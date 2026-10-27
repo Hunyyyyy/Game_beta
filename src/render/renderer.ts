@@ -1,5 +1,5 @@
 import { Building, BuildingKind, BUILDINGS } from '../sim/buildings';
-import type { Season, WeatherKind } from '../sim/calendar';
+import type { WeatherKind } from '../sim/calendar';
 import { TILE } from '../sim/constants';
 import type { Sim, Villager } from '../sim/sim';
 import { hash2 } from '../sim/rng';
@@ -15,10 +15,6 @@ export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean }
 interface Drawable { y: number; kind: 'tree' | 'rock' | 'bush' | 'villager' | 'building'; i: number; j: number; v?: Villager; b?: Building }
 
 const FOG_RGB = [8, 10, 20];
-/** Ground overlay color per season (winter: snow). */
-const GROUND_TINT: Record<Season, string | null> = {
-  spring: null, summer: 'rgba(255,214,110,.07)', autumn: 'rgba(196,128,40,.16)', winter: 'rgba(236,242,250,.52)',
-};
 /** Weather particles: drop/flake count (per 1000×700 px), extra dimming, wind slant, lightning chance. */
 const WEATHER_FX: Record<WeatherKind, { rain: number; snow: number; dim: number; wind: number; flash: number }> = {
   clear: { rain: 0, snow: 0, dim: 0, wind: 0, flash: 0 },
@@ -86,10 +82,10 @@ export class Renderer {
     return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
   }
 
+  /** Current level's sprite; while an upgrade runs the finished building stays drawn, with a progress bar. */
   private buildingProp(b: Building): Prop {
-    if (b.kind === 'campfire') return this.sprites.campfire;
     const st = b.done ? 4 : Math.min(3, Math.floor(b.progress * 4));
-    return b.kind === 'workshop' ? this.sprites.workshop[st] : this.sprites.storage[st];
+    return this.sprites.building(b.kind, b.level, st);
   }
 
   /** Rain, snow, mist, lightning in screen space; particle positions derive from time, so no state is kept. */
@@ -137,13 +133,13 @@ export class Renderer {
     }
   }
 
-  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null): void {
+  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null): void {
     const { ctx, cam, sim } = this, z = cam.zoom, world = sim.world, N = world.size, sp = this.sprites;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = '#0b0d16'; ctx.fillRect(0, 0, this.w, this.h);
 
-    const cx = Math.round(cam.x), cy = Math.round(cam.y), ts = TILE * z;
+    const cx = Math.round(cam.x), cy = Math.round(cam.y), ts = TILE * z, nat = sp.nature(sim.season);
     const i0 = Math.max(0, Math.floor(cx / TILE)), j0 = Math.max(0, Math.floor(cy / TILE));
     const i1 = Math.min(N - 1, Math.floor((cx + this.w / z) / TILE)), j1 = Math.min(N - 1, Math.floor((cy + this.h / z) / TILE));
     const px = (i: number) => (i * TILE - cx) * z, py = (j: number) => (j * TILE - cy) * z;
@@ -154,21 +150,19 @@ export class Renderer {
         const t = world.at(i, j), r = hash2(i, j, 11);
         let img: HTMLCanvasElement;
         if (t === Tile.Water) {
-          const w = sp.water[Math.floor(r * sp.water.length)];
+          const w = nat.water[Math.floor(r * nat.water.length)];
           img = w.frames[Math.floor(time * w.fps + hash2(i >> 2, j >> 2, 5) * 4) % w.frames.length];
-        } else if (t === Tile.Mud) img = sp.mud[Math.floor(r * sp.mud.length)];
-        else img = sp.grass[Math.floor(r * sp.grass.length)];
+        } else if (t === Tile.Mud) img = nat.mud[Math.floor(r * nat.mud.length)];
+        else img = nat.grass[Math.floor(r * nat.grass.length)];
         ctx.drawImage(img, px(i), py(j), ts, ts);
       }
     }
     // gốc cây là vật trang trí nằm sát đất
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
       if (!world.decor[j * N + i]) continue;
-      this.prop(sp.stump[Math.floor(hash2(i, j, 31) * sp.stump.length)], i * TILE + 16, j * TILE + 26, time);
+      this.prop(nat.stump[Math.floor(hash2(i, j, 31) * nat.stump.length)], i * TILE + 16, j * TILE + 26, time);
     }
-    const season = sim.season, ground = GROUND_TINT[season];
-    if (ground) { ctx.fillStyle = ground; ctx.fillRect(px(i0), py(j0), (i1 - i0 + 1) * ts, (j1 - j0 + 1) * ts); }
-    const trees = sp.treesIn(season);
+    const trees = nat.trees;
 
     // ---- vật thể + công trình + dân, sắp theo y ----
     const list: Drawable[] = [];
@@ -193,14 +187,14 @@ export class Renderer {
         const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
         this.prop(p, d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'rock') {
-        this.prop(sp.rocks[Math.floor(hash2(d.i, d.j, 22) * sp.rocks.length)], d.i * TILE + 16, d.y, time);
+        this.prop(nat.rocks[Math.floor(hash2(d.i, d.j, 22) * nat.rocks.length)], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'bush') {
-        const n = world.nodeAt(d.i, d.j), k = Math.floor(hash2(d.i, d.j, 23) * sp.bush.length);
-        this.prop(sp.bushIn(season, !!n && n.amount === 0)[k], d.i * TILE + 16, d.y, time);
+        const n = world.nodeAt(d.i, d.j), k = Math.floor(hash2(d.i, d.j, 23) * nat.bush.length);
+        this.prop((n && n.amount === 0 ? nat.bushEmpty : nat.bush)[k], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'building' && d.b) {
         const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
         this.prop(this.buildingProp(b), ax, ay, time);
-        if (!b.done) {
+        if (!b.done || b.upgrading) {
           const p = this.worldToScreen(ax, ay), w = 40 * z;
           ctx.fillStyle = 'rgba(20,14,8,.7)'; ctx.fillRect(p.x - w / 2, p.y - 4 * z, w, 5 * z);
           ctx.fillStyle = '#e0a23c'; ctx.fillRect(p.x - w / 2 + z, p.y - 3 * z, (w - 2 * z) * b.progress, 3 * z);
@@ -254,11 +248,19 @@ export class Renderer {
     // ---- bóng ma khi đặt công trình ----
     if (ghost) {
       const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
-      this.prop(ghost.kind === 'workshop' ? sp.workshop[4] : sp.storage[4], ax, ay, time, 0.6);
+      this.prop(sp.building(ghost.kind, 1, 4), ax, ay, time, 0.6);
       ctx.fillStyle = ghost.ok ? 'rgba(90,200,90,.38)' : 'rgba(220,70,60,.42)';
       ctx.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
       ctx.strokeStyle = ghost.ok ? '#bff0b0' : '#ffb4a8'; ctx.lineWidth = 2;
       ctx.strokeRect(px(ghost.x) + 1, py(ghost.y) + 1, d.w * ts - 2, d.h * ts - 2);
+    }
+
+    // ---- selected building ----
+    const sb = selBuilding === null ? undefined : sim.getBuilding(selBuilding);
+    if (sb) {
+      const d = BUILDINGS[sb.kind];
+      ctx.strokeStyle = '#f5e7c4'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+      ctx.strokeRect(px(sb.x) + 1, py(sb.y) + 1, d.w * ts - 2, d.h * ts - 2); ctx.setLineDash([]);
     }
 
     // ---- đánh dấu lệnh, vòng chọn ----

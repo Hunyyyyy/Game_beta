@@ -1,6 +1,6 @@
 import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, SEASON_DEF, WEATHER, WeatherKind } from './calendar';
 import { DAY_LENGTH, FIRE_VISION, NIGHT_VISION, START_TIME, TICK, VISION } from './constants';
-import { Building, BuildingKind, BUILDINGS } from './buildings';
+import { Building, BuildingKind, BUILDINGS, levelDef, maxLevel, needsWork } from './buildings';
 import { Fog } from './fog';
 import { Job, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, Stats, WorkJob, WORK_JOBS, XP_LEVELS } from './jobs';
 import { findPath, Step } from './path';
@@ -153,7 +153,7 @@ export class Sim {
 
   capacity(_res?: Res): number {
     let c = 0;
-    for (const b of this.buildings) if (b.done) c += BUILDINGS[b.kind].cap;
+    for (const b of this.buildings) if (b.done) c += levelDef(b).cap;
     return c;
   }
   buildingAt(x: number, y: number): Building | undefined {
@@ -199,7 +199,7 @@ export class Sim {
   // ---------------------------------------------------------------- công trình
   private addBuilding(kind: BuildingKind, x: number, y: number, done: boolean): Building {
     const d = BUILDINGS[kind];
-    const b: Building = { id: this.nextBid++, kind, x, y, progress: done ? 1 : 0, done, workers: 0 };
+    const b: Building = { id: this.nextBid++, kind, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, workers: 0 };
     this.buildings.push(b);
     for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) this.world.occ[(y + j) * this.world.size + x + i] = 1;
     return b;
@@ -216,7 +216,33 @@ export class Sim {
       const t = w.tiles[k];
       if ((t !== 0 && t !== 4) || w.occ[k]) return 'Vướng cây, đá, nước hoặc công trình';
     }
-    for (const r of Object.keys(d.cost) as Res[]) if (this.stock[r] < (d.cost[r] ?? 0)) return `Thiếu ${RES_NAME[r].toLowerCase()} (cần ${d.cost[r]})`;
+    return this.missing(d.levels[0].cost);
+  }
+
+  /** Reason the stock cannot pay `cost`, or null. */
+  private missing(cost: Partial<Stock>): string | null {
+    for (const r of Object.keys(cost) as Res[]) if (this.stock[r] < (cost[r] ?? 0)) return `Thiếu ${RES_NAME[r].toLowerCase()} (cần ${cost[r]})`;
+    return null;
+  }
+
+  /** Reason the building cannot be upgraded now, or null. */
+  canUpgrade(b: Building): string | null {
+    if (!b.done) return 'Công trình chưa dựng xong';
+    if (b.upgrading) return 'Đang nâng cấp';
+    if (b.level >= maxLevel(b.kind)) return 'Đã ở cấp cao nhất';
+    return this.missing(levelDef(b, b.level + 1).cost);
+  }
+
+  /** Pay for the next level; builders then work on it while the building keeps its current level. */
+  upgradeBuilding(id: number): string | null {
+    const b = this.getBuilding(id);
+    if (!b) return 'Không tìm thấy công trình';
+    const why = this.canUpgrade(b);
+    if (why) return why;
+    const next = levelDef(b, b.level + 1);
+    for (const r of Object.keys(next.cost) as Res[]) this.stock[r] -= next.cost[r] ?? 0;
+    b.upgrading = true; b.progress = 0;
+    this.say(`Bắt đầu nâng ${BUILDINGS[b.kind].name} lên cấp ${b.level + 1} (${next.name.toLowerCase()}). Giao việc "Thợ xây" để làm.`);
     return null;
   }
 
@@ -225,7 +251,8 @@ export class Sim {
     if (!d.buildable) return { ok: false, reason: 'Không xây được công trình này' };
     const why = this.canPlace(kind, x, y);
     if (why) return { ok: false, reason: why };
-    for (const r of Object.keys(d.cost) as Res[]) this.stock[r] -= d.cost[r] ?? 0;
+    const cost = d.levels[0].cost;
+    for (const r of Object.keys(cost) as Res[]) this.stock[r] -= cost[r] ?? 0;
     const b = this.addBuilding(kind, x, y, false);
     this.say(`Đã đặt nền ${d.name}. Giao việc "Thợ xây" để dựng.`);
     return { ok: true, building: b };
@@ -287,7 +314,7 @@ export class Sim {
     const node = this.world.nodeAt(tx, ty), site = this.buildingAt(tx, ty);
     let job: WorkJob | null = null, prefer = -1;
     if (node && this.fog.state[idx] > 0) { job = NODE_JOB[node.kind]; prefer = idx; }
-    else if (site && !site.done) { job = 'build'; prefer = site.id; }
+    else if (site && needsWork(site)) { job = 'build'; prefer = site.id; }
     else if (site && site.kind === 'workshop') { job = 'craft'; prefer = site.id; }
     if (!job) return null;
     for (const id of ids) {
@@ -555,19 +582,21 @@ export class Sim {
       case 'goEquip': this.equip(v); return;
       case 'goSite': {
         const b = this.getBuilding(v.target);
-        if (!b || b.done) { v.phase = 'idle'; return; }
+        if (!b || !needsWork(b)) { v.phase = 'idle'; return; }
         v.phase = 'build';
         v.slide = this.edgeSlide(v, b);
         return;
       }
       case 'build': {
         const b = this.getBuilding(v.target);
-        if (!b || b.done) { v.phase = 'idle'; return; }
-        b.progress += (dt / BUILDINGS[b.kind].buildTime) * this.workFactor(v, 'build');
+        if (!b || !needsWork(b)) { v.phase = 'idle'; return; }
+        const target = b.upgrading ? b.level + 1 : b.level;
+        b.progress += (dt / levelDef(b, target).buildTime) * this.workFactor(v, 'build');
         this.gainXp(v, 'build', dt); this.wear(v, 'build', dt);
         if (b.progress >= 1) {
-          b.progress = 1; b.done = true; this.fogDirty = true;
-          this.say(`${BUILDINGS[b.kind].name} đã dựng xong.`);
+          b.progress = 1;
+          if (b.upgrading) { b.level++; b.upgrading = false; this.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
+          else { b.done = true; this.fogDirty = true; this.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); }
           v.phase = 'idle';
         }
         return;
@@ -620,7 +649,8 @@ export class Sim {
   private doCraft(v: Villager, dt: number): void {
     const r = v.order ? RECIPE_BY_ID[v.order] : null;
     if (!r) { v.phase = 'idle'; return; }
-    v.progress += (dt * this.workFactor(v, 'craft')) / r.time;
+    const shop = this.getBuilding(v.target);
+    v.progress += (dt * this.workFactor(v, 'craft') * (shop ? levelDef(shop).craftSpeed : 1)) / r.time;
     this.gainXp(v, 'craft', dt);
     if (v.progress < 1) return;
     this.toolStock[r.id] = (this.toolStock[r.id] ?? 0) + 1;
@@ -804,7 +834,7 @@ export class Sim {
   }
 
   private planDeliver(v: Villager): void {
-    const done = this.buildings.filter((b) => b.done && BUILDINGS[b.kind].cap > 0);
+    const done = this.buildings.filter((b) => b.done && levelDef(b).cap > 0);
     done.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
     for (const b of done.slice(0, 2)) {
       const d = BUILDINGS[b.kind];
@@ -826,7 +856,7 @@ export class Sim {
 
   private planBuild(v: Villager): void {
     const crew = (b: Building) => this.villagers.filter((o) => o !== v && o.target === b.id && (o.phase === 'goSite' || o.phase === 'build')).length;
-    let sites = this.buildings.filter((b) => !b.done && crew(b) < 3);
+    let sites = this.buildings.filter((b) => needsWork(b) && crew(b) < 3);
     sites.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) ||
       Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
     sites = sites.slice(0, 2);

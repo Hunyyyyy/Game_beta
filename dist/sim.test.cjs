@@ -78,11 +78,29 @@ function rollWeather(season, r) {
 }
 
 // src/sim/buildings.ts
+var lv = (name, cost, buildTime, cap = 0, craftSpeed = 1) => ({ name, cost, buildTime, cap, craftSpeed });
 var BUILDINGS = {
-  campfire: { kind: "campfire", name: "Nh\xE0 chung (\u0111\u1ED1ng l\u1EEDa tr\u1EA1i)", w: 2, h: 2, cost: {}, buildTime: 0, cap: 50, buildable: false },
-  workshop: { kind: "workshop", name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c", w: 2, h: 2, cost: { wood: 15 }, buildTime: 30, cap: 0, buildable: true },
-  storage: { kind: "storage", name: "Kho", w: 2, h: 2, cost: { wood: 10 }, buildTime: 20, cap: 100, buildable: true }
+  campfire: { kind: "campfire", name: "Nh\xE0 chung (\u0111\u1ED1ng l\u1EEDa tr\u1EA1i)", w: 2, h: 2, buildable: false, levels: [lv("L\u1EEDa tr\u1EA1i", {}, 0, 50)] },
+  workshop: {
+    kind: "workshop",
+    name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c",
+    w: 2,
+    h: 2,
+    buildable: true,
+    levels: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 30, 0, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 60, 0, 1.25), lv("\u0110\xE1", { wood: 30, stone: 50 }, 90, 0, 1.5)]
+  },
+  storage: {
+    kind: "storage",
+    name: "Kho",
+    w: 2,
+    h: 2,
+    buildable: true,
+    levels: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 20, 100), lv("G\u1ED7", { wood: 35 }, 40, 250), lv("\u0110\xE1", { wood: 40, stone: 20 }, 60, 500)]
+  }
 };
+var levelDef = (b, level = b.level) => BUILDINGS[b.kind].levels[level - 1];
+var maxLevel = (kind) => BUILDINGS[kind].levels.length;
+var needsWork = (b) => !b.done || b.upgrading;
 
 // src/sim/fog.ts
 var Fog = class {
@@ -519,7 +537,7 @@ var Sim = class {
   }
   capacity(_res) {
     let c = 0;
-    for (const b of this.buildings) if (b.done) c += BUILDINGS[b.kind].cap;
+    for (const b of this.buildings) if (b.done) c += levelDef(b).cap;
     return c;
   }
   buildingAt(x, y) {
@@ -600,7 +618,7 @@ var Sim = class {
   // ---------------------------------------------------------------- công trình
   addBuilding(kind, x, y, done) {
     const d = BUILDINGS[kind];
-    const b = { id: this.nextBid++, kind, x, y, progress: done ? 1 : 0, done, workers: 0 };
+    const b = { id: this.nextBid++, kind, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, workers: 0 };
     this.buildings.push(b);
     for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) this.world.occ[(y + j) * this.world.size + x + i] = 1;
     return b;
@@ -616,7 +634,31 @@ var Sim = class {
       const t = w2.tiles[k];
       if (t !== 0 && t !== 4 || w2.occ[k]) return "V\u01B0\u1EDBng c\xE2y, \u0111\xE1, n\u01B0\u1EDBc ho\u1EB7c c\xF4ng tr\xECnh";
     }
-    for (const r of Object.keys(d.cost)) if (this.stock[r] < (d.cost[r] ?? 0)) return `Thi\u1EBFu ${RES_NAME[r].toLowerCase()} (c\u1EA7n ${d.cost[r]})`;
+    return this.missing(d.levels[0].cost);
+  }
+  /** Reason the stock cannot pay `cost`, or null. */
+  missing(cost) {
+    for (const r of Object.keys(cost)) if (this.stock[r] < (cost[r] ?? 0)) return `Thi\u1EBFu ${RES_NAME[r].toLowerCase()} (c\u1EA7n ${cost[r]})`;
+    return null;
+  }
+  /** Reason the building cannot be upgraded now, or null. */
+  canUpgrade(b) {
+    if (!b.done) return "C\xF4ng tr\xECnh ch\u01B0a d\u1EF1ng xong";
+    if (b.upgrading) return "\u0110ang n\xE2ng c\u1EA5p";
+    if (b.level >= maxLevel(b.kind)) return "\u0110\xE3 \u1EDF c\u1EA5p cao nh\u1EA5t";
+    return this.missing(levelDef(b, b.level + 1).cost);
+  }
+  /** Pay for the next level; builders then work on it while the building keeps its current level. */
+  upgradeBuilding(id) {
+    const b = this.getBuilding(id);
+    if (!b) return "Kh\xF4ng t\xECm th\u1EA5y c\xF4ng tr\xECnh";
+    const why = this.canUpgrade(b);
+    if (why) return why;
+    const next = levelDef(b, b.level + 1);
+    for (const r of Object.keys(next.cost)) this.stock[r] -= next.cost[r] ?? 0;
+    b.upgrading = true;
+    b.progress = 0;
+    this.say(`B\u1EAFt \u0111\u1EA7u n\xE2ng ${BUILDINGS[b.kind].name} l\xEAn c\u1EA5p ${b.level + 1} (${next.name.toLowerCase()}). Giao vi\u1EC7c "Th\u1EE3 x\xE2y" \u0111\u1EC3 l\xE0m.`);
     return null;
   }
   placeBuilding(kind, x, y) {
@@ -624,7 +666,8 @@ var Sim = class {
     if (!d.buildable) return { ok: false, reason: "Kh\xF4ng x\xE2y \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y" };
     const why = this.canPlace(kind, x, y);
     if (why) return { ok: false, reason: why };
-    for (const r of Object.keys(d.cost)) this.stock[r] -= d.cost[r] ?? 0;
+    const cost = d.levels[0].cost;
+    for (const r of Object.keys(cost)) this.stock[r] -= cost[r] ?? 0;
     const b = this.addBuilding(kind, x, y, false);
     this.say(`\u0110\xE3 \u0111\u1EB7t n\u1EC1n ${d.name}. Giao vi\u1EC7c "Th\u1EE3 x\xE2y" \u0111\u1EC3 d\u1EF1ng.`);
     return { ok: true, building: b };
@@ -693,7 +736,7 @@ var Sim = class {
     if (node && this.fog.state[idx] > 0) {
       job = NODE_JOB[node.kind];
       prefer = idx;
-    } else if (site && !site.done) {
+    } else if (site && needsWork(site)) {
       job = "build";
       prefer = site.id;
     } else if (site && site.kind === "workshop") {
@@ -1043,7 +1086,7 @@ var Sim = class {
         return;
       case "goSite": {
         const b = this.getBuilding(v.target);
-        if (!b || b.done) {
+        if (!b || !needsWork(b)) {
           v.phase = "idle";
           return;
         }
@@ -1053,18 +1096,25 @@ var Sim = class {
       }
       case "build": {
         const b = this.getBuilding(v.target);
-        if (!b || b.done) {
+        if (!b || !needsWork(b)) {
           v.phase = "idle";
           return;
         }
-        b.progress += dt / BUILDINGS[b.kind].buildTime * this.workFactor(v, "build");
+        const target = b.upgrading ? b.level + 1 : b.level;
+        b.progress += dt / levelDef(b, target).buildTime * this.workFactor(v, "build");
         this.gainXp(v, "build", dt);
         this.wear(v, "build", dt);
         if (b.progress >= 1) {
           b.progress = 1;
-          b.done = true;
-          this.fogDirty = true;
-          this.say(`${BUILDINGS[b.kind].name} \u0111\xE3 d\u1EF1ng xong.`);
+          if (b.upgrading) {
+            b.level++;
+            b.upgrading = false;
+            this.say(`${BUILDINGS[b.kind].name} \u0111\xE3 l\xEAn c\u1EA5p ${b.level} (${levelDef(b).name.toLowerCase()}).`);
+          } else {
+            b.done = true;
+            this.fogDirty = true;
+            this.say(`${BUILDINGS[b.kind].name} \u0111\xE3 d\u1EF1ng xong.`);
+          }
           v.phase = "idle";
         }
         return;
@@ -1136,7 +1186,8 @@ var Sim = class {
       v.phase = "idle";
       return;
     }
-    v.progress += dt * this.workFactor(v, "craft") / r.time;
+    const shop = this.getBuilding(v.target);
+    v.progress += dt * this.workFactor(v, "craft") * (shop ? levelDef(shop).craftSpeed : 1) / r.time;
     this.gainXp(v, "craft", dt);
     if (v.progress < 1) return;
     this.toolStock[r.id] = (this.toolStock[r.id] ?? 0) + 1;
@@ -1351,7 +1402,7 @@ var Sim = class {
     return false;
   }
   planDeliver(v) {
-    const done = this.buildings.filter((b) => b.done && BUILDINGS[b.kind].cap > 0);
+    const done = this.buildings.filter((b) => b.done && levelDef(b).cap > 0);
     done.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
     for (const b of done.slice(0, 2)) {
       const d = BUILDINGS[b.kind];
@@ -1386,7 +1437,7 @@ var Sim = class {
   }
   planBuild(v) {
     const crew = (b) => this.villagers.filter((o) => o !== v && o.target === b.id && (o.phase === "goSite" || o.phase === "build")).length;
-    let sites = this.buildings.filter((b) => !b.done && crew(b) < 3);
+    let sites = this.buildings.filter((b) => needsWork(b) && crew(b) < 3);
     sites.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) || Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
     sites = sites.slice(0, 2);
     for (const b of sites) {
@@ -1828,6 +1879,41 @@ var tickN = (sm, secs) => run(sm, secs);
   };
   const bare = buildTime(0), wood = buildTime(1), stone = buildTime(2);
   ok(wood < bare && stone < wood, `b\xFAa c\xE0ng t\u1ED1t x\xE2y c\xE0ng nhanh: tay kh\xF4ng ${bare.toFixed(0)}s \xB7 b\xFAa g\u1ED7 ${wood.toFixed(0)}s \xB7 b\xFAa \u0111\xE1 ${stone.toFixed(0)}s`);
+}
+{
+  const sm = new Sim(1337);
+  reveal(sm);
+  sm.villagers.forEach((o) => {
+    o.fullness = 1e9;
+  });
+  sm.time = DAY_LENGTH * 0.3;
+  sm.stock.wood = 10;
+  const sp = sm.world.start;
+  const spot2 = (() => {
+    for (let dx = -8; dx <= 8; dx++) for (let dy = 3; dy <= 9; dy++) if (!sm.canPlace("storage", sp.x + dx, sp.y + dy)) return [sp.x + dx, sp.y + dy];
+    return null;
+  })();
+  const b = sm.placeBuilding("storage", spot2[0], spot2[1]).building;
+  const ids2 = sm.villagers.map((o) => o.id);
+  sm.setJob(ids2, "build");
+  run(sm, 40);
+  ok(b.done && b.level === 1 && sm.capacity() === 150, `Kho c\u1EA5p 1 (\u0111\u01A1n s\u01A1) ch\u1EE9a 100 (t\u1ED5ng ${sm.capacity()})`);
+  ok(sm.upgradeBuilding(b.id) !== null && !b.upgrading, "thi\u1EBFu g\u1ED7 th\xEC kh\xF4ng n\xE2ng c\u1EA5p \u0111\u01B0\u1EE3c");
+  sm.stock.wood = 40;
+  ok(sm.upgradeBuilding(b.id) === null && b.upgrading && sm.stock.wood === 5, "n\xE2ng c\u1EA5p tr\u1EA3 tr\u01B0\u1EDBc 35 g\u1ED7");
+  ok(sm.capacity() === 150, "\u0111ang n\xE2ng c\u1EA5p v\u1EABn d\xF9ng s\u1EE9c ch\u1EE9a c\u1EA5p c\u0169");
+  ok(sm.upgradeBuilding(b.id) === "\u0110ang n\xE2ng c\u1EA5p", "kh\xF4ng n\xE2ng ch\u1ED3ng hai l\u1EA7n");
+  run(sm, 60);
+  ok(!b.upgrading && b.level === 2 && sm.capacity() === 300, `th\u1EE3 x\xE2y n\xE2ng xong l\xEAn c\u1EA5p 2 (g\u1ED7), ch\u1EE9a 250 (t\u1ED5ng ${sm.capacity()})`);
+  sm.stock.wood = 40;
+  sm.stock.stone = 0;
+  ok(sm.upgradeBuilding(b.id)?.startsWith("Thi\u1EBFu \u0111\xE1") ?? false, "c\u1EA5p 3 (\u0111\xE1) c\u1EA7n \u0111\xE1");
+  sm.time = DAY_LENGTH * 1.3;
+  sm.stock.stone = 20;
+  sm.upgradeBuilding(b.id);
+  run(sm, 90);
+  ok(b.level === 3 && sm.capacity() === 550 && sm.upgradeBuilding(b.id) === "\u0110\xE3 \u1EDF c\u1EA5p cao nh\u1EA5t", `c\u1EA5p 3 ch\u1EE9a 500, kh\xF4ng n\xE2ng th\xEAm (t\u1ED5ng ${sm.capacity()})`);
+  ok(levelDef({ kind: "workshop", level: 3 }).craftSpeed > levelDef({ kind: "workshop", level: 1 }).craftSpeed, "X\u01B0\u1EDFng c\u1EA5p cao ch\u1EBF nhanh h\u01A1n");
 }
 console.log(fails ? `${fails} l\u1ED7i` : "t\u1EA5t c\u1EA3 \u0111\u1EA1t");
 process.exit(fails ? 1 : 0);

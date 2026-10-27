@@ -1,21 +1,26 @@
 import { AnimTable, CX, H, W, renderFrame } from '../character/rig.js';
 import { Blueprint, BlueprintDef, toCanvases } from '../blueprint/blueprint';
 import animsJson from '../data/anims.json';
-import bushJson from '../data/blueprints/bush.json';
-import campfireJson from '../data/blueprints/campfire.json';
-import grassJson from '../data/blueprints/grass.json';
-import mudJson from '../data/blueprints/mud.json';
-import rockJson from '../data/blueprints/rock.json';
-import storageJson from '../data/blueprints/storage.json';
-import stumpJson from '../data/blueprints/stump.json';
-import treePineJson from '../data/blueprints/tree_pine.json';
-import treeRoundJson from '../data/blueprints/tree_round.json';
-import toolAxeJson from '../data/blueprints/tool_axe.json';
-import toolHammerJson from '../data/blueprints/tool_hammer.json';
-import toolHoeJson from '../data/blueprints/tool_hoe.json';
-import toolPickJson from '../data/blueprints/tool_pick.json';
-import waterJson from '../data/blueprints/water.json';
-import workshopJson from '../data/blueprints/workshop.json';
+import campfireL1 from '../data/blueprints/buildings/campfire/L1.json';
+import storageL1 from '../data/blueprints/buildings/storage/L1.json';
+import storageL2 from '../data/blueprints/buildings/storage/L2.json';
+import storageL3 from '../data/blueprints/buildings/storage/L3.json';
+import workshopL1 from '../data/blueprints/buildings/workshop/L1.json';
+import workshopL2 from '../data/blueprints/buildings/workshop/L2.json';
+import workshopL3 from '../data/blueprints/buildings/workshop/L3.json';
+import bushJson from '../data/blueprints/nature/resources/bush.json';
+import rockJson from '../data/blueprints/nature/resources/rock.json';
+import grassJson from '../data/blueprints/nature/terrain/grass.json';
+import mudJson from '../data/blueprints/nature/terrain/mud.json';
+import waterJson from '../data/blueprints/nature/terrain/water.json';
+import stumpJson from '../data/blueprints/nature/trees/stump.json';
+import treePineJson from '../data/blueprints/nature/trees/tree_pine.json';
+import treeRoundJson from '../data/blueprints/nature/trees/tree_round.json';
+import toolAxeJson from '../data/blueprints/tools/axe.json';
+import toolHammerJson from '../data/blueprints/tools/hammer.json';
+import toolHoeJson from '../data/blueprints/tools/hoe.json';
+import toolPickJson from '../data/blueprints/tools/pick.json';
+import type { BuildingKind } from '../sim/buildings';
 import type { Season } from '../sim/calendar';
 import type { Villager } from '../sim/sim';
 
@@ -38,61 +43,59 @@ function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContex
 
 const seeds = (n: number) => Array.from({ length: n }, (_, i) => i * 7 + 3);
 
-/** Copy of a prop with a color layer painted over its opaque pixels. */
-function tint(p: Prop, color: string): Prop {
-  const frames = p.frames.map((f) => {
-    const [c, g] = canvas(f.width, f.height);
-    g.drawImage(f, 0, 0);
-    g.globalCompositeOperation = 'source-atop'; g.fillStyle = color; g.fillRect(0, 0, f.width, f.height);
-    return c;
-  });
-  return { ...p, frames };
+/** Nature props for one state (season now; burnt, fallen... later). Each blueprint reads the params it knows. */
+export interface NatureSet {
+  grass: HTMLCanvasElement[]; mud: HTMLCanvasElement[]; water: Prop[];
+  trees: Prop[]; rocks: Prop[]; bush: Prop[]; bushEmpty: Prop[]; stump: Prop[];
 }
 
-/** Seasonal tint: [round tree, pine, bush]. Spring keeps the original art. */
-const SEASON_TINT: Record<Season, [string, string, string] | null> = {
-  spring: null,
-  summer: ['rgba(120,150,20,.12)', 'rgba(60,90,20,.08)', 'rgba(120,150,20,.1)'],
-  autumn: ['rgba(214,118,28,.52)', 'rgba(150,110,40,.18)', 'rgba(190,110,40,.35)'],
-  winter: ['rgba(196,186,170,.6)', 'rgba(240,246,255,.45)', 'rgba(236,240,248,.5)'],
+/** Construction stages 0..4 (4 = finished) as blueprint params. */
+const stage = (st: number) => ({ st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) });
+const BUILDING_LEVELS: Record<BuildingKind, unknown[]> = {
+  campfire: [campfireL1],
+  storage: [storageL1, storageL2, storageL3],
+  workshop: [workshopL1, workshopL2, workshopL3],
 };
 
 export class Sprites {
   private readonly vcache = new Map<string, HTMLCanvasElement>();
-  readonly grass = seeds(4).map((s) => make(grassJson, s).frames[0]);
-  readonly mud = seeds(4).map((s) => make(mudJson, s).frames[0]);
-  readonly water = seeds(3).map((s) => make(waterJson, s));
-  readonly trees = [...seeds(4).map((s) => make(treeRoundJson, s)), ...seeds(4).map((s) => make(treePineJson, s + 1))];
-  readonly rocks = seeds(3).map((s) => make(rockJson, s));
-  readonly bush = seeds(3).map((s) => make(bushJson, s));
-  readonly bushEmpty = seeds(3).map((s) => make(bushJson, s, { empty: 1 }));
-  readonly stump = seeds(3).map((s) => make(stumpJson, s));
-  readonly campfire = make(campfireJson, 5);
-  /** Kho theo giai đoạn xây 0..4 (4 = xong). */
-  readonly storage = [0, 1, 2, 3, 4].map((st) => make(storageJson, 5, { st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) }));
-  readonly workshop = [0, 1, 2, 3, 4].map((st) => make(workshopJson, 9, { st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) }));
-  private readonly seasonal = new Map<string, Prop[]>();
+  private readonly natureCache = new Map<string, NatureSet>();
+  /** Building sprites per kind and level (index 0 = level 1), each with construction stages 0..4. */
+  readonly buildings = Object.fromEntries((Object.keys(BUILDING_LEVELS) as BuildingKind[]).map((k) =>
+    [k, BUILDING_LEVELS[k].map((def) => [0, 1, 2, 3, 4].map((st) => make(def, k === 'workshop' ? 9 : 5, stage(st))))])) as Record<BuildingKind, Prop[][]>;
   /** Biểu tượng công cụ 16×16, khóa dạng "axe1" (gỗ) hoặc "axe2" (đá). */
   readonly icons: Record<string, HTMLCanvasElement> = {};
 
   constructor() {
     const defs: Record<string, unknown> = { axe: toolAxeJson, pick: toolPickJson, hoe: toolHoeJson, hammer: toolHammerJson };
     for (const k of Object.keys(defs)) for (const tier of [1, 2]) this.icons[`${k}${tier}`] = make(defs[k], 1, { stone: tier === 2 ? 1 : 0 }).frames[0];
+    this.nature('spring');
   }
 
-  /** Seasonal trees: orange in autumn; in winter round trees turn grey, pines get frosted. */
-  treesIn(season: Season): Prop[] {
-    const t = SEASON_TINT[season];
-    return t ? this.cached(`tree|${season}`, () => this.trees.map((p, i) => tint(p, i < 4 ? t[0] : t[1]))) : this.trees;
+  /** Nature drawn for a season; spring is the base art, other seasons switch the blueprints' palettes. */
+  nature(season: Season): NatureSet {
+    let n = this.natureCache.get(season);
+    if (!n) {
+      const p = season === 'spring' ? {} : { [season]: 1 };
+      n = {
+        grass: seeds(4).map((s) => make(grassJson, s, p).frames[0]),
+        mud: seeds(4).map((s) => make(mudJson, s, p).frames[0]),
+        water: seeds(3).map((s) => make(waterJson, s, p)),
+        trees: [...seeds(4).map((s) => make(treeRoundJson, s, p)), ...seeds(4).map((s) => make(treePineJson, s + 1, p))],
+        rocks: seeds(3).map((s) => make(rockJson, s, p)),
+        bush: seeds(3).map((s) => make(bushJson, s, p)),
+        bushEmpty: seeds(3).map((s) => make(bushJson, s, { ...p, empty: 1 })),
+        stump: seeds(3).map((s) => make(stumpJson, s, p)),
+      };
+      this.natureCache.set(season, n);
+    }
+    return n;
   }
-  bushIn(season: Season, empty: boolean): Prop[] {
-    const t = SEASON_TINT[season], base = empty ? this.bushEmpty : this.bush;
-    return t ? this.cached(`bush|${season}|${empty}`, () => base.map((p) => tint(p, t[2]))) : base;
-  }
-  private cached(key: string, make: () => Prop[]): Prop[] {
-    let v = this.seasonal.get(key);
-    if (!v) { v = make(); this.seasonal.set(key, v); }
-    return v;
+
+  /** Sprite of a building at its level and construction stage (0..4). */
+  building(kind: BuildingKind, level: number, st: number): Prop {
+    const lv = this.buildings[kind];
+    return lv[Math.min(lv.length, Math.max(1, level)) - 1][st];
   }
 
   villager(v: Villager): HTMLCanvasElement {

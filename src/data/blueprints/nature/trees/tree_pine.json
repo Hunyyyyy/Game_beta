@@ -5,9 +5,13 @@
   "anchor": [18, 64],
   "footprint": [14, 60, 8, 5],
   "seed": 5,
-  "palette": {
-    "trunk": "#5e4026", "trunkL": "#7a5532",
-    "leaf": "#2f5a35", "leafL": "#437a47", "leafD": "#1f3f27", "line": "#0f2014", "shadow": "#000000", "snow": "#eef4f8"
+  "palette": { "trunk": "#5e4026", "trunkL": "#7a5532", "leaf": "#2f5a35", "leafL": "#437a47", "leafD": "#1f3f27", "line": "#0f2014", "shadow": "#000000", "snow": "#eef4f8", "ember": "#e0602a" },
+  "params": {"summer": 0, "autumn": 0, "winter": 0, "burnt": 0},
+  "palettes": {
+    "summer": { "leaf": "#2c5a30", "leafL": "#407a42" },
+    "autumn": { "leaf": "#2f5530", "leafL": "#4a7040", "leafD": "#203a22" },
+    "winter": { "leaf": "#284a30", "leafL": "#3a6040", "leafD": "#1a3322" },
+    "burnt": { "leaf": "#3a3430", "leafL": "#4a423c", "leafD": "#241f1c", "trunk": "#2e2420", "trunkL": "#463830", "line": "#0e0a08" }
   },
   "layers": [
     { "shape": "rect", "x": 15, "y": 54, "w": 6, "h": 10, "color": "trunk" },
@@ -19,6 +23,13 @@
     { "shape": "poly", "points": [[18, 14], [31, 42], [18, 42]], "color": "leafD", "alpha": 0.35, "clip": "inside" },
     { "shape": "poly", "points": [[18, 26], [33, 56], [18, 56]], "color": "leafD", "alpha": 0.35, "clip": "inside" },
     { "shape": "scatter", "count": 28, "area": [4, 6, 28, 50], "size": [3, 1], "colors": ["leafL", "leafD"], "onlyOver": ["leaf"] },
+    {"shape": "group", "if": "winter", "layers": [
+      { "shape": "poly", "points": [[18, 2], [13, 13], [23, 13]], "color": "snow", "jitter": 1 },
+      { "shape": "scatter", "count": 45, "area": [4, 4, 28, 50], "size": [3, 1], "color": "snow", "onlyOver": ["leaf", "leafL"] },
+      { "shape": "rect", "x": 6, "y": 41, "w": 24, "h": 1, "color": "snow", "onlyOver": ["leaf", "leafD"] },
+      { "shape": "rect", "x": 4, "y": 55, "w": 28, "h": 1, "color": "snow", "onlyOver": ["leaf", "leafD"] }
+    ] },
+    { "shape": "scatter", "if": "burnt", "count": 5, "area": [6, 10, 24, 46], "size": 1, "color": "ember", "onlyOver": ["leaf", "leafD"] },
     { "shape": "bevel", "light": "#c8ffd0", "lightAlpha": 0.28, "dark": "#000000", "darkAlpha": 0.3 },
     { "shape": "outline", "color": "line" },
     { "shape": "ellipse", "cx": 18, "cy": 64, "rx": 14, "ry": 3, "color": "shadow", "alpha": 0.28, "mode": "under" }

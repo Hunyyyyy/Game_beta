@@ -1,6 +1,6 @@
 import { Renderer, Camera } from './render/renderer';
 import { Sprites } from './render/sprites';
-import { BUILDINGS, BuildingKind } from './sim/buildings';
+import { BUILDINGS, BuildingKind, levelDef, maxLevel } from './sim/buildings';
 import { DAY_PART_NAME, dayInSeason, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
 import { DAY_LENGTH, TILE } from './sim/constants';
 import { Job, JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS } from './sim/jobs';
@@ -151,6 +151,37 @@ function updateCraft() {
   $('toolStock').textContent = working ? `${working} thợ thủ công` : 'chưa có thợ thủ công';
 }
 
+// ---------------------------------------------------------------- building card
+const bcard = $('bcard'), upBtn = $<HTMLButtonElement>('btnUpgrade');
+const costText = (c: Partial<Record<'wood' | 'stone' | 'food', number>>) =>
+  (Object.keys(c) as Array<'wood' | 'stone' | 'food'>).map((k) => `${c[k]} ${RES_NAME[k].toLowerCase()}`).join(' + ') || 'miễn phí';
+const levelEffect = (kind: BuildingKind, cap: number, craftSpeed: number) =>
+  kind === 'workshop' ? `tốc độ chế tác ×${craftSpeed.toLocaleString('vi')}` : `sức chứa ${cap} mỗi loại`;
+upBtn.addEventListener('click', () => {
+  if (ctl.selectedBuilding === null) return;
+  const err = sim.upgradeBuilding(ctl.selectedBuilding);
+  ctl.onToast(err ?? 'Đã trả vật liệu. Giao Thợ xây để nâng cấp');
+  lastHud = 0;
+});
+function updateBuildingCard() {
+  const b = ctl.selectedBuilding === null ? undefined : sim.getBuilding(ctl.selectedBuilding);
+  bcard.hidden = !b;
+  if (!b) { if (ctl.selectedBuilding !== null) ctl.selectedBuilding = null; return; }
+  const def = BUILDINGS[b.kind], lv = levelDef(b), top = maxLevel(b.kind);
+  $('bName').textContent = `${def.name} · cấp ${b.level}/${top} (${lv.name.toLowerCase()})`;
+  $('bState').textContent = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : 'đang dùng';
+  $('bInfo').textContent = 'Hiện tại: ' + levelEffect(b.kind, lv.cap, lv.craftSpeed);
+  const canGrow = b.level < top;
+  upBtn.hidden = !canGrow || !def.buildable;
+  if (canGrow) {
+    const nx = levelDef(b, b.level + 1);
+    $('bNext').textContent = `Cấp ${b.level + 1} (${nx.name.toLowerCase()}): ${levelEffect(b.kind, nx.cap, nx.craftSpeed)}`;
+    const why = sim.canUpgrade(b);
+    upBtn.textContent = b.upgrading ? 'Đang nâng cấp…' : `Nâng cấp · ${costText(nx.cost)}`;
+    upBtn.disabled = !!why; upBtn.title = why ?? '';
+  } else $('bNext').textContent = def.buildable ? 'Đã ở cấp cao nhất' : '';
+}
+
 // ---------------------------------------------------------------- HUD
 const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(3 - n);
 const PHASE_TEXT = (v: Villager): string => {
@@ -217,6 +248,7 @@ function updateHud(now: number) {
   }
 
   updateCraft();
+  updateBuildingCard();
 
   // thẻ chi tiết
   const chosen = sim.villagers.filter((v) => ctl.selected.has(v.id));
@@ -249,7 +281,7 @@ function frame(t: number) {
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
   ctl.update(dt);
   sim.advance(dt);
-  renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost());
+  renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding);
   drawMini(); updateHud(t);
   requestAnimationFrame(frame);
 }

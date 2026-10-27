@@ -3,6 +3,7 @@ import { DAY_LENGTH } from '../src/sim/constants';
 import { Tile } from '../src/sim/world';
 import { lightAt, rollWeather, seasonOf, SEASONS } from '../src/sim/calendar';
 import { TIER_DURABILITY } from '../src/sim/tools';
+import { levelDef } from '../src/sim/buildings';
 
 let fails = 0;
 const ok = (c: boolean, msg: string) => { console.log((c ? 'ok   ' : 'FAIL ') + msg); if (!c) fails++; };
@@ -322,6 +323,29 @@ const tickN = (sm: Sim, secs: number) => run(sm, secs);
   };
   const bare = buildTime(0), wood = buildTime(1), stone = buildTime(2);
   ok(wood < bare && stone < wood, `búa càng tốt xây càng nhanh: tay không ${bare.toFixed(0)}s · búa gỗ ${wood.toFixed(0)}s · búa đá ${stone.toFixed(0)}s`);
+}
+
+{
+  // building levels: rough -> wood -> stone; upgrade is paid up front, builders finish it, capacity follows the level
+  const sm = new Sim(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  sm.time = DAY_LENGTH * 0.3; sm.stock.wood = 10;
+  const sp = sm.world.start;
+  const spot = (() => { for (let dx = -8; dx <= 8; dx++) for (let dy = 3; dy <= 9; dy++) if (!sm.canPlace('storage', sp.x + dx, sp.y + dy)) return [sp.x + dx, sp.y + dy]; return null; })()!;
+  const b = sm.placeBuilding('storage', spot[0], spot[1]).building!;
+  const ids = sm.villagers.map((o) => o.id); sm.setJob(ids, 'build'); run(sm, 40);
+  ok(b.done && b.level === 1 && sm.capacity() === 150, `Kho cấp 1 (đơn sơ) chứa 100 (tổng ${sm.capacity()})`);
+  ok(sm.upgradeBuilding(b.id) !== null && !b.upgrading, 'thiếu gỗ thì không nâng cấp được');
+  sm.stock.wood = 40;
+  ok(sm.upgradeBuilding(b.id) === null && b.upgrading && sm.stock.wood === 5, 'nâng cấp trả trước 35 gỗ');
+  ok(sm.capacity() === 150, 'đang nâng cấp vẫn dùng sức chứa cấp cũ');
+  ok(sm.upgradeBuilding(b.id) === 'Đang nâng cấp', 'không nâng chồng hai lần');
+  run(sm, 60);
+  ok(!b.upgrading && b.level === 2 && sm.capacity() === 300, `thợ xây nâng xong lên cấp 2 (gỗ), chứa 250 (tổng ${sm.capacity()})`);
+  sm.stock.wood = 40; sm.stock.stone = 0;
+  ok(sm.upgradeBuilding(b.id)?.startsWith('Thiếu đá') ?? false, 'cấp 3 (đá) cần đá');
+  sm.time = DAY_LENGTH * 1.3; sm.stock.stone = 20; sm.upgradeBuilding(b.id); run(sm, 90);
+  ok(b.level === 3 && sm.capacity() === 550 && sm.upgradeBuilding(b.id) === 'Đã ở cấp cao nhất', `cấp 3 chứa 500, không nâng thêm (tổng ${sm.capacity()})`);
+  ok(levelDef({ kind: 'workshop', level: 3 }).craftSpeed > levelDef({ kind: 'workshop', level: 1 }).craftSpeed, 'Xưởng cấp cao chế nhanh hơn');
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');

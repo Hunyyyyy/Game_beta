@@ -1,0 +1,18 @@
+{
+  "name": "Mặt hồ (hoạt ảnh)",
+  "type": "tile",
+  "size": [32, 32],
+  "seed": 2,
+  "animate": {"frames": 4, "fps": 3},
+  "palette": { "w0": "#356090", "w1": "#3f6f9a", "w2": "#4a7ca8", "glint": "#9cc6e4", "glint2": "#d4ecf8" },
+  "params": {"winter": 0},
+  "palettes": {
+    "winter": { "w0": "#8fb4cc", "w1": "#a0c2d8", "w2": "#b4d0e2", "glint": "#dcecf6", "glint2": "#ffffff" }
+  },
+  "bg": "w1",
+  "layers": [
+    { "shape": "noise", "scale": 8, "octaves": 2, "contrast": 2, "bands": [[0, "w0"], [0.42, "w1"], [0.8, "w2"]] },
+    { "shape": "rect", "x": [0, 27], "y": [0, 31], "w": 4, "h": 1, "color": "glint", "repeat": {"n": 12, "phase": 4} },
+    { "shape": "rect", "x": [0, 29], "y": [0, 31], "w": 2, "h": 1, "color": "glint2", "repeat": {"n": 8, "phase": 4} }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "name": "Cây tròn",
+  "type": "prop",
+  "size": [40, 64],
+  "anchor": [20, 60],
+  "footprint": [16, 56, 8, 5],
+  "seed": 3,
+  "palette": { "trunk": "#6b4a28", "trunkL": "#8a6238", "trunkD": "#4e3519", "leaf": "#3f6b2c", "leafL": "#5f9a44", "leafX": "#8cc765", "leafD": "#2c4d1f", "line": "#17240f", "shadow": "#000000", "snow": "#eef4f8", "ember": "#e0602a" },
+  "params": {"summer": 0, "autumn": 0, "winter": 0, "burnt": 0},
+  "palettes": {
+    "summer": { "leaf": "#3a6a26", "leafL": "#5a9a3a", "leafX": "#86c050", "leafD": "#284a1a" },
+    "autumn": { "leaf": "#c0782a", "leafL": "#dc9a3e", "leafX": "#f2c862", "leafD": "#8a4a1c" },
+    "winter": { "trunk": "#5e4630", "trunkL": "#7a6248", "trunkD": "#45321f" },
+    "burnt": { "trunk": "#2e2420", "trunkL": "#463830", "trunkD": "#1a1412", "line": "#0e0a08" }
+  },
+  "layers": [
+    { "shape": "rect", "x": 17, "y": 36, "w": 7, "h": 24, "color": "trunk" },
+    { "shape": "rect", "x": 17, "y": 36, "w": 2, "h": 24, "color": "trunkL" },
+    { "shape": "rect", "x": 22, "y": 38, "w": 2, "h": 22, "color": "trunkD" },
+    { "shape": "poly", "points": [[17, 56], [12, 61], [17, 60]], "color": "trunk" },
+    { "shape": "poly", "points": [[24, 56], [29, 61], [24, 60]], "color": "trunk" },
+    { "shape": "ellipse", "cx": 20, "cy": 26, "rx": 10, "ry": 9, "color": "leaf", "repeat": {"n": 9, "jitter": [8, 7]}, "ifNot": ["winter", "burnt"] },
+    {"shape": "group", "if": "winter", "layers": [
+      { "shape": "line", "from": [20, 38], "to": [11, 22], "w": 2, "color": "trunk" },
+      { "shape": "line", "from": [21, 38], "to": [30, 20], "w": 2, "color": "trunk" },
+      { "shape": "line", "from": [19, 32], "to": [17, 12], "w": 2, "color": "trunk" },
+      { "shape": "line", "from": [22, 30], "to": [26, 11], "w": 1, "color": "trunkL" },
+      { "shape": "line", "from": [13, 25], "to": [7, 17], "w": 1, "color": "trunk" },
+      { "shape": "line", "from": [28, 24], "to": [34, 15], "w": 1, "color": "trunk" },
+      { "shape": "line", "from": [15, 18], "to": [11, 10], "w": 1, "color": "trunkD" },
+      { "shape": "scatter", "count": 30, "area": [6, 8, 30, 30], "size": [2, 1], "color": "snow", "onlyOver": ["trunk", "trunkL", "trunkD"] }
+    ] },
+    {"shape": "group", "if": "burnt", "layers": [
+      { "shape": "line", "from": [20, 38], "to": [11, 22], "w": 2, "color": "trunk" },
+      { "shape": "line", "from": [21, 38], "to": [30, 20], "w": 2, "color": "trunk" },
+      { "shape": "line", "from": [19, 32], "to": [17, 12], "w": 2, "color": "trunk" },
+      { "shape": "line", "from": [22, 30], "to": [26, 11], "w": 1, "color": "trunkL" },
+      { "shape": "line", "from": [13, 25], "to": [7, 17], "w": 1, "color": "trunk" },
+      { "shape": "line", "from": [28, 24], "to": [34, 15], "w": 1, "color": "trunk" },
+      { "shape": "line", "from": [15, 18], "to": [11, 10], "w": 1, "color": "trunkD" },
+      { "shape": "scatter", "count": 5, "area": [8, 10, 26, 48], "size": 1, "color": "ember", "onlyOver": ["trunk", "trunkD"] }
+    ] },
+    { "shape": "bevel", "light": "#d8ffb0", "lightAlpha": 0.35, "dark": "#0a1a08", "darkAlpha": 0.4 },
+    { "shape": "scatter", "count": 40, "area": [6, 8, 28, 32], "size": [2, 1], "colors": ["leafL", "leafX", "leafD"], "clip": "inside", "onlyOver": ["leaf"] },
+    { "shape": "outline", "color": "line" },
+    { "shape": "ellipse", "cx": 20, "cy": 60, "rx": 14, "ry": 3, "color": "shadow", "alpha": 0.28, "mode": "under" }
+  ]
+}
