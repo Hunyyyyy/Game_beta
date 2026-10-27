@@ -150,6 +150,7 @@ export class Controller {
   private hit(p: { x: number; y: number }, touch = false): number | null {
     let best: number | null = null, bd = ((touch ? 22 : 14) * Math.max(1, this.cam.zoom)) ** 2;
     for (const v of this.sim.villagers) {
+      if (v.inside !== null) continue; // working inside a house: not on the map
       const s = this.bodyScreen(v), d = (s.x - p.x) ** 2 + (s.y - p.y) ** 2;
       if (d < bd) { bd = d; best = v.id; }
     }
@@ -211,6 +212,7 @@ export class Controller {
     const ref = this.sim.get(id); if (!ref) return;
     this.selected.clear();
     for (const v of this.sim.villagers) {
+      if (v.inside !== null) continue; // working inside a house: not on the map
       const s = this.bodyScreen(v);
       if (v.job === ref.job && s.x >= 0 && s.y >= 0 && s.x <= this.r.w && s.y <= this.r.h) this.selected.add(v.id);
     }
@@ -221,6 +223,7 @@ export class Controller {
     const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
     if (!add) this.selected.clear();
     for (const v of this.sim.villagers) {
+      if (v.inside !== null) continue; // working inside a house: not on the map
       const s = this.bodyScreen(v);
       if (s.x >= x0 && s.x <= x1 && s.y >= y0 && s.y <= y1) this.selected.add(v.id);
     }
@@ -342,7 +345,7 @@ export class Controller {
     this.selected.clear(); ids.forEach((id) => this.selected.add(id)); this.selectedBuilding = null; this.focusSelection(); this.onChange();
   }
 
-  selectAll(): void { this.sim.villagers.forEach((v) => this.selected.add(v.id)); this.selectedBuilding = null; this.onChange(); }
+  selectAll(): void { this.sim.villagers.forEach((v) => { if (v.inside === null) this.selected.add(v.id); }); this.selectedBuilding = null; this.onChange(); }
   clearSelection(): void { this.selected.clear(); this.selectedBuilding = null; this.inspect = null; this.onChange(); }
   setMulti(on: boolean): void { this.multi = on; this.box = null; this.onChange(); }
 
@@ -352,7 +355,7 @@ export class Controller {
   }
 
   focusSelection(): void {
-    const vs = this.sim.villagers.filter((v) => !this.selected.size || this.selected.has(v.id));
+    const vs = this.sim.villagers.filter((v) => v.inside === null && (!this.selected.size || this.selected.has(v.id)));
     if (!vs.length) return;
     this.centerOn(vs.reduce((a, v) => a + v.x, 0) / vs.length * TILE, vs.reduce((a, v) => a + v.y, 0) / vs.length * TILE);
   }

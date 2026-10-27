@@ -101,7 +101,7 @@ const near = (sim: Sim, x: number, y: number) => {
   // nearest living player unit; foes and wild animals are ignored by animals
   let best: { id: number; d: number } | null = null;
   for (const v of sim.villagers) {
-    if (v.down > 0) continue;
+    if (v.down > 0 || v.inside !== null) continue;
     const d = Math.hypot(v.x - x, v.y - y);
     if (!best || d < best.d) best = { id: v.id, d };
   }

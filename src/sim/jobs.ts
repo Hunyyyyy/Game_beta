@@ -1,6 +1,6 @@
 import type { Res } from './resources';
 
-export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'hunt' | 'fight';
+export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'repair' | 'hunt' | 'fight';
 export type WorkJob = Exclude<Job, 'idle'>;
 export type StatKey = 'vit' | 'str' | 'agi' | 'int' | 'sta';
 export type Stats = Record<StatKey, number>;
@@ -24,11 +24,15 @@ export const JOBS: Record<WorkJob, JobDef> = {
   build: { name: 'Thợ xây', stat: 'sta', baseTime: 1, anim: 'build' },
   craft: { name: 'Chế tạo', stat: 'int', baseTime: 1, anim: 'craft' },
   research: { name: 'Nghiên cứu', stat: 'int', baseTime: 1, anim: 'gather' },
+  repair: { name: 'Sửa chữa', stat: 'agi', baseTime: 1, anim: 'craft' },
   hunt: { name: 'Thợ săn', stat: 'agi', baseTime: 1, anim: 'thrust' },
   fight: { name: 'Chiến binh', stat: 'str', baseTime: 1, anim: 'smash' },
 };
-export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', hunt: 'Thợ săn', fight: 'Chiến binh' };
-export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 'research', 'hunt', 'fight'];
+export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', repair: 'Sửa chữa', hunt: 'Thợ săn', fight: 'Chiến binh' };
+export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 'research', 'repair', 'hunt', 'fight'];
+/** Jobs done inside a building: the villager walks in and works from the list there. */
+export const STAFF_BUILDING = { craft: 'workshop', research: 'lab', repair: 'repair' } as const;
+export const isStaffJob = (j: Job): j is keyof typeof STAFF_BUILDING => j in STAFF_BUILDING;
 
 /** Kinh nghiệm cần để lên cấp 1..5 (giây làm việc, chưa nhân tốc độ học). */
 export const XP_LEVELS = [60, 150, 300, 500, 800];

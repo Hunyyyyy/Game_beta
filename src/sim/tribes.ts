@@ -348,7 +348,7 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
     if (threats.length) { f.fight.target = threats[0].t; return; }
     const fire = sim.campfire(), gx = fire ? fire.x + 1 : sim.world.start.x, gy = fire ? fire.y + 1 : sim.world.start.y;
     if (Math.hypot(gx - f.x, gy - f.y) > 6) { if (!f.path.length) f.path = sim.pathTo(f, Math.floor(gx), Math.floor(gy), 40000); f.phase = 'move'; }
-    else { const v = sim.villagers.find((o) => o.health > 0 && o.down <= 0); if (v) f.fight.target = { kind: 'unit', id: v.id }; }
+    else { const v = sim.villagers.find((o) => o.health > 0 && o.down <= 0 && o.inside === null); if (v) f.fight.target = { kind: 'unit', id: v.id }; }
     return;
   }
 

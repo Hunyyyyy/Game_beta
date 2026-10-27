@@ -44,7 +44,7 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   const seen = (x: number, y: number) => !player || sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
   const pool = player ? sim.foes : sim.villagers;
   for (const o of pool) {
-    if (o.health <= 0 || o.down > 0 || !teamsHostile(sim, v.team, o.team)) continue;
+    if (o.health <= 0 || o.down > 0 || o.inside !== null || !teamsHostile(sim, v.team, o.team)) continue;
     const d = Math.hypot(o.x - v.x, o.y - v.y);
     if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name });
   }
@@ -261,7 +261,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   if (v.phase === 'skin' || v.phase === 'goCarcass') return huntBrain(sim, v, dt, threats);
   if (f.mode === 'hold' && !f.anchor) f.anchor = { x: v.x, y: v.y };
   // equipment first, but never in the middle of a fight
-  if (!threats.length && !f.target && v.phase !== 'fight' && sim.planEquipGear(v)) return true;
+  if (!threats.length && !f.target && v.phase !== 'fight' && (sim.planEquipGear(v) || sim.planGearErrand(v))) return true;
 
   // retreat stance beats a target the unit picked for itself; only a direct attack order overrides it
   if (v.stance === 'retreat' && f.mode !== 'attack' && f.target) f.target = null;

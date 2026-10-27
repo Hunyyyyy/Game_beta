@@ -6,8 +6,10 @@ import { RES_LIST, Res } from './resources';
 import type { Sim, Villager } from './sim';
 import type { StatKey } from './jobs';
 import { launchRaid, launchWolves, surrender, tribeOf } from './tribes';
+import { BUILDINGS, BuildingKind, levelDef } from './buildings';
 import { TECHS } from './research';
-import { RECIPES } from './tools';
+import { STAFF_BUILDING } from './jobs';
+import { RECIPES, TIER_DURABILITY } from './tools';
 
 /**
  * Helpers for the dev menu: put the game into a state worth testing without playing up to it.
@@ -84,3 +86,35 @@ export const DEV_SPECIES = SPECIES;
 export const DEV_TRIBES = TRIBE_IDS;
 export const DEV_WEAPONS = CRAFTED_WEAPONS.map((id) => ({ id, name: WEAPONS[id].name }));
 export const DEV_ARMOR = { id: 'hide', name: ARMORS.hide.name };
+
+// ---- buildings, tools and the workshop chain
+/** Put up every building that is missing, finished and free, near the campfire. */
+export function buildAll(sim: Sim): void {
+  const was = { f: sim.dev.freeBuild, i: sim.dev.instantBuild };
+  sim.dev.freeBuild = true; sim.dev.instantBuild = true;
+  const fire = sim.campfire(), cx = Math.floor(fire ? fire.x + 1 : sim.world.start.x), cy = Math.floor(fire ? fire.y + 4 : sim.world.start.y + 4);
+  for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
+    if (!BUILDINGS[kind].buildable || sim.buildings.some((b) => b.kind === kind)) continue;
+    let done = false;
+    for (let r = 2; r < 18 && !done; r++) for (let dx = -r; dx <= r && !done; dx++) for (let dy = -r; dy <= r && !done; dy++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      if (!sim.canPlace(kind, cx + dx * 2, cy + dy * 2) && sim.placeBuilding(kind, cx + dx * 2, cy + dy * 2).ok) done = true;
+    }
+  }
+  sim.dev.freeBuild = was.f; sim.dev.instantBuild = was.i;
+}
+/** Raise every building to its top level at once. */
+export function maxBuildings(sim: Sim): void {
+  for (const b of sim.buildings) { const top = BUILDINGS[b.kind].levels.stone!.length; if (b.done && b.level < top) { b.level = top; b.upgrading = false; } }
+}
+/** Wear the tools of the given villagers down to a fraction of their life (0 = broken). */
+export function wearTools(sim: Sim, ids: readonly number[], frac: number): void {
+  eachSelected(sim, ids, (v) => { for (const t of Object.values(v.tools)) if (t) t.dur = Math.min(t.dur, Math.max(0, TIER_DURABILITY[t.tier] * frac)); });
+}
+/** Fill the research, crafting and repair houses with the best villagers for each. */
+export function staffAll(sim: Sim): void {
+  for (const job of ['research', 'craft', 'repair'] as const) {
+    const b = sim.building(STAFF_BUILDING[job]); if (!b) continue;
+    while (sim.staffCount(b) < levelDef(b).slots) { const v = sim.bestFor(job); if (!v) break; sim.assignStaff([v.id], job); }
+  }
+}

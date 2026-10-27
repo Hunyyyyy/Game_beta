@@ -36,6 +36,7 @@ button.sm { padding: 2px 8px; min-height: 26px; }
 .res { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .res i { width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(0,0,0,.35); display: inline-block; }
 .res small { font-weight: 500; color: var(--muted); }
+.res#rCoin small { display: none; }
 .res.full b { color: var(--accent); }
 .res.warn small { color: var(--accent); font-weight: 700; }
 .clock { font-weight: 600; }
@@ -143,6 +144,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   body { font-size: 12px; }
   .top { gap: 4px; left: calc(4px + var(--sal)); right: calc(4px + var(--sar)); top: calc(4px + var(--sat)); }
   .hud { padding: 2px 6px; gap: 2px 8px; }
+  .res:not(.warn):not(.full) small { display: none; }
   .sheet { max-height: min(60%, calc(100% - var(--top-h, 40px) - 10px)); width: min(340px, calc(100% - 120px)); left: calc(4px + var(--sal)); bottom: calc(4px + var(--sab)); }
   .card { padding: 4px 6px; gap: 3px; }
   #mini { right: calc(4px + var(--sar)); bottom: calc(4px + var(--sab)); width: clamp(56px, 12vw, 84px); }
@@ -160,6 +162,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       <span class="res" id="rWood" title="Gỗ"><i style="background:#9a6a35"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rStone" title="Đá"><i style="background:#9aa0a4"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rHide" title="Da và xương"><i style="background:#a0552f"></i><b>0</b><small>/0</small></span>
+      <span class="res" id="rCoin" title="Tiền"><i style="background:#e8e0c8;border-radius:50%"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rPop" title="Số dân"><i style="background:#e8c4a0"></i><b>0</b><small>/40</small></span>
     </div>
     <div class="hud grp" role="group" aria-label="Tốc độ game">

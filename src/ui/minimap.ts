@@ -56,7 +56,7 @@ export class MapView {
       ctx.fillRect(t.camp.x - dot, t.camp.y - dot, dot * 2, dot * 2);
     }
     ctx.fillStyle = '#ffffff';
-    for (const v of sim.villagers) ctx.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
+    for (const v of sim.villagers) if (v.inside === null) ctx.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
     ctx.fillStyle = '#ff5a4a';
     for (const f of sim.foes) if (seen(f.x, f.y)) ctx.fillRect(f.x - dot / 2, f.y - dot / 2, dot, dot);
     for (const a of sim.animals) if (a.state !== 'dead' && seen(a.x, a.y)) { ctx.fillStyle = a.species === 'wolf' ? '#ff5a4a' : '#e8d4a8'; ctx.fillRect(a.x - dot / 3, a.y - dot / 3, dot * 0.7, dot * 0.7); }

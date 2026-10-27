@@ -189,7 +189,7 @@ export class Renderer {
       if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
       list.push({ y: ay, kind: 'building', i: 0, j: 0, b });
     }
-    for (const v of sim.villagers) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
+    for (const v of sim.villagers) if (v.inside === null) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
     const seen = (x: number, y: number) => sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
     for (const f of sim.foes) if (seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
     for (const a of sim.animals) if (seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
@@ -207,6 +207,8 @@ export class Renderer {
       } else if (d.kind === 'building' && d.b) {
         const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
         this.prop(this.buildingProp(b), ax, ay, time);
+        const emblem = b.done ? sp.emblems[b.kind] : undefined;
+        if (emblem) { const p = this.worldToScreen(ax, ay - 52); ctx.drawImage(emblem, Math.round(p.x - 8 * z), Math.round(p.y), 16 * z, 16 * z); }
         if (!b.done || b.upgrading) {
           const p = this.worldToScreen(ax, ay), w = 40 * z;
           ctx.fillStyle = 'rgba(20,14,8,.7)'; ctx.fillRect(p.x - w / 2, p.y - 4 * z, w, 5 * z);

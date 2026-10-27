@@ -1,22 +1,22 @@
 import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, SEASON_DEF, WEATHER, WeatherKind } from './calendar';
 import { DAY_LENGTH, FIRE_VISION, NIGHT_VISION, START_TIME, TICK, VISION } from './constants';
-import { Building, BuildingKind, BUILDINGS, Era, levelDef, levelsOf, maxLevel, needsWork } from './buildings';
+import { Building, BuildingKind, BUILDINGS, Era, holdsGoods, levelDef, levelsOf, maxLevel, needsWork } from './buildings';
 import { Fog } from './fog';
-import { Job, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, Stats, WorkJob, WORK_JOBS, XP_LEVELS } from './jobs';
+import { isStaffJob, Job, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, STAFF_BUILDING, Stats, WorkJob, WORK_JOBS, XP_LEVELS } from './jobs';
 import { findPath, Step } from './path';
-import { CARRY_CAP, emptyStock, FOOD_NUTRITION, FOOD_SPOIL_DAYS, Res, RES_NAME, Stock } from './resources';
+import { BARTER, CARRY_CAP, CURRENCY, emptyStock, FOOD_NUTRITION, FOOD_SPOIL_DAYS, Res, RES_NAME, Stock } from './resources';
 import { mulberry32 } from './rng';
-import { emptyToolSet, Recipe, RECIPE_BY_ID, recipeName, TIER_DURABILITY, TIER_NAME, TIER_SPEED, TIER_YIELD, Tool, ToolKind, ToolSet, TOOL_NAME, TOOL_OF_JOB } from './tools';
+import { emptyToolSet, isGear, Recipe, RECIPE_BY_ID, recipeName, TIER_DURABILITY, TIER_NAME, TIER_SPEED, TIER_YIELD, Tool, ToolKind, ToolSet, TOOL_NAME, TOOL_OF_JOB } from './tools';
 import { ARMORS, CRAFTED_WEAPONS, maxHpOf, MORALE, Team, TribeId, WEAPONS } from './combat';
 import { bestWeapon, brainPlayer, hurt, isFighter, resolve, tickCommon, tickDown, tickMorale, tickProjectiles, weaponOf } from './battle';
 import { Animal, animalDef, breed, populate, tickAnimals } from './fauna';
 import { adoptTribe, EventState, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tributeTribe } from './tribes';
-import { isResearchOrder, levelCap, recipeNeedLevel, recipeOpen, RESEARCH, RESEARCH_PREFIX, Tech, TECH_BY_ID, techForLevel, techForRecipe, techOfOrder } from './research';
+import { autoOn, buildingOpen, levelCap, recipeNeedLevel, recipeOpen, RESEARCH, Tech, TECH_BY_ID, techForBuilding, techForLevel, techForRecipe } from './research';
 import { World } from './world';
 
 export type Sex = 'm' | 'f';
 export type Facing = 'front' | 'back' | 'right' | 'left';
-export type Phase = 'idle' | 'move' | 'goNode' | 'work' | 'goStore' | 'wait' | 'goSite' | 'build' | 'goShop' | 'craft' | 'goEquip' | 'goHome' | 'sleep' | 'fight' | 'flee' | 'down' | 'goCarcass' | 'skin' | 'rescue';
+export type Phase = 'idle' | 'move' | 'goNode' | 'work' | 'goStore' | 'wait' | 'goSite' | 'build' | 'goShop' | 'craft' | 'goEquip' | 'goHome' | 'sleep' | 'goStaff' | 'inside' | 'goOrder' | 'fight' | 'flee' | 'down' | 'goCarcass' | 'skin' | 'rescue';
 export interface Look { sex: Sex; skin: string; hair: string; hide: string; pants: string }
 export interface Skill { xp: number; level: number }
 export interface LogLine { t: number; text: string }
@@ -113,8 +113,12 @@ export interface Villager {
   bed: number;      // reserved sleeping tile by the campfire (-1 if none)
   /** Ordered by the player during rest hours: stays awake until morning. */
   nightOwl: boolean;
-  /** Gear was handed out by the player: the workshop no longer swaps it automatically. */
+  /** Gear was handed out by the player: the stores no longer swap it automatically. */
   manualGear: boolean;
+  /** Building the villager is working inside (research, crafting or repair house); null when out on the map. */
+  inside: number | null;
+  /** Seconds until the villager may go and place another order for a tool. */
+  orderCd: number;
 }
 
 const NAMES_M = ['Bo', 'Rô', 'Gia', 'Mun', 'Lô', 'Tù', 'Đa'];
@@ -140,6 +144,12 @@ export class Sim {
   readonly toolStock: Record<string, number> = {};
   /** Hàng đợi chế tác (mã công thức). */
   readonly craftQueue: string[] = [];
+  /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
+  readonly researchQueue: string[] = [];
+  /** Tools waiting to be mended in the Nhà sửa chữa (recipe ids such as axe1). */
+  readonly repairQueue: string[] = [];
+  private coinFrac = 0;
+  private sawCoin = false;
   /** Finished research (tech ids). Recipes and building levels stay locked until their tech is here. */
   readonly researched = new Set<string>();
   readonly log: LogLine[] = [];
@@ -162,7 +172,7 @@ export class Sim {
   readonly projectiles: Projectile[] = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  readonly dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false };
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
   /** Called when something dies (UI refresh hook). */
@@ -194,6 +204,7 @@ export class Sim {
     this.rnd = mulberry32(seed ^ 0x9e3779b9);
     this.frnd = mulberry32(seed ^ 0x7f4a7c15);
     this.wrnd = mulberry32(seed ^ 0x5bd1e995);
+    RES_NAME.coin = CURRENCY[this.era];
     this.world.setSeason(this.season);
     this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
     this.resting = isRestTime(this.tod, this.season);
@@ -202,7 +213,7 @@ export class Sim {
     this.stock.food = 24;
     const spots: Array<[number, number, Sex]> = [[-1, 1, 'm'], [1, 1, 'f'], [0, 2, 'm']];
     for (const [dx, dy, sex] of spots) this.spawn(s.x + dx, s.y + dy, sex);
-    this.say('Ba người đầu tiên đã đến bên đống lửa. Chọn họ, rồi giao việc: chuột phải lên cây, đá hay bụi quả.');
+    this.say('Ba người đầu tiên đã đến bên đống lửa. Chọn họ, rồi giao việc: chuột phải lên cây, đá hay bụi quả. Về sau: Nhà nghiên cứu vẽ bản vẽ, Nhà chế tạo làm công cụ, Nhà sửa chữa giữ chúng bền.');
     this.refreshFog();
     populate(this);
     spawnTribes(this);
@@ -236,7 +247,7 @@ export class Sim {
 
   capacity(_res?: Res): number {
     let c = 0;
-    for (const b of this.buildings) if (b.done) c += levelDef(b).cap;
+    for (const b of this.buildings) if (b.done && holdsGoods(b)) c += levelDef(b).cap;
     return c;
   }
   buildingAt(x: number, y: number): Building | undefined {
@@ -246,12 +257,15 @@ export class Sim {
     });
   }
   getBuilding(id: number): Building | undefined { return this.buildings.find((b) => b.id === id); }
-  hasWorkshop(): boolean { return this.buildings.some((b) => b.kind === 'workshop' && b.done); }
+  /** The finished building of a kind (there is only ever one of each). */
+  building(kind: BuildingKind): Building | undefined { return this.buildings.find((b) => b.kind === kind && b.done); }
+  hasWorkshop(): boolean { return !!this.building('workshop'); }
   toolCount(kind: string, tier: number): number { return this.toolStock[`${kind}${tier}`] ?? 0; }
   /** Bậc công cụ dân đang dùng cho nghề này (0 = tay không). */
   toolTier(v: Villager, job: Job): number {
     const k = job === 'idle' ? undefined : TOOL_OF_JOB[job];
-    return k ? v.tools[k]?.tier ?? 0 : 0;
+    const t = k ? v.tools[k] : null;
+    return t && t.dur > 0 ? t.tier : 0; // a broken tool works like bare hands
   }
 
   private freshName(sex: Sex, rnd: () => number): string {
@@ -282,7 +296,7 @@ export class Sim {
       look: { sex, skin: pick(SKIN), hair: pick(HAIR), hide: '#8b6a45', pants: '#3f63a8' },
       x: x + 0.5, y: y + 0.5, path: [], slide: null, facing: 'front', speed: 1.6 + 0.1 * stats.agi, animClock: 0, tx: -1, ty: -1,
       stats, potential, skill, tools: emptyToolSet(), job: 'idle', phase: 'idle', slot: 0, target: -1, prefer: -1, progress: 0, frac: 0, timer: 0, order: null,
-      carry: null, fullness: 100, health: maxHpOf(stats.vit), starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, nightOwl: false, manualGear: false,
+      carry: null, fullness: 100, health: maxHpOf(stats.vit), starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, nightOwl: false, manualGear: false, inside: null, orderCd: 0,
       team, maxHealth: maxHpOf(stats.vit), weapon: null, armor: null, morale: MORALE.start, stance: 'aggressive',
       fight: { mode: 'none', target: null, dest: null, anchor: null, repath: 0, scan: 0 }, queue: [], atkCd: 0, down: 0, rescue: 0, fleeT: 0, calm: 99, loot: -1, leader: false, swing: null, flinch: 0, ai: null,
     };
@@ -291,7 +305,7 @@ export class Sim {
   // ---------------------------------------------------------------- công trình
   private addBuilding(kind: BuildingKind, x: number, y: number, done: boolean): Building {
     const d = BUILDINGS[kind];
-    const b: Building = { id: this.nextBid++, kind, era: this.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, workers: 0 };
+    const b: Building = { id: this.nextBid++, kind, era: this.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, staff: [], active: null, workers: 0 };
     this.buildings.push(b);
     for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) this.world.occ[(y + j) * this.world.size + x + i] = 1;
     return b;
@@ -312,9 +326,16 @@ export class Sim {
     return null;
   }
 
+  /** Why a kind of building cannot be built at all right now: one per game, and some need research first. */
+  buildingLock(kind: BuildingKind): string | null {
+    if (this.buildings.some((b) => b.kind === kind)) return 'Mỗi công trình chỉ xây được một cái, hãy nâng cấp nó';
+    if (!this.dev.freeBuild && !buildingOpen(this.researched, kind)) return `Cần nghiên cứu: ${techForBuilding(kind)?.name ?? '?'}`;
+    return null;
+  }
+
   /** Trả về lý do không đặt được, hoặc null nếu đặt được. */
   canPlace(kind: BuildingKind, x: number, y: number): string | null {
-    return this.footprintError(kind, x, y) ?? (this.dev.freeBuild ? null : this.missing(levelsOf(kind, this.era)[0].cost));
+    return this.footprintError(kind, x, y) ?? this.buildingLock(kind) ?? (this.dev.freeBuild ? null : this.missing(levelsOf(kind, this.era)[0].cost));
   }
 
   /** Reason the stock cannot pay `cost`, or null. */
@@ -383,11 +404,15 @@ export class Sim {
     return out;
   }
 
-  /** Send everyone who was heading for or working at this building back to idle. */
+  /** Send everyone who was heading for or working at this building back to idle; an order in progress is refunded. */
   private evict(b: Building): void {
+    for (const id of [...b.staff]) { const v = this.byId.get(id); if (v) { this.exitBuilding(v); v.job = 'idle'; } }
+    b.staff = [];
+    if (b.active && (b.kind === 'lab' || b.kind === 'workshop')) { const d = this.orderDef(b.kind === 'lab' ? 'research' : 'craft', b.active.id); if (d) this.pay(d.cost, 1); }
+    b.active = null;
     for (const v of this.villagers) {
       if (v.target !== b.id) continue;
-      if (v.phase === 'goSite' || v.phase === 'build' || v.phase === 'goShop' || v.phase === 'craft' || v.phase === 'goEquip') this.resetTask(v);
+      if (v.phase === 'goSite' || v.phase === 'build' || v.phase === 'goEquip' || v.phase === 'goStaff' || v.phase === 'goOrder') { if (isStaffJob(v.job)) v.job = 'idle'; this.resetTask(v); }
     }
   }
   private setOcc(b: Building, val: number): void {
@@ -436,87 +461,250 @@ export class Sim {
   }
 
   // ---------------------------------------------------------------- chế tác
-  /** Cost and time of a queued order: a recipe, or a research ("r:tech"). */
-  orderDef(id: string): { cost: Partial<Stock>; time: number } | null {
-    if (isResearchOrder(id)) { const t = techOfOrder(id); return t ? { cost: t.cost, time: t.time } : null; }
-    return RECIPE_BY_ID[id] ?? null;
+  // ---------------------------------------------------------------- research, crafting and repair
+  /** Cost and time of an order in one of the three queues. A repair costs half the materials and 60% of the time of making the tool. */
+  orderDef(kind: 'research' | 'craft' | 'repair', id: string): { cost: Partial<Stock>; time: number } | null {
+    if (kind === 'research') { const t = TECH_BY_ID[id]; return t ? { cost: t.cost, time: t.time } : null; }
+    const r = RECIPE_BY_ID[id]; if (!r) return null;
+    if (kind === 'craft') return { cost: r.cost, time: r.time };
+    const half: Partial<Stock> = {};
+    for (const k of Object.keys(r.cost) as Res[]) half[k] = Math.ceil((r.cost[k] ?? 0) / 2);
+    return { cost: half, time: Math.ceil(r.time * 0.6) };
   }
-  /** Highest level among the finished workshops. */
-  workshopLevel(): number { return this.buildings.reduce((m, b) => (b.kind === 'workshop' && b.done ? Math.max(m, b.level) : m), 0); }
-  /** Why a recipe cannot be made yet (workshop level or research), or null. */
+  /** Level of a finished building of a kind (0 when there is none). */
+  levelOfKind(kind: BuildingKind): number { return this.building(kind)?.level ?? 0; }
+  workshopLevel(): number { return this.levelOfKind('workshop'); }
+  /** The smartest villager working inside a building, 0 when it is empty. */
+  bestIntInside(b: Building): number { return b.staff.reduce((m, id) => Math.max(m, this.byId.get(id)?.stats.int ?? 0), 0); }
+  /** Why a recipe cannot be made yet (blueprint or crafting-house level), or null. */
   recipeLock(id: string): string | null {
     if (!RESEARCH.enabled) return null;
+    if (!recipeOpen(this.researched, id)) return `Chưa có bản vẽ: ${techForRecipe(id)?.name.replace(/^Bản vẽ /, '') ?? '?'}`;
     const need = recipeNeedLevel(id);
-    if (this.workshopLevel() < need) return `Cần Xưởng cấp ${need}`;
-    if (!recipeOpen(this.researched, id)) return `Cần nghiên cứu: ${techForRecipe(id)?.name ?? '?'}`;
+    if (this.workshopLevel() < need) return `Cần Nhà chế tạo cấp ${need}`;
     return null;
   }
   recipeOpen(id: string): boolean { return this.recipeLock(id) === null; }
-  /** The villager best suited to a workshop job who is not already doing it: free hands first, soldiers never, then the sharpest mind. */
-  bestFor(job: 'craft' | 'research'): Villager | null {
-    const pool = this.villagers.filter((v) => v.down <= 0 && v.job !== job && v.job !== 'fight' && v.job !== 'hunt');
-    pool.sort((a, b) => (a.job === 'idle' ? 0 : 1) - (b.job === 'idle' ? 0 : 1) || b.stats.int - a.stats.int);
-    return pool[0] ?? null;
-  }
   /** The smartest villager's Trí tuệ. */
   bestInt(): number { return this.villagers.reduce((m, v) => Math.max(m, v.stats.int), 0); }
 
   /** Where a research stands: done, being worked on, queued, ready to start or locked (with the reason). */
   techState(t: Tech): { state: 'done' | 'active' | 'queued' | 'ready' | 'locked'; why?: string } {
     if (this.researched.has(t.id)) return { state: 'done' };
-    const oid = RESEARCH_PREFIX + t.id;
-    if (this.villagers.some((v) => v.order === oid)) return { state: 'active' };
-    if (this.craftQueue.includes(oid)) return { state: 'queued' };
+    if (this.building('lab')?.active?.id === t.id) return { state: 'active' };
+    if (this.researchQueue.includes(t.id)) return { state: 'queued' };
     const need = t.requires.find((r) => !this.researched.has(r));
     if (need) return { state: 'locked', why: `Cần nghiên cứu: ${TECH_BY_ID[need].name}` };
-    if (!this.hasWorkshop()) return { state: 'locked', why: 'Cần dựng Xưởng chế tác' };
-    if (this.workshopLevel() < t.needLevel) return { state: 'locked', why: `Cần Xưởng cấp ${t.needLevel}` };
-    if (this.bestInt() < t.minInt) return { state: 'locked', why: `Cần dân có Trí tuệ ${t.minInt} trở lên (giỏi nhất làng: ${this.bestInt()})` };
+    const lab = this.building('lab');
+    if (!lab) return { state: 'locked', why: 'Cần dựng Nhà nghiên cứu' };
+    if (lab.level < t.needLevel) return { state: 'locked', why: `Cần Nhà nghiên cứu cấp ${t.needLevel}` };
     return { state: 'ready' };
   }
+  /** Whether a queued research could start now: someone inside is bright enough. Null when it can, else the reason. */
+  researchBlock(t: Tech): string | null {
+    const lab = this.building('lab');
+    if (!lab || !lab.staff.length) return 'Chưa có người làm việc trong Nhà nghiên cứu';
+    const best = this.bestIntInside(lab);
+    return best >= t.minInt ? null : `Cần người Trí tuệ ${t.minInt} trở lên trong nhà (giỏi nhất: ${best})`;
+  }
 
-  /** Thêm một đơn vào hàng đợi (nguyên liệu chỉ bị trừ khi thợ nhận đơn). */
+  /** Queue a research; materials and coins are paid when it starts. */
+  queueResearch(id: string): string | null {
+    const t = TECH_BY_ID[id];
+    if (!t) return 'Không có nghiên cứu này';
+    if (!RESEARCH.enabled) return 'Nghiên cứu đang tắt';
+    const st = this.techState(t);
+    if (st.state === 'done') return 'Đã nghiên cứu rồi';
+    if (st.state === 'active' || st.state === 'queued') return 'Đang nghiên cứu';
+    if (st.state === 'locked') return st.why ?? 'Chưa nghiên cứu được';
+    this.researchQueue.push(id);
+    return null;
+  }
+  /** Queue a tool, weapon or armour for the Nhà chế tạo. */
   queueCraft(id: string): string | null {
-    if (isResearchOrder(id)) {
-      if (!RESEARCH.enabled) return 'Nghiên cứu đang tắt';
-      const t = techOfOrder(id);
-      if (!t) return 'Không có nghiên cứu này';
-      const st = this.techState(t);
-      if (st.state === 'done') return 'Đã nghiên cứu rồi';
-      if (st.state === 'active' || st.state === 'queued') return 'Đang nghiên cứu';
-      if (st.state === 'locked') return st.why ?? 'Chưa nghiên cứu được';
-    } else {
-      if (!RECIPE_BY_ID[id]) return 'Công thức không tồn tại';
-      if (!this.hasWorkshop()) return 'Cần dựng Xưởng chế tác trước';
-      const lock = this.recipeLock(id);
-      if (lock) return lock;
-    }
+    if (!RECIPE_BY_ID[id]) return 'Công thức không tồn tại';
+    if (!this.hasWorkshop()) return 'Cần dựng Nhà chế tạo trước';
+    const lock = this.recipeLock(id);
+    if (lock) return lock;
     if (this.craftQueue.length >= 12) return 'Hàng đợi đã đầy';
     this.craftQueue.push(id);
     return null;
   }
-  /** Bỏ đơn cuối cùng cùng loại khỏi hàng đợi. */
-  unqueueCraft(id: string): void {
-    const i = this.craftQueue.lastIndexOf(id);
-    if (i >= 0) this.craftQueue.splice(i, 1);
+  queueRepair(id: string): string | null {
+    if (!RECIPE_BY_ID[id]) return 'Công thức không tồn tại';
+    if (!this.building('repair')) return 'Cần dựng Nhà sửa chữa trước';
+    if (this.repairQueue.length >= 12) return 'Hàng đợi sửa đã đầy';
+    this.repairQueue.push(id);
+    return null;
   }
-  private affordable(id: string): boolean {
-    const d = this.orderDef(id);
-    return !!d && (Object.keys(d.cost) as Res[]).every((k) => this.stock[k] >= (d.cost[k] ?? 0));
-  }
-  private releaseOrder(v: Villager): void {
-    if (!v.order) return;
-    const d = this.orderDef(v.order);
-    if (d && (v.phase === 'goShop' || v.phase === 'craft')) {
-      for (const k of Object.keys(d.cost) as Res[]) this.stock[k] += d.cost[k] ?? 0; // hoàn nguyên liệu
-      this.craftQueue.unshift(v.order);
+  unqueue(queue: string[], id: string): void { const i = queue.lastIndexOf(id); if (i >= 0) queue.splice(i, 1); }
+  unqueueCraft(id: string): void { this.unqueue(this.craftQueue, id); }
+  unqueueResearch(id: string): void { this.unqueue(this.researchQueue, id); }
+
+  private affordable(cost: Partial<Stock>): boolean { return (Object.keys(cost) as Res[]).every((k) => this.stock[k] >= (cost[k] ?? 0)); }
+  private pay(cost: Partial<Stock>, sign = -1): void { for (const k of Object.keys(cost) as Res[]) this.stock[k] += sign * (cost[k] ?? 0); }
+
+  /** How many tools or pieces of gear a store holds: the Kho công cụ for tools, the Kho vũ khí for weapons and armour. */
+  storeUsed(cat: 'tool' | 'gear'): number { return Object.entries(this.toolStock).reduce((n, [id, c]) => n + ((RECIPE_BY_ID[id] && isGear(RECIPE_BY_ID[id].kind)) === (cat === 'gear') ? c : 0), 0); }
+  /** Room for items: the matching store when it stands, otherwise the crafting house keeps a few. */
+  storeCap(cat: 'tool' | 'gear'): number { const b = this.building(cat === 'tool' ? 'toolstore' : 'armory'); return b ? levelDef(b).cap : 10; }
+
+  /** Work done inside the houses: each has one active order, advanced by everyone working there. */
+  private tickWorks(dt: number): void {
+    for (const b of this.buildings) {
+      if (!b.done || (b.kind !== 'lab' && b.kind !== 'workshop' && b.kind !== 'repair')) continue;
+      const kind = b.kind === 'lab' ? 'research' : b.kind === 'workshop' ? 'craft' : 'repair';
+      const queue = kind === 'research' ? this.researchQueue : kind === 'craft' ? this.craftQueue : this.repairQueue;
+      const staff = b.staff.map((id) => this.byId.get(id)).filter((v): v is Villager => !!v);
+      if (!staff.length) continue;
+      if (!b.active) {
+        const best = this.bestIntInside(b);
+        const i = queue.findIndex((id) => {
+          const d = this.orderDef(kind, id);
+          if (!d || !this.affordable(d.cost)) return false;
+          if (kind === 'research') return best >= (TECH_BY_ID[id]?.minInt ?? 0);
+          if (kind === 'craft') return this.recipeOpen(id);
+          return true;
+        });
+        if (i < 0) {
+          if (queue.length && this.time - this.lastMatWarn > 30) { this.lastMatWarn = this.time; this.say(kind === 'research' ? 'Nghiên cứu đang chờ: thiếu nguyên liệu, tiền hoặc người đủ thông minh.' : 'Đơn đang chờ: thiếu nguyên liệu.'); }
+          continue;
+        }
+        const id = queue[i], d = this.orderDef(kind, id)!;
+        queue.splice(i, 1); this.pay(d.cost);
+        b.active = { id, progress: 0 };
+      }
+      const d = this.orderDef(kind, b.active.id);
+      if (!d) { b.active = null; continue; }
+      const job = kind as WorkJob;
+      let rate = 0;
+      for (const v of staff) { rate += this.workFactor(v, job); this.gainXp(v, job, dt); }
+      b.active.progress = Math.min(1, b.active.progress + (dt * rate * levelDef(b).craftSpeed * (this.dev.fastWorks ? 25 : 1)) / d.time);
+      if (b.active.progress < 1) continue;
+      const id = b.active.id;
+      if (kind === 'research') {
+        this.researched.add(id); b.active = null;
+        this.say(`Nhà nghiên cứu đã hoàn thành "${TECH_BY_ID[id].name}".`);
+      } else {
+        const r = RECIPE_BY_ID[id], cat = isGear(r.kind) ? 'gear' : 'tool';
+        if (this.storeUsed(cat) >= this.storeCap(cat)) { // finished but nowhere to put it
+          if (this.time - this.lastFullWarn > 30) { this.lastFullWarn = this.time; this.say(cat === 'tool' ? 'Kho công cụ đã đầy, sản phẩm chờ chỗ.' : 'Kho vũ khí đã đầy, sản phẩm chờ chỗ.'); }
+          continue;
+        }
+        this.toolStock[id] = (this.toolStock[id] ?? 0) + 1; b.active = null;
+        this.say(kind === 'craft' ? `Đã chế xong ${recipeName(r).toLowerCase()}.` : `Đã sửa xong ${recipeName(r).toLowerCase()}.`);
+      }
     }
-    v.order = null;
+  }
+
+  // ---------------------------------------------------------------- working inside a house
+  /** The villager best suited to work in a house who is not already doing it: free hands first, soldiers never, then the best stat for the job. */
+  bestFor(job: 'craft' | 'research' | 'repair'): Villager | null {
+    const stat = JOBS[job].stat;
+    const pool = this.villagers.filter((v) => v.down <= 0 && v.inside === null && v.job !== job && v.job !== 'fight' && v.job !== 'hunt');
+    pool.sort((a, b) => (a.job === 'idle' ? 0 : 1) - (b.job === 'idle' ? 0 : 1) || b.stats[stat] - a.stats[stat]);
+    return pool[0] ?? null;
+  }
+  /** How fast a house gets through its active order: everyone inside, the house level and the dev speed-up. */
+  houseRate(b: Building): number {
+    const job: WorkJob = b.kind === 'lab' ? 'research' : b.kind === 'workshop' ? 'craft' : 'repair';
+    let r = 0;
+    for (const id of b.staff) { const v = this.byId.get(id); if (v) r += this.workFactor(v, job); }
+    return r * levelDef(b).craftSpeed * (this.dev.fastWorks ? 25 : 1);
+  }
+  /** Villagers heading for a house or already in it. */
+  staffCount(b: Building): number { return b.staff.length + this.villagers.filter((v) => v.phase === 'goStaff' && v.target === b.id).length; }
+  /** Put villagers to work inside the matching house (job craft, research or repair). Returns an error or null. */
+  assignStaff(ids: readonly number[], job: 'craft' | 'research' | 'repair'): string | null {
+    const b = this.building(STAFF_BUILDING[job]);
+    if (!b) return `Chưa có ${BUILDINGS[STAFF_BUILDING[job]].name}, hoặc chưa xây xong`;
+    let err: string | null = null;
+    for (const v of this.mine(ids)) {
+      if (v.inside === b.id) { v.job = job; continue; }
+      if (this.staffCount(b) >= levelDef(b).slots) { err = `${BUILDINGS[b.kind].name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} người`; continue; }
+      this.resetTask(v); this.clearCombat(v); v.job = job; v.prefer = -1;
+      this.planStaff(v);
+    }
+    return err;
+  }
+  private planStaff(v: Villager): void {
+    if (!isStaffJob(v.job)) return;
+    const b = this.building(STAFF_BUILDING[v.job]);
+    if (!b) { v.job = 'idle'; return; }
+    if (this.staffCount(b) >= levelDef(b).slots) { v.job = 'idle'; this.say(`${v.name} không còn chỗ trong ${BUILDINGS[b.kind].name.toLowerCase()}.`); return; }
+    const d = BUILDINGS[b.kind];
+    if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { v.target = b.id; v.phase = 'goStaff'; return; }
+    this.wait(v, 3);
+  }
+  private enterBuilding(v: Villager): void {
+    const b = this.getBuilding(v.target);
+    if (!b || !b.done || !isStaffJob(v.job) || STAFF_BUILDING[v.job] !== b.kind || b.staff.length >= levelDef(b).slots) { v.phase = 'idle'; if (isStaffJob(v.job)) v.job = 'idle'; return; }
+    b.staff.push(v.id); v.inside = b.id; v.phase = 'inside'; v.path = []; v.slide = null;
+    const d = BUILDINGS[b.kind]; v.x = b.x + d.w / 2; v.y = b.y + d.h / 2; v.facing = 'front';
+    this.say(`${v.name} vào ${BUILDINGS[b.kind].name.toLowerCase()} làm việc.`);
+  }
+  /** Step out of the house the villager works in; the job is the caller's to change. */
+  exitBuilding(v: Villager): void {
+    if (v.inside === null) return;
+    const b = this.getBuilding(v.inside);
+    v.inside = null; v.phase = 'idle';
+    if (!b) return;
+    b.staff = b.staff.filter((id) => id !== v.id);
+    const d = BUILDINGS[b.kind], ring = this.ringTiles(v, b.x, b.y, d.w, d.h);
+    const spot = ring[0] ?? [b.x - 1, b.y + d.h];
+    v.x = spot[0] + 0.5; v.y = spot[1] + 0.5;
+  }
+  /** "Cho ra": send the staff out to the map, idle. */
+  releaseStaff(ids: readonly number[]): void {
+    for (const v of this.mine(ids)) if (v.inside !== null) { this.exitBuilding(v); v.job = 'idle'; this.fogDirty = true; }
+  }
+
+  // ---------------------------------------------------------------- tools, weapons and armour by hand
+  private toolId(k: ToolKind, tier: number): string { return `${k}${tier}`; }
+  /** Give chosen villagers a tool from the stock (tier 0 puts theirs back if it is whole, else it is thrown away). */
+  assignTool(ids: readonly number[], k: ToolKind, tier: number): string | null {
+    let short = false, given = 0;
+    for (const v of this.mine(ids)) {
+      const cur = v.tools[k];
+      if (tier > 0 && (cur?.tier === tier && cur.dur > 0)) continue;
+      if (tier > 0) { if (this.toolCount(k, tier) <= 0) { short = true; continue; } this.toolStock[this.toolId(k, tier)]--; }
+      if (cur && cur.dur >= TIER_DURABILITY[cur.tier] - 1e-6) this.toolStock[this.toolId(k, cur.tier)] = (this.toolStock[this.toolId(k, cur.tier)] ?? 0) + 1;
+      v.tools[k] = tier > 0 ? { tier, dur: TIER_DURABILITY[tier] } : null;
+      given++;
+      this.say(tier > 0 ? `${v.name} được phát ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}.` : `${v.name} bỏ ${TOOL_NAME[k].toLowerCase()}.`);
+    }
+    return short && !given ? `Kho hết ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}, hãy chế thêm` : null;
+  }
+  /** Throw a tool away, worn or not. */
+  discardTool(ids: readonly number[], k: ToolKind): void {
+    for (const v of this.mine(ids)) if (v.tools[k]) { v.tools[k] = null; this.say(`${v.name} vứt ${TOOL_NAME[k].toLowerCase()}.`); }
+  }
+  /** Hand a worn tool in to the Nhà sửa chữa: it leaves the villager and comes back to the stock mended. */
+  repairTool(ids: readonly number[], k: ToolKind): string | null {
+    if (!this.building('repair')) return 'Cần dựng Nhà sửa chữa';
+    let err: string | null = null, n = 0;
+    for (const v of this.mine(ids)) {
+      const t = v.tools[k]; if (!t) continue;
+      if (t.dur >= TIER_DURABILITY[t.tier] - 1e-6) { err = 'Công cụ còn mới, chưa cần sửa'; continue; }
+      const e = this.queueRepair(this.toolId(k, t.tier));
+      if (e) { err = e; continue; }
+      v.tools[k] = null; n++;
+      this.say(`${v.name} đưa ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()} đi sửa.`);
+    }
+    return n ? null : err;
+  }
+  /** Swap goods for shells: the village trades a fixed amount of one good for one coin. */
+  barter(res: Exclude<Res, 'coin'>): string | null {
+    const n = BARTER[res];
+    if (this.stock[res] < n) return `Cần ${n} ${RES_NAME[res].toLowerCase()} để đổi lấy 1 ${RES_NAME.coin.toLowerCase()}`;
+    if (this.stock.coin >= this.capacity()) return `Kho đã đầy ${RES_NAME.coin.toLowerCase()}`;
+    this.stock[res] -= n; this.stock.coin += 1;
+    return null;
   }
 
   // ---------------------------------------------------------------- lệnh
   resetTask(v: Villager): void {
-    this.leaveNode(v); this.releaseOrder(v);
+    this.leaveNode(v); this.exitBuilding(v); v.order = null;
     v.path = []; v.slide = null; v.phase = 'idle'; v.progress = 0; v.timer = 0; v.target = -1; v.bed = -1;
     if (this.resting) v.nightOwl = true;
   }
@@ -571,11 +759,14 @@ export class Sim {
     return JOB_NAME[job];
   }
 
-  setJob(ids: readonly number[], job: Job): void {
+  /** Give villagers a job. Craft, research and repair mean working inside the matching house; the result is an error or null. */
+  setJob(ids: readonly number[], job: Job): string | null {
+    if (job === 'craft' || job === 'research' || job === 'repair') return this.assignStaff(ids, job);
     for (const v of this.mine(ids)) {
       this.resetTask(v); this.clearCombat(v); v.job = job; v.prefer = -1;
       if (job === 'fight' && v.fight.mode === 'none') v.fight.anchor = null;
     }
+    return null;
   }
 
   // ---------------------------------------------------------------- combat orders
@@ -666,7 +857,7 @@ export class Sim {
     const key = (k: string) => (k === 'hide' ? 'hide1' : `${k}${WEAPONS[k].tier ?? 1}`);
     const nameOf = (k: string) => (k === 'hide' ? ARMORS.hide.name : WEAPONS[k].name).toLowerCase();
     const people = this.mine(ids);
-    if (kind && !this.hasWorkshop()) return 'Cần có Xưởng để lấy đồ';
+    if (kind && !this.hasWorkshop() && !this.building('armory')) return 'Cần có Nhà chế tạo hoặc Kho vũ khí để lấy đồ';
     let given = 0, short = false;
     for (const v of people) {
       const cur = slot === 'weapon' ? v.weapon : v.armor;
@@ -677,7 +868,7 @@ export class Sim {
       v.manualGear = true; given++;
       this.say(kind ? `${v.name} được phát ${nameOf(kind)}.` : `${v.name} trả lại ${cur ? nameOf(cur) : 'đồ'}.`);
     }
-    return short && given === 0 ? `Kho Xưởng hết ${kind ? nameOf(kind) : 'đồ'}, hãy chế thêm` : null;
+    return short && given === 0 ? `Kho hết ${kind ? nameOf(kind) : 'đồ'}, hãy chế thêm` : null;
   }
   /** Let the workshop hand out and swap gear by itself again. */
   autoGear(ids: readonly number[]): void { for (const v of this.mine(ids)) v.manualGear = false; }
@@ -734,6 +925,7 @@ export class Sim {
     this.syncFood();
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
+    this.tickWorks(dt);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     this.moraleClock += dt;
@@ -804,6 +996,9 @@ export class Sim {
       if (v.fullness > 40 && v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 0.0015 * v.maxHealth);
     }
     if (v.health <= 0) { this.kill(v); return; }
+    v.orderCd = Math.max(0, v.orderCd - dt);
+    // working inside a house: no walking, no fighting, nobody sees them
+    if (v.inside !== null) { this.animate(v, dt); return; }
 
     // ---- combat decides first: fighting, fleeing, rescuing, hunting ----
     const brained = brainPlayer(this, v, dt);
@@ -863,7 +1058,7 @@ export class Sim {
     } else if (v.phase === 'build') {
       const t = this.toolTier(v, 'build');
       if (t > 0) { anim = 'build'; hold = { kind: 'hammer', tier: t }; } else anim = 'gather';
-    } else if (v.phase === 'craft') { if (v.order?.startsWith('r:')) anim = 'gather'; else { anim = 'craft'; hold = { kind: 'hammer', tier: 2 }; } }
+    }
     else if (v.phase === 'skin') anim = 'gather';
     if (anim !== v.anim) { v.anim = anim; v.animClock = 0; } else v.animClock += dt;
     v.hold = hold;
@@ -884,7 +1079,7 @@ export class Sim {
   }
 
   kill(v: Villager, cause = 'vì đói'): void {
-    this.leaveNode(v); this.releaseOrder(v);
+    this.leaveNode(v); this.exitBuilding(v);
     this.villagers.splice(this.villagers.indexOf(v), 1); this.byId.delete(v.id);
     this.fogDirty = true;
     this.say(`${v.name} đã chết ${cause}.`);
@@ -939,37 +1134,13 @@ export class Sim {
     for (const v of this.villagers) v.leader = false;
     if (fighters.length >= 5) fighters.sort((a, b) => b.stats.str + b.stats.agi - a.stats.str - a.stats.agi)[0].leader = true;
   }
-  /** Go to the workshop for a better weapon or armour than the one in hand. */
-  planEquipGear(v: Villager): boolean {
-    if ((v.job !== 'hunt' && v.job !== 'fight') || !this.hasWorkshop() || v.phase === 'fight' || v.manualGear) return false;
-    const wantsArmor = v.job === 'fight' && !v.armor && this.toolCount('hide', 1) > 0;
-    if (!bestWeapon(this, v) && !wantsArmor) return false;
-    const shops = this.buildings.filter((b) => b.kind === 'workshop' && b.done);
-    shops.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
-    for (const b of shops.slice(0, 2)) {
-      const d = BUILDINGS[b.kind];
-      if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { v.target = b.id; v.phase = 'goEquip'; return true; }
-    }
-    return false;
-  }
-  private equipGear(v: Villager): void {
-    const best = bestWeapon(this, v);
-    if (best) {
-      this.toolStock[`${best}${WEAPONS[best].tier ?? 1}`]--;
-      v.weapon = best; this.say(`${v.name} nhận ${WEAPONS[best].name.toLowerCase()}.`);
-    }
-    if (v.job === 'fight' && !v.armor && this.toolCount('hide', 1) > 0) {
-      this.toolStock.hide1--; v.armor = 'hide'; this.say(`${v.name} mặc ${ARMORS.hide.name.toLowerCase()}.`);
-    }
-  }
-
   // ---------------------------------------------------------------- việc làm
   /** How fast a villager gets through crafting or research (1 = the nominal time). */
   workRate(v: Villager, job: WorkJob): number { return this.workFactor(v, job); }
   private workFactor(v: Villager, job: WorkJob): number {
     const stat = v.stats[JOBS[job].stat];
     const season = job === 'food' ? SEASON_DEF[this.season].gather : 1;
-    return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * TIER_SPEED[this.toolTier(v, job)] * season;
+    return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * (TOOL_OF_JOB[job] ? TIER_SPEED[this.toolTier(v, job)] : 1) * season;
   }
 
   private gainXp(v: Villager, job: WorkJob, dt: number): void {
@@ -979,12 +1150,12 @@ export class Sim {
     if (s.xp >= XP_LEVELS[s.level]) { s.level++; this.say(`${v.name} lên cấp ${s.level} nghề ${JOB_NAME[job].toLowerCase()}.`); }
   }
 
-  /** Công cụ hao mòn theo thời gian làm việc; gãy thì dân quay về tay không. */
+  /** Tools wear with working time; at zero they are broken and the villager works as if bare-handed until a new tool or a repair. */
   private wear(v: Villager, job: WorkJob, dt: number): void {
     const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
-    if (!k || !t) return;
+    if (!k || !t || t.dur <= 0) return;
     t.dur -= dt;
-    if (t.dur <= 0) { v.tools[k] = null; this.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} của ${v.name} đã gãy.`); }
+    if (t.dur <= 0) { t.dur = 0; this.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} của ${v.name} đã hỏng.`); }
   }
 
   leaveNode(v: Villager): void {
@@ -1054,19 +1225,14 @@ export class Sim {
         if (b.progress >= 1) {
           b.progress = 1;
           if (b.upgrading) { b.level++; b.upgrading = false; this.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
-          else { b.done = true; b.rebuild = false; this.fogDirty = true; this.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (RESEARCH.enabled && b.kind === 'workshop' && this.researched.size === 0) this.say('Mở Xưởng, giao một dân làm Thợ thủ công, rồi nghiên cứu để mở thêm đồ chế tác và cấp công trình.'); }
+          else { b.done = true; b.rebuild = false; this.fogDirty = true; this.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (RESEARCH.enabled && b.kind === 'lab' && this.researched.size === 0) this.say('Mở Nhà nghiên cứu, đưa một dân thông minh vào làm việc, rồi nghiên cứu bản vẽ đầu tiên.'); }
           v.phase = 'idle';
         }
         return;
       }
-      case 'goShop': {
-        const b = this.getBuilding(v.target);
-        if (!b || !b.done || !v.order) { this.releaseOrder(v); v.phase = 'idle'; return; }
-        v.phase = 'craft'; v.progress = 0;
-        v.slide = this.edgeSlide(v, b);
-        return;
-      }
-      case 'craft': this.doCraft(v, dt); return;
+      case 'goStaff': this.enterBuilding(v); return;
+      case 'goOrder': this.errand(v); return;
+      case 'inside': return;
       case 'goHome': {
         // at the sleeping spot: stash carried goods in the campfire (it is also a store)
         const c = v.carry;
@@ -1098,35 +1264,21 @@ export class Sim {
     v.frac = acc - whole;
     n.amount -= take;
     v.carry = { res, amount: have + take };
+    // gatherers now and then turn up a shell (the stone age's money) among the berries
+    if (res === 'food' && take > 0) {
+      this.coinFrac += 0.06 * take;
+      if (this.coinFrac >= 1) { this.coinFrac -= 1; if (this.stock.coin < this.capacity()) { this.stock.coin++; if (!this.sawCoin) { this.sawCoin = true; this.say(`${v.name} nhặt được một ${RES_NAME.coin.toLowerCase()}: dân làng dùng nó để trao đổi.`); } } }
+    }
     if (n.amount <= 0) {
       const idx = v.target; this.leaveNode(v); this.world.depleted(idx); v.phase = 'idle';
       if (n.kind === 'tree') this.say('Một cây đã được đốn xong.');
-    } else if (v.carry.amount >= CARRY_CAP[res] || this.betterTool(v, job)) { this.leaveNode(v); v.phase = 'idle'; }
-  }
-
-  private doCraft(v: Villager, dt: number): void {
-    const d = v.order ? this.orderDef(v.order) : null;
-    if (!v.order || !d) { v.phase = 'idle'; return; }
-    const shop = this.getBuilding(v.target);
-    const kind: WorkJob = isResearchOrder(v.order) ? 'research' : 'craft';
-    v.progress += (dt * this.workFactor(v, kind) * (shop ? levelDef(shop).craftSpeed : 1)) / d.time;
-    this.gainXp(v, kind, dt);
-    if (v.progress < 1) return;
-    if (isResearchOrder(v.order)) {
-      const t = techOfOrder(v.order)!;
-      this.researched.add(t.id);
-      this.say(`${v.name} đã nghiên cứu xong "${t.name}".`);
-    } else {
-      this.toolStock[v.order] = (this.toolStock[v.order] ?? 0) + 1;
-      this.say(`${v.name} đã chế xong ${recipeName(RECIPE_BY_ID[v.order]).toLowerCase()}.`);
-    }
-    v.order = null; v.progress = 0; v.phase = 'idle';
+    } else if (v.carry.amount >= CARRY_CAP[res] || this.needTool(v, job)) { this.leaveNode(v); v.phase = 'idle'; }
   }
 
   private plan(v: Villager): void {
     if (v.job === 'hunt' || v.job === 'fight') { this.wait(v, 1); return; } // combat code drives these jobs
-    if (v.job === 'build') { if (!this.planEquip(v, 'build')) this.planBuild(v); return; }
-    if (v.job === 'craft' || v.job === 'research') { this.planCraft(v); return; }
+    if (v.job === 'build') { if (!this.planTool(v, 'build')) this.planBuild(v); return; }
+    if (isStaffJob(v.job)) { this.planStaff(v); return; }
     const def = JOBS[v.job as WorkJob], res = def.res!;
     if (v.carry && (v.carry.res !== res || v.carry.amount >= CARRY_CAP[v.carry.res])) { this.planDeliver(v); return; }
     if (this.stock[res] >= this.capacity(res)) {
@@ -1134,83 +1286,123 @@ export class Sim {
       if (this.time - this.lastFullWarn > 30) { this.lastFullWarn = this.time; this.say(`Kho đã đầy ${RES_NAME[res].toLowerCase()}, hãy xây thêm Kho.`); }
       this.wait(v, 3); return;
     }
-    if (this.planEquip(v, v.job as WorkJob)) return;
+    if (this.planTool(v, v.job as WorkJob)) return;
     if (this.findNode(v, def.node!)) return;
     if (v.carry) { this.planDeliver(v); return; }
     this.wait(v, 2);
   }
 
-  /** Bậc công cụ tốt hơn đang có sẵn ở Xưởng (0 nếu không có). */
-  private betterTool(v: Villager, job: WorkJob): number {
+  /** True when the villager's tool for this job is missing or broken. */
+  toolLacking(v: Villager, job: WorkJob): boolean {
+    const k = TOOL_OF_JOB[job]; if (!k) return false;
+    const t = v.tools[k];
+    return !t || t.dur <= 0;
+  }
+  /** Best tier of this tool the stock holds (0 when none). */
+  private stockedTier(k: ToolKind): number { for (let t = 2; t >= 1; t--) if (this.toolCount(k, t) > 0) return t; return 0; }
+  /** A villager who lacks a tool, with the Kho công cụ built and fetching researched, and a tool in stock. */
+  needTool(v: Villager, job: WorkJob): boolean {
     const k = TOOL_OF_JOB[job];
-    if (!k || !this.hasWorkshop()) return 0;
-    const cur = v.tools[k]?.tier ?? 0;
-    for (let t = 2; t > cur; t--) if (this.toolCount(k, t) > 0) return t;
-    return 0;
+    return !!k && autoOn(this.researched, 'fetch') && !!this.building('toolstore') && this.toolLacking(v, job) && this.stockedTier(k) > 0;
   }
 
-  /** Nếu Xưởng có công cụ tốt hơn thứ dân đang cầm thì đi lấy. */
-  planEquip(v: Villager, job: WorkJob): boolean {
+  /** Walk to a building's edge for an errand; false when it cannot be reached. */
+  private goTo(v: Villager, b: Building, phase: 'goEquip' | 'goOrder'): boolean {
+    const d = BUILDINGS[b.kind];
+    if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) < 0) return false;
+    v.target = b.id; v.phase = phase; return true;
+  }
+
+  /** Without a usable tool: fetch one from the Kho công cụ, else (once researched) go and order or repair one. */
+  planTool(v: Villager, job: WorkJob): boolean {
     const k = TOOL_OF_JOB[job];
-    if (!k) return false;
-    if (!this.betterTool(v, job)) return false;
-    const shops = this.buildings.filter((b) => b.kind === 'workshop' && b.done);
-    shops.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
-    for (const b of shops.slice(0, 2)) {
-      const d = BUILDINGS[b.kind];
-      if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { v.target = b.id; v.phase = 'goEquip'; return true; }
+    if (!k || !this.toolLacking(v, job)) return false;
+    const store = this.building('toolstore');
+    if (store && this.needTool(v, job)) return this.goTo(v, store, 'goEquip');
+    if (!autoOn(this.researched, 'order') || v.orderCd > 0) return false;
+    v.orderCd = 45;
+    const t = v.tools[k], repairHouse = this.building('repair'), craftHouse = this.building('workshop');
+    if (t && t.dur <= 0 && repairHouse && this.repairQueue.length < 12) { v.order = `repair:${k}`; return this.goTo(v, repairHouse, 'goOrder'); }
+    if (!craftHouse) return false;
+    // order the best tool the blueprints allow, unless enough are already made or on their way
+    let id = '';
+    for (let tier = 2; tier >= 1; tier--) if (this.recipeOpen(`${k}${tier}`)) { id = `${k}${tier}`; break; }
+    if (!id) return false;
+    const lacking = this.villagers.filter((o) => o.inside === null && o.job !== 'idle' && TOOL_OF_JOB[o.job as WorkJob] === k && this.toolLacking(o, o.job as WorkJob)).length;
+    const onWay = this.toolCount(k, 1) + this.toolCount(k, 2) + this.craftQueue.filter((q) => q.startsWith(k)).length + (craftHouse.active?.id.startsWith(k) ? 1 : 0);
+    if (onWay >= lacking || this.craftQueue.length >= 12) return false;
+    v.order = `craft:${id}`;
+    return this.goTo(v, craftHouse, 'goOrder');
+  }
+
+  /** Arrived at a house with an errand: hand over the order or the broken tool, then back to work. */
+  private errand(v: Villager): void {
+    const o = v.order; v.order = null; v.phase = 'idle'; v.orderCd = 90;
+    const b = this.getBuilding(v.target);
+    if (b) this.faceBuilding(v, b);
+    if (!o || !b || !b.done) return;
+    const [what, id] = o.split(':');
+    if (what === 'craft') { if (this.queueCraft(id) === null) this.say(`${v.name} nhờ chế ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`); }
+    else if (what === 'repair') {
+      const k = id as ToolKind, t = v.tools[k];
+      if (t && t.dur <= 0 && this.queueRepair(this.toolId(k, t.tier)) === null) { v.tools[k] = null; this.say(`${v.name} nhờ sửa ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}.`); }
     }
-    return false;
   }
 
+  /** Take a tool, or weapon and armour, from the store the villager stands at. */
   equip(v: Villager): void {
     v.phase = 'idle';
-    const shop = this.getBuilding(v.target);
-    if (shop) this.faceBuilding(v, shop);
+    const store = this.getBuilding(v.target);
+    if (store) this.faceBuilding(v, store);
     if (v.job === 'hunt' || v.job === 'fight') { this.equipGear(v); return; }
     const k = TOOL_OF_JOB[v.job as WorkJob];
-    if (!k) return;
-    const cur = v.tools[k]?.tier ?? 0;
-    for (let t = 2; t > cur; t--) {
-      const key = `${k}${t}`;
-      if ((this.toolStock[key] ?? 0) > 0) {
-        this.toolStock[key]--;
-        const tool: Tool = { tier: t, dur: TIER_DURABILITY[t] };
-        v.tools[k] = tool;
-        this.say(`${v.name} nhận ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t].toLowerCase()}.`);
-        return;
-      }
-    }
+    if (!k || !this.toolLacking(v, v.job as WorkJob)) return;
+    const t = this.stockedTier(k);
+    if (!t) return;
+    this.toolStock[this.toolId(k, t)]--;
+    v.tools[k] = { tier: t, dur: TIER_DURABILITY[t] };
+    this.say(`${v.name} nhận ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t].toLowerCase()}.`);
   }
 
-  private planCraft(v: Villager): void {
-    const shops = this.buildings.filter((b) => b.kind === 'workshop' && b.done);
-    if (!shops.length) { this.wait(v, 3); return; }
-    if (!v.order) {
-      const research = v.job === 'research';
-      // craftsmen take recipes, researchers take research; a researcher also needs the Trí tuệ for it
-      const mine = (id: string) => isResearchOrder(id) === research && (!research || v.stats.int >= (techOfOrder(id)?.minInt ?? 0)) && (research || this.recipeOpen(id));
-      const i = this.craftQueue.findIndex((id) => mine(id) && this.affordable(id));
-      if (i < 0) {
-        if (this.craftQueue.some(mine) && this.time - this.lastMatWarn > 30) { this.lastMatWarn = this.time; this.say(research ? 'Thiếu nguyên liệu để nghiên cứu.' : 'Thiếu nguyên liệu để chế công cụ trong hàng đợi.'); }
-        this.wait(v, 3); return;
+  /** A soldier or hunter with empty hands goes to the Kho vũ khí (once fetching is researched) for a weapon, a soldier also for armour. */
+  planEquipGear(v: Villager): boolean {
+    if ((v.job !== 'hunt' && v.job !== 'fight') || v.phase === 'fight' || v.manualGear) return false;
+    const armory = this.building('armory');
+    if (!armory || !autoOn(this.researched, 'fetch')) return false;
+    const wantsWeapon = !v.weapon && !!bestWeapon(this, v), wantsArmor = v.job === 'fight' && !v.armor && this.toolCount('hide', 1) > 0;
+    if (!wantsWeapon && !wantsArmor) return false;
+    return this.goTo(v, armory, 'goEquip');
+  }
+  private equipGear(v: Villager): void {
+    const best = !v.weapon ? bestWeapon(this, v) : null;
+    if (best) {
+      this.toolStock[`${best}${WEAPONS[best].tier ?? 1}`]--;
+      v.weapon = best; this.say(`${v.name} nhận ${WEAPONS[best].name.toLowerCase()}.`);
+    }
+    if (v.job === 'fight' && !v.armor && this.toolCount('hide', 1) > 0) {
+      this.toolStock.hide1--; v.armor = 'hide'; this.say(`${v.name} mặc ${ARMORS.hide.name.toLowerCase()}.`);
+    }
+  }
+  /** With ordering researched, a soldier or hunter who has nothing to fight with asks the Nhà chế tạo for a weapon (a soldier also for armour). */
+  planGearErrand(v: Villager): boolean {
+    if ((v.job !== 'hunt' && v.job !== 'fight') || v.phase === 'fight' || v.manualGear || v.orderCd > 0) return false;
+    const house = this.building('workshop');
+    if (!house || !autoOn(this.researched, 'order')) return false;
+    const have = (re: RegExp) => Object.entries(this.toolStock).some(([id, n]) => n > 0 && re.test(id)) || this.craftQueue.some((id) => re.test(id)) || !!house.active && re.test(house.active.id);
+    let id = '';
+    if (!v.weapon && !have(/^(club|spear|mace)/)) {
+      let bestScore = -1;
+      for (const w of CRAFTED_WEAPONS) {
+        const rid = `${w}${WEAPONS[w].tier ?? 1}`;
+        if (!this.recipeOpen(rid) || (w === 'mace' && v.job !== 'fight')) continue;
+        const sc = WEAPONS[w].damage / WEAPONS[w].cycle;
+        if (sc > bestScore) { bestScore = sc; id = rid; }
       }
-      const id = this.craftQueue[i], d = this.orderDef(id)!;
-      this.craftQueue.splice(i, 1);
-      for (const k of Object.keys(d.cost) as Res[]) this.stock[k] -= d.cost[k] ?? 0;
-      v.order = id;
-    }
-    shops.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) ||
-      Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
-    for (const b of shops.slice(0, 2)) {
-      const d = BUILDINGS[b.kind];
-      if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { v.target = b.id; v.phase = 'goShop'; return; }
-    }
-    // không tới được Xưởng: trả đơn về hàng đợi
-    const d = this.orderDef(v.order)!;
-    for (const k of Object.keys(d.cost) as Res[]) this.stock[k] += d.cost[k] ?? 0;
-    this.craftQueue.unshift(v.order); v.order = null;
-    this.wait(v, 3);
+    } else if (v.job === 'fight' && !v.armor && !have(/^hide/) && this.recipeOpen('hide1')) id = 'hide1';
+    v.orderCd = 60;
+    if (!id) return false;
+    v.order = `craft:${id}`;
+    return this.goTo(v, house, 'goOrder');
   }
 
   /** Các ô trống quanh một hình chữ nhật, gần `v` nhất trước. */
@@ -1304,7 +1496,7 @@ export class Sim {
   }
 
   planDeliver(v: Villager): void {
-    const done = this.buildings.filter((b) => b.done && levelDef(b).cap > 0);
+    const done = this.buildings.filter((b) => b.done && holdsGoods(b));
     done.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
     for (const b of done.slice(0, 2)) {
       const d = BUILDINGS[b.kind];

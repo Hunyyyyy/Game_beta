@@ -36,6 +36,7 @@ button.sm { padding: 2px 8px; min-height: 26px; }
 .res { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .res i { width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(0,0,0,.35); display: inline-block; }
 .res small { font-weight: 500; color: var(--muted); }
+.res#rCoin small { display: none; }
 .res.full b { color: var(--accent); }
 .res.warn small { color: var(--accent); font-weight: 700; }
 .clock { font-weight: 600; }
@@ -143,6 +144,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   body { font-size: 12px; }
   .top { gap: 4px; left: calc(4px + var(--sal)); right: calc(4px + var(--sar)); top: calc(4px + var(--sat)); }
   .hud { padding: 2px 6px; gap: 2px 8px; }
+  .res:not(.warn):not(.full) small { display: none; }
   .sheet { max-height: min(60%, calc(100% - var(--top-h, 40px) - 10px)); width: min(340px, calc(100% - 120px)); left: calc(4px + var(--sal)); bottom: calc(4px + var(--sab)); }
   .card { padding: 4px 6px; gap: 3px; }
   #mini { right: calc(4px + var(--sar)); bottom: calc(4px + var(--sab)); width: clamp(56px, 12vw, 84px); }
@@ -160,6 +162,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       <span class="res" id="rWood" title="Gỗ"><i style="background:#9a6a35"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rStone" title="Đá"><i style="background:#9aa0a4"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rHide" title="Da và xương"><i style="background:#a0552f"></i><b>0</b><small>/0</small></span>
+      <span class="res" id="rCoin" title="Tiền"><i style="background:#e8e0c8;border-radius:50%"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rPop" title="Số dân"><i style="background:#e8c4a0"></i><b>0</b><small>/40</small></span>
     </div>
     <div class="hud grp" role="group" aria-label="Tốc độ game">
@@ -222,16 +225,48 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
 (() => {
   // src/sim/buildings.ts
   var ERAS = ["stone", "ancient"];
-  var lv = (name, cost, buildTime, cap = 0, craftSpeed = 1) => ({ name, cost, buildTime, cap, craftSpeed });
+  var lv = (name, cost, buildTime, cap = 0, craftSpeed = 1, slots = 0) => ({ name, cost, buildTime, cap, craftSpeed, slots });
   var BUILDINGS = {
     campfire: { kind: "campfire", name: "Nh\xE0 chung (\u0111\u1ED1ng l\u1EEDa tr\u1EA1i)", w: 2, h: 2, buildable: false, levels: { stone: [lv("L\u1EEDa tr\u1EA1i", {}, 0, 50)] } },
     workshop: {
       kind: "workshop",
-      name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c",
+      name: "Nh\xE0 ch\u1EBF t\u1EA1o",
       w: 2,
       h: 2,
       buildable: true,
-      levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 30, 0, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 60, 0, 1.25), lv("\u0110\xE1", { wood: 30, stone: 50 }, 90, 0, 1.5)] }
+      levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 30, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 60, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 90, 0, 1.5, 3)] }
+    },
+    lab: {
+      kind: "lab",
+      name: "Nh\xE0 nghi\xEAn c\u1EE9u",
+      w: 2,
+      h: 2,
+      buildable: true,
+      levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 40, 0, 1, 1), lv("G\u1ED7", { wood: 20, stone: 30 }, 70, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 100, 0, 1.5, 4)] }
+    },
+    repair: {
+      kind: "repair",
+      name: "Nh\xE0 s\u1EEDa ch\u1EEFa",
+      w: 2,
+      h: 2,
+      buildable: true,
+      levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15, stone: 5 }, 30, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 60, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 90, 0, 1.5, 3)] }
+    },
+    toolstore: {
+      kind: "toolstore",
+      name: "Kho c\xF4ng c\u1EE5",
+      w: 2,
+      h: 2,
+      buildable: true,
+      levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 30, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 55, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 80, 60)] }
+    },
+    armory: {
+      kind: "armory",
+      name: "Kho v\u0169 kh\xED",
+      w: 2,
+      h: 2,
+      buildable: true,
+      levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 30, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 55, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 80, 60)] }
     },
     storage: {
       kind: "storage",
@@ -252,6 +287,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   }
   var levelDef = (b, level = b.level) => levelsOf(b.kind, b.era)[level - 1];
   var maxLevel = (kind, era) => levelsOf(kind, era).length;
+  var holdsGoods = (b) => b.kind === "storage" || b.kind === "campfire";
   var needsWork = (b) => !b.done || b.upgrading;
 
   // src/sim/constants.ts
@@ -3725,8 +3761,20 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     stone: {
       campfire: [L1_default],
       storage: [L1_default2, L2_default, L3_default],
-      workshop: [L1_default3, L2_default2, L3_default2]
+      workshop: [L1_default3, L2_default2, L3_default2],
+      // the newer houses reuse the workshop and storage drawings in their own colours until they get their own art
+      lab: [L1_default3, L2_default2, L3_default2],
+      repair: [L1_default3, L2_default2, L3_default2],
+      toolstore: [L1_default2, L2_default, L3_default],
+      armory: [L1_default2, L2_default, L3_default]
     }
+  };
+  var house = (h2, l, d) => ({ hide: h2, hideL: l, hideD: d, mat: d, matL: h2, matD: d });
+  var TINTS = {
+    lab: house("#5f7fa8", "#86a4c8", "#3f5c84"),
+    repair: house("#6f8a46", "#92ad66", "#4e6530"),
+    toolstore: house("#4f8a86", "#74b0aa", "#336460"),
+    armory: house("#a8342a", "#cf5b46", "#7a2318")
   };
   var Sprites = class {
     constructor() {
@@ -3734,6 +3782,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.natureCache = /* @__PURE__ */ new Map();
       this.buildingCache = /* @__PURE__ */ new Map();
       this.animalCache = /* @__PURE__ */ new Map();
+      /** Small badges drawn over the houses that share a drawing, so each can be told at a glance. */
+      this.emblems = {};
       /** Biểu tượng công cụ 16×16, khóa dạng "axe1" (gỗ) hoặc "axe2" (đá). */
       this.icons = {};
       const defs = { axe: axe_default2, pick: pick_default2, hoe: hoe_default2, hammer: hammer_default2 };
@@ -3743,6 +3793,28 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.icons.mace2 = make(mace_default2, 1).frames[0];
       this.icons.hide1 = make(hide_armor_default, 1).frames[0];
       this.nature("spring");
+      this.emblems.lab = this.scrollEmblem();
+      this.emblems.repair = this.icons.hammer2;
+      this.emblems.toolstore = this.icons.axe2;
+      this.emblems.armory = this.icons.club1;
+    }
+    /** A rolled blueprint on a pole: the sign of the research house. */
+    scrollEmblem() {
+      const [c, g] = canvas(16, 16);
+      g.fillStyle = "#2b1d10";
+      g.fillRect(2, 2, 12, 12);
+      g.fillStyle = "#efe3c2";
+      g.fillRect(3, 3, 10, 10);
+      g.fillStyle = "#c9b98a";
+      g.fillRect(3, 11, 10, 2);
+      g.fillStyle = "#5f7fa8";
+      g.fillRect(4, 5, 8, 1);
+      g.fillRect(4, 7, 6, 1);
+      g.fillRect(4, 9, 7, 1);
+      g.fillStyle = "#8a6238";
+      g.fillRect(2, 1, 12, 2);
+      g.fillRect(2, 13, 12, 2);
+      return c;
     }
     /** Nature drawn for a season; spring is the base art, other seasons switch the blueprints' palettes. */
     nature(season) {
@@ -3771,7 +3843,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         const key = `${ERAS[i]}|${kind}`;
         let set = this.buildingCache.get(key);
         if (!set) {
-          set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(def, kind === "workshop" ? 9 : 5, stage(st))));
+          const tint = TINTS[kind];
+          set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(tint ? { ...def, palettes: { tint } } : def, kind === "workshop" || kind === "lab" || kind === "repair" ? 9 : 5, { ...stage(st), ...tint ? { tint: 1 } : {} })));
           this.buildingCache.set(key, set);
         }
         return set;
@@ -4021,7 +4094,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
         list.push({ y: ay, kind: "building", i: 0, j: 0, b });
       }
-      for (const v of sim2.villagers) list.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
+      for (const v of sim2.villagers) if (v.inside === null) list.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
       const seen = (x, y) => sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
       for (const f of sim2.foes) if (seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
       for (const a of sim2.animals) if (seen(a.x, a.y)) list.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
@@ -4039,6 +4112,11 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         } else if (d.kind === "building" && d.b) {
           const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
           this.prop(this.buildingProp(b), ax, ay, time);
+          const emblem = b.done ? sp.emblems[b.kind] : void 0;
+          if (emblem) {
+            const p = this.worldToScreen(ax, ay - 52);
+            ctx2.drawImage(emblem, Math.round(p.x - 8 * z), Math.round(p.y), 16 * z, 16 * z);
+          }
           if (!b.done || b.upgrading) {
             const p = this.worldToScreen(ax, ay), w = 40 * z;
             ctx2.fillStyle = "rgba(20,14,8,.7)";
@@ -4290,10 +4368,12 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   }
 
   // src/sim/resources.ts
-  var RES_LIST = ["food", "wood", "stone", "hide"];
-  var RES_NAME = { wood: "G\u1ED7", stone: "\u0110\xE1", food: "Th\u1EE9c \u0103n", hide: "Da v\xE0 x\u01B0\u01A1ng" };
-  var emptyStock = () => ({ wood: 0, stone: 0, food: 0, hide: 0 });
-  var CARRY_CAP = { wood: 4, stone: 4, food: 10, hide: 10 };
+  var RES_LIST = ["food", "wood", "stone", "hide", "coin"];
+  var CURRENCY = { stone: "V\u1ECF s\xF2", ancient: "\u0110\u1ED3ng xu" };
+  var RES_NAME = { wood: "G\u1ED7", stone: "\u0110\xE1", food: "Th\u1EE9c \u0103n", hide: "Da v\xE0 x\u01B0\u01A1ng", coin: CURRENCY.stone };
+  var BARTER = { food: 10, wood: 5, stone: 5, hide: 2 };
+  var emptyStock = () => ({ wood: 0, stone: 0, food: 0, hide: 0, coin: 0 });
+  var CARRY_CAP = { wood: 4, stone: 4, food: 10, hide: 10, coin: 0 };
   var FOOD_NUTRITION = 25;
   var FOOD_SPOIL_DAYS = 3;
 
@@ -4334,11 +4414,14 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
     craft: { name: "Ch\u1EBF t\u1EA1o", stat: "int", baseTime: 1, anim: "craft" },
     research: { name: "Nghi\xEAn c\u1EE9u", stat: "int", baseTime: 1, anim: "gather" },
+    repair: { name: "S\u1EEDa ch\u1EEFa", stat: "agi", baseTime: 1, anim: "craft" },
     hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust" },
     fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "smash" }
   };
-  var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh" };
-  var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "hunt", "fight"];
+  var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", repair: "S\u1EEDa ch\u1EEFa", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh" };
+  var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "repair", "hunt", "fight"];
+  var STAFF_BUILDING = { craft: "workshop", research: "lab", repair: "repair" };
+  var isStaffJob = (j) => j in STAFF_BUILDING;
   var XP_LEVELS = [60, 150, 300, 500, 800];
   var MAX_LEVEL = 5;
 
@@ -4473,7 +4556,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       look: { hide: "#7a8a4a", pants: "#4a6a8a" },
       relation: 0,
       reward: "D\u1EC5 giao th\u01B0\u01A1ng v\xE0 thu n\u1EA1p; h\u1ECDc T4 B\u1EC7n s\u1EE3i",
-      tribute: { food: 12, wood: 6 }
+      tribute: { food: 12, wood: 6, coin: 3 }
     },
     axe: {
       name: "R\xECu \u0110\xE1",
@@ -4487,7 +4570,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       look: { hide: "#8a3a24", pants: "#6a2a1a" },
       relation: -20,
       reward: "L\xEDnh ch\xF9y, b\xED quy\u1EBFt ch\u1EBF ch\xF9y \u0111\xE1",
-      tribute: { stone: 10, food: 10 }
+      tribute: { stone: 10, food: 10, coin: 4 }
     },
     swamp: {
       name: "\u0110\u1EA7m L\u1EA7y",
@@ -4501,7 +4584,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       look: { hide: "#5a6a50", pants: "#3a4a3a" },
       relation: -10,
       reward: "\u0110\u1EA5t s\xE9t, s\u1EE3i; h\u1ECDc T5 D\xE2y qu\u0103ng \u0111\xE1",
-      tribute: { food: 10, wood: 10 }
+      tribute: { food: 10, wood: 10, coin: 3 }
     },
     relation: {
       labels: [[-100, "Th\xF9 \u0111\u1ECBch"], [-40, "Trung l\u1EADp"], [20, "Th\xE2n thi\u1EC7n"], [60, "C\u1ED1ng n\u1EA1p"], [90, "Thu ph\u1EE5c"]],
@@ -4679,6 +4762,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   var TIER_YIELD = [1, 1.25, 1.6];
   var TIER_DURABILITY = [0, 240, 600];
   var GEAR_KINDS = ["club", "spear", "mace", "hide"];
+  var isGear = (k) => GEAR_KINDS.includes(k);
   var isWeaponKind = (k) => k in WEAPONS;
   var R = (kind, tier, cost, time) => ({ id: `${kind}${tier}`, kind, tier, cost, time });
   var gearRecipe = (kind) => {
@@ -4797,7 +4881,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   var near = (sim2, x, y) => {
     let best = null;
     for (const v of sim2.villagers) {
-      if (v.down > 0) continue;
+      if (v.down > 0 || v.inside !== null) continue;
       const d = Math.hypot(v.x - x, v.y - y);
       if (!best || d < best.d) best = { id: v.id, d };
     }
@@ -5013,7 +5097,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     const seen = (x, y) => !player || sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
     const pool = player ? sim2.foes : sim2.villagers;
     for (const o of pool) {
-      if (o.health <= 0 || o.down > 0 || !teamsHostile(sim2, v.team, o.team)) continue;
+      if (o.health <= 0 || o.down > 0 || o.inside !== null || !teamsHostile(sim2, v.team, o.team)) continue;
       const d = Math.hypot(o.x - v.x, o.y - v.y);
       if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: "unit", id: o.id }, x: o.x, y: o.y, d, name: o.name });
     }
@@ -5265,7 +5349,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     const f = v.fight;
     if (v.phase === "skin" || v.phase === "goCarcass") return huntBrain(sim2, v, dt, threats);
     if (f.mode === "hold" && !f.anchor) f.anchor = { x: v.x, y: v.y };
-    if (!threats.length && !f.target && v.phase !== "fight" && sim2.planEquipGear(v)) return true;
+    if (!threats.length && !f.target && v.phase !== "fight" && (sim2.planEquipGear(v) || sim2.planGearErrand(v))) return true;
     if (v.stance === "retreat" && f.mode !== "attack" && f.target) f.target = null;
     if (f.target) {
       const e = resolve(sim2, f.target);
@@ -5864,7 +5948,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         if (!f.path.length) f.path = sim2.pathTo(f, Math.floor(gx), Math.floor(gy), 4e4);
         f.phase = "move";
       } else {
-        const v = sim2.villagers.find((o) => o.health > 0 && o.down <= 0);
+        const v = sim2.villagers.find((o) => o.health > 0 && o.down <= 0 && o.inside === null);
         if (v) f.fight.target = { kind: "unit", id: v.id };
       }
       return;
@@ -5896,17 +5980,27 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   // src/data/research.json
   var research_default = {
     enabled: true,
-    _note: "Research is done by a villager with the Nghi\xEAn c\u1EE9u job at the Workshop; the villager's Tr\xED tu\u1EC7 must reach the tech's minInt. cost is paid when a researcher takes the order, time is seconds at speed 1. needLevel: Workshop level to start it. unlocks.recipes: recipes that become craftable; unlocks.levels: highest level a building kind may be upgraded to. recipeLevel: Workshop level each recipe needs. A recipe is craftable when the Workshop level is high enough and, if some tech unlocks it, that tech is researched. Set enabled to false to open everything.",
+    _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Every tool, weapon and armour has ONE blueprint that is raised step by step (tech id = recipe id: axe1 is the wood axe, axe2 the stone one); a recipe can only be made once its blueprint step is researched and the Nh\xE0 ch\u1EBF t\u1EA1o is high enough (recipeLevel). cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, levels (highest level per building kind), buildings (kinds that may be built), auto (fetch: villagers fetch tools from the stores; order: villagers order crafting and repair themselves). Set enabled to false to open everything.",
     recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3 },
     techs: [
-      { id: "wood_tools", name: "D\u1EE5ng c\u1EE5 g\u1ED7", desc: "\u0110\u1EBDo cu\u1ED1c chim v\xE0 cu\u1ED1c h\xE1i b\u1EB1ng g\u1ED7.", requires: [], needLevel: 1, cost: { wood: 8 }, time: 45, unlocks: { recipes: ["pick1", "hoe1"] }, minInt: 5 },
-      { id: "club", name: "G\u1EADy chi\u1EBFn", desc: "Ch\u1EBF g\u1EADy g\u1ED7 \u0111\u1EC3 t\u1EF1 v\u1EC7 v\xE0 \u0111i s\u0103n.", requires: ["wood_tools"], needLevel: 1, cost: { wood: 6 }, time: 40, unlocks: { recipes: ["club1"] }, minInt: 5 },
-      { id: "tanning", name: "Thu\u1ED9c da", desc: "Kh\xE2u da th\xFA th\xE0nh \xE1o gi\xE1p.", requires: ["wood_tools"], needLevel: 1, cost: { hide: 3 }, time: 60, unlocks: { recipes: ["hide1"] }, minInt: 6 },
-      { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng Kho v\xE0 X\u01B0\u1EDFng l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["wood_tools"], needLevel: 1, cost: { wood: 20 }, time: 60, unlocks: { levels: { storage: 2, workshop: 2 } }, minInt: 6 },
-      { id: "spear", name: "Gi\xE1o v\xF3t nh\u1ECDn", desc: "Gi\xE1o g\u1ED7 c\xF3 t\u1EA7m \u0111\xE2m xa h\u01A1n g\u1EADy.", requires: ["club"], needLevel: 2, cost: { wood: 10 }, time: 70, unlocks: { recipes: ["spear1"] }, minInt: 6 },
-      { id: "stone_tools", name: "M\xE0i \u0111\xE1", desc: "R\xECu, cu\u1ED1c chim, cu\u1ED1c v\xE0 b\xFAa \u0111\u1EA7u \u0111\xE1, b\u1EC1n v\xE0 nhanh h\u01A1n g\u1ED7.", requires: ["timber"], needLevel: 2, cost: { wood: 10, stone: 20 }, time: 90, unlocks: { recipes: ["axe2", "pick2", "hoe2", "hammer2"] }, minInt: 7 },
-      { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng Kho v\xE0 X\u01B0\u1EDFng l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["stone_tools"], needLevel: 2, cost: { wood: 10, stone: 40 }, time: 120, unlocks: { levels: { storage: 3, workshop: 3 } }, minInt: 7 },
-      { id: "mace", name: "Ch\xF9y \u0111\xE1", desc: "V\u0169 kh\xED \u0111\u1EADp n\u1EB7ng, h\u1EE3p v\u1EDBi chi\u1EBFn binh kh\u1ECFe.", requires: ["stone_tools", "club"], needLevel: 3, cost: { stone: 25 }, time: 100, unlocks: { recipes: ["mace2"] }, minInt: 8 }
+      { id: "hammer1", name: "B\u1EA3n v\u1EBD B\xFAa g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo b\xFAa g\u1ED7 \u0111\u1EC3 d\u1EF1ng nh\xE0 nhanh h\u01A1n.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["hammer1"] } },
+      { id: "axe1", name: "B\u1EA3n v\u1EBD R\xECu g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo r\xECu g\u1ED7 \u0111\u1EC3 \u0111\u1ED1n c\xE2y.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["axe1"] } },
+      { id: "pick1", name: "B\u1EA3n v\u1EBD Cu\u1ED1c chim g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo cu\u1ED1c chim g\u1ED7 \u0111\u1EC3 \u0111\u1EE5c \u0111\xE1.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 160, unlocks: { recipes: ["pick1"] } },
+      { id: "hoe1", name: "B\u1EA3n v\u1EBD Cu\u1ED1c g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo cu\u1ED1c g\u1ED7 \u0111\u1EC3 h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 140, unlocks: { recipes: ["hoe1"] } },
+      { id: "club1", name: "B\u1EA3n v\u1EBD G\u1EADy chi\u1EBFn", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo g\u1EADy chi\u1EBFn \u0111\u1EC3 t\u1EF1 v\u1EC7 v\xE0 \u0111i s\u0103n.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 180, unlocks: { recipes: ["club1"] } },
+      { id: "hide1", name: "B\u1EA3n v\u1EBD \xC1o da", desc: "V\u1EBD c\xE1ch kh\xE2u da th\xFA th\xE0nh \xE1o gi\xE1p.", requires: ["axe1"], needLevel: 1, minInt: 6, cost: { hide: 4, coin: 4 }, time: 240, unlocks: { recipes: ["hide1"] } },
+      { id: "spear1", name: "B\u1EA3n v\u1EBD Gi\xE1o v\xF3t nh\u1ECDn", desc: "V\u1EBD c\xE1ch v\xF3t gi\xE1o c\xF3 t\u1EA7m \u0111\xE2m xa h\u01A1n g\u1EADy.", requires: ["club1"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 5 }, time: 320, unlocks: { recipes: ["spear1"] } },
+      { id: "axe2", name: "B\u1EA3n v\u1EBD R\xECu \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD R\xECu l\xEAn c\u1EA5p 2: l\u01B0\u1EE1i \u0111\xE1 b\u1EC1n v\xE0 nhanh h\u01A1n g\u1ED7.", requires: ["axe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 380, unlocks: { recipes: ["axe2"] } },
+      { id: "pick2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c chim \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c chim l\xEAn c\u1EA5p 2.", requires: ["pick1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 380, unlocks: { recipes: ["pick2"] } },
+      { id: "hoe2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c l\xEAn c\u1EA5p 2.", requires: ["hoe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 10, coin: 6 }, time: 340, unlocks: { recipes: ["hoe2"] } },
+      { id: "hammer2", name: "B\u1EA3n v\u1EBD B\xFAa \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD B\xFAa l\xEAn c\u1EA5p 2.", requires: ["hammer1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 360, unlocks: { recipes: ["hammer2"] } },
+      { id: "mace2", name: "B\u1EA3n v\u1EBD Ch\xF9y \u0111\xE1", desc: "V\u1EBD c\xE1ch bu\u1ED9c \u0111\u1EA7u \u0111\xE1 n\u1EB7ng v\xE0o c\xE1n th\xE0nh ch\xF9y.", requires: ["club1", "axe2"], needLevel: 3, minInt: 8, cost: { stone: 30, coin: 10 }, time: 600, unlocks: { recipes: ["mace2"] } },
+      { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { storage: 2, workshop: 2, lab: 2, repair: 2, toolstore: 2, armory: 2 } } },
+      { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber", "pick1"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { storage: 3, workshop: 3, lab: 3, repair: 3, toolstore: 3, armory: 3 } } },
+      { id: "tool_store", name: "Kho c\xF4ng c\u1EE5", desc: "Cho ph\xE9p d\u1EF1ng Kho c\xF4ng c\u1EE5 \u0111\u1EC3 c\u1EA5t r\xECu, cu\u1ED1c, b\xFAa.", requires: ["hammer1", "axe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 200, unlocks: { buildings: ["toolstore"] } },
+      { id: "armory", name: "Kho v\u0169 kh\xED", desc: "Cho ph\xE9p d\u1EF1ng Kho v\u0169 kh\xED \u0111\u1EC3 c\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["armory"] } },
+      { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: ["tool_store"], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
+      { id: "auto_order", name: "T\u1EF1 nh\u1EDD ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa", desc: "D\xE2n thi\u1EBFu \u0111\u1ED3 t\u1EF1 t\u1EDBi nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EB7t h\xE0ng, t\u1EDBi nh\xE0 s\u1EEDa ch\u1EEFa nh\u1EDD s\u1EEDa \u0111\u1ED3 h\u1ECFng.", requires: ["auto_fetch"], needLevel: 2, minInt: 7, cost: { wood: 10, coin: 8 }, time: 360, unlocks: { auto: ["order"] } }
     ]
   };
 
@@ -5916,17 +6010,24 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   var recipeNeedLevel = (id) => RECIPE_LEVEL[id] ?? 1;
   var TECHS = research_default.techs;
   var TECH_BY_ID = Object.fromEntries(TECHS.map((t) => [t.id, t]));
-  var RESEARCH_PREFIX = "r:";
-  var isResearchOrder = (id) => id.startsWith(RESEARCH_PREFIX);
-  var techOfOrder = (id) => TECH_BY_ID[id.slice(RESEARCH_PREFIX.length)];
-  var LOCKED_RECIPES = new Set(TECHS.flatMap((t) => t.unlocks.recipes ?? []));
-  var recipeOpen = (done, recipeId) => !RESEARCH.enabled || !LOCKED_RECIPES.has(recipeId) || TECHS.some((t) => done.has(t.id) && t.unlocks.recipes?.includes(recipeId));
-  var techForRecipe = (recipeId) => TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
+  var recipeOpen = (done, recipeId) => !RESEARCH.enabled || done.has(recipeId);
+  var techForRecipe = (recipeId) => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
   var levelCap = (done, kind) => !RESEARCH.enabled ? Infinity : TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks.levels?.[kind] ?? 1) : m, 1);
   var techForLevel = (kind, level) => TECHS.find((t) => (t.unlocks.levels?.[kind] ?? 0) >= level);
+  var techForBuilding = (kind) => TECHS.find((t) => t.unlocks.buildings?.includes(kind));
+  var buildingOpen = (done, kind) => {
+    const t = techForBuilding(kind);
+    return !RESEARCH.enabled || !t || done.has(t.id);
+  };
+  var autoOn = (done, key) => !RESEARCH.enabled || TECHS.some((t) => done.has(t.id) && t.unlocks.auto?.includes(key));
+  var KIND_NAME = { storage: "Kho", workshop: "Nh\xE0 ch\u1EBF t\u1EA1o", lab: "Nh\xE0 nghi\xEAn c\u1EE9u", repair: "Nh\xE0 s\u1EEDa ch\u1EEFa", toolstore: "Kho c\xF4ng c\u1EE5", armory: "Kho v\u0169 kh\xED" };
   var unlockText = (t, recipeName2) => {
     const parts = [...(t.unlocks.recipes ?? []).map(recipeName2)];
-    for (const [k, n] of Object.entries(t.unlocks.levels ?? {})) parts.push(`${k === "storage" ? "Kho" : k === "workshop" ? "X\u01B0\u1EDFng" : k} c\u1EA5p ${n}`);
+    const lv2 = Object.values(t.unlocks.levels ?? {})[0];
+    if (lv2) parts.push(`m\u1ECDi nh\xE0 l\xEAn c\u1EA5p ${lv2}`);
+    for (const k of t.unlocks.buildings ?? []) parts.push(`x\xE2y ${KIND_NAME[k] ?? k}`);
+    if (t.unlocks.auto?.includes("fetch")) parts.push("d\xE2n t\u1EF1 l\u1EA5y \u0111\u1ED3 \u1EDF kho");
+    if (t.unlocks.auto?.includes("order")) parts.push("d\xE2n t\u1EF1 \u0111\u1EB7t ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa");
     return parts.join(", ");
   };
 
@@ -5951,6 +6052,12 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.toolStock = {};
       /** Hàng đợi chế tác (mã công thức). */
       this.craftQueue = [];
+      /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
+      this.researchQueue = [];
+      /** Tools waiting to be mended in the Nhà sửa chữa (recipe ids such as axe1). */
+      this.repairQueue = [];
+      this.coinFrac = 0;
+      this.sawCoin = false;
       /** Finished research (tech ids). Recipes and building levels stay locked until their tech is here. */
       this.researched = /* @__PURE__ */ new Set();
       this.log = [];
@@ -5973,7 +6080,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.projectiles = [];
       this.nextAid = 1;
       /** Test switches driven by the dev menu; all off in a normal game. */
-      this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false };
+      this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false };
       /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
       this.pendingTribe = null;
       this.acc = 0;
@@ -5997,6 +6104,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.rnd = mulberry32(seed2 ^ 2654435769);
       this.frnd = mulberry32(seed2 ^ 2135587861);
       this.wrnd = mulberry32(seed2 ^ 1540483477);
+      RES_NAME.coin = CURRENCY[this.era];
       this.world.setSeason(this.season);
       this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
       this.resting = isRestTime(this.tod, this.season);
@@ -6005,7 +6113,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.stock.food = 24;
       const spots = [[-1, 1, "m"], [1, 1, "f"], [0, 2, "m"]];
       for (const [dx, dy, sex] of spots) this.spawn(s.x + dx, s.y + dy, sex);
-      this.say("Ba ng\u01B0\u1EDDi \u0111\u1EA7u ti\xEAn \u0111\xE3 \u0111\u1EBFn b\xEAn \u0111\u1ED1ng l\u1EEDa. Ch\u1ECDn h\u1ECD, r\u1ED3i giao vi\u1EC7c: chu\u1ED9t ph\u1EA3i l\xEAn c\xE2y, \u0111\xE1 hay b\u1EE5i qu\u1EA3.");
+      this.say("Ba ng\u01B0\u1EDDi \u0111\u1EA7u ti\xEAn \u0111\xE3 \u0111\u1EBFn b\xEAn \u0111\u1ED1ng l\u1EEDa. Ch\u1ECDn h\u1ECD, r\u1ED3i giao vi\u1EC7c: chu\u1ED9t ph\u1EA3i l\xEAn c\xE2y, \u0111\xE1 hay b\u1EE5i qu\u1EA3. V\u1EC1 sau: Nh\xE0 nghi\xEAn c\u1EE9u v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o l\xE0m c\xF4ng c\u1EE5, Nh\xE0 s\u1EEDa ch\u1EEFa gi\u1EEF ch\xFAng b\u1EC1n.");
       this.refreshFog();
       populate(this);
       spawnTribes(this);
@@ -6058,7 +6166,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     }
     capacity(_res) {
       let c = 0;
-      for (const b of this.buildings) if (b.done) c += levelDef(b).cap;
+      for (const b of this.buildings) if (b.done && holdsGoods(b)) c += levelDef(b).cap;
       return c;
     }
     buildingAt(x, y) {
@@ -6070,8 +6178,12 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     getBuilding(id) {
       return this.buildings.find((b) => b.id === id);
     }
+    /** The finished building of a kind (there is only ever one of each). */
+    building(kind) {
+      return this.buildings.find((b) => b.kind === kind && b.done);
+    }
     hasWorkshop() {
-      return this.buildings.some((b) => b.kind === "workshop" && b.done);
+      return !!this.building("workshop");
     }
     toolCount(kind, tier) {
       return this.toolStock[`${kind}${tier}`] ?? 0;
@@ -6079,7 +6191,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     /** Bậc công cụ dân đang dùng cho nghề này (0 = tay không). */
     toolTier(v, job) {
       const k = job === "idle" ? void 0 : TOOL_OF_JOB[job];
-      return k ? v.tools[k]?.tier ?? 0 : 0;
+      const t = k ? v.tools[k] : null;
+      return t && t.dur > 0 ? t.tier : 0;
     }
     freshName(sex, rnd) {
       const pool = (sex === "m" ? NAMES_M : NAMES_F).filter((n) => !this.villagers.some((v) => v.name === n));
@@ -6145,6 +6258,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         bed: -1,
         nightOwl: false,
         manualGear: false,
+        inside: null,
+        orderCd: 0,
         team,
         maxHealth: maxHpOf(stats.vit),
         weapon: null,
@@ -6168,7 +6283,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     // ---------------------------------------------------------------- công trình
     addBuilding(kind, x, y, done) {
       const d = BUILDINGS[kind];
-      const b = { id: this.nextBid++, kind, era: this.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, workers: 0 };
+      const b = { id: this.nextBid++, kind, era: this.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, staff: [], active: null, workers: 0 };
       this.buildings.push(b);
       for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) this.world.occ[(y + j) * this.world.size + x + i] = 1;
       return b;
@@ -6187,9 +6302,15 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       }
       return null;
     }
+    /** Why a kind of building cannot be built at all right now: one per game, and some need research first. */
+    buildingLock(kind) {
+      if (this.buildings.some((b) => b.kind === kind)) return "M\u1ED7i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y \u0111\u01B0\u1EE3c m\u1ED9t c\xE1i, h\xE3y n\xE2ng c\u1EA5p n\xF3";
+      if (!this.dev.freeBuild && !buildingOpen(this.researched, kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForBuilding(kind)?.name ?? "?"}`;
+      return null;
+    }
     /** Trả về lý do không đặt được, hoặc null nếu đặt được. */
     canPlace(kind, x, y) {
-      return this.footprintError(kind, x, y) ?? (this.dev.freeBuild ? null : this.missing(levelsOf(kind, this.era)[0].cost));
+      return this.footprintError(kind, x, y) ?? this.buildingLock(kind) ?? (this.dev.freeBuild ? null : this.missing(levelsOf(kind, this.era)[0].cost));
     }
     /** Reason the stock cannot pay `cost`, or null. */
     missing(cost) {
@@ -6271,11 +6392,27 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       }
       return out;
     }
-    /** Send everyone who was heading for or working at this building back to idle. */
+    /** Send everyone who was heading for or working at this building back to idle; an order in progress is refunded. */
     evict(b) {
+      for (const id of [...b.staff]) {
+        const v = this.byId.get(id);
+        if (v) {
+          this.exitBuilding(v);
+          v.job = "idle";
+        }
+      }
+      b.staff = [];
+      if (b.active && (b.kind === "lab" || b.kind === "workshop")) {
+        const d = this.orderDef(b.kind === "lab" ? "research" : "craft", b.active.id);
+        if (d) this.pay(d.cost, 1);
+      }
+      b.active = null;
       for (const v of this.villagers) {
         if (v.target !== b.id) continue;
-        if (v.phase === "goSite" || v.phase === "build" || v.phase === "goShop" || v.phase === "craft" || v.phase === "goEquip") this.resetTask(v);
+        if (v.phase === "goSite" || v.phase === "build" || v.phase === "goEquip" || v.phase === "goStaff" || v.phase === "goOrder") {
+          if (isStaffJob(v.job)) v.job = "idle";
+          this.resetTask(v);
+        }
       }
     }
     setOcc(b, val) {
@@ -6333,34 +6470,41 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       return null;
     }
     // ---------------------------------------------------------------- chế tác
-    /** Cost and time of a queued order: a recipe, or a research ("r:tech"). */
-    orderDef(id) {
-      if (isResearchOrder(id)) {
-        const t = techOfOrder(id);
+    // ---------------------------------------------------------------- research, crafting and repair
+    /** Cost and time of an order in one of the three queues. A repair costs half the materials and 60% of the time of making the tool. */
+    orderDef(kind, id) {
+      if (kind === "research") {
+        const t = TECH_BY_ID[id];
         return t ? { cost: t.cost, time: t.time } : null;
       }
-      return RECIPE_BY_ID[id] ?? null;
+      const r = RECIPE_BY_ID[id];
+      if (!r) return null;
+      if (kind === "craft") return { cost: r.cost, time: r.time };
+      const half = {};
+      for (const k of Object.keys(r.cost)) half[k] = Math.ceil((r.cost[k] ?? 0) / 2);
+      return { cost: half, time: Math.ceil(r.time * 0.6) };
     }
-    /** Highest level among the finished workshops. */
+    /** Level of a finished building of a kind (0 when there is none). */
+    levelOfKind(kind) {
+      return this.building(kind)?.level ?? 0;
+    }
     workshopLevel() {
-      return this.buildings.reduce((m, b) => b.kind === "workshop" && b.done ? Math.max(m, b.level) : m, 0);
+      return this.levelOfKind("workshop");
     }
-    /** Why a recipe cannot be made yet (workshop level or research), or null. */
+    /** The smartest villager working inside a building, 0 when it is empty. */
+    bestIntInside(b) {
+      return b.staff.reduce((m, id) => Math.max(m, this.byId.get(id)?.stats.int ?? 0), 0);
+    }
+    /** Why a recipe cannot be made yet (blueprint or crafting-house level), or null. */
     recipeLock(id) {
       if (!RESEARCH.enabled) return null;
+      if (!recipeOpen(this.researched, id)) return `Ch\u01B0a c\xF3 b\u1EA3n v\u1EBD: ${techForRecipe(id)?.name.replace(/^Bản vẽ /, "") ?? "?"}`;
       const need = recipeNeedLevel(id);
-      if (this.workshopLevel() < need) return `C\u1EA7n X\u01B0\u1EDFng c\u1EA5p ${need}`;
-      if (!recipeOpen(this.researched, id)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForRecipe(id)?.name ?? "?"}`;
+      if (this.workshopLevel() < need) return `C\u1EA7n Nh\xE0 ch\u1EBF t\u1EA1o c\u1EA5p ${need}`;
       return null;
     }
     recipeOpen(id) {
       return this.recipeLock(id) === null;
-    }
-    /** The villager best suited to a workshop job who is not already doing it: free hands first, soldiers never, then the sharpest mind. */
-    bestFor(job) {
-      const pool = this.villagers.filter((v) => v.down <= 0 && v.job !== job && v.job !== "fight" && v.job !== "hunt");
-      pool.sort((a, b) => (a.job === "idle" ? 0 : 1) - (b.job === "idle" ? 0 : 1) || b.stats.int - a.stats.int);
-      return pool[0] ?? null;
     }
     /** The smartest villager's Trí tuệ. */
     bestInt() {
@@ -6369,58 +6513,308 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     /** Where a research stands: done, being worked on, queued, ready to start or locked (with the reason). */
     techState(t) {
       if (this.researched.has(t.id)) return { state: "done" };
-      const oid = RESEARCH_PREFIX + t.id;
-      if (this.villagers.some((v) => v.order === oid)) return { state: "active" };
-      if (this.craftQueue.includes(oid)) return { state: "queued" };
+      if (this.building("lab")?.active?.id === t.id) return { state: "active" };
+      if (this.researchQueue.includes(t.id)) return { state: "queued" };
       const need = t.requires.find((r) => !this.researched.has(r));
       if (need) return { state: "locked", why: `C\u1EA7n nghi\xEAn c\u1EE9u: ${TECH_BY_ID[need].name}` };
-      if (!this.hasWorkshop()) return { state: "locked", why: "C\u1EA7n d\u1EF1ng X\u01B0\u1EDFng ch\u1EBF t\xE1c" };
-      if (this.workshopLevel() < t.needLevel) return { state: "locked", why: `C\u1EA7n X\u01B0\u1EDFng c\u1EA5p ${t.needLevel}` };
-      if (this.bestInt() < t.minInt) return { state: "locked", why: `C\u1EA7n d\xE2n c\xF3 Tr\xED tu\u1EC7 ${t.minInt} tr\u1EDF l\xEAn (gi\u1ECFi nh\u1EA5t l\xE0ng: ${this.bestInt()})` };
+      const lab = this.building("lab");
+      if (!lab) return { state: "locked", why: "C\u1EA7n d\u1EF1ng Nh\xE0 nghi\xEAn c\u1EE9u" };
+      if (lab.level < t.needLevel) return { state: "locked", why: `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${t.needLevel}` };
       return { state: "ready" };
     }
-    /** Thêm một đơn vào hàng đợi (nguyên liệu chỉ bị trừ khi thợ nhận đơn). */
+    /** Whether a queued research could start now: someone inside is bright enough. Null when it can, else the reason. */
+    researchBlock(t) {
+      const lab = this.building("lab");
+      if (!lab || !lab.staff.length) return "Ch\u01B0a c\xF3 ng\u01B0\u1EDDi l\xE0m vi\u1EC7c trong Nh\xE0 nghi\xEAn c\u1EE9u";
+      const best = this.bestIntInside(lab);
+      return best >= t.minInt ? null : `C\u1EA7n ng\u01B0\u1EDDi Tr\xED tu\u1EC7 ${t.minInt} tr\u1EDF l\xEAn trong nh\xE0 (gi\u1ECFi nh\u1EA5t: ${best})`;
+    }
+    /** Queue a research; materials and coins are paid when it starts. */
+    queueResearch(id) {
+      const t = TECH_BY_ID[id];
+      if (!t) return "Kh\xF4ng c\xF3 nghi\xEAn c\u1EE9u n\xE0y";
+      if (!RESEARCH.enabled) return "Nghi\xEAn c\u1EE9u \u0111ang t\u1EAFt";
+      const st = this.techState(t);
+      if (st.state === "done") return "\u0110\xE3 nghi\xEAn c\u1EE9u r\u1ED3i";
+      if (st.state === "active" || st.state === "queued") return "\u0110ang nghi\xEAn c\u1EE9u";
+      if (st.state === "locked") return st.why ?? "Ch\u01B0a nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c";
+      this.researchQueue.push(id);
+      return null;
+    }
+    /** Queue a tool, weapon or armour for the Nhà chế tạo. */
     queueCraft(id) {
-      if (isResearchOrder(id)) {
-        if (!RESEARCH.enabled) return "Nghi\xEAn c\u1EE9u \u0111ang t\u1EAFt";
-        const t = techOfOrder(id);
-        if (!t) return "Kh\xF4ng c\xF3 nghi\xEAn c\u1EE9u n\xE0y";
-        const st = this.techState(t);
-        if (st.state === "done") return "\u0110\xE3 nghi\xEAn c\u1EE9u r\u1ED3i";
-        if (st.state === "active" || st.state === "queued") return "\u0110ang nghi\xEAn c\u1EE9u";
-        if (st.state === "locked") return st.why ?? "Ch\u01B0a nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c";
-      } else {
-        if (!RECIPE_BY_ID[id]) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
-        if (!this.hasWorkshop()) return "C\u1EA7n d\u1EF1ng X\u01B0\u1EDFng ch\u1EBF t\xE1c tr\u01B0\u1EDBc";
-        const lock = this.recipeLock(id);
-        if (lock) return lock;
-      }
+      if (!RECIPE_BY_ID[id]) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
+      if (!this.hasWorkshop()) return "C\u1EA7n d\u1EF1ng Nh\xE0 ch\u1EBF t\u1EA1o tr\u01B0\u1EDBc";
+      const lock = this.recipeLock(id);
+      if (lock) return lock;
       if (this.craftQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
       this.craftQueue.push(id);
       return null;
     }
-    /** Bỏ đơn cuối cùng cùng loại khỏi hàng đợi. */
+    queueRepair(id) {
+      if (!RECIPE_BY_ID[id]) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
+      if (!this.building("repair")) return "C\u1EA7n d\u1EF1ng Nh\xE0 s\u1EEDa ch\u1EEFa tr\u01B0\u1EDBc";
+      if (this.repairQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i s\u1EEDa \u0111\xE3 \u0111\u1EA7y";
+      this.repairQueue.push(id);
+      return null;
+    }
+    unqueue(queue, id) {
+      const i = queue.lastIndexOf(id);
+      if (i >= 0) queue.splice(i, 1);
+    }
     unqueueCraft(id) {
-      const i = this.craftQueue.lastIndexOf(id);
-      if (i >= 0) this.craftQueue.splice(i, 1);
+      this.unqueue(this.craftQueue, id);
     }
-    affordable(id) {
-      const d = this.orderDef(id);
-      return !!d && Object.keys(d.cost).every((k) => this.stock[k] >= (d.cost[k] ?? 0));
+    unqueueResearch(id) {
+      this.unqueue(this.researchQueue, id);
     }
-    releaseOrder(v) {
-      if (!v.order) return;
-      const d = this.orderDef(v.order);
-      if (d && (v.phase === "goShop" || v.phase === "craft")) {
-        for (const k of Object.keys(d.cost)) this.stock[k] += d.cost[k] ?? 0;
-        this.craftQueue.unshift(v.order);
+    affordable(cost) {
+      return Object.keys(cost).every((k) => this.stock[k] >= (cost[k] ?? 0));
+    }
+    pay(cost, sign = -1) {
+      for (const k of Object.keys(cost)) this.stock[k] += sign * (cost[k] ?? 0);
+    }
+    /** How many tools or pieces of gear a store holds: the Kho công cụ for tools, the Kho vũ khí for weapons and armour. */
+    storeUsed(cat) {
+      return Object.entries(this.toolStock).reduce((n, [id, c]) => n + ((RECIPE_BY_ID[id] && isGear(RECIPE_BY_ID[id].kind)) === (cat === "gear") ? c : 0), 0);
+    }
+    /** Room for items: the matching store when it stands, otherwise the crafting house keeps a few. */
+    storeCap(cat) {
+      const b = this.building(cat === "tool" ? "toolstore" : "armory");
+      return b ? levelDef(b).cap : 10;
+    }
+    /** Work done inside the houses: each has one active order, advanced by everyone working there. */
+    tickWorks(dt) {
+      for (const b of this.buildings) {
+        if (!b.done || b.kind !== "lab" && b.kind !== "workshop" && b.kind !== "repair") continue;
+        const kind = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "repair";
+        const queue = kind === "research" ? this.researchQueue : kind === "craft" ? this.craftQueue : this.repairQueue;
+        const staff = b.staff.map((id2) => this.byId.get(id2)).filter((v) => !!v);
+        if (!staff.length) continue;
+        if (!b.active) {
+          const best = this.bestIntInside(b);
+          const i = queue.findIndex((id3) => {
+            const d3 = this.orderDef(kind, id3);
+            if (!d3 || !this.affordable(d3.cost)) return false;
+            if (kind === "research") return best >= (TECH_BY_ID[id3]?.minInt ?? 0);
+            if (kind === "craft") return this.recipeOpen(id3);
+            return true;
+          });
+          if (i < 0) {
+            if (queue.length && this.time - this.lastMatWarn > 30) {
+              this.lastMatWarn = this.time;
+              this.say(kind === "research" ? "Nghi\xEAn c\u1EE9u \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u, ti\u1EC1n ho\u1EB7c ng\u01B0\u1EDDi \u0111\u1EE7 th\xF4ng minh." : "\u0110\u01A1n \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
+            }
+            continue;
+          }
+          const id2 = queue[i], d2 = this.orderDef(kind, id2);
+          queue.splice(i, 1);
+          this.pay(d2.cost);
+          b.active = { id: id2, progress: 0 };
+        }
+        const d = this.orderDef(kind, b.active.id);
+        if (!d) {
+          b.active = null;
+          continue;
+        }
+        const job = kind;
+        let rate = 0;
+        for (const v of staff) {
+          rate += this.workFactor(v, job);
+          this.gainXp(v, job, dt);
+        }
+        b.active.progress = Math.min(1, b.active.progress + dt * rate * levelDef(b).craftSpeed * (this.dev.fastWorks ? 25 : 1) / d.time);
+        if (b.active.progress < 1) continue;
+        const id = b.active.id;
+        if (kind === "research") {
+          this.researched.add(id);
+          b.active = null;
+          this.say(`Nh\xE0 nghi\xEAn c\u1EE9u \u0111\xE3 ho\xE0n th\xE0nh "${TECH_BY_ID[id].name}".`);
+        } else {
+          const r = RECIPE_BY_ID[id], cat = isGear(r.kind) ? "gear" : "tool";
+          if (this.storeUsed(cat) >= this.storeCap(cat)) {
+            if (this.time - this.lastFullWarn > 30) {
+              this.lastFullWarn = this.time;
+              this.say(cat === "tool" ? "Kho c\xF4ng c\u1EE5 \u0111\xE3 \u0111\u1EA7y, s\u1EA3n ph\u1EA9m ch\u1EDD ch\u1ED7." : "Kho v\u0169 kh\xED \u0111\xE3 \u0111\u1EA7y, s\u1EA3n ph\u1EA9m ch\u1EDD ch\u1ED7.");
+            }
+            continue;
+          }
+          this.toolStock[id] = (this.toolStock[id] ?? 0) + 1;
+          b.active = null;
+          this.say(kind === "craft" ? `\u0110\xE3 ch\u1EBF xong ${recipeName(r).toLowerCase()}.` : `\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}.`);
+        }
       }
-      v.order = null;
+    }
+    // ---------------------------------------------------------------- working inside a house
+    /** The villager best suited to work in a house who is not already doing it: free hands first, soldiers never, then the best stat for the job. */
+    bestFor(job) {
+      const stat = JOBS[job].stat;
+      const pool = this.villagers.filter((v) => v.down <= 0 && v.inside === null && v.job !== job && v.job !== "fight" && v.job !== "hunt");
+      pool.sort((a, b) => (a.job === "idle" ? 0 : 1) - (b.job === "idle" ? 0 : 1) || b.stats[stat] - a.stats[stat]);
+      return pool[0] ?? null;
+    }
+    /** How fast a house gets through its active order: everyone inside, the house level and the dev speed-up. */
+    houseRate(b) {
+      const job = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "repair";
+      let r = 0;
+      for (const id of b.staff) {
+        const v = this.byId.get(id);
+        if (v) r += this.workFactor(v, job);
+      }
+      return r * levelDef(b).craftSpeed * (this.dev.fastWorks ? 25 : 1);
+    }
+    /** Villagers heading for a house or already in it. */
+    staffCount(b) {
+      return b.staff.length + this.villagers.filter((v) => v.phase === "goStaff" && v.target === b.id).length;
+    }
+    /** Put villagers to work inside the matching house (job craft, research or repair). Returns an error or null. */
+    assignStaff(ids, job) {
+      const b = this.building(STAFF_BUILDING[job]);
+      if (!b) return `Ch\u01B0a c\xF3 ${BUILDINGS[STAFF_BUILDING[job]].name}, ho\u1EB7c ch\u01B0a x\xE2y xong`;
+      let err = null;
+      for (const v of this.mine(ids)) {
+        if (v.inside === b.id) {
+          v.job = job;
+          continue;
+        }
+        if (this.staffCount(b) >= levelDef(b).slots) {
+          err = `${BUILDINGS[b.kind].name} c\u1EA5p ${b.level} ch\u1EC9 ch\u1EE9a ${levelDef(b).slots} ng\u01B0\u1EDDi`;
+          continue;
+        }
+        this.resetTask(v);
+        this.clearCombat(v);
+        v.job = job;
+        v.prefer = -1;
+        this.planStaff(v);
+      }
+      return err;
+    }
+    planStaff(v) {
+      if (!isStaffJob(v.job)) return;
+      const b = this.building(STAFF_BUILDING[v.job]);
+      if (!b) {
+        v.job = "idle";
+        return;
+      }
+      if (this.staffCount(b) >= levelDef(b).slots) {
+        v.job = "idle";
+        this.say(`${v.name} kh\xF4ng c\xF2n ch\u1ED7 trong ${BUILDINGS[b.kind].name.toLowerCase()}.`);
+        return;
+      }
+      const d = BUILDINGS[b.kind];
+      if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
+        v.target = b.id;
+        v.phase = "goStaff";
+        return;
+      }
+      this.wait(v, 3);
+    }
+    enterBuilding(v) {
+      const b = this.getBuilding(v.target);
+      if (!b || !b.done || !isStaffJob(v.job) || STAFF_BUILDING[v.job] !== b.kind || b.staff.length >= levelDef(b).slots) {
+        v.phase = "idle";
+        if (isStaffJob(v.job)) v.job = "idle";
+        return;
+      }
+      b.staff.push(v.id);
+      v.inside = b.id;
+      v.phase = "inside";
+      v.path = [];
+      v.slide = null;
+      const d = BUILDINGS[b.kind];
+      v.x = b.x + d.w / 2;
+      v.y = b.y + d.h / 2;
+      v.facing = "front";
+      this.say(`${v.name} v\xE0o ${BUILDINGS[b.kind].name.toLowerCase()} l\xE0m vi\u1EC7c.`);
+    }
+    /** Step out of the house the villager works in; the job is the caller's to change. */
+    exitBuilding(v) {
+      if (v.inside === null) return;
+      const b = this.getBuilding(v.inside);
+      v.inside = null;
+      v.phase = "idle";
+      if (!b) return;
+      b.staff = b.staff.filter((id) => id !== v.id);
+      const d = BUILDINGS[b.kind], ring = this.ringTiles(v, b.x, b.y, d.w, d.h);
+      const spot = ring[0] ?? [b.x - 1, b.y + d.h];
+      v.x = spot[0] + 0.5;
+      v.y = spot[1] + 0.5;
+    }
+    /** "Cho ra": send the staff out to the map, idle. */
+    releaseStaff(ids) {
+      for (const v of this.mine(ids)) if (v.inside !== null) {
+        this.exitBuilding(v);
+        v.job = "idle";
+        this.fogDirty = true;
+      }
+    }
+    // ---------------------------------------------------------------- tools, weapons and armour by hand
+    toolId(k, tier) {
+      return `${k}${tier}`;
+    }
+    /** Give chosen villagers a tool from the stock (tier 0 puts theirs back if it is whole, else it is thrown away). */
+    assignTool(ids, k, tier) {
+      let short = false, given = 0;
+      for (const v of this.mine(ids)) {
+        const cur = v.tools[k];
+        if (tier > 0 && (cur?.tier === tier && cur.dur > 0)) continue;
+        if (tier > 0) {
+          if (this.toolCount(k, tier) <= 0) {
+            short = true;
+            continue;
+          }
+          this.toolStock[this.toolId(k, tier)]--;
+        }
+        if (cur && cur.dur >= TIER_DURABILITY[cur.tier] - 1e-6) this.toolStock[this.toolId(k, cur.tier)] = (this.toolStock[this.toolId(k, cur.tier)] ?? 0) + 1;
+        v.tools[k] = tier > 0 ? { tier, dur: TIER_DURABILITY[tier] } : null;
+        given++;
+        this.say(tier > 0 ? `${v.name} \u0111\u01B0\u1EE3c ph\xE1t ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}.` : `${v.name} b\u1ECF ${TOOL_NAME[k].toLowerCase()}.`);
+      }
+      return short && !given ? `Kho h\u1EBFt ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}, h\xE3y ch\u1EBF th\xEAm` : null;
+    }
+    /** Throw a tool away, worn or not. */
+    discardTool(ids, k) {
+      for (const v of this.mine(ids)) if (v.tools[k]) {
+        v.tools[k] = null;
+        this.say(`${v.name} v\u1EE9t ${TOOL_NAME[k].toLowerCase()}.`);
+      }
+    }
+    /** Hand a worn tool in to the Nhà sửa chữa: it leaves the villager and comes back to the stock mended. */
+    repairTool(ids, k) {
+      if (!this.building("repair")) return "C\u1EA7n d\u1EF1ng Nh\xE0 s\u1EEDa ch\u1EEFa";
+      let err = null, n = 0;
+      for (const v of this.mine(ids)) {
+        const t = v.tools[k];
+        if (!t) continue;
+        if (t.dur >= TIER_DURABILITY[t.tier] - 1e-6) {
+          err = "C\xF4ng c\u1EE5 c\xF2n m\u1EDBi, ch\u01B0a c\u1EA7n s\u1EEDa";
+          continue;
+        }
+        const e = this.queueRepair(this.toolId(k, t.tier));
+        if (e) {
+          err = e;
+          continue;
+        }
+        v.tools[k] = null;
+        n++;
+        this.say(`${v.name} \u0111\u01B0a ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()} \u0111i s\u1EEDa.`);
+      }
+      return n ? null : err;
+    }
+    /** Swap goods for shells: the village trades a fixed amount of one good for one coin. */
+    barter(res) {
+      const n = BARTER[res];
+      if (this.stock[res] < n) return `C\u1EA7n ${n} ${RES_NAME[res].toLowerCase()} \u0111\u1EC3 \u0111\u1ED5i l\u1EA5y 1 ${RES_NAME.coin.toLowerCase()}`;
+      if (this.stock.coin >= this.capacity()) return `Kho \u0111\xE3 \u0111\u1EA7y ${RES_NAME.coin.toLowerCase()}`;
+      this.stock[res] -= n;
+      this.stock.coin += 1;
+      return null;
     }
     // ---------------------------------------------------------------- lệnh
     resetTask(v) {
       this.leaveNode(v);
-      this.releaseOrder(v);
+      this.exitBuilding(v);
+      v.order = null;
       v.path = [];
       v.slide = null;
       v.phase = "idle";
@@ -6501,7 +6895,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       }
       return JOB_NAME[job];
     }
+    /** Give villagers a job. Craft, research and repair mean working inside the matching house; the result is an error or null. */
     setJob(ids, job) {
+      if (job === "craft" || job === "research" || job === "repair") return this.assignStaff(ids, job);
       for (const v of this.mine(ids)) {
         this.resetTask(v);
         this.clearCombat(v);
@@ -6509,6 +6905,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         v.prefer = -1;
         if (job === "fight" && v.fight.mode === "none") v.fight.anchor = null;
       }
+      return null;
     }
     // ---------------------------------------------------------------- combat orders
     /** What the point (tile units) shows that can be fought or looted: living foes, animals, or a carcass. */
@@ -6646,7 +7043,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       const key = (k) => k === "hide" ? "hide1" : `${k}${WEAPONS[k].tier ?? 1}`;
       const nameOf = (k) => (k === "hide" ? ARMORS.hide.name : WEAPONS[k].name).toLowerCase();
       const people = this.mine(ids);
-      if (kind && !this.hasWorkshop()) return "C\u1EA7n c\xF3 X\u01B0\u1EDFng \u0111\u1EC3 l\u1EA5y \u0111\u1ED3";
+      if (kind && !this.hasWorkshop() && !this.building("armory")) return "C\u1EA7n c\xF3 Nh\xE0 ch\u1EBF t\u1EA1o ho\u1EB7c Kho v\u0169 kh\xED \u0111\u1EC3 l\u1EA5y \u0111\u1ED3";
       let given = 0, short = false;
       for (const v of people) {
         const cur = slot === "weapon" ? v.weapon : v.armor;
@@ -6668,7 +7065,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         given++;
         this.say(kind ? `${v.name} \u0111\u01B0\u1EE3c ph\xE1t ${nameOf(kind)}.` : `${v.name} tr\u1EA3 l\u1EA1i ${cur ? nameOf(cur) : "\u0111\u1ED3"}.`);
       }
-      return short && given === 0 ? `Kho X\u01B0\u1EDFng h\u1EBFt ${kind ? nameOf(kind) : "\u0111\u1ED3"}, h\xE3y ch\u1EBF th\xEAm` : null;
+      return short && given === 0 ? `Kho h\u1EBFt ${kind ? nameOf(kind) : "\u0111\u1ED3"}, h\xE3y ch\u1EBF th\xEAm` : null;
     }
     /** Let the workshop hand out and swap gear by itself again. */
     autoGear(ids) {
@@ -6736,6 +7133,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       tickAnimals(this, dt);
       tickProjectiles(this, dt);
       for (const v of [...this.villagers]) this.tickVillager(v, dt);
+      this.tickWorks(dt);
       for (const f of [...this.foes]) tickFoe(this, f, dt);
       tickTribes(this, dt);
       this.moraleClock += dt;
@@ -6824,6 +7222,11 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       }
       if (v.health <= 0) {
         this.kill(v);
+        return;
+      }
+      v.orderCd = Math.max(0, v.orderCd - dt);
+      if (v.inside !== null) {
+        this.animate(v, dt);
         return;
       }
       const brained = brainPlayer(this, v, dt);
@@ -6918,12 +7321,6 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           anim = "build";
           hold = { kind: "hammer", tier: t };
         } else anim = "gather";
-      } else if (v.phase === "craft") {
-        if (v.order?.startsWith("r:")) anim = "gather";
-        else {
-          anim = "craft";
-          hold = { kind: "hammer", tier: 2 };
-        }
       } else if (v.phase === "skin") anim = "gather";
       if (anim !== v.anim) {
         v.anim = anim;
@@ -6948,7 +7345,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     }
     kill(v, cause = "v\xEC \u0111\xF3i") {
       this.leaveNode(v);
-      this.releaseOrder(v);
+      this.exitBuilding(v);
       this.villagers.splice(this.villagers.indexOf(v), 1);
       this.byId.delete(v.id);
       this.fogDirty = true;
@@ -7028,36 +7425,6 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       for (const v of this.villagers) v.leader = false;
       if (fighters.length >= 5) fighters.sort((a, b) => b.stats.str + b.stats.agi - a.stats.str - a.stats.agi)[0].leader = true;
     }
-    /** Go to the workshop for a better weapon or armour than the one in hand. */
-    planEquipGear(v) {
-      if (v.job !== "hunt" && v.job !== "fight" || !this.hasWorkshop() || v.phase === "fight" || v.manualGear) return false;
-      const wantsArmor = v.job === "fight" && !v.armor && this.toolCount("hide", 1) > 0;
-      if (!bestWeapon(this, v) && !wantsArmor) return false;
-      const shops = this.buildings.filter((b) => b.kind === "workshop" && b.done);
-      shops.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
-      for (const b of shops.slice(0, 2)) {
-        const d = BUILDINGS[b.kind];
-        if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
-          v.target = b.id;
-          v.phase = "goEquip";
-          return true;
-        }
-      }
-      return false;
-    }
-    equipGear(v) {
-      const best = bestWeapon(this, v);
-      if (best) {
-        this.toolStock[`${best}${WEAPONS[best].tier ?? 1}`]--;
-        v.weapon = best;
-        this.say(`${v.name} nh\u1EADn ${WEAPONS[best].name.toLowerCase()}.`);
-      }
-      if (v.job === "fight" && !v.armor && this.toolCount("hide", 1) > 0) {
-        this.toolStock.hide1--;
-        v.armor = "hide";
-        this.say(`${v.name} m\u1EB7c ${ARMORS.hide.name.toLowerCase()}.`);
-      }
-    }
     // ---------------------------------------------------------------- việc làm
     /** How fast a villager gets through crafting or research (1 = the nominal time). */
     workRate(v, job) {
@@ -7066,7 +7433,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     workFactor(v, job) {
       const stat = v.stats[JOBS[job].stat];
       const season = job === "food" ? SEASON_DEF[this.season].gather : 1;
-      return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * TIER_SPEED[this.toolTier(v, job)] * season;
+      return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * (TOOL_OF_JOB[job] ? TIER_SPEED[this.toolTier(v, job)] : 1) * season;
     }
     gainXp(v, job, dt) {
       const s = v.skill[job];
@@ -7077,14 +7444,14 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         this.say(`${v.name} l\xEAn c\u1EA5p ${s.level} ngh\u1EC1 ${JOB_NAME[job].toLowerCase()}.`);
       }
     }
-    /** Công cụ hao mòn theo thời gian làm việc; gãy thì dân quay về tay không. */
+    /** Tools wear with working time; at zero they are broken and the villager works as if bare-handed until a new tool or a repair. */
     wear(v, job, dt) {
       const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
-      if (!k || !t) return;
+      if (!k || !t || t.dur <= 0) return;
       t.dur -= dt;
       if (t.dur <= 0) {
-        v.tools[k] = null;
-        this.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} c\u1EE7a ${v.name} \u0111\xE3 g\xE3y.`);
+        t.dur = 0;
+        this.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng.`);
       }
     }
     leaveNode(v) {
@@ -7193,26 +7560,19 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
               b.rebuild = false;
               this.fogDirty = true;
               this.say(`${BUILDINGS[b.kind].name} \u0111\xE3 d\u1EF1ng xong.`);
-              if (RESEARCH.enabled && b.kind === "workshop" && this.researched.size === 0) this.say("M\u1EDF X\u01B0\u1EDFng, giao m\u1ED9t d\xE2n l\xE0m Th\u1EE3 th\u1EE7 c\xF4ng, r\u1ED3i nghi\xEAn c\u1EE9u \u0111\u1EC3 m\u1EDF th\xEAm \u0111\u1ED3 ch\u1EBF t\xE1c v\xE0 c\u1EA5p c\xF4ng tr\xECnh.");
+              if (RESEARCH.enabled && b.kind === "lab" && this.researched.size === 0) this.say("M\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, \u0111\u01B0a m\u1ED9t d\xE2n th\xF4ng minh v\xE0o l\xE0m vi\u1EC7c, r\u1ED3i nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD \u0111\u1EA7u ti\xEAn.");
             }
             v.phase = "idle";
           }
           return;
         }
-        case "goShop": {
-          const b = this.getBuilding(v.target);
-          if (!b || !b.done || !v.order) {
-            this.releaseOrder(v);
-            v.phase = "idle";
-            return;
-          }
-          v.phase = "craft";
-          v.progress = 0;
-          v.slide = this.edgeSlide(v, b);
+        case "goStaff":
+          this.enterBuilding(v);
           return;
-        }
-        case "craft":
-          this.doCraft(v, dt);
+        case "goOrder":
+          this.errand(v);
+          return;
+        case "inside":
           return;
         case "goHome": {
           const c = v.carry;
@@ -7249,39 +7609,29 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       v.frac = acc - whole;
       n.amount -= take;
       v.carry = { res, amount: have + take };
+      if (res === "food" && take > 0) {
+        this.coinFrac += 0.06 * take;
+        if (this.coinFrac >= 1) {
+          this.coinFrac -= 1;
+          if (this.stock.coin < this.capacity()) {
+            this.stock.coin++;
+            if (!this.sawCoin) {
+              this.sawCoin = true;
+              this.say(`${v.name} nh\u1EB7t \u0111\u01B0\u1EE3c m\u1ED9t ${RES_NAME.coin.toLowerCase()}: d\xE2n l\xE0ng d\xF9ng n\xF3 \u0111\u1EC3 trao \u0111\u1ED5i.`);
+            }
+          }
+        }
+      }
       if (n.amount <= 0) {
         const idx = v.target;
         this.leaveNode(v);
         this.world.depleted(idx);
         v.phase = "idle";
         if (n.kind === "tree") this.say("M\u1ED9t c\xE2y \u0111\xE3 \u0111\u01B0\u1EE3c \u0111\u1ED1n xong.");
-      } else if (v.carry.amount >= CARRY_CAP[res] || this.betterTool(v, job)) {
+      } else if (v.carry.amount >= CARRY_CAP[res] || this.needTool(v, job)) {
         this.leaveNode(v);
         v.phase = "idle";
       }
-    }
-    doCraft(v, dt) {
-      const d = v.order ? this.orderDef(v.order) : null;
-      if (!v.order || !d) {
-        v.phase = "idle";
-        return;
-      }
-      const shop = this.getBuilding(v.target);
-      const kind = isResearchOrder(v.order) ? "research" : "craft";
-      v.progress += dt * this.workFactor(v, kind) * (shop ? levelDef(shop).craftSpeed : 1) / d.time;
-      this.gainXp(v, kind, dt);
-      if (v.progress < 1) return;
-      if (isResearchOrder(v.order)) {
-        const t = techOfOrder(v.order);
-        this.researched.add(t.id);
-        this.say(`${v.name} \u0111\xE3 nghi\xEAn c\u1EE9u xong "${t.name}".`);
-      } else {
-        this.toolStock[v.order] = (this.toolStock[v.order] ?? 0) + 1;
-        this.say(`${v.name} \u0111\xE3 ch\u1EBF xong ${recipeName(RECIPE_BY_ID[v.order]).toLowerCase()}.`);
-      }
-      v.order = null;
-      v.progress = 0;
-      v.phase = "idle";
     }
     plan(v) {
       if (v.job === "hunt" || v.job === "fight") {
@@ -7289,11 +7639,11 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         return;
       }
       if (v.job === "build") {
-        if (!this.planEquip(v, "build")) this.planBuild(v);
+        if (!this.planTool(v, "build")) this.planBuild(v);
         return;
       }
-      if (v.job === "craft" || v.job === "research") {
-        this.planCraft(v);
+      if (isStaffJob(v.job)) {
+        this.planStaff(v);
         return;
       }
       const def = JOBS[v.job], res = def.res;
@@ -7313,7 +7663,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         this.wait(v, 3);
         return;
       }
-      if (this.planEquip(v, v.job)) return;
+      if (this.planTool(v, v.job)) return;
       if (this.findNode(v, def.node)) return;
       if (v.carry) {
         this.planDeliver(v);
@@ -7321,90 +7671,139 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       }
       this.wait(v, 2);
     }
-    /** Bậc công cụ tốt hơn đang có sẵn ở Xưởng (0 nếu không có). */
-    betterTool(v, job) {
-      const k = TOOL_OF_JOB[job];
-      if (!k || !this.hasWorkshop()) return 0;
-      const cur = v.tools[k]?.tier ?? 0;
-      for (let t = 2; t > cur; t--) if (this.toolCount(k, t) > 0) return t;
-      return 0;
-    }
-    /** Nếu Xưởng có công cụ tốt hơn thứ dân đang cầm thì đi lấy. */
-    planEquip(v, job) {
+    /** True when the villager's tool for this job is missing or broken. */
+    toolLacking(v, job) {
       const k = TOOL_OF_JOB[job];
       if (!k) return false;
-      if (!this.betterTool(v, job)) return false;
-      const shops = this.buildings.filter((b) => b.kind === "workshop" && b.done);
-      shops.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
-      for (const b of shops.slice(0, 2)) {
-        const d = BUILDINGS[b.kind];
-        if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
-          v.target = b.id;
-          v.phase = "goEquip";
-          return true;
+      const t = v.tools[k];
+      return !t || t.dur <= 0;
+    }
+    /** Best tier of this tool the stock holds (0 when none). */
+    stockedTier(k) {
+      for (let t = 2; t >= 1; t--) if (this.toolCount(k, t) > 0) return t;
+      return 0;
+    }
+    /** A villager who lacks a tool, with the Kho công cụ built and fetching researched, and a tool in stock. */
+    needTool(v, job) {
+      const k = TOOL_OF_JOB[job];
+      return !!k && autoOn(this.researched, "fetch") && !!this.building("toolstore") && this.toolLacking(v, job) && this.stockedTier(k) > 0;
+    }
+    /** Walk to a building's edge for an errand; false when it cannot be reached. */
+    goTo(v, b, phase) {
+      const d = BUILDINGS[b.kind];
+      if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) < 0) return false;
+      v.target = b.id;
+      v.phase = phase;
+      return true;
+    }
+    /** Without a usable tool: fetch one from the Kho công cụ, else (once researched) go and order or repair one. */
+    planTool(v, job) {
+      const k = TOOL_OF_JOB[job];
+      if (!k || !this.toolLacking(v, job)) return false;
+      const store = this.building("toolstore");
+      if (store && this.needTool(v, job)) return this.goTo(v, store, "goEquip");
+      if (!autoOn(this.researched, "order") || v.orderCd > 0) return false;
+      v.orderCd = 45;
+      const t = v.tools[k], repairHouse = this.building("repair"), craftHouse = this.building("workshop");
+      if (t && t.dur <= 0 && repairHouse && this.repairQueue.length < 12) {
+        v.order = `repair:${k}`;
+        return this.goTo(v, repairHouse, "goOrder");
+      }
+      if (!craftHouse) return false;
+      let id = "";
+      for (let tier = 2; tier >= 1; tier--) if (this.recipeOpen(`${k}${tier}`)) {
+        id = `${k}${tier}`;
+        break;
+      }
+      if (!id) return false;
+      const lacking = this.villagers.filter((o) => o.inside === null && o.job !== "idle" && TOOL_OF_JOB[o.job] === k && this.toolLacking(o, o.job)).length;
+      const onWay = this.toolCount(k, 1) + this.toolCount(k, 2) + this.craftQueue.filter((q) => q.startsWith(k)).length + (craftHouse.active?.id.startsWith(k) ? 1 : 0);
+      if (onWay >= lacking || this.craftQueue.length >= 12) return false;
+      v.order = `craft:${id}`;
+      return this.goTo(v, craftHouse, "goOrder");
+    }
+    /** Arrived at a house with an errand: hand over the order or the broken tool, then back to work. */
+    errand(v) {
+      const o = v.order;
+      v.order = null;
+      v.phase = "idle";
+      v.orderCd = 90;
+      const b = this.getBuilding(v.target);
+      if (b) this.faceBuilding(v, b);
+      if (!o || !b || !b.done) return;
+      const [what, id] = o.split(":");
+      if (what === "craft") {
+        if (this.queueCraft(id) === null) this.say(`${v.name} nh\u1EDD ch\u1EBF ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`);
+      } else if (what === "repair") {
+        const k = id, t = v.tools[k];
+        if (t && t.dur <= 0 && this.queueRepair(this.toolId(k, t.tier)) === null) {
+          v.tools[k] = null;
+          this.say(`${v.name} nh\u1EDD s\u1EEDa ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}.`);
         }
       }
-      return false;
     }
+    /** Take a tool, or weapon and armour, from the store the villager stands at. */
     equip(v) {
       v.phase = "idle";
-      const shop = this.getBuilding(v.target);
-      if (shop) this.faceBuilding(v, shop);
+      const store = this.getBuilding(v.target);
+      if (store) this.faceBuilding(v, store);
       if (v.job === "hunt" || v.job === "fight") {
         this.equipGear(v);
         return;
       }
       const k = TOOL_OF_JOB[v.job];
-      if (!k) return;
-      const cur = v.tools[k]?.tier ?? 0;
-      for (let t = 2; t > cur; t--) {
-        const key = `${k}${t}`;
-        if ((this.toolStock[key] ?? 0) > 0) {
-          this.toolStock[key]--;
-          const tool = { tier: t, dur: TIER_DURABILITY[t] };
-          v.tools[k] = tool;
-          this.say(`${v.name} nh\u1EADn ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t].toLowerCase()}.`);
-          return;
-        }
+      if (!k || !this.toolLacking(v, v.job)) return;
+      const t = this.stockedTier(k);
+      if (!t) return;
+      this.toolStock[this.toolId(k, t)]--;
+      v.tools[k] = { tier: t, dur: TIER_DURABILITY[t] };
+      this.say(`${v.name} nh\u1EADn ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t].toLowerCase()}.`);
+    }
+    /** A soldier or hunter with empty hands goes to the Kho vũ khí (once fetching is researched) for a weapon, a soldier also for armour. */
+    planEquipGear(v) {
+      if (v.job !== "hunt" && v.job !== "fight" || v.phase === "fight" || v.manualGear) return false;
+      const armory = this.building("armory");
+      if (!armory || !autoOn(this.researched, "fetch")) return false;
+      const wantsWeapon = !v.weapon && !!bestWeapon(this, v), wantsArmor = v.job === "fight" && !v.armor && this.toolCount("hide", 1) > 0;
+      if (!wantsWeapon && !wantsArmor) return false;
+      return this.goTo(v, armory, "goEquip");
+    }
+    equipGear(v) {
+      const best = !v.weapon ? bestWeapon(this, v) : null;
+      if (best) {
+        this.toolStock[`${best}${WEAPONS[best].tier ?? 1}`]--;
+        v.weapon = best;
+        this.say(`${v.name} nh\u1EADn ${WEAPONS[best].name.toLowerCase()}.`);
+      }
+      if (v.job === "fight" && !v.armor && this.toolCount("hide", 1) > 0) {
+        this.toolStock.hide1--;
+        v.armor = "hide";
+        this.say(`${v.name} m\u1EB7c ${ARMORS.hide.name.toLowerCase()}.`);
       }
     }
-    planCraft(v) {
-      const shops = this.buildings.filter((b) => b.kind === "workshop" && b.done);
-      if (!shops.length) {
-        this.wait(v, 3);
-        return;
-      }
-      if (!v.order) {
-        const research = v.job === "research";
-        const mine = (id2) => isResearchOrder(id2) === research && (!research || v.stats.int >= (techOfOrder(id2)?.minInt ?? 0)) && (research || this.recipeOpen(id2));
-        const i = this.craftQueue.findIndex((id2) => mine(id2) && this.affordable(id2));
-        if (i < 0) {
-          if (this.craftQueue.some(mine) && this.time - this.lastMatWarn > 30) {
-            this.lastMatWarn = this.time;
-            this.say(research ? "Thi\u1EBFu nguy\xEAn li\u1EC7u \u0111\u1EC3 nghi\xEAn c\u1EE9u." : "Thi\u1EBFu nguy\xEAn li\u1EC7u \u0111\u1EC3 ch\u1EBF c\xF4ng c\u1EE5 trong h\xE0ng \u0111\u1EE3i.");
+    /** With ordering researched, a soldier or hunter who has nothing to fight with asks the Nhà chế tạo for a weapon (a soldier also for armour). */
+    planGearErrand(v) {
+      if (v.job !== "hunt" && v.job !== "fight" || v.phase === "fight" || v.manualGear || v.orderCd > 0) return false;
+      const house2 = this.building("workshop");
+      if (!house2 || !autoOn(this.researched, "order")) return false;
+      const have = (re) => Object.entries(this.toolStock).some(([id2, n]) => n > 0 && re.test(id2)) || this.craftQueue.some((id2) => re.test(id2)) || !!house2.active && re.test(house2.active.id);
+      let id = "";
+      if (!v.weapon && !have(/^(club|spear|mace)/)) {
+        let bestScore = -1;
+        for (const w of CRAFTED_WEAPONS) {
+          const rid = `${w}${WEAPONS[w].tier ?? 1}`;
+          if (!this.recipeOpen(rid) || w === "mace" && v.job !== "fight") continue;
+          const sc = WEAPONS[w].damage / WEAPONS[w].cycle;
+          if (sc > bestScore) {
+            bestScore = sc;
+            id = rid;
           }
-          this.wait(v, 3);
-          return;
         }
-        const id = this.craftQueue[i], d2 = this.orderDef(id);
-        this.craftQueue.splice(i, 1);
-        for (const k of Object.keys(d2.cost)) this.stock[k] -= d2.cost[k] ?? 0;
-        v.order = id;
-      }
-      shops.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) || Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
-      for (const b of shops.slice(0, 2)) {
-        const d2 = BUILDINGS[b.kind];
-        if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d2.w, d2.h)) >= 0) {
-          v.target = b.id;
-          v.phase = "goShop";
-          return;
-        }
-      }
-      const d = this.orderDef(v.order);
-      for (const k of Object.keys(d.cost)) this.stock[k] += d.cost[k] ?? 0;
-      this.craftQueue.unshift(v.order);
-      v.order = null;
-      this.wait(v, 3);
+      } else if (v.job === "fight" && !v.armor && !have(/^hide/) && this.recipeOpen("hide1")) id = "hide1";
+      v.orderCd = 60;
+      if (!id) return false;
+      v.order = `craft:${id}`;
+      return this.goTo(v, house2, "goOrder");
     }
     /** Các ô trống quanh một hình chữ nhật, gần `v` nhất trước. */
     ringTiles(v, x, y, w, h2) {
@@ -7499,7 +7898,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       return false;
     }
     planDeliver(v) {
-      const done = this.buildings.filter((b) => b.done && levelDef(b).cap > 0);
+      const done = this.buildings.filter((b) => b.done && holdsGoods(b));
       done.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
       for (const b of done.slice(0, 2)) {
         const d = BUILDINGS[b.kind];
@@ -7732,6 +8131,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     hit(p, touch = false) {
       let best = null, bd = ((touch ? 22 : 14) * Math.max(1, this.cam.zoom)) ** 2;
       for (const v of this.sim.villagers) {
+        if (v.inside !== null) continue;
         const s = this.bodyScreen(v), d = (s.x - p.x) ** 2 + (s.y - p.y) ** 2;
         if (d < bd) {
           bd = d;
@@ -7837,6 +8237,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       if (!ref) return;
       this.selected.clear();
       for (const v of this.sim.villagers) {
+        if (v.inside !== null) continue;
         const s = this.bodyScreen(v);
         if (v.job === ref.job && s.x >= 0 && s.y >= 0 && s.x <= this.r.w && s.y <= this.r.h) this.selected.add(v.id);
       }
@@ -7846,6 +8247,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
       if (!add) this.selected.clear();
       for (const v of this.sim.villagers) {
+        if (v.inside !== null) continue;
         const s = this.bodyScreen(v);
         if (s.x >= x0 && s.x <= x1 && s.y >= y0 && s.y <= y1) this.selected.add(v.id);
       }
@@ -8008,7 +8410,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.onChange();
     }
     selectAll() {
-      this.sim.villagers.forEach((v) => this.selected.add(v.id));
+      this.sim.villagers.forEach((v) => {
+        if (v.inside === null) this.selected.add(v.id);
+      });
       this.selectedBuilding = null;
       this.onChange();
     }
@@ -8030,7 +8434,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.clamp();
     }
     focusSelection() {
-      const vs = this.sim.villagers.filter((v) => !this.selected.size || this.selected.has(v.id));
+      const vs = this.sim.villagers.filter((v) => v.inside === null && (!this.selected.size || this.selected.has(v.id)));
       if (!vs.length) return;
       this.centerOn(vs.reduce((a, v) => a + v.x, 0) / vs.length * TILE, vs.reduce((a, v) => a + v.y, 0) / vs.length * TILE);
     }
@@ -8248,6 +8652,47 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   var DEV_TRIBES = TRIBE_IDS;
   var DEV_WEAPONS = CRAFTED_WEAPONS.map((id) => ({ id, name: WEAPONS[id].name }));
   var DEV_ARMOR = { id: "hide", name: ARMORS.hide.name };
+  function buildAll(sim2) {
+    const was = { f: sim2.dev.freeBuild, i: sim2.dev.instantBuild };
+    sim2.dev.freeBuild = true;
+    sim2.dev.instantBuild = true;
+    const fire = sim2.campfire(), cx = Math.floor(fire ? fire.x + 1 : sim2.world.start.x), cy = Math.floor(fire ? fire.y + 4 : sim2.world.start.y + 4);
+    for (const kind of Object.keys(BUILDINGS)) {
+      if (!BUILDINGS[kind].buildable || sim2.buildings.some((b) => b.kind === kind)) continue;
+      let done = false;
+      for (let r = 2; r < 18 && !done; r++) for (let dx = -r; dx <= r && !done; dx++) for (let dy = -r; dy <= r && !done; dy++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        if (!sim2.canPlace(kind, cx + dx * 2, cy + dy * 2) && sim2.placeBuilding(kind, cx + dx * 2, cy + dy * 2).ok) done = true;
+      }
+    }
+    sim2.dev.freeBuild = was.f;
+    sim2.dev.instantBuild = was.i;
+  }
+  function maxBuildings(sim2) {
+    for (const b of sim2.buildings) {
+      const top = BUILDINGS[b.kind].levels.stone.length;
+      if (b.done && b.level < top) {
+        b.level = top;
+        b.upgrading = false;
+      }
+    }
+  }
+  function wearTools(sim2, ids, frac) {
+    eachSelected(sim2, ids, (v) => {
+      for (const t of Object.values(v.tools)) if (t) t.dur = Math.min(t.dur, Math.max(0, TIER_DURABILITY[t.tier] * frac));
+    });
+  }
+  function staffAll(sim2) {
+    for (const job of ["research", "craft", "repair"]) {
+      const b = sim2.building(STAFF_BUILDING[job]);
+      if (!b) continue;
+      while (sim2.staffCount(b) < levelDef(b).slots) {
+        const v = sim2.bestFor(job);
+        if (!v) break;
+        sim2.assignStaff([v.id], job);
+      }
+    }
+  }
 
   // src/ui/menu.ts
   var TABS = [["build", "X\xE2y"], ["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["dev", "Dev"], ["help", "?"]];
@@ -8307,18 +8752,29 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     // ---------------------------------------------------------------- build
     buildPage() {
       const { sim: sim2, ctl: ctl2 } = this.c, page = h("div", { class: "page" });
-      page.append(h("p", { class: "sub", text: "Ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7. N\u1EBFu \u0111ang ch\u1ECDn d\xE2n, h\u1ECD s\u1EBD t\u1EF1 \u0111i x\xE2y." }));
+      page.append(h("p", { class: "sub", text: "M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y M\u1ED8T c\xE1i trong c\u1EA3 game; mu\u1ED1n m\u1EA1nh h\u01A1n th\xEC n\xE2ng c\u1EA5p n\xF3. Ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7. N\u1EBFu \u0111ang ch\u1ECDn d\xE2n, h\u1ECD s\u1EBD t\u1EF1 \u0111i x\xE2y." }));
       const rows = [];
+      const ROLE = {
+        storage: "C\u1EA5t t\xE0i nguy\xEAn.",
+        lab: "Nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD, m\u1EDF c\xF4ng tr\xECnh v\xE0 t\u1EF1 \u0111\u1ED9ng h\xF3a. D\xE2n th\xF4ng minh l\xE0m vi\u1EC7c b\xEAn trong.",
+        workshop: "Ch\u1EBF t\u1EA1o c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p theo b\u1EA3n v\u1EBD. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong.",
+        repair: "S\u1EEDa c\xF4ng c\u1EE5 \u0111\xE3 m\xF2n. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong.",
+        toolstore: "C\u1EA5t c\xF4ng c\u1EE5 cho d\xE2n t\u1EF1 l\u1EA5y.",
+        armory: "C\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p cho d\xE2n t\u1EF1 l\u1EA5y."
+      };
       for (const kind of Object.keys(BUILDINGS)) {
         const d = BUILDINGS[kind];
         if (!d.buildable) continue;
         const lv2 = levelsOf(kind, sim2.era)[0], btn = h("button", { class: "primary", text: "\u0110\u1EB7t", onclick: () => {
           ctl2.startPlacing(kind);
           this.close();
-        } });
-        page.append(h("div", { class: "row" }, h("div", { class: "nm" }, d.name, h("small", { text: `${lv2.name}: ${costText(lv2.cost, RES_NAME)} \xB7 x\xE2y ~${lv2.buildTime} gi\xE2y${d.kind === "storage" ? ` \xB7 ch\u1EE9a ${lv2.cap}` : ""}` })), btn));
+        } }), status = h("small", { class: "lock" });
+        page.append(h("div", { class: "row" }, h("div", { class: "nm" }, d.name, h("small", { text: `${ROLE[kind] ?? ""} ${lv2.name}: ${costText(lv2.cost, RES_NAME)} \xB7 x\xE2y ~${lv2.buildTime} gi\xE2y` }), status), btn));
         rows.push(() => {
-          btn.disabled = !sim2.dev.freeBuild && !Object.keys(lv2.cost).every((k) => sim2.stock[k] >= (lv2.cost[k] ?? 0));
+          const lock = sim2.buildingLock(kind), poor = !sim2.dev.freeBuild && !Object.keys(lv2.cost).every((k) => sim2.stock[k] >= (lv2.cost[k] ?? 0));
+          btn.disabled = !!lock || poor;
+          status.textContent = lock ?? (poor ? "Ch\u01B0a \u0111\u1EE7 v\u1EADt li\u1EC7u" : "");
+          btn.textContent = sim2.buildings.some((b) => b.kind === kind) ? "\u0110\xE3 x\xE2y" : "\u0110\u1EB7t";
         });
       }
       this.updaters.push(() => rows.forEach((f) => f()));
@@ -8440,15 +8896,22 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         toggle("X\xE2y mi\u1EC5n ph\xED", "freeBuild", "Kh\xF4ng t\u1ED1n v\u1EADt li\u1EC7u khi x\xE2y v\xE0 n\xE2ng c\u1EA5p"),
         toggle("X\xE2y t\u1EE9c th\xEC", "instantBuild", "C\xF4ng tr\xECnh xong ngay"),
         toggle("B\u1EA5t t\u1EED", "god", "D\xE2n kh\xF4ng nh\u1EADn s\xE1t th\u01B0\u01A1ng"),
-        toggle("Kh\xF4ng \u0111\xF3i", "noHunger", "D\xE2n kh\xF4ng b\u1ECB \u0111\xF3i")
+        toggle("Kh\xF4ng \u0111\xF3i", "noHunger", "D\xE2n kh\xF4ng b\u1ECB \u0111\xF3i"),
+        toggle("L\xE0m vi\u1EC7c nhanh \xD725", "fastWorks", "Nghi\xEAn c\u1EE9u, ch\u1EBF t\u1EA1o, s\u1EEDa ch\u1EEFa nhanh g\u1EA5p 25 l\u1EA7n")
       ), h("div", { class: "devrow" }, btn("Kh\xE1m ph\xE1 to\xE0n b\u1EA3n \u0111\u1ED3", () => revealMap(sim2))));
       const rsec = h("div", {}, h("h3", { text: "Nghi\xEAn c\u1EE9u" }), h("div", { class: "devrow" }, btn("M\u1EDF h\u1EBFt nghi\xEAn c\u1EE9u", () => unlockResearch(sim2), "M\u1ECDi c\xF4ng th\u1EE9c v\xE0 c\u1EA5p c\xF4ng tr\xECnh"), btn("Kh\xF3a l\u1EA1i h\u1EBFt", () => resetResearch(sim2))));
       page.append(rsec);
       this.updaters.push(() => {
         rsec.hidden = !RESEARCH.enabled;
       });
+      page.append(h("h3", { text: "Nh\xE0 v\xE0 lu\u1ED3ng ch\u1EBF t\u1EA1o" }));
+      page.append(h("div", { class: "devrow" }, btn("D\u1EF1ng s\u1EB5n m\u1ECDi nh\xE0", () => buildAll(sim2), "X\xE2y xong ngay c\xE1c nh\xE0 c\xF2n thi\u1EBFu, b\u1ECF qua nghi\xEAn c\u1EE9u"), btn("N\xE2ng m\u1ECDi nh\xE0 t\u1ED1i \u0111a", () => maxBuildings(sim2)), btn("X\u1EBFp ng\u01B0\u1EDDi v\xE0o c\xE1c nh\xE0", () => staffAll(sim2), "M\u1ED7i nh\xE0 \u0111\u1EA7y ng\u01B0\u1EDDi l\xE0m vi\u1EC7c ph\xF9 h\u1EE3p nh\u1EA5t")));
+      page.append(h("p", { class: "sub", text: 'Th\u1EED lu\u1ED3ng: m\u1EDF h\u1EBFt nghi\xEAn c\u1EE9u ho\u1EB7c d\u1EF1ng s\u1EB5n nh\xE0 \u2192 b\u1EADt "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 "t\u1EF1 \u0111\u1EB7t h\xE0ng" \u2192 l\xE0m h\u1ECFng c\xF4ng c\u1EE5 d\xE2n \u0111ang ch\u1ECDn \u2192 xem h\u1ECD t\u1EDBi Kho, Nh\xE0 ch\u1EBF t\u1EA1o, Nh\xE0 s\u1EEDa ch\u1EEFa.' }));
+      page.append(h("div", { class: "devrow" }, btn("L\xE0m h\u1ECFng c\xF4ng c\u1EE5 c\u1EE7a d\xE2n ch\u1ECDn", () => wearTools(sim2, sel(), 0)), btn("M\xF2n c\xF2n 50%", () => wearTools(sim2, sel(), 0.5)), btn("Thu h\u1EBFt c\xF4ng c\u1EE5", () => {
+        for (const k of TOOL_KINDS) sim2.giveTool(sel(), k, 0);
+      })));
       page.append(h("h3", { text: "C\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p" }));
-      page.append(row("X\u01B0\u1EDFng", btn("+3 m\u1ED7i lo\u1EA1i v\xE0o X\u01B0\u1EDFng", () => stockWorkshop(sim2, 3), "C\xF4ng c\u1EE5, v\u0169 kh\xED v\xE0 gi\xE1p c\xF3 s\u1EB5n cho d\xE2n t\u1EF1 nh\u1EADn")));
+      page.append(row("Kho \u0111\u1ED3", btn("+3 m\u1ED7i lo\u1EA1i v\xE0o kho", () => stockWorkshop(sim2, 3), "C\xF4ng c\u1EE5, v\u0169 kh\xED v\xE0 gi\xE1p c\xF3 s\u1EB5n trong kho")));
       const tools = h("div", { class: "devrow" });
       for (const k of TOOL_KINDS) for (const tier of [1, 2]) tools.append(btn(`${TOOL_NAME[k]} ${TIER_NAME[tier].toLowerCase()}`, () => sim2.giveTool(sel(), k, tier), "C\u1EA5p cho d\xE2n \u0111ang ch\u1ECDn"));
       tools.append(btn("Thu c\xF4ng c\u1EE5", () => {
@@ -8528,7 +8991,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         h("li", {}, h("b", { text: "Ra l\u1EC7nh" }), ": m\xE1y t\xEDnh: chu\u1ED9t ph\u1EA3i. \u0110i\u1EC7n tho\u1EA1i: khi \u0111\xE3 ch\u1ECDn d\xE2n, ch\u1EA1m l\xEAn \u0111\u1EA5t, c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3, c\xF4ng tr\u01B0\u1EDDng hay k\u1EBB \u0111\u1ECBch. Gi\u1EEF Shift (m\xE1y t\xEDnh) \u0111\u1EC3 x\u1EBFp l\u1EC7nh n\u1ED1i nhau."),
         h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: hai ng\xF3n tay; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
         h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
-        h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, X\u01B0\u1EDFng \u0111\u1EC3 ch\u1EBF c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p. C\xF4ng tr\xECnh n\xE2ng c\u1EA5p: \u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, nh\u01B0ng m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u tr\u01B0\u1EDBc. X\u01B0\u1EDFng: d\xE2n ngh\u1EC1 Ch\u1EBF t\u1EA1o l\xE0m \u0111\u1ED3, d\xE2n ngh\u1EC1 Nghi\xEAn c\u1EE9u (c\u1EA7n Tr\xED tu\u1EC7 \u0111\u1EE7 cao) m\u1EDF c\xF4ng th\u1EE9c v\xE0 c\u1EA5p m\u1EDBi; \u0111\u1ED3 t\u1ED1t h\u01A1n c\u0169ng c\u1EA7n X\u01B0\u1EDFng c\u1EA5p cao h\u01A1n. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
+        h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EC3 v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EC3 l\xE0m \u0111\u1ED3, Nh\xE0 s\u1EEDa ch\u1EEFa \u0111\u1EC3 m\xE0i l\u1EA1i c\xF4ng c\u1EE5. M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y m\u1ED9t c\xE1i r\u1ED3i n\xE2ng c\u1EA5p (\u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u). D\xE2n v\xE0o l\xE0m b\xEAn trong nh\xE0 (hi\u1EC7n th\xE0nh danh s\xE1ch t\xEAn v\xE0 Tr\xED tu\u1EC7, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3): nh\xE0 c\u1EA5p cao ch\u1EE9a th\xEAm ng\u01B0\u1EDDi, ng\u01B0\u1EDDi th\xF4ng minh nghi\xEAn c\u1EE9u nhanh h\u01A1n. L\xFAc \u0111\u1EA7u b\u1EA1n t\u1EF1 ph\xE1t c\xF4ng c\u1EE5 v\xE0 t\u1EF1 \u0111\u01B0a \u0111i s\u1EEDa; nghi\xEAn c\u1EE9u Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, t\u1EF1 l\u1EA5y \u0111\u1ED3 v\xE0 t\u1EF1 \u0111\u1EB7t h\xE0ng th\xEC d\xE2n t\u1EF1 lo. Ti\u1EC1n (v\u1ECF s\xF2) tr\u1EA3 cho nghi\xEAn c\u1EE9u, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m ho\u1EB7c \u0111\u1ED5i h\xE0ng \u1EDF Kho. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
         h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), ": d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng 30 gi\xE2y; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh 3 gi\xE2y s\u1EBD k\xE9o h\u1ECD d\u1EADy."),
         h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), ": t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD 30 gi\xE2y ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p."),
         h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
@@ -8604,7 +9067,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         ctx2.fillRect(t.camp.x - dot, t.camp.y - dot, dot * 2, dot * 2);
       }
       ctx2.fillStyle = "#ffffff";
-      for (const v of sim2.villagers) ctx2.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
+      for (const v of sim2.villagers) if (v.inside === null) ctx2.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
       ctx2.fillStyle = "#ff5a4a";
       for (const f of sim2.foes) if (seen(f.x, f.y)) ctx2.fillRect(f.x - dot / 2, f.y - dot / 2, dot, dot);
       for (const a of sim2.animals) if (a.state !== "dead" && seen(a.x, a.y)) {
@@ -8653,14 +9116,17 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       case "build":
         t = "\u0111ang x\xE2y";
         break;
-      case "goShop":
-        t = "\u0111i t\u1EDBi X\u01B0\u1EDFng";
+      case "goStaff":
+        t = "\u0111i v\xE0o nh\xE0 l\xE0m vi\u1EC7c";
         break;
-      case "craft":
-        t = v.order?.startsWith("r:") ? "\u0111ang nghi\xEAn c\u1EE9u" : "\u0111ang ch\u1EBF t\u1EA1o";
+      case "inside":
+        t = `\u0111ang ${JOBS[v.job].name.toLowerCase()} trong nh\xE0`;
+        break;
+      case "goOrder":
+        t = v.order?.startsWith("repair") ? "\u0111em \u0111\u1ED3 h\u1ECFng \u0111i s\u1EEDa" : "\u0111i \u0111\u1EB7t ch\u1EBF t\u1EA1o";
         break;
       case "goEquip":
-        t = "\u0111i l\u1EA5y \u0111\u1ED3 \u1EDF X\u01B0\u1EDFng";
+        t = "\u0111i l\u1EA5y \u0111\u1ED3 \u1EDF kho";
         break;
       case "wait":
         t = "ch\u1EDD vi\u1EC7c";
@@ -8709,7 +9175,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.gear = h("div", { class: "kv" });
       this.stats = h("div", { class: "kv" });
       this.skills = h("div", { class: "kv" });
-      this.tools = h("div", { class: "kv" });
+      this.toolRows = [];
       this.gearBtns = [];
       this.gearNote = h("div", { class: "kv" });
       this.statsKey = "";
@@ -8721,7 +9187,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         return h("div", { class: "bars" }, h("label", {}, "No", h("i", {}, full)), h("label", {}, "M\xE1u", h("i", {}, health)), h("label", {}, "Tinh th\u1EA7n", h("i", {}, morale)));
       };
       this.jobBtns = ["idle", ...WORK_JOBS].map((j) => h("button", { class: "sm", "data-job": j, pressed: false, text: JOB_NAME[j], onclick: () => {
-        sim2.setJob(ids(), j);
+        const e = sim2.setJob(ids(), j);
+        if (e) c.toast(e);
         ctl2.onChange();
       } }));
       this.stanceBtns = STANCES.map(([s, label, tip]) => h("button", { class: "sm", "data-stance": s, pressed: false, text: label, title: tip, onclick: () => {
@@ -8746,6 +9213,25 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         sim2.autoGear(ids());
         ctl2.onChange();
       } }));
+      const toolsSec = h("section", {}, h("h3", { text: "C\xF4ng c\u1EE5" }), h("p", { class: "sub", text: 'Ph\xE1t t\u1EEB kho, \u0111\u01B0a \u0111i s\u1EEDa ho\u1EB7c b\u1ECF. Sau khi nghi\xEAn c\u1EE9u "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 c\xF3 Kho c\xF4ng c\u1EE5, d\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng \u0111\u1ED3 s\u1EBD t\u1EF1 \u0111i l\u1EA5y.' }));
+      for (const k of TOOL_KINDS) {
+        const state = h("small"), give = [1, 2].map((tier) => ({ tier, btn: h("button", { class: "sm", onclick: () => {
+          const e = sim2.assignTool(ids(), k, tier);
+          if (e) c.toast(e);
+          ctl2.onChange();
+        } }) }));
+        const repair = h("button", { class: "sm", text: "S\u1EEDa", onclick: () => {
+          const e = sim2.repairTool(ids(), k);
+          if (e) c.toast(e);
+          ctl2.onChange();
+        } });
+        const drop = h("button", { class: "sm", text: "B\u1ECF", title: "V\u1EE9t c\xF4ng c\u1EE5, k\u1EC3 c\u1EA3 khi ch\u01B0a h\u1ECFng", onclick: () => {
+          sim2.discardTool(ids(), k);
+          ctl2.onChange();
+        } });
+        this.toolRows.push({ k, state, give, repair, drop });
+        toolsSec.append(h("div", { class: "row" }, h("div", { class: "nm" }, TOOL_NAME[k], state), h("div", { class: "btns" }, ...give.map((g) => g.btn), repair, drop)));
+      }
       root.append(
         h("div", { class: "cardhead" }, this.name, this.state, h("button", { class: "sm x", text: "\u2715", title: "B\u1ECF ch\u1ECDn", onclick: () => ctl2.clearSelection() })),
         makeBars(),
@@ -8788,7 +9274,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
             gearRow,
             this.gearNote
           ),
-          h("section", {}, h("h3", { text: "Ch\u1EC9 s\u1ED1, k\u1EF9 n\u0103ng, c\xF4ng c\u1EE5" }), this.stats, this.skills, this.tools)
+          toolsSec,
+          h("section", {}, h("h3", { text: "Ch\u1EC9 s\u1ED1 v\xE0 k\u1EF9 n\u0103ng" }), this.stats, this.skills)
         )
       );
     }
@@ -8833,10 +9320,17 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         this.stats.innerHTML = Object.keys(STAT_NAME).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(" \xB7 ");
         this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>c\u1EA5p ${v.skill[j].level}</b>`).join(" \xB7 ");
       }
-      this.tools.innerHTML = "C\xF4ng c\u1EE5: " + TOOL_KINDS.map((k) => {
-        const t = v.tools[k];
-        return `${TOOL_NAME[k]} <b>${t ? TIER_NAME[t.tier].toLowerCase() + " " + Math.round(t.dur / TIER_DURABILITY[t.tier] * 100) + "%" : "\u2014"}</b>`;
-      }).join(" \xB7 ");
+      for (const r of this.toolRows) {
+        const t = v.tools[r.k];
+        r.state.textContent = t ? t.dur <= 0 ? `${TIER_NAME[t.tier].toLowerCase()} \xB7 \u0111\xE3 h\u1ECFng` : `${TIER_NAME[t.tier].toLowerCase()} \xB7 c\xF2n ${Math.round(t.dur / TIER_DURABILITY[t.tier] * 100)}%` : "tay kh\xF4ng";
+        for (const g of r.give) {
+          const n = sim0.toolCount(r.k, g.tier);
+          g.btn.textContent = `${TIER_NAME[g.tier]} (${n})`;
+          g.btn.disabled = n <= 0;
+        }
+        r.repair.disabled = !t || t.dur >= TIER_DURABILITY[t.tier] - 1e-6;
+        r.drop.disabled = !t;
+      }
       this.jobBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.job === b.dataset.job))));
       this.stanceBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.stance === b.dataset.stance))));
     }
@@ -8915,6 +9409,74 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.loot.hidden = !dead;
     }
   };
+  var StaffBox = class {
+    constructor(c, job, currentId) {
+      this.c = c;
+      this.job = job;
+      this.currentId = currentId;
+      this.root = h("section", {});
+      this.head = h("h3");
+      this.list = h("div");
+      this.key = "";
+      const { sim: sim2, ctl: ctl2 } = c;
+      this.add = h("button", { class: "sm primary", text: `Th\xEAm ng\u01B0\u1EDDi ${JOB_NAME[job].toLowerCase()}` });
+      this.add.addEventListener("click", () => {
+        const ids = ctl2.selected.size ? [...ctl2.selected] : (() => {
+          const v = sim2.bestFor(job);
+          return v ? [v.id] : [];
+        })();
+        if (!ids.length) {
+          c.toast("Kh\xF4ng c\xF2n d\xE2n r\u1EA3nh \u0111\u1EC3 giao");
+          return;
+        }
+        const e = sim2.assignStaff(ids, job);
+        c.toast(e ?? `${ids.map((id) => sim2.get(id)?.name).join(", ")}: ${JOB_NAME[job]}`);
+        ctl2.onChange();
+      });
+      this.root.append(this.head, this.list, h("div", { class: "btns" }, this.add), h("p", { class: "sub", text: "D\xE2n v\xE0o trong nh\xE0 l\xE0m vi\u1EC7c, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3 v\xE0 kh\xF4ng b\u1ECB t\u1EA5n c\xF4ng. Th\xEAm ng\u01B0\u1EDDi: d\xF9ng d\xE2n \u0111ang ch\u1ECDn, n\u1EBFu kh\xF4ng ch\u1ECDn ai th\xEC ch\u1ECDn ng\u01B0\u1EDDi r\u1EA3nh ph\xF9 h\u1EE3p nh\u1EA5t." }));
+    }
+    update(b) {
+      const { sim: sim2 } = this.c, slots = levelDef(b).slots;
+      const staff = b.staff.map((id) => sim2.get(id)).filter((v) => !!v);
+      this.head.textContent = `Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c (${sim2.staffCount(b)}/${slots}) \xB7 n\xE2ng c\u1EA5p nh\xE0 \u0111\u1EC3 ch\u1EE9a th\xEAm`;
+      this.add.disabled = sim2.staffCount(b) >= slots;
+      const key = staff.map((v) => `${v.id}.${v.stats.int}`).join();
+      if (key === this.key) return;
+      this.key = key;
+      this.list.replaceChildren(...staff.length ? staff.map((v) => h(
+        "div",
+        { class: "row" },
+        h("div", { class: "nm" }, v.name, h("small", { text: `Tr\xED tu\u1EC7 ${v.stats.int} \xB7 ${JOBS[this.job].name} c\u1EA5p ${v.skill[this.job].level}` })),
+        h("button", { class: "sm", text: "Cho ra", onclick: () => {
+          sim2.releaseStaff([v.id]);
+          this.c.ctl.onChange();
+        } })
+      )) : [h("p", { class: "sub", text: "Ch\u01B0a c\xF3 ai l\xE0m vi\u1EC7c \u1EDF \u0111\xE2y." })]);
+    }
+  };
+  var ActiveBox = class {
+    constructor(c, nameOf, timeOf) {
+      this.c = c;
+      this.nameOf = nameOf;
+      this.timeOf = timeOf;
+      this.root = h("div", { class: "kv" });
+      this.bar = h("b");
+      this.text = h("span");
+      this.root.append(h("div", { class: "bars", style: "width:100%;grid-template-columns:1fr" }, h("label", {}, this.text, h("i", {}, this.bar))));
+    }
+    update(b) {
+      const a = b.active;
+      this.root.hidden = false;
+      if (!a) {
+        this.text.textContent = "\u0110ang r\u1EA3nh";
+        this.bar.style.width = "0%";
+        return;
+      }
+      const rate = this.c.sim.houseRate(b), left = rate > 0 ? Math.ceil((1 - a.progress) * this.timeOf(a.id) / rate) : 0;
+      this.text.textContent = `\u0110ang l\xE0m: ${this.nameOf(a.id)} \xB7 ${Math.floor(a.progress * 100)}%${rate > 0 ? ` \xB7 c\xF2n ~${left} gi\xE2y` : " \xB7 t\u1EA1m d\u1EEBng (kh\xF4ng c\xF3 ng\u01B0\u1EDDi)"}`;
+      this.bar.style.width = `${a.progress * 100}%`;
+    }
+  };
   var BuildingPanel = class {
     constructor(root, c) {
       this.root = root;
@@ -8924,29 +9486,42 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.campfire = h("div", { class: "sec" });
       this.storage = h("div", { class: "sec" });
       this.workshop = h("div", { class: "sec" });
+      this.lab = h("div", { class: "sec" });
+      this.repair = h("div", { class: "sec" });
+      this.goods = h("div", { class: "sec" });
       this.resRows = [];
+      this.barterBtns = [];
       this.recRows = [];
       this.techRows = [];
-      this.move = h("button", { class: "sm", text: "D\u1EDDi" });
-      this.demolish = h("button", { class: "sm danger", text: "Ph\xE1 b\u1ECF" });
-      this.researchSec = h("div");
-      this.shopTab = "tools";
-      this.shopPages = {};
-      this.shopTabBtns = {};
-      this.armed = 0;
-      this.armedFor = -1;
+      this.goodRows = [];
       this.villagerList = h("div");
       this.villagerKey = "";
       this.vRows = /* @__PURE__ */ new Map();
       this.pop = h("div", { class: "kv" });
-      this.shopInfo = h("div", { class: "kv" });
-      this.assign = h("button", { class: "sm", text: "Th\xEAm ng\u01B0\u1EDDi Ch\u1EBF t\u1EA1o" });
-      this.assignR = h("button", { class: "sm", text: "Th\xEAm ng\u01B0\u1EDDi Nghi\xEAn c\u1EE9u" });
-      this.active = h("div", { class: "kv" });
       this.info = h("div", { class: "kv" });
       this.next = h("div", { class: "kv" });
       this.upgrade = h("button", { class: "sm primary" });
-      const { sim: sim2, ctl: ctl2, sprites: sprites2 } = c;
+      this.move = h("button", { class: "sm", text: "D\u1EDDi" });
+      this.demolish = h("button", { class: "sm danger", text: "Ph\xE1 b\u1ECF" });
+      this.armed = 0;
+      this.armedFor = -1;
+      this.shopTab = "tools";
+      this.shopPages = {};
+      this.shopTabBtns = {};
+      this.queueNote = { craft: h("div", { class: "kv" }), research: h("div", { class: "kv" }), repair: h("div", { class: "kv" }) };
+      this.goodsNote = h("p", { class: "sub" });
+      this.toolList = h("div");
+      this.toolKey = "";
+      this.repairInfo = h("div", { class: "kv" });
+      const { sim: sim2, ctl: ctl2, sprites: sprites2 } = c, cur = () => this.current()?.id ?? null;
+      root.className = "modal";
+      const recipeNm = (id) => RECIPE_BY_ID[id] ? recipeName(RECIPE_BY_ID[id]) : id;
+      this.staffBoxes = { craft: new StaffBox(c, "craft", cur), research: new StaffBox(c, "research", cur), repair: new StaffBox(c, "repair", cur) };
+      this.activeBoxes = {
+        craft: new ActiveBox(c, recipeNm, (id) => sim2.orderDef("craft", id)?.time ?? 1),
+        research: new ActiveBox(c, (id) => TECHS.find((t) => t.id === id)?.name ?? id, (id) => sim2.orderDef("research", id)?.time ?? 1),
+        repair: new ActiveBox(c, (id) => `s\u1EEDa ${recipeNm(id).toLowerCase()}`, (id) => sim2.orderDef("repair", id)?.time ?? 1)
+      };
       this.campfire.append(this.pop, h("div", { class: "btns" }, h("button", { class: "sm", text: "Ch\u1ECDn t\u1EA5t c\u1EA3 d\xE2n", onclick: () => {
         ctl2.selected.clear();
         ctl2.selectAll();
@@ -8957,6 +9532,24 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         this.resRows.push({ res, num: num2, bar });
         this.storage.append(h("div", { class: "row" }, h("div", { class: "nm" }, RES_NAME[res], h("small", {}, num2)), h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, bar))));
       }
+      const barter = () => {
+        const box = h("div", {}, h("h3", { text: "\u0110\u1ED5i ch\xE1c" }), h("p", { class: "sub", text: "\u0110\u1ED5i h\xE0ng l\u1EA5y ti\u1EC1n \u0111\u1EC3 tr\u1EA3 cho nghi\xEAn c\u1EE9u. Ti\u1EC1n c\u0169ng nh\u1EB7t \u0111\u01B0\u1EE3c khi h\xE1i l\u01B0\u1EE3m v\xE0 nh\u1EADn t\u1EEB b\u1ED9 t\u1ED9c c\u1ED1ng n\u1EA1p." }));
+        const btns = h("div", { class: "btns" });
+        box.append(btns);
+        for (const res of RES_LIST) {
+          if (res === "coin") continue;
+          const btn = h("button", { class: "sm", onclick: () => {
+            const e = sim2.barter(res);
+            if (e) c.toast(e);
+            ctl2.onChange();
+          } });
+          this.barterBtns.push({ res, btn });
+          btns.append(btn);
+        }
+        return box;
+      };
+      this.storage.append(barter());
+      this.campfire.append(barter());
       const section = (page, list) => {
         for (const r of list) {
           const have = h("span", { class: "have" }), lock = h("small", { class: "lock" });
@@ -8980,29 +9573,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           page.append(row);
         }
       };
-      this.shopPages.research = this.researchSec;
-      this.researchSec.append(h("div", { class: "sub", text: "Nghi\xEAn c\u1EE9u: d\xE2n l\xE0m ngh\u1EC1 Nghi\xEAn c\u1EE9u, c\u1EA7n \u0111\u1EE7 Tr\xED tu\u1EC7, t\u1ED1n nguy\xEAn li\u1EC7u v\xE0 th\u1EDDi gian" }));
-      for (const t of TECHS) {
-        const note = h("small", { class: "lock" }), btn = h("button", { class: "sm" });
-        btn.addEventListener("click", () => {
-          const st = sim2.techState(t).state;
-          if (st === "queued") sim2.unqueueCraft(RESEARCH_PREFIX + t.id);
-          else {
-            const e = sim2.queueCraft(RESEARCH_PREFIX + t.id);
-            if (e) c.toast(e);
-          }
-          ctl2.onChange();
-        });
-        const row = h("div", { class: "tech" }, h("div", { class: "nm" }, t.name, h("small", {}, `${t.desc} M\u1EDF: ${unlockText(t, (id) => {
-          const r = RECIPE_BY_ID[id];
-          return r ? recipeName(r) : id;
-        })}.`), h("small", {}, `${costText(t.cost, RES_NAME)} \xB7 ${t.time} gi\xE2y \xB7 Tr\xED tu\u1EC7 \u2265 ${t.minInt}${t.needLevel > 1 ? ` \xB7 X\u01B0\u1EDFng c\u1EA5p ${t.needLevel}` : ""}`), note), btn);
-        this.techRows.push({ id: t.id, row, btn, note });
-        this.researchSec.append(row);
-      }
       for (const k of ["tools", "weapons", "armor"]) this.shopPages[k] = h("div");
       const tabBar = h("div", { class: "btns tabs", role: "tablist" });
-      for (const [k, label] of [["tools", "C\xF4ng c\u1EE5"], ["weapons", "V\u0169 kh\xED"], ["armor", "\xC1o gi\xE1p"], ["research", "Nghi\xEAn c\u1EE9u"]]) {
+      for (const [k, label] of [["tools", "C\xF4ng c\u1EE5"], ["weapons", "V\u0169 kh\xED"], ["armor", "\xC1o gi\xE1p"]]) {
         const btn = h("button", { class: "sm", text: label, role: "tab", onclick: () => {
           this.shopTab = k;
           this.update();
@@ -9010,25 +9583,64 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         this.shopTabBtns[k] = btn;
         tabBar.append(btn);
       }
-      this.workshop.append(this.shopInfo, h("div", { class: "btns" }, this.assign, this.assignR), this.active, tabBar, this.shopPages.tools, this.shopPages.weapons, this.shopPages.armor, this.shopPages.research);
-      const staff = (job) => {
-        const ids = ctl2.selected.size ? [...ctl2.selected] : (() => {
-          const v = sim2.bestFor(job);
-          return v ? [v.id] : [];
-        })();
-        if (!ids.length) {
-          c.toast("Kh\xF4ng c\xF2n d\xE2n r\u1EA3nh \u0111\u1EC3 giao");
-          return;
-        }
-        sim2.setJob(ids, job);
-        c.toast(`${ids.map((id) => sim2.get(id)?.name).join(", ")}: ${job === "craft" ? "Ch\u1EBF t\u1EA1o" : "Nghi\xEAn c\u1EE9u"}`);
-        ctl2.onChange();
-      };
-      this.assign.addEventListener("click", () => staff("craft"));
-      this.assignR.addEventListener("click", () => staff("research"));
       section(this.shopPages.tools, RECIPES.filter((r) => ["axe", "pick", "hoe", "hammer"].includes(r.kind)));
       section(this.shopPages.weapons, RECIPES.filter((r) => r.kind in WEAPONS));
       section(this.shopPages.armor, RECIPES.filter((r) => r.kind === "hide"));
+      this.workshop.append(
+        this.staffBoxes.craft.root,
+        h("h3", { text: "\u0110ang ch\u1EBF t\u1EA1o" }),
+        this.activeBoxes.craft.root,
+        this.queueNote.craft,
+        h("h3", { text: "Ch\u1EBF t\u1EA1o theo b\u1EA3n v\u1EBD" }),
+        h("p", { class: "sub", text: "Ch\u1EC9 ch\u1EBF \u0111\u01B0\u1EE3c m\xF3n \u0111\xE3 c\xF3 b\u1EA3n v\u1EBD \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u v\xE0 \u0111\u1EE7 c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. S\u1EA3n ph\u1EA9m v\xE0o Kho c\xF4ng c\u1EE5 ho\u1EB7c Kho v\u0169 kh\xED." }),
+        tabBar,
+        this.shopPages.tools,
+        this.shopPages.weapons,
+        this.shopPages.armor
+      );
+      this.lab.append(this.staffBoxes.research.root, h("h3", { text: "\u0110ang nghi\xEAn c\u1EE9u" }), this.activeBoxes.research.root, this.queueNote.research);
+      const groups = [
+        ["B\u1EA3n v\u1EBD c\xF4ng c\u1EE5", (id) => /^(axe|pick|hoe|hammer)\d$/.test(id)],
+        ["B\u1EA3n v\u1EBD v\u0169 kh\xED v\xE0 gi\xE1p", (id) => /^(club|spear|mace|hide)\d$/.test(id)],
+        ["X\xE2y d\u1EF1ng", (id) => ["timber", "masonry", "tool_store", "armory"].includes(id)],
+        ["T\u1EF1 \u0111\u1ED9ng h\xF3a", (id) => id.startsWith("auto_")]
+      ];
+      this.lab.append(h("p", { class: "sub", text: "M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. Nghi\xEAn c\u1EE9u c\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian, ti\u1EC1n v\xE0 ng\u01B0\u1EDDi th\xF4ng minh trong nh\xE0: c\xE0ng nhi\u1EC1u v\xE0 c\xE0ng th\xF4ng minh c\xE0ng nhanh." }));
+      for (const [title, test] of groups) {
+        this.lab.append(h("h3", { text: title }));
+        for (const t of TECHS.filter((x) => test(x.id))) {
+          const note = h("small", { class: "lock" }), btn = h("button", { class: "sm" });
+          btn.addEventListener("click", () => {
+            const st = sim2.techState(t).state;
+            if (st === "queued") sim2.unqueueResearch(t.id);
+            else {
+              const e = sim2.queueResearch(t.id);
+              if (e) c.toast(e);
+            }
+            ctl2.onChange();
+          });
+          const row = h("div", { class: "tech" }, h("div", { class: "nm" }, t.name, h("small", {}, `${t.desc} M\u1EDF: ${unlockText(t, recipeNm)}.`), h("small", {}, `${costText(t.cost, RES_NAME)} \xB7 ${t.time} gi\xE2y chu\u1EA9n \xB7 Tr\xED tu\u1EC7 \u2265 ${t.minInt}${t.needLevel > 1 ? ` \xB7 nh\xE0 c\u1EA5p ${t.needLevel}` : ""}`), note), btn);
+          this.techRows.push({ id: t.id, row, btn, note });
+          this.lab.append(row);
+        }
+      }
+      this.repair.append(
+        this.staffBoxes.repair.root,
+        h("h3", { text: "\u0110ang s\u1EEDa" }),
+        this.activeBoxes.repair.root,
+        this.queueNote.repair,
+        this.repairInfo,
+        h("h3", { text: "C\xF4ng c\u1EE5 c\u1EE7a d\xE2n" }),
+        h("p", { class: "sub", text: "\u0110\u01B0a c\xF4ng c\u1EE5 \u0111\xE3 m\xF2n \u0111i s\u1EEDa (t\u1ED1n n\u1EEDa nguy\xEAn li\u1EC7u, 60% th\u1EDDi gian ch\u1EBF) ho\u1EB7c v\u1EE9t b\u1ECF, k\u1EC3 c\u1EA3 khi ch\u01B0a h\u1ECFng. D\xE2n \u0111ang l\xE0m vi\u1EC7c s\u1EBD tay kh\xF4ng trong l\xFAc ch\u1EDD." }),
+        this.toolList
+      );
+      this.goods.append(this.goodsNote);
+      const goodsRows = (cat) => RECIPES.filter((r) => cat === "gear" === isGearKind(r.kind));
+      for (const r of [...goodsRows("tool"), ...goodsRows("gear")]) {
+        const num2 = h("b"), row = h("div", { class: "rec" }, iconCanvas(sprites2.icons[r.id]), h("div", { class: "nm" }, recipeName(r), h("small", { text: recipeUse(r) })), h("div", { class: "qty" }, num2));
+        this.goodRows.push({ id: r.id, num: num2, row });
+        this.goods.append(row);
+      }
       this.upgrade.addEventListener("click", () => {
         const b = this.current();
         if (!b) return;
@@ -9038,7 +9650,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       });
       root.append(
         h("div", { class: "cardhead" }, this.title, this.state, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => ctl2.closeBuilding() })),
-        h("div", { class: "mbody" }, this.info, this.campfire, this.storage, this.workshop, this.next, this.upgrade, h("div", { class: "btns" }, this.move, this.demolish))
+        h("div", { class: "mbody" }, this.info, this.campfire, this.storage, this.workshop, this.lab, this.repair, this.goods, this.next, this.upgrade, h("div", { class: "btns" }, this.move, this.demolish))
       );
       this.move.addEventListener("click", () => {
         const b = this.current();
@@ -9063,6 +9675,24 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       const id = this.c.ctl.selectedBuilding;
       return id === null ? void 0 : this.c.sim.getBuilding(id);
     }
+    infoText(b) {
+      const lv2 = levelDef(b);
+      switch (b.kind) {
+        case "workshop":
+          return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} ng\u01B0\u1EDDi ch\u1EBF t\u1EA1o \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+        case "lab":
+          return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} nh\xE0 nghi\xEAn c\u1EE9u \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+        case "repair":
+          return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} th\u1EE3 s\u1EEDa \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+        case "storage":
+          return `S\u1EE9c ch\u1EE9a ${lv2.cap} m\u1ED7i lo\u1EA1i`;
+        case "toolstore":
+        case "armory":
+          return `Ch\u1EE9a t\u1ED1i \u0111a ${lv2.cap} m\xF3n`;
+        default:
+          return `N\u01A1i d\xE2n ng\u1EE7 quanh l\u1EEDa \xB7 ch\u1EE9a ${lv2.cap} m\u1ED7i lo\u1EA1i`;
+      }
+    }
     update() {
       const { sim: sim2, ctl: ctl2 } = this.c, b = this.current();
       this.root.hidden = !b;
@@ -9070,52 +9700,30 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         if (ctl2.selectedBuilding !== null) ctl2.selectedBuilding = null;
         return;
       }
-      const def = BUILDINGS[b.kind], lv2 = levelDef(b), top = maxLevel(b.kind, b.era);
+      const def = BUILDINGS[b.kind], lv2 = levelDef(b), top = maxLevel(b.kind, b.era), ready = b.done;
       this.title.textContent = `${def.name}${def.buildable ? ` \xB7 c\u1EA5p ${b.level}/${top} (${lv2.name.toLowerCase()})` : ""}`;
       this.state.textContent = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%` : "\u0111ang d\xF9ng";
-      const ready = b.done;
       this.campfire.hidden = !(ready && b.kind === "campfire");
       this.storage.hidden = !(ready && b.kind === "storage");
       this.workshop.hidden = !(ready && b.kind === "workshop");
-      this.info.textContent = !b.done ? "Giao d\xE2n l\xE0m Th\u1EE3 x\xE2y \u0111\u1EC3 d\u1EF1ng c\xF4ng tr\xECnh n\xE0y." : b.kind === "workshop" ? `T\u1ED1c \u0111\u1ED9 ch\u1EBF t\xE1c \xD7${lv2.craftSpeed.toLocaleString("vi")}` : b.kind === "storage" ? `S\u1EE9c ch\u1EE9a ${lv2.cap} m\u1ED7i lo\u1EA1i` : `N\u01A1i d\xE2n ng\u1EE7 quanh l\u1EEDa \xB7 ch\u1EE9a ${lv2.cap} m\u1ED7i lo\u1EA1i`;
+      this.lab.hidden = !(ready && b.kind === "lab");
+      this.repair.hidden = !(ready && b.kind === "repair");
+      this.goods.hidden = !(ready && (b.kind === "toolstore" || b.kind === "armory"));
+      this.info.textContent = !b.done ? "Giao d\xE2n l\xE0m Th\u1EE3 x\xE2y \u0111\u1EC3 d\u1EF1ng c\xF4ng tr\xECnh n\xE0y." : this.infoText(b);
       if (b.kind === "campfire" && ready) this.updateCampfire();
       if (b.kind === "storage" && ready) for (const r of this.resRows) {
         r.num.textContent = `${Math.floor(sim2.stock[r.res])} / ${sim2.capacity()}`;
         r.bar.style.width = `${Math.min(100, sim2.stock[r.res] / Math.max(1, sim2.capacity()) * 100)}%`;
       }
-      if (b.kind === "workshop" && ready) {
-        for (const r of this.recRows) {
-          const open = sim2.recipeOpen(r.id);
-          r.have.textContent = open ? `kho ${sim2.toolCount(r.kind, r.tier)} \xB7 \u0111\u1EE3i ${sim2.craftQueue.filter((id) => id === r.id).length}` : "";
-          r.row.classList.toggle("locked", !open);
-          r.lock.textContent = sim2.recipeLock(r.id) ?? "";
-          for (const btn of r.btns) btn.disabled = !open;
-        }
-        if (!RESEARCH.enabled && this.shopTab === "research") this.shopTab = "tools";
-        this.shopTabBtns.research.hidden = !RESEARCH.enabled;
-        for (const k of Object.keys(this.shopPages)) {
-          this.shopPages[k].hidden = k !== this.shopTab;
-          this.shopTabBtns[k].setAttribute("aria-pressed", String(k === this.shopTab));
-        }
-        for (const r of this.techRows) {
-          const t = TECHS.find((x) => x.id === r.id), st = sim2.techState(t);
-          r.row.classList.toggle("locked", st.state === "locked");
-          r.row.classList.toggle("done", st.state === "done");
-          r.note.textContent = st.state === "locked" ? st.why ?? "" : st.state === "active" ? "Th\u1EE3 \u0111ang nghi\xEAn c\u1EE9u\u2026" : st.state === "queued" ? "\u0110ang ch\u1EDD th\u1EE3 nh\u1EADn (t\u1ED1n nguy\xEAn li\u1EC7u khi b\u1EAFt \u0111\u1EA7u)" : st.state === "done" ? "\u0110\xE3 nghi\xEAn c\u1EE9u" : "";
-          r.btn.textContent = { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state];
-          r.btn.disabled = st.state === "done" || st.state === "active" || st.state === "locked";
-        }
-        const crafters = sim2.villagers.filter((v) => v.job === "craft").length, thinkers = sim2.villagers.filter((v) => v.job === "research").length;
-        this.shopInfo.textContent = `Ch\u1EBF t\u1EA1o: ${crafters} ng\u01B0\u1EDDi \xB7 Nghi\xEAn c\u1EE9u: ${thinkers} ng\u01B0\u1EDDi \xB7 h\xE0ng \u0111\u1EE3i ${sim2.craftQueue.length} \xB7 X\u01B0\u1EDFng c\u1EA5p ${b.level} (\xD7${lv2.craftSpeed.toLocaleString("vi")} t\u1ED1c \u0111\u1ED9). Thi\u1EBFu ng\u01B0\u1EDDi l\xE0m ngh\u1EC1 n\xE0o th\xEC vi\u1EC7c \u0111\xF3 \u0111\u1EE9ng y\xEAn.`;
-        const busy = sim2.villagers.filter((v) => v.order && (v.phase === "craft" || v.phase === "goShop"));
-        this.active.innerHTML = busy.length ? "\u0110ang l\xE0m: " + busy.map((v) => {
-          const d = sim2.orderDef(v.order), kind = v.order.startsWith("r:") ? "research" : "craft";
-          const rate = sim2.workRate(v, kind) * lv2.craftSpeed, left = Math.max(0, Math.ceil((1 - v.progress) * d.time / Math.max(0.05, rate)));
-          const nm = v.order.startsWith("r:") ? TECHS.find((t) => t.id === v.order.slice(2))?.name ?? "" : recipeName(RECIPE_BY_ID[v.order]);
-          return `${v.name}: ${nm} <b>${Math.floor(v.progress * 100)}%</b>${v.phase === "craft" ? ` \xB7 c\xF2n ~${left} gi\xE2y` : " \xB7 \u0111ang t\u1EDBi X\u01B0\u1EDFng"}`;
-        }).join(" \xB7 ") : "";
-        this.active.hidden = !busy.length;
-        this.assign.title = this.assignR.title = "Giao d\xE2n \u0111ang ch\u1ECDn, n\u1EBFu kh\xF4ng ch\u1ECDn ai th\xEC giao ng\u01B0\u1EDDi r\u1EA3nh gi\u1ECFi nh\u1EA5t";
+      if ((b.kind === "storage" || b.kind === "campfire") && ready) for (const t of this.barterBtns) {
+        t.btn.textContent = `\u0110\u1ED5i ${BARTER[t.res]} ${RES_NAME[t.res].toLowerCase()} \u2192 1 ${RES_NAME.coin.toLowerCase()}`;
+        t.btn.disabled = sim2.stock[t.res] < BARTER[t.res];
+      }
+      if (b.kind === "workshop" && ready) this.updateWorkshop(b);
+      if (b.kind === "lab" && ready) this.updateLab(b);
+      if (b.kind === "repair" && ready) this.updateRepair(b);
+      if (b.kind === "toolstore" || b.kind === "armory") {
+        if (ready) this.updateGoods(b);
       }
       this.move.hidden = this.demolish.hidden = !def.buildable;
       const arm = this.armedFor === b.id && performance.now() < this.armed;
@@ -9127,11 +9735,88 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.next.hidden = !grow;
       if (grow) {
         const nx = levelDef(b, b.level + 1), why = sim2.canUpgrade(b);
-        this.next.textContent = `C\u1EA5p ${b.level + 1} (${nx.name.toLowerCase()}): ${b.kind === "workshop" ? `ch\u1EBF t\xE1c \xD7${nx.craftSpeed.toLocaleString("vi")}` : `ch\u1EE9a ${nx.cap} m\u1ED7i lo\u1EA1i`}`;
+        const gain = b.kind === "storage" || b.kind === "campfire" ? `ch\u1EE9a ${nx.cap} m\u1ED7i lo\u1EA1i` : b.kind === "toolstore" || b.kind === "armory" ? `ch\u1EE9a ${nx.cap} m\xF3n` : `ch\u1EE9a ${nx.slots} ng\u01B0\u1EDDi, t\u1ED1c \u0111\u1ED9 \xD7${nx.craftSpeed.toLocaleString("vi")}`;
+        this.next.textContent = `C\u1EA5p ${b.level + 1} (${nx.name.toLowerCase()}): ${gain}`;
         this.upgrade.textContent = b.upgrading ? "\u0110ang n\xE2ng c\u1EA5p\u2026" : `N\xE2ng c\u1EA5p \xB7 ${costText(nx.cost, RES_NAME)}`;
         this.upgrade.disabled = !!why;
         this.upgrade.title = why ?? "";
         if (why && why !== "\u0110ang n\xE2ng c\u1EA5p") this.next.textContent += ` \xB7 ${why}`;
+      }
+    }
+    updateWorkshop(b) {
+      const { sim: sim2 } = this.c;
+      this.staffBoxes.craft.update(b);
+      this.activeBoxes.craft.update(b);
+      this.queueNote.craft.textContent = `H\xE0ng \u0111\u1EE3i ${sim2.craftQueue.length}: ${sim2.craftQueue.map((id) => recipeName(RECIPE_BY_ID[id]).toLowerCase()).join(", ") || "tr\u1ED1ng"} \xB7 Kho c\xF4ng c\u1EE5 ${sim2.storeUsed("tool")}/${sim2.storeCap("tool")} \xB7 Kho v\u0169 kh\xED ${sim2.storeUsed("gear")}/${sim2.storeCap("gear")}`;
+      for (const r of this.recRows) {
+        const lock = sim2.recipeLock(r.id);
+        r.have.textContent = lock ? "" : `kho ${sim2.toolCount(r.kind, r.tier)} \xB7 \u0111\u1EE3i ${sim2.craftQueue.filter((id) => id === r.id).length}`;
+        r.row.classList.toggle("locked", !!lock);
+        r.lock.textContent = lock ?? "";
+        for (const btn of r.btns) btn.disabled = !!lock;
+      }
+      for (const k of Object.keys(this.shopPages)) {
+        this.shopPages[k].hidden = k !== this.shopTab;
+        this.shopTabBtns[k].setAttribute("aria-pressed", String(k === this.shopTab));
+      }
+    }
+    updateLab(b) {
+      const { sim: sim2 } = this.c;
+      this.staffBoxes.research.update(b);
+      this.activeBoxes.research.update(b);
+      this.queueNote.research.textContent = `H\xE0ng \u0111\u1EE3i ${sim2.researchQueue.length}: ${sim2.researchQueue.map((id) => TECHS.find((t) => t.id === id)?.name ?? id).join(", ") || "tr\u1ED1ng"} \xB7 Ng\u01B0\u1EDDi gi\u1ECFi nh\u1EA5t trong nh\xE0: Tr\xED tu\u1EC7 ${sim2.bestIntInside(b)}`;
+      for (const r of this.techRows) {
+        const t = TECHS.find((x) => x.id === r.id), st = sim2.techState(t), block = st.state === "queued" ? sim2.researchBlock(t) : null;
+        r.row.classList.toggle("locked", st.state === "locked");
+        r.row.classList.toggle("done", st.state === "done");
+        r.note.textContent = st.state === "locked" ? st.why ?? "" : st.state === "active" ? "\u0110ang nghi\xEAn c\u1EE9u\u2026" : st.state === "queued" ? block ?? "Ch\u1EDD t\u1EDBi l\u01B0\u1EE3t (t\u1ED1n nguy\xEAn li\u1EC7u v\xE0 ti\u1EC1n khi b\u1EAFt \u0111\u1EA7u)" : st.state === "done" ? "\u0110\xE3 nghi\xEAn c\u1EE9u" : "";
+        r.btn.textContent = { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state];
+        r.btn.disabled = st.state === "done" || st.state === "active" || st.state === "locked";
+      }
+    }
+    updateRepair(b) {
+      const { sim: sim2, ctl: ctl2 } = this.c;
+      this.staffBoxes.repair.update(b);
+      this.activeBoxes.repair.update(b);
+      this.queueNote.repair.textContent = `H\xE0ng \u0111\u1EE3i s\u1EEDa ${sim2.repairQueue.length}: ${sim2.repairQueue.map((id) => recipeName(RECIPE_BY_ID[id]).toLowerCase()).join(", ") || "tr\u1ED1ng"}`;
+      this.repairInfo.textContent = "";
+      const rows = [];
+      for (const v of sim2.villagers) for (const k of TOOL_KINDS) {
+        const t = v.tools[k];
+        if (t) rows.push({ v, k, t });
+      }
+      const key = rows.map((r) => `${r.v.id}${r.k}${r.t.tier}${Math.ceil(r.t.dur / TIER_DURABILITY[r.t.tier] * 10)}`).join();
+      if (key === this.toolKey) return;
+      this.toolKey = key;
+      this.toolList.replaceChildren(...rows.length ? rows.map(({ v, k, t }) => {
+        const pct = Math.round(t.dur / TIER_DURABILITY[t.tier] * 100), whole = pct >= 100;
+        return h(
+          "div",
+          { class: "row" },
+          h("div", { class: "nm" }, `${v.name}: ${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()}`, h("small", { text: t.dur <= 0 ? "\u0111\xE3 h\u1ECFng" : `c\xF2n ${pct}% \u0111\u1ED9 b\u1EC1n` })),
+          h(
+            "div",
+            { class: "btns" },
+            h("button", { class: "sm", text: "S\u1EEDa", disabled: whole, onclick: () => {
+              const e = sim2.repairTool([v.id], k);
+              if (e) this.c.toast(e);
+              ctl2.onChange();
+            } }),
+            h("button", { class: "sm", text: "B\u1ECF", onclick: () => {
+              sim2.discardTool([v.id], k);
+              ctl2.onChange();
+            } })
+          )
+        );
+      }) : [h("p", { class: "sub", text: "Ch\u01B0a c\xF3 d\xE2n n\xE0o c\u1EA7m c\xF4ng c\u1EE5." })]);
+    }
+    updateGoods(b) {
+      const { sim: sim2 } = this.c, cat = b.kind === "toolstore" ? "tool" : "gear";
+      this.goodsNote.textContent = `\u0110ang ch\u1EE9a ${sim2.storeUsed(cat)}/${sim2.storeCap(cat)} m\xF3n. ${autoOn(sim2.researched, "fetch") ? "D\xE2n thi\u1EBFu \u0111\u1ED3 ho\u1EB7c \u0111\u1ED3 h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi l\u1EA5y." : 'Ch\u01B0a nghi\xEAn c\u1EE9u "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho": h\xE3y ph\xE1t \u0111\u1ED3 b\u1EB1ng tay \u1EDF th\u1EBB d\xE2n.'}`;
+      for (const r of this.goodRows) {
+        const rc = RECIPE_BY_ID[r.id], mine = cat === "gear" === isGearKind(rc.kind), n = sim2.toolCount(rc.kind, rc.tier);
+        r.row.hidden = !mine || n === 0 && !!sim2.recipeLock(r.id);
+        r.num.textContent = `\xD7 ${n}`;
       }
     }
     updateCampfire() {
@@ -9147,6 +9832,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           return h(
             "div",
             { class: "vrow", onclick: () => {
+              if (v.inside !== null) {
+                ctl2.selectBuilding(v.inside);
+                return;
+              }
               ctl2.selected.clear();
               ctl2.selected.add(v.id);
               ctl2.selectedBuilding = null;
@@ -9167,6 +9856,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       }
     }
   };
+  var isGearKind = (k) => k in WEAPONS || k === "hide";
 
   // src/main.ts
   var seed = Number(new URLSearchParams(location.search).get("seed")) || 1337;
@@ -9332,6 +10022,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     setRes("rWood", sim.stock.wood, cap);
     setRes("rStone", sim.stock.stone, cap);
     setRes("rHide", sim.stock.hide, cap);
+    setRes("rCoin", sim.stock.coin, cap);
+    $("rCoin").title = `${RES_NAME.coin}: ti\u1EC1n c\u1EE7a l\xE0ng, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m, \u0111\u1ED5i h\xE0ng \u1EDF Kho, nh\u1EADn t\u1EEB b\u1ED9 t\u1ED9c. D\xF9ng \u0111\u1EC3 tr\u1EA3 cho nghi\xEAn c\u1EE9u.`;
     $("rPop").querySelector("b").textContent = String(sim.villagers.length);
     $("rPop").querySelector("small").textContent = `/${POP_CAP}`;
     for (const r of RES_LIST) void RES_NAME[r];

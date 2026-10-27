@@ -71,7 +71,20 @@ const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>
     campfire: [campfireL1],
     storage: [storageL1, storageL2, storageL3],
     workshop: [workshopL1, workshopL2, workshopL3],
+    // the newer houses reuse the workshop and storage drawings in their own colours until they get their own art
+    lab: [workshopL1, workshopL2, workshopL3],
+    repair: [workshopL1, workshopL2, workshopL3],
+    toolstore: [storageL1, storageL2, storageL3],
+    armory: [storageL1, storageL2, storageL3],
   },
+};
+/** Palette overrides that tell a reused drawing apart: the coverings take the house's colour. */
+const house = (h: string, l: string, d: string) => ({ hide: h, hideL: l, hideD: d, mat: d, matL: h, matD: d });
+const TINTS: Partial<Record<BuildingKind, Record<string, string>>> = {
+  lab: house('#5f7fa8', '#86a4c8', '#3f5c84'),
+  repair: house('#6f8a46', '#92ad66', '#4e6530'),
+  toolstore: house('#4f8a86', '#74b0aa', '#336460'),
+  armory: house('#a8342a', '#cf5b46', '#7a2318'),
 };
 
 export class Sprites {
@@ -79,6 +92,8 @@ export class Sprites {
   private readonly natureCache = new Map<string, NatureSet>();
   private readonly buildingCache = new Map<string, Prop[][]>();
   private readonly animalCache = new Map<string, HTMLCanvasElement>();
+  /** Small badges drawn over the houses that share a drawing, so each can be told at a glance. */
+  readonly emblems: Partial<Record<BuildingKind, HTMLCanvasElement>> = {};
   /** Biểu tượng công cụ 16×16, khóa dạng "axe1" (gỗ) hoặc "axe2" (đá). */
   readonly icons: Record<string, HTMLCanvasElement> = {};
 
@@ -91,6 +106,19 @@ export class Sprites {
     this.icons.mace2 = make(toolMaceJson, 1).frames[0];
     this.icons.hide1 = make(toolHideArmorJson, 1).frames[0];
     this.nature('spring');
+    this.emblems.lab = this.scrollEmblem();
+    this.emblems.repair = this.icons.hammer2; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1;
+  }
+
+  /** A rolled blueprint on a pole: the sign of the research house. */
+  private scrollEmblem(): HTMLCanvasElement {
+    const [c, g] = canvas(16, 16);
+    g.fillStyle = '#2b1d10'; g.fillRect(2, 2, 12, 12);
+    g.fillStyle = '#efe3c2'; g.fillRect(3, 3, 10, 10);
+    g.fillStyle = '#c9b98a'; g.fillRect(3, 11, 10, 2);
+    g.fillStyle = '#5f7fa8'; g.fillRect(4, 5, 8, 1); g.fillRect(4, 7, 6, 1); g.fillRect(4, 9, 7, 1);
+    g.fillStyle = '#8a6238'; g.fillRect(2, 1, 12, 2); g.fillRect(2, 13, 12, 2);
+    return c;
   }
 
   /** Nature drawn for a season; spring is the base art, other seasons switch the blueprints' palettes. */
@@ -121,7 +149,8 @@ export class Sprites {
       const key = `${ERAS[i]}|${kind}`;
       let set = this.buildingCache.get(key);
       if (!set) {
-        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(def, kind === 'workshop' ? 9 : 5, stage(st))));
+        const tint = TINTS[kind];
+        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(tint ? { ...(def as object), palettes: { tint } } : def, kind === 'workshop' || kind === 'lab' || kind === 'repair' ? 9 : 5, { ...stage(st), ...(tint ? { tint: 1 } : {}) })));
         this.buildingCache.set(key, set);
       }
       return set;

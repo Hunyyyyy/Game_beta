@@ -1,6 +1,6 @@
 import type { Stock } from './resources';
 
-export type BuildingKind = 'campfire' | 'storage' | 'workshop';
+export type BuildingKind = 'campfire' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory';
 
 /** Eras of the game. Each era has its own building art and its own level list (L1..L3). */
 export type Era = 'stone' | 'ancient';
@@ -12,8 +12,10 @@ export interface LevelDef {
   name: string;      // material tier shown to the player: Đơn sơ, Gỗ, Đá
   cost: Partial<Stock>;
   buildTime: number; // seconds for a builder with factor 1.0
-  cap: number;       // storage per resource
+  cap: number;       // storage per resource (Kho), items held (Kho công cụ, Kho vũ khí)
   craftSpeed: number;
+  /** Villagers that can work inside (research, crafting and repair houses). */
+  slots: number;
 }
 
 export interface BuildingDef {
@@ -26,13 +28,29 @@ export interface BuildingDef {
   levels: Partial<Record<Era, LevelDef[]>>;
 }
 
-const lv = (name: string, cost: Partial<Stock>, buildTime: number, cap = 0, craftSpeed = 1): LevelDef => ({ name, cost, buildTime, cap, craftSpeed });
+const lv = (name: string, cost: Partial<Stock>, buildTime: number, cap = 0, craftSpeed = 1, slots = 0): LevelDef => ({ name, cost, buildTime, cap, craftSpeed, slots });
 
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   campfire: { kind: 'campfire', name: 'Nhà chung (đống lửa trại)', w: 2, h: 2, buildable: false, levels: { stone: [lv('Lửa trại', {}, 0, 50)] } },
   workshop: {
-    kind: 'workshop', name: 'Xưởng chế tác', w: 2, h: 2, buildable: true,
-    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 30, 0, 1), lv('Gỗ', { wood: 15, stone: 30 }, 60, 0, 1.25), lv('Đá', { wood: 30, stone: 50 }, 90, 0, 1.5)] },
+    kind: 'workshop', name: 'Nhà chế tạo', w: 2, h: 2, buildable: true,
+    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 30, 0, 1, 1), lv('Gỗ', { wood: 15, stone: 30 }, 60, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 90, 0, 1.5, 3)] },
+  },
+  lab: {
+    kind: 'lab', name: 'Nhà nghiên cứu', w: 2, h: 2, buildable: true,
+    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 40, 0, 1, 1), lv('Gỗ', { wood: 20, stone: 30 }, 70, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 100, 0, 1.5, 4)] },
+  },
+  repair: {
+    kind: 'repair', name: 'Nhà sửa chữa', w: 2, h: 2, buildable: true,
+    levels: { stone: [lv('Đơn sơ', { wood: 15, stone: 5 }, 30, 0, 1, 1), lv('Gỗ', { wood: 15, stone: 30 }, 60, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 90, 0, 1.5, 3)] },
+  },
+  toolstore: {
+    kind: 'toolstore', name: 'Kho công cụ', w: 2, h: 2, buildable: true,
+    levels: { stone: [lv('Đơn sơ', { wood: 25 }, 30, 12), lv('Gỗ', { wood: 30, stone: 15 }, 55, 30), lv('Đá', { wood: 30, stone: 40 }, 80, 60)] },
+  },
+  armory: {
+    kind: 'armory', name: 'Kho vũ khí', w: 2, h: 2, buildable: true,
+    levels: { stone: [lv('Đơn sơ', { wood: 25 }, 30, 12), lv('Gỗ', { wood: 30, stone: 15 }, 55, 30), lv('Đá', { wood: 30, stone: 40 }, 80, 60)] },
   },
   storage: {
     kind: 'storage', name: 'Kho', w: 2, h: 2, buildable: true,
@@ -53,6 +71,10 @@ export interface Building {
   upgrading: boolean;
   /** Moved and standing again from salvaged parts: builds in half the time. */
   rebuild: boolean;
+  /** Villagers working inside (research, crafting and repair houses). */
+  staff: number[];
+  /** The order being worked on right now (research, crafting or repair): its id and progress 0..1. */
+  active: { id: string; progress: number } | null;
   workers: number;
 }
 
@@ -64,5 +86,7 @@ export function levelsOf(kind: BuildingKind, era: Era): LevelDef[] {
 }
 export const levelDef = (b: Pick<Building, 'kind' | 'level' | 'era'>, level = b.level): LevelDef => levelsOf(b.kind, b.era)[level - 1];
 export const maxLevel = (kind: BuildingKind, era: Era) => levelsOf(kind, era).length;
+/** Buildings that keep the village's goods (the Kho and the campfire) as opposed to those that hold tools or staff. */
+export const holdsGoods = (b: Pick<Building, 'kind'>) => b.kind === 'storage' || b.kind === 'campfire';
 /** Still needs builders: not finished yet, or an upgrade is underway. */
 export const needsWork = (b: Building) => !b.done || b.upgrading;

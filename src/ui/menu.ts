@@ -52,13 +52,22 @@ export class Menu {
   // ---------------------------------------------------------------- build
   private buildPage(): HTMLElement {
     const { sim, ctl } = this.c, page = h('div', { class: 'page' });
-    page.append(h('p', { class: 'sub', text: 'Chọn công trình rồi chạm lên bản đồ để chọn chỗ. Nếu đang chọn dân, họ sẽ tự đi xây.' }));
+    page.append(h('p', { class: 'sub', text: 'Mỗi loại công trình chỉ xây MỘT cái trong cả game; muốn mạnh hơn thì nâng cấp nó. Chọn công trình rồi chạm lên bản đồ để chọn chỗ. Nếu đang chọn dân, họ sẽ tự đi xây.' }));
     const rows: Array<() => void> = [];
+    const ROLE: Partial<Record<BuildingKind, string>> = {
+      storage: 'Cất tài nguyên.', lab: 'Nghiên cứu bản vẽ, mở công trình và tự động hóa. Dân thông minh làm việc bên trong.',
+      workshop: 'Chế tạo công cụ, vũ khí, giáp theo bản vẽ. Dân làm việc bên trong.', repair: 'Sửa công cụ đã mòn. Dân làm việc bên trong.',
+      toolstore: 'Cất công cụ cho dân tự lấy.', armory: 'Cất vũ khí và giáp cho dân tự lấy.',
+    };
     for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
       const d = BUILDINGS[kind]; if (!d.buildable) continue;
-      const lv = levelsOf(kind, sim.era)[0], btn = h('button', { class: 'primary', text: 'Đặt', onclick: () => { ctl.startPlacing(kind); this.close(); } });
-      page.append(h('div', { class: 'row' }, h('div', { class: 'nm' }, d.name, h('small', { text: `${lv.name}: ${costText(lv.cost, RES_NAME)} · xây ~${lv.buildTime} giây${d.kind === 'storage' ? ` · chứa ${lv.cap}` : ''}` })), btn));
-      rows.push(() => { btn.disabled = !sim.dev.freeBuild && !(Object.keys(lv.cost) as Array<keyof typeof lv.cost>).every((k) => sim.stock[k as keyof typeof sim.stock] >= (lv.cost[k] ?? 0)); });
+      const lv = levelsOf(kind, sim.era)[0], btn = h('button', { class: 'primary', text: 'Đặt', onclick: () => { ctl.startPlacing(kind); this.close(); } }) as HTMLButtonElement, status = h('small', { class: 'lock' });
+      page.append(h('div', { class: 'row' }, h('div', { class: 'nm' }, d.name, h('small', { text: `${ROLE[kind] ?? ''} ${lv.name}: ${costText(lv.cost, RES_NAME)} · xây ~${lv.buildTime} giây` }), status), btn));
+      rows.push(() => {
+        const lock = sim.buildingLock(kind), poor = !sim.dev.freeBuild && !(Object.keys(lv.cost) as Array<keyof typeof lv.cost>).every((k) => sim.stock[k as keyof typeof sim.stock] >= (lv.cost[k] ?? 0));
+        btn.disabled = !!lock || poor; status.textContent = lock ?? (poor ? 'Chưa đủ vật liệu' : '');
+        btn.textContent = sim.buildings.some((b) => b.kind === kind) ? 'Đã xây' : 'Đặt';
+      });
     }
     this.updaters.push(() => rows.forEach((f) => f()));
     return page;
@@ -133,12 +142,16 @@ export class Menu {
     page.append(h('h3', { text: 'Tài nguyên' }));
     for (const res of RES_LIST) page.append(row(RES_NAME[res], btn('−10', () => dev.addStock(sim, res, -10)), btn('+10', () => dev.addStock(sim, res, 10)), btn('+50', () => dev.addStock(sim, res, 50)), btn('+200', () => dev.addStock(sim, res, 200))));
     page.append(row('Kho', btn('Đầy kho', () => dev.fillStock(sim))), h('div', { class: 'devrow' }, toggle('Xây miễn phí', 'freeBuild', 'Không tốn vật liệu khi xây và nâng cấp'), toggle('Xây tức thì', 'instantBuild', 'Công trình xong ngay'),
-      toggle('Bất tử', 'god', 'Dân không nhận sát thương'), toggle('Không đói', 'noHunger', 'Dân không bị đói')), h('div', { class: 'devrow' }, btn('Khám phá toàn bản đồ', () => dev.revealMap(sim))));
+      toggle('Bất tử', 'god', 'Dân không nhận sát thương'), toggle('Không đói', 'noHunger', 'Dân không bị đói'), toggle('Làm việc nhanh ×25', 'fastWorks', 'Nghiên cứu, chế tạo, sửa chữa nhanh gấp 25 lần')), h('div', { class: 'devrow' }, btn('Khám phá toàn bản đồ', () => dev.revealMap(sim))));
 
     const rsec = h('div', {}, h('h3', { text: 'Nghiên cứu' }), h('div', { class: 'devrow' }, btn('Mở hết nghiên cứu', () => dev.unlockResearch(sim), 'Mọi công thức và cấp công trình'), btn('Khóa lại hết', () => dev.resetResearch(sim))));
     page.append(rsec); this.updaters.push(() => { rsec.hidden = !RESEARCH.enabled; });
+    page.append(h('h3', { text: 'Nhà và luồng chế tạo' }));
+    page.append(h('div', { class: 'devrow' }, btn('Dựng sẵn mọi nhà', () => dev.buildAll(sim), 'Xây xong ngay các nhà còn thiếu, bỏ qua nghiên cứu'), btn('Nâng mọi nhà tối đa', () => dev.maxBuildings(sim)), btn('Xếp người vào các nhà', () => dev.staffAll(sim), 'Mỗi nhà đầy người làm việc phù hợp nhất')));
+    page.append(h('p', { class: 'sub', text: 'Thử luồng: mở hết nghiên cứu hoặc dựng sẵn nhà → bật "tự lấy đồ" và "tự đặt hàng" → làm hỏng công cụ dân đang chọn → xem họ tới Kho, Nhà chế tạo, Nhà sửa chữa.' }));
+    page.append(h('div', { class: 'devrow' }, btn('Làm hỏng công cụ của dân chọn', () => dev.wearTools(sim, sel(), 0)), btn('Mòn còn 50%', () => dev.wearTools(sim, sel(), 0.5)), btn('Thu hết công cụ', () => { for (const k of TOOL_KINDS) sim.giveTool(sel(), k, 0); })));
     page.append(h('h3', { text: 'Công cụ, vũ khí, giáp' }));
-    page.append(row('Xưởng', btn('+3 mỗi loại vào Xưởng', () => dev.stockWorkshop(sim, 3), 'Công cụ, vũ khí và giáp có sẵn cho dân tự nhận')));
+    page.append(row('Kho đồ', btn('+3 mỗi loại vào kho', () => dev.stockWorkshop(sim, 3), 'Công cụ, vũ khí và giáp có sẵn trong kho')));
     const tools = h('div', { class: 'devrow' });
     for (const k of TOOL_KINDS) for (const tier of [1, 2]) tools.append(btn(`${TOOL_NAME[k]} ${TIER_NAME[tier].toLowerCase()}`, () => sim.giveTool(sel(), k, tier), 'Cấp cho dân đang chọn'));
     tools.append(btn('Thu công cụ', () => { for (const k of TOOL_KINDS) sim.giveTool(sel(), k, 0); }));
@@ -184,7 +197,7 @@ export class Menu {
       h('li', {}, h('b', { text: 'Ra lệnh' }), ': máy tính: chuột phải. Điện thoại: khi đã chọn dân, chạm lên đất, cây, đá, bụi quả, công trường hay kẻ địch. Giữ Shift (máy tính) để xếp lệnh nối nhau.'),
       h('li', {}, h('b', { text: 'Kéo bản đồ' }), ': máy tính: giữ chuột phải rồi kéo (hoặc W A S D). Điện thoại: hai ngón tay; chụm hoặc mở hai ngón để thu phóng.'),
       h('li', {}, h('b', { text: 'Bản đồ nhỏ' }), ': bấm vào để mở bản đồ lớn, chạm một chỗ để nhảy tới đó.'),
-      h('li', {}, h('b', { text: 'Công trình' }), `: mở Menu → Xây để đặt. Mở Menu → Công trình, hoặc bấm vào công trình trên bản đồ: lửa trại cho xem dân, Kho cho xem tài nguyên, Xưởng để chế công cụ, vũ khí, giáp. Công trình nâng cấp: đơn sơ → gỗ → đá, nhưng mỗi bước phải nghiên cứu trước. Xưởng: dân nghề Chế tạo làm đồ, dân nghề Nghiên cứu (cần Trí tuệ đủ cao) mở công thức và cấp mới; đồ tốt hơn cũng cần Xưởng cấp cao hơn. Trong bảng công trình còn có nút Dời (tốn 1/5 vật liệu, phải dựng lại) và Phá bỏ (thu lại một nửa).`),
+      h('li', {}, h('b', { text: 'Công trình' }), `: mở Menu → Xây để đặt. Mở Menu → Công trình, hoặc bấm vào công trình trên bản đồ: lửa trại cho xem dân, Kho cho xem tài nguyên, Nhà nghiên cứu để vẽ bản vẽ, Nhà chế tạo để làm đồ, Nhà sửa chữa để mài lại công cụ. Mỗi loại công trình chỉ xây một cái rồi nâng cấp (đơn sơ → gỗ → đá, mỗi bước phải nghiên cứu). Dân vào làm bên trong nhà (hiện thành danh sách tên và Trí tuệ, không hiện trên bản đồ): nhà cấp cao chứa thêm người, người thông minh nghiên cứu nhanh hơn. Lúc đầu bạn tự phát công cụ và tự đưa đi sửa; nghiên cứu Kho công cụ, Kho vũ khí, tự lấy đồ và tự đặt hàng thì dân tự lo. Tiền (vỏ sò) trả cho nghiên cứu, nhặt khi hái lượm hoặc đổi hàng ở Kho. Trong bảng công trình còn có nút Dời (tốn 1/5 vật liệu, phải dựng lại) và Phá bỏ (thu lại một nửa).`),
       h('li', {}, h('b', { text: 'Chiến đấu' }), ': dân thường không đánh nhau, thấy địch là chạy về lửa trại. Muốn có lính thì giao nghề Chiến binh (huy hiệu đỏ trên đầu) hoặc Thợ săn (huy hiệu vàng), phát vũ khí ở thẻ dân → Chiến đấu, rồi chạm vào thú hoặc địch. Thế đứng: Chủ động, Phòng thủ, Rút lui. F: tấn công–đi, H: giữ chỗ, G: dừng. Người bị thương nặng ngã xuống 30 giây; một người khác đứng cạnh 3 giây sẽ kéo họ dậy.'),
       h('li', {}, h('b', { text: 'Bộ tộc' }), ': tặng thức ăn để tăng quan hệ. Hạ thủ lĩnh, chiếm đống lửa của họ 30 giây hoặc làm sụp tinh thần để họ xin hàng, rồi chọn thu nạp hoặc cống nạp.'),
       h('li', {}, h('b', { text: 'Phím' }), ': P tạm dừng, Q E R: tốc độ 1× 2× 4×, B xây Kho, X xây Xưởng, 1–9 gọi nhóm (Ctrl + số để lưu), Space nhảy tới dân đang chọn, Esc bỏ chọn.'),

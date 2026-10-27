@@ -119,7 +119,7 @@ function updateHud(now: number) {
   setRes('rFood', sim.stock.food, cap, spoil > 0 ? ` · ${spoil}⚠` : '');
   $('rFood').classList.toggle('warn', spoil > 0);
   $('rFood').title = `Thức ăn. Quả hỏng sau 3 ngày nếu chưa ăn; dân ăn lứa cũ trước.${spoil > 0 ? ` ${spoil} thức ăn sẽ hỏng trong 1 ngày tới.` : ''}`;
-  setRes('rWood', sim.stock.wood, cap); setRes('rStone', sim.stock.stone, cap); setRes('rHide', sim.stock.hide, cap);
+  setRes('rWood', sim.stock.wood, cap); setRes('rStone', sim.stock.stone, cap); setRes('rHide', sim.stock.hide, cap); setRes('rCoin', sim.stock.coin, cap); $('rCoin').title = `${RES_NAME.coin}: tiền của làng, nhặt khi hái lượm, đổi hàng ở Kho, nhận từ bộ tộc. Dùng để trả cho nghiên cứu.`;
   $('rPop').querySelector('b')!.textContent = String(sim.villagers.length); $('rPop').querySelector('small')!.textContent = `/${POP_CAP}`;
   for (const r of RES_LIST) void RES_NAME[r];
   const se = SEASON_DEF[sim.season], we = WEATHER[sim.weather], year = yearOf(sim.day);
