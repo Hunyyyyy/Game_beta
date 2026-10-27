@@ -67,6 +67,20 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
 .selbar { display: flex; gap: 4px; flex-wrap: wrap; }
 .sheet.folded > .card { display: none; }
 
+/* full-screen panels: building details, villager details */
+.modal { position: fixed; inset: 0; z-index: 42; background: var(--bg); display: flex; flex-direction: column; padding: var(--sat) var(--sar) var(--sab) var(--sal); }
+.modal[hidden] { display: none; }
+.modal > .cardhead { padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line); align-items: center; flex-wrap: nowrap; }
+.modal > .cardhead b { font-size: 16px; }
+.modal > .cardhead span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.modal > .cardhead .x { flex: none; }
+.mbody { overflow: auto; flex: 1; padding: 10px 12px 16px; display: grid; gap: 10px; align-content: start; width: 100%; max-width: 860px; margin: 0 auto; -webkit-overflow-scrolling: touch; }
+.mbody.cols { max-width: 1100px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.mbody h3 { margin: 0; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.mbody section { display: grid; gap: 6px; align-content: start; }
+.mbody .bars { grid-template-columns: repeat(3, 1fr); }
+#ucard .open { margin-left: auto; }
+
 /* lists */
 .row { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line); }
 .row:first-child { border-top: 0; }
@@ -123,6 +137,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
 .devrow b { min-width: 2.5ch; text-align: center; font-variant-numeric: tabular-nums; }
 
 @media (max-width: 760px) { .log { display: none; } }
+/* on a phone the menu takes the whole screen too */
+@media (max-height: 480px), (max-width: 760px) { #drawer { width: 100%; border-left: 0; padding-left: var(--sal); padding-right: var(--sar); } #drawer .body { width: 100%; max-width: 860px; margin: 0 auto; } }
 @media (max-height: 480px) {
   body { font-size: 12px; }
   .top { gap: 4px; left: calc(4px + var(--sal)); right: calc(4px + var(--sar)); top: calc(4px + var(--sat)); }
@@ -162,13 +178,15 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   <canvas id="mini" aria-label="Bản đồ nhỏ, bấm để mở bản đồ lớn" title="Bấm để mở bản đồ lớn"></canvas>
   <div class="toast" id="toast" role="status"></div>
 
+  <div class="modal" id="bpanel" hidden></div>
+  <div class="modal" id="udetail" hidden></div>
+
   <div class="sheet" id="sheet">
     <div class="card" id="placeBar" hidden>
       <div class="cardhead"><b id="placeName"></b><span id="placeInfo"></span></div>
       <p class="sub">Kéo hoặc chạm để chọn chỗ (ô xanh là đặt được).</p>
       <div class="btns"><button id="btnPlaceOk" class="primary">✓ Đặt ở đây</button><button id="btnPlaceNo">✕ Hủy</button></div>
     </div>
-    <div class="card" id="bpanel" hidden></div>
     <div class="card" id="tcard" hidden></div>
     <div class="card" id="ucard" hidden></div>
     <div class="selbar">
@@ -6338,6 +6356,12 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     recipeOpen(id) {
       return this.recipeLock(id) === null;
     }
+    /** The villager best suited to a workshop job who is not already doing it: free hands first, soldiers never, then the sharpest mind. */
+    bestFor(job) {
+      const pool = this.villagers.filter((v) => v.down <= 0 && v.job !== job && v.job !== "fight" && v.job !== "hunt");
+      pool.sort((a, b) => (a.job === "idle" ? 0 : 1) - (b.job === "idle" ? 0 : 1) || b.stats.int - a.stats.int);
+      return pool[0] ?? null;
+    }
     /** The smartest villager's Trí tuệ. */
     bestInt() {
       return this.villagers.reduce((m, v) => Math.max(m, v.stats.int), 0);
@@ -8672,14 +8696,16 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   }
   var STANCES = [["aggressive", "Ch\u1EE7 \u0111\u1ED9ng", "\u0110u\u1ED5i \u0111\u1ECBch trong t\u1EA7m nh\xECn"], ["defensive", "Ph\xF2ng th\u1EE7", "Ch\u1EC9 \u0111\xE1nh \u0111\u1ECBch l\u1EA1i g\u1EA7n, kh\xF4ng r\u1EDDi ch\u1ED7"], ["retreat", "R\xFAt lui", "Kh\xF4ng \u0111\xE1nh, ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i"]];
   var UnitCard = class {
-    constructor(root, c) {
+    /** `root` is the small card over the map; `modal` is the full-screen page with everything about the chosen villagers. */
+    constructor(root, c, modal) {
       this.root = root;
       this.c = c;
+      this.modal = modal;
       this.name = h("b");
       this.state = h("span");
-      this.bFull = h("b");
-      this.bHealth = h("b");
-      this.bMorale = h("b", { class: "mor" });
+      this.dname = h("b");
+      this.dstate = h("span");
+      this.bars = [];
       this.gear = h("div", { class: "kv" });
       this.stats = h("div", { class: "kv" });
       this.skills = h("div", { class: "kv" });
@@ -8687,7 +8713,13 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.gearBtns = [];
       this.gearNote = h("div", { class: "kv" });
       this.statsKey = "";
+      this.open = false;
       const { sim: sim2, ctl: ctl2 } = c, ids = () => [...ctl2.selected];
+      const makeBars = () => {
+        const full = h("b"), health = h("b"), morale = h("b", { class: "mor" });
+        this.bars.push({ full, health, morale });
+        return h("div", { class: "bars" }, h("label", {}, "No", h("i", {}, full)), h("label", {}, "M\xE1u", h("i", {}, health)), h("label", {}, "Tinh th\u1EA7n", h("i", {}, morale)));
+      };
       this.jobBtns = ["idle", ...WORK_JOBS].map((j) => h("button", { class: "sm", "data-job": j, pressed: false, text: JOB_NAME[j], onclick: () => {
         sim2.setJob(ids(), j);
         ctl2.onChange();
@@ -8714,60 +8746,80 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         sim2.autoGear(ids());
         ctl2.onChange();
       } }));
-      const tall = innerHeight >= 560;
       root.append(
         h("div", { class: "cardhead" }, this.name, this.state, h("button", { class: "sm x", text: "\u2715", title: "B\u1ECF ch\u1ECDn", onclick: () => ctl2.clearSelection() })),
+        makeBars(),
+        h("div", { class: "btns" }, h("button", { class: "sm primary", text: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt", onclick: () => {
+          this.open = true;
+          this.update(this.chosen());
+        } }))
+      );
+      modal.append(
+        h("div", { class: "cardhead" }, this.dname, this.dstate, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => this.closeDetail() })),
         h(
           "div",
-          { class: "bars" },
-          h("label", {}, "No", h("i", {}, this.bFull)),
-          h("label", {}, "M\xE1u", h("i", {}, this.bHealth)),
-          h("label", {}, "Tinh th\u1EA7n", h("i", {}, this.bMorale))
-        ),
-        h("details", tall ? { class: "fold", open: "" } : { class: "fold" }, h("summary", { text: "Giao ngh\u1EC1" }), h("div", { class: "btns", role: "group", "aria-label": "Giao ngh\u1EC1" }, ...this.jobBtns)),
-        h(
-          "details",
-          { class: "fold" },
-          h("summary", { text: "Chi\u1EBFn \u0111\u1EA5u" }),
-          this.gear,
-          h("p", { class: "sub", text: "Ph\xE1t \u0111\u1ED3 (l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng):" }),
-          gearRow,
-          this.gearNote,
-          h("div", { class: "btns", role: "group", "aria-label": "Th\u1EBF \u0111\u1EE9ng" }, ...this.stanceBtns),
+          { class: "mbody cols" },
+          h("section", {}, h("h3", { text: "T\xECnh tr\u1EA1ng" }), makeBars(), this.gear),
+          h("section", {}, h("h3", { text: "Giao ngh\u1EC1" }), h("div", { class: "btns", role: "group", "aria-label": "Giao ngh\u1EC1" }, ...this.jobBtns)),
           h(
-            "div",
-            { class: "btns" },
-            h("button", { class: "sm", text: "Gi\u1EEF ch\u1ED7 (H)", title: "\u0110\u1EE9ng y\xEAn, ch\u1EC9 \u0111\xE1nh k\u1EBB \u1EDF s\xE1t", onclick: () => {
-              sim2.orderHold(ids());
-              ctl2.onChange();
-            } }),
-            h("button", { class: "sm", text: "D\u1EEBng (G)", title: "H\u1EE7y m\u1ECDi l\u1EC7nh", onclick: () => {
-              sim2.orderStop(ids());
-              ctl2.onChange();
-            } }),
-            h("button", { class: "sm", text: "T\u1EA5n c\xF4ng\u2013\u0111i (F)", title: "Ch\u1ECDn m\u1ED9t \u0111i\u1EC3m: \u0111i t\u1EDBi \u0111\xF3 v\xE0 \u0111\xE1nh m\u1ECDi \u0111\u1ECBch g\u1EB7p tr\xEAn \u0111\u01B0\u1EDDng", onclick: () => {
-              ctl2.attackMoveArmed = true;
-              c.toast("Ch\u1EA1m v\xE0o \u0111i\u1EC3m \u0111\u1EBFn");
-              ctl2.onChange();
-            } })
-          )
-        ),
-        h("details", { class: "fold" }, h("summary", { text: "Ch\u1EC9 s\u1ED1, k\u1EF9 n\u0103ng, c\xF4ng c\u1EE5" }), this.stats, this.skills, this.tools)
+            "section",
+            {},
+            h("h3", { text: "Chi\u1EBFn \u0111\u1EA5u" }),
+            h("div", { class: "btns", role: "group", "aria-label": "Th\u1EBF \u0111\u1EE9ng" }, ...this.stanceBtns),
+            h(
+              "div",
+              { class: "btns" },
+              h("button", { class: "sm", text: "Gi\u1EEF ch\u1ED7 (H)", title: "\u0110\u1EE9ng y\xEAn, ch\u1EC9 \u0111\xE1nh k\u1EBB \u1EDF s\xE1t", onclick: () => {
+                sim2.orderHold(ids());
+                ctl2.onChange();
+              } }),
+              h("button", { class: "sm", text: "D\u1EEBng (G)", title: "H\u1EE7y m\u1ECDi l\u1EC7nh", onclick: () => {
+                sim2.orderStop(ids());
+                ctl2.onChange();
+              } }),
+              h("button", { class: "sm", text: "T\u1EA5n c\xF4ng\u2013\u0111i (F)", title: "Ch\u1ECDn m\u1ED9t \u0111i\u1EC3m: \u0111i t\u1EDBi \u0111\xF3 v\xE0 \u0111\xE1nh m\u1ECDi \u0111\u1ECBch g\u1EB7p tr\xEAn \u0111\u01B0\u1EDDng", onclick: () => {
+                ctl2.attackMoveArmed = true;
+                this.closeDetail();
+                c.toast("Ch\u1EA1m v\xE0o \u0111i\u1EC3m \u0111\u1EBFn");
+                ctl2.onChange();
+              } })
+            ),
+            h("p", { class: "sub", text: "Ph\xE1t \u0111\u1ED3 (l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng):" }),
+            gearRow,
+            this.gearNote
+          ),
+          h("section", {}, h("h3", { text: "Ch\u1EC9 s\u1ED1, k\u1EF9 n\u0103ng, c\xF4ng c\u1EE5" }), this.stats, this.skills, this.tools)
+        )
       );
     }
+    chosen() {
+      const { sim: sim2, ctl: ctl2 } = this.c;
+      return sim2.villagers.filter((v) => ctl2.selected.has(v.id));
+    }
+    closeDetail() {
+      this.open = false;
+      this.modal.hidden = true;
+    }
     update(chosen) {
+      const sim0 = this.c.sim;
       this.root.hidden = chosen.length === 0;
       if (!chosen.length) {
         this.statsKey = "";
+        this.closeDetail();
         return;
       }
-      const sim0 = this.c.sim, v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : "tay kh\xF4ng";
-      this.name.textContent = chosen.length > 1 ? `${v.name} v\xE0 ${chosen.length - 1} ng\u01B0\u1EDDi n\u1EEFa` : v.name;
-      this.state.textContent = describe(v);
-      this.bFull.style.width = `${v.fullness}%`;
-      this.bHealth.style.width = `${v.health / v.maxHealth * 100}%`;
-      this.bMorale.style.width = `${v.morale}%`;
-      this.bHealth.className = v.health / v.maxHealth < 0.35 ? "bad" : "";
+      this.modal.hidden = !this.open;
+      const v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : "tay kh\xF4ng";
+      const title = chosen.length > 1 ? `${v.name} v\xE0 ${chosen.length - 1} ng\u01B0\u1EDDi n\u1EEFa` : v.name;
+      this.name.textContent = this.dname.textContent = title;
+      this.state.textContent = this.dstate.textContent = describe(v);
+      for (const b of this.bars) {
+        b.full.style.width = `${v.fullness}%`;
+        b.health.style.width = `${v.health / v.maxHealth * 100}%`;
+        b.morale.style.width = `${v.morale}%`;
+        b.health.className = v.health / v.maxHealth < 0.35 ? "bad" : "";
+      }
+      if (!this.open) return;
       for (const g of this.gearBtns) {
         const n = g.kind ? sim0.toolCount(g.kind, g.kind === "hide" ? 1 : WEAPONS[g.kind].tier ?? 1) : -1;
         g.btn.textContent = n >= 0 ? `${g.label} (${n})` : g.label;
@@ -8888,8 +8940,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.vRows = /* @__PURE__ */ new Map();
       this.pop = h("div", { class: "kv" });
       this.shopInfo = h("div", { class: "kv" });
-      this.assign = h("button", { class: "sm", text: "Giao d\xE2n \u0111ang ch\u1ECDn l\xE0m Ch\u1EBF t\u1EA1o" });
-      this.assignR = h("button", { class: "sm", text: "Giao d\xE2n \u0111ang ch\u1ECDn l\xE0m Nghi\xEAn c\u1EE9u" });
+      this.assign = h("button", { class: "sm", text: "Th\xEAm ng\u01B0\u1EDDi Ch\u1EBF t\u1EA1o" });
+      this.assignR = h("button", { class: "sm", text: "Th\xEAm ng\u01B0\u1EDDi Nghi\xEAn c\u1EE9u" });
       this.active = h("div", { class: "kv" });
       this.info = h("div", { class: "kv" });
       this.next = h("div", { class: "kv" });
@@ -8959,21 +9011,21 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         tabBar.append(btn);
       }
       this.workshop.append(this.shopInfo, h("div", { class: "btns" }, this.assign, this.assignR), this.active, tabBar, this.shopPages.tools, this.shopPages.weapons, this.shopPages.armor, this.shopPages.research);
-      this.assign.addEventListener("click", () => {
-        const b = this.current();
-        if (b && ctl2.selected.size) {
-          sim2.orderWork([...ctl2.selected], b.x, b.y);
-          c.toast("Ch\u1EBF t\u1EA1o");
-          ctl2.onChange();
-        } else c.toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
-      });
-      this.assignR.addEventListener("click", () => {
-        if (ctl2.selected.size) {
-          sim2.setJob([...ctl2.selected], "research");
-          c.toast("Nghi\xEAn c\u1EE9u");
-          ctl2.onChange();
-        } else c.toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
-      });
+      const staff = (job) => {
+        const ids = ctl2.selected.size ? [...ctl2.selected] : (() => {
+          const v = sim2.bestFor(job);
+          return v ? [v.id] : [];
+        })();
+        if (!ids.length) {
+          c.toast("Kh\xF4ng c\xF2n d\xE2n r\u1EA3nh \u0111\u1EC3 giao");
+          return;
+        }
+        sim2.setJob(ids, job);
+        c.toast(`${ids.map((id) => sim2.get(id)?.name).join(", ")}: ${job === "craft" ? "Ch\u1EBF t\u1EA1o" : "Nghi\xEAn c\u1EE9u"}`);
+        ctl2.onChange();
+      };
+      this.assign.addEventListener("click", () => staff("craft"));
+      this.assignR.addEventListener("click", () => staff("research"));
       section(this.shopPages.tools, RECIPES.filter((r) => ["axe", "pick", "hoe", "hammer"].includes(r.kind)));
       section(this.shopPages.weapons, RECIPES.filter((r) => r.kind in WEAPONS));
       section(this.shopPages.armor, RECIPES.filter((r) => r.kind === "hide"));
@@ -8985,14 +9037,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         ctl2.onChange();
       });
       root.append(
-        h("div", { class: "cardhead" }, this.title, this.state, h("button", { class: "sm x", text: "\u2715", onclick: () => ctl2.closeBuilding() })),
-        this.info,
-        this.campfire,
-        this.storage,
-        this.workshop,
-        this.next,
-        this.upgrade,
-        h("div", { class: "btns" }, this.move, this.demolish)
+        h("div", { class: "cardhead" }, this.title, this.state, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => ctl2.closeBuilding() })),
+        h("div", { class: "mbody" }, this.info, this.campfire, this.storage, this.workshop, this.next, this.upgrade, h("div", { class: "btns" }, this.move, this.demolish))
       );
       this.move.addEventListener("click", () => {
         const b = this.current();
@@ -9069,7 +9115,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           return `${v.name}: ${nm} <b>${Math.floor(v.progress * 100)}%</b>${v.phase === "craft" ? ` \xB7 c\xF2n ~${left} gi\xE2y` : " \xB7 \u0111ang t\u1EDBi X\u01B0\u1EDFng"}`;
         }).join(" \xB7 ") : "";
         this.active.hidden = !busy.length;
-        this.assign.disabled = this.assignR.disabled = ctl2.selected.size === 0;
+        this.assign.title = this.assignR.title = "Giao d\xE2n \u0111ang ch\u1ECDn, n\u1EBFu kh\xF4ng ch\u1ECDn ai th\xEC giao ng\u01B0\u1EDDi r\u1EA3nh gi\u1ECFi nh\u1EA5t";
       }
       this.move.hidden = this.demolish.hidden = !def.buildable;
       const arm = this.armedFor === b.id && performance.now() < this.armed;
@@ -9141,7 +9187,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   };
   ctl.onToast = toast;
   var ctx = { sim, ctl, sprites, toast };
-  var unitCard = new UnitCard($("ucard"), ctx);
+  var unitCard = new UnitCard($("ucard"), ctx, $("udetail"));
   var targetCard = new TargetCard($("tcard"), ctx);
   var buildingPanel = new BuildingPanel($("bpanel"), ctx);
   var map = new MapView(sim, cam, renderer, ctl, $("mini"), $("bigmapCanvas"), $("bigmap"));
@@ -9321,7 +9367,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     unitCard.update(chosen);
     targetCard.update();
     if (placing || !showB) $("bpanel").hidden = true;
-    if (placing || showB) $("ucard").hidden = true;
+    if (placing || showB) {
+      $("ucard").hidden = true;
+      unitCard.closeDetail();
+    }
     if (placing || showB) $("tcard").hidden = true;
     const bar = $("placeBar");
     bar.hidden = !placing;

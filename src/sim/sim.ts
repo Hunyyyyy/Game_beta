@@ -452,6 +452,12 @@ export class Sim {
     return null;
   }
   recipeOpen(id: string): boolean { return this.recipeLock(id) === null; }
+  /** The villager best suited to a workshop job who is not already doing it: free hands first, soldiers never, then the sharpest mind. */
+  bestFor(job: 'craft' | 'research'): Villager | null {
+    const pool = this.villagers.filter((v) => v.down <= 0 && v.job !== job && v.job !== 'fight' && v.job !== 'hunt');
+    pool.sort((a, b) => (a.job === 'idle' ? 0 : 1) - (b.job === 'idle' ? 0 : 1) || b.stats.int - a.stats.int);
+    return pool[0] ?? null;
+  }
   /** The smartest villager's Trí tuệ. */
   bestInt(): number { return this.villagers.reduce((m, v) => Math.max(m, v.stats.int), 0); }
 

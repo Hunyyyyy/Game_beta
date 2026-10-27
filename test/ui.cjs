@@ -43,6 +43,14 @@ const prepare = (p) => p.evaluate(() => {
     let b = await bodyOf(p, ids[0]);
     await p.mouse.click(b.x, b.y); await p.waitForTimeout(150);
     ok(await state(p, () => window.__game.ctl.selected.size) === 1 && await shown(p, '#ucard'), 'left click on a villager selects them and shows the card');
+    // the villager's details are a full-screen page
+    ok(await pressText(p, 'Giao việc và chi tiết'), 'the small card has a button for the details');
+    await p.waitForTimeout(150);
+    ok(await shown(p, '#udetail') && await p.evaluate(() => { const r = document.getElementById('udetail').getBoundingClientRect(); return r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }), 'the details fill the whole screen');
+    await p.evaluate(() => { for (const b of document.querySelectorAll('#udetail [data-job="wood"]')) b.click(); });
+    ok(await state(p, (id) => window.__game.sim.get(id).job, ids[0]) === 'wood', 'a job can be given from the details page');
+    await pressText(p, '✕ Đóng'); await p.waitForTimeout(100);
+    ok(!(await shown(p, '#udetail')) && await shown(p, '#ucard'), 'closing the details returns to the map');
     await p.mouse.click(60, 300); await p.waitForTimeout(100);
     ok(await state(p, () => window.__game.ctl.selected.size) === 0, 'left click on empty ground deselects');
     // multi-select
@@ -131,6 +139,11 @@ const prepare = (p) => p.evaluate(() => {
     await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Xưởng')) r.querySelector('button').click(); });
     await p.waitForTimeout(250);
     ok(await shown(p, '#bpanel') && await p.evaluate(() => document.getElementById('bpanel').innerText.includes('Vũ khí')), 'the workshop panel opens from the built list with its crafting items');
+    ok(await p.evaluate(() => { const r = document.getElementById('bpanel').getBoundingClientRect(); return r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }), 'the workshop panel fills the whole screen');
+    await pressText(p, '✕ Đóng'); await p.waitForTimeout(100);
+    ok(!(await shown(p, '#bpanel')) && await state(p, () => window.__game.ctl.selectedBuilding === null), 'the close button closes it');
+    await state(p, () => { const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'workshop').id); });
+    await p.waitForTimeout(200);
     await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .rec')].find((x) => x.textContent.includes('Búa')); r.querySelectorAll('button')[1].click(); });
     ok(await state(p, () => window.__game.sim.craftQueue.length) === 1, 'queueing a hammer from the panel');
     // the workshop list is split into tabs

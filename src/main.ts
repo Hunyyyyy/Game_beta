@@ -34,7 +34,7 @@ ctl.onToast = toast;
 const ctx: Ctx = { sim, ctl, sprites, toast };
 
 // ---------------------------------------------------------------- panels, menu, maps
-const unitCard = new UnitCard($('ucard'), ctx), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
+const unitCard = new UnitCard($('ucard'), ctx, $('udetail')), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
 const map = new MapView(sim, cam, renderer, ctl, $('mini'), $('bigmapCanvas'), $('bigmap'));
 const menu = new Menu($('drawer'), $('drawerTabs'), $('drawerBody'), ctx, () => { const w = renderer.screenToWorld(renderer.w / 2, renderer.h / 2); return { x: w.x / TILE, y: w.y / TILE }; });
 $('btnCloseMap').addEventListener('click', () => map.close());
@@ -145,7 +145,7 @@ function updateHud(now: number) {
   const placing = !!ctl.placing, showB = ctl.selectedBuilding !== null && !placing;
   buildingPanel.update(); unitCard.update(chosen); targetCard.update();
   if (placing || !showB) $('bpanel').hidden = true;
-  if (placing || showB) $('ucard').hidden = true;
+  if (placing || showB) { $('ucard').hidden = true; unitCard.closeDetail(); }
   if (placing || showB) $('tcard').hidden = true;
   const bar = $('placeBar'); bar.hidden = !placing;
   if (placing && ctl.placing) {
