@@ -1,14 +1,15 @@
 {
-  "enabled": false,
-  "_note": "Set enabled to true to switch research on; while off every recipe and building level is open. Research is done by a craftsman at the Workshop (it goes through the same queue as crafting). cost is paid when a craftsman takes the order, time is seconds at speed 1. needLevel: Workshop level required. unlocks.recipes: recipe ids that become craftable; unlocks.levels: highest level buildings of that kind may be upgraded to. Recipes and levels listed in no tech are open from the start.",
+  "enabled": true,
+  "_note": "Research is done by a villager with the Nghiên cứu job at the Workshop; the villager's Trí tuệ must reach the tech's minInt. cost is paid when a researcher takes the order, time is seconds at speed 1. needLevel: Workshop level to start it. unlocks.recipes: recipes that become craftable; unlocks.levels: highest level a building kind may be upgraded to. recipeLevel: Workshop level each recipe needs. A recipe is craftable when the Workshop level is high enough and, if some tech unlocks it, that tech is researched. Set enabled to false to open everything.",
+  "recipeLevel": {"axe1": 1, "hammer1": 1, "pick1": 1, "hoe1": 1, "club1": 1, "hide1": 1, "spear1": 2, "axe2": 2, "pick2": 2, "hoe2": 2, "hammer2": 2, "mace2": 3},
   "techs": [
-    { "id": "wood_tools", "name": "Dụng cụ gỗ", "desc": "Đẽo cuốc chim và cuốc hái bằng gỗ.", "requires": [], "needLevel": 1, "cost": { "wood": 8 }, "time": 45, "unlocks": { "recipes": ["pick1", "hoe1"] } },
-    { "id": "club", "name": "Gậy chiến", "desc": "Chế gậy gỗ để tự vệ và đi săn.", "requires": ["wood_tools"], "needLevel": 1, "cost": { "wood": 6 }, "time": 40, "unlocks": { "recipes": ["club1"] } },
-    { "id": "tanning", "name": "Thuộc da", "desc": "Khâu da thú thành áo giáp.", "requires": ["wood_tools"], "needLevel": 1, "cost": { "hide": 3 }, "time": 60, "unlocks": { "recipes": ["hide1"] } },
-    { "id": "timber", "name": "Dựng bằng gỗ", "desc": "Nâng Kho và Xưởng lên cấp 2 (gỗ).", "requires": ["wood_tools"], "needLevel": 1, "cost": { "wood": 20 }, "time": 60, "unlocks": { "levels": { "storage": 2, "workshop": 2 } } },
-    { "id": "spear", "name": "Giáo vót nhọn", "desc": "Giáo gỗ có tầm đâm xa hơn gậy.", "requires": ["club"], "needLevel": 2, "cost": { "wood": 10 }, "time": 70, "unlocks": { "recipes": ["spear1"] } },
-    { "id": "stone_tools", "name": "Mài đá", "desc": "Rìu, cuốc chim, cuốc và búa đầu đá, bền và nhanh hơn gỗ.", "requires": ["timber"], "needLevel": 2, "cost": { "wood": 10, "stone": 20 }, "time": 90, "unlocks": { "recipes": ["axe2", "pick2", "hoe2", "hammer2"] } },
-    { "id": "masonry", "name": "Xây bằng đá", "desc": "Nâng Kho và Xưởng lên cấp 3 (đá).", "requires": ["stone_tools"], "needLevel": 2, "cost": { "wood": 10, "stone": 40 }, "time": 120, "unlocks": { "levels": { "storage": 3, "workshop": 3 } } },
-    { "id": "mace", "name": "Chùy đá", "desc": "Vũ khí đập nặng, hợp với chiến binh khỏe.", "requires": ["stone_tools", "club"], "needLevel": 3, "cost": { "stone": 25 }, "time": 100, "unlocks": { "recipes": ["mace2"] } }
+    {"id": "wood_tools", "name": "Dụng cụ gỗ", "desc": "Đẽo cuốc chim và cuốc hái bằng gỗ.", "requires": [], "needLevel": 1, "cost": {"wood": 8}, "time": 45, "unlocks": {"recipes": ["pick1", "hoe1"]}, "minInt": 5},
+    {"id": "club", "name": "Gậy chiến", "desc": "Chế gậy gỗ để tự vệ và đi săn.", "requires": ["wood_tools"], "needLevel": 1, "cost": {"wood": 6}, "time": 40, "unlocks": {"recipes": ["club1"]}, "minInt": 5},
+    {"id": "tanning", "name": "Thuộc da", "desc": "Khâu da thú thành áo giáp.", "requires": ["wood_tools"], "needLevel": 1, "cost": {"hide": 3}, "time": 60, "unlocks": {"recipes": ["hide1"]}, "minInt": 6},
+    {"id": "timber", "name": "Dựng bằng gỗ", "desc": "Nâng Kho và Xưởng lên cấp 2 (gỗ).", "requires": ["wood_tools"], "needLevel": 1, "cost": {"wood": 20}, "time": 60, "unlocks": {"levels": {"storage": 2, "workshop": 2}}, "minInt": 6},
+    {"id": "spear", "name": "Giáo vót nhọn", "desc": "Giáo gỗ có tầm đâm xa hơn gậy.", "requires": ["club"], "needLevel": 2, "cost": {"wood": 10}, "time": 70, "unlocks": {"recipes": ["spear1"]}, "minInt": 6},
+    {"id": "stone_tools", "name": "Mài đá", "desc": "Rìu, cuốc chim, cuốc và búa đầu đá, bền và nhanh hơn gỗ.", "requires": ["timber"], "needLevel": 2, "cost": {"wood": 10, "stone": 20}, "time": 90, "unlocks": {"recipes": ["axe2", "pick2", "hoe2", "hammer2"]}, "minInt": 7},
+    {"id": "masonry", "name": "Xây bằng đá", "desc": "Nâng Kho và Xưởng lên cấp 3 (đá).", "requires": ["stone_tools"], "needLevel": 2, "cost": {"wood": 10, "stone": 40}, "time": 120, "unlocks": {"levels": {"storage": 3, "workshop": 3}}, "minInt": 7},
+    {"id": "mace", "name": "Chùy đá", "desc": "Vũ khí đập nặng, hợp với chiến binh khỏe.", "requires": ["stone_tools", "club"], "needLevel": 3, "cost": {"stone": 25}, "time": 100, "unlocks": {"recipes": ["mace2"]}, "minInt": 8}
   ]
 }

@@ -4294,12 +4294,13 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: 18, anim: "mine" },
     food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: 20, anim: "gather" },
     build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
-    craft: { name: "Th\u1EE3 th\u1EE7 c\xF4ng", stat: "int", baseTime: 1, anim: "craft" },
+    craft: { name: "Ch\u1EBF t\u1EA1o", stat: "int", baseTime: 1, anim: "craft" },
+    research: { name: "Nghi\xEAn c\u1EE9u", stat: "int", baseTime: 1, anim: "gather" },
     hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust" },
     fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "smash" }
   };
-  var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Th\u1EE3 th\u1EE7 c\xF4ng", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh" };
-  var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "hunt", "fight"];
+  var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh" };
+  var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "hunt", "fight"];
   var XP_LEVELS = [60, 150, 300, 500, 800];
   var MAX_LEVEL = 5;
 
@@ -5856,22 +5857,25 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
 
   // src/data/research.json
   var research_default = {
-    enabled: false,
-    _note: "Set enabled to true to switch research on; while off every recipe and building level is open. Research is done by a craftsman at the Workshop (it goes through the same queue as crafting). cost is paid when a craftsman takes the order, time is seconds at speed 1. needLevel: Workshop level required. unlocks.recipes: recipe ids that become craftable; unlocks.levels: highest level buildings of that kind may be upgraded to. Recipes and levels listed in no tech are open from the start.",
+    enabled: true,
+    _note: "Research is done by a villager with the Nghi\xEAn c\u1EE9u job at the Workshop; the villager's Tr\xED tu\u1EC7 must reach the tech's minInt. cost is paid when a researcher takes the order, time is seconds at speed 1. needLevel: Workshop level to start it. unlocks.recipes: recipes that become craftable; unlocks.levels: highest level a building kind may be upgraded to. recipeLevel: Workshop level each recipe needs. A recipe is craftable when the Workshop level is high enough and, if some tech unlocks it, that tech is researched. Set enabled to false to open everything.",
+    recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3 },
     techs: [
-      { id: "wood_tools", name: "D\u1EE5ng c\u1EE5 g\u1ED7", desc: "\u0110\u1EBDo cu\u1ED1c chim v\xE0 cu\u1ED1c h\xE1i b\u1EB1ng g\u1ED7.", requires: [], needLevel: 1, cost: { wood: 8 }, time: 45, unlocks: { recipes: ["pick1", "hoe1"] } },
-      { id: "club", name: "G\u1EADy chi\u1EBFn", desc: "Ch\u1EBF g\u1EADy g\u1ED7 \u0111\u1EC3 t\u1EF1 v\u1EC7 v\xE0 \u0111i s\u0103n.", requires: ["wood_tools"], needLevel: 1, cost: { wood: 6 }, time: 40, unlocks: { recipes: ["club1"] } },
-      { id: "tanning", name: "Thu\u1ED9c da", desc: "Kh\xE2u da th\xFA th\xE0nh \xE1o gi\xE1p.", requires: ["wood_tools"], needLevel: 1, cost: { hide: 3 }, time: 60, unlocks: { recipes: ["hide1"] } },
-      { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng Kho v\xE0 X\u01B0\u1EDFng l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["wood_tools"], needLevel: 1, cost: { wood: 20 }, time: 60, unlocks: { levels: { storage: 2, workshop: 2 } } },
-      { id: "spear", name: "Gi\xE1o v\xF3t nh\u1ECDn", desc: "Gi\xE1o g\u1ED7 c\xF3 t\u1EA7m \u0111\xE2m xa h\u01A1n g\u1EADy.", requires: ["club"], needLevel: 2, cost: { wood: 10 }, time: 70, unlocks: { recipes: ["spear1"] } },
-      { id: "stone_tools", name: "M\xE0i \u0111\xE1", desc: "R\xECu, cu\u1ED1c chim, cu\u1ED1c v\xE0 b\xFAa \u0111\u1EA7u \u0111\xE1, b\u1EC1n v\xE0 nhanh h\u01A1n g\u1ED7.", requires: ["timber"], needLevel: 2, cost: { wood: 10, stone: 20 }, time: 90, unlocks: { recipes: ["axe2", "pick2", "hoe2", "hammer2"] } },
-      { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng Kho v\xE0 X\u01B0\u1EDFng l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["stone_tools"], needLevel: 2, cost: { wood: 10, stone: 40 }, time: 120, unlocks: { levels: { storage: 3, workshop: 3 } } },
-      { id: "mace", name: "Ch\xF9y \u0111\xE1", desc: "V\u0169 kh\xED \u0111\u1EADp n\u1EB7ng, h\u1EE3p v\u1EDBi chi\u1EBFn binh kh\u1ECFe.", requires: ["stone_tools", "club"], needLevel: 3, cost: { stone: 25 }, time: 100, unlocks: { recipes: ["mace2"] } }
+      { id: "wood_tools", name: "D\u1EE5ng c\u1EE5 g\u1ED7", desc: "\u0110\u1EBDo cu\u1ED1c chim v\xE0 cu\u1ED1c h\xE1i b\u1EB1ng g\u1ED7.", requires: [], needLevel: 1, cost: { wood: 8 }, time: 45, unlocks: { recipes: ["pick1", "hoe1"] }, minInt: 5 },
+      { id: "club", name: "G\u1EADy chi\u1EBFn", desc: "Ch\u1EBF g\u1EADy g\u1ED7 \u0111\u1EC3 t\u1EF1 v\u1EC7 v\xE0 \u0111i s\u0103n.", requires: ["wood_tools"], needLevel: 1, cost: { wood: 6 }, time: 40, unlocks: { recipes: ["club1"] }, minInt: 5 },
+      { id: "tanning", name: "Thu\u1ED9c da", desc: "Kh\xE2u da th\xFA th\xE0nh \xE1o gi\xE1p.", requires: ["wood_tools"], needLevel: 1, cost: { hide: 3 }, time: 60, unlocks: { recipes: ["hide1"] }, minInt: 6 },
+      { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng Kho v\xE0 X\u01B0\u1EDFng l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["wood_tools"], needLevel: 1, cost: { wood: 20 }, time: 60, unlocks: { levels: { storage: 2, workshop: 2 } }, minInt: 6 },
+      { id: "spear", name: "Gi\xE1o v\xF3t nh\u1ECDn", desc: "Gi\xE1o g\u1ED7 c\xF3 t\u1EA7m \u0111\xE2m xa h\u01A1n g\u1EADy.", requires: ["club"], needLevel: 2, cost: { wood: 10 }, time: 70, unlocks: { recipes: ["spear1"] }, minInt: 6 },
+      { id: "stone_tools", name: "M\xE0i \u0111\xE1", desc: "R\xECu, cu\u1ED1c chim, cu\u1ED1c v\xE0 b\xFAa \u0111\u1EA7u \u0111\xE1, b\u1EC1n v\xE0 nhanh h\u01A1n g\u1ED7.", requires: ["timber"], needLevel: 2, cost: { wood: 10, stone: 20 }, time: 90, unlocks: { recipes: ["axe2", "pick2", "hoe2", "hammer2"] }, minInt: 7 },
+      { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng Kho v\xE0 X\u01B0\u1EDFng l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["stone_tools"], needLevel: 2, cost: { wood: 10, stone: 40 }, time: 120, unlocks: { levels: { storage: 3, workshop: 3 } }, minInt: 7 },
+      { id: "mace", name: "Ch\xF9y \u0111\xE1", desc: "V\u0169 kh\xED \u0111\u1EADp n\u1EB7ng, h\u1EE3p v\u1EDBi chi\u1EBFn binh kh\u1ECFe.", requires: ["stone_tools", "club"], needLevel: 3, cost: { stone: 25 }, time: 100, unlocks: { recipes: ["mace2"] }, minInt: 8 }
     ]
   };
 
   // src/sim/research.ts
   var RESEARCH = { enabled: research_default.enabled };
+  var RECIPE_LEVEL = research_default.recipeLevel;
+  var recipeNeedLevel = (id) => RECIPE_LEVEL[id] ?? 1;
   var TECHS = research_default.techs;
   var TECH_BY_ID = Object.fromEntries(TECHS.map((t) => [t.id, t]));
   var RESEARCH_PREFIX = "r:";
@@ -6057,8 +6061,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       for (const k of STAT_KEYS) stats[k] = 3 + Math.floor(r() * 8);
       const potential = {}, skill = {};
       for (const j of WORK_JOBS) {
-        if (j === "hunt" || j === "fight") {
-          const k = j === "hunt" ? stats.agi : stats.str;
+        if (j === "hunt" || j === "fight" || j === "research") {
+          const k = j === "hunt" ? stats.agi : j === "research" ? stats.int : stats.str;
           potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1;
           skill[j] = { xp: 0, level: 0 };
           continue;
@@ -6303,8 +6307,20 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     workshopLevel() {
       return this.buildings.reduce((m, b) => b.kind === "workshop" && b.done ? Math.max(m, b.level) : m, 0);
     }
+    /** Why a recipe cannot be made yet (workshop level or research), or null. */
+    recipeLock(id) {
+      if (!RESEARCH.enabled) return null;
+      const need = recipeNeedLevel(id);
+      if (this.workshopLevel() < need) return `C\u1EA7n X\u01B0\u1EDFng c\u1EA5p ${need}`;
+      if (!recipeOpen(this.researched, id)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForRecipe(id)?.name ?? "?"}`;
+      return null;
+    }
     recipeOpen(id) {
-      return recipeOpen(this.researched, id);
+      return this.recipeLock(id) === null;
+    }
+    /** The smartest villager's Trí tuệ. */
+    bestInt() {
+      return this.villagers.reduce((m, v) => Math.max(m, v.stats.int), 0);
     }
     /** Where a research stands: done, being worked on, queued, ready to start or locked (with the reason). */
     techState(t) {
@@ -6316,6 +6332,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       if (need) return { state: "locked", why: `C\u1EA7n nghi\xEAn c\u1EE9u: ${TECH_BY_ID[need].name}` };
       if (!this.hasWorkshop()) return { state: "locked", why: "C\u1EA7n d\u1EF1ng X\u01B0\u1EDFng ch\u1EBF t\xE1c" };
       if (this.workshopLevel() < t.needLevel) return { state: "locked", why: `C\u1EA7n X\u01B0\u1EDFng c\u1EA5p ${t.needLevel}` };
+      if (this.bestInt() < t.minInt) return { state: "locked", why: `C\u1EA7n d\xE2n c\xF3 Tr\xED tu\u1EC7 ${t.minInt} tr\u1EDF l\xEAn (gi\u1ECFi nh\u1EA5t l\xE0ng: ${this.bestInt()})` };
       return { state: "ready" };
     }
     /** Thêm một đơn vào hàng đợi (nguyên liệu chỉ bị trừ khi thợ nhận đơn). */
@@ -6331,7 +6348,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       } else {
         if (!RECIPE_BY_ID[id]) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
         if (!this.hasWorkshop()) return "C\u1EA7n d\u1EF1ng X\u01B0\u1EDFng ch\u1EBF t\xE1c tr\u01B0\u1EDBc";
-        if (!this.recipeOpen(id)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForRecipe(id)?.name ?? "?"}`;
+        const lock = this.recipeLock(id);
+        if (lock) return lock;
       }
       if (this.craftQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
       this.craftQueue.push(id);
@@ -6857,8 +6875,11 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           hold = { kind: "hammer", tier: t };
         } else anim = "gather";
       } else if (v.phase === "craft") {
-        anim = "craft";
-        hold = { kind: "hammer", tier: 2 };
+        if (v.order?.startsWith("r:")) anim = "gather";
+        else {
+          anim = "craft";
+          hold = { kind: "hammer", tier: 2 };
+        }
       } else if (v.phase === "skin") anim = "gather";
       if (anim !== v.anim) {
         v.anim = anim;
@@ -6994,6 +7015,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       }
     }
     // ---------------------------------------------------------------- việc làm
+    /** How fast a villager gets through crafting or research (1 = the nominal time). */
+    workRate(v, job) {
+      return this.workFactor(v, job);
+    }
     workFactor(v, job) {
       const stat = v.stats[JOBS[job].stat];
       const season = job === "food" ? SEASON_DEF[this.season].gather : 1;
@@ -7198,8 +7223,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         return;
       }
       const shop = this.getBuilding(v.target);
-      v.progress += dt * this.workFactor(v, "craft") * (shop ? levelDef(shop).craftSpeed : 1) / d.time;
-      this.gainXp(v, "craft", dt);
+      const kind = isResearchOrder(v.order) ? "research" : "craft";
+      v.progress += dt * this.workFactor(v, kind) * (shop ? levelDef(shop).craftSpeed : 1) / d.time;
+      this.gainXp(v, kind, dt);
       if (v.progress < 1) return;
       if (isResearchOrder(v.order)) {
         const t = techOfOrder(v.order);
@@ -7222,7 +7248,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         if (!this.planEquip(v, "build")) this.planBuild(v);
         return;
       }
-      if (v.job === "craft") {
+      if (v.job === "craft" || v.job === "research") {
         this.planCraft(v);
         return;
       }
@@ -7305,11 +7331,13 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         return;
       }
       if (!v.order) {
-        const i = this.craftQueue.findIndex((id2) => this.affordable(id2));
+        const research = v.job === "research";
+        const mine = (id2) => isResearchOrder(id2) === research && (!research || v.stats.int >= (techOfOrder(id2)?.minInt ?? 0)) && (research || this.recipeOpen(id2));
+        const i = this.craftQueue.findIndex((id2) => mine(id2) && this.affordable(id2));
         if (i < 0) {
-          if (this.craftQueue.length && this.time - this.lastMatWarn > 30) {
+          if (this.craftQueue.some(mine) && this.time - this.lastMatWarn > 30) {
             this.lastMatWarn = this.time;
-            this.say("Thi\u1EBFu nguy\xEAn li\u1EC7u \u0111\u1EC3 ch\u1EBF c\xF4ng c\u1EE5 trong h\xE0ng \u0111\u1EE3i.");
+            this.say(research ? "Thi\u1EBFu nguy\xEAn li\u1EC7u \u0111\u1EC3 nghi\xEAn c\u1EE9u." : "Thi\u1EBFu nguy\xEAn li\u1EC7u \u0111\u1EC3 ch\u1EBF c\xF4ng c\u1EE5 trong h\xE0ng \u0111\u1EE3i.");
           }
           this.wait(v, 3);
           return;
@@ -8456,7 +8484,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         h("li", {}, h("b", { text: "Ra l\u1EC7nh" }), ": m\xE1y t\xEDnh: chu\u1ED9t ph\u1EA3i. \u0110i\u1EC7n tho\u1EA1i: khi \u0111\xE3 ch\u1ECDn d\xE2n, ch\u1EA1m l\xEAn \u0111\u1EA5t, c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3, c\xF4ng tr\u01B0\u1EDDng hay k\u1EBB \u0111\u1ECBch. Gi\u1EEF Shift (m\xE1y t\xEDnh) \u0111\u1EC3 x\u1EBFp l\u1EC7nh n\u1ED1i nhau."),
         h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: hai ng\xF3n tay; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
         h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
-        h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, X\u01B0\u1EDFng \u0111\u1EC3 ch\u1EBF c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p. C\xF4ng tr\xECnh n\xE2ng c\u1EA5p: \u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
+        h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, X\u01B0\u1EDFng \u0111\u1EC3 ch\u1EBF c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p. C\xF4ng tr\xECnh n\xE2ng c\u1EA5p: \u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, nh\u01B0ng m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u tr\u01B0\u1EDBc. X\u01B0\u1EDFng: d\xE2n ngh\u1EC1 Ch\u1EBF t\u1EA1o l\xE0m \u0111\u1ED3, d\xE2n ngh\u1EC1 Nghi\xEAn c\u1EE9u (c\u1EA7n Tr\xED tu\u1EC7 \u0111\u1EE7 cao) m\u1EDF c\xF4ng th\u1EE9c v\xE0 c\u1EA5p m\u1EDBi; \u0111\u1ED3 t\u1ED1t h\u01A1n c\u0169ng c\u1EA7n X\u01B0\u1EDFng c\u1EA5p cao h\u01A1n. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
         h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), ": d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng 30 gi\xE2y; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh 3 gi\xE2y s\u1EBD k\xE9o h\u1ECD d\u1EADy."),
         h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), ": t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD 30 gi\xE2y ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p."),
         h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
@@ -8585,7 +8613,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         t = "\u0111i t\u1EDBi X\u01B0\u1EDFng";
         break;
       case "craft":
-        t = "\u0111ang ch\u1EBF t\xE1c";
+        t = v.order?.startsWith("r:") ? "\u0111ang nghi\xEAn c\u1EE9u" : "\u0111ang ch\u1EBF t\u1EA1o";
         break;
       case "goEquip":
         t = "\u0111i l\u1EA5y \u0111\u1ED3 \u1EDF X\u01B0\u1EDFng";
@@ -8837,7 +8865,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.vRows = /* @__PURE__ */ new Map();
       this.pop = h("div", { class: "kv" });
       this.shopInfo = h("div", { class: "kv" });
-      this.assign = h("button", { class: "sm", text: "Giao d\xE2n \u0111ang ch\u1ECDn l\xE0m Th\u1EE3 th\u1EE7 c\xF4ng" });
+      this.assign = h("button", { class: "sm", text: "Giao d\xE2n \u0111ang ch\u1ECDn l\xE0m Ch\u1EBF t\u1EA1o" });
+      this.assignR = h("button", { class: "sm", text: "Giao d\xE2n \u0111ang ch\u1ECDn l\xE0m Nghi\xEAn c\u1EE9u" });
+      this.active = h("div", { class: "kv" });
       this.info = h("div", { class: "kv" });
       this.next = h("div", { class: "kv" });
       this.upgrade = h("button", { class: "sm primary" });
@@ -8869,7 +8899,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
             "div",
             { class: "rec" },
             iconCanvas(sprites2.icons[r.id]),
-            h("div", { class: "nm" }, recipeName(r), h("small", {}, `${costText(r.cost, RES_NAME)} \xB7 ${r.time} gi\xE2y \xB7 ${recipeUse(r)}`), lock),
+            h("div", { class: "nm" }, recipeName(r), h("small", {}, `${costText(r.cost, RES_NAME)} \xB7 ${r.time} gi\xE2y chu\u1EA9n \xB7 ${recipeUse(r)}`), lock),
             h("div", { class: "qty" }, have, minus, plus)
           );
           this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, have, row, lock, btns: [minus, plus] });
@@ -8877,7 +8907,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         }
       };
       this.workshop.append(this.researchSec);
-      this.researchSec.append(h("div", { class: "sub", text: "Nghi\xEAn c\u1EE9u (th\u1EE3 th\u1EE7 c\xF4ng l\xE0m, t\u1ED1n nguy\xEAn li\u1EC7u v\xE0 th\u1EDDi gian)" }));
+      this.researchSec.append(h("div", { class: "sub", text: "Nghi\xEAn c\u1EE9u: d\xE2n l\xE0m ngh\u1EC1 Nghi\xEAn c\u1EE9u, c\u1EA7n \u0111\u1EE7 Tr\xED tu\u1EC7, t\u1ED1n nguy\xEAn li\u1EC7u v\xE0 th\u1EDDi gian" }));
       for (const t of TECHS) {
         const note = h("small", { class: "lock" }), btn = h("button", { class: "sm" });
         btn.addEventListener("click", () => {
@@ -8892,16 +8922,25 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         const row = h("div", { class: "tech" }, h("div", { class: "nm" }, t.name, h("small", {}, `${t.desc} M\u1EDF: ${unlockText(t, (id) => {
           const r = RECIPE_BY_ID[id];
           return r ? recipeName(r) : id;
-        })}.`), h("small", {}, `${costText(t.cost, RES_NAME)} \xB7 ${t.time} gi\xE2y${t.needLevel > 1 ? ` \xB7 X\u01B0\u1EDFng c\u1EA5p ${t.needLevel}` : ""}`), note), btn);
+        })}.`), h("small", {}, `${costText(t.cost, RES_NAME)} \xB7 ${t.time} gi\xE2y \xB7 Tr\xED tu\u1EC7 \u2265 ${t.minInt}${t.needLevel > 1 ? ` \xB7 X\u01B0\u1EDFng c\u1EA5p ${t.needLevel}` : ""}`), note), btn);
         this.techRows.push({ id: t.id, row, btn, note });
         this.researchSec.append(row);
       }
-      this.workshop.append(this.shopInfo, this.assign);
+      this.workshop.insertBefore(h("div", { class: "btns" }, this.assign, this.assignR), this.researchSec);
+      this.workshop.insertBefore(this.active, this.researchSec);
+      this.workshop.insertBefore(this.shopInfo, this.active);
       this.assign.addEventListener("click", () => {
         const b = this.current();
         if (b && ctl2.selected.size) {
           sim2.orderWork([...ctl2.selected], b.x, b.y);
-          c.toast("Th\u1EE3 th\u1EE7 c\xF4ng");
+          c.toast("Ch\u1EBF t\u1EA1o");
+          ctl2.onChange();
+        } else c.toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
+      });
+      this.assignR.addEventListener("click", () => {
+        if (ctl2.selected.size) {
+          sim2.setJob([...ctl2.selected], "research");
+          c.toast("Nghi\xEAn c\u1EE9u");
           ctl2.onChange();
         } else c.toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
       });
@@ -8973,7 +9012,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           const open = sim2.recipeOpen(r.id);
           r.have.textContent = open ? `kho ${sim2.toolCount(r.kind, r.tier)} \xB7 \u0111\u1EE3i ${sim2.craftQueue.filter((id) => id === r.id).length}` : "";
           r.row.classList.toggle("locked", !open);
-          r.lock.textContent = open ? "" : `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForRecipe(r.id)?.name ?? "?"}`;
+          r.lock.textContent = sim2.recipeLock(r.id) ?? "";
           for (const btn of r.btns) btn.disabled = !open;
         }
         this.researchSec.hidden = !RESEARCH.enabled;
@@ -8985,9 +9024,17 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           r.btn.textContent = { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state];
           r.btn.disabled = st.state === "done" || st.state === "active" || st.state === "locked";
         }
-        const n = sim2.villagers.filter((v) => v.job === "craft").length;
-        this.shopInfo.textContent = n ? `${n} th\u1EE3 th\u1EE7 c\xF4ng \u0111ang l\xE0m \xB7 h\xE0ng \u0111\u1EE3i ${sim2.craftQueue.length}` : "Ch\u01B0a c\xF3 th\u1EE3 th\u1EE7 c\xF4ng: giao m\u1ED9t d\xE2n l\xE0m ngh\u1EC1 n\xE0y \u0111\u1EC3 ch\u1EBF \u0111\u1ED3";
-        this.assign.disabled = ctl2.selected.size === 0;
+        const crafters = sim2.villagers.filter((v) => v.job === "craft").length, thinkers = sim2.villagers.filter((v) => v.job === "research").length;
+        this.shopInfo.textContent = `Ch\u1EBF t\u1EA1o: ${crafters} ng\u01B0\u1EDDi \xB7 Nghi\xEAn c\u1EE9u: ${thinkers} ng\u01B0\u1EDDi \xB7 h\xE0ng \u0111\u1EE3i ${sim2.craftQueue.length} \xB7 X\u01B0\u1EDFng c\u1EA5p ${b.level} (\xD7${lv2.craftSpeed.toLocaleString("vi")} t\u1ED1c \u0111\u1ED9). Thi\u1EBFu ng\u01B0\u1EDDi l\xE0m ngh\u1EC1 n\xE0o th\xEC vi\u1EC7c \u0111\xF3 \u0111\u1EE9ng y\xEAn.`;
+        const busy = sim2.villagers.filter((v) => v.order && (v.phase === "craft" || v.phase === "goShop"));
+        this.active.innerHTML = busy.length ? "\u0110ang l\xE0m: " + busy.map((v) => {
+          const d = sim2.orderDef(v.order), kind = v.order.startsWith("r:") ? "research" : "craft";
+          const rate = sim2.workRate(v, kind) * lv2.craftSpeed, left = Math.max(0, Math.ceil((1 - v.progress) * d.time / Math.max(0.05, rate)));
+          const nm = v.order.startsWith("r:") ? TECHS.find((t) => t.id === v.order.slice(2))?.name ?? "" : recipeName(RECIPE_BY_ID[v.order]);
+          return `${v.name}: ${nm} <b>${Math.floor(v.progress * 100)}%</b>${v.phase === "craft" ? ` \xB7 c\xF2n ~${left} gi\xE2y` : " \xB7 \u0111ang t\u1EDBi X\u01B0\u1EDFng"}`;
+        }).join(" \xB7 ") : "";
+        this.active.hidden = !busy.length;
+        this.assign.disabled = this.assignR.disabled = ctl2.selected.size === 0;
       }
       this.move.hidden = this.demolish.hidden = !def.buildable;
       const arm = this.armedFor === b.id && performance.now() < this.armed;

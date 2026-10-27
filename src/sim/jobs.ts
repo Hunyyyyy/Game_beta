@@ -1,6 +1,6 @@
 import type { Res } from './resources';
 
-export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'hunt' | 'fight';
+export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'hunt' | 'fight';
 export type WorkJob = Exclude<Job, 'idle'>;
 export type StatKey = 'vit' | 'str' | 'agi' | 'int' | 'sta';
 export type Stats = Record<StatKey, number>;
@@ -22,12 +22,13 @@ export const JOBS: Record<WorkJob, JobDef> = {
   stone: { name: 'Thợ đá', stat: 'str', res: 'stone', node: 'rock', baseTime: 18, anim: 'mine' },
   food: { name: 'Hái lượm', stat: 'agi', res: 'food', node: 'bush', baseTime: 20, anim: 'gather' },
   build: { name: 'Thợ xây', stat: 'sta', baseTime: 1, anim: 'build' },
-  craft: { name: 'Thợ thủ công', stat: 'int', baseTime: 1, anim: 'craft' },
+  craft: { name: 'Chế tạo', stat: 'int', baseTime: 1, anim: 'craft' },
+  research: { name: 'Nghiên cứu', stat: 'int', baseTime: 1, anim: 'gather' },
   hunt: { name: 'Thợ săn', stat: 'agi', baseTime: 1, anim: 'thrust' },
   fight: { name: 'Chiến binh', stat: 'str', baseTime: 1, anim: 'smash' },
 };
-export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Thợ thủ công', hunt: 'Thợ săn', fight: 'Chiến binh' };
-export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 'hunt', 'fight'];
+export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', hunt: 'Thợ săn', fight: 'Chiến binh' };
+export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 'research', 'hunt', 'fight'];
 
 /** Kinh nghiệm cần để lên cấp 1..5 (giây làm việc, chưa nhân tốc độ học). */
 export const XP_LEVELS = [60, 150, 300, 500, 800];

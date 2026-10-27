@@ -27,7 +27,7 @@ export function describe(v: Villager): string {
     case 'goSite': t = 'đi tới công trường'; break;
     case 'build': t = 'đang xây'; break;
     case 'goShop': t = 'đi tới Xưởng'; break;
-    case 'craft': t = 'đang chế tác'; break;
+    case 'craft': t = v.order?.startsWith('r:') ? 'đang nghiên cứu' : 'đang chế tạo'; break;
     case 'goEquip': t = 'đi lấy đồ ở Xưởng'; break;
     case 'wait': t = 'chờ việc'; break;
     case 'goHome': t = 'về lửa trại ngủ'; break;
@@ -160,7 +160,7 @@ export class BuildingPanel {
   private readonly researchSec = h('div');
   private armed = 0; private armedFor = -1;
   private readonly villagerList = h('div'); private villagerKey = ''; private readonly vRows = new Map<number, { st: HTMLElement; hp: HTMLElement }>();
-  private readonly pop = h('div', { class: 'kv' }); private readonly shopInfo = h('div', { class: 'kv' }); private readonly assign = h('button', { class: 'sm', text: 'Giao dân đang chọn làm Thợ thủ công' });
+  private readonly pop = h('div', { class: 'kv' }); private readonly shopInfo = h('div', { class: 'kv' }); private readonly assign = h('button', { class: 'sm', text: 'Giao dân đang chọn làm Chế tạo' }); private readonly assignR = h('button', { class: 'sm', text: 'Giao dân đang chọn làm Nghiên cứu' }); private readonly active = h('div', { class: 'kv' });
   private readonly info = h('div', { class: 'kv' }); private readonly next = h('div', { class: 'kv' }); private readonly upgrade = h('button', { class: 'sm primary' });
 
   constructor(readonly root: HTMLElement, private readonly c: Ctx) {
@@ -181,7 +181,7 @@ export class BuildingPanel {
         const minus = h('button', { class: 'sm', text: '−', title: 'Bớt một đơn', onclick: () => { sim.unqueueCraft(r.id); ctl.onChange(); } });
         const plus = h('button', { class: 'sm', text: '+', title: 'Thêm một đơn vào hàng đợi', onclick: () => { const e = sim.queueCraft(r.id); if (e) c.toast(e); ctl.onChange(); } });
         const row = h('div', { class: 'rec' }, iconCanvas(sprites.icons[r.id]),
-          h('div', { class: 'nm' }, recipeName(r), h('small', {}, `${costText(r.cost, RES_NAME)} · ${r.time} giây · ${recipeUse(r)}`), lock),
+          h('div', { class: 'nm' }, recipeName(r), h('small', {}, `${costText(r.cost, RES_NAME)} · ${r.time} giây chuẩn · ${recipeUse(r)}`), lock),
           h('div', { class: 'qty' }, have, minus, plus));
         this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, have, row, lock, btns: [minus, plus] });
         this.workshop.append(row);
@@ -189,7 +189,7 @@ export class BuildingPanel {
     };
     // research: each step opens recipes or building levels
     this.workshop.append(this.researchSec);
-    this.researchSec.append(h('div', { class: 'sub', text: 'Nghiên cứu (thợ thủ công làm, tốn nguyên liệu và thời gian)' }));
+    this.researchSec.append(h('div', { class: 'sub', text: 'Nghiên cứu: dân làm nghề Nghiên cứu, cần đủ Trí tuệ, tốn nguyên liệu và thời gian' }));
     for (const t of TECHS) {
       const note = h('small', { class: 'lock' }), btn = h('button', { class: 'sm' });
       btn.addEventListener('click', () => {
@@ -198,12 +198,14 @@ export class BuildingPanel {
         else { const e = sim.queueCraft(RESEARCH_PREFIX + t.id); if (e) c.toast(e); }
         ctl.onChange();
       });
-      const row = h('div', { class: 'tech' }, h('div', { class: 'nm' }, t.name, h('small', {}, `${t.desc} Mở: ${unlockText(t, (id) => { const r = RECIPE_BY_ID[id]; return r ? recipeName(r) : id; })}.`), h('small', {}, `${costText(t.cost, RES_NAME)} · ${t.time} giây${t.needLevel > 1 ? ` · Xưởng cấp ${t.needLevel}` : ''}`), note), btn);
+      const row = h('div', { class: 'tech' }, h('div', { class: 'nm' }, t.name, h('small', {}, `${t.desc} Mở: ${unlockText(t, (id) => { const r = RECIPE_BY_ID[id]; return r ? recipeName(r) : id; })}.`), h('small', {}, `${costText(t.cost, RES_NAME)} · ${t.time} giây · Trí tuệ ≥ ${t.minInt}${t.needLevel > 1 ? ` · Xưởng cấp ${t.needLevel}` : ''}`), note), btn);
       this.techRows.push({ id: t.id, row, btn, note });
       this.researchSec.append(row);
     }
-    this.workshop.append(this.shopInfo, this.assign);
-    this.assign.addEventListener('click', () => { const b = this.current(); if (b && ctl.selected.size) { sim.orderWork([...ctl.selected], b.x, b.y); c.toast('Thợ thủ công'); ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
+    this.workshop.insertBefore(h('div', { class: 'btns' }, this.assign, this.assignR), this.researchSec);
+    this.workshop.insertBefore(this.active, this.researchSec); this.workshop.insertBefore(this.shopInfo, this.active);
+    this.assign.addEventListener('click', () => { const b = this.current(); if (b && ctl.selected.size) { sim.orderWork([...ctl.selected], b.x, b.y); c.toast('Chế tạo'); ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
+    this.assignR.addEventListener('click', () => { if (ctl.selected.size) { sim.setJob([...ctl.selected], 'research'); c.toast('Nghiên cứu'); ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
     section('Công cụ', RECIPES.filter((r) => ['axe', 'pick', 'hoe', 'hammer'].includes(r.kind)));
     section('Vũ khí', RECIPES.filter((r) => r.kind in WEAPONS));
     section('Giáp', RECIPES.filter((r) => r.kind === 'hide'));
@@ -240,7 +242,7 @@ export class BuildingPanel {
         const open = sim.recipeOpen(r.id);
         r.have.textContent = open ? `kho ${sim.toolCount(r.kind, r.tier)} · đợi ${sim.craftQueue.filter((id) => id === r.id).length}` : '';
         r.row.classList.toggle('locked', !open);
-        r.lock.textContent = open ? '' : `Cần nghiên cứu: ${techForRecipe(r.id)?.name ?? '?'}`;
+        r.lock.textContent = sim.recipeLock(r.id) ?? '';
         for (const btn of r.btns) btn.disabled = !open;
       }
       this.researchSec.hidden = !RESEARCH.enabled;
@@ -251,9 +253,17 @@ export class BuildingPanel {
         r.btn.textContent = { done: '✓ Xong', active: 'Đang làm', queued: 'Hủy đơn', ready: 'Nghiên cứu', locked: 'Khóa' }[st.state];
         r.btn.disabled = st.state === 'done' || st.state === 'active' || st.state === 'locked';
       }
-      const n = sim.villagers.filter((v) => v.job === 'craft').length;
-      this.shopInfo.textContent = n ? `${n} thợ thủ công đang làm · hàng đợi ${sim.craftQueue.length}` : 'Chưa có thợ thủ công: giao một dân làm nghề này để chế đồ';
-      this.assign.disabled = ctl.selected.size === 0;
+      const crafters = sim.villagers.filter((v) => v.job === 'craft').length, thinkers = sim.villagers.filter((v) => v.job === 'research').length;
+      this.shopInfo.textContent = `Chế tạo: ${crafters} người · Nghiên cứu: ${thinkers} người · hàng đợi ${sim.craftQueue.length} · Xưởng cấp ${b.level} (×${lv.craftSpeed.toLocaleString('vi')} tốc độ). Thiếu người làm nghề nào thì việc đó đứng yên.`;
+      const busy = sim.villagers.filter((v) => v.order && (v.phase === 'craft' || v.phase === 'goShop'));
+      this.active.innerHTML = busy.length ? 'Đang làm: ' + busy.map((v) => {
+        const d = sim.orderDef(v.order!)!, kind = v.order!.startsWith('r:') ? 'research' : 'craft';
+        const rate = sim.workRate(v, kind) * lv.craftSpeed, left = Math.max(0, Math.ceil(((1 - v.progress) * d.time) / Math.max(0.05, rate)));
+        const nm = v.order!.startsWith('r:') ? TECHS.find((t) => t.id === v.order!.slice(2))?.name ?? '' : recipeName(RECIPE_BY_ID[v.order!]);
+        return `${v.name}: ${nm} <b>${Math.floor(v.progress * 100)}%</b>${v.phase === 'craft' ? ` · còn ~${left} giây` : ' · đang tới Xưởng'}`;
+      }).join(' · ') : '';
+      this.active.hidden = !busy.length;
+      this.assign.disabled = this.assignR.disabled = ctl.selected.size === 0;
     }
     this.move.hidden = this.demolish.hidden = !def.buildable;
     const arm = this.armedFor === b.id && performance.now() < this.armed;

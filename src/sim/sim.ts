@@ -11,7 +11,7 @@ import { ARMORS, CRAFTED_WEAPONS, maxHpOf, MORALE, Team, TribeId, WEAPONS } from
 import { bestWeapon, brainPlayer, hurt, isFighter, resolve, tickCommon, tickDown, tickMorale, tickProjectiles, weaponOf } from './battle';
 import { Animal, animalDef, breed, populate, tickAnimals } from './fauna';
 import { adoptTribe, EventState, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tributeTribe } from './tribes';
-import { isResearchOrder, levelCap, recipeOpen, RESEARCH, RESEARCH_PREFIX, Tech, TECH_BY_ID, techForLevel, techForRecipe, techOfOrder } from './research';
+import { isResearchOrder, levelCap, recipeNeedLevel, recipeOpen, RESEARCH, RESEARCH_PREFIX, Tech, TECH_BY_ID, techForLevel, techForRecipe, techOfOrder } from './research';
 import { World } from './world';
 
 export type Sex = 'm' | 'f';
@@ -274,7 +274,7 @@ export class Sim {
     const potential = {} as Record<WorkJob, number>, skill = {} as Record<WorkJob, Skill>;
     for (const j of WORK_JOBS) {
       // hunting and fighting come from the body, not from a random draw, so earlier random streams stay the same
-      if (j === 'hunt' || j === 'fight') { const k = j === 'hunt' ? stats.agi : stats.str; potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1; skill[j] = { xp: 0, level: 0 }; continue; }
+      if (j === 'hunt' || j === 'fight' || j === 'research') { const k = j === 'hunt' ? stats.agi : j === 'research' ? stats.int : stats.str; potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1; skill[j] = { xp: 0, level: 0 }; continue; }
       const p = r(); potential[j] = p < 0.45 ? 1 : p < 0.85 ? 2 : 3; skill[j] = { xp: 0, level: 0 };
     }
     return {
@@ -443,7 +443,17 @@ export class Sim {
   }
   /** Highest level among the finished workshops. */
   workshopLevel(): number { return this.buildings.reduce((m, b) => (b.kind === 'workshop' && b.done ? Math.max(m, b.level) : m), 0); }
-  recipeOpen(id: string): boolean { return recipeOpen(this.researched, id); }
+  /** Why a recipe cannot be made yet (workshop level or research), or null. */
+  recipeLock(id: string): string | null {
+    if (!RESEARCH.enabled) return null;
+    const need = recipeNeedLevel(id);
+    if (this.workshopLevel() < need) return `Cần Xưởng cấp ${need}`;
+    if (!recipeOpen(this.researched, id)) return `Cần nghiên cứu: ${techForRecipe(id)?.name ?? '?'}`;
+    return null;
+  }
+  recipeOpen(id: string): boolean { return this.recipeLock(id) === null; }
+  /** The smartest villager's Trí tuệ. */
+  bestInt(): number { return this.villagers.reduce((m, v) => Math.max(m, v.stats.int), 0); }
 
   /** Where a research stands: done, being worked on, queued, ready to start or locked (with the reason). */
   techState(t: Tech): { state: 'done' | 'active' | 'queued' | 'ready' | 'locked'; why?: string } {
@@ -455,6 +465,7 @@ export class Sim {
     if (need) return { state: 'locked', why: `Cần nghiên cứu: ${TECH_BY_ID[need].name}` };
     if (!this.hasWorkshop()) return { state: 'locked', why: 'Cần dựng Xưởng chế tác' };
     if (this.workshopLevel() < t.needLevel) return { state: 'locked', why: `Cần Xưởng cấp ${t.needLevel}` };
+    if (this.bestInt() < t.minInt) return { state: 'locked', why: `Cần dân có Trí tuệ ${t.minInt} trở lên (giỏi nhất làng: ${this.bestInt()})` };
     return { state: 'ready' };
   }
 
@@ -471,7 +482,8 @@ export class Sim {
     } else {
       if (!RECIPE_BY_ID[id]) return 'Công thức không tồn tại';
       if (!this.hasWorkshop()) return 'Cần dựng Xưởng chế tác trước';
-      if (!this.recipeOpen(id)) return `Cần nghiên cứu: ${techForRecipe(id)?.name ?? '?'}`;
+      const lock = this.recipeLock(id);
+      if (lock) return lock;
     }
     if (this.craftQueue.length >= 12) return 'Hàng đợi đã đầy';
     this.craftQueue.push(id);
@@ -845,7 +857,7 @@ export class Sim {
     } else if (v.phase === 'build') {
       const t = this.toolTier(v, 'build');
       if (t > 0) { anim = 'build'; hold = { kind: 'hammer', tier: t }; } else anim = 'gather';
-    } else if (v.phase === 'craft') { anim = 'craft'; hold = { kind: 'hammer', tier: 2 }; }
+    } else if (v.phase === 'craft') { if (v.order?.startsWith('r:')) anim = 'gather'; else { anim = 'craft'; hold = { kind: 'hammer', tier: 2 }; } }
     else if (v.phase === 'skin') anim = 'gather';
     if (anim !== v.anim) { v.anim = anim; v.animClock = 0; } else v.animClock += dt;
     v.hold = hold;
@@ -946,6 +958,8 @@ export class Sim {
   }
 
   // ---------------------------------------------------------------- việc làm
+  /** How fast a villager gets through crafting or research (1 = the nominal time). */
+  workRate(v: Villager, job: WorkJob): number { return this.workFactor(v, job); }
   private workFactor(v: Villager, job: WorkJob): number {
     const stat = v.stats[JOBS[job].stat];
     const season = job === 'food' ? SEASON_DEF[this.season].gather : 1;
@@ -1088,8 +1102,9 @@ export class Sim {
     const d = v.order ? this.orderDef(v.order) : null;
     if (!v.order || !d) { v.phase = 'idle'; return; }
     const shop = this.getBuilding(v.target);
-    v.progress += (dt * this.workFactor(v, 'craft') * (shop ? levelDef(shop).craftSpeed : 1)) / d.time;
-    this.gainXp(v, 'craft', dt);
+    const kind: WorkJob = isResearchOrder(v.order) ? 'research' : 'craft';
+    v.progress += (dt * this.workFactor(v, kind) * (shop ? levelDef(shop).craftSpeed : 1)) / d.time;
+    this.gainXp(v, kind, dt);
     if (v.progress < 1) return;
     if (isResearchOrder(v.order)) {
       const t = techOfOrder(v.order)!;
@@ -1105,7 +1120,7 @@ export class Sim {
   private plan(v: Villager): void {
     if (v.job === 'hunt' || v.job === 'fight') { this.wait(v, 1); return; } // combat code drives these jobs
     if (v.job === 'build') { if (!this.planEquip(v, 'build')) this.planBuild(v); return; }
-    if (v.job === 'craft') { this.planCraft(v); return; }
+    if (v.job === 'craft' || v.job === 'research') { this.planCraft(v); return; }
     const def = JOBS[v.job as WorkJob], res = def.res!;
     if (v.carry && (v.carry.res !== res || v.carry.amount >= CARRY_CAP[v.carry.res])) { this.planDeliver(v); return; }
     if (this.stock[res] >= this.capacity(res)) {
@@ -1166,9 +1181,12 @@ export class Sim {
     const shops = this.buildings.filter((b) => b.kind === 'workshop' && b.done);
     if (!shops.length) { this.wait(v, 3); return; }
     if (!v.order) {
-      const i = this.craftQueue.findIndex((id) => this.affordable(id));
+      const research = v.job === 'research';
+      // craftsmen take recipes, researchers take research; a researcher also needs the Trí tuệ for it
+      const mine = (id: string) => isResearchOrder(id) === research && (!research || v.stats.int >= (techOfOrder(id)?.minInt ?? 0)) && (research || this.recipeOpen(id));
+      const i = this.craftQueue.findIndex((id) => mine(id) && this.affordable(id));
       if (i < 0) {
-        if (this.craftQueue.length && this.time - this.lastMatWarn > 30) { this.lastMatWarn = this.time; this.say('Thiếu nguyên liệu để chế công cụ trong hàng đợi.'); }
+        if (this.craftQueue.some(mine) && this.time - this.lastMatWarn > 30) { this.lastMatWarn = this.time; this.say(research ? 'Thiếu nguyên liệu để nghiên cứu.' : 'Thiếu nguyên liệu để chế công cụ trong hàng đợi.'); }
         this.wait(v, 3); return;
       }
       const id = this.craftQueue[i], d = this.orderDef(id)!;

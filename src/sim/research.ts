@@ -7,6 +7,8 @@ export interface Tech {
   requires: string[];
   /** Workshop level needed to start it. */
   needLevel: number;
+  /** Trí tuệ a villager needs to research it. */
+  minInt: number;
   cost: Partial<Stock>;
   time: number;
   unlocks: { recipes?: string[]; levels?: Partial<Record<BuildingKind, number>> };
@@ -14,6 +16,9 @@ export interface Tech {
 
 /** Research is switched off by default: with `enabled` false every recipe and building level is open. */
 export const RESEARCH = { enabled: (data as unknown as { enabled: boolean }).enabled };
+/** Workshop level each recipe needs. */
+const RECIPE_LEVEL = (data as unknown as { recipeLevel: Record<string, number> }).recipeLevel;
+export const recipeNeedLevel = (id: string): number => RECIPE_LEVEL[id] ?? 1;
 export const TECHS = (data as unknown as { techs: Tech[] }).techs;
 export const TECH_BY_ID: Record<string, Tech> = Object.fromEntries(TECHS.map((t) => [t.id, t]));
 

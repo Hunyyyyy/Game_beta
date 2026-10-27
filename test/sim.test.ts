@@ -13,7 +13,7 @@ import type { Villager } from '../src/sim/sim';
 import * as dev from '../src/sim/dev';
 import { RESEARCH, TECHS } from '../src/sim/research';
 
-RESEARCH.enabled = true; // the research tests below need it; a block near the end checks the default (off)
+RESEARCH.enabled = false; // most tests run with everything open; the research tests switch it on
 
 let fails = 0;
 const ok = (c: boolean, msg: string) => { console.log((c ? 'ok   ' : 'FAIL ') + msg); if (!c) fails++; };
@@ -111,8 +111,9 @@ ok(none.maxDist < 0.8 && wood1.maxDist < 0.8, `dân đứng sát cây khi đốn
   ok(!!placed?.ok && sm.stock.wood === 25, 'đặt Xưởng tốn 15 gỗ');
   sm.setJob([a.id, b.id], 'build'); run(sm, 80);
   ok(sm.hasWorkshop(), 'Xưởng dựng xong');
+  RESEARCH.enabled = true;
   ok(sm.queueCraft('pick2') !== null && sm.queueCraft('club1') !== null, 'đồ chưa nghiên cứu thì chưa chế được');
-  dev.unlockResearch(sm);
+  RESEARCH.enabled = false;
   ok(sm.queueCraft('axe1') === null && sm.queueCraft('pick2') === null, 'xếp được đơn khi có Xưởng');
   sm.setJob([c.id], 'craft'); run(sm, 60);
   ok(sm.toolCount('axe', 1) === 1 && sm.toolCount('pick', 2) === 1, `chế xong rìu gỗ và cuốc chim đá (${JSON.stringify(sm.toolStock)})`);
@@ -345,8 +346,9 @@ const tickN = (sm: Sim, secs: number) => run(sm, secs);
   const spot = (() => { for (let dx = -8; dx <= 8; dx++) for (let dy = 3; dy <= 9; dy++) if (!sm.canPlace('storage', sp.x + dx, sp.y + dy)) return [sp.x + dx, sp.y + dy]; return null; })()!;
   const b = sm.placeBuilding('storage', spot[0], spot[1]).building!;
   const ids = sm.villagers.map((o) => o.id); sm.setJob(ids, 'build'); run(sm, 40);
+  RESEARCH.enabled = true;
   ok(sm.upgradeBuilding(b.id)?.startsWith('Cần nghiên cứu') ?? false, 'chưa nghiên cứu thì chưa nâng cấp được');
-  dev.unlockResearch(sm);
+  RESEARCH.enabled = false;
   ok(b.done && b.level === 1 && sm.capacity() === 150, `Kho cấp 1 (đơn sơ) chứa 100 (tổng ${sm.capacity()})`);
   ok(sm.upgradeBuilding(b.id) !== null && !b.upgrading, 'thiếu gỗ thì không nâng cấp được');
   sm.stock.wood = 40;
@@ -670,9 +672,10 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
 }
 
 {
-  // research opens recipes and building levels one step at a time, and goes through the craft queue
+  // research: a researcher with enough Trí tuệ works through the queue; recipes also need the workshop level
+  RESEARCH.enabled = true;
   const sm = new Sim(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
-  sm.time = DAY_LENGTH * 0.3; sm.stock.wood = 200; sm.stock.stone = 200;
+  sm.time = DAY_LENGTH * 0.3; sm.stock.wood = 200; sm.stock.stone = 200; sm.stock.hide = 20;
   const sp = sm.world.start;
   const spotFor = (kind: 'workshop' | 'storage', from = 3) => { for (let dx = -8; dx <= 8; dx++) for (let dy = from; dy <= from + 8; dy++) if (!sm.canPlace(kind, sp.x + dx, sp.y + dy)) return [sp.x + dx, sp.y + dy]; return null; };
   const [a, b, c] = sm.villagers;
@@ -681,28 +684,38 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   sm.setJob([a.id, b.id, c.id], 'build'); run(sm, 80);
   ok(shop.done, 'workshop is up');
   ok(sm.recipeOpen('axe1') && sm.recipeOpen('hammer1') && !sm.recipeOpen('pick1') && !sm.recipeOpen('mace2'), 'only the basic wood tools are open from the start');
+  ok(sm.recipeLock('spear1') === 'Cần Xưởng cấp 2', 'a better tool needs a better workshop');
   ok(sm.queueCraft('r:club') !== null && sm.techState(TECHS.find((t) => t.id === 'club')!).state === 'locked', 'a technology waits for the one before it');
   ok(sm.queueCraft('r:wood_tools') === null && sm.queueCraft('r:wood_tools') !== null, 'a technology can be queued once');
+  // a craftsman does not touch research, a dull researcher cannot take it, a bright one does
+  c.stats.int = 3; dev.bumpStat(sm, [a.id], 'int', 20); a.stats.int = 9;
+  sm.time = DAY_LENGTH * 0.3; sm.setJob([a.id, b.id], 'idle'); sm.setJob([b.id], 'craft'); sm.setJob([c.id], 'research'); run(sm, 10);
+  ok(b.order === null && c.order === null && sm.craftQueue.includes('r:wood_tools'), 'a craftsman ignores research and a dull researcher cannot take it');
+  ok(sm.techState(TECHS.find((t) => t.id === 'wood_tools')!).state === 'queued', 'it stays queued');
   const before = sm.stock.wood;
-  sm.time = DAY_LENGTH * 0.3; sm.setJob([a.id, b.id], 'idle'); sm.setJob([c.id], 'craft'); run(sm, 8);
-  ok(c.order === 'r:wood_tools' && sm.stock.wood === before - 8, 'the craftsman takes the research order and pays for it');
+  sm.setJob([c.id], 'idle'); sm.setJob([a.id], 'research'); run(sm, 8);
+  ok(a.order === 'r:wood_tools' && sm.stock.wood === before - 8, 'a bright researcher takes the order and pays for it');
+  ok(sm.techState(TECHS.find((t) => t.id === 'wood_tools')!).state === 'active', 'and it shows as being worked on');
   run(sm, 120);
   ok(sm.researched.has('wood_tools') && sm.recipeOpen('pick1') && sm.recipeOpen('hoe1'), 'the research finishes and opens its recipes');
   ok(sm.queueCraft('pick1') === null, 'an opened recipe can be queued');
-  ok(sm.queueCraft('r:spear') !== null, 'a spear still waits for the club and a level-2 workshop');
+  const rate = (int: number) => { const w = { ...a, stats: { ...a.stats, int } } as typeof a; return sm.workRate(w, 'research'); };
+  ok(rate(10) > rate(5), 'a smarter researcher is quicker');
+  ok(sm.techState(TECHS.find((t) => t.id === 'spear')!).state === 'locked', 'a spear still waits for the club and a level-2 workshop');
   sm.queueCraft('r:timber'); sm.craftQueue.splice(sm.craftQueue.indexOf('pick1'), 1); sm.time = DAY_LENGTH * 0.3; run(sm, 150);
   ok(sm.researched.has('timber'), 'timber research done');
   ok(sm.techState(TECHS.find((t) => t.id === 'stone_tools')!).why === 'Cần Xưởng cấp 2', 'stone tools need a level-2 workshop');
   ok(sm.upgradeBuilding(shop.id) === null, 'now the workshop may be upgraded to level 2');
-  // an interrupted research is refunded and goes back to the queue
-  sm.time = DAY_LENGTH * 0.3; sm.setJob([a.id, b.id], 'build'); run(sm, 100);
+  sm.time = DAY_LENGTH * 0.3; sm.setJob([b.id, c.id], 'build'); run(sm, 100);
   ok(shop.level === 2, 'workshop is level 2');
-  sm.queueCraft('r:stone_tools'); const w0 = sm.stock.wood; run(sm, 5);
-  ok(c.order === 'r:stone_tools' && sm.stock.wood === w0 - 10, 'second step taken');
-  sm.setJob([c.id], 'idle');
-  ok(c.order === null && sm.stock.wood === w0 && sm.craftQueue.includes('r:stone_tools'), 'giving up mid-research refunds it and requeues');
+  ok(sm.recipeLock('spear1') === 'Cần nghiên cứu: Giáo vót nhọn', 'level 2 opens the spear for research, not yet for crafting');
+  sm.queueCraft('r:stone_tools'); const w0 = sm.stock.wood; sm.setJob([b.id, c.id], 'idle'); sm.time = DAY_LENGTH * 0.3; run(sm, 8);
+  ok(a.order === 'r:stone_tools' && sm.stock.wood === w0 - 10, 'second step taken');
+  sm.setJob([a.id], 'idle');
+  ok(a.order === null && sm.stock.wood === w0 && sm.craftQueue.includes('r:stone_tools'), 'giving up mid-research refunds it and requeues');
   dev.resetResearch(sm);
   ok(!sm.recipeOpen('pick1') && sm.upgradeBuilding(shop.id) !== null, 'forgetting research locks things again');
+  RESEARCH.enabled = false;
 }
 
 {
