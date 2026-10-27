@@ -698,10 +698,11 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   a.stats.int = 9; c.stats.int = 3; b.stats.int = 6;
   ok(sm.assignStaff([a.id], 'research') === null, 'a bright villager is sent to the lab');
   ok(sm.assignStaff([c.id], 'research') !== null && c.inside === null, 'a level-1 lab holds one researcher');
-  const wood0 = sm.stock.wood, coin0 = sm.stock.coin; run(sm, 20);
+  run(sm, 20);
   ok(a.inside === lab.id && lab.active?.id === 'hammer1', 'the researcher is inside and the research has started');
-  ok(sm.stock.wood === wood0 - 6 && sm.stock.coin === coin0 - 2, 'materials and coins are paid when it starts');
+  ok(sm.stock.wood === 300 - 6 && sm.stock.coin === 40 - 2, 'materials and coins are paid as soon as the research is queued');
   ok(sm.techState(TECHS.find((t) => t.id === 'hammer1')!).state === 'active' && lab.active!.progress > 0 && lab.active!.progress < 1, 'it is under way, and takes a long time');
+  ok((sm.queueResearch('timber') ?? '').startsWith('Đang nghiên cứu') && sm.researchQueue.length === 0, 'only one research at a time: another cannot be queued while one is under way');
   const rate = (int: number) => sm.workRate({ ...a, stats: { ...a.stats, int } } as typeof a, 'research');
   ok(rate(10) > rate(5) * 1.3, 'the smarter the researcher, the faster the work');
   sm.dev.fastWorks = true; run(sm, 20); sm.dev.fastWorks = false;
@@ -714,10 +715,12 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(lab.active?.id === 'club1', 'it starts once a bright enough researcher is inside');
   // coins are needed too
   sm.dev.fastWorks = true; run(sm, 30); sm.dev.fastWorks = false;
-  sm.stock.coin = 0; sm.queueResearch('axe1'); run(sm, 10);
-  ok(lab.active === null && sm.researchQueue.includes('axe1'), 'without coins the research waits');
-  sm.stock.coin = 5; run(sm, 10);
-  ok(lab.active?.id === 'axe1' && sm.stock.coin === 3, 'and starts when the coins are there');
+  sm.stock.coin = 0; const noCoin = sm.queueResearch('axe1');
+  ok(noCoin !== null && sm.researchQueue.length === 0 && sm.researchShort(TECHS.find((t) => t.id === 'axe1')!) !== null, 'without the coins a research cannot be started');
+  sm.stock.coin = 5; ok(sm.queueResearch('axe1') === null && sm.stock.coin === 3, 'with them it is paid at once');
+  sm.unqueueResearch('axe1'); ok(sm.stock.coin === 5 && sm.researchQueue.length === 0, 'cancelling a queued research gives the payment back');
+  sm.queueResearch('axe1'); run(sm, 10);
+  ok(lab.active?.id === 'axe1' && sm.stock.coin === 3, 'and the researchers get on with it');
   sm.dev.fastWorks = true; run(sm, 30); sm.dev.fastWorks = false;
   // house level gates the next blueprint step and the researcher count
   ok(sm.techState(TECHS.find((t) => t.id === 'axe2')!).why === 'Cần Nhà nghiên cứu cấp 2', 'the stone axe needs a level-2 lab');
@@ -730,6 +733,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(b.inside === lab.id && lab.staff.length === 2, 'both are inside, listed by name');
   ok(sm.techState(TECHS.find((t) => t.id === 'axe2')!).state === 'ready', 'the stone axe step is open now');
   // the stores need research, and fetching and ordering are researched automations
+  sm.stock.wood = 300; sm.stock.stone = 100; sm.stock.coin = 40;
   ok(sm.researched.has('hammer1') && sm.queueResearch('tool_store') === null, 'the Kho công cụ can be researched');
   sm.researched.add('tool_store'); const store = place('toolstore');
   ok(store.kind === 'toolstore' && sm.buildingLock('toolstore') !== null, 'once built it is unique too');
@@ -754,20 +758,41 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const [a, b] = sm.villagers;
   ok(sm.repairTool([a.id], 'axe') === 'Cần dựng Nhà sửa chữa', 'no repair house, no repairs');
   dev.buildAll(sm); sm.toolStock.axe1 = 2;
-  ok(sm.assignTool([a.id], 'axe', 1) === null && a.tools.axe?.tier === 1 && sm.toolCount('axe', 1) === 1, 'a tool is taken from the stock and handed over');
-  ok(sm.assignTool([b.id], 'axe', 2) !== null && b.tools.axe === null, 'a tool that is not in stock cannot be handed out');
+  ok(sm.assignTool([a.id], 'axe', 1) !== null && a.tools.axe === null, 'a villager with no job (or another) cannot be handed an axe');
+  sm.setJob([a.id], 'wood'); sm.setJob([b.id], 'build');
+  ok(sm.assignTool([b.id], 'axe', 1) !== null && b.tools.axe === null, 'a builder is not given an axe either');
+  ok(sm.assignTool([a.id], 'axe', 1) === null && a.tools.axe?.tier === 1 && sm.toolCount('axe', 1) === 1, 'a woodcutter is handed the axe from the stock');
+  ok(sm.assignTool([a.id], 'axe', 2) !== null && a.tools.axe?.tier === 1, 'a tool that is not in stock cannot be handed out');
   ok(sm.repairTool([a.id], 'axe') === 'Công cụ còn mới, chưa cần sửa', 'a whole tool needs no repair');
-  a.tools.axe!.dur = 50;
-  ok(sm.repairTool([a.id], 'axe') === null && a.tools.axe === null && sm.repairQueue.includes('axe1'), 'a worn tool goes into the repair queue and leaves the villager');
-  sm.assignTool([a.id], 'axe', 1); a.tools.axe!.dur = 50;
-  sm.discardTool([a.id], 'axe');
-  ok(a.tools.axe === null && sm.toolCount('axe', 1) === 0, 'a tool can be thrown away even when it still works');
-  sm.toolStock.axe1 = 1; sm.assignTool([a.id], 'axe', 1); sm.assignTool([a.id], 'axe', 0);
-  ok(a.tools.axe === null && sm.toolCount('axe', 1) === 1, 'a whole tool handed back returns to the stock');
-  dev.wearTools(sm, [a.id], 0); sm.toolStock.axe1 = 1; sm.assignTool([a.id], 'axe', 1);
-  ok(a.tools.axe!.dur > 0, 'a new tool replaces a broken one');
-  sm.giveTool([a.id], 'pick', 1); dev.wearTools(sm, [a.id], 0);
-  ok(sm.toolTier(a, 'stone') === 0 && sm.toolLacking(a, 'stone'), 'dev can break tools to test the repair flow');
+  a.tools.axe!.dur = 50; sm.toolStock.axe1 = 0; // nothing in the store to fetch meanwhile
+  // the villager has to carry it to the repair house
+  ok(sm.repairTool([a.id], 'axe') === null && a.tools.axe !== null && a.phase === 'goOrder' && sm.repairQueue.length === 0, 'repair sends the villager walking, tool in hand');
+  run(sm, 60);
+  ok(a.tools.axe === null && (sm.repairQueue.includes('axe1') || sm.building('repair')!.active?.id === 'axe1') && a.repairFor === 'axe1', 'the tool is handed in at the repair house');
+  sm.assignStaff([b.id], 'repair'); sm.dev.fastWorks = true; run(sm, 200); sm.dev.fastWorks = false;
+  ok(a.tools.axe?.tier === 1 && a.tools.axe.dur > 100 && a.repairFor === null, 'the mended tool goes back to the villager who brought it');
+  ok(sm.orderDef('repair', 'axe2')!.time > sm.orderDef('repair', 'axe1')!.time, 'a stone tool takes longer to mend than a wooden one');
+  // changing the job gives the tool back, wear and all
+  const c = sm.villagers[2]; c.job = 'wood'; c.tools.axe = { tier: 1, dur: 100 }; c.repairFor = null;
+  sm.setJob([c.id], 'stone'); run(sm, 1);
+  ok(c.tools.axe === null && sm.wornTools.some((w) => w.id === 'axe1' && Math.abs(w.dur - 100) < 1), 'a worn tool goes back to the stock when the job changes, keeping its durability');
+  sm.setJob([c.id], 'wood'); sm.setJob([b.id], 'wood'); sm.wornTools.length = 0; sm.toolStock.axe1 = 0; sm.wornTools.push({ id: 'axe1', dur: 77 });
+  sm.assignTool([c.id], 'axe', 1);
+  ok(c.tools.axe?.dur === 77, 'a tool taken back out of the stock still carries its wear');
+  sm.setJob([c.id], 'idle'); run(sm, 1);
+  ok(c.tools.axe === null && sm.wornTools.length === 1 && Math.abs(sm.wornTools[0].dur - 77) < 1, 'and back again when the villager is idle');
+  sm.setJob([c.id], 'wood'); sm.toolStock.axe1 = 1; sm.wornTools.length = 0; sm.assignTool([c.id], 'axe', 1);
+  sm.giveTool([c.id], 'pick', 1);
+  ok(sm.heldTool(c)?.k === 'pick' && c.tools.axe === null, 'a villager carries only one tool at a time');
+  sm.setJob([c.id], 'wood'); c.tools.axe = { tier: 1, dur: 5 }; c.tools.pick = null;
+  sm.discardTool([c.id], 'axe');
+  ok(c.tools.axe === null, 'a tool can be thrown away even when it still works');
+  sm.toolStock.axe1 = 1; sm.wornTools.length = 0; sm.assignTool([c.id], 'axe', 1); sm.assignTool([c.id], 'axe', 0);
+  ok(c.tools.axe === null && sm.toolCount('axe', 1) === 1, 'a whole tool handed back returns to the stock');
+  dev.wearTools(sm, [c.id], 0); sm.toolStock.axe1 = 1; sm.assignTool([c.id], 'axe', 1);
+  ok(c.tools.axe!.dur > 0, 'a new tool replaces a broken one');
+  sm.giveTool([c.id], 'pick', 1); dev.wearTools(sm, [c.id], 0);
+  ok(sm.toolTier(c, 'stone') === 0 && sm.toolLacking(c, 'stone'), 'dev can break tools to test the repair flow');
   // storage limits: the craft house holds only a few items without stores
   const sm2 = new Sim(1337); reveal(sm2);
   ok(sm2.storeCap('tool') === 10 && sm2.storeCap('gear') === 10, 'without stores a few items are kept at the craft house');

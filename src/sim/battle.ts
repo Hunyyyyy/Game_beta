@@ -1,5 +1,6 @@
 import animsJson from '../data/anims.json';
 import { ANIMALS, ARMORS, ArmorDef, CRAFTED_WEAPONS, cycleOf, damageOf, DmgType, MORALE, RULES, Team, TRIBES, WeaponDef, WEAPONS } from './combat';
+import { gameDays } from './constants';
 import { Animal, animalDef, die as animalDie, provoke } from './fauna';
 import { CARRY_CAP } from './resources';
 import type { Sim, Target, Villager } from './sim';
@@ -91,7 +92,7 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
 function downUnit(sim: Sim, v: Villager): void {
   sim.resetTask(v); v.queue.length = 0;
   v.health = 0; v.down = RULES.downedSeconds; v.rescue = 0; v.phase = 'down'; v.swing = null;
-  sim.say(`${v.name} bị thương nặng, ngã xuống! Cần có người kéo dậy trong ${RULES.downedSeconds} giây.`);
+  sim.say(`${v.name} bị thương nặng, ngã xuống! Cần có người kéo dậy trong ${gameDays(RULES.downedSeconds)}.`);
   moraleShock(sim, v, MORALE.allyDeath * 0.6);
 }
 

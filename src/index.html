@@ -54,14 +54,28 @@ button.sm { padding: 2px 8px; min-height: 26px; }
 .kv { display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--muted); font-size: 12px; }
 .kv b { color: var(--fg); font-variant-numeric: tabular-nums; }
 .stars { color: var(--accent); letter-spacing: 1px; }
-.bars { display: grid; grid-template-columns: repeat(3, minmax(60px, 1fr)); gap: 4px 10px; }
+.bars { display: grid; grid-template-columns: repeat(4, minmax(56px, 1fr)); gap: 4px 10px; }
 .bars label { display: grid; gap: 2px; font-size: 11px; color: var(--muted); }
 .bars i { display: block; height: 7px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
 .bars i b { display: block; height: 100%; width: 0; background: var(--good); transition: width .2s; }
 .bars i b.bad { background: var(--bad); }
 .bars i b.mor { background: #6d8fd8; }
+.bars i b.arm { background: #9aa0a4; }
 .btns { display: flex; flex-wrap: wrap; gap: 4px; }
 .sub { color: var(--muted); font-size: 12px; margin: 0; }
+/* guidance hides behind a "?" */
+.hint { display: grid; gap: 4px; align-content: start; }
+.hinthead { display: flex; align-items: center; gap: 6px; }
+.hinthead > h3 { margin: 0; }
+.hint .cardhead .q, .hinthead > .q:only-child { margin-left: auto; }
+button.q { flex: none; width: 22px; height: 22px; min-height: 0; padding: 0; border-radius: 50%; font-size: 12px; line-height: 1; color: var(--muted); }
+button.q[aria-expanded="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+@media (pointer: coarse) { button.q { width: 28px; height: 28px; min-height: 0; padding: 0; } }
+.hintbody { padding: 4px 8px; border-left: 2px solid var(--accent); background: var(--panel-2); border-radius: 0 4px 4px 0; }
+.nm.hint { gap: 2px; }
+.nm.hint .hinthead { font-weight: 600; }
+.maphint { position: absolute; left: 8px; top: 8px; max-width: min(260px, 60%); }
+.maphint .hintbody { color: var(--fg); background: var(--hud); }
 details > summary { cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 600; padding: 2px 0; }
 details.fold { border-top: 1px solid var(--line); padding-top: 2px; display: block; }
 details.fold > .btns, details.fold > .kv { margin-top: 4px; }
@@ -79,8 +93,28 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
 .mbody.cols { max-width: 1100px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 .mbody h3 { margin: 0; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .mbody section { display: grid; gap: 6px; align-content: start; }
-.mbody .bars { grid-template-columns: repeat(3, 1fr); }
+.tabpage { display: grid; gap: 6px; align-content: start; }
+.tabs { position: sticky; top: 0; z-index: 1; background: var(--bg); padding: 2px 0 4px; }
+.picker { display: grid; gap: 2px; padding: 4px 8px; background: var(--panel-2); border-left: 2px solid var(--accent); border-radius: 0 4px 4px 0; }
+.mbody .bars { grid-template-columns: repeat(4, 1fr); }
 #ucard .open { margin-left: auto; }
+
+/* buttons of the tapped building, floating beneath it on the map */
+.bbar { position: absolute; left: 0; top: 0; z-index: 30; display: grid; gap: 4px; justify-items: center; max-width: min(94vw, 440px); padding: 5px 6px; background: var(--hud); border: 1px solid var(--line); border-radius: 8px; backdrop-filter: blur(2px); will-change: transform; }
+.bbar .who { font-size: 12px; color: var(--muted); text-align: center; }
+.bbar .who b { color: var(--fg); font-size: 13px; }
+.bbar .btns { justify-content: center; }
+/* confirm dialog: upgrade and demolish */
+.dialog { position: fixed; inset: 0; z-index: 48; display: grid; place-items: center; padding: 12px; background: rgba(5, 6, 12, .6); }
+.dialog > .card { width: min(380px, 100%); max-height: 100%; overflow: auto; background: var(--bg); gap: 8px; padding: 10px 12px; }
+.dialog h3 { margin: 0; font-size: 15px; color: var(--fg); text-transform: none; letter-spacing: 0; }
+.dialog .costs { display: grid; gap: 2px; }
+.dialog .costs div { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.dialog .costs .short { color: var(--bad); font-weight: 700; }
+.dialog .why { color: var(--bad); font-weight: 600; margin: 0; }
+.dialog .btns { justify-content: flex-end; }
+button.danger { color: var(--bad); }
+button.primary.danger { background: var(--bad); color: #fff; border-color: var(--bad); }
 
 /* lists */
 .row { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line); }
@@ -112,7 +146,6 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
 #bigmap { position: fixed; inset: 0; background: rgba(5,6,12,.88); z-index: 45; display: grid; place-items: center; }
 #bigmap .wrap { position: relative; width: min(94vh, 94vw); aspect-ratio: 1; }
 #bigmapCanvas { width: 100%; height: 100%; image-rendering: pixelated; border: 2px solid var(--ring); border-radius: 6px; background: #080a14; cursor: crosshair; touch-action: none; }
-#bigmap .note { position: absolute; left: 8px; bottom: 8px; color: #f5e7c4; text-shadow: 0 1px 2px #000; font-size: 12px; pointer-events: none; }
 #bigmap .close { position: absolute; right: 8px; top: 8px; }
 
 /* ask for landscape on a phone held upright */
@@ -181,13 +214,17 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   <canvas id="mini" aria-label="Bản đồ nhỏ, bấm để mở bản đồ lớn" title="Bấm để mở bản đồ lớn"></canvas>
   <div class="toast" id="toast" role="status"></div>
 
+  <div class="bbar" id="bbar" hidden></div>
   <div class="modal" id="bpanel" hidden></div>
+  <div class="dialog" id="dialog" hidden></div>
   <div class="modal" id="udetail" hidden></div>
 
   <div class="sheet" id="sheet">
     <div class="card" id="placeBar" hidden>
-      <div class="cardhead"><b id="placeName"></b><span id="placeInfo"></span></div>
-      <p class="sub">Kéo hoặc chạm để chọn chỗ (ô xanh là đặt được).</p>
+      <div class="hint">
+        <div class="cardhead"><b id="placeName"></b><span id="placeInfo"></span><button class="q" type="button" aria-label="Hướng dẫn" aria-expanded="false">?</button></div>
+        <p class="sub hintbody" hidden>Kéo hoặc chạm để chọn chỗ (ô xanh là đặt được).</p>
+      </div>
       <div class="btns"><button id="btnPlaceOk" class="primary">✓ Đặt ở đây</button><button id="btnPlaceNo">✕ Hủy</button></div>
     </div>
     <div class="card" id="tcard" hidden></div>
@@ -212,7 +249,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     <div class="wrap">
       <canvas id="bigmapCanvas"></canvas>
       <button class="close" id="btnCloseMap">✕ Đóng</button>
-      <div class="note">Chạm vào bản đồ để nhảy tới đó</div>
+      <div class="hint maphint"><button class="q" type="button" aria-label="Hướng dẫn" aria-expanded="false">?</button><p class="sub hintbody" hidden>Chạm vào bản đồ để nhảy tới đó.</p></div>
     </div>
   </div>
 

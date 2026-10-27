@@ -11,6 +11,7 @@ import { Controller } from './ui/controller';
 import { $, costText } from './ui/dom';
 import { Menu } from './ui/menu';
 import { MapView } from './ui/minimap';
+import { BuildingBar, Confirm } from './ui/buildbar';
 import { BuildingPanel, Ctx, TargetCard, UnitCard } from './ui/panels';
 
 const seed = Number(new URLSearchParams(location.search).get('seed')) || 1337;
@@ -35,6 +36,7 @@ const ctx: Ctx = { sim, ctl, sprites, toast };
 
 // ---------------------------------------------------------------- panels, menu, maps
 const unitCard = new UnitCard($('ucard'), ctx, $('udetail')), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
+const buildingBar = new BuildingBar($('bbar'), ctx, renderer, new Confirm($('dialog'), ctx));
 const map = new MapView(sim, cam, renderer, ctl, $('mini'), $('bigmapCanvas'), $('bigmap'));
 const menu = new Menu($('drawer'), $('drawerTabs'), $('drawerBody'), ctx, () => { const w = renderer.screenToWorld(renderer.w / 2, renderer.h / 2); return { x: w.x / TILE, y: w.y / TILE }; });
 $('btnCloseMap').addEventListener('click', () => map.close());
@@ -83,7 +85,7 @@ $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
 $('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
 function setSpeed(s: number) { sim.speed = s; syncButtons(); }
 function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); } }
-function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'workshop' && x.done); if (b) { ctl.selectBuilding(b.id); ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE); } else toast('Chưa có Xưởng'); }
+function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'workshop' && x.done); if (b) { ctl.selectBuilding(b.id, true); ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE); } else toast('Chưa có Xưởng'); }
 function syncButtons() {
   speedBtns.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === sim.speed)));
   multiBtn.setAttribute('aria-pressed', String(ctl.multi));
@@ -142,8 +144,8 @@ function updateHud(now: number) {
 
   // which panels show
   const chosen = sim.villagers.filter((v) => ctl.selected.has(v.id));
-  const placing = !!ctl.placing, showB = ctl.selectedBuilding !== null && !placing;
-  buildingPanel.update(); unitCard.update(chosen); targetCard.update();
+  const placing = !!ctl.placing, showB = ctl.selectedBuilding !== null && ctl.buildingOpen && !placing;
+  buildingPanel.update(); buildingBar.update(); unitCard.update(chosen); targetCard.update();
   if (placing || !showB) $('bpanel').hidden = true;
   if (placing || showB) { $('ucard').hidden = true; unitCard.closeDetail(); }
   if (placing || showB) $('tcard').hidden = true;
@@ -167,7 +169,7 @@ function frame(t: number) {
   ctl.update(dt);
   sim.advance(dt);
   renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect);
-  map.draw(); updateHud(t);
+  buildingBar.place(); map.draw(); updateHud(t);
   requestAnimationFrame(frame);
 }
 new ResizeObserver(() => { renderer.resize(); ctl.clamp(); }).observe(view);

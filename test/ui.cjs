@@ -49,6 +49,11 @@ const prepare = (p) => p.evaluate(() => {
     ok(await shown(p, '#udetail') && await p.evaluate(() => { const r = document.getElementById('udetail').getBoundingClientRect(); return r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }), 'the details fill the whole screen');
     await p.evaluate(() => { for (const b of document.querySelectorAll('#udetail [data-job="wood"]')) b.click(); });
     ok(await state(p, (id) => window.__game.sim.get(id).job, ids[0]) === 'wood', 'a job can be given from the details page');
+    ok(await p.evaluate(() => { const vis = (t) => [...document.querySelectorAll('#udetail h3')].some((h) => h.textContent === t && h.offsetParent !== null); return !vis('Chiến đấu') && !vis('Trang bị') && vis('Công cụ'); }), 'a woodcutter sees tools, but no fighting orders or gear');
+    ok(await p.evaluate(() => { const g = window.__game, id = [...g.ctl.selected][0]; const sim = g.sim; sim.setJob([id], 'fight'); g.ctl.onChange(); return true; }), 'turn the villager into a soldier');
+    await p.waitForTimeout(250);
+    ok(await p.evaluate(() => { const vis = (t) => [...document.querySelectorAll('#udetail h3')].some((h) => h.textContent === t && h.offsetParent !== null); return vis('Chiến đấu') && vis('Trang bị') && !vis('Công cụ'); }), 'a soldier sees fighting orders and gear, and no tools');
+    await p.evaluate(() => { for (const b of document.querySelectorAll('#udetail [data-job="wood"]')) b.click(); });
     await pressText(p, '✕ Đóng'); await p.waitForTimeout(100);
     ok(!(await shown(p, '#udetail')) && await shown(p, '#ucard'), 'closing the details returns to the map');
     await p.mouse.click(60, 300); await p.waitForTimeout(100);
@@ -144,13 +149,15 @@ const prepare = (p) => p.evaluate(() => {
     ok(await shown(p, '#bpanel') && await p.evaluate(() => document.getElementById('bpanel').innerText.includes('Vũ khí')), 'the craft house panel opens from the built list with its crafting items');
     ok(await p.evaluate(() => { const r = document.getElementById('bpanel').getBoundingClientRect(); return r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }), 'the craft house panel fills the whole screen');
     await pressText(p, '✕ Đóng'); await p.waitForTimeout(100);
-    ok(!(await shown(p, '#bpanel')) && await state(p, () => window.__game.ctl.selectedBuilding === null), 'the close button closes it');
-    await state(p, () => { const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'workshop').id); });
+    ok(!(await shown(p, '#bpanel')) && await state(p, () => window.__game.ctl.selectedBuilding !== null && !window.__game.ctl.buildingOpen) && await shown(p, '#bbar'), 'the close button closes the panel and leaves the buttons of the building on the map');
+    await state(p, () => { const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'workshop').id, true); });
     await p.waitForTimeout(200);
     ok(await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .rec')].find((x) => x.textContent.includes('Búa gỗ')); return r.classList.contains('locked') && r.querySelectorAll('button')[1].disabled && r.textContent.includes('Chưa có bản vẽ'); }), 'a tool without a blueprint is locked in the craft house');
     // the craft house list is split into tabs
     const tabShown = (label) => p.evaluate((l) => { const t = [...document.querySelectorAll('#bpanel .tabs button')].find((b) => b.textContent === l); return !!t && t.getAttribute('aria-pressed') === 'true'; }, label);
     const visibleRecs = () => p.evaluate(() => [...document.querySelectorAll('#bpanel .rec')].filter((r) => r.offsetParent !== null).map((r) => r.querySelector('.nm').firstChild.textContent));
+    ok(!(await tabShown('Công cụ')) && (await visibleRecs()).length === 0, 'the craft house opens on its first tab, with the items on tabs of their own');
+    await pressText(p, 'Công cụ'); await p.waitForTimeout(100);
     ok(await tabShown('Công cụ') && (await visibleRecs()).every((n) => /Rìu|Cuốc|Búa/.test(n)) && (await visibleRecs()).length === 8, 'craft house: the Công cụ tab lists only the 8 tools');
     await pressText(p, 'Vũ khí'); await p.waitForTimeout(150);
     ok(await tabShown('Vũ khí') && (await visibleRecs()).every((n) => /Gậy|Giáo|Chùy/.test(n)) && (await visibleRecs()).length === 3, 'craft house: the Vũ khí tab lists only weapons');
@@ -164,12 +171,15 @@ const prepare = (p) => p.evaluate(() => {
     await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Nhà nghiên cứu')) r.querySelector('button').click(); });
     const spotL = await screenOf(p, c.x + 2, c.y - 4);
     await p.mouse.move(spotL.x, spotL.y, { steps: 3 }); await p.mouse.click(spotL.x, spotL.y); await p.waitForTimeout(250);
-    await state(p, () => { const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'lab').id); });
+    await state(p, () => { const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'lab').id, true); });
     await p.waitForTimeout(250);
     ok(await p.evaluate(() => document.querySelectorAll('#bpanel .tech').length) === 18, 'the research house lists every blueprint and step');
     await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .tech')].find((x) => x.textContent.includes('Bản vẽ Búa gỗ')); r.querySelector('button').click(); });
     ok(await state(p, () => window.__game.sim.researchQueue.includes('hammer1')), 'starting a blueprint queues it');
-    ok(await pressText(p, 'Thêm người nghiên cứu'), 'the lab has a button to put a villager to work inside');
+    ok(await p.evaluate(() => [...document.querySelectorAll('#bpanel .tech')].every((r) => { const b = r.querySelector('button'); return b.disabled || b.textContent === 'Hủy đơn'; })), 'while one research is waiting or running no other can be started');
+    ok(await pressText(p, 'Thêm người nghiên cứu'), 'the lab has a button to choose a villager to work inside');
+    await p.waitForTimeout(150);
+    ok(await pressText(p, 'Vào làm'), 'and the player picks who goes in from the list');
     await state(p, () => { const s = window.__game.sim; s.dev.fastWorks = true; for (let i = 0; i < 20 * 120; i++) s.tick(0.05); s.dev.fastWorks = false; s.speed = 0; });
     await p.waitForTimeout(300);
     ok(await state(p, () => window.__game.sim.researched.has('hammer1')), 'the researcher inside finishes the blueprint');
@@ -177,7 +187,7 @@ const prepare = (p) => p.evaluate(() => {
     ok(await state(p, () => window.__game.sim.villagers.some((v) => v.inside !== null)) && await p.evaluate(() => { const g = window.__game, v = g.sim.villagers.find((x) => x.inside !== null); const b = g.renderer.worldToScreen(v.x * 32, v.y * 32 - 16); g.ctl.selectAll(); return !g.ctl.selected.has(v.id); }), 'a villager inside a house is not drawn or selectable on the map');
     await pressText(p, 'Cho ra'); await p.waitForTimeout(150);
     ok(await state(p, () => window.__game.sim.villagers.every((v) => v.inside === null)), 'Cho ra brings the villager back out');
-    await state(p, () => { window.__game.ctl.clearSelection(); const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'workshop').id); });
+    await state(p, () => { window.__game.ctl.clearSelection(); const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'workshop').id, true); });
     await p.waitForTimeout(250);
     ok(await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .rec')].find((x) => x.textContent.includes('Búa gỗ')); return !r.classList.contains('locked') && !r.querySelectorAll('button')[1].disabled; }), 'the tool opens in the craft house once its blueprint is researched');
     // the repair house lists villagers' tools and lets the player mend or drop them
@@ -187,24 +197,42 @@ const prepare = (p) => p.evaluate(() => {
     await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Nhà sửa chữa')) r.querySelector('button').click(); });
     const spotR = await screenOf(p, c.x + 5, c.y - 2);
     await p.mouse.move(spotR.x, spotR.y, { steps: 3 }); await p.mouse.click(spotR.x, spotR.y); await p.waitForTimeout(250);
-    await state(p, () => { const g = window.__game, s = g.sim; s.giveTool([s.villagers[0].id], 'axe', 1); s.villagers[0].tools.axe.dur = 10; s.ctlTest = s.villagers[0].id; g.ctl.selectBuilding(s.buildings.find((x) => x.kind === 'repair').id); });
+    await state(p, () => { const g = window.__game, s = g.sim; s.giveTool([s.villagers[0].id], 'axe', 1); s.villagers[0].tools.axe.dur = 10; s.ctlTest = s.villagers[0].id; g.ctl.selectBuilding(s.buildings.find((x) => x.kind === 'repair').id, true); });
     await p.waitForTimeout(250);
+    await pressText(p, 'Công cụ của dân'); await p.waitForTimeout(150);
     ok(await p.evaluate(() => document.getElementById('bpanel').innerText.includes('Rìu gỗ')), 'the repair house lists a worn tool');
-    await pressText(p, 'Sửa'); await p.waitForTimeout(150);
-    ok(await state(p, () => { const s = window.__game.sim; return s.repairQueue.includes('axe1') && s.villagers[0].tools.axe === null; }), 'Sửa hands the tool in');
+    await pressText(p, 'Đi sửa'); await p.waitForTimeout(150);
+    ok(await state(p, () => { const s = window.__game.sim; return s.villagers[0].phase === 'goOrder' && s.villagers[0].tools.axe !== null; }), 'Đi sửa sends the villager walking with the tool');
+    await state(p, () => { const s = window.__game.sim; for (let i = 0; i < 20 * 90; i++) s.tick(0.05); });
+    ok(await state(p, () => { const s = window.__game.sim; return (s.repairQueue.includes('axe1') || s.building('repair').active?.id === 'axe1') && s.villagers[0].tools.axe === null; }), 'and hands the tool in at the repair house');
     await state(p, () => { const g = window.__game; g.ctl.closeBuilding(); });
     // villager details: tools by hand
-    await state(p, () => { const g = window.__game, s = g.sim; s.toolStock.axe1 = 2; g.ctl.selected.clear(); g.ctl.selected.add(s.villagers[1].id); g.ctl.onChange(); });
+    await state(p, () => { const g = window.__game, s = g.sim; s.toolStock.axe1 = 2; s.setJob([s.villagers[1].id], 'wood'); g.ctl.selected.clear(); g.ctl.selected.add(s.villagers[1].id); g.ctl.onChange(); });
     await p.waitForTimeout(250);
     await pressText(p, 'Giao việc và chi tiết'); await p.waitForTimeout(150);
     await p.evaluate(() => { const row = [...document.querySelectorAll('#udetail .row')].find((r) => r.textContent.startsWith('Rìu')); [...row.querySelectorAll('button')].find((b) => b.textContent.startsWith('Gỗ')).click(); });
     ok(await state(p, () => window.__game.sim.villagers[1].tools.axe?.tier === 1), 'a tool is handed to the chosen villager from the details page');
     await pressText(p, '✕ Đóng'); await state(p, () => { window.__game.ctl.clearSelection(); });
-    // move and demolish from the panel
+    // buttons under the tapped building: upgrade and demolish ask first, the panel has none of them
     await state(p, () => { const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'workshop').id); });
-    await p.waitForTimeout(200);
+    await p.waitForTimeout(250);
+    ok(await shown(p, '#bbar') && !(await shown(p, '#bpanel')), 'tapping a building shows its buttons on the map, not the big panel');
+    ok(await p.evaluate(() => { const r = document.getElementById('bbar').getBoundingClientRect(); const g = window.__game, b = g.sim.buildings.find((x) => x.kind === 'workshop'), s = g.renderer.worldToScreen((b.x + 1) * 32, (b.y + 2) * 32); return r.top >= s.y - 1; }), 'the buttons sit beneath the building');
+    await pressText(p, 'Chế tạo'); await p.waitForTimeout(150);
+    ok(await shown(p, '#bpanel') && !(await shown(p, '#bbar')) && !(await p.evaluate(() => /Phá bỏ|Nâng cấp|Dời/.test(document.getElementById('bpanel').innerText))), 'the open button shows the big panel, which no longer has upgrade, move or demolish');
+    await pressText(p, '✕ Đóng'); await p.waitForTimeout(100);
+    await state(p, () => { const s = window.__game.sim; s.dev.freeBuild = false; s.stock.wood = 0; s.stock.stone = 0; });
+    ok(await pressText(p, 'Nâng cấp'), 'the bar has an upgrade button'); await p.waitForTimeout(100);
+    ok(await shown(p, '#dialog') && await p.evaluate(() => document.getElementById('dialog').innerText.includes('Gỗ') && document.getElementById('dialog').querySelector('button.primary').disabled), 'upgrade shows the materials it needs, and cannot be confirmed without them');
+    await pressText(p, 'Hủy'); await p.waitForTimeout(100);
+    ok(!(await shown(p, '#dialog')) && await state(p, () => window.__game.sim.buildings.find((x) => x.kind === 'workshop').level === 1), 'Hủy closes the dialog and changes nothing');
+    await state(p, () => { const s = window.__game.sim; s.stock.wood = 200; s.stock.stone = 200; s.researched.add('timber'); });
+    await pressText(p, 'Nâng cấp'); await p.waitForTimeout(100);
+    await p.evaluate(() => document.querySelector('#dialog button.primary').click()); await p.waitForTimeout(150);
+    ok(await state(p, () => window.__game.sim.buildings.find((x) => x.kind === 'workshop').upgrading) && await state(p, () => window.__game.sim.stock.wood < 200), 'confirming pays the materials and starts the upgrade');
+    await state(p, () => { const s = window.__game.sim; s.dev.freeBuild = true; });
     const old = await state(p, () => { const b = window.__game.sim.buildings.find((x) => x.kind === 'workshop'); return { x: b.x, y: b.y }; });
-    ok(await pressText(p, 'Dời'), 'the panel has a move button');
+    ok(await pressText(p, 'Dời'), 'the bar has a move button');
     await p.waitForTimeout(150);
     ok(await state(p, () => window.__game.ctl.moving !== null) && await shown(p, '#placeBar'), 'moving shows the placing bar');
     const spot2 = await screenOf(p, old.x - 2, old.y + 3);
@@ -213,10 +241,10 @@ const prepare = (p) => p.evaluate(() => {
     await state(p, () => { const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'workshop').id); });
     await p.waitForTimeout(200);
     await pressText(p, 'Phá bỏ'); await p.waitForTimeout(100);
-    ok(await state(p, () => window.__game.sim.buildings.some((b) => b.kind === 'workshop')), 'one tap on Phá bỏ only asks to confirm');
-    await p.evaluate(() => { for (const b of document.querySelectorAll('#bpanel button')) if (b.textContent.startsWith('Bấm lại')) b.click(); });
+    ok(await shown(p, '#dialog') && await state(p, () => window.__game.sim.buildings.some((b) => b.kind === 'workshop')), 'Phá bỏ only asks to confirm');
+    await p.evaluate(() => document.querySelector('#dialog button.primary').click());
     await p.waitForTimeout(150);
-    ok(await state(p, () => !window.__game.sim.buildings.some((b) => b.kind === 'workshop')), 'the second tap tears the craft house down');
+    ok(await state(p, () => !window.__game.sim.buildings.some((b) => b.kind === 'workshop')), 'confirming tears the craft house down');
     // storage and big map
     await p.keyboard.press('m'); ok(await shown(p, '#bigmap'), 'M opens the big map'); await p.keyboard.press('m');
 

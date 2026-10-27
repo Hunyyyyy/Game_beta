@@ -1,6 +1,6 @@
 import { Building, BuildingKind, BUILDINGS, Era } from '../sim/buildings';
 import type { WeatherKind } from '../sim/calendar';
-import { TILE } from '../sim/constants';
+import { gameDays, TILE } from '../sim/constants';
 import type { Sim, Villager } from '../sim/sim';
 import type { Animal } from '../sim/fauna';
 import type { Tribe } from '../sim/tribes';
@@ -243,7 +243,7 @@ export class Renderer {
           ctx.fillStyle = v.job === 'fight' ? '#d9534f' : '#e0a23c'; ctx.fillRect(p.x - 2 * u, p.y - 3 * u, 4 * u, 4 * u); ctx.fillRect(p.x - u, p.y + u, 2 * u, u);
         }
         if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - 46, v.health / v.maxHealth, v.team === 'player' ? '#6bbf59' : '#d9534f');
-        if (v.down > 0) { ctx.fillStyle = '#ffd27a'; ctx.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 30); ctx.fillText(`${Math.ceil(v.down)}s`, p.x, p.y); }
+        if (v.down > 0) { ctx.fillStyle = '#ffd27a'; ctx.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 30); ctx.fillText(gameDays(v.down), p.x, p.y); }
         if (v.phase === 'flee') { ctx.fillStyle = '#fff6e8'; ctx.font = `700 ${Math.max(12, 7 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 50); ctx.fillText('!', p.x, p.y); }
       }
     }

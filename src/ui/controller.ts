@@ -22,8 +22,10 @@ export class Controller {
   placeAt: { x: number; y: number } | null = null;
   /** Id of the building being carried to a new spot (null when placing a new one). */
   moving: number | null = null;
-  /** Building shown in the building panel. */
+  /** Building tapped on the map: its buttons show beneath it. */
   selectedBuilding: number | null = null;
+  /** The full-screen panel of the selected building is open. */
+  buildingOpen = false;
   /** Foe or animal shown in the target card. */
   inspect: { kind: 'unit' | 'animal'; id: number } | null = null;
   /** F pressed: the next click sends the selection to attack-move there. */
@@ -198,6 +200,9 @@ export class Controller {
     this.onChange();
   }
 
+  /** The chosen villagers who are soldiers: only they take fighting orders. */
+  private fighters(): number[] { return [...this.selected].filter((id) => this.sim.get(id)?.job === 'fight'); }
+
   private toggle(id: number): void { if (this.selected.has(id)) this.selected.delete(id); else this.selected.add(id); }
 
   /** Right click: an order for the selection. */
@@ -231,8 +236,10 @@ export class Controller {
     this.onChange();
   }
 
-  selectBuilding(id: number): void { this.selectedBuilding = id; this.inspect = null; this.onChange(); }
-  closeBuilding(): void { this.selectedBuilding = null; this.onChange(); }
+  selectBuilding(id: number, open = false): void { this.selectedBuilding = id; this.buildingOpen = open; this.inspect = null; this.onChange(); }
+  /** Close the panel but keep the building selected. */
+  closePanel(): void { this.buildingOpen = false; this.onChange(); }
+  closeBuilding(): void { this.selectedBuilding = null; this.buildingOpen = false; this.onChange(); }
 
   // ---------------------------------------------------------------- placing buildings
   /** Top-left tile of a building of the placing kind centred on the point. */
@@ -376,9 +383,9 @@ export class Controller {
     if (k === 'escape') { if (this.attackMoveArmed) { this.attackMoveArmed = false; this.onChange(); } else if (this.placing) this.cancelPlacing(); else this.clearSelection(); return; }
     if (/^[1-9]$/.test(k) && !e.shiftKey) { this.group(Number(k), e.ctrlKey || e.metaKey); e.preventDefault(); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (k === 'f' && this.selected.size) { this.attackMoveArmed = true; this.onToast('Chọn điểm đến (chuột trái); Esc để hủy'); this.onChange(); return; }
-    if (k === 'h' && this.selected.size) { this.sim.orderHold([...this.selected]); this.onToast('Giữ vị trí'); this.onChange(); return; }
-    if (k === 'g' && this.selected.size) { this.sim.orderStop([...this.selected]); this.onToast('Dừng'); this.onChange(); return; }
+    if (k === 'f' && this.fighters().length) { this.attackMoveArmed = true; this.onToast('Chọn điểm đến (chuột trái); Esc để hủy'); this.onChange(); return; }
+    if (k === 'h' && this.fighters().length) { this.sim.orderHold(this.fighters()); this.onToast('Giữ vị trí'); this.onChange(); return; }
+    if (k === 'g' && this.fighters().length) { this.sim.orderStop(this.fighters()); this.onToast('Dừng'); this.onChange(); return; }
     if (k === ' ') { e.preventDefault(); this.focusSelection(); return; }
     if (k === '+' || k === '=') { this.zoomAt({ x: this.r.w / 2, y: this.r.h / 2 }, 1); return; }
     if (k === '-') { this.zoomAt({ x: this.r.w / 2, y: this.r.h / 2 }, -1); return; }

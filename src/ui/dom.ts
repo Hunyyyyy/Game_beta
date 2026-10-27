@@ -23,6 +23,23 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Props = 
   return el;
 }
 
+/** The "?" button; one click handler (below) shows or hides the `.hintbody` that sits beside it in the same `.hint`. */
+export const helpButton = () => h('button', { class: 'q', type: 'button', 'aria-label': 'Hướng dẫn', 'aria-expanded': 'false', text: '?' });
+
+/** A heading with a "?" after it. The guidance stays hidden until the "?" is pressed; `tip` is its element, for text that changes. */
+export function hint(label: string | HTMLElement, text: string): HTMLElement & { tip: HTMLElement } {
+  const tip = h('p', { class: 'sub hintbody', hidden: true, text });
+  const head = h('div', { class: 'hinthead' }, typeof label === 'string' ? h('h3', { text: label }) : label, helpButton());
+  return Object.assign(h('div', { class: 'hint' }, head, tip), { tip });
+}
+
+if (typeof document !== 'undefined') document.addEventListener('click', (e) => {
+  const q = (e.target as Element | null)?.closest?.('button.q');
+  const body = q?.closest('.hint')?.querySelector(':scope > .hintbody') as HTMLElement | null;
+  if (!q || !body) return;
+  body.hidden = !body.hidden; q.setAttribute('aria-expanded', String(!body.hidden));
+});
+
 /** Copy an icon canvas into a fresh one (a canvas node can only live in one place). */
 export function iconCanvas(src: HTMLCanvasElement): HTMLCanvasElement {
   const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;

@@ -54,14 +54,28 @@ button.sm { padding: 2px 8px; min-height: 26px; }
 .kv { display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--muted); font-size: 12px; }
 .kv b { color: var(--fg); font-variant-numeric: tabular-nums; }
 .stars { color: var(--accent); letter-spacing: 1px; }
-.bars { display: grid; grid-template-columns: repeat(3, minmax(60px, 1fr)); gap: 4px 10px; }
+.bars { display: grid; grid-template-columns: repeat(4, minmax(56px, 1fr)); gap: 4px 10px; }
 .bars label { display: grid; gap: 2px; font-size: 11px; color: var(--muted); }
 .bars i { display: block; height: 7px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
 .bars i b { display: block; height: 100%; width: 0; background: var(--good); transition: width .2s; }
 .bars i b.bad { background: var(--bad); }
 .bars i b.mor { background: #6d8fd8; }
+.bars i b.arm { background: #9aa0a4; }
 .btns { display: flex; flex-wrap: wrap; gap: 4px; }
 .sub { color: var(--muted); font-size: 12px; margin: 0; }
+/* guidance hides behind a "?" */
+.hint { display: grid; gap: 4px; align-content: start; }
+.hinthead { display: flex; align-items: center; gap: 6px; }
+.hinthead > h3 { margin: 0; }
+.hint .cardhead .q, .hinthead > .q:only-child { margin-left: auto; }
+button.q { flex: none; width: 22px; height: 22px; min-height: 0; padding: 0; border-radius: 50%; font-size: 12px; line-height: 1; color: var(--muted); }
+button.q[aria-expanded="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+@media (pointer: coarse) { button.q { width: 28px; height: 28px; min-height: 0; padding: 0; } }
+.hintbody { padding: 4px 8px; border-left: 2px solid var(--accent); background: var(--panel-2); border-radius: 0 4px 4px 0; }
+.nm.hint { gap: 2px; }
+.nm.hint .hinthead { font-weight: 600; }
+.maphint { position: absolute; left: 8px; top: 8px; max-width: min(260px, 60%); }
+.maphint .hintbody { color: var(--fg); background: var(--hud); }
 details > summary { cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 600; padding: 2px 0; }
 details.fold { border-top: 1px solid var(--line); padding-top: 2px; display: block; }
 details.fold > .btns, details.fold > .kv { margin-top: 4px; }
@@ -79,8 +93,28 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
 .mbody.cols { max-width: 1100px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 .mbody h3 { margin: 0; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .mbody section { display: grid; gap: 6px; align-content: start; }
-.mbody .bars { grid-template-columns: repeat(3, 1fr); }
+.tabpage { display: grid; gap: 6px; align-content: start; }
+.tabs { position: sticky; top: 0; z-index: 1; background: var(--bg); padding: 2px 0 4px; }
+.picker { display: grid; gap: 2px; padding: 4px 8px; background: var(--panel-2); border-left: 2px solid var(--accent); border-radius: 0 4px 4px 0; }
+.mbody .bars { grid-template-columns: repeat(4, 1fr); }
 #ucard .open { margin-left: auto; }
+
+/* buttons of the tapped building, floating beneath it on the map */
+.bbar { position: absolute; left: 0; top: 0; z-index: 30; display: grid; gap: 4px; justify-items: center; max-width: min(94vw, 440px); padding: 5px 6px; background: var(--hud); border: 1px solid var(--line); border-radius: 8px; backdrop-filter: blur(2px); will-change: transform; }
+.bbar .who { font-size: 12px; color: var(--muted); text-align: center; }
+.bbar .who b { color: var(--fg); font-size: 13px; }
+.bbar .btns { justify-content: center; }
+/* confirm dialog: upgrade and demolish */
+.dialog { position: fixed; inset: 0; z-index: 48; display: grid; place-items: center; padding: 12px; background: rgba(5, 6, 12, .6); }
+.dialog > .card { width: min(380px, 100%); max-height: 100%; overflow: auto; background: var(--bg); gap: 8px; padding: 10px 12px; }
+.dialog h3 { margin: 0; font-size: 15px; color: var(--fg); text-transform: none; letter-spacing: 0; }
+.dialog .costs { display: grid; gap: 2px; }
+.dialog .costs div { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.dialog .costs .short { color: var(--bad); font-weight: 700; }
+.dialog .why { color: var(--bad); font-weight: 600; margin: 0; }
+.dialog .btns { justify-content: flex-end; }
+button.danger { color: var(--bad); }
+button.primary.danger { background: var(--bad); color: #fff; border-color: var(--bad); }
 
 /* lists */
 .row { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line); }
@@ -112,7 +146,6 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
 #bigmap { position: fixed; inset: 0; background: rgba(5,6,12,.88); z-index: 45; display: grid; place-items: center; }
 #bigmap .wrap { position: relative; width: min(94vh, 94vw); aspect-ratio: 1; }
 #bigmapCanvas { width: 100%; height: 100%; image-rendering: pixelated; border: 2px solid var(--ring); border-radius: 6px; background: #080a14; cursor: crosshair; touch-action: none; }
-#bigmap .note { position: absolute; left: 8px; bottom: 8px; color: #f5e7c4; text-shadow: 0 1px 2px #000; font-size: 12px; pointer-events: none; }
 #bigmap .close { position: absolute; right: 8px; top: 8px; }
 
 /* ask for landscape on a phone held upright */
@@ -181,13 +214,17 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   <canvas id="mini" aria-label="Bản đồ nhỏ, bấm để mở bản đồ lớn" title="Bấm để mở bản đồ lớn"></canvas>
   <div class="toast" id="toast" role="status"></div>
 
+  <div class="bbar" id="bbar" hidden></div>
   <div class="modal" id="bpanel" hidden></div>
+  <div class="dialog" id="dialog" hidden></div>
   <div class="modal" id="udetail" hidden></div>
 
   <div class="sheet" id="sheet">
     <div class="card" id="placeBar" hidden>
-      <div class="cardhead"><b id="placeName"></b><span id="placeInfo"></span></div>
-      <p class="sub">Kéo hoặc chạm để chọn chỗ (ô xanh là đặt được).</p>
+      <div class="hint">
+        <div class="cardhead"><b id="placeName"></b><span id="placeInfo"></span><button class="q" type="button" aria-label="Hướng dẫn" aria-expanded="false">?</button></div>
+        <p class="sub hintbody" hidden>Kéo hoặc chạm để chọn chỗ (ô xanh là đặt được).</p>
+      </div>
       <div class="btns"><button id="btnPlaceOk" class="primary">✓ Đặt ở đây</button><button id="btnPlaceNo">✕ Hủy</button></div>
     </div>
     <div class="card" id="tcard" hidden></div>
@@ -212,7 +249,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     <div class="wrap">
       <canvas id="bigmapCanvas"></canvas>
       <button class="close" id="btnCloseMap">✕ Đóng</button>
-      <div class="note">Chạm vào bản đồ để nhảy tới đó</div>
+      <div class="hint maphint"><button class="q" type="button" aria-label="Hướng dẫn" aria-expanded="false">?</button><p class="sub hintbody" hidden>Chạm vào bản đồ để nhảy tới đó.</p></div>
     </div>
   </div>
 
@@ -299,6 +336,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   var TICK = 1 / 20;
   var DAY_LENGTH = 240;
   var START_TIME = DAY_LENGTH * 0.25;
+  var gameDays = (secs) => {
+    const d = secs / DAY_LENGTH;
+    return `${d.toLocaleString("vi", { maximumFractionDigits: d < 1 ? 2 : d < 10 ? 1 : 0 })} ng\xE0y`;
+  };
 
   // src/sim/rng.ts
   function mulberry32(seed2) {
@@ -4174,7 +4215,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
             ctx2.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`;
             ctx2.textAlign = "center";
             const p = this.worldToScreen(fx, fy - 30);
-            ctx2.fillText(`${Math.ceil(v.down)}s`, p.x, p.y);
+            ctx2.fillText(gameDays(v.down), p.x, p.y);
           }
           if (v.phase === "flee") {
             ctx2.fillStyle = "#fff6e8";
@@ -5148,7 +5189,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     v.rescue = 0;
     v.phase = "down";
     v.swing = null;
-    sim2.say(`${v.name} b\u1ECB th\u01B0\u01A1ng n\u1EB7ng, ng\xE3 xu\u1ED1ng! C\u1EA7n c\xF3 ng\u01B0\u1EDDi k\xE9o d\u1EADy trong ${RULES.downedSeconds} gi\xE2y.`);
+    sim2.say(`${v.name} b\u1ECB th\u01B0\u01A1ng n\u1EB7ng, ng\xE3 xu\u1ED1ng! C\u1EA7n c\xF3 ng\u01B0\u1EDDi k\xE9o d\u1EADy trong ${gameDays(RULES.downedSeconds)}.`);
     moraleShock(sim2, v, MORALE.allyDeath * 0.6);
   }
   function moraleShock(sim2, who, amount) {
@@ -6050,6 +6091,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.stock = emptyStock();
       /** Công cụ đã chế, đang chờ dân tới Xưởng lấy. Khóa dạng "axe1". */
       this.toolStock = {};
+      /** Tools handed back with wear on them; they keep their durability. `id` as in toolStock. */
+      this.wornTools = [];
       /** Hàng đợi chế tác (mã công thức). */
       this.craftQueue = [];
       /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
@@ -6186,7 +6229,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       return !!this.building("workshop");
     }
     toolCount(kind, tier) {
-      return this.toolStock[`${kind}${tier}`] ?? 0;
+      const id = `${kind}${tier}`;
+      return (this.toolStock[id] ?? 0) + this.wornTools.filter((w) => w.id === id && w.dur > 0).length;
     }
     /** Bậc công cụ dân đang dùng cho nghề này (0 = tay không). */
     toolTier(v, job) {
@@ -6260,6 +6304,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         manualGear: false,
         inside: null,
         orderCd: 0,
+        repairFor: null,
         team,
         maxHealth: maxHpOf(stats.vit),
         weapon: null,
@@ -6482,7 +6527,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       if (kind === "craft") return { cost: r.cost, time: r.time };
       const half = {};
       for (const k of Object.keys(r.cost)) half[k] = Math.ceil((r.cost[k] ?? 0) / 2);
-      return { cost: half, time: Math.ceil(r.time * 0.6) };
+      return { cost: half, time: Math.ceil(r.time * 1.5) };
     }
     /** Level of a finished building of a kind (0 when there is none). */
     levelOfKind(kind) {
@@ -6529,6 +6574,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       const best = this.bestIntInside(lab);
       return best >= t.minInt ? null : `C\u1EA7n ng\u01B0\u1EDDi Tr\xED tu\u1EC7 ${t.minInt} tr\u1EDF l\xEAn trong nh\xE0 (gi\u1ECFi nh\u1EA5t: ${best})`;
     }
+    /** The research under way or waiting to start. Only one at a time: the next waits until it is done. */
+    currentResearch() {
+      return this.building("lab")?.active?.id ?? this.researchQueue[0] ?? null;
+    }
     /** Queue a research; materials and coins are paid when it starts. */
     queueResearch(id) {
       const t = TECH_BY_ID[id];
@@ -6537,9 +6586,18 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       const st = this.techState(t);
       if (st.state === "done") return "\u0110\xE3 nghi\xEAn c\u1EE9u r\u1ED3i";
       if (st.state === "active" || st.state === "queued") return "\u0110ang nghi\xEAn c\u1EE9u";
+      const cur = this.currentResearch();
+      if (cur) return `\u0110ang nghi\xEAn c\u1EE9u ${TECH_BY_ID[cur]?.name ?? cur}: xong r\u1ED3i m\u1EDBi nghi\xEAn c\u1EE9u ti\u1EBFp`;
       if (st.state === "locked") return st.why ?? "Ch\u01B0a nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c";
+      const short = this.researchShort(t);
+      if (short) return short;
+      this.pay(t.cost);
       this.researchQueue.push(id);
       return null;
+    }
+    /** Why the materials and coins for a research are not there, or null. They are paid when the research is queued. */
+    researchShort(t) {
+      return this.missing(t.cost);
     }
     /** Queue a tool, weapon or armour for the Nhà chế tạo. */
     queueCraft(id) {
@@ -6565,7 +6623,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     unqueueCraft(id) {
       this.unqueue(this.craftQueue, id);
     }
+    /** Cancel a queued research; what was paid comes back. */
     unqueueResearch(id) {
+      const t = TECH_BY_ID[id];
+      if (t && this.researchQueue.includes(id)) this.pay(t.cost, 1);
       this.unqueue(this.researchQueue, id);
     }
     affordable(cost) {
@@ -6576,7 +6637,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     }
     /** How many tools or pieces of gear a store holds: the Kho công cụ for tools, the Kho vũ khí for weapons and armour. */
     storeUsed(cat) {
-      return Object.entries(this.toolStock).reduce((n, [id, c]) => n + ((RECIPE_BY_ID[id] && isGear(RECIPE_BY_ID[id].kind)) === (cat === "gear") ? c : 0), 0);
+      return (cat === "tool" ? this.wornTools.length : 0) + Object.entries(this.toolStock).reduce((n, [id, c]) => n + ((RECIPE_BY_ID[id] && isGear(RECIPE_BY_ID[id].kind)) === (cat === "gear") ? c : 0), 0);
     }
     /** Room for items: the matching store when it stands, otherwise the crafting house keeps a few. */
     storeCap(cat) {
@@ -6595,7 +6656,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           const best = this.bestIntInside(b);
           const i = queue.findIndex((id3) => {
             const d3 = this.orderDef(kind, id3);
-            if (!d3 || !this.affordable(d3.cost)) return false;
+            if (!d3 || kind !== "research" && !this.affordable(d3.cost)) return false;
             if (kind === "research") return best >= (TECH_BY_ID[id3]?.minInt ?? 0);
             if (kind === "craft") return this.recipeOpen(id3);
             return true;
@@ -6603,13 +6664,13 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           if (i < 0) {
             if (queue.length && this.time - this.lastMatWarn > 30) {
               this.lastMatWarn = this.time;
-              this.say(kind === "research" ? "Nghi\xEAn c\u1EE9u \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u, ti\u1EC1n ho\u1EB7c ng\u01B0\u1EDDi \u0111\u1EE7 th\xF4ng minh." : "\u0110\u01A1n \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
+              this.say(kind === "research" ? "Nghi\xEAn c\u1EE9u \u0111ang ch\u1EDD: ch\u01B0a c\xF3 ng\u01B0\u1EDDi \u0111\u1EE7 th\xF4ng minh trong nh\xE0." : "\u0110\u01A1n \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
             }
             continue;
           }
           const id2 = queue[i], d2 = this.orderDef(kind, id2);
           queue.splice(i, 1);
-          this.pay(d2.cost);
+          if (kind !== "research") this.pay(d2.cost);
           b.active = { id: id2, progress: 0 };
         }
         const d = this.orderDef(kind, b.active.id);
@@ -6632,6 +6693,18 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           this.say(`Nh\xE0 nghi\xEAn c\u1EE9u \u0111\xE3 ho\xE0n th\xE0nh "${TECH_BY_ID[id].name}".`);
         } else {
           const r = RECIPE_BY_ID[id], cat = isGear(r.kind) ? "gear" : "tool";
+          if (kind === "repair") {
+            const owner = this.villagers.find((o) => o.repairFor === id), k = r.kind;
+            if (owner) {
+              owner.repairFor = null;
+              if (TOOL_OF_JOB[owner.job] === k && !this.heldTool(owner)) {
+                owner.tools[k] = { tier: r.tier, dur: TIER_DURABILITY[r.tier] };
+                b.active = null;
+                this.say(`\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}, tr\u1EA3 l\u1EA1i cho ${owner.name}.`);
+                continue;
+              }
+            }
+          }
           if (this.storeUsed(cat) >= this.storeCap(cat)) {
             if (this.time - this.lastFullWarn > 30) {
               this.lastFullWarn = this.time;
@@ -6752,25 +6825,69 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     toolId(k, tier) {
       return `${k}${tier}`;
     }
-    /** Give chosen villagers a tool from the stock (tier 0 puts theirs back if it is whole, else it is thrown away). */
+    /** The tool a villager holds. They carry one at a time (armour and weapons are separate). */
+    heldTool(v) {
+      for (const k of TOOL_KINDS) {
+        const t = v.tools[k];
+        if (t) return { k, t };
+      }
+      return null;
+    }
+    /** Put the tool a villager holds back in the stock, keeping its wear; a broken one is thrown away. */
+    returnTool(v) {
+      const h2 = this.heldTool(v);
+      if (!h2) return;
+      const { k, t } = h2, id = this.toolId(k, t.tier), name = `${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}`;
+      v.tools[k] = null;
+      if (t.dur <= 0) {
+        this.say(`${v.name} b\u1ECF ${name} \u0111\xE3 h\u1ECFng.`);
+        return;
+      }
+      if (t.dur >= TIER_DURABILITY[t.tier] - 1e-6) this.toolStock[id] = (this.toolStock[id] ?? 0) + 1;
+      else this.wornTools.push({ id, dur: t.dur });
+      this.say(`${v.name} tr\u1EA3 ${name} v\u1EC1 kho.`);
+    }
+    /** Take a tool out of the stock: a new one first, else the least worn. */
+    takeTool(k, tier) {
+      const id = this.toolId(k, tier);
+      if ((this.toolStock[id] ?? 0) > 0) {
+        this.toolStock[id]--;
+        return { tier, dur: TIER_DURABILITY[tier] };
+      }
+      let best = -1;
+      this.wornTools.forEach((w, i) => {
+        if (w.id === id && w.dur > 0 && (best < 0 || w.dur > this.wornTools[best].dur)) best = i;
+      });
+      return best < 0 ? null : { tier, dur: this.wornTools.splice(best, 1)[0].dur };
+    }
+    /** Hand chosen villagers a tool from the stock. It must be the tool of their job. Tier 0 takes the tool back, with its wear. */
     assignTool(ids, k, tier) {
-      let short = false, given = 0;
+      let short = false, wrong = null, given = 0;
       for (const v of this.mine(ids)) {
         const cur = v.tools[k];
-        if (tier > 0 && (cur?.tier === tier && cur.dur > 0)) continue;
-        if (tier > 0) {
-          if (this.toolCount(k, tier) <= 0) {
-            short = true;
-            continue;
+        if (tier === 0) {
+          if (cur) {
+            this.returnTool(v);
+            given++;
           }
-          this.toolStock[this.toolId(k, tier)]--;
+          continue;
         }
-        if (cur && cur.dur >= TIER_DURABILITY[cur.tier] - 1e-6) this.toolStock[this.toolId(k, cur.tier)] = (this.toolStock[this.toolId(k, cur.tier)] ?? 0) + 1;
-        v.tools[k] = tier > 0 ? { tier, dur: TIER_DURABILITY[tier] } : null;
+        if (TOOL_OF_JOB[v.job] !== k) {
+          wrong = `${v.name} l\xE0m ${JOB_NAME[v.job].toLowerCase()}: kh\xF4ng d\xF9ng ${TOOL_NAME[k].toLowerCase()}`;
+          continue;
+        }
+        if (cur?.tier === tier && cur.dur > 0) continue;
+        if (this.toolCount(k, tier) <= 0) {
+          short = true;
+          continue;
+        }
+        this.returnTool(v);
+        v.tools[k] = this.takeTool(k, tier);
         given++;
-        this.say(tier > 0 ? `${v.name} \u0111\u01B0\u1EE3c ph\xE1t ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}.` : `${v.name} b\u1ECF ${TOOL_NAME[k].toLowerCase()}.`);
+        this.say(`${v.name} \u0111\u01B0\u1EE3c ph\xE1t ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}.`);
       }
-      return short && !given ? `Kho h\u1EBFt ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}, h\xE3y ch\u1EBF th\xEAm` : null;
+      if (given) return null;
+      return short ? `Kho h\u1EBFt ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}, h\xE3y ch\u1EBF th\xEAm` : wrong;
     }
     /** Throw a tool away, worn or not. */
     discardTool(ids, k) {
@@ -6779,9 +6896,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         this.say(`${v.name} v\u1EE9t ${TOOL_NAME[k].toLowerCase()}.`);
       }
     }
-    /** Hand a worn tool in to the Nhà sửa chữa: it leaves the villager and comes back to the stock mended. */
+    /** Send villagers who hold a worn tool to the Nhà sửa chữa on foot: they hand it in there and are without it until it is mended. */
     repairTool(ids, k) {
-      if (!this.building("repair")) return "C\u1EA7n d\u1EF1ng Nh\xE0 s\u1EEDa ch\u1EEFa";
+      const house2 = this.building("repair");
+      if (!house2) return "C\u1EA7n d\u1EF1ng Nh\xE0 s\u1EEDa ch\u1EEFa";
       let err = null, n = 0;
       for (const v of this.mine(ids)) {
         const t = v.tools[k];
@@ -6790,14 +6908,21 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           err = "C\xF4ng c\u1EE5 c\xF2n m\u1EDBi, ch\u01B0a c\u1EA7n s\u1EEDa";
           continue;
         }
-        const e = this.queueRepair(this.toolId(k, t.tier));
-        if (e) {
-          err = e;
+        if (this.repairQueue.length >= 12) {
+          err = "H\xE0ng \u0111\u1EE3i s\u1EEDa \u0111\xE3 \u0111\u1EA7y";
           continue;
         }
-        v.tools[k] = null;
+        this.leaveNode(v);
+        v.path = [];
+        v.slide = null;
+        v.order = `repair:${k}`;
+        if (!this.goTo(v, house2, "goOrder")) {
+          v.order = null;
+          err = `${v.name} kh\xF4ng t\u1EDBi \u0111\u01B0\u1EE3c Nh\xE0 s\u1EEDa ch\u1EEFa`;
+          continue;
+        }
         n++;
-        this.say(`${v.name} \u0111\u01B0a ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()} \u0111i s\u1EEDa.`);
+        this.say(`${v.name} mang ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()} t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa.`);
       }
       return n ? null : err;
     }
@@ -7076,7 +7201,12 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       for (const id of ids) {
         const v = this.byId.get(id);
         if (!v) continue;
+        for (const k of TOOL_KINDS) v.tools[k] = null;
         v.tools[kind] = tier > 0 ? { tier, dur: TIER_DURABILITY[tier] } : null;
+        if (tier > 0 && TOOL_OF_JOB[v.job] !== kind) {
+          const job = Object.keys(TOOL_OF_JOB).find((j) => TOOL_OF_JOB[j] === kind);
+          if (job && v.team === "player") this.setJob([v.id], job);
+        }
         if (tier > 0) this.say(`${v.name} \u0111\u01B0\u1EE3c c\u1EA5p ${TOOL_NAME[kind].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}.`);
       }
     }
@@ -7225,6 +7355,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         return;
       }
       v.orderCd = Math.max(0, v.orderCd - dt);
+      const held = this.heldTool(v);
+      if (held && TOOL_OF_JOB[v.job] !== held.k) this.returnTool(v);
       if (v.inside !== null) {
         this.animate(v, dt);
         return;
@@ -7736,8 +7868,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         if (this.queueCraft(id) === null) this.say(`${v.name} nh\u1EDD ch\u1EBF ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`);
       } else if (what === "repair") {
         const k = id, t = v.tools[k];
-        if (t && t.dur <= 0 && this.queueRepair(this.toolId(k, t.tier)) === null) {
+        if (t && t.dur < TIER_DURABILITY[t.tier] - 1e-6 && this.queueRepair(this.toolId(k, t.tier)) === null) {
           v.tools[k] = null;
+          v.repairFor = this.toolId(k, t.tier);
           this.say(`${v.name} nh\u1EDD s\u1EEDa ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}.`);
         }
       }
@@ -7755,8 +7888,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       if (!k || !this.toolLacking(v, v.job)) return;
       const t = this.stockedTier(k);
       if (!t) return;
-      this.toolStock[this.toolId(k, t)]--;
-      v.tools[k] = { tier: t, dur: TIER_DURABILITY[t] };
+      v.tools[k] = this.takeTool(k, t);
       this.say(`${v.name} nh\u1EADn ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t].toLowerCase()}.`);
     }
     /** A soldier or hunter with empty hands goes to the Kho vũ khí (once fetching is researched) for a weapon, a soldier also for armour. */
@@ -7971,8 +8103,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.placeAt = null;
       /** Id of the building being carried to a new spot (null when placing a new one). */
       this.moving = null;
-      /** Building shown in the building panel. */
+      /** Building tapped on the map: its buttons show beneath it. */
       this.selectedBuilding = null;
+      /** The full-screen panel of the selected building is open. */
+      this.buildingOpen = false;
       /** Foe or animal shown in the target card. */
       this.inspect = null;
       /** F pressed: the next click sends the selection to attack-move there. */
@@ -8214,6 +8348,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       }
       this.onChange();
     }
+    /** The chosen villagers who are soldiers: only they take fighting orders. */
+    fighters() {
+      return [...this.selected].filter((id) => this.sim.get(id)?.job === "fight");
+    }
     toggle(id) {
       if (this.selected.has(id)) this.selected.delete(id);
       else this.selected.add(id);
@@ -8255,13 +8393,20 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.inspect = null;
       this.onChange();
     }
-    selectBuilding(id) {
+    selectBuilding(id, open = false) {
       this.selectedBuilding = id;
+      this.buildingOpen = open;
       this.inspect = null;
+      this.onChange();
+    }
+    /** Close the panel but keep the building selected. */
+    closePanel() {
+      this.buildingOpen = false;
       this.onChange();
     }
     closeBuilding() {
       this.selectedBuilding = null;
+      this.buildingOpen = false;
       this.onChange();
     }
     // ---------------------------------------------------------------- placing buildings
@@ -8469,20 +8614,20 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         return;
       }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (k === "f" && this.selected.size) {
+      if (k === "f" && this.fighters().length) {
         this.attackMoveArmed = true;
         this.onToast("Ch\u1ECDn \u0111i\u1EC3m \u0111\u1EBFn (chu\u1ED9t tr\xE1i); Esc \u0111\u1EC3 h\u1EE7y");
         this.onChange();
         return;
       }
-      if (k === "h" && this.selected.size) {
-        this.sim.orderHold([...this.selected]);
+      if (k === "h" && this.fighters().length) {
+        this.sim.orderHold(this.fighters());
         this.onToast("Gi\u1EEF v\u1ECB tr\xED");
         this.onChange();
         return;
       }
-      if (k === "g" && this.selected.size) {
-        this.sim.orderStop([...this.selected]);
+      if (k === "g" && this.fighters().length) {
+        this.sim.orderStop(this.fighters());
         this.onToast("D\u1EEBng");
         this.onChange();
         return;
@@ -8543,6 +8688,19 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     for (const kid of kids) if (kid !== null && kid !== false && kid !== void 0) el.append(kid instanceof Node ? kid : String(kid));
     return el;
   }
+  var helpButton = () => h("button", { class: "q", type: "button", "aria-label": "H\u01B0\u1EDBng d\u1EABn", "aria-expanded": "false", text: "?" });
+  function hint(label, text) {
+    const tip = h("p", { class: "sub hintbody", hidden: true, text });
+    const head = h("div", { class: "hinthead" }, typeof label === "string" ? h("h3", { text: label }) : label, helpButton());
+    return Object.assign(h("div", { class: "hint" }, head, tip), { tip });
+  }
+  if (typeof document !== "undefined") document.addEventListener("click", (e) => {
+    const q = e.target?.closest?.("button.q");
+    const body = q?.closest(".hint")?.querySelector(":scope > .hintbody");
+    if (!q || !body) return;
+    body.hidden = !body.hidden;
+    q.setAttribute("aria-expanded", String(!body.hidden));
+  });
   function iconCanvas(src) {
     const c = document.createElement("canvas");
     c.width = src.width;
@@ -8752,7 +8910,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     // ---------------------------------------------------------------- build
     buildPage() {
       const { sim: sim2, ctl: ctl2 } = this.c, page = h("div", { class: "page" });
-      page.append(h("p", { class: "sub", text: "M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y M\u1ED8T c\xE1i trong c\u1EA3 game; mu\u1ED1n m\u1EA1nh h\u01A1n th\xEC n\xE2ng c\u1EA5p n\xF3. Ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7. N\u1EBFu \u0111ang ch\u1ECDn d\xE2n, h\u1ECD s\u1EBD t\u1EF1 \u0111i x\xE2y." }));
+      page.append(hint("X\xE2y d\u1EF1ng", "M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y M\u1ED8T c\xE1i trong c\u1EA3 game; mu\u1ED1n m\u1EA1nh h\u01A1n th\xEC n\xE2ng c\u1EA5p n\xF3. Ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7. N\u1EBFu \u0111ang ch\u1ECDn d\xE2n, h\u1ECD s\u1EBD t\u1EF1 \u0111i x\xE2y."));
       const rows = [];
       const ROLE = {
         storage: "C\u1EA5t t\xE0i nguy\xEAn.",
@@ -8769,7 +8927,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           ctl2.startPlacing(kind);
           this.close();
         } }), status = h("small", { class: "lock" });
-        page.append(h("div", { class: "row" }, h("div", { class: "nm" }, d.name, h("small", { text: `${ROLE[kind] ?? ""} ${lv2.name}: ${costText(lv2.cost, RES_NAME)} \xB7 x\xE2y ~${lv2.buildTime} gi\xE2y` }), status), btn));
+        const role = ROLE[kind];
+        page.append(h("div", { class: "row" }, h("div", { class: "nm hint" }, h("div", { class: "hinthead" }, d.name, role ? helpButton() : null), h("small", { text: `${lv2.name}: ${costText(lv2.cost, RES_NAME)} \xB7 x\xE2y ~${gameDays(lv2.buildTime)}` }), status, role ? h("small", { class: "hintbody", hidden: true, text: role }) : null), btn));
         rows.push(() => {
           const lock = sim2.buildingLock(kind), poor = !sim2.dev.freeBuild && !Object.keys(lv2.cost).every((k) => sim2.stock[k] >= (lv2.cost[k] ?? 0));
           btn.disabled = !!lock || poor;
@@ -8798,14 +8957,14 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
             h("div", { class: "nm" }, name, h("small", { text: note.replace(/^ · /, "") || "\u0111ang d\xF9ng" })),
             h("button", { text: "M\u1EDF", onclick: () => {
               ctl2.selected.clear();
-              ctl2.selectBuilding(b.id);
+              ctl2.selectBuilding(b.id, true);
               ctl2.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE);
               this.close();
             } })
           );
         }));
       });
-      return h("div", { class: "page" }, h("p", { class: "sub", text: "M\u1ECDi c\xF4ng tr\xECnh \u0111\xE3 d\u1EF1ng n\u1EB1m \u1EDF \u0111\xE2y. M\u1EDF X\u01B0\u1EDFng \u0111\u1EC3 ch\u1EBF \u0111\u1ED3, m\u1EDF l\u1EEDa tr\u1EA1i \u0111\u1EC3 xem d\xE2n, m\u1EDF Kho \u0111\u1EC3 xem t\xE0i nguy\xEAn." }), this.placesList);
+      return h("div", { class: "page" }, hint("C\xF4ng tr\xECnh \u0111\xE3 d\u1EF1ng", "M\u1ECDi c\xF4ng tr\xECnh \u0111\xE3 d\u1EF1ng n\u1EB1m \u1EDF \u0111\xE2y. M\u1EDF X\u01B0\u1EDFng \u0111\u1EC3 ch\u1EBF \u0111\u1ED3, m\u1EDF l\u1EEDa tr\u1EA1i \u0111\u1EC3 xem d\xE2n, m\u1EDF Kho \u0111\u1EC3 xem t\xE0i nguy\xEAn."), this.placesList);
     }
     // ---------------------------------------------------------------- tribes
     tribesPage() {
@@ -8866,7 +9025,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         none.hidden = any;
         const p = sim2.pendingTribe && sim2.tribes.find((x) => x.id === sim2.pendingTribe);
         banner.hidden = !p;
-        if (p) banner.replaceChildren(h("b", { text: `${p.def.name} xin h\xE0ng!` }), h("p", { class: "sub", text: "Thu n\u1EA1p: d\xE2n v\xE0 l\xEDnh gia nh\u1EADp l\xE0ng. C\u1ED1ng n\u1EA1p: h\u1ECD gi\u1EEF l\xE0ng v\xE0 n\u1ED9p t\xE0i nguy\xEAn m\u1ED7i m\xF9a, kh\xF4ng \u0111\xE1nh b\u1EA1n n\u1EEFa." }));
+        if (p) banner.replaceChildren(hint(h("b", { text: `${p.def.name} xin h\xE0ng!` }), "Thu n\u1EA1p: d\xE2n v\xE0 l\xEDnh gia nh\u1EADp l\xE0ng. C\u1ED1ng n\u1EA1p: h\u1ECD gi\u1EEF l\xE0ng v\xE0 n\u1ED9p t\xE0i nguy\xEAn m\u1ED7i m\xF9a, kh\xF4ng \u0111\xE1nh b\u1EA1n n\u1EEFa."));
       });
       return page;
     }
@@ -8887,8 +9046,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         } });
         return b;
       };
-      page.append(h("p", { class: "sub", text: "C\xF4ng c\u1EE5 \u0111\u1EC3 th\u1EED game nhanh, kh\xF4ng d\xF9ng khi ch\u01A1i th\u1EADt." }));
-      page.append(h("h3", { text: "T\xE0i nguy\xEAn" }));
+      page.append(hint("T\xE0i nguy\xEAn", "C\xF4ng c\u1EE5 dev \u0111\u1EC3 th\u1EED game nhanh, kh\xF4ng d\xF9ng khi ch\u01A1i th\u1EADt."));
       for (const res of RES_LIST) page.append(row(RES_NAME[res], btn("\u221210", () => addStock(sim2, res, -10)), btn("+10", () => addStock(sim2, res, 10)), btn("+50", () => addStock(sim2, res, 50)), btn("+200", () => addStock(sim2, res, 200))));
       page.append(row("Kho", btn("\u0110\u1EA7y kho", () => fillStock(sim2))), h(
         "div",
@@ -8904,9 +9062,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.updaters.push(() => {
         rsec.hidden = !RESEARCH.enabled;
       });
-      page.append(h("h3", { text: "Nh\xE0 v\xE0 lu\u1ED3ng ch\u1EBF t\u1EA1o" }));
+      page.append(hint("Nh\xE0 v\xE0 lu\u1ED3ng ch\u1EBF t\u1EA1o", 'Th\u1EED lu\u1ED3ng: m\u1EDF h\u1EBFt nghi\xEAn c\u1EE9u ho\u1EB7c d\u1EF1ng s\u1EB5n nh\xE0 \u2192 b\u1EADt "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 "t\u1EF1 \u0111\u1EB7t h\xE0ng" \u2192 l\xE0m h\u1ECFng c\xF4ng c\u1EE5 d\xE2n \u0111ang ch\u1ECDn \u2192 xem h\u1ECD t\u1EDBi Kho, Nh\xE0 ch\u1EBF t\u1EA1o, Nh\xE0 s\u1EEDa ch\u1EEFa.'));
       page.append(h("div", { class: "devrow" }, btn("D\u1EF1ng s\u1EB5n m\u1ECDi nh\xE0", () => buildAll(sim2), "X\xE2y xong ngay c\xE1c nh\xE0 c\xF2n thi\u1EBFu, b\u1ECF qua nghi\xEAn c\u1EE9u"), btn("N\xE2ng m\u1ECDi nh\xE0 t\u1ED1i \u0111a", () => maxBuildings(sim2)), btn("X\u1EBFp ng\u01B0\u1EDDi v\xE0o c\xE1c nh\xE0", () => staffAll(sim2), "M\u1ED7i nh\xE0 \u0111\u1EA7y ng\u01B0\u1EDDi l\xE0m vi\u1EC7c ph\xF9 h\u1EE3p nh\u1EA5t")));
-      page.append(h("p", { class: "sub", text: 'Th\u1EED lu\u1ED3ng: m\u1EDF h\u1EBFt nghi\xEAn c\u1EE9u ho\u1EB7c d\u1EF1ng s\u1EB5n nh\xE0 \u2192 b\u1EADt "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 "t\u1EF1 \u0111\u1EB7t h\xE0ng" \u2192 l\xE0m h\u1ECFng c\xF4ng c\u1EE5 d\xE2n \u0111ang ch\u1ECDn \u2192 xem h\u1ECD t\u1EDBi Kho, Nh\xE0 ch\u1EBF t\u1EA1o, Nh\xE0 s\u1EEDa ch\u1EEFa.' }));
       page.append(h("div", { class: "devrow" }, btn("L\xE0m h\u1ECFng c\xF4ng c\u1EE5 c\u1EE7a d\xE2n ch\u1ECDn", () => wearTools(sim2, sel(), 0)), btn("M\xF2n c\xF2n 50%", () => wearTools(sim2, sel(), 0.5)), btn("Thu h\u1EBFt c\xF4ng c\u1EE5", () => {
         for (const k of TOOL_KINDS) sim2.giveTool(sel(), k, 0);
       })));
@@ -8992,8 +9149,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: hai ng\xF3n tay; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
         h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
         h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EC3 v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EC3 l\xE0m \u0111\u1ED3, Nh\xE0 s\u1EEDa ch\u1EEFa \u0111\u1EC3 m\xE0i l\u1EA1i c\xF4ng c\u1EE5. M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y m\u1ED9t c\xE1i r\u1ED3i n\xE2ng c\u1EA5p (\u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u). D\xE2n v\xE0o l\xE0m b\xEAn trong nh\xE0 (hi\u1EC7n th\xE0nh danh s\xE1ch t\xEAn v\xE0 Tr\xED tu\u1EC7, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3): nh\xE0 c\u1EA5p cao ch\u1EE9a th\xEAm ng\u01B0\u1EDDi, ng\u01B0\u1EDDi th\xF4ng minh nghi\xEAn c\u1EE9u nhanh h\u01A1n. L\xFAc \u0111\u1EA7u b\u1EA1n t\u1EF1 ph\xE1t c\xF4ng c\u1EE5 v\xE0 t\u1EF1 \u0111\u01B0a \u0111i s\u1EEDa; nghi\xEAn c\u1EE9u Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, t\u1EF1 l\u1EA5y \u0111\u1ED3 v\xE0 t\u1EF1 \u0111\u1EB7t h\xE0ng th\xEC d\xE2n t\u1EF1 lo. Ti\u1EC1n (v\u1ECF s\xF2) tr\u1EA3 cho nghi\xEAn c\u1EE9u, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m ho\u1EB7c \u0111\u1ED5i h\xE0ng \u1EDF Kho. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
-        h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), ": d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng 30 gi\xE2y; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh 3 gi\xE2y s\u1EBD k\xE9o h\u1ECD d\u1EADy."),
-        h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), ": t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD 30 gi\xE2y ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p."),
+        h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), `: d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng ${gameDays(30)}; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh ${gameDays(3)} s\u1EBD k\xE9o h\u1ECD d\u1EADy.`),
+        h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), `: t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD ${gameDays(30)} ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p.`),
         h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
       );
     }
@@ -9092,9 +9249,177 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     }
   };
 
+  // src/ui/buildbar.ts
+  var OPEN_LABEL = {
+    campfire: "Xem d\xE2n",
+    storage: "Kho",
+    workshop: "Ch\u1EBF t\u1EA1o",
+    lab: "Nghi\xEAn c\u1EE9u",
+    repair: "S\u1EEDa \u0111\u1ED3",
+    toolstore: "Kho c\xF4ng c\u1EE5",
+    armory: "Kho v\u0169 kh\xED"
+  };
+  var Confirm = class {
+    constructor(root, c) {
+      this.root = root;
+      this.c = c;
+      window.addEventListener("keydown", (e) => {
+        if (!root.hidden && e.key === "Escape") {
+          e.stopImmediatePropagation();
+          this.close();
+        }
+      }, true);
+      root.addEventListener("click", (e) => {
+        if (e.target === root) this.close();
+      });
+    }
+    close() {
+      this.root.hidden = true;
+      this.root.replaceChildren();
+    }
+    ask(a) {
+      const { sim: sim2 } = this.c;
+      const rows = a.cost ? Object.keys(a.cost).filter((r) => (a.cost[r] ?? 0) > 0) : [];
+      const ok = h("button", { class: `primary${a.danger ? " danger" : ""}`, text: a.ok, disabled: !!a.why, onclick: () => {
+        this.close();
+        a.onOk();
+      } });
+      const card = h(
+        "div",
+        { class: "card", role: "dialog", "aria-modal": "true", "aria-label": a.title },
+        h("h3", { text: a.title }),
+        ...(a.lines ?? []).map((t) => h("p", { class: "sub", text: t })),
+        rows.length ? h("div", { class: "costs" }, h("b", { text: a.costTitle ?? "C\u1EA7n" }), ...rows.map((r) => {
+          const need = a.cost[r] ?? 0, have = Math.floor(sim2.stock[r]), short = have < need;
+          return h("div", { class: short ? "short" : "" }, h("span", { text: RES_NAME[r] }), h("span", { text: `${need} (c\xF3 ${have})` }));
+        })) : null,
+        a.why ? h("p", { class: "why", text: a.why }) : null,
+        h("div", { class: "btns" }, h("button", { text: "H\u1EE7y", onclick: () => this.close() }), ok)
+      );
+      this.root.replaceChildren(card);
+      this.root.hidden = false;
+      ok.focus();
+    }
+  };
+  var BuildingBar = class {
+    constructor(root, c, r, confirm) {
+      this.root = root;
+      this.c = c;
+      this.r = r;
+      this.confirm = confirm;
+      this.who = h("div", { class: "who" });
+      this.open = h("button", { class: "sm primary" });
+      this.upgrade = h("button", { class: "sm", text: "N\xE2ng c\u1EA5p" });
+      this.move = h("button", { class: "sm", text: "D\u1EDDi" });
+      this.demolish = h("button", { class: "sm danger", text: "Ph\xE1 b\u1ECF" });
+      this.id = null;
+      this.width = 0;
+      this.height = 0;
+      const { ctl: ctl2 } = c;
+      root.append(this.who, h("div", { class: "btns" }, this.open, this.upgrade, this.move, this.demolish));
+      this.open.addEventListener("click", () => {
+        if (this.id !== null) ctl2.selectBuilding(this.id, true);
+      });
+      this.upgrade.addEventListener("click", () => {
+        const b = this.cur();
+        if (b) this.askUpgrade(b);
+      });
+      this.move.addEventListener("click", () => {
+        const b = this.cur();
+        if (b) ctl2.startMoving(b.id);
+      });
+      this.demolish.addEventListener("click", () => {
+        const b = this.cur();
+        if (b) this.askDemolish(b);
+      });
+    }
+    cur() {
+      return this.id === null ? void 0 : this.c.sim.getBuilding(this.id);
+    }
+    askUpgrade(b) {
+      const { sim: sim2, ctl: ctl2, toast: toast2 } = this.c, def = BUILDINGS[b.kind], nx = levelDef(b, b.level + 1);
+      const gain = b.kind === "storage" || b.kind === "campfire" ? `ch\u1EE9a ${nx.cap} m\u1ED7i lo\u1EA1i` : b.kind === "toolstore" || b.kind === "armory" ? `ch\u1EE9a ${nx.cap} m\xF3n` : `ch\u1EE9a ${nx.slots} ng\u01B0\u1EDDi, t\u1ED1c \u0111\u1ED9 \xD7${nx.craftSpeed.toLocaleString("vi")}`;
+      this.confirm.ask({
+        title: `N\xE2ng ${def.name} l\xEAn c\u1EA5p ${b.level + 1}?`,
+        lines: [`${nx.name}: ${gain}. V\u1EADt li\u1EC7u tr\u1EA3 ngay, r\u1ED3i giao Th\u1EE3 x\xE2y \u0111\u1EC3 l\xE0m (~${gameDays(nx.buildTime)}).${sim2.dev.freeBuild ? " \u0110ang b\u1EADt x\xE2y mi\u1EC5n ph\xED." : ""}`],
+        cost: sim2.dev.freeBuild ? {} : nx.cost,
+        costTitle: "V\u1EADt li\u1EC7u c\u1EA7n",
+        why: sim2.canUpgrade(b),
+        ok: "N\xE2ng c\u1EA5p",
+        onOk: () => {
+          const e = sim2.upgradeBuilding(b.id);
+          toast2(e ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u. Giao Th\u1EE3 x\xE2y \u0111\u1EC3 n\xE2ng c\u1EA5p");
+          ctl2.onChange();
+        }
+      });
+    }
+    askDemolish(b) {
+      const { sim: sim2, ctl: ctl2, toast: toast2 } = this.c, def = BUILDINGS[b.kind], back = sim2.salvage(b), has = Object.keys(back).length > 0;
+      this.confirm.ask({
+        title: `Ph\xE1 ${def.name}?`,
+        lines: [has ? `Thu l\u1EA1i: ${costText(back, RES_NAME)}.` : "Kh\xF4ng thu l\u1EA1i \u0111\u01B0\u1EE3c g\xEC.", ...b.staff.length ? ["D\xE2n \u0111ang l\xE0m vi\u1EC7c b\xEAn trong s\u1EBD ra ngo\xE0i."] : []],
+        ok: "Ph\xE1 b\u1ECF",
+        danger: true,
+        onOk: () => {
+          const e = sim2.demolishBuilding(b.id);
+          toast2(e ?? "\u0110\xE3 ph\xE1 b\u1ECF c\xF4ng tr\xECnh");
+          if (!e) ctl2.closeBuilding();
+          else ctl2.onChange();
+        }
+      });
+    }
+    /** Refresh what the buttons say and which ones show. */
+    update() {
+      const { sim: sim2, ctl: ctl2 } = this.c, b = ctl2.selectedBuilding === null ? void 0 : sim2.getBuilding(ctl2.selectedBuilding);
+      const show = !!b && !ctl2.buildingOpen && !ctl2.placing;
+      this.root.hidden = !show;
+      if (!b || !show) {
+        this.id = null;
+        return;
+      }
+      this.id = b.id;
+      const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv2 = levelDef(b);
+      const state = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%` : def.buildable ? `c\u1EA5p ${b.level}/${top} \xB7 ${lv2.name.toLowerCase()}` : lv2.name.toLowerCase();
+      this.who.replaceChildren(h("b", { text: def.name }), ` \xB7 ${state}`);
+      this.open.textContent = OPEN_LABEL[b.kind];
+      this.open.hidden = !b.done;
+      this.upgrade.hidden = !(def.buildable && b.done && !b.upgrading && b.level < top);
+      this.move.hidden = this.demolish.hidden = !def.buildable;
+      const fee = sim2.moveFee(b);
+      this.move.textContent = Object.keys(fee).length ? `D\u1EDDi (${costText(fee, RES_NAME)})` : "D\u1EDDi";
+      this.width = this.root.offsetWidth;
+      this.height = this.root.offsetHeight;
+    }
+    /** Keep the bar under its building as the map moves; called every frame. */
+    place() {
+      const b = this.cur();
+      if (this.root.hidden || !b) return;
+      const d = BUILDINGS[b.kind], p = this.r.worldToScreen((b.x + d.w / 2) * TILE, (b.y + d.h) * TILE);
+      const w = this.width || this.root.offsetWidth, hh = this.height || this.root.offsetHeight;
+      const gone = p.x < -40 || p.x > this.r.w + 40 || p.y < -hh - 120 || p.y > this.r.h + 40;
+      this.root.style.visibility = gone ? "hidden" : "visible";
+      const x = Math.max(4, Math.min(this.r.w - w - 4, p.x - w / 2)), y = Math.max((parseInt(document.documentElement.style.getPropertyValue("--top-h")) || 40) + 8, Math.min(this.r.h - hh - 4, p.y + 8));
+      this.root.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+    }
+  };
+
   // src/ui/panels.ts
+  var armorLevel = (a) => (a.pierce + a.slash + a.crush) / 3;
+  var ARMOR_FULL = 0.5;
+  var pct = (x) => `${Math.round(x * 100)}%`;
+  var armorText = (a, named = true) => `${named ? `${a.name}: ` : ""}gi\u1EA3m s\xE1t th\u01B0\u01A1ng \u0111\xE2m ${pct(a.pierce)} \xB7 ch\xE9m ${pct(a.slash)} \xB7 \u0111\u1EADp ${pct(a.crush)}`;
   var stars = (n) => "\u2605".repeat(n) + "\u2606".repeat(3 - n);
-  function describe(v) {
+  function waitReason(v, sim2) {
+    const j = v.job;
+    if (j === "build") return sim2.buildings.some(needsWork) ? null : "ch\u1EDD: ch\u01B0a c\xF3 c\xF4ng tr\u01B0\u1EDDng n\xE0o c\u1EA7n x\xE2y";
+    if (j === "wood" || j === "stone" || j === "food") {
+      const res = JOBS[j].res;
+      if (!v.carry && sim2.stock[res] >= sim2.capacity(res)) return `ch\u1EDD: kho \u0111\u1EA7y ${RES_NAME[res].toLowerCase()}, h\xE3y n\xE2ng c\u1EA5p Kho`;
+      return "ch\u1EDD: ch\u01B0a th\u1EA5y ngu\u1ED3n n\xE0o g\u1EA7n \u0111\xF3, h\xE3y kh\xE1m ph\xE1 th\xEAm";
+    }
+    return null;
+  }
+  function describe(v, sim2) {
     const carry = v.carry && v.carry.amount > 0 ? ` \xB7 mang ${v.carry.amount} ${RES_NAME[v.carry.res].toLowerCase()}` : "";
     let t;
     switch (v.phase) {
@@ -9129,7 +9454,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         t = "\u0111i l\u1EA5y \u0111\u1ED3 \u1EDF kho";
         break;
       case "wait":
-        t = "ch\u1EDD vi\u1EC7c";
+        t = sim2 && waitReason(v, sim2) || "ch\u1EDD vi\u1EC7c";
         break;
       case "goHome":
         t = "v\u1EC1 l\u1EEDa tr\u1EA1i ng\u1EE7";
@@ -9144,7 +9469,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         t = "\u0111ang b\u1ECF ch\u1EA1y";
         break;
       case "down":
-        t = `b\u1ECB th\u01B0\u01A1ng, c\xF2n ${Math.ceil(v.down)} gi\xE2y`;
+        t = `b\u1ECB th\u01B0\u01A1ng, c\xF2n ${gameDays(v.down)}`;
         break;
       case "goCarcass":
         t = "\u0111i l\u1ED9t da";
@@ -9177,14 +9502,14 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.skills = h("div", { class: "kv" });
       this.toolRows = [];
       this.gearBtns = [];
-      this.gearNote = h("div", { class: "kv" });
       this.statsKey = "";
       this.open = false;
       const { sim: sim2, ctl: ctl2 } = c, ids = () => [...ctl2.selected];
       const makeBars = () => {
-        const full = h("b"), health = h("b"), morale = h("b", { class: "mor" });
-        this.bars.push({ full, health, morale });
-        return h("div", { class: "bars" }, h("label", {}, "No", h("i", {}, full)), h("label", {}, "M\xE1u", h("i", {}, health)), h("label", {}, "Tinh th\u1EA7n", h("i", {}, morale)));
+        const full = h("b"), health = h("b"), morale = h("b", { class: "mor" }), armor = h("b", { class: "arm" });
+        const armorLabel = h("label", {}, "Gi\xE1p", h("i", {}, armor));
+        this.bars.push({ full, health, morale, armor, armorLabel });
+        return h("div", { class: "bars" }, h("label", {}, "No", h("i", {}, full)), h("label", {}, "M\xE1u", h("i", {}, health)), h("label", {}, "Tinh th\u1EA7n", h("i", {}, morale)), armorLabel);
       };
       this.jobBtns = ["idle", ...WORK_JOBS].map((j) => h("button", { class: "sm", "data-job": j, pressed: false, text: JOB_NAME[j], onclick: () => {
         const e = sim2.setJob(ids(), j);
@@ -9213,14 +9538,20 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         sim2.autoGear(ids());
         ctl2.onChange();
       } }));
-      const toolsSec = h("section", {}, h("h3", { text: "C\xF4ng c\u1EE5" }), h("p", { class: "sub", text: 'Ph\xE1t t\u1EEB kho, \u0111\u01B0a \u0111i s\u1EEDa ho\u1EB7c b\u1ECF. Sau khi nghi\xEAn c\u1EE9u "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 c\xF3 Kho c\xF4ng c\u1EE5, d\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng \u0111\u1ED3 s\u1EBD t\u1EF1 \u0111i l\u1EA5y.' }));
+      const gearHint = hint(h("p", { class: "sub", text: "Ph\xE1t \u0111\u1ED3 (l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng):" }), "");
+      this.gearTip = gearHint.tip;
+      const toolsSec = h("section", {}, hint("C\xF4ng c\u1EE5", 'M\u1ED7i ngh\u1EC1 d\xF9ng m\u1ED9t c\xF4ng c\u1EE5 (\u0111\u1ED1n g\u1ED7: r\xECu, th\u1EE3 \u0111\xE1: cu\u1ED1c chim, h\xE1i l\u01B0\u1EE3m: cu\u1ED1c, th\u1EE3 x\xE2y: b\xFAa) v\xE0 m\u1ED7i d\xE2n ch\u1EC9 c\u1EA7m m\u1ED9t c\xF4ng c\u1EE5. \u0110\u1ED5i ngh\u1EC1 th\xEC c\xF4ng c\u1EE5 tr\u1EA3 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n. "\u0110i s\u1EEDa": d\xE2n t\u1EF1 mang c\xF4ng c\u1EE5 t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa, s\u1EEDa xong \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i. Sau khi nghi\xEAn c\u1EE9u "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 c\xF3 Kho c\xF4ng c\u1EE5, d\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng \u0111\u1ED3 s\u1EBD t\u1EF1 \u0111i l\u1EA5y.'));
       for (const k of TOOL_KINDS) {
         const state = h("small"), give = [1, 2].map((tier) => ({ tier, btn: h("button", { class: "sm", onclick: () => {
           const e = sim2.assignTool(ids(), k, tier);
           if (e) c.toast(e);
           ctl2.onChange();
         } }) }));
-        const repair = h("button", { class: "sm", text: "S\u1EEDa", onclick: () => {
+        const back = h("button", { class: "sm", text: "Tr\u1EA3 kho", title: "Tr\u1EA3 c\xF4ng c\u1EE5 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n", onclick: () => {
+          sim2.assignTool(ids(), k, 0);
+          ctl2.onChange();
+        } });
+        const repair = h("button", { class: "sm", text: "\u0110i s\u1EEDa", title: "D\xE2n mang c\xF4ng c\u1EE5 t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa", onclick: () => {
           const e = sim2.repairTool(ids(), k);
           if (e) c.toast(e);
           ctl2.onChange();
@@ -9229,8 +9560,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           sim2.discardTool(ids(), k);
           ctl2.onChange();
         } });
-        this.toolRows.push({ k, state, give, repair, drop });
-        toolsSec.append(h("div", { class: "row" }, h("div", { class: "nm" }, TOOL_NAME[k], state), h("div", { class: "btns" }, ...give.map((g) => g.btn), repair, drop)));
+        const row = h("div", { class: "row" }, h("div", { class: "nm" }, TOOL_NAME[k], state), h("div", { class: "btns" }, ...give.map((g) => g.btn), back, repair, drop));
+        this.toolRows.push({ k, row, state, give, back, repair, drop });
+        toolsSec.append(row);
       }
       root.append(
         h("div", { class: "cardhead" }, this.name, this.state, h("button", { class: "sm x", text: "\u2715", title: "B\u1ECF ch\u1ECDn", onclick: () => ctl2.clearSelection() })),
@@ -9247,7 +9579,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           { class: "mbody cols" },
           h("section", {}, h("h3", { text: "T\xECnh tr\u1EA1ng" }), makeBars(), this.gear),
           h("section", {}, h("h3", { text: "Giao ngh\u1EC1" }), h("div", { class: "btns", role: "group", "aria-label": "Giao ngh\u1EC1" }, ...this.jobBtns)),
-          h(
+          this.combatSec = h(
             "section",
             {},
             h("h3", { text: "Chi\u1EBFn \u0111\u1EA5u" }),
@@ -9269,12 +9601,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
                 c.toast("Ch\u1EA1m v\xE0o \u0111i\u1EC3m \u0111\u1EBFn");
                 ctl2.onChange();
               } })
-            ),
-            h("p", { class: "sub", text: "Ph\xE1t \u0111\u1ED3 (l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng):" }),
-            gearRow,
-            this.gearNote
+            )
           ),
-          toolsSec,
+          this.gearSec = h("section", {}, h("h3", { text: "Trang b\u1ECB" }), gearHint, gearRow),
+          this.toolsSec = toolsSec,
           h("section", {}, h("h3", { text: "Ch\u1EC9 s\u1ED1 v\xE0 k\u1EF9 n\u0103ng" }), this.stats, this.skills)
         )
       );
@@ -9299,12 +9629,15 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       const v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : "tay kh\xF4ng";
       const title = chosen.length > 1 ? `${v.name} v\xE0 ${chosen.length - 1} ng\u01B0\u1EDDi n\u1EEFa` : v.name;
       this.name.textContent = this.dname.textContent = title;
-      this.state.textContent = this.dstate.textContent = describe(v);
+      this.state.textContent = this.dstate.textContent = describe(v, sim0);
       for (const b of this.bars) {
         b.full.style.width = `${v.fullness}%`;
         b.health.style.width = `${v.health / v.maxHealth * 100}%`;
         b.morale.style.width = `${v.morale}%`;
         b.health.className = v.health / v.maxHealth < 0.35 ? "bad" : "";
+        const ad = v.armor ? ARMORS[v.armor] : null;
+        b.armor.style.width = `${ad ? Math.min(100, armorLevel(ad) / ARMOR_FULL * 100) : 0}%`;
+        b.armorLabel.title = ad ? armorText(ad) : "Kh\xF4ng m\u1EB7c gi\xE1p";
       }
       if (!this.open) return;
       for (const g of this.gearBtns) {
@@ -9312,15 +9645,20 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         g.btn.textContent = n >= 0 ? `${g.label} (${n})` : g.label;
         g.btn.disabled = g.kind !== null && n <= 0 && !chosen.every((o) => (g.slot === "weapon" ? o.weapon : o.armor) === g.kind);
       }
-      this.gearNote.textContent = chosen.every((o) => o.job === "fight" || o.job === "hunt") ? chosen[0].manualGear ? "\u0110\u1ED3 do b\u1EA1n ph\xE1t: X\u01B0\u1EDFng kh\xF4ng t\u1EF1 \u0111\u1ED5i." : "X\u01B0\u1EDFng t\u1EF1 ph\xE1t \u0111\u1ED3 t\u1ED1t nh\u1EA5t c\xF2n trong kho." : "Ch\u1EC9 Chi\u1EBFn binh v\xE0 Th\u1EE3 s\u0103n c\u1EA7m v\u0169 kh\xED \u0111i theo; d\xE2n th\u01B0\u1EDDng kh\xF4ng chi\u1EBFn \u0111\u1EA5u m\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i khi c\xF3 \u0111\u1ECBch.";
-      this.gear.innerHTML = `M\xE1u <b>${Math.ceil(v.health)}/${v.maxHealth}</b> \xB7 V\u0169 kh\xED <b>${w}</b> \xB7 Gi\xE1p <b>${v.armor ? ARMORS[v.armor].name : "\u2014"}</b>${v.leader ? " \xB7 <b>Th\u1EE7 l\u0129nh</b>" : ""}`;
+      this.gearTip.textContent = chosen.every((o) => o.job === "fight" || o.job === "hunt") ? chosen[0].manualGear ? "\u0110\u1ED3 do b\u1EA1n ph\xE1t: X\u01B0\u1EDFng kh\xF4ng t\u1EF1 \u0111\u1ED5i." : "X\u01B0\u1EDFng t\u1EF1 ph\xE1t \u0111\u1ED3 t\u1ED1t nh\u1EA5t c\xF2n trong kho." : "Ch\u1EC9 Chi\u1EBFn binh v\xE0 Th\u1EE3 s\u0103n c\u1EA7m v\u0169 kh\xED \u0111i theo; d\xE2n th\u01B0\u1EDDng kh\xF4ng chi\u1EBFn \u0111\u1EA5u m\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i khi c\xF3 \u0111\u1ECBch.";
+      this.gear.innerHTML = `M\xE1u <b>${Math.ceil(v.health)}/${v.maxHealth}</b> \xB7 V\u0169 kh\xED <b>${w}</b> \xB7 Gi\xE1p <b>${v.armor ? ARMORS[v.armor].name : "\u2014"}</b>${v.armor ? ` (${armorText(ARMORS[v.armor], false)})` : ""}${v.leader ? " \xB7 <b>Th\u1EE7 l\u0129nh</b>" : ""}`;
       const sk = `${v.id}|${WORK_JOBS.map((j) => v.skill[j].level).join("")}|${Object.values(v.stats).join()}`;
       if (sk !== this.statsKey) {
         this.statsKey = sk;
         this.stats.innerHTML = Object.keys(STAT_NAME).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(" \xB7 ");
         this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>c\u1EA5p ${v.skill[j].level}</b>`).join(" \xB7 ");
       }
+      const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
+      this.toolsSec.hidden = only === null;
+      this.combatSec.hidden = !chosen.every((o) => o.job === "fight");
+      this.gearSec.hidden = !chosen.every((o) => o.job === "fight" || o.job === "hunt");
       for (const r of this.toolRows) {
+        r.row.hidden = r.k !== only;
         const t = v.tools[r.k];
         r.state.textContent = t ? t.dur <= 0 ? `${TIER_NAME[t.tier].toLowerCase()} \xB7 \u0111\xE3 h\u1ECFng` : `${TIER_NAME[t.tier].toLowerCase()} \xB7 c\xF2n ${Math.round(t.dur / TIER_DURABILITY[t.tier] * 100)}%` : "tay kh\xF4ng";
         for (const g of r.give) {
@@ -9329,7 +9667,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           g.btn.disabled = n <= 0;
         }
         r.repair.disabled = !t || t.dur >= TIER_DURABILITY[t.tier] - 1e-6;
-        r.drop.disabled = !t;
+        r.back.disabled = r.drop.disabled = !t;
       }
       this.jobBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.job === b.dataset.job))));
       this.stanceBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.stance === b.dataset.stance))));
@@ -9410,48 +9748,61 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     }
   };
   var StaffBox = class {
-    constructor(c, job, currentId) {
+    constructor(c, job) {
       this.c = c;
       this.job = job;
-      this.currentId = currentId;
       this.root = h("section", {});
       this.head = h("h3");
       this.list = h("div");
+      this.picker = h("div", { class: "picker" });
       this.key = "";
-      const { sim: sim2, ctl: ctl2 } = c;
-      this.add = h("button", { class: "sm primary", text: `Th\xEAm ng\u01B0\u1EDDi ${JOB_NAME[job].toLowerCase()}` });
-      this.add.addEventListener("click", () => {
-        const ids = ctl2.selected.size ? [...ctl2.selected] : (() => {
-          const v = sim2.bestFor(job);
-          return v ? [v.id] : [];
-        })();
-        if (!ids.length) {
-          c.toast("Kh\xF4ng c\xF2n d\xE2n r\u1EA3nh \u0111\u1EC3 giao");
-          return;
-        }
-        const e = sim2.assignStaff(ids, job);
-        c.toast(e ?? `${ids.map((id) => sim2.get(id)?.name).join(", ")}: ${JOB_NAME[job]}`);
-        ctl2.onChange();
-      });
-      this.root.append(this.head, this.list, h("div", { class: "btns" }, this.add), h("p", { class: "sub", text: "D\xE2n v\xE0o trong nh\xE0 l\xE0m vi\u1EC7c, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3 v\xE0 kh\xF4ng b\u1ECB t\u1EA5n c\xF4ng. Th\xEAm ng\u01B0\u1EDDi: d\xF9ng d\xE2n \u0111ang ch\u1ECDn, n\u1EBFu kh\xF4ng ch\u1ECDn ai th\xEC ch\u1ECDn ng\u01B0\u1EDDi r\u1EA3nh ph\xF9 h\u1EE3p nh\u1EA5t." }));
+      this.pickKey = "";
+      this.open = false;
+      this.add = h("button", { class: "sm primary", onclick: () => {
+        this.open = !this.open;
+        this.pickKey = "";
+        c.ctl.onChange();
+      } });
+      this.root.append(hint(this.head, 'D\xE2n v\xE0o trong nh\xE0 l\xE0m vi\u1EC7c, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3 v\xE0 kh\xF4ng b\u1ECB t\u1EA5n c\xF4ng. B\u1EA1n ch\u1ECDn ai v\xE0o: b\u1EA5m "Th\xEAm ng\u01B0\u1EDDi" r\u1ED3i ch\u1ECDn trong danh s\xE1ch.'), this.list, h("div", { class: "btns" }, this.add), this.picker);
     }
     update(b) {
-      const { sim: sim2 } = this.c, slots = levelDef(b).slots;
-      const staff = b.staff.map((id) => sim2.get(id)).filter((v) => !!v);
+      const { sim: sim2 } = this.c, slots = levelDef(b).slots, stat = JOBS[this.job].stat;
+      const staff = b.staff.map((id) => sim2.get(id)).filter((v) => !!v), full = sim2.staffCount(b) >= slots;
       this.head.textContent = `Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c (${sim2.staffCount(b)}/${slots}) \xB7 n\xE2ng c\u1EA5p nh\xE0 \u0111\u1EC3 ch\u1EE9a th\xEAm`;
-      this.add.disabled = sim2.staffCount(b) >= slots;
-      const key = staff.map((v) => `${v.id}.${v.stats.int}`).join();
-      if (key === this.key) return;
-      this.key = key;
-      this.list.replaceChildren(...staff.length ? staff.map((v) => h(
-        "div",
-        { class: "row" },
-        h("div", { class: "nm" }, v.name, h("small", { text: `Tr\xED tu\u1EC7 ${v.stats.int} \xB7 ${JOBS[this.job].name} c\u1EA5p ${v.skill[this.job].level}` })),
-        h("button", { class: "sm", text: "Cho ra", onclick: () => {
-          sim2.releaseStaff([v.id]);
-          this.c.ctl.onChange();
-        } })
-      )) : [h("p", { class: "sub", text: "Ch\u01B0a c\xF3 ai l\xE0m vi\u1EC7c \u1EDF \u0111\xE2y." })]);
+      this.add.disabled = full && !this.open;
+      this.add.textContent = this.open ? "Xong" : `Th\xEAm ng\u01B0\u1EDDi ${JOB_NAME[this.job].toLowerCase()}`;
+      const key = staff.map((v) => `${v.id}.${v.stats[stat]}`).join();
+      if (key !== this.key) {
+        this.key = key;
+        this.list.replaceChildren(...staff.length ? staff.map((v) => h(
+          "div",
+          { class: "row" },
+          h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${v.stats[stat]} \xB7 ${JOBS[this.job].name} c\u1EA5p ${v.skill[this.job].level}` })),
+          h("button", { class: "sm", text: "Cho ra", onclick: () => {
+            sim2.releaseStaff([v.id]);
+            this.c.ctl.onChange();
+          } })
+        )) : [h("p", { class: "sub", text: "Ch\u01B0a c\xF3 ai l\xE0m vi\u1EC7c \u1EDF \u0111\xE2y." })]);
+      }
+      this.picker.hidden = !this.open;
+      if (!this.open) return;
+      const pool = sim2.villagers.filter((v) => v.inside === null && v.down <= 0 && !(v.phase === "goStaff" && v.target === b.id)).sort((x, y) => y.stats[stat] - x.stats[stat]);
+      const pk = `${full}|${pool.map((v) => `${v.id}.${v.job}.${v.stats[stat]}`).join()}`;
+      if (pk === this.pickKey) return;
+      this.pickKey = pk;
+      this.picker.replaceChildren(
+        h("p", { class: "sub", text: full ? "Nh\xE0 \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: cho m\u1ED9t ng\u01B0\u1EDDi ra ho\u1EB7c n\xE2ng c\u1EA5p nh\xE0." : `Ch\u1ECDn ai v\xE0o l\xE0m ${JOB_NAME[this.job].toLowerCase()}:` }),
+        ...pool.map((v) => h(
+          "div",
+          { class: "row" },
+          h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${v.stats[stat]} \xB7 \u0111ang ${JOB_NAME[v.job].toLowerCase()}` })),
+          h("button", { class: "sm", text: "V\xE0o l\xE0m", disabled: full, onclick: () => {
+            const e = sim2.assignStaff([v.id], this.job);
+            this.c.toast(e ?? `${v.name}: ${JOB_NAME[this.job]}`);
+            this.c.ctl.onChange();
+          } })
+        ))
+      );
     }
   };
   var ActiveBox = class {
@@ -9472,8 +9823,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         this.bar.style.width = "0%";
         return;
       }
-      const rate = this.c.sim.houseRate(b), left = rate > 0 ? Math.ceil((1 - a.progress) * this.timeOf(a.id) / rate) : 0;
-      this.text.textContent = `\u0110ang l\xE0m: ${this.nameOf(a.id)} \xB7 ${Math.floor(a.progress * 100)}%${rate > 0 ? ` \xB7 c\xF2n ~${left} gi\xE2y` : " \xB7 t\u1EA1m d\u1EEBng (kh\xF4ng c\xF3 ng\u01B0\u1EDDi)"}`;
+      const rate = this.c.sim.houseRate(b), left = rate > 0 ? (1 - a.progress) * this.timeOf(a.id) / rate : 0;
+      this.text.textContent = `\u0110ang l\xE0m: ${this.nameOf(a.id)} \xB7 ${Math.floor(a.progress * 100)}%${rate > 0 ? ` \xB7 c\xF2n ~${gameDays(left)}` : " \xB7 t\u1EA1m d\u1EEBng (kh\xF4ng c\xF3 ng\u01B0\u1EDDi)"}`;
       this.bar.style.width = `${a.progress * 100}%`;
     }
   };
@@ -9483,12 +9834,12 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.c = c;
       this.title = h("b");
       this.state = h("span");
-      this.campfire = h("div", { class: "sec" });
-      this.storage = h("div", { class: "sec" });
-      this.workshop = h("div", { class: "sec" });
-      this.lab = h("div", { class: "sec" });
-      this.repair = h("div", { class: "sec" });
-      this.goods = h("div", { class: "sec" });
+      /** Every building shows its parts as pages behind a row of tab buttons at the top. */
+      this.tabs = {};
+      this.tabBar = h("div", { class: "btns tabs", role: "tablist" });
+      this.tabAt = {};
+      this.pages = [];
+      this.tabKey = "";
       this.resRows = [];
       this.barterBtns = [];
       this.recRows = [];
@@ -9499,41 +9850,28 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.vRows = /* @__PURE__ */ new Map();
       this.pop = h("div", { class: "kv" });
       this.info = h("div", { class: "kv" });
-      this.next = h("div", { class: "kv" });
-      this.upgrade = h("button", { class: "sm primary" });
-      this.move = h("button", { class: "sm", text: "D\u1EDDi" });
-      this.demolish = h("button", { class: "sm danger", text: "Ph\xE1 b\u1ECF" });
-      this.armed = 0;
-      this.armedFor = -1;
-      this.shopTab = "tools";
-      this.shopPages = {};
-      this.shopTabBtns = {};
       this.queueNote = { craft: h("div", { class: "kv" }), research: h("div", { class: "kv" }), repair: h("div", { class: "kv" }) };
       this.goodsNote = h("p", { class: "sub" });
+      this.goodsHint = hint(this.goodsNote, "");
       this.toolList = h("div");
       this.toolKey = "";
       this.repairInfo = h("div", { class: "kv" });
-      const { sim: sim2, ctl: ctl2, sprites: sprites2 } = c, cur = () => this.current()?.id ?? null;
+      const { sim: sim2, ctl: ctl2, sprites: sprites2 } = c;
       root.className = "modal";
       const recipeNm = (id) => RECIPE_BY_ID[id] ? recipeName(RECIPE_BY_ID[id]) : id;
-      this.staffBoxes = { craft: new StaffBox(c, "craft", cur), research: new StaffBox(c, "research", cur), repair: new StaffBox(c, "repair", cur) };
+      this.staffBoxes = { craft: new StaffBox(c, "craft"), research: new StaffBox(c, "research"), repair: new StaffBox(c, "repair") };
       this.activeBoxes = {
         craft: new ActiveBox(c, recipeNm, (id) => sim2.orderDef("craft", id)?.time ?? 1),
         research: new ActiveBox(c, (id) => TECHS.find((t) => t.id === id)?.name ?? id, (id) => sim2.orderDef("research", id)?.time ?? 1),
         repair: new ActiveBox(c, (id) => `s\u1EEDa ${recipeNm(id).toLowerCase()}`, (id) => sim2.orderDef("repair", id)?.time ?? 1)
       };
-      this.campfire.append(this.pop, h("div", { class: "btns" }, h("button", { class: "sm", text: "Ch\u1ECDn t\u1EA5t c\u1EA3 d\xE2n", onclick: () => {
-        ctl2.selected.clear();
-        ctl2.selectAll();
-        ctl2.closeBuilding();
-      } })), this.villagerList);
-      for (const res of RES_LIST) {
-        const num2 = h("b"), bar = h("b");
-        this.resRows.push({ res, num: num2, bar });
-        this.storage.append(h("div", { class: "row" }, h("div", { class: "nm" }, RES_NAME[res], h("small", {}, num2)), h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, bar))));
-      }
+      const page = (...kids) => {
+        const el = h("div", { class: "tabpage", hidden: true }, ...kids);
+        this.pages.push(el);
+        return el;
+      };
       const barter = () => {
-        const box = h("div", {}, h("h3", { text: "\u0110\u1ED5i ch\xE1c" }), h("p", { class: "sub", text: "\u0110\u1ED5i h\xE0ng l\u1EA5y ti\u1EC1n \u0111\u1EC3 tr\u1EA3 cho nghi\xEAn c\u1EE9u. Ti\u1EC1n c\u0169ng nh\u1EB7t \u0111\u01B0\u1EE3c khi h\xE1i l\u01B0\u1EE3m v\xE0 nh\u1EADn t\u1EEB b\u1ED9 t\u1ED9c c\u1ED1ng n\u1EA1p." }));
+        const box = h("div", {}, hint("\u0110\u1ED5i ch\xE1c", "\u0110\u1ED5i h\xE0ng l\u1EA5y ti\u1EC1n \u0111\u1EC3 tr\u1EA3 cho nghi\xEAn c\u1EE9u. Ti\u1EC1n c\u0169ng nh\u1EB7t \u0111\u01B0\u1EE3c khi h\xE1i l\u01B0\u1EE3m v\xE0 nh\u1EADn t\u1EEB b\u1ED9 t\u1ED9c c\u1ED1ng n\u1EA1p."));
         const btns = h("div", { class: "btns" });
         box.append(btns);
         for (const res of RES_LIST) {
@@ -9548,9 +9886,22 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         }
         return box;
       };
-      this.storage.append(barter());
-      this.campfire.append(barter());
-      const section = (page, list) => {
+      this.tabs.campfire = [
+        { label: "D\xE2n", page: page(this.pop, h("div", { class: "btns" }, h("button", { class: "sm", text: "Ch\u1ECDn t\u1EA5t c\u1EA3 d\xE2n", onclick: () => {
+          ctl2.selected.clear();
+          ctl2.selectAll();
+          ctl2.closeBuilding();
+        } })), this.villagerList) },
+        { label: "\u0110\u1ED5i ch\xE1c", page: page(barter()) }
+      ];
+      const stockRows = [];
+      for (const res of RES_LIST) {
+        const num2 = h("b"), bar = h("b");
+        this.resRows.push({ res, num: num2, bar });
+        stockRows.push(h("div", { class: "row" }, h("div", { class: "nm" }, RES_NAME[res], h("small", {}, num2)), h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, bar))));
+      }
+      this.tabs.storage = [{ label: "T\xE0i nguy\xEAn", page: page(...stockRows) }, { label: "\u0110\u1ED5i ch\xE1c", page: page(barter()) }];
+      const section = (el, list) => {
         for (const r of list) {
           const have = h("span", { class: "have" }), lock = h("small", { class: "lock" });
           const minus = h("button", { class: "sm", text: "\u2212", title: "B\u1EDBt m\u1ED9t \u0111\u01A1n", onclick: () => {
@@ -9566,48 +9917,30 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
             "div",
             { class: "rec" },
             iconCanvas(sprites2.icons[r.id]),
-            h("div", { class: "nm" }, recipeName(r), h("small", {}, `${costText(r.cost, RES_NAME)} \xB7 ${r.time} gi\xE2y chu\u1EA9n \xB7 ${recipeUse(r)}`), lock),
+            h("div", { class: "nm" }, recipeName(r), h("small", {}, `${costText(r.cost, RES_NAME)} \xB7 ${gameDays(r.time)} \xB7 ${recipeUse(r)}`), lock),
             h("div", { class: "qty" }, have, minus, plus)
           );
           this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, have, row, lock, btns: [minus, plus] });
-          page.append(row);
+          el.append(row);
         }
+        return el;
       };
-      for (const k of ["tools", "weapons", "armor"]) this.shopPages[k] = h("div");
-      const tabBar = h("div", { class: "btns tabs", role: "tablist" });
-      for (const [k, label] of [["tools", "C\xF4ng c\u1EE5"], ["weapons", "V\u0169 kh\xED"], ["armor", "\xC1o gi\xE1p"]]) {
-        const btn = h("button", { class: "sm", text: label, role: "tab", onclick: () => {
-          this.shopTab = k;
-          this.update();
-        } });
-        this.shopTabBtns[k] = btn;
-        tabBar.append(btn);
-      }
-      section(this.shopPages.tools, RECIPES.filter((r) => ["axe", "pick", "hoe", "hammer"].includes(r.kind)));
-      section(this.shopPages.weapons, RECIPES.filter((r) => r.kind in WEAPONS));
-      section(this.shopPages.armor, RECIPES.filter((r) => r.kind === "hide"));
-      this.workshop.append(
-        this.staffBoxes.craft.root,
-        h("h3", { text: "\u0110ang ch\u1EBF t\u1EA1o" }),
-        this.activeBoxes.craft.root,
-        this.queueNote.craft,
-        h("h3", { text: "Ch\u1EBF t\u1EA1o theo b\u1EA3n v\u1EBD" }),
-        h("p", { class: "sub", text: "Ch\u1EC9 ch\u1EBF \u0111\u01B0\u1EE3c m\xF3n \u0111\xE3 c\xF3 b\u1EA3n v\u1EBD \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u v\xE0 \u0111\u1EE7 c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. S\u1EA3n ph\u1EA9m v\xE0o Kho c\xF4ng c\u1EE5 ho\u1EB7c Kho v\u0169 kh\xED." }),
-        tabBar,
-        this.shopPages.tools,
-        this.shopPages.weapons,
-        this.shopPages.armor
-      );
-      this.lab.append(this.staffBoxes.research.root, h("h3", { text: "\u0110ang nghi\xEAn c\u1EE9u" }), this.activeBoxes.research.root, this.queueNote.research);
+      const shop = (list) => section(page(hint("Ch\u1EBF t\u1EA1o theo b\u1EA3n v\u1EBD", "Ch\u1EC9 ch\u1EBF \u0111\u01B0\u1EE3c m\xF3n \u0111\xE3 c\xF3 b\u1EA3n v\u1EBD \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u v\xE0 \u0111\u1EE7 c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. S\u1EA3n ph\u1EA9m v\xE0o Kho c\xF4ng c\u1EE5 ho\u1EB7c Kho v\u0169 kh\xED.")), list);
+      this.tabs.workshop = [
+        { label: "\u0110ang l\xE0m", page: page(this.staffBoxes.craft.root, h("h3", { text: "\u0110ang ch\u1EBF t\u1EA1o" }), this.activeBoxes.craft.root, this.queueNote.craft) },
+        { label: "C\xF4ng c\u1EE5", page: shop(RECIPES.filter((r) => ["axe", "pick", "hoe", "hammer"].includes(r.kind))) },
+        { label: "V\u0169 kh\xED", page: shop(RECIPES.filter((r) => r.kind in WEAPONS)) },
+        { label: "\xC1o gi\xE1p", page: shop(RECIPES.filter((r) => r.kind === "hide")) }
+      ];
       const groups = [
         ["B\u1EA3n v\u1EBD c\xF4ng c\u1EE5", (id) => /^(axe|pick|hoe|hammer)\d$/.test(id)],
-        ["B\u1EA3n v\u1EBD v\u0169 kh\xED v\xE0 gi\xE1p", (id) => /^(club|spear|mace|hide)\d$/.test(id)],
+        ["B\u1EA3n v\u1EBD v\u0169 kh\xED, gi\xE1p", (id) => /^(club|spear|mace|hide)\d$/.test(id)],
         ["X\xE2y d\u1EF1ng", (id) => ["timber", "masonry", "tool_store", "armory"].includes(id)],
         ["T\u1EF1 \u0111\u1ED9ng h\xF3a", (id) => id.startsWith("auto_")]
       ];
-      this.lab.append(h("p", { class: "sub", text: "M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. Nghi\xEAn c\u1EE9u c\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian, ti\u1EC1n v\xE0 ng\u01B0\u1EDDi th\xF4ng minh trong nh\xE0: c\xE0ng nhi\u1EC1u v\xE0 c\xE0ng th\xF4ng minh c\xE0ng nhanh." }));
+      this.tabs.lab = [{ label: "\u0110ang l\xE0m", page: page(this.staffBoxes.research.root, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian v\xE0 ng\u01B0\u1EDDi th\xF4ng minh trong nh\xE0: c\xE0ng nhi\u1EC1u v\xE0 c\xE0ng th\xF4ng minh c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research) }];
       for (const [title, test] of groups) {
-        this.lab.append(h("h3", { text: title }));
+        const el = page();
         for (const t of TECHS.filter((x) => test(x.id))) {
           const note = h("small", { class: "lock" }), btn = h("button", { class: "sm" });
           btn.addEventListener("click", () => {
@@ -9619,57 +9952,44 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
             }
             ctl2.onChange();
           });
-          const row = h("div", { class: "tech" }, h("div", { class: "nm" }, t.name, h("small", {}, `${t.desc} M\u1EDF: ${unlockText(t, recipeNm)}.`), h("small", {}, `${costText(t.cost, RES_NAME)} \xB7 ${t.time} gi\xE2y chu\u1EA9n \xB7 Tr\xED tu\u1EC7 \u2265 ${t.minInt}${t.needLevel > 1 ? ` \xB7 nh\xE0 c\u1EA5p ${t.needLevel}` : ""}`), note), btn);
+          const row = h("div", { class: "tech" }, h("div", { class: "nm" }, t.name, h("small", {}, `${t.desc} M\u1EDF: ${unlockText(t, recipeNm)}.`), h("small", {}, `${costText(t.cost, RES_NAME)} \xB7 ${gameDays(t.time)} \xB7 Tr\xED tu\u1EC7 \u2265 ${t.minInt}${t.needLevel > 1 ? ` \xB7 nh\xE0 c\u1EA5p ${t.needLevel}` : ""}`), note), btn);
           this.techRows.push({ id: t.id, row, btn, note });
-          this.lab.append(row);
+          el.append(row);
         }
+        this.tabs.lab.push({ label: title, page: el });
       }
-      this.repair.append(
-        this.staffBoxes.repair.root,
-        h("h3", { text: "\u0110ang s\u1EEDa" }),
-        this.activeBoxes.repair.root,
-        this.queueNote.repair,
-        this.repairInfo,
-        h("h3", { text: "C\xF4ng c\u1EE5 c\u1EE7a d\xE2n" }),
-        h("p", { class: "sub", text: "\u0110\u01B0a c\xF4ng c\u1EE5 \u0111\xE3 m\xF2n \u0111i s\u1EEDa (t\u1ED1n n\u1EEDa nguy\xEAn li\u1EC7u, 60% th\u1EDDi gian ch\u1EBF) ho\u1EB7c v\u1EE9t b\u1ECF, k\u1EC3 c\u1EA3 khi ch\u01B0a h\u1ECFng. D\xE2n \u0111ang l\xE0m vi\u1EC7c s\u1EBD tay kh\xF4ng trong l\xFAc ch\u1EDD." }),
-        this.toolList
-      );
-      this.goods.append(this.goodsNote);
+      this.tabs.repair = [
+        { label: "\u0110ang l\xE0m", page: page(this.staffBoxes.repair.root, h("h3", { text: "\u0110ang s\u1EEDa" }), this.activeBoxes.repair.root, this.queueNote.repair, this.repairInfo) },
+        { label: "C\xF4ng c\u1EE5 c\u1EE7a d\xE2n", page: page(hint("C\xF4ng c\u1EE5 c\u1EE7a d\xE2n", '"\u0110i s\u1EEDa": d\xE2n mang c\xF4ng c\u1EE5 \u0111\xE3 m\xF2n t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa, t\u1ED1n n\u1EEDa nguy\xEAn li\u1EC7u v\xE0 m\u1EA5t 1,5 l\u1EA7n th\u1EDDi gian ch\u1EBF (c\xF4ng c\u1EE5 \u0111\xE1 l\xE2u h\u01A1n c\xF4ng c\u1EE5 g\u1ED7). S\u1EEDa xong c\xF4ng c\u1EE5 \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i cho \u0111\xFAng ng\u01B0\u1EDDi \u0111\xF3; trong l\xFAc ch\u1EDD h\u1ECD l\xE0m vi\u1EC7c tay kh\xF4ng. C\u0169ng c\xF3 th\u1EC3 v\u1EE9t b\u1ECF, k\u1EC3 c\u1EA3 khi ch\u01B0a h\u1ECFng.'), this.toolList) }
+      ];
+      const goods = page(this.goodsHint);
       const goodsRows = (cat) => RECIPES.filter((r) => cat === "gear" === isGearKind(r.kind));
       for (const r of [...goodsRows("tool"), ...goodsRows("gear")]) {
         const num2 = h("b"), row = h("div", { class: "rec" }, iconCanvas(sprites2.icons[r.id]), h("div", { class: "nm" }, recipeName(r), h("small", { text: recipeUse(r) })), h("div", { class: "qty" }, num2));
         this.goodRows.push({ id: r.id, num: num2, row });
-        this.goods.append(row);
+        goods.append(row);
       }
-      this.upgrade.addEventListener("click", () => {
-        const b = this.current();
-        if (!b) return;
-        const err = sim2.upgradeBuilding(b.id);
-        c.toast(err ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u. Giao Th\u1EE3 x\xE2y \u0111\u1EC3 n\xE2ng c\u1EA5p");
-        ctl2.onChange();
-      });
+      this.tabs.toolstore = this.tabs.armory = [{ label: "Kho", page: goods }];
       root.append(
-        h("div", { class: "cardhead" }, this.title, this.state, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => ctl2.closeBuilding() })),
-        h("div", { class: "mbody" }, this.info, this.campfire, this.storage, this.workshop, this.lab, this.repair, this.goods, this.next, this.upgrade, h("div", { class: "btns" }, this.move, this.demolish))
+        h("div", { class: "cardhead" }, this.title, this.state, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => ctl2.closePanel() })),
+        h("div", { class: "mbody" }, this.info, this.tabBar, ...this.pages)
       );
-      this.move.addEventListener("click", () => {
-        const b = this.current();
-        if (b) ctl2.startMoving(b.id);
-      });
-      this.demolish.addEventListener("click", () => {
-        const b = this.current();
-        if (!b) return;
-        if (this.armedFor === b.id && performance.now() < this.armed) {
-          const e = sim2.demolishBuilding(b.id);
-          c.toast(e ?? "\u0110\xE3 ph\xE1 b\u1ECF c\xF4ng tr\xECnh");
-          this.armedFor = -1;
-          ctl2.closeBuilding();
-          return;
-        }
-        this.armedFor = b.id;
-        this.armed = performance.now() + 4e3;
-        this.update();
-      });
+    }
+    /** Show the tab buttons of the building and the page of the chosen one. */
+    showTabs(kind, ready) {
+      const tabs = ready ? this.tabs[kind] ?? [] : [];
+      const key = `${kind}:${tabs.length}`;
+      if (key !== this.tabKey) {
+        this.tabKey = key;
+        this.tabBar.replaceChildren(...tabs.map((t, i) => h("button", { class: "sm", text: t.label, role: "tab", onclick: () => {
+          this.tabAt[kind] = i;
+          this.showTabs(kind, true);
+        } })));
+      }
+      const at = Math.min(this.tabAt[kind] ?? 0, Math.max(0, tabs.length - 1));
+      this.tabBar.hidden = tabs.length < 2;
+      [...this.tabBar.children].forEach((el, i) => el.setAttribute("aria-pressed", String(i === at)));
+      for (const p of this.pages) p.hidden = tabs[at]?.page !== p;
     }
     current() {
       const id = this.c.ctl.selectedBuilding;
@@ -9695,20 +10015,16 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     }
     update() {
       const { sim: sim2, ctl: ctl2 } = this.c, b = this.current();
-      this.root.hidden = !b;
+      this.root.hidden = !b || !ctl2.buildingOpen;
       if (!b) {
         if (ctl2.selectedBuilding !== null) ctl2.selectedBuilding = null;
         return;
       }
+      if (!ctl2.buildingOpen) return;
       const def = BUILDINGS[b.kind], lv2 = levelDef(b), top = maxLevel(b.kind, b.era), ready = b.done;
       this.title.textContent = `${def.name}${def.buildable ? ` \xB7 c\u1EA5p ${b.level}/${top} (${lv2.name.toLowerCase()})` : ""}`;
       this.state.textContent = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%` : "\u0111ang d\xF9ng";
-      this.campfire.hidden = !(ready && b.kind === "campfire");
-      this.storage.hidden = !(ready && b.kind === "storage");
-      this.workshop.hidden = !(ready && b.kind === "workshop");
-      this.lab.hidden = !(ready && b.kind === "lab");
-      this.repair.hidden = !(ready && b.kind === "repair");
-      this.goods.hidden = !(ready && (b.kind === "toolstore" || b.kind === "armory"));
+      this.showTabs(b.kind, ready);
       this.info.textContent = !b.done ? "Giao d\xE2n l\xE0m Th\u1EE3 x\xE2y \u0111\u1EC3 d\u1EF1ng c\xF4ng tr\xECnh n\xE0y." : this.infoText(b);
       if (b.kind === "campfire" && ready) this.updateCampfire();
       if (b.kind === "storage" && ready) for (const r of this.resRows) {
@@ -9725,23 +10041,6 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       if (b.kind === "toolstore" || b.kind === "armory") {
         if (ready) this.updateGoods(b);
       }
-      this.move.hidden = this.demolish.hidden = !def.buildable;
-      const arm = this.armedFor === b.id && performance.now() < this.armed;
-      this.demolish.textContent = arm ? `B\u1EA5m l\u1EA1i \u0111\u1EC3 ph\xE1 (thu ${costText(sim2.salvage(b), RES_NAME)})` : "Ph\xE1 b\u1ECF";
-      this.demolish.classList.toggle("armed", arm);
-      this.move.textContent = b.done && Object.keys(sim2.moveFee(b)).length ? `D\u1EDDi (${costText(sim2.moveFee(b), RES_NAME)})` : "D\u1EDDi";
-      const grow = b.level < top && def.buildable && b.done;
-      this.upgrade.hidden = !grow;
-      this.next.hidden = !grow;
-      if (grow) {
-        const nx = levelDef(b, b.level + 1), why = sim2.canUpgrade(b);
-        const gain = b.kind === "storage" || b.kind === "campfire" ? `ch\u1EE9a ${nx.cap} m\u1ED7i lo\u1EA1i` : b.kind === "toolstore" || b.kind === "armory" ? `ch\u1EE9a ${nx.cap} m\xF3n` : `ch\u1EE9a ${nx.slots} ng\u01B0\u1EDDi, t\u1ED1c \u0111\u1ED9 \xD7${nx.craftSpeed.toLocaleString("vi")}`;
-        this.next.textContent = `C\u1EA5p ${b.level + 1} (${nx.name.toLowerCase()}): ${gain}`;
-        this.upgrade.textContent = b.upgrading ? "\u0110ang n\xE2ng c\u1EA5p\u2026" : `N\xE2ng c\u1EA5p \xB7 ${costText(nx.cost, RES_NAME)}`;
-        this.upgrade.disabled = !!why;
-        this.upgrade.title = why ?? "";
-        if (why && why !== "\u0110ang n\xE2ng c\u1EA5p") this.next.textContent += ` \xB7 ${why}`;
-      }
     }
     updateWorkshop(b) {
       const { sim: sim2 } = this.c;
@@ -9755,23 +10054,21 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         r.lock.textContent = lock ?? "";
         for (const btn of r.btns) btn.disabled = !!lock;
       }
-      for (const k of Object.keys(this.shopPages)) {
-        this.shopPages[k].hidden = k !== this.shopTab;
-        this.shopTabBtns[k].setAttribute("aria-pressed", String(k === this.shopTab));
-      }
     }
     updateLab(b) {
       const { sim: sim2 } = this.c;
       this.staffBoxes.research.update(b);
       this.activeBoxes.research.update(b);
-      this.queueNote.research.textContent = `H\xE0ng \u0111\u1EE3i ${sim2.researchQueue.length}: ${sim2.researchQueue.map((id) => TECHS.find((t) => t.id === id)?.name ?? id).join(", ") || "tr\u1ED1ng"} \xB7 Ng\u01B0\u1EDDi gi\u1ECFi nh\u1EA5t trong nh\xE0: Tr\xED tu\u1EC7 ${sim2.bestIntInside(b)}`;
+      const waiting = sim2.researchQueue[0];
+      this.queueNote.research.textContent = `${waiting ? `Ch\u1EDD b\u1EAFt \u0111\u1EA7u: ${TECHS.find((t) => t.id === waiting)?.name ?? waiting}` : "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9"} \xB7 Ng\u01B0\u1EDDi gi\u1ECFi nh\u1EA5t trong nh\xE0: Tr\xED tu\u1EC7 ${sim2.bestIntInside(b)}`;
       for (const r of this.techRows) {
         const t = TECHS.find((x) => x.id === r.id), st = sim2.techState(t), block = st.state === "queued" ? sim2.researchBlock(t) : null;
         r.row.classList.toggle("locked", st.state === "locked");
         r.row.classList.toggle("done", st.state === "done");
-        r.note.textContent = st.state === "locked" ? st.why ?? "" : st.state === "active" ? "\u0110ang nghi\xEAn c\u1EE9u\u2026" : st.state === "queued" ? block ?? "Ch\u1EDD t\u1EDBi l\u01B0\u1EE3t (t\u1ED1n nguy\xEAn li\u1EC7u v\xE0 ti\u1EC1n khi b\u1EAFt \u0111\u1EA7u)" : st.state === "done" ? "\u0110\xE3 nghi\xEAn c\u1EE9u" : "";
+        const busy = st.state === "ready" && sim2.currentResearch() !== null, short = st.state === "ready" && !busy ? sim2.researchShort(t) : null;
+        r.note.textContent = busy ? "\u0110\u1EE3i nghi\xEAn c\u1EE9u hi\u1EC7n t\u1EA1i xong" : short ? short : st.state === "locked" ? st.why ?? "" : st.state === "active" ? "\u0110ang nghi\xEAn c\u1EE9u\u2026" : st.state === "queued" ? block ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u, ch\u1EDD b\u1EAFt \u0111\u1EA7u" : st.state === "done" ? "\u0110\xE3 nghi\xEAn c\u1EE9u" : "";
         r.btn.textContent = { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state];
-        r.btn.disabled = st.state === "done" || st.state === "active" || st.state === "locked";
+        r.btn.disabled = st.state === "done" || st.state === "active" || st.state === "locked" || busy || !!short;
       }
     }
     updateRepair(b) {
@@ -9789,15 +10086,15 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       if (key === this.toolKey) return;
       this.toolKey = key;
       this.toolList.replaceChildren(...rows.length ? rows.map(({ v, k, t }) => {
-        const pct = Math.round(t.dur / TIER_DURABILITY[t.tier] * 100), whole = pct >= 100;
+        const pct2 = Math.round(t.dur / TIER_DURABILITY[t.tier] * 100), whole = pct2 >= 100;
         return h(
           "div",
           { class: "row" },
-          h("div", { class: "nm" }, `${v.name}: ${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()}`, h("small", { text: t.dur <= 0 ? "\u0111\xE3 h\u1ECFng" : `c\xF2n ${pct}% \u0111\u1ED9 b\u1EC1n` })),
+          h("div", { class: "nm" }, `${v.name}: ${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()}`, h("small", { text: t.dur <= 0 ? "\u0111\xE3 h\u1ECFng" : `c\xF2n ${pct2}% \u0111\u1ED9 b\u1EC1n` })),
           h(
             "div",
             { class: "btns" },
-            h("button", { class: "sm", text: "S\u1EEDa", disabled: whole, onclick: () => {
+            h("button", { class: "sm", text: "\u0110i s\u1EEDa", disabled: whole || v.phase === "goOrder", onclick: () => {
               const e = sim2.repairTool([v.id], k);
               if (e) this.c.toast(e);
               ctl2.onChange();
@@ -9812,7 +10109,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     }
     updateGoods(b) {
       const { sim: sim2 } = this.c, cat = b.kind === "toolstore" ? "tool" : "gear";
-      this.goodsNote.textContent = `\u0110ang ch\u1EE9a ${sim2.storeUsed(cat)}/${sim2.storeCap(cat)} m\xF3n. ${autoOn(sim2.researched, "fetch") ? "D\xE2n thi\u1EBFu \u0111\u1ED3 ho\u1EB7c \u0111\u1ED3 h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi l\u1EA5y." : 'Ch\u01B0a nghi\xEAn c\u1EE9u "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho": h\xE3y ph\xE1t \u0111\u1ED3 b\u1EB1ng tay \u1EDF th\u1EBB d\xE2n.'}`;
+      this.goodsNote.textContent = `\u0110ang ch\u1EE9a ${sim2.storeUsed(cat)}/${sim2.storeCap(cat)} m\xF3n`;
+      this.goodsHint.tip.textContent = autoOn(sim2.researched, "fetch") ? "D\xE2n thi\u1EBFu \u0111\u1ED3 ho\u1EB7c \u0111\u1ED3 h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi l\u1EA5y." : 'Ch\u01B0a nghi\xEAn c\u1EE9u "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho": h\xE3y ph\xE1t \u0111\u1ED3 b\u1EB1ng tay \u1EDF th\u1EBB d\xE2n.';
       for (const r of this.goodRows) {
         const rc = RECIPE_BY_ID[r.id], mine = cat === "gear" === isGearKind(rc.kind), n = sim2.toolCount(rc.kind, rc.tier);
         r.row.hidden = !mine || n === 0 && !!sim2.recipeLock(r.id);
@@ -9833,7 +10131,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
             "div",
             { class: "vrow", onclick: () => {
               if (v.inside !== null) {
-                ctl2.selectBuilding(v.inside);
+                ctl2.selectBuilding(v.inside, true);
                 return;
               }
               ctl2.selected.clear();
@@ -9850,7 +10148,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       for (const v of vs) {
         const r = this.vRows.get(v.id);
         if (r) {
-          r.st.textContent = `\xB7 ${describe(v)}`;
+          r.st.textContent = `\xB7 ${describe(v, sim2)}`;
           r.hp.textContent = `${Math.ceil(v.health)}/${v.maxHealth}`;
         }
       }
@@ -9880,6 +10178,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   var unitCard = new UnitCard($("ucard"), ctx, $("udetail"));
   var targetCard = new TargetCard($("tcard"), ctx);
   var buildingPanel = new BuildingPanel($("bpanel"), ctx);
+  var buildingBar = new BuildingBar($("bbar"), ctx, renderer, new Confirm($("dialog"), ctx));
   var map = new MapView(sim, cam, renderer, ctl, $("mini"), $("bigmapCanvas"), $("bigmap"));
   var menu = new Menu($("drawer"), $("drawerTabs"), $("drawerBody"), ctx, () => {
     const w = renderer.screenToWorld(renderer.w / 2, renderer.h / 2);
@@ -9970,7 +10269,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   function openWorkshop() {
     const b = sim.buildings.find((x) => x.kind === "workshop" && x.done);
     if (b) {
-      ctl.selectBuilding(b.id);
+      ctl.selectBuilding(b.id, true);
       ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE);
     } else toast("Ch\u01B0a c\xF3 X\u01B0\u1EDFng");
   }
@@ -10054,8 +10353,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       }
     }
     const chosen = sim.villagers.filter((v) => ctl.selected.has(v.id));
-    const placing = !!ctl.placing, showB = ctl.selectedBuilding !== null && !placing;
+    const placing = !!ctl.placing, showB = ctl.selectedBuilding !== null && ctl.buildingOpen && !placing;
     buildingPanel.update();
+    buildingBar.update();
     unitCard.update(chosen);
     targetCard.update();
     if (placing || !showB) $("bpanel").hidden = true;
@@ -10088,6 +10388,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     ctl.update(dt);
     sim.advance(dt);
     renderer.draw(t / 1e3, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect);
+    buildingBar.place();
     map.draw();
     updateHud(t);
     requestAnimationFrame(frame);
