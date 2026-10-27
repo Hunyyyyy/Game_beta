@@ -1,0 +1,10 @@
+{
+  "mine": { "fps": 7, "loop": true, "frames": [
+    {"bob":0,"lean":0,"legR":{"a":12,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":80,"b":40},"armL":{"a":70,"b":40},"tool":{"on":true,"a":165,"kind":"pick"}},
+    {"bob":-1,"lean":-1,"legR":{"a":12,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":125,"b":25},"armL":{"a":115,"b":25},"tool":{"on":true,"a":195,"kind":"pick"}},
+    {"bob":-1,"lean":-2,"legR":{"a":10,"lift":0},"legL":{"a":-16,"lift":0},"armR":{"a":150,"b":15},"armL":{"a":140,"b":15},"tool":{"on":true,"a":215,"kind":"pick"}},
+    {"bob":0,"lean":1,"legR":{"a":14,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":100,"b":20},"armL":{"a":92,"b":20},"tool":{"on":true,"a":130,"kind":"pick"}},
+    {"bob":1,"lean":2,"legR":{"a":18,"lift":0},"legL":{"a":-16,"lift":0},"armR":{"a":45,"b":30},"armL":{"a":40,"b":30},"tool":{"on":true,"a":70,"kind":"pick"}},
+    {"bob":0,"lean":1,"legR":{"a":14,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":70,"b":35},"armL":{"a":62,"b":35},"tool":{"on":true,"a":125,"kind":"pick"}}
+  ] }
+}

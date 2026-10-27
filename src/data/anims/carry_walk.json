@@ -1,0 +1,10 @@
+{
+  "carry_walk": { "fps": 8, "loop": true, "frames": [
+    {"bob":-1,"lean":1,"legR":{"a":0,"lift":2},"legL":{"a":0,"lift":0},"armR":{"a":48,"b":50},"armL":{"a":52,"b":46},"carry":{"on":true,"dy":0}},
+    {"bob":0,"lean":1,"legR":{"a":21,"lift":1},"legL":{"a":-21,"lift":0},"armR":{"a":48,"b":50},"armL":{"a":52,"b":46},"carry":{"on":true,"dy":0}},
+    {"bob":0,"lean":1,"legR":{"a":21,"lift":0},"legL":{"a":-21,"lift":1},"armR":{"a":48,"b":50},"armL":{"a":52,"b":46},"carry":{"on":true,"dy":0}},
+    {"bob":-1,"lean":1,"legR":{"a":0,"lift":0},"legL":{"a":0,"lift":2},"armR":{"a":48,"b":50},"armL":{"a":52,"b":46},"carry":{"on":true,"dy":0}},
+    {"bob":0,"lean":1,"legR":{"a":-21,"lift":0},"legL":{"a":21,"lift":1},"armR":{"a":48,"b":50},"armL":{"a":52,"b":46},"carry":{"on":true,"dy":0}},
+    {"bob":0,"lean":1,"legR":{"a":-21,"lift":1},"legL":{"a":21,"lift":0},"armR":{"a":48,"b":50},"armL":{"a":52,"b":46},"carry":{"on":true,"dy":0}}
+  ] }
+}

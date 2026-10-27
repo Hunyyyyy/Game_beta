@@ -1,0 +1,10 @@
+{
+  "walk": { "fps": 8, "loop": true, "frames": [
+    {"bob":-1,"lean":1,"legR":{"a":0,"lift":2},"legL":{"a":0,"lift":0},"armR":{"a":0,"b":14},"armL":{"a":0,"b":14}},
+    {"bob":0,"lean":1,"legR":{"a":28,"lift":1},"legL":{"a":-28,"lift":0},"armR":{"a":-23,"b":14},"armL":{"a":23,"b":14}},
+    {"bob":0,"lean":1,"legR":{"a":28,"lift":0},"legL":{"a":-28,"lift":1},"armR":{"a":-23,"b":14},"armL":{"a":23,"b":14}},
+    {"bob":-1,"lean":1,"legR":{"a":0,"lift":0},"legL":{"a":0,"lift":2},"armR":{"a":0,"b":14},"armL":{"a":0,"b":14}},
+    {"bob":0,"lean":1,"legR":{"a":-28,"lift":0},"legL":{"a":28,"lift":1},"armR":{"a":23,"b":14},"armL":{"a":-23,"b":14}},
+    {"bob":0,"lean":1,"legR":{"a":-28,"lift":1},"legL":{"a":28,"lift":0},"armR":{"a":23,"b":14},"armL":{"a":-23,"b":14}}
+  ] }
+}

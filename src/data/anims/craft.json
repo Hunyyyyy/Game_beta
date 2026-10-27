@@ -1,0 +1,8 @@
+{
+  "craft": { "fps": 5, "loop": true, "frames": [
+    {"bob":1,"lean":1,"legR":{"a":10,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":70,"b":45},"armL":{"a":60,"b":45},"tool":{"on":true,"a":150,"kind":"hammer"}},
+    {"bob":0,"lean":0,"legR":{"a":10,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":110,"b":30},"armL":{"a":100,"b":30},"tool":{"on":true,"a":190,"kind":"hammer"}},
+    {"bob":1,"lean":2,"legR":{"a":12,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":60,"b":35},"armL":{"a":55,"b":35},"tool":{"on":true,"a":95,"kind":"hammer"}},
+    {"bob":2,"lean":3,"legR":{"a":14,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":50,"b":40},"armL":{"a":45,"b":40},"tool":{"on":true,"a":60,"kind":"hammer"}}
+  ] }
+}

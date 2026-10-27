@@ -1,0 +1,15 @@
+{
+  "name": "Ô cỏ",
+  "type": "tile",
+  "size": [32, 32],
+  "seed": 4,
+  "palette": { "g0": "#7a984a", "g1": "#86a355", "g2": "#93b05f", "tuft": "#6b8a41", "tuftL": "#a8c470", "flower": "#e8d28a", "flower2": "#f2f2e6" },
+  "bg": "g1",
+  "layers": [
+    { "shape": "noise", "scale": 6, "octaves": 2, "contrast": 2.2, "bands": [[0, "g0"], [0.4, "g1"], [0.78, "g2"]] },
+    { "shape": "scatter", "count": 22, "size": [1, 2], "colors": ["tuft", "tuft", "tuftL"] },
+    { "shape": "scatter", "count": 8, "size": [2, 1], "colors": ["tuft", "tuftL"] },
+    { "shape": "scatter", "count": [0, 1], "size": 2, "color": "flower" },
+    { "shape": "scatter", "count": [0, 1], "size": 1, "color": "flower2" }
+  ]
+}

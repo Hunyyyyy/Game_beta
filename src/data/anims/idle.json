@@ -1,0 +1,8 @@
+{
+  "idle": { "fps": 4, "loop": true, "frames": [
+    {"bob":0,"lean":0,"legR":{"a":2,"lift":0},"legL":{"a":-2,"lift":0},"armR":{"a":4,"b":8},"armL":{"a":-4,"b":8}},
+    {"bob":0,"lean":0,"legR":{"a":2,"lift":0},"legL":{"a":-2,"lift":0},"armR":{"a":6,"b":8},"armL":{"a":-6,"b":8}},
+    {"bob":1,"lean":0,"legR":{"a":2,"lift":0},"legL":{"a":-2,"lift":0},"armR":{"a":8,"b":8},"armL":{"a":-8,"b":8}},
+    {"bob":1,"lean":0,"legR":{"a":2,"lift":0},"legL":{"a":-2,"lift":0},"armR":{"a":6,"b":8},"armL":{"a":-6,"b":8}}
+  ] }
+}

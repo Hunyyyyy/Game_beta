@@ -1,0 +1,26 @@
+{
+  "name": "Cây thông",
+  "type": "prop",
+  "size": [36, 68],
+  "anchor": [18, 64],
+  "footprint": [14, 60, 8, 5],
+  "seed": 5,
+  "palette": {
+    "trunk": "#5e4026", "trunkL": "#7a5532",
+    "leaf": "#2f5a35", "leafL": "#437a47", "leafD": "#1f3f27", "line": "#0f2014", "shadow": "#000000", "snow": "#eef4f8"
+  },
+  "layers": [
+    { "shape": "rect", "x": 15, "y": 54, "w": 6, "h": 10, "color": "trunk" },
+    { "shape": "rect", "x": 15, "y": 54, "w": 2, "h": 10, "color": "trunkL" },
+    { "shape": "poly", "points": [[18, 26], [3, 56], [33, 56]], "color": "leaf", "jitter": 1 },
+    { "shape": "poly", "points": [[18, 14], [5, 42], [31, 42]], "color": "leaf", "jitter": 1 },
+    { "shape": "poly", "points": [[18, 2], [8, 28], [28, 28]], "color": "leaf", "jitter": 1 },
+    { "shape": "poly", "points": [[18, 2], [28, 28], [18, 28]], "color": "leafD", "alpha": 0.35, "clip": "inside" },
+    { "shape": "poly", "points": [[18, 14], [31, 42], [18, 42]], "color": "leafD", "alpha": 0.35, "clip": "inside" },
+    { "shape": "poly", "points": [[18, 26], [33, 56], [18, 56]], "color": "leafD", "alpha": 0.35, "clip": "inside" },
+    { "shape": "scatter", "count": 28, "area": [4, 6, 28, 50], "size": [3, 1], "colors": ["leafL", "leafD"], "onlyOver": ["leaf"] },
+    { "shape": "bevel", "light": "#c8ffd0", "lightAlpha": 0.28, "dark": "#000000", "darkAlpha": 0.3 },
+    { "shape": "outline", "color": "line" },
+    { "shape": "ellipse", "cx": 18, "cy": 64, "rx": 14, "ry": 3, "color": "shadow", "alpha": 0.28, "mode": "under" }
+  ]
+}

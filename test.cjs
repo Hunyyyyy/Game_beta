@@ -1,0 +1,25 @@
+const {chromium}=require('playwright');
+(async()=>{const b=await chromium.launch();const pg=await b.newPage({viewport:{width:1200,height:900}});
+const errs=[];pg.on('pageerror',e=>errs.push(e.message));pg.on('console',m=>m.type()==='error'&&!/ERR_TUNNEL|Failed to load/.test(m.text())&&errs.push(m.text()));
+await pg.goto('file://'+process.cwd()+'/dist/index.html');await pg.waitForTimeout(800);
+const st=await pg.evaluate(()=>{const g=window.__game;return {n:g.sim.villagers.length,expl:g.sim.fog.countExplored(),zoom:g.cam.zoom}});console.log('start',st);
+await pg.locator('.stage').scrollIntoViewIfNeeded();
+const bb=await pg.locator('#view').boundingBox();
+await pg.screenshot({path:'g1.png'});
+// drag box around villagers
+const pos=await pg.evaluate(()=>{const g=window.__game;return g.sim.villagers.map(v=>g.renderer.worldToScreen(v.x*32,v.y*32-16))});
+console.log(pos);
+const xs=pos.map(p=>p.x),ys=pos.map(p=>p.y);
+await pg.mouse.move(bb.x+Math.min(...xs)-40,bb.y+Math.min(...ys)-50);await pg.mouse.down();
+await pg.mouse.move(bb.x+Math.max(...xs)+40,bb.y+Math.max(...ys)+40,{steps:5});
+await pg.screenshot({path:'g2.png'});
+await pg.mouse.up();
+console.log('selected',await pg.evaluate(()=>[...window.__game.ctl.selected]));
+await pg.mouse.click(bb.x+bb.width*0.8,bb.y+bb.height*0.3,{button:'right'});
+await pg.waitForTimeout(3500);
+const st2=await pg.evaluate(()=>{const g=window.__game;return {pos:g.sim.villagers.map(v=>[+v.x.toFixed(1),+v.y.toFixed(1),v.state,v.facing]),expl:g.sim.fog.countExplored()}});console.log(st2);
+await pg.screenshot({path:'g3.png'});
+await pg.waitForTimeout(6000);
+console.log(await pg.evaluate(()=>window.__game.sim.villagers.map(v=>[+v.x.toFixed(1),+v.y.toFixed(1),v.state])));
+await pg.screenshot({path:'g4.png'});
+console.log('errors',errs);await b.close();})();

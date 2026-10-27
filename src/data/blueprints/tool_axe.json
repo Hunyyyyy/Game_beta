@@ -1,0 +1,133 @@
+{
+ "name": "Rìu",
+ "type": "prop",
+ "size": [
+  16,
+  16
+ ],
+ "anchor": [
+  8,
+  15
+ ],
+ "params": {
+  "stone": 1
+ },
+ "palette": {
+  "line": "#2b1d10",
+  "handle": "#8a5e34",
+  "handleL": "#aa7c48",
+  "tw": "#b88c54",
+  "twL": "#dEb87e",
+  "twD": "#805c34",
+  "st": "#8e9498",
+  "stL": "#c0c6c8",
+  "stD": "#60676b",
+  "bind": "#d8c690"
+ },
+ "layers": [
+  {
+   "shape": "line",
+   "from": [
+    3,
+    14
+   ],
+   "to": [
+    11,
+    4
+   ],
+   "w": 2,
+   "color": "handle"
+  },
+  {
+   "shape": "line",
+   "from": [
+    2,
+    14
+   ],
+   "to": [
+    10,
+    4
+   ],
+   "w": 1,
+   "color": "handleL"
+  },
+  {
+   "shape": "poly",
+   "points": [
+    [
+     8,
+     2
+    ],
+    [
+     14,
+     3
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     10,
+     8
+    ]
+   ],
+   "color": "tw",
+   "ifNot": "stone"
+  },
+  {
+   "shape": "poly",
+   "points": [
+    [
+     8,
+     2
+    ],
+    [
+     14,
+     3
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     10,
+     8
+    ]
+   ],
+   "color": "st",
+   "if": "stone"
+  },
+  {
+   "shape": "line",
+   "from": [
+    9,
+    3
+   ],
+   "to": [
+    13,
+    3
+   ],
+   "w": 1,
+   "color": "twL",
+   "ifNot": "stone"
+  },
+  {
+   "shape": "line",
+   "from": [
+    9,
+    3
+   ],
+   "to": [
+    13,
+    3
+   ],
+   "w": 1,
+   "color": "stL",
+   "if": "stone"
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  }
+ ]
+}

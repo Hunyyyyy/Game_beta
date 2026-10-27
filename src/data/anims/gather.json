@@ -1,0 +1,8 @@
+{
+  "gather": { "fps": 5, "loop": true, "frames": [
+    {"bob":1,"lean":2,"legR":{"a":10,"lift":0},"legL":{"a":-10,"lift":0},"armR":{"a":30,"b":20},"armL":{"a":25,"b":20}},
+    {"bob":2,"lean":3,"legR":{"a":14,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":14,"b":10},"armL":{"a":10,"b":10}},
+    {"bob":1,"lean":2,"legR":{"a":10,"lift":0},"legL":{"a":-10,"lift":0},"armR":{"a":55,"b":60},"armL":{"a":50,"b":60}},
+    {"bob":0,"lean":1,"legR":{"a":8,"lift":0},"legL":{"a":-8,"lift":0},"armR":{"a":45,"b":70},"armL":{"a":40,"b":70}}
+  ] }
+}

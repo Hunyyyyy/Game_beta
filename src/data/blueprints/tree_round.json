@@ -1,0 +1,26 @@
+{
+  "name": "Cây tròn",
+  "type": "prop",
+  "size": [40, 64],
+  "anchor": [20, 60],
+  "footprint": [16, 56, 8, 5],
+  "seed": 3,
+  "palette": {
+    "trunk": "#6b4a28", "trunkL": "#8a6238", "trunkD": "#4e3519",
+    "leaf": "#3f6b2c", "leafL": "#5f9a44", "leafX": "#8cc765", "leafD": "#2c4d1f",
+    "line": "#17240f", "shadow": "#000000"
+  },
+  "layers": [
+    { "shape": "rect", "x": 17, "y": 36, "w": 7, "h": 24, "color": "trunk" },
+    { "shape": "rect", "x": 17, "y": 36, "w": 2, "h": 24, "color": "trunkL" },
+    { "shape": "rect", "x": 22, "y": 38, "w": 2, "h": 22, "color": "trunkD" },
+    { "shape": "poly", "points": [[17, 56], [12, 61], [17, 60]], "color": "trunk" },
+    { "shape": "poly", "points": [[24, 56], [29, 61], [24, 60]], "color": "trunk" },
+    { "shape": "ellipse", "cx": 20, "cy": 26, "rx": 10, "ry": 9, "color": "leaf",
+      "repeat": { "n": 9, "jitter": [8, 7] } },
+    { "shape": "bevel", "light": "#d8ffb0", "lightAlpha": 0.35, "dark": "#0a1a08", "darkAlpha": 0.4 },
+    { "shape": "scatter", "count": 40, "area": [6, 8, 28, 32], "size": [2, 1], "colors": ["leafL", "leafX", "leafD"], "clip": "inside", "onlyOver": ["leaf"] },
+    { "shape": "outline", "color": "line" },
+    { "shape": "ellipse", "cx": 20, "cy": 60, "rx": 14, "ry": 3, "color": "shadow", "alpha": 0.28, "mode": "under" }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Ô bùn",
+  "type": "tile",
+  "size": [32, 32],
+  "seed": 9,
+  "palette": { "m0": "#563a24", "m1": "#684a2e", "m2": "#7a5a38", "wet": "#3e2c1d", "wetL": "#5a4330", "shine": "#a98a64", "stone": "#9a8e78", "stoneD": "#6f6552" },
+  "bg": "m1",
+  "layers": [
+    { "shape": "noise", "scale": 5, "octaves": 2, "contrast": 2.2, "bands": [[0, "m0"], [0.4, "m1"], [0.8, "m2"]] },
+    { "shape": "ellipse", "cx": [3, 28], "cy": [3, 28], "rx": [3, 6], "ry": [2, 4], "color": "wet", "repeat": { "n": 4 } },
+    { "shape": "scatter", "count": 10, "size": [2, 1], "color": "shine", "onlyOver": ["wet"] },
+    { "shape": "scatter", "count": 14, "size": 1, "colors": ["m0", "m2"] },
+    { "shape": "scatter", "count": 3, "size": [2, 2], "color": "stone" },
+    { "shape": "scatter", "count": 3, "size": [1, 1], "color": "stoneD" }
+  ]
+}
