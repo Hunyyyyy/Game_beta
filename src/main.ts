@@ -40,6 +40,36 @@ const menu = new Menu($('drawer'), $('drawerTabs'), $('drawerBody'), ctx, () => 
 $('btnCloseMap').addEventListener('click', () => map.close());
 $('btnMenu').addEventListener('click', () => { menu.toggle(); });
 
+// ---------------------------------------------------------------- landscape on phones
+// A phone held upright gets a prompt (and the game pauses until it is turned); fullscreen plus an orientation lock is tried where the browser allows it.
+const rotateEl = $('rotate'), fullBtn = $<HTMLButtonElement>('btnFull');
+let rotateSkipped = false, pausedByRotate = false;
+const upright = () => matchMedia('(orientation: portrait)').matches && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 700;
+function syncRotate() {
+  const need = upright() && !rotateSkipped;
+  rotateEl.hidden = !need;
+  if (need && sim.speed !== 0 && !pausedByRotate) { pausedByRotate = true; setSpeed(0); }
+  else if (!need && pausedByRotate) { pausedByRotate = false; if (sim.speed === 0) setSpeed(1); }
+}
+async function goLandscape() {
+  const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+  try {
+    if (!document.fullscreenElement) await (el.requestFullscreen?.() ?? el.webkitRequestFullscreen?.());
+    const o = screen.orientation as ScreenOrientation & { lock?: (t: string) => Promise<void> };
+    await o.lock?.('landscape');
+    toast('Đã khóa màn hình ngang');
+  } catch {
+    toast(document.fullscreenElement ? 'Máy không cho khóa hướng: hãy xoay điện thoại ngang' : 'Trình duyệt không cho toàn màn hình: hãy xoay điện thoại ngang');
+  }
+  syncRotate(); syncFull();
+}
+function syncFull() { fullBtn.setAttribute('aria-pressed', String(!!document.fullscreenElement)); }
+fullBtn.addEventListener('click', () => { if (document.fullscreenElement) { void document.exitFullscreen(); (screen.orientation as ScreenOrientation & { unlock?: () => void }).unlock?.(); } else void goLandscape(); });
+$('btnRotateFull').addEventListener('click', () => { void goLandscape(); });
+$('btnRotateSkip').addEventListener('click', () => { rotateSkipped = true; syncRotate(); });
+window.addEventListener('resize', syncRotate); window.addEventListener('orientationchange', syncRotate); document.addEventListener('fullscreenchange', () => { syncFull(); syncRotate(); });
+fullBtn.hidden = !matchMedia('(pointer: coarse)').matches && !document.fullscreenEnabled;
+
 // ---------------------------------------------------------------- buttons and keys
 const speedBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-speed]')];
 speedBtns.forEach((b) => b.addEventListener('click', () => setSpeed(Number(b.dataset.speed))));
@@ -142,6 +172,7 @@ function frame(t: number) {
 }
 new ResizeObserver(() => { renderer.resize(); ctl.clamp(); }).observe(view);
 requestAnimationFrame(frame);
+syncRotate();
 
 // Bridge for tests and the console.
 (window as unknown as { __game: unknown }).__game = { sim, cam, ctl, renderer, menu, map, research: RESEARCH };

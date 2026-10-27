@@ -158,6 +158,9 @@ export class BuildingPanel {
   private readonly techRows: Array<{ id: string; row: HTMLElement; btn: HTMLButtonElement; note: HTMLElement }> = [];
   private readonly move = h('button', { class: 'sm', text: 'Dời' }); private readonly demolish = h('button', { class: 'sm danger', text: 'Phá bỏ' });
   private readonly researchSec = h('div');
+  private shopTab: 'tools' | 'weapons' | 'armor' | 'research' = 'tools';
+  private readonly shopPages = {} as Record<'tools' | 'weapons' | 'armor' | 'research', HTMLElement>;
+  private readonly shopTabBtns = {} as Record<'tools' | 'weapons' | 'armor' | 'research', HTMLButtonElement>;
   private armed = 0; private armedFor = -1;
   private readonly villagerList = h('div'); private villagerKey = ''; private readonly vRows = new Map<number, { st: HTMLElement; hp: HTMLElement }>();
   private readonly pop = h('div', { class: 'kv' }); private readonly shopInfo = h('div', { class: 'kv' }); private readonly assign = h('button', { class: 'sm', text: 'Giao dân đang chọn làm Chế tạo' }); private readonly assignR = h('button', { class: 'sm', text: 'Giao dân đang chọn làm Nghiên cứu' }); private readonly active = h('div', { class: 'kv' });
@@ -174,8 +177,7 @@ export class BuildingPanel {
       this.storage.append(h('div', { class: 'row' }, h('div', { class: 'nm' }, RES_NAME[res], h('small', {}, num)), h('div', { class: 'bars', style: 'width:90px;display:block' }, h('i', {}, bar))));
     }
     // workshop: what can be made
-    const section = (title: string, list: typeof RECIPES) => {
-      this.workshop.append(h('div', { class: 'sub', text: title }));
+    const section = (page: HTMLElement, list: typeof RECIPES) => {
       for (const r of list) {
         const have = h('span', { class: 'have' }), lock = h('small', { class: 'lock' });
         const minus = h('button', { class: 'sm', text: '−', title: 'Bớt một đơn', onclick: () => { sim.unqueueCraft(r.id); ctl.onChange(); } });
@@ -184,11 +186,11 @@ export class BuildingPanel {
           h('div', { class: 'nm' }, recipeName(r), h('small', {}, `${costText(r.cost, RES_NAME)} · ${r.time} giây chuẩn · ${recipeUse(r)}`), lock),
           h('div', { class: 'qty' }, have, minus, plus));
         this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, have, row, lock, btns: [minus, plus] });
-        this.workshop.append(row);
+        page.append(row);
       }
     };
     // research: each step opens recipes or building levels
-    this.workshop.append(this.researchSec);
+    this.shopPages.research = this.researchSec;
     this.researchSec.append(h('div', { class: 'sub', text: 'Nghiên cứu: dân làm nghề Nghiên cứu, cần đủ Trí tuệ, tốn nguyên liệu và thời gian' }));
     for (const t of TECHS) {
       const note = h('small', { class: 'lock' }), btn = h('button', { class: 'sm' });
@@ -202,13 +204,18 @@ export class BuildingPanel {
       this.techRows.push({ id: t.id, row, btn, note });
       this.researchSec.append(row);
     }
-    this.workshop.insertBefore(h('div', { class: 'btns' }, this.assign, this.assignR), this.researchSec);
-    this.workshop.insertBefore(this.active, this.researchSec); this.workshop.insertBefore(this.shopInfo, this.active);
+    for (const k of ['tools', 'weapons', 'armor'] as const) this.shopPages[k] = h('div');
+    const tabBar = h('div', { class: 'btns tabs', role: 'tablist' });
+    for (const [k, label] of [['tools', 'Công cụ'], ['weapons', 'Vũ khí'], ['armor', 'Áo giáp'], ['research', 'Nghiên cứu']] as const) {
+      const btn = h('button', { class: 'sm', text: label, role: 'tab', onclick: () => { this.shopTab = k; this.update(); } });
+      this.shopTabBtns[k] = btn; tabBar.append(btn);
+    }
+    this.workshop.append(this.shopInfo, h('div', { class: 'btns' }, this.assign, this.assignR), this.active, tabBar, this.shopPages.tools, this.shopPages.weapons, this.shopPages.armor, this.shopPages.research);
     this.assign.addEventListener('click', () => { const b = this.current(); if (b && ctl.selected.size) { sim.orderWork([...ctl.selected], b.x, b.y); c.toast('Chế tạo'); ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
     this.assignR.addEventListener('click', () => { if (ctl.selected.size) { sim.setJob([...ctl.selected], 'research'); c.toast('Nghiên cứu'); ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
-    section('Công cụ', RECIPES.filter((r) => ['axe', 'pick', 'hoe', 'hammer'].includes(r.kind)));
-    section('Vũ khí', RECIPES.filter((r) => r.kind in WEAPONS));
-    section('Giáp', RECIPES.filter((r) => r.kind === 'hide'));
+    section(this.shopPages.tools, RECIPES.filter((r) => ['axe', 'pick', 'hoe', 'hammer'].includes(r.kind)));
+    section(this.shopPages.weapons, RECIPES.filter((r) => r.kind in WEAPONS));
+    section(this.shopPages.armor, RECIPES.filter((r) => r.kind === 'hide'));
     this.upgrade.addEventListener('click', () => { const b = this.current(); if (!b) return; const err = sim.upgradeBuilding(b.id); c.toast(err ?? 'Đã trả vật liệu. Giao Thợ xây để nâng cấp'); ctl.onChange(); });
     root.append(
       h('div', { class: 'cardhead' }, this.title, this.state, h('button', { class: 'sm x', text: '✕', onclick: () => ctl.closeBuilding() })),
@@ -245,7 +252,9 @@ export class BuildingPanel {
         r.lock.textContent = sim.recipeLock(r.id) ?? '';
         for (const btn of r.btns) btn.disabled = !open;
       }
-      this.researchSec.hidden = !RESEARCH.enabled;
+      if (!RESEARCH.enabled && this.shopTab === 'research') this.shopTab = 'tools';
+      this.shopTabBtns.research.hidden = !RESEARCH.enabled;
+      for (const k of Object.keys(this.shopPages) as Array<keyof typeof this.shopPages>) { this.shopPages[k].hidden = k !== this.shopTab; this.shopTabBtns[k].setAttribute('aria-pressed', String(k === this.shopTab)); }
       for (const r of this.techRows) {
         const t = TECHS.find((x) => x.id === r.id)!, st = sim.techState(t);
         r.row.classList.toggle('locked', st.state === 'locked'); r.row.classList.toggle('done', st.state === 'done');

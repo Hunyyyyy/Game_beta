@@ -100,6 +100,17 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
 #bigmap .note { position: absolute; left: 8px; bottom: 8px; color: #f5e7c4; text-shadow: 0 1px 2px #000; font-size: 12px; pointer-events: none; }
 #bigmap .close { position: absolute; right: 8px; top: 8px; }
 
+/* ask for landscape on a phone held upright */
+#rotate { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: rgba(11, 13, 22, .94); color: #f5e7c4; }
+#rotate[hidden] { display: none; }
+#rotate p { margin: 0; max-width: 28ch; color: #d9c9a6; }
+#rotate button { min-width: 200px; }
+#rotate .phone { width: 64px; height: 36px; border: 4px solid #f5e7c4; border-radius: 8px; position: relative; animation: turn 2.4s ease-in-out infinite; transform: rotate(90deg); }
+#rotate .phone::after { content: ''; position: absolute; right: -2px; top: 50%; width: 3px; height: 8px; margin-top: -4px; background: #f5e7c4; }
+@keyframes turn { 0%, 25% { transform: rotate(90deg); } 60%, 100% { transform: rotate(0deg); } }
+@media (prefers-reduced-motion: reduce) { #rotate .phone { animation: none; transform: rotate(0deg); } }
+#btnFull[hidden] { display: none; }
+
 /* menu drawer */
 #drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(390px, 94vw); background: var(--bg); border-left: 2px solid var(--ring); z-index: 40; display: flex; flex-direction: column; padding-top: var(--sat); padding-bottom: var(--sab); }
 #drawer .head { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid var(--line); flex-wrap: wrap; background: var(--panel); }
@@ -143,6 +154,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     </div>
     <div class="hud" id="clockLine"><span class="clock" id="clock">Ngày 1</span></div>
     <span class="spacer"></span>
+    <button id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
     <button id="btnMenu" class="primary" title="Menu (Tab)">☰ Menu</button>
   </div>
 
@@ -165,6 +177,14 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       <button id="btnNone" title="Bỏ chọn (Esc)">Bỏ chọn</button>
       <button id="btnFold" aria-pressed="false" title="Ẩn các bảng thông tin để thấy rõ bản đồ">Ẩn bảng</button>
     </div>
+  </div>
+
+  <div id="rotate" hidden>
+    <div class="phone" aria-hidden="true"></div>
+    <b>Xoay ngang điện thoại</b>
+    <p>Chơi ngang cho màn hình rộng hơn. Game đang tạm dừng.</p>
+    <button id="btnRotateFull" class="primary">Toàn màn hình và khóa ngang</button>
+    <button id="btnRotateSkip">Cứ chơi dọc</button>
   </div>
 
   <div id="bigmap" hidden>
@@ -8858,6 +8878,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.move = h("button", { class: "sm", text: "D\u1EDDi" });
       this.demolish = h("button", { class: "sm danger", text: "Ph\xE1 b\u1ECF" });
       this.researchSec = h("div");
+      this.shopTab = "tools";
+      this.shopPages = {};
+      this.shopTabBtns = {};
       this.armed = 0;
       this.armedFor = -1;
       this.villagerList = h("div");
@@ -8882,8 +8905,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         this.resRows.push({ res, num: num2, bar });
         this.storage.append(h("div", { class: "row" }, h("div", { class: "nm" }, RES_NAME[res], h("small", {}, num2)), h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, bar))));
       }
-      const section = (title, list) => {
-        this.workshop.append(h("div", { class: "sub", text: title }));
+      const section = (page, list) => {
         for (const r of list) {
           const have = h("span", { class: "have" }), lock = h("small", { class: "lock" });
           const minus = h("button", { class: "sm", text: "\u2212", title: "B\u1EDBt m\u1ED9t \u0111\u01A1n", onclick: () => {
@@ -8903,10 +8925,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
             h("div", { class: "qty" }, have, minus, plus)
           );
           this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, have, row, lock, btns: [minus, plus] });
-          this.workshop.append(row);
+          page.append(row);
         }
       };
-      this.workshop.append(this.researchSec);
+      this.shopPages.research = this.researchSec;
       this.researchSec.append(h("div", { class: "sub", text: "Nghi\xEAn c\u1EE9u: d\xE2n l\xE0m ngh\u1EC1 Nghi\xEAn c\u1EE9u, c\u1EA7n \u0111\u1EE7 Tr\xED tu\u1EC7, t\u1ED1n nguy\xEAn li\u1EC7u v\xE0 th\u1EDDi gian" }));
       for (const t of TECHS) {
         const note = h("small", { class: "lock" }), btn = h("button", { class: "sm" });
@@ -8926,9 +8948,17 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         this.techRows.push({ id: t.id, row, btn, note });
         this.researchSec.append(row);
       }
-      this.workshop.insertBefore(h("div", { class: "btns" }, this.assign, this.assignR), this.researchSec);
-      this.workshop.insertBefore(this.active, this.researchSec);
-      this.workshop.insertBefore(this.shopInfo, this.active);
+      for (const k of ["tools", "weapons", "armor"]) this.shopPages[k] = h("div");
+      const tabBar = h("div", { class: "btns tabs", role: "tablist" });
+      for (const [k, label] of [["tools", "C\xF4ng c\u1EE5"], ["weapons", "V\u0169 kh\xED"], ["armor", "\xC1o gi\xE1p"], ["research", "Nghi\xEAn c\u1EE9u"]]) {
+        const btn = h("button", { class: "sm", text: label, role: "tab", onclick: () => {
+          this.shopTab = k;
+          this.update();
+        } });
+        this.shopTabBtns[k] = btn;
+        tabBar.append(btn);
+      }
+      this.workshop.append(this.shopInfo, h("div", { class: "btns" }, this.assign, this.assignR), this.active, tabBar, this.shopPages.tools, this.shopPages.weapons, this.shopPages.armor, this.shopPages.research);
       this.assign.addEventListener("click", () => {
         const b = this.current();
         if (b && ctl2.selected.size) {
@@ -8944,9 +8974,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           ctl2.onChange();
         } else c.toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
       });
-      section("C\xF4ng c\u1EE5", RECIPES.filter((r) => ["axe", "pick", "hoe", "hammer"].includes(r.kind)));
-      section("V\u0169 kh\xED", RECIPES.filter((r) => r.kind in WEAPONS));
-      section("Gi\xE1p", RECIPES.filter((r) => r.kind === "hide"));
+      section(this.shopPages.tools, RECIPES.filter((r) => ["axe", "pick", "hoe", "hammer"].includes(r.kind)));
+      section(this.shopPages.weapons, RECIPES.filter((r) => r.kind in WEAPONS));
+      section(this.shopPages.armor, RECIPES.filter((r) => r.kind === "hide"));
       this.upgrade.addEventListener("click", () => {
         const b = this.current();
         if (!b) return;
@@ -9015,7 +9045,12 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           r.lock.textContent = sim2.recipeLock(r.id) ?? "";
           for (const btn of r.btns) btn.disabled = !open;
         }
-        this.researchSec.hidden = !RESEARCH.enabled;
+        if (!RESEARCH.enabled && this.shopTab === "research") this.shopTab = "tools";
+        this.shopTabBtns.research.hidden = !RESEARCH.enabled;
+        for (const k of Object.keys(this.shopPages)) {
+          this.shopPages[k].hidden = k !== this.shopTab;
+          this.shopTabBtns[k].setAttribute("aria-pressed", String(k === this.shopTab));
+        }
         for (const r of this.techRows) {
           const t = TECHS.find((x) => x.id === r.id), st = sim2.techState(t);
           r.row.classList.toggle("locked", st.state === "locked");
@@ -9118,6 +9153,58 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   $("btnMenu").addEventListener("click", () => {
     menu.toggle();
   });
+  var rotateEl = $("rotate");
+  var fullBtn = $("btnFull");
+  var rotateSkipped = false;
+  var pausedByRotate = false;
+  var upright = () => matchMedia("(orientation: portrait)").matches && matchMedia("(pointer: coarse)").matches && Math.min(innerWidth, innerHeight) < 700;
+  function syncRotate() {
+    const need = upright() && !rotateSkipped;
+    rotateEl.hidden = !need;
+    if (need && sim.speed !== 0 && !pausedByRotate) {
+      pausedByRotate = true;
+      setSpeed(0);
+    } else if (!need && pausedByRotate) {
+      pausedByRotate = false;
+      if (sim.speed === 0) setSpeed(1);
+    }
+  }
+  async function goLandscape() {
+    const el = document.documentElement;
+    try {
+      if (!document.fullscreenElement) await (el.requestFullscreen?.() ?? el.webkitRequestFullscreen?.());
+      const o = screen.orientation;
+      await o.lock?.("landscape");
+      toast("\u0110\xE3 kh\xF3a m\xE0n h\xECnh ngang");
+    } catch {
+      toast(document.fullscreenElement ? "M\xE1y kh\xF4ng cho kh\xF3a h\u01B0\u1EDBng: h\xE3y xoay \u0111i\u1EC7n tho\u1EA1i ngang" : "Tr\xECnh duy\u1EC7t kh\xF4ng cho to\xE0n m\xE0n h\xECnh: h\xE3y xoay \u0111i\u1EC7n tho\u1EA1i ngang");
+    }
+    syncRotate();
+    syncFull();
+  }
+  function syncFull() {
+    fullBtn.setAttribute("aria-pressed", String(!!document.fullscreenElement));
+  }
+  fullBtn.addEventListener("click", () => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+      screen.orientation.unlock?.();
+    } else void goLandscape();
+  });
+  $("btnRotateFull").addEventListener("click", () => {
+    void goLandscape();
+  });
+  $("btnRotateSkip").addEventListener("click", () => {
+    rotateSkipped = true;
+    syncRotate();
+  });
+  window.addEventListener("resize", syncRotate);
+  window.addEventListener("orientationchange", syncRotate);
+  document.addEventListener("fullscreenchange", () => {
+    syncFull();
+    syncRotate();
+  });
+  fullBtn.hidden = !matchMedia("(pointer: coarse)").matches && !document.fullscreenEnabled;
   var speedBtns = [...document.querySelectorAll("[data-speed]")];
   speedBtns.forEach((b) => b.addEventListener("click", () => setSpeed(Number(b.dataset.speed))));
   var multiBtn = $("btnMulti");
@@ -9269,6 +9356,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     ctl.clamp();
   }).observe(view);
   requestAnimationFrame(frame);
+  syncRotate();
   window.__game = { sim, cam, ctl, renderer, menu, map, research: RESEARCH };
 })();
 </script>

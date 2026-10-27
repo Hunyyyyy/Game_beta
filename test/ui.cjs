@@ -133,6 +133,17 @@ const prepare = (p) => p.evaluate(() => {
     ok(await shown(p, '#bpanel') && await p.evaluate(() => document.getElementById('bpanel').innerText.includes('Vũ khí')), 'the workshop panel opens from the built list with its crafting items');
     await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .rec')].find((x) => x.textContent.includes('Búa')); r.querySelectorAll('button')[1].click(); });
     ok(await state(p, () => window.__game.sim.craftQueue.length) === 1, 'queueing a hammer from the panel');
+    // the workshop list is split into tabs
+    const tabShown = (label) => p.evaluate((l) => { const t = [...document.querySelectorAll('#bpanel .tabs button')].find((b) => b.textContent === l); return !!t && t.getAttribute('aria-pressed') === 'true'; }, label);
+    const visibleRecs = () => p.evaluate(() => [...document.querySelectorAll('#bpanel .rec')].filter((r) => r.offsetParent !== null).map((r) => r.querySelector('.nm').firstChild.textContent));
+    ok(await tabShown('Công cụ') && (await visibleRecs()).every((n) => /Rìu|Cuốc|Búa/.test(n)) && (await visibleRecs()).length === 8, 'workshop: the Công cụ tab lists only the 8 tools');
+    await pressText(p, 'Vũ khí'); await p.waitForTimeout(150);
+    ok(await tabShown('Vũ khí') && (await visibleRecs()).every((n) => /Gậy|Giáo|Chùy/.test(n)) && (await visibleRecs()).length === 3, 'workshop: the Vũ khí tab lists only weapons');
+    await pressText(p, 'Áo giáp'); await p.waitForTimeout(150);
+    ok(await tabShown('Áo giáp') && (await visibleRecs()).length === 1, 'workshop: the Áo giáp tab lists the armour');
+    await pressText(p, 'Nghiên cứu'); await p.waitForTimeout(150);
+    ok(await tabShown('Nghiên cứu') && (await visibleRecs()).length === 0, 'workshop: the Nghiên cứu tab shows the research instead');
+    await pressText(p, 'Công cụ'); await p.waitForTimeout(100);
     // research, move and demolish from the workshop panel
     await state(p, () => { window.__game.sim.villagers.forEach((v) => { v.stats.int = 9; }); });
     await p.waitForTimeout(250);
@@ -162,6 +173,20 @@ const prepare = (p) => p.evaluate(() => {
 
     // layout
     ok(await state(p, () => document.documentElement.scrollWidth <= innerWidth + 1), 'no horizontal scrolling');
+    await p.context().close();
+  }
+
+  // ============================================================ phone held upright
+  {
+    const p = await (await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 })).newPage(); watch(p);
+    await p.goto(url); await p.waitForTimeout(500);
+    ok(await shown(p, '#rotate') && await state(p, () => window.__game.sim.speed) === 0, 'upright phone: asks to turn the phone and pauses the game');
+    await p.setViewportSize({ width: 812, height: 375 }); await p.waitForTimeout(300);
+    ok(!(await shown(p, '#rotate')) && await state(p, () => window.__game.sim.speed) === 1, 'turned sideways: the prompt goes away and the game resumes');
+    await p.setViewportSize({ width: 375, height: 812 }); await p.waitForTimeout(300);
+    ok(await shown(p, '#rotate'), 'turned upright again: the prompt returns');
+    await p.tap('#btnRotateSkip'); await p.waitForTimeout(200);
+    ok(!(await shown(p, '#rotate')) && await state(p, () => window.__game.sim.speed) === 1, 'playing upright on purpose is allowed');
     await p.context().close();
   }
 
