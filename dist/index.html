@@ -2349,6 +2349,20 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     down: { fps: 2, loop: true, frames: [
       { bob: 7, lean: -2, legR: { a: 55, lift: 0 }, legL: { a: 48, lift: 0 }, armR: { a: 25, b: 25 }, armL: { a: 15, b: 20 } },
       { bob: 6, lean: -3, legR: { a: 55, lift: 0 }, legL: { a: 48, lift: 0 }, armR: { a: 28, b: 25 }, armL: { a: 18, b: 20 } }
+    ] },
+    idle_armed: { fps: 4, loop: true, frames: [
+      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "spear" } }
+    ] },
+    walk_armed: { fps: 8, loop: true, frames: [
+      { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+      { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+      { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+      { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+      { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+      { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } }
     ] }
   };
 
@@ -3778,7 +3792,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     villager(v) {
       const name = v.anim in anims ? v.anim : "idle";
       const def = anims[name];
-      const rate = name === "walk" || name === "carry_walk" ? Math.min(1.6, v.speed / 1.5) : 1;
+      const rate = name === "walk" || name === "carry_walk" || name === "walk_armed" ? Math.min(1.6, v.speed / 1.5) : 1;
       const step2 = Math.floor(v.animClock * def.fps * rate);
       const frame2 = def.loop === false ? Math.min(step2, def.frames.length - 1) : step2 % def.frames.length;
       const kind = v.carry?.res ?? "wood";
@@ -4030,6 +4044,14 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
             ctx2.restore();
           } else ctx2.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
           const v = d.v;
+          if (v.team === "player" && (v.job === "fight" || v.job === "hunt") && v.phase !== "flee" && v.phase !== "sleep" && v.phase !== "down") {
+            const p = this.worldToScreen(fx, fy - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
+            ctx2.fillStyle = "rgba(20,14,8,.85)";
+            ctx2.fillRect(p.x - 3 * u, p.y - 4 * u, 6 * u, 7 * u);
+            ctx2.fillStyle = v.job === "fight" ? "#d9534f" : "#e0a23c";
+            ctx2.fillRect(p.x - 2 * u, p.y - 3 * u, 4 * u, 4 * u);
+            ctx2.fillRect(p.x - u, p.y + u, 2 * u, u);
+          }
           if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - 46, v.health / v.maxHealth, v.team === "player" ? "#6bbf59" : "#d9534f");
           if (v.down > 0) {
             ctx2.fillStyle = "#ffd27a";
@@ -5114,26 +5136,12 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     const fighter = isFighter(v);
     if (!fighter) {
       if (threats.length && threats[0].d < 6 && v.phase !== "fight") {
-        if (sim2.nearHome(v) && v.morale >= MORALE.fleeRecover && v.health > v.maxHealth * 0.4) {
-          militia(sim2, v, threats[0].t);
-          return true;
-        }
         startFlee(sim2, v, 8);
         return true;
       }
       return assistBrain(sim2, v);
     }
     return fightBrain(sim2, v, dt, threats);
-  }
-  function militia(sim2, v, target) {
-    const keep = v.job, owl = v.nightOwl;
-    sim2.resetTask(v);
-    v.job = keep;
-    v.nightOwl = owl;
-    if (!v.weapon) v.weapon = "club";
-    v.fight.mode = "attack";
-    v.fight.target = target;
-    v.stance = "aggressive";
   }
   function startFlee(sim2, v, secs) {
     const keep = v.job, nightOwl = v.nightOwl;
@@ -6093,6 +6101,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         bad: /* @__PURE__ */ new Map(),
         bed: -1,
         nightOwl: false,
+        manualGear: false,
         team,
         maxHealth: maxHpOf(stats.vit),
         weapon: null,
@@ -6557,6 +6566,39 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         if (kind) this.say(`${v.name} \u0111\u01B0\u1EE3c c\u1EA5p ${kind === "hide" ? ARMORS.hide.name.toLowerCase() : WEAPONS[kind].name.toLowerCase()}.`);
       }
     }
+    /** Give a villager a weapon or armour from the workshop's stock (the old piece goes back); null hands it back. Returns an error or null. */
+    assignGear(ids, kind, slot) {
+      const key = (k) => k === "hide" ? "hide1" : `${k}${WEAPONS[k].tier ?? 1}`;
+      const nameOf = (k) => (k === "hide" ? ARMORS.hide.name : WEAPONS[k].name).toLowerCase();
+      const people = this.mine(ids);
+      if (kind && !this.hasWorkshop()) return "C\u1EA7n c\xF3 X\u01B0\u1EDFng \u0111\u1EC3 l\u1EA5y \u0111\u1ED3";
+      let given = 0, short = false;
+      for (const v of people) {
+        const cur = slot === "weapon" ? v.weapon : v.armor;
+        if (cur === kind) {
+          v.manualGear = true;
+          continue;
+        }
+        if (kind) {
+          if (this.toolCount(kind === "hide" ? "hide" : kind, kind === "hide" ? 1 : WEAPONS[kind].tier ?? 1) <= 0) {
+            short = true;
+            continue;
+          }
+          this.toolStock[key(kind)]--;
+        }
+        if (cur) this.toolStock[key(cur)] = (this.toolStock[key(cur)] ?? 0) + 1;
+        if (slot === "weapon") v.weapon = kind;
+        else v.armor = kind;
+        v.manualGear = true;
+        given++;
+        this.say(kind ? `${v.name} \u0111\u01B0\u1EE3c ph\xE1t ${nameOf(kind)}.` : `${v.name} tr\u1EA3 l\u1EA1i ${cur ? nameOf(cur) : "\u0111\u1ED3"}.`);
+      }
+      return short && given === 0 ? `Kho X\u01B0\u1EDFng h\u1EBFt ${kind ? nameOf(kind) : "\u0111\u1ED3"}, h\xE3y ch\u1EBF th\xEAm` : null;
+    }
+    /** Let the workshop hand out and swap gear by itself again. */
+    autoGear(ids) {
+      for (const v of this.mine(ids)) v.manualGear = false;
+    }
     /** Cấp công cụ ngay cho dân đã chọn, không cần Xưởng hay nguyên liệu. tier 0 = thu lại (tay không). */
     giveTool(ids, kind, tier) {
       for (const id of ids) {
@@ -6726,7 +6768,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     }
     /** Follow the path and the final slide step; shared by villagers and tribal people. */
     moveUnit(v, dt) {
-      const walk = v.speed * WEATHER[this.weather].speed * (v.phase === "flee" ? 1.15 : 1) * (v.armor ? 1 : 1);
+      const walk = v.speed * WEATHER[this.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.armor ? 1 : 1);
       if (v.swing) return;
       let left = walk * dt;
       while (left > 0 && v.path.length) {
@@ -6769,6 +6811,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       };
       const style = !v.weapon ? "fist" : { thrust: "pierce", shoot: "bow", sling: "sling" }[weaponOf(v).anim] ?? "melee";
       const ready = v.phase === "fight" || v.fight.mode !== "none";
+      const carrying = !!v.weapon && (v.job === "fight" || v.job === "hunt");
       if (v.down > 0) anim = "down";
       else if (v.swing) {
         const w = weaponOf(v);
@@ -6779,8 +6822,16 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       else if (ready) {
         anim = `${walking ? "charge" : "guard"}_${style}`;
         hold = armed();
-      } else if (walking) anim = v.carry && v.carry.amount > 0 ? "carry_walk" : "walk";
-      else if (v.phase === "work" && v.job !== "idle") {
+      } else if (walking) {
+        anim = v.carry && v.carry.amount > 0 ? "carry_walk" : "walk";
+        if (carrying && !(v.carry && v.carry.amount > 0)) {
+          anim = "walk_armed";
+          hold = armed();
+        }
+      } else if (carrying && v.phase === "idle") {
+        anim = "idle_armed";
+        hold = armed();
+      } else if (v.phase === "work" && v.job !== "idle") {
         const k = TOOL_OF_JOB[v.job], tier = this.toolTier(v, v.job);
         if (k && tier > 0) {
           anim = JOBS[v.job].anim === "gather" ? "dig" : JOBS[v.job].anim;
@@ -6901,7 +6952,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     }
     /** Go to the workshop for a better weapon or armour than the one in hand. */
     planEquipGear(v) {
-      if (v.job !== "hunt" && v.job !== "fight" || !this.hasWorkshop() || v.phase === "fight") return false;
+      if (v.job !== "hunt" && v.job !== "fight" || !this.hasWorkshop() || v.phase === "fight" || v.manualGear) return false;
       const wantsArmor = v.job === "fight" && !v.armor && this.toolCount("hide", 1) > 0;
       if (!bestWeapon(this, v) && !wantsArmor) return false;
       const shops = this.buildings.filter((b) => b.kind === "workshop" && b.done);
@@ -8393,7 +8444,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: hai ng\xF3n tay; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
         h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
         h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, X\u01B0\u1EDFng \u0111\u1EC3 ch\u1EBF c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p. C\xF4ng tr\xECnh n\xE2ng c\u1EA5p: \u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
-        h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), ": giao ngh\u1EC1 Chi\u1EBFn binh ho\u1EB7c Th\u1EE3 s\u0103n r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng 30 gi\xE2y; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh 3 gi\xE2y s\u1EBD k\xE9o h\u1ECD d\u1EADy."),
+        h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), ": d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng 30 gi\xE2y; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh 3 gi\xE2y s\u1EBD k\xE9o h\u1ECD d\u1EADy."),
         h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), ": t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD 30 gi\xE2y ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p."),
         h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
       );
@@ -8572,6 +8623,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       this.stats = h("div", { class: "kv" });
       this.skills = h("div", { class: "kv" });
       this.tools = h("div", { class: "kv" });
+      this.gearBtns = [];
+      this.gearNote = h("div", { class: "kv" });
       this.statsKey = "";
       const { sim: sim2, ctl: ctl2 } = c, ids = () => [...ctl2.selected];
       this.jobBtns = ["idle", ...WORK_JOBS].map((j) => h("button", { class: "sm", "data-job": j, pressed: false, text: JOB_NAME[j], onclick: () => {
@@ -8580,6 +8633,24 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       } }));
       this.stanceBtns = STANCES.map(([s, label, tip]) => h("button", { class: "sm", "data-stance": s, pressed: false, text: label, title: tip, onclick: () => {
         sim2.setStance(ids(), s);
+        ctl2.onChange();
+      } }));
+      const gearRow = h("div", { class: "btns", role: "group", "aria-label": "Ph\xE1t \u0111\u1ED3" });
+      const addGear = (label, kind, slot, title) => {
+        const btn = h("button", { class: "sm", title, onclick: () => {
+          const e = sim2.assignGear(ids(), kind, slot);
+          if (e) c.toast(e);
+          ctl2.onChange();
+        } });
+        this.gearBtns.push({ btn, kind, slot, label });
+        gearRow.append(btn);
+      };
+      for (const id of CRAFTED_WEAPONS) addGear(WEAPONS[id].name, id, "weapon", `Ph\xE1t ${WEAPONS[id].name.toLowerCase()} t\u1EEB kho X\u01B0\u1EDFng cho d\xE2n \u0111ang ch\u1ECDn`);
+      addGear("\xC1o da", "hide", "armor", "Ph\xE1t \xE1o da t\u1EEB kho X\u01B0\u1EDFng");
+      addGear("Tr\u1EA3 v\u0169 kh\xED", null, "weapon", "Tr\u1EA3 v\u0169 kh\xED v\u1EC1 kho X\u01B0\u1EDFng");
+      addGear("Tr\u1EA3 gi\xE1p", null, "armor", "Tr\u1EA3 gi\xE1p v\u1EC1 kho X\u01B0\u1EDFng");
+      gearRow.append(h("button", { class: "sm", text: "T\u1EF1 nh\u1EADn \u0111\u1ED3", title: "\u0110\u1EC3 X\u01B0\u1EDFng t\u1EF1 ph\xE1t v\xE0 \u0111\u1ED5i \u0111\u1ED3 cho ng\u01B0\u1EDDi n\xE0y (khi l\xE0m Chi\u1EBFn binh ho\u1EB7c Th\u1EE3 s\u0103n)", onclick: () => {
+        sim2.autoGear(ids());
         ctl2.onChange();
       } }));
       const tall = innerHeight >= 560;
@@ -8598,6 +8669,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
           { class: "fold" },
           h("summary", { text: "Chi\u1EBFn \u0111\u1EA5u" }),
           this.gear,
+          h("p", { class: "sub", text: "Ph\xE1t \u0111\u1ED3 (l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng):" }),
+          gearRow,
+          this.gearNote,
           h("div", { class: "btns", role: "group", "aria-label": "Th\u1EBF \u0111\u1EE9ng" }, ...this.stanceBtns),
           h(
             "div",
@@ -8626,13 +8700,19 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         this.statsKey = "";
         return;
       }
-      const v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : "tay kh\xF4ng";
+      const sim0 = this.c.sim, v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : "tay kh\xF4ng";
       this.name.textContent = chosen.length > 1 ? `${v.name} v\xE0 ${chosen.length - 1} ng\u01B0\u1EDDi n\u1EEFa` : v.name;
       this.state.textContent = describe(v);
       this.bFull.style.width = `${v.fullness}%`;
       this.bHealth.style.width = `${v.health / v.maxHealth * 100}%`;
       this.bMorale.style.width = `${v.morale}%`;
       this.bHealth.className = v.health / v.maxHealth < 0.35 ? "bad" : "";
+      for (const g of this.gearBtns) {
+        const n = g.kind ? sim0.toolCount(g.kind, g.kind === "hide" ? 1 : WEAPONS[g.kind].tier ?? 1) : -1;
+        g.btn.textContent = n >= 0 ? `${g.label} (${n})` : g.label;
+        g.btn.disabled = g.kind !== null && n <= 0 && !chosen.every((o) => (g.slot === "weapon" ? o.weapon : o.armor) === g.kind);
+      }
+      this.gearNote.textContent = chosen.every((o) => o.job === "fight" || o.job === "hunt") ? chosen[0].manualGear ? "\u0110\u1ED3 do b\u1EA1n ph\xE1t: X\u01B0\u1EDFng kh\xF4ng t\u1EF1 \u0111\u1ED5i." : "X\u01B0\u1EDFng t\u1EF1 ph\xE1t \u0111\u1ED3 t\u1ED1t nh\u1EA5t c\xF2n trong kho." : "Ch\u1EC9 Chi\u1EBFn binh v\xE0 Th\u1EE3 s\u0103n c\u1EA7m v\u0169 kh\xED \u0111i theo; d\xE2n th\u01B0\u1EDDng kh\xF4ng chi\u1EBFn \u0111\u1EA5u m\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i khi c\xF3 \u0111\u1ECBch.";
       this.gear.innerHTML = `M\xE1u <b>${Math.ceil(v.health)}/${v.maxHealth}</b> \xB7 V\u0169 kh\xED <b>${w}</b> \xB7 Gi\xE1p <b>${v.armor ? ARMORS[v.armor].name : "\u2014"}</b>${v.leader ? " \xB7 <b>Th\u1EE7 l\u0129nh</b>" : ""}`;
       const sk = `${v.id}|${WORK_JOBS.map((j) => v.skill[j].level).join("")}|${Object.values(v.stats).join()}`;
       if (sk !== this.statsKey) {

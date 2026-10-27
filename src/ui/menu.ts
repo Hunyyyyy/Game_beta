@@ -185,7 +185,7 @@ export class Menu {
       h('li', {}, h('b', { text: 'Kéo bản đồ' }), ': máy tính: giữ chuột phải rồi kéo (hoặc W A S D). Điện thoại: hai ngón tay; chụm hoặc mở hai ngón để thu phóng.'),
       h('li', {}, h('b', { text: 'Bản đồ nhỏ' }), ': bấm vào để mở bản đồ lớn, chạm một chỗ để nhảy tới đó.'),
       h('li', {}, h('b', { text: 'Công trình' }), `: mở Menu → Xây để đặt. Mở Menu → Công trình, hoặc bấm vào công trình trên bản đồ: lửa trại cho xem dân, Kho cho xem tài nguyên, Xưởng để chế công cụ, vũ khí, giáp. Công trình nâng cấp: đơn sơ → gỗ → đá. Trong bảng công trình còn có nút Dời (tốn 1/5 vật liệu, phải dựng lại) và Phá bỏ (thu lại một nửa).`),
-      h('li', {}, h('b', { text: 'Chiến đấu' }), ': giao nghề Chiến binh hoặc Thợ săn rồi chạm vào thú hoặc địch. Thế đứng: Chủ động, Phòng thủ, Rút lui. F: tấn công–đi, H: giữ chỗ, G: dừng. Người bị thương nặng ngã xuống 30 giây; một người khác đứng cạnh 3 giây sẽ kéo họ dậy.'),
+      h('li', {}, h('b', { text: 'Chiến đấu' }), ': dân thường không đánh nhau, thấy địch là chạy về lửa trại. Muốn có lính thì giao nghề Chiến binh (huy hiệu đỏ trên đầu) hoặc Thợ săn (huy hiệu vàng), phát vũ khí ở thẻ dân → Chiến đấu, rồi chạm vào thú hoặc địch. Thế đứng: Chủ động, Phòng thủ, Rút lui. F: tấn công–đi, H: giữ chỗ, G: dừng. Người bị thương nặng ngã xuống 30 giây; một người khác đứng cạnh 3 giây sẽ kéo họ dậy.'),
       h('li', {}, h('b', { text: 'Bộ tộc' }), ': tặng thức ăn để tăng quan hệ. Hạ thủ lĩnh, chiếm đống lửa của họ 30 giây hoặc làm sụp tinh thần để họ xin hàng, rồi chọn thu nạp hoặc cống nạp.'),
       h('li', {}, h('b', { text: 'Phím' }), ': P tạm dừng, Q E R: tốc độ 1× 2× 4×, B xây Kho, X xây Xưởng, 1–9 gọi nhóm (Ctrl + số để lưu), Space nhảy tới dân đang chọn, Esc bỏ chọn.'),
     );

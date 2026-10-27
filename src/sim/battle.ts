@@ -200,22 +200,11 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
 
   const fighter = isFighter(v);
   if (!fighter) {
-    if (threats.length && threats[0].d < 6 && v.phase !== 'fight') {
-      // At home, healthy and not afraid, ordinary villagers pick up a stick and defend the village; away from it they run for the fire
-      if (sim.nearHome(v) && v.morale >= MORALE.fleeRecover && v.health > v.maxHealth * 0.4) { militia(sim, v, threats[0].t); return true; }
-      startFlee(sim, v, 8); return true;
-    }
+    // Civilians do not fight: anything hostile within sight sends them running to the campfire
+    if (threats.length && threats[0].d < 6 && v.phase !== 'fight') { startFlee(sim, v, 8); return true; }
     return assistBrain(sim, v);
   }
   return fightBrain(sim, v, dt, threats);
-}
-
-/** 'Dân phòng': a villager joins the defence for as long as the fight lasts, then goes back to the job. */
-function militia(sim: Sim, v: Villager, target: Target): void {
-  const keep = v.job, owl = v.nightOwl;
-  sim.resetTask(v); v.job = keep; v.nightOwl = owl;
-  if (!v.weapon) v.weapon = 'club'; // a stick is always at hand
-  v.fight.mode = 'attack'; v.fight.target = target; v.stance = 'aggressive';
 }
 
 function startFlee(sim: Sim, v: Villager, secs: number): void {

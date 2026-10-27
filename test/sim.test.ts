@@ -647,16 +647,23 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
 }
 
 {
-  // militia: near the village a healthy woodcutter picks up a stick and fights; far from it, or frightened, they run
+  // civilians never fight: they run for the fire; soldiers (job Chiến binh) stand and fight
   const sm = new Sim(1337); reveal(sm); day(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
   const t = tribeById(sm, 'axe'); t.relation = -60;
   const foe = sm.get(t.unitIds.find((u) => sm.get(u)!.ai!.role === 'guard')!)!; const fire = sm.campfire()!;
   const w = sm.villagers[0]; sm.setJob([w.id], 'wood'); w.x = fire.x + 3; w.y = fire.y + 5; w.path = [];
   foe.x = w.x + 4; foe.y = w.y; foe.ai!.camp = { x: foe.x, y: foe.y };
+  w.x = fire.x + 14; foe.x = w.x + 4; foe.y = w.y = fire.y + 5; foe.ai!.camp = { x: foe.x, y: foe.y };
   run(sm, 1);
-  ok(w.fight.mode === 'attack' && w.weapon === 'club' && w.job === 'wood', 'a healthy villager at home takes a club and defends, keeping their job');
-  w.morale = 10; run(sm, 2);
-  ok(w.phase === 'flee' || w.fleeT > 0, 'with their nerve gone the same villager runs instead');
+  ok(w.phase === 'flee' && w.fight.mode === 'none' && w.weapon === null && w.job === 'wood', 'a healthy civilian at home runs for the fire instead of fighting, keeping their job');
+  
+  { const x0 = w.x, y0 = w.y; run(sm, 1); const d = Math.hypot(w.x - x0, w.y - y0); ok(d > w.speed * 1.15, `fleeing is faster than walking (${d.toFixed(2)} tiles in 1 s, walking ${w.speed.toFixed(2)})`); }
+  const sol = sm.villagers[1]; sm.giveGear([sol.id], 'spear', 'weapon'); sm.setJob([sol.id], 'fight'); sol.x = w.x + 1; sol.y = w.y; sol.path = []; sol.morale = 100;
+  foe.x = sol.x + 4; foe.y = sol.y; foe.ai!.camp = { x: foe.x, y: foe.y }; run(sm, 1.5);
+  ok(sol.fight.mode === 'attack' || sol.phase === 'fight', 'a soldier meets the same enemy');
+  // an enemy still hits a civilian who is caught
+  const cat = sm.villagers[2]; cat.x = foe.x + 0.6; cat.y = foe.y; cat.path = []; const hp = cat.health; sm.hurt({ kind: 'unit', id: cat.id }, 5, 'crush', { x: foe.x, y: foe.y }, { unit: foe });
+  ok(cat.health < hp, 'and enemies can still hurt civilians');
   const far = sm.villagers[1]; sm.setJob([far.id], 'stone'); far.x = sm.world.start.x + 30; far.y = sm.world.start.y; far.path = [];
   foe.x = far.x + 4; foe.y = far.y; run(sm, 1.5);
   ok(far.phase === 'flee' && far.fight.mode === 'none', 'a villager far from home flees to the fire');
@@ -762,6 +769,29 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(sm.queueCraft('r:timber') === 'Nghiên cứu đang tắt', 'research off: no research can be queued');
   const st = sm.buildings[0]; void st;
   RESEARCH.enabled = true;
+}
+
+{
+  // handing out gear from the workshop stock
+  const sm = new Sim(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const [a, b] = sm.villagers;
+  ok(sm.assignGear([a.id], 'spear', 'weapon') !== null, 'no workshop, no gear to hand out');
+  dev.unlockResearch(sm); sm.dev.freeBuild = true; sm.dev.instantBuild = true;
+  const sp = sm.world.start; for (let dx = -8; dx <= 8 && !sm.hasWorkshop(); dx++) for (let dy = 3; dy <= 11; dy++) if (!sm.canPlace('workshop', sp.x + dx, sp.y + dy)) { sm.placeBuilding('workshop', sp.x + dx, sp.y + dy); break; }
+  sm.dev.freeBuild = false;
+  ok(sm.assignGear([a.id], 'spear', 'weapon') !== null && a.weapon === null, 'an empty stock hands out nothing');
+  sm.toolStock.spear1 = 1; sm.toolStock.club1 = 1; sm.toolStock.hide1 = 1;
+  ok(sm.assignGear([a.id], 'spear', 'weapon') === null && a.weapon === 'spear' && sm.toolStock.spear1 === 0 && a.manualGear, 'a spear is taken from the stock and given');
+  ok(sm.assignGear([a.id], 'club', 'weapon') === null && a.weapon === 'club' && sm.toolStock.spear1 === 1 && sm.toolStock.club1 === 0, 'swapping returns the old weapon');
+  sm.assignGear([a.id], 'hide', 'armor'); ok(a.armor === 'hide' && sm.toolStock.hide1 === 0, 'armour is handed out too');
+  sm.assignGear([a.id], null, 'weapon'); sm.assignGear([a.id], null, 'armor');
+  ok(a.weapon === null && a.armor === null && sm.toolStock.club1 === 1 && sm.toolStock.hide1 === 1, 'giving it back restores the stock');
+  sm.assignGear([a.id], 'spear', 'weapon'); sm.toolStock.mace2 = 1; sm.setJob([a.id], 'fight'); run(sm, 20);
+  ok(a.weapon === 'spear' && sm.toolStock.mace2 === 1, 'gear handed out by hand is not swapped by the workshop');
+  sm.assignGear([a.id], null, 'weapon'); sm.autoGear([a.id]); run(sm, 40);
+  ok(!a.manualGear && a.weapon !== null, 'after "Tự nhận đồ" the workshop equips them again');
+  sm.setJob([b.id], 'fight'); sm.giveGear([b.id], 'club', 'weapon'); b.manualGear = true; run(sm, 1);
+  ok(b.anim === 'idle_armed' && b.hold?.kind === 'club', 'a soldier carries the weapon in hand while idle');
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');

@@ -188,5 +188,19 @@
   "down": { "fps": 2, "loop": true, "frames": [
     {"bob":7,"lean":-2,"legR":{"a":55,"lift":0},"legL":{"a":48,"lift":0},"armR":{"a":25,"b":25},"armL":{"a":15,"b":20}},
     {"bob":6,"lean":-3,"legR":{"a":55,"lift":0},"legL":{"a":48,"lift":0},"armR":{"a":28,"b":25},"armL":{"a":18,"b":20}}
+  ] },
+  "idle_armed": { "fps": 4, "loop": true, "frames": [
+    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-5,"b":8},"tool":{"on":true,"a":172,"kind":"spear"}},
+    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-7,"b":8},"tool":{"on":true,"a":172,"kind":"spear"}},
+    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-9,"b":8},"tool":{"on":true,"a":172,"kind":"spear"}},
+    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-7,"b":8},"tool":{"on":true,"a":172,"kind":"spear"}}
+  ] },
+  "walk_armed": { "fps": 8, "loop": true, "frames": [
+    {"bob":-1,"lean":1,"legR":{"a":0,"lift":2},"legL":{"a":0,"lift":0},"armR":{"a":30,"b":30},"armL":{"a":0,"b":14},"tool":{"on":true,"a":172,"kind":"spear"}},
+    {"bob":0,"lean":1,"legR":{"a":24,"lift":1},"legL":{"a":-24,"lift":0},"armR":{"a":30,"b":30},"armL":{"a":19,"b":14},"tool":{"on":true,"a":172,"kind":"spear"}},
+    {"bob":0,"lean":1,"legR":{"a":24,"lift":0},"legL":{"a":-24,"lift":1},"armR":{"a":30,"b":30},"armL":{"a":19,"b":14},"tool":{"on":true,"a":172,"kind":"spear"}},
+    {"bob":-1,"lean":1,"legR":{"a":0,"lift":0},"legL":{"a":0,"lift":2},"armR":{"a":30,"b":30},"armL":{"a":0,"b":14},"tool":{"on":true,"a":172,"kind":"spear"}},
+    {"bob":0,"lean":1,"legR":{"a":-24,"lift":0},"legL":{"a":24,"lift":1},"armR":{"a":30,"b":30},"armL":{"a":-19,"b":14},"tool":{"on":true,"a":172,"kind":"spear"}},
+    {"bob":0,"lean":1,"legR":{"a":-24,"lift":1},"legL":{"a":24,"lift":0},"armR":{"a":30,"b":30},"armL":{"a":-19,"b":14},"tool":{"on":true,"a":172,"kind":"spear"}}
   ] }
 }

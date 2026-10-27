@@ -1,7 +1,7 @@
 import type { Sprites } from '../render/sprites';
 import { animalDef } from '../sim/fauna';
 import { BUILDINGS, Building, levelDef, maxLevel, needsWork } from '../sim/buildings';
-import { ARMORS, relationLabel, WEAPONS } from '../sim/combat';
+import { ARMORS, CRAFTED_WEAPONS, relationLabel, WEAPONS } from '../sim/combat';
 import { DAY_LENGTH } from '../sim/constants';
 import { Job, JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS } from '../sim/jobs';
 import { RES_LIST, RES_NAME } from '../sim/resources';
@@ -52,12 +52,24 @@ export class UnitCard {
   private readonly gear = h('div', { class: 'kv' });
   private readonly stats = h('div', { class: 'kv' }); private readonly skills = h('div', { class: 'kv' }); private readonly tools = h('div', { class: 'kv' });
   private readonly jobBtns: HTMLButtonElement[]; private readonly stanceBtns: HTMLButtonElement[];
+  private readonly gearBtns: Array<{ btn: HTMLButtonElement; kind: string | null; slot: 'weapon' | 'armor'; label: string }> = [];
+  private readonly gearNote = h('div', { class: 'kv' });
   private statsKey = '';
 
   constructor(readonly root: HTMLElement, private readonly c: Ctx) {
     const { sim, ctl } = c, ids = () => [...ctl.selected];
     this.jobBtns = (['idle', ...WORK_JOBS] as Job[]).map((j) => h('button', { class: 'sm', 'data-job': j, pressed: false, text: JOB_NAME[j], onclick: () => { sim.setJob(ids(), j); ctl.onChange(); } }));
     this.stanceBtns = STANCES.map(([s, label, tip]) => h('button', { class: 'sm', 'data-stance': s, pressed: false, text: label, title: tip, onclick: () => { sim.setStance(ids(), s); ctl.onChange(); } }));
+    // Handing out gear from the workshop's stock: soldiers carry what they are given
+    const gearRow = h('div', { class: 'btns', role: 'group', 'aria-label': 'Phát đồ' });
+    const addGear = (label: string, kind: string | null, slot: 'weapon' | 'armor', title: string) => {
+      const btn = h('button', { class: 'sm', title, onclick: () => { const e = sim.assignGear(ids(), kind, slot); if (e) c.toast(e); ctl.onChange(); } });
+      this.gearBtns.push({ btn, kind, slot, label }); gearRow.append(btn);
+    };
+    for (const id of CRAFTED_WEAPONS) addGear(WEAPONS[id].name, id, 'weapon', `Phát ${WEAPONS[id].name.toLowerCase()} từ kho Xưởng cho dân đang chọn`);
+    addGear('Áo da', 'hide', 'armor', 'Phát áo da từ kho Xưởng');
+    addGear('Trả vũ khí', null, 'weapon', 'Trả vũ khí về kho Xưởng'); addGear('Trả giáp', null, 'armor', 'Trả giáp về kho Xưởng');
+    gearRow.append(h('button', { class: 'sm', text: 'Tự nhận đồ', title: 'Để Xưởng tự phát và đổi đồ cho người này (khi làm Chiến binh hoặc Thợ săn)', onclick: () => { sim.autoGear(ids()); ctl.onChange(); } }));
     // The card starts small so the map stays visible on a phone; the sections open on demand.
     const tall = innerHeight >= 560;
     root.append(
@@ -65,7 +77,7 @@ export class UnitCard {
       h('div', { class: 'bars' },
         h('label', {}, 'No', h('i', {}, this.bFull)), h('label', {}, 'Máu', h('i', {}, this.bHealth)), h('label', {}, 'Tinh thần', h('i', {}, this.bMorale))),
       h('details', tall ? { class: 'fold', open: '' } : { class: 'fold' }, h('summary', { text: 'Giao nghề' }), h('div', { class: 'btns', role: 'group', 'aria-label': 'Giao nghề' }, ...this.jobBtns)),
-      h('details', { class: 'fold' }, h('summary', { text: 'Chiến đấu' }), this.gear,
+      h('details', { class: 'fold' }, h('summary', { text: 'Chiến đấu' }), this.gear, h('p', { class: 'sub', text: 'Phát đồ (lấy từ kho Xưởng):' }), gearRow, this.gearNote,
         h('div', { class: 'btns', role: 'group', 'aria-label': 'Thế đứng' }, ...this.stanceBtns),
         h('div', { class: 'btns' },
           h('button', { class: 'sm', text: 'Giữ chỗ (H)', title: 'Đứng yên, chỉ đánh kẻ ở sát', onclick: () => { sim.orderHold(ids()); ctl.onChange(); } }),
@@ -78,11 +90,13 @@ export class UnitCard {
   update(chosen: Villager[]): void {
     this.root.hidden = chosen.length === 0;
     if (!chosen.length) { this.statsKey = ''; return; }
-    const v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : 'tay không';
+    const sim0 = this.c.sim, v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : 'tay không';
     this.name.textContent = chosen.length > 1 ? `${v.name} và ${chosen.length - 1} người nữa` : v.name;
     this.state.textContent = describe(v);
     this.bFull.style.width = `${v.fullness}%`; this.bHealth.style.width = `${(v.health / v.maxHealth) * 100}%`; this.bMorale.style.width = `${v.morale}%`;
     this.bHealth.className = v.health / v.maxHealth < 0.35 ? 'bad' : '';
+    for (const g of this.gearBtns) { const n = g.kind ? sim0.toolCount(g.kind, g.kind === 'hide' ? 1 : WEAPONS[g.kind].tier ?? 1) : -1; g.btn.textContent = n >= 0 ? `${g.label} (${n})` : g.label; g.btn.disabled = g.kind !== null && n <= 0 && !chosen.every((o) => (g.slot === 'weapon' ? o.weapon : o.armor) === g.kind); }
+    this.gearNote.textContent = chosen.every((o) => o.job === 'fight' || o.job === 'hunt') ? (chosen[0].manualGear ? 'Đồ do bạn phát: Xưởng không tự đổi.' : 'Xưởng tự phát đồ tốt nhất còn trong kho.') : 'Chỉ Chiến binh và Thợ săn cầm vũ khí đi theo; dân thường không chiến đấu mà chạy về lửa trại khi có địch.';
     this.gear.innerHTML = `Máu <b>${Math.ceil(v.health)}/${v.maxHealth}</b> · Vũ khí <b>${w}</b> · Giáp <b>${v.armor ? ARMORS[v.armor].name : '—'}</b>${v.leader ? ' · <b>Thủ lĩnh</b>' : ''}`;
     const sk = `${v.id}|${WORK_JOBS.map((j) => v.skill[j].level).join('')}|${Object.values(v.stats).join()}`;
     if (sk !== this.statsKey) {

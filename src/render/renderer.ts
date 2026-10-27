@@ -234,6 +234,12 @@ export class Renderer {
           ctx.drawImage(s, -SPRITE_FEET.x * z, -SPRITE_FEET.y * z, s.width * z, s.height * z); ctx.restore();
         } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
         const v = d.v;
+        // a small badge tells soldiers (red) and hunters (amber) from civilians
+        if (v.team === 'player' && (v.job === 'fight' || v.job === 'hunt') && v.phase !== 'flee' && v.phase !== 'sleep' && v.phase !== 'down') {
+          const p = this.worldToScreen(fx, fy - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
+          ctx.fillStyle = 'rgba(20,14,8,.85)'; ctx.fillRect(p.x - 3 * u, p.y - 4 * u, 6 * u, 7 * u);
+          ctx.fillStyle = v.job === 'fight' ? '#d9534f' : '#e0a23c'; ctx.fillRect(p.x - 2 * u, p.y - 3 * u, 4 * u, 4 * u); ctx.fillRect(p.x - u, p.y + u, 2 * u, u);
+        }
         if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - 46, v.health / v.maxHealth, v.team === 'player' ? '#6bbf59' : '#d9534f');
         if (v.down > 0) { ctx.fillStyle = '#ffd27a'; ctx.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 30); ctx.fillText(`${Math.ceil(v.down)}s`, p.x, p.y); }
         if (v.phase === 'flee') { ctx.fillStyle = '#fff6e8'; ctx.font = `700 ${Math.max(12, 7 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 50); ctx.fillText('!', p.x, p.y); }

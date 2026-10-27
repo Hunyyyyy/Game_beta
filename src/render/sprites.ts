@@ -176,7 +176,7 @@ export class Sprites {
   villager(v: Villager): HTMLCanvasElement {
     const name = v.anim in anims ? v.anim : 'idle';
     const def = anims[name];
-    const rate = name === 'walk' || name === 'carry_walk' ? Math.min(1.6, v.speed / 1.5) : 1;
+    const rate = name === 'walk' || name === 'carry_walk' || name === 'walk_armed' ? Math.min(1.6, v.speed / 1.5) : 1;
     const step = Math.floor(v.animClock * def.fps * rate);
     // looping animations wrap; one-shot ones (attacks) stop on their last frame
     const frame = def.loop === false ? Math.min(step, def.frames.length - 1) : step % def.frames.length;

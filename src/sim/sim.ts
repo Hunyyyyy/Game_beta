@@ -113,6 +113,8 @@ export interface Villager {
   bed: number;      // reserved sleeping tile by the campfire (-1 if none)
   /** Ordered by the player during rest hours: stays awake until morning. */
   nightOwl: boolean;
+  /** Gear was handed out by the player: the workshop no longer swaps it automatically. */
+  manualGear: boolean;
 }
 
 const NAMES_M = ['Bo', 'Rô', 'Gia', 'Mun', 'Lô', 'Tù', 'Đa'];
@@ -280,7 +282,7 @@ export class Sim {
       look: { sex, skin: pick(SKIN), hair: pick(HAIR), hide: '#8b6a45', pants: '#3f63a8' },
       x: x + 0.5, y: y + 0.5, path: [], slide: null, facing: 'front', speed: 1.6 + 0.1 * stats.agi, animClock: 0, tx: -1, ty: -1,
       stats, potential, skill, tools: emptyToolSet(), job: 'idle', phase: 'idle', slot: 0, target: -1, prefer: -1, progress: 0, frac: 0, timer: 0, order: null,
-      carry: null, fullness: 100, health: maxHpOf(stats.vit), starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, nightOwl: false,
+      carry: null, fullness: 100, health: maxHpOf(stats.vit), starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, nightOwl: false, manualGear: false,
       team, maxHealth: maxHpOf(stats.vit), weapon: null, armor: null, morale: MORALE.start, stance: 'aggressive',
       fight: { mode: 'none', target: null, dest: null, anchor: null, repath: 0, scan: 0 }, queue: [], atkCd: 0, down: 0, rescue: 0, fleeT: 0, calm: 99, loot: -1, leader: false, swing: null, flinch: 0, ai: null,
     };
@@ -635,6 +637,27 @@ export class Sim {
     }
   }
 
+  /** Give a villager a weapon or armour from the workshop's stock (the old piece goes back); null hands it back. Returns an error or null. */
+  assignGear(ids: readonly number[], kind: string | null, slot: 'weapon' | 'armor'): string | null {
+    const key = (k: string) => (k === 'hide' ? 'hide1' : `${k}${WEAPONS[k].tier ?? 1}`);
+    const nameOf = (k: string) => (k === 'hide' ? ARMORS.hide.name : WEAPONS[k].name).toLowerCase();
+    const people = this.mine(ids);
+    if (kind && !this.hasWorkshop()) return 'Cần có Xưởng để lấy đồ';
+    let given = 0, short = false;
+    for (const v of people) {
+      const cur = slot === 'weapon' ? v.weapon : v.armor;
+      if (cur === kind) { v.manualGear = true; continue; }
+      if (kind) { if (this.toolCount(kind === 'hide' ? 'hide' : kind, kind === 'hide' ? 1 : WEAPONS[kind].tier ?? 1) <= 0) { short = true; continue; } this.toolStock[key(kind)]--; }
+      if (cur) this.toolStock[key(cur)] = (this.toolStock[key(cur)] ?? 0) + 1;
+      if (slot === 'weapon') v.weapon = kind; else v.armor = kind;
+      v.manualGear = true; given++;
+      this.say(kind ? `${v.name} được phát ${nameOf(kind)}.` : `${v.name} trả lại ${cur ? nameOf(cur) : 'đồ'}.`);
+    }
+    return short && given === 0 ? `Kho Xưởng hết ${kind ? nameOf(kind) : 'đồ'}, hãy chế thêm` : null;
+  }
+  /** Let the workshop hand out and swap gear by itself again. */
+  autoGear(ids: readonly number[]): void { for (const v of this.mine(ids)) v.manualGear = false; }
+
   /** Cấp công cụ ngay cho dân đã chọn, không cần Xưởng hay nguyên liệu. tier 0 = thu lại (tay không). */
   giveTool(ids: readonly number[], kind: ToolKind, tier: number): void {
     for (const id of ids) {
@@ -774,7 +797,7 @@ export class Sim {
 
   /** Follow the path and the final slide step; shared by villagers and tribal people. */
   moveUnit(v: Villager, dt: number): void {
-    const walk = v.speed * WEATHER[this.weather].speed * (v.phase === 'flee' ? 1.15 : 1) * (v.armor ? 1 : 1);
+    const walk = v.speed * WEATHER[this.weather].speed * (v.phase === 'flee' ? 1.3 : 1) * (v.armor ? 1 : 1);
     if (v.swing) return; // a blow in progress plants the feet
     let left = walk * dt;
     while (left > 0 && v.path.length) {
@@ -800,12 +823,15 @@ export class Sim {
     const armed = (): Hold | null => { if (!v.weapon) return null; const w = weaponOf(v); return { kind: v.weapon, tier: w.tier ?? 1 }; };
     const style = !v.weapon ? 'fist' : ({ thrust: 'pierce', shoot: 'bow', sling: 'sling' } as Record<string, string>)[weaponOf(v).anim] ?? 'melee';
     const ready = v.phase === 'fight' || v.fight.mode !== 'none';
+    // soldiers and hunters keep their weapon in hand between tasks, so they can be told apart from civilians
+    const carrying = !!v.weapon && (v.job === 'fight' || v.job === 'hunt');
     if (v.down > 0) anim = 'down';
     else if (v.swing) { const w = weaponOf(v); anim = w.anim; if (v.weapon) hold = { kind: v.weapon, tier: w.tier ?? 1 }; }
     else if (v.flinch > 0) anim = 'hit';
     else if (v.phase === 'flee') anim = 'run';
     else if (ready) { anim = `${walking ? 'charge' : 'guard'}_${style}`; hold = armed(); }
-    else if (walking) anim = v.carry && v.carry.amount > 0 ? 'carry_walk' : 'walk';
+    else if (walking) { anim = v.carry && v.carry.amount > 0 ? 'carry_walk' : 'walk'; if (carrying && !(v.carry && v.carry.amount > 0)) { anim = 'walk_armed'; hold = armed(); } }
+    else if (carrying && v.phase === 'idle') { anim = 'idle_armed'; hold = armed(); }
     else if (v.phase === 'work' && v.job !== 'idle') {
       const k = TOOL_OF_JOB[v.job as WorkJob], tier = this.toolTier(v, v.job);
       if (k && tier > 0) { anim = JOBS[v.job as WorkJob].anim === 'gather' ? 'dig' : JOBS[v.job as WorkJob].anim; hold = { kind: k, tier }; }
@@ -891,7 +917,7 @@ export class Sim {
   }
   /** Go to the workshop for a better weapon or armour than the one in hand. */
   planEquipGear(v: Villager): boolean {
-    if ((v.job !== 'hunt' && v.job !== 'fight') || !this.hasWorkshop() || v.phase === 'fight') return false;
+    if ((v.job !== 'hunt' && v.job !== 'fight') || !this.hasWorkshop() || v.phase === 'fight' || v.manualGear) return false;
     const wantsArmor = v.job === 'fight' && !v.armor && this.toolCount('hide', 1) > 0;
     if (!bestWeapon(this, v) && !wantsArmor) return false;
     const shops = this.buildings.filter((b) => b.kind === 'workshop' && b.done);
