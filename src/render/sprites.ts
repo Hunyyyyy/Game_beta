@@ -16,6 +16,7 @@ import toolPickJson from '../data/blueprints/tool_pick.json';
 import toolShovelJson from '../data/blueprints/tool_shovel.json';
 import waterJson from '../data/blueprints/water.json';
 import workshopJson from '../data/blueprints/workshop.json';
+import type { Season } from '../sim/calendar';
 import type { Villager } from '../sim/sim';
 
 export const anims = animsJson as unknown as AnimTable;
@@ -37,6 +38,25 @@ function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContex
 
 const seeds = (n: number) => Array.from({ length: n }, (_, i) => i * 7 + 3);
 
+/** Copy of a prop with a color layer painted over its opaque pixels. */
+function tint(p: Prop, color: string): Prop {
+  const frames = p.frames.map((f) => {
+    const [c, g] = canvas(f.width, f.height);
+    g.drawImage(f, 0, 0);
+    g.globalCompositeOperation = 'source-atop'; g.fillStyle = color; g.fillRect(0, 0, f.width, f.height);
+    return c;
+  });
+  return { ...p, frames };
+}
+
+/** Seasonal tint: [round tree, pine, bush]. Spring keeps the original art. */
+const SEASON_TINT: Record<Season, [string, string, string] | null> = {
+  spring: null,
+  summer: ['rgba(120,150,20,.12)', 'rgba(60,90,20,.08)', 'rgba(120,150,20,.1)'],
+  autumn: ['rgba(214,118,28,.52)', 'rgba(150,110,40,.18)', 'rgba(190,110,40,.35)'],
+  winter: ['rgba(196,186,170,.6)', 'rgba(240,246,255,.45)', 'rgba(236,240,248,.5)'],
+};
+
 export class Sprites {
   private readonly vcache = new Map<string, HTMLCanvasElement>();
   readonly grass = seeds(4).map((s) => make(grassJson, s).frames[0]);
@@ -51,12 +71,28 @@ export class Sprites {
   /** Kho theo giai đoạn xây 0..4 (4 = xong). */
   readonly storage = [0, 1, 2, 3, 4].map((st) => make(storageJson, 5, { st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) }));
   readonly workshop = [0, 1, 2, 3, 4].map((st) => make(workshopJson, 9, { st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) }));
+  private readonly seasonal = new Map<string, Prop[]>();
   /** Biểu tượng công cụ 16×16, khóa dạng "axe1" (gỗ) hoặc "axe2" (đá). */
   readonly icons: Record<string, HTMLCanvasElement> = {};
 
   constructor() {
     const defs: Record<string, unknown> = { axe: toolAxeJson, pick: toolPickJson, hoe: toolHoeJson, shovel: toolShovelJson };
     for (const k of Object.keys(defs)) for (const tier of [1, 2]) this.icons[`${k}${tier}`] = make(defs[k], 1, { stone: tier === 2 ? 1 : 0 }).frames[0];
+  }
+
+  /** Seasonal trees: orange in autumn; in winter round trees turn grey, pines get frosted. */
+  treesIn(season: Season): Prop[] {
+    const t = SEASON_TINT[season];
+    return t ? this.cached(`tree|${season}`, () => this.trees.map((p, i) => tint(p, i < 4 ? t[0] : t[1]))) : this.trees;
+  }
+  bushIn(season: Season, empty: boolean): Prop[] {
+    const t = SEASON_TINT[season], base = empty ? this.bushEmpty : this.bush;
+    return t ? this.cached(`bush|${season}|${empty}`, () => base.map((p) => tint(p, t[2]))) : base;
+  }
+  private cached(key: string, make: () => Prop[]): Prop[] {
+    let v = this.seasonal.get(key);
+    if (!v) { v = make(); this.seasonal.set(key, v); }
+    return v;
   }
 
   villager(v: Villager): HTMLCanvasElement {

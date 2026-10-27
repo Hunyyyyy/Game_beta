@@ -27,7 +27,8 @@ h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 26px; margin: 0;
 .res i { width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(0,0,0,.35); display: inline-block; }
 .res small { font-weight: 500; color: var(--muted); }
 .res.full b { color: var(--accent); }
-.clock { font-size: 13px; font-weight: 600; min-width: 9ch; }
+.res.warn small { color: var(--accent); font-weight: 700; }
+.clock { font-size: 13px; font-weight: 600; min-width: 9ch; cursor: help; }
 .grp { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .panel { position: absolute; left: 10px; bottom: 10px; width: min(440px, calc(100% - min(160px, 28vw) - 30px)); display: grid; gap: 6px; }
 .panel > * { background: var(--hud); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; backdrop-filter: blur(2px); }
@@ -72,8 +73,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 <main>
   <header>
-    <h1>Làng Đồ Đá — bản chạy thử M2</h1>
-    <p class="sub">Dân biết làm việc: đốn gỗ, đục đá, hái quả, dựng Kho và Xưởng. Công cụ chế từ gỗ rồi đá làm họ làm nhanh hơn và thu được nhiều hơn. Bản đồ 192×192 vẫn bị sương mù che; đi tới đâu thấy tới đó.</p>
+    <h1>Làng Đồ Đá — bản chạy thử M3</h1>
+    <p class="sub">Thời gian đã chảy: ngày đêm, bốn mùa, mưa nắng. Đêm tối chỉ thấy quanh mình 3 ô và dân về ngủ bên đống lửa; mưa, tuyết làm đi chậm; quả hái về hỏng sau 3 ngày; mùa đông bụi quả trụi hết.</p>
   </header>
   <div class="stage">
     <canvas id="view" tabindex="0" aria-label="Bản đồ làng"></canvas>
@@ -134,6 +135,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     <li><b>Chuột phải lên nền Kho</b>: giao thợ xây · lên đất trống: đi tới đó</li>
     <li><b>Xây Kho / Xây Xưởng</b>: bấm nút (phím B / X), rê chuột chọn chỗ xanh, bấm trái để đặt; Esc hoặc chuột phải để hủy</li>
     <li><b>Công cụ</b>: dựng Xưởng, mở bảng Chế tác (phím C), thêm đơn rìu, cuốc chim, cuốc, xẻng; giao một dân làm Thợ thủ công</li>
+    <li><b>Ngày đêm</b>: tối đến dân về ngủ quanh đống lửa, sáng ra tự đi làm tiếp. Ra lệnh lúc đêm thì dân đó thức tới sáng</li>
+    <li><b>Mùa</b>: mỗi mùa 5 ngày. Thu hái quả nhanh nhất, đông không có quả. Rê chuột lên đồng hồ để xem tác động của thời tiết</li>
     <li><b>W A S D</b>: dời camera · <b>Lăn chuột / + −</b>: thu phóng · <b>P</b>: tạm dừng · <b>1 2 3</b>: tốc độ</li>
     <li><b>Điện thoại</b>: chế độ Ra lệnh = chạm đất, cây, đá để ra lệnh; bấm bản đồ nhỏ để nhảy tới</li>
   </ul>
@@ -151,6 +154,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   var TILE = 32;
   var MAP_SIZE = 192;
   var VISION = 7;
+  var NIGHT_VISION = 3;
+  var FIRE_VISION = 8;
   var TICK = 1 / 20;
   var DAY_LENGTH = 240;
   var START_TIME = DAY_LENGTH * 0.25;
@@ -210,6 +215,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       // 1 = gốc cây
       this.nodes = /* @__PURE__ */ new Map();
       this.start = { x: MAP_SIZE >> 1, y: MAP_SIZE >> 1 };
+      this.season = "spring";
       const N2 = this.size;
       for (let y = 0; y < N2; y++) {
         for (let x = 0; x < N2; x++) {
@@ -290,7 +296,24 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       this.tiles[idx] = Tile.Grass;
       if (n.kind === "tree") this.decor[idx] = 1;
     }
+    /** Winter: bushes go bare and stop regrowing. Spring: they flower and fruit again after 1–3 min (staggered per tile). */
+    setSeason(season) {
+      const prev = this.season;
+      this.season = season;
+      if (season === prev) return;
+      for (const [idx, n] of this.nodes) {
+        if (n.kind !== "bush") continue;
+        if (season === "winter") {
+          n.amount = 0;
+          n.regrow = 0;
+        } else if (prev === "winter") {
+          n.amount = 0;
+          n.regrow = 60 + 120 * hash2(idx % this.size, idx / this.size | 0, this.seed + 29);
+        }
+      }
+    }
     tick(dt) {
+      if (this.season === "winter") return;
       for (const n of this.nodes.values()) {
         if (n.kind === "bush" && n.amount === 0 && n.regrow > 0) {
           n.regrow -= dt;
@@ -2218,6 +2241,23 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     return [c, c.getContext("2d")];
   }
   var seeds = (n) => Array.from({ length: n }, (_, i) => i * 7 + 3);
+  function tint(p, color) {
+    const frames = p.frames.map((f) => {
+      const [c, g] = canvas(f.width, f.height);
+      g.drawImage(f, 0, 0);
+      g.globalCompositeOperation = "source-atop";
+      g.fillStyle = color;
+      g.fillRect(0, 0, f.width, f.height);
+      return c;
+    });
+    return { ...p, frames };
+  }
+  var SEASON_TINT = {
+    spring: null,
+    summer: ["rgba(120,150,20,.12)", "rgba(60,90,20,.08)", "rgba(120,150,20,.1)"],
+    autumn: ["rgba(214,118,28,.52)", "rgba(150,110,40,.18)", "rgba(190,110,40,.35)"],
+    winter: ["rgba(196,186,170,.6)", "rgba(240,246,255,.45)", "rgba(236,240,248,.5)"]
+  };
   var Sprites = class {
     constructor() {
       this.vcache = /* @__PURE__ */ new Map();
@@ -2233,10 +2273,28 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       /** Kho theo giai đoạn xây 0..4 (4 = xong). */
       this.storage = [0, 1, 2, 3, 4].map((st) => make(storage_default, 5, { st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) }));
       this.workshop = [0, 1, 2, 3, 4].map((st) => make(workshop_default, 9, { st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) }));
+      this.seasonal = /* @__PURE__ */ new Map();
       /** Biểu tượng công cụ 16×16, khóa dạng "axe1" (gỗ) hoặc "axe2" (đá). */
       this.icons = {};
       const defs = { axe: tool_axe_default, pick: tool_pick_default, hoe: tool_hoe_default, shovel: tool_shovel_default };
       for (const k of Object.keys(defs)) for (const tier of [1, 2]) this.icons[`${k}${tier}`] = make(defs[k], 1, { stone: tier === 2 ? 1 : 0 }).frames[0];
+    }
+    /** Seasonal trees: orange in autumn; in winter round trees turn grey, pines get frosted. */
+    treesIn(season) {
+      const t = SEASON_TINT[season];
+      return t ? this.cached(`tree|${season}`, () => this.trees.map((p, i) => tint(p, i < 4 ? t[0] : t[1]))) : this.trees;
+    }
+    bushIn(season, empty) {
+      const t = SEASON_TINT[season], base2 = empty ? this.bushEmpty : this.bush;
+      return t ? this.cached(`bush|${season}|${empty}`, () => base2.map((p) => tint(p, t[2]))) : base2;
+    }
+    cached(key, make2) {
+      let v = this.seasonal.get(key);
+      if (!v) {
+        v = make2();
+        this.seasonal.set(key, v);
+      }
+      return v;
     }
     villager(v) {
       const name = v.anim in anims ? v.anim : "idle";
@@ -2258,6 +2316,21 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   // src/render/renderer.ts
   var FOG_RGB = [8, 10, 20];
+  var GROUND_TINT = {
+    spring: null,
+    summer: "rgba(255,214,110,.07)",
+    autumn: "rgba(196,128,40,.16)",
+    winter: "rgba(236,242,250,.52)"
+  };
+  var WEATHER_FX = {
+    clear: { rain: 0, snow: 0, dim: 0, wind: 0, flash: 0 },
+    mist: { rain: 0, snow: 0, dim: 0, wind: 0, flash: 0 },
+    drizzle: { rain: 90, snow: 0, dim: 0.06, wind: 0.15, flash: 0 },
+    rain: { rain: 240, snow: 0, dim: 0.14, wind: 0.2, flash: 0 },
+    thunder: { rain: 200, snow: 0, dim: 0.22, wind: 0.25, flash: 0.4 },
+    storm: { rain: 320, snow: 0, dim: 0.26, wind: 0.6, flash: 0.15 },
+    snow: { rain: 0, snow: 170, dim: 0.04, wind: 0.1, flash: 0 }
+  };
   var Renderer = class {
     constructor(canvas2, sim2, cam2, sprites2) {
       this.canvas = canvas2;
@@ -2319,6 +2392,59 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       const st = b.done ? 4 : Math.min(3, Math.floor(b.progress * 4));
       return b.kind === "workshop" ? this.sprites.workshop[st] : this.sprites.storage[st];
     }
+    /** Rain, snow, mist, lightning in screen space; particle positions derive from time, so no state is kept. */
+    drawWeather(time) {
+      const { ctx, w, h } = this, kind = this.sim.weather, fx = WEATHER_FX[kind];
+      if (kind === "mist") {
+        ctx.fillStyle = "rgba(214,220,228,.24)";
+        ctx.fillRect(0, 0, w, h);
+        for (let b = 0; b < 3; b++) {
+          const y = (hash2(b, 1, 77) * h + time * (6 + b * 3)) % (h + 200) - 100, g = ctx.createLinearGradient(0, y - 80, 0, y + 80);
+          g.addColorStop(0, "rgba(225,230,236,0)");
+          g.addColorStop(0.5, "rgba(225,230,236,.22)");
+          g.addColorStop(1, "rgba(225,230,236,0)");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, y - 80, w, 160);
+        }
+        return;
+      }
+      if (fx.dim > 0) {
+        ctx.fillStyle = `rgba(16,22,38,${fx.dim})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+      const area = w * h / 7e5;
+      if (fx.rain) {
+        const n = Math.round(fx.rain * area), len = kind === "drizzle" ? 8 : 15, sx = fx.wind * len, sy = len;
+        ctx.strokeStyle = kind === "drizzle" ? "rgba(200,215,235,.35)" : "rgba(200,215,235,.5)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const sp = 650 + hash2(i, 3, 41) * 300;
+          const y = (hash2(i, 1, 41) * (h + 40) + time * sp) % (h + 40) - 20;
+          const x = ((hash2(i, 2, 41) * (w + 80) + time * sp * fx.wind) % (w + 80) + (w + 80)) % (w + 80) - 40;
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - sx, y - sy);
+        }
+        ctx.stroke();
+      }
+      if (fx.snow) {
+        const n = Math.round(fx.snow * area);
+        ctx.fillStyle = "rgba(250,252,255,.85)";
+        for (let i = 0; i < n; i++) {
+          const sp = 30 + hash2(i, 3, 43) * 40, r = 1 + hash2(i, 4, 43) * 1.6;
+          const y = (hash2(i, 1, 43) * (h + 20) + time * sp) % (h + 20) - 10;
+          const x = ((hash2(i, 2, 43) * w + Math.sin(time * 0.8 + i) * 12 + time * 20 * fx.wind) % w + w) % w;
+          ctx.fillRect(x, y, r, r);
+        }
+      }
+      if (fx.flash) {
+        const slot = Math.floor(time / 3), f = time / 3 - slot;
+        if (hash2(slot, 7, 91) < fx.flash && f < 0.13) {
+          ctx.fillStyle = `rgba(235,240,255,${(0.55 * (1 - f / 0.13)).toFixed(3)})`;
+          ctx.fillRect(0, 0, w, h);
+        }
+      }
+    }
     draw(time, selected, box, markers, ghost = null) {
       const { ctx, cam: cam2, sim: sim2 } = this, z = cam2.zoom, world = sim2.world, N2 = world.size, sp = this.sprites;
       ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -2345,6 +2471,12 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         if (!world.decor[j * N2 + i]) continue;
         this.prop(sp.stump[Math.floor(hash2(i, j, 31) * sp.stump.length)], i * TILE + 16, j * TILE + 26, time);
       }
+      const season = sim2.season, ground = GROUND_TINT[season];
+      if (ground) {
+        ctx.fillStyle = ground;
+        ctx.fillRect(px(i0), py(j0), (i1 - i0 + 1) * ts, (j1 - j0 + 1) * ts);
+      }
+      const trees = sp.treesIn(season);
       const list = [];
       for (let j = j0; j <= Math.min(N2 - 1, j1 + 2); j++) {
         for (let i = Math.max(0, i0 - 1); i <= Math.min(N2 - 1, i1 + 1); i++) {
@@ -2364,13 +2496,13 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       list.sort((a, b) => a.y - b.y);
       for (const d of list) {
         if (d.kind === "tree") {
-          const p = sp.trees[Math.floor(hash2(d.i, d.j, 21) * sp.trees.length)];
+          const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
           this.prop(p, d.i * TILE + 16, d.y, time);
         } else if (d.kind === "rock") {
           this.prop(sp.rocks[Math.floor(hash2(d.i, d.j, 22) * sp.rocks.length)], d.i * TILE + 16, d.y, time);
         } else if (d.kind === "bush") {
           const n = world.nodeAt(d.i, d.j), k = Math.floor(hash2(d.i, d.j, 23) * sp.bush.length);
-          this.prop((n && n.amount === 0 ? sp.bushEmpty : sp.bush)[k], d.i * TILE + 16, d.y, time);
+          this.prop(sp.bushIn(season, !!n && n.amount === 0)[k], d.i * TILE + 16, d.y, time);
         } else if (d.kind === "building" && d.b) {
           const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
           this.prop(this.buildingProp(b), ax, ay, time);
@@ -2383,10 +2515,20 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
           }
         } else if (d.v) {
           const s = sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
-          ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
+          if (d.v.phase === "sleep") {
+            ctx.save();
+            ctx.translate(Math.round((fx + 16 - cx) * z), Math.round((fy - 2 - cy) * z));
+            ctx.rotate(-Math.PI / 2);
+            ctx.drawImage(s, -SPRITE_FEET.x * z, -SPRITE_FEET.y * z, s.width * z, s.height * z);
+            ctx.restore();
+          } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
         }
       }
       const dark = sim2.darkness;
+      if (dark > 0.01 && dark < 0.99) {
+        ctx.fillStyle = `rgba(255,128,60,${(0.16 * Math.sin(Math.PI * dark)).toFixed(3)})`;
+        ctx.fillRect(0, 0, this.w, this.h);
+      }
       if (dark > 0.01) {
         ctx.fillStyle = `rgba(14,20,56,${(0.46 * dark).toFixed(3)})`;
         ctx.fillRect(0, 0, this.w, this.h);
@@ -2407,6 +2549,15 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       ctx.imageSmoothingEnabled = true;
       ctx.drawImage(this.fogCanvas, fi0, fj0, fi1 - fi0, fj1 - fj0, px(fi0), py(fj0), (fi1 - fi0) * ts, (fj1 - fj0) * ts);
       ctx.imageSmoothingEnabled = false;
+      this.drawWeather(time);
+      ctx.font = `700 ${Math.max(10, 5 * z)}px system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      for (const v of sim2.villagers) {
+        if (v.phase !== "sleep") continue;
+        const p = this.worldToScreen(v.x * TILE - 10, v.y * TILE - 14), k = (time * 0.6 + v.id * 0.37) % 1;
+        ctx.fillStyle = `rgba(235,240,255,${(0.9 * (1 - k)).toFixed(2)})`;
+        ctx.fillText("z", p.x + k * 6 * z, p.y - k * 10 * z);
+      }
       if (ghost) {
         const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
         this.prop(ghost.kind === "workshop" ? sp.workshop[4] : sp.storage[4], ax, ay, time, 0.6);
@@ -2448,6 +2599,77 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     }
   };
 
+  // src/data/seasons.json
+  var seasons_default = {
+    spring: { name: "Xu\xE2n", daylight: 0.5, gather: 0.8, enter: "M\xF9a xu\xE2n \u0111\u1EBFn: b\u1EE5i c\xE2y ra hoa, v\xE0i h\xF4m n\u1EEFa s\u1EBD c\xF3 qu\u1EA3. Hay m\u01B0a." },
+    summer: { name: "H\u1EA1", daylight: 0.6, gather: 1.2, enter: "M\xF9a h\u1EA1: ng\xE0y d\xE0i h\u01A1n, qu\u1EA3 ch\xEDn nhi\u1EC1u. Coi ch\u1EEBng gi\xF4ng s\xE9t." },
+    autumn: { name: "Thu", daylight: 0.5, gather: 1.4, enter: "M\xF9a thu: qu\u1EA3 nhi\u1EC1u nh\u1EA5t n\u0103m. M\xF9a \u0111\xF4ng s\u1EAFp t\u1EDBi, h\xE3y chu\u1EA9n b\u1ECB." },
+    winter: { name: "\u0110\xF4ng", daylight: 0.4, gather: 0, enter: "M\xF9a \u0111\xF4ng: b\u1EE5i qu\u1EA3 tr\u1EE5i h\u1EBFt, ng\xE0y ng\u1EAFn l\u1EA1i. S\u1ED1ng b\u1EB1ng th\u1EE9c \u0103n \u0111\xE3 t\xEDch tr\u1EEF." }
+  };
+
+  // src/data/weather.json
+  var weather_default = {
+    types: {
+      clear: { name: "N\u1EAFng", vision: 0, speed: 1, signal: "" },
+      mist: { name: "S\u01B0\u01A1ng m\u1ECFng", vision: 2, speed: 1, signal: "H\u01A1i n\u01B0\u1EDBc b\u1ED1c l\xEAn t\u1EEB \u0111\u1EA5t, s\xE1ng mai c\xF3 l\u1EBD s\u1EBD c\xF3 s\u01B0\u01A1ng." },
+      drizzle: { name: "M\u01B0a nh\u1EB9", vision: 0, speed: 0.9, signal: "M\xE2y x\xE1m k\xE9o t\u1EDBi, c\xF3 l\u1EBD ng\xE0y mai m\u01B0a." },
+      rain: { name: "M\u01B0a to", vision: 1, speed: 0.75, signal: "Tr\u1EDDi t\u1ED1i s\u1EA7m, gi\xF3 \u1EA9m n\u1ED5i l\xEAn: ng\xE0y mai m\u01B0a to." },
+      thunder: { name: "Gi\xF4ng s\xE9t", vision: 3, speed: 0.85, signal: "Kh\xF4ng kh\xED oi n\u1ED3ng, m\xE2y d\u1EF1ng th\xE0nh th\xE1p: s\u1EAFp c\xF3 gi\xF4ng." },
+      storm: { name: "B\xE3o", vision: 4, speed: 0.7, signal: "Gi\xF3 gi\u1EADt m\u1EA1nh, chim bay t\xE1n lo\u1EA1n: b\xE3o \u0111ang t\u1EDBi." },
+      snow: { name: "Tuy\u1EBFt", vision: 1, speed: 0.75, signal: "Gi\xF3 l\u1EA1nh bu\u1ED1t th\u1ED5i v\u1EC1, c\xF3 l\u1EBD s\u1EAFp c\xF3 tuy\u1EBFt." }
+    },
+    chance: {
+      spring: { clear: 0.45, mist: 0.15, drizzle: 0.25, rain: 0.15 },
+      summer: { clear: 0.6, rain: 0.15, thunder: 0.15, storm: 0.1 },
+      autumn: { clear: 0.45, mist: 0.2, drizzle: 0.2, storm: 0.15 },
+      winter: { clear: 0.5, mist: 0.1, snow: 0.4 }
+    }
+  };
+
+  // src/sim/calendar.ts
+  var SEASONS = ["spring", "summer", "autumn", "winter"];
+  var SEASON_DAYS = 5;
+  var YEAR_DAYS = SEASON_DAYS * SEASONS.length;
+  var SEASON_DEF = seasons_default;
+  var WEATHER = weather_default.types;
+  var CHANCE = weather_default.chance;
+  var DAY_PART_NAME = { dawn: "b\xECnh minh", day: "ban ng\xE0y", dusk: "ho\xE0ng h\xF4n", night: "\u0111\xEAm" };
+  var TWILIGHT = 0.125;
+  var seasonOf = (day) => SEASONS[Math.floor((day - 1) / SEASON_DAYS) % SEASONS.length];
+  var dayInSeason = (day) => (day - 1) % SEASON_DAYS + 1;
+  var yearOf = (day) => Math.floor((day - 1) / YEAR_DAYS) + 1;
+  function sunTimes(season) {
+    const d = SEASON_DEF[season].daylight;
+    return { rise: 0.5 - d / 2, set: 0.5 + d / 2 };
+  }
+  function lightAt(tod, season) {
+    const { rise, set } = sunTimes(season);
+    if (tod >= rise && tod <= set) return 1;
+    if (tod > set) return Math.max(0, 1 - (tod - set) / TWILIGHT);
+    return Math.max(0, 1 - (rise - tod) / TWILIGHT);
+  }
+  function dayPart(tod, season) {
+    const { rise, set } = sunTimes(season);
+    if (tod >= rise && tod <= set) return "day";
+    if (tod > set && tod < set + TWILIGHT) return "dusk";
+    if (tod < rise && tod > rise - TWILIGHT) return "dawn";
+    return "night";
+  }
+  function isRestTime(tod, season) {
+    const { rise, set } = sunTimes(season);
+    return tod > set + TWILIGHT / 2 || tod < rise - TWILIGHT / 2;
+  }
+  function rollWeather(season, r) {
+    const table = CHANCE[season];
+    let acc = 0, last2 = "clear";
+    for (const k of Object.keys(table)) {
+      acc += table[k] ?? 0;
+      last2 = k;
+      if (r < acc) return k;
+    }
+    return last2;
+  }
+
   // src/sim/jobs.ts
   var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", int: "Tr\xED tu\u1EC7", sta: "Th\u1EC3 l\u1EF1c" };
   var JOBS = {
@@ -2467,6 +2689,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   var emptyStock = () => ({ wood: 0, stone: 0, food: 0 });
   var CARRY_CAP = { wood: 4, stone: 4, food: 10 };
   var FOOD_NUTRITION = 25;
+  var FOOD_SPOIL_DAYS = 3;
 
   // src/sim/tools.ts
   var TOOL_KINDS = ["axe", "pick", "hoe", "shovel"];
@@ -2499,12 +2722,12 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       this.version = 0;
       this.state = new Uint8Array(world.size * world.size);
     }
-    update(sources, radius) {
+    /** Each source has its own sight radius `r` (tiles). */
+    update(sources) {
       const N2 = this.world.size, s = this.state;
       for (let i = 0; i < s.length; i++) if (s[i] === 2) s[i] = 1;
-      const r2 = radius * radius + 0.5;
       for (const p of sources) {
-        const cx = Math.floor(p.x), cy = Math.floor(p.y);
+        const cx = Math.floor(p.x), cy = Math.floor(p.y), radius = p.r, r2 = radius * radius + 0.5;
         for (let y = Math.max(0, cy - radius); y <= Math.min(N2 - 1, cy + radius); y++) {
           for (let x = Math.max(0, cx - radius); x <= Math.min(N2 - 1, cx + radius); x++) {
             if ((x - cx) ** 2 + (y - cy) ** 2 <= r2) s[y * N2 + x] = 2;
@@ -2647,9 +2870,22 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       this.nextBid = 1;
       this.lastFullWarn = -999;
       this.lastMatWarn = -999;
+      /** Today's and tomorrow's weather (tomorrow is rolled ahead so it can be foretold). */
+      this.weather = "clear";
+      this.nextWeather = "clear";
+      this.lastDay = 1;
+      this.signalled = false;
+      this.resting = false;
+      this.lastVision = -1;
+      /** Stored food split into lots, oldest eaten first; each lot has an expiry time. */
+      this.foodLots = [];
       this.world = new World(seed2);
       this.fog = new Fog(this.world);
       this.rnd = mulberry32(seed2 ^ 2654435769);
+      this.wrnd = mulberry32(seed2 ^ 1540483477);
+      this.world.setSeason(this.season);
+      this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
+      this.resting = isRestTime(this.tod, this.season);
       const s = this.world.start;
       this.addBuilding("campfire", s.x - 1, s.y - 2, true);
       this.stock.food = 24;
@@ -2666,11 +2902,36 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     get tod() {
       return this.time % DAY_LENGTH / DAY_LENGTH;
     }
+    get season() {
+      return seasonOf(this.day);
+    }
+    /** Light 0..1 from time of day and the season's day length. */
+    get light() {
+      return lightAt(this.tod, this.season);
+    }
     /** Độ tối ban đêm 0..1 (dùng để phủ màu). */
     get darkness() {
-      let a = Math.abs(this.tod - 0.45);
-      a = Math.min(a, 1 - a) * 2;
-      return Math.max(0, Math.min(1, (a - 0.62) / 0.38));
+      return 1 - this.light;
+    }
+    get part() {
+      return dayPart(this.tod, this.season);
+    }
+    /** Rest hours: mid-dusk to mid-dawn. */
+    get restTime() {
+      return this.resting;
+    }
+    /** Villager sight: 7 tiles by day, 3 at night, minus the weather penalty. */
+    visionRadius() {
+      return Math.max(1, Math.round(NIGHT_VISION + (VISION - NIGHT_VISION) * this.light) - WEATHER[this.weather].vision);
+    }
+    fireRadius() {
+      return Math.max(1, FIRE_VISION - WEATHER[this.weather].vision);
+    }
+    /** Stored food that will spoil within the next `secs` seconds. */
+    foodSpoilingWithin(secs) {
+      let n = 0;
+      for (const l of this.foodLots) if (l.exp <= this.time + secs) n += l.amount;
+      return Math.min(n, this.stock.food);
     }
     get(id) {
       return this.byId.get(id);
@@ -2751,7 +3012,9 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         starving: false,
         anim: "idle",
         hold: null,
-        bad: /* @__PURE__ */ new Map()
+        bad: /* @__PURE__ */ new Map(),
+        bed: -1,
+        nightOwl: false
       };
       this.villagers.push(v);
       this.byId.set(v.id, v);
@@ -2825,6 +3088,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       v.progress = 0;
       v.timer = 0;
       v.target = -1;
+      v.bed = -1;
+      if (this.resting) v.nightOwl = true;
     }
     /** Lệnh đi: mỗi dân nhận một ô đích riêng quanh điểm chọn; dân thôi làm nghề. */
     orderMove(ids, tx, ty) {
@@ -2838,7 +3103,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         v.prefer = -1;
         if (!goal) continue;
         taken.add(goal[1] * this.world.size + goal[0]);
-        v.path = findPath(this.world, Math.floor(v.x), Math.floor(v.y), goal[0], goal[1]);
+        v.path = this.pathTo(v, goal[0], goal[1], 3e4);
         v.phase = v.path.length ? "move" : "idle";
       }
     }
@@ -2899,12 +3164,14 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     }
     // ---------------------------------------------------------------- vòng lặp
     refreshFog() {
-      const src = [...this.villagers];
+      const r = this.visionRadius(), fire = this.fireRadius();
+      this.lastVision = r;
+      const src = this.villagers.map((v) => ({ x: v.x, y: v.y, r }));
       for (const b of this.buildings) if (b.done) {
         const d = BUILDINGS[b.kind];
-        src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2 });
+        src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === "campfire" ? fire : r });
       }
-      this.fog.update(src, VISION);
+      this.fog.update(src);
       for (const v of this.villagers) {
         v.tx = Math.floor(v.x);
         v.ty = Math.floor(v.y);
@@ -2922,11 +3189,63 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     }
     tick(dt) {
       this.time += dt;
+      this.tickCalendar();
       this.world.tick(dt);
+      this.syncFood();
       for (const v of [...this.villagers]) this.tickVillager(v, dt);
+      if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
       if (this.fogDirty) {
         this.fogDirty = false;
         this.refreshFog();
+      }
+    }
+    /** New day: roll weather, maybe change season; at noon foretell tomorrow; track rest hours. */
+    tickCalendar() {
+      const day = this.day;
+      if (day !== this.lastDay) {
+        this.lastDay = day;
+        this.weather = this.nextWeather;
+        this.nextWeather = rollWeather(seasonOf(day + 1), this.wrnd());
+        this.signalled = false;
+        const season = seasonOf(day);
+        if (season !== this.world.season) {
+          this.world.setSeason(season);
+          this.say(SEASON_DEF[season].enter);
+        }
+        if (this.weather !== "clear") this.say(`H\xF4m nay: ${WEATHER[this.weather].name.toLowerCase()}.`);
+      }
+      if (!this.signalled && this.tod >= 0.5) {
+        this.signalled = true;
+        const sig = WEATHER[this.nextWeather].signal;
+        if (sig && this.nextWeather !== this.weather) this.say(sig);
+      }
+      const rest = isRestTime(this.tod, this.season);
+      if (this.resting && !rest) for (const v of this.villagers) v.nightOwl = false;
+      this.resting = rest;
+    }
+    /** Reconcile lots with the stock: gains open a new lot, losses come off the oldest; expired lots spoil. */
+    syncFood() {
+      const lots = this.foodLots, cur = this.stock.food;
+      let sum = 0;
+      for (const l of lots) sum += l.amount;
+      if (cur > sum) {
+        const exp = this.time + FOOD_SPOIL_DAYS * DAY_LENGTH, last2 = lots[lots.length - 1];
+        if (last2 && exp - last2.exp < 30) last2.amount += cur - sum;
+        else lots.push({ amount: cur - sum, exp });
+      } else if (cur < sum) {
+        let take = sum - cur;
+        while (take > 0 && lots.length) {
+          const l = lots[0], k = Math.min(l.amount, take);
+          l.amount -= k;
+          take -= k;
+          if (l.amount <= 0) lots.shift();
+        }
+      }
+      let spoiled = 0;
+      while (lots.length && lots[0].exp <= this.time) spoiled += lots.shift().amount;
+      if (spoiled > 0) {
+        this.stock.food = Math.max(0, this.stock.food - spoiled);
+        this.say(`${Math.round(spoiled)} th\u1EE9c \u0103n \u0111\u1EC3 qu\xE1 ${FOOD_SPOIL_DAYS} ng\xE0y \u0111\xE3 h\u1ECFng.`);
       }
     }
     tickVillager(v, dt) {
@@ -2950,7 +3269,16 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         this.kill(v);
         return;
       }
-      let left = v.speed * dt;
+      if (this.resting) {
+        if (!v.nightOwl && v.phase !== "goHome" && v.phase !== "sleep") this.goHome(v);
+      } else if (v.phase === "goHome" || v.phase === "sleep") {
+        v.path = [];
+        v.slide = null;
+        v.phase = "idle";
+        v.bed = -1;
+      }
+      const walk = v.speed * WEATHER[this.weather].speed;
+      let left = walk * dt;
       while (left > 0 && v.path.length) {
         const [px, py] = v.path[0];
         const dx = px + 0.5 - v.x, dy = py + 0.5 - v.y, d = Math.hypot(dx, dy);
@@ -2967,7 +3295,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         if (d > 1e-6) v.facing = Math.abs(dx) > Math.abs(dy) * 1.1 ? dx > 0 ? "right" : "left" : dy > 0 ? "front" : "back";
       }
       if (!v.path.length && v.slide) {
-        const s = v.slide, dx = s.x - v.x, dy = s.y - v.y, d = Math.hypot(dx, dy), step = v.speed * 0.7 * dt;
+        const s = v.slide, dx = s.x - v.x, dy = s.y - v.y, d = Math.hypot(dx, dy), step = walk * 0.7 * dt;
         if (d <= step) {
           v.x = s.x;
           v.y = s.y;
@@ -3004,6 +3332,21 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       } else v.animClock += dt;
       v.hold = hold;
     }
+    /** Go sleep by the campfire: drop the current task (job kept), one spot per villager. */
+    goHome(v) {
+      const owl = v.nightOwl;
+      this.resetTask(v);
+      v.nightOwl = owl;
+      v.phase = "sleep";
+      const fire = this.buildings.find((b) => b.kind === "campfire");
+      if (!fire) return;
+      const d = BUILDINGS[fire.kind];
+      const taken = new Set(this.villagers.filter((o) => o !== v && o.bed >= 0).map((o) => o.bed));
+      const spot = this.nearestFree(fire.x + (d.w >> 1), fire.y + d.h, taken);
+      if (!spot || this.routeTo(v, [spot], 1) < 0) return;
+      v.bed = spot[1] * this.world.size + spot[0];
+      v.phase = "goHome";
+    }
     kill(v) {
       this.leaveNode(v);
       this.releaseOrder(v);
@@ -3015,7 +3358,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     // ---------------------------------------------------------------- việc làm
     workFactor(v, job) {
       const stat = v.stats[JOBS[job].stat];
-      return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * TIER_SPEED[this.toolTier(v, job)];
+      const season = job === "food" ? SEASON_DEF[this.season].gather : 1;
+      return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * TIER_SPEED[this.toolTier(v, job)] * season;
     }
     gainXp(v, job, dt) {
       const s = v.skill[job];
@@ -3151,6 +3495,20 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         }
         case "craft":
           this.doCraft(v, dt);
+          return;
+        case "goHome": {
+          const c = v.carry;
+          if (c) {
+            const moved = Math.min(Math.max(0, this.capacity(c.res) - this.stock[c.res]), c.amount);
+            this.stock[c.res] += moved;
+            c.amount -= moved;
+            if (c.amount <= 0) v.carry = null;
+          }
+          v.phase = "sleep";
+          v.facing = "front";
+          return;
+        }
+        case "sleep":
           return;
       }
     }
@@ -3323,18 +3681,38 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       out.sort((a, b) => cost(a) - cost(b));
       return out;
     }
+    /**
+     * Start tile for pathfinding. A work spot can overlap a blocked tile (a tree between two trees);
+     * then use the nearest free neighbour, since A* cannot leave a blocked tile without cutting corners.
+     */
+    standTile(v) {
+      const fx = Math.floor(v.x), fy = Math.floor(v.y);
+      if (!this.world.isBlocked(fx, fy)) return [fx, fy];
+      let best = [fx, fy], bd = Infinity;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const x = fx + dx, y = fy + dy;
+        if (this.world.isBlocked(x, y)) continue;
+        const d = Math.hypot(x + 0.5 - v.x, y + 0.5 - v.y);
+        if (d < bd) {
+          bd = d;
+          best = [x, y];
+        }
+      }
+      return best;
+    }
+    /** Path from where the villager stands to (gx, gy); may end at the closest tile if unreachable. */
+    pathTo(v, gx, gy, maxNodes = 14e3) {
+      const [sx, sy] = this.standTile(v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
+      const p = gx === sx && gy === sy ? [] : findPath(this.world, sx, sy, gx, gy, maxNodes);
+      return off ? [[sx, sy], ...p] : p;
+    }
     /** Thử đi tới một trong các ô; trả về chỉ số ô đã có đường tới (hoặc -1). */
     routeTo(v, tiles, tries = 3) {
-      const sx = Math.floor(v.x), sy = Math.floor(v.y);
+      const [sx, sy] = this.standTile(v);
       for (let k = 0; k < Math.min(tries, tiles.length); k++) {
         const [gx, gy] = tiles[k];
-        if (gx === sx && gy === sy) {
-          v.path = [];
-          return k;
-        }
-        const p = findPath(this.world, sx, sy, gx, gy, 14e3);
-        const last2 = p[p.length - 1];
-        if (last2 && last2[0] === gx && last2[1] === gy) {
+        const p = this.pathTo(v, gx, gy), last2 = p[p.length - 1];
+        if (gx === sx && gy === sy || last2 && last2[0] === gx && last2[1] === gy) {
           v.path = p;
           return k;
         }
@@ -3914,6 +4292,12 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       case "wait":
         t = "ch\u1EDD vi\u1EC7c";
         break;
+      case "goHome":
+        t = "v\u1EC1 l\u1EEDa tr\u1EA1i ng\u1EE7";
+        break;
+      case "sleep":
+        t = "\u0111ang ng\u1EE7";
+        break;
       default:
         t = v.job === "idle" ? "r\u1EA3nh" : "ch\u1EDD vi\u1EC7c";
     }
@@ -3929,20 +4313,25 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   var chipsKey = "";
   var statsKey = "";
   var logKey = "";
-  function setRes(id, val, cap) {
+  function setRes(id, val, cap, note = "") {
     const el = $(id);
     el.querySelector("b").textContent = String(Math.floor(val));
-    el.querySelector("small").textContent = `/${cap}`;
+    el.querySelector("small").textContent = `/${cap}${note}`;
     el.classList.toggle("full", val >= cap);
   }
   function updateHud(now) {
     if (now - lastHud < 150) return;
     lastHud = now;
-    setRes("rFood", sim.stock.food, sim.capacity());
+    const spoil = Math.floor(sim.foodSpoilingWithin(DAY_LENGTH));
+    setRes("rFood", sim.stock.food, sim.capacity(), spoil > 0 ? ` \xB7 ${spoil} s\u1EAFp h\u1ECFng` : "");
+    $("rFood").classList.toggle("warn", spoil > 0);
+    $("rFood").title = `Qu\u1EA3 h\u1ECFng sau 3 ng\xE0y n\u1EBFu ch\u01B0a \u0103n; d\xE2n \u0103n l\u1EE9a c\u0169 tr\u01B0\u1EDBc.${spoil > 0 ? ` ${spoil} th\u1EE9c \u0103n s\u1EBD h\u1ECFng trong 1 ng\xE0y t\u1EDBi.` : ""}`;
     setRes("rWood", sim.stock.wood, sim.capacity());
     setRes("rStone", sim.stock.stone, sim.capacity());
-    const t = sim.tod, part = t < 0.2 ? "\u0111\xEAm" : t < 0.35 ? "b\xECnh minh" : t < 0.65 ? "ban ng\xE0y" : t < 0.8 ? "ho\xE0ng h\xF4n" : "\u0111\xEAm";
-    clock.textContent = `Ng\xE0y ${sim.day} \xB7 ${part}`;
+    const se = SEASON_DEF[sim.season], we = WEATHER[sim.weather], year = yearOf(sim.day);
+    clock.textContent = `${year > 1 ? `N\u0103m ${year} \xB7 ` : ""}Ng\xE0y ${sim.day} \xB7 ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} \xB7 ${DAY_PART_NAME[sim.part]} \xB7 ${we.name}`;
+    const eff = [we.vision ? `t\u1EA7m nh\xECn \u2212${we.vision} \xF4` : "", we.speed < 1 ? `\u0111i ch\u1EADm ${Math.round((1 - we.speed) * 100)}%` : ""].filter(Boolean).join(", ");
+    clock.title = `${we.name}${eff ? `: ${eff}` : ""}. H\xE1i l\u01B0\u1EE3m m\xF9a ${se.name.toLowerCase()} \xD7${se.gather.toLocaleString("vi")}. D\xE2n ng\u1EE7 t\u1EEB gi\u1EEFa ho\xE0ng h\xF4n t\u1EDBi gi\u1EEFa b\xECnh minh.`;
     const explored = sim.fog.countExplored(), pct = (explored / (N * N) * 100).toFixed(1);
     info.textContent = `D\xE2n ${sim.villagers.length} \xB7 \u0111\xE3 ch\u1ECDn ${ctl.selected.size} \xB7 kh\xE1m ph\xE1 ${pct}% \xB7 1 ng\xE0y = ${DAY_LENGTH / 60} ph\xFAt \xB7 ${Math.round(fps)} fps`;
     const lines = sim.log.slice(-4), lk = lines.map((l) => l.text).join("|");
@@ -3987,8 +4376,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         $("cSkills").innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>c\u1EA5p ${v.skill[j].level}</b>`).join(" \xB7 ");
       }
       $("cTools").innerHTML = "C\xF4ng c\u1EE5: " + TOOL_KINDS.map((k) => {
-        const t2 = v.tools[k];
-        return `${TOOL_NAME[k]} <b>${t2 ? TIER_NAME[t2.tier].toLowerCase() + " " + Math.round(t2.dur / TIER_DURABILITY[t2.tier] * 100) + "%" : "\u2014"}</b>`;
+        const t = v.tools[k];
+        return `${TOOL_NAME[k]} <b>${t ? TIER_NAME[t.tier].toLowerCase() + " " + Math.round(t.dur / TIER_DURABILITY[t.tier] * 100) + "%" : "\u2014"}</b>`;
       }).join(" \xB7 ");
       jobBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((c) => c.job === b.dataset.job))));
     } else statsKey = "";

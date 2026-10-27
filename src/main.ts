@@ -1,6 +1,7 @@
 import { Renderer, Camera } from './render/renderer';
 import { Sprites } from './render/sprites';
 import { BUILDINGS, BuildingKind } from './sim/buildings';
+import { DAY_PART_NAME, dayInSeason, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
 import { DAY_LENGTH, TILE } from './sim/constants';
 import { Job, JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS } from './sim/jobs';
 import { RES_LIST, RES_NAME } from './sim/resources';
@@ -153,6 +154,8 @@ const PHASE_TEXT = (v: Villager): string => {
     case 'craft': t = 'đang chế tác'; break;
     case 'goEquip': t = 'đi lấy công cụ'; break;
     case 'wait': t = 'chờ việc'; break;
+    case 'goHome': t = 'về lửa trại ngủ'; break;
+    case 'sleep': t = 'đang ngủ'; break;
     default: t = v.job === 'idle' ? 'rảnh' : 'chờ việc';
   }
   return t + carry;
@@ -161,19 +164,25 @@ const info = $('info'), sel = $('sel'), card = $('card'), logBox = $('log');
 const clock = $('clock');
 let fps = 60, lastHud = 0, chipsKey = '', statsKey = '', logKey = '';
 
-function setRes(id: string, val: number, cap: number) {
+function setRes(id: string, val: number, cap: number, note = '') {
   const el = $(id);
   el.querySelector('b')!.textContent = String(Math.floor(val));
-  el.querySelector('small')!.textContent = `/${cap}`;
+  el.querySelector('small')!.textContent = `/${cap}${note}`;
   el.classList.toggle('full', val >= cap);
 }
 
 function updateHud(now: number) {
   if (now - lastHud < 150) return;
   lastHud = now;
-  setRes('rFood', sim.stock.food, sim.capacity()); setRes('rWood', sim.stock.wood, sim.capacity()); setRes('rStone', sim.stock.stone, sim.capacity());
-  const t = sim.tod, part = t < 0.2 ? 'đêm' : t < 0.35 ? 'bình minh' : t < 0.65 ? 'ban ngày' : t < 0.8 ? 'hoàng hôn' : 'đêm';
-  clock.textContent = `Ngày ${sim.day} · ${part}`;
+  const spoil = Math.floor(sim.foodSpoilingWithin(DAY_LENGTH));
+  setRes('rFood', sim.stock.food, sim.capacity(), spoil > 0 ? ` · ${spoil} sắp hỏng` : '');
+  $('rFood').classList.toggle('warn', spoil > 0);
+  $('rFood').title = `Quả hỏng sau 3 ngày nếu chưa ăn; dân ăn lứa cũ trước.${spoil > 0 ? ` ${spoil} thức ăn sẽ hỏng trong 1 ngày tới.` : ''}`;
+  setRes('rWood', sim.stock.wood, sim.capacity()); setRes('rStone', sim.stock.stone, sim.capacity());
+  const se = SEASON_DEF[sim.season], we = WEATHER[sim.weather], year = yearOf(sim.day);
+  clock.textContent = `${year > 1 ? `Năm ${year} · ` : ''}Ngày ${sim.day} · ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} · ${DAY_PART_NAME[sim.part]} · ${we.name}`;
+  const eff = [we.vision ? `tầm nhìn −${we.vision} ô` : '', we.speed < 1 ? `đi chậm ${Math.round((1 - we.speed) * 100)}%` : ''].filter(Boolean).join(', ');
+  clock.title = `${we.name}${eff ? `: ${eff}` : ''}. Hái lượm mùa ${se.name.toLowerCase()} ×${se.gather.toLocaleString('vi')}. Dân ngủ từ giữa hoàng hôn tới giữa bình minh.`;
   const explored = sim.fog.countExplored(), pct = ((explored / (N * N)) * 100).toFixed(1);
   info.textContent = `Dân ${sim.villagers.length} · đã chọn ${ctl.selected.size} · khám phá ${pct}% · 1 ngày = ${DAY_LENGTH / 60} phút · ${Math.round(fps)} fps`;
 

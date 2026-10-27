@@ -8,3 +8,5 @@ export const emptyStock = (): Stock => ({ wood: 0, stone: 0, food: 0 });
 export const CARRY_CAP: Record<Res, number> = { wood: 4, stone: 4, food: 10 };
 /** Mỗi đơn vị thức ăn hồi bao nhiêu điểm no (thang 0–100). */
 export const FOOD_NUTRITION = 25;
+/** Game days before stored fruit spoils. */
+export const FOOD_SPOIL_DAYS = 3;

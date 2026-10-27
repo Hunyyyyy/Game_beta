@@ -1,16 +1,17 @@
-import { DAY_LENGTH, START_TIME, TICK, VISION } from './constants';
+import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, SEASON_DEF, WEATHER, WeatherKind } from './calendar';
+import { DAY_LENGTH, FIRE_VISION, NIGHT_VISION, START_TIME, TICK, VISION } from './constants';
 import { Building, BuildingKind, BUILDINGS } from './buildings';
 import { Fog } from './fog';
 import { Job, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, Stats, WorkJob, WORK_JOBS, XP_LEVELS } from './jobs';
 import { findPath, Step } from './path';
-import { CARRY_CAP, emptyStock, FOOD_NUTRITION, Res, RES_NAME, Stock } from './resources';
+import { CARRY_CAP, emptyStock, FOOD_NUTRITION, FOOD_SPOIL_DAYS, Res, RES_NAME, Stock } from './resources';
 import { mulberry32 } from './rng';
 import { emptyToolSet, Recipe, RECIPE_BY_ID, recipeName, TIER_DURABILITY, TIER_NAME, TIER_SPEED, TIER_YIELD, Tool, ToolKind, ToolSet, TOOL_NAME, TOOL_OF_JOB } from './tools';
 import { World } from './world';
 
 export type Sex = 'm' | 'f';
 export type Facing = 'front' | 'back' | 'right' | 'left';
-export type Phase = 'idle' | 'move' | 'goNode' | 'work' | 'goStore' | 'wait' | 'goSite' | 'build' | 'goShop' | 'craft' | 'goEquip';
+export type Phase = 'idle' | 'move' | 'goNode' | 'work' | 'goStore' | 'wait' | 'goSite' | 'build' | 'goShop' | 'craft' | 'goEquip' | 'goHome' | 'sleep';
 export interface Look { sex: Sex; skin: string; hair: string; hide: string; pants: string }
 export interface Skill { xp: number; level: number }
 export interface LogLine { t: number; text: string }
@@ -55,6 +56,9 @@ export interface Villager {
   anim: string;
   hold: Hold | null;
   bad: Map<number, number>; // nguồn không tới được -> hết hạn
+  bed: number;      // reserved sleeping tile by the campfire (-1 if none)
+  /** Ordered by the player during rest hours: stays awake until morning. */
+  nightOwl: boolean;
 }
 
 const NAMES_M = ['Bo', 'Rô', 'Gia', 'Mun', 'Lô', 'Tù', 'Đa'];
@@ -93,11 +97,25 @@ export class Sim {
   private readonly rnd: () => number;
   private lastFullWarn = -999;
   private lastMatWarn = -999;
+  /** Today's and tomorrow's weather (tomorrow is rolled ahead so it can be foretold). */
+  weather: WeatherKind = 'clear';
+  nextWeather: WeatherKind = 'clear';
+  private readonly wrnd: () => number;
+  private lastDay = 1;
+  private signalled = false;
+  private resting = false;
+  private lastVision = -1;
+  /** Stored food split into lots, oldest eaten first; each lot has an expiry time. */
+  private readonly foodLots: Array<{ amount: number; exp: number }> = [];
 
   constructor(readonly seed = 1337) {
     this.world = new World(seed);
     this.fog = new Fog(this.world);
     this.rnd = mulberry32(seed ^ 0x9e3779b9);
+    this.wrnd = mulberry32(seed ^ 0x5bd1e995);
+    this.world.setSeason(this.season);
+    this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
+    this.resting = isRestTime(this.tod, this.season);
     const s = this.world.start;
     this.addBuilding('campfire', s.x - 1, s.y - 2, true);
     this.stock.food = 24;
@@ -111,10 +129,24 @@ export class Sim {
   get day(): number { return Math.floor(this.time / DAY_LENGTH) + 1; }
   /** 0..1 trong ngày: 0 = nửa đêm trước bình minh, 0.5 = giữa trưa. */
   get tod(): number { return (this.time % DAY_LENGTH) / DAY_LENGTH; }
+  get season(): Season { return seasonOf(this.day); }
+  /** Light 0..1 from time of day and the season's day length. */
+  get light(): number { return lightAt(this.tod, this.season); }
   /** Độ tối ban đêm 0..1 (dùng để phủ màu). */
-  get darkness(): number {
-    let a = Math.abs(this.tod - 0.45); a = Math.min(a, 1 - a) * 2;
-    return Math.max(0, Math.min(1, (a - 0.62) / 0.38));
+  get darkness(): number { return 1 - this.light; }
+  get part(): DayPart { return dayPart(this.tod, this.season); }
+  /** Rest hours: mid-dusk to mid-dawn. */
+  get restTime(): boolean { return this.resting; }
+  /** Villager sight: 7 tiles by day, 3 at night, minus the weather penalty. */
+  visionRadius(): number {
+    return Math.max(1, Math.round(NIGHT_VISION + (VISION - NIGHT_VISION) * this.light) - WEATHER[this.weather].vision);
+  }
+  fireRadius(): number { return Math.max(1, FIRE_VISION - WEATHER[this.weather].vision); }
+  /** Stored food that will spoil within the next `secs` seconds. */
+  foodSpoilingWithin(secs: number): number {
+    let n = 0;
+    for (const l of this.foodLots) if (l.exp <= this.time + secs) n += l.amount;
+    return Math.min(n, this.stock.food);
   }
   get(id: number): Villager | undefined { return this.byId.get(id); }
   say(text: string): void { this.log.push({ t: this.time, text }); if (this.log.length > 40) this.log.shift(); }
@@ -158,7 +190,7 @@ export class Sim {
       look: { sex, skin: pick(SKIN), hair: pick(HAIR), hide: '#8b6a45', pants: '#3f63a8' },
       x: x + 0.5, y: y + 0.5, path: [], slide: null, facing: 'front', speed: 1.6 + 0.1 * stats.agi, animClock: 0, tx: -1, ty: -1,
       stats, potential, skill, tools: emptyToolSet(), job: 'idle', phase: 'idle', slot: 0, target: -1, prefer: -1, progress: 0, frac: 0, timer: 0, order: null,
-      carry: null, fullness: 100, health: 100, starving: false, anim: 'idle', hold: null, bad: new Map(),
+      carry: null, fullness: 100, health: 100, starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, nightOwl: false,
     };
     this.villagers.push(v); this.byId.set(v.id, v);
     return v;
@@ -229,7 +261,8 @@ export class Sim {
   // ---------------------------------------------------------------- lệnh
   private resetTask(v: Villager): void {
     this.leaveNode(v); this.releaseOrder(v);
-    v.path = []; v.slide = null; v.phase = 'idle'; v.progress = 0; v.timer = 0; v.target = -1;
+    v.path = []; v.slide = null; v.phase = 'idle'; v.progress = 0; v.timer = 0; v.target = -1; v.bed = -1;
+    if (this.resting) v.nightOwl = true;
   }
 
   /** Lệnh đi: mỗi dân nhận một ô đích riêng quanh điểm chọn; dân thôi làm nghề. */
@@ -242,7 +275,7 @@ export class Sim {
       this.resetTask(v); v.job = 'idle'; v.prefer = -1;
       if (!goal) continue;
       taken.add(goal[1] * this.world.size + goal[0]);
-      v.path = findPath(this.world, Math.floor(v.x), Math.floor(v.y), goal[0], goal[1]);
+      v.path = this.pathTo(v, goal[0], goal[1], 30000);
       v.phase = v.path.length ? 'move' : 'idle';
     }
   }
@@ -291,9 +324,11 @@ export class Sim {
 
   // ---------------------------------------------------------------- vòng lặp
   private refreshFog(): void {
-    const src: Array<{ x: number; y: number }> = [...this.villagers];
-    for (const b of this.buildings) if (b.done) { const d = BUILDINGS[b.kind]; src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2 }); }
-    this.fog.update(src, VISION);
+    const r = this.visionRadius(), fire = this.fireRadius();
+    this.lastVision = r;
+    const src = this.villagers.map((v) => ({ x: v.x, y: v.y, r }));
+    for (const b of this.buildings) if (b.done) { const d = BUILDINGS[b.kind]; src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === 'campfire' ? fire : r }); }
+    this.fog.update(src);
     for (const v of this.villagers) { v.tx = Math.floor(v.x); v.ty = Math.floor(v.y); }
   }
 
@@ -307,9 +342,58 @@ export class Sim {
 
   private tick(dt: number): void {
     this.time += dt;
+    this.tickCalendar();
     this.world.tick(dt);
+    this.syncFood();
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
+    if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
     if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
+  }
+
+  /** New day: roll weather, maybe change season; at noon foretell tomorrow; track rest hours. */
+  private tickCalendar(): void {
+    const day = this.day;
+    if (day !== this.lastDay) {
+      this.lastDay = day;
+      this.weather = this.nextWeather;
+      this.nextWeather = rollWeather(seasonOf(day + 1), this.wrnd());
+      this.signalled = false;
+      const season = seasonOf(day);
+      if (season !== this.world.season) { this.world.setSeason(season); this.say(SEASON_DEF[season].enter); }
+      if (this.weather !== 'clear') this.say(`Hôm nay: ${WEATHER[this.weather].name.toLowerCase()}.`);
+    }
+    if (!this.signalled && this.tod >= 0.5) {
+      this.signalled = true;
+      const sig = WEATHER[this.nextWeather].signal;
+      if (sig && this.nextWeather !== this.weather) this.say(sig);
+    }
+    const rest = isRestTime(this.tod, this.season);
+    if (this.resting && !rest) for (const v of this.villagers) v.nightOwl = false;
+    this.resting = rest;
+  }
+
+  /** Reconcile lots with the stock: gains open a new lot, losses come off the oldest; expired lots spoil. */
+  private syncFood(): void {
+    const lots = this.foodLots, cur = this.stock.food;
+    let sum = 0;
+    for (const l of lots) sum += l.amount;
+    if (cur > sum) {
+      const exp = this.time + FOOD_SPOIL_DAYS * DAY_LENGTH, last = lots[lots.length - 1];
+      if (last && exp - last.exp < 30) last.amount += cur - sum; else lots.push({ amount: cur - sum, exp });
+    } else if (cur < sum) {
+      let take = sum - cur;
+      while (take > 0 && lots.length) {
+        const l = lots[0], k = Math.min(l.amount, take);
+        l.amount -= k; take -= k;
+        if (l.amount <= 0) lots.shift();
+      }
+    }
+    let spoiled = 0;
+    while (lots.length && lots[0].exp <= this.time) spoiled += lots.shift()!.amount;
+    if (spoiled > 0) {
+      this.stock.food = Math.max(0, this.stock.food - spoiled);
+      this.say(`${Math.round(spoiled)} thức ăn để quá ${FOOD_SPOIL_DAYS} ngày đã hỏng.`);
+    }
   }
 
   private tickVillager(v: Villager, dt: number): void {
@@ -327,8 +411,13 @@ export class Sim {
     }
     if (v.health <= 0) { this.kill(v); return; }
 
-    // ---- đi bộ ----
-    let left = v.speed * dt;
+    // ---- night rest ----
+    if (this.resting) { if (!v.nightOwl && v.phase !== 'goHome' && v.phase !== 'sleep') this.goHome(v); }
+    else if (v.phase === 'goHome' || v.phase === 'sleep') { v.path = []; v.slide = null; v.phase = 'idle'; v.bed = -1; }
+
+    // ---- walking (slowed by rain, snow) ----
+    const walk = v.speed * WEATHER[this.weather].speed;
+    let left = walk * dt;
     while (left > 0 && v.path.length) {
       const [px, py] = v.path[0];
       const dx = px + 0.5 - v.x, dy = py + 0.5 - v.y, d = Math.hypot(dx, dy);
@@ -338,7 +427,7 @@ export class Sim {
     }
     // ---- bước trượt cuối: nhích sát vật thể trước khi làm ----
     if (!v.path.length && v.slide) {
-      const s = v.slide, dx = s.x - v.x, dy = s.y - v.y, d = Math.hypot(dx, dy), step = v.speed * 0.7 * dt;
+      const s = v.slide, dx = s.x - v.x, dy = s.y - v.y, d = Math.hypot(dx, dy), step = walk * 0.7 * dt;
       if (d <= step) { v.x = s.x; v.y = s.y; v.slide = null; v.facing = s.face; }
       else { v.x += (dx / d) * step; v.y += (dy / d) * step; if (Math.abs(dx) > 0.02) v.facing = dx > 0 ? 'right' : 'left'; }
     }
@@ -361,6 +450,20 @@ export class Sim {
     v.hold = hold;
   }
 
+  /** Go sleep by the campfire: drop the current task (job kept), one spot per villager. */
+  private goHome(v: Villager): void {
+    const owl = v.nightOwl;
+    this.resetTask(v); v.nightOwl = owl;
+    v.phase = 'sleep';
+    const fire = this.buildings.find((b) => b.kind === 'campfire');
+    if (!fire) return;
+    const d = BUILDINGS[fire.kind];
+    const taken = new Set(this.villagers.filter((o) => o !== v && o.bed >= 0).map((o) => o.bed));
+    const spot = this.nearestFree(fire.x + (d.w >> 1), fire.y + d.h, taken);
+    if (!spot || this.routeTo(v, [spot], 1) < 0) return; // unreachable: sleep where standing
+    v.bed = spot[1] * this.world.size + spot[0]; v.phase = 'goHome';
+  }
+
   private kill(v: Villager): void {
     this.leaveNode(v); this.releaseOrder(v);
     this.villagers.splice(this.villagers.indexOf(v), 1); this.byId.delete(v.id);
@@ -371,7 +474,8 @@ export class Sim {
   // ---------------------------------------------------------------- việc làm
   private workFactor(v: Villager, job: WorkJob): number {
     const stat = v.stats[JOBS[job].stat];
-    return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * TIER_SPEED[this.toolTier(v, job)];
+    const season = job === 'food' ? SEASON_DEF[this.season].gather : 1;
+    return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * TIER_SPEED[this.toolTier(v, job)] * season;
   }
 
   private gainXp(v: Villager, job: WorkJob, dt: number): void {
@@ -467,6 +571,18 @@ export class Sim {
         return;
       }
       case 'craft': this.doCraft(v, dt); return;
+      case 'goHome': {
+        // at the sleeping spot: stash carried goods in the campfire (it is also a store)
+        const c = v.carry;
+        if (c) {
+          const moved = Math.min(Math.max(0, this.capacity(c.res) - this.stock[c.res]), c.amount);
+          this.stock[c.res] += moved; c.amount -= moved;
+          if (c.amount <= 0) v.carry = null;
+        }
+        v.phase = 'sleep'; v.facing = 'front';
+        return;
+      }
+      case 'sleep': return;
     }
   }
 
@@ -601,15 +717,37 @@ export class Sim {
     return out;
   }
 
+  /**
+   * Start tile for pathfinding. A work spot can overlap a blocked tile (a tree between two trees);
+   * then use the nearest free neighbour, since A* cannot leave a blocked tile without cutting corners.
+   */
+  private standTile(v: Villager): [number, number] {
+    const fx = Math.floor(v.x), fy = Math.floor(v.y);
+    if (!this.world.isBlocked(fx, fy)) return [fx, fy];
+    let best: [number, number] = [fx, fy], bd = Infinity;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const x = fx + dx, y = fy + dy;
+      if (this.world.isBlocked(x, y)) continue;
+      const d = Math.hypot(x + 0.5 - v.x, y + 0.5 - v.y);
+      if (d < bd) { bd = d; best = [x, y]; }
+    }
+    return best;
+  }
+
+  /** Path from where the villager stands to (gx, gy); may end at the closest tile if unreachable. */
+  private pathTo(v: Villager, gx: number, gy: number, maxNodes = 14000): Step[] {
+    const [sx, sy] = this.standTile(v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
+    const p = gx === sx && gy === sy ? [] : findPath(this.world, sx, sy, gx, gy, maxNodes);
+    return off ? [[sx, sy] as Step, ...p] : p;
+  }
+
   /** Thử đi tới một trong các ô; trả về chỉ số ô đã có đường tới (hoặc -1). */
   private routeTo(v: Villager, tiles: Array<[number, number]>, tries = 3): number {
-    const sx = Math.floor(v.x), sy = Math.floor(v.y);
+    const [sx, sy] = this.standTile(v);
     for (let k = 0; k < Math.min(tries, tiles.length); k++) {
       const [gx, gy] = tiles[k];
-      if (gx === sx && gy === sy) { v.path = []; return k; }
-      const p = findPath(this.world, sx, sy, gx, gy, 14000);
-      const last = p[p.length - 1];
-      if (last && last[0] === gx && last[1] === gy) { v.path = p; return k; }
+      const p = this.pathTo(v, gx, gy), last = p[p.length - 1];
+      if ((gx === sx && gy === sy) || (last && last[0] === gx && last[1] === gy)) { v.path = p; return k; }
     }
     return -1;
   }

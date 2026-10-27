@@ -1,0 +1,4 @@
+node_modules/
+dist/*.cjs
+package-lock.json
+dist/artifact.html

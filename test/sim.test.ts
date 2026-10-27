@@ -1,6 +1,7 @@
 import { Sim } from '../src/sim/sim';
 import { DAY_LENGTH } from '../src/sim/constants';
 import { Tile } from '../src/sim/world';
+import { lightAt, rollWeather, seasonOf, SEASONS } from '../src/sim/calendar';
 
 let fails = 0;
 const ok = (c: boolean, msg: string) => { console.log((c ? 'ok   ' : 'FAIL ') + msg); if (!c) fails++; };
@@ -149,6 +150,9 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   ok(reached, 'dân tới chặt được cây giữa hai cây khác');
   ok(sideOk && dyOk && maxDx < 0.05, 'đứng ở chỗ ngang bên cạnh cây, nhìn ngang');
   ok((sm.world.nodes.get(mid)?.amount ?? 0) < 8, 'chặt được gỗ từ cây giữa');
+  // chỗ đứng lấn sang ô cây bên cạnh: mang đủ gỗ vẫn phải ra được để về kho
+  sm.time = DAY_LENGTH * 0.3; run(sm, 120);
+  ok(sm.stock.wood > 0 && Math.floor(v.x) !== cx + 1, `dân chặt cây giữa vẫn mang được gỗ về kho (kho ${sm.stock.wood})`);
 }
 {
   // hai dân cùng chặt một cây: mỗi người một bên
@@ -188,6 +192,99 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   sm.setJob([a.id], 'craft'); sm.setJob([b.id], 'wood'); sm.setJob([c.id], 'stone'); watch(100);
   sm.setJob([c.id], 'food'); watch(60);
   ok(bad === '', 'xây, chế tác, chặt, đào, hái đều nhìn ngang ' + bad);
+}
+
+// ======== M3: ngày đêm, bốn mùa, thời tiết ========
+const tickN = (sm: Sim, secs: number) => run(sm, secs);
+{
+  ok(seasonOf(1) === 'spring' && seasonOf(6) === 'summer' && seasonOf(11) === 'autumn' && seasonOf(16) === 'winter' && seasonOf(21) === 'spring', 'mỗi mùa 5 ngày, năm 20 ngày');
+  const daylen = (se: typeof SEASONS[number]) => { let n = 0; for (let i = 0; i < 1000; i++) if (lightAt(i / 1000, se) >= 1) n++; return n / 1000; };
+  ok(Math.abs(daylen('spring') - 0.5) < 0.01 && daylen('summer') > daylen('spring') * 1.15 && daylen('winter') < daylen('spring') * 0.85, 'mùa hạ ngày dài hơn 20%, mùa đông ngắn hơn 20%');
+  ok(lightAt(0.5, 'spring') === 1 && lightAt(0, 'spring') === 0 && lightAt(0.8, 'spring') > 0 && lightAt(0.8, 'spring') < 1, 'trưa sáng, nửa đêm tối, hoàng hôn chuyển dần');
+  const kinds = new Set<string>(); for (let i = 0; i < 200; i++) kinds.add(rollWeather('winter', i / 200));
+  ok([...kinds].every((k) => ['clear', 'mist', 'snow'].includes(k)) && kinds.has('snow'), 'mùa đông chỉ có nắng, sương, tuyết');
+}
+{
+  // tầm nhìn: 7 ô ban ngày, 3 ô ban đêm, sương trừ 2; lửa trại sáng 8 ô
+  const sm = new Sim(1337);
+  sm.time = DAY_LENGTH * 0.5; ok(sm.visionRadius() === 7, 'ban ngày nhìn 7 ô');
+  sm.time = DAY_LENGTH * 1.0; ok(sm.visionRadius() === 3 && sm.fireRadius() === 8, 'ban đêm nhìn 3 ô, lửa trại vẫn 8 ô');
+  sm.weather = 'mist'; ok(sm.visionRadius() === 1 && sm.fireRadius() === 6, 'sương mỏng trừ 2 ô tầm nhìn');
+  // đêm: một dân ở xa lửa trại chỉ còn thấy quanh mình 3 ô
+  const sm2 = new Sim(1337); reveal(sm2); sm2.villagers.forEach((o) => { o.fullness = 1e9; });
+  const v = sm2.villagers[0], N = sm2.world.size;
+  sm2.time = DAY_LENGTH * 0.5; sm2.orderMove([v.id], sm2.world.start.x + 20, sm2.world.start.y); tickN(sm2, 20);
+  sm2.time = DAY_LENGTH * 1.0 + 1; sm2.orderMove([v.id], Math.floor(v.x), Math.floor(v.y)); tickN(sm2, 0.2);
+  const at = (dx: number) => sm2.fog.state[Math.floor(v.y) * N + Math.floor(v.x) + dx];
+  ok(at(2) === 2 && at(5) === 1, `ban đêm ô cách 2 còn thấy, ô cách 5 chỉ còn nhớ (${at(2)}, ${at(5)})`);
+}
+{
+  // ngủ đêm: tối thì về lửa trại ngủ, sáng thì đi làm tiếp
+  const sm = new Sim(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const ids = sm.villagers.map((o) => o.id); sm.setJob(ids, 'wood');
+  const fire = sm.buildings[0];
+  tickN(sm, DAY_LENGTH * 0.84 - sm.time + 10); // quá giữa hoàng hôn
+  ok(sm.restTime, 'giữa hoàng hôn là giờ ngủ');
+  tickN(sm, 30);
+  ok(sm.villagers.every((o) => o.phase === 'sleep'), 'tối đến cả làng đi ngủ: ' + sm.villagers.map((o) => o.phase).join(','));
+  ok(sm.villagers.every((o) => Math.hypot(o.x - fire.x - 1, o.y - fire.y - 1) < 4), 'ngủ quanh đống lửa');
+  ok(new Set(sm.villagers.map((o) => o.bed)).size === 3, 'mỗi người một chỗ nằm');
+  ok(sm.villagers.every((o) => o.job === 'wood' && !o.carry), 'vẫn giữ nghề, đồ mang theo đã cất kho');
+  // ra lệnh lúc nửa đêm: dân đó thức, không quay về ngủ
+  const owl = sm.villagers[0]; tickN(sm, 30);
+  sm.orderMove([owl.id], fire.x + 6, fire.y + 6); tickN(sm, 10);
+  ok(owl.phase !== 'sleep' && owl.phase !== 'goHome' && owl.nightOwl, 'dân được ra lệnh ban đêm thì thức');
+  const wakeAt = DAY_LENGTH * (1 + 0.125 + 0.0625) + 2;
+  tickN(sm, wakeAt - sm.time);
+  ok(!sm.restTime && sm.villagers.every((o) => o.phase !== 'sleep'), 'sáng ra dân thức dậy');
+  tickN(sm, 20);
+  ok(sm.villagers.filter((o) => o.job === 'wood').every((o) => ['goNode', 'work', 'goStore', 'wait', 'idle'].includes(o.phase)), 'dân đốn gỗ đi làm lại');
+}
+{
+  // thời tiết làm chậm bước đi
+  const walked = (wk: 'clear' | 'snow' | 'drizzle') => {
+    const sm = new Sim(1337); reveal(sm); sm.time = DAY_LENGTH * 0.5; sm.weather = wk;
+    const v = sm.villagers[0], x0 = v.x, y0 = v.y; sm.orderMove([v.id], sm.world.start.x + 30, sm.world.start.y + 1); tickN(sm, 4);
+    return Math.hypot(v.x - x0, v.y - y0);
+  };
+  const c = walked('clear'), sn = walked('snow'), dr = walked('drizzle');
+  ok(Math.abs(sn / c - 0.75) < 0.05 && Math.abs(dr / c - 0.9) < 0.05, `tuyết đi chậm 25%, mưa nhẹ 10% (${(sn / c).toFixed(2)}, ${(dr / c).toFixed(2)})`);
+}
+{
+  // đổi ngày thì đổi thời tiết theo đúng lịch báo trước; sang đông bụi trụi; sang xuân bụi ra quả lại
+  const sm = new Sim(1337); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const fc = sm.nextWeather; sm.time = DAY_LENGTH - 0.01; tickN(sm, 0.1);
+  ok(sm.day === 2 && sm.weather === fc, 'thời tiết ngày mai đúng như đã định trước');
+  sm.time = DAY_LENGTH * 15 - 0.01; tickN(sm, 0.1);
+  const bushes = [...sm.world.nodes.values()].filter((n) => n.kind === 'bush');
+  ok(sm.season === 'winter' && bushes.every((n) => n.amount === 0), 'vào đông mọi bụi quả trụi');
+  ok(sm.log.some((l) => l.text.startsWith('Mùa đông')), 'có thông báo vào đông');
+  sm.world.tick(500); ok(bushes.every((n) => n.amount === 0), 'mùa đông bụi không mọc lại');
+  sm.time = DAY_LENGTH * 20 - 0.01; tickN(sm, 0.1);
+  ok(sm.season === 'spring' && bushes.every((n) => n.amount === 0 && n.regrow > 0), 'sang xuân bụi ra hoa, chưa có quả');
+  sm.world.tick(181); ok(bushes.every((n) => n.amount === n.max), 'vài phút sau bụi có quả lại');
+}
+{
+  // quả hỏng sau 3 ngày; ăn lứa cũ trước
+  const sm = new Sim(1337); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  sm.stock.food = 0; tickN(sm, 1);
+  sm.stock.food = 10; tickN(sm, DAY_LENGTH);
+  sm.stock.food += 10; tickN(sm, 1);
+  ok(sm.foodSpoilingWithin(DAY_LENGTH * 2.1) === 10 && sm.foodSpoilingWithin(DAY_LENGTH * 3.1) === 20, 'theo dõi hạn từng lứa');
+  sm.stock.food -= 4; tickN(sm, 1);
+  ok(sm.foodSpoilingWithin(DAY_LENGTH * 2.1) === 6, 'ăn lứa cũ trước');
+  tickN(sm, DAY_LENGTH * 2.05);
+  ok(sm.stock.food === 10 && sm.log.some((l) => l.text.includes('đã hỏng')), `lứa đầu hỏng sau 3 ngày (còn ${sm.stock.food})`);
+  tickN(sm, DAY_LENGTH);
+  ok(sm.stock.food === 0, 'lứa sau cũng hỏng');
+}
+{
+  // hái lượm theo mùa: thu nhanh hơn xuân
+  const sm = new Sim(1337); const v = sm.villagers[0];
+  const wf = (sm as unknown as { workFactor(v: unknown, j: string): number });
+  sm.time = DAY_LENGTH * 0.5; const spring = wf.workFactor.call(sm, v, 'food');
+  sm.time = DAY_LENGTH * 10.5; const autumn = wf.workFactor.call(sm, v, 'food');
+  ok(Math.abs(autumn / spring - 1.4 / 0.8) < 1e-6, 'hệ số hái lượm theo mùa (xuân 0,8, thu 1,4)');
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');

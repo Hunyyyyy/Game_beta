@@ -27,7 +27,8 @@ h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 26px; margin: 0;
 .res i { width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(0,0,0,.35); display: inline-block; }
 .res small { font-weight: 500; color: var(--muted); }
 .res.full b { color: var(--accent); }
-.clock { font-size: 13px; font-weight: 600; min-width: 9ch; }
+.res.warn small { color: var(--accent); font-weight: 700; }
+.clock { font-size: 13px; font-weight: 600; min-width: 9ch; cursor: help; }
 .grp { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .panel { position: absolute; left: 10px; bottom: 10px; width: min(440px, calc(100% - min(160px, 28vw) - 30px)); display: grid; gap: 6px; }
 .panel > * { background: var(--hud); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; backdrop-filter: blur(2px); }
@@ -72,8 +73,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 <main>
   <header>
-    <h1>Làng Đồ Đá — bản chạy thử M2</h1>
-    <p class="sub">Dân biết làm việc: đốn gỗ, đục đá, hái quả, dựng Kho và Xưởng. Công cụ chế từ gỗ rồi đá làm họ làm nhanh hơn và thu được nhiều hơn. Bản đồ 192×192 vẫn bị sương mù che; đi tới đâu thấy tới đó.</p>
+    <h1>Làng Đồ Đá — bản chạy thử M3</h1>
+    <p class="sub">Thời gian đã chảy: ngày đêm, bốn mùa, mưa nắng. Đêm tối chỉ thấy quanh mình 3 ô và dân về ngủ bên đống lửa; mưa, tuyết làm đi chậm; quả hái về hỏng sau 3 ngày; mùa đông bụi quả trụi hết.</p>
   </header>
   <div class="stage">
     <canvas id="view" tabindex="0" aria-label="Bản đồ làng"></canvas>
@@ -134,6 +135,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     <li><b>Chuột phải lên nền Kho</b>: giao thợ xây · lên đất trống: đi tới đó</li>
     <li><b>Xây Kho / Xây Xưởng</b>: bấm nút (phím B / X), rê chuột chọn chỗ xanh, bấm trái để đặt; Esc hoặc chuột phải để hủy</li>
     <li><b>Công cụ</b>: dựng Xưởng, mở bảng Chế tác (phím C), thêm đơn rìu, cuốc chim, cuốc, xẻng; giao một dân làm Thợ thủ công</li>
+    <li><b>Ngày đêm</b>: tối đến dân về ngủ quanh đống lửa, sáng ra tự đi làm tiếp. Ra lệnh lúc đêm thì dân đó thức tới sáng</li>
+    <li><b>Mùa</b>: mỗi mùa 5 ngày. Thu hái quả nhanh nhất, đông không có quả. Rê chuột lên đồng hồ để xem tác động của thời tiết</li>
     <li><b>W A S D</b>: dời camera · <b>Lăn chuột / + −</b>: thu phóng · <b>P</b>: tạm dừng · <b>1 2 3</b>: tốc độ</li>
     <li><b>Điện thoại</b>: chế độ Ra lệnh = chạm đất, cây, đá để ra lệnh; bấm bản đồ nhỏ để nhảy tới</li>
   </ul>
