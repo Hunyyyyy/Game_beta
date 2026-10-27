@@ -515,6 +515,9 @@ export class Sim {
     return v.phase !== 'idle' || v.path.length > 0 || v.fight.mode !== 'none';
   }
 
+  /** A plain order ends a civilian's job, but soldiers and hunters stay what they are. */
+  private keepSoldierJob(v: Villager): void { if (v.job !== 'fight' && v.job !== 'hunt') v.job = 'idle'; }
+
   /** Lệnh đi: mỗi dân nhận một ô đích riêng quanh điểm chọn; dân thôi làm nghề. With `queue`, the move waits its turn. */
   orderMove(ids: readonly number[], tx: number, ty: number, queue = false): void {
     const vs = this.mine(ids);
@@ -523,11 +526,14 @@ export class Sim {
     for (const v of vs) {
       if (queue && this.busy(v)) { v.queue.push({ k: 'move', x: tx, y: ty }); continue; }
       const goal = this.nearestFree(tx, ty, taken);
-      this.resetTask(v); this.clearCombat(v); v.job = 'idle'; v.prefer = -1;
+      this.resetTask(v); this.clearCombat(v); v.prefer = -1;
+      this.keepSoldierJob(v);
       if (!goal) continue;
       taken.add(goal[1] * this.world.size + goal[0]);
       v.path = this.pathTo(v, goal[0], goal[1], 30000);
       v.phase = v.path.length ? 'move' : 'idle';
+      // a soldier who is sent somewhere stands guard there afterwards
+      if (v.job === 'fight') { v.fight.mode = 'guard'; v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 }; }
     }
   }
 
@@ -623,7 +629,7 @@ export class Sim {
     if (o.k === 'move') {
       v.fight.mode = 'none'; v.fight.target = null;
       const goal = this.nearestFree(Math.floor(o.x), Math.floor(o.y), new Set());
-      if (goal) { v.path = this.pathTo(v, goal[0], goal[1], 30000); v.phase = v.path.length ? 'move' : 'idle'; }
+      if (goal) { v.path = this.pathTo(v, goal[0], goal[1], 30000); v.phase = v.path.length ? 'move' : 'idle'; if (v.job === 'fight') { v.fight.mode = 'guard'; v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 }; } }
     } else if (o.k === 'attackMove') { v.job = 'fight'; v.fight.mode = 'attackMove'; v.fight.dest = { x: o.x, y: o.y }; v.phase = 'move'; }
     else { v.job = v.job === 'hunt' ? 'hunt' : 'fight'; v.fight.mode = 'attack'; v.fight.target = o.t; }
     return true;

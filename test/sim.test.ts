@@ -794,5 +794,17 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(b.anim === 'idle_armed' && b.hold?.kind === 'club', 'a soldier carries the weapon in hand while idle');
 }
 
+{
+  // a move order does not turn a soldier or a hunter back into a civilian
+  const sm = new Sim(1337); reveal(sm); day(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const [sol, hun, civ] = sm.villagers; sm.giveGear([sol.id], 'spear', 'weapon'); sm.setJob([sol.id], 'fight'); sm.setJob([hun.id], 'hunt'); sm.setJob([civ.id], 'wood');
+  const f = sm.campfire()!; const gx = Math.floor(f.x + 8), gy = Math.floor(f.y + 4);
+  sm.orderMove([sol.id, hun.id, civ.id], gx, gy); run(sm, 1);
+  ok(sol.job === 'fight' && hun.job === 'hunt' && civ.job === 'idle', 'soldier and hunter keep their job; a civilian goes idle');
+  ok(sol.weapon === 'spear' && sol.anim.startsWith('charge') && sol.hold?.kind === 'spear', 'the soldier walks with the spear in hand');
+  run(sm, 25);
+  ok(Math.hypot(sol.x - gx, sol.y - gy) < 3 && sol.job === 'fight', 'and stands at the spot they were sent to');
+}
+
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');
 process.exit(fails ? 1 : 0);

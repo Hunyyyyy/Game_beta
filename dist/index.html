@@ -5354,6 +5354,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       }
       return true;
     }
+    if (v.phase === "move" && v.path.length) return true;
     if (v.carry && v.carry.amount >= CARRY_CAP[v.carry.res]) {
       sim2.planDeliver(v);
       return true;
@@ -6384,6 +6385,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
     busy(v) {
       return v.phase !== "idle" || v.path.length > 0 || v.fight.mode !== "none";
     }
+    /** A plain order ends a civilian's job, but soldiers and hunters stay what they are. */
+    keepSoldierJob(v) {
+      if (v.job !== "fight" && v.job !== "hunt") v.job = "idle";
+    }
     /** Lệnh đi: mỗi dân nhận một ô đích riêng quanh điểm chọn; dân thôi làm nghề. With `queue`, the move waits its turn. */
     orderMove(ids, tx, ty, queue = false) {
       const vs = this.mine(ids);
@@ -6397,12 +6402,16 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         const goal = this.nearestFree(tx, ty, taken);
         this.resetTask(v);
         this.clearCombat(v);
-        v.job = "idle";
         v.prefer = -1;
+        this.keepSoldierJob(v);
         if (!goal) continue;
         taken.add(goal[1] * this.world.size + goal[0]);
         v.path = this.pathTo(v, goal[0], goal[1], 3e4);
         v.phase = v.path.length ? "move" : "idle";
+        if (v.job === "fight") {
+          v.fight.mode = "guard";
+          v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 };
+        }
       }
     }
     /** Chuột phải lên cây/đá/bụi quả/công trình: giao nghề tương ứng. Trả về tên việc hoặc null. */
@@ -6545,6 +6554,10 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
         if (goal) {
           v.path = this.pathTo(v, goal[0], goal[1], 3e4);
           v.phase = v.path.length ? "move" : "idle";
+          if (v.job === "fight") {
+            v.fight.mode = "guard";
+            v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 };
+          }
         }
       } else if (o.k === "attackMove") {
         v.job = "fight";

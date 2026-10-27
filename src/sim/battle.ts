@@ -326,6 +326,7 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
     if (!v.path.length) { v.path = sim.pathTo(v, Math.floor(a.x), Math.floor(a.y), 3000); if (!v.path.length) { v.phase = 'idle'; v.loot = -1; } }
     return true;
   }
+  if (v.phase === 'move' && v.path.length) return true; // told to walk somewhere: arrive first, then hunt on
   if (v.carry && v.carry.amount >= CARRY_CAP[v.carry.res]) { sim.planDeliver(v); return true; }
   // a carcass waiting to be skinned
   const N = sim.world.size;
