@@ -12,6 +12,8 @@ export interface Tech {
   unlocks: { recipes?: string[]; levels?: Partial<Record<BuildingKind, number>> };
 }
 
+/** Research is switched off by default: with `enabled` false every recipe and building level is open. */
+export const RESEARCH = { enabled: (data as unknown as { enabled: boolean }).enabled };
 export const TECHS = (data as unknown as { techs: Tech[] }).techs;
 export const TECH_BY_ID: Record<string, Tech> = Object.fromEntries(TECHS.map((t) => [t.id, t]));
 
@@ -23,12 +25,12 @@ export const techOfOrder = (id: string): Tech | undefined => TECH_BY_ID[id.slice
 const LOCKED_RECIPES = new Set(TECHS.flatMap((t) => t.unlocks.recipes ?? []));
 /** Recipes open from the start are the ones no technology lists. */
 export const recipeOpen = (done: ReadonlySet<string>, recipeId: string): boolean =>
-  !LOCKED_RECIPES.has(recipeId) || TECHS.some((t) => done.has(t.id) && t.unlocks.recipes?.includes(recipeId));
+  !RESEARCH.enabled || !LOCKED_RECIPES.has(recipeId) || TECHS.some((t) => done.has(t.id) && t.unlocks.recipes?.includes(recipeId));
 /** The tech that opens a recipe (undefined for recipes open from the start). */
 export const techForRecipe = (recipeId: string): Tech | undefined => TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
 
 /** Highest level a building kind may reach with the research done so far (1 when nothing is researched). */
-export const levelCap = (done: ReadonlySet<string>, kind: BuildingKind): number =>
+export const levelCap = (done: ReadonlySet<string>, kind: BuildingKind): number => !RESEARCH.enabled ? Infinity :
   TECHS.reduce((m, t) => (done.has(t.id) ? Math.max(m, t.unlocks.levels?.[kind] ?? 1) : m), 1);
 /** The tech that opens `level` of a kind. */
 export const techForLevel = (kind: BuildingKind, level: number): Tech | undefined => TECHS.find((t) => (t.unlocks.levels?.[kind] ?? 0) >= level);

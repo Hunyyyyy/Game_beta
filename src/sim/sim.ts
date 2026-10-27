@@ -11,7 +11,7 @@ import { ARMORS, CRAFTED_WEAPONS, maxHpOf, MORALE, Team, TribeId, WEAPONS } from
 import { bestWeapon, brainPlayer, hurt, isFighter, resolve, tickCommon, tickDown, tickMorale, tickProjectiles, weaponOf } from './battle';
 import { Animal, animalDef, breed, populate, tickAnimals } from './fauna';
 import { adoptTribe, EventState, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tributeTribe } from './tribes';
-import { isResearchOrder, levelCap, recipeOpen, RESEARCH_PREFIX, Tech, TECH_BY_ID, techForLevel, techForRecipe, techOfOrder } from './research';
+import { isResearchOrder, levelCap, recipeOpen, RESEARCH, RESEARCH_PREFIX, Tech, TECH_BY_ID, techForLevel, techForRecipe, techOfOrder } from './research';
 import { World } from './world';
 
 export type Sex = 'm' | 'f';
@@ -459,6 +459,7 @@ export class Sim {
   /** Thêm một đơn vào hàng đợi (nguyên liệu chỉ bị trừ khi thợ nhận đơn). */
   queueCraft(id: string): string | null {
     if (isResearchOrder(id)) {
+      if (!RESEARCH.enabled) return 'Nghiên cứu đang tắt';
       const t = techOfOrder(id);
       if (!t) return 'Không có nghiên cứu này';
       const st = this.techState(t);
@@ -1001,7 +1002,7 @@ export class Sim {
         if (b.progress >= 1) {
           b.progress = 1;
           if (b.upgrading) { b.level++; b.upgrading = false; this.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
-          else { b.done = true; b.rebuild = false; this.fogDirty = true; this.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (b.kind === 'workshop' && this.researched.size === 0) this.say('Mở Xưởng, giao một dân làm Thợ thủ công, rồi nghiên cứu để mở thêm đồ chế tác và cấp công trình.'); }
+          else { b.done = true; b.rebuild = false; this.fogDirty = true; this.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (RESEARCH.enabled && b.kind === 'workshop' && this.researched.size === 0) this.say('Mở Xưởng, giao một dân làm Thợ thủ công, rồi nghiên cứu để mở thêm đồ chế tác và cấp công trình.'); }
           v.phase = 'idle';
         }
         return;

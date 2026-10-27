@@ -6,7 +6,7 @@ import { DAY_LENGTH } from '../sim/constants';
 import { Job, JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS } from '../sim/jobs';
 import { RES_LIST, RES_NAME } from '../sim/resources';
 import type { Sim, Villager } from '../sim/sim';
-import { RESEARCH_PREFIX, TECHS, techForRecipe, unlockText } from '../sim/research';
+import { RESEARCH, RESEARCH_PREFIX, TECHS, techForRecipe, unlockText } from '../sim/research';
 import { RECIPE_BY_ID, RECIPES, TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, recipeName, recipeUse } from '../sim/tools';
 import type { Controller } from './controller';
 import { costText, h, iconCanvas } from './dom';
@@ -143,6 +143,7 @@ export class BuildingPanel {
   private readonly recRows: Array<{ id: string; kind: string; tier: number; have: HTMLElement; row: HTMLElement; lock: HTMLElement; btns: HTMLButtonElement[] }> = [];
   private readonly techRows: Array<{ id: string; row: HTMLElement; btn: HTMLButtonElement; note: HTMLElement }> = [];
   private readonly move = h('button', { class: 'sm', text: 'Dời' }); private readonly demolish = h('button', { class: 'sm danger', text: 'Phá bỏ' });
+  private readonly researchSec = h('div');
   private armed = 0; private armedFor = -1;
   private readonly villagerList = h('div'); private villagerKey = ''; private readonly vRows = new Map<number, { st: HTMLElement; hp: HTMLElement }>();
   private readonly pop = h('div', { class: 'kv' }); private readonly shopInfo = h('div', { class: 'kv' }); private readonly assign = h('button', { class: 'sm', text: 'Giao dân đang chọn làm Thợ thủ công' });
@@ -173,7 +174,8 @@ export class BuildingPanel {
       }
     };
     // research: each step opens recipes or building levels
-    this.workshop.append(h('div', { class: 'sub', text: 'Nghiên cứu (thợ thủ công làm, tốn nguyên liệu và thời gian)' }));
+    this.workshop.append(this.researchSec);
+    this.researchSec.append(h('div', { class: 'sub', text: 'Nghiên cứu (thợ thủ công làm, tốn nguyên liệu và thời gian)' }));
     for (const t of TECHS) {
       const note = h('small', { class: 'lock' }), btn = h('button', { class: 'sm' });
       btn.addEventListener('click', () => {
@@ -184,7 +186,7 @@ export class BuildingPanel {
       });
       const row = h('div', { class: 'tech' }, h('div', { class: 'nm' }, t.name, h('small', {}, `${t.desc} Mở: ${unlockText(t, (id) => { const r = RECIPE_BY_ID[id]; return r ? recipeName(r) : id; })}.`), h('small', {}, `${costText(t.cost, RES_NAME)} · ${t.time} giây${t.needLevel > 1 ? ` · Xưởng cấp ${t.needLevel}` : ''}`), note), btn);
       this.techRows.push({ id: t.id, row, btn, note });
-      this.workshop.append(row);
+      this.researchSec.append(row);
     }
     this.workshop.append(this.shopInfo, this.assign);
     this.assign.addEventListener('click', () => { const b = this.current(); if (b && ctl.selected.size) { sim.orderWork([...ctl.selected], b.x, b.y); c.toast('Thợ thủ công'); ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
@@ -227,6 +229,7 @@ export class BuildingPanel {
         r.lock.textContent = open ? '' : `Cần nghiên cứu: ${techForRecipe(r.id)?.name ?? '?'}`;
         for (const btn of r.btns) btn.disabled = !open;
       }
+      this.researchSec.hidden = !RESEARCH.enabled;
       for (const r of this.techRows) {
         const t = TECHS.find((x) => x.id === r.id)!, st = sim.techState(t);
         r.row.classList.toggle('locked', st.state === 'locked'); r.row.classList.toggle('done', st.state === 'done');

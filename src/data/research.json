@@ -1,5 +1,6 @@
 {
-  "_note": "Research is done by a craftsman at the Workshop (it goes through the same queue as crafting). cost is paid when a craftsman takes the order, time is seconds at speed 1. needLevel: Workshop level required. unlocks.recipes: recipe ids that become craftable; unlocks.levels: highest level buildings of that kind may be upgraded to. Recipes and levels listed in no tech are open from the start.",
+  "enabled": false,
+  "_note": "Set enabled to true to switch research on; while off every recipe and building level is open. Research is done by a craftsman at the Workshop (it goes through the same queue as crafting). cost is paid when a craftsman takes the order, time is seconds at speed 1. needLevel: Workshop level required. unlocks.recipes: recipe ids that become craftable; unlocks.levels: highest level buildings of that kind may be upgraded to. Recipes and levels listed in no tech are open from the start.",
   "techs": [
     { "id": "wood_tools", "name": "Dụng cụ gỗ", "desc": "Đẽo cuốc chim và cuốc hái bằng gỗ.", "requires": [], "needLevel": 1, "cost": { "wood": 8 }, "time": 45, "unlocks": { "recipes": ["pick1", "hoe1"] } },
     { "id": "club", "name": "Gậy chiến", "desc": "Chế gậy gỗ để tự vệ và đi săn.", "requires": ["wood_tools"], "needLevel": 1, "cost": { "wood": 6 }, "time": 40, "unlocks": { "recipes": ["club1"] } },

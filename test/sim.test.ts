@@ -11,7 +11,9 @@ import { swingTimes, weaponOf } from '../src/sim/battle';
 import { spawnAnimal } from '../src/sim/fauna';
 import type { Villager } from '../src/sim/sim';
 import * as dev from '../src/sim/dev';
-import { TECHS } from '../src/sim/research';
+import { RESEARCH, TECHS } from '../src/sim/research';
+
+RESEARCH.enabled = true; // the research tests below need it; a block near the end checks the default (off)
 
 let fails = 0;
 const ok = (c: boolean, msg: string) => { console.log((c ? 'ok   ' : 'FAIL ') + msg); if (!c) fails++; };
@@ -750,6 +752,16 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const look = { sex: 'm' as const, skin: '#d9a371', hair: '#3b2a1a', hide: '#8b6a45', pants: '#3f63a8' };
   const diff = (view: 'front' | 'back' | 'right') => { const a = renderFrame(anims, 'idle', 0, view, look, 'wood', { tier: 0 }, null), b = renderFrame(anims, 'idle', 0, view, look, 'wood', { tier: 0 }, 'hide'); let n = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++; return n; };
   ok(diff('front') > 80 && diff('back') > 80 && diff('right') > 60, `hide armour changes the look from every side (${diff('front')}/${diff('back')}/${diff('right')} bytes)`);
+}
+
+{
+  // with research switched off (the default of the game) everything is open
+  RESEARCH.enabled = false;
+  const sm = new Sim(1337); reveal(sm);
+  ok(sm.recipeOpen('mace2') && sm.recipeOpen('pick2'), 'research off: every recipe is open');
+  ok(sm.queueCraft('r:timber') === 'Nghiên cứu đang tắt', 'research off: no research can be queued');
+  const st = sm.buildings[0]; void st;
+  RESEARCH.enabled = true;
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');

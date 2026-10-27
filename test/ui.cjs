@@ -133,7 +133,10 @@ const prepare = (p) => p.evaluate(() => {
     ok(await shown(p, '#bpanel') && await p.evaluate(() => document.getElementById('bpanel').innerText.includes('Vũ khí')), 'the workshop panel opens from the built list with its crafting items');
     await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .rec')].find((x) => x.textContent.includes('Búa')); r.querySelectorAll('button')[1].click(); });
     ok(await state(p, () => window.__game.sim.craftQueue.length) === 1, 'queueing a hammer from the panel');
-    // research, move and demolish from the workshop panel
+    // research (off by default; switch it on to test its panel), move and demolish from the workshop panel
+    ok(await p.evaluate(() => document.querySelector('#bpanel .tech').offsetParent === null), 'research is hidden while it is off');
+    await state(p, () => { window.__game.research.enabled = true; });
+    await p.waitForTimeout(250);
     ok(await p.evaluate(() => document.querySelectorAll('#bpanel .tech').length) === 8, 'the workshop panel lists the research');
     ok(await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .rec')].find((x) => x.textContent.includes('Cuốc chim gỗ')); return r.classList.contains('locked') && r.querySelectorAll('button')[1].disabled; }), 'a recipe that is not researched yet is locked');
     await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .tech')].find((x) => x.textContent.includes('Dụng cụ gỗ')); r.querySelector('button').click(); });

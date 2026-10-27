@@ -5,6 +5,7 @@ import { DAY_PART_NAME, dayInSeason, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } 
 import { DAY_LENGTH, TILE } from './sim/constants';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
+import { RESEARCH } from './sim/research';
 import { POP_CAP } from './sim/tribes';
 import { Controller } from './ui/controller';
 import { $, costText } from './ui/dom';
@@ -143,4 +144,4 @@ new ResizeObserver(() => { renderer.resize(); ctl.clamp(); }).observe(view);
 requestAnimationFrame(frame);
 
 // Bridge for tests and the console.
-(window as unknown as { __game: unknown }).__game = { sim, cam, ctl, renderer, menu, map };
+(window as unknown as { __game: unknown }).__game = { sim, cam, ctl, renderer, menu, map, research: RESEARCH };
