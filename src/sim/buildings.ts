@@ -51,6 +51,8 @@ export interface Building {
   done: boolean;
   /** An upgrade to level + 1 is paid for and waiting on builders; the building keeps working meanwhile. */
   upgrading: boolean;
+  /** Moved and standing again from salvaged parts: builds in half the time. */
+  rebuild: boolean;
   workers: number;
 }
 

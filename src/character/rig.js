@@ -10,9 +10,12 @@ import mace from '../data/handtools/mace.json';
 import hatchet from '../data/handtools/hatchet.json';
 import sling from '../data/handtools/sling.json';
 import bow from '../data/handtools/bow.json';
+import hideArmor from '../data/armors/hide.json';
 
 /* Hand-held tools are drawn from JSON (src/data/handtools). handTools may be replaced at runtime (the animation viewer uses this to try out designs). */
 const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow };
+/* Worn armour, drawn over the body from JSON (src/data/armors). */
+const armors = { hide: hideArmor };
 
 /* ---- Lõi vẽ dân pixel: không phụ thuộc DOM ---- */
 const W = 40, H = 48, CX = 20;
@@ -180,7 +183,28 @@ function drawTool(b, side, hx, hy, tool, ov, P) {
   else rotShapes(b, gripShapes(def), col, gx, gy, rad(180 - (tool.a || 0)));
 }
 
-function drawCharacter(b, view, f, P, sex, ov) {
+/* Colours of a worn armour: its own palette plus the villager's skin tones. */
+function armorColors(def, P) {
+  const c = { skin: P.skin, skinD: P.skinD };
+  for (const [k, v] of Object.entries(def.palette || {})) c[k] = hexRgb(v);
+  return c;
+}
+/* Shapes of one armour layer ('torso' or 'head') for a view, drawn with their top-left corner at (ox, oy). */
+function drawArmorLayer(b, def, C, view, layer, ox, oy) {
+  const shapes = def[view] && def[view][layer];
+  if (!shapes) return;
+  for (const [x, y, w, h, k] of rects(shapes)) rect(b, ox + x, oy + y, w, h, C[k] || hexRgb(k));
+}
+/* A band around a limb, centred on (x, y). */
+function drawWrap(b, wr, C, x, y) {
+  if (!wr) return;
+  const w = wr.w || 3, h = wr.h || 2, x0 = Math.round(x - w / 2), y0 = Math.round(y);
+  rect(b, x0, y0, w, h, C[wr.color] || hexRgb(wr.color));
+  if (wr.edge) rect(b, x0, y0, w, 1, C[wr.edge] || hexRgb(wr.edge));
+}
+
+function drawCharacter(b, view, f, P, sex, ov, armorId) {
+  const AD = armorId && armors[armorId], AC = AD ? armorColors(AD, P) : null;
   const side = view === 'side', back = view === 'back', front = view === 'front';
   const bob = f.bob || 0, lean = f.lean || 0;
   const tool = f.tool && f.tool.on ? f.tool : null;
@@ -196,6 +220,7 @@ function drawCharacter(b, view, f, P, sex, ov) {
     const fy = 42 - gl(L, 'lift', 0) - 7 * (1 - Math.cos(a));
     line(b, hx, hipY, fx, fy, 3, col);
     rect(b, Math.round(fx) - 1, Math.round(fy) + 1, 3, 1, P.skinD);
+    if (AD && col !== P.skinD) drawWrap(b, AD.wraps && AD.wraps.leg, AC, (hx + fx) / 2, fy - gl(AD.wraps && AD.wraps.leg, 'dy', 4));
   };
   const armPts = (A, sx) => {
     const a1 = gl(A, 'a', 0), a2 = a1 + gl(A, 'b', 0), L = 3.5;
@@ -210,6 +235,7 @@ function drawCharacter(b, view, f, P, sex, ov) {
   const arm = (p, col) => {
     line(b, p.sx, shY, p.ex, p.ey, 3, col);
     line(b, p.ex, p.ey, p.hx, p.hy, 3, col);
+    if (AD) drawWrap(b, AD.wraps && AD.wraps.arm, AC, (p.ex + p.hx) / 2, (p.ey + p.hy) / 2 - 1);
   };
   const axe = (hx, hy) => drawTool(b, side, hx, hy, tool, ov, P);
   const bundle = () => {
@@ -234,7 +260,9 @@ function drawCharacter(b, view, f, P, sex, ov) {
     leg(f.legL, hx0, P.skinD);
     leg(f.legR, hx0, P.skin);
     drawTorso(b, CX - 3 + tDx, TY, 'side', P, sex);
+    if (AD) drawArmorLayer(b, AD, AC, 'side', 'torso', CX - 3 + tDx, TY);
     drawHead(b, 'side', CX - 6 + hDx, HY, P, sex);
+    if (AD) drawArmorLayer(b, AD, AC, 'side', 'head', CX - 6 + hDx, HY);
     if (carry) bundle();
     arm(pR, P.skin);
     if (tool) axe(pR.hx, pR.hy);
@@ -246,7 +274,9 @@ function drawCharacter(b, view, f, P, sex, ov) {
   leg(f.legL, front ? CX + 2.5 : CX - 2.5, P.skin);
   if (!hold || back) { arm(pR, P.skin); arm(pL, P.skin); }
   drawTorso(b, CX - 5, TY, view, P, sex);
+  if (AD) drawArmorLayer(b, AD, AC, view, 'torso', CX - 5, TY);
   drawHead(b, view, CX - 6, HY, P, sex);
+  if (AD) drawArmorLayer(b, AD, AC, view, 'head', CX - 6, HY);
   if (hold) {
     if (carry) bundle();
     if (!back) { arm(pR, P.skin); arm(pL, P.skin); }
@@ -332,14 +362,14 @@ function bakeTool(kind, angleDeg) {
 }
 
 /* view: front | back | right | left (left = right lật ngang) */
-function renderFrame(anims, name, idx, view, look, kind, toolOv) {
+function renderFrame(anims, name, idx, view, look, kind, toolOv, armorId) {
   lastAnchor = null;
   const an = anims[name];
   const f = an.frames[((idx % an.frames.length) + an.frames.length) % an.frames.length];
   const P = palette(look, kind);
   const b = new Uint8ClampedArray(W * H * 4);
   const v = (view === 'left' || view === 'right') ? 'side' : view;
-  drawCharacter(b, v, f, P, look.sex, toolOv);
+  drawCharacter(b, v, f, P, look.sex, toolOv, armorId);
   const o = outline(b, P.line);
   shadow(o, v === 'side' ? 1 : 0);
   return view === 'left' ? flipH(o) : o;
@@ -388,4 +418,4 @@ function formatAnims(anims) {
     '  "' + k + '": { "fps": ' + v.fps + ', "loop": ' + v.loop + (v.hit === undefined ? '' : ', "hit": ' + v.hit) + ', "frames": [\n' +
     v.frames.map(f => '    ' + JSON.stringify(f)).join(',\n') + '\n  ] }').join(',\n') + '\n}';
 }
-export { W, H, CX, renderFrame, defaultAnims, formatAnims, palette, handTools, renderTool, bakeTool, toolAnchor, unpackShapes, packPixels, HAND_Y };
+export { W, H, CX, armors, renderFrame, defaultAnims, formatAnims, palette, handTools, renderTool, bakeTool, toolAnchor, unpackShapes, packPixels, HAND_Y };

@@ -170,7 +170,7 @@ export function tickMorale(sim: Sim, v: Villager): void {
 // ---------------------------------------------------------------- wounded and rescue
 /** Count down a fallen unit; a friend standing beside it for a few seconds gets it back on its feet. */
 export function tickDown(sim: Sim, v: Villager, dt: number): void {
-  v.down -= dt; v.anim = 'idle'; v.hold = null; v.path = []; v.slide = null;
+  v.down -= dt; v.hold = null; v.path = []; v.slide = null;
   const helper = sim.villagers.some((o) => o !== v && o.health > 0 && o.down <= 0 && o.phase !== 'flee' && Math.hypot(o.x - v.x, o.y - v.y) < 1.6);
   v.rescue = helper ? v.rescue + dt : Math.max(0, v.rescue - dt);
   if (v.rescue >= RULES.rescueSeconds) {

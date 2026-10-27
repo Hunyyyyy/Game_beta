@@ -134,6 +134,8 @@ export class Menu {
     page.append(row('Kho', btn('Đầy kho', () => dev.fillStock(sim))), h('div', { class: 'devrow' }, toggle('Xây miễn phí', 'freeBuild', 'Không tốn vật liệu khi xây và nâng cấp'), toggle('Xây tức thì', 'instantBuild', 'Công trình xong ngay'),
       toggle('Bất tử', 'god', 'Dân không nhận sát thương'), toggle('Không đói', 'noHunger', 'Dân không bị đói')), h('div', { class: 'devrow' }, btn('Khám phá toàn bản đồ', () => dev.revealMap(sim))));
 
+    page.append(h('h3', { text: 'Nghiên cứu' }));
+    page.append(h('div', { class: 'devrow' }, btn('Mở hết nghiên cứu', () => dev.unlockResearch(sim), 'Mọi công thức và cấp công trình'), btn('Khóa lại hết', () => dev.resetResearch(sim))));
     page.append(h('h3', { text: 'Công cụ, vũ khí, giáp' }));
     page.append(row('Xưởng', btn('+3 mỗi loại vào Xưởng', () => dev.stockWorkshop(sim, 3), 'Công cụ, vũ khí và giáp có sẵn cho dân tự nhận')));
     const tools = h('div', { class: 'devrow' });
@@ -181,7 +183,7 @@ export class Menu {
       h('li', {}, h('b', { text: 'Ra lệnh' }), ': máy tính: chuột phải. Điện thoại: khi đã chọn dân, chạm lên đất, cây, đá, bụi quả, công trường hay kẻ địch. Giữ Shift (máy tính) để xếp lệnh nối nhau.'),
       h('li', {}, h('b', { text: 'Kéo bản đồ' }), ': máy tính: giữ chuột phải rồi kéo (hoặc W A S D). Điện thoại: hai ngón tay; chụm hoặc mở hai ngón để thu phóng.'),
       h('li', {}, h('b', { text: 'Bản đồ nhỏ' }), ': bấm vào để mở bản đồ lớn, chạm một chỗ để nhảy tới đó.'),
-      h('li', {}, h('b', { text: 'Công trình' }), ': mở Menu → Xây để đặt. Mở Menu → Công trình, hoặc bấm vào công trình trên bản đồ: lửa trại cho xem dân, Kho cho xem tài nguyên, Xưởng để chế công cụ, vũ khí, giáp. Công trình nâng cấp: đơn sơ → gỗ → đá.'),
+      h('li', {}, h('b', { text: 'Công trình' }), ': mở Menu → Xây để đặt. Mở Menu → Công trình, hoặc bấm vào công trình trên bản đồ: lửa trại cho xem dân, Kho cho xem tài nguyên, Xưởng để chế công cụ, vũ khí, giáp. Công trình nâng cấp: đơn sơ → gỗ → đá, nhưng mỗi bước phải nghiên cứu trước ở Xưởng (giao một dân làm Thợ thủ công). Trong bảng công trình còn có nút Dời (tốn 1/5 vật liệu, phải dựng lại) và Phá bỏ (thu lại một nửa).'),
       h('li', {}, h('b', { text: 'Chiến đấu' }), ': giao nghề Chiến binh hoặc Thợ săn rồi chạm vào thú hoặc địch. Thế đứng: Chủ động, Phòng thủ, Rút lui. F: tấn công–đi, H: giữ chỗ, G: dừng. Người bị thương nặng ngã xuống 30 giây; một người khác đứng cạnh 3 giây sẽ kéo họ dậy.'),
       h('li', {}, h('b', { text: 'Bộ tộc' }), ': tặng thức ăn để tăng quan hệ. Hạ thủ lĩnh, chiếm đống lửa của họ 30 giây hoặc làm sụp tinh thần để họ xin hàng, rồi chọn thu nạp hoặc cống nạp.'),
       h('li', {}, h('b', { text: 'Phím' }), ': P tạm dừng, Q E R: tốc độ 1× 2× 4×, B xây Kho, X xây Xưởng, 1–9 gọi nhóm (Ctrl + số để lưu), Space nhảy tới dân đang chọn, Esc bỏ chọn.'),

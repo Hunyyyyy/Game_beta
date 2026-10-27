@@ -75,6 +75,13 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
 .rec { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; padding: 3px 0; border-top: 1px solid var(--line); }
 .rec canvas { width: 32px; height: 32px; image-rendering: pixelated; }
 .rec .qty { display: inline-flex; gap: 4px; align-items: center; font-variant-numeric: tabular-nums; }
+.rec.locked, .tech.locked { opacity: .55; }
+.tech { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line); }
+.tech .nm { font-weight: 600; }
+.tech .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.tech.done .nm { color: var(--good); }
+.lock { display: block; color: var(--bad); }
+button.danger.armed { background: var(--bad); color: #fff; border-color: var(--bad); }
 .rec .have { min-width: 9ch; text-align: right; color: var(--muted); font-size: 12px; }
 .vrow { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; padding: 3px 0; border-top: 1px solid var(--line); cursor: pointer; }
 .vrow small { color: var(--muted); }
@@ -702,8 +709,98 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
     ]
   };
 
+  // src/data/armors/hide.json
+  var hide_default = {
+    _note: "Worn armour is drawn over the body. Shapes are [x, y, w, h, color]. 'torso' is measured from the top-left of the torso (front/back: 10 wide, side: 7 wide), 'head' from the top-left of the head (front/back: 12 wide, side: 13 wide). 'wraps' are the bands on shins and forearms. Colour names: the palette below plus skin, skinD from the villager.",
+    name: "\xC1o da",
+    palette: { h: "#a8733f", hd: "#774c28", hl: "#cf9a62", st: "#43291a", bone: "#eadfc3" },
+    front: {
+      torso: [
+        [0, 0, 10, 6, "h"],
+        [0, 1, 1, 5, "hd"],
+        [9, 1, 1, 5, "hd"],
+        [1, 1, 3, 1, "hl"],
+        [6, 1, 3, 1, "hl"],
+        [3, 0, 4, 2, "skin"],
+        [4, 0, 2, 1, "skinD"],
+        [4, 2, 1, 1, "bone"],
+        [5, 3, 1, 1, "bone"],
+        [4, 4, 1, 1, "bone"],
+        [5, 5, 1, 1, "bone"],
+        [-1, -1, 3, 3, "hd"],
+        [-1, -1, 3, 1, "hl"],
+        [8, -1, 3, 3, "hd"],
+        [8, -1, 3, 1, "hl"],
+        [0, 6, 10, 1, "st"],
+        [4, 6, 2, 1, "bone"],
+        [0, 7, 2, 2, "hd"],
+        [3, 7, 2, 2, "h"],
+        [5, 7, 2, 2, "hd"],
+        [8, 7, 2, 2, "h"]
+      ],
+      head: [
+        [1, 0, 10, 3, "h"],
+        [2, 0, 4, 1, "hl"],
+        [1, 2, 10, 1, "hd"],
+        [0, 3, 12, 1, "st"],
+        [5, 3, 2, 1, "bone"]
+      ]
+    },
+    back: {
+      torso: [
+        [0, 0, 10, 6, "h"],
+        [0, 1, 1, 5, "hd"],
+        [9, 1, 1, 5, "hd"],
+        [4, 0, 2, 6, "hd"],
+        [1, 1, 2, 1, "hl"],
+        [7, 1, 2, 1, "hl"],
+        [-1, -1, 3, 3, "hd"],
+        [-1, -1, 3, 1, "hl"],
+        [8, -1, 3, 3, "hd"],
+        [8, -1, 3, 1, "hl"],
+        [0, 6, 10, 1, "st"],
+        [0, 7, 2, 2, "hd"],
+        [3, 7, 2, 2, "h"],
+        [5, 7, 2, 2, "hd"],
+        [8, 7, 2, 2, "h"]
+      ],
+      head: [
+        [1, 0, 10, 4, "h"],
+        [2, 0, 4, 1, "hl"],
+        [1, 3, 10, 1, "hd"],
+        [0, 4, 12, 1, "st"]
+      ]
+    },
+    side: {
+      torso: [
+        [0, 0, 7, 6, "h"],
+        [6, 0, 1, 6, "hd"],
+        [1, 1, 3, 1, "hl"],
+        [1, -1, 5, 3, "hd"],
+        [1, -1, 5, 1, "hl"],
+        [0, 6, 7, 1, "st"],
+        [2, 6, 2, 1, "bone"],
+        [0, 7, 2, 2, "hd"],
+        [3, 7, 2, 2, "h"],
+        [5, 7, 2, 1, "hd"]
+      ],
+      head: [
+        [0, 0, 11, 3, "h"],
+        [1, 0, 5, 1, "hl"],
+        [0, 2, 11, 1, "hd"],
+        [0, 3, 12, 1, "st"],
+        [8, 3, 2, 1, "bone"]
+      ]
+    },
+    wraps: {
+      leg: { dy: 4, w: 3, h: 2, color: "hd", edge: "st" },
+      arm: { w: 3, h: 2, color: "hd", edge: "st" }
+    }
+  };
+
   // src/character/rig.js
   var handTools = { axe: axe_default, pick: pick_default, hammer: hammer_default, hoe: hoe_default, club: club_default, spear: spear_default, mace: mace_default, hatchet: hatchet_default, sling: sling_default, bow: bow_default };
+  var armors = { hide: hide_default };
   var W = 40;
   var H = 48;
   var CX = 20;
@@ -920,7 +1017,24 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
     if (own) for (const [x, y, w, h2, c] of own) rect(b, gx + x, gy + y, w, h2, col[c] || hexRgb(c));
     else rotShapes(b, gripShapes(def), col, gx, gy, rad(180 - (tool.a || 0)));
   }
-  function drawCharacter(b, view2, f, P, sex, ov) {
+  function armorColors(def, P) {
+    const c = { skin: P.skin, skinD: P.skinD };
+    for (const [k, v] of Object.entries(def.palette || {})) c[k] = hexRgb(v);
+    return c;
+  }
+  function drawArmorLayer(b, def, C, view2, layer, ox, oy) {
+    const shapes = def[view2] && def[view2][layer];
+    if (!shapes) return;
+    for (const [x, y, w, h2, k] of rects(shapes)) rect(b, ox + x, oy + y, w, h2, C[k] || hexRgb(k));
+  }
+  function drawWrap(b, wr, C, x, y) {
+    if (!wr) return;
+    const w = wr.w || 3, h2 = wr.h || 2, x0 = Math.round(x - w / 2), y0 = Math.round(y);
+    rect(b, x0, y0, w, h2, C[wr.color] || hexRgb(wr.color));
+    if (wr.edge) rect(b, x0, y0, w, 1, C[wr.edge] || hexRgb(wr.edge));
+  }
+  function drawCharacter(b, view2, f, P, sex, ov, armorId) {
+    const AD = armorId && armors[armorId], AC = AD ? armorColors(AD, P) : null;
     const side = view2 === "side", back = view2 === "back", front = view2 === "front";
     const bob = f.bob || 0, lean = f.lean || 0;
     const tool = f.tool && f.tool.on ? f.tool : null;
@@ -935,6 +1049,7 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       const fy = 42 - gl(L, "lift", 0) - 7 * (1 - Math.cos(a));
       line(b, hx, hipY, fx, fy, 3, col);
       rect(b, Math.round(fx) - 1, Math.round(fy) + 1, 3, 1, P.skinD);
+      if (AD && col !== P.skinD) drawWrap(b, AD.wraps && AD.wraps.leg, AC, (hx + fx) / 2, fy - gl(AD.wraps && AD.wraps.leg, "dy", 4));
     };
     const armPts = (A, sx) => {
       const a1 = gl(A, "a", 0), a2 = a1 + gl(A, "b", 0), L = 3.5;
@@ -949,6 +1064,7 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
     const arm = (p, col) => {
       line(b, p.sx, shY, p.ex, p.ey, 3, col);
       line(b, p.ex, p.ey, p.hx, p.hy, 3, col);
+      if (AD) drawWrap(b, AD.wraps && AD.wraps.arm, AC, (p.ex + p.hx) / 2, (p.ey + p.hy) / 2 - 1);
     };
     const axe = (hx, hy) => drawTool(b, side, hx, hy, tool, ov, P);
     const bundle = () => {
@@ -978,7 +1094,9 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       leg(f.legL, hx0, P.skinD);
       leg(f.legR, hx0, P.skin);
       drawTorso(b, CX - 3 + tDx, TY, "side", P, sex);
+      if (AD) drawArmorLayer(b, AD, AC, "side", "torso", CX - 3 + tDx, TY);
       drawHead(b, "side", CX - 6 + hDx, HY, P, sex);
+      if (AD) drawArmorLayer(b, AD, AC, "side", "head", CX - 6 + hDx, HY);
       if (carry) bundle();
       arm(pR2, P.skin);
       if (tool) axe(pR2.hx, pR2.hy);
@@ -993,7 +1111,9 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       arm(pL, P.skin);
     }
     drawTorso(b, CX - 5, TY, view2, P, sex);
+    if (AD) drawArmorLayer(b, AD, AC, view2, "torso", CX - 5, TY);
     drawHead(b, view2, CX - 6, HY, P, sex);
+    if (AD) drawArmorLayer(b, AD, AC, view2, "head", CX - 6, HY);
     if (hold) {
       if (carry) bundle();
       if (!back) {
@@ -1045,14 +1165,14 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
     }
     return o;
   }
-  function renderFrame(anims2, name, idx, view2, look, kind, toolOv) {
+  function renderFrame(anims2, name, idx, view2, look, kind, toolOv, armorId) {
     lastAnchor = null;
     const an = anims2[name];
     const f = an.frames[(idx % an.frames.length + an.frames.length) % an.frames.length];
     const P = palette(look, kind);
     const b = new Uint8ClampedArray(W * H * 4);
     const v = view2 === "left" || view2 === "right" ? "side" : view2;
-    drawCharacter(b, v, f, P, look.sex, toolOv);
+    drawCharacter(b, v, f, P, look.sex, toolOv, armorId);
     const o = outline(b, P.line);
     shadow(o, v === "side" ? 1 : 0);
     return view2 === "left" ? flipH(o) : o;
@@ -2147,6 +2267,88 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
     hit: { fps: 10, loop: false, hit: 0, frames: [
       { bob: 0, lean: -3, legR: { a: 8, lift: 0 }, legL: { a: -8, lift: 0 }, armR: { a: 30, b: 10 }, armL: { a: 28, b: 10 } },
       { bob: 0, lean: -1, legR: { a: 10, lift: 0 }, legL: { a: -10, lift: 0 }, armR: { a: 20, b: 10 }, armL: { a: 18, b: 10 } }
+    ] },
+    guard_melee: { fps: 4, loop: true, frames: [
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 105, b: 30 }, armL: { a: 98, b: 30 }, tool: { on: true, a: 150, kind: "club" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 106, b: 30 }, armL: { a: 99, b: 30 }, tool: { on: true, a: 152, kind: "club" } },
+      { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 105, b: 30 }, armL: { a: 98, b: 30 }, tool: { on: true, a: 150, kind: "club" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 104, b: 30 }, armL: { a: 97, b: 30 }, tool: { on: true, a: 148, kind: "club" } }
+    ] },
+    guard_pierce: { fps: 4, loop: true, frames: [
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 111, kind: "spear" } },
+      { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 51, b: 30 }, armL: { a: 45, b: 30 }, tool: { on: true, a: 109, kind: "spear" } }
+    ] },
+    guard_bow: { fps: 4, loop: true, frames: [
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 81, b: 10 }, armL: { a: 71, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+      { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 79, b: 10 }, armL: { a: 69, b: 20 }, tool: { on: true, a: 180, kind: "bow" } }
+    ] },
+    guard_sling: { fps: 4, loop: true, frames: [
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 61, b: 25 }, armL: { a: 56, b: 25 }, tool: { on: true, a: 113, kind: "sling" } },
+      { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 59, b: 25 }, armL: { a: 54, b: 25 }, tool: { on: true, a: 107, kind: "sling" } }
+    ] },
+    guard_fist: { fps: 4, loop: true, frames: [
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 55, b: 75 }, armL: { a: 45, b: 80 } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 56, b: 75 }, armL: { a: 46, b: 80 } },
+      { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 55, b: 75 }, armL: { a: 45, b: 80 } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 54, b: 75 }, armL: { a: 44, b: 80 } }
+    ] },
+    charge_melee: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 4, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 150, b: 20 }, armL: { a: 144, b: 20 }, tool: { on: true, a: 205, kind: "club" } },
+      { bob: 0, lean: 4, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 147, b: 20 }, armL: { a: 141, b: 20 }, tool: { on: true, a: 201, kind: "club" } },
+      { bob: 0, lean: 4, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 147, b: 20 }, armL: { a: 141, b: 20 }, tool: { on: true, a: 201, kind: "club" } },
+      { bob: -1, lean: 4, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 150, b: 20 }, armL: { a: 144, b: 20 }, tool: { on: true, a: 205, kind: "club" } },
+      { bob: 0, lean: 4, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 153, b: 20 }, armL: { a: 147, b: 20 }, tool: { on: true, a: 209, kind: "club" } },
+      { bob: 0, lean: 4, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 153, b: 20 }, armL: { a: 147, b: 20 }, tool: { on: true, a: 209, kind: "club" } }
+    ] },
+    charge_pierce: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+      { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+      { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+      { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+      { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } },
+      { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } }
+    ] },
+    charge_bow: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+      { bob: 0, lean: 3, legR: { a: 31, lift: 2 }, legL: { a: -31, lift: 0 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+      { bob: 0, lean: 3, legR: { a: 31, lift: 0 }, legL: { a: -31, lift: 1 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+      { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+      { bob: 0, lean: 3, legR: { a: -31, lift: 0 }, legL: { a: 31, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+      { bob: 0, lean: 3, legR: { a: -31, lift: 2 }, legL: { a: 31, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } }
+    ] },
+    charge_sling: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 0, lean: 3, legR: { a: 31, lift: 2 }, legL: { a: -31, lift: 0 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 0, lean: 3, legR: { a: 31, lift: 0 }, legL: { a: -31, lift: 1 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 0, lean: 3, legR: { a: -31, lift: 0 }, legL: { a: 31, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 0, lean: 3, legR: { a: -31, lift: 2 }, legL: { a: 31, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } }
+    ] },
+    charge_fist: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 40, b: 80 }, armL: { a: 40, b: 80 } },
+      { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: -3, b: 80 }, armL: { a: 83, b: 80 } },
+      { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: -3, b: 80 }, armL: { a: 83, b: 80 } },
+      { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 40, b: 80 }, armL: { a: 40, b: 80 } },
+      { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 83, b: 80 }, armL: { a: -3, b: 80 } },
+      { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 83, b: 80 }, armL: { a: -3, b: 80 } }
+    ] },
+    run: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 0, b: 70 }, armL: { a: 0, b: 70 } },
+      { bob: 0, lean: 3, legR: { a: 36, lift: 2 }, legL: { a: -36, lift: 0 }, armR: { a: -52, b: 70 }, armL: { a: 52, b: 70 } },
+      { bob: 0, lean: 3, legR: { a: 36, lift: 0 }, legL: { a: -36, lift: 1 }, armR: { a: -52, b: 70 }, armL: { a: 52, b: 70 } },
+      { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 0, b: 70 }, armL: { a: 0, b: 70 } },
+      { bob: 0, lean: 3, legR: { a: -36, lift: 0 }, legL: { a: 36, lift: 2 }, armR: { a: 52, b: 70 }, armL: { a: -52, b: 70 } },
+      { bob: 0, lean: 3, legR: { a: -36, lift: 2 }, legL: { a: 36, lift: 0 }, armR: { a: 52, b: 70 }, armL: { a: -52, b: 70 } }
+    ] },
+    down: { fps: 2, loop: true, frames: [
+      { bob: 7, lean: -2, legR: { a: 55, lift: 0 }, legL: { a: 48, lift: 0 }, armR: { a: 25, b: 25 }, armL: { a: 15, b: 20 } },
+      { bob: 6, lean: -3, legR: { a: 55, lift: 0 }, legL: { a: 48, lift: 0 }, armR: { a: 28, b: 25 }, armL: { a: 18, b: 20 } }
     ] }
   };
 
@@ -3580,11 +3782,11 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       const step2 = Math.floor(v.animClock * def.fps * rate);
       const frame2 = def.loop === false ? Math.min(step2, def.frames.length - 1) : step2 % def.frames.length;
       const kind = v.carry?.res ?? "wood";
-      const key = `${name}|${frame2}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : "-"}`;
+      const key = `${name}|${frame2}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : "-"}|${v.armor ?? "-"}`;
       let c = this.vcache.get(key);
       if (!c) {
         const [cv, g] = canvas(W, H);
-        g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame2, v.facing, v.look, kind, v.hold ?? { tier: 0 })), W, H), 0, 0);
+        g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame2, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor)), W, H), 0, 0);
         this.vcache.set(key, cv);
         c = cv;
       }
@@ -3881,7 +4083,7 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       }
       if (ghost) {
         const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
-        this.prop(sp.building(ghost.kind, sim2.era, 1, 4), ax, ay, time, 0.6);
+        this.prop(sp.building(ghost.kind, ghost.era ?? sim2.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
         ctx2.fillStyle = ghost.ok ? "rgba(90,200,90,.38)" : "rgba(220,70,60,.42)";
         ctx2.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
         ctx2.strokeStyle = ghost.ok ? "#bff0b0" : "#ffb4a8";
@@ -4877,7 +5079,6 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
   }
   function tickDown(sim2, v, dt) {
     v.down -= dt;
-    v.anim = "idle";
     v.hold = null;
     v.path = [];
     v.slide = null;
@@ -5644,6 +5845,38 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
     void DAY_LENGTH;
   }
 
+  // src/data/research.json
+  var research_default = {
+    _note: "Research is done by a craftsman at the Workshop (it goes through the same queue as crafting). cost is paid when a craftsman takes the order, time is seconds at speed 1. needLevel: Workshop level required. unlocks.recipes: recipe ids that become craftable; unlocks.levels: highest level buildings of that kind may be upgraded to. Recipes and levels listed in no tech are open from the start.",
+    techs: [
+      { id: "wood_tools", name: "D\u1EE5ng c\u1EE5 g\u1ED7", desc: "\u0110\u1EBDo cu\u1ED1c chim v\xE0 cu\u1ED1c h\xE1i b\u1EB1ng g\u1ED7.", requires: [], needLevel: 1, cost: { wood: 8 }, time: 45, unlocks: { recipes: ["pick1", "hoe1"] } },
+      { id: "club", name: "G\u1EADy chi\u1EBFn", desc: "Ch\u1EBF g\u1EADy g\u1ED7 \u0111\u1EC3 t\u1EF1 v\u1EC7 v\xE0 \u0111i s\u0103n.", requires: ["wood_tools"], needLevel: 1, cost: { wood: 6 }, time: 40, unlocks: { recipes: ["club1"] } },
+      { id: "tanning", name: "Thu\u1ED9c da", desc: "Kh\xE2u da th\xFA th\xE0nh \xE1o gi\xE1p.", requires: ["wood_tools"], needLevel: 1, cost: { hide: 3 }, time: 60, unlocks: { recipes: ["hide1"] } },
+      { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng Kho v\xE0 X\u01B0\u1EDFng l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["wood_tools"], needLevel: 1, cost: { wood: 20 }, time: 60, unlocks: { levels: { storage: 2, workshop: 2 } } },
+      { id: "spear", name: "Gi\xE1o v\xF3t nh\u1ECDn", desc: "Gi\xE1o g\u1ED7 c\xF3 t\u1EA7m \u0111\xE2m xa h\u01A1n g\u1EADy.", requires: ["club"], needLevel: 2, cost: { wood: 10 }, time: 70, unlocks: { recipes: ["spear1"] } },
+      { id: "stone_tools", name: "M\xE0i \u0111\xE1", desc: "R\xECu, cu\u1ED1c chim, cu\u1ED1c v\xE0 b\xFAa \u0111\u1EA7u \u0111\xE1, b\u1EC1n v\xE0 nhanh h\u01A1n g\u1ED7.", requires: ["timber"], needLevel: 2, cost: { wood: 10, stone: 20 }, time: 90, unlocks: { recipes: ["axe2", "pick2", "hoe2", "hammer2"] } },
+      { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng Kho v\xE0 X\u01B0\u1EDFng l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["stone_tools"], needLevel: 2, cost: { wood: 10, stone: 40 }, time: 120, unlocks: { levels: { storage: 3, workshop: 3 } } },
+      { id: "mace", name: "Ch\xF9y \u0111\xE1", desc: "V\u0169 kh\xED \u0111\u1EADp n\u1EB7ng, h\u1EE3p v\u1EDBi chi\u1EBFn binh kh\u1ECFe.", requires: ["stone_tools", "club"], needLevel: 3, cost: { stone: 25 }, time: 100, unlocks: { recipes: ["mace2"] } }
+    ]
+  };
+
+  // src/sim/research.ts
+  var TECHS = research_default.techs;
+  var TECH_BY_ID = Object.fromEntries(TECHS.map((t) => [t.id, t]));
+  var RESEARCH_PREFIX = "r:";
+  var isResearchOrder = (id) => id.startsWith(RESEARCH_PREFIX);
+  var techOfOrder = (id) => TECH_BY_ID[id.slice(RESEARCH_PREFIX.length)];
+  var LOCKED_RECIPES = new Set(TECHS.flatMap((t) => t.unlocks.recipes ?? []));
+  var recipeOpen = (done, recipeId) => !LOCKED_RECIPES.has(recipeId) || TECHS.some((t) => done.has(t.id) && t.unlocks.recipes?.includes(recipeId));
+  var techForRecipe = (recipeId) => TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
+  var levelCap = (done, kind) => TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks.levels?.[kind] ?? 1) : m, 1);
+  var techForLevel = (kind, level) => TECHS.find((t) => (t.unlocks.levels?.[kind] ?? 0) >= level);
+  var unlockText = (t, recipeName2) => {
+    const parts = [...(t.unlocks.recipes ?? []).map(recipeName2)];
+    for (const [k, n] of Object.entries(t.unlocks.levels ?? {})) parts.push(`${k === "storage" ? "Kho" : k === "workshop" ? "X\u01B0\u1EDFng" : k} c\u1EA5p ${n}`);
+    return parts.join(", ");
+  };
+
   // src/sim/sim.ts
   var NAMES_M = ["Bo", "R\xF4", "Gia", "Mun", "L\xF4", "T\xF9", "\u0110a"];
   var NAMES_F = ["Tia", "Noa", "Ma", "Pa", "K\xEA", "Ly", "Sa"];
@@ -5665,6 +5898,8 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       this.toolStock = {};
       /** Hàng đợi chế tác (mã công thức). */
       this.craftQueue = [];
+      /** Finished research (tech ids). Recipes and building levels stay locked until their tech is here. */
+      this.researched = /* @__PURE__ */ new Set();
       this.log = [];
       /** Current era: new buildings are built with this era's art and levels. */
       this.era = "stone";
@@ -5879,23 +6114,28 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
     // ---------------------------------------------------------------- công trình
     addBuilding(kind, x, y, done) {
       const d = BUILDINGS[kind];
-      const b = { id: this.nextBid++, kind, era: this.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, workers: 0 };
+      const b = { id: this.nextBid++, kind, era: this.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, workers: 0 };
       this.buildings.push(b);
       for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) this.world.occ[(y + j) * this.world.size + x + i] = 1;
       return b;
     }
-    /** Trả về lý do không đặt được, hoặc null nếu đặt được. */
-    canPlace(kind, x, y) {
+    /** Why the footprint of `kind` at (x, y) is unusable, or null. `ignore` is a building that is being moved and may overlap itself. */
+    footprintError(kind, x, y, ignore) {
       const d = BUILDINGS[kind], w = this.world, N = w.size;
+      const own = (tx, ty) => !!ignore && tx >= ignore.x && tx < ignore.x + d.w && ty >= ignore.y && ty < ignore.y + d.h;
       for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) {
         const tx = x + i, ty = y + j;
         if (!w.inBounds(tx, ty)) return "Ngo\xE0i b\u1EA3n \u0111\u1ED3";
         const k = ty * N + tx;
         if (this.fog.state[k] === 0) return "Ch\u01B0a kh\xE1m ph\xE1";
         const t = w.tiles[k];
-        if (t !== 0 && t !== 4 || w.occ[k]) return "V\u01B0\u1EDBng c\xE2y, \u0111\xE1, n\u01B0\u1EDBc ho\u1EB7c c\xF4ng tr\xECnh";
+        if (t !== 0 && t !== 4 || w.occ[k] && !own(tx, ty)) return "V\u01B0\u1EDBng c\xE2y, \u0111\xE1, n\u01B0\u1EDBc ho\u1EB7c c\xF4ng tr\xECnh";
       }
-      return this.dev.freeBuild ? null : this.missing(levelsOf(kind, this.era)[0].cost);
+      return null;
+    }
+    /** Trả về lý do không đặt được, hoặc null nếu đặt được. */
+    canPlace(kind, x, y) {
+      return this.footprintError(kind, x, y) ?? (this.dev.freeBuild ? null : this.missing(levelsOf(kind, this.era)[0].cost));
     }
     /** Reason the stock cannot pay `cost`, or null. */
     missing(cost) {
@@ -5907,6 +6147,7 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       if (!b.done) return "C\xF4ng tr\xECnh ch\u01B0a d\u1EF1ng xong";
       if (b.upgrading) return "\u0110ang n\xE2ng c\u1EA5p";
       if (b.level >= maxLevel(b.kind, b.era)) return "\u0110\xE3 \u1EDF c\u1EA5p cao nh\u1EA5t";
+      if (b.level + 1 > levelCap(this.researched, b.kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForLevel(b.kind, b.level + 1)?.name ?? "?"}`;
       return this.dev.freeBuild ? null : this.missing(levelDef(b, b.level + 1).cost);
     }
     /** Pay for the next level; builders then work on it while the building keeps its current level. */
@@ -5945,11 +6186,140 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       this.say(`\u0110\xE3 \u0111\u1EB7t n\u1EC1n ${d.name}. Giao vi\u1EC7c "Th\u1EE3 x\xE2y" \u0111\u1EC3 d\u1EF1ng.`);
       return { ok: true, building: b };
     }
+    // ---------------------------------------------------------------- demolish and move
+    /** Materials paid so far for a building: every level reached, plus a running upgrade. */
+    invested(b) {
+      const out = {};
+      const add = (c) => {
+        for (const r of Object.keys(c)) out[r] = (out[r] ?? 0) + (c[r] ?? 0);
+      };
+      for (let l = 1; l <= b.level; l++) add(levelDef(b, l).cost);
+      if (b.upgrading) add(levelDef(b, b.level + 1).cost);
+      return out;
+    }
+    /** What tearing a building down gives back: half of what was paid (nothing in free-build mode). */
+    salvage(b) {
+      const out = {}, paid = this.invested(b);
+      if (!this.dev.freeBuild) for (const r of Object.keys(paid)) {
+        const n = Math.floor((paid[r] ?? 0) * 0.5);
+        if (n > 0) out[r] = n;
+      }
+      return out;
+    }
+    /** What moving a finished building costs: a fifth of what was paid. An unfinished one moves for free. */
+    moveFee(b) {
+      const out = {};
+      if (!b.done || this.dev.freeBuild) return out;
+      const paid = this.invested(b);
+      for (const r of Object.keys(paid)) {
+        const n = Math.ceil((paid[r] ?? 0) * 0.2);
+        if (n > 0) out[r] = n;
+      }
+      return out;
+    }
+    /** Send everyone who was heading for or working at this building back to idle. */
+    evict(b) {
+      for (const v of this.villagers) {
+        if (v.target !== b.id) continue;
+        if (v.phase === "goSite" || v.phase === "build" || v.phase === "goShop" || v.phase === "craft" || v.phase === "goEquip") this.resetTask(v);
+      }
+    }
+    setOcc(b, val) {
+      const d = BUILDINGS[b.kind];
+      for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) this.world.occ[(b.y + j) * this.world.size + b.x + i] = val;
+    }
+    canDemolish(b) {
+      return BUILDINGS[b.kind].buildable ? null : "Kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
+    }
+    demolishBuilding(id) {
+      const b = this.getBuilding(id);
+      if (!b) return "Kh\xF4ng t\xECm th\u1EA5y c\xF4ng tr\xECnh";
+      const why = this.canDemolish(b);
+      if (why) return why;
+      const back = this.salvage(b);
+      this.evict(b);
+      this.setOcc(b, 0);
+      this.buildings.splice(this.buildings.indexOf(b), 1);
+      for (const r of Object.keys(back)) this.stock[r] += back[r] ?? 0;
+      this.fogDirty = true;
+      this.say(`\u0110\xE3 ph\xE1 ${BUILDINGS[b.kind].name.toLowerCase()}${Object.keys(back).length ? `, thu l\u1EA1i ${Object.keys(back).map((r) => `${back[r]} ${RES_NAME[r].toLowerCase()}`).join(", ")}` : ""}.`);
+      return null;
+    }
+    /** Why the building cannot go to (x, y), or null. */
+    canMove(b, x, y) {
+      if (!BUILDINGS[b.kind].buildable) return "Kh\xF4ng d\u1EDDi \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
+      if (x === b.x && y === b.y) return "V\u1EABn \u1EDF ch\u1ED7 c\u0169";
+      return this.footprintError(b.kind, x, y, b) ?? this.missing(this.moveFee(b));
+    }
+    /** Take a building apart and put it up again elsewhere: it keeps its level, pays the fee and must be rebuilt (half the time). */
+    moveBuilding(id, x, y) {
+      const b = this.getBuilding(id);
+      if (!b) return "Kh\xF4ng t\xECm th\u1EA5y c\xF4ng tr\xECnh";
+      const why = this.canMove(b, x, y);
+      if (why) return why;
+      const fee = this.moveFee(b);
+      for (const r of Object.keys(fee)) this.stock[r] -= fee[r] ?? 0;
+      this.evict(b);
+      if (b.upgrading) {
+        for (const r of Object.keys(levelDef(b, b.level + 1).cost)) if (!this.dev.freeBuild) this.stock[r] += levelDef(b, b.level + 1).cost[r] ?? 0;
+        b.upgrading = false;
+      }
+      const wasDone = b.done;
+      this.setOcc(b, 0);
+      b.x = x;
+      b.y = y;
+      this.setOcc(b, 1);
+      if (wasDone && !this.dev.instantBuild) {
+        b.done = false;
+        b.progress = 0;
+        b.rebuild = true;
+      }
+      this.fogDirty = true;
+      this.say(`${BUILDINGS[b.kind].name} \u0111\u01B0\u1EE3c d\u1EDDi sang ch\u1ED7 m\u1EDBi.${b.rebuild ? ' Giao "Th\u1EE3 x\xE2y" \u0111\u1EC3 d\u1EF1ng l\u1EA1i.' : ""}`);
+      return null;
+    }
     // ---------------------------------------------------------------- chế tác
+    /** Cost and time of a queued order: a recipe, or a research ("r:tech"). */
+    orderDef(id) {
+      if (isResearchOrder(id)) {
+        const t = techOfOrder(id);
+        return t ? { cost: t.cost, time: t.time } : null;
+      }
+      return RECIPE_BY_ID[id] ?? null;
+    }
+    /** Highest level among the finished workshops. */
+    workshopLevel() {
+      return this.buildings.reduce((m, b) => b.kind === "workshop" && b.done ? Math.max(m, b.level) : m, 0);
+    }
+    recipeOpen(id) {
+      return recipeOpen(this.researched, id);
+    }
+    /** Where a research stands: done, being worked on, queued, ready to start or locked (with the reason). */
+    techState(t) {
+      if (this.researched.has(t.id)) return { state: "done" };
+      const oid = RESEARCH_PREFIX + t.id;
+      if (this.villagers.some((v) => v.order === oid)) return { state: "active" };
+      if (this.craftQueue.includes(oid)) return { state: "queued" };
+      const need = t.requires.find((r) => !this.researched.has(r));
+      if (need) return { state: "locked", why: `C\u1EA7n nghi\xEAn c\u1EE9u: ${TECH_BY_ID[need].name}` };
+      if (!this.hasWorkshop()) return { state: "locked", why: "C\u1EA7n d\u1EF1ng X\u01B0\u1EDFng ch\u1EBF t\xE1c" };
+      if (this.workshopLevel() < t.needLevel) return { state: "locked", why: `C\u1EA7n X\u01B0\u1EDFng c\u1EA5p ${t.needLevel}` };
+      return { state: "ready" };
+    }
     /** Thêm một đơn vào hàng đợi (nguyên liệu chỉ bị trừ khi thợ nhận đơn). */
     queueCraft(id) {
-      if (!RECIPE_BY_ID[id]) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
-      if (!this.hasWorkshop()) return "C\u1EA7n d\u1EF1ng X\u01B0\u1EDFng ch\u1EBF t\xE1c tr\u01B0\u1EDBc";
+      if (isResearchOrder(id)) {
+        const t = techOfOrder(id);
+        if (!t) return "Kh\xF4ng c\xF3 nghi\xEAn c\u1EE9u n\xE0y";
+        const st = this.techState(t);
+        if (st.state === "done") return "\u0110\xE3 nghi\xEAn c\u1EE9u r\u1ED3i";
+        if (st.state === "active" || st.state === "queued") return "\u0110ang nghi\xEAn c\u1EE9u";
+        if (st.state === "locked") return st.why ?? "Ch\u01B0a nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c";
+      } else {
+        if (!RECIPE_BY_ID[id]) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
+        if (!this.hasWorkshop()) return "C\u1EA7n d\u1EF1ng X\u01B0\u1EDFng ch\u1EBF t\xE1c tr\u01B0\u1EDBc";
+        if (!this.recipeOpen(id)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForRecipe(id)?.name ?? "?"}`;
+      }
       if (this.craftQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
       this.craftQueue.push(id);
       return null;
@@ -5959,15 +6329,16 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       const i = this.craftQueue.lastIndexOf(id);
       if (i >= 0) this.craftQueue.splice(i, 1);
     }
-    affordable(r) {
-      return Object.keys(r.cost).every((k) => this.stock[k] >= (r.cost[k] ?? 0));
+    affordable(id) {
+      const d = this.orderDef(id);
+      return !!d && Object.keys(d.cost).every((k) => this.stock[k] >= (d.cost[k] ?? 0));
     }
     releaseOrder(v) {
       if (!v.order) return;
-      const r = RECIPE_BY_ID[v.order];
-      if (r && (v.phase === "goShop" || v.phase === "craft")) {
-        for (const k of Object.keys(r.cost)) this.stock[k] += r.cost[k] ?? 0;
-        this.craftQueue.unshift(r.id);
+      const d = this.orderDef(v.order);
+      if (d && (v.phase === "goShop" || v.phase === "craft")) {
+        for (const k of Object.keys(d.cost)) this.stock[k] += d.cost[k] ?? 0;
+        this.craftQueue.unshift(v.order);
       }
       v.order = null;
     }
@@ -6388,16 +6759,25 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
     animate(v, dt) {
       let anim = "idle", hold = null;
       const walking = v.path.length > 0 || !!v.slide;
-      if (v.down > 0) anim = "idle";
+      const armed = () => {
+        if (!v.weapon) return null;
+        const w = weaponOf(v);
+        return { kind: v.weapon, tier: w.tier ?? 1 };
+      };
+      const style = !v.weapon ? "fist" : { thrust: "pierce", shoot: "bow", sling: "sling" }[weaponOf(v).anim] ?? "melee";
+      const ready = v.phase === "fight" || v.fight.mode !== "none";
+      if (v.down > 0) anim = "down";
       else if (v.swing) {
         const w = weaponOf(v);
         anim = w.anim;
         if (v.weapon) hold = { kind: v.weapon, tier: w.tier ?? 1 };
       } else if (v.flinch > 0) anim = "hit";
-      else if (walking) {
-        anim = v.carry && v.carry.amount > 0 ? "carry_walk" : "walk";
-        if (v.weapon && v.phase === "fight") hold = null;
-      } else if (v.phase === "work" && v.job !== "idle") {
+      else if (v.phase === "flee") anim = "run";
+      else if (ready) {
+        anim = `${walking ? "charge" : "guard"}_${style}`;
+        hold = armed();
+      } else if (walking) anim = v.carry && v.carry.amount > 0 ? "carry_walk" : "walk";
+      else if (v.phase === "work" && v.job !== "idle") {
         const k = TOOL_OF_JOB[v.job], tier = this.toolTier(v, v.job);
         if (k && tier > 0) {
           anim = JOBS[v.job].anim === "gather" ? "dig" : JOBS[v.job].anim;
@@ -6663,7 +7043,7 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
             return;
           }
           const target = b.upgrading ? b.level + 1 : b.level;
-          b.progress += dt / levelDef(b, target).buildTime * this.workFactor(v, "build");
+          b.progress += dt / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1)) * this.workFactor(v, "build");
           this.gainXp(v, "build", dt);
           this.wear(v, "build", dt);
           if (b.progress >= 1) {
@@ -6674,8 +7054,10 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
               this.say(`${BUILDINGS[b.kind].name} \u0111\xE3 l\xEAn c\u1EA5p ${b.level} (${levelDef(b).name.toLowerCase()}).`);
             } else {
               b.done = true;
+              b.rebuild = false;
               this.fogDirty = true;
               this.say(`${BUILDINGS[b.kind].name} \u0111\xE3 d\u1EF1ng xong.`);
+              if (b.kind === "workshop" && this.researched.size === 0) this.say("M\u1EDF X\u01B0\u1EDFng, giao m\u1ED9t d\xE2n l\xE0m Th\u1EE3 th\u1EE7 c\xF4ng, r\u1ED3i nghi\xEAn c\u1EE9u \u0111\u1EC3 m\u1EDF th\xEAm \u0111\u1ED3 ch\u1EBF t\xE1c v\xE0 c\u1EA5p c\xF4ng tr\xECnh.");
             }
             v.phase = "idle";
           }
@@ -6743,17 +7125,23 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       }
     }
     doCraft(v, dt) {
-      const r = v.order ? RECIPE_BY_ID[v.order] : null;
-      if (!r) {
+      const d = v.order ? this.orderDef(v.order) : null;
+      if (!v.order || !d) {
         v.phase = "idle";
         return;
       }
       const shop = this.getBuilding(v.target);
-      v.progress += dt * this.workFactor(v, "craft") * (shop ? levelDef(shop).craftSpeed : 1) / r.time;
+      v.progress += dt * this.workFactor(v, "craft") * (shop ? levelDef(shop).craftSpeed : 1) / d.time;
       this.gainXp(v, "craft", dt);
       if (v.progress < 1) return;
-      this.toolStock[r.id] = (this.toolStock[r.id] ?? 0) + 1;
-      this.say(`${v.name} \u0111\xE3 ch\u1EBF xong ${recipeName(r).toLowerCase()}.`);
+      if (isResearchOrder(v.order)) {
+        const t = techOfOrder(v.order);
+        this.researched.add(t.id);
+        this.say(`${v.name} \u0111\xE3 nghi\xEAn c\u1EE9u xong "${t.name}".`);
+      } else {
+        this.toolStock[v.order] = (this.toolStock[v.order] ?? 0) + 1;
+        this.say(`${v.name} \u0111\xE3 ch\u1EBF xong ${recipeName(RECIPE_BY_ID[v.order]).toLowerCase()}.`);
+      }
       v.order = null;
       v.progress = 0;
       v.phase = "idle";
@@ -6850,7 +7238,7 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
         return;
       }
       if (!v.order) {
-        const i = this.craftQueue.findIndex((id) => this.affordable(RECIPE_BY_ID[id]));
+        const i = this.craftQueue.findIndex((id2) => this.affordable(id2));
         if (i < 0) {
           if (this.craftQueue.length && this.time - this.lastMatWarn > 30) {
             this.lastMatWarn = this.time;
@@ -6859,23 +7247,23 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
           this.wait(v, 3);
           return;
         }
-        const r2 = RECIPE_BY_ID[this.craftQueue[i]];
+        const id = this.craftQueue[i], d2 = this.orderDef(id);
         this.craftQueue.splice(i, 1);
-        for (const k of Object.keys(r2.cost)) this.stock[k] -= r2.cost[k] ?? 0;
-        v.order = r2.id;
+        for (const k of Object.keys(d2.cost)) this.stock[k] -= d2.cost[k] ?? 0;
+        v.order = id;
       }
       shops.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) || Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
       for (const b of shops.slice(0, 2)) {
-        const d = BUILDINGS[b.kind];
-        if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
+        const d2 = BUILDINGS[b.kind];
+        if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d2.w, d2.h)) >= 0) {
           v.target = b.id;
           v.phase = "goShop";
           return;
         }
       }
-      const r = RECIPE_BY_ID[v.order];
-      for (const k of Object.keys(r.cost)) this.stock[k] += r.cost[k] ?? 0;
-      this.craftQueue.unshift(r.id);
+      const d = this.orderDef(v.order);
+      for (const k of Object.keys(d.cost)) this.stock[k] += d.cost[k] ?? 0;
+      this.craftQueue.unshift(v.order);
       v.order = null;
       this.wait(v, 3);
     }
@@ -7043,6 +7431,8 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       /** Building being placed, and where the ghost currently sits (top-left tile). */
       this.placing = null;
       this.placeAt = null;
+      /** Id of the building being carried to a new spot (null when placing a new one). */
+      this.moving = null;
       /** Building shown in the building panel. */
       this.selectedBuilding = null;
       /** Foe or animal shown in the target card. */
@@ -7342,7 +7732,15 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
     }
     ghost() {
       if (!this.placing || !this.placeAt) return null;
-      return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.sim.canPlace(this.placing, this.placeAt.x, this.placeAt.y) === null };
+      const b = this.moving !== null ? this.sim.getBuilding(this.moving) : void 0;
+      return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era };
+    }
+    /** Why the ghost cannot be put down where it is, or null. */
+    placeProblem() {
+      if (!this.placing || !this.placeAt) return "Ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7";
+      if (this.moving === null) return this.sim.canPlace(this.placing, this.placeAt.x, this.placeAt.y);
+      const b = this.sim.getBuilding(this.moving);
+      return b ? this.sim.canMove(b, this.placeAt.x, this.placeAt.y) : "C\xF4ng tr\xECnh kh\xF4ng c\xF2n";
     }
     startPlacing(kind) {
       this.placing = kind;
@@ -7350,13 +7748,39 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       this.placeAt = this.originAt({ x: this.r.w / 2, y: this.r.h / 2 });
       this.onChange();
     }
+    /** Pick a built building up to put it somewhere else. */
+    startMoving(id) {
+      const b = this.sim.getBuilding(id);
+      if (!b) return;
+      this.moving = id;
+      this.selectedBuilding = null;
+      this.startPlacing(b.kind);
+      this.placeAt = { x: b.x, y: b.y };
+      this.onChange();
+    }
     cancelPlacing() {
       this.placing = null;
       this.placeAt = null;
+      this.moving = null;
       this.onChange();
     }
     confirmPlace(keep = false) {
       if (!this.placing || !this.placeAt) return;
+      if (this.moving !== null) {
+        const id = this.moving, err = this.sim.moveBuilding(id, this.placeAt.x, this.placeAt.y);
+        if (err) {
+          this.onToast(err);
+          return;
+        }
+        const ids2 = [...this.selected], b = this.sim.getBuilding(id);
+        if (ids2.length && b && needsWork(b)) this.sim.orderWork(ids2, b.x, b.y);
+        this.placing = null;
+        this.placeAt = null;
+        this.moving = null;
+        this.onToast("\u0110\xE3 d\u1EDDi c\xF4ng tr\xECnh");
+        this.onChange();
+        return;
+      }
       const o = this.placeAt, res = this.sim.placeBuilding(this.placing, o.x, o.y);
       if (!res.ok) {
         this.onToast(res.reason ?? "Kh\xF4ng \u0111\u1EB7t \u0111\u01B0\u1EE3c");
@@ -7594,6 +8018,12 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
   }
   function stockWorkshop(sim2, n) {
     for (const r of RECIPES) sim2.toolStock[r.id] = (sim2.toolStock[r.id] ?? 0) + n;
+  }
+  function unlockResearch(sim2) {
+    for (const t of TECHS) sim2.researched.add(t.id);
+  }
+  function resetResearch(sim2) {
+    sim2.researched.clear();
   }
   function bumpStat(sim2, ids, key, delta) {
     for (const id of ids) {
@@ -7873,6 +8303,8 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
         toggle("B\u1EA5t t\u1EED", "god", "D\xE2n kh\xF4ng nh\u1EADn s\xE1t th\u01B0\u01A1ng"),
         toggle("Kh\xF4ng \u0111\xF3i", "noHunger", "D\xE2n kh\xF4ng b\u1ECB \u0111\xF3i")
       ), h("div", { class: "devrow" }, btn("Kh\xE1m ph\xE1 to\xE0n b\u1EA3n \u0111\u1ED3", () => revealMap(sim2))));
+      page.append(h("h3", { text: "Nghi\xEAn c\u1EE9u" }));
+      page.append(h("div", { class: "devrow" }, btn("M\u1EDF h\u1EBFt nghi\xEAn c\u1EE9u", () => unlockResearch(sim2), "M\u1ECDi c\xF4ng th\u1EE9c v\xE0 c\u1EA5p c\xF4ng tr\xECnh"), btn("Kh\xF3a l\u1EA1i h\u1EBFt", () => resetResearch(sim2))));
       page.append(h("h3", { text: "C\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p" }));
       page.append(row("X\u01B0\u1EDFng", btn("+3 m\u1ED7i lo\u1EA1i v\xE0o X\u01B0\u1EDFng", () => stockWorkshop(sim2, 3), "C\xF4ng c\u1EE5, v\u0169 kh\xED v\xE0 gi\xE1p c\xF3 s\u1EB5n cho d\xE2n t\u1EF1 nh\u1EADn")));
       const tools = h("div", { class: "devrow" });
@@ -7954,7 +8386,7 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
         h("li", {}, h("b", { text: "Ra l\u1EC7nh" }), ": m\xE1y t\xEDnh: chu\u1ED9t ph\u1EA3i. \u0110i\u1EC7n tho\u1EA1i: khi \u0111\xE3 ch\u1ECDn d\xE2n, ch\u1EA1m l\xEAn \u0111\u1EA5t, c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3, c\xF4ng tr\u01B0\u1EDDng hay k\u1EBB \u0111\u1ECBch. Gi\u1EEF Shift (m\xE1y t\xEDnh) \u0111\u1EC3 x\u1EBFp l\u1EC7nh n\u1ED1i nhau."),
         h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: hai ng\xF3n tay; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
         h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
-        h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), ": m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, X\u01B0\u1EDFng \u0111\u1EC3 ch\u1EBF c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p. C\xF4ng tr\xECnh n\xE2ng c\u1EA5p: \u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1."),
+        h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), ": m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, X\u01B0\u1EDFng \u0111\u1EC3 ch\u1EBF c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p. C\xF4ng tr\xECnh n\xE2ng c\u1EA5p: \u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, nh\u01B0ng m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u tr\u01B0\u1EDBc \u1EDF X\u01B0\u1EDFng (giao m\u1ED9t d\xE2n l\xE0m Th\u1EE3 th\u1EE7 c\xF4ng). Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa)."),
         h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), ": giao ngh\u1EC1 Chi\u1EBFn binh ho\u1EB7c Th\u1EE3 s\u0103n r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng 30 gi\xE2y; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh 3 gi\xE2y s\u1EBD k\xE9o h\u1ECD d\u1EADy."),
         h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), ": t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD 30 gi\xE2y ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p."),
         h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
@@ -8295,6 +8727,11 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       this.workshop = h("div", { class: "sec" });
       this.resRows = [];
       this.recRows = [];
+      this.techRows = [];
+      this.move = h("button", { class: "sm", text: "D\u1EDDi" });
+      this.demolish = h("button", { class: "sm danger", text: "Ph\xE1 b\u1ECF" });
+      this.armed = 0;
+      this.armedFor = -1;
       this.villagerList = h("div");
       this.villagerKey = "";
       this.vRows = /* @__PURE__ */ new Map();
@@ -8318,30 +8755,46 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
       const section = (title, list) => {
         this.workshop.append(h("div", { class: "sub", text: title }));
         for (const r of list) {
-          const have = h("span", { class: "have" });
-          this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, have });
-          this.workshop.append(h(
+          const have = h("span", { class: "have" }), lock = h("small", { class: "lock" });
+          const minus = h("button", { class: "sm", text: "\u2212", title: "B\u1EDBt m\u1ED9t \u0111\u01A1n", onclick: () => {
+            sim2.unqueueCraft(r.id);
+            ctl2.onChange();
+          } });
+          const plus = h("button", { class: "sm", text: "+", title: "Th\xEAm m\u1ED9t \u0111\u01A1n v\xE0o h\xE0ng \u0111\u1EE3i", onclick: () => {
+            const e = sim2.queueCraft(r.id);
+            if (e) c.toast(e);
+            ctl2.onChange();
+          } });
+          const row = h(
             "div",
             { class: "rec" },
             iconCanvas(sprites2.icons[r.id]),
-            h("div", { class: "nm" }, recipeName(r), h("small", {}, `${costText(r.cost, RES_NAME)} \xB7 ${r.time} gi\xE2y \xB7 ${recipeUse(r)}`)),
-            h(
-              "div",
-              { class: "qty" },
-              have,
-              h("button", { class: "sm", text: "\u2212", title: "B\u1EDBt m\u1ED9t \u0111\u01A1n", onclick: () => {
-                sim2.unqueueCraft(r.id);
-                ctl2.onChange();
-              } }),
-              h("button", { class: "sm", text: "+", title: "Th\xEAm m\u1ED9t \u0111\u01A1n v\xE0o h\xE0ng \u0111\u1EE3i", onclick: () => {
-                const e = sim2.queueCraft(r.id);
-                if (e) c.toast(e);
-                ctl2.onChange();
-              } })
-            )
-          ));
+            h("div", { class: "nm" }, recipeName(r), h("small", {}, `${costText(r.cost, RES_NAME)} \xB7 ${r.time} gi\xE2y \xB7 ${recipeUse(r)}`), lock),
+            h("div", { class: "qty" }, have, minus, plus)
+          );
+          this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, have, row, lock, btns: [minus, plus] });
+          this.workshop.append(row);
         }
       };
+      this.workshop.append(h("div", { class: "sub", text: "Nghi\xEAn c\u1EE9u (th\u1EE3 th\u1EE7 c\xF4ng l\xE0m, t\u1ED1n nguy\xEAn li\u1EC7u v\xE0 th\u1EDDi gian)" }));
+      for (const t of TECHS) {
+        const note = h("small", { class: "lock" }), btn = h("button", { class: "sm" });
+        btn.addEventListener("click", () => {
+          const st = sim2.techState(t).state;
+          if (st === "queued") sim2.unqueueCraft(RESEARCH_PREFIX + t.id);
+          else {
+            const e = sim2.queueCraft(RESEARCH_PREFIX + t.id);
+            if (e) c.toast(e);
+          }
+          ctl2.onChange();
+        });
+        const row = h("div", { class: "tech" }, h("div", { class: "nm" }, t.name, h("small", {}, `${t.desc} M\u1EDF: ${unlockText(t, (id) => {
+          const r = RECIPE_BY_ID[id];
+          return r ? recipeName(r) : id;
+        })}.`), h("small", {}, `${costText(t.cost, RES_NAME)} \xB7 ${t.time} gi\xE2y${t.needLevel > 1 ? ` \xB7 X\u01B0\u1EDFng c\u1EA5p ${t.needLevel}` : ""}`), note), btn);
+        this.techRows.push({ id: t.id, row, btn, note });
+        this.workshop.append(row);
+      }
       this.workshop.append(this.shopInfo, this.assign);
       this.assign.addEventListener("click", () => {
         const b = this.current();
@@ -8368,8 +8821,27 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
         this.storage,
         this.workshop,
         this.next,
-        this.upgrade
+        this.upgrade,
+        h("div", { class: "btns" }, this.move, this.demolish)
       );
+      this.move.addEventListener("click", () => {
+        const b = this.current();
+        if (b) ctl2.startMoving(b.id);
+      });
+      this.demolish.addEventListener("click", () => {
+        const b = this.current();
+        if (!b) return;
+        if (this.armedFor === b.id && performance.now() < this.armed) {
+          const e = sim2.demolishBuilding(b.id);
+          c.toast(e ?? "\u0110\xE3 ph\xE1 b\u1ECF c\xF4ng tr\xECnh");
+          this.armedFor = -1;
+          ctl2.closeBuilding();
+          return;
+        }
+        this.armedFor = b.id;
+        this.armed = performance.now() + 4e3;
+        this.update();
+      });
     }
     current() {
       const id = this.c.ctl.selectedBuilding;
@@ -8396,11 +8868,30 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
         r.bar.style.width = `${Math.min(100, sim2.stock[r.res] / Math.max(1, sim2.capacity()) * 100)}%`;
       }
       if (b.kind === "workshop" && ready) {
-        for (const r of this.recRows) r.have.textContent = `kho ${sim2.toolCount(r.kind, r.tier)} \xB7 \u0111\u1EE3i ${sim2.craftQueue.filter((id) => id === r.id).length}`;
+        for (const r of this.recRows) {
+          const open = sim2.recipeOpen(r.id);
+          r.have.textContent = open ? `kho ${sim2.toolCount(r.kind, r.tier)} \xB7 \u0111\u1EE3i ${sim2.craftQueue.filter((id) => id === r.id).length}` : "";
+          r.row.classList.toggle("locked", !open);
+          r.lock.textContent = open ? "" : `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForRecipe(r.id)?.name ?? "?"}`;
+          for (const btn of r.btns) btn.disabled = !open;
+        }
+        for (const r of this.techRows) {
+          const t = TECHS.find((x) => x.id === r.id), st = sim2.techState(t);
+          r.row.classList.toggle("locked", st.state === "locked");
+          r.row.classList.toggle("done", st.state === "done");
+          r.note.textContent = st.state === "locked" ? st.why ?? "" : st.state === "active" ? "Th\u1EE3 \u0111ang nghi\xEAn c\u1EE9u\u2026" : st.state === "queued" ? "\u0110ang ch\u1EDD th\u1EE3 nh\u1EADn (t\u1ED1n nguy\xEAn li\u1EC7u khi b\u1EAFt \u0111\u1EA7u)" : st.state === "done" ? "\u0110\xE3 nghi\xEAn c\u1EE9u" : "";
+          r.btn.textContent = { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state];
+          r.btn.disabled = st.state === "done" || st.state === "active" || st.state === "locked";
+        }
         const n = sim2.villagers.filter((v) => v.job === "craft").length;
         this.shopInfo.textContent = n ? `${n} th\u1EE3 th\u1EE7 c\xF4ng \u0111ang l\xE0m \xB7 h\xE0ng \u0111\u1EE3i ${sim2.craftQueue.length}` : "Ch\u01B0a c\xF3 th\u1EE3 th\u1EE7 c\xF4ng: giao m\u1ED9t d\xE2n l\xE0m ngh\u1EC1 n\xE0y \u0111\u1EC3 ch\u1EBF \u0111\u1ED3";
         this.assign.disabled = ctl2.selected.size === 0;
       }
+      this.move.hidden = this.demolish.hidden = !def.buildable;
+      const arm = this.armedFor === b.id && performance.now() < this.armed;
+      this.demolish.textContent = arm ? `B\u1EA5m l\u1EA1i \u0111\u1EC3 ph\xE1 (thu ${costText(sim2.salvage(b), RES_NAME)})` : "Ph\xE1 b\u1ECF";
+      this.demolish.classList.toggle("armed", arm);
+      this.move.textContent = b.done && Object.keys(sim2.moveFee(b)).length ? `D\u1EDDi (${costText(sim2.moveFee(b), RES_NAME)})` : "D\u1EDDi";
       const grow = b.level < top && def.buildable && b.done;
       this.upgrade.hidden = !grow;
       this.next.hidden = !grow;
@@ -8410,6 +8901,7 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
         this.upgrade.textContent = b.upgrading ? "\u0110ang n\xE2ng c\u1EA5p\u2026" : `N\xE2ng c\u1EA5p \xB7 ${costText(nx.cost, RES_NAME)}`;
         this.upgrade.disabled = !!why;
         this.upgrade.title = why ?? "";
+        if (why && why !== "\u0110ang n\xE2ng c\u1EA5p") this.next.textContent += ` \xB7 ${why}`;
       }
     }
     updateCampfire() {
@@ -8598,10 +9090,11 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
     const bar = $("placeBar");
     bar.hidden = !placing;
     if (placing && ctl.placing) {
-      const g = ctl.ghost(), why = g ? sim.canPlace(ctl.placing, g.x, g.y) : "Ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7";
-      $("placeName").textContent = `\u0110\u1EB7t ${BUILDINGS[ctl.placing].name}`;
-      $("placeInfo").textContent = why ?? "Ch\u1ED7 n\xE0y \u0111\u1EB7t \u0111\u01B0\u1EE3c";
+      const why = ctl.placeProblem(), moving = ctl.moving !== null ? sim.getBuilding(ctl.moving) : void 0;
+      $("placeName").textContent = `${moving ? "D\u1EDDi" : "\u0110\u1EB7t"} ${BUILDINGS[ctl.placing].name}`;
+      $("placeInfo").textContent = why ?? (moving ? `Ph\xED d\u1EDDi: ${costText(sim.moveFee(moving), RES_NAME)}` : "Ch\u1ED7 n\xE0y \u0111\u1EB7t \u0111\u01B0\u1EE3c");
       $("btnPlaceOk").disabled = why !== null;
+      $("btnPlaceOk").textContent = moving ? "\u2713 D\u1EDDi t\u1EDBi \u0111\xE2y" : "\u2713 \u0110\u1EB7t \u1EDF \u0111\xE2y";
     }
     menu.update();
     syncButtons();

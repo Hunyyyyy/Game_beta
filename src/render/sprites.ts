@@ -181,11 +181,11 @@ export class Sprites {
     // looping animations wrap; one-shot ones (attacks) stop on their last frame
     const frame = def.loop === false ? Math.min(step, def.frames.length - 1) : step % def.frames.length;
     const kind = v.carry?.res ?? 'wood';
-    const key = `${name}|${frame}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : '-'}`;
+    const key = `${name}|${frame}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : '-'}|${v.armor ?? '-'}`;
     let c = this.vcache.get(key);
     if (!c) {
       const [cv, g] = canvas(W, H);
-      g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 })), W, H), 0, 0);
+      g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor)), W, H), 0, 0);
       this.vcache.set(key, cv); c = cv;
     }
     return c;

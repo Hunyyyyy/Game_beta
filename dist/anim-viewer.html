@@ -433,8 +433,98 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
     ]
   };
 
+  // src/data/armors/hide.json
+  var hide_default = {
+    _note: "Worn armour is drawn over the body. Shapes are [x, y, w, h, color]. 'torso' is measured from the top-left of the torso (front/back: 10 wide, side: 7 wide), 'head' from the top-left of the head (front/back: 12 wide, side: 13 wide). 'wraps' are the bands on shins and forearms. Colour names: the palette below plus skin, skinD from the villager.",
+    name: "\xC1o da",
+    palette: { h: "#a8733f", hd: "#774c28", hl: "#cf9a62", st: "#43291a", bone: "#eadfc3" },
+    front: {
+      torso: [
+        [0, 0, 10, 6, "h"],
+        [0, 1, 1, 5, "hd"],
+        [9, 1, 1, 5, "hd"],
+        [1, 1, 3, 1, "hl"],
+        [6, 1, 3, 1, "hl"],
+        [3, 0, 4, 2, "skin"],
+        [4, 0, 2, 1, "skinD"],
+        [4, 2, 1, 1, "bone"],
+        [5, 3, 1, 1, "bone"],
+        [4, 4, 1, 1, "bone"],
+        [5, 5, 1, 1, "bone"],
+        [-1, -1, 3, 3, "hd"],
+        [-1, -1, 3, 1, "hl"],
+        [8, -1, 3, 3, "hd"],
+        [8, -1, 3, 1, "hl"],
+        [0, 6, 10, 1, "st"],
+        [4, 6, 2, 1, "bone"],
+        [0, 7, 2, 2, "hd"],
+        [3, 7, 2, 2, "h"],
+        [5, 7, 2, 2, "hd"],
+        [8, 7, 2, 2, "h"]
+      ],
+      head: [
+        [1, 0, 10, 3, "h"],
+        [2, 0, 4, 1, "hl"],
+        [1, 2, 10, 1, "hd"],
+        [0, 3, 12, 1, "st"],
+        [5, 3, 2, 1, "bone"]
+      ]
+    },
+    back: {
+      torso: [
+        [0, 0, 10, 6, "h"],
+        [0, 1, 1, 5, "hd"],
+        [9, 1, 1, 5, "hd"],
+        [4, 0, 2, 6, "hd"],
+        [1, 1, 2, 1, "hl"],
+        [7, 1, 2, 1, "hl"],
+        [-1, -1, 3, 3, "hd"],
+        [-1, -1, 3, 1, "hl"],
+        [8, -1, 3, 3, "hd"],
+        [8, -1, 3, 1, "hl"],
+        [0, 6, 10, 1, "st"],
+        [0, 7, 2, 2, "hd"],
+        [3, 7, 2, 2, "h"],
+        [5, 7, 2, 2, "hd"],
+        [8, 7, 2, 2, "h"]
+      ],
+      head: [
+        [1, 0, 10, 4, "h"],
+        [2, 0, 4, 1, "hl"],
+        [1, 3, 10, 1, "hd"],
+        [0, 4, 12, 1, "st"]
+      ]
+    },
+    side: {
+      torso: [
+        [0, 0, 7, 6, "h"],
+        [6, 0, 1, 6, "hd"],
+        [1, 1, 3, 1, "hl"],
+        [1, -1, 5, 3, "hd"],
+        [1, -1, 5, 1, "hl"],
+        [0, 6, 7, 1, "st"],
+        [2, 6, 2, 1, "bone"],
+        [0, 7, 2, 2, "hd"],
+        [3, 7, 2, 2, "h"],
+        [5, 7, 2, 1, "hd"]
+      ],
+      head: [
+        [0, 0, 11, 3, "h"],
+        [1, 0, 5, 1, "hl"],
+        [0, 2, 11, 1, "hd"],
+        [0, 3, 12, 1, "st"],
+        [8, 3, 2, 1, "bone"]
+      ]
+    },
+    wraps: {
+      leg: { dy: 4, w: 3, h: 2, color: "hd", edge: "st" },
+      arm: { w: 3, h: 2, color: "hd", edge: "st" }
+    }
+  };
+
   // src/character/rig.js
   var handTools = { axe: axe_default, pick: pick_default, hammer: hammer_default, hoe: hoe_default, club: club_default, spear: spear_default, mace: mace_default, hatchet: hatchet_default, sling: sling_default, bow: bow_default };
+  var armors = { hide: hide_default };
   var W = 40;
   var H = 48;
   var CX = 20;
@@ -654,7 +744,24 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
     if (own) for (const [x, y, w, h, c] of own) rect(b, gx + x, gy + y, w, h, col[c] || hexRgb(c));
     else rotShapes(b, gripShapes(def), col, gx, gy, rad(180 - (tool.a || 0)));
   }
-  function drawCharacter(b, view, f, P, sex, ov) {
+  function armorColors(def, P) {
+    const c = { skin: P.skin, skinD: P.skinD };
+    for (const [k, v] of Object.entries(def.palette || {})) c[k] = hexRgb(v);
+    return c;
+  }
+  function drawArmorLayer(b, def, C, view, layer, ox, oy) {
+    const shapes = def[view] && def[view][layer];
+    if (!shapes) return;
+    for (const [x, y, w, h, k] of rects(shapes)) rect(b, ox + x, oy + y, w, h, C[k] || hexRgb(k));
+  }
+  function drawWrap(b, wr, C, x, y) {
+    if (!wr) return;
+    const w = wr.w || 3, h = wr.h || 2, x0 = Math.round(x - w / 2), y0 = Math.round(y);
+    rect(b, x0, y0, w, h, C[wr.color] || hexRgb(wr.color));
+    if (wr.edge) rect(b, x0, y0, w, 1, C[wr.edge] || hexRgb(wr.edge));
+  }
+  function drawCharacter(b, view, f, P, sex, ov, armorId) {
+    const AD = armorId && armors[armorId], AC = AD ? armorColors(AD, P) : null;
     const side = view === "side", back = view === "back", front = view === "front";
     const bob = f.bob || 0, lean = f.lean || 0;
     const tool = f.tool && f.tool.on ? f.tool : null;
@@ -669,6 +776,7 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
       const fy = 42 - gl(L, "lift", 0) - 7 * (1 - Math.cos(a));
       line(b, hx, hipY, fx, fy, 3, col);
       rect(b, Math.round(fx) - 1, Math.round(fy) + 1, 3, 1, P.skinD);
+      if (AD && col !== P.skinD) drawWrap(b, AD.wraps && AD.wraps.leg, AC, (hx + fx) / 2, fy - gl(AD.wraps && AD.wraps.leg, "dy", 4));
     };
     const armPts = (A, sx) => {
       const a1 = gl(A, "a", 0), a2 = a1 + gl(A, "b", 0), L = 3.5;
@@ -683,6 +791,7 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
     const arm = (p, col) => {
       line(b, p.sx, shY, p.ex, p.ey, 3, col);
       line(b, p.ex, p.ey, p.hx, p.hy, 3, col);
+      if (AD) drawWrap(b, AD.wraps && AD.wraps.arm, AC, (p.ex + p.hx) / 2, (p.ey + p.hy) / 2 - 1);
     };
     const axe = (hx, hy) => drawTool(b, side, hx, hy, tool, ov, P);
     const bundle = () => {
@@ -712,7 +821,9 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
       leg(f.legL, hx0, P.skinD);
       leg(f.legR, hx0, P.skin);
       drawTorso(b, CX - 3 + tDx, TY, "side", P, sex);
+      if (AD) drawArmorLayer(b, AD, AC, "side", "torso", CX - 3 + tDx, TY);
       drawHead(b, "side", CX - 6 + hDx, HY, P, sex);
+      if (AD) drawArmorLayer(b, AD, AC, "side", "head", CX - 6 + hDx, HY);
       if (carry) bundle();
       arm(pR2, P.skin);
       if (tool) axe(pR2.hx, pR2.hy);
@@ -727,7 +838,9 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
       arm(pL, P.skin);
     }
     drawTorso(b, CX - 5, TY, view, P, sex);
+    if (AD) drawArmorLayer(b, AD, AC, view, "torso", CX - 5, TY);
     drawHead(b, view, CX - 6, HY, P, sex);
+    if (AD) drawArmorLayer(b, AD, AC, view, "head", CX - 6, HY);
     if (hold) {
       if (carry) bundle();
       if (!back) {
@@ -819,14 +932,14 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
     }
     return packPixels(list);
   }
-  function renderFrame(anims2, name, idx, view, look2, kind, toolOv) {
+  function renderFrame(anims2, name, idx, view, look2, kind, toolOv, armorId) {
     lastAnchor = null;
     const an = anims2[name];
     const f = an.frames[(idx % an.frames.length + an.frames.length) % an.frames.length];
     const P = palette(look2, kind);
     const b = new Uint8ClampedArray(W * H * 4);
     const v = view === "left" || view === "right" ? "side" : view;
-    drawCharacter(b, v, f, P, look2.sex, toolOv);
+    drawCharacter(b, v, f, P, look2.sex, toolOv, armorId);
     const o = outline(b, P.line);
     shadow(o, v === "side" ? 1 : 0);
     return view === "left" ? flipH(o) : o;
@@ -944,6 +1057,88 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
     hit: { fps: 10, loop: false, hit: 0, frames: [
       { bob: 0, lean: -3, legR: { a: 8, lift: 0 }, legL: { a: -8, lift: 0 }, armR: { a: 30, b: 10 }, armL: { a: 28, b: 10 } },
       { bob: 0, lean: -1, legR: { a: 10, lift: 0 }, legL: { a: -10, lift: 0 }, armR: { a: 20, b: 10 }, armL: { a: 18, b: 10 } }
+    ] },
+    guard_melee: { fps: 4, loop: true, frames: [
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 105, b: 30 }, armL: { a: 98, b: 30 }, tool: { on: true, a: 150, kind: "club" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 106, b: 30 }, armL: { a: 99, b: 30 }, tool: { on: true, a: 152, kind: "club" } },
+      { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 105, b: 30 }, armL: { a: 98, b: 30 }, tool: { on: true, a: 150, kind: "club" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 104, b: 30 }, armL: { a: 97, b: 30 }, tool: { on: true, a: 148, kind: "club" } }
+    ] },
+    guard_pierce: { fps: 4, loop: true, frames: [
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 111, kind: "spear" } },
+      { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 51, b: 30 }, armL: { a: 45, b: 30 }, tool: { on: true, a: 109, kind: "spear" } }
+    ] },
+    guard_bow: { fps: 4, loop: true, frames: [
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 81, b: 10 }, armL: { a: 71, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+      { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 79, b: 10 }, armL: { a: 69, b: 20 }, tool: { on: true, a: 180, kind: "bow" } }
+    ] },
+    guard_sling: { fps: 4, loop: true, frames: [
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 61, b: 25 }, armL: { a: 56, b: 25 }, tool: { on: true, a: 113, kind: "sling" } },
+      { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 59, b: 25 }, armL: { a: 54, b: 25 }, tool: { on: true, a: 107, kind: "sling" } }
+    ] },
+    guard_fist: { fps: 4, loop: true, frames: [
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 55, b: 75 }, armL: { a: 45, b: 80 } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 56, b: 75 }, armL: { a: 46, b: 80 } },
+      { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 55, b: 75 }, armL: { a: 45, b: 80 } },
+      { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 54, b: 75 }, armL: { a: 44, b: 80 } }
+    ] },
+    charge_melee: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 4, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 150, b: 20 }, armL: { a: 144, b: 20 }, tool: { on: true, a: 205, kind: "club" } },
+      { bob: 0, lean: 4, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 147, b: 20 }, armL: { a: 141, b: 20 }, tool: { on: true, a: 201, kind: "club" } },
+      { bob: 0, lean: 4, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 147, b: 20 }, armL: { a: 141, b: 20 }, tool: { on: true, a: 201, kind: "club" } },
+      { bob: -1, lean: 4, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 150, b: 20 }, armL: { a: 144, b: 20 }, tool: { on: true, a: 205, kind: "club" } },
+      { bob: 0, lean: 4, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 153, b: 20 }, armL: { a: 147, b: 20 }, tool: { on: true, a: 209, kind: "club" } },
+      { bob: 0, lean: 4, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 153, b: 20 }, armL: { a: 147, b: 20 }, tool: { on: true, a: 209, kind: "club" } }
+    ] },
+    charge_pierce: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+      { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+      { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+      { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+      { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } },
+      { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } }
+    ] },
+    charge_bow: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+      { bob: 0, lean: 3, legR: { a: 31, lift: 2 }, legL: { a: -31, lift: 0 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+      { bob: 0, lean: 3, legR: { a: 31, lift: 0 }, legL: { a: -31, lift: 1 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+      { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+      { bob: 0, lean: 3, legR: { a: -31, lift: 0 }, legL: { a: 31, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+      { bob: 0, lean: 3, legR: { a: -31, lift: 2 }, legL: { a: 31, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } }
+    ] },
+    charge_sling: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 0, lean: 3, legR: { a: 31, lift: 2 }, legL: { a: -31, lift: 0 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 0, lean: 3, legR: { a: 31, lift: 0 }, legL: { a: -31, lift: 1 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 0, lean: 3, legR: { a: -31, lift: 0 }, legL: { a: 31, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+      { bob: 0, lean: 3, legR: { a: -31, lift: 2 }, legL: { a: 31, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } }
+    ] },
+    charge_fist: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 40, b: 80 }, armL: { a: 40, b: 80 } },
+      { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: -3, b: 80 }, armL: { a: 83, b: 80 } },
+      { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: -3, b: 80 }, armL: { a: 83, b: 80 } },
+      { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 40, b: 80 }, armL: { a: 40, b: 80 } },
+      { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 83, b: 80 }, armL: { a: -3, b: 80 } },
+      { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 83, b: 80 }, armL: { a: -3, b: 80 } }
+    ] },
+    run: { fps: 12, loop: true, frames: [
+      { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 0, b: 70 }, armL: { a: 0, b: 70 } },
+      { bob: 0, lean: 3, legR: { a: 36, lift: 2 }, legL: { a: -36, lift: 0 }, armR: { a: -52, b: 70 }, armL: { a: 52, b: 70 } },
+      { bob: 0, lean: 3, legR: { a: 36, lift: 0 }, legL: { a: -36, lift: 1 }, armR: { a: -52, b: 70 }, armL: { a: 52, b: 70 } },
+      { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 0, b: 70 }, armL: { a: 0, b: 70 } },
+      { bob: 0, lean: 3, legR: { a: -36, lift: 0 }, legL: { a: 36, lift: 2 }, armR: { a: 52, b: 70 }, armL: { a: -52, b: 70 } },
+      { bob: 0, lean: 3, legR: { a: -36, lift: 2 }, legL: { a: 36, lift: 0 }, armR: { a: 52, b: 70 }, armL: { a: -52, b: 70 } }
+    ] },
+    down: { fps: 2, loop: true, frames: [
+      { bob: 7, lean: -2, legR: { a: 55, lift: 0 }, legL: { a: 48, lift: 0 }, armR: { a: 25, b: 25 }, armL: { a: 15, b: 20 } },
+      { bob: 6, lean: -3, legR: { a: 55, lift: 0 }, legL: { a: 48, lift: 0 }, armR: { a: 28, b: 25 }, armL: { a: 18, b: 20 } }
     ] }
   };
 

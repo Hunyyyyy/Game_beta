@@ -7,7 +7,7 @@ import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { POP_CAP } from './sim/tribes';
 import { Controller } from './ui/controller';
-import { $ } from './ui/dom';
+import { $, costText } from './ui/dom';
 import { Menu } from './ui/menu';
 import { MapView } from './ui/minimap';
 import { BuildingPanel, Ctx, TargetCard, UnitCard } from './ui/panels';
@@ -118,9 +118,10 @@ function updateHud(now: number) {
   if (placing || showB) $('tcard').hidden = true;
   const bar = $('placeBar'); bar.hidden = !placing;
   if (placing && ctl.placing) {
-    const g = ctl.ghost(), why = g ? sim.canPlace(ctl.placing, g.x, g.y) : 'Chạm lên bản đồ để chọn chỗ';
-    $('placeName').textContent = `Đặt ${BUILDINGS[ctl.placing].name}`; $('placeInfo').textContent = why ?? 'Chỗ này đặt được';
+    const why = ctl.placeProblem(), moving = ctl.moving !== null ? sim.getBuilding(ctl.moving) : undefined;
+    $('placeName').textContent = `${moving ? 'Dời' : 'Đặt'} ${BUILDINGS[ctl.placing].name}`; $('placeInfo').textContent = why ?? (moving ? `Phí dời: ${costText(sim.moveFee(moving), RES_NAME)}` : 'Chỗ này đặt được');
     $<HTMLButtonElement>('btnPlaceOk').disabled = why !== null;
+    $('btnPlaceOk').textContent = moving ? '✓ Dời tới đây' : '✓ Đặt ở đây';
   }
   menu.update();
   syncButtons();

@@ -75,6 +75,13 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
 .rec { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; padding: 3px 0; border-top: 1px solid var(--line); }
 .rec canvas { width: 32px; height: 32px; image-rendering: pixelated; }
 .rec .qty { display: inline-flex; gap: 4px; align-items: center; font-variant-numeric: tabular-nums; }
+.rec.locked, .tech.locked { opacity: .55; }
+.tech { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line); }
+.tech .nm { font-weight: 600; }
+.tech .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.tech.done .nm { color: var(--good); }
+.lock { display: block; color: var(--bad); }
+button.danger.armed { background: var(--bad); color: #fff; border-color: var(--bad); }
 .rec .have { min-width: 9ch; text-align: right; color: var(--muted); font-size: 12px; }
 .vrow { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; padding: 3px 0; border-top: 1px solid var(--line); cursor: pointer; }
 .vrow small { color: var(--muted); }

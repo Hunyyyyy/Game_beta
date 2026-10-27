@@ -20,6 +20,8 @@ export class Controller {
   /** Building being placed, and where the ghost currently sits (top-left tile). */
   placing: BuildingKind | null = null;
   placeAt: { x: number; y: number } | null = null;
+  /** Id of the building being carried to a new spot (null when placing a new one). */
+  moving: number | null = null;
   /** Building shown in the building panel. */
   selectedBuilding: number | null = null;
   /** Foe or animal shown in the target card. */
@@ -239,7 +241,16 @@ export class Controller {
 
   ghost(): Ghost | null {
     if (!this.placing || !this.placeAt) return null;
-    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.sim.canPlace(this.placing, this.placeAt.x, this.placeAt.y) === null };
+    const b = this.moving !== null ? this.sim.getBuilding(this.moving) : undefined;
+    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era };
+  }
+
+  /** Why the ghost cannot be put down where it is, or null. */
+  placeProblem(): string | null {
+    if (!this.placing || !this.placeAt) return 'Chạm lên bản đồ để chọn chỗ';
+    if (this.moving === null) return this.sim.canPlace(this.placing, this.placeAt.x, this.placeAt.y);
+    const b = this.sim.getBuilding(this.moving);
+    return b ? this.sim.canMove(b, this.placeAt.x, this.placeAt.y) : 'Công trình không còn';
   }
 
   startPlacing(kind: BuildingKind): void {
@@ -248,10 +259,23 @@ export class Controller {
     this.placeAt = this.originAt({ x: this.r.w / 2, y: this.r.h / 2 });
     this.onChange();
   }
-  cancelPlacing(): void { this.placing = null; this.placeAt = null; this.onChange(); }
+  /** Pick a built building up to put it somewhere else. */
+  startMoving(id: number): void {
+    const b = this.sim.getBuilding(id); if (!b) return;
+    this.moving = id; this.selectedBuilding = null; this.startPlacing(b.kind);
+    this.placeAt = { x: b.x, y: b.y }; this.onChange();
+  }
+  cancelPlacing(): void { this.placing = null; this.placeAt = null; this.moving = null; this.onChange(); }
 
   confirmPlace(keep = false): void {
     if (!this.placing || !this.placeAt) return;
+    if (this.moving !== null) {
+      const id = this.moving, err = this.sim.moveBuilding(id, this.placeAt.x, this.placeAt.y);
+      if (err) { this.onToast(err); return; }
+      const ids = [...this.selected], b = this.sim.getBuilding(id);
+      if (ids.length && b && needsWork(b)) this.sim.orderWork(ids, b.x, b.y);
+      this.placing = null; this.placeAt = null; this.moving = null; this.onToast('Đã dời công trình'); this.onChange(); return;
+    }
     const o = this.placeAt, res = this.sim.placeBuilding(this.placing, o.x, o.y);
     if (!res.ok) { this.onToast(res.reason ?? 'Không đặt được'); return; }
     const d = BUILDINGS[this.placing];

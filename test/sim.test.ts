@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { renderFrame } from '../src/character/rig.js';
 import { Sim } from '../src/sim/sim';
 import { DAY_LENGTH } from '../src/sim/constants';
 import { Tile } from '../src/sim/world';
@@ -8,6 +10,8 @@ import { ANIMALS, ARMORS, cycleOf, damageOf, MORALE, RULES, TRIBES, TRIBE_IDS, W
 import { swingTimes, weaponOf } from '../src/sim/battle';
 import { spawnAnimal } from '../src/sim/fauna';
 import type { Villager } from '../src/sim/sim';
+import * as dev from '../src/sim/dev';
+import { TECHS } from '../src/sim/research';
 
 let fails = 0;
 const ok = (c: boolean, msg: string) => { console.log((c ? 'ok   ' : 'FAIL ') + msg); if (!c) fails++; };
@@ -105,6 +109,8 @@ ok(none.maxDist < 0.8 && wood1.maxDist < 0.8, `dân đứng sát cây khi đốn
   ok(!!placed?.ok && sm.stock.wood === 25, 'đặt Xưởng tốn 15 gỗ');
   sm.setJob([a.id, b.id], 'build'); run(sm, 80);
   ok(sm.hasWorkshop(), 'Xưởng dựng xong');
+  ok(sm.queueCraft('pick2') !== null && sm.queueCraft('club1') !== null, 'đồ chưa nghiên cứu thì chưa chế được');
+  dev.unlockResearch(sm);
   ok(sm.queueCraft('axe1') === null && sm.queueCraft('pick2') === null, 'xếp được đơn khi có Xưởng');
   sm.setJob([c.id], 'craft'); run(sm, 60);
   ok(sm.toolCount('axe', 1) === 1 && sm.toolCount('pick', 2) === 1, `chế xong rìu gỗ và cuốc chim đá (${JSON.stringify(sm.toolStock)})`);
@@ -194,7 +200,7 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   sm.setJob([a.id, b.id, c.id], 'build');
   const watch = (n: number) => { for (let i = 0; i < n * 20; i++) { (sm as unknown as { tick(d: number): void }).tick(0.05);
     for (const v of sm.villagers) if ((v.phase === 'work' || v.phase === 'build' || v.phase === 'craft') && !v.slide && !sideOnly(v.facing)) bad = `${v.name} ${v.phase} nhìn ${v.facing}`; } };
-  watch(80); sm.queueCraft('axe1'); sm.queueCraft('pick1');
+  watch(80); sm.queueCraft('axe1'); sm.queueCraft('hammer1');
   sm.setJob([a.id], 'craft'); sm.setJob([b.id], 'wood'); sm.setJob([c.id], 'stone'); watch(100);
   sm.setJob([c.id], 'food'); watch(60);
   ok(bad === '', 'xây, chế tác, chặt, đào, hái đều nhìn ngang ' + bad);
@@ -337,6 +343,8 @@ const tickN = (sm: Sim, secs: number) => run(sm, secs);
   const spot = (() => { for (let dx = -8; dx <= 8; dx++) for (let dy = 3; dy <= 9; dy++) if (!sm.canPlace('storage', sp.x + dx, sp.y + dy)) return [sp.x + dx, sp.y + dy]; return null; })()!;
   const b = sm.placeBuilding('storage', spot[0], spot[1]).building!;
   const ids = sm.villagers.map((o) => o.id); sm.setJob(ids, 'build'); run(sm, 40);
+  ok(sm.upgradeBuilding(b.id)?.startsWith('Cần nghiên cứu') ?? false, 'chưa nghiên cứu thì chưa nâng cấp được');
+  dev.unlockResearch(sm);
   ok(b.done && b.level === 1 && sm.capacity() === 150, `Kho cấp 1 (đơn sơ) chứa 100 (tổng ${sm.capacity()})`);
   ok(sm.upgradeBuilding(b.id) !== null && !b.upgrading, 'thiếu gỗ thì không nâng cấp được');
   sm.stock.wood = 40;
@@ -650,6 +658,98 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const far = sm.villagers[1]; sm.setJob([far.id], 'stone'); far.x = sm.world.start.x + 30; far.y = sm.world.start.y; far.path = [];
   foe.x = far.x + 4; foe.y = far.y; run(sm, 1.5);
   ok(far.phase === 'flee' && far.fight.mode === 'none', 'a villager far from home flees to the fire');
+}
+
+{
+  // research opens recipes and building levels one step at a time, and goes through the craft queue
+  const sm = new Sim(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  sm.time = DAY_LENGTH * 0.3; sm.stock.wood = 200; sm.stock.stone = 200;
+  const sp = sm.world.start;
+  const spotFor = (kind: 'workshop' | 'storage', from = 3) => { for (let dx = -8; dx <= 8; dx++) for (let dy = from; dy <= from + 8; dy++) if (!sm.canPlace(kind, sp.x + dx, sp.y + dy)) return [sp.x + dx, sp.y + dy]; return null; };
+  const [a, b, c] = sm.villagers;
+  ok(sm.queueCraft('r:wood_tools') !== null, 'research needs a workshop first');
+  const ws = spotFor('workshop')!; const shop = sm.placeBuilding('workshop', ws[0], ws[1]).building!;
+  sm.setJob([a.id, b.id, c.id], 'build'); run(sm, 80);
+  ok(shop.done, 'workshop is up');
+  ok(sm.recipeOpen('axe1') && sm.recipeOpen('hammer1') && !sm.recipeOpen('pick1') && !sm.recipeOpen('mace2'), 'only the basic wood tools are open from the start');
+  ok(sm.queueCraft('r:club') !== null && sm.techState(TECHS.find((t) => t.id === 'club')!).state === 'locked', 'a technology waits for the one before it');
+  ok(sm.queueCraft('r:wood_tools') === null && sm.queueCraft('r:wood_tools') !== null, 'a technology can be queued once');
+  const before = sm.stock.wood;
+  sm.time = DAY_LENGTH * 0.3; sm.setJob([a.id, b.id], 'idle'); sm.setJob([c.id], 'craft'); run(sm, 8);
+  ok(c.order === 'r:wood_tools' && sm.stock.wood === before - 8, 'the craftsman takes the research order and pays for it');
+  run(sm, 120);
+  ok(sm.researched.has('wood_tools') && sm.recipeOpen('pick1') && sm.recipeOpen('hoe1'), 'the research finishes and opens its recipes');
+  ok(sm.queueCraft('pick1') === null, 'an opened recipe can be queued');
+  ok(sm.queueCraft('r:spear') !== null, 'a spear still waits for the club and a level-2 workshop');
+  sm.queueCraft('r:timber'); sm.craftQueue.splice(sm.craftQueue.indexOf('pick1'), 1); sm.time = DAY_LENGTH * 0.3; run(sm, 150);
+  ok(sm.researched.has('timber'), 'timber research done');
+  ok(sm.techState(TECHS.find((t) => t.id === 'stone_tools')!).why === 'Cần Xưởng cấp 2', 'stone tools need a level-2 workshop');
+  ok(sm.upgradeBuilding(shop.id) === null, 'now the workshop may be upgraded to level 2');
+  // an interrupted research is refunded and goes back to the queue
+  sm.time = DAY_LENGTH * 0.3; sm.setJob([a.id, b.id], 'build'); run(sm, 100);
+  ok(shop.level === 2, 'workshop is level 2');
+  sm.queueCraft('r:stone_tools'); const w0 = sm.stock.wood; run(sm, 5);
+  ok(c.order === 'r:stone_tools' && sm.stock.wood === w0 - 10, 'second step taken');
+  sm.setJob([c.id], 'idle');
+  ok(c.order === null && sm.stock.wood === w0 && sm.craftQueue.includes('r:stone_tools'), 'giving up mid-research refunds it and requeues');
+  dev.resetResearch(sm);
+  ok(!sm.recipeOpen('pick1') && sm.upgradeBuilding(shop.id) !== null, 'forgetting research locks things again');
+}
+
+{
+  // demolishing and moving buildings
+  const sm = new Sim(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  sm.time = DAY_LENGTH * 0.3; sm.stock.wood = 50;
+  const sp = sm.world.start, N = sm.world.size;
+  const spots: Array<[number, number]> = [];
+  for (let dx = -10; dx <= 10; dx++) for (let dy = 3; dy <= 12; dy++) if (!sm.canPlace('storage', sp.x + dx, sp.y + dy)) spots.push([sp.x + dx, sp.y + dy]);
+  const A = spots[0], far = spots.find(([x, y]) => Math.abs(x - A[0]) > 4 || Math.abs(y - A[1]) > 4)!;
+  const st = sm.placeBuilding('storage', A[0], A[1]).building!;
+  ok(sm.stock.wood === 40, 'storage costs 10 wood');
+  ok(sm.demolishBuilding(sm.buildings[0].id) !== null, 'the campfire cannot be torn down');
+  const ids = sm.villagers.map((o) => o.id); sm.setJob(ids, 'build'); run(sm, 5);
+  ok(sm.moveBuilding(st.id, far[0], far[1]) === null && st.x === far[0] && !st.done, 'an unfinished building moves for free');
+  ok(sm.world.occ[A[1] * N + A[0]] === 0 && sm.world.occ[far[1] * N + far[0]] === 1, 'its old tiles are free and the new ones taken');
+  run(sm, 60);
+  ok(st.done && !st.rebuild, 'the builders finish it at the new place');
+  const wood = sm.stock.wood;
+  ok(sm.moveBuilding(st.id, st.x, st.y) !== null, 'moving to the same place is refused');
+  ok(sm.moveBuilding(st.id, sm.buildings[0].x, sm.buildings[0].y) !== null, 'moving onto the campfire is refused');
+  ok(sm.moveBuilding(st.id, A[0], A[1]) === null && sm.stock.wood === wood - 2, 'a finished building pays a fifth of its price to move');
+  ok(!st.done && st.rebuild && st.level === 1 && sm.capacity() === 50, 'it must be rebuilt and gives no space meanwhile');
+  const t0 = sm.time; run(sm, 15);
+  ok(st.done && sm.time - t0 < 25, 'rebuilding takes about half the original time');
+  ok(sm.canMove(st, A[0] + 1, A[1]) === null, 'a building may shift by one tile onto its own old ground');
+  sm.setJob(ids, 'idle');
+  const w2 = sm.stock.wood;
+  ok(sm.demolishBuilding(st.id) === null && sm.stock.wood === w2 + 5 && !sm.getBuilding(st.id), 'tearing it down returns half of the wood');
+  ok(sm.world.occ[A[1] * N + A[0]] === 0, 'and frees the ground');
+}
+
+{
+  // fighters have their own poses, apart from the work animations
+  const anims = JSON.parse(readFileSync('src/data/anims.json', 'utf8')) as Record<string, { frames: unknown[] }>;
+  for (const style of ['melee', 'pierce', 'bow', 'sling', 'fist']) ok(!!anims[`guard_${style}`] && !!anims[`charge_${style}`], `a ready stance and a charge exist for ${style} fighters`);
+  ok(!!anims.run && !!anims.down, 'fleeing and being downed have their own poses');
+  const sm = new Sim(1337); reveal(sm); const v = sm.villagers[0]; sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  sm.setJob([v.id], 'wood'); run(sm, 1);
+  ok(v.anim !== 'guard_melee' && !v.anim.startsWith('charge'), 'a peaceful woodcutter does not use a fighting pose');
+  sm.giveGear([v.id], 'spear', 'weapon'); sm.setJob([v.id], 'fight'); sm.orderHold([v.id]); run(sm, 1);
+  ok(v.anim === 'guard_pierce' && v.hold?.kind === 'spear', 'a spearman on guard stands in the spear stance with the spear in hand');
+  sm.giveGear([v.id], null, 'weapon'); run(sm, 0.2);
+  ok(v.anim === 'guard_fist' && v.hold === null, 'unarmed, the same man raises fists');
+  v.fight.mode = 'none'; v.phase = 'flee'; sm.animate(v, 0.05);
+  ok(v.anim === 'run', 'a frightened villager runs');
+  sm.hurt({ kind: 'unit', id: v.id }, 9999, 'crush', { x: 0, y: 0 }, {}); run(sm, 0.5);
+  ok(v.down > 0 && v.anim === 'down', 'a downed villager lies down');
+}
+
+{
+  // worn armour is drawn: the same pose with and without hide armour differs
+  const anims = JSON.parse(readFileSync('src/data/anims.json', 'utf8'));
+  const look = { sex: 'm' as const, skin: '#d9a371', hair: '#3b2a1a', hide: '#8b6a45', pants: '#3f63a8' };
+  const diff = (view: 'front' | 'back' | 'right') => { const a = renderFrame(anims, 'idle', 0, view, look, 'wood', { tier: 0 }, null), b = renderFrame(anims, 'idle', 0, view, look, 'wood', { tier: 0 }, 'hide'); let n = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++; return n; };
+  ok(diff('front') > 80 && diff('back') > 80 && diff('right') > 60, `hide armour changes the look from every side (${diff('front')}/${diff('back')}/${diff('right')} bytes)`);
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');

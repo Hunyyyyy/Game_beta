@@ -6,6 +6,7 @@ import { RES_LIST, Res } from './resources';
 import type { Sim, Villager } from './sim';
 import type { StatKey } from './jobs';
 import { launchRaid, launchWolves, surrender, tribeOf } from './tribes';
+import { TECHS } from './research';
 import { RECIPES } from './tools';
 
 /**
@@ -19,6 +20,10 @@ export function fillStock(sim: Sim): void { for (const r of RES_LIST) sim.stock[
 export function stockWorkshop(sim: Sim, n: number): void {
   for (const r of RECIPES) sim.toolStock[r.id] = (sim.toolStock[r.id] ?? 0) + n;
 }
+
+/** Open every technology at once, or forget them all. */
+export function unlockResearch(sim: Sim): void { for (const t of TECHS) sim.researched.add(t.id); }
+export function resetResearch(sim: Sim): void { sim.researched.clear(); }
 
 /** Change one stat of the given villagers by `delta`; the numbers that follow from it are recomputed. */
 export function bumpStat(sim: Sim, ids: readonly number[], key: StatKey, delta: number): void {
