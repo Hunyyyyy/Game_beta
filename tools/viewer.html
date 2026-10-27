@@ -1,0 +1,117 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Animation viewer</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:13px system-ui;background:#161616;color:#eee;display:flex;flex-direction:column;overflow:hidden}
+select,button,input{font:inherit;color:inherit}
+select,button{background:#2b2b2b;border:1px solid #484848;border-radius:4px;padding:3px 7px}
+button{cursor:pointer}button:hover:not(:disabled){background:#383838}button:disabled{opacity:.4;cursor:default}
+label{display:inline-flex;align-items:center;gap:4px;margin-right:10px;white-space:nowrap}
+input[type=number]{background:#101010;border:1px solid #484848;border-radius:4px;padding:2px 4px;color:#eee}
+canvas{image-rendering:pixelated;display:block}
+
+#top{padding:6px 8px;border-bottom:1px solid #333;display:flex;flex-wrap:wrap;align-items:center;gap:4px 0}
+#msgs{padding:2px 8px;min-height:20px;display:flex;flex-wrap:wrap;gap:0 16px;font-size:12px}
+#err{color:#ff7b7b}#note{color:#9fd}#hint{color:#fc6}
+
+#main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.8fr) minmax(0,1fr);gap:8px;padding:8px}
+.col{min-height:0;display:flex;flex-direction:column;gap:8px}
+.panel{background:#1d1d1d;border:1px solid #333;border-radius:6px;display:flex;flex-direction:column;min-height:0;padding:6px;gap:6px}
+.panel>h4{margin:0;font-size:12px;font-weight:600;color:#9ab;text-transform:uppercase;letter-spacing:.04em}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.fill{flex:1;min-height:0;position:relative}
+.fill canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border:1px solid #333;background:#222}
+.grow{flex:1}.g2{flex:1.2}
+
+.fab{position:fixed;right:18px;bottom:18px;z-index:10;min-width:104px;padding:10px 18px;font-size:14px;font-weight:700;border-radius:999px;background:#2f6fb3;border:1px solid #6aa7e6;box-shadow:0 4px 16px rgba(0,0,0,.6)}
+.fab:hover:not(:disabled){background:#3a82cf}
+#ecv{cursor:crosshair;touch-action:none}
+#palette{display:inline-flex;gap:4px;align-items:center}
+.sw{width:26px;height:26px;border:3px solid #666;padding:0;color:#fff;border-radius:4px}.sw.on{border-color:#ffd54a}
+#applybar button.on{border-color:#ffd54a;color:#ffd54a}
+#estatus{font-size:12px;color:#bcd}
+
+#strip{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px}
+#strip canvas{height:70px;width:auto;flex:none;cursor:pointer;border:2px solid #444}#strip canvas.on{border-color:#ffd54a}
+#pgallery{display:flex;gap:6px;overflow-x:auto;min-height:20px;font-size:12px;color:#889}
+.pg{flex:none;cursor:pointer;text-align:center;font-size:11px}.pg canvas{height:78px;width:auto;border:2px solid #444}.pg.on canvas{border-color:#ffd54a}
+
+.tabs{display:flex;gap:4px}.tab{border-radius:4px 4px 0 0}.tab.on{background:#3a4a5a;border-color:#6a8aa8}
+.pane{flex:1;min-height:0;display:none;flex-direction:column;gap:6px}.pane.on{display:flex}
+textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cde;border:1px solid #444;border-radius:4px;font:12px Consolas,monospace;padding:6px}
+#terr{color:#ff7b7b;font-size:12px}
+.help{font-size:11px;color:#889;line-height:1.35}
+
+@media (max-width:1000px){body{overflow:auto;height:auto}#main{display:flex;flex-direction:column}.col{min-height:520px}}
+</style></head><body>
+
+<div id="top">
+  <label>Animation <select id="anim"></select></label>
+  <label>View <select id="view"><option value="right">right</option><option value="left">left</option><option value="front">front</option><option value="back">back</option></select></label>
+  <label>Tier <select id="tier"><option value="0">bare hands</option><option value="1" selected>wood</option><option value="2">stone</option></select></label>
+  <label>Tool in hand <select id="tkind"></select></label>
+  <label>Carry <select id="carry"><option value="wood">wood</option><option value="stone">stone</option><option value="food">food</option></select></label>
+  <span id="info" style="margin-left:10px;color:#9ab"></span>
+  <a href="blueprint-viewer.html" style="margin-left:auto;color:#8cc4ff;text-decoration:none">Blueprint viewer →</a>
+</div>
+<div id="msgs"><span id="err"></span><span id="note"></span><span id="hint"></span></div>
+
+<div id="main">
+  <!-- column 1: the editor, the star of the page -->
+  <div class="col">
+    <div class="panel grow">
+      <h4>Pose editor <span style="text-transform:none;font-weight:400;color:#789">left-click paint · right-click erase · red square = hand (0,0)</span></h4>
+      <div class="bar"><span id="palette"></span><button id="undo">Undo</button><button id="mkpose">Create pose for this frame</button></div>
+      <div id="estatus"></div>
+      <div class="fill"><canvas id="ecv"></canvas></div>
+    </div>
+    <div class="panel">
+      <h4>Frames <span style="text-transform:none;font-weight:400;color:#789">click to pick the frame to edit</span></h4>
+      <div id="strip"></div>
+    </div>
+  </div>
+
+  <!-- column 2: previews -->
+  <div class="col">
+    <div class="panel g2">
+      <h4>Live animation</h4>
+      <div class="fill"><canvas id="cv"></canvas>
+      </div>
+    </div>
+    <div class="panel grow">
+      <h4>Tool preview (no character)</h4>
+      <div class="bar">
+        <label>Pose <select id="tpose"></select></label>
+        <label>Angle <input id="tanglenum" type="number" min="-360" max="720" step="1" value="180" style="width:62px">° <input id="tangle" type="range" min="0" max="360" value="180" style="width:90px"></label>
+        <label><input id="tgrid" type="checkbox" checked> grid</label>
+      </div>
+      <div class="bar"><span>Use this angle for</span><span id="applybar" class="bar"></span></div>
+      <div class="bar"><span id="curang" style="color:#ffd54a"></span><button id="readang" title="Copy the angle (and tool) of the frame you are looking at into the Angle box, to fine-tune it">← take this frame's angle</button></div>
+      <div class="fill"><canvas id="tcv"></canvas></div>
+      <div id="pgallery"></div>
+    </div>
+  </div>
+
+  <!-- column 3: JSON, one tab at a time -->
+  <div class="col">
+    <div class="panel grow">
+      <div class="tabs"><button class="tab on" data-pane="p-anim">Animation JSON</button><button class="tab" data-pane="p-tool">Tool JSON</button></div>
+      <div class="pane on" id="p-anim">
+        <div class="help">This box holds the whole game table (same text as <code>src/data/anims.json</code>); the picture updates live. You can also paste a single animation.</div>
+        <textarea id="src" spellcheck="false"></textarea>
+        <div class="bar"><button id="load">Reset to the game's anims.json</button></div>
+      </div>
+      <div class="pane" id="p-tool">
+        <div class="bar">
+          <label>Tool <select id="tedit"></select></label><button id="treset">Restore original</button>
+          <button id="bake" title="One hand-editable pose per frame of this animation, from the frame's current angle">Bake poses for this animation</button>
+        </div>
+        <div id="terr"></div>
+        <div class="help"><code>src/data/handtools/*.json</code> · rectangle <code>[x, y, w, h, color]</code>, color = head | light | dark | wood | #rrggbb · <code>"poses"</code> are hand-drawn per frame, never rotated · side view only</div>
+        <textarea id="tsrc" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+<button id="play" class="fab" title="Play / pause the animation">⏸ Pause</button>
+<script>/*BUNDLE*/</script></body></html>

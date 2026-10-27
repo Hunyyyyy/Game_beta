@@ -11,9 +11,9 @@ import stumpJson from '../data/blueprints/stump.json';
 import treePineJson from '../data/blueprints/tree_pine.json';
 import treeRoundJson from '../data/blueprints/tree_round.json';
 import toolAxeJson from '../data/blueprints/tool_axe.json';
+import toolHammerJson from '../data/blueprints/tool_hammer.json';
 import toolHoeJson from '../data/blueprints/tool_hoe.json';
 import toolPickJson from '../data/blueprints/tool_pick.json';
-import toolShovelJson from '../data/blueprints/tool_shovel.json';
 import waterJson from '../data/blueprints/water.json';
 import workshopJson from '../data/blueprints/workshop.json';
 import type { Season } from '../sim/calendar';
@@ -76,7 +76,7 @@ export class Sprites {
   readonly icons: Record<string, HTMLCanvasElement> = {};
 
   constructor() {
-    const defs: Record<string, unknown> = { axe: toolAxeJson, pick: toolPickJson, hoe: toolHoeJson, shovel: toolShovelJson };
+    const defs: Record<string, unknown> = { axe: toolAxeJson, pick: toolPickJson, hoe: toolHoeJson, hammer: toolHammerJson };
     for (const k of Object.keys(defs)) for (const tier of [1, 2]) this.icons[`${k}${tier}`] = make(defs[k], 1, { stone: tier === 2 ? 1 : 0 }).frames[0];
   }
 

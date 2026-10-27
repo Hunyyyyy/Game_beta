@@ -108,6 +108,19 @@ const jobBtns = (['idle', ...WORK_JOBS] as Job[]).map((j) => {
   return b;
 });
 
+// ---------------------------------------------------------------- cấp công cụ ngay (bỏ qua Xưởng, để thử nhanh)
+const giveBox = $('cGive');
+for (const k of TOOL_KINDS) for (const tier of [1, 2]) {
+  const b = document.createElement('button');
+  b.textContent = `${TOOL_NAME[k]} ${TIER_NAME[tier].toLowerCase()}`; b.title = `Cấp ${b.textContent.toLowerCase()} cho dân đang chọn · ${TOOL_USE[k]}`;
+  b.addEventListener('click', () => { sim.giveTool([...ctl.selected], k, tier); lastHud = 0; });
+  giveBox.appendChild(b);
+}
+const dropBtn = document.createElement('button');
+dropBtn.textContent = 'Thu hết'; dropBtn.title = 'Thu lại mọi công cụ của dân đang chọn (tay không)';
+dropBtn.addEventListener('click', () => { for (const k of TOOL_KINDS) sim.giveTool([...ctl.selected], k, 0); lastHud = 0; });
+giveBox.appendChild(dropBtn);
+
 // ---------------------------------------------------------------- bảng chế tác
 const recipesBox = $('recipes'), craftCard = $('craft');
 const recRows = RECIPES.map((r) => {

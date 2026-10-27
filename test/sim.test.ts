@@ -2,6 +2,7 @@ import { Sim } from '../src/sim/sim';
 import { DAY_LENGTH } from '../src/sim/constants';
 import { Tile } from '../src/sim/world';
 import { lightAt, rollWeather, seasonOf, SEASONS } from '../src/sim/calendar';
+import { TIER_DURABILITY } from '../src/sim/tools';
 
 let fails = 0;
 const ok = (c: boolean, msg: string) => { console.log((c ? 'ok   ' : 'FAIL ') + msg); if (!c) fails++; };
@@ -285,6 +286,42 @@ const tickN = (sm: Sim, secs: number) => run(sm, secs);
   sm.time = DAY_LENGTH * 0.5; const spring = wf.workFactor.call(sm, v, 'food');
   sm.time = DAY_LENGTH * 10.5; const autumn = wf.workFactor.call(sm, v, 'food');
   ok(Math.abs(autumn / spring - 1.4 / 0.8) < 1e-6, 'hệ số hái lượm theo mùa (xuân 0,8, thu 1,4)');
+}
+
+{
+  // cấp công cụ ngay: không cần Xưởng, dân dùng được và tốc độ làm việc tăng theo bậc
+  const sm = new Sim(5);
+  const [a] = sm.villagers;
+  ok(a.tools.axe === null, 'ban đầu tay không');
+  const rate = (t: number) => { sm.giveTool([a.id], 'axe', t); return sm.toolTier(a, 'wood'); };
+  ok(rate(1) === 1 && a.tools.axe?.tier === 1 && a.tools.axe.dur === TIER_DURABILITY[1], 'cấp rìu gỗ ngay, không cần Xưởng');
+  ok(rate(2) === 2 && a.tools.axe?.dur === TIER_DURABILITY[2], 'cấp rìu đá ghi đè rìu gỗ');
+  sm.giveTool([a.id], 'axe', 0);
+  ok(a.tools.axe === null && sm.toolTier(a, 'wood') === 0, 'thu lại về tay không');
+  ok(sm.toolTier(a, 'build') === 0, 'thợ xây tay không thì bậc 0');
+  sm.giveTool([a.id], 'hammer', 2);
+  ok(sm.toolTier(a, 'build') === 2 && sm.toolTier(a, 'wood') === 0, 'có búa đá thì xây bậc 2, không ảnh hưởng nghề khác');
+  sm.giveTool([999999], 'pick', 1);
+  ok(true, 'id không tồn tại thì bỏ qua, không lỗi');
+}
+
+{
+  // có búa thì xây nhanh hơn: cùng một thợ, cùng một Kho, đo thời gian xây xong
+  const buildTime = (tier: number): number => {
+    const sm = new Sim(42);
+    const a = sm.villagers[0];
+    sm.stock.wood = 100;
+    const sp = sm.world.start;
+    const spot = (() => { for (let dx = -8; dx <= 8; dx++) for (let dy = 3; dy <= 9; dy++) if (!sm.canPlace('storage', sp.x + dx, sp.y + dy)) return [sp.x + dx, sp.y + dy]; return null; })()!;
+    sm.placeBuilding('storage', spot[0], spot[1]);
+    if (tier) sm.giveTool([a.id], 'hammer', tier);
+    sm.setJob([a.id], 'build');
+    let t = 0;
+    while (t < 900 && !sm.buildings.every((b) => b.done)) { (sm as unknown as { tick(d: number): void }).tick(0.05); t += 0.05; }
+    return t;
+  };
+  const bare = buildTime(0), wood = buildTime(1), stone = buildTime(2);
+  ok(wood < bare && stone < wood, `búa càng tốt xây càng nhanh: tay không ${bare.toFixed(0)}s · búa gỗ ${wood.toFixed(0)}s · búa đá ${stone.toFixed(0)}s`);
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');

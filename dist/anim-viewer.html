@@ -1,0 +1,1186 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Animation viewer</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:13px system-ui;background:#161616;color:#eee;display:flex;flex-direction:column;overflow:hidden}
+select,button,input{font:inherit;color:inherit}
+select,button{background:#2b2b2b;border:1px solid #484848;border-radius:4px;padding:3px 7px}
+button{cursor:pointer}button:hover:not(:disabled){background:#383838}button:disabled{opacity:.4;cursor:default}
+label{display:inline-flex;align-items:center;gap:4px;margin-right:10px;white-space:nowrap}
+input[type=number]{background:#101010;border:1px solid #484848;border-radius:4px;padding:2px 4px;color:#eee}
+canvas{image-rendering:pixelated;display:block}
+
+#top{padding:6px 8px;border-bottom:1px solid #333;display:flex;flex-wrap:wrap;align-items:center;gap:4px 0}
+#msgs{padding:2px 8px;min-height:20px;display:flex;flex-wrap:wrap;gap:0 16px;font-size:12px}
+#err{color:#ff7b7b}#note{color:#9fd}#hint{color:#fc6}
+
+#main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.8fr) minmax(0,1fr);gap:8px;padding:8px}
+.col{min-height:0;display:flex;flex-direction:column;gap:8px}
+.panel{background:#1d1d1d;border:1px solid #333;border-radius:6px;display:flex;flex-direction:column;min-height:0;padding:6px;gap:6px}
+.panel>h4{margin:0;font-size:12px;font-weight:600;color:#9ab;text-transform:uppercase;letter-spacing:.04em}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.fill{flex:1;min-height:0;position:relative}
+.fill canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border:1px solid #333;background:#222}
+.grow{flex:1}.g2{flex:1.2}
+
+.fab{position:fixed;right:18px;bottom:18px;z-index:10;min-width:104px;padding:10px 18px;font-size:14px;font-weight:700;border-radius:999px;background:#2f6fb3;border:1px solid #6aa7e6;box-shadow:0 4px 16px rgba(0,0,0,.6)}
+.fab:hover:not(:disabled){background:#3a82cf}
+#ecv{cursor:crosshair;touch-action:none}
+#palette{display:inline-flex;gap:4px;align-items:center}
+.sw{width:26px;height:26px;border:3px solid #666;padding:0;color:#fff;border-radius:4px}.sw.on{border-color:#ffd54a}
+#applybar button.on{border-color:#ffd54a;color:#ffd54a}
+#estatus{font-size:12px;color:#bcd}
+
+#strip{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px}
+#strip canvas{height:70px;width:auto;flex:none;cursor:pointer;border:2px solid #444}#strip canvas.on{border-color:#ffd54a}
+#pgallery{display:flex;gap:6px;overflow-x:auto;min-height:20px;font-size:12px;color:#889}
+.pg{flex:none;cursor:pointer;text-align:center;font-size:11px}.pg canvas{height:78px;width:auto;border:2px solid #444}.pg.on canvas{border-color:#ffd54a}
+
+.tabs{display:flex;gap:4px}.tab{border-radius:4px 4px 0 0}.tab.on{background:#3a4a5a;border-color:#6a8aa8}
+.pane{flex:1;min-height:0;display:none;flex-direction:column;gap:6px}.pane.on{display:flex}
+textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cde;border:1px solid #444;border-radius:4px;font:12px Consolas,monospace;padding:6px}
+#terr{color:#ff7b7b;font-size:12px}
+.help{font-size:11px;color:#889;line-height:1.35}
+
+@media (max-width:1000px){body{overflow:auto;height:auto}#main{display:flex;flex-direction:column}.col{min-height:520px}}
+</style></head><body>
+
+<div id="top">
+  <label>Animation <select id="anim"></select></label>
+  <label>View <select id="view"><option value="right">right</option><option value="left">left</option><option value="front">front</option><option value="back">back</option></select></label>
+  <label>Tier <select id="tier"><option value="0">bare hands</option><option value="1" selected>wood</option><option value="2">stone</option></select></label>
+  <label>Tool in hand <select id="tkind"></select></label>
+  <label>Carry <select id="carry"><option value="wood">wood</option><option value="stone">stone</option><option value="food">food</option></select></label>
+  <span id="info" style="margin-left:10px;color:#9ab"></span>
+  <a href="blueprint-viewer.html" style="margin-left:auto;color:#8cc4ff;text-decoration:none">Blueprint viewer →</a>
+</div>
+<div id="msgs"><span id="err"></span><span id="note"></span><span id="hint"></span></div>
+
+<div id="main">
+  <!-- column 1: the editor, the star of the page -->
+  <div class="col">
+    <div class="panel grow">
+      <h4>Pose editor <span style="text-transform:none;font-weight:400;color:#789">left-click paint · right-click erase · red square = hand (0,0)</span></h4>
+      <div class="bar"><span id="palette"></span><button id="undo">Undo</button><button id="mkpose">Create pose for this frame</button></div>
+      <div id="estatus"></div>
+      <div class="fill"><canvas id="ecv"></canvas></div>
+    </div>
+    <div class="panel">
+      <h4>Frames <span style="text-transform:none;font-weight:400;color:#789">click to pick the frame to edit</span></h4>
+      <div id="strip"></div>
+    </div>
+  </div>
+
+  <!-- column 2: previews -->
+  <div class="col">
+    <div class="panel g2">
+      <h4>Live animation</h4>
+      <div class="fill"><canvas id="cv"></canvas>
+      </div>
+    </div>
+    <div class="panel grow">
+      <h4>Tool preview (no character)</h4>
+      <div class="bar">
+        <label>Pose <select id="tpose"></select></label>
+        <label>Angle <input id="tanglenum" type="number" min="-360" max="720" step="1" value="180" style="width:62px">° <input id="tangle" type="range" min="0" max="360" value="180" style="width:90px"></label>
+        <label><input id="tgrid" type="checkbox" checked> grid</label>
+      </div>
+      <div class="bar"><span>Use this angle for</span><span id="applybar" class="bar"></span></div>
+      <div class="bar"><span id="curang" style="color:#ffd54a"></span><button id="readang" title="Copy the angle (and tool) of the frame you are looking at into the Angle box, to fine-tune it">← take this frame's angle</button></div>
+      <div class="fill"><canvas id="tcv"></canvas></div>
+      <div id="pgallery"></div>
+    </div>
+  </div>
+
+  <!-- column 3: JSON, one tab at a time -->
+  <div class="col">
+    <div class="panel grow">
+      <div class="tabs"><button class="tab on" data-pane="p-anim">Animation JSON</button><button class="tab" data-pane="p-tool">Tool JSON</button></div>
+      <div class="pane on" id="p-anim">
+        <div class="help">This box holds the whole game table (same text as <code>src/data/anims.json</code>); the picture updates live. You can also paste a single animation.</div>
+        <textarea id="src" spellcheck="false"></textarea>
+        <div class="bar"><button id="load">Reset to the game's anims.json</button></div>
+      </div>
+      <div class="pane" id="p-tool">
+        <div class="bar">
+          <label>Tool <select id="tedit"></select></label><button id="treset">Restore original</button>
+          <button id="bake" title="One hand-editable pose per frame of this animation, from the frame's current angle">Bake poses for this animation</button>
+        </div>
+        <div id="terr"></div>
+        <div class="help"><code>src/data/handtools/*.json</code> · rectangle <code>[x, y, w, h, color]</code>, color = head | light | dark | wood | #rrggbb · <code>"poses"</code> are hand-drawn per frame, never rotated · side view only</div>
+        <textarea id="tsrc" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+<button id="play" class="fab" title="Play / pause the animation">⏸ Pause</button>
+<script>"use strict";
+(() => {
+  // src/data/handtools/tiers.json
+  var tiers_default = {
+    _note: "Tool head colors per tier. Keys are tier numbers (1 = wood, 2 = stone; 0 = bare hands, nothing drawn). To add a tier, add an entry here.",
+    "1": { name: "wood", head: "#b88c54", light: "#deb87e", dark: "#805c34" },
+    "2": { name: "stone", head: "#8e9496", light: "#c0c6c6", dark: "#62686c" }
+  };
+
+  // src/data/handtools/axe.json
+  var axe_default = {
+    name: "Axe",
+    handle: { length: 10, width: 1, color: "wood" },
+    head: [
+      { x: -1, y: 0, w: 2, h: 3, color: "dark" },
+      { x: 1, y: -1, w: 3, h: 5, color: "head" },
+      { x: 1, y: -1, w: 3, h: 1, color: "light" },
+      { x: 4, y: 0, w: 1, h: 3, color: "dark" },
+      { x: 1, y: 4, w: 2, h: 1, color: "head" }
+    ]
+  };
+
+  // src/data/handtools/pick.json
+  var pick_default = {
+    name: "Pickaxe",
+    handle: {
+      len: 10,
+      w: 1,
+      color: "wood"
+    },
+    side: [
+      [0, -9, 1, 12, "wood"],
+      [-1, -8, 3, 3, "dark"],
+      [-2, -7, 5, 2, "head"],
+      [-2, -7, 5, 1, "light"],
+      [-4, -6, 2, 1, "head"],
+      [-6, -5, 2, 1, "dark"],
+      [3, -6, 2, 1, "head"],
+      [5, -5, 2, 1, "dark"]
+    ]
+  };
+
+  // src/data/handtools/hammer.json
+  var hammer_default = {
+    name: "Hammer",
+    handle: {
+      length: 7,
+      width: 1,
+      color: "wood"
+    },
+    head: [
+      {
+        x: -2,
+        y: -2,
+        w: 5,
+        h: 4,
+        color: "head"
+      },
+      {
+        x: -2,
+        y: -2,
+        w: 5,
+        h: 1,
+        color: "light"
+      },
+      {
+        x: 2,
+        y: -1,
+        w: 1,
+        h: 3,
+        color: "dark"
+      }
+    ]
+  };
+
+  // src/data/handtools/hoe.json
+  var hoe_default = {
+    name: "Hoe",
+    handle: { length: 17, width: 1, color: "wood" },
+    head: [
+      { x: 1, y: 2, w: 5, h: 2, color: "head" },
+      { x: 1, y: 2, w: 5, h: 1, color: "light" },
+      { x: 0, y: 2, w: 1, h: 2, color: "dark" }
+    ]
+  };
+
+  // src/character/rig.js
+  var handTools = { axe: axe_default, pick: pick_default, hammer: hammer_default, hoe: hoe_default };
+  var W = 40;
+  var H = 48;
+  var CX = 20;
+  var rad = (d) => d * Math.PI / 180;
+  var hexRgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  var mul = (c, f) => c.map((v) => Math.max(0, Math.min(255, Math.round(v * f))));
+  function palette(look2, kind) {
+    const skin = hexRgb(look2.skin), hair = hexRgb(look2.hair), hide = hexRgb(look2.hide), pants = hexRgb(look2.pants || "#3f63a8");
+    return {
+      skin,
+      skinD: mul(skin, 0.8),
+      cheek: [Math.min(255, skin[0] + 18), Math.round(skin[1] * 0.86), Math.round(skin[2] * 0.86)],
+      mouth: mul(skin, 0.6),
+      hair,
+      hairD: mul(hair, 0.72),
+      hairL: mul(hair, 1.45),
+      pants,
+      pantsD: mul(pants, 0.72),
+      pantsL: mul(pants, 1.25),
+      hide,
+      hideD: mul(hide, 0.7),
+      wood: [139, 94, 52],
+      woodD: [104, 70, 38],
+      woodL: [196, 160, 108],
+      cb: kind === "stone" ? [120, 126, 130] : kind === "food" ? [150, 60, 60] : [139, 94, 52],
+      cbD: kind === "stone" ? [84, 90, 94] : kind === "food" ? [96, 40, 44] : [104, 70, 38],
+      cbL: kind === "stone" ? [182, 188, 192] : kind === "food" ? [220, 110, 100] : [196, 160, 108],
+      stone: [142, 148, 150],
+      stoneD: [98, 104, 108],
+      stoneL: [192, 198, 198],
+      tw: [184, 140, 84],
+      twD: [128, 92, 52],
+      twL: [222, 184, 126],
+      eye: [30, 20, 16],
+      line: [30, 20, 16]
+    };
+  }
+  function put(b, x, y, c, a) {
+    x = Math.round(x);
+    y = Math.round(y);
+    if (x < 0 || y < 0 || x >= W || y >= H) return;
+    const i = (y * W + x) * 4;
+    b[i] = c[0];
+    b[i + 1] = c[1];
+    b[i + 2] = c[2];
+    b[i + 3] = a === void 0 ? 255 : a;
+  }
+  function rect(b, x, y, w, h, c) {
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) put(b, x + i, y + j, c);
+  }
+  function line(b, x0, y0, x1, y1, w, c) {
+    const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2));
+    for (let k = 0; k <= n; k++) {
+      const t = k / n, cx = x0 + (x1 - x0) * t, cy = y0 + (y1 - y0) * t;
+      rect(b, Math.round(cx - w / 2), Math.round(cy - w / 2), w, w, c);
+    }
+  }
+  function rotShapes(b, shapes, col, ox, oy, th) {
+    const c = Math.cos(th), s = Math.sin(th);
+    for (const [x, y, w, h, k] of shapes) {
+      const C = col[k] || hexRgb(k);
+      if (w === 1 || h === 1) {
+        const horiz = w >= h, ax = x + 0.5, ay = y + 0.5, bx = horiz ? x + w - 0.5 : ax, by = horiz ? ay : y + h - 0.5;
+        const X0 = Math.floor(ox + ax * c - ay * s), Y0 = Math.floor(oy + ax * s + ay * c);
+        const X12 = Math.floor(ox + bx * c - by * s), Y12 = Math.floor(oy + bx * s + by * c);
+        const n = Math.max(Math.abs(X12 - X0), Math.abs(Y12 - Y0));
+        for (let i = 0; i <= n; i++) put(b, n ? Math.round(X0 + (X12 - X0) * i / n) : X0, n ? Math.round(Y0 + (Y12 - Y0) * i / n) : Y0, C);
+        continue;
+      }
+      const xs = [], ys = [];
+      for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) {
+        xs.push(ox + px * c - py * s);
+        ys.push(oy + px * s + py * c);
+      }
+      const X1 = Math.ceil(Math.max(...xs)), Y1 = Math.ceil(Math.max(...ys));
+      for (let Y = Math.floor(Math.min(...ys)); Y < Y1; Y++) for (let X = Math.floor(Math.min(...xs)); X < X1; X++) {
+        const dx = X + 0.5 - ox, dy = Y + 0.5 - oy;
+        const lx = dx * c + dy * s, ly = -dx * s + dy * c;
+        if (lx >= x && lx < x + w && ly >= y && ly < y + h) put(b, X, Y, C);
+      }
+    }
+  }
+  var HM = {
+    front: [
+      "..HHHHHHHH..",
+      ".HLLLHHHHHH.",
+      "HHLLHHHHHHHH",
+      "HHHHHHHHHHHH",
+      "HHSHHHSHHSHH",
+      "HSSSSSSSSSSH",
+      "HSSESSSSESSH",
+      "sSSESSSSESSs",
+      ".ScSSSSSScS.",
+      ".SSSSmmSSSS.",
+      "..ssssssss.."
+    ],
+    back: [
+      "..HHHHHHHH..",
+      ".HLLLHHHHHH.",
+      "HHLLHHHHHHHH",
+      "HHHHHHHHHHHH",
+      "HHHHHDDHHHHH",
+      "HHHHHHDHHHHH",
+      "HHHHHHHHHHHH",
+      "HDHHHHHHHHDH",
+      ".DDDDDDDDDD.",
+      "..SSSSSSSS..",
+      "..ssssssss.."
+    ],
+    side: [
+      "..HHHHHHHH...",
+      ".HLLLHHHHHH..",
+      "HHLLHHHHHHHH.",
+      "HHHHHHHHHHHH.",
+      "HHHHHHHHHHSS.",
+      "HHHHHHSSSSSS.",
+      "HHHHHHsSSESS.",
+      "HHHHHHsSSESSS",
+      "HHHHHHSSScSS.",
+      "DDDDDDSSSSmS.",
+      ".DDDDsssss..."
+    ]
+  };
+  function femaleOf(view) {
+    const m = HM[view], out = [];
+    if (view === "side") {
+      m.forEach((r, i) => out.push(i < 3 ? ".." + r : "HH" + (i === 10 ? r.replace(/^\./, "H") : r)));
+      out.push(".HHHDDD........", "..HDDDD........", "...DDD.........");
+      return out;
+    }
+    m.forEach((r, i) => {
+      if (i < 3) {
+        out.push("." + r + ".");
+        return;
+      }
+      let x = r;
+      if (view === "front" && i >= 5) x = x.replace(/^[.sS]/, "H").replace(/[.sS]$/, "H");
+      out.push("H" + x + "H");
+    });
+    if (view === "front") out.push("HD..........DH", ".DD........DD.");
+    else {
+      out.splice(8, 3, "HHHHHHHHHHHHHH", "HHHHHHHHHHHHHH", "HDHHHHHHHHHHDH");
+      out.push(".DDHHHHHHHHDD.", "..DDDDDDDDDD..");
+    }
+    return out;
+  }
+  var HF = { front: femaleOf("front"), back: femaleOf("back"), side: femaleOf("side") };
+  function drawHead(b, view, hx, hy, P, sex) {
+    const F = sex === "f", rows = (F ? HF : HM)[view];
+    const ox = F ? view === "side" ? -2 : -1 : 0;
+    const col = { H: P.hair, L: P.hairL, D: P.hairD, S: P.skin, s: P.skinD, E: P.eye, c: P.cheek, m: P.mouth };
+    rows.forEach((r, j) => {
+      for (let i = 0; i < r.length; i++) {
+        const c = col[r[i]];
+        if (c) put(b, hx + ox + i, hy + j, c);
+      }
+    });
+  }
+  function drawTorso(b, x, y, view, P, sex) {
+    const F = sex === "f";
+    if (view === "side") {
+      rect(b, x, y, 7, 6, P.skin);
+      rect(b, x + 6, y, 1, 6, P.skinD);
+      if (F) rect(b, x, y, 7, 3, P.hide);
+      else for (let i = 0; i < 6; i++) rect(b, x + i, y + i, 2, 1, P.hide);
+      rect(b, x, y + 6, 7, 1, P.hideD);
+      rect(b, x, y + 7, 7, 3, P.pants);
+      rect(b, x, y + 10, 7, 1, P.pantsD);
+      rect(b, x, y + 7, 1, 3, P.pantsL);
+      return;
+    }
+    const front = view === "front";
+    rect(b, x, y, 10, 6, P.skin);
+    rect(b, x, y + 1, 1, 5, P.skinD);
+    rect(b, x + 9, y + 1, 1, 5, P.skinD);
+    if (F) {
+      rect(b, x, y, 10, 3, P.hide);
+      rect(b, x, y + 3, 10, 1, P.hideD);
+    } else for (let i = 0; i < 6; i++) rect(b, front ? x + i : x + 8 - i, y + i, 2, 1, P.hide);
+    rect(b, x, y + 6, 10, 1, P.hideD);
+    rect(b, x, y + 7, 10, 3, P.pants);
+    rect(b, x, y + 10, 10, 1, P.pantsD);
+    rect(b, x + 1, y + 7, 2, 2, P.pantsL);
+    rect(b, x + 4, y + 8, 2, 3, P.pantsD);
+  }
+  function rectOf(r) {
+    return Array.isArray(r) ? r : [r.x, r.y, r.w, r.h, r.color];
+  }
+  function rects(list) {
+    return list.map(rectOf);
+  }
+  function gripShapes(def) {
+    if (!Array.isArray(def.head)) return rects(def.side || []);
+    const hd = def.handle || {}, len = hd.length === void 0 ? 10 : hd.length, w = hd.width || 1;
+    return [[-Math.floor((w - 1) / 2), -len, w, len, hd.color || "wood"], ...rects(def.head).map(([x, y, rw, rh, c]) => [x, y - len, rw, rh, c])];
+  }
+  var lastAnchor = null;
+  function toolAnchor() {
+    return lastAnchor;
+  }
+  function drawTool(b, side, hx, hy, tool, ov, P) {
+    if (!side) return;
+    const tier = ov && ov.tier !== void 0 ? ov.tier : 2;
+    if (tier <= 0) return;
+    lastAnchor = [Math.round(hx), Math.round(hy)];
+    const kind = ov && ov.kind || tool.kind || "axe";
+    const def = handTools[kind] || handTools.axe;
+    const T = tiers_default[tier] || tiers_default[Math.max(...Object.keys(tiers_default).map(Number).filter((n) => n > 0))];
+    const col = { head: hexRgb(T.head), light: hexRgb(T.light), dark: hexRgb(T.dark), wood: P.wood };
+    const gx = Math.round(hx), gy = Math.round(hy);
+    const pose = tool.pose && def.poses && def.poses[tool.pose];
+    if (pose) {
+      for (const [x, y, w, h, c] of rects(pose)) rect(b, gx + x, gy + y, w, h, col[c] || hexRgb(c));
+      return;
+    }
+    const own = (tool.side || tool.shapes) && rects(tool.side || tool.shapes);
+    if (own) for (const [x, y, w, h, c] of own) rect(b, gx + x, gy + y, w, h, col[c] || hexRgb(c));
+    else rotShapes(b, gripShapes(def), col, gx, gy, rad(180 - (tool.a || 0)));
+  }
+  function drawCharacter(b, view, f, P, sex, ov) {
+    const side = view === "side", back = view === "back", front = view === "front";
+    const bob = f.bob || 0, lean = f.lean || 0;
+    const tool = f.tool && f.tool.on ? f.tool : null;
+    const carry = f.carry && f.carry.on ? f.carry : null;
+    const hold = !!(tool || carry);
+    const tDx = side ? Math.trunc(lean / 2) : 0, hDx = side ? lean : 0;
+    const hipY = 35 + bob, shY = 27 + bob, TY = 25 + bob, HY = 14 + bob;
+    const gl = (o, k, d) => o && typeof o[k] === "number" ? o[k] : d;
+    const leg = (L, hx, col) => {
+      const a = rad(gl(L, "a", 0));
+      const fx = side ? hx + 7 * Math.sin(a) : hx;
+      const fy = 42 - gl(L, "lift", 0) - 7 * (1 - Math.cos(a));
+      line(b, hx, hipY, fx, fy, 3, col);
+      rect(b, Math.round(fx) - 1, Math.round(fy) + 1, 3, 1, P.skinD);
+    };
+    const armPts = (A, sx) => {
+      const a1 = gl(A, "a", 0), a2 = a1 + gl(A, "b", 0), L = 3.5;
+      if (side) {
+        const ex = sx + L * Math.sin(rad(a1)), ey2 = shY + L * Math.cos(rad(a1));
+        return { sx, ex, ey: ey2, hx: ex + L * Math.sin(rad(a2)), hy: ey2 + L * Math.cos(rad(a2)) };
+      }
+      const k = hold && !back ? 0.55 : 0;
+      const ey = shY + L * Math.cos(rad(a1));
+      return { sx, ex: sx + (CX - sx) * k * 0.4, ey, hx: sx + (CX - sx) * k, hy: ey + L * Math.cos(rad(a2)) };
+    };
+    const arm = (p, col) => {
+      line(b, p.sx, shY, p.ex, p.ey, 3, col);
+      line(b, p.ex, p.ey, p.hx, p.hy, 3, col);
+    };
+    const axe = (hx, hy) => drawTool(b, side, hx, hy, tool, ov, P);
+    const bundle = () => {
+      const dy = gl(carry, "dy", 0) + bob;
+      if (side) {
+        const x = CX + 2 + tDx, y = 28 + dy;
+        rect(b, x, y, 7, 6, P.cb);
+        rect(b, x, y + 5, 7, 1, P.cbD);
+        [[1, 1], [3, 1], [5, 1], [2, 3], [4, 3]].forEach(([i, j]) => put(b, x + i, y + j, P.cbL));
+      } else if (!back) {
+        const x = CX - 7, y = 28 + dy;
+        rect(b, x, y, 14, 2, P.cb);
+        rect(b, x, y + 2, 14, 2, P.cbD);
+        rect(b, x + 1, y + 4, 12, 2, P.cb);
+        rect(b, x, y, 1, 2, P.cbL);
+        rect(b, x + 13, y + 2, 1, 2, P.cbL);
+        rect(b, x + 1, y + 4, 1, 2, P.cbL);
+      } else {
+        rect(b, CX - 8, 29 + bob, 1, 3, P.cbL);
+        rect(b, CX + 7, 29 + bob, 1, 3, P.cbL);
+      }
+    };
+    if (side) {
+      const hx0 = CX + 0.5;
+      const pL2 = armPts(f.armL, hx0 + tDx), pR2 = armPts(f.armR, hx0 + tDx);
+      arm(pL2, P.skinD);
+      leg(f.legL, hx0, P.skinD);
+      leg(f.legR, hx0, P.skin);
+      drawTorso(b, CX - 3 + tDx, TY, "side", P, sex);
+      drawHead(b, "side", CX - 6 + hDx, HY, P, sex);
+      if (carry) bundle();
+      arm(pR2, P.skin);
+      if (tool) axe(pR2.hx, pR2.hy);
+      return;
+    }
+    const pR = armPts(f.armR, front ? CX - 5.5 : CX + 5.5);
+    const pL = armPts(f.armL, front ? CX + 5.5 : CX - 5.5);
+    leg(f.legR, front ? CX - 2.5 : CX + 2.5, P.skin);
+    leg(f.legL, front ? CX + 2.5 : CX - 2.5, P.skin);
+    if (!hold || back) {
+      arm(pR, P.skin);
+      arm(pL, P.skin);
+    }
+    drawTorso(b, CX - 5, TY, view, P, sex);
+    drawHead(b, view, CX - 6, HY, P, sex);
+    if (hold) {
+      if (carry) bundle();
+      if (!back) {
+        arm(pR, P.skin);
+        arm(pL, P.skin);
+      }
+    }
+  }
+  function outline(b, c) {
+    const o = new Uint8ClampedArray(b);
+    const N = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      if (b[i + 3]) continue;
+      const touch = N.some(([dx, dy]) => {
+        const xx = x + dx, yy = y + dy;
+        return xx >= 0 && yy >= 0 && xx < W && yy < H && b[(yy * W + xx) * 4 + 3] > 0;
+      });
+      if (touch) {
+        o[i] = c[0];
+        o[i + 1] = c[1];
+        o[i + 2] = c[2];
+        o[i + 3] = 255;
+      }
+    }
+    return o;
+  }
+  function shadow(b, dx) {
+    [[43, -7, 14], [44, -7, 14], [45, -5, 10]].forEach(([y, x0, n]) => {
+      for (let i = 0; i < n; i++) {
+        const x = CX + dx + x0 + i, k = (y * W + x) * 4;
+        if (x >= 0 && x < W && !b[k + 3]) {
+          b[k] = 0;
+          b[k + 1] = 0;
+          b[k + 2] = 0;
+          b[k + 3] = 70;
+        }
+      }
+    });
+  }
+  function flipH(b) {
+    const o = new Uint8ClampedArray(b.length);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const s = (y * W + x) * 4, d = (y * W + (W - 1 - x)) * 4;
+      o[d] = b[s];
+      o[d + 1] = b[s + 1];
+      o[d + 2] = b[s + 2];
+      o[d + 3] = b[s + 3];
+    }
+    return o;
+  }
+  var HAND_Y = 30;
+  function renderTool(kind, tier, angleDeg, look2, pose) {
+    const b = new Uint8ClampedArray(W * H * 4);
+    const P = palette(look2 || { skin: "#e0ac69", hair: "#3b2a1a", hide: "#8b6a45", pants: "#3f63a8" });
+    drawTool(b, true, CX, HAND_Y, { a: angleDeg, pose }, { kind, tier }, P);
+    return b;
+  }
+  function unpackShapes(shapes) {
+    const m = /* @__PURE__ */ new Map();
+    for (const [x, y, w, h, c] of rects(shapes)) for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) m.set(x + i + "," + (y + j), [x + i, y + j, c]);
+    return [...m.values()];
+  }
+  function packPixels(list) {
+    const px = [...list].sort((p, q) => p[1] - q[1] || p[0] - q[0]);
+    const runs = [];
+    for (const [x, y, n] of px) {
+      const last2 = runs[runs.length - 1];
+      if (last2 && last2.y === y && last2.x + last2.w === x && last2.n === n) last2.w++;
+      else runs.push({ x, y, w: 1, h: 1, n });
+    }
+    const out = [];
+    for (const r of runs) {
+      const up = out.find((o) => o.n === r.n && o.x === r.x && o.w === r.w && o.y + o.h === r.y);
+      if (up) up.h++;
+      else out.push({ ...r });
+    }
+    return out.map((o) => [o.x, o.y, o.w, o.h, o.n]);
+  }
+  function bakeTool(kind, angleDeg) {
+    const P = palette({ skin: "#e0ac69", hair: "#3b2a1a", hide: "#8b6a45", pants: "#3f63a8" });
+    const T = tiers_default[1], names = {};
+    for (const [n, c] of [["head", hexRgb(T.head)], ["light", hexRgb(T.light)], ["dark", hexRgb(T.dark)], ["wood", P.wood]]) names[c.join(",")] = n;
+    const px = renderTool(kind, 1, angleDeg), list = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      const n = px[i + 3] && names[px[i] + "," + px[i + 1] + "," + px[i + 2]];
+      if (n) list.push([x - CX, y - HAND_Y, n]);
+    }
+    return packPixels(list);
+  }
+  function renderFrame(anims2, name, idx, view, look2, kind, toolOv) {
+    lastAnchor = null;
+    const an = anims2[name];
+    const f = an.frames[(idx % an.frames.length + an.frames.length) % an.frames.length];
+    const P = palette(look2, kind);
+    const b = new Uint8ClampedArray(W * H * 4);
+    const v = view === "left" || view === "right" ? "side" : view;
+    drawCharacter(b, v, f, P, look2.sex, toolOv);
+    const o = outline(b, P.line);
+    shadow(o, v === "side" ? 1 : 0);
+    return view === "left" ? flipH(o) : o;
+  }
+  function formatAnims(anims2) {
+    return "{\n" + Object.entries(anims2).map(([k, v]) => '  "' + k + '": { "fps": ' + v.fps + ', "loop": ' + v.loop + ', "frames": [\n' + v.frames.map((f) => "    " + JSON.stringify(f)).join(",\n") + "\n  ] }").join(",\n") + "\n}";
+  }
+
+  // src/data/anims.json
+  var anims_default = {
+    idle: { fps: 4, loop: true, frames: [
+      { bob: 0, lean: 0, legR: { a: 2, lift: 0 }, legL: { a: -2, lift: 0 }, armR: { a: 4, b: 8 }, armL: { a: -4, b: 8 } },
+      { bob: 0, lean: 0, legR: { a: 2, lift: 0 }, legL: { a: -2, lift: 0 }, armR: { a: 6, b: 8 }, armL: { a: -6, b: 8 } },
+      { bob: 1, lean: 0, legR: { a: 2, lift: 0 }, legL: { a: -2, lift: 0 }, armR: { a: 8, b: 8 }, armL: { a: -8, b: 8 } },
+      { bob: 1, lean: 0, legR: { a: 2, lift: 0 }, legL: { a: -2, lift: 0 }, armR: { a: 6, b: 8 }, armL: { a: -6, b: 8 } }
+    ] },
+    walk: { fps: 8, loop: true, frames: [
+      { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 0, b: 14 }, armL: { a: 0, b: 14 } },
+      { bob: 0, lean: 1, legR: { a: 28, lift: 1 }, legL: { a: -28, lift: 0 }, armR: { a: -23, b: 14 }, armL: { a: 23, b: 14 } },
+      { bob: 0, lean: 1, legR: { a: 28, lift: 0 }, legL: { a: -28, lift: 1 }, armR: { a: -23, b: 14 }, armL: { a: 23, b: 14 } },
+      { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 0, b: 14 }, armL: { a: 0, b: 14 } },
+      { bob: 0, lean: 1, legR: { a: -28, lift: 0 }, legL: { a: 28, lift: 1 }, armR: { a: 23, b: 14 }, armL: { a: -23, b: 14 } },
+      { bob: 0, lean: 1, legR: { a: -28, lift: 1 }, legL: { a: 28, lift: 0 }, armR: { a: 23, b: 14 }, armL: { a: -23, b: 14 } }
+    ] },
+    carry_walk: { fps: 8, loop: true, frames: [
+      { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
+      { bob: 0, lean: 1, legR: { a: 21, lift: 1 }, legL: { a: -21, lift: 0 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
+      { bob: 0, lean: 1, legR: { a: 21, lift: 0 }, legL: { a: -21, lift: 1 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
+      { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
+      { bob: 0, lean: 1, legR: { a: -21, lift: 0 }, legL: { a: 21, lift: 1 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
+      { bob: 0, lean: 1, legR: { a: -21, lift: 1 }, legL: { a: 21, lift: 0 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } }
+    ] },
+    chop: { fps: 8, loop: true, frames: [
+      { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 80, b: 40 }, armL: { a: 70, b: 40 }, tool: { on: true, a: 151, kind: "axe" } },
+      { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 125, b: 25 }, armL: { a: 115, b: 25 }, tool: { on: true, a: 186, kind: "axe" } },
+      { bob: -1, lean: -2, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 15 }, armL: { a: 140, b: 15 }, tool: { on: true, a: 151, kind: "axe" } },
+      { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 100, b: 20 }, armL: { a: 92, b: 20 }, tool: { on: true, a: 130, kind: "axe" } },
+      { bob: 1, lean: 2, legR: { a: 18, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 45, b: 30 }, armL: { a: 40, b: 30 }, tool: { on: true, a: 116, kind: "axe" } },
+      { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 35 }, armL: { a: 62, b: 35 }, tool: { on: true, a: 89, kind: "axe" } }
+    ] },
+    mine: { fps: 7, loop: true, frames: [
+      { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 80, b: 40 }, armL: { a: 70, b: 40 }, tool: { on: true, a: 165, kind: "pick" } },
+      { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 125, b: 25 }, armL: { a: 115, b: 25 }, tool: { on: true, a: 195, kind: "pick" } },
+      { bob: -1, lean: -2, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 15 }, armL: { a: 140, b: 15 }, tool: { on: true, a: 215, kind: "pick" } },
+      { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 100, b: 20 }, armL: { a: 92, b: 20 }, tool: { on: true, a: 130, kind: "pick" } },
+      { bob: 1, lean: 2, legR: { a: 18, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 45, b: 30 }, armL: { a: 40, b: 30 }, tool: { on: true, a: 70, kind: "pick" } },
+      { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 35 }, armL: { a: 62, b: 35 }, tool: { on: true, a: 125, kind: "pick" } }
+    ] },
+    dig: { fps: 6, loop: true, frames: [
+      { bob: 1, lean: 1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 80, b: 40 }, armL: { a: 70, b: 40 }, tool: { on: true, a: 155, kind: "hoe" } },
+      { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 125, b: 25 }, armL: { a: 115, b: 25 }, tool: { on: true, a: 185, kind: "hoe" } },
+      { bob: 0, lean: -1, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 15 }, armL: { a: 140, b: 15 }, tool: { on: true, a: 205, kind: "hoe" } },
+      { bob: 1, lean: 2, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 100, b: 20 }, armL: { a: 92, b: 20 }, tool: { on: true, a: 120, kind: "hoe" } },
+      { bob: 2, lean: 3, legR: { a: 18, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 45, b: 30 }, armL: { a: 40, b: 30 }, tool: { on: true, a: 60, kind: "hoe" } },
+      { bob: 1, lean: 2, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 35 }, armL: { a: 62, b: 35 }, tool: { on: true, a: 115, kind: "hoe" } }
+    ] },
+    gather: { fps: 5, loop: true, frames: [
+      { bob: 1, lean: 2, legR: { a: 10, lift: 0 }, legL: { a: -10, lift: 0 }, armR: { a: 30, b: 20 }, armL: { a: 25, b: 20 } },
+      { bob: 2, lean: 3, legR: { a: 14, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 14, b: 10 }, armL: { a: 10, b: 10 } },
+      { bob: 1, lean: 2, legR: { a: 10, lift: 0 }, legL: { a: -10, lift: 0 }, armR: { a: 55, b: 60 }, armL: { a: 50, b: 60 } },
+      { bob: 0, lean: 1, legR: { a: 8, lift: 0 }, legL: { a: -8, lift: 0 }, armR: { a: 45, b: 70 }, armL: { a: 40, b: 70 } }
+    ] },
+    build: { fps: 6, loop: true, frames: [
+      { bob: 0, lean: 0, legR: { a: 10, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 70, b: 45 }, armL: { a: 60, b: 45 }, tool: { on: true, a: 150, kind: "hammer" } },
+      { bob: -1, lean: -1, legR: { a: 10, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 110, b: 30 }, armL: { a: 100, b: 30 }, tool: { on: true, a: 190, kind: "hammer" } },
+      { bob: 0, lean: 1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 60, b: 35 }, armL: { a: 55, b: 35 }, tool: { on: true, a: 95, kind: "hammer" } },
+      { bob: 1, lean: 2, legR: { a: 14, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 50, b: 40 }, armL: { a: 45, b: 40 }, tool: { on: true, a: 60, kind: "hammer" } }
+    ] },
+    craft: { fps: 5, loop: true, frames: [
+      { bob: 1, lean: 1, legR: { a: 10, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 70, b: 45 }, armL: { a: 60, b: 45 }, tool: { on: true, a: 150, kind: "hammer" } },
+      { bob: 0, lean: 0, legR: { a: 10, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 110, b: 30 }, armL: { a: 100, b: 30 }, tool: { on: true, a: 190, kind: "hammer" } },
+      { bob: 1, lean: 2, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 60, b: 35 }, armL: { a: 55, b: 35 }, tool: { on: true, a: 95, kind: "hammer" } },
+      { bob: 2, lean: 3, legR: { a: 14, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 50, b: 40 }, armL: { a: 45, b: 40 }, tool: { on: true, a: 60, kind: "hammer" } }
+    ] }
+  };
+
+  // tools/viewer-entry.js
+  var $ = (id) => document.getElementById(id);
+  var look = { sex: "m", skin: "#e0ac69", hair: "#3b2a1a", hide: "#8b6a45", pants: "#3f63a8" };
+  var lastAnimText = "";
+  var anims = {};
+  var cur = "";
+  var frame = 0;
+  var playing = true;
+  var last = 0;
+  var acc = 0;
+  var scale = 10;
+  var cv = $("cv");
+  var g = cv.getContext("2d");
+  var tmp = document.createElement("canvas");
+  tmp.width = W;
+  tmp.height = H;
+  var tg = tmp.getContext("2d");
+  function normalize(data) {
+    const isFrames = (a) => a.length && a[0] && typeof a[0] === "object" && !Array.isArray(a[0]);
+    if (Array.isArray(data)) return isFrames(data) ? { anim: { fps: 6, loop: true, frames: data } } : {};
+    if (data && Array.isArray(data.frames)) return { anim: { fps: 6, loop: true, ...data } };
+    const out = {};
+    for (const [k, v] of Object.entries(data || {})) {
+      if (Array.isArray(v)) {
+        if (isFrames(v)) out[k] = { fps: 6, loop: true, frames: v };
+      } else if (v && Array.isArray(v.frames)) out[k] = { fps: 6, loop: true, ...v };
+    }
+    return out;
+  }
+  var isToolDef = (v) => v && typeof v === "object" && !Array.isArray(v) && (Array.isArray(v.side) || Array.isArray(v.shapes) || Array.isArray(v.head) || v.poses && typeof v.poses === "object");
+  function refreshKinds() {
+    const kinds = Object.keys(handTools), tk = $("tkind").value, te = $("tedit").value;
+    $("tkind").innerHTML = '<option value="">from animation</option>' + kinds.map((k) => `<option>${k}</option>`).join("");
+    $("tedit").innerHTML = kinds.map((k) => `<option>${k}</option>`).join("");
+    $("tkind").value = kinds.includes(tk) ? tk : "";
+    $("tedit").value = kinds.includes(te) ? te : kinds[0];
+  }
+  function parse() {
+    try {
+      const data = JSON.parse($("src").value);
+      if (isToolDef(data) && !Array.isArray(data.frames)) {
+        const guess = String(data.name || "").toLowerCase(), kind = handTools[guess] ? guess : $("tedit").value;
+        handTools[kind] = data;
+        refreshKinds();
+        $("tedit").value = kind;
+        $("tkind").value = kind;
+        $("src").value = lastAnimText;
+        showTool();
+        activateTab("p-tool");
+        draw();
+        $("note").textContent = `That is a tool design, so it was applied to "${kind}" (Tool JSON tab). The animation text was restored.`;
+        return;
+      }
+      const applied = [];
+      if (data && typeof data === "object" && !Array.isArray(data)) {
+        for (const [k, v] of Object.entries(data)) if (isToolDef(v)) {
+          handTools[k] = v;
+          applied.push(k);
+        }
+      }
+      if (applied.length) {
+        refreshKinds();
+        showTool();
+      }
+      $("note").textContent = applied.length ? "Applied tool design(s) from this JSON: " + applied.join(", ") : "";
+      const t = normalize(data);
+      const names = Object.keys(t).filter((n) => t[n].frames.length);
+      if (!names.length) throw new Error('No animation with "frames" found.');
+      anims = t;
+      $("anim").innerHTML = names.map((n) => `<option>${n}</option>`).join("");
+      if (!names.includes(cur)) {
+        cur = names[0];
+        frame = 0;
+      }
+      $("anim").value = cur;
+      $("err").textContent = "";
+      lastAnimText = $("src").value;
+      draw();
+    } catch (e) {
+      $("err").textContent = "Error: " + e.message;
+    }
+  }
+  var fmt = (data) => data && !Array.isArray(data) && Object.values(data).length && Object.values(data).every((v) => v && Array.isArray(v.frames)) ? formatAnims(data) : JSON.stringify(data, null, 1);
+  var angleVal = () => {
+    const n = parseFloat($("tanglenum").value);
+    return Number.isNaN(n) ? +$("tangle").value : n;
+  };
+  var applyKey = "";
+  function buildApplyBar() {
+    const def = anims[cur], bar = $("applybar");
+    if (!def) return;
+    const angles = def.frames.map((fr) => fr.tool && fr.tool.on ? Math.round((fr.tool.a || 0) * 10) / 10 : null);
+    const key = cur + ":" + angles.join(",");
+    if (key !== applyKey) {
+      applyKey = key;
+      bar.innerHTML = "";
+      def.frames.forEach((_, i) => {
+        const b = document.createElement("button");
+        b.textContent = `frame ${i + 1} \xB7 ${angles[i] === null ? "no tool" : angles[i] + "\xB0"}`;
+        b.title = `Set the angle of frame ${i + 1} to the Angle box, and its tool to the one being previewed`;
+        b.onclick = () => applyAngle(i);
+        bar.appendChild(b);
+      });
+    }
+    [...bar.children].forEach((b, i) => b.classList.toggle("on", i === frame));
+    const fa = angles[frame];
+    $("curang").textContent = fa === null ? `Frame ${frame + 1} has no tool.` : `Frame ${frame + 1} uses ${fa}\xB0 (${def.frames[frame].tool.kind || "axe"}${def.frames[frame].tool.pose ? ", hand-drawn pose" : ""})`;
+  }
+  function applyAngle(i) {
+    try {
+      const data = JSON.parse($("src").value), def = normalize(data)[cur], fr = def && def.frames[i];
+      if (!fr) return;
+      const ang = angleVal(), kind = $("tedit").value;
+      const hadPose = fr.tool && fr.tool.pose;
+      fr.tool = { ...fr.tool || {}, on: true, a: ang, kind };
+      delete fr.tool.pose;
+      $("src").value = fmt(data);
+      parse();
+      stop();
+      frame = i;
+      draw();
+      $("note").textContent = `Frame ${i + 1}: tool "${kind}" at ${ang}\xB0` + (hadPose ? ` (hand-drawn pose "${hadPose}" removed from this frame)` : "") + ".";
+    } catch (e) {
+      $("terr").textContent = "Error: " + e.message;
+    }
+  }
+  function drawToolPreview() {
+    const kind = $("tedit").value, tier = +$("tier").value || 1, ang = angleVal(), Z = 10;
+    const c = $("tcv");
+    c.width = W * Z;
+    c.height = H * Z;
+    const x = c.getContext("2d");
+    x.imageSmoothingEnabled = false;
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+      x.fillStyle = (i + j) % 2 ? "#3a3a3a" : "#333";
+      x.fillRect(i * Z, j * Z, Z, Z);
+    }
+    let px;
+    try {
+      px = renderTool(kind, tier, ang, void 0, $("tpose").value || void 0);
+    } catch (e) {
+      $("terr").textContent = "Render error: " + e.message;
+      return;
+    }
+    tg.putImageData(new ImageData(new Uint8ClampedArray(px), W, H), 0, 0);
+    x.drawImage(tmp, 0, 0, c.width, c.height);
+    if ($("tgrid").checked) {
+      x.strokeStyle = "rgba(255,255,255,.12)";
+      x.lineWidth = 1;
+      x.beginPath();
+      for (let i = 0; i <= W; i++) {
+        x.moveTo(i * Z + 0.5, 0);
+        x.lineTo(i * Z + 0.5, H * Z);
+      }
+      for (let j = 0; j <= H; j++) {
+        x.moveTo(0, j * Z + 0.5);
+        x.lineTo(W * Z, j * Z + 0.5);
+      }
+      x.stroke();
+    }
+    x.fillStyle = "#ff3b3b";
+    x.fillRect(CX * Z - 2, HAND_Y * Z - 2, 4, 4);
+  }
+  function render(f, v) {
+    try {
+      tg.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, cur, f, v, look, $("carry").value, { tier: +$("tier").value, kind: $("tkind").value || void 0 })), W, H), 0, 0);
+      return null;
+    } catch (e) {
+      return e;
+    }
+  }
+  function draw() {
+    const def = anims[cur];
+    if (!def) return;
+    const n = def.frames.length;
+    frame = (frame % n + n) % n;
+    const view = $("view").value;
+    cv.width = W * scale;
+    cv.height = H * scale;
+    g.imageSmoothingEnabled = false;
+    g.fillStyle = "#6d8f4e";
+    g.fillRect(0, 0, cv.width, cv.height);
+    const err = render(frame, view);
+    if (err) {
+      $("err").textContent = "Render error in frame " + (frame + 1) + ": " + err.message;
+    } else {
+      $("err").textContent = "";
+      g.drawImage(tmp, 0, 0, cv.width, cv.height);
+    }
+    const hasTool = def.frames.some((fr) => fr.tool && fr.tool.on);
+    $("hint").textContent = hasTool && +$("tier").value === 0 ? 'Tool tier is "bare hands", so the tool is hidden. Pick wood or stone.' : !hasTool && !$("tkind").value ? 'This animation has no "tool":{"on":true} in any frame, so no tool is drawn.' : "";
+    $("info").textContent = `${cur}  \xB7  frame ${frame + 1}/${n}  \xB7  ${def.fps} fps  \xB7  ${def.loop ? "loop" : "once"}`;
+    const strip = $("strip");
+    strip.innerHTML = "";
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement("canvas");
+      c.width = W * 3;
+      c.height = H * 3;
+      const x = c.getContext("2d");
+      x.imageSmoothingEnabled = false;
+      x.fillStyle = "#6d8f4e";
+      x.fillRect(0, 0, c.width, c.height);
+      if (!render(i, view)) x.drawImage(tmp, 0, 0, c.width, c.height);
+      c.className = i === frame ? "on" : "";
+      c.title = "frame " + (i + 1);
+      c.onclick = () => {
+        stop();
+        frame = i;
+        draw();
+      };
+      strip.appendChild(c);
+    }
+    drawToolPreview();
+    drawEditor();
+    drawGallery();
+    buildApplyBar();
+  }
+  var stop = () => {
+    playing = false;
+    $("play").textContent = "\u25B6 Play";
+  };
+  function tick(t) {
+    if (playing && anims[cur]) {
+      acc += t - last;
+      const step = 1e3 / (anims[cur].fps || 6);
+      while (acc >= step) {
+        acc -= step;
+        frame++;
+        draw();
+      }
+    }
+    last = t;
+    requestAnimationFrame(tick);
+  }
+  refreshKinds();
+  var defaults = JSON.parse(JSON.stringify(handTools));
+  var refreshPoses = () => {
+    const names = Object.keys((handTools[$("tedit").value] || {}).poses || {}), cur2 = $("tpose").value;
+    $("tpose").innerHTML = '<option value="">auto-rotate (angle)</option>' + names.map((n) => `<option>${n}</option>`).join("");
+    $("tpose").value = names.includes(cur2) ? cur2 : "";
+  };
+  var prettyTool = (def) => JSON.stringify(def, null, 2).replace(/\{([^{}\[\]]*)\}/g, (m, inner) => "{ " + inner.split("\n").map((l) => l.trim()).filter(Boolean).join(" ") + " }").replace(/\[\s+(-?\d+),\s+(-?\d+),\s+(\d+),\s+(\d+),\s+("[^"]+")\s+\]/g, "[$1, $2, $3, $4, $5]");
+  var showTool = () => {
+    refreshPoses();
+    $("tsrc").value = prettyTool(handTools[$("tedit").value]);
+    $("terr").textContent = "";
+  };
+  var ttimer;
+  $("tsrc").oninput = () => {
+    clearTimeout(ttimer);
+    ttimer = setTimeout(() => {
+      try {
+        const kind = $("tedit").value, v = JSON.parse($("tsrc").value);
+        const def = isToolDef(v) ? v : isToolDef(v[kind]) ? v[kind] : Object.values(v).find(isToolDef);
+        if (!def) {
+          $("terr").textContent = 'No "head" (or "side") shapes found, so nothing would be drawn except the handle. Paste only the tool design (the part inside "axe": {...}). Not applied.';
+          return;
+        }
+        handTools[kind] = def;
+        $("tkind").value = kind;
+        $("terr").textContent = "";
+        draw();
+      } catch (e) {
+        $("terr").textContent = "Error: " + e.message;
+      }
+    }, 250);
+  };
+  $("tedit").onchange = () => {
+    $("tkind").value = $("tedit").value;
+    showTool();
+    draw();
+  };
+  $("treset").onclick = () => {
+    const k = $("tedit").value;
+    if (defaults[k]) handTools[k] = JSON.parse(JSON.stringify(defaults[k]));
+    showTool();
+    draw();
+  };
+  $("tkind").onchange = draw;
+  $("tpose").onchange = drawToolPreview;
+  function bakeFrames(only) {
+    try {
+      const data = JSON.parse($("src").value), t = normalize(data), def = t[cur];
+      if (!def) return;
+      const made = [], kept = [];
+      let baked = null;
+      def.frames.forEach((fr, i) => {
+        if (only && !only.includes(i)) return;
+        if (!fr.tool || !fr.tool.on) return;
+        const kind = $("tkind").value || fr.tool.kind || "axe";
+        const tool = handTools[kind];
+        if (!tool) return;
+        if (fr.tool.pose && tool.poses && tool.poses[fr.tool.pose]) {
+          kept.push(i + 1);
+          return;
+        }
+        let name = cur + "_" + (i + 1);
+        tool.poses = tool.poses || {};
+        tool.poses[name] = bakeTool(kind, fr.tool.a || 0);
+        fr.tool.pose = name;
+        fr.tool.kind = kind;
+        made.push(name);
+        baked = kind;
+      });
+      $("src").value = fmt(data);
+      parse();
+      if (baked) {
+        $("tedit").value = baked;
+        $("tkind").value = baked;
+      }
+      showTool();
+      draw();
+      $("note").textContent = (made.length ? "Baked poses: " + made.join(", ") + ". Paint on them in the pose editor. " : "Nothing to bake. ") + (kept.length ? "Kept existing poses on frame(s) " + kept.join(", ") + "." : "");
+    } catch (e) {
+      $("terr").textContent = "Error: " + e.message;
+    }
+  }
+  $("bake").onclick = () => bakeFrames(null);
+  $("mkpose").onclick = () => bakeFrames([frame]);
+  var EZ = 14;
+  var brush = "head";
+  var undo = [];
+  var painting = false;
+  var lastKey = "";
+  var anchor = null;
+  var swatchColor = (n) => n === "wood" ? "#8b5e34" : (tiers_default[+$("tier").value || 1] || tiers_default[1])[n];
+  function buildPalette() {
+    $("palette").innerHTML = ["head", "light", "dark", "wood", "erase"].map((n) => `<button class="sw${n === brush ? " on" : ""}" data-b="${n}" title="${n}" style="background:${n === "erase" ? "#222" : swatchColor(n)}">${n === "erase" ? "\u2715" : ""}</button>`).join("");
+    for (const bt of $("palette").children) bt.onclick = () => {
+      brush = bt.dataset.b;
+      buildPalette();
+    };
+  }
+  function curPose() {
+    const fr = anims[cur] && anims[cur].frames[frame];
+    if (!fr || !fr.tool || !fr.tool.on) return null;
+    const kind = $("tkind").value || fr.tool.kind || "axe", tool = handTools[kind], name = fr.tool.pose;
+    return { fr, kind, tool, name, ok: !!(name && tool && tool.poses && tool.poses[name]) };
+  }
+  function drawEditor() {
+    const c = $("ecv");
+    if (!c) return;
+    c.width = W * EZ;
+    c.height = H * EZ;
+    const x = c.getContext("2d");
+    x.imageSmoothingEnabled = false;
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+      x.fillStyle = (i + j) % 2 ? "#5f8446" : "#6d8f4e";
+      x.fillRect(i * EZ, j * EZ, EZ, EZ);
+    }
+    const cp = curPose();
+    if (!anims[cur]) return;
+    if (!render(frame, "right")) x.drawImage(tmp, 0, 0, c.width, c.height);
+    anchor = toolAnchor();
+    x.strokeStyle = "rgba(255,255,255,.14)";
+    x.lineWidth = 1;
+    x.beginPath();
+    for (let i = 0; i <= W; i++) {
+      x.moveTo(i * EZ + 0.5, 0);
+      x.lineTo(i * EZ + 0.5, H * EZ);
+    }
+    for (let j = 0; j <= H; j++) {
+      x.moveTo(0, j * EZ + 0.5);
+      x.lineTo(W * EZ, j * EZ + 0.5);
+    }
+    x.stroke();
+    if (anchor) {
+      x.strokeStyle = "#ff3b3b";
+      x.lineWidth = 2;
+      x.strokeRect(anchor[0] * EZ + 1, anchor[1] * EZ + 1, EZ - 2, EZ - 2);
+    }
+    $("mkpose").disabled = !(cp && !cp.ok);
+    $("undo").disabled = !undo.length;
+    $("estatus").textContent = !cp ? 'This frame has no tool ("tool":{"on":true}). Pick a frame that holds one.' : !anchor ? 'Tool tier is "bare hands": choose wood or stone to see and paint the tool.' : cp.ok ? `Frame ${frame + 1}: painting pose "${cp.name}" of tool "${cp.kind}". Left-click or drag = paint, right-click = erase.` : `Frame ${frame + 1} has no hand-drawn pose yet. Press "Create pose for this frame" to start from its current look.`;
+    buildPalette();
+  }
+  function paintAt(e) {
+    const cp = curPose();
+    if (!cp || !cp.ok || !anchor) return;
+    const r = $("ecv").getBoundingClientRect();
+    const cw = $("ecv").width, ch = $("ecv").height, k = Math.min(r.width / cw, r.height / ch);
+    const X = Math.floor((e.clientX - r.left - (r.width - cw * k) / 2) / k / EZ), Y = Math.floor((e.clientY - r.top - (r.height - ch * k) / 2) / k / EZ);
+    if (X < 0 || Y < 0 || X >= W || Y >= H) return;
+    const erase = brush === "erase" || e.button === 2 || e.buttons & 2;
+    const key = X + "," + Y + "," + erase + brush;
+    if (key === lastKey) return;
+    lastKey = key;
+    const rx = X - anchor[0], ry = Y - anchor[1];
+    const list = unpackShapes(cp.tool.poses[cp.name]).filter(([px, py]) => px !== rx || py !== ry);
+    if (!erase) list.push([rx, ry, brush]);
+    cp.tool.poses[cp.name] = packPixels(list);
+    showTool();
+    draw();
+  }
+  $("ecv").onpointerdown = (e) => {
+    const cp = curPose();
+    if (!cp || !cp.ok) return;
+    stop();
+    painting = true;
+    lastKey = "";
+    undo.push({ kind: cp.kind, name: cp.name, shapes: JSON.parse(JSON.stringify(cp.tool.poses[cp.name])) });
+    if (undo.length > 100) undo.shift();
+    try {
+      $("ecv").setPointerCapture(e.pointerId);
+    } catch (_) {
+    }
+    paintAt(e);
+  };
+  $("ecv").onpointermove = (e) => {
+    if (painting) paintAt(e);
+  };
+  $("ecv").onpointerup = () => {
+    painting = false;
+  };
+  $("ecv").oncontextmenu = (e) => e.preventDefault();
+  $("undo").onclick = () => {
+    const u = undo.pop();
+    if (!u) return;
+    handTools[u.kind].poses[u.name] = u.shapes;
+    showTool();
+    draw();
+  };
+  function drawGallery() {
+    const g2 = $("pgallery");
+    if (!g2) return;
+    const kind = $("tedit").value, poses = (handTools[kind] || {}).poses || {}, tier = +$("tier").value || 1;
+    g2.innerHTML = "";
+    const names = Object.keys(poses);
+    if (!names.length) {
+      g2.textContent = 'No poses yet. Bake poses for an animation, or add "poses" to the tool JSON.';
+      return;
+    }
+    for (const n of names) {
+      const box = document.createElement("div");
+      box.className = "pg" + (curPose() && curPose().name === n ? " on" : "");
+      const c = document.createElement("canvas");
+      c.width = W * 4;
+      c.height = H * 4;
+      const x = c.getContext("2d");
+      x.imageSmoothingEnabled = false;
+      x.fillStyle = "#6d8f4e";
+      x.fillRect(0, 0, c.width, c.height);
+      try {
+        tg.putImageData(new ImageData(new Uint8ClampedArray(renderTool(kind, tier, 0, void 0, n)), W, H), 0, 0);
+        x.drawImage(tmp, 0, 0, c.width, c.height);
+      } catch (_) {
+      }
+      const label = document.createElement("div");
+      label.textContent = n;
+      box.appendChild(c);
+      box.appendChild(label);
+      box.onclick = () => {
+        $("tpose").value = n;
+        const i = anims[cur] ? anims[cur].frames.findIndex((fr) => fr.tool && fr.tool.pose === n) : -1;
+        if (i >= 0) {
+          stop();
+          frame = i;
+          draw();
+        } else drawToolPreview();
+      };
+      g2.appendChild(box);
+    }
+  }
+  $("tangle").oninput = () => {
+    $("tanglenum").value = $("tangle").value;
+    drawToolPreview();
+  };
+  $("tanglenum").oninput = () => {
+    $("tangle").value = $("tanglenum").value;
+    drawToolPreview();
+  };
+  $("readang").onclick = () => {
+    const fr = anims[cur] && anims[cur].frames[frame];
+    if (!fr || !fr.tool || !fr.tool.on) return;
+    $("tanglenum").value = fr.tool.a || 0;
+    $("tangle").value = fr.tool.a || 0;
+    if (fr.tool.kind && handTools[fr.tool.kind]) {
+      $("tedit").value = fr.tool.kind;
+      showTool();
+    }
+    drawToolPreview();
+  };
+  $("tgrid").onchange = drawToolPreview;
+  var timer;
+  $("src").oninput = () => {
+    clearTimeout(timer);
+    timer = setTimeout(parse, 250);
+  };
+  $("anim").onchange = () => {
+    cur = $("anim").value;
+    frame = 0;
+    draw();
+  };
+  ["view", "tier", "carry"].forEach((id) => $(id).onchange = draw);
+  $("play").onclick = () => {
+    playing = !playing;
+    $("play").textContent = playing ? "\u23F8 Pause" : "\u25B6 Play";
+  };
+  $("load").onclick = () => {
+    $("src").value = formatAnims(anims_default);
+    parse();
+  };
+  $("src").value = formatAnims(anims_default);
+  cur = "chop";
+  function activateTab(id) {
+    for (const t of document.querySelectorAll(".tab")) t.classList.toggle("on", t.dataset.pane === id);
+    for (const p of document.querySelectorAll(".pane")) p.classList.toggle("on", p.id === id);
+  }
+  for (const tab of document.querySelectorAll ? document.querySelectorAll(".tab") : []) tab.onclick = () => activateTab(tab.dataset.pane);
+  showTool();
+  parse();
+  requestAnimationFrame(tick);
+})();
+</script></body></html>

@@ -1,4 +1,13 @@
 // Lõi vẽ nhân vật procedural (giữ JS thuần, kiểu dữ liệu khai báo trong rig.d.ts).
+import tiers from '../data/handtools/tiers.json';
+import axe from '../data/handtools/axe.json';
+import pick from '../data/handtools/pick.json';
+import hammer from '../data/handtools/hammer.json';
+import hoe from '../data/handtools/hoe.json';
+
+/* Hand-held tools are drawn from JSON (src/data/handtools). handTools may be replaced at runtime (the animation viewer uses this to try out designs). */
+const handTools = { axe, pick, hammer, hoe };
+
 /* ---- Lõi vẽ dân pixel: không phụ thuộc DOM ---- */
 const W = 40, H = 48, CX = 20;
 const rad = d => d * Math.PI / 180;
@@ -35,6 +44,33 @@ function line(b, x0, y0, x1, y1, w, c) {
   for (let k = 0; k <= n; k++) {
     const t = k / n, cx = x0 + (x1 - x0) * t, cy = y0 + (y1 - y0) * t;
     rect(b, Math.round(cx - w / 2), Math.round(cy - w / 2), w, w, c);
+  }
+}
+
+/* Draws rectangles [x, y, w, h, color] defined in a local frame rotated by th (radians) around (ox, oy).
+   Each destination pixel is sampled by its center, so rotated shapes leave no holes. th = 0 equals plain rect(). */
+function rotShapes(b, shapes, col, ox, oy, th) {
+  const c = Math.cos(th), s = Math.sin(th);
+  for (const [x, y, w, h, k] of shapes) {
+    const C = col[k] || hexRgb(k);
+    if (w === 1 || h === 1) {
+      // Thin shape (handle, edge highlight): sampling pixel centers would break it into loose dots at slanted angles,
+      // so draw it as one connected line between its rotated end points.
+      const horiz = w >= h, ax = x + 0.5, ay = y + 0.5, bx = horiz ? x + w - 0.5 : ax, by = horiz ? ay : y + h - 0.5;
+      const X0 = Math.floor(ox + ax * c - ay * s), Y0 = Math.floor(oy + ax * s + ay * c);
+      const X1 = Math.floor(ox + bx * c - by * s), Y1 = Math.floor(oy + bx * s + by * c);
+      const n = Math.max(Math.abs(X1 - X0), Math.abs(Y1 - Y0));
+      for (let i = 0; i <= n; i++) put(b, n ? Math.round(X0 + (X1 - X0) * i / n) : X0, n ? Math.round(Y0 + (Y1 - Y0) * i / n) : Y0, C);
+      continue;
+    }
+    const xs = [], ys = [];
+    for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) { xs.push(ox + px * c - py * s); ys.push(oy + px * s + py * c); }
+    const X1 = Math.ceil(Math.max(...xs)), Y1 = Math.ceil(Math.max(...ys));
+    for (let Y = Math.floor(Math.min(...ys)); Y < Y1; Y++) for (let X = Math.floor(Math.min(...xs)); X < X1; X++) {
+      const dx = X + 0.5 - ox, dy = Y + 0.5 - oy;
+      const lx = dx * c + dy * s, ly = -dx * s + dy * c;
+      if (lx >= x && lx < x + w && ly >= y && ly < y + h) put(b, X, Y, C);
+    }
   }
 }
 
@@ -100,6 +136,44 @@ function drawTorso(b, x, y, view, P, sex) {
   rect(b, x + 1, y + 7, 2, 2, P.pantsL); rect(b, x + 4, y + 8, 2, 3, P.pantsD);
 }
 
+/* Shapes may be written as [x, y, w, h, color] or as { "x", "y", "w", "h", "color" }. */
+function rectOf(r) { return Array.isArray(r) ? r : [r.x, r.y, r.w, r.h, r.color]; }
+function rects(list) { return list.map(rectOf); }
+/* One-piece tool shapes. Readable format: "handle": { length, width, color } rises from the pivot (0,0) and "head" shapes are
+   measured from the handle tip, so changing the length moves the head with it. Older format: "side" = ready-made shapes. */
+function gripShapes(def) {
+  if (!Array.isArray(def.head)) return rects(def.side || []);
+  const hd = def.handle || {}, len = hd.length === undefined ? 10 : hd.length, w = hd.width || 1;
+  return [[-Math.floor((w - 1) / 2), -len, w, len, hd.color || 'wood'], ...rects(def.head).map(([x, y, rw, rh, c]) => [x, y - len, rw, rh, c])];
+}
+
+let lastAnchor = null; // [x, y] pixel of the hand the last time a tool was drawn (null if none)
+function toolAnchor() { return lastAnchor; }
+
+function drawTool(b, side, hx, hy, tool, ov, P) {
+  // Tools are only held while working, and work is always seen from the side: other views draw nothing.
+  // ov = { kind, tier }: công cụ dân đang cầm. tier 0 = tay không, 1 = gỗ, 2 = đá.
+  if (!side) return;
+  const tier = ov && ov.tier !== undefined ? ov.tier : 2;
+  if (tier <= 0) return;
+  lastAnchor = [Math.round(hx), Math.round(hy)];
+  const kind = (ov && ov.kind) || tool.kind || 'axe';
+  const def = handTools[kind] || handTools.axe;
+  const T = tiers[tier] || tiers[Math.max(...Object.keys(tiers).map(Number).filter(n => n > 0))];
+  const col = { head: hexRgb(T.head), light: hexRgb(T.light), dark: hexRgb(T.dark), wood: P.wood };
+  const gx = Math.round(hx), gy = Math.round(hy);
+  // Pose: hand-drawn shapes for this exact frame, relative to the hand (0,0), never rotated, so pixel art stays intact.
+  const pose = tool.pose && def.poses && def.poses[tool.pose];
+  if (pose) {
+    for (const [x, y, w, h, c] of rects(pose)) rect(b, gx + x, gy + y, w, h, col[c] || hexRgb(c));
+    return;
+  }
+  const own = (tool.side || tool.shapes) && rects(tool.side || tool.shapes); // per-frame override: hand-placed offsets, never rotated
+  // Every tool pivots at the end of its handle (the hand) and turns as one body with the handle angle.
+  if (own) for (const [x, y, w, h, c] of own) rect(b, gx + x, gy + y, w, h, col[c] || hexRgb(c));
+  else rotShapes(b, gripShapes(def), col, gx, gy, rad(180 - (tool.a || 0)));
+}
+
 function drawCharacter(b, view, f, P, sex, ov) {
   const side = view === 'side', back = view === 'back', front = view === 'front';
   const bob = f.bob || 0, lean = f.lean || 0;
@@ -131,30 +205,7 @@ function drawCharacter(b, view, f, P, sex, ov) {
     line(b, p.sx, shY, p.ex, p.ey, 3, col);
     line(b, p.ex, p.ey, p.hx, p.hy, 3, col);
   };
-  const axe = (hx, hy) => {
-    // ov = { kind, tier }: công cụ dân đang cầm. tier 0 = tay không, 1 = gỗ, 2 = đá.
-    const tier = ov && ov.tier !== undefined ? ov.tier : 2;
-    if (tier <= 0) return;
-    const a = rad(tool.a || 0);
-    const ex = side ? hx + 7 * Math.sin(a) : hx, ey = hy + 7 * Math.cos(a);
-    line(b, hx, hy, ex, ey, 1, P.wood);
-    const bx = Math.round(ex), by = Math.round(ey), kind = (ov && ov.kind) || tool.kind || 'axe';
-    const C = tier === 1 ? P.tw : P.stone, CL = tier === 1 ? P.twL : P.stoneL, CD = tier === 1 ? P.twD : P.stoneD;
-    if (kind === 'pick') {
-      rect(b, bx - 3, by - 1, 7, 2, C); rect(b, bx - 3, by - 1, 7, 1, CL); rect(b, bx - 3, by, 1, 2, CD); rect(b, bx + 3, by, 1, 2, CD);
-    } else if (kind === 'hammer') {
-      rect(b, bx - 2, by - 2, 5, 4, C); rect(b, bx - 2, by - 2, 5, 1, CL); rect(b, bx + 2, by - 1, 1, 3, CD);
-    } else if (kind === 'hoe') {
-      if (side) { rect(b, bx, by - 1, 4, 2, C); rect(b, bx, by - 1, 4, 1, CL); rect(b, bx + 3, by, 1, 3, CD); }
-      else { rect(b, bx - 2, by - 1, 5, 2, C); rect(b, bx - 2, by - 1, 5, 1, CL); rect(b, bx - 2, by, 1, 3, CD); }
-    } else if (kind === 'shovel') {
-      rect(b, bx - 1, by, 3, 4, C); rect(b, bx - 1, by, 3, 1, CL); rect(b, bx + 1, by + 1, 1, 3, CD); rect(b, bx, by + 3, 1, 1, CD);
-    } else if (side) {
-      rect(b, bx - 1, by - 1, 4, 3, C); rect(b, bx - 1, by - 1, 4, 1, CL); rect(b, bx + 2, by, 1, 2, CD);
-    } else {
-      rect(b, bx - 2, by - 1, 5, 3, C); rect(b, bx - 2, by - 1, 5, 1, CL); rect(b, bx + 2, by, 1, 2, CD);
-    }
-  };
+  const axe = (hx, hy) => drawTool(b, side, hx, hy, tool, ov, P);
   const bundle = () => {
     const dy = gl(carry, 'dy', 0) + bob;
     if (side) {
@@ -185,7 +236,6 @@ function drawCharacter(b, view, f, P, sex, ov) {
   }
   const pR = armPts(f.armR, front ? CX - 5.5 : CX + 5.5);
   const pL = armPts(f.armL, front ? CX + 5.5 : CX - 5.5);
-  if (back && tool) axe(CX + 6, (pR.hy + pL.hy) / 2);
   leg(f.legR, front ? CX - 2.5 : CX + 2.5, P.skin);
   leg(f.legL, front ? CX + 2.5 : CX - 2.5, P.skin);
   if (!hold || back) { arm(pR, P.skin); arm(pL, P.skin); }
@@ -194,7 +244,6 @@ function drawCharacter(b, view, f, P, sex, ov) {
   if (hold) {
     if (carry) bundle();
     if (!back) { arm(pR, P.skin); arm(pL, P.skin); }
-    if (!back && tool) axe(CX - 0.5, (pR.hy + pL.hy) / 2);
   }
 }
 
@@ -229,8 +278,56 @@ function flipH(b) {
   return o;
 }
 
+/* Tool alone (no character), side view, for design previews. The hand (grip point) sits at (CX, HAND_Y); angleDeg is the
+   handle angle as in a frame's tool.a (180 = handle pointing straight up). Returns RGBA, W x H. */
+const HAND_Y = 30;
+function renderTool(kind, tier, angleDeg, look, pose) {
+  const b = new Uint8ClampedArray(W * H * 4);
+  const P = palette(look || { skin: '#e0ac69', hair: '#3b2a1a', hide: '#8b6a45', pants: '#3f63a8' });
+  drawTool(b, true, CX, HAND_Y, { a: angleDeg, pose }, { kind, tier }, P);
+  return b;
+}
+
+/* Pose shapes <-> single pixels, so a pose can be edited pixel by pixel and stored as few rectangles again. */
+function unpackShapes(shapes) {
+  const m = new Map();
+  for (const [x, y, w, h, c] of rects(shapes)) for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) m.set((x + i) + ',' + (y + j), [x + i, y + j, c]);
+  return [...m.values()];
+}
+function packPixels(list) {
+  const px = [...list].sort((p, q) => p[1] - q[1] || p[0] - q[0]);
+  const runs = [];
+  for (const [x, y, n] of px) {
+    const last = runs[runs.length - 1];
+    if (last && last.y === y && last.x + last.w === x && last.n === n) last.w++;
+    else runs.push({ x, y, w: 1, h: 1, n });
+  }
+  const out = [];
+  for (const r of runs) {
+    const up = out.find(o => o.n === r.n && o.x === r.x && o.w === r.w && o.y + o.h === r.y);
+    if (up) up.h++; else out.push({ ...r });
+  }
+  return out.map(o => [o.x, o.y, o.w, o.h, o.n]);
+}
+
+/* Turns the auto-rotated drawing of a tool at angleDeg into hand-editable pose shapes [x, y, w, h, colorName],
+   relative to the hand. Starting point for hand-drawing a pose; never used while rendering. */
+function bakeTool(kind, angleDeg) {
+  const P = palette({ skin: '#e0ac69', hair: '#3b2a1a', hide: '#8b6a45', pants: '#3f63a8' });
+  const T = tiers[1], names = {};
+  for (const [n, c] of [['head', hexRgb(T.head)], ['light', hexRgb(T.light)], ['dark', hexRgb(T.dark)], ['wood', P.wood]]) names[c.join(',')] = n;
+  const px = renderTool(kind, 1, angleDeg), list = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4;
+    const n = px[i + 3] && names[px[i] + ',' + px[i + 1] + ',' + px[i + 2]];
+    if (n) list.push([x - CX, y - HAND_Y, n]);
+  }
+  return packPixels(list);
+}
+
 /* view: front | back | right | left (left = right lật ngang) */
 function renderFrame(anims, name, idx, view, look, kind, toolOv) {
+  lastAnchor = null;
   const an = anims[name];
   const f = an.frames[((idx % an.frames.length) + an.frames.length) % an.frames.length];
   const P = palette(look, kind);
@@ -285,4 +382,4 @@ function formatAnims(anims) {
     '  "' + k + '": { "fps": ' + v.fps + ', "loop": ' + v.loop + ', "frames": [\n' +
     v.frames.map(f => '    ' + JSON.stringify(f)).join(',\n') + '\n  ] }').join(',\n') + '\n}';
 }
-export { W, H, CX, renderFrame, defaultAnims, formatAnims, palette };
+export { W, H, CX, renderFrame, defaultAnims, formatAnims, palette, handTools, renderTool, bakeTool, toolAnchor, unpackShapes, packPixels, HAND_Y };

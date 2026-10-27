@@ -1,0 +1,31 @@
+{
+  "name": "Hammer",
+  "handle": {
+    "length": 7,
+    "width": 1,
+    "color": "wood"
+  },
+  "head": [
+    {
+      "x": -2,
+      "y": -2,
+      "w": 5,
+      "h": 4,
+      "color": "head"
+    },
+    {
+      "x": -2,
+      "y": -2,
+      "w": 5,
+      "h": 1,
+      "color": "light"
+    },
+    {
+      "x": 2,
+      "y": -1,
+      "w": 1,
+      "h": 3,
+      "color": "dark"
+    }
+  ]
+}

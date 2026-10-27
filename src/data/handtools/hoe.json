@@ -1,0 +1,9 @@
+{
+  "name": "Hoe",
+  "handle": { "length": 17, "width": 1, "color": "wood" },
+  "head": [
+    { "x": 1, "y": 2, "w": 5, "h": 2, "color": "head" },
+    { "x": 1, "y": 2, "w": 5, "h": 1, "color": "light" },
+    { "x": 0, "y": 2, "w": 1, "h": 2, "color": "dark" }
+  ]
+}

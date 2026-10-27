@@ -122,6 +122,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         <div class="kv" id="cSkills"></div>
         <div class="kv" id="cTools"></div>
         <div class="jobs" id="cJobs" role="group" aria-label="Giao nghề"></div>
+        <div class="kv">Cấp công cụ ngay <small>(không cần Xưởng)</small></div>
+        <div class="jobs" id="cGive" role="group" aria-label="Cấp công cụ ngay"></div>
       </div>
       <div class="chips" id="sel"></div>
     </div>
@@ -134,7 +136,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     <li><b>Chuột phải lên cây / đá / bụi quả</b>: giao nghề đốn gỗ / thợ đá / hái lượm</li>
     <li><b>Chuột phải lên nền Kho</b>: giao thợ xây · lên đất trống: đi tới đó</li>
     <li><b>Xây Kho / Xây Xưởng</b>: bấm nút (phím B / X), rê chuột chọn chỗ xanh, bấm trái để đặt; Esc hoặc chuột phải để hủy</li>
-    <li><b>Công cụ</b>: dựng Xưởng, mở bảng Chế tác (phím C), thêm đơn rìu, cuốc chim, cuốc, xẻng; giao một dân làm Thợ thủ công</li>
+    <li><b>Công cụ</b>: dựng Xưởng, mở bảng Chế tác (phím C), thêm đơn rìu, cuốc chim, cuốc, búa; giao một dân làm Thợ thủ công</li>
     <li><b>Ngày đêm</b>: tối đến dân về ngủ quanh đống lửa, sáng ra tự đi làm tiếp. Ra lệnh lúc đêm thì dân đó thức tới sáng</li>
     <li><b>Mùa</b>: mỗi mùa 5 ngày. Thu hái quả nhanh nhất, đông không có quả. Rê chuột lên đồng hồ để xem tác động của thời tiết</li>
     <li><b>W A S D</b>: dời camera · <b>Lăn chuột / + −</b>: thu phóng · <b>P</b>: tạm dừng · <b>1 2 3</b>: tốc độ</li>
@@ -326,7 +328,92 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     }
   };
 
+  // src/data/handtools/tiers.json
+  var tiers_default = {
+    _note: "Tool head colors per tier. Keys are tier numbers (1 = wood, 2 = stone; 0 = bare hands, nothing drawn). To add a tier, add an entry here.",
+    "1": { name: "wood", head: "#b88c54", light: "#deb87e", dark: "#805c34" },
+    "2": { name: "stone", head: "#8e9496", light: "#c0c6c6", dark: "#62686c" }
+  };
+
+  // src/data/handtools/axe.json
+  var axe_default = {
+    name: "Axe",
+    handle: { length: 10, width: 1, color: "wood" },
+    head: [
+      { x: -1, y: 0, w: 2, h: 3, color: "dark" },
+      { x: 1, y: -1, w: 3, h: 5, color: "head" },
+      { x: 1, y: -1, w: 3, h: 1, color: "light" },
+      { x: 4, y: 0, w: 1, h: 3, color: "dark" },
+      { x: 1, y: 4, w: 2, h: 1, color: "head" }
+    ]
+  };
+
+  // src/data/handtools/pick.json
+  var pick_default = {
+    name: "Pickaxe",
+    handle: {
+      len: 10,
+      w: 1,
+      color: "wood"
+    },
+    side: [
+      [0, -9, 1, 12, "wood"],
+      [-1, -8, 3, 3, "dark"],
+      [-2, -7, 5, 2, "head"],
+      [-2, -7, 5, 1, "light"],
+      [-4, -6, 2, 1, "head"],
+      [-6, -5, 2, 1, "dark"],
+      [3, -6, 2, 1, "head"],
+      [5, -5, 2, 1, "dark"]
+    ]
+  };
+
+  // src/data/handtools/hammer.json
+  var hammer_default = {
+    name: "Hammer",
+    handle: {
+      length: 7,
+      width: 1,
+      color: "wood"
+    },
+    head: [
+      {
+        x: -2,
+        y: -2,
+        w: 5,
+        h: 4,
+        color: "head"
+      },
+      {
+        x: -2,
+        y: -2,
+        w: 5,
+        h: 1,
+        color: "light"
+      },
+      {
+        x: 2,
+        y: -1,
+        w: 1,
+        h: 3,
+        color: "dark"
+      }
+    ]
+  };
+
+  // src/data/handtools/hoe.json
+  var hoe_default = {
+    name: "Hoe",
+    handle: { length: 17, width: 1, color: "wood" },
+    head: [
+      { x: 1, y: 2, w: 5, h: 2, color: "head" },
+      { x: 1, y: 2, w: 5, h: 1, color: "light" },
+      { x: 0, y: 2, w: 1, h: 2, color: "dark" }
+    ]
+  };
+
   // src/character/rig.js
+  var handTools = { axe: axe_default, pick: pick_default, hammer: hammer_default, hoe: hoe_default };
   var W = 40;
   var H = 48;
   var CX = 20;
@@ -382,6 +469,31 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     for (let k = 0; k <= n; k++) {
       const t = k / n, cx = x0 + (x1 - x0) * t, cy = y0 + (y1 - y0) * t;
       rect(b, Math.round(cx - w / 2), Math.round(cy - w / 2), w, w, c);
+    }
+  }
+  function rotShapes(b, shapes, col, ox, oy, th) {
+    const c = Math.cos(th), s = Math.sin(th);
+    for (const [x, y, w, h, k] of shapes) {
+      const C = col[k] || hexRgb(k);
+      if (w === 1 || h === 1) {
+        const horiz = w >= h, ax = x + 0.5, ay = y + 0.5, bx = horiz ? x + w - 0.5 : ax, by = horiz ? ay : y + h - 0.5;
+        const X0 = Math.floor(ox + ax * c - ay * s), Y0 = Math.floor(oy + ax * s + ay * c);
+        const X12 = Math.floor(ox + bx * c - by * s), Y12 = Math.floor(oy + bx * s + by * c);
+        const n = Math.max(Math.abs(X12 - X0), Math.abs(Y12 - Y0));
+        for (let i = 0; i <= n; i++) put(b, n ? Math.round(X0 + (X12 - X0) * i / n) : X0, n ? Math.round(Y0 + (Y12 - Y0) * i / n) : Y0, C);
+        continue;
+      }
+      const xs = [], ys = [];
+      for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) {
+        xs.push(ox + px * c - py * s);
+        ys.push(oy + px * s + py * c);
+      }
+      const X1 = Math.ceil(Math.max(...xs)), Y1 = Math.ceil(Math.max(...ys));
+      for (let Y = Math.floor(Math.min(...ys)); Y < Y1; Y++) for (let X = Math.floor(Math.min(...xs)); X < X1; X++) {
+        const dx = X + 0.5 - ox, dy = Y + 0.5 - oy;
+        const lx = dx * c + dy * s, ly = -dx * s + dy * c;
+        if (lx >= x && lx < x + w && ly >= y && ly < y + h) put(b, X, Y, C);
+      }
     }
   }
   var HM = {
@@ -487,6 +599,37 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     rect(b, x + 1, y + 7, 2, 2, P.pantsL);
     rect(b, x + 4, y + 8, 2, 3, P.pantsD);
   }
+  function rectOf(r) {
+    return Array.isArray(r) ? r : [r.x, r.y, r.w, r.h, r.color];
+  }
+  function rects(list) {
+    return list.map(rectOf);
+  }
+  function gripShapes(def) {
+    if (!Array.isArray(def.head)) return rects(def.side || []);
+    const hd = def.handle || {}, len = hd.length === void 0 ? 10 : hd.length, w = hd.width || 1;
+    return [[-Math.floor((w - 1) / 2), -len, w, len, hd.color || "wood"], ...rects(def.head).map(([x, y, rw, rh, c]) => [x, y - len, rw, rh, c])];
+  }
+  var lastAnchor = null;
+  function drawTool(b, side, hx, hy, tool, ov, P) {
+    if (!side) return;
+    const tier = ov && ov.tier !== void 0 ? ov.tier : 2;
+    if (tier <= 0) return;
+    lastAnchor = [Math.round(hx), Math.round(hy)];
+    const kind = ov && ov.kind || tool.kind || "axe";
+    const def = handTools[kind] || handTools.axe;
+    const T = tiers_default[tier] || tiers_default[Math.max(...Object.keys(tiers_default).map(Number).filter((n) => n > 0))];
+    const col = { head: hexRgb(T.head), light: hexRgb(T.light), dark: hexRgb(T.dark), wood: P.wood };
+    const gx = Math.round(hx), gy = Math.round(hy);
+    const pose = tool.pose && def.poses && def.poses[tool.pose];
+    if (pose) {
+      for (const [x, y, w, h, c] of rects(pose)) rect(b, gx + x, gy + y, w, h, col[c] || hexRgb(c));
+      return;
+    }
+    const own = (tool.side || tool.shapes) && rects(tool.side || tool.shapes);
+    if (own) for (const [x, y, w, h, c] of own) rect(b, gx + x, gy + y, w, h, col[c] || hexRgb(c));
+    else rotShapes(b, gripShapes(def), col, gx, gy, rad(180 - (tool.a || 0)));
+  }
   function drawCharacter(b, view2, f, P, sex, ov) {
     const side = view2 === "side", back = view2 === "back", front = view2 === "front";
     const bob = f.bob || 0, lean = f.lean || 0;
@@ -517,48 +660,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       line(b, p.sx, shY, p.ex, p.ey, 3, col);
       line(b, p.ex, p.ey, p.hx, p.hy, 3, col);
     };
-    const axe = (hx, hy) => {
-      const tier = ov && ov.tier !== void 0 ? ov.tier : 2;
-      if (tier <= 0) return;
-      const a = rad(tool.a || 0);
-      const ex = side ? hx + 7 * Math.sin(a) : hx, ey = hy + 7 * Math.cos(a);
-      line(b, hx, hy, ex, ey, 1, P.wood);
-      const bx = Math.round(ex), by = Math.round(ey), kind = ov && ov.kind || tool.kind || "axe";
-      const C = tier === 1 ? P.tw : P.stone, CL = tier === 1 ? P.twL : P.stoneL, CD = tier === 1 ? P.twD : P.stoneD;
-      if (kind === "pick") {
-        rect(b, bx - 3, by - 1, 7, 2, C);
-        rect(b, bx - 3, by - 1, 7, 1, CL);
-        rect(b, bx - 3, by, 1, 2, CD);
-        rect(b, bx + 3, by, 1, 2, CD);
-      } else if (kind === "hammer") {
-        rect(b, bx - 2, by - 2, 5, 4, C);
-        rect(b, bx - 2, by - 2, 5, 1, CL);
-        rect(b, bx + 2, by - 1, 1, 3, CD);
-      } else if (kind === "hoe") {
-        if (side) {
-          rect(b, bx, by - 1, 4, 2, C);
-          rect(b, bx, by - 1, 4, 1, CL);
-          rect(b, bx + 3, by, 1, 3, CD);
-        } else {
-          rect(b, bx - 2, by - 1, 5, 2, C);
-          rect(b, bx - 2, by - 1, 5, 1, CL);
-          rect(b, bx - 2, by, 1, 3, CD);
-        }
-      } else if (kind === "shovel") {
-        rect(b, bx - 1, by, 3, 4, C);
-        rect(b, bx - 1, by, 3, 1, CL);
-        rect(b, bx + 1, by + 1, 1, 3, CD);
-        rect(b, bx, by + 3, 1, 1, CD);
-      } else if (side) {
-        rect(b, bx - 1, by - 1, 4, 3, C);
-        rect(b, bx - 1, by - 1, 4, 1, CL);
-        rect(b, bx + 2, by, 1, 2, CD);
-      } else {
-        rect(b, bx - 2, by - 1, 5, 3, C);
-        rect(b, bx - 2, by - 1, 5, 1, CL);
-        rect(b, bx + 2, by, 1, 2, CD);
-      }
-    };
+    const axe = (hx, hy) => drawTool(b, side, hx, hy, tool, ov, P);
     const bundle = () => {
       const dy = gl(carry, "dy", 0) + bob;
       if (side) {
@@ -594,7 +696,6 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     }
     const pR = armPts(f.armR, front ? CX - 5.5 : CX + 5.5);
     const pL = armPts(f.armL, front ? CX + 5.5 : CX - 5.5);
-    if (back && tool) axe(CX + 6, (pR.hy + pL.hy) / 2);
     leg(f.legR, front ? CX - 2.5 : CX + 2.5, P.skin);
     leg(f.legL, front ? CX + 2.5 : CX - 2.5, P.skin);
     if (!hold || back) {
@@ -609,7 +710,6 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         arm(pR, P.skin);
         arm(pL, P.skin);
       }
-      if (!back && tool) axe(CX - 0.5, (pR.hy + pL.hy) / 2);
     }
   }
   function outline(b, c) {
@@ -656,6 +756,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     return o;
   }
   function renderFrame(anims2, name, idx, view2, look, kind, toolOv) {
+    lastAnchor = null;
     const an = anims2[name];
     const f = an.frames[(idx % an.frames.length + an.frames.length) % an.frames.length];
     const P = palette(look, kind);
@@ -1173,12 +1274,12 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       { bob: 0, lean: 1, legR: { a: -21, lift: 1 }, legL: { a: 21, lift: 0 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } }
     ] },
     chop: { fps: 8, loop: true, frames: [
-      { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 80, b: 40 }, armL: { a: 70, b: 40 }, tool: { on: true, a: 165, kind: "axe" } },
-      { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 125, b: 25 }, armL: { a: 115, b: 25 }, tool: { on: true, a: 195, kind: "axe" } },
-      { bob: -1, lean: -2, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 15 }, armL: { a: 140, b: 15 }, tool: { on: true, a: 215, kind: "axe" } },
+      { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 80, b: 40 }, armL: { a: 70, b: 40 }, tool: { on: true, a: 151, kind: "axe" } },
+      { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 125, b: 25 }, armL: { a: 115, b: 25 }, tool: { on: true, a: 186, kind: "axe" } },
+      { bob: -1, lean: -2, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 15 }, armL: { a: 140, b: 15 }, tool: { on: true, a: 151, kind: "axe" } },
       { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 100, b: 20 }, armL: { a: 92, b: 20 }, tool: { on: true, a: 130, kind: "axe" } },
-      { bob: 1, lean: 2, legR: { a: 18, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 45, b: 30 }, armL: { a: 40, b: 30 }, tool: { on: true, a: 70, kind: "axe" } },
-      { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 35 }, armL: { a: 62, b: 35 }, tool: { on: true, a: 125, kind: "axe" } }
+      { bob: 1, lean: 2, legR: { a: 18, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 45, b: 30 }, armL: { a: 40, b: 30 }, tool: { on: true, a: 116, kind: "axe" } },
+      { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 35 }, armL: { a: 62, b: 35 }, tool: { on: true, a: 89, kind: "axe" } }
     ] },
     mine: { fps: 7, loop: true, frames: [
       { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 80, b: 40 }, armL: { a: 70, b: 40 }, tool: { on: true, a: 165, kind: "pick" } },
@@ -1670,6 +1771,36 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     ]
   };
 
+  // src/data/blueprints/tool_hammer.json
+  var tool_hammer_default = {
+    name: "Hammer",
+    type: "prop",
+    size: [16, 16],
+    anchor: [8, 15],
+    params: { stone: 1 },
+    palette: {
+      line: "#2b1d10",
+      handle: "#8a5e34",
+      handleL: "#aa7c48",
+      tw: "#b88c54",
+      twL: "#dEb87e",
+      twD: "#805c34",
+      st: "#8e9498",
+      stL: "#c0c6c8",
+      stD: "#60676b",
+      bind: "#d8c690"
+    },
+    layers: [
+      { shape: "line", from: [3, 14], to: [10, 7], w: 2, color: "handle" },
+      { shape: "line", from: [2, 14], to: [9, 7], w: 1, color: "handleL" },
+      { shape: "poly", points: [[7, 3], [13, 5], [12, 9], [6, 7]], color: "tw", ifNot: "stone" },
+      { shape: "poly", points: [[7, 3], [13, 5], [12, 9], [6, 7]], color: "st", if: "stone" },
+      { shape: "line", from: [8, 4], to: [12, 5], w: 1, color: "twL", ifNot: "stone" },
+      { shape: "line", from: [8, 4], to: [12, 5], w: 1, color: "stL", if: "stone" },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
   // src/data/blueprints/tool_hoe.json
   var tool_hoe_default = {
     name: "Cu\u1ED1c",
@@ -1972,149 +2103,6 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     ]
   };
 
-  // src/data/blueprints/tool_shovel.json
-  var tool_shovel_default = {
-    name: "X\u1EBBng",
-    type: "prop",
-    size: [
-      16,
-      16
-    ],
-    anchor: [
-      8,
-      15
-    ],
-    params: {
-      stone: 1
-    },
-    palette: {
-      line: "#2b1d10",
-      handle: "#8a5e34",
-      handleL: "#aa7c48",
-      tw: "#b88c54",
-      twL: "#dEb87e",
-      twD: "#805c34",
-      st: "#8e9498",
-      stL: "#c0c6c8",
-      stD: "#60676b",
-      bind: "#d8c690"
-    },
-    layers: [
-      {
-        shape: "line",
-        from: [
-          4,
-          2
-        ],
-        to: [
-          9,
-          9
-        ],
-        w: 2,
-        color: "handle"
-      },
-      {
-        shape: "line",
-        from: [
-          3,
-          2
-        ],
-        to: [
-          8,
-          9
-        ],
-        w: 1,
-        color: "handleL"
-      },
-      {
-        shape: "poly",
-        points: [
-          [
-            7,
-            9
-          ],
-          [
-            12,
-            9
-          ],
-          [
-            12,
-            13
-          ],
-          [
-            9,
-            15
-          ],
-          [
-            7,
-            13
-          ]
-        ],
-        color: "tw",
-        ifNot: "stone"
-      },
-      {
-        shape: "poly",
-        points: [
-          [
-            7,
-            9
-          ],
-          [
-            12,
-            9
-          ],
-          [
-            12,
-            13
-          ],
-          [
-            9,
-            15
-          ],
-          [
-            7,
-            13
-          ]
-        ],
-        color: "st",
-        if: "stone"
-      },
-      {
-        shape: "line",
-        from: [
-          8,
-          10
-        ],
-        to: [
-          11,
-          10
-        ],
-        w: 1,
-        color: "twL",
-        ifNot: "stone"
-      },
-      {
-        shape: "line",
-        from: [
-          8,
-          10
-        ],
-        to: [
-          11,
-          10
-        ],
-        w: 1,
-        color: "stL",
-        if: "stone"
-      },
-      {
-        shape: "outline",
-        color: "line"
-      }
-    ]
-  };
-
   // src/data/blueprints/water.json
   var water_default = {
     name: "M\u1EB7t h\u1ED3 (ho\u1EA1t \u1EA3nh)",
@@ -2304,7 +2292,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       this.seasonal = /* @__PURE__ */ new Map();
       /** Biểu tượng công cụ 16×16, khóa dạng "axe1" (gỗ) hoặc "axe2" (đá). */
       this.icons = {};
-      const defs = { axe: tool_axe_default, pick: tool_pick_default, hoe: tool_hoe_default, shovel: tool_shovel_default };
+      const defs = { axe: tool_axe_default, pick: tool_pick_default, hoe: tool_hoe_default, hammer: tool_hammer_default };
       for (const k of Object.keys(defs)) for (const tier of [1, 2]) this.icons[`${k}${tier}`] = make(defs[k], 1, { stone: tier === 2 ? 1 : 0 }).frames[0];
     }
     /** Seasonal trees: orange in autumn; in winter round trees turn grey, pines get frosted. */
@@ -2720,10 +2708,10 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   var FOOD_SPOIL_DAYS = 3;
 
   // src/sim/tools.ts
-  var TOOL_KINDS = ["axe", "pick", "hoe", "shovel"];
-  var TOOL_NAME = { axe: "R\xECu", pick: "Cu\u1ED1c chim", hoe: "Cu\u1ED1c", shovel: "X\u1EBBng" };
-  var TOOL_USE = { axe: "\u0111\u1ED1n g\u1ED7", pick: "\u0111\u1EE5c \u0111\xE1", hoe: "h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7", shovel: "d\u1EF1ng c\xF4ng tr\xECnh" };
-  var TOOL_OF_JOB = { wood: "axe", stone: "pick", food: "hoe", build: "shovel" };
+  var TOOL_KINDS = ["axe", "pick", "hoe", "hammer"];
+  var TOOL_NAME = { axe: "R\xECu", pick: "Cu\u1ED1c chim", hoe: "Cu\u1ED1c", hammer: "B\xFAa" };
+  var TOOL_USE = { axe: "\u0111\u1ED1n g\u1ED7", pick: "\u0111\u1EE5c \u0111\xE1", hoe: "h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7", hammer: "d\u1EF1ng c\xF4ng tr\xECnh" };
+  var TOOL_OF_JOB = { wood: "axe", stone: "pick", food: "hoe", build: "hammer" };
   var TIER_NAME = ["Tay kh\xF4ng", "G\u1ED7", "\u0110\xE1"];
   var TIER_SPEED = [0.6, 1, 1.4];
   var TIER_YIELD = [1, 1.25, 1.6];
@@ -2736,12 +2724,12 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     R("pick", 2, { wood: 2, stone: 4 }, 22),
     R("hoe", 1, { wood: 3 }, 12),
     R("hoe", 2, { wood: 2, stone: 2 }, 18),
-    R("shovel", 1, { wood: 3 }, 12),
-    R("shovel", 2, { wood: 2, stone: 3 }, 18)
+    R("hammer", 1, { wood: 3 }, 12),
+    R("hammer", 2, { wood: 2, stone: 3 }, 18)
   ];
   var RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
   var recipeName = (r) => `${TOOL_NAME[r.kind]} ${TIER_NAME[r.tier].toLowerCase()}`;
-  var emptyToolSet = () => ({ axe: null, pick: null, hoe: null, shovel: null });
+  var emptyToolSet = () => ({ axe: null, pick: null, hoe: null, hammer: null });
 
   // src/sim/fog.ts
   var Fog = class {
@@ -3170,6 +3158,15 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         v.prefer = -1;
       }
     }
+    /** Cấp công cụ ngay cho dân đã chọn, không cần Xưởng hay nguyên liệu. tier 0 = thu lại (tay không). */
+    giveTool(ids, kind, tier) {
+      for (const id of ids) {
+        const v = this.byId.get(id);
+        if (!v) continue;
+        v.tools[kind] = tier > 0 ? { tier, dur: TIER_DURABILITY[tier] } : null;
+        if (tier > 0) this.say(`${v.name} \u0111\u01B0\u1EE3c c\u1EA5p ${TOOL_NAME[kind].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}.`);
+      }
+    }
     /** Ô trống gần (tx,ty) nhất, chưa bị ai giữ. */
     nearestFree(tx, ty, taken) {
       const N2 = this.world.size;
@@ -3347,9 +3344,11 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
           hold = { kind: k, tier };
         } else anim = "gather";
       } else if (v.phase === "build") {
-        anim = "build";
-        const t = v.tools.shovel?.tier ?? 0;
-        hold = t > 0 ? { kind: "shovel", tier: t } : { kind: "hammer", tier: 2 };
+        const t = this.toolTier(v, "build");
+        if (t > 0) {
+          anim = "build";
+          hold = { kind: "hammer", tier: t };
+        } else anim = "gather";
       } else if (v.phase === "craft") {
         anim = "craft";
         hold = { kind: "hammer", tier: 2 };
@@ -4239,6 +4238,25 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     jobsBox.appendChild(b);
     return b;
   });
+  var giveBox = $("cGive");
+  for (const k of TOOL_KINDS) for (const tier of [1, 2]) {
+    const b = document.createElement("button");
+    b.textContent = `${TOOL_NAME[k]} ${TIER_NAME[tier].toLowerCase()}`;
+    b.title = `C\u1EA5p ${b.textContent.toLowerCase()} cho d\xE2n \u0111ang ch\u1ECDn \xB7 ${TOOL_USE[k]}`;
+    b.addEventListener("click", () => {
+      sim.giveTool([...ctl.selected], k, tier);
+      lastHud = 0;
+    });
+    giveBox.appendChild(b);
+  }
+  var dropBtn = document.createElement("button");
+  dropBtn.textContent = "Thu h\u1EBFt";
+  dropBtn.title = "Thu l\u1EA1i m\u1ECDi c\xF4ng c\u1EE5 c\u1EE7a d\xE2n \u0111ang ch\u1ECDn (tay kh\xF4ng)";
+  dropBtn.addEventListener("click", () => {
+    for (const k of TOOL_KINDS) sim.giveTool([...ctl.selected], k, 0);
+    lastHud = 0;
+  });
+  giveBox.appendChild(dropBtn);
   var recipesBox = $("recipes");
   var craftCard = $("craft");
   var recRows = RECIPES.map((r) => {

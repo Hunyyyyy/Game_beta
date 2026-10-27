@@ -1,0 +1,67 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Blueprint viewer</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:13px system-ui;background:#161616;color:#eee;display:flex;flex-direction:column;overflow:hidden}
+select,button,input{font:inherit;color:inherit}
+select,button{background:#2b2b2b;border:1px solid #484848;border-radius:4px;padding:3px 7px}
+input[type=number]{background:#101010;border:1px solid #484848;border-radius:4px;padding:2px 4px;width:70px}
+button{cursor:pointer}button:hover{background:#383838}
+label{display:inline-flex;align-items:center;gap:4px;margin-right:10px;white-space:nowrap}
+canvas{image-rendering:pixelated;display:block}
+a{color:#8cc4ff;text-decoration:none}
+
+#top{padding:6px 8px;border-bottom:1px solid #333;display:flex;flex-wrap:wrap;align-items:center;gap:4px 0}
+#top a{margin-left:auto}
+#msgs{padding:2px 8px;min-height:20px;display:flex;flex-wrap:wrap;gap:0 16px;font-size:12px}
+#err{color:#ff7b7b}#warn{color:#fc6}#note{color:#9fd}
+
+#main{flex:1;min-height:0;display:grid;grid-template-columns:190px minmax(0,1.4fr) minmax(0,1fr);gap:8px;padding:8px}
+.panel{background:#1d1d1d;border:1px solid #333;border-radius:6px;display:flex;flex-direction:column;min-height:0;padding:6px;gap:6px}
+.panel>h4{margin:0;font-size:12px;font-weight:600;color:#9ab;text-transform:uppercase;letter-spacing:.04em}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.fill{flex:1;min-height:0;position:relative}
+.fill canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border:1px solid #333;background:#222}
+
+#list{overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.item{display:flex;align-items:center;gap:8px;padding:4px;border:2px solid transparent;border-radius:5px;cursor:pointer}
+.item:hover{background:#262626}.item.on{border-color:#ffd54a;background:#262626}
+.item canvas{width:44px;height:44px;object-fit:contain;flex:none;background:#2a2a2a}
+.item.mod span::after{content:" ●";color:#ffd54a}
+.stage{cursor:pointer;text-align:center;font-size:11px;color:#9ab}
+.stage canvas{height:62px;width:auto;border:2px solid #444}.stage:hover canvas{border-color:#ffd54a}
+
+textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cde;border:1px solid #444;border-radius:4px;font:12px Consolas,monospace;padding:6px}
+.help{font-size:11px;color:#889;line-height:1.35}
+@media (max-width:1000px){body{overflow:auto;height:auto}#main{display:flex;flex-direction:column}.panel{min-height:420px}}
+</style></head><body>
+
+<div id="top">
+  <b style="margin-right:14px">Blueprint viewer</b>
+  <label>Seed <input id="seed" type="number" placeholder="auto" title="Changes the random scatter (pebbles, spots...). Empty = the file's own seed."></label>
+  <label>Background <select id="bg"><option value="grass">grass</option><option value="dark">dark</option><option value="light">light</option><option value="checker">checker</option></select></label>
+  <label><input id="marks" type="checkbox" checked> anchor + footprint</label>
+  <label><input id="grid" type="checkbox"> pixel grid</label>
+  <span id="info" style="color:#9ab"></span>
+  <a href="anim-viewer.html">Animation viewer →</a>
+</div>
+<div id="msgs"><span id="err"></span><span id="warn"></span><span id="note"></span></div>
+
+<div id="main">
+  <div class="panel"><h4>Blueprints</h4><div id="list"></div></div>
+
+  <div class="panel">
+    <h4 id="title"></h4>
+    <div class="bar"><span id="params" class="bar"></span><button id="play" style="display:none">⏸ Pause</button></div>
+    <div id="stages" class="bar"></div>
+    <div class="fill"><canvas id="cv"></canvas></div>
+    <div class="help">Red cross = anchor (the point that sits on the tile). Dashed blue box = footprint (what blocks movement).</div>
+  </div>
+
+  <div class="panel">
+    <div class="bar"><button id="copy">Copy JSON</button><button id="reset">Restore original</button></div>
+    <div class="help">Edit the JSON and the picture updates live. A ● in the list marks a blueprint you changed. Nothing is saved: paste the JSON over <code>src/data/blueprints/&lt;name&gt;.json</code>, then <code>npm run build</code>.</div>
+    <textarea id="src" spellcheck="false"></textarea>
+  </div>
+</div>
+<script>/*BUNDLE*/</script></body></html>

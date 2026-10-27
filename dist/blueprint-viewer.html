@@ -1,0 +1,1675 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Blueprint viewer</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:13px system-ui;background:#161616;color:#eee;display:flex;flex-direction:column;overflow:hidden}
+select,button,input{font:inherit;color:inherit}
+select,button{background:#2b2b2b;border:1px solid #484848;border-radius:4px;padding:3px 7px}
+input[type=number]{background:#101010;border:1px solid #484848;border-radius:4px;padding:2px 4px;width:70px}
+button{cursor:pointer}button:hover{background:#383838}
+label{display:inline-flex;align-items:center;gap:4px;margin-right:10px;white-space:nowrap}
+canvas{image-rendering:pixelated;display:block}
+a{color:#8cc4ff;text-decoration:none}
+
+#top{padding:6px 8px;border-bottom:1px solid #333;display:flex;flex-wrap:wrap;align-items:center;gap:4px 0}
+#top a{margin-left:auto}
+#msgs{padding:2px 8px;min-height:20px;display:flex;flex-wrap:wrap;gap:0 16px;font-size:12px}
+#err{color:#ff7b7b}#warn{color:#fc6}#note{color:#9fd}
+
+#main{flex:1;min-height:0;display:grid;grid-template-columns:190px minmax(0,1.4fr) minmax(0,1fr);gap:8px;padding:8px}
+.panel{background:#1d1d1d;border:1px solid #333;border-radius:6px;display:flex;flex-direction:column;min-height:0;padding:6px;gap:6px}
+.panel>h4{margin:0;font-size:12px;font-weight:600;color:#9ab;text-transform:uppercase;letter-spacing:.04em}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.fill{flex:1;min-height:0;position:relative}
+.fill canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border:1px solid #333;background:#222}
+
+#list{overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.item{display:flex;align-items:center;gap:8px;padding:4px;border:2px solid transparent;border-radius:5px;cursor:pointer}
+.item:hover{background:#262626}.item.on{border-color:#ffd54a;background:#262626}
+.item canvas{width:44px;height:44px;object-fit:contain;flex:none;background:#2a2a2a}
+.item.mod span::after{content:" ●";color:#ffd54a}
+.stage{cursor:pointer;text-align:center;font-size:11px;color:#9ab}
+.stage canvas{height:62px;width:auto;border:2px solid #444}.stage:hover canvas{border-color:#ffd54a}
+
+textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cde;border:1px solid #444;border-radius:4px;font:12px Consolas,monospace;padding:6px}
+.help{font-size:11px;color:#889;line-height:1.35}
+@media (max-width:1000px){body{overflow:auto;height:auto}#main{display:flex;flex-direction:column}.panel{min-height:420px}}
+</style></head><body>
+
+<div id="top">
+  <b style="margin-right:14px">Blueprint viewer</b>
+  <label>Seed <input id="seed" type="number" placeholder="auto" title="Changes the random scatter (pebbles, spots...). Empty = the file's own seed."></label>
+  <label>Background <select id="bg"><option value="grass">grass</option><option value="dark">dark</option><option value="light">light</option><option value="checker">checker</option></select></label>
+  <label><input id="marks" type="checkbox" checked> anchor + footprint</label>
+  <label><input id="grid" type="checkbox"> pixel grid</label>
+  <span id="info" style="color:#9ab"></span>
+  <a href="anim-viewer.html">Animation viewer →</a>
+</div>
+<div id="msgs"><span id="err"></span><span id="warn"></span><span id="note"></span></div>
+
+<div id="main">
+  <div class="panel"><h4>Blueprints</h4><div id="list"></div></div>
+
+  <div class="panel">
+    <h4 id="title"></h4>
+    <div class="bar"><span id="params" class="bar"></span><button id="play" style="display:none">⏸ Pause</button></div>
+    <div id="stages" class="bar"></div>
+    <div class="fill"><canvas id="cv"></canvas></div>
+    <div class="help">Red cross = anchor (the point that sits on the tile). Dashed blue box = footprint (what blocks movement).</div>
+  </div>
+
+  <div class="panel">
+    <div class="bar"><button id="copy">Copy JSON</button><button id="reset">Restore original</button></div>
+    <div class="help">Edit the JSON and the picture updates live. A ● in the list marks a blueprint you changed. Nothing is saved: paste the JSON over <code>src/data/blueprints/&lt;name&gt;.json</code>, then <code>npm run build</code>.</div>
+    <textarea id="src" spellcheck="false"></textarea>
+  </div>
+</div>
+<script>"use strict";
+(() => {
+  // src/data/blueprints/bush.json
+  var bush_default = {
+    name: "B\u1EE5i c\xE2y c\xF3 qu\u1EA3",
+    type: "prop",
+    size: [30, 24],
+    anchor: [15, 21],
+    footprint: [8, 17, 14, 5],
+    seed: 11,
+    params: { empty: 0 },
+    palette: { leaf: "#4a7d33", leafL: "#6aa84c", leafD: "#2f5222", berry: "#c23a3a", berryL: "#f08a7a", line: "#17240f", shadow: "#000000" },
+    layers: [
+      { shape: "ellipse", cx: 15, cy: 14, rx: 6, ry: 5, color: "leaf", repeat: { n: 6, jitter: [6, 3] } },
+      { shape: "bevel", light: "#d8ffb0", lightAlpha: 0.35, dark: "#0a1a08", darkAlpha: 0.4 },
+      { shape: "scatter", count: 14, area: [3, 4, 24, 16], size: [2, 1], colors: ["leafL", "leafD"], onlyOver: ["leaf"] },
+      { shape: "scatter", count: 6, area: [5, 7, 20, 11], size: 2, color: "berry", onlyOver: ["leaf", "leafL", "leafD"], ifNot: "empty" },
+      { shape: "scatter", count: 3, area: [5, 7, 20, 11], size: 1, color: "berryL", onlyOver: ["berry"], ifNot: "empty" },
+      { shape: "outline", color: "line" },
+      { shape: "ellipse", cx: 15, cy: 21, rx: 12, ry: 2.5, color: "shadow", alpha: 0.28, mode: "under" }
+    ]
+  };
+
+  // src/data/blueprints/campfire.json
+  var campfire_default = {
+    name: "Nh\xE0 chung (\u0111\u1ED1ng l\u1EEDa tr\u1EA1i)",
+    type: "prop",
+    size: [72, 60],
+    anchor: [36, 54],
+    footprint: [4, 30, 64, 28],
+    seed: 1,
+    animate: { frames: 4, fps: 6 },
+    palette: {
+      line: "#2b1d10",
+      rock: "#7a8084",
+      rockL: "#b0b7bb",
+      shadow: "#000000",
+      dirt: "#5a4430",
+      dirtL: "#6e553b",
+      dirtD: "#47362a",
+      ash: "#2e2822",
+      log: "#7a5530",
+      logD: "#5e4026",
+      logE: "#c49a60",
+      flame2: "#e8641e",
+      flame1: "#f7a728",
+      flame0: "#fff1a8",
+      spark: "#ffd070"
+    },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 50, rx: 32, ry: 8, color: "shadow", alpha: 0.25 },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 30, ry: 14, color: "#ffb040", alpha: 0.1 },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 24, ry: 10, color: "dirt" },
+      { shape: "scatter", count: 40, area: [12, 34, 48, 20], size: 1, colors: ["dirtL", "dirtD"], onlyOver: ["dirt"] },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 15, ry: 6, color: "ash" },
+      { shape: "ellipse", cx: 21, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 21, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 19, y: 37, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 30, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 30, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 28, y: 33, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 42, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 42, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 40, y: 33, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 51, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 51, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 49, y: 37, w: 3, h: 1, color: "rockL" },
+      { shape: "line", from: [26, 47], to: [46, 40], w: 4, color: "log" },
+      { shape: "line", from: [26, 40], to: [46, 47], w: 4, color: "logD" },
+      { shape: "rect", x: 25, y: 45, w: 3, h: 4, color: "logE" },
+      { shape: "rect", x: 45, y: 45, w: 3, h: 4, color: "logE" },
+      { shape: "poly", points: [[27, 44], [36, { cycle: [22, 19, 23, 20] }], [45, 44]], color: "flame2" },
+      { shape: "poly", points: [[30, 44], [34, { cycle: [27, 25, 28, 26] }], [38, 44]], color: "flame1" },
+      { shape: "poly", points: [[34, 44], [40, { cycle: [26, 28, 25, 27] }], [44, 44]], color: "flame1" },
+      { shape: "poly", points: [[32, 44], [36, { cycle: [32, 30, 33, 31] }], [40, 44]], color: "flame0" },
+      { shape: "rect", x: [28, 44], y: [12, 30], w: 1, h: 1, color: "spark", repeat: { n: 8, phase: 4 } },
+      { shape: "ellipse", cx: 55, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 55, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 53, y: 42, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 51, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 51, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 49, y: 47, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 42, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 42, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 40, y: 51, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 30, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 30, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 28, y: 51, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 21, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 21, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 19, y: 47, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 17, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 17, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 15, y: 42, w: 3, h: 1, color: "rockL" }
+    ]
+  };
+
+  // src/data/blueprints/grass.json
+  var grass_default = {
+    name: "\xD4 c\u1ECF",
+    type: "tile",
+    size: [32, 32],
+    seed: 4,
+    palette: { g0: "#7a984a", g1: "#86a355", g2: "#93b05f", tuft: "#6b8a41", tuftL: "#a8c470", flower: "#e8d28a", flower2: "#f2f2e6" },
+    bg: "g1",
+    layers: [
+      { shape: "noise", scale: 6, octaves: 2, contrast: 2.2, bands: [[0, "g0"], [0.4, "g1"], [0.78, "g2"]] },
+      { shape: "scatter", count: 22, size: [1, 2], colors: ["tuft", "tuft", "tuftL"] },
+      { shape: "scatter", count: 8, size: [2, 1], colors: ["tuft", "tuftL"] },
+      { shape: "scatter", count: [0, 1], size: 2, color: "flower" },
+      { shape: "scatter", count: [0, 1], size: 1, color: "flower2" }
+    ]
+  };
+
+  // src/data/blueprints/mud.json
+  var mud_default = {
+    name: "\xD4 b\xF9n",
+    type: "tile",
+    size: [32, 32],
+    seed: 9,
+    palette: { m0: "#563a24", m1: "#684a2e", m2: "#7a5a38", wet: "#3e2c1d", wetL: "#5a4330", shine: "#a98a64", stone: "#9a8e78", stoneD: "#6f6552" },
+    bg: "m1",
+    layers: [
+      { shape: "noise", scale: 5, octaves: 2, contrast: 2.2, bands: [[0, "m0"], [0.4, "m1"], [0.8, "m2"]] },
+      { shape: "ellipse", cx: [3, 28], cy: [3, 28], rx: [3, 6], ry: [2, 4], color: "wet", repeat: { n: 4 } },
+      { shape: "scatter", count: 10, size: [2, 1], color: "shine", onlyOver: ["wet"] },
+      { shape: "scatter", count: 14, size: 1, colors: ["m0", "m2"] },
+      { shape: "scatter", count: 3, size: [2, 2], color: "stone" },
+      { shape: "scatter", count: 3, size: [1, 1], color: "stoneD" }
+    ]
+  };
+
+  // src/data/blueprints/rock.json
+  var rock_default = {
+    name: "T\u1EA3ng \u0111\xE1",
+    type: "prop",
+    size: [32, 26],
+    anchor: [16, 23],
+    footprint: [5, 18, 22, 6],
+    seed: 8,
+    palette: { rock: "#7a8084", rockL: "#a6adb1", rockD: "#555b60", crack: "#3d4246", moss: "#5f8a3e", line: "#22262a", shadow: "#000000" },
+    layers: [
+      { shape: "poly", points: [[3, 21], [1, 13], [6, 5], [14, 2], [23, 4], [29, 11], [28, 20], [16, 23]], color: "rock", jitter: 1 },
+      { shape: "poly", points: [[6, 5], [14, 2], [23, 4], [17, 10], [8, 12]], color: "rockL", clip: "inside" },
+      { shape: "poly", points: [[28, 20], [29, 11], [22, 9], [18, 22], [16, 23]], color: "rockD", clip: "inside" },
+      { shape: "line", from: [11, 12], to: [14, 19], color: "crack" },
+      { shape: "line", from: [14, 19], to: [13, 22], color: "crack" },
+      { shape: "scatter", count: 26, area: [2, 4, 27, 19], size: 1, colors: ["rockL", "rockD", "crack"], onlyOver: ["rock"] },
+      { shape: "ellipse", cx: 9, cy: 6, rx: 4, ry: 1.5, color: "moss", alpha: 0.9, clip: "inside" },
+      { shape: "bevel", light: "#ffffff", lightAlpha: 0.25, dark: "#000000", darkAlpha: 0.3 },
+      { shape: "outline", color: "line" },
+      { shape: "ellipse", cx: 16, cy: 23, rx: 15, ry: 2.5, color: "shadow", alpha: 0.28, mode: "under" }
+    ]
+  };
+
+  // src/data/blueprints/storage.json
+  var storage_default = {
+    name: "Kho",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 4,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: {
+      line: "#2b1d10",
+      shadow: "#000000",
+      dirt: "#6a5238",
+      wood: "#8a6238",
+      woodL: "#aa7c48",
+      woodD: "#5e4026",
+      thatch: "#c9a85a",
+      thatchL: "#e0c47a",
+      thatchD: "#9a7c3a",
+      sack: "#c9b27a",
+      sackD: "#9d8756",
+      crate: "#7a5530",
+      log: "#6b4a28",
+      logE: "#c49a60",
+      rope: "#d8c690"
+    },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 54, rx: 32, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 10, y: 36, w: 52, h: 12, color: "wood", if: "st1" },
+      { shape: "rect", x: 10, y: 40, w: 52, h: 1, color: "woodD", if: "st1" },
+      { shape: "rect", x: 10, y: 44, w: 52, h: 1, color: "woodD", if: "st1" },
+      { shape: "rect", x: 8, y: 48, w: 56, h: 6, color: "woodD", if: "st1" },
+      { shape: "rect", x: 8, y: 48, w: 56, h: 1, color: "woodL", if: "st1" },
+      { shape: "rect", x: 12, y: 16, w: 3, h: 22, color: "wood", if: "st2" },
+      { shape: "rect", x: 57, y: 16, w: 3, h: 22, color: "wood", if: "st2" },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 15, y: 20, w: 42, h: 18, color: "woodD" },
+        { shape: "rect", x: 15, y: 28, w: 42, h: 1, color: "wood" },
+        { shape: "ellipse", cx: 22, cy: 43, rx: 7, ry: 6, color: "sack" },
+        { shape: "rect", x: 19, y: 36, w: 6, h: 2, color: "sackD" },
+        { shape: "ellipse", cx: 32, cy: 44, rx: 6, ry: 5, color: "sack" },
+        { shape: "rect", x: 30, y: 38, w: 5, h: 2, color: "sackD" },
+        { shape: "rect", x: 40, y: 33, w: 13, h: 12, color: "crate" },
+        { shape: "rect", x: 40, y: 38, w: 13, h: 1, color: "woodD" },
+        { shape: "rect", x: 46, y: 33, w: 1, h: 12, color: "woodD" },
+        { shape: "rect", x: 44, y: 29, w: 18, h: 3, color: "log" },
+        { shape: "rect", x: 44, y: 29, w: 2, h: 3, color: "logE" }
+      ] },
+      { shape: "rect", x: 8, y: 22, w: 4, h: 32, color: "woodL", if: "st2" },
+      { shape: "rect", x: 60, y: 22, w: 4, h: 32, color: "wood", if: "st2" },
+      { shape: "line", from: [6, 24], to: [36, 8], w: 2, color: "wood", if: "st3" },
+      { shape: "line", from: [36, 8], to: [66, 24], w: 2, color: "wood", if: "st3" },
+      { shape: "line", from: [20, 16], to: [20, 26], w: 1, color: "woodD", if: "st3" },
+      { shape: "line", from: [52, 16], to: [52, 26], w: 1, color: "woodD", if: "st3" },
+      { shape: "line", from: [10, 26], to: [62, 26], w: 2, color: "woodD", if: "st3" },
+      { shape: "poly", points: [[2, 28], [36, 4], [70, 28]], color: "thatch", if: "st4" },
+      { shape: "poly", points: [[36, 4], [70, 28], [36, 28]], color: "thatchD", if: "st4", alpha: 0.45, clip: "inside" },
+      { shape: "scatter", count: 50, area: [6, 6, 60, 22], size: [1, 3], colors: ["thatchL", "thatchD"], onlyOver: ["thatch", "thatchD"], if: "st4" },
+      { shape: "rect", x: 2, y: 28, w: 68, h: 2, color: "thatchD", if: "st4" },
+      { shape: "outline", color: "line", ifNot: "st1" },
+      { shape: "outline", color: "line", if: "st1" }
+    ]
+  };
+
+  // src/data/blueprints/stump.json
+  var stump_default = {
+    name: "G\u1ED1c c\xE2y",
+    type: "prop",
+    size: [22, 16],
+    anchor: [11, 13],
+    seed: 2,
+    palette: { wood: "#6b4a28", woodL: "#8a6238", woodD: "#4e3519", ring: "#a47a48", ringD: "#8a6238", line: "#2b1d10", shadow: "#000000" },
+    layers: [
+      { shape: "rect", x: 4, y: 6, w: 14, h: 7, color: "wood" },
+      { shape: "rect", x: 4, y: 6, w: 3, h: 7, color: "woodL" },
+      { shape: "rect", x: 15, y: 7, w: 3, h: 6, color: "woodD" },
+      { shape: "ellipse", cx: 11, cy: 6, rx: 7, ry: 3.5, color: "ring" },
+      { shape: "ellipse", cx: 11, cy: 6, rx: 4.5, ry: 2, color: "ringD" },
+      { shape: "ellipse", cx: 11, cy: 6, rx: 2, ry: 1, color: "ring" },
+      { shape: "poly", points: [[4, 12], [1, 14], [5, 14]], color: "wood" },
+      { shape: "poly", points: [[18, 12], [21, 14], [17, 14]], color: "wood" },
+      { shape: "outline", color: "line" },
+      { shape: "ellipse", cx: 11, cy: 14, rx: 9, ry: 2, color: "shadow", alpha: 0.25, mode: "under" }
+    ]
+  };
+
+  // src/data/blueprints/tool_axe.json
+  var tool_axe_default = {
+    name: "R\xECu",
+    type: "prop",
+    size: [
+      16,
+      16
+    ],
+    anchor: [
+      8,
+      15
+    ],
+    params: {
+      stone: 1
+    },
+    palette: {
+      line: "#2b1d10",
+      handle: "#8a5e34",
+      handleL: "#aa7c48",
+      tw: "#b88c54",
+      twL: "#dEb87e",
+      twD: "#805c34",
+      st: "#8e9498",
+      stL: "#c0c6c8",
+      stD: "#60676b",
+      bind: "#d8c690"
+    },
+    layers: [
+      {
+        shape: "line",
+        from: [
+          3,
+          14
+        ],
+        to: [
+          11,
+          4
+        ],
+        w: 2,
+        color: "handle"
+      },
+      {
+        shape: "line",
+        from: [
+          2,
+          14
+        ],
+        to: [
+          10,
+          4
+        ],
+        w: 1,
+        color: "handleL"
+      },
+      {
+        shape: "poly",
+        points: [
+          [
+            8,
+            2
+          ],
+          [
+            14,
+            3
+          ],
+          [
+            14,
+            9
+          ],
+          [
+            10,
+            8
+          ]
+        ],
+        color: "tw",
+        ifNot: "stone"
+      },
+      {
+        shape: "poly",
+        points: [
+          [
+            8,
+            2
+          ],
+          [
+            14,
+            3
+          ],
+          [
+            14,
+            9
+          ],
+          [
+            10,
+            8
+          ]
+        ],
+        color: "st",
+        if: "stone"
+      },
+      {
+        shape: "line",
+        from: [
+          9,
+          3
+        ],
+        to: [
+          13,
+          3
+        ],
+        w: 1,
+        color: "twL",
+        ifNot: "stone"
+      },
+      {
+        shape: "line",
+        from: [
+          9,
+          3
+        ],
+        to: [
+          13,
+          3
+        ],
+        w: 1,
+        color: "stL",
+        if: "stone"
+      },
+      {
+        shape: "outline",
+        color: "line"
+      }
+    ]
+  };
+
+  // src/data/blueprints/tool_hammer.json
+  var tool_hammer_default = {
+    name: "Hammer",
+    type: "prop",
+    size: [16, 16],
+    anchor: [8, 15],
+    params: { stone: 1 },
+    palette: {
+      line: "#2b1d10",
+      handle: "#8a5e34",
+      handleL: "#aa7c48",
+      tw: "#b88c54",
+      twL: "#dEb87e",
+      twD: "#805c34",
+      st: "#8e9498",
+      stL: "#c0c6c8",
+      stD: "#60676b",
+      bind: "#d8c690"
+    },
+    layers: [
+      { shape: "line", from: [3, 14], to: [10, 7], w: 2, color: "handle" },
+      { shape: "line", from: [2, 14], to: [9, 7], w: 1, color: "handleL" },
+      { shape: "poly", points: [[7, 3], [13, 5], [12, 9], [6, 7]], color: "tw", ifNot: "stone" },
+      { shape: "poly", points: [[7, 3], [13, 5], [12, 9], [6, 7]], color: "st", if: "stone" },
+      { shape: "line", from: [8, 4], to: [12, 5], w: 1, color: "twL", ifNot: "stone" },
+      { shape: "line", from: [8, 4], to: [12, 5], w: 1, color: "stL", if: "stone" },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/tool_hoe.json
+  var tool_hoe_default = {
+    name: "Cu\u1ED1c",
+    type: "prop",
+    size: [
+      16,
+      16
+    ],
+    anchor: [
+      8,
+      15
+    ],
+    params: {
+      stone: 1
+    },
+    palette: {
+      line: "#2b1d10",
+      handle: "#8a5e34",
+      handleL: "#aa7c48",
+      tw: "#b88c54",
+      twL: "#dEb87e",
+      twD: "#805c34",
+      st: "#8e9498",
+      stL: "#c0c6c8",
+      stD: "#60676b",
+      bind: "#d8c690"
+    },
+    layers: [
+      {
+        shape: "line",
+        from: [
+          3,
+          14
+        ],
+        to: [
+          11,
+          4
+        ],
+        w: 2,
+        color: "handle"
+      },
+      {
+        shape: "line",
+        from: [
+          2,
+          14
+        ],
+        to: [
+          10,
+          4
+        ],
+        w: 1,
+        color: "handleL"
+      },
+      {
+        shape: "poly",
+        points: [
+          [
+            10,
+            3
+          ],
+          [
+            14,
+            3
+          ],
+          [
+            14,
+            9
+          ],
+          [
+            12,
+            9
+          ],
+          [
+            12,
+            5
+          ],
+          [
+            10,
+            5
+          ]
+        ],
+        color: "tw",
+        ifNot: "stone"
+      },
+      {
+        shape: "poly",
+        points: [
+          [
+            10,
+            3
+          ],
+          [
+            14,
+            3
+          ],
+          [
+            14,
+            9
+          ],
+          [
+            12,
+            9
+          ],
+          [
+            12,
+            5
+          ],
+          [
+            10,
+            5
+          ]
+        ],
+        color: "st",
+        if: "stone"
+      },
+      {
+        shape: "line",
+        from: [
+          11,
+          3
+        ],
+        to: [
+          14,
+          3
+        ],
+        w: 1,
+        color: "twL",
+        ifNot: "stone"
+      },
+      {
+        shape: "line",
+        from: [
+          11,
+          3
+        ],
+        to: [
+          14,
+          3
+        ],
+        w: 1,
+        color: "stL",
+        if: "stone"
+      },
+      {
+        shape: "outline",
+        color: "line"
+      }
+    ]
+  };
+
+  // src/data/blueprints/tool_pick.json
+  var tool_pick_default = {
+    name: "Cu\u1ED1c chim",
+    type: "prop",
+    size: [
+      16,
+      16
+    ],
+    anchor: [
+      8,
+      15
+    ],
+    params: {
+      stone: 1
+    },
+    palette: {
+      line: "#2b1d10",
+      handle: "#8a5e34",
+      handleL: "#aa7c48",
+      tw: "#b88c54",
+      twL: "#dEb87e",
+      twD: "#805c34",
+      st: "#8e9498",
+      stL: "#c0c6c8",
+      stD: "#60676b",
+      bind: "#d8c690"
+    },
+    layers: [
+      {
+        shape: "line",
+        from: [
+          3,
+          14
+        ],
+        to: [
+          11,
+          6
+        ],
+        w: 2,
+        color: "handle"
+      },
+      {
+        shape: "line",
+        from: [
+          2,
+          14
+        ],
+        to: [
+          10,
+          6
+        ],
+        w: 1,
+        color: "handleL"
+      },
+      {
+        shape: "poly",
+        points: [
+          [
+            4,
+            4
+          ],
+          [
+            8,
+            2
+          ],
+          [
+            14,
+            5
+          ],
+          [
+            14,
+            7
+          ],
+          [
+            8,
+            5
+          ],
+          [
+            4,
+            6
+          ]
+        ],
+        color: "tw",
+        ifNot: "stone"
+      },
+      {
+        shape: "poly",
+        points: [
+          [
+            4,
+            4
+          ],
+          [
+            8,
+            2
+          ],
+          [
+            14,
+            5
+          ],
+          [
+            14,
+            7
+          ],
+          [
+            8,
+            5
+          ],
+          [
+            4,
+            6
+          ]
+        ],
+        color: "st",
+        if: "stone"
+      },
+      {
+        shape: "line",
+        from: [
+          6,
+          3
+        ],
+        to: [
+          11,
+          3
+        ],
+        w: 1,
+        color: "twL",
+        ifNot: "stone"
+      },
+      {
+        shape: "line",
+        from: [
+          6,
+          3
+        ],
+        to: [
+          11,
+          3
+        ],
+        w: 1,
+        color: "stL",
+        if: "stone"
+      },
+      {
+        shape: "outline",
+        color: "line"
+      }
+    ]
+  };
+
+  // src/data/blueprints/tree_pine.json
+  var tree_pine_default = {
+    name: "C\xE2y th\xF4ng",
+    type: "prop",
+    size: [36, 68],
+    anchor: [18, 64],
+    footprint: [14, 60, 8, 5],
+    seed: 5,
+    palette: {
+      trunk: "#5e4026",
+      trunkL: "#7a5532",
+      leaf: "#2f5a35",
+      leafL: "#437a47",
+      leafD: "#1f3f27",
+      line: "#0f2014",
+      shadow: "#000000",
+      snow: "#eef4f8"
+    },
+    layers: [
+      { shape: "rect", x: 15, y: 54, w: 6, h: 10, color: "trunk" },
+      { shape: "rect", x: 15, y: 54, w: 2, h: 10, color: "trunkL" },
+      { shape: "poly", points: [[18, 26], [3, 56], [33, 56]], color: "leaf", jitter: 1 },
+      { shape: "poly", points: [[18, 14], [5, 42], [31, 42]], color: "leaf", jitter: 1 },
+      { shape: "poly", points: [[18, 2], [8, 28], [28, 28]], color: "leaf", jitter: 1 },
+      { shape: "poly", points: [[18, 2], [28, 28], [18, 28]], color: "leafD", alpha: 0.35, clip: "inside" },
+      { shape: "poly", points: [[18, 14], [31, 42], [18, 42]], color: "leafD", alpha: 0.35, clip: "inside" },
+      { shape: "poly", points: [[18, 26], [33, 56], [18, 56]], color: "leafD", alpha: 0.35, clip: "inside" },
+      { shape: "scatter", count: 28, area: [4, 6, 28, 50], size: [3, 1], colors: ["leafL", "leafD"], onlyOver: ["leaf"] },
+      { shape: "bevel", light: "#c8ffd0", lightAlpha: 0.28, dark: "#000000", darkAlpha: 0.3 },
+      { shape: "outline", color: "line" },
+      { shape: "ellipse", cx: 18, cy: 64, rx: 14, ry: 3, color: "shadow", alpha: 0.28, mode: "under" }
+    ]
+  };
+
+  // src/data/blueprints/tree_round.json
+  var tree_round_default = {
+    name: "C\xE2y tr\xF2n",
+    type: "prop",
+    size: [40, 64],
+    anchor: [20, 60],
+    footprint: [16, 56, 8, 5],
+    seed: 3,
+    palette: {
+      trunk: "#6b4a28",
+      trunkL: "#8a6238",
+      trunkD: "#4e3519",
+      leaf: "#3f6b2c",
+      leafL: "#5f9a44",
+      leafX: "#8cc765",
+      leafD: "#2c4d1f",
+      line: "#17240f",
+      shadow: "#000000"
+    },
+    layers: [
+      { shape: "rect", x: 17, y: 36, w: 7, h: 24, color: "trunk" },
+      { shape: "rect", x: 17, y: 36, w: 2, h: 24, color: "trunkL" },
+      { shape: "rect", x: 22, y: 38, w: 2, h: 22, color: "trunkD" },
+      { shape: "poly", points: [[17, 56], [12, 61], [17, 60]], color: "trunk" },
+      { shape: "poly", points: [[24, 56], [29, 61], [24, 60]], color: "trunk" },
+      {
+        shape: "ellipse",
+        cx: 20,
+        cy: 26,
+        rx: 10,
+        ry: 9,
+        color: "leaf",
+        repeat: { n: 9, jitter: [8, 7] }
+      },
+      { shape: "bevel", light: "#d8ffb0", lightAlpha: 0.35, dark: "#0a1a08", darkAlpha: 0.4 },
+      { shape: "scatter", count: 40, area: [6, 8, 28, 32], size: [2, 1], colors: ["leafL", "leafX", "leafD"], clip: "inside", onlyOver: ["leaf"] },
+      { shape: "outline", color: "line" },
+      { shape: "ellipse", cx: 20, cy: 60, rx: 14, ry: 3, color: "shadow", alpha: 0.28, mode: "under" }
+    ]
+  };
+
+  // src/data/blueprints/water.json
+  var water_default = {
+    name: "M\u1EB7t h\u1ED3 (ho\u1EA1t \u1EA3nh)",
+    type: "tile",
+    size: [32, 32],
+    seed: 2,
+    animate: { frames: 4, fps: 3 },
+    palette: { w0: "#356090", w1: "#3f6f9a", w2: "#4a7ca8", glint: "#9cc6e4", glint2: "#d4ecf8" },
+    bg: "w1",
+    layers: [
+      { shape: "noise", scale: 8, octaves: 2, contrast: 2, bands: [[0, "w0"], [0.42, "w1"], [0.8, "w2"]] },
+      { shape: "rect", x: [0, 27], y: [0, 31], w: 4, h: 1, color: "glint", repeat: { n: 12, phase: 4 } },
+      { shape: "rect", x: [0, 29], y: [0, 31], w: 2, h: 1, color: "glint2", repeat: { n: 8, phase: 4 } }
+    ]
+  };
+
+  // src/data/blueprints/workshop.json
+  var workshop_default = {
+    name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 9,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: {
+      line: "#2b1d10",
+      shadow: "#000000",
+      dirt: "#6a5238",
+      wood: "#8a6238",
+      woodL: "#aa7c48",
+      woodD: "#5e4026",
+      floor: "#a88a5c",
+      floorD: "#8a6e46",
+      pebble: "#8e9498",
+      pebbleL: "#b9bfc2",
+      hide: "#a0552f",
+      hideL: "#c06f43",
+      hideD: "#7a3d20",
+      stitch: "#e8d6a8",
+      stone: "#8e9498",
+      stoneL: "#b9bfc2",
+      stoneD: "#60676b",
+      chip: "#d8d2c0",
+      table: "#9b7140",
+      log: "#6b4a28",
+      logE: "#c49a60",
+      rope: "#d8c690"
+    },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 54, rx: 32, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "floor", if: "st1" },
+      { shape: "scatter", count: 40, area: [8, 36, 56, 18], size: [1, 2], colors: ["floorD", "pebble", "pebbleL"], onlyOver: ["floor"], if: "st1" },
+      { shape: "rect", x: 8, y: 52, w: 56, h: 2, color: "floorD", if: "st1" },
+      { shape: "rect", x: 13, y: 14, w: 3, h: 24, color: "woodD", if: "st2" },
+      { shape: "rect", x: 56, y: 14, w: 3, h: 24, color: "woodD", if: "st2" },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 16, y: 16, w: 40, h: 22, color: "woodD" },
+        { shape: "rect", x: 16, y: 24, w: 40, h: 1, color: "wood" },
+        { shape: "rect", x: 16, y: 31, w: 40, h: 1, color: "wood" },
+        { shape: "line", from: [22, 33], to: [22, 18], w: 1, color: "wood" },
+        { shape: "rect", x: 20, y: 17, w: 6, h: 3, color: "stone" },
+        { shape: "rect", x: 20, y: 17, w: 6, h: 1, color: "stoneL" },
+        { shape: "line", from: [32, 33], to: [32, 19], w: 1, color: "wood" },
+        { shape: "rect", x: 28, y: 18, w: 9, h: 2, color: "stone" },
+        { shape: "rect", x: 28, y: 18, w: 9, h: 1, color: "stoneL" },
+        { shape: "line", from: [42, 33], to: [42, 19], w: 1, color: "wood" },
+        { shape: "rect", x: 42, y: 18, w: 5, h: 2, color: "stone" },
+        { shape: "line", from: [50, 33], to: [50, 19], w: 1, color: "wood" },
+        { shape: "rect", x: 49, y: 17, w: 3, h: 4, color: "stone" },
+        { shape: "rect", x: 17, y: 40, w: 32, h: 4, color: "table" },
+        { shape: "rect", x: 17, y: 40, w: 32, h: 1, color: "woodL" },
+        { shape: "rect", x: 17, y: 44, w: 32, h: 1, color: "woodD" },
+        { shape: "rect", x: 19, y: 45, w: 3, h: 9, color: "woodD" },
+        { shape: "rect", x: 44, y: 45, w: 3, h: 9, color: "woodD" },
+        { shape: "rect", x: 24, y: 37, w: 7, h: 3, color: "stone" },
+        { shape: "rect", x: 24, y: 37, w: 7, h: 1, color: "stoneL" },
+        { shape: "line", from: [31, 38], to: [38, 36], w: 1, color: "wood" },
+        { shape: "scatter", count: 7, area: [34, 38, 12, 3], size: [1, 2], colors: ["chip", "stoneL"] },
+        { shape: "ellipse", cx: 57, cy: 47, rx: 6, ry: 5, color: "log" },
+        { shape: "ellipse", cx: 57, cy: 44, rx: 6, ry: 3, color: "logE" },
+        { shape: "ellipse", cx: 57, cy: 44, rx: 3, ry: 1, color: "wood" },
+        { shape: "ellipse", cx: 11, cy: 52, rx: 4, ry: 2, color: "stone" },
+        { shape: "ellipse", cx: 8, cy: 50, rx: 3, ry: 2, color: "stoneD" },
+        { shape: "ellipse", cx: 14, cy: 50, rx: 2, ry: 1, color: "stoneL" }
+      ] },
+      { shape: "rect", x: 8, y: 22, w: 4, h: 32, color: "woodL", if: "st2" },
+      { shape: "rect", x: 60, y: 22, w: 4, h: 32, color: "wood", if: "st2" },
+      { shape: "line", from: [6, 26], to: [14, 8], w: 2, color: "wood", if: "st3" },
+      { shape: "line", from: [66, 26], to: [58, 8], w: 2, color: "wood", if: "st3" },
+      { shape: "line", from: [36, 27], to: [36, 8], w: 2, color: "wood", if: "st3" },
+      { shape: "line", from: [14, 8], to: [58, 8], w: 2, color: "woodD", if: "st3" },
+      { shape: "line", from: [6, 27], to: [66, 27], w: 2, color: "woodD", if: "st3" },
+      { shape: "poly", points: [[1, 29], [71, 29], [59, 8], [13, 8]], color: "hide", if: "st4" },
+      { shape: "poly", points: [[36, 8], [59, 8], [71, 29], [36, 29]], color: "hideD", if: "st4", alpha: 0.4 },
+      { shape: "line", from: [13, 12], to: [5, 29], w: 1, color: "hideD", if: "st4" },
+      { shape: "line", from: [36, 8], to: [36, 29], w: 1, color: "hideD", if: "st4" },
+      { shape: "line", from: [59, 12], to: [67, 29], w: 1, color: "hideD", if: "st4" },
+      { shape: "scatter", count: 26, area: [10, 9, 52, 19], size: [1, 2], colors: ["hideL", "hideD"], onlyOver: ["hide", "hideD"], if: "st4" },
+      { shape: "rect", x: 1, y: 29, w: 70, h: 2, color: "hideD", if: "st4" },
+      { shape: "scatter", count: 12, area: [4, 29, 64, 1], size: 1, colors: ["stitch"], if: "st4" },
+      { shape: "outline", color: "line", ifNot: "st1" },
+      { shape: "outline", color: "line", if: "st1" }
+    ]
+  };
+
+  // bp:blueprints
+  var blueprints_default = { "bush": bush_default, "campfire": campfire_default, "grass": grass_default, "mud": mud_default, "rock": rock_default, "storage": storage_default, "stump": stump_default, "tool_axe": tool_axe_default, "tool_hammer": tool_hammer_default, "tool_hoe": tool_hoe_default, "tool_pick": tool_pick_default, "tree_pine": tree_pine_default, "tree_round": tree_round_default, "water": water_default, "workshop": workshop_default };
+
+  // src/blueprint/engine.js
+  (function(root) {
+    "use strict";
+    var OPS_LIMIT = 6e6;
+    var clamp = function(v, a, b) {
+      return Math.max(a, Math.min(b, v));
+    };
+    function mulberry32(a) {
+      a >>>= 0;
+      return function() {
+        a = a + 1831565813 >>> 0;
+        var t = a;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+    function hash2(x, y, s) {
+      var h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(s | 0, 1274126177);
+      h = Math.imul(h ^ h >>> 13, 1274126177);
+      h ^= h >>> 16;
+      return (h >>> 0) / 4294967296;
+    }
+    function hstr(str) {
+      var h = 2166136261;
+      for (var i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+    var mod = function(a, n) {
+      return (a % n + n) % n;
+    };
+    function parseColor(c, pal, depth) {
+      if (typeof c !== "string") return null;
+      depth = depth || 0;
+      if (pal && Object.prototype.hasOwnProperty.call(pal, c) && depth < 6) return parseColor(pal[c], pal, depth + 1);
+      var m;
+      if (m = /^#([0-9a-f]{3,8})$/i.exec(c)) {
+        var h = m[1];
+        if (h.length === 3 || h.length === 4) h = h.split("").map(function(x) {
+          return x + x;
+        }).join("");
+        if (h.length === 6) h += "ff";
+        if (h.length !== 8) return null;
+        return [0, 2, 4, 6].map(function(i) {
+          return parseInt(h.substr(i, 2), 16);
+        });
+      }
+      if (m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?\s*\)$/i.exec(c)) {
+        return [clamp(+m[1], 0, 255) | 0, clamp(+m[2], 0, 255) | 0, clamp(+m[3], 0, 255) | 0, m[4] === void 0 ? 255 : Math.round(clamp(+m[4], 0, 1) * 255)];
+      }
+      if (c === "none" || c === "transparent") return [0, 0, 0, 0];
+      return null;
+    }
+    function num(v, d, ctx, rng) {
+      if (v === void 0 || v === null) return d;
+      if (typeof v === "number") return isFinite(v) ? v : d;
+      if (Array.isArray(v) && v.length === 2 && typeof v[0] === "number" && typeof v[1] === "number") {
+        var a = Math.min(v[0], v[1]), b = Math.max(v[0], v[1]), r = rng();
+        return Number.isInteger(v[0]) && Number.isInteger(v[1]) ? a + Math.floor(r * (b - a + 1)) : a + r * (b - a);
+      }
+      if (v && typeof v === "object" && Array.isArray(v.cycle) && v.cycle.length) {
+        var x = v.cycle[ctx.frame % v.cycle.length];
+        return typeof x === "number" ? x : d;
+      }
+      return d;
+    }
+    function cond(s, ctx) {
+      var p = ctx.params;
+      var test = function(k) {
+        var neg = false;
+        if (typeof k !== "string") return true;
+        if (k[0] === "!") {
+          neg = true;
+          k = k.slice(1);
+        }
+        var v = !!p[k];
+        return neg ? !v : v;
+      };
+      if (s["if"] !== void 0) {
+        var a = [].concat(s["if"]);
+        if (!a.every(test)) return false;
+      }
+      if (s.ifNot !== void 0) {
+        var b = [].concat(s.ifNot);
+        if (b.some(function(k) {
+          return !!p[k];
+        })) return false;
+      }
+      return true;
+    }
+    function blend(buf, i, c, a, mode) {
+      var dA = buf[i + 3] / 255;
+      if (mode === "erase") {
+        buf[i + 3] = Math.round(dA * (1 - a) * 255);
+        return;
+      }
+      var sA = a, topA, botA, top, bot;
+      if (mode === "under") {
+        top = [buf[i], buf[i + 1], buf[i + 2]];
+        topA = dA;
+        bot = c;
+        botA = sA;
+      } else {
+        top = c;
+        topA = sA;
+        bot = [buf[i], buf[i + 1], buf[i + 2]];
+        botA = dA;
+      }
+      var oA = topA + botA * (1 - topA);
+      if (oA <= 0) {
+        buf[i + 3] = 0;
+        return;
+      }
+      for (var k = 0; k < 3; k++) buf[i + k] = Math.round((top[k] * topA + bot[k] * botA * (1 - topA)) / oA);
+      buf[i + 3] = Math.round(oA * 255);
+    }
+    function put(ctx, s, lx, ly, c) {
+      if (++ctx.ops > OPS_LIMIT) throw new Error("B\u1EA3n v\u1EBD qu\xE1 n\u1EB7ng (qu\xE1 nhi\u1EC1u \u0111i\u1EC3m \u1EA3nh ph\u1EA3i v\u1EBD)");
+      var x = lx + ctx.ox, y = ly + ctx.oy, w = ctx.w, h = ctx.h;
+      if (ctx.flip) x = w - 1 - x;
+      if (ctx.wrap) {
+        x = mod(x, w);
+        y = mod(y, h);
+      } else if (x < 0 || y < 0 || x >= w || y >= h) return;
+      var i = (y * w + x) * 4, buf = ctx.buf, dA = buf[i + 3];
+      if (s.clip === "inside" && dA === 0) return;
+      if (s.clip === "outside" && dA > 0) return;
+      if (s._over) {
+        if (dA === 0) return;
+        var ok = false;
+        for (var q = 0; q < s._over.length; q++) {
+          var o = s._over[q];
+          if (buf[i] === o[0] && buf[i + 1] === o[1] && buf[i + 2] === o[2]) {
+            ok = true;
+            break;
+          }
+        }
+        if (!ok) return;
+      }
+      var al = c[3] / 255 * (s.alpha === void 0 ? 1 : s.alpha);
+      if (al <= 0) return;
+      blend(buf, i, c, Math.min(1, al), s.mode);
+    }
+    function painter(s, ctx, rng) {
+      var cache = ctx.cc;
+      var get = function(e) {
+        var key = e;
+        if (cache.has(key)) return cache.get(key);
+        var c = parseColor(e, ctx.palette);
+        if (!c) ctx.warn("M\xE0u kh\xF4ng h\u1EE3p l\u1EC7: " + JSON.stringify(e));
+        cache.set(key, c);
+        return c;
+      };
+      if (Array.isArray(s.colors) && s.colors.length) {
+        var list = s.colors.map(function(e) {
+          return typeof e === "object" && e ? { c: e.color, w: e.weight === void 0 ? 1 : e.weight } : { c: e, w: 1 };
+        });
+        var tot = list.reduce(function(a, b) {
+          return a + b.w;
+        }, 0);
+        return function(x, y) {
+          var r = rng() * tot, k = 0;
+          for (; k < list.length - 1; k++) {
+            r -= list[k].w;
+            if (r < 0) break;
+          }
+          var c = get(list[k].c);
+          if (c) put(ctx, s, x, y, c);
+        };
+      }
+      var c0 = s.color === void 0 ? null : get(s.color);
+      if (s.color === void 0) ctx.warn('Thi\u1EBFu "color" \u1EDF layer ' + (s.shape || "?"));
+      return function(x, y) {
+        if (c0) put(ctx, s, x, y, c0);
+      };
+    }
+    function pip(px, py, pts) {
+      var inside = false;
+      for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        var xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1];
+        if (yi > py !== yj > py && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+      }
+      return inside;
+    }
+    function area(s, ctx, rng) {
+      var a = Array.isArray(s.area) && s.area.length === 4 ? s.area : [0, 0, ctx.w, ctx.h];
+      return a.map(function(v, i) {
+        return Math.round(num(v, i < 2 ? 0 : i === 2 ? ctx.w : ctx.h, ctx, rng));
+      });
+    }
+    var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+    function valueNoiseWrap(u, v, Px, Py, salt) {
+      var ix = Math.floor(u), iy = Math.floor(v), fx = u - ix, fy = v - iy;
+      fx = fx * fx * (3 - 2 * fx);
+      fy = fy * fy * (3 - 2 * fy);
+      var a = hash2(mod(ix, Px), mod(iy, Py), salt), b = hash2(mod(ix + 1, Px), mod(iy, Py), salt);
+      var c = hash2(mod(ix, Px), mod(iy + 1, Py), salt), d = hash2(mod(ix + 1, Px), mod(iy + 1, Py), salt);
+      return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+    }
+    var SHAPES = {
+      rect: function(s, ctx, rng) {
+        var x = Math.round(num(s.x, 0, ctx, rng)), y = Math.round(num(s.y, 0, ctx, rng));
+        var w = Math.round(num(s.w, 1, ctx, rng)), h = Math.round(num(s.h, 1, ctx, rng)), p = painter(s, ctx, rng);
+        for (var j = 0; j < h; j++) for (var i = 0; i < w; i++) p(x + i, y + j);
+      },
+      ellipse: function(s, ctx, rng) {
+        var cx = num(s.cx, 0, ctx, rng), cy = num(s.cy, 0, ctx, rng);
+        var rx = Math.max(0.5, num(s.rx, num(s.r, 4, ctx, rng), ctx, rng)), ry = Math.max(0.5, num(s.ry, num(s.r, rx, ctx, rng), ctx, rng)), p = painter(s, ctx, rng);
+        for (var y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (var x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+          var dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
+          if (dx * dx + dy * dy <= 1) p(x, y);
+        }
+      },
+      poly: function(s, ctx, rng) {
+        if (!Array.isArray(s.points) || s.points.length < 3) {
+          ctx.warn('poly c\u1EA7n "points" v\u1EDBi \xEDt nh\u1EA5t 3 \u0111\u1EC9nh');
+          return;
+        }
+        var j = num(s.jitter, 0, ctx, rng);
+        var pts = s.points.map(function(p) {
+          var x2 = num(p[0], 0, ctx, rng), y2 = num(p[1], 0, ctx, rng);
+          if (j) {
+            x2 += Math.round((rng() * 2 - 1) * j);
+            y2 += Math.round((rng() * 2 - 1) * j);
+          }
+          return [x2, y2];
+        });
+        var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+        pts.forEach(function(p) {
+          x0 = Math.min(x0, p[0]);
+          x1 = Math.max(x1, p[0]);
+          y0 = Math.min(y0, p[1]);
+          y1 = Math.max(y1, p[1]);
+        });
+        var pt = painter(s, ctx, rng);
+        for (var y = Math.floor(y0); y <= Math.ceil(y1); y++) for (var x = Math.floor(x0); x <= Math.ceil(x1); x++) if (pip(x + 0.5, y + 0.5, pts)) pt(x, y);
+      },
+      line: function(s, ctx, rng) {
+        var f = s.from || [0, 0], t = s.to || [0, 0];
+        var x0 = num(f[0], 0, ctx, rng), y0 = num(f[1], 0, ctx, rng), x1 = num(t[0], 0, ctx, rng), y1 = num(t[1], 0, ctx, rng);
+        var w = Math.max(1, Math.round(num(s.w, 1, ctx, rng))), n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2)), p = painter(s, ctx, rng), o = Math.floor(w / 2);
+        var seen = {};
+        for (var k = 0; k <= n; k++) {
+          var cx = Math.round(x0 + (x1 - x0) * k / n), cy = Math.round(y0 + (y1 - y0) * k / n);
+          for (var j = 0; j < w; j++) for (var i = 0; i < w; i++) {
+            var kx = cx - o + i, ky = cy - o + j, key = kx + "," + ky;
+            if (!seen[key]) {
+              seen[key] = 1;
+              p(kx, ky);
+            }
+          }
+        }
+      },
+      pixels: function(s, ctx, rng) {
+        if (!Array.isArray(s.at)) {
+          ctx.warn('pixels c\u1EA7n "at": [[x,y],...]');
+          return;
+        }
+        var p = painter(s, ctx, rng);
+        s.at.forEach(function(q) {
+          p(Math.round(num(q[0], 0, ctx, rng)), Math.round(num(q[1], 0, ctx, rng)));
+        });
+      },
+      scatter: function(s, ctx, rng) {
+        var a = area(s, ctx, rng), n = clamp(Math.round(num(s.count, 10, ctx, rng)), 0, 5e3), p = painter(s, ctx, rng);
+        var sz = Array.isArray(s.size) ? s.size : [s.size === void 0 ? 1 : s.size, s.size === void 0 ? 1 : s.size];
+        var cw = Math.max(1, Math.round(num(sz[0], 1, ctx, rng))), ch = Math.max(1, Math.round(num(sz[1], cw, ctx, rng)));
+        for (var i = 0; i < n; i++) {
+          var x = a[0] + Math.floor(rng() * a[2]), y = a[1] + Math.floor(rng() * a[3]);
+          for (var j = 0; j < ch; j++) for (var k = 0; k < cw; k++) p(x + k, y + j);
+        }
+      },
+      noise: function(s, ctx, rng, id) {
+        var a = area(s, ctx, rng), scale = Math.max(1, num(s.scale, 4, ctx, rng)), oct = clamp(Math.round(num(s.octaves, 1, ctx, rng)), 1, 4);
+        var contrast = num(s.contrast, 1.8, ctx, rng);
+        var bands = Array.isArray(s.bands) ? s.bands.slice().sort(function(p, q2) {
+          return p[0] - q2[0];
+        }) : null;
+        if (!bands || !bands.length) {
+          ctx.warn('noise c\u1EA7n "bands": [[ng\u01B0\u1EE1ng, m\xE0u], ...]');
+          return;
+        }
+        var cols = bands.map(function(b) {
+          return b[1] === null ? null : parseColor(b[1], ctx.palette);
+        });
+        var salt = ctx.seed * 31 + hstr(id) & 2147483647, Px = Math.max(1, Math.round(ctx.w / scale)), Py = Math.max(1, Math.round(ctx.h / scale));
+        for (var y = a[1]; y < a[1] + a[3]; y++) for (var x = a[0]; x < a[0] + a[2]; x++) {
+          var v = 0, amp = 1, norm = 0, f = 1;
+          for (var o = 0; o < oct; o++) {
+            v += valueNoiseWrap((x + 0.5) / ctx.w * Px * f, (y + 0.5) / ctx.h * Py * f, Px * f, Py * f, salt + o * 77) * amp;
+            norm += amp;
+            amp *= 0.5;
+            f *= 2;
+          }
+          v = clamp((v / norm - 0.5) * contrast + 0.5, 0, 0.9999);
+          var k = -1;
+          for (var q = 0; q < bands.length; q++) if (v >= bands[q][0]) k = q;
+          if (k >= 0 && cols[k]) put(ctx, s, x, y, cols[k]);
+        }
+      },
+      gradient: function(s, ctx, rng) {
+        var a = area(s, ctx, rng), list = Array.isArray(s.colors) ? s.colors : [s.from, s.to];
+        var cols = list.map(function(c) {
+          return parseColor(c, ctx.palette);
+        });
+        if (cols.length < 2 || cols.some(function(c) {
+          return !c;
+        })) {
+          ctx.warn('gradient c\u1EA7n "from"/"to" ho\u1EB7c "colors" h\u1EE3p l\u1EC7');
+          return;
+        }
+        var dir = s.dir || "down", steps = cols.length - 1;
+        for (var y = 0; y < a[3]; y++) for (var x = 0; x < a[2]; x++) {
+          var t;
+          if (dir === "down") t = (y + 0.5) / a[3];
+          else if (dir === "up") t = 1 - (y + 0.5) / a[3];
+          else if (dir === "right") t = (x + 0.5) / a[2];
+          else if (dir === "left") t = 1 - (x + 0.5) / a[2];
+          else t = clamp(Math.hypot((x + 0.5) / a[2] - 0.5, (y + 0.5) / a[3] - 0.5) * 2, 0, 1);
+          var pos = clamp(t, 0, 1) * steps, i = Math.min(steps - 1, Math.floor(pos)), fr = pos - i;
+          var th = (BAYER[(y + a[1] & 3) * 4 + (x + a[0] & 3)] + 0.5) / 16;
+          put(ctx, s, a[0] + x, a[1] + y, fr > th ? cols[i + 1] : cols[i]);
+        }
+      },
+      bevel: function(s, ctx, rng) {
+        var snap = new Uint8ClampedArray(ctx.buf), w = ctx.w, h = ctx.h;
+        var li = parseColor(s.light === void 0 ? "#ffffff" : s.light, ctx.palette), da = parseColor(s.dark === void 0 ? "#000000" : s.dark, ctx.palette);
+        var la = num(s.lightAlpha, 0.3, ctx, rng), dk = num(s.darkAlpha, 0.3, ctx, rng);
+        if (!li || !da) {
+          ctx.warn("bevel: m\xE0u kh\xF4ng h\u1EE3p l\u1EC7");
+          return;
+        }
+        var empty = function(x2, y2) {
+          if (ctx.wrap) {
+            x2 = mod(x2, w);
+            y2 = mod(y2, h);
+          } else if (x2 < 0 || y2 < 0 || x2 >= w || y2 >= h) return true;
+          return snap[(y2 * w + x2) * 4 + 3] === 0;
+        };
+        for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+          var i = (y * w + x) * 4;
+          if (snap[i + 3] === 0) continue;
+          if (empty(x, y - 1) || empty(x - 1, y)) blend(ctx.buf, i, li, la * (li[3] / 255), "normal");
+          else if (empty(x, y + 1) || empty(x + 1, y)) blend(ctx.buf, i, da, dk * (da[3] / 255), "normal");
+        }
+      },
+      outline: function(s, ctx, rng) {
+        var snap = new Uint8ClampedArray(ctx.buf), w = ctx.w, h = ctx.h;
+        var c = parseColor(s.color === void 0 ? "#1e1410" : s.color, ctx.palette);
+        if (!c) {
+          ctx.warn("outline: m\xE0u kh\xF4ng h\u1EE3p l\u1EC7");
+          return;
+        }
+        var diag = !!s.corners, N = diag ? [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+          var i = (y * w + x) * 4;
+          if (snap[i + 3] !== 0) continue;
+          var hit = N.some(function(d) {
+            var xx = x + d[0], yy = y + d[1];
+            if (ctx.wrap) {
+              xx = mod(xx, w);
+              yy = mod(yy, h);
+            } else if (xx < 0 || yy < 0 || xx >= w || yy >= h) return false;
+            return snap[(yy * w + xx) * 4 + 3] > 0;
+          });
+          if (hit) blend(ctx.buf, i, c, c[3] / 255 * (s.alpha === void 0 ? 1 : s.alpha), "normal");
+        }
+      },
+      group: function(s, ctx, rng, id) {
+        if (!Array.isArray(s.layers)) {
+          ctx.warn('group c\u1EA7n "layers": [...]');
+          return;
+        }
+        drawLayers(s.layers, ctx, id + ".");
+      }
+    };
+    SHAPES.circle = function(s, ctx, rng) {
+      SHAPES.ellipse(Object.assign({}, s, { rx: s.r, ry: s.r }), ctx, rng);
+    };
+    function drawShape(s, ctx, id) {
+      if (!s || typeof s !== "object" || Array.isArray(s)) {
+        ctx.warn("M\u1ED9t layer kh\xF4ng ph\u1EA3i object");
+        return;
+      }
+      var fn = SHAPES[s.shape];
+      if (!fn) {
+        ctx.warn('Kh\xF4ng bi\u1EBFt l\u1EC7nh "' + s.shape + '" (layer ' + id + ")");
+        return;
+      }
+      if (!cond(s, ctx)) return;
+      if (Array.isArray(s.onFrames) && s.onFrames.indexOf(ctx.frame) < 0) return;
+      var over = null;
+      if (s.onlyOver !== void 0) {
+        over = [].concat(s.onlyOver).map(function(n2) {
+          return parseColor(n2, ctx.palette);
+        }).filter(Boolean);
+      }
+      var sh = over ? Object.assign({}, s, { _over: over }) : s;
+      var rep = s.repeat && typeof s.repeat === "object" ? s.repeat : null;
+      var n = rep ? clamp(Math.round(rep.n === void 0 ? 1 : rep.n), 0, 500) : 1;
+      for (var i = 0; i < n; i++) {
+        if (rep && rep.phase && ctx.frame % rep.phase !== i % rep.phase) continue;
+        var seed = (Math.imul(ctx.seed, 7919) ^ hstr(id) ^ Math.imul(i + 1, 1013)) >>> 0;
+        var ox = s.offset && s.offset[0] || 0, oy = s.offset && s.offset[1] || 0;
+        if (rep) {
+          ox += i * (rep.dx || 0);
+          oy += i * (rep.dy || 0);
+          if (rep.jitter) {
+            var jr = mulberry32(seed ^ 1540483477), jx = Array.isArray(rep.jitter) ? rep.jitter[0] : rep.jitter, jy = Array.isArray(rep.jitter) ? rep.jitter[1] : rep.jitter;
+            ox += Math.round((jr() * 2 - 1) * jx);
+            oy += Math.round((jr() * 2 - 1) * jy);
+          }
+        }
+        var passes = s.mirror ? [false, true] : [false];
+        for (var q = 0; q < passes.length; q++) {
+          var sv = { ox: ctx.ox, oy: ctx.oy, flip: ctx.flip };
+          ctx.ox += ox;
+          ctx.oy += oy;
+          if (passes[q]) ctx.flip = !ctx.flip;
+          fn(sh, ctx, mulberry32(seed), id);
+          ctx.ox = sv.ox;
+          ctx.oy = sv.oy;
+          ctx.flip = sv.flip;
+        }
+      }
+    }
+    function drawLayers(layers, ctx, prefix) {
+      layers.forEach(function(l, i) {
+        drawShape(l, ctx, prefix + i);
+      });
+    }
+    function renderFrame(def, o) {
+      var ctx = { w: o.w, h: o.h, buf: new Uint8ClampedArray(o.w * o.h * 4), palette: def.palette && typeof def.palette === "object" ? def.palette : {}, seed: o.seed, frame: o.frame, params: o.params, warn: o.warn, wrap: o.wrap, ox: 0, oy: 0, flip: false, ops: 0, cc: /* @__PURE__ */ new Map() };
+      if (def.bg !== void 0) {
+        var c = parseColor(def.bg, ctx.palette);
+        if (c) for (var i = 0; i < o.w * o.h; i++) {
+          ctx.buf[i * 4] = c[0];
+          ctx.buf[i * 4 + 1] = c[1];
+          ctx.buf[i * 4 + 2] = c[2];
+          ctx.buf[i * 4 + 3] = c[3];
+        }
+        else o.warn('"bg" kh\xF4ng ph\u1EA3i m\xE0u h\u1EE3p l\u1EC7');
+      }
+      drawLayers(def.layers, ctx, "L");
+      return ctx.buf;
+    }
+    function render2(def, opts) {
+      opts = opts || {};
+      var warns = [], warn = function(m) {
+        if (warns.indexOf(m) < 0) warns.push(m);
+      };
+      if (!def || typeof def !== "object" || Array.isArray(def)) throw new Error("JSON ph\u1EA3i l\xE0 m\u1ED9t object { ... }");
+      if (!Array.isArray(def.layers)) throw new Error('Thi\u1EBFu m\u1EA3ng "layers": [ ... ]');
+      var size = Array.isArray(def.size) ? def.size : [32, 32];
+      var w = clamp(Math.round(+size[0] || 32), 1, 512), h = clamp(Math.round(+size[1] || 32), 1, 512);
+      var seed = (opts.seed !== void 0 ? opts.seed : def.seed !== void 0 ? def.seed : 1) | 0;
+      var nf2 = def.animate && def.animate.frames > 1 ? clamp(Math.round(def.animate.frames), 2, 16) : 1;
+      var params2 = Object.assign({}, def.params || {}, opts.params || {});
+      var wrap = def.wrap !== void 0 ? !!def.wrap : def.type === "tile";
+      var frames = [];
+      for (var f = 0; f < nf2; f++) frames.push(renderFrame(def, { w, h, seed, frame: f, params: params2, warn, wrap }));
+      return { w, h, frames, fps: def.animate && def.animate.fps || 4, warnings: warns, anchor: def.anchor, footprint: def.footprint, type: def.type || "prop" };
+    }
+    root.Blueprint = { render: render2, parseColor, mulberry32 };
+  })(typeof window !== "undefined" ? window : globalThis);
+
+  // tools/blueprint-viewer-entry.js
+  var Blueprint = globalThis.Blueprint;
+  var $ = (id) => document.getElementById(id);
+  var BG = { grass: "#6d8f4e", dark: "#262626", light: "#e8e4d8" };
+  var names = Object.keys(blueprints_default).sort();
+  var edited = {};
+  var cur = "";
+  var frame = 0;
+  var playing = true;
+  var last = 0;
+  var acc = 0;
+  var nf = 1;
+  var fps = 4;
+  var paramKeys = "";
+  var params = {};
+  var result = null;
+  var tmp = document.createElement("canvas");
+  var cv = $("cv");
+  var pretty = (def) => JSON.stringify(def, null, 1);
+  function draw(canvas, res, f, bg, Z, marks, grid) {
+    canvas.width = res.w * Z;
+    canvas.height = res.h * Z;
+    const g = canvas.getContext("2d");
+    g.imageSmoothingEnabled = false;
+    if (bg === "checker") {
+      for (let j = 0; j < res.h; j++) for (let i = 0; i < res.w; i++) {
+        g.fillStyle = (i + j) % 2 ? "#3a3a3a" : "#333";
+        g.fillRect(i * Z, j * Z, Z, Z);
+      }
+    } else {
+      g.fillStyle = BG[bg] || BG.grass;
+      g.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    tmp.width = res.w;
+    tmp.height = res.h;
+    tmp.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(res.frames[f % res.frames.length]), res.w, res.h), 0, 0);
+    g.drawImage(tmp, 0, 0, canvas.width, canvas.height);
+    if (grid) {
+      g.strokeStyle = "rgba(255,255,255,.13)";
+      g.lineWidth = 1;
+      g.beginPath();
+      for (let i = 0; i <= res.w; i++) {
+        g.moveTo(i * Z + 0.5, 0);
+        g.lineTo(i * Z + 0.5, canvas.height);
+      }
+      for (let j = 0; j <= res.h; j++) {
+        g.moveTo(0, j * Z + 0.5);
+        g.lineTo(canvas.width, j * Z + 0.5);
+      }
+      g.stroke();
+    }
+    if (marks) {
+      if (res.footprint) {
+        const [x, y, w, h] = res.footprint;
+        g.strokeStyle = "#4fd1ff";
+        g.lineWidth = 2;
+        g.setLineDash([6, 4]);
+        g.strokeRect(x * Z, y * Z, w * Z, h * Z);
+        g.setLineDash([]);
+      }
+      if (res.anchor) {
+        const [x, y] = res.anchor;
+        g.strokeStyle = "#ff3b3b";
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(x * Z - 8, y * Z + Z / 2);
+        g.lineTo(x * Z + Z + 8, y * Z + Z / 2);
+        g.moveTo(x * Z + Z / 2, y * Z - 8);
+        g.lineTo(x * Z + Z / 2, y * Z + Z + 8);
+        g.stroke();
+      }
+    }
+  }
+  var parseDef = (text) => JSON.parse(text);
+  var seedOf = (def) => {
+    const n = parseInt($("seed").value, 10);
+    return Number.isNaN(n) ? def.seed ?? 1 : n;
+  };
+  function thumb(def, canvas, p) {
+    try {
+      const r = Blueprint.render(def, { seed: def.seed ?? 1, params: p });
+      draw(canvas, r, 0, "grass", 2, false, false);
+    } catch (_) {
+      canvas.width = canvas.height = 1;
+    }
+  }
+  function render() {
+    let def;
+    try {
+      def = parseDef($("src").value);
+    } catch (e) {
+      $("err").textContent = "JSON error: " + e.message;
+      return;
+    }
+    $("err").textContent = "";
+    syncParams(def);
+    try {
+      result = Blueprint.render(def, { seed: seedOf(def), params });
+    } catch (e) {
+      $("err").textContent = "Render error: " + e.message;
+      return;
+    }
+    $("warn").textContent = result.warnings.length ? "Warnings: " + result.warnings.join(" \xB7 ") : "";
+    nf = result.frames.length;
+    fps = result.fps || 4;
+    $("play").style.display = nf > 1 ? "" : "none";
+    const Z = Math.max(3, Math.min(24, Math.floor(700 / Math.max(result.w, result.h))));
+    draw(cv, result, frame, $("bg").value, Z, $("marks").checked, $("grid").checked);
+    $("info").textContent = `${cur}.json \xB7 ${result.w}\xD7${result.h}` + (nf > 1 ? ` \xB7 frame ${frame % nf + 1}/${nf} \xB7 ${fps} fps` : "") + (result.anchor ? ` \xB7 anchor ${result.anchor}` : "") + (result.footprint ? ` \xB7 footprint ${result.footprint}` : "");
+    drawStages(def);
+    const item = $("list").querySelector(`[data-name="${cur}"] canvas`);
+    if (item) thumb(def, item, params);
+    $("list").querySelector(`[data-name="${cur}"]`)?.classList.toggle("mod", edited[cur] !== void 0);
+  }
+  function syncParams(def) {
+    const defaults = def.params && typeof def.params === "object" ? def.params : {};
+    const keys = Object.keys(defaults).join(",");
+    if (keys === paramKeys) return;
+    paramKeys = keys;
+    const next = {};
+    for (const k of Object.keys(defaults)) next[k] = k in params ? params[k] : defaults[k];
+    params = next;
+    const box = $("params");
+    box.innerHTML = "";
+    for (const k of Object.keys(params)) {
+      const lab = document.createElement("label"), inp = document.createElement("input");
+      const flag = defaults[k] === 0 || defaults[k] === 1;
+      inp.type = flag ? "checkbox" : "number";
+      if (flag) inp.checked = !!params[k];
+      else inp.value = params[k];
+      inp.dataset.k = k;
+      inp.onchange = () => {
+        params[k] = flag ? inp.checked ? 1 : 0 : +inp.value;
+        render();
+      };
+      lab.append(inp, " " + k);
+      box.appendChild(lab);
+    }
+    if (!Object.keys(params).length) box.textContent = "No parameters.";
+  }
+  function setParams(p) {
+    Object.assign(params, p);
+    for (const inp of $("params").querySelectorAll("input")) {
+      const v = params[inp.dataset.k];
+      if (inp.type === "checkbox") inp.checked = !!v;
+      else inp.value = v;
+    }
+    render();
+  }
+  function drawStages(def) {
+    const box = $("stages"), ks = Object.keys(params).filter((k) => /^st\d+$/.test(k)).sort((a, b) => +a.slice(2) - +b.slice(2));
+    box.innerHTML = "";
+    if (!ks.length) return;
+    const lab = document.createElement("span");
+    lab.textContent = "Stages:";
+    box.appendChild(lab);
+    ks.forEach((k, i) => {
+      const p = { ...params };
+      ks.forEach((kk, j) => {
+        p[kk] = j <= i ? 1 : 0;
+      });
+      const wrap = document.createElement("div"), c = document.createElement("canvas");
+      wrap.className = "stage";
+      c.title = "Show stage " + (i + 1);
+      thumb(def, c, p);
+      const t = document.createElement("div");
+      t.textContent = "stage " + (i + 1);
+      wrap.append(c, t);
+      wrap.onclick = () => setParams(p);
+      box.appendChild(wrap);
+    });
+  }
+  function select(name) {
+    cur = name;
+    frame = 0;
+    paramKeys = "";
+    params = {};
+    $("seed").value = "";
+    $("src").value = edited[name] ?? pretty(blueprints_default[name]);
+    for (const el of $("list").children) el.classList.toggle("on", el.dataset.name === name);
+    $("title").textContent = name;
+    render();
+  }
+  for (const n of names) {
+    const item = document.createElement("div"), c = document.createElement("canvas"), t = document.createElement("span");
+    item.className = "item";
+    item.dataset.name = n;
+    t.textContent = n;
+    thumb(blueprints_default[n], c, void 0);
+    item.append(c, t);
+    item.onclick = () => select(n);
+    $("list").appendChild(item);
+  }
+  var timer;
+  $("src").oninput = () => {
+    edited[cur] = $("src").value;
+    if (edited[cur] === pretty(blueprints_default[cur])) delete edited[cur];
+    clearTimeout(timer);
+    timer = setTimeout(render, 250);
+  };
+  for (const id of ["seed", "bg", "marks", "grid"]) $(id).oninput = render;
+  $("reset").onclick = () => {
+    delete edited[cur];
+    $("src").value = pretty(blueprints_default[cur]);
+    paramKeys = "";
+    render();
+  };
+  $("copy").onclick = async () => {
+    try {
+      await navigator.clipboard.writeText($("src").value);
+      $("note").textContent = "Copied. Paste it over src/data/blueprints/" + cur + ".json";
+    } catch (_) {
+      $("src").select();
+      document.execCommand("copy");
+      $("note").textContent = "Copied.";
+    }
+  };
+  $("play").onclick = () => {
+    playing = !playing;
+    $("play").textContent = playing ? "\u23F8 Pause" : "\u25B6 Play";
+  };
+  function tick(t) {
+    if (playing && nf > 1) {
+      acc += t - last;
+      const step = 1e3 / fps;
+      while (acc >= step) {
+        acc -= step;
+        frame++;
+        render();
+      }
+    }
+    last = t;
+    requestAnimationFrame(tick);
+  }
+  select(names.includes("workshop") ? "workshop" : names[0]);
+  requestAnimationFrame(tick);
+})();
+</script></body></html>
