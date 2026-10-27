@@ -187,7 +187,11 @@ export class Controller {
     }
     if (seen) { this.inspect = { kind: seen.target.kind, id: seen.target.id }; this.selectedBuilding = null; }
     else if (b !== null) this.selectBuilding(b);
-    else if (!additive) { this.selected.clear(); this.selectedBuilding = null; this.inspect = null; }
+    else if (!additive) {
+      // nobody selected: a tap on the ground does nothing, so say why instead of leaving it silent
+      if (touch && !this.selected.size && !this.selectedBuilding && !this.inspect) this.onToast('Chạm vào một dân để chọn trước, rồi chạm đất để ra lệnh');
+      this.selected.clear(); this.selectedBuilding = null; this.inspect = null;
+    }
     this.onChange();
   }
 

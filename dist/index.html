@@ -7278,6 +7278,7 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
         this.selectedBuilding = null;
       } else if (b !== null) this.selectBuilding(b);
       else if (!additive) {
+        if (touch && !this.selected.size && !this.selectedBuilding && !this.inspect) this.onToast("Ch\u1EA1m v\xE0o m\u1ED9t d\xE2n \u0111\u1EC3 ch\u1ECDn tr\u01B0\u1EDBc, r\u1ED3i ch\u1EA1m \u0111\u1EA5t \u0111\u1EC3 ra l\u1EC7nh");
         this.selected.clear();
         this.selectedBuilding = null;
         this.inspect = null;
