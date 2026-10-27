@@ -49,6 +49,7 @@ const prepare = (p) => p.evaluate(() => {
     ok(await shown(p, '#udetail') && await p.evaluate(() => { const r = document.getElementById('udetail').getBoundingClientRect(); return r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }), 'the details fill the whole screen');
     await p.evaluate(() => { for (const b of document.querySelectorAll('#udetail [data-job="wood"]')) b.click(); });
     ok(await state(p, (id) => window.__game.sim.get(id).job, ids[0]) === 'wood', 'a job can be given from the details page');
+    await p.waitForTimeout(250);
     ok(await p.evaluate(() => { const vis = (t) => [...document.querySelectorAll('#udetail h3')].some((h) => h.textContent === t && h.offsetParent !== null); return !vis('Chiến đấu') && !vis('Trang bị') && vis('Công cụ'); }), 'a woodcutter sees tools, but no fighting orders or gear');
     ok(await p.evaluate(() => { const g = window.__game, id = [...g.ctl.selected][0]; const sim = g.sim; sim.setJob([id], 'fight'); g.ctl.onChange(); return true; }), 'turn the villager into a soldier');
     await p.waitForTimeout(250);
@@ -87,7 +88,8 @@ const prepare = (p) => p.evaluate(() => {
     const sel2 = await state(p, () => [...window.__game.ctl.selected].length);
     ok(sel2 === 2, 'double click selects every villager with the same job');
 
-    // keys
+    // keys (fighting orders only reach soldiers)
+    await state(p, (ids) => { window.__game.sim.setJob([ids[0], ids[1]], 'fight'); window.__game.ctl.onChange(); }, ids); await p.waitForTimeout(150);
     await p.keyboard.press('e'); ok(await state(p, () => window.__game.sim.speed) === 2, 'E sets speed 2x'); await p.keyboard.press('q');
     await p.keyboard.press('h'); ok(await state(p, (id) => window.__game.sim.get(id).fight.mode, ids[0]) === 'hold', 'H holds position');
     await p.keyboard.press('g');
@@ -136,15 +138,15 @@ const prepare = (p) => p.evaluate(() => {
     await state(p, () => { window.__game.sim.stock.wood = 0; });
     // place the craft house with the mouse (hover, click) then open it from the "Công trình" tab
     await pressText(p, 'Xây'); await p.waitForTimeout(100);
-    await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Nhà chế tạo')) r.querySelector('button').click(); });
+    await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Nhà chế tạo')) [...r.querySelectorAll('button')].pop().click(); });
     const spot = await screenOf(p, c.x - 4, c.y - 3);
     await p.mouse.move(spot.x, spot.y, { steps: 3 }); await p.mouse.click(spot.x, spot.y); await p.waitForTimeout(250);
     ok(await state(p, () => window.__game.sim.buildings.some((b) => b.kind === 'workshop' && b.done)), 'placing the craft house with free+instant build completes it at once');
     await menuTo(p, true); await pressText(p, 'Xây'); await p.waitForTimeout(150);
-    ok(await p.evaluate(() => [...document.querySelectorAll('#drawerBody .page:not([hidden]) .row')].some((r) => r.textContent.includes('Nhà chế tạo') && r.querySelector('button').disabled)), 'a second craft house cannot be built: one of each kind per game');
+    ok(await p.evaluate(() => [...document.querySelectorAll('#drawerBody .page:not([hidden]) .row')].some((r) => r.textContent.includes('Nhà chế tạo') && [...r.querySelectorAll('button')].pop().disabled)), 'a second craft house cannot be built: one of each kind per game');
     ok(await state(p, () => { const s = window.__game.sim, f = s.dev.freeBuild; s.dev.freeBuild = false; const r = s.buildingLock('toolstore'); s.dev.freeBuild = f; return r === 'Cần nghiên cứu: Kho công cụ'; }), 'the tool store is locked behind research (dev free build skips the lock)');
     await pressText(p, 'Công trình'); await p.waitForTimeout(200);
-    await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Nhà chế tạo')) r.querySelector('button').click(); });
+    await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Nhà chế tạo')) [...r.querySelectorAll('button')].pop().click(); });
     await p.waitForTimeout(250);
     ok(await shown(p, '#bpanel') && await p.evaluate(() => document.getElementById('bpanel').innerText.includes('Vũ khí')), 'the craft house panel opens from the built list with its crafting items');
     ok(await p.evaluate(() => { const r = document.getElementById('bpanel').getBoundingClientRect(); return r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }), 'the craft house panel fills the whole screen');
@@ -168,14 +170,15 @@ const prepare = (p) => p.evaluate(() => {
     await state(p, () => { const g = window.__game, s = g.sim; s.villagers.forEach((v) => { v.stats.int = 9; }); s.stock.wood = 100; s.stock.coin = 20; });
     await pressText(p, '✕ Đóng');
     await menuTo(p, true); await pressText(p, 'Xây'); await p.waitForTimeout(100);
-    await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Nhà nghiên cứu')) r.querySelector('button').click(); });
+    await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Nhà nghiên cứu')) [...r.querySelectorAll('button')].pop().click(); });
     const spotL = await screenOf(p, c.x + 2, c.y - 4);
     await p.mouse.move(spotL.x, spotL.y, { steps: 3 }); await p.mouse.click(spotL.x, spotL.y); await p.waitForTimeout(250);
     await state(p, () => { const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'lab').id, true); });
     await p.waitForTimeout(250);
     ok(await p.evaluate(() => document.querySelectorAll('#bpanel .tech').length) === 18, 'the research house lists every blueprint and step');
-    await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .tech')].find((x) => x.textContent.includes('Bản vẽ Búa gỗ')); r.querySelector('button').click(); });
+    await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .tech')].find((x) => x.textContent.includes('Bản vẽ Búa gỗ')); [...r.querySelectorAll('button')].pop().click(); });
     ok(await state(p, () => window.__game.sim.researchQueue.includes('hammer1')), 'starting a blueprint queues it');
+    await p.waitForTimeout(300);
     ok(await p.evaluate(() => [...document.querySelectorAll('#bpanel .tech')].every((r) => { const b = r.querySelector('button'); return b.disabled || b.textContent === 'Hủy đơn'; })), 'while one research is waiting or running no other can be started');
     ok(await pressText(p, 'Thêm người nghiên cứu'), 'the lab has a button to choose a villager to work inside');
     await p.waitForTimeout(150);
@@ -194,7 +197,7 @@ const prepare = (p) => p.evaluate(() => {
     await state(p, () => { const g = window.__game, s = g.sim; s.dev.freeBuild = true; s.dev.instantBuild = true; });
     await state(p, () => { const g = window.__game; g.ctl.closeBuilding(); });
     await menuTo(p, true); await pressText(p, 'Xây'); await p.waitForTimeout(100);
-    await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Nhà sửa chữa')) r.querySelector('button').click(); });
+    await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Nhà sửa chữa')) [...r.querySelectorAll('button')].pop().click(); });
     const spotR = await screenOf(p, c.x + 5, c.y - 2);
     await p.mouse.move(spotR.x, spotR.y, { steps: 3 }); await p.mouse.click(spotR.x, spotR.y); await p.waitForTimeout(250);
     await state(p, () => { const g = window.__game, s = g.sim; s.giveTool([s.villagers[0].id], 'axe', 1); s.villagers[0].tools.axe.dur = 10; s.ctlTest = s.villagers[0].id; g.ctl.selectBuilding(s.buildings.find((x) => x.kind === 'repair').id, true); });
@@ -229,9 +232,10 @@ const prepare = (p) => p.evaluate(() => {
     await state(p, () => { const s = window.__game.sim; s.stock.wood = 200; s.stock.stone = 200; s.researched.add('timber'); });
     await pressText(p, 'Nâng cấp'); await p.waitForTimeout(100);
     await p.evaluate(() => document.querySelector('#dialog button.primary').click()); await p.waitForTimeout(150);
-    ok(await state(p, () => window.__game.sim.buildings.find((x) => x.kind === 'workshop').upgrading) && await state(p, () => window.__game.sim.stock.wood < 200), 'confirming pays the materials and starts the upgrade');
+    ok(await state(p, () => { const b = window.__game.sim.buildings.find((x) => x.kind === 'workshop'); return b.upgrading || b.level === 2; }) && await state(p, () => window.__game.sim.stock.wood < 200), 'confirming pays the materials and starts the upgrade');
     await state(p, () => { const s = window.__game.sim; s.dev.freeBuild = true; });
     const old = await state(p, () => { const b = window.__game.sim.buildings.find((x) => x.kind === 'workshop'); return { x: b.x, y: b.y }; });
+    await p.waitForTimeout(300);
     ok(await pressText(p, 'Dời'), 'the bar has a move button');
     await p.waitForTimeout(150);
     ok(await state(p, () => window.__game.ctl.moving !== null) && await shown(p, '#placeBar'), 'moving shows the placing bar');
@@ -315,7 +319,7 @@ const prepare = (p) => p.evaluate(() => {
     await p.tap('#btnCloseMap'); ok(!(await shown(p, '#bigmap')), 'the big map closes');
     // menu → build → confirm bar
     await state(p, () => { window.__game.sim.stock.wood = 50; });
-    await menuTo(p, true, true); await pressText(p, 'Xây'); await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Kho')) r.querySelector('button').click(); });
+    await menuTo(p, true, true); await pressText(p, 'Xây'); await p.evaluate(() => { for (const r of document.querySelectorAll('#drawerBody .page:not([hidden]) .row')) if (r.textContent.includes('Kho')) [...r.querySelectorAll('button')].pop().click(); });
     await p.waitForTimeout(250);
     ok(await shown(p, '#placeBar') && !(await shown(p, '#drawer')), 'choosing a building shows the confirm bar and closes the menu');
     const spot = await state(p, () => { const g = window.__game, w = g.renderer.screenToWorld(620, 100); for (let r = 0; r < 14; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const ox = Math.round(w.x / 32) + dx - 1, oy = Math.round(w.y / 32) + dy - 1; if (g.sim.canPlace('storage', ox, oy) === null) { const q = g.renderer.worldToScreen((ox + 1) * 32, (oy + 1) * 32), b = document.getElementById('view').getBoundingClientRect(); return { x: b.left + q.x, y: b.top + q.y }; } } return null; });
