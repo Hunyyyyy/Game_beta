@@ -271,6 +271,15 @@ export class Sim {
     }
   }
 
+  /** Cấp công cụ ngay cho dân đã chọn, không cần Xưởng hay nguyên liệu. tier 0 = thu lại (tay không). */
+  giveTool(ids: readonly number[], kind: ToolKind, tier: number): void {
+    for (const id of ids) {
+      const v = this.byId.get(id); if (!v) continue;
+      v.tools[kind] = tier > 0 ? { tier, dur: TIER_DURABILITY[tier] } : null;
+      if (tier > 0) this.say(`${v.name} được cấp ${TOOL_NAME[kind].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}.`);
+    }
+  }
+
   /** Ô trống gần (tx,ty) nhất, chưa bị ai giữ. */
   private nearestFree(tx: number, ty: number, taken: Set<number>): [number, number] | null {
     const N = this.world.size;
@@ -354,8 +363,8 @@ export class Sim {
       if (k && tier > 0) { anim = JOBS[v.job as WorkJob].anim === 'gather' ? 'dig' : JOBS[v.job as WorkJob].anim; hold = { kind: k, tier }; }
       else anim = 'gather';
     } else if (v.phase === 'build') {
-      anim = 'build'; const t = v.tools.shovel?.tier ?? 0;
-      hold = t > 0 ? { kind: 'shovel', tier: t } : { kind: 'hammer', tier: 2 };
+      const t = this.toolTier(v, 'build');
+      if (t > 0) { anim = 'build'; hold = { kind: 'hammer', tier: t }; } else anim = 'gather';
     } else if (v.phase === 'craft') { anim = 'craft'; hold = { kind: 'hammer', tier: 2 }; }
     if (anim !== v.anim) { v.anim = anim; v.animClock = 0; } else v.animClock += dt;
     v.hold = hold;

@@ -19,7 +19,7 @@ Thêm `?seed=123` vào địa chỉ để sinh bản đồ khác.
 - Chuột phải lên **cây** → đốn gỗ · lên **đá** → thợ đá · lên **bụi quả** → hái lượm · lên **nền Kho** → thợ xây · lên đất trống → đi tới đó (và thôi làm nghề).
 - Hoặc dùng nút nghề trong bảng dân: Rảnh / Đốn gỗ / Thợ đá / Hái lượm / Thợ xây.
 - **Xây Kho** (nút hoặc phím B, 10 gỗ): rê chuột chọn chỗ xanh, bấm trái để đặt. Dân đang chọn tự nhận việc xây.
-- **Xây Xưởng** (phím X, 15 gỗ) rồi giao một dân làm **Thợ thủ công** (hoặc chuột phải lên Xưởng). Mở bảng **Chế tác** (phím C) để xếp đơn rìu, cuốc chim, cuốc, xẻng bậc gỗ hoặc đá.
+- **Xây Xưởng** (phím X, 15 gỗ) rồi giao một dân làm **Thợ thủ công** (hoặc chuột phải lên Xưởng). Mở bảng **Chế tác** (phím C) để xếp đơn rìu, cuốc chim, cuốc, búa bậc gỗ hoặc đá.
 - Dân đốn gỗ, thợ đá, hái lượm, thợ xây tự tới Xưởng nhận công cụ tốt hơn thứ đang cầm.
 - P: tạm dừng · 1 2 3: tốc độ 1× 2× 4× · W A S D: camera · lăn chuột hoặc + −: thu phóng.
 
@@ -37,11 +37,11 @@ Thêm `?seed=123` vào địa chỉ để sinh bản đồ khác.
 | Nhà chung | dựng sẵn, chứa 50 mỗi loại |
 | Kho | 10 gỗ, 20 giây (hệ số 1), chứa 100 mỗi loại; 4 giai đoạn xây |
 | Đói | no tụt 100 mỗi ngày; dưới 50 thì ăn 2 thức ăn (hồi 50); hết ăn thì chết sau khoảng 1,5 ngày |
-| Công cụ | Rìu → đốn gỗ · Cuốc chim → đục đá · Cuốc → hái lượm · Xẻng → xây |
+| Công cụ | Rìu → đốn gỗ · Cuốc chim → đục đá · Cuốc → hái lượm · Búa → xây |
 | Bậc công cụ | Tay không: tốc độ ×0,6, sản lượng ×1 · Gỗ: ×1, ×1,25 · Đá: ×1,4, ×1,6 |
 | Độ bền | Gỗ 240 giây làm việc, đá 600 giây, hết thì gãy |
-| Công thức gỗ | Rìu 3 gỗ (12 giây) · Cuốc chim 4 gỗ (14) · Cuốc 3 gỗ (12) · Xẻng 3 gỗ (12) |
-| Công thức đá | Rìu 2 gỗ + 3 đá (20) · Cuốc chim 2 gỗ + 4 đá (22) · Cuốc 2 gỗ + 2 đá (18) · Xẻng 2 gỗ + 3 đá (18) |
+| Công thức gỗ | Rìu 3 gỗ (12 giây) · Cuốc chim 4 gỗ (14) · Cuốc 3 gỗ (12) · Búa 3 gỗ (12) |
+| Công thức đá | Rìu 2 gỗ + 3 đá (20) · Cuốc chim 2 gỗ + 4 đá (22) · Cuốc 2 gỗ + 2 đá (18) · Búa 2 gỗ + 3 đá (18) |
 | Xưởng chế tác | 15 gỗ, 30 giây (hệ số 1); thợ thủ công làm theo Trí tuệ; nguyên liệu trừ khi thợ nhận đơn, hoàn lại nếu bỏ giữa chừng |
 | Cấp nghề | 0–5, mỗi nghề có tiềm năng 1–3 sao quyết định tốc độ lên cấp |
 
@@ -56,7 +56,7 @@ Dân đi tới một ô tiếp cận rồi trượt vào chỗ đứng. Ô tiế
 ## Giản lược có chủ ý
 
 - Công cụ cũ bị bỏ lại khi nhận công cụ mới, không trả về kho.
-- Xẻng dùng cho Thợ xây (đào móng); chưa có nghề nông nên cuốc chỉ phục vụ hái lượm, đào củ.
+- Búa dùng cho Thợ xây (có búa thì xây nhanh hơn, tay không thì chậm); thợ thủ công luôn dùng búa đá, không cần; chưa có nghề nông nên cuốc chỉ phục vụ hái lượm, đào củ.
 
 - Kho chứa theo tổng: mọi công trình đã xong cộng lại thành một sức chứa chung cho mỗi loại.
 - Chi phí trừ ngay khi đặt nền; chưa có hủy nền để hoàn trả.
@@ -79,7 +79,7 @@ src/
     tools.ts      Công cụ, bậc chất lượng, công thức chế tác
     sim.ts        Dân, AI nghề, kho, xây dựng, chế tác, đói, lệnh
   blueprint/      Bộ vẽ JSON (engine.js) và cầu nối TypeScript
-  data/blueprints/  Bản vẽ JSON: grass, mud, water, tree_round, tree_pine, rock, bush, stump, campfire, storage, workshop, tool_axe, tool_pick, tool_hoe, tool_shovel
+  data/blueprints/  Bản vẽ JSON: grass, mud, water, tree_round, tree_pine, rock, bush, stump, campfire, storage, workshop, tool_axe, tool_pick, tool_hoe, tool_hammer
   data/anims.json   Hoạt ảnh dân: idle, walk, carry_walk, chop, mine, dig, gather, build, craft
   data/anims/*.json Mỗi hoạt ảnh một file, dán thẳng vào trang demo dân được
   character/rig.js  Vẽ dân bằng code
