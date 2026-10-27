@@ -85,7 +85,7 @@ export class Renderer {
   /** Current level's sprite; while an upgrade runs the finished building stays drawn, with a progress bar. */
   private buildingProp(b: Building): Prop {
     const st = b.done ? 4 : Math.min(3, Math.floor(b.progress * 4));
-    return this.sprites.building(b.kind, b.level, st);
+    return this.sprites.building(b.kind, b.era, b.level, st);
   }
 
   /** Rain, snow, mist, lightning in screen space; particle positions derive from time, so no state is kept. */
@@ -248,7 +248,7 @@ export class Renderer {
     // ---- bóng ma khi đặt công trình ----
     if (ghost) {
       const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
-      this.prop(sp.building(ghost.kind, 1, 4), ax, ay, time, 0.6);
+      this.prop(sp.building(ghost.kind, sim.era, 1, 4), ax, ay, time, 0.6);
       ctx.fillStyle = ghost.ok ? 'rgba(90,200,90,.38)' : 'rgba(220,70,60,.42)';
       ctx.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
       ctx.strokeStyle = ghost.ok ? '#bff0b0' : '#ffb4a8'; ctx.lineWidth = 2;

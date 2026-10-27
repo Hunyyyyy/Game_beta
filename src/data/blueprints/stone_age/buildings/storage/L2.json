@@ -10,7 +10,7 @@
     "line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238",
     "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026",
     "thatch": "#c9a85a", "thatchL": "#e0c47a", "thatchD": "#9a7c3a",
-    "sack": "#c9b27a", "sackD": "#9d8756", "crate": "#7a5530", "log": "#6b4a28", "logE": "#c49a60", "rope": "#d8c690"
+    "sack": "#c9b27a", "sackD": "#9d8756", "wicker": "#b89a58", "wickerD": "#8a7038", "log": "#6b4a28", "logE": "#c49a60", "rope": "#d8c690"
   },
   "layers": [
     { "shape": "ellipse", "cx": 36, "cy": 54, "rx": 32, "ry": 6, "color": "shadow", "alpha": 0.25 },
@@ -33,9 +33,9 @@
       { "shape": "rect", "x": 19, "y": 36, "w": 6, "h": 2, "color": "sackD" },
       { "shape": "ellipse", "cx": 32, "cy": 44, "rx": 6, "ry": 5, "color": "sack" },
       { "shape": "rect", "x": 30, "y": 38, "w": 5, "h": 2, "color": "sackD" },
-      { "shape": "rect", "x": 40, "y": 33, "w": 13, "h": 12, "color": "crate" },
-      { "shape": "rect", "x": 40, "y": 38, "w": 13, "h": 1, "color": "woodD" },
-      { "shape": "rect", "x": 46, "y": 33, "w": 1, "h": 12, "color": "woodD" },
+      { "shape": "ellipse", "cx": 46, "cy": 40, "rx": 6, "ry": 6, "color": "wicker" },
+      { "shape": "rect", "x": 40, "y": 38, "w": 13, "h": 1, "color": "wickerD" },
+      { "shape": "rect", "x": 40, "y": 42, "w": 13, "h": 1, "color": "wickerD" },
       { "shape": "rect", "x": 44, "y": 29, "w": 18, "h": 3, "color": "log" },
       { "shape": "rect", "x": 44, "y": 29, "w": 2, "h": 3, "color": "logE" }
     ] },

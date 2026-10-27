@@ -1,13 +1,13 @@
 import { AnimTable, CX, H, W, renderFrame } from '../character/rig.js';
 import { Blueprint, BlueprintDef, toCanvases } from '../blueprint/blueprint';
 import animsJson from '../data/anims.json';
-import campfireL1 from '../data/blueprints/buildings/campfire/L1.json';
-import storageL1 from '../data/blueprints/buildings/storage/L1.json';
-import storageL2 from '../data/blueprints/buildings/storage/L2.json';
-import storageL3 from '../data/blueprints/buildings/storage/L3.json';
-import workshopL1 from '../data/blueprints/buildings/workshop/L1.json';
-import workshopL2 from '../data/blueprints/buildings/workshop/L2.json';
-import workshopL3 from '../data/blueprints/buildings/workshop/L3.json';
+import campfireL1 from '../data/blueprints/stone_age/buildings/campfire/L1.json';
+import storageL1 from '../data/blueprints/stone_age/buildings/storage/L1.json';
+import storageL2 from '../data/blueprints/stone_age/buildings/storage/L2.json';
+import storageL3 from '../data/blueprints/stone_age/buildings/storage/L3.json';
+import workshopL1 from '../data/blueprints/stone_age/buildings/workshop/L1.json';
+import workshopL2 from '../data/blueprints/stone_age/buildings/workshop/L2.json';
+import workshopL3 from '../data/blueprints/stone_age/buildings/workshop/L3.json';
 import bushJson from '../data/blueprints/nature/resources/bush.json';
 import rockJson from '../data/blueprints/nature/resources/rock.json';
 import grassJson from '../data/blueprints/nature/terrain/grass.json';
@@ -16,11 +16,11 @@ import waterJson from '../data/blueprints/nature/terrain/water.json';
 import stumpJson from '../data/blueprints/nature/trees/stump.json';
 import treePineJson from '../data/blueprints/nature/trees/tree_pine.json';
 import treeRoundJson from '../data/blueprints/nature/trees/tree_round.json';
-import toolAxeJson from '../data/blueprints/tools/axe.json';
-import toolHammerJson from '../data/blueprints/tools/hammer.json';
-import toolHoeJson from '../data/blueprints/tools/hoe.json';
-import toolPickJson from '../data/blueprints/tools/pick.json';
-import type { BuildingKind } from '../sim/buildings';
+import toolAxeJson from '../data/blueprints/stone_age/tools/axe.json';
+import toolHammerJson from '../data/blueprints/stone_age/tools/hammer.json';
+import toolHoeJson from '../data/blueprints/stone_age/tools/hoe.json';
+import toolPickJson from '../data/blueprints/stone_age/tools/pick.json';
+import { BuildingKind, Era, ERAS } from '../sim/buildings';
 import type { Season } from '../sim/calendar';
 import type { Villager } from '../sim/sim';
 
@@ -51,18 +51,19 @@ export interface NatureSet {
 
 /** Construction stages 0..4 (4 = finished) as blueprint params. */
 const stage = (st: number) => ({ st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) });
-const BUILDING_LEVELS: Record<BuildingKind, unknown[]> = {
-  campfire: [campfireL1],
-  storage: [storageL1, storageL2, storageL3],
-  workshop: [workshopL1, workshopL2, workshopL3],
+/** Building blueprints per era and kind, one entry per level. A later era only lists what it redraws. */
+const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>>> = {
+  stone: {
+    campfire: [campfireL1],
+    storage: [storageL1, storageL2, storageL3],
+    workshop: [workshopL1, workshopL2, workshopL3],
+  },
 };
 
 export class Sprites {
   private readonly vcache = new Map<string, HTMLCanvasElement>();
   private readonly natureCache = new Map<string, NatureSet>();
-  /** Building sprites per kind and level (index 0 = level 1), each with construction stages 0..4. */
-  readonly buildings = Object.fromEntries((Object.keys(BUILDING_LEVELS) as BuildingKind[]).map((k) =>
-    [k, BUILDING_LEVELS[k].map((def) => [0, 1, 2, 3, 4].map((st) => make(def, k === 'workshop' ? 9 : 5, stage(st))))])) as Record<BuildingKind, Prop[][]>;
+  private readonly buildingCache = new Map<string, Prop[][]>();
   /** Biểu tượng công cụ 16×16, khóa dạng "axe1" (gỗ) hoặc "axe2" (đá). */
   readonly icons: Record<string, HTMLCanvasElement> = {};
 
@@ -92,9 +93,25 @@ export class Sprites {
     return n;
   }
 
+  /** Sprites for a building kind in an era: [level][construction stage 0..4]. Falls back to the closest earlier era. */
+  private buildingSet(kind: BuildingKind, era: Era): Prop[][] {
+    for (let i = ERAS.indexOf(era); i >= 0; i--) {
+      const defs = BUILDING_ART[ERAS[i]]?.[kind];
+      if (!defs) continue;
+      const key = `${ERAS[i]}|${kind}`;
+      let set = this.buildingCache.get(key);
+      if (!set) {
+        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(def, kind === 'workshop' ? 9 : 5, stage(st))));
+        this.buildingCache.set(key, set);
+      }
+      return set;
+    }
+    throw new Error(`No art for ${kind} in era ${era}`);
+  }
+
   /** Sprite of a building at its level and construction stage (0..4). */
-  building(kind: BuildingKind, level: number, st: number): Prop {
-    const lv = this.buildings[kind];
+  building(kind: BuildingKind, era: Era, level: number, st: number): Prop {
+    const lv = this.buildingSet(kind, era);
     return lv[Math.min(lv.length, Math.max(1, level)) - 1][st];
   }
 

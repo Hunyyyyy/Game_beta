@@ -167,7 +167,7 @@ function updateBuildingCard() {
   const b = ctl.selectedBuilding === null ? undefined : sim.getBuilding(ctl.selectedBuilding);
   bcard.hidden = !b;
   if (!b) { if (ctl.selectedBuilding !== null) ctl.selectedBuilding = null; return; }
-  const def = BUILDINGS[b.kind], lv = levelDef(b), top = maxLevel(b.kind);
+  const def = BUILDINGS[b.kind], lv = levelDef(b), top = maxLevel(b.kind, b.era);
   $('bName').textContent = `${def.name} · cấp ${b.level}/${top} (${lv.name.toLowerCase()})`;
   $('bState').textContent = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : 'đang dùng';
   $('bInfo').textContent = 'Hiện tại: ' + levelEffect(b.kind, lv.cap, lv.craftSpeed);

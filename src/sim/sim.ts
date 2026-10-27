@@ -1,6 +1,6 @@
 import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, SEASON_DEF, WEATHER, WeatherKind } from './calendar';
 import { DAY_LENGTH, FIRE_VISION, NIGHT_VISION, START_TIME, TICK, VISION } from './constants';
-import { Building, BuildingKind, BUILDINGS, levelDef, maxLevel, needsWork } from './buildings';
+import { Building, BuildingKind, BUILDINGS, Era, levelDef, levelsOf, maxLevel, needsWork } from './buildings';
 import { Fog } from './fog';
 import { Job, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, Stats, WorkJob, WORK_JOBS, XP_LEVELS } from './jobs';
 import { findPath, Step } from './path';
@@ -85,6 +85,8 @@ export class Sim {
   /** Hàng đợi chế tác (mã công thức). */
   readonly craftQueue: string[] = [];
   readonly log: LogLine[] = [];
+  /** Current era: new buildings are built with this era's art and levels. */
+  era: Era = 'stone';
   /** Hệ số tốc độ: 0 = tạm dừng. */
   speed = 1;
   /** Giây game đã trôi qua. */
@@ -199,7 +201,7 @@ export class Sim {
   // ---------------------------------------------------------------- công trình
   private addBuilding(kind: BuildingKind, x: number, y: number, done: boolean): Building {
     const d = BUILDINGS[kind];
-    const b: Building = { id: this.nextBid++, kind, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, workers: 0 };
+    const b: Building = { id: this.nextBid++, kind, era: this.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, workers: 0 };
     this.buildings.push(b);
     for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) this.world.occ[(y + j) * this.world.size + x + i] = 1;
     return b;
@@ -216,7 +218,7 @@ export class Sim {
       const t = w.tiles[k];
       if ((t !== 0 && t !== 4) || w.occ[k]) return 'Vướng cây, đá, nước hoặc công trình';
     }
-    return this.missing(d.levels[0].cost);
+    return this.missing(levelsOf(kind, this.era)[0].cost);
   }
 
   /** Reason the stock cannot pay `cost`, or null. */
@@ -229,7 +231,7 @@ export class Sim {
   canUpgrade(b: Building): string | null {
     if (!b.done) return 'Công trình chưa dựng xong';
     if (b.upgrading) return 'Đang nâng cấp';
-    if (b.level >= maxLevel(b.kind)) return 'Đã ở cấp cao nhất';
+    if (b.level >= maxLevel(b.kind, b.era)) return 'Đã ở cấp cao nhất';
     return this.missing(levelDef(b, b.level + 1).cost);
   }
 
@@ -251,7 +253,7 @@ export class Sim {
     if (!d.buildable) return { ok: false, reason: 'Không xây được công trình này' };
     const why = this.canPlace(kind, x, y);
     if (why) return { ok: false, reason: why };
-    const cost = d.levels[0].cost;
+    const cost = levelsOf(kind, this.era)[0].cost;
     for (const r of Object.keys(cost) as Res[]) this.stock[r] -= cost[r] ?? 0;
     const b = this.addBuilding(kind, x, y, false);
     this.say(`Đã đặt nền ${d.name}. Giao việc "Thợ xây" để dựng.`);

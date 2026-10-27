@@ -3,7 +3,7 @@ import { DAY_LENGTH } from '../src/sim/constants';
 import { Tile } from '../src/sim/world';
 import { lightAt, rollWeather, seasonOf, SEASONS } from '../src/sim/calendar';
 import { TIER_DURABILITY } from '../src/sim/tools';
-import { levelDef } from '../src/sim/buildings';
+import { levelDef, levelsOf, maxLevel } from '../src/sim/buildings';
 
 let fails = 0;
 const ok = (c: boolean, msg: string) => { console.log((c ? 'ok   ' : 'FAIL ') + msg); if (!c) fails++; };
@@ -346,6 +346,14 @@ const tickN = (sm: Sim, secs: number) => run(sm, secs);
   sm.time = DAY_LENGTH * 1.3; sm.stock.stone = 20; sm.upgradeBuilding(b.id); run(sm, 90);
   ok(b.level === 3 && sm.capacity() === 550 && sm.upgradeBuilding(b.id) === 'Đã ở cấp cao nhất', `cấp 3 chứa 500, không nâng thêm (tổng ${sm.capacity()})`);
   ok(levelDef({ kind: 'workshop', level: 3 }).craftSpeed > levelDef({ kind: 'workshop', level: 1 }).craftSpeed, 'Xưởng cấp cao chế nhanh hơn');
+}
+
+{
+  // eras: buildings remember the era they were built in; an era without its own level list reuses the earlier one
+  const sm = new Sim(1337);
+  ok(sm.era === 'stone' && sm.buildings[0].era === 'stone', 'game starts in the Stone Age, the campfire belongs to it');
+  ok(maxLevel('storage', 'stone') === 3 && maxLevel('workshop', 'stone') === 3, 'Stone Age buildings have 3 levels');
+  ok(levelsOf('storage', 'ancient') === levelsOf('storage', 'stone'), 'a later era without its own levels falls back to the earlier era');
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');
