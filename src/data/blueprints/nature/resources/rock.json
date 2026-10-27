@@ -1,0 +1,28 @@
+{
+  "name": "Tảng đá",
+  "type": "prop",
+  "size": [32, 26],
+  "anchor": [16, 23],
+  "footprint": [5, 18, 22, 6],
+  "seed": 8,
+  "palette": { "rock": "#7a8084", "rockL": "#a6adb1", "rockD": "#555b60", "crack": "#3d4246", "moss": "#5f8a3e", "line": "#22262a", "shadow": "#000000", "snow": "#eef4f8" },
+  "params": {"autumn": 0, "winter": 0, "burnt": 0},
+  "palettes": {
+    "autumn": { "moss": "#8a7a3a" },
+    "winter": { "moss": "#dfe6ee" },
+    "burnt": { "moss": "#2e2a26", "rockL": "#7a7f82" }
+  },
+  "layers": [
+    { "shape": "poly", "points": [[3, 21], [1, 13], [6, 5], [14, 2], [23, 4], [29, 11], [28, 20], [16, 23]], "color": "rock", "jitter": 1 },
+    { "shape": "poly", "points": [[6, 5], [14, 2], [23, 4], [17, 10], [8, 12]], "color": "rockL", "clip": "inside" },
+    { "shape": "poly", "points": [[28, 20], [29, 11], [22, 9], [18, 22], [16, 23]], "color": "rockD", "clip": "inside" },
+    { "shape": "line", "from": [11, 12], "to": [14, 19], "color": "crack" },
+    { "shape": "line", "from": [14, 19], "to": [13, 22], "color": "crack" },
+    { "shape": "scatter", "count": 26, "area": [2, 4, 27, 19], "size": 1, "colors": ["rockL", "rockD", "crack"], "onlyOver": ["rock"] },
+    { "shape": "ellipse", "cx": 9, "cy": 6, "rx": 4, "ry": 1.5, "color": "moss", "alpha": 0.9, "clip": "inside" },
+    { "shape": "bevel", "light": "#ffffff", "lightAlpha": 0.25, "dark": "#000000", "darkAlpha": 0.3 },
+    { "shape": "scatter", "if": "winter", "count": 40, "area": [2, 0, 28, 10], "size": [3, 1], "color": "snow", "onlyOver": ["rock", "rockL", "rockD", "moss"] },
+    { "shape": "outline", "color": "line" },
+    { "shape": "ellipse", "cx": 16, "cy": 23, "rx": 15, "ry": 2.5, "color": "shadow", "alpha": 0.28, "mode": "under" }
+  ]
+}

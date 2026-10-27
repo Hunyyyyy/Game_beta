@@ -1,3 +1,4 @@
+import type { Season } from './calendar';
 import { MAP_SIZE } from './constants';
 import type { NodeKind } from './jobs';
 import type { Res } from './resources';
@@ -31,6 +32,7 @@ export class World {
   readonly decor = new Uint8Array(MAP_SIZE * MAP_SIZE); // 1 = gốc cây
   readonly nodes = new Map<number, ResourceNode>();
   readonly start = { x: MAP_SIZE >> 1, y: MAP_SIZE >> 1 };
+  season: Season = 'spring';
 
   constructor(readonly seed: number) {
     const N = this.size;
@@ -108,7 +110,20 @@ export class World {
     if (n.kind === 'tree') this.decor[idx] = 1;
   }
 
+  /** Winter: bushes go bare and stop regrowing. Spring: they flower and fruit again after 1–3 min (staggered per tile). */
+  setSeason(season: Season): void {
+    const prev = this.season;
+    this.season = season;
+    if (season === prev) return;
+    for (const [idx, n] of this.nodes) {
+      if (n.kind !== 'bush') continue;
+      if (season === 'winter') { n.amount = 0; n.regrow = 0; }
+      else if (prev === 'winter') { n.amount = 0; n.regrow = 60 + 120 * hash2(idx % this.size, (idx / this.size) | 0, this.seed + 29); }
+    }
+  }
+
   tick(dt: number): void {
+    if (this.season === 'winter') return;
     for (const n of this.nodes.values()) {
       if (n.kind === 'bush' && n.amount === 0 && n.regrow > 0) {
         n.regrow -= dt;

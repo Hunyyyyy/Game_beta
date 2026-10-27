@@ -2,9 +2,10 @@ import { build } from 'esbuild';
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-// Every src/data/blueprints/*.json is bundled into the page through a virtual module, so new blueprints show up on rebuild.
+// Every src/data/blueprints/**/*.json is bundled into the page through a virtual module, so new blueprints show up on rebuild.
+// Names keep their folder, e.g. "buildings/storage/L2" or "nature/trees/tree_round".
 const dir = resolve('src/data/blueprints');
-const files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
+const files = readdirSync(dir, { recursive: true }).map((f) => f.split('\\').join('/')).filter((f) => f.endsWith('.json')).sort();
 const virtual = {
   name: 'blueprints',
   setup(b) {

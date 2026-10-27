@@ -1,6 +1,7 @@
 import { Renderer, Camera } from './render/renderer';
 import { Sprites } from './render/sprites';
-import { BUILDINGS, BuildingKind } from './sim/buildings';
+import { BUILDINGS, BuildingKind, levelDef, maxLevel } from './sim/buildings';
+import { DAY_PART_NAME, dayInSeason, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
 import { DAY_LENGTH, TILE } from './sim/constants';
 import { Job, JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS } from './sim/jobs';
 import { RES_LIST, RES_NAME } from './sim/resources';
@@ -150,6 +151,37 @@ function updateCraft() {
   $('toolStock').textContent = working ? `${working} thợ thủ công` : 'chưa có thợ thủ công';
 }
 
+// ---------------------------------------------------------------- building card
+const bcard = $('bcard'), upBtn = $<HTMLButtonElement>('btnUpgrade');
+const costText = (c: Partial<Record<'wood' | 'stone' | 'food', number>>) =>
+  (Object.keys(c) as Array<'wood' | 'stone' | 'food'>).map((k) => `${c[k]} ${RES_NAME[k].toLowerCase()}`).join(' + ') || 'miễn phí';
+const levelEffect = (kind: BuildingKind, cap: number, craftSpeed: number) =>
+  kind === 'workshop' ? `tốc độ chế tác ×${craftSpeed.toLocaleString('vi')}` : `sức chứa ${cap} mỗi loại`;
+upBtn.addEventListener('click', () => {
+  if (ctl.selectedBuilding === null) return;
+  const err = sim.upgradeBuilding(ctl.selectedBuilding);
+  ctl.onToast(err ?? 'Đã trả vật liệu. Giao Thợ xây để nâng cấp');
+  lastHud = 0;
+});
+function updateBuildingCard() {
+  const b = ctl.selectedBuilding === null ? undefined : sim.getBuilding(ctl.selectedBuilding);
+  bcard.hidden = !b;
+  if (!b) { if (ctl.selectedBuilding !== null) ctl.selectedBuilding = null; return; }
+  const def = BUILDINGS[b.kind], lv = levelDef(b), top = maxLevel(b.kind);
+  $('bName').textContent = `${def.name} · cấp ${b.level}/${top} (${lv.name.toLowerCase()})`;
+  $('bState').textContent = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : 'đang dùng';
+  $('bInfo').textContent = 'Hiện tại: ' + levelEffect(b.kind, lv.cap, lv.craftSpeed);
+  const canGrow = b.level < top;
+  upBtn.hidden = !canGrow || !def.buildable;
+  if (canGrow) {
+    const nx = levelDef(b, b.level + 1);
+    $('bNext').textContent = `Cấp ${b.level + 1} (${nx.name.toLowerCase()}): ${levelEffect(b.kind, nx.cap, nx.craftSpeed)}`;
+    const why = sim.canUpgrade(b);
+    upBtn.textContent = b.upgrading ? 'Đang nâng cấp…' : `Nâng cấp · ${costText(nx.cost)}`;
+    upBtn.disabled = !!why; upBtn.title = why ?? '';
+  } else $('bNext').textContent = def.buildable ? 'Đã ở cấp cao nhất' : '';
+}
+
 // ---------------------------------------------------------------- HUD
 const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(3 - n);
 const PHASE_TEXT = (v: Villager): string => {
@@ -166,6 +198,8 @@ const PHASE_TEXT = (v: Villager): string => {
     case 'craft': t = 'đang chế tác'; break;
     case 'goEquip': t = 'đi lấy công cụ'; break;
     case 'wait': t = 'chờ việc'; break;
+    case 'goHome': t = 'về lửa trại ngủ'; break;
+    case 'sleep': t = 'đang ngủ'; break;
     default: t = v.job === 'idle' ? 'rảnh' : 'chờ việc';
   }
   return t + carry;
@@ -174,19 +208,25 @@ const info = $('info'), sel = $('sel'), card = $('card'), logBox = $('log');
 const clock = $('clock');
 let fps = 60, lastHud = 0, chipsKey = '', statsKey = '', logKey = '';
 
-function setRes(id: string, val: number, cap: number) {
+function setRes(id: string, val: number, cap: number, note = '') {
   const el = $(id);
   el.querySelector('b')!.textContent = String(Math.floor(val));
-  el.querySelector('small')!.textContent = `/${cap}`;
+  el.querySelector('small')!.textContent = `/${cap}${note}`;
   el.classList.toggle('full', val >= cap);
 }
 
 function updateHud(now: number) {
   if (now - lastHud < 150) return;
   lastHud = now;
-  setRes('rFood', sim.stock.food, sim.capacity()); setRes('rWood', sim.stock.wood, sim.capacity()); setRes('rStone', sim.stock.stone, sim.capacity());
-  const t = sim.tod, part = t < 0.2 ? 'đêm' : t < 0.35 ? 'bình minh' : t < 0.65 ? 'ban ngày' : t < 0.8 ? 'hoàng hôn' : 'đêm';
-  clock.textContent = `Ngày ${sim.day} · ${part}`;
+  const spoil = Math.floor(sim.foodSpoilingWithin(DAY_LENGTH));
+  setRes('rFood', sim.stock.food, sim.capacity(), spoil > 0 ? ` · ${spoil} sắp hỏng` : '');
+  $('rFood').classList.toggle('warn', spoil > 0);
+  $('rFood').title = `Quả hỏng sau 3 ngày nếu chưa ăn; dân ăn lứa cũ trước.${spoil > 0 ? ` ${spoil} thức ăn sẽ hỏng trong 1 ngày tới.` : ''}`;
+  setRes('rWood', sim.stock.wood, sim.capacity()); setRes('rStone', sim.stock.stone, sim.capacity());
+  const se = SEASON_DEF[sim.season], we = WEATHER[sim.weather], year = yearOf(sim.day);
+  clock.textContent = `${year > 1 ? `Năm ${year} · ` : ''}Ngày ${sim.day} · ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} · ${DAY_PART_NAME[sim.part]} · ${we.name}`;
+  const eff = [we.vision ? `tầm nhìn −${we.vision} ô` : '', we.speed < 1 ? `đi chậm ${Math.round((1 - we.speed) * 100)}%` : ''].filter(Boolean).join(', ');
+  clock.title = `${we.name}${eff ? `: ${eff}` : ''}. Hái lượm mùa ${se.name.toLowerCase()} ×${se.gather.toLocaleString('vi')}. Dân ngủ từ giữa hoàng hôn tới giữa bình minh.`;
   const explored = sim.fog.countExplored(), pct = ((explored / (N * N)) * 100).toFixed(1);
   info.textContent = `Dân ${sim.villagers.length} · đã chọn ${ctl.selected.size} · khám phá ${pct}% · 1 ngày = ${DAY_LENGTH / 60} phút · ${Math.round(fps)} fps`;
 
@@ -208,6 +248,7 @@ function updateHud(now: number) {
   }
 
   updateCraft();
+  updateBuildingCard();
 
   // thẻ chi tiết
   const chosen = sim.villagers.filter((v) => ctl.selected.has(v.id));
@@ -240,7 +281,7 @@ function frame(t: number) {
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
   ctl.update(dt);
   sim.advance(dt);
-  renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost());
+  renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding);
   drawMini(); updateHud(t);
   requestAnimationFrame(frame);
 }

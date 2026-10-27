@@ -295,7 +295,7 @@
   }
 
   function renderFrame(def, o) {
-    var ctx = { w: o.w, h: o.h, buf: new Uint8ClampedArray(o.w * o.h * 4), palette: def.palette && typeof def.palette === 'object' ? def.palette : {}, seed: o.seed, frame: o.frame, params: o.params, warn: o.warn, wrap: o.wrap, ox: 0, oy: 0, flip: false, ops: 0, cc: new Map() };
+    var ctx = { w: o.w, h: o.h, buf: new Uint8ClampedArray(o.w * o.h * 4), palette: o.palette, seed: o.seed, frame: o.frame, params: o.params, warn: o.warn, wrap: o.wrap, ox: 0, oy: 0, flip: false, ops: 0, cc: new Map() };
     if (def.bg !== undefined) {
       var c = parseColor(def.bg, ctx.palette);
       if (c) for (var i = 0; i < o.w * o.h; i++) { ctx.buf[i * 4] = c[0]; ctx.buf[i * 4 + 1] = c[1]; ctx.buf[i * 4 + 2] = c[2]; ctx.buf[i * 4 + 3] = c[3]; }
@@ -317,8 +317,11 @@
     var nf = def.animate && def.animate.frames > 1 ? clamp(Math.round(def.animate.frames), 2, 16) : 1;
     var params = Object.assign({}, def.params || {}, opts.params || {});
     var wrap = def.wrap !== undefined ? !!def.wrap : def.type === 'tile';
+    // "palettes": { "<param>": { colorName: value } } overrides palette entries while that param is set (seasons, snow, burnt...).
+    var palette = Object.assign({}, def.palette && typeof def.palette === 'object' ? def.palette : {});
+    if (def.palettes && typeof def.palettes === 'object') Object.keys(def.palettes).forEach(function (k) { if (params[k]) Object.assign(palette, def.palettes[k]); });
     var frames = [];
-    for (var f = 0; f < nf; f++) frames.push(renderFrame(def, { w: w, h: h, seed: seed, frame: f, params: params, warn: warn, wrap: wrap }));
+    for (var f = 0; f < nf; f++) frames.push(renderFrame(def, { w: w, h: h, seed: seed, frame: f, params: params, palette: palette, warn: warn, wrap: wrap }));
     return { w: w, h: h, frames: frames, fps: (def.animate && def.animate.fps) || 4, warnings: warns, anchor: def.anchor, footprint: def.footprint, type: def.type || 'prop' };
   }
 

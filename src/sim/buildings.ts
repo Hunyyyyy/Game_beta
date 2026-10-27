@@ -2,29 +2,52 @@ import type { Stock } from './resources';
 
 export type BuildingKind = 'campfire' | 'storage' | 'workshop';
 
+/** One level of a building. Level 1 is the cost to place it; higher levels are upgrade costs. */
+export interface LevelDef {
+  name: string;      // material tier shown to the player: Đơn sơ, Gỗ, Đá
+  cost: Partial<Stock>;
+  buildTime: number; // seconds for a builder with factor 1.0
+  cap: number;       // storage per resource
+  craftSpeed: number;
+}
+
 export interface BuildingDef {
   kind: BuildingKind;
   name: string;
   w: number;
   h: number;
-  cost: Partial<Stock>;
-  buildTime: number; // giây, thợ xây hệ số 1,0
-  cap: number;       // sức chứa mỗi loại tài nguyên
   buildable: boolean;
+  levels: LevelDef[];
 }
 
+const lv = (name: string, cost: Partial<Stock>, buildTime: number, cap = 0, craftSpeed = 1): LevelDef => ({ name, cost, buildTime, cap, craftSpeed });
+
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
-  campfire: { kind: 'campfire', name: 'Nhà chung (đống lửa trại)', w: 2, h: 2, cost: {}, buildTime: 0, cap: 50, buildable: false },
-  workshop: { kind: 'workshop', name: 'Xưởng chế tác', w: 2, h: 2, cost: { wood: 15 }, buildTime: 30, cap: 0, buildable: true },
-  storage: { kind: 'storage', name: 'Kho', w: 2, h: 2, cost: { wood: 10 }, buildTime: 20, cap: 100, buildable: true },
+  campfire: { kind: 'campfire', name: 'Nhà chung (đống lửa trại)', w: 2, h: 2, buildable: false, levels: [lv('Lửa trại', {}, 0, 50)] },
+  workshop: {
+    kind: 'workshop', name: 'Xưởng chế tác', w: 2, h: 2, buildable: true,
+    levels: [lv('Đơn sơ', { wood: 15 }, 30, 0, 1), lv('Gỗ', { wood: 15, stone: 30 }, 60, 0, 1.25), lv('Đá', { wood: 30, stone: 50 }, 90, 0, 1.5)],
+  },
+  storage: {
+    kind: 'storage', name: 'Kho', w: 2, h: 2, buildable: true,
+    levels: [lv('Đơn sơ', { wood: 10 }, 20, 100), lv('Gỗ', { wood: 35 }, 40, 250), lv('Đá', { wood: 40, stone: 20 }, 60, 500)],
+  },
 };
 
 export interface Building {
   id: number;
   kind: BuildingKind;
-  x: number; // ô trên-trái
+  x: number; // top-left tile
   y: number;
-  progress: number; // 0..1
+  level: number;     // 1..levels.length
+  progress: number;  // 0..1, for the first build or the running upgrade
   done: boolean;
+  /** An upgrade to level + 1 is paid for and waiting on builders; the building keeps working meanwhile. */
+  upgrading: boolean;
   workers: number;
 }
+
+export const levelDef = (b: Pick<Building, 'kind' | 'level'>, level = b.level): LevelDef => BUILDINGS[b.kind].levels[level - 1];
+export const maxLevel = (kind: BuildingKind) => BUILDINGS[kind].levels.length;
+/** Still needs builders: not finished yet, or an upgrade is underway. */
+export const needsWork = (b: Building) => !b.done || b.upgrading;

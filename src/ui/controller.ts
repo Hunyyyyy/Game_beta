@@ -15,6 +15,8 @@ export class Controller {
   onToast: (text: string) => void = () => {};
   /** Đang chọn vị trí đặt công trình. */
   placing: BuildingKind | null = null;
+  /** Building shown in the building card (clicked with no villager under the cursor). */
+  selectedBuilding: number | null = null;
   private hover: { x: number; y: number } | null = null;
   private keys = new Set<string>();
   private down: { x: number; y: number } | null = null;
@@ -86,9 +88,21 @@ export class Controller {
   private click(p: { x: number; y: number }, add: boolean): void {
     const id = this.hit(p);
     if (this.mode === 'move' && id === null && this.selected.size) { this.command(p); return; }
-    if (id !== null) { if (!add) this.selected.clear(); this.selected.add(id); }
-    else if (!add) this.selected.clear();
+    const b = id === null ? this.buildingUnder(p) : null;
+    if (id !== null) { if (!add) this.selected.clear(); this.selected.add(id); this.selectedBuilding = null; }
+    else if (b !== null) { if (!add) this.selected.clear(); this.selectedBuilding = b; }
+    else if (!add) { this.selected.clear(); this.selectedBuilding = null; }
     this.onChange();
+  }
+
+  /** Building whose drawn shape (footprint plus the roof above it) is under the screen point. */
+  private buildingUnder(p: { x: number; y: number }): number | null {
+    const w = this.r.screenToWorld(p.x, p.y);
+    for (const b of this.sim.buildings) {
+      const d = BUILDINGS[b.kind];
+      if (w.x >= b.x * TILE && w.x <= (b.x + d.w) * TILE && w.y >= b.y * TILE - 24 && w.y <= (b.y + d.h) * TILE) return b.id;
+    }
+    return null;
   }
 
   private boxSelect(b: Box, add: boolean): void {
@@ -160,7 +174,7 @@ export class Controller {
   }
 
   selectAll(): void { this.sim.villagers.forEach((v) => this.selected.add(v.id)); this.onChange(); }
-  clearSelection(): void { this.selected.clear(); this.onChange(); }
+  clearSelection(): void { this.selected.clear(); this.selectedBuilding = null; this.onChange(); }
 
   centerOn(wx: number, wy: number): void {
     this.cam.x = wx - this.r.w / this.cam.zoom / 2; this.cam.y = wy - this.r.h / this.cam.zoom / 2; this.clamp();

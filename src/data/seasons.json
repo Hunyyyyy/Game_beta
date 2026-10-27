@@ -1,0 +1,6 @@
+{
+  "spring": { "name": "Xuân", "daylight": 0.5, "gather": 0.8, "enter": "Mùa xuân đến: bụi cây ra hoa, vài hôm nữa sẽ có quả. Hay mưa." },
+  "summer": { "name": "Hạ", "daylight": 0.6, "gather": 1.2, "enter": "Mùa hạ: ngày dài hơn, quả chín nhiều. Coi chừng giông sét." },
+  "autumn": { "name": "Thu", "daylight": 0.5, "gather": 1.4, "enter": "Mùa thu: quả nhiều nhất năm. Mùa đông sắp tới, hãy chuẩn bị." },
+  "winter": { "name": "Đông", "daylight": 0.4, "gather": 0, "enter": "Mùa đông: bụi quả trụi hết, ngày ngắn lại. Sống bằng thức ăn đã tích trữ." }
+}

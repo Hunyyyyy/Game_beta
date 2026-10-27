@@ -1,0 +1,22 @@
+{
+  "name": "Ô cỏ",
+  "type": "tile",
+  "size": [32, 32],
+  "seed": 4,
+  "palette": { "g0": "#7a984a", "g1": "#86a355", "g2": "#93b05f", "tuft": "#6b8a41", "tuftL": "#a8c470", "flower": "#e8d28a", "flower2": "#f2f2e6" },
+  "params": {"summer": 0, "autumn": 0, "winter": 0, "burnt": 0},
+  "palettes": {
+    "summer": { "g0": "#7e9a42", "g1": "#8aa64c", "g2": "#98b256", "tuft": "#6e8a38", "tuftL": "#b4c868" },
+    "autumn": { "g0": "#8e8a46", "g1": "#9c9450", "g2": "#aaa05a", "tuft": "#7e763a", "tuftL": "#c0b46a", "flower": "#d0884a" },
+    "winter": { "g0": "#d8e0ea", "g1": "#e4ebf2", "g2": "#f0f4f8", "tuft": "#b8c4ce", "tuftL": "#ffffff", "flower": "#d8e0ea", "flower2": "#ffffff" },
+    "burnt": { "g0": "#3a342c", "g1": "#443c32", "g2": "#4e463a", "tuft": "#2a2420", "tuftL": "#6a5a48", "flower": "#3a342c", "flower2": "#e06a2a" }
+  },
+  "bg": "g1",
+  "layers": [
+    { "shape": "noise", "scale": 6, "octaves": 2, "contrast": 2.2, "bands": [[0, "g0"], [0.4, "g1"], [0.78, "g2"]] },
+    { "shape": "scatter", "count": 22, "size": [1, 2], "colors": ["tuft", "tuft", "tuftL"] },
+    { "shape": "scatter", "count": 8, "size": [2, 1], "colors": ["tuft", "tuftL"] },
+    { "shape": "scatter", "count": [0, 1], "size": 2, "color": "flower" },
+    { "shape": "scatter", "count": [0, 1], "size": 1, "color": "flower2" }
+  ]
+}

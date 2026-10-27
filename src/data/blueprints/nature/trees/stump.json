@@ -1,0 +1,25 @@
+{
+  "name": "Gốc cây",
+  "type": "prop",
+  "size": [22, 16],
+  "anchor": [11, 13],
+  "seed": 2,
+  "palette": { "wood": "#6b4a28", "woodL": "#8a6238", "woodD": "#4e3519", "ring": "#a47a48", "ringD": "#8a6238", "line": "#2b1d10", "shadow": "#000000" },
+  "params": {"winter": 0, "burnt": 0},
+  "palettes": {
+    "winter": { "ring": "#e8eef4", "ringD": "#c8d4dc" },
+    "burnt": { "wood": "#2e2420", "woodL": "#463830", "woodD": "#1a1412", "ring": "#3a2e26", "ringD": "#2a201a" }
+  },
+  "layers": [
+    { "shape": "rect", "x": 4, "y": 6, "w": 14, "h": 7, "color": "wood" },
+    { "shape": "rect", "x": 4, "y": 6, "w": 3, "h": 7, "color": "woodL" },
+    { "shape": "rect", "x": 15, "y": 7, "w": 3, "h": 6, "color": "woodD" },
+    { "shape": "ellipse", "cx": 11, "cy": 6, "rx": 7, "ry": 3.5, "color": "ring" },
+    { "shape": "ellipse", "cx": 11, "cy": 6, "rx": 4.5, "ry": 2, "color": "ringD" },
+    { "shape": "ellipse", "cx": 11, "cy": 6, "rx": 2, "ry": 1, "color": "ring" },
+    { "shape": "poly", "points": [[4, 12], [1, 14], [5, 14]], "color": "wood" },
+    { "shape": "poly", "points": [[18, 12], [21, 14], [17, 14]], "color": "wood" },
+    { "shape": "outline", "color": "line" },
+    { "shape": "ellipse", "cx": 11, "cy": 14, "rx": 9, "ry": 2, "color": "shadow", "alpha": 0.25, "mode": "under" }
+  ]
+}

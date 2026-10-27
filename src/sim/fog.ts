@@ -8,12 +8,12 @@ export class Fog {
     this.state = new Uint8Array(world.size * world.size);
   }
 
-  update(sources: ReadonlyArray<{ x: number; y: number }>, radius: number): void {
+  /** Each source has its own sight radius `r` (tiles). */
+  update(sources: ReadonlyArray<{ x: number; y: number; r: number }>): void {
     const N = this.world.size, s = this.state;
     for (let i = 0; i < s.length; i++) if (s[i] === 2) s[i] = 1;
-    const r2 = radius * radius + 0.5;
     for (const p of sources) {
-      const cx = Math.floor(p.x), cy = Math.floor(p.y);
+      const cx = Math.floor(p.x), cy = Math.floor(p.y), radius = p.r, r2 = radius * radius + 0.5;
       for (let y = Math.max(0, cy - radius); y <= Math.min(N - 1, cy + radius); y++) {
         for (let x = Math.max(0, cx - radius); x <= Math.min(N - 1, cx + radius); x++) {
           if ((x - cx) ** 2 + (y - cy) ** 2 <= r2) s[y * N + x] = 2;
