@@ -1,0 +1,17 @@
+{
+  "name": "Chùy đá",
+  "type": "prop",
+  "size": [16, 16],
+  "anchor": [8, 15],
+  "params": {"stone": 1},
+  "palette": { "line": "#2b1d10", "handle": "#8a5e34", "handleL": "#aa7c48", "tw": "#b88c54", "twL": "#deb87e", "twD": "#805c34", "st": "#8e9498", "stL": "#c0c6c8", "stD": "#60676b", "bind": "#d8c690", "hide": "#a0552f", "hideL": "#c06f43", "hideD": "#7a3d20", "stitch": "#e8d6a8" },
+  "layers": [
+    { "shape": "line", "from": [3, 14], "to": [10, 7], "w": 2, "color": "handle" },
+    { "shape": "line", "from": [2, 14], "to": [9, 7], "w": 1, "color": "handleL" },
+    { "shape": "ellipse", "cx": 11, "cy": 4.5, "rx": 4, "ry": 4, "color": "st" },
+    { "shape": "pixels", "at": [[9, 2], [10, 1], [8, 4]], "color": "stL" },
+    { "shape": "pixels", "at": [[13, 6], [14, 4], [12, 8]], "color": "stD" },
+    { "shape": "pixels", "at": [[9, 8], [10, 9]], "color": "bind" },
+    { "shape": "outline", "color": "line" }
+  ]
+}

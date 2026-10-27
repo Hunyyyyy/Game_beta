@@ -1,0 +1,54 @@
+{
+  "idle": { "fps": 4, "loop": true, "frames": [
+    {"bob":0,"rise":0,"fl":{"a":0,"lift":0},"fr":{"a":0,"lift":0},"bl":{"a":0,"lift":0},"br":{"a":0,"lift":0},"head":{"dy":0},"tail":15,"mouth":0},
+    {"bob":0,"rise":0,"fl":{"a":0,"lift":0},"fr":{"a":0,"lift":0},"bl":{"a":0,"lift":0},"br":{"a":0,"lift":0},"head":{"dy":-1},"tail":18,"mouth":0},
+    {"bob":-1,"rise":0,"fl":{"a":0,"lift":0},"fr":{"a":0,"lift":0},"bl":{"a":0,"lift":0},"br":{"a":0,"lift":0},"head":{"dy":-1},"tail":20,"mouth":0},
+    {"bob":0,"rise":0,"fl":{"a":0,"lift":0},"fr":{"a":0,"lift":0},"bl":{"a":0,"lift":0},"br":{"a":0,"lift":0},"head":{"dy":0},"tail":16,"mouth":0}
+  ] },
+  "walk": { "fps": 8, "loop": true, "frames": [
+    {"bob":0,"rise":0,"fl":{"a":25,"lift":0},"fr":{"a":-20,"lift":2},"bl":{"a":-22,"lift":2},"br":{"a":22,"lift":0},"head":{"dy":0},"tail":15,"mouth":0},
+    {"bob":-1,"rise":0,"fl":{"a":12,"lift":0},"fr":{"a":-8,"lift":1},"bl":{"a":-12,"lift":1},"br":{"a":12,"lift":0},"head":{"dy":0},"tail":15,"mouth":0},
+    {"bob":0,"rise":0,"fl":{"a":-4,"lift":2},"fr":{"a":8,"lift":0},"bl":{"a":8,"lift":0},"br":{"a":-6,"lift":2},"head":{"dy":0},"tail":15,"mouth":0},
+    {"bob":0,"rise":0,"fl":{"a":-20,"lift":2},"fr":{"a":25,"lift":0},"bl":{"a":22,"lift":0},"br":{"a":-22,"lift":2},"head":{"dy":0},"tail":15,"mouth":0},
+    {"bob":-1,"rise":0,"fl":{"a":-8,"lift":1},"fr":{"a":12,"lift":0},"bl":{"a":12,"lift":0},"br":{"a":-12,"lift":1},"head":{"dy":0},"tail":15,"mouth":0},
+    {"bob":0,"rise":0,"fl":{"a":8,"lift":0},"fr":{"a":-4,"lift":2},"bl":{"a":-6,"lift":2},"br":{"a":8,"lift":0},"head":{"dy":0},"tail":15,"mouth":0}
+  ] },
+  "run": { "fps": 12, "loop": true, "frames": [
+    {"bob":-1,"rise":1,"fl":{"a":40,"lift":0},"fr":{"a":35,"lift":0},"bl":{"a":-38,"lift":3},"br":{"a":-30,"lift":3},"head":{"dy":-1},"tail":30,"mouth":0},
+    {"bob":-2,"rise":0,"fl":{"a":15,"lift":2},"fr":{"a":10,"lift":2},"bl":{"a":-10,"lift":4},"br":{"a":-5,"lift":4},"head":{"dy":-1},"tail":32,"mouth":0},
+    {"bob":-3,"rise":-1,"fl":{"a":-30,"lift":3},"fr":{"a":-35,"lift":3},"bl":{"a":35,"lift":0},"br":{"a":40,"lift":0},"head":{"dy":-2},"tail":34,"mouth":0},
+    {"bob":-2,"rise":0,"fl":{"a":-10,"lift":4},"fr":{"a":-5,"lift":4},"bl":{"a":15,"lift":2},"br":{"a":10,"lift":2},"head":{"dy":-1},"tail":32,"mouth":0}
+  ] },
+  "graze": { "fps": 5, "loop": true, "frames": [
+    {"bob":0,"rise":0,"fl":{"a":0,"lift":0},"fr":{"a":0,"lift":0},"bl":{"a":0,"lift":0},"br":{"a":0,"lift":0},"head":{"dy":2},"tail":15,"mouth":0},
+    {"bob":0,"rise":0,"fl":{"a":0,"lift":0},"fr":{"a":0,"lift":0},"bl":{"a":0,"lift":0},"br":{"a":0,"lift":0},"head":{"dy":7},"tail":12,"mouth":0},
+    {"bob":0,"rise":-1,"fl":{"a":0,"lift":0},"fr":{"a":0,"lift":0},"bl":{"a":0,"lift":0},"br":{"a":0,"lift":0},"head":{"dy":9},"tail":10,"mouth":0},
+    {"bob":0,"rise":-1,"fl":{"a":0,"lift":0},"fr":{"a":0,"lift":0},"bl":{"a":0,"lift":0},"br":{"a":0,"lift":0},"head":{"dy":9},"tail":12,"mouth":0},
+    {"bob":0,"rise":0,"fl":{"a":0,"lift":0},"fr":{"a":0,"lift":0},"bl":{"a":0,"lift":0},"br":{"a":0,"lift":0},"head":{"dy":6},"tail":14,"mouth":0},
+    {"bob":0,"rise":0,"fl":{"a":0,"lift":0},"fr":{"a":0,"lift":0},"bl":{"a":0,"lift":0},"br":{"a":0,"lift":0},"head":{"dy":1},"tail":16,"mouth":0}
+  ] },
+  "attack": { "fps": 12, "loop": false, "hit": 3, "frames": [
+    {"bob":0,"rise":0,"fl":{"a":10,"lift":0},"fr":{"a":6,"lift":0},"bl":{"a":-6,"lift":0},"br":{"a":-10,"lift":0},"head":{"dy":0},"tail":20,"mouth":0},
+    {"bob":1,"rise":-1,"fl":{"a":-5,"lift":0},"fr":{"a":-8,"lift":0},"bl":{"a":-14,"lift":0},"br":{"a":-18,"lift":0},"head":{"dy":-2},"tail":25,"mouth":0},
+    {"bob":-1,"rise":3,"fl":{"a":10,"lift":0},"fr":{"a":6,"lift":0},"bl":{"a":-14,"lift":0},"br":{"a":-18,"lift":0},"head":{"dy":-4},"tail":35,"mouth":1},
+    {"bob":-1,"rise":4,"fl":{"a":28,"lift":2},"fr":{"a":22,"lift":2},"bl":{"a":-14,"lift":0},"br":{"a":-18,"lift":0},"head":{"dy":3},"tail":38,"mouth":1},
+    {"bob":0,"rise":2,"fl":{"a":20,"lift":1},"fr":{"a":14,"lift":1},"bl":{"a":-8,"lift":0},"br":{"a":-12,"lift":0},"head":{"dy":1},"tail":30,"mouth":1},
+    {"bob":0,"rise":0,"fl":{"a":10,"lift":0},"fr":{"a":6,"lift":0},"bl":{"a":-6,"lift":0},"br":{"a":-10,"lift":0},"head":{"dy":0},"tail":22,"mouth":0}
+  ] },
+  "hit": { "fps": 10, "loop": false, "hit": 0, "frames": [
+    {"bob":1,"rise":-2,"fl":{"a":-8,"lift":0},"fr":{"a":-8,"lift":0},"bl":{"a":6,"lift":0},"br":{"a":6,"lift":0},"head":{"dy":3},"tail":30,"mouth":1},
+    {"bob":0,"rise":-1,"fl":{"a":-3,"lift":0},"fr":{"a":-3,"lift":0},"bl":{"a":3,"lift":0},"br":{"a":3,"lift":0},"head":{"dy":1},"tail":22,"mouth":0}
+  ] },
+  "die": { "fps": 8, "loop": false, "frames": [
+    {"bob":1,"rise":-2,"fl":{"a":-10,"lift":0},"fr":{"a":-10,"lift":0},"bl":{"a":8,"lift":0},"br":{"a":8,"lift":0},"head":{"dy":3},"tail":25,"mouth":1},
+    {"bob":3,"rise":-3,"fl":{"a":-20,"lift":0},"fr":{"a":-12,"lift":0},"bl":{"a":14,"lift":0},"br":{"a":10,"lift":0},"head":{"dy":5},"tail":20,"mouth":1,"lay":0.5},
+    {"bob":6,"rise":0,"fl":{"a":30,"lift":0},"fr":{"a":25,"lift":0},"bl":{"a":25,"lift":0},"br":{"a":20,"lift":0},"head":{"dy":7},"tail":10,"mouth":1,"lay":0.9},
+    {"bob":7,"rise":0,"fl":{"a":60,"lift":0},"fr":{"a":55,"lift":0},"bl":{"a":50,"lift":0},"br":{"a":45,"lift":0},"head":{"dy":8},"tail":8,"mouth":1,"lay":1,"side":0.6},
+    {"bob":7,"rise":0,"fl":{"a":80,"lift":0},"fr":{"a":75,"lift":0},"bl":{"a":70,"lift":0},"br":{"a":65,"lift":0},"head":{"dy":9},"tail":6,"mouth":0,"lay":1,"side":1},
+    {"bob":7,"rise":0,"fl":{"a":82,"lift":0},"fr":{"a":78,"lift":0},"bl":{"a":72,"lift":0},"br":{"a":68,"lift":0},"head":{"dy":9},"tail":5,"mouth":0,"lay":1,"side":1}
+  ] },
+  "sleep": { "fps": 2, "loop": true, "frames": [
+    {"bob":0,"rise":0,"fl":{"a":60,"lift":0},"fr":{"a":55,"lift":0},"bl":{"a":50,"lift":0},"br":{"a":45,"lift":0},"head":{"dy":6},"tail":10,"mouth":0,"lay":1},
+    {"bob":0,"rise":0,"fl":{"a":60,"lift":0},"fr":{"a":55,"lift":0},"bl":{"a":50,"lift":0},"br":{"a":45,"lift":0},"head":{"dy":6},"tail":11,"mouth":0,"lay":1}
+  ] }
+}

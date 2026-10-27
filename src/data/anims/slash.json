@@ -1,0 +1,10 @@
+{
+  "slash": { "fps": 12, "loop": false, "hit": 3, "frames": [
+    {"bob":0,"lean":0,"legR":{"a":14,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":100,"b":30},"armL":{"a":92,"b":30},"tool":{"on":true,"a":150,"kind":"hatchet"}},
+    {"bob":0,"lean":-2,"legR":{"a":12,"lift":0},"legL":{"a":-16,"lift":0},"armR":{"a":150,"b":20},"armL":{"a":140,"b":20},"tool":{"on":true,"a":215,"kind":"hatchet"}},
+    {"bob":-1,"lean":-3,"legR":{"a":10,"lift":0},"legL":{"a":-18,"lift":0},"armR":{"a":165,"b":10},"armL":{"a":155,"b":10},"tool":{"on":true,"a":235,"kind":"hatchet"}},
+    {"bob":1,"lean":3,"legR":{"a":24,"lift":0},"legL":{"a":-20,"lift":0},"armR":{"a":95,"b":10},"armL":{"a":88,"b":10},"tool":{"on":true,"a":80,"kind":"hatchet"}},
+    {"bob":1,"lean":4,"legR":{"a":26,"lift":0},"legL":{"a":-20,"lift":0},"armR":{"a":60,"b":15},"armL":{"a":55,"b":15},"tool":{"on":true,"a":40,"kind":"hatchet"}},
+    {"bob":0,"lean":1,"legR":{"a":16,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":85,"b":25},"armL":{"a":78,"b":25},"tool":{"on":true,"a":110,"kind":"hatchet"}}
+  ] }
+}

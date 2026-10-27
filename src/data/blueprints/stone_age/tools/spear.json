@@ -1,0 +1,17 @@
+{
+  "name": "Giáo gỗ",
+  "type": "prop",
+  "size": [16, 16],
+  "anchor": [8, 15],
+  "params": {"stone": 0},
+  "palette": { "line": "#2b1d10", "handle": "#8a5e34", "handleL": "#aa7c48", "tw": "#b88c54", "twL": "#deb87e", "twD": "#805c34", "st": "#8e9498", "stL": "#c0c6c8", "stD": "#60676b", "bind": "#d8c690", "hide": "#a0552f", "hideL": "#c06f43", "hideD": "#7a3d20", "stitch": "#e8d6a8" },
+  "layers": [
+    { "shape": "line", "from": [2, 15], "to": [11, 5], "w": 1, "color": "handle" },
+    { "shape": "line", "from": [3, 15], "to": [12, 5], "w": 1, "color": "handleL" },
+    { "shape": "poly", "points": [[11, 6], [13, 0], [15, 4]], "color": "tw" },
+    { "shape": "pixels", "at": [[13, 2], [13, 3]], "color": "twL" },
+    { "shape": "pixels", "at": [[12, 6], [14, 5]], "color": "twD" },
+    { "shape": "pixels", "at": [[10, 7], [9, 8]], "color": "bind" },
+    { "shape": "outline", "color": "line" }
+  ]
+}

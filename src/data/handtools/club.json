@@ -1,0 +1,31 @@
+{
+  "name": "Club",
+  "handle": {
+    "length": 8,
+    "width": 2,
+    "color": "wood"
+  },
+  "head": [
+    {
+      "x": -1,
+      "y": -1,
+      "w": 4,
+      "h": 5,
+      "color": "head"
+    },
+    {
+      "x": -1,
+      "y": -1,
+      "w": 4,
+      "h": 1,
+      "color": "light"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "w": 1,
+      "h": 4,
+      "color": "dark"
+    }
+  ]
+}

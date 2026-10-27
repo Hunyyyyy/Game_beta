@@ -1,0 +1,36 @@
+{
+  "_note": "distance = tiles from the player's campfire (map is 192 wide, so zone ring = 24 tiles). Strength multiplier = 0.8 + 0.06 * (ring - 1), ring = ceil(distance / 4.8). reward is shown to the player; techs come in M5.",
+  "spring": {
+    "name": "Suối Nguồn", "personality": "peaceful", "angle": 200, "distance": 30,
+    "civilians": 8, "warriors": 4, "weapons": ["club", "spear"], "armor": false,
+    "look": { "hide": "#7a8a4a", "pants": "#4a6a8a" },
+    "relation": 0, "reward": "Dễ giao thương và thu nạp; học T4 Bện sợi",
+    "tribute": { "food": 12, "wood": 6 }
+  },
+  "axe": {
+    "name": "Rìu Đá", "personality": "aggressive", "angle": 320, "distance": 45,
+    "civilians": 15, "warriors": 10, "weapons": ["hatchet", "mace"], "armor": true,
+    "look": { "hide": "#8a3a24", "pants": "#6a2a1a" },
+    "relation": -20, "reward": "Lính chùy, bí quyết chế chùy đá",
+    "tribute": { "stone": 10, "food": 10 }
+  },
+  "swamp": {
+    "name": "Đầm Lầy", "personality": "ambusher", "angle": 80, "distance": 55,
+    "civilians": 12, "warriors": 8, "weapons": ["sling", "club"], "armor": false,
+    "look": { "hide": "#5a6a50", "pants": "#3a4a3a" },
+    "relation": -10, "reward": "Đất sét, sợi; học T5 Dây quăng đá",
+    "tribute": { "food": 10, "wood": 10 }
+  },
+  "relation": {
+    "labels": [[-100, "Thù địch"], [-40, "Trung lập"], [20, "Thân thiện"], [60, "Cống nạp"], [90, "Thu phục"]],
+    "giftFood": 10, "giftGain": 5,
+    "killWarrior": -10, "killCivilian": -25, "attackedPeaceful": -30,
+    "tributeAt": 60, "joinAt": 90
+  },
+  "surrender": { "leaderDown": true, "holdCampSeconds": 30, "moraleBelow": 10 },
+  "morale": {
+    "start": 70, "flee": 25, "fleeRecover": 45, "surrender": 10,
+    "allyDeath": -15, "outnumbered": -0.8, "outnumbering": 0.5, "nearHome": 0.5, "night": -0.3,
+    "leaderNear": 0.3, "leaderFar": -0.2, "winBonus": 20, "backstab": -5, "calm": 0.1
+  }
+}

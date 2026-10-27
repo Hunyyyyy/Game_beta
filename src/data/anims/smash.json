@@ -1,0 +1,10 @@
+{
+  "smash": { "fps": 10, "loop": false, "hit": 3, "frames": [
+    {"bob":0,"lean":0,"legR":{"a":14,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":110,"b":30},"armL":{"a":104,"b":30},"tool":{"on":true,"a":140,"kind":"club"}},
+    {"bob":-1,"lean":-1,"legR":{"a":12,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":160,"b":20},"armL":{"a":155,"b":20},"tool":{"on":true,"a":185,"kind":"club"}},
+    {"bob":-1,"lean":-3,"legR":{"a":10,"lift":0},"legL":{"a":-16,"lift":0},"armR":{"a":175,"b":10},"armL":{"a":170,"b":10},"tool":{"on":true,"a":205,"kind":"club"}},
+    {"bob":1,"lean":4,"legR":{"a":24,"lift":0},"legL":{"a":-20,"lift":0},"armR":{"a":70,"b":30},"armL":{"a":66,"b":30},"tool":{"on":true,"a":60,"kind":"club"}},
+    {"bob":1,"lean":4,"legR":{"a":24,"lift":0},"legL":{"a":-20,"lift":0},"armR":{"a":60,"b":30},"armL":{"a":56,"b":30},"tool":{"on":true,"a":55,"kind":"club"}},
+    {"bob":0,"lean":1,"legR":{"a":16,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":90,"b":25},"armL":{"a":84,"b":25},"tool":{"on":true,"a":120,"kind":"club"}}
+  ] }
+}

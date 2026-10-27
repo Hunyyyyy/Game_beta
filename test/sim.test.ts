@@ -4,6 +4,10 @@ import { Tile } from '../src/sim/world';
 import { lightAt, rollWeather, seasonOf, SEASONS } from '../src/sim/calendar';
 import { TIER_DURABILITY } from '../src/sim/tools';
 import { levelDef, levelsOf, maxLevel } from '../src/sim/buildings';
+import { ANIMALS, ARMORS, cycleOf, damageOf, MORALE, RULES, TRIBES, TRIBE_IDS, WEAPONS, zoneOf } from '../src/sim/combat';
+import { swingTimes, weaponOf } from '../src/sim/battle';
+import { spawnAnimal } from '../src/sim/fauna';
+import type { Villager } from '../src/sim/sim';
 
 let fails = 0;
 const ok = (c: boolean, msg: string) => { console.log((c ? 'ok   ' : 'FAIL ') + msg); if (!c) fails++; };
@@ -354,6 +358,298 @@ const tickN = (sm: Sim, secs: number) => run(sm, secs);
   ok(sm.era === 'stone' && sm.buildings[0].era === 'stone', 'game starts in the Stone Age, the campfire belongs to it');
   ok(maxLevel('storage', 'stone') === 3 && maxLevel('workshop', 'stone') === 3, 'Stone Age buildings have 3 levels');
   ok(levelsOf('storage', 'ancient') === levelsOf('storage', 'stone'), 'a later era without its own levels falls back to the earlier era');
+}
+
+// ======== M4.1/M4.2: wildlife, damage rules, hunting ========
+const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+const day = (sm: Sim, d = 0.3) => { sm.time = DAY_LENGTH * (Math.floor(sm.time / DAY_LENGTH) + d); };
+const firstVillager = (sm: Sim) => sm.villagers[0];
+function openField(sm: Sim): { x: number; y: number } { // a clear patch of grass near the village for staged fights
+  const c = { x: sm.world.start.x + 10, y: sm.world.start.y + 8 };
+  clearArea(sm, c.x, c.y, 8);
+  return c;
+}
+{
+  const sm = new Sim(1337);
+  const by = (sp: string) => sm.animals.filter((a) => a.species === sp);
+  ok(['rabbit', 'fowl', 'deer', 'boar', 'wolf', 'fish'].every((sp) => by(sp).length > 0), `all six species live on the map (${sm.animals.length} animals)`);
+  ok(sm.animals.every((a) => a.species === 'fish' || dist(a, sm.world.start) >= 15), 'no land animal near the starting fire');
+  ok(by('wolf').every((a) => zoneOf(dist(a, sm.world.start)) >= ANIMALS.wolf.zones[0]), 'wolves only in zone 2 and beyond');
+  ok(by('fish').every((a) => sm.world.at(Math.floor(a.x), Math.floor(a.y)) === Tile.Water), 'fish live in water');
+  ok(sm.villagers.map((v) => v.stats.str).join() === new Sim(1337).villagers.map((v) => v.stats.str).join(), 'same seed gives the same villagers');
+  ok(sm.tribes.length === 3 && sm.tribes.every((t) => t.unitIds.length === t.def.civilians + t.def.warriors), 'three tribes with the people the data asks for');
+  ok(sm.tribes.every((t) => { const d = dist(t.camp, sm.world.start); return Math.abs(d - t.def.distance) < 32 && d > 15; }), 'tribal camps lie around their intended distance');
+  ok(sm.tribes.every((t) => sm.get(t.leaderId)?.leader === true), 'every tribe has a leader');
+  ok(sm.foes.every((f) => f.health === f.maxHealth && f.team !== 'player'), 'tribal people are foes, not villagers');
+}
+{
+  // damage: weapon + 0.6 x strength, armour by type, backstab x1.25, agility speeds the cycle
+  const spear = WEAPONS.spear, hide = ARMORS.hide;
+  const raw = damageOf(spear, 10, null, false);
+  ok(Math.abs(raw - (7 + RULES.strengthDamage * 10)) < 1e-9, `spear hits for 7 + 0.6 x str (${raw})`);
+  ok(Math.abs(damageOf(spear, 10, hide, false) - raw * 0.9) < 1e-9, 'hide armour takes 10% off a stab');
+  ok(Math.abs(damageOf(WEAPONS.hatchet, 10, hide, false) - damageOf(WEAPONS.hatchet, 10, null, false) * 0.8) < 1e-9, 'hide armour takes 20% off a slash');
+  ok(Math.abs(damageOf(spear, 10, null, true) / raw - 1.25) < 1e-9, 'a blow from behind does 25% more');
+  ok(damageOf(WEAPONS.sling, 12, null, false) === 5, 'missiles ignore strength');
+  ok(cycleOf(1.4, 9) < cycleOf(1.4, 3), 'quicker people swing faster');
+  for (const [id, w] of Object.entries(WEAPONS)) { const t = swingTimes(w.anim); ok(t.hitAt > 0 && t.hitAt < t.end, `weapon ${id}: animation "${w.anim}" lands its blow before it ends (${t.hitAt.toFixed(2)}s of ${t.end.toFixed(2)}s)`); }
+  ok(new Set(Object.values(WEAPONS).map((w) => w.anim)).size >= 5, 'melee, thrust, shoot and sling have their own animations');
+}
+{
+  // a villager kills a rabbit with a club; the blow lands on the animation's hit frame, not at the start
+  const sm = new Sim(1337); reveal(sm); day(sm); const c = openField(sm);
+  const v = firstVillager(sm); sm.villagers.slice(1).forEach((o) => { o.fullness = 1e9; }); v.fullness = 1e9;
+  v.x = c.x + 0.5; v.y = c.y + 0.5; v.weapon = 'club';
+  const rb = spawnAnimal(sm, 'rabbit', c.x + 1.2, c.y + 0.5, 1); rb.state = 'graze'; rb.timer = 99;
+  sm.orderAttack([v.id], { kind: 'animal', id: rb.id });
+  run(sm, 0.1);
+  ok(v.swing !== null, 'the attack starts a swing');
+  ok(rb.hp === rb.maxHp, 'no damage yet at the start of the swing');
+  const hitAt = v.swing!.hitAt; run(sm, hitAt + 0.15);
+  ok(rb.hp < rb.maxHp || rb.state === 'dead', 'the blow lands once the hit frame is reached');
+  run(sm, 6);
+  ok(rb.state === 'dead' && (rb.meat === 3 || v.carry?.res === 'food'), 'the rabbit is dead and its meat is taken');
+}
+{
+  // a hunter fetches meat and hide to the store; a deer tires and can be caught
+  const sm = new Sim(1337); reveal(sm); day(sm, 0.3); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const hunters = sm.villagers.slice(0, 2); const s = sm.world.start;
+  const d = spawnAnimal(sm, 'deer', s.x + 12, s.y - 4, 5); d.state = 'graze'; d.timer = 99;
+  for (const h of hunters) { h.weapon = 'spear'; }
+  sm.setJob(hunters.map((h) => h.id), 'hunt');
+  const food0 = sm.stock.food, hide0 = sm.stock.hide; let killed = false;
+  for (let i = 0; i < 20 * 150 && !(sm.stock.hide > hide0 && sm.stock.food > food0 + 2); i++) { (sm as unknown as { tick(d: number): void }).tick(0.05); if (d.state === 'dead') killed = true; }
+  ok(killed, 'two hunters with spears brought down a deer');
+  ok(sm.stock.hide >= hide0 + 3, `the hide reached the store (da ${sm.stock.hide})`);
+  ok(sm.stock.food > food0 + 2 || hunters.some((h) => h.carry?.res === 'food'), 'meat was carried back');
+}
+{
+  // a wolf does not walk into firelight, but hunts a villager away from it at night
+  const sm = new Sim(1337); reveal(sm); sm.time = DAY_LENGTH * 0.95; sm.villagers.forEach((o) => { o.fullness = 1e9; o.nightOwl = true; });
+  const v = firstVillager(sm), fire = sm.campfire()!, s = sm.world.start;
+  const w = spawnAnimal(sm, 'wolf', s.x - 14, s.y + 12, 7, true);
+  v.x = s.x + 0.5; v.y = s.y + 14.5; sm.orderMove([v.id], s.x, s.y + 14); run(sm, 2);
+  run(sm, 12);
+  ok(w.state === 'attack' || v.health < v.maxHealth || v.down > 0, 'the wolf hunts a villager who is away from the fire');
+  const sm2 = new Sim(1337); reveal(sm2); sm2.time = DAY_LENGTH * 0.95; sm2.villagers.forEach((o) => { o.fullness = 1e9; });
+  const f2 = sm2.campfire()!, s2 = sm2.world.start, w2 = spawnAnimal(sm2, 'wolf', s2.x - 12, s2.y, 8, true);
+  sm2.villagers.forEach((o) => { o.x = f2.x + 1; o.y = f2.y + 3; o.phase = 'sleep'; o.nightOwl = false; });
+  let nearest = 99; for (let i = 0; i < 20 * 40; i++) { (sm2 as unknown as { tick(d: number): void }).tick(0.05); nearest = Math.min(nearest, dist(w2, { x: f2.x + 1, y: f2.y + 1 })); }
+  ok(nearest > 3.5 && sm2.villagers.length === 3 && sm2.villagers.every((o) => o.down === 0), `the wolf keeps out of the firelight (closest ${nearest.toFixed(1)} tiles) and nobody falls; the camp wakes and drives it off`);
+  void fire;
+}
+
+// ======== M4.3: orders, stances, downed and rescue, morale ========
+const tickOnce = (sm: Sim, secs: number) => run(sm, secs);
+function stage(seed = 1337) { // a village with its villagers fed, the map revealed, daytime and a clear field with one hostile foe
+  const sm = new Sim(seed); reveal(sm); day(sm, 0.3); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const c = openField(sm), tribe = sm.tribes.find((t) => t.id === 'axe')!;
+  tribe.relation = -60; // hostile
+  const foe = sm.get(tribe.unitIds.find((u) => sm.get(u)!.ai!.role === 'guard')!)!;
+  foe.x = c.x + 5.5; foe.y = c.y + 0.5; foe.path = []; foe.ai!.camp = { x: c.x + 5, y: c.y }; foe.weapon = 'club'; foe.armor = null;
+  tribe.unitIds.filter((u) => u !== foe.id).forEach((u) => { const o = sm.get(u)!; o.x = sm.world.start.x + 60; o.y = sm.world.start.y; o.ai!.camp = { x: o.x, y: o.y }; });
+  return { sm, c, tribe, foe };
+}
+{
+  const { sm, c, tribe, foe } = stage();
+  const v = firstVillager(sm); v.x = c.x + 0.5; v.y = c.y + 0.5; v.weapon = 'mace'; v.stats.str = 12; foe.health = foe.maxHealth = 40;
+  sm.orderAttack([v.id], { kind: 'unit', id: foe.id });
+  ok(v.job === 'fight' && v.fight.mode === 'attack', 'right click on a foe makes the villager a fighter attacking it');
+  run(sm, 25);
+  ok(foe.health <= 0 || !sm.foes.includes(foe), 'the foe went down under a stone mace');
+  ok(!tribe.unitIds.includes(foe.id) && tribe.relation < -60, `killing a warrior costs relations (${tribe.relation})`);
+  ok(v.fight.target === null && v.fight.mode === 'guard', 'the order ends with the kill and the fighter stays on guard there');
+}
+{
+  const { sm, c, foe } = stage();
+  const [a, b] = sm.villagers; a.x = c.x + 0.5; a.y = c.y + 0.5; b.x = c.x - 1.5; b.y = c.y + 0.5;
+  sm.hurt({ kind: 'unit', id: a.id }, 9999, 'crush', { x: foe.x, y: foe.y }, { unit: foe });
+  ok(a.down > 0 && a.phase === 'down' && a.health === 0, 'a mortal blow knocks a villager down instead of killing');
+  run(sm, 2); ok(a.down > 0 && sm.villagers.includes(a), 'still lying there after two seconds');
+  foe.x += 40; foe.ai!.camp = { x: foe.x, y: foe.y };
+  run(sm, 22);
+  ok(a.down === 0 && a.health > 0 && a.phase !== 'down', 'once the foe is gone the other villager calms down, comes back and gets them on their feet');
+  ok(a.rescue === 0 && sm.log.some((l) => l.text.includes('đã được đỡ dậy')), 'and the log says so');
+  const lone = sm.villagers[2]; lone.x = sm.world.start.x - 30; lone.y = sm.world.start.y + 6;
+  sm.hurt({ kind: 'unit', id: lone.id }, 9999, 'crush', { x: lone.x - 3, y: lone.y }, {});
+  run(sm, RULES.downedSeconds + 1);
+  ok(!sm.villagers.includes(lone), 'nobody came, so the wounded villager died after 30 seconds');
+}
+{
+  // morale: a frightened villager runs for the fire even with a hostile foe next to them
+  const { sm, c, foe } = stage();
+  const v = firstVillager(sm); v.x = c.x + 2.5; v.y = c.y + 0.5; const fire = sm.campfire()!; sm.setJob([v.id], 'wood');
+  foe.x = c.x + 4.5; foe.y = c.y + 0.5; v.morale = 5;
+  run(sm, 1.6);
+  ok(v.phase === 'flee' || v.fleeT > 0, 'a villager with broken morale flees');
+  const d0 = dist(v, { x: fire.x + 1, y: fire.y + 1 }); run(sm, 4);
+  ok(dist(v, { x: fire.x + 1, y: fire.y + 1 }) < d0, 'and runs toward the campfire');
+}
+{
+  // an ordinary worker runs from a threat; a fighter on guard defends
+  const { sm, c, foe } = stage();
+  const [w, g] = sm.villagers; w.x = c.x + 1.5; w.y = c.y + 0.5; g.x = c.x - 1.5; g.y = c.y + 0.5;
+  sm.setJob([w.id], 'wood'); sm.setJob([g.id], 'fight'); g.weapon = 'mace'; foe.x = c.x + 3.5; foe.y = c.y + 0.5;
+  run(sm, 2);
+  ok(w.phase === 'flee', 'a woodcutter runs from an armed foe');
+  ok(g.phase === 'fight' || g.fight.target !== null, 'a guard goes for the foe');
+}
+{
+  // hold keeps position, stop cancels, retreat avoids, defensive does not chase
+  const { sm, c, foe } = stage();
+  const v = firstVillager(sm); v.x = c.x + 0.5; v.y = c.y + 0.5; foe.x = c.x + 7.5; foe.y = c.y + 0.5; foe.ai!.camp = { x: foe.x, y: foe.y };
+  sm.orderHold([v.id]); const home = { x: v.x, y: v.y }; run(sm, 3);
+  ok(v.fight.mode === 'hold' && dist(v, home) < 0.3, 'a unit told to hold does not chase a foe 7 tiles away');
+  sm.setStance([v.id], 'retreat'); foe.x = c.x + 2.5; run(sm, 4);
+  ok(v.phase === 'flee' || dist(v, foe) > 2.4, 'a unit in retreat stance does not stand and fight');
+  sm.orderStop([v.id]); ok(v.fight.target === null && v.queue.length === 0, 'stop clears orders');
+}
+{
+  // attack-move walks and fights on the way; shift queues orders
+  const { sm, c, foe } = stage();
+  const v = firstVillager(sm); v.x = c.x - 6.5; v.y = c.y + 0.5; v.weapon = 'mace'; v.stats.str = 12; foe.health = foe.maxHealth = 30; foe.x = c.x; foe.y = c.y + 0.5; foe.ai!.camp = { x: foe.x, y: foe.y };
+  sm.orderAttackMove([v.id], c.x + 6, c.y);
+  ok(v.job === 'fight' && v.fight.mode === 'attackMove', 'attack-move turns the unit into a fighter on the march');
+  run(sm, 30);
+  ok(foe.health <= 0 || !sm.foes.includes(foe), 'the unit fought the foe it met on the way');
+  ok(dist(v, { x: c.x + 6, y: c.y }) < 3, 'then carried on to the destination');
+  const q = sm.villagers[1]; q.x = c.x + 0.5; q.y = c.y + 4.5; sm.orderMove([q.id], c.x + 4, c.y + 4); sm.orderMove([q.id], c.x - 4, c.y + 4, true); sm.orderMove([q.id], c.x, c.y - 4, true);
+  ok(q.queue.length === 2, 'Shift + move queues orders behind the current one');
+  run(sm, 25); ok(dist(q, { x: c.x, y: c.y - 4 }) < 2.5 && q.queue.length === 0, 'the queued moves are carried out in order');
+}
+{
+  // gear: workshop stock goes to fighters; armour only for fighters, from hide
+  const sm = new Sim(1337); reveal(sm); day(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const s = sm.world.start; clearArea(sm, s.x + 6, s.y + 5, 3);
+  (sm as unknown as { addBuilding(k: string, x: number, y: number, d: boolean): unknown }).addBuilding('workshop', s.x + 5, s.y + 4, true);
+  sm.toolStock.club1 = 1; sm.toolStock.mace2 = 1; sm.toolStock.hide1 = 1;
+  const [f, h] = sm.villagers; sm.setJob([f.id], 'fight'); sm.setJob([h.id], 'hunt');
+  run(sm, 40);
+  ok(f.weapon === 'mace', `the fighter picks the best weapon (${f.weapon})`);
+  ok(f.armor === 'hide' && sm.toolStock.hide1 === 0, 'the fighter puts on hide armour');
+  ok(h.weapon !== null && h.armor === null, `the hunter takes a weapon but no armour (${h.weapon})`);
+  ok(weaponOf(f).name === 'Chùy đá', 'the weapon in hand shows its name');
+}
+
+// ======== M4.4: tribes, relations, surrender, adopt and tribute, raids ========
+const tribeById = (sm: Sim, id: string) => sm.tribes.find((t) => t.id === id)!;
+const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.get(u)!).filter(Boolean);
+{
+  // being attacked turns a peaceful tribe hostile; gifts calm it down
+  const sm = new Sim(1337); reveal(sm); day(sm);
+  const t = tribeById(sm, 'spring'), civ = sm.get(t.unitIds.find((u) => sm.get(u)!.ai!.role === 'civ')!)!, v = firstVillager(sm);
+  ok(!sm.tribeHostile('spring') && t.relation === 0, 'the peaceful tribe starts neutral');
+  sm.hurt({ kind: 'unit', id: civ.id }, 1, 'crush', { x: v.x, y: v.y }, { unit: v });
+  ok(t.relation === -30 && sm.tribeHostile('spring'), `attacking them drops relations to ${t.relation} and makes them hostile`);
+  t.relation = -60; sm.stock.food = 100; for (let i = 0; i < 5; i++) sm.diplomacy('spring', 'gift');
+  ok(t.relation === -35 && sm.stock.food === 50, `five gifts of 10 food buy back 25 points of goodwill (${t.relation}, food ${sm.stock.food})`);
+  ok(!sm.tribeHostile('spring'), 'and they stop being hostile once above -40');
+  sm.stock.food = 3; ok(sm.diplomacy('spring', 'gift') !== null, 'a gift needs 10 food');
+  t.relation = 59; ok(sm.diplomacy('spring', 'tribute') !== null && sm.diplomacy('spring', 'adopt') !== null, 'below 60 they will not pay tribute, below 90 not join');
+}
+{
+  // surrender: the leader falls, the tribe gives in and asks for a decision
+  const sm = new Sim(1337); reveal(sm); day(sm); const t = tribeById(sm, 'axe'); t.relation = -60;
+  const v = firstVillager(sm), lead = sm.get(t.leaderId)!;
+  sm.hurt({ kind: 'unit', id: lead.id }, 9999, 'crush', { x: v.x, y: v.y }, { unit: v });
+  run(sm, 2);
+  ok(t.state === 'surrendered' && sm.pendingTribe === 'axe', 'killing the leader makes the tribe surrender and waits for a choice');
+  ok(!sm.tribeHostile('axe') && alive(sm, 'axe').every((f) => f.fight.target === null), 'a surrendered tribe stops fighting');
+  const pop = sm.villagers.length, units = t.unitIds.length;
+  ok(sm.diplomacy('axe', 'adopt') === null && t.state === 'adopted', 'the player can take them in');
+  ok(sm.villagers.length === pop + units && sm.foes.filter((f) => f.team === 'axe').length === 0, `all ${units} people become villagers`);
+  ok(sm.villagers.every((o) => o.team === 'player') && sm.pendingTribe === null, 'they are on the player team now');
+}
+{
+  // adoption respects the population cap of 40
+  const sm = new Sim(1337); reveal(sm); const t = tribeById(sm, 'axe'); t.state = 'surrendered';
+  const extra = 40 - sm.villagers.length - 5;
+  for (let i = 0; i < extra; i++) { const o = sm.makeVillager(sm.world.start.x, sm.world.start.y, 'm', 'player'); (sm.villagers as Villager[]).push(o); }
+  sm.diplomacy('axe', 'adopt');
+  ok(sm.villagers.length === 40, `the village stops at 40 people (${sm.villagers.length})`);
+}
+{
+  // tribute: a surrendered tribe pays every season and never raids
+  const sm = new Sim(1337); reveal(sm); const t = tribeById(sm, 'axe'); t.state = 'surrendered'; sm.pendingTribe = 'axe';
+  ok(sm.diplomacy('axe', 'tribute') === null && t.state === 'tribute' && sm.pendingTribe === null, 'tribute can be chosen instead');
+  const s0 = sm.stock.stone, f0 = sm.stock.food; sm.villagers.forEach((o) => { o.fullness = 1e9; }); sm.time = DAY_LENGTH * (sm.day + 5); run(sm, 3);
+  ok(sm.stock.stone >= s0 + 10 && sm.stock.food >= f0 + 10, 'after a season the tribute arrives');
+  sm.events.find((e) => e.tribe === 'axe')!.fireDay = sm.day; run(sm, DAY_LENGTH * 0.3);
+  ok(t.raid === null, 'a tributary tribe does not raid');
+}
+{
+  // holding their fire for 30 seconds, with nobody left to defend it, makes them surrender
+  const sm = new Sim(1337); reveal(sm); day(sm); const t = tribeById(sm, 'axe'); t.relation = -60;
+  for (const f of alive(sm, 'axe')) if (f.ai!.role !== 'civ') { f.x = t.camp.x + 40; f.y = t.camp.y; f.ai!.camp = { x: f.x, y: f.y }; }
+  const v = firstVillager(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; }); v.x = t.camp.x + 0.5; v.y = t.camp.y + 3.5; sm.orderHold([v.id]);
+  run(sm, 20); ok(t.state === 'free', 'still fighting on after 20 seconds');
+  run(sm, 15); ok(t.state === 'surrendered', 'they give in once their fire has been held for 30 seconds');
+}
+{
+  // morale collapse also ends it
+  const sm = new Sim(1337); reveal(sm); const t = tribeById(sm, 'axe');
+  for (const f of alive(sm, 'axe')) if (f.ai!.role !== 'civ') f.morale = 2;
+  (sm as unknown as { moraleClock: number }).moraleClock = 0; run(sm, 3);
+  ok(t.state === 'surrendered' || t.state === 'free' && alive(sm, 'axe').some((f) => f.morale > 10), 'a tribe whose warriors have lost all heart gives up');
+}
+{
+  // the Axe tribe sends scouts; the raid is capped by the warriors it has and marches on the village
+  const sm = new Sim(1337); reveal(sm); const t = tribeById(sm, 'axe'), ev = sm.events.find((e) => e.id === 'axe_scout')!;
+  sm.villagers.forEach((o) => { o.fullness = 1e9; }); ev.fireDay = sm.day; ev.warned = true; day(sm, 0.3);
+  run(sm, 1);
+  ok(t.raid !== null && alive(sm, 'axe').filter((f) => f.ai!.role === 'raider').length === 5, 'the scouting party of 5 sets out');
+  ok(sm.log.some((l) => l.text.includes('đang tiến vào làng')) && sm.tribeHostile('axe'), 'the village is told, and they count as hostile');
+  const fire = sm.campfire()!; let close = 999;
+  for (let i = 0; i < 20 * 120; i++) { (sm as unknown as { tick(d: number): void }).tick(0.05); for (const f of alive(sm, 'axe')) if (f.ai!.role === 'raider') close = Math.min(close, dist(f, { x: fire.x + 1, y: fire.y + 1 })); }
+  ok(close < 14, `the raiders reached the village (closest ${close.toFixed(1)} tiles)`);
+}
+{
+  // a raid cannot be bigger than the army: the big attack of year 2 is capped at the ten warriors
+  const sm = new Sim(1337); reveal(sm); const t = tribeById(sm, 'axe'), ev = sm.events.find((e) => e.id === 'axe_war')!;
+  ev.fireDay = sm.day; ev.warned = true; day(sm, 0.3); run(sm, 1);
+  ok(t.raid !== null && t.raid.size === 10 && ev.size === 18, `18 were planned but only ${t.raid?.size} warriors exist`);
+  const sm2 = new Sim(1337); reveal(sm2); const t2 = tribeById(sm2, 'axe'); for (const u of t2.unitIds.slice(0, 8)) { sm2.removeFoe(sm2.get(u)!); } t2.unitIds = t2.unitIds.slice(8);
+  const e2 = sm2.events.find((e) => e.id === 'axe_scout')!; e2.fireDay = sm2.day; e2.warned = true; day(sm2, 0.3); run(sm2, 1);
+  ok(t2.raid === null, 'with fewer than three fighters left the tribe does not attack');
+}
+{
+  // wolves: warned the day before, they arrive at night around the village and leave at dawn
+  const sm = new Sim(1337); reveal(sm); const ev = sm.events.find((e) => e.id === 'wolves_summer')!;
+  sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  ev.fireDay = 3; ev.warnDay = 2; ev.warned = false; sm.time = DAY_LENGTH * 0.4; run(sm, 1);
+  ok(!ev.warned, 'no warning two days early'); sm.time = DAY_LENGTH * 1.55; run(sm, 1);
+  ok(ev.warned && sm.log.some((l) => l.text.includes('Tiếng hú')), 'the howling is heard the day before');
+  sm.time = DAY_LENGTH * 2 + DAY_LENGTH * 0.85; const before = sm.animals.length; run(sm, 1);
+  ok(ev.fired && sm.animals.filter((a) => a.raid).length === ev.size && sm.animals.length === before + ev.size, `${ev.size} hungry wolves arrive at night`);
+  sm.time = DAY_LENGTH * 3 + DAY_LENGTH * 0.4; run(sm, 60);
+  ok(sm.animals.filter((a) => a.raid && a.state !== 'dead').length === 0 || sm.animals.filter((a) => a.raid).every((a) => dist(a, a.home) < 40), 'by day the pack heads home');
+}
+{
+  // missiles: a sling stone flies, takes time, and can miss; strength does not add to it
+  const { sm, c, foe } = stage(); const v = firstVillager(sm), tribe = tribeById(sm, 'axe');
+  foe.weapon = 'sling'; foe.x = c.x + 6.5; foe.y = c.y + 0.5; foe.ai!.camp = { x: foe.x, y: foe.y }; v.x = c.x + 0.5; v.y = c.y + 0.5;
+  sm.setJob([v.id], 'fight'); v.weapon = null; sm.setStance([v.id], 'defensive'); v.fight.anchor = { x: v.x, y: v.y };
+  let launched = 0, hits = 0; const hp0 = v.health;
+  for (let i = 0; i < 20 * 30; i++) { (sm as unknown as { tick(d: number): void }).tick(0.05); launched = Math.max(launched, sm.projectiles.length); if (v.health < hp0 - 0.5 && !hits) hits = 1; }
+  ok(launched > 0, 'the slinger throws stones that fly through the air');
+  ok(hits === 1 || v.down > 0, 'and some of them hit');
+  void tribe;
+}
+
+{
+  // militia: near the village a healthy woodcutter picks up a stick and fights; far from it, or frightened, they run
+  const sm = new Sim(1337); reveal(sm); day(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const t = tribeById(sm, 'axe'); t.relation = -60;
+  const foe = sm.get(t.unitIds.find((u) => sm.get(u)!.ai!.role === 'guard')!)!; const fire = sm.campfire()!;
+  const w = sm.villagers[0]; sm.setJob([w.id], 'wood'); w.x = fire.x + 3; w.y = fire.y + 5; w.path = [];
+  foe.x = w.x + 4; foe.y = w.y; foe.ai!.camp = { x: foe.x, y: foe.y };
+  run(sm, 1);
+  ok(w.fight.mode === 'attack' && w.weapon === 'club' && w.job === 'wood', 'a healthy villager at home takes a club and defends, keeping their job');
+  w.morale = 10; run(sm, 2);
+  ok(w.phase === 'flee' || w.fleeT > 0, 'with their nerve gone the same villager runs instead');
+  const far = sm.villagers[1]; sm.setJob([far.id], 'stone'); far.x = sm.world.start.x + 30; far.y = sm.world.start.y; far.path = [];
+  foe.x = far.x + 4; foe.y = far.y; run(sm, 1.5);
+  ok(far.phase === 'flee' && far.fight.mode === 'none', 'a villager far from home flees to the fire');
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');

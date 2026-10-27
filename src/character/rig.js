@@ -4,9 +4,15 @@ import axe from '../data/handtools/axe.json';
 import pick from '../data/handtools/pick.json';
 import hammer from '../data/handtools/hammer.json';
 import hoe from '../data/handtools/hoe.json';
+import club from '../data/handtools/club.json';
+import spear from '../data/handtools/spear.json';
+import mace from '../data/handtools/mace.json';
+import hatchet from '../data/handtools/hatchet.json';
+import sling from '../data/handtools/sling.json';
+import bow from '../data/handtools/bow.json';
 
 /* Hand-held tools are drawn from JSON (src/data/handtools). handTools may be replaced at runtime (the animation viewer uses this to try out designs). */
-const handTools = { axe, pick, hammer, hoe };
+const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow };
 
 /* ---- Lõi vẽ dân pixel: không phụ thuộc DOM ---- */
 const W = 40, H = 48, CX = 20;
@@ -379,7 +385,7 @@ function defaultAnims() {
 }
 function formatAnims(anims) {
   return '{\n' + Object.entries(anims).map(([k, v]) =>
-    '  "' + k + '": { "fps": ' + v.fps + ', "loop": ' + v.loop + ', "frames": [\n' +
+    '  "' + k + '": { "fps": ' + v.fps + ', "loop": ' + v.loop + (v.hit === undefined ? '' : ', "hit": ' + v.hit) + ', "frames": [\n' +
     v.frames.map(f => '    ' + JSON.stringify(f)).join(',\n') + '\n  ] }').join(',\n') + '\n}';
 }
 export { W, H, CX, renderFrame, defaultAnims, formatAnims, palette, handTools, renderTool, bakeTool, toolAnchor, unpackShapes, packPixels, HAND_Y };

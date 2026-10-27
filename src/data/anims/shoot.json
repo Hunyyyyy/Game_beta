@@ -1,0 +1,10 @@
+{
+  "shoot": { "fps": 10, "loop": false, "hit": 4, "frames": [
+    {"bob":0,"lean":0,"legR":{"a":12,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":80,"b":10},"armL":{"a":70,"b":20},"tool":{"on":true,"a":180,"kind":"bow"}},
+    {"bob":0,"lean":-1,"legR":{"a":12,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":85,"b":5},"armL":{"a":60,"b":40},"tool":{"on":true,"a":180,"kind":"bow"}},
+    {"bob":0,"lean":-2,"legR":{"a":12,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":88,"b":0},"armL":{"a":40,"b":-70},"tool":{"on":true,"a":180,"kind":"bow"}},
+    {"bob":0,"lean":-3,"legR":{"a":12,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":90,"b":0},"armL":{"a":30,"b":-80},"tool":{"on":true,"a":180,"kind":"bow"}},
+    {"bob":0,"lean":0,"legR":{"a":12,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":90,"b":0},"armL":{"a":60,"b":-20},"tool":{"on":true,"a":180,"kind":"bow"}},
+    {"bob":0,"lean":0,"legR":{"a":12,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":80,"b":10},"armL":{"a":70,"b":20},"tool":{"on":true,"a":180,"kind":"bow"}}
+  ] }
+}

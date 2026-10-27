@@ -1,0 +1,16 @@
+{
+  "name": "Áo da thú",
+  "type": "prop",
+  "size": [16, 16],
+  "anchor": [8, 15],
+  "params": {"stone": 0},
+  "palette": { "line": "#2b1d10", "handle": "#8a5e34", "handleL": "#aa7c48", "tw": "#b88c54", "twL": "#deb87e", "twD": "#805c34", "st": "#8e9498", "stL": "#c0c6c8", "stD": "#60676b", "bind": "#d8c690", "hide": "#a0552f", "hideL": "#c06f43", "hideD": "#7a3d20", "stitch": "#e8d6a8" },
+  "layers": [
+    { "shape": "poly", "points": [[5, 2], [11, 2], [15, 5], [13, 8], [12, 7], [12, 15], [4, 15], [4, 7], [3, 8], [1, 5]], "color": "hide" },
+    { "shape": "rect", "x": 6, "y": 2, "w": 4, "h": 2, "color": "hideD" },
+    { "shape": "line", "from": [8, 4], "to": [8, 14], "w": 1, "color": "hideD" },
+    { "shape": "pixels", "at": [[8, 6], [8, 9], [8, 12]], "color": "stitch" },
+    { "shape": "rect", "x": 4, "y": 13, "w": 8, "h": 2, "color": "hideL" },
+    { "shape": "outline", "color": "line" }
+  ]
+}

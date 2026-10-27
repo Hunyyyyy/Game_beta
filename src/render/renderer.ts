@@ -2,6 +2,8 @@ import { Building, BuildingKind, BUILDINGS } from '../sim/buildings';
 import type { WeatherKind } from '../sim/calendar';
 import { TILE } from '../sim/constants';
 import type { Sim, Villager } from '../sim/sim';
+import type { Animal } from '../sim/fauna';
+import type { Tribe } from '../sim/tribes';
 import { hash2 } from '../sim/rng';
 import { Tile } from '../sim/world';
 import { Prop, Sprites, SPRITE_FEET } from './sprites';
@@ -12,7 +14,7 @@ export interface Marker { x: number; y: number; age: number }
 
 export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean }
 
-interface Drawable { y: number; kind: 'tree' | 'rock' | 'bush' | 'villager' | 'building'; i: number; j: number; v?: Villager; b?: Building }
+interface Drawable { y: number; kind: 'tree' | 'rock' | 'bush' | 'villager' | 'building' | 'animal' | 'camp'; i: number; j: number; v?: Villager; b?: Building; a?: Animal; t?: Tribe }
 
 const FOG_RGB = [8, 10, 20];
 /** Weather particles: drop/flake count (per 1000×700 px), extra dimming, wind slant, lightning chance. */
@@ -133,7 +135,14 @@ export class Renderer {
     }
   }
 
-  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null): void {
+  /** Small health bar over a unit or animal. */
+  private bar(wx: number, wy: number, frac: number, color: string): void {
+    const { ctx, cam } = this, z = cam.zoom, p = this.worldToScreen(wx, wy), w = 16 * z;
+    ctx.fillStyle = 'rgba(20,14,8,.75)'; ctx.fillRect(p.x - w / 2 - z * 0.5, p.y - 0.5 * z, w + z, 3 * z);
+    ctx.fillStyle = color; ctx.fillRect(p.x - w / 2, p.y, w * Math.max(0, Math.min(1, frac)), 2 * z);
+  }
+
+  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal'; id: number } | null = null): void {
     const { ctx, cam, sim } = this, z = cam.zoom, world = sim.world, N = world.size, sp = this.sprites;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
@@ -181,6 +190,10 @@ export class Renderer {
       list.push({ y: ay, kind: 'building', i: 0, j: 0, b });
     }
     for (const v of sim.villagers) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
+    const seen = (x: number, y: number) => sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
+    for (const f of sim.foes) if (seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
+    for (const a of sim.animals) if (seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
+    for (const t of sim.tribes) if (t.state !== 'adopted' && sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: 'camp', i: 0, j: 0, t });
     list.sort((a, b) => a.y - b.y);
     for (const d of list) {
       if (d.kind === 'tree') {
@@ -199,13 +212,31 @@ export class Renderer {
           ctx.fillStyle = 'rgba(20,14,8,.7)'; ctx.fillRect(p.x - w / 2, p.y - 4 * z, w, 5 * z);
           ctx.fillStyle = '#e0a23c'; ctx.fillRect(p.x - w / 2 + z, p.y - 3 * z, (w - 2 * z) * b.progress, 3 * z);
         }
+      } else if (d.kind === 'animal' && d.a) {
+        const a = d.a, box = sp.animalBox(a.species), s = sp.animal(a), fx = a.x * TILE, fy = a.y * TILE;
+        const fade = a.state === 'dead' ? Math.min(1, a.carcass / 10) : 1;
+        if (a.state !== 'dead') { ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(Math.round((fx - cx) * z), Math.round((fy - cy) * z), box.w * 0.3 * z, box.h * 0.1 * z, 0, 0, Math.PI * 2); ctx.fill(); }
+        const prev = ctx.globalAlpha; ctx.globalAlpha = fade;
+        ctx.drawImage(s, Math.round((fx - box.ax - cx) * z), Math.round((fy - box.ay - cy) * z), s.width * z, s.height * z);
+        ctx.globalAlpha = prev;
+        if (a.state !== 'dead' && a.hp < a.maxHp) this.bar(fx, fy - box.ay - 2, a.hp / a.maxHp, '#d9534f');
+      } else if (d.kind === 'camp' && d.t) {
+        const t = d.t, sp0 = this.sprites;
+        for (const p of t.props) {
+          if (p.kind === 'fire') { if (t.state === 'destroyed') continue; const [ax, ay] = this.buildingAnchor('campfire', p.x, p.y); this.prop(sp0.building('campfire', 'stone', 1, 4), ax, ay, time); }
+          else { const [ax, ay] = this.buildingAnchor('storage', p.x, p.y); this.prop(sp0.building('storage', 'stone', 1, 4), ax, ay, time, t.state === 'destroyed' ? 0.5 : 1); }
+        }
       } else if (d.v) {
         const s = sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
-        if (d.v.phase === 'sleep') {
+        if (d.v.phase === 'sleep' || d.v.phase === 'down') {
           // lying asleep: sprite rotated 90°, head to the left
           ctx.save(); ctx.translate(Math.round((fx + 16 - cx) * z), Math.round((fy - 2 - cy) * z)); ctx.rotate(-Math.PI / 2);
           ctx.drawImage(s, -SPRITE_FEET.x * z, -SPRITE_FEET.y * z, s.width * z, s.height * z); ctx.restore();
         } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
+        const v = d.v;
+        if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - 46, v.health / v.maxHealth, v.team === 'player' ? '#6bbf59' : '#d9534f');
+        if (v.down > 0) { ctx.fillStyle = '#ffd27a'; ctx.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 30); ctx.fillText(`${Math.ceil(v.down)}s`, p.x, p.y); }
+        if (v.phase === 'flee') { ctx.fillStyle = '#fff6e8'; ctx.font = `700 ${Math.max(12, 7 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 50); ctx.fillText('!', p.x, p.y); }
       }
     }
 
@@ -253,6 +284,19 @@ export class Renderer {
       ctx.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
       ctx.strokeStyle = ghost.ok ? '#bff0b0' : '#ffb4a8'; ctx.lineWidth = 2;
       ctx.strokeRect(px(ghost.x) + 1, py(ghost.y) + 1, d.w * ts - 2, d.h * ts - 2);
+    }
+
+    // ---- missiles in flight ----
+    for (const m of sim.projectiles) {
+      const p = this.worldToScreen(m.x * TILE, m.y * TILE), dx = m.tx - m.x, dy = m.ty - m.y, d = Math.hypot(dx, dy) || 1;
+      ctx.strokeStyle = m.kind === 'arrow' ? '#e8d6a8' : '#c9ced1'; ctx.fillStyle = ctx.strokeStyle; ctx.lineWidth = Math.max(1, z);
+      if (m.kind === 'arrow') { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - (dx / d) * 7 * z, p.y - (dy / d) * 7 * z); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.arc(p.x, p.y, 1.6 * z, 0, Math.PI * 2); ctx.fill(); }
+    }
+    // ---- the unit or animal being inspected ----
+    if (inspect) {
+      const e = inspect.kind === 'unit' ? sim.get(inspect.id) : sim.animalById.get(inspect.id);
+      if (e) { const p = this.worldToScreen(e.x * TILE, e.y * TILE); ctx.strokeStyle = '#ff8a7a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(p.x, p.y + z, 11 * z, 5 * z, 0, 0, Math.PI * 2); ctx.stroke(); }
     }
 
     // ---- selected building ----

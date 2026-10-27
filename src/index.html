@@ -1,153 +1,176 @@
 <title>Làng Đồ Đá</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <style>
 :root {
   --bg: #f1e8d5; --panel: #e8dcc2; --panel-2: #dfd0b0; --fg: #3a2c1c; --muted: #7a6850; --line: #bfa97f;
-  --accent: #a4481f; --accent-fg: #fff6e8; --hud: rgba(241,232,213,.86); --ring: #6a5330;
+  --accent: #a4481f; --accent-fg: #fff6e8; --hud: rgba(241,232,213,.9); --ring: #6a5330; --good: #4f8a38; --bad: #b8433a;
+  --game-bg: #0b0d16;
+  /* everything pinned to a screen edge keeps clear of a phone's system bars */
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px); --sal: 0px; --sar: 0px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #1d1710; --panel: #2a2217; --panel-2: #342a1c; --fg: #ecdfc4; --muted: #a8977a; --line: #4d3f29;
-  --accent: #e08a52; --accent-fg: #26180c; --hud: rgba(29,23,16,.86); --ring: #8a7048; color-scheme: dark; } }
+  --accent: #e08a52; --accent-fg: #26180c; --hud: rgba(29,23,16,.9); --ring: #8a7048; --good: #7ac15c; --bad: #e0705f; color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #1d1710; --panel: #2a2217; --panel-2: #342a1c; --fg: #ecdfc4; --muted: #a8977a; --line: #4d3f29;
-  --accent: #e08a52; --accent-fg: #26180c; --hud: rgba(29,23,16,.86); --ring: #8a7048; color-scheme: dark; }
-* { box-sizing: border-box; }
+  --accent: #e08a52; --accent-fg: #26180c; --hud: rgba(29,23,16,.9); --ring: #8a7048; --good: #7ac15c; --bad: #e0705f; color-scheme: dark; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
-body { background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.45;
-  padding-block: 18px 36px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-main { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
-h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 26px; margin: 0; text-wrap: balance; }
-.sub { margin: 4px 0 0; color: var(--muted); max-width: 72ch; }
-.stage { position: relative; height: min(78vh, 740px); min-height: 480px; border: 3px solid var(--ring); border-radius: 10px; overflow: hidden; background: #0b0d16; }
+html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+body { background: var(--game-bg); color: var(--fg); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.35; user-select: none; -webkit-user-select: none; }
+#app { position: fixed; inset: 0; }
 #view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; cursor: crosshair; image-rendering: pixelated; }
-.hud { position: absolute; background: var(--hud); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; backdrop-filter: blur(2px); }
-.bar { position: absolute; left: 10px; right: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: flex-start; pointer-events: none; }
-.bar > .hud { position: static; pointer-events: auto; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
-.res { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 13px; }
-.res i { width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(0,0,0,.35); display: inline-block; }
-.res small { font-weight: 500; color: var(--muted); }
-.res.full b { color: var(--accent); }
-.res.warn small { color: var(--accent); font-weight: 700; }
-.clock { font-size: 13px; font-weight: 600; min-width: 9ch; cursor: help; }
-.grp { display: inline-flex; gap: 4px; flex-wrap: wrap; }
-.panel { position: absolute; left: 10px; bottom: 10px; width: min(440px, calc(100% - min(160px, 28vw) - 30px)); display: grid; gap: 6px; }
-.panel > * { background: var(--hud); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; backdrop-filter: blur(2px); }
-.panel { max-height: calc(100% - 158px); overflow: auto; }
-.craft .hint { margin: 0; color: var(--muted); font-size: 12px; }
-#recipes { display: grid; gap: 4px; }
-.rec { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; padding: 3px 0; border-top: 1px solid var(--line); }
-.rec canvas { width: 32px; height: 32px; image-rendering: pixelated; }
-.rec .nm { font-weight: 600; }
-.rec .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
-.rec .qty { display: inline-flex; gap: 4px; align-items: center; font-variant-numeric: tabular-nums; }
-.rec .qty button { padding: 2px 8px; }
-.rec .have { min-width: 9ch; text-align: right; color: var(--muted); font-size: 12px; }
-.panel .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.card { display: grid; gap: 6px; font-size: 13px; }
-.cardhead { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
-.cardhead b { font-size: 15px; }
-.cardhead span { color: var(--muted); }
-.bars { display: grid; grid-template-columns: repeat(2, minmax(90px, 1fr)); gap: 4px 12px; }
-.bars label { display: grid; gap: 2px; font-size: 12px; color: var(--muted); }
-.bars i { display: block; height: 7px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
-.bars i b { display: block; height: 100%; width: 0; background: #5a9a3c; transition: width .2s; }
-#bHealth { background: #c2573a; }
-.kv { display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--muted); font-size: 12px; }
-.kv b { color: var(--fg); font-variant-numeric: tabular-nums; }
-.stars { color: var(--accent); letter-spacing: 1px; }
-.jobs { display: flex; flex-wrap: wrap; gap: 4px; }
-.log { position: absolute; right: 10px; bottom: calc(min(160px, 28vw) + 22px); max-width: min(330px, 52%); text-align: right; font-size: 12px; line-height: 1.35; color: #f5e7c4; text-shadow: 0 1px 2px #000, 0 0 4px #000; pointer-events: none; display: grid; gap: 2px; }
-.toast { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); background: var(--accent); color: var(--accent-fg); font-weight: 600; font-size: 13px; padding: 5px 12px; border-radius: 16px; pointer-events: none; opacity: 0; transition: opacity .25s; max-width: 90%; text-align: center; }
-.toast.on { opacity: 1; }
-#mini { position: absolute; right: 10px; bottom: 10px; width: min(160px, 28vw); aspect-ratio: 1; image-rendering: pixelated; border: 2px solid var(--ring); border-radius: 6px; background: #080a14; cursor: pointer; }
-button { font: inherit; font-size: 13px; font-weight: 600; color: var(--fg); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+
+button { font: inherit; font-weight: 600; color: var(--fg); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; cursor: pointer; min-height: 30px; }
 button:hover { border-color: var(--accent); }
 button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 button:disabled { opacity: .5; cursor: not-allowed; }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.status { margin: 0; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-.help { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px 18px; color: var(--muted); font-size: 13px; margin: 0; padding: 0; list-style: none; }
-.help b { color: var(--fg); }
-@media (max-width: 600px) { .kv, .log { display: none; } .stage { min-height: 560px; } h1 { font-size: 22px; } }
+button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+button.sm { padding: 2px 8px; min-height: 26px; }
+@media (pointer: coarse) { button { min-height: 38px; padding: 6px 11px; } button.sm { min-height: 32px; } }
+
+/* top bar */
+.top { position: absolute; left: calc(6px + var(--sal)); right: calc(6px + var(--sar)); top: calc(6px + var(--sat)); display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; pointer-events: none; }
+.top > * { pointer-events: auto; }
+.hud { background: var(--hud); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; backdrop-filter: blur(2px); display: flex; flex-wrap: wrap; gap: 3px 10px; align-items: center; }
+.res { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.res i { width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(0,0,0,.35); display: inline-block; }
+.res small { font-weight: 500; color: var(--muted); }
+.res.full b { color: var(--accent); }
+.res.warn small { color: var(--accent); font-weight: 700; }
+.clock { font-weight: 600; }
+.grp { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.spacer { flex: 1; }
+
+/* bottom-left sheet */
+.sheet { position: absolute; left: calc(6px + var(--sal)); bottom: calc(6px + var(--sab)); width: min(440px, calc(100% - 130px)); max-height: calc(100% - var(--top-h, 44px) - 14px); overflow: auto; display: grid; gap: 6px; pointer-events: none; align-content: end; }
+.sheet > * { pointer-events: auto; }
+.card { background: var(--hud); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; backdrop-filter: blur(2px); display: grid; gap: 5px; }
+.cardhead { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
+.cardhead b { font-size: 14px; }
+.cardhead span { color: var(--muted); }
+.cardhead .x { margin-left: auto; align-self: center; }
+.kv { display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--muted); font-size: 12px; }
+.kv b { color: var(--fg); font-variant-numeric: tabular-nums; }
+.stars { color: var(--accent); letter-spacing: 1px; }
+.bars { display: grid; grid-template-columns: repeat(3, minmax(60px, 1fr)); gap: 4px 10px; }
+.bars label { display: grid; gap: 2px; font-size: 11px; color: var(--muted); }
+.bars i { display: block; height: 7px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
+.bars i b { display: block; height: 100%; width: 0; background: var(--good); transition: width .2s; }
+.bars i b.bad { background: var(--bad); }
+.bars i b.mor { background: #6d8fd8; }
+.btns { display: flex; flex-wrap: wrap; gap: 4px; }
+.sub { color: var(--muted); font-size: 12px; margin: 0; }
+details > summary { cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 600; padding: 2px 0; }
+details.fold { border-top: 1px solid var(--line); padding-top: 2px; display: block; }
+details.fold > .btns, details.fold > .kv { margin-top: 4px; }
+.selbar { display: flex; gap: 4px; flex-wrap: wrap; }
+.sheet.folded > .card { display: none; }
+
+/* lists */
+.row { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.row .nm { font-weight: 600; }
+.row .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.rec { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; padding: 3px 0; border-top: 1px solid var(--line); }
+.rec canvas { width: 32px; height: 32px; image-rendering: pixelated; }
+.rec .qty { display: inline-flex; gap: 4px; align-items: center; font-variant-numeric: tabular-nums; }
+.rec .have { min-width: 9ch; text-align: right; color: var(--muted); font-size: 12px; }
+.vrow { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; padding: 3px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.vrow small { color: var(--muted); }
+.tribe-bar { height: 6px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--line); position: relative; overflow: hidden; }
+.tribe-bar b { position: absolute; top: 0; bottom: 0; background: var(--accent); }
+.tribe-bar u { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--fg); left: 50%; opacity: .5; }
+
+/* minimap, log, toast */
+#mini { position: absolute; right: calc(6px + var(--sar)); bottom: calc(6px + var(--sab)); width: clamp(64px, 15vw, 96px); aspect-ratio: 1; image-rendering: pixelated; border: 2px solid var(--ring); border-radius: 6px; background: #080a14; cursor: zoom-in; }
+.log { position: absolute; right: calc(6px + var(--sar)); bottom: calc(clamp(64px, 15vw, 96px) + 14px + var(--sab)); max-width: min(330px, 46%); text-align: right; font-size: 12px; line-height: 1.35; color: #f5e7c4; text-shadow: 0 1px 2px #000, 0 0 4px #000; pointer-events: none; display: grid; gap: 2px; }
+.toast { position: absolute; left: 50%; top: calc(52px + var(--sat)); transform: translateX(-50%); background: var(--accent); color: var(--accent-fg); font-weight: 600; padding: 5px 12px; border-radius: 16px; pointer-events: none; opacity: 0; transition: opacity .25s; max-width: 90%; text-align: center; z-index: 50; }
+.toast.on { opacity: 1; }
+#bigmap { position: fixed; inset: 0; background: rgba(5,6,12,.88); z-index: 45; display: grid; place-items: center; }
+#bigmap .wrap { position: relative; width: min(94vh, 94vw); aspect-ratio: 1; }
+#bigmapCanvas { width: 100%; height: 100%; image-rendering: pixelated; border: 2px solid var(--ring); border-radius: 6px; background: #080a14; cursor: crosshair; touch-action: none; }
+#bigmap .note { position: absolute; left: 8px; bottom: 8px; color: #f5e7c4; text-shadow: 0 1px 2px #000; font-size: 12px; pointer-events: none; }
+#bigmap .close { position: absolute; right: 8px; top: 8px; }
+
+/* menu drawer */
+#drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(390px, 94vw); background: var(--bg); border-left: 2px solid var(--ring); z-index: 40; display: flex; flex-direction: column; padding-top: var(--sat); padding-bottom: var(--sab); }
+#drawer .head { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid var(--line); flex-wrap: wrap; background: var(--panel); }
+#drawer .body { overflow: auto; padding: 8px; display: grid; gap: 8px; align-content: start; flex: 1; }
+#drawer h3 { margin: 4px 0 0; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+#drawer .help { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 4px; }
+#drawer .help b { color: var(--fg); }
+.devrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.devrow > span { min-width: 7ch; font-weight: 600; }
+.devrow b { min-width: 2.5ch; text-align: center; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 760px) { .log { display: none; } }
+@media (max-height: 480px) {
+  body { font-size: 12px; }
+  .top { gap: 4px; left: calc(4px + var(--sal)); right: calc(4px + var(--sar)); top: calc(4px + var(--sat)); }
+  .hud { padding: 2px 6px; gap: 2px 8px; }
+  .sheet { max-height: min(60%, calc(100% - var(--top-h, 40px) - 10px)); width: min(340px, calc(100% - 120px)); left: calc(4px + var(--sal)); bottom: calc(4px + var(--sab)); }
+  .card { padding: 4px 6px; gap: 3px; }
+  #mini { right: calc(4px + var(--sar)); bottom: calc(4px + var(--sab)); width: clamp(56px, 12vw, 84px); }
+  .log { bottom: calc(clamp(56px, 12vw, 84px) + 10px + var(--sab)); right: calc(4px + var(--sar)); }
+  .toast { top: calc(40px + var(--sat)); }
+}
 </style>
 
-<main>
-  <header>
-    <h1>Làng Đồ Đá — bản chạy thử M3</h1>
-    <p class="sub">Thời gian đã chảy: ngày đêm, bốn mùa, mưa nắng. Đêm tối chỉ thấy quanh mình 3 ô và dân về ngủ bên đống lửa; mưa, tuyết làm đi chậm; quả hái về hỏng sau 3 ngày; mùa đông bụi quả trụi hết.</p>
-  </header>
-  <div class="stage">
-    <canvas id="view" tabindex="0" aria-label="Bản đồ làng"></canvas>
-    <div class="bar">
-      <div class="hud" id="top">
-        <span class="res" id="rFood"><i style="background:#c2573a"></i>Thức ăn <b>0</b><small>/0</small></span>
-        <span class="res" id="rWood"><i style="background:#9a6a35"></i>Gỗ <b>0</b><small>/0</small></span>
-        <span class="res" id="rStone"><i style="background:#9aa0a4"></i>Đá <b>0</b><small>/0</small></span>
-        <span class="clock" id="clock">Ngày 1</span>
-        <span class="grp" role="group" aria-label="Tốc độ game">
-          <button data-speed="0" aria-pressed="false" title="Tạm dừng (P)">❚❚</button>
-          <button data-speed="1" aria-pressed="true" title="Tốc độ 1× (phím 1)">1×</button>
-          <button data-speed="2" aria-pressed="false" title="Tốc độ 2× (phím 2)">2×</button>
-          <button data-speed="4" aria-pressed="false" title="Tốc độ 4× (phím 3)">4×</button>
-        </span>
-      </div>
-      <div class="hud">
-        <span class="grp" role="group" aria-label="Chế độ chuột">
-          <button data-mode="select" aria-pressed="true">Chọn</button>
-          <button data-mode="move" aria-pressed="false">Ra lệnh</button>
-          <button data-mode="pan" aria-pressed="false">Kéo bản đồ</button>
-        </span>
-        <span class="grp">
-          <button id="btnBuild" aria-pressed="false" title="Xây Kho (phím B)">Xây Kho · 10 gỗ</button>
-          <button id="btnShop" aria-pressed="false" title="Xây Xưởng chế tác (phím X)">Xây Xưởng · 15 gỗ</button>
-          <button id="btnCraft" aria-pressed="false" title="Bảng chế tác (phím C)" disabled>Chế tác</button>
-          <button id="btnAll">Chọn hết</button>
-        </span>
-      </div>
+<div id="app">
+  <canvas id="view" tabindex="0" aria-label="Bản đồ làng"></canvas>
+
+  <div class="top">
+    <div class="hud" id="resBar">
+      <span class="res" id="rFood" title="Thức ăn"><i style="background:#c2573a"></i><b>0</b><small>/0</small></span>
+      <span class="res" id="rWood" title="Gỗ"><i style="background:#9a6a35"></i><b>0</b><small>/0</small></span>
+      <span class="res" id="rStone" title="Đá"><i style="background:#9aa0a4"></i><b>0</b><small>/0</small></span>
+      <span class="res" id="rHide" title="Da và xương"><i style="background:#a0552f"></i><b>0</b><small>/0</small></span>
+      <span class="res" id="rPop" title="Số dân"><i style="background:#e8c4a0"></i><b>0</b><small>/40</small></span>
     </div>
-    <div class="toast" id="toast" role="status"></div>
-    <div class="panel">
-      <div class="card craft" id="craft" hidden>
-        <div class="cardhead"><b>Xưởng chế tác</b><span id="toolStock"></span></div>
-        <p class="hint">Giao một dân làm <b>Thợ thủ công</b> để chế. Dân đốn gỗ, thợ đá, hái lượm, thợ xây tự đến Xưởng nhận công cụ tốt hơn thứ đang cầm.</p>
-        <div id="recipes"></div>
-      </div>
-      <div class="card" id="bcard" hidden>
-        <div class="cardhead"><b id="bName"></b><span id="bState"></span></div>
-        <div class="kv" id="bInfo"></div>
-        <div class="kv" id="bNext"></div>
-        <div class="jobs"><button id="btnUpgrade"></button></div>
-      </div>
-      <div class="card" id="card" hidden>
-        <div class="cardhead"><b id="cName"></b><span id="cState"></span></div>
-        <div class="bars">
-          <label>No<i><b id="bFull"></b></i></label>
-          <label>Sức khỏe<i><b id="bHealth"></b></i></label>
-        </div>
-        <div class="kv" id="cStats"></div>
-        <div class="kv" id="cSkills"></div>
-        <div class="kv" id="cTools"></div>
-        <div class="jobs" id="cJobs" role="group" aria-label="Giao nghề"></div>
-        <div class="kv">Cấp công cụ ngay <small>(không cần Xưởng)</small></div>
-        <div class="jobs" id="cGive" role="group" aria-label="Cấp công cụ ngay"></div>
-      </div>
-      <div class="chips" id="sel"></div>
+    <div class="hud grp" role="group" aria-label="Tốc độ game">
+      <button class="sm" data-speed="0" aria-pressed="false" title="Tạm dừng (P)">❚❚</button>
+      <button class="sm" data-speed="1" aria-pressed="true" title="Tốc độ 1× (Q)">1×</button>
+      <button class="sm" data-speed="2" aria-pressed="false" title="Tốc độ 2× (E)">2×</button>
+      <button class="sm" data-speed="4" aria-pressed="false" title="Tốc độ 4× (R)">4×</button>
     </div>
-    <div class="log" id="log" aria-live="polite"></div>
-    <canvas id="mini" aria-label="Bản đồ nhỏ"></canvas>
+    <div class="hud" id="clockLine"><span class="clock" id="clock">Ngày 1</span></div>
+    <span class="spacer"></span>
+    <button id="btnMenu" class="primary" title="Menu (Tab)">☰ Menu</button>
   </div>
-  <p class="status" id="info">…</p>
-  <ul class="help">
-    <li><b>Chuột trái kéo khung</b>: chọn dân (Shift để thêm)</li>
-    <li><b>Chuột phải lên cây / đá / bụi quả</b>: giao nghề đốn gỗ / thợ đá / hái lượm</li>
-    <li><b>Chuột phải lên nền Kho</b>: giao thợ xây · lên đất trống: đi tới đó</li>
-    <li><b>Xây Kho / Xây Xưởng</b>: bấm nút (phím B / X), rê chuột chọn chỗ xanh, bấm trái để đặt; Esc hoặc chuột phải để hủy</li>
-    <li><b>Công cụ</b>: dựng Xưởng, mở bảng Chế tác (phím C), thêm đơn rìu, cuốc chim, cuốc, búa; giao một dân làm Thợ thủ công</li>
-    <li><b>Bấm vào công trình</b>: xem cấp, sức chứa và nâng cấp (đơn sơ → gỗ → đá); thợ xây sẽ tới làm</li>
-    <li><b>Ngày đêm</b>: tối đến dân về ngủ quanh đống lửa, sáng ra tự đi làm tiếp. Ra lệnh lúc đêm thì dân đó thức tới sáng</li>
-    <li><b>Mùa</b>: mỗi mùa 5 ngày. Thu hái quả nhanh nhất, đông không có quả. Rê chuột lên đồng hồ để xem tác động của thời tiết</li>
-    <li><b>W A S D</b>: dời camera · <b>Lăn chuột / + −</b>: thu phóng · <b>P</b>: tạm dừng · <b>1 2 3</b>: tốc độ</li>
-    <li><b>Điện thoại</b>: chế độ Ra lệnh = chạm đất, cây, đá để ra lệnh; bấm bản đồ nhỏ để nhảy tới</li>
-  </ul>
-</main>
+
+  <div class="log" id="log" aria-live="polite"></div>
+  <canvas id="mini" aria-label="Bản đồ nhỏ, bấm để mở bản đồ lớn" title="Bấm để mở bản đồ lớn"></canvas>
+  <div class="toast" id="toast" role="status"></div>
+
+  <div class="sheet" id="sheet">
+    <div class="card" id="placeBar" hidden>
+      <div class="cardhead"><b id="placeName"></b><span id="placeInfo"></span></div>
+      <p class="sub">Kéo hoặc chạm để chọn chỗ (ô xanh là đặt được).</p>
+      <div class="btns"><button id="btnPlaceOk" class="primary">✓ Đặt ở đây</button><button id="btnPlaceNo">✕ Hủy</button></div>
+    </div>
+    <div class="card" id="bpanel" hidden></div>
+    <div class="card" id="tcard" hidden></div>
+    <div class="card" id="ucard" hidden></div>
+    <div class="selbar">
+      <button id="btnMulti" aria-pressed="false" title="Bật để chạm từng dân hoặc kéo khung chọn nhiều dân">Chọn nhiều</button>
+      <button id="btnAll" title="Chọn tất cả dân (Ctrl+A)">Chọn hết</button>
+      <button id="btnNone" title="Bỏ chọn (Esc)">Bỏ chọn</button>
+      <button id="btnFold" aria-pressed="false" title="Ẩn các bảng thông tin để thấy rõ bản đồ">Ẩn bảng</button>
+    </div>
+  </div>
+
+  <div id="bigmap" hidden>
+    <div class="wrap">
+      <canvas id="bigmapCanvas"></canvas>
+      <button class="close" id="btnCloseMap">✕ Đóng</button>
+      <div class="note">Chạm vào bản đồ để nhảy tới đó</div>
+    </div>
+  </div>
+
+  <aside id="drawer" hidden>
+    <div class="head" id="drawerTabs"></div>
+    <div class="body" id="drawerBody"></div>
+  </aside>
+</div>
 <script>/*BUNDLE*/</script>

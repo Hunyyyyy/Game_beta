@@ -1,0 +1,16 @@
+{
+  "name": "Gậy gỗ",
+  "type": "prop",
+  "size": [16, 16],
+  "anchor": [8, 15],
+  "params": {"stone": 0},
+  "palette": { "line": "#2b1d10", "handle": "#8a5e34", "handleL": "#aa7c48", "tw": "#b88c54", "twL": "#deb87e", "twD": "#805c34", "st": "#8e9498", "stL": "#c0c6c8", "stD": "#60676b", "bind": "#d8c690", "hide": "#a0552f", "hideL": "#c06f43", "hideD": "#7a3d20", "stitch": "#e8d6a8" },
+  "layers": [
+    { "shape": "line", "from": [3, 14], "to": [10, 6], "w": 2, "color": "handle" },
+    { "shape": "line", "from": [2, 14], "to": [9, 6], "w": 1, "color": "handleL" },
+    { "shape": "ellipse", "cx": 11, "cy": 4.5, "rx": 3.5, "ry": 3.5, "color": "tw" },
+    { "shape": "pixels", "at": [[9, 3], [10, 2]], "color": "twL" },
+    { "shape": "pixels", "at": [[13, 6], [12, 7]], "color": "twD" },
+    { "shape": "outline", "color": "line" }
+  ]
+}

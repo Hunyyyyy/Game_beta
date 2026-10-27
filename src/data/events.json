@@ -1,0 +1,10 @@
+{
+  "_note": "day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
+  "events": [
+    { "id": "wolves_summer", "kind": "wolves", "day": 6,  "spread": 2, "size": 4, "night": true,  "warn": "Tiếng hú vang lên từ xa trong đêm..." },
+    { "id": "axe_scout",     "kind": "raid",   "tribe": "axe",   "day": 10, "spread": 2, "size": 5,  "night": false, "warnDays": 1, "warn": "Khói bốc lên từ phía tộc Rìu Đá, có lẽ họ đang cử người dò xét." },
+    { "id": "wolves_winter", "kind": "wolves", "day": 16, "spread": 4, "size": 8, "night": true,  "warn": "Dấu chân sói đầy quanh làng." },
+    { "id": "swamp_raid",    "kind": "raid",   "tribe": "swamp", "day": 21, "spread": 4, "size": 8,  "night": true,  "warnDays": 0, "warn": "" },
+    { "id": "axe_war",       "kind": "raid",   "tribe": "axe",   "day": 26, "spread": 4, "size": 18, "night": false, "warnDays": 1, "warn": "Tiếng trống chiến vang lên: tộc Rìu Đá sắp đánh lớn." }
+  ]
+}

@@ -1,0 +1,229 @@
+import type { Sprites } from '../render/sprites';
+import { animalDef } from '../sim/fauna';
+import { BUILDINGS, Building, levelDef, maxLevel, needsWork } from '../sim/buildings';
+import { ARMORS, relationLabel, WEAPONS } from '../sim/combat';
+import { DAY_LENGTH } from '../sim/constants';
+import { Job, JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS } from '../sim/jobs';
+import { RES_LIST, RES_NAME } from '../sim/resources';
+import type { Sim, Villager } from '../sim/sim';
+import { RECIPES, TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, recipeName, recipeUse } from '../sim/tools';
+import type { Controller } from './controller';
+import { costText, h, iconCanvas } from './dom';
+
+export interface Ctx { sim: Sim; ctl: Controller; sprites: Sprites; toast: (text: string) => void }
+
+const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(3 - n);
+
+/** What a villager is doing, in words. */
+export function describe(v: Villager): string {
+  const carry = v.carry && v.carry.amount > 0 ? ` · mang ${v.carry.amount} ${RES_NAME[v.carry.res].toLowerCase()}` : '';
+  let t: string;
+  switch (v.phase) {
+    case 'move': t = 'đang đi'; break;
+    case 'goNode': t = 'đi tới nguồn'; break;
+    case 'work': t = v.job !== 'idle' ? JOB_NAME[v.job].toLowerCase() : 'rảnh'; break;
+    case 'goStore': t = 'mang về kho'; break;
+    case 'goSite': t = 'đi tới công trường'; break;
+    case 'build': t = 'đang xây'; break;
+    case 'goShop': t = 'đi tới Xưởng'; break;
+    case 'craft': t = 'đang chế tác'; break;
+    case 'goEquip': t = 'đi lấy đồ ở Xưởng'; break;
+    case 'wait': t = 'chờ việc'; break;
+    case 'goHome': t = 'về lửa trại ngủ'; break;
+    case 'sleep': t = 'đang ngủ'; break;
+    case 'fight': t = 'đang chiến đấu'; break;
+    case 'flee': t = 'đang bỏ chạy'; break;
+    case 'down': t = `bị thương, còn ${Math.ceil(v.down)} giây`; break;
+    case 'goCarcass': t = 'đi lột da'; break;
+    case 'skin': t = 'đang lột da'; break;
+    case 'rescue': t = 'chạy đi cứu bạn'; break;
+    default: t = v.job === 'idle' ? 'rảnh' : v.job === 'fight' ? 'canh gác' : 'chờ việc';
+  }
+  return t + carry;
+}
+
+const STANCES = [['aggressive', 'Chủ động', 'Đuổi địch trong tầm nhìn'], ['defensive', 'Phòng thủ', 'Chỉ đánh địch lại gần, không rời chỗ'], ['retreat', 'Rút lui', 'Không đánh, chạy về lửa trại']] as const;
+
+// ================================================================== selected villagers
+export class UnitCard {
+  private readonly name = h('b'); private readonly state = h('span');
+  private readonly bFull = h('b'); private readonly bHealth = h('b'); private readonly bMorale = h('b', { class: 'mor' });
+  private readonly gear = h('div', { class: 'kv' });
+  private readonly stats = h('div', { class: 'kv' }); private readonly skills = h('div', { class: 'kv' }); private readonly tools = h('div', { class: 'kv' });
+  private readonly jobBtns: HTMLButtonElement[]; private readonly stanceBtns: HTMLButtonElement[];
+  private statsKey = '';
+
+  constructor(readonly root: HTMLElement, private readonly c: Ctx) {
+    const { sim, ctl } = c, ids = () => [...ctl.selected];
+    this.jobBtns = (['idle', ...WORK_JOBS] as Job[]).map((j) => h('button', { class: 'sm', 'data-job': j, pressed: false, text: JOB_NAME[j], onclick: () => { sim.setJob(ids(), j); ctl.onChange(); } }));
+    this.stanceBtns = STANCES.map(([s, label, tip]) => h('button', { class: 'sm', 'data-stance': s, pressed: false, text: label, title: tip, onclick: () => { sim.setStance(ids(), s); ctl.onChange(); } }));
+    // The card starts small so the map stays visible on a phone; the sections open on demand.
+    const tall = innerHeight >= 560;
+    root.append(
+      h('div', { class: 'cardhead' }, this.name, this.state, h('button', { class: 'sm x', text: '✕', title: 'Bỏ chọn', onclick: () => ctl.clearSelection() })),
+      h('div', { class: 'bars' },
+        h('label', {}, 'No', h('i', {}, this.bFull)), h('label', {}, 'Máu', h('i', {}, this.bHealth)), h('label', {}, 'Tinh thần', h('i', {}, this.bMorale))),
+      h('details', tall ? { class: 'fold', open: '' } : { class: 'fold' }, h('summary', { text: 'Giao nghề' }), h('div', { class: 'btns', role: 'group', 'aria-label': 'Giao nghề' }, ...this.jobBtns)),
+      h('details', { class: 'fold' }, h('summary', { text: 'Chiến đấu' }), this.gear,
+        h('div', { class: 'btns', role: 'group', 'aria-label': 'Thế đứng' }, ...this.stanceBtns),
+        h('div', { class: 'btns' },
+          h('button', { class: 'sm', text: 'Giữ chỗ (H)', title: 'Đứng yên, chỉ đánh kẻ ở sát', onclick: () => { sim.orderHold(ids()); ctl.onChange(); } }),
+          h('button', { class: 'sm', text: 'Dừng (G)', title: 'Hủy mọi lệnh', onclick: () => { sim.orderStop(ids()); ctl.onChange(); } }),
+          h('button', { class: 'sm', text: 'Tấn công–đi (F)', title: 'Chọn một điểm: đi tới đó và đánh mọi địch gặp trên đường', onclick: () => { ctl.attackMoveArmed = true; c.toast('Chạm vào điểm đến'); ctl.onChange(); } }))),
+      h('details', { class: 'fold' }, h('summary', { text: 'Chỉ số, kỹ năng, công cụ' }), this.stats, this.skills, this.tools),
+    );
+  }
+
+  update(chosen: Villager[]): void {
+    this.root.hidden = chosen.length === 0;
+    if (!chosen.length) { this.statsKey = ''; return; }
+    const v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : 'tay không';
+    this.name.textContent = chosen.length > 1 ? `${v.name} và ${chosen.length - 1} người nữa` : v.name;
+    this.state.textContent = describe(v);
+    this.bFull.style.width = `${v.fullness}%`; this.bHealth.style.width = `${(v.health / v.maxHealth) * 100}%`; this.bMorale.style.width = `${v.morale}%`;
+    this.bHealth.className = v.health / v.maxHealth < 0.35 ? 'bad' : '';
+    this.gear.innerHTML = `Máu <b>${Math.ceil(v.health)}/${v.maxHealth}</b> · Vũ khí <b>${w}</b> · Giáp <b>${v.armor ? ARMORS[v.armor].name : '—'}</b>${v.leader ? ' · <b>Thủ lĩnh</b>' : ''}`;
+    const sk = `${v.id}|${WORK_JOBS.map((j) => v.skill[j].level).join('')}|${Object.values(v.stats).join()}`;
+    if (sk !== this.statsKey) {
+      this.statsKey = sk;
+      this.stats.innerHTML = (Object.keys(STAT_NAME) as StatKey[]).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(' · ');
+      this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>cấp ${v.skill[j].level}</b>`).join(' · ');
+    }
+    this.tools.innerHTML = 'Công cụ: ' + TOOL_KINDS.map((k) => { const t = v.tools[k]; return `${TOOL_NAME[k]} <b>${t ? TIER_NAME[t.tier].toLowerCase() + ' ' + Math.round((t.dur / TIER_DURABILITY[t.tier]) * 100) + '%' : '—'}</b>`; }).join(' · ');
+    this.jobBtns.forEach((b) => b.setAttribute('aria-pressed', String(chosen.every((o) => o.job === b.dataset.job))));
+    this.stanceBtns.forEach((b) => b.setAttribute('aria-pressed', String(chosen.every((o) => o.stance === b.dataset.stance))));
+  }
+}
+
+// ================================================================== a foe, an animal or a carcass that was tapped
+export class TargetCard {
+  private readonly name = h('b'); private readonly info = h('span'); private readonly hp = h('b', { class: 'bad' }); private readonly line = h('div', { class: 'kv' });
+  private readonly attack = h('button', { class: 'sm primary', text: 'Tấn công' }); private readonly loot = h('button', { class: 'sm', text: 'Lột da, lấy thịt' });
+  constructor(readonly root: HTMLElement, private readonly c: Ctx) {
+    root.append(
+      h('div', { class: 'cardhead' }, this.name, this.info, h('button', { class: 'sm x', text: '✕', onclick: () => { c.ctl.inspect = null; c.ctl.onChange(); } })),
+      h('div', { class: 'bars' }, h('label', {}, 'Máu', h('i', {}, this.hp))), this.line,
+      h('div', { class: 'btns' }, this.attack, this.loot),
+    );
+    this.attack.addEventListener('click', () => { const t = c.ctl.inspect; if (t && c.ctl.selected.size) { c.sim.orderAttack([...c.ctl.selected], { kind: t.kind, id: t.id }); c.ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
+    this.loot.addEventListener('click', () => { const t = c.ctl.inspect; if (t && c.ctl.selected.size) { c.sim.orderLoot([...c.ctl.selected], t.id); c.ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
+  }
+
+  update(): void {
+    const t = this.c.ctl.inspect, { sim } = this.c;
+    if (!t) { this.root.hidden = true; return; }
+    if (t.kind === 'unit') {
+      const f = sim.get(t.id);
+      if (!f || f.health <= 0) { this.c.ctl.inspect = null; this.root.hidden = true; return; }
+      const tribe = sim.tribes.find((x) => x.id === f.team);
+      this.root.hidden = false;
+      this.name.textContent = f.name; this.info.textContent = `${tribe?.def.name ?? ''} · ${f.ai?.role === 'civ' ? 'dân thường' : f.ai?.role === 'raider' ? 'kẻ tập kích' : 'chiến binh'}`;
+      this.hp.style.width = `${(f.health / f.maxHealth) * 100}%`;
+      this.line.innerHTML = `Máu <b>${Math.ceil(f.health)}/${f.maxHealth}</b> · Vũ khí <b>${f.weapon ? WEAPONS[f.weapon].name : 'tay không'}</b> · Tinh thần <b>${Math.round(f.morale)}</b> · ${tribe ? `quan hệ <b>${relationLabel(tribe.relation)}</b>` : ''}`;
+      this.attack.hidden = false; this.loot.hidden = true;
+      return;
+    }
+    const a = sim.animalById.get(t.id);
+    if (!a) { this.c.ctl.inspect = null; this.root.hidden = true; return; }
+    const d = animalDef(a), dead = a.state === 'dead';
+    this.root.hidden = false;
+    this.name.textContent = d.name; this.info.textContent = dead ? 'xác' : { graze: 'đang gặm cỏ', wander: 'đang đi', flee: 'đang chạy trốn', attack: 'đang tấn công', sleep: 'đang ngủ', dead: 'xác' }[a.state];
+    this.hp.style.width = `${(Math.max(0, a.hp) / a.maxHp) * 100}%`;
+    this.line.innerHTML = dead ? `Còn <b>${a.meat}</b> thịt · <b>${a.hide}</b> da và xương` : `Máu <b>${Math.ceil(a.hp)}/${a.maxHp}</b> · sát thương <b>${d.damage}</b> · ${d.prey ? 'con mồi' : 'thú dữ'}`;
+    this.attack.hidden = dead; this.attack.textContent = d.prey ? 'Săn' : 'Tấn công'; this.loot.hidden = !dead;
+  }
+}
+
+// ================================================================== a building tapped on the map or chosen from the menu
+export class BuildingPanel {
+  private readonly title = h('b'); private readonly state = h('span');
+  private readonly campfire = h('div', { class: 'sec' }); private readonly storage = h('div', { class: 'sec' }); private readonly workshop = h('div', { class: 'sec' });
+  private readonly resRows: Array<{ res: typeof RES_LIST[number]; num: HTMLElement; bar: HTMLElement }> = [];
+  private readonly recRows: Array<{ id: string; kind: string; tier: number; have: HTMLElement }> = [];
+  private readonly villagerList = h('div'); private villagerKey = ''; private readonly vRows = new Map<number, { st: HTMLElement; hp: HTMLElement }>();
+  private readonly pop = h('div', { class: 'kv' }); private readonly shopInfo = h('div', { class: 'kv' }); private readonly assign = h('button', { class: 'sm', text: 'Giao dân đang chọn làm Thợ thủ công' });
+  private readonly info = h('div', { class: 'kv' }); private readonly next = h('div', { class: 'kv' }); private readonly upgrade = h('button', { class: 'sm primary' });
+
+  constructor(readonly root: HTMLElement, private readonly c: Ctx) {
+    const { sim, ctl, sprites } = c;
+    // campfire: the village's people
+    this.campfire.append(this.pop, h('div', { class: 'btns' }, h('button', { class: 'sm', text: 'Chọn tất cả dân', onclick: () => { ctl.selected.clear(); ctl.selectAll(); ctl.closeBuilding(); } })), this.villagerList);
+    // storage: stock against capacity
+    for (const res of RES_LIST) {
+      const num = h('b'), bar = h('b');
+      this.resRows.push({ res, num, bar });
+      this.storage.append(h('div', { class: 'row' }, h('div', { class: 'nm' }, RES_NAME[res], h('small', {}, num)), h('div', { class: 'bars', style: 'width:90px;display:block' }, h('i', {}, bar))));
+    }
+    // workshop: what can be made
+    const section = (title: string, list: typeof RECIPES) => {
+      this.workshop.append(h('div', { class: 'sub', text: title }));
+      for (const r of list) {
+        const have = h('span', { class: 'have' });
+        this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, have });
+        this.workshop.append(h('div', { class: 'rec' }, iconCanvas(sprites.icons[r.id]),
+          h('div', { class: 'nm' }, recipeName(r), h('small', {}, `${costText(r.cost, RES_NAME)} · ${r.time} giây · ${recipeUse(r)}`)),
+          h('div', { class: 'qty' }, have,
+            h('button', { class: 'sm', text: '−', title: 'Bớt một đơn', onclick: () => { sim.unqueueCraft(r.id); ctl.onChange(); } }),
+            h('button', { class: 'sm', text: '+', title: 'Thêm một đơn vào hàng đợi', onclick: () => { const e = sim.queueCraft(r.id); if (e) c.toast(e); ctl.onChange(); } }))));
+      }
+    };
+    this.workshop.append(this.shopInfo, this.assign);
+    this.assign.addEventListener('click', () => { const b = this.current(); if (b && ctl.selected.size) { sim.orderWork([...ctl.selected], b.x, b.y); c.toast('Thợ thủ công'); ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
+    section('Công cụ', RECIPES.filter((r) => ['axe', 'pick', 'hoe', 'hammer'].includes(r.kind)));
+    section('Vũ khí', RECIPES.filter((r) => r.kind in WEAPONS));
+    section('Giáp', RECIPES.filter((r) => r.kind === 'hide'));
+    this.upgrade.addEventListener('click', () => { const b = this.current(); if (!b) return; const err = sim.upgradeBuilding(b.id); c.toast(err ?? 'Đã trả vật liệu. Giao Thợ xây để nâng cấp'); ctl.onChange(); });
+    root.append(
+      h('div', { class: 'cardhead' }, this.title, this.state, h('button', { class: 'sm x', text: '✕', onclick: () => ctl.closeBuilding() })),
+      this.info, this.campfire, this.storage, this.workshop, this.next, this.upgrade,
+    );
+  }
+
+  private current(): Building | undefined { const id = this.c.ctl.selectedBuilding; return id === null ? undefined : this.c.sim.getBuilding(id); }
+
+  update(): void {
+    const { sim, ctl } = this.c, b = this.current();
+    this.root.hidden = !b;
+    if (!b) { if (ctl.selectedBuilding !== null) ctl.selectedBuilding = null; return; }
+    const def = BUILDINGS[b.kind], lv = levelDef(b), top = maxLevel(b.kind, b.era);
+    this.title.textContent = `${def.name}${def.buildable ? ` · cấp ${b.level}/${top} (${lv.name.toLowerCase()})` : ''}`;
+    this.state.textContent = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : 'đang dùng';
+    const ready = b.done;
+    this.campfire.hidden = !(ready && b.kind === 'campfire'); this.storage.hidden = !(ready && b.kind === 'storage'); this.workshop.hidden = !(ready && b.kind === 'workshop');
+    this.info.textContent = !b.done ? 'Giao dân làm Thợ xây để dựng công trình này.' : b.kind === 'workshop' ? `Tốc độ chế tác ×${lv.craftSpeed.toLocaleString('vi')}` : b.kind === 'storage' ? `Sức chứa ${lv.cap} mỗi loại` : `Nơi dân ngủ quanh lửa · chứa ${lv.cap} mỗi loại`;
+    if (b.kind === 'campfire' && ready) this.updateCampfire();
+    if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity()}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity())) * 100)}%`; }
+    if (b.kind === 'workshop' && ready) {
+      for (const r of this.recRows) r.have.textContent = `kho ${sim.toolCount(r.kind, r.tier)} · đợi ${sim.craftQueue.filter((id) => id === r.id).length}`;
+      const n = sim.villagers.filter((v) => v.job === 'craft').length;
+      this.shopInfo.textContent = n ? `${n} thợ thủ công đang làm · hàng đợi ${sim.craftQueue.length}` : 'Chưa có thợ thủ công: giao một dân làm nghề này để chế đồ';
+      this.assign.disabled = ctl.selected.size === 0;
+    }
+    const grow = b.level < top && def.buildable && b.done;
+    this.upgrade.hidden = !grow; this.next.hidden = !grow;
+    if (grow) {
+      const nx = levelDef(b, b.level + 1), why = sim.canUpgrade(b);
+      this.next.textContent = `Cấp ${b.level + 1} (${nx.name.toLowerCase()}): ${b.kind === 'workshop' ? `chế tác ×${nx.craftSpeed.toLocaleString('vi')}` : `chứa ${nx.cap} mỗi loại`}`;
+      this.upgrade.textContent = b.upgrading ? 'Đang nâng cấp…' : `Nâng cấp · ${costText(nx.cost, RES_NAME)}`;
+      this.upgrade.disabled = !!why; this.upgrade.title = why ?? '';
+    }
+  }
+
+  private updateCampfire(): void {
+    const { sim, ctl } = this.c, vs = sim.villagers;
+    this.pop.innerHTML = `Dân <b>${vs.length}</b> · đang làm việc <b>${vs.filter((v) => v.job !== 'idle').length}</b> · lính <b>${vs.filter((v) => v.job === 'fight').length}</b> · thợ săn <b>${vs.filter((v) => v.job === 'hunt').length}</b> · thức ăn <b>${Math.floor(sim.stock.food)}</b> (sống được ~${(sim.stock.food / Math.max(1, vs.length * 5)).toFixed(1)} ngày)`;
+    const key = vs.map((v) => v.id).join();
+    if (key !== this.villagerKey) {
+      this.villagerKey = key; this.vRows.clear();
+      this.villagerList.replaceChildren(...vs.map((v) => {
+        const st = h('small'), hp = h('small');
+        this.vRows.set(v.id, { st, hp });
+        return h('div', { class: 'vrow', onclick: () => { ctl.selected.clear(); ctl.selected.add(v.id); ctl.selectedBuilding = null; ctl.focusSelection(); ctl.onChange(); } },
+          h('div', {}, h('b', { text: v.name }), ' ', st), hp);
+      }));
+    }
+    for (const v of vs) { const r = this.vRows.get(v.id); if (r) { r.st.textContent = `· ${describe(v)}`; r.hp.textContent = `${Math.ceil(v.health)}/${v.maxHealth}`; } }
+  }
+}
+
+void DAY_LENGTH; void needsWork;

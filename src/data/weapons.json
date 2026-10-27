@@ -1,0 +1,106 @@
+{
+  "_note": "type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor. cost/time/tier only for what the player can craft; others are used by tribes.",
+  "weapons": {
+    "fist": {
+      "name": "Tay không",
+      "type": "crush",
+      "range": 1,
+      "damage": 2,
+      "cycle": 1.0,
+      "anim": "smash"
+    },
+    "club": {
+      "name": "Gậy gỗ",
+      "type": "crush",
+      "range": 1,
+      "damage": 4,
+      "cycle": 1.2,
+      "cost": {
+        "wood": 1
+      },
+      "time": 40,
+      "tier": 1,
+      "anim": "smash"
+    },
+    "spear": {
+      "name": "Giáo gỗ",
+      "type": "pierce",
+      "range": 1.5,
+      "damage": 7,
+      "cycle": 1.4,
+      "cost": {
+        "wood": 2
+      },
+      "time": 60,
+      "tier": 1,
+      "anim": "thrust"
+    },
+    "mace": {
+      "name": "Chùy đá",
+      "type": "crush",
+      "range": 1,
+      "damage": 10,
+      "cycle": 1.8,
+      "cost": {
+        "wood": 2,
+        "stone": 2
+      },
+      "time": 120,
+      "tier": 2,
+      "anim": "smash"
+    },
+    "hatchet": {
+      "name": "Rìu đá",
+      "type": "slash",
+      "range": 1,
+      "damage": 8,
+      "cycle": 1.3,
+      "anim": "slash",
+      "tier": 2
+    },
+    "sling": {
+      "name": "Dây quăng đá",
+      "type": "crush",
+      "range": 7,
+      "damage": 5,
+      "cycle": 1.8,
+      "ranged": true,
+      "anim": "sling",
+      "tier": 1
+    },
+    "bow": {
+      "name": "Cung ngắn",
+      "type": "pierce",
+      "range": 11,
+      "damage": 8,
+      "cycle": 2.0,
+      "ranged": true,
+      "anim": "shoot",
+      "tier": 1
+    }
+  },
+  "armor": {
+    "hide": {
+      "name": "Áo da thú",
+      "pierce": 0.1,
+      "slash": 0.2,
+      "crush": 0.1,
+      "cost": {
+        "hide": 3
+      },
+      "time": 100,
+      "tier": 1
+    }
+  },
+  "rules": {
+    "backstab": 1.25,
+    "strengthDamage": 0.6,
+    "agilityBase": 1.3,
+    "agilityStep": 0.04,
+    "rangedHitNear": 0.9,
+    "rangedHitFar": 0.7,
+    "downedSeconds": 30,
+    "rescueSeconds": 3,
+    "rescueHp": 0.3
+  }
+}

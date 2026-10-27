@@ -1,0 +1,52 @@
+{
+  "idle": { "fps": 4, "loop": true, "frames": [
+    {"bob":0,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":0,"dy":0},"headDy":0,"wing":0,"tail":0,"mouth":0},
+    {"bob":0,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":0,"dy":-1},"headDy":0,"wing":0,"tail":0,"mouth":0},
+    {"bob":-1,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":1,"dy":0},"headDy":0,"wing":0,"tail":0,"mouth":0},
+    {"bob":0,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":0,"dy":-1},"headDy":0,"wing":0,"tail":0,"mouth":0}
+  ] },
+  "walk": { "fps": 8, "loop": true, "frames": [
+    {"bob":0,"l":{"a":25,"lift":0},"r":{"a":-25,"lift":2},"neck":{"dx":1,"dy":0},"headDy":0,"wing":0,"tail":0,"mouth":0},
+    {"bob":-1,"l":{"a":10,"lift":1},"r":{"a":-10,"lift":1},"neck":{"dx":2,"dy":0},"headDy":0,"wing":0,"tail":0,"mouth":0},
+    {"bob":0,"l":{"a":-25,"lift":2},"r":{"a":25,"lift":0},"neck":{"dx":1,"dy":0},"headDy":0,"wing":0,"tail":0,"mouth":0},
+    {"bob":-1,"l":{"a":-10,"lift":1},"r":{"a":10,"lift":1},"neck":{"dx":0,"dy":0},"headDy":0,"wing":0,"tail":0,"mouth":0}
+  ] },
+  "run": { "fps": 12, "loop": true, "frames": [
+    {"bob":-1,"l":{"a":40,"lift":0},"r":{"a":-35,"lift":3},"neck":{"dx":3,"dy":1},"headDy":0,"wing":20,"tail":10,"mouth":0},
+    {"bob":-2,"l":{"a":0,"lift":4},"r":{"a":0,"lift":4},"neck":{"dx":4,"dy":1},"headDy":0,"wing":45,"tail":12,"mouth":0},
+    {"bob":-1,"l":{"a":-35,"lift":3},"r":{"a":40,"lift":0},"neck":{"dx":3,"dy":1},"headDy":0,"wing":20,"tail":10,"mouth":0},
+    {"bob":-2,"l":{"a":0,"lift":4},"r":{"a":0,"lift":4},"neck":{"dx":4,"dy":1},"headDy":0,"wing":45,"tail":12,"mouth":0}
+  ] },
+  "graze": { "fps": 6, "loop": true, "frames": [
+    {"bob":0,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":0,"dy":0},"headDy":0,"wing":0,"tail":0,"mouth":0},
+    {"bob":0,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":2,"dy":3},"headDy":4,"wing":0,"tail":0,"mouth":0},
+    {"bob":0,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":3,"dy":5},"headDy":7,"wing":0,"tail":0,"mouth":0},
+    {"bob":0,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":2,"dy":3},"headDy":4,"wing":0,"tail":0,"mouth":0},
+    {"bob":0,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":3,"dy":5},"headDy":7,"wing":0,"tail":0,"mouth":0},
+    {"bob":0,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":0,"dy":0},"headDy":0,"wing":0,"tail":0,"mouth":0}
+  ] },
+  "attack": { "fps": 12, "loop": false, "hit": 3, "frames": [
+    {"bob":0,"l":{"a":5,"lift":0},"r":{"a":-5,"lift":0},"neck":{"dx":0,"dy":0},"headDy":0,"wing":0,"tail":0,"mouth":0},
+    {"bob":0,"l":{"a":8,"lift":0},"r":{"a":-8,"lift":0},"neck":{"dx":-2,"dy":0},"headDy":0,"wing":20,"tail":5,"mouth":0},
+    {"bob":-1,"l":{"a":15,"lift":0},"r":{"a":-10,"lift":0},"neck":{"dx":3,"dy":1},"headDy":2,"wing":60,"tail":12,"mouth":1},
+    {"bob":-1,"l":{"a":20,"lift":1},"r":{"a":-12,"lift":0},"neck":{"dx":4,"dy":2},"headDy":3,"wing":70,"tail":14,"mouth":1},
+    {"bob":0,"l":{"a":10,"lift":0},"r":{"a":-8,"lift":0},"neck":{"dx":2,"dy":0},"headDy":0,"wing":30,"tail":8,"mouth":0},
+    {"bob":0,"l":{"a":0,"lift":0},"r":{"a":0,"lift":0},"neck":{"dx":0,"dy":0},"headDy":0,"wing":0,"tail":0,"mouth":0}
+  ] },
+  "hit": { "fps": 10, "loop": false, "hit": 0, "frames": [
+    {"bob":1,"l":{"a":-10,"lift":0},"r":{"a":10,"lift":0},"neck":{"dx":-3,"dy":1},"headDy":0,"wing":50,"tail":15,"mouth":1},
+    {"bob":0,"l":{"a":-4,"lift":0},"r":{"a":4,"lift":0},"neck":{"dx":-1,"dy":0},"headDy":0,"wing":20,"tail":8,"mouth":0}
+  ] },
+  "die": { "fps": 8, "loop": false, "frames": [
+    {"bob":1,"l":{"a":-10,"lift":0},"r":{"a":10,"lift":0},"neck":{"dx":-3,"dy":1},"headDy":0,"wing":50,"tail":15,"mouth":1},
+    {"bob":3,"l":{"a":-20,"lift":0},"r":{"a":15,"lift":0},"neck":{"dx":-2,"dy":3},"headDy":2,"wing":70,"tail":10,"mouth":1,"lay":0.5},
+    {"bob":6,"l":{"a":30,"lift":0},"r":{"a":40,"lift":0},"neck":{"dx":0,"dy":5},"headDy":4,"wing":40,"tail":4,"mouth":0,"lay":0.9},
+    {"bob":8,"l":{"a":70,"lift":0},"r":{"a":75,"lift":0},"neck":{"dx":0,"dy":6},"headDy":5,"wing":20,"tail":0,"mouth":0,"lay":1,"side":0.7},
+    {"bob":8,"l":{"a":85,"lift":0},"r":{"a":88,"lift":0},"neck":{"dx":0,"dy":6},"headDy":6,"wing":10,"tail":0,"mouth":0,"lay":1,"side":1},
+    {"bob":8,"l":{"a":85,"lift":0},"r":{"a":88,"lift":0},"neck":{"dx":0,"dy":6},"headDy":6,"wing":10,"tail":0,"mouth":0,"lay":1,"side":1}
+  ] },
+  "sleep": { "fps": 2, "loop": true, "frames": [
+    {"bob":0,"l":{"a":80,"lift":0},"r":{"a":80,"lift":0},"neck":{"dx":0,"dy":6},"headDy":5,"wing":0,"tail":0,"mouth":0,"lay":1},
+    {"bob":0,"l":{"a":80,"lift":0},"r":{"a":80,"lift":0},"neck":{"dx":0,"dy":7},"headDy":5,"wing":0,"tail":0,"mouth":0,"lay":1}
+  ] }
+}

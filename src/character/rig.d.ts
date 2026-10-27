@@ -1,6 +1,7 @@
 export type View = 'front' | 'back' | 'right' | 'left';
 export interface Look { sex: 'm' | 'f'; skin: string; hair: string; hide: string; pants: string }
-export interface AnimDef { fps: number; loop: boolean; frames: unknown[] }
+/** `hit`: frame at which a blow lands or a missile leaves (one-shot attack animations). */
+export interface AnimDef { fps: number; loop: boolean; hit?: number; frames: unknown[] }
 export type AnimTable = Record<string, AnimDef>;
 export const W: number;
 export const H: number;

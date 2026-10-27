@@ -1,0 +1,21 @@
+{
+  "_note": "Art of each species. 'body' picks the animation set in animals/anims/<body>.json. Sizes are pixels; sprites face right and are mirrored for left. shape numbers are pixels, palette colors are hex.",
+  "rabbit": { "name": "Thỏ", "body": "hopper", "size": [22, 18],
+    "palette": { "base": "#b5a58c", "light": "#e8e0d0", "dark": "#7a6a55", "accent": "#ffffff", "eye": "#2a1c14" },
+    "shape": { "bodyL": 9, "bodyH": 7, "legL": 5, "headR": 3, "ear": 7 } },
+  "fowl": { "name": "Gà rừng", "body": "biped", "size": [20, 22],
+    "palette": { "base": "#a0603a", "light": "#d49a5a", "dark": "#6a3a20", "accent": "#c8283a", "beak": "#e0b040", "eye": "#1a1210" },
+    "shape": { "bodyL": 10, "bodyH": 8, "legL": 6, "neck": 5, "headR": 2, "tail": 6 } },
+  "deer": { "name": "Hươu", "body": "quadruped", "size": [48, 42],
+    "palette": { "base": "#a8743c", "light": "#e8d4a8", "dark": "#6a4420", "accent": "#d8c8a0", "eye": "#1a1210" },
+    "shape": { "bodyL": 20, "bodyH": 9, "legL": 14, "neck": 11, "neckA": 55, "headR": 3.5, "snout": 4, "tail": 3, "feature": "antlers", "ear": 4 } },
+  "boar": { "name": "Lợn rừng", "body": "quadruped", "size": [40, 26],
+    "palette": { "base": "#5a4a3c", "light": "#8a7660", "dark": "#342a22", "accent": "#f0e8d0", "eye": "#1a1210" },
+    "shape": { "bodyL": 18, "bodyH": 11, "legL": 6, "neck": 5, "neckA": 8, "headR": 4, "snout": 5, "tail": 3, "feature": "tusks", "ear": 3 } },
+  "wolf": { "name": "Sói", "body": "quadruped", "size": [40, 28],
+    "palette": { "base": "#7a7a80", "light": "#b8b8bc", "dark": "#4a4a50", "accent": "#f4f4f4", "eye": "#e0b030" },
+    "shape": { "bodyL": 17, "bodyH": 8, "legL": 9, "neck": 6, "neckA": 30, "headR": 3.5, "snout": 5, "tail": 8, "feature": "bushy", "ear": 4 } },
+  "fish": { "name": "Cá", "body": "fish", "size": [22, 12],
+    "palette": { "base": "#6a9aaa", "light": "#c8dce0", "dark": "#3a6070", "accent": "#e8b040", "eye": "#101820" },
+    "shape": { "bodyL": 12, "bodyH": 6, "tail": 5 } }
+}

@@ -1,0 +1,50 @@
+{
+  "idle": { "fps": 4, "loop": true, "frames": [
+    {"bend":0,"bob":0,"fin":0,"mouth":0},
+    {"bend":1,"bob":0,"fin":0,"mouth":0},
+    {"bend":0,"bob":-1,"fin":0,"mouth":0},
+    {"bend":-1,"bob":0,"fin":0,"mouth":0}
+  ] },
+  "swim": { "fps": 8, "loop": true, "frames": [
+    {"bend":3,"bob":0,"fin":0,"mouth":0},
+    {"bend":1,"bob":0,"fin":0,"mouth":0},
+    {"bend":-3,"bob":0,"fin":0,"mouth":0},
+    {"bend":-1,"bob":0,"fin":0,"mouth":0}
+  ] },
+  "run": { "fps": 14, "loop": true, "frames": [
+    {"bend":4,"bob":0,"fin":1,"mouth":0},
+    {"bend":-4,"bob":0,"fin":1,"mouth":0},
+    {"bend":4,"bob":0,"fin":1,"mouth":0},
+    {"bend":-4,"bob":0,"fin":1,"mouth":0}
+  ] },
+  "graze": { "fps": 5, "loop": true, "frames": [
+    {"bend":1,"bob":0,"fin":0,"mouth":0},
+    {"bend":1,"bob":1,"fin":0,"mouth":1},
+    {"bend":1,"bob":1,"fin":0,"mouth":0},
+    {"bend":1,"bob":1,"fin":0,"mouth":1}
+  ] },
+  "attack": { "fps": 12, "loop": false, "hit": 3, "frames": [
+    {"bend":0,"bob":0,"fin":0,"mouth":0},
+    {"bend":-2,"bob":0,"fin":0,"mouth":1},
+    {"bend":3,"bob":0,"fin":1,"mouth":1},
+    {"bend":2,"bob":0,"fin":1,"mouth":1},
+    {"bend":0,"bob":0,"fin":0,"mouth":0},
+    {"bend":0,"bob":0,"fin":0,"mouth":0}
+  ] },
+  "hit": { "fps": 10, "loop": false, "hit": 0, "frames": [
+    {"bend":5,"bob":0,"fin":1,"mouth":0},
+    {"bend":2,"bob":0,"fin":0,"mouth":0}
+  ] },
+  "die": { "fps": 6, "loop": false, "frames": [
+    {"bend":5,"bob":0,"fin":1,"mouth":0},
+    {"bend":2,"bob":1,"fin":0,"mouth":1},
+    {"bend":1,"bob":2,"fin":0,"mouth":1,"flip":0.5},
+    {"bend":0,"bob":3,"fin":0,"mouth":1,"flip":1},
+    {"bend":0,"bob":3,"fin":0,"mouth":0,"flip":1},
+    {"bend":0,"bob":3,"fin":0,"mouth":0,"flip":1}
+  ] },
+  "sleep": { "fps": 2, "loop": true, "frames": [
+    {"bend":0,"bob":1,"fin":0,"mouth":0},
+    {"bend":1,"bob":1,"fin":0,"mouth":0}
+  ] }
+}

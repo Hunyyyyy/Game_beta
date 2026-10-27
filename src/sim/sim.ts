@@ -7,16 +7,49 @@ import { findPath, Step } from './path';
 import { CARRY_CAP, emptyStock, FOOD_NUTRITION, FOOD_SPOIL_DAYS, Res, RES_NAME, Stock } from './resources';
 import { mulberry32 } from './rng';
 import { emptyToolSet, Recipe, RECIPE_BY_ID, recipeName, TIER_DURABILITY, TIER_NAME, TIER_SPEED, TIER_YIELD, Tool, ToolKind, ToolSet, TOOL_NAME, TOOL_OF_JOB } from './tools';
+import { ARMORS, CRAFTED_WEAPONS, maxHpOf, MORALE, Team, TribeId, WEAPONS } from './combat';
+import { bestWeapon, brainPlayer, hurt, isFighter, resolve, tickCommon, tickDown, tickMorale, tickProjectiles, weaponOf } from './battle';
+import { Animal, animalDef, breed, populate, tickAnimals } from './fauna';
+import { adoptTribe, EventState, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tributeTribe } from './tribes';
 import { World } from './world';
 
 export type Sex = 'm' | 'f';
 export type Facing = 'front' | 'back' | 'right' | 'left';
-export type Phase = 'idle' | 'move' | 'goNode' | 'work' | 'goStore' | 'wait' | 'goSite' | 'build' | 'goShop' | 'craft' | 'goEquip' | 'goHome' | 'sleep';
+export type Phase = 'idle' | 'move' | 'goNode' | 'work' | 'goStore' | 'wait' | 'goSite' | 'build' | 'goShop' | 'craft' | 'goEquip' | 'goHome' | 'sleep' | 'fight' | 'flee' | 'down' | 'goCarcass' | 'skin' | 'rescue';
 export interface Look { sex: Sex; skin: string; hair: string; hide: string; pants: string }
 export interface Skill { xp: number; level: number }
 export interface LogLine { t: number; text: string }
 /** Công cụ đang hiện trong tay (để vẽ). */
 export interface Hold { kind: string; tier: number }
+/** What a unit is attacking: another unit (player or tribe) or an animal. */
+export interface Target { kind: 'unit' | 'animal'; id: number }
+export type Stance = 'aggressive' | 'defensive' | 'retreat';
+/** One queued order (Shift + right click). */
+export type OrderStep = { k: 'move'; x: number; y: number } | { k: 'attackMove'; x: number; y: number } | { k: 'attack'; t: Target };
+export interface FightState {
+  /** guard: stay at the anchor and fight what comes by the stance rules; hold: only hit what is in reach. */
+  mode: 'none' | 'attack' | 'attackMove' | 'hold' | 'guard';
+  target: Target | null;
+  /** Attack-move destination. */
+  dest: { x: number; y: number } | null;
+  /** Where a defensive or holding unit stays. */
+  anchor: { x: number; y: number } | null;
+  repath: number; // seconds until the path to the target is recomputed
+  scan: number;   // seconds until the next look for enemies
+}
+/** A missile in flight: arrows, sling stones. */
+export interface Projectile {
+  x: number; y: number; tx: number; ty: number; speed: number;
+  dmg: number; type: 'pierce' | 'slash' | 'crush'; from: { x: number; y: number };
+  src: number; team: Team; target: Target; chance: number; kind: 'arrow' | 'stone';
+}
+export interface FoeAI {
+  role: 'civ' | 'guard' | 'raider';
+  camp: { x: number; y: number };
+  wander: number;          // seconds until the next stroll
+  goal: { x: number; y: number } | null;
+  raid: number;            // id of the raid party (0 = none)
+}
 /** Điểm đứng cuối cùng và hướng nhìn (luôn ngang) khi làm việc. */
 interface Slide { x: number; y: number; face: 'left' | 'right' }
 
@@ -56,6 +89,26 @@ export interface Villager {
   anim: string;
   hold: Hold | null;
   bad: Map<number, number>; // nguồn không tới được -> hết hạn
+  team: Team;
+  maxHealth: number;
+  weapon: string | null;  // crafted weapon id (club, spear, mace); null = fists
+  armor: string | null;   // armour id (hide)
+  morale: number;         // 0..100
+  stance: Stance;
+  fight: FightState;
+  queue: OrderStep[];
+  atkCd: number;          // seconds until the next blow
+  down: number;           // seconds left lying wounded (0 = on feet)
+  rescue: number;         // seconds an ally has been tending this wounded unit
+  fleeT: number;          // seconds left running away
+  calm: number;           // seconds since the last threat was near
+  loot: number;           // carcass id being skinned (-1 none)
+  leader: boolean;        // best fighter of a group of 5+: boosts morale
+  /** A blow in progress: damage lands when the animation reaches its hit frame. */
+  swing: { t: number; hitAt: number; end: number; target: Target } | null;
+  flinch: number;         // seconds left of the 'hit' animation
+  /** Only tribal people: their role and where their camp is. */
+  ai: FoeAI | null;
   bed: number;      // reserved sleeping tile by the campfire (-1 if none)
   /** Ordered by the player during rest hours: stays awake until morning. */
   nightOwl: boolean;
@@ -91,12 +144,32 @@ export class Sim {
   speed = 1;
   /** Giây game đã trôi qua. */
   time = START_TIME;
+  /** Player villagers and tribal people, by id. */
   private readonly byId = new Map<number, Villager>();
+  /** Tribal people (enemies, neutrals, tributaries); they share the Villager body but never work. */
+  readonly foes: Villager[] = [];
+  readonly tribes: Tribe[] = [];
+  /** Scheduled wolf packs and tribal raids. */
+  readonly events: EventState[] = [];
+  nextRaid = 0;
+  readonly animals: Animal[] = [];
+  readonly animalById = new Map<number, Animal>();
+  readonly projectiles: Projectile[] = [];
+  nextAid = 1;
+  /** Test switches driven by the dev menu; all off in a normal game. */
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false };
+  /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
+  pendingTribe: TribeId | null = null;
+  /** Called when something dies (UI refresh hook). */
+  onKill?: () => void;
+  /** Random stream for animals, tribes and events, so adding them never changes villager stats. */
+  readonly frnd: () => number;
   private acc = 0;
   private fogDirty = true;
   private nextVid = 1;
   private nextBid = 1;
   private readonly rnd: () => number;
+  private moraleClock = 0;
   private lastFullWarn = -999;
   private lastMatWarn = -999;
   /** Today's and tomorrow's weather (tomorrow is rolled ahead so it can be foretold). */
@@ -114,6 +187,7 @@ export class Sim {
     this.world = new World(seed);
     this.fog = new Fog(this.world);
     this.rnd = mulberry32(seed ^ 0x9e3779b9);
+    this.frnd = mulberry32(seed ^ 0x7f4a7c15);
     this.wrnd = mulberry32(seed ^ 0x5bd1e995);
     this.world.setSeason(this.season);
     this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
@@ -125,6 +199,8 @@ export class Sim {
     for (const [dx, dy, sex] of spots) this.spawn(s.x + dx, s.y + dy, sex);
     this.say('Ba người đầu tiên đã đến bên đống lửa. Chọn họ, rồi giao việc: chuột phải lên cây, đá hay bụi quả.');
     this.refreshFog();
+    populate(this);
+    spawnTribes(this);
   }
 
   // ---------------------------------------------------------------- tiện ích
@@ -166,36 +242,45 @@ export class Sim {
   }
   getBuilding(id: number): Building | undefined { return this.buildings.find((b) => b.id === id); }
   hasWorkshop(): boolean { return this.buildings.some((b) => b.kind === 'workshop' && b.done); }
-  toolCount(kind: ToolKind, tier: number): number { return this.toolStock[`${kind}${tier}`] ?? 0; }
+  toolCount(kind: string, tier: number): number { return this.toolStock[`${kind}${tier}`] ?? 0; }
   /** Bậc công cụ dân đang dùng cho nghề này (0 = tay không). */
   toolTier(v: Villager, job: Job): number {
     const k = job === 'idle' ? undefined : TOOL_OF_JOB[job];
     return k ? v.tools[k]?.tier ?? 0 : 0;
   }
 
-  private freshName(sex: Sex): string {
+  private freshName(sex: Sex, rnd: () => number): string {
     const pool = (sex === 'm' ? NAMES_M : NAMES_F).filter((n) => !this.villagers.some((v) => v.name === n));
     const list = pool.length ? pool : sex === 'm' ? NAMES_M : NAMES_F;
-    return list[Math.floor(this.rnd() * list.length)];
+    return list[Math.floor(rnd() * list.length)];
   }
 
   private spawn(x: number, y: number, sex: Sex): Villager {
-    const r = this.rnd, pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
+    const v = this.makeVillager(x, y, sex, 'player');
+    this.villagers.push(v); this.byId.set(v.id, v);
+    return v;
+  }
+
+  /** Build a unit without registering it: player villagers and tribal people share the same body. */
+  makeVillager(x: number, y: number, sex: Sex, team: Team, rnd: () => number = this.rnd): Villager {
+    const r = rnd, pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
     const stats = {} as Stats;
     for (const k of STAT_KEYS) stats[k] = 3 + Math.floor(r() * 8);
     const potential = {} as Record<WorkJob, number>, skill = {} as Record<WorkJob, Skill>;
     for (const j of WORK_JOBS) {
+      // hunting and fighting come from the body, not from a random draw, so earlier random streams stay the same
+      if (j === 'hunt' || j === 'fight') { const k = j === 'hunt' ? stats.agi : stats.str; potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1; skill[j] = { xp: 0, level: 0 }; continue; }
       const p = r(); potential[j] = p < 0.45 ? 1 : p < 0.85 ? 2 : 3; skill[j] = { xp: 0, level: 0 };
     }
-    const v: Villager = {
-      id: this.nextVid++, name: this.freshName(sex),
+    return {
+      id: this.nextVid++, name: this.freshName(sex, rnd),
       look: { sex, skin: pick(SKIN), hair: pick(HAIR), hide: '#8b6a45', pants: '#3f63a8' },
       x: x + 0.5, y: y + 0.5, path: [], slide: null, facing: 'front', speed: 1.6 + 0.1 * stats.agi, animClock: 0, tx: -1, ty: -1,
       stats, potential, skill, tools: emptyToolSet(), job: 'idle', phase: 'idle', slot: 0, target: -1, prefer: -1, progress: 0, frac: 0, timer: 0, order: null,
-      carry: null, fullness: 100, health: 100, starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, nightOwl: false,
+      carry: null, fullness: 100, health: maxHpOf(stats.vit), starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, nightOwl: false,
+      team, maxHealth: maxHpOf(stats.vit), weapon: null, armor: null, morale: MORALE.start, stance: 'aggressive',
+      fight: { mode: 'none', target: null, dest: null, anchor: null, repath: 0, scan: 0 }, queue: [], atkCd: 0, down: 0, rescue: 0, fleeT: 0, calm: 99, loot: -1, leader: false, swing: null, flinch: 0, ai: null,
     };
-    this.villagers.push(v); this.byId.set(v.id, v);
-    return v;
   }
 
   // ---------------------------------------------------------------- công trình
@@ -218,7 +303,7 @@ export class Sim {
       const t = w.tiles[k];
       if ((t !== 0 && t !== 4) || w.occ[k]) return 'Vướng cây, đá, nước hoặc công trình';
     }
-    return this.missing(levelsOf(kind, this.era)[0].cost);
+    return this.dev.freeBuild ? null : this.missing(levelsOf(kind, this.era)[0].cost);
   }
 
   /** Reason the stock cannot pay `cost`, or null. */
@@ -232,7 +317,7 @@ export class Sim {
     if (!b.done) return 'Công trình chưa dựng xong';
     if (b.upgrading) return 'Đang nâng cấp';
     if (b.level >= maxLevel(b.kind, b.era)) return 'Đã ở cấp cao nhất';
-    return this.missing(levelDef(b, b.level + 1).cost);
+    return this.dev.freeBuild ? null : this.missing(levelDef(b, b.level + 1).cost);
   }
 
   /** Pay for the next level; builders then work on it while the building keeps its current level. */
@@ -242,7 +327,8 @@ export class Sim {
     const why = this.canUpgrade(b);
     if (why) return why;
     const next = levelDef(b, b.level + 1);
-    for (const r of Object.keys(next.cost) as Res[]) this.stock[r] -= next.cost[r] ?? 0;
+    if (!this.dev.freeBuild) for (const r of Object.keys(next.cost) as Res[]) this.stock[r] -= next.cost[r] ?? 0;
+    if (this.dev.instantBuild) { b.level++; this.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); return null; }
     b.upgrading = true; b.progress = 0;
     this.say(`Bắt đầu nâng ${BUILDINGS[b.kind].name} lên cấp ${b.level + 1} (${next.name.toLowerCase()}). Giao việc "Thợ xây" để làm.`);
     return null;
@@ -254,8 +340,9 @@ export class Sim {
     const why = this.canPlace(kind, x, y);
     if (why) return { ok: false, reason: why };
     const cost = levelsOf(kind, this.era)[0].cost;
-    for (const r of Object.keys(cost) as Res[]) this.stock[r] -= cost[r] ?? 0;
+    if (!this.dev.freeBuild) for (const r of Object.keys(cost) as Res[]) this.stock[r] -= cost[r] ?? 0;
     const b = this.addBuilding(kind, x, y, false);
+    if (this.dev.instantBuild) { b.progress = 1; b.done = true; this.fogDirty = true; this.say(`${d.name} đã dựng xong ngay (dev).`); return { ok: true, building: b }; }
     this.say(`Đã đặt nền ${d.name}. Giao việc "Thợ xây" để dựng.`);
     return { ok: true, building: b };
   }
@@ -288,20 +375,33 @@ export class Sim {
   }
 
   // ---------------------------------------------------------------- lệnh
-  private resetTask(v: Villager): void {
+  resetTask(v: Villager): void {
     this.leaveNode(v); this.releaseOrder(v);
     v.path = []; v.slide = null; v.phase = 'idle'; v.progress = 0; v.timer = 0; v.target = -1; v.bed = -1;
     if (this.resting) v.nightOwl = true;
   }
 
-  /** Lệnh đi: mỗi dân nhận một ô đích riêng quanh điểm chọn; dân thôi làm nghề. */
-  orderMove(ids: readonly number[], tx: number, ty: number): void {
-    const vs = ids.map((id) => this.byId.get(id)).filter((v): v is Villager => !!v);
+  /** Drop every combat order of a unit (a new plain order replaces them). */
+  clearCombat(v: Villager): void {
+    v.fight.target = null; v.fight.mode = 'none'; v.fight.dest = null; v.fight.anchor = null; v.queue.length = 0; v.loot = -1; v.fleeT = 0;
+  }
+  private mine(ids: readonly number[]): Villager[] {
+    return ids.map((id) => this.byId.get(id)).filter((v): v is Villager => !!v && v.team === 'player' && v.down <= 0);
+  }
+  /** A unit that is already doing something takes a Shift-queued order after it. */
+  private busy(v: Villager): boolean {
+    return v.phase !== 'idle' || v.path.length > 0 || v.fight.mode !== 'none';
+  }
+
+  /** Lệnh đi: mỗi dân nhận một ô đích riêng quanh điểm chọn; dân thôi làm nghề. With `queue`, the move waits its turn. */
+  orderMove(ids: readonly number[], tx: number, ty: number, queue = false): void {
+    const vs = this.mine(ids);
     vs.sort((a, b) => Math.hypot(a.x - tx, a.y - ty) - Math.hypot(b.x - tx, b.y - ty));
     const taken = new Set<number>();
     for (const v of vs) {
+      if (queue && this.busy(v)) { v.queue.push({ k: 'move', x: tx, y: ty }); continue; }
       const goal = this.nearestFree(tx, ty, taken);
-      this.resetTask(v); v.job = 'idle'; v.prefer = -1;
+      this.resetTask(v); this.clearCombat(v); v.job = 'idle'; v.prefer = -1;
       if (!goal) continue;
       taken.add(goal[1] * this.world.size + goal[0]);
       v.path = this.pathTo(v, goal[0], goal[1], 30000);
@@ -319,17 +419,99 @@ export class Sim {
     else if (site && needsWork(site)) { job = 'build'; prefer = site.id; }
     else if (site && site.kind === 'workshop') { job = 'craft'; prefer = site.id; }
     if (!job) return null;
-    for (const id of ids) {
-      const v = this.byId.get(id); if (!v) continue;
-      this.resetTask(v); v.job = job; v.prefer = prefer;
+    for (const v of this.mine(ids)) {
+      this.resetTask(v); this.clearCombat(v); v.job = job; v.prefer = prefer;
     }
     return JOB_NAME[job];
   }
 
   setJob(ids: readonly number[], job: Job): void {
-    for (const id of ids) {
-      const v = this.byId.get(id); if (!v) continue;
-      this.resetTask(v); v.job = job; v.prefer = -1;
+    for (const v of this.mine(ids)) {
+      this.resetTask(v); this.clearCombat(v); v.job = job; v.prefer = -1;
+      if (job === 'fight' && v.fight.mode === 'none') v.fight.anchor = null;
+    }
+  }
+
+  // ---------------------------------------------------------------- combat orders
+  /** What the point (tile units) shows that can be fought or looted: living foes, animals, or a carcass. */
+  targetAt(x: number, y: number): { target: Target; kind: 'foe' | 'animal' | 'carcass' } | null {
+    const N = this.world.size, seen = (px: number, py: number) => this.fog.state[Math.floor(py) * N + Math.floor(px)] === 2;
+    let best: { target: Target; kind: 'foe' | 'animal' | 'carcass' } | null = null, bd = 0.9;
+    for (const f of this.foes) {
+      if (f.health <= 0 || !seen(f.x, f.y)) continue;
+      const d = Math.hypot(f.x - x, f.y - 0.5 - y);
+      if (d < bd) { bd = d; best = { target: { kind: 'unit', id: f.id }, kind: 'foe' }; }
+    }
+    for (const a of this.animals) {
+      if (!seen(a.x, a.y)) continue;
+      const d = Math.hypot(a.x - x, a.y - 0.3 - y);
+      if (d < bd) { bd = d; best = { target: { kind: 'animal', id: a.id }, kind: a.state === 'dead' ? 'carcass' : 'animal' }; }
+    }
+    return best;
+  }
+
+  /** Right click on an enemy, animal or carcass. Prey goes to hunters; everything else is a fight. */
+  orderAttack(ids: readonly number[], target: Target, queue = false): void {
+    const e = resolve(this, target);
+    const prey = e?.kind === 'animal' && e.a.state !== 'dead' && animalDef(e.a).prey;
+    for (const v of this.mine(ids)) {
+      if (queue && this.busy(v)) { v.queue.push({ k: 'attack', t: target }); continue; }
+      this.resetTask(v); this.clearCombat(v); v.prefer = -1;
+      if (!(v.job === 'fight' || (prey && v.job === 'hunt'))) v.job = prey ? 'hunt' : 'fight';
+      v.fight.mode = 'attack'; v.fight.target = target;
+    }
+  }
+
+  /** Walk to a point and fight whatever is met on the way. */
+  orderAttackMove(ids: readonly number[], x: number, y: number, queue = false): void {
+    for (const v of this.mine(ids)) {
+      if (queue && this.busy(v)) { v.queue.push({ k: 'attackMove', x, y }); continue; }
+      this.resetTask(v); this.clearCombat(v); v.prefer = -1; v.job = 'fight';
+      v.fight.mode = 'attackMove'; v.fight.dest = { x, y }; v.phase = 'move';
+    }
+  }
+
+  /** Right click on a dead animal: go and skin it. */
+  orderLoot(ids: readonly number[], animalId: number): void {
+    for (const v of this.mine(ids)) { this.resetTask(v); this.clearCombat(v); v.job = 'hunt'; v.loot = animalId; v.phase = 'goCarcass'; }
+  }
+
+  /** H: stand here and only hit what comes close. */
+  orderHold(ids: readonly number[]): void {
+    for (const v of this.mine(ids)) {
+      this.resetTask(v); this.clearCombat(v); if (v.job !== 'hunt') v.job = 'fight';
+      v.fight.mode = 'hold'; v.fight.anchor = { x: v.x, y: v.y };
+    }
+  }
+
+  /** G: stop everything, keep the job. */
+  orderStop(ids: readonly number[]): void {
+    for (const v of this.mine(ids)) { this.resetTask(v); this.clearCombat(v); if (v.job === 'fight') { v.fight.mode = 'hold'; v.fight.anchor = { x: v.x, y: v.y }; } }
+  }
+
+  setStance(ids: readonly number[], stance: 'aggressive' | 'defensive' | 'retreat'): void {
+    for (const v of this.mine(ids)) { v.stance = stance; if (stance === 'defensive') v.fight.anchor = v.fight.anchor ?? { x: v.x, y: v.y }; else if (v.fight.mode !== 'hold') v.fight.anchor = null; }
+  }
+
+  /** Start the next queued order, if any. Returns true when something started. */
+  nextOrder(v: Villager): boolean {
+    const o = v.queue.shift();
+    if (!o) return false;
+    this.resetTask(v);
+    if (o.k === 'move') {
+      v.fight.mode = 'none'; v.fight.target = null;
+      const goal = this.nearestFree(Math.floor(o.x), Math.floor(o.y), new Set());
+      if (goal) { v.path = this.pathTo(v, goal[0], goal[1], 30000); v.phase = v.path.length ? 'move' : 'idle'; }
+    } else if (o.k === 'attackMove') { v.job = 'fight'; v.fight.mode = 'attackMove'; v.fight.dest = { x: o.x, y: o.y }; v.phase = 'move'; }
+    else { v.job = v.job === 'hunt' ? 'hunt' : 'fight'; v.fight.mode = 'attack'; v.fight.target = o.t; }
+    return true;
+  }
+
+  /** Hand a weapon (club, spear, mace) or the hide armour straight to villagers; null takes it away. */
+  giveGear(ids: readonly number[], kind: string | null, slot: 'weapon' | 'armor'): void {
+    for (const v of this.mine(ids)) {
+      if (slot === 'weapon') v.weapon = kind; else v.armor = kind;
+      if (kind) this.say(`${v.name} được cấp ${kind === 'hide' ? ARMORS.hide.name.toLowerCase() : WEAPONS[kind].name.toLowerCase()}.`);
     }
   }
 
@@ -343,7 +525,7 @@ export class Sim {
   }
 
   /** Ô trống gần (tx,ty) nhất, chưa bị ai giữ. */
-  private nearestFree(tx: number, ty: number, taken: Set<number>): [number, number] | null {
+  nearestFree(tx: number, ty: number, taken: Set<number>): [number, number] | null {
     const N = this.world.size;
     for (let r = 0; r <= 12; r++) {
       let best: [number, number] | null = null, bd = Infinity;
@@ -383,7 +565,12 @@ export class Sim {
     this.tickCalendar();
     this.world.tick(dt);
     this.syncFood();
+    tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
+    for (const f of [...this.foes]) tickFoe(this, f, dt);
+    tickTribes(this, dt);
+    this.moraleClock += dt;
+    if (this.moraleClock >= 1) { this.moraleClock = 0; for (const v of this.villagers) if (v.down <= 0) tickMorale(this, v); this.pickLeaders(); }
     if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
     if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
   }
@@ -435,26 +622,40 @@ export class Sim {
   }
 
   private tickVillager(v: Villager, dt: number): void {
+    tickCommon(this, v, dt);
+    if (v.down > 0) { tickDown(this, v, dt); this.animate(v, dt); return; }
     // ---- nhu cầu ----
-    v.fullness -= (dt * 100) / DAY_LENGTH;
+    v.fullness -= this.dev.noHunger ? 0 : (dt * 100) / DAY_LENGTH;
     if (v.fullness < 50 && this.stock.food >= 2) {
       this.stock.food -= 2; v.fullness = Math.min(100, v.fullness + 2 * FOOD_NUTRITION);
     }
     if (v.fullness <= 0) {
       if (!v.starving) { v.starving = true; this.say(`${v.name} đói lả, kho hết thức ăn!`); }
-      v.fullness = 0; v.health -= (dt * 100) / (1.5 * DAY_LENGTH);
+      v.fullness = 0; v.health -= (dt * v.maxHealth) / (1.5 * DAY_LENGTH);
     } else {
       v.starving = false;
-      if (v.fullness > 40 && v.health < 100) v.health = Math.min(100, v.health + dt * 0.15);
+      if (v.fullness > 40 && v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 0.0015 * v.maxHealth);
     }
     if (v.health <= 0) { this.kill(v); return; }
 
-    // ---- night rest ----
-    if (this.resting) { if (!v.nightOwl && v.phase !== 'goHome' && v.phase !== 'sleep') this.goHome(v); }
+    // ---- combat decides first: fighting, fleeing, rescuing, hunting ----
+    const brained = brainPlayer(this, v, dt);
+
+    // ---- night rest (sentries and anyone busy with a fight stay up) ----
+    const fighting = brained && (v.phase === 'fight' || v.phase === 'flee' || v.phase === 'rescue');
+    if (this.resting) { if (!v.nightOwl && v.job !== 'fight' && !fighting && v.phase !== 'goHome' && v.phase !== 'sleep') this.goHome(v); }
     else if (v.phase === 'goHome' || v.phase === 'sleep') { v.path = []; v.slide = null; v.phase = 'idle'; v.bed = -1; }
 
-    // ---- walking (slowed by rain, snow) ----
-    const walk = v.speed * WEATHER[this.weather].speed;
+    this.moveUnit(v, dt);
+    if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) this.fogDirty = true;
+    if (!v.path.length && !v.slide && !brained) this.think(v, dt);
+    this.animate(v, dt);
+  }
+
+  /** Follow the path and the final slide step; shared by villagers and tribal people. */
+  moveUnit(v: Villager, dt: number): void {
+    const walk = v.speed * WEATHER[this.weather].speed * (v.phase === 'flee' ? 1.15 : 1) * (v.armor ? 1 : 1);
+    if (v.swing) return; // a blow in progress plants the feet
     let left = walk * dt;
     while (left > 0 && v.path.length) {
       const [px, py] = v.path[0];
@@ -469,13 +670,16 @@ export class Sim {
       if (d <= step) { v.x = s.x; v.y = s.y; v.slide = null; v.facing = s.face; }
       else { v.x += (dx / d) * step; v.y += (dy / d) * step; if (Math.abs(dx) > 0.02) v.facing = dx > 0 ? 'right' : 'left'; }
     }
-    if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) this.fogDirty = true;
-    if (!v.path.length && !v.slide) this.think(v, dt);
+  }
 
-    // ---- hoạt ảnh và công cụ trong tay ----
+  /** Pick the animation and the item in hand from what the unit is doing. */
+  animate(v: Villager, dt: number): void {
     let anim = 'idle', hold: Hold | null = null;
     const walking = v.path.length > 0 || !!v.slide;
-    if (walking) anim = v.carry && v.carry.amount > 0 ? 'carry_walk' : 'walk';
+    if (v.down > 0) anim = 'idle';
+    else if (v.swing) { const w = weaponOf(v); anim = w.anim; if (v.weapon) hold = { kind: v.weapon, tier: w.tier ?? 1 }; }
+    else if (v.flinch > 0) anim = 'hit';
+    else if (walking) { anim = v.carry && v.carry.amount > 0 ? 'carry_walk' : 'walk'; if (v.weapon && v.phase === 'fight') hold = null; }
     else if (v.phase === 'work' && v.job !== 'idle') {
       const k = TOOL_OF_JOB[v.job as WorkJob], tier = this.toolTier(v, v.job);
       if (k && tier > 0) { anim = JOBS[v.job as WorkJob].anim === 'gather' ? 'dig' : JOBS[v.job as WorkJob].anim; hold = { kind: k, tier }; }
@@ -484,6 +688,7 @@ export class Sim {
       const t = this.toolTier(v, 'build');
       if (t > 0) { anim = 'build'; hold = { kind: 'hammer', tier: t }; } else anim = 'gather';
     } else if (v.phase === 'craft') { anim = 'craft'; hold = { kind: 'hammer', tier: 2 }; }
+    else if (v.phase === 'skin') anim = 'gather';
     if (anim !== v.anim) { v.anim = anim; v.animClock = 0; } else v.animClock += dt;
     v.hold = hold;
   }
@@ -502,11 +707,84 @@ export class Sim {
     v.bed = spot[1] * this.world.size + spot[0]; v.phase = 'goHome';
   }
 
-  private kill(v: Villager): void {
+  kill(v: Villager, cause = 'vì đói'): void {
     this.leaveNode(v); this.releaseOrder(v);
     this.villagers.splice(this.villagers.indexOf(v), 1); this.byId.delete(v.id);
     this.fogDirty = true;
-    this.say(`${v.name} đã chết vì đói.`);
+    this.say(`${v.name} đã chết ${cause}.`);
+    this.onKill?.();
+  }
+  killUnit(v: Villager, cause: string): void { this.kill(v, cause); }
+
+  // ---------------------------------------------------------------- tribal people
+  /** Make a unit known by id (used when a villager is created outside the constructor, e.g. by the dev menu). */
+  registerUnit(v: Villager): void { this.byId.set(v.id, v); this.fogDirty = true; }
+  addFoe(v: Villager): void { this.foes.push(v); this.byId.set(v.id, v); }
+  removeFoe(v: Villager): void {
+    const i = this.foes.indexOf(v);
+    if (i >= 0) this.foes.splice(i, 1);
+    this.byId.delete(v.id);
+  }
+  /** A tribal person joins the village. */
+  adoptFoe(v: Villager): void {
+    const i = this.foes.indexOf(v);
+    if (i >= 0) this.foes.splice(i, 1);
+    v.team = 'player'; v.ai = null; v.job = 'idle'; v.phase = 'idle'; v.path = []; v.morale = 50; v.leader = false; v.fleeT = 0;
+    this.clearCombat(v); v.health = Math.max(v.health, v.maxHealth * 0.6); v.fullness = 70;
+    this.villagers.push(v); this.fogDirty = true;
+  }
+  /** Diplomacy buttons: 'gift', 'tribute', 'adopt'. Returns an error text or null. */
+  diplomacy(id: TribeId, action: 'gift' | 'tribute' | 'adopt'): string | null {
+    return action === 'gift' ? giftTribe(this, id) : action === 'tribute' ? tributeTribe(this, id) : adoptTribe(this, id);
+  }
+
+  // ---------------------------------------------------------------- combat helpers
+  hurt(target: Target, dmg: number, type: 'pierce' | 'slash' | 'crush', from: { x: number; y: number }, src: { unit?: Villager; animal?: Animal }): void {
+    hurt(this, target, dmg, type, from, src);
+  }
+  tribeHostile(id: Team): boolean { return tribeHostile(this, id); }
+  tribeAttacked(id: Exclude<Team, 'player' | 'wild'>, victim: Villager): void { tribeAttacked(this, id, victim); }
+  killFoe(v: Villager, killer?: Villager): void { killFoe(this, v, killer); }
+  /** The player's own campfire (the village centre). */
+  campfire(): Building | undefined { return this.buildings.find((b) => b.kind === 'campfire' && b.done); }
+  /** Close to the unit's own camp: the village fire, or the tribal camp for tribal people. */
+  nearHome(v: Villager): boolean {
+    if (v.ai) return Math.hypot(v.x - v.ai.camp.x, v.y - v.ai.camp.y) < 10;
+    const f = this.campfire();
+    return !!f && Math.hypot(v.x - f.x - 1, v.y - f.y - 1) < 10;
+  }
+  /** Another fighter within 7 tiles of the animal: a boar is only worth attacking in a group. */
+  packNear(v: Villager, a: Animal): boolean {
+    return this.villagers.some((o) => o !== v && o.health > 0 && o.down <= 0 && (o.job === 'hunt' || o.job === 'fight') && Math.hypot(o.x - a.x, o.y - a.y) < 7);
+  }
+  /** Every second: groups of five or more fighters get a leader, the best of them. */
+  private pickLeaders(): void {
+    const fighters = this.villagers.filter((v) => v.job === 'fight' && v.health > 0 && v.down <= 0);
+    for (const v of this.villagers) v.leader = false;
+    if (fighters.length >= 5) fighters.sort((a, b) => b.stats.str + b.stats.agi - a.stats.str - a.stats.agi)[0].leader = true;
+  }
+  /** Go to the workshop for a better weapon or armour than the one in hand. */
+  planEquipGear(v: Villager): boolean {
+    if ((v.job !== 'hunt' && v.job !== 'fight') || !this.hasWorkshop() || v.phase === 'fight') return false;
+    const wantsArmor = v.job === 'fight' && !v.armor && this.toolCount('hide', 1) > 0;
+    if (!bestWeapon(this, v) && !wantsArmor) return false;
+    const shops = this.buildings.filter((b) => b.kind === 'workshop' && b.done);
+    shops.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
+    for (const b of shops.slice(0, 2)) {
+      const d = BUILDINGS[b.kind];
+      if (this.routeTo(v, this.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { v.target = b.id; v.phase = 'goEquip'; return true; }
+    }
+    return false;
+  }
+  private equipGear(v: Villager): void {
+    const best = bestWeapon(this, v);
+    if (best) {
+      this.toolStock[`${best}${WEAPONS[best].tier ?? 1}`]--;
+      v.weapon = best; this.say(`${v.name} nhận ${WEAPONS[best].name.toLowerCase()}.`);
+    }
+    if (v.job === 'fight' && !v.armor && this.toolCount('hide', 1) > 0) {
+      this.toolStock.hide1--; v.armor = 'hide'; this.say(`${v.name} mặc ${ARMORS.hide.name.toLowerCase()}.`);
+    }
   }
 
   // ---------------------------------------------------------------- việc làm
@@ -531,7 +809,7 @@ export class Sim {
     if (t.dur <= 0) { v.tools[k] = null; this.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} của ${v.name} đã gãy.`); }
   }
 
-  private leaveNode(v: Villager): void {
+  leaveNode(v: Villager): void {
     if ((v.phase === 'goNode' || v.phase === 'work') && v.target >= 0) {
       const n = this.world.nodes.get(v.target);
       if (n) { if (n.workers > 0) n.workers--; n.sides &= ~v.slot; }
@@ -544,7 +822,7 @@ export class Sim {
     v.facing = Math.abs(dx) > Math.abs(dy) * 1.1 ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'front' : 'back';
   }
 
-  private wait(v: Villager, secs: number): void { v.phase = 'wait'; v.timer = secs; }
+  wait(v: Villager, secs: number): void { v.phase = 'wait'; v.timer = secs; }
 
   /** Dân luôn làm việc ở dạng nhìn ngang: nhìn về phía tâm vật thể. */
   private faceX(v: Villager, cx: number): void { v.facing = cx >= v.x ? 'right' : 'left'; }
@@ -564,11 +842,11 @@ export class Sim {
   /** Đứng yên nhìn ngang về phía công trình (dùng khi dỡ hàng, lấy công cụ). */
   private faceBuilding(v: Villager, b: Building): void { this.faceX(v, b.x + BUILDINGS[b.kind].w / 2); }
 
-  private think(v: Villager, dt: number): void {
+  think(v: Villager, dt: number): void {
     const N = this.world.size;
     switch (v.phase) {
-      case 'move': v.phase = 'idle'; return;
-      case 'idle': if (v.job !== 'idle') this.plan(v); return;
+      case 'move': v.phase = 'idle'; this.nextOrder(v); return;
+      case 'idle': if (v.queue.length && this.nextOrder(v)) return; if (v.job !== 'idle') this.plan(v); return;
       case 'wait': v.timer -= dt; if (v.timer <= 0) v.phase = 'idle'; return;
       case 'goNode': {
         const n = this.world.nodes.get(v.target);
@@ -661,6 +939,7 @@ export class Sim {
   }
 
   private plan(v: Villager): void {
+    if (v.job === 'hunt' || v.job === 'fight') { this.wait(v, 1); return; } // combat code drives these jobs
     if (v.job === 'build') { if (!this.planEquip(v, 'build')) this.planBuild(v); return; }
     if (v.job === 'craft') { this.planCraft(v); return; }
     const def = JOBS[v.job as WorkJob], res = def.res!;
@@ -686,7 +965,7 @@ export class Sim {
   }
 
   /** Nếu Xưởng có công cụ tốt hơn thứ dân đang cầm thì đi lấy. */
-  private planEquip(v: Villager, job: WorkJob): boolean {
+  planEquip(v: Villager, job: WorkJob): boolean {
     const k = TOOL_OF_JOB[job];
     if (!k) return false;
     if (!this.betterTool(v, job)) return false;
@@ -699,10 +978,11 @@ export class Sim {
     return false;
   }
 
-  private equip(v: Villager): void {
+  equip(v: Villager): void {
     v.phase = 'idle';
     const shop = this.getBuilding(v.target);
     if (shop) this.faceBuilding(v, shop);
+    if (v.job === 'hunt' || v.job === 'fight') { this.equipGear(v); return; }
     const k = TOOL_OF_JOB[v.job as WorkJob];
     if (!k) return;
     const cur = v.tools[k]?.tier ?? 0;
@@ -746,7 +1026,7 @@ export class Sim {
   }
 
   /** Các ô trống quanh một hình chữ nhật, gần `v` nhất trước. */
-  private ringTiles(v: Villager, x: number, y: number, w: number, h: number): Array<[number, number]> {
+  ringTiles(v: Villager, x: number, y: number, w: number, h: number): Array<[number, number]> {
     const out: Array<[number, number]> = [];
     for (let j = y - 1; j <= y + h; j++) for (let i = x - 1; i <= x + w; i++) {
       if (i >= x && i < x + w && j >= y && j < y + h) continue;
@@ -762,7 +1042,7 @@ export class Sim {
    * Start tile for pathfinding. A work spot can overlap a blocked tile (a tree between two trees);
    * then use the nearest free neighbour, since A* cannot leave a blocked tile without cutting corners.
    */
-  private standTile(v: Villager): [number, number] {
+  standTile(v: Villager): [number, number] {
     const fx = Math.floor(v.x), fy = Math.floor(v.y);
     if (!this.world.isBlocked(fx, fy)) return [fx, fy];
     let best: [number, number] = [fx, fy], bd = Infinity;
@@ -776,14 +1056,14 @@ export class Sim {
   }
 
   /** Path from where the villager stands to (gx, gy); may end at the closest tile if unreachable. */
-  private pathTo(v: Villager, gx: number, gy: number, maxNodes = 14000): Step[] {
+  pathTo(v: Villager, gx: number, gy: number, maxNodes = 14000): Step[] {
     const [sx, sy] = this.standTile(v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
     const p = gx === sx && gy === sy ? [] : findPath(this.world, sx, sy, gx, gy, maxNodes);
     return off ? [[sx, sy] as Step, ...p] : p;
   }
 
   /** Thử đi tới một trong các ô; trả về chỉ số ô đã có đường tới (hoặc -1). */
-  private routeTo(v: Villager, tiles: Array<[number, number]>, tries = 3): number {
+  routeTo(v: Villager, tiles: Array<[number, number]>, tries = 3): number {
     const [sx, sy] = this.standTile(v);
     for (let k = 0; k < Math.min(tries, tiles.length); k++) {
       const [gx, gy] = tiles[k];
@@ -835,7 +1115,7 @@ export class Sim {
     return false;
   }
 
-  private planDeliver(v: Villager): void {
+  planDeliver(v: Villager): void {
     const done = this.buildings.filter((b) => b.done && levelDef(b).cap > 0);
     done.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
     for (const b of done.slice(0, 2)) {

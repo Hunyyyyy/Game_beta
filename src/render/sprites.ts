@@ -1,4 +1,10 @@
 import { AnimTable, CX, H, W, renderFrame } from '../character/rig.js';
+import { renderAnimal, type AnimalClips, type AnimalDef } from '../character/animal-rig.js';
+import bodiesJson from '../data/animals/bodies.json';
+import bipedClips from '../data/animals/anims/biped.json';
+import fishClips from '../data/animals/anims/fish.json';
+import hopperClips from '../data/animals/anims/hopper.json';
+import quadrupedClips from '../data/animals/anims/quadruped.json';
 import { Blueprint, BlueprintDef, toCanvases } from '../blueprint/blueprint';
 import animsJson from '../data/anims.json';
 import campfireL1 from '../data/blueprints/stone_age/buildings/campfire/L1.json';
@@ -20,11 +26,19 @@ import toolAxeJson from '../data/blueprints/stone_age/tools/axe.json';
 import toolHammerJson from '../data/blueprints/stone_age/tools/hammer.json';
 import toolHoeJson from '../data/blueprints/stone_age/tools/hoe.json';
 import toolPickJson from '../data/blueprints/stone_age/tools/pick.json';
+import toolClubJson from '../data/blueprints/stone_age/tools/club.json';
+import toolSpearJson from '../data/blueprints/stone_age/tools/spear.json';
+import toolMaceJson from '../data/blueprints/stone_age/tools/mace.json';
+import toolHideArmorJson from '../data/blueprints/stone_age/tools/hide_armor.json';
 import { BuildingKind, Era, ERAS } from '../sim/buildings';
 import type { Season } from '../sim/calendar';
+import type { Animal } from '../sim/fauna';
 import type { Villager } from '../sim/sim';
 
 export const anims = animsJson as unknown as AnimTable;
+const BODIES = bodiesJson as unknown as Record<string, AnimalDef>;
+/** Each body type has its own set of clips: four legs, hopping, two legs and fish. */
+const ANIMAL_CLIPS: Record<string, AnimalClips> = { quadruped: quadrupedClips as AnimalClips, hopper: hopperClips as AnimalClips, biped: bipedClips as AnimalClips, fish: fishClips as AnimalClips };
 export const SPRITE_FEET = { x: CX, y: 42 };
 
 /** Một vật thể đã vẽ sẵn từ bản vẽ JSON: các khung hình + điểm neo (chân vật thể). */
@@ -64,12 +78,18 @@ export class Sprites {
   private readonly vcache = new Map<string, HTMLCanvasElement>();
   private readonly natureCache = new Map<string, NatureSet>();
   private readonly buildingCache = new Map<string, Prop[][]>();
+  private readonly animalCache = new Map<string, HTMLCanvasElement>();
   /** Biểu tượng công cụ 16×16, khóa dạng "axe1" (gỗ) hoặc "axe2" (đá). */
   readonly icons: Record<string, HTMLCanvasElement> = {};
 
   constructor() {
     const defs: Record<string, unknown> = { axe: toolAxeJson, pick: toolPickJson, hoe: toolHoeJson, hammer: toolHammerJson };
     for (const k of Object.keys(defs)) for (const tier of [1, 2]) this.icons[`${k}${tier}`] = make(defs[k], 1, { stone: tier === 2 ? 1 : 0 }).frames[0];
+    // gear icons are keyed like their recipes: club1, spear1, mace2, hide1
+    this.icons.club1 = make(toolClubJson, 1).frames[0];
+    this.icons.spear1 = make(toolSpearJson, 1).frames[0];
+    this.icons.mace2 = make(toolMaceJson, 1).frames[0];
+    this.icons.hide1 = make(toolHideArmorJson, 1).frames[0];
     this.nature('spring');
   }
 
@@ -115,11 +135,51 @@ export class Sprites {
     return lv[Math.min(lv.length, Math.max(1, level)) - 1][st];
   }
 
+  /** Sprite size of a species and where its feet are (the sprite is drawn with this point on the animal's position). */
+  animalBox(species: string): { w: number; h: number; ax: number; ay: number } {
+    const d = BODIES[species], [w, h] = d.size;
+    return d.body === 'fish' ? { w, h, ax: w / 2, ay: h / 2 } : { w, h, ax: w / 2, ay: h - 2 };
+  }
+
+  /** The clip an animal plays right now, from its state. */
+  private animalClip(a: Animal): string {
+    const fish = BODIES[a.species].body === 'fish';
+    if (a.state === 'dead') return 'die';
+    if (a.bite > 0) return 'attack';
+    switch (a.state) {
+      case 'flee': return a.tired > 0 ? (fish ? 'swim' : 'walk') : 'run';
+      case 'attack': return fish ? 'swim' : 'run';
+      case 'wander': return fish ? 'swim' : 'walk';
+      case 'sleep': return 'sleep';
+      default: return fish ? 'idle' : 'graze';
+    }
+  }
+
+  /** Current frame of an animal, mirrored when it faces left. Rendered once per frame and kept. */
+  animal(a: Animal): HTMLCanvasElement {
+    const def = BODIES[a.species], clips = ANIMAL_CLIPS[def.body], name = this.animalClip(a), clip = clips[name] ?? clips.idle;
+    const n = clip.frames.length;
+    // attack plays once per bite from the bite timer; dying holds its last frame; the rest loop on the animal's own clock
+    const frame = name === 'attack' ? Math.min(n - 1, Math.floor(((0.25 - a.bite) / 0.25) * n))
+      : name === 'die' ? n - 1 : Math.floor(a.clock * clip.fps) % n;
+    const key = `${a.species}|${name}|${frame}|${a.dir}`;
+    let c = this.animalCache.get(key);
+    if (!c) {
+      const r = renderAnimal(def, clip, frame), [cv, g] = canvas(r.w, r.h);
+      g.putImageData(new ImageData(new Uint8ClampedArray(r.data), r.w, r.h), 0, 0);
+      if (a.dir === -1) { const [mv, mg] = canvas(r.w, r.h); mg.translate(r.w, 0); mg.scale(-1, 1); mg.drawImage(cv, 0, 0); c = mv; } else c = cv;
+      this.animalCache.set(key, c);
+    }
+    return c;
+  }
+
   villager(v: Villager): HTMLCanvasElement {
     const name = v.anim in anims ? v.anim : 'idle';
     const def = anims[name];
     const rate = name === 'walk' || name === 'carry_walk' ? Math.min(1.6, v.speed / 1.5) : 1;
-    const frame = Math.floor(v.animClock * def.fps * rate) % def.frames.length;
+    const step = Math.floor(v.animClock * def.fps * rate);
+    // looping animations wrap; one-shot ones (attacks) stop on their last frame
+    const frame = def.loop === false ? Math.min(step, def.frames.length - 1) : step % def.frames.length;
     const kind = v.carry?.res ?? 'wood';
     const key = `${name}|${frame}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : '-'}`;
     let c = this.vcache.get(key);

@@ -1,0 +1,38 @@
+{
+  "name": "Spear",
+  "handle": {
+    "length": 14,
+    "width": 1,
+    "color": "wood"
+  },
+  "head": [
+    {
+      "x": 0,
+      "y": -3,
+      "w": 1,
+      "h": 3,
+      "color": "head"
+    },
+    {
+      "x": -1,
+      "y": -1,
+      "w": 3,
+      "h": 2,
+      "color": "head"
+    },
+    {
+      "x": 0,
+      "y": -3,
+      "w": 1,
+      "h": 1,
+      "color": "light"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "w": 1,
+      "h": 1,
+      "color": "dark"
+    }
+  ]
+}

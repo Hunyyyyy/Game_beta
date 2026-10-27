@@ -1,0 +1,6 @@
+{
+  "hit": { "fps": 10, "loop": false, "hit": 0, "frames": [
+    {"bob":0,"lean":-3,"legR":{"a":8,"lift":0},"legL":{"a":-8,"lift":0},"armR":{"a":30,"b":10},"armL":{"a":28,"b":10}},
+    {"bob":0,"lean":-1,"legR":{"a":10,"lift":0},"legL":{"a":-10,"lift":0},"armR":{"a":20,"b":10},"armL":{"a":18,"b":10}}
+  ] }
+}

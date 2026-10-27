@@ -1,0 +1,10 @@
+{
+  "thrust": { "fps": 10, "loop": false, "hit": 3, "frames": [
+    {"bob":0,"lean":0,"legR":{"a":14,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":50,"b":30},"armL":{"a":44,"b":30},"tool":{"on":true,"a":110,"kind":"spear"}},
+    {"bob":0,"lean":-2,"legR":{"a":12,"lift":0},"legL":{"a":-16,"lift":0},"armR":{"a":20,"b":40},"armL":{"a":15,"b":40},"tool":{"on":true,"a":105,"kind":"spear"}},
+    {"bob":0,"lean":-3,"legR":{"a":10,"lift":0},"legL":{"a":-18,"lift":0},"armR":{"a":10,"b":40},"armL":{"a":5,"b":40},"tool":{"on":true,"a":102,"kind":"spear"}},
+    {"bob":-1,"lean":3,"legR":{"a":24,"lift":0},"legL":{"a":-20,"lift":0},"armR":{"a":95,"b":0},"armL":{"a":90,"b":0},"tool":{"on":true,"a":90,"kind":"spear"}},
+    {"bob":-1,"lean":3,"legR":{"a":24,"lift":0},"legL":{"a":-20,"lift":0},"armR":{"a":98,"b":0},"armL":{"a":92,"b":0},"tool":{"on":true,"a":88,"kind":"spear"}},
+    {"bob":0,"lean":1,"legR":{"a":16,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":70,"b":20},"armL":{"a":64,"b":20},"tool":{"on":true,"a":98,"kind":"spear"}}
+  ] }
+}
