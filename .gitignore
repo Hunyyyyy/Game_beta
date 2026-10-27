@@ -1,1 +1,21 @@
+# dependencies
 node_modules/
+
+# generated intermediates (dist/index.html and the viewers stay tracked so the game opens without a build)
+dist/sim.test.cjs
+dist/artifact.html
+
+# logs
+*.log
+npm-debug.log*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# local env
+.env
+.env.*
