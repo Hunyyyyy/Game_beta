@@ -132,5 +132,5 @@ function tick(t) {
   if (playing && nf > 1) { acc += t - last; const step = 1000 / fps; while (acc >= step) { acc -= step; frame++; render(); } }
   last = t; requestAnimationFrame(tick);
 }
-select(names.includes('buildings/workshop/L2') ? 'buildings/workshop/L2' : names[0]);
+select(names.includes('stone_age/buildings/workshop/L2') ? 'stone_age/buildings/workshop/L2' : names[0]);
 requestAnimationFrame(tick);
