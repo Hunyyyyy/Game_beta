@@ -8,6 +8,24 @@ import quadrupedClips from '../data/animals/anims/quadruped.json';
 import { Blueprint, BlueprintDef, toCanvases } from '../blueprint/blueprint';
 import animsJson from '../data/anims.json';
 import campfireL1 from '../data/blueprints/stone_age/buildings/campfire/L1.json';
+import builderL1 from '../data/blueprints/stone_age/buildings/builder/L1.json';
+import builderL2 from '../data/blueprints/stone_age/buildings/builder/L2.json';
+import builderL3 from '../data/blueprints/stone_age/buildings/builder/L3.json';
+import labL1 from '../data/blueprints/stone_age/buildings/lab/L1.json';
+import labL2 from '../data/blueprints/stone_age/buildings/lab/L2.json';
+import labL3 from '../data/blueprints/stone_age/buildings/lab/L3.json';
+import repairL1 from '../data/blueprints/stone_age/buildings/repair/L1.json';
+import repairL2 from '../data/blueprints/stone_age/buildings/repair/L2.json';
+import repairL3 from '../data/blueprints/stone_age/buildings/repair/L3.json';
+import toolstoreL1 from '../data/blueprints/stone_age/buildings/toolstore/L1.json';
+import toolstoreL2 from '../data/blueprints/stone_age/buildings/toolstore/L2.json';
+import toolstoreL3 from '../data/blueprints/stone_age/buildings/toolstore/L3.json';
+import armoryL1 from '../data/blueprints/stone_age/buildings/armory/L1.json';
+import armoryL2 from '../data/blueprints/stone_age/buildings/armory/L2.json';
+import armoryL3 from '../data/blueprints/stone_age/buildings/armory/L3.json';
+import campfireL2 from '../data/blueprints/stone_age/buildings/campfire/L2.json';
+import campfireL3 from '../data/blueprints/stone_age/buildings/campfire/L3.json';
+import campfireL4 from '../data/blueprints/stone_age/buildings/campfire/L4.json';
 import storageL1 from '../data/blueprints/stone_age/buildings/storage/L1.json';
 import storageL2 from '../data/blueprints/stone_age/buildings/storage/L2.json';
 import storageL3 from '../data/blueprints/stone_age/buildings/storage/L3.json';
@@ -68,26 +86,17 @@ const stage = (st: number) => ({ st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 
 /** Building blueprints per era and kind, one entry per level. A later era only lists what it redraws. */
 const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>>> = {
   stone: {
-    campfire: [campfireL1, campfireL1, campfireL1, campfireL1],
-    builder: [workshopL1, workshopL2, workshopL3],
+    campfire: [campfireL1, campfireL2, campfireL3, campfireL4],
+    builder: [builderL1, builderL2, builderL3],
     storage: [storageL1, storageL2, storageL3],
     workshop: [workshopL1, workshopL2, workshopL3],
-    // the newer houses reuse the workshop and storage drawings in their own colours until they get their own art
-    lab: [workshopL1, workshopL2, workshopL3],
-    repair: [workshopL1, workshopL2, workshopL3],
-    toolstore: [storageL1, storageL2, storageL3],
-    armory: [storageL1, storageL2, storageL3],
+    lab: [labL1, labL2, labL3],
+    repair: [repairL1, repairL2, repairL3],
+    toolstore: [toolstoreL1, toolstoreL2, toolstoreL3],
+    armory: [armoryL1, armoryL2, armoryL3],
   },
 };
-/** Palette overrides that tell a reused drawing apart: the coverings take the house's colour. */
-const house = (h: string, l: string, d: string) => ({ hide: h, hideL: l, hideD: d, mat: d, matL: h, matD: d });
-const TINTS: Partial<Record<BuildingKind, Record<string, string>>> = {
-  builder: house('#b0762f', '#d29a4c', '#7c5120'),
-  lab: house('#5f7fa8', '#86a4c8', '#3f5c84'),
-  repair: house('#6f8a46', '#92ad66', '#4e6530'),
-  toolstore: house('#4f8a86', '#74b0aa', '#336460'),
-  armory: house('#a8342a', '#cf5b46', '#7a2318'),
-};
+const TINTS: Partial<Record<BuildingKind, Record<string, string>>> = {}; // no reused drawings left: every house has its own art
 
 export class Sprites {
   private readonly vcache = new Map<string, HTMLCanvasElement>();
@@ -207,7 +216,7 @@ export class Sprites {
   villager(v: Villager): HTMLCanvasElement {
     const name = v.anim in anims ? v.anim : 'idle';
     const def = anims[name];
-    const rate = name === 'walk' || name === 'carry_walk' || name === 'walk_armed' ? Math.min(1.6, v.speed / 1.5) : 1;
+    const rate = def.gait ? Math.min(1.6, v.speed / 1.5) : 1; // walking animations step faster when the villager is quick
     const step = Math.floor(v.animClock * def.fps * rate);
     // looping animations wrap; one-shot ones (attacks) stop on their last frame
     const frame = def.loop === false ? Math.min(step, def.frames.length - 1) : step % def.frames.length;

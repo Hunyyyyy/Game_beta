@@ -1,0 +1,69 @@
+{
+  "name": "Lán sửa (cấp 2, mái tranh, giá treo, bánh mài)",
+  "name_en": "Mending Lean-to (Tier 2, Thatch Roof, Tool Rack, Grinding Wheel)",
+  "type": "prop",
+  "size": [72, 64],
+  "anchor": [36, 58],
+  "footprint": [4, 32, 64, 28],
+  "seed": 9,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": { "line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "earth": "#86704e", "earthL": "#9a8460", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "rope": "#d8c690", "stone": "#8e9498", "stoneL": "#b9bfc2", "stoneD": "#60676b", "chip": "#d8d2c0", "thatch": "#c2a85a", "thatchL": "#dcc678", "thatchD": "#8f7a38", "water": "#5c86a8", "waterL": "#8fb4cf", "green": "#6f8a46", "greenD": "#4e6530" },
+  "layers": [
+    {"shape": "ellipse", "cx": 36, "cy": 55, "rx": 30, "ry": 6, "color": "shadow", "alpha": 0.25},
+    {"shape": "rect", "x": 8, "y": 36, "w": 56, "h": 18, "color": "dirt", "alpha": 0.55, "ifNot": "st1"},
+    {"shape": "rect", "x": 7, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 63, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 7, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 63, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "line", "from": [9, 37], "to": [62, 37], "w": 1, "color": "rope", "ifNot": "st1"},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "ellipse", "cx": 36, "cy": 47, "rx": 30, "ry": 8, "color": "earth"},
+      {"shape": "scatter", "count": 34, "area": [6, 40, 60, 14], "size": [1, 2], "colors": ["dirt", "chip", "earthL", "stoneD"], "onlyOver": ["earth"]},
+      {"shape": "rect", "x": 14, "y": 45, "w": 44, "h": 9, "color": "woodD", "alpha": 0.35}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "rect", "x": 10, "y": 20, "w": 2, "h": 23, "color": "wood"},
+      {"shape": "rect", "x": 10, "y": 20, "w": 1, "h": 23, "color": "woodL"},
+      {"shape": "rect", "x": 60, "y": 20, "w": 2, "h": 23, "color": "wood"},
+      {"shape": "rect", "x": 60, "y": 20, "w": 1, "h": 23, "color": "woodL"},
+      {"shape": "rect", "x": 6, "y": 30, "w": 2, "h": 25, "color": "wood"},
+      {"shape": "rect", "x": 6, "y": 30, "w": 1, "h": 25, "color": "woodL"},
+      {"shape": "rect", "x": 64, "y": 30, "w": 2, "h": 25, "color": "wood"},
+      {"shape": "rect", "x": 64, "y": 30, "w": 1, "h": 25, "color": "woodL"},
+      {"shape": "rect", "x": 9, "y": 19, "w": 54, "h": 2, "color": "woodD"},
+      {"shape": "rect", "x": 5, "y": 30, "w": 62, "h": 2, "color": "woodD"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "poly", "points": [[3, 31], [13, 16], [59, 16], [69, 31]], "color": "thatch"},
+      {"shape": "poly", "points": [[3, 31], [69, 31], [67, 35], [5, 35]], "color": "thatchD"},
+      {"shape": "line", "from": [13, 16], "to": [59, 16], "w": 1, "color": "thatchL"},
+      {"shape": "line", "from": [14, 18], "to": [8, 31], "w": 1, "color": "thatchD", "alpha": 0.6},
+      {"shape": "line", "from": [26, 17], "to": [22, 31], "w": 1, "color": "thatchD", "alpha": 0.6},
+      {"shape": "line", "from": [38, 17], "to": [38, 31], "w": 1, "color": "thatchD", "alpha": 0.6},
+      {"shape": "line", "from": [50, 17], "to": [54, 31], "w": 1, "color": "thatchD", "alpha": 0.6},
+      {"shape": "line", "from": [58, 18], "to": [65, 31], "w": 1, "color": "thatchD", "alpha": 0.6},
+      {"shape": "scatter", "count": 30, "area": [8, 17, 56, 14], "size": 1, "colors": ["thatchL", "thatchD"], "onlyOver": ["thatch"]},
+      {"shape": "rect", "x": 4, "y": 33, "w": 64, "h": 1, "color": "green"}
+    ] },
+    {"shape": "group", "if": "st4", "layers": [
+      {"shape": "rect", "x": 15, "y": 36, "w": 42, "h": 2, "color": "woodD"},
+      {"shape": "line", "from": [20, 38], "to": [20, 44], "w": 1, "color": "rope"},
+      {"shape": "rect", "x": 18, "y": 44, "w": 5, "h": 2, "color": "stoneD"},
+      {"shape": "line", "from": [30, 38], "to": [30, 45], "w": 1, "color": "rope"},
+      {"shape": "line", "from": [28, 45], "to": [32, 45], "w": 1, "color": "stoneD"},
+      {"shape": "line", "from": [40, 38], "to": [40, 44], "w": 1, "color": "rope"},
+      {"shape": "rect", "x": 38, "y": 44, "w": 5, "h": 3, "color": "stone"},
+      {"shape": "line", "from": [50, 38], "to": [50, 46], "w": 1, "color": "woodD"},
+      {"shape": "ellipse", "cx": 30, "cy": 50, "rx": 3, "ry": 5, "color": "stoneD"},
+      {"shape": "ellipse", "cx": 29, "cy": 50, "rx": 3, "ry": 4, "color": "stone"},
+      {"shape": "ellipse", "cx": 29, "cy": 49, "rx": 1, "ry": 2, "color": "stoneL"},
+      {"shape": "rect", "x": 24, "y": 49, "w": 12, "h": 2, "color": "woodD"},
+      {"shape": "rect", "x": 44, "y": 50, "w": 14, "h": 4, "color": "woodD"},
+      {"shape": "rect", "x": 45, "y": 50, "w": 12, "h": 2, "color": "water"},
+      {"shape": "pixels", "at": [[47, 50], [52, 51]], "color": "waterL"},
+      {"shape": "ellipse", "cx": 10, "cy": 52, "rx": 3, "ry": 1, "color": "greenD"},
+      {"shape": "ellipse", "cx": 10, "cy": 51, "rx": 3, "ry": 1, "color": "green"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

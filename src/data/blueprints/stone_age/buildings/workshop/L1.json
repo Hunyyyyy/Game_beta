@@ -1,5 +1,6 @@
 {
-  "name": "Xưởng chế tác (cấp 1, bãi đẽo đá)",
+  "name": "Bãi chế tạo (cấp 1, bãi đá đơn sơ)",
+  "name_en": "Crafting Ground (Tier 1, Rough Stone Ground)",
   "type": "prop",
   "size": [72, 64],
   "anchor": [36, 58],
@@ -17,32 +18,48 @@
     { "shape": "line", "from": [9, 37], "to": [62, 37], "w": 1, "color": "rope", "ifNot": "st1" },
     {"shape": "group", "if": "st1", "layers": [
       { "shape": "ellipse", "cx": 36, "cy": 47, "rx": 30, "ry": 8, "color": "earth" },
-      { "shape": "scatter", "count": 28, "area": [6, 40, 60, 14], "size": [1, 2], "colors": ["dirt", "chip", "earthL"], "onlyOver": ["earth"] },
-      { "shape": "ellipse", "cx": 30, "cy": 47, "rx": 15, "ry": 5, "color": "mat" },
-      { "shape": "scatter", "count": 10, "area": [16, 44, 28, 6], "size": [2, 1], "colors": ["matL", "matD"], "onlyOver": ["mat"] }
+      { "shape": "scatter", "count": 34, "area": [6, 40, 60, 14], "size": [1, 2], "colors": ["dirt", "chip", "earthL", "stoneD"], "onlyOver": ["earth"] },
+      { "shape": "ellipse", "cx": 22, "cy": 48, "rx": 9, "ry": 3, "color": "stoneD", "alpha": 0.6 },
+      { "shape": "ellipse", "cx": 22, "cy": 47, "rx": 8, "ry": 2, "color": "stone" },
+      { "shape": "scatter", "count": 8, "area": [14, 45, 16, 5], "size": 1, "colors": ["stoneL", "flint"], "onlyOver": ["stone"] },
+      { "shape": "ellipse", "cx": 48, "cy": 50, "rx": 7, "ry": 3, "color": "mat" },
+      { "shape": "scatter", "count": 8, "area": [42, 48, 12, 4], "size": [2, 1], "colors": ["matL", "matD"], "onlyOver": ["mat"] }
     ] },
     {"shape": "group", "if": "st2", "layers": [
-      { "shape": "rect", "x": 10, "y": 43, "w": 14, "h": 6, "color": "log" },
-      { "shape": "rect", "x": 10, "y": 43, "w": 14, "h": 1, "color": "woodL" },
-      { "shape": "rect", "x": 13, "y": 43, "w": 1, "h": 6, "color": "woodD" },
-      { "shape": "ellipse", "cx": 10, "cy": 46, "rx": 2, "ry": 3, "color": "logE" }
+      { "shape": "rect", "x": 9, "y": 42, "w": 12, "h": 5, "color": "log" },
+      { "shape": "rect", "x": 9, "y": 42, "w": 12, "h": 1, "color": "woodL" },
+      { "shape": "rect", "x": 12, "y": 42, "w": 1, "h": 5, "color": "woodD" },
+      { "shape": "ellipse", "cx": 9, "cy": 44, "rx": 2, "ry": 2, "color": "logE" },
+      { "shape": "ellipse", "cx": 38, "cy": 44, "rx": 7, "ry": 5, "color": "stoneD" },
+      { "shape": "ellipse", "cx": 38, "cy": 43, "rx": 6, "ry": 4, "color": "stone" },
+      { "shape": "ellipse", "cx": 38, "cy": 42, "rx": 3, "ry": 2, "color": "stoneL" },
+      { "shape": "scatter", "count": 6, "area": [30, 46, 16, 4], "size": 1, "colors": ["flint", "chip"], "onlyOver": ["earth"] }
     ] },
     {"shape": "group", "if": "st3", "layers": [
-      { "shape": "poly", "points": [[32, 43], [48, 42], [50, 47], [34, 49]], "color": "stoneD" },
-      { "shape": "poly", "points": [[32, 41], [48, 40], [50, 45], [34, 47]], "color": "stone" },
-      { "shape": "line", "from": [32, 41], "to": [48, 40], "w": 1, "color": "stoneL" },
-      { "shape": "poly", "points": [[37, 39], [41, 36], [43, 39]], "color": "flint" },
-      { "shape": "scatter", "count": 12, "area": [28, 47, 26, 5], "size": 1, "colors": ["flint", "flintL", "chip"] }
+      { "shape": "poly", "points": [[14, 38], [26, 37], [28, 41], [16, 42]], "color": "hideD" },
+      { "shape": "poly", "points": [[14, 36], [26, 35], [28, 39], [16, 40]], "color": "hide" },
+      { "shape": "line", "from": [14, 36], "to": [26, 35], "w": 1, "color": "hideL" },
+      { "shape": "pixels", "at": [[18, 38], [22, 37]], "color": "stitch" },
+      { "shape": "poly", "points": [[50, 36], [62, 35], [63, 39], [51, 40]], "color": "wickerD" },
+      { "shape": "poly", "points": [[50, 34], [62, 33], [63, 37], [51, 38]], "color": "wicker" },
+      { "shape": "scatter", "count": 6, "area": [52, 34, 10, 4], "size": 1, "colors": ["wickerD", "sackD"] },
+      { "shape": "ellipse", "cx": 34, "cy": 51, "rx": 6, "ry": 2, "color": "stoneD" },
+      { "shape": "scatter", "count": 10, "area": [26, 50, 18, 4], "size": 1, "colors": ["flint", "flintL", "chip", "boneD"], "onlyOver": ["earth", "stoneD"] }
     ] },
     {"shape": "group", "if": "st4", "layers": [
-      { "shape": "ellipse", "cx": 56, "cy": 45, "rx": 6, "ry": 4, "color": "stoneD" },
-      { "shape": "ellipse", "cx": 56, "cy": 44, "rx": 5, "ry": 3, "color": "stone" },
-      { "shape": "ellipse", "cx": 60, "cy": 48, "rx": 3, "ry": 2, "color": "stone" },
-      { "shape": "ellipse", "cx": 52, "cy": 49, "rx": 3, "ry": 2, "color": "stoneD" },
-      { "shape": "pixels", "at": [[54, 42], [59, 47]], "color": "stoneL" },
-      { "shape": "poly", "points": [[17, 52], [27, 52], [26, 54], [18, 54]], "color": "bone" },
-      { "shape": "line", "from": [10, 52], "to": [16, 50], "w": 1, "color": "boneD" },
-      { "shape": "ellipse", "cx": 45, "cy": 51, "rx": 2, "ry": 1, "color": "flint" }
+      { "shape": "poly", "points": [[30, 41], [42, 40], [44, 44], [32, 45]], "color": "woodD" },
+      { "shape": "poly", "points": [[30, 39], [42, 38], [44, 42], [32, 43]], "color": "wood" },
+      { "shape": "line", "from": [30, 39], "to": [42, 38], "w": 1, "color": "woodL" },
+      { "shape": "ellipse", "cx": 36, "cy": 41, "rx": 4, "ry": 2, "color": "stone" },
+      { "shape": "ellipse", "cx": 36, "cy": 40, "rx": 2, "ry": 1, "color": "flintL" },
+      { "shape": "ellipse", "cx": 56, "cy": 46, "rx": 6, "ry": 3, "color": "fireD" },
+      { "shape": "ellipse", "cx": 56, "cy": 45, "rx": 4, "ry": 2, "color": "fire" },
+      { "shape": "ellipse", "cx": 56, "cy": 44, "rx": 2, "ry": 1, "color": "fireL" },
+      { "shape": "scatter", "count": 6, "area": [52, 42, 8, 3], "size": 1, "colors": ["smoke"], "alpha": 0.5 },
+      { "shape": "poly", "points": [[16, 52], [26, 52], [25, 54], [17, 54]], "color": "bone" },
+      { "shape": "line", "from": [9, 52], "to": [15, 50], "w": 1, "color": "boneD" },
+      { "shape": "ellipse", "cx": 45, "cy": 51, "rx": 2, "ry": 1, "color": "flint" },
+      { "shape": "scatter", "count": 8, "area": [8, 47, 56, 6], "size": 1, "colors": ["chip", "stoneL", "boneD"], "onlyOver": ["earth"] }
     ] },
     { "shape": "outline", "color": "line" }
   ]

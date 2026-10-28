@@ -6,7 +6,7 @@ import { Tile } from '../src/sim/world';
 import { lightAt, rollWeather, seasonOf, SEASONS } from '../src/sim/calendar';
 import { TIER_DURABILITY } from '../src/sim/tools';
 import { levelDef, levelsOf, maxLevel } from '../src/sim/buildings';
-import { ANIMALS, ARMORS, cycleOf, damageOf, MORALE, RULES, TRIBES, TRIBE_IDS, WEAPONS, zoneOf } from '../src/sim/combat';
+import { ANIMALS, ARMORS, COMBAT_STATES, cycleOf, damageOf, MORALE, poseOf, RULES, STYLES, TRIBES, TRIBE_IDS, WEAPONS, zoneOf } from '../src/sim/combat';
 import { swingTimes, weaponOf } from '../src/sim/battle';
 import { spawnAnimal } from '../src/sim/fauna';
 import type { Villager } from '../src/sim/sim';
@@ -975,15 +975,20 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
 {
   // fighters have their own poses, apart from the work animations
   const anims = JSON.parse(readFileSync('src/data/anims.json', 'utf8')) as Record<string, { frames: unknown[] }>;
-  for (const style of ['melee', 'pierce', 'bow', 'sling', 'fist']) ok(!!anims[`guard_${style}`] && !!anims[`charge_${style}`], `a ready stance and a charge exist for ${style} fighters`);
+  // every fighting style has the five poses an armed person needs, and every weapon belongs to a style
+  for (const [id, st] of Object.entries(STYLES)) ok(COMBAT_STATES.every((s2) => !!anims[st[s2]]), `style "${id}" has an animation for idle, walk, guard, charge and attack`);
+  for (const [id, w] of Object.entries(WEAPONS)) ok(!!STYLES[w.style] && COMBAT_STATES.every((s2) => !!anims[poseOf(id, s2)]), `weapon ${id} (${w.style}) resolves every pose to an existing animation`);
+  ok(Object.values(STYLES).every((st) => (anims[st.attack] as { hit?: number }).hit !== undefined), 'every attack animation says on which frame the blow lands');
+  ok(poseOf(null, 'guard') === 'fist_guard' && poseOf('hatchet', 'attack') === 'slash' && poseOf('hatchet', 'guard') === 'swing_guard', 'bare hands use the fist style; one weapon can override a single pose');
+  ok(Object.entries(anims).filter(([k]) => /_walk$|^walk$|^carry_walk$/.test(k)).every(([, a]) => (a as { gait?: boolean }).gait === true), 'walking animations are marked as gaits so they step with the walking speed');
   ok(!!anims.run && !!anims.down, 'fleeing and being downed have their own poses');
   const sm = mk(1337); reveal(sm); const v = sm.villagers[0]; sm.villagers.forEach((o) => { o.fullness = 1e9; });
   sm.setJob([v.id], 'wood'); run(sm, 1);
-  ok(v.anim !== 'guard_melee' && !v.anim.startsWith('charge'), 'a peaceful woodcutter does not use a fighting pose');
+  ok(!/_(guard|charge|attack)$/.test(v.anim), 'a peaceful woodcutter does not use a fighting pose');
   sm.giveGear([v.id], 'spear', 'weapon'); sm.setJob([v.id], 'fight'); sm.orderHold([v.id]); run(sm, 1);
-  ok(v.anim === 'guard_pierce' && v.hold?.kind === 'spear', 'a spearman on guard stands in the spear stance with the spear in hand');
+  ok(v.anim === 'thrust_guard' && v.hold?.kind === 'spear', 'a spearman on guard stands in the spear stance with the spear in hand');
   sm.giveGear([v.id], null, 'weapon'); run(sm, 0.2);
-  ok(v.anim === 'guard_fist' && v.hold === null, 'unarmed, the same man raises fists');
+  ok(v.anim === 'fist_guard' && v.hold === null, 'unarmed, the same man raises fists');
   v.fight.mode = 'none'; v.phase = 'flee'; sm.animate(v, 0.05);
   ok(v.anim === 'run', 'a frightened villager runs');
   sm.hurt({ kind: 'unit', id: v.id }, 9999, 'crush', { x: 0, y: 0 }, {}); run(sm, 0.5);
@@ -1028,7 +1033,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   sm.assignGear([a.id], null, 'weapon'); sm.autoGear([a.id]); run(sm, 40);
   ok(!a.manualGear && a.weapon !== null, 'after "Tự nhận đồ" the workshop equips them again');
   sm.setJob([b.id], 'fight'); sm.giveGear([b.id], 'club', 'weapon'); b.manualGear = true; run(sm, 1);
-  ok(b.anim === 'idle_armed' && b.hold?.kind === 'club', 'a soldier carries the weapon in hand while idle');
+  ok(b.anim === 'swing_idle' && b.hold?.kind === 'club', 'a soldier carries the weapon in hand while idle');
 }
 
 {
@@ -1038,7 +1043,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const f = sm.campfire()!; const gx = Math.floor(f.x + 8), gy = Math.floor(f.y + 4);
   sm.orderMove([sol.id, hun.id, civ.id], gx, gy); run(sm, 1);
   ok(sol.job === 'fight' && hun.job === 'hunt' && civ.job === 'idle', 'soldier and hunter keep their job; a civilian goes idle');
-  ok(sol.weapon === 'spear' && sol.anim.startsWith('charge') && sol.hold?.kind === 'spear', 'the soldier walks with the spear in hand');
+  ok(sol.weapon === 'spear' && sol.anim === 'thrust_charge' && sol.hold?.kind === 'spear', 'the soldier walks with the spear in hand');
   run(sm, 25);
   ok(Math.hypot(sol.x - gx, sol.y - gy) < 3 && sol.job === 'fight', 'and stands at the spot they were sent to');
 }

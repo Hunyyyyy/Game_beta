@@ -12,7 +12,13 @@ export interface WeaponDef {
   damage: number;
   cycle: number;
   ranged?: boolean;
-  /** Name of the attack animation (src/data/anims): slash, thrust, smash, shoot, sling. */
+  /** Which set of fighting animations it uses: a key of `styles` in weapons.json (swing, thrust, shoot, sling, throw, fist). */
+  style: string;
+  /** Single animations this weapon plays instead of its style's. */
+  anims?: Partial<Record<CombatState, string>>;
+  /** What a ranged weapon fires. */
+  projectile?: 'arrow' | 'stone';
+  /** The attack animation, worked out from `style` and `anims` when the data is read; do not write it in weapons.json. */
   anim: string;
   cost?: Partial<Stock>;
   time?: number;
@@ -25,7 +31,23 @@ export interface ArmorDef extends Record<DmgType, number> {
   tier?: number;
 }
 
-export const WEAPONS = weaponsJson.weapons as Record<string, WeaponDef>;
+/** What a fighter's body does while armed. Hands for work have their own animations; these are for people who carry a weapon. */
+export type CombatState = 'idle' | 'walk' | 'guard' | 'charge' | 'attack';
+export const COMBAT_STATES: readonly CombatState[] = ['idle', 'walk', 'guard', 'charge', 'attack'];
+/** A family of weapons that move alike (every sword, club and mace swings; every spear thrusts), with one animation per state. */
+export type CombatStyle = { name: string } & Record<CombatState, string>;
+export const STYLES = weaponsJson.styles as unknown as Record<string, CombatStyle>;
+export const WEAPONS = weaponsJson.weapons as unknown as Record<string, WeaponDef>;
+
+/**
+ * The animation a weapon uses in a state: its own override, else its style's, else bare fists.
+ * `null` is a person with nothing in their hands.
+ */
+export function poseOf(weapon: string | null, state: CombatState): string {
+  const w = weapon ? WEAPONS[weapon] : WEAPONS.fist;
+  return w?.anims?.[state] ?? STYLES[w?.style ?? 'fist']?.[state] ?? STYLES.fist[state];
+}
+for (const id of Object.keys(WEAPONS)) WEAPONS[id].anim = poseOf(id, 'attack');
 export const ARMORS = weaponsJson.armor as unknown as Record<string, ArmorDef>;
 export const RULES = weaponsJson.rules;
 /** Weapons the player can craft, best last (used to pick what a fighter equips). */

@@ -1,45 +1,16 @@
 {
   "name": "Mace",
-  "handle": {
-    "length": 8,
-    "width": 2,
-    "color": "wood"
-  },
+  "handle": { "length": 8, "width": 2, "color": "wood" },
   "head": [
-    {
-      "x": -2,
-      "y": -2,
-      "w": 6,
-      "h": 6,
-      "color": "head"
-    },
-    {
-      "x": -2,
-      "y": -2,
-      "w": 6,
-      "h": 1,
-      "color": "light"
-    },
-    {
-      "x": 3,
-      "y": -1,
-      "w": 1,
-      "h": 5,
-      "color": "dark"
-    },
-    {
-      "x": -3,
-      "y": 0,
-      "w": 1,
-      "h": 2,
-      "color": "dark"
-    },
-    {
-      "x": 4,
-      "y": 0,
-      "w": 1,
-      "h": 2,
-      "color": "dark"
-    }
+    { "x": -2, "y": -1, "w": 6, "h": 4, "color": "head" },
+    { "x": -1, "y": -2, "w": 4, "h": 6, "color": "head" },
+    { "x": 0, "y": -4, "w": 2, "h": 2, "color": "head" },
+    { "x": -3, "y": 0, "w": 1, "h": 2, "color": "head" },
+    { "x": 4, "y": 0, "w": 1, "h": 2, "color": "head" },
+    { "x": -1, "y": -2, "w": 4, "h": 1, "color": "light" },
+    { "x": -2, "y": -1, "w": 1, "h": 2, "color": "light" },
+    { "x": 0, "y": -4, "w": 1, "h": 1, "color": "light" },
+    { "x": 3, "y": -1, "w": 1, "h": 4, "color": "dark" },
+    { "x": -1, "y": 3, "w": 4, "h": 1, "color": "dark" }
   ]
 }

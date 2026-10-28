@@ -5,7 +5,10 @@ import { resolve } from 'node:path';
 // Every src/data/blueprints/**/*.json is bundled into the page through a virtual module, so new blueprints show up on rebuild.
 // Names keep their folder, e.g. "buildings/storage/L2" or "nature/trees/tree_round".
 const dir = resolve('src/data/blueprints');
-const files = readdirSync(dir, { recursive: true }).map((f) => f.split('\\').join('/')).filter((f) => f.endsWith('.json')).sort();
+const all = readdirSync(dir, { recursive: true }).map((f) => f.split('\\').join('/')).filter((f) => f.endsWith('.json')).sort();
+// an empty .json is a placeholder waiting to be drawn: leave it out of the page instead of failing the build
+const files = all.filter((f) => readFileSync(resolve(dir, f), 'utf8').trim() !== '');
+if (files.length < all.length) console.log(`skipped ${all.length - files.length} empty placeholder files`);
 const virtual = {
   name: 'blueprints',
   setup(b) {

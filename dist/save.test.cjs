@@ -366,7 +366,7 @@ var anims_default = {
     { bob: 1, lean: 0, legR: { a: 2, lift: 0 }, legL: { a: -2, lift: 0 }, armR: { a: 8, b: 8 }, armL: { a: -8, b: 8 } },
     { bob: 1, lean: 0, legR: { a: 2, lift: 0 }, legL: { a: -2, lift: 0 }, armR: { a: 6, b: 8 }, armL: { a: -6, b: 8 } }
   ] },
-  walk: { fps: 8, loop: true, frames: [
+  walk: { fps: 8, loop: true, gait: true, frames: [
     { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 0, b: 14 }, armL: { a: 0, b: 14 } },
     { bob: 0, lean: 1, legR: { a: 28, lift: 1 }, legL: { a: -28, lift: 0 }, armR: { a: -23, b: 14 }, armL: { a: 23, b: 14 } },
     { bob: 0, lean: 1, legR: { a: 28, lift: 0 }, legL: { a: -28, lift: 1 }, armR: { a: -23, b: 14 }, armL: { a: 23, b: 14 } },
@@ -374,7 +374,7 @@ var anims_default = {
     { bob: 0, lean: 1, legR: { a: -28, lift: 0 }, legL: { a: 28, lift: 1 }, armR: { a: 23, b: 14 }, armL: { a: -23, b: 14 } },
     { bob: 0, lean: 1, legR: { a: -28, lift: 1 }, legL: { a: 28, lift: 0 }, armR: { a: 23, b: 14 }, armL: { a: -23, b: 14 } }
   ] },
-  carry_walk: { fps: 8, loop: true, frames: [
+  carry_walk: { fps: 8, loop: true, gait: true, frames: [
     { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
     { bob: 0, lean: 1, legR: { a: 21, lift: 1 }, legL: { a: -21, lift: 0 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
     { bob: 0, lean: 1, legR: { a: 21, lift: 0 }, legL: { a: -21, lift: 1 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
@@ -424,119 +424,9 @@ var anims_default = {
     { bob: 1, lean: 2, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 60, b: 35 }, armL: { a: 55, b: 35 }, tool: { on: true, a: 95, kind: "hammer" } },
     { bob: 2, lean: 3, legR: { a: 14, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 50, b: 40 }, armL: { a: 45, b: 40 }, tool: { on: true, a: 60, kind: "hammer" } }
   ] },
-  slash: { fps: 12, loop: false, hit: 3, frames: [
-    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 100, b: 30 }, armL: { a: 92, b: 30 }, tool: { on: true, a: 150, kind: "hatchet" } },
-    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 20 }, armL: { a: 140, b: 20 }, tool: { on: true, a: 215, kind: "hatchet" } },
-    { bob: -1, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 165, b: 10 }, armL: { a: 155, b: 10 }, tool: { on: true, a: 235, kind: "hatchet" } },
-    { bob: 1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 95, b: 10 }, armL: { a: 88, b: 10 }, tool: { on: true, a: 80, kind: "hatchet" } },
-    { bob: 1, lean: 4, legR: { a: 26, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 60, b: 15 }, armL: { a: 55, b: 15 }, tool: { on: true, a: 40, kind: "hatchet" } },
-    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 85, b: 25 }, armL: { a: 78, b: 25 }, tool: { on: true, a: 110, kind: "hatchet" } }
-  ] },
-  smash: { fps: 10, loop: false, hit: 3, frames: [
-    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 110, b: 30 }, armL: { a: 104, b: 30 }, tool: { on: true, a: 140, kind: "club" } },
-    { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 160, b: 20 }, armL: { a: 155, b: 20 }, tool: { on: true, a: 185, kind: "club" } },
-    { bob: -1, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 175, b: 10 }, armL: { a: 170, b: 10 }, tool: { on: true, a: 205, kind: "club" } },
-    { bob: 1, lean: 4, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 70, b: 30 }, armL: { a: 66, b: 30 }, tool: { on: true, a: 60, kind: "club" } },
-    { bob: 1, lean: 4, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 60, b: 30 }, armL: { a: 56, b: 30 }, tool: { on: true, a: 55, kind: "club" } },
-    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 90, b: 25 }, armL: { a: 84, b: 25 }, tool: { on: true, a: 120, kind: "club" } }
-  ] },
-  thrust: { fps: 10, loop: false, hit: 3, frames: [
-    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
-    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 20, b: 40 }, armL: { a: 15, b: 40 }, tool: { on: true, a: 105, kind: "spear" } },
-    { bob: 0, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 10, b: 40 }, armL: { a: 5, b: 40 }, tool: { on: true, a: 102, kind: "spear" } },
-    { bob: -1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 95, b: 0 }, armL: { a: 90, b: 0 }, tool: { on: true, a: 90, kind: "spear" } },
-    { bob: -1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 98, b: 0 }, armL: { a: 92, b: 0 }, tool: { on: true, a: 88, kind: "spear" } },
-    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 20 }, armL: { a: 64, b: 20 }, tool: { on: true, a: 98, kind: "spear" } }
-  ] },
-  shoot: { fps: 10, loop: false, hit: 4, frames: [
-    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
-    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 85, b: 5 }, armL: { a: 60, b: 40 }, tool: { on: true, a: 180, kind: "bow" } },
-    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 88, b: 0 }, armL: { a: 40, b: -70 }, tool: { on: true, a: 180, kind: "bow" } },
-    { bob: 0, lean: -3, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 90, b: 0 }, armL: { a: 30, b: -80 }, tool: { on: true, a: 180, kind: "bow" } },
-    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 90, b: 0 }, armL: { a: 60, b: -20 }, tool: { on: true, a: 180, kind: "bow" } },
-    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } }
-  ] },
-  sling: { fps: 10, loop: false, hit: 4, frames: [
-    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 165, b: 10 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 175, kind: "sling" } },
-    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 170, b: 5 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 270, kind: "sling" } },
-    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 170, b: 5 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 360, kind: "sling" } },
-    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 170, b: 5 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 90, kind: "sling" } },
-    { bob: 0, lean: 2, legR: { a: 20, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 100, b: 10 }, armL: { a: 95, b: 10 }, tool: { on: true, a: 100, kind: "sling" } },
-    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } }
-  ] },
   hit: { fps: 10, loop: false, hit: 0, frames: [
     { bob: 0, lean: -3, legR: { a: 8, lift: 0 }, legL: { a: -8, lift: 0 }, armR: { a: 30, b: 10 }, armL: { a: 28, b: 10 } },
     { bob: 0, lean: -1, legR: { a: 10, lift: 0 }, legL: { a: -10, lift: 0 }, armR: { a: 20, b: 10 }, armL: { a: 18, b: 10 } }
-  ] },
-  guard_melee: { fps: 4, loop: true, frames: [
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 105, b: 30 }, armL: { a: 98, b: 30 }, tool: { on: true, a: 150, kind: "club" } },
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 106, b: 30 }, armL: { a: 99, b: 30 }, tool: { on: true, a: 152, kind: "club" } },
-    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 105, b: 30 }, armL: { a: 98, b: 30 }, tool: { on: true, a: 150, kind: "club" } },
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 104, b: 30 }, armL: { a: 97, b: 30 }, tool: { on: true, a: 148, kind: "club" } }
-  ] },
-  guard_pierce: { fps: 4, loop: true, frames: [
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 111, kind: "spear" } },
-    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 51, b: 30 }, armL: { a: 45, b: 30 }, tool: { on: true, a: 109, kind: "spear" } }
-  ] },
-  guard_bow: { fps: 4, loop: true, frames: [
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 81, b: 10 }, armL: { a: 71, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
-    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 79, b: 10 }, armL: { a: 69, b: 20 }, tool: { on: true, a: 180, kind: "bow" } }
-  ] },
-  guard_sling: { fps: 4, loop: true, frames: [
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 61, b: 25 }, armL: { a: 56, b: 25 }, tool: { on: true, a: 113, kind: "sling" } },
-    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 59, b: 25 }, armL: { a: 54, b: 25 }, tool: { on: true, a: 107, kind: "sling" } }
-  ] },
-  guard_fist: { fps: 4, loop: true, frames: [
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 55, b: 75 }, armL: { a: 45, b: 80 } },
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 56, b: 75 }, armL: { a: 46, b: 80 } },
-    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 55, b: 75 }, armL: { a: 45, b: 80 } },
-    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 54, b: 75 }, armL: { a: 44, b: 80 } }
-  ] },
-  charge_melee: { fps: 12, loop: true, frames: [
-    { bob: -1, lean: 4, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 150, b: 20 }, armL: { a: 144, b: 20 }, tool: { on: true, a: 205, kind: "club" } },
-    { bob: 0, lean: 4, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 147, b: 20 }, armL: { a: 141, b: 20 }, tool: { on: true, a: 201, kind: "club" } },
-    { bob: 0, lean: 4, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 147, b: 20 }, armL: { a: 141, b: 20 }, tool: { on: true, a: 201, kind: "club" } },
-    { bob: -1, lean: 4, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 150, b: 20 }, armL: { a: 144, b: 20 }, tool: { on: true, a: 205, kind: "club" } },
-    { bob: 0, lean: 4, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 153, b: 20 }, armL: { a: 147, b: 20 }, tool: { on: true, a: 209, kind: "club" } },
-    { bob: 0, lean: 4, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 153, b: 20 }, armL: { a: 147, b: 20 }, tool: { on: true, a: 209, kind: "club" } }
-  ] },
-  charge_pierce: { fps: 12, loop: true, frames: [
-    { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
-    { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
-    { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
-    { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
-    { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } },
-    { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } }
-  ] },
-  charge_bow: { fps: 12, loop: true, frames: [
-    { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
-    { bob: 0, lean: 3, legR: { a: 31, lift: 2 }, legL: { a: -31, lift: 0 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
-    { bob: 0, lean: 3, legR: { a: 31, lift: 0 }, legL: { a: -31, lift: 1 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
-    { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
-    { bob: 0, lean: 3, legR: { a: -31, lift: 0 }, legL: { a: 31, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
-    { bob: 0, lean: 3, legR: { a: -31, lift: 2 }, legL: { a: 31, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } }
-  ] },
-  charge_sling: { fps: 12, loop: true, frames: [
-    { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-    { bob: 0, lean: 3, legR: { a: 31, lift: 2 }, legL: { a: -31, lift: 0 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-    { bob: 0, lean: 3, legR: { a: 31, lift: 0 }, legL: { a: -31, lift: 1 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-    { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-    { bob: 0, lean: 3, legR: { a: -31, lift: 0 }, legL: { a: 31, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-    { bob: 0, lean: 3, legR: { a: -31, lift: 2 }, legL: { a: 31, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } }
-  ] },
-  charge_fist: { fps: 12, loop: true, frames: [
-    { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 40, b: 80 }, armL: { a: 40, b: 80 } },
-    { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: -3, b: 80 }, armL: { a: 83, b: 80 } },
-    { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: -3, b: 80 }, armL: { a: 83, b: 80 } },
-    { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 40, b: 80 }, armL: { a: 40, b: 80 } },
-    { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 83, b: 80 }, armL: { a: -3, b: 80 } },
-    { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 83, b: 80 }, armL: { a: -3, b: 80 } }
   ] },
   run: { fps: 12, loop: true, frames: [
     { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 0, b: 70 }, armL: { a: 0, b: 70 } },
@@ -550,19 +440,215 @@ var anims_default = {
     { bob: 7, lean: -2, legR: { a: 55, lift: 0 }, legL: { a: 48, lift: 0 }, armR: { a: 25, b: 25 }, armL: { a: 15, b: 20 } },
     { bob: 6, lean: -3, legR: { a: 55, lift: 0 }, legL: { a: 48, lift: 0 }, armR: { a: 28, b: 25 }, armL: { a: 18, b: 20 } }
   ] },
-  idle_armed: { fps: 4, loop: true, frames: [
+  fist_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 55, b: 75 }, armL: { a: 45, b: 80 } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 56, b: 75 }, armL: { a: 46, b: 80 } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 55, b: 75 }, armL: { a: 45, b: 80 } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 54, b: 75 }, armL: { a: 44, b: 80 } }
+  ] },
+  fist_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 40, b: 80 }, armL: { a: 40, b: 80 } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: -3, b: 80 }, armL: { a: 83, b: 80 } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: -3, b: 80 }, armL: { a: 83, b: 80 } },
+    { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 40, b: 80 }, armL: { a: 40, b: 80 } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 83, b: 80 }, armL: { a: -3, b: 80 } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 83, b: 80 }, armL: { a: -3, b: 80 } }
+  ] },
+  fist_attack: { fps: 10, loop: false, hit: 3, frames: [
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 110, b: 30 }, armL: { a: 104, b: 30 }, tool: { on: true, a: 140, kind: "club" } },
+    { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 160, b: 20 }, armL: { a: 155, b: 20 }, tool: { on: true, a: 185, kind: "club" } },
+    { bob: -1, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 175, b: 10 }, armL: { a: 170, b: 10 }, tool: { on: true, a: 205, kind: "club" } },
+    { bob: 1, lean: 4, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 70, b: 30 }, armL: { a: 66, b: 30 }, tool: { on: true, a: 60, kind: "club" } },
+    { bob: 1, lean: 4, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 60, b: 30 }, armL: { a: 56, b: 30 }, tool: { on: true, a: 55, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 90, b: 25 }, armL: { a: 84, b: 25 }, tool: { on: true, a: 120, kind: "club" } }
+  ] },
+  swing_idle: { fps: 4, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "club" } }
+  ] },
+  swing_walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "club" } }
+  ] },
+  swing_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 105, b: 30 }, armL: { a: 98, b: 30 }, tool: { on: true, a: 150, kind: "club" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 106, b: 30 }, armL: { a: 99, b: 30 }, tool: { on: true, a: 152, kind: "club" } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 105, b: 30 }, armL: { a: 98, b: 30 }, tool: { on: true, a: 150, kind: "club" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 104, b: 30 }, armL: { a: 97, b: 30 }, tool: { on: true, a: 148, kind: "club" } }
+  ] },
+  swing_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 4, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 150, b: 20 }, armL: { a: 144, b: 20 }, tool: { on: true, a: 205, kind: "club" } },
+    { bob: 0, lean: 4, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 147, b: 20 }, armL: { a: 141, b: 20 }, tool: { on: true, a: 201, kind: "club" } },
+    { bob: 0, lean: 4, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 147, b: 20 }, armL: { a: 141, b: 20 }, tool: { on: true, a: 201, kind: "club" } },
+    { bob: -1, lean: 4, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 150, b: 20 }, armL: { a: 144, b: 20 }, tool: { on: true, a: 205, kind: "club" } },
+    { bob: 0, lean: 4, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 153, b: 20 }, armL: { a: 147, b: 20 }, tool: { on: true, a: 209, kind: "club" } },
+    { bob: 0, lean: 4, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 153, b: 20 }, armL: { a: 147, b: 20 }, tool: { on: true, a: 209, kind: "club" } }
+  ] },
+  swing_attack: { fps: 10, loop: false, hit: 3, frames: [
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 110, b: 30 }, armL: { a: 104, b: 30 }, tool: { on: true, a: 140, kind: "club" } },
+    { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 160, b: 20 }, armL: { a: 155, b: 20 }, tool: { on: true, a: 185, kind: "club" } },
+    { bob: -1, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 175, b: 10 }, armL: { a: 170, b: 10 }, tool: { on: true, a: 205, kind: "club" } },
+    { bob: 1, lean: 4, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 70, b: 30 }, armL: { a: 66, b: 30 }, tool: { on: true, a: 60, kind: "club" } },
+    { bob: 1, lean: 4, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 60, b: 30 }, armL: { a: 56, b: 30 }, tool: { on: true, a: 55, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 90, b: 25 }, armL: { a: 84, b: 25 }, tool: { on: true, a: 120, kind: "club" } }
+  ] },
+  thrust_idle: { fps: 4, loop: true, frames: [
     { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
     { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
     { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
     { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "spear" } }
   ] },
-  walk_armed: { fps: 8, loop: true, frames: [
+  thrust_walk: { fps: 8, loop: true, gait: true, frames: [
     { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
     { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
     { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
     { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
     { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
     { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } }
+  ] },
+  thrust_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 111, kind: "spear" } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 51, b: 30 }, armL: { a: 45, b: 30 }, tool: { on: true, a: 109, kind: "spear" } }
+  ] },
+  thrust_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+    { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } }
+  ] },
+  thrust_attack: { fps: 10, loop: false, hit: 3, frames: [
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 20, b: 40 }, armL: { a: 15, b: 40 }, tool: { on: true, a: 105, kind: "spear" } },
+    { bob: 0, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 10, b: 40 }, armL: { a: 5, b: 40 }, tool: { on: true, a: 102, kind: "spear" } },
+    { bob: -1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 95, b: 0 }, armL: { a: 90, b: 0 }, tool: { on: true, a: 90, kind: "spear" } },
+    { bob: -1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 98, b: 0 }, armL: { a: 92, b: 0 }, tool: { on: true, a: 88, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 20 }, armL: { a: 64, b: 20 }, tool: { on: true, a: 98, kind: "spear" } }
+  ] },
+  shoot_idle: { fps: 4, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "bow" } }
+  ] },
+  shoot_walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } }
+  ] },
+  shoot_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 81, b: 10 }, armL: { a: 71, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 79, b: 10 }, armL: { a: 69, b: 20 }, tool: { on: true, a: 180, kind: "bow" } }
+  ] },
+  shoot_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+    { bob: 0, lean: 3, legR: { a: 31, lift: 2 }, legL: { a: -31, lift: 0 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+    { bob: 0, lean: 3, legR: { a: 31, lift: 0 }, legL: { a: -31, lift: 1 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+    { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+    { bob: 0, lean: 3, legR: { a: -31, lift: 0 }, legL: { a: 31, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+    { bob: 0, lean: 3, legR: { a: -31, lift: 2 }, legL: { a: 31, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } }
+  ] },
+  shoot_attack: { fps: 10, loop: false, hit: 4, frames: [
+    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 85, b: 5 }, armL: { a: 60, b: 40 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 88, b: 0 }, armL: { a: 40, b: -70 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 0, lean: -3, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 90, b: 0 }, armL: { a: 30, b: -80 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 90, b: 0 }, armL: { a: 60, b: -20 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } }
+  ] },
+  sling_idle: { fps: 4, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "sling" } }
+  ] },
+  sling_walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } }
+  ] },
+  sling_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 61, b: 25 }, armL: { a: 56, b: 25 }, tool: { on: true, a: 113, kind: "sling" } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 59, b: 25 }, armL: { a: 54, b: 25 }, tool: { on: true, a: 107, kind: "sling" } }
+  ] },
+  sling_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 0, lean: 3, legR: { a: 31, lift: 2 }, legL: { a: -31, lift: 0 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 0, lean: 3, legR: { a: 31, lift: 0 }, legL: { a: -31, lift: 1 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 0, lean: 3, legR: { a: -31, lift: 0 }, legL: { a: 31, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 0, lean: 3, legR: { a: -31, lift: 2 }, legL: { a: 31, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } }
+  ] },
+  sling_attack: { fps: 10, loop: false, hit: 4, frames: [
+    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 165, b: 10 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 175, kind: "sling" } },
+    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 170, b: 5 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 270, kind: "sling" } },
+    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 170, b: 5 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 360, kind: "sling" } },
+    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 170, b: 5 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 90, kind: "sling" } },
+    { bob: 0, lean: 2, legR: { a: 20, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 100, b: 10 }, armL: { a: 95, b: 10 }, tool: { on: true, a: 100, kind: "sling" } },
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } }
+  ] },
+  throw_idle: { fps: 4, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "spear" } }
+  ] },
+  throw_walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } }
+  ] },
+  throw_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 111, kind: "spear" } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 51, b: 30 }, armL: { a: 45, b: 30 }, tool: { on: true, a: 109, kind: "spear" } }
+  ] },
+  throw_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+    { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } }
+  ] },
+  throw_attack: { fps: 10, loop: false, hit: 3, frames: [
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 20, b: 40 }, armL: { a: 15, b: 40 }, tool: { on: true, a: 105, kind: "spear" } },
+    { bob: 0, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 10, b: 40 }, armL: { a: 5, b: 40 }, tool: { on: true, a: 102, kind: "spear" } },
+    { bob: -1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 95, b: 0 }, armL: { a: 90, b: 0 }, tool: { on: true, a: 90, kind: "spear" } },
+    { bob: -1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 98, b: 0 }, armL: { a: 92, b: 0 }, tool: { on: true, a: 88, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 20 }, armL: { a: 64, b: 20 }, tool: { on: true, a: 98, kind: "spear" } }
+  ] },
+  slash: { fps: 12, loop: false, hit: 3, frames: [
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 100, b: 30 }, armL: { a: 92, b: 30 }, tool: { on: true, a: 150, kind: "hatchet" } },
+    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 20 }, armL: { a: 140, b: 20 }, tool: { on: true, a: 215, kind: "hatchet" } },
+    { bob: -1, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 165, b: 10 }, armL: { a: 155, b: 10 }, tool: { on: true, a: 235, kind: "hatchet" } },
+    { bob: 1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 95, b: 10 }, armL: { a: 88, b: 10 }, tool: { on: true, a: 80, kind: "hatchet" } },
+    { bob: 1, lean: 4, legR: { a: 26, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 60, b: 15 }, armL: { a: 55, b: 15 }, tool: { on: true, a: 40, kind: "hatchet" } },
+    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 85, b: 25 }, armL: { a: 78, b: 25 }, tool: { on: true, a: 110, kind: "hatchet" } }
   ] }
 };
 
@@ -664,7 +750,15 @@ var tribes_default = {
 
 // src/data/weapons.json
 var weapons_default = {
-  _note: "type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor. cost/time/tier only for what the player can craft; others are used by tribes.",
+  _note: 'type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor. cost/time/tier only for what the player can craft; others are used by tribes. style: which set of fighting animations the weapon uses (see "styles"); anims overrides single states for one weapon; projectile: what a ranged weapon fires.',
+  styles: {
+    fist: { name: "Tay kh\xF4ng", idle: "idle", walk: "walk", guard: "fist_guard", charge: "fist_charge", attack: "fist_attack" },
+    swing: { name: "Vung, ch\xE9m, \u0111\u1EADp (g\u1EADy, ch\xF9y, r\xECu, ki\u1EBFm)", idle: "swing_idle", walk: "swing_walk", guard: "swing_guard", charge: "swing_charge", attack: "swing_attack" },
+    thrust: { name: "\u0110\xE2m (gi\xE1o, th\u01B0\u01A1ng)", idle: "thrust_idle", walk: "thrust_walk", guard: "thrust_guard", charge: "thrust_charge", attack: "thrust_attack" },
+    shoot: { name: "B\u1EAFn (cung, n\u1ECF, s\xFAng)", idle: "shoot_idle", walk: "shoot_walk", guard: "shoot_guard", charge: "shoot_charge", attack: "shoot_attack" },
+    sling: { name: "Qu\u0103ng \u0111\xE1 (d\xE2y qu\u0103ng, n\xE1)", idle: "sling_idle", walk: "sling_walk", guard: "sling_guard", charge: "sling_charge", attack: "sling_attack" },
+    throw: { name: "N\xE9m (lao, ph\xF3ng lao)", idle: "throw_idle", walk: "throw_walk", guard: "throw_guard", charge: "throw_charge", attack: "throw_attack" }
+  },
   weapons: {
     fist: {
       name: "Tay kh\xF4ng",
@@ -672,7 +766,7 @@ var weapons_default = {
       range: 1,
       damage: 2,
       cycle: 1,
-      anim: "smash"
+      style: "fist"
     },
     club: {
       name: "G\u1EADy g\u1ED7",
@@ -685,7 +779,7 @@ var weapons_default = {
       },
       time: 40,
       tier: 1,
-      anim: "smash"
+      style: "swing"
     },
     spear: {
       name: "Gi\xE1o g\u1ED7",
@@ -698,7 +792,7 @@ var weapons_default = {
       },
       time: 60,
       tier: 1,
-      anim: "thrust"
+      style: "thrust"
     },
     mace: {
       name: "Ch\xF9y \u0111\xE1",
@@ -712,7 +806,7 @@ var weapons_default = {
       },
       time: 120,
       tier: 2,
-      anim: "smash"
+      style: "swing"
     },
     hatchet: {
       name: "R\xECu \u0111\xE1",
@@ -720,7 +814,8 @@ var weapons_default = {
       range: 1,
       damage: 8,
       cycle: 1.3,
-      anim: "slash",
+      style: "swing",
+      anims: { attack: "slash" },
       tier: 2
     },
     sling: {
@@ -730,7 +825,8 @@ var weapons_default = {
       damage: 5,
       cycle: 1.8,
       ranged: true,
-      anim: "sling",
+      style: "sling",
+      projectile: "stone",
       tier: 1
     },
     bow: {
@@ -740,7 +836,8 @@ var weapons_default = {
       damage: 8,
       cycle: 2,
       ranged: true,
-      anim: "shoot",
+      style: "shoot",
+      projectile: "arrow",
       tier: 1
     }
   },
@@ -771,7 +868,13 @@ var weapons_default = {
 };
 
 // src/sim/combat.ts
+var STYLES = weapons_default.styles;
 var WEAPONS = weapons_default.weapons;
+function poseOf(weapon, state) {
+  const w = weapon ? WEAPONS[weapon] : WEAPONS.fist;
+  return w?.anims?.[state] ?? STYLES[w?.style ?? "fist"]?.[state] ?? STYLES.fist[state];
+}
+for (const id of Object.keys(WEAPONS)) WEAPONS[id].anim = poseOf(id, "attack");
 var ARMORS = weapons_default.armor;
 var RULES = weapons_default.rules;
 var CRAFTED_WEAPONS = Object.keys(WEAPONS).filter((k) => WEAPONS[k].cost);
@@ -1298,7 +1401,7 @@ function resolveSwing(sim, v, target) {
   const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y);
   if (w.ranged) {
     if (d > w.range + 1) return;
-    sim.projectiles.push({ x: v.x, y: v.y - 0.4, tx: entX(e), ty: entY(e), speed: 14, dmg: w.damage, type: w.type, from: { x: v.x, y: v.y }, src: v.id, team: v.team, target, chance: d <= w.range / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.anim === "shoot" ? "arrow" : "stone" });
+    sim.projectiles.push({ x: v.x, y: v.y - 0.4, tx: entX(e), ty: entY(e), speed: 14, dmg: w.damage, type: w.type, from: { x: v.x, y: v.y }, src: v.id, team: v.team, target, chance: d <= w.range / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? "stone" });
     return;
   }
   if (d > w.range + 1.1) return;
@@ -2112,8 +2215,8 @@ var JOBS = {
   craft: { name: "Ch\u1EBF t\u1EA1o", stat: "int", baseTime: 1, anim: "craft" },
   research: { name: "Nghi\xEAn c\u1EE9u", stat: "int", baseTime: 1, anim: "gather" },
   repair: { name: "S\u1EEDa ch\u1EEFa", stat: "agi", baseTime: 1, anim: "craft" },
-  hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust" },
-  fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "smash" }
+  hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
+  fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
 };
 var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", repair: "S\u1EEDa ch\u1EEFa", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh" };
 var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "repair", "hunt", "fight"];
@@ -3754,27 +3857,25 @@ function animate(sim, v, dt) {
     const w = weaponOf(v);
     return { kind: v.weapon, tier: w.tier ?? 1 };
   };
-  const style = !v.weapon ? "fist" : { thrust: "pierce", shoot: "bow", sling: "sling" }[weaponOf(v).anim] ?? "melee";
   const ready = v.phase === "fight" || v.fight.mode !== "none";
   const carrying = !!v.weapon && (v.job === "fight" || v.job === "hunt");
   if (v.down > 0) anim = "down";
   else if (v.swing) {
-    const w = weaponOf(v);
-    anim = w.anim;
-    if (v.weapon) hold = { kind: v.weapon, tier: w.tier ?? 1 };
+    anim = poseOf(v.weapon, "attack");
+    hold = armed();
   } else if (v.flinch > 0) anim = "hit";
   else if (v.phase === "flee") anim = "run";
   else if (ready) {
-    anim = `${walking ? "charge" : "guard"}_${style}`;
+    anim = poseOf(v.weapon, walking ? "charge" : "guard");
     hold = armed();
   } else if (walking) {
     anim = v.carry && v.carry.amount > 0 ? "carry_walk" : "walk";
     if (carrying && !(v.carry && v.carry.amount > 0)) {
-      anim = "walk_armed";
+      anim = poseOf(v.weapon, "walk");
       hold = armed();
     }
   } else if (carrying && v.phase === "idle") {
-    anim = "idle_armed";
+    anim = poseOf(v.weapon, "idle");
     hold = armed();
   } else if (v.phase === "work" && v.job !== "idle") {
     const k = TOOL_OF_JOB[v.job], tier = sim.toolTier(v, v.job);

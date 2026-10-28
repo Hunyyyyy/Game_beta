@@ -1,0 +1,59 @@
+{
+  "name": "Bãi mài sửa (cấp 1, đá mài và lửa nhỏ)",
+  "name_en": "Mending Ground (Tier 1, Whetstone and Small Fire)",
+  "type": "prop",
+  "size": [72, 64],
+  "anchor": [36, 58],
+  "footprint": [4, 32, 64, 28],
+  "seed": 9,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": { "line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "earth": "#86704e", "earthL": "#9a8460", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "rope": "#d8c690", "stone": "#8e9498", "stoneL": "#b9bfc2", "stoneD": "#60676b", "chip": "#d8d2c0", "mat": "#7a5a38", "matL": "#8e6c46", "matD": "#5e4428", "fire": "#f08a2a", "fireL": "#ffd27a", "fireD": "#6a1e0e", "smoke": "#c8ccd0", "bone": "#e4dcc4", "boneD": "#b8ac90", "water": "#5c86a8", "waterL": "#8fb4cf" },
+  "layers": [
+    {"shape": "ellipse", "cx": 36, "cy": 55, "rx": 30, "ry": 6, "color": "shadow", "alpha": 0.25},
+    {"shape": "rect", "x": 8, "y": 36, "w": 56, "h": 18, "color": "dirt", "alpha": 0.55, "ifNot": "st1"},
+    {"shape": "rect", "x": 7, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 63, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 7, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 63, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "line", "from": [9, 37], "to": [62, 37], "w": 1, "color": "rope", "ifNot": "st1"},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "ellipse", "cx": 36, "cy": 47, "rx": 30, "ry": 8, "color": "earth"},
+      {"shape": "scatter", "count": 34, "area": [6, 40, 60, 14], "size": [1, 2], "colors": ["dirt", "chip", "earthL", "stoneD"], "onlyOver": ["earth"]},
+      {"shape": "ellipse", "cx": 52, "cy": 50, "rx": 8, "ry": 3, "color": "mat"},
+      {"shape": "scatter", "count": 8, "area": [46, 48, 12, 4], "size": [2, 1], "colors": ["matL", "matD"], "onlyOver": ["mat"]}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "ellipse", "cx": 22, "cy": 49, "rx": 11, "ry": 4, "color": "stoneD"},
+      {"shape": "ellipse", "cx": 22, "cy": 48, "rx": 11, "ry": 4, "color": "stone"},
+      {"shape": "ellipse", "cx": 22, "cy": 47, "rx": 8, "ry": 2, "color": "stoneL"},
+      {"shape": "line", "from": [15, 48], "to": [29, 47], "w": 1, "color": "stoneD"},
+      {"shape": "line", "from": [16, 50], "to": [28, 49], "w": 1, "color": "stoneD", "alpha": 0.6},
+      {"shape": "ellipse", "cx": 37, "cy": 52, "rx": 4, "ry": 2, "color": "stoneD"},
+      {"shape": "ellipse", "cx": 37, "cy": 51, "rx": 3, "ry": 1, "color": "water"},
+      {"shape": "pixels", "at": [[36, 51]], "color": "waterL"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "line", "from": [44, 49], "to": [50, 47], "w": 1, "color": "woodD"},
+      {"shape": "line", "from": [52, 46], "to": [56, 45], "w": 1, "color": "woodD"},
+      {"shape": "rect", "x": 57, "y": 43, "w": 4, "h": 3, "color": "stoneD"},
+      {"shape": "pixels", "at": [[57, 43]], "color": "stoneL"},
+      {"shape": "line", "from": [48, 53], "to": [54, 51], "w": 1, "color": "woodD"},
+      {"shape": "line", "from": [56, 50], "to": [60, 49], "w": 1, "color": "woodD"},
+      {"shape": "ellipse", "cx": 60, "cy": 49, "rx": 2, "ry": 1, "color": "stoneD"},
+      {"shape": "pixels", "at": [[59, 48]], "color": "stoneL"}
+    ] },
+    {"shape": "group", "if": "st4", "layers": [
+      {"shape": "ellipse", "cx": 58, "cy": 44, "rx": 5.4, "ry": 2.7, "color": "fireD"},
+      {"shape": "ellipse", "cx": 58, "cy": 43, "rx": 3.6, "ry": 1.8, "color": "fire"},
+      {"shape": "ellipse", "cx": 58, "cy": 42, "rx": 1.8, "ry": 1, "color": "fireL"},
+      {"shape": "scatter", "count": 6, "area": [54, 38, 8, 3], "size": 1, "colors": ["smoke"], "alpha": 0.5},
+      {"shape": "line", "from": [10, 52], "to": [12, 36], "w": 1, "color": "wood"},
+      {"shape": "line", "from": [13, 52], "to": [14, 35], "w": 1, "color": "woodL"},
+      {"shape": "line", "from": [16, 52], "to": [16, 37], "w": 1, "color": "wood"},
+      {"shape": "pixels", "at": [[9, 49], [14, 48]], "color": "rope"},
+      {"shape": "ellipse", "cx": 30, "cy": 54, "rx": 2, "ry": 1, "color": "bone"},
+      {"shape": "pixels", "at": [[29, 54], [32, 54]], "color": "boneD"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

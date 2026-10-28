@@ -1,38 +1,11 @@
 {
   "name": "Hatchet",
-  "handle": {
-    "length": 9,
-    "width": 1,
-    "color": "wood"
-  },
+  "handle": { "length": 9, "width": 1, "color": "wood" },
   "head": [
-    {
-      "x": -1,
-      "y": 0,
-      "w": 2,
-      "h": 3,
-      "color": "dark"
-    },
-    {
-      "x": 1,
-      "y": -1,
-      "w": 3,
-      "h": 4,
-      "color": "head"
-    },
-    {
-      "x": 1,
-      "y": -1,
-      "w": 3,
-      "h": 1,
-      "color": "light"
-    },
-    {
-      "x": 4,
-      "y": 0,
-      "w": 1,
-      "h": 3,
-      "color": "dark"
-    }
+    { "x": -1, "y": 0, "w": 2, "h": 3, "color": "dark" },
+    { "x": 1, "y": -1, "w": 3, "h": 4, "color": "head" },
+    { "x": 1, "y": -1, "w": 3, "h": 1, "color": "light" },
+    { "x": 4, "y": -2, "w": 1, "h": 6, "color": "light" },
+    { "x": 3, "y": 1, "w": 1, "h": 2, "color": "dark" }
   ]
 }

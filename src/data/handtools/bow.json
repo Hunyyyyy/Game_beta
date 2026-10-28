@@ -1,45 +1,12 @@
 {
   "name": "Bow",
-  "handle": {
-    "length": 5,
-    "width": 1,
-    "color": "wood"
-  },
+  "handle": { "length": 5, "width": 1, "color": "wood" },
   "head": [
-    {
-      "x": 1,
-      "y": -3,
-      "w": 1,
-      "h": 3,
-      "color": "wood"
-    },
-    {
-      "x": 2,
-      "y": -6,
-      "w": 1,
-      "h": 3,
-      "color": "wood"
-    },
-    {
-      "x": 1,
-      "y": 5,
-      "w": 1,
-      "h": 3,
-      "color": "wood"
-    },
-    {
-      "x": 2,
-      "y": 8,
-      "w": 1,
-      "h": 3,
-      "color": "wood"
-    },
-    {
-      "x": -1,
-      "y": -6,
-      "w": 1,
-      "h": 17,
-      "color": "light"
-    }
+    { "x": 0, "y": 1, "w": 1, "h": 3, "color": "dark" },
+    { "x": -1, "y": -3, "w": 1, "h": 3, "color": "wood" },
+    { "x": -2, "y": -6, "w": 1, "h": 3, "color": "wood" },
+    { "x": -1, "y": 5, "w": 1, "h": 3, "color": "wood" },
+    { "x": -2, "y": 8, "w": 1, "h": 3, "color": "wood" },
+    { "x": -3, "y": -6, "w": 1, "h": 17, "color": "light" }
   ]
 }

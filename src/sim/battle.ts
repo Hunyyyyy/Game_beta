@@ -118,7 +118,7 @@ function resolveSwing(sim: Sim, v: Villager, target: Target): void {
   const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y);
   if (w.ranged) {
     if (d > w.range + 1) return;
-    sim.projectiles.push({ x: v.x, y: v.y - 0.4, tx: entX(e), ty: entY(e), speed: 14, dmg: w.damage, type: w.type, from: { x: v.x, y: v.y }, src: v.id, team: v.team, target, chance: d <= w.range / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.anim === 'shoot' ? 'arrow' : 'stone' });
+    sim.projectiles.push({ x: v.x, y: v.y - 0.4, tx: entX(e), ty: entY(e), speed: 14, dmg: w.damage, type: w.type, from: { x: v.x, y: v.y }, src: v.id, team: v.team, target, chance: d <= w.range / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? 'stone' });
     return;
   }
   if (d > w.range + 1.1) return; // the target stepped away: the blow misses

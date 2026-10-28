@@ -306,8 +306,455 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
     ]
   };
 
-  // src/data/blueprints/stone_age/buildings/campfire/L1.json
+  // src/data/blueprints/stone_age/buildings/armory/L1.json
   var L1_default = {
+    name: "Gi\xE1 gi\xE1o (c\u1EA5p 1, gi\xE1 ba ch\xE2n)",
+    name_en: "Spear Stand (Tier 1, Tripod)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 5,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", stitch: "#e8d6a8", wicker: "#b89a58", wickerD: "#8a7038", flintL: "#7c8794", bone: "#e4dcc4" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "line", from: [22, 52], to: [36, 24], w: 2, color: "wood" },
+        { shape: "line", from: [50, 52], to: [36, 24], w: 2, color: "woodD" },
+        { shape: "line", from: [36, 52], to: [36, 24], w: 2, color: "wood" },
+        { shape: "rect", x: 33, y: 24, w: 6, h: 2, color: "rope" },
+        { shape: "pixels", at: [[35, 23], [37, 23]], color: "rope" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "line", from: [25, 52], to: [25, 28], w: 1, color: "woodD" },
+        { shape: "poly", points: [[24, 29], [25, 25], [26, 29]], color: "flintL" },
+        { shape: "line", from: [29, 52], to: [29, 26], w: 1, color: "woodD" },
+        { shape: "poly", points: [[28, 27], [29, 23], [30, 27]], color: "flintL" },
+        { shape: "line", from: [43, 52], to: [43, 27], w: 1, color: "woodD" },
+        { shape: "poly", points: [[42, 28], [43, 24], [44, 28]], color: "flintL" },
+        { shape: "line", from: [47, 52], to: [47, 29], w: 1, color: "woodD" },
+        { shape: "poly", points: [[46, 30], [47, 26], [48, 30]], color: "flintL" },
+        { shape: "line", from: [33, 52], to: [33, 24], w: 1, color: "woodD" },
+        { shape: "poly", points: [[32, 25], [33, 21], [34, 25]], color: "flintL" }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "ellipse", cx: 12, cy: 50, rx: 4, ry: 3, color: "wickerD" },
+        { shape: "ellipse", cx: 12, cy: 49, rx: 4, ry: 3, color: "wicker" },
+        { shape: "ellipse", cx: 12, cy: 47, rx: 3, ry: 2, color: "wickerD" },
+        { shape: "line", from: [10, 47], to: [10, 39], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 10, cy: 38, rx: 2, ry: 2, color: "woodD" },
+        { shape: "pixels", at: [[9, 37]], color: "woodL" },
+        { shape: "line", from: [13, 47], to: [13, 37], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 13, cy: 36, rx: 2, ry: 2, color: "woodD" },
+        { shape: "pixels", at: [[12, 35]], color: "woodL" },
+        { shape: "line", from: [15, 48], to: [15, 41], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 15, cy: 40, rx: 2, ry: 2, color: "woodD" },
+        { shape: "pixels", at: [[14, 39]], color: "woodL" },
+        { shape: "line", from: [58, 53], to: [58, 34], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 58, cy: 38, rx: 5, ry: 6, color: "line" },
+        { shape: "ellipse", cx: 58, cy: 38, rx: 4, ry: 5, color: "hide" },
+        { shape: "ellipse", cx: 58, cy: 38, rx: 1, ry: 1, color: "bone" },
+        { shape: "line", from: [58, 33], to: [58, 43], w: 1, color: "woodD", alpha: 0.6 },
+        { shape: "pixels", at: [[56, 36], [60, 36]], color: "stitch" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/armory/L2.json
+  var L2_default = {
+    name: "L\xE1n v\u0169 kh\xED (c\u1EA5p 2, m\xE1i da, gi\xE1 gi\xE1o v\xE0 khi\xEAn)",
+    name_en: "Weapon Shed (Tier 2, Hide Roof, Spear and Shield Racks)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 5,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", flintL: "#7c8794", bone: "#e4dcc4", red: "#a8342a" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+        { shape: "rect", x: 14, y: 45, w: 44, h: 9, color: "woodD", alpha: 0.35 }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 10, y: 20, w: 2, h: 23, color: "wood" },
+        { shape: "rect", x: 10, y: 20, w: 1, h: 23, color: "woodL" },
+        { shape: "rect", x: 60, y: 20, w: 2, h: 23, color: "wood" },
+        { shape: "rect", x: 60, y: 20, w: 1, h: 23, color: "woodL" },
+        { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
+        { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
+        { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
+        { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
+        { shape: "rect", x: 9, y: 19, w: 54, h: 2, color: "woodD" },
+        { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "poly", points: [[3, 31], [13, 16], [59, 16], [69, 31]], color: "hide" },
+        { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "hideD" },
+        { shape: "line", from: [13, 16], to: [59, 16], w: 1, color: "hideL" },
+        { shape: "line", from: [8, 24], to: [64, 24], w: 1, color: "hideL", alpha: 0.35 },
+        { shape: "pixels", at: [[10, 33], [18, 33], [26, 33], [34, 33], [42, 33], [50, 33], [58, 33], [64, 33]], color: "stitch" },
+        { shape: "scatter", count: 24, area: [10, 17, 52, 12], size: 1, colors: ["hideL", "hideD"], onlyOver: ["hide"] },
+        { shape: "rect", x: 4, y: 33, w: 64, h: 1, color: "red" }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 15, y: 36, w: 42, h: 2, color: "woodD" },
+        { shape: "line", from: [22, 38], to: [22, 40], w: 1, color: "rope" },
+        { shape: "line", from: [36, 38], to: [36, 40], w: 1, color: "rope" },
+        { shape: "line", from: [50, 38], to: [50, 40], w: 1, color: "rope" },
+        { shape: "ellipse", cx: 22, cy: 44, rx: 4, ry: 5, color: "line" },
+        { shape: "ellipse", cx: 22, cy: 44, rx: 3, ry: 4, color: "hide" },
+        { shape: "ellipse", cx: 22, cy: 44, rx: 1, ry: 1, color: "bone" },
+        { shape: "line", from: [22, 40], to: [22, 48], w: 1, color: "woodD", alpha: 0.6 },
+        { shape: "ellipse", cx: 36, cy: 44, rx: 4, ry: 5, color: "line" },
+        { shape: "ellipse", cx: 36, cy: 44, rx: 3, ry: 4, color: "red" },
+        { shape: "ellipse", cx: 36, cy: 44, rx: 1, ry: 1, color: "bone" },
+        { shape: "line", from: [36, 40], to: [36, 48], w: 1, color: "woodD", alpha: 0.6 },
+        { shape: "ellipse", cx: 50, cy: 44, rx: 4, ry: 5, color: "line" },
+        { shape: "ellipse", cx: 50, cy: 44, rx: 3, ry: 4, color: "hide" },
+        { shape: "ellipse", cx: 50, cy: 44, rx: 1, ry: 1, color: "bone" },
+        { shape: "line", from: [50, 40], to: [50, 48], w: 1, color: "woodD", alpha: 0.6 },
+        { shape: "line", from: [15, 54], to: [15, 40], w: 1, color: "woodD" },
+        { shape: "poly", points: [[14, 41], [15, 37], [16, 41]], color: "flintL" },
+        { shape: "line", from: [18, 54], to: [18, 41], w: 1, color: "woodD" },
+        { shape: "poly", points: [[17, 42], [18, 38], [19, 42]], color: "flintL" },
+        { shape: "line", from: [54, 54], to: [54, 40], w: 1, color: "woodD" },
+        { shape: "poly", points: [[53, 41], [54, 37], [55, 41]], color: "flintL" },
+        { shape: "line", from: [57, 54], to: [57, 41], w: 1, color: "woodD" },
+        { shape: "poly", points: [[56, 42], [57, 38], [58, 42]], color: "flintL" },
+        { shape: "line", from: [26, 54], to: [26, 46], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 26, cy: 45, rx: 2, ry: 2, color: "woodD" },
+        { shape: "pixels", at: [[25, 44]], color: "woodL" },
+        { shape: "line", from: [29, 54], to: [29, 45], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 29, cy: 44, rx: 2, ry: 2, color: "woodD" },
+        { shape: "pixels", at: [[28, 43]], color: "woodL" },
+        { shape: "line", from: [43, 54], to: [43, 45], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 43, cy: 44, rx: 2, ry: 2, color: "woodD" },
+        { shape: "pixels", at: [[42, 43]], color: "woodL" },
+        { shape: "line", from: [46, 54], to: [46, 46], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 46, cy: 45, rx: 2, ry: 2, color: "woodD" },
+        { shape: "pixels", at: [[45, 44]], color: "woodL" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/armory/L3.json
+  var L3_default = {
+    name: "Kho v\u0169 kh\xED (c\u1EA5p 3, t\u01B0\u1EDDng \u0111\xE1, c\u1EDD da \u0111\u1ECF)",
+    name_en: "Armoury (Tier 3, Stone Walls, Red Hide Banner)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 5,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", flintL: "#7c8794", bone: "#e4dcc4", red: "#a8342a", redL: "#cf5b46", redD: "#7a2318" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
+        { shape: "scatter", count: 40, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 6, y: 24, w: 60, h: 12, color: "stoneD" },
+        { shape: "rect", x: 6, y: 24, w: 60, h: 2, color: "stone" },
+        { shape: "rect", x: 6, y: 24, w: 60, h: 1, color: "stoneL" },
+        { shape: "rect", x: 6, y: 24, w: 8, h: 28, color: "stoneD" },
+        { shape: "rect", x: 6, y: 24, w: 8, h: 2, color: "stone" },
+        { shape: "rect", x: 58, y: 24, w: 8, h: 28, color: "stoneD" },
+        { shape: "rect", x: 58, y: 24, w: 8, h: 2, color: "stone" },
+        { shape: "scatter", count: 44, area: [7, 26, 56, 24], size: 1, colors: ["stone", "stoneL", "stoneD"], onlyOver: ["stoneD"] },
+        { shape: "rect", x: 22, y: 36, w: 28, h: 16, color: "line", alpha: 0.55 }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "poly", points: [[3, 26], [12, 8], [60, 8], [69, 26]], color: "wood" },
+        { shape: "poly", points: [[3, 26], [69, 26], [68, 30], [4, 30]], color: "woodD" },
+        { shape: "line", from: [12, 8], to: [60, 8], w: 2, color: "woodL" },
+        { shape: "line", from: [22, 8], to: [14, 26], w: 1, color: "woodD" },
+        { shape: "line", from: [36, 8], to: [36, 26], w: 1, color: "woodD" },
+        { shape: "line", from: [50, 8], to: [58, 26], w: 1, color: "woodD" },
+        { shape: "scatter", count: 24, area: [8, 10, 56, 14], size: 1, colors: ["woodL", "woodD"], onlyOver: ["wood"] },
+        { shape: "poly", points: [[26, 31], [46, 31], [46, 40], [36, 44], [26, 40]], color: "redD" },
+        { shape: "poly", points: [[26, 30], [46, 30], [46, 39], [36, 43], [26, 39]], color: "red" },
+        { shape: "line", from: [26, 30], to: [46, 30], w: 1, color: "redL" },
+        { shape: "pixels", at: [[36, 34], [35, 35], [37, 35], [36, 36]], color: "bone" }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "line", from: [12, 52], to: [12, 30], w: 1, color: "woodD" },
+        { shape: "poly", points: [[11, 31], [12, 27], [13, 31]], color: "flintL" },
+        { shape: "line", from: [16, 52], to: [16, 32], w: 1, color: "woodD" },
+        { shape: "poly", points: [[15, 33], [16, 29], [17, 33]], color: "flintL" },
+        { shape: "line", from: [56, 52], to: [56, 30], w: 1, color: "woodD" },
+        { shape: "poly", points: [[55, 31], [56, 27], [57, 31]], color: "flintL" },
+        { shape: "line", from: [60, 52], to: [60, 32], w: 1, color: "woodD" },
+        { shape: "poly", points: [[59, 33], [60, 29], [61, 33]], color: "flintL" },
+        { shape: "rect", x: 23, y: 46, w: 4, h: 6, color: "woodD" },
+        { shape: "rect", x: 45, y: 46, w: 4, h: 6, color: "woodD" },
+        { shape: "ellipse", cx: 25, cy: 47, rx: 4, ry: 5, color: "line" },
+        { shape: "ellipse", cx: 25, cy: 47, rx: 3, ry: 4, color: "hide" },
+        { shape: "ellipse", cx: 25, cy: 47, rx: 1, ry: 1, color: "bone" },
+        { shape: "line", from: [25, 43], to: [25, 51], w: 1, color: "woodD", alpha: 0.6 },
+        { shape: "ellipse", cx: 47, cy: 47, rx: 4, ry: 5, color: "line" },
+        { shape: "ellipse", cx: 47, cy: 47, rx: 3, ry: 4, color: "red" },
+        { shape: "ellipse", cx: 47, cy: 47, rx: 1, ry: 1, color: "bone" },
+        { shape: "line", from: [47, 43], to: [47, 51], w: 1, color: "woodD", alpha: 0.6 },
+        { shape: "line", from: [31, 53], to: [31, 44], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 31, cy: 43, rx: 2, ry: 2, color: "woodD" },
+        { shape: "pixels", at: [[30, 42]], color: "woodL" },
+        { shape: "line", from: [36, 53], to: [36, 42], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 36, cy: 41, rx: 2, ry: 2, color: "woodD" },
+        { shape: "pixels", at: [[35, 40]], color: "woodL" },
+        { shape: "line", from: [41, 53], to: [41, 44], w: 2, color: "wood" },
+        { shape: "ellipse", cx: 41, cy: 43, rx: 2, ry: 2, color: "woodD" },
+        { shape: "pixels", at: [[40, 42]], color: "woodL" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/builder/L1.json
+  var L1_default2 = {
+    name: "B\xE3i th\u1EE3 x\xE2y (c\u1EA5p 1, \u0111\u1ED1ng g\u1ED7 v\xE0 c\u1ECDc)",
+    name_en: "Builders' Yard (Tier 1, Log Pile and Stakes)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 9,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", sandL: "#cdbb94", sandD: "#9a8760" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+        { shape: "ellipse", cx: 50, cy: 49, rx: 9, ry: 3, color: "sandL", alpha: 0.85 },
+        { shape: "scatter", count: 10, area: [43, 47, 14, 5], size: 1, colors: ["chip", "sandD"], onlyOver: ["sandL"] }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 9, y: 47, w: 17, h: 4, color: "log" },
+        { shape: "rect", x: 9, y: 47, w: 17, h: 1, color: "woodL" },
+        { shape: "ellipse", cx: 9, cy: 49, rx: 2, ry: 2, color: "logE" },
+        { shape: "ellipse", cx: 26, cy: 49, rx: 2, ry: 2, color: "logE" },
+        { shape: "rect", x: 11, y: 43, w: 14, h: 4, color: "log" },
+        { shape: "rect", x: 11, y: 43, w: 14, h: 1, color: "woodL" },
+        { shape: "ellipse", cx: 11, cy: 45, rx: 2, ry: 2, color: "logE" },
+        { shape: "ellipse", cx: 25, cy: 45, rx: 2, ry: 2, color: "logE" },
+        { shape: "rect", x: 13, y: 39, w: 11, h: 4, color: "log" },
+        { shape: "rect", x: 13, y: 39, w: 11, h: 1, color: "woodL" },
+        { shape: "ellipse", cx: 13, cy: 41, rx: 2, ry: 2, color: "logE" },
+        { shape: "ellipse", cx: 24, cy: 41, rx: 2, ry: 2, color: "logE" },
+        { shape: "line", from: [56, 52], to: [51, 33], w: 2, color: "wood" },
+        { shape: "line", from: [60, 52], to: [57, 32], w: 2, color: "woodL" },
+        { shape: "line", from: [63, 51], to: [62, 34], w: 2, color: "wood" },
+        { shape: "line", from: [53, 44], to: [62, 44], w: 1, color: "rope" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "ellipse", cx: 34, cy: 51, rx: 6, ry: 3, color: "woodD" },
+        { shape: "ellipse", cx: 34, cy: 50, rx: 6, ry: 3, color: "log" },
+        { shape: "ellipse", cx: 34, cy: 49, rx: 4, ry: 2, color: "logE" },
+        { shape: "line", from: [29, 41], to: [27, 50], w: 1, color: "woodD" },
+        { shape: "line", from: [29, 41], to: [31, 50], w: 1, color: "woodD" },
+        { shape: "line", from: [43, 40], to: [41, 49], w: 1, color: "woodD" },
+        { shape: "line", from: [43, 40], to: [45, 49], w: 1, color: "woodD" },
+        { shape: "poly", points: [[26, 39], [46, 38], [47, 41], [27, 42]], color: "woodD" },
+        { shape: "poly", points: [[26, 38], [46, 37], [47, 40], [27, 41]], color: "wood" },
+        { shape: "line", from: [26, 38], to: [46, 37], w: 1, color: "woodL" }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "line", from: [35, 49], to: [35, 40], w: 1, color: "woodD" },
+        { shape: "rect", x: 33, y: 39, w: 3, h: 2, color: "stoneD" },
+        { shape: "pixels", at: [[35, 39]], color: "stoneL" },
+        { shape: "ellipse", cx: 45, cy: 52, rx: 3, ry: 1, color: "rope" },
+        { shape: "pixels", at: [[43, 52], [47, 52]], color: "wood" },
+        { shape: "scatter", count: 8, area: [28, 45, 24, 8], size: 1, colors: ["chip", "sandL"], onlyOver: ["earth", "sandL"] },
+        { shape: "line", from: [22, 36], to: [27, 48], w: 2, color: "woodD" },
+        { shape: "rect", x: 20, y: 34, w: 5, h: 3, color: "stoneD" },
+        { shape: "pixels", at: [[20, 34]], color: "stoneL" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/builder/L2.json
+  var L2_default2 = {
+    name: "L\xE1n th\u1EE3 x\xE2y (c\u1EA5p 2, m\xE1i da, b\xE0n g\u1ED7)",
+    name_en: "Builders' Lean-to (Tier 2, Hide Roof, Workbench)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 9,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+        { shape: "rect", x: 14, y: 45, w: 44, h: 9, color: "woodD", alpha: 0.45 },
+        { shape: "scatter", count: 10, area: [14, 46, 44, 7], size: [3, 1], colors: ["woodL", "wood"], onlyOver: ["woodD"] }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 11, y: 20, w: 2, h: 23, color: "wood" },
+        { shape: "rect", x: 11, y: 20, w: 1, h: 23, color: "woodL" },
+        { shape: "rect", x: 59, y: 20, w: 2, h: 23, color: "wood" },
+        { shape: "rect", x: 59, y: 20, w: 1, h: 23, color: "woodL" },
+        { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
+        { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
+        { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
+        { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
+        { shape: "rect", x: 10, y: 19, w: 52, h: 2, color: "woodD" },
+        { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "poly", points: [[3, 31], [13, 16], [59, 16], [69, 31]], color: "hide" },
+        { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "hideD" },
+        { shape: "line", from: [13, 16], to: [59, 16], w: 1, color: "hideL" },
+        { shape: "line", from: [8, 24], to: [64, 24], w: 1, color: "hideL", alpha: 0.35 },
+        { shape: "pixels", at: [[10, 33], [18, 33], [26, 33], [34, 33], [42, 33], [50, 33], [58, 33], [64, 33]], color: "stitch" },
+        { shape: "scatter", count: 26, area: [10, 17, 52, 12], size: 1, colors: ["hideL", "hideD"], onlyOver: ["hide"] }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 17, y: 47, w: 38, h: 4, color: "wood" },
+        { shape: "rect", x: 17, y: 47, w: 38, h: 1, color: "woodL" },
+        { shape: "rect", x: 19, y: 51, w: 3, h: 5, color: "woodD" },
+        { shape: "rect", x: 50, y: 51, w: 3, h: 5, color: "woodD" },
+        { shape: "poly", points: [[21, 44], [38, 43], [39, 46], [22, 46]], color: "woodL" },
+        { shape: "rect", x: 42, y: 44, w: 5, h: 2, color: "stoneD" },
+        { shape: "pixels", at: [[42, 44]], color: "stoneL" },
+        { shape: "ellipse", cx: 51, cy: 45, rx: 2, ry: 1, color: "rope" },
+        { shape: "rect", x: 15, y: 36, w: 42, h: 2, color: "woodD" },
+        { shape: "line", from: [21, 38], to: [21, 41], w: 1, color: "rope" },
+        { shape: "rect", x: 19, y: 41, w: 5, h: 2, color: "stoneD" },
+        { shape: "line", from: [31, 38], to: [31, 42], w: 1, color: "rope" },
+        { shape: "line", from: [29, 42], to: [33, 42], w: 1, color: "stoneD" },
+        { shape: "line", from: [42, 38], to: [42, 41], w: 1, color: "rope" },
+        { shape: "rect", x: 40, y: 41, w: 5, h: 3, color: "stone" },
+        { shape: "line", from: [51, 38], to: [51, 41], w: 1, color: "rope" },
+        { shape: "line", from: [51, 41], to: [51, 43], w: 1, color: "woodD" },
+        { shape: "rect", x: 57, y: 46, w: 7, h: 3, color: "log" },
+        { shape: "rect", x: 58, y: 49, w: 7, h: 3, color: "log" },
+        { shape: "ellipse", cx: 57, cy: 47, rx: 1, ry: 1, color: "logE" },
+        { shape: "ellipse", cx: 58, cy: 50, rx: 1, ry: 1, color: "logE" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/builder/L3.json
+  var L3_default2 = {
+    name: "X\u01B0\u1EDFng th\u1EE3 x\xE2y (c\u1EA5p 3, n\u1EC1n \u0111\xE1, khung g\u1ED7 l\u1EDBn)",
+    name_en: "Builders' Hall (Tier 3, Stone Floor, Great Timber Frame)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 9,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
+        { shape: "scatter", count: 44, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] },
+        { shape: "line", from: [10, 45], to: [62, 45], w: 1, color: "stoneD", alpha: 0.5 },
+        { shape: "line", from: [14, 50], to: [58, 50], w: 1, color: "stoneD", alpha: 0.5 }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 9, y: 12, w: 3, h: 30, color: "woodD" },
+        { shape: "rect", x: 9, y: 12, w: 1, h: 30, color: "wood" },
+        { shape: "rect", x: 60, y: 12, w: 3, h: 30, color: "woodD" },
+        { shape: "rect", x: 60, y: 12, w: 1, h: 30, color: "wood" },
+        { shape: "rect", x: 5, y: 28, w: 3, h: 27, color: "woodD" },
+        { shape: "rect", x: 5, y: 28, w: 1, h: 27, color: "wood" },
+        { shape: "rect", x: 64, y: 28, w: 3, h: 27, color: "woodD" },
+        { shape: "rect", x: 64, y: 28, w: 1, h: 27, color: "wood" },
+        { shape: "rect", x: 7, y: 11, w: 58, h: 3, color: "log" },
+        { shape: "rect", x: 4, y: 27, w: 64, h: 3, color: "log" },
+        { shape: "rect", x: 8, y: 11, w: 56, h: 1, color: "woodL" },
+        { shape: "rect", x: 8, y: 35, w: 56, h: 2, color: "woodD" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "poly", points: [[3, 30], [11, 8], [61, 8], [69, 30]], color: "wood" },
+        { shape: "poly", points: [[3, 30], [69, 30], [68, 34], [4, 34]], color: "woodD" },
+        { shape: "line", from: [11, 8], to: [61, 8], w: 2, color: "woodL" },
+        { shape: "line", from: [20, 8], to: [14, 30], w: 1, color: "woodD" },
+        { shape: "line", from: [30, 8], to: [26, 30], w: 1, color: "woodD" },
+        { shape: "line", from: [42, 8], to: [46, 30], w: 1, color: "woodD" },
+        { shape: "line", from: [52, 8], to: [58, 30], w: 1, color: "woodD" },
+        { shape: "scatter", count: 30, area: [8, 10, 56, 20], size: 1, colors: ["woodL", "woodD"], onlyOver: ["wood"] }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 48, y: 43, w: 14, h: 5, color: "stone" },
+        { shape: "rect", x: 48, y: 43, w: 14, h: 1, color: "stoneL" },
+        { shape: "rect", x: 50, y: 39, w: 10, h: 4, color: "stoneL" },
+        { shape: "rect", x: 50, y: 39, w: 10, h: 1, color: "chip" },
+        { shape: "line", from: [55, 43], to: [55, 48], w: 1, color: "stoneD" },
+        { shape: "rect", x: 10, y: 47, w: 16, h: 3, color: "woodL" },
+        { shape: "rect", x: 10, y: 50, w: 16, h: 3, color: "wood" },
+        { shape: "rect", x: 10, y: 47, w: 16, h: 1, color: "chip", alpha: 0.6 },
+        { shape: "line", from: [36, 37], to: [36, 42], w: 1, color: "rope" },
+        { shape: "rect", x: 32, y: 42, w: 8, h: 5, color: "stoneL" },
+        { shape: "rect", x: 32, y: 42, w: 8, h: 1, color: "chip" },
+        { shape: "pixels", at: [[35, 43], [36, 44]], color: "stoneD" },
+        { shape: "line", from: [14, 50], to: [18, 37], w: 1, color: "wood" },
+        { shape: "line", from: [18, 50], to: [22, 37], w: 1, color: "wood" },
+        { shape: "pixels", at: [[15, 48], [19, 48], [16, 45], [20, 45], [17, 42], [21, 42], [18, 39], [22, 39]], color: "woodL" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/campfire/L1.json
+  var L1_default3 = {
     name: "Nh\xE0 chung (\u0111\u1ED1ng l\u1EEDa tr\u1EA1i)",
     type: "prop",
     size: [72, 60],
@@ -380,8 +827,746 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
     ]
   };
 
+  // src/data/blueprints/stone_age/buildings/campfire/L2.json
+  var L2_default3 = {
+    name: "L\u1EEDa tr\u1EA1i (c\u1EA5p 2, v\xF2ng l\u1EEDa c\xF3 gh\u1EBF g\u1ED7)",
+    name_en: "Campfire (Tier 2, Fire Circle with Log Seats)",
+    type: "prop",
+    size: [72, 60],
+    anchor: [36, 54],
+    footprint: [4, 30, 64, 28],
+    seed: 1,
+    animate: { frames: 4, fps: 6 },
+    palette: { line: "#2b1d10", rock: "#7a8084", rockL: "#b0b7bb", shadow: "#000000", dirt: "#5a4430", dirtL: "#6e553b", dirtD: "#47362a", ash: "#2e2822", log: "#7a5530", logD: "#5e4026", logE: "#c49a60", flame2: "#e8641e", flame1: "#f7a728", flame0: "#fff1a8", spark: "#ffd070", wood: "#8a6238", woodL: "#aa7c48", hide: "#a0552f", hideL: "#c06f43" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 50, rx: 32, ry: 8, color: "shadow", alpha: 0.25 },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 34, ry: 16, color: "#ffb040", alpha: 0.14 },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 29, ry: 11, color: "dirt" },
+      { shape: "scatter", count: 40, area: [12, 34, 48, 20], size: 1, colors: ["dirtL", "dirtD"], onlyOver: ["dirt"] },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 15, ry: 6, color: "ash" },
+      { shape: "ellipse", cx: 21, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 21, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 19, y: 37, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 30, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 30, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 28, y: 33, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 42, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 42, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 40, y: 33, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 51, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 51, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 49, y: 37, w: 3, h: 1, color: "rockL" },
+      { shape: "line", from: [26, 47], to: [46, 40], w: 4, color: "log" },
+      { shape: "line", from: [26, 40], to: [46, 47], w: 4, color: "logD" },
+      { shape: "rect", x: 25, y: 45, w: 3, h: 4, color: "logE" },
+      { shape: "rect", x: 45, y: 45, w: 3, h: 4, color: "logE" },
+      { shape: "poly", points: [[27, 44], [36, { cycle: [22, 19, 23, 20] }], [45, 44]], color: "flame2" },
+      { shape: "poly", points: [[30, 44], [34, { cycle: [27, 25, 28, 26] }], [38, 44]], color: "flame1" },
+      { shape: "poly", points: [[34, 44], [40, { cycle: [26, 28, 25, 27] }], [44, 44]], color: "flame1" },
+      { shape: "poly", points: [[32, 44], [36, { cycle: [32, 30, 33, 31] }], [40, 44]], color: "flame0" },
+      { shape: "rect", x: [28, 44], y: [12, 30], w: 1, h: 1, color: "spark", repeat: { n: 8, phase: 4 } },
+      { shape: "ellipse", cx: 55, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 55, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 53, y: 42, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 51, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 51, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 49, y: 47, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 42, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 42, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 40, y: 51, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 30, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 30, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 28, y: 51, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 21, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 21, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 19, y: 47, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 17, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 17, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 15, y: 42, w: 3, h: 1, color: "rockL" },
+      { shape: "rect", x: 5, y: 40, w: 11, h: 4, color: "log" },
+      { shape: "rect", x: 5, y: 40, w: 11, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 5, cy: 42, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 8, y: 43, w: 6, h: 1, color: "logD" },
+      { shape: "rect", x: 57, y: 40, w: 11, h: 4, color: "log" },
+      { shape: "rect", x: 57, y: 40, w: 11, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 57, cy: 42, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 60, y: 43, w: 6, h: 1, color: "logD" },
+      { shape: "rect", x: 26, y: 55, w: 12, h: 4, color: "log" },
+      { shape: "rect", x: 26, y: 55, w: 12, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 26, cy: 57, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 29, y: 58, w: 7, h: 1, color: "logD" },
+      { shape: "rect", x: 40, y: 55, w: 12, h: 4, color: "log" },
+      { shape: "rect", x: 40, y: 55, w: 12, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 40, cy: 57, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 43, y: 58, w: 7, h: 1, color: "logD" },
+      { shape: "rect", x: 3, y: 24, w: 2, h: 17, color: "wood" },
+      { shape: "rect", x: 3, y: 24, w: 1, h: 17, color: "woodL" },
+      { shape: "line", from: [4, 25], to: [14, 25], w: 1, color: "wood" },
+      { shape: "poly", points: [[6, 26], [12, 26], [11, 34], [7, 34]], color: "hide" },
+      { shape: "line", from: [6, 26], to: [12, 26], w: 1, color: "hideL" },
+      { shape: "line", from: [66, 40], to: [64, 28], w: 1, color: "wood" },
+      { shape: "line", from: [68, 40], to: [68, 29], w: 1, color: "woodL" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/campfire/L3.json
+  var L3_default3 = {
+    name: "B\u1EBFp l\u1EEDa l\u1EDBn (c\u1EA5p 3, gi\xE1 n\u01B0\u1EDBng, n\u1ED3i \u0111\u1EA5t, gi\xE0n ph\u01A1i)",
+    name_en: "Great Hearth (Tier 3, Spit, Clay Pot, Drying Rack)",
+    type: "prop",
+    size: [72, 60],
+    anchor: [36, 54],
+    footprint: [4, 30, 64, 28],
+    seed: 1,
+    animate: { frames: 4, fps: 6 },
+    palette: { line: "#2b1d10", rock: "#7a8084", rockL: "#b0b7bb", shadow: "#000000", dirt: "#5a4430", dirtL: "#6e553b", dirtD: "#47362a", ash: "#2e2822", log: "#7a5530", logD: "#5e4026", logE: "#c49a60", flame2: "#e8641e", flame1: "#f7a728", flame0: "#fff1a8", spark: "#ffd070", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stitch: "#e8d6a8", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", clay: "#a8643c", clayD: "#7a4526", meat: "#9a3a30", meatL: "#c4584a" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 50, rx: 32, ry: 8, color: "shadow", alpha: 0.25 },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 34, ry: 16, color: "#ffb040", alpha: 0.14 },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 30, ry: 11, color: "dirt" },
+      { shape: "scatter", count: 40, area: [12, 34, 48, 20], size: 1, colors: ["dirtL", "dirtD"], onlyOver: ["dirt"] },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 15, ry: 6, color: "ash" },
+      { shape: "rect", x: 6, y: 12, w: 2, h: 24, color: "wood" },
+      { shape: "rect", x: 6, y: 12, w: 1, h: 24, color: "woodL" },
+      { shape: "rect", x: 64, y: 12, w: 2, h: 24, color: "wood" },
+      { shape: "rect", x: 64, y: 12, w: 1, h: 24, color: "woodL" },
+      { shape: "poly", points: [[8, 14], [64, 14], [64, 32], [8, 32]], color: "hideD" },
+      { shape: "poly", points: [[8, 14], [64, 14], [64, 30], [8, 30]], color: "hide" },
+      { shape: "line", from: [8, 14], to: [64, 14], w: 1, color: "hideL" },
+      { shape: "pixels", at: [[14, 16], [24, 16], [34, 16], [44, 16], [54, 16]], color: "stitch" },
+      { shape: "scatter", count: 30, area: [9, 15, 54, 15], size: 1, colors: ["hideL", "hideD"], onlyOver: ["hide"] },
+      { shape: "rect", x: 12, y: 33, w: 2, h: 10, color: "wood" },
+      { shape: "rect", x: 28, y: 33, w: 2, h: 10, color: "wood" },
+      { shape: "rect", x: 11, y: 33, w: 20, h: 1, color: "woodD" },
+      { shape: "rect", x: 15, y: 34, w: 2, h: 6, color: "meat" },
+      { shape: "rect", x: 19, y: 34, w: 2, h: 7, color: "meatL" },
+      { shape: "rect", x: 23, y: 34, w: 2, h: 6, color: "meat" },
+      { shape: "rect", x: 26, y: 34, w: 1, h: 5, color: "meatL" },
+      { shape: "ellipse", cx: 21, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 21, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 19, y: 37, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 30, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 30, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 28, y: 33, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 42, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 42, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 40, y: 33, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 51, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 51, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 49, y: 37, w: 3, h: 1, color: "rockL" },
+      { shape: "line", from: [26, 47], to: [46, 40], w: 4, color: "log" },
+      { shape: "line", from: [26, 40], to: [46, 47], w: 4, color: "logD" },
+      { shape: "rect", x: 25, y: 45, w: 3, h: 4, color: "logE" },
+      { shape: "rect", x: 45, y: 45, w: 3, h: 4, color: "logE" },
+      { shape: "poly", points: [[27, 44], [36, { cycle: [22, 19, 23, 20] }], [45, 44]], color: "flame2" },
+      { shape: "poly", points: [[30, 44], [34, { cycle: [27, 25, 28, 26] }], [38, 44]], color: "flame1" },
+      { shape: "poly", points: [[34, 44], [40, { cycle: [26, 28, 25, 27] }], [44, 44]], color: "flame1" },
+      { shape: "poly", points: [[32, 44], [36, { cycle: [32, 30, 33, 31] }], [40, 44]], color: "flame0" },
+      { shape: "rect", x: [28, 44], y: [12, 30], w: 1, h: 1, color: "spark", repeat: { n: 8, phase: 4 } },
+      { shape: "ellipse", cx: 55, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 55, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 53, y: 42, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 51, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 51, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 49, y: 47, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 42, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 42, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 40, y: 51, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 30, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 30, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 28, y: 51, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 21, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 21, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 19, y: 47, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 17, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 17, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 15, y: 42, w: 3, h: 1, color: "rockL" },
+      { shape: "rect", x: 53, y: 30, w: 2, h: 18, color: "wood" },
+      { shape: "rect", x: 53, y: 30, w: 1, h: 18, color: "woodL" },
+      { shape: "rect", x: 60, y: 34, w: 2, h: 14, color: "wood" },
+      { shape: "line", from: [53, 31], to: [61, 35], w: 1, color: "woodD" },
+      { shape: "line", from: [59, 35], to: [59, 38], w: 1, color: "rope" },
+      { shape: "ellipse", cx: 59, cy: 41, rx: 4, ry: 3, color: "clayD" },
+      { shape: "ellipse", cx: 59, cy: 40, rx: 4, ry: 3, color: "clay" },
+      { shape: "ellipse", cx: 59, cy: 38, rx: 3, ry: 1, color: "meatL" },
+      { shape: "rect", x: 5, y: 42, w: 11, h: 4, color: "log" },
+      { shape: "rect", x: 5, y: 42, w: 11, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 5, cy: 44, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 8, y: 45, w: 6, h: 1, color: "logD" },
+      { shape: "rect", x: 26, y: 55, w: 12, h: 4, color: "log" },
+      { shape: "rect", x: 26, y: 55, w: 12, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 26, cy: 57, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 29, y: 58, w: 7, h: 1, color: "logD" },
+      { shape: "rect", x: 42, y: 55, w: 12, h: 4, color: "log" },
+      { shape: "rect", x: 42, y: 55, w: 12, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 42, cy: 57, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 45, y: 58, w: 7, h: 1, color: "logD" },
+      { shape: "ellipse", cx: 66, cy: 50, rx: 3, ry: 2, color: "clayD" },
+      { shape: "ellipse", cx: 66, cy: 49, rx: 3, ry: 1, color: "clay" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/campfire/L4.json
+  var L4_default = {
+    name: "Nh\xE0 chung (c\u1EA5p 4, t\u01B0\u1EDDng da, c\u1ED9t t\u1ED5 ti\xEAn, gh\u1EBF d\xE0i)",
+    name_en: "Common House (Tier 4, Hide Wall, Ancestor Poles, Long Benches)",
+    type: "prop",
+    size: [72, 60],
+    anchor: [36, 54],
+    footprint: [4, 30, 64, 28],
+    seed: 1,
+    animate: { frames: 4, fps: 6 },
+    palette: { line: "#2b1d10", rock: "#7a8084", rockL: "#b0b7bb", shadow: "#000000", dirt: "#5a4430", dirtL: "#6e553b", dirtD: "#47362a", ash: "#2e2822", log: "#7a5530", logD: "#5e4026", logE: "#c49a60", flame2: "#e8641e", flame1: "#f7a728", flame0: "#fff1a8", spark: "#ffd070", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stitch: "#e8d6a8", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stoneD: "#60676b", bone: "#e4dcc4", clay: "#a8643c", clayD: "#7a4526", ochre: "#b0762f", redp: "#a8342a", bluep: "#5f7fa8", chip: "#d8d2c0" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 50, rx: 32, ry: 8, color: "shadow", alpha: 0.25 },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 34, ry: 16, color: "#ffb040", alpha: 0.14 },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 31, ry: 11, color: "dirt" },
+      { shape: "scatter", count: 40, area: [12, 34, 48, 20], size: 1, colors: ["dirtL", "dirtD"], onlyOver: ["dirt"] },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 15, ry: 6, color: "ash" },
+      { shape: "poly", points: [[4, 8], [68, 8], [66, 14], [6, 14]], color: "hideD" },
+      { shape: "poly", points: [[4, 4], [68, 4], [68, 10], [4, 10]], color: "hide" },
+      { shape: "line", from: [4, 4], to: [68, 4], w: 1, color: "hideL" },
+      { shape: "pixels", at: [[12, 7], [22, 7], [32, 7], [42, 7], [52, 7], [62, 7]], color: "stitch" },
+      { shape: "poly", points: [[8, 14], [64, 14], [64, 33], [8, 33]], color: "hideD" },
+      { shape: "poly", points: [[8, 14], [64, 14], [64, 31], [8, 31]], color: "hide" },
+      { shape: "scatter", count: 36, area: [9, 15, 54, 16], size: 1, colors: ["hideL", "hideD"], onlyOver: ["hide"] },
+      { shape: "ellipse", cx: 20, cy: 23, rx: 4, ry: 4, color: "bluep" },
+      { shape: "ellipse", cx: 20, cy: 23, rx: 2, ry: 2, color: "chip" },
+      { shape: "rect", x: 34, y: 19, w: 4, h: 8, color: "ochre" },
+      { shape: "rect", x: 35, y: 17, w: 2, h: 2, color: "ochre" },
+      { shape: "poly", points: [[46, 27], [50, 19], [54, 27]], color: "redp" },
+      { shape: "rect", x: 6, y: 6, w: 5, h: 30, color: "wood" },
+      { shape: "rect", x: 6, y: 6, w: 1, h: 30, color: "woodL" },
+      { shape: "rect", x: 10, y: 6, w: 1, h: 30, color: "woodD" },
+      { shape: "rect", x: 6, y: 14, w: 5, h: 3, color: "ochre" },
+      { shape: "rect", x: 6, y: 21, w: 5, h: 3, color: "redp" },
+      { shape: "rect", x: 5, y: 4, w: 7, h: 7, color: "woodD" },
+      { shape: "rect", x: 6, y: 4, w: 5, h: 6, color: "wood" },
+      { shape: "pixels", at: [[7, 6], [9, 6]], color: "bone" },
+      { shape: "rect", x: 7, y: 8, w: 3, h: 1, color: "line" },
+      { shape: "rect", x: 61, y: 6, w: 5, h: 30, color: "wood" },
+      { shape: "rect", x: 61, y: 6, w: 1, h: 30, color: "woodL" },
+      { shape: "rect", x: 65, y: 6, w: 1, h: 30, color: "woodD" },
+      { shape: "rect", x: 61, y: 14, w: 5, h: 3, color: "bluep" },
+      { shape: "rect", x: 61, y: 21, w: 5, h: 3, color: "ochre" },
+      { shape: "rect", x: 60, y: 4, w: 7, h: 7, color: "woodD" },
+      { shape: "rect", x: 61, y: 4, w: 5, h: 6, color: "wood" },
+      { shape: "pixels", at: [[62, 6], [64, 6]], color: "bone" },
+      { shape: "rect", x: 62, y: 8, w: 3, h: 1, color: "line" },
+      { shape: "line", from: [11, 12], to: [36, 17], w: 1, color: "rope" },
+      { shape: "line", from: [36, 17], to: [61, 12], w: 1, color: "rope" },
+      { shape: "poly", points: [[18, 14], [22, 14], [20, 20]], color: "redp" },
+      { shape: "poly", points: [[28, 16], [32, 16], [30, 22]], color: "ochre" },
+      { shape: "poly", points: [[40, 16], [44, 16], [42, 22]], color: "bluep" },
+      { shape: "poly", points: [[51, 14], [55, 14], [53, 20]], color: "ochre" },
+      { shape: "ellipse", cx: 21, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 21, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 19, y: 37, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 30, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 30, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 28, y: 33, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 42, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 42, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 40, y: 33, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 51, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 51, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 49, y: 37, w: 3, h: 1, color: "rockL" },
+      { shape: "line", from: [26, 47], to: [46, 40], w: 4, color: "log" },
+      { shape: "line", from: [26, 40], to: [46, 47], w: 4, color: "logD" },
+      { shape: "rect", x: 25, y: 45, w: 3, h: 4, color: "logE" },
+      { shape: "rect", x: 45, y: 45, w: 3, h: 4, color: "logE" },
+      { shape: "poly", points: [[27, 44], [36, { cycle: [22, 19, 23, 20] }], [45, 44]], color: "flame2" },
+      { shape: "poly", points: [[30, 44], [34, { cycle: [27, 25, 28, 26] }], [38, 44]], color: "flame1" },
+      { shape: "poly", points: [[34, 44], [40, { cycle: [26, 28, 25, 27] }], [44, 44]], color: "flame1" },
+      { shape: "poly", points: [[32, 44], [36, { cycle: [32, 30, 33, 31] }], [40, 44]], color: "flame0" },
+      { shape: "rect", x: [28, 44], y: [12, 30], w: 1, h: 1, color: "spark", repeat: { n: 8, phase: 4 } },
+      { shape: "ellipse", cx: 55, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 55, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 53, y: 42, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 51, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 51, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 49, y: 47, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 42, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 42, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 40, y: 51, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 30, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 30, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 28, y: 51, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 21, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 21, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 19, y: 47, w: 3, h: 1, color: "rockL" },
+      { shape: "ellipse", cx: 17, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+      { shape: "ellipse", cx: 17, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+      { shape: "rect", x: 15, y: 42, w: 3, h: 1, color: "rockL" },
+      { shape: "rect", x: 9, y: 36, w: 54, h: 2, color: "stoneD", alpha: 0.55 },
+      { shape: "rect", x: 5, y: 41, w: 13, h: 4, color: "log" },
+      { shape: "rect", x: 5, y: 41, w: 13, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 5, cy: 43, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 8, y: 44, w: 8, h: 1, color: "logD" },
+      { shape: "rect", x: 56, y: 41, w: 13, h: 4, color: "log" },
+      { shape: "rect", x: 56, y: 41, w: 13, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 56, cy: 43, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 59, y: 44, w: 8, h: 1, color: "logD" },
+      { shape: "rect", x: 22, y: 55, w: 14, h: 4, color: "log" },
+      { shape: "rect", x: 22, y: 55, w: 14, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 22, cy: 57, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 25, y: 58, w: 9, h: 1, color: "logD" },
+      { shape: "rect", x: 38, y: 55, w: 14, h: 4, color: "log" },
+      { shape: "rect", x: 38, y: 55, w: 14, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 38, cy: 57, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 41, y: 58, w: 9, h: 1, color: "logD" },
+      { shape: "rect", x: 4, y: 46, w: 12, h: 3, color: "hideD" },
+      { shape: "rect", x: 4, y: 45, w: 12, h: 2, color: "hide" },
+      { shape: "rect", x: 56, y: 46, w: 12, h: 3, color: "hideD" },
+      { shape: "rect", x: 56, y: 45, w: 12, h: 2, color: "hide" },
+      { shape: "ellipse", cx: 12, cy: 52, rx: 3, ry: 2, color: "clayD" },
+      { shape: "ellipse", cx: 12, cy: 51, rx: 3, ry: 1, color: "clay" },
+      { shape: "ellipse", cx: 60, cy: 52, rx: 3, ry: 2, color: "clayD" },
+      { shape: "ellipse", cx: 60, cy: 51, rx: 3, ry: 1, color: "clay" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/lab/L1.json
+  var L1_default4 = {
+    name: "B\xE3i v\u1EBD (c\u1EA5p 1, n\u1EC1n c\xE1t v\xE0 phi\u1EBFn \u0111\xE1)",
+    name_en: "Drawing Ground (Tier 1, Sand Floor and Slate Slab)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 9,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", sack: "#c9b27a", sackD: "#9d8756", bone: "#e4dcc4", boneD: "#b8ac90", sand: "#b9a47a", sandL: "#cdbb94", sandD: "#9a8760", char: "#2e2822", blue: "#5f7fa8", blueD: "#3f5c84", ochre: "#b0762f", red: "#a8342a" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "sand" },
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["sandL", "sandD", "chip"], onlyOver: ["sand"] },
+        { shape: "ellipse", cx: 22, cy: 46, rx: 7, ry: 3, color: "sandD", alpha: 0.55 },
+        { shape: "ellipse", cx: 22, cy: 46, rx: 6, ry: 2, color: "sandL" },
+        { shape: "poly", points: [[40, 42], [52, 42], [46, 50]], color: "sandD", alpha: 0.55 },
+        { shape: "poly", points: [[41, 43], [51, 43], [46, 49]], color: "sandL" },
+        { shape: "line", from: [10, 52], to: [30, 53], w: 1, color: "sandD" },
+        { shape: "line", from: [34, 53], to: [60, 52], w: 1, color: "sandD" },
+        { shape: "line", from: [18, 41], to: [30, 40], w: 1, color: "sandD" }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "ellipse", cx: 54, cy: 47, rx: 10, ry: 4, color: "stoneD" },
+        { shape: "ellipse", cx: 54, cy: 46, rx: 10, ry: 4, color: "stone" },
+        { shape: "ellipse", cx: 54, cy: 45, rx: 8, ry: 3, color: "stoneL" },
+        { shape: "line", from: [49, 45], to: [53, 44], w: 1, color: "char" },
+        { shape: "line", from: [53, 44], to: [58, 46], w: 1, color: "char" },
+        { shape: "pixels", at: [[51, 47], [56, 44], [57, 47]], color: "char" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "ellipse", cx: 14, cy: 52, rx: 4, ry: 2, color: "stoneD" },
+        { shape: "ellipse", cx: 14, cy: 51, rx: 3, ry: 1, color: "ochre" },
+        { shape: "ellipse", cx: 24, cy: 54, rx: 4, ry: 2, color: "stoneD" },
+        { shape: "ellipse", cx: 24, cy: 53, rx: 3, ry: 1, color: "blue" },
+        { shape: "ellipse", cx: 33, cy: 52, rx: 4, ry: 2, color: "stoneD" },
+        { shape: "ellipse", cx: 33, cy: 51, rx: 3, ry: 1, color: "red" }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 10, y: 26, w: 2, h: 22, color: "wood" },
+        { shape: "rect", x: 10, y: 26, w: 1, h: 22, color: "woodL" },
+        { shape: "rect", x: 8, y: 25, w: 12, h: 2, color: "woodD" },
+        { shape: "rect", x: 12, y: 28, w: 7, h: 10, color: "sack" },
+        { shape: "rect", x: 12, y: 28, w: 7, h: 1, color: "sackD" },
+        { shape: "rect", x: 12, y: 37, w: 7, h: 1, color: "sackD" },
+        { shape: "pixels", at: [[13, 31], [15, 31], [14, 33], [16, 33]], color: "blueD" },
+        { shape: "line", from: [12, 27], to: [18, 27], w: 1, color: "rope" },
+        { shape: "rect", x: 62, y: 38, w: 2, h: 12, color: "wood" },
+        { shape: "rect", x: 62, y: 38, w: 1, h: 12, color: "woodL" },
+        { shape: "pixels", at: [[61, 38], [64, 38]], color: "boneD" },
+        { shape: "ellipse", cx: 44, cy: 52, rx: 3, ry: 1, color: "bone" },
+        { shape: "pixels", at: [[42, 52], [46, 52]], color: "boneD" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/lab/L2.json
+  var L2_default4 = {
+    name: "L\xE1n b\u1EA3n v\u1EBD (c\u1EA5p 2, m\xE1i da xanh, gi\xE1 cu\u1ED9n da)",
+    name_en: "Drawing Lean-to (Tier 2, Blue Hide Roof, Scroll Rack)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 9,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", bone: "#e4dcc4", boneD: "#b8ac90", sand: "#b9a47a", sandL: "#cdbb94", sandD: "#9a8760", blue: "#5f7fa8", blueL: "#86a4c8", blueD: "#3f5c84" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "sand" },
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["sandL", "sandD", "chip"], onlyOver: ["sand"] },
+        { shape: "rect", x: 14, y: 44, w: 44, h: 10, color: "woodD", alpha: 0.35 },
+        { shape: "ellipse", cx: 22, cy: 46, rx: 7, ry: 3, color: "sandD", alpha: 0.55 },
+        { shape: "ellipse", cx: 22, cy: 46, rx: 6, ry: 2, color: "sandL" }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 10, y: 22, w: 2, h: 21, color: "wood" },
+        { shape: "rect", x: 10, y: 22, w: 1, h: 21, color: "woodL" },
+        { shape: "rect", x: 60, y: 22, w: 2, h: 21, color: "wood" },
+        { shape: "rect", x: 60, y: 22, w: 1, h: 21, color: "woodL" },
+        { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
+        { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
+        { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
+        { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
+        { shape: "rect", x: 9, y: 21, w: 54, h: 2, color: "woodD" },
+        { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "poly", points: [[3, 31], [13, 15], [59, 15], [69, 31]], color: "blue" },
+        { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "blueD" },
+        { shape: "line", from: [13, 15], to: [59, 15], w: 1, color: "blueL" },
+        { shape: "line", from: [8, 23], to: [64, 23], w: 1, color: "blueL", alpha: 0.35 },
+        { shape: "pixels", at: [[10, 33], [18, 33], [26, 33], [34, 33], [42, 33], [50, 33], [58, 33], [64, 33]], color: "stitch" },
+        { shape: "scatter", count: 24, area: [10, 16, 52, 12], size: 1, colors: ["blueL", "blueD"], onlyOver: ["blue"] }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 14, y: 38, w: 44, h: 2, color: "woodD" },
+        { shape: "line", from: [20, 40], to: [20, 42], w: 1, color: "rope" },
+        { shape: "line", from: [30, 40], to: [30, 42], w: 1, color: "rope" },
+        { shape: "line", from: [40, 40], to: [40, 42], w: 1, color: "rope" },
+        { shape: "line", from: [50, 40], to: [50, 42], w: 1, color: "rope" },
+        { shape: "rect", x: 17, y: 42, w: 6, h: 9, color: "sack" },
+        { shape: "rect", x: 17, y: 42, w: 6, h: 1, color: "sackD" },
+        { shape: "rect", x: 17, y: 50, w: 6, h: 1, color: "sackD" },
+        { shape: "pixels", at: [[18, 45], [20, 45], [19, 47], [21, 47]], color: "blueD" },
+        { shape: "rect", x: 27, y: 42, w: 6, h: 8, color: "sackD" },
+        { shape: "rect", x: 27, y: 42, w: 6, h: 1, color: "sackD" },
+        { shape: "rect", x: 27, y: 49, w: 6, h: 1, color: "sackD" },
+        { shape: "pixels", at: [[28, 45], [30, 45], [29, 47], [31, 47]], color: "blueD" },
+        { shape: "rect", x: 37, y: 42, w: 6, h: 9, color: "sack" },
+        { shape: "rect", x: 37, y: 42, w: 6, h: 1, color: "sackD" },
+        { shape: "rect", x: 37, y: 50, w: 6, h: 1, color: "sackD" },
+        { shape: "pixels", at: [[38, 45], [40, 45], [39, 47], [41, 47]], color: "blueD" },
+        { shape: "rect", x: 47, y: 42, w: 6, h: 8, color: "sackD" },
+        { shape: "rect", x: 47, y: 42, w: 6, h: 1, color: "sackD" },
+        { shape: "rect", x: 47, y: 49, w: 6, h: 1, color: "sackD" },
+        { shape: "pixels", at: [[48, 45], [50, 45], [49, 47], [51, 47]], color: "blueD" },
+        { shape: "rect", x: 24, y: 52, w: 24, h: 3, color: "stoneD" },
+        { shape: "rect", x: 24, y: 51, w: 24, h: 2, color: "stone" },
+        { shape: "rect", x: 24, y: 51, w: 24, h: 1, color: "stoneL" },
+        { shape: "pixels", at: [[6, 52], [8, 53], [60, 53], [62, 52]], color: "boneD" },
+        { shape: "rect", x: 55, y: 50, w: 8, h: 1, color: "bone" },
+        { shape: "rect", x: 56, y: 52, w: 6, h: 1, color: "bone" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/lab/L3.json
+  var L3_default4 = {
+    name: "Hang v\u1EBD (c\u1EA5p 3, v\xE1ch \u0111\xE1 c\xF3 tranh, \u0111\xE1 d\u1EF1ng)",
+    name_en: "Painting Cave (Tier 3, Painted Rock Wall, Standing Stones)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 9,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", sack: "#c9b27a", sackD: "#9d8756", blue: "#5f7fa8", blueL: "#86a4c8", blueD: "#3f5c84", ochre: "#b0762f", red: "#a8342a" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
+        { shape: "scatter", count: 42, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] },
+        { shape: "ellipse", cx: 36, cy: 48, rx: 14, ry: 4, color: "stoneD", alpha: 0.55 },
+        { shape: "ellipse", cx: 36, cy: 48, rx: 12, ry: 3, color: "stoneL" },
+        { shape: "ellipse", cx: 36, cy: 48, rx: 6, ry: 1, color: "stone" }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 8, y: 14, w: 56, h: 20, color: "stoneD" },
+        { shape: "rect", x: 8, y: 14, w: 56, h: 2, color: "stone" },
+        { shape: "rect", x: 8, y: 14, w: 56, h: 1, color: "stoneL" },
+        { shape: "poly", points: [[8, 34], [64, 34], [60, 38], [12, 38]], color: "stoneD" },
+        { shape: "scatter", count: 40, area: [9, 17, 54, 16], size: 1, colors: ["stone", "stoneL", "stoneD"], onlyOver: ["stoneD"] },
+        { shape: "rect", x: 4, y: 24, w: 6, h: 26, color: "stone" },
+        { shape: "rect", x: 4, y: 24, w: 6, h: 2, color: "stoneL" },
+        { shape: "rect", x: 62, y: 22, w: 6, h: 28, color: "stone" },
+        { shape: "rect", x: 62, y: 22, w: 6, h: 2, color: "stoneL" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "ellipse", cx: 18, cy: 24, rx: 5, ry: 2, color: "ochre" },
+        { shape: "rect", x: 14, y: 26, w: 1, h: 3, color: "ochre" },
+        { shape: "rect", x: 21, y: 26, w: 1, h: 3, color: "ochre" },
+        { shape: "rect", x: 13, y: 23, w: 2, h: 2, color: "ochre" },
+        { shape: "ellipse", cx: 30, cy: 24, rx: 4, ry: 2, color: "red" },
+        { shape: "rect", x: 27, y: 25, w: 1, h: 3, color: "red" },
+        { shape: "rect", x: 33, y: 25, w: 1, h: 3, color: "red" },
+        { shape: "rect", x: 33, y: 22, w: 2, h: 2, color: "red" },
+        { shape: "ellipse", cx: 44, cy: 22, rx: 4, ry: 4, color: "blueL" },
+        { shape: "line", from: [44, 15], to: [44, 18], w: 1, color: "blueL" },
+        { shape: "line", from: [44, 26], to: [44, 29], w: 1, color: "blueL" },
+        { shape: "line", from: [37, 22], to: [40, 22], w: 1, color: "blueL" },
+        { shape: "line", from: [48, 22], to: [51, 22], w: 1, color: "blueL" },
+        { shape: "rect", x: 54, y: 21, w: 5, h: 5, color: "ochre" },
+        { shape: "rect", x: 54, y: 18, w: 1, h: 3, color: "ochre" },
+        { shape: "rect", x: 56, y: 17, w: 1, h: 4, color: "ochre" },
+        { shape: "rect", x: 58, y: 18, w: 1, h: 3, color: "ochre" },
+        { shape: "pixels", at: [[20, 31], [24, 32], [36, 31], [48, 32], [56, 31]], color: "chip" }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 13, y: 36, w: 4, h: 12, color: "stoneL" },
+        { shape: "rect", x: 13, y: 36, w: 4, h: 2, color: "chip" },
+        { shape: "rect", x: 55, y: 38, w: 4, h: 10, color: "stoneL" },
+        { shape: "rect", x: 55, y: 38, w: 4, h: 2, color: "chip" },
+        { shape: "rect", x: 24, y: 44, w: 24, h: 5, color: "stoneD" },
+        { shape: "rect", x: 24, y: 43, w: 24, h: 3, color: "stone" },
+        { shape: "rect", x: 24, y: 43, w: 24, h: 1, color: "stoneL" },
+        { shape: "rect", x: 27, y: 40, w: 5, h: 3, color: "sack" },
+        { shape: "rect", x: 34, y: 41, w: 5, h: 2, color: "sackD" },
+        { shape: "rect", x: 41, y: 40, w: 4, h: 3, color: "sack" },
+        { shape: "pixels", at: [[28, 41], [30, 41], [36, 41], [42, 41]], color: "blueD" },
+        { shape: "ellipse", cx: 20, cy: 52, rx: 3, ry: 1, color: "ochre" },
+        { shape: "ellipse", cx: 50, cy: 53, rx: 3, ry: 1, color: "blue" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/repair/L1.json
+  var L1_default5 = {
+    name: "B\xE3i m\xE0i s\u1EEDa (c\u1EA5p 1, \u0111\xE1 m\xE0i v\xE0 l\u1EEDa nh\u1ECF)",
+    name_en: "Mending Ground (Tier 1, Whetstone and Small Fire)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 9,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428", fire: "#f08a2a", fireL: "#ffd27a", fireD: "#6a1e0e", smoke: "#c8ccd0", bone: "#e4dcc4", boneD: "#b8ac90", water: "#5c86a8", waterL: "#8fb4cf" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+        { shape: "ellipse", cx: 52, cy: 50, rx: 8, ry: 3, color: "mat" },
+        { shape: "scatter", count: 8, area: [46, 48, 12, 4], size: [2, 1], colors: ["matL", "matD"], onlyOver: ["mat"] }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "ellipse", cx: 22, cy: 49, rx: 11, ry: 4, color: "stoneD" },
+        { shape: "ellipse", cx: 22, cy: 48, rx: 11, ry: 4, color: "stone" },
+        { shape: "ellipse", cx: 22, cy: 47, rx: 8, ry: 2, color: "stoneL" },
+        { shape: "line", from: [15, 48], to: [29, 47], w: 1, color: "stoneD" },
+        { shape: "line", from: [16, 50], to: [28, 49], w: 1, color: "stoneD", alpha: 0.6 },
+        { shape: "ellipse", cx: 37, cy: 52, rx: 4, ry: 2, color: "stoneD" },
+        { shape: "ellipse", cx: 37, cy: 51, rx: 3, ry: 1, color: "water" },
+        { shape: "pixels", at: [[36, 51]], color: "waterL" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "line", from: [44, 49], to: [50, 47], w: 1, color: "woodD" },
+        { shape: "line", from: [52, 46], to: [56, 45], w: 1, color: "woodD" },
+        { shape: "rect", x: 57, y: 43, w: 4, h: 3, color: "stoneD" },
+        { shape: "pixels", at: [[57, 43]], color: "stoneL" },
+        { shape: "line", from: [48, 53], to: [54, 51], w: 1, color: "woodD" },
+        { shape: "line", from: [56, 50], to: [60, 49], w: 1, color: "woodD" },
+        { shape: "ellipse", cx: 60, cy: 49, rx: 2, ry: 1, color: "stoneD" },
+        { shape: "pixels", at: [[59, 48]], color: "stoneL" }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "ellipse", cx: 58, cy: 44, rx: 5.4, ry: 2.7, color: "fireD" },
+        { shape: "ellipse", cx: 58, cy: 43, rx: 3.6, ry: 1.8, color: "fire" },
+        { shape: "ellipse", cx: 58, cy: 42, rx: 1.8, ry: 1, color: "fireL" },
+        { shape: "scatter", count: 6, area: [54, 38, 8, 3], size: 1, colors: ["smoke"], alpha: 0.5 },
+        { shape: "line", from: [10, 52], to: [12, 36], w: 1, color: "wood" },
+        { shape: "line", from: [13, 52], to: [14, 35], w: 1, color: "woodL" },
+        { shape: "line", from: [16, 52], to: [16, 37], w: 1, color: "wood" },
+        { shape: "pixels", at: [[9, 49], [14, 48]], color: "rope" },
+        { shape: "ellipse", cx: 30, cy: 54, rx: 2, ry: 1, color: "bone" },
+        { shape: "pixels", at: [[29, 54], [32, 54]], color: "boneD" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/repair/L2.json
+  var L2_default5 = {
+    name: "L\xE1n s\u1EEDa (c\u1EA5p 2, m\xE1i tranh, gi\xE1 treo, b\xE1nh m\xE0i)",
+    name_en: "Mending Lean-to (Tier 2, Thatch Roof, Tool Rack, Grinding Wheel)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 9,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", thatch: "#c2a85a", thatchL: "#dcc678", thatchD: "#8f7a38", water: "#5c86a8", waterL: "#8fb4cf", green: "#6f8a46", greenD: "#4e6530" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+        { shape: "rect", x: 14, y: 45, w: 44, h: 9, color: "woodD", alpha: 0.35 }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 10, y: 20, w: 2, h: 23, color: "wood" },
+        { shape: "rect", x: 10, y: 20, w: 1, h: 23, color: "woodL" },
+        { shape: "rect", x: 60, y: 20, w: 2, h: 23, color: "wood" },
+        { shape: "rect", x: 60, y: 20, w: 1, h: 23, color: "woodL" },
+        { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
+        { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
+        { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
+        { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
+        { shape: "rect", x: 9, y: 19, w: 54, h: 2, color: "woodD" },
+        { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "poly", points: [[3, 31], [13, 16], [59, 16], [69, 31]], color: "thatch" },
+        { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "thatchD" },
+        { shape: "line", from: [13, 16], to: [59, 16], w: 1, color: "thatchL" },
+        { shape: "line", from: [14, 18], to: [8, 31], w: 1, color: "thatchD", alpha: 0.6 },
+        { shape: "line", from: [26, 17], to: [22, 31], w: 1, color: "thatchD", alpha: 0.6 },
+        { shape: "line", from: [38, 17], to: [38, 31], w: 1, color: "thatchD", alpha: 0.6 },
+        { shape: "line", from: [50, 17], to: [54, 31], w: 1, color: "thatchD", alpha: 0.6 },
+        { shape: "line", from: [58, 18], to: [65, 31], w: 1, color: "thatchD", alpha: 0.6 },
+        { shape: "scatter", count: 30, area: [8, 17, 56, 14], size: 1, colors: ["thatchL", "thatchD"], onlyOver: ["thatch"] },
+        { shape: "rect", x: 4, y: 33, w: 64, h: 1, color: "green" }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 15, y: 36, w: 42, h: 2, color: "woodD" },
+        { shape: "line", from: [20, 38], to: [20, 44], w: 1, color: "rope" },
+        { shape: "rect", x: 18, y: 44, w: 5, h: 2, color: "stoneD" },
+        { shape: "line", from: [30, 38], to: [30, 45], w: 1, color: "rope" },
+        { shape: "line", from: [28, 45], to: [32, 45], w: 1, color: "stoneD" },
+        { shape: "line", from: [40, 38], to: [40, 44], w: 1, color: "rope" },
+        { shape: "rect", x: 38, y: 44, w: 5, h: 3, color: "stone" },
+        { shape: "line", from: [50, 38], to: [50, 46], w: 1, color: "woodD" },
+        { shape: "ellipse", cx: 30, cy: 50, rx: 3, ry: 5, color: "stoneD" },
+        { shape: "ellipse", cx: 29, cy: 50, rx: 3, ry: 4, color: "stone" },
+        { shape: "ellipse", cx: 29, cy: 49, rx: 1, ry: 2, color: "stoneL" },
+        { shape: "rect", x: 24, y: 49, w: 12, h: 2, color: "woodD" },
+        { shape: "rect", x: 44, y: 50, w: 14, h: 4, color: "woodD" },
+        { shape: "rect", x: 45, y: 50, w: 12, h: 2, color: "water" },
+        { shape: "pixels", at: [[47, 50], [52, 51]], color: "waterL" },
+        { shape: "ellipse", cx: 10, cy: 52, rx: 3, ry: 1, color: "greenD" },
+        { shape: "ellipse", cx: 10, cy: 51, rx: 3, ry: 1, color: "green" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/repair/L3.json
+  var L3_default5 = {
+    name: "X\u01B0\u1EDFng s\u1EEDa (c\u1EA5p 3, b\xE0n \u0111\xE1, b\xE1nh m\xE0i l\u1EDBn, l\xF2 nh\u1ECF)",
+    name_en: "Mending Workshop (Tier 3, Stone Bench, Great Wheel, Small Forge)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 9,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", fire: "#f08a2a", fireL: "#ffd27a", fireD: "#6a1e0e", water: "#5c86a8", clay: "#a8643c", clayD: "#7a4526", green: "#6f8a46", greenD: "#4e6530" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
+        { shape: "scatter", count: 40, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] },
+        { shape: "line", from: [10, 46], to: [62, 46], w: 1, color: "stoneD", alpha: 0.5 }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 8, y: 27, w: 56, h: 9, color: "stoneD" },
+        { shape: "rect", x: 8, y: 27, w: 56, h: 2, color: "stone" },
+        { shape: "rect", x: 8, y: 27, w: 56, h: 1, color: "stoneL" },
+        { shape: "scatter", count: 26, area: [9, 29, 54, 6], size: 1, colors: ["stone", "stoneL"], onlyOver: ["stoneD"] },
+        { shape: "rect", x: 5, y: 14, w: 3, h: 38, color: "woodD" },
+        { shape: "rect", x: 5, y: 14, w: 1, h: 38, color: "wood" },
+        { shape: "rect", x: 64, y: 14, w: 3, h: 38, color: "woodD" },
+        { shape: "rect", x: 64, y: 14, w: 1, h: 38, color: "wood" },
+        { shape: "rect", x: 4, y: 13, w: 64, h: 3, color: "log" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "poly", points: [[3, 16], [14, 6], [58, 6], [69, 16]], color: "wood" },
+        { shape: "poly", points: [[3, 16], [69, 16], [68, 20], [4, 20]], color: "woodD" },
+        { shape: "line", from: [14, 6], to: [58, 6], w: 1, color: "woodL" },
+        { shape: "line", from: [22, 6], to: [18, 16], w: 1, color: "woodD" },
+        { shape: "line", from: [36, 6], to: [36, 16], w: 1, color: "woodD" },
+        { shape: "line", from: [50, 6], to: [54, 16], w: 1, color: "woodD" },
+        { shape: "rect", x: 4, y: 21, w: 64, h: 1, color: "green" },
+        { shape: "rect", x: 4, y: 22, w: 64, h: 1, color: "greenD" }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 12, y: 30, w: 48, h: 1, color: "woodD" },
+        { shape: "line", from: [18, 30], to: [18, 21], w: 1, color: "woodD" },
+        { shape: "rect", x: 16, y: 20, w: 3, h: 2, color: "stoneD" },
+        { shape: "pixels", at: [[18, 20]], color: "stoneL" },
+        { shape: "line", from: [26, 30], to: [26, 21], w: 1, color: "woodD" },
+        { shape: "line", from: [23, 22], to: [29, 20], w: 1, color: "stoneD" },
+        { shape: "pixels", at: [[23, 22]], color: "stoneL" },
+        { shape: "line", from: [34, 30], to: [34, 22], w: 1, color: "woodD" },
+        { shape: "rect", x: 32, y: 19, w: 5, h: 3, color: "stone" },
+        { shape: "rect", x: 32, y: 19, w: 5, h: 1, color: "stoneL" },
+        { shape: "line", from: [42, 30], to: [42, 20], w: 1, color: "woodD" },
+        { shape: "line", from: [42, 20], to: [46, 21], w: 1, color: "woodD" },
+        { shape: "pixels", at: [[46, 22]], color: "stoneD" },
+        { shape: "line", from: [50, 30], to: [50, 21], w: 1, color: "woodD" },
+        { shape: "rect", x: 48, y: 20, w: 3, h: 2, color: "stoneD" },
+        { shape: "pixels", at: [[50, 20]], color: "stoneL" },
+        { shape: "rect", x: 10, y: 44, w: 22, h: 5, color: "stoneD" },
+        { shape: "rect", x: 10, y: 43, w: 22, h: 3, color: "stone" },
+        { shape: "rect", x: 10, y: 43, w: 22, h: 1, color: "stoneL" },
+        { shape: "rect", x: 12, y: 49, w: 3, h: 5, color: "stoneD" },
+        { shape: "rect", x: 28, y: 49, w: 3, h: 5, color: "stoneD" },
+        { shape: "ellipse", cx: 44, cy: 46, rx: 3, ry: 6, color: "stoneD" },
+        { shape: "ellipse", cx: 43, cy: 46, rx: 3, ry: 5, color: "stone" },
+        { shape: "ellipse", cx: 43, cy: 45, rx: 1, ry: 2, color: "stoneL" },
+        { shape: "rect", x: 38, y: 45, w: 12, h: 2, color: "woodD" },
+        { shape: "rect", x: 52, y: 49, w: 10, h: 4, color: "stoneD" },
+        { shape: "rect", x: 53, y: 48, w: 8, h: 2, color: "water" },
+        { shape: "ellipse", cx: 14, cy: 53, rx: 3, ry: 2, color: "clayD" },
+        { shape: "ellipse", cx: 14, cy: 52, rx: 3, ry: 1, color: "clay" },
+        { shape: "ellipse", cx: 22, cy: 54, rx: 3, ry: 2, color: "clayD" },
+        { shape: "ellipse", cx: 22, cy: 53, rx: 3, ry: 1, color: "clay" },
+        { shape: "ellipse", cx: 60, cy: 40, rx: 4.800000000000001, ry: 2.4000000000000004, color: "fireD" },
+        { shape: "ellipse", cx: 60, cy: 39, rx: 3.2, ry: 1.6, color: "fire" },
+        { shape: "ellipse", cx: 60, cy: 38, rx: 1.6, ry: 1, color: "fireL" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
   // src/data/blueprints/stone_age/buildings/storage/L1.json
-  var L1_default2 = {
+  var L1_default6 = {
     name: "Kho (c\u1EA5p 1, b\xE3i ch\u1EA5t \u0111\u1ED3)",
     type: "prop",
     size: [72, 64],
@@ -481,7 +1666,7 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
   };
 
   // src/data/blueprints/stone_age/buildings/storage/L2.json
-  var L2_default = {
+  var L2_default6 = {
     name: "Kho (c\u1EA5p 2, gi\xE0n g\u1ED7)",
     type: "prop",
     size: [72, 64],
@@ -564,7 +1749,7 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
   };
 
   // src/data/blueprints/stone_age/buildings/storage/L3.json
-  var L3_default = {
+  var L3_default6 = {
     name: "Kho (c\u1EA5p 3, h\u1ED1 ch\u1EE9a l\xF3t \u0111\xE1)",
     type: "prop",
     size: [72, 64],
@@ -628,9 +1813,228 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
     ]
   };
 
+  // src/data/blueprints/stone_age/buildings/toolstore/L1.json
+  var L1_default7 = {
+    name: "Gi\xE1 c\xF4ng c\u1EE5 (c\u1EA5p 1, gi\xE1 ch\xE9o c\u1ECDc)",
+    name_en: "Tool Rack (Tier 1, Crossed Poles)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 5,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", stitch: "#e8d6a8", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", teal: "#4f8a86", tealL: "#74b0aa", tealD: "#336460" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "line", from: [14, 52], to: [26, 30], w: 2, color: "wood" },
+        { shape: "line", from: [38, 52], to: [26, 30], w: 2, color: "woodD" },
+        { shape: "line", from: [32, 52], to: [44, 30], w: 2, color: "wood" },
+        { shape: "line", from: [56, 52], to: [44, 30], w: 2, color: "woodD" },
+        { shape: "rect", x: 14, y: 36, w: 42, h: 2, color: "woodD" },
+        { shape: "rect", x: 14, y: 36, w: 42, h: 1, color: "woodL" },
+        { shape: "pixels", at: [[26, 31], [44, 31]], color: "rope" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "line", from: [20, 38], to: [20, 41], w: 1, color: "rope" },
+        { shape: "line", from: [30, 38], to: [30, 41], w: 1, color: "rope" },
+        { shape: "line", from: [40, 38], to: [40, 41], w: 1, color: "rope" },
+        { shape: "line", from: [50, 38], to: [50, 41], w: 1, color: "rope" },
+        { shape: "line", from: [20, 41], to: [20, 50], w: 1, color: "woodD" },
+        { shape: "rect", x: 18, y: 49, w: 5, h: 2, color: "stoneD" },
+        { shape: "line", from: [30, 41], to: [30, 51], w: 1, color: "woodD" },
+        { shape: "line", from: [27, 50], to: [33, 49], w: 1, color: "stoneD" },
+        { shape: "line", from: [40, 41], to: [40, 49], w: 1, color: "woodD" },
+        { shape: "rect", x: 38, y: 49, w: 5, h: 3, color: "stone" },
+        { shape: "rect", x: 38, y: 49, w: 5, h: 1, color: "stoneL" },
+        { shape: "line", from: [50, 41], to: [50, 51], w: 1, color: "woodD" },
+        { shape: "line", from: [50, 49], to: [54, 50], w: 1, color: "woodD" }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "ellipse", cx: 10, cy: 52, rx: 5, ry: 3, color: "wickerD" },
+        { shape: "ellipse", cx: 10, cy: 51, rx: 5, ry: 3, color: "wicker" },
+        { shape: "ellipse", cx: 10, cy: 50, rx: 4, ry: 2, color: "wickerD" },
+        { shape: "pixels", at: [[8, 51], [10, 52], [12, 51]], color: "sackD" },
+        { shape: "line", from: [8, 49], to: [7, 42], w: 1, color: "woodD" },
+        { shape: "line", from: [10, 49], to: [10, 41], w: 1, color: "wood" },
+        { shape: "line", from: [12, 49], to: [13, 43], w: 1, color: "woodD" },
+        { shape: "ellipse", cx: 62, cy: 53, rx: 4, ry: 3, color: "wickerD" },
+        { shape: "ellipse", cx: 62, cy: 52, rx: 4, ry: 3, color: "wicker" },
+        { shape: "ellipse", cx: 62, cy: 51, rx: 3, ry: 2, color: "wickerD" },
+        { shape: "pixels", at: [[60, 52], [62, 53], [64, 52]], color: "sackD" },
+        { shape: "rect", x: 56, y: 40, w: 12, h: 6, color: "teal" },
+        { shape: "rect", x: 56, y: 40, w: 12, h: 2, color: "tealL" },
+        { shape: "rect", x: 56, y: 45, w: 12, h: 1, color: "tealD" },
+        { shape: "pixels", at: [[58, 43], [62, 43], [66, 43]], color: "stitch" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/toolstore/L2.json
+  var L2_default7 = {
+    name: "L\xE1n c\xF4ng c\u1EE5 (c\u1EA5p 2, m\xE1i da xanh l\u1EE5c, hai gi\xE1)",
+    name_en: "Tool Shed (Tier 2, Teal Hide Roof, Two Racks)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 5,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneD: "#60676b", chip: "#d8d2c0", stitch: "#e8d6a8", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", teal: "#4f8a86", tealL: "#74b0aa", tealD: "#336460" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+        { shape: "rect", x: 14, y: 45, w: 44, h: 9, color: "woodD", alpha: 0.35 }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 10, y: 20, w: 2, h: 23, color: "wood" },
+        { shape: "rect", x: 10, y: 20, w: 1, h: 23, color: "woodL" },
+        { shape: "rect", x: 60, y: 20, w: 2, h: 23, color: "wood" },
+        { shape: "rect", x: 60, y: 20, w: 1, h: 23, color: "woodL" },
+        { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
+        { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
+        { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
+        { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
+        { shape: "rect", x: 9, y: 19, w: 54, h: 2, color: "woodD" },
+        { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "poly", points: [[3, 31], [13, 16], [59, 16], [69, 31]], color: "teal" },
+        { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "tealD" },
+        { shape: "line", from: [13, 16], to: [59, 16], w: 1, color: "tealL" },
+        { shape: "line", from: [8, 24], to: [64, 24], w: 1, color: "tealL", alpha: 0.35 },
+        { shape: "pixels", at: [[10, 33], [18, 33], [26, 33], [34, 33], [42, 33], [50, 33], [58, 33], [64, 33]], color: "stitch" },
+        { shape: "scatter", count: 24, area: [10, 17, 52, 12], size: 1, colors: ["tealL", "tealD"], onlyOver: ["teal"] }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 15, y: 36, w: 42, h: 2, color: "woodD" },
+        { shape: "rect", x: 15, y: 44, w: 42, h: 2, color: "woodD" },
+        { shape: "line", from: [20, 38], to: [20, 40], w: 1, color: "rope" },
+        { shape: "line", from: [30, 38], to: [30, 40], w: 1, color: "rope" },
+        { shape: "line", from: [40, 38], to: [40, 40], w: 1, color: "rope" },
+        { shape: "line", from: [50, 38], to: [50, 40], w: 1, color: "rope" },
+        { shape: "line", from: [20, 40], to: [20, 47], w: 1, color: "woodD" },
+        { shape: "rect", x: 18, y: 46, w: 5, h: 2, color: "stoneD" },
+        { shape: "line", from: [30, 40], to: [30, 48], w: 1, color: "woodD" },
+        { shape: "line", from: [27, 47], to: [33, 46], w: 1, color: "stoneD" },
+        { shape: "line", from: [40, 40], to: [40, 47], w: 1, color: "woodD" },
+        { shape: "rect", x: 38, y: 47, w: 5, h: 3, color: "stone" },
+        { shape: "line", from: [50, 40], to: [50, 49], w: 1, color: "woodD" },
+        { shape: "line", from: [50, 46], to: [54, 47], w: 1, color: "woodD" },
+        { shape: "ellipse", cx: 14, cy: 54, rx: 4, ry: 3, color: "wickerD" },
+        { shape: "ellipse", cx: 14, cy: 53, rx: 4, ry: 3, color: "wicker" },
+        { shape: "ellipse", cx: 14, cy: 52, rx: 3, ry: 2, color: "wickerD" },
+        { shape: "pixels", at: [[12, 53], [14, 54], [16, 53]], color: "sackD" },
+        { shape: "ellipse", cx: 58, cy: 54, rx: 4, ry: 3, color: "wickerD" },
+        { shape: "ellipse", cx: 58, cy: 53, rx: 4, ry: 3, color: "wicker" },
+        { shape: "ellipse", cx: 58, cy: 52, rx: 3, ry: 2, color: "wickerD" },
+        { shape: "pixels", at: [[56, 53], [58, 54], [60, 53]], color: "sackD" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/toolstore/L3.json
+  var L3_default7 = {
+    name: "Kho c\xF4ng c\u1EE5 (c\u1EA5p 3, t\u01B0\u1EDDng \u0111\xE1 th\u1EA5p, m\xE1i v\xE1n)",
+    name_en: "Tool Store (Tier 3, Low Stone Walls, Plank Roof)",
+    type: "prop",
+    size: [72, 64],
+    anchor: [36, 58],
+    footprint: [4, 32, 64, 28],
+    seed: 5,
+    params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+    palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", teal: "#4f8a86", tealD: "#336460" },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+      { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+      { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+      { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+      { shape: "group", if: "st1", layers: [
+        { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
+        { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
+        { shape: "scatter", count: 40, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] }
+      ] },
+      { shape: "group", if: "st2", layers: [
+        { shape: "rect", x: 6, y: 28, w: 60, h: 8, color: "stoneD" },
+        { shape: "rect", x: 6, y: 28, w: 60, h: 2, color: "stone" },
+        { shape: "rect", x: 6, y: 28, w: 60, h: 1, color: "stoneL" },
+        { shape: "rect", x: 6, y: 28, w: 8, h: 24, color: "stoneD" },
+        { shape: "rect", x: 6, y: 28, w: 8, h: 2, color: "stone" },
+        { shape: "rect", x: 58, y: 28, w: 8, h: 24, color: "stoneD" },
+        { shape: "rect", x: 58, y: 28, w: 8, h: 2, color: "stone" },
+        { shape: "scatter", count: 40, area: [7, 30, 56, 20], size: 1, colors: ["stone", "stoneL", "stoneD"], onlyOver: ["stoneD"] },
+        { shape: "rect", x: 22, y: 36, w: 28, h: 16, color: "line", alpha: 0.55 }
+      ] },
+      { shape: "group", if: "st3", layers: [
+        { shape: "poly", points: [[3, 30], [12, 9], [60, 9], [69, 30]], color: "wood" },
+        { shape: "poly", points: [[3, 30], [69, 30], [68, 34], [4, 34]], color: "woodD" },
+        { shape: "line", from: [12, 9], to: [60, 9], w: 2, color: "woodL" },
+        { shape: "line", from: [22, 9], to: [14, 30], w: 1, color: "woodD" },
+        { shape: "line", from: [36, 9], to: [36, 30], w: 1, color: "woodD" },
+        { shape: "line", from: [50, 9], to: [58, 30], w: 1, color: "woodD" },
+        { shape: "rect", x: 4, y: 35, w: 64, h: 1, color: "teal" },
+        { shape: "rect", x: 4, y: 36, w: 64, h: 1, color: "tealD" },
+        { shape: "scatter", count: 26, area: [8, 11, 56, 18], size: 1, colors: ["woodL", "woodD"], onlyOver: ["wood"] }
+      ] },
+      { shape: "group", if: "st4", layers: [
+        { shape: "rect", x: 22, y: 36, w: 28, h: 1, color: "woodD" },
+        { shape: "line", from: [26, 50], to: [26, 41], w: 1, color: "woodD" },
+        { shape: "rect", x: 24, y: 40, w: 3, h: 2, color: "stoneD" },
+        { shape: "pixels", at: [[26, 40]], color: "stoneL" },
+        { shape: "line", from: [31, 50], to: [31, 41], w: 1, color: "woodD" },
+        { shape: "line", from: [28, 42], to: [34, 40], w: 1, color: "stoneD" },
+        { shape: "pixels", at: [[28, 42]], color: "stoneL" },
+        { shape: "line", from: [36, 50], to: [36, 42], w: 1, color: "woodD" },
+        { shape: "rect", x: 34, y: 39, w: 5, h: 3, color: "stone" },
+        { shape: "rect", x: 34, y: 39, w: 5, h: 1, color: "stoneL" },
+        { shape: "line", from: [41, 50], to: [41, 40], w: 1, color: "woodD" },
+        { shape: "line", from: [41, 40], to: [45, 41], w: 1, color: "woodD" },
+        { shape: "pixels", at: [[45, 42]], color: "stoneD" },
+        { shape: "line", from: [46, 50], to: [46, 41], w: 1, color: "woodD" },
+        { shape: "rect", x: 44, y: 40, w: 3, h: 2, color: "stoneD" },
+        { shape: "pixels", at: [[46, 40]], color: "stoneL" },
+        { shape: "rect", x: 25, y: 50, w: 24, h: 2, color: "woodD" },
+        { shape: "pixels", at: [[27, 51], [35, 51], [43, 51]], color: "rope" },
+        { shape: "ellipse", cx: 12, cy: 55, rx: 4, ry: 3, color: "wickerD" },
+        { shape: "ellipse", cx: 12, cy: 54, rx: 4, ry: 3, color: "wicker" },
+        { shape: "ellipse", cx: 12, cy: 53, rx: 3, ry: 2, color: "wickerD" },
+        { shape: "pixels", at: [[10, 54], [12, 55], [14, 54]], color: "sackD" },
+        { shape: "ellipse", cx: 60, cy: 55, rx: 4, ry: 3, color: "wickerD" },
+        { shape: "ellipse", cx: 60, cy: 54, rx: 4, ry: 3, color: "wicker" },
+        { shape: "ellipse", cx: 60, cy: 53, rx: 3, ry: 2, color: "wickerD" },
+        { shape: "pixels", at: [[58, 54], [60, 55], [62, 54]], color: "sackD" }
+      ] },
+      { shape: "outline", color: "line" }
+    ]
+  };
+
   // src/data/blueprints/stone_age/buildings/workshop/L1.json
-  var L1_default3 = {
-    name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c (c\u1EA5p 1, b\xE3i \u0111\u1EBDo \u0111\xE1)",
+  var L1_default8 = {
+    name: "B\xE3i ch\u1EBF t\u1EA1o (c\u1EA5p 1, b\xE3i \u0111\xE1 \u0111\u01A1n s\u01A1)",
+    name_en: "Crafting Ground (Tier 1, Rough Stone Ground)",
     type: "prop",
     size: [72, 64],
     anchor: [36, 58],
@@ -648,39 +2052,55 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
       { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
       { shape: "group", if: "st1", layers: [
         { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
-        { shape: "scatter", count: 28, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL"], onlyOver: ["earth"] },
-        { shape: "ellipse", cx: 30, cy: 47, rx: 15, ry: 5, color: "mat" },
-        { shape: "scatter", count: 10, area: [16, 44, 28, 6], size: [2, 1], colors: ["matL", "matD"], onlyOver: ["mat"] }
+        { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+        { shape: "ellipse", cx: 22, cy: 48, rx: 9, ry: 3, color: "stoneD", alpha: 0.6 },
+        { shape: "ellipse", cx: 22, cy: 47, rx: 8, ry: 2, color: "stone" },
+        { shape: "scatter", count: 8, area: [14, 45, 16, 5], size: 1, colors: ["stoneL", "flint"], onlyOver: ["stone"] },
+        { shape: "ellipse", cx: 48, cy: 50, rx: 7, ry: 3, color: "mat" },
+        { shape: "scatter", count: 8, area: [42, 48, 12, 4], size: [2, 1], colors: ["matL", "matD"], onlyOver: ["mat"] }
       ] },
       { shape: "group", if: "st2", layers: [
-        { shape: "rect", x: 10, y: 43, w: 14, h: 6, color: "log" },
-        { shape: "rect", x: 10, y: 43, w: 14, h: 1, color: "woodL" },
-        { shape: "rect", x: 13, y: 43, w: 1, h: 6, color: "woodD" },
-        { shape: "ellipse", cx: 10, cy: 46, rx: 2, ry: 3, color: "logE" }
+        { shape: "rect", x: 9, y: 42, w: 12, h: 5, color: "log" },
+        { shape: "rect", x: 9, y: 42, w: 12, h: 1, color: "woodL" },
+        { shape: "rect", x: 12, y: 42, w: 1, h: 5, color: "woodD" },
+        { shape: "ellipse", cx: 9, cy: 44, rx: 2, ry: 2, color: "logE" },
+        { shape: "ellipse", cx: 38, cy: 44, rx: 7, ry: 5, color: "stoneD" },
+        { shape: "ellipse", cx: 38, cy: 43, rx: 6, ry: 4, color: "stone" },
+        { shape: "ellipse", cx: 38, cy: 42, rx: 3, ry: 2, color: "stoneL" },
+        { shape: "scatter", count: 6, area: [30, 46, 16, 4], size: 1, colors: ["flint", "chip"], onlyOver: ["earth"] }
       ] },
       { shape: "group", if: "st3", layers: [
-        { shape: "poly", points: [[32, 43], [48, 42], [50, 47], [34, 49]], color: "stoneD" },
-        { shape: "poly", points: [[32, 41], [48, 40], [50, 45], [34, 47]], color: "stone" },
-        { shape: "line", from: [32, 41], to: [48, 40], w: 1, color: "stoneL" },
-        { shape: "poly", points: [[37, 39], [41, 36], [43, 39]], color: "flint" },
-        { shape: "scatter", count: 12, area: [28, 47, 26, 5], size: 1, colors: ["flint", "flintL", "chip"] }
+        { shape: "poly", points: [[14, 38], [26, 37], [28, 41], [16, 42]], color: "hideD" },
+        { shape: "poly", points: [[14, 36], [26, 35], [28, 39], [16, 40]], color: "hide" },
+        { shape: "line", from: [14, 36], to: [26, 35], w: 1, color: "hideL" },
+        { shape: "pixels", at: [[18, 38], [22, 37]], color: "stitch" },
+        { shape: "poly", points: [[50, 36], [62, 35], [63, 39], [51, 40]], color: "wickerD" },
+        { shape: "poly", points: [[50, 34], [62, 33], [63, 37], [51, 38]], color: "wicker" },
+        { shape: "scatter", count: 6, area: [52, 34, 10, 4], size: 1, colors: ["wickerD", "sackD"] },
+        { shape: "ellipse", cx: 34, cy: 51, rx: 6, ry: 2, color: "stoneD" },
+        { shape: "scatter", count: 10, area: [26, 50, 18, 4], size: 1, colors: ["flint", "flintL", "chip", "boneD"], onlyOver: ["earth", "stoneD"] }
       ] },
       { shape: "group", if: "st4", layers: [
-        { shape: "ellipse", cx: 56, cy: 45, rx: 6, ry: 4, color: "stoneD" },
-        { shape: "ellipse", cx: 56, cy: 44, rx: 5, ry: 3, color: "stone" },
-        { shape: "ellipse", cx: 60, cy: 48, rx: 3, ry: 2, color: "stone" },
-        { shape: "ellipse", cx: 52, cy: 49, rx: 3, ry: 2, color: "stoneD" },
-        { shape: "pixels", at: [[54, 42], [59, 47]], color: "stoneL" },
-        { shape: "poly", points: [[17, 52], [27, 52], [26, 54], [18, 54]], color: "bone" },
-        { shape: "line", from: [10, 52], to: [16, 50], w: 1, color: "boneD" },
-        { shape: "ellipse", cx: 45, cy: 51, rx: 2, ry: 1, color: "flint" }
+        { shape: "poly", points: [[30, 41], [42, 40], [44, 44], [32, 45]], color: "woodD" },
+        { shape: "poly", points: [[30, 39], [42, 38], [44, 42], [32, 43]], color: "wood" },
+        { shape: "line", from: [30, 39], to: [42, 38], w: 1, color: "woodL" },
+        { shape: "ellipse", cx: 36, cy: 41, rx: 4, ry: 2, color: "stone" },
+        { shape: "ellipse", cx: 36, cy: 40, rx: 2, ry: 1, color: "flintL" },
+        { shape: "ellipse", cx: 56, cy: 46, rx: 6, ry: 3, color: "fireD" },
+        { shape: "ellipse", cx: 56, cy: 45, rx: 4, ry: 2, color: "fire" },
+        { shape: "ellipse", cx: 56, cy: 44, rx: 2, ry: 1, color: "fireL" },
+        { shape: "scatter", count: 6, area: [52, 42, 8, 3], size: 1, colors: ["smoke"], alpha: 0.5 },
+        { shape: "poly", points: [[16, 52], [26, 52], [25, 54], [17, 54]], color: "bone" },
+        { shape: "line", from: [9, 52], to: [15, 50], w: 1, color: "boneD" },
+        { shape: "ellipse", cx: 45, cy: 51, rx: 2, ry: 1, color: "flint" },
+        { shape: "scatter", count: 8, area: [8, 47, 56, 6], size: 1, colors: ["chip", "stoneL", "boneD"], onlyOver: ["earth"] }
       ] },
       { shape: "outline", color: "line" }
     ]
   };
 
   // src/data/blueprints/stone_age/buildings/workshop/L2.json
-  var L2_default2 = {
+  var L2_default8 = {
     name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c (c\u1EA5p 2, gi\xE1 g\u1ED7)",
     type: "prop",
     size: [72, 64],
@@ -742,7 +2162,7 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
   };
 
   // src/data/blueprints/stone_age/buildings/workshop/L3.json
-  var L3_default2 = {
+  var L3_default8 = {
     name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c (c\u1EA5p 3, b\xE3i l\xE1t \u0111\xE1)",
     type: "prop",
     size: [72, 64],
@@ -1366,7 +2786,7 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
   };
 
   // bp:blueprints
-  var blueprints_default = { "nature/resources/bush": bush_default, "nature/resources/rock": rock_default, "nature/terrain/grass": grass_default, "nature/terrain/mud": mud_default, "nature/terrain/water": water_default, "nature/trees/stump": stump_default, "nature/trees/tree_pine": tree_pine_default, "nature/trees/tree_round": tree_round_default, "stone_age/buildings/campfire/L1": L1_default, "stone_age/buildings/storage/L1": L1_default2, "stone_age/buildings/storage/L2": L2_default, "stone_age/buildings/storage/L3": L3_default, "stone_age/buildings/workshop/L1": L1_default3, "stone_age/buildings/workshop/L2": L2_default2, "stone_age/buildings/workshop/L3": L3_default2, "stone_age/tools/axe": axe_default, "stone_age/tools/club": club_default, "stone_age/tools/hammer": hammer_default, "stone_age/tools/hide_armor": hide_armor_default, "stone_age/tools/hoe": hoe_default, "stone_age/tools/mace": mace_default, "stone_age/tools/pick": pick_default, "stone_age/tools/spear": spear_default };
+  var blueprints_default = { "nature/resources/bush": bush_default, "nature/resources/rock": rock_default, "nature/terrain/grass": grass_default, "nature/terrain/mud": mud_default, "nature/terrain/water": water_default, "nature/trees/stump": stump_default, "nature/trees/tree_pine": tree_pine_default, "nature/trees/tree_round": tree_round_default, "stone_age/buildings/armory/L1": L1_default, "stone_age/buildings/armory/L2": L2_default, "stone_age/buildings/armory/L3": L3_default, "stone_age/buildings/builder/L1": L1_default2, "stone_age/buildings/builder/L2": L2_default2, "stone_age/buildings/builder/L3": L3_default2, "stone_age/buildings/campfire/L1": L1_default3, "stone_age/buildings/campfire/L2": L2_default3, "stone_age/buildings/campfire/L3": L3_default3, "stone_age/buildings/campfire/L4": L4_default, "stone_age/buildings/lab/L1": L1_default4, "stone_age/buildings/lab/L2": L2_default4, "stone_age/buildings/lab/L3": L3_default4, "stone_age/buildings/repair/L1": L1_default5, "stone_age/buildings/repair/L2": L2_default5, "stone_age/buildings/repair/L3": L3_default5, "stone_age/buildings/storage/L1": L1_default6, "stone_age/buildings/storage/L2": L2_default6, "stone_age/buildings/storage/L3": L3_default6, "stone_age/buildings/toolstore/L1": L1_default7, "stone_age/buildings/toolstore/L2": L2_default7, "stone_age/buildings/toolstore/L3": L3_default7, "stone_age/buildings/workshop/L1": L1_default8, "stone_age/buildings/workshop/L2": L2_default8, "stone_age/buildings/workshop/L3": L3_default8, "stone_age/tools/axe": axe_default, "stone_age/tools/club": club_default, "stone_age/tools/hammer": hammer_default, "stone_age/tools/hide_armor": hide_armor_default, "stone_age/tools/hoe": hoe_default, "stone_age/tools/mace": mace_default, "stone_age/tools/pick": pick_default, "stone_age/tools/spear": spear_default };
 
   // src/blueprint/engine.js
   (function(root) {

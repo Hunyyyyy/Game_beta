@@ -1,0 +1,64 @@
+{
+  "name": "Giá giáo (cấp 1, giá ba chân)",
+  "name_en": "Spear Stand (Tier 1, Tripod)",
+  "type": "prop",
+  "size": [72, 64],
+  "anchor": [36, 58],
+  "footprint": [4, 32, 64, 28],
+  "seed": 5,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": { "line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "earth": "#86704e", "earthL": "#9a8460", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "rope": "#d8c690", "stoneD": "#60676b", "chip": "#d8d2c0", "hide": "#a0552f", "stitch": "#e8d6a8", "wicker": "#b89a58", "wickerD": "#8a7038", "flintL": "#7c8794", "bone": "#e4dcc4" },
+  "layers": [
+    {"shape": "ellipse", "cx": 36, "cy": 55, "rx": 30, "ry": 6, "color": "shadow", "alpha": 0.25},
+    {"shape": "rect", "x": 8, "y": 36, "w": 56, "h": 18, "color": "dirt", "alpha": 0.55, "ifNot": "st1"},
+    {"shape": "rect", "x": 7, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 63, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 7, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 63, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
+    {"shape": "line", "from": [9, 37], "to": [62, 37], "w": 1, "color": "rope", "ifNot": "st1"},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "ellipse", "cx": 36, "cy": 47, "rx": 30, "ry": 8, "color": "earth"},
+      {"shape": "scatter", "count": 34, "area": [6, 40, 60, 14], "size": [1, 2], "colors": ["dirt", "chip", "earthL", "stoneD"], "onlyOver": ["earth"]}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "line", "from": [22, 52], "to": [36, 24], "w": 2, "color": "wood"},
+      {"shape": "line", "from": [50, 52], "to": [36, 24], "w": 2, "color": "woodD"},
+      {"shape": "line", "from": [36, 52], "to": [36, 24], "w": 2, "color": "wood"},
+      {"shape": "rect", "x": 33, "y": 24, "w": 6, "h": 2, "color": "rope"},
+      {"shape": "pixels", "at": [[35, 23], [37, 23]], "color": "rope"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "line", "from": [25, 52], "to": [25, 28], "w": 1, "color": "woodD"},
+      {"shape": "poly", "points": [[24, 29], [25, 25], [26, 29]], "color": "flintL"},
+      {"shape": "line", "from": [29, 52], "to": [29, 26], "w": 1, "color": "woodD"},
+      {"shape": "poly", "points": [[28, 27], [29, 23], [30, 27]], "color": "flintL"},
+      {"shape": "line", "from": [43, 52], "to": [43, 27], "w": 1, "color": "woodD"},
+      {"shape": "poly", "points": [[42, 28], [43, 24], [44, 28]], "color": "flintL"},
+      {"shape": "line", "from": [47, 52], "to": [47, 29], "w": 1, "color": "woodD"},
+      {"shape": "poly", "points": [[46, 30], [47, 26], [48, 30]], "color": "flintL"},
+      {"shape": "line", "from": [33, 52], "to": [33, 24], "w": 1, "color": "woodD"},
+      {"shape": "poly", "points": [[32, 25], [33, 21], [34, 25]], "color": "flintL"}
+    ] },
+    {"shape": "group", "if": "st4", "layers": [
+      {"shape": "ellipse", "cx": 12, "cy": 50, "rx": 4, "ry": 3, "color": "wickerD"},
+      {"shape": "ellipse", "cx": 12, "cy": 49, "rx": 4, "ry": 3, "color": "wicker"},
+      {"shape": "ellipse", "cx": 12, "cy": 47, "rx": 3, "ry": 2, "color": "wickerD"},
+      {"shape": "line", "from": [10, 47], "to": [10, 39], "w": 2, "color": "wood"},
+      {"shape": "ellipse", "cx": 10, "cy": 38, "rx": 2, "ry": 2, "color": "woodD"},
+      {"shape": "pixels", "at": [[9, 37]], "color": "woodL"},
+      {"shape": "line", "from": [13, 47], "to": [13, 37], "w": 2, "color": "wood"},
+      {"shape": "ellipse", "cx": 13, "cy": 36, "rx": 2, "ry": 2, "color": "woodD"},
+      {"shape": "pixels", "at": [[12, 35]], "color": "woodL"},
+      {"shape": "line", "from": [15, 48], "to": [15, 41], "w": 2, "color": "wood"},
+      {"shape": "ellipse", "cx": 15, "cy": 40, "rx": 2, "ry": 2, "color": "woodD"},
+      {"shape": "pixels", "at": [[14, 39]], "color": "woodL"},
+      {"shape": "line", "from": [58, 53], "to": [58, 34], "w": 2, "color": "wood"},
+      {"shape": "ellipse", "cx": 58, "cy": 38, "rx": 5, "ry": 6, "color": "line"},
+      {"shape": "ellipse", "cx": 58, "cy": 38, "rx": 4, "ry": 5, "color": "hide"},
+      {"shape": "ellipse", "cx": 58, "cy": 38, "rx": 1, "ry": 1, "color": "bone"},
+      {"shape": "line", "from": [58, 33], "to": [58, 43], "w": 1, "color": "woodD", "alpha": 0.6},
+      {"shape": "pixels", "at": [[56, 36], [60, 36]], "color": "stitch"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

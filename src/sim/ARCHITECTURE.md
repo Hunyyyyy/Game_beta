@@ -83,3 +83,37 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 
 Mọi thứ thay đổi trong ván chơi nằm trong đối tượng `Sim`. Không tệp nào giữ biến `let` ở cấp tệp (test kiểm tra): trạng thái giấu ngoài `Sim` sẽ lọt khỏi bản lưu và làm hai ván chơi trong cùng một tiến trình ảnh hưởng nhau (đã từng xảy ra với `tribeClock`).
 Bộ sinh số ngẫu nhiên là `Rng` (`rng.ts`), đọc và đặt lại được vị trí; dùng `sim.rnd`, `sim.frnd`, `sim.wrnd`, đừng tạo bộ sinh riêng cho thứ thay đổi theo ván.
+
+## Vũ khí và hoạt ảnh chiến đấu
+
+Hoạt ảnh của người cầm vũ khí (chiến binh, thợ săn) tách khỏi hoạt ảnh làm việc và đi **theo kiểu vũ khí**, không theo từng món. Mọi vũ khí cùng kiểu cử động giống nhau: gậy, chùy, rìu, kiếm đều *vung*; giáo, thương *đâm*; cung, nỏ, súng *bắn*; lao *ném*.
+
+```
+ weapons.json  "weapons": { "club": { "style": "swing", ... } }
+                    │
+ weapons.json  "styles":  { "swing": { idle, walk, guard, charge, attack } }   tên hoạt ảnh cho 5 trạng thái
+                    │
+ anims.json    "swing_idle", "swing_walk", "swing_guard", "swing_charge", "swing_attack"   các khung hình (vẽ bằng trình xem)
+                    │
+ movement.animate()  →  poseOf(vũ khí, trạng thái)
+```
+
+| Trạng thái | Khi nào |
+|---|---|
+| `idle` | đứng yên, tay cầm vũ khí |
+| `walk` | đi bình thường |
+| `guard` | đang giao chiến hoặc canh, đứng yên |
+| `charge` | đang giao chiến, đang chạy tới |
+| `attack` | một đòn đánh; cần trường `hit` (khung hình trúng đòn), game lấy thời điểm gây sát thương từ đó |
+
+Hoạt ảnh `hit` (bị trúng đòn), `run` (bỏ chạy) và `down` (ngã) dùng chung cho mọi người. Giáp luôn được vẽ đè lên thân ở mọi hoạt ảnh. Vũ khí cầm trên tay do `hold` quyết định, không phụ thuộc trường `tool.kind` trong khung (trường đó chỉ để xem thử trong trình xem).
+
+**Thêm một vũ khí cùng kiểu có sẵn** (ví dụ kiếm): thêm vào `weapons` với `"style": "swing"` (số liệu, `cost` nếu chế được), vẽ hình cầm tay trong `src/data/handtools/` và biểu tượng trong `src/data/blueprints/*/tools/`. Không cần hoạt ảnh mới.
+
+**Một vũ khí khác biệt ở một động tác:** thêm `"anims": { "attack": "tên_hoạt_ảnh" }` vào vũ khí đó (rìu đá đang dùng `slash` như vậy).
+
+**Thêm một kiểu mới** (ví dụ súng hay máy bắn đá): thêm vào `styles` với 5 tên hoạt ảnh, vẽ 5 hoạt ảnh đó trong `anims.json`, rồi gán `"style"` cho vũ khí. Với vũ khí bắn, đặt `"projectile"`. Test `npm run test:sim` kiểm: mọi kiểu có đủ 5 hoạt ảnh, mọi vũ khí chỉ tới hoạt ảnh có thật, mọi đòn đánh có khung `hit`.
+
+Kiểu `throw` (lao) mới là bản sao của `thrust` để sẵn chỗ; chưa vũ khí nào dùng.
+
+Muốn **đổi cơ chế chiến đấu** (tốc độ ra đòn, thời điểm trúng, tầm, đạn): thời điểm trúng nằm ở `hit` và `fps` của hoạt ảnh `attack`; chu kỳ giữa hai đòn nằm ở `cycle` của vũ khí; luật tính sát thương ở `src/sim/battle.ts`.
