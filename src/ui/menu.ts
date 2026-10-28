@@ -1,18 +1,18 @@
 import { BUILDINGS, BuildingKind, levelDef, levelsOf } from '../sim/buildings';
 import { relationLabel, WEAPONS, RELATION, TribeId } from '../sim/combat';
 import { SEASONS, Season, WEATHER, WeatherKind } from '../sim/calendar';
-import { gameDays, TILE } from '../sim/constants';
+import { gameDays, TILE, workDays } from '../sim/constants';
 import * as dev from '../sim/dev';
 import { StatKey, STAT_NAME } from '../sim/jobs';
 import { RESEARCH } from '../sim/research';
 import { RES_LIST, RES_NAME } from '../sim/resources';
 import { TOOL_KINDS, TOOL_NAME, TIER_NAME } from '../sim/tools';
-import { canAdopt, canTribute, POP_CAP } from '../sim/tribes';
+import { canAdopt, canTribute } from '../sim/tribes';
 import { costText, h, helpButton, hint } from './dom';
 import type { Ctx } from './panels';
 
-type Tab = 'build' | 'places' | 'tribes' | 'dev' | 'help';
-const TABS: Array<[Tab, string]> = [['build', 'Xây'], ['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['dev', 'Dev'], ['help', '?']];
+type Tab = 'build' | 'places' | 'tribes' | 'game' | 'dev' | 'help';
+const TABS: Array<[Tab, string]> = [['build', 'Xây'], ['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['game', 'Ván chơi'], ['dev', 'Dev'], ['help', '?']];
 const SEASON_NAME: Record<Season, string> = { spring: 'Xuân', summer: 'Hạ', autumn: 'Thu', winter: 'Đông' };
 const PERSONALITY = { peaceful: 'Hòa bình', aggressive: 'Hiếu chiến', ambusher: 'Hay phục kích' } as const;
 
@@ -32,7 +32,7 @@ export class Menu {
     }
     tabs.append(h('span', { class: 'spacer' }), h('button', { class: 'sm', text: '✕', title: 'Đóng menu', onclick: () => this.close() }));
     this.pages.set('build', this.buildPage()); this.pages.set('places', this.placesPage()); this.pages.set('tribes', this.tribesPage());
-    this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
+    this.pages.set('game', this.gamePage()); this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
     for (const p of this.pages.values()) body.append(p);
     this.show(this.tab);
   }
@@ -55,7 +55,7 @@ export class Menu {
     page.append(hint('Xây dựng', 'Mỗi loại công trình chỉ xây MỘT cái trong cả game; muốn mạnh hơn thì nâng cấp nó. Chọn công trình rồi chạm lên bản đồ để chọn chỗ. Nếu đang chọn dân, họ sẽ tự đi xây.'));
     const rows: Array<() => void> = [];
     const ROLE: Partial<Record<BuildingKind, string>> = {
-      storage: 'Cất tài nguyên.', lab: 'Nghiên cứu bản vẽ, mở công trình và tự động hóa. Dân thông minh làm việc bên trong.',
+      builder: 'Dân làm thợ xây ở đây (do bạn chọn). Phải có nhà này mới dựng được các công trình khác.', storage: 'Cất tài nguyên.', lab: 'Nghiên cứu bản vẽ, mở công trình và tự động hóa. Dân thông minh làm việc bên trong.',
       workshop: 'Chế tạo công cụ, vũ khí, giáp theo bản vẽ. Dân làm việc bên trong.', repair: 'Sửa công cụ đã mòn. Dân làm việc bên trong.',
       toolstore: 'Cất công cụ cho dân tự lấy.', armory: 'Cất vũ khí và giáp cho dân tự lấy.',
     };
@@ -63,7 +63,7 @@ export class Menu {
       const d = BUILDINGS[kind]; if (!d.buildable) continue;
       const lv = levelsOf(kind, sim.era)[0], btn = h('button', { class: 'primary', text: 'Đặt', onclick: () => { ctl.startPlacing(kind); this.close(); } }) as HTMLButtonElement, status = h('small', { class: 'lock' });
       const role = ROLE[kind];
-      page.append(h('div', { class: 'row' }, h('div', { class: 'nm hint' }, h('div', { class: 'hinthead' }, d.name, role ? helpButton() : null), h('small', { text: `${lv.name}: ${costText(lv.cost, RES_NAME)} · xây ~${gameDays(lv.buildTime)}` }), status, role ? h('small', { class: 'hintbody', hidden: true, text: role }) : null), btn));
+      page.append(h('div', { class: 'row' }, h('div', { class: 'nm hint' }, h('div', { class: 'hinthead' }, d.name, role ? helpButton() : null), h('small', { text: `${lv.name}: ${costText(lv.cost, RES_NAME)} · xây ~${workDays(lv.buildTime)}` }), status, role ? h('small', { class: 'hintbody', hidden: true, text: role }) : null), btn));
       rows.push(() => {
         const lock = sim.buildingLock(kind), poor = !sim.dev.freeBuild && !(Object.keys(lv.cost) as Array<keyof typeof lv.cost>).every((k) => sim.stock[k as keyof typeof sim.stock] >= (lv.cost[k] ?? 0));
         btn.disabled = !!lock || poor; status.textContent = lock ?? (poor ? 'Chưa đủ vật liệu' : '');
@@ -121,13 +121,34 @@ export class Menu {
         const alive = t.unitIds.map((u) => sim.get(u)).filter(Boolean);
         c.people.innerHTML = t.state === 'adopted' || t.state === 'destroyed' ? '' : `Người <b>${alive.length}</b> · lính <b>${alive.filter((u) => u!.ai?.role !== 'civ').length}</b> · quan hệ <b>${Math.round(rel)}</b>${t.raid ? ' · <b>đang tập kích!</b>' : ''}`;
         const over = t.state === 'adopted' || t.state === 'destroyed';
-        c.gift.disabled = over || sim.stock.food < RELATION.giftFood; c.tribute.disabled = over || !canTribute(t) || t.state === 'tribute'; c.adopt.disabled = over || !canAdopt(t) || sim.villagers.length >= POP_CAP;
+        c.gift.disabled = over || sim.stock.food < RELATION.giftFood; c.tribute.disabled = over || !canTribute(t) || t.state === 'tribute'; c.adopt.disabled = over || !canAdopt(t) || sim.villagers.length >= sim.popCap();
       }
       none.hidden = any;
       const p = sim.pendingTribe && sim.tribes.find((x) => x.id === sim.pendingTribe);
       banner.hidden = !p;
       if (p) banner.replaceChildren(hint(h('b', { text: `${p.def.name} xin hàng!` }), 'Thu nạp: dân và lính gia nhập làng. Cống nạp: họ giữ làng và nộp tài nguyên mỗi mùa, không đánh bạn nữa.'));
     });
+    return page;
+  }
+
+  // ---------------------------------------------------------------- the game itself
+  private gamePage(): HTMLElement {
+    const { session, toast } = this.c, page = h('div', { class: 'page' });
+    const info = h('p', { class: 'sub', text: 'Chưa có bản lưu.' });
+    const refresh = async () => { const m = await session.latest(); info.textContent = m ? `Bản lưu gần nhất: ngày ${m.day}, ${m.population} dân, lúc ${new Date(m.savedAt).toLocaleString('vi')}.` : 'Chưa có bản lưu.'; };
+    let armed = 0;
+    const fresh = h('button', { class: 'sm danger', text: 'Ván mới' }) as HTMLButtonElement;
+    fresh.addEventListener('click', () => {
+      if (performance.now() < armed) { void session.forget().then(() => location.assign(location.pathname + location.search.replace(/[?&]continue=1/, ''))); return; }
+      armed = performance.now() + 4000; fresh.textContent = 'Bấm lại để xóa bản lưu và chơi lại'; setTimeout(() => { fresh.textContent = 'Ván mới'; }, 4000);
+    });
+    page.append(hint('Lưu và tải', 'Game tự lưu vào đầu mỗi ngày và khi bạn rời trang. Bản lưu nằm trong trình duyệt của máy này. Tốc độ game và lời nhắc xoay ngang là cài đặt của bạn, không nằm trong bản lưu.'), info,
+      h('div', { class: 'btns' },
+        h('button', { class: 'sm primary', text: 'Lưu ngay', onclick: () => { void session.save().then((ok) => { if (ok) toast('Đã lưu'); void refresh(); }); } }),
+        h('button', { class: 'sm', text: 'Tải bản lưu', onclick: () => { void session.resume('auto').then((ok) => { toast(ok ? 'Đã tải lại ván chơi' : 'Chưa có bản lưu'); this.close(); }); } }),
+        fresh));
+    let last = -1e9;
+    this.updaters.push(() => { const now = performance.now(); if (!page.hidden && now - last > 2000) { last = now; void refresh(); } });
     return page;
   }
 

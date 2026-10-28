@@ -172,8 +172,8 @@ export function tributeTribe(sim: Sim, id: TribeId): string | null {
 export function adoptTribe(sim: Sim, id: TribeId): string | null {
   const t = tribeOf(sim, id);
   if (!t || !canAdopt(t)) return 'Họ chưa chịu theo làng';
-  const room = POP_CAP - sim.villagers.length;
-  if (room <= 0) return `Làng đã đủ ${POP_CAP} dân`;
+  const cap = sim.popCap(), room = cap - sim.villagers.length;
+  if (room <= 0) return `Làng đã đủ ${cap} dân: hãy nâng đống lửa trại để chứa thêm`;
   const units = t.unitIds.map((u) => sim.get(u)).filter((u): u is Villager => !!u).sort((a) => (a.ai?.role === 'civ' ? 0 : 1)); // civilians first
   let taken = 0;
   for (const f of units) {
@@ -192,12 +192,11 @@ function releaseRaiders(sim: Sim, t: Tribe): void {
 }
 
 // ---------------------------------------------------------------- tribe upkeep (once per tick, cheap)
-let tribeClock = 0;
 export function tickTribes(sim: Sim, dt: number): void {
   tickEvents(sim);
-  tribeClock += dt;
-  if (tribeClock < 1) return;
-  tribeClock = 0;
+  sim.tribeClock += dt;
+  if (sim.tribeClock < 1) return;
+  sim.tribeClock = 0;
   for (const t of sim.tribes) {
     t.unitIds = t.unitIds.filter((u) => { const f = sim.get(u); return !!f && f.health > 0; });
     for (const u of t.unitIds) tickMorale(sim, sim.get(u)!);

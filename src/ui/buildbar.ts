@@ -1,5 +1,5 @@
-import { BUILDINGS, Building, BuildingKind, levelDef, maxLevel } from '../sim/buildings';
-import { gameDays, TILE } from '../sim/constants';
+import { BUILDINGS, Building, BuildingKind, canGrow, levelCapByFire, levelDef, maxLevel, POP_BY_FIRE } from '../sim/buildings';
+import { TILE, workDays } from '../sim/constants';
 import { RES_NAME, Res, Stock } from '../sim/resources';
 import type { Renderer } from '../render/renderer';
 import { costText, h } from './dom';
@@ -7,7 +7,7 @@ import type { Ctx } from './panels';
 
 /** What the button that opens a building's panel is called. */
 const OPEN_LABEL: Record<BuildingKind, string> = {
-  campfire: 'Xem dân', storage: 'Kho', workshop: 'Chế tạo', lab: 'Nghiên cứu', repair: 'Sửa đồ', toolstore: 'Kho công cụ', armory: 'Kho vũ khí',
+  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', workshop: 'Chế tạo', lab: 'Nghiên cứu', repair: 'Sửa đồ', toolstore: 'Kho công cụ', armory: 'Kho vũ khí',
 };
 
 interface Ask {
@@ -68,10 +68,10 @@ export class BuildingBar {
 
   private askUpgrade(b: Building): void {
     const { sim, ctl, toast } = this.c, def = BUILDINGS[b.kind], nx = levelDef(b, b.level + 1);
-    const gain = b.kind === 'storage' || b.kind === 'campfire' ? `chứa ${nx.cap} mỗi loại` : b.kind === 'toolstore' || b.kind === 'armory' ? `chứa ${nx.cap} món` : `chứa ${nx.slots} người, tốc độ ×${nx.craftSpeed.toLocaleString('vi')}`;
+    const gain = b.kind === 'campfire' ? `kho chứa ${nx.cap} mỗi loại, ${POP_BY_FIRE[b.level]} dân, các nhà khác lên được cấp ${levelCapByFire(b.level + 1)}` : b.kind === 'storage' ? `chứa ${nx.cap} mỗi loại` : b.kind === 'toolstore' || b.kind === 'armory' ? `chứa ${nx.cap} món` : `chứa ${nx.slots} người, tốc độ ×${nx.craftSpeed.toLocaleString('vi')}`;
     this.confirm.ask({
       title: `Nâng ${def.name} lên cấp ${b.level + 1}?`,
-      lines: [`${nx.name}: ${gain}. Vật liệu trả ngay, rồi giao Thợ xây để làm (~${gameDays(nx.buildTime)}).${sim.dev.freeBuild ? ' Đang bật xây miễn phí.' : ''}`],
+      lines: [`${nx.name}: ${gain}. Vật liệu trả ngay, rồi giao Thợ xây để làm (~${workDays(nx.buildTime)}).${sim.dev.freeBuild ? ' Đang bật xây miễn phí.' : ''}`],
       cost: sim.dev.freeBuild ? {} : nx.cost, costTitle: 'Vật liệu cần', why: sim.canUpgrade(b), ok: 'Nâng cấp',
       onOk: () => { const e = sim.upgradeBuilding(b.id); toast(e ?? 'Đã trả vật liệu. Giao Thợ xây để nâng cấp'); ctl.onChange(); },
     });
@@ -95,10 +95,10 @@ export class BuildingBar {
     if (!b || !show) { this.id = null; return; }
     this.id = b.id;
     const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
-    const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : def.buildable ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
+    const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
     this.who.replaceChildren(h('b', { text: def.name }), ` · ${state}`);
     this.open.textContent = OPEN_LABEL[b.kind]; this.open.hidden = !b.done;
-    this.upgrade.hidden = !(def.buildable && b.done && !b.upgrading && b.level < top);
+    this.upgrade.hidden = !(canGrow(b.kind) && b.done && !b.upgrading && b.level < top);
     this.move.hidden = this.demolish.hidden = !def.buildable;
     const fee = sim.moveFee(b);
     this.move.textContent = Object.keys(fee).length ? `Dời (${costText(fee, RES_NAME)})` : 'Dời';

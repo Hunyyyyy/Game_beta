@@ -68,7 +68,8 @@ const stage = (st: number) => ({ st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 
 /** Building blueprints per era and kind, one entry per level. A later era only lists what it redraws. */
 const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>>> = {
   stone: {
-    campfire: [campfireL1],
+    campfire: [campfireL1, campfireL1, campfireL1, campfireL1],
+    builder: [workshopL1, workshopL2, workshopL3],
     storage: [storageL1, storageL2, storageL3],
     workshop: [workshopL1, workshopL2, workshopL3],
     // the newer houses reuse the workshop and storage drawings in their own colours until they get their own art
@@ -81,6 +82,7 @@ const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>
 /** Palette overrides that tell a reused drawing apart: the coverings take the house's colour. */
 const house = (h: string, l: string, d: string) => ({ hide: h, hideL: l, hideD: d, mat: d, matL: h, matD: d });
 const TINTS: Partial<Record<BuildingKind, Record<string, string>>> = {
+  builder: house('#b0762f', '#d29a4c', '#7c5120'),
   lab: house('#5f7fa8', '#86a4c8', '#3f5c84'),
   repair: house('#6f8a46', '#92ad66', '#4e6530'),
   toolstore: house('#4f8a86', '#74b0aa', '#336460'),
@@ -107,7 +109,7 @@ export class Sprites {
     this.icons.hide1 = make(toolHideArmorJson, 1).frames[0];
     this.nature('spring');
     this.emblems.lab = this.scrollEmblem();
-    this.emblems.repair = this.icons.hammer2; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1;
+    this.emblems.builder = this.icons.hammer1; this.emblems.repair = this.icons.hammer2; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1;
   }
 
   /** A rolled blueprint on a pole: the sign of the research house. */
@@ -150,7 +152,7 @@ export class Sprites {
       let set = this.buildingCache.get(key);
       if (!set) {
         const tint = TINTS[kind];
-        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(tint ? { ...(def as object), palettes: { tint } } : def, kind === 'workshop' || kind === 'lab' || kind === 'repair' ? 9 : 5, { ...stage(st), ...(tint ? { tint: 1 } : {}) })));
+        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(tint ? { ...(def as object), palettes: { tint } } : def, kind === 'workshop' || kind === 'lab' || kind === 'repair' || kind === 'builder' ? 9 : 5, { ...stage(st), ...(tint ? { tint: 1 } : {}) })));
         this.buildingCache.set(key, set);
       }
       return set;

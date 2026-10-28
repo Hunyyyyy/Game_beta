@@ -1,0 +1,102 @@
+/** Creating villagers and living a day as one: hunger, health, sleep. */
+import { DAY_LENGTH } from './constants';
+import { BUILDINGS } from './buildings';
+import { Stats, WorkJob, WORK_JOBS } from './jobs';
+import { FOOD_NUTRITION } from './resources';
+import { emptyToolSet, TOOL_OF_JOB } from './tools';
+import { maxHpOf, MORALE, Team } from './combat';
+import { brainPlayer, tickCommon, tickDown } from './battle';
+import type { Sim } from './sim';
+import { HAIR, NAMES_F, NAMES_M, SKIN, SLEEP_HUNGER, STAT_KEYS, Sex, Skill, Villager } from './model';
+
+export function freshName(sim: Sim, sex: Sex, rnd: () => number): string {
+  const pool = (sex === 'm' ? NAMES_M : NAMES_F).filter((n) => !sim.villagers.some((v) => v.name === n));
+  const list = pool.length ? pool : sex === 'm' ? NAMES_M : NAMES_F;
+  return list[Math.floor(rnd() * list.length)];
+}
+
+export function spawn(sim: Sim, x: number, y: number, sex: Sex): Villager {
+  const v = makeVillager(sim, x, y, sex, 'player');
+  sim.villagers.push(v); sim.byId.set(v.id, v);
+  return v;
+}
+
+/** Build a unit without registering it: player villagers and tribal people share the same body. */
+export function makeVillager(sim: Sim, x: number, y: number, sex: Sex, team: Team, rnd: () => number = sim.rnd): Villager {
+  const r = rnd, pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
+  const stats = {} as Stats;
+  for (const k of STAT_KEYS) stats[k] = 3 + Math.floor(r() * 8);
+  const potential = {} as Record<WorkJob, number>, skill = {} as Record<WorkJob, Skill>;
+  for (const j of WORK_JOBS) {
+    // hunting and fighting come from the body, not from a random draw, so earlier random streams stay the same
+    if (j === 'hunt' || j === 'fight' || j === 'research') { const k = j === 'hunt' ? stats.agi : j === 'research' ? stats.int : stats.str; potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1; skill[j] = { xp: 0, level: 0 }; continue; }
+    const p = r(); potential[j] = p < 0.45 ? 1 : p < 0.85 ? 2 : 3; skill[j] = { xp: 0, level: 0 };
+  }
+  return {
+    id: sim.nextVid++, name: freshName(sim, sex, rnd),
+    look: { sex, skin: pick(SKIN), hair: pick(HAIR), hide: '#8b6a45', pants: '#3f63a8' },
+    x: x + 0.5, y: y + 0.5, path: [], slide: null, facing: 'front', speed: 1.6 + 0.1 * stats.agi, animClock: 0, tx: -1, ty: -1,
+    stats, potential, skill, tools: emptyToolSet(), job: 'idle', phase: 'idle', slot: 0, target: -1, prefer: -1, progress: 0, frac: 0, timer: 0, order: null,
+    carry: null, fullness: 100, health: maxHpOf(stats.vit), starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, nightOwl: false, manualGear: false, inside: null, orderCd: 0, repairFor: null,
+    team, maxHealth: maxHpOf(stats.vit), weapon: null, armor: null, morale: MORALE.start, stance: 'aggressive',
+    fight: { mode: 'none', target: null, dest: null, anchor: null, repath: 0, scan: 0 }, queue: [], atkCd: 0, down: 0, rescue: 0, fleeT: 0, calm: 99, loot: -1, leader: false, swing: null, flinch: 0, ai: null,
+  };
+}
+
+export function tickVillager(sim: Sim, v: Villager, dt: number): void {
+  tickCommon(sim, v, dt);
+  if (v.down > 0) { tickDown(sim, v, dt); sim.animate(v, dt); return; }
+  // ---- nhu cầu ----
+  v.fullness -= sim.dev.noHunger ? 0 : (dt * 100 * (v.phase === 'sleep' ? SLEEP_HUNGER : 1)) / DAY_LENGTH;
+  if (v.fullness < 50 && sim.stock.food >= 2) {
+    sim.stock.food -= 2; v.fullness = Math.min(100, v.fullness + 2 * FOOD_NUTRITION);
+  }
+  if (v.fullness <= 0) {
+    if (!v.starving) { v.starving = true; sim.say(`${v.name} đói lả, kho hết thức ăn!`); }
+    v.fullness = 0; v.health -= (dt * v.maxHealth) / (1.5 * DAY_LENGTH);
+  } else {
+    v.starving = false;
+    if (v.fullness > 40 && v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 0.0015 * v.maxHealth);
+  }
+  if (v.health <= 0) { sim.kill(v); return; }
+  v.orderCd = Math.max(0, v.orderCd - dt);
+  const held = sim.heldTool(v);
+  if (held && TOOL_OF_JOB[v.job as WorkJob] !== held.k) sim.returnTool(v); // the job changed: the tool goes back with its wear
+  // working inside a house: no walking, no fighting, nobody sees them
+  if (v.inside !== null) { sim.animate(v, dt); return; }
+
+  // ---- combat decides first: fighting, fleeing, rescuing, hunting ----
+  const brained = brainPlayer(sim, v, dt);
+
+  // ---- night rest: everyone sleeps; only a soldier woken by a threat (or anyone already in a fight) stays up ----
+  const fighting = brained && (v.phase === 'fight' || v.phase === 'flee' || v.phase === 'rescue');
+  if (sim.resting) { if (!v.nightOwl && !fighting && v.phase !== 'goHome' && v.phase !== 'sleep') goHome(sim, v); }
+  else if (v.phase === 'goHome' || v.phase === 'sleep') { v.path = []; v.slide = null; v.phase = 'idle'; v.bed = -1; }
+
+  sim.moveUnit(v, dt);
+  if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim.fogDirty = true;
+  if (!v.path.length && !v.slide && !brained) sim.think(v, dt);
+  sim.animate(v, dt);
+}
+
+/** Go sleep by the campfire: drop the current task (job kept), one spot per villager. */
+export function goHome(sim: Sim, v: Villager): void {
+  const owl = v.nightOwl;
+  sim.stash(v);
+  sim.resetTask(v); v.nightOwl = owl;
+  v.phase = 'sleep';
+  const fire = sim.buildings.find((b) => b.kind === 'campfire');
+  if (!fire) return;
+  const d = BUILDINGS[fire.kind];
+  const taken = new Set(sim.villagers.filter((o) => o !== v && o.bed >= 0).map((o) => o.bed));
+  const spot = sim.nearestFree(fire.x + (d.w >> 1), fire.y + d.h, taken);
+  if (!spot || sim.routeTo(v, [spot], 1) < 0) return; // unreachable: sleep where standing
+  v.bed = spot[1] * sim.world.size + spot[0]; v.phase = 'goHome';
+}
+
+/** Every second: groups of five or more fighters get a leader, the best of them. */
+export function pickLeaders(sim: Sim): void {
+  const fighters = sim.villagers.filter((v) => v.job === 'fight' && v.health > 0 && v.down <= 0);
+  for (const v of sim.villagers) v.leader = false;
+  if (fighters.length >= 5) fighters.sort((a, b) => b.stats.str + b.stats.agi - a.stats.str - a.stats.agi)[0].leader = true;
+}

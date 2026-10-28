@@ -8,7 +8,10 @@
     "viewer": "node tools/build-viewer.mjs && node tools/build-blueprint-viewer.mjs",
     "typecheck": "tsc --noEmit",
     "test:sim": "esbuild test/sim.test.ts --bundle --platform=node --outfile=dist/sim.test.cjs --loader:.json=json && node dist/sim.test.cjs",
-    "test:ui": "node test/ui.cjs"
+    "test:ui": "node test/ui.cjs",
+    "test:arch": "node test/architecture.cjs",
+    "test": "npm run typecheck && npm run test:sim && npm run test:save && npm run test:arch",
+    "test:save": "esbuild test/save.test.ts --bundle --platform=node --outfile=dist/save.test.cjs --loader:.json=json && node dist/save.test.cjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

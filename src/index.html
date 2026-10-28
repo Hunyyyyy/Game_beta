@@ -95,6 +95,14 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
 .mbody section { display: grid; gap: 6px; align-content: start; }
 .tabpage { display: grid; gap: 6px; align-content: start; }
 .tabs { position: sticky; top: 0; z-index: 1; background: var(--bg); padding: 2px 0 4px; }
+.split { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(240px, 1.1fr); gap: 10px; align-items: start; }
+@media (max-width: 640px) { .split { grid-template-columns: 1fr; } }
+.plist { display: grid; gap: 2px; }
+button.vrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left; font-weight: 400; padding: 5px 8px; min-height: 0; border-radius: 6px; }
+button.vrow small { color: var(--muted); }
+button.vrow.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+button.vrow.on small { color: var(--accent-fg); }
+.ppane { position: sticky; top: 36px; display: grid; gap: 6px; padding: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
 .picker { display: grid; gap: 2px; padding: 4px 8px; background: var(--panel-2); border-left: 2px solid var(--accent); border-radius: 0 4px 4px 0; }
 .mbody .bars { grid-template-columns: repeat(4, 1fr); }
 #ucard .open { margin-left: auto; }
@@ -217,6 +225,7 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   <div class="bbar" id="bbar" hidden></div>
   <div class="modal" id="bpanel" hidden></div>
   <div class="dialog" id="dialog" hidden></div>
+  <div class="dialog" id="start" hidden></div>
   <div class="modal" id="udetail" hidden></div>
 
   <div class="sheet" id="sheet">

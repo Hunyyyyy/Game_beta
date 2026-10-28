@@ -28,6 +28,8 @@ export class Controller {
   buildingOpen = false;
   /** Foe or animal shown in the target card. */
   inspect: { kind: 'unit' | 'animal'; id: number } | null = null;
+  /** The campfire's people menu asked for the full page of the chosen villager. */
+  openDetail = false;
   /** F pressed: the next click sends the selection to attack-move there. */
   attackMoveArmed = false;
   /** Saved selections, keys 1-9 (Ctrl + number saves, number recalls). */
@@ -200,6 +202,12 @@ export class Controller {
     this.onChange();
   }
 
+  /** A finished order lets the villagers go (soldiers stay chosen to be ordered again, and so does a queue being built with Shift). */
+  private releaseCivilians(keep: boolean): void {
+    if (keep || [...this.selected].some((id) => this.sim.get(id)?.job === 'fight')) return;
+    this.selected.clear();
+  }
+
   /** The chosen villagers who are soldiers: only they take fighting orders. */
   private fighters(): number[] { return [...this.selected].filter((id) => this.sim.get(id)?.job === 'fight'); }
 
@@ -331,6 +339,7 @@ export class Controller {
     if (job) this.onToast(`${job}`);
     else this.sim.orderMove(ids, tx, ty, queue);
     this.markers.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, age: 0 });
+    this.releaseCivilians(queue);
     this.onChange();
   }
 

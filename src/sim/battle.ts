@@ -194,8 +194,8 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   if (scanNow) v.fight.scan = 0.35;
   const threats = scanNow || v.phase === 'flee' || v.phase === 'fight' ? threatsOf(sim, v, SIGHT + 2) : [];
 
-  if (rest) { // a threat wakes the sleeper
-    if (scanNow && threats.length && threats[0].d < 7) { v.nightOwl = true; sim.resetTask(v); } else return false;
+  if (rest) { // a threat wakes the sleeper; only a soldier then stays up for the night, everyone else runs and goes back to bed
+    if (scanNow && threats.length && threats[0].d < 7) { if (isFighter(v)) v.nightOwl = true; sim.resetTask(v); } else return false;
   }
   if (v.phase === 'flee' || v.fleeT > 0 || (v.morale < MORALE.flee && threats.length)) return fleeBrain(sim, v, dt, threats);
 

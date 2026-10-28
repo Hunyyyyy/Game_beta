@@ -9,7 +9,7 @@ export const YEAR_DAYS = SEASON_DAYS * SEASONS.length;
 
 export interface SeasonDef {
   name: string;
-  /** Fraction of the day in full daylight (excluding dawn and dusk). Spring 0.5 = 2 min. */
+  /** Fraction of the day in full daylight (excluding dawn and dusk): 0.6 = 12 of 20 minutes. */
   daylight: number;
   /** Gathering productivity multiplier. */
   gather: number;
@@ -32,8 +32,8 @@ const CHANCE = weatherJson.chance as Record<Season, Partial<Record<WeatherKind, 
 
 export type DayPart = 'dawn' | 'day' | 'dusk' | 'night';
 export const DAY_PART_NAME: Record<DayPart, string> = { dawn: 'bình minh', day: 'ban ngày', dusk: 'hoàng hôn', night: 'đêm' };
-/** Dawn and dusk each last 0.125 day (30 s). */
-export const TWILIGHT = 0.125;
+/** Dawn and dusk each last 0.05 day (1 min of a 20-minute day). Daylight is 0.6 of the day (12 min), the rest is night (8 min). */
+export const TWILIGHT = 0.05;
 
 /** Day number (1, 2, …) at `time` (game seconds). */
 export const dayOf = (time: number) => Math.floor(time / DAY_LENGTH) + 1;

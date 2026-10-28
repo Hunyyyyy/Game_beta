@@ -1,6 +1,6 @@
 import type { Stock } from './resources';
 
-export type BuildingKind = 'campfire' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory';
+export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory';
 
 /** Eras of the game. Each era has its own building art and its own level list (L1..L3). */
 export type Era = 'stone' | 'ancient';
@@ -24,6 +24,10 @@ export interface BuildingDef {
   w: number;
   h: number;
   buildable: boolean;
+  /** Can be raised to a higher level although it cannot be built, moved or torn down (the campfire). */
+  upgradable?: boolean;
+  /** Kinds that must stand, finished, before this one can be placed: the order the village grows in. */
+  requires?: BuildingKind[];
   /** Levels per era; an era without an entry reuses the closest earlier era's levels. */
   levels: Partial<Record<Era, LevelDef[]>>;
 }
@@ -31,30 +35,39 @@ export interface BuildingDef {
 const lv = (name: string, cost: Partial<Stock>, buildTime: number, cap = 0, craftSpeed = 1, slots = 0): LevelDef => ({ name, cost, buildTime, cap, craftSpeed, slots });
 
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
-  campfire: { kind: 'campfire', name: 'Nhà chung (đống lửa trại)', w: 2, h: 2, buildable: false, levels: { stone: [lv('Lửa trại', {}, 0, 50)] } },
+  // the heart of the village: it starts as a heap of firewood and every other house is held back by its level
+  campfire: {
+    kind: 'campfire', name: 'Nhà chung (đống lửa trại)', w: 2, h: 2, buildable: false, upgradable: true,
+    levels: { stone: [lv('Củi lửa', {}, 0, 30), lv('Lửa trại', { wood: 20 }, 240, 45), lv('Bếp lửa lớn', { wood: 20, stone: 12 }, 480, 60), lv('Nhà chung', { wood: 50, stone: 30, hide: 10 }, 960, 90)] },
+  },
+  // builders belong to this house: without it nothing but the house itself can be raised
+  builder: {
+    kind: 'builder', name: 'Nhà thợ xây', w: 2, h: 2, buildable: true,
+    levels: { stone: [lv('Đơn sơ', { wood: 10 }, 30, 0, 1, 2), lv('Gỗ', { wood: 15, stone: 10 }, 60, 0, 1.25, 3), lv('Đá', { wood: 25, stone: 20 }, 90, 0, 1.5, 4)] },
+  },
+  storage: {
+    kind: 'storage', name: 'Kho', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Đơn sơ', { wood: 10 }, 20, 100), lv('Gỗ', { wood: 35 }, 40, 250), lv('Đá', { wood: 40, stone: 20 }, 60, 500)] },
+  },
   workshop: {
-    kind: 'workshop', name: 'Nhà chế tạo', w: 2, h: 2, buildable: true,
+    kind: 'workshop', name: 'Nhà chế tạo', w: 2, h: 2, buildable: true, requires: ['builder'],
     levels: { stone: [lv('Đơn sơ', { wood: 15 }, 30, 0, 1, 1), lv('Gỗ', { wood: 15, stone: 30 }, 60, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 90, 0, 1.5, 3)] },
   },
   lab: {
-    kind: 'lab', name: 'Nhà nghiên cứu', w: 2, h: 2, buildable: true,
+    kind: 'lab', name: 'Nhà nghiên cứu', w: 2, h: 2, buildable: true, requires: ['workshop'],
     levels: { stone: [lv('Đơn sơ', { wood: 20 }, 40, 0, 1, 1), lv('Gỗ', { wood: 20, stone: 30 }, 70, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 100, 0, 1.5, 4)] },
   },
   repair: {
-    kind: 'repair', name: 'Nhà sửa chữa', w: 2, h: 2, buildable: true,
+    kind: 'repair', name: 'Nhà sửa chữa', w: 2, h: 2, buildable: true, requires: ['workshop'],
     levels: { stone: [lv('Đơn sơ', { wood: 15, stone: 5 }, 30, 0, 1, 1), lv('Gỗ', { wood: 15, stone: 30 }, 60, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 90, 0, 1.5, 3)] },
   },
   toolstore: {
-    kind: 'toolstore', name: 'Kho công cụ', w: 2, h: 2, buildable: true,
+    kind: 'toolstore', name: 'Kho công cụ', w: 2, h: 2, buildable: true, requires: ['workshop'],
     levels: { stone: [lv('Đơn sơ', { wood: 25 }, 30, 12), lv('Gỗ', { wood: 30, stone: 15 }, 55, 30), lv('Đá', { wood: 30, stone: 40 }, 80, 60)] },
   },
   armory: {
-    kind: 'armory', name: 'Kho vũ khí', w: 2, h: 2, buildable: true,
+    kind: 'armory', name: 'Kho vũ khí', w: 2, h: 2, buildable: true, requires: ['workshop'],
     levels: { stone: [lv('Đơn sơ', { wood: 25 }, 30, 12), lv('Gỗ', { wood: 30, stone: 15 }, 55, 30), lv('Đá', { wood: 30, stone: 40 }, 80, 60)] },
-  },
-  storage: {
-    kind: 'storage', name: 'Kho', w: 2, h: 2, buildable: true,
-    levels: { stone: [lv('Đơn sơ', { wood: 10 }, 20, 100), lv('Gỗ', { wood: 35 }, 40, 250), lv('Đá', { wood: 40, stone: 20 }, 60, 500)] },
   },
 };
 
@@ -90,3 +103,10 @@ export const maxLevel = (kind: BuildingKind, era: Era) => levelsOf(kind, era).le
 export const holdsGoods = (b: Pick<Building, 'kind'>) => b.kind === 'storage' || b.kind === 'campfire';
 /** Still needs builders: not finished yet, or an upgrade is underway. */
 export const needsWork = (b: Building) => !b.done || b.upgrading;
+
+/** A building that can be raised to a higher level. */
+export const canGrow = (kind: BuildingKind): boolean => BUILDINGS[kind].buildable || !!BUILDINGS[kind].upgradable;
+/** Villagers the campfire can hold at each of its levels. */
+export const POP_BY_FIRE = [8, 16, 25, 40];
+/** Highest level any other house may have for a campfire level: the Nhà chung is the axis the whole village turns on. */
+export const levelCapByFire = (fireLevel: number): number => Math.max(1, fireLevel - 1);

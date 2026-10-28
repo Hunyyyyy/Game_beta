@@ -11,6 +11,6 @@ export const emptyStock = (): Stock => ({ wood: 0, stone: 0, food: 0, hide: 0, c
 /** Mỗi dân mang tối đa 4 đơn vị nặng (gỗ, đá) hoặc 10 đơn vị nhẹ (thức ăn). */
 export const CARRY_CAP: Record<Res, number> = { wood: 4, stone: 4, food: 10, hide: 10, coin: 0 };
 /** Mỗi đơn vị thức ăn hồi bao nhiêu điểm no (thang 0–100). */
-export const FOOD_NUTRITION = 25;
+export const FOOD_NUTRITION = 20; // 2 thức ăn = 40 điểm no: 5 thức ăn mỗi ngày game
 /** Game days before stored fruit spoils. */
 export const FOOD_SPOIL_DAYS = 3;

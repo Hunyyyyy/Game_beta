@@ -20,7 +20,7 @@ export interface JobDef {
 export const JOBS: Record<WorkJob, JobDef> = {
   wood: { name: 'Đốn gỗ', stat: 'str', res: 'wood', node: 'tree', baseTime: 12, anim: 'chop' },
   stone: { name: 'Thợ đá', stat: 'str', res: 'stone', node: 'rock', baseTime: 18, anim: 'mine' },
-  food: { name: 'Hái lượm', stat: 'agi', res: 'food', node: 'bush', baseTime: 20, anim: 'gather' },
+  food: { name: 'Hái lượm', stat: 'agi', res: 'food', node: 'bush', baseTime: 7, anim: 'gather' },
   build: { name: 'Thợ xây', stat: 'sta', baseTime: 1, anim: 'build' },
   craft: { name: 'Chế tạo', stat: 'int', baseTime: 1, anim: 'craft' },
   research: { name: 'Nghiên cứu', stat: 'int', baseTime: 1, anim: 'gather' },
@@ -37,3 +37,5 @@ export const isStaffJob = (j: Job): j is keyof typeof STAFF_BUILDING => j in STA
 /** Kinh nghiệm cần để lên cấp 1..5 (giây làm việc, chưa nhân tốc độ học). */
 export const XP_LEVELS = [60, 150, 300, 500, 800];
 export const MAX_LEVEL = 5;
+/** Jobs done out on the map by a crew that belongs to a house: builders are the crew of the Nhà thợ xây. */
+export const CREW_BUILDING = { build: 'builder' } as const;

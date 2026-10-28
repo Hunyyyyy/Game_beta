@@ -30,7 +30,7 @@ export const recipeOpen = (done: ReadonlySet<string>, recipeId: string): boolean
 export const techForRecipe = (recipeId: string): Tech | undefined => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
 
 /** Highest level a building kind may reach with the research done so far (1 when nothing is researched). */
-export const levelCap = (done: ReadonlySet<string>, kind: BuildingKind): number => !RESEARCH.enabled ? Infinity :
+export const levelCap = (done: ReadonlySet<string>, kind: BuildingKind): number => !RESEARCH.enabled || kind === 'campfire' ? Infinity :
   TECHS.reduce((m, t) => (done.has(t.id) ? Math.max(m, t.unlocks.levels?.[kind] ?? 1) : m), 1);
 /** The tech that opens `level` of a kind. */
 export const techForLevel = (kind: BuildingKind, level: number): Tech | undefined => TECHS.find((t) => (t.unlocks.levels?.[kind] ?? 0) >= level);

@@ -6,17 +6,24 @@ import { DAY_LENGTH, TILE } from './sim/constants';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { RESEARCH } from './sim/research';
-import { POP_CAP } from './sim/tribes';
 import { Controller } from './ui/controller';
 import { $, costText } from './ui/dom';
 import { Menu } from './ui/menu';
 import { MapView } from './ui/minimap';
 import { BuildingBar, Confirm } from './ui/buildbar';
 import { BuildingPanel, Ctx, TargetCard, UnitCard } from './ui/panels';
+import { IndexedDbStore } from './save/indexeddb';
+import { Session, AUTO_SAVE } from './save/session';
+import { loadSettings, saveSettings } from './save/settings';
+import { MemoryStore } from './save/store';
 
 const seed = Number(new URLSearchParams(location.search).get('seed')) || 1337;
 
 const sim = new Sim(seed);
+const settings = loadSettings();
+const session = new Session(sim, IndexedDbStore.available() ? new IndexedDbStore() : new MemoryStore());
+sim.speed = settings.speed;
+let started = false; // true once the player has answered the "continue?" question
 const view = $<HTMLCanvasElement>('view');
 const cam: Camera = { x: 0, y: 0, zoom: Math.min(view.clientWidth, view.clientHeight) < 700 ? 1 : 2 };
 const sprites = new Sprites();
@@ -32,7 +39,8 @@ const toast = (text: string) => {
   clearTimeout(toastTimer); toastTimer = window.setTimeout(() => toastEl.classList.remove('on'), 2200);
 };
 ctl.onToast = toast;
-const ctx: Ctx = { sim, ctl, sprites, toast };
+session.onError = toast;
+const ctx: Ctx = { sim, ctl, sprites, session, toast };
 
 // ---------------------------------------------------------------- panels, menu, maps
 const unitCard = new UnitCard($('ucard'), ctx, $('udetail')), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
@@ -45,13 +53,13 @@ $('btnMenu').addEventListener('click', () => { menu.toggle(); });
 // ---------------------------------------------------------------- landscape on phones
 // A phone held upright gets a prompt (and the game pauses until it is turned); fullscreen plus an orientation lock is tried where the browser allows it.
 const rotateEl = $('rotate'), fullBtn = $<HTMLButtonElement>('btnFull');
-let rotateSkipped = false, pausedByRotate = false;
+let rotateSkipped = settings.skipRotatePrompt, pausedByRotate = false;
 const upright = () => matchMedia('(orientation: portrait)').matches && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 700;
 function syncRotate() {
   const need = upright() && !rotateSkipped;
   rotateEl.hidden = !need;
   if (need && sim.speed !== 0 && !pausedByRotate) { pausedByRotate = true; setSpeed(0); }
-  else if (!need && pausedByRotate) { pausedByRotate = false; if (sim.speed === 0) setSpeed(1); }
+  else if (!need && pausedByRotate) { pausedByRotate = false; if (sim.speed === 0) setSpeed(settings.speed); }
 }
 async function goLandscape() {
   const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
@@ -68,7 +76,7 @@ async function goLandscape() {
 function syncFull() { fullBtn.setAttribute('aria-pressed', String(!!document.fullscreenElement)); }
 fullBtn.addEventListener('click', () => { if (document.fullscreenElement) { void document.exitFullscreen(); (screen.orientation as ScreenOrientation & { unlock?: () => void }).unlock?.(); } else void goLandscape(); });
 $('btnRotateFull').addEventListener('click', () => { void goLandscape(); });
-$('btnRotateSkip').addEventListener('click', () => { rotateSkipped = true; syncRotate(); });
+$('btnRotateSkip').addEventListener('click', () => { rotateSkipped = true; settings.skipRotatePrompt = true; saveSettings(settings); syncRotate(); });
 window.addEventListener('resize', syncRotate); window.addEventListener('orientationchange', syncRotate); document.addEventListener('fullscreenchange', () => { syncFull(); syncRotate(); });
 fullBtn.hidden = !matchMedia('(pointer: coarse)').matches && !document.fullscreenEnabled;
 
@@ -83,7 +91,7 @@ const foldBtn = $<HTMLButtonElement>('btnFold');
 foldBtn.addEventListener('click', () => { const on = !$('sheet').classList.contains('folded'); $('sheet').classList.toggle('folded', on); foldBtn.setAttribute('aria-pressed', String(on)); foldBtn.textContent = on ? 'Hiện bảng' : 'Ẩn bảng'; });
 $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
 $('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
-function setSpeed(s: number) { sim.speed = s; syncButtons(); }
+function setSpeed(s: number) { sim.speed = s; if (s > 0) { settings.speed = s; saveSettings(settings); } syncButtons(); }
 function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); } }
 function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'workshop' && x.done); if (b) { ctl.selectBuilding(b.id, true); ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE); } else toast('Chưa có Xưởng'); }
 function syncButtons() {
@@ -122,7 +130,7 @@ function updateHud(now: number) {
   $('rFood').classList.toggle('warn', spoil > 0);
   $('rFood').title = `Thức ăn. Quả hỏng sau 3 ngày nếu chưa ăn; dân ăn lứa cũ trước.${spoil > 0 ? ` ${spoil} thức ăn sẽ hỏng trong 1 ngày tới.` : ''}`;
   setRes('rWood', sim.stock.wood, cap); setRes('rStone', sim.stock.stone, cap); setRes('rHide', sim.stock.hide, cap); setRes('rCoin', sim.stock.coin, cap); $('rCoin').title = `${RES_NAME.coin}: tiền của làng, nhặt khi hái lượm, đổi hàng ở Kho, nhận từ bộ tộc. Dùng để trả cho nghiên cứu.`;
-  $('rPop').querySelector('b')!.textContent = String(sim.villagers.length); $('rPop').querySelector('small')!.textContent = `/${POP_CAP}`;
+  $('rPop').querySelector('b')!.textContent = String(sim.villagers.length); $('rPop').querySelector('small')!.textContent = `/${sim.popCap()}`;
   for (const r of RES_LIST) void RES_NAME[r];
   const se = SEASON_DEF[sim.season], we = WEATHER[sim.weather], year = yearOf(sim.day);
   clock.textContent = `${year > 1 ? `Năm ${year} · ` : ''}Ngày ${sim.day} · ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} · ${DAY_PART_NAME[sim.part]} · ${we.name}`;
@@ -167,6 +175,7 @@ function frame(t: number) {
   const dt = last ? (t - last) / 1000 : 0; last = t;
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
   ctl.update(dt);
+  if (started) session.tick();
   sim.advance(dt);
   renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect);
   buildingBar.place(); map.draw(); updateHud(t);
@@ -177,4 +186,31 @@ requestAnimationFrame(frame);
 syncRotate();
 
 // Bridge for tests and the console.
-(window as unknown as { __game: unknown }).__game = { sim, cam, ctl, renderer, menu, map, research: RESEARCH };
+(window as unknown as { __game: unknown }).__game = { sim, cam, ctl, renderer, menu, map, session, research: RESEARCH };
+
+// ---------------------------------------------------------------- continue a saved game
+// The game starts at once with a new world. If there is a save, a question comes first and the game waits for the answer.
+function begin(): void { started = true; $('start').hidden = true; setSpeed(settings.speed); }
+document.addEventListener('visibilitychange', () => { if (document.hidden && started) void session.save(); });
+void (async () => {
+  const latest = await session.latest();
+  if (!latest) { started = true; return; }
+  const params = new URLSearchParams(location.search);
+  // a save of another world: load the page again with that world, then continue
+  const resume = async () => {
+    if (latest.seed !== seed) { location.search = `?seed=${latest.seed}&continue=1`; return; }
+    if (await session.resume(AUTO_SAVE)) toast('Đã tải lại ván chơi'); else toast('Không đọc được bản lưu');
+    begin();
+  };
+  if (params.get('continue') === '1' && latest.seed === seed) { await resume(); return; }
+  sim.speed = 0; syncButtons();
+  const when = new Date(latest.savedAt).toLocaleString('vi');
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<h3>Làng Đồ Đá</h3><p class="sub">Có ván đang chơi dở: ngày ${latest.day}, ${latest.population} dân (lưu lúc ${when}).</p>`;
+  const btns = document.createElement('div'); btns.className = 'btns';
+  const go = document.createElement('button'); go.className = 'primary'; go.textContent = 'Tiếp tục'; go.addEventListener('click', () => { void resume(); });
+  const fresh = document.createElement('button'); fresh.textContent = 'Ván mới'; fresh.title = 'Bản lưu cũ vẫn còn cho tới khi ván mới tự lưu lần đầu (đầu ngày hôm sau)'; fresh.addEventListener('click', begin);
+  btns.append(go, fresh); card.append(btns);
+  $('start').replaceChildren(card); $('start').hidden = false;
+})();

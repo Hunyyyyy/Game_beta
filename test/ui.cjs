@@ -50,11 +50,15 @@ const prepare = (p) => p.evaluate(() => {
     await p.evaluate(() => { for (const b of document.querySelectorAll('#udetail [data-job="wood"]')) b.click(); });
     ok(await state(p, (id) => window.__game.sim.get(id).job, ids[0]) === 'wood', 'a job can be given from the details page');
     await p.waitForTimeout(250);
+    ok(await state(p, () => window.__game.ctl.selected.size) === 0 && !(await shown(p, '#udetail')), 'giving a job lets the villager go: nobody stays chosen');
+    ok(await p.evaluate(() => ![...document.querySelectorAll('#udetail [data-job]')].some((b) => ['craft', 'research', 'repair', 'build'].includes(b.dataset.job))), 'builder, crafter, researcher and mender are not jobs to hand out from the villager page');
+    await state(p, (id) => { const g = window.__game; g.ctl.selected.add(id); g.ctl.onChange(); }, ids[0]);
+    await p.waitForTimeout(250);
+    await pressText(p, 'Giao việc và chi tiết'); await p.waitForTimeout(150);
     ok(await p.evaluate(() => { const vis = (t) => [...document.querySelectorAll('#udetail h3')].some((h) => h.textContent === t && h.offsetParent !== null); return !vis('Chiến đấu') && !vis('Trang bị') && vis('Công cụ'); }), 'a woodcutter sees tools, but no fighting orders or gear');
     ok(await p.evaluate(() => { const g = window.__game, id = [...g.ctl.selected][0]; const sim = g.sim; sim.setJob([id], 'fight'); g.ctl.onChange(); return true; }), 'turn the villager into a soldier');
     await p.waitForTimeout(250);
     ok(await p.evaluate(() => { const vis = (t) => [...document.querySelectorAll('#udetail h3')].some((h) => h.textContent === t && h.offsetParent !== null); return vis('Chiến đấu') && vis('Trang bị') && !vis('Công cụ'); }), 'a soldier sees fighting orders and gear, and no tools');
-    await p.evaluate(() => { for (const b of document.querySelectorAll('#udetail [data-job="wood"]')) b.click(); });
     await pressText(p, '✕ Đóng'); await p.waitForTimeout(100);
     ok(!(await shown(p, '#udetail')) && await shown(p, '#ucard'), 'closing the details returns to the map');
     await p.mouse.click(60, 300); await p.waitForTimeout(100);
