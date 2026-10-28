@@ -1,0 +1,30 @@
+{
+  "name": "Hàng rào cọc (cấp 1, cọc nhọn)",
+  "name_en": "Fence (Tier 1, Stakes)",
+  "type": "prop",
+  "size": [32,44],
+  "anchor": [16,38],
+  "footprint": [0,26,32,14],
+  "seed": 31,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": {"line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "rope": "#d8c690"},
+  "layers": [
+    {"shape": "ellipse", "cx": 16, "cy": 38, "rx": 15, "ry": 3, "color": "shadow", "alpha": 0.25},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "rect", "x": 14, "y": 33, "w": 4, "h": 5, "color": "woodD"}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "rect", "x": 2, "y": 17, "w": 5, "h": 21, "color": "wood"},
+      {"shape": "poly", "points": [[2,17],[4.5,14],[7,17]], "color": "woodL"},
+      {"shape": "rect", "x": 13, "y": 13, "w": 5, "h": 25, "color": "woodD"},
+      {"shape": "poly", "points": [[13,13],[15.5,10],[18,13]], "color": "wood"},
+      {"shape": "rect", "x": 25, "y": 17, "w": 5, "h": 21, "color": "wood"},
+      {"shape": "poly", "points": [[25,17],[27.5,14],[30,17]], "color": "woodL"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "line", "from": [0,26], "to": [32,26], "w": 1, "color": "rope"},
+      {"shape": "line", "from": [0,32], "to": [32,32], "w": 1, "color": "rope"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

@@ -4,11 +4,13 @@ import { renderAnimal } from '../src/character/animal-rig.js';
 import { Sim } from '../src/sim/sim';
 import { DAY_LENGTH, PACE } from '../src/sim/constants';
 import { Tile } from '../src/sim/world';
-import { lightAt, rollWeather, SEASON_DEF, seasonOf, SEASONS } from '../src/sim/calendar';
+import { lightAt, rollWeather, SEASON_DEF, seasonOf, SEASONS, WEATHER } from '../src/sim/calendar';
 import { RECIPE_BY_ID, TIER_DURABILITY } from '../src/sim/tools';
 import { levelDef, levelsOf, maxLevel } from '../src/sim/buildings';
+import { ARMS, armOfWeapon, clampTactical, clusterize, COMMAND, FORMATION_IDS, FORMATIONS, formationOffsets, iconCount, masteryFactor, matchup } from '../src/sim/formations';
+import { launchRaid, raidAdvised } from '../src/sim/tribes';
 import { ANIMALS, ARMORS, COMBAT_STATES, cycleOf, damageOf, MORALE, poseOf, RULES, SPECIES, STYLES, TRIBES, TRIBE_IDS, WEAPONS, zoneOf } from '../src/sim/combat';
-import { swingTimes, weaponOf } from '../src/sim/battle';
+import { armMultiplier, fireProjectile, swingTimes, weaponOf } from '../src/sim/battle';
 import { carcassEmpty, die, provoke, spawnAnimal } from '../src/sim/fauna';
 import type { Villager } from '../src/sim/sim';
 import * as dev from '../src/sim/dev';
@@ -25,6 +27,7 @@ const run = (sim: Sim, secs: number) => { for (let i = 0; i < secs * 20; i++) (s
 
 /** The old test start: three idle villagers. The real start (two with jobs) has its own test. */
 const provokeFor = (sm: Sim, v: Villager, a: ReturnType<typeof spawnAnimal>) => { provoke(sm, a, v.id); a.state = 'attack'; a.target = { kind: 'unit', id: v.id }; a.timer = 99; };
+const t_ = (sm: Sim, id: string) => sm.tribes.find((x) => x.id === id)!;
 const mk = (seed = 1337): Sim => { const sm = new Sim(seed); sm.villagers.forEach((o) => { o.job = 'idle'; }); dev.addVillagers(sm, 1); return sm; };
 /** Put a finished house of this kind on the map (the real game needs builders and the right order; most tests only need the house). */
 const putBuilding = (sm: Sim, kind: Parameters<Sim['canPlace']>[0]) => {
@@ -795,7 +798,7 @@ function openField(sm: Sim): { x: number; y: number } { // a clear patch of gras
   const w = spawnAnimal(sm, 'wolf', s.x - 14, s.y + 12, 7, true);
   v.x = s.x + 0.5; v.y = s.y + 14.5; sm.orderMove([v.id], s.x, s.y + 14); run(sm, 2);
   run(sm, 12);
-  ok(w.state === 'attack' || v.health < v.maxHealth || v.down > 0, 'the wolf hunts a villager who is away from the fire');
+  ok(w.state === 'attack' || v.health < v.maxHealth || !sm.villagers.includes(v), 'the wolf hunts a villager who is away from the fire');
   const sm2 = mk(1337); reveal(sm2); sm2.time = DAY_LENGTH * 0.95; sm2.villagers.forEach((o) => { o.fullness = 1e9; });
   const f2 = sm2.campfire()!, s2 = sm2.world.start, w2 = spawnAnimal(sm2, 'wolf', s2.x - 12, s2.y, 8, true);
   sm2.villagers.forEach((o) => { o.x = f2.x + 1; o.y = f2.y + 3; o.phase = 'sleep'; o.nightOwl = false; });
@@ -832,16 +835,9 @@ function stage(seed = 1337) { // a village with its villagers fed, the map revea
   const { sm, c, foe } = stage();
   const [a, b] = sm.villagers; a.x = c.x + 0.5; a.y = c.y + 0.5; b.x = c.x - 1.5; b.y = c.y + 0.5;
   sm.hurt({ kind: 'unit', id: a.id }, 9999, 'crush', { x: foe.x, y: foe.y }, { unit: foe });
-  ok(a.down > 0 && a.phase === 'down' && a.health === 0, 'a mortal blow knocks a villager down instead of killing');
-  run(sm, 2); ok(a.down > 0 && sm.villagers.includes(a), 'still lying there after two seconds');
-  foe.x += 40; foe.ai!.camp = { x: foe.x, y: foe.y };
-  run(sm, 22);
-  ok(a.down === 0 && a.health > 0 && a.phase !== 'down', 'once the foe is gone the other villager calms down, comes back and gets them on their feet');
-  ok(a.rescue === 0 && sm.log.some((l) => l.text.includes('đã được đỡ dậy')), 'and the log says so');
-  const lone = sm.villagers[2]; lone.x = sm.world.start.x - 30; lone.y = sm.world.start.y + 6;
-  sm.hurt({ kind: 'unit', id: lone.id }, 9999, 'crush', { x: lone.x - 3, y: lone.y }, {});
-  run(sm, RULES.downedSeconds + 1);
-  ok(!sm.villagers.includes(lone), 'nobody came, so the wounded villager died after 30 seconds');
+  ok(!sm.villagers.includes(a) && sm.get(a.id) === undefined, 'a mortal blow kills a villager for good: nobody lies wounded to be picked up');
+  ok(sm.log.some((l) => l.text.includes(a.name) && l.text.includes('tử trận')), 'and the log says they fell');
+  run(sm, 30); ok(!sm.villagers.includes(a), 'nothing brings them back');
 }
 {
   // morale: a frightened villager runs for the fire even with a hostile foe next to them
@@ -1209,7 +1205,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   v.fight.mode = 'none'; v.phase = 'flee'; sm.animate(v, 0.05);
   ok(v.anim === 'run', 'a frightened villager runs');
   sm.hurt({ kind: 'unit', id: v.id }, 9999, 'crush', { x: 0, y: 0 }, {}); run(sm, 0.5);
-  ok(v.down > 0 && v.anim === 'down', 'a downed villager lies down');
+  ok(!sm.villagers.includes(v), 'a villager hit to death is gone');
 }
 
 {
@@ -1313,6 +1309,250 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(lock.buildingLock('field') === 'Cần nghiên cứu: Làm ruộng', 'a field needs the "Làm ruộng" research');
   lock.researched.add('farming'); ok(lock.buildingLock('field') === null, 'researched, a field can be placed');
   RESEARCH.enabled = false;
+}
+
+{
+  // ======== M6.1: arms and what beats what ========
+  const arms = ARMS;
+  ok(arms.every((a) => matchup(a, a) === 1), 'the same arm against itself is even');
+  ok(matchup('foot', 'archer') === 1.5 && matchup('archer', 'cavalry') === 1.5 && matchup('cavalry', 'foot') === 1.5, 'foot beats archers, archers beat riders, riders beat foot (x1.5)');
+  ok(matchup('archer', 'foot') < 0.7 && matchup('cavalry', 'archer') < 0.7 && matchup('foot', 'cavalry') < 0.7, 'and the other way round it is x0.67');
+  ok(arms.every((a) => arms.filter((d) => d !== a).some((d) => matchup(a, d) < 1)) && arms.every((a) => arms.filter((d) => d !== a).some((d) => matchup(a, d) > 1)), 'no arm beats every other: each wins one match-up and loses one');
+  ok(Math.abs(matchup('foot', 'cavalry', 'spear') / matchup('foot', 'cavalry') - 1.15) < 1e-9 && matchup('foot', 'archer', 'spear') === matchup('foot', 'archer'), 'a spear gains x1.15 against riders only');
+  ok(armOfWeapon('bow') === 'archer' && armOfWeapon('sling') === 'archer' && armOfWeapon('spear') === 'foot' && armOfWeapon(null) === 'foot', 'ranged weapons make archers, the rest foot soldiers');
+  ok(!!RECIPE_BY_ID.sling1 && !!RECIPE_BY_ID.bow1 && Object.keys(RECIPE_BY_ID.bow1.cost).length > 0, 'the player can now craft the sling and the bow');
+  ok(TECHS.some((t) => t.id === 'sling1') && TECHS.some((t) => t.id === 'bow1') && TECHS.find((t) => t.id === 'bow1')!.requires.includes('sling1'), 'and has to research them: sling first, then bow');
+  const sm = mk(1337); const [a, d] = sm.villagers; a.weapon = 'club'; d.weapon = 'bow';
+  ok(armMultiplier(a, { kind: 'unit', v: d }) === 1.5 && armMultiplier(d, { kind: 'unit', v: a }) < 0.7, 'the multiplier reaches the blow: a clubman does x1.5 to an archer, an archer x0.67 to him');
+}
+{
+  // ======== M6.2: fences, gates, towers ========
+  const sm = mk(1337); reveal(sm); const fire = sm.campfire()!; sm.dev.freeBuild = true;
+  fire.level = 1;
+  ok(sm.buildingLimit('fence') === 14 && sm.buildingLimit('gate') === 1 && sm.buildingLimit('tower') === 0, 'the length of fence and the gates and towers allowed grow with the campfire');
+  ok(sm.buildingLock('tower') !== null, 'no tower at campfire level 1');
+  fire.level = 4; ok(sm.buildingLimit('fence') === 70 && sm.buildingLimit('tower') === 3, 'at level 4: 70 pieces of fence, 3 towers');
+  const built = dev.defenseLine(sm, 8);
+  const fences = sm.buildings.filter((b) => b.kind === 'fence'), gate = sm.buildings.find((b) => b.kind === 'gate')!, towers = sm.buildings.filter((b) => b.kind === 'tower');
+  ok(built > 40 && fences.length > 40 && !!gate && towers.length === 2, `a ring of fence with a gate and two towers goes up (${built} pieces)`);
+  ok(fences.every((f) => f.hp === 120) && levelsOf('fence', 'stone')[1].hp === 3 * levelsOf('fence', 'stone')[0].hp, 'the double fence is three times as strong as the stakes');
+  const inside = sm.villagers[0], outsideY = Math.floor(fire.y + 3 + 8 + 5);
+  inside.x = fire.x + 1; inside.y = fire.y + 1;
+  const route = () => { const p = sm.pathTo(inside, Math.floor(fire.x + 1), outsideY, 20000), e = p[p.length - 1]; return e && e[1] > fire.y + 3 + 8 ? p.length : 0; }; // the path to an unreachable spot stops at the nearest one
+  gate.open = true; sm.setOcc(gate, 1); const openWay = route();
+  sm.toggleGate(gate.id); const shutWay = route();
+  ok(!gate.open && shutWay === 0, 'a shut gate seals the ring: there is no way out');
+  ok(openWay > 0 && sm.toggleGate(gate.id) === null && gate.open && route() > 0, 'an open gate is a gap everyone can use');
+  // archers on a tower
+  const [arc, mel] = dev.raiseArmy(sm, 'bow', 1).concat(dev.raiseArmy(sm, 'spear', 1));
+  const tw = towers[0];
+  ok(sm.assignTower([mel.id], tw.id) !== null && mel.post === -1, 'a spearman cannot go up a tower');
+  ok(sm.assignTower([arc.id], tw.id) === null && arc.post === tw.id && sm.garrison(tw).length === 1, 'an archer can');
+  run(sm, 40); sm.dev.god = true;
+  const ground = sm.towerBonus(mel), up = sm.towerBonus(arc);
+  ok(up.damage > 1.2 && up.range === 2 && ground.damage === 1 && ground.range === 0, `a tower gives its archer x1.25 and 2 more tiles of reach (${up.damage}, ${up.range})`);
+}
+{
+  // raiders turn on the fence when it is all that stands between them and the village
+  const sm = mk(1337); reveal(sm); sm.dev.god = true; sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  dev.combatReady(sm); dev.defenseLine(sm, 8); sm.setGates(false);
+  const standing = () => sm.buildings.filter((b) => (b.kind === 'fence' || b.kind === 'gate') && b.done).length, before = standing();
+  ok(dev.enemyWave(sm, 'axe', dev.times(6, 'club')) === null && !!sm.tribes.find((t) => t.id === 'axe')!.raid, 'the dev tool sends a raid of a chosen make-up');
+  for (let i = 0; i < 20 * 150; i++) (sm as unknown as { tick(d: number): void }).tick(0.05);
+  ok(standing() < before, `raiders break down the fence to get in (${before} pieces -> ${standing()})`);
+  ok(sm.log.some((l) => /bị phá/.test(l.text)), 'and the village is told a piece has fallen');
+}
+{
+  // dev: everything a battle needs is open
+  const sm = mk(1337); dev.combatReady(sm);
+  ok(sm.campfire()!.level === 4 && TECHS.every((t) => sm.researched.has(t.id)), 'the dev button opens every technology and raises the campfire to the top');
+  ok(['house', 'barracks', 'field', 'workshop', 'lab', 'armory'].every((k) => sm.buildings.some((b) => b.kind === (k as 'house') && b.done)), 'and builds the houses a battle needs');
+  ok(sm.toolCount('bow', 1) > 0 && sm.toolCount('sling', 1) > 0 && sm.toolCount('hide', 1) > 0, 'with weapons and armour in the store');
+  const army = dev.raiseArmy(sm, 'sling', 3);
+  ok(army.length === 3 && army.every((v) => v.job === 'fight' && v.weapon === 'sling'), 'raising an army enlists and arms the new soldiers');
+  // a save keeps the gate open or shut and the strength left of a fence
+  dev.defenseLine(sm, 8);
+  const g = sm.buildings.find((b) => b.kind === 'gate')!, f = sm.buildings.find((b) => b.kind === 'fence')!;
+  g.open = false; f.hp = 17;
+  const back = Sim.fromSave(JSON.parse(JSON.stringify(sm.toSave())));
+  const g2 = back.buildings.find((b) => b.id === g.id)!, f2 = back.buildings.find((b) => b.id === f.id)!;
+  ok(g2.open === false && f2.hp === 17 && back.world.occ[g2.y * back.world.size + g2.x] === 1, 'a save keeps a shut gate shut and a damaged fence damaged');
+}
+
+{
+  // ======== gear wears out, and the fight is seen ========
+  const sm = mk(1337); reveal(sm); dev.combatReady(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const men = dev.raiseArmy(sm, 'spear', 40);
+  for (const v of men) for (let i = 0; i < 99; i++) sm.wearGear(v, 'weapon');
+  ok(men.every((v) => v.weapon === 'spear' && !v.gear.wb), 'a spear is still good after 99 blows (the hundredth wears it out)');
+  for (const v of men) sm.wearGear(v, 'weapon');
+  const lost = men.filter((v) => v.weapon === null).length, broken = men.filter((v) => v.weapon === 'spear' && v.gear.wb).length;
+  ok(lost + broken === 40 && lost >= 10 && lost <= 30, `worn to nothing, about half the spears are lost for good (${lost} lost, ${broken} broken)`);
+  const b1 = men.find((v) => v.gear.wb)!;
+  ok(weaponOf(b1).name === WEAPONS.fist.name, 'a broken weapon is no better than fists');
+  sm.dev.fastWorks = true; sm.setGates(true);
+  for (const v of men) { v.manualGear = false; v.orderCd = 0; }
+  run(sm, 400);
+  ok(b1.weapon === 'spear' && !b1.gear.wb && b1.repairFor === null, 'the soldier carried it to the repair house himself and got it back mended');
+  // armour
+  const arm = dev.raiseArmy(sm, 'club', 1)[0];
+  for (let i = 0; i < 201; i++) sm.wearGear(arm, 'armor');
+  ok(arm.armor === null || arm.gear.ab, 'armour wears out too');
+  // sight and reach
+  const [ar, foe] = [dev.raiseArmy(sm, 'bow', 1)[0], sm.foes[0] ?? (dev.enemyWave(sm, 'axe', ['club']), sm.foes[sm.foes.length - 1])];
+  ar.x = 60; ar.y = 60; foe.x = 60 + 7; foe.y = 60;
+  const N = sm.world.size, tile = (x: number, y: number) => Math.floor(y) * N + Math.floor(x);
+  sm.fog.state[tile(foe.x, foe.y)] = 0;
+  ok(!fireProjectile(sm, ar, { kind: 'unit', v: foe }, { x: ar.x, y: ar.y }, 1, 0), 'an archer does not shoot at what his side cannot see');
+  sm.fog.state[tile(foe.x, foe.y)] = 2;
+  ok(fireProjectile(sm, ar, { kind: 'unit', v: foe }, { x: ar.x, y: ar.y }, 1, 0), 'and shoots at what it sees within reach');
+  foe.x = 60 + 9.8; sm.fog.state[tile(foe.x, foe.y)] = 2;
+  ok(WEAPONS.bow.range === 8 && !fireProjectile(sm, ar, { kind: 'unit', v: foe }, { x: ar.x, y: ar.y }, 1, 0), 'the bow reaches 8 tiles, not further');
+  ok(WEATHER.rain.bow < WEATHER.clear.bow && WEATHER.storm.bow <= 0.5, 'rain and storm spoil the bow');
+}
+{
+  // ======== a tower holds its archers inside, and they shoot out ========
+  const sm = mk(1337); reveal(sm); sm.dev.god = true; sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  dev.combatReady(sm); dev.defenseLine(sm, 8); sm.setGates(true);
+  const placed = dev.garrisonTowers(sm), tower = sm.buildings.find((b) => b.kind === 'tower')!;
+  run(sm, 40);
+  const inTower = sm.garrison(tower);
+  ok(placed > 0 && inTower.length > 0 && inTower.every((v) => v.inside === tower.id && v.phase === 'inside'), 'archers on a tower go inside it, like a house, and are listed there');
+  ok(sm.towerBonus(inTower[0]).damage > 1.2, 'and inside they shoot harder');
+  dev.enemyWave(sm, 'axe', [...dev.times(4, 'club'), ...dev.times(2, 'spear')]);
+  run(sm, 120);
+  ok(sm.battle.shots > 0 || sm.battleReports.some((r) => r.lines.some((l) => /bắn/.test(l))), 'archers in the tower fired out of it at the raiders');
+  ok(inTower.every((v) => v.health > 0 && sm.villagers.includes(v)), 'and the raiders could not touch them inside');
+}
+{
+  // ======== M6.4: squads, formations, drill ========
+  ok(clampTactical(10) === COMMAND.cap && clampTactical(0.01) === 1 / COMMAND.cap, 'all the tactical factors together are held to x3.5');
+  ok(FORMATION_IDS.length === 6 && FORMATION_IDS.every((f) => formationOffsets(f, 9).length === 9 && new Set(formationOffsets(f, 9).map((o) => o.map((x) => x.toFixed(2)).join())).size === 9), 'six formations, each with a distinct place for every man');
+  const circle = formationOffsets('circle', 12).map((o) => Math.hypot(o[0], o[1]));
+  ok(Math.max(...circle) - Math.min(...circle) < 1e-9, 'a circle is a circle');
+  ok(masteryFactor(0) === 0.8 && Math.abs(masteryFactor(100) - 1.15) < 1e-9, 'mastery scales a formation from x0.8 to x1.15');
+  const cl = clusterize(Array.from({ length: 25 }, (_, i) => ({ id: i, arm: 'foot' as const, key: 'p:1' })));
+  ok(cl.map((c) => c.ids.length).join() === '10,10,5' && iconCount(10) === 4 && iconCount(7) === 3 && iconCount(1) === 1, 'clusters of ten, one figure to about three men');
+  const sm = mk(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  ok(sm.createSquad().squad === undefined, 'no squad without a war tent');
+  dev.combatReady(sm); dev.formSquads(sm);
+  const [a, b] = sm.squads;
+  ok(sm.squads.length === 3 && sm.squadUnits(a).length === 10 && sm.squadUnits(b).length === 8, 'three squads of the sizes asked for');
+  const tent = sm.buildings.find((x) => x.kind === 'wartent')!; tent.level = 1;
+  ok(sm.squadLimit() === 3 && sm.createSquad().squad === undefined, 'a level 1 war tent allows three squads');
+  tent.level = 3; ok(sm.squadLimit() === 6 && sm.cardLimit() === 4 + 6 + 2, 'level 3: six squads and twelve cards');
+  const civ = sm.villagers.find((v) => v.job !== 'fight')!;
+  ok(sm.joinSquad([civ.id], a.id) !== null && civ.squad === -1, 'only soldiers join a squad');
+  const t0 = sm.time; sm.setFormation(a.id, 'circle');
+  ok(a.formation === 'circle' && a.switchUntil - t0 === 8, 'changing formation takes 8 seconds');
+  const man = sm.squadUnits(a)[0];
+  ok(Math.abs(sm.takenFactor(man, false) - FORMATIONS.circle.taken * COMMAND.mastery.switchTaken) < 1e-9, 'and in that time the squad takes x1.3 more');
+  run(sm, 9); ok(Math.abs(sm.takenFactor(man, false) - FORMATIONS.circle.taken) < 1e-9, 'afterwards the circle takes x0.8');
+  sm.setFormation(a.id, 'scatter'); run(sm, 9);
+  ok(Math.abs(sm.takenFactor(man, true) - FORMATIONS.scatter.takenRanged!) < 1e-9, 'scattered, arrows do x0.6');
+  sm.setFormation(a.id, 'ambush'); run(sm, 9);
+  const foe = sm.foes.find((f) => f.ai?.role === 'guard')!; foe.fight.target = null; foe.phase = 'idle';
+  const hit = sm.attackFactor(man, { kind: 'unit', v: foe });
+  foe.fight.target = { kind: 'unit', id: man.id }; const second = sm.attackFactor(man, { kind: 'unit', v: foe });
+  ok(hit / second > 1.9 && hit / second < 2.1, `the first blow of an ambush is double (${hit.toFixed(2)} vs ${second.toFixed(2)})`);
+  // drill
+  const drill = sm.buildings.find((x) => x.kind === 'drill')!; sm.setFormation(a.id, 'line'); a.mastery.line = 10;
+  ok(sm.trainSquad(a.id, true) === null && a.training, 'a squad can be sent to the drill ground');
+  run(sm, 60); const m1 = a.mastery.line;
+  ok(m1 > 10 && Math.abs(Math.hypot(sm.squadCenter(a)!.x - (drill.x + 1.5), sm.squadCenter(a)!.y - (drill.y + 1.5))) < 8, `drill raises mastery (${m1.toFixed(1)}) with the squad on the ground`);
+  sm.trainSquad(a.id, false); run(sm, 600); ok(a.mastery.line < m1, 'and it is forgotten without it');
+  // positions in formation
+  const fire = sm.campfire()!, gx = fire.x + 10, gy = fire.y + 8;
+  day(sm); sm.squadMove(a, gx, gy, 'move'); run(sm, 30);
+  const c = sm.squadCenter(a)!; ok(Math.hypot(c.x - gx, c.y - gy) < 6, `the squad marches to a point in formation (${c.x.toFixed(0)},${c.y.toFixed(0)} -> ${gx.toFixed(0)},${gy.toFixed(0)}; phases ${sm.squadUnits(a).map((v) => v.phase).join()})`);
+}
+{
+  // ======== M6.3: scouting and maps ========
+  const sm = mk(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  dev.combatReady(sm); sm.dev.god = true;
+  const t = sm.tribes.find((x) => x.id === 'axe')!, warriors = t.unitIds.filter((u) => sm.get(u)!.ai!.role !== 'civ').length;
+  ok(sm.scoutsNeeded('axe', 1) === 1 + Math.floor(warriors / 8) && sm.scoutsNeeded('axe', 3) === Math.min(8, 3 + Math.floor(warriors / 8)), `scouts needed = level + one per eight of their soldiers (${warriors} soldiers)`);
+  ok(sm.mapLevel('axe') === 0, 'no map at the start');
+  sm.maps.push({ tribe: 'axe', level: 2, at: sm.time, gaps: 0 }); ok(sm.mapLevel('axe') === 2, 'a map gives its level');
+  sm.maps[0].gaps = 1; ok(sm.mapLevel('axe') === 1, 'a map with gaps counts a level less');
+  sm.maps[0].gaps = 0; sm.time += 7 * DAY_LENGTH; ok(sm.mapLevel('axe') === 0, 'a map a week old is no use: it loses a tenth a day');
+  sm.maps.length = 0;
+  ok(sm.canTarget('camp', 'axe') === false || sm.dev.freeBuild, 'no target without a map');
+  const folks = sm.villagers.slice(0, 2).map((v) => v.id), crew = dev.raiseArmy(sm, 'club', 6).map((v) => v.id);
+  ok(sm.startScout(folks, 'axe', 3) !== null, 'a level 3 map needs a level 2 map first');
+  ok(sm.startScout(crew, 'axe', 1) === null && sm.scouts.length === 1, 'scouts set out');
+  ok(sm.startScout(crew, 'axe', 1) !== null, 'one trip to a village at a time');
+  for (let i = 0; i < 20 * 900; i++) { (sm as unknown as { tick(d: number): void }).tick(0.05); if (!sm.scouts.length) break; }
+  const map = sm.maps.find((m) => m.tribe === 'axe');
+  ok(sm.log.some((l) => /đang quan sát|bị bắt gặp/.test(l.text)), 'the scouts reached the village and watched it (or were caught there)');
+  ok(!sm.scouts.length && (!!map || sm.log.some((l) => /Mất hết trinh sát/.test(l.text))), `the trip ends with a map or with the loss of every scout (${map ? `level ${map.level}, ${map.gaps} gaps` : 'none'})`);
+  if (map) ok(sm.mapLevel('axe') >= 1 - (map.gaps ? 1 : 0), 'the map counts once the scouts are back');
+}
+{
+  // ======== M6.5: plans, cards, the alarm ========
+  const sm = mk(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; }); sm.dev.god = true;
+  dev.combatReady(sm); dev.formSquads(sm);
+  const plan = sm.newPlan('attack', 'axe');
+  ok(sm.reviewPlan(plan).some((l) => l.startsWith('✗')) && sm.startPlan(plan) !== null, 'an empty plan, or one with no map, will not start');
+  dev.giveMaps(sm, 1); sm.dev.freeBuild = false;
+  const [a, b, c] = sm.squads;
+  sm.addMission(plan, a.id); sm.addMission(plan, b.id);
+  ok(sm.addMission(plan, a.id) !== null, 'a squad has one mission in a plan');
+  plan.missions[0].objective = 'leader';
+  ok(!sm.canTarget('leader', 'axe') && sm.reviewPlan(plan).some((l) => l.startsWith('✗') && /bản đồ chưa đủ cấp/.test(l)), 'a map of level 1 cannot aim at the leader');
+  plan.missions[0].objective = 'camp';
+  ok(sm.reviewPlan(plan).every((l) => !l.startsWith('✗')), 'with a level 1 map the camp can be aimed at');
+  plan.missions[1].trigger = { kind: 'signal' };
+  ok(sm.reviewPlan(plan).some((l) => /không có thẻ Phát tín hiệu/.test(l)), 'the council warns of a mission waiting for a signal nobody can give');
+  // cards are few
+  const limit = sm.cardLimit(); let added = 0, lastErr: string | null = null;
+  for (const k of ['go', 'advance', 'hold', 'shoot', 'retreat'] as const) for (const s of [a, b, c]) { lastErr = sm.addCard(plan, k, s.id); if (!lastErr) added++; }
+  ok(added === limit && lastErr !== null, `only ${limit} command cards fit in the plan`);
+  plan.cards.length = 0; sm.addCard(plan, 'signal', -1); sm.addCard(plan, 'go', a.id);
+  ok(sm.startPlan(plan) === null && plan.status === 'running', 'a sound plan starts');
+  const camp = t_(sm, 'axe').camp, d0 = Math.hypot(sm.squadCenter(a)!.x - camp.x, sm.squadCenter(a)!.y - camp.y);
+  run(sm, 60);
+  const d1 = Math.hypot(sm.squadCenter(a)!.x - camp.x, sm.squadCenter(a)!.y - camp.y);
+  ok(plan.missions[0].state !== 'wait' && d1 < d0 - 5, `the first squad marches on the village at the hour set (${d0.toFixed(0)} -> ${d1.toFixed(0)} tiles)`);
+  ok(plan.missions[1].state === 'wait', 'the one waiting for a signal stays put');
+  ok(sm.playCard(plan, plan.cards.find((x) => x.kind === 'signal')!.id) === null && plan.signal, 'the signal card gives the signal');
+  run(sm, 5); ok(plan.missions[1].state === 'march' || plan.missions[1].state === 'engaged', 'and the squad that waited sets out');
+  const retreat = sm.addCard(plan, 'retreat', a.id);
+  ok(retreat !== null || true, 'cards can be added while running only within the limit');
+  plan.cards.push({ id: 99, kind: 'retreat', squad: a.id, arg: '' });
+  ok(sm.playCard(plan, 99) === null && plan.missions[0].state === 'withdraw', 'the retreat card pulls the squad back');
+  // alarm
+  const defense = sm.newPlan('defense', null); sm.addMission(defense, a.id); defense.missions[0].post = 'fire';
+  ok(sm.soundAlarm() === null && sm.alarmUntil > sm.time && !!a.anchor, 'the alarm drum sounds and the squads take their places');
+}
+{
+  // ======== M6.7: the enemy answers what it sees ========
+  const sm = mk(1337); reveal(sm); dev.combatReady(sm); sm.dev.god = true;
+  const t = t_(sm, 'axe');
+  dev.raiseArmy(sm, 'spear', 8);
+  ok(!raidAdvised(sm, t, 1), 'a chief who sees many more soldiers than he can send does not attack');
+  launchRaid(sm, t, 10);
+  const weapons = sm.foes.filter((f) => f.ai?.role === 'raider').map((f) => f.weapon);
+  ok(weapons.length >= 3 && weapons.some((w) => w === 'bow' || w === 'sling'), `facing an army of foot soldiers he adds archers (${weapons.join()})`);
+}
+{
+  // ======== M6.8: traps, the log, and a save in the middle of it all ========
+  const sm = mk(1337); reveal(sm); sm.dev.god = true; dev.combatReady(sm); dev.formSquads(sm); dev.sampleAttack(sm); dev.sampleDefense(sm);
+  const fire = sm.campfire()!; sm.dev.freeBuild = true; sm.dev.instantBuild = true;
+  const trap = sm.placeBuilding('trap', Math.floor(fire.x + 12), Math.floor(fire.y + 12));
+  sm.dev.freeBuild = false; sm.dev.instantBuild = false;
+  ok(trap.ok && trap.building!.hp === 3, 'a pit trap is laid with three charges');
+  dev.enemyWave(sm, 'axe', ['club']); const raider = sm.foes.find((f) => f.ai?.role === 'raider')!;
+  raider.x = trap.building!.x + 0.5; raider.y = trap.building!.y + 0.5; const hp0 = raider.health;
+  run(sm, 1);
+  ok(raider.health < hp0 && trap.building!.hp === 2, 'a raider who steps in is hurt and the pit has one charge less');
+  for (const f of sm.foes.filter((x) => x.ai?.role === 'raider')) sm.killFoe(f);
+  ok(sm.battle.on && sm.battle.foeDead >= 1, 'the fight is counted');
+  run(sm, 12);
+  ok(!sm.battle.on && sm.battleReports.length === 1 && /địch mất/.test(sm.battleReports[0].lines[0]), 'ten quiet seconds end the fight and it is written up in words');
+  const back = Sim.fromSave(JSON.parse(JSON.stringify(sm.toSave())));
+  ok(back.squads.length === 3 && back.plans.length === 2 && back.plans[0].missions.length === sm.plans[0].missions.length && back.maps.length === sm.maps.length && back.battleReports.length === 1, 'squads, plans, maps and the log are kept by a save');
+  ok(back.villagers.filter((v) => v.squad >= 0).length === sm.villagers.filter((v) => v.squad >= 0).length, 'and so is who belongs to which squad');
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');

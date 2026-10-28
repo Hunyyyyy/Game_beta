@@ -32,6 +32,22 @@ import houseL3 from '../data/blueprints/stone_age/buildings/house/L3.json';
 import fieldL1 from '../data/blueprints/stone_age/buildings/field/L1.json';
 import fieldL2 from '../data/blueprints/stone_age/buildings/field/L2.json';
 import fieldL3 from '../data/blueprints/stone_age/buildings/field/L3.json';
+import fenceL1 from '../data/blueprints/stone_age/buildings/fence/L1.json';
+import fenceL2 from '../data/blueprints/stone_age/buildings/fence/L2.json';
+import gateL1 from '../data/blueprints/stone_age/buildings/gate/L1.json';
+import gateL2 from '../data/blueprints/stone_age/buildings/gate/L2.json';
+import gateL1o from '../data/blueprints/stone_age/buildings/gate/L1open.json';
+import gateL2o from '../data/blueprints/stone_age/buildings/gate/L2open.json';
+import towerL1 from '../data/blueprints/stone_age/buildings/tower/L1.json';
+import towerL2 from '../data/blueprints/stone_age/buildings/tower/L2.json';
+import wartentL1 from '../data/blueprints/stone_age/buildings/wartent/L1.json';
+import wartentL2 from '../data/blueprints/stone_age/buildings/wartent/L2.json';
+import wartentL3 from '../data/blueprints/stone_age/buildings/wartent/L3.json';
+import drillL1 from '../data/blueprints/stone_age/buildings/drill/L1.json';
+import drillL2 from '../data/blueprints/stone_age/buildings/drill/L2.json';
+import drillL3 from '../data/blueprints/stone_age/buildings/drill/L3.json';
+import trapL1 from '../data/blueprints/stone_age/buildings/trap/L1.json';
+import trapL2 from '../data/blueprints/stone_age/buildings/trap/L2.json';
 import campfireL2 from '../data/blueprints/stone_age/buildings/campfire/L2.json';
 import campfireL3 from '../data/blueprints/stone_age/buildings/campfire/L3.json';
 import campfireL4 from '../data/blueprints/stone_age/buildings/campfire/L4.json';
@@ -57,6 +73,8 @@ import toolClubJson from '../data/blueprints/stone_age/tools/club.json';
 import toolSpearJson from '../data/blueprints/stone_age/tools/spear.json';
 import toolMaceJson from '../data/blueprints/stone_age/tools/mace.json';
 import toolHideArmorJson from '../data/blueprints/stone_age/tools/hide_armor.json';
+import toolSlingJson from '../data/blueprints/stone_age/tools/sling.json';
+import toolBowJson from '../data/blueprints/stone_age/tools/bow.json';
 import { BuildingKind, Era, ERAS } from '../sim/buildings';
 import type { Season } from '../sim/calendar';
 import type { Animal } from '../sim/fauna';
@@ -106,6 +124,12 @@ const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>
     barracks: [barracksL1, barracksL2, barracksL3],
     house: [houseL1, houseL2, houseL3],
     field: [fieldL1, fieldL2, fieldL3],
+    fence: [fenceL1, fenceL2],
+    gate: [gateL1, gateL2, gateL1o, gateL2o], // the last two are the same gates standing open
+    tower: [towerL1, towerL2],
+    wartent: [wartentL1, wartentL2, wartentL3],
+    drill: [drillL1, drillL2, drillL3],
+    trap: [trapL1, trapL2],
   },
 };
 const TINTS: Partial<Record<BuildingKind, Record<string, string>>> = {}; // no reused drawings left: every house has its own art
@@ -127,6 +151,8 @@ export class Sprites {
     this.icons.club1 = make(toolClubJson, 1).frames[0];
     this.icons.spear1 = make(toolSpearJson, 1).frames[0];
     this.icons.mace2 = make(toolMaceJson, 1).frames[0];
+    this.icons.sling1 = make(toolSlingJson, 1).frames[0];
+    this.icons.bow1 = make(toolBowJson, 1).frames[0];
     this.icons.hide1 = make(toolHideArmorJson, 1).frames[0];
     this.icons.torch1 = this.torchIcon();
     this.nature('spring');

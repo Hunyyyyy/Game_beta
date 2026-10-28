@@ -1,0 +1,37 @@
+{
+  "name": "Chòi canh (cấp 1, chòi gỗ)",
+  "name_en": "Watchtower (Tier 1, Timber)",
+  "type": "prop",
+  "size": [72,64],
+  "anchor": [36,58],
+  "footprint": [4,32,64,28],
+  "seed": 33,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": {"line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "earth": "#86704e", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "log": "#6b4a28", "rope": "#d8c690", "thatch": "#c9a84e", "thatchL": "#e0c670", "thatchD": "#9a7c32"},
+  "layers": [
+    {"shape": "ellipse", "cx": 36, "cy": 55, "rx": 30, "ry": 6, "color": "shadow", "alpha": 0.25},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "rect", "x": 10, "y": 50, "w": 52, "h": 5, "color": "dirt"}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "line", "from": [14,54], "to": [20,36], "w": 3, "color": "woodD"},
+      {"shape": "line", "from": [58,54], "to": [52,36], "w": 3, "color": "woodD"},
+      {"shape": "line", "from": [22,54], "to": [24,36], "w": 2, "color": "wood"},
+      {"shape": "line", "from": [50,54], "to": [48,36], "w": 2, "color": "wood"},
+      {"shape": "line", "from": [18,40], "to": [54,40], "w": 2, "color": "rope"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "rect", "x": 14, "y": 22, "w": 44, "h": 5, "color": "wood"},
+      {"shape": "rect", "x": 14, "y": 22, "w": 44, "h": 2, "color": "woodL"},
+      {"shape": "rect", "x": 14, "y": 12, "w": 3, "h": 12, "color": "woodD"},
+      {"shape": "rect", "x": 55, "y": 12, "w": 3, "h": 12, "color": "woodD"},
+      {"shape": "line", "from": [14,14], "to": [58,14], "w": 2, "color": "woodD"}
+    ] },
+    {"shape": "group", "if": "st4", "layers": [
+      {"shape": "poly", "points": [[10,14],[36,2],[62,14]], "color": "thatch"},
+      {"shape": "poly", "points": [[10,14],[36,2],[36,14]], "color": "thatchL"},
+      {"shape": "poly", "points": [[36,2],[62,14],[36,14]], "color": "thatchD"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

@@ -1,0 +1,16741 @@
+"use strict";
+
+// src/sim/buildings.ts
+var ERAS = ["stone", "ancient"];
+var lv = (name, cost, buildTime, cap = 0, craftSpeed = 1, slots = 0, hp = 0) => ({ name, cost, buildTime, cap, craftSpeed, slots, hp });
+var BUILDINGS = {
+  // the heart of the village: it starts as a heap of firewood and every other house is held back by its level
+  campfire: {
+    kind: "campfire",
+    name: "Nh\xE0 chung (\u0111\u1ED1ng l\u1EEDa tr\u1EA1i)",
+    w: 2,
+    h: 2,
+    buildable: false,
+    upgradable: true,
+    levels: { stone: [lv("C\u1EE7i l\u1EEDa", {}, 0, 30), lv("L\u1EEDa tr\u1EA1i", { wood: 20 }, 120, 45), lv("B\u1EBFp l\u1EEDa l\u1EDBn", { wood: 20, stone: 12 }, 240, 60), lv("Nh\xE0 chung", { wood: 50, stone: 30, hide: 10 }, 480, 90)] }
+  },
+  // builders belong to this house: without it nothing but the house itself can be raised
+  builder: {
+    kind: "builder",
+    name: "Nh\xE0 th\u1EE3 x\xE2y",
+    w: 2,
+    h: 2,
+    buildable: true,
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 60, 0, 1, 2), lv("G\u1ED7", { wood: 15, stone: 10 }, 110, 0, 1.25, 3), lv("\u0110\xE1", { wood: 25, stone: 20 }, 160, 0, 1.5, 4)] }
+  },
+  storage: {
+    kind: "storage",
+    name: "Kho",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["builder"],
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 50, 100), lv("G\u1ED7", { wood: 35 }, 90, 250), lv("\u0110\xE1", { wood: 40, stone: 20 }, 140, 500)] }
+  },
+  workshop: {
+    kind: "workshop",
+    name: "Nh\xE0 ch\u1EBF t\u1EA1o",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["builder"],
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 70, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] }
+  },
+  lab: {
+    kind: "lab",
+    name: "Nh\xE0 nghi\xEAn c\u1EE9u",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["workshop"],
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 80, 0, 1, 1), lv("G\u1ED7", { wood: 20, stone: 30 }, 140, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 200, 0, 1.5, 4)] }
+  },
+  repair: {
+    kind: "repair",
+    name: "Nh\xE0 s\u1EEDa ch\u1EEFa",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["workshop"],
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15, stone: 5 }, 70, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] }
+  },
+  toolstore: {
+    kind: "toolstore",
+    name: "Kho c\xF4ng c\u1EE5",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["workshop"],
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 60, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 100, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 150, 60)] }
+  },
+  armory: {
+    kind: "armory",
+    name: "Kho v\u0169 kh\xED",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["workshop"],
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 60, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 100, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 150, 60)] }
+  },
+  // where soldiers sleep, out of sight, as a list (slots = beds, craftSpeed = how well they rest); without a bed they sleep by the campfire
+  barracks: {
+    kind: "barracks",
+    name: "L\u1EC1u chi\u1EBFn binh",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["builder"],
+    perFire: [1, 2, 2, 2],
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 3), lv("G\u1ED7", { wood: 25, hide: 6 }, 100, 0, 1.1, 5), lv("\u0110\xE1", { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 8)] }
+  },
+  // where everyone who is not a soldier sleeps, out of sight, as a list; without a bed they sleep by the campfire and rest slower
+  house: {
+    kind: "house",
+    name: "Nh\xE0 d\xE2n",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["builder"],
+    perFire: [1, 3, 3, 3],
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 4), lv("G\u1ED7", { wood: 30, stone: 10 }, 100, 0, 1.15, 8), lv("\u0110\xE1", { wood: 40, stone: 30 }, 150, 0, 1.3, 12)] }
+  },
+  // defence works (not "one of each": they are laid piece by piece, as many as the campfire allows). hp is what the raiders must break down.
+  fence: {
+    kind: "fence",
+    name: "H\xE0ng r\xE0o c\u1ECDc",
+    w: 1,
+    h: 1,
+    buildable: true,
+    requires: ["builder"],
+    perFire: [14, 30, 50, 70],
+    repeat: true,
+    levels: { stone: [lv("C\u1ECDc nh\u1ECDn", { wood: 2 }, 14, 0, 1, 0, 40), lv("H\xE0ng r\xE0o \u0111\xF4i", { wood: 4, stone: 1 }, 24, 0, 1, 0, 120)] }
+  },
+  // slots here are the archers who can keep watch on a tower; a gate has no staff, it opens and shuts
+  gate: {
+    kind: "gate",
+    name: "C\u1ED5ng",
+    w: 1,
+    h: 1,
+    buildable: true,
+    requires: ["fence"],
+    perFire: [1, 2, 3, 4],
+    levels: { stone: [lv("C\u1ED5ng g\u1ED7", { wood: 4 }, 20, 0, 1, 0, 30), lv("C\u1ED5ng \u0111\xF4i", { wood: 6, stone: 2 }, 32, 0, 1, 0, 90)] }
+  },
+  tower: {
+    kind: "tower",
+    name: "Ch\xF2i canh",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["fence"],
+    perFire: [0, 1, 2, 3],
+    levels: { stone: [lv("Ch\xF2i g\u1ED7", { wood: 20 }, 80, 0, 1, 2, 150), lv("Ch\xF2i cao", { wood: 30, stone: 8 }, 130, 0, 1.2, 4, 300)] }
+  },
+  // where the squads, formations and plans are made: its level decides how many squads and command cards there are
+  wartent: {
+    kind: "wartent",
+    name: "L\u1EC1u h\u1ECDp chi\u1EBFn",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["builder"],
+    levels: { stone: [lv("L\u1EC1u da", { wood: 30, hide: 8 }, 90), lv("L\u1EC1u l\u1EDBn", { wood: 40, hide: 10, stone: 15 }, 140), lv("L\u1EC1u th\u1EE7 l\u0129nh", { wood: 50, stone: 40, hide: 14 }, 200)] }
+  },
+  // the drill ground: squads train their formation here
+  drill: {
+    kind: "drill",
+    name: "B\xE3i t\u1EADp",
+    w: 3,
+    h: 3,
+    buildable: true,
+    requires: ["barracks"],
+    levels: { stone: [lv("B\xE3i c\u1ECDc", { wood: 25 }, 80), lv("B\xE3i r\xE0o", { wood: 30, stone: 10 }, 120), lv("B\xE3i \u0111\xE1", { wood: 35, stone: 30 }, 170)] }
+  },
+  // a pit of sharpened stakes, laid one at a time; hp is how many men it can still wound
+  trap: {
+    kind: "trap",
+    name: "H\u1ED1 ch\xF4ng",
+    w: 1,
+    h: 1,
+    buildable: true,
+    requires: ["fence"],
+    perFire: [4, 10, 18, 28],
+    repeat: true,
+    levels: { stone: [lv("H\u1ED1 ch\xF4ng", { wood: 3 }, 12, 0, 1, 0, 3), lv("H\u1ED1 ch\xF4ng s\xE2u", { wood: 4, stone: 2 }, 20, 0, 1, 0, 6)] }
+  },
+  // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
+  field: {
+    kind: "field",
+    name: "Ru\u1ED9ng",
+    w: 3,
+    h: 3,
+    buildable: true,
+    requires: ["builder"],
+    perFire: [1, 3, 3, 4],
+    levels: { stone: [lv("\u0110\u1EA5t v\u1EE1", { wood: 10 }, 70, 0, 1, 1), lv("Lu\u1ED1ng \u0111\u1EAFp", { wood: 15, stone: 5 }, 110, 0, 1.4, 1), lv("B\u1EDD \u0111\xE1", { wood: 20, stone: 15 }, 160, 0, 1.8, 1)] }
+  }
+};
+function levelsOf(kind, era) {
+  const defs = BUILDINGS[kind].levels;
+  for (let i = ERAS.indexOf(era); i >= 0; i--) {
+    const l = defs[ERAS[i]];
+    if (l) return l;
+  }
+  return defs.stone;
+}
+var levelDef = (b, level = b.level) => levelsOf(b.kind, b.era)[level - 1];
+var maxLevel = (kind, era) => levelsOf(kind, era).length;
+var holdsGoods = (b) => b.kind === "storage" || b.kind === "campfire";
+var needsWork = (b) => !b.done || b.upgrading;
+var canGrow = (kind) => BUILDINGS[kind].buildable || !!BUILDINGS[kind].upgradable;
+var POP_BY_FIRE = [8, 16, 25, 40];
+var levelCapByFire = (fireLevel) => Math.max(1, fireLevel - 1);
+
+// src/sim/constants.ts
+var TILE = 32;
+var MAP_SIZE = 192;
+var VISION = 7;
+var NIGHT_VISION = 3;
+var FIRE_VISION = 8;
+var TICK = 1 / 20;
+var DAY_LENGTH = 1200;
+var START_TIME = DAY_LENGTH * 0.25;
+var gameDays = (secs) => {
+  const d = secs / DAY_LENGTH;
+  return `${d.toLocaleString("vi", { maximumFractionDigits: d < 1 ? 2 : d < 10 ? 1 : 0 })} ng\xE0y`;
+};
+var WORK_DAY = 240;
+var PACE = { work: WORK_DAY / DAY_LENGTH };
+var workDays = (workSecs) => gameDays(workSecs / PACE.work);
+
+// src/sim/rng.ts
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  const next = (() => {
+    a = a + 1831565813 >>> 0;
+    let t = a;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  });
+  next.getState = () => a;
+  next.setState = (state) => {
+    a = state >>> 0;
+  };
+  return next;
+}
+function hash2(x, y, seed) {
+  let h2 = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(seed | 0, 1274126177);
+  h2 = Math.imul(h2 ^ h2 >>> 13, 1274126177);
+  h2 ^= h2 >>> 16;
+  return (h2 >>> 0) / 4294967296;
+}
+var smooth = (t) => t * t * (3 - 2 * t);
+function valueNoise(x, y, seed) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = smooth(x - ix), fy = smooth(y - iy);
+  const a = hash2(ix, iy, seed), b = hash2(ix + 1, iy, seed);
+  const c = hash2(ix, iy + 1, seed), d = hash2(ix + 1, iy + 1, seed);
+  return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+}
+function fbm(x, y, seed, octaves = 3) {
+  let sum = 0, amp = 1, norm = 0, f = 1;
+  for (let o = 0; o < octaves; o++) {
+    sum += valueNoise(x * f, y * f, seed + o * 101) * amp;
+    norm += amp;
+    amp *= 0.5;
+    f *= 2;
+  }
+  return sum / norm;
+}
+
+// src/sim/world.ts
+var Tile = { Grass: 0, Water: 1, Tree: 2, Rock: 3, Mud: 4, Bush: 5 };
+var NODE_INFO = {
+  tree: { res: "wood", max: 10 },
+  rock: { res: "stone", max: 14 },
+  bush: { res: "food", max: 6 }
+};
+var TILE_OF = { tree: Tile.Tree, rock: Tile.Rock, bush: Tile.Bush };
+var World = class {
+  constructor(seed) {
+    this.seed = seed;
+    this.size = MAP_SIZE;
+    this.tiles = new Uint8Array(MAP_SIZE * MAP_SIZE);
+    this.occ = new Uint8Array(MAP_SIZE * MAP_SIZE);
+    // ô bị công trình chiếm
+    this.decor = new Uint8Array(MAP_SIZE * MAP_SIZE);
+    // 1 = gốc cây
+    this.nodes = /* @__PURE__ */ new Map();
+    this.start = { x: MAP_SIZE >> 1, y: MAP_SIZE >> 1 };
+    this.season = "spring";
+    const N = this.size;
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const d = Math.hypot(x - this.start.x, y - this.start.y);
+        const elev = fbm(x / 26, y / 26, seed);
+        const forest = fbm(x / 10, y / 10, seed + 7);
+        let t = Tile.Grass;
+        if (elev < 0.34 && d > 14) t = Tile.Water;
+        else if (d > 6 && forest > 0.58 && hash2(x, y, seed + 3) < 0.5) t = Tile.Tree;
+        else if (d > 5 && hash2(x, y, seed + 9) < 0.012) t = Tile.Rock;
+        else if (d > 4 && hash2(x, y, seed + 13) < 0.012) t = Tile.Bush;
+        else if (d > 8 && hash2(x, y, seed + 5) < 0.01) t = Tile.Tree;
+        this.tiles[y * N + x] = t;
+      }
+    }
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      if (this.tiles[y * N + x] !== Tile.Grass) continue;
+      let near2 = false;
+      for (let dy = -1; dy <= 1 && !near2; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && ny >= 0 && nx < N && ny < N && this.tiles[ny * N + nx] === Tile.Water) {
+          near2 = true;
+          break;
+        }
+      }
+      if (near2 && hash2(x, y, seed + 17) < 0.8) this.tiles[y * N + x] = Tile.Mud;
+    }
+    this.ensureNearStart("tree", 12, 6, 17, seed + 101);
+    this.ensureNearStart("rock", 5, 6, 15, seed + 102);
+    this.ensureNearStart("bush", 8, 5, 14, seed + 103);
+    for (let i = 0; i < this.tiles.length; i++) {
+      const t = this.tiles[i];
+      const kind = t === Tile.Tree ? "tree" : t === Tile.Rock ? "rock" : t === Tile.Bush ? "bush" : null;
+      if (kind) this.nodes.set(i, { kind, res: NODE_INFO[kind].res, amount: NODE_INFO[kind].max, max: NODE_INFO[kind].max, workers: 0, sides: 0, regrow: 0 });
+    }
+  }
+  /** Bảo đảm có tối thiểu `count` nguồn loại `kind` quanh điểm khởi đầu. */
+  ensureNearStart(kind, count, rMin, rMax, seed) {
+    const N = this.size, tile = TILE_OF[kind], rnd = mulberry32(seed);
+    let have = 0;
+    for (let y = this.start.y - rMax; y <= this.start.y + rMax; y++) for (let x = this.start.x - rMax; x <= this.start.x + rMax; x++) {
+      const d = Math.hypot(x - this.start.x, y - this.start.y);
+      if (d >= rMin && d <= rMax && this.tiles[y * N + x] === tile) have++;
+    }
+    for (let tries = 0; have < count && tries < 600; tries++) {
+      const a = rnd() * Math.PI * 2, r = rMin + rnd() * (rMax - rMin);
+      const x = Math.round(this.start.x + Math.cos(a) * r), y = Math.round(this.start.y + Math.sin(a) * r);
+      if (this.tiles[y * N + x] === Tile.Grass) {
+        this.tiles[y * N + x] = tile;
+        have++;
+      }
+    }
+  }
+  inBounds(x, y) {
+    return x >= 0 && y >= 0 && x < this.size && y < this.size;
+  }
+  at(x, y) {
+    return this.tiles[y * this.size + x];
+  }
+  isBlocked(x, y) {
+    if (!this.inBounds(x, y)) return true;
+    const i = y * this.size + x, t = this.tiles[i];
+    return t !== Tile.Grass && t !== Tile.Mud || this.occ[i] !== 0;
+  }
+  nodeAt(x, y) {
+    return this.inBounds(x, y) ? this.nodes.get(y * this.size + x) : void 0;
+  }
+  /** Cây và đá cạn thì ô trở lại thành cỏ (cây để lại gốc); bụi quả giữ nguyên và mọc lại. */
+  depleted(idx) {
+    const n = this.nodes.get(idx);
+    if (!n) return;
+    if (n.kind === "bush") {
+      n.amount = 0;
+      n.regrow = 240;
+      return;
+    }
+    this.nodes.delete(idx);
+    this.tiles[idx] = Tile.Grass;
+    if (n.kind === "tree") this.decor[idx] = 1;
+  }
+  /** Winter: bushes go bare and stop regrowing. Spring: they flower and fruit again after 1–3 min (staggered per tile). */
+  setSeason(season) {
+    const prev = this.season;
+    this.season = season;
+    if (season === prev) return;
+    for (const [idx, n] of this.nodes) {
+      if (n.kind !== "bush") continue;
+      if (season === "winter") {
+        n.amount = 0;
+        n.regrow = 0;
+      } else if (prev === "winter") {
+        n.amount = 0;
+        n.regrow = 60 + 120 * hash2(idx % this.size, idx / this.size | 0, this.seed + 29);
+      }
+    }
+  }
+  tick(dt) {
+    if (this.season === "winter") return;
+    for (const n of this.nodes.values()) {
+      if (n.kind === "bush" && n.amount === 0 && n.regrow > 0) {
+        n.regrow -= dt;
+        if (n.regrow <= 0) {
+          n.amount = n.max;
+          n.regrow = 0;
+        }
+      }
+    }
+  }
+};
+
+// src/data/handtools/tiers.json
+var tiers_default = {
+  _note: "Tool head colors per tier. Keys are tier numbers (1 = wood, 2 = stone; 0 = bare hands, nothing drawn). To add a tier, add an entry here.",
+  "1": { name: "wood", head: "#b88c54", light: "#deb87e", dark: "#805c34" },
+  "2": { name: "stone", head: "#8e9496", light: "#c0c6c6", dark: "#62686c" }
+};
+
+// src/data/handtools/axe.json
+var axe_default = {
+  name: "Axe",
+  handle: { length: 10, width: 1, color: "wood" },
+  head: [
+    { x: -1, y: 0, w: 2, h: 3, color: "dark" },
+    { x: 1, y: -1, w: 3, h: 5, color: "head" },
+    { x: 1, y: -1, w: 3, h: 1, color: "light" },
+    { x: 4, y: 0, w: 1, h: 3, color: "dark" },
+    { x: 1, y: 4, w: 2, h: 1, color: "head" }
+  ]
+};
+
+// src/data/handtools/pick.json
+var pick_default = {
+  name: "Pickaxe",
+  handle: {
+    len: 10,
+    w: 1,
+    color: "wood"
+  },
+  side: [
+    [0, -9, 1, 12, "wood"],
+    [-1, -8, 3, 3, "dark"],
+    [-2, -7, 5, 2, "head"],
+    [-2, -7, 5, 1, "light"],
+    [-4, -6, 2, 1, "head"],
+    [-6, -5, 2, 1, "dark"],
+    [3, -6, 2, 1, "head"],
+    [5, -5, 2, 1, "dark"]
+  ]
+};
+
+// src/data/handtools/hammer.json
+var hammer_default = {
+  name: "Hammer",
+  handle: {
+    length: 7,
+    width: 1,
+    color: "wood"
+  },
+  head: [
+    {
+      x: -2,
+      y: -2,
+      w: 5,
+      h: 4,
+      color: "head"
+    },
+    {
+      x: -2,
+      y: -2,
+      w: 5,
+      h: 1,
+      color: "light"
+    },
+    {
+      x: 2,
+      y: -1,
+      w: 1,
+      h: 3,
+      color: "dark"
+    }
+  ]
+};
+
+// src/data/handtools/hoe.json
+var hoe_default = {
+  name: "Hoe",
+  handle: { length: 17, width: 1, color: "wood" },
+  head: [
+    { x: 1, y: 2, w: 5, h: 2, color: "head" },
+    { x: 1, y: 2, w: 5, h: 1, color: "light" },
+    { x: 0, y: 2, w: 1, h: 2, color: "dark" }
+  ]
+};
+
+// src/data/handtools/club.json
+var club_default = {
+  name: "Club",
+  handle: { length: 8, width: 2, color: "wood" },
+  head: [
+    { x: 0, y: -4, w: 2, h: 1, color: "head" },
+    { x: -1, y: -3, w: 4, h: 6, color: "head" },
+    { x: 0, y: -4, w: 2, h: 1, color: "light" },
+    { x: -1, y: -3, w: 1, h: 3, color: "light" },
+    { x: 2, y: -3, w: 1, h: 6, color: "dark" }
+  ]
+};
+
+// src/data/handtools/spear.json
+var spear_default = {
+  name: "Spear",
+  handle: { length: 14, width: 1, color: "wood" },
+  head: [
+    { x: 0, y: -5, w: 1, h: 2, color: "head" },
+    { x: -1, y: -3, w: 3, h: 3, color: "head" },
+    { x: 0, y: -5, w: 1, h: 1, color: "light" },
+    { x: -1, y: -3, w: 1, h: 2, color: "light" },
+    { x: 1, y: -2, w: 1, h: 2, color: "dark" },
+    { x: -1, y: 0, w: 3, h: 1, color: "dark" }
+  ]
+};
+
+// src/data/handtools/mace.json
+var mace_default = {
+  name: "Mace",
+  handle: { length: 8, width: 2, color: "wood" },
+  head: [
+    { x: -2, y: -1, w: 6, h: 4, color: "head" },
+    { x: -1, y: -2, w: 4, h: 6, color: "head" },
+    { x: 0, y: -4, w: 2, h: 2, color: "head" },
+    { x: -3, y: 0, w: 1, h: 2, color: "head" },
+    { x: 4, y: 0, w: 1, h: 2, color: "head" },
+    { x: -1, y: -2, w: 4, h: 1, color: "light" },
+    { x: -2, y: -1, w: 1, h: 2, color: "light" },
+    { x: 0, y: -4, w: 1, h: 1, color: "light" },
+    { x: 3, y: -1, w: 1, h: 4, color: "dark" },
+    { x: -1, y: 3, w: 4, h: 1, color: "dark" }
+  ]
+};
+
+// src/data/handtools/hatchet.json
+var hatchet_default = {
+  name: "Hatchet",
+  handle: { length: 9, width: 1, color: "wood" },
+  head: [
+    { x: -1, y: 0, w: 2, h: 3, color: "dark" },
+    { x: 1, y: -1, w: 3, h: 4, color: "head" },
+    { x: 1, y: -1, w: 3, h: 1, color: "light" },
+    { x: 4, y: -2, w: 1, h: 6, color: "light" },
+    { x: 3, y: 1, w: 1, h: 2, color: "dark" }
+  ]
+};
+
+// src/data/handtools/sling.json
+var sling_default = {
+  name: "Sling",
+  handle: { length: 5, width: 1, color: "wood" },
+  head: [
+    { x: 0, y: -3, w: 1, h: 3, color: "dark" },
+    { x: -1, y: -4, w: 3, h: 2, color: "dark" },
+    { x: -1, y: -7, w: 3, h: 3, color: "head" },
+    { x: -1, y: -7, w: 2, h: 1, color: "light" },
+    { x: 1, y: -5, w: 1, h: 1, color: "dark" }
+  ]
+};
+
+// src/data/handtools/bow.json
+var bow_default = {
+  name: "Bow",
+  handle: { length: 5, width: 1, color: "wood" },
+  head: [
+    { x: 0, y: 1, w: 1, h: 3, color: "dark" },
+    { x: -1, y: -3, w: 1, h: 3, color: "wood" },
+    { x: -2, y: -6, w: 1, h: 3, color: "wood" },
+    { x: -1, y: 5, w: 1, h: 3, color: "wood" },
+    { x: -2, y: 8, w: 1, h: 3, color: "wood" },
+    { x: -3, y: -6, w: 1, h: 17, color: "light" }
+  ]
+};
+
+// src/data/armors/hide.json
+var hide_default = {
+  _note: "Worn armour is drawn over the body. Shapes are [x, y, w, h, color]. 'torso' is measured from the top-left of the torso (front/back: 10 wide, side: 7 wide), 'head' from the top-left of the head (front/back: 12 wide, side: 13 wide). 'wraps' are the bands on shins and forearms. Colour names: the palette below plus skin, skinD from the villager.",
+  name: "\xC1o da",
+  palette: { h: "#a8733f", hd: "#774c28", hl: "#cf9a62", st: "#43291a", bone: "#eadfc3" },
+  front: {
+    torso: [
+      [0, 0, 10, 6, "h"],
+      [0, 1, 1, 5, "hd"],
+      [9, 1, 1, 5, "hd"],
+      [1, 1, 3, 1, "hl"],
+      [6, 1, 3, 1, "hl"],
+      [3, 0, 4, 2, "skin"],
+      [4, 0, 2, 1, "skinD"],
+      [4, 2, 1, 1, "bone"],
+      [5, 3, 1, 1, "bone"],
+      [4, 4, 1, 1, "bone"],
+      [5, 5, 1, 1, "bone"],
+      [-1, -1, 3, 3, "hd"],
+      [-1, -1, 3, 1, "hl"],
+      [8, -1, 3, 3, "hd"],
+      [8, -1, 3, 1, "hl"],
+      [0, 6, 10, 1, "st"],
+      [4, 6, 2, 1, "bone"],
+      [0, 7, 2, 2, "hd"],
+      [3, 7, 2, 2, "h"],
+      [5, 7, 2, 2, "hd"],
+      [8, 7, 2, 2, "h"]
+    ],
+    head: [
+      [1, 0, 10, 3, "h"],
+      [2, 0, 4, 1, "hl"],
+      [1, 2, 10, 1, "hd"],
+      [0, 3, 12, 1, "st"],
+      [5, 3, 2, 1, "bone"]
+    ]
+  },
+  back: {
+    torso: [
+      [0, 0, 10, 6, "h"],
+      [0, 1, 1, 5, "hd"],
+      [9, 1, 1, 5, "hd"],
+      [4, 0, 2, 6, "hd"],
+      [1, 1, 2, 1, "hl"],
+      [7, 1, 2, 1, "hl"],
+      [-1, -1, 3, 3, "hd"],
+      [-1, -1, 3, 1, "hl"],
+      [8, -1, 3, 3, "hd"],
+      [8, -1, 3, 1, "hl"],
+      [0, 6, 10, 1, "st"],
+      [0, 7, 2, 2, "hd"],
+      [3, 7, 2, 2, "h"],
+      [5, 7, 2, 2, "hd"],
+      [8, 7, 2, 2, "h"]
+    ],
+    head: [
+      [1, 0, 10, 4, "h"],
+      [2, 0, 4, 1, "hl"],
+      [1, 3, 10, 1, "hd"],
+      [0, 4, 12, 1, "st"]
+    ]
+  },
+  side: {
+    torso: [
+      [0, 0, 7, 6, "h"],
+      [6, 0, 1, 6, "hd"],
+      [1, 1, 3, 1, "hl"],
+      [1, -1, 5, 3, "hd"],
+      [1, -1, 5, 1, "hl"],
+      [0, 6, 7, 1, "st"],
+      [2, 6, 2, 1, "bone"],
+      [0, 7, 2, 2, "hd"],
+      [3, 7, 2, 2, "h"],
+      [5, 7, 2, 1, "hd"]
+    ],
+    head: [
+      [0, 0, 11, 3, "h"],
+      [1, 0, 5, 1, "hl"],
+      [0, 2, 11, 1, "hd"],
+      [0, 3, 12, 1, "st"],
+      [8, 3, 2, 1, "bone"]
+    ]
+  },
+  wraps: {
+    leg: { dy: 4, w: 3, h: 2, color: "hd", edge: "st" },
+    arm: { w: 3, h: 2, color: "hd", edge: "st" }
+  }
+};
+
+// src/character/rig.js
+var handTools = { axe: axe_default, pick: pick_default, hammer: hammer_default, hoe: hoe_default, club: club_default, spear: spear_default, mace: mace_default, hatchet: hatchet_default, sling: sling_default, bow: bow_default };
+var armors = { hide: hide_default };
+var W = 40;
+var H = 48;
+var CX = 20;
+var rad = (d) => d * Math.PI / 180;
+var hexRgb = (h2) => [parseInt(h2.slice(1, 3), 16), parseInt(h2.slice(3, 5), 16), parseInt(h2.slice(5, 7), 16)];
+var mul = (c, f) => c.map((v) => Math.max(0, Math.min(255, Math.round(v * f))));
+function palette(look, kind) {
+  const skin = hexRgb(look.skin), hair = hexRgb(look.hair), hide = hexRgb(look.hide), pants = hexRgb(look.pants || "#3f63a8");
+  return {
+    skin,
+    skinD: mul(skin, 0.8),
+    cheek: [Math.min(255, skin[0] + 18), Math.round(skin[1] * 0.86), Math.round(skin[2] * 0.86)],
+    mouth: mul(skin, 0.6),
+    hair,
+    hairD: mul(hair, 0.72),
+    hairL: mul(hair, 1.45),
+    pants,
+    pantsD: mul(pants, 0.72),
+    pantsL: mul(pants, 1.25),
+    hide,
+    hideD: mul(hide, 0.7),
+    wood: [139, 94, 52],
+    woodD: [104, 70, 38],
+    woodL: [196, 160, 108],
+    cb: kind === "stone" ? [120, 126, 130] : kind === "food" ? [150, 60, 60] : [139, 94, 52],
+    cbD: kind === "stone" ? [84, 90, 94] : kind === "food" ? [96, 40, 44] : [104, 70, 38],
+    cbL: kind === "stone" ? [182, 188, 192] : kind === "food" ? [220, 110, 100] : [196, 160, 108],
+    stone: [142, 148, 150],
+    stoneD: [98, 104, 108],
+    stoneL: [192, 198, 198],
+    tw: [184, 140, 84],
+    twD: [128, 92, 52],
+    twL: [222, 184, 126],
+    eye: [30, 20, 16],
+    line: [30, 20, 16]
+  };
+}
+function put(b, x, y, c, a) {
+  x = Math.round(x);
+  y = Math.round(y);
+  if (x < 0 || y < 0 || x >= W || y >= H) return;
+  const i = (y * W + x) * 4;
+  b[i] = c[0];
+  b[i + 1] = c[1];
+  b[i + 2] = c[2];
+  b[i + 3] = a === void 0 ? 255 : a;
+}
+function rect(b, x, y, w, h2, c) {
+  for (let j = 0; j < h2; j++) for (let i = 0; i < w; i++) put(b, x + i, y + j, c);
+}
+function line(b, x0, y0, x1, y1, w, c) {
+  const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2));
+  for (let k = 0; k <= n; k++) {
+    const t = k / n, cx = x0 + (x1 - x0) * t, cy = y0 + (y1 - y0) * t;
+    rect(b, Math.round(cx - w / 2), Math.round(cy - w / 2), w, w, c);
+  }
+}
+function rotShapes(b, shapes, col, ox, oy, th) {
+  const c = Math.cos(th), s = Math.sin(th);
+  for (const [x, y, w, h2, k] of shapes) {
+    const C = col[k] || hexRgb(k);
+    if (w === 1 || h2 === 1) {
+      const horiz = w >= h2, ax = x + 0.5, ay = y + 0.5, bx = horiz ? x + w - 0.5 : ax, by = horiz ? ay : y + h2 - 0.5;
+      const X0 = Math.floor(ox + ax * c - ay * s), Y0 = Math.floor(oy + ax * s + ay * c);
+      const X12 = Math.floor(ox + bx * c - by * s), Y12 = Math.floor(oy + bx * s + by * c);
+      const n = Math.max(Math.abs(X12 - X0), Math.abs(Y12 - Y0));
+      for (let i = 0; i <= n; i++) put(b, n ? Math.round(X0 + (X12 - X0) * i / n) : X0, n ? Math.round(Y0 + (Y12 - Y0) * i / n) : Y0, C);
+      continue;
+    }
+    const xs = [], ys = [];
+    for (const [px, py] of [[x, y], [x + w, y], [x, y + h2], [x + w, y + h2]]) {
+      xs.push(ox + px * c - py * s);
+      ys.push(oy + px * s + py * c);
+    }
+    const X1 = Math.ceil(Math.max(...xs)), Y1 = Math.ceil(Math.max(...ys));
+    for (let Y = Math.floor(Math.min(...ys)); Y < Y1; Y++) for (let X = Math.floor(Math.min(...xs)); X < X1; X++) {
+      const dx = X + 0.5 - ox, dy = Y + 0.5 - oy;
+      const lx = dx * c + dy * s, ly = -dx * s + dy * c;
+      if (lx >= x && lx < x + w && ly >= y && ly < y + h2) put(b, X, Y, C);
+    }
+  }
+}
+var HM = {
+  front: [
+    "..HHHHHHHH..",
+    ".HLLLHHHHHH.",
+    "HHLLHHHHHHHH",
+    "HHHHHHHHHHHH",
+    "HHSHHHSHHSHH",
+    "HSSSSSSSSSSH",
+    "HSSESSSSESSH",
+    "sSSESSSSESSs",
+    ".ScSSSSSScS.",
+    ".SSSSmmSSSS.",
+    "..ssssssss.."
+  ],
+  back: [
+    "..HHHHHHHH..",
+    ".HLLLHHHHHH.",
+    "HHLLHHHHHHHH",
+    "HHHHHHHHHHHH",
+    "HHHHHDDHHHHH",
+    "HHHHHHDHHHHH",
+    "HHHHHHHHHHHH",
+    "HDHHHHHHHHDH",
+    ".DDDDDDDDDD.",
+    "..SSSSSSSS..",
+    "..ssssssss.."
+  ],
+  side: [
+    "..HHHHHHHH...",
+    ".HLLLHHHHHH..",
+    "HHLLHHHHHHHH.",
+    "HHHHHHHHHHHH.",
+    "HHHHHHHHHHSS.",
+    "HHHHHHSSSSSS.",
+    "HHHHHHsSSESS.",
+    "HHHHHHsSSESSS",
+    "HHHHHHSSScSS.",
+    "DDDDDDSSSSmS.",
+    ".DDDDsssss..."
+  ]
+};
+function femaleOf(view2) {
+  const m = HM[view2], out = [];
+  if (view2 === "side") {
+    m.forEach((r, i) => out.push(i < 3 ? ".." + r : "HH" + (i === 10 ? r.replace(/^\./, "H") : r)));
+    out.push(".HHHDDD........", "..HDDDD........", "...DDD.........");
+    return out;
+  }
+  m.forEach((r, i) => {
+    if (i < 3) {
+      out.push("." + r + ".");
+      return;
+    }
+    let x = r;
+    if (view2 === "front" && i >= 5) x = x.replace(/^[.sS]/, "H").replace(/[.sS]$/, "H");
+    out.push("H" + x + "H");
+  });
+  if (view2 === "front") out.push("HD..........DH", ".DD........DD.");
+  else {
+    out.splice(8, 3, "HHHHHHHHHHHHHH", "HHHHHHHHHHHHHH", "HDHHHHHHHHHHDH");
+    out.push(".DDHHHHHHHHDD.", "..DDDDDDDDDD..");
+  }
+  return out;
+}
+var HF = { front: femaleOf("front"), back: femaleOf("back"), side: femaleOf("side") };
+function drawHead(b, view2, hx, hy, P, sex) {
+  const F = sex === "f", rows = (F ? HF : HM)[view2];
+  const ox = F ? view2 === "side" ? -2 : -1 : 0;
+  const col = { H: P.hair, L: P.hairL, D: P.hairD, S: P.skin, s: P.skinD, E: P.eye, c: P.cheek, m: P.mouth };
+  rows.forEach((r, j) => {
+    for (let i = 0; i < r.length; i++) {
+      const c = col[r[i]];
+      if (c) put(b, hx + ox + i, hy + j, c);
+    }
+  });
+}
+function drawTorso(b, x, y, view2, P, sex) {
+  const F = sex === "f";
+  if (view2 === "side") {
+    rect(b, x, y, 7, 6, P.skin);
+    rect(b, x + 6, y, 1, 6, P.skinD);
+    if (F) rect(b, x, y, 7, 3, P.hide);
+    else for (let i = 0; i < 6; i++) rect(b, x + i, y + i, 2, 1, P.hide);
+    rect(b, x, y + 6, 7, 1, P.hideD);
+    rect(b, x, y + 7, 7, 3, P.pants);
+    rect(b, x, y + 10, 7, 1, P.pantsD);
+    rect(b, x, y + 7, 1, 3, P.pantsL);
+    return;
+  }
+  const front = view2 === "front";
+  rect(b, x, y, 10, 6, P.skin);
+  rect(b, x, y + 1, 1, 5, P.skinD);
+  rect(b, x + 9, y + 1, 1, 5, P.skinD);
+  if (F) {
+    rect(b, x, y, 10, 3, P.hide);
+    rect(b, x, y + 3, 10, 1, P.hideD);
+  } else for (let i = 0; i < 6; i++) rect(b, front ? x + i : x + 8 - i, y + i, 2, 1, P.hide);
+  rect(b, x, y + 6, 10, 1, P.hideD);
+  rect(b, x, y + 7, 10, 3, P.pants);
+  rect(b, x, y + 10, 10, 1, P.pantsD);
+  rect(b, x + 1, y + 7, 2, 2, P.pantsL);
+  rect(b, x + 4, y + 8, 2, 3, P.pantsD);
+}
+function rectOf(r) {
+  return Array.isArray(r) ? r : [r.x, r.y, r.w, r.h, r.color];
+}
+function rects(list) {
+  return list.map(rectOf);
+}
+function gripShapes(def) {
+  if (!Array.isArray(def.head)) return rects(def.side || []);
+  const hd = def.handle || {}, len = hd.length === void 0 ? 10 : hd.length, w = hd.width || 1;
+  return [[-Math.floor((w - 1) / 2), -len, w, len, hd.color || "wood"], ...rects(def.head).map(([x, y, rw, rh, c]) => [x, y - len, rw, rh, c])];
+}
+var lastAnchor = null;
+function drawTool(b, side, hx, hy, tool, ov, P) {
+  if (!side) return;
+  const tier = ov && ov.tier !== void 0 ? ov.tier : 2;
+  if (tier <= 0) return;
+  lastAnchor = [Math.round(hx), Math.round(hy)];
+  const kind = ov && ov.kind || tool.kind || "axe";
+  const def = handTools[kind] || handTools.axe;
+  const T = tiers_default[tier] || tiers_default[Math.max(...Object.keys(tiers_default).map(Number).filter((n) => n > 0))];
+  const col = { head: hexRgb(T.head), light: hexRgb(T.light), dark: hexRgb(T.dark), wood: P.wood };
+  const gx = Math.round(hx), gy = Math.round(hy);
+  const pose = tool.pose && def.poses && def.poses[tool.pose];
+  if (pose) {
+    for (const [x, y, w, h2, c] of rects(pose)) rect(b, gx + x, gy + y, w, h2, col[c] || hexRgb(c));
+    return;
+  }
+  const own = (tool.side || tool.shapes) && rects(tool.side || tool.shapes);
+  if (own) for (const [x, y, w, h2, c] of own) rect(b, gx + x, gy + y, w, h2, col[c] || hexRgb(c));
+  else rotShapes(b, gripShapes(def), col, gx, gy, rad(180 - (tool.a || 0)));
+}
+function armorColors(def, P) {
+  const c = { skin: P.skin, skinD: P.skinD };
+  for (const [k, v] of Object.entries(def.palette || {})) c[k] = hexRgb(v);
+  return c;
+}
+function drawArmorLayer(b, def, C, view2, layer, ox, oy) {
+  const shapes = def[view2] && def[view2][layer];
+  if (!shapes) return;
+  for (const [x, y, w, h2, k] of rects(shapes)) rect(b, ox + x, oy + y, w, h2, C[k] || hexRgb(k));
+}
+function drawWrap(b, wr, C, x, y) {
+  if (!wr) return;
+  const w = wr.w || 3, h2 = wr.h || 2, x0 = Math.round(x - w / 2), y0 = Math.round(y);
+  rect(b, x0, y0, w, h2, C[wr.color] || hexRgb(wr.color));
+  if (wr.edge) rect(b, x0, y0, w, 1, C[wr.edge] || hexRgb(wr.edge));
+}
+function drawTorch(b, hx, hy, flick) {
+  const x = Math.round(hx), y = Math.round(hy);
+  const wood = [120, 84, 46, 255], bind = [214, 190, 130, 255], coal = [60, 36, 24, 255];
+  const flameD = [214, 72, 24, 255], flame = [248, 150, 40, 255], core = [255, 232, 140, 255];
+  rect(b, x, y - 6, 1, 7, wood);
+  rect(b, x - 1, y - 8, 3, 3, coal);
+  rect(b, x - 1, y - 6, 3, 1, bind);
+  const sway = [0, 1, -1][flick % 3], tall = [3, 4, 3][flick % 3];
+  rect(b, x - 1 + sway, y - 11 - tall + 3, 3, tall, flameD);
+  rect(b, x + sway, y - 11 - tall + 4, 1, tall - 1, flame);
+  put(b, x + sway, y - 9 - tall + 4, core);
+  if (flick % 3 === 1) put(b, x - 2, y - 12, [255, 208, 112, 200]);
+}
+function drawCharacter(b, view2, f, P, sex, ov, armorId, extra) {
+  const AD = armorId && armors[armorId], AC = AD ? armorColors(AD, P) : null;
+  const side = view2 === "side", back = view2 === "back", front = view2 === "front";
+  const bob = f.bob || 0, lean = f.lean || 0;
+  const tool = f.tool && f.tool.on ? f.tool : null;
+  const carry = f.carry && f.carry.on ? f.carry : null;
+  const hold = !!(tool || carry);
+  const tDx = side ? Math.trunc(lean / 2) : 0, hDx = side ? lean : 0;
+  const hipY = 35 + bob, shY = 27 + bob, TY = 25 + bob, HY = 14 + bob;
+  const gl = (o, k, d) => o && typeof o[k] === "number" ? o[k] : d;
+  const leg = (L, hx, col) => {
+    const a = rad(gl(L, "a", 0));
+    const fx = side ? hx + 7 * Math.sin(a) : hx;
+    const fy = 42 - gl(L, "lift", 0) - 7 * (1 - Math.cos(a));
+    line(b, hx, hipY, fx, fy, 3, col);
+    rect(b, Math.round(fx) - 1, Math.round(fy) + 1, 3, 1, P.skinD);
+    if (AD && col !== P.skinD) drawWrap(b, AD.wraps && AD.wraps.leg, AC, (hx + fx) / 2, fy - gl(AD.wraps && AD.wraps.leg, "dy", 4));
+  };
+  const armPts = (A, sx) => {
+    const a1 = gl(A, "a", 0), a2 = a1 + gl(A, "b", 0), L = 3.5;
+    if (side) {
+      const ex = sx + L * Math.sin(rad(a1)), ey2 = shY + L * Math.cos(rad(a1));
+      return { sx, ex, ey: ey2, hx: ex + L * Math.sin(rad(a2)), hy: ey2 + L * Math.cos(rad(a2)) };
+    }
+    const k = hold && !back ? 0.55 : 0;
+    const ey = shY + L * Math.cos(rad(a1));
+    return { sx, ex: sx + (CX - sx) * k * 0.4, ey, hx: sx + (CX - sx) * k, hy: ey + L * Math.cos(rad(a2)) };
+  };
+  const arm = (p, col) => {
+    line(b, p.sx, shY, p.ex, p.ey, 3, col);
+    line(b, p.ex, p.ey, p.hx, p.hy, 3, col);
+    if (AD) drawWrap(b, AD.wraps && AD.wraps.arm, AC, (p.ex + p.hx) / 2, (p.ey + p.hy) / 2 - 1);
+  };
+  const axe = (hx, hy) => drawTool(b, side, hx, hy, tool, ov, P);
+  const bundle = () => {
+    const dy = gl(carry, "dy", 0) + bob;
+    if (side) {
+      const x = CX + 2 + tDx, y = 28 + dy;
+      rect(b, x, y, 7, 6, P.cb);
+      rect(b, x, y + 5, 7, 1, P.cbD);
+      [[1, 1], [3, 1], [5, 1], [2, 3], [4, 3]].forEach(([i, j]) => put(b, x + i, y + j, P.cbL));
+    } else if (!back) {
+      const x = CX - 7, y = 28 + dy;
+      rect(b, x, y, 14, 2, P.cb);
+      rect(b, x, y + 2, 14, 2, P.cbD);
+      rect(b, x + 1, y + 4, 12, 2, P.cb);
+      rect(b, x, y, 1, 2, P.cbL);
+      rect(b, x + 13, y + 2, 1, 2, P.cbL);
+      rect(b, x + 1, y + 4, 1, 2, P.cbL);
+    } else {
+      rect(b, CX - 8, 29 + bob, 1, 3, P.cbL);
+      rect(b, CX + 7, 29 + bob, 1, 3, P.cbL);
+    }
+  };
+  if (side) {
+    const hx0 = CX + 0.5;
+    const pL2 = armPts(f.armL, hx0 + tDx), pR2 = armPts(f.armR, hx0 + tDx);
+    arm(pL2, P.skinD);
+    leg(f.legL, hx0, P.skinD);
+    leg(f.legR, hx0, P.skin);
+    drawTorso(b, CX - 3 + tDx, TY, "side", P, sex);
+    if (AD) drawArmorLayer(b, AD, AC, "side", "torso", CX - 3 + tDx, TY);
+    drawHead(b, "side", CX - 6 + hDx, HY, P, sex);
+    if (AD) drawArmorLayer(b, AD, AC, "side", "head", CX - 6 + hDx, HY);
+    if (carry) bundle();
+    arm(pR2, P.skin);
+    if (tool) axe(pR2.hx, pR2.hy);
+    if (extra && extra.torch !== void 0) drawTorch(b, pL2.hx, pL2.hy, extra.torch);
+    return;
+  }
+  const pR = armPts(f.armR, front ? CX - 5.5 : CX + 5.5);
+  const pL = armPts(f.armL, front ? CX + 5.5 : CX - 5.5);
+  leg(f.legR, front ? CX - 2.5 : CX + 2.5, P.skin);
+  leg(f.legL, front ? CX + 2.5 : CX - 2.5, P.skin);
+  if (!hold || back) {
+    arm(pR, P.skin);
+    arm(pL, P.skin);
+  }
+  drawTorso(b, CX - 5, TY, view2, P, sex);
+  if (AD) drawArmorLayer(b, AD, AC, view2, "torso", CX - 5, TY);
+  drawHead(b, view2, CX - 6, HY, P, sex);
+  if (AD) drawArmorLayer(b, AD, AC, view2, "head", CX - 6, HY);
+  if (hold) {
+    if (carry) bundle();
+    if (!back) {
+      arm(pR, P.skin);
+      arm(pL, P.skin);
+    }
+  }
+  if (extra && extra.torch !== void 0) drawTorch(b, pL.hx + (front ? 1 : -1), pL.hy, extra.torch);
+}
+function outline(b, c) {
+  const o = new Uint8ClampedArray(b);
+  const N = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4;
+    if (b[i + 3]) continue;
+    const touch = N.some(([dx, dy]) => {
+      const xx = x + dx, yy = y + dy;
+      return xx >= 0 && yy >= 0 && xx < W && yy < H && b[(yy * W + xx) * 4 + 3] > 0;
+    });
+    if (touch) {
+      o[i] = c[0];
+      o[i + 1] = c[1];
+      o[i + 2] = c[2];
+      o[i + 3] = 255;
+    }
+  }
+  return o;
+}
+function shadow(b, dx) {
+  [[43, -7, 14], [44, -7, 14], [45, -5, 10]].forEach(([y, x0, n]) => {
+    for (let i = 0; i < n; i++) {
+      const x = CX + dx + x0 + i, k = (y * W + x) * 4;
+      if (x >= 0 && x < W && !b[k + 3]) {
+        b[k] = 0;
+        b[k + 1] = 0;
+        b[k + 2] = 0;
+        b[k + 3] = 70;
+      }
+    }
+  });
+}
+function flipH(b) {
+  const o = new Uint8ClampedArray(b.length);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const s = (y * W + x) * 4, d = (y * W + (W - 1 - x)) * 4;
+    o[d] = b[s];
+    o[d + 1] = b[s + 1];
+    o[d + 2] = b[s + 2];
+    o[d + 3] = b[s + 3];
+  }
+  return o;
+}
+function renderFrame(anims2, name, idx, view2, look, kind, toolOv, armorId, extra) {
+  lastAnchor = null;
+  const an = anims2[name];
+  const f = an.frames[(idx % an.frames.length + an.frames.length) % an.frames.length];
+  const P = palette(look, kind);
+  const b = new Uint8ClampedArray(W * H * 4);
+  const v = view2 === "left" || view2 === "right" ? "side" : view2;
+  drawCharacter(b, v, f, P, look.sex, toolOv, armorId, extra);
+  const o = outline(b, P.line);
+  shadow(o, v === "side" ? 1 : 0);
+  return view2 === "left" ? flipH(o) : o;
+}
+
+// src/character/animal-rig.js
+var rad2 = (d) => d * Math.PI / 180;
+var hex = (h2) => [parseInt(h2.slice(1, 3), 16), parseInt(h2.slice(3, 5), 16), parseInt(h2.slice(5, 7), 16), 255];
+var shade = (c, k) => [Math.round(c[0] * k), Math.round(c[1] * k), Math.round(c[2] * k), 255];
+var num = (o, k, d) => o && typeof o[k] === "number" ? o[k] : d;
+function buf(w, h2) {
+  return { w, h: h2, d: new Uint8ClampedArray(w * h2 * 4) };
+}
+function put2(b, x, y, c) {
+  x = Math.round(x);
+  y = Math.round(y);
+  if (x < 0 || y < 0 || x >= b.w || y >= b.h) return;
+  const i = (y * b.w + x) * 4;
+  b.d[i] = c[0];
+  b.d[i + 1] = c[1];
+  b.d[i + 2] = c[2];
+  b.d[i + 3] = c[3];
+}
+function rect2(b, x, y, w, h2, c) {
+  for (let j = 0; j < h2; j++) for (let i = 0; i < w; i++) put2(b, x + i, y + j, c);
+}
+function ell(b, cx, cy, rx, ry, c) {
+  rx = Math.max(0.5, rx);
+  ry = Math.max(0.5, ry);
+  for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+    const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
+    if (dx * dx + dy * dy <= 1) put2(b, x, y, c);
+  }
+}
+function line2(b, x0, y0, x1, y1, w, c) {
+  const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2)), o = Math.floor(w / 2);
+  for (let k = 0; k <= n; k++) {
+    const x = Math.round(x0 + (x1 - x0) * k / n), y = Math.round(y0 + (y1 - y0) * k / n);
+    for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) put2(b, x - o + i, y - o + j, c);
+  }
+}
+function poly(b, pts, c) {
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (const [x, y] of pts) {
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    y0 = Math.min(y0, y);
+    y1 = Math.max(y1, y);
+  }
+  for (let y = Math.floor(y0); y <= Math.ceil(y1); y++) for (let x = Math.floor(x0); x <= Math.ceil(x1); x++) {
+    let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const [xi, yi] = pts[i], [xj, yj] = pts[j], px = x + 0.5, py = y + 0.5;
+      if (yi > py !== yj > py && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    if (inside) put2(b, x, y, c);
+  }
+}
+function outline2(b, c) {
+  const snap = new Uint8ClampedArray(b.d);
+  for (let y = 0; y < b.h; y++) for (let x = 0; x < b.w; x++) {
+    if (snap[(y * b.w + x) * 4 + 3]) continue;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy;
+      if (nx >= 0 && ny >= 0 && nx < b.w && ny < b.h && snap[(ny * b.w + nx) * 4 + 3]) {
+        put2(b, x, y, c);
+        break;
+      }
+    }
+  }
+}
+function flipY(b) {
+  const o = new Uint8ClampedArray(b.d);
+  for (let y = 0; y < b.h; y++) b.d.set(o.subarray((b.h - 1 - y) * b.w * 4, (b.h - y) * b.w * 4), y * b.w * 4);
+}
+function colors(def) {
+  const P = def.palette, base = hex(P.base);
+  return { base, light: hex(P.light), dark: hex(P.dark), acc: hex(P.accent), eye: hex(P.eye), far: shade(base, 0.72), rim: shade(hex(P.dark), 0.5), beak: P.beak ? hex(P.beak) : hex(P.accent) };
+}
+function quadruped(b, def, f) {
+  const S = def.shape, C = colors(def), has = (n) => S.feature === n || Array.isArray(S.features) && S.features.includes(n), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
+  const legL = Math.max(2, S.legL * (1 - lay * 0.75)), bodyH = S.bodyH * (1 - 0.18 * side);
+  const rise = num(f, "rise", 0), bob = num(f, "bob", 0);
+  const cx = b.w / 2 - 4, cy = gy - legL - bodyH / 2 + 1 + bob + lay * 1.5;
+  const hipX = cx - S.bodyL / 2 + 3, shX = cx + S.bodyL / 2 - 3, jy = cy + bodyH / 2 - 1;
+  const leg = (x, p, col, w) => {
+    const a = num(p, "a", 0), lift = num(p, "lift", 0);
+    const fx = x + Math.sin(rad2(a)) * legL, fy = Math.min(gy, jy + Math.cos(rad2(a)) * legL - lift);
+    line2(b, x, jy, fx, fy, w, col);
+    put2(b, fx, fy, C.dark);
+    put2(b, fx + (a > 0 ? 1 : 0), fy, C.dark);
+  };
+  const thick = S.legL > 10 ? 2 : 2;
+  leg(hipX - 1, f.br, C.far, thick);
+  leg(shX - 1, f.fr, C.far, thick);
+  for (let i = 0; i <= 4; i++) {
+    const t = i / 4;
+    ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t, S.bodyL / 4 + 1.5, bodyH / 2, C.base);
+  }
+  for (let i = 0; i <= 4; i++) {
+    const t = i / 4;
+    ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t + bodyH * 0.22, S.bodyL / 4 + 0.5, bodyH * 0.27, C.light);
+  }
+  for (let i = 0; i <= 4; i++) {
+    const t = i / 4;
+    ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t - bodyH * 0.32, S.bodyL / 4 + 1, bodyH * 0.2, C.dark);
+  }
+  if (has("antlers")) for (const [dx, dy2] of [[-4, -1], [0, -2], [4, -1], [-2, 1], [2, 1]]) put2(b, cx + dx, cy - bodyH * 0.2 + dy2, C.light);
+  if (has("tusks")) for (let i = 0; i < S.bodyL - 4; i += 2) put2(b, cx - S.bodyL / 2 + 3 + i, cy - bodyH / 2 - 1 - rise * (i / S.bodyL), C.dark);
+  if (has("bear")) ell(b, shX - 1, cy - bodyH / 2 - rise, 4, 3, C.base);
+  if (has("shaggy")) for (let i = 0; i < S.bodyL - 2; i += 2) {
+    const sx2 = cx - S.bodyL / 2 + 2 + i;
+    line2(b, sx2, cy + bodyH / 2 - 2, sx2 - 1, cy + bodyH / 2 + 3, 1, C.dark);
+  }
+  leg(hipX + 1, f.bl, C.base, thick);
+  leg(shX + 1, f.fl, C.base, thick);
+  const sx = shX + 1, sy = cy - bodyH / 2 + 2 - rise, ang = rad2(num(f.head, "a", S.neckA)), dy = num(f.head, "dy", 0);
+  const hx = sx + Math.cos(ang) * S.neck, hy = sy - Math.sin(ang) * S.neck + dy;
+  line2(b, sx, sy, hx, hy, Math.max(2, Math.round(bodyH * 0.45)), C.base);
+  if (has("mane")) ell(b, hx - 2, hy + 1, S.headR + 3, S.headR + 3, C.dark);
+  if (has("trunk")) ell(b, hx - 1, hy - S.headR * 0.6, S.headR * 0.9, S.headR * 0.8, C.base);
+  ell(b, hx, hy, S.headR * 1.1, S.headR, C.base);
+  const open = num(f, "mouth", 0) > 0.5;
+  ell(b, hx + S.headR + S.snout / 2 - 1, hy + 1 - (open ? 1 : 0), S.snout / 2 + 1, S.headR * 0.55, C.light);
+  const nx = hx + S.headR + S.snout - 1;
+  put2(b, nx, hy + (open ? 0 : 1), C.dark);
+  if (open) {
+    rect2(b, hx + 1, hy + 1, S.snout + 2, 2, C.rim);
+    put2(b, hx + S.headR + 1, hy + 1, C.acc);
+    put2(b, hx + S.headR + 3, hy + 1, C.acc);
+  }
+  if (has("tusks")) {
+    put2(b, nx - 1, hy + 2, C.acc);
+    put2(b, nx - 1, hy + 1, C.acc);
+  }
+  const asleep = lay > 0.5;
+  if (asleep) put2(b, hx + 1, hy - 1, C.dark);
+  else put2(b, hx + 1, hy - 1, C.eye);
+  const earL = S.ear || 3;
+  if (has("bear")) ell(b, hx - 2, hy - S.headR + 1, 1.8, 1.8, C.dark);
+  else poly(b, [[hx - 2, hy - S.headR + 1], [hx - 3 - (asleep ? 2 : 0), hy - S.headR - earL + (asleep ? 3 : 0)], [hx, hy - S.headR]], C.dark);
+  if (has("antlers")) {
+    const t = hy - S.headR;
+    line2(b, hx, t, hx - 3, t - 7, 1, C.acc);
+    line2(b, hx - 1, t - 3, hx + 2, t - 6, 1, C.acc);
+    line2(b, hx - 2, t - 5, hx - 5, t - 8, 1, C.acc);
+  }
+  if (has("horns")) {
+    const t = hy - S.headR, h2 = S.horn || 5, back = !!S.hornBack;
+    for (const dx of [-1, 1]) {
+      const bx = hx + dx, tipx = back ? bx - h2 * 0.8 : bx + (dx > 0 ? 3 : -1), tipy = t - h2 * (back ? 0.9 : 0.8);
+      line2(b, bx, t, tipx, tipy, 1, C.acc);
+      put2(b, tipx, tipy - 1, C.acc);
+    }
+  }
+  if (has("palmate")) {
+    const t = hy - S.headR;
+    for (const side2 of [-1, 1]) {
+      const bx = hx + side2 * 2;
+      line2(b, bx, t, bx + side2 * 4, t - 5, 1, C.acc);
+      for (let k = 0; k < 4; k++) line2(b, bx + side2 * (3 + k), t - 4 - k % 2, bx + side2 * (4 + k), t - 8 - k, 1, C.acc);
+    }
+  }
+  if (has("trunk")) {
+    const tl2 = S.trunk || 12, sway = num(f, "bob", 0);
+    line2(b, hx + S.headR - 1, hy + 1, hx + S.headR + 1 + sway, hy + tl2 * 0.7, 3, C.base);
+    line2(b, hx + S.headR + 1 + sway, hy + tl2 * 0.7, hx + S.headR + 3 + sway, hy + tl2, 2, C.base);
+    line2(b, hx + S.headR - 2, hy + 2, hx + S.headR + 5, hy + 8, 2, C.acc);
+    put2(b, hx + S.headR + 6, hy + 7, C.acc);
+  }
+  const tb = [cx - S.bodyL / 2 - 1, cy - bodyH * 0.25], ta = rad2(num(f.tail !== void 0 ? { a: f.tail } : null, "a", 15)), tl = S.tail;
+  const tx = tb[0] - Math.cos(ta) * tl, ty = tb[1] - Math.sin(ta) * tl;
+  line2(b, tb[0], tb[1], tx, ty, has("bushy") ? 3 : 2, C.base);
+  if (has("bushy")) ell(b, tx, ty, 2, 2, C.dark);
+  outline2(b, C.rim);
+}
+function hopper(b, def, f) {
+  const S = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
+  const lift = num(f, "lift", 0), stretch = num(f, "stretch", 0), crouch = num(f, "crouch", 0);
+  const bodyH = S.bodyH - crouch * 0.6 - side * 1.5, L = S.bodyL + stretch, cx = b.w / 2 - 2;
+  const cy = gy - bodyH / 2 - 2 - lift + lay * 1.5, hind0 = cx - L / 2 + 2, jy = cy + bodyH / 2 - 1;
+  const ha = rad2(num(f.hind, "a", 0)), hl = S.legL * 1.4;
+  const fx = hind0 + Math.sin(ha) * hl, fy = Math.min(gy, jy + Math.cos(ha) * S.legL);
+  line2(b, hind0, jy, fx, fy, 2, C.far);
+  rect2(b, Math.round(fx), Math.round(fy), 3, 1, C.dark);
+  ell(b, cx, cy, L / 2, bodyH / 2, C.base);
+  ell(b, cx + 1, cy + bodyH * 0.25, L / 2 - 1, bodyH * 0.27, C.light);
+  ell(b, hind0 + 1, cy + 1, 3.5, bodyH / 2, C.base);
+  const fa = rad2(num(f.fore, "a", 0)), fl = S.legL * 0.8, fx0 = cx + L / 2 - 1;
+  line2(b, fx0, jy, fx0 + Math.sin(fa) * fl, Math.min(gy, jy + Math.cos(fa) * fl), 1, C.base);
+  const hx = cx + L / 2 + 1, hy = cy - 1 + num(f, "headDy", 0) + lay;
+  ell(b, hx, hy, S.headR, S.headR * 0.9, C.base);
+  ell(b, hx + S.headR - 1, hy + 1, 1.8, 1.2, C.light);
+  put2(b, hx + S.headR + 1, hy + 1, C.dark);
+  if (num(f, "mouth", 0) > 0.5) {
+    put2(b, hx + S.headR, hy + 2, C.rim);
+    put2(b, hx + S.headR - 1, hy + 2, C.acc);
+  }
+  put2(b, hx + 1, hy - 1, lay > 0.5 ? C.dark : C.eye);
+  const e = rad2(num(f, "ear", 10)), el2 = S.ear;
+  for (const ox of [-1, 1]) {
+    const bx = hx - 1 + ox, by = hy - S.headR + 1, tx = bx - Math.sin(e) * el2 - ox * 0.5, ty = by - Math.cos(e) * el2;
+    line2(b, bx, by, tx, ty, 2, C.base);
+    line2(b, bx, by - 1, tx, ty + 1, 1, C.light);
+  }
+  ell(b, hind0 - 2, cy, 1.8, 1.8, C.acc);
+  outline2(b, C.rim);
+}
+function biped(b, def, f) {
+  const S = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
+  const legL = Math.max(2, S.legL * (1 - lay * 0.7)), bodyH = S.bodyH - side * 2, bob = num(f, "bob", 0);
+  const cx = b.w / 2 - 2, cy = gy - legL - bodyH / 2 + bob + lay;
+  const leg = (x, p, col) => {
+    const a = num(p, "a", 0), lift = num(p, "lift", 0), jy = cy + bodyH / 2 - 1;
+    const fx = x + Math.sin(rad2(a)) * legL, fy = Math.min(gy, jy + Math.cos(rad2(a)) * legL - lift);
+    line2(b, x, jy, fx, fy, 1, col);
+    rect2(b, Math.round(fx), Math.round(fy), 3, 1, col);
+  };
+  leg(cx - 1, f.r, shade(C.beak, 0.7));
+  ell(b, cx - 2, cy + 1, S.bodyL / 2 - 1, bodyH / 2, C.base);
+  ell(b, cx + 1, cy, S.bodyL / 2 - 1, bodyH / 2, C.base);
+  ell(b, cx, cy + bodyH * 0.25, S.bodyL / 2 - 2, bodyH * 0.27, C.light);
+  const ta = num(f, "tail", 0);
+  for (const base of [35, 55, 75]) {
+    const a = rad2(base + ta);
+    line2(b, cx - S.bodyL / 2 + 1, cy - 1, cx - S.bodyL / 2 + 1 - Math.cos(a) * S.tail, cy - 1 - Math.sin(a) * S.tail, 1, base === 55 ? C.dark : C.base);
+  }
+  const flap = num(f, "wing", 0);
+  ell(b, cx - 1, cy, 3.5, 2.5, C.dark);
+  if (flap > 25) line2(b, cx - 1, cy - 1, cx - 2 - flap / 14, cy - 2 - flap / 10, 2, C.dark);
+  leg(cx + 1, f.l, C.beak);
+  const nx = cx + S.bodyL / 2 - 2, ny = cy - bodyH / 2 + 2, nk = f.neck || {};
+  const hx = nx + 2 + num(nk, "dx", 0), hy = ny - S.neck * 0.8 + num(nk, "dy", 0) + num(f, "headDy", 0) + lay * 2;
+  line2(b, nx, ny, hx, hy, 2, C.base);
+  ell(b, hx, hy, S.headR + 0.5, S.headR, C.base);
+  const open = num(f, "mouth", 0) > 0.5;
+  poly(b, [[hx + S.headR, hy - 1], [hx + S.headR + 3, hy + (open ? -1 : 0)], [hx + S.headR, hy + 1]], C.beak);
+  if (open) put2(b, hx + S.headR + 1, hy + 1, C.rim);
+  put2(b, hx, hy - 1, lay > 0.5 ? C.dark : C.eye);
+  rect2(b, hx - 1, hy - S.headR - 1, 2, 2, C.acc);
+  put2(b, hx + S.headR, hy + 2, C.acc);
+  outline2(b, C.rim);
+}
+function fish(b, def, f) {
+  const S = def.shape, C = colors(def), flip = num(f, "flip", 0) >= 0.5;
+  const bend = num(f, "bend", 0), fin = num(f, "fin", 0), cx = b.w / 2 + 2, cy = b.h / 2 + num(f, "bob", 0) - (flip ? 1 : 0);
+  const rx = cx - S.bodyL / 2, ry = cy + bend * 0.4, T = S.tail + fin;
+  poly(b, [[rx - T, ry - 3 + bend * 0.5], [rx, ry], [rx - T, ry + 3 + bend * 0.5]], C.acc);
+  poly(b, [[cx + S.bodyL / 2, cy], [cx + 3, cy - S.bodyH / 2], [cx - 3, cy - S.bodyH / 3 + bend * 0.15], [rx, ry - 1], [rx, ry + 1], [cx - 3, cy + S.bodyH / 3 + bend * 0.15], [cx + 3, cy + S.bodyH / 2]], C.base);
+  poly(b, [[cx + S.bodyL / 2 - 1, cy + 1], [cx - 3, cy + 1 + bend * 0.1], [cx - 3, cy + S.bodyH / 3 + bend * 0.15], [cx + 3, cy + S.bodyH / 2 - 1]], C.light);
+  poly(b, [[cx - 1, cy - S.bodyH / 2 + 1], [cx + 2, cy - S.bodyH / 2 - 2], [cx + 3, cy - S.bodyH / 2 + 1]], C.acc);
+  poly(b, [[cx + 1, cy + S.bodyH / 3], [cx - 1, cy + S.bodyH / 3 + 2], [cx + 2, cy + S.bodyH / 3 + 1]], C.acc);
+  for (let i = 0; i < 4; i++) put2(b, cx - 2 + i * 2, cy - 1 + i % 2 * 2, C.dark);
+  put2(b, cx + S.bodyL / 2 - 3, cy - 1, flip ? C.dark : C.eye);
+  if (num(f, "mouth", 0) > 0.5) put2(b, cx + S.bodyL / 2, cy, C.rim);
+  outline2(b, C.rim);
+  if (flip) flipY(b);
+}
+var DRAW = { quadruped, hopper, biped, fish };
+function renderAnimal(def, clip, frameIdx) {
+  const b = buf(def.size[0], def.size[1]);
+  const frames = clip.frames, f = frames[Math.max(0, Math.min(frames.length - 1, frameIdx))] || {};
+  (DRAW[def.body] || quadruped)(b, def, f);
+  return { w: b.w, h: b.h, data: b.d };
+}
+
+// src/data/animals/bodies.json
+var bodies_default = {
+  _note: "Art of each species. 'body' picks the animation set in animals/anims/<body>.json. Sizes are pixels; sprites face right and are mirrored for left. shape numbers are pixels, palette colors are hex.",
+  rabbit: {
+    name: "Th\u1ECF",
+    body: "hopper",
+    size: [22, 18],
+    palette: { base: "#b5a58c", light: "#e8e0d0", dark: "#7a6a55", accent: "#ffffff", eye: "#2a1c14" },
+    shape: { bodyL: 9, bodyH: 7, legL: 5, headR: 3, ear: 7 }
+  },
+  fowl: {
+    name: "G\xE0 r\u1EEBng",
+    body: "biped",
+    size: [20, 22],
+    palette: { base: "#a0603a", light: "#d49a5a", dark: "#6a3a20", accent: "#c8283a", beak: "#e0b040", eye: "#1a1210" },
+    shape: { bodyL: 10, bodyH: 8, legL: 6, neck: 5, headR: 2, tail: 6 }
+  },
+  deer: {
+    name: "H\u01B0\u01A1u",
+    body: "quadruped",
+    size: [48, 42],
+    palette: { base: "#a8743c", light: "#e8d4a8", dark: "#6a4420", accent: "#d8c8a0", eye: "#1a1210" },
+    shape: { bodyL: 20, bodyH: 9, legL: 14, neck: 11, neckA: 55, headR: 3.5, snout: 4, tail: 3, feature: "antlers", ear: 4 }
+  },
+  boar: {
+    name: "L\u1EE3n r\u1EEBng",
+    body: "quadruped",
+    size: [40, 26],
+    palette: { base: "#5a4a3c", light: "#8a7660", dark: "#342a22", accent: "#f0e8d0", eye: "#1a1210" },
+    shape: { bodyL: 18, bodyH: 11, legL: 6, neck: 5, neckA: 8, headR: 4, snout: 5, tail: 3, feature: "tusks", ear: 3 }
+  },
+  wolf: {
+    name: "S\xF3i",
+    body: "quadruped",
+    size: [40, 28],
+    palette: { base: "#7a7a80", light: "#b8b8bc", dark: "#4a4a50", accent: "#f4f4f4", eye: "#e0b030" },
+    shape: { bodyL: 17, bodyH: 8, legL: 9, neck: 6, neckA: 30, headR: 3.5, snout: 5, tail: 8, feature: "bushy", ear: 4 }
+  },
+  fish: {
+    name: "C\xE1",
+    body: "fish",
+    size: [22, 12],
+    palette: { base: "#6a9aaa", light: "#c8dce0", dark: "#3a6070", accent: "#e8b040", eye: "#101820" },
+    shape: { bodyL: 12, bodyH: 6, tail: 5 }
+  },
+  aurochs: {
+    name: "B\xF2 r\u1EEBng",
+    body: "quadruped",
+    size: [54, 38],
+    palette: { base: "#4a3a2c", light: "#8a7458", dark: "#2c2118", accent: "#efe6cc", eye: "#1a1210" },
+    shape: { bodyL: 24, bodyH: 12, legL: 9, neck: 7, neckA: 20, headR: 4.5, snout: 4, tail: 5, feature: "horns", horn: 5, ear: 3 }
+  },
+  duck: {
+    name: "V\u1ECBt tr\u1EDDi",
+    body: "biped",
+    size: [20, 18],
+    palette: { base: "#8a7a5a", light: "#c8b890", dark: "#5a4a30", accent: "#2a7a5a", beak: "#e0a830", eye: "#1a1210" },
+    shape: { bodyL: 10, bodyH: 7, legL: 4, neck: 4, headR: 2, tail: 3 }
+  },
+  fox: {
+    name: "C\xE1o",
+    body: "quadruped",
+    size: [36, 22],
+    palette: { base: "#b8662a", light: "#f0e4d0", dark: "#6a3a18", accent: "#fafafa", eye: "#1a1210" },
+    shape: { bodyL: 12, bodyH: 6, legL: 6, neck: 4, neckA: 20, headR: 3, snout: 3, tail: 9, feature: "bushy", ear: 4 }
+  },
+  ibex: {
+    name: "D\xEA n\xFAi",
+    body: "quadruped",
+    size: [42, 38],
+    palette: { base: "#8a7a62", light: "#c8baa0", dark: "#544838", accent: "#d8cdb0", eye: "#1a1210" },
+    shape: { bodyL: 16, bodyH: 8, legL: 11, neck: 7, neckA: 45, headR: 3, snout: 3, tail: 2, feature: "horns", horn: 8, hornBack: true, ear: 3 }
+  },
+  elk: {
+    name: "Nai s\u1EEBng t\u1EA5m",
+    body: "quadruped",
+    size: [58, 56],
+    palette: { base: "#5e4430", light: "#94785a", dark: "#3a2a1c", accent: "#d8c8a0", eye: "#1a1210" },
+    shape: { bodyL: 22, bodyH: 11, legL: 18, neck: 12, neckA: 50, headR: 4.5, snout: 5, tail: 3, feature: "palmate", ear: 4 }
+  },
+  bear: {
+    name: "G\u1EA5u n\xE2u",
+    body: "quadruped",
+    size: [52, 36],
+    palette: { base: "#5a3e2a", light: "#80593c", dark: "#34221a", accent: "#e8d8b8", eye: "#1a1210" },
+    shape: { bodyL: 22, bodyH: 14, legL: 8, neck: 6, neckA: 10, headR: 5, snout: 4, tail: 2, feature: "bear", ear: 2 }
+  },
+  lion: {
+    name: "S\u01B0 t\u1EED hang",
+    body: "quadruped",
+    size: [54, 32],
+    palette: { base: "#c4a060", light: "#e8d4a0", dark: "#7a5a30", accent: "#f4ecd8", eye: "#e0b030" },
+    shape: { bodyL: 22, bodyH: 9, legL: 10, neck: 7, neckA: 25, headR: 4.5, snout: 3, tail: 10, features: ["mane", "bushy"], ear: 3 }
+  },
+  mammoth: {
+    name: "Voi ma m\xFAt",
+    body: "quadruped",
+    size: [72, 56],
+    palette: { base: "#6a4a30", light: "#8e6a46", dark: "#3e2a1a", accent: "#f4ecd0", eye: "#1a1210" },
+    shape: { bodyL: 30, bodyH: 20, legL: 14, neck: 7, neckA: 20, headR: 7, snout: 3, tail: 3, features: ["trunk", "shaggy"], trunk: 13, ear: 4 }
+  },
+  pike: {
+    name: "C\xE1 ch\xF3",
+    body: "fish",
+    size: [28, 12],
+    palette: { base: "#6a8a5a", light: "#d0dcb8", dark: "#3a5430", accent: "#c8b040", eye: "#101820" },
+    shape: { bodyL: 18, bodyH: 5, tail: 6 }
+  }
+};
+
+// src/data/animals/anims/biped.json
+var biped_default = {
+  idle: { fps: 4, loop: true, frames: [
+    { bob: 0, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 0, dy: 0 }, headDy: 0, wing: 0, tail: 0, mouth: 0 },
+    { bob: 0, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 0, dy: -1 }, headDy: 0, wing: 0, tail: 0, mouth: 0 },
+    { bob: -1, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 1, dy: 0 }, headDy: 0, wing: 0, tail: 0, mouth: 0 },
+    { bob: 0, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 0, dy: -1 }, headDy: 0, wing: 0, tail: 0, mouth: 0 }
+  ] },
+  walk: { fps: 8, loop: true, frames: [
+    { bob: 0, l: { a: 25, lift: 0 }, r: { a: -25, lift: 2 }, neck: { dx: 1, dy: 0 }, headDy: 0, wing: 0, tail: 0, mouth: 0 },
+    { bob: -1, l: { a: 10, lift: 1 }, r: { a: -10, lift: 1 }, neck: { dx: 2, dy: 0 }, headDy: 0, wing: 0, tail: 0, mouth: 0 },
+    { bob: 0, l: { a: -25, lift: 2 }, r: { a: 25, lift: 0 }, neck: { dx: 1, dy: 0 }, headDy: 0, wing: 0, tail: 0, mouth: 0 },
+    { bob: -1, l: { a: -10, lift: 1 }, r: { a: 10, lift: 1 }, neck: { dx: 0, dy: 0 }, headDy: 0, wing: 0, tail: 0, mouth: 0 }
+  ] },
+  run: { fps: 12, loop: true, frames: [
+    { bob: -1, l: { a: 40, lift: 0 }, r: { a: -35, lift: 3 }, neck: { dx: 3, dy: 1 }, headDy: 0, wing: 20, tail: 10, mouth: 0 },
+    { bob: -2, l: { a: 0, lift: 4 }, r: { a: 0, lift: 4 }, neck: { dx: 4, dy: 1 }, headDy: 0, wing: 45, tail: 12, mouth: 0 },
+    { bob: -1, l: { a: -35, lift: 3 }, r: { a: 40, lift: 0 }, neck: { dx: 3, dy: 1 }, headDy: 0, wing: 20, tail: 10, mouth: 0 },
+    { bob: -2, l: { a: 0, lift: 4 }, r: { a: 0, lift: 4 }, neck: { dx: 4, dy: 1 }, headDy: 0, wing: 45, tail: 12, mouth: 0 }
+  ] },
+  graze: { fps: 6, loop: true, frames: [
+    { bob: 0, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 0, dy: 0 }, headDy: 0, wing: 0, tail: 0, mouth: 0 },
+    { bob: 0, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 2, dy: 3 }, headDy: 4, wing: 0, tail: 0, mouth: 0 },
+    { bob: 0, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 3, dy: 5 }, headDy: 7, wing: 0, tail: 0, mouth: 0 },
+    { bob: 0, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 2, dy: 3 }, headDy: 4, wing: 0, tail: 0, mouth: 0 },
+    { bob: 0, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 3, dy: 5 }, headDy: 7, wing: 0, tail: 0, mouth: 0 },
+    { bob: 0, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 0, dy: 0 }, headDy: 0, wing: 0, tail: 0, mouth: 0 }
+  ] },
+  attack: { fps: 12, loop: false, hit: 3, frames: [
+    { bob: 0, l: { a: 5, lift: 0 }, r: { a: -5, lift: 0 }, neck: { dx: 0, dy: 0 }, headDy: 0, wing: 0, tail: 0, mouth: 0 },
+    { bob: 0, l: { a: 8, lift: 0 }, r: { a: -8, lift: 0 }, neck: { dx: -2, dy: 0 }, headDy: 0, wing: 20, tail: 5, mouth: 0 },
+    { bob: -1, l: { a: 15, lift: 0 }, r: { a: -10, lift: 0 }, neck: { dx: 3, dy: 1 }, headDy: 2, wing: 60, tail: 12, mouth: 1 },
+    { bob: -1, l: { a: 20, lift: 1 }, r: { a: -12, lift: 0 }, neck: { dx: 4, dy: 2 }, headDy: 3, wing: 70, tail: 14, mouth: 1 },
+    { bob: 0, l: { a: 10, lift: 0 }, r: { a: -8, lift: 0 }, neck: { dx: 2, dy: 0 }, headDy: 0, wing: 30, tail: 8, mouth: 0 },
+    { bob: 0, l: { a: 0, lift: 0 }, r: { a: 0, lift: 0 }, neck: { dx: 0, dy: 0 }, headDy: 0, wing: 0, tail: 0, mouth: 0 }
+  ] },
+  hit: { fps: 10, loop: false, hit: 0, frames: [
+    { bob: 1, l: { a: -10, lift: 0 }, r: { a: 10, lift: 0 }, neck: { dx: -3, dy: 1 }, headDy: 0, wing: 50, tail: 15, mouth: 1 },
+    { bob: 0, l: { a: -4, lift: 0 }, r: { a: 4, lift: 0 }, neck: { dx: -1, dy: 0 }, headDy: 0, wing: 20, tail: 8, mouth: 0 }
+  ] },
+  die: { fps: 8, loop: false, frames: [
+    { bob: 1, l: { a: -10, lift: 0 }, r: { a: 10, lift: 0 }, neck: { dx: -3, dy: 1 }, headDy: 0, wing: 50, tail: 15, mouth: 1 },
+    { bob: 3, l: { a: -20, lift: 0 }, r: { a: 15, lift: 0 }, neck: { dx: -2, dy: 3 }, headDy: 2, wing: 70, tail: 10, mouth: 1, lay: 0.5 },
+    { bob: 6, l: { a: 30, lift: 0 }, r: { a: 40, lift: 0 }, neck: { dx: 0, dy: 5 }, headDy: 4, wing: 40, tail: 4, mouth: 0, lay: 0.9 },
+    { bob: 8, l: { a: 70, lift: 0 }, r: { a: 75, lift: 0 }, neck: { dx: 0, dy: 6 }, headDy: 5, wing: 20, tail: 0, mouth: 0, lay: 1, side: 0.7 },
+    { bob: 8, l: { a: 85, lift: 0 }, r: { a: 88, lift: 0 }, neck: { dx: 0, dy: 6 }, headDy: 6, wing: 10, tail: 0, mouth: 0, lay: 1, side: 1 },
+    { bob: 8, l: { a: 85, lift: 0 }, r: { a: 88, lift: 0 }, neck: { dx: 0, dy: 6 }, headDy: 6, wing: 10, tail: 0, mouth: 0, lay: 1, side: 1 }
+  ] },
+  sleep: { fps: 2, loop: true, frames: [
+    { bob: 0, l: { a: 80, lift: 0 }, r: { a: 80, lift: 0 }, neck: { dx: 0, dy: 6 }, headDy: 5, wing: 0, tail: 0, mouth: 0, lay: 1 },
+    { bob: 0, l: { a: 80, lift: 0 }, r: { a: 80, lift: 0 }, neck: { dx: 0, dy: 7 }, headDy: 5, wing: 0, tail: 0, mouth: 0, lay: 1 }
+  ] }
+};
+
+// src/data/animals/anims/fish.json
+var fish_default = {
+  idle: { fps: 4, loop: true, frames: [
+    { bend: 0, bob: 0, fin: 0, mouth: 0 },
+    { bend: 1, bob: 0, fin: 0, mouth: 0 },
+    { bend: 0, bob: -1, fin: 0, mouth: 0 },
+    { bend: -1, bob: 0, fin: 0, mouth: 0 }
+  ] },
+  swim: { fps: 8, loop: true, frames: [
+    { bend: 3, bob: 0, fin: 0, mouth: 0 },
+    { bend: 1, bob: 0, fin: 0, mouth: 0 },
+    { bend: -3, bob: 0, fin: 0, mouth: 0 },
+    { bend: -1, bob: 0, fin: 0, mouth: 0 }
+  ] },
+  run: { fps: 14, loop: true, frames: [
+    { bend: 4, bob: 0, fin: 1, mouth: 0 },
+    { bend: -4, bob: 0, fin: 1, mouth: 0 },
+    { bend: 4, bob: 0, fin: 1, mouth: 0 },
+    { bend: -4, bob: 0, fin: 1, mouth: 0 }
+  ] },
+  graze: { fps: 5, loop: true, frames: [
+    { bend: 1, bob: 0, fin: 0, mouth: 0 },
+    { bend: 1, bob: 1, fin: 0, mouth: 1 },
+    { bend: 1, bob: 1, fin: 0, mouth: 0 },
+    { bend: 1, bob: 1, fin: 0, mouth: 1 }
+  ] },
+  attack: { fps: 12, loop: false, hit: 3, frames: [
+    { bend: 0, bob: 0, fin: 0, mouth: 0 },
+    { bend: -2, bob: 0, fin: 0, mouth: 1 },
+    { bend: 3, bob: 0, fin: 1, mouth: 1 },
+    { bend: 2, bob: 0, fin: 1, mouth: 1 },
+    { bend: 0, bob: 0, fin: 0, mouth: 0 },
+    { bend: 0, bob: 0, fin: 0, mouth: 0 }
+  ] },
+  hit: { fps: 10, loop: false, hit: 0, frames: [
+    { bend: 5, bob: 0, fin: 1, mouth: 0 },
+    { bend: 2, bob: 0, fin: 0, mouth: 0 }
+  ] },
+  die: { fps: 6, loop: false, frames: [
+    { bend: 5, bob: 0, fin: 1, mouth: 0 },
+    { bend: 2, bob: 1, fin: 0, mouth: 1 },
+    { bend: 1, bob: 2, fin: 0, mouth: 1, flip: 0.5 },
+    { bend: 0, bob: 3, fin: 0, mouth: 1, flip: 1 },
+    { bend: 0, bob: 3, fin: 0, mouth: 0, flip: 1 },
+    { bend: 0, bob: 3, fin: 0, mouth: 0, flip: 1 }
+  ] },
+  sleep: { fps: 2, loop: true, frames: [
+    { bend: 0, bob: 1, fin: 0, mouth: 0 },
+    { bend: 1, bob: 1, fin: 0, mouth: 0 }
+  ] }
+};
+
+// src/data/animals/anims/hopper.json
+var hopper_default = {
+  idle: { fps: 3, loop: true, frames: [
+    { lift: 0, stretch: 0, crouch: 0, hind: { a: 0 }, fore: { a: 0 }, ear: 10, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 0, hind: { a: 0 }, fore: { a: 0 }, ear: 18, headDy: -1, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 0, hind: { a: 0 }, fore: { a: 0 }, ear: 10, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 0, hind: { a: 0 }, fore: { a: 0 }, ear: 4, headDy: 0, tail: 0, mouth: 0 }
+  ] },
+  walk: { fps: 8, loop: true, frames: [
+    { lift: 0, stretch: 0, crouch: 2, hind: { a: -10 }, fore: { a: 10 }, ear: 25, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 2, stretch: 1, crouch: 0, hind: { a: -35 }, fore: { a: 25 }, ear: 35, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 3, stretch: 2, crouch: 0, hind: { a: -50 }, fore: { a: 35 }, ear: 40, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 1, stretch: 1, crouch: 0, hind: { a: -25 }, fore: { a: 15 }, ear: 35, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 2, hind: { a: 0 }, fore: { a: 0 }, ear: 25, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 3, hind: { a: -5 }, fore: { a: 5 }, ear: 20, headDy: 0, tail: 0, mouth: 0 }
+  ] },
+  run: { fps: 12, loop: true, frames: [
+    { lift: 0, stretch: 0, crouch: 3, hind: { a: -5 }, fore: { a: 10 }, ear: 40, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 5, stretch: 3, crouch: 0, hind: { a: -60 }, fore: { a: 45 }, ear: 60, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 7, stretch: 4, crouch: 0, hind: { a: -70 }, fore: { a: 50 }, ear: 65, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 4, stretch: 2, crouch: 0, hind: { a: -40 }, fore: { a: 30 }, ear: 55, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 3, hind: { a: -5 }, fore: { a: 10 }, ear: 40, headDy: 0, tail: 0, mouth: 0 }
+  ] },
+  graze: { fps: 5, loop: true, frames: [
+    { lift: 0, stretch: 0, crouch: 1, hind: { a: 0 }, fore: { a: 0 }, ear: 12, headDy: 1, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 2, hind: { a: 0 }, fore: { a: 5 }, ear: 10, headDy: 4, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 2, hind: { a: 0 }, fore: { a: 8 }, ear: 8, headDy: 5, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 2, hind: { a: 0 }, fore: { a: 5 }, ear: 10, headDy: 4, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 1, hind: { a: 0 }, fore: { a: 0 }, ear: 12, headDy: 1, tail: 0, mouth: 0 }
+  ] },
+  attack: { fps: 12, loop: false, hit: 3, frames: [
+    { lift: 0, stretch: 0, crouch: 2, hind: { a: 0 }, fore: { a: 0 }, ear: 20, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 4, hind: { a: -5 }, fore: { a: 0 }, ear: 25, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 2, stretch: 1, crouch: 0, hind: { a: -50 }, fore: { a: 20 }, ear: 30, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 2, stretch: 2, crouch: 0, hind: { a: -60 }, fore: { a: 30 }, ear: 30, headDy: 0, tail: 0, mouth: 1 },
+    { lift: 0, stretch: 0, crouch: 1, hind: { a: -20 }, fore: { a: 10 }, ear: 25, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 0, stretch: 0, crouch: 0, hind: { a: 0 }, fore: { a: 0 }, ear: 20, headDy: 0, tail: 0, mouth: 0 }
+  ] },
+  hit: { fps: 10, loop: false, hit: 0, frames: [
+    { lift: 1, stretch: 0, crouch: 0, hind: { a: -20 }, fore: { a: 20 }, ear: 50, headDy: 0, tail: 0, mouth: 1 },
+    { lift: 0, stretch: 0, crouch: 1, hind: { a: -5 }, fore: { a: 5 }, ear: 30, headDy: 0, tail: 0, mouth: 0 }
+  ] },
+  die: { fps: 8, loop: false, frames: [
+    { lift: 3, stretch: 0, crouch: 0, hind: { a: -30 }, fore: { a: 30 }, ear: 50, headDy: 0, tail: 0, mouth: 0 },
+    { lift: 2, stretch: 0, crouch: 0, hind: { a: -10 }, fore: { a: 10 }, ear: 30, headDy: 0, tail: 0, mouth: 0, lay: 0.4 },
+    { lift: 0, stretch: 0, crouch: 2, hind: { a: 0 }, fore: { a: 0 }, ear: 10, headDy: 0, tail: 0, mouth: 0, lay: 0.9 },
+    { lift: 0, stretch: 0, crouch: 2, hind: { a: 40 }, fore: { a: 40 }, ear: 0, headDy: 0, tail: 0, mouth: 0, lay: 1, side: 0.6 },
+    { lift: 0, stretch: 0, crouch: 2, hind: { a: 70 }, fore: { a: 60 }, ear: 0, headDy: 0, tail: 0, mouth: 0, lay: 1, side: 1 },
+    { lift: 0, stretch: 0, crouch: 2, hind: { a: 72 }, fore: { a: 62 }, ear: 0, headDy: 0, tail: 0, mouth: 0, lay: 1, side: 1 }
+  ] },
+  sleep: { fps: 2, loop: true, frames: [
+    { lift: 0, stretch: 0, crouch: 3, hind: { a: 0 }, fore: { a: 0 }, ear: 0, headDy: 0, tail: 0, mouth: 0, lay: 1 },
+    { lift: 0, stretch: 0, crouch: 3, hind: { a: 0 }, fore: { a: 0 }, ear: 0, headDy: 1, tail: 0, mouth: 0, lay: 1 }
+  ] }
+};
+
+// src/data/animals/anims/quadruped.json
+var quadruped_default = {
+  idle: { fps: 4, loop: true, frames: [
+    { bob: 0, rise: 0, fl: { a: 0, lift: 0 }, fr: { a: 0, lift: 0 }, bl: { a: 0, lift: 0 }, br: { a: 0, lift: 0 }, head: { dy: 0 }, tail: 15, mouth: 0 },
+    { bob: 0, rise: 0, fl: { a: 0, lift: 0 }, fr: { a: 0, lift: 0 }, bl: { a: 0, lift: 0 }, br: { a: 0, lift: 0 }, head: { dy: -1 }, tail: 18, mouth: 0 },
+    { bob: -1, rise: 0, fl: { a: 0, lift: 0 }, fr: { a: 0, lift: 0 }, bl: { a: 0, lift: 0 }, br: { a: 0, lift: 0 }, head: { dy: -1 }, tail: 20, mouth: 0 },
+    { bob: 0, rise: 0, fl: { a: 0, lift: 0 }, fr: { a: 0, lift: 0 }, bl: { a: 0, lift: 0 }, br: { a: 0, lift: 0 }, head: { dy: 0 }, tail: 16, mouth: 0 }
+  ] },
+  walk: { fps: 8, loop: true, frames: [
+    { bob: 0, rise: 0, fl: { a: 25, lift: 0 }, fr: { a: -20, lift: 2 }, bl: { a: -22, lift: 2 }, br: { a: 22, lift: 0 }, head: { dy: 0 }, tail: 15, mouth: 0 },
+    { bob: -1, rise: 0, fl: { a: 12, lift: 0 }, fr: { a: -8, lift: 1 }, bl: { a: -12, lift: 1 }, br: { a: 12, lift: 0 }, head: { dy: 0 }, tail: 15, mouth: 0 },
+    { bob: 0, rise: 0, fl: { a: -4, lift: 2 }, fr: { a: 8, lift: 0 }, bl: { a: 8, lift: 0 }, br: { a: -6, lift: 2 }, head: { dy: 0 }, tail: 15, mouth: 0 },
+    { bob: 0, rise: 0, fl: { a: -20, lift: 2 }, fr: { a: 25, lift: 0 }, bl: { a: 22, lift: 0 }, br: { a: -22, lift: 2 }, head: { dy: 0 }, tail: 15, mouth: 0 },
+    { bob: -1, rise: 0, fl: { a: -8, lift: 1 }, fr: { a: 12, lift: 0 }, bl: { a: 12, lift: 0 }, br: { a: -12, lift: 1 }, head: { dy: 0 }, tail: 15, mouth: 0 },
+    { bob: 0, rise: 0, fl: { a: 8, lift: 0 }, fr: { a: -4, lift: 2 }, bl: { a: -6, lift: 2 }, br: { a: 8, lift: 0 }, head: { dy: 0 }, tail: 15, mouth: 0 }
+  ] },
+  run: { fps: 12, loop: true, frames: [
+    { bob: -1, rise: 1, fl: { a: 40, lift: 0 }, fr: { a: 35, lift: 0 }, bl: { a: -38, lift: 3 }, br: { a: -30, lift: 3 }, head: { dy: -1 }, tail: 30, mouth: 0 },
+    { bob: -2, rise: 0, fl: { a: 15, lift: 2 }, fr: { a: 10, lift: 2 }, bl: { a: -10, lift: 4 }, br: { a: -5, lift: 4 }, head: { dy: -1 }, tail: 32, mouth: 0 },
+    { bob: -3, rise: -1, fl: { a: -30, lift: 3 }, fr: { a: -35, lift: 3 }, bl: { a: 35, lift: 0 }, br: { a: 40, lift: 0 }, head: { dy: -2 }, tail: 34, mouth: 0 },
+    { bob: -2, rise: 0, fl: { a: -10, lift: 4 }, fr: { a: -5, lift: 4 }, bl: { a: 15, lift: 2 }, br: { a: 10, lift: 2 }, head: { dy: -1 }, tail: 32, mouth: 0 }
+  ] },
+  graze: { fps: 5, loop: true, frames: [
+    { bob: 0, rise: 0, fl: { a: 0, lift: 0 }, fr: { a: 0, lift: 0 }, bl: { a: 0, lift: 0 }, br: { a: 0, lift: 0 }, head: { dy: 2 }, tail: 15, mouth: 0 },
+    { bob: 0, rise: 0, fl: { a: 0, lift: 0 }, fr: { a: 0, lift: 0 }, bl: { a: 0, lift: 0 }, br: { a: 0, lift: 0 }, head: { dy: 7 }, tail: 12, mouth: 0 },
+    { bob: 0, rise: -1, fl: { a: 0, lift: 0 }, fr: { a: 0, lift: 0 }, bl: { a: 0, lift: 0 }, br: { a: 0, lift: 0 }, head: { dy: 9 }, tail: 10, mouth: 0 },
+    { bob: 0, rise: -1, fl: { a: 0, lift: 0 }, fr: { a: 0, lift: 0 }, bl: { a: 0, lift: 0 }, br: { a: 0, lift: 0 }, head: { dy: 9 }, tail: 12, mouth: 0 },
+    { bob: 0, rise: 0, fl: { a: 0, lift: 0 }, fr: { a: 0, lift: 0 }, bl: { a: 0, lift: 0 }, br: { a: 0, lift: 0 }, head: { dy: 6 }, tail: 14, mouth: 0 },
+    { bob: 0, rise: 0, fl: { a: 0, lift: 0 }, fr: { a: 0, lift: 0 }, bl: { a: 0, lift: 0 }, br: { a: 0, lift: 0 }, head: { dy: 1 }, tail: 16, mouth: 0 }
+  ] },
+  attack: { fps: 12, loop: false, hit: 3, frames: [
+    { bob: 0, rise: 0, fl: { a: 10, lift: 0 }, fr: { a: 6, lift: 0 }, bl: { a: -6, lift: 0 }, br: { a: -10, lift: 0 }, head: { dy: 0 }, tail: 20, mouth: 0 },
+    { bob: 1, rise: -1, fl: { a: -5, lift: 0 }, fr: { a: -8, lift: 0 }, bl: { a: -14, lift: 0 }, br: { a: -18, lift: 0 }, head: { dy: -2 }, tail: 25, mouth: 0 },
+    { bob: -1, rise: 3, fl: { a: 10, lift: 0 }, fr: { a: 6, lift: 0 }, bl: { a: -14, lift: 0 }, br: { a: -18, lift: 0 }, head: { dy: -4 }, tail: 35, mouth: 1 },
+    { bob: -1, rise: 4, fl: { a: 28, lift: 2 }, fr: { a: 22, lift: 2 }, bl: { a: -14, lift: 0 }, br: { a: -18, lift: 0 }, head: { dy: 3 }, tail: 38, mouth: 1 },
+    { bob: 0, rise: 2, fl: { a: 20, lift: 1 }, fr: { a: 14, lift: 1 }, bl: { a: -8, lift: 0 }, br: { a: -12, lift: 0 }, head: { dy: 1 }, tail: 30, mouth: 1 },
+    { bob: 0, rise: 0, fl: { a: 10, lift: 0 }, fr: { a: 6, lift: 0 }, bl: { a: -6, lift: 0 }, br: { a: -10, lift: 0 }, head: { dy: 0 }, tail: 22, mouth: 0 }
+  ] },
+  hit: { fps: 10, loop: false, hit: 0, frames: [
+    { bob: 1, rise: -2, fl: { a: -8, lift: 0 }, fr: { a: -8, lift: 0 }, bl: { a: 6, lift: 0 }, br: { a: 6, lift: 0 }, head: { dy: 3 }, tail: 30, mouth: 1 },
+    { bob: 0, rise: -1, fl: { a: -3, lift: 0 }, fr: { a: -3, lift: 0 }, bl: { a: 3, lift: 0 }, br: { a: 3, lift: 0 }, head: { dy: 1 }, tail: 22, mouth: 0 }
+  ] },
+  die: { fps: 8, loop: false, frames: [
+    { bob: 1, rise: -2, fl: { a: -10, lift: 0 }, fr: { a: -10, lift: 0 }, bl: { a: 8, lift: 0 }, br: { a: 8, lift: 0 }, head: { dy: 3 }, tail: 25, mouth: 1 },
+    { bob: 3, rise: -3, fl: { a: -20, lift: 0 }, fr: { a: -12, lift: 0 }, bl: { a: 14, lift: 0 }, br: { a: 10, lift: 0 }, head: { dy: 5 }, tail: 20, mouth: 1, lay: 0.5 },
+    { bob: 6, rise: 0, fl: { a: 30, lift: 0 }, fr: { a: 25, lift: 0 }, bl: { a: 25, lift: 0 }, br: { a: 20, lift: 0 }, head: { dy: 7 }, tail: 10, mouth: 1, lay: 0.9 },
+    { bob: 7, rise: 0, fl: { a: 60, lift: 0 }, fr: { a: 55, lift: 0 }, bl: { a: 50, lift: 0 }, br: { a: 45, lift: 0 }, head: { dy: 8 }, tail: 8, mouth: 1, lay: 1, side: 0.6 },
+    { bob: 7, rise: 0, fl: { a: 80, lift: 0 }, fr: { a: 75, lift: 0 }, bl: { a: 70, lift: 0 }, br: { a: 65, lift: 0 }, head: { dy: 9 }, tail: 6, mouth: 0, lay: 1, side: 1 },
+    { bob: 7, rise: 0, fl: { a: 82, lift: 0 }, fr: { a: 78, lift: 0 }, bl: { a: 72, lift: 0 }, br: { a: 68, lift: 0 }, head: { dy: 9 }, tail: 5, mouth: 0, lay: 1, side: 1 }
+  ] },
+  sleep: { fps: 2, loop: true, frames: [
+    { bob: 0, rise: 0, fl: { a: 60, lift: 0 }, fr: { a: 55, lift: 0 }, bl: { a: 50, lift: 0 }, br: { a: 45, lift: 0 }, head: { dy: 6 }, tail: 10, mouth: 0, lay: 1 },
+    { bob: 0, rise: 0, fl: { a: 60, lift: 0 }, fr: { a: 55, lift: 0 }, bl: { a: 50, lift: 0 }, br: { a: 45, lift: 0 }, head: { dy: 6 }, tail: 11, mouth: 0, lay: 1 }
+  ] }
+};
+
+// src/blueprint/engine.js
+(function(root) {
+  "use strict";
+  var OPS_LIMIT = 6e6;
+  var clamp2 = function(v, a, b) {
+    return Math.max(a, Math.min(b, v));
+  };
+  function mulberry322(a) {
+    a >>>= 0;
+    return function() {
+      a = a + 1831565813 >>> 0;
+      var t = a;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function hash22(x, y, s) {
+    var h2 = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(s | 0, 1274126177);
+    h2 = Math.imul(h2 ^ h2 >>> 13, 1274126177);
+    h2 ^= h2 >>> 16;
+    return (h2 >>> 0) / 4294967296;
+  }
+  function hstr(str) {
+    var h2 = 2166136261;
+    for (var i = 0; i < str.length; i++) {
+      h2 ^= str.charCodeAt(i);
+      h2 = Math.imul(h2, 16777619);
+    }
+    return h2 >>> 0;
+  }
+  var mod = function(a, n) {
+    return (a % n + n) % n;
+  };
+  function parseColor(c, pal, depth) {
+    if (typeof c !== "string") return null;
+    depth = depth || 0;
+    if (pal && Object.prototype.hasOwnProperty.call(pal, c) && depth < 6) return parseColor(pal[c], pal, depth + 1);
+    var m;
+    if (m = /^#([0-9a-f]{3,8})$/i.exec(c)) {
+      var h2 = m[1];
+      if (h2.length === 3 || h2.length === 4) h2 = h2.split("").map(function(x) {
+        return x + x;
+      }).join("");
+      if (h2.length === 6) h2 += "ff";
+      if (h2.length !== 8) return null;
+      return [0, 2, 4, 6].map(function(i) {
+        return parseInt(h2.substr(i, 2), 16);
+      });
+    }
+    if (m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?\s*\)$/i.exec(c)) {
+      return [clamp2(+m[1], 0, 255) | 0, clamp2(+m[2], 0, 255) | 0, clamp2(+m[3], 0, 255) | 0, m[4] === void 0 ? 255 : Math.round(clamp2(+m[4], 0, 1) * 255)];
+    }
+    if (c === "none" || c === "transparent") return [0, 0, 0, 0];
+    return null;
+  }
+  function num2(v, d, ctx2, rng) {
+    if (v === void 0 || v === null) return d;
+    if (typeof v === "number") return isFinite(v) ? v : d;
+    if (Array.isArray(v) && v.length === 2 && typeof v[0] === "number" && typeof v[1] === "number") {
+      var a = Math.min(v[0], v[1]), b = Math.max(v[0], v[1]), r = rng();
+      return Number.isInteger(v[0]) && Number.isInteger(v[1]) ? a + Math.floor(r * (b - a + 1)) : a + r * (b - a);
+    }
+    if (v && typeof v === "object" && Array.isArray(v.cycle) && v.cycle.length) {
+      var x = v.cycle[ctx2.frame % v.cycle.length];
+      return typeof x === "number" ? x : d;
+    }
+    return d;
+  }
+  function cond(s, ctx2) {
+    var p = ctx2.params;
+    var test = function(k) {
+      var neg = false;
+      if (typeof k !== "string") return true;
+      if (k[0] === "!") {
+        neg = true;
+        k = k.slice(1);
+      }
+      var v = !!p[k];
+      return neg ? !v : v;
+    };
+    if (s["if"] !== void 0) {
+      var a = [].concat(s["if"]);
+      if (!a.every(test)) return false;
+    }
+    if (s.ifNot !== void 0) {
+      var b = [].concat(s.ifNot);
+      if (b.some(function(k) {
+        return !!p[k];
+      })) return false;
+    }
+    return true;
+  }
+  function blend(buf2, i, c, a, mode) {
+    var dA = buf2[i + 3] / 255;
+    if (mode === "erase") {
+      buf2[i + 3] = Math.round(dA * (1 - a) * 255);
+      return;
+    }
+    var sA = a, topA, botA, top, bot;
+    if (mode === "under") {
+      top = [buf2[i], buf2[i + 1], buf2[i + 2]];
+      topA = dA;
+      bot = c;
+      botA = sA;
+    } else {
+      top = c;
+      topA = sA;
+      bot = [buf2[i], buf2[i + 1], buf2[i + 2]];
+      botA = dA;
+    }
+    var oA = topA + botA * (1 - topA);
+    if (oA <= 0) {
+      buf2[i + 3] = 0;
+      return;
+    }
+    for (var k = 0; k < 3; k++) buf2[i + k] = Math.round((top[k] * topA + bot[k] * botA * (1 - topA)) / oA);
+    buf2[i + 3] = Math.round(oA * 255);
+  }
+  function put3(ctx2, s, lx, ly, c) {
+    if (++ctx2.ops > OPS_LIMIT) throw new Error("B\u1EA3n v\u1EBD qu\xE1 n\u1EB7ng (qu\xE1 nhi\u1EC1u \u0111i\u1EC3m \u1EA3nh ph\u1EA3i v\u1EBD)");
+    var x = lx + ctx2.ox, y = ly + ctx2.oy, w = ctx2.w, h2 = ctx2.h;
+    if (ctx2.flip) x = w - 1 - x;
+    if (ctx2.wrap) {
+      x = mod(x, w);
+      y = mod(y, h2);
+    } else if (x < 0 || y < 0 || x >= w || y >= h2) return;
+    var i = (y * w + x) * 4, buf2 = ctx2.buf, dA = buf2[i + 3];
+    if (s.clip === "inside" && dA === 0) return;
+    if (s.clip === "outside" && dA > 0) return;
+    if (s._over) {
+      if (dA === 0) return;
+      var ok = false;
+      for (var q = 0; q < s._over.length; q++) {
+        var o = s._over[q];
+        if (buf2[i] === o[0] && buf2[i + 1] === o[1] && buf2[i + 2] === o[2]) {
+          ok = true;
+          break;
+        }
+      }
+      if (!ok) return;
+    }
+    var al = c[3] / 255 * (s.alpha === void 0 ? 1 : s.alpha);
+    if (al <= 0) return;
+    blend(buf2, i, c, Math.min(1, al), s.mode);
+  }
+  function painter(s, ctx2, rng) {
+    var cache = ctx2.cc;
+    var get = function(e) {
+      var key = e;
+      if (cache.has(key)) return cache.get(key);
+      var c = parseColor(e, ctx2.palette);
+      if (!c) ctx2.warn("M\xE0u kh\xF4ng h\u1EE3p l\u1EC7: " + JSON.stringify(e));
+      cache.set(key, c);
+      return c;
+    };
+    if (Array.isArray(s.colors) && s.colors.length) {
+      var list = s.colors.map(function(e) {
+        return typeof e === "object" && e ? { c: e.color, w: e.weight === void 0 ? 1 : e.weight } : { c: e, w: 1 };
+      });
+      var tot = list.reduce(function(a, b) {
+        return a + b.w;
+      }, 0);
+      return function(x, y) {
+        var r = rng() * tot, k = 0;
+        for (; k < list.length - 1; k++) {
+          r -= list[k].w;
+          if (r < 0) break;
+        }
+        var c = get(list[k].c);
+        if (c) put3(ctx2, s, x, y, c);
+      };
+    }
+    var c0 = s.color === void 0 ? null : get(s.color);
+    if (s.color === void 0) ctx2.warn('Thi\u1EBFu "color" \u1EDF layer ' + (s.shape || "?"));
+    return function(x, y) {
+      if (c0) put3(ctx2, s, x, y, c0);
+    };
+  }
+  function pip(px, py, pts) {
+    var inside = false;
+    for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      var xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1];
+      if (yi > py !== yj > py && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+  function area(s, ctx2, rng) {
+    var a = Array.isArray(s.area) && s.area.length === 4 ? s.area : [0, 0, ctx2.w, ctx2.h];
+    return a.map(function(v, i) {
+      return Math.round(num2(v, i < 2 ? 0 : i === 2 ? ctx2.w : ctx2.h, ctx2, rng));
+    });
+  }
+  var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  function valueNoiseWrap(u, v, Px, Py, salt) {
+    var ix = Math.floor(u), iy = Math.floor(v), fx = u - ix, fy = v - iy;
+    fx = fx * fx * (3 - 2 * fx);
+    fy = fy * fy * (3 - 2 * fy);
+    var a = hash22(mod(ix, Px), mod(iy, Py), salt), b = hash22(mod(ix + 1, Px), mod(iy, Py), salt);
+    var c = hash22(mod(ix, Px), mod(iy + 1, Py), salt), d = hash22(mod(ix + 1, Px), mod(iy + 1, Py), salt);
+    return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+  }
+  var SHAPES = {
+    rect: function(s, ctx2, rng) {
+      var x = Math.round(num2(s.x, 0, ctx2, rng)), y = Math.round(num2(s.y, 0, ctx2, rng));
+      var w = Math.round(num2(s.w, 1, ctx2, rng)), h2 = Math.round(num2(s.h, 1, ctx2, rng)), p = painter(s, ctx2, rng);
+      for (var j = 0; j < h2; j++) for (var i = 0; i < w; i++) p(x + i, y + j);
+    },
+    ellipse: function(s, ctx2, rng) {
+      var cx = num2(s.cx, 0, ctx2, rng), cy = num2(s.cy, 0, ctx2, rng);
+      var rx = Math.max(0.5, num2(s.rx, num2(s.r, 4, ctx2, rng), ctx2, rng)), ry = Math.max(0.5, num2(s.ry, num2(s.r, rx, ctx2, rng), ctx2, rng)), p = painter(s, ctx2, rng);
+      for (var y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (var x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+        var dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
+        if (dx * dx + dy * dy <= 1) p(x, y);
+      }
+    },
+    poly: function(s, ctx2, rng) {
+      if (!Array.isArray(s.points) || s.points.length < 3) {
+        ctx2.warn('poly c\u1EA7n "points" v\u1EDBi \xEDt nh\u1EA5t 3 \u0111\u1EC9nh');
+        return;
+      }
+      var j = num2(s.jitter, 0, ctx2, rng);
+      var pts = s.points.map(function(p) {
+        var x2 = num2(p[0], 0, ctx2, rng), y2 = num2(p[1], 0, ctx2, rng);
+        if (j) {
+          x2 += Math.round((rng() * 2 - 1) * j);
+          y2 += Math.round((rng() * 2 - 1) * j);
+        }
+        return [x2, y2];
+      });
+      var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      pts.forEach(function(p) {
+        x0 = Math.min(x0, p[0]);
+        x1 = Math.max(x1, p[0]);
+        y0 = Math.min(y0, p[1]);
+        y1 = Math.max(y1, p[1]);
+      });
+      var pt = painter(s, ctx2, rng);
+      for (var y = Math.floor(y0); y <= Math.ceil(y1); y++) for (var x = Math.floor(x0); x <= Math.ceil(x1); x++) if (pip(x + 0.5, y + 0.5, pts)) pt(x, y);
+    },
+    line: function(s, ctx2, rng) {
+      var f = s.from || [0, 0], t = s.to || [0, 0];
+      var x0 = num2(f[0], 0, ctx2, rng), y0 = num2(f[1], 0, ctx2, rng), x1 = num2(t[0], 0, ctx2, rng), y1 = num2(t[1], 0, ctx2, rng);
+      var w = Math.max(1, Math.round(num2(s.w, 1, ctx2, rng))), n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2)), p = painter(s, ctx2, rng), o = Math.floor(w / 2);
+      var seen = {};
+      for (var k = 0; k <= n; k++) {
+        var cx = Math.round(x0 + (x1 - x0) * k / n), cy = Math.round(y0 + (y1 - y0) * k / n);
+        for (var j = 0; j < w; j++) for (var i = 0; i < w; i++) {
+          var kx = cx - o + i, ky = cy - o + j, key = kx + "," + ky;
+          if (!seen[key]) {
+            seen[key] = 1;
+            p(kx, ky);
+          }
+        }
+      }
+    },
+    pixels: function(s, ctx2, rng) {
+      if (!Array.isArray(s.at)) {
+        ctx2.warn('pixels c\u1EA7n "at": [[x,y],...]');
+        return;
+      }
+      var p = painter(s, ctx2, rng);
+      s.at.forEach(function(q) {
+        p(Math.round(num2(q[0], 0, ctx2, rng)), Math.round(num2(q[1], 0, ctx2, rng)));
+      });
+    },
+    scatter: function(s, ctx2, rng) {
+      var a = area(s, ctx2, rng), n = clamp2(Math.round(num2(s.count, 10, ctx2, rng)), 0, 5e3), p = painter(s, ctx2, rng);
+      var sz = Array.isArray(s.size) ? s.size : [s.size === void 0 ? 1 : s.size, s.size === void 0 ? 1 : s.size];
+      var cw = Math.max(1, Math.round(num2(sz[0], 1, ctx2, rng))), ch = Math.max(1, Math.round(num2(sz[1], cw, ctx2, rng)));
+      for (var i = 0; i < n; i++) {
+        var x = a[0] + Math.floor(rng() * a[2]), y = a[1] + Math.floor(rng() * a[3]);
+        for (var j = 0; j < ch; j++) for (var k = 0; k < cw; k++) p(x + k, y + j);
+      }
+    },
+    noise: function(s, ctx2, rng, id) {
+      var a = area(s, ctx2, rng), scale = Math.max(1, num2(s.scale, 4, ctx2, rng)), oct = clamp2(Math.round(num2(s.octaves, 1, ctx2, rng)), 1, 4);
+      var contrast = num2(s.contrast, 1.8, ctx2, rng);
+      var bands = Array.isArray(s.bands) ? s.bands.slice().sort(function(p, q2) {
+        return p[0] - q2[0];
+      }) : null;
+      if (!bands || !bands.length) {
+        ctx2.warn('noise c\u1EA7n "bands": [[ng\u01B0\u1EE1ng, m\xE0u], ...]');
+        return;
+      }
+      var cols = bands.map(function(b) {
+        return b[1] === null ? null : parseColor(b[1], ctx2.palette);
+      });
+      var salt = ctx2.seed * 31 + hstr(id) & 2147483647, Px = Math.max(1, Math.round(ctx2.w / scale)), Py = Math.max(1, Math.round(ctx2.h / scale));
+      for (var y = a[1]; y < a[1] + a[3]; y++) for (var x = a[0]; x < a[0] + a[2]; x++) {
+        var v = 0, amp = 1, norm = 0, f = 1;
+        for (var o = 0; o < oct; o++) {
+          v += valueNoiseWrap((x + 0.5) / ctx2.w * Px * f, (y + 0.5) / ctx2.h * Py * f, Px * f, Py * f, salt + o * 77) * amp;
+          norm += amp;
+          amp *= 0.5;
+          f *= 2;
+        }
+        v = clamp2((v / norm - 0.5) * contrast + 0.5, 0, 0.9999);
+        var k = -1;
+        for (var q = 0; q < bands.length; q++) if (v >= bands[q][0]) k = q;
+        if (k >= 0 && cols[k]) put3(ctx2, s, x, y, cols[k]);
+      }
+    },
+    gradient: function(s, ctx2, rng) {
+      var a = area(s, ctx2, rng), list = Array.isArray(s.colors) ? s.colors : [s.from, s.to];
+      var cols = list.map(function(c) {
+        return parseColor(c, ctx2.palette);
+      });
+      if (cols.length < 2 || cols.some(function(c) {
+        return !c;
+      })) {
+        ctx2.warn('gradient c\u1EA7n "from"/"to" ho\u1EB7c "colors" h\u1EE3p l\u1EC7');
+        return;
+      }
+      var dir = s.dir || "down", steps = cols.length - 1;
+      for (var y = 0; y < a[3]; y++) for (var x = 0; x < a[2]; x++) {
+        var t;
+        if (dir === "down") t = (y + 0.5) / a[3];
+        else if (dir === "up") t = 1 - (y + 0.5) / a[3];
+        else if (dir === "right") t = (x + 0.5) / a[2];
+        else if (dir === "left") t = 1 - (x + 0.5) / a[2];
+        else t = clamp2(Math.hypot((x + 0.5) / a[2] - 0.5, (y + 0.5) / a[3] - 0.5) * 2, 0, 1);
+        var pos = clamp2(t, 0, 1) * steps, i = Math.min(steps - 1, Math.floor(pos)), fr = pos - i;
+        var th = (BAYER[(y + a[1] & 3) * 4 + (x + a[0] & 3)] + 0.5) / 16;
+        put3(ctx2, s, a[0] + x, a[1] + y, fr > th ? cols[i + 1] : cols[i]);
+      }
+    },
+    bevel: function(s, ctx2, rng) {
+      var snap = new Uint8ClampedArray(ctx2.buf), w = ctx2.w, h2 = ctx2.h;
+      var li = parseColor(s.light === void 0 ? "#ffffff" : s.light, ctx2.palette), da = parseColor(s.dark === void 0 ? "#000000" : s.dark, ctx2.palette);
+      var la = num2(s.lightAlpha, 0.3, ctx2, rng), dk = num2(s.darkAlpha, 0.3, ctx2, rng);
+      if (!li || !da) {
+        ctx2.warn("bevel: m\xE0u kh\xF4ng h\u1EE3p l\u1EC7");
+        return;
+      }
+      var empty = function(x2, y2) {
+        if (ctx2.wrap) {
+          x2 = mod(x2, w);
+          y2 = mod(y2, h2);
+        } else if (x2 < 0 || y2 < 0 || x2 >= w || y2 >= h2) return true;
+        return snap[(y2 * w + x2) * 4 + 3] === 0;
+      };
+      for (var y = 0; y < h2; y++) for (var x = 0; x < w; x++) {
+        var i = (y * w + x) * 4;
+        if (snap[i + 3] === 0) continue;
+        if (empty(x, y - 1) || empty(x - 1, y)) blend(ctx2.buf, i, li, la * (li[3] / 255), "normal");
+        else if (empty(x, y + 1) || empty(x + 1, y)) blend(ctx2.buf, i, da, dk * (da[3] / 255), "normal");
+      }
+    },
+    outline: function(s, ctx2, rng) {
+      var snap = new Uint8ClampedArray(ctx2.buf), w = ctx2.w, h2 = ctx2.h;
+      var c = parseColor(s.color === void 0 ? "#1e1410" : s.color, ctx2.palette);
+      if (!c) {
+        ctx2.warn("outline: m\xE0u kh\xF4ng h\u1EE3p l\u1EC7");
+        return;
+      }
+      var diag = !!s.corners, N = diag ? [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1]];
+      for (var y = 0; y < h2; y++) for (var x = 0; x < w; x++) {
+        var i = (y * w + x) * 4;
+        if (snap[i + 3] !== 0) continue;
+        var hit = N.some(function(d) {
+          var xx = x + d[0], yy = y + d[1];
+          if (ctx2.wrap) {
+            xx = mod(xx, w);
+            yy = mod(yy, h2);
+          } else if (xx < 0 || yy < 0 || xx >= w || yy >= h2) return false;
+          return snap[(yy * w + xx) * 4 + 3] > 0;
+        });
+        if (hit) blend(ctx2.buf, i, c, c[3] / 255 * (s.alpha === void 0 ? 1 : s.alpha), "normal");
+      }
+    },
+    group: function(s, ctx2, rng, id) {
+      if (!Array.isArray(s.layers)) {
+        ctx2.warn('group c\u1EA7n "layers": [...]');
+        return;
+      }
+      drawLayers(s.layers, ctx2, id + ".");
+    }
+  };
+  SHAPES.circle = function(s, ctx2, rng) {
+    SHAPES.ellipse(Object.assign({}, s, { rx: s.r, ry: s.r }), ctx2, rng);
+  };
+  function drawShape(s, ctx2, id) {
+    if (!s || typeof s !== "object" || Array.isArray(s)) {
+      ctx2.warn("M\u1ED9t layer kh\xF4ng ph\u1EA3i object");
+      return;
+    }
+    var fn = SHAPES[s.shape];
+    if (!fn) {
+      ctx2.warn('Kh\xF4ng bi\u1EBFt l\u1EC7nh "' + s.shape + '" (layer ' + id + ")");
+      return;
+    }
+    if (!cond(s, ctx2)) return;
+    if (Array.isArray(s.onFrames) && s.onFrames.indexOf(ctx2.frame) < 0) return;
+    var over = null;
+    if (s.onlyOver !== void 0) {
+      over = [].concat(s.onlyOver).map(function(n2) {
+        return parseColor(n2, ctx2.palette);
+      }).filter(Boolean);
+    }
+    var sh = over ? Object.assign({}, s, { _over: over }) : s;
+    var rep = s.repeat && typeof s.repeat === "object" ? s.repeat : null;
+    var n = rep ? clamp2(Math.round(rep.n === void 0 ? 1 : rep.n), 0, 500) : 1;
+    for (var i = 0; i < n; i++) {
+      if (rep && rep.phase && ctx2.frame % rep.phase !== i % rep.phase) continue;
+      var seed = (Math.imul(ctx2.seed, 7919) ^ hstr(id) ^ Math.imul(i + 1, 1013)) >>> 0;
+      var ox = s.offset && s.offset[0] || 0, oy = s.offset && s.offset[1] || 0;
+      if (rep) {
+        ox += i * (rep.dx || 0);
+        oy += i * (rep.dy || 0);
+        if (rep.jitter) {
+          var jr = mulberry322(seed ^ 1540483477), jx = Array.isArray(rep.jitter) ? rep.jitter[0] : rep.jitter, jy = Array.isArray(rep.jitter) ? rep.jitter[1] : rep.jitter;
+          ox += Math.round((jr() * 2 - 1) * jx);
+          oy += Math.round((jr() * 2 - 1) * jy);
+        }
+      }
+      var passes = s.mirror ? [false, true] : [false];
+      for (var q = 0; q < passes.length; q++) {
+        var sv = { ox: ctx2.ox, oy: ctx2.oy, flip: ctx2.flip };
+        ctx2.ox += ox;
+        ctx2.oy += oy;
+        if (passes[q]) ctx2.flip = !ctx2.flip;
+        fn(sh, ctx2, mulberry322(seed), id);
+        ctx2.ox = sv.ox;
+        ctx2.oy = sv.oy;
+        ctx2.flip = sv.flip;
+      }
+    }
+  }
+  function drawLayers(layers, ctx2, prefix) {
+    layers.forEach(function(l, i) {
+      drawShape(l, ctx2, prefix + i);
+    });
+  }
+  function renderFrame2(def, o) {
+    var ctx2 = { w: o.w, h: o.h, buf: new Uint8ClampedArray(o.w * o.h * 4), palette: o.palette, seed: o.seed, frame: o.frame, params: o.params, warn: o.warn, wrap: o.wrap, ox: 0, oy: 0, flip: false, ops: 0, cc: /* @__PURE__ */ new Map() };
+    if (def.bg !== void 0) {
+      var c = parseColor(def.bg, ctx2.palette);
+      if (c) for (var i = 0; i < o.w * o.h; i++) {
+        ctx2.buf[i * 4] = c[0];
+        ctx2.buf[i * 4 + 1] = c[1];
+        ctx2.buf[i * 4 + 2] = c[2];
+        ctx2.buf[i * 4 + 3] = c[3];
+      }
+      else o.warn('"bg" kh\xF4ng ph\u1EA3i m\xE0u h\u1EE3p l\u1EC7');
+    }
+    drawLayers(def.layers, ctx2, "L");
+    return ctx2.buf;
+  }
+  function render(def, opts) {
+    opts = opts || {};
+    var warns = [], warn = function(m) {
+      if (warns.indexOf(m) < 0) warns.push(m);
+    };
+    if (!def || typeof def !== "object" || Array.isArray(def)) throw new Error("JSON ph\u1EA3i l\xE0 m\u1ED9t object { ... }");
+    if (!Array.isArray(def.layers)) throw new Error('Thi\u1EBFu m\u1EA3ng "layers": [ ... ]');
+    var size = Array.isArray(def.size) ? def.size : [32, 32];
+    var w = clamp2(Math.round(+size[0] || 32), 1, 512), h2 = clamp2(Math.round(+size[1] || 32), 1, 512);
+    var seed = (opts.seed !== void 0 ? opts.seed : def.seed !== void 0 ? def.seed : 1) | 0;
+    var nf = def.animate && def.animate.frames > 1 ? clamp2(Math.round(def.animate.frames), 2, 16) : 1;
+    var params = Object.assign({}, def.params || {}, opts.params || {});
+    var wrap = def.wrap !== void 0 ? !!def.wrap : def.type === "tile";
+    var palette2 = Object.assign({}, def.palette && typeof def.palette === "object" ? def.palette : {});
+    if (def.palettes && typeof def.palettes === "object") Object.keys(def.palettes).forEach(function(k) {
+      if (params[k]) Object.assign(palette2, def.palettes[k]);
+    });
+    var frames = [];
+    for (var f = 0; f < nf; f++) frames.push(renderFrame2(def, { w, h: h2, seed, frame: f, params, palette: palette2, warn, wrap }));
+    return { w, h: h2, frames, fps: def.animate && def.animate.fps || 4, warnings: warns, anchor: def.anchor, footprint: def.footprint, type: def.type || "prop" };
+  }
+  root.Blueprint = { render, parseColor, mulberry32: mulberry322 };
+})(typeof window !== "undefined" ? window : globalThis);
+
+// src/blueprint/blueprint.ts
+var Blueprint = globalThis.Blueprint;
+function toCanvases(res) {
+  return res.frames.map((f) => {
+    const c = document.createElement("canvas");
+    c.width = res.w;
+    c.height = res.h;
+    c.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(f), res.w, res.h), 0, 0);
+    return c;
+  });
+}
+
+// src/data/anims.json
+var anims_default = {
+  idle: { fps: 4, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 2, lift: 0 }, legL: { a: -2, lift: 0 }, armR: { a: 4, b: 8 }, armL: { a: -4, b: 8 } },
+    { bob: 0, lean: 0, legR: { a: 2, lift: 0 }, legL: { a: -2, lift: 0 }, armR: { a: 6, b: 8 }, armL: { a: -6, b: 8 } },
+    { bob: 1, lean: 0, legR: { a: 2, lift: 0 }, legL: { a: -2, lift: 0 }, armR: { a: 8, b: 8 }, armL: { a: -8, b: 8 } },
+    { bob: 1, lean: 0, legR: { a: 2, lift: 0 }, legL: { a: -2, lift: 0 }, armR: { a: 6, b: 8 }, armL: { a: -6, b: 8 } }
+  ] },
+  walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 0, b: 14 }, armL: { a: 0, b: 14 } },
+    { bob: 0, lean: 1, legR: { a: 28, lift: 1 }, legL: { a: -28, lift: 0 }, armR: { a: -23, b: 14 }, armL: { a: 23, b: 14 } },
+    { bob: 0, lean: 1, legR: { a: 28, lift: 0 }, legL: { a: -28, lift: 1 }, armR: { a: -23, b: 14 }, armL: { a: 23, b: 14 } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 0, b: 14 }, armL: { a: 0, b: 14 } },
+    { bob: 0, lean: 1, legR: { a: -28, lift: 0 }, legL: { a: 28, lift: 1 }, armR: { a: 23, b: 14 }, armL: { a: -23, b: 14 } },
+    { bob: 0, lean: 1, legR: { a: -28, lift: 1 }, legL: { a: 28, lift: 0 }, armR: { a: 23, b: 14 }, armL: { a: -23, b: 14 } }
+  ] },
+  carry_walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
+    { bob: 0, lean: 1, legR: { a: 21, lift: 1 }, legL: { a: -21, lift: 0 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
+    { bob: 0, lean: 1, legR: { a: 21, lift: 0 }, legL: { a: -21, lift: 1 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
+    { bob: 0, lean: 1, legR: { a: -21, lift: 0 }, legL: { a: 21, lift: 1 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } },
+    { bob: 0, lean: 1, legR: { a: -21, lift: 1 }, legL: { a: 21, lift: 0 }, armR: { a: 48, b: 50 }, armL: { a: 52, b: 46 }, carry: { on: true, dy: 0 } }
+  ] },
+  chop: { fps: 8, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 80, b: 40 }, armL: { a: 70, b: 40 }, tool: { on: true, a: 151, kind: "axe" } },
+    { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 125, b: 25 }, armL: { a: 115, b: 25 }, tool: { on: true, a: 186, kind: "axe" } },
+    { bob: -1, lean: -2, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 15 }, armL: { a: 140, b: 15 }, tool: { on: true, a: 151, kind: "axe" } },
+    { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 100, b: 20 }, armL: { a: 92, b: 20 }, tool: { on: true, a: 130, kind: "axe" } },
+    { bob: 1, lean: 2, legR: { a: 18, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 45, b: 30 }, armL: { a: 40, b: 30 }, tool: { on: true, a: 116, kind: "axe" } },
+    { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 35 }, armL: { a: 62, b: 35 }, tool: { on: true, a: 89, kind: "axe" } }
+  ] },
+  mine: { fps: 7, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 80, b: 40 }, armL: { a: 70, b: 40 }, tool: { on: true, a: 165, kind: "pick" } },
+    { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 125, b: 25 }, armL: { a: 115, b: 25 }, tool: { on: true, a: 195, kind: "pick" } },
+    { bob: -1, lean: -2, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 15 }, armL: { a: 140, b: 15 }, tool: { on: true, a: 215, kind: "pick" } },
+    { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 100, b: 20 }, armL: { a: 92, b: 20 }, tool: { on: true, a: 130, kind: "pick" } },
+    { bob: 1, lean: 2, legR: { a: 18, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 45, b: 30 }, armL: { a: 40, b: 30 }, tool: { on: true, a: 70, kind: "pick" } },
+    { bob: 0, lean: 1, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 35 }, armL: { a: 62, b: 35 }, tool: { on: true, a: 125, kind: "pick" } }
+  ] },
+  dig: { fps: 6, loop: true, frames: [
+    { bob: 1, lean: 1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 80, b: 40 }, armL: { a: 70, b: 40 }, tool: { on: true, a: 155, kind: "hoe" } },
+    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 125, b: 25 }, armL: { a: 115, b: 25 }, tool: { on: true, a: 185, kind: "hoe" } },
+    { bob: 0, lean: -1, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 15 }, armL: { a: 140, b: 15 }, tool: { on: true, a: 205, kind: "hoe" } },
+    { bob: 1, lean: 2, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 100, b: 20 }, armL: { a: 92, b: 20 }, tool: { on: true, a: 120, kind: "hoe" } },
+    { bob: 2, lean: 3, legR: { a: 18, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 45, b: 30 }, armL: { a: 40, b: 30 }, tool: { on: true, a: 60, kind: "hoe" } },
+    { bob: 1, lean: 2, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 35 }, armL: { a: 62, b: 35 }, tool: { on: true, a: 115, kind: "hoe" } }
+  ] },
+  gather: { fps: 5, loop: true, frames: [
+    { bob: 1, lean: 2, legR: { a: 10, lift: 0 }, legL: { a: -10, lift: 0 }, armR: { a: 30, b: 20 }, armL: { a: 25, b: 20 } },
+    { bob: 2, lean: 3, legR: { a: 14, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 14, b: 10 }, armL: { a: 10, b: 10 } },
+    { bob: 1, lean: 2, legR: { a: 10, lift: 0 }, legL: { a: -10, lift: 0 }, armR: { a: 55, b: 60 }, armL: { a: 50, b: 60 } },
+    { bob: 0, lean: 1, legR: { a: 8, lift: 0 }, legL: { a: -8, lift: 0 }, armR: { a: 45, b: 70 }, armL: { a: 40, b: 70 } }
+  ] },
+  build: { fps: 6, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 10, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 70, b: 45 }, armL: { a: 60, b: 45 }, tool: { on: true, a: 150, kind: "hammer" } },
+    { bob: -1, lean: -1, legR: { a: 10, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 110, b: 30 }, armL: { a: 100, b: 30 }, tool: { on: true, a: 190, kind: "hammer" } },
+    { bob: 0, lean: 1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 60, b: 35 }, armL: { a: 55, b: 35 }, tool: { on: true, a: 95, kind: "hammer" } },
+    { bob: 1, lean: 2, legR: { a: 14, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 50, b: 40 }, armL: { a: 45, b: 40 }, tool: { on: true, a: 60, kind: "hammer" } }
+  ] },
+  craft: { fps: 5, loop: true, frames: [
+    { bob: 1, lean: 1, legR: { a: 10, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 70, b: 45 }, armL: { a: 60, b: 45 }, tool: { on: true, a: 150, kind: "hammer" } },
+    { bob: 0, lean: 0, legR: { a: 10, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 110, b: 30 }, armL: { a: 100, b: 30 }, tool: { on: true, a: 190, kind: "hammer" } },
+    { bob: 1, lean: 2, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 60, b: 35 }, armL: { a: 55, b: 35 }, tool: { on: true, a: 95, kind: "hammer" } },
+    { bob: 2, lean: 3, legR: { a: 14, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 50, b: 40 }, armL: { a: 45, b: 40 }, tool: { on: true, a: 60, kind: "hammer" } }
+  ] },
+  hit: { fps: 10, loop: false, hit: 0, frames: [
+    { bob: 0, lean: -3, legR: { a: 8, lift: 0 }, legL: { a: -8, lift: 0 }, armR: { a: 30, b: 10 }, armL: { a: 28, b: 10 } },
+    { bob: 0, lean: -1, legR: { a: 10, lift: 0 }, legL: { a: -10, lift: 0 }, armR: { a: 20, b: 10 }, armL: { a: 18, b: 10 } }
+  ] },
+  run: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 0, b: 70 }, armL: { a: 0, b: 70 } },
+    { bob: 0, lean: 3, legR: { a: 36, lift: 2 }, legL: { a: -36, lift: 0 }, armR: { a: -52, b: 70 }, armL: { a: 52, b: 70 } },
+    { bob: 0, lean: 3, legR: { a: 36, lift: 0 }, legL: { a: -36, lift: 1 }, armR: { a: -52, b: 70 }, armL: { a: 52, b: 70 } },
+    { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 0, b: 70 }, armL: { a: 0, b: 70 } },
+    { bob: 0, lean: 3, legR: { a: -36, lift: 0 }, legL: { a: 36, lift: 2 }, armR: { a: 52, b: 70 }, armL: { a: -52, b: 70 } },
+    { bob: 0, lean: 3, legR: { a: -36, lift: 2 }, legL: { a: 36, lift: 0 }, armR: { a: 52, b: 70 }, armL: { a: -52, b: 70 } }
+  ] },
+  down: { fps: 2, loop: true, frames: [
+    { bob: 7, lean: -2, legR: { a: 55, lift: 0 }, legL: { a: 48, lift: 0 }, armR: { a: 25, b: 25 }, armL: { a: 15, b: 20 } },
+    { bob: 6, lean: -3, legR: { a: 55, lift: 0 }, legL: { a: 48, lift: 0 }, armR: { a: 28, b: 25 }, armL: { a: 18, b: 20 } }
+  ] },
+  fist_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 55, b: 75 }, armL: { a: 45, b: 80 } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 56, b: 75 }, armL: { a: 46, b: 80 } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 55, b: 75 }, armL: { a: 45, b: 80 } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 54, b: 75 }, armL: { a: 44, b: 80 } }
+  ] },
+  fist_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 40, b: 80 }, armL: { a: 40, b: 80 } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: -3, b: 80 }, armL: { a: 83, b: 80 } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: -3, b: 80 }, armL: { a: 83, b: 80 } },
+    { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 40, b: 80 }, armL: { a: 40, b: 80 } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 83, b: 80 }, armL: { a: -3, b: 80 } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 83, b: 80 }, armL: { a: -3, b: 80 } }
+  ] },
+  fist_attack: { fps: 10, loop: false, hit: 3, frames: [
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 110, b: 30 }, armL: { a: 104, b: 30 }, tool: { on: true, a: 140, kind: "club" } },
+    { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 160, b: 20 }, armL: { a: 155, b: 20 }, tool: { on: true, a: 185, kind: "club" } },
+    { bob: -1, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 175, b: 10 }, armL: { a: 170, b: 10 }, tool: { on: true, a: 205, kind: "club" } },
+    { bob: 1, lean: 4, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 70, b: 30 }, armL: { a: 66, b: 30 }, tool: { on: true, a: 60, kind: "club" } },
+    { bob: 1, lean: 4, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 60, b: 30 }, armL: { a: 56, b: 30 }, tool: { on: true, a: 55, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 90, b: 25 }, armL: { a: 84, b: 25 }, tool: { on: true, a: 120, kind: "club" } }
+  ] },
+  swing_idle: { fps: 4, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "club" } }
+  ] },
+  swing_walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "club" } }
+  ] },
+  swing_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 105, b: 30 }, armL: { a: 98, b: 30 }, tool: { on: true, a: 150, kind: "club" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 106, b: 30 }, armL: { a: 99, b: 30 }, tool: { on: true, a: 152, kind: "club" } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 105, b: 30 }, armL: { a: 98, b: 30 }, tool: { on: true, a: 150, kind: "club" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 104, b: 30 }, armL: { a: 97, b: 30 }, tool: { on: true, a: 148, kind: "club" } }
+  ] },
+  swing_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 4, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 150, b: 20 }, armL: { a: 144, b: 20 }, tool: { on: true, a: 205, kind: "club" } },
+    { bob: 0, lean: 4, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 147, b: 20 }, armL: { a: 141, b: 20 }, tool: { on: true, a: 201, kind: "club" } },
+    { bob: 0, lean: 4, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 147, b: 20 }, armL: { a: 141, b: 20 }, tool: { on: true, a: 201, kind: "club" } },
+    { bob: -1, lean: 4, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 150, b: 20 }, armL: { a: 144, b: 20 }, tool: { on: true, a: 205, kind: "club" } },
+    { bob: 0, lean: 4, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 153, b: 20 }, armL: { a: 147, b: 20 }, tool: { on: true, a: 209, kind: "club" } },
+    { bob: 0, lean: 4, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 153, b: 20 }, armL: { a: 147, b: 20 }, tool: { on: true, a: 209, kind: "club" } }
+  ] },
+  swing_attack: { fps: 10, loop: false, hit: 3, frames: [
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 110, b: 30 }, armL: { a: 104, b: 30 }, tool: { on: true, a: 140, kind: "club" } },
+    { bob: -1, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 160, b: 20 }, armL: { a: 155, b: 20 }, tool: { on: true, a: 185, kind: "club" } },
+    { bob: -1, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 175, b: 10 }, armL: { a: 170, b: 10 }, tool: { on: true, a: 205, kind: "club" } },
+    { bob: 1, lean: 4, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 70, b: 30 }, armL: { a: 66, b: 30 }, tool: { on: true, a: 60, kind: "club" } },
+    { bob: 1, lean: 4, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 60, b: 30 }, armL: { a: 56, b: 30 }, tool: { on: true, a: 55, kind: "club" } },
+    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 90, b: 25 }, armL: { a: 84, b: 25 }, tool: { on: true, a: 120, kind: "club" } }
+  ] },
+  thrust_idle: { fps: 4, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "spear" } }
+  ] },
+  thrust_walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } }
+  ] },
+  thrust_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 111, kind: "spear" } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 51, b: 30 }, armL: { a: 45, b: 30 }, tool: { on: true, a: 109, kind: "spear" } }
+  ] },
+  thrust_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+    { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } }
+  ] },
+  thrust_attack: { fps: 10, loop: false, hit: 3, frames: [
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 20, b: 40 }, armL: { a: 15, b: 40 }, tool: { on: true, a: 105, kind: "spear" } },
+    { bob: 0, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 10, b: 40 }, armL: { a: 5, b: 40 }, tool: { on: true, a: 102, kind: "spear" } },
+    { bob: -1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 95, b: 0 }, armL: { a: 90, b: 0 }, tool: { on: true, a: 90, kind: "spear" } },
+    { bob: -1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 98, b: 0 }, armL: { a: 92, b: 0 }, tool: { on: true, a: 88, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 20 }, armL: { a: 64, b: 20 }, tool: { on: true, a: 98, kind: "spear" } }
+  ] },
+  shoot_idle: { fps: 4, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "bow" } }
+  ] },
+  shoot_walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } }
+  ] },
+  shoot_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 81, b: 10 }, armL: { a: 71, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 79, b: 10 }, armL: { a: 69, b: 20 }, tool: { on: true, a: 180, kind: "bow" } }
+  ] },
+  shoot_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+    { bob: 0, lean: 3, legR: { a: 31, lift: 2 }, legL: { a: -31, lift: 0 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+    { bob: 0, lean: 3, legR: { a: 31, lift: 0 }, legL: { a: -31, lift: 1 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+    { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+    { bob: 0, lean: 3, legR: { a: -31, lift: 0 }, legL: { a: 31, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
+    { bob: 0, lean: 3, legR: { a: -31, lift: 2 }, legL: { a: 31, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } }
+  ] },
+  shoot_attack: { fps: 10, loop: false, hit: 4, frames: [
+    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 85, b: 5 }, armL: { a: 60, b: 40 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 88, b: 0 }, armL: { a: 40, b: -70 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 0, lean: -3, legR: { a: 12, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 90, b: 0 }, armL: { a: 30, b: -80 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 90, b: 0 }, armL: { a: 60, b: -20 }, tool: { on: true, a: 180, kind: "bow" } },
+    { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } }
+  ] },
+  sling_idle: { fps: 4, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "sling" } }
+  ] },
+  sling_walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } }
+  ] },
+  sling_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 61, b: 25 }, armL: { a: 56, b: 25 }, tool: { on: true, a: 113, kind: "sling" } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 59, b: 25 }, armL: { a: 54, b: 25 }, tool: { on: true, a: 107, kind: "sling" } }
+  ] },
+  sling_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 3, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 0, lean: 3, legR: { a: 31, lift: 2 }, legL: { a: -31, lift: 0 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 0, lean: 3, legR: { a: 31, lift: 0 }, legL: { a: -31, lift: 1 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: -1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 0, lean: 3, legR: { a: -31, lift: 0 }, legL: { a: 31, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
+    { bob: 0, lean: 3, legR: { a: -31, lift: 2 }, legL: { a: 31, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } }
+  ] },
+  sling_attack: { fps: 10, loop: false, hit: 4, frames: [
+    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 165, b: 10 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 175, kind: "sling" } },
+    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 170, b: 5 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 270, kind: "sling" } },
+    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 170, b: 5 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 360, kind: "sling" } },
+    { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 170, b: 5 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 90, kind: "sling" } },
+    { bob: 0, lean: 2, legR: { a: 20, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 100, b: 10 }, armL: { a: 95, b: 10 }, tool: { on: true, a: 100, kind: "sling" } },
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } }
+  ] },
+  throw_idle: { fps: 4, loop: true, frames: [
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "spear" } }
+  ] },
+  throw_walk: { fps: 8, loop: true, gait: true, frames: [
+    { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 1 }, legL: { a: -24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: 24, lift: 0 }, legL: { a: -24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 0 }, legL: { a: 24, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: -24, lift: 1 }, legL: { a: 24, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "spear" } }
+  ] },
+  throw_guard: { fps: 4, loop: true, frames: [
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 111, kind: "spear" } },
+    { bob: 2, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 52, b: 30 }, armL: { a: 46, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 51, b: 30 }, armL: { a: 45, b: 30 }, tool: { on: true, a: 109, kind: "spear" } }
+  ] },
+  throw_charge: { fps: 12, loop: true, frames: [
+    { bob: -1, lean: 5, legR: { a: 0, lift: 3 }, legL: { a: 0, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 2 }, legL: { a: -33, lift: 0 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: 33, lift: 0 }, legL: { a: -33, lift: 1 }, armR: { a: 53, b: 30 }, armL: { a: 47, b: 30 }, tool: { on: true, a: 113, kind: "spear" } },
+    { bob: -1, lean: 5, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 3 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 0 }, legL: { a: 33, lift: 2 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } },
+    { bob: 0, lean: 5, legR: { a: -33, lift: 2 }, legL: { a: 33, lift: 0 }, armR: { a: 47, b: 30 }, armL: { a: 41, b: 30 }, tool: { on: true, a: 107, kind: "spear" } }
+  ] },
+  throw_attack: { fps: 10, loop: false, hit: 3, frames: [
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 50, b: 30 }, armL: { a: 44, b: 30 }, tool: { on: true, a: 110, kind: "spear" } },
+    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 20, b: 40 }, armL: { a: 15, b: 40 }, tool: { on: true, a: 105, kind: "spear" } },
+    { bob: 0, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 10, b: 40 }, armL: { a: 5, b: 40 }, tool: { on: true, a: 102, kind: "spear" } },
+    { bob: -1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 95, b: 0 }, armL: { a: 90, b: 0 }, tool: { on: true, a: 90, kind: "spear" } },
+    { bob: -1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 98, b: 0 }, armL: { a: 92, b: 0 }, tool: { on: true, a: 88, kind: "spear" } },
+    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 20 }, armL: { a: 64, b: 20 }, tool: { on: true, a: 98, kind: "spear" } }
+  ] },
+  slash: { fps: 12, loop: false, hit: 3, frames: [
+    { bob: 0, lean: 0, legR: { a: 14, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 100, b: 30 }, armL: { a: 92, b: 30 }, tool: { on: true, a: 150, kind: "hatchet" } },
+    { bob: 0, lean: -2, legR: { a: 12, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 150, b: 20 }, armL: { a: 140, b: 20 }, tool: { on: true, a: 215, kind: "hatchet" } },
+    { bob: -1, lean: -3, legR: { a: 10, lift: 0 }, legL: { a: -18, lift: 0 }, armR: { a: 165, b: 10 }, armL: { a: 155, b: 10 }, tool: { on: true, a: 235, kind: "hatchet" } },
+    { bob: 1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 95, b: 10 }, armL: { a: 88, b: 10 }, tool: { on: true, a: 80, kind: "hatchet" } },
+    { bob: 1, lean: 4, legR: { a: 26, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 60, b: 15 }, armL: { a: 55, b: 15 }, tool: { on: true, a: 40, kind: "hatchet" } },
+    { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 85, b: 25 }, armL: { a: 78, b: 25 }, tool: { on: true, a: 110, kind: "hatchet" } }
+  ] }
+};
+
+// src/data/blueprints/stone_age/buildings/campfire/L1.json
+var L1_default = {
+  name: "Nh\xE0 chung (\u0111\u1ED1ng l\u1EEDa tr\u1EA1i)",
+  type: "prop",
+  size: [72, 60],
+  anchor: [36, 54],
+  footprint: [4, 30, 64, 28],
+  seed: 1,
+  animate: { frames: 4, fps: 6 },
+  palette: {
+    line: "#2b1d10",
+    rock: "#7a8084",
+    rockL: "#b0b7bb",
+    shadow: "#000000",
+    dirt: "#5a4430",
+    dirtL: "#6e553b",
+    dirtD: "#47362a",
+    ash: "#2e2822",
+    log: "#7a5530",
+    logD: "#5e4026",
+    logE: "#c49a60",
+    flame2: "#e8641e",
+    flame1: "#f7a728",
+    flame0: "#fff1a8",
+    spark: "#ffd070"
+  },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 50, rx: 32, ry: 8, color: "shadow", alpha: 0.25 },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 30, ry: 14, color: "#ffb040", alpha: 0.1 },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 24, ry: 10, color: "dirt" },
+    { shape: "scatter", count: 40, area: [12, 34, 48, 20], size: 1, colors: ["dirtL", "dirtD"], onlyOver: ["dirt"] },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 15, ry: 6, color: "ash" },
+    { shape: "ellipse", cx: 21, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 21, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 19, y: 37, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 30, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 30, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 28, y: 33, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 42, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 42, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 40, y: 33, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 51, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 51, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 49, y: 37, w: 3, h: 1, color: "rockL" },
+    { shape: "line", from: [26, 47], to: [46, 40], w: 4, color: "log" },
+    { shape: "line", from: [26, 40], to: [46, 47], w: 4, color: "logD" },
+    { shape: "rect", x: 25, y: 45, w: 3, h: 4, color: "logE" },
+    { shape: "rect", x: 45, y: 45, w: 3, h: 4, color: "logE" },
+    { shape: "poly", points: [[27, 44], [36, { cycle: [22, 19, 23, 20] }], [45, 44]], color: "flame2" },
+    { shape: "poly", points: [[30, 44], [34, { cycle: [27, 25, 28, 26] }], [38, 44]], color: "flame1" },
+    { shape: "poly", points: [[34, 44], [40, { cycle: [26, 28, 25, 27] }], [44, 44]], color: "flame1" },
+    { shape: "poly", points: [[32, 44], [36, { cycle: [32, 30, 33, 31] }], [40, 44]], color: "flame0" },
+    { shape: "rect", x: [28, 44], y: [12, 30], w: 1, h: 1, color: "spark", repeat: { n: 8, phase: 4 } },
+    { shape: "ellipse", cx: 55, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 55, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 53, y: 42, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 51, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 51, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 49, y: 47, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 42, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 42, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 40, y: 51, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 30, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 30, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 28, y: 51, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 21, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 21, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 19, y: 47, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 17, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 17, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 15, y: 42, w: 3, h: 1, color: "rockL" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/builder/L1.json
+var L1_default2 = {
+  name: "B\xE3i th\u1EE3 x\xE2y (c\u1EA5p 1, \u0111\u1ED1ng g\u1ED7 v\xE0 c\u1ECDc)",
+  name_en: "Builders' Yard (Tier 1, Log Pile and Stakes)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", sandL: "#cdbb94", sandD: "#9a8760" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "ellipse", cx: 50, cy: 49, rx: 9, ry: 3, color: "sandL", alpha: 0.85 },
+      { shape: "scatter", count: 10, area: [43, 47, 14, 5], size: 1, colors: ["chip", "sandD"], onlyOver: ["sandL"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 9, y: 47, w: 17, h: 4, color: "log" },
+      { shape: "rect", x: 9, y: 47, w: 17, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 9, cy: 49, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 26, cy: 49, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 11, y: 43, w: 14, h: 4, color: "log" },
+      { shape: "rect", x: 11, y: 43, w: 14, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 11, cy: 45, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 25, cy: 45, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 13, y: 39, w: 11, h: 4, color: "log" },
+      { shape: "rect", x: 13, y: 39, w: 11, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 13, cy: 41, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 24, cy: 41, rx: 2, ry: 2, color: "logE" },
+      { shape: "line", from: [56, 52], to: [51, 33], w: 2, color: "wood" },
+      { shape: "line", from: [60, 52], to: [57, 32], w: 2, color: "woodL" },
+      { shape: "line", from: [63, 51], to: [62, 34], w: 2, color: "wood" },
+      { shape: "line", from: [53, 44], to: [62, 44], w: 1, color: "rope" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "ellipse", cx: 34, cy: 51, rx: 6, ry: 3, color: "woodD" },
+      { shape: "ellipse", cx: 34, cy: 50, rx: 6, ry: 3, color: "log" },
+      { shape: "ellipse", cx: 34, cy: 49, rx: 4, ry: 2, color: "logE" },
+      { shape: "line", from: [29, 41], to: [27, 50], w: 1, color: "woodD" },
+      { shape: "line", from: [29, 41], to: [31, 50], w: 1, color: "woodD" },
+      { shape: "line", from: [43, 40], to: [41, 49], w: 1, color: "woodD" },
+      { shape: "line", from: [43, 40], to: [45, 49], w: 1, color: "woodD" },
+      { shape: "poly", points: [[26, 39], [46, 38], [47, 41], [27, 42]], color: "woodD" },
+      { shape: "poly", points: [[26, 38], [46, 37], [47, 40], [27, 41]], color: "wood" },
+      { shape: "line", from: [26, 38], to: [46, 37], w: 1, color: "woodL" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "line", from: [35, 49], to: [35, 40], w: 1, color: "woodD" },
+      { shape: "rect", x: 33, y: 39, w: 3, h: 2, color: "stoneD" },
+      { shape: "pixels", at: [[35, 39]], color: "stoneL" },
+      { shape: "ellipse", cx: 45, cy: 52, rx: 3, ry: 1, color: "rope" },
+      { shape: "pixels", at: [[43, 52], [47, 52]], color: "wood" },
+      { shape: "scatter", count: 8, area: [28, 45, 24, 8], size: 1, colors: ["chip", "sandL"], onlyOver: ["earth", "sandL"] },
+      { shape: "line", from: [22, 36], to: [27, 48], w: 2, color: "woodD" },
+      { shape: "rect", x: 20, y: 34, w: 5, h: 3, color: "stoneD" },
+      { shape: "pixels", at: [[20, 34]], color: "stoneL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/builder/L2.json
+var L2_default = {
+  name: "L\xE1n th\u1EE3 x\xE2y (c\u1EA5p 2, m\xE1i da, b\xE0n g\u1ED7)",
+  name_en: "Builders' Lean-to (Tier 2, Hide Roof, Workbench)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "rect", x: 14, y: 45, w: 44, h: 9, color: "woodD", alpha: 0.45 },
+      { shape: "scatter", count: 10, area: [14, 46, 44, 7], size: [3, 1], colors: ["woodL", "wood"], onlyOver: ["woodD"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 11, y: 20, w: 2, h: 23, color: "wood" },
+      { shape: "rect", x: 11, y: 20, w: 1, h: 23, color: "woodL" },
+      { shape: "rect", x: 59, y: 20, w: 2, h: 23, color: "wood" },
+      { shape: "rect", x: 59, y: 20, w: 1, h: 23, color: "woodL" },
+      { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
+      { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
+      { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
+      { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
+      { shape: "rect", x: 10, y: 19, w: 52, h: 2, color: "woodD" },
+      { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[3, 31], [13, 16], [59, 16], [69, 31]], color: "hide" },
+      { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "hideD" },
+      { shape: "line", from: [13, 16], to: [59, 16], w: 1, color: "hideL" },
+      { shape: "line", from: [8, 24], to: [64, 24], w: 1, color: "hideL", alpha: 0.35 },
+      { shape: "pixels", at: [[10, 33], [18, 33], [26, 33], [34, 33], [42, 33], [50, 33], [58, 33], [64, 33]], color: "stitch" },
+      { shape: "scatter", count: 26, area: [10, 17, 52, 12], size: 1, colors: ["hideL", "hideD"], onlyOver: ["hide"] }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 17, y: 47, w: 38, h: 4, color: "wood" },
+      { shape: "rect", x: 17, y: 47, w: 38, h: 1, color: "woodL" },
+      { shape: "rect", x: 19, y: 51, w: 3, h: 5, color: "woodD" },
+      { shape: "rect", x: 50, y: 51, w: 3, h: 5, color: "woodD" },
+      { shape: "poly", points: [[21, 44], [38, 43], [39, 46], [22, 46]], color: "woodL" },
+      { shape: "rect", x: 42, y: 44, w: 5, h: 2, color: "stoneD" },
+      { shape: "pixels", at: [[42, 44]], color: "stoneL" },
+      { shape: "ellipse", cx: 51, cy: 45, rx: 2, ry: 1, color: "rope" },
+      { shape: "rect", x: 15, y: 36, w: 42, h: 2, color: "woodD" },
+      { shape: "line", from: [21, 38], to: [21, 41], w: 1, color: "rope" },
+      { shape: "rect", x: 19, y: 41, w: 5, h: 2, color: "stoneD" },
+      { shape: "line", from: [31, 38], to: [31, 42], w: 1, color: "rope" },
+      { shape: "line", from: [29, 42], to: [33, 42], w: 1, color: "stoneD" },
+      { shape: "line", from: [42, 38], to: [42, 41], w: 1, color: "rope" },
+      { shape: "rect", x: 40, y: 41, w: 5, h: 3, color: "stone" },
+      { shape: "line", from: [51, 38], to: [51, 41], w: 1, color: "rope" },
+      { shape: "line", from: [51, 41], to: [51, 43], w: 1, color: "woodD" },
+      { shape: "rect", x: 57, y: 46, w: 7, h: 3, color: "log" },
+      { shape: "rect", x: 58, y: 49, w: 7, h: 3, color: "log" },
+      { shape: "ellipse", cx: 57, cy: 47, rx: 1, ry: 1, color: "logE" },
+      { shape: "ellipse", cx: 58, cy: 50, rx: 1, ry: 1, color: "logE" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/builder/L3.json
+var L3_default = {
+  name: "X\u01B0\u1EDFng th\u1EE3 x\xE2y (c\u1EA5p 3, n\u1EC1n \u0111\xE1, khung g\u1ED7 l\u1EDBn)",
+  name_en: "Builders' Hall (Tier 3, Stone Floor, Great Timber Frame)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
+      { shape: "scatter", count: 44, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] },
+      { shape: "line", from: [10, 45], to: [62, 45], w: 1, color: "stoneD", alpha: 0.5 },
+      { shape: "line", from: [14, 50], to: [58, 50], w: 1, color: "stoneD", alpha: 0.5 }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 9, y: 12, w: 3, h: 30, color: "woodD" },
+      { shape: "rect", x: 9, y: 12, w: 1, h: 30, color: "wood" },
+      { shape: "rect", x: 60, y: 12, w: 3, h: 30, color: "woodD" },
+      { shape: "rect", x: 60, y: 12, w: 1, h: 30, color: "wood" },
+      { shape: "rect", x: 5, y: 28, w: 3, h: 27, color: "woodD" },
+      { shape: "rect", x: 5, y: 28, w: 1, h: 27, color: "wood" },
+      { shape: "rect", x: 64, y: 28, w: 3, h: 27, color: "woodD" },
+      { shape: "rect", x: 64, y: 28, w: 1, h: 27, color: "wood" },
+      { shape: "rect", x: 7, y: 11, w: 58, h: 3, color: "log" },
+      { shape: "rect", x: 4, y: 27, w: 64, h: 3, color: "log" },
+      { shape: "rect", x: 8, y: 11, w: 56, h: 1, color: "woodL" },
+      { shape: "rect", x: 8, y: 35, w: 56, h: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[3, 30], [11, 8], [61, 8], [69, 30]], color: "wood" },
+      { shape: "poly", points: [[3, 30], [69, 30], [68, 34], [4, 34]], color: "woodD" },
+      { shape: "line", from: [11, 8], to: [61, 8], w: 2, color: "woodL" },
+      { shape: "line", from: [20, 8], to: [14, 30], w: 1, color: "woodD" },
+      { shape: "line", from: [30, 8], to: [26, 30], w: 1, color: "woodD" },
+      { shape: "line", from: [42, 8], to: [46, 30], w: 1, color: "woodD" },
+      { shape: "line", from: [52, 8], to: [58, 30], w: 1, color: "woodD" },
+      { shape: "scatter", count: 30, area: [8, 10, 56, 20], size: 1, colors: ["woodL", "woodD"], onlyOver: ["wood"] }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 48, y: 43, w: 14, h: 5, color: "stone" },
+      { shape: "rect", x: 48, y: 43, w: 14, h: 1, color: "stoneL" },
+      { shape: "rect", x: 50, y: 39, w: 10, h: 4, color: "stoneL" },
+      { shape: "rect", x: 50, y: 39, w: 10, h: 1, color: "chip" },
+      { shape: "line", from: [55, 43], to: [55, 48], w: 1, color: "stoneD" },
+      { shape: "rect", x: 10, y: 47, w: 16, h: 3, color: "woodL" },
+      { shape: "rect", x: 10, y: 50, w: 16, h: 3, color: "wood" },
+      { shape: "rect", x: 10, y: 47, w: 16, h: 1, color: "chip", alpha: 0.6 },
+      { shape: "line", from: [36, 37], to: [36, 42], w: 1, color: "rope" },
+      { shape: "rect", x: 32, y: 42, w: 8, h: 5, color: "stoneL" },
+      { shape: "rect", x: 32, y: 42, w: 8, h: 1, color: "chip" },
+      { shape: "pixels", at: [[35, 43], [36, 44]], color: "stoneD" },
+      { shape: "line", from: [14, 50], to: [18, 37], w: 1, color: "wood" },
+      { shape: "line", from: [18, 50], to: [22, 37], w: 1, color: "wood" },
+      { shape: "pixels", at: [[15, 48], [19, 48], [16, 45], [20, 45], [17, 42], [21, 42], [18, 39], [22, 39]], color: "woodL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/lab/L1.json
+var L1_default3 = {
+  name: "B\xE3i v\u1EBD (c\u1EA5p 1, n\u1EC1n c\xE1t v\xE0 phi\u1EBFn \u0111\xE1)",
+  name_en: "Drawing Ground (Tier 1, Sand Floor and Slate Slab)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", sack: "#c9b27a", sackD: "#9d8756", bone: "#e4dcc4", boneD: "#b8ac90", sand: "#b9a47a", sandL: "#cdbb94", sandD: "#9a8760", char: "#2e2822", blue: "#5f7fa8", blueD: "#3f5c84", ochre: "#b0762f", red: "#a8342a" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "sand" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["sandL", "sandD", "chip"], onlyOver: ["sand"] },
+      { shape: "ellipse", cx: 22, cy: 46, rx: 7, ry: 3, color: "sandD", alpha: 0.55 },
+      { shape: "ellipse", cx: 22, cy: 46, rx: 6, ry: 2, color: "sandL" },
+      { shape: "poly", points: [[40, 42], [52, 42], [46, 50]], color: "sandD", alpha: 0.55 },
+      { shape: "poly", points: [[41, 43], [51, 43], [46, 49]], color: "sandL" },
+      { shape: "line", from: [10, 52], to: [30, 53], w: 1, color: "sandD" },
+      { shape: "line", from: [34, 53], to: [60, 52], w: 1, color: "sandD" },
+      { shape: "line", from: [18, 41], to: [30, 40], w: 1, color: "sandD" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "ellipse", cx: 54, cy: 47, rx: 10, ry: 4, color: "stoneD" },
+      { shape: "ellipse", cx: 54, cy: 46, rx: 10, ry: 4, color: "stone" },
+      { shape: "ellipse", cx: 54, cy: 45, rx: 8, ry: 3, color: "stoneL" },
+      { shape: "line", from: [49, 45], to: [53, 44], w: 1, color: "char" },
+      { shape: "line", from: [53, 44], to: [58, 46], w: 1, color: "char" },
+      { shape: "pixels", at: [[51, 47], [56, 44], [57, 47]], color: "char" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "ellipse", cx: 14, cy: 52, rx: 4, ry: 2, color: "stoneD" },
+      { shape: "ellipse", cx: 14, cy: 51, rx: 3, ry: 1, color: "ochre" },
+      { shape: "ellipse", cx: 24, cy: 54, rx: 4, ry: 2, color: "stoneD" },
+      { shape: "ellipse", cx: 24, cy: 53, rx: 3, ry: 1, color: "blue" },
+      { shape: "ellipse", cx: 33, cy: 52, rx: 4, ry: 2, color: "stoneD" },
+      { shape: "ellipse", cx: 33, cy: 51, rx: 3, ry: 1, color: "red" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 10, y: 26, w: 2, h: 22, color: "wood" },
+      { shape: "rect", x: 10, y: 26, w: 1, h: 22, color: "woodL" },
+      { shape: "rect", x: 8, y: 25, w: 12, h: 2, color: "woodD" },
+      { shape: "rect", x: 12, y: 28, w: 7, h: 10, color: "sack" },
+      { shape: "rect", x: 12, y: 28, w: 7, h: 1, color: "sackD" },
+      { shape: "rect", x: 12, y: 37, w: 7, h: 1, color: "sackD" },
+      { shape: "pixels", at: [[13, 31], [15, 31], [14, 33], [16, 33]], color: "blueD" },
+      { shape: "line", from: [12, 27], to: [18, 27], w: 1, color: "rope" },
+      { shape: "rect", x: 62, y: 38, w: 2, h: 12, color: "wood" },
+      { shape: "rect", x: 62, y: 38, w: 1, h: 12, color: "woodL" },
+      { shape: "pixels", at: [[61, 38], [64, 38]], color: "boneD" },
+      { shape: "ellipse", cx: 44, cy: 52, rx: 3, ry: 1, color: "bone" },
+      { shape: "pixels", at: [[42, 52], [46, 52]], color: "boneD" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/lab/L2.json
+var L2_default2 = {
+  name: "L\xE1n b\u1EA3n v\u1EBD (c\u1EA5p 2, m\xE1i da xanh, gi\xE1 cu\u1ED9n da)",
+  name_en: "Drawing Lean-to (Tier 2, Blue Hide Roof, Scroll Rack)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", bone: "#e4dcc4", boneD: "#b8ac90", sand: "#b9a47a", sandL: "#cdbb94", sandD: "#9a8760", blue: "#5f7fa8", blueL: "#86a4c8", blueD: "#3f5c84" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "sand" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["sandL", "sandD", "chip"], onlyOver: ["sand"] },
+      { shape: "rect", x: 14, y: 44, w: 44, h: 10, color: "woodD", alpha: 0.35 },
+      { shape: "ellipse", cx: 22, cy: 46, rx: 7, ry: 3, color: "sandD", alpha: 0.55 },
+      { shape: "ellipse", cx: 22, cy: 46, rx: 6, ry: 2, color: "sandL" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 10, y: 22, w: 2, h: 21, color: "wood" },
+      { shape: "rect", x: 10, y: 22, w: 1, h: 21, color: "woodL" },
+      { shape: "rect", x: 60, y: 22, w: 2, h: 21, color: "wood" },
+      { shape: "rect", x: 60, y: 22, w: 1, h: 21, color: "woodL" },
+      { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
+      { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
+      { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
+      { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
+      { shape: "rect", x: 9, y: 21, w: 54, h: 2, color: "woodD" },
+      { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[3, 31], [13, 15], [59, 15], [69, 31]], color: "blue" },
+      { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "blueD" },
+      { shape: "line", from: [13, 15], to: [59, 15], w: 1, color: "blueL" },
+      { shape: "line", from: [8, 23], to: [64, 23], w: 1, color: "blueL", alpha: 0.35 },
+      { shape: "pixels", at: [[10, 33], [18, 33], [26, 33], [34, 33], [42, 33], [50, 33], [58, 33], [64, 33]], color: "stitch" },
+      { shape: "scatter", count: 24, area: [10, 16, 52, 12], size: 1, colors: ["blueL", "blueD"], onlyOver: ["blue"] }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 14, y: 38, w: 44, h: 2, color: "woodD" },
+      { shape: "line", from: [20, 40], to: [20, 42], w: 1, color: "rope" },
+      { shape: "line", from: [30, 40], to: [30, 42], w: 1, color: "rope" },
+      { shape: "line", from: [40, 40], to: [40, 42], w: 1, color: "rope" },
+      { shape: "line", from: [50, 40], to: [50, 42], w: 1, color: "rope" },
+      { shape: "rect", x: 17, y: 42, w: 6, h: 9, color: "sack" },
+      { shape: "rect", x: 17, y: 42, w: 6, h: 1, color: "sackD" },
+      { shape: "rect", x: 17, y: 50, w: 6, h: 1, color: "sackD" },
+      { shape: "pixels", at: [[18, 45], [20, 45], [19, 47], [21, 47]], color: "blueD" },
+      { shape: "rect", x: 27, y: 42, w: 6, h: 8, color: "sackD" },
+      { shape: "rect", x: 27, y: 42, w: 6, h: 1, color: "sackD" },
+      { shape: "rect", x: 27, y: 49, w: 6, h: 1, color: "sackD" },
+      { shape: "pixels", at: [[28, 45], [30, 45], [29, 47], [31, 47]], color: "blueD" },
+      { shape: "rect", x: 37, y: 42, w: 6, h: 9, color: "sack" },
+      { shape: "rect", x: 37, y: 42, w: 6, h: 1, color: "sackD" },
+      { shape: "rect", x: 37, y: 50, w: 6, h: 1, color: "sackD" },
+      { shape: "pixels", at: [[38, 45], [40, 45], [39, 47], [41, 47]], color: "blueD" },
+      { shape: "rect", x: 47, y: 42, w: 6, h: 8, color: "sackD" },
+      { shape: "rect", x: 47, y: 42, w: 6, h: 1, color: "sackD" },
+      { shape: "rect", x: 47, y: 49, w: 6, h: 1, color: "sackD" },
+      { shape: "pixels", at: [[48, 45], [50, 45], [49, 47], [51, 47]], color: "blueD" },
+      { shape: "rect", x: 24, y: 52, w: 24, h: 3, color: "stoneD" },
+      { shape: "rect", x: 24, y: 51, w: 24, h: 2, color: "stone" },
+      { shape: "rect", x: 24, y: 51, w: 24, h: 1, color: "stoneL" },
+      { shape: "pixels", at: [[6, 52], [8, 53], [60, 53], [62, 52]], color: "boneD" },
+      { shape: "rect", x: 55, y: 50, w: 8, h: 1, color: "bone" },
+      { shape: "rect", x: 56, y: 52, w: 6, h: 1, color: "bone" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/lab/L3.json
+var L3_default2 = {
+  name: "Hang v\u1EBD (c\u1EA5p 3, v\xE1ch \u0111\xE1 c\xF3 tranh, \u0111\xE1 d\u1EF1ng)",
+  name_en: "Painting Cave (Tier 3, Painted Rock Wall, Standing Stones)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", sack: "#c9b27a", sackD: "#9d8756", blue: "#5f7fa8", blueL: "#86a4c8", blueD: "#3f5c84", ochre: "#b0762f", red: "#a8342a" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
+      { shape: "scatter", count: 42, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] },
+      { shape: "ellipse", cx: 36, cy: 48, rx: 14, ry: 4, color: "stoneD", alpha: 0.55 },
+      { shape: "ellipse", cx: 36, cy: 48, rx: 12, ry: 3, color: "stoneL" },
+      { shape: "ellipse", cx: 36, cy: 48, rx: 6, ry: 1, color: "stone" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 8, y: 14, w: 56, h: 20, color: "stoneD" },
+      { shape: "rect", x: 8, y: 14, w: 56, h: 2, color: "stone" },
+      { shape: "rect", x: 8, y: 14, w: 56, h: 1, color: "stoneL" },
+      { shape: "poly", points: [[8, 34], [64, 34], [60, 38], [12, 38]], color: "stoneD" },
+      { shape: "scatter", count: 40, area: [9, 17, 54, 16], size: 1, colors: ["stone", "stoneL", "stoneD"], onlyOver: ["stoneD"] },
+      { shape: "rect", x: 4, y: 24, w: 6, h: 26, color: "stone" },
+      { shape: "rect", x: 4, y: 24, w: 6, h: 2, color: "stoneL" },
+      { shape: "rect", x: 62, y: 22, w: 6, h: 28, color: "stone" },
+      { shape: "rect", x: 62, y: 22, w: 6, h: 2, color: "stoneL" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "ellipse", cx: 18, cy: 24, rx: 5, ry: 2, color: "ochre" },
+      { shape: "rect", x: 14, y: 26, w: 1, h: 3, color: "ochre" },
+      { shape: "rect", x: 21, y: 26, w: 1, h: 3, color: "ochre" },
+      { shape: "rect", x: 13, y: 23, w: 2, h: 2, color: "ochre" },
+      { shape: "ellipse", cx: 30, cy: 24, rx: 4, ry: 2, color: "red" },
+      { shape: "rect", x: 27, y: 25, w: 1, h: 3, color: "red" },
+      { shape: "rect", x: 33, y: 25, w: 1, h: 3, color: "red" },
+      { shape: "rect", x: 33, y: 22, w: 2, h: 2, color: "red" },
+      { shape: "ellipse", cx: 44, cy: 22, rx: 4, ry: 4, color: "blueL" },
+      { shape: "line", from: [44, 15], to: [44, 18], w: 1, color: "blueL" },
+      { shape: "line", from: [44, 26], to: [44, 29], w: 1, color: "blueL" },
+      { shape: "line", from: [37, 22], to: [40, 22], w: 1, color: "blueL" },
+      { shape: "line", from: [48, 22], to: [51, 22], w: 1, color: "blueL" },
+      { shape: "rect", x: 54, y: 21, w: 5, h: 5, color: "ochre" },
+      { shape: "rect", x: 54, y: 18, w: 1, h: 3, color: "ochre" },
+      { shape: "rect", x: 56, y: 17, w: 1, h: 4, color: "ochre" },
+      { shape: "rect", x: 58, y: 18, w: 1, h: 3, color: "ochre" },
+      { shape: "pixels", at: [[20, 31], [24, 32], [36, 31], [48, 32], [56, 31]], color: "chip" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 13, y: 36, w: 4, h: 12, color: "stoneL" },
+      { shape: "rect", x: 13, y: 36, w: 4, h: 2, color: "chip" },
+      { shape: "rect", x: 55, y: 38, w: 4, h: 10, color: "stoneL" },
+      { shape: "rect", x: 55, y: 38, w: 4, h: 2, color: "chip" },
+      { shape: "rect", x: 24, y: 44, w: 24, h: 5, color: "stoneD" },
+      { shape: "rect", x: 24, y: 43, w: 24, h: 3, color: "stone" },
+      { shape: "rect", x: 24, y: 43, w: 24, h: 1, color: "stoneL" },
+      { shape: "rect", x: 27, y: 40, w: 5, h: 3, color: "sack" },
+      { shape: "rect", x: 34, y: 41, w: 5, h: 2, color: "sackD" },
+      { shape: "rect", x: 41, y: 40, w: 4, h: 3, color: "sack" },
+      { shape: "pixels", at: [[28, 41], [30, 41], [36, 41], [42, 41]], color: "blueD" },
+      { shape: "ellipse", cx: 20, cy: 52, rx: 3, ry: 1, color: "ochre" },
+      { shape: "ellipse", cx: 50, cy: 53, rx: 3, ry: 1, color: "blue" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/repair/L1.json
+var L1_default4 = {
+  name: "B\xE3i m\xE0i s\u1EEDa (c\u1EA5p 1, \u0111\xE1 m\xE0i v\xE0 l\u1EEDa nh\u1ECF)",
+  name_en: "Mending Ground (Tier 1, Whetstone and Small Fire)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428", fire: "#f08a2a", fireL: "#ffd27a", fireD: "#6a1e0e", smoke: "#c8ccd0", bone: "#e4dcc4", boneD: "#b8ac90", water: "#5c86a8", waterL: "#8fb4cf" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "ellipse", cx: 52, cy: 50, rx: 8, ry: 3, color: "mat" },
+      { shape: "scatter", count: 8, area: [46, 48, 12, 4], size: [2, 1], colors: ["matL", "matD"], onlyOver: ["mat"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "ellipse", cx: 22, cy: 49, rx: 11, ry: 4, color: "stoneD" },
+      { shape: "ellipse", cx: 22, cy: 48, rx: 11, ry: 4, color: "stone" },
+      { shape: "ellipse", cx: 22, cy: 47, rx: 8, ry: 2, color: "stoneL" },
+      { shape: "line", from: [15, 48], to: [29, 47], w: 1, color: "stoneD" },
+      { shape: "line", from: [16, 50], to: [28, 49], w: 1, color: "stoneD", alpha: 0.6 },
+      { shape: "ellipse", cx: 37, cy: 52, rx: 4, ry: 2, color: "stoneD" },
+      { shape: "ellipse", cx: 37, cy: 51, rx: 3, ry: 1, color: "water" },
+      { shape: "pixels", at: [[36, 51]], color: "waterL" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [44, 49], to: [50, 47], w: 1, color: "woodD" },
+      { shape: "line", from: [52, 46], to: [56, 45], w: 1, color: "woodD" },
+      { shape: "rect", x: 57, y: 43, w: 4, h: 3, color: "stoneD" },
+      { shape: "pixels", at: [[57, 43]], color: "stoneL" },
+      { shape: "line", from: [48, 53], to: [54, 51], w: 1, color: "woodD" },
+      { shape: "line", from: [56, 50], to: [60, 49], w: 1, color: "woodD" },
+      { shape: "ellipse", cx: 60, cy: 49, rx: 2, ry: 1, color: "stoneD" },
+      { shape: "pixels", at: [[59, 48]], color: "stoneL" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "ellipse", cx: 58, cy: 44, rx: 5.4, ry: 2.7, color: "fireD" },
+      { shape: "ellipse", cx: 58, cy: 43, rx: 3.6, ry: 1.8, color: "fire" },
+      { shape: "ellipse", cx: 58, cy: 42, rx: 1.8, ry: 1, color: "fireL" },
+      { shape: "scatter", count: 6, area: [54, 38, 8, 3], size: 1, colors: ["smoke"], alpha: 0.5 },
+      { shape: "line", from: [10, 52], to: [12, 36], w: 1, color: "wood" },
+      { shape: "line", from: [13, 52], to: [14, 35], w: 1, color: "woodL" },
+      { shape: "line", from: [16, 52], to: [16, 37], w: 1, color: "wood" },
+      { shape: "pixels", at: [[9, 49], [14, 48]], color: "rope" },
+      { shape: "ellipse", cx: 30, cy: 54, rx: 2, ry: 1, color: "bone" },
+      { shape: "pixels", at: [[29, 54], [32, 54]], color: "boneD" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/repair/L2.json
+var L2_default3 = {
+  name: "L\xE1n s\u1EEDa (c\u1EA5p 2, m\xE1i tranh, gi\xE1 treo, b\xE1nh m\xE0i)",
+  name_en: "Mending Lean-to (Tier 2, Thatch Roof, Tool Rack, Grinding Wheel)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", thatch: "#c2a85a", thatchL: "#dcc678", thatchD: "#8f7a38", water: "#5c86a8", waterL: "#8fb4cf", green: "#6f8a46", greenD: "#4e6530" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "rect", x: 14, y: 45, w: 44, h: 9, color: "woodD", alpha: 0.35 }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 10, y: 20, w: 2, h: 23, color: "wood" },
+      { shape: "rect", x: 10, y: 20, w: 1, h: 23, color: "woodL" },
+      { shape: "rect", x: 60, y: 20, w: 2, h: 23, color: "wood" },
+      { shape: "rect", x: 60, y: 20, w: 1, h: 23, color: "woodL" },
+      { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
+      { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
+      { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
+      { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
+      { shape: "rect", x: 9, y: 19, w: 54, h: 2, color: "woodD" },
+      { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[3, 31], [13, 16], [59, 16], [69, 31]], color: "thatch" },
+      { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "thatchD" },
+      { shape: "line", from: [13, 16], to: [59, 16], w: 1, color: "thatchL" },
+      { shape: "line", from: [14, 18], to: [8, 31], w: 1, color: "thatchD", alpha: 0.6 },
+      { shape: "line", from: [26, 17], to: [22, 31], w: 1, color: "thatchD", alpha: 0.6 },
+      { shape: "line", from: [38, 17], to: [38, 31], w: 1, color: "thatchD", alpha: 0.6 },
+      { shape: "line", from: [50, 17], to: [54, 31], w: 1, color: "thatchD", alpha: 0.6 },
+      { shape: "line", from: [58, 18], to: [65, 31], w: 1, color: "thatchD", alpha: 0.6 },
+      { shape: "scatter", count: 30, area: [8, 17, 56, 14], size: 1, colors: ["thatchL", "thatchD"], onlyOver: ["thatch"] },
+      { shape: "rect", x: 4, y: 33, w: 64, h: 1, color: "green" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 15, y: 36, w: 42, h: 2, color: "woodD" },
+      { shape: "line", from: [20, 38], to: [20, 44], w: 1, color: "rope" },
+      { shape: "rect", x: 18, y: 44, w: 5, h: 2, color: "stoneD" },
+      { shape: "line", from: [30, 38], to: [30, 45], w: 1, color: "rope" },
+      { shape: "line", from: [28, 45], to: [32, 45], w: 1, color: "stoneD" },
+      { shape: "line", from: [40, 38], to: [40, 44], w: 1, color: "rope" },
+      { shape: "rect", x: 38, y: 44, w: 5, h: 3, color: "stone" },
+      { shape: "line", from: [50, 38], to: [50, 46], w: 1, color: "woodD" },
+      { shape: "ellipse", cx: 30, cy: 50, rx: 3, ry: 5, color: "stoneD" },
+      { shape: "ellipse", cx: 29, cy: 50, rx: 3, ry: 4, color: "stone" },
+      { shape: "ellipse", cx: 29, cy: 49, rx: 1, ry: 2, color: "stoneL" },
+      { shape: "rect", x: 24, y: 49, w: 12, h: 2, color: "woodD" },
+      { shape: "rect", x: 44, y: 50, w: 14, h: 4, color: "woodD" },
+      { shape: "rect", x: 45, y: 50, w: 12, h: 2, color: "water" },
+      { shape: "pixels", at: [[47, 50], [52, 51]], color: "waterL" },
+      { shape: "ellipse", cx: 10, cy: 52, rx: 3, ry: 1, color: "greenD" },
+      { shape: "ellipse", cx: 10, cy: 51, rx: 3, ry: 1, color: "green" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/repair/L3.json
+var L3_default3 = {
+  name: "X\u01B0\u1EDFng s\u1EEDa (c\u1EA5p 3, b\xE0n \u0111\xE1, b\xE1nh m\xE0i l\u1EDBn, l\xF2 nh\u1ECF)",
+  name_en: "Mending Workshop (Tier 3, Stone Bench, Great Wheel, Small Forge)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", fire: "#f08a2a", fireL: "#ffd27a", fireD: "#6a1e0e", water: "#5c86a8", clay: "#a8643c", clayD: "#7a4526", green: "#6f8a46", greenD: "#4e6530" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
+      { shape: "scatter", count: 40, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] },
+      { shape: "line", from: [10, 46], to: [62, 46], w: 1, color: "stoneD", alpha: 0.5 }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 8, y: 27, w: 56, h: 9, color: "stoneD" },
+      { shape: "rect", x: 8, y: 27, w: 56, h: 2, color: "stone" },
+      { shape: "rect", x: 8, y: 27, w: 56, h: 1, color: "stoneL" },
+      { shape: "scatter", count: 26, area: [9, 29, 54, 6], size: 1, colors: ["stone", "stoneL"], onlyOver: ["stoneD"] },
+      { shape: "rect", x: 5, y: 14, w: 3, h: 38, color: "woodD" },
+      { shape: "rect", x: 5, y: 14, w: 1, h: 38, color: "wood" },
+      { shape: "rect", x: 64, y: 14, w: 3, h: 38, color: "woodD" },
+      { shape: "rect", x: 64, y: 14, w: 1, h: 38, color: "wood" },
+      { shape: "rect", x: 4, y: 13, w: 64, h: 3, color: "log" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[3, 16], [14, 6], [58, 6], [69, 16]], color: "wood" },
+      { shape: "poly", points: [[3, 16], [69, 16], [68, 20], [4, 20]], color: "woodD" },
+      { shape: "line", from: [14, 6], to: [58, 6], w: 1, color: "woodL" },
+      { shape: "line", from: [22, 6], to: [18, 16], w: 1, color: "woodD" },
+      { shape: "line", from: [36, 6], to: [36, 16], w: 1, color: "woodD" },
+      { shape: "line", from: [50, 6], to: [54, 16], w: 1, color: "woodD" },
+      { shape: "rect", x: 4, y: 21, w: 64, h: 1, color: "green" },
+      { shape: "rect", x: 4, y: 22, w: 64, h: 1, color: "greenD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 12, y: 30, w: 48, h: 1, color: "woodD" },
+      { shape: "line", from: [18, 30], to: [18, 21], w: 1, color: "woodD" },
+      { shape: "rect", x: 16, y: 20, w: 3, h: 2, color: "stoneD" },
+      { shape: "pixels", at: [[18, 20]], color: "stoneL" },
+      { shape: "line", from: [26, 30], to: [26, 21], w: 1, color: "woodD" },
+      { shape: "line", from: [23, 22], to: [29, 20], w: 1, color: "stoneD" },
+      { shape: "pixels", at: [[23, 22]], color: "stoneL" },
+      { shape: "line", from: [34, 30], to: [34, 22], w: 1, color: "woodD" },
+      { shape: "rect", x: 32, y: 19, w: 5, h: 3, color: "stone" },
+      { shape: "rect", x: 32, y: 19, w: 5, h: 1, color: "stoneL" },
+      { shape: "line", from: [42, 30], to: [42, 20], w: 1, color: "woodD" },
+      { shape: "line", from: [42, 20], to: [46, 21], w: 1, color: "woodD" },
+      { shape: "pixels", at: [[46, 22]], color: "stoneD" },
+      { shape: "line", from: [50, 30], to: [50, 21], w: 1, color: "woodD" },
+      { shape: "rect", x: 48, y: 20, w: 3, h: 2, color: "stoneD" },
+      { shape: "pixels", at: [[50, 20]], color: "stoneL" },
+      { shape: "rect", x: 10, y: 44, w: 22, h: 5, color: "stoneD" },
+      { shape: "rect", x: 10, y: 43, w: 22, h: 3, color: "stone" },
+      { shape: "rect", x: 10, y: 43, w: 22, h: 1, color: "stoneL" },
+      { shape: "rect", x: 12, y: 49, w: 3, h: 5, color: "stoneD" },
+      { shape: "rect", x: 28, y: 49, w: 3, h: 5, color: "stoneD" },
+      { shape: "ellipse", cx: 44, cy: 46, rx: 3, ry: 6, color: "stoneD" },
+      { shape: "ellipse", cx: 43, cy: 46, rx: 3, ry: 5, color: "stone" },
+      { shape: "ellipse", cx: 43, cy: 45, rx: 1, ry: 2, color: "stoneL" },
+      { shape: "rect", x: 38, y: 45, w: 12, h: 2, color: "woodD" },
+      { shape: "rect", x: 52, y: 49, w: 10, h: 4, color: "stoneD" },
+      { shape: "rect", x: 53, y: 48, w: 8, h: 2, color: "water" },
+      { shape: "ellipse", cx: 14, cy: 53, rx: 3, ry: 2, color: "clayD" },
+      { shape: "ellipse", cx: 14, cy: 52, rx: 3, ry: 1, color: "clay" },
+      { shape: "ellipse", cx: 22, cy: 54, rx: 3, ry: 2, color: "clayD" },
+      { shape: "ellipse", cx: 22, cy: 53, rx: 3, ry: 1, color: "clay" },
+      { shape: "ellipse", cx: 60, cy: 40, rx: 4.800000000000001, ry: 2.4000000000000004, color: "fireD" },
+      { shape: "ellipse", cx: 60, cy: 39, rx: 3.2, ry: 1.6, color: "fire" },
+      { shape: "ellipse", cx: 60, cy: 38, rx: 1.6, ry: 1, color: "fireL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/toolstore/L1.json
+var L1_default5 = {
+  name: "Gi\xE1 c\xF4ng c\u1EE5 (c\u1EA5p 1, gi\xE1 ch\xE9o c\u1ECDc)",
+  name_en: "Tool Rack (Tier 1, Crossed Poles)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 5,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", stitch: "#e8d6a8", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", teal: "#4f8a86", tealL: "#74b0aa", tealD: "#336460" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [14, 52], to: [26, 30], w: 2, color: "wood" },
+      { shape: "line", from: [38, 52], to: [26, 30], w: 2, color: "woodD" },
+      { shape: "line", from: [32, 52], to: [44, 30], w: 2, color: "wood" },
+      { shape: "line", from: [56, 52], to: [44, 30], w: 2, color: "woodD" },
+      { shape: "rect", x: 14, y: 36, w: 42, h: 2, color: "woodD" },
+      { shape: "rect", x: 14, y: 36, w: 42, h: 1, color: "woodL" },
+      { shape: "pixels", at: [[26, 31], [44, 31]], color: "rope" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [20, 38], to: [20, 41], w: 1, color: "rope" },
+      { shape: "line", from: [30, 38], to: [30, 41], w: 1, color: "rope" },
+      { shape: "line", from: [40, 38], to: [40, 41], w: 1, color: "rope" },
+      { shape: "line", from: [50, 38], to: [50, 41], w: 1, color: "rope" },
+      { shape: "line", from: [20, 41], to: [20, 50], w: 1, color: "woodD" },
+      { shape: "rect", x: 18, y: 49, w: 5, h: 2, color: "stoneD" },
+      { shape: "line", from: [30, 41], to: [30, 51], w: 1, color: "woodD" },
+      { shape: "line", from: [27, 50], to: [33, 49], w: 1, color: "stoneD" },
+      { shape: "line", from: [40, 41], to: [40, 49], w: 1, color: "woodD" },
+      { shape: "rect", x: 38, y: 49, w: 5, h: 3, color: "stone" },
+      { shape: "rect", x: 38, y: 49, w: 5, h: 1, color: "stoneL" },
+      { shape: "line", from: [50, 41], to: [50, 51], w: 1, color: "woodD" },
+      { shape: "line", from: [50, 49], to: [54, 50], w: 1, color: "woodD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "ellipse", cx: 10, cy: 52, rx: 5, ry: 3, color: "wickerD" },
+      { shape: "ellipse", cx: 10, cy: 51, rx: 5, ry: 3, color: "wicker" },
+      { shape: "ellipse", cx: 10, cy: 50, rx: 4, ry: 2, color: "wickerD" },
+      { shape: "pixels", at: [[8, 51], [10, 52], [12, 51]], color: "sackD" },
+      { shape: "line", from: [8, 49], to: [7, 42], w: 1, color: "woodD" },
+      { shape: "line", from: [10, 49], to: [10, 41], w: 1, color: "wood" },
+      { shape: "line", from: [12, 49], to: [13, 43], w: 1, color: "woodD" },
+      { shape: "ellipse", cx: 62, cy: 53, rx: 4, ry: 3, color: "wickerD" },
+      { shape: "ellipse", cx: 62, cy: 52, rx: 4, ry: 3, color: "wicker" },
+      { shape: "ellipse", cx: 62, cy: 51, rx: 3, ry: 2, color: "wickerD" },
+      { shape: "pixels", at: [[60, 52], [62, 53], [64, 52]], color: "sackD" },
+      { shape: "rect", x: 56, y: 40, w: 12, h: 6, color: "teal" },
+      { shape: "rect", x: 56, y: 40, w: 12, h: 2, color: "tealL" },
+      { shape: "rect", x: 56, y: 45, w: 12, h: 1, color: "tealD" },
+      { shape: "pixels", at: [[58, 43], [62, 43], [66, 43]], color: "stitch" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/toolstore/L2.json
+var L2_default4 = {
+  name: "L\xE1n c\xF4ng c\u1EE5 (c\u1EA5p 2, m\xE1i da xanh l\u1EE5c, hai gi\xE1)",
+  name_en: "Tool Shed (Tier 2, Teal Hide Roof, Two Racks)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 5,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneD: "#60676b", chip: "#d8d2c0", stitch: "#e8d6a8", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", teal: "#4f8a86", tealL: "#74b0aa", tealD: "#336460" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "rect", x: 14, y: 45, w: 44, h: 9, color: "woodD", alpha: 0.35 }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 10, y: 20, w: 2, h: 23, color: "wood" },
+      { shape: "rect", x: 10, y: 20, w: 1, h: 23, color: "woodL" },
+      { shape: "rect", x: 60, y: 20, w: 2, h: 23, color: "wood" },
+      { shape: "rect", x: 60, y: 20, w: 1, h: 23, color: "woodL" },
+      { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
+      { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
+      { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
+      { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
+      { shape: "rect", x: 9, y: 19, w: 54, h: 2, color: "woodD" },
+      { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[3, 31], [13, 16], [59, 16], [69, 31]], color: "teal" },
+      { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "tealD" },
+      { shape: "line", from: [13, 16], to: [59, 16], w: 1, color: "tealL" },
+      { shape: "line", from: [8, 24], to: [64, 24], w: 1, color: "tealL", alpha: 0.35 },
+      { shape: "pixels", at: [[10, 33], [18, 33], [26, 33], [34, 33], [42, 33], [50, 33], [58, 33], [64, 33]], color: "stitch" },
+      { shape: "scatter", count: 24, area: [10, 17, 52, 12], size: 1, colors: ["tealL", "tealD"], onlyOver: ["teal"] }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 15, y: 36, w: 42, h: 2, color: "woodD" },
+      { shape: "rect", x: 15, y: 44, w: 42, h: 2, color: "woodD" },
+      { shape: "line", from: [20, 38], to: [20, 40], w: 1, color: "rope" },
+      { shape: "line", from: [30, 38], to: [30, 40], w: 1, color: "rope" },
+      { shape: "line", from: [40, 38], to: [40, 40], w: 1, color: "rope" },
+      { shape: "line", from: [50, 38], to: [50, 40], w: 1, color: "rope" },
+      { shape: "line", from: [20, 40], to: [20, 47], w: 1, color: "woodD" },
+      { shape: "rect", x: 18, y: 46, w: 5, h: 2, color: "stoneD" },
+      { shape: "line", from: [30, 40], to: [30, 48], w: 1, color: "woodD" },
+      { shape: "line", from: [27, 47], to: [33, 46], w: 1, color: "stoneD" },
+      { shape: "line", from: [40, 40], to: [40, 47], w: 1, color: "woodD" },
+      { shape: "rect", x: 38, y: 47, w: 5, h: 3, color: "stone" },
+      { shape: "line", from: [50, 40], to: [50, 49], w: 1, color: "woodD" },
+      { shape: "line", from: [50, 46], to: [54, 47], w: 1, color: "woodD" },
+      { shape: "ellipse", cx: 14, cy: 54, rx: 4, ry: 3, color: "wickerD" },
+      { shape: "ellipse", cx: 14, cy: 53, rx: 4, ry: 3, color: "wicker" },
+      { shape: "ellipse", cx: 14, cy: 52, rx: 3, ry: 2, color: "wickerD" },
+      { shape: "pixels", at: [[12, 53], [14, 54], [16, 53]], color: "sackD" },
+      { shape: "ellipse", cx: 58, cy: 54, rx: 4, ry: 3, color: "wickerD" },
+      { shape: "ellipse", cx: 58, cy: 53, rx: 4, ry: 3, color: "wicker" },
+      { shape: "ellipse", cx: 58, cy: 52, rx: 3, ry: 2, color: "wickerD" },
+      { shape: "pixels", at: [[56, 53], [58, 54], [60, 53]], color: "sackD" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/toolstore/L3.json
+var L3_default4 = {
+  name: "Kho c\xF4ng c\u1EE5 (c\u1EA5p 3, t\u01B0\u1EDDng \u0111\xE1 th\u1EA5p, m\xE1i v\xE1n)",
+  name_en: "Tool Store (Tier 3, Low Stone Walls, Plank Roof)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 5,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", teal: "#4f8a86", tealD: "#336460" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
+      { shape: "scatter", count: 40, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 6, y: 28, w: 60, h: 8, color: "stoneD" },
+      { shape: "rect", x: 6, y: 28, w: 60, h: 2, color: "stone" },
+      { shape: "rect", x: 6, y: 28, w: 60, h: 1, color: "stoneL" },
+      { shape: "rect", x: 6, y: 28, w: 8, h: 24, color: "stoneD" },
+      { shape: "rect", x: 6, y: 28, w: 8, h: 2, color: "stone" },
+      { shape: "rect", x: 58, y: 28, w: 8, h: 24, color: "stoneD" },
+      { shape: "rect", x: 58, y: 28, w: 8, h: 2, color: "stone" },
+      { shape: "scatter", count: 40, area: [7, 30, 56, 20], size: 1, colors: ["stone", "stoneL", "stoneD"], onlyOver: ["stoneD"] },
+      { shape: "rect", x: 22, y: 36, w: 28, h: 16, color: "line", alpha: 0.55 }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[3, 30], [12, 9], [60, 9], [69, 30]], color: "wood" },
+      { shape: "poly", points: [[3, 30], [69, 30], [68, 34], [4, 34]], color: "woodD" },
+      { shape: "line", from: [12, 9], to: [60, 9], w: 2, color: "woodL" },
+      { shape: "line", from: [22, 9], to: [14, 30], w: 1, color: "woodD" },
+      { shape: "line", from: [36, 9], to: [36, 30], w: 1, color: "woodD" },
+      { shape: "line", from: [50, 9], to: [58, 30], w: 1, color: "woodD" },
+      { shape: "rect", x: 4, y: 35, w: 64, h: 1, color: "teal" },
+      { shape: "rect", x: 4, y: 36, w: 64, h: 1, color: "tealD" },
+      { shape: "scatter", count: 26, area: [8, 11, 56, 18], size: 1, colors: ["woodL", "woodD"], onlyOver: ["wood"] }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 22, y: 36, w: 28, h: 1, color: "woodD" },
+      { shape: "line", from: [26, 50], to: [26, 41], w: 1, color: "woodD" },
+      { shape: "rect", x: 24, y: 40, w: 3, h: 2, color: "stoneD" },
+      { shape: "pixels", at: [[26, 40]], color: "stoneL" },
+      { shape: "line", from: [31, 50], to: [31, 41], w: 1, color: "woodD" },
+      { shape: "line", from: [28, 42], to: [34, 40], w: 1, color: "stoneD" },
+      { shape: "pixels", at: [[28, 42]], color: "stoneL" },
+      { shape: "line", from: [36, 50], to: [36, 42], w: 1, color: "woodD" },
+      { shape: "rect", x: 34, y: 39, w: 5, h: 3, color: "stone" },
+      { shape: "rect", x: 34, y: 39, w: 5, h: 1, color: "stoneL" },
+      { shape: "line", from: [41, 50], to: [41, 40], w: 1, color: "woodD" },
+      { shape: "line", from: [41, 40], to: [45, 41], w: 1, color: "woodD" },
+      { shape: "pixels", at: [[45, 42]], color: "stoneD" },
+      { shape: "line", from: [46, 50], to: [46, 41], w: 1, color: "woodD" },
+      { shape: "rect", x: 44, y: 40, w: 3, h: 2, color: "stoneD" },
+      { shape: "pixels", at: [[46, 40]], color: "stoneL" },
+      { shape: "rect", x: 25, y: 50, w: 24, h: 2, color: "woodD" },
+      { shape: "pixels", at: [[27, 51], [35, 51], [43, 51]], color: "rope" },
+      { shape: "ellipse", cx: 12, cy: 55, rx: 4, ry: 3, color: "wickerD" },
+      { shape: "ellipse", cx: 12, cy: 54, rx: 4, ry: 3, color: "wicker" },
+      { shape: "ellipse", cx: 12, cy: 53, rx: 3, ry: 2, color: "wickerD" },
+      { shape: "pixels", at: [[10, 54], [12, 55], [14, 54]], color: "sackD" },
+      { shape: "ellipse", cx: 60, cy: 55, rx: 4, ry: 3, color: "wickerD" },
+      { shape: "ellipse", cx: 60, cy: 54, rx: 4, ry: 3, color: "wicker" },
+      { shape: "ellipse", cx: 60, cy: 53, rx: 3, ry: 2, color: "wickerD" },
+      { shape: "pixels", at: [[58, 54], [60, 55], [62, 54]], color: "sackD" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/armory/L1.json
+var L1_default6 = {
+  name: "Gi\xE1 gi\xE1o (c\u1EA5p 1, gi\xE1 ba ch\xE2n)",
+  name_en: "Spear Stand (Tier 1, Tripod)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 5,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", stitch: "#e8d6a8", wicker: "#b89a58", wickerD: "#8a7038", flintL: "#7c8794", bone: "#e4dcc4" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [22, 52], to: [36, 24], w: 2, color: "wood" },
+      { shape: "line", from: [50, 52], to: [36, 24], w: 2, color: "woodD" },
+      { shape: "line", from: [36, 52], to: [36, 24], w: 2, color: "wood" },
+      { shape: "rect", x: 33, y: 24, w: 6, h: 2, color: "rope" },
+      { shape: "pixels", at: [[35, 23], [37, 23]], color: "rope" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [25, 52], to: [25, 28], w: 1, color: "woodD" },
+      { shape: "poly", points: [[24, 29], [25, 25], [26, 29]], color: "flintL" },
+      { shape: "line", from: [29, 52], to: [29, 26], w: 1, color: "woodD" },
+      { shape: "poly", points: [[28, 27], [29, 23], [30, 27]], color: "flintL" },
+      { shape: "line", from: [43, 52], to: [43, 27], w: 1, color: "woodD" },
+      { shape: "poly", points: [[42, 28], [43, 24], [44, 28]], color: "flintL" },
+      { shape: "line", from: [47, 52], to: [47, 29], w: 1, color: "woodD" },
+      { shape: "poly", points: [[46, 30], [47, 26], [48, 30]], color: "flintL" },
+      { shape: "line", from: [33, 52], to: [33, 24], w: 1, color: "woodD" },
+      { shape: "poly", points: [[32, 25], [33, 21], [34, 25]], color: "flintL" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "ellipse", cx: 12, cy: 50, rx: 4, ry: 3, color: "wickerD" },
+      { shape: "ellipse", cx: 12, cy: 49, rx: 4, ry: 3, color: "wicker" },
+      { shape: "ellipse", cx: 12, cy: 47, rx: 3, ry: 2, color: "wickerD" },
+      { shape: "line", from: [10, 47], to: [10, 39], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 10, cy: 38, rx: 2, ry: 2, color: "woodD" },
+      { shape: "pixels", at: [[9, 37]], color: "woodL" },
+      { shape: "line", from: [13, 47], to: [13, 37], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 13, cy: 36, rx: 2, ry: 2, color: "woodD" },
+      { shape: "pixels", at: [[12, 35]], color: "woodL" },
+      { shape: "line", from: [15, 48], to: [15, 41], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 15, cy: 40, rx: 2, ry: 2, color: "woodD" },
+      { shape: "pixels", at: [[14, 39]], color: "woodL" },
+      { shape: "line", from: [58, 53], to: [58, 34], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 58, cy: 38, rx: 5, ry: 6, color: "line" },
+      { shape: "ellipse", cx: 58, cy: 38, rx: 4, ry: 5, color: "hide" },
+      { shape: "ellipse", cx: 58, cy: 38, rx: 1, ry: 1, color: "bone" },
+      { shape: "line", from: [58, 33], to: [58, 43], w: 1, color: "woodD", alpha: 0.6 },
+      { shape: "pixels", at: [[56, 36], [60, 36]], color: "stitch" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/armory/L2.json
+var L2_default5 = {
+  name: "L\xE1n v\u0169 kh\xED (c\u1EA5p 2, m\xE1i da, gi\xE1 gi\xE1o v\xE0 khi\xEAn)",
+  name_en: "Weapon Shed (Tier 2, Hide Roof, Spear and Shield Racks)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 5,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", flintL: "#7c8794", bone: "#e4dcc4", red: "#a8342a" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "rect", x: 14, y: 45, w: 44, h: 9, color: "woodD", alpha: 0.35 }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 10, y: 20, w: 2, h: 23, color: "wood" },
+      { shape: "rect", x: 10, y: 20, w: 1, h: 23, color: "woodL" },
+      { shape: "rect", x: 60, y: 20, w: 2, h: 23, color: "wood" },
+      { shape: "rect", x: 60, y: 20, w: 1, h: 23, color: "woodL" },
+      { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
+      { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
+      { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
+      { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
+      { shape: "rect", x: 9, y: 19, w: 54, h: 2, color: "woodD" },
+      { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[3, 31], [13, 16], [59, 16], [69, 31]], color: "hide" },
+      { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "hideD" },
+      { shape: "line", from: [13, 16], to: [59, 16], w: 1, color: "hideL" },
+      { shape: "line", from: [8, 24], to: [64, 24], w: 1, color: "hideL", alpha: 0.35 },
+      { shape: "pixels", at: [[10, 33], [18, 33], [26, 33], [34, 33], [42, 33], [50, 33], [58, 33], [64, 33]], color: "stitch" },
+      { shape: "scatter", count: 24, area: [10, 17, 52, 12], size: 1, colors: ["hideL", "hideD"], onlyOver: ["hide"] },
+      { shape: "rect", x: 4, y: 33, w: 64, h: 1, color: "red" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 15, y: 36, w: 42, h: 2, color: "woodD" },
+      { shape: "line", from: [22, 38], to: [22, 40], w: 1, color: "rope" },
+      { shape: "line", from: [36, 38], to: [36, 40], w: 1, color: "rope" },
+      { shape: "line", from: [50, 38], to: [50, 40], w: 1, color: "rope" },
+      { shape: "ellipse", cx: 22, cy: 44, rx: 4, ry: 5, color: "line" },
+      { shape: "ellipse", cx: 22, cy: 44, rx: 3, ry: 4, color: "hide" },
+      { shape: "ellipse", cx: 22, cy: 44, rx: 1, ry: 1, color: "bone" },
+      { shape: "line", from: [22, 40], to: [22, 48], w: 1, color: "woodD", alpha: 0.6 },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 4, ry: 5, color: "line" },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 3, ry: 4, color: "red" },
+      { shape: "ellipse", cx: 36, cy: 44, rx: 1, ry: 1, color: "bone" },
+      { shape: "line", from: [36, 40], to: [36, 48], w: 1, color: "woodD", alpha: 0.6 },
+      { shape: "ellipse", cx: 50, cy: 44, rx: 4, ry: 5, color: "line" },
+      { shape: "ellipse", cx: 50, cy: 44, rx: 3, ry: 4, color: "hide" },
+      { shape: "ellipse", cx: 50, cy: 44, rx: 1, ry: 1, color: "bone" },
+      { shape: "line", from: [50, 40], to: [50, 48], w: 1, color: "woodD", alpha: 0.6 },
+      { shape: "line", from: [15, 54], to: [15, 40], w: 1, color: "woodD" },
+      { shape: "poly", points: [[14, 41], [15, 37], [16, 41]], color: "flintL" },
+      { shape: "line", from: [18, 54], to: [18, 41], w: 1, color: "woodD" },
+      { shape: "poly", points: [[17, 42], [18, 38], [19, 42]], color: "flintL" },
+      { shape: "line", from: [54, 54], to: [54, 40], w: 1, color: "woodD" },
+      { shape: "poly", points: [[53, 41], [54, 37], [55, 41]], color: "flintL" },
+      { shape: "line", from: [57, 54], to: [57, 41], w: 1, color: "woodD" },
+      { shape: "poly", points: [[56, 42], [57, 38], [58, 42]], color: "flintL" },
+      { shape: "line", from: [26, 54], to: [26, 46], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 26, cy: 45, rx: 2, ry: 2, color: "woodD" },
+      { shape: "pixels", at: [[25, 44]], color: "woodL" },
+      { shape: "line", from: [29, 54], to: [29, 45], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 29, cy: 44, rx: 2, ry: 2, color: "woodD" },
+      { shape: "pixels", at: [[28, 43]], color: "woodL" },
+      { shape: "line", from: [43, 54], to: [43, 45], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 43, cy: 44, rx: 2, ry: 2, color: "woodD" },
+      { shape: "pixels", at: [[42, 43]], color: "woodL" },
+      { shape: "line", from: [46, 54], to: [46, 46], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 46, cy: 45, rx: 2, ry: 2, color: "woodD" },
+      { shape: "pixels", at: [[45, 44]], color: "woodL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/armory/L3.json
+var L3_default5 = {
+  name: "Kho v\u0169 kh\xED (c\u1EA5p 3, t\u01B0\u1EDDng \u0111\xE1, c\u1EDD da \u0111\u1ECF)",
+  name_en: "Armoury (Tier 3, Stone Walls, Red Hide Banner)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 5,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", flintL: "#7c8794", bone: "#e4dcc4", red: "#a8342a", redL: "#cf5b46", redD: "#7a2318" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
+      { shape: "scatter", count: 40, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 6, y: 24, w: 60, h: 12, color: "stoneD" },
+      { shape: "rect", x: 6, y: 24, w: 60, h: 2, color: "stone" },
+      { shape: "rect", x: 6, y: 24, w: 60, h: 1, color: "stoneL" },
+      { shape: "rect", x: 6, y: 24, w: 8, h: 28, color: "stoneD" },
+      { shape: "rect", x: 6, y: 24, w: 8, h: 2, color: "stone" },
+      { shape: "rect", x: 58, y: 24, w: 8, h: 28, color: "stoneD" },
+      { shape: "rect", x: 58, y: 24, w: 8, h: 2, color: "stone" },
+      { shape: "scatter", count: 44, area: [7, 26, 56, 24], size: 1, colors: ["stone", "stoneL", "stoneD"], onlyOver: ["stoneD"] },
+      { shape: "rect", x: 22, y: 36, w: 28, h: 16, color: "line", alpha: 0.55 }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[3, 26], [12, 8], [60, 8], [69, 26]], color: "wood" },
+      { shape: "poly", points: [[3, 26], [69, 26], [68, 30], [4, 30]], color: "woodD" },
+      { shape: "line", from: [12, 8], to: [60, 8], w: 2, color: "woodL" },
+      { shape: "line", from: [22, 8], to: [14, 26], w: 1, color: "woodD" },
+      { shape: "line", from: [36, 8], to: [36, 26], w: 1, color: "woodD" },
+      { shape: "line", from: [50, 8], to: [58, 26], w: 1, color: "woodD" },
+      { shape: "scatter", count: 24, area: [8, 10, 56, 14], size: 1, colors: ["woodL", "woodD"], onlyOver: ["wood"] },
+      { shape: "poly", points: [[26, 31], [46, 31], [46, 40], [36, 44], [26, 40]], color: "redD" },
+      { shape: "poly", points: [[26, 30], [46, 30], [46, 39], [36, 43], [26, 39]], color: "red" },
+      { shape: "line", from: [26, 30], to: [46, 30], w: 1, color: "redL" },
+      { shape: "pixels", at: [[36, 34], [35, 35], [37, 35], [36, 36]], color: "bone" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "line", from: [12, 52], to: [12, 30], w: 1, color: "woodD" },
+      { shape: "poly", points: [[11, 31], [12, 27], [13, 31]], color: "flintL" },
+      { shape: "line", from: [16, 52], to: [16, 32], w: 1, color: "woodD" },
+      { shape: "poly", points: [[15, 33], [16, 29], [17, 33]], color: "flintL" },
+      { shape: "line", from: [56, 52], to: [56, 30], w: 1, color: "woodD" },
+      { shape: "poly", points: [[55, 31], [56, 27], [57, 31]], color: "flintL" },
+      { shape: "line", from: [60, 52], to: [60, 32], w: 1, color: "woodD" },
+      { shape: "poly", points: [[59, 33], [60, 29], [61, 33]], color: "flintL" },
+      { shape: "rect", x: 23, y: 46, w: 4, h: 6, color: "woodD" },
+      { shape: "rect", x: 45, y: 46, w: 4, h: 6, color: "woodD" },
+      { shape: "ellipse", cx: 25, cy: 47, rx: 4, ry: 5, color: "line" },
+      { shape: "ellipse", cx: 25, cy: 47, rx: 3, ry: 4, color: "hide" },
+      { shape: "ellipse", cx: 25, cy: 47, rx: 1, ry: 1, color: "bone" },
+      { shape: "line", from: [25, 43], to: [25, 51], w: 1, color: "woodD", alpha: 0.6 },
+      { shape: "ellipse", cx: 47, cy: 47, rx: 4, ry: 5, color: "line" },
+      { shape: "ellipse", cx: 47, cy: 47, rx: 3, ry: 4, color: "red" },
+      { shape: "ellipse", cx: 47, cy: 47, rx: 1, ry: 1, color: "bone" },
+      { shape: "line", from: [47, 43], to: [47, 51], w: 1, color: "woodD", alpha: 0.6 },
+      { shape: "line", from: [31, 53], to: [31, 44], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 31, cy: 43, rx: 2, ry: 2, color: "woodD" },
+      { shape: "pixels", at: [[30, 42]], color: "woodL" },
+      { shape: "line", from: [36, 53], to: [36, 42], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 36, cy: 41, rx: 2, ry: 2, color: "woodD" },
+      { shape: "pixels", at: [[35, 40]], color: "woodL" },
+      { shape: "line", from: [41, 53], to: [41, 44], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 41, cy: 43, rx: 2, ry: 2, color: "woodD" },
+      { shape: "pixels", at: [[40, 42]], color: "woodL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/barracks/L1.json
+var L1_default7 = {
+  name: "L\u1EC1u chi\u1EBFn binh (c\u1EA5p 1, l\u1EC1u da)",
+  name_en: "Warriors' Tent (Tier 1, Hide Tent)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 11,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", bone: "#e4dcc4", flintL: "#7c8794", door: "#2a1a0e", flag: "#b03a2e", flagD: "#7d2a20" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [14, 53], to: [36, 10], w: 2, color: "wood" },
+      { shape: "line", from: [58, 53], to: [36, 10], w: 2, color: "woodD" },
+      { shape: "line", from: [36, 53], to: [36, 8], w: 2, color: "wood" },
+      { shape: "line", from: [25, 53], to: [36, 10], w: 1, color: "woodD" },
+      { shape: "line", from: [47, 53], to: [36, 10], w: 1, color: "woodD" },
+      { shape: "rect", x: 33, y: 17, w: 6, h: 2, color: "rope" },
+      { shape: "pixels", at: [[35, 16], [37, 16]], color: "rope" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[13, 53], [36, 13], [59, 53]], color: "hide" },
+      { shape: "poly", points: [[36, 13], [13, 53], [22, 53], [36, 24]], color: "hideL" },
+      { shape: "poly", points: [[36, 13], [59, 53], [42, 53], [36, 31]], color: "hideD" },
+      { shape: "line", from: [36, 13], to: [26, 53], w: 1, color: "hideD", alpha: 0.8 },
+      { shape: "line", from: [36, 13], to: [47, 53], w: 1, color: "hideD", alpha: 0.8 },
+      { shape: "poly", points: [[30, 53], [36, 31], [42, 53]], color: "door" },
+      { shape: "line", from: [36, 31], to: [29, 53], w: 1, color: "hideL" },
+      { shape: "line", from: [36, 31], to: [43, 53], w: 1, color: "hideD" },
+      { shape: "line", from: [34, 13], to: [33, 5], w: 2, color: "wood" },
+      { shape: "line", from: [38, 13], to: [39, 5], w: 2, color: "woodD" },
+      { shape: "rect", x: 33, y: 17, w: 6, h: 2, color: "rope" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "pixels", at: [[17, 50], [21, 51], [47, 51], [51, 50], [55, 51], [24, 41], [30, 30], [44, 38]], color: "stitch" },
+      { shape: "line", from: [36, 9], to: [36, -1], w: 1, color: "woodD" },
+      { shape: "poly", points: [[37, 0], [45, 2], [37, 6]], color: "flag" },
+      { shape: "poly", points: [[37, 4], [42, 4], [37, 6]], color: "flagD" },
+      { shape: "line", from: [61, 52], to: [62, 27], w: 1, color: "woodD" },
+      { shape: "poly", points: [[61, 28], [62, 22], [63, 28]], color: "flintL" },
+      { shape: "ellipse", cx: 9, cy: 45, rx: 5, ry: 6, color: "line" },
+      { shape: "ellipse", cx: 9, cy: 45, rx: 4, ry: 5, color: "hide" },
+      { shape: "ellipse", cx: 9, cy: 45, rx: 1, ry: 1, color: "bone" },
+      { shape: "line", from: [9, 41], to: [9, 49], w: 1, color: "hideD", alpha: 0.7 },
+      { shape: "ellipse", cx: 6, cy: 52, rx: 3, ry: 2, color: "stoneD" },
+      { shape: "ellipse", cx: 6, cy: 51, rx: 3, ry: 2, color: "stone" },
+      { shape: "ellipse", cx: 63, cy: 53, rx: 3, ry: 2, color: "stoneD" },
+      { shape: "pixels", at: [[28, 52], [44, 52]], color: "bone" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/barracks/L2.json
+var L2_default6 = {
+  name: "L\u1EC1u chi\u1EBFn binh (c\u1EA5p 2, hai l\u1EC1u da, c\u1EDD hi\u1EC7u)",
+  name_en: "Warriors' Tent (Tier 2, Two Hide Tents, Banner)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 11,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", bone: "#e4dcc4", flintL: "#7c8794", door: "#2a1a0e", flag: "#b03a2e", flagD: "#7d2a20" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "rect", x: 14, y: 46, w: 44, h: 8, color: "woodD", alpha: 0.35 }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [3, 50], to: [15, 26], w: 2, color: "wood" },
+      { shape: "line", from: [27, 50], to: [15, 26], w: 2, color: "woodD" },
+      { shape: "line", from: [10, 53], to: [38, 8], w: 2, color: "wood" },
+      { shape: "line", from: [64, 53], to: [38, 8], w: 2, color: "woodD" },
+      { shape: "line", from: [38, 53], to: [38, 6], w: 2, color: "wood" },
+      { shape: "line", from: [24, 53], to: [38, 8], w: 1, color: "woodD" },
+      { shape: "line", from: [52, 53], to: [38, 8], w: 1, color: "woodD" },
+      { shape: "rect", x: 35, y: 16, w: 6, h: 2, color: "rope" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[2, 50], [15, 25], [28, 50]], color: "hide" },
+      { shape: "poly", points: [[15, 25], [2, 50], [8, 50], [15, 33]], color: "hideL" },
+      { shape: "poly", points: [[15, 25], [28, 50], [19, 50]], color: "hideD" },
+      { shape: "poly", points: [[9, 50], [15, 37], [21, 50]], color: "door" },
+      { shape: "poly", points: [[9, 53], [38, 11], [66, 53]], color: "hide" },
+      { shape: "poly", points: [[38, 11], [9, 53], [21, 53], [38, 24]], color: "hideL" },
+      { shape: "poly", points: [[38, 11], [66, 53], [45, 53], [38, 32]], color: "hideD" },
+      { shape: "line", from: [38, 11], to: [26, 53], w: 1, color: "hideD", alpha: 0.8 },
+      { shape: "line", from: [38, 11], to: [52, 53], w: 1, color: "hideD", alpha: 0.8 },
+      { shape: "poly", points: [[31, 53], [38, 29], [45, 53]], color: "door" },
+      { shape: "line", from: [31, 53], to: [38, 29], w: 1, color: "woodD" },
+      { shape: "line", from: [45, 53], to: [38, 29], w: 1, color: "woodD" },
+      { shape: "line", from: [36, 11], to: [35, 3], w: 2, color: "wood" },
+      { shape: "line", from: [40, 11], to: [41, 3], w: 2, color: "woodD" },
+      { shape: "rect", x: 35, y: 16, w: 6, h: 2, color: "rope" },
+      { shape: "poly", points: [[16, 53], [19, 47], [22, 53]], color: "flag" },
+      { shape: "poly", points: [[22, 53], [25, 48], [28, 53]], color: "flagD" },
+      { shape: "poly", points: [[48, 53], [51, 48], [54, 53]], color: "flag" },
+      { shape: "poly", points: [[54, 53], [57, 47], [60, 53]], color: "flagD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "line", from: [38, 9], to: [38, -1], w: 1, color: "woodD" },
+      { shape: "poly", points: [[39, 0], [49, 2], [39, 6]], color: "flag" },
+      { shape: "poly", points: [[39, 4], [46, 4], [39, 6]], color: "flagD" },
+      { shape: "line", from: [15, 23], to: [15, 13], w: 1, color: "woodD" },
+      { shape: "poly", points: [[16, 14], [23, 16], [16, 20]], color: "flag" },
+      { shape: "poly", points: [[16, 18], [20, 18], [16, 20]], color: "flagD" },
+      { shape: "line", from: [60, 53], to: [61, 27], w: 1, color: "woodD" },
+      { shape: "poly", points: [[60, 28], [61, 22], [62, 28]], color: "flintL" },
+      { shape: "line", from: [64, 53], to: [65, 31], w: 1, color: "woodD" },
+      { shape: "poly", points: [[64, 32], [65, 26], [66, 32]], color: "flintL" },
+      { shape: "ellipse", cx: 5, cy: 53, rx: 5, ry: 6, color: "line" },
+      { shape: "ellipse", cx: 5, cy: 53, rx: 4, ry: 5, color: "hide" },
+      { shape: "ellipse", cx: 5, cy: 53, rx: 1, ry: 1, color: "bone" },
+      { shape: "line", from: [5, 49], to: [5, 57], w: 1, color: "hideD", alpha: 0.7 },
+      { shape: "pixels", at: [[20, 40], [32, 22], [50, 36]], color: "stitch" },
+      { shape: "rect", x: 10, y: 52, w: 2, h: 6, color: "wood" },
+      { shape: "rect", x: 13, y: 52, w: 2, h: 6, color: "wood" },
+      { shape: "rect", x: 16, y: 52, w: 2, h: 6, color: "wood" },
+      { shape: "rect", x: 58, y: 52, w: 2, h: 6, color: "wood" },
+      { shape: "rect", x: 61, y: 52, w: 2, h: 6, color: "wood" },
+      { shape: "rect", x: 64, y: 52, w: 2, h: 6, color: "wood" },
+      { shape: "pixels", at: [[10, 51]], color: "woodL" },
+      { shape: "pixels", at: [[13, 51]], color: "woodL" },
+      { shape: "pixels", at: [[16, 51]], color: "woodL" },
+      { shape: "pixels", at: [[58, 51]], color: "woodL" },
+      { shape: "pixels", at: [[61, 51]], color: "woodL" },
+      { shape: "pixels", at: [[64, 51]], color: "woodL" },
+      { shape: "line", from: [10, 55], to: [17, 55], w: 1, color: "rope" },
+      { shape: "line", from: [58, 55], to: [65, 55], w: 1, color: "rope" },
+      { shape: "pixels", at: [[29, 55], [46, 55]], color: "bone" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/barracks/L3.json
+var L3_default6 = {
+  name: "L\u1EC1u chi\u1EBFn binh (c\u1EA5p 3, doanh tr\u1EA1i n\u1EC1n \u0111\xE1)",
+  name_en: "Warriors' Tent (Tier 3, Stone-floored Camp)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 11,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", bone: "#e4dcc4", flintL: "#7c8794", door: "#2a1a0e", flag: "#b03a2e", flagD: "#7d2a20" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "ellipse", cx: 36, cy: 50, rx: 31, ry: 8, color: "stoneD" },
+      { shape: "ellipse", cx: 36, cy: 49, rx: 30, ry: 7, color: "stone" },
+      { shape: "scatter", count: 26, area: [8, 43, 56, 12], size: 1, colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [8, 52], to: [36, 7], w: 2, color: "wood" },
+      { shape: "line", from: [64, 52], to: [36, 7], w: 2, color: "woodD" },
+      { shape: "line", from: [36, 52], to: [36, 5], w: 2, color: "wood" },
+      { shape: "line", from: [22, 52], to: [36, 7], w: 1, color: "woodD" },
+      { shape: "line", from: [50, 52], to: [36, 7], w: 1, color: "woodD" },
+      { shape: "rect", x: 33, y: 15, w: 6, h: 2, color: "rope" },
+      { shape: "rect", x: 25, y: 36, w: 2, h: 17, color: "wood" },
+      { shape: "rect", x: 45, y: 36, w: 2, h: 17, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[7, 52], [36, 9], [65, 52]], color: "hide" },
+      { shape: "poly", points: [[36, 9], [7, 52], [20, 52], [36, 22]], color: "hideL" },
+      { shape: "poly", points: [[36, 9], [65, 52], [44, 52], [36, 30]], color: "hideD" },
+      { shape: "line", from: [36, 9], to: [25, 52], w: 1, color: "hideD", alpha: 0.8 },
+      { shape: "line", from: [36, 9], to: [50, 52], w: 1, color: "hideD", alpha: 0.8 },
+      { shape: "poly", points: [[28, 52], [36, 27], [44, 52]], color: "door" },
+      { shape: "rect", x: 24, y: 33, w: 3, h: 20, color: "wood" },
+      { shape: "rect", x: 24, y: 33, w: 1, h: 20, color: "woodL" },
+      { shape: "rect", x: 45, y: 33, w: 3, h: 20, color: "woodD" },
+      { shape: "ellipse", cx: 25, cy: 33, rx: 2, ry: 2, color: "woodD" },
+      { shape: "ellipse", cx: 46, cy: 33, rx: 2, ry: 2, color: "woodD" },
+      { shape: "line", from: [34, 9], to: [33, 2], w: 2, color: "wood" },
+      { shape: "line", from: [38, 9], to: [39, 2], w: 2, color: "woodD" },
+      { shape: "rect", x: 33, y: 15, w: 6, h: 2, color: "rope" },
+      { shape: "poly", points: [[14, 52], [17, 46], [20, 52]], color: "flag" },
+      { shape: "poly", points: [[20, 52], [23, 47], [26, 52]], color: "flagD" },
+      { shape: "poly", points: [[46, 52], [49, 47], [52, 52]], color: "flag" },
+      { shape: "poly", points: [[52, 52], [55, 46], [58, 52]], color: "flagD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "line", from: [36, 9], to: [36, -1], w: 1, color: "woodD" },
+      { shape: "poly", points: [[37, 0], [47, 2], [37, 6]], color: "flag" },
+      { shape: "poly", points: [[37, 4], [44, 4], [37, 6]], color: "flagD" },
+      { shape: "line", from: [6, 37], to: [6, 27], w: 1, color: "woodD" },
+      { shape: "poly", points: [[7, 28], [15, 30], [7, 34]], color: "flag" },
+      { shape: "poly", points: [[7, 32], [12, 32], [7, 34]], color: "flagD" },
+      { shape: "line", from: [66, 37], to: [66, 27], w: 1, color: "woodD" },
+      { shape: "poly", points: [[65, 28], [61, 30], [65, 34]], color: "flag" },
+      { shape: "poly", points: [[65, 32], [64, 32], [65, 34]], color: "flagD" },
+      { shape: "line", from: [55, 54], to: [55, 39], w: 2, color: "wood" },
+      { shape: "line", from: [65, 54], to: [65, 39], w: 2, color: "woodD" },
+      { shape: "line", from: [54, 41], to: [66, 41], w: 2, color: "wood" },
+      { shape: "line", from: [57, 54], to: [58, 33], w: 1, color: "woodD" },
+      { shape: "poly", points: [[57, 34], [58, 28], [59, 34]], color: "flintL" },
+      { shape: "line", from: [60, 54], to: [61, 33], w: 1, color: "woodD" },
+      { shape: "poly", points: [[60, 34], [61, 28], [62, 34]], color: "flintL" },
+      { shape: "line", from: [63, 54], to: [64, 33], w: 1, color: "woodD" },
+      { shape: "poly", points: [[63, 34], [64, 28], [65, 34]], color: "flintL" },
+      { shape: "line", from: [10, 55], to: [10, 44], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 10, cy: 42, rx: 3, ry: 3, color: "bone" },
+      { shape: "pixels", at: [[9, 42], [11, 42]], color: "line" },
+      { shape: "ellipse", cx: 16, cy: 47, rx: 5, ry: 6, color: "line" },
+      { shape: "ellipse", cx: 16, cy: 47, rx: 4, ry: 5, color: "hide" },
+      { shape: "ellipse", cx: 16, cy: 47, rx: 1, ry: 1, color: "bone" },
+      { shape: "line", from: [16, 43], to: [16, 51], w: 1, color: "hideD", alpha: 0.7 },
+      { shape: "pixels", at: [[22, 40], [28, 24], [48, 36], [52, 44]], color: "stitch" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/house/L1.json
+var L1_default8 = {
+  name: "Nh\xE0 d\xE2n (c\u1EA5p 1, l\u1EC1u c\u1ECF tranh)",
+  name_en: "Dwelling (Tier 1, Thatch Hut)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 21,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideD: "#7a3d20", stitch: "#e8d6a8", door: "#2a1a0e", thatch: "#c9a84e", thatchL: "#e0c670", thatchD: "#9a7c32", wattle: "#b89a58", wattleD: "#8a7038", clay: "#b08a62", clayD: "#8c6a48" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 17, y: 34, w: 2, h: 19, color: "wood" },
+      { shape: "rect", x: 53, y: 34, w: 2, h: 19, color: "woodD" },
+      { shape: "rect", x: 35, y: 34, w: 2, h: 19, color: "wood" },
+      { shape: "line", from: [10, 40], to: [36, 10], w: 2, color: "wood" },
+      { shape: "line", from: [62, 40], to: [36, 10], w: 2, color: "woodD" },
+      { shape: "line", from: [36, 40], to: [36, 8], w: 2, color: "wood" },
+      { shape: "line", from: [18, 34], to: [54, 34], w: 1, color: "rope" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "rect", x: 16, y: 33, w: 40, h: 20, color: "wattle" },
+      { shape: "rect", x: 16, y: 33, w: 40, h: 2, color: "wattleD" },
+      { shape: "line", from: [16, 37], to: [55, 37], w: 1, color: "wattleD", alpha: 0.7 },
+      { shape: "line", from: [16, 41], to: [55, 41], w: 1, color: "wattleD", alpha: 0.7 },
+      { shape: "line", from: [16, 45], to: [55, 45], w: 1, color: "wattleD", alpha: 0.7 },
+      { shape: "line", from: [16, 49], to: [55, 49], w: 1, color: "wattleD", alpha: 0.7 },
+      { shape: "rect", x: 16, y: 33, w: 3, h: 20, color: "wattleD", alpha: 0.5 },
+      { shape: "rect", x: 53, y: 33, w: 3, h: 20, color: "wattleD", alpha: 0.6 },
+      { shape: "poly", points: [[8, 42], [36, 8], [64, 42]], color: "thatch" },
+      { shape: "poly", points: [[36, 8], [8, 42], [20, 42], [36, 22]], color: "thatchL" },
+      { shape: "poly", points: [[36, 8], [64, 42], [48, 42], [36, 27]], color: "thatchD" },
+      { shape: "scatter", count: 46, area: [14, 14, 44, 28], size: [1, 3], colors: ["thatchL", "thatchD", "thatchL"], onlyOver: ["thatch"] },
+      { shape: "scatter", count: 14, area: [14, 14, 44, 28], size: [1, 2], colors: ["thatchD"], onlyOver: ["thatch"] },
+      { shape: "rect", x: 8, y: 41, w: 56, h: 3, color: "thatchD" },
+      { shape: "rect", x: 8, y: 41, w: 56, h: 1, color: "thatchL" },
+      { shape: "line", from: [34, 8], to: [33, 3], w: 2, color: "wood" },
+      { shape: "line", from: [38, 8], to: [39, 3], w: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "ellipse", cx: 36, cy: 48, rx: 5, ry: 5, color: "door" },
+      { shape: "rect", x: 31, y: 48, w: 11, h: 5, color: "door" },
+      { shape: "line", from: [31, 53], to: [31, 46], w: 1, color: "woodD" },
+      { shape: "line", from: [41, 53], to: [41, 46], w: 1, color: "woodD" },
+      { shape: "ellipse", cx: 10, cy: 53, rx: 4, ry: 2, color: "clayD" },
+      { shape: "ellipse", cx: 10, cy: 50, rx: 4, ry: 5, color: "clay" },
+      { shape: "rect", x: 7, y: 45, w: 6, h: 2, color: "clayD" },
+      { shape: "pixels", at: [[8, 48]], color: "earthL" },
+      { shape: "ellipse", cx: 62, cy: 54, rx: 4, ry: 2, color: "clayD" },
+      { shape: "ellipse", cx: 62, cy: 51, rx: 4, ry: 5, color: "clay" },
+      { shape: "rect", x: 59, y: 46, w: 6, h: 2, color: "clayD" },
+      { shape: "pixels", at: [[60, 49]], color: "earthL" },
+      { shape: "line", from: [48, 53], to: [51, 44], w: 1, color: "woodD" },
+      { shape: "line", from: [51, 44], to: [55, 53], w: 1, color: "woodD" },
+      { shape: "pixels", at: [[20, 38], [26, 44], [47, 38], [52, 44]], color: "wattle" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/house/L2.json
+var L2_default7 = {
+  name: "Nh\xE0 d\xE2n (c\u1EA5p 2, nh\xE0 g\u1ED7 m\xE1i tranh)",
+  name_en: "Dwelling (Tier 2, Log House, Thatch Roof)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 21,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideD: "#7a3d20", stitch: "#e8d6a8", door: "#2a1a0e", thatch: "#c9a84e", thatchL: "#e0c670", thatchD: "#9a7c32", wattle: "#b89a58", wattleD: "#8a7038", clay: "#b08a62", clayD: "#8c6a48" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "rect", x: 12, y: 47, w: 48, h: 7, color: "woodD", alpha: 0.3 }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 13, y: 30, w: 3, h: 23, color: "wood" },
+      { shape: "rect", x: 57, y: 30, w: 3, h: 23, color: "woodD" },
+      { shape: "rect", x: 34, y: 28, w: 3, h: 25, color: "wood" },
+      { shape: "line", from: [6, 36], to: [35, 7], w: 2, color: "wood" },
+      { shape: "line", from: [66, 36], to: [35, 7], w: 2, color: "woodD" },
+      { shape: "line", from: [35, 36], to: [35, 5], w: 2, color: "wood" },
+      { shape: "line", from: [14, 31], to: [59, 31], w: 1, color: "rope" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "rect", x: 12, y: 30, w: 48, h: 23, color: "log" },
+      { shape: "rect", x: 12, y: 32, w: 48, h: 1, color: "woodL", alpha: 0.55 },
+      { shape: "rect", x: 12, y: 35, w: 48, h: 1, color: "woodD", alpha: 0.6 },
+      { shape: "rect", x: 12, y: 36, w: 48, h: 1, color: "woodL", alpha: 0.55 },
+      { shape: "rect", x: 12, y: 39, w: 48, h: 1, color: "woodD", alpha: 0.6 },
+      { shape: "rect", x: 12, y: 40, w: 48, h: 1, color: "woodL", alpha: 0.55 },
+      { shape: "rect", x: 12, y: 43, w: 48, h: 1, color: "woodD", alpha: 0.6 },
+      { shape: "rect", x: 12, y: 44, w: 48, h: 1, color: "woodL", alpha: 0.55 },
+      { shape: "rect", x: 12, y: 47, w: 48, h: 1, color: "woodD", alpha: 0.6 },
+      { shape: "rect", x: 12, y: 48, w: 48, h: 1, color: "woodL", alpha: 0.55 },
+      { shape: "rect", x: 12, y: 51, w: 48, h: 1, color: "woodD", alpha: 0.6 },
+      { shape: "ellipse", cx: 12, cy: 34, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 60, cy: 34, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 12, cy: 38, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 60, cy: 38, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 12, cy: 42, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 60, cy: 42, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 12, cy: 46, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 60, cy: 46, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 12, cy: 50, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 60, cy: 50, rx: 2, ry: 2, color: "logE" },
+      { shape: "poly", points: [[4, 40], [36, 5], [68, 40]], color: "thatch" },
+      { shape: "poly", points: [[36, 5], [4, 40], [18, 40], [36, 20]], color: "thatchL" },
+      { shape: "poly", points: [[36, 5], [68, 40], [50, 40], [36, 26]], color: "thatchD" },
+      { shape: "scatter", count: 46, area: [12, 10, 48, 30], size: [1, 3], colors: ["thatchL", "thatchD", "thatchL"], onlyOver: ["thatch"] },
+      { shape: "scatter", count: 14, area: [12, 10, 48, 30], size: [1, 2], colors: ["thatchD"], onlyOver: ["thatch"] },
+      { shape: "rect", x: 4, y: 39, w: 64, h: 3, color: "thatchD" },
+      { shape: "rect", x: 4, y: 39, w: 64, h: 1, color: "thatchL" },
+      { shape: "rect", x: 11, y: 41, w: 3, h: 12, color: "wood" },
+      { shape: "rect", x: 58, y: 41, w: 3, h: 12, color: "woodD" },
+      { shape: "line", from: [33, 5], to: [32, 0], w: 2, color: "wood" },
+      { shape: "line", from: [39, 5], to: [40, 0], w: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 29, y: 41, w: 12, h: 12, color: "woodD" },
+      { shape: "rect", x: 30, y: 42, w: 10, h: 11, color: "wood" },
+      { shape: "line", from: [33, 42], to: [33, 52], w: 1, color: "woodD" },
+      { shape: "line", from: [36, 42], to: [36, 52], w: 1, color: "woodD" },
+      { shape: "rect", x: 37, y: 47, w: 2, h: 2, color: "logE" },
+      { shape: "rect", x: 17, y: 43, w: 7, h: 6, color: "door" },
+      { shape: "line", from: [20, 43], to: [20, 48], w: 1, color: "wood" },
+      { shape: "line", from: [17, 46], to: [23, 46], w: 1, color: "wood" },
+      { shape: "rect", x: 46, y: 43, w: 7, h: 6, color: "door" },
+      { shape: "line", from: [49, 43], to: [49, 48], w: 1, color: "wood" },
+      { shape: "line", from: [46, 46], to: [52, 46], w: 1, color: "wood" },
+      { shape: "ellipse", cx: 6, cy: 54, rx: 4, ry: 2, color: "clayD" },
+      { shape: "ellipse", cx: 6, cy: 51, rx: 4, ry: 5, color: "clay" },
+      { shape: "rect", x: 3, y: 46, w: 6, h: 2, color: "clayD" },
+      { shape: "pixels", at: [[4, 49]], color: "earthL" },
+      { shape: "rect", x: 60, y: 49, w: 7, h: 4, color: "log" },
+      { shape: "rect", x: 60, y: 49, w: 7, h: 1, color: "woodL" },
+      { shape: "rect", x: 61, y: 46, w: 5, h: 3, color: "log" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/house/L3.json
+var L3_default7 = {
+  name: "Nh\xE0 d\xE2n (c\u1EA5p 3, nh\xE0 n\u1EC1n \u0111\xE1)",
+  name_en: "Dwelling (Tier 3, Stone-footed House)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 21,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideD: "#7a3d20", stitch: "#e8d6a8", door: "#2a1a0e", thatch: "#c9a84e", thatchL: "#e0c670", thatchD: "#9a7c32", wattle: "#b89a58", wattleD: "#8a7038", clay: "#b08a62", clayD: "#8c6a48" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "ellipse", cx: 36, cy: 50, rx: 30, ry: 7, color: "stoneD", alpha: 0.5 }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 11, y: 28, w: 3, h: 25, color: "wood" },
+      { shape: "rect", x: 59, y: 28, w: 3, h: 25, color: "woodD" },
+      { shape: "rect", x: 34, y: 26, w: 3, h: 27, color: "wood" },
+      { shape: "line", from: [3, 34], to: [35, 5], w: 2, color: "wood" },
+      { shape: "line", from: [69, 34], to: [35, 5], w: 2, color: "woodD" },
+      { shape: "line", from: [35, 34], to: [35, 3], w: 2, color: "wood" },
+      { shape: "line", from: [12, 29], to: [60, 29], w: 1, color: "rope" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "rect", x: 10, y: 42, w: 52, h: 12, color: "stone" },
+      { shape: "rect", x: 10, y: 44, w: 52, h: 1, color: "stoneD", alpha: 0.8 },
+      { shape: "rect", x: 10, y: 48, w: 52, h: 1, color: "stoneD", alpha: 0.8 },
+      { shape: "rect", x: 10, y: 52, w: 52, h: 1, color: "stoneD", alpha: 0.8 },
+      { shape: "rect", x: 16, y: 42, w: 1, h: 4, color: "stoneD" },
+      { shape: "rect", x: 26, y: 42, w: 1, h: 4, color: "stoneD" },
+      { shape: "rect", x: 36, y: 42, w: 1, h: 4, color: "stoneD" },
+      { shape: "rect", x: 46, y: 42, w: 1, h: 4, color: "stoneD" },
+      { shape: "rect", x: 56, y: 42, w: 1, h: 4, color: "stoneD" },
+      { shape: "rect", x: 21, y: 46, w: 1, h: 4, color: "stoneD" },
+      { shape: "rect", x: 31, y: 46, w: 1, h: 4, color: "stoneD" },
+      { shape: "rect", x: 41, y: 46, w: 1, h: 4, color: "stoneD" },
+      { shape: "rect", x: 51, y: 46, w: 1, h: 4, color: "stoneD" },
+      { shape: "rect", x: 10, y: 42, w: 52, h: 1, color: "stoneL" },
+      { shape: "rect", x: 10, y: 29, w: 52, h: 13, color: "clay" },
+      { shape: "rect", x: 10, y: 32, w: 52, h: 1, color: "clayD", alpha: 0.5 },
+      { shape: "rect", x: 10, y: 36, w: 52, h: 1, color: "clayD", alpha: 0.5 },
+      { shape: "rect", x: 10, y: 40, w: 52, h: 1, color: "clayD", alpha: 0.5 },
+      { shape: "rect", x: 10, y: 29, w: 52, h: 1, color: "woodD" },
+      { shape: "rect", x: 10, y: 41, w: 52, h: 1, color: "woodD" },
+      { shape: "rect", x: 10, y: 29, w: 3, h: 14, color: "wood" },
+      { shape: "rect", x: 35, y: 29, w: 3, h: 14, color: "wood" },
+      { shape: "rect", x: 60, y: 29, w: 3, h: 14, color: "wood" },
+      { shape: "poly", points: [[2, 38], [36, 3], [70, 38]], color: "thatch" },
+      { shape: "poly", points: [[36, 3], [2, 38], [17, 38], [36, 18]], color: "thatchL" },
+      { shape: "poly", points: [[36, 3], [70, 38], [50, 38], [36, 25]], color: "thatchD" },
+      { shape: "scatter", count: 46, area: [10, 8, 52, 30], size: [1, 3], colors: ["thatchL", "thatchD", "thatchL"], onlyOver: ["thatch"] },
+      { shape: "scatter", count: 14, area: [10, 8, 52, 30], size: [1, 2], colors: ["thatchD"], onlyOver: ["thatch"] },
+      { shape: "rect", x: 2, y: 37, w: 68, h: 3, color: "thatchD" },
+      { shape: "rect", x: 2, y: 37, w: 68, h: 1, color: "thatchL" },
+      { shape: "line", from: [36, 3], to: [36, 0], w: 2, color: "wood" },
+      { shape: "line", from: [30, 4], to: [42, 4], w: 1, color: "woodD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 28, y: 38, w: 14, h: 16, color: "woodD" },
+      { shape: "ellipse", cx: 35, cy: 38, rx: 7, ry: 3, color: "woodD" },
+      { shape: "rect", x: 29, y: 39, w: 12, h: 15, color: "wood" },
+      { shape: "line", from: [32, 38], to: [32, 53], w: 1, color: "woodD" },
+      { shape: "line", from: [35, 38], to: [35, 53], w: 1, color: "woodD" },
+      { shape: "line", from: [38, 38], to: [38, 53], w: 1, color: "woodD" },
+      { shape: "rect", x: 24, y: 40, w: 3, h: 14, color: "wood" },
+      { shape: "rect", x: 43, y: 40, w: 3, h: 14, color: "woodD" },
+      { shape: "ellipse", cx: 38, cy: 47, rx: 1, ry: 1, color: "logE" },
+      { shape: "rect", x: 14, y: 32, w: 7, h: 6, color: "door" },
+      { shape: "rect", x: 51, y: 32, w: 7, h: 6, color: "door" },
+      { shape: "line", from: [17, 32], to: [17, 37], w: 1, color: "wood" },
+      { shape: "line", from: [54, 32], to: [54, 37], w: 1, color: "wood" },
+      { shape: "ellipse", cx: 6, cy: 55, rx: 4, ry: 2, color: "clayD" },
+      { shape: "ellipse", cx: 6, cy: 52, rx: 4, ry: 5, color: "clay" },
+      { shape: "rect", x: 3, y: 47, w: 6, h: 2, color: "clayD" },
+      { shape: "pixels", at: [[4, 50]], color: "earthL" },
+      { shape: "ellipse", cx: 66, cy: 55, rx: 4, ry: 2, color: "clayD" },
+      { shape: "ellipse", cx: 66, cy: 52, rx: 4, ry: 5, color: "clay" },
+      { shape: "rect", x: 63, y: 47, w: 6, h: 2, color: "clayD" },
+      { shape: "pixels", at: [[64, 50]], color: "earthL" },
+      { shape: "line", from: [47, 54], to: [50, 45], w: 1, color: "woodD" },
+      { shape: "line", from: [50, 45], to: [54, 54], w: 1, color: "woodD" },
+      { shape: "line", from: [48, 49], to: [53, 49], w: 1, color: "rope" },
+      { shape: "pixels", at: [[20, 50], [42, 50], [55, 49]], color: "chip" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/field/L1.json
+var L1_default9 = {
+  name: "Ru\u1ED9ng (c\u1EA5p 1, \u0111\u1EA5t v\u1EE1)",
+  name_en: "Field (Tier 1, Broken Soil)",
+  type: "prop",
+  size: [100, 64],
+  anchor: [50, 58],
+  footprint: [2, 30, 96, 28],
+  seed: 21,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", soil: "#6a4a2c", soilL: "#86613a", soilD: "#4d341e", furrow: "#3c2815", dirt: "#7a6244", wood: "#8a6238", rope: "#d8c690", leaf: "#6fa83c", leafL: "#9ccc4e" },
+  layers: [
+    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
+    { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "dirt", alpha: 0.5, ifNot: "st1" },
+    { shape: "rect", x: 6, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 92, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 6, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 92, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [7, 29], to: [93, 29], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "soil" },
+      { shape: "scatter", count: 40, area: [10, 28, 80, 24], size: [1, 2], colors: ["soilL", "soilD", "furrow"], onlyOver: ["soil"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [15.2, 30], to: [84.8, 30], w: 2, color: "furrow" },
+      { shape: "line", from: [13.6, 35], to: [86.4, 35], w: 2, color: "furrow" },
+      { shape: "line", from: [12, 40], to: [88, 40], w: 2, color: "furrow" },
+      { shape: "line", from: [10.4, 45], to: [89.6, 45], w: 2, color: "furrow" },
+      { shape: "line", from: [8.8, 50], to: [91.2, 50], w: 2, color: "furrow" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [15.2, 30], to: [84.8, 30], w: 1, color: "soilL", alpha: 0.6 },
+      { shape: "line", from: [13.6, 35], to: [86.4, 35], w: 1, color: "soilL", alpha: 0.6 },
+      { shape: "line", from: [12, 40], to: [88, 40], w: 1, color: "soilL", alpha: 0.6 },
+      { shape: "line", from: [10.4, 45], to: [89.6, 45], w: 1, color: "soilL", alpha: 0.6 },
+      { shape: "line", from: [8.8, 50], to: [91.2, 50], w: 1, color: "soilL", alpha: 0.6 }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "pixels", at: [[14, 29], [14, 28]], color: "leaf" },
+      { shape: "pixels", at: [[13, 27], [15, 27]], color: "leafL" },
+      { shape: "pixels", at: [[42, 29], [42, 28]], color: "leaf" },
+      { shape: "pixels", at: [[41, 27], [43, 27]], color: "leafL" },
+      { shape: "pixels", at: [[70, 29], [70, 28]], color: "leaf" },
+      { shape: "pixels", at: [[69, 27], [71, 27]], color: "leafL" },
+      { shape: "pixels", at: [[28, 34], [28, 33]], color: "leaf" },
+      { shape: "pixels", at: [[27, 32], [29, 32]], color: "leafL" },
+      { shape: "pixels", at: [[56, 34], [56, 33]], color: "leaf" },
+      { shape: "pixels", at: [[55, 32], [57, 32]], color: "leafL" },
+      { shape: "pixels", at: [[82, 34], [82, 33]], color: "leaf" },
+      { shape: "pixels", at: [[81, 32], [83, 32]], color: "leafL" },
+      { shape: "pixels", at: [[14, 39], [14, 38]], color: "leaf" },
+      { shape: "pixels", at: [[13, 37], [15, 37]], color: "leafL" },
+      { shape: "pixels", at: [[42, 39], [42, 38]], color: "leaf" },
+      { shape: "pixels", at: [[41, 37], [43, 37]], color: "leafL" },
+      { shape: "pixels", at: [[70, 39], [70, 38]], color: "leaf" },
+      { shape: "pixels", at: [[69, 37], [71, 37]], color: "leafL" },
+      { shape: "pixels", at: [[28, 44], [28, 43]], color: "leaf" },
+      { shape: "pixels", at: [[27, 42], [29, 42]], color: "leafL" },
+      { shape: "pixels", at: [[56, 44], [56, 43]], color: "leaf" },
+      { shape: "pixels", at: [[55, 42], [57, 42]], color: "leafL" },
+      { shape: "pixels", at: [[82, 44], [82, 43]], color: "leaf" },
+      { shape: "pixels", at: [[81, 42], [83, 42]], color: "leafL" },
+      { shape: "pixels", at: [[14, 49], [14, 48]], color: "leaf" },
+      { shape: "pixels", at: [[13, 47], [15, 47]], color: "leafL" },
+      { shape: "pixels", at: [[42, 49], [42, 48]], color: "leaf" },
+      { shape: "pixels", at: [[41, 47], [43, 47]], color: "leafL" },
+      { shape: "pixels", at: [[70, 49], [70, 48]], color: "leaf" },
+      { shape: "pixels", at: [[69, 47], [71, 47]], color: "leafL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/field/L2.json
+var L2_default8 = {
+  name: "Ru\u1ED9ng (c\u1EA5p 2, lu\u1ED1ng \u0111\u1EAFp)",
+  name_en: "Field (Tier 2, Raised Beds)",
+  type: "prop",
+  size: [100, 64],
+  anchor: [50, 58],
+  footprint: [2, 30, 96, 28],
+  seed: 21,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", soil: "#6a4a2c", soilL: "#86613a", soilD: "#4d341e", furrow: "#3c2815", dirt: "#7a6244", wood: "#8a6238", woodD: "#5e4026", rope: "#d8c690", leaf: "#6fa83c", leafL: "#9ccc4e", leafD: "#4a7a28" },
+  layers: [
+    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
+    { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "dirt", alpha: 0.5, ifNot: "st1" },
+    { shape: "rect", x: 6, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 92, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 6, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 92, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [7, 29], to: [93, 29], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "soil" },
+      { shape: "scatter", count: 30, area: [10, 28, 80, 24], size: [1, 2], colors: ["soilL", "soilD"], onlyOver: ["soil"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [15, 31], to: [85, 31], w: 5, color: "soilL" },
+      { shape: "line", from: [13, 37], to: [87, 37], w: 5, color: "soilL" },
+      { shape: "line", from: [11, 43], to: [89, 43], w: 5, color: "soilL" },
+      { shape: "line", from: [9, 49], to: [91, 49], w: 5, color: "soilL" },
+      { shape: "line", from: [15, 31], to: [85, 31], w: 1, color: "furrow" },
+      { shape: "line", from: [13, 37], to: [87, 37], w: 1, color: "furrow" },
+      { shape: "line", from: [11, 43], to: [89, 43], w: 1, color: "furrow" },
+      { shape: "line", from: [9, 49], to: [91, 49], w: 1, color: "furrow" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [14, 26], to: [86, 26], w: 2, color: "woodD" },
+      { shape: "line", from: [6, 54], to: [94, 54], w: 2, color: "wood" },
+      { shape: "line", from: [14, 26], to: [6, 54], w: 2, color: "wood" },
+      { shape: "line", from: [86, 26], to: [94, 54], w: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "pixels", at: [[18, 31], [18, 30], [18, 29], [17, 28], [19, 28], [18, 27]], color: "leaf" },
+      { shape: "pixels", at: [[17, 27], [19, 27]], color: "leafL" },
+      { shape: "pixels", at: [[27, 31], [27, 30], [27, 29], [26, 28], [28, 28], [27, 27]], color: "leaf" },
+      { shape: "pixels", at: [[26, 27], [28, 27]], color: "leafL" },
+      { shape: "pixels", at: [[36, 31], [36, 30], [36, 29], [35, 28], [37, 28], [36, 27]], color: "leaf" },
+      { shape: "pixels", at: [[35, 27], [37, 27]], color: "leafL" },
+      { shape: "pixels", at: [[45, 31], [45, 30], [45, 29], [44, 28], [46, 28], [45, 27]], color: "leaf" },
+      { shape: "pixels", at: [[44, 27], [46, 27]], color: "leafL" },
+      { shape: "pixels", at: [[55, 31], [55, 30], [55, 29], [54, 28], [56, 28], [55, 27]], color: "leaf" },
+      { shape: "pixels", at: [[54, 27], [56, 27]], color: "leafL" },
+      { shape: "pixels", at: [[64, 31], [64, 30], [64, 29], [63, 28], [65, 28], [64, 27]], color: "leaf" },
+      { shape: "pixels", at: [[63, 27], [65, 27]], color: "leafL" },
+      { shape: "pixels", at: [[73, 31], [73, 30], [73, 29], [72, 28], [74, 28], [73, 27]], color: "leaf" },
+      { shape: "pixels", at: [[72, 27], [74, 27]], color: "leafL" },
+      { shape: "pixels", at: [[82, 31], [82, 30], [82, 29], [81, 28], [83, 28], [82, 27]], color: "leaf" },
+      { shape: "pixels", at: [[81, 27], [83, 27]], color: "leafL" },
+      { shape: "pixels", at: [[18, 37], [18, 36], [18, 35], [17, 34], [19, 34], [18, 33]], color: "leaf" },
+      { shape: "pixels", at: [[17, 33], [19, 33]], color: "leafL" },
+      { shape: "pixels", at: [[27, 37], [27, 36], [27, 35], [26, 34], [28, 34], [27, 33]], color: "leaf" },
+      { shape: "pixels", at: [[26, 33], [28, 33]], color: "leafL" },
+      { shape: "pixels", at: [[36, 37], [36, 36], [36, 35], [35, 34], [37, 34], [36, 33]], color: "leaf" },
+      { shape: "pixels", at: [[35, 33], [37, 33]], color: "leafL" },
+      { shape: "pixels", at: [[45, 37], [45, 36], [45, 35], [44, 34], [46, 34], [45, 33]], color: "leaf" },
+      { shape: "pixels", at: [[44, 33], [46, 33]], color: "leafL" },
+      { shape: "pixels", at: [[55, 37], [55, 36], [55, 35], [54, 34], [56, 34], [55, 33]], color: "leaf" },
+      { shape: "pixels", at: [[54, 33], [56, 33]], color: "leafL" },
+      { shape: "pixels", at: [[64, 37], [64, 36], [64, 35], [63, 34], [65, 34], [64, 33]], color: "leaf" },
+      { shape: "pixels", at: [[63, 33], [65, 33]], color: "leafL" },
+      { shape: "pixels", at: [[73, 37], [73, 36], [73, 35], [72, 34], [74, 34], [73, 33]], color: "leaf" },
+      { shape: "pixels", at: [[72, 33], [74, 33]], color: "leafL" },
+      { shape: "pixels", at: [[82, 37], [82, 36], [82, 35], [81, 34], [83, 34], [82, 33]], color: "leaf" },
+      { shape: "pixels", at: [[81, 33], [83, 33]], color: "leafL" },
+      { shape: "pixels", at: [[18, 43], [18, 42], [18, 41], [17, 40], [19, 40], [18, 39]], color: "leaf" },
+      { shape: "pixels", at: [[17, 39], [19, 39]], color: "leafL" },
+      { shape: "pixels", at: [[27, 43], [27, 42], [27, 41], [26, 40], [28, 40], [27, 39]], color: "leaf" },
+      { shape: "pixels", at: [[26, 39], [28, 39]], color: "leafL" },
+      { shape: "pixels", at: [[36, 43], [36, 42], [36, 41], [35, 40], [37, 40], [36, 39]], color: "leaf" },
+      { shape: "pixels", at: [[35, 39], [37, 39]], color: "leafL" },
+      { shape: "pixels", at: [[45, 43], [45, 42], [45, 41], [44, 40], [46, 40], [45, 39]], color: "leaf" },
+      { shape: "pixels", at: [[44, 39], [46, 39]], color: "leafL" },
+      { shape: "pixels", at: [[55, 43], [55, 42], [55, 41], [54, 40], [56, 40], [55, 39]], color: "leaf" },
+      { shape: "pixels", at: [[54, 39], [56, 39]], color: "leafL" },
+      { shape: "pixels", at: [[64, 43], [64, 42], [64, 41], [63, 40], [65, 40], [64, 39]], color: "leaf" },
+      { shape: "pixels", at: [[63, 39], [65, 39]], color: "leafL" },
+      { shape: "pixels", at: [[73, 43], [73, 42], [73, 41], [72, 40], [74, 40], [73, 39]], color: "leaf" },
+      { shape: "pixels", at: [[72, 39], [74, 39]], color: "leafL" },
+      { shape: "pixels", at: [[82, 43], [82, 42], [82, 41], [81, 40], [83, 40], [82, 39]], color: "leaf" },
+      { shape: "pixels", at: [[81, 39], [83, 39]], color: "leafL" },
+      { shape: "pixels", at: [[18, 49], [18, 48], [18, 47], [17, 46], [19, 46], [18, 45]], color: "leaf" },
+      { shape: "pixels", at: [[17, 45], [19, 45]], color: "leafL" },
+      { shape: "pixels", at: [[27, 49], [27, 48], [27, 47], [26, 46], [28, 46], [27, 45]], color: "leaf" },
+      { shape: "pixels", at: [[26, 45], [28, 45]], color: "leafL" },
+      { shape: "pixels", at: [[36, 49], [36, 48], [36, 47], [35, 46], [37, 46], [36, 45]], color: "leaf" },
+      { shape: "pixels", at: [[35, 45], [37, 45]], color: "leafL" },
+      { shape: "pixels", at: [[45, 49], [45, 48], [45, 47], [44, 46], [46, 46], [45, 45]], color: "leaf" },
+      { shape: "pixels", at: [[44, 45], [46, 45]], color: "leafL" },
+      { shape: "pixels", at: [[55, 49], [55, 48], [55, 47], [54, 46], [56, 46], [55, 45]], color: "leaf" },
+      { shape: "pixels", at: [[54, 45], [56, 45]], color: "leafL" },
+      { shape: "pixels", at: [[64, 49], [64, 48], [64, 47], [63, 46], [65, 46], [64, 45]], color: "leaf" },
+      { shape: "pixels", at: [[63, 45], [65, 45]], color: "leafL" },
+      { shape: "pixels", at: [[73, 49], [73, 48], [73, 47], [72, 46], [74, 46], [73, 45]], color: "leaf" },
+      { shape: "pixels", at: [[72, 45], [74, 45]], color: "leafL" },
+      { shape: "pixels", at: [[82, 49], [82, 48], [82, 47], [81, 46], [83, 46], [82, 45]], color: "leaf" },
+      { shape: "pixels", at: [[81, 45], [83, 45]], color: "leafL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/field/L3.json
+var L3_default8 = {
+  name: "Ru\u1ED9ng (c\u1EA5p 3, b\u1EDD \u0111\xE1)",
+  name_en: "Field (Tier 3, Stone Border)",
+  type: "prop",
+  size: [100, 64],
+  anchor: [50, 58],
+  footprint: [2, 30, 96, 28],
+  seed: 21,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", soil: "#6a4a2c", soilL: "#86613a", soilD: "#4d341e", furrow: "#3c2815", dirt: "#7a6244", wood: "#8a6238", rope: "#d8c690", leaf: "#6fa83c", leafD: "#4a7a28", grain: "#d8b84a", grainL: "#ecd478", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b" },
+  layers: [
+    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
+    { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "dirt", alpha: 0.5, ifNot: "st1" },
+    { shape: "rect", x: 6, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 92, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 6, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 92, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [7, 29], to: [93, 29], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "soil" },
+      { shape: "scatter", count: 30, area: [10, 28, 80, 24], size: [1, 2], colors: ["soilL", "soilD"], onlyOver: ["soil"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [15, 31], to: [85, 31], w: 5, color: "soilL" },
+      { shape: "line", from: [13, 37], to: [87, 37], w: 5, color: "soilL" },
+      { shape: "line", from: [11, 43], to: [89, 43], w: 5, color: "soilL" },
+      { shape: "line", from: [9, 49], to: [91, 49], w: 5, color: "soilL" },
+      { shape: "line", from: [15, 31], to: [85, 31], w: 1, color: "furrow" },
+      { shape: "line", from: [13, 37], to: [87, 37], w: 1, color: "furrow" },
+      { shape: "line", from: [11, 43], to: [89, 43], w: 1, color: "furrow" },
+      { shape: "line", from: [9, 49], to: [91, 49], w: 1, color: "furrow" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [14, 26], to: [86, 26], w: 3, color: "stoneD" },
+      { shape: "line", from: [6, 54], to: [94, 54], w: 3, color: "stone" },
+      { shape: "line", from: [14, 26], to: [6, 54], w: 3, color: "stoneD" },
+      { shape: "line", from: [86, 26], to: [94, 54], w: 3, color: "stone" },
+      { shape: "line", from: [8, 53], to: [92, 53], w: 1, color: "stoneL" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "pixels", at: [[18, 32], [18, 31], [18, 30], [18, 29], [18, 28], [18, 27], [18, 26]], color: "leaf" },
+      { shape: "pixels", at: [[17, 24], [18, 24], [19, 24], [18, 23], [18, 22]], color: "grain" },
+      { shape: "pixels", at: [[19, 23]], color: "grainL" },
+      { shape: "pixels", at: [[25, 32], [25, 31], [25, 30], [25, 29], [25, 28], [25, 27], [25, 26]], color: "leaf" },
+      { shape: "pixels", at: [[24, 24], [25, 24], [26, 24], [25, 23], [25, 22]], color: "grain" },
+      { shape: "pixels", at: [[26, 23]], color: "grainL" },
+      { shape: "pixels", at: [[32, 32], [32, 31], [32, 30], [32, 29], [32, 28], [32, 27], [32, 26]], color: "leaf" },
+      { shape: "pixels", at: [[31, 24], [32, 24], [33, 24], [32, 23], [32, 22]], color: "grain" },
+      { shape: "pixels", at: [[33, 23]], color: "grainL" },
+      { shape: "pixels", at: [[39, 32], [39, 31], [39, 30], [39, 29], [39, 28], [39, 27], [39, 26]], color: "leaf" },
+      { shape: "pixels", at: [[38, 24], [39, 24], [40, 24], [39, 23], [39, 22]], color: "grain" },
+      { shape: "pixels", at: [[40, 23]], color: "grainL" },
+      { shape: "pixels", at: [[46, 32], [46, 31], [46, 30], [46, 29], [46, 28], [46, 27], [46, 26]], color: "leaf" },
+      { shape: "pixels", at: [[45, 24], [46, 24], [47, 24], [46, 23], [46, 22]], color: "grain" },
+      { shape: "pixels", at: [[47, 23]], color: "grainL" },
+      { shape: "pixels", at: [[54, 32], [54, 31], [54, 30], [54, 29], [54, 28], [54, 27], [54, 26]], color: "leaf" },
+      { shape: "pixels", at: [[53, 24], [54, 24], [55, 24], [54, 23], [54, 22]], color: "grain" },
+      { shape: "pixels", at: [[55, 23]], color: "grainL" },
+      { shape: "pixels", at: [[61, 32], [61, 31], [61, 30], [61, 29], [61, 28], [61, 27], [61, 26]], color: "leaf" },
+      { shape: "pixels", at: [[60, 24], [61, 24], [62, 24], [61, 23], [61, 22]], color: "grain" },
+      { shape: "pixels", at: [[62, 23]], color: "grainL" },
+      { shape: "pixels", at: [[68, 32], [68, 31], [68, 30], [68, 29], [68, 28], [68, 27], [68, 26]], color: "leaf" },
+      { shape: "pixels", at: [[67, 24], [68, 24], [69, 24], [68, 23], [68, 22]], color: "grain" },
+      { shape: "pixels", at: [[69, 23]], color: "grainL" },
+      { shape: "pixels", at: [[75, 32], [75, 31], [75, 30], [75, 29], [75, 28], [75, 27], [75, 26]], color: "leaf" },
+      { shape: "pixels", at: [[74, 24], [75, 24], [76, 24], [75, 23], [75, 22]], color: "grain" },
+      { shape: "pixels", at: [[76, 23]], color: "grainL" },
+      { shape: "pixels", at: [[82, 32], [82, 31], [82, 30], [82, 29], [82, 28], [82, 27], [82, 26]], color: "leaf" },
+      { shape: "pixels", at: [[81, 24], [82, 24], [83, 24], [82, 23], [82, 22]], color: "grain" },
+      { shape: "pixels", at: [[83, 23]], color: "grainL" },
+      { shape: "pixels", at: [[18, 37], [18, 36], [18, 35], [18, 34], [18, 33], [18, 32], [18, 31]], color: "leaf" },
+      { shape: "pixels", at: [[17, 29], [18, 29], [19, 29], [18, 28], [18, 27]], color: "grain" },
+      { shape: "pixels", at: [[19, 28]], color: "grainL" },
+      { shape: "pixels", at: [[25, 37], [25, 36], [25, 35], [25, 34], [25, 33], [25, 32], [25, 31]], color: "leaf" },
+      { shape: "pixels", at: [[24, 29], [25, 29], [26, 29], [25, 28], [25, 27]], color: "grain" },
+      { shape: "pixels", at: [[26, 28]], color: "grainL" },
+      { shape: "pixels", at: [[32, 37], [32, 36], [32, 35], [32, 34], [32, 33], [32, 32], [32, 31]], color: "leaf" },
+      { shape: "pixels", at: [[31, 29], [32, 29], [33, 29], [32, 28], [32, 27]], color: "grain" },
+      { shape: "pixels", at: [[33, 28]], color: "grainL" },
+      { shape: "pixels", at: [[39, 37], [39, 36], [39, 35], [39, 34], [39, 33], [39, 32], [39, 31]], color: "leaf" },
+      { shape: "pixels", at: [[38, 29], [39, 29], [40, 29], [39, 28], [39, 27]], color: "grain" },
+      { shape: "pixels", at: [[40, 28]], color: "grainL" },
+      { shape: "pixels", at: [[46, 37], [46, 36], [46, 35], [46, 34], [46, 33], [46, 32], [46, 31]], color: "leaf" },
+      { shape: "pixels", at: [[45, 29], [46, 29], [47, 29], [46, 28], [46, 27]], color: "grain" },
+      { shape: "pixels", at: [[47, 28]], color: "grainL" },
+      { shape: "pixels", at: [[54, 37], [54, 36], [54, 35], [54, 34], [54, 33], [54, 32], [54, 31]], color: "leaf" },
+      { shape: "pixels", at: [[53, 29], [54, 29], [55, 29], [54, 28], [54, 27]], color: "grain" },
+      { shape: "pixels", at: [[55, 28]], color: "grainL" },
+      { shape: "pixels", at: [[61, 37], [61, 36], [61, 35], [61, 34], [61, 33], [61, 32], [61, 31]], color: "leaf" },
+      { shape: "pixels", at: [[60, 29], [61, 29], [62, 29], [61, 28], [61, 27]], color: "grain" },
+      { shape: "pixels", at: [[62, 28]], color: "grainL" },
+      { shape: "pixels", at: [[68, 37], [68, 36], [68, 35], [68, 34], [68, 33], [68, 32], [68, 31]], color: "leaf" },
+      { shape: "pixels", at: [[67, 29], [68, 29], [69, 29], [68, 28], [68, 27]], color: "grain" },
+      { shape: "pixels", at: [[69, 28]], color: "grainL" },
+      { shape: "pixels", at: [[75, 37], [75, 36], [75, 35], [75, 34], [75, 33], [75, 32], [75, 31]], color: "leaf" },
+      { shape: "pixels", at: [[74, 29], [75, 29], [76, 29], [75, 28], [75, 27]], color: "grain" },
+      { shape: "pixels", at: [[76, 28]], color: "grainL" },
+      { shape: "pixels", at: [[82, 37], [82, 36], [82, 35], [82, 34], [82, 33], [82, 32], [82, 31]], color: "leaf" },
+      { shape: "pixels", at: [[81, 29], [82, 29], [83, 29], [82, 28], [82, 27]], color: "grain" },
+      { shape: "pixels", at: [[83, 28]], color: "grainL" },
+      { shape: "pixels", at: [[18, 43], [18, 42], [18, 41], [18, 40], [18, 39], [18, 38], [18, 37]], color: "leaf" },
+      { shape: "pixels", at: [[17, 35], [18, 35], [19, 35], [18, 34], [18, 33]], color: "grain" },
+      { shape: "pixels", at: [[19, 34]], color: "grainL" },
+      { shape: "pixels", at: [[25, 43], [25, 42], [25, 41], [25, 40], [25, 39], [25, 38], [25, 37]], color: "leaf" },
+      { shape: "pixels", at: [[24, 35], [25, 35], [26, 35], [25, 34], [25, 33]], color: "grain" },
+      { shape: "pixels", at: [[26, 34]], color: "grainL" },
+      { shape: "pixels", at: [[32, 43], [32, 42], [32, 41], [32, 40], [32, 39], [32, 38], [32, 37]], color: "leaf" },
+      { shape: "pixels", at: [[31, 35], [32, 35], [33, 35], [32, 34], [32, 33]], color: "grain" },
+      { shape: "pixels", at: [[33, 34]], color: "grainL" },
+      { shape: "pixels", at: [[39, 43], [39, 42], [39, 41], [39, 40], [39, 39], [39, 38], [39, 37]], color: "leaf" },
+      { shape: "pixels", at: [[38, 35], [39, 35], [40, 35], [39, 34], [39, 33]], color: "grain" },
+      { shape: "pixels", at: [[40, 34]], color: "grainL" },
+      { shape: "pixels", at: [[46, 43], [46, 42], [46, 41], [46, 40], [46, 39], [46, 38], [46, 37]], color: "leaf" },
+      { shape: "pixels", at: [[45, 35], [46, 35], [47, 35], [46, 34], [46, 33]], color: "grain" },
+      { shape: "pixels", at: [[47, 34]], color: "grainL" },
+      { shape: "pixels", at: [[54, 43], [54, 42], [54, 41], [54, 40], [54, 39], [54, 38], [54, 37]], color: "leaf" },
+      { shape: "pixels", at: [[53, 35], [54, 35], [55, 35], [54, 34], [54, 33]], color: "grain" },
+      { shape: "pixels", at: [[55, 34]], color: "grainL" },
+      { shape: "pixels", at: [[61, 43], [61, 42], [61, 41], [61, 40], [61, 39], [61, 38], [61, 37]], color: "leaf" },
+      { shape: "pixels", at: [[60, 35], [61, 35], [62, 35], [61, 34], [61, 33]], color: "grain" },
+      { shape: "pixels", at: [[62, 34]], color: "grainL" },
+      { shape: "pixels", at: [[68, 43], [68, 42], [68, 41], [68, 40], [68, 39], [68, 38], [68, 37]], color: "leaf" },
+      { shape: "pixels", at: [[67, 35], [68, 35], [69, 35], [68, 34], [68, 33]], color: "grain" },
+      { shape: "pixels", at: [[69, 34]], color: "grainL" },
+      { shape: "pixels", at: [[75, 43], [75, 42], [75, 41], [75, 40], [75, 39], [75, 38], [75, 37]], color: "leaf" },
+      { shape: "pixels", at: [[74, 35], [75, 35], [76, 35], [75, 34], [75, 33]], color: "grain" },
+      { shape: "pixels", at: [[76, 34]], color: "grainL" },
+      { shape: "pixels", at: [[82, 43], [82, 42], [82, 41], [82, 40], [82, 39], [82, 38], [82, 37]], color: "leaf" },
+      { shape: "pixels", at: [[81, 35], [82, 35], [83, 35], [82, 34], [82, 33]], color: "grain" },
+      { shape: "pixels", at: [[83, 34]], color: "grainL" },
+      { shape: "pixels", at: [[18, 48], [18, 47], [18, 46], [18, 45], [18, 44], [18, 43], [18, 42]], color: "leaf" },
+      { shape: "pixels", at: [[17, 40], [18, 40], [19, 40], [18, 39], [18, 38]], color: "grain" },
+      { shape: "pixels", at: [[19, 39]], color: "grainL" },
+      { shape: "pixels", at: [[25, 48], [25, 47], [25, 46], [25, 45], [25, 44], [25, 43], [25, 42]], color: "leaf" },
+      { shape: "pixels", at: [[24, 40], [25, 40], [26, 40], [25, 39], [25, 38]], color: "grain" },
+      { shape: "pixels", at: [[26, 39]], color: "grainL" },
+      { shape: "pixels", at: [[32, 48], [32, 47], [32, 46], [32, 45], [32, 44], [32, 43], [32, 42]], color: "leaf" },
+      { shape: "pixels", at: [[31, 40], [32, 40], [33, 40], [32, 39], [32, 38]], color: "grain" },
+      { shape: "pixels", at: [[33, 39]], color: "grainL" },
+      { shape: "pixels", at: [[39, 48], [39, 47], [39, 46], [39, 45], [39, 44], [39, 43], [39, 42]], color: "leaf" },
+      { shape: "pixels", at: [[38, 40], [39, 40], [40, 40], [39, 39], [39, 38]], color: "grain" },
+      { shape: "pixels", at: [[40, 39]], color: "grainL" },
+      { shape: "pixels", at: [[46, 48], [46, 47], [46, 46], [46, 45], [46, 44], [46, 43], [46, 42]], color: "leaf" },
+      { shape: "pixels", at: [[45, 40], [46, 40], [47, 40], [46, 39], [46, 38]], color: "grain" },
+      { shape: "pixels", at: [[47, 39]], color: "grainL" },
+      { shape: "pixels", at: [[54, 48], [54, 47], [54, 46], [54, 45], [54, 44], [54, 43], [54, 42]], color: "leaf" },
+      { shape: "pixels", at: [[53, 40], [54, 40], [55, 40], [54, 39], [54, 38]], color: "grain" },
+      { shape: "pixels", at: [[55, 39]], color: "grainL" },
+      { shape: "pixels", at: [[61, 48], [61, 47], [61, 46], [61, 45], [61, 44], [61, 43], [61, 42]], color: "leaf" },
+      { shape: "pixels", at: [[60, 40], [61, 40], [62, 40], [61, 39], [61, 38]], color: "grain" },
+      { shape: "pixels", at: [[62, 39]], color: "grainL" },
+      { shape: "pixels", at: [[68, 48], [68, 47], [68, 46], [68, 45], [68, 44], [68, 43], [68, 42]], color: "leaf" },
+      { shape: "pixels", at: [[67, 40], [68, 40], [69, 40], [68, 39], [68, 38]], color: "grain" },
+      { shape: "pixels", at: [[69, 39]], color: "grainL" },
+      { shape: "pixels", at: [[75, 48], [75, 47], [75, 46], [75, 45], [75, 44], [75, 43], [75, 42]], color: "leaf" },
+      { shape: "pixels", at: [[74, 40], [75, 40], [76, 40], [75, 39], [75, 38]], color: "grain" },
+      { shape: "pixels", at: [[76, 39]], color: "grainL" },
+      { shape: "pixels", at: [[82, 48], [82, 47], [82, 46], [82, 45], [82, 44], [82, 43], [82, 42]], color: "leaf" },
+      { shape: "pixels", at: [[81, 40], [82, 40], [83, 40], [82, 39], [82, 38]], color: "grain" },
+      { shape: "pixels", at: [[83, 39]], color: "grainL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/fence/L1.json
+var L1_default10 = {
+  name: "H\xE0ng r\xE0o c\u1ECDc (c\u1EA5p 1, c\u1ECDc nh\u1ECDn)",
+  name_en: "Fence (Tier 1, Stakes)",
+  type: "prop",
+  size: [32, 44],
+  anchor: [16, 38],
+  footprint: [0, 26, 32, 14],
+  seed: 31,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690" },
+  layers: [
+    { shape: "ellipse", cx: 16, cy: 38, rx: 15, ry: 3, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 14, y: 33, w: 4, h: 5, color: "woodD" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 2, y: 17, w: 5, h: 21, color: "wood" },
+      { shape: "poly", points: [[2, 17], [4.5, 14], [7, 17]], color: "woodL" },
+      { shape: "rect", x: 13, y: 13, w: 5, h: 25, color: "woodD" },
+      { shape: "poly", points: [[13, 13], [15.5, 10], [18, 13]], color: "wood" },
+      { shape: "rect", x: 25, y: 17, w: 5, h: 21, color: "wood" },
+      { shape: "poly", points: [[25, 17], [27.5, 14], [30, 17]], color: "woodL" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [0, 26], to: [32, 26], w: 1, color: "rope" },
+      { shape: "line", from: [0, 32], to: [32, 32], w: 1, color: "rope" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/fence/L2.json
+var L2_default9 = {
+  name: "H\xE0ng r\xE0o c\u1ECDc (c\u1EA5p 2, h\xE0ng r\xE0o \u0111\xF4i)",
+  name_en: "Fence (Tier 2, Double Palisade)",
+  type: "prop",
+  size: [32, 44],
+  anchor: [16, 38],
+  footprint: [0, 26, 32, 14],
+  seed: 31,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690" },
+  layers: [
+    { shape: "ellipse", cx: 16, cy: 38, rx: 15, ry: 3, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 0, y: 32, w: 32, h: 6, color: "earth" },
+      { shape: "scatter", count: 8, area: [0, 32, 32, 6], size: [1, 2], colors: ["dirt", "earthL"], onlyOver: ["earth"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 1, y: 11, w: 5, h: 23, color: "wood" },
+      { shape: "poly", points: [[1, 11], [3.5, 8], [6, 11]], color: "woodL" },
+      { shape: "rect", x: 7, y: 14, w: 5, h: 20, color: "woodD" },
+      { shape: "poly", points: [[7, 14], [9.5, 11], [12, 14]], color: "woodL" },
+      { shape: "rect", x: 13, y: 11, w: 5, h: 23, color: "wood" },
+      { shape: "poly", points: [[13, 11], [15.5, 8], [18, 11]], color: "woodL" },
+      { shape: "rect", x: 19, y: 14, w: 5, h: 20, color: "woodD" },
+      { shape: "poly", points: [[19, 14], [21.5, 11], [24, 14]], color: "woodL" },
+      { shape: "rect", x: 25, y: 11, w: 5, h: 23, color: "wood" },
+      { shape: "poly", points: [[25, 11], [27.5, 8], [30, 11]], color: "woodL" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [0, 20], to: [32, 20], w: 2, color: "woodD" },
+      { shape: "line", from: [0, 29], to: [32, 29], w: 2, color: "woodD" },
+      { shape: "line", from: [0, 20], to: [32, 20], w: 1, color: "rope", alpha: 0.8 }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/gate/L1.json
+var L1_default11 = {
+  name: "C\u1ED5ng (c\u1EA5p 1, c\u1ED5ng g\u1ED7, \u0111\xF3ng)",
+  name_en: "Gate (Tier 1, Shut)",
+  type: "prop",
+  size: [32, 44],
+  anchor: [16, 38],
+  footprint: [0, 26, 32, 14],
+  seed: 32,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", door: "#2a1a0e" },
+  layers: [
+    { shape: "ellipse", cx: 16, cy: 38, rx: 15, ry: 3, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 0, y: 7, w: 5, h: 31, color: "woodD" },
+      { shape: "poly", points: [[0, 7], [2.5, 4], [5, 7]], color: "wood" },
+      { shape: "rect", x: 27, y: 7, w: 5, h: 31, color: "woodD" },
+      { shape: "poly", points: [[27, 7], [29.5, 4], [32, 7]], color: "wood" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [2, 9], to: [30, 9], w: 3, color: "wood" },
+      { shape: "rect", x: 5, y: 12, w: 22, h: 26, color: "wood" },
+      { shape: "line", from: [16, 12], to: [16, 38], w: 1, color: "woodD" },
+      { shape: "line", from: [5, 20], to: [27, 20], w: 1, color: "woodD" },
+      { shape: "line", from: [5, 30], to: [27, 30], w: 1, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "rect", x: 14, y: 24, w: 4, h: 3, color: "rope" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/gate/L2.json
+var L2_default10 = {
+  name: "C\u1ED5ng (c\u1EA5p 2, c\u1ED5ng \u0111\xF4i, \u0111\xF3ng)",
+  name_en: "Gate (Tier 2, Shut)",
+  type: "prop",
+  size: [32, 44],
+  anchor: [16, 38],
+  footprint: [0, 26, 32, 14],
+  seed: 32,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneD: "#60676b" },
+  layers: [
+    { shape: "ellipse", cx: 16, cy: 38, rx: 15, ry: 3, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 0, y: 7, w: 5, h: 31, color: "woodD" },
+      { shape: "poly", points: [[0, 7], [2.5, 4], [5, 7]], color: "wood" },
+      { shape: "rect", x: 27, y: 7, w: 5, h: 31, color: "woodD" },
+      { shape: "poly", points: [[27, 7], [29.5, 4], [32, 7]], color: "wood" },
+      { shape: "rect", x: 0, y: 32, w: 5, h: 6, color: "stoneD" },
+      { shape: "rect", x: 27, y: 32, w: 5, h: 6, color: "stoneD" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [2, 9], to: [30, 9], w: 3, color: "wood" },
+      { shape: "line", from: [2, 14], to: [30, 14], w: 2, color: "woodD" },
+      { shape: "rect", x: 5, y: 12, w: 22, h: 26, color: "woodL" },
+      { shape: "line", from: [16, 12], to: [16, 38], w: 2, color: "woodD" },
+      { shape: "line", from: [5, 20], to: [27, 20], w: 2, color: "woodD" },
+      { shape: "line", from: [5, 30], to: [27, 30], w: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "rect", x: 13, y: 24, w: 6, h: 4, color: "rope" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/gate/L1open.json
+var L1open_default = {
+  name: "C\u1ED5ng (c\u1EA5p 1, c\u1ED5ng g\u1ED7, m\u1EDF)",
+  name_en: "Gate (Tier 1, Open)",
+  type: "prop",
+  size: [32, 44],
+  anchor: [16, 38],
+  footprint: [0, 26, 32, 14],
+  seed: 32,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690" },
+  layers: [
+    { shape: "ellipse", cx: 16, cy: 38, rx: 15, ry: 3, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 0, y: 7, w: 5, h: 31, color: "woodD" },
+      { shape: "poly", points: [[0, 7], [2.5, 4], [5, 7]], color: "wood" },
+      { shape: "rect", x: 27, y: 7, w: 5, h: 31, color: "woodD" },
+      { shape: "poly", points: [[27, 7], [29.5, 4], [32, 7]], color: "wood" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [2, 9], to: [30, 9], w: 3, color: "wood" },
+      { shape: "rect", x: 5, y: 12, w: 3, h: 26, color: "wood" },
+      { shape: "rect", x: 24, y: 12, w: 3, h: 26, color: "wood" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/gate/L2open.json
+var L2open_default = {
+  name: "C\u1ED5ng (c\u1EA5p 2, c\u1ED5ng \u0111\xF4i, m\u1EDF)",
+  name_en: "Gate (Tier 2, Open)",
+  type: "prop",
+  size: [32, 44],
+  anchor: [16, 38],
+  footprint: [0, 26, 32, 14],
+  seed: 32,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneD: "#60676b" },
+  layers: [
+    { shape: "ellipse", cx: 16, cy: 38, rx: 15, ry: 3, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 0, y: 7, w: 5, h: 31, color: "woodD" },
+      { shape: "poly", points: [[0, 7], [2.5, 4], [5, 7]], color: "wood" },
+      { shape: "rect", x: 27, y: 7, w: 5, h: 31, color: "woodD" },
+      { shape: "poly", points: [[27, 7], [29.5, 4], [32, 7]], color: "wood" },
+      { shape: "rect", x: 0, y: 32, w: 5, h: 6, color: "stoneD" },
+      { shape: "rect", x: 27, y: 32, w: 5, h: 6, color: "stoneD" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [2, 9], to: [30, 9], w: 3, color: "wood" },
+      { shape: "line", from: [2, 14], to: [30, 14], w: 2, color: "woodD" },
+      { shape: "rect", x: 5, y: 12, w: 4, h: 26, color: "woodL" },
+      { shape: "rect", x: 23, y: 12, w: 4, h: 26, color: "woodL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/tower/L1.json
+var L1_default12 = {
+  name: "Ch\xF2i canh (c\u1EA5p 1, ch\xF2i g\u1ED7)",
+  name_en: "Watchtower (Tier 1, Timber)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 33,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", rope: "#d8c690", thatch: "#c9a84e", thatchL: "#e0c670", thatchD: "#9a7c32" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 10, y: 50, w: 52, h: 5, color: "dirt" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [14, 54], to: [20, 36], w: 3, color: "woodD" },
+      { shape: "line", from: [58, 54], to: [52, 36], w: 3, color: "woodD" },
+      { shape: "line", from: [22, 54], to: [24, 36], w: 2, color: "wood" },
+      { shape: "line", from: [50, 54], to: [48, 36], w: 2, color: "wood" },
+      { shape: "line", from: [18, 40], to: [54, 40], w: 2, color: "rope" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "rect", x: 14, y: 22, w: 44, h: 5, color: "wood" },
+      { shape: "rect", x: 14, y: 22, w: 44, h: 2, color: "woodL" },
+      { shape: "rect", x: 14, y: 12, w: 3, h: 12, color: "woodD" },
+      { shape: "rect", x: 55, y: 12, w: 3, h: 12, color: "woodD" },
+      { shape: "line", from: [14, 14], to: [58, 14], w: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "poly", points: [[10, 14], [36, 2], [62, 14]], color: "thatch" },
+      { shape: "poly", points: [[10, 14], [36, 2], [36, 14]], color: "thatchL" },
+      { shape: "poly", points: [[36, 2], [62, 14], [36, 14]], color: "thatchD" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/tower/L2.json
+var L2_default11 = {
+  name: "Ch\xF2i canh (c\u1EA5p 2, ch\xF2i cao)",
+  name_en: "Watchtower (Tier 2, Tall)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 33,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", rope: "#d8c690", thatch: "#c9a84e", thatchL: "#e0c670", thatchD: "#9a7c32" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 8, y: 48, w: 56, h: 7, color: "stoneD" },
+      { shape: "rect", x: 8, y: 48, w: 56, h: 2, color: "stoneL" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [14, 50], to: [20, 28], w: 3, color: "woodD" },
+      { shape: "line", from: [58, 50], to: [52, 28], w: 3, color: "woodD" },
+      { shape: "line", from: [22, 50], to: [24, 28], w: 2, color: "wood" },
+      { shape: "line", from: [50, 50], to: [48, 28], w: 2, color: "wood" },
+      { shape: "line", from: [18, 36], to: [54, 36], w: 2, color: "rope" },
+      { shape: "line", from: [20, 26], to: [52, 26], w: 2, color: "rope" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "rect", x: 12, y: 14, w: 48, h: 5, color: "woodL" },
+      { shape: "rect", x: 12, y: 14, w: 48, h: 2, color: "wood" },
+      { shape: "rect", x: 12, y: 4, w: 3, h: 12, color: "woodD" },
+      { shape: "rect", x: 57, y: 4, w: 3, h: 12, color: "woodD" },
+      { shape: "line", from: [12, 6], to: [60, 6], w: 2, color: "woodD" },
+      { shape: "line", from: [13, 10], to: [59, 10], w: 1, color: "rope" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "poly", points: [[8, 6], [36, 0], [64, 6]], color: "thatch" },
+      { shape: "poly", points: [[8, 6], [36, 0], [36, 6]], color: "thatchL" },
+      { shape: "poly", points: [[36, 0], [64, 6], [36, 6]], color: "thatchD" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/wartent/L1.json
+var L1_default13 = {
+  name: "L\u1EC1u h\u1ECDp chi\u1EBFn (c\u1EA5p 1, l\u1EC1u da)",
+  name_en: "War Tent (Tier 1)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 41,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", door: "#2a1a0e", flag: "#b03a2e", flagD: "#7d2a20", bone: "#e4dcc4", stoneD: "#60676b" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 8, y: 46, w: 56, h: 8, color: "dirt" },
+      { shape: "scatter", count: 14, area: [8, 46, 56, 8], size: [1, 2], colors: ["earth", "earthL"], onlyOver: ["dirt"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [11, 52], to: [36, 8], w: 2, color: "wood" },
+      { shape: "line", from: [61, 52], to: [36, 8], w: 2, color: "woodD" },
+      { shape: "line", from: [36, 52], to: [36, 6], w: 2, color: "wood" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[9, 52], [36, 11], [63, 52]], color: "hide" },
+      { shape: "poly", points: [[36, 11], [9, 52], [19, 52], [36, 24]], color: "hideL" },
+      { shape: "poly", points: [[36, 11], [63, 52], [49, 52], [36, 30]], color: "hideD" },
+      { shape: "poly", points: [[30, 52], [36, 30], [42, 52]], color: "door" },
+      { shape: "line", from: [36, 11], to: [30, 52], w: 1, color: "hideD", alpha: 0.8 },
+      { shape: "line", from: [36, 11], to: [44, 52], w: 1, color: "hideD", alpha: 0.8 }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "line", from: [36, 11], to: [36, 0], w: 1, color: "woodD" },
+      { shape: "poly", points: [[37, 1], [47, 4], [37, 8]], color: "flag" },
+      { shape: "pixels", at: [[33, 20], [39, 24], [30, 40], [43, 42]], color: "bone" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/wartent/L2.json
+var L2_default12 = {
+  name: "L\u1EC1u h\u1ECDp chi\u1EBFn (c\u1EA5p 2, l\u1EC1u l\u1EDBn)",
+  name_en: "War Tent (Tier 2)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 41,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", door: "#2a1a0e", flag: "#b03a2e", flagD: "#7d2a20", bone: "#e4dcc4", stoneD: "#60676b" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 8, y: 46, w: 56, h: 8, color: "dirt" },
+      { shape: "scatter", count: 14, area: [8, 46, 56, 8], size: [1, 2], colors: ["earth", "earthL"], onlyOver: ["dirt"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [8, 52], to: [36, 8], w: 2, color: "wood" },
+      { shape: "line", from: [64, 52], to: [36, 8], w: 2, color: "woodD" },
+      { shape: "line", from: [36, 52], to: [36, 6], w: 2, color: "wood" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[6, 52], [36, 11], [66, 52]], color: "hide" },
+      { shape: "poly", points: [[36, 11], [6, 52], [16, 52], [36, 24]], color: "hideL" },
+      { shape: "poly", points: [[36, 11], [66, 52], [52, 52], [36, 30]], color: "hideD" },
+      { shape: "poly", points: [[30, 52], [36, 30], [42, 52]], color: "door" },
+      { shape: "line", from: [36, 11], to: [30, 52], w: 1, color: "hideD", alpha: 0.8 },
+      { shape: "line", from: [36, 11], to: [44, 52], w: 1, color: "hideD", alpha: 0.8 }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "line", from: [36, 9], to: [36, -2], w: 1, color: "woodD" },
+      { shape: "poly", points: [[37, -1], [47, 2], [37, 6]], color: "flag" },
+      { shape: "line", from: [10, 40], to: [10, 29], w: 1, color: "woodD" },
+      { shape: "poly", points: [[11, 30], [21, 33], [11, 37]], color: "flagD" },
+      { shape: "rect", x: 10, y: 48, w: 3, h: 6, color: "wood" },
+      { shape: "rect", x: 59, y: 48, w: 3, h: 6, color: "wood" },
+      { shape: "pixels", at: [[33, 20], [39, 24], [30, 40], [43, 42]], color: "bone" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/wartent/L3.json
+var L3_default9 = {
+  name: "L\u1EC1u h\u1ECDp chi\u1EBFn (c\u1EA5p 3, l\u1EC1u th\u1EE7 l\u0129nh)",
+  name_en: "War Tent (Tier 3)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 41,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", door: "#2a1a0e", flag: "#b03a2e", flagD: "#7d2a20", bone: "#e4dcc4", stoneD: "#60676b" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 8, y: 46, w: 56, h: 8, color: "dirt" },
+      { shape: "scatter", count: 14, area: [8, 46, 56, 8], size: [1, 2], colors: ["earth", "earthL"], onlyOver: ["dirt"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [5, 52], to: [36, 8], w: 2, color: "wood" },
+      { shape: "line", from: [67, 52], to: [36, 8], w: 2, color: "woodD" },
+      { shape: "line", from: [36, 52], to: [36, 6], w: 2, color: "wood" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[3, 52], [36, 11], [69, 52]], color: "hide" },
+      { shape: "poly", points: [[36, 11], [3, 52], [13, 52], [36, 24]], color: "hideL" },
+      { shape: "poly", points: [[36, 11], [69, 52], [55, 52], [36, 30]], color: "hideD" },
+      { shape: "poly", points: [[30, 52], [36, 30], [42, 52]], color: "door" },
+      { shape: "line", from: [36, 11], to: [30, 52], w: 1, color: "hideD", alpha: 0.8 },
+      { shape: "line", from: [36, 11], to: [44, 52], w: 1, color: "hideD", alpha: 0.8 }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "line", from: [36, 9], to: [36, -2], w: 1, color: "woodD" },
+      { shape: "poly", points: [[37, -1], [47, 2], [37, 6]], color: "flag" },
+      { shape: "line", from: [7, 40], to: [7, 29], w: 1, color: "woodD" },
+      { shape: "poly", points: [[8, 30], [18, 33], [8, 37]], color: "flagD" },
+      { shape: "line", from: [61, 40], to: [61, 29], w: 1, color: "woodD" },
+      { shape: "poly", points: [[62, 30], [72, 33], [62, 37]], color: "flag" },
+      { shape: "rect", x: 10, y: 48, w: 3, h: 6, color: "wood" },
+      { shape: "rect", x: 59, y: 48, w: 3, h: 6, color: "wood" },
+      { shape: "poly", points: [[2, 54], [6, 44], [10, 54]], color: "stoneD" },
+      { shape: "poly", points: [[62, 54], [66, 44], [70, 54]], color: "stoneD" },
+      { shape: "pixels", at: [[33, 20], [39, 24], [30, 40], [43, 42]], color: "bone" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/drill/L1.json
+var L1_default14 = {
+  name: "B\xE3i t\u1EADp (c\u1EA5p 1, b\xE3i c\u1ECDc)",
+  name_en: "Drill Ground (Tier 1)",
+  type: "prop",
+  size: [100, 64],
+  anchor: [50, 58],
+  footprint: [2, 30, 96, 28],
+  seed: 42,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodD: "#5e4026", straw: "#c9a84e", strawD: "#9a7c32", stone: "#8e9498", stoneD: "#60676b", flag: "#b03a2e", flagD: "#7d2a20" },
+  layers: [
+    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 4, y: 28, w: 92, h: 26, color: "earth" },
+      { shape: "scatter", count: 30, area: [4, 28, 92, 26], size: [1, 2], colors: ["dirt", "earthL", "stone"], onlyOver: ["earth"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 4, y: 28, w: 92, h: 2, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [20, 52], to: [20, 30], w: 2, color: "wood" },
+      { shape: "line", from: [14, 38], to: [26, 38], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 20, cy: 30, rx: 4, ry: 4, color: "straw" },
+      { shape: "pixels", at: [[19, 29], [21, 29]], color: "strawD" },
+      { shape: "line", from: [50, 52], to: [50, 30], w: 2, color: "wood" },
+      { shape: "line", from: [44, 38], to: [56, 38], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 50, cy: 30, rx: 4, ry: 4, color: "straw" },
+      { shape: "pixels", at: [[49, 29], [51, 29]], color: "strawD" },
+      { shape: "line", from: [80, 52], to: [80, 30], w: 2, color: "wood" },
+      { shape: "line", from: [74, 38], to: [86, 38], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 80, cy: 30, rx: 4, ry: 4, color: "straw" },
+      { shape: "pixels", at: [[79, 29], [81, 29]], color: "strawD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 40, y: 44, w: 20, h: 3, color: "wood" },
+      { shape: "line", from: [42, 44], to: [44, 36], w: 1, color: "woodD" },
+      { shape: "line", from: [48, 44], to: [50, 35], w: 1, color: "woodD" },
+      { shape: "line", from: [54, 44], to: [56, 36], w: 1, color: "woodD" },
+      { shape: "line", from: [10, 24], to: [10, 13], w: 1, color: "woodD" },
+      { shape: "poly", points: [[11, 14], [21, 17], [11, 21]], color: "flag" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/drill/L2.json
+var L2_default13 = {
+  name: "B\xE3i t\u1EADp (c\u1EA5p 2, b\xE3i r\xE0o)",
+  name_en: "Drill Ground (Tier 2)",
+  type: "prop",
+  size: [100, 64],
+  anchor: [50, 58],
+  footprint: [2, 30, 96, 28],
+  seed: 42,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodD: "#5e4026", straw: "#c9a84e", strawD: "#9a7c32", stone: "#8e9498", stoneD: "#60676b", flag: "#b03a2e", flagD: "#7d2a20" },
+  layers: [
+    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 4, y: 28, w: 92, h: 26, color: "earth" },
+      { shape: "scatter", count: 30, area: [4, 28, 92, 26], size: [1, 2], colors: ["dirt", "earthL", "stone"], onlyOver: ["earth"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 4, y: 28, w: 92, h: 2, color: "woodD" },
+      { shape: "rect", x: 4, y: 52, w: 92, h: 2, color: "woodD" },
+      { shape: "rect", x: 4, y: 28, w: 2, h: 26, color: "woodD" },
+      { shape: "rect", x: 94, y: 28, w: 2, h: 26, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [20, 52], to: [20, 30], w: 2, color: "wood" },
+      { shape: "line", from: [14, 38], to: [26, 38], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 20, cy: 30, rx: 4, ry: 4, color: "straw" },
+      { shape: "pixels", at: [[19, 29], [21, 29]], color: "strawD" },
+      { shape: "line", from: [50, 52], to: [50, 30], w: 2, color: "wood" },
+      { shape: "line", from: [44, 38], to: [56, 38], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 50, cy: 30, rx: 4, ry: 4, color: "straw" },
+      { shape: "pixels", at: [[49, 29], [51, 29]], color: "strawD" },
+      { shape: "line", from: [80, 52], to: [80, 30], w: 2, color: "wood" },
+      { shape: "line", from: [74, 38], to: [86, 38], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 80, cy: 30, rx: 4, ry: 4, color: "straw" },
+      { shape: "pixels", at: [[79, 29], [81, 29]], color: "strawD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 40, y: 44, w: 20, h: 3, color: "wood" },
+      { shape: "line", from: [42, 44], to: [44, 36], w: 1, color: "woodD" },
+      { shape: "line", from: [48, 44], to: [50, 35], w: 1, color: "woodD" },
+      { shape: "line", from: [54, 44], to: [56, 36], w: 1, color: "woodD" },
+      { shape: "line", from: [10, 24], to: [10, 13], w: 1, color: "woodD" },
+      { shape: "poly", points: [[11, 14], [21, 17], [11, 21]], color: "flag" },
+      { shape: "line", from: [90, 24], to: [90, 13], w: 1, color: "woodD" },
+      { shape: "poly", points: [[91, 14], [101, 17], [91, 21]], color: "flagD" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/drill/L3.json
+var L3_default10 = {
+  name: "B\xE3i t\u1EADp (c\u1EA5p 3, b\xE3i \u0111\xE1)",
+  name_en: "Drill Ground (Tier 3)",
+  type: "prop",
+  size: [100, 64],
+  anchor: [50, 58],
+  footprint: [2, 30, 96, 28],
+  seed: 42,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodD: "#5e4026", straw: "#c9a84e", strawD: "#9a7c32", stone: "#8e9498", stoneD: "#60676b", flag: "#b03a2e", flagD: "#7d2a20" },
+  layers: [
+    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "rect", x: 4, y: 28, w: 92, h: 26, color: "stoneD" },
+      { shape: "scatter", count: 30, area: [4, 28, 92, 26], size: [1, 2], colors: ["dirt", "earthL", "stone"], onlyOver: ["stoneD"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 4, y: 28, w: 92, h: 2, color: "woodD" },
+      { shape: "rect", x: 4, y: 52, w: 92, h: 2, color: "woodD" },
+      { shape: "rect", x: 4, y: 28, w: 2, h: 26, color: "woodD" },
+      { shape: "rect", x: 94, y: 28, w: 2, h: 26, color: "woodD" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "line", from: [20, 52], to: [20, 30], w: 2, color: "wood" },
+      { shape: "line", from: [14, 38], to: [26, 38], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 20, cy: 30, rx: 4, ry: 4, color: "straw" },
+      { shape: "pixels", at: [[19, 29], [21, 29]], color: "strawD" },
+      { shape: "line", from: [50, 52], to: [50, 30], w: 2, color: "wood" },
+      { shape: "line", from: [44, 38], to: [56, 38], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 50, cy: 30, rx: 4, ry: 4, color: "straw" },
+      { shape: "pixels", at: [[49, 29], [51, 29]], color: "strawD" },
+      { shape: "line", from: [80, 52], to: [80, 30], w: 2, color: "wood" },
+      { shape: "line", from: [74, 38], to: [86, 38], w: 2, color: "wood" },
+      { shape: "ellipse", cx: 80, cy: 30, rx: 4, ry: 4, color: "straw" },
+      { shape: "pixels", at: [[79, 29], [81, 29]], color: "strawD" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 40, y: 44, w: 20, h: 3, color: "wood" },
+      { shape: "line", from: [42, 44], to: [44, 36], w: 1, color: "woodD" },
+      { shape: "line", from: [48, 44], to: [50, 35], w: 1, color: "woodD" },
+      { shape: "line", from: [54, 44], to: [56, 36], w: 1, color: "woodD" },
+      { shape: "line", from: [10, 24], to: [10, 13], w: 1, color: "woodD" },
+      { shape: "poly", points: [[11, 14], [21, 17], [11, 21]], color: "flag" },
+      { shape: "line", from: [90, 24], to: [90, 13], w: 1, color: "woodD" },
+      { shape: "poly", points: [[91, 14], [101, 17], [91, 21]], color: "flagD" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/trap/L1.json
+var L1_default15 = {
+  name: "H\u1ED1 ch\xF4ng (c\u1EA5p 1)",
+  name_en: "Pit Trap (Tier 1)",
+  type: "prop",
+  size: [32, 44],
+  anchor: [16, 38],
+  footprint: [0, 26, 32, 14],
+  seed: 43,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", pit: "#2a1a0e", spike: "#d8c690", straw: "#c9a84e", strawD: "#9a7c32" },
+  layers: [
+    { shape: "ellipse", cx: 16, cy: 38, rx: 14, ry: 4, color: "shadow", alpha: 0.2 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 16, cy: 34, rx: 13, ry: 5, color: "dirt" },
+      { shape: "ellipse", cx: 16, cy: 34, rx: 10, ry: 4, color: "pit" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [8, 36], to: [7, 28], w: 1, color: "spike" },
+      { shape: "pixels", at: [[7, 27]], color: "spike" },
+      { shape: "line", from: [14, 36], to: [15, 28], w: 1, color: "spike" },
+      { shape: "pixels", at: [[15, 27]], color: "spike" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[6, 33], [16, 30], [26, 33], [16, 36]], color: "straw", alpha: 0.85 },
+      { shape: "pixels", at: [[10, 33], [18, 32], [22, 34]], color: "strawD", alpha: 1 }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/trap/L2.json
+var L2_default14 = {
+  name: "H\u1ED1 ch\xF4ng (c\u1EA5p 2, h\u1ED1 s\xE2u)",
+  name_en: "Pit Trap (Tier 2)",
+  type: "prop",
+  size: [32, 44],
+  anchor: [16, 38],
+  footprint: [0, 26, 32, 14],
+  seed: 43,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", pit: "#2a1a0e", spike: "#d8c690", straw: "#c9a84e", strawD: "#9a7c32" },
+  layers: [
+    { shape: "ellipse", cx: 16, cy: 38, rx: 14, ry: 4, color: "shadow", alpha: 0.2 },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 16, cy: 34, rx: 13, ry: 5, color: "dirt" },
+      { shape: "ellipse", cx: 16, cy: 34, rx: 10, ry: 4, color: "pit" }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "line", from: [8, 36], to: [7, 28], w: 1, color: "spike" },
+      { shape: "pixels", at: [[7, 27]], color: "spike" },
+      { shape: "line", from: [14, 36], to: [15, 28], w: 1, color: "spike" },
+      { shape: "pixels", at: [[15, 27]], color: "spike" },
+      { shape: "line", from: [20, 36], to: [19, 28], w: 1, color: "spike" },
+      { shape: "pixels", at: [[19, 27]], color: "spike" },
+      { shape: "line", from: [24, 36], to: [25, 28], w: 1, color: "spike" },
+      { shape: "pixels", at: [[25, 27]], color: "spike" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[6, 33], [16, 30], [26, 33], [16, 36]], color: "straw", alpha: 0 },
+      { shape: "pixels", at: [[10, 33], [18, 32], [22, 34]], color: "strawD", alpha: 0 }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/campfire/L2.json
+var L2_default15 = {
+  name: "L\u1EEDa tr\u1EA1i (c\u1EA5p 2, v\xF2ng l\u1EEDa c\xF3 gh\u1EBF g\u1ED7)",
+  name_en: "Campfire (Tier 2, Fire Circle with Log Seats)",
+  type: "prop",
+  size: [72, 60],
+  anchor: [36, 54],
+  footprint: [4, 30, 64, 28],
+  seed: 1,
+  animate: { frames: 4, fps: 6 },
+  palette: { line: "#2b1d10", rock: "#7a8084", rockL: "#b0b7bb", shadow: "#000000", dirt: "#5a4430", dirtL: "#6e553b", dirtD: "#47362a", ash: "#2e2822", log: "#7a5530", logD: "#5e4026", logE: "#c49a60", flame2: "#e8641e", flame1: "#f7a728", flame0: "#fff1a8", spark: "#ffd070", wood: "#8a6238", woodL: "#aa7c48", hide: "#a0552f", hideL: "#c06f43" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 50, rx: 32, ry: 8, color: "shadow", alpha: 0.25 },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 34, ry: 16, color: "#ffb040", alpha: 0.14 },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 29, ry: 11, color: "dirt" },
+    { shape: "scatter", count: 40, area: [12, 34, 48, 20], size: 1, colors: ["dirtL", "dirtD"], onlyOver: ["dirt"] },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 15, ry: 6, color: "ash" },
+    { shape: "ellipse", cx: 21, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 21, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 19, y: 37, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 30, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 30, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 28, y: 33, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 42, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 42, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 40, y: 33, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 51, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 51, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 49, y: 37, w: 3, h: 1, color: "rockL" },
+    { shape: "line", from: [26, 47], to: [46, 40], w: 4, color: "log" },
+    { shape: "line", from: [26, 40], to: [46, 47], w: 4, color: "logD" },
+    { shape: "rect", x: 25, y: 45, w: 3, h: 4, color: "logE" },
+    { shape: "rect", x: 45, y: 45, w: 3, h: 4, color: "logE" },
+    { shape: "poly", points: [[27, 44], [36, { cycle: [22, 19, 23, 20] }], [45, 44]], color: "flame2" },
+    { shape: "poly", points: [[30, 44], [34, { cycle: [27, 25, 28, 26] }], [38, 44]], color: "flame1" },
+    { shape: "poly", points: [[34, 44], [40, { cycle: [26, 28, 25, 27] }], [44, 44]], color: "flame1" },
+    { shape: "poly", points: [[32, 44], [36, { cycle: [32, 30, 33, 31] }], [40, 44]], color: "flame0" },
+    { shape: "rect", x: [28, 44], y: [12, 30], w: 1, h: 1, color: "spark", repeat: { n: 8, phase: 4 } },
+    { shape: "ellipse", cx: 55, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 55, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 53, y: 42, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 51, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 51, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 49, y: 47, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 42, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 42, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 40, y: 51, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 30, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 30, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 28, y: 51, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 21, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 21, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 19, y: 47, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 17, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 17, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 15, y: 42, w: 3, h: 1, color: "rockL" },
+    { shape: "rect", x: 5, y: 40, w: 11, h: 4, color: "log" },
+    { shape: "rect", x: 5, y: 40, w: 11, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 5, cy: 42, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 8, y: 43, w: 6, h: 1, color: "logD" },
+    { shape: "rect", x: 57, y: 40, w: 11, h: 4, color: "log" },
+    { shape: "rect", x: 57, y: 40, w: 11, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 57, cy: 42, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 60, y: 43, w: 6, h: 1, color: "logD" },
+    { shape: "rect", x: 26, y: 55, w: 12, h: 4, color: "log" },
+    { shape: "rect", x: 26, y: 55, w: 12, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 26, cy: 57, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 29, y: 58, w: 7, h: 1, color: "logD" },
+    { shape: "rect", x: 40, y: 55, w: 12, h: 4, color: "log" },
+    { shape: "rect", x: 40, y: 55, w: 12, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 40, cy: 57, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 43, y: 58, w: 7, h: 1, color: "logD" },
+    { shape: "rect", x: 3, y: 24, w: 2, h: 17, color: "wood" },
+    { shape: "rect", x: 3, y: 24, w: 1, h: 17, color: "woodL" },
+    { shape: "line", from: [4, 25], to: [14, 25], w: 1, color: "wood" },
+    { shape: "poly", points: [[6, 26], [12, 26], [11, 34], [7, 34]], color: "hide" },
+    { shape: "line", from: [6, 26], to: [12, 26], w: 1, color: "hideL" },
+    { shape: "line", from: [66, 40], to: [64, 28], w: 1, color: "wood" },
+    { shape: "line", from: [68, 40], to: [68, 29], w: 1, color: "woodL" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/campfire/L3.json
+var L3_default11 = {
+  name: "B\u1EBFp l\u1EEDa l\u1EDBn (c\u1EA5p 3, gi\xE1 n\u01B0\u1EDBng, n\u1ED3i \u0111\u1EA5t, gi\xE0n ph\u01A1i)",
+  name_en: "Great Hearth (Tier 3, Spit, Clay Pot, Drying Rack)",
+  type: "prop",
+  size: [72, 60],
+  anchor: [36, 54],
+  footprint: [4, 30, 64, 28],
+  seed: 1,
+  animate: { frames: 4, fps: 6 },
+  palette: { line: "#2b1d10", rock: "#7a8084", rockL: "#b0b7bb", shadow: "#000000", dirt: "#5a4430", dirtL: "#6e553b", dirtD: "#47362a", ash: "#2e2822", log: "#7a5530", logD: "#5e4026", logE: "#c49a60", flame2: "#e8641e", flame1: "#f7a728", flame0: "#fff1a8", spark: "#ffd070", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stitch: "#e8d6a8", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", clay: "#a8643c", clayD: "#7a4526", meat: "#9a3a30", meatL: "#c4584a" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 50, rx: 32, ry: 8, color: "shadow", alpha: 0.25 },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 34, ry: 16, color: "#ffb040", alpha: 0.14 },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 30, ry: 11, color: "dirt" },
+    { shape: "scatter", count: 40, area: [12, 34, 48, 20], size: 1, colors: ["dirtL", "dirtD"], onlyOver: ["dirt"] },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 15, ry: 6, color: "ash" },
+    { shape: "rect", x: 6, y: 12, w: 2, h: 24, color: "wood" },
+    { shape: "rect", x: 6, y: 12, w: 1, h: 24, color: "woodL" },
+    { shape: "rect", x: 64, y: 12, w: 2, h: 24, color: "wood" },
+    { shape: "rect", x: 64, y: 12, w: 1, h: 24, color: "woodL" },
+    { shape: "poly", points: [[8, 14], [64, 14], [64, 32], [8, 32]], color: "hideD" },
+    { shape: "poly", points: [[8, 14], [64, 14], [64, 30], [8, 30]], color: "hide" },
+    { shape: "line", from: [8, 14], to: [64, 14], w: 1, color: "hideL" },
+    { shape: "pixels", at: [[14, 16], [24, 16], [34, 16], [44, 16], [54, 16]], color: "stitch" },
+    { shape: "scatter", count: 30, area: [9, 15, 54, 15], size: 1, colors: ["hideL", "hideD"], onlyOver: ["hide"] },
+    { shape: "rect", x: 12, y: 33, w: 2, h: 10, color: "wood" },
+    { shape: "rect", x: 28, y: 33, w: 2, h: 10, color: "wood" },
+    { shape: "rect", x: 11, y: 33, w: 20, h: 1, color: "woodD" },
+    { shape: "rect", x: 15, y: 34, w: 2, h: 6, color: "meat" },
+    { shape: "rect", x: 19, y: 34, w: 2, h: 7, color: "meatL" },
+    { shape: "rect", x: 23, y: 34, w: 2, h: 6, color: "meat" },
+    { shape: "rect", x: 26, y: 34, w: 1, h: 5, color: "meatL" },
+    { shape: "ellipse", cx: 21, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 21, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 19, y: 37, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 30, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 30, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 28, y: 33, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 42, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 42, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 40, y: 33, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 51, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 51, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 49, y: 37, w: 3, h: 1, color: "rockL" },
+    { shape: "line", from: [26, 47], to: [46, 40], w: 4, color: "log" },
+    { shape: "line", from: [26, 40], to: [46, 47], w: 4, color: "logD" },
+    { shape: "rect", x: 25, y: 45, w: 3, h: 4, color: "logE" },
+    { shape: "rect", x: 45, y: 45, w: 3, h: 4, color: "logE" },
+    { shape: "poly", points: [[27, 44], [36, { cycle: [22, 19, 23, 20] }], [45, 44]], color: "flame2" },
+    { shape: "poly", points: [[30, 44], [34, { cycle: [27, 25, 28, 26] }], [38, 44]], color: "flame1" },
+    { shape: "poly", points: [[34, 44], [40, { cycle: [26, 28, 25, 27] }], [44, 44]], color: "flame1" },
+    { shape: "poly", points: [[32, 44], [36, { cycle: [32, 30, 33, 31] }], [40, 44]], color: "flame0" },
+    { shape: "rect", x: [28, 44], y: [12, 30], w: 1, h: 1, color: "spark", repeat: { n: 8, phase: 4 } },
+    { shape: "ellipse", cx: 55, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 55, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 53, y: 42, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 51, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 51, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 49, y: 47, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 42, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 42, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 40, y: 51, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 30, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 30, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 28, y: 51, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 21, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 21, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 19, y: 47, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 17, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 17, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 15, y: 42, w: 3, h: 1, color: "rockL" },
+    { shape: "rect", x: 53, y: 30, w: 2, h: 18, color: "wood" },
+    { shape: "rect", x: 53, y: 30, w: 1, h: 18, color: "woodL" },
+    { shape: "rect", x: 60, y: 34, w: 2, h: 14, color: "wood" },
+    { shape: "line", from: [53, 31], to: [61, 35], w: 1, color: "woodD" },
+    { shape: "line", from: [59, 35], to: [59, 38], w: 1, color: "rope" },
+    { shape: "ellipse", cx: 59, cy: 41, rx: 4, ry: 3, color: "clayD" },
+    { shape: "ellipse", cx: 59, cy: 40, rx: 4, ry: 3, color: "clay" },
+    { shape: "ellipse", cx: 59, cy: 38, rx: 3, ry: 1, color: "meatL" },
+    { shape: "rect", x: 5, y: 42, w: 11, h: 4, color: "log" },
+    { shape: "rect", x: 5, y: 42, w: 11, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 5, cy: 44, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 8, y: 45, w: 6, h: 1, color: "logD" },
+    { shape: "rect", x: 26, y: 55, w: 12, h: 4, color: "log" },
+    { shape: "rect", x: 26, y: 55, w: 12, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 26, cy: 57, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 29, y: 58, w: 7, h: 1, color: "logD" },
+    { shape: "rect", x: 42, y: 55, w: 12, h: 4, color: "log" },
+    { shape: "rect", x: 42, y: 55, w: 12, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 42, cy: 57, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 45, y: 58, w: 7, h: 1, color: "logD" },
+    { shape: "ellipse", cx: 66, cy: 50, rx: 3, ry: 2, color: "clayD" },
+    { shape: "ellipse", cx: 66, cy: 49, rx: 3, ry: 1, color: "clay" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/campfire/L4.json
+var L4_default = {
+  name: "Nh\xE0 chung (c\u1EA5p 4, t\u01B0\u1EDDng da, c\u1ED9t t\u1ED5 ti\xEAn, gh\u1EBF d\xE0i)",
+  name_en: "Common House (Tier 4, Hide Wall, Ancestor Poles, Long Benches)",
+  type: "prop",
+  size: [72, 60],
+  anchor: [36, 54],
+  footprint: [4, 30, 64, 28],
+  seed: 1,
+  animate: { frames: 4, fps: 6 },
+  palette: { line: "#2b1d10", rock: "#7a8084", rockL: "#b0b7bb", shadow: "#000000", dirt: "#5a4430", dirtL: "#6e553b", dirtD: "#47362a", ash: "#2e2822", log: "#7a5530", logD: "#5e4026", logE: "#c49a60", flame2: "#e8641e", flame1: "#f7a728", flame0: "#fff1a8", spark: "#ffd070", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stitch: "#e8d6a8", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stoneD: "#60676b", bone: "#e4dcc4", clay: "#a8643c", clayD: "#7a4526", ochre: "#b0762f", redp: "#a8342a", bluep: "#5f7fa8", chip: "#d8d2c0" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 50, rx: 32, ry: 8, color: "shadow", alpha: 0.25 },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 34, ry: 16, color: "#ffb040", alpha: 0.14 },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 31, ry: 11, color: "dirt" },
+    { shape: "scatter", count: 40, area: [12, 34, 48, 20], size: 1, colors: ["dirtL", "dirtD"], onlyOver: ["dirt"] },
+    { shape: "ellipse", cx: 36, cy: 44, rx: 15, ry: 6, color: "ash" },
+    { shape: "poly", points: [[4, 8], [68, 8], [66, 14], [6, 14]], color: "hideD" },
+    { shape: "poly", points: [[4, 4], [68, 4], [68, 10], [4, 10]], color: "hide" },
+    { shape: "line", from: [4, 4], to: [68, 4], w: 1, color: "hideL" },
+    { shape: "pixels", at: [[12, 7], [22, 7], [32, 7], [42, 7], [52, 7], [62, 7]], color: "stitch" },
+    { shape: "poly", points: [[8, 14], [64, 14], [64, 33], [8, 33]], color: "hideD" },
+    { shape: "poly", points: [[8, 14], [64, 14], [64, 31], [8, 31]], color: "hide" },
+    { shape: "scatter", count: 36, area: [9, 15, 54, 16], size: 1, colors: ["hideL", "hideD"], onlyOver: ["hide"] },
+    { shape: "ellipse", cx: 20, cy: 23, rx: 4, ry: 4, color: "bluep" },
+    { shape: "ellipse", cx: 20, cy: 23, rx: 2, ry: 2, color: "chip" },
+    { shape: "rect", x: 34, y: 19, w: 4, h: 8, color: "ochre" },
+    { shape: "rect", x: 35, y: 17, w: 2, h: 2, color: "ochre" },
+    { shape: "poly", points: [[46, 27], [50, 19], [54, 27]], color: "redp" },
+    { shape: "rect", x: 6, y: 6, w: 5, h: 30, color: "wood" },
+    { shape: "rect", x: 6, y: 6, w: 1, h: 30, color: "woodL" },
+    { shape: "rect", x: 10, y: 6, w: 1, h: 30, color: "woodD" },
+    { shape: "rect", x: 6, y: 14, w: 5, h: 3, color: "ochre" },
+    { shape: "rect", x: 6, y: 21, w: 5, h: 3, color: "redp" },
+    { shape: "rect", x: 5, y: 4, w: 7, h: 7, color: "woodD" },
+    { shape: "rect", x: 6, y: 4, w: 5, h: 6, color: "wood" },
+    { shape: "pixels", at: [[7, 6], [9, 6]], color: "bone" },
+    { shape: "rect", x: 7, y: 8, w: 3, h: 1, color: "line" },
+    { shape: "rect", x: 61, y: 6, w: 5, h: 30, color: "wood" },
+    { shape: "rect", x: 61, y: 6, w: 1, h: 30, color: "woodL" },
+    { shape: "rect", x: 65, y: 6, w: 1, h: 30, color: "woodD" },
+    { shape: "rect", x: 61, y: 14, w: 5, h: 3, color: "bluep" },
+    { shape: "rect", x: 61, y: 21, w: 5, h: 3, color: "ochre" },
+    { shape: "rect", x: 60, y: 4, w: 7, h: 7, color: "woodD" },
+    { shape: "rect", x: 61, y: 4, w: 5, h: 6, color: "wood" },
+    { shape: "pixels", at: [[62, 6], [64, 6]], color: "bone" },
+    { shape: "rect", x: 62, y: 8, w: 3, h: 1, color: "line" },
+    { shape: "line", from: [11, 12], to: [36, 17], w: 1, color: "rope" },
+    { shape: "line", from: [36, 17], to: [61, 12], w: 1, color: "rope" },
+    { shape: "poly", points: [[18, 14], [22, 14], [20, 20]], color: "redp" },
+    { shape: "poly", points: [[28, 16], [32, 16], [30, 22]], color: "ochre" },
+    { shape: "poly", points: [[40, 16], [44, 16], [42, 22]], color: "bluep" },
+    { shape: "poly", points: [[51, 14], [55, 14], [53, 20]], color: "ochre" },
+    { shape: "ellipse", cx: 21, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 21, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 19, y: 37, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 30, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 30, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 28, y: 33, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 42, cy: 35, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 42, cy: 35, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 40, y: 33, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 51, cy: 39, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 51, cy: 39, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 49, y: 37, w: 3, h: 1, color: "rockL" },
+    { shape: "line", from: [26, 47], to: [46, 40], w: 4, color: "log" },
+    { shape: "line", from: [26, 40], to: [46, 47], w: 4, color: "logD" },
+    { shape: "rect", x: 25, y: 45, w: 3, h: 4, color: "logE" },
+    { shape: "rect", x: 45, y: 45, w: 3, h: 4, color: "logE" },
+    { shape: "poly", points: [[27, 44], [36, { cycle: [22, 19, 23, 20] }], [45, 44]], color: "flame2" },
+    { shape: "poly", points: [[30, 44], [34, { cycle: [27, 25, 28, 26] }], [38, 44]], color: "flame1" },
+    { shape: "poly", points: [[34, 44], [40, { cycle: [26, 28, 25, 27] }], [44, 44]], color: "flame1" },
+    { shape: "poly", points: [[32, 44], [36, { cycle: [32, 30, 33, 31] }], [40, 44]], color: "flame0" },
+    { shape: "rect", x: [28, 44], y: [12, 30], w: 1, h: 1, color: "spark", repeat: { n: 8, phase: 4 } },
+    { shape: "ellipse", cx: 55, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 55, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 53, y: 42, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 51, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 51, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 49, y: 47, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 42, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 42, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 40, y: 51, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 30, cy: 53, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 30, cy: 53, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 28, y: 51, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 21, cy: 49, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 21, cy: 49, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 19, y: 47, w: 3, h: 1, color: "rockL" },
+    { shape: "ellipse", cx: 17, cy: 44, rx: 4.5, ry: 3.5, color: "line" },
+    { shape: "ellipse", cx: 17, cy: 44, rx: 3.5, ry: 2.5, color: "rock" },
+    { shape: "rect", x: 15, y: 42, w: 3, h: 1, color: "rockL" },
+    { shape: "rect", x: 9, y: 36, w: 54, h: 2, color: "stoneD", alpha: 0.55 },
+    { shape: "rect", x: 5, y: 41, w: 13, h: 4, color: "log" },
+    { shape: "rect", x: 5, y: 41, w: 13, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 5, cy: 43, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 8, y: 44, w: 8, h: 1, color: "logD" },
+    { shape: "rect", x: 56, y: 41, w: 13, h: 4, color: "log" },
+    { shape: "rect", x: 56, y: 41, w: 13, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 56, cy: 43, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 59, y: 44, w: 8, h: 1, color: "logD" },
+    { shape: "rect", x: 22, y: 55, w: 14, h: 4, color: "log" },
+    { shape: "rect", x: 22, y: 55, w: 14, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 22, cy: 57, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 25, y: 58, w: 9, h: 1, color: "logD" },
+    { shape: "rect", x: 38, y: 55, w: 14, h: 4, color: "log" },
+    { shape: "rect", x: 38, y: 55, w: 14, h: 1, color: "woodL" },
+    { shape: "ellipse", cx: 38, cy: 57, rx: 2, ry: 2, color: "logE" },
+    { shape: "rect", x: 41, y: 58, w: 9, h: 1, color: "logD" },
+    { shape: "rect", x: 4, y: 46, w: 12, h: 3, color: "hideD" },
+    { shape: "rect", x: 4, y: 45, w: 12, h: 2, color: "hide" },
+    { shape: "rect", x: 56, y: 46, w: 12, h: 3, color: "hideD" },
+    { shape: "rect", x: 56, y: 45, w: 12, h: 2, color: "hide" },
+    { shape: "ellipse", cx: 12, cy: 52, rx: 3, ry: 2, color: "clayD" },
+    { shape: "ellipse", cx: 12, cy: 51, rx: 3, ry: 1, color: "clay" },
+    { shape: "ellipse", cx: 60, cy: 52, rx: 3, ry: 2, color: "clayD" },
+    { shape: "ellipse", cx: 60, cy: 51, rx: 3, ry: 1, color: "clay" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/storage/L1.json
+var L1_default16 = {
+  name: "Kho (c\u1EA5p 1, b\xE3i ch\u1EA5t \u0111\u1ED3)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 4,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", berry: "#c23a3a", berryL: "#f08a7a", herb: "#6f7d3a", herbD: "#4e5a28", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 32, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 31, ry: 8, color: "earth" },
+      { shape: "scatter", count: 30, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL"], onlyOver: ["earth"] },
+      { shape: "ellipse", cx: 36, cy: 47, rx: 22, ry: 5, color: "mat" },
+      { shape: "scatter", count: 16, area: [15, 43, 42, 8], size: [2, 1], colors: ["matL", "matD"], onlyOver: ["mat"] },
+      { shape: "ellipse", cx: 65, cy: 46.7, rx: 2, ry: 1.5, color: "stone" },
+      { shape: "pixels", at: [[64, 46]], color: "stoneL" },
+      { shape: "ellipse", cx: 63, cy: 49.7, rx: 2.5, ry: 2, color: "stone" },
+      { shape: "pixels", at: [[62, 49]], color: "stoneL" },
+      { shape: "ellipse", cx: 56.1, cy: 52.4, rx: 1.5, ry: 1.5, color: "stone" },
+      { shape: "pixels", at: [[55, 51]], color: "stoneL" },
+      { shape: "ellipse", cx: 46.7, cy: 54, rx: 2.5, ry: 2, color: "stone" },
+      { shape: "pixels", at: [[46, 53]], color: "stoneL" },
+      { shape: "ellipse", cx: 37.1, cy: 54.5, rx: 2, ry: 1.5, color: "stone" },
+      { shape: "pixels", at: [[36, 53]], color: "stoneL" },
+      { shape: "ellipse", cx: 26.2, cy: 54.1, rx: 2.5, ry: 2, color: "stone" },
+      { shape: "pixels", at: [[25, 53]], color: "stoneL" },
+      { shape: "ellipse", cx: 15.4, cy: 52.3, rx: 2.5, ry: 2, color: "stone" },
+      { shape: "pixels", at: [[14, 51]], color: "stoneL" },
+      { shape: "ellipse", cx: 9.4, cy: 50, rx: 2, ry: 1.5, color: "stone" },
+      { shape: "pixels", at: [[8, 49]], color: "stoneL" },
+      { shape: "ellipse", cx: 7, cy: 47.3, rx: 2, ry: 1.5, color: "stone" },
+      { shape: "pixels", at: [[6, 46]], color: "stoneL" },
+      { shape: "ellipse", cx: 9.9, cy: 43.7, rx: 2.5, ry: 2, color: "stone" },
+      { shape: "pixels", at: [[9, 43]], color: "stoneL" },
+      { shape: "ellipse", cx: 16.3, cy: 41.5, rx: 1.5, ry: 1.5, color: "stone" },
+      { shape: "pixels", at: [[15, 40]], color: "stoneL" },
+      { shape: "ellipse", cx: 23.5, cy: 40.2, rx: 1.5, ry: 1.5, color: "stone" },
+      { shape: "pixels", at: [[22, 39]], color: "stoneL" },
+      { shape: "ellipse", cx: 35.1, cy: 39.5, rx: 1.5, ry: 1.5, color: "stone" },
+      { shape: "pixels", at: [[34, 39]], color: "stoneL" },
+      { shape: "ellipse", cx: 48.4, cy: 40.2, rx: 2, ry: 1.5, color: "stone" },
+      { shape: "pixels", at: [[47, 39]], color: "stoneL" },
+      { shape: "ellipse", cx: 56.4, cy: 41.7, rx: 2.5, ry: 2, color: "stone" },
+      { shape: "pixels", at: [[55, 41]], color: "stoneL" },
+      { shape: "ellipse", cx: 63.2, cy: 44.4, rx: 2.5, ry: 2, color: "stone" },
+      { shape: "pixels", at: [[62, 43]], color: "stoneL" }
+    ] },
+    { shape: "rect", x: 9, y: 22, w: 3, h: 29, color: "woodD", if: "st2", mirror: true },
+    { shape: "rect", x: 9, y: 22, w: 1, h: 29, color: "woodL", if: "st2", mirror: true },
+    { shape: "line", from: [10, 22], to: [7, 18], w: 1, color: "wood", if: "st2", mirror: true },
+    { shape: "line", from: [11, 22], to: [14, 18], w: 1, color: "wood", if: "st2", mirror: true },
+    { shape: "ellipse", cx: 10.5, cy: 51, rx: 3.5, ry: 2, color: "stoneD", if: "st2", mirror: true },
+    { shape: "line", from: [11, 22], to: [36, 26], w: 1, color: "rope", if: "st3", mirror: true },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 17, y: 23, w: 2, h: 4, color: "herb" },
+      { shape: "pixels", at: [[17, 26]], color: "herbD" },
+      { shape: "rect", x: 24, y: 24, w: 2, h: 5, color: "hide" },
+      { shape: "pixels", at: [[24, 28]], color: "hideD" },
+      { shape: "rect", x: 31, y: 25, w: 2, h: 6, color: "herb" },
+      { shape: "pixels", at: [[31, 30]], color: "herbD" },
+      { shape: "rect", x: 41, y: 25, w: 2, h: 4, color: "hide" },
+      { shape: "pixels", at: [[41, 28]], color: "hideD" },
+      { shape: "rect", x: 48, y: 24, w: 2, h: 5, color: "herb" },
+      { shape: "pixels", at: [[48, 28]], color: "herbD" },
+      { shape: "rect", x: 55, y: 23, w: 2, h: 6, color: "hide" },
+      { shape: "pixels", at: [[55, 28]], color: "hideD" },
+      { shape: "rect", x: 8, y: 47, w: 9, h: 4, color: "log" },
+      { shape: "ellipse", cx: 17, cy: 49, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 8, y: 47, w: 9, h: 1, color: "woodL" },
+      { shape: "rect", x: 14, y: 47, w: 9, h: 4, color: "log" },
+      { shape: "ellipse", cx: 23, cy: 49, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 14, y: 47, w: 9, h: 1, color: "woodL" },
+      { shape: "rect", x: 11, y: 43, w: 9, h: 4, color: "log" },
+      { shape: "ellipse", cx: 20, cy: 45, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 11, y: 43, w: 9, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 33, cy: 45, rx: 5, ry: 4, color: "sack" },
+      { shape: "rect", x: 31, y: 40, w: 4, h: 2, color: "sackD" },
+      { shape: "ellipse", cx: 41, cy: 47, rx: 4, ry: 3, color: "sack" },
+      { shape: "rect", x: 39, y: 43, w: 4, h: 2, color: "sackD" },
+      { shape: "ellipse", cx: 53, cy: 45, rx: 5, ry: 5, color: "wicker" },
+      { shape: "rect", x: 48, y: 44, w: 10, h: 1, color: "wickerD" },
+      { shape: "rect", x: 48, y: 47, w: 10, h: 1, color: "wickerD" },
+      { shape: "scatter", count: 8, area: [49, 40, 8, 2], size: 1, colors: ["berry", "berry", "berryL"] },
+      { shape: "poly", points: [[24, 38], [34, 36], [36, 41], [22, 42]], color: "hide" },
+      { shape: "line", from: [24, 38], to: [34, 36], w: 1, color: "hideL" },
+      { shape: "poly", points: [[24, 41], [22, 42], [36, 41]], color: "hideD" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/storage/L2.json
+var L2_default16 = {
+  name: "Kho (c\u1EA5p 2, gi\xE0n g\u1ED7)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 4,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", berry: "#c23a3a", berryL: "#f08a7a", herb: "#6f7d3a", herbD: "#4e5a28", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 32, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 49, rx: 30, ry: 7, color: "earth" },
+      { shape: "scatter", count: 26, area: [6, 43, 60, 12], size: [1, 2], colors: ["dirt", "chip", "earthL"], onlyOver: ["earth"] }
+    ] },
+    { shape: "rect", x: 10, y: 30, w: 4, h: 23, color: "wood", if: "st2", mirror: true },
+    { shape: "rect", x: 10, y: 30, w: 1, h: 23, color: "woodL", if: "st2", mirror: true },
+    { shape: "rect", x: 13, y: 30, w: 1, h: 23, color: "woodD", if: "st2", mirror: true },
+    { shape: "ellipse", cx: 12, cy: 53, rx: 4, ry: 2, color: "stoneD", if: "st2", mirror: true },
+    { shape: "rect", x: 24, y: 44, w: 24, h: 9, color: "shadow", alpha: 0.28, if: "st3" },
+    { shape: "group", if: "st3", layers: [
+      { shape: "rect", x: 8, y: 34, w: 56, h: 3, color: "woodL" },
+      { shape: "rect", x: 8, y: 37, w: 56, h: 5, color: "log" },
+      { shape: "rect", x: 8, y: 37, w: 1, h: 5, color: "woodD" },
+      { shape: "ellipse", cx: 12, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
+      { shape: "rect", x: 16, y: 37, w: 1, h: 5, color: "woodD" },
+      { shape: "ellipse", cx: 20, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
+      { shape: "rect", x: 24, y: 37, w: 1, h: 5, color: "woodD" },
+      { shape: "ellipse", cx: 28, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
+      { shape: "rect", x: 32, y: 37, w: 1, h: 5, color: "woodD" },
+      { shape: "ellipse", cx: 36, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
+      { shape: "rect", x: 40, y: 37, w: 1, h: 5, color: "woodD" },
+      { shape: "ellipse", cx: 44, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
+      { shape: "rect", x: 48, y: 37, w: 1, h: 5, color: "woodD" },
+      { shape: "ellipse", cx: 52, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
+      { shape: "rect", x: 56, y: 37, w: 1, h: 5, color: "woodD" },
+      { shape: "ellipse", cx: 60, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
+      { shape: "rect", x: 8, y: 42, w: 56, h: 2, color: "woodD" },
+      { shape: "pixels", at: [[12, 35], [22, 35], [36, 35], [50, 35], [60, 35]], color: "rope" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "ellipse", cx: 16, cy: 31, rx: 5, ry: 4, color: "sack" },
+      { shape: "rect", x: 14, y: 26, w: 4, h: 2, color: "sackD" },
+      { shape: "ellipse", cx: 24, cy: 32, rx: 4, ry: 3, color: "sack" },
+      { shape: "rect", x: 22, y: 28, w: 4, h: 2, color: "sackD" },
+      { shape: "ellipse", cx: 33, cy: 30, rx: 5, ry: 5, color: "wicker" },
+      { shape: "rect", x: 28, y: 29, w: 10, h: 1, color: "wickerD" },
+      { shape: "rect", x: 28, y: 32, w: 10, h: 1, color: "wickerD" },
+      { shape: "scatter", count: 8, area: [29, 25, 8, 2], size: 1, colors: ["berry", "berry", "berryL"] },
+      { shape: "ellipse", cx: 43, cy: 31, rx: 4, ry: 4, color: "wicker" },
+      { shape: "rect", x: 39, y: 30, w: 8, h: 1, color: "wickerD" },
+      { shape: "rect", x: 39, y: 33, w: 8, h: 1, color: "wickerD" },
+      { shape: "poly", points: [[46, 24], [62, 27], [63, 35], [45, 35]], color: "hide" },
+      { shape: "poly", points: [[54, 25], [62, 27], [63, 35], [54, 35]], color: "hideD", alpha: 0.4, clip: "inside" },
+      { shape: "line", from: [46, 24], to: [62, 27], w: 1, color: "hideL" },
+      { shape: "pixels", at: [[48, 27], [52, 28], [57, 29], [61, 31], [47, 32], [56, 33]], color: "stitch" },
+      { shape: "line", from: [47, 35], to: [47, 41], w: 1, color: "rope" },
+      { shape: "line", from: [61, 35], to: [61, 41], w: 1, color: "rope" },
+      { shape: "line", from: [30, 56], to: [33, 44], w: 1, color: "woodL" },
+      { shape: "line", from: [39, 56], to: [41, 44], w: 1, color: "woodL" },
+      { shape: "rect", x: 32, y: 52, w: 8, h: 1, color: "wood" },
+      { shape: "rect", x: 32, y: 48, w: 8, h: 1, color: "wood" },
+      { shape: "rect", x: 9, y: 50, w: 9, h: 4, color: "log" },
+      { shape: "ellipse", cx: 18, cy: 52, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 9, y: 50, w: 9, h: 1, color: "woodL" },
+      { shape: "rect", x: 15, y: 50, w: 9, h: 4, color: "log" },
+      { shape: "ellipse", cx: 24, cy: 52, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 15, y: 50, w: 9, h: 1, color: "woodL" },
+      { shape: "rect", x: 12, y: 46, w: 9, h: 4, color: "log" },
+      { shape: "ellipse", cx: 21, cy: 48, rx: 2, ry: 2, color: "logE" },
+      { shape: "rect", x: 12, y: 46, w: 9, h: 1, color: "woodL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/storage/L3.json
+var L3_default12 = {
+  name: "Kho (c\u1EA5p 3, h\u1ED1 ch\u1EE9a l\xF3t \u0111\xE1)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 4,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", berry: "#c23a3a", berryL: "#f08a7a", herb: "#6f7d3a", herbD: "#4e5a28", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428", clay: "#b0693c", clayL: "#d08a58", clayD: "#8a4e2a", pit: "#3a2a1c", pitL: "#54402c" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 33, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 49, rx: 32, ry: 8, color: "earth" },
+      { shape: "scatter", count: 26, area: [5, 43, 62, 12], size: [1, 2], colors: ["dirt", "chip", "earthL"], onlyOver: ["earth"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "ellipse", cx: 36, cy: 50, rx: 29, ry: 10, color: "stoneD" },
+      { shape: "ellipse", cx: 36, cy: 47, rx: 29, ry: 10, color: "stone" },
+      { shape: "scatter", count: 70, area: [7, 37, 58, 20], size: [2, 1], colors: ["stoneL", "stoneD"], onlyOver: ["stone"] },
+      { shape: "ellipse", cx: 36, cy: 46, rx: 23, ry: 7, color: "pit" },
+      { shape: "ellipse", cx: 36, cy: 47, rx: 23, ry: 7, color: "pitL", alpha: 0.35, clip: "inside" },
+      { shape: "rect", x: 8, y: 52, w: 56, h: 1, color: "stoneD", onlyOver: ["stone"] }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "ellipse", cx: 26, cy: 46, rx: 5, ry: 3, color: "sack" },
+      { shape: "rect", x: 24, y: 42, w: 4, h: 2, color: "sackD" },
+      { shape: "ellipse", cx: 36, cy: 45, rx: 5, ry: 3, color: "sack" },
+      { shape: "rect", x: 34, y: 41, w: 4, h: 2, color: "sackD" },
+      { shape: "ellipse", cx: 46, cy: 47, rx: 4, ry: 3, color: "sack" },
+      { shape: "rect", x: 44, y: 43, w: 4, h: 2, color: "sackD" },
+      { shape: "scatter", count: 10, area: [22, 43, 28, 4], size: 1, colors: ["berry", "sack", "berryL"] }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "ellipse", cx: 12, cy: 45, rx: 6, ry: 6, color: "clay" },
+      { shape: "rect", x: 9, y: 36, w: 6, h: 4, color: "clay" },
+      { shape: "rect", x: 8, y: 35, w: 8, h: 2, color: "clayL" },
+      { shape: "rect", x: 7, y: 47, w: 10, h: 1, color: "clayD", onlyOver: ["clay"] },
+      { shape: "scatter", count: 8, area: [7, 41, 10, 8], size: [2, 1], colors: ["clayL", "clayD"], onlyOver: ["clay"] },
+      { shape: "ellipse", cx: 60, cy: 44, rx: 6, ry: 6, color: "clay" },
+      { shape: "rect", x: 57, y: 35, w: 6, h: 4, color: "clay" },
+      { shape: "rect", x: 56, y: 34, w: 8, h: 2, color: "clayL" },
+      { shape: "rect", x: 55, y: 46, w: 10, h: 1, color: "clayD", onlyOver: ["clay"] },
+      { shape: "scatter", count: 8, area: [55, 40, 10, 8], size: [2, 1], colors: ["clayL", "clayD"], onlyOver: ["clay"] },
+      { shape: "ellipse", cx: 16, cy: 53, rx: 4, ry: 4, color: "wicker" },
+      { shape: "rect", x: 12, y: 52, w: 8, h: 1, color: "wickerD" },
+      { shape: "rect", x: 12, y: 55, w: 8, h: 1, color: "wickerD" },
+      { shape: "poly", points: [[34, 38], [56, 40], [58, 50], [34, 52]], color: "hide" },
+      { shape: "poly", points: [[46, 39], [56, 40], [58, 50], [46, 51]], color: "hideD", alpha: 0.4, clip: "inside" },
+      { shape: "line", from: [34, 38], to: [56, 40], w: 1, color: "hideL" },
+      { shape: "ellipse", cx: 40, cy: 42, rx: 2.5, ry: 1.5, color: "stone" },
+      { shape: "ellipse", cx: 52, cy: 44, rx: 2.5, ry: 1.5, color: "stone" },
+      { shape: "ellipse", cx: 44, cy: 49, rx: 2.5, ry: 1.5, color: "stone" },
+      { shape: "pixels", at: [[39, 41], [51, 43], [43, 48]], color: "stoneL" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/workshop/L1.json
+var L1_default17 = {
+  name: "B\xE3i ch\u1EBF t\u1EA1o (c\u1EA5p 1, b\xE3i \u0111\xE1 \u0111\u01A1n s\u01A1)",
+  name_en: "Crafting Ground (Tier 1, Rough Stone Ground)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", berry: "#c23a3a", berryL: "#f08a7a", herb: "#6f7d3a", herbD: "#4e5a28", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428", fire: "#f08a2a", fireL: "#ffd27a", fireD: "#6a1e0e", smoke: "#c8ccd0", flint: "#3a3f48", flintL: "#7c8794", bone: "#e4dcc4", boneD: "#b8ac90" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
+      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
+      { shape: "ellipse", cx: 22, cy: 48, rx: 9, ry: 3, color: "stoneD", alpha: 0.6 },
+      { shape: "ellipse", cx: 22, cy: 47, rx: 8, ry: 2, color: "stone" },
+      { shape: "scatter", count: 8, area: [14, 45, 16, 5], size: 1, colors: ["stoneL", "flint"], onlyOver: ["stone"] },
+      { shape: "ellipse", cx: 48, cy: 50, rx: 7, ry: 3, color: "mat" },
+      { shape: "scatter", count: 8, area: [42, 48, 12, 4], size: [2, 1], colors: ["matL", "matD"], onlyOver: ["mat"] }
+    ] },
+    { shape: "group", if: "st2", layers: [
+      { shape: "rect", x: 9, y: 42, w: 12, h: 5, color: "log" },
+      { shape: "rect", x: 9, y: 42, w: 12, h: 1, color: "woodL" },
+      { shape: "rect", x: 12, y: 42, w: 1, h: 5, color: "woodD" },
+      { shape: "ellipse", cx: 9, cy: 44, rx: 2, ry: 2, color: "logE" },
+      { shape: "ellipse", cx: 38, cy: 44, rx: 7, ry: 5, color: "stoneD" },
+      { shape: "ellipse", cx: 38, cy: 43, rx: 6, ry: 4, color: "stone" },
+      { shape: "ellipse", cx: 38, cy: 42, rx: 3, ry: 2, color: "stoneL" },
+      { shape: "scatter", count: 6, area: [30, 46, 16, 4], size: 1, colors: ["flint", "chip"], onlyOver: ["earth"] }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "poly", points: [[14, 38], [26, 37], [28, 41], [16, 42]], color: "hideD" },
+      { shape: "poly", points: [[14, 36], [26, 35], [28, 39], [16, 40]], color: "hide" },
+      { shape: "line", from: [14, 36], to: [26, 35], w: 1, color: "hideL" },
+      { shape: "pixels", at: [[18, 38], [22, 37]], color: "stitch" },
+      { shape: "poly", points: [[50, 36], [62, 35], [63, 39], [51, 40]], color: "wickerD" },
+      { shape: "poly", points: [[50, 34], [62, 33], [63, 37], [51, 38]], color: "wicker" },
+      { shape: "scatter", count: 6, area: [52, 34, 10, 4], size: 1, colors: ["wickerD", "sackD"] },
+      { shape: "ellipse", cx: 34, cy: 51, rx: 6, ry: 2, color: "stoneD" },
+      { shape: "scatter", count: 10, area: [26, 50, 18, 4], size: 1, colors: ["flint", "flintL", "chip", "boneD"], onlyOver: ["earth", "stoneD"] }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "poly", points: [[30, 41], [42, 40], [44, 44], [32, 45]], color: "woodD" },
+      { shape: "poly", points: [[30, 39], [42, 38], [44, 42], [32, 43]], color: "wood" },
+      { shape: "line", from: [30, 39], to: [42, 38], w: 1, color: "woodL" },
+      { shape: "ellipse", cx: 36, cy: 41, rx: 4, ry: 2, color: "stone" },
+      { shape: "ellipse", cx: 36, cy: 40, rx: 2, ry: 1, color: "flintL" },
+      { shape: "ellipse", cx: 56, cy: 46, rx: 6, ry: 3, color: "fireD" },
+      { shape: "ellipse", cx: 56, cy: 45, rx: 4, ry: 2, color: "fire" },
+      { shape: "ellipse", cx: 56, cy: 44, rx: 2, ry: 1, color: "fireL" },
+      { shape: "scatter", count: 6, area: [52, 42, 8, 3], size: 1, colors: ["smoke"], alpha: 0.5 },
+      { shape: "poly", points: [[16, 52], [26, 52], [25, 54], [17, 54]], color: "bone" },
+      { shape: "line", from: [9, 52], to: [15, 50], w: 1, color: "boneD" },
+      { shape: "ellipse", cx: 45, cy: 51, rx: 2, ry: 1, color: "flint" },
+      { shape: "scatter", count: 8, area: [8, 47, 56, 6], size: 1, colors: ["chip", "stoneL", "boneD"], onlyOver: ["earth"] }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/workshop/L2.json
+var L2_default17 = {
+  name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c (c\u1EA5p 2, gi\xE1 g\u1ED7)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", berry: "#c23a3a", berryL: "#f08a7a", herb: "#6f7d3a", herbD: "#4e5a28", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428", fire: "#f08a2a", fireL: "#ffd27a", fireD: "#6a1e0e", smoke: "#c8ccd0", flint: "#3a3f48", flintL: "#7c8794", bone: "#e4dcc4", boneD: "#b8ac90" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 49, rx: 30, ry: 7, color: "earth" },
+      { shape: "scatter", count: 28, area: [6, 43, 60, 12], size: [1, 2], colors: ["dirt", "chip", "earthL"], onlyOver: ["earth"] },
+      { shape: "ellipse", cx: 34, cy: 49, rx: 16, ry: 4, color: "mat" }
+    ] },
+    { shape: "rect", x: 8, y: 16, w: 4, h: 37, color: "woodL", if: "st2", mirror: true },
+    { shape: "rect", x: 11, y: 16, w: 1, h: 37, color: "woodD", if: "st2", mirror: true },
+    { shape: "line", from: [9, 17], to: [6, 13], w: 1, color: "wood", if: "st2", mirror: true },
+    { shape: "ellipse", cx: 10, cy: 53, rx: 4, ry: 2, color: "stoneD", if: "st2", mirror: true },
+    { shape: "group", if: "st3", layers: [
+      { shape: "rect", x: 11, y: 19, w: 50, h: 3, color: "woodL" },
+      { shape: "rect", x: 11, y: 21, w: 50, h: 1, color: "woodD" },
+      { shape: "pixels", at: [[12, 20], [60, 20], [24, 20], [48, 20]], color: "rope" },
+      { shape: "line", from: [20, 22], to: [20, 34], w: 1, color: "rope" },
+      { shape: "rect", x: 17, y: 34, w: 7, h: 3, color: "stone" },
+      { shape: "rect", x: 17, y: 34, w: 7, h: 1, color: "stoneL" },
+      { shape: "line", from: [29, 22], to: [29, 40], w: 1, color: "woodL" },
+      { shape: "poly", points: [[29, 40], [27, 36], [31, 36]], color: "flintL" },
+      { shape: "line", from: [38, 22], to: [38, 32], w: 1, color: "rope" },
+      { shape: "rect", x: 35, y: 32, w: 6, h: 3, color: "stone" },
+      { shape: "rect", x: 35, y: 32, w: 6, h: 1, color: "stoneL" },
+      { shape: "line", from: [46, 22], to: [46, 30], w: 1, color: "bone" },
+      { shape: "poly", points: [[46, 22], [56, 22], [56, 34], [51, 38], [46, 34]], color: "hide" },
+      { shape: "poly", points: [[51, 22], [56, 22], [56, 34], [51, 38]], color: "hideD", alpha: 0.4, clip: "inside" },
+      { shape: "pixels", at: [[48, 25], [53, 27], [49, 31]], color: "stitch" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "rect", x: 28, y: 43, w: 13, h: 8, color: "log" },
+      { shape: "rect", x: 31, y: 43, w: 1, h: 8, color: "woodD" },
+      { shape: "ellipse", cx: 34, cy: 43, rx: 7, ry: 2, color: "logE" },
+      { shape: "rect", x: 27, y: 40, w: 15, h: 3, color: "stone" },
+      { shape: "rect", x: 27, y: 40, w: 15, h: 1, color: "stoneL" },
+      { shape: "poly", points: [[31, 39], [34, 36], [37, 39]], color: "flint" },
+      { shape: "scatter", count: 12, area: [43, 45, 12, 5], size: 1, colors: ["flint", "flintL", "chip"] },
+      { shape: "rect", x: 13, y: 45, w: 11, h: 5, color: "log" },
+      { shape: "rect", x: 13, y: 45, w: 11, h: 1, color: "woodL" },
+      { shape: "ellipse", cx: 13, cy: 47.5, rx: 2, ry: 2.5, color: "logE" },
+      { shape: "ellipse", cx: 58, cy: 48, rx: 5, ry: 3, color: "stoneD" },
+      { shape: "ellipse", cx: 58, cy: 47, rx: 4, ry: 2, color: "stone" }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/workshop/L3.json
+var L3_default13 = {
+  name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c (c\u1EA5p 3, b\xE3i l\xE1t \u0111\xE1)",
+  type: "prop",
+  size: [72, 64],
+  anchor: [36, 58],
+  footprint: [4, 32, 64, 28],
+  seed: 9,
+  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
+  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", berry: "#c23a3a", berryL: "#f08a7a", herb: "#6f7d3a", herbD: "#4e5a28", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428", fire: "#f08a2a", fireL: "#ffd27a", fireD: "#6a1e0e", smoke: "#c8ccd0", flint: "#3a3f48", flintL: "#7c8794", bone: "#e4dcc4", boneD: "#b8ac90" },
+  layers: [
+    { shape: "ellipse", cx: 36, cy: 55, rx: 32, ry: 6, color: "shadow", alpha: 0.25 },
+    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
+    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
+    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
+    { shape: "group", if: "st1", layers: [
+      { shape: "ellipse", cx: 36, cy: 47, rx: 32, ry: 9, color: "stoneD" },
+      { shape: "ellipse", cx: 36, cy: 46, rx: 31, ry: 8, color: "stone" },
+      { shape: "scatter", count: 70, area: [5, 38, 62, 17], size: [2, 1], colors: ["stoneL", "stoneD"], onlyOver: ["stone"] },
+      { shape: "rect", x: 6, y: 46, w: 60, h: 1, color: "stoneD", onlyOver: ["stone"] },
+      { shape: "rect", x: 14, y: 40, w: 1, h: 13, color: "stoneD", onlyOver: ["stone"], repeat: { n: 5, dx: 11 } }
+    ] },
+    { shape: "group", if: "st2", mirror: true, layers: [
+      { shape: "rect", x: 6, y: 22, w: 9, h: 31, color: "stoneD" },
+      { shape: "rect", x: 6, y: 22, w: 8, h: 4, color: "stone" },
+      { shape: "rect", x: 6, y: 22, w: 8, h: 1, color: "stoneL" },
+      { shape: "rect", x: 6, y: 27, w: 4, h: 5, color: "stone" },
+      { shape: "rect", x: 6, y: 27, w: 4, h: 1, color: "stoneL" },
+      { shape: "rect", x: 11, y: 27, w: 3, h: 5, color: "stone" },
+      { shape: "rect", x: 11, y: 27, w: 3, h: 1, color: "stoneL" },
+      { shape: "rect", x: 6, y: 33, w: 6, h: 3, color: "stone" },
+      { shape: "rect", x: 6, y: 33, w: 6, h: 1, color: "stoneL" },
+      { shape: "rect", x: 6, y: 37, w: 7, h: 5, color: "stone" },
+      { shape: "rect", x: 6, y: 37, w: 7, h: 1, color: "stoneL" },
+      { shape: "rect", x: 6, y: 43, w: 8, h: 5, color: "stone" },
+      { shape: "rect", x: 6, y: 43, w: 8, h: 1, color: "stoneL" },
+      { shape: "rect", x: 6, y: 49, w: 2, h: 3, color: "stone" },
+      { shape: "rect", x: 6, y: 49, w: 2, h: 1, color: "stoneL" },
+      { shape: "rect", x: 9, y: 49, w: 5, h: 3, color: "stone" },
+      { shape: "rect", x: 9, y: 49, w: 5, h: 1, color: "stoneL" }
+    ] },
+    { shape: "group", if: "st3", layers: [
+      { shape: "rect", x: 13, y: 19, w: 46, h: 3, color: "woodL" },
+      { shape: "rect", x: 13, y: 21, w: 46, h: 1, color: "woodD" },
+      { shape: "line", from: [22, 22], to: [22, 32], w: 1, color: "rope" },
+      { shape: "rect", x: 19, y: 32, w: 6, h: 3, color: "stone" },
+      { shape: "rect", x: 19, y: 32, w: 6, h: 1, color: "stoneL" },
+      { shape: "line", from: [31, 22], to: [31, 38], w: 1, color: "woodL" },
+      { shape: "poly", points: [[31, 38], [29, 34], [33, 34]], color: "flintL" },
+      { shape: "line", from: [40, 22], to: [40, 30], w: 1, color: "rope" },
+      { shape: "rect", x: 37, y: 30, w: 6, h: 3, color: "stone" },
+      { shape: "rect", x: 37, y: 30, w: 6, h: 1, color: "stoneL" },
+      { shape: "line", from: [49, 22], to: [49, 33], w: 1, color: "bone" },
+      { shape: "line", from: [54, 22], to: [54, 30], w: 1, color: "rope" },
+      { shape: "poly", points: [[52, 30], [56, 30], [56, 34], [52, 34]], color: "hide" }
+    ] },
+    { shape: "group", if: "st4", layers: [
+      { shape: "ellipse", cx: 23, cy: 46, rx: 9, ry: 4, color: "stoneD" },
+      { shape: "ellipse", cx: 23, cy: 45, rx: 8, ry: 3, color: "earth" },
+      { shape: "scatter", count: 8, area: [15, 43, 17, 5], size: [2, 2], color: "stone", onlyOver: ["earth"] },
+      { shape: "poly", points: [[23, 37], [20, 45], [26, 45]], color: "fire" },
+      { shape: "poly", points: [[23, 40], [21, 45], [25, 45]], color: "fireL" },
+      { shape: "pixels", at: [[19, 37], [27, 39], [22, 34]], color: "fireL" },
+      { shape: "rect", x: 35, y: 44, w: 10, h: 7, color: "log" },
+      { shape: "rect", x: 37, y: 44, w: 1, h: 7, color: "woodD" },
+      { shape: "ellipse", cx: 40, cy: 44, rx: 6, ry: 2, color: "logE" },
+      { shape: "rect", x: 34, y: 41, w: 13, h: 3, color: "stone" },
+      { shape: "rect", x: 34, y: 41, w: 13, h: 1, color: "stoneL" },
+      { shape: "poly", points: [[38, 40], [41, 37], [44, 40]], color: "flint" },
+      { shape: "scatter", count: 12, area: [47, 45, 9, 4], size: 1, colors: ["flint", "flintL", "chip"] },
+      { shape: "ellipse", cx: 58, cy: 49, rx: 7, ry: 3, color: "stoneD" },
+      { shape: "ellipse", cx: 58, cy: 48, rx: 6, ry: 2, color: "stone" },
+      { shape: "ellipse", cx: 56, cy: 47, rx: 2, ry: 1, color: "stoneL" },
+      { shape: "ellipse", cx: 60, cy: 46, rx: 2, ry: 1, color: "stoneD" },
+      { shape: "scatter", count: 5, area: [22, 31, 2, 3], size: 1, color: "smoke", alpha: 0.55 }
+    ] },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/nature/resources/bush.json
+var bush_default = {
+  name: "B\u1EE5i c\xE2y c\xF3 qu\u1EA3",
+  type: "prop",
+  size: [30, 24],
+  anchor: [15, 21],
+  footprint: [8, 17, 14, 5],
+  seed: 11,
+  palette: { leaf: "#4a7d33", leafL: "#6aa84c", leafD: "#2f5222", berry: "#c23a3a", berryL: "#f08a7a", line: "#17240f", shadow: "#000000", snow: "#eef4f8" },
+  params: { empty: 0, summer: 0, autumn: 0, winter: 0, burnt: 0 },
+  palettes: {
+    summer: { leaf: "#3e7a2c", leafL: "#5ea040" },
+    autumn: { leaf: "#8a7a2e", leafL: "#b09a3e", leafD: "#5e5420" },
+    winter: { leaf: "#7a6a50", leafL: "#968468", leafD: "#5a4c38" },
+    burnt: { leaf: "#3a3430", leafL: "#4a423c", leafD: "#241f1c", berry: "#3a3430", berryL: "#4a423c" }
+  },
+  layers: [
+    { shape: "ellipse", cx: 15, cy: 14, rx: 6, ry: 5, color: "leaf", repeat: { n: 6, jitter: [6, 3] } },
+    { shape: "bevel", light: "#d8ffb0", lightAlpha: 0.35, dark: "#0a1a08", darkAlpha: 0.4 },
+    { shape: "scatter", count: 14, area: [3, 4, 24, 16], size: [2, 1], colors: ["leafL", "leafD"], onlyOver: ["leaf"] },
+    { shape: "scatter", count: 6, area: [5, 7, 20, 11], size: 2, color: "berry", onlyOver: ["leaf", "leafL", "leafD"], ifNot: "empty" },
+    { shape: "scatter", count: 3, area: [5, 7, 20, 11], size: 1, color: "berryL", onlyOver: ["berry"], ifNot: "empty" },
+    { shape: "scatter", if: "winter", count: 18, area: [3, 4, 24, 10], size: [2, 1], color: "snow", onlyOver: ["leaf", "leafL", "leafD"] },
+    { shape: "outline", color: "line" },
+    { shape: "ellipse", cx: 15, cy: 21, rx: 12, ry: 2.5, color: "shadow", alpha: 0.28, mode: "under" }
+  ]
+};
+
+// src/data/blueprints/nature/resources/rock.json
+var rock_default = {
+  name: "T\u1EA3ng \u0111\xE1",
+  type: "prop",
+  size: [32, 26],
+  anchor: [16, 23],
+  footprint: [5, 18, 22, 6],
+  seed: 8,
+  palette: { rock: "#7a8084", rockL: "#a6adb1", rockD: "#555b60", crack: "#3d4246", moss: "#5f8a3e", line: "#22262a", shadow: "#000000", snow: "#eef4f8" },
+  params: { autumn: 0, winter: 0, burnt: 0 },
+  palettes: {
+    autumn: { moss: "#8a7a3a" },
+    winter: { moss: "#dfe6ee" },
+    burnt: { moss: "#2e2a26", rockL: "#7a7f82" }
+  },
+  layers: [
+    { shape: "poly", points: [[3, 21], [1, 13], [6, 5], [14, 2], [23, 4], [29, 11], [28, 20], [16, 23]], color: "rock", jitter: 1 },
+    { shape: "poly", points: [[6, 5], [14, 2], [23, 4], [17, 10], [8, 12]], color: "rockL", clip: "inside" },
+    { shape: "poly", points: [[28, 20], [29, 11], [22, 9], [18, 22], [16, 23]], color: "rockD", clip: "inside" },
+    { shape: "line", from: [11, 12], to: [14, 19], color: "crack" },
+    { shape: "line", from: [14, 19], to: [13, 22], color: "crack" },
+    { shape: "scatter", count: 26, area: [2, 4, 27, 19], size: 1, colors: ["rockL", "rockD", "crack"], onlyOver: ["rock"] },
+    { shape: "ellipse", cx: 9, cy: 6, rx: 4, ry: 1.5, color: "moss", alpha: 0.9, clip: "inside" },
+    { shape: "bevel", light: "#ffffff", lightAlpha: 0.25, dark: "#000000", darkAlpha: 0.3 },
+    { shape: "scatter", if: "winter", count: 40, area: [2, 0, 28, 10], size: [3, 1], color: "snow", onlyOver: ["rock", "rockL", "rockD", "moss"] },
+    { shape: "outline", color: "line" },
+    { shape: "ellipse", cx: 16, cy: 23, rx: 15, ry: 2.5, color: "shadow", alpha: 0.28, mode: "under" }
+  ]
+};
+
+// src/data/blueprints/nature/terrain/grass.json
+var grass_default = {
+  name: "\xD4 c\u1ECF",
+  type: "tile",
+  size: [32, 32],
+  seed: 4,
+  palette: { g0: "#7a984a", g1: "#86a355", g2: "#93b05f", tuft: "#6b8a41", tuftL: "#a8c470", flower: "#e8d28a", flower2: "#f2f2e6" },
+  params: { summer: 0, autumn: 0, winter: 0, burnt: 0 },
+  palettes: {
+    summer: { g0: "#7e9a42", g1: "#8aa64c", g2: "#98b256", tuft: "#6e8a38", tuftL: "#b4c868" },
+    autumn: { g0: "#8e8a46", g1: "#9c9450", g2: "#aaa05a", tuft: "#7e763a", tuftL: "#c0b46a", flower: "#d0884a" },
+    winter: { g0: "#d8e0ea", g1: "#e4ebf2", g2: "#f0f4f8", tuft: "#b8c4ce", tuftL: "#ffffff", flower: "#d8e0ea", flower2: "#ffffff" },
+    burnt: { g0: "#3a342c", g1: "#443c32", g2: "#4e463a", tuft: "#2a2420", tuftL: "#6a5a48", flower: "#3a342c", flower2: "#e06a2a" }
+  },
+  bg: "g1",
+  layers: [
+    { shape: "noise", scale: 6, octaves: 2, contrast: 2.2, bands: [[0, "g0"], [0.4, "g1"], [0.78, "g2"]] },
+    { shape: "scatter", count: 22, size: [1, 2], colors: ["tuft", "tuft", "tuftL"] },
+    { shape: "scatter", count: 8, size: [2, 1], colors: ["tuft", "tuftL"] },
+    { shape: "scatter", count: [0, 1], size: 2, color: "flower" },
+    { shape: "scatter", count: [0, 1], size: 1, color: "flower2" }
+  ]
+};
+
+// src/data/blueprints/nature/terrain/mud.json
+var mud_default = {
+  name: "\xD4 b\xF9n",
+  type: "tile",
+  size: [32, 32],
+  seed: 9,
+  palette: { m0: "#563a24", m1: "#684a2e", m2: "#7a5a38", wet: "#3e2c1d", wetL: "#5a4330", shine: "#a98a64", stone: "#9a8e78", stoneD: "#6f6552" },
+  params: { winter: 0 },
+  palettes: {
+    winter: { m0: "#6e6258", m1: "#7e7268", m2: "#8e8478", wet: "#9ab0c0", wetL: "#c0d4e0", shine: "#eef4f8" }
+  },
+  bg: "m1",
+  layers: [
+    { shape: "noise", scale: 5, octaves: 2, contrast: 2.2, bands: [[0, "m0"], [0.4, "m1"], [0.8, "m2"]] },
+    { shape: "ellipse", cx: [3, 28], cy: [3, 28], rx: [3, 6], ry: [2, 4], color: "wet", repeat: { n: 4 } },
+    { shape: "scatter", count: 10, size: [2, 1], color: "shine", onlyOver: ["wet"] },
+    { shape: "scatter", count: 14, size: 1, colors: ["m0", "m2"] },
+    { shape: "scatter", count: 3, size: [2, 2], color: "stone" },
+    { shape: "scatter", count: 3, size: [1, 1], color: "stoneD" }
+  ]
+};
+
+// src/data/blueprints/nature/terrain/water.json
+var water_default = {
+  name: "M\u1EB7t h\u1ED3 (ho\u1EA1t \u1EA3nh)",
+  type: "tile",
+  size: [32, 32],
+  seed: 2,
+  animate: { frames: 4, fps: 3 },
+  palette: { w0: "#356090", w1: "#3f6f9a", w2: "#4a7ca8", glint: "#9cc6e4", glint2: "#d4ecf8" },
+  params: { winter: 0 },
+  palettes: {
+    winter: { w0: "#8fb4cc", w1: "#a0c2d8", w2: "#b4d0e2", glint: "#dcecf6", glint2: "#ffffff" }
+  },
+  bg: "w1",
+  layers: [
+    { shape: "noise", scale: 8, octaves: 2, contrast: 2, bands: [[0, "w0"], [0.42, "w1"], [0.8, "w2"]] },
+    { shape: "rect", x: [0, 27], y: [0, 31], w: 4, h: 1, color: "glint", repeat: { n: 12, phase: 4 } },
+    { shape: "rect", x: [0, 29], y: [0, 31], w: 2, h: 1, color: "glint2", repeat: { n: 8, phase: 4 } }
+  ]
+};
+
+// src/data/blueprints/nature/trees/stump.json
+var stump_default = {
+  name: "G\u1ED1c c\xE2y",
+  type: "prop",
+  size: [22, 16],
+  anchor: [11, 13],
+  seed: 2,
+  palette: { wood: "#6b4a28", woodL: "#8a6238", woodD: "#4e3519", ring: "#a47a48", ringD: "#8a6238", line: "#2b1d10", shadow: "#000000" },
+  params: { winter: 0, burnt: 0 },
+  palettes: {
+    winter: { ring: "#e8eef4", ringD: "#c8d4dc" },
+    burnt: { wood: "#2e2420", woodL: "#463830", woodD: "#1a1412", ring: "#3a2e26", ringD: "#2a201a" }
+  },
+  layers: [
+    { shape: "rect", x: 4, y: 6, w: 14, h: 7, color: "wood" },
+    { shape: "rect", x: 4, y: 6, w: 3, h: 7, color: "woodL" },
+    { shape: "rect", x: 15, y: 7, w: 3, h: 6, color: "woodD" },
+    { shape: "ellipse", cx: 11, cy: 6, rx: 7, ry: 3.5, color: "ring" },
+    { shape: "ellipse", cx: 11, cy: 6, rx: 4.5, ry: 2, color: "ringD" },
+    { shape: "ellipse", cx: 11, cy: 6, rx: 2, ry: 1, color: "ring" },
+    { shape: "poly", points: [[4, 12], [1, 14], [5, 14]], color: "wood" },
+    { shape: "poly", points: [[18, 12], [21, 14], [17, 14]], color: "wood" },
+    { shape: "outline", color: "line" },
+    { shape: "ellipse", cx: 11, cy: 14, rx: 9, ry: 2, color: "shadow", alpha: 0.25, mode: "under" }
+  ]
+};
+
+// src/data/blueprints/nature/trees/tree_pine.json
+var tree_pine_default = {
+  name: "C\xE2y th\xF4ng",
+  type: "prop",
+  size: [36, 68],
+  anchor: [18, 64],
+  footprint: [14, 60, 8, 5],
+  seed: 5,
+  palette: { trunk: "#5e4026", trunkL: "#7a5532", leaf: "#2f5a35", leafL: "#437a47", leafD: "#1f3f27", line: "#0f2014", shadow: "#000000", snow: "#eef4f8", ember: "#e0602a" },
+  params: { summer: 0, autumn: 0, winter: 0, burnt: 0 },
+  palettes: {
+    summer: { leaf: "#2c5a30", leafL: "#407a42" },
+    autumn: { leaf: "#2f5530", leafL: "#4a7040", leafD: "#203a22" },
+    winter: { leaf: "#284a30", leafL: "#3a6040", leafD: "#1a3322" },
+    burnt: { leaf: "#3a3430", leafL: "#4a423c", leafD: "#241f1c", trunk: "#2e2420", trunkL: "#463830", line: "#0e0a08" }
+  },
+  layers: [
+    { shape: "rect", x: 15, y: 54, w: 6, h: 10, color: "trunk" },
+    { shape: "rect", x: 15, y: 54, w: 2, h: 10, color: "trunkL" },
+    { shape: "poly", points: [[18, 26], [3, 56], [33, 56]], color: "leaf", jitter: 1 },
+    { shape: "poly", points: [[18, 14], [5, 42], [31, 42]], color: "leaf", jitter: 1 },
+    { shape: "poly", points: [[18, 2], [8, 28], [28, 28]], color: "leaf", jitter: 1 },
+    { shape: "poly", points: [[18, 2], [28, 28], [18, 28]], color: "leafD", alpha: 0.35, clip: "inside" },
+    { shape: "poly", points: [[18, 14], [31, 42], [18, 42]], color: "leafD", alpha: 0.35, clip: "inside" },
+    { shape: "poly", points: [[18, 26], [33, 56], [18, 56]], color: "leafD", alpha: 0.35, clip: "inside" },
+    { shape: "scatter", count: 28, area: [4, 6, 28, 50], size: [3, 1], colors: ["leafL", "leafD"], onlyOver: ["leaf"] },
+    { shape: "group", if: "winter", layers: [
+      { shape: "poly", points: [[18, 2], [13, 13], [23, 13]], color: "snow", jitter: 1 },
+      { shape: "scatter", count: 45, area: [4, 4, 28, 50], size: [3, 1], color: "snow", onlyOver: ["leaf", "leafL"] },
+      { shape: "rect", x: 6, y: 41, w: 24, h: 1, color: "snow", onlyOver: ["leaf", "leafD"] },
+      { shape: "rect", x: 4, y: 55, w: 28, h: 1, color: "snow", onlyOver: ["leaf", "leafD"] }
+    ] },
+    { shape: "scatter", if: "burnt", count: 5, area: [6, 10, 24, 46], size: 1, color: "ember", onlyOver: ["leaf", "leafD"] },
+    { shape: "bevel", light: "#c8ffd0", lightAlpha: 0.28, dark: "#000000", darkAlpha: 0.3 },
+    { shape: "outline", color: "line" },
+    { shape: "ellipse", cx: 18, cy: 64, rx: 14, ry: 3, color: "shadow", alpha: 0.28, mode: "under" }
+  ]
+};
+
+// src/data/blueprints/nature/trees/tree_round.json
+var tree_round_default = {
+  name: "C\xE2y tr\xF2n",
+  type: "prop",
+  size: [40, 64],
+  anchor: [20, 60],
+  footprint: [16, 56, 8, 5],
+  seed: 3,
+  palette: { trunk: "#6b4a28", trunkL: "#8a6238", trunkD: "#4e3519", leaf: "#3f6b2c", leafL: "#5f9a44", leafX: "#8cc765", leafD: "#2c4d1f", line: "#17240f", shadow: "#000000", snow: "#eef4f8", ember: "#e0602a" },
+  params: { summer: 0, autumn: 0, winter: 0, burnt: 0 },
+  palettes: {
+    summer: { leaf: "#3a6a26", leafL: "#5a9a3a", leafX: "#86c050", leafD: "#284a1a" },
+    autumn: { leaf: "#c0782a", leafL: "#dc9a3e", leafX: "#f2c862", leafD: "#8a4a1c" },
+    winter: { trunk: "#5e4630", trunkL: "#7a6248", trunkD: "#45321f" },
+    burnt: { trunk: "#2e2420", trunkL: "#463830", trunkD: "#1a1412", line: "#0e0a08" }
+  },
+  layers: [
+    { shape: "rect", x: 17, y: 36, w: 7, h: 24, color: "trunk" },
+    { shape: "rect", x: 17, y: 36, w: 2, h: 24, color: "trunkL" },
+    { shape: "rect", x: 22, y: 38, w: 2, h: 22, color: "trunkD" },
+    { shape: "poly", points: [[17, 56], [12, 61], [17, 60]], color: "trunk" },
+    { shape: "poly", points: [[24, 56], [29, 61], [24, 60]], color: "trunk" },
+    { shape: "ellipse", cx: 20, cy: 26, rx: 10, ry: 9, color: "leaf", repeat: { n: 9, jitter: [8, 7] }, ifNot: ["winter", "burnt"] },
+    { shape: "group", if: "winter", layers: [
+      { shape: "line", from: [20, 38], to: [11, 22], w: 2, color: "trunk" },
+      { shape: "line", from: [21, 38], to: [30, 20], w: 2, color: "trunk" },
+      { shape: "line", from: [19, 32], to: [17, 12], w: 2, color: "trunk" },
+      { shape: "line", from: [22, 30], to: [26, 11], w: 1, color: "trunkL" },
+      { shape: "line", from: [13, 25], to: [7, 17], w: 1, color: "trunk" },
+      { shape: "line", from: [28, 24], to: [34, 15], w: 1, color: "trunk" },
+      { shape: "line", from: [15, 18], to: [11, 10], w: 1, color: "trunkD" },
+      { shape: "scatter", count: 30, area: [6, 8, 30, 30], size: [2, 1], color: "snow", onlyOver: ["trunk", "trunkL", "trunkD"] }
+    ] },
+    { shape: "group", if: "burnt", layers: [
+      { shape: "line", from: [20, 38], to: [11, 22], w: 2, color: "trunk" },
+      { shape: "line", from: [21, 38], to: [30, 20], w: 2, color: "trunk" },
+      { shape: "line", from: [19, 32], to: [17, 12], w: 2, color: "trunk" },
+      { shape: "line", from: [22, 30], to: [26, 11], w: 1, color: "trunkL" },
+      { shape: "line", from: [13, 25], to: [7, 17], w: 1, color: "trunk" },
+      { shape: "line", from: [28, 24], to: [34, 15], w: 1, color: "trunk" },
+      { shape: "line", from: [15, 18], to: [11, 10], w: 1, color: "trunkD" },
+      { shape: "scatter", count: 5, area: [8, 10, 26, 48], size: 1, color: "ember", onlyOver: ["trunk", "trunkD"] }
+    ] },
+    { shape: "bevel", light: "#d8ffb0", lightAlpha: 0.35, dark: "#0a1a08", darkAlpha: 0.4 },
+    { shape: "scatter", count: 40, area: [6, 8, 28, 32], size: [2, 1], colors: ["leafL", "leafX", "leafD"], clip: "inside", onlyOver: ["leaf"] },
+    { shape: "outline", color: "line" },
+    { shape: "ellipse", cx: 20, cy: 60, rx: 14, ry: 3, color: "shadow", alpha: 0.28, mode: "under" }
+  ]
+};
+
+// src/data/blueprints/stone_age/tools/axe.json
+var axe_default2 = {
+  name: "R\xECu",
+  type: "prop",
+  size: [
+    16,
+    16
+  ],
+  anchor: [
+    8,
+    15
+  ],
+  params: {
+    stone: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    handle: "#8a5e34",
+    handleL: "#aa7c48",
+    tw: "#b88c54",
+    twL: "#dEb87e",
+    twD: "#805c34",
+    st: "#8e9498",
+    stL: "#c0c6c8",
+    stD: "#60676b",
+    bind: "#d8c690"
+  },
+  layers: [
+    {
+      shape: "line",
+      from: [
+        3,
+        14
+      ],
+      to: [
+        11,
+        4
+      ],
+      w: 2,
+      color: "handle"
+    },
+    {
+      shape: "line",
+      from: [
+        2,
+        14
+      ],
+      to: [
+        10,
+        4
+      ],
+      w: 1,
+      color: "handleL"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          8,
+          2
+        ],
+        [
+          14,
+          3
+        ],
+        [
+          14,
+          9
+        ],
+        [
+          10,
+          8
+        ]
+      ],
+      color: "tw",
+      ifNot: "stone"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          8,
+          2
+        ],
+        [
+          14,
+          3
+        ],
+        [
+          14,
+          9
+        ],
+        [
+          10,
+          8
+        ]
+      ],
+      color: "st",
+      if: "stone"
+    },
+    {
+      shape: "line",
+      from: [
+        9,
+        3
+      ],
+      to: [
+        13,
+        3
+      ],
+      w: 1,
+      color: "twL",
+      ifNot: "stone"
+    },
+    {
+      shape: "line",
+      from: [
+        9,
+        3
+      ],
+      to: [
+        13,
+        3
+      ],
+      w: 1,
+      color: "stL",
+      if: "stone"
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ]
+};
+
+// src/data/blueprints/stone_age/tools/hammer.json
+var hammer_default2 = {
+  name: "Hammer",
+  type: "prop",
+  size: [16, 16],
+  anchor: [8, 15],
+  params: { stone: 1 },
+  palette: {
+    line: "#2b1d10",
+    handle: "#8a5e34",
+    handleL: "#aa7c48",
+    tw: "#b88c54",
+    twL: "#dEb87e",
+    twD: "#805c34",
+    st: "#8e9498",
+    stL: "#c0c6c8",
+    stD: "#60676b",
+    bind: "#d8c690"
+  },
+  layers: [
+    { shape: "line", from: [3, 14], to: [10, 7], w: 2, color: "handle" },
+    { shape: "line", from: [2, 14], to: [9, 7], w: 1, color: "handleL" },
+    { shape: "poly", points: [[7, 3], [13, 5], [12, 9], [6, 7]], color: "tw", ifNot: "stone" },
+    { shape: "poly", points: [[7, 3], [13, 5], [12, 9], [6, 7]], color: "st", if: "stone" },
+    { shape: "line", from: [8, 4], to: [12, 5], w: 1, color: "twL", ifNot: "stone" },
+    { shape: "line", from: [8, 4], to: [12, 5], w: 1, color: "stL", if: "stone" },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/tools/hoe.json
+var hoe_default2 = {
+  name: "Cu\u1ED1c",
+  type: "prop",
+  size: [
+    16,
+    16
+  ],
+  anchor: [
+    8,
+    15
+  ],
+  params: {
+    stone: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    handle: "#8a5e34",
+    handleL: "#aa7c48",
+    tw: "#b88c54",
+    twL: "#dEb87e",
+    twD: "#805c34",
+    st: "#8e9498",
+    stL: "#c0c6c8",
+    stD: "#60676b",
+    bind: "#d8c690"
+  },
+  layers: [
+    {
+      shape: "line",
+      from: [
+        3,
+        14
+      ],
+      to: [
+        11,
+        4
+      ],
+      w: 2,
+      color: "handle"
+    },
+    {
+      shape: "line",
+      from: [
+        2,
+        14
+      ],
+      to: [
+        10,
+        4
+      ],
+      w: 1,
+      color: "handleL"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          10,
+          3
+        ],
+        [
+          14,
+          3
+        ],
+        [
+          14,
+          9
+        ],
+        [
+          12,
+          9
+        ],
+        [
+          12,
+          5
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      color: "tw",
+      ifNot: "stone"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          10,
+          3
+        ],
+        [
+          14,
+          3
+        ],
+        [
+          14,
+          9
+        ],
+        [
+          12,
+          9
+        ],
+        [
+          12,
+          5
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      color: "st",
+      if: "stone"
+    },
+    {
+      shape: "line",
+      from: [
+        11,
+        3
+      ],
+      to: [
+        14,
+        3
+      ],
+      w: 1,
+      color: "twL",
+      ifNot: "stone"
+    },
+    {
+      shape: "line",
+      from: [
+        11,
+        3
+      ],
+      to: [
+        14,
+        3
+      ],
+      w: 1,
+      color: "stL",
+      if: "stone"
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ]
+};
+
+// src/data/blueprints/stone_age/tools/pick.json
+var pick_default2 = {
+  name: "Cu\u1ED1c chim",
+  type: "prop",
+  size: [
+    16,
+    16
+  ],
+  anchor: [
+    8,
+    15
+  ],
+  params: {
+    stone: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    handle: "#8a5e34",
+    handleL: "#aa7c48",
+    tw: "#b88c54",
+    twL: "#dEb87e",
+    twD: "#805c34",
+    st: "#8e9498",
+    stL: "#c0c6c8",
+    stD: "#60676b",
+    bind: "#d8c690"
+  },
+  layers: [
+    {
+      shape: "line",
+      from: [
+        3,
+        14
+      ],
+      to: [
+        11,
+        6
+      ],
+      w: 2,
+      color: "handle"
+    },
+    {
+      shape: "line",
+      from: [
+        2,
+        14
+      ],
+      to: [
+        10,
+        6
+      ],
+      w: 1,
+      color: "handleL"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          4,
+          4
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          14,
+          5
+        ],
+        [
+          14,
+          7
+        ],
+        [
+          8,
+          5
+        ],
+        [
+          4,
+          6
+        ]
+      ],
+      color: "tw",
+      ifNot: "stone"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          4,
+          4
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          14,
+          5
+        ],
+        [
+          14,
+          7
+        ],
+        [
+          8,
+          5
+        ],
+        [
+          4,
+          6
+        ]
+      ],
+      color: "st",
+      if: "stone"
+    },
+    {
+      shape: "line",
+      from: [
+        6,
+        3
+      ],
+      to: [
+        11,
+        3
+      ],
+      w: 1,
+      color: "twL",
+      ifNot: "stone"
+    },
+    {
+      shape: "line",
+      from: [
+        6,
+        3
+      ],
+      to: [
+        11,
+        3
+      ],
+      w: 1,
+      color: "stL",
+      if: "stone"
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ]
+};
+
+// src/data/blueprints/stone_age/tools/club.json
+var club_default2 = {
+  name: "G\u1EADy g\u1ED7",
+  type: "prop",
+  size: [16, 16],
+  anchor: [8, 15],
+  params: { stone: 0 },
+  palette: { line: "#2b1d10", handle: "#8a5e34", handleL: "#aa7c48", tw: "#b88c54", twL: "#deb87e", twD: "#805c34", st: "#8e9498", stL: "#c0c6c8", stD: "#60676b", bind: "#d8c690", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8" },
+  layers: [
+    { shape: "line", from: [3, 14], to: [10, 6], w: 2, color: "handle" },
+    { shape: "line", from: [2, 14], to: [9, 6], w: 1, color: "handleL" },
+    { shape: "ellipse", cx: 11, cy: 4.5, rx: 3.5, ry: 3.5, color: "tw" },
+    { shape: "pixels", at: [[9, 3], [10, 2]], color: "twL" },
+    { shape: "pixels", at: [[13, 6], [12, 7]], color: "twD" },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/tools/spear.json
+var spear_default2 = {
+  name: "Gi\xE1o g\u1ED7",
+  type: "prop",
+  size: [16, 16],
+  anchor: [8, 15],
+  params: { stone: 0 },
+  palette: { line: "#2b1d10", handle: "#8a5e34", handleL: "#aa7c48", tw: "#b88c54", twL: "#deb87e", twD: "#805c34", st: "#8e9498", stL: "#c0c6c8", stD: "#60676b", bind: "#d8c690", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8" },
+  layers: [
+    { shape: "line", from: [2, 15], to: [11, 5], w: 1, color: "handle" },
+    { shape: "line", from: [3, 15], to: [12, 5], w: 1, color: "handleL" },
+    { shape: "poly", points: [[11, 6], [13, 0], [15, 4]], color: "tw" },
+    { shape: "pixels", at: [[13, 2], [13, 3]], color: "twL" },
+    { shape: "pixels", at: [[12, 6], [14, 5]], color: "twD" },
+    { shape: "pixels", at: [[10, 7], [9, 8]], color: "bind" },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/tools/mace.json
+var mace_default2 = {
+  name: "Ch\xF9y \u0111\xE1",
+  type: "prop",
+  size: [16, 16],
+  anchor: [8, 15],
+  params: { stone: 1 },
+  palette: { line: "#2b1d10", handle: "#8a5e34", handleL: "#aa7c48", tw: "#b88c54", twL: "#deb87e", twD: "#805c34", st: "#8e9498", stL: "#c0c6c8", stD: "#60676b", bind: "#d8c690", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8" },
+  layers: [
+    { shape: "line", from: [3, 14], to: [10, 7], w: 2, color: "handle" },
+    { shape: "line", from: [2, 14], to: [9, 7], w: 1, color: "handleL" },
+    { shape: "ellipse", cx: 11, cy: 4.5, rx: 4, ry: 4, color: "st" },
+    { shape: "pixels", at: [[9, 2], [10, 1], [8, 4]], color: "stL" },
+    { shape: "pixels", at: [[13, 6], [14, 4], [12, 8]], color: "stD" },
+    { shape: "pixels", at: [[9, 8], [10, 9]], color: "bind" },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/tools/hide_armor.json
+var hide_armor_default = {
+  name: "\xC1o da th\xFA",
+  type: "prop",
+  size: [16, 16],
+  anchor: [8, 15],
+  params: { stone: 0 },
+  palette: { line: "#2b1d10", handle: "#8a5e34", handleL: "#aa7c48", tw: "#b88c54", twL: "#deb87e", twD: "#805c34", st: "#8e9498", stL: "#c0c6c8", stD: "#60676b", bind: "#d8c690", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8" },
+  layers: [
+    { shape: "poly", points: [[5, 2], [11, 2], [15, 5], [13, 8], [12, 7], [12, 15], [4, 15], [4, 7], [3, 8], [1, 5]], color: "hide" },
+    { shape: "rect", x: 6, y: 2, w: 4, h: 2, color: "hideD" },
+    { shape: "line", from: [8, 4], to: [8, 14], w: 1, color: "hideD" },
+    { shape: "pixels", at: [[8, 6], [8, 9], [8, 12]], color: "stitch" },
+    { shape: "rect", x: 4, y: 13, w: 8, h: 2, color: "hideL" },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/tools/sling.json
+var sling_default2 = {
+  name: "D\xE2y qu\u0103ng \u0111\xE1",
+  type: "prop",
+  size: [16, 16],
+  anchor: [8, 15],
+  params: { stone: 0 },
+  palette: { line: "#2b1d10", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", bind: "#d8c690", st: "#8e9498", stL: "#c0c6c8", stD: "#60676b" },
+  layers: [
+    { shape: "line", from: [3, 14], to: [6, 8], w: 1, color: "bind" },
+    { shape: "line", from: [13, 14], to: [10, 8], w: 1, color: "bind" },
+    { shape: "poly", points: [[5, 7], [11, 7], [8, 12]], color: "hide" },
+    { shape: "poly", points: [[5, 7], [8, 7], [8, 12]], color: "hideL" },
+    { shape: "pixels", at: [[8, 11], [7, 10], [9, 10]], color: "hideD" },
+    { shape: "ellipse", cx: 8, cy: 6, rx: 2, ry: 2, color: "st" },
+    { shape: "pixels", at: [[7, 5], [8, 5]], color: "stL" },
+    { shape: "pixels", at: [[9, 7]], color: "stD" },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/data/blueprints/stone_age/tools/bow.json
+var bow_default2 = {
+  name: "Cung ng\u1EAFn",
+  type: "prop",
+  size: [16, 16],
+  anchor: [8, 15],
+  params: { stone: 0 },
+  palette: { line: "#2b1d10", handle: "#8a5e34", handleL: "#aa7c48", bind: "#d8c690", st: "#8e9498", stL: "#c0c6c8", feather: "#e4dcc4" },
+  layers: [
+    { shape: "line", from: [6, 1], to: [11, 5], w: 1, color: "handle" },
+    { shape: "line", from: [11, 5], to: [11, 10], w: 1, color: "handleL" },
+    { shape: "line", from: [11, 10], to: [6, 14], w: 1, color: "handle" },
+    { shape: "line", from: [6, 1], to: [6, 14], w: 1, color: "bind" },
+    { shape: "line", from: [1, 8], to: [10, 8], w: 1, color: "handleL" },
+    { shape: "poly", points: [[10, 6], [14, 8], [10, 10]], color: "stL" },
+    { shape: "pixels", at: [[2, 7], [2, 9], [3, 7], [3, 9]], color: "feather" },
+    { shape: "outline", color: "line" }
+  ]
+};
+
+// src/render/sprites.ts
+var anims = anims_default;
+var BODIES = bodies_default;
+var ANIMAL_CLIPS = { quadruped: quadruped_default, hopper: hopper_default, biped: biped_default, fish: fish_default };
+var SPRITE_FEET = { x: CX, y: 42 };
+function make(def, seed, params) {
+  const res = Blueprint.render(def, { seed, params });
+  if (res.warnings.length) console.warn("[blueprint]", def.name, res.warnings);
+  return { frames: toCanvases(res), ax: res.anchor?.[0] ?? res.w >> 1, ay: res.anchor?.[1] ?? res.h - 1, fps: res.fps };
+}
+function canvas(w, h2) {
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h2;
+  return [c, c.getContext("2d")];
+}
+var seeds = (n) => Array.from({ length: n }, (_, i) => i * 7 + 3);
+var stage = (st) => ({ st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) });
+var BUILDING_ART = {
+  stone: {
+    campfire: [L1_default, L2_default15, L3_default11, L4_default],
+    builder: [L1_default2, L2_default, L3_default],
+    storage: [L1_default16, L2_default16, L3_default12],
+    workshop: [L1_default17, L2_default17, L3_default13],
+    lab: [L1_default3, L2_default2, L3_default2],
+    repair: [L1_default4, L2_default3, L3_default3],
+    toolstore: [L1_default5, L2_default4, L3_default4],
+    armory: [L1_default6, L2_default5, L3_default5],
+    barracks: [L1_default7, L2_default6, L3_default6],
+    house: [L1_default8, L2_default7, L3_default7],
+    field: [L1_default9, L2_default8, L3_default8],
+    fence: [L1_default10, L2_default9],
+    gate: [L1_default11, L2_default10, L1open_default, L2open_default],
+    // the last two are the same gates standing open
+    tower: [L1_default12, L2_default11],
+    wartent: [L1_default13, L2_default12, L3_default9],
+    drill: [L1_default14, L2_default13, L3_default10],
+    trap: [L1_default15, L2_default14]
+  }
+};
+var TINTS = {};
+var Sprites = class {
+  constructor() {
+    this.vcache = /* @__PURE__ */ new Map();
+    this.natureCache = /* @__PURE__ */ new Map();
+    this.buildingCache = /* @__PURE__ */ new Map();
+    this.animalCache = /* @__PURE__ */ new Map();
+    /** Small badges drawn over the houses that share a drawing, so each can be told at a glance. */
+    this.emblems = {};
+    /** Biểu tượng công cụ 16×16, khóa dạng "axe1" (gỗ) hoặc "axe2" (đá). */
+    this.icons = {};
+    const defs = { axe: axe_default2, pick: pick_default2, hoe: hoe_default2, hammer: hammer_default2 };
+    for (const k of Object.keys(defs)) for (const tier of [1, 2]) this.icons[`${k}${tier}`] = make(defs[k], 1, { stone: tier === 2 ? 1 : 0 }).frames[0];
+    this.icons.club1 = make(club_default2, 1).frames[0];
+    this.icons.spear1 = make(spear_default2, 1).frames[0];
+    this.icons.mace2 = make(mace_default2, 1).frames[0];
+    this.icons.sling1 = make(sling_default2, 1).frames[0];
+    this.icons.bow1 = make(bow_default2, 1).frames[0];
+    this.icons.hide1 = make(hide_armor_default, 1).frames[0];
+    this.icons.torch1 = this.torchIcon();
+    this.nature("spring");
+    this.emblems.lab = this.scrollEmblem();
+    this.emblems.builder = this.icons.hammer1;
+    this.emblems.repair = this.icons.hammer2;
+    this.emblems.toolstore = this.icons.axe2;
+    this.emblems.armory = this.icons.club1;
+    this.emblems.barracks = this.icons.spear1;
+  }
+  /** A torch 16x16, for the craft list. */
+  torchIcon() {
+    const [c, g2] = canvas(16, 16);
+    g2.fillStyle = "#2b1d10";
+    g2.fillRect(7, 5, 3, 10);
+    g2.fillStyle = "#8a6238";
+    g2.fillRect(8, 6, 1, 9);
+    g2.fillStyle = "#3c2418";
+    g2.fillRect(6, 4, 5, 3);
+    g2.fillStyle = "#d6be82";
+    g2.fillRect(6, 6, 5, 1);
+    g2.fillStyle = "#d64818";
+    g2.fillRect(6, 1, 5, 4);
+    g2.fillStyle = "#f89628";
+    g2.fillRect(7, 1, 3, 3);
+    g2.fillStyle = "#ffe88c";
+    g2.fillRect(8, 2, 1, 2);
+    return c;
+  }
+  /** A rolled blueprint on a pole: the sign of the research house. */
+  scrollEmblem() {
+    const [c, g2] = canvas(16, 16);
+    g2.fillStyle = "#2b1d10";
+    g2.fillRect(2, 2, 12, 12);
+    g2.fillStyle = "#efe3c2";
+    g2.fillRect(3, 3, 10, 10);
+    g2.fillStyle = "#c9b98a";
+    g2.fillRect(3, 11, 10, 2);
+    g2.fillStyle = "#5f7fa8";
+    g2.fillRect(4, 5, 8, 1);
+    g2.fillRect(4, 7, 6, 1);
+    g2.fillRect(4, 9, 7, 1);
+    g2.fillStyle = "#8a6238";
+    g2.fillRect(2, 1, 12, 2);
+    g2.fillRect(2, 13, 12, 2);
+    return c;
+  }
+  /** Nature drawn for a season; spring is the base art, other seasons switch the blueprints' palettes. */
+  nature(season) {
+    let n = this.natureCache.get(season);
+    if (!n) {
+      const p = season === "spring" ? {} : { [season]: 1 };
+      n = {
+        grass: seeds(4).map((s) => make(grass_default, s, p).frames[0]),
+        mud: seeds(4).map((s) => make(mud_default, s, p).frames[0]),
+        water: seeds(3).map((s) => make(water_default, s, p)),
+        trees: [...seeds(4).map((s) => make(tree_round_default, s, p)), ...seeds(4).map((s) => make(tree_pine_default, s + 1, p))],
+        rocks: seeds(3).map((s) => make(rock_default, s, p)),
+        bush: seeds(3).map((s) => make(bush_default, s, p)),
+        bushEmpty: seeds(3).map((s) => make(bush_default, s, { ...p, empty: 1 })),
+        stump: seeds(3).map((s) => make(stump_default, s, p))
+      };
+      this.natureCache.set(season, n);
+    }
+    return n;
+  }
+  /** Sprites for a building kind in an era: [level][construction stage 0..4]. Falls back to the closest earlier era. */
+  buildingSet(kind, era) {
+    for (let i = ERAS.indexOf(era); i >= 0; i--) {
+      const defs = BUILDING_ART[ERAS[i]]?.[kind];
+      if (!defs) continue;
+      const key = `${ERAS[i]}|${kind}`;
+      let set = this.buildingCache.get(key);
+      if (!set) {
+        const tint = TINTS[kind];
+        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(tint ? { ...def, palettes: { tint } } : def, kind === "workshop" || kind === "lab" || kind === "repair" || kind === "builder" ? 9 : 5, { ...stage(st), ...tint ? { tint: 1 } : {} })));
+        this.buildingCache.set(key, set);
+      }
+      return set;
+    }
+    throw new Error(`No art for ${kind} in era ${era}`);
+  }
+  /** Sprite of a building at its level and construction stage (0..4). */
+  building(kind, era, level, st) {
+    const lv2 = this.buildingSet(kind, era);
+    return lv2[Math.min(lv2.length, Math.max(1, level)) - 1][st];
+  }
+  /** Sprite size of a species and where its feet are (the sprite is drawn with this point on the animal's position). */
+  animalBox(species) {
+    const d = BODIES[species], [w, h2] = d.size;
+    return d.body === "fish" ? { w, h: h2, ax: w / 2, ay: h2 / 2 } : { w, h: h2, ax: w / 2, ay: h2 - 2 };
+  }
+  /** The clip an animal plays right now, from its state. */
+  animalClip(a) {
+    const fish2 = BODIES[a.species].body === "fish";
+    if (a.state === "dead") return "die";
+    if (a.bite > 0) return "attack";
+    switch (a.state) {
+      case "flee":
+        return a.tired > 0 ? fish2 ? "swim" : "walk" : "run";
+      case "attack":
+        return fish2 ? "swim" : "run";
+      case "wander":
+        return fish2 ? "swim" : "walk";
+      case "sleep":
+        return "sleep";
+      default:
+        return fish2 ? "idle" : "graze";
+    }
+  }
+  /** Current frame of an animal, mirrored when it faces left. Rendered once per frame and kept. */
+  animal(a) {
+    const def = BODIES[a.species], clips = ANIMAL_CLIPS[def.body], name = this.animalClip(a), clip = clips[name] ?? clips.idle;
+    const n = clip.frames.length;
+    const frame = name === "attack" ? Math.min(n - 1, Math.floor((0.25 - a.bite) / 0.25 * n)) : name === "die" ? n - 1 : Math.floor(a.clock * clip.fps) % n;
+    const key = `${a.species}|${name}|${frame}|${a.dir}`;
+    let c = this.animalCache.get(key);
+    if (!c) {
+      const r = renderAnimal(def, clip, frame), [cv, g2] = canvas(r.w, r.h);
+      g2.putImageData(new ImageData(new Uint8ClampedArray(r.data), r.w, r.h), 0, 0);
+      if (a.dir === -1) {
+        const [mv, mg] = canvas(r.w, r.h);
+        mg.translate(r.w, 0);
+        mg.scale(-1, 1);
+        mg.drawImage(cv, 0, 0);
+        c = mv;
+      } else c = cv;
+      this.animalCache.set(key, c);
+    }
+    return c;
+  }
+  villager(v) {
+    const name = v.anim in anims ? v.anim : "idle";
+    const def = anims[name];
+    const rate = def.gait ? Math.min(1.6, v.speed / 1.5) : 1;
+    const step3 = Math.floor(v.animClock * def.fps * rate);
+    const frame = def.loop === false ? Math.min(step3, def.frames.length - 1) : step3 % def.frames.length;
+    const kind = v.carry?.res ?? "wood";
+    const flick = v.lit ? Math.floor(v.animClock * 6) % 3 : void 0;
+    const key = `${name}|${frame}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : "-"}|${v.armor ?? "-"}|${flick ?? "-"}`;
+    let c = this.vcache.get(key);
+    if (!c) {
+      const [cv, g2] = canvas(W, H);
+      g2.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === void 0 ? void 0 : { torch: flick })), W, H), 0, 0);
+      this.vcache.set(key, cv);
+      c = cv;
+    }
+    return c;
+  }
+};
+
+// src/render/renderer.ts
+var FOG_RGB = [8, 10, 20];
+var WEATHER_FX = {
+  clear: { rain: 0, snow: 0, dim: 0, wind: 0, flash: 0 },
+  mist: { rain: 0, snow: 0, dim: 0, wind: 0, flash: 0 },
+  drizzle: { rain: 90, snow: 0, dim: 0.06, wind: 0.15, flash: 0 },
+  rain: { rain: 240, snow: 0, dim: 0.14, wind: 0.2, flash: 0 },
+  thunder: { rain: 200, snow: 0, dim: 0.22, wind: 0.25, flash: 0.4 },
+  storm: { rain: 320, snow: 0, dim: 0.26, wind: 0.6, flash: 0.15 },
+  snow: { rain: 0, snow: 170, dim: 0.04, wind: 0.1, flash: 0 }
+};
+var Renderer = class {
+  constructor(canvas2, sim2, cam2, sprites2) {
+    this.canvas = canvas2;
+    this.sim = sim2;
+    this.cam = cam2;
+    this.sprites = sprites2;
+    this.w = 0;
+    this.h = 0;
+    this.dpr = 1;
+    this.fogVer = -1;
+    /** Draw the soldiers as one figure for about three of them in a big battle (set from the war HUD). */
+    this.reduceFigures = false;
+    /** The cluster flags drawn last frame, for taps. */
+    this.flags = [];
+    this.ctx = canvas2.getContext("2d");
+    this.fogCanvas = document.createElement("canvas");
+    this.fogCanvas.width = this.fogCanvas.height = sim2.world.size;
+    this.fogCtx = this.fogCanvas.getContext("2d");
+    this.resize();
+  }
+  resize() {
+    this.dpr = Math.max(1, Math.round(window.devicePixelRatio || 1));
+    this.w = this.canvas.clientWidth;
+    this.h = this.canvas.clientHeight;
+    this.canvas.width = Math.max(1, this.w * this.dpr);
+    this.canvas.height = Math.max(1, this.h * this.dpr);
+  }
+  screenToWorld(sx, sy) {
+    return { x: sx / this.cam.zoom + this.cam.x, y: sy / this.cam.zoom + this.cam.y };
+  }
+  worldToScreen(wx, wy) {
+    return { x: (wx - this.cam.x) * this.cam.zoom, y: (wy - this.cam.y) * this.cam.zoom };
+  }
+  updateFog() {
+    const fog = this.sim.fog;
+    if (fog.version === this.fogVer) return;
+    this.fogVer = fog.version;
+    const N = this.sim.world.size, img = this.fogCtx.createImageData(N, N), s = fog.state;
+    for (let i = 0; i < s.length; i++) {
+      img.data[i * 4] = FOG_RGB[0];
+      img.data[i * 4 + 1] = FOG_RGB[1];
+      img.data[i * 4 + 2] = FOG_RGB[2];
+      img.data[i * 4 + 3] = s[i] === 0 ? 255 : s[i] === 1 ? 150 : 0;
+    }
+    this.fogCtx.putImageData(img, 0, 0);
+  }
+  /** Vẽ một vật thể: neo (ax, ay) đặt tại điểm thế giới (wx, wy). */
+  prop(p, wx, wy, time, alpha = 1) {
+    const { ctx: ctx2, cam: cam2 } = this, z = cam2.zoom;
+    const f = p.frames.length > 1 ? Math.floor(time * p.fps) % p.frames.length : 0, s = p.frames[f];
+    const prev = ctx2.globalAlpha;
+    if (alpha !== 1) ctx2.globalAlpha = alpha;
+    ctx2.drawImage(s, Math.round((wx - p.ax - cam2.x) * z), Math.round((wy - p.ay - cam2.y) * z), s.width * z, s.height * z);
+    ctx2.globalAlpha = prev;
+  }
+  /** Điểm neo của công trình: giữa mép dưới ô chiếm, hơi nhích lên. */
+  buildingAnchor(kind, x, y) {
+    const d = BUILDINGS[kind];
+    return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
+  }
+  /** Current level's sprite; while an upgrade runs the finished building stays drawn, with a progress bar. */
+  buildingProp(b) {
+    const st = b.done ? 4 : Math.min(3, Math.floor(b.progress * 4));
+    return this.sprites.building(b.kind, b.era, b.kind === "gate" && b.open ? b.level + 2 : b.level, st);
+  }
+  /** Rain, snow, mist, lightning in screen space; particle positions derive from time, so no state is kept. */
+  drawWeather(time) {
+    const { ctx: ctx2, w, h: h2 } = this, kind = this.sim.weather, fx = WEATHER_FX[kind];
+    if (kind === "mist") {
+      ctx2.fillStyle = "rgba(214,220,228,.24)";
+      ctx2.fillRect(0, 0, w, h2);
+      for (let b = 0; b < 3; b++) {
+        const y = (hash2(b, 1, 77) * h2 + time * (6 + b * 3)) % (h2 + 200) - 100, g2 = ctx2.createLinearGradient(0, y - 80, 0, y + 80);
+        g2.addColorStop(0, "rgba(225,230,236,0)");
+        g2.addColorStop(0.5, "rgba(225,230,236,.22)");
+        g2.addColorStop(1, "rgba(225,230,236,0)");
+        ctx2.fillStyle = g2;
+        ctx2.fillRect(0, y - 80, w, 160);
+      }
+      return;
+    }
+    if (fx.dim > 0) {
+      ctx2.fillStyle = `rgba(16,22,38,${fx.dim})`;
+      ctx2.fillRect(0, 0, w, h2);
+    }
+    const area = w * h2 / 7e5;
+    if (fx.rain) {
+      const n = Math.round(fx.rain * area), len = kind === "drizzle" ? 8 : 15, sx = fx.wind * len, sy = len;
+      ctx2.strokeStyle = kind === "drizzle" ? "rgba(200,215,235,.35)" : "rgba(200,215,235,.5)";
+      ctx2.lineWidth = 1;
+      ctx2.beginPath();
+      for (let i = 0; i < n; i++) {
+        const sp = 650 + hash2(i, 3, 41) * 300;
+        const y = (hash2(i, 1, 41) * (h2 + 40) + time * sp) % (h2 + 40) - 20;
+        const x = ((hash2(i, 2, 41) * (w + 80) + time * sp * fx.wind) % (w + 80) + (w + 80)) % (w + 80) - 40;
+        ctx2.moveTo(x, y);
+        ctx2.lineTo(x - sx, y - sy);
+      }
+      ctx2.stroke();
+    }
+    if (fx.snow) {
+      const n = Math.round(fx.snow * area);
+      ctx2.fillStyle = "rgba(250,252,255,.85)";
+      for (let i = 0; i < n; i++) {
+        const sp = 30 + hash2(i, 3, 43) * 40, r = 1 + hash2(i, 4, 43) * 1.6;
+        const y = (hash2(i, 1, 43) * (h2 + 20) + time * sp) % (h2 + 20) - 10;
+        const x = ((hash2(i, 2, 43) * w + Math.sin(time * 0.8 + i) * 12 + time * 20 * fx.wind) % w + w) % w;
+        ctx2.fillRect(x, y, r, r);
+      }
+    }
+    if (fx.flash) {
+      const slot = Math.floor(time / 3), f = time / 3 - slot;
+      if (hash2(slot, 7, 91) < fx.flash && f < 0.13) {
+        ctx2.fillStyle = `rgba(235,240,255,${(0.55 * (1 - f / 0.13)).toFixed(3)})`;
+        ctx2.fillRect(0, 0, w, h2);
+      }
+    }
+  }
+  /** Small health bar over a unit or animal. */
+  bar(wx, wy, frac, color) {
+    const { ctx: ctx2, cam: cam2 } = this, z = cam2.zoom, p = this.worldToScreen(wx, wy), w = 16 * z;
+    ctx2.fillStyle = "rgba(20,14,8,.75)";
+    ctx2.fillRect(p.x - w / 2 - z * 0.5, p.y - 0.5 * z, w + z, 3 * z);
+    ctx2.fillStyle = color;
+    ctx2.fillRect(p.x - w / 2, p.y, w * Math.max(0, Math.min(1, frac)), 2 * z);
+  }
+  /** The cluster whose flag is under the screen point, if any. */
+  flagAt(px, py) {
+    for (const f of this.flags) if (px >= f.x && px <= f.x + f.w && py >= f.y && py <= f.y + f.h) return f.ids;
+    return null;
+  }
+  /** A small flag over each cluster of soldiers: how many are left, how well they are, and which arm and squad they are. */
+  drawClusters(selected) {
+    const { ctx: ctx2, cam: cam2, sim: sim2 } = this, z = cam2.zoom, N = sim2.world.size;
+    this.flags = [];
+    if (!sim2.squads.length && !sim2.battle.on) return;
+    const ARM = { foot: "#d9a441", archer: "#5aa0d9", cavalry: "#c05ad9" };
+    const ARM_LETTER = { foot: "B", archer: "C", cavalry: "K" };
+    ctx2.font = `700 ${Math.max(10, 5 * z)}px system-ui, sans-serif`;
+    ctx2.textAlign = "center";
+    for (const c of sim2.clusters()) {
+      if (c.side !== "player" && sim2.fog.state[Math.floor(c.y) * N + Math.floor(c.x)] !== 2) continue;
+      const p = this.worldToScreen(c.x * TILE, c.y * TILE - 38), w = 30 * z * 0.7, h2 = 11 * z * 0.7, x = Math.round(p.x - w / 2), y = Math.round(p.y - h2);
+      const chosen = c.ids.some((id) => selected.has(id));
+      ctx2.fillStyle = c.color;
+      ctx2.globalAlpha = 0.92;
+      ctx2.fillRect(x, y, w, h2);
+      ctx2.globalAlpha = 1;
+      ctx2.strokeStyle = chosen ? "#ffffff" : ARM[c.arm];
+      ctx2.lineWidth = chosen ? 2 : 1.5;
+      ctx2.strokeRect(x + 0.5, y + 0.5, w, h2);
+      ctx2.fillStyle = "#ffffff";
+      ctx2.fillText(`${ARM_LETTER[c.arm]} ${c.n}`, p.x, y + h2 * 0.78);
+      ctx2.fillStyle = "rgba(0,0,0,.55)";
+      ctx2.fillRect(x, y + h2 + 1, w, 3);
+      ctx2.fillStyle = c.hp > 0.5 ? "#6ac24a" : c.hp > 0.25 ? "#e0b43c" : "#d9503c";
+      ctx2.fillRect(x, y + h2 + 1, w * Math.max(0, Math.min(1, c.hp)), 3);
+      this.flags.push({ ids: c.ids, x, y, w, h: h2 + 4 });
+    }
+  }
+  draw(time, selected, box, markers, ghost = null, selBuilding = null, inspect = null) {
+    const { ctx: ctx2, cam: cam2, sim: sim2 } = this, z = cam2.zoom, world = sim2.world, N = world.size, sp = this.sprites;
+    ctx2.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx2.imageSmoothingEnabled = false;
+    ctx2.fillStyle = "#0b0d16";
+    ctx2.fillRect(0, 0, this.w, this.h);
+    const cx = Math.round(cam2.x), cy = Math.round(cam2.y), ts = TILE * z, nat = sp.nature(sim2.season);
+    const i0 = Math.max(0, Math.floor(cx / TILE)), j0 = Math.max(0, Math.floor(cy / TILE));
+    const i1 = Math.min(N - 1, Math.floor((cx + this.w / z) / TILE)), j1 = Math.min(N - 1, Math.floor((cy + this.h / z) / TILE));
+    const px = (i) => (i * TILE - cx) * z, py = (j) => (j * TILE - cy) * z;
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const t = world.at(i, j), r = hash2(i, j, 11);
+        let img;
+        if (t === Tile.Water) {
+          const w = nat.water[Math.floor(r * nat.water.length)];
+          img = w.frames[Math.floor(time * w.fps + hash2(i >> 2, j >> 2, 5) * 4) % w.frames.length];
+        } else if (t === Tile.Mud) img = nat.mud[Math.floor(r * nat.mud.length)];
+        else img = nat.grass[Math.floor(r * nat.grass.length)];
+        ctx2.drawImage(img, px(i), py(j), ts, ts);
+      }
+    }
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      if (!world.decor[j * N + i]) continue;
+      this.prop(nat.stump[Math.floor(hash2(i, j, 31) * nat.stump.length)], i * TILE + 16, j * TILE + 26, time);
+    }
+    const trees = nat.trees;
+    const list = [];
+    for (let j = j0; j <= Math.min(N - 1, j1 + 2); j++) {
+      for (let i = Math.max(0, i0 - 1); i <= Math.min(N - 1, i1 + 1); i++) {
+        const t = world.at(i, j);
+        if (t === Tile.Tree) list.push({ y: j * TILE + 28, kind: "tree", i, j });
+        else if (t === Tile.Rock) list.push({ y: j * TILE + 28, kind: "rock", i, j });
+        else if (t === Tile.Bush) list.push({ y: j * TILE + 28, kind: "bush", i, j });
+      }
+    }
+    const vx0 = cx - 128, vx1 = cx + this.w / z + 128, vy0 = cy - 128, vy1 = cy + this.h / z + 128;
+    for (const b of sim2.buildings) {
+      const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
+      if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
+      list.push({ y: ay, kind: "building", i: 0, j: 0, b });
+    }
+    const figs = this.reduceFigures ? sim2.drawnFigures() : null;
+    for (const v of sim2.villagers) if (v.inside === null && (!figs || v.job !== "fight" || figs.has(v.id))) list.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
+    const seen = (x, y) => sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
+    for (const f of sim2.foes) if (seen(f.x, f.y) && (!figs || f.ai?.role === "civ" || figs.has(f.id))) list.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
+    for (const a of sim2.animals) if (seen(a.x, a.y)) list.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
+    for (const t of sim2.tribes) if (t.state !== "adopted" && sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: "camp", i: 0, j: 0, t });
+    list.sort((a, b) => a.y - b.y);
+    for (const d of list) {
+      if (d.kind === "tree") {
+        const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
+        this.prop(p, d.i * TILE + 16, d.y, time);
+      } else if (d.kind === "rock") {
+        this.prop(nat.rocks[Math.floor(hash2(d.i, d.j, 22) * nat.rocks.length)], d.i * TILE + 16, d.y, time);
+      } else if (d.kind === "bush") {
+        const n = world.nodeAt(d.i, d.j), k = Math.floor(hash2(d.i, d.j, 23) * nat.bush.length);
+        this.prop((n && n.amount === 0 ? nat.bushEmpty : nat.bush)[k], d.i * TILE + 16, d.y, time);
+      } else if (d.kind === "building" && d.b) {
+        const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
+        this.prop(this.buildingProp(b), ax, ay, time);
+        const emblem = b.done ? sp.emblems[b.kind] : void 0;
+        if (emblem) {
+          const p = this.worldToScreen(ax, ay - 52);
+          ctx2.drawImage(emblem, Math.round(p.x - 8 * z), Math.round(p.y), 16 * z, 16 * z);
+        }
+        if (!b.done || b.upgrading) {
+          const p = this.worldToScreen(ax, ay), w = 40 * z;
+          ctx2.fillStyle = "rgba(20,14,8,.7)";
+          ctx2.fillRect(p.x - w / 2, p.y - 4 * z, w, 5 * z);
+          ctx2.fillStyle = "#e0a23c";
+          ctx2.fillRect(p.x - w / 2 + z, p.y - 3 * z, (w - 2 * z) * b.progress, 3 * z);
+        }
+      } else if (d.kind === "animal" && d.a) {
+        const a = d.a, box2 = sp.animalBox(a.species), s = sp.animal(a), fx = a.x * TILE, fy = a.y * TILE;
+        const fade = a.state === "dead" ? Math.min(1, a.carcass / 10) : 1;
+        if (a.state !== "dead") {
+          ctx2.fillStyle = "rgba(0,0,0,.22)";
+          ctx2.beginPath();
+          ctx2.ellipse(Math.round((fx - cx) * z), Math.round((fy - cy) * z), box2.w * 0.3 * z, box2.h * 0.1 * z, 0, 0, Math.PI * 2);
+          ctx2.fill();
+        }
+        const prev = ctx2.globalAlpha;
+        ctx2.globalAlpha = fade;
+        ctx2.drawImage(s, Math.round((fx - box2.ax - cx) * z), Math.round((fy - box2.ay - cy) * z), s.width * z, s.height * z);
+        ctx2.globalAlpha = prev;
+        if (a.state !== "dead" && a.hp < a.maxHp) this.bar(fx, fy - box2.ay - 2, a.hp / a.maxHp, "#d9534f");
+      } else if (d.kind === "camp" && d.t) {
+        const t = d.t, sp0 = this.sprites;
+        for (const p of t.props) {
+          if (p.kind === "fire") {
+            if (t.state === "destroyed") continue;
+            const [ax, ay] = this.buildingAnchor("campfire", p.x, p.y);
+            this.prop(sp0.building("campfire", "stone", 1, 4), ax, ay, time);
+          } else {
+            const [ax, ay] = this.buildingAnchor("storage", p.x, p.y);
+            this.prop(sp0.building("storage", "stone", 1, 4), ax, ay, time, t.state === "destroyed" ? 0.5 : 1);
+          }
+        }
+      } else if (d.v) {
+        const s = sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
+        if (d.v.phase === "sleep" || d.v.phase === "down") {
+          ctx2.save();
+          ctx2.translate(Math.round((fx + 16 - cx) * z), Math.round((fy - 2 - cy) * z));
+          ctx2.rotate(-Math.PI / 2);
+          ctx2.drawImage(s, -SPRITE_FEET.x * z, -SPRITE_FEET.y * z, s.width * z, s.height * z);
+          ctx2.restore();
+        } else ctx2.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
+        const v = d.v;
+        if (v.team === "player" && (v.job === "fight" || v.job === "hunt") && v.phase !== "flee" && v.phase !== "sleep" && v.phase !== "down") {
+          const p = this.worldToScreen(fx, fy - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
+          ctx2.fillStyle = "rgba(20,14,8,.85)";
+          ctx2.fillRect(p.x - 3 * u, p.y - 4 * u, 6 * u, 7 * u);
+          ctx2.fillStyle = v.job === "fight" ? "#d9534f" : "#e0a23c";
+          ctx2.fillRect(p.x - 2 * u, p.y - 3 * u, 4 * u, 4 * u);
+          ctx2.fillRect(p.x - u, p.y + u, 2 * u, u);
+        }
+        if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - 46, v.health / v.maxHealth, v.team === "player" ? "#6bbf59" : "#d9534f");
+        if (v.down > 0) {
+          ctx2.fillStyle = "#ffd27a";
+          ctx2.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`;
+          ctx2.textAlign = "center";
+          const p = this.worldToScreen(fx, fy - 30);
+          ctx2.fillText(gameDays(v.down), p.x, p.y);
+        }
+        if (v.phase === "flee") {
+          ctx2.fillStyle = "#fff6e8";
+          ctx2.font = `700 ${Math.max(12, 7 * z)}px system-ui, sans-serif`;
+          ctx2.textAlign = "center";
+          const p = this.worldToScreen(fx, fy - 50);
+          ctx2.fillText("!", p.x, p.y);
+        }
+      }
+    }
+    const dark = sim2.darkness;
+    if (dark > 0.01 && dark < 0.99) {
+      ctx2.fillStyle = `rgba(255,128,60,${(0.16 * Math.sin(Math.PI * dark)).toFixed(3)})`;
+      ctx2.fillRect(0, 0, this.w, this.h);
+    }
+    if (dark > 0.01) {
+      ctx2.fillStyle = `rgba(14,20,56,${(0.46 * dark).toFixed(3)})`;
+      ctx2.fillRect(0, 0, this.w, this.h);
+      ctx2.globalCompositeOperation = "lighter";
+      for (const b of sim2.buildings) {
+        if (b.kind !== "campfire") continue;
+        const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 14), rad3 = 120 * z;
+        const g2 = ctx2.createRadialGradient(p.x, p.y, 4 * z, p.x, p.y, rad3);
+        g2.addColorStop(0, `rgba(255,170,70,${(0.5 * dark).toFixed(3)})`);
+        g2.addColorStop(1, "rgba(255,170,70,0)");
+        ctx2.fillStyle = g2;
+        ctx2.fillRect(p.x - rad3, p.y - rad3, rad3 * 2, rad3 * 2);
+      }
+      for (const v of sim2.villagers) {
+        if (!v.lit) continue;
+        const p = this.worldToScreen(v.x * TILE - 8, v.y * TILE - 22), rad3 = 52 * z, flick = 0.92 + 0.08 * Math.sin(time * 9 + v.id);
+        const g2 = ctx2.createRadialGradient(p.x, p.y, 2 * z, p.x, p.y, rad3);
+        g2.addColorStop(0, `rgba(255,176,80,${(0.42 * dark * flick).toFixed(3)})`);
+        g2.addColorStop(1, "rgba(255,176,80,0)");
+        ctx2.fillStyle = g2;
+        ctx2.fillRect(p.x - rad3, p.y - rad3, rad3 * 2, rad3 * 2);
+      }
+      ctx2.globalCompositeOperation = "source-over";
+    }
+    this.updateFog();
+    const fi0 = Math.max(0, i0 - 1), fj0 = Math.max(0, j0 - 1), fi1 = Math.min(N, i1 + 2), fj1 = Math.min(N, j1 + 2);
+    ctx2.imageSmoothingEnabled = true;
+    ctx2.drawImage(this.fogCanvas, fi0, fj0, fi1 - fi0, fj1 - fj0, px(fi0), py(fj0), (fi1 - fi0) * ts, (fj1 - fj0) * ts);
+    ctx2.imageSmoothingEnabled = false;
+    this.drawWeather(time);
+    ctx2.font = `700 ${Math.max(10, 5 * z)}px system-ui, sans-serif`;
+    ctx2.textAlign = "center";
+    for (const v of sim2.villagers) {
+      if (v.phase !== "sleep") continue;
+      const p = this.worldToScreen(v.x * TILE - 10, v.y * TILE - 14), k = (time * 0.6 + v.id * 0.37) % 1;
+      ctx2.fillStyle = `rgba(235,240,255,${(0.9 * (1 - k)).toFixed(2)})`;
+      ctx2.fillText("z", p.x + k * 6 * z, p.y - k * 10 * z);
+    }
+    if (ghost) {
+      const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
+      this.prop(sp.building(ghost.kind, ghost.era ?? sim2.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
+      ctx2.fillStyle = ghost.ok ? "rgba(90,200,90,.38)" : "rgba(220,70,60,.42)";
+      ctx2.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
+      ctx2.strokeStyle = ghost.ok ? "#bff0b0" : "#ffb4a8";
+      ctx2.lineWidth = 2;
+      ctx2.strokeRect(px(ghost.x) + 1, py(ghost.y) + 1, d.w * ts - 2, d.h * ts - 2);
+    }
+    for (const m of sim2.projectiles) {
+      const p = this.worldToScreen(m.x * TILE, m.y * TILE), dx = m.tx - m.x, dy = m.ty - m.y, d = Math.hypot(dx, dy) || 1;
+      ctx2.strokeStyle = m.kind === "arrow" ? "#e8d6a8" : "#c9ced1";
+      ctx2.fillStyle = ctx2.strokeStyle;
+      ctx2.lineWidth = Math.max(1, z);
+      if (m.kind === "arrow") {
+        ctx2.beginPath();
+        ctx2.moveTo(p.x, p.y);
+        ctx2.lineTo(p.x - dx / d * 7 * z, p.y - dy / d * 7 * z);
+        ctx2.stroke();
+      } else {
+        ctx2.beginPath();
+        ctx2.arc(p.x, p.y, 1.6 * z, 0, Math.PI * 2);
+        ctx2.fill();
+      }
+    }
+    if (inspect) {
+      const e = inspect.kind === "unit" ? sim2.get(inspect.id) : sim2.animalById.get(inspect.id);
+      if (e) {
+        const p = this.worldToScreen(e.x * TILE, e.y * TILE);
+        ctx2.strokeStyle = "#ff8a7a";
+        ctx2.lineWidth = 2;
+        ctx2.beginPath();
+        ctx2.ellipse(p.x, p.y + z, 11 * z, 5 * z, 0, 0, Math.PI * 2);
+        ctx2.stroke();
+      }
+    }
+    const sb = selBuilding === null ? void 0 : sim2.getBuilding(selBuilding);
+    if (sb) {
+      const d = BUILDINGS[sb.kind];
+      ctx2.strokeStyle = "#f5e7c4";
+      ctx2.lineWidth = 2;
+      ctx2.setLineDash([6, 4]);
+      ctx2.strokeRect(px(sb.x) + 1, py(sb.y) + 1, d.w * ts - 2, d.h * ts - 2);
+      ctx2.setLineDash([]);
+    }
+    for (const m of markers) {
+      const p = this.worldToScreen(m.x, m.y), k = 1 - m.age / 0.9;
+      ctx2.strokeStyle = `rgba(255,246,232,${Math.max(0, k)})`;
+      ctx2.lineWidth = 2;
+      ctx2.beginPath();
+      ctx2.ellipse(p.x, p.y, (6 + m.age * 14) * z / 2, (3 + m.age * 7) * z / 2, 0, 0, Math.PI * 2);
+      ctx2.stroke();
+    }
+    for (const v of sim2.villagers) {
+      if (!selected.has(v.id)) continue;
+      const p = this.worldToScreen(v.x * TILE, v.y * TILE);
+      ctx2.strokeStyle = "#f5e7c4";
+      ctx2.lineWidth = 2;
+      ctx2.beginPath();
+      ctx2.ellipse(p.x, p.y + 1 * z, 11 * z, 5 * z, 0, 0, Math.PI * 2);
+      ctx2.stroke();
+      ctx2.fillStyle = "#f5e7c4";
+      ctx2.font = `600 ${Math.max(11, 6 * z)}px system-ui, sans-serif`;
+      ctx2.textAlign = "center";
+      ctx2.fillText(v.name, p.x, p.y - 44 * z);
+    }
+    this.drawClusters(selected);
+    if (box) {
+      const x = Math.min(box.x0, box.x1), y = Math.min(box.y0, box.y1), w = Math.abs(box.x1 - box.x0), h2 = Math.abs(box.y1 - box.y0);
+      ctx2.fillStyle = "rgba(245,231,196,.14)";
+      ctx2.fillRect(x, y, w, h2);
+      ctx2.strokeStyle = "#f5e7c4";
+      ctx2.lineWidth = 1;
+      ctx2.strokeRect(x + 0.5, y + 0.5, w, h2);
+    }
+  }
+};
+
+// src/data/seasons.json
+var seasons_default = {
+  spring: { name: "Xu\xE2n", daylight: 0.6, work: 1, gather: 0.8, farm: 0.9, enter: "M\xF9a xu\xE2n \u0111\u1EBFn: b\u1EE5i c\xE2y ra hoa, v\xE0i h\xF4m n\u1EEFa s\u1EBD c\xF3 qu\u1EA3. Hay m\u01B0a." },
+  summer: { name: "H\u1EA1", daylight: 0.6, work: 1.05, gather: 1.2, farm: 1.2, enter: "M\xF9a h\u1EA1: ng\xE0y d\xE0i h\u01A1n, qu\u1EA3 ch\xEDn nhi\u1EC1u. Coi ch\u1EEBng gi\xF4ng s\xE9t." },
+  autumn: { name: "Thu", daylight: 0.6, work: 1, gather: 1.4, farm: 1.4, enter: "M\xF9a thu: qu\u1EA3 nhi\u1EC1u nh\u1EA5t n\u0103m. M\xF9a \u0111\xF4ng s\u1EAFp t\u1EDBi, h\xE3y chu\u1EA9n b\u1ECB." },
+  winter: { name: "\u0110\xF4ng", daylight: 0.6, work: 0.8, gather: 0, farm: 0.25, enter: "M\xF9a \u0111\xF4ng: b\u1EE5i qu\u1EA3 tr\u1EE5i h\u1EBFt, ng\xE0y ng\u1EAFn l\u1EA1i. S\u1ED1ng b\u1EB1ng th\u1EE9c \u0103n \u0111\xE3 t\xEDch tr\u1EEF." }
+};
+
+// src/data/weather.json
+var weather_default = {
+  types: {
+    clear: { name: "N\u1EAFng", vision: 0, speed: 1, work: 1, bow: 1, signal: "" },
+    mist: { name: "S\u01B0\u01A1ng m\u1ECFng", vision: 2, speed: 1, work: 0.95, bow: 1, signal: "H\u01A1i n\u01B0\u1EDBc b\u1ED1c l\xEAn t\u1EEB \u0111\u1EA5t, s\xE1ng mai c\xF3 l\u1EBD s\u1EBD c\xF3 s\u01B0\u01A1ng." },
+    drizzle: { name: "M\u01B0a nh\u1EB9", vision: 0, speed: 0.9, work: 0.85, bow: 0.85, signal: "M\xE2y x\xE1m k\xE9o t\u1EDBi, c\xF3 l\u1EBD ng\xE0y mai m\u01B0a." },
+    rain: { name: "M\u01B0a to", vision: 1, speed: 0.75, work: 0.7, bow: 0.7, signal: "Tr\u1EDDi t\u1ED1i s\u1EA7m, gi\xF3 \u1EA9m n\u1ED5i l\xEAn: ng\xE0y mai m\u01B0a to." },
+    thunder: { name: "Gi\xF4ng s\xE9t", vision: 3, speed: 0.85, work: 0.6, bow: 0.7, signal: "Kh\xF4ng kh\xED oi n\u1ED3ng, m\xE2y d\u1EF1ng th\xE0nh th\xE1p: s\u1EAFp c\xF3 gi\xF4ng." },
+    storm: { name: "B\xE3o", vision: 4, speed: 0.7, work: 0.45, bow: 0.5, signal: "Gi\xF3 gi\u1EADt m\u1EA1nh, chim bay t\xE1n lo\u1EA1n: b\xE3o \u0111ang t\u1EDBi." },
+    snow: { name: "Tuy\u1EBFt", vision: 1, speed: 0.75, work: 0.6, bow: 0.85, signal: "Gi\xF3 l\u1EA1nh bu\u1ED1t th\u1ED5i v\u1EC1, c\xF3 l\u1EBD s\u1EAFp c\xF3 tuy\u1EBFt." }
+  },
+  chance: {
+    spring: { clear: 0.45, mist: 0.15, drizzle: 0.25, rain: 0.15 },
+    summer: { clear: 0.6, rain: 0.15, thunder: 0.15, storm: 0.1 },
+    autumn: { clear: 0.45, mist: 0.2, drizzle: 0.2, storm: 0.15 },
+    winter: { clear: 0.5, mist: 0.1, snow: 0.4 }
+  }
+};
+
+// src/sim/calendar.ts
+var SEASONS = ["spring", "summer", "autumn", "winter"];
+var SEASON_DAYS = 5;
+var YEAR_DAYS = SEASON_DAYS * SEASONS.length;
+var SEASON_DEF = seasons_default;
+var WEATHER = weather_default.types;
+var CHANCE = weather_default.chance;
+var TWILIGHT = 0.05;
+var seasonOf = (day) => SEASONS[Math.floor((day - 1) / SEASON_DAYS) % SEASONS.length];
+function sunTimes(season) {
+  const d = SEASON_DEF[season].daylight;
+  return { rise: 0.5 - d / 2, set: 0.5 + d / 2 };
+}
+function lightAt(tod, season) {
+  const { rise, set } = sunTimes(season);
+  if (tod >= rise && tod <= set) return 1;
+  if (tod > set) return Math.max(0, 1 - (tod - set) / TWILIGHT);
+  return Math.max(0, 1 - (rise - tod) / TWILIGHT);
+}
+function dayPart(tod, season) {
+  const { rise, set } = sunTimes(season);
+  if (tod >= rise && tod <= set) return "day";
+  if (tod > set && tod < set + TWILIGHT) return "dusk";
+  if (tod < rise && tod > rise - TWILIGHT) return "dawn";
+  return "night";
+}
+function isRestTime(tod, season) {
+  const { rise, set } = sunTimes(season);
+  return tod > set + TWILIGHT / 2 || tod < rise - TWILIGHT / 2;
+}
+function rollWeather(season, r) {
+  const table = CHANCE[season];
+  let acc = 0, last = "clear";
+  for (const k of Object.keys(table)) {
+    acc += table[k] ?? 0;
+    last = k;
+    if (r < acc) return k;
+  }
+  return last;
+}
+
+// src/sim/fog.ts
+var Fog = class {
+  constructor(world) {
+    this.world = world;
+    this.version = 0;
+    this.state = new Uint8Array(world.size * world.size);
+  }
+  /** Each source has its own sight radius `r` (tiles). */
+  update(sources) {
+    const N = this.world.size, s = this.state;
+    for (let i = 0; i < s.length; i++) if (s[i] === 2) s[i] = 1;
+    for (const p of sources) {
+      const cx = Math.floor(p.x), cy = Math.floor(p.y), radius = p.r, r2 = radius * radius + 0.5;
+      for (let y = Math.max(0, cy - radius); y <= Math.min(N - 1, cy + radius); y++) {
+        for (let x = Math.max(0, cx - radius); x <= Math.min(N - 1, cx + radius); x++) {
+          if ((x - cx) ** 2 + (y - cy) ** 2 <= r2) s[y * N + x] = 2;
+        }
+      }
+    }
+    this.version++;
+  }
+  countExplored() {
+    let n = 0;
+    for (let i = 0; i < this.state.length; i++) if (this.state[i] > 0) n++;
+    return n;
+  }
+};
+
+// src/sim/resources.ts
+var RES_LIST = ["food", "wood", "stone", "hide", "bone", "fat", "feather", "tusk", "coin"];
+var CURRENCY = { stone: "V\u1ECF s\xF2", ancient: "\u0110\u1ED3ng xu" };
+var RES_NAME = { wood: "G\u1ED7", stone: "\u0110\xE1", food: "Th\u1EE9c \u0103n", hide: "Da", bone: "X\u01B0\u01A1ng", fat: "M\u1EE1", feather: "L\xF4ng v\u0169", tusk: "Ng\xE0", coin: CURRENCY.stone };
+var BARTER = { food: 10, wood: 5, stone: 5, hide: 2, bone: 4, fat: 4, feather: 10, tusk: 1 };
+var emptyStock = () => ({ wood: 0, stone: 0, food: 0, hide: 0, bone: 0, fat: 0, feather: 0, tusk: 0, coin: 0 });
+var CARRY_CAP = { wood: 4, stone: 4, food: 10, hide: 10, bone: 6, fat: 6, feather: 10, tusk: 2, coin: 0 };
+var FOOD_NUTRITION = 20;
+var FOOD_SPOIL_DAYS = 3;
+
+// src/data/animals.json
+var animals_default = {
+  _note: "zone = map ring 1..4 (each 24 tiles from the campfire). speed in tiles/s. flee: distance that makes it run. aggro: distance at which a predator starts hunting. herd: [min,max] group size. habitat water = lives in water tiles. Art lives in animals/bodies.json. drops: other materials the body gives when skinned (bone, fat, feather, tusk), on top of meat (becomes food) and hide. A species is just a key here plus an entry in bodies.json; the list below is in spawn order.",
+  rabbit: { name: "Th\u1ECF", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2.2, flee: 6, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 2], count: 36, prey: true, nocturnal: false },
+  fowl: { name: "G\xE0 r\u1EEBng", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2, flee: 5, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 3], count: 20, prey: true, nocturnal: false, drops: { feather: 2 } },
+  deer: { name: "H\u01B0\u01A1u", hp: 60, damage: 4, type: "crush", cycle: 1.6, range: 1, speed: 2.6, flee: 7, aggro: 0, meat: 20, hide: 3, zones: [1, 3], herd: [3, 5], count: 18, prey: true, nocturnal: false, cornered: true, drops: { bone: 2, fat: 2 } },
+  boar: { name: "L\u1EE3n r\u1EEBng", hp: 90, damage: 10, type: "pierce", cycle: 1.5, range: 1, speed: 2.1, flee: 0, aggro: 0, meat: 25, hide: 3, zones: [1, 3], herd: [1, 2], count: 8, prey: true, nocturnal: false, defends: true, drops: { bone: 2, fat: 4 } },
+  wolf: { name: "S\xF3i", hp: 55, damage: 7, type: "slash", cycle: 1.2, range: 1, speed: 2.9, flee: 0, aggro: 9, meat: 8, hide: 2, zones: [2, 3], herd: [4, 6], count: 12, prey: false, nocturnal: true, fearsFire: 5, drops: { bone: 2 } },
+  fish: { name: "C\xE1", hp: 1, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.4, flee: 3, aggro: 0, meat: 3, hide: 0, zones: [1, 3], herd: [3, 6], count: 36, prey: true, nocturnal: false, habitat: "water" },
+  aurochs: { name: "B\xF2 r\u1EEBng", hp: 130, damage: 12, type: "crush", cycle: 1.8, range: 1, speed: 2, flee: 0, aggro: 0, meat: 45, hide: 6, drops: { bone: 3, fat: 4 }, zones: [1, 3], herd: [2, 4], count: 6, prey: true, nocturnal: false, defends: true },
+  duck: { name: "V\u1ECBt tr\u1EDDi", hp: 8, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.9, flee: 5, aggro: 0, meat: 3, hide: 0, drops: { feather: 2 }, zones: [1, 2], herd: [2, 4], count: 14, prey: true, nocturnal: false },
+  fox: { name: "C\xE1o", hp: 25, damage: 4, type: "pierce", cycle: 1, range: 1, speed: 2.8, flee: 0, aggro: 4, meat: 4, hide: 1, zones: [2, 3], herd: [1, 1], count: 8, prey: false, nocturnal: true, fearsFire: 4 },
+  ibex: { name: "D\xEA n\xFAi", hp: 50, damage: 5, type: "crush", cycle: 1.5, range: 1, speed: 3, flee: 9, aggro: 0, meat: 14, hide: 2, drops: { bone: 2 }, zones: [2, 4], herd: [3, 5], count: 10, prey: true, nocturnal: false, cornered: true },
+  elk: { name: "Nai s\u1EEBng t\u1EA5m", hp: 160, damage: 10, type: "crush", cycle: 1.8, range: 1, speed: 2.4, flee: 0, aggro: 0, meat: 55, hide: 7, drops: { bone: 4, fat: 5 }, zones: [2, 3], herd: [1, 3], count: 6, prey: true, nocturnal: false, defends: true },
+  bear: { name: "G\u1EA5u n\xE2u", hp: 240, damage: 20, type: "slash", cycle: 1.9, range: 1, speed: 2.2, flee: 0, aggro: 6, meat: 45, hide: 9, drops: { bone: 5, fat: 10 }, zones: [3, 4], herd: [1, 1], count: 4, prey: false, nocturnal: false },
+  lion: { name: "S\u01B0 t\u1EED hang", hp: 130, damage: 16, type: "slash", cycle: 1.3, range: 1, speed: 3.3, flee: 0, aggro: 11, meat: 28, hide: 6, drops: { bone: 3, fat: 3 }, zones: [3, 4], herd: [1, 3], count: 5, prey: false, nocturnal: true, fearsFire: 6 },
+  mammoth: { name: "Voi ma m\xFAt", hp: 450, damage: 28, type: "crush", cycle: 2.6, range: 1, speed: 1.5, flee: 0, aggro: 0, meat: 120, hide: 16, drops: { bone: 14, fat: 24, tusk: 2 }, zones: [3, 4], herd: [2, 3], count: 6, prey: true, nocturnal: false, defends: true },
+  pike: { name: "C\xE1 ch\xF3", hp: 2, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.8, flee: 4, aggro: 0, meat: 6, hide: 0, drops: { bone: 1 }, zones: [1, 3], herd: [1, 2], count: 16, prey: true, nocturnal: false, habitat: "water" },
+  behaviour: {
+    fleeBurst: 8,
+    tiredSeconds: 6,
+    tiredSpeed: 0.5,
+    carcassSeconds: 90,
+    skinSeconds: 3,
+    breedMonth: "spring",
+    breedMinFemales: 2,
+    breedChance: 0.35,
+    regionRadius: 28
+  }
+};
+
+// src/data/tribes.json
+var tribes_default = {
+  _note: "distance = tiles from the player's campfire (map is 192 wide, so zone ring = 24 tiles). Strength multiplier = 0.8 + 0.06 * (ring - 1), ring = ceil(distance / 4.8). reward is shown to the player; techs come in M5.",
+  spring: {
+    name: "Su\u1ED1i Ngu\u1ED3n",
+    personality: "peaceful",
+    angle: 200,
+    distance: 30,
+    civilians: 8,
+    warriors: 4,
+    weapons: ["club", "spear"],
+    armor: false,
+    look: { hide: "#7a8a4a", pants: "#4a6a8a" },
+    relation: 0,
+    reward: "D\u1EC5 giao th\u01B0\u01A1ng v\xE0 thu n\u1EA1p; h\u1ECDc T4 B\u1EC7n s\u1EE3i",
+    tribute: { food: 12, wood: 6, coin: 3 }
+  },
+  axe: {
+    name: "R\xECu \u0110\xE1",
+    personality: "aggressive",
+    angle: 320,
+    distance: 45,
+    civilians: 15,
+    warriors: 10,
+    weapons: ["hatchet", "mace"],
+    armor: true,
+    look: { hide: "#8a3a24", pants: "#6a2a1a" },
+    relation: -20,
+    reward: "L\xEDnh ch\xF9y, b\xED quy\u1EBFt ch\u1EBF ch\xF9y \u0111\xE1",
+    tribute: { stone: 10, food: 10, coin: 4 }
+  },
+  swamp: {
+    name: "\u0110\u1EA7m L\u1EA7y",
+    personality: "ambusher",
+    angle: 80,
+    distance: 55,
+    civilians: 12,
+    warriors: 8,
+    weapons: ["sling", "club"],
+    armor: false,
+    look: { hide: "#5a6a50", pants: "#3a4a3a" },
+    relation: -10,
+    reward: "\u0110\u1EA5t s\xE9t, s\u1EE3i; h\u1ECDc T5 D\xE2y qu\u0103ng \u0111\xE1",
+    tribute: { food: 10, wood: 10, coin: 3 }
+  },
+  relation: {
+    labels: [[-100, "Th\xF9 \u0111\u1ECBch"], [-40, "Trung l\u1EADp"], [20, "Th\xE2n thi\u1EC7n"], [60, "C\u1ED1ng n\u1EA1p"], [90, "Thu ph\u1EE5c"]],
+    giftFood: 10,
+    giftGain: 5,
+    killWarrior: -10,
+    killCivilian: -25,
+    attackedPeaceful: -30,
+    tributeAt: 60,
+    joinAt: 90
+  },
+  surrender: { leaderDown: true, holdCampSeconds: 30, moraleBelow: 10 },
+  morale: {
+    start: 70,
+    flee: 25,
+    fleeRecover: 45,
+    surrender: 10,
+    allyDeath: -15,
+    outnumbered: -0.8,
+    outnumbering: 0.5,
+    nearHome: 0.5,
+    night: -0.3,
+    leaderNear: 0.3,
+    leaderFar: -0.2,
+    winBonus: 20,
+    backstab: -5,
+    calm: 0.1
+  }
+};
+
+// src/data/weapons.json
+var weapons_default = {
+  _note: 'type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor. cost/time/tier only for what the player can craft; others are used by tribes. style: which set of fighting animations the weapon uses (see "styles"); anims overrides single states for one weapon; projectile: what a ranged weapon fires.',
+  styles: {
+    fist: { name: "Tay kh\xF4ng", idle: "idle", walk: "walk", guard: "fist_guard", charge: "fist_charge", attack: "fist_attack" },
+    swing: { name: "Vung, ch\xE9m, \u0111\u1EADp (g\u1EADy, ch\xF9y, r\xECu, ki\u1EBFm)", idle: "swing_idle", walk: "swing_walk", guard: "swing_guard", charge: "swing_charge", attack: "swing_attack" },
+    thrust: { name: "\u0110\xE2m (gi\xE1o, th\u01B0\u01A1ng)", idle: "thrust_idle", walk: "thrust_walk", guard: "thrust_guard", charge: "thrust_charge", attack: "thrust_attack" },
+    shoot: { name: "B\u1EAFn (cung, n\u1ECF, s\xFAng)", idle: "shoot_idle", walk: "shoot_walk", guard: "shoot_guard", charge: "shoot_charge", attack: "shoot_attack" },
+    sling: { name: "Qu\u0103ng \u0111\xE1 (d\xE2y qu\u0103ng, n\xE1)", idle: "sling_idle", walk: "sling_walk", guard: "sling_guard", charge: "sling_charge", attack: "sling_attack" },
+    throw: { name: "N\xE9m (lao, ph\xF3ng lao)", idle: "throw_idle", walk: "throw_walk", guard: "throw_guard", charge: "throw_charge", attack: "throw_attack" }
+  },
+  weapons: {
+    fist: {
+      name: "Tay kh\xF4ng",
+      type: "crush",
+      range: 1,
+      damage: 2,
+      cycle: 1,
+      style: "fist"
+    },
+    club: {
+      name: "G\u1EADy g\u1ED7",
+      type: "crush",
+      range: 1,
+      damage: 4,
+      cycle: 1.2,
+      cost: {
+        wood: 1
+      },
+      durability: 120,
+      time: 40,
+      tier: 1,
+      style: "swing"
+    },
+    spear: {
+      name: "Gi\xE1o g\u1ED7",
+      type: "pierce",
+      range: 1.5,
+      damage: 7,
+      cycle: 1.4,
+      cost: {
+        wood: 2
+      },
+      durability: 100,
+      time: 60,
+      tier: 1,
+      style: "thrust"
+    },
+    mace: {
+      name: "Ch\xF9y \u0111\xE1",
+      type: "crush",
+      range: 1,
+      damage: 10,
+      cycle: 1.8,
+      cost: {
+        wood: 2,
+        stone: 2
+      },
+      durability: 160,
+      time: 120,
+      tier: 2,
+      style: "swing"
+    },
+    hatchet: {
+      name: "R\xECu \u0111\xE1",
+      type: "slash",
+      range: 1,
+      damage: 8,
+      cycle: 1.3,
+      style: "swing",
+      anims: { attack: "slash" },
+      tier: 2
+    },
+    sling: {
+      name: "D\xE2y qu\u0103ng \u0111\xE1",
+      type: "crush",
+      range: 5.5,
+      damage: 5,
+      cycle: 1.8,
+      ranged: true,
+      cost: { hide: 1, stone: 1 },
+      durability: 90,
+      time: 60,
+      style: "sling",
+      projectile: "stone",
+      tier: 1
+    },
+    bow: {
+      name: "Cung ng\u1EAFn",
+      type: "pierce",
+      range: 8,
+      damage: 8,
+      cycle: 2,
+      ranged: true,
+      cost: { wood: 3, hide: 1 },
+      durability: 110,
+      time: 100,
+      style: "shoot",
+      projectile: "arrow",
+      tier: 1
+    }
+  },
+  armor: {
+    hide: {
+      name: "\xC1o da th\xFA",
+      pierce: 0.1,
+      slash: 0.2,
+      crush: 0.1,
+      cost: {
+        hide: 3
+      },
+      durability: 200,
+      time: 100,
+      tier: 1
+    }
+  },
+  rules: {
+    backstab: 1.25,
+    strengthDamage: 0.6,
+    agilityBase: 1.3,
+    agilityStep: 0.04,
+    rangedHitNear: 0.9,
+    rangedHitFar: 0.7,
+    downedSeconds: 30,
+    rescueSeconds: 3,
+    rescueHp: 0.3
+  }
+};
+
+// src/sim/combat.ts
+var STYLES = weapons_default.styles;
+var WEAPONS = weapons_default.weapons;
+function poseOf(weapon, state) {
+  const w = weapon ? WEAPONS[weapon] : WEAPONS.fist;
+  return w?.anims?.[state] ?? STYLES[w?.style ?? "fist"]?.[state] ?? STYLES.fist[state];
+}
+for (const id of Object.keys(WEAPONS)) WEAPONS[id].anim = poseOf(id, "attack");
+var ARMORS = weapons_default.armor;
+var RULES = weapons_default.rules;
+var CRAFTED_WEAPONS = Object.keys(WEAPONS).filter((k) => WEAPONS[k].cost);
+var SPECIES = Object.keys(animals_default).filter((k) => !k.startsWith("_") && k !== "behaviour");
+var ANIMALS = Object.fromEntries(SPECIES.map((s) => [s, animals_default[s]]));
+var BEHAVIOUR = animals_default.behaviour;
+var TRIBE_IDS = ["spring", "axe", "swamp"];
+var TRIBES = Object.fromEntries(TRIBE_IDS.map((t) => [t, tribes_default[t]]));
+var RELATION = tribes_default.relation;
+var HOSTILE_BELOW = RELATION.labels[1][0];
+var SURRENDER = tribes_default.surrender;
+var MORALE = tribes_default.morale;
+function relationLabel(score) {
+  let name = RELATION.labels[0][1];
+  for (const [from, label] of RELATION.labels) if (score >= from) name = label;
+  return name;
+}
+var ringOf = (distance) => Math.max(1, Math.min(20, Math.ceil(distance / 4.8)));
+var zoneOf = (distance) => Math.max(1, Math.min(4, Math.ceil(distance / 24)));
+var ringPower = (ring) => 0.8 + 0.06 * (ring - 1);
+var maxHpOf = (vit) => 40 + 8 * vit;
+var cycleOf = (weaponCycle, agi) => weaponCycle * (RULES.agilityBase - RULES.agilityStep * agi);
+function damageOf(w, strength, armor, backstab) {
+  const base = w.damage + (w.ranged ? 0 : RULES.strengthDamage * strength);
+  return base * (1 - (armor ? armor[w.type] : 0)) * (backstab ? RULES.backstab : 1);
+}
+
+// src/data/units.json
+var units_default = {
+  _note: "Arms of the army and what beats what. A weapon decides its arm: ranged weapons (sling, bow) make an archer, everything else a foot soldier; a rider (cavalry) is a soldier on a tamed beast, which the game does not have yet but the table is ready for. beats[attacker][defender] multiplies the damage an attacker does. Foot beats archers, archers beat riders, riders beat foot. The small bonuses are on top of that.",
+  arms: {
+    foot: "B\u1ED9 binh",
+    archer: "Cung th\u1EE7",
+    cavalry: "K\u1EF5 th\xFA"
+  },
+  beats: {
+    foot: { foot: 1, archer: 1.5, cavalry: 0.67 },
+    archer: { foot: 0.67, archer: 1, cavalry: 1.5 },
+    cavalry: { foot: 1.5, archer: 0.67, cavalry: 1 }
+  },
+  spearVsCavalry: 1.15,
+  archerOnTower: { damage: 1.25, range: 2, within: 2.2 },
+  archerPressed: { within: 2, damage: 0.5 }
+};
+
+// src/data/formations.json
+var formations_default = {
+  _note: "Battle formations (tr\u1EADn ph\xE1p) and the numbers of command. dmg = damage the squad does, taken = damage it takes, speed = pace of the march; charge applies while a wedge runs at the foe, flank when a blow lands from behind, firstBlow to a foe who has not yet noticed the squad, takenRanged to arrows and stones. mastery 0-100 is trained at the B\xE3i t\u1EADp and scales a formation from min to max. cap is the most all tactical factors (arms, formation, tower, surprise, information) may multiply to. info = the factor for the best map level held of the enemy (0..3), infoCounter when level 3 and the right arm is used. A war tent level gives squadLimit squads and cardBase + cardPerLevel * level command cards.",
+  formations: {
+    line: { name: "H\xE0ng ngang", tech: "form_basic", dmg: 1, taken: 0.85, speed: 0.9, note: "Gi\u1EEF ch\u1ED7 th\u1EAFt ch\u1EAFc, ch\u1ED1ng k\u1EF5 \xD71,3; ch\u1EADm quay." },
+    circle: { name: "V\xF2ng tr\xF2n", tech: "form_basic", dmg: 0.85, taken: 0.8, speed: 0.7, note: "Kh\xF4ng c\xF3 h\u01B0\u1EDBng y\u1EBFu; ch\u1EADm, kh\xF4ng xung phong." },
+    wedge: { name: "M\u0169i nh\u1ECDn", tech: "form_wedge", dmg: 0.9, charge: 1.4, taken: 1.1, speed: 1.05, note: "Xung phong \xD71,4 khi \u0111ang lao v\xE0o \u0111\u1ECBch; hai c\xE1nh y\u1EBFu." },
+    horns: { name: "S\u1EEBng b\xF2", tech: "form_horns", dmg: 1, flank: 1.25, taken: 1.1, speed: 1, note: "\u0110\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng th\xEAm \xD71,25; gi\u1EEFa m\u1ECFng." },
+    scatter: { name: "R\u1EA3i qu\xE2n", tech: "form_scatter", dmg: 0.85, taken: 1, takenRanged: 0.6, speed: 1, note: "Gi\u1EA3m 40% thi\u1EC7t h\u1EA1i t\u1EEB cung; \u0111\xE1nh y\u1EBFu h\u01A1n." },
+    ambush: { name: "Ph\u1EE5c k\xEDch", tech: "form_ambush", dmg: 0.7, firstBlow: 2, taken: 1.15, speed: 0.9, note: "\u0110\xF2n \u0111\u1EA7u \xD72 v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt; l\u1ED9 ra th\xEC y\u1EBFu nh\u1EA5t." }
+  },
+  mastery: { min: 0.8, max: 1.15, start: 20, perSecond: 0.4, decayPerDay: 2, switchSeconds: 8, switchTaken: 1.3 },
+  cap: 3.5,
+  info: [0.95, 1, 1.1, 1.2],
+  infoCounter: 1.1,
+  squadLimit: [3, 4, 6],
+  cardBase: 4,
+  cardPerLevel: 2,
+  mapDecayPerDay: 0.1,
+  clusterSize: 10,
+  iconEvery: 3,
+  bigBattle: 24
+};
+
+// src/sim/formations.ts
+var OBJECTIVE_NAME = { camp: "\u0110\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD", gate: "\u0110\u01B0\u1EDDng v\xE0o l\xE0ng", ambush: "Ch\u1ED7 ph\u1EE5c k\xEDch", stores: "Kho l\u01B0\u01A1ng", leader: "Th\u1EE7 l\u0129nh" };
+var ARM_NAME = units_default.arms;
+var BEATS = units_default.beats;
+var UNIT_RULES = units_default;
+var armOfWeapon = (weapon) => WEAPONS[weapon ?? "fist"]?.ranged ? "archer" : "foot";
+function matchup(attacker, defender, weapon = null) {
+  return BEATS[attacker][defender] * (weapon === "spear" && defender === "cavalry" ? UNIT_RULES.spearVsCavalry : 1);
+}
+var FORMATION_IDS = Object.keys(formations_default.formations);
+var FORMATIONS = formations_default.formations;
+var COMMAND = formations_default;
+var masteryFactor = (mastery) => COMMAND.mastery.min + (COMMAND.mastery.max - COMMAND.mastery.min) * Math.max(0, Math.min(100, mastery)) / 100;
+var clampTactical = (x) => Math.max(1 / COMMAND.cap, Math.min(COMMAND.cap, x));
+function formationOffsets(kind, n) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    switch (kind) {
+      case "line": {
+        const cols = Math.ceil(n / 2);
+        out.push([-(i % 2) * 1.2, (Math.floor(i / 2) - (cols - 1) / 2) * 1.3]);
+        break;
+      }
+      case "wedge": {
+        let r = 0, k = i;
+        while (k > r) {
+          k -= r + 1;
+          r++;
+        }
+        out.push([-r * 1.1, (k - r / 2) * 1.4]);
+        break;
+      }
+      case "circle": {
+        const R2 = Math.max(1.6, n * 1.3 / (2 * Math.PI));
+        out.push([Math.cos(i / n * 2 * Math.PI) * R2, Math.sin(i / n * 2 * Math.PI) * R2]);
+        break;
+      }
+      case "horns": {
+        const arm = i % 3, k = Math.floor(i / 3) + 1;
+        out.push(arm === 0 ? [-1, (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.7] : [k * 0.8, (arm === 1 ? -1 : 1) * (2 + k * 0.9)]);
+        break;
+      }
+      case "scatter": {
+        const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
+        out.push([-Math.floor(i / cols) * 2.6, (i % cols - (cols - 1) / 2) * 2.6]);
+        break;
+      }
+      default: {
+        const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
+        out.push([-Math.floor(i / cols) * 1.5 + i % 2 * 0.4, (i % cols - (cols - 1) / 2) * 1.6]);
+      }
+    }
+  }
+  return out;
+}
+var placeOffset = (o, heading, cx, cy) => [cx + o[0] * Math.cos(heading) - o[1] * Math.sin(heading), cy + o[0] * Math.sin(heading) + o[1] * Math.cos(heading)];
+function clusterize(units, size = COMMAND.clusterSize) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const u of units) {
+    const k = `${u.key}|${u.arm}`;
+    (groups.get(k) ?? groups.set(k, []).get(k)).push(u);
+  }
+  const out = [];
+  for (const g2 of [...groups.values()].sort((a, b) => a[0].key + a[0].arm < b[0].key + b[0].arm ? -1 : 1)) {
+    g2.sort((a, b) => a.id - b.id);
+    for (let i = 0; i < g2.length; i += size) out.push({ key: g2[0].key, arm: g2[0].arm, ids: g2.slice(i, i + size).map((u) => u.id) });
+  }
+  return out;
+}
+var iconCount = (n) => Math.max(1, Math.ceil(n / COMMAND.iconEvery));
+
+// src/sim/fauna.ts
+var animalDef = (a) => ANIMALS[a.species];
+var isGround = (sim2, x, y) => {
+  if (!sim2.world.inBounds(x, y)) return false;
+  const t = sim2.world.at(x, y);
+  return (t === Tile.Grass || t === Tile.Mud) && !sim2.world.occ[y * sim2.world.size + x];
+};
+var isWater = (sim2, x, y) => sim2.world.inBounds(x, y) && sim2.world.at(x, y) === Tile.Water;
+var habitable = (sim2, def, x, y) => def.habitat === "water" ? isWater(sim2, x, y) : isGround(sim2, x, y);
+function populate(sim2) {
+  const N = sim2.world.size, s = sim2.world.start, rnd = sim2.frnd;
+  let herd = 1;
+  for (const sp of SPECIES) {
+    const def = ANIMALS[sp];
+    let made = 0, guard = 0;
+    while (made < def.count && guard++ < def.count * 60) {
+      const x = Math.floor(rnd() * N), y = Math.floor(rnd() * N), d = Math.hypot(x - s.x, y - s.y);
+      const z = zoneOf(d);
+      if (d < 16 && def.habitat !== "water" || z < def.zones[0] || z > def.zones[1] || !habitable(sim2, def, x, y)) continue;
+      const size = Math.min(def.count - made, def.herd[0] + Math.floor(rnd() * (def.herd[1] - def.herd[0] + 1)));
+      for (let i = 0; i < size; i++) {
+        const ax = x + (rnd() - 0.5) * 4, ay = y + (rnd() - 0.5) * 4;
+        if (!habitable(sim2, def, Math.floor(ax), Math.floor(ay))) continue;
+        spawnAnimal(sim2, sp, ax, ay, herd);
+        made++;
+      }
+      herd++;
+    }
+  }
+}
+function spawnAnimal(sim2, species, x, y, herd, raid = false) {
+  const def = ANIMALS[species];
+  const a = {
+    id: sim2.nextAid++,
+    species,
+    x,
+    y,
+    hp: def.hp,
+    maxHp: def.hp,
+    state: "graze",
+    dir: sim2.frnd() < 0.5 ? 1 : -1,
+    dest: null,
+    timer: 2 + sim2.frnd() * 6,
+    cd: 0,
+    scan: sim2.frnd() * 0.5,
+    target: null,
+    herd,
+    home: { x, y },
+    burst: 0,
+    tired: 0,
+    female: sim2.frnd() < 0.5,
+    raid,
+    bite: 0,
+    clock: sim2.frnd() * 10,
+    meat: 0,
+    hide: 0,
+    drops: {},
+    carcass: 0
+  };
+  sim2.animals.push(a);
+  sim2.animalById.set(a.id, a);
+  return a;
+}
+function step(sim2, a, tx, ty, speed, dt) {
+  const dx = tx - a.x, dy = ty - a.y, d = Math.hypot(dx, dy);
+  if (d < 0.05) return true;
+  const k = Math.min(d, speed * dt) / d, sx = dx * k, sy = dy * k, w = sim2.world, water = ANIMALS[a.species].habitat === "water";
+  const fear = ANIMALS[a.species].fearsFire;
+  if (fear) {
+    const nf = fireDistance(sim2, a.x + sx, a.y + sy);
+    if (nf < fear && nf < fireDistance(sim2, a.x, a.y)) return false;
+  }
+  const free = (x, y) => water ? isWater(sim2, Math.floor(x), Math.floor(y)) : w.inBounds(Math.floor(x), Math.floor(y)) && !w.isBlocked(Math.floor(x), Math.floor(y));
+  let moved = true;
+  if (free(a.x + sx, a.y + sy)) {
+    a.x += sx;
+    a.y += sy;
+  } else if (free(a.x + sx, a.y)) a.x += sx;
+  else if (free(a.x, a.y + sy)) a.y += sy;
+  else moved = false;
+  if (Math.abs(sx) > 1e-3) a.dir = sx > 0 ? 1 : -1;
+  return moved;
+}
+var near = (sim2, x, y) => {
+  let best = null;
+  for (const v of sim2.villagers) {
+    if (v.down > 0 || v.inside !== null) continue;
+    const d = Math.hypot(v.x - x, v.y - y);
+    if (!best || d < best.d) best = { id: v.id, d };
+  }
+  return best;
+};
+function fireDistance(sim2, x, y) {
+  let best = Infinity;
+  for (const b of sim2.buildings) if (b.kind === "campfire" && b.done) best = Math.min(best, Math.hypot(b.x + 1 - x, b.y + 1 - y));
+  return best;
+}
+function wanderTo(sim2, a, radius) {
+  const def = animalDef(a);
+  if (def.habitat === "water") radius = 4;
+  for (let i = 0; i < 6; i++) {
+    const ang = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * radius;
+    const x = a.home.x + Math.cos(ang) * r, y = a.home.y + Math.sin(ang) * r;
+    if (habitable(sim2, def, Math.floor(x), Math.floor(y))) {
+      a.dest = { x, y };
+      return;
+    }
+  }
+  a.dest = null;
+}
+function provoke(sim2, a, byId) {
+  if (a.state === "dead") return;
+  const def = animalDef(a);
+  if (def.defends || def.aggro > 0 || def.cornered && a.tired > 0) {
+    a.state = "attack";
+    a.target = { kind: "unit", id: byId };
+    a.timer = 14;
+  } else {
+    a.state = "flee";
+    a.target = { kind: "unit", id: byId };
+    a.timer = 8;
+  }
+  for (const o of sim2.animals) {
+    if (o !== a && o.herd === a.herd && o.state !== "dead" && o.state !== "attack" && Math.hypot(o.x - a.x, o.y - a.y) < 9 && !animalDef(o).defends) {
+      o.state = "flee";
+      o.target = { kind: "unit", id: byId };
+      o.timer = 6;
+    }
+  }
+}
+function tickAnimals(sim2, dt) {
+  const night = sim2.restTime;
+  for (let i = sim2.animals.length - 1; i >= 0; i--) {
+    const a = sim2.animals[i];
+    a.clock += dt;
+    if (a.state === "dead") {
+      a.carcass -= dt;
+      if (a.carcass <= 0 || carcassEmpty(a)) {
+        sim2.animals.splice(i, 1);
+        sim2.animalById.delete(a.id);
+      }
+      continue;
+    }
+    const def = animalDef(a);
+    a.timer -= dt;
+    a.cd = Math.max(0, a.cd - dt);
+    a.scan -= dt;
+    a.bite = Math.max(0, a.bite - dt);
+    if (a.tired > 0) a.tired -= dt;
+    const slow = a.tired > 0 ? BEHAVIOUR.tiredSpeed : 1;
+    if (a.scan <= 0) {
+      a.scan = 0.3 + sim2.frnd() * 0.2;
+      const p = near(sim2, a.x, a.y);
+      if (def.prey && def.flee > 0 && a.state !== "flee" && p && p.d < def.flee && !def.defends) {
+        a.state = "flee";
+        a.target = { kind: "unit", id: p.id };
+        a.timer = 6;
+        a.burst = 0;
+      }
+      if (def.aggro > 0 && a.state !== "attack" && p && (a.raid || night && def.nocturnal) && p.d < (a.raid ? 40 : def.aggro)) {
+        const v = sim2.get(p.id);
+        if (fireDistance(sim2, v.x, v.y) > (def.fearsFire ?? 0)) {
+          a.state = "attack";
+          a.target = { kind: "unit", id: p.id };
+          a.timer = 20;
+        }
+      }
+    }
+    switch (a.state) {
+      case "flee": {
+        const t = a.target && sim2.get(a.target.id);
+        if (!t || a.timer <= 0 || Math.hypot(t.x - a.x, t.y - a.y) > def.flee * 2) {
+          a.state = "graze";
+          a.timer = 3;
+          a.target = null;
+          a.dest = null;
+          break;
+        }
+        a.burst += dt;
+        if (a.burst > BEHAVIOUR.fleeBurst && a.tired <= 0) {
+          a.tired = BEHAVIOUR.tiredSeconds;
+          a.burst = 0;
+        }
+        const ax = a.x - t.x, ay = a.y - t.y, d = Math.hypot(ax, ay) || 1;
+        const ok = step(sim2, a, a.x + ax / d * 5, a.y + ay / d * 5, def.speed * slow, dt);
+        if (!ok) {
+          step(sim2, a, a.x - ay / d * 5, a.y + ax / d * 5, def.speed * slow, dt);
+          if (def.cornered && d < 1.4 && a.cd <= 0) {
+            a.cd = def.cycle;
+            a.bite = 0.25;
+            sim2.hurt({ kind: "unit", id: t.id }, def.damage, def.type, { x: a.x, y: a.y }, { animal: a });
+          }
+        }
+        break;
+      }
+      case "attack": {
+        const t = a.target && sim2.get(a.target.id);
+        const lost = !t || t.down > 0 || a.timer <= 0 || !a.raid && Math.hypot(t.x - a.x, t.y - a.y) > 16;
+        if (lost) {
+          a.state = "graze";
+          a.target = null;
+          a.timer = 3;
+          if (a.raid && t === void 0) a.timer = 1;
+          break;
+        }
+        const d = Math.hypot(t.x - a.x, t.y - a.y);
+        if (def.fearsFire && fireDistance(sim2, t.x, t.y) <= def.fearsFire && fireDistance(sim2, a.x, a.y) < def.fearsFire + 1.5) {
+          step(sim2, a, a.home.x, a.home.y, def.speed, dt);
+          break;
+        }
+        if (d > def.range + 0.4) step(sim2, a, t.x, t.y, def.speed * slow, dt);
+        else if (a.cd <= 0) {
+          a.cd = def.cycle;
+          a.bite = 0.25;
+          const behind = t.facing === "right" && a.x < t.x || t.facing === "left" && a.x > t.x;
+          sim2.hurt({ kind: "unit", id: t.id }, def.damage * (behind ? 1.25 : 1), def.type, { x: a.x, y: a.y }, { animal: a });
+        }
+        break;
+      }
+      case "sleep":
+        if (!night || !def.nocturnal) {
+          if (a.timer <= 0) {
+            a.state = "graze";
+            a.timer = 2;
+          }
+        }
+        break;
+      case "wander": {
+        if (!a.dest || !step(sim2, a, a.dest.x, a.dest.y, def.speed * 0.45, dt) || Math.hypot(a.dest.x - a.x, a.dest.y - a.y) < 0.3) {
+          a.state = "graze";
+          a.timer = 3 + sim2.frnd() * 8;
+          a.dest = null;
+        }
+        break;
+      }
+      default: {
+        if (a.raid && !night) {
+          step(sim2, a, a.home.x, a.home.y, def.speed, dt);
+          if (Math.hypot(a.home.x - a.x, a.home.y - a.y) < 2) {
+            sim2.animals.splice(i, 1);
+            sim2.animalById.delete(a.id);
+          }
+          break;
+        }
+        if (a.timer <= 0) {
+          if (def.nocturnal && !night && !a.raid) {
+            a.state = "sleep";
+            a.timer = 4;
+            break;
+          }
+          a.state = "wander";
+          wanderTo(sim2, a, BEHAVIOUR.regionRadius);
+          if (a.raid && night) {
+            const p = near(sim2, a.x, a.y);
+            if (p) a.dest = { x: sim2.get(p.id).x, y: sim2.get(p.id).y };
+          }
+        }
+      }
+    }
+  }
+}
+var carcassEmpty = (a) => a.meat <= 0 && a.hide <= 0 && !Object.values(a.drops ?? {}).some((n) => (n ?? 0) > 0);
+function die(sim2, a) {
+  const def = animalDef(a);
+  a.state = "dead";
+  a.hp = 0;
+  a.target = null;
+  a.meat = def.meat;
+  a.hide = def.hide;
+  a.drops = { ...def.drops ?? {} };
+  a.carcass = BEHAVIOUR.carcassSeconds;
+}
+
+// src/sim/battle.ts
+var ANIM = anims_default;
+function swingTimes(anim) {
+  const a = ANIM[anim];
+  return { hitAt: (a?.hit ?? 2) / (a?.fps ?? 10), end: (a?.frames.length ?? 6) / (a?.fps ?? 10) };
+}
+var entX = (e) => e.kind === "unit" ? e.v.x : e.a.x;
+var entY = (e) => e.kind === "unit" ? e.v.y : e.a.y;
+function resolve(sim2, t) {
+  if (!t) return null;
+  if (t.kind === "unit") {
+    const v = sim2.get(t.id);
+    return v && v.health > 0 && v.down <= 0 ? { kind: "unit", v } : null;
+  }
+  const a = sim2.animalById.get(t.id);
+  return a && a.state !== "dead" ? { kind: "animal", a } : null;
+}
+var effWeapon = (v) => v.team === "player" && v.gear.wb && v.gear.w === v.weapon ? null : v.weapon;
+var weaponOf = (v) => WEAPONS[effWeapon(v) ?? "fist"] ?? WEAPONS.fist;
+var armorOf = (v) => v.armor && !(v.team === "player" && v.gear.ab && v.gear.a === v.armor) ? ARMORS[v.armor] ?? null : null;
+function canSee(sim2, v, x, y) {
+  return v.team !== "player" || sim2.fog.state[Math.floor(y) * sim2.world.size + Math.floor(x)] === 2;
+}
+var isFighter = (v) => v.job === "fight" || v.job === "hunt" || v.fight.mode !== "none";
+function teamsHostile(sim2, a, b) {
+  if (a === b || a === "wild" || b === "wild") return false;
+  if (a === "player") return sim2.tribeHostile(b);
+  if (b === "player") return sim2.tribeHostile(a);
+  return false;
+}
+function threatsOf(sim2, v, radius) {
+  const out = [], N = sim2.world.size, player = v.team === "player";
+  const seen = (x, y) => !player || sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
+  const pool = player ? sim2.foes : sim2.villagers;
+  for (const o of pool) {
+    if (o.health <= 0 || o.down > 0 || o.inside !== null || !teamsHostile(sim2, v.team, o.team)) continue;
+    const d = Math.hypot(o.x - v.x, o.y - v.y);
+    if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: "unit", id: o.id }, x: o.x, y: o.y, d, name: o.name });
+  }
+  if (player) for (const a of sim2.animals) {
+    if (a.state === "dead") continue;
+    const def = animalDef(a);
+    if (!(a.state === "attack" || def.aggro > 0)) continue;
+    const d = Math.hypot(a.x - v.x, a.y - v.y);
+    if (d <= radius && seen(a.x, a.y)) out.push({ t: { kind: "animal", id: a.id }, x: a.x, y: a.y, d, name: def.name });
+  }
+  return out.sort((p, q) => p.d - q.d);
+}
+function hurt(sim2, target, dmg, type, from, src) {
+  if (target.kind === "animal") {
+    const a = sim2.animalById.get(target.id);
+    if (!a || a.state === "dead") return;
+    a.hp -= dmg;
+    if (a.hp <= 0) {
+      die(sim2, a);
+      sim2.onKill?.();
+      if (src.unit?.team === "player" && a.species === "wolf") sim2.say("M\u1ED9t con s\xF3i \u0111\xE3 b\u1ECB h\u1EA1.");
+    } else if (src.unit) provoke(sim2, a, src.unit.id);
+    return;
+  }
+  const v = sim2.get(target.id);
+  if (!v || v.health <= 0) return;
+  if (sim2.dev.god && v.team === "player") return;
+  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === "player" ? sim2.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) : 1);
+  v.health -= final;
+  v.calm = 0;
+  v.flinch = 0.3;
+  if (armor) sim2.wearGear(v, "armor");
+  const behind = v.facing === "right" && from.x < v.x || v.facing === "left" && from.x > v.x;
+  if (behind) v.morale = Math.max(0, v.morale + MORALE.backstab);
+  if (src.unit && src.unit.team === "player" && v.team !== "player") sim2.tribeAttacked(v.team, v);
+  if (v.health > 0) {
+    if (!v.fight.target && src.unit && v.team !== "player") v.fight.target = { kind: "unit", id: src.unit.id };
+    else if (!v.fight.target && src.animal && v.team !== "player") v.fight.target = { kind: "animal", id: src.animal.id };
+    return;
+  }
+  if (v.team === "player") fallUnit(sim2, v);
+  else sim2.killFoe(v, src.unit);
+}
+function fallUnit(sim2, v) {
+  sim2.resetTask(v);
+  v.queue.length = 0;
+  v.swing = null;
+  moraleShock(sim2, v, MORALE.allyDeath);
+  sim2.noteBattle("ours");
+  sim2.killUnit(v, "t\u1EED tr\u1EADn");
+}
+function moraleShock(sim2, who, amount) {
+  const pool = who.team === "player" ? sim2.villagers : sim2.foes.filter((f) => f.team === who.team);
+  for (const o of pool) if (o !== who && o.health > 0 && Math.hypot(o.x - who.x, o.y - who.y) < 8) o.morale = Math.max(0, Math.min(100, o.morale + amount));
+}
+function startSwing(sim2, v, target) {
+  const w = weaponOf(v), { hitAt, end } = swingTimes(w.anim);
+  v.swing = { t: 0, hitAt, end, target };
+  v.atkCd = cycleOf(w.cycle, v.stats.agi);
+  v.anim = w.anim;
+  v.animClock = 0;
+  const e = resolve(sim2, target);
+  if (e) v.facing = entX(e) >= v.x ? "right" : "left";
+}
+function armMultiplier(attacker, e) {
+  return e.kind === "unit" ? matchup(armOfWeapon(effWeapon(attacker)), armOfWeapon(effWeapon(e.v)), effWeapon(attacker)) : 1;
+}
+function fireProjectile(sim2, v, e, from, mult, rangeBonus) {
+  const w = weaponOf(v), tx = entX(e), ty = entY(e), d = Math.hypot(tx - from.x, ty - from.y);
+  if (d > w.range + rangeBonus + 1 || !canSee(sim2, v, tx, ty)) return false;
+  const shot = w.damage * clampTactical(armMultiplier(v, e) * mult * sim2.attackFactor(v, e)) * WEATHER[sim2.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
+  if (v.inside !== null) sim2.noteBattle("shot");
+  const target = e.kind === "unit" ? { kind: "unit", id: e.v.id } : { kind: "animal", id: e.a.id };
+  sim2.projectiles.push({ x: from.x, y: from.y - 0.4, tx, ty, speed: 14, dmg: shot, type: w.type, from, src: v.id, team: v.team, target, chance: d <= (w.range + rangeBonus) / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? "stone" });
+  sim2.wearGear(v, "weapon");
+  return true;
+}
+function resolveSwing(sim2, v, target) {
+  const e = resolve(sim2, target);
+  if (!e) return;
+  const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(v, e);
+  if (w.ranged) {
+    fireProjectile(sim2, v, e, { x: v.x, y: v.y }, 1, 0);
+    return;
+  }
+  if (d > w.range + 1.1) return;
+  let behind = false;
+  if (e.kind === "unit") behind = e.v.facing === "right" && v.x < e.v.x || e.v.facing === "left" && v.x > e.v.x;
+  else behind = e.a.dir === 1 && v.x < e.a.x || e.a.dir === -1 && v.x > e.a.x;
+  hurt(sim2, target, damageOf(w, v.stats.str, null, behind) * clampTactical(arm * sim2.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
+  if (v.weapon) sim2.wearGear(v, "weapon");
+}
+function tickProjectiles(sim2, dt) {
+  for (let i = sim2.projectiles.length - 1; i >= 0; i--) {
+    const p = sim2.projectiles[i], dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy), step3 = p.speed * dt;
+    if (d > step3) {
+      p.x += dx / d * step3;
+      p.y += dy / d * step3;
+      continue;
+    }
+    sim2.projectiles.splice(i, 1);
+    const e = resolve(sim2, p.target);
+    if (!e || Math.hypot(entX(e) - p.tx, entY(e) - p.ty) > 1.4 || sim2.frnd() > p.chance) continue;
+    const src = sim2.get(p.src);
+    hurt(sim2, p.target, p.dmg + (src ? RULES.strengthDamage * 0 : 0), p.type, p.from, { unit: src });
+  }
+}
+function tickCommon(sim2, v, dt) {
+  v.atkCd = Math.max(0, v.atkCd - dt);
+  v.calm += dt;
+  if (v.flinch > 0) v.flinch -= dt;
+  if (v.swing) {
+    const s = v.swing, before = s.t;
+    s.t += dt;
+    if (before < s.hitAt && s.t >= s.hitAt) resolveSwing(sim2, v, s.target);
+    if (s.t >= s.end) v.swing = null;
+  }
+}
+function tickMorale(sim2, v) {
+  const near2 = threatsOf(sim2, v, 9);
+  const allies = (v.team === "player" ? sim2.villagers : sim2.foes.filter((f) => f.team === v.team)).filter((o) => o !== v && o.health > 0 && o.down <= 0 && Math.hypot(o.x - v.x, o.y - v.y) < 8).length;
+  let m = v.morale;
+  if (near2.length) {
+    m += near2.length > allies + 1 ? MORALE.outnumbered : near2.length < allies ? MORALE.outnumbering : 0;
+  } else m += (MORALE.start - m) * 0.04 + MORALE.calm;
+  if (sim2.nearHome(v)) m += MORALE.nearHome * (near2.length ? 1 : 0.2);
+  if (v.team === "player" && sim2.restTime && !sim2.nearHome(v)) m += MORALE.night;
+  if (v.leader) m += 0.2;
+  else {
+    const lead = (v.team === "player" ? sim2.villagers : sim2.foes.filter((f) => f.team === v.team)).find((o) => o.leader && o.health > 0 && Math.hypot(o.x - v.x, o.y - v.y) < 8);
+    if (lead) m += MORALE.leaderNear;
+    else if (allies >= 4) m += MORALE.leaderFar;
+  }
+  v.morale = Math.max(0, Math.min(100, m));
+}
+function tickDown(sim2, v, dt) {
+  v.down -= dt;
+  v.hold = null;
+  v.path = [];
+  v.slide = null;
+  const helper = sim2.villagers.some((o) => o !== v && o.health > 0 && o.down <= 0 && o.phase !== "flee" && Math.hypot(o.x - v.x, o.y - v.y) < 1.6);
+  v.rescue = helper ? v.rescue + dt : Math.max(0, v.rescue - dt);
+  if (v.rescue >= RULES.rescueSeconds) {
+    v.down = 0;
+    v.rescue = 0;
+    v.health = v.maxHealth * RULES.rescueHp;
+    v.phase = "idle";
+    v.morale = Math.max(v.morale, 40);
+    sim2.say(`${v.name} \u0111\xE3 \u0111\u01B0\u1EE3c \u0111\u1EE1 d\u1EADy.`);
+    return;
+  }
+  if (v.down <= 0) sim2.killUnit(v, "v\xEC v\u1EBFt th\u01B0\u01A1ng");
+}
+var SIGHT = 8;
+var DEFENSIVE = 4.5;
+function brainPlayer(sim2, v, dt) {
+  if (v.phase === "goStore" || v.phase === "goEquip") return false;
+  const rest = v.phase === "sleep" || v.phase === "goHome";
+  v.fight.scan -= dt;
+  const scanNow = v.fight.scan <= 0;
+  if (scanNow) v.fight.scan = 0.35;
+  const threats = scanNow || v.phase === "flee" || v.phase === "fight" ? threatsOf(sim2, v, SIGHT + 2) : [];
+  if (rest) {
+    if (scanNow && threats.length && threats[0].d < 7) {
+      if (isFighter(v)) v.nightOwl = true;
+      sim2.resetTask(v);
+    } else return false;
+  }
+  if (v.phase === "flee" || v.fleeT > 0 || v.morale < MORALE.flee && threats.length) return fleeBrain(sim2, v, dt, threats);
+  const fighter = isFighter(v);
+  if (!fighter) {
+    if (threats.length && threats[0].d < 6 && v.phase !== "fight") {
+      startFlee(sim2, v, 8);
+      return true;
+    }
+    return assistBrain(sim2, v);
+  }
+  return fightBrain(sim2, v, dt, threats);
+}
+function startFlee(sim2, v, secs) {
+  const keep = v.job, nightOwl = v.nightOwl;
+  sim2.resetTask(v);
+  v.job = keep;
+  v.nightOwl = nightOwl;
+  v.fight.target = null;
+  if (v.fight.mode === "attack") v.fight.mode = "none";
+  v.phase = "flee";
+  v.fleeT = secs;
+  const fire = sim2.campfire();
+  if (fire) v.path = sim2.pathTo(v, Math.floor(fire.x + 1), Math.floor(fire.y + 2), 4e3);
+}
+function fleeBrain(sim2, v, dt, threats) {
+  if (v.phase !== "flee") {
+    startFlee(sim2, v, 8);
+    return true;
+  }
+  v.fleeT -= dt;
+  if (threats.length && threats[0].d < 6) v.fleeT = Math.max(v.fleeT, 3);
+  if (!v.path.length && sim2.campfire() && Math.hypot(v.x - sim2.campfire().x - 1, v.y - sim2.campfire().y - 1) > 3) {
+    const f = sim2.campfire();
+    v.path = sim2.pathTo(v, Math.floor(f.x + 1), Math.floor(f.y + 2), 4e3);
+  }
+  if (v.fleeT <= 0 && v.morale >= MORALE.fleeRecover - 10) {
+    v.phase = "idle";
+    v.fleeT = 0;
+    v.path = [];
+    return false;
+  }
+  return true;
+}
+function assistBrain(sim2, v) {
+  if (v.phase === "rescue") {
+    const t = sim2.get(v.target);
+    if (!t || t.down <= 0) {
+      v.phase = "idle";
+      v.target = -1;
+      return false;
+    }
+    if (Math.hypot(t.x - v.x, t.y - v.y) < 1.4) {
+      v.path = [];
+      return true;
+    }
+    if (!v.path.length) v.path = sim2.pathTo(v, Math.floor(t.x), Math.floor(t.y), 3e3);
+    return true;
+  }
+  if (v.phase === "sleep" || v.phase === "goHome") return false;
+  const down = sim2.villagers.find((o) => o !== v && o.down > 0 && Math.hypot(o.x - v.x, o.y - v.y) < 14);
+  if (down && v.health > 0) {
+    const keep = v.job, owl = v.nightOwl;
+    sim2.resetTask(v);
+    v.job = keep;
+    v.nightOwl = owl;
+    v.phase = "rescue";
+    v.target = down.id;
+    v.path = sim2.pathTo(v, Math.floor(down.x), Math.floor(down.y), 3e3);
+    return true;
+  }
+  return false;
+}
+function engage(sim2, v, e, dt) {
+  const w = weaponOf(v), x = entX(e), y = entY(e), d = Math.hypot(x - v.x, y - v.y);
+  const reach = w.ranged ? w.range : w.range + (e.kind === "animal" ? 0.45 : 0.5);
+  v.phase = "fight";
+  if (d <= reach && (!w.ranged || canSee(sim2, v, x, y))) {
+    v.path = [];
+    v.slide = null;
+    v.facing = x >= v.x ? "right" : "left";
+    if (!v.swing && v.atkCd <= 0) startSwing(sim2, v, e.kind === "unit" ? { kind: "unit", id: e.v.id } : { kind: "animal", id: e.a.id });
+    return;
+  }
+  if (v.swing) return;
+  v.fight.repath -= dt;
+  if (v.fight.repath <= 0 || !v.path.length) {
+    v.fight.repath = 0.5;
+    v.path = sim2.pathTo(v, Math.floor(x), Math.floor(y), 3500);
+    if (!v.path.length) v.fight.repath = 1.5;
+  }
+}
+function fightBrain(sim2, v, dt, threats) {
+  const f = v.fight;
+  if (v.phase === "skin" || v.phase === "goCarcass") return huntBrain(sim2, v, dt, threats);
+  if (f.mode === "hold" && !f.anchor) f.anchor = { x: v.x, y: v.y };
+  if (!threats.length && !f.target && v.phase !== "fight" && (sim2.planGearRepair(v) || sim2.planEquipGear(v) || sim2.planGearErrand(v))) return true;
+  if (v.stance === "retreat" && f.mode !== "attack" && f.target) f.target = null;
+  if (f.target) {
+    const e = resolve(sim2, f.target);
+    if (e) {
+      if (f.mode === "hold" && f.anchor && Math.hypot(entX(e) - f.anchor.x, entY(e) - f.anchor.y) > weaponOf(v).range + 2) {
+        f.target = null;
+      } else {
+        engage(sim2, v, e, dt);
+        return true;
+      }
+    } else {
+      const dead = f.target.kind === "animal" ? sim2.animalById.get(f.target.id) : void 0;
+      f.target = null;
+      if (f.mode === "attack") {
+        if (v.job === "fight") {
+          f.mode = "guard";
+          f.anchor = { x: v.x, y: v.y };
+        } else f.mode = "none";
+      }
+      if (dead && dead.state === "dead" && v.job === "hunt") v.loot = dead.id;
+      if (v.phase === "fight") {
+        v.phase = "idle";
+        v.path = [];
+      }
+      if (sim2.nextOrder(v)) return true;
+    }
+  }
+  if (v.stance === "retreat") {
+    if (threats.length && threats[0].d < 8) {
+      startFlee(sim2, v, 6);
+      return true;
+    }
+  } else if (threats.length && f.scan >= 0) {
+    const range = f.mode === "hold" ? weaponOf(v).range + 1.5 : v.stance === "defensive" ? DEFENSIVE : SIGHT;
+    const pick = threats.find((t) => t.d <= range && (!f.anchor || v.stance !== "defensive" || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
+    if (pick) {
+      f.target = pick.t;
+      const e = resolve(sim2, pick.t);
+      if (e) {
+        engage(sim2, v, e, dt);
+        return true;
+      }
+    }
+  }
+  if (f.mode === "attackMove" && f.dest) {
+    if (Math.hypot(f.dest.x - v.x, f.dest.y - v.y) < 1.5) {
+      f.mode = "guard";
+      f.anchor = { x: f.dest.x, y: f.dest.y };
+      f.dest = null;
+      v.path = [];
+      v.phase = "idle";
+      if (sim2.nextOrder(v)) return true;
+    } else {
+      if (!v.path.length) v.path = sim2.pathTo(v, Math.floor(f.dest.x), Math.floor(f.dest.y), 2e4);
+      v.phase = "move";
+      return true;
+    }
+  }
+  if (v.post >= 0 && v.phase === "idle" && !threats.length && !f.target) {
+    sim2.planStaff(v);
+    if (v.phase === "goStaff") return true;
+  }
+  if (f.mode === "hold") {
+    v.phase = "idle";
+    v.path = [];
+    return true;
+  }
+  if (v.job === "hunt") return huntBrain(sim2, v, dt, threats);
+  if (v.phase === "fight") {
+    v.phase = "idle";
+    v.path = [];
+  }
+  if (v.job === "fight") {
+    const fire = sim2.campfire(), post = f.mode === "guard" && f.anchor ? { x: f.anchor.x, y: f.anchor.y, slack: 2 } : fire ? { x: fire.x + 1 + v.id % 3 - 1, y: fire.y + 3, slack: 5 } : null;
+    if (post && v.phase === "idle" && !v.path.length && Math.hypot(v.x - post.x, v.y - post.y) > post.slack) {
+      v.path = sim2.pathTo(v, Math.floor(post.x), Math.floor(post.y), 4e3);
+      v.phase = "move";
+      return true;
+    }
+    return v.phase === "move" || v.phase === "idle";
+  }
+  return false;
+}
+function huntBrain(sim2, v, dt, threats) {
+  if (v.phase === "skin") {
+    v.timer -= dt;
+    v.anim = "build";
+    if (v.timer > 0) return true;
+    const a = sim2.animalById.get(v.loot);
+    v.phase = "idle";
+    v.loot = -1;
+    if (!a) return true;
+    const have = v.carry && v.carry.res === "food" ? v.carry.amount : 0, take = Math.min(a.meat, CARRY_CAP.food - have);
+    if (take > 0) {
+      a.meat -= take;
+      v.carry = { res: "food", amount: have + take };
+    }
+    const got = [];
+    if (a.hide > 0) {
+      sim2.stock.hide = Math.min(sim2.capacity(), sim2.stock.hide + a.hide);
+      got.push(`${a.hide} ${RES_NAME.hide.toLowerCase()}`);
+      a.hide = 0;
+    }
+    for (const [res, n] of Object.entries(a.drops ?? {})) {
+      if (!(n > 0)) continue;
+      sim2.stock[res] = Math.min(sim2.capacity(), sim2.stock[res] + n);
+      got.push(`${n} ${RES_NAME[res].toLowerCase()}`);
+    }
+    a.drops = {};
+    if (got.length) sim2.say(`${v.name} x\u1EBB ${animalDef(a).name.toLowerCase()}: ${got.join(", ")}.`);
+    return true;
+  }
+  if (v.phase === "goCarcass") {
+    const a = sim2.animalById.get(v.loot);
+    if (!a || a.state !== "dead" || carcassEmpty(a)) {
+      v.phase = "idle";
+      v.loot = -1;
+      v.path = [];
+      return true;
+    }
+    if (Math.hypot(a.x - v.x, a.y - v.y) < 1.5) {
+      v.path = [];
+      v.phase = "skin";
+      v.timer = BEHAVIOUR.skinSeconds;
+      v.facing = a.x >= v.x ? "right" : "left";
+      return true;
+    }
+    if (!v.path.length) {
+      v.path = sim2.pathTo(v, Math.floor(a.x), Math.floor(a.y), 3e3);
+      if (!v.path.length) {
+        v.phase = "idle";
+        v.loot = -1;
+      }
+    }
+    return true;
+  }
+  if (v.phase === "move" && v.path.length) return true;
+  if (v.carry && v.carry.amount >= CARRY_CAP[v.carry.res]) {
+    sim2.planDeliver(v);
+    return true;
+  }
+  const N = sim2.world.size;
+  let best = null, bd = 45;
+  if (v.loot >= 0) {
+    const a = sim2.animalById.get(v.loot);
+    if (a && a.state === "dead") best = a;
+    else v.loot = -1;
+  }
+  if (!best) for (const a of sim2.animals) {
+    if (a.state !== "dead" || carcassEmpty(a) || sim2.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
+    const d = Math.hypot(a.x - v.x, a.y - v.y);
+    if (d < bd) {
+      bd = d;
+      best = a;
+    }
+  }
+  if (best) {
+    v.loot = best.id;
+    v.phase = "goCarcass";
+    v.path = sim2.pathTo(v, Math.floor(best.x), Math.floor(best.y), 3e3);
+    return true;
+  }
+  if (!threats.length) {
+    let prey = null;
+    bd = 40;
+    for (const a of sim2.animals) {
+      const def = animalDef(a);
+      if (a.state === "dead" || !def.prey || sim2.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
+      if (def.defends && !sim2.packNear(v, a)) continue;
+      const d = Math.hypot(a.x - v.x, a.y - v.y);
+      if (d < bd) {
+        bd = d;
+        prey = a;
+      }
+    }
+    if (prey) {
+      v.fight.target = { kind: "animal", id: prey.id };
+      engage(sim2, v, { kind: "animal", a: prey }, 0);
+      return true;
+    }
+  }
+  if (v.carry && v.carry.amount > 0) {
+    sim2.planDeliver(v);
+    return true;
+  }
+  if (v.phase === "fight") {
+    v.phase = "idle";
+    v.path = [];
+  }
+  sim2.wait(v, 2);
+  return true;
+}
+function bestWeapon(sim2, v) {
+  const score = (id) => {
+    const w = WEAPONS[id];
+    return (w.damage + RULES.strengthDamage * v.stats.str) / cycleOf(w.cycle, v.stats.agi) + (w.range > 1 ? 1 : 0);
+  };
+  const cur = v.weapon ? score(v.weapon) : score("fist");
+  let best = null, bs = cur;
+  for (const id of CRAFTED_WEAPONS) {
+    if (sim2.toolCount(id, WEAPONS[id].tier ?? 1) <= 0) continue;
+    if (id === "mace" && v.job !== "fight") continue;
+    if (score(id) > bs) {
+      bs = score(id);
+      best = id;
+    }
+  }
+  return best;
+}
+
+// src/data/events.json
+var events_default = {
+  _note: "day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
+  events: [
+    { id: "wolves_summer", kind: "wolves", day: 6, spread: 2, size: 4, night: true, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm..." },
+    { id: "axe_scout", kind: "raid", tribe: "axe", day: 10, spread: 2, size: 5, night: false, warnDays: 1, warn: "Kh\xF3i b\u1ED1c l\xEAn t\u1EEB ph\xEDa t\u1ED9c R\xECu \u0110\xE1, c\xF3 l\u1EBD h\u1ECD \u0111ang c\u1EED ng\u01B0\u1EDDi d\xF2 x\xE9t." },
+    { id: "wolves_winter", kind: "wolves", day: 16, spread: 4, size: 8, night: true, warn: "D\u1EA5u ch\xE2n s\xF3i \u0111\u1EA7y quanh l\xE0ng." },
+    { id: "swamp_raid", kind: "raid", tribe: "swamp", day: 21, spread: 4, size: 8, night: true, warnDays: 0, warn: "" },
+    { id: "axe_war", kind: "raid", tribe: "axe", day: 26, spread: 4, size: 18, night: false, warnDays: 1, warn: "Ti\u1EBFng tr\u1ED1ng chi\u1EBFn vang l\xEAn: t\u1ED9c R\xECu \u0110\xE1 s\u1EAFp \u0111\xE1nh l\u1EDBn." }
+  ]
+};
+
+// src/sim/tribes.ts
+var tribeOf = (sim2, id) => sim2.tribes.find((t) => t.id === id);
+function spawnTribes(sim2) {
+  for (const id of TRIBE_IDS) spawnTribe(sim2, id);
+  initEvents(sim2);
+}
+function campFits(sim2, cx, cy) {
+  const w = sim2.world, r = 7;
+  for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) {
+    if (!w.inBounds(x, y)) return false;
+    if (Math.hypot(x - cx, y - cy) <= r && w.at(x, y) === Tile.Water) return false;
+  }
+  return true;
+}
+function spawnTribe(sim2, id) {
+  const def = TRIBES[id], w = sim2.world, s = w.start, N = w.size;
+  let cx = -1, cy = -1;
+  search: for (let dd = 0; dd <= 24; dd += 3) for (const sign of dd ? [1, -1] : [1]) for (let da = 0; da <= 90; da += 15) for (const as of da ? [1, -1] : [1]) {
+    const ang = (def.angle + da * as) * Math.PI / 180, d = def.distance + dd * sign;
+    const x = Math.round(s.x + Math.cos(ang) * d), y = Math.round(s.y + Math.sin(ang) * d);
+    if (x > 9 && y > 9 && x < N - 9 && y < N - 9 && campFits(sim2, x, y)) {
+      cx = x;
+      cy = y;
+      break search;
+    }
+  }
+  if (cx < 0) return;
+  for (let y = cy - 7; y <= cy + 7; y++) for (let x = cx - 7; x <= cx + 7; x++) {
+    if (Math.hypot(x - cx, y - cy) > 6.5) continue;
+    const i = y * N + x;
+    w.nodes.delete(i);
+    w.tiles[i] = Tile.Grass;
+    w.decor[i] = 0;
+  }
+  const props = [
+    { x: cx, y: cy, w: 2, h: 2, kind: "fire" },
+    { x: cx - 5, y: cy - 1, w: 2, h: 2, kind: "pile" },
+    { x: cx + 4, y: cy + 1, w: 2, h: 2, kind: "pile" }
+  ];
+  for (const p of props) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) w.occ[(p.y + j) * N + p.x + i] = 1;
+  const power = ringPower(ringOf(Math.hypot(cx - s.x, cy - s.y)));
+  const camp = { x: cx + 1, y: cy + 1 };
+  const tribe = {
+    id,
+    def,
+    camp,
+    props,
+    relation: def.relation,
+    state: "free",
+    angryUntil: 0,
+    unitIds: [],
+    leaderId: -1,
+    holdT: 0,
+    nextTribute: 0,
+    raid: null,
+    loot: Object.fromEntries(Object.entries(def.tribute).map(([k, v]) => [k, (v ?? 0) * 2])),
+    lastAngry: -999
+  };
+  sim2.tribes.push(tribe);
+  const total = def.civilians + def.warriors;
+  for (let i = 0; i < total; i++) {
+    const warrior = i < def.warriors, ang = sim2.frnd() * Math.PI * 2, r = 2.5 + sim2.frnd() * 3.5;
+    const f = sim2.makeVillager(Math.floor(camp.x + Math.cos(ang) * r), Math.floor(camp.y + Math.sin(ang) * r), sim2.frnd() < 0.5 ? "m" : "f", id, sim2.frnd);
+    f.look.hide = def.look.hide;
+    f.look.pants = def.look.pants;
+    f.stats.str = Math.round(f.stats.str * power + (warrior ? 1 : 0));
+    f.maxHealth = Math.round(maxHpOf(f.stats.vit) * power);
+    f.health = f.maxHealth;
+    if (warrior) {
+      f.weapon = def.weapons[i % def.weapons.length];
+      f.armor = def.armor ? "hide" : null;
+    }
+    f.ai = { role: warrior ? "guard" : "civ", camp, wander: sim2.frnd() * 5, goal: null, raid: 0 };
+    sim2.addFoe(f);
+    tribe.unitIds.push(f.id);
+  }
+  const warriors = tribe.unitIds.map((u) => sim2.get(u)).filter((u) => u.ai.role === "guard");
+  if (warriors.length >= 1) {
+    const lead = warriors.sort((a, b) => b.stats.str + b.stats.vit - a.stats.str - a.stats.vit)[0];
+    lead.leader = true;
+    tribe.leaderId = lead.id;
+  }
+}
+function tribeHostile(sim2, id) {
+  const t = tribeOf(sim2, id);
+  return !!t && t.state === "free" && (t.relation < HOSTILE_BELOW || sim2.time < t.angryUntil || !!t.raid);
+}
+function tribeAttacked(sim2, id, victim) {
+  const t = tribeOf(sim2, id);
+  if (!t || t.state !== "free") return;
+  const first = sim2.time > t.angryUntil;
+  t.angryUntil = sim2.time + 120;
+  if (first) {
+    t.relation = Math.max(-100, t.relation + (t.def.personality === "peaceful" ? RELATION.attackedPeaceful : -10));
+    if (sim2.time - t.lastAngry > 30) {
+      t.lastAngry = sim2.time;
+      sim2.say(`${t.def.name} b\u1ECB t\u1EA5n c\xF4ng v\xE0 n\u1ED5i gi\u1EADn!`);
+    }
+  }
+  void victim;
+}
+function killFoe(sim2, v, killer) {
+  const t = tribeOf(sim2, v.team);
+  sim2.removeFoe(v);
+  if (!t) return;
+  t.unitIds = t.unitIds.filter((u) => u !== v.id);
+  if (v.ai?.role === "raider") sim2.noteBattle("foes");
+  moraleShock(sim2, v, MORALE.allyDeath);
+  if (killer?.team === "player") {
+    t.relation = Math.max(-100, t.relation + (v.ai?.role === "civ" ? RELATION.killCivilian : RELATION.killWarrior));
+    t.angryUntil = sim2.time + 120;
+  }
+  if (v.id === t.leaderId) sim2.say(`Th\u1EE7 l\u0129nh ${t.def.name} \u0111\xE3 g\u1EE5c ng\xE3.`);
+  sim2.onKill?.();
+}
+function giftTribe(sim2, id) {
+  const t = tribeOf(sim2, id);
+  if (!t || t.state === "destroyed" || t.state === "adopted") return "Kh\xF4ng c\xF2n ai \u0111\u1EC3 t\u1EB7ng";
+  if (sim2.stock.food < RELATION.giftFood) return `C\u1EA7n ${RELATION.giftFood} th\u1EE9c \u0103n \u0111\u1EC3 l\xE0m qu\xE0`;
+  sim2.stock.food -= RELATION.giftFood;
+  t.relation = Math.min(100, t.relation + RELATION.giftGain);
+  if (t.relation >= HOSTILE_BELOW) t.angryUntil = Math.min(t.angryUntil, sim2.time);
+  return null;
+}
+function canTribute(t) {
+  return t.state === "surrendered" || t.state === "free" && t.relation >= RELATION.tributeAt;
+}
+function canAdopt(t) {
+  return t.state === "surrendered" || t.state === "free" && t.def.personality === "peaceful" && t.relation >= RELATION.joinAt;
+}
+function tributeTribe(sim2, id) {
+  const t = tribeOf(sim2, id);
+  if (!t || !canTribute(t)) return "H\u1ECD ch\u01B0a ch\u1ECBu c\u1ED1ng n\u1EA1p";
+  t.state = "tribute";
+  t.relation = Math.max(t.relation, RELATION.tributeAt);
+  t.raid = null;
+  t.nextTribute = sim2.day + SEASON_DAYS;
+  if (sim2.pendingTribe === id) sim2.pendingTribe = null;
+  releaseRaiders(sim2, t);
+  sim2.say(`${t.def.name} ch\u1ECBu c\u1ED1ng n\u1EA1p: m\u1ED7i m\xF9a h\u1ECD g\u1EEDi t\xE0i nguy\xEAn v\xE0 kh\xF4ng \u0111\xE1nh l\xE0ng n\u1EEFa.`);
+  return null;
+}
+function adoptTribe(sim2, id) {
+  const t = tribeOf(sim2, id);
+  if (!t || !canAdopt(t)) return "H\u1ECD ch\u01B0a ch\u1ECBu theo l\xE0ng";
+  const cap = sim2.popCap(), room = cap - sim2.villagers.length;
+  if (room <= 0) return `L\xE0ng \u0111\xE3 \u0111\u1EE7 ${cap} d\xE2n: h\xE3y n\xE2ng \u0111\u1ED1ng l\u1EEDa tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm`;
+  const units = t.unitIds.map((u) => sim2.get(u)).filter((u) => !!u).sort((a) => a.ai?.role === "civ" ? 0 : 1);
+  let taken = 0;
+  for (const f of units) {
+    if (taken >= room) {
+      sim2.removeFoe(f);
+      continue;
+    }
+    sim2.adoptFoe(f);
+    taken++;
+  }
+  for (const [k, n] of Object.entries(t.loot)) sim2.stock[k] = Math.min(sim2.capacity(), sim2.stock[k] + (n ?? 0));
+  t.unitIds = [];
+  t.state = "adopted";
+  t.relation = 100;
+  t.raid = null;
+  if (sim2.pendingTribe === id) sim2.pendingTribe = null;
+  sim2.say(`${taken} ng\u01B0\u1EDDi c\u1EE7a ${t.def.name} gia nh\u1EADp l\xE0ng.${units.length > taken ? " S\u1ED1 c\xF2n l\u1EA1i kh\xF4ng c\xF3 ch\u1ED7 n\xEAn t\u1EA3n \u0111i." : ""}`);
+  return null;
+}
+function releaseRaiders(sim2, t) {
+  for (const u of t.unitIds) {
+    const f = sim2.get(u);
+    if (f?.ai?.role === "raider") {
+      f.ai.role = "guard";
+      f.ai.raid = 0;
+      f.fight.target = null;
+      f.path = [];
+    }
+  }
+}
+function tickTribes(sim2, dt) {
+  tickEvents(sim2);
+  sim2.tribeClock += dt;
+  if (sim2.tribeClock < 1) return;
+  sim2.tribeClock = 0;
+  for (const t of sim2.tribes) {
+    t.unitIds = t.unitIds.filter((u) => {
+      const f = sim2.get(u);
+      return !!f && f.health > 0;
+    });
+    for (const u of t.unitIds) tickMorale(sim2, sim2.get(u));
+    if (t.state === "free" && t.unitIds.length === 0) {
+      t.state = "destroyed";
+      t.raid = null;
+      sim2.say(`${t.def.name} \u0111\xE3 b\u1ECB x\xF3a s\u1ED5.`);
+      continue;
+    }
+    if (t.state === "tribute" && sim2.day >= t.nextTribute) {
+      t.nextTribute = sim2.day + SEASON_DAYS;
+      for (const [k, n] of Object.entries(t.def.tribute)) sim2.stock[k] = Math.min(sim2.capacity(), sim2.stock[k] + (n ?? 0));
+      sim2.say(`${t.def.name} g\u1EEDi c\u1ED1ng n\u1EA1p m\xF9a n\xE0y.`);
+    }
+    if (t.state === "free") {
+      checkSurrender(sim2, t);
+      manageRaid(sim2, t);
+    }
+  }
+}
+function checkSurrender(sim2, t) {
+  const units = t.unitIds.map((u) => sim2.get(u)).filter(Boolean), warriors = units.filter((u) => u.ai?.role !== "civ");
+  if (SURRENDER.leaderDown && t.leaderId >= 0 && !t.unitIds.includes(t.leaderId) && units.length) return surrender(sim2, t, "Th\u1EE7 l\u0129nh \u0111\xE3 g\u1EE5c");
+  const intruders = sim2.villagers.filter((v) => v.health > 0 && v.down <= 0 && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 5).length;
+  const defenders = warriors.filter((w) => Math.hypot(w.x - t.camp.x, w.y - t.camp.y) < 9 && w.morale >= MORALE.flee).length;
+  t.holdT = intruders > 0 && defenders === 0 && tribeHostile(sim2, t.id) ? t.holdT + 1 : 0;
+  if (t.holdT >= SURRENDER.holdCampSeconds) return surrender(sim2, t, "\u0110\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD \u0111\xE3 b\u1ECB chi\u1EBFm");
+  if (warriors.length && warriors.reduce((a, w) => a + w.morale, 0) / warriors.length < SURRENDER.moraleBelow) surrender(sim2, t, "Tinh th\u1EA7n s\u1EE5p \u0111\u1ED5");
+}
+function surrender(sim2, t, why) {
+  t.state = "surrendered";
+  t.raid = null;
+  t.holdT = 0;
+  t.angryUntil = 0;
+  releaseRaiders(sim2, t);
+  for (const u of t.unitIds) {
+    const f = sim2.get(u);
+    if (f) {
+      f.fight.target = null;
+      f.fleeT = 0;
+      f.path = [];
+      f.phase = "idle";
+    }
+  }
+  sim2.pendingTribe = t.id;
+  sim2.say(`${why}: ${t.def.name} xin h\xE0ng! Ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p.`);
+}
+function manageRaid(sim2, t) {
+  const r = t.raid;
+  if (!r) return;
+  r.t += 1;
+  const raiders = t.unitIds.map((u) => sim2.get(u)).filter((u) => u?.ai?.raid === r.id);
+  const heart = raiders.length ? raiders.reduce((a, u) => a + u.morale, 0) / raiders.length : 0;
+  const playerAlive = sim2.villagers.some((v) => v.health > 0);
+  if (r.phase === "march" && (raiders.length === 0 || r.t > r.max || heart < MORALE.flee || !playerAlive)) {
+    r.phase = "retreat";
+    if (raiders.length) sim2.say(`Qu\xE2n ${t.def.name} r\xFAt lui.`);
+  }
+  if (r.phase === "retreat") {
+    const home = raiders.every((u) => Math.hypot(u.x - t.camp.x, u.y - t.camp.y) < 7);
+    if (raiders.length === 0 || home || r.t > r.max + 120) {
+      releaseRaiders(sim2, t);
+      t.raid = null;
+    }
+  }
+}
+function raidAdvised(sim2, t, size) {
+  const ours = sim2.villagers.filter((v) => v.job === "fight").length, theirs = Math.min(size, t.unitIds.filter((u) => sim2.get(u)?.ai?.role === "guard").length);
+  return ours < 6 || theirs >= ours * 0.35;
+}
+function launchRaid(sim2, t, size) {
+  const guards = t.unitIds.map((u) => sim2.get(u)).filter((u) => u?.ai?.role === "guard").sort((a, b) => b.maxHealth - a.maxHealth);
+  const n = Math.min(size, guards.length);
+  if (n < 3 || t.raid) return;
+  const id = ++sim2.nextRaid;
+  t.raid = { id, phase: "march", t: 0, max: 200, size: n };
+  const ours = sim2.villagers.filter((v) => v.job === "fight"), oursArch = ours.filter((v) => armOfWeapon(v.weapon) === "archer").length, wantArch = ours.length >= 4 && oursArch * 2 <= ours.length ? Math.floor(n / 3) : 0;
+  const melee = t.def.weapons.filter((w) => !WEAPONS[w]?.ranged), picks = guards.slice(0, n);
+  picks.forEach((g2, i) => {
+    g2.ai.role = "raider";
+    g2.ai.raid = id;
+    g2.fight.target = null;
+    g2.path = [];
+    g2.fleeT = 0;
+    g2.weapon = i < wantArch ? i % 2 ? "sling" : "bow" : melee[i % Math.max(1, melee.length)] ?? g2.weapon;
+  });
+  t.angryUntil = sim2.time + 400;
+  const arch = picks.filter((g2) => armOfWeapon(g2.weapon) === "archer").length;
+  sim2.say(`Qu\xE2n ${t.def.name} (${n} ng\u01B0\u1EDDi${sim2.mapLevel(t.id) >= 3 ? `: ${arch} cung th\u1EE7, ${n - arch} b\u1ED9 binh` : ""}) \u0111ang ti\u1EBFn v\xE0o l\xE0ng!`);
+}
+function launchCustomRaid(sim2, t, weapons, armor) {
+  const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
+  const dx = t.camp.x - fx, dy = t.camp.y - fy, len = Math.max(1, Math.hypot(dx, dy)), dist = Math.min(26, len);
+  const id = ++sim2.nextRaid, power = ringPower(ringOf(len));
+  t.relation = Math.min(t.relation, -60);
+  t.raid = { id, phase: "march", t: 0, max: 900, size: weapons.length };
+  weapons.forEach((weapon, i) => {
+    const ang = i / weapons.length * Math.PI * 2, gx = Math.floor(fx + dx / len * dist + Math.cos(ang) * 2), gy = Math.floor(fy + dy / len * dist + Math.sin(ang) * 2);
+    const spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+    const f = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < 0.5 ? "m" : "f", t.id, sim2.frnd);
+    f.look.hide = t.def.look.hide;
+    f.look.pants = t.def.look.pants;
+    f.stats.str = Math.round(f.stats.str * power + 1);
+    f.maxHealth = Math.round(maxHpOf(f.stats.vit) * power);
+    f.health = f.maxHealth;
+    f.weapon = weapon;
+    f.armor = armor ? "hide" : null;
+    f.ai = { role: "raider", camp: t.camp, wander: 0, goal: null, raid: id };
+    sim2.addFoe(f);
+    t.unitIds.push(f.id);
+  });
+  t.angryUntil = sim2.time + 400;
+  sim2.say(`Qu\xE2n ${t.def.name} (${weapons.length} ng\u01B0\u1EDDi) \u0111ang ti\u1EBFn v\xE0o l\xE0ng!`);
+}
+function launchWolves(sim2, size) {
+  const fire = sim2.campfire(), s = sim2.world.start, cx = fire ? fire.x + 1 : s.x, cy = fire ? fire.y + 1 : s.y;
+  let placed = 0;
+  const ang0 = sim2.frnd() * Math.PI * 2;
+  for (let tries = 0; tries < 80 && placed < size; tries++) {
+    const a = ang0 + (sim2.frnd() - 0.5) * 0.8, d = 26 + sim2.frnd() * 6;
+    const x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d, tx = Math.floor(x), ty = Math.floor(y);
+    if (!sim2.world.inBounds(tx, ty) || sim2.world.isBlocked(tx, ty)) continue;
+    const w = spawnAnimal(sim2, "wolf", x, y, 9e3 + sim2.nextRaid, true);
+    w.state = "graze";
+    w.timer = 0;
+    placed++;
+  }
+  sim2.nextRaid++;
+  if (placed) sim2.say("B\u1EA7y s\xF3i \u0111\xF3i k\xE9o t\u1EDBi quanh l\xE0ng! \u0110\u1ED1t l\u1EEDa v\xE0 gi\u1EEF d\xE2n g\u1EA7n \u0111\u1ED1ng l\u1EEDa.");
+}
+function initEvents(sim2) {
+  for (const e of events_default.events) {
+    const fireDay = e.day + Math.floor(sim2.frnd() * (e.spread + 1));
+    sim2.events.push({ id: e.id, kind: e.kind, tribe: e.tribe, fireDay, warnDay: fireDay - (e.warnDays ?? 1), size: e.size, night: e.night, warn: e.warn, warned: !e.warn, fired: false });
+  }
+}
+function tickEvents(sim2) {
+  for (const e of sim2.events) {
+    if (e.fired) continue;
+    if (!e.warned && sim2.day >= e.warnDay && sim2.tod >= 0.3) {
+      e.warned = true;
+      sim2.say(e.warn);
+    }
+    if (sim2.day < e.fireDay) continue;
+    const ready = e.night ? sim2.restTime : sim2.tod >= 0.28 && !sim2.restTime;
+    if (!ready) continue;
+    e.fired = true;
+    if (e.kind === "wolves") launchWolves(sim2, e.size);
+    else if (e.tribe) {
+      const t = tribeOf(sim2, e.tribe);
+      if (t && t.state === "free") {
+        if (raidAdvised(sim2, t, e.size) || e.fireDay >= e.warnDay + 4) launchRaid(sim2, t, e.size);
+        else {
+          e.fired = false;
+          e.fireDay = sim2.day + 1;
+          e.warned = true;
+          sim2.say(`${t.def.name} th\u1EA5y l\xE0ng \u0111\xF4ng qu\xE2n v\xE0 ho\xE3n t\u1EADp k\xEDch.`);
+        }
+      }
+    }
+  }
+}
+var AGGRO = { peaceful: 6, aggressive: 14, ambusher: 9 };
+var LEASH = 24;
+function wander(sim2, f, radius) {
+  const ai = f.ai;
+  for (let i = 0; i < 6; i++) {
+    const a = sim2.frnd() * Math.PI * 2, r = 1.5 + sim2.frnd() * radius;
+    const g2 = sim2.nearestFree(Math.floor(ai.camp.x + Math.cos(a) * r), Math.floor(ai.camp.y + Math.sin(a) * r), /* @__PURE__ */ new Set());
+    if (g2) {
+      f.path = sim2.pathTo(f, g2[0], g2[1], 2500);
+      f.phase = f.path.length ? "move" : "idle";
+      break;
+    }
+  }
+  ai.wander = 4 + sim2.frnd() * 8;
+}
+function tickFoe(sim2, f, dt) {
+  tickCommon(sim2, f, dt);
+  const t = tribeOf(sim2, f.team), ai = f.ai;
+  if (t && ai) foeBrain(sim2, f, t, ai, dt);
+  sim2.moveUnit(f, dt);
+  sim2.animate(f, dt);
+}
+function noteStuck(sim2, f, ai, dt, blocked) {
+  if (!blocked) {
+    ai.stuck = 0;
+    return;
+  }
+  ai.stuck = (ai.stuck ?? 0) + dt;
+  if (ai.stuck < 3) return;
+  const wall = sim2.nearestWork(f.x, f.y, 16);
+  ai.stuck = 0;
+  if (wall) ai.siege = wall.id;
+}
+function siegeBrain(sim2, f, ai, dt, threats) {
+  if (!ai.siege) return false;
+  if (threats.length && threats[0].d <= weaponOf(f).range + 1.5) return false;
+  const b = sim2.getBuilding(ai.siege);
+  if (!b) {
+    ai.siege = 0;
+    f.path = [];
+    return false;
+  }
+  const w = weaponOf(f), d = BUILDINGS[b.kind], cx = b.x + d.w / 2, cy = b.y + d.h / 2;
+  const dist = Math.hypot(cx - f.x, cy - f.y) - Math.max(d.w, d.h) / 2;
+  if (dist <= (w.ranged ? 1.2 : w.range) + 0.6) {
+    f.path = [];
+    f.slide = null;
+    f.phase = "fight";
+    f.facing = cx >= f.x ? "right" : "left";
+    if (f.atkCd <= 0 && !f.swing) {
+      const { hitAt, end } = swingTimes(w.anim);
+      f.swing = { t: 0, hitAt, end, target: { kind: "unit", id: -1 } };
+      f.atkCd = cycleOf(w.cycle, f.stats.agi);
+      sim2.damageWork(b, (w.damage + (w.ranged ? 0 : RULES.strengthDamage * f.stats.str)) * (w.type === "slash" ? 1.5 : 1));
+    }
+    return true;
+  }
+  f.fight.repath -= dt;
+  if (!f.path.length && f.fight.repath <= 0) {
+    const ring = sim2.ringTiles(f, b.x, b.y, d.w, d.h);
+    f.path = ring.length ? sim2.pathTo(f, ring[0][0], ring[0][1], 4e3) : [];
+    f.fight.repath = 1;
+    if (!f.path.length) {
+      ai.siege = 0;
+      return false;
+    }
+  }
+  f.phase = "move";
+  return true;
+}
+function foeBrain(sim2, f, t, ai, dt) {
+  const free = t.state === "free";
+  f.fight.scan -= dt;
+  const radius = ai.role === "raider" ? 12 : ai.role === "civ" ? 9 : AGGRO[t.def.personality];
+  const scanNow = f.fight.scan <= 0;
+  if (scanNow) f.fight.scan = 0.4;
+  const threats = free && (scanNow || f.phase === "fight" || f.phase === "flee") ? threatsOf(sim2, f, radius) : [];
+  if (!free) {
+    f.fight.target = null;
+    if (f.phase === "fight") {
+      f.phase = "idle";
+      f.path = [];
+    }
+  }
+  if (free && (f.fleeT > 0 || f.morale < MORALE.flee && threats.length || ai.role === "civ" && threats.length && threats[0].d < 8)) {
+    if (f.fleeT <= 0) {
+      f.fleeT = 6;
+      f.fight.target = null;
+      f.path = sim2.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3e3);
+    }
+    f.fleeT -= dt;
+    f.phase = "flee";
+    if (threats.length && threats[0].d < 6) f.fleeT = Math.max(f.fleeT, 2);
+    if (f.fleeT <= 0 && f.morale < MORALE.fleeRecover) f.fleeT = 1;
+    if (!f.path.length && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 3) f.path = sim2.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3e3);
+    return;
+  }
+  if (f.phase === "flee") {
+    f.phase = "idle";
+    f.path = [];
+  }
+  if (free && ai.role === "raider" && t.raid) {
+    if (t.raid.phase === "retreat") {
+      if (!f.path.length && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 4) f.path = sim2.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 2e4);
+      f.phase = "move";
+      return;
+    }
+    if (siegeBrain(sim2, f, ai, dt, threats)) return;
+    if (f.fight.target) {
+      const e = resolve(sim2, f.fight.target);
+      if (e) {
+        engage(sim2, f, e, dt);
+        const ex = e.kind === "unit" ? e.v.x : e.a.x, ey = e.kind === "unit" ? e.v.y : e.a.y;
+        noteStuck(sim2, f, ai, dt, !f.path.length && !f.swing && Math.hypot(ex - f.x, ey - f.y) > weaponOf(f).range + 2);
+        return;
+      }
+      f.fight.target = null;
+      f.phase = "idle";
+    }
+    if (threats.length) {
+      f.fight.target = threats[0].t;
+      return;
+    }
+    const fire = sim2.campfire(), gx = fire ? fire.x + 1 : sim2.world.start.x, gy = fire ? fire.y + 1 : sim2.world.start.y;
+    if (Math.hypot(gx - f.x, gy - f.y) > 6) {
+      f.fight.repath -= dt;
+      if (!f.path.length && f.fight.repath <= 0) {
+        f.path = sim2.pathTo(f, Math.floor(gx), Math.floor(gy), 4e4);
+        f.fight.repath = f.path.length ? 0.5 : 1.5;
+      }
+      f.phase = "move";
+      noteStuck(sim2, f, ai, dt, !f.path.length);
+    } else {
+      const v = sim2.villagers.find((o) => o.health > 0 && o.down <= 0 && o.inside === null);
+      if (v) f.fight.target = { kind: "unit", id: v.id };
+    }
+    return;
+  }
+  if (free && f.fight.target) {
+    const e = resolve(sim2, f.fight.target);
+    if (e && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) < LEASH) {
+      engage(sim2, f, e, dt);
+      return;
+    }
+    f.fight.target = null;
+    f.phase = "idle";
+    f.path = [];
+  }
+  if (free && ai.role === "guard" && threats.length && tribeHostile(sim2, t.id)) {
+    f.fight.target = threats[0].t;
+    return;
+  }
+  if (f.phase === "fight") {
+    f.phase = "idle";
+    f.path = [];
+  }
+  ai.wander -= dt;
+  if (ai.wander <= 0 && !f.path.length) wander(sim2, f, ai.role === "civ" ? 5 : t.def.personality === "aggressive" ? 12 : 8);
+  if (f.phase === "move" && !f.path.length) f.phase = "idle";
+  void DAY_LENGTH;
+}
+
+// src/data/pace.json
+var pace_default = {
+  _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
+  gather: { wood: 11, stone: 17, food: 6, farm: 70 },
+  bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
+  outdoor: ["wood", "stone", "food", "build"]
+};
+
+// src/sim/jobs.ts
+var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", int: "Tr\xED tu\u1EC7", sta: "Th\u1EC3 l\u1EF1c" };
+var JOBS = {
+  wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
+  stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
+  food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: pace_default.gather.food, anim: "gather" },
+  build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
+  craft: { name: "Ch\u1EBF t\u1EA1o", stat: "int", baseTime: 1, anim: "craft" },
+  research: { name: "Nghi\xEAn c\u1EE9u", stat: "int", baseTime: 1, anim: "gather" },
+  repair: { name: "S\u1EEDa ch\u1EEFa", stat: "agi", baseTime: 1, anim: "craft" },
+  hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
+  fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
+};
+var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", repair: "S\u1EEDa ch\u1EEFa", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh" };
+var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "repair", "hunt", "fight"];
+var STAFF_BUILDING = { craft: "workshop", research: "lab", repair: "repair" };
+var isStaffJob = (j) => j in STAFF_BUILDING;
+var FARM_TIME = pace_default.gather.farm;
+var XP_LEVELS = [60, 150, 300, 500, 800];
+var MAX_LEVEL = 5;
+var CREW_BUILDING = { build: "builder" };
+var BARE_HANDS = pace_default.bare;
+var OUTDOOR_JOBS = pace_default.outdoor;
+
+// src/data/research.json
+var research_default = {
+  enabled: true,
+  _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Every tool, weapon and armour has ONE blueprint that is raised step by step (tech id = recipe id: axe1 is the wood axe, axe2 the stone one); a recipe can only be made once its blueprint step is researched and the Nh\xE0 ch\u1EBF t\u1EA1o is high enough (recipeLevel). cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, levels (highest level per building kind), buildings (kinds that may be built), auto (fetch: villagers fetch tools from the stores; order: villagers order crafting and repair themselves). Set enabled to false to open everything.",
+  recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1, sling1: 1, bow1: 2 },
+  techs: [
+    { id: "hammer1", name: "B\u1EA3n v\u1EBD B\xFAa g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo b\xFAa g\u1ED7 \u0111\u1EC3 d\u1EF1ng nh\xE0 nhanh h\u01A1n.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["hammer1"] } },
+    { id: "axe1", name: "B\u1EA3n v\u1EBD R\xECu g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo r\xECu g\u1ED7 \u0111\u1EC3 \u0111\u1ED1n c\xE2y.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["axe1"] } },
+    { id: "pick1", name: "B\u1EA3n v\u1EBD Cu\u1ED1c chim g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo cu\u1ED1c chim g\u1ED7 \u0111\u1EC3 \u0111\u1EE5c \u0111\xE1.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 160, unlocks: { recipes: ["pick1"] } },
+    { id: "hoe1", name: "B\u1EA3n v\u1EBD Cu\u1ED1c g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo cu\u1ED1c g\u1ED7 \u0111\u1EC3 h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 140, unlocks: { recipes: ["hoe1"] } },
+    { id: "torch1", name: "B\u1EA3n v\u1EBD \u0110u\u1ED1c", desc: "Qu\u1EA5n nh\u1EF1a v\xE0 c\xE0nh kh\xF4 th\xE0nh \u0111u\u1ED1c \u0111\u1EC3 l\xE0m vi\u1EC7c \u0111\u01B0\u1EE3c ban \u0111\xEAm.", requires: [], needLevel: 1, minInt: 3, cost: { wood: 4, coin: 1 }, time: 120, unlocks: { recipes: ["torch1"] } },
+    { id: "club1", name: "B\u1EA3n v\u1EBD G\u1EADy chi\u1EBFn", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo g\u1EADy chi\u1EBFn \u0111\u1EC3 t\u1EF1 v\u1EC7 v\xE0 \u0111i s\u0103n.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 180, unlocks: { recipes: ["club1"] } },
+    { id: "hide1", name: "B\u1EA3n v\u1EBD \xC1o da", desc: "V\u1EBD c\xE1ch kh\xE2u da th\xFA th\xE0nh \xE1o gi\xE1p.", requires: ["axe1"], needLevel: 1, minInt: 6, cost: { hide: 4, coin: 4 }, time: 240, unlocks: { recipes: ["hide1"] } },
+    { id: "spear1", name: "B\u1EA3n v\u1EBD Gi\xE1o v\xF3t nh\u1ECDn", desc: "V\u1EBD c\xE1ch v\xF3t gi\xE1o c\xF3 t\u1EA7m \u0111\xE2m xa h\u01A1n g\u1EADy.", requires: ["club1"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 5 }, time: 320, unlocks: { recipes: ["spear1"] } },
+    { id: "sling1", name: "B\u1EA3n v\u1EBD D\xE2y qu\u0103ng \u0111\xE1", desc: "V\u1EBD c\xE1ch b\u1EC7n d\xE2y qu\u0103ng \u0111\xE1: cung th\u1EE7 t\u1EA7m ng\u1EAFn, b\u1EAFn t\u1EEB xa.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 200, unlocks: { recipes: ["sling1"] } },
+    { id: "bow1", name: "B\u1EA3n v\u1EBD Cung ng\u1EAFn", desc: "V\u1EBD c\xE1ch u\u1ED1n cung v\xE0 v\xF3t t\xEAn: cung th\u1EE7 t\u1EA7m xa.", requires: ["sling1", "spear1"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 5 }, time: 320, unlocks: { recipes: ["bow1"] } },
+    { id: "axe2", name: "B\u1EA3n v\u1EBD R\xECu \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD R\xECu l\xEAn c\u1EA5p 2: l\u01B0\u1EE1i \u0111\xE1 b\u1EC1n v\xE0 nhanh h\u01A1n g\u1ED7.", requires: ["axe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 380, unlocks: { recipes: ["axe2"] } },
+    { id: "pick2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c chim \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c chim l\xEAn c\u1EA5p 2.", requires: ["pick1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 380, unlocks: { recipes: ["pick2"] } },
+    { id: "hoe2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c l\xEAn c\u1EA5p 2.", requires: ["hoe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 10, coin: 6 }, time: 340, unlocks: { recipes: ["hoe2"] } },
+    { id: "hammer2", name: "B\u1EA3n v\u1EBD B\xFAa \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD B\xFAa l\xEAn c\u1EA5p 2.", requires: ["hammer1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 360, unlocks: { recipes: ["hammer2"] } },
+    { id: "mace2", name: "B\u1EA3n v\u1EBD Ch\xF9y \u0111\xE1", desc: "V\u1EBD c\xE1ch bu\u1ED9c \u0111\u1EA7u \u0111\xE1 n\u1EB7ng v\xE0o c\xE1n th\xE0nh ch\xF9y.", requires: ["club1", "axe2"], needLevel: 3, minInt: 8, cost: { stone: 30, coin: 10 }, time: 600, unlocks: { recipes: ["mace2"] } },
+    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { storage: 2, workshop: 2, lab: 2, repair: 2, toolstore: 2, armory: 2, house: 2, barracks: 2, field: 2, fence: 2, gate: 2, tower: 2 } } },
+    { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber", "pick1"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { storage: 3, workshop: 3, lab: 3, repair: 3, toolstore: 3, armory: 3, house: 3, barracks: 3, field: 3 } } },
+    { id: "house", name: "Nh\xE0 d\xE2n", desc: "D\u1EF1ng nh\xE0 cho d\xE2n ng\u1EE7: ng\u1EE7 trong nh\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["house"] } },
+    { id: "barracks", name: "L\u1EC1u chi\u1EBFn binh", desc: "D\u1EF1ng l\u1EC1u cho chi\u1EBFn binh ng\u1EE7 v\xE0 ngh\u1EC9 ng\u01A1i; l\xEDnh \u0111\u01B0\u1EE3c tuy\u1EC3n \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["barracks"] } },
+    { id: "farming", name: "L\xE0m ru\u1ED9ng", desc: "V\u1EE1 \u0111\u1EA5t l\xE0m ru\u1ED9ng: th\u1EE9c \u0103n \u0111\u1EC1u quanh n\u0103m, kh\xF4ng nh\u01B0 b\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n.", requires: ["hoe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 220, unlocks: { buildings: ["field"] } },
+    { id: "fence", name: "H\xE0ng r\xE0o c\u1ECDc", desc: "\u0110\xF3ng c\u1ECDc nh\u1ECDn ch\u1EB7n \u0111\u01B0\u1EDDng, t\u1EA1o ch\u1ED7 th\u1EAFt; l\xEAn c\u1EA5p hai th\xE0nh h\xE0ng r\xE0o \u0111\xF4i \u0111\u1EAFp \u0111\u1EA5t.", requires: ["hammer1", "timber"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["fence"] } },
+    { id: "gate", name: "C\u1ED5ng h\xE0ng r\xE0o", desc: "C\u1ED5ng \u0111\u1EC3 ng\u01B0\u1EDDi m\xECnh ra v\xE0o, \u0111\xF3ng l\u1EA1i th\xEC ch\u1EB7n m\u1ECDi ng\u01B0\u1EDDi.", requires: ["fence"], needLevel: 1, minInt: 5, cost: { wood: 12, coin: 3 }, time: 160, unlocks: { buildings: ["gate"] } },
+    { id: "tower", name: "Ch\xF2i canh", desc: "Ch\xF2i cao cho cung th\u1EE7: b\u1EAFn xa h\u01A1n v\xE0 m\u1EA1nh h\u01A1n.", requires: ["fence"], needLevel: 2, minInt: 6, cost: { wood: 20, coin: 4 }, time: 240, unlocks: { buildings: ["tower"] } },
+    { id: "pit", name: "\u0110\xE0o h\xE0o, h\u1ED1 ch\xF4ng", desc: "\u0110\xE0o h\u1ED1 g\xE0i c\u1ECDc nh\u1ECDn tr\xEAn \u0111\u01B0\u1EDDng \u0111\u1ECBch t\u1EDBi.", requires: ["fence", "pick1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["trap"] } },
+    { id: "signal", name: "T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)", desc: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED; th\u1EBB l\u1EC7nh Ph\xE1t t\xEDn hi\u1EC7u cho c\xE1c \u0111\u1ED9i.", requires: ["tower"], needLevel: 2, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: {} },
+    { id: "scout", name: "Trinh s\xE1t", desc: "C\u1EED d\xE2n \u0111i d\xF2 m\u1ED9t l\xE0ng v\xE0 v\u1EBD b\u1EA3n \u0111\u1ED3 ba c\u1EA5p v\u1EC1 n\xF3.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 200, unlocks: {} },
+    { id: "council", name: "H\u1ED9i \u0111\u1ED3ng chi\u1EBFn", desc: "D\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn: l\u1EADp \u0111\u1ED9i, k\u1EBF ho\u1EA1ch v\xE0 th\u1EBB l\u1EC7nh.", requires: ["scout"], needLevel: 1, minInt: 6, cost: { wood: 15, coin: 4 }, time: 240, unlocks: { buildings: ["wartent"] } },
+    { id: "drill", name: "B\xE3i t\u1EADp", desc: "D\u1EF1ng b\xE3i luy\u1EC7n tr\u1EADn ph\xE1p cho c\xE1c \u0111\u1ED9i.", requires: ["council", "barracks"], needLevel: 1, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["drill"] } },
+    { id: "form_basic", name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", desc: "H\xE0ng ngang v\xE0 v\xF2ng tr\xF2n.", requires: ["drill"], needLevel: 1, minInt: 6, cost: { wood: 12, coin: 4 }, time: 240, unlocks: {} },
+    { id: "form_wedge", name: "Tr\u1EADn m\u0169i nh\u1ECDn", desc: "Xung phong ph\xE1 h\xE0ng.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_horns", name: "Tr\u1EADn s\u1EEBng b\xF2", desc: "Bao hai c\xE1nh, \u0111\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_scatter", name: "Tr\u1EADn r\u1EA3i qu\xE2n", desc: "Gi\u1EA3m thi\u1EC7t h\u1EA1i t\u1EEB cung v\xE0 l\u1EEDa.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_ambush", name: "Tr\u1EADn ph\u1EE5c k\xEDch", desc: "\u0110\xF2n \u0111\u1EA7u m\u1EA1nh g\u1EA5p \u0111\xF4i v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "tool_store", name: "Kho c\xF4ng c\u1EE5", desc: "Cho ph\xE9p d\u1EF1ng Kho c\xF4ng c\u1EE5 \u0111\u1EC3 c\u1EA5t r\xECu, cu\u1ED1c, b\xFAa.", requires: ["hammer1", "axe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 200, unlocks: { buildings: ["toolstore"] } },
+    { id: "armory", name: "Kho v\u0169 kh\xED", desc: "Cho ph\xE9p d\u1EF1ng Kho v\u0169 kh\xED \u0111\u1EC3 c\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["armory"] } },
+    { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: ["tool_store"], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
+    { id: "auto_order", name: "T\u1EF1 nh\u1EDD ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa", desc: "D\xE2n thi\u1EBFu \u0111\u1ED3 t\u1EF1 t\u1EDBi nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EB7t h\xE0ng, t\u1EDBi nh\xE0 s\u1EEDa ch\u1EEFa nh\u1EDD s\u1EEDa \u0111\u1ED3 h\u1ECFng.", requires: ["auto_fetch"], needLevel: 2, minInt: 7, cost: { wood: 10, coin: 8 }, time: 360, unlocks: { auto: ["order"] } }
+  ]
+};
+
+// src/sim/research.ts
+var RESEARCH = { enabled: research_default.enabled };
+var RECIPE_LEVEL = research_default.recipeLevel;
+var recipeNeedLevel = (id) => RECIPE_LEVEL[id] ?? 1;
+var TECHS = research_default.techs;
+var TECH_BY_ID = Object.fromEntries(TECHS.map((t) => [t.id, t]));
+var recipeOpen = (done, recipeId) => !RESEARCH.enabled || done.has(recipeId);
+var techForRecipe = (recipeId) => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
+var levelCap = (done, kind) => !RESEARCH.enabled || kind === "campfire" ? Infinity : TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks.levels?.[kind] ?? 1) : m, 1);
+var techForLevel = (kind, level) => TECHS.find((t) => (t.unlocks.levels?.[kind] ?? 0) >= level);
+var techForBuilding = (kind) => TECHS.find((t) => t.unlocks.buildings?.includes(kind));
+var buildingOpen = (done, kind) => {
+  const t = techForBuilding(kind);
+  return !RESEARCH.enabled || !t || done.has(t.id);
+};
+var autoOn = (done, key) => !RESEARCH.enabled || TECHS.some((t) => done.has(t.id) && t.unlocks.auto?.includes(key));
+var KIND_NAME = { storage: "Kho", workshop: "Nh\xE0 ch\u1EBF t\u1EA1o", lab: "Nh\xE0 nghi\xEAn c\u1EE9u", repair: "Nh\xE0 s\u1EEDa ch\u1EEFa", toolstore: "Kho c\xF4ng c\u1EE5", armory: "Kho v\u0169 kh\xED", barracks: "L\u1EC1u chi\u1EBFn binh", house: "Nh\xE0 d\xE2n", field: "Ru\u1ED9ng", fence: "H\xE0ng r\xE0o", gate: "C\u1ED5ng", tower: "Ch\xF2i canh", wartent: "L\u1EC1u h\u1ECDp chi\u1EBFn", drill: "B\xE3i t\u1EADp", trap: "H\u1ED1 ch\xF4ng" };
+var unlockText = (t, recipeName2) => {
+  const parts = [...(t.unlocks.recipes ?? []).map(recipeName2)];
+  const lv2 = Object.values(t.unlocks.levels ?? {})[0];
+  if (lv2) parts.push(`m\u1ECDi nh\xE0 l\xEAn c\u1EA5p ${lv2}`);
+  for (const k of t.unlocks.buildings ?? []) parts.push(`x\xE2y ${KIND_NAME[k] ?? k}`);
+  if (t.unlocks.auto?.includes("fetch")) parts.push("d\xE2n t\u1EF1 l\u1EA5y \u0111\u1ED3 \u1EDF kho");
+  if (t.unlocks.auto?.includes("order")) parts.push("d\xE2n t\u1EF1 \u0111\u1EB7t ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa");
+  return parts.join(", ");
+};
+
+// src/sim/construction.ts
+function addBuilding(sim2, kind, x, y, done) {
+  const d = BUILDINGS[kind];
+  const b = { id: sim2.nextBid++, kind, era: sim2.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
+  b.hp = levelDef(b).hp;
+  sim2.buildings.push(b);
+  setOcc(sim2, b, 1);
+  return b;
+}
+function footprintError(sim2, kind, x, y, ignore) {
+  const d = BUILDINGS[kind], w = sim2.world, N = w.size;
+  const own = (tx, ty) => !!ignore && tx >= ignore.x && tx < ignore.x + d.w && ty >= ignore.y && ty < ignore.y + d.h;
+  for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) {
+    const tx = x + i, ty = y + j;
+    if (!w.inBounds(tx, ty)) return "Ngo\xE0i b\u1EA3n \u0111\u1ED3";
+    const k = ty * N + tx;
+    if (sim2.fog.state[k] === 0) return "Ch\u01B0a kh\xE1m ph\xE1";
+    const t = w.tiles[k];
+    if (t !== 0 && t !== 4 || w.occ[k] && !own(tx, ty)) return "V\u01B0\u1EDBng c\xE2y, \u0111\xE1, n\u01B0\u1EDBc ho\u1EB7c c\xF4ng tr\xECnh";
+  }
+  return null;
+}
+function buildingLimit(sim2, kind) {
+  const per = BUILDINGS[kind].perFire;
+  if (!per) return 1;
+  return sim2.buildings.reduce((n, f) => n + (f.kind === "campfire" ? per[Math.min(per.length, f.level) - 1] : 0), 0);
+}
+function buildingLock(sim2, kind) {
+  const have = sim2.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim2, kind);
+  if (limit === 0) return `C\u1EA7n n\xE2ng c\u1EA5p Nh\xE0 chung \u0111\u1EC3 x\xE2y ${BUILDINGS[kind].name.toLowerCase()}`;
+  if (have >= limit) return limit === 1 ? "M\u1ED7i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y \u0111\u01B0\u1EE3c m\u1ED9t c\xE1i, h\xE3y n\xE2ng c\u1EA5p n\xF3" : `\u0110\xE3 \u0111\u1EE7 ${limit} ${BUILDINGS[kind].name.toLowerCase()}: n\xE2ng c\u1EA5p Nh\xE0 chung \u0111\u1EC3 x\xE2y th\xEAm`;
+  const need = sim2.dev.freeBuild ? void 0 : BUILDINGS[kind].requires?.find((r) => !sim2.building(r));
+  if (need) return `C\u1EA7n d\u1EF1ng ${BUILDINGS[need].name} tr\u01B0\u1EDBc`;
+  if (!sim2.dev.freeBuild && !buildingOpen(sim2.researched, kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForBuilding(kind)?.name ?? "?"}`;
+  return null;
+}
+function canPlace(sim2, kind, x, y) {
+  return footprintError(sim2, kind, x, y) ?? buildingLock(sim2, kind) ?? (sim2.dev.freeBuild ? null : sim2.missing(levelsOf(kind, sim2.era)[0].cost));
+}
+function canUpgrade(sim2, b) {
+  if (!b.done) return "C\xF4ng tr\xECnh ch\u01B0a d\u1EF1ng xong";
+  if (b.upgrading) return "\u0110ang n\xE2ng c\u1EA5p";
+  if (b.level >= maxLevel(b.kind, b.era)) return "\u0110\xE3 \u1EDF c\u1EA5p cao nh\u1EA5t";
+  if (b.level + 1 > levelCap(sim2.researched, b.kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForLevel(b.kind, b.level + 1)?.name ?? "?"}`;
+  const fire = sim2.campfire();
+  if (b.kind !== "campfire" && fire && !sim2.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `C\u1EA7n n\xE2ng ${BUILDINGS.campfire.name} l\xEAn c\u1EA5p ${b.level + 2}`;
+  return sim2.dev.freeBuild ? null : sim2.missing(levelDef(b, b.level + 1).cost);
+}
+function upgradeBuilding(sim2, id) {
+  const b = sim2.getBuilding(id);
+  if (!b) return "Kh\xF4ng t\xECm th\u1EA5y c\xF4ng tr\xECnh";
+  const why = canUpgrade(sim2, b);
+  if (why) return why;
+  const next = levelDef(b, b.level + 1);
+  if (!sim2.dev.freeBuild) for (const r of Object.keys(next.cost)) sim2.stock[r] -= next.cost[r] ?? 0;
+  if (sim2.dev.instantBuild) {
+    b.level++;
+    b.hp = levelDef(b).hp;
+    sim2.say(`${BUILDINGS[b.kind].name} l\xEAn c\u1EA5p ${b.level} ngay (dev).`);
+    return null;
+  }
+  b.upgrading = true;
+  b.progress = 0;
+  sim2.say(`B\u1EAFt \u0111\u1EA7u n\xE2ng ${BUILDINGS[b.kind].name} l\xEAn c\u1EA5p ${b.level + 1} (${next.name.toLowerCase()}). Giao vi\u1EC7c "Th\u1EE3 x\xE2y" \u0111\u1EC3 l\xE0m.`);
+  return null;
+}
+function placeBuilding(sim2, kind, x, y) {
+  const d = BUILDINGS[kind];
+  if (!d.buildable) return { ok: false, reason: "Kh\xF4ng x\xE2y \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y" };
+  const why = canPlace(sim2, kind, x, y);
+  if (why) return { ok: false, reason: why };
+  const cost = levelsOf(kind, sim2.era)[0].cost;
+  if (!sim2.dev.freeBuild) for (const r of Object.keys(cost)) sim2.stock[r] -= cost[r] ?? 0;
+  const b = addBuilding(sim2, kind, x, y, false);
+  if (sim2.dev.instantBuild) {
+    b.progress = 1;
+    b.done = true;
+    sim2.fogDirty = true;
+    sim2.say(`${d.name} \u0111\xE3 d\u1EF1ng xong ngay (dev).`);
+    return { ok: true, building: b };
+  }
+  sim2.say(`\u0110\xE3 \u0111\u1EB7t n\u1EC1n ${d.name}. Giao vi\u1EC7c "Th\u1EE3 x\xE2y" \u0111\u1EC3 d\u1EF1ng.`);
+  return { ok: true, building: b };
+}
+function invested(sim2, b) {
+  const out = {};
+  const add = (c) => {
+    for (const r of Object.keys(c)) out[r] = (out[r] ?? 0) + (c[r] ?? 0);
+  };
+  for (let l = 1; l <= b.level; l++) add(levelDef(b, l).cost);
+  if (b.upgrading) add(levelDef(b, b.level + 1).cost);
+  return out;
+}
+function salvage(sim2, b) {
+  const out = {}, paid = invested(sim2, b);
+  if (!sim2.dev.freeBuild) for (const r of Object.keys(paid)) {
+    const n = Math.floor((paid[r] ?? 0) * 0.5);
+    if (n > 0) out[r] = n;
+  }
+  return out;
+}
+function moveFee(sim2, b) {
+  const out = {};
+  if (!b.done || sim2.dev.freeBuild) return out;
+  const paid = invested(sim2, b);
+  for (const r of Object.keys(paid)) {
+    const n = Math.ceil((paid[r] ?? 0) * 0.2);
+    if (n > 0) out[r] = n;
+  }
+  return out;
+}
+function evict(sim2, b) {
+  for (const id of [...b.staff]) {
+    const v = sim2.byId.get(id);
+    if (v) {
+      sim2.exitBuilding(v);
+      if (v.job !== "fight") v.job = "idle";
+      v.post = -1;
+    }
+  }
+  b.staff = [];
+  if (b.kind === "builder") for (const v of sim2.crew()) {
+    sim2.resetTask(v);
+    v.job = "idle";
+  }
+  if (b.active && (b.kind === "lab" || b.kind === "workshop")) {
+    const d = sim2.orderDef(b.kind === "lab" ? "research" : "craft", b.active.id);
+    if (d) sim2.pay(d.cost, 1);
+  }
+  b.active = null;
+  for (const v of sim2.sleepers(b)) {
+    sim2.exitBuilding(v);
+    v.phase = "idle";
+    v.target = -1;
+    v.path = [];
+  }
+  for (const v of sim2.villagers) {
+    if (v.target !== b.id) continue;
+    if (v.phase === "goSite" || v.phase === "build" || v.phase === "goEquip" || v.phase === "goStaff" || v.phase === "goOrder") {
+      if (isStaffJob(v.job) || v.post === b.id) v.job = "idle";
+      sim2.resetTask(v);
+    }
+  }
+  for (const v of sim2.villagers) if (v.post === b.id) {
+    v.post = -1;
+    if (v.job === "food" && v.phase === "idle") v.job = "idle";
+  }
+}
+function setOcc(sim2, b, val) {
+  const d = BUILDINGS[b.kind];
+  if (b.kind === "gate" && b.open || b.kind === "trap") val = 0;
+  for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim2.world.occ[(b.y + j) * sim2.world.size + b.x + i] = val;
+}
+function canDemolish(sim2, b) {
+  return BUILDINGS[b.kind].buildable ? null : "Kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
+}
+function destroyBuilding(sim2, b) {
+  evict(sim2, b);
+  setOcc(sim2, b, 0);
+  sim2.buildings.splice(sim2.buildings.indexOf(b), 1);
+  sim2.fogDirty = true;
+}
+function demolishBuilding(sim2, id) {
+  const b = sim2.getBuilding(id);
+  if (!b) return "Kh\xF4ng t\xECm th\u1EA5y c\xF4ng tr\xECnh";
+  const why = canDemolish(sim2, b);
+  if (why) return why;
+  const back = salvage(sim2, b);
+  evict(sim2, b);
+  setOcc(sim2, b, 0);
+  sim2.buildings.splice(sim2.buildings.indexOf(b), 1);
+  for (const r of Object.keys(back)) sim2.stock[r] += back[r] ?? 0;
+  sim2.fogDirty = true;
+  sim2.say(`\u0110\xE3 ph\xE1 ${BUILDINGS[b.kind].name.toLowerCase()}${Object.keys(back).length ? `, thu l\u1EA1i ${Object.keys(back).map((r) => `${back[r]} ${RES_NAME[r].toLowerCase()}`).join(", ")}` : ""}.`);
+  return null;
+}
+function canMove(sim2, b, x, y) {
+  if (!BUILDINGS[b.kind].buildable) return "Kh\xF4ng d\u1EDDi \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
+  if (x === b.x && y === b.y) return "V\u1EABn \u1EDF ch\u1ED7 c\u0169";
+  return footprintError(sim2, b.kind, x, y, b) ?? sim2.missing(moveFee(sim2, b));
+}
+function moveBuilding(sim2, id, x, y) {
+  const b = sim2.getBuilding(id);
+  if (!b) return "Kh\xF4ng t\xECm th\u1EA5y c\xF4ng tr\xECnh";
+  const why = canMove(sim2, b, x, y);
+  if (why) return why;
+  const fee = moveFee(sim2, b);
+  for (const r of Object.keys(fee)) sim2.stock[r] -= fee[r] ?? 0;
+  evict(sim2, b);
+  if (b.upgrading) {
+    for (const r of Object.keys(levelDef(b, b.level + 1).cost)) if (!sim2.dev.freeBuild) sim2.stock[r] += levelDef(b, b.level + 1).cost[r] ?? 0;
+    b.upgrading = false;
+  }
+  const wasDone = b.done;
+  setOcc(sim2, b, 0);
+  b.x = x;
+  b.y = y;
+  setOcc(sim2, b, 1);
+  if (wasDone && !sim2.dev.instantBuild) {
+    b.done = false;
+    b.progress = 0;
+    b.rebuild = true;
+  }
+  sim2.fogDirty = true;
+  sim2.say(`${BUILDINGS[b.kind].name} \u0111\u01B0\u1EE3c d\u1EDDi sang ch\u1ED7 m\u1EDBi.${b.rebuild ? ' Giao "Th\u1EE3 x\xE2y" \u0111\u1EC3 d\u1EF1ng l\u1EA1i.' : ""}`);
+  return null;
+}
+function capacity(sim2, _res) {
+  let c = 0;
+  for (const b of sim2.buildings) if (b.done && holdsGoods(b)) c += levelDef(b).cap;
+  return c;
+}
+function popCap(sim2) {
+  const f = sim2.campfire();
+  return POP_BY_FIRE[Math.min(POP_BY_FIRE.length, f?.level ?? 1) - 1];
+}
+function crewSpeed(sim2) {
+  const h2 = sim2.building("builder");
+  return h2 ? levelDef(h2).craftSpeed : 1;
+}
+
+// src/sim/economy.ts
+function missing(sim2, cost) {
+  for (const r of Object.keys(cost)) if (sim2.stock[r] < (cost[r] ?? 0)) return `Thi\u1EBFu ${RES_NAME[r].toLowerCase()} (c\u1EA7n ${cost[r]})`;
+  return null;
+}
+function affordable(sim2, cost) {
+  return Object.keys(cost).every((k) => sim2.stock[k] >= (cost[k] ?? 0));
+}
+function pay(sim2, cost, sign = -1) {
+  for (const k of Object.keys(cost)) sim2.stock[k] += sign * (cost[k] ?? 0);
+}
+function barter(sim2, res) {
+  const n = BARTER[res];
+  if (sim2.stock[res] < n) return `C\u1EA7n ${n} ${RES_NAME[res].toLowerCase()} \u0111\u1EC3 \u0111\u1ED5i l\u1EA5y 1 ${RES_NAME.coin.toLowerCase()}`;
+  if (sim2.stock.coin >= sim2.capacity()) return `Kho \u0111\xE3 \u0111\u1EA7y ${RES_NAME.coin.toLowerCase()}`;
+  sim2.stock[res] -= n;
+  sim2.stock.coin += 1;
+  return null;
+}
+function syncFood(sim2) {
+  const lots = sim2.foodLots, cur = sim2.stock.food;
+  let sum = 0;
+  for (const l of lots) sum += l.amount;
+  if (cur > sum) {
+    const exp = sim2.time + FOOD_SPOIL_DAYS * DAY_LENGTH, last = lots[lots.length - 1];
+    if (last && exp - last.exp < 30) last.amount += cur - sum;
+    else lots.push({ amount: cur - sum, exp });
+  } else if (cur < sum) {
+    let take = sum - cur;
+    while (take > 0 && lots.length) {
+      const l = lots[0], k = Math.min(l.amount, take);
+      l.amount -= k;
+      take -= k;
+      if (l.amount <= 0) lots.shift();
+    }
+  }
+  let spoiled = 0;
+  while (lots.length && lots[0].exp <= sim2.time) spoiled += lots.shift().amount;
+  if (spoiled > 0) {
+    sim2.stock.food = Math.max(0, sim2.stock.food - spoiled);
+    sim2.say(`${Math.round(spoiled)} th\u1EE9c \u0103n \u0111\u1EC3 qu\xE1 ${FOOD_SPOIL_DAYS} ng\xE0y \u0111\xE3 h\u1ECFng.`);
+  }
+}
+function foodSpoilingWithin(sim2, secs) {
+  let n = 0;
+  for (const l of sim2.foodLots) if (l.exp <= sim2.time + secs) n += l.amount;
+  return Math.min(n, sim2.stock.food);
+}
+
+// src/sim/tools.ts
+var TOOL_KINDS = ["axe", "pick", "hoe", "hammer"];
+var TOOL_NAME = { axe: "R\xECu", pick: "Cu\u1ED1c chim", hoe: "Cu\u1ED1c", hammer: "B\xFAa" };
+var TOOL_USE = { axe: "\u0111\u1ED1n g\u1ED7", pick: "\u0111\u1EE5c \u0111\xE1", hoe: "h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7", hammer: "d\u1EF1ng c\xF4ng tr\xECnh" };
+var TOOL_OF_JOB = { wood: "axe", stone: "pick", food: "hoe", build: "hammer" };
+var TIER_NAME = ["Tay kh\xF4ng", "G\u1ED7", "\u0110\xE1"];
+var TIER_SPEED = [0.6, 1, 1.4];
+var TIER_YIELD = [1, 1.25, 1.6];
+var TIER_DURABILITY = [0, 240, 600];
+var GEAR_KINDS = ["club", "spear", "mace", "sling", "bow", "hide"];
+var isGear = (k) => GEAR_KINDS.includes(k);
+var isWeaponKind = (k) => k in WEAPONS;
+var R = (kind, tier, cost, time) => ({ id: `${kind}${tier}`, kind, tier, cost, time });
+var gearRecipe = (kind) => {
+  const d = kind === "hide" ? ARMORS.hide : WEAPONS[kind];
+  return R(kind, d.tier ?? 1, d.cost ?? {}, d.time ?? 60);
+};
+var RECIPES = [
+  R("axe", 1, { wood: 3 }, 24),
+  R("axe", 2, { wood: 2, stone: 3 }, 40),
+  R("pick", 1, { wood: 4 }, 28),
+  R("pick", 2, { wood: 2, stone: 4 }, 44),
+  R("hoe", 1, { wood: 3 }, 24),
+  R("hoe", 2, { wood: 2, stone: 2 }, 36),
+  R("hammer", 1, { wood: 3 }, 24),
+  R("hammer", 2, { wood: 2, stone: 3 }, 36),
+  R("torch", 1, { wood: 2 }, 12),
+  ...GEAR_KINDS.map(gearRecipe)
+];
+var RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
+var recipeName = (r) => {
+  if (r.kind === "hide") return ARMORS.hide.name;
+  if (r.kind === "torch") return "\u0110u\u1ED1c";
+  if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
+  return `${TOOL_NAME[r.kind]} ${TIER_NAME[r.tier].toLowerCase()}`;
+};
+var recipeUse = (r) => {
+  if (r.kind === "hide") return "gi\xE1p, gi\u1EA3m s\xE1t th\u01B0\u01A1ng";
+  if (r.kind === "torch") return "l\xE0m vi\u1EC7c ban \u0111\xEAm (hi\u1EC7u su\u1EA5t 70%), nh\xECn xa h\u01A1n trong t\u1ED1i";
+  if (isWeaponKind(r.kind)) {
+    const w = WEAPONS[r.kind];
+    return `${{ pierce: "\u0111\xE2m", slash: "ch\xE9m", crush: "\u0111\u1EADp" }[w.type]} ${w.damage} \xB7 t\u1EA7m ${w.range}`;
+  }
+  return TOOL_USE[r.kind];
+};
+var emptyToolSet = () => ({ axe: null, pick: null, hoe: null, hammer: null });
+
+// src/sim/works.ts
+function orderDef(sim2, kind, id) {
+  if (kind === "research") {
+    const t = TECH_BY_ID[id];
+    return t ? { cost: t.cost, time: t.time } : null;
+  }
+  const r = RECIPE_BY_ID[id];
+  if (!r) return null;
+  if (kind === "craft") return { cost: r.cost, time: r.time };
+  const half = {};
+  for (const k of Object.keys(r.cost)) half[k] = Math.ceil((r.cost[k] ?? 0) / 2);
+  return { cost: half, time: Math.ceil(r.time * 1.5) };
+}
+function levelOfKind(sim2, kind) {
+  return sim2.building(kind)?.level ?? 0;
+}
+function workshopLevel(sim2) {
+  return levelOfKind(sim2, "workshop");
+}
+function bestIntInside(sim2, b) {
+  return b.staff.reduce((m, id) => Math.max(m, sim2.byId.get(id)?.stats.int ?? 0), 0);
+}
+function recipeLock(sim2, id) {
+  if (!RESEARCH.enabled) return null;
+  if (!recipeOpen(sim2.researched, id)) return `Ch\u01B0a c\xF3 b\u1EA3n v\u1EBD: ${techForRecipe(id)?.name.replace(/^Bản vẽ /, "") ?? "?"}`;
+  const need = recipeNeedLevel(id);
+  if (workshopLevel(sim2) < need) return `C\u1EA7n Nh\xE0 ch\u1EBF t\u1EA1o c\u1EA5p ${need}`;
+  return null;
+}
+function recipeOpen2(sim2, id) {
+  return recipeLock(sim2, id) === null;
+}
+function techState(sim2, t) {
+  if (sim2.researched.has(t.id)) return { state: "done" };
+  if (sim2.building("lab")?.active?.id === t.id) return { state: "active" };
+  if (sim2.researchQueue.includes(t.id)) return { state: "queued" };
+  const need = t.requires.find((r) => !sim2.researched.has(r));
+  if (need) return { state: "locked", why: `C\u1EA7n nghi\xEAn c\u1EE9u: ${TECH_BY_ID[need].name}` };
+  const lab = sim2.building("lab");
+  if (!lab) return { state: "locked", why: "C\u1EA7n d\u1EF1ng Nh\xE0 nghi\xEAn c\u1EE9u" };
+  if (lab.level < t.needLevel) return { state: "locked", why: `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${t.needLevel}` };
+  return { state: "ready" };
+}
+function researchBlock(sim2, t) {
+  const lab = sim2.building("lab");
+  if (!lab || !lab.staff.length) return "Ch\u01B0a c\xF3 ng\u01B0\u1EDDi l\xE0m vi\u1EC7c trong Nh\xE0 nghi\xEAn c\u1EE9u";
+  const best = bestIntInside(sim2, lab);
+  return best >= t.minInt ? null : `C\u1EA7n ng\u01B0\u1EDDi Tr\xED tu\u1EC7 ${t.minInt} tr\u1EDF l\xEAn trong nh\xE0 (gi\u1ECFi nh\u1EA5t: ${best})`;
+}
+function currentResearch(sim2) {
+  return sim2.building("lab")?.active?.id ?? sim2.researchQueue[0] ?? null;
+}
+function queueResearch(sim2, id) {
+  const t = TECH_BY_ID[id];
+  if (!t) return "Kh\xF4ng c\xF3 nghi\xEAn c\u1EE9u n\xE0y";
+  if (!RESEARCH.enabled) return "Nghi\xEAn c\u1EE9u \u0111ang t\u1EAFt";
+  const st = techState(sim2, t);
+  if (st.state === "done") return "\u0110\xE3 nghi\xEAn c\u1EE9u r\u1ED3i";
+  if (st.state === "active" || st.state === "queued") return "\u0110ang nghi\xEAn c\u1EE9u";
+  const cur = currentResearch(sim2);
+  if (cur) return `\u0110ang nghi\xEAn c\u1EE9u ${TECH_BY_ID[cur]?.name ?? cur}: xong r\u1ED3i m\u1EDBi nghi\xEAn c\u1EE9u ti\u1EBFp`;
+  if (st.state === "locked") return st.why ?? "Ch\u01B0a nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c";
+  const short = researchShort(sim2, t);
+  if (short) return short;
+  sim2.pay(t.cost);
+  sim2.researchQueue.push(id);
+  return null;
+}
+function researchShort(sim2, t) {
+  return sim2.missing(t.cost);
+}
+function queueCraft(sim2, id) {
+  if (!RECIPE_BY_ID[id]) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
+  if (!sim2.hasWorkshop()) return "C\u1EA7n d\u1EF1ng Nh\xE0 ch\u1EBF t\u1EA1o tr\u01B0\u1EDBc";
+  const lock = recipeLock(sim2, id);
+  if (lock) return lock;
+  if (sim2.craftQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
+  sim2.craftQueue.push(id);
+  return null;
+}
+function queueRepair(sim2, id) {
+  if (!RECIPE_BY_ID[id]) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
+  if (!sim2.building("repair")) return "C\u1EA7n d\u1EF1ng Nh\xE0 s\u1EEDa ch\u1EEFa tr\u01B0\u1EDBc";
+  if (sim2.repairQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i s\u1EEDa \u0111\xE3 \u0111\u1EA7y";
+  sim2.repairQueue.push(id);
+  return null;
+}
+function unqueue(sim2, queue, id) {
+  const i = queue.lastIndexOf(id);
+  if (i >= 0) queue.splice(i, 1);
+}
+function unqueueCraft(sim2, id) {
+  unqueue(sim2, sim2.craftQueue, id);
+}
+function unqueueResearch(sim2, id) {
+  const t = TECH_BY_ID[id];
+  if (t && sim2.researchQueue.includes(id)) sim2.pay(t.cost, 1);
+  unqueue(sim2, sim2.researchQueue, id);
+}
+function storeUsed(sim2, cat) {
+  return (cat === "tool" ? sim2.wornTools.length : 0) + Object.entries(sim2.toolStock).reduce((n, [id, c]) => n + ((RECIPE_BY_ID[id] && isGear(RECIPE_BY_ID[id].kind)) === (cat === "gear") ? c : 0), 0);
+}
+function storeCap(sim2, cat) {
+  const b = sim2.building(cat === "tool" ? "toolstore" : "armory");
+  return b ? levelDef(b).cap : 10;
+}
+function tickWorks(sim2, dt) {
+  for (const b of sim2.buildings) {
+    if (!b.done || b.kind !== "lab" && b.kind !== "workshop" && b.kind !== "repair") continue;
+    const kind = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "repair";
+    const queue = kind === "research" ? sim2.researchQueue : kind === "craft" ? sim2.craftQueue : sim2.repairQueue;
+    const staff = b.staff.map((id2) => sim2.byId.get(id2)).filter((v) => !!v);
+    if (!staff.length) continue;
+    if (!b.active) {
+      const best = bestIntInside(sim2, b);
+      const i = queue.findIndex((id3) => {
+        const d3 = orderDef(sim2, kind, id3);
+        if (!d3 || kind !== "research" && !sim2.affordable(d3.cost)) return false;
+        if (kind === "research") return best >= (TECH_BY_ID[id3]?.minInt ?? 0);
+        if (kind === "craft") return recipeOpen2(sim2, id3);
+        return true;
+      });
+      if (i < 0) {
+        if (queue.length && sim2.time - sim2.lastMatWarn > 30) {
+          sim2.lastMatWarn = sim2.time;
+          sim2.say(kind === "research" ? "Nghi\xEAn c\u1EE9u \u0111ang ch\u1EDD: ch\u01B0a c\xF3 ng\u01B0\u1EDDi \u0111\u1EE7 th\xF4ng minh trong nh\xE0." : "\u0110\u01A1n \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
+        }
+        continue;
+      }
+      const id2 = queue[i], d2 = orderDef(sim2, kind, id2);
+      queue.splice(i, 1);
+      if (kind !== "research") sim2.pay(d2.cost);
+      b.active = { id: id2, progress: 0 };
+    }
+    const d = orderDef(sim2, kind, b.active.id);
+    if (!d) {
+      b.active = null;
+      continue;
+    }
+    const job = kind;
+    let rate = 0;
+    for (const v of staff) {
+      rate += sim2.workFactor(v, job);
+      sim2.gainXp(v, job, dt);
+    }
+    b.active.progress = Math.min(1, b.active.progress + dt * PACE.work * rate * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 25 : 1) / d.time);
+    if (b.active.progress < 1) continue;
+    const id = b.active.id;
+    if (kind === "research") {
+      sim2.researched.add(id);
+      b.active = null;
+      sim2.say(`Nh\xE0 nghi\xEAn c\u1EE9u \u0111\xE3 ho\xE0n th\xE0nh "${TECH_BY_ID[id].name}".`);
+    } else {
+      const r = RECIPE_BY_ID[id], cat = isGear(r.kind) ? "gear" : "tool";
+      if (kind === "repair") {
+        const owner = sim2.villagers.find((o) => o.repairFor === id), k = r.kind;
+        if (owner && isGear(r.kind)) {
+          owner.repairFor = null;
+          if (r.kind === "hide") {
+            if (!owner.armor) {
+              owner.armor = "hide";
+              owner.gear.a = null;
+            }
+          } else if (!owner.weapon) {
+            owner.weapon = r.kind;
+            owner.gear.w = null;
+          }
+          b.active = null;
+          sim2.say(`\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}, tr\u1EA3 l\u1EA1i cho ${owner.name}.`);
+          continue;
+        }
+        if (owner) {
+          owner.repairFor = null;
+          if (TOOL_OF_JOB[owner.job] === k && !sim2.heldTool(owner)) {
+            owner.tools[k] = { tier: r.tier, dur: TIER_DURABILITY[r.tier] };
+            b.active = null;
+            sim2.say(`\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}, tr\u1EA3 l\u1EA1i cho ${owner.name}.`);
+            continue;
+          }
+        }
+      }
+      if (storeUsed(sim2, cat) >= storeCap(sim2, cat)) {
+        if (sim2.time - sim2.lastFullWarn > 30) {
+          sim2.lastFullWarn = sim2.time;
+          sim2.say(cat === "tool" ? "Kho c\xF4ng c\u1EE5 \u0111\xE3 \u0111\u1EA7y, s\u1EA3n ph\u1EA9m ch\u1EDD ch\u1ED7." : "Kho v\u0169 kh\xED \u0111\xE3 \u0111\u1EA7y, s\u1EA3n ph\u1EA9m ch\u1EDD ch\u1ED7.");
+        }
+        continue;
+      }
+      sim2.toolStock[id] = (sim2.toolStock[id] ?? 0) + 1;
+      b.active = null;
+      sim2.say(kind === "craft" ? `\u0110\xE3 ch\u1EBF xong ${recipeName(r).toLowerCase()}.` : `\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}.`);
+    }
+  }
+}
+
+// src/sim/houses.ts
+function bestFor(sim2, job) {
+  const stat = JOBS[job].stat;
+  const pool = sim2.villagers.filter((v) => v.down <= 0 && v.inside === null && v.job !== job && v.job !== "fight" && v.job !== "hunt");
+  pool.sort((a, b) => (a.job === "idle" ? 0 : 1) - (b.job === "idle" ? 0 : 1) || b.stats[stat] - a.stats[stat]);
+  return pool[0] ?? null;
+}
+function houseRate(sim2, b) {
+  const job = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "repair";
+  let r = 0;
+  for (const id of b.staff) {
+    const v = sim2.byId.get(id);
+    if (v) r += sim2.workFactor(v, job);
+  }
+  return r * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 25 : 1);
+}
+function staffCount(sim2, b) {
+  return b.staff.length + sim2.villagers.filter((v) => v.phase === "goStaff" && v.target === b.id).length;
+}
+function crew(sim2) {
+  return sim2.villagers.filter((v) => v.job === "build");
+}
+function assignCrew(sim2, ids) {
+  const house = sim2.building(CREW_BUILDING.build);
+  if (!house) return `Ch\u01B0a c\xF3 ${BUILDINGS.builder.name}, ho\u1EB7c ch\u01B0a x\xE2y xong`;
+  let err = null;
+  for (const v of sim2.mine(ids)) {
+    if (v.job === "build") continue;
+    if (v.job === "fight") {
+      err = "Chi\u1EBFn binh do \u0111\u1ED1ng l\u1EEDa tr\u1EA1i qu\u1EA3n l\xFD: gi\u1EA3i ng\u0169 tr\u01B0\u1EDBc";
+      continue;
+    }
+    if (crew(sim2).length >= levelDef(house).slots) {
+      err = `${BUILDINGS.builder.name} c\u1EA5p ${house.level} ch\u1EC9 ch\u1EE9a ${levelDef(house).slots} th\u1EE3`;
+      continue;
+    }
+    sim2.resetTask(v);
+    sim2.clearCombat(v);
+    v.job = "build";
+    v.prefer = -1;
+    v.post = -1;
+  }
+  return err;
+}
+function trimCrew(sim2) {
+  const house = sim2.building("builder"), builders = crew(sim2);
+  if (house) for (const v of builders.slice(levelDef(house).slots)) {
+    sim2.resetTask(v);
+    v.job = "idle";
+  }
+}
+function releaseCrew(sim2, ids) {
+  for (const v of sim2.mine(ids)) if (v.job === "build") {
+    sim2.resetTask(v);
+    v.job = "idle";
+  }
+}
+function assignStaff(sim2, ids, job) {
+  const b = sim2.building(STAFF_BUILDING[job]);
+  if (!b) return `Ch\u01B0a c\xF3 ${BUILDINGS[STAFF_BUILDING[job]].name}, ho\u1EB7c ch\u01B0a x\xE2y xong`;
+  let err = null;
+  for (const v of sim2.mine(ids)) {
+    if (v.inside === b.id) {
+      v.job = job;
+      continue;
+    }
+    if (v.job === "fight") {
+      err = "Chi\u1EBFn binh do \u0111\u1ED1ng l\u1EEDa tr\u1EA1i qu\u1EA3n l\xFD: gi\u1EA3i ng\u0169 tr\u01B0\u1EDBc";
+      continue;
+    }
+    if (staffCount(sim2, b) >= levelDef(b).slots) {
+      err = `${BUILDINGS[b.kind].name} c\u1EA5p ${b.level} ch\u1EC9 ch\u1EE9a ${levelDef(b).slots} ng\u01B0\u1EDDi`;
+      continue;
+    }
+    sim2.resetTask(v);
+    sim2.clearCombat(v);
+    v.job = job;
+    v.prefer = -1;
+    v.post = -1;
+    planStaff(sim2, v);
+  }
+  return err;
+}
+function assignField(sim2, ids, fieldId) {
+  const b = sim2.getBuilding(fieldId);
+  if (!b || b.kind !== "field" || !b.done) return "Ru\u1ED9ng ch\u01B0a d\u1EF1ng xong";
+  let err = null;
+  for (const v of sim2.mine(ids)) {
+    if (v.post === b.id && v.job === "food") continue;
+    if (v.job === "fight") {
+      err = "Chi\u1EBFn binh do \u0111\u1ED1ng l\u1EEDa tr\u1EA1i qu\u1EA3n l\xFD: gi\u1EA3i ng\u0169 tr\u01B0\u1EDBc";
+      continue;
+    }
+    if (staffCount(sim2, b) >= levelDef(b).slots) {
+      err = `${BUILDINGS.field.name} c\u1EA5p ${b.level} ch\u1EC9 ch\u1EE9a ${levelDef(b).slots} ng\u01B0\u1EDDi`;
+      continue;
+    }
+    sim2.resetTask(v);
+    sim2.clearCombat(v);
+    v.job = "food";
+    v.prefer = -1;
+    v.post = b.id;
+    planStaff(sim2, v);
+  }
+  return err;
+}
+function postOf(sim2, v) {
+  if (isStaffJob(v.job)) return sim2.building(STAFF_BUILDING[v.job]);
+  const b = (v.job === "food" || v.job === "fight") && v.post >= 0 ? sim2.getBuilding(v.post) : void 0;
+  return b && (v.job === "food" ? b.kind === "field" : b.kind === "tower") ? b : void 0;
+}
+function planStaff(sim2, v) {
+  if (!isStaffJob(v.job) && !((v.job === "food" || v.job === "fight") && v.post >= 0)) return;
+  const b = postOf(sim2, v);
+  if (!b) {
+    if (v.job === "food" || v.job === "fight") v.post = -1;
+    else v.job = "idle";
+    return;
+  }
+  if (staffCount(sim2, b) >= levelDef(b).slots) {
+    if (v.job !== "fight") v.job = "idle";
+    v.post = -1;
+    sim2.say(`${v.name} kh\xF4ng c\xF2n ch\u1ED7 trong ${BUILDINGS[b.kind].name.toLowerCase()}.`);
+    return;
+  }
+  const d = BUILDINGS[b.kind];
+  if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
+    v.target = b.id;
+    v.phase = "goStaff";
+    return;
+  }
+  sim2.wait(v, 3);
+}
+function enterBuilding(sim2, v) {
+  const b = sim2.getBuilding(v.target);
+  if (!b || !b.done || postOf(sim2, v)?.id !== b.id || b.staff.length >= levelDef(b).slots) {
+    v.phase = "idle";
+    if (isStaffJob(v.job)) v.job = "idle";
+    return;
+  }
+  b.staff.push(v.id);
+  v.inside = b.id;
+  v.phase = "inside";
+  v.path = [];
+  v.slide = null;
+  const d = BUILDINGS[b.kind];
+  v.x = b.x + d.w / 2;
+  v.y = b.y + d.h / 2;
+  v.facing = "front";
+  sim2.say(`${v.name} v\xE0o ${BUILDINGS[b.kind].name.toLowerCase()} l\xE0m vi\u1EC7c.`);
+}
+function sleepIn(sim2, v, b) {
+  v.inside = b.id;
+  v.phase = "sleep";
+  v.path = [];
+  v.slide = null;
+  v.target = -1;
+  v.bed = -1;
+  const d = BUILDINGS[b.kind];
+  v.x = b.x + d.w / 2;
+  v.y = b.y + d.h / 2;
+  v.facing = "front";
+  sim2.fogDirty = true;
+}
+function sleepers(sim2, b) {
+  return sim2.villagers.filter((v) => v.phase === "sleep" && v.inside === b.id || v.phase === "goHome" && v.target === b.id);
+}
+function exitBuilding(sim2, v) {
+  if (v.inside === null) return;
+  const b = sim2.getBuilding(v.inside);
+  v.inside = null;
+  v.phase = "idle";
+  if (!b) return;
+  b.staff = b.staff.filter((id) => id !== v.id);
+  const d = BUILDINGS[b.kind], ring = sim2.ringTiles(v, b.x, b.y, d.w, d.h);
+  const spot = ring[0] ?? [b.x - 1, b.y + d.h];
+  v.x = spot[0] + 0.5;
+  v.y = spot[1] + 0.5;
+}
+function releaseStaff(sim2, ids) {
+  for (const v of sim2.mine(ids)) if (v.inside !== null) {
+    exitBuilding(sim2, v);
+    v.job = "idle";
+    v.post = -1;
+    sim2.fogDirty = true;
+  }
+}
+
+// src/sim/inventory.ts
+function toolCount(sim2, kind, tier) {
+  const id = `${kind}${tier}`;
+  return (sim2.toolStock[id] ?? 0) + sim2.wornTools.filter((w) => w.id === id && w.dur > 0).length;
+}
+function toolTier(sim2, v, job) {
+  const k = job === "idle" ? void 0 : TOOL_OF_JOB[job];
+  const t = k ? v.tools[k] : null;
+  return t && t.dur > 0 ? t.tier : 0;
+}
+function toolId(sim2, k, tier) {
+  return `${k}${tier}`;
+}
+function heldTool(sim2, v) {
+  for (const k of TOOL_KINDS) {
+    const t = v.tools[k];
+    if (t) return { k, t };
+  }
+  return null;
+}
+function returnTool(sim2, v) {
+  const h2 = heldTool(sim2, v);
+  if (!h2) return;
+  const { k, t } = h2, id = toolId(sim2, k, t.tier), name = `${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}`;
+  v.tools[k] = null;
+  if (t.dur <= 0) {
+    sim2.say(`${v.name} b\u1ECF ${name} \u0111\xE3 h\u1ECFng.`);
+    return;
+  }
+  if (t.dur >= TIER_DURABILITY[t.tier] - 1e-6) sim2.toolStock[id] = (sim2.toolStock[id] ?? 0) + 1;
+  else sim2.wornTools.push({ id, dur: t.dur });
+  sim2.say(`${v.name} tr\u1EA3 ${name} v\u1EC1 kho.`);
+}
+function takeTool(sim2, k, tier) {
+  const id = toolId(sim2, k, tier);
+  if ((sim2.toolStock[id] ?? 0) > 0) {
+    sim2.toolStock[id]--;
+    return { tier, dur: TIER_DURABILITY[tier] };
+  }
+  let best = -1;
+  sim2.wornTools.forEach((w, i) => {
+    if (w.id === id && w.dur > 0 && (best < 0 || w.dur > sim2.wornTools[best].dur)) best = i;
+  });
+  return best < 0 ? null : { tier, dur: sim2.wornTools.splice(best, 1)[0].dur };
+}
+function assignTool(sim2, ids, k, tier) {
+  let short = false, wrong = null, given = 0;
+  for (const v of sim2.mine(ids)) {
+    const cur = v.tools[k];
+    if (tier === 0) {
+      if (cur) {
+        returnTool(sim2, v);
+        given++;
+      }
+      continue;
+    }
+    if (TOOL_OF_JOB[v.job] !== k) {
+      wrong = `${v.name} l\xE0m ${JOB_NAME[v.job].toLowerCase()}: kh\xF4ng d\xF9ng ${TOOL_NAME[k].toLowerCase()}`;
+      continue;
+    }
+    if (cur?.tier === tier && cur.dur > 0) continue;
+    if (toolCount(sim2, k, tier) <= 0) {
+      short = true;
+      continue;
+    }
+    returnTool(sim2, v);
+    v.tools[k] = takeTool(sim2, k, tier);
+    given++;
+    sim2.say(`${v.name} \u0111\u01B0\u1EE3c ph\xE1t ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}.`);
+  }
+  if (given) return null;
+  return short ? `Kho h\u1EBFt ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}, h\xE3y ch\u1EBF th\xEAm` : wrong;
+}
+function discardTool(sim2, ids, k) {
+  for (const v of sim2.mine(ids)) if (v.tools[k]) {
+    v.tools[k] = null;
+    sim2.say(`${v.name} v\u1EE9t ${TOOL_NAME[k].toLowerCase()}.`);
+  }
+}
+function repairTool(sim2, ids, k) {
+  const house = sim2.building("repair");
+  if (!house) return "C\u1EA7n d\u1EF1ng Nh\xE0 s\u1EEDa ch\u1EEFa";
+  let err = null, n = 0;
+  for (const v of sim2.mine(ids)) {
+    const t = v.tools[k];
+    if (!t) continue;
+    if (t.dur >= TIER_DURABILITY[t.tier] - 1e-6) {
+      err = "C\xF4ng c\u1EE5 c\xF2n m\u1EDBi, ch\u01B0a c\u1EA7n s\u1EEDa";
+      continue;
+    }
+    if (sim2.repairQueue.length >= 12) {
+      err = "H\xE0ng \u0111\u1EE3i s\u1EEDa \u0111\xE3 \u0111\u1EA7y";
+      continue;
+    }
+    sim2.leaveNode(v);
+    v.path = [];
+    v.slide = null;
+    v.order = `repair:${k}`;
+    if (!goTo(sim2, v, house, "goOrder")) {
+      v.order = null;
+      err = `${v.name} kh\xF4ng t\u1EDBi \u0111\u01B0\u1EE3c Nh\xE0 s\u1EEDa ch\u1EEFa`;
+      continue;
+    }
+    n++;
+    sim2.say(`${v.name} mang ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()} t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa.`);
+  }
+  return n ? null : err;
+}
+var gearName = (slot, id) => (slot === "armor" ? ARMORS[id]?.name : WEAPONS[id]?.name)?.toLowerCase() ?? id;
+var gearId = (slot, id) => slot === "armor" ? "hide1" : `${id}${WEAPONS[id]?.tier ?? 1}`;
+function wearGear(sim2, v, slot) {
+  if (v.team !== "player") return;
+  const id = slot === "weapon" ? v.weapon : v.armor, g2 = v.gear;
+  if (!id) return;
+  const max = (slot === "weapon" ? WEAPONS[id]?.durability : ARMORS[id]?.durability) ?? 0;
+  if (!max) return;
+  if (slot === "weapon") {
+    if (g2.w !== id) {
+      g2.w = id;
+      g2.wd = max;
+      g2.wb = false;
+    }
+    if (g2.wb || --g2.wd > 0) return;
+  } else {
+    if (g2.a !== id) {
+      g2.a = id;
+      g2.ad = max;
+      g2.ab = false;
+    }
+    if (g2.ab || --g2.ad > 0) return;
+  }
+  if (sim2.frnd() < 0.5) {
+    if (slot === "weapon") {
+      v.weapon = null;
+      g2.w = null;
+      g2.wb = false;
+    } else {
+      v.armor = null;
+      g2.a = null;
+      g2.ab = false;
+    }
+    v.manualGear = false;
+    sim2.say(`${v.name} l\xE0m v\u1EE1 ${gearName(slot, id)}, m\u1EA5t h\u1EB3n.`);
+  } else {
+    if (slot === "weapon") g2.wb = true;
+    else g2.ab = true;
+    sim2.say(`${gearName(slot, id)} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng, c\u1EA7n mang \u0111i s\u1EEDa.`);
+  }
+}
+function planGearRepair(sim2, v) {
+  if (v.job !== "fight" && v.job !== "hunt" || v.phase === "fight" || v.orderCd > 0 || v.team !== "player") return false;
+  const house = sim2.building("repair");
+  if (!house || sim2.repairQueue.length >= 12 || !(v.gear.wb && v.gear.w === v.weapon) && !(v.gear.ab && v.gear.a === v.armor)) return false;
+  v.orderCd = 30;
+  v.order = "repair:gear";
+  if (goTo(sim2, v, house, "goOrder")) return true;
+  v.order = null;
+  return false;
+}
+function giveGear(sim2, ids, kind, slot) {
+  for (const v of sim2.mine(ids)) {
+    if (slot === "weapon") v.weapon = kind;
+    else v.armor = kind;
+    if (kind) sim2.say(`${v.name} \u0111\u01B0\u1EE3c c\u1EA5p ${kind === "hide" ? ARMORS.hide.name.toLowerCase() : WEAPONS[kind].name.toLowerCase()}.`);
+  }
+}
+function assignGear(sim2, ids, kind, slot) {
+  const key = (k) => k === "hide" ? "hide1" : `${k}${WEAPONS[k].tier ?? 1}`;
+  const nameOf = (k) => (k === "hide" ? ARMORS.hide.name : WEAPONS[k].name).toLowerCase();
+  const people = sim2.mine(ids);
+  if (kind && !sim2.hasWorkshop() && !sim2.building("armory")) return "C\u1EA7n c\xF3 Nh\xE0 ch\u1EBF t\u1EA1o ho\u1EB7c Kho v\u0169 kh\xED \u0111\u1EC3 l\u1EA5y \u0111\u1ED3";
+  let given = 0, short = false;
+  for (const v of people) {
+    const cur = slot === "weapon" ? v.weapon : v.armor;
+    if (cur === kind) {
+      v.manualGear = true;
+      continue;
+    }
+    if (kind) {
+      if (toolCount(sim2, kind === "hide" ? "hide" : kind, kind === "hide" ? 1 : WEAPONS[kind].tier ?? 1) <= 0) {
+        short = true;
+        continue;
+      }
+      sim2.toolStock[key(kind)]--;
+    }
+    if (cur) sim2.toolStock[key(cur)] = (sim2.toolStock[key(cur)] ?? 0) + 1;
+    if (slot === "weapon") v.weapon = kind;
+    else v.armor = kind;
+    v.manualGear = true;
+    given++;
+    sim2.say(kind ? `${v.name} \u0111\u01B0\u1EE3c ph\xE1t ${nameOf(kind)}.` : `${v.name} tr\u1EA3 l\u1EA1i ${cur ? nameOf(cur) : "\u0111\u1ED3"}.`);
+  }
+  return short && given === 0 ? `Kho h\u1EBFt ${kind ? nameOf(kind) : "\u0111\u1ED3"}, h\xE3y ch\u1EBF th\xEAm` : null;
+}
+function autoGear(sim2, ids) {
+  for (const v of sim2.mine(ids)) v.manualGear = false;
+}
+function giveTool(sim2, ids, kind, tier) {
+  for (const id of ids) {
+    const v = sim2.byId.get(id);
+    if (!v) continue;
+    for (const k of TOOL_KINDS) v.tools[k] = null;
+    v.tools[kind] = tier > 0 ? { tier, dur: TIER_DURABILITY[tier] } : null;
+    if (tier > 0 && TOOL_OF_JOB[v.job] !== kind) {
+      const job = Object.keys(TOOL_OF_JOB).find((j) => TOOL_OF_JOB[j] === kind);
+      if (job && v.team === "player") sim2.setJob([v.id], job);
+    }
+    if (tier > 0) sim2.say(`${v.name} \u0111\u01B0\u1EE3c c\u1EA5p ${TOOL_NAME[kind].toLowerCase()} ${TIER_NAME[tier].toLowerCase()}.`);
+  }
+}
+function toolLacking(sim2, v, job) {
+  const k = TOOL_OF_JOB[job];
+  if (!k) return false;
+  const t = v.tools[k];
+  return !t || t.dur <= 0;
+}
+function stockedTier(sim2, k) {
+  for (let t = 2; t >= 1; t--) if (toolCount(sim2, k, t) > 0) return t;
+  return 0;
+}
+function needTool(sim2, v, job) {
+  const k = TOOL_OF_JOB[job];
+  return !!k && autoOn(sim2.researched, "fetch") && !!sim2.building("toolstore") && toolLacking(sim2, v, job) && stockedTier(sim2, k) > 0;
+}
+function goTo(sim2, v, b, phase) {
+  const d = BUILDINGS[b.kind];
+  if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h)) < 0) return false;
+  v.target = b.id;
+  v.phase = phase;
+  return true;
+}
+function planTool(sim2, v, job) {
+  const k = TOOL_OF_JOB[job];
+  if (!k || !toolLacking(sim2, v, job)) return false;
+  const store = sim2.building("toolstore");
+  if (store && needTool(sim2, v, job)) return goTo(sim2, v, store, "goEquip");
+  if (!autoOn(sim2.researched, "order") || v.orderCd > 0) return false;
+  v.orderCd = 45;
+  const t = v.tools[k], repairHouse = sim2.building("repair"), craftHouse = sim2.building("workshop");
+  if (t && t.dur <= 0 && repairHouse && sim2.repairQueue.length < 12) {
+    v.order = `repair:${k}`;
+    return goTo(sim2, v, repairHouse, "goOrder");
+  }
+  if (!craftHouse) return false;
+  let id = "";
+  for (let tier = 2; tier >= 1; tier--) if (sim2.recipeOpen(`${k}${tier}`)) {
+    id = `${k}${tier}`;
+    break;
+  }
+  if (!id) return false;
+  const lacking = sim2.villagers.filter((o) => o.inside === null && o.job !== "idle" && TOOL_OF_JOB[o.job] === k && toolLacking(sim2, o, o.job)).length;
+  const onWay = toolCount(sim2, k, 1) + toolCount(sim2, k, 2) + sim2.craftQueue.filter((q) => q.startsWith(k)).length + (craftHouse.active?.id.startsWith(k) ? 1 : 0);
+  if (onWay >= lacking || sim2.craftQueue.length >= 12) return false;
+  v.order = `craft:${id}`;
+  return goTo(sim2, v, craftHouse, "goOrder");
+}
+function errand(sim2, v) {
+  const o = v.order;
+  v.order = null;
+  v.phase = "idle";
+  v.orderCd = 90;
+  const b = sim2.getBuilding(v.target);
+  if (b) sim2.faceBuilding(v, b);
+  if (!o || !b || !b.done) return;
+  const [what, id] = o.split(":");
+  if (what === "craft") {
+    if (sim2.queueCraft(id) === null) sim2.say(`${v.name} nh\u1EDD ch\u1EBF ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`);
+  } else if (what === "repair" && id === "gear") {
+    for (const slot of ["weapon", "armor"]) {
+      const piece = slot === "weapon" ? v.weapon : v.armor, broken = slot === "weapon" ? v.gear.wb && v.gear.w === v.weapon : v.gear.ab && v.gear.a === v.armor;
+      if (!piece || !broken || v.repairFor) continue;
+      if (sim2.queueRepair(gearId(slot, piece)) === null) {
+        v.repairFor = gearId(slot, piece);
+        if (slot === "weapon") {
+          v.weapon = null;
+          v.gear.w = null;
+          v.gear.wb = false;
+        } else {
+          v.armor = null;
+          v.gear.a = null;
+          v.gear.ab = false;
+        }
+        sim2.say(`${v.name} nh\u1EDD s\u1EEDa ${gearName(slot, piece)}.`);
+      }
+    }
+  } else if (what === "repair") {
+    const k = id, t = v.tools[k];
+    if (t && t.dur < TIER_DURABILITY[t.tier] - 1e-6 && sim2.queueRepair(toolId(sim2, k, t.tier)) === null) {
+      v.tools[k] = null;
+      v.repairFor = toolId(sim2, k, t.tier);
+      sim2.say(`${v.name} nh\u1EDD s\u1EEDa ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}.`);
+    }
+  }
+}
+function equip(sim2, v) {
+  v.phase = "idle";
+  const store = sim2.getBuilding(v.target);
+  if (store) sim2.faceBuilding(v, store);
+  if (v.job === "hunt" || v.job === "fight") {
+    equipGear(sim2, v);
+    return;
+  }
+  const k = TOOL_OF_JOB[v.job];
+  if (!k || !toolLacking(sim2, v, v.job)) return;
+  const t = stockedTier(sim2, k);
+  if (!t) return;
+  v.tools[k] = takeTool(sim2, k, t);
+  sim2.say(`${v.name} nh\u1EADn ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t].toLowerCase()}.`);
+}
+function planEquipGear(sim2, v) {
+  if (v.job !== "hunt" && v.job !== "fight" || v.phase === "fight" || v.manualGear) return false;
+  const armory = sim2.building("armory");
+  if (!armory || !autoOn(sim2.researched, "fetch")) return false;
+  const wantsWeapon = !v.weapon && !!bestWeapon(sim2, v), wantsArmor = v.job === "fight" && !v.armor && toolCount(sim2, "hide", 1) > 0;
+  if (!wantsWeapon && !wantsArmor) return false;
+  return goTo(sim2, v, armory, "goEquip");
+}
+function equipGear(sim2, v) {
+  const best = !v.weapon ? bestWeapon(sim2, v) : null;
+  if (best) {
+    sim2.toolStock[`${best}${WEAPONS[best].tier ?? 1}`]--;
+    v.weapon = best;
+    sim2.say(`${v.name} nh\u1EADn ${WEAPONS[best].name.toLowerCase()}.`);
+  }
+  if (v.job === "fight" && !v.armor && toolCount(sim2, "hide", 1) > 0) {
+    sim2.toolStock.hide1--;
+    v.armor = "hide";
+    sim2.say(`${v.name} m\u1EB7c ${ARMORS.hide.name.toLowerCase()}.`);
+  }
+}
+function planGearErrand(sim2, v) {
+  if (v.job !== "hunt" && v.job !== "fight" || v.phase === "fight" || v.manualGear || v.orderCd > 0) return false;
+  const house = sim2.building("workshop");
+  if (!house || !autoOn(sim2.researched, "order")) return false;
+  const have = (re) => Object.entries(sim2.toolStock).some(([id2, n]) => n > 0 && re.test(id2)) || sim2.craftQueue.some((id2) => re.test(id2)) || !!house.active && re.test(house.active.id);
+  let id = "";
+  if (!v.weapon && !have(/^(club|spear|mace)/)) {
+    let bestScore = -1;
+    for (const w of CRAFTED_WEAPONS) {
+      const rid = `${w}${WEAPONS[w].tier ?? 1}`;
+      if (!sim2.recipeOpen(rid) || w === "mace" && v.job !== "fight") continue;
+      const sc = WEAPONS[w].damage / WEAPONS[w].cycle;
+      if (sc > bestScore) {
+        bestScore = sc;
+        id = rid;
+      }
+    }
+  } else if (v.job === "fight" && !v.armor && !have(/^hide/) && sim2.recipeOpen("hide1")) id = "hide1";
+  v.orderCd = 60;
+  if (!id) return false;
+  v.order = `craft:${id}`;
+  return goTo(sim2, v, house, "goOrder");
+}
+
+// src/sim/model.ts
+var SLEEP_HUNGER = 0.4;
+var NAMES_M = ["Bo", "R\xF4", "Gia", "Mun", "L\xF4", "T\xF9", "\u0110a"];
+var NAMES_F = ["Tia", "Noa", "Ma", "Pa", "K\xEA", "Ly", "Sa"];
+var HAIR = ["#4a2e1a", "#2b1b10", "#6b3f1d", "#c98a3a", "#7a5a3a"];
+var SKIN = ["#d9a371", "#e8c4a0", "#c58a5c", "#b87850"];
+var NODE_JOB = { tree: "wood", rock: "stone", bush: "food" };
+var STAT_KEYS = ["vit", "str", "agi", "int", "sta"];
+var XP_MULT = [0, 1, 1.5, 2];
+var REACH = { tree: 0.55, rock: 0.62, bush: 0.5 };
+var LEFT = 1;
+var RIGHT = 2;
+
+// src/sim/commands.ts
+function resetTask(sim2, v) {
+  sim2.leaveNode(v);
+  sim2.exitBuilding(v);
+  v.order = null;
+  v.path = [];
+  v.slide = null;
+  v.phase = "idle";
+  v.progress = 0;
+  v.timer = 0;
+  v.target = -1;
+  v.bed = -1;
+}
+function keepWatch(sim2, v) {
+  if (v.job !== "idle") sim2.callUp(v);
+}
+function clearCombat(sim2, v) {
+  v.fight.target = null;
+  v.fight.mode = "none";
+  v.fight.dest = null;
+  v.fight.anchor = null;
+  v.queue.length = 0;
+  v.loot = -1;
+  v.fleeT = 0;
+}
+function mine(sim2, ids) {
+  return ids.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.team === "player" && v.down <= 0 && !sim2.sleepLocked(v));
+}
+function busy(sim2, v) {
+  return v.phase !== "idle" || v.path.length > 0 || v.fight.mode !== "none";
+}
+function keepSoldierJob(sim2, v) {
+  if (v.job !== "fight" && v.job !== "hunt") v.job = "idle";
+}
+function orderMove(sim2, ids, tx, ty, queue = false) {
+  const vs = mine(sim2, ids);
+  vs.sort((a, b) => Math.hypot(a.x - tx, a.y - ty) - Math.hypot(b.x - tx, b.y - ty));
+  const taken = /* @__PURE__ */ new Set();
+  for (const v of vs) {
+    if (queue && busy(sim2, v)) {
+      v.queue.push({ k: "move", x: tx, y: ty });
+      continue;
+    }
+    const goal = sim2.nearestFree(tx, ty, taken);
+    resetTask(sim2, v);
+    clearCombat(sim2, v);
+    v.prefer = -1;
+    keepSoldierJob(sim2, v);
+    keepWatch(sim2, v);
+    if (!goal) continue;
+    taken.add(goal[1] * sim2.world.size + goal[0]);
+    v.path = sim2.pathTo(v, goal[0], goal[1], 3e4);
+    v.phase = v.path.length ? "move" : "idle";
+    if (v.job === "fight") {
+      v.fight.mode = "guard";
+      v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 };
+    }
+  }
+}
+function orderWork(sim2, ids, tx, ty) {
+  if (!sim2.world.inBounds(tx, ty)) return null;
+  const idx = ty * sim2.world.size + tx;
+  const node = sim2.world.nodeAt(tx, ty), site = sim2.buildingAt(tx, ty);
+  let job = null, prefer = -1;
+  if (node && sim2.fog.state[idx] > 0) {
+    job = NODE_JOB[node.kind];
+    prefer = idx;
+  } else if (site && needsWork(site)) {
+    job = "build";
+    prefer = site.id;
+  }
+  if (!job) return null;
+  const first = !!site && site.kind === "builder" && !sim2.building("builder");
+  const workers = mine(sim2, ids).filter((v) => v.job === job || first && v.job !== "fight");
+  for (const v of workers) {
+    resetTask(sim2, v);
+    clearCombat(sim2, v);
+    v.job = job;
+    v.prefer = prefer;
+  }
+  return { job, sent: workers.length };
+}
+function setJob(sim2, ids, job) {
+  if (job === "fight") return enlist(sim2, ids) > 0 ? null : "Ch\u1ECDn d\xE2n th\u01B0\u1EDDng \u0111\u1EC3 tuy\u1EC3n l\xE0m chi\u1EBFn binh";
+  const soldiers = mine(sim2, ids).filter((v) => v.job === "fight");
+  const rest = ids.filter((id) => !soldiers.some((s) => s.id === id));
+  const err = jobFor(sim2, rest, job);
+  return err ?? (soldiers.length ? "Chi\u1EBFn binh do \u0111\u1ED1ng l\u1EEDa tr\u1EA1i qu\u1EA3n l\xFD: gi\u1EA3i ng\u0169 h\u1ECD \u1EDF \u0111\xF3 tr\u01B0\u1EDBc" : null);
+}
+function jobFor(sim2, ids, job) {
+  if (job === "craft" || job === "research" || job === "repair") return sim2.assignStaff(ids, job);
+  if (job === "build") return sim2.assignCrew(ids);
+  for (const v of mine(sim2, ids)) {
+    resetTask(sim2, v);
+    clearCombat(sim2, v);
+    v.job = job;
+    v.prefer = -1;
+    v.post = -1;
+    keepWatch(sim2, v);
+  }
+  return null;
+}
+function enlist(sim2, ids) {
+  let n = 0;
+  for (const v of mine(sim2, ids)) {
+    if (v.job === "fight") continue;
+    resetTask(sim2, v);
+    clearCombat(sim2, v);
+    v.job = "fight";
+    v.prefer = -1;
+    v.post = -1;
+    v.fight.anchor = null;
+    keepWatch(sim2, v);
+    n++;
+  }
+  return n;
+}
+function discharge(sim2, ids) {
+  let n = 0;
+  for (const v of mine(sim2, ids)) {
+    if (v.job !== "fight") continue;
+    resetTask(sim2, v);
+    clearCombat(sim2, v);
+    v.job = "idle";
+    v.nightOwl = false;
+    v.post = -1;
+    sim2.assignGear([v.id], null, "weapon");
+    sim2.assignGear([v.id], null, "armor");
+    v.manualGear = false;
+    n++;
+  }
+  return n;
+}
+function targetAt(sim2, x, y) {
+  const N = sim2.world.size, seen = (px, py) => sim2.fog.state[Math.floor(py) * N + Math.floor(px)] === 2;
+  let best = null, bd = 0.9;
+  for (const f of sim2.foes) {
+    if (f.health <= 0 || !seen(f.x, f.y)) continue;
+    const d = Math.hypot(f.x - x, f.y - 0.5 - y);
+    if (d < bd) {
+      bd = d;
+      best = { target: { kind: "unit", id: f.id }, kind: "foe" };
+    }
+  }
+  for (const a of sim2.animals) {
+    if (!seen(a.x, a.y)) continue;
+    const d = Math.hypot(a.x - x, a.y - 0.3 - y);
+    if (d < bd) {
+      bd = d;
+      best = { target: { kind: "animal", id: a.id }, kind: a.state === "dead" ? "carcass" : "animal" };
+    }
+  }
+  return best;
+}
+function orderAttack(sim2, ids, target, queue = false) {
+  const e = resolve(sim2, target);
+  const prey = e?.kind === "animal" && e.a.state !== "dead" && animalDef(e.a).prey;
+  let n = 0;
+  for (const v of mine(sim2, ids)) {
+    if (!(v.job === "fight" || prey && v.job === "hunt")) continue;
+    n++;
+    if (queue && busy(sim2, v)) {
+      v.queue.push({ k: "attack", t: target });
+      continue;
+    }
+    resetTask(sim2, v);
+    clearCombat(sim2, v);
+    v.prefer = -1;
+    v.fight.mode = "attack";
+    v.fight.target = target;
+    keepWatch(sim2, v);
+  }
+  return n;
+}
+function orderAttackMove(sim2, ids, x, y, queue = false) {
+  for (const v of mine(sim2, ids)) {
+    if (v.job !== "fight") continue;
+    if (queue && busy(sim2, v)) {
+      v.queue.push({ k: "attackMove", x, y });
+      continue;
+    }
+    resetTask(sim2, v);
+    clearCombat(sim2, v);
+    v.prefer = -1;
+    v.fight.mode = "attackMove";
+    v.fight.dest = { x, y };
+    v.phase = "move";
+    keepWatch(sim2, v);
+  }
+}
+function orderLoot(sim2, ids, animalId) {
+  let n = 0;
+  for (const v of mine(sim2, ids)) {
+    if (v.job !== "hunt") continue;
+    resetTask(sim2, v);
+    clearCombat(sim2, v);
+    v.loot = animalId;
+    v.phase = "goCarcass";
+    n++;
+  }
+  return n;
+}
+function orderHold(sim2, ids) {
+  for (const v of mine(sim2, ids)) {
+    if (v.job !== "fight" && v.job !== "hunt") continue;
+    resetTask(sim2, v);
+    clearCombat(sim2, v);
+    v.fight.mode = "hold";
+    v.fight.anchor = { x: v.x, y: v.y };
+    keepWatch(sim2, v);
+  }
+}
+function orderStop(sim2, ids) {
+  for (const v of mine(sim2, ids)) {
+    resetTask(sim2, v);
+    clearCombat(sim2, v);
+    if (v.job === "fight") {
+      v.fight.mode = "hold";
+      v.fight.anchor = { x: v.x, y: v.y };
+      keepWatch(sim2, v);
+    }
+  }
+}
+function setStance(sim2, ids, stance) {
+  for (const v of mine(sim2, ids)) {
+    v.stance = stance;
+    if (stance === "defensive") v.fight.anchor = v.fight.anchor ?? { x: v.x, y: v.y };
+    else if (v.fight.mode !== "hold") v.fight.anchor = null;
+  }
+}
+function nextOrder(sim2, v) {
+  const o = v.queue.shift();
+  if (!o) return false;
+  resetTask(sim2, v);
+  if (o.k === "move") {
+    v.fight.mode = "none";
+    v.fight.target = null;
+    const goal = sim2.nearestFree(Math.floor(o.x), Math.floor(o.y), /* @__PURE__ */ new Set());
+    if (goal) {
+      v.path = sim2.pathTo(v, goal[0], goal[1], 3e4);
+      v.phase = v.path.length ? "move" : "idle";
+      if (v.job === "fight") {
+        v.fight.mode = "guard";
+        v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 };
+      }
+    }
+  } else if (o.k === "attackMove") {
+    v.fight.mode = "attackMove";
+    v.fight.dest = { x: o.x, y: o.y };
+    v.phase = "move";
+  } else {
+    v.fight.mode = "attack";
+    v.fight.target = o.t;
+  }
+  return true;
+}
+
+// src/sim/labor.ts
+function workRate(sim2, v, job) {
+  return workFactor(sim2, v, job);
+}
+function outdoorFactor(sim2, job) {
+  return OUTDOOR_JOBS.includes(job) ? WEATHER[sim2.weather].work * SEASON_DEF[sim2.season].work : 1;
+}
+function workFactor(sim2, v, job, field = false) {
+  const stat = v.stats[JOBS[job].stat];
+  const season = job === "food" ? SEASON_DEF[sim2.season][field ? "farm" : "gather"] : 1;
+  const tier = TOOL_OF_JOB[job] ? sim2.toolTier(v, job) : -1;
+  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier];
+  return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim2, job) * sim2.restFactor(v);
+}
+function gainXp(sim2, v, job, dt) {
+  const s = v.skill[job];
+  if (s.level >= MAX_LEVEL) return;
+  s.xp += dt * PACE.work * XP_MULT[v.potential[job]];
+  if (s.xp >= XP_LEVELS[s.level]) {
+    s.level++;
+    sim2.say(`${v.name} l\xEAn c\u1EA5p ${s.level} ngh\u1EC1 ${JOB_NAME[job].toLowerCase()}.`);
+  }
+}
+function wear(sim2, v, job, dt) {
+  const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
+  if (!k || !t || t.dur <= 0) return;
+  t.dur -= dt * PACE.work;
+  if (t.dur <= 0) {
+    t.dur = 0;
+    sim2.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng.`);
+  }
+}
+function leaveNode(sim2, v) {
+  if ((v.phase === "goNode" || v.phase === "work") && v.target >= 0) {
+    const n = sim2.world.nodes.get(v.target);
+    if (n) {
+      if (n.workers > 0) n.workers--;
+      n.sides &= ~v.slot;
+    }
+  }
+  v.slot = 0;
+}
+function face(sim2, v, tx, ty) {
+  const dx = tx + 0.5 - v.x, dy = ty + 0.5 - v.y;
+  v.facing = Math.abs(dx) > Math.abs(dy) * 1.1 ? dx > 0 ? "right" : "left" : dy > 0 ? "front" : "back";
+}
+function wait(sim2, v, secs) {
+  v.phase = "wait";
+  v.timer = secs;
+}
+function faceX(sim2, v, cx) {
+  v.facing = cx >= v.x ? "right" : "left";
+}
+function nodeSlide(sim2, v, nx, ny, kind) {
+  const left = v.slot === LEFT;
+  return { x: nx + 0.5 + (left ? -REACH[kind] : REACH[kind]), y: ny + 0.875, face: left ? "right" : "left" };
+}
+function edgeSlide(sim2, v, b) {
+  const d = BUILDINGS[b.kind], left = v.x < b.x + d.w / 2;
+  return { x: left ? b.x - 0.3 : b.x + d.w + 0.3, y: b.y + d.h - 0.3 - v.id % 2 * 0.5, face: left ? "right" : "left" };
+}
+function faceBuilding(sim2, v, b) {
+  faceX(sim2, v, b.x + BUILDINGS[b.kind].w / 2);
+}
+function think(sim2, v, dt) {
+  const N = sim2.world.size;
+  switch (v.phase) {
+    case "move":
+      v.phase = "idle";
+      sim2.nextOrder(v);
+      return;
+    case "idle":
+      if (v.queue.length && sim2.nextOrder(v)) return;
+      if (v.job !== "idle") plan(sim2, v);
+      return;
+    case "wait":
+      v.timer -= dt;
+      if (v.timer <= 0) v.phase = "idle";
+      return;
+    case "goNode": {
+      const n = sim2.world.nodes.get(v.target);
+      if (!n || n.amount <= 0) {
+        leaveNode(sim2, v);
+        v.phase = "idle";
+        return;
+      }
+      const nx = v.target % N, ny = v.target / N | 0;
+      v.phase = "work";
+      v.progress = 0;
+      const sl = nodeSlide(sim2, v, nx, ny, n.kind);
+      if (Math.hypot(sl.x - v.x, sl.y - v.y) < 0.04) v.facing = sl.face;
+      else v.slide = sl;
+      return;
+    }
+    case "work":
+      doWork(sim2, v, dt);
+      return;
+    case "goStore":
+      unload(sim2, v);
+      return;
+    case "goEquip":
+      sim2.equip(v);
+      return;
+    case "goSite": {
+      const b = sim2.getBuilding(v.target);
+      if (!b || !needsWork(b)) {
+        v.phase = "idle";
+        return;
+      }
+      v.phase = "build";
+      v.slide = edgeSlide(sim2, v, b);
+      return;
+    }
+    case "build": {
+      const b = sim2.getBuilding(v.target);
+      if (!b || !needsWork(b)) {
+        v.phase = "idle";
+        return;
+      }
+      const target = b.upgrading ? b.level + 1 : b.level;
+      b.progress += dt * PACE.work / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1)) * workFactor(sim2, v, "build") * sim2.crewSpeed();
+      gainXp(sim2, v, "build", dt);
+      wear(sim2, v, "build", dt);
+      if (b.progress >= 1) {
+        b.progress = 1;
+        if (b.upgrading) {
+          b.level++;
+          b.upgrading = false;
+          b.hp = levelDef(b).hp;
+          sim2.say(`${BUILDINGS[b.kind].name} \u0111\xE3 l\xEAn c\u1EA5p ${b.level} (${levelDef(b).name.toLowerCase()}).`);
+        } else {
+          b.done = true;
+          b.rebuild = false;
+          sim2.fogDirty = true;
+          if (b.kind === "builder") sim2.trimCrew();
+          sim2.say(`${BUILDINGS[b.kind].name} \u0111\xE3 d\u1EF1ng xong.`);
+          if (RESEARCH.enabled && b.kind === "lab" && sim2.researched.size === 0) sim2.say("M\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, \u0111\u01B0a m\u1ED9t d\xE2n th\xF4ng minh v\xE0o l\xE0m vi\u1EC7c, r\u1ED3i nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD \u0111\u1EA7u ti\xEAn.");
+        }
+        v.phase = "idle";
+      }
+      return;
+    }
+    case "goStaff":
+      sim2.enterBuilding(v);
+      return;
+    case "goOrder":
+      sim2.errand(v);
+      return;
+    case "inside":
+      return;
+    case "goHome": {
+      stash(sim2, v);
+      const bed = v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
+      if (bed && bed.done) sim2.sleepIn(v, bed);
+      else {
+        v.phase = "sleep";
+        v.facing = "front";
+      }
+      return;
+    }
+    case "sleep":
+      return;
+  }
+}
+function doWork(sim2, v, dt) {
+  const job = v.job, def = JOBS[job], n = sim2.world.nodes.get(v.target);
+  if (!def.res || !n || n.amount <= 0) {
+    leaveNode(sim2, v);
+    v.phase = "idle";
+    return;
+  }
+  v.progress += dt * workFactor(sim2, v, job) / def.baseTime;
+  gainXp(sim2, v, job, dt);
+  const tierNow = sim2.toolTier(v, job);
+  wear(sim2, v, job, dt);
+  if (v.progress < 1) return;
+  v.progress -= 1;
+  const res = def.res, acc = v.frac + TIER_YIELD[tierNow], whole = Math.floor(acc);
+  const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
+  const take = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have));
+  v.frac = acc - whole;
+  n.amount -= take;
+  v.carry = { res, amount: have + take };
+  if (res === "food" && take > 0) {
+    sim2.coinFrac += 0.06 * take;
+    if (sim2.coinFrac >= 1) {
+      sim2.coinFrac -= 1;
+      if (sim2.stock.coin < sim2.capacity()) {
+        sim2.stock.coin++;
+        if (!sim2.sawCoin) {
+          sim2.sawCoin = true;
+          sim2.say(`${v.name} nh\u1EB7t \u0111\u01B0\u1EE3c m\u1ED9t ${RES_NAME.coin.toLowerCase()}: d\xE2n l\xE0ng d\xF9ng n\xF3 \u0111\u1EC3 trao \u0111\u1ED5i.`);
+        }
+      }
+    }
+  }
+  if (n.amount <= 0) {
+    const idx = v.target;
+    leaveNode(sim2, v);
+    sim2.world.depleted(idx);
+    v.phase = "idle";
+    if (n.kind === "tree") sim2.say("M\u1ED9t c\xE2y \u0111\xE3 \u0111\u01B0\u1EE3c \u0111\u1ED1n xong.");
+  } else if (v.carry.amount >= CARRY_CAP[res] || sim2.needTool(v, job)) {
+    leaveNode(sim2, v);
+    v.phase = "idle";
+  }
+}
+function tickFarms(sim2, dt) {
+  for (const b of sim2.buildings) {
+    if (b.kind !== "field" || !b.done) continue;
+    for (const id of b.staff) {
+      const v = sim2.byId.get(id);
+      if (!v || v.phase !== "inside" || v.job !== "food" || sim2.stock.food >= sim2.capacity("food")) continue;
+      v.progress += dt * workFactor(sim2, v, "food", true) * levelDef(b).craftSpeed / FARM_TIME;
+      gainXp(sim2, v, "food", dt);
+      wear(sim2, v, "food", dt);
+      if (v.progress < 1) continue;
+      v.progress -= 1;
+      const acc = v.frac + TIER_YIELD[sim2.toolTier(v, "food")], whole = Math.floor(acc);
+      v.frac = acc - whole;
+      sim2.stock.food = Math.min(sim2.capacity("food"), sim2.stock.food + whole);
+    }
+  }
+}
+function plan(sim2, v) {
+  if (v.job === "hunt" || v.job === "fight") {
+    wait(sim2, v, 1);
+    return;
+  }
+  if (v.job === "build") {
+    if (!sim2.planTool(v, "build")) planBuild(sim2, v);
+    return;
+  }
+  if (isStaffJob(v.job) || v.job === "food" && v.post >= 0) {
+    sim2.planStaff(v);
+    return;
+  }
+  const def = JOBS[v.job], res = def.res;
+  if (v.carry && (v.carry.res !== res || v.carry.amount >= CARRY_CAP[v.carry.res])) {
+    planDeliver(sim2, v);
+    return;
+  }
+  if (sim2.stock[res] >= sim2.capacity(res)) {
+    if (v.carry) {
+      planDeliver(sim2, v);
+      return;
+    }
+    if (sim2.time - sim2.lastFullWarn > 30) {
+      sim2.lastFullWarn = sim2.time;
+      sim2.say(`Kho \u0111\xE3 \u0111\u1EA7y ${RES_NAME[res].toLowerCase()}, h\xE3y x\xE2y th\xEAm Kho.`);
+    }
+    wait(sim2, v, 3);
+    return;
+  }
+  if (sim2.planTool(v, v.job)) return;
+  if (findNode(sim2, v, def.node)) return;
+  if (v.carry) {
+    planDeliver(sim2, v);
+    return;
+  }
+  wait(sim2, v, 2);
+}
+function findNode(sim2, v, kind) {
+  const N = sim2.world.size, vx = Math.floor(v.x), vy = Math.floor(v.y);
+  const ok = (idx) => {
+    const n = sim2.world.nodes.get(idx);
+    return !!n && n.kind === kind && n.amount > 0 && n.workers < 2 && n.sides !== 3 && sim2.fog.state[idx] > 0 && (v.bad.get(idx) ?? 0) <= sim2.time;
+  };
+  const cands = [];
+  if (v.prefer >= 0 && ok(v.prefer)) cands.push([-1, v.prefer]);
+  for (const [idx, n] of sim2.world.nodes) {
+    if (n.kind !== kind || n.amount <= 0 || n.workers >= 2 || n.sides === 3 || idx === v.prefer || !ok(idx)) continue;
+    const d = (idx % N - vx) ** 2 + ((idx / N | 0) - vy) ** 2;
+    if (d <= 70 * 70) cands.push([d, idx]);
+  }
+  cands.sort((a, b) => a[0] - b[0]);
+  for (let c = 0; c < Math.min(4, cands.length); c++) {
+    const idx = cands[c][1], nx = idx % N, ny = idx / N | 0, node = sim2.world.nodes.get(idx);
+    const opts = [];
+    for (const side of [LEFT, RIGHT]) {
+      if (node.sides & side) continue;
+      const sx = side === LEFT ? -1 : 1;
+      const near2 = [[sx, 0, 0], [sx, 1, 0.6], [sx, -1, 1.6], [0, 1, 1.2], [0, -1, 2.4]];
+      for (const [dx, dy, pen] of near2) if (!sim2.world.isBlocked(nx + dx, ny + dy)) opts.push({ t: [nx + dx, ny + dy], side, pen });
+    }
+    const cost = (o) => Math.hypot(o.t[0] + 0.5 - v.x, o.t[1] + 0.5 - v.y) + o.pen;
+    opts.sort((a, b) => cost(a) - cost(b));
+    const k = sim2.routeTo(v, opts.map((o) => o.t), 4);
+    if (k >= 0) {
+      node.workers++;
+      node.sides |= opts[k].side;
+      v.slot = opts[k].side;
+      v.target = idx;
+      v.phase = "goNode";
+      v.prefer = -1;
+      return true;
+    }
+    v.bad.set(idx, sim2.time + 30);
+  }
+  if (v.prefer >= 0) {
+    if (sim2.world.nodes.has(v.prefer) && (v.bad.get(v.prefer) ?? 0) > sim2.time) sim2.say(`${v.name} kh\xF4ng t\xECm \u0111\u01B0\u1EE3c \u0111\u01B0\u1EDDng t\u1EDBi ngu\u1ED3n \u0111\xE3 ch\u1ECDn.`);
+    v.prefer = -1;
+  }
+  return false;
+}
+function planDeliver(sim2, v) {
+  const done = sim2.buildings.filter((b) => b.done && holdsGoods(b));
+  done.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
+  for (const b of done.slice(0, 2)) {
+    const d = BUILDINGS[b.kind];
+    if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
+      v.target = b.id;
+      v.phase = "goStore";
+      return;
+    }
+  }
+  wait(sim2, v, 2);
+}
+function stash(sim2, v) {
+  const c = v.carry;
+  if (!c) return;
+  const moved = Math.min(Math.max(0, sim2.capacity(c.res) - sim2.stock[c.res]), c.amount);
+  sim2.stock[c.res] += moved;
+  c.amount -= moved;
+  if (c.amount <= 0) v.carry = null;
+}
+function unload(sim2, v) {
+  const c = v.carry, st = sim2.getBuilding(v.target);
+  if (st) faceBuilding(sim2, v, st);
+  if (!c) {
+    v.phase = "idle";
+    return;
+  }
+  const space = Math.max(0, sim2.capacity(c.res) - sim2.stock[c.res]), moved = Math.min(space, c.amount);
+  sim2.stock[c.res] += moved;
+  c.amount -= moved;
+  if (c.amount <= 0) {
+    v.carry = null;
+    v.phase = "idle";
+    return;
+  }
+  if (sim2.time - sim2.lastFullWarn > 30) {
+    sim2.lastFullWarn = sim2.time;
+    sim2.say(`Kho \u0111\xE3 \u0111\u1EA7y ${RES_NAME[c.res].toLowerCase()}, h\xE3y x\xE2y th\xEAm Kho.`);
+  }
+  wait(sim2, v, 3);
+}
+function planBuild(sim2, v) {
+  const onSite = (b) => sim2.villagers.filter((o) => o !== v && o.target === b.id && (o.phase === "goSite" || o.phase === "build")).length;
+  const house = !!sim2.building("builder");
+  let sites = sim2.buildings.filter((b) => needsWork(b) && (house || b.kind === "builder") && onSite(b) < 3);
+  sites.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) || Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
+  sites = sites.slice(0, 2);
+  for (const b of sites) {
+    const d = BUILDINGS[b.kind];
+    if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
+      v.target = b.id;
+      v.phase = "goSite";
+      v.prefer = -1;
+      return;
+    }
+  }
+  wait(sim2, v, 2);
+}
+
+// src/sim/path.ts
+var SQ2 = Math.SQRT2;
+var MinHeap = class {
+  constructor(key) {
+    this.key = key;
+    this.items = [];
+  }
+  get size() {
+    return this.items.length;
+  }
+  push(n) {
+    const a = this.items;
+    a.push(n);
+    let i = a.length - 1;
+    while (i > 0) {
+      const p = i - 1 >> 1;
+      if (this.key[a[p]] <= this.key[a[i]]) break;
+      [a[p], a[i]] = [a[i], a[p]];
+      i = p;
+    }
+  }
+  pop() {
+    const a = this.items, top = a[0], last = a.pop();
+    if (a.length) {
+      a[0] = last;
+      let i = 0;
+      for (; ; ) {
+        const l = i * 2 + 1, r = l + 1;
+        let m = i;
+        if (l < a.length && this.key[a[l]] < this.key[a[m]]) m = l;
+        if (r < a.length && this.key[a[r]] < this.key[a[m]]) m = r;
+        if (m === i) break;
+        [a[m], a[i]] = [a[i], a[m]];
+        i = m;
+      }
+    }
+    return top;
+  }
+};
+function findPath(world, sx, sy, gx, gy, maxNodes = 3e4) {
+  const N = world.size, total = N * N;
+  if (!world.inBounds(sx, sy) || !world.inBounds(gx, gy)) return [];
+  const g2 = new Float32Array(total).fill(Infinity);
+  const f = new Float32Array(total);
+  const parent = new Int32Array(total).fill(-1);
+  const closed = new Uint8Array(total);
+  const heap = new MinHeap(f);
+  const h2 = (x, y) => {
+    const dx = Math.abs(x - gx), dy = Math.abs(y - gy);
+    return dx + dy + (SQ2 - 2) * Math.min(dx, dy);
+  };
+  const start = sy * N + sx, goal = gy * N + gx;
+  g2[start] = 0;
+  f[start] = h2(sx, sy);
+  heap.push(start);
+  let best = start, bestH = f[start], expanded = 0;
+  while (heap.size && expanded < maxNodes) {
+    const cur = heap.pop();
+    if (closed[cur]) continue;
+    closed[cur] = 1;
+    expanded++;
+    if (cur === goal) {
+      best = cur;
+      break;
+    }
+    const cx = cur % N, cy = cur / N | 0;
+    const hh = h2(cx, cy);
+    if (hh < bestH) {
+      bestH = hh;
+      best = cur;
+    }
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = cx + dx, ny = cy + dy;
+        if (world.isBlocked(nx, ny)) continue;
+        if (dx && dy && (world.isBlocked(cx + dx, cy) || world.isBlocked(cx, cy + dy))) continue;
+        const ni = ny * N + nx;
+        if (closed[ni]) continue;
+        const ng = g2[cur] + (dx && dy ? SQ2 : 1);
+        if (ng < g2[ni]) {
+          g2[ni] = ng;
+          f[ni] = ng + h2(nx, ny);
+          parent[ni] = cur;
+          heap.push(ni);
+        }
+      }
+    }
+  }
+  const out = [];
+  for (let n = best; n !== start && n !== -1; n = parent[n]) out.push([n % N, n / N | 0]);
+  return out.reverse();
+}
+
+// src/sim/movement.ts
+function nearestFree(sim2, tx, ty, taken) {
+  const N = sim2.world.size;
+  for (let r = 0; r <= 12; r++) {
+    let best = null, bd = Infinity;
+    for (let y = ty - r; y <= ty + r; y++) {
+      for (let x = tx - r; x <= tx + r; x++) {
+        if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r) continue;
+        if (sim2.world.isBlocked(x, y) || taken.has(y * N + x)) continue;
+        const d = (x - tx) ** 2 + (y - ty) ** 2;
+        if (d < bd) {
+          bd = d;
+          best = [x, y];
+        }
+      }
+    }
+    if (best) return best;
+  }
+  return null;
+}
+function moveUnit(sim2, v, dt) {
+  const walk = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.armor ? 1 : 1);
+  if (v.swing) return;
+  let left = walk * dt;
+  while (left > 0 && v.path.length) {
+    const [px, py] = v.path[0];
+    const dx = px + 0.5 - v.x, dy = py + 0.5 - v.y, d = Math.hypot(dx, dy);
+    if (d <= left) {
+      v.x = px + 0.5;
+      v.y = py + 0.5;
+      left -= d;
+      v.path.shift();
+    } else {
+      v.x += dx / d * left;
+      v.y += dy / d * left;
+      left = 0;
+    }
+    if (d > 1e-6) v.facing = Math.abs(dx) > Math.abs(dy) * 1.1 ? dx > 0 ? "right" : "left" : dy > 0 ? "front" : "back";
+  }
+  if (!v.path.length && v.slide) {
+    const s = v.slide, dx = s.x - v.x, dy = s.y - v.y, d = Math.hypot(dx, dy), step3 = walk * 0.7 * dt;
+    if (d <= step3) {
+      v.x = s.x;
+      v.y = s.y;
+      v.slide = null;
+      v.facing = s.face;
+    } else {
+      v.x += dx / d * step3;
+      v.y += dy / d * step3;
+      if (Math.abs(dx) > 0.02) v.facing = dx > 0 ? "right" : "left";
+    }
+  }
+}
+function animate(sim2, v, dt) {
+  let anim = "idle", hold = null;
+  const walking = v.path.length > 0 || !!v.slide;
+  const armed = () => {
+    if (!v.weapon) return null;
+    const w = weaponOf(v);
+    return { kind: v.weapon, tier: w.tier ?? 1 };
+  };
+  const ready = v.phase === "fight" || v.fight.mode !== "none";
+  const carrying = !!v.weapon && (v.job === "fight" || v.job === "hunt");
+  if (v.down > 0) anim = "down";
+  else if (v.swing) {
+    anim = poseOf(v.weapon, "attack");
+    hold = armed();
+  } else if (v.flinch > 0) anim = "hit";
+  else if (v.phase === "flee") anim = "run";
+  else if (ready) {
+    anim = poseOf(v.weapon, walking ? "charge" : "guard");
+    hold = armed();
+  } else if (walking) {
+    anim = v.carry && v.carry.amount > 0 ? "carry_walk" : "walk";
+    if (carrying && !(v.carry && v.carry.amount > 0)) {
+      anim = poseOf(v.weapon, "walk");
+      hold = armed();
+    }
+  } else if (carrying && v.phase === "idle") {
+    anim = poseOf(v.weapon, "idle");
+    hold = armed();
+  } else if (v.phase === "work" && v.job !== "idle") {
+    const k = TOOL_OF_JOB[v.job], tier = sim2.toolTier(v, v.job);
+    if (k && tier > 0) {
+      anim = JOBS[v.job].anim === "gather" ? "dig" : JOBS[v.job].anim;
+      hold = { kind: k, tier };
+    } else anim = "gather";
+  } else if (v.phase === "build") {
+    const t = sim2.toolTier(v, "build");
+    if (t > 0) {
+      anim = "build";
+      hold = { kind: "hammer", tier: t };
+    } else anim = "gather";
+  } else if (v.phase === "skin") anim = "gather";
+  const lit = !!v.torch && sim2.resting && v.phase !== "sleep" && v.phase !== "goHome";
+  if (lit !== v.lit) {
+    v.lit = lit;
+    sim2.fogDirty = true;
+  }
+  if (anim !== v.anim) {
+    v.anim = anim;
+    v.animClock = 0;
+  } else v.animClock += dt;
+  v.hold = hold;
+}
+function ringTiles(sim2, v, x, y, w, h2) {
+  const out = [];
+  for (let j = y - 1; j <= y + h2; j++) for (let i = x - 1; i <= x + w; i++) {
+    if (i >= x && i < x + w && j >= y && j < y + h2) continue;
+    if (!sim2.world.isBlocked(i, j)) out.push([i, j]);
+  }
+  const cost = (t) => Math.hypot(t[0] + 0.5 - v.x, t[1] + 0.5 - v.y) + (t[0] >= x && t[0] < x + w ? 1.5 : 0);
+  out.sort((a, b) => cost(a) - cost(b));
+  return out;
+}
+function standTile(sim2, v) {
+  const fx = Math.floor(v.x), fy = Math.floor(v.y);
+  if (!sim2.world.isBlocked(fx, fy)) return [fx, fy];
+  let best = [fx, fy], bd = Infinity;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const x = fx + dx, y = fy + dy;
+    if (sim2.world.isBlocked(x, y)) continue;
+    const d = Math.hypot(x + 0.5 - v.x, y + 0.5 - v.y);
+    if (d < bd) {
+      bd = d;
+      best = [x, y];
+    }
+  }
+  return best;
+}
+function pathTo(sim2, v, gx, gy, maxNodes = 14e3) {
+  const [sx, sy] = standTile(sim2, v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
+  const p = gx === sx && gy === sy ? [] : findPath(sim2.world, sx, sy, gx, gy, maxNodes);
+  return off ? [[sx, sy], ...p] : p;
+}
+function routeTo(sim2, v, tiles, tries = 3) {
+  const [sx, sy] = standTile(sim2, v);
+  for (let k = 0; k < Math.min(tries, tiles.length); k++) {
+    const [gx, gy] = tiles[k];
+    const p = pathTo(sim2, v, gx, gy), last = p[p.length - 1];
+    if (gx === sx && gy === sy || last && last[0] === gx && last[1] === gy) {
+      v.path = p;
+      return k;
+    }
+  }
+  return -1;
+}
+
+// src/sim/villagers.ts
+function freshName(sim2, sex, rnd) {
+  const pool = (sex === "m" ? NAMES_M : NAMES_F).filter((n) => !sim2.villagers.some((v) => v.name === n));
+  const list = pool.length ? pool : sex === "m" ? NAMES_M : NAMES_F;
+  return list[Math.floor(rnd() * list.length)];
+}
+function spawn(sim2, x, y, sex) {
+  const v = makeVillager(sim2, x, y, sex, "player");
+  sim2.villagers.push(v);
+  sim2.byId.set(v.id, v);
+  return v;
+}
+function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
+  const r = rnd, pick = (a) => a[Math.floor(r() * a.length)];
+  const stats = {};
+  for (const k of STAT_KEYS) stats[k] = 3 + Math.floor(r() * 8);
+  const potential = {}, skill = {};
+  for (const j of WORK_JOBS) {
+    if (j === "hunt" || j === "fight" || j === "research") {
+      const k = j === "hunt" ? stats.agi : j === "research" ? stats.int : stats.str;
+      potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1;
+      skill[j] = { xp: 0, level: 0 };
+      continue;
+    }
+    const p = r();
+    potential[j] = p < 0.45 ? 1 : p < 0.85 ? 2 : 3;
+    skill[j] = { xp: 0, level: 0 };
+  }
+  return {
+    id: sim2.nextVid++,
+    name: freshName(sim2, sex, rnd),
+    look: { sex, skin: pick(SKIN), hair: pick(HAIR), hide: "#8b6a45", pants: "#3f63a8" },
+    x: x + 0.5,
+    y: y + 0.5,
+    path: [],
+    slide: null,
+    facing: "front",
+    speed: 1.6 + 0.1 * stats.agi,
+    animClock: 0,
+    tx: -1,
+    ty: -1,
+    stats,
+    potential,
+    skill,
+    tools: emptyToolSet(),
+    job: "idle",
+    phase: "idle",
+    slot: 0,
+    target: -1,
+    prefer: -1,
+    progress: 0,
+    frac: 0,
+    timer: 0,
+    order: null,
+    carry: null,
+    fullness: 100,
+    health: maxHpOf(stats.vit),
+    starving: false,
+    anim: "idle",
+    hold: null,
+    bad: /* @__PURE__ */ new Map(),
+    bed: -1,
+    post: -1,
+    nightOwl: false,
+    energy: 100,
+    strain: 0,
+    shift: "day",
+    torch: null,
+    lockUntil: 0,
+    lit: false,
+    manualGear: false,
+    inside: null,
+    orderCd: 0,
+    repairFor: null,
+    squad: -1,
+    gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
+    team,
+    maxHealth: maxHpOf(stats.vit),
+    weapon: null,
+    armor: null,
+    morale: MORALE.start,
+    stance: "aggressive",
+    fight: { mode: "none", target: null, dest: null, anchor: null, repath: 0, scan: 0 },
+    queue: [],
+    atkCd: 0,
+    down: 0,
+    rescue: 0,
+    fleeT: 0,
+    calm: 99,
+    loot: -1,
+    leader: false,
+    swing: null,
+    flinch: 0,
+    ai: null
+  };
+}
+function tickVillager(sim2, v, dt) {
+  tickCommon(sim2, v, dt);
+  if (v.down > 0) {
+    tickDown(sim2, v, dt);
+    sim2.animate(v, dt);
+    return;
+  }
+  v.fullness -= sim2.dev.noHunger ? 0 : dt * 100 * (v.phase === "sleep" ? SLEEP_HUNGER : 1) / DAY_LENGTH;
+  if (v.fullness < 50 && sim2.stock.food >= 2) {
+    sim2.stock.food -= 2;
+    v.fullness = Math.min(100, v.fullness + 2 * FOOD_NUTRITION);
+  }
+  if (v.fullness <= 0) {
+    if (!v.starving) {
+      v.starving = true;
+      sim2.say(`${v.name} \u0111\xF3i l\u1EA3, kho h\u1EBFt th\u1EE9c \u0103n!`);
+    }
+    v.fullness = 0;
+    v.health -= dt * v.maxHealth / (1.5 * DAY_LENGTH);
+  } else {
+    v.starving = false;
+    if (v.fullness > 40 && v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 15e-4 * v.maxHealth);
+  }
+  if (v.health <= 0) {
+    sim2.kill(v);
+    return;
+  }
+  v.orderCd = Math.max(0, v.orderCd - dt);
+  sim2.tickEnergy(v, dt);
+  const held = sim2.heldTool(v);
+  if (held && TOOL_OF_JOB[v.job] !== held.k) sim2.returnTool(v);
+  if (v.inside !== null && v.phase !== "sleep") {
+    const onWatch = v.job === "fight" && v.post >= 0 && sim2.tribes.some((t) => t.raid);
+    if (sim2.shouldSleep(v, onWatch)) {
+      sim2.exitBuilding(v);
+      goHome(sim2, v);
+    } else {
+      sim2.animate(v, dt);
+      return;
+    }
+  }
+  const brained = brainPlayer(sim2, v, dt);
+  const fighting = brained && (v.phase === "fight" || v.phase === "flee" || v.phase === "rescue");
+  const asleep = v.phase === "goHome" || v.phase === "sleep";
+  if (sim2.shouldSleep(v, fighting)) {
+    if (!asleep) goHome(sim2, v);
+  } else if (asleep) {
+    sim2.exitBuilding(v);
+    v.path = [];
+    v.slide = null;
+    v.phase = "idle";
+    v.bed = -1;
+  }
+  sim2.moveUnit(v, dt);
+  if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim2.fogDirty = true;
+  if (!v.path.length && !v.slide && !brained) sim2.think(v, dt);
+  sim2.animate(v, dt);
+}
+function goHome(sim2, v) {
+  const owl = v.nightOwl;
+  sim2.stash(v);
+  sim2.resetTask(v);
+  v.nightOwl = owl;
+  v.phase = "sleep";
+  const bed = sim2.freeBed(v);
+  if (bed) {
+    const bd = BUILDINGS[bed.kind];
+    if (sim2.routeTo(v, sim2.ringTiles(v, bed.x, bed.y, bd.w, bd.h)) >= 0) {
+      v.target = bed.id;
+      v.phase = "goHome";
+      return;
+    }
+  }
+  const fire = sim2.buildings.find((b) => b.kind === "campfire");
+  if (!fire) return;
+  const d = BUILDINGS[fire.kind];
+  const taken = new Set(sim2.villagers.filter((o) => o !== v && o.bed >= 0).map((o) => o.bed));
+  const spot = sim2.nearestFree(fire.x + (d.w >> 1), fire.y + d.h, taken);
+  if (!spot || sim2.routeTo(v, [spot], 1) < 0) return;
+  v.bed = spot[1] * sim2.world.size + spot[0];
+  v.phase = "goHome";
+}
+function pickLeaders(sim2) {
+  const fighters = sim2.villagers.filter((v) => v.job === "fight" && v.health > 0 && v.down <= 0);
+  for (const v of sim2.villagers) v.leader = false;
+  if (fighters.length >= 5) fighters.sort((a, b) => b.stats.str + b.stats.agi - a.stats.str - a.stats.agi)[0].leader = true;
+}
+
+// src/sim/environment.ts
+function tickCalendar(sim2) {
+  const day = sim2.day;
+  if (day !== sim2.lastDay) {
+    sim2.lastDay = day;
+    sim2.weather = sim2.nextWeather;
+    sim2.nextWeather = rollWeather(seasonOf(day + 1), sim2.wrnd());
+    sim2.signalled = false;
+    const season = seasonOf(day);
+    if (season !== sim2.world.season) {
+      sim2.world.setSeason(season);
+      sim2.say(SEASON_DEF[season].enter);
+    }
+    if (sim2.weather !== "clear") sim2.say(`H\xF4m nay: ${WEATHER[sim2.weather].name.toLowerCase()}.`);
+  }
+  if (!sim2.signalled && sim2.tod >= 0.5) {
+    sim2.signalled = true;
+    const sig = WEATHER[sim2.nextWeather].signal;
+    if (sig && sim2.nextWeather !== sim2.weather) sim2.say(sig);
+  }
+  const rest = isRestTime(sim2.tod, sim2.season);
+  if (sim2.resting !== rest) for (const v of sim2.villagers) {
+    v.nightOwl = false;
+    if (!rest) sim2.returnTorch(v);
+  }
+  sim2.resting = rest;
+}
+var TORCH_VISION = 6;
+function refreshFog(sim2) {
+  const r = visionRadius(sim2), fire = fireRadius(sim2);
+  sim2.lastVision = r;
+  const src = sim2.villagers.map((v) => ({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r }));
+  for (const b of sim2.buildings) if (b.done) {
+    const d = BUILDINGS[b.kind];
+    src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === "campfire" ? fire : r });
+  }
+  sim2.fog.update(src);
+  for (const v of sim2.villagers) {
+    v.tx = Math.floor(v.x);
+    v.ty = Math.floor(v.y);
+  }
+}
+function visionRadius(sim2) {
+  return Math.max(1, Math.round(NIGHT_VISION + (VISION - NIGHT_VISION) * sim2.light) - WEATHER[sim2.weather].vision);
+}
+function fireRadius(sim2) {
+  return Math.max(1, FIRE_VISION - WEATHER[sim2.weather].vision);
+}
+
+// src/sim/codec.ts
+function encode(value) {
+  if (value === void 0 || value === null) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : { $: "num", v: String(value) };
+  if (typeof value === "string" || typeof value === "boolean") return value;
+  if (Array.isArray(value)) return value.map(encode);
+  if (value instanceof Map) return { $: "map", v: [...value].map(([k, x]) => [encode(k), encode(x)]) };
+  if (value instanceof Set) return { $: "set", v: [...value].map(encode) };
+  if (typeof value === "object") {
+    const out = {};
+    for (const [k, x] of Object.entries(value)) if (x !== void 0 && typeof x !== "function") out[k] = encode(x);
+    return out;
+  }
+  throw new Error(`cannot save a ${typeof value}`);
+}
+function decode(json) {
+  if (Array.isArray(json)) return json.map(decode);
+  if (json && typeof json === "object") {
+    const o = json;
+    if (o.$ === "num") return Number(o.v);
+    if (o.$ === "map") return new Map(o.v.map(([k, x]) => [decode(k), decode(x)]));
+    if (o.$ === "set") return new Set(o.v.map(decode));
+    const out = {};
+    for (const [k, x] of Object.entries(json)) out[k] = decode(x);
+    return out;
+  }
+  return json;
+}
+function packRuns(data) {
+  const out = [];
+  for (let i = 0; i < data.length; ) {
+    let j = i + 1;
+    while (j < data.length && data[j] === data[i]) j++;
+    out.push(data[i], j - i);
+    i = j;
+  }
+  return out;
+}
+function unpackRuns(runs, target) {
+  let at = 0;
+  for (let i = 0; i < runs.length; i += 2) {
+    target.fill(runs[i], at, at + runs[i + 1]);
+    at += runs[i + 1];
+  }
+  if (at !== target.length) throw new Error(`saved array has ${at} cells, expected ${target.length}`);
+}
+
+// src/sim/save.ts
+var SAVE_VERSION = 5;
+var SAVED = {
+  /** Single values. */
+  scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
+  /** Objects whose keys are filled in place. */
+  records: ["stock", "toolStock", "battle"],
+  /** Lists of plain data. */
+  lists: ["wornTools", "craftQueue", "researchQueue", "repairQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "plans", "battleReports"],
+  /** Handled by hand below. */
+  special: ["researched", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
+};
+function toSave(sim2) {
+  const w = sim2.world;
+  const pick = (keys) => Object.fromEntries(keys.map((k) => [k, encode(sim2[k])]));
+  return {
+    version: SAVE_VERSION,
+    seed: sim2.seed,
+    scalars: pick(SAVED.scalars),
+    records: pick(SAVED.records),
+    lists: pick(SAVED.lists),
+    researched: [...sim2.researched],
+    tribes: sim2.tribes.map(({ def: _def, ...t }) => encode(t)),
+    rng: { rnd: sim2.rnd.getState(), frnd: sim2.frnd.getState(), wrnd: sim2.wrnd.getState() },
+    world: {
+      season: w.season,
+      tiles: packRuns(w.tiles),
+      occ: packRuns(w.occ),
+      decor: packRuns(w.decor),
+      nodes: [...w.nodes].map(([i, n]) => [i, n.kind, n.res, n.amount, n.max, n.workers, n.sides, n.regrow])
+    },
+    fog: { state: packRuns(sim2.fog.state), version: sim2.fog.version }
+  };
+}
+var MIGRATIONS = {
+  // eslint-disable-line @typescript-eslint/no-explicit-any
+  // 1 -> 2: villagers gained energy, strain, a shift and a torch; the torch blueprint became a known technology
+  1: (d) => {
+    for (const list of [d.lists.villagers, d.lists.foes]) {
+      for (const v of list) {
+        v.energy ??= 100;
+        v.strain ??= 0;
+        v.shift ??= "day";
+        v.torch ??= null;
+        v.lockUntil ??= 0;
+        v.lit ??= false;
+      }
+    }
+    if (!d.researched.includes("torch1")) d.researched.push("torch1");
+    return { ...d, version: 2 };
+  },
+  // 2 -> 3: a gatherer can be posted to a Ruộng
+  2: (d) => {
+    for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) v.post ??= -1;
+    return { ...d, version: 3 };
+  },
+  // 3 -> 4: buildings gained strength (defence works) and an open/shut state (gates)
+  3: (d) => {
+    for (const b of d.lists.buildings) {
+      b.hp ??= 0;
+      b.open ??= true;
+    }
+    return { ...d, version: 4 };
+  },
+  // 4 -> 5: weapons and armour wear out
+  4: (d) => {
+    for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+      v.gear ??= { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false };
+      v.squad ??= -1;
+    }
+    for (const k of ["squads", "maps", "scouts", "plans", "battleReports"]) d.lists[k] ??= [];
+    d.scalars.nextSquad ??= 1;
+    d.scalars.nextMission ??= 1;
+    d.scalars.nextPlan ??= 1;
+    d.scalars.alarmUntil ??= 0;
+    d.records.battle ??= { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] };
+    return { ...d, version: 5 };
+  }
+};
+function migrate(raw) {
+  let d = raw;
+  if (!d || typeof d !== "object" || typeof d.version !== "number") throw new Error("this is not a saved game");
+  if (d.version > SAVE_VERSION) throw new Error(`this game was saved by a newer version (${d.version}); this one reads up to ${SAVE_VERSION}`);
+  while (d.version < SAVE_VERSION) {
+    const step3 = MIGRATIONS[d.version];
+    if (!step3) throw new Error(`no way to read saved games of version ${d.version}`);
+    d = step3(d);
+  }
+  return d;
+}
+function applySave(sim2, data) {
+  if (data.seed !== sim2.seed) throw new Error(`the save is of world ${data.seed}, this game is world ${sim2.seed}`);
+  const w = sim2.world, target = sim2;
+  unpackRuns(data.world.tiles, w.tiles);
+  unpackRuns(data.world.occ, w.occ);
+  unpackRuns(data.world.decor, w.decor);
+  w.nodes.clear();
+  for (const [i, kind, res, amount, max, workers, sides, regrow] of data.world.nodes) {
+    w.nodes.set(i, { kind, res, amount, max, workers, sides, regrow });
+  }
+  w.season = data.world.season;
+  unpackRuns(data.fog.state, sim2.fog.state);
+  sim2.fog.version = data.fog.version;
+  for (const k of SAVED.scalars) target[k] = decode(data.scalars[k]);
+  for (const k of SAVED.records) {
+    const rec = target[k];
+    for (const key of Object.keys(rec)) delete rec[key];
+    Object.assign(rec, k === "stock" ? emptyStock() : {}, decode(data.records[k]));
+  }
+  for (const k of SAVED.lists) {
+    const list = target[k];
+    list.length = 0;
+    list.push(...decode(data.lists[k]));
+  }
+  sim2.researched.clear();
+  for (const id of data.researched) sim2.researched.add(id);
+  sim2.tribes.length = 0;
+  for (const t of data.tribes) {
+    const tribe = decode(t);
+    sim2.tribes.push({ ...tribe, def: TRIBES[tribe.id] });
+  }
+  sim2.rnd.setState(data.rng.rnd);
+  sim2.frnd.setState(data.rng.frnd);
+  sim2.wrnd.setState(data.rng.wrnd);
+  sim2.byId.clear();
+  for (const v of sim2.villagers) sim2.byId.set(v.id, v);
+  for (const f of sim2.foes) sim2.byId.set(f.id, f);
+  sim2.animalById.clear();
+  for (const a of sim2.animals) sim2.animalById.set(a.id, a);
+  RES_NAME.coin = CURRENCY[sim2.era];
+}
+
+// src/data/rest.json
+var rest_default = {
+  _note: "Energy (s\u1EE9c) of a villager, 0-100. Costs are percentage points. A day's heavy work costs dayCost over the waking hours, a night shift nightCost over the night; jobWeight scales it per job. Sleep gives back sleepNight points over one night of sleep (half that by day) in a Nh\xE0 d\xE2n; sleepAt scales it by where they lie down: by the campfire (no bed free) it is slower, in the Nh\xE0 d\xE2n or the L\u1EC1u chi\u1EBFn binh (soldiers) it is full, and a higher level of the house multiplies it again (its craftSpeed). Below tired a villager must sleep and cannot be woken until wakeAfterTired (wakeAfterCollapse if they fell asleep below collapse). Strain builds up from night work and from collapsing, and wears off with sleep; it lowers the energy ceiling and slows recovery, so nobody can be worked night after night. Night work needs a torch and goes at nightEfficiency.",
+  tired: 20,
+  collapse: 10,
+  wakeAfterTired: 50,
+  wakeAfterCollapse: 60,
+  dayCost: 42,
+  nightCost: 30,
+  sleepNight: 60,
+  sleepDay: 30,
+  sleepAt: { campfire: 0.6, house: 1, barracks: 1.6 },
+  nightEfficiency: 0.7,
+  tiredEfficiency: 0.7,
+  tiredBelow: 40,
+  torchBurn: 600,
+  jobWeight: { wood: 1, stone: 1, build: 0.95, fight: 0.8, hunt: 0.9, food: 0.7, craft: 0.6, repair: 0.6, research: 0.5, idle: 0.15 },
+  strain: { nightWork: 0.1, collapse: 15, nightSleep: 0.12, daySleep: 0.03, capLoss: 0.4, recoveryLoss: 67e-4, moraleLoss: 4e-3 }
+};
+
+// src/sim/rest.ts
+var REST = rest_default;
+var DAY_HOURS = DAY_LENGTH * 0.65;
+var NIGHT_HOURS = DAY_LENGTH * 0.35;
+var clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+var fit = (v) => clamp((v.stats.vit + v.stats.sta) / 20, 0, 1);
+var hpFrac = (v) => clamp(v.health / v.maxHealth, 0, 1);
+function maxEnergy(_sim, v) {
+  return 100 - v.strain * REST.strain.capLoss;
+}
+function drainRate(sim2, v) {
+  if (v.phase === "sleep" || v.phase === "down") return 0;
+  const w = REST.jobWeight[v.job] ?? REST.jobWeight.idle;
+  let k;
+  switch (v.phase) {
+    case "work":
+    case "build":
+    case "craft":
+    case "inside":
+    case "skin":
+      k = w;
+      break;
+    case "fight":
+      k = w * 1.8;
+      break;
+    case "flee":
+      k = 1.2;
+      break;
+    case "idle":
+    case "wait":
+      k = REST.jobWeight.idle;
+      break;
+    case "goHome":
+      k = 0.3;
+      break;
+    default:
+      k = w * 0.8;
+  }
+  const cond = (1.25 - 0.25 * fit(v)) * (1.2 - 0.2 * (v.morale / 100)) * (1.3 - 0.3 * hpFrac(v));
+  return REST.dayCost / DAY_HOURS * k * cond;
+}
+var bedKind = (v) => v.job === "fight" ? "barracks" : "house";
+function bedsTaken(sim2, b, except) {
+  return sim2.villagers.filter((o) => o !== except && (o.phase === "sleep" && o.inside === b.id || o.phase === "goHome" && o.target === b.id)).length;
+}
+function freeBed(sim2, v) {
+  const kind = bedKind(v);
+  let best, bd = Infinity;
+  for (const b of sim2.buildings) {
+    if (b.kind !== kind || !b.done || bedsTaken(sim2, b, v) >= levelDef(b).slots) continue;
+    const d = Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y);
+    if (d < bd) {
+      bd = d;
+      best = b;
+    }
+  }
+  return best;
+}
+function bedFactor(sim2, v) {
+  const b = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
+  return b && (b.kind === "house" || b.kind === "barracks") ? REST.sleepAt[b.kind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
+}
+function sleepRate(sim2, v) {
+  const base = (sim2.resting ? REST.sleepNight : REST.sleepDay) / NIGHT_HOURS;
+  const q = (0.8 + 0.4 * fit(v)) * (0.85 + 0.15 * (v.morale / 100)) * (0.7 + 0.3 * hpFrac(v)) * Math.max(0.3, 1 - v.strain * REST.strain.recoveryLoss);
+  return base * q * bedFactor(sim2, v);
+}
+function sleepLocked(_sim, v) {
+  return v.lockUntil > 0 && v.energy < v.lockUntil && (v.phase === "sleep" || v.phase === "goHome");
+}
+function restFactor(sim2, v) {
+  const night = sim2.resting ? REST.nightEfficiency : 1;
+  const tired = v.energy >= REST.tiredBelow ? 1 : REST.tiredEfficiency + (1 - REST.tiredEfficiency) * (v.energy / REST.tiredBelow);
+  return night * tired;
+}
+function torchCount(sim2) {
+  return (sim2.toolStock.torch1 ?? 0) + sim2.wornTools.filter((w) => w.id === "torch1" && w.dur > 0).length;
+}
+function ensureTorch(sim2, v) {
+  if (v.torch) return true;
+  if ((sim2.toolStock.torch1 ?? 0) > 0) {
+    sim2.toolStock.torch1--;
+    v.torch = { dur: REST.torchBurn };
+    return true;
+  }
+  let best = -1;
+  sim2.wornTools.forEach((w, i) => {
+    if (w.id === "torch1" && w.dur > 0 && (best < 0 || w.dur > sim2.wornTools[best].dur)) best = i;
+  });
+  if (best >= 0) {
+    v.torch = { dur: sim2.wornTools.splice(best, 1)[0].dur };
+    return true;
+  }
+  return false;
+}
+function returnTorch(sim2, v) {
+  const t = v.torch;
+  if (!t) return;
+  v.torch = null;
+  if (t.dur <= 5) return;
+  if (t.dur >= REST.torchBurn - 1) sim2.toolStock.torch1 = (sim2.toolStock.torch1 ?? 0) + 1;
+  else sim2.wornTools.push({ id: "torch1", dur: t.dur });
+}
+function giveTorch(sim2, ids) {
+  let short = false, given = 0;
+  for (const v of sim2.mine(ids)) {
+    if (v.torch) continue;
+    if (ensureTorch(sim2, v)) {
+      given++;
+      sim2.say(`${v.name} c\u1EA7m \u0111u\u1ED1c.`);
+    } else short = true;
+  }
+  return short && !given ? "Kho h\u1EBFt \u0111u\u1ED1c, h\xE3y ch\u1EBF th\xEAm \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o" : null;
+}
+function onShift(sim2, v) {
+  if (v.nightOwl) return true;
+  const night = sim2.resting;
+  if (v.job === "fight" || v.job === "idle") return !night;
+  if (v.shift === "both") return true;
+  return v.shift === "night" ? night : !night;
+}
+function onDuty(sim2, v) {
+  if (!onShift(sim2, v)) return false;
+  if (sim2.resting && v.job !== "fight" && v.job !== "idle") return ensureTorch(sim2, v);
+  return true;
+}
+function callUp(sim2, v) {
+  if (sleepLocked(sim2, v) || v.energy < REST.tired) return false;
+  if (onShift(sim2, v)) return true;
+  if (v.job === "fight") {
+    v.nightOwl = true;
+    return true;
+  }
+  if (v.job === "idle") return false;
+  if (sim2.resting && !ensureTorch(sim2, v)) return false;
+  v.nightOwl = true;
+  return true;
+}
+function tickEnergy(sim2, v, dt) {
+  const top = maxEnergy(sim2, v);
+  if (v.phase === "sleep") {
+    v.energy = Math.min(top, v.energy + sleepRate(sim2, v) * dt);
+    v.strain = Math.max(0, v.strain - (sim2.resting ? REST.strain.nightSleep : REST.strain.daySleep) * dt);
+  } else if (!sim2.dev.noTire) {
+    const working = v.job !== "idle" && (v.phase === "work" || v.phase === "build" || v.phase === "craft" || v.phase === "inside" || v.phase === "fight");
+    v.energy = Math.max(0, v.energy - drainRate(sim2, v) * dt);
+    if (sim2.resting && working) {
+      v.strain = Math.min(100, v.strain + REST.strain.nightWork * dt);
+      if (v.job !== "fight") v.morale = Math.max(0, v.morale - REST.strain.moraleLoss * dt);
+    }
+  }
+  if (v.energy > top) v.energy = top;
+  if (v.torch && sim2.resting && v.phase !== "sleep") {
+    v.torch.dur -= dt;
+    if (v.torch.dur <= 0) {
+      v.torch = null;
+      sim2.say(`\u0110u\u1ED1c c\u1EE7a ${v.name} \u0111\xE3 ch\xE1y h\u1EBFt.`);
+    }
+  }
+}
+function shouldSleep(sim2, v, fighting) {
+  if (fighting) return false;
+  if (v.lockUntil > 0) {
+    if (v.energy >= v.lockUntil) v.lockUntil = 0;
+    else return true;
+  }
+  if (v.energy < REST.tired) {
+    const collapse = v.energy < REST.collapse;
+    v.lockUntil = collapse ? REST.wakeAfterCollapse : REST.wakeAfterTired;
+    if (collapse) v.strain = Math.min(100, v.strain + REST.strain.collapse);
+    sim2.say(`${v.name} ${collapse ? "ki\u1EC7t s\u1EE9c, ng\xE3 xu\u1ED1ng ng\u1EE7 say" : "m\u1EC7t, \u0111i ng\u1EE7"}.`);
+    return true;
+  }
+  return !onDuty(sim2, v);
+}
+function bedsIn(sim2, kind) {
+  return sim2.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0);
+}
+
+// src/sim/defense.ts
+var isWall = (b) => b.kind === "fence" || b.kind === "gate";
+var isDefense = (b) => isWall(b) || b.kind === "tower";
+function toggleGate(sim2, id) {
+  const b = sim2.getBuilding(id);
+  if (!b || b.kind !== "gate") return "\u0110\xE2y kh\xF4ng ph\u1EA3i c\u1ED5ng";
+  if (!b.done) return "C\u1ED5ng ch\u01B0a d\u1EF1ng xong";
+  b.open = !b.open;
+  sim2.setOcc(b, 1);
+  sim2.say(b.open ? "C\u1ED5ng \u0111\xE3 m\u1EDF." : "C\u1ED5ng \u0111\xE3 \u0111\xF3ng.");
+  return null;
+}
+function setGates(sim2, open) {
+  for (const b of sim2.buildings) if (b.kind === "gate" && b.done && b.open !== open) {
+    b.open = open;
+    sim2.setOcc(b, 1);
+  }
+}
+function nearestWork(sim2, x, y, radius) {
+  let best, bd = radius;
+  for (const b of sim2.buildings) {
+    if (!b.done || !isDefense(b)) continue;
+    const d = BUILDINGS[b.kind], dist = Math.hypot(b.x + d.w / 2 - x, b.y + d.h / 2 - y);
+    if (dist <= bd) {
+      bd = dist;
+      best = b;
+    }
+  }
+  return best;
+}
+function damageWork(sim2, b, dmg) {
+  b.hp -= dmg;
+  if (b.hp > 0) return;
+  sim2.say(`${BUILDINGS[b.kind].name} b\u1ECB ph\xE1!`);
+  sim2.noteBattle("breach");
+  sim2.destroyBuilding(b);
+}
+function towerBonus(sim2, v) {
+  const b = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
+  if (!b || b.kind !== "tower" || armOfWeapon(effWeapon(v)) !== "archer") return { damage: 1, range: 0 };
+  return { damage: UNIT_RULES.archerOnTower.damage, range: UNIT_RULES.archerOnTower.range };
+}
+function garrison(sim2, b) {
+  return sim2.villagers.filter((v) => v.post === b.id && v.job === "fight");
+}
+function assignTower(sim2, ids, towerId) {
+  const b = sim2.getBuilding(towerId);
+  if (!b || b.kind !== "tower" || !b.done) return "Ch\xF2i canh ch\u01B0a d\u1EF1ng xong";
+  let err = null;
+  for (const v of sim2.mine(ids)) {
+    if (v.post === b.id && v.job === "fight") continue;
+    if (v.job !== "fight") {
+      err = "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi l\xEAn ch\xF2i: tuy\u1EC3n \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i";
+      continue;
+    }
+    if (armOfWeapon(effWeapon(v)) !== "archer") {
+      err = "Ch\u1EC9 cung th\u1EE7 (c\u1EA7m cung ho\u1EB7c d\xE2y qu\u0103ng) m\u1EDBi l\xEAn ch\xF2i";
+      continue;
+    }
+    if (garrison(sim2, b).length >= levelDef(b).slots) {
+      err = `${BUILDINGS.tower.name} c\u1EA5p ${b.level} ch\u1EC9 ch\u1EE9a ${levelDef(b).slots} cung th\u1EE7`;
+      continue;
+    }
+    sim2.resetTask(v);
+    sim2.clearCombat(v);
+    v.post = b.id;
+    v.fight.mode = "none";
+    v.fight.anchor = null;
+    sim2.planStaff(v);
+  }
+  return err;
+}
+function leaveTower(sim2, ids) {
+  for (const v of sim2.mine(ids)) if (v.post >= 0 && v.job === "fight") {
+    sim2.exitBuilding(v);
+    v.post = -1;
+    v.phase = "idle";
+  }
+}
+function tickTraps(sim2, _dt) {
+  for (const b of [...sim2.buildings]) {
+    if (b.kind !== "trap" || !b.done) continue;
+    for (const f of sim2.foes) {
+      if (f.health <= 0 || b.staff.includes(f.id) || Math.hypot(f.x - (b.x + 0.5), f.y - (b.y + 0.5)) > 0.8) continue;
+      b.staff.push(f.id);
+      hurt(sim2, { kind: "unit", id: f.id }, 14 * b.level, "pierce", { x: b.x, y: b.y }, {});
+      sim2.noteBattle("note", "M\u1ED9t h\u1ED1 ch\xF4ng \u0111\xE3 l\xE0m \u0111\u1ECBch b\u1ECB th\u01B0\u01A1ng.");
+      if (--b.hp <= 0) {
+        b.staff = [];
+        sim2.destroyBuilding(b);
+        break;
+      }
+    }
+  }
+}
+function tickTowers(sim2, _dt) {
+  for (const b of sim2.buildings) {
+    if (b.kind !== "tower" || !b.done) continue;
+    const d = BUILDINGS.tower, from = { x: b.x + d.w / 2, y: b.y + 0.4 };
+    for (const v of sim2.villagers) {
+      if (v.inside !== b.id || v.phase !== "inside" || v.atkCd > 0 || v.health <= 0) continue;
+      const w = weaponOf(v);
+      if (!w.ranged) continue;
+      const bonus = towerBonus(sim2, v), threat = threatsOf(sim2, v, w.range + bonus.range + 1)[0], e = threat && resolve(sim2, threat.t);
+      if (e && fireProjectile(sim2, v, e, from, bonus.damage, bonus.range)) v.atkCd = cycleOf(w.cycle, v.stats.agi);
+    }
+  }
+}
+
+// src/sim/army.ts
+var COLORS = ["#e0523c", "#3c8ce0", "#e0b43c", "#5cb85c", "#a85cd8", "#3cd0c8"];
+function squadLimit(sim2) {
+  const tent = sim2.building("wartent");
+  if (tent) return COMMAND.squadLimit[Math.min(COMMAND.squadLimit.length, tent.level) - 1];
+  return sim2.dev.freeBuild ? COMMAND.squadLimit[COMMAND.squadLimit.length - 1] : 0;
+}
+function cardLimit(sim2) {
+  const tent = sim2.building("wartent"), level = tent ? tent.level : sim2.dev.freeBuild ? 3 : 0;
+  return level ? COMMAND.cardBase + COMMAND.cardPerLevel * level + (!RESEARCH.enabled || sim2.researched.has("signal") ? 2 : 0) : 0;
+}
+var squadById = (sim2, id) => sim2.squads.find((s) => s.id === id);
+var squadOf = (sim2, v) => v.squad >= 0 ? squadById(sim2, v.squad) : void 0;
+function squadUnits(sim2, s) {
+  const out = [];
+  for (const id of s.ids) {
+    const v = sim2.byId.get(id);
+    if (v && v.team === "player" && v.job === "fight" && v.health > 0 && v.squad === s.id) out.push(v);
+  }
+  if (out.length !== s.ids.length) s.ids = out.map((v) => v.id);
+  if (!out.some((v) => v.id === s.leader)) s.leader = out.length ? out.slice().sort((a, b) => b.stats.str + b.stats.vit - a.stats.str - a.stats.vit)[0].id : -1;
+  return out;
+}
+function squadCenter(sim2, s) {
+  const us = squadUnits(sim2, s);
+  return us.length ? { x: us.reduce((a, v) => a + v.x, 0) / us.length, y: us.reduce((a, v) => a + v.y, 0) / us.length } : null;
+}
+function createSquad(sim2, name) {
+  if (sim2.squads.length >= squadLimit(sim2)) return { reason: squadLimit(sim2) ? `L\u1EC1u h\u1ECDp chi\u1EBFn ch\u1EC9 cho ${squadLimit(sim2)} \u0111\u1ED9i: n\xE2ng c\u1EA5p l\u1EC1u` : "C\u1EA7n d\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn \u0111\u1EC3 l\u1EADp \u0111\u1ED9i" };
+  const id = sim2.nextSquad++;
+  const s = { id, name: name ?? `\u0110\u1ED9i ${String.fromCharCode(64 + id)}`, color: COLORS[(id - 1) % COLORS.length], ids: [], leader: -1, formation: "line", mastery: Object.fromEntries(FORMATION_IDS.map((f) => [f, COMMAND.mastery.start])), switchUntil: 0, anchor: null, heading: 0, training: false };
+  sim2.squads.push(s);
+  return { squad: s };
+}
+function joinSquad(sim2, ids, squadId) {
+  const s = squadById(sim2, squadId);
+  if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+  let err = null;
+  for (const v of sim2.mine(ids)) {
+    if (v.job !== "fight") {
+      err = "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi v\xE0o \u0111\u1ED9i: tuy\u1EC3n \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i";
+      continue;
+    }
+    if (v.squad === s.id) continue;
+    leaveSquad(sim2, [v.id]);
+    v.squad = s.id;
+    s.ids.push(v.id);
+  }
+  return err;
+}
+function leaveSquad(sim2, ids) {
+  for (const v of sim2.mine(ids)) {
+    const s = squadOf(sim2, v);
+    if (s) {
+      s.ids = s.ids.filter((i) => i !== v.id);
+      if (s.leader === v.id) s.leader = -1;
+    }
+    v.squad = -1;
+    v.speed = 1.6 + 0.1 * v.stats.agi;
+  }
+}
+function disbandSquad(sim2, id) {
+  const s = squadById(sim2, id);
+  if (!s) return;
+  leaveSquad(sim2, [...s.ids]);
+  sim2.squads.splice(sim2.squads.indexOf(s), 1);
+  for (const p of sim2.plans) {
+    p.missions = p.missions.filter((m) => m.squad !== id);
+    p.cards = p.cards.filter((c) => c.squad !== id);
+  }
+}
+function setCommander(sim2, squadId, vid) {
+  const s = squadById(sim2, squadId);
+  if (s && s.ids.includes(vid)) s.leader = vid;
+}
+var formationOpen = (sim2, f) => !RESEARCH.enabled || sim2.dev.freeBuild || sim2.researched.has(FORMATIONS[f].tech);
+function applySpeed(sim2, s) {
+  for (const v of squadUnits(sim2, s)) v.speed = (1.6 + 0.1 * v.stats.agi) * FORMATIONS[s.formation].speed;
+}
+function setFormation(sim2, squadId, f) {
+  const s = squadById(sim2, squadId);
+  if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+  if (!FORMATIONS[f]) return "Kh\xF4ng c\xF3 tr\u1EADn n\xE0y";
+  if (!formationOpen(sim2, f)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${f === "line" || f === "circle" ? "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n" : FORMATIONS[f].name}`;
+  if (s.formation === f) return null;
+  s.formation = f;
+  s.switchUntil = sim2.time + COMMAND.mastery.switchSeconds;
+  applySpeed(sim2, s);
+  if (s.anchor) squadMove(sim2, s, s.anchor.x, s.anchor.y, "hold");
+  return null;
+}
+function squadMove(sim2, s, x, y, mode) {
+  const us = squadUnits(sim2, s);
+  if (!us.length) return;
+  const c = squadCenter(sim2, s);
+  s.heading = Math.hypot(x - c.x, y - c.y) > 1 ? Math.atan2(y - c.y, x - c.x) : s.heading;
+  s.anchor = { x, y };
+  us.sort((a, b) => (armOfWeapon(effWeapon(a)) === "archer" ? 1 : 0) - (armOfWeapon(effWeapon(b)) === "archer" ? 1 : 0) || a.id - b.id);
+  const offs = formationOffsets(s.formation, us.length), taken = /* @__PURE__ */ new Set();
+  applySpeed(sim2, s);
+  us.forEach((v, i) => {
+    const [px, py] = placeOffset(offs[i], s.heading, x, y);
+    const spot = sim2.nearestFree(Math.floor(px), Math.floor(py), taken) ?? [Math.floor(px), Math.floor(py)];
+    taken.add(spot[1] * sim2.world.size + spot[0]);
+    if (mode === "move") sim2.orderMove([v.id], spot[0], spot[1]);
+    else if (mode === "attack") sim2.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
+    else {
+      sim2.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
+      v.fight.anchor = { x: spot[0] + 0.5, y: spot[1] + 0.5 };
+    }
+  });
+}
+function trainSquad(sim2, squadId, on) {
+  const s = squadById(sim2, squadId);
+  if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+  if (!on) {
+    s.training = false;
+    return null;
+  }
+  const field = sim2.building("drill");
+  if (!field) return "C\u1EA7n d\u1EF1ng B\xE3i t\u1EADp";
+  s.training = true;
+  squadMove(sim2, s, field.x + 1.5, field.y + 1.5, "hold");
+  return null;
+}
+function tickTraining(sim2, dt) {
+  const field = sim2.building("drill");
+  for (const s of sim2.squads) {
+    const us = squadUnits(sim2, s);
+    const near2 = field && us.length ? us.filter((v) => Math.hypot(v.x - (field.x + 1.5), v.y - (field.y + 1.5)) < 7).length >= Math.ceil(us.length / 2) : false;
+    for (const f of FORMATION_IDS) {
+      if (f === s.formation && s.training && near2) s.mastery[f] = Math.min(100, s.mastery[f] + COMMAND.mastery.perSecond * dt);
+      else s.mastery[f] = Math.max(0, s.mastery[f] - COMMAND.mastery.decayPerDay * dt / DAY_LENGTH);
+    }
+    if (s.training && !field) s.training = false;
+  }
+}
+function attackFactor(sim2, v, e) {
+  if (v.team !== "player") return 1;
+  let f = 1;
+  const s = squadOf(sim2, v);
+  if (s) {
+    const fm = FORMATIONS[s.formation];
+    f *= fm.dmg * masteryFactor(s.mastery[s.formation]);
+    if (fm.charge && v.path.length > 0) f *= fm.charge;
+    if (fm.flank && e.kind === "unit" && (e.v.facing === "right" && v.x < e.v.x || e.v.facing === "left" && v.x > e.v.x)) f *= fm.flank;
+    if (fm.firstBlow && e.kind === "unit" && !e.v.fight.target && e.v.phase !== "fight") f *= fm.firstBlow;
+  }
+  if (e.kind === "unit" && e.v.team !== "player") f *= COMMAND.info[Math.min(3, sim2.mapLevel(e.v.team))];
+  return f;
+}
+function takenFactor(sim2, victim, ranged) {
+  const s = squadOf(sim2, victim);
+  if (!s) return 1;
+  const fm = FORMATIONS[s.formation];
+  return fm.taken * (ranged ? fm.takenRanged ?? 1 : 1) * (s.switchUntil > sim2.time ? COMMAND.mastery.switchTaken : 1);
+}
+function clusters(sim2) {
+  const units = [...sim2.villagers.filter((v) => v.job === "fight" && v.health > 0 && v.inside === null), ...sim2.foes.filter((f) => f.health > 0 && f.ai && f.ai.role !== "civ")];
+  const key = (v) => v.team === "player" ? `p:${v.squad}` : `f:${v.team}`;
+  const out = [];
+  const by = new Map(units.map((v) => [v.id, v]));
+  for (const c of clusterize(units.map((v) => ({ id: v.id, arm: armOfWeapon(effWeapon(v)), key: key(v) })))) {
+    const vs = c.ids.map((id) => by.get(id));
+    const sq = c.key.startsWith("p:") ? Number(c.key.slice(2)) : -1, squad = sq >= 0 ? squadById(sim2, sq) : void 0;
+    out.push({
+      id: `${c.key}|${c.arm}|${c.ids[0]}`,
+      side: vs[0].team,
+      squad: sq,
+      color: squad?.color ?? (vs[0].team === "player" ? "#9aa4b0" : "#c04040"),
+      arm: c.arm,
+      ids: c.ids,
+      x: vs.reduce((a, v) => a + v.x, 0) / vs.length,
+      y: vs.reduce((a, v) => a + v.y, 0) / vs.length,
+      hp: vs.reduce((a, v) => a + Math.max(0, v.health) / v.maxHealth, 0) / vs.length,
+      n: vs.length
+    });
+  }
+  return out;
+}
+function drawnFigures(sim2) {
+  const cs = clusters(sim2), ours = cs.filter((c) => c.side === "player").reduce((n, c) => n + c.n, 0), theirs = cs.filter((c) => c.side !== "player").reduce((n, c) => n + c.n, 0);
+  if (Math.max(ours, theirs) <= COMMAND.bigBattle) return null;
+  const shown = /* @__PURE__ */ new Set();
+  for (const c of cs) for (const id of c.ids.slice(0, iconCount(c.n))) shown.add(id);
+  return shown;
+}
+function noteBattle(sim2, kind, text = "") {
+  const b = sim2.battle;
+  if (!b.on) return;
+  if (kind === "ours") b.ourDead++;
+  else if (kind === "foes") b.foeDead++;
+  else if (kind === "breach") b.breaches++;
+  else if (kind === "shot") b.shots++;
+  else if (text && b.notes.length < 12) b.notes.push(text);
+}
+function tickBattle(sim2, dt) {
+  const b = sim2.battle, hostile = sim2.foes.some((f) => f.ai?.role === "raider" && f.health > 0);
+  if (hostile && !b.on) {
+    Object.assign(b, { on: true, since: sim2.time, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] });
+    return;
+  }
+  if (!b.on) return;
+  b.quiet = hostile ? 0 : b.quiet + dt;
+  if (b.quiet < 10) return;
+  b.on = false;
+  sim2.alarmUntil = 0;
+  const lines = [`Tr\u1EADn k\xE9o d\xE0i ${Math.max(1, Math.round((sim2.time - b.since) / 60))} ph\xFAt: ta m\u1EA5t ${b.ourDead}, \u0111\u1ECBch m\u1EA5t ${b.foeDead}.`];
+  if (b.breaches) lines.push(`${b.breaches} \u0111o\u1EA1n h\xE0ng r\xE0o ho\u1EB7c c\u1ED5ng b\u1ECB ph\xE1.`);
+  if (b.shots) lines.push(`Cung th\u1EE7 tr\xEAn ch\xF2i b\u1EAFn ${b.shots} ph\xE1t.`);
+  lines.push(...b.notes);
+  sim2.battleReports.push({ at: sim2.time, lines });
+  if (sim2.battleReports.length > 8) sim2.battleReports.shift();
+  for (const l of lines) sim2.say(l);
+}
+
+// src/sim/scouting.ts
+var mapAccuracy = (sim2, m) => Math.max(0, 1 - COMMAND.mapDecayPerDay * (sim2.time - m.at) / DAY_LENGTH);
+function mapLevel(sim2, tribe) {
+  let best = 0;
+  for (const m of sim2.maps) if (m.tribe === tribe && mapAccuracy(sim2, m) >= 0.4) best = Math.max(best, m.gaps > 0 ? m.level - 1 : m.level);
+  return best;
+}
+var warriorsOf = (sim2, tribe) => {
+  const t = tribeOf(sim2, tribe);
+  return t ? t.unitIds.filter((u) => sim2.get(u)?.ai?.role !== "civ").length : 0;
+};
+var scoutsNeeded = (sim2, tribe, level) => Math.min(8, level + Math.floor(warriorsOf(sim2, tribe) / 8));
+function startScout(sim2, ids, tribe, level) {
+  if (RESEARCH.enabled && !sim2.dev.freeBuild && !sim2.researched.has("scout")) return "C\u1EA7n nghi\xEAn c\u1EE9u: Trinh s\xE1t";
+  const t = tribeOf(sim2, tribe);
+  if (!t) return "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
+  if (level < 1 || level > 3) return "B\u1EA3n \u0111\u1ED3 c\xF3 ba c\u1EA5p";
+  if (level > 1 && mapLevel(sim2, tribe) < level - 1 && !sim2.dev.freeBuild) return `C\u1EA7n b\u1EA3n \u0111\u1ED3 c\u1EA5p ${level - 1} tr\u01B0\u1EDBc`;
+  if (sim2.scouts.some((m) => m.tribe === tribe)) return "\u0110\xE3 c\xF3 trinh s\xE1t \u0111ang \u0111i l\xE0ng n\xE0y";
+  const scouts = sim2.mine(ids).filter((v) => v.health > 0 && v.inside === null).slice(0, 8);
+  if (!scouts.length) return "Ch\u1ECDn d\xE2n \u0111\u1EC3 c\u1EED \u0111i trinh s\xE1t";
+  const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
+  const dx = fx - t.camp.x, dy = fy - t.camp.y, len = Math.max(1, Math.hypot(dx, dy)), reach = Math.min(len, 15);
+  const spotX = t.camp.x + dx / len * reach, spotY = t.camp.y + dy / len * reach;
+  scouts.forEach((v, i) => {
+    sim2.resetTask(v);
+    sim2.clearCombat(v);
+    const spot = sim2.nearestFree(Math.floor(spotX + Math.cos(i * 2.4) * 2), Math.floor(spotY + Math.sin(i * 2.4) * 2), /* @__PURE__ */ new Set()) ?? [Math.floor(spotX), Math.floor(spotY)];
+    sim2.orderMove([v.id], spot[0], spot[1]);
+  });
+  const need = scoutsNeeded(sim2, tribe, level);
+  sim2.scouts.push({ id: sim2.nextMission++, tribe, level, ids: scouts.map((v) => v.id), phase: "go", t: 0, need, survivors: scouts.length });
+  sim2.say(`${scouts.length} trinh s\xE1t l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ${t.def.name} (b\u1EA3n \u0111\u1ED3 c\u1EA5p ${level}, c\u1EA7n ${need} ng\u01B0\u1EDDi cho \u0111\u1EE7).${scouts.length < need ? " \xCDt ng\u01B0\u1EDDi h\u01A1n th\u1EBF th\xEC b\u1EA3n \u0111\u1ED3 s\u1EBD b\u1ECB h\u1EDF." : ""}`);
+  return null;
+}
+function deathChance(sim2, m, agi) {
+  const t = tribeOf(sim2, m.tribe), fire = sim2.campfire();
+  const power = warriorsOf(sim2, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
+  const day = sim2.weather === "clear" && !sim2.resting;
+  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim2.resting ? 0.1 : 0) - Math.max(0, agi - 6) * 0.01));
+}
+function tickScouts(sim2, dt) {
+  for (let i = sim2.scouts.length - 1; i >= 0; i--) {
+    const m = sim2.scouts[i], t = tribeOf(sim2, m.tribe);
+    const alive = m.ids.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.team === "player" && v.health > 0);
+    m.ids = alive.map((v) => v.id);
+    if (!alive.length || !t) {
+      sim2.say(alive.length ? "Trinh s\xE1t b\u1ECB h\u1EE7y." : "M\u1EA5t h\u1EBFt trinh s\xE1t: kh\xF4ng c\xF3 b\u1EA3n \u0111\u1ED3 n\xE0o v\u1EC1.");
+      sim2.scouts.splice(i, 1);
+      continue;
+    }
+    m.t += dt;
+    if (m.phase === "go") {
+      const near2 = alive.every((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
+      if (near2 || m.t > 300) {
+        m.phase = "watch";
+        m.t = 0;
+        for (const v of alive) if (sim2.frnd() < deathChance(sim2, m, v.stats.agi)) sim2.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
+        m.survivors = alive.filter((v) => v.health > 0 && sim2.byId.has(v.id)).length;
+        sim2.say(m.survivors ? `Trinh s\xE1t \u0111ang quan s\xE1t ${t.def.name}.` : "Trinh s\xE1t b\u1ECB b\u1EAFt g\u1EB7p, kh\xF4ng ai tho\xE1t.");
+      }
+    } else if (m.phase === "watch") {
+      if (m.t >= 0.08 * m.level * DAY_LENGTH) {
+        m.phase = "back";
+        m.t = 0;
+        const fire = sim2.campfire();
+        for (const id of m.ids) if (sim2.byId.has(id) && fire) sim2.orderMove([id], Math.floor(fire.x + 1), Math.floor(fire.y + 3));
+      }
+    } else {
+      const fire = sim2.campfire(), home = !fire || alive.every((v) => Math.hypot(v.x - fire.x, v.y - fire.y) < 7);
+      if (home || m.t > 600) {
+        const pieces = alive.length, gaps = Math.max(0, m.need - pieces);
+        const old = sim2.maps.findIndex((x) => x.tribe === m.tribe && x.level === m.level);
+        const map = { tribe: m.tribe, level: m.level, at: sim2.time, gaps };
+        if (old >= 0) sim2.maps[old] = map;
+        else sim2.maps.push(map);
+        sim2.say(`Trinh s\xE1t v\u1EC1: b\u1EA3n \u0111\u1ED3 c\u1EA5p ${m.level} c\u1EE7a ${t.def.name}${gaps ? `, nh\u01B0ng c\xF2n h\u1EDF (thi\u1EBFu ${gaps} m\u1EA3nh)` : " \u0111\u1EA7y \u0111\u1EE7"}.`);
+        sim2.scouts.splice(i, 1);
+      }
+    }
+  }
+}
+
+// src/sim/warplan.ts
+var NEED_LEVEL = { camp: 1, gate: 2, ambush: 2, stores: 3, leader: 3 };
+function canTarget(sim2, objective, tribe) {
+  return sim2.dev.freeBuild || !!tribe && sim2.mapLevel(tribe) >= NEED_LEVEL[objective];
+}
+function newPlan(sim2, kind, tribe) {
+  const old = sim2.plans.findIndex((p) => p.kind === kind && p.status !== "running");
+  if (old >= 0) sim2.plans.splice(old, 1);
+  const fire = sim2.campfire();
+  const plan2 = { id: sim2.nextPlan++, kind, tribe, missions: [], cards: [], status: "draft", startedAt: 0, signal: false, nextCard: 1, rally: { x: (fire?.x ?? sim2.world.start.x) + 1.5, y: (fire?.y ?? sim2.world.start.y) + 6 } };
+  sim2.plans.push(plan2);
+  return plan2;
+}
+function addMission(sim2, plan2, squadId) {
+  if (!sim2.squadById(squadId)) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+  if (plan2.missions.some((m) => m.squad === squadId)) return "\u0110\u1ED9i n\xE0y \u0111\xE3 c\xF3 nhi\u1EC7m v\u1EE5";
+  plan2.missions.push({ squad: squadId, objective: "camp", route: "main", trigger: { kind: "time", at: 0 }, stance: "fight", withdrawAt: 0.5, state: "idle", initial: 0, post: "gate" });
+  return null;
+}
+function addCard(sim2, plan2, kind, squadId, arg = "") {
+  if (plan2.cards.length >= sim2.cardLimit()) return `L\u1EC1u h\u1ECDp chi\u1EBFn ch\u1EC9 cho ${sim2.cardLimit()} th\u1EBB l\u1EC7nh: n\xE2ng c\u1EA5p l\u1EC1u ho\u1EB7c b\u1ECF b\u1EDBt`;
+  if (kind !== "signal" && !sim2.squadById(squadId)) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+  if (plan2.cards.some((c) => c.kind === kind && c.squad === squadId && c.arg === arg)) return "\u0110\xE3 c\xF3 th\u1EBB n\xE0y";
+  plan2.cards.push({ id: plan2.nextCard++, kind, squad: squadId, arg });
+  return null;
+}
+function removeCard(plan2, cardId) {
+  plan2.cards = plan2.cards.filter((c) => c.id !== cardId);
+}
+function reviewPlan(sim2, plan2) {
+  const out = [];
+  const t = plan2.tribe ? sim2.tribes.find((x) => x.id === plan2.tribe) : void 0;
+  if (plan2.kind === "attack") {
+    if (!t) out.push("\u2717 Ch\u01B0a ch\u1ECDn l\xE0ng \u0111\u1EC3 \u0111\xE1nh.");
+    else if (t.state !== "free") out.push(`\u2717 ${t.def.name} kh\xF4ng c\xF2n l\xE0 k\u1EBB \u0111\u1ECBch.`);
+    else {
+      const level = sim2.mapLevel(t.id), maps = sim2.maps.filter((m) => m.tribe === t.id);
+      if (!level && !sim2.dev.freeBuild) out.push("\u2717 Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 n\xE0o c\u1EE7a l\xE0ng n\xE0y: h\xE3y c\u1EED trinh s\xE1t.");
+      else {
+        const newest = Math.max(...maps.map((m) => m.at));
+        const days = Math.floor((sim2.time - newest) / 1200);
+        out.push(days >= 3 ? "B\u1EA3n \u0111\u1ED3 \u0111\xE3 c\u0169, \u0111\u1ECBch c\xF3 th\u1EC3 \u0111\xE3 \u0111\u1ED5i b\u1ED1 tr\xED." : days >= 1 ? `B\xE1o c\xE1o trinh s\xE1t t\u1EEB ${days} h\xF4m tr\u01B0\u1EDBc.` : "B\xE1o c\xE1o trinh s\xE1t m\u1EDBi trong ng\xE0y.");
+        if (maps.some((m) => m.gaps > 0)) out.push("B\u1EA3n \u0111\u1ED3 c\xF2n h\u1EDF v\xEC \xEDt trinh s\xE1t v\u1EC1: v\xE0i ch\u1ED7 ch\u01B0a ch\u1EAFc ch\u1EAFn.");
+      }
+    }
+  }
+  if (!plan2.missions.length) out.push("\u2717 Ch\u01B0a giao nhi\u1EC7m v\u1EE5 cho \u0111\u1ED9i n\xE0o.");
+  for (const m of plan2.missions) {
+    const s = sim2.squadById(m.squad), n = s ? sim2.squadUnits(s).length : 0, name = s?.name ?? "?";
+    if (!n) out.push(`\u2717 ${name} ch\u01B0a c\xF3 l\xEDnh.`);
+    else if (plan2.kind === "attack" && !canTarget(sim2, m.objective, plan2.tribe)) out.push(`\u2717 ${name} nh\u1EAFm "${OBJECTIVE_NAME[m.objective]}" nh\u01B0ng b\u1EA3n \u0111\u1ED3 ch\u01B0a \u0111\u1EE7 c\u1EA5p.`);
+    else if (m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
+    else if (m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
+    if (s && n && !sim2.squadCenter(s)) out.push(`${name} ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng.`);
+    if (s && plan2.kind === "attack" && m.route === "night") out.push(`${name} \u0111i \u0111\u01B0\u1EDDng v\xF2ng ban \u0111\xEAm: s\u1EBD ch\u1EDD \u0111\u1EBFn t\u1ED1i m\u1EDBi xu\u1EA5t ph\xE1t.`);
+  }
+  if (plan2.kind === "attack") {
+    const starts = plan2.missions.filter((m) => m.trigger.kind === "time" && m.trigger.at <= 0).length;
+    if (plan2.missions.length && !starts && !plan2.cards.some((c) => c.kind === "go")) out.push("Kh\xF4ng \u0111\u1ED9i n\xE0o c\xF3 gi\u1EDD xu\u1EA5t ph\xE1t: h\xE3y th\xEAm th\u1EBB Xu\u1EA5t ph\xE1t ho\u1EB7c \u0111\u1EB7t gi\u1EDD.");
+  }
+  return out;
+}
+function objectivePos(sim2, plan2, m) {
+  const t = sim2.tribes.find((x) => x.id === plan2.tribe);
+  if (!t) return null;
+  const toward = (d, side = 0) => {
+    const dx = plan2.rally.x - t.camp.x, dy = plan2.rally.y - t.camp.y, len = Math.max(1, Math.hypot(dx, dy));
+    return { x: t.camp.x + dx / len * d - dy / len * side, y: t.camp.y + dy / len * d + dx / len * side };
+  };
+  switch (m.objective) {
+    case "gate":
+      return toward(9);
+    case "ambush":
+      return toward(14, 8);
+    case "stores": {
+      const p = t.props.find((q) => q.kind === "pile");
+      return p ? { x: p.x + 1, y: p.y + 1 } : { ...t.camp };
+    }
+    case "leader": {
+      const l = sim2.get(t.leaderId);
+      return l && l.health > 0 ? { x: l.x, y: l.y, target: l.id } : { ...t.camp };
+    }
+    default:
+      return { ...t.camp };
+  }
+}
+function dispatch(sim2, plan2, m, s) {
+  const pos = objectivePos(sim2, plan2, m);
+  if (!pos) return;
+  m.state = "march";
+  const c = sim2.squadCenter(s) ?? plan2.rally;
+  if (m.route === "forest") {
+    const dx = pos.x - c.x, dy = pos.y - c.y, len = Math.max(1, Math.hypot(dx, dy));
+    sim2.squadMove(s, c.x + dx * 0.5 - dy / len * 10, c.y + dy * 0.5 + dx / len * 10, m.stance === "evade" ? "move" : "attack");
+    return;
+  }
+  sim2.squadMove(s, pos.x, pos.y, m.stance === "evade" ? "move" : "attack");
+  if (m.stance === "shoot") {
+    for (const v of sim2.squadUnits(s)) if (!v.weapon || !(v.weapon === "bow" || v.weapon === "sling")) sim2.orderHold([v.id]);
+  }
+}
+function triggered(sim2, plan2, m) {
+  const t = sim2.tribes.find((x) => x.id === plan2.tribe), tr = m.trigger;
+  if (m.route === "night" && !sim2.resting) return false;
+  if (tr.kind === "time") return sim2.time - plan2.startedAt >= tr.at;
+  if (tr.kind === "signal") return plan2.signal;
+  if (tr.kind === "after") {
+    const o = plan2.missions.find((x) => x.squad === tr.squad);
+    return !!o && (o.state === "engaged" || o.state === "withdraw" || o.state === "done");
+  }
+  if (!t) return false;
+  const raiders = t.unitIds.map((u) => sim2.get(u)).filter((u) => u && u.ai?.role !== "civ");
+  return raiders.length > 0 && raiders.some((u) => Math.hypot(u.x - t.camp.x, u.y - t.camp.y) > 9);
+}
+function startPlan(sim2, plan2) {
+  const bad = reviewPlan(sim2, plan2).find((l) => l.startsWith("\u2717"));
+  if (bad) return bad.slice(2);
+  if (plan2.kind === "defense") return "K\u1EBF ho\u1EA1ch ph\xF2ng th\u1EE7 ch\u1EA1y khi b\u1EA1n \u0111\xE1nh tr\u1ED1ng b\xE1o \u0111\u1ED9ng";
+  for (const m of plan2.missions) {
+    const s = sim2.squadById(m.squad);
+    m.state = "wait";
+    m.initial = sim2.squadUnits(s).length;
+  }
+  plan2.status = "running";
+  plan2.startedAt = sim2.time;
+  plan2.signal = false;
+  sim2.say(`K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng ${sim2.tribes.find((t) => t.id === plan2.tribe)?.def.name ?? ""} b\u1EAFt \u0111\u1EA7u.`);
+  return null;
+}
+function tickPlans(sim2, dt) {
+  if (sim2.alarmUntil > 0 && sim2.time > sim2.alarmUntil) sim2.alarmUntil = 0;
+  for (const plan2 of sim2.plans) {
+    if (plan2.kind !== "attack" || plan2.status !== "running") continue;
+    const t = sim2.tribes.find((x) => x.id === plan2.tribe);
+    for (const m of plan2.missions) {
+      const s = sim2.squadById(m.squad);
+      if (!s || !sim2.squadUnits(s).length) {
+        if (m.state !== "done") {
+          m.state = "done";
+        }
+        continue;
+      }
+      const alive = sim2.squadUnits(s).length, c = sim2.squadCenter(s);
+      if (m.state === "wait" && triggered(sim2, plan2, m)) dispatch(sim2, plan2, m, s);
+      else if (m.state === "march" || m.state === "engaged") {
+        const pos = objectivePos(sim2, plan2, m);
+        if (pos) {
+          const d = Math.hypot(pos.x - c.x, pos.y - c.y);
+          if (m.state === "march" && d < 9) {
+            m.state = "engaged";
+            sim2.noteBattle("note", `${s.name} \xE1p s\xE1t ${OBJECTIVE_NAME[m.objective].toLowerCase()}.`);
+            if (pos.target) sim2.orderAttack(sim2.squadUnits(s).map((v) => v.id), { kind: "unit", id: pos.target });
+          } else if (m.state === "march" && m.route === "forest" && d > 12 && Math.hypot((s.anchor?.x ?? 0) - c.x, (s.anchor?.y ?? 0) - c.y) < 4) dispatch(sim2, plan2, { ...m, route: "main" }, s);
+        }
+        const lost = m.initial ? 1 - alive / m.initial : 0, morale = sim2.squadUnits(s).reduce((a, v) => a + v.morale, 0) / alive;
+        if (lost >= m.withdrawAt || morale < 25) {
+          m.state = "withdraw";
+          sim2.squadMove(s, plan2.rally.x, plan2.rally.y, "move");
+          sim2.noteBattle("note", `${s.name} r\xFAt lui sau khi m\u1EA5t ${Math.round(lost * 100)}% qu\xE2n.`);
+          sim2.say(`${s.name} r\xFAt lui!`);
+        }
+      } else if (m.state === "withdraw" && Math.hypot(plan2.rally.x - c.x, plan2.rally.y - c.y) < 7) m.state = "done";
+    }
+    if (plan2.missions.every((m) => m.state === "done" || m.state === "idle") || !t || t.state !== "free") {
+      plan2.status = "done";
+      sim2.say("K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng k\u1EBFt th\xFAc.");
+      if (t && t.state !== "free") sim2.noteBattle("note", `${t.def.name} \u0111\xE3 khu\u1EA5t ph\u1EE5c.`);
+    }
+    void dt;
+  }
+}
+function playCard(sim2, plan2, cardId) {
+  const card = plan2.cards.find((c2) => c2.id === cardId);
+  if (!card) return "Kh\xF4ng c\xF3 th\u1EBB n\xE0y";
+  if (card.kind === "signal") {
+    plan2.signal = true;
+    sim2.say("T\xEDn hi\u1EC7u \u0111\u01B0\u1EE3c ph\xE1t \u0111i!");
+    return null;
+  }
+  const s = sim2.squadById(card.squad), m = plan2.missions.find((x) => x.squad === card.squad);
+  if (!s) return "\u0110\u1ED9i n\xE0y kh\xF4ng c\xF2n";
+  if (card.kind === "formation") return sim2.setFormation(s.id, card.arg);
+  if (plan2.status !== "running" || !m) return "K\u1EBF ho\u1EA1ch ch\u01B0a b\u1EAFt \u0111\u1EA7u";
+  if (!sim2.squadUnits(s).length) return `${s.name} kh\xF4ng c\xF2n ai`;
+  const c = sim2.squadCenter(s);
+  switch (card.kind) {
+    case "go":
+    case "advance":
+      if (m.state === "withdraw" || m.state === "done") return `${s.name} \u0111\xE3 r\xFAt`;
+      if (!m.initial) m.initial = sim2.squadUnits(s).length;
+      dispatch(sim2, plan2, m, s);
+      break;
+    case "hold":
+      m.state = "hold";
+      sim2.squadMove(s, c.x, c.y, "hold");
+      break;
+    case "shoot":
+      m.stance = "shoot";
+      for (const v of sim2.squadUnits(s)) if (v.weapon !== "bow" && v.weapon !== "sling") sim2.orderHold([v.id]);
+      break;
+    case "attack":
+      if (!canTarget(sim2, card.arg, plan2.tribe)) return "B\u1EA3n \u0111\u1ED3 ch\u01B0a \u0111\u1EE7 c\u1EA5p \u0111\u1EC3 nh\u1EAFm m\u1EE5c ti\xEAu n\xE0y";
+      m.objective = card.arg;
+      if (!m.initial) m.initial = sim2.squadUnits(s).length;
+      dispatch(sim2, plan2, m, s);
+      break;
+    case "retreat":
+      m.state = "withdraw";
+      sim2.squadMove(s, plan2.rally.x, plan2.rally.y, "move");
+      sim2.noteBattle("note", `${s.name} \u0111\u01B0\u1EE3c l\u1EC7nh r\xFAt.`);
+      break;
+  }
+  return null;
+}
+function soundAlarm(sim2) {
+  if (RESEARCH.enabled && !sim2.dev.freeBuild && !sim2.researched.has("signal")) return "C\u1EA7n nghi\xEAn c\u1EE9u: T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)";
+  sim2.alarmUntil = sim2.time + 180;
+  sim2.say("Tr\u1ED1ng b\xE1o \u0111\u1ED9ng vang l\xEAn! D\xE2n v\u1EC1 \u0111\u1ED1ng l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED.");
+  const fire = sim2.campfire(), fx = (fire?.x ?? sim2.world.start.x) + 1, fy = (fire?.y ?? sim2.world.start.y) + 3;
+  const plan2 = sim2.plans.find((p) => p.kind === "defense");
+  const hostile = sim2.foes.filter((f) => f.ai?.role === "raider" && f.health > 0), first = hostile[0] ?? sim2.tribes.find((t) => t.state === "free" && t.raid)?.camp;
+  const toward = first ?? { x: fx, y: fy + 10 };
+  const inward = (b, w) => {
+    const dx = fx - b.x, dy = fy - b.y, len = Math.max(1, Math.hypot(dx, dy));
+    return { x: b.x + w / 2 + dx / len * 1.8, y: b.y + w / 2 + dy / len * 1.8 };
+  };
+  const place = (post) => {
+    if (post === "gate") {
+      const g2 = sim2.buildings.filter((b) => b.kind === "gate" && b.done).sort((a, b) => Math.hypot(a.x - toward.x, a.y - toward.y) - Math.hypot(b.x - toward.x, b.y - toward.y))[0];
+      if (g2) return inward(g2, 1);
+    }
+    if (post === "fence") {
+      const f = sim2.buildings.filter((b) => b.kind === "fence" && b.done).sort((a, b) => Math.hypot(a.x - toward.x, a.y - toward.y) - Math.hypot(b.x - toward.x, b.y - toward.y))[0];
+      if (f) return inward(f, 1);
+    }
+    if (post === "tower") {
+      const tw = sim2.buildings.filter((b) => b.kind === "tower" && b.done).sort((a, b) => Math.hypot(a.x - toward.x, a.y - toward.y) - Math.hypot(b.x - toward.x, b.y - toward.y))[0];
+      if (tw) return inward(tw, 2);
+    }
+    return { x: fx, y: fy };
+  };
+  const squads = plan2 ? plan2.missions : sim2.squads.map((s) => ({ squad: s.id, post: "fire" }));
+  for (const m of squads) {
+    const s = sim2.squadById(m.squad);
+    if (!s) continue;
+    if (m.post === "tower") for (const tw of sim2.buildings.filter((b) => b.kind === "tower" && b.done)) sim2.assignTower(sim2.squadUnits(s).map((v) => v.id), tw.id);
+    const p = place(m.post);
+    sim2.squadMove(s, p.x, p.y, "hold");
+  }
+  return null;
+}
+
+// src/sim/simwar.ts
+var WAR = {
+  /** → army.squadLimit */
+  squadLimit() {
+    return squadLimit(this);
+  },
+  /** → army.cardLimit */
+  cardLimit() {
+    return cardLimit(this);
+  },
+  /** → army.createSquad */
+  createSquad(name) {
+    return createSquad(this, name);
+  },
+  /** → army.joinSquad */
+  joinSquad(ids, squadId) {
+    return joinSquad(this, ids, squadId);
+  },
+  /** → army.leaveSquad */
+  leaveSquad(ids) {
+    return leaveSquad(this, ids);
+  },
+  /** → army.disbandSquad */
+  disbandSquad(id) {
+    return disbandSquad(this, id);
+  },
+  /** → army.setCommander */
+  setCommander(squadId, vid) {
+    return setCommander(this, squadId, vid);
+  },
+  /** → army.setFormation */
+  setFormation(squadId, f) {
+    return setFormation(this, squadId, f);
+  },
+  /** → army.formationOpen */
+  formationOpen(f) {
+    return formationOpen(this, f);
+  },
+  /** → army.squadMove */
+  squadMove(s, x, y, mode) {
+    return squadMove(this, s, x, y, mode);
+  },
+  /** → army.squadUnits */
+  squadUnits(s) {
+    return squadUnits(this, s);
+  },
+  /** → army.squadCenter */
+  squadCenter(s) {
+    return squadCenter(this, s);
+  },
+  /** → army.squadById */
+  squadById(id) {
+    return squadById(this, id);
+  },
+  /** → army.trainSquad */
+  trainSquad(squadId, on) {
+    return trainSquad(this, squadId, on);
+  },
+  /** → army.attackFactor */
+  attackFactor(v, e) {
+    return attackFactor(this, v, e);
+  },
+  /** → army.takenFactor */
+  takenFactor(v, ranged) {
+    return takenFactor(this, v, ranged);
+  },
+  /** → army.clusters */
+  clusters() {
+    return clusters(this);
+  },
+  /** → army.drawnFigures */
+  drawnFigures() {
+    return drawnFigures(this);
+  },
+  /** → army.noteBattle */
+  noteBattle(kind, text = "") {
+    return noteBattle(this, kind, text);
+  },
+  /** → scouting.mapLevel */
+  mapLevel(tribe) {
+    return mapLevel(this, tribe);
+  },
+  /** → scouting.mapAccuracy */
+  mapAccuracy(m) {
+    return mapAccuracy(this, m);
+  },
+  /** → scouting.startScout */
+  startScout(ids, tribe, level) {
+    return startScout(this, ids, tribe, level);
+  },
+  /** → scouting.scoutsNeeded */
+  scoutsNeeded(tribe, level) {
+    return scoutsNeeded(this, tribe, level);
+  },
+  /** → warplan.newPlan */
+  newPlan(kind, tribe) {
+    return newPlan(this, kind, tribe);
+  },
+  /** → warplan.addMission */
+  addMission(plan2, squadId) {
+    return addMission(this, plan2, squadId);
+  },
+  /** → warplan.addCard */
+  addCard(plan2, kind, squadId, arg) {
+    return addCard(this, plan2, kind, squadId, arg);
+  },
+  /** → warplan.removeCard */
+  removeCard(plan2, cardId) {
+    return removeCard(plan2, cardId);
+  },
+  /** → warplan.reviewPlan */
+  reviewPlan(plan2) {
+    return reviewPlan(this, plan2);
+  },
+  /** → warplan.startPlan */
+  startPlan(plan2) {
+    return startPlan(this, plan2);
+  },
+  /** → warplan.playCard */
+  playCard(plan2, cardId) {
+    return playCard(this, plan2, cardId);
+  },
+  /** → warplan.soundAlarm */
+  soundAlarm() {
+    return soundAlarm(this);
+  },
+  /** → warplan.canTarget */
+  canTarget(objective, tribe) {
+    return canTarget(this, objective, tribe);
+  }
+};
+
+// src/sim/sim.ts
+var Sim = class _Sim {
+  constructor(seed = 1337) {
+    this.seed = seed;
+    this.villagers = [];
+    this.buildings = [];
+    this.stock = emptyStock();
+    /** Công cụ đã chế, đang chờ dân tới Xưởng lấy. Khóa dạng "axe1". */
+    this.toolStock = {};
+    /** Tools handed back with wear on them; they keep their durability. `id` as in toolStock. */
+    this.wornTools = [];
+    /** Hàng đợi chế tác (mã công thức). */
+    this.craftQueue = [];
+    /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
+    this.researchQueue = [];
+    /** Tools waiting to be mended in the Nhà sửa chữa (recipe ids such as axe1). */
+    this.repairQueue = [];
+    this.coinFrac = 0;
+    this.sawCoin = false;
+    /** Finished research (tech ids). Recipes and building levels stay locked until their tech is here. */
+    this.researched = /* @__PURE__ */ new Set();
+    this.log = [];
+    /** Current era: new buildings are built with this era's art and levels. */
+    this.era = "stone";
+    /** Hệ số tốc độ: 0 = tạm dừng. */
+    this.speed = 1;
+    /** Giây game đã trôi qua. */
+    this.time = START_TIME;
+    /** Player villagers and tribal people, by id. */
+    this.byId = /* @__PURE__ */ new Map();
+    /** Tribal people (enemies, neutrals, tributaries); they share the Villager body but never work. */
+    this.foes = [];
+    this.tribes = [];
+    /** Scheduled wolf packs and tribal raids. */
+    this.events = [];
+    this.nextRaid = 0;
+    this.animals = [];
+    this.animalById = /* @__PURE__ */ new Map();
+    this.projectiles = [];
+    /** War: squads, what the scouts have learnt, scouting trips, battle plans, the alarm and the fight that is on. */
+    this.squads = [];
+    this.nextSquad = 1;
+    this.maps = [];
+    this.scouts = [];
+    this.nextMission = 1;
+    this.plans = [];
+    this.nextPlan = 1;
+    /** Game seconds until which the alarm drum is sounding (0 = quiet). */
+    this.alarmUntil = 0;
+    this.battle = { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] };
+    /** The summaries of past fights, newest last. */
+    this.battleReports = [];
+    this.nextAid = 1;
+    /** Test switches driven by the dev menu; all off in a normal game. */
+    this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false };
+    /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
+    this.pendingTribe = null;
+    this.acc = 0;
+    this.fogDirty = true;
+    this.nextVid = 1;
+    this.nextBid = 1;
+    this.moraleClock = 0;
+    /** Seconds since the tribes were last looked after (they are tended once a second). */
+    this.tribeClock = 0;
+    this.lastFullWarn = -999;
+    this.lastMatWarn = -999;
+    /** Today's and tomorrow's weather (tomorrow is rolled ahead so it can be foretold). */
+    this.weather = "clear";
+    this.nextWeather = "clear";
+    this.lastDay = 1;
+    this.signalled = false;
+    this.resting = false;
+    this.lastVision = -1;
+    /** Stored food split into lots, oldest eaten first; each lot has an expiry time. */
+    this.foodLots = [];
+    this.world = new World(seed);
+    this.fog = new Fog(this.world);
+    this.rnd = mulberry32(seed ^ 2654435769);
+    this.frnd = mulberry32(seed ^ 2135587861);
+    this.wrnd = mulberry32(seed ^ 1540483477);
+    RES_NAME.coin = CURRENCY[this.era];
+    this.researched.add("torch1");
+    this.world.setSeason(this.season);
+    this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
+    this.resting = isRestTime(this.tod, this.season);
+    const s = this.world.start;
+    this.addBuilding("campfire", s.x - 1, s.y - 2, true);
+    this.stock.food = 20;
+    const spots = [[-1, 1, "m", "food"], [1, 1, "f", "wood"]];
+    for (const [dx, dy, sex, job] of spots) this.spawn(s.x + dx, s.y + dy, sex).job = job;
+    this.say("Hai ng\u01B0\u1EDDi \u0111\u1EA7u ti\xEAn \u0111\xE3 \u0111\u1EBFn b\xEAn \u0111\u1ED1ng l\u1EEDa: m\u1ED9t ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m, m\u1ED9t ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7. Ch\u1ECDn m\u1ED9t d\xE2n r\u1ED3i chu\u1ED9t ph\u1EA3i l\xEAn c\xE2y, \u0111\xE1 hay b\u1EE5i qu\u1EA3 \u0111\u1EC3 giao vi\u1EC7c. D\u1EF1ng Nh\xE0 th\u1EE3 x\xE2y tr\u01B0\u1EDBc, r\u1ED3i c\xE1c c\xF4ng tr\xECnh kh\xE1c.");
+    this.refreshFog();
+    populate(this);
+    spawnTribes(this);
+  }
+  // ---------------------------------------------------------------- tiện ích
+  get day() {
+    return Math.floor(this.time / DAY_LENGTH) + 1;
+  }
+  /** 0..1 trong ngày: 0 = nửa đêm trước bình minh, 0.5 = giữa trưa. */
+  get tod() {
+    return this.time % DAY_LENGTH / DAY_LENGTH;
+  }
+  get season() {
+    return seasonOf(this.day);
+  }
+  /** Light 0..1 from time of day and the season's day length. */
+  get light() {
+    return lightAt(this.tod, this.season);
+  }
+  /** Độ tối ban đêm 0..1 (dùng để phủ màu). */
+  get darkness() {
+    return 1 - this.light;
+  }
+  get part() {
+    return dayPart(this.tod, this.season);
+  }
+  /** Rest hours: mid-dusk to mid-dawn. */
+  get restTime() {
+    return this.resting;
+  }
+  // ---------------------------------------------------------------- energy, shifts and torches
+  /** → rest.sleepLocked */
+  sleepLocked(v) {
+    return sleepLocked(this, v);
+  }
+  /** → rest.callUp */
+  callUp(v) {
+    return callUp(this, v);
+  }
+  /** → rest.returnTorch */
+  returnTorch(v) {
+    returnTorch(this, v);
+  }
+  /** → rest.giveTorch */
+  giveTorch(ids) {
+    return giveTorch(this, ids);
+  }
+  /** → rest.torchCount */
+  torchCount() {
+    return torchCount(this);
+  }
+  /** → rest.restFactor */
+  restFactor(v) {
+    return restFactor(this, v);
+  }
+  /** → rest.shouldSleep */
+  shouldSleep(v, fighting) {
+    return shouldSleep(this, v, fighting);
+  }
+  /** → rest.tickEnergy */
+  tickEnergy(v, dt) {
+    tickEnergy(this, v, dt);
+  }
+  /** → rest.bedsIn */
+  bedsIn(kind) {
+    return bedsIn(this, kind);
+  }
+  /** → rest.freeBed */
+  freeBed(v) {
+    return freeBed(this, v);
+  }
+  /** → rest.bedsTaken */
+  bedsTaken(b) {
+    return bedsTaken(this, b);
+  }
+  /** Choose when a villager works. */
+  setShift(ids, shift) {
+    for (const v of this.mine(ids)) v.shift = shift;
+  }
+  /** → rest.maxEnergy */
+  maxEnergy(v) {
+    return maxEnergy(this, v);
+  }
+  // ---------------------------------------------------------------- saving
+  /** The whole game as plain JSON data (see save.ts). Settings are not in it. */
+  toSave() {
+    return toSave(this);
+  }
+  /** Replace this game by a saved one; it must be a save of the same world (seed). */
+  loadSave(raw) {
+    applySave(this, migrate(raw));
+    this.fog.version++;
+  }
+  // the drawing of the fog must be redone
+  /** A new Sim continuing a saved game. */
+  static fromSave(raw) {
+    const data = migrate(raw), sim2 = new _Sim(data.seed);
+    applySave(sim2, data);
+    return sim2;
+  }
+  /** → environment.visionRadius */
+  visionRadius() {
+    return visionRadius(this);
+  }
+  /** → environment.fireRadius */
+  fireRadius() {
+    return fireRadius(this);
+  }
+  /** → economy.foodSpoilingWithin */
+  foodSpoilingWithin(secs) {
+    return foodSpoilingWithin(this, secs);
+  }
+  get(id) {
+    return this.byId.get(id);
+  }
+  say(text) {
+    this.log.push({ t: this.time, text });
+    if (this.log.length > 40) this.log.shift();
+  }
+  /** → construction.capacity */
+  capacity(_res) {
+    return capacity(this, _res);
+  }
+  buildingAt(x, y) {
+    return this.buildings.find((b) => {
+      const d = BUILDINGS[b.kind];
+      return x >= b.x && x < b.x + d.w && y >= b.y && y < b.y + d.h;
+    });
+  }
+  getBuilding(id) {
+    return this.buildings.find((b) => b.id === id);
+  }
+  /** The finished building of a kind (there is only ever one of each). */
+  building(kind) {
+    return this.buildings.find((b) => b.kind === kind && b.done);
+  }
+  hasWorkshop() {
+    return !!this.building("workshop");
+  }
+  /** → inventory.toolCount */
+  toolCount(kind, tier) {
+    return toolCount(this, kind, tier);
+  }
+  /** → inventory.toolTier */
+  toolTier(v, job) {
+    return toolTier(this, v, job);
+  }
+  /** → villagers.spawn */
+  spawn(x, y, sex) {
+    return spawn(this, x, y, sex);
+  }
+  /** → villagers.makeVillager */
+  makeVillager(x, y, sex, team, rnd = this.rnd) {
+    return makeVillager(this, x, y, sex, team, rnd);
+  }
+  /** → construction.addBuilding */
+  addBuilding(kind, x, y, done) {
+    return addBuilding(this, kind, x, y, done);
+  }
+  /** → construction.buildingLimit */
+  buildingLimit(kind) {
+    return buildingLimit(this, kind);
+  }
+  /** → construction.buildingLock */
+  buildingLock(kind) {
+    return buildingLock(this, kind);
+  }
+  /** → construction.canPlace */
+  canPlace(kind, x, y) {
+    return canPlace(this, kind, x, y);
+  }
+  /** → economy.missing */
+  missing(cost) {
+    return missing(this, cost);
+  }
+  /** → construction.canUpgrade */
+  canUpgrade(b) {
+    return canUpgrade(this, b);
+  }
+  /** → construction.upgradeBuilding */
+  upgradeBuilding(id) {
+    return upgradeBuilding(this, id);
+  }
+  /** → construction.placeBuilding */
+  placeBuilding(kind, x, y) {
+    return placeBuilding(this, kind, x, y);
+  }
+  /** → construction.salvage */
+  salvage(b) {
+    return salvage(this, b);
+  }
+  /** → construction.moveFee */
+  moveFee(b) {
+    return moveFee(this, b);
+  }
+  /** → construction.demolishBuilding */
+  demolishBuilding(id) {
+    return demolishBuilding(this, id);
+  }
+  /** → construction.canMove */
+  canMove(b, x, y) {
+    return canMove(this, b, x, y);
+  }
+  /** → construction.moveBuilding */
+  moveBuilding(id, x, y) {
+    return moveBuilding(this, id, x, y);
+  }
+  /** → works.orderDef */
+  orderDef(kind, id) {
+    return orderDef(this, kind, id);
+  }
+  /** → works.bestIntInside */
+  bestIntInside(b) {
+    return bestIntInside(this, b);
+  }
+  /** → works.recipeLock */
+  recipeLock(id) {
+    return recipeLock(this, id);
+  }
+  /** → works.recipeOpen */
+  recipeOpen(id) {
+    return recipeOpen2(this, id);
+  }
+  /** → works.techState */
+  techState(t) {
+    return techState(this, t);
+  }
+  /** → works.researchBlock */
+  researchBlock(t) {
+    return researchBlock(this, t);
+  }
+  /** → works.currentResearch */
+  currentResearch() {
+    return currentResearch(this);
+  }
+  /** → works.queueResearch */
+  queueResearch(id) {
+    return queueResearch(this, id);
+  }
+  /** → works.researchShort */
+  researchShort(t) {
+    return researchShort(this, t);
+  }
+  /** → works.queueCraft */
+  queueCraft(id) {
+    return queueCraft(this, id);
+  }
+  /** → works.queueRepair */
+  queueRepair(id) {
+    return queueRepair(this, id);
+  }
+  /** → works.unqueueCraft */
+  unqueueCraft(id) {
+    return unqueueCraft(this, id);
+  }
+  /** → works.unqueueResearch */
+  unqueueResearch(id) {
+    return unqueueResearch(this, id);
+  }
+  /** → economy.affordable */
+  affordable(cost) {
+    return affordable(this, cost);
+  }
+  /** → economy.pay */
+  pay(cost, sign = -1) {
+    return pay(this, cost, sign);
+  }
+  /** → works.storeUsed */
+  storeUsed(cat) {
+    return storeUsed(this, cat);
+  }
+  /** → works.storeCap */
+  storeCap(cat) {
+    return storeCap(this, cat);
+  }
+  /** → labor.tickFarms */
+  tickFarms(dt) {
+    return tickFarms(this, dt);
+  }
+  /** → works.tickWorks */
+  tickWorks(dt) {
+    return tickWorks(this, dt);
+  }
+  /** → houses.bestFor */
+  bestFor(job) {
+    return bestFor(this, job);
+  }
+  /** → defense.tickTraps */
+  tickTraps(dt) {
+    return tickTraps(this, dt);
+  }
+  /** → defense.tickTowers */
+  tickTowers(dt) {
+    return tickTowers(this, dt);
+  }
+  /** → defense.toggleGate */
+  toggleGate(id) {
+    return toggleGate(this, id);
+  }
+  /** → defense.setGates */
+  setGates(open) {
+    return setGates(this, open);
+  }
+  /** → defense.nearestWork */
+  nearestWork(x, y, radius) {
+    return nearestWork(this, x, y, radius);
+  }
+  /** → defense.damageWork */
+  damageWork(b, dmg) {
+    return damageWork(this, b, dmg);
+  }
+  /** → defense.towerBonus */
+  towerBonus(v) {
+    return towerBonus(this, v);
+  }
+  /** → defense.garrison */
+  garrison(b) {
+    return garrison(this, b);
+  }
+  /** → defense.assignTower */
+  assignTower(ids, towerId) {
+    return assignTower(this, ids, towerId);
+  }
+  /** → defense.leaveTower */
+  leaveTower(ids) {
+    return leaveTower(this, ids);
+  }
+  /** → construction.destroyBuilding */
+  destroyBuilding(b) {
+    return destroyBuilding(this, b);
+  }
+  /** → construction.setOcc */
+  setOcc(b, val) {
+    return setOcc(this, b, val);
+  }
+  /** → houses.assignField */
+  assignField(ids, fieldId) {
+    return assignField(this, ids, fieldId);
+  }
+  /** → houses.houseRate */
+  houseRate(b) {
+    return houseRate(this, b);
+  }
+  /** → houses.staffCount */
+  staffCount(b) {
+    return staffCount(this, b);
+  }
+  /** → construction.popCap */
+  popCap() {
+    return popCap(this);
+  }
+  /** → construction.crewSpeed */
+  crewSpeed() {
+    return crewSpeed(this);
+  }
+  /** → houses.crew */
+  crew() {
+    return crew(this);
+  }
+  /** → houses.assignCrew */
+  assignCrew(ids) {
+    return assignCrew(this, ids);
+  }
+  /** → houses.trimCrew */
+  trimCrew() {
+    return trimCrew(this);
+  }
+  /** → houses.releaseCrew */
+  releaseCrew(ids) {
+    return releaseCrew(this, ids);
+  }
+  /** → houses.assignStaff */
+  assignStaff(ids, job) {
+    return assignStaff(this, ids, job);
+  }
+  /** → houses.planStaff */
+  planStaff(v) {
+    return planStaff(this, v);
+  }
+  /** → houses.enterBuilding */
+  enterBuilding(v) {
+    return enterBuilding(this, v);
+  }
+  /** → houses.exitBuilding */
+  exitBuilding(v) {
+    return exitBuilding(this, v);
+  }
+  /** → houses.sleepIn */
+  sleepIn(v, b) {
+    return sleepIn(this, v, b);
+  }
+  /** → houses.sleepers */
+  sleepers(b) {
+    return sleepers(this, b);
+  }
+  /** → houses.releaseStaff */
+  releaseStaff(ids) {
+    return releaseStaff(this, ids);
+  }
+  /** → inventory.heldTool */
+  heldTool(v) {
+    return heldTool(this, v);
+  }
+  /** → inventory.returnTool */
+  returnTool(v) {
+    return returnTool(this, v);
+  }
+  /** → inventory.assignTool */
+  assignTool(ids, k, tier) {
+    return assignTool(this, ids, k, tier);
+  }
+  /** → inventory.discardTool */
+  discardTool(ids, k) {
+    return discardTool(this, ids, k);
+  }
+  /** → inventory.repairTool */
+  repairTool(ids, k) {
+    return repairTool(this, ids, k);
+  }
+  /** → economy.barter */
+  barter(res) {
+    return barter(this, res);
+  }
+  /** → commands.resetTask */
+  resetTask(v) {
+    return resetTask(this, v);
+  }
+  /** → commands.clearCombat */
+  clearCombat(v) {
+    return clearCombat(this, v);
+  }
+  /** → commands.mine */
+  mine(ids) {
+    return mine(this, ids);
+  }
+  /** → commands.orderMove */
+  orderMove(ids, tx, ty, queue = false) {
+    return orderMove(this, ids, tx, ty, queue);
+  }
+  /** → commands.orderWork */
+  orderWork(ids, tx, ty) {
+    return orderWork(this, ids, tx, ty);
+  }
+  /** → commands.setJob */
+  setJob(ids, job) {
+    return setJob(this, ids, job);
+  }
+  /** → commands.enlist */
+  enlist(ids) {
+    return enlist(this, ids);
+  }
+  /** → commands.discharge */
+  discharge(ids) {
+    return discharge(this, ids);
+  }
+  /** → commands.targetAt */
+  targetAt(x, y) {
+    return targetAt(this, x, y);
+  }
+  /** → commands.orderAttack */
+  orderAttack(ids, target, queue = false) {
+    return orderAttack(this, ids, target, queue);
+  }
+  /** → commands.orderAttackMove */
+  orderAttackMove(ids, x, y, queue = false) {
+    return orderAttackMove(this, ids, x, y, queue);
+  }
+  /** → commands.orderLoot */
+  orderLoot(ids, animalId) {
+    return orderLoot(this, ids, animalId);
+  }
+  /** → commands.orderHold */
+  orderHold(ids) {
+    return orderHold(this, ids);
+  }
+  /** → commands.orderStop */
+  orderStop(ids) {
+    return orderStop(this, ids);
+  }
+  /** → commands.setStance */
+  setStance(ids, stance) {
+    return setStance(this, ids, stance);
+  }
+  /** → commands.nextOrder */
+  nextOrder(v) {
+    return nextOrder(this, v);
+  }
+  /** → inventory.giveGear */
+  giveGear(ids, kind, slot) {
+    return giveGear(this, ids, kind, slot);
+  }
+  /** → inventory.assignGear */
+  assignGear(ids, kind, slot) {
+    return assignGear(this, ids, kind, slot);
+  }
+  /** → inventory.autoGear */
+  autoGear(ids) {
+    return autoGear(this, ids);
+  }
+  /** → inventory.giveTool */
+  giveTool(ids, kind, tier) {
+    return giveTool(this, ids, kind, tier);
+  }
+  /** → movement.nearestFree */
+  nearestFree(tx, ty, taken) {
+    return nearestFree(this, tx, ty, taken);
+  }
+  /** → environment.refreshFog */
+  refreshFog() {
+    return refreshFog(this);
+  }
+  /** Gọi mỗi khung hình với dt thực; chạy theo bước cố định, nhân với hệ số tốc độ. */
+  advance(dt) {
+    if (this.speed <= 0) return;
+    this.acc += Math.min(dt, 0.25) * this.speed;
+    let guard = 0;
+    while (this.acc >= TICK && guard++ < 400) {
+      this.acc -= TICK;
+      this.tick(TICK);
+    }
+  }
+  tick(dt) {
+    this.time += dt;
+    this.tickCalendar();
+    this.world.tick(dt);
+    this.syncFood();
+    tickAnimals(this, dt);
+    tickProjectiles(this, dt);
+    for (const v of [...this.villagers]) this.tickVillager(v, dt);
+    this.tickWorks(dt);
+    this.tickFarms(dt);
+    this.tickTowers(dt);
+    this.tickTraps(dt);
+    tickTraining(this, dt);
+    tickBattle(this, dt);
+    tickScouts(this, dt);
+    tickPlans(this, dt);
+    for (const f of [...this.foes]) tickFoe(this, f, dt);
+    tickTribes(this, dt);
+    this.moraleClock += dt;
+    if (this.moraleClock >= 1) {
+      this.moraleClock = 0;
+      for (const v of this.villagers) if (v.down <= 0) tickMorale(this, v);
+      this.pickLeaders();
+    }
+    if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
+    if (this.fogDirty) {
+      this.fogDirty = false;
+      this.refreshFog();
+    }
+  }
+  /** → environment.tickCalendar */
+  tickCalendar() {
+    return tickCalendar(this);
+  }
+  /** → economy.syncFood */
+  syncFood() {
+    return syncFood(this);
+  }
+  /** → villagers.tickVillager */
+  tickVillager(v, dt) {
+    return tickVillager(this, v, dt);
+  }
+  /** → movement.moveUnit */
+  moveUnit(v, dt) {
+    return moveUnit(this, v, dt);
+  }
+  /** → movement.animate */
+  animate(v, dt) {
+    return animate(this, v, dt);
+  }
+  kill(v, cause = "v\xEC \u0111\xF3i") {
+    this.leaveNode(v);
+    this.exitBuilding(v);
+    this.villagers.splice(this.villagers.indexOf(v), 1);
+    this.byId.delete(v.id);
+    this.fogDirty = true;
+    this.say(`${v.name} \u0111\xE3 ch\u1EBFt ${cause}.`);
+    this.onKill?.();
+  }
+  killUnit(v, cause) {
+    this.kill(v, cause);
+  }
+  // ---------------------------------------------------------------- tribal people
+  /** Make a unit known by id (used when a villager is created outside the constructor, e.g. by the dev menu). */
+  registerUnit(v) {
+    this.byId.set(v.id, v);
+    this.fogDirty = true;
+  }
+  addFoe(v) {
+    this.foes.push(v);
+    this.byId.set(v.id, v);
+  }
+  removeFoe(v) {
+    const i = this.foes.indexOf(v);
+    if (i >= 0) this.foes.splice(i, 1);
+    this.byId.delete(v.id);
+  }
+  /** A tribal person joins the village. */
+  adoptFoe(v) {
+    const i = this.foes.indexOf(v);
+    if (i >= 0) this.foes.splice(i, 1);
+    v.team = "player";
+    v.ai = null;
+    v.job = "idle";
+    v.phase = "idle";
+    v.path = [];
+    v.morale = 50;
+    v.leader = false;
+    v.fleeT = 0;
+    this.clearCombat(v);
+    v.health = Math.max(v.health, v.maxHealth * 0.6);
+    v.fullness = 70;
+    this.villagers.push(v);
+    this.fogDirty = true;
+  }
+  /** Diplomacy buttons: 'gift', 'tribute', 'adopt'. Returns an error text or null. */
+  diplomacy(id, action) {
+    return action === "gift" ? giftTribe(this, id) : action === "tribute" ? tributeTribe(this, id) : adoptTribe(this, id);
+  }
+  // ---------------------------------------------------------------- combat helpers
+  hurt(target, dmg, type, from, src) {
+    hurt(this, target, dmg, type, from, src);
+  }
+  tribeHostile(id) {
+    return tribeHostile(this, id);
+  }
+  tribeAttacked(id, victim) {
+    tribeAttacked(this, id, victim);
+  }
+  killFoe(v, killer) {
+    killFoe(this, v, killer);
+  }
+  /** The player's own campfire (the village centre). */
+  campfire() {
+    return this.buildings.find((b) => b.kind === "campfire" && b.done);
+  }
+  /** Close to the unit's own camp: the village fire, or the tribal camp for tribal people. */
+  nearHome(v) {
+    if (v.ai) return Math.hypot(v.x - v.ai.camp.x, v.y - v.ai.camp.y) < 10;
+    const f = this.campfire();
+    return !!f && Math.hypot(v.x - f.x - 1, v.y - f.y - 1) < 10;
+  }
+  /** Another fighter within 7 tiles of the animal: a boar is only worth attacking in a group. */
+  packNear(v, a) {
+    return this.villagers.some((o) => o !== v && o.health > 0 && o.down <= 0 && (o.job === "hunt" || o.job === "fight") && Math.hypot(o.x - a.x, o.y - a.y) < 7);
+  }
+  /** → villagers.pickLeaders */
+  pickLeaders() {
+    return pickLeaders(this);
+  }
+  /** → labor.workRate */
+  workRate(v, job) {
+    return workRate(this, v, job);
+  }
+  /** → labor.workFactor */
+  workFactor(v, job) {
+    return workFactor(this, v, job);
+  }
+  /** → labor.gainXp */
+  gainXp(v, job, dt) {
+    return gainXp(this, v, job, dt);
+  }
+  /** → labor.leaveNode */
+  leaveNode(v) {
+    return leaveNode(this, v);
+  }
+  /** → labor.face */
+  face(v, tx, ty) {
+    return face(this, v, tx, ty);
+  }
+  /** → labor.wait */
+  wait(v, secs) {
+    return wait(this, v, secs);
+  }
+  /** → labor.faceBuilding */
+  faceBuilding(v, b) {
+    return faceBuilding(this, v, b);
+  }
+  /** → labor.think */
+  think(v, dt) {
+    return think(this, v, dt);
+  }
+  /** → inventory.toolLacking */
+  toolLacking(v, job) {
+    return toolLacking(this, v, job);
+  }
+  /** → inventory.needTool */
+  needTool(v, job) {
+    return needTool(this, v, job);
+  }
+  /** → inventory.planTool */
+  planTool(v, job) {
+    return planTool(this, v, job);
+  }
+  /** → inventory.errand */
+  errand(v) {
+    return errand(this, v);
+  }
+  /** → inventory.equip */
+  equip(v) {
+    return equip(this, v);
+  }
+  /** → inventory.wearGear */
+  wearGear(v, slot) {
+    return wearGear(this, v, slot);
+  }
+  /** → inventory.planGearRepair */
+  planGearRepair(v) {
+    return planGearRepair(this, v);
+  }
+  /** → inventory.planEquipGear */
+  planEquipGear(v) {
+    return planEquipGear(this, v);
+  }
+  /** → inventory.planGearErrand */
+  planGearErrand(v) {
+    return planGearErrand(this, v);
+  }
+  /** → movement.ringTiles */
+  ringTiles(v, x, y, w, h2) {
+    return ringTiles(this, v, x, y, w, h2);
+  }
+  /** → movement.pathTo */
+  pathTo(v, gx, gy, maxNodes = 14e3) {
+    return pathTo(this, v, gx, gy, maxNodes);
+  }
+  /** → movement.routeTo */
+  routeTo(v, tiles, tries = 3) {
+    return routeTo(this, v, tiles, tries);
+  }
+  /** → labor.planDeliver */
+  planDeliver(v) {
+    return planDeliver(this, v);
+  }
+  /** → labor.stash */
+  stash(v) {
+    return stash(this, v);
+  }
+};
+Object.assign(Sim.prototype, WAR);
+
+// src/sim/dev.ts
+function addStock(sim2, res, n) {
+  sim2.stock[res] = Math.max(0, sim2.stock[res] + n);
+}
+function fillStock(sim2) {
+  for (const r of RES_LIST) sim2.stock[r] = Math.max(sim2.stock[r], sim2.capacity());
+}
+function stockWorkshop(sim2, n) {
+  for (const r of RECIPES) sim2.toolStock[r.id] = (sim2.toolStock[r.id] ?? 0) + n;
+}
+function unlockResearch(sim2) {
+  for (const t of TECHS) sim2.researched.add(t.id);
+}
+function resetResearch(sim2) {
+  sim2.researched.clear();
+}
+function bumpStat(sim2, ids, key, delta) {
+  for (const id of ids) {
+    const v = sim2.get(id);
+    if (!v || v.team !== "player") continue;
+    v.stats[key] = Math.max(1, Math.min(20, v.stats[key] + delta));
+    if (key === "agi") v.speed = 1.6 + 0.1 * v.stats.agi;
+    if (key === "vit") {
+      const ratio = v.health / v.maxHealth;
+      v.maxHealth = maxHpOf(v.stats.vit);
+      v.health = v.maxHealth * ratio;
+    }
+  }
+}
+function eachSelected(sim2, ids, fn) {
+  for (const id of ids) {
+    const v = sim2.get(id);
+    if (v && v.team === "player") fn(v);
+  }
+}
+function heal(sim2, ids) {
+  eachSelected(sim2, ids, (v) => {
+    v.health = v.maxHealth;
+    v.down = 0;
+    v.fullness = 100;
+    v.energy = 100;
+    v.strain = 0;
+    v.lockUntil = 0;
+    if (v.phase === "down") v.phase = "idle";
+  });
+}
+function addVillagers(sim2, n) {
+  const fire = sim2.campfire(), s = sim2.world.start;
+  for (let i = 0; i < n; i++) {
+    const a = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * 2;
+    const v = sim2.makeVillager(Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
+    sim2.villagers.push(v);
+    sim2.registerUnit(v);
+  }
+}
+function setTimeOfDay(sim2, tod) {
+  sim2.time = Math.floor(sim2.time / DAY_LENGTH) * DAY_LENGTH + tod * DAY_LENGTH;
+}
+function skipDays(sim2, n) {
+  sim2.time += n * DAY_LENGTH;
+}
+function setSeason(sim2, season) {
+  const year = Math.floor((sim2.day - 1) / (SEASON_DAYS * SEASONS.length));
+  const day = year * SEASON_DAYS * SEASONS.length + SEASONS.indexOf(season) * SEASON_DAYS + 1;
+  sim2.time = (day - 1) * DAY_LENGTH + 0.3 * DAY_LENGTH;
+}
+function setWeather(sim2, kind) {
+  sim2.weather = kind;
+}
+function wolvesNow(sim2, n) {
+  launchWolves(sim2, n);
+}
+function raidNow(sim2, id, size) {
+  const t = tribeOf(sim2, id);
+  if (!t) return "Kh\xF4ng c\xF3 b\u1ED9 t\u1ED9c n\xE0y";
+  if (t.state !== "free") return `${t.def.name} kh\xF4ng c\xF2n l\xE0 k\u1EBB \u0111\u1ECBch`;
+  if (t.raid) return "H\u1ECD \u0111ang t\u1EADp k\xEDch r\u1ED3i";
+  launchRaid(sim2, t, size);
+  return t.raid ? null : `${t.def.name} kh\xF4ng \u0111\u1EE7 l\xEDnh \u0111\u1EC3 t\u1EADp k\xEDch`;
+}
+function surrenderNow(sim2, id) {
+  const t = tribeOf(sim2, id);
+  if (t && t.state === "free") surrender(sim2, t, "Dev: \xE9p \u0111\u1EA7u h\xE0ng");
+}
+function bumpRelation(sim2, id, n) {
+  const t = tribeOf(sim2, id);
+  if (t) t.relation = Math.max(-100, Math.min(100, t.relation + n));
+}
+function spawnAt(sim2, species, x, y, n) {
+  for (let i = 0; i < n; i++) spawnAnimal(sim2, species, x + (sim2.frnd() - 0.5) * 3, y + (sim2.frnd() - 0.5) * 3, 9500 + i);
+}
+function clearAnimals(sim2) {
+  sim2.animals.length = 0;
+  sim2.animalById.clear();
+}
+function revealMap(sim2) {
+  sim2.fog.state.fill(2);
+  sim2.fog.version++;
+}
+var DEV_SPECIES = SPECIES;
+var DEV_TRIBES = TRIBE_IDS;
+var DEV_WEAPONS = CRAFTED_WEAPONS.map((id) => ({ id, name: WEAPONS[id].name }));
+var DEV_ARMOR = { id: "hide", name: ARMORS.hide.name };
+function buildAll(sim2) {
+  const was = { f: sim2.dev.freeBuild, i: sim2.dev.instantBuild };
+  sim2.dev.freeBuild = true;
+  sim2.dev.instantBuild = true;
+  const fire = sim2.campfire(), cx = Math.floor(fire ? fire.x + 1 : sim2.world.start.x), cy = Math.floor(fire ? fire.y + 4 : sim2.world.start.y + 4);
+  for (const kind of Object.keys(BUILDINGS)) {
+    if (!BUILDINGS[kind].buildable || sim2.buildings.some((b) => b.kind === kind)) continue;
+    let done = false;
+    for (let r = 2; r < 18 && !done; r++) for (let dx = -r; dx <= r && !done; dx++) for (let dy = -r; dy <= r && !done; dy++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      if (!sim2.canPlace(kind, cx + dx * 2, cy + dy * 2) && sim2.placeBuilding(kind, cx + dx * 2, cy + dy * 2).ok) done = true;
+    }
+  }
+  sim2.dev.freeBuild = was.f;
+  sim2.dev.instantBuild = was.i;
+}
+function maxBuildings(sim2) {
+  for (const b of sim2.buildings) {
+    const top = BUILDINGS[b.kind].levels.stone.length;
+    if (b.done && b.level < top) {
+      b.level = top;
+      b.upgrading = false;
+      b.hp = levelDef(b).hp;
+    }
+  }
+}
+function wearTools(sim2, ids, frac) {
+  eachSelected(sim2, ids, (v) => {
+    for (const t of Object.values(v.tools)) if (t) t.dur = Math.min(t.dur, Math.max(0, TIER_DURABILITY[t.tier] * frac));
+  });
+}
+function staffAll(sim2) {
+  for (const job of ["research", "craft", "repair"]) {
+    const b = sim2.building(STAFF_BUILDING[job]);
+    if (!b) continue;
+    while (sim2.staffCount(b) < levelDef(b).slots) {
+      const v = sim2.bestFor(job);
+      if (!v) break;
+      sim2.assignStaff([v.id], job);
+    }
+  }
+}
+function combatReady(sim2) {
+  const fire = sim2.campfire();
+  if (fire) {
+    fire.level = POP_BY_FIRE.length;
+    fire.upgrading = false;
+  }
+  unlockResearch(sim2);
+  fillStock(sim2);
+  stockWorkshop(sim2, 12);
+  revealMap(sim2);
+  buildAll(sim2);
+  maxBuildings(sim2);
+  staffAll(sim2);
+}
+var DEV_KITS = {
+  club: { name: "Xung k\xEDch (g\u1EADy + gi\xE1p)", weapon: "club", armor: true },
+  mace: { name: "Xung k\xEDch n\u1EB7ng (ch\xF9y + gi\xE1p)", weapon: "mace", armor: true },
+  spear: { name: "Gi\xE1o binh (gi\xE1o + gi\xE1p)", weapon: "spear", armor: true },
+  sling: { name: "Cung th\u1EE7 n\xE1 \u0111\xE1", weapon: "sling", armor: false },
+  bow: { name: "Cung th\u1EE7 (cung)", weapon: "bow", armor: false }
+};
+function raiseArmy(sim2, kit, n) {
+  const before = sim2.villagers.length;
+  addVillagers(sim2, n);
+  const fresh = sim2.villagers.slice(before), ids = fresh.map((v) => v.id), k = DEV_KITS[kit];
+  sim2.enlist(ids);
+  sim2.giveGear(ids, k.weapon, "weapon");
+  if (k.armor) sim2.giveGear(ids, "hide", "armor");
+  for (const v of fresh) v.manualGear = true;
+  return fresh;
+}
+function defenseLine(sim2, half = 8) {
+  const fire = sim2.campfire();
+  if (!fire) return 0;
+  const was = { f: sim2.dev.freeBuild, i: sim2.dev.instantBuild };
+  sim2.dev.freeBuild = sim2.dev.instantBuild = true;
+  const cx = Math.floor(fire.x + 1), cy = Math.floor(fire.y + 3);
+  let n = 0;
+  revealMap(sim2);
+  const clear = (x, y, w, h2) => {
+    const N = sim2.world.size;
+    for (let j = 0; j < h2; j++) for (let i = 0; i < w; i++) {
+      const k = (y + j) * N + x + i;
+      if (sim2.world.nodes.delete(k)) {
+        sim2.world.tiles[k] = Tile.Grass;
+        sim2.world.decor[k] = 0;
+      }
+    }
+  };
+  const put3 = (kind, x, y) => {
+    clear(x, y, BUILDINGS[kind].w, BUILDINGS[kind].h);
+    if (!sim2.canPlace(kind, x, y) && sim2.placeBuilding(kind, x, y).ok) n++;
+  };
+  for (let d = -half; d <= half; d++) {
+    for (const [x, y] of [[cx + d, cy - half], [cx - half, cy + d], [cx + half, cy + d]]) put3("fence", x, y);
+    put3(d === 0 ? "gate" : "fence", cx + d, cy + half);
+  }
+  put3("tower", cx - half - 1, cy - half - 2);
+  put3("tower", cx + half, cy - half - 2);
+  for (const b of sim2.buildings) if (b.done && (b.kind === "fence" || b.kind === "gate" || b.kind === "tower")) {
+    b.level = BUILDINGS[b.kind].levels.stone.length;
+    b.hp = levelDef(b).hp;
+  }
+  sim2.dev.freeBuild = was.f;
+  sim2.dev.instantBuild = was.i;
+  return n;
+}
+function garrisonTowers(sim2) {
+  let n = 0;
+  for (const t of sim2.buildings.filter((b) => b.kind === "tower" && b.done)) {
+    const room = levelDef(t).slots - sim2.garrison(t).length;
+    if (room <= 0) continue;
+    const archers = raiseArmy(sim2, "bow", room);
+    for (const a of archers) if (!sim2.assignTower([a.id], t.id)) n++;
+  }
+  return n;
+}
+function enemyWave(sim2, id, weapons, armor = true) {
+  const t = tribeOf(sim2, id);
+  if (!t) return "Kh\xF4ng c\xF3 b\u1ED9 t\u1ED9c n\xE0y";
+  if (t.state !== "free") return `${t.def.name} kh\xF4ng c\xF2n l\xE0 k\u1EBB \u0111\u1ECBch`;
+  if (t.raid) return "H\u1ECD \u0111ang t\u1EADp k\xEDch r\u1ED3i";
+  launchCustomRaid(sim2, t, weapons, armor);
+  return null;
+}
+var times = (n, w) => Array.from({ length: n }, () => w);
+function giveMaps(sim2, level = 3) {
+  for (const t of sim2.tribes) for (let l = 1; l <= level; l++) {
+    const i = sim2.maps.findIndex((m) => m.tribe === t.id && m.level === l), map = { tribe: t.id, level: l, at: sim2.time, gaps: 0 };
+    if (i >= 0) sim2.maps[i] = map;
+    else sim2.maps.push(map);
+  }
+}
+function formSquads(sim2) {
+  while (sim2.squads.length) sim2.disbandSquad(sim2.squads[0].id);
+  const plan2 = [["spear", 10, "Gi\xE1o binh", "line"], ["bow", 8, "Cung th\u1EE7", "scatter"], ["mace", 6, "Xung k\xEDch", "wedge"]];
+  for (const [kit, n, name, formation] of plan2) {
+    const made = sim2.createSquad(name);
+    if (!made.squad) break;
+    sim2.joinSquad(raiseArmy(sim2, kit, n).map((v) => v.id), made.squad.id);
+    sim2.setFormation(made.squad.id, formation);
+    made.squad.mastery[formation] = 50;
+  }
+}
+function sampleAttack(sim2, tribe = "axe") {
+  const [a, b, c] = sim2.squads;
+  if (!a) return null;
+  giveMaps(sim2, 3);
+  const plan2 = sim2.newPlan("attack", tribe);
+  sim2.addMission(plan2, a.id);
+  plan2.missions[0].objective = "gate";
+  if (b) {
+    sim2.addMission(plan2, b.id);
+    Object.assign(plan2.missions[1], { objective: "camp", stance: "shoot", trigger: { kind: "after", squad: a.id } });
+  }
+  if (c) {
+    sim2.addMission(plan2, c.id);
+    Object.assign(plan2.missions[2], { objective: "leader", route: "forest", trigger: { kind: "signal" } });
+  }
+  sim2.addCard(plan2, "go", a.id);
+  sim2.addCard(plan2, "signal", -1);
+  sim2.addCard(plan2, "retreat", a.id);
+  if (b) sim2.addCard(plan2, "formation", b.id, "line");
+  return plan2;
+}
+function sampleDefense(sim2) {
+  const [a, b, c] = sim2.squads;
+  if (!a) return null;
+  const plan2 = sim2.newPlan("defense", null);
+  sim2.addMission(plan2, a.id);
+  plan2.missions[0].post = "gate";
+  if (b) {
+    sim2.addMission(plan2, b.id);
+    plan2.missions[1].post = "tower";
+  }
+  if (c) {
+    sim2.addMission(plan2, c.id);
+    plan2.missions[2].post = "reserve";
+  }
+  return plan2;
+}
+
+// src/ui/controller.ts
+var Controller = class {
+  constructor(el2, sim2, cam2, r) {
+    this.el = el2;
+    this.sim = sim2;
+    this.cam = cam2;
+    this.r = r;
+    this.selected = /* @__PURE__ */ new Set();
+    this.markers = [];
+    this.box = null;
+    this.onChange = () => {
+    };
+    /** Short message for the player. */
+    this.onToast = () => {
+    };
+    /** Selecting several villagers: taps toggle, drags draw a box. */
+    this.multi = false;
+    /** Building being placed, and where the ghost currently sits (top-left tile). */
+    this.placing = null;
+    this.placeAt = null;
+    /** Id of the building being carried to a new spot (null when placing a new one). */
+    this.moving = null;
+    /** Building tapped on the map: its buttons show beneath it. */
+    this.selectedBuilding = null;
+    /** The full-screen panel of the selected building is open. */
+    this.buildingOpen = false;
+    /** Foe or animal shown in the target card. */
+    this.inspect = null;
+    /** The campfire's people menu asked for the full page of the chosen villager. */
+    this.openDetail = false;
+    /** F pressed: the next click sends the selection to attack-move there. */
+    this.attackMoveArmed = false;
+    /** Saved selections, keys 1-9 (Ctrl + number saves, number recalls). */
+    this.groups = /* @__PURE__ */ new Map();
+    this.keys = /* @__PURE__ */ new Set();
+    this.lastClick = { t: 0, id: -1 };
+    // mouse
+    this.left = null;
+    this.right = null;
+    // touch
+    this.touches = /* @__PURE__ */ new Map();
+    this.gesture = null;
+    this.tapDead = false;
+    el2.addEventListener("contextmenu", (e) => e.preventDefault());
+    el2.addEventListener("pointerdown", (e) => this.pointerDown(e));
+    el2.addEventListener("pointermove", (e) => this.pointerMove(e));
+    el2.addEventListener("pointerup", (e) => this.pointerUp(e));
+    el2.addEventListener("pointercancel", () => this.cancelPointers());
+    el2.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      this.zoomAt(this.pos(e), e.deltaY < 0 ? 1 : -1);
+    }, { passive: false });
+    window.addEventListener("keydown", (e) => this.keyDown(e));
+    window.addEventListener("keyup", (e) => this.keys.delete(e.key.toLowerCase()));
+  }
+  pos(e) {
+    const b = this.el.getBoundingClientRect();
+    return { x: e.clientX - b.left, y: e.clientY - b.top };
+  }
+  /** Tâm thân dân trên màn hình (css px). */
+  bodyScreen(v) {
+    return this.r.worldToScreen(v.x * TILE, v.y * TILE - 16);
+  }
+  cancelPointers() {
+    this.left = null;
+    this.right = null;
+    this.touches.clear();
+    this.gesture = null;
+    this.box = null;
+    this.el.style.cursor = "";
+  }
+  // ---------------------------------------------------------------- pointer events
+  pointerDown(e) {
+    const p = this.pos(e);
+    this.el.focus();
+    if (e.pointerType === "touch") {
+      this.touches.set(e.pointerId, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: performance.now() });
+      if (this.touches.size === 1) this.tapDead = false;
+      if (this.touches.size === 2) this.startGesture();
+      return;
+    }
+    this.el.setPointerCapture(e.pointerId);
+    if (e.button === 2) this.right = { x: p.x, y: p.y, moved: false };
+    else if (e.button === 0) this.left = { x: p.x, y: p.y, moved: false };
+    else if (e.button === 1) {
+      this.right = { x: p.x, y: p.y, moved: true };
+      e.preventDefault();
+    }
+  }
+  pointerMove(e) {
+    const p = this.pos(e);
+    if (e.pointerType === "touch") {
+      const t = this.touches.get(e.pointerId);
+      if (!t) return;
+      t.x = p.x;
+      t.y = p.y;
+      if (this.touches.size >= 2) {
+        this.moveGesture();
+        return;
+      }
+      if (Math.hypot(t.x - t.sx, t.y - t.sy) > 10) {
+        if (this.multi) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
+        else if (this.placing) this.placeAt = this.originAt(p);
+      }
+      return;
+    }
+    if (this.placing) this.placeAt = this.originAt(p);
+    if (this.right) {
+      if (!this.right.moved && Math.hypot(p.x - this.right.x, p.y - this.right.y) > 5) {
+        this.right.moved = true;
+        this.el.style.cursor = "grabbing";
+      }
+      if (this.right.moved) {
+        this.cam.x -= (p.x - this.right.x) / this.cam.zoom;
+        this.cam.y -= (p.y - this.right.y) / this.cam.zoom;
+        this.right.x = p.x;
+        this.right.y = p.y;
+        this.clamp();
+      }
+    }
+    if (this.left) {
+      if (!this.left.moved && Math.hypot(p.x - this.left.x, p.y - this.left.y) > 5) this.left.moved = true;
+      if (this.left.moved && this.multi) this.box = { x0: this.left.x, y0: this.left.y, x1: p.x, y1: p.y };
+    }
+  }
+  pointerUp(e) {
+    const p = this.pos(e);
+    if (e.pointerType === "touch") {
+      const t = this.touches.get(e.pointerId);
+      this.touches.delete(e.pointerId);
+      if (this.touches.size < 2) this.gesture = null;
+      if (!t) return;
+      if (this.touches.size === 0) {
+        if (this.box) {
+          this.boxSelect(this.box, true);
+          this.box = null;
+        } else if (!this.tapDead && Math.hypot(p.x - t.sx, p.y - t.sy) < 12 && performance.now() - t.t < 600) this.activate(p, true, false);
+      }
+      return;
+    }
+    if (e.button === 2 || e.button === 1) {
+      const r = this.right;
+      this.right = null;
+      this.el.style.cursor = "";
+      if (r && !r.moved) this.rightClick(p, e.shiftKey);
+    } else if (e.button === 0) {
+      const l = this.left;
+      this.left = null;
+      if (this.box) {
+        this.boxSelect(this.box, true);
+        this.box = null;
+      } else if (l && !l.moved) this.activate(p, false, e.shiftKey || e.ctrlKey);
+    }
+  }
+  // ---------------------------------------------------------------- two-finger pan and pinch
+  startGesture() {
+    this.tapDead = true;
+    this.box = null;
+    const [a, b] = [...this.touches.values()];
+    this.gesture = { dist: Math.hypot(a.x - b.x, a.y - b.y), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, acc: 1 };
+  }
+  moveGesture() {
+    const g2 = this.gesture;
+    if (!g2) return;
+    const [a, b] = [...this.touches.values()], mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist = Math.hypot(a.x - b.x, a.y - b.y);
+    this.cam.x -= (mid.x - g2.mid.x) / this.cam.zoom;
+    this.cam.y -= (mid.y - g2.mid.y) / this.cam.zoom;
+    g2.mid = mid;
+    if (g2.dist > 0) {
+      g2.acc *= dist / g2.dist;
+      g2.dist = dist;
+      if (g2.acc > 1.3) {
+        this.zoomAt(mid, 1);
+        g2.acc = 1;
+      } else if (g2.acc < 0.77) {
+        this.zoomAt(mid, -1);
+        g2.acc = 1;
+      }
+    }
+    this.clamp();
+  }
+  // ---------------------------------------------------------------- what a click or tap does
+  /** Villager under the point; fingers get a wider target. */
+  hit(p, touch = false) {
+    let best = null, bd = ((touch ? 22 : 14) * Math.max(1, this.cam.zoom)) ** 2;
+    for (const v of this.sim.villagers) {
+      if (v.inside !== null) continue;
+      const s = this.bodyScreen(v), d = (s.x - p.x) ** 2 + (s.y - p.y) ** 2;
+      if (d < bd) {
+        bd = d;
+        best = v.id;
+      }
+    }
+    return best;
+  }
+  /** Building whose drawn shape (footprint plus what stands above it) is under the screen point. */
+  buildingUnder(p) {
+    const w = this.r.screenToWorld(p.x, p.y);
+    for (const b of this.sim.buildings) {
+      const d = BUILDINGS[b.kind];
+      if (w.x >= b.x * TILE && w.x <= (b.x + d.w) * TILE && w.y >= b.y * TILE - 24 && w.y <= (b.y + d.h) * TILE) return b.id;
+    }
+    return null;
+  }
+  /** Left click or tap. */
+  activate(p, touch, additive) {
+    if (this.attackMoveArmed) {
+      this.attackMove(p, additive);
+      return;
+    }
+    if (this.placing) {
+      if (touch) {
+        this.placeAt = this.originAt(p);
+        this.onChange();
+      } else this.confirmPlace(additive);
+      return;
+    }
+    const flag = this.r.flagAt(p.x, p.y);
+    if (flag) {
+      if (!additive) this.selected.clear();
+      for (const fid of flag) if (this.sim.get(fid)?.team === "player") this.selected.add(fid);
+      this.selectedBuilding = null;
+      this.inspect = null;
+      this.onChange();
+      return;
+    }
+    const id = this.hit(p, touch);
+    if (this.multi) {
+      if (id !== null) {
+        this.toggle(id);
+        this.onChange();
+      }
+      return;
+    }
+    const b = this.buildingUnder(p), w = this.r.screenToWorld(p.x, p.y);
+    const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
+    if (id !== null) {
+      const now = performance.now();
+      if (this.lastClick.id === id && now - this.lastClick.t < 400) {
+        this.selectSameJob(id);
+        this.lastClick = { t: 0, id: -1 };
+        return;
+      }
+      this.lastClick = { t: now, id };
+      if (additive || touch && this.selected.has(id) && this.selected.size > 1) this.toggle(id);
+      else {
+        this.selected.clear();
+        this.selected.add(id);
+      }
+      this.selectedBuilding = null;
+      this.inspect = null;
+      this.onChange();
+      return;
+    }
+    if (touch && this.selected.size) {
+      const finished = b !== null && (() => {
+        const bb = this.sim.getBuilding(b);
+        return !!bb && !needsWork(bb);
+      })();
+      if (finished) {
+        this.selectBuilding(b);
+        return;
+      }
+      this.command(p, false);
+      return;
+    }
+    if (seen) {
+      this.inspect = { kind: seen.target.kind, id: seen.target.id };
+      this.selectedBuilding = null;
+    } else if (b !== null) this.selectBuilding(b);
+    else if (!additive) {
+      if (touch && !this.selected.size && !this.selectedBuilding && !this.inspect) this.onToast("Ch\u1EA1m v\xE0o m\u1ED9t d\xE2n \u0111\u1EC3 ch\u1ECDn tr\u01B0\u1EDBc, r\u1ED3i ch\u1EA1m \u0111\u1EA5t \u0111\u1EC3 ra l\u1EC7nh");
+      this.selected.clear();
+      this.selectedBuilding = null;
+      this.inspect = null;
+    }
+    this.onChange();
+  }
+  /** A finished order lets the villagers go (soldiers stay chosen to be ordered again, and so does a queue being built with Shift). */
+  releaseCivilians(keep) {
+    if (keep || [...this.selected].some((id) => this.sim.get(id)?.job === "fight")) return;
+    this.selected.clear();
+  }
+  /** The chosen villagers who are soldiers: only they take fighting orders. */
+  fighters() {
+    return [...this.selected].filter((id) => this.sim.get(id)?.job === "fight");
+  }
+  toggle(id) {
+    if (this.selected.has(id)) this.selected.delete(id);
+    else this.selected.add(id);
+  }
+  /** Right click: an order for the selection. */
+  rightClick(p, queue) {
+    if (this.attackMoveArmed) {
+      this.attackMoveArmed = false;
+      this.onChange();
+      return;
+    }
+    if (this.placing) {
+      this.cancelPlacing();
+      return;
+    }
+    this.command(p, queue);
+  }
+  /** Select every villager of the same job as `id` that is visible on screen. */
+  selectSameJob(id) {
+    const ref = this.sim.get(id);
+    if (!ref) return;
+    this.selected.clear();
+    for (const v of this.sim.villagers) {
+      if (v.inside !== null) continue;
+      const s = this.bodyScreen(v);
+      if (v.job === ref.job && s.x >= 0 && s.y >= 0 && s.x <= this.r.w && s.y <= this.r.h) this.selected.add(v.id);
+    }
+    this.onChange();
+  }
+  boxSelect(b, add) {
+    const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
+    if (!add) this.selected.clear();
+    for (const v of this.sim.villagers) {
+      if (v.inside !== null) continue;
+      const s = this.bodyScreen(v);
+      if (s.x >= x0 && s.x <= x1 && s.y >= y0 && s.y <= y1) this.selected.add(v.id);
+    }
+    this.selectedBuilding = null;
+    this.inspect = null;
+    this.onChange();
+  }
+  selectBuilding(id, open = false) {
+    this.selectedBuilding = id;
+    this.buildingOpen = open;
+    this.inspect = null;
+    this.onChange();
+  }
+  /** Close the panel but keep the building selected. */
+  closePanel() {
+    this.buildingOpen = false;
+    this.onChange();
+  }
+  closeBuilding() {
+    this.selectedBuilding = null;
+    this.buildingOpen = false;
+    this.onChange();
+  }
+  // ---------------------------------------------------------------- placing buildings
+  /** Top-left tile of a building of the placing kind centred on the point. */
+  originAt(p) {
+    if (!this.placing) return null;
+    const d = BUILDINGS[this.placing], w = this.r.screenToWorld(p.x, p.y);
+    return { x: Math.round(w.x / TILE - d.w / 2), y: Math.round(w.y / TILE - d.h / 2) };
+  }
+  ghost() {
+    if (!this.placing || !this.placeAt) return null;
+    const b = this.moving !== null ? this.sim.getBuilding(this.moving) : void 0;
+    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era };
+  }
+  /** Why the ghost cannot be put down where it is, or null. */
+  placeProblem() {
+    if (!this.placing || !this.placeAt) return "Ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7";
+    if (this.moving === null) return this.sim.canPlace(this.placing, this.placeAt.x, this.placeAt.y);
+    const b = this.sim.getBuilding(this.moving);
+    return b ? this.sim.canMove(b, this.placeAt.x, this.placeAt.y) : "C\xF4ng tr\xECnh kh\xF4ng c\xF2n";
+  }
+  startPlacing(kind) {
+    this.placing = kind;
+    this.attackMoveArmed = false;
+    this.placeAt = this.originAt({ x: this.r.w / 2, y: this.r.h / 2 });
+    this.onChange();
+  }
+  /** Pick a built building up to put it somewhere else. */
+  startMoving(id) {
+    const b = this.sim.getBuilding(id);
+    if (!b) return;
+    this.moving = id;
+    this.selectedBuilding = null;
+    this.startPlacing(b.kind);
+    this.placeAt = { x: b.x, y: b.y };
+    this.onChange();
+  }
+  cancelPlacing() {
+    this.placing = null;
+    this.placeAt = null;
+    this.moving = null;
+    this.onChange();
+  }
+  confirmPlace(keep = false) {
+    if (!this.placing || !this.placeAt) return;
+    if (this.moving !== null) {
+      const id = this.moving, err = this.sim.moveBuilding(id, this.placeAt.x, this.placeAt.y);
+      if (err) {
+        this.onToast(err);
+        return;
+      }
+      const ids2 = [...this.selected], b = this.sim.getBuilding(id);
+      if (ids2.length && b && needsWork(b)) this.sim.orderWork(ids2, b.x, b.y);
+      this.placing = null;
+      this.placeAt = null;
+      this.moving = null;
+      this.onToast("\u0110\xE3 d\u1EDDi c\xF4ng tr\xECnh");
+      this.onChange();
+      return;
+    }
+    const o = this.placeAt, res = this.sim.placeBuilding(this.placing, o.x, o.y);
+    if (!res.ok) {
+      this.onToast(res.reason ?? "Kh\xF4ng \u0111\u1EB7t \u0111\u01B0\u1EE3c");
+      return;
+    }
+    const d = BUILDINGS[this.placing];
+    this.markers.push({ x: (o.x + d.w / 2) * TILE, y: (o.y + d.h / 2) * TILE, age: 0 });
+    const ids = [...this.selected];
+    if (ids.length && res.building && needsWork(res.building)) this.sim.orderWork(ids, o.x, o.y);
+    if (!keep && !d.repeat) {
+      this.placing = null;
+      this.placeAt = null;
+    }
+    this.onChange();
+  }
+  // ---------------------------------------------------------------- orders
+  /** Chọn đúng vật thể người chơi nhìn thấy (tán cây vẽ cao hơn ô của nó): trả về ô gốc. */
+  pickTile(wx, wy) {
+    const world = this.sim.world, i = Math.floor(wx / TILE), j0 = Math.floor(wy / TILE);
+    const reach = { tree: [14, 56, 4], rock: [14, 20, 4], bush: [13, 18, 4] };
+    for (let j = j0 + 2; j >= j0 - 1; j--) {
+      const n = world.nodeAt(i, j);
+      if (!n) continue;
+      const [hw, up, down] = reach[n.kind], base = j * TILE + 28, cx = i * TILE + 16;
+      if (Math.abs(wx - cx) <= hw && wy >= base - up && wy <= base + down) return { x: i, y: j };
+    }
+    for (const b of this.sim.buildings) {
+      const d = BUILDINGS[b.kind];
+      if (wx >= b.x * TILE && wx <= (b.x + d.w) * TILE && wy >= b.y * TILE - 24 && wy <= (b.y + d.h) * TILE) return { x: b.x, y: b.y };
+    }
+    return { x: Math.floor(wx / TILE), y: j0 };
+  }
+  command(p, queue = false) {
+    if (!this.selected.size) return;
+    const w = this.r.screenToWorld(p.x, p.y), ids = [...this.selected];
+    const worn = ids.filter((id) => {
+      const o = this.sim.get(id);
+      return !!o && this.sim.sleepLocked(o);
+    });
+    if (worn.length === ids.length) {
+      this.onToast(ids.length > 1 ? "H\u1ECD \u0111ang ng\u1EE7 say, ch\u01B0a g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c" : `${this.sim.get(ids[0])?.name} \u0111ang ng\u1EE7 say, ch\u01B0a g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c`);
+      return;
+    }
+    const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
+    if (seen) {
+      if (seen.kind === "carcass") {
+        const n = this.sim.orderLoot(ids, seen.target.id);
+        this.onToast(n ? "L\u1ED9t da, l\u1EA5y th\u1ECBt" : "Ch\u1EC9 Th\u1EE3 s\u0103n l\u1ED9t da: giao ngh\u1EC1 Th\u1EE3 s\u0103n b\u1EB1ng n\xFAt ngh\u1EC1 tr\u01B0\u1EDBc");
+      } else {
+        const n = this.sim.orderAttack(ids, seen.target, queue);
+        this.onToast(n ? seen.kind === "foe" ? "T\u1EA5n c\xF4ng" : "S\u0103n" : seen.kind === "foe" ? "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi \u0111\xE1nh: tuy\u1EC3n l\xEDnh \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i" : "Ch\u1EC9 Th\u1EE3 s\u0103n ho\u1EB7c chi\u1EBFn binh m\u1EDBi s\u0103n th\xFA: giao ngh\u1EC1 Th\u1EE3 s\u0103n b\u1EB1ng n\xFAt ngh\u1EC1 tr\u01B0\u1EDBc");
+      }
+      this.markers.push({ x: w.x, y: w.y, age: 0 });
+      this.onChange();
+      return;
+    }
+    const { x: tx, y: ty } = this.pickTile(w.x, w.y);
+    if (!this.sim.world.inBounds(tx, ty)) return;
+    const work = this.sim.orderWork(ids, tx, ty);
+    if (work) this.onToast(work.sent ? JOB_NAME[work.job] : work.job === "build" ? "Ch\u1EC9 th\u1EE3 x\xE2y c\u1EE7a Nh\xE0 th\u1EE3 x\xE2y m\u1EDBi x\xE2y: ch\u1ECDn th\u1EE3 \u1EDF nh\xE0 \u0111\xF3" : `Ch\u01B0a l\xE0 ${JOB_NAME[work.job].toLowerCase()}: giao ngh\u1EC1 b\u1EB1ng n\xFAt ngh\u1EC1 tr\u01B0\u1EDBc`);
+    else this.sim.orderMove(ids, tx, ty, queue);
+    this.markers.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, age: 0 });
+    if (work?.sent) this.releaseCivilians(queue);
+    this.onChange();
+  }
+  /** Send the selection to a point, fighting whatever it meets on the way. */
+  attackMove(p, queue = false) {
+    this.attackMoveArmed = false;
+    if (!this.selected.size) {
+      this.onChange();
+      return;
+    }
+    const w = this.r.screenToWorld(p.x, p.y);
+    this.sim.orderAttackMove([...this.selected], w.x / TILE, w.y / TILE, queue);
+    this.markers.push({ x: w.x, y: w.y, age: 0 });
+    this.onToast("T\u1EA5n c\xF4ng \u2013 di chuy\u1EC3n");
+    this.onChange();
+  }
+  /** Save the selection under a number, or recall it (and jump the camera to it). */
+  group(n, save) {
+    if (save) {
+      this.groups.set(n, [...this.selected]);
+      this.onToast(`\u0110\xE3 l\u01B0u nh\xF3m ${n} (${this.selected.size} ng\u01B0\u1EDDi)`);
+      return;
+    }
+    const ids = (this.groups.get(n) ?? []).filter((id) => this.sim.get(id));
+    if (!ids.length) {
+      this.onToast(`Nh\xF3m ${n} \u0111ang tr\u1ED1ng`);
+      return;
+    }
+    this.selected.clear();
+    ids.forEach((id) => this.selected.add(id));
+    this.selectedBuilding = null;
+    this.focusSelection();
+    this.onChange();
+  }
+  selectAll() {
+    this.sim.villagers.forEach((v) => {
+      if (v.inside === null) this.selected.add(v.id);
+    });
+    this.selectedBuilding = null;
+    this.onChange();
+  }
+  clearSelection() {
+    this.selected.clear();
+    this.selectedBuilding = null;
+    this.inspect = null;
+    this.onChange();
+  }
+  setMulti(on) {
+    this.multi = on;
+    this.box = null;
+    this.onChange();
+  }
+  // ---------------------------------------------------------------- camera
+  centerOn(wx, wy) {
+    this.cam.x = wx - this.r.w / this.cam.zoom / 2;
+    this.cam.y = wy - this.r.h / this.cam.zoom / 2;
+    this.clamp();
+  }
+  focusSelection() {
+    const vs = this.sim.villagers.filter((v) => v.inside === null && (!this.selected.size || this.selected.has(v.id)));
+    if (!vs.length) return;
+    this.centerOn(vs.reduce((a, v) => a + v.x, 0) / vs.length * TILE, vs.reduce((a, v) => a + v.y, 0) / vs.length * TILE);
+  }
+  zoomAt(p, dir) {
+    const nz = Math.max(1, Math.min(4, this.cam.zoom + dir));
+    if (nz === this.cam.zoom) return;
+    const before = this.r.screenToWorld(p.x, p.y);
+    this.cam.zoom = nz;
+    this.cam.x = before.x - p.x / nz;
+    this.cam.y = before.y - p.y / nz;
+    this.clamp();
+  }
+  keyDown(e) {
+    const k = e.key.toLowerCase();
+    if (e.target instanceof HTMLElement && /input|textarea|select/i.test(e.target.tagName)) return;
+    if ((e.ctrlKey || e.metaKey) && k === "a") {
+      e.preventDefault();
+      this.selectAll();
+      return;
+    }
+    if (k === "escape") {
+      if (this.attackMoveArmed) {
+        this.attackMoveArmed = false;
+        this.onChange();
+      } else if (this.placing) this.cancelPlacing();
+      else this.clearSelection();
+      return;
+    }
+    if (/^[1-9]$/.test(k) && !e.shiftKey) {
+      this.group(Number(k), e.ctrlKey || e.metaKey);
+      e.preventDefault();
+      return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (k === "f" && this.fighters().length) {
+      this.attackMoveArmed = true;
+      this.onToast("Ch\u1ECDn \u0111i\u1EC3m \u0111\u1EBFn (chu\u1ED9t tr\xE1i); Esc \u0111\u1EC3 h\u1EE7y");
+      this.onChange();
+      return;
+    }
+    if (k === "h" && this.fighters().length) {
+      this.sim.orderHold(this.fighters());
+      this.onToast("Gi\u1EEF v\u1ECB tr\xED");
+      this.onChange();
+      return;
+    }
+    if (k === "g" && this.fighters().length) {
+      this.sim.orderStop(this.fighters());
+      this.onToast("D\u1EEBng");
+      this.onChange();
+      return;
+    }
+    if (k === " ") {
+      e.preventDefault();
+      this.focusSelection();
+      return;
+    }
+    if (k === "+" || k === "=") {
+      this.zoomAt({ x: this.r.w / 2, y: this.r.h / 2 }, 1);
+      return;
+    }
+    if (k === "-") {
+      this.zoomAt({ x: this.r.w / 2, y: this.r.h / 2 }, -1);
+      return;
+    }
+    if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) {
+      this.keys.add(k);
+      e.preventDefault();
+    }
+  }
+  clamp() {
+    const N = this.sim.world.size * TILE, z = this.cam.zoom, m = 96;
+    this.cam.x = Math.max(-m, Math.min(N - this.r.w / z + m, this.cam.x));
+    this.cam.y = Math.max(-m, Math.min(N - this.r.h / z + m, this.cam.y));
+  }
+  update(dt) {
+    const sp = 640 / this.cam.zoom * dt, k = this.keys;
+    if (k.has("w") || k.has("arrowup")) this.cam.y -= sp;
+    if (k.has("s") || k.has("arrowdown")) this.cam.y += sp;
+    if (k.has("a") || k.has("arrowleft")) this.cam.x -= sp;
+    if (k.has("d") || k.has("arrowright")) this.cam.x += sp;
+    if (k.size) this.clamp();
+    for (const id of [...this.selected]) if (!this.sim.get(id)) {
+      this.selected.delete(id);
+      this.onChange();
+    }
+    for (const m of this.markers) m.age += dt;
+    for (let i = this.markers.length - 1; i >= 0; i--) if (this.markers[i].age > 0.9) this.markers.splice(i, 1);
+  }
+};
+
+// src/ui/dom.ts
+function h(tag, props = {}, ...kids) {
+  const el2 = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (v === void 0 || v === null || v === false) continue;
+    if (k === "class") el2.className = String(v);
+    else if (k === "text") el2.textContent = String(v);
+    else if (k === "hidden") el2.hidden = !!v;
+    else if (k === "disabled") el2.disabled = !!v;
+    else if (k === "pressed") el2.setAttribute("aria-pressed", String(!!v));
+    else if (k === "onclick") el2.addEventListener("click", v);
+    else el2.setAttribute(k, String(v));
+  }
+  for (const kid of kids) if (kid !== null && kid !== false && kid !== void 0) el2.append(kid instanceof Node ? kid : String(kid));
+  return el2;
+}
+var helpButton = () => h("button", { class: "q", type: "button", "aria-label": "H\u01B0\u1EDBng d\u1EABn", "aria-expanded": "false", text: "?" });
+function hint(label, text) {
+  const tip = h("p", { class: "sub hintbody", hidden: true, text });
+  const head = h("div", { class: "hinthead" }, typeof label === "string" ? h("h3", { text: label }) : label, helpButton());
+  return Object.assign(h("div", { class: "hint" }, head, tip), { tip });
+}
+if (typeof document !== "undefined") document.addEventListener("click", (e) => {
+  const q = e.target?.closest?.("button.q");
+  const body = q?.closest(".hint")?.querySelector(":scope > .hintbody");
+  if (!q || !body) return;
+  body.hidden = !body.hidden;
+  q.setAttribute("aria-expanded", String(!body.hidden));
+});
+function iconCanvas(src) {
+  const c = document.createElement("canvas");
+  c.width = src.width;
+  c.height = src.height;
+  c.getContext("2d").drawImage(src, 0, 0);
+  return c;
+}
+var costText = (c, names) => Object.keys(c).filter((k) => (c[k] ?? 0) > 0).map((k) => `${c[k]} ${names[k].toLowerCase()}`).join(" + ") || "mi\u1EC5n ph\xED";
+
+// src/ui/warpanel.ts
+var TABS = [["squads", "\u0110\u1ED9i v\xE0 tr\u1EADn ph\xE1p"], ["maps", "Trinh s\xE1t, b\u1EA3n \u0111\u1ED3"], ["plan", "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"], ["defense", "Ph\xF2ng th\u1EE7"], ["log", "Nh\u1EADt k\xFD tr\u1EADn"]];
+var ROUTE_NAME = { main: "\u0110\u01B0\u1EDDng ch\xEDnh", forest: "\u0110\u01B0\u1EDDng r\u1EEBng (v\xF2ng s\u01B0\u1EDDn)", night: "\u0110\u01B0\u1EDDng v\xF2ng ban \u0111\xEAm" };
+var STANCE_NAME = { fight: "\u0110\xE1nh", evade: "N\xE9, ch\u1EC9 \u0111i", hold: "Gi\u1EEF y\xEAn", shoot: "Ch\u1EC9 b\u1EAFn" };
+var POST_NAME = { gate: "Gi\u1EEF c\u1ED5ng", fence: "\u0110\u1EE9ng sau h\xE0ng r\xE0o", tower: "L\xEAn ch\xF2i canh", reserve: "Ph\u1EA3n k\xEDch (v\u1EC1 l\u1EEDa)", fire: "Quanh \u0111\u1ED1ng l\u1EEDa" };
+var CARD_NAME = { go: "Xu\u1EA5t ph\xE1t", advance: "Ti\u1EBFn", hold: "Gi\u1EEF", formation: "\u0110\u1ED5i tr\u1EADn", attack: "T\u1EA5n c\xF4ng m\u1EE5c ti\xEAu", shoot: "B\u1EAFn", retreat: "R\xFAt", signal: "Ph\xE1t t\xEDn hi\u1EC7u" };
+var CARD_KINDS = ["go", "advance", "hold", "formation", "attack", "shoot", "retreat", "signal"];
+var TIMES = [0, 30, 60, 120, 240, 480];
+function select(opts, cur, onPick) {
+  const el2 = document.createElement("select");
+  for (const o of opts) {
+    const op = document.createElement("option");
+    op.value = o.v;
+    op.textContent = o.label;
+    op.disabled = !!o.disabled;
+    if (o.v === cur) op.selected = true;
+    el2.append(op);
+  }
+  el2.value = cur;
+  el2.addEventListener("change", () => onPick(el2.value));
+  return el2;
+}
+var WarPanel = class {
+  constructor(c) {
+    this.c = c;
+    this.root = h("div", { class: "page" });
+    this.tab = "squads";
+    this.body = h("div");
+    this.tabBtns = /* @__PURE__ */ new Map();
+    this.key = "";
+    this.targetTribe = "";
+    this.newLevel = {};
+    const bar2 = h("div", { class: "btns tabs" });
+    for (const [t, label] of TABS) {
+      const b = h("button", { class: "sm", text: label, pressed: t === this.tab, onclick: () => {
+        this.tab = t;
+        this.key = "";
+        this.update();
+      } });
+      this.tabBtns.set(t, b);
+      bar2.append(b);
+    }
+    this.root.append(hint("L\u1EC1u h\u1ECDp chi\u1EBFn", "L\u1EADp \u0111\u1ED9i (chia l\xEDnh theo lo\u1EA1i), ch\u1ECDn tr\u1EADn ph\xE1p, c\u1EED trinh s\xE1t v\u1EBD b\u1EA3n \u0111\u1ED3 l\xE0ng \u0111\u1ECBch, r\u1ED3i l\u1EADp k\u1EBF ho\u1EA1ch: m\u1ED7i \u0111\u1ED9i m\u1ED9t nhi\u1EC7m v\u1EE5, m\u1ED9t h\u01B0\u1EDBng ti\u1EBFn, m\u1ED9t gi\u1EDD xu\u1EA5t ph\xE1t. Th\u1EBB l\u1EC7nh b\u1EA1n g\u1EAFn v\xE0o k\u1EBF ho\u1EA1ch s\u1EBD hi\u1EC7n th\xE0nh n\xFAt khi \u0111\xE1nh. V\xE0o l\u1EC1u l\xE0 game t\u1EA1m d\u1EEBng."), bar2, this.body);
+  }
+  /** Show one of the pages (used by tests). */
+  open(t) {
+    this.tab = t;
+    this.key = "";
+    this.update();
+  }
+  get sim() {
+    return this.c.sim;
+  }
+  refresh() {
+    this.key = "";
+    this.c.ctl.onChange();
+  }
+  toast(e) {
+    if (e) this.c.toast(e);
+  }
+  update() {
+    const { sim: sim2 } = this, plan2 = (k) => sim2.plans.find((p) => p.kind === k);
+    for (const [t, b] of this.tabBtns) b.setAttribute("aria-pressed", String(t === this.tab));
+    const soldiers = sim2.villagers.filter((v) => v.job === "fight");
+    const key = [
+      this.tab,
+      sim2.squads.map((s) => `${s.id}.${s.name}.${s.formation}.${s.ids.join("/")}.${s.leader}.${Math.round(s.mastery[s.formation] / 5)}.${s.training}`).join(),
+      soldiers.map((v) => `${v.id}.${v.squad}.${v.weapon}`).join(),
+      JSON.stringify(sim2.maps),
+      JSON.stringify(sim2.scouts.map((m) => [m.id, m.phase])),
+      JSON.stringify(plan2("attack")),
+      JSON.stringify(plan2("defense")),
+      sim2.battleReports.length,
+      sim2.battle.on,
+      this.targetTribe,
+      sim2.tribes.map((t) => t.state).join(),
+      sim2.squadLimit(),
+      sim2.cardLimit()
+    ].join("|");
+    if (key === this.key) return;
+    this.key = key;
+    this.body.replaceChildren(...{ squads: () => this.squadsPage(), maps: () => this.mapsPage(), plan: () => this.planPage(), defense: () => this.defensePage(), log: () => this.logPage() }[this.tab]());
+  }
+  // ---------------------------------------------------------------- squads and formations
+  armCounts(vs) {
+    const n = { foot: 0, archer: 0, cavalry: 0 };
+    for (const v of vs) n[armOfWeapon(v.weapon)]++;
+    return ["foot", "archer", "cavalry"].filter((a) => n[a]).map((a) => `${n[a]} ${ARM_NAME[a].toLowerCase()}`).join(" \xB7 ") || "ch\u01B0a c\xF3 l\xEDnh";
+  }
+  squadsPage() {
+    const { sim: sim2 } = this, c = this.c;
+    const free = sim2.villagers.filter((v) => v.job === "fight" && v.squad < 0), out = [];
+    out.push(h("h3", { text: `\u0110\u1ED9i (${sim2.squads.length}/${sim2.squadLimit()})` }));
+    if (!sim2.squadLimit()) out.push(h("p", { class: "sub", text: "C\u1EA7n d\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn (nghi\xEAn c\u1EE9u H\u1ED9i \u0111\u1ED3ng chi\u1EBFn) \u0111\u1EC3 l\u1EADp \u0111\u1ED9i." }));
+    out.push(h(
+      "div",
+      { class: "btns" },
+      h("button", { class: "sm primary", text: "L\u1EADp \u0111\u1ED9i m\u1EDBi", onclick: () => {
+        this.toast(sim2.createSquad().reason);
+        this.refresh();
+      } }),
+      h("button", { class: "sm", text: "Ch\u1ECDn h\u1EBFt l\xEDnh", onclick: () => {
+        c.ctl.selected.clear();
+        for (const v of sim2.villagers) if (v.job === "fight") c.ctl.selected.add(v.id);
+        c.ctl.onChange();
+      } })
+    ));
+    for (const s of sim2.squads) {
+      const us = sim2.squadUnits(s), hp = us.length ? Math.round(100 * us.reduce((a, v) => a + v.health / v.maxHealth, 0) / us.length) : 0, leader = sim2.get(s.leader);
+      const fm = FORMATIONS[s.formation];
+      out.push(h(
+        "div",
+        { class: "row", style: `border-left:5px solid ${s.color};padding-left:8px;flex-direction:column;align-items:stretch` },
+        h("div", { class: "nm" }, h("b", { text: s.name }), h("small", { text: `${this.armCounts(us)} \xB7 m\xE1u ${hp}% \xB7 ch\u1EC9 huy ${leader?.name ?? "ch\u01B0a c\xF3"}` })),
+        h(
+          "div",
+          { class: "btns" },
+          select(FORMATION_IDS.map((f) => ({ v: f, label: `${FORMATIONS[f].name}${sim2.formationOpen(f) ? "" : " (c\u1EA7n nghi\xEAn c\u1EE9u)"}`, disabled: !sim2.formationOpen(f) })), s.formation, (f) => {
+            this.toast(sim2.setFormation(s.id, f));
+            this.refresh();
+          }),
+          h("small", { text: `thu\u1EA7n th\u1EE5c ${Math.round(s.mastery[s.formation])}%${s.switchUntil > sim2.time ? " \xB7 \u0111ang \u0111\u1ED5i tr\u1EADn" : ""}` })
+        ),
+        h("small", { class: "sub", text: fm.note }),
+        h(
+          "div",
+          { class: "btns" },
+          h("button", { class: "sm", text: "Ch\u1ECDn tr\xEAn b\u1EA3n \u0111\u1ED3", onclick: () => {
+            c.ctl.selected.clear();
+            for (const v of us) c.ctl.selected.add(v.id);
+            c.ctl.onChange();
+          } }),
+          h("button", { class: "sm", text: s.training ? "Th\xF4i luy\u1EC7n" : "Luy\u1EC7n \u1EDF b\xE3i t\u1EADp", onclick: () => {
+            this.toast(sim2.trainSquad(s.id, !s.training));
+            this.refresh();
+          } }),
+          h("button", { class: "sm", text: "Nh\u1EADn h\u1EBFt l\xEDnh r\u1EA3nh", disabled: !free.length, onclick: () => {
+            sim2.joinSquad(free.map((v) => v.id), s.id);
+            this.refresh();
+          } }),
+          h("button", { class: "sm danger", text: "Gi\u1EA3i t\xE1n", onclick: () => {
+            sim2.disbandSquad(s.id);
+            this.refresh();
+          } })
+        ),
+        ...us.map((v) => h(
+          "div",
+          { class: "row" },
+          h("div", { class: "nm" }, v.name, h("small", { text: `${ARM_NAME[armOfWeapon(v.weapon)]} \xB7 ${WEAPONS[v.weapon ?? "fist"].name}${v.id === s.leader ? " \xB7 ch\u1EC9 huy" : ""}` })),
+          h("button", { class: "sm", text: "Ch\u1EC9 huy", disabled: v.id === s.leader, onclick: () => {
+            sim2.setCommander(s.id, v.id);
+            this.refresh();
+          } }),
+          h("button", { class: "sm", text: "Ra", onclick: () => {
+            sim2.leaveSquad([v.id]);
+            this.refresh();
+          } })
+        ))
+      ));
+    }
+    out.push(h("h3", { text: `L\xEDnh ch\u01B0a v\xE0o \u0111\u1ED9i (${free.length})` }));
+    if (!free.length) out.push(h("p", { class: "sub", text: "Tuy\u1EC3n l\xEDnh \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i (tab L\xEDnh), r\u1ED3i x\u1EBFp v\xE0o \u0111\u1ED9i \u1EDF \u0111\xE2y." }));
+    for (const v of free) out.push(h(
+      "div",
+      { class: "row" },
+      h("div", { class: "nm" }, v.name, h("small", { text: `${ARM_NAME[armOfWeapon(v.weapon)]} \xB7 ${WEAPONS[v.weapon ?? "fist"].name}` })),
+      select([{ v: "", label: "V\xE0o \u0111\u1ED9i\u2026" }, ...sim2.squads.map((s) => ({ v: String(s.id), label: s.name }))], "", (id) => {
+        if (id) {
+          this.toast(sim2.joinSquad([v.id], Number(id)));
+          this.refresh();
+        }
+      })
+    ));
+    return out;
+  }
+  // ---------------------------------------------------------------- scouting and maps
+  ageWords(at) {
+    const days = Math.floor((this.sim.time - at) / DAY_LENGTH);
+    return days <= 0 ? "b\xE1o c\xE1o trong ng\xE0y" : days === 1 ? "b\xE1o c\xE1o t\u1EEB h\xF4m qua" : days < 4 ? `b\xE1o c\xE1o t\u1EEB ${days} h\xF4m tr\u01B0\u1EDBc` : "\u0111\xE3 c\u0169";
+  }
+  mapsPage() {
+    const { sim: sim2 } = this, c = this.c, out = [];
+    out.push(hint("Trinh s\xE1t v\xE0 b\u1EA3n \u0111\u1ED3", "Mu\u1ED1n \u0111\xE1nh m\u1ED9t l\xE0ng ph\u1EA3i c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EE7a n\xF3. C\u1EA5p 1 cho v\u1ECB tr\xED v\xE0 s\u1ED1 d\xE2n; c\u1EA5p 2 cho \u0111\u01B0\u1EDDng v\xE0o, c\u1ED5ng v\xE0 ch\u1ED7 ph\u1EE5c k\xEDch; c\u1EA5p 3 cho s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i, kho v\xE0 th\u1EE7 l\u0129nh. Trinh s\xE1t c\xF3 th\u1EC3 ch\u1EBFt, b\u1EA3n \u0111\u1ED3 m\u1EA5t 10% \u0111\u1ED9 ch\xEDnh x\xE1c m\u1ED7i ng\xE0y. Ch\u1ECDn d\xE2n tr\xEAn b\u1EA3n \u0111\u1ED3 r\u1ED3i c\u1EED \u0111i, ho\u1EB7c b\u1EA5m c\u1EED \u0111\u1EC3 game t\u1EF1 l\u1EA5y ng\u01B0\u1EDDi r\u1EA3nh."));
+    if (!sim2.dev.freeBuild && !sim2.researched.has("scout")) out.push(h("p", { class: "sub", text: 'C\u1EA7n nghi\xEAn c\u1EE9u "Trinh s\xE1t" \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u.' }));
+    for (const t of sim2.tribes) {
+      const maps = sim2.maps.filter((m) => m.tribe === t.id).sort((a, b) => b.level - a.level), best = maps[0], level = sim2.mapLevel(t.id);
+      const next = this.newLevel[t.id] ?? Math.min(3, level + 1), need = sim2.scoutsNeeded(t.id, next);
+      out.push(h(
+        "div",
+        { class: "row", style: "flex-direction:column;align-items:stretch" },
+        h("div", { class: "nm" }, h("b", { text: t.def.name }), h("small", { text: best ? `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${level || best.level}${best.gaps ? " (c\xF2n h\u1EDF)" : ""}, ${this.ageWords(best.at)}` : "Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3" })),
+        h(
+          "div",
+          { class: "btns" },
+          select([1, 2, 3].map((l) => ({ v: String(l), label: `C\u1EA5p ${l}` })), String(next), (l) => {
+            this.newLevel[t.id] = Number(l);
+            this.refresh();
+          }),
+          h("small", { text: `c\u1EA7n ${need} trinh s\xE1t cho \u0111\u1EE7` }),
+          h("button", { class: "sm primary", text: "C\u1EED trinh s\xE1t", disabled: sim2.scouts.some((m) => m.tribe === t.id), onclick: () => {
+            const chosen = [...c.ctl.selected].filter((id) => sim2.get(id)?.team === "player");
+            const ids = chosen.length ? chosen : sim2.villagers.filter((v) => v.job !== "fight" && v.inside === null).slice(0, need).map((v) => v.id);
+            this.toast(sim2.startScout(ids, t.id, next));
+            this.refresh();
+          } })
+        )
+      ));
+    }
+    if (sim2.scouts.length) out.push(h("h3", { text: "\u0110ang \u0111i trinh s\xE1t" }));
+    for (const m of sim2.scouts) out.push(h("p", { class: "sub", text: `${sim2.tribes.find((t) => t.id === m.tribe)?.def.name}: ${m.ids.length} ng\u01B0\u1EDDi, ${{ go: "\u0111ang t\u1EDBi", watch: "\u0111ang quan s\xE1t", back: "\u0111ang v\u1EC1" }[m.phase]} (b\u1EA3n \u0111\u1ED3 c\u1EA5p ${m.level})` }));
+    return out;
+  }
+  // ---------------------------------------------------------------- the attack plan
+  missionCard(plan2, m, defense) {
+    const { sim: sim2 } = this, s = sim2.squadById(m.squad), draft = plan2.status !== "running";
+    const kids = [h("div", { class: "nm" }, h("b", { text: s?.name ?? "?" }), h("small", { text: defense ? POST_NAME[m.post] : `${{ idle: "ch\u01B0a b\u1EAFt \u0111\u1EA7u", wait: "ch\u1EDD l\u1EC7nh", march: "\u0111ang ti\u1EBFn", engaged: "\u0111ang giao chi\u1EBFn", hold: "gi\u1EEF v\u1ECB tr\xED", withdraw: "\u0111ang r\xFAt", done: "xong" }[m.state]}` }))];
+    if (defense) kids.push(h("div", { class: "btns" }, select(Object.keys(POST_NAME).map((p) => ({ v: p, label: POST_NAME[p] })), m.post, (p) => {
+      m.post = p;
+      this.refresh();
+    })));
+    else {
+      const trig = m.trigger.kind;
+      kids.push(
+        h(
+          "div",
+          { class: "btns" },
+          select(Object.keys(OBJECTIVE_NAME).map((o) => ({ v: o, label: OBJECTIVE_NAME[o], disabled: !sim2.canTarget(o, plan2.tribe) })), m.objective, (o) => {
+            m.objective = o;
+            this.refresh();
+          }),
+          select(Object.keys(ROUTE_NAME).map((r) => ({ v: r, label: ROUTE_NAME[r] })), m.route, (r) => {
+            m.route = r;
+            this.refresh();
+          })
+        ),
+        h(
+          "div",
+          { class: "btns" },
+          select([{ v: "time", label: "Theo gi\u1EDD" }, { v: "after", label: "Sau khi \u0111\u1ED9i kh\xE1c giao chi\u1EBFn" }, { v: "signal", label: "Khi c\xF3 t\xEDn hi\u1EC7u" }, { v: "leaves", label: "Khi \u0111\u1ECBch r\u1EDDi l\xE0ng" }], trig, (k) => {
+            m.trigger = k === "time" ? { kind: "time", at: 0 } : k === "after" ? { kind: "after", squad: plan2.missions.find((x) => x.squad !== m.squad)?.squad ?? -1 } : { kind: k };
+            this.refresh();
+          }),
+          m.trigger.kind === "time" ? select(TIMES.map((t) => ({ v: String(t), label: t ? `sau ${t} gi\xE2y` : "ngay" })), String(m.trigger.at), (t) => {
+            m.trigger = { kind: "time", at: Number(t) };
+            this.refresh();
+          }) : null,
+          m.trigger.kind === "after" ? select(plan2.missions.filter((x) => x.squad !== m.squad).map((x) => ({ v: String(x.squad), label: sim2.squadById(x.squad)?.name ?? "?" })), String(m.trigger.squad), (q) => {
+            m.trigger = { kind: "after", squad: Number(q) };
+            this.refresh();
+          }) : null
+        ),
+        h(
+          "div",
+          { class: "btns" },
+          select(Object.keys(STANCE_NAME).map((x) => ({ v: x, label: STANCE_NAME[x] })), m.stance, (x) => {
+            m.stance = x;
+            this.refresh();
+          }),
+          select([0.2, 0.35, 0.5, 0.7].map((x) => ({ v: String(x), label: `R\xFAt khi m\u1EA5t ${Math.round(x * 100)}%` })), String(m.withdrawAt), (x) => {
+            m.withdrawAt = Number(x);
+            this.refresh();
+          })
+        )
+      );
+    }
+    if (draft) kids.push(h("button", { class: "sm", text: "B\u1ECF nhi\u1EC7m v\u1EE5", onclick: () => {
+      plan2.missions.splice(plan2.missions.indexOf(m), 1);
+      this.refresh();
+    } }));
+    return h("div", { class: "row", style: `border-left:5px solid ${s?.color ?? "#888"};padding-left:8px;flex-direction:column;align-items:stretch` }, ...kids);
+  }
+  addMissionRow(plan2) {
+    const { sim: sim2 } = this, open = sim2.squads.filter((s) => !plan2.missions.some((m) => m.squad === s.id));
+    return h("div", { class: "btns" }, select([{ v: "", label: "Giao nhi\u1EC7m v\u1EE5 cho \u0111\u1ED9i\u2026" }, ...open.map((s) => ({ v: String(s.id), label: s.name }))], "", (id) => {
+      if (id) {
+        this.toast(sim2.addMission(plan2, Number(id)));
+        this.refresh();
+      }
+    }));
+  }
+  planPage() {
+    const { sim: sim2 } = this, out = [], plan2 = sim2.plans.find((p) => p.kind === "attack");
+    const targets = sim2.tribes.filter((t) => t.state === "free");
+    if (!this.targetTribe || !targets.some((t) => t.id === this.targetTribe)) this.targetTribe = targets[0]?.id ?? "";
+    out.push(h(
+      "div",
+      { class: "btns" },
+      select(targets.map((t) => ({ v: t.id, label: t.def.name })), this.targetTribe, (t) => {
+        this.targetTribe = t;
+        this.refresh();
+      }),
+      h("button", { class: "sm primary", text: "L\u1EADp k\u1EBF ho\u1EA1ch m\u1EDBi", disabled: !this.targetTribe || plan2?.status === "running", onclick: () => {
+        sim2.newPlan("attack", this.targetTribe);
+        this.refresh();
+      } })
+    ));
+    if (!plan2) {
+      out.push(h("p", { class: "sub", text: "Ch\u1ECDn l\xE0ng c\u1EA7n \u0111\xE1nh r\u1ED3i l\u1EADp k\u1EBF ho\u1EA1ch. M\u1ED7i \u0111\u1ED9i c\xF3 th\u1EC3 nh\u1EADn m\u1ED9t nhi\u1EC7m v\u1EE5." }));
+      return out;
+    }
+    out.push(h("h3", { text: `K\u1EBF ho\u1EA1ch \u0111\xE1nh ${sim2.tribes.find((t) => t.id === plan2.tribe)?.def.name ?? "?"} \xB7 ${{ draft: "\u0111ang so\u1EA1n", running: "\u0111ang ch\u1EA1y", done: "\u0111\xE3 xong" }[plan2.status]}` }));
+    for (const l of sim2.reviewPlan(plan2)) out.push(h("p", { class: l.startsWith("\u2717") ? "why" : "sub", text: l }));
+    for (const m of plan2.missions) out.push(this.missionCard(plan2, m, false));
+    if (plan2.status !== "running") out.push(this.addMissionRow(plan2));
+    out.push(h("h3", { text: `Th\u1EBB l\u1EC7nh (${plan2.cards.length}/${sim2.cardLimit()})` }), h("p", { class: "sub", text: "Khi \u0111\xE1nh, ch\u1EC9 nh\u1EEFng th\u1EBB n\xE0y hi\u1EC7n th\xE0nh n\xFAt. Th\xEAm \xEDt m\xE0 ch\u1EAFc: l\u1EC1u c\u1EA5p cao cho nhi\u1EC1u th\u1EBB h\u01A1n." }));
+    for (const cd of plan2.cards) out.push(h(
+      "div",
+      { class: "row" },
+      h("div", { class: "nm" }, `${CARD_NAME[cd.kind]}${cd.squad >= 0 && cd.kind !== "signal" ? ` \xB7 ${sim2.squadById(cd.squad)?.name ?? "?"}` : ""}${cd.arg ? ` \xB7 ${FORMATIONS[cd.arg]?.name ?? OBJECTIVE_NAME[cd.arg] ?? cd.arg}` : ""}`),
+      plan2.status === "running" ? h("button", { class: "sm", text: "D\xF9ng", onclick: () => {
+        this.toast(sim2.playCard(plan2, cd.id));
+        this.refresh();
+      } }) : null,
+      h("button", { class: "sm", text: "B\u1ECF th\u1EBB", onclick: () => {
+        sim2.removeCard(plan2, cd.id);
+        this.refresh();
+      } })
+    ));
+    out.push(this.cardAdder(plan2));
+    out.push(h(
+      "div",
+      { class: "btns" },
+      plan2.status === "draft" ? h("button", { class: "sm primary", text: "B\u1EAFt \u0111\u1EA7u t\u1EA5n c\xF4ng", onclick: () => {
+        this.toast(sim2.startPlan(plan2));
+        this.refresh();
+      } }) : null,
+      plan2.status === "running" ? h("button", { class: "sm danger", text: "D\u1EEBng k\u1EBF ho\u1EA1ch", onclick: () => {
+        plan2.status = "done";
+        this.refresh();
+      } }) : null,
+      plan2.status === "done" ? h("button", { class: "sm", text: "So\u1EA1n l\u1EA1i", onclick: () => {
+        plan2.status = "draft";
+        for (const m of plan2.missions) {
+          m.state = "idle";
+        }
+        this.refresh();
+      } }) : null
+    ));
+    return out;
+  }
+  /** Pick a card kind, its squad and what it carries, and add it to the plan. */
+  cardAdder(plan2) {
+    const { sim: sim2 } = this;
+    let kind = "go", squad = String(sim2.squads[0]?.id ?? ""), arg = "";
+    const argSel = h("span");
+    const fill = () => {
+      argSel.replaceChildren();
+      if (kind === "formation") {
+        arg = arg && FORMATIONS[arg] ? arg : "line";
+        argSel.append(select(FORMATION_IDS.map((f) => ({ v: f, label: FORMATIONS[f].name })), arg, (v) => {
+          arg = v;
+        }));
+      } else if (kind === "attack") {
+        arg = arg && OBJECTIVE_NAME[arg] ? arg : "camp";
+        argSel.append(select(Object.keys(OBJECTIVE_NAME).map((o) => ({ v: o, label: OBJECTIVE_NAME[o] })), arg, (v) => {
+          arg = v;
+        }));
+      } else arg = "";
+    };
+    fill();
+    return h(
+      "div",
+      { class: "btns" },
+      select(CARD_KINDS.map((k) => ({ v: k, label: CARD_NAME[k] })), kind, (k) => {
+        kind = k;
+        fill();
+      }),
+      select(sim2.squads.map((s) => ({ v: String(s.id), label: s.name })), squad, (s) => {
+        squad = s;
+      }),
+      argSel,
+      h("button", { class: "sm primary", text: "Th\xEAm th\u1EBB", onclick: () => {
+        this.toast(sim2.addCard(plan2, kind, kind === "signal" ? -1 : Number(squad), arg));
+        this.refresh();
+      } })
+    );
+  }
+  // ---------------------------------------------------------------- defence
+  defensePage() {
+    const { sim: sim2 } = this, out = [], plan2 = sim2.plans.find((p) => p.kind === "defense");
+    out.push(hint("K\u1EBF ho\u1EA1ch ph\xF2ng th\u1EE7", "M\u1EABu ph\xF2ng th\u1EE7: m\u1ED7i \u0111\u1ED9i \u0111\u1EE9ng \u1EDF \u0111\xE2u khi tr\u1ED1ng b\xE1o \u0111\u1ED9ng. Khi \u0111\xE1nh tr\u1ED1ng, d\xE2n v\u1EC1 \u0111\u1ED1ng l\u1EEDa v\xE0 c\xE1c \u0111\u1ED9i v\u1EC1 \u0111\xFAng v\u1ECB tr\xED; \u0111\u1ED9i \u0111\u1EE9ng ch\xF2i s\u1EBD cho cung th\u1EE7 l\xEAn ch\xF2i. Kh\xF4ng c\xF3 m\u1EABu th\xEC m\u1ECDi \u0111\u1ED9i \u0111\u1EE9ng quanh \u0111\u1ED1ng l\u1EEDa."));
+    out.push(h(
+      "div",
+      { class: "btns" },
+      h("button", { class: "sm primary", text: plan2 ? "So\u1EA1n m\u1EABu m\u1EDBi" : "L\u1EADp m\u1EABu ph\xF2ng th\u1EE7", onclick: () => {
+        sim2.newPlan("defense", null);
+        this.refresh();
+      } }),
+      h("button", { class: "sm danger", text: sim2.alarmUntil > sim2.time ? "\u0110ang b\xE1o \u0111\u1ED9ng" : "\u0110\xE1nh tr\u1ED1ng b\xE1o \u0111\u1ED9ng", disabled: sim2.alarmUntil > sim2.time, onclick: () => {
+        this.toast(sim2.soundAlarm());
+        this.refresh();
+      } })
+    ));
+    if (!plan2) return out;
+    for (const m of plan2.missions) out.push(this.missionCard(plan2, m, true));
+    out.push(this.addMissionRow(plan2));
+    return out;
+  }
+  // ---------------------------------------------------------------- the log
+  logPage() {
+    const { sim: sim2 } = this, b = sim2.battle, out = [];
+    out.push(h("h3", { text: b.on ? "\u0110ang c\xF3 giao tranh" : "Kh\xF4ng c\xF3 giao tranh" }));
+    if (b.on) out.push(h("p", { class: "sub", text: `Ta m\u1EA5t ${b.ourDead}, \u0111\u1ECBch m\u1EA5t ${b.foeDead}${b.breaches ? `, ${b.breaches} \u0111o\u1EA1n r\xE0o b\u1ECB ph\xE1` : ""}${b.shots ? `, cung tr\xEAn ch\xF2i b\u1EAFn ${b.shots} ph\xE1t` : ""}.` }), ...b.notes.map((n) => h("p", { class: "sub", text: n })));
+    if (!sim2.battleReports.length) out.push(h("p", { class: "sub", text: "Ch\u01B0a c\xF3 tr\u1EADn n\xE0o k\u1EBFt th\xFAc. Sau m\u1ED7i tr\u1EADn, b\u1EA3n t\xF3m t\u1EAFt hi\u1EC7n \u1EDF \u0111\xE2y \u0111\u1EC3 b\u1EA1n ch\u1EC9nh k\u1EBF ho\u1EA1ch l\u1EA7n sau." }));
+    for (const r of [...sim2.battleReports].reverse()) out.push(h("div", { class: "row", style: "flex-direction:column;align-items:stretch" }, ...r.lines.map((l) => h("small", { text: l }))));
+    return out;
+  }
+};
+
+// src/ui/menu.ts
+var TABS2 = [["build", "X\xE2y"], ["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["war", "Chi\u1EBFn"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
+var SEASON_NAME = { spring: "Xu\xE2n", summer: "H\u1EA1", autumn: "Thu", winter: "\u0110\xF4ng" };
+var PERSONALITY = { peaceful: "H\xF2a b\xECnh", aggressive: "Hi\u1EBFu chi\u1EBFn", ambusher: "Hay ph\u1EE5c k\xEDch" };
+var Menu = class {
+  constructor(drawer, tabs, body, c, center) {
+    this.drawer = drawer;
+    this.body = body;
+    this.c = c;
+    this.center = center;
+    this.tab = "build";
+    this.tabBtns = /* @__PURE__ */ new Map();
+    this.pages = /* @__PURE__ */ new Map();
+    this.updaters = [];
+    this.placesKey = "";
+    this.placesList = h("div");
+    /** The speed to go back to when the war tent is left (it opens the game paused, as a war council does). */
+    this.resume = 0;
+    for (const [t, label] of TABS2) {
+      const b = h("button", { class: "sm", text: label, pressed: t === this.tab, onclick: () => this.show(t) });
+      this.tabBtns.set(t, b);
+      tabs.append(b);
+    }
+    tabs.append(h("span", { class: "spacer" }), h("button", { class: "sm", text: "\u2715", title: "\u0110\xF3ng menu", onclick: () => this.close() }));
+    this.pages.set("build", this.buildPage());
+    this.pages.set("places", this.placesPage());
+    this.pages.set("tribes", this.tribesPage());
+    const war = new WarPanel(c);
+    this.pages.set("war", war.root);
+    this.updaters.push(() => war.update());
+    this.pages.set("game", this.gamePage());
+    this.pages.set("dev", this.devPage());
+    this.pages.set("help", this.helpPage());
+    for (const p of this.pages.values()) body.append(p);
+    this.show(this.tab);
+  }
+  get isOpen() {
+    return !this.drawer.hidden;
+  }
+  open(tab) {
+    this.drawer.hidden = false;
+    if (tab) this.show(tab);
+    this.update();
+  }
+  close() {
+    this.drawer.hidden = true;
+    if (this.tab === "war" && this.resume > 0 && this.c.sim.speed === 0) {
+      this.c.sim.speed = this.resume;
+      this.resume = 0;
+    }
+  }
+  toggle() {
+    if (this.isOpen) this.close();
+    else this.open();
+  }
+  show(tab) {
+    const { sim: sim2 } = this.c;
+    if (tab === "war" && this.tab !== "war") {
+      this.resume = sim2.speed;
+      sim2.speed = 0;
+    } else if (tab !== "war" && this.tab === "war" && this.resume > 0 && sim2.speed === 0) {
+      sim2.speed = this.resume;
+      this.resume = 0;
+    }
+    this.tab = tab;
+    for (const [t, b] of this.tabBtns) b.setAttribute("aria-pressed", String(t === tab));
+    for (const [t, p] of this.pages) p.hidden = t !== tab;
+    this.body.scrollTop = 0;
+    this.update();
+  }
+  update() {
+    if (this.isOpen) for (const u of this.updaters) u();
+  }
+  // ---------------------------------------------------------------- build
+  buildPage() {
+    const { sim: sim2, ctl: ctl2 } = this.c, page = h("div", { class: "page" });
+    page.append(hint("X\xE2y d\u1EF1ng", "Nh\xE0 l\xE0m vi\u1EC7c (th\u1EE3 x\xE2y, kho, ch\u1EBF t\u1EA1o, nghi\xEAn c\u1EE9u, s\u1EEDa \u0111\u1ED3, kho c\xF4ng c\u1EE5, kho v\u0169 kh\xED) ch\u1EC9 x\xE2y M\u1ED8T c\xE1i, mu\u1ED1n m\u1EA1nh h\u01A1n th\xEC n\xE2ng c\u1EA5p. Nh\xE0 d\xE2n, L\u1EC1u chi\u1EBFn binh v\xE0 Ru\u1ED9ng x\xE2y \u0111\u01B0\u1EE3c nhi\u1EC1u c\xE1i, s\u1ED1 l\u01B0\u1EE3ng t\u0103ng khi n\xE2ng c\u1EA5p Nh\xE0 chung. Ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7. N\u1EBFu \u0111ang ch\u1ECDn d\xE2n, h\u1ECD s\u1EBD t\u1EF1 \u0111i x\xE2y."));
+    const rows = [];
+    const ROLE = {
+      builder: "D\xE2n l\xE0m th\u1EE3 x\xE2y \u1EDF \u0111\xE2y (do b\u1EA1n ch\u1ECDn). Ph\u1EA3i c\xF3 nh\xE0 n\xE0y m\u1EDBi d\u1EF1ng \u0111\u01B0\u1EE3c c\xE1c c\xF4ng tr\xECnh kh\xE1c.",
+      storage: "C\u1EA5t t\xE0i nguy\xEAn.",
+      lab: "Nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD, m\u1EDF c\xF4ng tr\xECnh v\xE0 t\u1EF1 \u0111\u1ED9ng h\xF3a. D\xE2n th\xF4ng minh l\xE0m vi\u1EC7c b\xEAn trong.",
+      workshop: "Ch\u1EBF t\u1EA1o c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p theo b\u1EA3n v\u1EBD. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong.",
+      repair: "S\u1EEDa c\xF4ng c\u1EE5 \u0111\xE3 m\xF2n. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong.",
+      barracks: "Chi\u1EBFn binh ng\u1EE7 \u1EDF \u0111\xE2y (v\xE0o l\u1EC1u, hi\u1EC7n th\xE0nh danh s\xE1ch) v\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa. M\u1ED7i c\u1EA5p th\xEAm gi\u01B0\u1EDDng. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
+      house: "D\xE2n th\u01B0\u1EDDng ng\u1EE7 \u1EDF \u0111\xE2y (v\xE0o nh\xE0, hi\u1EC7n th\xE0nh danh s\xE1ch) v\xE0 h\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7. Kh\xF4ng c\xF3 nh\xE0 ho\u1EB7c h\u1EBFt gi\u01B0\u1EDDng th\xEC d\xE2n ng\u1EE7 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa, h\u1ED3i s\u1EE9c ch\u1EADm h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
+      field: "D\xE2n b\u1EA1n ch\u1ECDn v\xE0o ru\u1ED9ng l\xE0m vi\u1EC7c b\xEAn trong (kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3), th\u1EE9c \u0103n v\u1EC1 th\u1EB3ng kho, \u0111\u1EC1u quanh n\u0103m h\u01A1n b\u1EE5i qu\u1EA3 (b\u1EE5i qu\u1EA3 kh\xF4ng m\u1ECDc l\u1EA1i). M\u1ED7i ru\u1ED9ng m\u1ED9t ng\u01B0\u1EDDi, n\xE2ng c\u1EA5p \u0111\u1EC3 l\xE0m nhanh h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
+      wartent: "N\u01A1i l\u1EADp \u0111\u1ED9i, ch\u1ECDn tr\u1EADn ph\xE1p, l\u1EADp k\u1EBF ho\u1EA1ch v\xE0 th\u1EBB l\u1EC7nh cho tr\u1EADn \u0111\xE1nh. C\u1EA5p c\xE0ng cao c\xE0ng nhi\u1EC1u \u0111\u1ED9i v\xE0 th\u1EBB l\u1EC7nh. C\u1EA7n nghi\xEAn c\u1EE9u H\u1ED9i \u0111\u1ED3ng chi\u1EBFn.",
+      drill: "B\xE3i t\u1EADp: c\xE1c \u0111\u1ED9i luy\u1EC7n tr\u1EADn ph\xE1p \u1EDF \u0111\xE2y, \u0111\u1ED9 thu\u1EA7n th\u1EE5c t\u0103ng d\u1EA7n. C\u1EA7n L\u1EC1u chi\u1EBFn binh v\xE0 nghi\xEAn c\u1EE9u.",
+      trap: "H\u1ED1 ch\xF4ng g\xE0i s\u1EB5n: \u0111\u1ECBch b\u01B0\u1EDBc v\xE0o b\u1ECB th\u01B0\u01A1ng, m\u1ED7i h\u1ED1 l\xE0m b\u1ECB th\u01B0\u01A1ng v\xE0i ng\u01B0\u1EDDi. \u0110\u1EB7t t\u1EEBng c\xE1i m\u1ED9t. C\u1EA7n nghi\xEAn c\u1EE9u \u0110\xE0o h\xE0o.",
+      fence: "Ch\u1EB7n \u0111\u01B0\u1EDDng, t\u1EA1o ch\u1ED7 th\u1EAFt: \u0111\u1ECBch ph\u1EA3i ph\xE1 r\xE0o m\u1EDBi v\xE0o \u0111\u01B0\u1EE3c. \u0110\u1EB7t t\u1EEBng \u0111o\u1EA1n m\u1ED9t, c\u1EE9 ch\u1EA1m ti\u1EBFp \u0111\u1EC3 \u0111\u1EB7t \u0111o\u1EA1n k\u1EBF. C\u1EA5p 2 (h\xE0ng r\xE0o \u0111\xF4i) b\u1EC1n g\u1EA5p ba. S\u1ED1 \u0111o\u1EA1n t\u1ED1i \u0111a t\u0103ng theo Nh\xE0 chung. C\u1EA7n nghi\xEAn c\u1EE9u.",
+      gate: "Ch\u1ED7 ra v\xE0o c\u1EE7a h\xE0ng r\xE0o. M\u1EDF th\xEC ai c\u0169ng qua \u0111\u01B0\u1EE3c, \u0111\xF3ng th\xEC ch\u1EB7n t\u1EA5t c\u1EA3 k\u1EC3 c\u1EA3 d\xE2n m\xECnh. Ch\u1EA1m v\xE0o c\u1ED5ng \u0111\u1EC3 m\u1EDF ho\u1EB7c \u0111\xF3ng. C\u1EA7n nghi\xEAn c\u1EE9u.",
+      tower: "Cung th\u1EE7 \u0111\u1EE9ng tr\xEAn ch\xF2i b\u1EAFn xa h\u01A1n v\xE0 m\u1EA1nh h\u01A1n. Ch\u1EA1m v\xE0o ch\xF2i \u0111\u1EC3 ch\u1ECDn cung th\u1EE7 l\xEAn canh. C\u1EA7n Nh\xE0 chung c\u1EA5p 2 v\xE0 nghi\xEAn c\u1EE9u.",
+      toolstore: "C\u1EA5t c\xF4ng c\u1EE5 cho d\xE2n t\u1EF1 l\u1EA5y.",
+      armory: "C\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p cho d\xE2n t\u1EF1 l\u1EA5y."
+    };
+    for (const kind of Object.keys(BUILDINGS)) {
+      const d = BUILDINGS[kind];
+      if (!d.buildable) continue;
+      const lv2 = levelsOf(kind, sim2.era)[0], btn = h("button", { class: "primary", text: "\u0110\u1EB7t", onclick: () => {
+        ctl2.startPlacing(kind);
+        this.close();
+      } }), status = h("small", { class: "lock" });
+      const role = ROLE[kind];
+      page.append(h("div", { class: "row" }, h("div", { class: "nm hint" }, h("div", { class: "hinthead" }, d.name, role ? helpButton() : null), h("small", { text: `${lv2.name}: ${costText(lv2.cost, RES_NAME)} \xB7 x\xE2y ~${workDays(lv2.buildTime)}` }), status, role ? h("small", { class: "hintbody", hidden: true, text: role }) : null), btn));
+      rows.push(() => {
+        const lock = sim2.buildingLock(kind), poor = !sim2.dev.freeBuild && !Object.keys(lv2.cost).every((k) => sim2.stock[k] >= (lv2.cost[k] ?? 0));
+        btn.disabled = !!lock || poor;
+        status.textContent = lock ?? (poor ? "Ch\u01B0a \u0111\u1EE7 v\u1EADt li\u1EC7u" : "");
+        const have = sim2.buildings.filter((b) => b.kind === kind).length, limit = sim2.buildingLimit(kind);
+        btn.textContent = have >= limit ? "\u0110\xE3 \u0111\u1EE7" : "\u0110\u1EB7t";
+        if (limit > 1 && !lock) status.textContent = `\u0110\xE3 c\xF3 ${have}/${limit}${poor ? " \xB7 ch\u01B0a \u0111\u1EE7 v\u1EADt li\u1EC7u" : ""}`;
+      });
+    }
+    this.updaters.push(() => rows.forEach((f) => f()));
+    return page;
+  }
+  // ---------------------------------------------------------------- built buildings
+  placesPage() {
+    const { sim: sim2, ctl: ctl2 } = this.c;
+    this.updaters.push(() => {
+      const key = sim2.buildings.map((b) => `${b.id}.${b.level}.${b.done}.${b.upgrading}`).join();
+      if (key === this.placesKey) return;
+      this.placesKey = key;
+      const counts = {};
+      this.placesList.replaceChildren(...sim2.buildings.map((b) => {
+        counts[b.kind] = (counts[b.kind] ?? 0) + 1;
+        const d = BUILDINGS[b.kind], name = `${d.name}${counts[b.kind] > 1 || b.kind !== "campfire" ? ` #${counts[b.kind]}` : ""}`;
+        const note = !b.done ? " \xB7 \u0111ang x\xE2y" : b.upgrading ? " \xB7 \u0111ang n\xE2ng c\u1EA5p" : d.buildable ? ` \xB7 c\u1EA5p ${b.level} (${levelDef(b).name.toLowerCase()})` : "";
+        return h(
+          "div",
+          { class: "row" },
+          h("div", { class: "nm" }, name, h("small", { text: note.replace(/^ · /, "") || "\u0111ang d\xF9ng" })),
+          h("button", { text: "M\u1EDF", onclick: () => {
+            ctl2.selected.clear();
+            ctl2.selectBuilding(b.id, true);
+            ctl2.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE);
+            this.close();
+          } })
+        );
+      }));
+    });
+    return h("div", { class: "page" }, hint("C\xF4ng tr\xECnh \u0111\xE3 d\u1EF1ng", "M\u1ECDi c\xF4ng tr\xECnh \u0111\xE3 d\u1EF1ng n\u1EB1m \u1EDF \u0111\xE2y. M\u1EDF X\u01B0\u1EDFng \u0111\u1EC3 ch\u1EBF \u0111\u1ED3, m\u1EDF l\u1EEDa tr\u1EA1i \u0111\u1EC3 xem d\xE2n, m\u1EDF Kho \u0111\u1EC3 xem t\xE0i nguy\xEAn."), this.placesList);
+  }
+  // ---------------------------------------------------------------- tribes
+  tribesPage() {
+    const { sim: sim2, ctl: ctl2 } = this.c, page = h("div", { class: "page" });
+    const banner = h("div", { class: "card", hidden: true });
+    const none = h("p", { class: "sub", text: "Ch\u01B0a g\u1EB7p b\u1ED9 t\u1ED9c n\xE0o. H\xE3y c\u1EED ng\u01B0\u1EDDi \u0111i kh\xE1m ph\xE1." });
+    page.append(banner, none);
+    const cards = sim2.tribes.map((t) => {
+      const status = h("span"), people = h("div", { class: "kv" }), fill = h("b");
+      const gift = h("button", { class: "sm", text: `T\u1EB7ng ${RELATION.giftFood} th\u1EE9c \u0103n`, onclick: () => {
+        const e = sim2.diplomacy(t.id, "gift");
+        if (e) this.c.toast(e);
+      } });
+      const tribute = h("button", { class: "sm", text: "C\u1ED1ng n\u1EA1p", onclick: () => {
+        const e = sim2.diplomacy(t.id, "tribute");
+        this.c.toast(e ?? `${t.def.name} ch\u1ECBu c\u1ED1ng n\u1EA1p`);
+      } });
+      const adopt = h("button", { class: "sm primary", text: "Thu n\u1EA1p", onclick: () => {
+        const e = sim2.diplomacy(t.id, "adopt");
+        this.c.toast(e ?? `${t.def.name} gia nh\u1EADp l\xE0ng`);
+      } });
+      const go = h("button", { class: "sm", text: "T\u1EDBi tr\u1EA1i", onclick: () => {
+        ctl2.centerOn(t.camp.x * TILE, t.camp.y * TILE);
+        this.close();
+      } });
+      const bar2 = h("div", { class: "tribe-bar" }, fill, h("u"));
+      const card = h(
+        "div",
+        { class: "card", hidden: true },
+        h("div", { class: "cardhead" }, h("b", { text: t.def.name }), h("span", { text: PERSONALITY[t.def.personality] }), status),
+        bar2,
+        people,
+        h("p", { class: "sub", text: `Ph\u1EA7n th\u01B0\u1EDFng: ${t.def.reward}` }),
+        h("div", { class: "btns" }, gift, tribute, adopt, go)
+      );
+      page.append(card);
+      return { t, card, status, people, fill, gift, tribute, adopt };
+    });
+    this.updaters.push(() => {
+      const N = sim2.world.size;
+      let any = false;
+      for (const c of cards) {
+        const { t } = c, seen = sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0;
+        c.card.hidden = !seen;
+        if (!seen) continue;
+        any = true;
+        const rel = t.state === "tribute" ? Math.max(60, t.relation) : t.relation;
+        c.status.textContent = t.state === "free" ? relationLabel(rel) + (sim2.tribeHostile(t.id) ? " \xB7 \u0111ang th\xF9 \u0111\u1ECBch" : "") : { surrendered: "\u0110\xE3 xin h\xE0ng", tribute: "\u0110ang c\u1ED1ng n\u1EA1p", adopted: "\u0110\xE3 gia nh\u1EADp l\xE0ng", destroyed: "\u0110\xE3 b\u1ECB x\xF3a s\u1ED5" }[t.state];
+        c.fill.style.left = rel >= 0 ? "50%" : `${50 + rel / 2}%`;
+        c.fill.style.width = `${Math.abs(rel) / 2}%`;
+        const alive = t.unitIds.map((u) => sim2.get(u)).filter(Boolean);
+        c.people.innerHTML = t.state === "adopted" || t.state === "destroyed" ? "" : `Ng\u01B0\u1EDDi <b>${alive.length}</b> \xB7 l\xEDnh <b>${alive.filter((u) => u.ai?.role !== "civ").length}</b> \xB7 quan h\u1EC7 <b>${Math.round(rel)}</b>${t.raid ? " \xB7 <b>\u0111ang t\u1EADp k\xEDch!</b>" : ""}`;
+        const over = t.state === "adopted" || t.state === "destroyed";
+        c.gift.disabled = over || sim2.stock.food < RELATION.giftFood;
+        c.tribute.disabled = over || !canTribute(t) || t.state === "tribute";
+        c.adopt.disabled = over || !canAdopt(t) || sim2.villagers.length >= sim2.popCap();
+      }
+      none.hidden = any;
+      const p = sim2.pendingTribe && sim2.tribes.find((x) => x.id === sim2.pendingTribe);
+      banner.hidden = !p;
+      if (p) banner.replaceChildren(hint(h("b", { text: `${p.def.name} xin h\xE0ng!` }), "Thu n\u1EA1p: d\xE2n v\xE0 l\xEDnh gia nh\u1EADp l\xE0ng. C\u1ED1ng n\u1EA1p: h\u1ECD gi\u1EEF l\xE0ng v\xE0 n\u1ED9p t\xE0i nguy\xEAn m\u1ED7i m\xF9a, kh\xF4ng \u0111\xE1nh b\u1EA1n n\u1EEFa."));
+    });
+    return page;
+  }
+  // ---------------------------------------------------------------- the game itself
+  gamePage() {
+    const { session, toast } = this.c, page = h("div", { class: "page" });
+    const info = h("p", { class: "sub", text: "Ch\u01B0a c\xF3 b\u1EA3n l\u01B0u." });
+    const refresh = async () => {
+      const m = await session.latest();
+      info.textContent = m ? `B\u1EA3n l\u01B0u g\u1EA7n nh\u1EA5t: ng\xE0y ${m.day}, ${m.population} d\xE2n, l\xFAc ${new Date(m.savedAt).toLocaleString("vi")}.` : "Ch\u01B0a c\xF3 b\u1EA3n l\u01B0u.";
+    };
+    let armed = 0;
+    const fresh = h("button", { class: "sm danger", text: "V\xE1n m\u1EDBi" });
+    fresh.addEventListener("click", () => {
+      if (performance.now() < armed) {
+        void session.forget().then(() => location.assign(location.pathname + location.search.replace(/[?&]continue=1/, "")));
+        return;
+      }
+      armed = performance.now() + 4e3;
+      fresh.textContent = "B\u1EA5m l\u1EA1i \u0111\u1EC3 x\xF3a b\u1EA3n l\u01B0u v\xE0 ch\u01A1i l\u1EA1i";
+      setTimeout(() => {
+        fresh.textContent = "V\xE1n m\u1EDBi";
+      }, 4e3);
+    });
+    page.append(
+      hint("L\u01B0u v\xE0 t\u1EA3i", "Game t\u1EF1 l\u01B0u v\xE0o \u0111\u1EA7u m\u1ED7i ng\xE0y v\xE0 khi b\u1EA1n r\u1EDDi trang. B\u1EA3n l\u01B0u n\u1EB1m trong tr\xECnh duy\u1EC7t c\u1EE7a m\xE1y n\xE0y. T\u1ED1c \u0111\u1ED9 game v\xE0 l\u1EDDi nh\u1EAFc xoay ngang l\xE0 c\xE0i \u0111\u1EB7t c\u1EE7a b\u1EA1n, kh\xF4ng n\u1EB1m trong b\u1EA3n l\u01B0u."),
+      info,
+      h(
+        "div",
+        { class: "btns" },
+        h("button", { class: "sm primary", text: "L\u01B0u ngay", onclick: () => {
+          void session.save().then((ok) => {
+            if (ok) toast("\u0110\xE3 l\u01B0u");
+            void refresh();
+          });
+        } }),
+        h("button", { class: "sm", text: "T\u1EA3i b\u1EA3n l\u01B0u", onclick: () => {
+          void session.resume("auto").then((ok) => {
+            toast(ok ? "\u0110\xE3 t\u1EA3i l\u1EA1i v\xE1n ch\u01A1i" : "Ch\u01B0a c\xF3 b\u1EA3n l\u01B0u");
+            this.close();
+          });
+        } }),
+        fresh
+      )
+    );
+    let last = -1e9;
+    this.updaters.push(() => {
+      const now = performance.now();
+      if (!page.hidden && now - last > 2e3) {
+        last = now;
+        void refresh();
+      }
+    });
+    return page;
+  }
+  // ---------------------------------------------------------------- dev tools
+  devPage() {
+    const { sim: sim2, ctl: ctl2, toast } = { ...this.c, toast: this.c.toast }, page = h("div", { class: "page" });
+    const sel = () => [...ctl2.selected];
+    const btn = (text, fn, title = "") => h("button", { class: "sm", text, title, onclick: () => {
+      fn();
+      ctl2.onChange();
+      this.update();
+    } });
+    const row = (label, ...kids) => h("div", { class: "devrow" }, h("span", { text: label }), ...kids);
+    const toggle = (label, key, tip) => {
+      const b = h("button", { class: "sm", text: label, title: tip, pressed: sim2.dev[key], onclick: () => {
+        sim2.dev[key] = !sim2.dev[key];
+        b.setAttribute("aria-pressed", String(sim2.dev[key]));
+      } });
+      return b;
+    };
+    page.append(hint("Th\u1EED chi\u1EBFn \u0111\u1EA5u", 'B\u1EA5m "M\u1EDF h\u1EBFt \u0111\u1EC3 \u0111\xE1nh" tr\u01B0\u1EDBc: nh\xE0 c\u1EA5p cao nh\u1EA5t, m\u1ECDi nghi\xEAn c\u1EE9u, kho \u0111\u1EA7y, \u0111\u1ED3 trong kho. R\u1ED3i l\u1EADp qu\xE2n, d\u1EF1ng ph\xF2ng tuy\u1EBFn, \u0111\u01B0a cung th\u1EE7 l\xEAn ch\xF2i v\xE0 g\u1ECDi \u0111\u1ECBch t\u1EDBi. B\u1EADt "B\u1EA5t t\u1EED" n\u1EBFu ch\u1EC9 mu\u1ED1n xem \u0111\u1ECBch ph\xE1 h\xE0ng r\xE0o.'));
+    page.append(h(
+      "div",
+      { class: "devrow" },
+      btn("M\u1EDF h\u1EBFt \u0111\u1EC3 \u0111\xE1nh", () => {
+        combatReady(sim2);
+        toast("\u0110\xE3 m\u1EDF h\u1EBFt: nh\xE0, nghi\xEAn c\u1EE9u, kho, \u0111\u1ED3");
+      }, "Nh\xE0 c\u1EA5p cao nh\u1EA5t, m\u1ECDi nghi\xEAn c\u1EE9u, kho \u0111\u1EA7y, v\u0169 kh\xED trong kho, Nh\xE0 chung c\u1EA5p 4"),
+      btn("D\u1EF1ng ph\xF2ng tuy\u1EBFn", () => {
+        const n = defenseLine(sim2);
+        toast(n ? `\u0110\xE3 d\u1EF1ng ${n} \u0111o\u1EA1n r\xE0o, c\u1ED5ng v\xE0 ch\xF2i quanh l\xE0ng` : "Kh\xF4ng d\u1EF1ng \u0111\u01B0\u1EE3c (ch\u01B0a m\u1EDF h\u1EBFt?)");
+      }, "V\xF2ng r\xE0o c\xF3 c\u1ED5ng ph\xEDa nam v\xE0 hai ch\xF2i canh"),
+      btn("Cung th\u1EE7 l\xEAn ch\xF2i", () => toast(`${garrisonTowers(sim2)} cung th\u1EE7 l\xEAn ch\xF2i`)),
+      btn("M\u1EDF m\u1ECDi c\u1ED5ng", () => sim2.setGates(true)),
+      btn("\u0110\xF3ng m\u1ECDi c\u1ED5ng", () => sim2.setGates(false))
+    ));
+    page.append(h("p", { class: "sub", text: "Chi\u1EBFn l\u01B0\u1EE3c (L\u1EC1u h\u1ECDp chi\u1EBFn, tab Chi\u1EBFn):" }));
+    page.append(h(
+      "div",
+      { class: "devrow" },
+      btn("B\u1EA3n \u0111\u1ED3 c\u1EA5p 3 m\u1ECDi l\xE0ng", () => giveMaps(sim2, 3)),
+      btn("L\u1EADp 3 \u0111\u1ED9i m\u1EABu", () => {
+        formSquads(sim2);
+        toast("Ba \u0111\u1ED9i \u0111\xE3 l\u1EADp: gi\xE1o binh, cung th\u1EE7, xung k\xEDch");
+      }),
+      btn("K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng m\u1EABu", () => {
+        const p = sampleAttack(sim2);
+        toast(p ? "\u0110\xE3 so\u1EA1n k\u1EBF ho\u1EA1ch m\u1EABu: m\u1EDF tab Chi\u1EBFn \u2192 K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng" : "L\u1EADp \u0111\u1ED9i m\u1EABu tr\u01B0\u1EDBc");
+      }),
+      btn("K\u1EBF ho\u1EA1ch ph\xF2ng th\u1EE7 m\u1EABu", () => {
+        const p = sampleDefense(sim2);
+        toast(p ? "\u0110\xE3 so\u1EA1n m\u1EABu ph\xF2ng th\u1EE7" : "L\u1EADp \u0111\u1ED9i m\u1EABu tr\u01B0\u1EDBc");
+      }),
+      btn("B\u1EAFt \u0111\u1EA7u k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng", () => {
+        const p = sim2.plans.find((x) => x.kind === "attack");
+        toast(p ? sim2.startPlan(p) ?? "K\u1EBF ho\u1EA1ch b\u1EAFt \u0111\u1EA7u" : "Ch\u01B0a c\xF3 k\u1EBF ho\u1EA1ch");
+      }),
+      btn("\u0110\xE1nh tr\u1ED1ng b\xE1o \u0111\u1ED9ng", () => {
+        const e = sim2.soundAlarm();
+        if (e) toast(e);
+      })
+    ));
+    page.append(h("p", { class: "sub", text: "L\u1EADp qu\xE2n (tuy\u1EC3n v\xE0 ph\xE1t \u0111\u1ED3 ngay):" }));
+    for (const n of [4, 12]) page.append(h("div", { class: "devrow" }, ...Object.keys(DEV_KITS).map((k) => btn(`+${n} ${DEV_KITS[k].name}`, () => {
+      raiseArmy(sim2, k, n);
+    }))));
+    page.append(h("p", { class: "sub", text: "\u0110\u1ECBch t\u1EDBi (R\xECu \u0110\xE1):" }));
+    const wave = (label, weapons) => btn(label, () => {
+      const e = enemyWave(sim2, "axe", weapons);
+      if (e) toast(e);
+    });
+    page.append(h(
+      "div",
+      { class: "devrow" },
+      wave("6 b\u1ED9 binh", times(6, "club")),
+      wave("6 gi\xE1o", times(6, "spear")),
+      wave("6 cung th\u1EE7", [...times(3, "bow"), ...times(3, "sling")]),
+      wave("12 h\u1ED7n h\u1EE3p", [...times(4, "club"), ...times(4, "spear"), ...times(4, "bow")]),
+      wave("24 h\u1ED7n h\u1EE3p", [...times(8, "club"), ...times(8, "spear"), ...times(8, "bow")])
+    ));
+    page.append(h("div", { class: "devrow" }, btn("H\u1ED3i \u0111\u1EA7y l\xEDnh", () => heal(sim2, sim2.villagers.filter((v) => v.job === "fight").map((v) => v.id))), btn("X\xF3a h\u1EBFt \u0111\u1ECBch", () => {
+      for (const f of [...sim2.foes].filter((u) => u.ai?.role === "raider")) sim2.killFoe(f);
+    })));
+    page.append(hint("T\xE0i nguy\xEAn", "C\xF4ng c\u1EE5 dev \u0111\u1EC3 th\u1EED game nhanh, kh\xF4ng d\xF9ng khi ch\u01A1i th\u1EADt."));
+    for (const res of RES_LIST) page.append(row(RES_NAME[res], btn("\u221210", () => addStock(sim2, res, -10)), btn("+10", () => addStock(sim2, res, 10)), btn("+50", () => addStock(sim2, res, 50)), btn("+200", () => addStock(sim2, res, 200))));
+    page.append(row("Kho", btn("\u0110\u1EA7y kho", () => fillStock(sim2))), h(
+      "div",
+      { class: "devrow" },
+      toggle("X\xE2y mi\u1EC5n ph\xED", "freeBuild", "Kh\xF4ng t\u1ED1n v\u1EADt li\u1EC7u khi x\xE2y v\xE0 n\xE2ng c\u1EA5p"),
+      toggle("X\xE2y t\u1EE9c th\xEC", "instantBuild", "C\xF4ng tr\xECnh xong ngay"),
+      toggle("B\u1EA5t t\u1EED", "god", "D\xE2n kh\xF4ng nh\u1EADn s\xE1t th\u01B0\u01A1ng"),
+      toggle("Kh\xF4ng \u0111\xF3i", "noHunger", "D\xE2n kh\xF4ng b\u1ECB \u0111\xF3i"),
+      toggle("Kh\xF4ng m\u1EC7t", "noTire", "S\u1EE9c c\u1EE7a d\xE2n kh\xF4ng t\u1EE5t khi l\xE0m vi\u1EC7c"),
+      toggle("L\xE0m vi\u1EC7c nhanh \xD725", "fastWorks", "Nghi\xEAn c\u1EE9u, ch\u1EBF t\u1EA1o, s\u1EEDa ch\u1EEFa nhanh g\u1EA5p 25 l\u1EA7n")
+    ), h("div", { class: "devrow" }, btn("Kh\xE1m ph\xE1 to\xE0n b\u1EA3n \u0111\u1ED3", () => revealMap(sim2))));
+    const rsec = h("div", {}, h("h3", { text: "Nghi\xEAn c\u1EE9u" }), h("div", { class: "devrow" }, btn("M\u1EDF h\u1EBFt nghi\xEAn c\u1EE9u", () => unlockResearch(sim2), "M\u1ECDi c\xF4ng th\u1EE9c v\xE0 c\u1EA5p c\xF4ng tr\xECnh"), btn("Kh\xF3a l\u1EA1i h\u1EBFt", () => resetResearch(sim2))));
+    page.append(rsec);
+    this.updaters.push(() => {
+      rsec.hidden = !RESEARCH.enabled;
+    });
+    page.append(hint("Nh\xE0 v\xE0 lu\u1ED3ng ch\u1EBF t\u1EA1o", 'Th\u1EED lu\u1ED3ng: m\u1EDF h\u1EBFt nghi\xEAn c\u1EE9u ho\u1EB7c d\u1EF1ng s\u1EB5n nh\xE0 \u2192 b\u1EADt "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 "t\u1EF1 \u0111\u1EB7t h\xE0ng" \u2192 l\xE0m h\u1ECFng c\xF4ng c\u1EE5 d\xE2n \u0111ang ch\u1ECDn \u2192 xem h\u1ECD t\u1EDBi Kho, Nh\xE0 ch\u1EBF t\u1EA1o, Nh\xE0 s\u1EEDa ch\u1EEFa.'));
+    page.append(h("div", { class: "devrow" }, btn("D\u1EF1ng s\u1EB5n m\u1ECDi nh\xE0", () => buildAll(sim2), "X\xE2y xong ngay c\xE1c nh\xE0 c\xF2n thi\u1EBFu, b\u1ECF qua nghi\xEAn c\u1EE9u"), btn("N\xE2ng m\u1ECDi nh\xE0 t\u1ED1i \u0111a", () => maxBuildings(sim2)), btn("X\u1EBFp ng\u01B0\u1EDDi v\xE0o c\xE1c nh\xE0", () => staffAll(sim2), "M\u1ED7i nh\xE0 \u0111\u1EA7y ng\u01B0\u1EDDi l\xE0m vi\u1EC7c ph\xF9 h\u1EE3p nh\u1EA5t")));
+    page.append(h("div", { class: "devrow" }, btn("L\xE0m h\u1ECFng c\xF4ng c\u1EE5 c\u1EE7a d\xE2n ch\u1ECDn", () => wearTools(sim2, sel(), 0)), btn("M\xF2n c\xF2n 50%", () => wearTools(sim2, sel(), 0.5)), btn("Thu h\u1EBFt c\xF4ng c\u1EE5", () => {
+      for (const k of TOOL_KINDS) sim2.giveTool(sel(), k, 0);
+    })));
+    page.append(h("h3", { text: "C\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p" }));
+    page.append(row("Kho \u0111\u1ED3", btn("+3 m\u1ED7i lo\u1EA1i v\xE0o kho", () => stockWorkshop(sim2, 3), "C\xF4ng c\u1EE5, v\u0169 kh\xED v\xE0 gi\xE1p c\xF3 s\u1EB5n trong kho")));
+    const tools = h("div", { class: "devrow" });
+    for (const k of TOOL_KINDS) for (const tier of [1, 2]) tools.append(btn(`${TOOL_NAME[k]} ${TIER_NAME[tier].toLowerCase()}`, () => sim2.giveTool(sel(), k, tier), "C\u1EA5p cho d\xE2n \u0111ang ch\u1ECDn"));
+    tools.append(btn("Thu c\xF4ng c\u1EE5", () => {
+      for (const k of TOOL_KINDS) sim2.giveTool(sel(), k, 0);
+    }));
+    page.append(h("p", { class: "sub", text: "Cho d\xE2n \u0111ang ch\u1ECDn:" }), tools);
+    const gear = h("div", { class: "devrow" });
+    for (const id of Object.keys(WEAPONS)) if (id !== "fist") gear.append(btn(WEAPONS[id].name, () => sim2.giveGear(sel(), id, "weapon")));
+    gear.append(btn("Tay kh\xF4ng", () => sim2.giveGear(sel(), null, "weapon")), btn("\xC1o da", () => sim2.giveGear(sel(), "hide", "armor")), btn("B\u1ECF gi\xE1p", () => sim2.giveGear(sel(), null, "armor")));
+    page.append(gear);
+    page.append(h("h3", { text: "D\xE2n \u0111ang ch\u1ECDn" }));
+    const who = h("p", { class: "sub" });
+    page.append(who);
+    const statVals = /* @__PURE__ */ new Map();
+    for (const k of Object.keys(STAT_NAME)) {
+      const v = h("b", { text: "\u2013" });
+      statVals.set(k, v);
+      page.append(row(STAT_NAME[k], btn("\u2212", () => bumpStat(sim2, sel(), k, -1)), v, btn("+", () => bumpStat(sim2, sel(), k, 1))));
+    }
+    page.append(h(
+      "div",
+      { class: "devrow" },
+      btn("H\u1ED3i \u0111\u1EA7y m\xE1u, no", () => heal(sim2, sel())),
+      btn("Tinh th\u1EA7n 100", () => eachSelected(sim2, sel(), (v) => {
+        v.morale = 100;
+      })),
+      btn("Tinh th\u1EA7n 5", () => eachSelected(sim2, sel(), (v) => {
+        v.morale = 5;
+      })),
+      btn("Ng\xE3 xu\u1ED1ng", () => {
+        for (const id of sel()) sim2.hurt({ kind: "unit", id }, 9999, "crush", { x: 0, y: 0 }, {});
+      }),
+      btn("X\xF3a d\xE2n", () => eachSelected(sim2, sel(), (v) => sim2.killUnit(v, "(dev)")))
+    ));
+    page.append(h("div", { class: "devrow" }, btn("+1 d\xE2n", () => addVillagers(sim2, 1)), btn("+5 d\xE2n", () => addVillagers(sim2, 5))));
+    this.updaters.push(() => {
+      const v = sel().map((id) => sim2.get(id)).find((u) => u && u.team === "player");
+      who.textContent = v ? `${v.name}${ctl2.selected.size > 1 ? ` (v\xE0 ${ctl2.selected.size - 1} ng\u01B0\u1EDDi kh\xE1c, ch\u1EC9 s\u1ED1 hi\u1EC7n c\u1EE7a ng\u01B0\u1EDDi \u0111\u1EA7u ti\xEAn)` : ""}` : "Ch\u01B0a ch\u1ECDn d\xE2n n\xE0o.";
+      for (const [k, el2] of statVals) el2.textContent = v ? String(v.stats[k]) : "\u2013";
+    });
+    page.append(h("h3", { text: "Th\u1EDDi gian v\xE0 th\u1EDDi ti\u1EBFt" }));
+    page.append(h("div", { class: "devrow" }, btn("S\xE1ng", () => setTimeOfDay(sim2, 0.3)), btn("Tr\u01B0a", () => setTimeOfDay(sim2, 0.5)), btn("Chi\u1EC1u", () => setTimeOfDay(sim2, 0.78)), btn("\u0110\xEAm", () => setTimeOfDay(sim2, 0.95)), btn("+1 ng\xE0y", () => skipDays(sim2, 1)), btn("+5 ng\xE0y", () => skipDays(sim2, 5))));
+    page.append(h("div", { class: "devrow" }, ...SEASONS.map((s) => btn(SEASON_NAME[s], () => setSeason(sim2, s)))));
+    page.append(h("div", { class: "devrow" }, ...Object.keys(WEATHER).map((k) => btn(WEATHER[k].name, () => setWeather(sim2, k)))));
+    page.append(h("h3", { text: "S\u1EF1 ki\u1EC7n, th\xFA, b\u1ED9 t\u1ED9c" }));
+    page.append(h("div", { class: "devrow" }, btn("S\xF3i \xD74 t\u1EDBi", () => wolvesNow(sim2, 4)), btn("S\xF3i \xD78 t\u1EDBi", () => wolvesNow(sim2, 8)), btn("X\xF3a h\u1EBFt th\xFA", () => clearAnimals(sim2))));
+    page.append(h("div", { class: "devrow" }, ...DEV_SPECIES.map((s) => btn(`+3 ${s}`, () => {
+      const c = this.center();
+      spawnAt(sim2, s, c.x, c.y, 3);
+    }, "Sinh th\xFA \u1EDF gi\u1EEFa m\xE0n h\xECnh"))));
+    for (const id of DEV_TRIBES) {
+      const t = sim2.tribes.find((x) => x.id === id);
+      if (!t) continue;
+      page.append(row(
+        t.def.name.slice(0, 9),
+        btn("T\u1EADp k\xEDch", () => {
+          const e = raidNow(sim2, id, 10);
+          if (e) toast(e);
+        }),
+        btn("\u0110\u1EA7u h\xE0ng", () => surrenderNow(sim2, id)),
+        btn("Quan h\u1EC7 \u221220", () => bumpRelation(sim2, id, -20)),
+        btn("+20", () => bumpRelation(sim2, id, 20)),
+        btn("T\u1EDBi tr\u1EA1i", () => {
+          ctl2.centerOn(t.camp.x * TILE, t.camp.y * TILE);
+          this.close();
+        })
+      ));
+    }
+    return page;
+  }
+  // ---------------------------------------------------------------- controls
+  helpPage() {
+    return h(
+      "ul",
+      { class: "help" },
+      h("li", {}, h("b", { text: "Ch\u1ECDn d\xE2n" }), ': b\u1EA5m v\xE0o d\xE2n. B\u1EA5m \u0111\xFAp \u0111\u1EC3 ch\u1ECDn m\u1ECDi d\xE2n c\xF9ng ngh\u1EC1 \u0111ang hi\u1EC7n tr\xEAn m\xE0n h\xECnh. "Ch\u1ECDn nhi\u1EC1u" \u0111\u1EC3 b\u1EA5m t\u1EEBng ng\u01B0\u1EDDi ho\u1EB7c k\xE9o khung; "Ch\u1ECDn h\u1EBFt" ch\u1ECDn c\u1EA3 l\xE0ng.'),
+      h("li", {}, h("b", { text: "Ra l\u1EC7nh" }), ": m\xE1y t\xEDnh: chu\u1ED9t ph\u1EA3i. \u0110i\u1EC7n tho\u1EA1i: khi \u0111\xE3 ch\u1ECDn d\xE2n, ch\u1EA1m l\xEAn \u0111\u1EA5t, c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3, c\xF4ng tr\u01B0\u1EDDng hay k\u1EBB \u0111\u1ECBch. Gi\u1EEF Shift (m\xE1y t\xEDnh) \u0111\u1EC3 x\u1EBFp l\u1EC7nh n\u1ED1i nhau."),
+      h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: hai ng\xF3n tay; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
+      h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
+      h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EC3 v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EC3 l\xE0m \u0111\u1ED3, Nh\xE0 s\u1EEDa ch\u1EEFa \u0111\u1EC3 m\xE0i l\u1EA1i c\xF4ng c\u1EE5. M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y m\u1ED9t c\xE1i r\u1ED3i n\xE2ng c\u1EA5p (\u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u). D\xE2n v\xE0o l\xE0m b\xEAn trong nh\xE0 (hi\u1EC7n th\xE0nh danh s\xE1ch t\xEAn v\xE0 Tr\xED tu\u1EC7, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3): nh\xE0 c\u1EA5p cao ch\u1EE9a th\xEAm ng\u01B0\u1EDDi, ng\u01B0\u1EDDi th\xF4ng minh nghi\xEAn c\u1EE9u nhanh h\u01A1n. L\xFAc \u0111\u1EA7u b\u1EA1n t\u1EF1 ph\xE1t c\xF4ng c\u1EE5 v\xE0 t\u1EF1 \u0111\u01B0a \u0111i s\u1EEDa; nghi\xEAn c\u1EE9u Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, t\u1EF1 l\u1EA5y \u0111\u1ED3 v\xE0 t\u1EF1 \u0111\u1EB7t h\xE0ng th\xEC d\xE2n t\u1EF1 lo. Ti\u1EC1n (v\u1ECF s\xF2) tr\u1EA3 cho nghi\xEAn c\u1EE9u, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m ho\u1EB7c \u0111\u1ED5i h\xE0ng \u1EDF Kho. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
+      h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), `: d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng ${gameDays(30)}; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh ${gameDays(3)} s\u1EBD k\xE9o h\u1ECD d\u1EADy.`),
+      h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), `: t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD ${gameDays(30)} ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p.`),
+      h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
+    );
+  }
+};
+
+// src/ui/minimap.ts
+var TERRAIN = {
+  [Tile.Grass]: [134, 163, 85],
+  [Tile.Water]: [63, 111, 154],
+  [Tile.Tree]: [47, 82, 34],
+  [Tile.Rock]: [120, 125, 128],
+  [Tile.Mud]: [122, 100, 66],
+  [Tile.Bush]: [150, 70, 60]
+};
+var MapView = class {
+  constructor(sim2, cam2, r, ctl2, mini, big, overlay) {
+    this.sim = sim2;
+    this.cam = cam2;
+    this.r = r;
+    this.ctl = ctl2;
+    this.mini = mini;
+    this.big = big;
+    this.overlay = overlay;
+    this.base = document.createElement("canvas");
+    this.ver = -1;
+    this.builds = -1;
+    this.frame = 0;
+    this.N = sim2.world.size;
+    this.base.width = this.base.height = mini.width = mini.height = big.width = big.height = this.N;
+    this.bctx = this.base.getContext("2d");
+    mini.addEventListener("click", () => this.open());
+    big.addEventListener("click", (e) => {
+      const b = big.getBoundingClientRect();
+      ctl2.centerOn((e.clientX - b.left) / b.width * this.N * TILE, (e.clientY - b.top) / b.height * this.N * TILE);
+      this.close();
+    });
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) this.close();
+    });
+  }
+  get isOpen() {
+    return !this.overlay.hidden;
+  }
+  open() {
+    this.overlay.hidden = false;
+  }
+  close() {
+    this.overlay.hidden = true;
+  }
+  redrawBase() {
+    const { sim: sim2, N } = this;
+    if (sim2.fog.version === this.ver && sim2.buildings.length === this.builds) return;
+    this.ver = sim2.fog.version;
+    this.builds = sim2.buildings.length;
+    const img = this.bctx.createImageData(N, N), s = sim2.fog.state;
+    for (let i = 0; i < N * N; i++) {
+      const c = sim2.world.occ[i] ? [200, 150, 80] : TERRAIN[sim2.world.tiles[i]], k = s[i] === 2 ? 1 : s[i] === 1 ? 0.55 : 0;
+      img.data[i * 4] = c[0] * k + 8 * (1 - k);
+      img.data[i * 4 + 1] = c[1] * k + 10 * (1 - k);
+      img.data[i * 4 + 2] = c[2] * k + 20 * (1 - k);
+      img.data[i * 4 + 3] = 255;
+    }
+    this.bctx.putImageData(img, 0, 0);
+  }
+  paint(ctx2, dot) {
+    const { sim: sim2, N } = this, seen = (x2, y2) => sim2.fog.state[Math.floor(y2) * N + Math.floor(x2)] === 2;
+    ctx2.drawImage(this.base, 0, 0);
+    for (const t of sim2.tribes) {
+      if (t.state === "adopted" || sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] === 0) continue;
+      ctx2.fillStyle = t.state === "destroyed" ? "#555" : t.state === "free" ? sim2.tribeHostile(t.id) ? "#e0452a" : "#e0a22a" : "#6fc06f";
+      ctx2.fillRect(t.camp.x - dot, t.camp.y - dot, dot * 2, dot * 2);
+    }
+    ctx2.fillStyle = "#ffffff";
+    for (const v of sim2.villagers) if (v.inside === null) ctx2.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
+    ctx2.fillStyle = "#ff5a4a";
+    for (const f of sim2.foes) if (seen(f.x, f.y)) ctx2.fillRect(f.x - dot / 2, f.y - dot / 2, dot, dot);
+    for (const a of sim2.animals) if (a.state !== "dead" && seen(a.x, a.y)) {
+      ctx2.fillStyle = a.species === "wolf" ? "#ff5a4a" : "#e8d4a8";
+      ctx2.fillRect(a.x - dot / 3, a.y - dot / 3, dot * 0.7, dot * 0.7);
+    }
+    const z = this.cam.zoom, x = this.cam.x / TILE, y = this.cam.y / TILE, w = this.r.w / z / TILE, h2 = this.r.h / z / TILE;
+    ctx2.strokeStyle = "#ffffff";
+    ctx2.lineWidth = Math.max(1, dot / 2);
+    ctx2.strokeRect(x, y, w, h2);
+  }
+  draw() {
+    this.frame++;
+    if (this.isOpen) {
+      this.redrawBase();
+      this.paint(this.big.getContext("2d"), 2.2);
+      return;
+    }
+    if (this.frame % 3) return;
+    this.redrawBase();
+    this.paint(this.mini.getContext("2d"), 3);
+  }
+};
+
+// src/ui/buildbar.ts
+var OPEN_LABEL = {
+  campfire: "Xem d\xE2n",
+  builder: "Th\u1EE3 x\xE2y",
+  storage: "Kho",
+  workshop: "Ch\u1EBF t\u1EA1o",
+  lab: "Nghi\xEAn c\u1EE9u",
+  repair: "S\u1EEDa \u0111\u1ED3",
+  toolstore: "Kho c\xF4ng c\u1EE5",
+  armory: "Kho v\u0169 kh\xED",
+  barracks: "Ng\u01B0\u1EDDi trong l\u1EC1u",
+  house: "Ng\u01B0\u1EDDi trong nh\xE0",
+  field: "Ng\u01B0\u1EDDi l\xE0m ru\u1ED9ng",
+  fence: "H\xE0ng r\xE0o",
+  gate: "C\u1ED5ng",
+  tower: "Cung th\u1EE7 canh",
+  wartent: "M\u1EDF L\u1EC1u h\u1ECDp chi\u1EBFn",
+  drill: "Xem b\xE3i t\u1EADp",
+  trap: "H\u1ED1 ch\xF4ng"
+};
+var Confirm = class {
+  constructor(root, c) {
+    this.root = root;
+    this.c = c;
+    window.addEventListener("keydown", (e) => {
+      if (!root.hidden && e.key === "Escape") {
+        e.stopImmediatePropagation();
+        this.close();
+      }
+    }, true);
+    root.addEventListener("click", (e) => {
+      if (e.target === root) this.close();
+    });
+  }
+  close() {
+    this.root.hidden = true;
+    this.root.replaceChildren();
+  }
+  ask(a) {
+    const { sim: sim2 } = this.c;
+    const rows = a.cost ? Object.keys(a.cost).filter((r) => (a.cost[r] ?? 0) > 0) : [];
+    const ok = h("button", { class: `primary${a.danger ? " danger" : ""}`, text: a.ok, disabled: !!a.why, onclick: () => {
+      this.close();
+      a.onOk();
+    } });
+    const card = h(
+      "div",
+      { class: "card", role: "dialog", "aria-modal": "true", "aria-label": a.title },
+      h("h3", { text: a.title }),
+      ...(a.lines ?? []).map((t) => h("p", { class: "sub", text: t })),
+      rows.length ? h("div", { class: "costs" }, h("b", { text: a.costTitle ?? "C\u1EA7n" }), ...rows.map((r) => {
+        const need = a.cost[r] ?? 0, have = Math.floor(sim2.stock[r]), short = have < need;
+        return h("div", { class: short ? "short" : "" }, h("span", { text: RES_NAME[r] }), h("span", { text: `${need} (c\xF3 ${have})` }));
+      })) : null,
+      a.why ? h("p", { class: "why", text: a.why }) : null,
+      h("div", { class: "btns" }, h("button", { text: "H\u1EE7y", onclick: () => this.close() }), ok)
+    );
+    this.root.replaceChildren(card);
+    this.root.hidden = false;
+    ok.focus();
+  }
+};
+var BuildingBar = class {
+  constructor(root, c, r, confirm) {
+    this.root = root;
+    this.c = c;
+    this.r = r;
+    this.confirm = confirm;
+    this.who = h("div", { class: "who" });
+    this.open = h("button", { class: "sm primary" });
+    this.gate = h("button", { class: "sm primary" });
+    this.upgrade = h("button", { class: "sm", text: "N\xE2ng c\u1EA5p" });
+    this.move = h("button", { class: "sm", text: "D\u1EDDi" });
+    this.demolish = h("button", { class: "sm danger", text: "Ph\xE1 b\u1ECF" });
+    this.id = null;
+    this.width = 0;
+    this.height = 0;
+    const { ctl: ctl2 } = c;
+    root.append(this.who, h("div", { class: "btns" }, this.open, this.gate, this.upgrade, this.move, this.demolish));
+    this.open.addEventListener("click", () => {
+      if (this.id !== null) ctl2.selectBuilding(this.id, true);
+    });
+    this.gate.addEventListener("click", () => {
+      const b = this.cur();
+      if (b) {
+        const e = c.sim.toggleGate(b.id);
+        if (e) c.toast(e);
+        ctl2.onChange();
+      }
+    });
+    this.upgrade.addEventListener("click", () => {
+      const b = this.cur();
+      if (b) this.askUpgrade(b);
+    });
+    this.move.addEventListener("click", () => {
+      const b = this.cur();
+      if (b) ctl2.startMoving(b.id);
+    });
+    this.demolish.addEventListener("click", () => {
+      const b = this.cur();
+      if (b) this.askDemolish(b);
+    });
+  }
+  cur() {
+    return this.id === null ? void 0 : this.c.sim.getBuilding(this.id);
+  }
+  askUpgrade(b) {
+    const { sim: sim2, ctl: ctl2, toast } = this.c, def = BUILDINGS[b.kind], nx = levelDef(b, b.level + 1);
+    const gain = b.kind === "campfire" ? `kho ch\u1EE9a ${nx.cap} m\u1ED7i lo\u1EA1i, ${POP_BY_FIRE[b.level]} d\xE2n, c\xE1c nh\xE0 kh\xE1c l\xEAn \u0111\u01B0\u1EE3c c\u1EA5p ${levelCapByFire(b.level + 1)}` : b.kind === "storage" ? `ch\u1EE9a ${nx.cap} m\u1ED7i lo\u1EA1i` : b.kind === "toolstore" || b.kind === "armory" ? `ch\u1EE9a ${nx.cap} m\xF3n` : b.kind === "house" || b.kind === "barracks" ? `${nx.slots} gi\u01B0\u1EDDng, h\u1ED3i s\u1EE9c \xD7${nx.craftSpeed.toLocaleString("vi")}` : b.kind === "field" ? `n\u0103ng su\u1EA5t \xD7${nx.craftSpeed.toLocaleString("vi")}` : `ch\u1EE9a ${nx.slots} ng\u01B0\u1EDDi, t\u1ED1c \u0111\u1ED9 \xD7${nx.craftSpeed.toLocaleString("vi")}`;
+    this.confirm.ask({
+      title: `N\xE2ng ${def.name} l\xEAn c\u1EA5p ${b.level + 1}?`,
+      lines: [`${nx.name}: ${gain}. V\u1EADt li\u1EC7u tr\u1EA3 ngay, r\u1ED3i giao Th\u1EE3 x\xE2y \u0111\u1EC3 l\xE0m (~${workDays(nx.buildTime)}).${sim2.dev.freeBuild ? " \u0110ang b\u1EADt x\xE2y mi\u1EC5n ph\xED." : ""}`],
+      cost: sim2.dev.freeBuild ? {} : nx.cost,
+      costTitle: "V\u1EADt li\u1EC7u c\u1EA7n",
+      why: sim2.canUpgrade(b),
+      ok: "N\xE2ng c\u1EA5p",
+      onOk: () => {
+        const e = sim2.upgradeBuilding(b.id);
+        toast(e ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u. Giao Th\u1EE3 x\xE2y \u0111\u1EC3 n\xE2ng c\u1EA5p");
+        ctl2.onChange();
+      }
+    });
+  }
+  askDemolish(b) {
+    const { sim: sim2, ctl: ctl2, toast } = this.c, def = BUILDINGS[b.kind], back = sim2.salvage(b), has = Object.keys(back).length > 0;
+    this.confirm.ask({
+      title: `Ph\xE1 ${def.name}?`,
+      lines: [has ? `Thu l\u1EA1i: ${costText(back, RES_NAME)}.` : "Kh\xF4ng thu l\u1EA1i \u0111\u01B0\u1EE3c g\xEC.", ...b.staff.length || sim2.sleepers(b).length ? ["D\xE2n \u0111ang \u1EDF b\xEAn trong s\u1EBD ra ngo\xE0i."] : []],
+      ok: "Ph\xE1 b\u1ECF",
+      danger: true,
+      onOk: () => {
+        const e = sim2.demolishBuilding(b.id);
+        toast(e ?? "\u0110\xE3 ph\xE1 b\u1ECF c\xF4ng tr\xECnh");
+        if (!e) ctl2.closeBuilding();
+        else ctl2.onChange();
+      }
+    });
+  }
+  /** Refresh what the buttons say and which ones show. */
+  update() {
+    const { sim: sim2, ctl: ctl2 } = this.c, b = ctl2.selectedBuilding === null ? void 0 : sim2.getBuilding(ctl2.selectedBuilding);
+    const show = !!b && !ctl2.buildingOpen && !ctl2.placing;
+    this.root.hidden = !show;
+    if (!b || !show) {
+      this.id = null;
+      return;
+    }
+    this.id = b.id;
+    const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv2 = levelDef(b);
+    const state = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%` : canGrow(b.kind) ? `c\u1EA5p ${b.level}/${top} \xB7 ${lv2.name.toLowerCase()}` : lv2.name.toLowerCase();
+    this.who.replaceChildren(h("b", { text: def.name }), ` \xB7 ${state}${b.done && lv2.hp ? ` \xB7 b\u1EC1n ${Math.max(0, Math.round(b.hp))}/${lv2.hp}` : ""}`);
+    this.open.textContent = OPEN_LABEL[b.kind];
+    this.open.hidden = !b.done || b.kind === "fence" || b.kind === "gate";
+    this.gate.hidden = !(b.kind === "gate" && b.done);
+    this.gate.textContent = b.open ? "\u0110\xF3ng c\u1ED5ng" : "M\u1EDF c\u1ED5ng";
+    this.upgrade.hidden = !(canGrow(b.kind) && b.done && !b.upgrading && b.level < top);
+    this.move.hidden = this.demolish.hidden = !def.buildable;
+    const fee = sim2.moveFee(b);
+    this.move.textContent = Object.keys(fee).length ? `D\u1EDDi (${costText(fee, RES_NAME)})` : "D\u1EDDi";
+    this.width = this.root.offsetWidth;
+    this.height = this.root.offsetHeight;
+  }
+  /** Keep the bar under its building as the map moves; called every frame. */
+  place() {
+    const b = this.cur();
+    if (this.root.hidden || !b) return;
+    const d = BUILDINGS[b.kind], p = this.r.worldToScreen((b.x + d.w / 2) * TILE, (b.y + d.h) * TILE);
+    const w = this.width || this.root.offsetWidth, hh = this.height || this.root.offsetHeight;
+    const gone = p.x < -40 || p.x > this.r.w + 40 || p.y < -hh - 120 || p.y > this.r.h + 40;
+    this.root.style.visibility = gone ? "hidden" : "visible";
+    const x = Math.max(4, Math.min(this.r.w - w - 4, p.x - w / 2)), y = Math.max((parseInt(document.documentElement.style.getPropertyValue("--top-h")) || 40) + 8, Math.min(this.r.h - hh - 4, p.y + 8));
+    this.root.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+  }
+};
+
+// src/ui/describe.ts
+var armorLevel = (a) => (a.pierce + a.slash + a.crush) / 3;
+var ARMOR_FULL = 0.5;
+var pct = (x) => `${Math.round(x * 100)}%`;
+var armorText = (a, named = true) => `${named ? `${a.name}: ` : ""}gi\u1EA3m s\xE1t th\u01B0\u01A1ng \u0111\xE2m ${pct(a.pierce)} \xB7 ch\xE9m ${pct(a.slash)} \xB7 \u0111\u1EADp ${pct(a.crush)}`;
+var PLAIN_JOBS = ["idle", "wood", "stone", "food", "hunt"];
+var stars = (n) => "\u2605".repeat(n) + "\u2606".repeat(3 - n);
+function waitReason(v, sim2) {
+  const j = v.job;
+  if (j === "build") return sim2.buildings.some(needsWork) ? null : "ch\u1EDD: ch\u01B0a c\xF3 c\xF4ng tr\u01B0\u1EDDng n\xE0o c\u1EA7n x\xE2y";
+  if (j === "wood" || j === "stone" || j === "food") {
+    const res = JOBS[j].res;
+    if (!v.carry && sim2.stock[res] >= sim2.capacity(res)) return `ch\u1EDD: kho \u0111\u1EA7y ${RES_NAME[res].toLowerCase()}, h\xE3y n\xE2ng c\u1EA5p Kho`;
+    return "ch\u1EDD: ch\u01B0a th\u1EA5y ngu\u1ED3n n\xE0o g\u1EA7n \u0111\xF3, h\xE3y kh\xE1m ph\xE1 th\xEAm";
+  }
+  return null;
+}
+function describe(v, sim2) {
+  const carry = v.carry && v.carry.amount > 0 ? ` \xB7 mang ${v.carry.amount} ${RES_NAME[v.carry.res].toLowerCase()}` : "";
+  let t;
+  switch (v.phase) {
+    case "move":
+      t = "\u0111ang \u0111i";
+      break;
+    case "goNode":
+      t = "\u0111i t\u1EDBi ngu\u1ED3n";
+      break;
+    case "work":
+      t = v.job !== "idle" ? JOB_NAME[v.job].toLowerCase() : "r\u1EA3nh";
+      break;
+    case "goStore":
+      t = "mang v\u1EC1 kho";
+      break;
+    case "goSite":
+      t = "\u0111i t\u1EDBi c\xF4ng tr\u01B0\u1EDDng";
+      break;
+    case "build":
+      t = "\u0111ang x\xE2y";
+      break;
+    case "goStaff":
+      t = "\u0111i v\xE0o nh\xE0 l\xE0m vi\u1EC7c";
+      break;
+    case "inside":
+      t = v.job === "food" ? "\u0111ang l\xE0m ru\u1ED9ng" : `\u0111ang ${JOBS[v.job].name.toLowerCase()} trong nh\xE0`;
+      break;
+    case "goOrder":
+      t = v.order?.startsWith("repair") ? "\u0111em \u0111\u1ED3 h\u1ECFng \u0111i s\u1EEDa" : "\u0111i \u0111\u1EB7t ch\u1EBF t\u1EA1o";
+      break;
+    case "goEquip":
+      t = "\u0111i l\u1EA5y \u0111\u1ED3 \u1EDF kho";
+      break;
+    case "wait":
+      t = sim2 && waitReason(v, sim2) || "ch\u1EDD vi\u1EC7c";
+      break;
+    case "goHome": {
+      const bed = sim2 && v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
+      t = bed ? `\u0111i v\xE0o ${BUILDINGS[bed.kind].name.toLowerCase()} ng\u1EE7` : "v\u1EC1 l\u1EEDa tr\u1EA1i ng\u1EE7";
+      break;
+    }
+    case "sleep": {
+      const bed = sim2 && v.inside !== null ? sim2.getBuilding(v.inside) : void 0, where = bed ? ` trong ${BUILDINGS[bed.kind].name.toLowerCase()}` : "";
+      t = sim2 && sim2.sleepLocked(v) ? `ng\u1EE7 say${where} (h\u1ED3i s\u1EE9c ${Math.round(v.energy)}/${v.lockUntil}%)` : `\u0111ang ng\u1EE7${where}`;
+      break;
+    }
+    case "fight":
+      t = "\u0111ang chi\u1EBFn \u0111\u1EA5u";
+      break;
+    case "flee":
+      t = "\u0111ang b\u1ECF ch\u1EA1y";
+      break;
+    case "down":
+      t = `b\u1ECB th\u01B0\u01A1ng, c\xF2n ${gameDays(v.down)}`;
+      break;
+    case "goCarcass":
+      t = "\u0111i l\u1ED9t da";
+      break;
+    case "skin":
+      t = "\u0111ang l\u1ED9t da";
+      break;
+    case "rescue":
+      t = "ch\u1EA1y \u0111i c\u1EE9u b\u1EA1n";
+      break;
+    default:
+      t = v.job === "idle" ? "r\u1EA3nh" : v.job === "fight" ? "canh g\xE1c" : "ch\u1EDD vi\u1EC7c";
+  }
+  return t + carry;
+}
+var SHIFT_LABEL = { day: "Ban ng\xE0y", night: "Ban \u0111\xEAm", both: "C\u1EA3 ng\xE0y l\u1EABn \u0111\xEAm" };
+var SHIFT_TIP = {
+  day: "L\xE0m ban ng\xE0y, ng\u1EE7 ban \u0111\xEAm.",
+  night: "L\xE0m ban \u0111\xEAm (c\u1EA7n \u0111u\u1ED1c, hi\u1EC7u su\u1EA5t 70%), ng\u1EE7 ban ng\xE0y (h\u1ED3i s\u1EE9c ch\u1EADm h\u01A1n).",
+  both: "L\xE0m c\u1EA3 ng\xE0y l\u1EABn \u0111\xEAm, ch\u1EC9 ngh\u1EC9 khi s\u1EE9c xu\u1ED1ng d\u01B0\u1EDBi 20%. T\xEDch l\u0169y m\u1EC7t m\u1ECFi, gi\u1EA3m s\u1EE9c t\u1ED1i \u0111a v\xE0 h\u1ED3i s\u1EE9c ch\u1EADm."
+};
+function energyText(sim2, v) {
+  const top = Math.round(sim2.maxEnergy(v));
+  const parts = [`S\u1EE9c <b>${Math.round(v.energy)}%</b>${top < 100 ? ` / t\u1ED1i \u0111a ${top}%` : ""}`];
+  if (v.strain >= 5) parts.push(`m\u1EC7t m\u1ECFi t\xEDch l\u0169y <b>${Math.round(v.strain)}</b>`);
+  if (v.torch) parts.push(`\u0111u\u1ED1c c\xF2n ${Math.max(1, Math.round(v.torch.dur / 60))} ph\xFAt`);
+  if (sim2.sleepLocked(v)) parts.push(`<b>ng\u1EE7 say</b>, d\u1EADy khi \u0111\u1EA1t ${v.lockUntil}%`);
+  return parts.join(" \xB7 ");
+}
+
+// src/ui/unitcard.ts
+var STANCES = [["aggressive", "Ch\u1EE7 \u0111\u1ED9ng", "\u0110u\u1ED5i \u0111\u1ECBch trong t\u1EA7m nh\xECn"], ["defensive", "Ph\xF2ng th\u1EE7", "Ch\u1EC9 \u0111\xE1nh \u0111\u1ECBch l\u1EA1i g\u1EA7n, kh\xF4ng r\u1EDDi ch\u1ED7"], ["retreat", "R\xFAt lui", "Kh\xF4ng \u0111\xE1nh, ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i"]];
+var UnitCard = class {
+  /** `root` is the small card over the map; `modal` is the full-screen page with everything about the chosen villagers. */
+  constructor(root, c, modal) {
+    this.root = root;
+    this.c = c;
+    this.modal = modal;
+    this.name = h("b");
+    this.state = h("span");
+    this.dname = h("b");
+    this.dstate = h("span");
+    this.bars = [];
+    this.shiftBtns = [];
+    this.rest = h("div", { class: "kv" });
+    this.torchBtn = h("button", { class: "sm", text: "Ph\xE1t \u0111u\u1ED1c" });
+    this.gear = h("div", { class: "kv" });
+    this.stats = h("div", { class: "kv" });
+    this.skills = h("div", { class: "kv" });
+    this.toolRows = [];
+    this.gearBtns = [];
+    this.statsKey = "";
+    this.open = false;
+    const { sim: sim2, ctl: ctl2 } = c, ids = () => [...ctl2.selected];
+    const makeBars = () => {
+      const full = h("b"), health = h("b"), morale = h("b", { class: "mor" }), armor = h("b", { class: "arm" });
+      const armorLabel = h("label", {}, "Gi\xE1p", h("i", {}, armor));
+      const energy = h("b", { class: "en" }), energyLabel = h("label", {}, "S\u1EE9c", h("i", {}, energy));
+      this.bars.push({ full, health, morale, armor, armorLabel, energy, energyLabel });
+      return h("div", { class: "bars" }, h("label", {}, "No", h("i", {}, full)), energyLabel, h("label", {}, "M\xE1u", h("i", {}, health)), h("label", {}, "Tinh th\u1EA7n", h("i", {}, morale)), armorLabel);
+    };
+    this.jobBtns = PLAIN_JOBS.map((j) => h("button", { class: "sm", "data-job": j, pressed: false, text: JOB_NAME[j], onclick: () => {
+      const e = sim2.setJob(ids(), j);
+      if (e) c.toast(e);
+      else ctl2.clearSelection();
+      ctl2.onChange();
+    } }));
+    this.stanceBtns = STANCES.map(([s, label, tip]) => h("button", { class: "sm", "data-stance": s, pressed: false, text: label, title: tip, onclick: () => {
+      sim2.setStance(ids(), s);
+      ctl2.onChange();
+    } }));
+    const gearRow = h("div", { class: "btns", role: "group", "aria-label": "Ph\xE1t \u0111\u1ED3" });
+    const addGear = (label, kind, slot, title) => {
+      const btn = h("button", { class: "sm", title, onclick: () => {
+        const e = sim2.assignGear(ids(), kind, slot);
+        if (e) c.toast(e);
+        else ctl2.clearSelection();
+        ctl2.onChange();
+      } });
+      this.gearBtns.push({ btn, kind, slot, label });
+      gearRow.append(btn);
+    };
+    for (const id of CRAFTED_WEAPONS) addGear(WEAPONS[id].name, id, "weapon", `Ph\xE1t ${WEAPONS[id].name.toLowerCase()} t\u1EEB kho X\u01B0\u1EDFng cho d\xE2n \u0111ang ch\u1ECDn`);
+    addGear("\xC1o da", "hide", "armor", "Ph\xE1t \xE1o da t\u1EEB kho X\u01B0\u1EDFng");
+    addGear("Tr\u1EA3 v\u0169 kh\xED", null, "weapon", "Tr\u1EA3 v\u0169 kh\xED v\u1EC1 kho X\u01B0\u1EDFng");
+    addGear("Tr\u1EA3 gi\xE1p", null, "armor", "Tr\u1EA3 gi\xE1p v\u1EC1 kho X\u01B0\u1EDFng");
+    gearRow.append(h("button", { class: "sm", text: "T\u1EF1 nh\u1EADn \u0111\u1ED3", title: "\u0110\u1EC3 X\u01B0\u1EDFng t\u1EF1 ph\xE1t v\xE0 \u0111\u1ED5i \u0111\u1ED3 cho ng\u01B0\u1EDDi n\xE0y (khi l\xE0m Chi\u1EBFn binh ho\u1EB7c Th\u1EE3 s\u0103n)", onclick: () => {
+      sim2.autoGear(ids());
+      ctl2.clearSelection();
+      ctl2.onChange();
+    } }));
+    const gearHint = hint(h("p", { class: "sub", text: "Ph\xE1t \u0111\u1ED3 (l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng):" }), "");
+    this.gearTip = gearHint.tip;
+    const toolsSec = h("section", {}, hint("C\xF4ng c\u1EE5", 'M\u1ED7i ngh\u1EC1 d\xF9ng m\u1ED9t c\xF4ng c\u1EE5 (\u0111\u1ED1n g\u1ED7: r\xECu, th\u1EE3 \u0111\xE1: cu\u1ED1c chim, h\xE1i l\u01B0\u1EE3m: cu\u1ED1c, th\u1EE3 x\xE2y: b\xFAa) v\xE0 m\u1ED7i d\xE2n ch\u1EC9 c\u1EA7m m\u1ED9t c\xF4ng c\u1EE5. \u0110\u1ED5i ngh\u1EC1 th\xEC c\xF4ng c\u1EE5 tr\u1EA3 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n. "\u0110i s\u1EEDa": d\xE2n t\u1EF1 mang c\xF4ng c\u1EE5 t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa, s\u1EEDa xong \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i. Sau khi nghi\xEAn c\u1EE9u "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 c\xF3 Kho c\xF4ng c\u1EE5, d\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng \u0111\u1ED3 s\u1EBD t\u1EF1 \u0111i l\u1EA5y.'));
+    for (const k of TOOL_KINDS) {
+      const state = h("small"), give = [1, 2].map((tier) => ({ tier, btn: h("button", { class: "sm", onclick: () => {
+        const e = sim2.assignTool(ids(), k, tier);
+        if (e) c.toast(e);
+        else ctl2.clearSelection();
+        ctl2.onChange();
+      } }) }));
+      const back = h("button", { class: "sm", text: "Tr\u1EA3 kho", title: "Tr\u1EA3 c\xF4ng c\u1EE5 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n", onclick: () => {
+        sim2.assignTool(ids(), k, 0);
+        ctl2.clearSelection();
+        ctl2.onChange();
+      } });
+      const repair = h("button", { class: "sm", text: "\u0110i s\u1EEDa", title: "D\xE2n mang c\xF4ng c\u1EE5 t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa", onclick: () => {
+        const e = sim2.repairTool(ids(), k);
+        if (e) c.toast(e);
+        else ctl2.clearSelection();
+        ctl2.onChange();
+      } });
+      const drop = h("button", { class: "sm", text: "B\u1ECF", title: "V\u1EE9t c\xF4ng c\u1EE5, k\u1EC3 c\u1EA3 khi ch\u01B0a h\u1ECFng", onclick: () => {
+        sim2.discardTool(ids(), k);
+        ctl2.clearSelection();
+        ctl2.onChange();
+      } });
+      const row = h("div", { class: "row" }, h("div", { class: "nm" }, TOOL_NAME[k], state), h("div", { class: "btns" }, ...give.map((g2) => g2.btn), back, repair, drop));
+      this.toolRows.push({ k, row, state, give, back, repair, drop });
+      toolsSec.append(row);
+    }
+    this.torchBtn.addEventListener("click", () => {
+      const e = sim2.giveTorch(ids());
+      if (e) c.toast(e);
+      ctl2.onChange();
+    });
+    root.append(
+      h("div", { class: "cardhead" }, this.name, this.state, h("button", { class: "sm x", text: "\u2715", title: "B\u1ECF ch\u1ECDn", onclick: () => ctl2.clearSelection() })),
+      makeBars(),
+      h("div", { class: "btns" }, h("button", { class: "sm primary", text: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt", onclick: () => {
+        this.open = true;
+        this.update(this.chosen());
+      } }))
+    );
+    modal.append(
+      h("div", { class: "cardhead" }, this.dname, this.dstate, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => this.closeDetail() })),
+      h(
+        "div",
+        { class: "mbody cols" },
+        h("section", {}, h("h3", { text: "T\xECnh tr\u1EA1ng" }), makeBars(), this.gear),
+        h(
+          "section",
+          {},
+          hint("Ca l\xE0m v\xE0 s\u1EE9c", "D\u01B0\u1EDBi 20% s\u1EE9c d\xE2n ph\u1EA3i \u0111i ng\u1EE7 v\xE0 kh\xF4ng g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c t\u1EDBi khi h\u1ED3i \u0111\u1EE7 (50%, ho\u1EB7c 60% n\u1EBFu ki\u1EC7t s\u1EE9c d\u01B0\u1EDBi 10%). Ng\u1EE7 \u0111\xEAm h\u1ED3i s\u1EE9c nhanh h\u01A1n ng\u1EE7 ng\xE0y. Ng\u1EE7 trong Nh\xE0 d\xE2n (chi\u1EBFn binh: L\u1EC1u chi\u1EBFn binh) h\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7; ch\u01B0a c\xF3 nh\xE0 ho\u1EB7c h\u1EBFt gi\u01B0\u1EDDng th\xEC n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa, h\u1ED3i ch\u1EADm h\u01A1n. L\xE0m vi\u1EC7c ban \u0111\xEAm c\u1EA7n \u0111u\u1ED1c v\xE0 \u0111\u1EA1t 70% hi\u1EC7u su\u1EA5t. L\xE0m ca \u0111\xEAm li\xEAn t\u1EE5c l\xE0m d\xE2n m\u1EC7t m\u1ECFi t\xEDch l\u0169y: s\u1EE9c t\u1ED1i \u0111a gi\u1EA3m v\xE0 h\u1ED3i s\u1EE9c ch\u1EADm."),
+          this.rest,
+          h("div", { class: "btns", role: "group", "aria-label": "Ca l\xE0m" }, ...["day", "night", "both"].map((sh) => {
+            const btn = h("button", { class: "sm", text: SHIFT_LABEL[sh], title: SHIFT_TIP[sh], "data-shift": sh, pressed: false, onclick: () => {
+              sim2.setShift(ids(), sh);
+              ctl2.onChange();
+            } });
+            this.shiftBtns.push(btn);
+            return btn;
+          }), this.torchBtn)
+        ),
+        this.jobSec = h("section", {}, hint("Giao ngh\u1EC1", "Ngh\u1EC1 ch\u1EC9 \u0111\u1ED5i khi b\u1EA1n b\u1EA5m c\xE1c n\xFAt n\xE0y; chu\u1ED9t ph\u1EA3i l\xEAn c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3 hay th\xFA kh\xF4ng \u0111\u1ED5i ngh\u1EC1 c\u1EE7a ai. Chi\u1EBFn binh \u0111\u01B0\u1EE3c tuy\u1EC3n v\xE0 gi\u1EA3i ng\u0169 \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i; th\u1EE3 x\xE2y, ch\u1EBF t\u1EA1o, nghi\xEAn c\u1EE9u, s\u1EEDa ch\u1EEFa ch\u1ECDn \u1EDF nh\xE0 t\u01B0\u01A1ng \u1EE9ng."), h("div", { class: "btns", role: "group", "aria-label": "Giao ngh\u1EC1" }, ...this.jobBtns)),
+        this.combatSec = h(
+          "section",
+          {},
+          h("h3", { text: "Chi\u1EBFn \u0111\u1EA5u" }),
+          h("div", { class: "btns", role: "group", "aria-label": "Th\u1EBF \u0111\u1EE9ng" }, ...this.stanceBtns),
+          h(
+            "div",
+            { class: "btns" },
+            h("button", { class: "sm", text: "Gi\u1EEF ch\u1ED7 (H)", title: "\u0110\u1EE9ng y\xEAn, ch\u1EC9 \u0111\xE1nh k\u1EBB \u1EDF s\xE1t", onclick: () => {
+              sim2.orderHold(ids());
+              ctl2.onChange();
+            } }),
+            h("button", { class: "sm", text: "D\u1EEBng (G)", title: "H\u1EE7y m\u1ECDi l\u1EC7nh", onclick: () => {
+              sim2.orderStop(ids());
+              ctl2.onChange();
+            } }),
+            h("button", { class: "sm", text: "T\u1EA5n c\xF4ng\u2013\u0111i (F)", title: "Ch\u1ECDn m\u1ED9t \u0111i\u1EC3m: \u0111i t\u1EDBi \u0111\xF3 v\xE0 \u0111\xE1nh m\u1ECDi \u0111\u1ECBch g\u1EB7p tr\xEAn \u0111\u01B0\u1EDDng", onclick: () => {
+              ctl2.attackMoveArmed = true;
+              this.closeDetail();
+              c.toast("Ch\u1EA1m v\xE0o \u0111i\u1EC3m \u0111\u1EBFn");
+              ctl2.onChange();
+            } })
+          )
+        ),
+        this.gearSec = h("section", {}, h("h3", { text: "Trang b\u1ECB" }), gearHint, gearRow),
+        this.toolsSec = toolsSec,
+        h("section", {}, h("h3", { text: "Ch\u1EC9 s\u1ED1 v\xE0 k\u1EF9 n\u0103ng" }), this.stats, this.skills)
+      )
+    );
+  }
+  chosen() {
+    const { sim: sim2, ctl: ctl2 } = this.c;
+    return sim2.villagers.filter((v) => ctl2.selected.has(v.id));
+  }
+  closeDetail() {
+    this.open = false;
+    this.modal.hidden = true;
+  }
+  update(chosen) {
+    const sim0 = this.c.sim;
+    if (this.c.ctl.openDetail) {
+      this.c.ctl.openDetail = false;
+      if (chosen.length) this.open = true;
+    }
+    this.root.hidden = chosen.length === 0;
+    if (!chosen.length) {
+      this.statsKey = "";
+      this.closeDetail();
+      return;
+    }
+    this.modal.hidden = !this.open;
+    const v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : "tay kh\xF4ng";
+    const title = chosen.length > 1 ? `${v.name} v\xE0 ${chosen.length - 1} ng\u01B0\u1EDDi n\u1EEFa` : v.name;
+    this.name.textContent = this.dname.textContent = title;
+    this.state.textContent = this.dstate.textContent = describe(v, sim0);
+    for (const b of this.bars) {
+      b.full.style.width = `${v.fullness}%`;
+      b.health.style.width = `${v.health / v.maxHealth * 100}%`;
+      b.morale.style.width = `${v.morale}%`;
+      b.health.className = v.health / v.maxHealth < 0.35 ? "bad" : "";
+      const ad = v.armor ? ARMORS[v.armor] : null;
+      b.armor.style.width = `${ad ? Math.min(100, armorLevel(ad) / ARMOR_FULL * 100) : 0}%`;
+      b.armorLabel.title = ad ? armorText(ad) : "Kh\xF4ng m\u1EB7c gi\xE1p";
+      b.energy.style.width = `${v.energy}%`;
+      b.energy.className = v.energy < 20 ? "en low" : "en";
+      b.energyLabel.title = `S\u1EE9c ${Math.round(v.energy)}%. D\u01B0\u1EDBi 20% d\xE2n ph\u1EA3i \u0111i ng\u1EE7; d\u01B0\u1EDBi 10% h\u1ECD ng\u1EE7 say v\xE0 kh\xF4ng ai g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c.`;
+    }
+    if (!this.open) return;
+    for (const g2 of this.gearBtns) {
+      const n = g2.kind ? sim0.toolCount(g2.kind, g2.kind === "hide" ? 1 : WEAPONS[g2.kind].tier ?? 1) : -1;
+      g2.btn.textContent = n >= 0 ? `${g2.label} (${n})` : g2.label;
+      g2.btn.disabled = g2.kind !== null && n <= 0 && !chosen.every((o) => (g2.slot === "weapon" ? o.weapon : o.armor) === g2.kind);
+    }
+    this.gearTip.textContent = chosen.every((o) => o.job === "fight" || o.job === "hunt") ? chosen[0].manualGear ? "\u0110\u1ED3 do b\u1EA1n ph\xE1t: X\u01B0\u1EDFng kh\xF4ng t\u1EF1 \u0111\u1ED5i." : "X\u01B0\u1EDFng t\u1EF1 ph\xE1t \u0111\u1ED3 t\u1ED1t nh\u1EA5t c\xF2n trong kho." : "Ch\u1EC9 Chi\u1EBFn binh v\xE0 Th\u1EE3 s\u0103n c\u1EA7m v\u0169 kh\xED \u0111i theo; d\xE2n th\u01B0\u1EDDng kh\xF4ng chi\u1EBFn \u0111\u1EA5u m\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i khi c\xF3 \u0111\u1ECBch.";
+    this.gear.innerHTML = `M\xE1u <b>${Math.ceil(v.health)}/${v.maxHealth}</b> \xB7 V\u0169 kh\xED <b>${w}</b> \xB7 Gi\xE1p <b>${v.armor ? ARMORS[v.armor].name : "\u2014"}</b>${v.armor ? ` (${armorText(ARMORS[v.armor], false)})` : ""}${v.leader ? " \xB7 <b>Th\u1EE7 l\u0129nh</b>" : ""}`;
+    const sk = `${v.id}|${WORK_JOBS.map((j) => v.skill[j].level).join("")}|${Object.values(v.stats).join()}`;
+    if (sk !== this.statsKey) {
+      this.statsKey = sk;
+      this.stats.innerHTML = Object.keys(STAT_NAME).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(" \xB7 ");
+      this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>c\u1EA5p ${v.skill[j].level}</b>`).join(" \xB7 ");
+    }
+    const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
+    this.toolsSec.hidden = only === null;
+    this.jobSec.hidden = chosen.every((o) => o.job === "fight");
+    this.combatSec.hidden = !chosen.every((o) => o.job === "fight");
+    this.gearSec.hidden = !chosen.every((o) => o.job === "fight" || o.job === "hunt");
+    for (const r of this.toolRows) {
+      r.row.hidden = r.k !== only;
+      const t = v.tools[r.k];
+      r.state.textContent = t ? t.dur <= 0 ? `${TIER_NAME[t.tier].toLowerCase()} \xB7 \u0111\xE3 h\u1ECFng` : `${TIER_NAME[t.tier].toLowerCase()} \xB7 c\xF2n ${Math.round(t.dur / TIER_DURABILITY[t.tier] * 100)}%` : "tay kh\xF4ng";
+      for (const g2 of r.give) {
+        const n = sim0.toolCount(r.k, g2.tier);
+        g2.btn.textContent = `${TIER_NAME[g2.tier]} (${n})`;
+        g2.btn.disabled = n <= 0;
+      }
+      r.repair.disabled = !t || t.dur >= TIER_DURABILITY[t.tier] - 1e-6;
+      r.back.disabled = r.drop.disabled = !t;
+    }
+    this.jobBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.job === b.dataset.job))));
+    this.shiftBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.shift === b.dataset.shift))));
+    this.rest.innerHTML = energyText(sim0, v) + ` \xB7 ${sim0.torchCount()} \u0111u\u1ED1c trong kho`;
+    this.torchBtn.disabled = sim0.torchCount() <= 0 || chosen.every((o) => !!o.torch);
+    this.stanceBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.stance === b.dataset.stance))));
+  }
+};
+
+// src/ui/targetcard.ts
+var TargetCard = class {
+  constructor(root, c) {
+    this.root = root;
+    this.c = c;
+    this.name = h("b");
+    this.info = h("span");
+    this.hp = h("b", { class: "bad" });
+    this.line = h("div", { class: "kv" });
+    this.attack = h("button", { class: "sm primary", text: "T\u1EA5n c\xF4ng" });
+    this.loot = h("button", { class: "sm", text: "L\u1ED9t da, l\u1EA5y th\u1ECBt" });
+    root.append(
+      h("div", { class: "cardhead" }, this.name, this.info, h("button", { class: "sm x", text: "\u2715", onclick: () => {
+        c.ctl.inspect = null;
+        c.ctl.onChange();
+      } })),
+      h("div", { class: "bars" }, h("label", {}, "M\xE1u", h("i", {}, this.hp))),
+      this.line,
+      h("div", { class: "btns" }, this.attack, this.loot)
+    );
+    this.attack.addEventListener("click", () => {
+      const t = c.ctl.inspect;
+      if (!t || !c.ctl.selected.size) {
+        c.toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
+        return;
+      }
+      if (!c.sim.orderAttack([...c.ctl.selected], { kind: t.kind, id: t.id })) c.toast(t.kind === "unit" ? "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi \u0111\xE1nh: tuy\u1EC3n l\xEDnh \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i" : "Ch\u1EC9 Th\u1EE3 s\u0103n ho\u1EB7c chi\u1EBFn binh m\u1EDBi s\u0103n th\xFA");
+      c.ctl.onChange();
+    });
+    this.loot.addEventListener("click", () => {
+      const t = c.ctl.inspect;
+      if (!t || !c.ctl.selected.size) {
+        c.toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
+        return;
+      }
+      if (!c.sim.orderLoot([...c.ctl.selected], t.id)) c.toast("Ch\u1EC9 Th\u1EE3 s\u0103n l\u1ED9t da: giao ngh\u1EC1 Th\u1EE3 s\u0103n b\u1EB1ng n\xFAt ngh\u1EC1 tr\u01B0\u1EDBc");
+      c.ctl.onChange();
+    });
+  }
+  update() {
+    const t = this.c.ctl.inspect, { sim: sim2 } = this.c;
+    if (!t) {
+      this.root.hidden = true;
+      return;
+    }
+    if (t.kind === "unit") {
+      const f = sim2.get(t.id);
+      if (!f || f.health <= 0) {
+        this.c.ctl.inspect = null;
+        this.root.hidden = true;
+        return;
+      }
+      const tribe = sim2.tribes.find((x) => x.id === f.team);
+      this.root.hidden = false;
+      this.name.textContent = f.name;
+      this.info.textContent = `${tribe?.def.name ?? ""} \xB7 ${f.ai?.role === "civ" ? "d\xE2n th\u01B0\u1EDDng" : f.ai?.role === "raider" ? "k\u1EBB t\u1EADp k\xEDch" : "chi\u1EBFn binh"}`;
+      this.hp.style.width = `${f.health / f.maxHealth * 100}%`;
+      this.line.innerHTML = `M\xE1u <b>${Math.ceil(f.health)}/${f.maxHealth}</b> \xB7 V\u0169 kh\xED <b>${f.weapon ? WEAPONS[f.weapon].name : "tay kh\xF4ng"}</b> \xB7 Tinh th\u1EA7n <b>${Math.round(f.morale)}</b> \xB7 ${tribe ? `quan h\u1EC7 <b>${relationLabel(tribe.relation)}</b>` : ""}`;
+      this.attack.hidden = false;
+      this.loot.hidden = true;
+      return;
+    }
+    const a = sim2.animalById.get(t.id);
+    if (!a) {
+      this.c.ctl.inspect = null;
+      this.root.hidden = true;
+      return;
+    }
+    const d = animalDef(a), dead = a.state === "dead";
+    this.root.hidden = false;
+    this.name.textContent = d.name;
+    this.info.textContent = dead ? "x\xE1c" : { graze: "\u0111ang g\u1EB7m c\u1ECF", wander: "\u0111ang \u0111i", flee: "\u0111ang ch\u1EA1y tr\u1ED1n", attack: "\u0111ang t\u1EA5n c\xF4ng", sleep: "\u0111ang ng\u1EE7", dead: "x\xE1c" }[a.state];
+    this.hp.style.width = `${Math.max(0, a.hp) / a.maxHp * 100}%`;
+    this.line.innerHTML = dead ? `C\xF2n <b>${a.meat}</b> th\u1ECBt \xB7 <b>${a.hide}</b> ${RES_NAME.hide.toLowerCase()}${Object.entries(a.drops ?? {}).filter(([, n]) => (n ?? 0) > 0).map(([r, n]) => ` \xB7 <b>${n}</b> ${RES_NAME[r].toLowerCase()}`).join("")}` : `M\xE1u <b>${Math.ceil(a.hp)}/${a.maxHp}</b> \xB7 s\xE1t th\u01B0\u01A1ng <b>${d.damage}</b> \xB7 ${d.prey ? "con m\u1ED3i" : "th\xFA d\u1EEF"}`;
+    this.attack.hidden = dead;
+    this.attack.textContent = d.prey ? "S\u0103n" : "T\u1EA5n c\xF4ng";
+    this.loot.hidden = !dead;
+  }
+};
+
+// src/ui/peoplepane.ts
+var PeoplePane = class {
+  constructor(c) {
+    this.c = c;
+    this.root = h("div", { class: "split" });
+    this.count = h("div", { class: "kv" });
+    this.list = h("div", { class: "plist" });
+    this.pane = h("div", { class: "ppane", hidden: true });
+    this.rows = /* @__PURE__ */ new Map();
+    this.key = "";
+    this.picked = null;
+    // the menu of the picked villager
+    this.name = h("b");
+    this.state = h("span");
+    this.facts = h("div", { class: "kv" });
+    this.skills = h("div", { class: "kv" });
+    this.bar = { full: h("b"), health: h("b"), morale: h("b", { class: "mor" }), armor: h("b", { class: "arm" }) };
+    this.armorLabel = h("label", {}, "Gi\xE1p");
+    this.energy = h("b", { class: "en" });
+    this.restLine = h("div", { class: "kv" });
+    this.shiftBtns = [];
+    this.where = h("button", { class: "sm primary", text: "\u0110i t\u1EDBi" });
+    const { sim: sim2, ctl: ctl2, toast } = c;
+    this.armorLabel.append(h("i", {}, this.bar.armor));
+    const energyLabel = h("label", {}, "S\u1EE9c", h("i", {}, this.energy));
+    for (const sh of ["day", "night", "both"]) this.shiftBtns.push(h("button", { class: "sm", text: SHIFT_LABEL[sh], title: SHIFT_TIP[sh], "data-shift": sh, pressed: false, onclick: () => {
+      const v = this.villager();
+      if (!v) return;
+      sim2.setShift([v.id], sh);
+      ctl2.onChange();
+    } }));
+    this.jobBtns = PLAIN_JOBS.map((j) => h("button", { class: "sm", "data-job": j, pressed: false, text: JOB_NAME[j], onclick: () => {
+      const v = this.villager();
+      if (!v) return;
+      const e = sim2.setJob([v.id], j);
+      if (e) toast(e);
+      ctl2.onChange();
+    } }));
+    this.jobBox = h(
+      "div",
+      {},
+      h("h3", { text: "Giao vi\u1EC7c" }),
+      h("div", { class: "btns", role: "group", "aria-label": "Giao vi\u1EC7c" }, ...this.jobBtns),
+      h("p", { class: "sub", text: "Th\u1EE3 x\xE2y, ch\u1EBF t\u1EA1o, nghi\xEAn c\u1EE9u v\xE0 s\u1EEDa ch\u1EEFa do b\u1EA1n ch\u1ECDn \u1EDF nh\xE0 t\u01B0\u01A1ng \u1EE9ng." })
+    );
+    this.where.addEventListener("click", () => {
+      const v = this.villager();
+      if (!v) return;
+      if (v.inside !== null) {
+        ctl2.selectBuilding(v.inside, true);
+        return;
+      }
+      ctl2.selected.clear();
+      ctl2.selected.add(v.id);
+      ctl2.focusSelection();
+      ctl2.closeBuilding();
+    });
+    const more = h("button", { class: "sm", text: "C\xF4ng c\u1EE5, trang b\u1ECB, ch\u1EC9 s\u1ED1", onclick: () => {
+      const v = this.villager();
+      if (!v || v.inside !== null) {
+        toast("D\xE2n \u0111ang \u1EDF trong nh\xE0: m\u1EDF nh\xE0 \u0111\u1EC3 cho h\u1ECD ra");
+        return;
+      }
+      ctl2.selected.clear();
+      ctl2.selected.add(v.id);
+      ctl2.openDetail = true;
+      ctl2.closeBuilding();
+    } });
+    const labels = (...names) => names.map((n, i) => h("label", {}, n, h("i", {}, [this.bar.full, this.bar.health, this.bar.morale][i])));
+    this.pane.append(
+      h("div", { class: "cardhead" }, this.name, this.state),
+      h("div", { class: "bars" }, ...labels("No", "M\xE1u", "Tinh th\u1EA7n"), energyLabel, this.armorLabel),
+      this.restLine,
+      h("div", { class: "btns", role: "group", "aria-label": "Ca l\xE0m" }, ...this.shiftBtns),
+      this.facts,
+      this.skills,
+      this.jobBox,
+      h("div", { class: "btns" }, this.where, more)
+    );
+    this.root.append(h("div", {}, this.count, this.list), this.pane);
+  }
+  villager() {
+    return this.picked === null ? void 0 : this.c.sim.get(this.picked);
+  }
+  update() {
+    const { sim: sim2 } = this.c, vs = sim2.villagers;
+    this.count.innerHTML = `D\xE2n <b>${vs.length}/${sim2.popCap()}</b> \xB7 \u0111ang l\xE0m vi\u1EC7c <b>${vs.filter((v2) => v2.job !== "idle").length}</b> \xB7 l\xEDnh <b>${vs.filter((v2) => v2.job === "fight").length}</b> \xB7 th\u1EE3 s\u0103n <b>${vs.filter((v2) => v2.job === "hunt").length}</b> \xB7 th\u1EE9c \u0103n <b>${Math.floor(sim2.stock.food)}</b> (s\u1ED1ng \u0111\u01B0\u1EE3c ~${(sim2.stock.food / Math.max(1, vs.length * 5)).toFixed(1)} ng\xE0y)`;
+    const key = vs.map((v2) => v2.id).join();
+    if (key !== this.key) {
+      this.key = key;
+      this.rows.clear();
+      this.list.replaceChildren(...vs.map((v2) => {
+        const st = h("small"), hp = h("small");
+        const row = h("button", { class: "vrow", type: "button", onclick: () => {
+          this.picked = v2.id;
+          this.update();
+        } }, h("span", {}, h("b", { text: v2.name }), " ", st), hp);
+        this.rows.set(v2.id, { row, st, hp });
+        return row;
+      }));
+      if (this.picked !== null && !sim2.get(this.picked)) this.picked = null;
+    }
+    for (const v2 of vs) {
+      const r = this.rows.get(v2.id);
+      if (r) {
+        r.st.textContent = `\xB7 ${describe(v2, sim2)}`;
+        r.hp.textContent = `${Math.ceil(v2.health)}/${v2.maxHealth}`;
+        r.row.classList.toggle("on", v2.id === this.picked);
+      }
+    }
+    const v = this.villager();
+    this.pane.hidden = !v;
+    if (!v) return;
+    this.name.textContent = v.name;
+    this.state.textContent = describe(v, sim2);
+    this.bar.full.style.width = `${v.fullness}%`;
+    this.bar.health.style.width = `${v.health / v.maxHealth * 100}%`;
+    this.bar.morale.style.width = `${v.morale}%`;
+    this.bar.health.className = v.health / v.maxHealth < 0.35 ? "bad" : "";
+    const ad = v.armor ? ARMORS[v.armor] : null;
+    this.bar.armor.style.width = `${ad ? Math.min(100, armorLevel(ad) / ARMOR_FULL * 100) : 0}%`;
+    this.armorLabel.title = ad ? armorText(ad) : "Kh\xF4ng m\u1EB7c gi\xE1p";
+    this.facts.innerHTML = Object.keys(STAT_NAME).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(" \xB7 ");
+    this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>c\u1EA5p ${v.skill[j].level}</b>`).join(" \xB7 ");
+    this.jobBtns.forEach((b) => b.setAttribute("aria-pressed", String(v.job === b.dataset.job)));
+    this.energy.style.width = `${v.energy}%`;
+    this.energy.className = v.energy < 20 ? "en low" : "en";
+    this.restLine.innerHTML = energyText(sim2, v);
+    this.shiftBtns.forEach((b) => b.setAttribute("aria-pressed", String(v.shift === b.dataset.shift)));
+    this.jobBox.hidden = v.job === "fight";
+    this.where.textContent = v.inside !== null ? v.phase === "sleep" ? "M\u1EDF nh\xE0 \u0111ang ng\u1EE7" : "M\u1EDF nh\xE0 \u0111ang l\xE0m" : "\u0110i t\u1EDBi";
+  }
+};
+
+// src/ui/housebox.ts
+var StaffBox = class {
+  constructor(c, job) {
+    this.c = c;
+    this.job = job;
+    this.root = h("section", {});
+    this.head = h("h3");
+    this.list = h("div");
+    this.picker = h("div", { class: "picker" });
+    this.key = "";
+    this.pickKey = "";
+    this.open = false;
+    this.add = h("button", { class: "sm primary", onclick: () => {
+      this.open = !this.open;
+      this.pickKey = "";
+      c.ctl.onChange();
+    } });
+    this.root.append(hint(this.head, job === "build" ? 'Ch\u1EC9 th\u1EE3 x\xE2y c\u1EE7a nh\xE0 n\xE0y m\u1EDBi d\u1EF1ng v\xE0 n\xE2ng c\u1EA5p \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh. B\u1EA1n ch\u1ECDn ai l\xE0m th\u1EE3 x\xE2y: b\u1EA5m "Th\xEAm ng\u01B0\u1EDDi" r\u1ED3i ch\u1ECDn trong danh s\xE1ch.' : job === "farm" ? "Ru\u1ED9ng cho th\u1EE9c \u0103n \u0111\u1EC1u quanh n\u0103m, \xEDt nh\u1EA5t v\xE0o m\xF9a \u0111\xF4ng, c\xF2n b\u1EE5i qu\u1EA3 th\xEC kh\xF4ng m\u1ECDc l\u1EA1i. D\xE2n b\u1EA1n ch\u1ECDn v\xE0o ru\u1ED9ng l\xE0m vi\u1EC7c b\xEAn trong, th\u1EE9c \u0103n v\u1EC1 th\u1EB3ng kho. M\u1ED7i ru\u1ED9ng m\u1ED9t ng\u01B0\u1EDDi, ru\u1ED9ng c\u1EA5p cao h\u01A1n l\xE0m nhanh h\u01A1n." : 'D\xE2n v\xE0o trong nh\xE0 l\xE0m vi\u1EC7c, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3 v\xE0 kh\xF4ng b\u1ECB t\u1EA5n c\xF4ng. B\u1EA1n ch\u1ECDn ai v\xE0o: b\u1EA5m "Th\xEAm ng\u01B0\u1EDDi" r\u1ED3i ch\u1ECDn trong danh s\xE1ch.'), this.list, h("div", { class: "btns" }, this.add), this.picker);
+  }
+  update(b) {
+    const { sim: sim2 } = this.c, slots = levelDef(b).slots, jobKey = this.job === "farm" ? "food" : this.job, stat = JOBS[jobKey].stat, label = this.job === "farm" ? "N\xF4ng d\xE2n" : JOB_NAME[this.job];
+    const crew2 = this.job === "build", staff = crew2 ? sim2.crew() : b.staff.map((id) => sim2.get(id)).filter((v) => !!v);
+    const count = crew2 ? staff.length : sim2.staffCount(b), full = count >= slots;
+    this.head.textContent = `${crew2 ? "Th\u1EE3 x\xE2y" : this.job === "farm" ? "N\xF4ng d\xE2n" : "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c"} (${count}/${slots}) \xB7 n\xE2ng c\u1EA5p nh\xE0 \u0111\u1EC3 ch\u1EE9a th\xEAm`;
+    this.add.disabled = full && !this.open;
+    this.add.textContent = this.open ? "Xong" : `Th\xEAm ng\u01B0\u1EDDi ${label.toLowerCase()}`;
+    const key = `${b.id}|${staff.map((v) => `${v.id}.${v.stats[stat]}`).join()}`;
+    if (key !== this.key) {
+      this.key = key;
+      this.list.replaceChildren(...staff.length ? staff.map((v) => h(
+        "div",
+        { class: "row" },
+        h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${v.stats[stat]} \xB7 ${JOBS[jobKey].name} c\u1EA5p ${v.skill[jobKey].level}` })),
+        h("button", { class: "sm", text: crew2 ? "Cho ngh\u1EC9" : "Cho ra", onclick: () => {
+          if (crew2) sim2.releaseCrew([v.id]);
+          else sim2.releaseStaff([v.id]);
+          this.c.ctl.onChange();
+        } })
+      )) : [h("p", { class: "sub", text: crew2 ? "Ch\u01B0a c\xF3 th\u1EE3 x\xE2y n\xE0o: ch\u01B0a d\u1EF1ng \u0111\u01B0\u1EE3c g\xEC." : "Ch\u01B0a c\xF3 ai l\xE0m vi\u1EC7c \u1EDF \u0111\xE2y." })]);
+    }
+    this.picker.hidden = !this.open;
+    if (!this.open) return;
+    const pool = sim2.villagers.filter((v) => v.inside === null && v.down <= 0 && v.job !== "fight" && !(v.phase === "goStaff" && v.target === b.id) && !(crew2 && v.job === "build") && !(v.job === "food" && v.post === b.id)).sort((x, y) => y.stats[stat] - x.stats[stat]);
+    const pk = `${b.id}|${full}|${pool.map((v) => `${v.id}.${v.job}.${v.stats[stat]}`).join()}`;
+    if (pk === this.pickKey) return;
+    this.pickKey = pk;
+    this.picker.replaceChildren(
+      h("p", { class: "sub", text: full ? "Nh\xE0 \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: cho m\u1ED9t ng\u01B0\u1EDDi ra ho\u1EB7c n\xE2ng c\u1EA5p nh\xE0." : `Ch\u1ECDn ai l\xE0m ${label.toLowerCase()}:` }),
+      ...pool.map((v) => h(
+        "div",
+        { class: "row" },
+        h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${v.stats[stat]} \xB7 \u0111ang ${JOB_NAME[v.job].toLowerCase()}` })),
+        h("button", { class: "sm", text: "V\xE0o l\xE0m", disabled: full, onclick: () => {
+          const e = crew2 ? sim2.assignCrew([v.id]) : this.job === "farm" ? sim2.assignField([v.id], b.id) : sim2.assignStaff([v.id], this.job);
+          this.c.toast(e ?? `${v.name}: ${label}`);
+          this.c.ctl.onChange();
+        } })
+      ))
+    );
+  }
+};
+var ActiveBox = class {
+  constructor(c, nameOf, timeOf) {
+    this.c = c;
+    this.nameOf = nameOf;
+    this.timeOf = timeOf;
+    this.root = h("div", { class: "kv" });
+    this.bar = h("b");
+    this.text = h("span");
+    this.root.append(h("div", { class: "bars", style: "width:100%;grid-template-columns:1fr" }, h("label", {}, this.text, h("i", {}, this.bar))));
+  }
+  update(b) {
+    const a = b.active;
+    this.root.hidden = false;
+    if (!a) {
+      this.text.textContent = "\u0110ang r\u1EA3nh";
+      this.bar.style.width = "0%";
+      return;
+    }
+    const rate = this.c.sim.houseRate(b), left = rate > 0 ? (1 - a.progress) * this.timeOf(a.id) / rate : 0;
+    this.text.textContent = `\u0110ang l\xE0m: ${this.nameOf(a.id)} \xB7 ${Math.floor(a.progress * 100)}%${rate > 0 ? ` \xB7 c\xF2n ~${workDays(left)}` : " \xB7 t\u1EA1m d\u1EEBng (kh\xF4ng c\xF3 ng\u01B0\u1EDDi)"}`;
+    this.bar.style.width = `${a.progress * 100}%`;
+  }
+};
+
+// src/ui/soldierpane.ts
+var energyBar = (v) => h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, h("b", { class: v.energy < 20 ? "en low" : "en", style: `width:${v.energy}%` })));
+var SoldierPane = class {
+  constructor(c) {
+    this.c = c;
+    this.root = h("div");
+    this.head = h("h3");
+    this.list = h("div");
+    this.poolHead = h("h3");
+    this.pool = h("div");
+    this.rows = /* @__PURE__ */ new Map();
+    this.key = "";
+    this.root.append(
+      hint(this.head, "Chi\u1EBFn binh \u0111\u01B0\u1EE3c tuy\u1EC3n v\xE0 gi\u1EA3i ng\u0169 \u1EDF \u0111\xE2y, kh\xF4ng ph\u1EA3i b\u1EB1ng n\xFAt ngh\u1EC1 hay b\u1EB1ng chu\u1ED9t ph\u1EA3i. H\u1ECD canh g\xE1c b\xEAn \u0111\u1ED1ng l\u1EEDa, \u0111\xE1nh \u0111\u1ECBch v\xE0 th\xFA d\u1EEF. Khi m\u1EC7t h\u1ECD v\xE0o L\u1EC1u chi\u1EBFn binh ng\u1EE7 (h\u1EBFt gi\u01B0\u1EDDng th\xEC n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa, h\u1ED3i s\u1EE9c ch\u1EADm h\u01A1n). Gi\u1EA3i ng\u0169 th\xEC h\u1ECD th\xE0nh d\xE2n th\u01B0\u1EDDng v\xE0 tr\u1EA3 v\u0169 kh\xED, gi\xE1p v\u1EC1 kho."),
+      this.list,
+      hint(this.poolHead, "Ch\u1ECDn ng\u01B0\u1EDDi \u0111\u1EC3 tuy\u1EC3n l\xE0m chi\u1EBFn binh. Ng\u01B0\u1EDDi \u0111ang l\xE0m vi\u1EC7c s\u1EBD b\u1ECF vi\u1EC7c \u0111\xF3. Nh\u1EDB ch\u1EBF v\u0169 kh\xED v\xE0 gi\xE1p \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o cho h\u1ECD."),
+      this.pool
+    );
+  }
+  update() {
+    const { sim: sim2, ctl: ctl2, toast } = this.c;
+    const soldiers = sim2.villagers.filter((v) => v.job === "fight"), civilians = sim2.villagers.filter((v) => v.job !== "fight");
+    const beds = sim2.bedsIn("barracks");
+    this.head.textContent = `Chi\u1EBFn binh (${soldiers.length}) \xB7 ${beds ? `L\u1EC1u chi\u1EBFn binh ${beds} gi\u01B0\u1EDDng` : "ch\u01B0a c\xF3 L\u1EC1u chi\u1EBFn binh"}`;
+    this.poolHead.textContent = `D\xE2n c\xF3 th\u1EC3 tuy\u1EC3n (${civilians.length})`;
+    const key = `${soldiers.map((v) => v.id).join()}|${civilians.map((v) => v.id).join()}`;
+    if (key !== this.key) {
+      this.key = key;
+      this.rows.clear();
+      const row = (v, buttons) => {
+        const st = h("small"), bar2 = h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, h("b", { class: "en" })));
+        this.rows.set(v.id, { st, bar: bar2 });
+        return h("div", { class: "row" }, h("div", { class: "nm" }, v.name, st), bar2, h("div", { class: "btns" }, ...buttons));
+      };
+      this.list.replaceChildren(...soldiers.length ? soldiers.map((v) => row(v, [
+        h("button", { class: "sm", text: "Ch\u1ECDn", title: "Ch\u1ECDn tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ra l\u1EC7nh", onclick: () => {
+          if (v.inside !== null) {
+            toast(`${v.name} \u0111ang ng\u1EE7 trong l\u1EC1u`);
+            return;
+          }
+          ctl2.selected.clear();
+          ctl2.selected.add(v.id);
+          ctl2.focusSelection();
+          ctl2.closeBuilding();
+        } }),
+        h("button", { class: "sm danger", text: "Gi\u1EA3i ng\u0169", onclick: () => {
+          if (!sim2.discharge([v.id])) toast(`${v.name} \u0111ang ng\u1EE7 say, ch\u01B0a gi\u1EA3i ng\u0169 \u0111\u01B0\u1EE3c`);
+          ctl2.onChange();
+        } })
+      ])) : [h("p", { class: "sub", text: "Ch\u01B0a c\xF3 chi\u1EBFn binh n\xE0o. Tuy\u1EC3n \u1EDF danh s\xE1ch b\xEAn d\u01B0\u1EDBi." })]);
+      this.pool.replaceChildren(...civilians.map((v) => row(v, [
+        h("button", { class: "sm primary", text: "Tuy\u1EC3n", onclick: () => {
+          const e = sim2.setJob([v.id], "fight");
+          if (e) toast(e);
+          ctl2.onChange();
+        } })
+      ])));
+    }
+    for (const v of sim2.villagers) {
+      const r = this.rows.get(v.id);
+      if (!r) continue;
+      r.st.textContent = describe(v, sim2);
+      const b = r.bar.querySelector("b");
+      b.style.width = `${v.energy}%`;
+      b.className = v.energy < 20 ? "en low" : "en";
+    }
+  }
+};
+function sleeperRows(sim2, list) {
+  return list.map((v) => h("div", { class: "row" }, h("div", { class: "nm" }, v.name, h("small", { text: describe(v, sim2) })), energyBar(v)));
+}
+
+// src/ui/buildingpanel.ts
+var BuildingPanel = class {
+  constructor(root, c) {
+    this.root = root;
+    this.c = c;
+    this.title = h("b");
+    this.state = h("span");
+    /** Every building shows its parts as pages behind a row of tab buttons at the top. */
+    this.tabs = {};
+    this.tabBar = h("div", { class: "btns tabs", role: "tablist" });
+    this.tabAt = {};
+    this.pages = [];
+    this.tabKey = "";
+    this.resRows = [];
+    this.barterBtns = [];
+    this.recRows = [];
+    this.techRows = [];
+    this.goodRows = [];
+    /** The people lying in the Nhà dân and the Lều chiến binh. */
+    this.bedHead = { house: h("h3"), barracks: h("h3") };
+    this.bedList = { house: h("div"), barracks: h("div") };
+    this.bedKey = { house: "", barracks: "" };
+    /** The archers posted on a tower. */
+    this.towerHead = h("h3");
+    this.towerList = h("div");
+    this.towerKey = "";
+    this.info = h("div", { class: "kv" });
+    this.queueNote = { craft: h("div", { class: "kv" }), research: h("div", { class: "kv" }), repair: h("div", { class: "kv" }) };
+    this.goodsNote = h("p", { class: "sub" });
+    this.goodsHint = hint(this.goodsNote, "");
+    this.toolList = h("div");
+    this.toolKey = "";
+    this.repairInfo = h("div", { class: "kv" });
+    const { sim: sim2, ctl: ctl2, sprites: sprites2 } = c;
+    root.className = "modal";
+    const recipeNm = (id) => RECIPE_BY_ID[id] ? recipeName(RECIPE_BY_ID[id]) : id;
+    this.staffBoxes = { build: new StaffBox(c, "build"), craft: new StaffBox(c, "craft"), research: new StaffBox(c, "research"), repair: new StaffBox(c, "repair"), farm: new StaffBox(c, "farm") };
+    this.activeBoxes = {
+      craft: new ActiveBox(c, recipeNm, (id) => sim2.orderDef("craft", id)?.time ?? 1),
+      research: new ActiveBox(c, (id) => TECHS.find((t) => t.id === id)?.name ?? id, (id) => sim2.orderDef("research", id)?.time ?? 1),
+      repair: new ActiveBox(c, (id) => `s\u1EEDa ${recipeNm(id).toLowerCase()}`, (id) => sim2.orderDef("repair", id)?.time ?? 1)
+    };
+    const page = (...kids) => {
+      const el2 = h("div", { class: "tabpage", hidden: true }, ...kids);
+      this.pages.push(el2);
+      return el2;
+    };
+    const barter2 = () => {
+      const box = h("div", {}, hint("\u0110\u1ED5i ch\xE1c", "\u0110\u1ED5i h\xE0ng l\u1EA5y ti\u1EC1n \u0111\u1EC3 tr\u1EA3 cho nghi\xEAn c\u1EE9u. Ti\u1EC1n c\u0169ng nh\u1EB7t \u0111\u01B0\u1EE3c khi h\xE1i l\u01B0\u1EE3m v\xE0 nh\u1EADn t\u1EEB b\u1ED9 t\u1ED9c c\u1ED1ng n\u1EA1p."));
+      const btns = h("div", { class: "btns" });
+      box.append(btns);
+      for (const res of RES_LIST) {
+        if (res === "coin") continue;
+        const btn = h("button", { class: "sm", onclick: () => {
+          const e = sim2.barter(res);
+          if (e) c.toast(e);
+          ctl2.onChange();
+        } });
+        this.barterBtns.push({ res, btn });
+        btns.append(btn);
+      }
+      return box;
+    };
+    this.people = new PeoplePane(c);
+    this.soldiers = new SoldierPane(c);
+    this.tabs.barracks = [{ label: "Ng\u01B0\u1EDDi trong l\u1EC1u", page: page(hint(this.bedHead.barracks, "Chi\u1EBFn binh v\xE0o l\u1EC1u ng\u1EE7 khi tr\u1EDDi t\u1ED1i ho\u1EB7c ki\u1EC7t s\u1EE9c: h\u1ECD bi\u1EBFn m\u1EA5t kh\u1ECFi b\u1EA3n \u0111\u1ED3, hi\u1EC7n \u1EDF danh s\xE1ch n\xE0y, kh\xF4ng c\xF3 h\xECnh ng\u1EE7. H\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7, c\u1EA5p cao h\u01A1n h\u1ED3i nhanh h\u01A1n. H\u1EBFt gi\u01B0\u1EDDng th\xEC l\xEDnh ng\u1EE7 b\xEAn \u0111\u1ED1ng l\u1EEDa, h\u1ED3i ch\u1EADm h\u01A1n. L\xEDnh \u0111\u01B0\u1EE3c tuy\u1EC3n \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i."), this.bedList.barracks) }];
+    this.tabs.house = [{ label: "Ng\u01B0\u1EDDi trong nh\xE0", page: page(hint(this.bedHead.house, "D\xE2n th\u01B0\u1EDDng v\xE0o nh\xE0 ng\u1EE7 khi tr\u1EDDi t\u1ED1i ho\u1EB7c ki\u1EC7t s\u1EE9c: h\u1ECD bi\u1EBFn m\u1EA5t kh\u1ECFi b\u1EA3n \u0111\u1ED3, hi\u1EC7n \u1EDF danh s\xE1ch n\xE0y, kh\xF4ng c\xF3 h\xECnh ng\u1EE7. H\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7, c\u1EA5p cao h\u01A1n h\u1ED3i nhanh h\u01A1n. H\u1EBFt gi\u01B0\u1EDDng th\xEC d\xE2n ng\u1EE7 b\xEAn \u0111\u1ED1ng l\u1EEDa, h\u1ED3i ch\u1EADm h\u01A1n."), this.bedList.house) }];
+    this.tabs.field = [{ label: "Ng\u01B0\u1EDDi l\xE0m ru\u1ED9ng", page: page(this.staffBoxes.farm.root) }];
+    this.tabs.tower = [{ label: "Cung th\u1EE7 canh", page: page(hint(this.towerHead, "Cung th\u1EE7 \u0111\u1EE9ng tr\xEAn ch\xF2i b\u1EAFn xa h\u01A1n 2 \xF4 v\xE0 m\u1EA1nh h\u01A1n m\u1ED9t ph\u1EA7n t\u01B0, v\xE0 k\u1EBB \u0111\u1ECBch ph\u1EA3i ph\xE1 ch\xF2i m\u1EDBi h\u1EA1 \u0111\u01B0\u1EE3c h\u1ECD. Ch\u1EC9 chi\u1EBFn binh c\u1EA7m cung ho\u1EB7c d\xE2y qu\u0103ng \u0111\xE1 m\u1EDBi l\xEAn \u0111\u01B0\u1EE3c. Ch\u1EBF cung v\xE0 d\xE2y qu\u0103ng \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o."), this.towerList) }];
+    this.tabs.fence = [];
+    this.tabs.gate = [];
+    this.tabs.builder = [{ label: "Th\u1EE3 x\xE2y", page: page(this.staffBoxes.build.root) }];
+    this.tabs.campfire = [
+      { label: "D\xE2n", page: page(this.people.root, h("div", { class: "btns" }, h("button", { class: "sm", text: "Ch\u1ECDn t\u1EA5t c\u1EA3 d\xE2n", onclick: () => {
+        ctl2.selected.clear();
+        ctl2.selectAll();
+        ctl2.closeBuilding();
+      } }))) },
+      { label: "L\xEDnh", page: page(this.soldiers.root) },
+      { label: "\u0110\u1ED5i ch\xE1c", page: page(barter2()) }
+    ];
+    const stockRows = [];
+    for (const res of RES_LIST) {
+      const num2 = h("b"), bar2 = h("b");
+      this.resRows.push({ res, num: num2, bar: bar2 });
+      stockRows.push(h("div", { class: "row" }, h("div", { class: "nm" }, RES_NAME[res], h("small", {}, num2)), h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, bar2))));
+    }
+    this.tabs.storage = [{ label: "T\xE0i nguy\xEAn", page: page(...stockRows) }, { label: "\u0110\u1ED5i ch\xE1c", page: page(barter2()) }];
+    const section = (el2, list) => {
+      for (const r of list) {
+        const have = h("span", { class: "have" }), lock = h("small", { class: "lock" });
+        const minus = h("button", { class: "sm", text: "\u2212", title: "B\u1EDBt m\u1ED9t \u0111\u01A1n", onclick: () => {
+          sim2.unqueueCraft(r.id);
+          ctl2.onChange();
+        } });
+        const plus = h("button", { class: "sm", text: "+", title: "Th\xEAm m\u1ED9t \u0111\u01A1n v\xE0o h\xE0ng \u0111\u1EE3i", onclick: () => {
+          const e = sim2.queueCraft(r.id);
+          if (e) c.toast(e);
+          ctl2.onChange();
+        } });
+        const row = h(
+          "div",
+          { class: "rec" },
+          iconCanvas(sprites2.icons[r.id]),
+          h("div", { class: "nm" }, recipeName(r), h("small", {}, `${costText(r.cost, RES_NAME)} \xB7 ${workDays(r.time)} \xB7 ${recipeUse(r)}`), lock),
+          h("div", { class: "qty" }, have, minus, plus)
+        );
+        this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, have, row, lock, btns: [minus, plus] });
+        el2.append(row);
+      }
+      return el2;
+    };
+    const shop = (list) => section(page(hint("Ch\u1EBF t\u1EA1o theo b\u1EA3n v\u1EBD", "Ch\u1EC9 ch\u1EBF \u0111\u01B0\u1EE3c m\xF3n \u0111\xE3 c\xF3 b\u1EA3n v\u1EBD \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u v\xE0 \u0111\u1EE7 c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. S\u1EA3n ph\u1EA9m v\xE0o Kho c\xF4ng c\u1EE5 ho\u1EB7c Kho v\u0169 kh\xED.")), list);
+    this.tabs.workshop = [
+      { label: "\u0110ang l\xE0m", page: page(this.staffBoxes.craft.root, h("h3", { text: "\u0110ang ch\u1EBF t\u1EA1o" }), this.activeBoxes.craft.root, this.queueNote.craft) },
+      { label: "C\xF4ng c\u1EE5", page: shop(RECIPES.filter((r) => ["axe", "pick", "hoe", "hammer", "torch"].includes(r.kind))) },
+      { label: "V\u0169 kh\xED", page: shop(RECIPES.filter((r) => r.kind in WEAPONS)) },
+      { label: "\xC1o gi\xE1p", page: shop(RECIPES.filter((r) => r.kind === "hide")) }
+    ];
+    const groups = [
+      ["B\u1EA3n v\u1EBD c\xF4ng c\u1EE5", (id) => /^(axe|pick|hoe|hammer|torch)\d$/.test(id)],
+      ["B\u1EA3n v\u1EBD v\u0169 kh\xED, gi\xE1p", (id) => /^(club|spear|mace|sling|bow|hide)\d$/.test(id)],
+      ["X\xE2y d\u1EF1ng", (id) => ["timber", "masonry", "tool_store", "armory", "house", "barracks", "farming", "fence", "gate", "tower", "pit"].includes(id)],
+      ["Qu\xE2n s\u1EF1", (id) => ["scout", "council", "drill", "signal"].includes(id) || id.startsWith("form_")],
+      ["T\u1EF1 \u0111\u1ED9ng h\xF3a", (id) => id.startsWith("auto_")]
+    ];
+    this.tabs.lab = [{ label: "\u0110ang l\xE0m", page: page(this.staffBoxes.research.root, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian v\xE0 ng\u01B0\u1EDDi th\xF4ng minh trong nh\xE0: c\xE0ng nhi\u1EC1u v\xE0 c\xE0ng th\xF4ng minh c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research) }];
+    for (const [title, test] of groups) {
+      const el2 = page();
+      for (const t of TECHS.filter((x) => test(x.id))) {
+        const note = h("small", { class: "lock" }), btn = h("button", { class: "sm" });
+        btn.addEventListener("click", () => {
+          const st = sim2.techState(t).state;
+          if (st === "queued") sim2.unqueueResearch(t.id);
+          else {
+            const e = sim2.queueResearch(t.id);
+            if (e) c.toast(e);
+          }
+          ctl2.onChange();
+        });
+        const row = h("div", { class: "tech" }, h("div", { class: "nm" }, t.name, h("small", {}, `${t.desc} M\u1EDF: ${unlockText(t, recipeNm)}.`), h("small", {}, `${costText(t.cost, RES_NAME)} \xB7 ${workDays(t.time)} \xB7 Tr\xED tu\u1EC7 \u2265 ${t.minInt}${t.needLevel > 1 ? ` \xB7 nh\xE0 c\u1EA5p ${t.needLevel}` : ""}`), note), btn);
+        this.techRows.push({ id: t.id, row, btn, note });
+        el2.append(row);
+      }
+      this.tabs.lab.push({ label: title, page: el2 });
+    }
+    this.tabs.repair = [
+      { label: "\u0110ang l\xE0m", page: page(this.staffBoxes.repair.root, h("h3", { text: "\u0110ang s\u1EEDa" }), this.activeBoxes.repair.root, this.queueNote.repair, this.repairInfo) },
+      { label: "C\xF4ng c\u1EE5 c\u1EE7a d\xE2n", page: page(hint("C\xF4ng c\u1EE5 c\u1EE7a d\xE2n", '"\u0110i s\u1EEDa": d\xE2n mang c\xF4ng c\u1EE5 \u0111\xE3 m\xF2n t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa, t\u1ED1n n\u1EEDa nguy\xEAn li\u1EC7u v\xE0 m\u1EA5t 1,5 l\u1EA7n th\u1EDDi gian ch\u1EBF (c\xF4ng c\u1EE5 \u0111\xE1 l\xE2u h\u01A1n c\xF4ng c\u1EE5 g\u1ED7). S\u1EEDa xong c\xF4ng c\u1EE5 \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i cho \u0111\xFAng ng\u01B0\u1EDDi \u0111\xF3; trong l\xFAc ch\u1EDD h\u1ECD l\xE0m vi\u1EC7c tay kh\xF4ng. C\u0169ng c\xF3 th\u1EC3 v\u1EE9t b\u1ECF, k\u1EC3 c\u1EA3 khi ch\u01B0a h\u1ECFng.'), this.toolList) }
+    ];
+    const goods = page(this.goodsHint);
+    const goodsRows = (cat) => RECIPES.filter((r) => cat === "gear" === isGearKind(r.kind));
+    for (const r of [...goodsRows("tool"), ...goodsRows("gear")]) {
+      const num2 = h("b"), row = h("div", { class: "rec" }, iconCanvas(sprites2.icons[r.id]), h("div", { class: "nm" }, recipeName(r), h("small", { text: recipeUse(r) })), h("div", { class: "qty" }, num2));
+      this.goodRows.push({ id: r.id, num: num2, row });
+      goods.append(row);
+    }
+    this.tabs.toolstore = this.tabs.armory = [{ label: "Kho", page: goods }];
+    root.append(
+      h("div", { class: "cardhead" }, this.title, this.state, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => ctl2.closePanel() })),
+      h("div", { class: "mbody" }, this.info, this.tabBar, ...this.pages)
+    );
+  }
+  /** Show the tab buttons of the building and the page of the chosen one. */
+  showTabs(kind, ready) {
+    const tabs = ready ? this.tabs[kind] ?? [] : [];
+    const key = `${kind}:${tabs.length}`;
+    if (key !== this.tabKey) {
+      this.tabKey = key;
+      this.tabBar.replaceChildren(...tabs.map((t, i) => h("button", { class: "sm", text: t.label, role: "tab", onclick: () => {
+        this.tabAt[kind] = i;
+        this.showTabs(kind, true);
+      } })));
+    }
+    const at = Math.min(this.tabAt[kind] ?? 0, Math.max(0, tabs.length - 1));
+    this.tabBar.hidden = tabs.length < 2;
+    [...this.tabBar.children].forEach((el2, i) => el2.setAttribute("aria-pressed", String(i === at)));
+    for (const p of this.pages) p.hidden = tabs[at]?.page !== p;
+  }
+  current() {
+    const id = this.c.ctl.selectedBuilding;
+    return id === null ? void 0 : this.c.sim.getBuilding(id);
+  }
+  infoText(b) {
+    const lv2 = levelDef(b);
+    switch (b.kind) {
+      case "barracks":
+        return `C\u1EA5p ${b.level}: ${lv2.slots} gi\u01B0\u1EDDng cho chi\u1EBFn binh \xB7 h\u1ED3i s\u1EE9c \xD7${lv2.craftSpeed.toLocaleString("vi")} (c\u1EA1nh \u0111\u1ED1ng l\u1EEDa ch\u1EC9 \xD7${rest_default.sleepAt.campfire.toLocaleString("vi")})`;
+      case "house":
+        return `C\u1EA5p ${b.level}: ${lv2.slots} gi\u01B0\u1EDDng cho d\xE2n \xB7 h\u1ED3i s\u1EE9c \xD7${lv2.craftSpeed.toLocaleString("vi")} (c\u1EA1nh \u0111\u1ED1ng l\u1EEDa ch\u1EC9 \xD7${rest_default.sleepAt.campfire.toLocaleString("vi")})`;
+      case "field":
+        return `C\u1EA5p ${b.level}: ${lv2.slots} n\xF4ng d\xE2n l\xE0m m\u1ED9t l\xFAc \xB7 n\u0103ng su\u1EA5t \xD7${lv2.craftSpeed.toLocaleString("vi")} (cu\u1ED1c \u0111\xE1 l\xE0m nhanh h\u01A1n)`;
+      case "builder":
+        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} th\u1EE3 x\xE2y \xB7 x\xE2y nhanh \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+      case "workshop":
+        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} ng\u01B0\u1EDDi ch\u1EBF t\u1EA1o \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+      case "lab":
+        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} nh\xE0 nghi\xEAn c\u1EE9u \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+      case "repair":
+        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} th\u1EE3 s\u1EEDa \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+      case "storage":
+        return `S\u1EE9c ch\u1EE9a ${lv2.cap} m\u1ED7i lo\u1EA1i`;
+      case "toolstore":
+      case "armory":
+        return `Ch\u1EE9a t\u1ED1i \u0111a ${lv2.cap} m\xF3n`;
+      default:
+        return `N\u01A1i d\xE2n ng\u1EE7 quanh l\u1EEDa \xB7 ch\u1EE9a ${lv2.cap} m\u1ED7i lo\u1EA1i \xB7 t\u1ED1i \u0111a ${this.c.sim.popCap()} d\xE2n \xB7 c\xE1c nh\xE0 kh\xE1c l\xEAn \u0111\u01B0\u1EE3c c\u1EA5p ${levelCapByFire(b.level)}`;
+    }
+  }
+  update() {
+    const { sim: sim2, ctl: ctl2 } = this.c, b = this.current();
+    this.root.hidden = !b || !ctl2.buildingOpen;
+    if (!b) {
+      if (ctl2.selectedBuilding !== null) ctl2.selectedBuilding = null;
+      return;
+    }
+    if (!ctl2.buildingOpen) return;
+    const def = BUILDINGS[b.kind], lv2 = levelDef(b), top = maxLevel(b.kind, b.era), ready = b.done;
+    this.title.textContent = `${def.name}${def.buildable ? ` \xB7 c\u1EA5p ${b.level}/${top} (${lv2.name.toLowerCase()})` : ""}`;
+    this.state.textContent = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%` : "\u0111ang d\xF9ng";
+    this.showTabs(b.kind, ready);
+    this.info.textContent = !b.done ? "Giao d\xE2n l\xE0m Th\u1EE3 x\xE2y \u0111\u1EC3 d\u1EF1ng c\xF4ng tr\xECnh n\xE0y." : this.infoText(b);
+    if (b.kind === "campfire" && ready) this.updateCampfire();
+    if (b.kind === "storage" && ready) for (const r of this.resRows) {
+      r.num.textContent = `${Math.floor(sim2.stock[r.res])} / ${sim2.capacity()}`;
+      r.bar.style.width = `${Math.min(100, sim2.stock[r.res] / Math.max(1, sim2.capacity()) * 100)}%`;
+    }
+    if ((b.kind === "storage" || b.kind === "campfire") && ready) for (const t of this.barterBtns) {
+      t.btn.textContent = `\u0110\u1ED5i ${BARTER[t.res]} ${RES_NAME[t.res].toLowerCase()} \u2192 1 ${RES_NAME.coin.toLowerCase()}`;
+      t.btn.disabled = sim2.stock[t.res] < BARTER[t.res];
+    }
+    if ((b.kind === "barracks" || b.kind === "house") && ready) this.updateBeds(b);
+    if (b.kind === "field" && ready) this.staffBoxes.farm.update(b);
+    if (b.kind === "tower" && ready) this.updateTower(b);
+    if (b.kind === "workshop" && ready) this.updateWorkshop(b);
+    if (b.kind === "lab" && ready) this.updateLab(b);
+    if (b.kind === "repair" && ready) this.updateRepair(b);
+    if (b.kind === "toolstore" || b.kind === "armory") {
+      if (ready) this.updateGoods(b);
+    }
+  }
+  updateWorkshop(b) {
+    const { sim: sim2 } = this.c;
+    this.staffBoxes.craft.update(b);
+    this.activeBoxes.craft.update(b);
+    this.queueNote.craft.textContent = `H\xE0ng \u0111\u1EE3i ${sim2.craftQueue.length}: ${sim2.craftQueue.map((id) => recipeName(RECIPE_BY_ID[id]).toLowerCase()).join(", ") || "tr\u1ED1ng"} \xB7 Kho c\xF4ng c\u1EE5 ${sim2.storeUsed("tool")}/${sim2.storeCap("tool")} \xB7 Kho v\u0169 kh\xED ${sim2.storeUsed("gear")}/${sim2.storeCap("gear")}`;
+    for (const r of this.recRows) {
+      const lock = sim2.recipeLock(r.id);
+      r.have.textContent = lock ? "" : `kho ${sim2.toolCount(r.kind, r.tier)} \xB7 \u0111\u1EE3i ${sim2.craftQueue.filter((id) => id === r.id).length}`;
+      r.row.classList.toggle("locked", !!lock);
+      r.lock.textContent = lock ?? "";
+      for (const btn of r.btns) btn.disabled = !!lock;
+    }
+  }
+  updateLab(b) {
+    const { sim: sim2 } = this.c;
+    this.staffBoxes.research.update(b);
+    this.activeBoxes.research.update(b);
+    const waiting = sim2.researchQueue[0];
+    this.queueNote.research.textContent = `${waiting ? `Ch\u1EDD b\u1EAFt \u0111\u1EA7u: ${TECHS.find((t) => t.id === waiting)?.name ?? waiting}` : "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9"} \xB7 Ng\u01B0\u1EDDi gi\u1ECFi nh\u1EA5t trong nh\xE0: Tr\xED tu\u1EC7 ${sim2.bestIntInside(b)}`;
+    for (const r of this.techRows) {
+      const t = TECHS.find((x) => x.id === r.id), st = sim2.techState(t), block = st.state === "queued" ? sim2.researchBlock(t) : null;
+      r.row.classList.toggle("locked", st.state === "locked");
+      r.row.classList.toggle("done", st.state === "done");
+      const busy2 = st.state === "ready" && sim2.currentResearch() !== null, short = st.state === "ready" && !busy2 ? sim2.researchShort(t) : null;
+      r.note.textContent = busy2 ? "\u0110\u1EE3i nghi\xEAn c\u1EE9u hi\u1EC7n t\u1EA1i xong" : short ? short : st.state === "locked" ? st.why ?? "" : st.state === "active" ? "\u0110ang nghi\xEAn c\u1EE9u\u2026" : st.state === "queued" ? block ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u, ch\u1EDD b\u1EAFt \u0111\u1EA7u" : st.state === "done" ? "\u0110\xE3 nghi\xEAn c\u1EE9u" : "";
+      r.btn.textContent = { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state];
+      r.btn.disabled = st.state === "done" || st.state === "active" || st.state === "locked" || busy2 || !!short;
+    }
+  }
+  updateRepair(b) {
+    const { sim: sim2, ctl: ctl2 } = this.c;
+    this.staffBoxes.repair.update(b);
+    this.activeBoxes.repair.update(b);
+    this.queueNote.repair.textContent = `H\xE0ng \u0111\u1EE3i s\u1EEDa ${sim2.repairQueue.length}: ${sim2.repairQueue.map((id) => recipeName(RECIPE_BY_ID[id]).toLowerCase()).join(", ") || "tr\u1ED1ng"}`;
+    this.repairInfo.textContent = "";
+    const rows = [];
+    for (const v of sim2.villagers) for (const k of TOOL_KINDS) {
+      const t = v.tools[k];
+      if (t) rows.push({ v, k, t });
+    }
+    const key = rows.map((r) => `${r.v.id}${r.k}${r.t.tier}${Math.ceil(r.t.dur / TIER_DURABILITY[r.t.tier] * 10)}`).join();
+    if (key === this.toolKey) return;
+    this.toolKey = key;
+    this.toolList.replaceChildren(...rows.length ? rows.map(({ v, k, t }) => {
+      const pct2 = Math.round(t.dur / TIER_DURABILITY[t.tier] * 100), whole = pct2 >= 100;
+      return h(
+        "div",
+        { class: "row" },
+        h("div", { class: "nm" }, `${v.name}: ${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()}`, h("small", { text: t.dur <= 0 ? "\u0111\xE3 h\u1ECFng" : `c\xF2n ${pct2}% \u0111\u1ED9 b\u1EC1n` })),
+        h(
+          "div",
+          { class: "btns" },
+          h("button", { class: "sm", text: "\u0110i s\u1EEDa", disabled: whole || v.phase === "goOrder", onclick: () => {
+            const e = sim2.repairTool([v.id], k);
+            if (e) this.c.toast(e);
+            ctl2.onChange();
+          } }),
+          h("button", { class: "sm", text: "B\u1ECF", onclick: () => {
+            sim2.discardTool([v.id], k);
+            ctl2.onChange();
+          } })
+        )
+      );
+    }) : [h("p", { class: "sub", text: "Ch\u01B0a c\xF3 d\xE2n n\xE0o c\u1EA7m c\xF4ng c\u1EE5." })]);
+  }
+  updateGoods(b) {
+    const { sim: sim2 } = this.c, cat = b.kind === "toolstore" ? "tool" : "gear";
+    this.goodsNote.textContent = `\u0110ang ch\u1EE9a ${sim2.storeUsed(cat)}/${sim2.storeCap(cat)} m\xF3n`;
+    this.goodsHint.tip.textContent = autoOn(sim2.researched, "fetch") ? "D\xE2n thi\u1EBFu \u0111\u1ED3 ho\u1EB7c \u0111\u1ED3 h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi l\u1EA5y." : 'Ch\u01B0a nghi\xEAn c\u1EE9u "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho": h\xE3y ph\xE1t \u0111\u1ED3 b\u1EB1ng tay \u1EDF th\u1EBB d\xE2n.';
+    for (const r of this.goodRows) {
+      const rc = RECIPE_BY_ID[r.id], mine2 = cat === "gear" === isGearKind(rc.kind), n = sim2.toolCount(rc.kind, rc.tier);
+      r.row.hidden = !mine2 || n === 0 && !!sim2.recipeLock(r.id);
+      r.num.textContent = `\xD7 ${n}`;
+    }
+  }
+  /** Who keeps watch on the tower, and the archers who could. */
+  updateTower(b) {
+    const { sim: sim2, ctl: ctl2, toast } = this.c, crew2 = sim2.garrison(b), slots = levelDef(b).slots;
+    const archers = sim2.villagers.filter((v) => v.job === "fight" && v.post !== b.id && WEAPONS[v.weapon ?? "fist"].ranged);
+    this.towerHead.textContent = `Cung th\u1EE7 tr\xEAn ch\xF2i (${crew2.length}/${slots})`;
+    const key = `${b.id}|${crew2.map((v) => v.id).join()}|${archers.map((v) => `${v.id}.${v.post}`).join()}|${crew2.length >= slots}`;
+    if (key === this.towerKey) return;
+    this.towerKey = key;
+    const row = (v, label, fn) => h("div", { class: "row" }, h("div", { class: "nm" }, v.name, h("small", { text: WEAPONS[v.weapon ?? "fist"].name })), h("button", { class: "sm", text: label, disabled: label === "L\xEAn ch\xF2i" && crew2.length >= slots, onclick: () => {
+      fn();
+      ctl2.onChange();
+    } }));
+    this.towerList.replaceChildren(
+      ...crew2.length ? crew2.map((v) => row(v, "Xu\u1ED1ng", () => sim2.leaveTower([v.id]))) : [h("p", { class: "sub", text: "Ch\u01B0a c\xF3 cung th\u1EE7 n\xE0o tr\xEAn ch\xF2i." })],
+      h("p", { class: "sub", text: archers.length ? "Cung th\u1EE7 c\xF3 th\u1EC3 l\xEAn:" : "Ch\u01B0a c\xF3 chi\u1EBFn binh n\xE0o c\u1EA7m cung ho\u1EB7c d\xE2y qu\u0103ng." }),
+      ...archers.map((v) => row(v, "L\xEAn ch\xF2i", () => {
+        const e = sim2.assignTower([v.id], b.id);
+        if (e) toast(e);
+      }))
+    );
+  }
+  updateCampfire() {
+    this.people.update();
+    this.soldiers.update();
+  }
+  /** Who lies in the beds of a Nhà dân or a Lều chiến binh, with their strength. Rebuilt only when the sleepers change. */
+  updateBeds(b) {
+    const kind = b.kind, sleepers2 = this.c.sim.sleepers(b), inside = sleepers2.filter((v) => v.inside === b.id);
+    this.bedHead[kind].textContent = `\u0110ang ng\u1EE7 (${inside.length}/${levelDef(b).slots} gi\u01B0\u1EDDng)${sleepers2.length > inside.length ? ` \xB7 ${sleepers2.length - inside.length} \u0111ang t\u1EDBi` : ""}`;
+    const key = `${sleepers2.map((v) => `${v.id}${v.inside === b.id}${Math.round(v.energy)}`).join()}|${kind}|${b.id}`;
+    if (key === this.bedKey[kind]) return;
+    this.bedKey[kind] = key;
+    this.bedList[kind].replaceChildren(...sleepers2.length ? sleeperRows(this.c.sim, sleepers2) : [h("p", { class: "sub", text: kind === "barracks" ? "Ch\u01B0a c\xF3 chi\u1EBFn binh n\xE0o trong l\u1EC1u. L\xEDnh v\xE0o l\u1EC1u khi tr\u1EDDi t\u1ED1i ho\u1EB7c khi ki\u1EC7t s\u1EE9c." : "Ch\u01B0a c\xF3 ai trong nh\xE0. D\xE2n v\xE0o nh\xE0 khi tr\u1EDDi t\u1ED1i ho\u1EB7c khi ki\u1EC7t s\u1EE9c." })]);
+  }
+};
+var isGearKind = (k) => k in WEAPONS || k === "hide";
+
+// src/ui/warhud.ts
+var WarHud = class {
+  constructor(root, c, r) {
+    this.root = root;
+    this.c = c;
+    this.r = r;
+    this.key = "";
+  }
+  update() {
+    const { sim: sim2, ctl: ctl2, toast } = this.c, attack = sim2.plans.find((p) => p.kind === "attack" && p.status === "running");
+    const show = sim2.squads.length > 0 || sim2.battle.on || !!attack;
+    this.root.hidden = !show;
+    if (!show) return;
+    const cs = sim2.clusters(), ours = cs.filter((c) => c.side === "player").reduce((n, c) => n + c.n, 0), theirs = cs.filter((c) => c.side !== "player").reduce((n, c) => n + c.n, 0);
+    const health = (s) => {
+      const us = s.ids.map((id) => sim2.get(id)).filter((v) => !!v && v.health > 0);
+      return { n: us.length, hp: us.length ? Math.round(100 * us.reduce((a, v) => a + v.health / v.maxHealth, 0) / us.length) : 0 };
+    };
+    const key = [sim2.squads.map((s) => {
+      const q = health(s);
+      return `${s.id}.${q.n}.${Math.round(q.hp / 5)}.${s.formation}.${s.switchUntil > sim2.time}`;
+    }).join(), JSON.stringify(attack?.cards), JSON.stringify(attack?.missions.map((m) => m.state)), sim2.battle.on, ours, theirs, sim2.alarmUntil > sim2.time, this.r.reduceFigures].join("|");
+    if (key === this.key) return;
+    this.key = key;
+    const chips = sim2.squads.map((s) => {
+      const q = health(s);
+      return h("button", { class: "sm", style: `border-left:6px solid ${s.color}`, text: `${s.name} \xB7 ${q.n} \xB7 ${q.hp}% \xB7 ${FORMATIONS[s.formation].name}${s.switchUntil > sim2.time ? " \u27F3" : ""}`, title: "Ch\u1ECDn c\u1EA3 \u0111\u1ED9i", onclick: () => {
+        ctl2.selected.clear();
+        for (const id of s.ids) ctl2.selected.add(id);
+        ctl2.focusSelection();
+        ctl2.onChange();
+      } });
+    });
+    const cards = attack ? attack.cards.map((cd) => {
+      const sq = sim2.squadById(cd.squad);
+      return h("button", { class: "sm primary", text: `${CARD_NAME[cd.kind]}${cd.kind !== "signal" && sq ? ` \xB7 ${sq.name}` : ""}${cd.arg ? ` \xB7 ${FORMATIONS[cd.arg]?.name ?? cd.arg}` : ""}`, onclick: () => {
+        const e = sim2.playCard(attack, cd.id);
+        if (e) toast(e);
+        ctl2.onChange();
+      } });
+    }) : [];
+    this.root.replaceChildren(
+      h("div", { class: "btns" }, h("b", { text: sim2.battle.on ? `Giao tranh: ta ${ours} \xB7 \u0111\u1ECBch ${theirs}` : `Qu\xE2n: ${ours}` }), ...chips),
+      h(
+        "div",
+        { class: "btns" },
+        ...cards,
+        h("button", { class: "sm danger", text: sim2.alarmUntil > sim2.time ? "\u0110ang b\xE1o \u0111\u1ED9ng" : "B\xE1o \u0111\u1ED9ng", disabled: sim2.alarmUntil > sim2.time, onclick: () => {
+          const e = sim2.soundAlarm();
+          if (e) toast(e);
+          ctl2.onChange();
+        } }),
+        h("button", { class: "sm", text: "G\u1ECDn c\u1EE5m", pressed: this.r.reduceFigures, title: "Tr\u1EADn l\u1EDBn: v\u1EBD m\u1ED9t h\xECnh cho kho\u1EA3ng ba l\xEDnh", onclick: () => {
+          this.r.reduceFigures = !this.r.reduceFigures;
+          ctl2.onChange();
+        } })
+      )
+    );
+  }
+};
+
+// src/save/store.ts
+var MemoryStore = class {
+  constructor() {
+    this.saves = /* @__PURE__ */ new Map();
+  }
+  async list() {
+    return [...this.saves.values()].map((s) => s.meta).sort((a, b) => b.savedAt - a.savedAt);
+  }
+  async load(id) {
+    const s = this.saves.get(id);
+    return s ? JSON.parse(s.json) : null;
+  }
+  async save(id, data, meta) {
+    this.saves.set(id, { meta: { ...meta, id, version: data.version, seed: data.seed }, json: JSON.stringify(data) });
+  }
+  async remove(id) {
+    this.saves.delete(id);
+  }
+};
+
+// src/save/session.ts
+var AUTO_SAVE = "auto";
+var Session = class {
+  constructor(sim2, store) {
+    this.sim = sim2;
+    this.store = store;
+    this.busy = false;
+    /** Called with a message when a save fails, so the player is told once. */
+    this.onError = () => {
+    };
+    this.lastDay = sim2.day;
+  }
+  /** Call every frame (or often): saves when a new day has begun. */
+  tick() {
+    if (this.sim.day === this.lastDay) return;
+    this.lastDay = this.sim.day;
+    void this.save();
+  }
+  /** Save now. Two saves never overlap: one asked for while another is running is skipped. */
+  async save(id = AUTO_SAVE) {
+    if (this.busy) return false;
+    this.busy = true;
+    try {
+      const sim2 = this.sim;
+      await this.store.save(id, sim2.toSave(), { savedAt: Date.now(), day: sim2.day, population: sim2.villagers.length });
+      return true;
+    } catch (e) {
+      this.onError(`Kh\xF4ng l\u01B0u \u0111\u01B0\u1EE3c: ${e instanceof Error ? e.message : String(e)}`);
+      return false;
+    } finally {
+      this.busy = false;
+    }
+  }
+  /** The newest save, if any. */
+  async latest() {
+    try {
+      return (await this.store.list())[0] ?? null;
+    } catch {
+      return null;
+    }
+  }
+  /** Put a save into this game. Returns false when there is none; the save must be of this world. */
+  async resume(id) {
+    const data = await this.store.load(id);
+    if (!data) return false;
+    this.sim.loadSave(data);
+    this.lastDay = this.sim.day;
+    return true;
+  }
+  async forget(id = AUTO_SAVE) {
+    await this.store.remove(id);
+  }
+};
+
+// tools/check-ui.ts
+var fakeEl = () => {
+  const kids = [], store = { children: kids, hidden: false, dataset: {}, style: new Proxy({}, { get: () => "", set: () => true }), classList: { add() {
+  }, remove() {
+  }, toggle() {
+  }, contains: () => false }, clientWidth: 800, clientHeight: 400, textContent: "", innerHTML: "", value: "", width: 100, height: 100 };
+  return new Proxy(store, {
+    get(t, p) {
+      if (p in t) return t[p];
+      if (p === "append" || p === "appendChild" || p === "replaceChildren" || p === "prepend") return (...a) => {
+        if (p === "replaceChildren") kids.length = 0;
+        kids.push(...a);
+        return a[0];
+      };
+      if (p === "getContext") return () => fakeCtx;
+      if (p === "getBoundingClientRect") return () => ({ left: 0, top: 0, width: 800, height: 400 });
+      if (p === "querySelector") return () => fakeEl();
+      if (p === "querySelectorAll") return () => [];
+      if (p === "closest") return () => null;
+      return () => void 0;
+    },
+    set(t, p, v) {
+      t[p] = v;
+      return true;
+    }
+  });
+};
+var fakeCtx = new Proxy({}, { get: (_t, p) => p === "getImageData" || p === "createImageData" ? (w, h2) => ({ data: new Uint8ClampedArray(Math.max(1, w * h2 * 4)), width: w, height: h2 }) : p === "measureText" ? () => ({ width: 10 }) : p === "createLinearGradient" || p === "createRadialGradient" ? () => ({ addColorStop() {
+} }) : () => void 0, set: () => true });
+var g = globalThis;
+g.document = { createElement: fakeEl, getElementById: fakeEl, createTextNode: (t) => ({ textContent: t }), querySelector: fakeEl, querySelectorAll: () => [], addEventListener() {
+}, documentElement: fakeEl() };
+g.ImageData = class {
+  constructor(data, width, height) {
+    this.data = data;
+    this.width = width;
+    this.height = height;
+  }
+};
+g.devicePixelRatio = 1;
+g.window = g;
+g.innerWidth = 800;
+g.innerHeight = 400;
+g.matchMedia = () => ({ matches: false, addEventListener() {
+} });
+g.location = { search: "" };
+g.Node = class {
+};
+g.window.addEventListener = () => void 0;
+g.addEventListener = () => void 0;
+g.ResizeObserver = class {
+  observe() {
+  }
+};
+g.HTMLElement = class {
+};
+var step2 = (name, fn) => {
+  try {
+    fn();
+    console.log("ok   ", name);
+  } catch (e) {
+    console.log("THROW", name, e.stack?.split("\n").slice(0, 5).join("\n"));
+  }
+};
+var sim = new Sim(1337);
+var view = fakeEl();
+var cam = { x: 0, y: 0, zoom: 2 };
+var sprites = new Sprites();
+var renderer;
+var ctl;
+var ctx;
+step2("renderer and controller", () => {
+  renderer = new Renderer(view, sim, cam, sprites);
+  ctl = new Controller(view, sim, cam, renderer);
+});
+ctx = { sim, ctl, sprites, session: new Session(sim, new MemoryStore()), toast: () => void 0 };
+var el = () => fakeEl();
+step2("unit card", () => new UnitCard(el(), ctx, el()));
+step2("target card", () => new TargetCard(el(), ctx));
+var panel;
+step2("building panel", () => {
+  panel = new BuildingPanel(el(), ctx);
+});
+var bar;
+step2("building bar", () => {
+  bar = new BuildingBar(el(), ctx, renderer, new Confirm(el(), ctx));
+});
+step2("map", () => new MapView(sim, cam, renderer, ctl, el(), el(), el()));
+var menu;
+step2("menu", () => {
+  menu = new Menu(el(), el(), el(), ctx, () => ({ x: 0, y: 0 }));
+});
+step2("menu open on every tab", () => {
+  for (const t of ["build", "places", "dev", "tribes", "people"]) {
+    try {
+      menu.open(t);
+      menu.update();
+    } catch (e) {
+      throw new Error(`tab ${t}: ${e.stack?.split("\n").slice(0, 3).join(" | ")}`);
+    }
+  }
+});
+step2("panels update for every kind of building", () => {
+  combatReady(sim);
+  defenseLine(sim, 8);
+  raiseArmy(sim, "bow", 2);
+  garrisonTowers(sim);
+  for (const b of sim.buildings) {
+    ctl.selectedBuilding = b.id;
+    ctl.buildingOpen = true;
+    try {
+      panel.update();
+      bar.update();
+    } catch (e) {
+      throw new Error(`${b.kind}: ${e.stack?.split("\n").slice(0, 3).join(" | ")}`);
+    }
+  }
+});
+step2("every building has art for each level and stage, and every recipe an icon", () => {
+  for (const kind of Object.keys(BUILDINGS)) for (let lv2 = 1; lv2 <= maxLevel(kind, "stone") + (kind === "gate" ? 2 : 0); lv2++) for (let st = 0; st <= 4; st++) sprites.building(kind, "stone", lv2, st);
+  const missing2 = RECIPES.filter((r) => !sprites.icons[r.id]).map((r) => r.id);
+  if (missing2.length) throw new Error(`no icon for ${missing2.join(", ")}`);
+});
+step2("war tent pages and the battle HUD, with squads, maps, plans and a fight on", () => {
+  combatReady(sim);
+  giveMaps(sim, 3);
+  formSquads(sim);
+  sampleAttack(sim);
+  sampleDefense(sim);
+  const plan2 = sim.plans.find((p) => p.kind === "attack");
+  sim.startPlan(plan2);
+  enemyWave(sim, "axe", ["club", "bow", "spear"]);
+  for (let i = 0; i < 200; i++) sim.tick(0.05);
+  const war = new WarPanel(ctx), hud = new WarHud(el(), ctx, renderer);
+  for (const t of ["squads", "maps", "plan", "defense", "log"]) {
+    try {
+      war.open(t);
+    } catch (e) {
+      throw new Error(`war tab ${t}: ${e.stack?.split(String.fromCharCode(10)).slice(0, 3).join(" | ")}`);
+    }
+  }
+  hud.update();
+  renderer.draw(0, /* @__PURE__ */ new Set(), null, [], null, null, null);
+  renderer.reduceFigures = true;
+  renderer.draw(0, /* @__PURE__ */ new Set(), null, [], null, null, null);
+});

@@ -112,10 +112,6 @@ var FIRE_VISION = 8;
 var TICK = 1 / 20;
 var DAY_LENGTH = 1200;
 var START_TIME = DAY_LENGTH * 0.25;
-var gameDays = (secs) => {
-  const d = secs / DAY_LENGTH;
-  return `${d.toLocaleString("vi", { maximumFractionDigits: d < 1 ? 2 : d < 10 ? 1 : 0 })} ng\xE0y`;
-};
 var WORK_DAY = 240;
 var PACE = { work: WORK_DAY / DAY_LENGTH };
 
@@ -130,13 +126,13 @@ var seasons_default = {
 // src/data/weather.json
 var weather_default = {
   types: {
-    clear: { name: "N\u1EAFng", vision: 0, speed: 1, work: 1, signal: "" },
-    mist: { name: "S\u01B0\u01A1ng m\u1ECFng", vision: 2, speed: 1, work: 0.95, signal: "H\u01A1i n\u01B0\u1EDBc b\u1ED1c l\xEAn t\u1EEB \u0111\u1EA5t, s\xE1ng mai c\xF3 l\u1EBD s\u1EBD c\xF3 s\u01B0\u01A1ng." },
-    drizzle: { name: "M\u01B0a nh\u1EB9", vision: 0, speed: 0.9, work: 0.85, signal: "M\xE2y x\xE1m k\xE9o t\u1EDBi, c\xF3 l\u1EBD ng\xE0y mai m\u01B0a." },
-    rain: { name: "M\u01B0a to", vision: 1, speed: 0.75, work: 0.7, signal: "Tr\u1EDDi t\u1ED1i s\u1EA7m, gi\xF3 \u1EA9m n\u1ED5i l\xEAn: ng\xE0y mai m\u01B0a to." },
-    thunder: { name: "Gi\xF4ng s\xE9t", vision: 3, speed: 0.85, work: 0.6, signal: "Kh\xF4ng kh\xED oi n\u1ED3ng, m\xE2y d\u1EF1ng th\xE0nh th\xE1p: s\u1EAFp c\xF3 gi\xF4ng." },
-    storm: { name: "B\xE3o", vision: 4, speed: 0.7, work: 0.45, signal: "Gi\xF3 gi\u1EADt m\u1EA1nh, chim bay t\xE1n lo\u1EA1n: b\xE3o \u0111ang t\u1EDBi." },
-    snow: { name: "Tuy\u1EBFt", vision: 1, speed: 0.75, work: 0.6, signal: "Gi\xF3 l\u1EA1nh bu\u1ED1t th\u1ED5i v\u1EC1, c\xF3 l\u1EBD s\u1EAFp c\xF3 tuy\u1EBFt." }
+    clear: { name: "N\u1EAFng", vision: 0, speed: 1, work: 1, bow: 1, signal: "" },
+    mist: { name: "S\u01B0\u01A1ng m\u1ECFng", vision: 2, speed: 1, work: 0.95, bow: 1, signal: "H\u01A1i n\u01B0\u1EDBc b\u1ED1c l\xEAn t\u1EEB \u0111\u1EA5t, s\xE1ng mai c\xF3 l\u1EBD s\u1EBD c\xF3 s\u01B0\u01A1ng." },
+    drizzle: { name: "M\u01B0a nh\u1EB9", vision: 0, speed: 0.9, work: 0.85, bow: 0.85, signal: "M\xE2y x\xE1m k\xE9o t\u1EDBi, c\xF3 l\u1EBD ng\xE0y mai m\u01B0a." },
+    rain: { name: "M\u01B0a to", vision: 1, speed: 0.75, work: 0.7, bow: 0.7, signal: "Tr\u1EDDi t\u1ED1i s\u1EA7m, gi\xF3 \u1EA9m n\u1ED5i l\xEAn: ng\xE0y mai m\u01B0a to." },
+    thunder: { name: "Gi\xF4ng s\xE9t", vision: 3, speed: 0.85, work: 0.6, bow: 0.7, signal: "Kh\xF4ng kh\xED oi n\u1ED3ng, m\xE2y d\u1EF1ng th\xE0nh th\xE1p: s\u1EAFp c\xF3 gi\xF4ng." },
+    storm: { name: "B\xE3o", vision: 4, speed: 0.7, work: 0.45, bow: 0.5, signal: "Gi\xF3 gi\u1EADt m\u1EA1nh, chim bay t\xE1n lo\u1EA1n: b\xE3o \u0111ang t\u1EDBi." },
+    snow: { name: "Tuy\u1EBFt", vision: 1, speed: 0.75, work: 0.6, bow: 0.85, signal: "Gi\xF3 l\u1EA1nh bu\u1ED1t th\u1ED5i v\u1EC1, c\xF3 l\u1EBD s\u1EAFp c\xF3 tuy\u1EBFt." }
   },
   chance: {
     spring: { clear: 0.45, mist: 0.15, drizzle: 0.25, rain: 0.15 },
@@ -189,7 +185,7 @@ function rollWeather(season, r) {
 
 // src/sim/buildings.ts
 var ERAS = ["stone", "ancient"];
-var lv = (name, cost, buildTime, cap = 0, craftSpeed = 1, slots = 0) => ({ name, cost, buildTime, cap, craftSpeed, slots });
+var lv = (name, cost, buildTime, cap = 0, craftSpeed = 1, slots = 0, hp = 0) => ({ name, cost, buildTime, cap, craftSpeed, slots, hp });
 var BUILDINGS = {
   // the heart of the village: it starts as a heap of firewood and every other house is held back by its level
   campfire: {
@@ -285,6 +281,71 @@ var BUILDINGS = {
     requires: ["builder"],
     perFire: [1, 3, 3, 3],
     levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 4), lv("G\u1ED7", { wood: 30, stone: 10 }, 100, 0, 1.15, 8), lv("\u0110\xE1", { wood: 40, stone: 30 }, 150, 0, 1.3, 12)] }
+  },
+  // defence works (not "one of each": they are laid piece by piece, as many as the campfire allows). hp is what the raiders must break down.
+  fence: {
+    kind: "fence",
+    name: "H\xE0ng r\xE0o c\u1ECDc",
+    w: 1,
+    h: 1,
+    buildable: true,
+    requires: ["builder"],
+    perFire: [14, 30, 50, 70],
+    repeat: true,
+    levels: { stone: [lv("C\u1ECDc nh\u1ECDn", { wood: 2 }, 14, 0, 1, 0, 40), lv("H\xE0ng r\xE0o \u0111\xF4i", { wood: 4, stone: 1 }, 24, 0, 1, 0, 120)] }
+  },
+  // slots here are the archers who can keep watch on a tower; a gate has no staff, it opens and shuts
+  gate: {
+    kind: "gate",
+    name: "C\u1ED5ng",
+    w: 1,
+    h: 1,
+    buildable: true,
+    requires: ["fence"],
+    perFire: [1, 2, 3, 4],
+    levels: { stone: [lv("C\u1ED5ng g\u1ED7", { wood: 4 }, 20, 0, 1, 0, 30), lv("C\u1ED5ng \u0111\xF4i", { wood: 6, stone: 2 }, 32, 0, 1, 0, 90)] }
+  },
+  tower: {
+    kind: "tower",
+    name: "Ch\xF2i canh",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["fence"],
+    perFire: [0, 1, 2, 3],
+    levels: { stone: [lv("Ch\xF2i g\u1ED7", { wood: 20 }, 80, 0, 1, 2, 150), lv("Ch\xF2i cao", { wood: 30, stone: 8 }, 130, 0, 1.2, 4, 300)] }
+  },
+  // where the squads, formations and plans are made: its level decides how many squads and command cards there are
+  wartent: {
+    kind: "wartent",
+    name: "L\u1EC1u h\u1ECDp chi\u1EBFn",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["builder"],
+    levels: { stone: [lv("L\u1EC1u da", { wood: 30, hide: 8 }, 90), lv("L\u1EC1u l\u1EDBn", { wood: 40, hide: 10, stone: 15 }, 140), lv("L\u1EC1u th\u1EE7 l\u0129nh", { wood: 50, stone: 40, hide: 14 }, 200)] }
+  },
+  // the drill ground: squads train their formation here
+  drill: {
+    kind: "drill",
+    name: "B\xE3i t\u1EADp",
+    w: 3,
+    h: 3,
+    buildable: true,
+    requires: ["barracks"],
+    levels: { stone: [lv("B\xE3i c\u1ECDc", { wood: 25 }, 80), lv("B\xE3i r\xE0o", { wood: 30, stone: 10 }, 120), lv("B\xE3i \u0111\xE1", { wood: 35, stone: 30 }, 170)] }
+  },
+  // a pit of sharpened stakes, laid one at a time; hp is how many men it can still wound
+  trap: {
+    kind: "trap",
+    name: "H\u1ED1 ch\xF4ng",
+    w: 1,
+    h: 1,
+    buildable: true,
+    requires: ["fence"],
+    perFire: [4, 10, 18, 28],
+    repeat: true,
+    levels: { stone: [lv("H\u1ED1 ch\xF4ng", { wood: 3 }, 12, 0, 1, 0, 3), lv("H\u1ED1 ch\xF4ng s\xE2u", { wood: 4, stone: 2 }, 20, 0, 1, 0, 6)] }
   },
   // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
   field: {
@@ -819,6 +880,7 @@ var weapons_default = {
       cost: {
         wood: 1
       },
+      durability: 120,
       time: 40,
       tier: 1,
       style: "swing"
@@ -832,6 +894,7 @@ var weapons_default = {
       cost: {
         wood: 2
       },
+      durability: 100,
       time: 60,
       tier: 1,
       style: "thrust"
@@ -846,6 +909,7 @@ var weapons_default = {
         wood: 2,
         stone: 2
       },
+      durability: 160,
       time: 120,
       tier: 2,
       style: "swing"
@@ -863,10 +927,13 @@ var weapons_default = {
     sling: {
       name: "D\xE2y qu\u0103ng \u0111\xE1",
       type: "crush",
-      range: 7,
+      range: 5.5,
       damage: 5,
       cycle: 1.8,
       ranged: true,
+      cost: { hide: 1, stone: 1 },
+      durability: 90,
+      time: 60,
       style: "sling",
       projectile: "stone",
       tier: 1
@@ -874,10 +941,13 @@ var weapons_default = {
     bow: {
       name: "Cung ng\u1EAFn",
       type: "pierce",
-      range: 11,
+      range: 8,
       damage: 8,
       cycle: 2,
       ranged: true,
+      cost: { wood: 3, hide: 1 },
+      durability: 110,
+      time: 100,
       style: "shoot",
       projectile: "arrow",
       tier: 1
@@ -892,6 +962,7 @@ var weapons_default = {
       cost: {
         hide: 3
       },
+      durability: 200,
       time: 100,
       tier: 1
     }
@@ -938,6 +1009,119 @@ function damageOf(w, strength, armor, backstab) {
   const base = w.damage + (w.ranged ? 0 : RULES.strengthDamage * strength);
   return base * (1 - (armor ? armor[w.type] : 0)) * (backstab ? RULES.backstab : 1);
 }
+
+// src/data/units.json
+var units_default = {
+  _note: "Arms of the army and what beats what. A weapon decides its arm: ranged weapons (sling, bow) make an archer, everything else a foot soldier; a rider (cavalry) is a soldier on a tamed beast, which the game does not have yet but the table is ready for. beats[attacker][defender] multiplies the damage an attacker does. Foot beats archers, archers beat riders, riders beat foot. The small bonuses are on top of that.",
+  arms: {
+    foot: "B\u1ED9 binh",
+    archer: "Cung th\u1EE7",
+    cavalry: "K\u1EF5 th\xFA"
+  },
+  beats: {
+    foot: { foot: 1, archer: 1.5, cavalry: 0.67 },
+    archer: { foot: 0.67, archer: 1, cavalry: 1.5 },
+    cavalry: { foot: 1.5, archer: 0.67, cavalry: 1 }
+  },
+  spearVsCavalry: 1.15,
+  archerOnTower: { damage: 1.25, range: 2, within: 2.2 },
+  archerPressed: { within: 2, damage: 0.5 }
+};
+
+// src/data/formations.json
+var formations_default = {
+  _note: "Battle formations (tr\u1EADn ph\xE1p) and the numbers of command. dmg = damage the squad does, taken = damage it takes, speed = pace of the march; charge applies while a wedge runs at the foe, flank when a blow lands from behind, firstBlow to a foe who has not yet noticed the squad, takenRanged to arrows and stones. mastery 0-100 is trained at the B\xE3i t\u1EADp and scales a formation from min to max. cap is the most all tactical factors (arms, formation, tower, surprise, information) may multiply to. info = the factor for the best map level held of the enemy (0..3), infoCounter when level 3 and the right arm is used. A war tent level gives squadLimit squads and cardBase + cardPerLevel * level command cards.",
+  formations: {
+    line: { name: "H\xE0ng ngang", tech: "form_basic", dmg: 1, taken: 0.85, speed: 0.9, note: "Gi\u1EEF ch\u1ED7 th\u1EAFt ch\u1EAFc, ch\u1ED1ng k\u1EF5 \xD71,3; ch\u1EADm quay." },
+    circle: { name: "V\xF2ng tr\xF2n", tech: "form_basic", dmg: 0.85, taken: 0.8, speed: 0.7, note: "Kh\xF4ng c\xF3 h\u01B0\u1EDBng y\u1EBFu; ch\u1EADm, kh\xF4ng xung phong." },
+    wedge: { name: "M\u0169i nh\u1ECDn", tech: "form_wedge", dmg: 0.9, charge: 1.4, taken: 1.1, speed: 1.05, note: "Xung phong \xD71,4 khi \u0111ang lao v\xE0o \u0111\u1ECBch; hai c\xE1nh y\u1EBFu." },
+    horns: { name: "S\u1EEBng b\xF2", tech: "form_horns", dmg: 1, flank: 1.25, taken: 1.1, speed: 1, note: "\u0110\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng th\xEAm \xD71,25; gi\u1EEFa m\u1ECFng." },
+    scatter: { name: "R\u1EA3i qu\xE2n", tech: "form_scatter", dmg: 0.85, taken: 1, takenRanged: 0.6, speed: 1, note: "Gi\u1EA3m 40% thi\u1EC7t h\u1EA1i t\u1EEB cung; \u0111\xE1nh y\u1EBFu h\u01A1n." },
+    ambush: { name: "Ph\u1EE5c k\xEDch", tech: "form_ambush", dmg: 0.7, firstBlow: 2, taken: 1.15, speed: 0.9, note: "\u0110\xF2n \u0111\u1EA7u \xD72 v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt; l\u1ED9 ra th\xEC y\u1EBFu nh\u1EA5t." }
+  },
+  mastery: { min: 0.8, max: 1.15, start: 20, perSecond: 0.4, decayPerDay: 2, switchSeconds: 8, switchTaken: 1.3 },
+  cap: 3.5,
+  info: [0.95, 1, 1.1, 1.2],
+  infoCounter: 1.1,
+  squadLimit: [3, 4, 6],
+  cardBase: 4,
+  cardPerLevel: 2,
+  mapDecayPerDay: 0.1,
+  clusterSize: 10,
+  iconEvery: 3,
+  bigBattle: 24
+};
+
+// src/sim/formations.ts
+var OBJECTIVE_NAME = { camp: "\u0110\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD", gate: "\u0110\u01B0\u1EDDng v\xE0o l\xE0ng", ambush: "Ch\u1ED7 ph\u1EE5c k\xEDch", stores: "Kho l\u01B0\u01A1ng", leader: "Th\u1EE7 l\u0129nh" };
+var ARM_NAME = units_default.arms;
+var BEATS = units_default.beats;
+var UNIT_RULES = units_default;
+var armOfWeapon = (weapon) => WEAPONS[weapon ?? "fist"]?.ranged ? "archer" : "foot";
+function matchup(attacker, defender, weapon = null) {
+  return BEATS[attacker][defender] * (weapon === "spear" && defender === "cavalry" ? UNIT_RULES.spearVsCavalry : 1);
+}
+var FORMATION_IDS = Object.keys(formations_default.formations);
+var FORMATIONS = formations_default.formations;
+var COMMAND = formations_default;
+var masteryFactor = (mastery) => COMMAND.mastery.min + (COMMAND.mastery.max - COMMAND.mastery.min) * Math.max(0, Math.min(100, mastery)) / 100;
+var clampTactical = (x) => Math.max(1 / COMMAND.cap, Math.min(COMMAND.cap, x));
+function formationOffsets(kind, n) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    switch (kind) {
+      case "line": {
+        const cols = Math.ceil(n / 2);
+        out.push([-(i % 2) * 1.2, (Math.floor(i / 2) - (cols - 1) / 2) * 1.3]);
+        break;
+      }
+      case "wedge": {
+        let r = 0, k = i;
+        while (k > r) {
+          k -= r + 1;
+          r++;
+        }
+        out.push([-r * 1.1, (k - r / 2) * 1.4]);
+        break;
+      }
+      case "circle": {
+        const R2 = Math.max(1.6, n * 1.3 / (2 * Math.PI));
+        out.push([Math.cos(i / n * 2 * Math.PI) * R2, Math.sin(i / n * 2 * Math.PI) * R2]);
+        break;
+      }
+      case "horns": {
+        const arm = i % 3, k = Math.floor(i / 3) + 1;
+        out.push(arm === 0 ? [-1, (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.7] : [k * 0.8, (arm === 1 ? -1 : 1) * (2 + k * 0.9)]);
+        break;
+      }
+      case "scatter": {
+        const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
+        out.push([-Math.floor(i / cols) * 2.6, (i % cols - (cols - 1) / 2) * 2.6]);
+        break;
+      }
+      default: {
+        const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
+        out.push([-Math.floor(i / cols) * 1.5 + i % 2 * 0.4, (i % cols - (cols - 1) / 2) * 1.6]);
+      }
+    }
+  }
+  return out;
+}
+var placeOffset = (o, heading, cx, cy) => [cx + o[0] * Math.cos(heading) - o[1] * Math.sin(heading), cy + o[0] * Math.sin(heading) + o[1] * Math.cos(heading)];
+function clusterize(units, size = COMMAND.clusterSize) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const u of units) {
+    const k = `${u.key}|${u.arm}`;
+    (groups.get(k) ?? groups.set(k, []).get(k)).push(u);
+  }
+  const out = [];
+  for (const g of [...groups.values()].sort((a, b) => a[0].key + a[0].arm < b[0].key + b[0].arm ? -1 : 1)) {
+    g.sort((a, b) => a.id - b.id);
+    for (let i = 0; i < g.length; i += size) out.push({ key: g[0].key, arm: g[0].arm, ids: g.slice(i, i + size).map((u) => u.id) });
+  }
+  return out;
+}
+var iconCount = (n) => Math.max(1, Math.ceil(n / COMMAND.iconEvery));
 
 // src/sim/world.ts
 var Tile = { Grass: 0, Water: 1, Tree: 2, Rock: 3, Mud: 4, Bush: 5 };
@@ -1359,8 +1543,12 @@ function resolve(sim, t) {
   const a = sim.animalById.get(t.id);
   return a && a.state !== "dead" ? { kind: "animal", a } : null;
 }
-var weaponOf = (v) => WEAPONS[v.weapon ?? "fist"] ?? WEAPONS.fist;
-var armorOf = (v) => v.armor ? ARMORS[v.armor] ?? null : null;
+var effWeapon = (v) => v.team === "player" && v.gear.wb && v.gear.w === v.weapon ? null : v.weapon;
+var weaponOf = (v) => WEAPONS[effWeapon(v) ?? "fist"] ?? WEAPONS.fist;
+var armorOf = (v) => v.armor && !(v.team === "player" && v.gear.ab && v.gear.a === v.armor) ? ARMORS[v.armor] ?? null : null;
+function canSee(sim, v, x, y) {
+  return v.team !== "player" || sim.fog.state[Math.floor(y) * sim.world.size + Math.floor(x)] === 2;
+}
 var isFighter = (v) => v.job === "fight" || v.job === "hunt" || v.fight.mode !== "none";
 function teamsHostile(sim, a, b) {
   if (a === b || a === "wild" || b === "wild") return false;
@@ -1401,10 +1589,11 @@ function hurt(sim, target, dmg, type, from, src) {
   const v = sim.get(target.id);
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === "player") return;
-  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0));
+  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === "player" ? sim.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) : 1);
   v.health -= final;
   v.calm = 0;
   v.flinch = 0.3;
+  if (armor) sim.wearGear(v, "armor");
   const behind = v.facing === "right" && from.x < v.x || v.facing === "left" && from.x > v.x;
   if (behind) v.morale = Math.max(0, v.morale + MORALE.backstab);
   if (src.unit && src.unit.team === "player" && v.team !== "player") sim.tribeAttacked(v.team, v);
@@ -1413,19 +1602,16 @@ function hurt(sim, target, dmg, type, from, src) {
     else if (!v.fight.target && src.animal && v.team !== "player") v.fight.target = { kind: "animal", id: src.animal.id };
     return;
   }
-  if (v.team === "player") downUnit(sim, v);
+  if (v.team === "player") fallUnit(sim, v);
   else sim.killFoe(v, src.unit);
 }
-function downUnit(sim, v) {
+function fallUnit(sim, v) {
   sim.resetTask(v);
   v.queue.length = 0;
-  v.health = 0;
-  v.down = RULES.downedSeconds;
-  v.rescue = 0;
-  v.phase = "down";
   v.swing = null;
-  sim.say(`${v.name} b\u1ECB th\u01B0\u01A1ng n\u1EB7ng, ng\xE3 xu\u1ED1ng! C\u1EA7n c\xF3 ng\u01B0\u1EDDi k\xE9o d\u1EADy trong ${gameDays(RULES.downedSeconds)}.`);
-  moraleShock(sim, v, MORALE.allyDeath * 0.6);
+  moraleShock(sim, v, MORALE.allyDeath);
+  sim.noteBattle("ours");
+  sim.killUnit(v, "t\u1EED tr\u1EADn");
 }
 function moraleShock(sim, who, amount) {
   const pool = who.team === "player" ? sim.villagers : sim.foes.filter((f) => f.team === who.team);
@@ -1440,20 +1626,33 @@ function startSwing(sim, v, target) {
   const e = resolve(sim, target);
   if (e) v.facing = entX(e) >= v.x ? "right" : "left";
 }
+function armMultiplier(attacker, e) {
+  return e.kind === "unit" ? matchup(armOfWeapon(effWeapon(attacker)), armOfWeapon(effWeapon(e.v)), effWeapon(attacker)) : 1;
+}
+function fireProjectile(sim, v, e, from, mult, rangeBonus) {
+  const w = weaponOf(v), tx = entX(e), ty = entY(e), d = Math.hypot(tx - from.x, ty - from.y);
+  if (d > w.range + rangeBonus + 1 || !canSee(sim, v, tx, ty)) return false;
+  const shot = w.damage * clampTactical(armMultiplier(v, e) * mult * sim.attackFactor(v, e)) * WEATHER[sim.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
+  if (v.inside !== null) sim.noteBattle("shot");
+  const target = e.kind === "unit" ? { kind: "unit", id: e.v.id } : { kind: "animal", id: e.a.id };
+  sim.projectiles.push({ x: from.x, y: from.y - 0.4, tx, ty, speed: 14, dmg: shot, type: w.type, from, src: v.id, team: v.team, target, chance: d <= (w.range + rangeBonus) / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? "stone" });
+  sim.wearGear(v, "weapon");
+  return true;
+}
 function resolveSwing(sim, v, target) {
   const e = resolve(sim, target);
   if (!e) return;
-  const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y);
+  const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(v, e);
   if (w.ranged) {
-    if (d > w.range + 1) return;
-    sim.projectiles.push({ x: v.x, y: v.y - 0.4, tx: entX(e), ty: entY(e), speed: 14, dmg: w.damage, type: w.type, from: { x: v.x, y: v.y }, src: v.id, team: v.team, target, chance: d <= w.range / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? "stone" });
+    fireProjectile(sim, v, e, { x: v.x, y: v.y }, 1, 0);
     return;
   }
   if (d > w.range + 1.1) return;
   let behind = false;
   if (e.kind === "unit") behind = e.v.facing === "right" && v.x < e.v.x || e.v.facing === "left" && v.x > e.v.x;
   else behind = e.a.dir === 1 && v.x < e.a.x || e.a.dir === -1 && v.x > e.a.x;
-  hurt(sim, target, damageOf(w, v.stats.str, null, behind), w.type, { x: v.x, y: v.y }, { unit: v });
+  hurt(sim, target, damageOf(w, v.stats.str, null, behind) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
+  if (v.weapon) sim.wearGear(v, "weapon");
 }
 function tickProjectiles(sim, dt) {
   for (let i = sim.projectiles.length - 1; i >= 0; i--) {
@@ -1606,7 +1805,7 @@ function engage(sim, v, e, dt) {
   const w = weaponOf(v), x = entX(e), y = entY(e), d = Math.hypot(x - v.x, y - v.y);
   const reach = w.ranged ? w.range : w.range + (e.kind === "animal" ? 0.45 : 0.5);
   v.phase = "fight";
-  if (d <= reach) {
+  if (d <= reach && (!w.ranged || canSee(sim, v, x, y))) {
     v.path = [];
     v.slide = null;
     v.facing = x >= v.x ? "right" : "left";
@@ -1625,7 +1824,7 @@ function fightBrain(sim, v, dt, threats) {
   const f = v.fight;
   if (v.phase === "skin" || v.phase === "goCarcass") return huntBrain(sim, v, dt, threats);
   if (f.mode === "hold" && !f.anchor) f.anchor = { x: v.x, y: v.y };
-  if (!threats.length && !f.target && v.phase !== "fight" && (sim.planEquipGear(v) || sim.planGearErrand(v))) return true;
+  if (!threats.length && !f.target && v.phase !== "fight" && (sim.planGearRepair(v) || sim.planEquipGear(v) || sim.planGearErrand(v))) return true;
   if (v.stance === "retreat" && f.mode !== "attack" && f.target) f.target = null;
   if (f.target) {
     const e = resolve(sim, f.target);
@@ -1683,6 +1882,10 @@ function fightBrain(sim, v, dt, threats) {
       v.phase = "move";
       return true;
     }
+  }
+  if (v.post >= 0 && v.phase === "idle" && !threats.length && !f.target) {
+    sim.planStaff(v);
+    if (v.phase === "goStaff") return true;
   }
   if (f.mode === "hold") {
     v.phase = "idle";
@@ -1950,6 +2153,7 @@ function killFoe(sim, v, killer) {
   sim.removeFoe(v);
   if (!t) return;
   t.unitIds = t.unitIds.filter((u) => u !== v.id);
+  if (v.ai?.role === "raider") sim.noteBattle("foes");
   moraleShock(sim, v, MORALE.allyDeath);
   if (killer?.team === "player") {
     t.relation = Math.max(-100, t.relation + (v.ai?.role === "civ" ? RELATION.killCivilian : RELATION.killWarrior));
@@ -2094,21 +2298,29 @@ function manageRaid(sim, t) {
     }
   }
 }
+function raidAdvised(sim, t, size) {
+  const ours = sim.villagers.filter((v) => v.job === "fight").length, theirs = Math.min(size, t.unitIds.filter((u) => sim.get(u)?.ai?.role === "guard").length);
+  return ours < 6 || theirs >= ours * 0.35;
+}
 function launchRaid(sim, t, size) {
   const guards = t.unitIds.map((u) => sim.get(u)).filter((u) => u?.ai?.role === "guard").sort((a, b) => b.maxHealth - a.maxHealth);
   const n = Math.min(size, guards.length);
   if (n < 3 || t.raid) return;
   const id = ++sim.nextRaid;
   t.raid = { id, phase: "march", t: 0, max: 200, size: n };
-  for (const g of guards.slice(0, n)) {
+  const ours = sim.villagers.filter((v) => v.job === "fight"), oursArch = ours.filter((v) => armOfWeapon(v.weapon) === "archer").length, wantArch = ours.length >= 4 && oursArch * 2 <= ours.length ? Math.floor(n / 3) : 0;
+  const melee = t.def.weapons.filter((w) => !WEAPONS[w]?.ranged), picks = guards.slice(0, n);
+  picks.forEach((g, i) => {
     g.ai.role = "raider";
     g.ai.raid = id;
     g.fight.target = null;
     g.path = [];
     g.fleeT = 0;
-  }
+    g.weapon = i < wantArch ? i % 2 ? "sling" : "bow" : melee[i % Math.max(1, melee.length)] ?? g.weapon;
+  });
   t.angryUntil = sim.time + 400;
-  sim.say(`Qu\xE2n ${t.def.name} (${n} ng\u01B0\u1EDDi) \u0111ang ti\u1EBFn v\xE0o l\xE0ng!`);
+  const arch = picks.filter((g) => armOfWeapon(g.weapon) === "archer").length;
+  sim.say(`Qu\xE2n ${t.def.name} (${n} ng\u01B0\u1EDDi${sim.mapLevel(t.id) >= 3 ? `: ${arch} cung th\u1EE7, ${n - arch} b\u1ED9 binh` : ""}) \u0111ang ti\u1EBFn v\xE0o l\xE0ng!`);
 }
 function launchWolves(sim, size) {
   const fire = sim.campfire(), s = sim.world.start, cx = fire ? fire.x + 1 : s.x, cy = fire ? fire.y + 1 : s.y;
@@ -2146,7 +2358,15 @@ function tickEvents(sim) {
     if (e.kind === "wolves") launchWolves(sim, e.size);
     else if (e.tribe) {
       const t = tribeOf(sim, e.tribe);
-      if (t && t.state === "free") launchRaid(sim, t, e.size);
+      if (t && t.state === "free") {
+        if (raidAdvised(sim, t, e.size) || e.fireDay >= e.warnDay + 4) launchRaid(sim, t, e.size);
+        else {
+          e.fired = false;
+          e.fireDay = sim.day + 1;
+          e.warned = true;
+          sim.say(`${t.def.name} th\u1EA5y l\xE0ng \u0111\xF4ng qu\xE2n v\xE0 ho\xE3n t\u1EADp k\xEDch.`);
+        }
+      }
     }
   }
 }
@@ -2171,6 +2391,54 @@ function tickFoe(sim, f, dt) {
   if (t && ai) foeBrain(sim, f, t, ai, dt);
   sim.moveUnit(f, dt);
   sim.animate(f, dt);
+}
+function noteStuck(sim, f, ai, dt, blocked) {
+  if (!blocked) {
+    ai.stuck = 0;
+    return;
+  }
+  ai.stuck = (ai.stuck ?? 0) + dt;
+  if (ai.stuck < 3) return;
+  const wall = sim.nearestWork(f.x, f.y, 16);
+  ai.stuck = 0;
+  if (wall) ai.siege = wall.id;
+}
+function siegeBrain(sim, f, ai, dt, threats) {
+  if (!ai.siege) return false;
+  if (threats.length && threats[0].d <= weaponOf(f).range + 1.5) return false;
+  const b = sim.getBuilding(ai.siege);
+  if (!b) {
+    ai.siege = 0;
+    f.path = [];
+    return false;
+  }
+  const w = weaponOf(f), d = BUILDINGS[b.kind], cx = b.x + d.w / 2, cy = b.y + d.h / 2;
+  const dist = Math.hypot(cx - f.x, cy - f.y) - Math.max(d.w, d.h) / 2;
+  if (dist <= (w.ranged ? 1.2 : w.range) + 0.6) {
+    f.path = [];
+    f.slide = null;
+    f.phase = "fight";
+    f.facing = cx >= f.x ? "right" : "left";
+    if (f.atkCd <= 0 && !f.swing) {
+      const { hitAt, end } = swingTimes(w.anim);
+      f.swing = { t: 0, hitAt, end, target: { kind: "unit", id: -1 } };
+      f.atkCd = cycleOf(w.cycle, f.stats.agi);
+      sim.damageWork(b, (w.damage + (w.ranged ? 0 : RULES.strengthDamage * f.stats.str)) * (w.type === "slash" ? 1.5 : 1));
+    }
+    return true;
+  }
+  f.fight.repath -= dt;
+  if (!f.path.length && f.fight.repath <= 0) {
+    const ring = sim.ringTiles(f, b.x, b.y, d.w, d.h);
+    f.path = ring.length ? sim.pathTo(f, ring[0][0], ring[0][1], 4e3) : [];
+    f.fight.repath = 1;
+    if (!f.path.length) {
+      ai.siege = 0;
+      return false;
+    }
+  }
+  f.phase = "move";
+  return true;
 }
 function foeBrain(sim, f, t, ai, dt) {
   const free = t.state === "free";
@@ -2209,10 +2477,13 @@ function foeBrain(sim, f, t, ai, dt) {
       f.phase = "move";
       return;
     }
+    if (siegeBrain(sim, f, ai, dt, threats)) return;
     if (f.fight.target) {
       const e = resolve(sim, f.fight.target);
       if (e) {
         engage(sim, f, e, dt);
+        const ex = e.kind === "unit" ? e.v.x : e.a.x, ey = e.kind === "unit" ? e.v.y : e.a.y;
+        noteStuck(sim, f, ai, dt, !f.path.length && !f.swing && Math.hypot(ex - f.x, ey - f.y) > weaponOf(f).range + 2);
         return;
       }
       f.fight.target = null;
@@ -2224,8 +2495,13 @@ function foeBrain(sim, f, t, ai, dt) {
     }
     const fire = sim.campfire(), gx = fire ? fire.x + 1 : sim.world.start.x, gy = fire ? fire.y + 1 : sim.world.start.y;
     if (Math.hypot(gx - f.x, gy - f.y) > 6) {
-      if (!f.path.length) f.path = sim.pathTo(f, Math.floor(gx), Math.floor(gy), 4e4);
+      f.fight.repath -= dt;
+      if (!f.path.length && f.fight.repath <= 0) {
+        f.path = sim.pathTo(f, Math.floor(gx), Math.floor(gy), 4e4);
+        f.fight.repath = f.path.length ? 0.5 : 1.5;
+      }
       f.phase = "move";
+      noteStuck(sim, f, ai, dt, !f.path.length);
     } else {
       const v = sim.villagers.find((o) => o.health > 0 && o.down <= 0 && o.inside === null);
       if (v) f.fight.target = { kind: "unit", id: v.id };
@@ -2291,7 +2567,7 @@ var OUTDOOR_JOBS = pace_default.outdoor;
 var research_default = {
   enabled: true,
   _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Every tool, weapon and armour has ONE blueprint that is raised step by step (tech id = recipe id: axe1 is the wood axe, axe2 the stone one); a recipe can only be made once its blueprint step is researched and the Nh\xE0 ch\u1EBF t\u1EA1o is high enough (recipeLevel). cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, levels (highest level per building kind), buildings (kinds that may be built), auto (fetch: villagers fetch tools from the stores; order: villagers order crafting and repair themselves). Set enabled to false to open everything.",
-  recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1 },
+  recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1, sling1: 1, bow1: 2 },
   techs: [
     { id: "hammer1", name: "B\u1EA3n v\u1EBD B\xFAa g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo b\xFAa g\u1ED7 \u0111\u1EC3 d\u1EF1ng nh\xE0 nhanh h\u01A1n.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["hammer1"] } },
     { id: "axe1", name: "B\u1EA3n v\u1EBD R\xECu g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo r\xECu g\u1ED7 \u0111\u1EC3 \u0111\u1ED1n c\xE2y.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["axe1"] } },
@@ -2301,16 +2577,31 @@ var research_default = {
     { id: "club1", name: "B\u1EA3n v\u1EBD G\u1EADy chi\u1EBFn", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo g\u1EADy chi\u1EBFn \u0111\u1EC3 t\u1EF1 v\u1EC7 v\xE0 \u0111i s\u0103n.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 180, unlocks: { recipes: ["club1"] } },
     { id: "hide1", name: "B\u1EA3n v\u1EBD \xC1o da", desc: "V\u1EBD c\xE1ch kh\xE2u da th\xFA th\xE0nh \xE1o gi\xE1p.", requires: ["axe1"], needLevel: 1, minInt: 6, cost: { hide: 4, coin: 4 }, time: 240, unlocks: { recipes: ["hide1"] } },
     { id: "spear1", name: "B\u1EA3n v\u1EBD Gi\xE1o v\xF3t nh\u1ECDn", desc: "V\u1EBD c\xE1ch v\xF3t gi\xE1o c\xF3 t\u1EA7m \u0111\xE2m xa h\u01A1n g\u1EADy.", requires: ["club1"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 5 }, time: 320, unlocks: { recipes: ["spear1"] } },
+    { id: "sling1", name: "B\u1EA3n v\u1EBD D\xE2y qu\u0103ng \u0111\xE1", desc: "V\u1EBD c\xE1ch b\u1EC7n d\xE2y qu\u0103ng \u0111\xE1: cung th\u1EE7 t\u1EA7m ng\u1EAFn, b\u1EAFn t\u1EEB xa.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 200, unlocks: { recipes: ["sling1"] } },
+    { id: "bow1", name: "B\u1EA3n v\u1EBD Cung ng\u1EAFn", desc: "V\u1EBD c\xE1ch u\u1ED1n cung v\xE0 v\xF3t t\xEAn: cung th\u1EE7 t\u1EA7m xa.", requires: ["sling1", "spear1"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 5 }, time: 320, unlocks: { recipes: ["bow1"] } },
     { id: "axe2", name: "B\u1EA3n v\u1EBD R\xECu \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD R\xECu l\xEAn c\u1EA5p 2: l\u01B0\u1EE1i \u0111\xE1 b\u1EC1n v\xE0 nhanh h\u01A1n g\u1ED7.", requires: ["axe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 380, unlocks: { recipes: ["axe2"] } },
     { id: "pick2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c chim \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c chim l\xEAn c\u1EA5p 2.", requires: ["pick1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 380, unlocks: { recipes: ["pick2"] } },
     { id: "hoe2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c l\xEAn c\u1EA5p 2.", requires: ["hoe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 10, coin: 6 }, time: 340, unlocks: { recipes: ["hoe2"] } },
     { id: "hammer2", name: "B\u1EA3n v\u1EBD B\xFAa \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD B\xFAa l\xEAn c\u1EA5p 2.", requires: ["hammer1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 360, unlocks: { recipes: ["hammer2"] } },
     { id: "mace2", name: "B\u1EA3n v\u1EBD Ch\xF9y \u0111\xE1", desc: "V\u1EBD c\xE1ch bu\u1ED9c \u0111\u1EA7u \u0111\xE1 n\u1EB7ng v\xE0o c\xE1n th\xE0nh ch\xF9y.", requires: ["club1", "axe2"], needLevel: 3, minInt: 8, cost: { stone: 30, coin: 10 }, time: 600, unlocks: { recipes: ["mace2"] } },
-    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { storage: 2, workshop: 2, lab: 2, repair: 2, toolstore: 2, armory: 2, house: 2, barracks: 2, field: 2 } } },
+    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { storage: 2, workshop: 2, lab: 2, repair: 2, toolstore: 2, armory: 2, house: 2, barracks: 2, field: 2, fence: 2, gate: 2, tower: 2 } } },
     { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber", "pick1"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { storage: 3, workshop: 3, lab: 3, repair: 3, toolstore: 3, armory: 3, house: 3, barracks: 3, field: 3 } } },
     { id: "house", name: "Nh\xE0 d\xE2n", desc: "D\u1EF1ng nh\xE0 cho d\xE2n ng\u1EE7: ng\u1EE7 trong nh\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["house"] } },
     { id: "barracks", name: "L\u1EC1u chi\u1EBFn binh", desc: "D\u1EF1ng l\u1EC1u cho chi\u1EBFn binh ng\u1EE7 v\xE0 ngh\u1EC9 ng\u01A1i; l\xEDnh \u0111\u01B0\u1EE3c tuy\u1EC3n \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["barracks"] } },
     { id: "farming", name: "L\xE0m ru\u1ED9ng", desc: "V\u1EE1 \u0111\u1EA5t l\xE0m ru\u1ED9ng: th\u1EE9c \u0103n \u0111\u1EC1u quanh n\u0103m, kh\xF4ng nh\u01B0 b\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n.", requires: ["hoe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 220, unlocks: { buildings: ["field"] } },
+    { id: "fence", name: "H\xE0ng r\xE0o c\u1ECDc", desc: "\u0110\xF3ng c\u1ECDc nh\u1ECDn ch\u1EB7n \u0111\u01B0\u1EDDng, t\u1EA1o ch\u1ED7 th\u1EAFt; l\xEAn c\u1EA5p hai th\xE0nh h\xE0ng r\xE0o \u0111\xF4i \u0111\u1EAFp \u0111\u1EA5t.", requires: ["hammer1", "timber"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["fence"] } },
+    { id: "gate", name: "C\u1ED5ng h\xE0ng r\xE0o", desc: "C\u1ED5ng \u0111\u1EC3 ng\u01B0\u1EDDi m\xECnh ra v\xE0o, \u0111\xF3ng l\u1EA1i th\xEC ch\u1EB7n m\u1ECDi ng\u01B0\u1EDDi.", requires: ["fence"], needLevel: 1, minInt: 5, cost: { wood: 12, coin: 3 }, time: 160, unlocks: { buildings: ["gate"] } },
+    { id: "tower", name: "Ch\xF2i canh", desc: "Ch\xF2i cao cho cung th\u1EE7: b\u1EAFn xa h\u01A1n v\xE0 m\u1EA1nh h\u01A1n.", requires: ["fence"], needLevel: 2, minInt: 6, cost: { wood: 20, coin: 4 }, time: 240, unlocks: { buildings: ["tower"] } },
+    { id: "pit", name: "\u0110\xE0o h\xE0o, h\u1ED1 ch\xF4ng", desc: "\u0110\xE0o h\u1ED1 g\xE0i c\u1ECDc nh\u1ECDn tr\xEAn \u0111\u01B0\u1EDDng \u0111\u1ECBch t\u1EDBi.", requires: ["fence", "pick1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["trap"] } },
+    { id: "signal", name: "T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)", desc: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED; th\u1EBB l\u1EC7nh Ph\xE1t t\xEDn hi\u1EC7u cho c\xE1c \u0111\u1ED9i.", requires: ["tower"], needLevel: 2, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: {} },
+    { id: "scout", name: "Trinh s\xE1t", desc: "C\u1EED d\xE2n \u0111i d\xF2 m\u1ED9t l\xE0ng v\xE0 v\u1EBD b\u1EA3n \u0111\u1ED3 ba c\u1EA5p v\u1EC1 n\xF3.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 200, unlocks: {} },
+    { id: "council", name: "H\u1ED9i \u0111\u1ED3ng chi\u1EBFn", desc: "D\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn: l\u1EADp \u0111\u1ED9i, k\u1EBF ho\u1EA1ch v\xE0 th\u1EBB l\u1EC7nh.", requires: ["scout"], needLevel: 1, minInt: 6, cost: { wood: 15, coin: 4 }, time: 240, unlocks: { buildings: ["wartent"] } },
+    { id: "drill", name: "B\xE3i t\u1EADp", desc: "D\u1EF1ng b\xE3i luy\u1EC7n tr\u1EADn ph\xE1p cho c\xE1c \u0111\u1ED9i.", requires: ["council", "barracks"], needLevel: 1, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["drill"] } },
+    { id: "form_basic", name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", desc: "H\xE0ng ngang v\xE0 v\xF2ng tr\xF2n.", requires: ["drill"], needLevel: 1, minInt: 6, cost: { wood: 12, coin: 4 }, time: 240, unlocks: {} },
+    { id: "form_wedge", name: "Tr\u1EADn m\u0169i nh\u1ECDn", desc: "Xung phong ph\xE1 h\xE0ng.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_horns", name: "Tr\u1EADn s\u1EEBng b\xF2", desc: "Bao hai c\xE1nh, \u0111\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_scatter", name: "Tr\u1EADn r\u1EA3i qu\xE2n", desc: "Gi\u1EA3m thi\u1EC7t h\u1EA1i t\u1EEB cung v\xE0 l\u1EEDa.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_ambush", name: "Tr\u1EADn ph\u1EE5c k\xEDch", desc: "\u0110\xF2n \u0111\u1EA7u m\u1EA1nh g\u1EA5p \u0111\xF4i v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
     { id: "tool_store", name: "Kho c\xF4ng c\u1EE5", desc: "Cho ph\xE9p d\u1EF1ng Kho c\xF4ng c\u1EE5 \u0111\u1EC3 c\u1EA5t r\xECu, cu\u1ED1c, b\xFAa.", requires: ["hammer1", "axe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 200, unlocks: { buildings: ["toolstore"] } },
     { id: "armory", name: "Kho v\u0169 kh\xED", desc: "Cho ph\xE9p d\u1EF1ng Kho v\u0169 kh\xED \u0111\u1EC3 c\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["armory"] } },
     { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: ["tool_store"], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
@@ -2338,9 +2629,10 @@ var autoOn = (done, key) => !RESEARCH.enabled || TECHS.some((t) => done.has(t.id
 // src/sim/construction.ts
 function addBuilding(sim, kind, x, y, done) {
   const d = BUILDINGS[kind];
-  const b = { id: sim.nextBid++, kind, era: sim.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, staff: [], active: null, workers: 0 };
+  const b = { id: sim.nextBid++, kind, era: sim.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
+  b.hp = levelDef(b).hp;
   sim.buildings.push(b);
-  for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.occ[(y + j) * sim.world.size + x + i] = 1;
+  setOcc(sim, b, 1);
   return b;
 }
 function footprintError(sim, kind, x, y, ignore) {
@@ -2363,6 +2655,7 @@ function buildingLimit(sim, kind) {
 }
 function buildingLock(sim, kind) {
   const have = sim.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim, kind);
+  if (limit === 0) return `C\u1EA7n n\xE2ng c\u1EA5p Nh\xE0 chung \u0111\u1EC3 x\xE2y ${BUILDINGS[kind].name.toLowerCase()}`;
   if (have >= limit) return limit === 1 ? "M\u1ED7i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y \u0111\u01B0\u1EE3c m\u1ED9t c\xE1i, h\xE3y n\xE2ng c\u1EA5p n\xF3" : `\u0110\xE3 \u0111\u1EE7 ${limit} ${BUILDINGS[kind].name.toLowerCase()}: n\xE2ng c\u1EA5p Nh\xE0 chung \u0111\u1EC3 x\xE2y th\xEAm`;
   const need = sim.dev.freeBuild ? void 0 : BUILDINGS[kind].requires?.find((r) => !sim.building(r));
   if (need) return `C\u1EA7n d\u1EF1ng ${BUILDINGS[need].name} tr\u01B0\u1EDBc`;
@@ -2390,6 +2683,7 @@ function upgradeBuilding(sim, id) {
   if (!sim.dev.freeBuild) for (const r of Object.keys(next.cost)) sim.stock[r] -= next.cost[r] ?? 0;
   if (sim.dev.instantBuild) {
     b.level++;
+    b.hp = levelDef(b).hp;
     sim.say(`${BUILDINGS[b.kind].name} l\xEAn c\u1EA5p ${b.level} ngay (dev).`);
     return null;
   }
@@ -2448,7 +2742,7 @@ function evict(sim, b) {
     const v = sim.byId.get(id);
     if (v) {
       sim.exitBuilding(v);
-      v.job = "idle";
+      if (v.job !== "fight") v.job = "idle";
       v.post = -1;
     }
   }
@@ -2482,10 +2776,17 @@ function evict(sim, b) {
 }
 function setOcc(sim, b, val) {
   const d = BUILDINGS[b.kind];
+  if (b.kind === "gate" && b.open || b.kind === "trap") val = 0;
   for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.occ[(b.y + j) * sim.world.size + b.x + i] = val;
 }
 function canDemolish(sim, b) {
   return BUILDINGS[b.kind].buildable ? null : "Kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
+}
+function destroyBuilding(sim, b) {
+  evict(sim, b);
+  setOcc(sim, b, 0);
+  sim.buildings.splice(sim.buildings.indexOf(b), 1);
+  sim.fogDirty = true;
 }
 function demolishBuilding(sim, id) {
   const b = sim.getBuilding(id);
@@ -2603,7 +2904,7 @@ var TIER_NAME = ["Tay kh\xF4ng", "G\u1ED7", "\u0110\xE1"];
 var TIER_SPEED = [0.6, 1, 1.4];
 var TIER_YIELD = [1, 1.25, 1.6];
 var TIER_DURABILITY = [0, 240, 600];
-var GEAR_KINDS = ["club", "spear", "mace", "hide"];
+var GEAR_KINDS = ["club", "spear", "mace", "sling", "bow", "hide"];
 var isGear = (k) => GEAR_KINDS.includes(k);
 var isWeaponKind = (k) => k in WEAPONS;
 var R = (kind, tier, cost, time) => ({ id: `${kind}${tier}`, kind, tier, cost, time });
@@ -2788,6 +3089,21 @@ function tickWorks(sim, dt) {
       const r = RECIPE_BY_ID[id], cat = isGear(r.kind) ? "gear" : "tool";
       if (kind === "repair") {
         const owner = sim.villagers.find((o) => o.repairFor === id), k = r.kind;
+        if (owner && isGear(r.kind)) {
+          owner.repairFor = null;
+          if (r.kind === "hide") {
+            if (!owner.armor) {
+              owner.armor = "hide";
+              owner.gear.a = null;
+            }
+          } else if (!owner.weapon) {
+            owner.weapon = r.kind;
+            owner.gear.w = null;
+          }
+          b.active = null;
+          sim.say(`\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}, tr\u1EA3 l\u1EA1i cho ${owner.name}.`);
+          continue;
+        }
         if (owner) {
           owner.repairFor = null;
           if (TOOL_OF_JOB[owner.job] === k && !sim.heldTool(owner)) {
@@ -2920,19 +3236,19 @@ function assignField(sim, ids, fieldId) {
 }
 function postOf(sim, v) {
   if (isStaffJob(v.job)) return sim.building(STAFF_BUILDING[v.job]);
-  const b = v.job === "food" && v.post >= 0 ? sim.getBuilding(v.post) : void 0;
-  return b && b.kind === "field" ? b : void 0;
+  const b = (v.job === "food" || v.job === "fight") && v.post >= 0 ? sim.getBuilding(v.post) : void 0;
+  return b && (v.job === "food" ? b.kind === "field" : b.kind === "tower") ? b : void 0;
 }
 function planStaff(sim, v) {
-  if (!isStaffJob(v.job) && !(v.job === "food" && v.post >= 0)) return;
+  if (!isStaffJob(v.job) && !((v.job === "food" || v.job === "fight") && v.post >= 0)) return;
   const b = postOf(sim, v);
   if (!b) {
-    if (v.job === "food") v.post = -1;
+    if (v.job === "food" || v.job === "fight") v.post = -1;
     else v.job = "idle";
     return;
   }
   if (staffCount(sim, b) >= levelDef(b).slots) {
-    v.job = "idle";
+    if (v.job !== "fight") v.job = "idle";
     v.post = -1;
     sim.say(`${v.name} kh\xF4ng c\xF2n ch\u1ED7 trong ${BUILDINGS[b.kind].name.toLowerCase()}.`);
     return;
@@ -3108,6 +3424,57 @@ function repairTool(sim, ids, k) {
   }
   return n ? null : err;
 }
+var gearName = (slot, id) => (slot === "armor" ? ARMORS[id]?.name : WEAPONS[id]?.name)?.toLowerCase() ?? id;
+var gearId = (slot, id) => slot === "armor" ? "hide1" : `${id}${WEAPONS[id]?.tier ?? 1}`;
+function wearGear(sim, v, slot) {
+  if (v.team !== "player") return;
+  const id = slot === "weapon" ? v.weapon : v.armor, g = v.gear;
+  if (!id) return;
+  const max = (slot === "weapon" ? WEAPONS[id]?.durability : ARMORS[id]?.durability) ?? 0;
+  if (!max) return;
+  if (slot === "weapon") {
+    if (g.w !== id) {
+      g.w = id;
+      g.wd = max;
+      g.wb = false;
+    }
+    if (g.wb || --g.wd > 0) return;
+  } else {
+    if (g.a !== id) {
+      g.a = id;
+      g.ad = max;
+      g.ab = false;
+    }
+    if (g.ab || --g.ad > 0) return;
+  }
+  if (sim.frnd() < 0.5) {
+    if (slot === "weapon") {
+      v.weapon = null;
+      g.w = null;
+      g.wb = false;
+    } else {
+      v.armor = null;
+      g.a = null;
+      g.ab = false;
+    }
+    v.manualGear = false;
+    sim.say(`${v.name} l\xE0m v\u1EE1 ${gearName(slot, id)}, m\u1EA5t h\u1EB3n.`);
+  } else {
+    if (slot === "weapon") g.wb = true;
+    else g.ab = true;
+    sim.say(`${gearName(slot, id)} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng, c\u1EA7n mang \u0111i s\u1EEDa.`);
+  }
+}
+function planGearRepair(sim, v) {
+  if (v.job !== "fight" && v.job !== "hunt" || v.phase === "fight" || v.orderCd > 0 || v.team !== "player") return false;
+  const house = sim.building("repair");
+  if (!house || sim.repairQueue.length >= 12 || !(v.gear.wb && v.gear.w === v.weapon) && !(v.gear.ab && v.gear.a === v.armor)) return false;
+  v.orderCd = 30;
+  v.order = "repair:gear";
+  if (goTo(sim, v, house, "goOrder")) return true;
+  v.order = null;
+  return false;
+}
 function giveGear(sim, ids, kind, slot) {
   for (const v of sim.mine(ids)) {
     if (slot === "weapon") v.weapon = kind;
@@ -3216,6 +3583,24 @@ function errand(sim, v) {
   const [what, id] = o.split(":");
   if (what === "craft") {
     if (sim.queueCraft(id) === null) sim.say(`${v.name} nh\u1EDD ch\u1EBF ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`);
+  } else if (what === "repair" && id === "gear") {
+    for (const slot of ["weapon", "armor"]) {
+      const piece = slot === "weapon" ? v.weapon : v.armor, broken = slot === "weapon" ? v.gear.wb && v.gear.w === v.weapon : v.gear.ab && v.gear.a === v.armor;
+      if (!piece || !broken || v.repairFor) continue;
+      if (sim.queueRepair(gearId(slot, piece)) === null) {
+        v.repairFor = gearId(slot, piece);
+        if (slot === "weapon") {
+          v.weapon = null;
+          v.gear.w = null;
+          v.gear.wb = false;
+        } else {
+          v.armor = null;
+          v.gear.a = null;
+          v.gear.ab = false;
+        }
+        sim.say(`${v.name} nh\u1EDD s\u1EEDa ${gearName(slot, piece)}.`);
+      }
+    }
   } else if (what === "repair") {
     const k = id, t = v.tools[k];
     if (t && t.dur < TIER_DURABILITY[t.tier] - 1e-6 && sim.queueRepair(toolId(sim, k, t.tier)) === null) {
@@ -3423,6 +3808,7 @@ function discharge(sim, ids) {
     clearCombat(sim, v);
     v.job = "idle";
     v.nightOwl = false;
+    v.post = -1;
     sim.assignGear([v.id], null, "weapon");
     sim.assignGear([v.id], null, "armor");
     v.manualGear = false;
@@ -3682,6 +4068,7 @@ function think(sim, v, dt) {
         if (b.upgrading) {
           b.level++;
           b.upgrading = false;
+          b.hp = levelDef(b).hp;
           sim.say(`${BUILDINGS[b.kind].name} \u0111\xE3 l\xEAn c\u1EA5p ${b.level} (${levelDef(b).name.toLowerCase()}).`);
         } else {
           b.done = true;
@@ -4234,6 +4621,8 @@ function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
     inside: null,
     orderCd: 0,
     repairFor: null,
+    squad: -1,
+    gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
     team,
     maxHealth: maxHpOf(stats.vit),
     weapon: null,
@@ -4286,7 +4675,8 @@ function tickVillager(sim, v, dt) {
   const held = sim.heldTool(v);
   if (held && TOOL_OF_JOB[v.job] !== held.k) sim.returnTool(v);
   if (v.inside !== null && v.phase !== "sleep") {
-    if (sim.shouldSleep(v, false)) {
+    const onWatch = v.job === "fight" && v.post >= 0 && sim.tribes.some((t) => t.raid);
+    if (sim.shouldSleep(v, onWatch)) {
       sim.exitBuilding(v);
       goHome(sim, v);
     } else {
@@ -4438,14 +4828,14 @@ function unpackRuns(runs, target) {
 }
 
 // src/sim/save.ts
-var SAVE_VERSION = 3;
+var SAVE_VERSION = 5;
 var SAVED = {
   /** Single values. */
-  scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
+  scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
   /** Objects whose keys are filled in place. */
-  records: ["stock", "toolStock"],
+  records: ["stock", "toolStock", "battle"],
   /** Lists of plain data. */
-  lists: ["wornTools", "craftQueue", "researchQueue", "repairQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles"],
+  lists: ["wornTools", "craftQueue", "researchQueue", "repairQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "plans", "battleReports"],
   /** Handled by hand below. */
   special: ["researched", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
 };
@@ -4492,6 +4882,28 @@ var MIGRATIONS = {
   2: (d) => {
     for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) v.post ??= -1;
     return { ...d, version: 3 };
+  },
+  // 3 -> 4: buildings gained strength (defence works) and an open/shut state (gates)
+  3: (d) => {
+    for (const b of d.lists.buildings) {
+      b.hp ??= 0;
+      b.open ??= true;
+    }
+    return { ...d, version: 4 };
+  },
+  // 4 -> 5: weapons and armour wear out
+  4: (d) => {
+    for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+      v.gear ??= { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false };
+      v.squad ??= -1;
+    }
+    for (const k of ["squads", "maps", "scouts", "plans", "battleReports"]) d.lists[k] ??= [];
+    d.scalars.nextSquad ??= 1;
+    d.scalars.nextMission ??= 1;
+    d.scalars.nextPlan ??= 1;
+    d.scalars.alarmUntil ??= 0;
+    d.records.battle ??= { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] };
+    return { ...d, version: 5 };
   }
 };
 function migrate(raw) {
@@ -4746,6 +5158,798 @@ function bedsIn(sim, kind) {
   return sim.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0);
 }
 
+// src/sim/defense.ts
+var isWall = (b) => b.kind === "fence" || b.kind === "gate";
+var isDefense = (b) => isWall(b) || b.kind === "tower";
+function toggleGate(sim, id) {
+  const b = sim.getBuilding(id);
+  if (!b || b.kind !== "gate") return "\u0110\xE2y kh\xF4ng ph\u1EA3i c\u1ED5ng";
+  if (!b.done) return "C\u1ED5ng ch\u01B0a d\u1EF1ng xong";
+  b.open = !b.open;
+  sim.setOcc(b, 1);
+  sim.say(b.open ? "C\u1ED5ng \u0111\xE3 m\u1EDF." : "C\u1ED5ng \u0111\xE3 \u0111\xF3ng.");
+  return null;
+}
+function setGates(sim, open) {
+  for (const b of sim.buildings) if (b.kind === "gate" && b.done && b.open !== open) {
+    b.open = open;
+    sim.setOcc(b, 1);
+  }
+}
+function nearestWork(sim, x, y, radius) {
+  let best, bd = radius;
+  for (const b of sim.buildings) {
+    if (!b.done || !isDefense(b)) continue;
+    const d = BUILDINGS[b.kind], dist = Math.hypot(b.x + d.w / 2 - x, b.y + d.h / 2 - y);
+    if (dist <= bd) {
+      bd = dist;
+      best = b;
+    }
+  }
+  return best;
+}
+function damageWork(sim, b, dmg) {
+  b.hp -= dmg;
+  if (b.hp > 0) return;
+  sim.say(`${BUILDINGS[b.kind].name} b\u1ECB ph\xE1!`);
+  sim.noteBattle("breach");
+  sim.destroyBuilding(b);
+}
+function towerBonus(sim, v) {
+  const b = v.inside === null ? void 0 : sim.getBuilding(v.inside);
+  if (!b || b.kind !== "tower" || armOfWeapon(effWeapon(v)) !== "archer") return { damage: 1, range: 0 };
+  return { damage: UNIT_RULES.archerOnTower.damage, range: UNIT_RULES.archerOnTower.range };
+}
+function garrison(sim, b) {
+  return sim.villagers.filter((v) => v.post === b.id && v.job === "fight");
+}
+function assignTower(sim, ids, towerId) {
+  const b = sim.getBuilding(towerId);
+  if (!b || b.kind !== "tower" || !b.done) return "Ch\xF2i canh ch\u01B0a d\u1EF1ng xong";
+  let err = null;
+  for (const v of sim.mine(ids)) {
+    if (v.post === b.id && v.job === "fight") continue;
+    if (v.job !== "fight") {
+      err = "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi l\xEAn ch\xF2i: tuy\u1EC3n \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i";
+      continue;
+    }
+    if (armOfWeapon(effWeapon(v)) !== "archer") {
+      err = "Ch\u1EC9 cung th\u1EE7 (c\u1EA7m cung ho\u1EB7c d\xE2y qu\u0103ng) m\u1EDBi l\xEAn ch\xF2i";
+      continue;
+    }
+    if (garrison(sim, b).length >= levelDef(b).slots) {
+      err = `${BUILDINGS.tower.name} c\u1EA5p ${b.level} ch\u1EC9 ch\u1EE9a ${levelDef(b).slots} cung th\u1EE7`;
+      continue;
+    }
+    sim.resetTask(v);
+    sim.clearCombat(v);
+    v.post = b.id;
+    v.fight.mode = "none";
+    v.fight.anchor = null;
+    sim.planStaff(v);
+  }
+  return err;
+}
+function leaveTower(sim, ids) {
+  for (const v of sim.mine(ids)) if (v.post >= 0 && v.job === "fight") {
+    sim.exitBuilding(v);
+    v.post = -1;
+    v.phase = "idle";
+  }
+}
+function tickTraps(sim, _dt) {
+  for (const b of [...sim.buildings]) {
+    if (b.kind !== "trap" || !b.done) continue;
+    for (const f of sim.foes) {
+      if (f.health <= 0 || b.staff.includes(f.id) || Math.hypot(f.x - (b.x + 0.5), f.y - (b.y + 0.5)) > 0.8) continue;
+      b.staff.push(f.id);
+      hurt(sim, { kind: "unit", id: f.id }, 14 * b.level, "pierce", { x: b.x, y: b.y }, {});
+      sim.noteBattle("note", "M\u1ED9t h\u1ED1 ch\xF4ng \u0111\xE3 l\xE0m \u0111\u1ECBch b\u1ECB th\u01B0\u01A1ng.");
+      if (--b.hp <= 0) {
+        b.staff = [];
+        sim.destroyBuilding(b);
+        break;
+      }
+    }
+  }
+}
+function tickTowers(sim, _dt) {
+  for (const b of sim.buildings) {
+    if (b.kind !== "tower" || !b.done) continue;
+    const d = BUILDINGS.tower, from = { x: b.x + d.w / 2, y: b.y + 0.4 };
+    for (const v of sim.villagers) {
+      if (v.inside !== b.id || v.phase !== "inside" || v.atkCd > 0 || v.health <= 0) continue;
+      const w = weaponOf(v);
+      if (!w.ranged) continue;
+      const bonus = towerBonus(sim, v), threat = threatsOf(sim, v, w.range + bonus.range + 1)[0], e = threat && resolve(sim, threat.t);
+      if (e && fireProjectile(sim, v, e, from, bonus.damage, bonus.range)) v.atkCd = cycleOf(w.cycle, v.stats.agi);
+    }
+  }
+}
+
+// src/sim/army.ts
+var COLORS = ["#e0523c", "#3c8ce0", "#e0b43c", "#5cb85c", "#a85cd8", "#3cd0c8"];
+function squadLimit(sim) {
+  const tent = sim.building("wartent");
+  if (tent) return COMMAND.squadLimit[Math.min(COMMAND.squadLimit.length, tent.level) - 1];
+  return sim.dev.freeBuild ? COMMAND.squadLimit[COMMAND.squadLimit.length - 1] : 0;
+}
+function cardLimit(sim) {
+  const tent = sim.building("wartent"), level = tent ? tent.level : sim.dev.freeBuild ? 3 : 0;
+  return level ? COMMAND.cardBase + COMMAND.cardPerLevel * level + (!RESEARCH.enabled || sim.researched.has("signal") ? 2 : 0) : 0;
+}
+var squadById = (sim, id) => sim.squads.find((s) => s.id === id);
+var squadOf = (sim, v) => v.squad >= 0 ? squadById(sim, v.squad) : void 0;
+function squadUnits(sim, s) {
+  const out = [];
+  for (const id of s.ids) {
+    const v = sim.byId.get(id);
+    if (v && v.team === "player" && v.job === "fight" && v.health > 0 && v.squad === s.id) out.push(v);
+  }
+  if (out.length !== s.ids.length) s.ids = out.map((v) => v.id);
+  if (!out.some((v) => v.id === s.leader)) s.leader = out.length ? out.slice().sort((a, b) => b.stats.str + b.stats.vit - a.stats.str - a.stats.vit)[0].id : -1;
+  return out;
+}
+function squadCenter(sim, s) {
+  const us = squadUnits(sim, s);
+  return us.length ? { x: us.reduce((a, v) => a + v.x, 0) / us.length, y: us.reduce((a, v) => a + v.y, 0) / us.length } : null;
+}
+function createSquad(sim, name) {
+  if (sim.squads.length >= squadLimit(sim)) return { reason: squadLimit(sim) ? `L\u1EC1u h\u1ECDp chi\u1EBFn ch\u1EC9 cho ${squadLimit(sim)} \u0111\u1ED9i: n\xE2ng c\u1EA5p l\u1EC1u` : "C\u1EA7n d\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn \u0111\u1EC3 l\u1EADp \u0111\u1ED9i" };
+  const id = sim.nextSquad++;
+  const s = { id, name: name ?? `\u0110\u1ED9i ${String.fromCharCode(64 + id)}`, color: COLORS[(id - 1) % COLORS.length], ids: [], leader: -1, formation: "line", mastery: Object.fromEntries(FORMATION_IDS.map((f) => [f, COMMAND.mastery.start])), switchUntil: 0, anchor: null, heading: 0, training: false };
+  sim.squads.push(s);
+  return { squad: s };
+}
+function joinSquad(sim, ids, squadId) {
+  const s = squadById(sim, squadId);
+  if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+  let err = null;
+  for (const v of sim.mine(ids)) {
+    if (v.job !== "fight") {
+      err = "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi v\xE0o \u0111\u1ED9i: tuy\u1EC3n \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i";
+      continue;
+    }
+    if (v.squad === s.id) continue;
+    leaveSquad(sim, [v.id]);
+    v.squad = s.id;
+    s.ids.push(v.id);
+  }
+  return err;
+}
+function leaveSquad(sim, ids) {
+  for (const v of sim.mine(ids)) {
+    const s = squadOf(sim, v);
+    if (s) {
+      s.ids = s.ids.filter((i) => i !== v.id);
+      if (s.leader === v.id) s.leader = -1;
+    }
+    v.squad = -1;
+    v.speed = 1.6 + 0.1 * v.stats.agi;
+  }
+}
+function disbandSquad(sim, id) {
+  const s = squadById(sim, id);
+  if (!s) return;
+  leaveSquad(sim, [...s.ids]);
+  sim.squads.splice(sim.squads.indexOf(s), 1);
+  for (const p of sim.plans) {
+    p.missions = p.missions.filter((m) => m.squad !== id);
+    p.cards = p.cards.filter((c) => c.squad !== id);
+  }
+}
+function setCommander(sim, squadId, vid) {
+  const s = squadById(sim, squadId);
+  if (s && s.ids.includes(vid)) s.leader = vid;
+}
+var formationOpen = (sim, f) => !RESEARCH.enabled || sim.dev.freeBuild || sim.researched.has(FORMATIONS[f].tech);
+function applySpeed(sim, s) {
+  for (const v of squadUnits(sim, s)) v.speed = (1.6 + 0.1 * v.stats.agi) * FORMATIONS[s.formation].speed;
+}
+function setFormation(sim, squadId, f) {
+  const s = squadById(sim, squadId);
+  if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+  if (!FORMATIONS[f]) return "Kh\xF4ng c\xF3 tr\u1EADn n\xE0y";
+  if (!formationOpen(sim, f)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${f === "line" || f === "circle" ? "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n" : FORMATIONS[f].name}`;
+  if (s.formation === f) return null;
+  s.formation = f;
+  s.switchUntil = sim.time + COMMAND.mastery.switchSeconds;
+  applySpeed(sim, s);
+  if (s.anchor) squadMove(sim, s, s.anchor.x, s.anchor.y, "hold");
+  return null;
+}
+function squadMove(sim, s, x, y, mode) {
+  const us = squadUnits(sim, s);
+  if (!us.length) return;
+  const c = squadCenter(sim, s);
+  s.heading = Math.hypot(x - c.x, y - c.y) > 1 ? Math.atan2(y - c.y, x - c.x) : s.heading;
+  s.anchor = { x, y };
+  us.sort((a, b) => (armOfWeapon(effWeapon(a)) === "archer" ? 1 : 0) - (armOfWeapon(effWeapon(b)) === "archer" ? 1 : 0) || a.id - b.id);
+  const offs = formationOffsets(s.formation, us.length), taken = /* @__PURE__ */ new Set();
+  applySpeed(sim, s);
+  us.forEach((v, i) => {
+    const [px, py] = placeOffset(offs[i], s.heading, x, y);
+    const spot = sim.nearestFree(Math.floor(px), Math.floor(py), taken) ?? [Math.floor(px), Math.floor(py)];
+    taken.add(spot[1] * sim.world.size + spot[0]);
+    if (mode === "move") sim.orderMove([v.id], spot[0], spot[1]);
+    else if (mode === "attack") sim.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
+    else {
+      sim.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
+      v.fight.anchor = { x: spot[0] + 0.5, y: spot[1] + 0.5 };
+    }
+  });
+}
+function trainSquad(sim, squadId, on) {
+  const s = squadById(sim, squadId);
+  if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+  if (!on) {
+    s.training = false;
+    return null;
+  }
+  const field = sim.building("drill");
+  if (!field) return "C\u1EA7n d\u1EF1ng B\xE3i t\u1EADp";
+  s.training = true;
+  squadMove(sim, s, field.x + 1.5, field.y + 1.5, "hold");
+  return null;
+}
+function tickTraining(sim, dt) {
+  const field = sim.building("drill");
+  for (const s of sim.squads) {
+    const us = squadUnits(sim, s);
+    const near2 = field && us.length ? us.filter((v) => Math.hypot(v.x - (field.x + 1.5), v.y - (field.y + 1.5)) < 7).length >= Math.ceil(us.length / 2) : false;
+    for (const f of FORMATION_IDS) {
+      if (f === s.formation && s.training && near2) s.mastery[f] = Math.min(100, s.mastery[f] + COMMAND.mastery.perSecond * dt);
+      else s.mastery[f] = Math.max(0, s.mastery[f] - COMMAND.mastery.decayPerDay * dt / DAY_LENGTH);
+    }
+    if (s.training && !field) s.training = false;
+  }
+}
+function attackFactor(sim, v, e) {
+  if (v.team !== "player") return 1;
+  let f = 1;
+  const s = squadOf(sim, v);
+  if (s) {
+    const fm = FORMATIONS[s.formation];
+    f *= fm.dmg * masteryFactor(s.mastery[s.formation]);
+    if (fm.charge && v.path.length > 0) f *= fm.charge;
+    if (fm.flank && e.kind === "unit" && (e.v.facing === "right" && v.x < e.v.x || e.v.facing === "left" && v.x > e.v.x)) f *= fm.flank;
+    if (fm.firstBlow && e.kind === "unit" && !e.v.fight.target && e.v.phase !== "fight") f *= fm.firstBlow;
+  }
+  if (e.kind === "unit" && e.v.team !== "player") f *= COMMAND.info[Math.min(3, sim.mapLevel(e.v.team))];
+  return f;
+}
+function takenFactor(sim, victim, ranged) {
+  const s = squadOf(sim, victim);
+  if (!s) return 1;
+  const fm = FORMATIONS[s.formation];
+  return fm.taken * (ranged ? fm.takenRanged ?? 1 : 1) * (s.switchUntil > sim.time ? COMMAND.mastery.switchTaken : 1);
+}
+function clusters(sim) {
+  const units = [...sim.villagers.filter((v) => v.job === "fight" && v.health > 0 && v.inside === null), ...sim.foes.filter((f) => f.health > 0 && f.ai && f.ai.role !== "civ")];
+  const key = (v) => v.team === "player" ? `p:${v.squad}` : `f:${v.team}`;
+  const out = [];
+  const by = new Map(units.map((v) => [v.id, v]));
+  for (const c of clusterize(units.map((v) => ({ id: v.id, arm: armOfWeapon(effWeapon(v)), key: key(v) })))) {
+    const vs = c.ids.map((id) => by.get(id));
+    const sq = c.key.startsWith("p:") ? Number(c.key.slice(2)) : -1, squad = sq >= 0 ? squadById(sim, sq) : void 0;
+    out.push({
+      id: `${c.key}|${c.arm}|${c.ids[0]}`,
+      side: vs[0].team,
+      squad: sq,
+      color: squad?.color ?? (vs[0].team === "player" ? "#9aa4b0" : "#c04040"),
+      arm: c.arm,
+      ids: c.ids,
+      x: vs.reduce((a, v) => a + v.x, 0) / vs.length,
+      y: vs.reduce((a, v) => a + v.y, 0) / vs.length,
+      hp: vs.reduce((a, v) => a + Math.max(0, v.health) / v.maxHealth, 0) / vs.length,
+      n: vs.length
+    });
+  }
+  return out;
+}
+function drawnFigures(sim) {
+  const cs = clusters(sim), ours = cs.filter((c) => c.side === "player").reduce((n, c) => n + c.n, 0), theirs = cs.filter((c) => c.side !== "player").reduce((n, c) => n + c.n, 0);
+  if (Math.max(ours, theirs) <= COMMAND.bigBattle) return null;
+  const shown = /* @__PURE__ */ new Set();
+  for (const c of cs) for (const id of c.ids.slice(0, iconCount(c.n))) shown.add(id);
+  return shown;
+}
+function noteBattle(sim, kind, text = "") {
+  const b = sim.battle;
+  if (!b.on) return;
+  if (kind === "ours") b.ourDead++;
+  else if (kind === "foes") b.foeDead++;
+  else if (kind === "breach") b.breaches++;
+  else if (kind === "shot") b.shots++;
+  else if (text && b.notes.length < 12) b.notes.push(text);
+}
+function tickBattle(sim, dt) {
+  const b = sim.battle, hostile = sim.foes.some((f) => f.ai?.role === "raider" && f.health > 0);
+  if (hostile && !b.on) {
+    Object.assign(b, { on: true, since: sim.time, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] });
+    return;
+  }
+  if (!b.on) return;
+  b.quiet = hostile ? 0 : b.quiet + dt;
+  if (b.quiet < 10) return;
+  b.on = false;
+  sim.alarmUntil = 0;
+  const lines = [`Tr\u1EADn k\xE9o d\xE0i ${Math.max(1, Math.round((sim.time - b.since) / 60))} ph\xFAt: ta m\u1EA5t ${b.ourDead}, \u0111\u1ECBch m\u1EA5t ${b.foeDead}.`];
+  if (b.breaches) lines.push(`${b.breaches} \u0111o\u1EA1n h\xE0ng r\xE0o ho\u1EB7c c\u1ED5ng b\u1ECB ph\xE1.`);
+  if (b.shots) lines.push(`Cung th\u1EE7 tr\xEAn ch\xF2i b\u1EAFn ${b.shots} ph\xE1t.`);
+  lines.push(...b.notes);
+  sim.battleReports.push({ at: sim.time, lines });
+  if (sim.battleReports.length > 8) sim.battleReports.shift();
+  for (const l of lines) sim.say(l);
+}
+
+// src/sim/scouting.ts
+var mapAccuracy = (sim, m) => Math.max(0, 1 - COMMAND.mapDecayPerDay * (sim.time - m.at) / DAY_LENGTH);
+function mapLevel(sim, tribe) {
+  let best = 0;
+  for (const m of sim.maps) if (m.tribe === tribe && mapAccuracy(sim, m) >= 0.4) best = Math.max(best, m.gaps > 0 ? m.level - 1 : m.level);
+  return best;
+}
+var warriorsOf = (sim, tribe) => {
+  const t = tribeOf(sim, tribe);
+  return t ? t.unitIds.filter((u) => sim.get(u)?.ai?.role !== "civ").length : 0;
+};
+var scoutsNeeded = (sim, tribe, level) => Math.min(8, level + Math.floor(warriorsOf(sim, tribe) / 8));
+function startScout(sim, ids, tribe, level) {
+  if (RESEARCH.enabled && !sim.dev.freeBuild && !sim.researched.has("scout")) return "C\u1EA7n nghi\xEAn c\u1EE9u: Trinh s\xE1t";
+  const t = tribeOf(sim, tribe);
+  if (!t) return "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
+  if (level < 1 || level > 3) return "B\u1EA3n \u0111\u1ED3 c\xF3 ba c\u1EA5p";
+  if (level > 1 && mapLevel(sim, tribe) < level - 1 && !sim.dev.freeBuild) return `C\u1EA7n b\u1EA3n \u0111\u1ED3 c\u1EA5p ${level - 1} tr\u01B0\u1EDBc`;
+  if (sim.scouts.some((m) => m.tribe === tribe)) return "\u0110\xE3 c\xF3 trinh s\xE1t \u0111ang \u0111i l\xE0ng n\xE0y";
+  const scouts = sim.mine(ids).filter((v) => v.health > 0 && v.inside === null).slice(0, 8);
+  if (!scouts.length) return "Ch\u1ECDn d\xE2n \u0111\u1EC3 c\u1EED \u0111i trinh s\xE1t";
+  const fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y;
+  const dx = fx - t.camp.x, dy = fy - t.camp.y, len = Math.max(1, Math.hypot(dx, dy)), reach = Math.min(len, 15);
+  const spotX = t.camp.x + dx / len * reach, spotY = t.camp.y + dy / len * reach;
+  scouts.forEach((v, i) => {
+    sim.resetTask(v);
+    sim.clearCombat(v);
+    const spot = sim.nearestFree(Math.floor(spotX + Math.cos(i * 2.4) * 2), Math.floor(spotY + Math.sin(i * 2.4) * 2), /* @__PURE__ */ new Set()) ?? [Math.floor(spotX), Math.floor(spotY)];
+    sim.orderMove([v.id], spot[0], spot[1]);
+  });
+  const need = scoutsNeeded(sim, tribe, level);
+  sim.scouts.push({ id: sim.nextMission++, tribe, level, ids: scouts.map((v) => v.id), phase: "go", t: 0, need, survivors: scouts.length });
+  sim.say(`${scouts.length} trinh s\xE1t l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ${t.def.name} (b\u1EA3n \u0111\u1ED3 c\u1EA5p ${level}, c\u1EA7n ${need} ng\u01B0\u1EDDi cho \u0111\u1EE7).${scouts.length < need ? " \xCDt ng\u01B0\u1EDDi h\u01A1n th\u1EBF th\xEC b\u1EA3n \u0111\u1ED3 s\u1EBD b\u1ECB h\u1EDF." : ""}`);
+  return null;
+}
+function deathChance(sim, m, agi) {
+  const t = tribeOf(sim, m.tribe), fire = sim.campfire();
+  const power = warriorsOf(sim, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
+  const day = sim.weather === "clear" && !sim.resting;
+  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, agi - 6) * 0.01));
+}
+function tickScouts(sim, dt) {
+  for (let i = sim.scouts.length - 1; i >= 0; i--) {
+    const m = sim.scouts[i], t = tribeOf(sim, m.tribe);
+    const alive = m.ids.map((id) => sim.byId.get(id)).filter((v) => !!v && v.team === "player" && v.health > 0);
+    m.ids = alive.map((v) => v.id);
+    if (!alive.length || !t) {
+      sim.say(alive.length ? "Trinh s\xE1t b\u1ECB h\u1EE7y." : "M\u1EA5t h\u1EBFt trinh s\xE1t: kh\xF4ng c\xF3 b\u1EA3n \u0111\u1ED3 n\xE0o v\u1EC1.");
+      sim.scouts.splice(i, 1);
+      continue;
+    }
+    m.t += dt;
+    if (m.phase === "go") {
+      const near2 = alive.every((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
+      if (near2 || m.t > 300) {
+        m.phase = "watch";
+        m.t = 0;
+        for (const v of alive) if (sim.frnd() < deathChance(sim, m, v.stats.agi)) sim.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
+        m.survivors = alive.filter((v) => v.health > 0 && sim.byId.has(v.id)).length;
+        sim.say(m.survivors ? `Trinh s\xE1t \u0111ang quan s\xE1t ${t.def.name}.` : "Trinh s\xE1t b\u1ECB b\u1EAFt g\u1EB7p, kh\xF4ng ai tho\xE1t.");
+      }
+    } else if (m.phase === "watch") {
+      if (m.t >= 0.08 * m.level * DAY_LENGTH) {
+        m.phase = "back";
+        m.t = 0;
+        const fire = sim.campfire();
+        for (const id of m.ids) if (sim.byId.has(id) && fire) sim.orderMove([id], Math.floor(fire.x + 1), Math.floor(fire.y + 3));
+      }
+    } else {
+      const fire = sim.campfire(), home = !fire || alive.every((v) => Math.hypot(v.x - fire.x, v.y - fire.y) < 7);
+      if (home || m.t > 600) {
+        const pieces = alive.length, gaps = Math.max(0, m.need - pieces);
+        const old = sim.maps.findIndex((x) => x.tribe === m.tribe && x.level === m.level);
+        const map = { tribe: m.tribe, level: m.level, at: sim.time, gaps };
+        if (old >= 0) sim.maps[old] = map;
+        else sim.maps.push(map);
+        sim.say(`Trinh s\xE1t v\u1EC1: b\u1EA3n \u0111\u1ED3 c\u1EA5p ${m.level} c\u1EE7a ${t.def.name}${gaps ? `, nh\u01B0ng c\xF2n h\u1EDF (thi\u1EBFu ${gaps} m\u1EA3nh)` : " \u0111\u1EA7y \u0111\u1EE7"}.`);
+        sim.scouts.splice(i, 1);
+      }
+    }
+  }
+}
+
+// src/sim/warplan.ts
+var NEED_LEVEL = { camp: 1, gate: 2, ambush: 2, stores: 3, leader: 3 };
+function canTarget(sim, objective, tribe) {
+  return sim.dev.freeBuild || !!tribe && sim.mapLevel(tribe) >= NEED_LEVEL[objective];
+}
+function newPlan(sim, kind, tribe) {
+  const old = sim.plans.findIndex((p) => p.kind === kind && p.status !== "running");
+  if (old >= 0) sim.plans.splice(old, 1);
+  const fire = sim.campfire();
+  const plan2 = { id: sim.nextPlan++, kind, tribe, missions: [], cards: [], status: "draft", startedAt: 0, signal: false, nextCard: 1, rally: { x: (fire?.x ?? sim.world.start.x) + 1.5, y: (fire?.y ?? sim.world.start.y) + 6 } };
+  sim.plans.push(plan2);
+  return plan2;
+}
+function addMission(sim, plan2, squadId) {
+  if (!sim.squadById(squadId)) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+  if (plan2.missions.some((m) => m.squad === squadId)) return "\u0110\u1ED9i n\xE0y \u0111\xE3 c\xF3 nhi\u1EC7m v\u1EE5";
+  plan2.missions.push({ squad: squadId, objective: "camp", route: "main", trigger: { kind: "time", at: 0 }, stance: "fight", withdrawAt: 0.5, state: "idle", initial: 0, post: "gate" });
+  return null;
+}
+function addCard(sim, plan2, kind, squadId, arg = "") {
+  if (plan2.cards.length >= sim.cardLimit()) return `L\u1EC1u h\u1ECDp chi\u1EBFn ch\u1EC9 cho ${sim.cardLimit()} th\u1EBB l\u1EC7nh: n\xE2ng c\u1EA5p l\u1EC1u ho\u1EB7c b\u1ECF b\u1EDBt`;
+  if (kind !== "signal" && !sim.squadById(squadId)) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+  if (plan2.cards.some((c) => c.kind === kind && c.squad === squadId && c.arg === arg)) return "\u0110\xE3 c\xF3 th\u1EBB n\xE0y";
+  plan2.cards.push({ id: plan2.nextCard++, kind, squad: squadId, arg });
+  return null;
+}
+function removeCard(plan2, cardId) {
+  plan2.cards = plan2.cards.filter((c) => c.id !== cardId);
+}
+function reviewPlan(sim, plan2) {
+  const out = [];
+  const t = plan2.tribe ? sim.tribes.find((x) => x.id === plan2.tribe) : void 0;
+  if (plan2.kind === "attack") {
+    if (!t) out.push("\u2717 Ch\u01B0a ch\u1ECDn l\xE0ng \u0111\u1EC3 \u0111\xE1nh.");
+    else if (t.state !== "free") out.push(`\u2717 ${t.def.name} kh\xF4ng c\xF2n l\xE0 k\u1EBB \u0111\u1ECBch.`);
+    else {
+      const level = sim.mapLevel(t.id), maps = sim.maps.filter((m) => m.tribe === t.id);
+      if (!level && !sim.dev.freeBuild) out.push("\u2717 Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 n\xE0o c\u1EE7a l\xE0ng n\xE0y: h\xE3y c\u1EED trinh s\xE1t.");
+      else {
+        const newest = Math.max(...maps.map((m) => m.at));
+        const days = Math.floor((sim.time - newest) / 1200);
+        out.push(days >= 3 ? "B\u1EA3n \u0111\u1ED3 \u0111\xE3 c\u0169, \u0111\u1ECBch c\xF3 th\u1EC3 \u0111\xE3 \u0111\u1ED5i b\u1ED1 tr\xED." : days >= 1 ? `B\xE1o c\xE1o trinh s\xE1t t\u1EEB ${days} h\xF4m tr\u01B0\u1EDBc.` : "B\xE1o c\xE1o trinh s\xE1t m\u1EDBi trong ng\xE0y.");
+        if (maps.some((m) => m.gaps > 0)) out.push("B\u1EA3n \u0111\u1ED3 c\xF2n h\u1EDF v\xEC \xEDt trinh s\xE1t v\u1EC1: v\xE0i ch\u1ED7 ch\u01B0a ch\u1EAFc ch\u1EAFn.");
+      }
+    }
+  }
+  if (!plan2.missions.length) out.push("\u2717 Ch\u01B0a giao nhi\u1EC7m v\u1EE5 cho \u0111\u1ED9i n\xE0o.");
+  for (const m of plan2.missions) {
+    const s = sim.squadById(m.squad), n = s ? sim.squadUnits(s).length : 0, name = s?.name ?? "?";
+    if (!n) out.push(`\u2717 ${name} ch\u01B0a c\xF3 l\xEDnh.`);
+    else if (plan2.kind === "attack" && !canTarget(sim, m.objective, plan2.tribe)) out.push(`\u2717 ${name} nh\u1EAFm "${OBJECTIVE_NAME[m.objective]}" nh\u01B0ng b\u1EA3n \u0111\u1ED3 ch\u01B0a \u0111\u1EE7 c\u1EA5p.`);
+    else if (m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
+    else if (m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
+    if (s && n && !sim.squadCenter(s)) out.push(`${name} ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng.`);
+    if (s && plan2.kind === "attack" && m.route === "night") out.push(`${name} \u0111i \u0111\u01B0\u1EDDng v\xF2ng ban \u0111\xEAm: s\u1EBD ch\u1EDD \u0111\u1EBFn t\u1ED1i m\u1EDBi xu\u1EA5t ph\xE1t.`);
+  }
+  if (plan2.kind === "attack") {
+    const starts = plan2.missions.filter((m) => m.trigger.kind === "time" && m.trigger.at <= 0).length;
+    if (plan2.missions.length && !starts && !plan2.cards.some((c) => c.kind === "go")) out.push("Kh\xF4ng \u0111\u1ED9i n\xE0o c\xF3 gi\u1EDD xu\u1EA5t ph\xE1t: h\xE3y th\xEAm th\u1EBB Xu\u1EA5t ph\xE1t ho\u1EB7c \u0111\u1EB7t gi\u1EDD.");
+  }
+  return out;
+}
+function objectivePos(sim, plan2, m) {
+  const t = sim.tribes.find((x) => x.id === plan2.tribe);
+  if (!t) return null;
+  const toward = (d, side = 0) => {
+    const dx = plan2.rally.x - t.camp.x, dy = plan2.rally.y - t.camp.y, len = Math.max(1, Math.hypot(dx, dy));
+    return { x: t.camp.x + dx / len * d - dy / len * side, y: t.camp.y + dy / len * d + dx / len * side };
+  };
+  switch (m.objective) {
+    case "gate":
+      return toward(9);
+    case "ambush":
+      return toward(14, 8);
+    case "stores": {
+      const p = t.props.find((q) => q.kind === "pile");
+      return p ? { x: p.x + 1, y: p.y + 1 } : { ...t.camp };
+    }
+    case "leader": {
+      const l = sim.get(t.leaderId);
+      return l && l.health > 0 ? { x: l.x, y: l.y, target: l.id } : { ...t.camp };
+    }
+    default:
+      return { ...t.camp };
+  }
+}
+function dispatch(sim, plan2, m, s) {
+  const pos = objectivePos(sim, plan2, m);
+  if (!pos) return;
+  m.state = "march";
+  const c = sim.squadCenter(s) ?? plan2.rally;
+  if (m.route === "forest") {
+    const dx = pos.x - c.x, dy = pos.y - c.y, len = Math.max(1, Math.hypot(dx, dy));
+    sim.squadMove(s, c.x + dx * 0.5 - dy / len * 10, c.y + dy * 0.5 + dx / len * 10, m.stance === "evade" ? "move" : "attack");
+    return;
+  }
+  sim.squadMove(s, pos.x, pos.y, m.stance === "evade" ? "move" : "attack");
+  if (m.stance === "shoot") {
+    for (const v of sim.squadUnits(s)) if (!v.weapon || !(v.weapon === "bow" || v.weapon === "sling")) sim.orderHold([v.id]);
+  }
+}
+function triggered(sim, plan2, m) {
+  const t = sim.tribes.find((x) => x.id === plan2.tribe), tr = m.trigger;
+  if (m.route === "night" && !sim.resting) return false;
+  if (tr.kind === "time") return sim.time - plan2.startedAt >= tr.at;
+  if (tr.kind === "signal") return plan2.signal;
+  if (tr.kind === "after") {
+    const o = plan2.missions.find((x) => x.squad === tr.squad);
+    return !!o && (o.state === "engaged" || o.state === "withdraw" || o.state === "done");
+  }
+  if (!t) return false;
+  const raiders = t.unitIds.map((u) => sim.get(u)).filter((u) => u && u.ai?.role !== "civ");
+  return raiders.length > 0 && raiders.some((u) => Math.hypot(u.x - t.camp.x, u.y - t.camp.y) > 9);
+}
+function startPlan(sim, plan2) {
+  const bad = reviewPlan(sim, plan2).find((l) => l.startsWith("\u2717"));
+  if (bad) return bad.slice(2);
+  if (plan2.kind === "defense") return "K\u1EBF ho\u1EA1ch ph\xF2ng th\u1EE7 ch\u1EA1y khi b\u1EA1n \u0111\xE1nh tr\u1ED1ng b\xE1o \u0111\u1ED9ng";
+  for (const m of plan2.missions) {
+    const s = sim.squadById(m.squad);
+    m.state = "wait";
+    m.initial = sim.squadUnits(s).length;
+  }
+  plan2.status = "running";
+  plan2.startedAt = sim.time;
+  plan2.signal = false;
+  sim.say(`K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng ${sim.tribes.find((t) => t.id === plan2.tribe)?.def.name ?? ""} b\u1EAFt \u0111\u1EA7u.`);
+  return null;
+}
+function tickPlans(sim, dt) {
+  if (sim.alarmUntil > 0 && sim.time > sim.alarmUntil) sim.alarmUntil = 0;
+  for (const plan2 of sim.plans) {
+    if (plan2.kind !== "attack" || plan2.status !== "running") continue;
+    const t = sim.tribes.find((x) => x.id === plan2.tribe);
+    for (const m of plan2.missions) {
+      const s = sim.squadById(m.squad);
+      if (!s || !sim.squadUnits(s).length) {
+        if (m.state !== "done") {
+          m.state = "done";
+        }
+        continue;
+      }
+      const alive = sim.squadUnits(s).length, c = sim.squadCenter(s);
+      if (m.state === "wait" && triggered(sim, plan2, m)) dispatch(sim, plan2, m, s);
+      else if (m.state === "march" || m.state === "engaged") {
+        const pos = objectivePos(sim, plan2, m);
+        if (pos) {
+          const d = Math.hypot(pos.x - c.x, pos.y - c.y);
+          if (m.state === "march" && d < 9) {
+            m.state = "engaged";
+            sim.noteBattle("note", `${s.name} \xE1p s\xE1t ${OBJECTIVE_NAME[m.objective].toLowerCase()}.`);
+            if (pos.target) sim.orderAttack(sim.squadUnits(s).map((v) => v.id), { kind: "unit", id: pos.target });
+          } else if (m.state === "march" && m.route === "forest" && d > 12 && Math.hypot((s.anchor?.x ?? 0) - c.x, (s.anchor?.y ?? 0) - c.y) < 4) dispatch(sim, plan2, { ...m, route: "main" }, s);
+        }
+        const lost = m.initial ? 1 - alive / m.initial : 0, morale = sim.squadUnits(s).reduce((a, v) => a + v.morale, 0) / alive;
+        if (lost >= m.withdrawAt || morale < 25) {
+          m.state = "withdraw";
+          sim.squadMove(s, plan2.rally.x, plan2.rally.y, "move");
+          sim.noteBattle("note", `${s.name} r\xFAt lui sau khi m\u1EA5t ${Math.round(lost * 100)}% qu\xE2n.`);
+          sim.say(`${s.name} r\xFAt lui!`);
+        }
+      } else if (m.state === "withdraw" && Math.hypot(plan2.rally.x - c.x, plan2.rally.y - c.y) < 7) m.state = "done";
+    }
+    if (plan2.missions.every((m) => m.state === "done" || m.state === "idle") || !t || t.state !== "free") {
+      plan2.status = "done";
+      sim.say("K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng k\u1EBFt th\xFAc.");
+      if (t && t.state !== "free") sim.noteBattle("note", `${t.def.name} \u0111\xE3 khu\u1EA5t ph\u1EE5c.`);
+    }
+    void dt;
+  }
+}
+function playCard(sim, plan2, cardId) {
+  const card = plan2.cards.find((c2) => c2.id === cardId);
+  if (!card) return "Kh\xF4ng c\xF3 th\u1EBB n\xE0y";
+  if (card.kind === "signal") {
+    plan2.signal = true;
+    sim.say("T\xEDn hi\u1EC7u \u0111\u01B0\u1EE3c ph\xE1t \u0111i!");
+    return null;
+  }
+  const s = sim.squadById(card.squad), m = plan2.missions.find((x) => x.squad === card.squad);
+  if (!s) return "\u0110\u1ED9i n\xE0y kh\xF4ng c\xF2n";
+  if (card.kind === "formation") return sim.setFormation(s.id, card.arg);
+  if (plan2.status !== "running" || !m) return "K\u1EBF ho\u1EA1ch ch\u01B0a b\u1EAFt \u0111\u1EA7u";
+  if (!sim.squadUnits(s).length) return `${s.name} kh\xF4ng c\xF2n ai`;
+  const c = sim.squadCenter(s);
+  switch (card.kind) {
+    case "go":
+    case "advance":
+      if (m.state === "withdraw" || m.state === "done") return `${s.name} \u0111\xE3 r\xFAt`;
+      if (!m.initial) m.initial = sim.squadUnits(s).length;
+      dispatch(sim, plan2, m, s);
+      break;
+    case "hold":
+      m.state = "hold";
+      sim.squadMove(s, c.x, c.y, "hold");
+      break;
+    case "shoot":
+      m.stance = "shoot";
+      for (const v of sim.squadUnits(s)) if (v.weapon !== "bow" && v.weapon !== "sling") sim.orderHold([v.id]);
+      break;
+    case "attack":
+      if (!canTarget(sim, card.arg, plan2.tribe)) return "B\u1EA3n \u0111\u1ED3 ch\u01B0a \u0111\u1EE7 c\u1EA5p \u0111\u1EC3 nh\u1EAFm m\u1EE5c ti\xEAu n\xE0y";
+      m.objective = card.arg;
+      if (!m.initial) m.initial = sim.squadUnits(s).length;
+      dispatch(sim, plan2, m, s);
+      break;
+    case "retreat":
+      m.state = "withdraw";
+      sim.squadMove(s, plan2.rally.x, plan2.rally.y, "move");
+      sim.noteBattle("note", `${s.name} \u0111\u01B0\u1EE3c l\u1EC7nh r\xFAt.`);
+      break;
+  }
+  return null;
+}
+function soundAlarm(sim) {
+  if (RESEARCH.enabled && !sim.dev.freeBuild && !sim.researched.has("signal")) return "C\u1EA7n nghi\xEAn c\u1EE9u: T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)";
+  sim.alarmUntil = sim.time + 180;
+  sim.say("Tr\u1ED1ng b\xE1o \u0111\u1ED9ng vang l\xEAn! D\xE2n v\u1EC1 \u0111\u1ED1ng l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED.");
+  const fire = sim.campfire(), fx = (fire?.x ?? sim.world.start.x) + 1, fy = (fire?.y ?? sim.world.start.y) + 3;
+  const plan2 = sim.plans.find((p) => p.kind === "defense");
+  const hostile = sim.foes.filter((f) => f.ai?.role === "raider" && f.health > 0), first = hostile[0] ?? sim.tribes.find((t) => t.state === "free" && t.raid)?.camp;
+  const toward = first ?? { x: fx, y: fy + 10 };
+  const inward = (b, w) => {
+    const dx = fx - b.x, dy = fy - b.y, len = Math.max(1, Math.hypot(dx, dy));
+    return { x: b.x + w / 2 + dx / len * 1.8, y: b.y + w / 2 + dy / len * 1.8 };
+  };
+  const place = (post) => {
+    if (post === "gate") {
+      const g = sim.buildings.filter((b) => b.kind === "gate" && b.done).sort((a, b) => Math.hypot(a.x - toward.x, a.y - toward.y) - Math.hypot(b.x - toward.x, b.y - toward.y))[0];
+      if (g) return inward(g, 1);
+    }
+    if (post === "fence") {
+      const f = sim.buildings.filter((b) => b.kind === "fence" && b.done).sort((a, b) => Math.hypot(a.x - toward.x, a.y - toward.y) - Math.hypot(b.x - toward.x, b.y - toward.y))[0];
+      if (f) return inward(f, 1);
+    }
+    if (post === "tower") {
+      const tw = sim.buildings.filter((b) => b.kind === "tower" && b.done).sort((a, b) => Math.hypot(a.x - toward.x, a.y - toward.y) - Math.hypot(b.x - toward.x, b.y - toward.y))[0];
+      if (tw) return inward(tw, 2);
+    }
+    return { x: fx, y: fy };
+  };
+  const squads = plan2 ? plan2.missions : sim.squads.map((s) => ({ squad: s.id, post: "fire" }));
+  for (const m of squads) {
+    const s = sim.squadById(m.squad);
+    if (!s) continue;
+    if (m.post === "tower") for (const tw of sim.buildings.filter((b) => b.kind === "tower" && b.done)) sim.assignTower(sim.squadUnits(s).map((v) => v.id), tw.id);
+    const p = place(m.post);
+    sim.squadMove(s, p.x, p.y, "hold");
+  }
+  return null;
+}
+
+// src/sim/simwar.ts
+var WAR = {
+  /** → army.squadLimit */
+  squadLimit() {
+    return squadLimit(this);
+  },
+  /** → army.cardLimit */
+  cardLimit() {
+    return cardLimit(this);
+  },
+  /** → army.createSquad */
+  createSquad(name) {
+    return createSquad(this, name);
+  },
+  /** → army.joinSquad */
+  joinSquad(ids, squadId) {
+    return joinSquad(this, ids, squadId);
+  },
+  /** → army.leaveSquad */
+  leaveSquad(ids) {
+    return leaveSquad(this, ids);
+  },
+  /** → army.disbandSquad */
+  disbandSquad(id) {
+    return disbandSquad(this, id);
+  },
+  /** → army.setCommander */
+  setCommander(squadId, vid) {
+    return setCommander(this, squadId, vid);
+  },
+  /** → army.setFormation */
+  setFormation(squadId, f) {
+    return setFormation(this, squadId, f);
+  },
+  /** → army.formationOpen */
+  formationOpen(f) {
+    return formationOpen(this, f);
+  },
+  /** → army.squadMove */
+  squadMove(s, x, y, mode) {
+    return squadMove(this, s, x, y, mode);
+  },
+  /** → army.squadUnits */
+  squadUnits(s) {
+    return squadUnits(this, s);
+  },
+  /** → army.squadCenter */
+  squadCenter(s) {
+    return squadCenter(this, s);
+  },
+  /** → army.squadById */
+  squadById(id) {
+    return squadById(this, id);
+  },
+  /** → army.trainSquad */
+  trainSquad(squadId, on) {
+    return trainSquad(this, squadId, on);
+  },
+  /** → army.attackFactor */
+  attackFactor(v, e) {
+    return attackFactor(this, v, e);
+  },
+  /** → army.takenFactor */
+  takenFactor(v, ranged) {
+    return takenFactor(this, v, ranged);
+  },
+  /** → army.clusters */
+  clusters() {
+    return clusters(this);
+  },
+  /** → army.drawnFigures */
+  drawnFigures() {
+    return drawnFigures(this);
+  },
+  /** → army.noteBattle */
+  noteBattle(kind, text = "") {
+    return noteBattle(this, kind, text);
+  },
+  /** → scouting.mapLevel */
+  mapLevel(tribe) {
+    return mapLevel(this, tribe);
+  },
+  /** → scouting.mapAccuracy */
+  mapAccuracy(m) {
+    return mapAccuracy(this, m);
+  },
+  /** → scouting.startScout */
+  startScout(ids, tribe, level) {
+    return startScout(this, ids, tribe, level);
+  },
+  /** → scouting.scoutsNeeded */
+  scoutsNeeded(tribe, level) {
+    return scoutsNeeded(this, tribe, level);
+  },
+  /** → warplan.newPlan */
+  newPlan(kind, tribe) {
+    return newPlan(this, kind, tribe);
+  },
+  /** → warplan.addMission */
+  addMission(plan2, squadId) {
+    return addMission(this, plan2, squadId);
+  },
+  /** → warplan.addCard */
+  addCard(plan2, kind, squadId, arg) {
+    return addCard(this, plan2, kind, squadId, arg);
+  },
+  /** → warplan.removeCard */
+  removeCard(plan2, cardId) {
+    return removeCard(plan2, cardId);
+  },
+  /** → warplan.reviewPlan */
+  reviewPlan(plan2) {
+    return reviewPlan(this, plan2);
+  },
+  /** → warplan.startPlan */
+  startPlan(plan2) {
+    return startPlan(this, plan2);
+  },
+  /** → warplan.playCard */
+  playCard(plan2, cardId) {
+    return playCard(this, plan2, cardId);
+  },
+  /** → warplan.soundAlarm */
+  soundAlarm() {
+    return soundAlarm(this);
+  },
+  /** → warplan.canTarget */
+  canTarget(objective, tribe) {
+    return canTarget(this, objective, tribe);
+  }
+};
+
 // src/sim/sim.ts
 var Sim = class _Sim {
   constructor(seed = 1337) {
@@ -4785,6 +5989,19 @@ var Sim = class _Sim {
     this.animals = [];
     this.animalById = /* @__PURE__ */ new Map();
     this.projectiles = [];
+    /** War: squads, what the scouts have learnt, scouting trips, battle plans, the alarm and the fight that is on. */
+    this.squads = [];
+    this.nextSquad = 1;
+    this.maps = [];
+    this.scouts = [];
+    this.nextMission = 1;
+    this.plans = [];
+    this.nextPlan = 1;
+    /** Game seconds until which the alarm drum is sounding (0 = quiet). */
+    this.alarmUntil = 0;
+    this.battle = { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] };
+    /** The summaries of past fights, newest last. */
+    this.battleReports = [];
     this.nextAid = 1;
     /** Test switches driven by the dev menu; all off in a normal game. */
     this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false };
@@ -5111,6 +6328,54 @@ var Sim = class _Sim {
   bestFor(job) {
     return bestFor(this, job);
   }
+  /** → defense.tickTraps */
+  tickTraps(dt) {
+    return tickTraps(this, dt);
+  }
+  /** → defense.tickTowers */
+  tickTowers(dt) {
+    return tickTowers(this, dt);
+  }
+  /** → defense.toggleGate */
+  toggleGate(id) {
+    return toggleGate(this, id);
+  }
+  /** → defense.setGates */
+  setGates(open) {
+    return setGates(this, open);
+  }
+  /** → defense.nearestWork */
+  nearestWork(x, y, radius) {
+    return nearestWork(this, x, y, radius);
+  }
+  /** → defense.damageWork */
+  damageWork(b, dmg) {
+    return damageWork(this, b, dmg);
+  }
+  /** → defense.towerBonus */
+  towerBonus(v) {
+    return towerBonus(this, v);
+  }
+  /** → defense.garrison */
+  garrison(b) {
+    return garrison(this, b);
+  }
+  /** → defense.assignTower */
+  assignTower(ids, towerId) {
+    return assignTower(this, ids, towerId);
+  }
+  /** → defense.leaveTower */
+  leaveTower(ids) {
+    return leaveTower(this, ids);
+  }
+  /** → construction.destroyBuilding */
+  destroyBuilding(b) {
+    return destroyBuilding(this, b);
+  }
+  /** → construction.setOcc */
+  setOcc(b, val) {
+    return setOcc(this, b, val);
+  }
   /** → houses.assignField */
   assignField(ids, fieldId) {
     return assignField(this, ids, fieldId);
@@ -5307,6 +6572,12 @@ var Sim = class _Sim {
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt);
     this.tickFarms(dt);
+    this.tickTowers(dt);
+    this.tickTraps(dt);
+    tickTraining(this, dt);
+    tickBattle(this, dt);
+    tickScouts(this, dt);
+    tickPlans(this, dt);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     this.moraleClock += dt;
@@ -5473,6 +6744,14 @@ var Sim = class _Sim {
   equip(v) {
     return equip(this, v);
   }
+  /** → inventory.wearGear */
+  wearGear(v, slot) {
+    return wearGear(this, v, slot);
+  }
+  /** → inventory.planGearRepair */
+  planGearRepair(v) {
+    return planGearRepair(this, v);
+  }
   /** → inventory.planEquipGear */
   planEquipGear(v) {
     return planEquipGear(this, v);
@@ -5502,6 +6781,7 @@ var Sim = class _Sim {
     return stash(this, v);
   }
 };
+Object.assign(Sim.prototype, WAR);
 
 // test/save.test.ts
 PACE.work = 1;

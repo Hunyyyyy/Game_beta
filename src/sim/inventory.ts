@@ -85,6 +85,44 @@ export function repairTool(sim: Sim, ids: readonly number[], k: ToolKind): strin
   return n ? null : err;
 }
 
+// ---------------------------------------------------------------- weapons and armour wear out
+const gearName = (slot: 'weapon' | 'armor', id: string) => (slot === 'armor' ? ARMORS[id]?.name : WEAPONS[id]?.name)?.toLowerCase() ?? id;
+const gearId = (slot: 'weapon' | 'armor', id: string) => (slot === 'armor' ? 'hide1' : `${id}${WEAPONS[id]?.tier ?? 1}`);
+
+/**
+ * One blow struck (weapon) or taken (armour). Worn to nothing, the piece is lost for good half the time; otherwise it breaks and its
+ * bearer carries it to the Nhà sửa chữa. Only our own people's gear wears.
+ */
+export function wearGear(sim: Sim, v: Villager, slot: 'weapon' | 'armor'): void {
+  if (v.team !== 'player') return;
+  const id = slot === 'weapon' ? v.weapon : v.armor, g = v.gear;
+  if (!id) return;
+  const max = (slot === 'weapon' ? WEAPONS[id]?.durability : ARMORS[id]?.durability) ?? 0;
+  if (!max) return;
+  if (slot === 'weapon') { if (g.w !== id) { g.w = id; g.wd = max; g.wb = false; } if (g.wb || --g.wd > 0) return; }
+  else { if (g.a !== id) { g.a = id; g.ad = max; g.ab = false; } if (g.ab || --g.ad > 0) return; }
+  if (sim.frnd() < 0.5) {
+    if (slot === 'weapon') { v.weapon = null; g.w = null; g.wb = false; } else { v.armor = null; g.a = null; g.ab = false; }
+    v.manualGear = false;
+    sim.say(`${v.name} làm vỡ ${gearName(slot, id)}, mất hẳn.`);
+  } else {
+    if (slot === 'weapon') g.wb = true; else g.ab = true;
+    sim.say(`${gearName(slot, id)} của ${v.name} đã hỏng, cần mang đi sửa.`);
+  }
+}
+
+/** A soldier or hunter with broken gear walks it to the Nhà sửa chữa by himself. */
+export function planGearRepair(sim: Sim, v: Villager): boolean {
+  if ((v.job !== 'fight' && v.job !== 'hunt') || v.phase === 'fight' || v.orderCd > 0 || v.team !== 'player') return false;
+  const house = sim.building('repair');
+  if (!house || sim.repairQueue.length >= 12 || !(v.gear.wb && v.gear.w === v.weapon) && !(v.gear.ab && v.gear.a === v.armor)) return false;
+  v.orderCd = 30;
+  v.order = 'repair:gear';
+  if (goTo(sim, v, house, 'goOrder')) return true;
+  v.order = null;
+  return false;
+}
+
 /** Hand a weapon (club, spear, mace) or the hide armour straight to villagers; null takes it away. */
 export function giveGear(sim: Sim, ids: readonly number[], kind: string | null, slot: 'weapon' | 'armor'): void {
   for (const v of sim.mine(ids)) {
@@ -179,7 +217,17 @@ export function errand(sim: Sim, v: Villager): void {
   if (!o || !b || !b.done) return;
   const [what, id] = o.split(':');
   if (what === 'craft') { if (sim.queueCraft(id) === null) sim.say(`${v.name} nhờ chế ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`); }
-  else if (what === 'repair') {
+  else if (what === 'repair' && id === 'gear') {
+    for (const slot of ['weapon', 'armor'] as const) {
+      const piece = slot === 'weapon' ? v.weapon : v.armor, broken = slot === 'weapon' ? v.gear.wb && v.gear.w === v.weapon : v.gear.ab && v.gear.a === v.armor;
+      if (!piece || !broken || v.repairFor) continue;
+      if (sim.queueRepair(gearId(slot, piece)) === null) {
+        v.repairFor = gearId(slot, piece);
+        if (slot === 'weapon') { v.weapon = null; v.gear.w = null; v.gear.wb = false; } else { v.armor = null; v.gear.a = null; v.gear.ab = false; }
+        sim.say(`${v.name} nhờ sửa ${gearName(slot, piece)}.`);
+      }
+    }
+  } else if (what === 'repair') {
     const k = id as ToolKind, t = v.tools[k];
     if (t && t.dur < TIER_DURABILITY[t.tier] - 1e-6 && sim.queueRepair(toolId(sim, k, t.tier)) === null) { v.tools[k] = null; v.repairFor = toolId(sim, k, t.tier); sim.say(`${v.name} nhờ sửa ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}.`); }
   }

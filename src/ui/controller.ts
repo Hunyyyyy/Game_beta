@@ -176,6 +176,8 @@ export class Controller {
   private activate(p: { x: number; y: number }, touch: boolean, additive: boolean): void {
     if (this.attackMoveArmed) { this.attackMove(p, additive); return; }
     if (this.placing) { if (touch) { this.placeAt = this.originAt(p); this.onChange(); } else this.confirmPlace(additive); return; }
+    const flag = this.r.flagAt(p.x, p.y); // a tap on the flag of a cluster picks all its soldiers
+    if (flag) { if (!additive) this.selected.clear(); for (const fid of flag) if (this.sim.get(fid)?.team === 'player') this.selected.add(fid); this.selectedBuilding = null; this.inspect = null; this.onChange(); return; }
     const id = this.hit(p, touch);
     if (this.multi) { if (id !== null) { this.toggle(id); this.onChange(); } return; }
     const b = this.buildingUnder(p), w = this.r.screenToWorld(p.x, p.y);
@@ -302,7 +304,7 @@ export class Controller {
     // Có dân đang chọn thì tự giao việc xây cho họ.
     const ids = [...this.selected];
     if (ids.length && res.building && needsWork(res.building)) this.sim.orderWork(ids, o.x, o.y);
-    if (!keep) { this.placing = null; this.placeAt = null; }
+    if (!keep && !d.repeat) { this.placing = null; this.placeAt = null; }
     this.onChange();
   }
 

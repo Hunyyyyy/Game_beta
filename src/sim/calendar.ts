@@ -30,6 +30,8 @@ export interface WeatherDef {
   speed: number;
   /** How fast outdoor work goes in this weather. */
   work: number;
+  /** Archers shoot with this share of their strength (rain wets the strings, wind spoils the aim). */
+  bow: number;
   /** Warning shown half a day ahead (empty for none). */
   signal: string;
 }

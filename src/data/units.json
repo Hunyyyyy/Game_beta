@@ -1,0 +1,16 @@
+{
+  "_note": "Arms of the army and what beats what. A weapon decides its arm: ranged weapons (sling, bow) make an archer, everything else a foot soldier; a rider (cavalry) is a soldier on a tamed beast, which the game does not have yet but the table is ready for. beats[attacker][defender] multiplies the damage an attacker does. Foot beats archers, archers beat riders, riders beat foot. The small bonuses are on top of that.",
+  "arms": {
+    "foot": "Bộ binh",
+    "archer": "Cung thủ",
+    "cavalry": "Kỵ thú"
+  },
+  "beats": {
+    "foot":    { "foot": 1.0,  "archer": 1.5,  "cavalry": 0.67 },
+    "archer":  { "foot": 0.67, "archer": 1.0,  "cavalry": 1.5 },
+    "cavalry": { "foot": 1.5,  "archer": 0.67, "cavalry": 1.0 }
+  },
+  "spearVsCavalry": 1.15,
+  "archerOnTower": { "damage": 1.25, "range": 2, "within": 2.2 },
+  "archerPressed": { "within": 2, "damage": 0.5 }
+}

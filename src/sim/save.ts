@@ -14,16 +14,16 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 5;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
-  scalars: ['era', 'time', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'moraleClock', 'tribeClock', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
+  scalars: ['era', 'time', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'moraleClock', 'tribeClock', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
-  records: ['stock', 'toolStock'],
+  records: ['stock', 'toolStock', 'battle'],
   /** Lists of plain data. */
-  lists: ['wornTools', 'craftQueue', 'researchQueue', 'repairQueue', 'log', 'foodLots', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles'],
+  lists: ['wornTools', 'craftQueue', 'researchQueue', 'repairQueue', 'log', 'foodLots', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'plans', 'battleReports'],
   /** Handled by hand below. */
   special: ['researched', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
 } as const satisfies Record<string, readonly (keyof Sim)[]>;
@@ -85,6 +85,20 @@ export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disabl
   2: (d) => {
     for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) v.post ??= -1;
     return { ...d, version: 3 };
+  },
+  // 3 -> 4: buildings gained strength (defence works) and an open/shut state (gates)
+  3: (d) => {
+    for (const b of d.lists.buildings as Array<Record<string, unknown>>) { b.hp ??= 0; b.open ??= true; }
+    return { ...d, version: 4 };
+  },
+  // 4 -> 5: weapons and armour wear out
+  4: (d) => {
+    for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) { v.gear ??= { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false }; v.squad ??= -1; }
+    // squads, maps, plans and the fight log start empty
+    for (const k of ['squads', 'maps', 'scouts', 'plans', 'battleReports']) d.lists[k] ??= [];
+    d.scalars.nextSquad ??= 1; d.scalars.nextMission ??= 1; d.scalars.nextPlan ??= 1; d.scalars.alarmUntil ??= 0;
+    d.records.battle ??= { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] };
+    return { ...d, version: 5 };
   },
 };
 

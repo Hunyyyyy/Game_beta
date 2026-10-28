@@ -117,7 +117,7 @@ export function discharge(sim: Sim, ids: readonly number[]): number {
   let n = 0;
   for (const v of mine(sim, ids)) {
     if (v.job !== 'fight') continue;
-    resetTask(sim, v); clearCombat(sim, v); v.job = 'idle'; v.nightOwl = false;
+    resetTask(sim, v); clearCombat(sim, v); v.job = 'idle'; v.nightOwl = false; v.post = -1;
     sim.assignGear([v.id], null, 'weapon'); sim.assignGear([v.id], null, 'armor'); v.manualGear = false;
     n++;
   }

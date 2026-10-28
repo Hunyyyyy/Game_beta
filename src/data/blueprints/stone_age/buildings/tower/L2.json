@@ -1,0 +1,40 @@
+{
+  "name": "Chòi canh (cấp 2, chòi cao)",
+  "name_en": "Watchtower (Tier 2, Tall)",
+  "type": "prop",
+  "size": [72,64],
+  "anchor": [36,58],
+  "footprint": [4,32,64,28],
+  "seed": 33,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": {"line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "earth": "#86704e", "stone": "#8e9498", "stoneL": "#b9bfc2", "stoneD": "#60676b", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "log": "#6b4a28", "rope": "#d8c690", "thatch": "#c9a84e", "thatchL": "#e0c670", "thatchD": "#9a7c32"},
+  "layers": [
+    {"shape": "ellipse", "cx": 36, "cy": 55, "rx": 30, "ry": 6, "color": "shadow", "alpha": 0.25},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "rect", "x": 8, "y": 48, "w": 56, "h": 7, "color": "stoneD"},
+      {"shape": "rect", "x": 8, "y": 48, "w": 56, "h": 2, "color": "stoneL"}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "line", "from": [14,50], "to": [20,28], "w": 3, "color": "woodD"},
+      {"shape": "line", "from": [58,50], "to": [52,28], "w": 3, "color": "woodD"},
+      {"shape": "line", "from": [22,50], "to": [24,28], "w": 2, "color": "wood"},
+      {"shape": "line", "from": [50,50], "to": [48,28], "w": 2, "color": "wood"},
+      {"shape": "line", "from": [18,36], "to": [54,36], "w": 2, "color": "rope"},
+      {"shape": "line", "from": [20,26], "to": [52,26], "w": 2, "color": "rope"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "rect", "x": 12, "y": 14, "w": 48, "h": 5, "color": "woodL"},
+      {"shape": "rect", "x": 12, "y": 14, "w": 48, "h": 2, "color": "wood"},
+      {"shape": "rect", "x": 12, "y": 4, "w": 3, "h": 12, "color": "woodD"},
+      {"shape": "rect", "x": 57, "y": 4, "w": 3, "h": 12, "color": "woodD"},
+      {"shape": "line", "from": [12,6], "to": [60,6], "w": 2, "color": "woodD"},
+      {"shape": "line", "from": [13,10], "to": [59,10], "w": 1, "color": "rope"}
+    ] },
+    {"shape": "group", "if": "st4", "layers": [
+      {"shape": "poly", "points": [[8,6],[36,0],[64,6]], "color": "thatch"},
+      {"shape": "poly", "points": [[8,6],[36,0],[36,6]], "color": "thatchL"},
+      {"shape": "poly", "points": [[36,0],[64,6],[36,6]], "color": "thatchD"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

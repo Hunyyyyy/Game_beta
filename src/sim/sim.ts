@@ -25,7 +25,13 @@ import * as villagers from './villagers';
 import * as environment from './environment';
 import * as save from './save';
 import * as rest from './rest';
-import { LogLine, PlaceResult, Projectile, Sex, Shift, Target, Villager } from './model';
+import * as defense from './defense';
+import * as army from './army';
+import * as scouting from './scouting';
+import * as warplan from './warplan';
+import { WAR, WarApi } from './simwar';
+import { BattleState, CardKind, FormationName, LogLine, Objective, PlaceResult, Plan, Projectile, ScoutMap, ScoutMission, Sex, Shift, Squad, Target, Villager } from './model';
+import type { Ent } from './battle';
 export * from './model';
 
 export class Sim {
@@ -66,6 +72,19 @@ export class Sim {
   readonly animals: Animal[] = [];
   readonly animalById = new Map<number, Animal>();
   readonly projectiles: Projectile[] = [];
+  /** War: squads, what the scouts have learnt, scouting trips, battle plans, the alarm and the fight that is on. */
+  readonly squads: Squad[] = [];
+  nextSquad = 1;
+  readonly maps: ScoutMap[] = [];
+  readonly scouts: ScoutMission[] = [];
+  nextMission = 1;
+  readonly plans: Plan[] = [];
+  nextPlan = 1;
+  /** Game seconds until which the alarm drum is sounding (0 = quiet). */
+  alarmUntil = 0;
+  readonly battle: BattleState = { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] };
+  /** The summaries of past fights, newest last. */
+  readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
   readonly dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false };
@@ -289,6 +308,30 @@ export class Sim {
 
   /** → houses.bestFor */
   bestFor(job: 'craft' | 'research' | 'repair'): Villager | null { return houses.bestFor(this, job); }
+  /** → defense.tickTraps */
+  tickTraps(dt: number): void { return defense.tickTraps(this, dt); }
+  /** → defense.tickTowers */
+  tickTowers(dt: number): void { return defense.tickTowers(this, dt); }
+  /** → defense.toggleGate */
+  toggleGate(id: number): string | null { return defense.toggleGate(this, id); }
+  /** → defense.setGates */
+  setGates(open: boolean): void { return defense.setGates(this, open); }
+  /** → defense.nearestWork */
+  nearestWork(x: number, y: number, radius: number): Building | undefined { return defense.nearestWork(this, x, y, radius); }
+  /** → defense.damageWork */
+  damageWork(b: Building, dmg: number): void { return defense.damageWork(this, b, dmg); }
+  /** → defense.towerBonus */
+  towerBonus(v: Villager): { damage: number; range: number } { return defense.towerBonus(this, v); }
+  /** → defense.garrison */
+  garrison(b: Building): Villager[] { return defense.garrison(this, b); }
+  /** → defense.assignTower */
+  assignTower(ids: readonly number[], towerId: number): string | null { return defense.assignTower(this, ids, towerId); }
+  /** → defense.leaveTower */
+  leaveTower(ids: readonly number[]): void { return defense.leaveTower(this, ids); }
+  /** → construction.destroyBuilding */
+  destroyBuilding(b: Building): void { return construction.destroyBuilding(this, b); }
+  /** → construction.setOcc */
+  setOcc(b: Building, val: number): void { return construction.setOcc(this, b, val); }
   /** → houses.assignField */
   assignField(ids: readonly number[], fieldId: number): string | null { return houses.assignField(this, ids, fieldId); }
   /** → houses.houseRate */
@@ -417,7 +460,7 @@ export class Sim {
     this.syncFood();
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
-    this.tickWorks(dt); this.tickFarms(dt);
+    this.tickWorks(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     this.moraleClock += dt;
@@ -538,6 +581,10 @@ export class Sim {
   /** → inventory.equip */
   equip(v: Villager): void { return inventory.equip(this, v); }
 
+  /** → inventory.wearGear */
+  wearGear(v: Villager, slot: 'weapon' | 'armor'): void { return inventory.wearGear(this, v, slot); }
+  /** → inventory.planGearRepair */
+  planGearRepair(v: Villager): boolean { return inventory.planGearRepair(this, v); }
   /** → inventory.planEquipGear */
   planEquipGear(v: Villager): boolean { return inventory.planEquipGear(this, v); }
   /** → inventory.planGearErrand */
@@ -563,3 +610,6 @@ export class Sim {
 
 }
 
+/** The war methods (squads, formations, scouting, plans) live in simwar.ts and are added here. */
+export interface Sim extends WarApi {}
+Object.assign(Sim.prototype, WAR);

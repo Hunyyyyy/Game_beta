@@ -16,8 +16,8 @@ export const TIER_YIELD = [1, 1.25, 1.6];    // đơn vị thu được mỗi l�
 export const TIER_DURABILITY = [0, 240, 600]; // giây làm việc trước khi gãy
 
 /** Gear a fighter wears: crafted weapons and armour share the recipe, stock and equip flow of tools. */
-export type GearKind = 'club' | 'spear' | 'mace' | 'hide';
-export const GEAR_KINDS: GearKind[] = ['club', 'spear', 'mace', 'hide'];
+export type GearKind = 'club' | 'spear' | 'mace' | 'sling' | 'bow' | 'hide';
+export const GEAR_KINDS: GearKind[] = ['club', 'spear', 'mace', 'sling', 'bow', 'hide'];
 export const isGear = (k: string): k is GearKind => (GEAR_KINDS as string[]).includes(k);
 export const isWeaponKind = (k: string) => k in WEAPONS;
 

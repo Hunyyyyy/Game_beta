@@ -163,6 +163,12 @@ export function tickWorks(sim: Sim, dt: number): void {
       const r = RECIPE_BY_ID[id], cat = isGear(r.kind) ? 'gear' : 'tool';
       if (kind === 'repair') {
         const owner = sim.villagers.find((o) => o.repairFor === id), k = r.kind as ToolKind;
+        if (owner && isGear(r.kind)) { // mended weapon or armour goes back into its owner's hands
+          owner.repairFor = null;
+          if (r.kind === 'hide') { if (!owner.armor) { owner.armor = 'hide'; owner.gear.a = null; } } else if (!owner.weapon) { owner.weapon = r.kind; owner.gear.w = null; }
+          b.active = null; sim.say(`Đã sửa xong ${recipeName(r).toLowerCase()}, trả lại cho ${owner.name}.`);
+          continue;
+        }
         if (owner) {
           owner.repairFor = null;
           if (TOOL_OF_JOB[owner.job as WorkJob] === k && !sim.heldTool(owner)) {

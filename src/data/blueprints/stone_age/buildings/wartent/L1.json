@@ -1,0 +1,37 @@
+{
+  "name": "Lều họp chiến (cấp 1, lều da)",
+  "name_en": "War Tent (Tier 1)",
+  "type": "prop",
+  "size": [72,64],
+  "anchor": [36,58],
+  "footprint": [4,32,64,28],
+  "seed": 41,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": {"line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "earth": "#86704e", "earthL": "#9a8460", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "hide": "#a0552f", "hideL": "#c06f43", "hideD": "#7a3d20", "door": "#2a1a0e", "flag": "#b03a2e", "flagD": "#7d2a20", "bone": "#e4dcc4", "stoneD": "#60676b"},
+  "layers": [
+    {"shape": "ellipse", "cx": 36, "cy": 55, "rx": 30, "ry": 6, "color": "shadow", "alpha": 0.25},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "rect", "x": 8, "y": 46, "w": 56, "h": 8, "color": "dirt"},
+      {"shape": "scatter", "count": 14, "area": [8,46,56,8], "size": [1,2], "colors": ["earth", "earthL"], "onlyOver": ["dirt"]}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "line", "from": [11,52], "to": [36,8], "w": 2, "color": "wood"},
+      {"shape": "line", "from": [61,52], "to": [36,8], "w": 2, "color": "woodD"},
+      {"shape": "line", "from": [36,52], "to": [36,6], "w": 2, "color": "wood"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "poly", "points": [[9,52],[36,11],[63,52]], "color": "hide"},
+      {"shape": "poly", "points": [[36,11],[9,52],[19,52],[36,24]], "color": "hideL"},
+      {"shape": "poly", "points": [[36,11],[63,52],[49,52],[36,30]], "color": "hideD"},
+      {"shape": "poly", "points": [[30,52],[36,30],[42,52]], "color": "door"},
+      {"shape": "line", "from": [36,11], "to": [30,52], "w": 1, "color": "hideD", "alpha": 0.8},
+      {"shape": "line", "from": [36,11], "to": [44,52], "w": 1, "color": "hideD", "alpha": 0.8}
+    ] },
+    {"shape": "group", "if": "st4", "layers": [
+      {"shape": "line", "from": [36,11], "to": [36,0], "w": 1, "color": "woodD"},
+      {"shape": "poly", "points": [[37,1],[47,4],[37,8]], "color": "flag"},
+      {"shape": "pixels", "at": [[33,20],[39,24],[30,40],[43,42]], "color": "bone"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

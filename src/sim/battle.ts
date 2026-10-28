@@ -1,6 +1,8 @@
 import animsJson from '../data/anims.json';
 import { ANIMALS, ARMORS, ArmorDef, CRAFTED_WEAPONS, cycleOf, damageOf, DmgType, MORALE, RULES, Team, TRIBES, WeaponDef, WEAPONS } from './combat';
+import { WEATHER } from './calendar';
 import { gameDays } from './constants';
+import { armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formations';
 import { Animal, animalDef, die as animalDie, provoke, carcassEmpty } from './fauna';
 import { CARRY_CAP, Res, RES_NAME } from './resources';
 import type { Sim, Target, Villager } from './sim';
@@ -26,8 +28,14 @@ export function resolve(sim: Sim, t: Target | null): Ent | null {
   return a && a.state !== 'dead' ? { kind: 'animal', a } : null;
 }
 
-export const weaponOf = (v: Villager): WeaponDef => WEAPONS[v.weapon ?? 'fist'] ?? WEAPONS.fist;
-const armorOf = (v: Villager): ArmorDef | null => (v.armor ? ARMORS[v.armor] ?? null : null);
+/** The weapon that counts: a broken one is no better than fists until it is mended. */
+export const effWeapon = (v: Villager): string | null => (v.team === 'player' && v.gear.wb && v.gear.w === v.weapon ? null : v.weapon);
+export const weaponOf = (v: Villager): WeaponDef => WEAPONS[effWeapon(v) ?? 'fist'] ?? WEAPONS.fist;
+const armorOf = (v: Villager): ArmorDef | null => (v.armor && !(v.team === 'player' && v.gear.ab && v.gear.a === v.armor) ? ARMORS[v.armor] ?? null : null);
+/** Can this unit's side see the spot? Our own people shoot only at what they can see; the foe has no fog. */
+export function canSee(sim: Sim, v: Villager, x: number, y: number): boolean {
+  return v.team !== 'player' || sim.fog.state[Math.floor(y) * sim.world.size + Math.floor(x)] === 2;
+}
 export const isFighter = (v: Villager) => v.job === 'fight' || v.job === 'hunt' || v.fight.mode !== 'none';
 
 export function teamsHostile(sim: Sim, a: Team, b: Team): boolean {
@@ -75,8 +83,9 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   const v = sim.get(target.id);
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === 'player') return;
-  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0));
+  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === 'player' ? sim.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) : 1);
   v.health -= final; v.calm = 0; v.flinch = 0.3;
+  if (armor) sim.wearGear(v, 'armor');
   const behind = (v.facing === 'right' && from.x < v.x) || (v.facing === 'left' && from.x > v.x);
   if (behind) v.morale = Math.max(0, v.morale + MORALE.backstab);
   if (src.unit && src.unit.team === 'player' && v.team !== 'player') sim.tribeAttacked(v.team as Exclude<Team, 'player' | 'wild'>, v);
@@ -86,14 +95,15 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
     else if (!v.fight.target && src.animal && v.team !== 'player') v.fight.target = { kind: 'animal', id: src.animal.id };
     return;
   }
-  if (v.team === 'player') downUnit(sim, v); else sim.killFoe(v, src.unit);
+  if (v.team === 'player') fallUnit(sim, v); else sim.killFoe(v, src.unit);
 }
 
-function downUnit(sim: Sim, v: Villager): void {
-  sim.resetTask(v); v.queue.length = 0;
-  v.health = 0; v.down = RULES.downedSeconds; v.rescue = 0; v.phase = 'down'; v.swing = null;
-  sim.say(`${v.name} bị thương nặng, ngã xuống! Cần có người kéo dậy trong ${gameDays(RULES.downedSeconds)}.`);
-  moraleShock(sim, v, MORALE.allyDeath * 0.6);
+/** A villager with no health left is dead for good: nobody picks them up, nothing brings them back. */
+function fallUnit(sim: Sim, v: Villager): void {
+  sim.resetTask(v); v.queue.length = 0; v.swing = null;
+  moraleShock(sim, v, MORALE.allyDeath);
+  sim.noteBattle('ours');
+  sim.killUnit(v, 'tử trận');
 }
 
 /** Allies within 8 tiles lose heart when a comrade falls. */
@@ -112,20 +122,35 @@ export function startSwing(sim: Sim, v: Villager, target: Target): void {
   if (e) v.facing = entX(e) >= v.x ? 'right' : 'left';
 }
 
+/** What the arms do to each other: foot beats archers, archers beat riders, riders beat foot (units.json). Animals are no arm. */
+export function armMultiplier(attacker: Villager, e: Ent): number {
+  return e.kind === 'unit' ? matchup(armOfWeapon(effWeapon(attacker)), armOfWeapon(effWeapon(e.v)), effWeapon(attacker)) : 1;
+}
+
+/** Loose an arrow or a stone from a point (the archer, or the tower he stands in): it must be seen and within reach, and it flies. */
+export function fireProjectile(sim: Sim, v: Villager, e: Ent, from: { x: number; y: number }, mult: number, rangeBonus: number): boolean {
+  const w = weaponOf(v), tx = entX(e), ty = entY(e), d = Math.hypot(tx - from.x, ty - from.y);
+  if (d > w.range + rangeBonus + 1 || !canSee(sim, v, tx, ty)) return false;
+  // an archer with the enemy in his face shoots badly, rain and storm spoil the aim
+  const shot = w.damage * clampTactical(armMultiplier(v, e) * mult * sim.attackFactor(v, e)) * WEATHER[sim.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
+  if (v.inside !== null) sim.noteBattle('shot');
+  const target: Target = e.kind === 'unit' ? { kind: 'unit', id: e.v.id } : { kind: 'animal', id: e.a.id };
+  sim.projectiles.push({ x: from.x, y: from.y - 0.4, tx, ty, speed: 14, dmg: shot, type: w.type, from, src: v.id, team: v.team, target, chance: d <= (w.range + rangeBonus) / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? 'stone' });
+  sim.wearGear(v, 'weapon');
+  return true;
+}
+
 function resolveSwing(sim: Sim, v: Villager, target: Target): void {
   const e = resolve(sim, target);
   if (!e) return;
-  const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y);
-  if (w.ranged) {
-    if (d > w.range + 1) return;
-    sim.projectiles.push({ x: v.x, y: v.y - 0.4, tx: entX(e), ty: entY(e), speed: 14, dmg: w.damage, type: w.type, from: { x: v.x, y: v.y }, src: v.id, team: v.team, target, chance: d <= w.range / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? 'stone' });
-    return;
-  }
+  const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(v, e);
+  if (w.ranged) { fireProjectile(sim, v, e, { x: v.x, y: v.y }, 1, 0); return; }
   if (d > w.range + 1.1) return; // the target stepped away: the blow misses
   let behind = false;
   if (e.kind === 'unit') behind = (e.v.facing === 'right' && v.x < e.v.x) || (e.v.facing === 'left' && v.x > e.v.x);
   else behind = (e.a.dir === 1 && v.x < e.a.x) || (e.a.dir === -1 && v.x > e.a.x);
-  hurt(sim, target, damageOf(w, v.stats.str, null, behind), w.type, { x: v.x, y: v.y }, { unit: v });
+  hurt(sim, target, damageOf(w, v.stats.str, null, behind) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
+  if (v.weapon) sim.wearGear(v, 'weapon');
 }
 
 export function tickProjectiles(sim: Sim, dt: number): void {
@@ -246,7 +271,7 @@ export function engage(sim: Sim, v: Villager, e: Ent, dt: number): void {
   const w = weaponOf(v), x = entX(e), y = entY(e), d = Math.hypot(x - v.x, y - v.y);
   const reach = w.ranged ? w.range : w.range + (e.kind === 'animal' ? 0.45 : 0.5);
   v.phase = 'fight';
-  if (d <= reach) {
+  if (d <= reach && (!w.ranged || canSee(sim, v, x, y))) {
     v.path = []; v.slide = null;
     v.facing = x >= v.x ? 'right' : 'left';
     if (!v.swing && v.atkCd <= 0) startSwing(sim, v, e.kind === 'unit' ? { kind: 'unit', id: e.v.id } : { kind: 'animal', id: e.a.id });
@@ -262,7 +287,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   if (v.phase === 'skin' || v.phase === 'goCarcass') return huntBrain(sim, v, dt, threats);
   if (f.mode === 'hold' && !f.anchor) f.anchor = { x: v.x, y: v.y };
   // equipment first, but never in the middle of a fight
-  if (!threats.length && !f.target && v.phase !== 'fight' && (sim.planEquipGear(v) || sim.planGearErrand(v))) return true;
+  if (!threats.length && !f.target && v.phase !== 'fight' && (sim.planGearRepair(v) || sim.planEquipGear(v) || sim.planGearErrand(v))) return true;
 
   // retreat stance beats a target the unit picked for itself; only a direct attack order overrides it
   if (v.stance === 'retreat' && f.mode !== 'attack' && f.target) f.target = null;
@@ -294,6 +319,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
     if (Math.hypot(f.dest.x - v.x, f.dest.y - v.y) < 1.5) { f.mode = 'guard'; f.anchor = { x: f.dest.x, y: f.dest.y }; f.dest = null; v.path = []; v.phase = 'idle'; if (sim.nextOrder(v)) return true; }
     else { if (!v.path.length) v.path = sim.pathTo(v, Math.floor(f.dest.x), Math.floor(f.dest.y), 20000); v.phase = 'move'; return true; }
   }
+  if (v.post >= 0 && v.phase === 'idle' && !threats.length && !f.target) { sim.planStaff(v); if ((v.phase as string) === 'goStaff') return true; } // back to his tower after the night
   if (f.mode === 'hold') { v.phase = 'idle'; v.path = []; return true; }
   // 4. nothing to fight: hunters hunt, warriors stand guard by the fire
   if (v.job === 'hunt') return huntBrain(sim, v, dt, threats);

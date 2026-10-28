@@ -1,0 +1,36 @@
+{
+  "name": "Hàng rào cọc (cấp 2, hàng rào đôi)",
+  "name_en": "Fence (Tier 2, Double Palisade)",
+  "type": "prop",
+  "size": [32,44],
+  "anchor": [16,38],
+  "footprint": [0,26,32,14],
+  "seed": 31,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": {"line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "earth": "#86704e", "earthL": "#9a8460", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "rope": "#d8c690"},
+  "layers": [
+    {"shape": "ellipse", "cx": 16, "cy": 38, "rx": 15, "ry": 3, "color": "shadow", "alpha": 0.25},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "rect", "x": 0, "y": 32, "w": 32, "h": 6, "color": "earth"},
+      {"shape": "scatter", "count": 8, "area": [0,32,32,6], "size": [1,2], "colors": ["dirt", "earthL"], "onlyOver": ["earth"]}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "rect", "x": 1, "y": 11, "w": 5, "h": 23, "color": "wood"},
+      {"shape": "poly", "points": [[1,11],[3.5,8],[6,11]], "color": "woodL"},
+      {"shape": "rect", "x": 7, "y": 14, "w": 5, "h": 20, "color": "woodD"},
+      {"shape": "poly", "points": [[7,14],[9.5,11],[12,14]], "color": "woodL"},
+      {"shape": "rect", "x": 13, "y": 11, "w": 5, "h": 23, "color": "wood"},
+      {"shape": "poly", "points": [[13,11],[15.5,8],[18,11]], "color": "woodL"},
+      {"shape": "rect", "x": 19, "y": 14, "w": 5, "h": 20, "color": "woodD"},
+      {"shape": "poly", "points": [[19,14],[21.5,11],[24,14]], "color": "woodL"},
+      {"shape": "rect", "x": 25, "y": 11, "w": 5, "h": 23, "color": "wood"},
+      {"shape": "poly", "points": [[25,11],[27.5,8],[30,11]], "color": "woodL"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "line", "from": [0,20], "to": [32,20], "w": 2, "color": "woodD"},
+      {"shape": "line", "from": [0,29], "to": [32,29], "w": 2, "color": "woodD"},
+      {"shape": "line", "from": [0,20], "to": [32,20], "w": 1, "color": "rope", "alpha": 0.8}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

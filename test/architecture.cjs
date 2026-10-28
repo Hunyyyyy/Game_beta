@@ -8,10 +8,10 @@ let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
 
 // the layers, see src/sim/ARCHITECTURE.md
-const DATA = ['codec', 'constants', 'resources', 'rng', 'calendar', 'buildings', 'jobs', 'tools', 'combat', 'research', 'world', 'fog', 'path', 'model'];
-const VILLAGE = ['construction', 'economy', 'works', 'houses', 'inventory', 'commands', 'labor', 'movement', 'villagers', 'environment', 'rest'];
-const CREATURES = ['battle', 'fauna', 'tribes'];
-const CORE = ['sim'];
+const DATA = ['codec', 'constants', 'resources', 'rng', 'calendar', 'buildings', 'jobs', 'tools', 'combat', 'research', 'world', 'fog', 'path', 'model', 'formations'];
+const VILLAGE = ['warplan', 'construction', 'economy', 'works', 'houses', 'inventory', 'commands', 'labor', 'movement', 'villagers', 'environment', 'rest', 'defense'];
+const CREATURES = ['battle', 'fauna', 'tribes', 'army', 'scouting'];
+const CORE = ['sim', 'simwar'];
 const PERSISTENCE = ['save'];
 const TOOLING = ['dev'];
 
