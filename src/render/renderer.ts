@@ -263,6 +263,13 @@ export class Renderer {
         g.addColorStop(0, `rgba(255,170,70,${(0.5 * dark).toFixed(3)})`); g.addColorStop(1, 'rgba(255,170,70,0)');
         ctx.fillStyle = g; ctx.fillRect(p.x - rad, p.y - rad, rad * 2, rad * 2);
       }
+      for (const v of sim.villagers) {
+        if (!v.lit) continue;
+        const p = this.worldToScreen(v.x * TILE - 8, v.y * TILE - 22), rad = 52 * z, flick = 0.92 + 0.08 * Math.sin(time * 9 + v.id);
+        const g = ctx.createRadialGradient(p.x, p.y, 2 * z, p.x, p.y, rad);
+        g.addColorStop(0, `rgba(255,176,80,${(0.42 * dark * flick).toFixed(3)})`); g.addColorStop(1, 'rgba(255,176,80,0)');
+        ctx.fillStyle = g; ctx.fillRect(p.x - rad, p.y - rad, rad * 2, rad * 2);
+      }
       ctx.globalCompositeOperation = 'source-over';
     }
 

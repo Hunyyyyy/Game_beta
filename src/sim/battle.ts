@@ -1,8 +1,8 @@
 import animsJson from '../data/anims.json';
 import { ANIMALS, ARMORS, ArmorDef, CRAFTED_WEAPONS, cycleOf, damageOf, DmgType, MORALE, RULES, Team, TRIBES, WeaponDef, WEAPONS } from './combat';
 import { gameDays } from './constants';
-import { Animal, animalDef, die as animalDie, provoke } from './fauna';
-import { CARRY_CAP } from './resources';
+import { Animal, animalDef, die as animalDie, provoke, carcassEmpty } from './fauna';
+import { CARRY_CAP, Res, RES_NAME } from './resources';
 import type { Sim, Target, Villager } from './sim';
 import { BEHAVIOUR } from './combat';
 
@@ -276,7 +276,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
       const dead = f.target.kind === 'animal' ? sim.animalById.get(f.target.id) : undefined;
       f.target = null;
       if (f.mode === 'attack') { if (v.job === 'fight') { f.mode = 'guard'; f.anchor = { x: v.x, y: v.y }; } else f.mode = 'none'; }
-      if (dead && dead.state === 'dead' && (v.job === 'hunt' || dead.meat > 0)) { v.loot = dead.id; v.job = 'hunt'; }
+      if (dead && dead.state === 'dead' && v.job === 'hunt') v.loot = dead.id; // only a hunter goes to skin it; a soldier keeps his post
       if (v.phase === 'fight') { v.phase = 'idle'; v.path = []; }
       if (sim.nextOrder(v)) return true;
     }
@@ -317,12 +317,20 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
     if (!a) return true;
     const have = v.carry && v.carry.res === 'food' ? v.carry.amount : 0, take = Math.min(a.meat, CARRY_CAP.food - have);
     if (take > 0) { a.meat -= take; v.carry = { res: 'food', amount: have + take }; }
-    if (a.hide > 0) { sim.stock.hide = Math.min(sim.capacity(), sim.stock.hide + a.hide); sim.say(`${v.name} lột da ${animalDef(a).name.toLowerCase()}: ${a.hide} da và xương.`); a.hide = 0; }
+    // the skin and everything else on the body goes straight to the store
+    const got: string[] = [];
+    if (a.hide > 0) { sim.stock.hide = Math.min(sim.capacity(), sim.stock.hide + a.hide); got.push(`${a.hide} ${RES_NAME.hide.toLowerCase()}`); a.hide = 0; }
+    for (const [res, n] of Object.entries(a.drops ?? {}) as Array<[Res, number]>) {
+      if (!(n > 0)) continue;
+      sim.stock[res] = Math.min(sim.capacity(), sim.stock[res] + n); got.push(`${n} ${RES_NAME[res].toLowerCase()}`);
+    }
+    a.drops = {};
+    if (got.length) sim.say(`${v.name} xẻ ${animalDef(a).name.toLowerCase()}: ${got.join(', ')}.`);
     return true;
   }
   if (v.phase === 'goCarcass') {
     const a = sim.animalById.get(v.loot);
-    if (!a || a.state !== 'dead' || (a.meat <= 0 && a.hide <= 0)) { v.phase = 'idle'; v.loot = -1; v.path = []; return true; }
+    if (!a || a.state !== 'dead' || carcassEmpty(a)) { v.phase = 'idle'; v.loot = -1; v.path = []; return true; }
     if (Math.hypot(a.x - v.x, a.y - v.y) < 1.5) { v.path = []; v.phase = 'skin'; v.timer = BEHAVIOUR.skinSeconds; v.facing = a.x >= v.x ? 'right' : 'left'; return true; }
     if (!v.path.length) { v.path = sim.pathTo(v, Math.floor(a.x), Math.floor(a.y), 3000); if (!v.path.length) { v.phase = 'idle'; v.loot = -1; } }
     return true;
@@ -334,7 +342,7 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
   let best: Animal | null = null, bd = 45;
   if (v.loot >= 0) { const a = sim.animalById.get(v.loot); if (a && a.state === 'dead') best = a; else v.loot = -1; }
   if (!best) for (const a of sim.animals) {
-    if (a.state !== 'dead' || (a.meat <= 0 && a.hide <= 0) || sim.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
+    if (a.state !== 'dead' || carcassEmpty(a) || sim.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
     const d = Math.hypot(a.x - v.x, a.y - v.y);
     if (d < bd) { bd = d; best = a; }
   }

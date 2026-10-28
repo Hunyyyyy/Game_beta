@@ -21,28 +21,31 @@ export const GEAR_KINDS: GearKind[] = ['club', 'spear', 'mace', 'hide'];
 export const isGear = (k: string): k is GearKind => (GEAR_KINDS as string[]).includes(k);
 export const isWeaponKind = (k: string) => k in WEAPONS;
 
-export interface Recipe { id: string; kind: ToolKind | GearKind; tier: 1 | 2; cost: Partial<Stock>; time: number }
-const R = (kind: ToolKind | GearKind, tier: 1 | 2, cost: Partial<Stock>, time: number): Recipe => ({ id: `${kind}${tier}`, kind, tier, cost, time });
+export interface Recipe { id: string; kind: ToolKind | GearKind | 'torch'; tier: 1 | 2; cost: Partial<Stock>; time: number }
+const R = (kind: ToolKind | GearKind | 'torch', tier: 1 | 2, cost: Partial<Stock>, time: number): Recipe => ({ id: `${kind}${tier}`, kind, tier, cost, time });
 const gearRecipe = (kind: GearKind): Recipe => {
   const d = kind === 'hide' ? ARMORS.hide : WEAPONS[kind];
   return R(kind, (d.tier ?? 1) as 1 | 2, d.cost ?? {}, d.time ?? 60);
 };
 export const RECIPES: Recipe[] = [
-  R('axe', 1, { wood: 3 }, 12), R('axe', 2, { wood: 2, stone: 3 }, 20),
-  R('pick', 1, { wood: 4 }, 14), R('pick', 2, { wood: 2, stone: 4 }, 22),
-  R('hoe', 1, { wood: 3 }, 12), R('hoe', 2, { wood: 2, stone: 2 }, 18),
-  R('hammer', 1, { wood: 3 }, 12), R('hammer', 2, { wood: 2, stone: 3 }, 18),
+  R('axe', 1, { wood: 3 }, 24), R('axe', 2, { wood: 2, stone: 3 }, 40),
+  R('pick', 1, { wood: 4 }, 28), R('pick', 2, { wood: 2, stone: 4 }, 44),
+  R('hoe', 1, { wood: 3 }, 24), R('hoe', 2, { wood: 2, stone: 2 }, 36),
+  R('hammer', 1, { wood: 3 }, 24), R('hammer', 2, { wood: 2, stone: 3 }, 36),
+  R('torch', 1, { wood: 2 }, 12),
   ...GEAR_KINDS.map(gearRecipe),
 ];
 export const RECIPE_BY_ID: Record<string, Recipe> = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
 export const recipeName = (r: Recipe) => {
   if (r.kind === 'hide') return ARMORS.hide.name;
+  if (r.kind === 'torch') return 'Đuốc';
   if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
   return `${TOOL_NAME[r.kind as ToolKind]} ${TIER_NAME[r.tier].toLowerCase()}`;
 };
 /** One-line use shown in the crafting panel. */
 export const recipeUse = (r: Recipe) => {
   if (r.kind === 'hide') return 'giáp, giảm sát thương';
+  if (r.kind === 'torch') return 'làm việc ban đêm (hiệu suất 70%), nhìn xa hơn trong tối';
   if (isWeaponKind(r.kind)) { const w = WEAPONS[r.kind]; return `${{ pierce: 'đâm', slash: 'chém', crush: 'đập' }[w.type]} ${w.damage} · tầm ${w.range}`; }
   return TOOL_USE[r.kind as ToolKind];
 };

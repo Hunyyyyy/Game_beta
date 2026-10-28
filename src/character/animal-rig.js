@@ -63,7 +63,7 @@ function colors(def) {
 
 // ------------------------------------------------------------------ four legs: deer, boar, wolf
 function quadruped(b, def, f) {
-  const S = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, 'lay', 0), side = num(f, 'side', 0);
+  const S = def.shape, C = colors(def), has = (n) => S.feature === n || (Array.isArray(S.features) && S.features.includes(n)), gy = b.h - 2, lay = num(f, 'lay', 0), side = num(f, 'side', 0);
   const legL = Math.max(2, S.legL * (1 - lay * 0.75)), bodyH = S.bodyH * (1 - 0.18 * side);
   const rise = num(f, 'rise', 0), bob = num(f, 'bob', 0);
   const cx = b.w / 2 - 4, cy = gy - legL - bodyH / 2 + 1 + bob + lay * 1.5;
@@ -79,33 +79,58 @@ function quadruped(b, def, f) {
   for (let i = 0; i <= 4; i++) { const t = i / 4; ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t, S.bodyL / 4 + 1.5, bodyH / 2, C.base); }
   for (let i = 0; i <= 4; i++) { const t = i / 4; ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t + bodyH * 0.22, S.bodyL / 4 + 0.5, bodyH * 0.27, C.light); }
   for (let i = 0; i <= 4; i++) { const t = i / 4; ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t - bodyH * 0.32, S.bodyL / 4 + 1, bodyH * 0.2, C.dark); }
-  if (S.feature === 'antlers') for (const [dx, dy] of [[-4, -1], [0, -2], [4, -1], [-2, 1], [2, 1]]) put(b, cx + dx, cy - bodyH * 0.2 + dy, C.light);
-  if (S.feature === 'tusks') for (let i = 0; i < S.bodyL - 4; i += 2) put(b, cx - S.bodyL / 2 + 3 + i, cy - bodyH / 2 - 1 - rise * (i / S.bodyL), C.dark); // bristle mane
+  if (has('antlers')) for (const [dx, dy] of [[-4, -1], [0, -2], [4, -1], [-2, 1], [2, 1]]) put(b, cx + dx, cy - bodyH * 0.2 + dy, C.light);
+  if (has('tusks')) for (let i = 0; i < S.bodyL - 4; i += 2) put(b, cx - S.bodyL / 2 + 3 + i, cy - bodyH / 2 - 1 - rise * (i / S.bodyL), C.dark); // bristle mane
+  if (has('bear')) ell(b, shX - 1, cy - bodyH / 2 - rise, 4, 3, C.base); // shoulder hump
+  if (has('shaggy')) for (let i = 0; i < S.bodyL - 2; i += 2) { const sx2 = cx - S.bodyL / 2 + 2 + i; line(b, sx2, cy + bodyH / 2 - 2, sx2 - 1, cy + bodyH / 2 + 3, 1, C.dark); } // long hair hanging
   leg(hipX + 1, f.bl, C.base, thick); leg(shX + 1, f.fl, C.base, thick);
   // neck and head
   const sx = shX + 1, sy = cy - bodyH / 2 + 2 - rise, ang = rad(num(f.head, 'a', S.neckA)), dy = num(f.head, 'dy', 0);
   const hx = sx + Math.cos(ang) * S.neck, hy = sy - Math.sin(ang) * S.neck + dy;
   line(b, sx, sy, hx, hy, Math.max(2, Math.round(bodyH * 0.45)), C.base);
+  if (has('mane')) ell(b, hx - 2, hy + 1, S.headR + 3, S.headR + 3, C.dark);
+  if (has('trunk')) ell(b, hx - 1, hy - S.headR * 0.6, S.headR * 0.9, S.headR * 0.8, C.base); // domed forehead
   ell(b, hx, hy, S.headR * 1.1, S.headR, C.base);
   const open = num(f, 'mouth', 0) > 0.5;
   ell(b, hx + S.headR + S.snout / 2 - 1, hy + 1 - (open ? 1 : 0), S.snout / 2 + 1, S.headR * 0.55, C.light);
   const nx = hx + S.headR + S.snout - 1;
   put(b, nx, hy + (open ? 0 : 1), C.dark);
   if (open) { rect(b, hx + 1, hy + 1, S.snout + 2, 2, C.rim); put(b, hx + S.headR + 1, hy + 1, C.acc); put(b, hx + S.headR + 3, hy + 1, C.acc); }
-  if (S.feature === 'tusks') { put(b, nx - 1, hy + 2, C.acc); put(b, nx - 1, hy + 1, C.acc); }
+  if (has('tusks')) { put(b, nx - 1, hy + 2, C.acc); put(b, nx - 1, hy + 1, C.acc); }
   const asleep = lay > 0.5;
   if (asleep) put(b, hx + 1, hy - 1, C.dark); else put(b, hx + 1, hy - 1, C.eye);
   const earL = S.ear || 3;
-  poly(b, [[hx - 2, hy - S.headR + 1], [hx - 3 - (asleep ? 2 : 0), hy - S.headR - earL + (asleep ? 3 : 0)], [hx, hy - S.headR]], C.dark);
-  if (S.feature === 'antlers') {
+  if (has('bear')) ell(b, hx - 2, hy - S.headR + 1, 1.8, 1.8, C.dark);
+  else poly(b, [[hx - 2, hy - S.headR + 1], [hx - 3 - (asleep ? 2 : 0), hy - S.headR - earL + (asleep ? 3 : 0)], [hx, hy - S.headR]], C.dark);
+  if (has('antlers')) {
     const t = hy - S.headR;
     line(b, hx, t, hx - 3, t - 7, 1, C.acc); line(b, hx - 1, t - 3, hx + 2, t - 6, 1, C.acc); line(b, hx - 2, t - 5, hx - 5, t - 8, 1, C.acc);
+  }
+  if (has('horns')) {
+    const t = hy - S.headR, h = S.horn || 5, back = !!S.hornBack;
+    for (const dx of [-1, 1]) {
+      const bx = hx + dx, tipx = back ? bx - h * 0.8 : bx + (dx > 0 ? 3 : -1), tipy = t - h * (back ? 0.9 : 0.8);
+      line(b, bx, t, tipx, tipy, 1, C.acc); put(b, tipx, tipy - 1, C.acc);
+    }
+  }
+  if (has('palmate')) {
+    const t = hy - S.headR;
+    for (const side of [-1, 1]) {
+      const bx = hx + side * 2;
+      line(b, bx, t, bx + side * 4, t - 5, 1, C.acc);
+      for (let k = 0; k < 4; k++) line(b, bx + side * (3 + k), t - 4 - (k % 2), bx + side * (4 + k), t - 8 - k, 1, C.acc);
+    }
+  }
+  if (has('trunk')) {
+    const tl = S.trunk || 12, sway = num(f, 'bob', 0);
+    line(b, hx + S.headR - 1, hy + 1, hx + S.headR + 1 + sway, hy + tl * 0.7, 3, C.base); line(b, hx + S.headR + 1 + sway, hy + tl * 0.7, hx + S.headR + 3 + sway, hy + tl, 2, C.base);
+    line(b, hx + S.headR - 2, hy + 2, hx + S.headR + 5, hy + 8, 2, C.acc); put(b, hx + S.headR + 6, hy + 7, C.acc); // tusk curling forward
   }
   // tail
   const tb = [cx - S.bodyL / 2 - 1, cy - bodyH * 0.25], ta = rad(num(f.tail !== undefined ? { a: f.tail } : null, 'a', 15)), tl = S.tail;
   const tx = tb[0] - Math.cos(ta) * tl, ty = tb[1] - Math.sin(ta) * tl;
-  line(b, tb[0], tb[1], tx, ty, S.feature === 'bushy' ? 3 : 2, C.base);
-  if (S.feature === 'bushy') ell(b, tx, ty, 2, 2, C.dark);
+  line(b, tb[0], tb[1], tx, ty, has('bushy') ? 3 : 2, C.base);
+  if (has('bushy')) ell(b, tx, ty, 2, 2, C.dark);
   outline(b, C.rim);
 }
 

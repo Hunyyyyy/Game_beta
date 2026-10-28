@@ -71,6 +71,8 @@ export function animate(sim: Sim, v: Villager, dt: number): void {
     if (t > 0) { anim = 'build'; hold = { kind: 'hammer', tier: t }; } else anim = 'gather';
   }
   else if (v.phase === 'skin') anim = 'gather';
+  const lit = !!v.torch && sim.resting && v.phase !== 'sleep' && v.phase !== 'goHome';
+  if (lit !== v.lit) { v.lit = lit; sim.fogDirty = true; }
   if (anim !== v.anim) { v.anim = anim; v.animClock = 0; } else v.animClock += dt;
   v.hold = hold;
 }

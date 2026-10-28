@@ -4,7 +4,7 @@ import type { Villager } from '../sim/sim';
 import { TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, TOOL_OF_JOB, ToolKind } from '../sim/tools';
 import { h, hint } from './dom';
 import type { Ctx } from './ctx';
-import { armorLevel, ARMOR_FULL, armorText, describe, PLAIN_JOBS, stars } from './describe';
+import { energyText, SHIFT_LABEL, SHIFT_TIP, armorLevel, ARMOR_FULL, armorText, describe, PLAIN_JOBS, stars } from './describe';
 
 const STANCES = [['aggressive', 'Chủ động', 'Đuổi địch trong tầm nhìn'], ['defensive', 'Phòng thủ', 'Chỉ đánh địch lại gần, không rời chỗ'], ['retreat', 'Rút lui', 'Không đánh, chạy về lửa trại']] as const;
 
@@ -12,11 +12,12 @@ const STANCES = [['aggressive', 'Chủ động', 'Đuổi địch trong tầm nh
 export class UnitCard {
   private readonly name = h('b'); private readonly state = h('span');
   private readonly dname = h('b'); private readonly dstate = h('span');
-  private readonly bars: Array<{ full: HTMLElement; health: HTMLElement; morale: HTMLElement; armor: HTMLElement; armorLabel: HTMLElement }> = [];
+  private readonly bars: Array<{ full: HTMLElement; health: HTMLElement; morale: HTMLElement; armor: HTMLElement; armorLabel: HTMLElement; energy: HTMLElement; energyLabel: HTMLElement }> = [];
+  private readonly shiftBtns: HTMLButtonElement[] = []; private readonly rest = h('div', { class: 'kv' }); private readonly torchBtn = h('button', { class: 'sm', text: 'Phát đuốc' }) as HTMLButtonElement;
   private readonly gear = h('div', { class: 'kv' });
   private readonly stats = h('div', { class: 'kv' }); private readonly skills = h('div', { class: 'kv' });
   private readonly toolRows: Array<{ k: ToolKind; row: HTMLElement; state: HTMLElement; give: Array<{ btn: HTMLButtonElement; tier: number }>; back: HTMLButtonElement; repair: HTMLButtonElement; drop: HTMLButtonElement }> = [];
-  private combatSec!: HTMLElement; private gearSec!: HTMLElement; private toolsSec!: HTMLElement;
+  private combatSec!: HTMLElement; private gearSec!: HTMLElement; private toolsSec!: HTMLElement; private jobSec!: HTMLElement;
   private readonly jobBtns: HTMLButtonElement[]; private readonly stanceBtns: HTMLButtonElement[];
   private readonly gearBtns: Array<{ btn: HTMLButtonElement; kind: string | null; slot: 'weapon' | 'armor'; label: string }> = [];
   private gearTip!: HTMLElement;
@@ -29,8 +30,9 @@ export class UnitCard {
     const makeBars = () => {
       const full = h('b'), health = h('b'), morale = h('b', { class: 'mor' }), armor = h('b', { class: 'arm' });
       const armorLabel = h('label', {}, 'Giáp', h('i', {}, armor));
-      this.bars.push({ full, health, morale, armor, armorLabel });
-      return h('div', { class: 'bars' }, h('label', {}, 'No', h('i', {}, full)), h('label', {}, 'Máu', h('i', {}, health)), h('label', {}, 'Tinh thần', h('i', {}, morale)), armorLabel);
+      const energy = h('b', { class: 'en' }), energyLabel = h('label', {}, 'Sức', h('i', {}, energy));
+      this.bars.push({ full, health, morale, armor, armorLabel, energy, energyLabel });
+      return h('div', { class: 'bars' }, h('label', {}, 'No', h('i', {}, full)), energyLabel, h('label', {}, 'Máu', h('i', {}, health)), h('label', {}, 'Tinh thần', h('i', {}, morale)), armorLabel);
     };
     // builders, crafters, researchers and menders are chosen in their houses; here only the plain jobs
     this.jobBtns = PLAIN_JOBS.map((j) => h('button', { class: 'sm', 'data-job': j, pressed: false, text: JOB_NAME[j], onclick: () => { const e = sim.setJob(ids(), j); if (e) c.toast(e); else ctl.clearSelection(); ctl.onChange(); } }));
@@ -60,6 +62,7 @@ export class UnitCard {
       this.toolRows.push({ k, row, state, give, back, repair, drop });
       toolsSec.append(row);
     }
+    this.torchBtn.addEventListener('click', () => { const e = sim.giveTorch(ids()); if (e) c.toast(e); ctl.onChange(); });
     // the small card: who, how they are, and a way into the details
     root.append(
       h('div', { class: 'cardhead' }, this.name, this.state, h('button', { class: 'sm x', text: '✕', title: 'Bỏ chọn', onclick: () => ctl.clearSelection() })),
@@ -71,7 +74,9 @@ export class UnitCard {
       h('div', { class: 'cardhead' }, this.dname, this.dstate, h('button', { class: 'x', text: '✕ Đóng', onclick: () => this.closeDetail() })),
       h('div', { class: 'mbody cols' },
         h('section', {}, h('h3', { text: 'Tình trạng' }), makeBars(), this.gear),
-        h('section', {}, h('h3', { text: 'Giao nghề' }), h('div', { class: 'btns', role: 'group', 'aria-label': 'Giao nghề' }, ...this.jobBtns)),
+        h('section', {}, hint('Ca làm và sức', 'Dưới 20% sức dân phải đi ngủ và không gọi dậy được tới khi hồi đủ (50%, hoặc 60% nếu kiệt sức dưới 10%). Ngủ đêm hồi sức nhanh hơn ngủ ngày. Ngủ trong Nhà dân (chiến binh: Lều chiến binh) hồi sức đầy đủ; chưa có nhà hoặc hết giường thì nằm cạnh đống lửa, hồi chậm hơn. Làm việc ban đêm cần đuốc và đạt 70% hiệu suất. Làm ca đêm liên tục làm dân mệt mỏi tích lũy: sức tối đa giảm và hồi sức chậm.'), this.rest,
+          h('div', { class: 'btns', role: 'group', 'aria-label': 'Ca làm' }, ...(['day', 'night', 'both'] as const).map((sh) => { const btn = h('button', { class: 'sm', text: SHIFT_LABEL[sh], title: SHIFT_TIP[sh], 'data-shift': sh, pressed: false, onclick: () => { sim.setShift(ids(), sh); ctl.onChange(); } }) as HTMLButtonElement; this.shiftBtns.push(btn); return btn; }), this.torchBtn)),
+        this.jobSec = h('section', {}, hint('Giao nghề', 'Nghề chỉ đổi khi bạn bấm các nút này; chuột phải lên cây, đá, bụi quả hay thú không đổi nghề của ai. Chiến binh được tuyển và giải ngũ ở đống lửa trại; thợ xây, chế tạo, nghiên cứu, sửa chữa chọn ở nhà tương ứng.'), h('div', { class: 'btns', role: 'group', 'aria-label': 'Giao nghề' }, ...this.jobBtns)),
         this.combatSec = h('section', {}, h('h3', { text: 'Chiến đấu' }),
           h('div', { class: 'btns', role: 'group', 'aria-label': 'Thế đứng' }, ...this.stanceBtns),
           h('div', { class: 'btns' },
@@ -105,6 +110,8 @@ export class UnitCard {
       const ad = v.armor ? ARMORS[v.armor] : null;
       b.armor.style.width = `${ad ? Math.min(100, (armorLevel(ad) / ARMOR_FULL) * 100) : 0}%`;
       b.armorLabel.title = ad ? armorText(ad) : 'Không mặc giáp';
+      b.energy.style.width = `${v.energy}%`; b.energy.className = v.energy < 20 ? 'en low' : 'en';
+      b.energyLabel.title = `Sức ${Math.round(v.energy)}%. Dưới 20% dân phải đi ngủ; dưới 10% họ ngủ say và không ai gọi dậy được.`;
     }
     if (!this.open) return;
     for (const g of this.gearBtns) { const n = g.kind ? sim0.toolCount(g.kind, g.kind === 'hide' ? 1 : WEAPONS[g.kind].tier ?? 1) : -1; g.btn.textContent = n >= 0 ? `${g.label} (${n})` : g.label; g.btn.disabled = g.kind !== null && n <= 0 && !chosen.every((o) => (g.slot === 'weapon' ? o.weapon : o.armor) === g.kind); }
@@ -119,6 +126,7 @@ export class UnitCard {
     // the tool follows the job: only the one the chosen villagers use is offered
     const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job as WorkJob] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
     this.toolsSec.hidden = only === null;
+    this.jobSec.hidden = chosen.every((o) => o.job === 'fight'); // soldiers are discharged at the campfire, not given another job here
     this.combatSec.hidden = !chosen.every((o) => o.job === 'fight'); // only soldiers get fighting orders
     this.gearSec.hidden = !chosen.every((o) => o.job === 'fight' || o.job === 'hunt');
     for (const r of this.toolRows) {
@@ -129,6 +137,9 @@ export class UnitCard {
       r.repair.disabled = !t || t.dur >= TIER_DURABILITY[t.tier] - 1e-6; r.back.disabled = r.drop.disabled = !t;
     }
     this.jobBtns.forEach((b) => b.setAttribute('aria-pressed', String(chosen.every((o) => o.job === b.dataset.job))));
+    this.shiftBtns.forEach((b) => b.setAttribute('aria-pressed', String(chosen.every((o) => o.shift === b.dataset.shift))));
+    this.rest.innerHTML = energyText(sim0, v) + ` · ${sim0.torchCount()} đuốc trong kho`;
+    this.torchBtn.disabled = sim0.torchCount() <= 0 || chosen.every((o) => !!o.torch);
     this.stanceBtns.forEach((b) => b.setAttribute('aria-pressed', String(chosen.every((o) => o.stance === b.dataset.stance))));
   }
 }

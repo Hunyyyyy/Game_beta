@@ -13,7 +13,7 @@ export type AnimTable = Record<string, AnimDef>;
 export const W: number;
 export const H: number;
 export const CX: number;
-export function renderFrame(anims: AnimTable, name: string, idx: number, view: View, look: Look, carryKind?: string, tool?: { kind?: string; tier?: number }, armor?: string | null): Uint8ClampedArray;
+export function renderFrame(anims: AnimTable, name: string, idx: number, view: View, look: Look, carryKind?: string, tool?: { kind?: string; tier?: number }, armor?: string | null, extra?: { torch?: number }): Uint8ClampedArray;
 export function defaultAnims(): AnimTable;
 export function formatAnims(anims: AnimTable): string;
 export const HAND_Y: number;

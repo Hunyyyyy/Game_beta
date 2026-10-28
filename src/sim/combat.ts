@@ -1,7 +1,7 @@
 import animalsJson from '../data/animals.json';
 import tribesJson from '../data/tribes.json';
 import weaponsJson from '../data/weapons.json';
-import type { Stock } from './resources';
+import type { Stock, Res } from './resources';
 
 export type DmgType = 'pierce' | 'slash' | 'crush';
 
@@ -65,6 +65,8 @@ export interface AnimalDef {
   aggro: number;
   meat: number;
   hide: number;
+  /** Other materials the body gives when skinned, by resource: bone, fat, feather, tusk. */
+  drops?: Partial<Record<Res, number>>;
   zones: [number, number];
   herd: [number, number];
   count: number;
@@ -75,8 +77,9 @@ export interface AnimalDef {
   fearsFire?: number;
   habitat?: 'water';
 }
-export type Species = 'rabbit' | 'fowl' | 'deer' | 'boar' | 'wolf' | 'fish';
-export const SPECIES: Species[] = ['rabbit', 'fowl', 'deer', 'boar', 'wolf', 'fish'];
+/** A species is a key of animals.json (and of animals/bodies.json for its art); adding one needs no code. */
+export type Species = string;
+export const SPECIES: Species[] = Object.keys(animalsJson).filter((k) => !k.startsWith('_') && k !== 'behaviour');
 export const ANIMALS = Object.fromEntries(SPECIES.map((s) => [s, (animalsJson as unknown as Record<string, AnimalDef>)[s]])) as Record<Species, AnimalDef>;
 export const BEHAVIOUR = animalsJson.behaviour;
 

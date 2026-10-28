@@ -203,7 +203,21 @@ function drawWrap(b, wr, C, x, y) {
   if (wr.edge) rect(b, x0, y0, w, 1, C[wr.edge] || hexRgb(wr.edge));
 }
 
-function drawCharacter(b, view, f, P, sex, ov, armorId) {
+/* A lit torch in the off hand: a stick, a wrapped head and a flame that flickers with `flick` (0, 1, 2). */
+function drawTorch(b, hx, hy, flick) {
+  const x = Math.round(hx), y = Math.round(hy);
+  const wood = [120, 84, 46, 255], bind = [214, 190, 130, 255], coal = [60, 36, 24, 255];
+  const flameD = [214, 72, 24, 255], flame = [248, 150, 40, 255], core = [255, 232, 140, 255];
+  rect(b, x, y - 6, 1, 7, wood);                    // the stick
+  rect(b, x - 1, y - 8, 3, 3, coal); rect(b, x - 1, y - 6, 3, 1, bind);   // the wrapped head
+  const sway = [0, 1, -1][flick % 3], tall = [3, 4, 3][flick % 3];
+  rect(b, x - 1 + sway, y - 11 - tall + 3, 3, tall, flameD);
+  rect(b, x + sway, y - 11 - tall + 4, 1, tall - 1, flame);
+  put(b, x + sway, y - 9 - tall + 4, core);
+  if (flick % 3 === 1) put(b, x - 2, y - 12, [255, 208, 112, 200]);   // a spark
+}
+
+function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
   const AD = armorId && armors[armorId], AC = AD ? armorColors(AD, P) : null;
   const side = view === 'side', back = view === 'back', front = view === 'front';
   const bob = f.bob || 0, lean = f.lean || 0;
@@ -266,6 +280,7 @@ function drawCharacter(b, view, f, P, sex, ov, armorId) {
     if (carry) bundle();
     arm(pR, P.skin);
     if (tool) axe(pR.hx, pR.hy);
+    if (extra && extra.torch !== undefined) drawTorch(b, pL.hx, pL.hy, extra.torch);
     return;
   }
   const pR = armPts(f.armR, front ? CX - 5.5 : CX + 5.5);
@@ -281,6 +296,7 @@ function drawCharacter(b, view, f, P, sex, ov, armorId) {
     if (carry) bundle();
     if (!back) { arm(pR, P.skin); arm(pL, P.skin); }
   }
+  if (extra && extra.torch !== undefined) drawTorch(b, pL.hx + (front ? 1 : -1), pL.hy, extra.torch);
 }
 
 function outline(b, c) {
@@ -362,14 +378,14 @@ function bakeTool(kind, angleDeg) {
 }
 
 /* view: front | back | right | left (left = right lật ngang) */
-function renderFrame(anims, name, idx, view, look, kind, toolOv, armorId) {
+function renderFrame(anims, name, idx, view, look, kind, toolOv, armorId, extra) {
   lastAnchor = null;
   const an = anims[name];
   const f = an.frames[((idx % an.frames.length) + an.frames.length) % an.frames.length];
   const P = palette(look, kind);
   const b = new Uint8ClampedArray(W * H * 4);
   const v = (view === 'left' || view === 'right') ? 'side' : view;
-  drawCharacter(b, v, f, P, look.sex, toolOv, armorId);
+  drawCharacter(b, v, f, P, look.sex, toolOv, armorId, extra);
   const o = outline(b, P.line);
   shadow(o, v === 'side' ? 1 : 0);
   return view === 'left' ? flipH(o) : o;

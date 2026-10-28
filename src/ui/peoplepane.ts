@@ -2,7 +2,7 @@ import { JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS } from '../sim/jobs';
 import type { Villager } from '../sim/sim';
 import { ARMORS } from '../sim/combat';
 import type { Ctx } from './ctx';
-import { armorLevel, ARMOR_FULL, armorText, describe, PLAIN_JOBS, stars } from './describe';
+import { armorLevel, ARMOR_FULL, armorText, describe, energyText, PLAIN_JOBS, SHIFT_LABEL, SHIFT_TIP, stars } from './describe';
 import { h } from './dom';
 
 /**
@@ -21,13 +21,18 @@ export class PeoplePane {
   private readonly name = h('b'); private readonly state = h('span'); private readonly facts = h('div', { class: 'kv' }); private readonly skills = h('div', { class: 'kv' });
   private readonly bar = { full: h('b'), health: h('b'), morale: h('b', { class: 'mor' }), armor: h('b', { class: 'arm' }) };
   private readonly armorLabel = h('label', {}, 'Giáp');
-  private readonly jobBtns: HTMLButtonElement[];
+  private readonly energy = h('b', { class: 'en' }); private readonly restLine = h('div', { class: 'kv' });
+  private readonly shiftBtns: HTMLButtonElement[] = [];
+  private readonly jobBtns: HTMLButtonElement[]; private readonly jobBox: HTMLElement;
   private readonly where = h('button', { class: 'sm primary', text: 'Đi tới' });
 
   constructor(private readonly c: Ctx) {
     const { sim, ctl, toast } = c;
-    this.armorLabel.append(h('i', {}, this.bar.armor));
+    this.armorLabel.append(h('i', {}, this.bar.armor));    const energyLabel = h('label', {}, 'Sức', h('i', {}, this.energy));
+    for (const sh of ['day', 'night', 'both'] as const) this.shiftBtns.push(h('button', { class: 'sm', text: SHIFT_LABEL[sh], title: SHIFT_TIP[sh], 'data-shift': sh, pressed: false, onclick: () => { const v = this.villager(); if (!v) return; sim.setShift([v.id], sh); ctl.onChange(); } }) as HTMLButtonElement);
     this.jobBtns = PLAIN_JOBS.map((j) => h('button', { class: 'sm', 'data-job': j, pressed: false, text: JOB_NAME[j], onclick: () => { const v = this.villager(); if (!v) return; const e = sim.setJob([v.id], j); if (e) toast(e); ctl.onChange(); } }) as HTMLButtonElement);
+    this.jobBox = h('div', {}, h('h3', { text: 'Giao việc' }), h('div', { class: 'btns', role: 'group', 'aria-label': 'Giao việc' }, ...this.jobBtns),
+      h('p', { class: 'sub', text: 'Thợ xây, chế tạo, nghiên cứu và sửa chữa do bạn chọn ở nhà tương ứng.' }));
     this.where.addEventListener('click', () => {
       const v = this.villager(); if (!v) return;
       if (v.inside !== null) { ctl.selectBuilding(v.inside, true); return; }
@@ -40,10 +45,10 @@ export class PeoplePane {
     const labels = (...names: string[]) => names.map((n, i) => h('label', {}, n, h('i', {}, [this.bar.full, this.bar.health, this.bar.morale][i])));
     this.pane.append(
       h('div', { class: 'cardhead' }, this.name, this.state),
-      h('div', { class: 'bars' }, ...labels('No', 'Máu', 'Tinh thần'), this.armorLabel),
+      h('div', { class: 'bars' }, ...labels('No', 'Máu', 'Tinh thần'), energyLabel, this.armorLabel),
+      this.restLine, h('div', { class: 'btns', role: 'group', 'aria-label': 'Ca làm' }, ...this.shiftBtns),
       this.facts, this.skills,
-      h('h3', { text: 'Giao việc' }), h('div', { class: 'btns', role: 'group', 'aria-label': 'Giao việc' }, ...this.jobBtns),
-      h('p', { class: 'sub', text: 'Thợ xây, chế tạo, nghiên cứu và sửa chữa do bạn chọn ở nhà tương ứng.' }),
+      this.jobBox,
       h('div', { class: 'btns' }, this.where, more),
     );
     this.root.append(h('div', {}, this.count, this.list), this.pane);
@@ -79,6 +84,10 @@ export class PeoplePane {
     this.facts.innerHTML = (Object.keys(STAT_NAME) as StatKey[]).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(' · ');
     this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>cấp ${v.skill[j].level}</b>`).join(' · ');
     this.jobBtns.forEach((b) => b.setAttribute('aria-pressed', String(v.job === b.dataset.job)));
-    this.where.textContent = v.inside !== null ? 'Mở nhà dân đang làm' : 'Đi tới';
+    this.energy.style.width = `${v.energy}%`; this.energy.className = v.energy < 20 ? 'en low' : 'en';
+    this.restLine.innerHTML = energyText(sim, v);
+    this.shiftBtns.forEach((b) => b.setAttribute('aria-pressed', String(v.shift === b.dataset.shift)));
+    this.jobBox.hidden = v.job === 'fight'; // soldiers are managed in the Lính tab
+    this.where.textContent = v.inside !== null ? (v.phase === 'sleep' ? 'Mở nhà đang ngủ' : 'Mở nhà đang làm') : 'Đi tới';
   }
 }

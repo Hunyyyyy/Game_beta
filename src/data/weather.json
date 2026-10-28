@@ -1,12 +1,12 @@
 {
   "types": {
-    "clear":   { "name": "Nắng",      "vision": 0, "speed": 1,    "signal": "" },
-    "mist":    { "name": "Sương mỏng", "vision": 2, "speed": 1,    "signal": "Hơi nước bốc lên từ đất, sáng mai có lẽ sẽ có sương." },
-    "drizzle": { "name": "Mưa nhẹ",   "vision": 0, "speed": 0.9,  "signal": "Mây xám kéo tới, có lẽ ngày mai mưa." },
-    "rain":    { "name": "Mưa to",    "vision": 1, "speed": 0.75, "signal": "Trời tối sầm, gió ẩm nổi lên: ngày mai mưa to." },
-    "thunder": { "name": "Giông sét", "vision": 3, "speed": 0.85, "signal": "Không khí oi nồng, mây dựng thành tháp: sắp có giông." },
-    "storm":   { "name": "Bão",       "vision": 4, "speed": 0.7,  "signal": "Gió giật mạnh, chim bay tán loạn: bão đang tới." },
-    "snow":    { "name": "Tuyết",     "vision": 1, "speed": 0.75, "signal": "Gió lạnh buốt thổi về, có lẽ sắp có tuyết." }
+    "clear":   { "name": "Nắng",      "vision": 0, "speed": 1, "work": 1,    "signal": "" },
+    "mist":    { "name": "Sương mỏng", "vision": 2, "speed": 1, "work": 0.95,    "signal": "Hơi nước bốc lên từ đất, sáng mai có lẽ sẽ có sương." },
+    "drizzle": { "name": "Mưa nhẹ",   "vision": 0, "speed": 0.9, "work": 0.85,  "signal": "Mây xám kéo tới, có lẽ ngày mai mưa." },
+    "rain":    { "name": "Mưa to",    "vision": 1, "speed": 0.75, "work": 0.7, "signal": "Trời tối sầm, gió ẩm nổi lên: ngày mai mưa to." },
+    "thunder": { "name": "Giông sét", "vision": 3, "speed": 0.85, "work": 0.6, "signal": "Không khí oi nồng, mây dựng thành tháp: sắp có giông." },
+    "storm":   { "name": "Bão",       "vision": 4, "speed": 0.7, "work": 0.45,  "signal": "Gió giật mạnh, chim bay tán loạn: bão đang tới." },
+    "snow":    { "name": "Tuyết",     "vision": 1, "speed": 0.75, "work": 0.6, "signal": "Gió lạnh buốt thổi về, có lẽ sắp có tuyết." }
   },
   "chance": {
     "spring": { "clear": 0.45, "mist": 0.15, "drizzle": 0.25, "rain": 0.15 },

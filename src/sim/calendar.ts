@@ -13,6 +13,8 @@ export interface SeasonDef {
   daylight: number;
   /** Gathering productivity multiplier. */
   gather: number;
+  /** How fast outdoor work goes in this season (winter cold slows it). */
+  work: number;
   enter: string;
 }
 export const SEASON_DEF = seasonsJson as Record<Season, SeasonDef>;
@@ -24,6 +26,8 @@ export interface WeatherDef {
   vision: number;
   /** Walking speed multiplier. */
   speed: number;
+  /** How fast outdoor work goes in this weather. */
+  work: number;
   /** Warning shown half a day ahead (empty for none). */
   signal: string;
 }

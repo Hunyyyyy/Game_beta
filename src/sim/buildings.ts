@@ -1,6 +1,6 @@
 import type { Stock } from './resources';
 
-export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory';
+export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'barracks' | 'house';
 
 /** Eras of the game. Each era has its own building art and its own level list (L1..L3). */
 export type Era = 'stone' | 'ancient';
@@ -38,36 +38,46 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   // the heart of the village: it starts as a heap of firewood and every other house is held back by its level
   campfire: {
     kind: 'campfire', name: 'Nhà chung (đống lửa trại)', w: 2, h: 2, buildable: false, upgradable: true,
-    levels: { stone: [lv('Củi lửa', {}, 0, 30), lv('Lửa trại', { wood: 20 }, 240, 45), lv('Bếp lửa lớn', { wood: 20, stone: 12 }, 480, 60), lv('Nhà chung', { wood: 50, stone: 30, hide: 10 }, 960, 90)] },
+    levels: { stone: [lv('Củi lửa', {}, 0, 30), lv('Lửa trại', { wood: 20 }, 120, 45), lv('Bếp lửa lớn', { wood: 20, stone: 12 }, 240, 60), lv('Nhà chung', { wood: 50, stone: 30, hide: 10 }, 480, 90)] },
   },
   // builders belong to this house: without it nothing but the house itself can be raised
   builder: {
     kind: 'builder', name: 'Nhà thợ xây', w: 2, h: 2, buildable: true,
-    levels: { stone: [lv('Đơn sơ', { wood: 10 }, 30, 0, 1, 2), lv('Gỗ', { wood: 15, stone: 10 }, 60, 0, 1.25, 3), lv('Đá', { wood: 25, stone: 20 }, 90, 0, 1.5, 4)] },
+    levels: { stone: [lv('Đơn sơ', { wood: 10 }, 60, 0, 1, 2), lv('Gỗ', { wood: 15, stone: 10 }, 110, 0, 1.25, 3), lv('Đá', { wood: 25, stone: 20 }, 160, 0, 1.5, 4)] },
   },
   storage: {
     kind: 'storage', name: 'Kho', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 10 }, 20, 100), lv('Gỗ', { wood: 35 }, 40, 250), lv('Đá', { wood: 40, stone: 20 }, 60, 500)] },
+    levels: { stone: [lv('Đơn sơ', { wood: 10 }, 50, 100), lv('Gỗ', { wood: 35 }, 90, 250), lv('Đá', { wood: 40, stone: 20 }, 140, 500)] },
   },
   workshop: {
     kind: 'workshop', name: 'Nhà chế tạo', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 30, 0, 1, 1), lv('Gỗ', { wood: 15, stone: 30 }, 60, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 90, 0, 1.5, 3)] },
+    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 70, 0, 1, 1), lv('Gỗ', { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] },
   },
   lab: {
     kind: 'lab', name: 'Nhà nghiên cứu', w: 2, h: 2, buildable: true, requires: ['workshop'],
-    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 40, 0, 1, 1), lv('Gỗ', { wood: 20, stone: 30 }, 70, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 100, 0, 1.5, 4)] },
+    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 80, 0, 1, 1), lv('Gỗ', { wood: 20, stone: 30 }, 140, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 200, 0, 1.5, 4)] },
   },
   repair: {
     kind: 'repair', name: 'Nhà sửa chữa', w: 2, h: 2, buildable: true, requires: ['workshop'],
-    levels: { stone: [lv('Đơn sơ', { wood: 15, stone: 5 }, 30, 0, 1, 1), lv('Gỗ', { wood: 15, stone: 30 }, 60, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 90, 0, 1.5, 3)] },
+    levels: { stone: [lv('Đơn sơ', { wood: 15, stone: 5 }, 70, 0, 1, 1), lv('Gỗ', { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] },
   },
   toolstore: {
     kind: 'toolstore', name: 'Kho công cụ', w: 2, h: 2, buildable: true, requires: ['workshop'],
-    levels: { stone: [lv('Đơn sơ', { wood: 25 }, 30, 12), lv('Gỗ', { wood: 30, stone: 15 }, 55, 30), lv('Đá', { wood: 30, stone: 40 }, 80, 60)] },
+    levels: { stone: [lv('Đơn sơ', { wood: 25 }, 60, 12), lv('Gỗ', { wood: 30, stone: 15 }, 100, 30), lv('Đá', { wood: 30, stone: 40 }, 150, 60)] },
   },
   armory: {
     kind: 'armory', name: 'Kho vũ khí', w: 2, h: 2, buildable: true, requires: ['workshop'],
-    levels: { stone: [lv('Đơn sơ', { wood: 25 }, 30, 12), lv('Gỗ', { wood: 30, stone: 15 }, 55, 30), lv('Đá', { wood: 30, stone: 40 }, 80, 60)] },
+    levels: { stone: [lv('Đơn sơ', { wood: 25 }, 60, 12), lv('Gỗ', { wood: 30, stone: 15 }, 100, 30), lv('Đá', { wood: 30, stone: 40 }, 150, 60)] },
+  },
+  // where soldiers sleep, out of sight, as a list (slots = beds, craftSpeed = how well they rest); without a bed they sleep by the campfire
+  barracks: {
+    kind: 'barracks', name: 'Lều chiến binh', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 3), lv('Gỗ', { wood: 25, hide: 6 }, 100, 0, 1.1, 5), lv('Đá', { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 8)] },
+  },
+  // where everyone who is not a soldier sleeps, out of sight, as a list; without a bed they sleep by the campfire and rest slower
+  house: {
+    kind: 'house', name: 'Nhà dân', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 4), lv('Gỗ', { wood: 30, stone: 10 }, 100, 0, 1.15, 8), lv('Đá', { wood: 40, stone: 30 }, 150, 0, 1.3, 12)] },
   },
 };
 

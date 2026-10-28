@@ -1,19 +1,20 @@
 import { readFileSync } from 'fs';
 import { renderFrame } from '../src/character/rig.js';
+import { renderAnimal } from '../src/character/animal-rig.js';
 import { Sim } from '../src/sim/sim';
 import { DAY_LENGTH, PACE } from '../src/sim/constants';
 import { Tile } from '../src/sim/world';
 import { lightAt, rollWeather, seasonOf, SEASONS } from '../src/sim/calendar';
-import { TIER_DURABILITY } from '../src/sim/tools';
+import { RECIPE_BY_ID, TIER_DURABILITY } from '../src/sim/tools';
 import { levelDef, levelsOf, maxLevel } from '../src/sim/buildings';
-import { ANIMALS, ARMORS, COMBAT_STATES, cycleOf, damageOf, MORALE, poseOf, RULES, STYLES, TRIBES, TRIBE_IDS, WEAPONS, zoneOf } from '../src/sim/combat';
+import { ANIMALS, ARMORS, COMBAT_STATES, cycleOf, damageOf, MORALE, poseOf, RULES, SPECIES, STYLES, TRIBES, TRIBE_IDS, WEAPONS, zoneOf } from '../src/sim/combat';
 import { swingTimes, weaponOf } from '../src/sim/battle';
-import { spawnAnimal } from '../src/sim/fauna';
+import { carcassEmpty, die, provoke, spawnAnimal } from '../src/sim/fauna';
 import type { Villager } from '../src/sim/sim';
 import * as dev from '../src/sim/dev';
 import { NOT_SAVED, SAVE_VERSION, SAVED } from '../src/sim/save';
 import { RESEARCH, TECHS } from '../src/sim/research';
-import { RES_NAME } from '../src/sim/resources';
+import { ANIMAL_MATERIALS, RES_LIST, RES_NAME } from '../src/sim/resources';
 
 PACE.work = 1; // the tests count work in plain seconds; the pace has its own test
 RESEARCH.enabled = false; // most tests run with everything open; the research tests switch it on
@@ -23,6 +24,7 @@ const ok = (c: boolean, msg: string) => { console.log((c ? 'ok   ' : 'FAIL ') + 
 const run = (sim: Sim, secs: number) => { for (let i = 0; i < secs * 20; i++) (sim as unknown as { tick(d: number): void }).tick(0.05); };
 
 /** The old test start: three idle villagers. The real start (two with jobs) has its own test. */
+const provokeFor = (sm: Sim, v: Villager, a: ReturnType<typeof spawnAnimal>) => { provoke(sm, a, v.id); a.state = 'attack'; a.target = { kind: 'unit', id: v.id }; a.timer = 99; };
 const mk = (seed = 1337): Sim => { const sm = new Sim(seed); sm.villagers.forEach((o) => { o.job = 'idle'; }); dev.addVillagers(sm, 1); return sm; };
 /** Put a finished house of this kind on the map (the real game needs builders and the right order; most tests only need the house). */
 const putBuilding = (sm: Sim, kind: Parameters<Sim['canPlace']>[0]) => {
@@ -174,8 +176,8 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   const sm = mk(1337); reveal(sm); const cx = sm.world.start.x + 9, cy = sm.world.start.y + 4;
   clearArea(sm, cx, cy, 4);
   plant(sm, cx - 1, cy); const mid = plant(sm, cx, cy); plant(sm, cx + 1, cy);
-  const v = sm.villagers[0]; sm.villagers.forEach((o) => { o.fullness = 1e9; });
-  ok(sm.orderWork([v.id], cx, cy) === 'Đốn gỗ', 'chuột phải lên cây giữa vẫn nhận lệnh');
+  const v = sm.villagers[0]; sm.villagers.forEach((o) => { o.fullness = 1e9; }); sm.setJob([v.id], 'wood');
+  ok(sm.orderWork([v.id], cx, cy)?.sent === 1, 'chuột phải lên cây giữa vẫn nhận lệnh');
   let reached = false, sideOk = true, maxDx = 0, dyOk = true;
   for (let i = 0; i < 20 * 400; i++) {
     (sm as unknown as { tick(d: number): void }).tick(0.05);
@@ -196,7 +198,7 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   // hai dân cùng chặt một cây: mỗi người một bên
   const sm = mk(1337); reveal(sm); const cx = sm.world.start.x + 9, cy = sm.world.start.y + 4;
   clearArea(sm, cx, cy, 4); const t = plant(sm, cx, cy);
-  const [a, b] = sm.villagers; sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const [a, b] = sm.villagers; sm.villagers.forEach((o) => { o.fullness = 1e9; }); sm.setJob([a.id, b.id], 'wood');
   sm.orderWork([a.id, b.id], cx, cy);
   let both = false;
   for (let i = 0; i < 20 * 40 && !both; i++) {
@@ -210,7 +212,7 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   const sm = mk(1337); reveal(sm); const cx = sm.world.start.x + 9, cy = sm.world.start.y + 4;
   clearArea(sm, cx, cy, 4); const mid = plant(sm, cx, cy);
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) plant(sm, cx + dx, cy + dy);
-  const v = sm.villagers[0]; sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const v = sm.villagers[0]; sm.villagers.forEach((o) => { o.fullness = 1e9; }); sm.setJob([v.id], 'wood');
   sm.orderWork([v.id], cx, cy); run(sm, 60);
   ok(sm.world.nodes.get(mid)!.amount === 10 && sm.world.nodes.get(mid)!.workers === 0, 'cây bị vây kín không có ai giữ chỗ');
   ok(v.job === 'wood' && v.phase !== 'idle', 'dân chuyển sang cây khác, không kẹt');
@@ -266,16 +268,16 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   const sp = sm.world.start; let spot: [number, number] | null = null;
   for (let dx = -8; dx <= 8 && !spot; dx++) for (let dy = 3; dy <= 9 && !spot; dy++) if (!sm.canPlace('builder', sp.x + dx, sp.y + dy)) spot = [sp.x + dx, sp.y + dy];
   const house = sm.placeBuilding('builder', spot![0], spot![1]).building!;
-  ok(sm.orderWork([a.id], spot![0], spot![1]) === 'Thợ xây' && a.job === 'build', 'the very first house may be raised by whoever is sent to it');
-  run(sm, 60);
+  ok(sm.orderWork([a.id], spot![0], spot![1])?.job === 'build' && a.job === 'build', 'the very first house may be raised by whoever is sent to it');
+  run(sm, 200);
   ok(house.done && sm.crew().length === 1, 'the builder raised the Nhà thợ xây and stays on as a builder');
   ok(sm.buildingLock('storage') === null && sm.buildingLock('lab') !== null, 'now the Kho can be placed, the research house still waits');
   const kho = sm.placeBuilding('storage', spot![0] + 4, spot![1]).building!;
-  ok(sm.orderWork([b.id], spot![0] + 4, spot![1]) === null && b.job === 'wood', 'a villager who is not a builder cannot be sent to raise a house');
+  ok(sm.orderWork([b.id], spot![0] + 4, spot![1])?.sent === 0 && b.job === 'wood', 'a villager who is not a builder cannot be sent to raise a house');
   ok(sm.assignCrew([b.id]) === null && sm.crew().length === 2, 'the player picks a second builder');
   const c = sm.makeVillager(sp.x, sp.y, 'm', 'player'); (sm.villagers as Villager[]).push(c); sm.registerUnit(c);
   ok(sm.assignCrew([c.id]) !== null && sm.crew().length === 2, 'the house holds two builders at level 1');
-  run(sm, 120);
+  run(sm, 300);
   ok(kho.done, 'builders raise the Kho');
   sm.releaseCrew([b.id]); ok(b.job === 'idle' && sm.crew().length === 1, 'a builder can be let go');
   sm.demolishBuilding(house.id); ok(sm.crew().length === 0 && a.job === 'idle', 'without the house its builders go idle');
@@ -327,6 +329,15 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   // loading into a running Sim replaces what it has
   const c = new Sim(1337); c.loadSave(JSON.parse(json));
   const cs = c.toSave(); ok(cs.fog.version === snap.fog.version + 1 && same({ ...cs, fog: { ...cs.fog, version: snap.fog.version } }, snap), 'loadSave puts a save into an existing game (and tells the screen to redraw the fog)');
+  // a save from before villagers had energy still loads: they start rested, and the torch is a known technology
+  {
+    const old = JSON.parse(json) as { version: number; lists: { villagers: Array<Record<string, unknown>>; foes: Array<Record<string, unknown>> }; researched: string[] };
+    old.version = 1; for (const v of [...old.lists.villagers, ...old.lists.foes]) { delete v.energy; delete v.strain; delete v.shift; delete v.torch; delete v.lockUntil; delete v.lit; }
+    old.researched = old.researched.filter((r) => r !== 'torch1');
+    const up = Sim.fromSave(old);
+    ok(up.villagers.every((v) => v.energy === 100 && v.shift === 'day' && v.torch === null && v.lockUntil === 0) && up.researched.has('torch1'), 'a version 1 save is brought forward when it is loaded');
+    run(up, 5);
+  }
   // the format is a contract
   ok(snap.version === SAVE_VERSION && JSON.stringify(JSON.parse(json)) === json, 'the save is plain JSON with a version');
   let err = ''; try { Sim.fromSave({ ...JSON.parse(json), version: SAVE_VERSION + 1 }); } catch (e) { err = String(e); }
@@ -341,6 +352,148 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   ok(unknown.length === 0, 'every field of Sim is saved or deliberately not saved (add new ones to src/sim/save.ts): ' + unknown.join(', '));
   // a second game in the same process starts as new, nothing leaks between games
   ok(same(new Sim(1337).toSave(), new Sim(1337).toSave()), 'two new games of one seed are identical');
+}
+
+// ======== how long gathering takes: real seconds, slowed by weather and season ========
+{
+  const wood = (weather: 'clear' | 'rain' | 'storm', season?: number): number => {
+    const sm = new Sim(1337); sm.fog.state.fill(2); sm.villagers.forEach((o) => { o.fullness = 1e9; }); sm.villagers[1].job = 'idle';
+    sm.events.length = 0; sm.nextRaid = 1e9; sm.animals.length = 0; sm.animalById.clear(); // nothing attacks while we count wood
+    sm.time = DAY_LENGTH * (season ?? 0) + DAY_LENGTH * 0.25; sm.weather = weather; sm.nextWeather = weather;
+    const v = sm.villagers[0]; sm.setJob([v.id], 'wood');
+    for (let i = 0; i < 20 * 300; i++) (sm as unknown as { tick(d: number): void }).tick(0.05); // five minutes at normal speed
+    return sm.stock.wood + (v.carry?.res === 'wood' ? v.carry.amount : 0);
+  };
+  const clear = wood('clear'), rain = wood('rain'), storm = wood('storm'), winter = wood('clear', 15);
+  ok(clear >= 15, `one woodcutter with bare hands has the 15 wood of a first house within five minutes (${clear})`);
+  ok(rain < clear && storm < rain, `rain and storm slow the work (clear ${clear}, rain ${rain}, storm ${storm})`);
+  ok(winter < clear, `and so does the cold of winter (${winter} against ${clear})`);
+}
+
+// ======== energy, sleep, shifts and torches ========
+{
+  const quiet = (seed = 1337) => { // two villagers on an empty map: nothing hunts them, everything is revealed
+    const sm = new Sim(seed); sm.fog.state.fill(2); sm.events.length = 0; sm.nextRaid = 1e9; sm.animals.length = 0; sm.animalById.clear();
+    sm.villagers.forEach((o) => { o.fullness = 1e9; o.stats.vit = 7; o.stats.sta = 7; o.morale = 80; }); sm.buildings[0].level = 4;
+    return sm;
+  };
+  const at = (sm: Sim, tod: number) => { sm.time = Math.floor(sm.time / DAY_LENGTH) * DAY_LENGTH + DAY_LENGTH * tod; };
+  const tickFor = (sm: Sim, secs: number) => { for (let i = 0; i < secs * 20; i++) (sm as unknown as { tick(d: number): void }).tick(0.05); };
+
+  // a day of hard work costs about half the energy, a lighter job less
+  const day = quiet(); const [w, g] = day.villagers; day.setJob([w.id], 'wood'); day.setJob([g.id], 'food'); at(day, 0.2);
+  tickFor(day, DAY_LENGTH * 0.6);
+  ok(w.energy < 70 && w.energy > 40, `a woodcutter spends about half his energy in a day (${w.energy.toFixed(0)} left)`);
+  ok(g.energy > w.energy, `a gatherer spends less than a woodcutter (${g.energy.toFixed(0)} against ${w.energy.toFixed(0)})`);
+  // a stronger body tires slower
+  const fitTest = quiet(); const [a1, b1] = fitTest.villagers; a1.stats.vit = a1.stats.sta = 10; b1.stats.vit = b1.stats.sta = 3;
+  fitTest.setJob([a1.id, b1.id], 'wood'); at(fitTest, 0.2); tickFor(fitTest, 300);
+  ok(a1.energy > b1.energy, `a sturdy villager tires slower than a frail one (${a1.energy.toFixed(1)} against ${b1.energy.toFixed(1)})`);
+  // night sleep gives back about 60 points, sleep by day half of that
+  const nap = quiet(); const [s1] = nap.villagers; s1.energy = 30; s1.job = 'idle'; at(nap, 0.83); nap.resting = true;
+  tickFor(nap, 20); const e0 = s1.energy; tickFor(nap, DAY_LENGTH * 0.35 - 40);
+  const nightGain = s1.energy - e0;
+  ok(s1.phase === 'sleep' && nightGain > 28 && nightGain < 44, `without a Nhà dân a night by the campfire gives back around 36 points (${nightGain.toFixed(0)})`);
+  const homeNap = quiet(); const [h1] = homeNap.villagers; putBuilding(homeNap, 'builder'); const home = putBuilding(homeNap, 'house');
+  h1.energy = 30; h1.job = 'idle'; at(homeNap, 0.83); homeNap.resting = true; tickFor(homeNap, 60); const h0 = h1.energy; tickFor(homeNap, DAY_LENGTH * 0.35 - 80);
+  ok(h1.phase === 'sleep' && h1.inside === home.id && h1.energy - h0 > 45 && h1.energy - h0 < 70, `in the Nhà dân a night gives back around 60 points (${(h1.energy - h0).toFixed(0)}), and they are indoors`);
+  ok(homeNap.sleepers(home).includes(h1) && !homeNap.villagers.some((o) => o !== h1 && o.inside === home.id && o.phase !== 'sleep'), 'the house lists its sleepers');
+  const daySleep = quiet(); const [s2] = daySleep.villagers; s2.energy = 30; s2.shift = 'night'; daySleep.setJob([s2.id], 'wood'); s2.nightOwl = false; at(daySleep, 0.3); tickFor(daySleep, 20); // (the order itself would call him up)
+  const d0 = s2.energy; tickFor(daySleep, 200);
+  ok(s2.phase === 'sleep', 'a night-shift villager sleeps through the day');
+  const dayGainPerS = (s2.energy - d0) / 200, nightGainPerS = nightGain / (DAY_LENGTH * 0.35 - 60);
+  ok(dayGainPerS > 0 && dayGainPerS < nightGainPerS * 0.7, `sleep by day gives back less than sleep by night (${(dayGainPerS * 60).toFixed(1)} against ${(nightGainPerS * 60).toFixed(1)} a minute)`);
+  // the ordinary day shift never runs dry: they sleep every night
+  const cycle = quiet(); const [c1] = cycle.villagers; cycle.setJob([c1.id], 'wood'); at(cycle, 0.2); let lowest = 100;
+  for (let i = 0; i < 20 * DAY_LENGTH * 3; i++) { (cycle as unknown as { tick(d: number): void }).tick(0.05); if (i % 200 === 0) lowest = Math.min(lowest, c1.energy); }
+  ok(lowest > 20, `a day-shift worker never goes below 20 over three days (lowest ${lowest.toFixed(0)})`);
+
+  // worn out: below 20 they go to bed and cannot be woken until 50; below 10 until 60
+  const tired = quiet(); const [t1, t2] = tired.villagers; tired.setJob([t1.id, t2.id], 'wood'); at(tired, 0.3); t1.energy = 20.3; t2.energy = 9.5;
+  tickFor(tired, 20);
+  ok(t1.phase === 'sleep' && t1.lockUntil === 50 && t2.phase === 'sleep' && t2.lockUntil === 60, 'worn out, they sleep: until 50, or until 60 after a collapse below 10');
+  tired.orderMove([t1.id, t2.id], tired.world.start.x + 6, tired.world.start.y); tickFor(tired, 5);
+  ok(t1.phase === 'sleep' && t2.phase === 'sleep' && tired.sleepLocked(t1) && tired.setJob([t1.id], 'stone') === null && t1.job === 'wood', 'a worn-out sleeper cannot be woken by an order');
+  const e1 = t1.energy; tickFor(tired, 60); ok(t1.energy > e1, 'and keeps recovering');
+  for (let i = 0; i < 20 * 600 && t1.lockUntil > 0; i++) (tired as unknown as { tick(d: number): void }).tick(0.05);
+  ok(t1.lockUntil === 0 && t1.energy >= 49.9, `they get up once rested (${t1.energy.toFixed(0)})`);
+  ok(t2.lockUntil === 60 ? t2.energy < 60 : t2.energy >= 59.9, 'after a collapse the rest goes on longer');
+  // above 20 a sleeper can be called up
+  const calm = quiet(); const [k1] = calm.villagers; calm.setJob([k1.id], 'wood'); k1.nightOwl = false; at(calm, 0.3); k1.energy = 60; k1.shift = 'night'; tickFor(calm, 20);
+  ok(k1.phase === 'sleep' && !calm.sleepLocked(k1), 'a night-shift worker asleep by day with energy to spare is not locked');
+  calm.setJob([k1.id], 'stone'); tickFor(calm, 3);
+  ok(k1.job === 'stone' && k1.nightOwl && k1.phase !== 'sleep', 'and an order calls him up');
+
+  // soldiers fight on whatever their energy, and sleep long afterwards
+  const war = quiet(); const [m1] = war.villagers; m1.weapon = 'club'; war.setJob([m1.id], 'fight'); at(war, 0.3); m1.energy = 5; m1.health = m1.maxHealth;
+  const field = war.world.start; const foe = spawnAnimal(war, 'boar', field.x + 2, field.y + 1, 99); foe.hp = foe.maxHp = 400; provokeFor(war, m1, foe);
+  tickFor(war, 6);
+  ok(m1.phase !== 'sleep' && m1.phase !== 'goHome', 'a soldier at 5% energy keeps fighting');
+  foe.hp = 0; war.animals.length = 0; war.animalById.clear(); m1.fight.target = null; m1.fight.mode = 'none'; m1.phase = 'idle'; tickFor(war, 6);
+  ok((m1.phase === 'sleep' || m1.phase === 'goHome') && m1.lockUntil === 60, 'once the fight is over he sleeps long, until 60 percent');
+
+  // night work needs a torch and goes at 70 percent
+  const rate = (torch: boolean): number => {
+    const sm = quiet(); const [n1] = sm.villagers; sm.villagers[1].job = 'idle'; n1.shift = 'night'; sm.setJob([n1.id], 'wood'); at(sm, 0.85); sm.resting = true; sm.weather = 'clear'; sm.nextWeather = 'clear';
+    if (torch) sm.toolStock.torch1 = 3;
+    tickFor(sm, 30); const w0 = sm.stock.wood + (n1.carry?.amount ?? 0);
+    tickFor(sm, 120);
+    return (sm.stock.wood + (n1.carry?.amount ?? 0) - w0) + (n1.phase === 'sleep' ? -999 : 0);
+  };
+  const noTorch = rate(false), withTorch = rate(true);
+  ok(noTorch < 0, 'at night a worker without a torch does not work');
+  ok(withTorch > 0, `with a torch the night shift gets on with it (${withTorch} wood in two minutes)`);
+  const dayRate = (() => { const sm = quiet(); const [n1] = sm.villagers; sm.villagers[1].job = 'idle'; sm.setJob([n1.id], 'wood'); at(sm, 0.3); sm.weather = 'clear'; sm.nextWeather = 'clear'; tickFor(sm, 30); const w0 = sm.stock.wood + (n1.carry?.amount ?? 0); tickFor(sm, 120); return sm.stock.wood + (n1.carry?.amount ?? 0) - w0; })();
+  ok(withTorch < dayRate && withTorch > dayRate * 0.4, `night work goes at about 70% of day work (${withTorch} against ${dayRate})`);
+  // torches: made in the craft house, handed out, burn, go back
+  ok(!!RECIPE_BY_ID.torch1 && Object.keys(RECIPE_BY_ID.torch1.cost).length > 0, 'the craft house can make torches');
+  const torches = quiet(); const [r1] = torches.villagers; torches.toolStock.torch1 = 2; at(torches, 0.9); torches.resting = true;
+  ok(torches.giveTorch([r1.id]) === null && !!r1.torch && torches.torchCount() === 1, 'a torch is handed from the store to a villager');
+  torches.returnTorch(r1); ok(!r1.torch && torches.torchCount() === 2, 'and goes back to the store if it is unused');
+  torches.giveTorch([r1.id]); torches.toolStock.torch1 = 0; r1.torch!.dur = 3; r1.job = 'wood'; r1.shift = 'night'; r1.phase = 'work'; tickFor(torches, 6);
+  ok(!r1.torch, 'a torch burns out');
+  // night after night: strain builds up, the ceiling falls, recovery slows
+  const grind = quiet(); const [x1] = grind.villagers; grind.villagers[1].job = 'idle'; x1.shift = 'both'; grind.setJob([x1.id], 'wood'); grind.toolStock.torch1 = 50; at(grind, 0.2);
+  let ceiling = 100;
+  for (let i = 0; i < 20 * DAY_LENGTH * 4; i++) { (grind as unknown as { tick(d: number): void }).tick(0.05); if (i % 600 === 0) { grind.stock.wood = 0; ceiling = Math.min(ceiling, grind.maxEnergy(x1)); if (!x1.torch) grind.giveTorch([x1.id]); } }
+  ok(x1.strain > 20 && ceiling < 95, `working round the clock builds up strain and lowers the ceiling (strain ${x1.strain.toFixed(0)}, ceiling ${ceiling.toFixed(0)})`);
+  const rested = quiet(); const [y1] = rested.villagers; y1.strain = 60; y1.energy = 30; y1.job = 'idle'; at(rested, 0.83); rested.resting = true; tickFor(rested, 20);
+  const fresh = quiet(); const [y2] = fresh.villagers; y2.energy = 30; y2.job = 'idle'; at(fresh, 0.83); fresh.resting = true; tickFor(fresh, 20);
+  tickFor(rested, 200); tickFor(fresh, 200);
+  ok(y1.energy - 30 < (y2.energy - 30) * 0.9, `a strained villager recovers more slowly (${(y1.energy - 30).toFixed(1)} against ${(y2.energy - 30).toFixed(1)})`);
+  // the barracks heals soldiers faster
+  const camp = quiet(); const [q1, q2] = camp.villagers; for (const o of [q1, q2]) { o.job = 'fight'; o.energy = 30; o.weapon = 'club'; }
+  putBuilding(camp, 'builder'); putBuilding(camp, 'barracks'); at(camp, 0.83); camp.resting = true; tickFor(camp, 60);
+  const bar = camp.building('barracks')!;
+  ok(camp.villagers.some((o) => Math.hypot(o.x - bar.x - 1, o.y - bar.y - 1) < 5), 'soldiers go to sleep in the barracks while it has beds');
+  const inB = camp.villagers.find((o) => Math.hypot(o.x - bar.x - 1, o.y - bar.y - 1) < 4)!;
+  const outB = quiet(); const [z1] = outB.villagers; z1.job = 'fight'; z1.energy = 30; z1.weapon = 'club'; at(outB, 0.83); outB.resting = true; tickFor(outB, 60);
+  ok(!!inB && inB.energy > z1.energy + 1, `a soldier in the barracks recovers faster than one by the campfire (${inB?.energy.toFixed(1)} against ${z1.energy.toFixed(1)})`);
+  ok(!!inB && inB.inside === bar.id && inB.phase === 'sleep' && camp.sleepers(bar).includes(inB), 'a soldier in the tent is listed there, out of sight, not drawn asleep on the map');
+  ok(camp.villagers.filter((o) => o.inside === bar.id).length <= camp.bedsIn('barracks'), 'no more soldiers in the tent than it has beds');
+  // a full house: the extra sleeper lies by the campfire and rests slower
+  const full = quiet(); putBuilding(full, 'builder'); const hut = putBuilding(full, 'house'); full.bedsIn('house');
+  const crowd = [...full.villagers]; for (let i = 0; i < 6; i++) { const e = full.makeVillager(full.world.start.x, full.world.start.y, 'm', 'player'); (full.villagers as Villager[]).push(e); full.registerUnit(e); crowd.push(e); }
+  for (const o of crowd) { o.fullness = 1e9; o.energy = 30; o.job = 'idle'; } at(full, 0.83); full.resting = true; tickFor(full, 90);
+  const inHut = crowd.filter((o) => o.inside === hut.id), outside = crowd.filter((o) => o.inside === null && o.phase === 'sleep');
+  ok(inHut.length === full.bedsIn('house') && outside.length === crowd.length - inHut.length && outside.length > 0, `only as many sleep in the house as it has beds (${inHut.length}), the rest by the fire (${outside.length})`);
+  ok(full.sleepers(hut).length === inHut.length, 'the house lists exactly those inside');
+  // a click gives no job; soldiers are made and unmade at the campfire only
+  const jobs = quiet(); const [j1, j2] = jobs.villagers; jobs.setJob([j1.id], 'food');
+  const tree = (() => { const sp = jobs.world.start; clearArea(jobs, sp.x + 8, sp.y + 4, 3); plant(jobs, sp.x + 8, sp.y + 4); return { x: sp.x + 8, y: sp.y + 4 }; })();
+  ok(jobs.orderWork([j1.id], tree.x, tree.y)?.sent === 0 && j1.job === 'food', 'a click on a tree does not turn a gatherer into a woodcutter');
+  jobs.enlist([j2.id]);
+  ok(j2.job === 'fight' && jobs.setJob([j2.id], 'wood') !== null && j2.job === 'fight', 'the job buttons cannot unmake a soldier');
+  ok(jobs.assignCrew([j2.id]) !== null && j2.job === 'fight', 'nor can a house take a soldier');
+  ok(jobs.discharge([j2.id]) === 1 && j2.job === 'idle', 'the campfire discharges him');
+  // new houses come from research
+  RESEARCH.enabled = true; const lock = new Sim(1337); lock.dev.freeBuild = false;
+  ok(lock.buildingLock('house') !== null && lock.buildingLock('barracks') !== null, 'the Nhà dân and the Lều chiến binh need the Nhà thợ xây first');
+  putBuilding(lock, 'builder');
+  ok(lock.buildingLock('house') === 'Cần nghiên cứu: Nhà dân' && lock.buildingLock('barracks') === 'Cần nghiên cứu: Lều chiến binh', 'and both must be researched before they can be built');
+  lock.researched.add('house'); lock.researched.add('barracks');
+  ok(lock.buildingLock('house') === null && lock.buildingLock('barracks') === null, 'researched, they can be placed');
+  RESEARCH.enabled = false;
 }
 
 // ======== M3: ngày đêm, bốn mùa, thời tiết ========
@@ -381,6 +534,19 @@ const tickN = (sm: Sim, secs: number) => run(sm, secs);
   ok(sm.villagers.every((o) => Math.hypot(o.x - fire.x - 1, o.y - fire.y - 1) < 4), 'ngủ quanh đống lửa');
   ok(new Set(sm.villagers.map((o) => o.bed)).size === 3, 'mỗi người một chỗ nằm');
   ok(sm.villagers.every((o) => o.job === 'wood' && !o.carry), 'vẫn giữ nghề, đồ mang theo đã cất kho');
+  // a soldier chosen by the player at night does not sleep: they get up and stand watch; the others stay in bed
+  {
+    const night = new Sim(1337); reveal(night); night.villagers.forEach((o) => { o.fullness = 1e9; }); night.time = DAY_LENGTH * 0.9;
+    const [w1, w2] = night.villagers; run(night, 60);
+    ok(night.villagers.every((o) => o.phase === 'sleep' || o.phase === 'goHome'), 'at night everybody is in bed');
+    night.setJob([w1.id], 'fight'); night.setJob([w2.id], 'wood'); run(night, 10);
+    ok(w1.job === 'fight' && w1.nightOwl && w1.phase !== 'sleep' && w1.phase !== 'goHome', 'a villager made a soldier at night gets up to stand watch');
+    ok(w2.phase === 'sleep' || w2.phase === 'goHome', 'a worker given a job at night stays in bed');
+    night.orderHold([w1.id]); run(night, 5);
+    ok(w1.nightOwl && w1.fight.mode === 'hold', 'and keeps the watch he was told to');
+    night.time = DAY_LENGTH * 1.2; run(night, 2);
+    ok(!w1.nightOwl && night.restTime === false, 'in the morning the watch is over');
+  }
   // an order in the middle of the night does not wake anyone: they stay in bed and start the new job in the morning
   const owl = sm.villagers[0]; tickN(sm, 30);
   sm.orderMove([owl.id], fire.x + 6, fire.y + 6); sm.setJob([owl.id], 'stone'); tickN(sm, 10);
@@ -524,7 +690,7 @@ function openField(sm: Sim): { x: number; y: number } { // a clear patch of gras
 {
   const sm = mk(1337);
   const by = (sp: string) => sm.animals.filter((a) => a.species === sp);
-  ok(['rabbit', 'fowl', 'deer', 'boar', 'wolf', 'fish'].every((sp) => by(sp).length > 0), `all six species live on the map (${sm.animals.length} animals)`);
+  ok(SPECIES.every((sp) => by(sp).length > 0), `every species lives on the map (${sm.animals.length} animals): missing ${SPECIES.filter((sp) => by(sp).length === 0).join(', ')}`);
   ok(sm.animals.every((a) => a.species === 'fish' || dist(a, sm.world.start) >= 15), 'no land animal near the starting fire');
   ok(by('wolf').every((a) => zoneOf(dist(a, sm.world.start)) >= ANIMALS.wolf.zones[0]), 'wolves only in zone 2 and beyond');
   ok(by('fish').every((a) => sm.world.at(Math.floor(a.x), Math.floor(a.y)) === Tile.Water), 'fish live in water');
@@ -553,6 +719,8 @@ function openField(sm: Sim): { x: number; y: number } { // a clear patch of gras
   const v = firstVillager(sm); sm.villagers.slice(1).forEach((o) => { o.fullness = 1e9; }); v.fullness = 1e9;
   v.x = c.x + 0.5; v.y = c.y + 0.5; v.weapon = 'club';
   const rb = spawnAnimal(sm, 'rabbit', c.x + 1.2, c.y + 0.5, 1); rb.state = 'graze'; rb.timer = 99;
+  ok(sm.orderAttack([v.id], { kind: 'animal', id: rb.id }) === 0 && v.job !== 'hunt' && v.job !== 'fight', 'a click on a rabbit gives a plain villager no job and no fight');
+  sm.setJob([v.id], 'hunt');
   sm.orderAttack([v.id], { kind: 'animal', id: rb.id });
   run(sm, 0.1);
   ok(v.swing !== null, 'the attack starts a swing');
@@ -574,6 +742,51 @@ function openField(sm: Sim): { x: number; y: number } { // a clear patch of gras
   ok(killed, 'two hunters with spears brought down a deer');
   ok(sm.stock.hide >= hide0 + 3, `the hide reached the store (da ${sm.stock.hide})`);
   ok(sm.stock.food > food0 + 2 || hunters.some((h) => h.carry?.res === 'food'), 'meat was carried back');
+  ok(sm.stock.bone >= 2 && sm.stock.fat >= 2, `bone and fat from the deer reached the store too (xương ${sm.stock.bone}, mỡ ${sm.stock.fat})`);
+}
+{
+  // the biggest game gives the rarest material
+  const sm = mk(1337); reveal(sm); day(sm, 0.3); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const s = sm.world.start, m = spawnAnimal(sm, 'mammoth', s.x + 8, s.y - 3, 9); die(sm, m);
+  ok(m.drops.tusk === 2 && m.meat === 120 && !carcassEmpty(m), 'a dead mammoth carries meat, hide, bone, fat and two tusks');
+  sm.villagers[0].weapon = 'spear'; sm.stock.tusk = 0; sm.setJob([sm.villagers[0].id], 'hunt');
+  for (let i = 0; i < 20 * 120 && sm.stock.tusk < 2; i++) (sm as unknown as { tick(d: number): void }).tick(0.05);
+  ok(sm.stock.tusk === 2 && sm.stock.bone >= 14 && sm.stock.fat >= 24 && Object.keys(m.drops).every((k) => !m.drops[k as keyof typeof m.drops]), 'the hunter brought home the tusks, bone and fat');
+}
+{
+  // species are data: every one has art, a body family with its clips, sane zones and real materials
+  const clips: Record<string, Record<string, unknown>> = {};
+  for (const body of ['quadruped', 'biped', 'hopper', 'fish']) clips[body] = JSON.parse(readFileSync(`src/data/animals/anims/${body}.json`, 'utf8'));
+  const art = JSON.parse(readFileSync('src/data/animals/bodies.json', 'utf8')) as Record<string, { body: string; size: number[]; palette: Record<string, string>; shape: Record<string, unknown> }>;
+  ok(SPECIES.length >= 15, `${SPECIES.length} species in the game`);
+  for (const sp of SPECIES) {
+    const d = ANIMALS[sp], a = art[sp];
+    const problems: string[] = [];
+    if (!a) problems.push('no art in bodies.json');
+    else {
+      if (!clips[a.body]) problems.push(`unknown body "${a.body}"`);
+      else for (const c of d.habitat === 'water' ? ['idle', 'swim', 'die'] : ['idle', 'walk', 'run', 'die']) if (!clips[a.body][c]) problems.push(`body ${a.body} has no clip ${c}`);
+      if (!(a.size[0] >= 12 && a.size[1] >= 8)) problems.push('size');
+    }
+    if (!(d.zones[0] >= 1 && d.zones[1] <= 4 && d.zones[0] <= d.zones[1])) problems.push('zones');
+    if (!(d.herd[0] >= 1 && d.herd[1] >= d.herd[0]) || !(d.count > 0) || !(d.hp > 0)) problems.push('herd, count or hp');
+    if (!Object.keys(d.drops ?? {}).every((k) => (RES_LIST as string[]).includes(k) && ANIMAL_MATERIALS.includes(k as never))) problems.push('a drop that is not an animal material');
+    if (d.aggro > 0 && d.zones[0] < 2) problems.push('a hunter of men in the first ring');
+    ok(problems.length === 0, `species ${sp}: art, body, zones and drops are in order${problems.length ? ' — ' + problems.join('; ') : ''}`);
+  }
+  ok(ANIMAL_MATERIALS.every((r) => SPECIES.some((sp) => (ANIMALS[sp].drops?.[r] ?? 0) > 0)), 'every animal material is given by some animal');
+  // every species draws something in every clip (no pictures looked at; the art is for the eye to judge)
+  for (const sp of SPECIES) {
+    const def = art[sp], empty: string[] = [];
+    for (const [clip, c] of Object.entries(clips[def.body]) as Array<[string, { frames: unknown[] }]>) {
+      for (let i = 0; i < c.frames.length; i++) {
+        const r = renderAnimal(def, c as never, i); let n = 0;
+        for (let q = 3; q < r.data.length; q += 4) if (r.data[q] > 0) n++;
+        if (n < 20) empty.push(`${clip}[${i}]`);
+      }
+    }
+    ok(empty.length === 0, `species ${sp} draws in every clip${empty.length ? ' — empty: ' + empty.slice(0, 4).join(', ') : ''}`);
+  }
 }
 {
   // a wolf does not walk into firelight, but hunts a villager away from it at night
@@ -605,8 +818,11 @@ function stage(seed = 1337) { // a village with its villagers fed, the map revea
 {
   const { sm, c, tribe, foe } = stage();
   const v = firstVillager(sm); v.x = c.x + 0.5; v.y = c.y + 0.5; v.weapon = 'mace'; v.stats.str = 12; foe.health = foe.maxHealth = 40;
+  const plain = sm.villagers[1];
+  ok(sm.orderAttack([plain.id], { kind: 'unit', id: foe.id }) === 0 && plain.job !== 'fight', 'right click on a foe gives a plain villager no job: soldiers are made at the campfire');
+  sm.enlist([v.id]);
   sm.orderAttack([v.id], { kind: 'unit', id: foe.id });
-  ok(v.job === 'fight' && v.fight.mode === 'attack', 'right click on a foe makes the villager a fighter attacking it');
+  ok(v.job === 'fight' && v.fight.mode === 'attack', 'right click on a foe sends a soldier to attack it');
   run(sm, 25);
   ok(foe.health <= 0 || !sm.foes.includes(foe), 'the foe went down under a stone mace');
   ok(!tribe.unitIds.includes(foe.id) && tribe.relation < -60, `killing a warrior costs relations (${tribe.relation})`);
@@ -649,7 +865,7 @@ function stage(seed = 1337) { // a village with its villagers fed, the map revea
 {
   // hold keeps position, stop cancels, retreat avoids, defensive does not chase
   const { sm, c, foe } = stage();
-  const v = firstVillager(sm); v.x = c.x + 0.5; v.y = c.y + 0.5; foe.x = c.x + 7.5; foe.y = c.y + 0.5; foe.ai!.camp = { x: foe.x, y: foe.y };
+  const v = firstVillager(sm); v.x = c.x + 0.5; v.y = c.y + 0.5; foe.x = c.x + 7.5; foe.y = c.y + 0.5; foe.ai!.camp = { x: foe.x, y: foe.y }; foe.speed = 0.4; sm.enlist([v.id]); // a slow foe: the test is about not chasing, not about how fast it comes
   sm.orderHold([v.id]); const home = { x: v.x, y: v.y }; run(sm, 3);
   ok(v.fight.mode === 'hold' && dist(v, home) < 0.3, 'a unit told to hold does not chase a foe 7 tiles away');
   sm.setStance([v.id], 'retreat'); foe.x = c.x + 2.5; run(sm, 4);
@@ -660,8 +876,9 @@ function stage(seed = 1337) { // a village with its villagers fed, the map revea
   // attack-move walks and fights on the way; shift queues orders
   const { sm, c, foe } = stage();
   const v = firstVillager(sm); v.x = c.x - 6.5; v.y = c.y + 0.5; v.weapon = 'mace'; v.stats.str = 12; foe.health = foe.maxHealth = 30; foe.x = c.x; foe.y = c.y + 0.5; foe.ai!.camp = { x: foe.x, y: foe.y };
-  sm.orderAttackMove([v.id], c.x + 6, c.y);
-  ok(v.job === 'fight' && v.fight.mode === 'attackMove', 'attack-move turns the unit into a fighter on the march');
+  sm.orderAttackMove([v.id], c.x + 6, c.y); ok(v.fight.mode === 'none', 'attack-move is for soldiers only: a plain villager does not march to war');
+  sm.enlist([v.id]); sm.orderAttackMove([v.id], c.x + 6, c.y);
+  ok(v.job === 'fight' && v.fight.mode === 'attackMove', 'attack-move sends a soldier on the march');
   run(sm, 30);
   ok(foe.health <= 0 || !sm.foes.includes(foe), 'the unit fought the foe it met on the way');
   ok(dist(v, { x: c.x + 6, y: c.y }) < 3, 'then carried on to the destination');
@@ -735,7 +952,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   // holding their fire for 30 seconds, with nobody left to defend it, makes them surrender
   const sm = mk(1337); reveal(sm); day(sm); const t = tribeById(sm, 'axe'); t.relation = -60;
   for (const f of alive(sm, 'axe')) if (f.ai!.role !== 'civ') { f.x = t.camp.x + 40; f.y = t.camp.y; f.ai!.camp = { x: f.x, y: f.y }; }
-  const v = firstVillager(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; }); v.x = t.camp.x + 0.5; v.y = t.camp.y + 3.5; sm.orderHold([v.id]);
+  const v = firstVillager(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; }); v.x = t.camp.x + 0.5; v.y = t.camp.y + 3.5; sm.enlist([v.id]); sm.orderHold([v.id]);
   run(sm, 20); ok(t.state === 'free', 'still fighting on after 20 seconds');
   run(sm, 15); ok(t.state === 'surrendered', 'they give in once their fire has been held for 30 seconds');
 }
@@ -808,7 +1025,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   // an enemy still hits a civilian who is caught
   const cat = sm.villagers[2]; cat.x = foe.x + 0.6; cat.y = foe.y; cat.path = []; const hp = cat.health; sm.hurt({ kind: 'unit', id: cat.id }, 5, 'crush', { x: foe.x, y: foe.y }, { unit: foe });
   ok(cat.health < hp, 'and enemies can still hurt civilians');
-  const far = sm.villagers[1]; sm.setJob([far.id], 'stone'); far.x = sm.world.start.x + 30; far.y = sm.world.start.y; far.path = [];
+  const far = sm.villagers[1]; sm.discharge([far.id]); sm.setJob([far.id], 'stone'); far.x = sm.world.start.x + 30; far.y = sm.world.start.y; far.path = [];
   foe.x = far.x + 4; foe.y = far.y; run(sm, 1.5);
   ok(far.phase === 'flee' && far.fight.mode === 'none', 'a villager far from home flees to the fire');
 }
@@ -963,8 +1180,8 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(sm.moveBuilding(st.id, sm.buildings[0].x, sm.buildings[0].y) !== null, 'moving onto the campfire is refused');
   ok(sm.moveBuilding(st.id, A[0], A[1]) === null && sm.stock.wood === wood - 2, 'a finished building pays a fifth of its price to move');
   ok(!st.done && st.rebuild && st.level === 1 && sm.capacity() === 30, 'it must be rebuilt and gives no space meanwhile');
-  const t0 = sm.time; run(sm, 15);
-  ok(st.done && sm.time - t0 < 25, 'rebuilding takes about half the original time');
+  const t0 = sm.time; for (let t = 0; t < 120 && !st.done; t += 0.5) run(sm, 0.5);
+  ok(st.done && sm.time - t0 < 0.75 * levelDef(st, 1).buildTime, 'rebuilding takes about half the original time');
   ok(sm.canMove(st, A[0] + 1, A[1]) === null, 'a building may shift by one tile onto its own old ground');
   sm.setJob(ids, 'idle');
   const w2 = sm.stock.wood;

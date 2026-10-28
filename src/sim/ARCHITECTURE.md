@@ -34,13 +34,14 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 | `construction` | Đặt, nâng cấp, dời, phá công trình; công trình cho làng thứ gì (chỗ chứa, dân tối đa, tốc độ xây) | `placeBuilding` `upgradeBuilding` `buildingLock` `popCap` |
 | `economy` | Kho chung: trả chi phí, đổi chác, thức ăn hỏng | `pay` `barter` `syncFood` |
 | `works` | Hàng đợi và tiến độ của nhà nghiên cứu, chế tạo, sửa chữa | `queueResearch` `queueCraft` `tickWorks` |
-| `houses` | Ai làm việc ở nhà nào: đội thợ xây và người trong nhà | `assignCrew` `assignStaff` `releaseStaff` |
+| `houses` | Ai làm việc hoặc ngủ ở nhà nào: đội thợ xây, người trong nhà, người nằm giường | `assignCrew` `assignStaff` `releaseStaff` `sleepIn` `sleepers` |
 | `inventory` | Công cụ, vũ khí, giáp: phát, hao mòn, trả kho, lấy, đặt chế | `assignTool` `repairTool` `assignGear` `planTool` |
-| `commands` | Lệnh của người chơi: đi, làm, đánh, giữ chỗ, đổi nghề | `orderMove` `orderWork` `setJob` |
+| `commands` | Lệnh của người chơi: đi, làm, đánh, giữ chỗ, đổi nghề, tuyển và giải ngũ lính | `orderMove` `orderWork` `setJob` `enlist` `discharge` |
 | `labor` | Việc hằng ngày: thu hoạch, mang vác, xây; máy trạng thái của dân | `think` `doWork` `planBuild` |
 | `movement` | Đi lại: đường đi, bước chân, chỗ đứng, tư thế vẽ | `pathTo` `moveUnit` `animate` |
 | `villagers` | Tạo dân và một ngày của dân: đói, máu, ngủ | `makeVillager` `tickVillager` |
 | `environment` | Đồng hồ, mùa, thời tiết, tầm nhìn | `tickCalendar` `refreshFog` |
+| `rest` | Sức (năng lượng), ngủ, ca làm, đuốc, mệt mỏi tích lũy | `tickEnergy` `shouldSleep` `callUp` `ensureTorch` |
 
 ## Quy tắc (có kiểm tra tự động: `npm run test:arch`)
 
@@ -117,3 +118,34 @@ Hoạt ảnh `hit` (bị trúng đòn), `run` (bỏ chạy) và `down` (ngã) d�
 Kiểu `throw` (lao) mới là bản sao của `thrust` để sẵn chỗ; chưa vũ khí nào dùng.
 
 Muốn **đổi cơ chế chiến đấu** (tốc độ ra đòn, thời điểm trúng, tầm, đạn): thời điểm trúng nằm ở `hit` và `fps` của hoạt ảnh `attack`; chu kỳ giữa hai đòn nằm ở `cycle` của vũ khí; luật tính sát thương ở `src/sim/battle.ts`.
+
+## Nhịp thời gian
+
+Một ngày game là 20 phút thật (`DAY_LENGTH = 1200` giây): 12 phút ban ngày, 8 phút ban đêm. Có hai loại thời gian, để chỉnh riêng:
+
+| Việc | Đơn vị | Chỉnh ở đâu |
+|---|---|---|
+| **Thu hoạch** (gỗ, đá, hái lượm) | giây thật ở tốc độ 1×, cho một đơn vị, dân hệ số 1,0 | `src/data/pace.json` (`gather`, và `bare` = tay không so với có công cụ) |
+| **Xây, chế tạo, sửa, nghiên cứu, hao mòn công cụ, kinh nghiệm** | "giây công": 240 giây công = 1 ngày công, dù ngày dài bao lâu | `buildings.ts` (thời gian xây từng cấp), `tools.ts` (thời gian chế), `weapons.json`, `research.json` |
+
+Giây công trôi với tỷ lệ `PACE.work` (`WORK_DAY / DAY_LENGTH`), nên một ngôi nhà tốn nửa ngày công vẫn tốn nửa ngày dù đổi độ dài ngày. Giao diện hiện chúng bằng ngày (`workDays`).
+
+**Mùa và thời tiết** làm chậm việc ngoài trời (đốn gỗ, đục đá, hái lượm, xây; danh sách `outdoor` trong `pace.json`): hệ số `work` trong `weather.json` (nắng 1, sương 0,95, mưa nhẹ 0,85, mưa to 0,7, giông 0,6, bão 0,45, tuyết 0,6) nhân với `work` trong `seasons.json` (đông 0,8, hạ 1,05). Hái lượm còn nhân thêm `gather` theo mùa. Việc trong nhà (chế tạo, nghiên cứu, sửa) không bị ảnh hưởng. Hệ số `speed` của thời tiết chỉ ảnh hưởng tốc độ đi.
+
+Mốc hiện tại (dân tay không, trời nắng, 12 phút ban ngày): khoảng 32 gỗ, 28 đá, hơn 80 thức ăn; 15 gỗ đầu tiên mất khoảng 3 đến 4 phút. Test `how long gathering takes` giữ các mốc này.
+
+**Nghề chỉ đổi bằng nút.** Chuột phải lên cây, đá, bụi quả, công trường hay thú không bao giờ đổi nghề của ai: người đã có đúng nghề thì đi tới chỗ đó, người khác bị bỏ qua (`orderWork`, `orderAttack`, `orderLoot` trả về số người nhận lệnh). Duy nhất một ngoại lệ: trước khi có Nhà thợ xây thì ai được chuột phải lên nền của nó sẽ dựng nó. **Chiến binh** do đống lửa trại quản lý (tab Lính: `enlist` tuyển, `discharge` giải ngũ và trả vũ khí, giáp về kho); nút nghề và các nhà không đổi được nghề của lính. Nhà dân và Lều chiến binh, như mọi công trình mới, phải nghiên cứu (`house`, `barracks` trong `research.json`) rồi mới xây được.
+
+**Ban đêm:** mọi người ngủ và lệnh lúc đó chờ đến sáng, trừ chiến binh. Dân bạn chọn làm chiến binh hoặc ra lệnh cho chiến binh vào ban đêm thì dậy trực tới sáng (`keepWatch` trong `commands.ts`).
+
+## Sức, ngủ, ca làm và đuốc
+
+Mọi con số ở `src/data/rest.json`; logic ở `src/sim/rest.ts`.
+
+- **Sức (`energy`, 0 đến 100)** tụt khi làm, hồi khi ngủ. Một ngày làm nặng tốn khoảng 40 đến 50 điểm, ca đêm khoảng 30. Mỗi nghề có hệ số riêng (`jobWeight`: đốn gỗ, đục đá nặng nhất, nghiên cứu nhẹ nhất). Dân khỏe (Sức khỏe, Thể lực), tinh thần và máu cao thì tụt chậm và hồi nhanh.
+- **Dưới 20%** dân phải đi ngủ và **không gọi dậy được** tới 50% (hoặc 60% nếu ngã xuống ngủ khi dưới 10%). Trên 20% đang ngủ thì lệnh của người chơi gọi dậy được.
+- **Chiến binh** đánh tới cùng, bất kể sức; xong trận mà sức dưới 10% thì ngủ dài tới 60%.
+- **Ngủ đêm** hồi khoảng 60 điểm mỗi đêm, ngủ ngày một nửa, nhân với chỗ nằm (`sleepAt` trong `rest.json`). Hết sức hay tới giờ ngủ, dân đi bộ tới giường: dân thường tới **Nhà dân** (`house`, hồi ×1), chiến binh tới **Lều chiến binh** (`barracks`, hồi ×1); cấp nhà cao hơn nhân thêm `craftSpeed`. Vào giường là vào trong nhà (`inside`, `phase: sleep`): biến khỏi bản đồ, hiện thành danh sách trong nhà, không có hình ngủ. Chưa có nhà hoặc hết giường (`slots`) thì ngủ trên đất cạnh đống lửa, hồi chỉ ×0,6. Có địch tới gần thì người trong nhà bị đánh thức và ra ngoài.
+- **Ca làm** (`shift`: ban ngày, ban đêm, cả ngày lẫn đêm) do người chơi đặt cho từng dân, mặc định ban ngày. Lệnh giao việc lúc ngoài ca gọi dân dậy nếu họ đủ sức (ban đêm cần đuốc).
+- **Làm việc ban đêm cần đuốc** (cầm tay trái, cháy hết sau 10 phút, vẫn còn thì trả lại kho lúc sáng) và chỉ đạt **70%** hiệu suất; lính canh đêm không cần đuốc. Đuốc làm ở Nhà chế tạo (bản vẽ có sẵn từ đầu), phát tay hoặc tự cấp cho ca đêm từ kho. Người cầm đuốc thấy xa 6 ô và tỏa sáng.
+- **Chống bóc lột:** làm đêm tích lũy `strain` (mệt mỏi). Strain hạ sức tối đa và làm hồi sức chậm, giảm dần khi ngủ đêm; làm ca đêm liên tục thì không kịp hồi.

@@ -115,6 +115,8 @@ export function evict(sim: Sim, b: Building): void {
   if (b.kind === 'builder') for (const v of sim.crew()) { sim.resetTask(v); v.job = 'idle'; }
   if (b.active && (b.kind === 'lab' || b.kind === 'workshop')) { const d = sim.orderDef(b.kind === 'lab' ? 'research' : 'craft', b.active.id); if (d) sim.pay(d.cost, 1); }
   b.active = null;
+  // sleepers are put out of their beds; being tired still, they look for another bed at once
+  for (const v of sim.sleepers(b)) { sim.exitBuilding(v); v.phase = 'idle'; v.target = -1; v.path = []; }
   for (const v of sim.villagers) {
     if (v.target !== b.id) continue;
     if (v.phase === 'goSite' || v.phase === 'build' || v.phase === 'goEquip' || v.phase === 'goStaff' || v.phase === 'goOrder') { if (isStaffJob(v.job)) v.job = 'idle'; sim.resetTask(v); }

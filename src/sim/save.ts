@@ -7,14 +7,14 @@
  *
  * Settings (speed, sound, orientation lock) are not part of a game and live in src/save/settings.ts.
  */
-import { CURRENCY, RES_NAME } from './resources';
+import { CURRENCY, emptyStock, RES_NAME } from './resources';
 import { TRIBES } from './combat';
 import { decode, encode, packRuns, unpackRuns } from './codec';
 import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
@@ -72,7 +72,16 @@ export function toSave(sim: Sim): GameSave {
 }
 
 /** Old saves are brought forward one version at a time. To change the format: bump SAVE_VERSION and add `MIGRATIONS[oldVersion]`. */
-export const MIGRATIONS: Record<number, (data: any) => any> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
+export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disable-line @typescript-eslint/no-explicit-any
+  // 1 -> 2: villagers gained energy, strain, a shift and a torch; the torch blueprint became a known technology
+  1: (d) => {
+    for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) {
+      for (const v of list) { v.energy ??= 100; v.strain ??= 0; v.shift ??= 'day'; v.torch ??= null; v.lockUntil ??= 0; v.lit ??= false; }
+    }
+    if (!d.researched.includes('torch1')) d.researched.push('torch1');
+    return { ...d, version: 2 };
+  },
+};
 
 export function migrate(raw: unknown): GameSave {
   let d = raw as { version?: unknown };
@@ -99,7 +108,7 @@ export function applySave(sim: Sim, data: GameSave): void {
   unpackRuns(data.fog.state, sim.fog.state); sim.fog.version = data.fog.version;
 
   for (const k of SAVED.scalars) target[k] = decode(data.scalars[k]);
-  for (const k of SAVED.records) { const rec = target[k] as Record<string, unknown>; for (const key of Object.keys(rec)) delete rec[key]; Object.assign(rec, decode(data.records[k])); }
+  for (const k of SAVED.records) { const rec = target[k] as Record<string, unknown>; for (const key of Object.keys(rec)) delete rec[key]; Object.assign(rec, k === 'stock' ? emptyStock() : {}, decode(data.records[k])); } // a save from before a material existed has no entry for it: zero
   for (const k of SAVED.lists) { const list = target[k] as unknown[]; list.length = 0; list.push(...decode<unknown[]>(data.lists[k])); }
   sim.researched.clear(); for (const id of data.researched) sim.researched.add(id);
   sim.tribes.length = 0;

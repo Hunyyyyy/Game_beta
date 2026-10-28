@@ -1,3 +1,4 @@
+import { RES_NAME, Res } from '../sim/resources';
 import { animalDef } from '../sim/fauna';
 import { relationLabel, WEAPONS } from '../sim/combat';
 import { h } from './dom';
@@ -13,8 +14,18 @@ export class TargetCard {
       h('div', { class: 'bars' }, h('label', {}, 'Máu', h('i', {}, this.hp))), this.line,
       h('div', { class: 'btns' }, this.attack, this.loot),
     );
-    this.attack.addEventListener('click', () => { const t = c.ctl.inspect; if (t && c.ctl.selected.size) { c.sim.orderAttack([...c.ctl.selected], { kind: t.kind, id: t.id }); c.ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
-    this.loot.addEventListener('click', () => { const t = c.ctl.inspect; if (t && c.ctl.selected.size) { c.sim.orderLoot([...c.ctl.selected], t.id); c.ctl.onChange(); } else c.toast('Hãy chọn dân trước'); });
+    this.attack.addEventListener('click', () => {
+      const t = c.ctl.inspect;
+      if (!t || !c.ctl.selected.size) { c.toast('Hãy chọn dân trước'); return; }
+      if (!c.sim.orderAttack([...c.ctl.selected], { kind: t.kind, id: t.id })) c.toast(t.kind === 'unit' ? 'Chỉ chiến binh mới đánh: tuyển lính ở đống lửa trại' : 'Chỉ Thợ săn hoặc chiến binh mới săn thú');
+      c.ctl.onChange();
+    });
+    this.loot.addEventListener('click', () => {
+      const t = c.ctl.inspect;
+      if (!t || !c.ctl.selected.size) { c.toast('Hãy chọn dân trước'); return; }
+      if (!c.sim.orderLoot([...c.ctl.selected], t.id)) c.toast('Chỉ Thợ săn lột da: giao nghề Thợ săn bằng nút nghề trước');
+      c.ctl.onChange();
+    });
   }
 
   update(): void {
@@ -37,7 +48,7 @@ export class TargetCard {
     this.root.hidden = false;
     this.name.textContent = d.name; this.info.textContent = dead ? 'xác' : { graze: 'đang gặm cỏ', wander: 'đang đi', flee: 'đang chạy trốn', attack: 'đang tấn công', sleep: 'đang ngủ', dead: 'xác' }[a.state];
     this.hp.style.width = `${(Math.max(0, a.hp) / a.maxHp) * 100}%`;
-    this.line.innerHTML = dead ? `Còn <b>${a.meat}</b> thịt · <b>${a.hide}</b> da và xương` : `Máu <b>${Math.ceil(a.hp)}/${a.maxHp}</b> · sát thương <b>${d.damage}</b> · ${d.prey ? 'con mồi' : 'thú dữ'}`;
+    this.line.innerHTML = dead ? `Còn <b>${a.meat}</b> thịt · <b>${a.hide}</b> ${RES_NAME.hide.toLowerCase()}${Object.entries(a.drops ?? {}).filter(([, n]) => (n ?? 0) > 0).map(([r, n]) => ` · <b>${n}</b> ${RES_NAME[r as Res].toLowerCase()}`).join('')}` : `Máu <b>${Math.ceil(a.hp)}/${a.maxHp}</b> · sát thương <b>${d.damage}</b> · ${d.prey ? 'con mồi' : 'thú dữ'}`;
     this.attack.hidden = dead; this.attack.textContent = d.prey ? 'Săn' : 'Tấn công'; this.loot.hidden = !dead;
   }
 }

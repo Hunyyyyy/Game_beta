@@ -54,13 +54,15 @@ button.sm { padding: 2px 8px; min-height: 26px; }
 .kv { display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--muted); font-size: 12px; }
 .kv b { color: var(--fg); font-variant-numeric: tabular-nums; }
 .stars { color: var(--accent); letter-spacing: 1px; }
-.bars { display: grid; grid-template-columns: repeat(4, minmax(56px, 1fr)); gap: 4px 10px; }
+.bars { display: grid; grid-template-columns: repeat(5, minmax(48px, 1fr)); gap: 4px 10px; }
 .bars label { display: grid; gap: 2px; font-size: 11px; color: var(--muted); }
 .bars i { display: block; height: 7px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
 .bars i b { display: block; height: 100%; width: 0; background: var(--good); transition: width .2s; }
 .bars i b.bad { background: var(--bad); }
 .bars i b.mor { background: #6d8fd8; }
 .bars i b.arm { background: #9aa0a4; }
+.bars i b.en { background: #d8b13a; }
+.bars i b.en.low { background: var(--bad); }
 .btns { display: flex; flex-wrap: wrap; gap: 4px; }
 .sub { color: var(--muted); font-size: 12px; margin: 0; }
 /* guidance hides behind a "?" */
@@ -104,7 +106,7 @@ button.vrow.on { background: var(--accent); color: var(--accent-fg); border-colo
 button.vrow.on small { color: var(--accent-fg); }
 .ppane { position: sticky; top: 36px; display: grid; gap: 6px; padding: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
 .picker { display: grid; gap: 2px; padding: 4px 8px; background: var(--panel-2); border-left: 2px solid var(--accent); border-radius: 0 4px 4px 0; }
-.mbody .bars { grid-template-columns: repeat(4, 1fr); }
+.mbody .bars { grid-template-columns: repeat(5, 1fr); }
 #ucard .open { margin-left: auto; }
 
 /* buttons of the tapped building, floating beneath it on the map */
@@ -202,7 +204,12 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
       <span class="res" id="rFood" title="Thức ăn"><i style="background:#c2573a"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rWood" title="Gỗ"><i style="background:#9a6a35"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rStone" title="Đá"><i style="background:#9aa0a4"></i><b>0</b><small>/0</small></span>
-      <span class="res" id="rHide" title="Da và xương"><i style="background:#a0552f"></i><b>0</b><small>/0</small></span>
+      <span class="res" id="rHide" title="Da"><i style="background:#a0552f"></i><b>0</b><small>/0</small></span>
+      <span class="res" id="rBone" title="Xương" hidden><i style="background:#e4dcc4"></i><b>0</b></span>
+      <span class="res" id="rFat" title="Mỡ" hidden><i style="background:#f0e2b0"></i><b>0</b></span>
+      <span class="res" id="rFeather" title="Lông vũ" hidden><i style="background:#7aa0c8"></i><b>0</b></span>
+      <span class="res" id="rTusk" title="Ngà" hidden><i style="background:#fff6e0"></i><b>0</b></span>
+      <span class="res" id="rTorch" title="Đuốc trong kho" hidden><i style="background:#f89628;border-radius:2px 2px 0 0"></i><b>0</b></span>
       <span class="res" id="rCoin" title="Tiền"><i style="background:#e8e0c8;border-radius:50%"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rPop" title="Số dân"><i style="background:#e8c4a0"></i><b>0</b><small>/40</small></span>
     </div>

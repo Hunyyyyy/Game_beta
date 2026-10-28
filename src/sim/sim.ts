@@ -24,7 +24,8 @@ import * as movement from './movement';
 import * as villagers from './villagers';
 import * as environment from './environment';
 import * as save from './save';
-import { LogLine, PlaceResult, Projectile, Sex, Target, Villager } from './model';
+import * as rest from './rest';
+import { LogLine, PlaceResult, Projectile, Sex, Shift, Target, Villager } from './model';
 export * from './model';
 
 export class Sim {
@@ -67,7 +68,7 @@ export class Sim {
   readonly projectiles: Projectile[] = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  readonly dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false };
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
   /** Called when something dies (UI refresh hook). */
@@ -102,6 +103,7 @@ export class Sim {
     this.frnd = mulberry32(seed ^ 0x7f4a7c15);
     this.wrnd = mulberry32(seed ^ 0x5bd1e995);
     RES_NAME.coin = CURRENCY[this.era];
+    this.researched.add('torch1'); // fire is known from the first day: torches can be made as soon as there is a craft house
     this.world.setSeason(this.season);
     this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
     this.resting = isRestTime(this.tod, this.season);
@@ -129,6 +131,34 @@ export class Sim {
   get part(): DayPart { return dayPart(this.tod, this.season); }
   /** Rest hours: mid-dusk to mid-dawn. */
   get restTime(): boolean { return this.resting; }
+  // ---------------------------------------------------------------- energy, shifts and torches
+  /** → rest.sleepLocked */
+  sleepLocked(v: Villager): boolean { return rest.sleepLocked(this, v); }
+  /** → rest.callUp */
+  callUp(v: Villager): boolean { return rest.callUp(this, v); }
+  /** → rest.returnTorch */
+  returnTorch(v: Villager): void { rest.returnTorch(this, v); }
+  /** → rest.giveTorch */
+  giveTorch(ids: readonly number[]): string | null { return rest.giveTorch(this, ids); }
+  /** → rest.torchCount */
+  torchCount(): number { return rest.torchCount(this); }
+  /** → rest.restFactor */
+  restFactor(v: Villager): number { return rest.restFactor(this, v); }
+  /** → rest.shouldSleep */
+  shouldSleep(v: Villager, fighting: boolean): boolean { return rest.shouldSleep(this, v, fighting); }
+  /** → rest.tickEnergy */
+  tickEnergy(v: Villager, dt: number): void { rest.tickEnergy(this, v, dt); }
+  /** → rest.bedsIn */
+  bedsIn(kind: 'barracks' | 'house'): number { return rest.bedsIn(this, kind); }
+  /** → rest.freeBed */
+  freeBed(v: Villager): Building | undefined { return rest.freeBed(this, v); }
+  /** → rest.bedsTaken */
+  bedsTaken(b: Building): number { return rest.bedsTaken(this, b); }
+  /** Choose when a villager works. */
+  setShift(ids: readonly number[], shift: Shift): void { for (const v of this.mine(ids)) v.shift = shift; }
+  /** → rest.maxEnergy */
+  maxEnergy(v: Villager): number { return rest.maxEnergy(this, v); }
+
   // ---------------------------------------------------------------- saving
   /** The whole game as plain JSON data (see save.ts). Settings are not in it. */
   toSave(): save.GameSave { return save.toSave(this); }
@@ -281,6 +311,10 @@ export class Sim {
   enterBuilding(v: Villager): void { return houses.enterBuilding(this, v); }
   /** → houses.exitBuilding */
   exitBuilding(v: Villager): void { return houses.exitBuilding(this, v); }
+  /** → houses.sleepIn */
+  sleepIn(v: Villager, b: Building): void { return houses.sleepIn(this, v, b); }
+  /** → houses.sleepers */
+  sleepers(b: Building): Villager[] { return houses.sleepers(this, b); }
   /** → houses.releaseStaff */
   releaseStaff(ids: readonly number[]): void { return houses.releaseStaff(this, ids); }
 
@@ -310,22 +344,28 @@ export class Sim {
   orderMove(ids: readonly number[], tx: number, ty: number, queue = false): void { return commands.orderMove(this, ids, tx, ty, queue); }
 
   /** → commands.orderWork */
-  orderWork(ids: readonly number[], tx: number, ty: number): string | null { return commands.orderWork(this, ids, tx, ty); }
+  orderWork(ids: readonly number[], tx: number, ty: number): { job: WorkJob; sent: number } | null { return commands.orderWork(this, ids, tx, ty); }
 
   /** → commands.setJob */
   setJob(ids: readonly number[], job: Job): string | null { return commands.setJob(this, ids, job); }
+
+  /** → commands.enlist */
+  enlist(ids: readonly number[]): number { return commands.enlist(this, ids); }
+
+  /** → commands.discharge */
+  discharge(ids: readonly number[]): number { return commands.discharge(this, ids); }
 
   /** → commands.targetAt */
   targetAt(x: number, y: number): { target: Target; kind: 'foe' | 'animal' | 'carcass' } | null { return commands.targetAt(this, x, y); }
 
   /** → commands.orderAttack */
-  orderAttack(ids: readonly number[], target: Target, queue = false): void { return commands.orderAttack(this, ids, target, queue); }
+  orderAttack(ids: readonly number[], target: Target, queue = false): number { return commands.orderAttack(this, ids, target, queue); }
 
   /** → commands.orderAttackMove */
   orderAttackMove(ids: readonly number[], x: number, y: number, queue = false): void { return commands.orderAttackMove(this, ids, x, y, queue); }
 
   /** → commands.orderLoot */
-  orderLoot(ids: readonly number[], animalId: number): void { return commands.orderLoot(this, ids, animalId); }
+  orderLoot(ids: readonly number[], animalId: number): number { return commands.orderLoot(this, ids, animalId); }
 
   /** → commands.orderHold */
   orderHold(ids: readonly number[]): void { return commands.orderHold(this, ids); }

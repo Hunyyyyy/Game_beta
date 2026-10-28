@@ -23,15 +23,18 @@ export function tickCalendar(sim: Sim): void {
     if (sig && sim.nextWeather !== sim.weather) sim.say(sig);
   }
   const rest = isRestTime(sim.tod, sim.season);
-  if (sim.resting && !rest) for (const v of sim.villagers) v.nightOwl = false;
+  if (sim.resting !== rest) for (const v of sim.villagers) { v.nightOwl = false; if (!rest) sim.returnTorch(v); } // dusk and dawn end every call-up; torches go back at dawn
   sim.resting = rest;
 }
 
 // ---------------------------------------------------------------- vòng lặp
+/** How far a villager with a lit torch sees at night (tiles). */
+export const TORCH_VISION = 6;
+
 export function refreshFog(sim: Sim): void {
   const r = visionRadius(sim), fire = fireRadius(sim);
   sim.lastVision = r;
-  const src = sim.villagers.map((v) => ({ x: v.x, y: v.y, r }));
+  const src = sim.villagers.map((v) => ({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r })); // a lit torch sees as far as by day
   for (const b of sim.buildings) if (b.done) { const d = BUILDINGS[b.kind]; src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === 'campfire' ? fire : r }); }
   sim.fog.update(src);
   for (const v of sim.villagers) { v.tx = Math.floor(v.x); v.ty = Math.floor(v.y); }

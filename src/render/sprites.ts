@@ -23,6 +23,12 @@ import toolstoreL3 from '../data/blueprints/stone_age/buildings/toolstore/L3.jso
 import armoryL1 from '../data/blueprints/stone_age/buildings/armory/L1.json';
 import armoryL2 from '../data/blueprints/stone_age/buildings/armory/L2.json';
 import armoryL3 from '../data/blueprints/stone_age/buildings/armory/L3.json';
+import barracksL1 from '../data/blueprints/stone_age/buildings/barracks/L1.json';
+import barracksL2 from '../data/blueprints/stone_age/buildings/barracks/L2.json';
+import barracksL3 from '../data/blueprints/stone_age/buildings/barracks/L3.json';
+import houseL1 from '../data/blueprints/stone_age/buildings/house/L1.json';
+import houseL2 from '../data/blueprints/stone_age/buildings/house/L2.json';
+import houseL3 from '../data/blueprints/stone_age/buildings/house/L3.json';
 import campfireL2 from '../data/blueprints/stone_age/buildings/campfire/L2.json';
 import campfireL3 from '../data/blueprints/stone_age/buildings/campfire/L3.json';
 import campfireL4 from '../data/blueprints/stone_age/buildings/campfire/L4.json';
@@ -94,6 +100,8 @@ const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>
     repair: [repairL1, repairL2, repairL3],
     toolstore: [toolstoreL1, toolstoreL2, toolstoreL3],
     armory: [armoryL1, armoryL2, armoryL3],
+    barracks: [barracksL1, barracksL2, barracksL3],
+    house: [houseL1, houseL2, houseL3],
   },
 };
 const TINTS: Partial<Record<BuildingKind, Record<string, string>>> = {}; // no reused drawings left: every house has its own art
@@ -116,9 +124,20 @@ export class Sprites {
     this.icons.spear1 = make(toolSpearJson, 1).frames[0];
     this.icons.mace2 = make(toolMaceJson, 1).frames[0];
     this.icons.hide1 = make(toolHideArmorJson, 1).frames[0];
+    this.icons.torch1 = this.torchIcon();
     this.nature('spring');
     this.emblems.lab = this.scrollEmblem();
-    this.emblems.builder = this.icons.hammer1; this.emblems.repair = this.icons.hammer2; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1;
+    this.emblems.builder = this.icons.hammer1; this.emblems.repair = this.icons.hammer2; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.barracks = this.icons.spear1;
+  }
+
+  /** A torch 16x16, for the craft list. */
+  private torchIcon(): HTMLCanvasElement {
+    const [c, g] = canvas(16, 16);
+    g.fillStyle = '#2b1d10'; g.fillRect(7, 5, 3, 10);
+    g.fillStyle = '#8a6238'; g.fillRect(8, 6, 1, 9);
+    g.fillStyle = '#3c2418'; g.fillRect(6, 4, 5, 3); g.fillStyle = '#d6be82'; g.fillRect(6, 6, 5, 1);
+    g.fillStyle = '#d64818'; g.fillRect(6, 1, 5, 4); g.fillStyle = '#f89628'; g.fillRect(7, 1, 3, 3); g.fillStyle = '#ffe88c'; g.fillRect(8, 2, 1, 2);
+    return c;
   }
 
   /** A rolled blueprint on a pole: the sign of the research house. */
@@ -221,11 +240,12 @@ export class Sprites {
     // looping animations wrap; one-shot ones (attacks) stop on their last frame
     const frame = def.loop === false ? Math.min(step, def.frames.length - 1) : step % def.frames.length;
     const kind = v.carry?.res ?? 'wood';
-    const key = `${name}|${frame}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : '-'}|${v.armor ?? '-'}`;
+    const flick = v.lit ? Math.floor(v.animClock * 6) % 3 : undefined; // a lit torch flickers through three drawings
+    const key = `${name}|${frame}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : '-'}|${v.armor ?? '-'}|${flick ?? '-'}`;
     let c = this.vcache.get(key);
     if (!c) {
       const [cv, g] = canvas(W, H);
-      g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor)), W, H), 0, 0);
+      g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === undefined ? undefined : { torch: flick })), W, H), 0, 0);
       this.vcache.set(key, cv); c = cv;
     }
     return c;

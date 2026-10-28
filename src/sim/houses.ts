@@ -35,6 +35,7 @@ export function assignCrew(sim: Sim, ids: readonly number[]): string | null {
   let err: string | null = null;
   for (const v of sim.mine(ids)) {
     if (v.job === 'build') continue;
+    if (v.job === 'fight') { err = 'Chiến binh do đống lửa trại quản lý: giải ngũ trước'; continue; }
     if (crew(sim).length >= levelDef(house).slots) { err = `${BUILDINGS.builder.name} cấp ${house.level} chỉ chứa ${levelDef(house).slots} thợ`; continue; }
     sim.resetTask(v); sim.clearCombat(v); v.job = 'build'; v.prefer = -1;
   }
@@ -59,6 +60,7 @@ export function assignStaff(sim: Sim, ids: readonly number[], job: 'craft' | 're
   let err: string | null = null;
   for (const v of sim.mine(ids)) {
     if (v.inside === b.id) { v.job = job; continue; }
+    if (v.job === 'fight') { err = 'Chiến binh do đống lửa trại quản lý: giải ngũ trước'; continue; }
     if (staffCount(sim, b) >= levelDef(b).slots) { err = `${BUILDINGS[b.kind].name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} người`; continue; }
     sim.resetTask(v); sim.clearCombat(v); v.job = job; v.prefer = -1;
     planStaff(sim, v);
@@ -84,7 +86,19 @@ export function enterBuilding(sim: Sim, v: Villager): void {
   sim.say(`${v.name} vào ${BUILDINGS[b.kind].name.toLowerCase()} làm việc.`);
 }
 
-/** Step out of the house the villager works in; the job is the caller's to change. */
+/** Lie down in a bed of the house they came to (the Nhà dân or the Lều chiến binh): out of sight, listed in the house, no sleeping drawing. */
+export function sleepIn(sim: Sim, v: Villager, b: Building): void {
+  v.inside = b.id; v.phase = 'sleep'; v.path = []; v.slide = null; v.target = -1; v.bed = -1;
+  const d = BUILDINGS[b.kind]; v.x = b.x + d.w / 2; v.y = b.y + d.h / 2; v.facing = 'front';
+  sim.fogDirty = true;
+}
+
+/** Villagers asleep inside a house, and those on their way to its beds. */
+export function sleepers(sim: Sim, b: Building): Villager[] {
+  return sim.villagers.filter((v) => (v.phase === 'sleep' && v.inside === b.id) || (v.phase === 'goHome' && v.target === b.id));
+}
+
+/** Step out of the house the villager works or sleeps in; the job is the caller's to change. */
 export function exitBuilding(sim: Sim, v: Villager): void {
   if (v.inside === null) return;
   const b = sim.getBuilding(v.inside);

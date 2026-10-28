@@ -130,11 +130,17 @@ function updateHud(now: number) {
   $('rFood').classList.toggle('warn', spoil > 0);
   $('rFood').title = `Thức ăn. Quả hỏng sau 3 ngày nếu chưa ăn; dân ăn lứa cũ trước.${spoil > 0 ? ` ${spoil} thức ăn sẽ hỏng trong 1 ngày tới.` : ''}`;
   setRes('rWood', sim.stock.wood, cap); setRes('rStone', sim.stock.stone, cap); setRes('rHide', sim.stock.hide, cap); setRes('rCoin', sim.stock.coin, cap); $('rCoin').title = `${RES_NAME.coin}: tiền của làng, nhặt khi hái lượm, đổi hàng ở Kho, nhận từ bộ tộc. Dùng để trả cho nghiên cứu.`;
+  { const el = $('rTorch'), n = sim.torchCount(); el.hidden = n <= 0; if (n > 0) el.querySelector('b')!.textContent = String(n); }
+  for (const [id, res] of [['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk']] as const) {
+    const el = $(id), n = Math.floor(sim.stock[res]);
+    el.hidden = n <= 0; if (n > 0) el.querySelector('b')!.textContent = String(n);
+  }
   $('rPop').querySelector('b')!.textContent = String(sim.villagers.length); $('rPop').querySelector('small')!.textContent = `/${sim.popCap()}`;
   for (const r of RES_LIST) void RES_NAME[r];
   const se = SEASON_DEF[sim.season], we = WEATHER[sim.weather], year = yearOf(sim.day);
   clock.textContent = `${year > 1 ? `Năm ${year} · ` : ''}Ngày ${sim.day} · ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} · ${DAY_PART_NAME[sim.part]} · ${we.name}`;
-  const eff = [we.vision ? `tầm nhìn −${we.vision} ô` : '', we.speed < 1 ? `đi chậm ${Math.round((1 - we.speed) * 100)}%` : ''].filter(Boolean).join(', ');
+  const outdoor = we.work * se.work;
+  const eff = [we.vision ? `tầm nhìn −${we.vision} ô` : '', we.speed < 1 ? `đi chậm ${Math.round((1 - we.speed) * 100)}%` : '', outdoor < 1 ? `làm việc ngoài trời chậm ${Math.round((1 - outdoor) * 100)}%` : ''].filter(Boolean).join(', ');
   $('clockLine').title = `${we.name}${eff ? `: ${eff}` : ''}. Hái lượm mùa ${se.name.toLowerCase()} ×${se.gather.toLocaleString('vi')}. ${Math.round(fps)} fps`;
 
   const lines = sim.log.slice(-4), lk = lines.map((l) => l.text).join('|');

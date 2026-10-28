@@ -1,4 +1,5 @@
 import type { Res } from './resources';
+import paceJson from '../data/pace.json';
 
 export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'repair' | 'hunt' | 'fight';
 export type WorkJob = Exclude<Job, 'idle'>;
@@ -13,14 +14,14 @@ export interface JobDef {
   stat: StatKey;       // chỉ số chính
   res?: Res;           // tài nguyên làm ra
   node?: NodeKind;     // loại nguồn khai thác
-  baseTime: number;    // giây cho 1 đơn vị, dân cấp 0 hệ số 1,0 (chưa tính đi lại)
+  baseTime: number;    // giây thật (tốc độ 1×) để thu 1 đơn vị, dân hệ số 1,0 (chưa tính đi lại); xem src/data/pace.json
   anim: string;        // tên hoạt ảnh khi làm
 }
 
 export const JOBS: Record<WorkJob, JobDef> = {
-  wood: { name: 'Đốn gỗ', stat: 'str', res: 'wood', node: 'tree', baseTime: 12, anim: 'chop' },
-  stone: { name: 'Thợ đá', stat: 'str', res: 'stone', node: 'rock', baseTime: 18, anim: 'mine' },
-  food: { name: 'Hái lượm', stat: 'agi', res: 'food', node: 'bush', baseTime: 7, anim: 'gather' },
+  wood: { name: 'Đốn gỗ', stat: 'str', res: 'wood', node: 'tree', baseTime: paceJson.gather.wood, anim: 'chop' },
+  stone: { name: 'Thợ đá', stat: 'str', res: 'stone', node: 'rock', baseTime: paceJson.gather.stone, anim: 'mine' },
+  food: { name: 'Hái lượm', stat: 'agi', res: 'food', node: 'bush', baseTime: paceJson.gather.food, anim: 'gather' },
   build: { name: 'Thợ xây', stat: 'sta', baseTime: 1, anim: 'build' },
   craft: { name: 'Chế tạo', stat: 'int', baseTime: 1, anim: 'craft' },
   research: { name: 'Nghiên cứu', stat: 'int', baseTime: 1, anim: 'gather' },
@@ -39,3 +40,8 @@ export const XP_LEVELS = [60, 150, 300, 500, 800];
 export const MAX_LEVEL = 5;
 /** Jobs done out on the map by a crew that belongs to a house: builders are the crew of the Nhà thợ xây. */
 export const CREW_BUILDING = { build: 'builder' } as const;
+
+/** How bare hands compare with a good tool for a job (1 = just as good). */
+export const BARE_HANDS = paceJson.bare as Partial<Record<WorkJob, number>>;
+/** Jobs done in the open, which weather and season slow down. */
+export const OUTDOOR_JOBS = paceJson.outdoor as WorkJob[];

@@ -203,233 +203,85 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
   // src/data/handtools/club.json
   var club_default = {
     name: "Club",
-    handle: {
-      length: 8,
-      width: 2,
-      color: "wood"
-    },
+    handle: { length: 8, width: 2, color: "wood" },
     head: [
-      {
-        x: -1,
-        y: -1,
-        w: 4,
-        h: 5,
-        color: "head"
-      },
-      {
-        x: -1,
-        y: -1,
-        w: 4,
-        h: 1,
-        color: "light"
-      },
-      {
-        x: 2,
-        y: 0,
-        w: 1,
-        h: 4,
-        color: "dark"
-      }
+      { x: 0, y: -4, w: 2, h: 1, color: "head" },
+      { x: -1, y: -3, w: 4, h: 6, color: "head" },
+      { x: 0, y: -4, w: 2, h: 1, color: "light" },
+      { x: -1, y: -3, w: 1, h: 3, color: "light" },
+      { x: 2, y: -3, w: 1, h: 6, color: "dark" }
     ]
   };
 
   // src/data/handtools/spear.json
   var spear_default = {
     name: "Spear",
-    handle: {
-      length: 14,
-      width: 1,
-      color: "wood"
-    },
+    handle: { length: 14, width: 1, color: "wood" },
     head: [
-      {
-        x: 0,
-        y: -3,
-        w: 1,
-        h: 3,
-        color: "head"
-      },
-      {
-        x: -1,
-        y: -1,
-        w: 3,
-        h: 2,
-        color: "head"
-      },
-      {
-        x: 0,
-        y: -3,
-        w: 1,
-        h: 1,
-        color: "light"
-      },
-      {
-        x: 1,
-        y: 0,
-        w: 1,
-        h: 1,
-        color: "dark"
-      }
+      { x: 0, y: -5, w: 1, h: 2, color: "head" },
+      { x: -1, y: -3, w: 3, h: 3, color: "head" },
+      { x: 0, y: -5, w: 1, h: 1, color: "light" },
+      { x: -1, y: -3, w: 1, h: 2, color: "light" },
+      { x: 1, y: -2, w: 1, h: 2, color: "dark" },
+      { x: -1, y: 0, w: 3, h: 1, color: "dark" }
     ]
   };
 
   // src/data/handtools/mace.json
   var mace_default = {
     name: "Mace",
-    handle: {
-      length: 8,
-      width: 2,
-      color: "wood"
-    },
+    handle: { length: 8, width: 2, color: "wood" },
     head: [
-      {
-        x: -2,
-        y: -2,
-        w: 6,
-        h: 6,
-        color: "head"
-      },
-      {
-        x: -2,
-        y: -2,
-        w: 6,
-        h: 1,
-        color: "light"
-      },
-      {
-        x: 3,
-        y: -1,
-        w: 1,
-        h: 5,
-        color: "dark"
-      },
-      {
-        x: -3,
-        y: 0,
-        w: 1,
-        h: 2,
-        color: "dark"
-      },
-      {
-        x: 4,
-        y: 0,
-        w: 1,
-        h: 2,
-        color: "dark"
-      }
+      { x: -2, y: -1, w: 6, h: 4, color: "head" },
+      { x: -1, y: -2, w: 4, h: 6, color: "head" },
+      { x: 0, y: -4, w: 2, h: 2, color: "head" },
+      { x: -3, y: 0, w: 1, h: 2, color: "head" },
+      { x: 4, y: 0, w: 1, h: 2, color: "head" },
+      { x: -1, y: -2, w: 4, h: 1, color: "light" },
+      { x: -2, y: -1, w: 1, h: 2, color: "light" },
+      { x: 0, y: -4, w: 1, h: 1, color: "light" },
+      { x: 3, y: -1, w: 1, h: 4, color: "dark" },
+      { x: -1, y: 3, w: 4, h: 1, color: "dark" }
     ]
   };
 
   // src/data/handtools/hatchet.json
   var hatchet_default = {
     name: "Hatchet",
-    handle: {
-      length: 9,
-      width: 1,
-      color: "wood"
-    },
+    handle: { length: 9, width: 1, color: "wood" },
     head: [
-      {
-        x: -1,
-        y: 0,
-        w: 2,
-        h: 3,
-        color: "dark"
-      },
-      {
-        x: 1,
-        y: -1,
-        w: 3,
-        h: 4,
-        color: "head"
-      },
-      {
-        x: 1,
-        y: -1,
-        w: 3,
-        h: 1,
-        color: "light"
-      },
-      {
-        x: 4,
-        y: 0,
-        w: 1,
-        h: 3,
-        color: "dark"
-      }
+      { x: -1, y: 0, w: 2, h: 3, color: "dark" },
+      { x: 1, y: -1, w: 3, h: 4, color: "head" },
+      { x: 1, y: -1, w: 3, h: 1, color: "light" },
+      { x: 4, y: -2, w: 1, h: 6, color: "light" },
+      { x: 3, y: 1, w: 1, h: 2, color: "dark" }
     ]
   };
 
   // src/data/handtools/sling.json
   var sling_default = {
     name: "Sling",
-    handle: {
-      length: 4,
-      width: 1,
-      color: "wood"
-    },
+    handle: { length: 5, width: 1, color: "wood" },
     head: [
-      {
-        x: -1,
-        y: -2,
-        w: 3,
-        h: 3,
-        color: "head"
-      },
-      {
-        x: -1,
-        y: -2,
-        w: 3,
-        h: 1,
-        color: "light"
-      }
+      { x: 0, y: -3, w: 1, h: 3, color: "dark" },
+      { x: -1, y: -4, w: 3, h: 2, color: "dark" },
+      { x: -1, y: -7, w: 3, h: 3, color: "head" },
+      { x: -1, y: -7, w: 2, h: 1, color: "light" },
+      { x: 1, y: -5, w: 1, h: 1, color: "dark" }
     ]
   };
 
   // src/data/handtools/bow.json
   var bow_default = {
     name: "Bow",
-    handle: {
-      length: 5,
-      width: 1,
-      color: "wood"
-    },
+    handle: { length: 5, width: 1, color: "wood" },
     head: [
-      {
-        x: 1,
-        y: -3,
-        w: 1,
-        h: 3,
-        color: "wood"
-      },
-      {
-        x: 2,
-        y: -6,
-        w: 1,
-        h: 3,
-        color: "wood"
-      },
-      {
-        x: 1,
-        y: 5,
-        w: 1,
-        h: 3,
-        color: "wood"
-      },
-      {
-        x: 2,
-        y: 8,
-        w: 1,
-        h: 3,
-        color: "wood"
-      },
-      {
-        x: -1,
-        y: -6,
-        w: 1,
-        h: 17,
-        color: "light"
-      }
+      { x: 0, y: 1, w: 1, h: 3, color: "dark" },
+      { x: -1, y: -3, w: 1, h: 3, color: "wood" },
+      { x: -2, y: -6, w: 1, h: 3, color: "wood" },
+      { x: -1, y: 5, w: 1, h: 3, color: "wood" },
+      { x: -2, y: 8, w: 1, h: 3, color: "wood" },
+      { x: -3, y: -6, w: 1, h: 17, color: "light" }
     ]
   };
 
@@ -760,7 +612,20 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
     rect(b, x0, y0, w, h, C[wr.color] || hexRgb(wr.color));
     if (wr.edge) rect(b, x0, y0, w, 1, C[wr.edge] || hexRgb(wr.edge));
   }
-  function drawCharacter(b, view, f, P, sex, ov, armorId) {
+  function drawTorch(b, hx, hy, flick) {
+    const x = Math.round(hx), y = Math.round(hy);
+    const wood = [120, 84, 46, 255], bind = [214, 190, 130, 255], coal = [60, 36, 24, 255];
+    const flameD = [214, 72, 24, 255], flame = [248, 150, 40, 255], core = [255, 232, 140, 255];
+    rect(b, x, y - 6, 1, 7, wood);
+    rect(b, x - 1, y - 8, 3, 3, coal);
+    rect(b, x - 1, y - 6, 3, 1, bind);
+    const sway = [0, 1, -1][flick % 3], tall = [3, 4, 3][flick % 3];
+    rect(b, x - 1 + sway, y - 11 - tall + 3, 3, tall, flameD);
+    rect(b, x + sway, y - 11 - tall + 4, 1, tall - 1, flame);
+    put(b, x + sway, y - 9 - tall + 4, core);
+    if (flick % 3 === 1) put(b, x - 2, y - 12, [255, 208, 112, 200]);
+  }
+  function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
     const AD = armorId && armors[armorId], AC = AD ? armorColors(AD, P) : null;
     const side = view === "side", back = view === "back", front = view === "front";
     const bob = f.bob || 0, lean = f.lean || 0;
@@ -827,6 +692,7 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
       if (carry) bundle();
       arm(pR2, P.skin);
       if (tool) axe(pR2.hx, pR2.hy);
+      if (extra && extra.torch !== void 0) drawTorch(b, pL2.hx, pL2.hy, extra.torch);
       return;
     }
     const pR = armPts(f.armR, front ? CX - 5.5 : CX + 5.5);
@@ -848,6 +714,7 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
         arm(pL, P.skin);
       }
     }
+    if (extra && extra.torch !== void 0) drawTorch(b, pL.hx + (front ? 1 : -1), pL.hy, extra.torch);
   }
   function outline(b, c) {
     const o = new Uint8ClampedArray(b);
@@ -932,14 +799,14 @@ textarea{flex:1;min-height:0;width:100%;resize:none;background:#101010;color:#cd
     }
     return packPixels(list);
   }
-  function renderFrame(anims2, name, idx, view, look2, kind, toolOv, armorId) {
+  function renderFrame(anims2, name, idx, view, look2, kind, toolOv, armorId, extra) {
     lastAnchor = null;
     const an = anims2[name];
     const f = an.frames[(idx % an.frames.length + an.frames.length) % an.frames.length];
     const P = palette(look2, kind);
     const b = new Uint8ClampedArray(W * H * 4);
     const v = view === "left" || view === "right" ? "side" : view;
-    drawCharacter(b, v, f, P, look2.sex, toolOv, armorId);
+    drawCharacter(b, v, f, P, look2.sex, toolOv, armorId, extra);
     const o = outline(b, P.line);
     shadow(o, v === "side" ? 1 : 0);
     return view === "left" ? flipH(o) : o;

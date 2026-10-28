@@ -179,7 +179,7 @@ const prepare = (p) => p.evaluate(() => {
     await p.mouse.move(spotL.x, spotL.y, { steps: 3 }); await p.mouse.click(spotL.x, spotL.y); await p.waitForTimeout(250);
     await state(p, () => { const g = window.__game; g.ctl.selectBuilding(g.sim.buildings.find((x) => x.kind === 'lab').id, true); });
     await p.waitForTimeout(250);
-    ok(await p.evaluate(() => document.querySelectorAll('#bpanel .tech').length) === 18, 'the research house lists every blueprint and step');
+    ok(await p.evaluate(() => document.querySelectorAll('#bpanel .tech').length) === 19, 'the research house lists every blueprint and step');
     await p.evaluate(() => { const r = [...document.querySelectorAll('#bpanel .tech')].find((x) => x.textContent.includes('Bản vẽ Búa gỗ')); [...r.querySelectorAll('button')].pop().click(); });
     ok(await state(p, () => window.__game.sim.researchQueue.includes('hammer1')), 'starting a blueprint queues it');
     await p.waitForTimeout(300);

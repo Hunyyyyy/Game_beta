@@ -1,5 +1,6 @@
 import { BuildingKind, BUILDINGS, needsWork } from '../sim/buildings';
 import { TILE } from '../sim/constants';
+import { JOB_NAME } from '../sim/jobs';
 import type { Sim } from '../sim/sim';
 import type { Box, Camera, Ghost, Marker, Renderer } from '../render/renderer';
 
@@ -326,20 +327,29 @@ export class Controller {
   command(p: { x: number; y: number }, queue = false): void {
     if (!this.selected.size) return;
     const w = this.r.screenToWorld(p.x, p.y), ids = [...this.selected];
+    const worn = ids.filter((id) => { const o = this.sim.get(id); return !!o && this.sim.sleepLocked(o); });
+    if (worn.length === ids.length) { this.onToast(ids.length > 1 ? 'Họ đang ngủ say, chưa gọi dậy được' : `${this.sim.get(ids[0])?.name} đang ngủ say, chưa gọi dậy được`); return; }
     // an enemy, an animal or a carcass under the cursor beats ground orders
     const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
     if (seen) {
-      if (seen.kind === 'carcass') { this.sim.orderLoot(ids, seen.target.id); this.onToast('Lột da, lấy thịt'); }
-      else { this.sim.orderAttack(ids, seen.target, queue); this.onToast(seen.kind === 'foe' ? 'Tấn công' : 'Săn'); }
+      // a click never gives anyone a job: only soldiers fight and only hunters hunt, the rest are told how to get the job
+      if (seen.kind === 'carcass') {
+        const n = this.sim.orderLoot(ids, seen.target.id);
+        this.onToast(n ? 'Lột da, lấy thịt' : 'Chỉ Thợ săn lột da: giao nghề Thợ săn bằng nút nghề trước');
+      } else {
+        const n = this.sim.orderAttack(ids, seen.target, queue);
+        this.onToast(n ? (seen.kind === 'foe' ? 'Tấn công' : 'Săn') : seen.kind === 'foe' ? 'Chỉ chiến binh mới đánh: tuyển lính ở đống lửa trại' : 'Chỉ Thợ săn hoặc chiến binh mới săn thú: giao nghề Thợ săn bằng nút nghề trước');
+      }
       this.markers.push({ x: w.x, y: w.y, age: 0 }); this.onChange(); return;
     }
     const { x: tx, y: ty } = this.pickTile(w.x, w.y);
     if (!this.sim.world.inBounds(tx, ty)) return;
-    const job = this.sim.orderWork(ids, tx, ty);
-    if (job) this.onToast(`${job}`);
+    // a tree, rock, bush or building site: those who already have that job go to it; a click gives no one a job
+    const work = this.sim.orderWork(ids, tx, ty);
+    if (work) this.onToast(work.sent ? JOB_NAME[work.job] : work.job === 'build' ? 'Chỉ thợ xây của Nhà thợ xây mới xây: chọn thợ ở nhà đó' : `Chưa là ${JOB_NAME[work.job].toLowerCase()}: giao nghề bằng nút nghề trước`);
     else this.sim.orderMove(ids, tx, ty, queue);
     this.markers.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, age: 0 });
-    this.releaseCivilians(queue);
+    if (work?.sent) this.releaseCivilians(queue); // a job lets the villager go; plain moves keep them chosen so they can be sent on again
     this.onChange();
   }
 

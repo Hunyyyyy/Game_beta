@@ -41,7 +41,7 @@ export const buildingOpen = (done: ReadonlySet<string>, kind: BuildingKind): boo
 /** Whether an automation is switched on: 'fetch' (villagers fetch tools from the stores) or 'order' (they order crafting and repair). */
 export const autoOn = (done: ReadonlySet<string>, key: string): boolean => !RESEARCH.enabled || TECHS.some((t) => done.has(t.id) && t.unlocks.auto?.includes(key));
 
-const KIND_NAME: Partial<Record<BuildingKind, string>> = { storage: 'Kho', workshop: 'Nhà chế tạo', lab: 'Nhà nghiên cứu', repair: 'Nhà sửa chữa', toolstore: 'Kho công cụ', armory: 'Kho vũ khí' };
+const KIND_NAME: Partial<Record<BuildingKind, string>> = { storage: 'Kho', workshop: 'Nhà chế tạo', lab: 'Nhà nghiên cứu', repair: 'Nhà sửa chữa', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', barracks: 'Lều chiến binh', house: 'Nhà dân' };
 /** What a tech unlocks, as a short Vietnamese phrase for the UI. */
 export const unlockText = (t: Tech, recipeName: (id: string) => string): string => {
   const parts = [...(t.unlocks.recipes ?? []).map(recipeName)];

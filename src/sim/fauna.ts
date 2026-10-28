@@ -1,4 +1,5 @@
 import { ANIMALS, BEHAVIOUR, Species, SPECIES, zoneOf, type AnimalDef } from './combat';
+import type { Res } from './resources';
 import { hash2 } from './rng';
 import type { Sim, Target } from './sim';
 import { Tile } from './world';
@@ -31,6 +32,8 @@ export interface Animal {
   // carcass
   meat: number;
   hide: number;
+  /** Bone, fat, feathers and the like still on the body. */
+  drops: Partial<Record<Res, number>>;
   carcass: number;       // seconds the body lasts
 }
 
@@ -73,7 +76,7 @@ export function spawnAnimal(sim: Sim, species: Species, x: number, y: number, he
   const a: Animal = {
     id: sim.nextAid++, species, x, y, hp: def.hp, maxHp: def.hp, state: 'graze', dir: sim.frnd() < 0.5 ? 1 : -1, dest: null,
     timer: 2 + sim.frnd() * 6, cd: 0, scan: sim.frnd() * 0.5, target: null, herd, home: { x, y }, burst: 0, tired: 0,
-    female: sim.frnd() < 0.5, raid, bite: 0, clock: sim.frnd() * 10, meat: 0, hide: 0, carcass: 0,
+    female: sim.frnd() < 0.5, raid, bite: 0, clock: sim.frnd() * 10, meat: 0, hide: 0, drops: {}, carcass: 0,
   };
   sim.animals.push(a); sim.animalById.set(a.id, a);
   return a;
@@ -145,7 +148,7 @@ export function tickAnimals(sim: Sim, dt: number): void {
     a.clock += dt;
     if (a.state === 'dead') {
       a.carcass -= dt;
-      if (a.carcass <= 0 || (a.meat <= 0 && a.hide <= 0)) { sim.animals.splice(i, 1); sim.animalById.delete(a.id); }
+      if (a.carcass <= 0 || carcassEmpty(a)) { sim.animals.splice(i, 1); sim.animalById.delete(a.id); }
       continue;
     }
     const def = animalDef(a);
@@ -231,10 +234,13 @@ export function breed(sim: Sim): void {
   }
 }
 
+/** Nothing left on the body worth skinning. */
+export const carcassEmpty = (a: Animal): boolean => a.meat <= 0 && a.hide <= 0 && !Object.values(a.drops ?? {}).some((n) => (n ?? 0) > 0);
+
 /** Turn a killed animal into a carcass that hunters can skin. */
 export function die(sim: Sim, a: Animal): void {
   const def = animalDef(a);
-  a.state = 'dead'; a.hp = 0; a.target = null; a.meat = def.meat; a.hide = def.hide; a.carcass = BEHAVIOUR.carcassSeconds;
+  a.state = 'dead'; a.hp = 0; a.target = null; a.meat = def.meat; a.hide = def.hide; a.drops = { ...(def.drops ?? {}) }; a.carcass = BEHAVIOUR.carcassSeconds;
 }
 
 void hash2;

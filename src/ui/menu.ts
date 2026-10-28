@@ -57,6 +57,8 @@ export class Menu {
     const ROLE: Partial<Record<BuildingKind, string>> = {
       builder: 'Dân làm thợ xây ở đây (do bạn chọn). Phải có nhà này mới dựng được các công trình khác.', storage: 'Cất tài nguyên.', lab: 'Nghiên cứu bản vẽ, mở công trình và tự động hóa. Dân thông minh làm việc bên trong.',
       workshop: 'Chế tạo công cụ, vũ khí, giáp theo bản vẽ. Dân làm việc bên trong.', repair: 'Sửa công cụ đã mòn. Dân làm việc bên trong.',
+      barracks: 'Chiến binh ngủ ở đây (vào lều, hiện thành danh sách) và hồi sức nhanh hơn nằm cạnh đống lửa. Mỗi cấp thêm giường. Cần nghiên cứu mới xây được.',
+      house: 'Dân thường ngủ ở đây (vào nhà, hiện thành danh sách) và hồi sức đầy đủ. Không có nhà hoặc hết giường thì dân ngủ cạnh đống lửa, hồi sức chậm hơn. Cần nghiên cứu mới xây được.',
       toolstore: 'Cất công cụ cho dân tự lấy.', armory: 'Cất vũ khí và giáp cho dân tự lấy.',
     };
     for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
@@ -162,7 +164,7 @@ export class Menu {
     page.append(hint('Tài nguyên', 'Công cụ dev để thử game nhanh, không dùng khi chơi thật.'));
     for (const res of RES_LIST) page.append(row(RES_NAME[res], btn('−10', () => dev.addStock(sim, res, -10)), btn('+10', () => dev.addStock(sim, res, 10)), btn('+50', () => dev.addStock(sim, res, 50)), btn('+200', () => dev.addStock(sim, res, 200))));
     page.append(row('Kho', btn('Đầy kho', () => dev.fillStock(sim))), h('div', { class: 'devrow' }, toggle('Xây miễn phí', 'freeBuild', 'Không tốn vật liệu khi xây và nâng cấp'), toggle('Xây tức thì', 'instantBuild', 'Công trình xong ngay'),
-      toggle('Bất tử', 'god', 'Dân không nhận sát thương'), toggle('Không đói', 'noHunger', 'Dân không bị đói'), toggle('Làm việc nhanh ×25', 'fastWorks', 'Nghiên cứu, chế tạo, sửa chữa nhanh gấp 25 lần')), h('div', { class: 'devrow' }, btn('Khám phá toàn bản đồ', () => dev.revealMap(sim))));
+      toggle('Bất tử', 'god', 'Dân không nhận sát thương'), toggle('Không đói', 'noHunger', 'Dân không bị đói'), toggle('Không mệt', 'noTire', 'Sức của dân không tụt khi làm việc'), toggle('Làm việc nhanh ×25', 'fastWorks', 'Nghiên cứu, chế tạo, sửa chữa nhanh gấp 25 lần')), h('div', { class: 'devrow' }, btn('Khám phá toàn bản đồ', () => dev.revealMap(sim))));
 
     const rsec = h('div', {}, h('h3', { text: 'Nghiên cứu' }), h('div', { class: 'devrow' }, btn('Mở hết nghiên cứu', () => dev.unlockResearch(sim), 'Mọi công thức và cấp công trình'), btn('Khóa lại hết', () => dev.resetResearch(sim))));
     page.append(rsec); this.updaters.push(() => { rsec.hidden = !RESEARCH.enabled; });

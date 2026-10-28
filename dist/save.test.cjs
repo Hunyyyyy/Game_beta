@@ -121,22 +121,22 @@ var PACE = { work: WORK_DAY / DAY_LENGTH };
 
 // src/data/seasons.json
 var seasons_default = {
-  spring: { name: "Xu\xE2n", daylight: 0.6, gather: 0.8, enter: "M\xF9a xu\xE2n \u0111\u1EBFn: b\u1EE5i c\xE2y ra hoa, v\xE0i h\xF4m n\u1EEFa s\u1EBD c\xF3 qu\u1EA3. Hay m\u01B0a." },
-  summer: { name: "H\u1EA1", daylight: 0.6, gather: 1.2, enter: "M\xF9a h\u1EA1: ng\xE0y d\xE0i h\u01A1n, qu\u1EA3 ch\xEDn nhi\u1EC1u. Coi ch\u1EEBng gi\xF4ng s\xE9t." },
-  autumn: { name: "Thu", daylight: 0.6, gather: 1.4, enter: "M\xF9a thu: qu\u1EA3 nhi\u1EC1u nh\u1EA5t n\u0103m. M\xF9a \u0111\xF4ng s\u1EAFp t\u1EDBi, h\xE3y chu\u1EA9n b\u1ECB." },
-  winter: { name: "\u0110\xF4ng", daylight: 0.6, gather: 0, enter: "M\xF9a \u0111\xF4ng: b\u1EE5i qu\u1EA3 tr\u1EE5i h\u1EBFt, ng\xE0y ng\u1EAFn l\u1EA1i. S\u1ED1ng b\u1EB1ng th\u1EE9c \u0103n \u0111\xE3 t\xEDch tr\u1EEF." }
+  spring: { name: "Xu\xE2n", daylight: 0.6, work: 1, gather: 0.8, enter: "M\xF9a xu\xE2n \u0111\u1EBFn: b\u1EE5i c\xE2y ra hoa, v\xE0i h\xF4m n\u1EEFa s\u1EBD c\xF3 qu\u1EA3. Hay m\u01B0a." },
+  summer: { name: "H\u1EA1", daylight: 0.6, work: 1.05, gather: 1.2, enter: "M\xF9a h\u1EA1: ng\xE0y d\xE0i h\u01A1n, qu\u1EA3 ch\xEDn nhi\u1EC1u. Coi ch\u1EEBng gi\xF4ng s\xE9t." },
+  autumn: { name: "Thu", daylight: 0.6, work: 1, gather: 1.4, enter: "M\xF9a thu: qu\u1EA3 nhi\u1EC1u nh\u1EA5t n\u0103m. M\xF9a \u0111\xF4ng s\u1EAFp t\u1EDBi, h\xE3y chu\u1EA9n b\u1ECB." },
+  winter: { name: "\u0110\xF4ng", daylight: 0.6, work: 0.8, gather: 0, enter: "M\xF9a \u0111\xF4ng: b\u1EE5i qu\u1EA3 tr\u1EE5i h\u1EBFt, ng\xE0y ng\u1EAFn l\u1EA1i. S\u1ED1ng b\u1EB1ng th\u1EE9c \u0103n \u0111\xE3 t\xEDch tr\u1EEF." }
 };
 
 // src/data/weather.json
 var weather_default = {
   types: {
-    clear: { name: "N\u1EAFng", vision: 0, speed: 1, signal: "" },
-    mist: { name: "S\u01B0\u01A1ng m\u1ECFng", vision: 2, speed: 1, signal: "H\u01A1i n\u01B0\u1EDBc b\u1ED1c l\xEAn t\u1EEB \u0111\u1EA5t, s\xE1ng mai c\xF3 l\u1EBD s\u1EBD c\xF3 s\u01B0\u01A1ng." },
-    drizzle: { name: "M\u01B0a nh\u1EB9", vision: 0, speed: 0.9, signal: "M\xE2y x\xE1m k\xE9o t\u1EDBi, c\xF3 l\u1EBD ng\xE0y mai m\u01B0a." },
-    rain: { name: "M\u01B0a to", vision: 1, speed: 0.75, signal: "Tr\u1EDDi t\u1ED1i s\u1EA7m, gi\xF3 \u1EA9m n\u1ED5i l\xEAn: ng\xE0y mai m\u01B0a to." },
-    thunder: { name: "Gi\xF4ng s\xE9t", vision: 3, speed: 0.85, signal: "Kh\xF4ng kh\xED oi n\u1ED3ng, m\xE2y d\u1EF1ng th\xE0nh th\xE1p: s\u1EAFp c\xF3 gi\xF4ng." },
-    storm: { name: "B\xE3o", vision: 4, speed: 0.7, signal: "Gi\xF3 gi\u1EADt m\u1EA1nh, chim bay t\xE1n lo\u1EA1n: b\xE3o \u0111ang t\u1EDBi." },
-    snow: { name: "Tuy\u1EBFt", vision: 1, speed: 0.75, signal: "Gi\xF3 l\u1EA1nh bu\u1ED1t th\u1ED5i v\u1EC1, c\xF3 l\u1EBD s\u1EAFp c\xF3 tuy\u1EBFt." }
+    clear: { name: "N\u1EAFng", vision: 0, speed: 1, work: 1, signal: "" },
+    mist: { name: "S\u01B0\u01A1ng m\u1ECFng", vision: 2, speed: 1, work: 0.95, signal: "H\u01A1i n\u01B0\u1EDBc b\u1ED1c l\xEAn t\u1EEB \u0111\u1EA5t, s\xE1ng mai c\xF3 l\u1EBD s\u1EBD c\xF3 s\u01B0\u01A1ng." },
+    drizzle: { name: "M\u01B0a nh\u1EB9", vision: 0, speed: 0.9, work: 0.85, signal: "M\xE2y x\xE1m k\xE9o t\u1EDBi, c\xF3 l\u1EBD ng\xE0y mai m\u01B0a." },
+    rain: { name: "M\u01B0a to", vision: 1, speed: 0.75, work: 0.7, signal: "Tr\u1EDDi t\u1ED1i s\u1EA7m, gi\xF3 \u1EA9m n\u1ED5i l\xEAn: ng\xE0y mai m\u01B0a to." },
+    thunder: { name: "Gi\xF4ng s\xE9t", vision: 3, speed: 0.85, work: 0.6, signal: "Kh\xF4ng kh\xED oi n\u1ED3ng, m\xE2y d\u1EF1ng th\xE0nh th\xE1p: s\u1EAFp c\xF3 gi\xF4ng." },
+    storm: { name: "B\xE3o", vision: 4, speed: 0.7, work: 0.45, signal: "Gi\xF3 gi\u1EADt m\u1EA1nh, chim bay t\xE1n lo\u1EA1n: b\xE3o \u0111ang t\u1EDBi." },
+    snow: { name: "Tuy\u1EBFt", vision: 1, speed: 0.75, work: 0.6, signal: "Gi\xF3 l\u1EA1nh bu\u1ED1t th\u1ED5i v\u1EC1, c\xF3 l\u1EBD s\u1EAFp c\xF3 tuy\u1EBFt." }
   },
   chance: {
     spring: { clear: 0.45, mist: 0.15, drizzle: 0.25, rain: 0.15 },
@@ -199,7 +199,7 @@ var BUILDINGS = {
     h: 2,
     buildable: false,
     upgradable: true,
-    levels: { stone: [lv("C\u1EE7i l\u1EEDa", {}, 0, 30), lv("L\u1EEDa tr\u1EA1i", { wood: 20 }, 240, 45), lv("B\u1EBFp l\u1EEDa l\u1EDBn", { wood: 20, stone: 12 }, 480, 60), lv("Nh\xE0 chung", { wood: 50, stone: 30, hide: 10 }, 960, 90)] }
+    levels: { stone: [lv("C\u1EE7i l\u1EEDa", {}, 0, 30), lv("L\u1EEDa tr\u1EA1i", { wood: 20 }, 120, 45), lv("B\u1EBFp l\u1EEDa l\u1EDBn", { wood: 20, stone: 12 }, 240, 60), lv("Nh\xE0 chung", { wood: 50, stone: 30, hide: 10 }, 480, 90)] }
   },
   // builders belong to this house: without it nothing but the house itself can be raised
   builder: {
@@ -208,7 +208,7 @@ var BUILDINGS = {
     w: 2,
     h: 2,
     buildable: true,
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 30, 0, 1, 2), lv("G\u1ED7", { wood: 15, stone: 10 }, 60, 0, 1.25, 3), lv("\u0110\xE1", { wood: 25, stone: 20 }, 90, 0, 1.5, 4)] }
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 60, 0, 1, 2), lv("G\u1ED7", { wood: 15, stone: 10 }, 110, 0, 1.25, 3), lv("\u0110\xE1", { wood: 25, stone: 20 }, 160, 0, 1.5, 4)] }
   },
   storage: {
     kind: "storage",
@@ -217,7 +217,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 20, 100), lv("G\u1ED7", { wood: 35 }, 40, 250), lv("\u0110\xE1", { wood: 40, stone: 20 }, 60, 500)] }
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 50, 100), lv("G\u1ED7", { wood: 35 }, 90, 250), lv("\u0110\xE1", { wood: 40, stone: 20 }, 140, 500)] }
   },
   workshop: {
     kind: "workshop",
@@ -226,7 +226,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 30, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 60, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 90, 0, 1.5, 3)] }
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 70, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] }
   },
   lab: {
     kind: "lab",
@@ -235,7 +235,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 40, 0, 1, 1), lv("G\u1ED7", { wood: 20, stone: 30 }, 70, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 100, 0, 1.5, 4)] }
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 80, 0, 1, 1), lv("G\u1ED7", { wood: 20, stone: 30 }, 140, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 200, 0, 1.5, 4)] }
   },
   repair: {
     kind: "repair",
@@ -244,7 +244,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15, stone: 5 }, 30, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 60, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 90, 0, 1.5, 3)] }
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15, stone: 5 }, 70, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] }
   },
   toolstore: {
     kind: "toolstore",
@@ -253,7 +253,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 30, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 55, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 80, 60)] }
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 60, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 100, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 150, 60)] }
   },
   armory: {
     kind: "armory",
@@ -262,7 +262,27 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 30, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 55, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 80, 60)] }
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 60, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 100, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 150, 60)] }
+  },
+  // where soldiers sleep, out of sight, as a list (slots = beds, craftSpeed = how well they rest); without a bed they sleep by the campfire
+  barracks: {
+    kind: "barracks",
+    name: "L\u1EC1u chi\u1EBFn binh",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["builder"],
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 3), lv("G\u1ED7", { wood: 25, hide: 6 }, 100, 0, 1.1, 5), lv("\u0110\xE1", { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 8)] }
+  },
+  // where everyone who is not a soldier sleeps, out of sight, as a list; without a bed they sleep by the campfire and rest slower
+  house: {
+    kind: "house",
+    name: "Nh\xE0 d\xE2n",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["builder"],
+    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 4), lv("G\u1ED7", { wood: 30, stone: 10 }, 100, 0, 1.15, 8), lv("\u0110\xE1", { wood: 40, stone: 30 }, 150, 0, 1.3, 12)] }
   }
 };
 function levelsOf(kind, era) {
@@ -310,10 +330,10 @@ var Fog = class {
 
 // src/sim/resources.ts
 var CURRENCY = { stone: "V\u1ECF s\xF2", ancient: "\u0110\u1ED3ng xu" };
-var RES_NAME = { wood: "G\u1ED7", stone: "\u0110\xE1", food: "Th\u1EE9c \u0103n", hide: "Da v\xE0 x\u01B0\u01A1ng", coin: CURRENCY.stone };
-var BARTER = { food: 10, wood: 5, stone: 5, hide: 2 };
-var emptyStock = () => ({ wood: 0, stone: 0, food: 0, hide: 0, coin: 0 });
-var CARRY_CAP = { wood: 4, stone: 4, food: 10, hide: 10, coin: 0 };
+var RES_NAME = { wood: "G\u1ED7", stone: "\u0110\xE1", food: "Th\u1EE9c \u0103n", hide: "Da", bone: "X\u01B0\u01A1ng", fat: "M\u1EE1", feather: "L\xF4ng v\u0169", tusk: "Ng\xE0", coin: CURRENCY.stone };
+var BARTER = { food: 10, wood: 5, stone: 5, hide: 2, bone: 4, fat: 4, feather: 10, tusk: 1 };
+var emptyStock = () => ({ wood: 0, stone: 0, food: 0, hide: 0, bone: 0, fat: 0, feather: 0, tusk: 0, coin: 0 });
+var CARRY_CAP = { wood: 4, stone: 4, food: 10, hide: 10, bone: 6, fat: 6, feather: 10, tusk: 2, coin: 0 };
 var FOOD_NUTRITION = 20;
 var FOOD_SPOIL_DAYS = 3;
 
@@ -654,13 +674,22 @@ var anims_default = {
 
 // src/data/animals.json
 var animals_default = {
-  _note: "zone = map ring 1..4 (each 24 tiles from the campfire). speed in tiles/s. flee: distance that makes it run. aggro: distance at which a predator starts hunting. herd: [min,max] group size. habitat water = lives in water tiles. Art lives in animals/bodies.json.",
+  _note: "zone = map ring 1..4 (each 24 tiles from the campfire). speed in tiles/s. flee: distance that makes it run. aggro: distance at which a predator starts hunting. herd: [min,max] group size. habitat water = lives in water tiles. Art lives in animals/bodies.json. drops: other materials the body gives when skinned (bone, fat, feather, tusk), on top of meat (becomes food) and hide. A species is just a key here plus an entry in bodies.json; the list below is in spawn order.",
   rabbit: { name: "Th\u1ECF", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2.2, flee: 6, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 2], count: 36, prey: true, nocturnal: false },
-  fowl: { name: "G\xE0 r\u1EEBng", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2, flee: 5, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 3], count: 20, prey: true, nocturnal: false },
-  deer: { name: "H\u01B0\u01A1u", hp: 60, damage: 4, type: "crush", cycle: 1.6, range: 1, speed: 2.6, flee: 7, aggro: 0, meat: 20, hide: 3, zones: [1, 3], herd: [3, 5], count: 18, prey: true, nocturnal: false, cornered: true },
-  boar: { name: "L\u1EE3n r\u1EEBng", hp: 90, damage: 10, type: "pierce", cycle: 1.5, range: 1, speed: 2.1, flee: 0, aggro: 0, meat: 25, hide: 3, zones: [1, 3], herd: [1, 2], count: 8, prey: true, nocturnal: false, defends: true },
-  wolf: { name: "S\xF3i", hp: 55, damage: 7, type: "slash", cycle: 1.2, range: 1, speed: 2.9, flee: 0, aggro: 9, meat: 8, hide: 2, zones: [2, 3], herd: [4, 6], count: 12, prey: false, nocturnal: true, fearsFire: 5 },
+  fowl: { name: "G\xE0 r\u1EEBng", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2, flee: 5, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 3], count: 20, prey: true, nocturnal: false, drops: { feather: 2 } },
+  deer: { name: "H\u01B0\u01A1u", hp: 60, damage: 4, type: "crush", cycle: 1.6, range: 1, speed: 2.6, flee: 7, aggro: 0, meat: 20, hide: 3, zones: [1, 3], herd: [3, 5], count: 18, prey: true, nocturnal: false, cornered: true, drops: { bone: 2, fat: 2 } },
+  boar: { name: "L\u1EE3n r\u1EEBng", hp: 90, damage: 10, type: "pierce", cycle: 1.5, range: 1, speed: 2.1, flee: 0, aggro: 0, meat: 25, hide: 3, zones: [1, 3], herd: [1, 2], count: 8, prey: true, nocturnal: false, defends: true, drops: { bone: 2, fat: 4 } },
+  wolf: { name: "S\xF3i", hp: 55, damage: 7, type: "slash", cycle: 1.2, range: 1, speed: 2.9, flee: 0, aggro: 9, meat: 8, hide: 2, zones: [2, 3], herd: [4, 6], count: 12, prey: false, nocturnal: true, fearsFire: 5, drops: { bone: 2 } },
   fish: { name: "C\xE1", hp: 1, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.4, flee: 3, aggro: 0, meat: 3, hide: 0, zones: [1, 3], herd: [3, 6], count: 36, prey: true, nocturnal: false, habitat: "water" },
+  aurochs: { name: "B\xF2 r\u1EEBng", hp: 130, damage: 12, type: "crush", cycle: 1.8, range: 1, speed: 2, flee: 0, aggro: 0, meat: 45, hide: 6, drops: { bone: 3, fat: 4 }, zones: [1, 3], herd: [2, 4], count: 6, prey: true, nocturnal: false, defends: true },
+  duck: { name: "V\u1ECBt tr\u1EDDi", hp: 8, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.9, flee: 5, aggro: 0, meat: 3, hide: 0, drops: { feather: 2 }, zones: [1, 2], herd: [2, 4], count: 14, prey: true, nocturnal: false },
+  fox: { name: "C\xE1o", hp: 25, damage: 4, type: "pierce", cycle: 1, range: 1, speed: 2.8, flee: 0, aggro: 4, meat: 4, hide: 1, zones: [2, 3], herd: [1, 1], count: 8, prey: false, nocturnal: true, fearsFire: 4 },
+  ibex: { name: "D\xEA n\xFAi", hp: 50, damage: 5, type: "crush", cycle: 1.5, range: 1, speed: 3, flee: 9, aggro: 0, meat: 14, hide: 2, drops: { bone: 2 }, zones: [2, 4], herd: [3, 5], count: 10, prey: true, nocturnal: false, cornered: true },
+  elk: { name: "Nai s\u1EEBng t\u1EA5m", hp: 160, damage: 10, type: "crush", cycle: 1.8, range: 1, speed: 2.4, flee: 0, aggro: 0, meat: 55, hide: 7, drops: { bone: 4, fat: 5 }, zones: [2, 3], herd: [1, 3], count: 6, prey: true, nocturnal: false, defends: true },
+  bear: { name: "G\u1EA5u n\xE2u", hp: 240, damage: 20, type: "slash", cycle: 1.9, range: 1, speed: 2.2, flee: 0, aggro: 6, meat: 45, hide: 9, drops: { bone: 5, fat: 10 }, zones: [3, 4], herd: [1, 1], count: 4, prey: false, nocturnal: false },
+  lion: { name: "S\u01B0 t\u1EED hang", hp: 130, damage: 16, type: "slash", cycle: 1.3, range: 1, speed: 3.3, flee: 0, aggro: 11, meat: 28, hide: 6, drops: { bone: 3, fat: 3 }, zones: [3, 4], herd: [1, 3], count: 5, prey: false, nocturnal: true, fearsFire: 6 },
+  mammoth: { name: "Voi ma m\xFAt", hp: 450, damage: 28, type: "crush", cycle: 2.6, range: 1, speed: 1.5, flee: 0, aggro: 0, meat: 120, hide: 16, drops: { bone: 14, fat: 24, tusk: 2 }, zones: [3, 4], herd: [2, 3], count: 6, prey: true, nocturnal: false, defends: true },
+  pike: { name: "C\xE1 ch\xF3", hp: 2, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.8, flee: 4, aggro: 0, meat: 6, hide: 0, drops: { bone: 1 }, zones: [1, 3], herd: [1, 2], count: 16, prey: true, nocturnal: false, habitat: "water" },
   behaviour: {
     fleeBurst: 8,
     tiredSeconds: 6,
@@ -878,7 +907,7 @@ for (const id of Object.keys(WEAPONS)) WEAPONS[id].anim = poseOf(id, "attack");
 var ARMORS = weapons_default.armor;
 var RULES = weapons_default.rules;
 var CRAFTED_WEAPONS = Object.keys(WEAPONS).filter((k) => WEAPONS[k].cost);
-var SPECIES = ["rabbit", "fowl", "deer", "boar", "wolf", "fish"];
+var SPECIES = Object.keys(animals_default).filter((k) => !k.startsWith("_") && k !== "behaviour");
 var ANIMALS = Object.fromEntries(SPECIES.map((s) => [s, animals_default[s]]));
 var BEHAVIOUR = animals_default.behaviour;
 var TRIBE_IDS = ["spring", "axe", "swamp"];
@@ -1083,6 +1112,7 @@ function spawnAnimal(sim, species, x, y, herd, raid = false) {
     clock: sim.frnd() * 10,
     meat: 0,
     hide: 0,
+    drops: {},
     carcass: 0
   };
   sim.animals.push(a);
@@ -1163,7 +1193,7 @@ function tickAnimals(sim, dt) {
     a.clock += dt;
     if (a.state === "dead") {
       a.carcass -= dt;
-      if (a.carcass <= 0 || a.meat <= 0 && a.hide <= 0) {
+      if (a.carcass <= 0 || carcassEmpty(a)) {
         sim.animals.splice(i, 1);
         sim.animalById.delete(a.id);
       }
@@ -1287,6 +1317,7 @@ function tickAnimals(sim, dt) {
     }
   }
 }
+var carcassEmpty = (a) => a.meat <= 0 && a.hide <= 0 && !Object.values(a.drops ?? {}).some((n) => (n ?? 0) > 0);
 function die(sim, a) {
   const def = animalDef(a);
   a.state = "dead";
@@ -1294,6 +1325,7 @@ function die(sim, a) {
   a.target = null;
   a.meat = def.meat;
   a.hide = def.hide;
+  a.drops = { ...def.drops ?? {} };
   a.carcass = BEHAVIOUR.carcassSeconds;
 }
 
@@ -1600,10 +1632,7 @@ function fightBrain(sim, v, dt, threats) {
           f.anchor = { x: v.x, y: v.y };
         } else f.mode = "none";
       }
-      if (dead && dead.state === "dead" && (v.job === "hunt" || dead.meat > 0)) {
-        v.loot = dead.id;
-        v.job = "hunt";
-      }
+      if (dead && dead.state === "dead" && v.job === "hunt") v.loot = dead.id;
       if (v.phase === "fight") {
         v.phase = "idle";
         v.path = [];
@@ -1677,16 +1706,24 @@ function huntBrain(sim, v, dt, threats) {
       a.meat -= take;
       v.carry = { res: "food", amount: have + take };
     }
+    const got = [];
     if (a.hide > 0) {
       sim.stock.hide = Math.min(sim.capacity(), sim.stock.hide + a.hide);
-      sim.say(`${v.name} l\u1ED9t da ${animalDef(a).name.toLowerCase()}: ${a.hide} da v\xE0 x\u01B0\u01A1ng.`);
+      got.push(`${a.hide} ${RES_NAME.hide.toLowerCase()}`);
       a.hide = 0;
     }
+    for (const [res, n] of Object.entries(a.drops ?? {})) {
+      if (!(n > 0)) continue;
+      sim.stock[res] = Math.min(sim.capacity(), sim.stock[res] + n);
+      got.push(`${n} ${RES_NAME[res].toLowerCase()}`);
+    }
+    a.drops = {};
+    if (got.length) sim.say(`${v.name} x\u1EBB ${animalDef(a).name.toLowerCase()}: ${got.join(", ")}.`);
     return true;
   }
   if (v.phase === "goCarcass") {
     const a = sim.animalById.get(v.loot);
-    if (!a || a.state !== "dead" || a.meat <= 0 && a.hide <= 0) {
+    if (!a || a.state !== "dead" || carcassEmpty(a)) {
       v.phase = "idle";
       v.loot = -1;
       v.path = [];
@@ -1721,7 +1758,7 @@ function huntBrain(sim, v, dt, threats) {
     else v.loot = -1;
   }
   if (!best) for (const a of sim.animals) {
-    if (a.state !== "dead" || a.meat <= 0 && a.hide <= 0 || sim.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
+    if (a.state !== "dead" || carcassEmpty(a) || sim.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
     const d = Math.hypot(a.x - v.x, a.y - v.y);
     if (d < bd) {
       bd = d;
@@ -2206,11 +2243,19 @@ function foeBrain(sim, f, t, ai, dt) {
   void DAY_LENGTH;
 }
 
+// src/data/pace.json
+var pace_default = {
+  _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
+  gather: { wood: 11, stone: 17, food: 6 },
+  bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
+  outdoor: ["wood", "stone", "food", "build"]
+};
+
 // src/sim/jobs.ts
 var JOBS = {
-  wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: 12, anim: "chop" },
-  stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: 18, anim: "mine" },
-  food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: 7, anim: "gather" },
+  wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
+  stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
+  food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: pace_default.gather.food, anim: "gather" },
   build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
   craft: { name: "Ch\u1EBF t\u1EA1o", stat: "int", baseTime: 1, anim: "craft" },
   research: { name: "Nghi\xEAn c\u1EE9u", stat: "int", baseTime: 1, anim: "gather" },
@@ -2225,17 +2270,20 @@ var isStaffJob = (j) => j in STAFF_BUILDING;
 var XP_LEVELS = [60, 150, 300, 500, 800];
 var MAX_LEVEL = 5;
 var CREW_BUILDING = { build: "builder" };
+var BARE_HANDS = pace_default.bare;
+var OUTDOOR_JOBS = pace_default.outdoor;
 
 // src/data/research.json
 var research_default = {
   enabled: true,
   _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Every tool, weapon and armour has ONE blueprint that is raised step by step (tech id = recipe id: axe1 is the wood axe, axe2 the stone one); a recipe can only be made once its blueprint step is researched and the Nh\xE0 ch\u1EBF t\u1EA1o is high enough (recipeLevel). cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, levels (highest level per building kind), buildings (kinds that may be built), auto (fetch: villagers fetch tools from the stores; order: villagers order crafting and repair themselves). Set enabled to false to open everything.",
-  recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3 },
+  recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1 },
   techs: [
     { id: "hammer1", name: "B\u1EA3n v\u1EBD B\xFAa g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo b\xFAa g\u1ED7 \u0111\u1EC3 d\u1EF1ng nh\xE0 nhanh h\u01A1n.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["hammer1"] } },
     { id: "axe1", name: "B\u1EA3n v\u1EBD R\xECu g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo r\xECu g\u1ED7 \u0111\u1EC3 \u0111\u1ED1n c\xE2y.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["axe1"] } },
     { id: "pick1", name: "B\u1EA3n v\u1EBD Cu\u1ED1c chim g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo cu\u1ED1c chim g\u1ED7 \u0111\u1EC3 \u0111\u1EE5c \u0111\xE1.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 160, unlocks: { recipes: ["pick1"] } },
     { id: "hoe1", name: "B\u1EA3n v\u1EBD Cu\u1ED1c g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo cu\u1ED1c g\u1ED7 \u0111\u1EC3 h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 140, unlocks: { recipes: ["hoe1"] } },
+    { id: "torch1", name: "B\u1EA3n v\u1EBD \u0110u\u1ED1c", desc: "Qu\u1EA5n nh\u1EF1a v\xE0 c\xE0nh kh\xF4 th\xE0nh \u0111u\u1ED1c \u0111\u1EC3 l\xE0m vi\u1EC7c \u0111\u01B0\u1EE3c ban \u0111\xEAm.", requires: [], needLevel: 1, minInt: 3, cost: { wood: 4, coin: 1 }, time: 120, unlocks: { recipes: ["torch1"] } },
     { id: "club1", name: "B\u1EA3n v\u1EBD G\u1EADy chi\u1EBFn", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo g\u1EADy chi\u1EBFn \u0111\u1EC3 t\u1EF1 v\u1EC7 v\xE0 \u0111i s\u0103n.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 180, unlocks: { recipes: ["club1"] } },
     { id: "hide1", name: "B\u1EA3n v\u1EBD \xC1o da", desc: "V\u1EBD c\xE1ch kh\xE2u da th\xFA th\xE0nh \xE1o gi\xE1p.", requires: ["axe1"], needLevel: 1, minInt: 6, cost: { hide: 4, coin: 4 }, time: 240, unlocks: { recipes: ["hide1"] } },
     { id: "spear1", name: "B\u1EA3n v\u1EBD Gi\xE1o v\xF3t nh\u1ECDn", desc: "V\u1EBD c\xE1ch v\xF3t gi\xE1o c\xF3 t\u1EA7m \u0111\xE2m xa h\u01A1n g\u1EADy.", requires: ["club1"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 5 }, time: 320, unlocks: { recipes: ["spear1"] } },
@@ -2244,8 +2292,10 @@ var research_default = {
     { id: "hoe2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c l\xEAn c\u1EA5p 2.", requires: ["hoe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 10, coin: 6 }, time: 340, unlocks: { recipes: ["hoe2"] } },
     { id: "hammer2", name: "B\u1EA3n v\u1EBD B\xFAa \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD B\xFAa l\xEAn c\u1EA5p 2.", requires: ["hammer1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 360, unlocks: { recipes: ["hammer2"] } },
     { id: "mace2", name: "B\u1EA3n v\u1EBD Ch\xF9y \u0111\xE1", desc: "V\u1EBD c\xE1ch bu\u1ED9c \u0111\u1EA7u \u0111\xE1 n\u1EB7ng v\xE0o c\xE1n th\xE0nh ch\xF9y.", requires: ["club1", "axe2"], needLevel: 3, minInt: 8, cost: { stone: 30, coin: 10 }, time: 600, unlocks: { recipes: ["mace2"] } },
-    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { storage: 2, workshop: 2, lab: 2, repair: 2, toolstore: 2, armory: 2 } } },
-    { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber", "pick1"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { storage: 3, workshop: 3, lab: 3, repair: 3, toolstore: 3, armory: 3 } } },
+    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { storage: 2, workshop: 2, lab: 2, repair: 2, toolstore: 2, armory: 2, house: 2, barracks: 2 } } },
+    { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber", "pick1"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { storage: 3, workshop: 3, lab: 3, repair: 3, toolstore: 3, armory: 3, house: 3, barracks: 3 } } },
+    { id: "house", name: "Nh\xE0 d\xE2n", desc: "D\u1EF1ng nh\xE0 cho d\xE2n ng\u1EE7: ng\u1EE7 trong nh\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["house"] } },
+    { id: "barracks", name: "L\u1EC1u chi\u1EBFn binh", desc: "D\u1EF1ng l\u1EC1u cho chi\u1EBFn binh ng\u1EE7 v\xE0 ngh\u1EC9 ng\u01A1i; l\xEDnh \u0111\u01B0\u1EE3c tuy\u1EC3n \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["barracks"] } },
     { id: "tool_store", name: "Kho c\xF4ng c\u1EE5", desc: "Cho ph\xE9p d\u1EF1ng Kho c\xF4ng c\u1EE5 \u0111\u1EC3 c\u1EA5t r\xECu, cu\u1ED1c, b\xFAa.", requires: ["hammer1", "axe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 200, unlocks: { buildings: ["toolstore"] } },
     { id: "armory", name: "Kho v\u0169 kh\xED", desc: "Cho ph\xE9p d\u1EF1ng Kho v\u0169 kh\xED \u0111\u1EC3 c\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["armory"] } },
     { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: ["tool_store"], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
@@ -2390,6 +2440,12 @@ function evict(sim, b) {
     if (d) sim.pay(d.cost, 1);
   }
   b.active = null;
+  for (const v of sim.sleepers(b)) {
+    sim.exitBuilding(v);
+    v.phase = "idle";
+    v.target = -1;
+    v.path = [];
+  }
   for (const v of sim.villagers) {
     if (v.target !== b.id) continue;
     if (v.phase === "goSite" || v.phase === "build" || v.phase === "goEquip" || v.phase === "goStaff" || v.phase === "goOrder") {
@@ -2530,19 +2586,21 @@ var gearRecipe = (kind) => {
   return R(kind, d.tier ?? 1, d.cost ?? {}, d.time ?? 60);
 };
 var RECIPES = [
-  R("axe", 1, { wood: 3 }, 12),
-  R("axe", 2, { wood: 2, stone: 3 }, 20),
-  R("pick", 1, { wood: 4 }, 14),
-  R("pick", 2, { wood: 2, stone: 4 }, 22),
-  R("hoe", 1, { wood: 3 }, 12),
-  R("hoe", 2, { wood: 2, stone: 2 }, 18),
-  R("hammer", 1, { wood: 3 }, 12),
-  R("hammer", 2, { wood: 2, stone: 3 }, 18),
+  R("axe", 1, { wood: 3 }, 24),
+  R("axe", 2, { wood: 2, stone: 3 }, 40),
+  R("pick", 1, { wood: 4 }, 28),
+  R("pick", 2, { wood: 2, stone: 4 }, 44),
+  R("hoe", 1, { wood: 3 }, 24),
+  R("hoe", 2, { wood: 2, stone: 2 }, 36),
+  R("hammer", 1, { wood: 3 }, 24),
+  R("hammer", 2, { wood: 2, stone: 3 }, 36),
+  R("torch", 1, { wood: 2 }, 12),
   ...GEAR_KINDS.map(gearRecipe)
 ];
 var RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
 var recipeName = (r) => {
   if (r.kind === "hide") return ARMORS.hide.name;
+  if (r.kind === "torch") return "\u0110u\u1ED1c";
   if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
   return `${TOOL_NAME[r.kind]} ${TIER_NAME[r.tier].toLowerCase()}`;
 };
@@ -2756,6 +2814,10 @@ function assignCrew(sim, ids) {
   let err = null;
   for (const v of sim.mine(ids)) {
     if (v.job === "build") continue;
+    if (v.job === "fight") {
+      err = "Chi\u1EBFn binh do \u0111\u1ED1ng l\u1EEDa tr\u1EA1i qu\u1EA3n l\xFD: gi\u1EA3i ng\u0169 tr\u01B0\u1EDBc";
+      continue;
+    }
     if (crew(sim).length >= levelDef(house).slots) {
       err = `${BUILDINGS.builder.name} c\u1EA5p ${house.level} ch\u1EC9 ch\u1EE9a ${levelDef(house).slots} th\u1EE3`;
       continue;
@@ -2787,6 +2849,10 @@ function assignStaff(sim, ids, job) {
   for (const v of sim.mine(ids)) {
     if (v.inside === b.id) {
       v.job = job;
+      continue;
+    }
+    if (v.job === "fight") {
+      err = "Chi\u1EBFn binh do \u0111\u1ED1ng l\u1EEDa tr\u1EA1i qu\u1EA3n l\xFD: gi\u1EA3i ng\u0169 tr\u01B0\u1EDBc";
       continue;
     }
     if (staffCount(sim, b) >= levelDef(b).slots) {
@@ -2838,6 +2904,22 @@ function enterBuilding(sim, v) {
   v.y = b.y + d.h / 2;
   v.facing = "front";
   sim.say(`${v.name} v\xE0o ${BUILDINGS[b.kind].name.toLowerCase()} l\xE0m vi\u1EC7c.`);
+}
+function sleepIn(sim, v, b) {
+  v.inside = b.id;
+  v.phase = "sleep";
+  v.path = [];
+  v.slide = null;
+  v.target = -1;
+  v.bed = -1;
+  const d = BUILDINGS[b.kind];
+  v.x = b.x + d.w / 2;
+  v.y = b.y + d.h / 2;
+  v.facing = "front";
+  sim.fogDirty = true;
+}
+function sleepers(sim, b) {
+  return sim.villagers.filter((v) => v.phase === "sleep" && v.inside === b.id || v.phase === "goHome" && v.target === b.id);
 }
 function exitBuilding(sim, v) {
   if (v.inside === null) return;
@@ -3170,6 +3252,9 @@ function resetTask(sim, v) {
   v.target = -1;
   v.bed = -1;
 }
+function keepWatch(sim, v) {
+  if (v.job !== "idle") sim.callUp(v);
+}
 function clearCombat(sim, v) {
   v.fight.target = null;
   v.fight.mode = "none";
@@ -3180,7 +3265,7 @@ function clearCombat(sim, v) {
   v.fleeT = 0;
 }
 function mine(sim, ids) {
-  return ids.map((id) => sim.byId.get(id)).filter((v) => !!v && v.team === "player" && v.down <= 0);
+  return ids.map((id) => sim.byId.get(id)).filter((v) => !!v && v.team === "player" && v.down <= 0 && !sim.sleepLocked(v));
 }
 function busy(sim, v) {
   return v.phase !== "idle" || v.path.length > 0 || v.fight.mode !== "none";
@@ -3202,6 +3287,7 @@ function orderMove(sim, ids, tx, ty, queue = false) {
     clearCombat(sim, v);
     v.prefer = -1;
     keepSoldierJob(sim, v);
+    keepWatch(sim, v);
     if (!goal) continue;
     taken.add(goal[1] * sim.world.size + goal[0]);
     v.path = sim.pathTo(v, goal[0], goal[1], 3e4);
@@ -3226,17 +3312,23 @@ function orderWork(sim, ids, tx, ty) {
   }
   if (!job) return null;
   const first = !!site && site.kind === "builder" && !sim.building("builder");
-  const workers = mine(sim, ids).filter((v) => job !== "build" || v.job === "build" || first);
-  if (!workers.length) return null;
+  const workers = mine(sim, ids).filter((v) => v.job === job || first && v.job !== "fight");
   for (const v of workers) {
     resetTask(sim, v);
     clearCombat(sim, v);
     v.job = job;
     v.prefer = prefer;
   }
-  return JOB_NAME[job];
+  return { job, sent: workers.length };
 }
 function setJob(sim, ids, job) {
+  if (job === "fight") return enlist(sim, ids) > 0 ? null : "Ch\u1ECDn d\xE2n th\u01B0\u1EDDng \u0111\u1EC3 tuy\u1EC3n l\xE0m chi\u1EBFn binh";
+  const soldiers = mine(sim, ids).filter((v) => v.job === "fight");
+  const rest = ids.filter((id) => !soldiers.some((s) => s.id === id));
+  const err = jobFor(sim, rest, job);
+  return err ?? (soldiers.length ? "Chi\u1EBFn binh do \u0111\u1ED1ng l\u1EEDa tr\u1EA1i qu\u1EA3n l\xFD: gi\u1EA3i ng\u0169 h\u1ECD \u1EDF \u0111\xF3 tr\u01B0\u1EDBc" : null);
+}
+function jobFor(sim, ids, job) {
   if (job === "craft" || job === "research" || job === "repair") return sim.assignStaff(ids, job);
   if (job === "build") return sim.assignCrew(ids);
   for (const v of mine(sim, ids)) {
@@ -3244,9 +3336,38 @@ function setJob(sim, ids, job) {
     clearCombat(sim, v);
     v.job = job;
     v.prefer = -1;
-    if (job === "fight" && v.fight.mode === "none") v.fight.anchor = null;
+    keepWatch(sim, v);
   }
   return null;
+}
+function enlist(sim, ids) {
+  let n = 0;
+  for (const v of mine(sim, ids)) {
+    if (v.job === "fight") continue;
+    resetTask(sim, v);
+    clearCombat(sim, v);
+    v.job = "fight";
+    v.prefer = -1;
+    v.fight.anchor = null;
+    keepWatch(sim, v);
+    n++;
+  }
+  return n;
+}
+function discharge(sim, ids) {
+  let n = 0;
+  for (const v of mine(sim, ids)) {
+    if (v.job !== "fight") continue;
+    resetTask(sim, v);
+    clearCombat(sim, v);
+    v.job = "idle";
+    v.nightOwl = false;
+    sim.assignGear([v.id], null, "weapon");
+    sim.assignGear([v.id], null, "armor");
+    v.manualGear = false;
+    n++;
+  }
+  return n;
 }
 function targetAt(sim, x, y) {
   const N = sim.world.size, seen = (px, py) => sim.fog.state[Math.floor(py) * N + Math.floor(px)] === 2;
@@ -3272,7 +3393,10 @@ function targetAt(sim, x, y) {
 function orderAttack(sim, ids, target, queue = false) {
   const e = resolve(sim, target);
   const prey = e?.kind === "animal" && e.a.state !== "dead" && animalDef(e.a).prey;
+  let n = 0;
   for (const v of mine(sim, ids)) {
+    if (!(v.job === "fight" || prey && v.job === "hunt")) continue;
+    n++;
     if (queue && busy(sim, v)) {
       v.queue.push({ k: "attack", t: target });
       continue;
@@ -3280,13 +3404,15 @@ function orderAttack(sim, ids, target, queue = false) {
     resetTask(sim, v);
     clearCombat(sim, v);
     v.prefer = -1;
-    if (!(v.job === "fight" || prey && v.job === "hunt")) v.job = prey ? "hunt" : "fight";
     v.fight.mode = "attack";
     v.fight.target = target;
+    keepWatch(sim, v);
   }
+  return n;
 }
 function orderAttackMove(sim, ids, x, y, queue = false) {
   for (const v of mine(sim, ids)) {
+    if (v.job !== "fight") continue;
     if (queue && busy(sim, v)) {
       v.queue.push({ k: "attackMove", x, y });
       continue;
@@ -3294,28 +3420,32 @@ function orderAttackMove(sim, ids, x, y, queue = false) {
     resetTask(sim, v);
     clearCombat(sim, v);
     v.prefer = -1;
-    v.job = "fight";
     v.fight.mode = "attackMove";
     v.fight.dest = { x, y };
     v.phase = "move";
+    keepWatch(sim, v);
   }
 }
 function orderLoot(sim, ids, animalId) {
+  let n = 0;
   for (const v of mine(sim, ids)) {
+    if (v.job !== "hunt") continue;
     resetTask(sim, v);
     clearCombat(sim, v);
-    v.job = "hunt";
     v.loot = animalId;
     v.phase = "goCarcass";
+    n++;
   }
+  return n;
 }
 function orderHold(sim, ids) {
   for (const v of mine(sim, ids)) {
+    if (v.job !== "fight" && v.job !== "hunt") continue;
     resetTask(sim, v);
     clearCombat(sim, v);
-    if (v.job !== "hunt") v.job = "fight";
     v.fight.mode = "hold";
     v.fight.anchor = { x: v.x, y: v.y };
+    keepWatch(sim, v);
   }
 }
 function orderStop(sim, ids) {
@@ -3325,6 +3455,7 @@ function orderStop(sim, ids) {
     if (v.job === "fight") {
       v.fight.mode = "hold";
       v.fight.anchor = { x: v.x, y: v.y };
+      keepWatch(sim, v);
     }
   }
 }
@@ -3352,12 +3483,10 @@ function nextOrder(sim, v) {
       }
     }
   } else if (o.k === "attackMove") {
-    v.job = "fight";
     v.fight.mode = "attackMove";
     v.fight.dest = { x: o.x, y: o.y };
     v.phase = "move";
   } else {
-    v.job = v.job === "hunt" ? "hunt" : "fight";
     v.fight.mode = "attack";
     v.fight.target = o.t;
   }
@@ -3368,10 +3497,15 @@ function nextOrder(sim, v) {
 function workRate(sim, v, job) {
   return workFactor(sim, v, job);
 }
+function outdoorFactor(sim, job) {
+  return OUTDOOR_JOBS.includes(job) ? WEATHER[sim.weather].work * SEASON_DEF[sim.season].work : 1;
+}
 function workFactor(sim, v, job) {
   const stat = v.stats[JOBS[job].stat];
   const season = job === "food" ? SEASON_DEF[sim.season].gather : 1;
-  return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * (TOOL_OF_JOB[job] ? TIER_SPEED[sim.toolTier(v, job)] : 1) * season;
+  const tier = TOOL_OF_JOB[job] ? sim.toolTier(v, job) : -1;
+  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier];
+  return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v);
 }
 function gainXp(sim, v, job, dt) {
   const s = v.skill[job];
@@ -3510,8 +3644,12 @@ function think(sim, v, dt) {
       return;
     case "goHome": {
       stash(sim, v);
-      v.phase = "sleep";
-      v.facing = "front";
+      const bed = v.target >= 0 ? sim.getBuilding(v.target) : void 0;
+      if (bed && bed.done) sim.sleepIn(v, bed);
+      else {
+        v.phase = "sleep";
+        v.facing = "front";
+      }
       return;
     }
     case "sleep":
@@ -3525,7 +3663,7 @@ function doWork(sim, v, dt) {
     v.phase = "idle";
     return;
   }
-  v.progress += dt * PACE.work * workFactor(sim, v, job) / def.baseTime;
+  v.progress += dt * workFactor(sim, v, job) / def.baseTime;
   gainXp(sim, v, job, dt);
   const tierNow = sim.toolTier(v, job);
   wear(sim, v, job, dt);
@@ -3890,6 +4028,11 @@ function animate(sim, v, dt) {
       hold = { kind: "hammer", tier: t };
     } else anim = "gather";
   } else if (v.phase === "skin") anim = "gather";
+  const lit = !!v.torch && sim.resting && v.phase !== "sleep" && v.phase !== "goHome";
+  if (lit !== v.lit) {
+    v.lit = lit;
+    sim.fogDirty = true;
+  }
   if (anim !== v.anim) {
     v.anim = anim;
     v.animClock = 0;
@@ -4002,6 +4145,12 @@ function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
     bad: /* @__PURE__ */ new Map(),
     bed: -1,
     nightOwl: false,
+    energy: 100,
+    strain: 0,
+    shift: "day",
+    torch: null,
+    lockUntil: 0,
+    lit: false,
     manualGear: false,
     inside: null,
     orderCd: 0,
@@ -4054,17 +4203,25 @@ function tickVillager(sim, v, dt) {
     return;
   }
   v.orderCd = Math.max(0, v.orderCd - dt);
+  sim.tickEnergy(v, dt);
   const held = sim.heldTool(v);
   if (held && TOOL_OF_JOB[v.job] !== held.k) sim.returnTool(v);
-  if (v.inside !== null) {
-    sim.animate(v, dt);
-    return;
+  if (v.inside !== null && v.phase !== "sleep") {
+    if (sim.shouldSleep(v, false)) {
+      sim.exitBuilding(v);
+      goHome(sim, v);
+    } else {
+      sim.animate(v, dt);
+      return;
+    }
   }
   const brained = brainPlayer(sim, v, dt);
   const fighting = brained && (v.phase === "fight" || v.phase === "flee" || v.phase === "rescue");
-  if (sim.resting) {
-    if (!v.nightOwl && !fighting && v.phase !== "goHome" && v.phase !== "sleep") goHome(sim, v);
-  } else if (v.phase === "goHome" || v.phase === "sleep") {
+  const asleep = v.phase === "goHome" || v.phase === "sleep";
+  if (sim.shouldSleep(v, fighting)) {
+    if (!asleep) goHome(sim, v);
+  } else if (asleep) {
+    sim.exitBuilding(v);
     v.path = [];
     v.slide = null;
     v.phase = "idle";
@@ -4081,6 +4238,15 @@ function goHome(sim, v) {
   sim.resetTask(v);
   v.nightOwl = owl;
   v.phase = "sleep";
+  const bed = sim.freeBed(v);
+  if (bed) {
+    const bd = BUILDINGS[bed.kind];
+    if (sim.routeTo(v, sim.ringTiles(v, bed.x, bed.y, bd.w, bd.h)) >= 0) {
+      v.target = bed.id;
+      v.phase = "goHome";
+      return;
+    }
+  }
   const fire = sim.buildings.find((b) => b.kind === "campfire");
   if (!fire) return;
   const d = BUILDINGS[fire.kind];
@@ -4117,13 +4283,17 @@ function tickCalendar(sim) {
     if (sig && sim.nextWeather !== sim.weather) sim.say(sig);
   }
   const rest = isRestTime(sim.tod, sim.season);
-  if (sim.resting && !rest) for (const v of sim.villagers) v.nightOwl = false;
+  if (sim.resting !== rest) for (const v of sim.villagers) {
+    v.nightOwl = false;
+    if (!rest) sim.returnTorch(v);
+  }
   sim.resting = rest;
 }
+var TORCH_VISION = 6;
 function refreshFog(sim) {
   const r = visionRadius(sim), fire = fireRadius(sim);
   sim.lastVision = r;
-  const src = sim.villagers.map((v) => ({ x: v.x, y: v.y, r }));
+  const src = sim.villagers.map((v) => ({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r }));
   for (const b of sim.buildings) if (b.done) {
     const d = BUILDINGS[b.kind];
     src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === "campfire" ? fire : r });
@@ -4189,7 +4359,7 @@ function unpackRuns(runs, target) {
 }
 
 // src/sim/save.ts
-var SAVE_VERSION = 1;
+var SAVE_VERSION = 2;
 var SAVED = {
   /** Single values. */
   scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
@@ -4222,7 +4392,24 @@ function toSave(sim) {
     fog: { state: packRuns(sim.fog.state), version: sim.fog.version }
   };
 }
-var MIGRATIONS = {};
+var MIGRATIONS = {
+  // eslint-disable-line @typescript-eslint/no-explicit-any
+  // 1 -> 2: villagers gained energy, strain, a shift and a torch; the torch blueprint became a known technology
+  1: (d) => {
+    for (const list of [d.lists.villagers, d.lists.foes]) {
+      for (const v of list) {
+        v.energy ??= 100;
+        v.strain ??= 0;
+        v.shift ??= "day";
+        v.torch ??= null;
+        v.lockUntil ??= 0;
+        v.lit ??= false;
+      }
+    }
+    if (!d.researched.includes("torch1")) d.researched.push("torch1");
+    return { ...d, version: 2 };
+  }
+};
 function migrate(raw) {
   let d = raw;
   if (!d || typeof d !== "object" || typeof d.version !== "number") throw new Error("this is not a saved game");
@@ -4251,7 +4438,7 @@ function applySave(sim, data) {
   for (const k of SAVED.records) {
     const rec = target[k];
     for (const key of Object.keys(rec)) delete rec[key];
-    Object.assign(rec, decode(data.records[k]));
+    Object.assign(rec, k === "stock" ? emptyStock() : {}, decode(data.records[k]));
   }
   for (const k of SAVED.lists) {
     const list = target[k];
@@ -4274,6 +4461,197 @@ function applySave(sim, data) {
   sim.animalById.clear();
   for (const a of sim.animals) sim.animalById.set(a.id, a);
   RES_NAME.coin = CURRENCY[sim.era];
+}
+
+// src/data/rest.json
+var rest_default = {
+  _note: "Energy (s\u1EE9c) of a villager, 0-100. Costs are percentage points. A day's heavy work costs dayCost over the waking hours, a night shift nightCost over the night; jobWeight scales it per job. Sleep gives back sleepNight points over one night of sleep (half that by day) in a Nh\xE0 d\xE2n; sleepAt scales it by where they lie down: by the campfire (no bed free) it is slower, in the Nh\xE0 d\xE2n or the L\u1EC1u chi\u1EBFn binh (soldiers) it is full, and a higher level of the house multiplies it again (its craftSpeed). Below tired a villager must sleep and cannot be woken until wakeAfterTired (wakeAfterCollapse if they fell asleep below collapse). Strain builds up from night work and from collapsing, and wears off with sleep; it lowers the energy ceiling and slows recovery, so nobody can be worked night after night. Night work needs a torch and goes at nightEfficiency.",
+  tired: 20,
+  collapse: 10,
+  wakeAfterTired: 50,
+  wakeAfterCollapse: 60,
+  dayCost: 42,
+  nightCost: 30,
+  sleepNight: 60,
+  sleepDay: 30,
+  sleepAt: { campfire: 0.6, house: 1, barracks: 1 },
+  nightEfficiency: 0.7,
+  tiredEfficiency: 0.7,
+  tiredBelow: 40,
+  torchBurn: 600,
+  jobWeight: { wood: 1, stone: 1, build: 0.95, fight: 0.8, hunt: 0.9, food: 0.7, craft: 0.6, repair: 0.6, research: 0.5, idle: 0.15 },
+  strain: { nightWork: 0.1, collapse: 15, nightSleep: 0.12, daySleep: 0.03, capLoss: 0.4, recoveryLoss: 67e-4, moraleLoss: 4e-3 }
+};
+
+// src/sim/rest.ts
+var REST = rest_default;
+var DAY_HOURS = DAY_LENGTH * 0.65;
+var NIGHT_HOURS = DAY_LENGTH * 0.35;
+var clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+var fit = (v) => clamp((v.stats.vit + v.stats.sta) / 20, 0, 1);
+var hpFrac = (v) => clamp(v.health / v.maxHealth, 0, 1);
+function maxEnergy(_sim, v) {
+  return 100 - v.strain * REST.strain.capLoss;
+}
+function drainRate(sim, v) {
+  if (v.phase === "sleep" || v.phase === "down") return 0;
+  const w = REST.jobWeight[v.job] ?? REST.jobWeight.idle;
+  let k;
+  switch (v.phase) {
+    case "work":
+    case "build":
+    case "craft":
+    case "inside":
+    case "skin":
+      k = w;
+      break;
+    case "fight":
+      k = w * 1.8;
+      break;
+    case "flee":
+      k = 1.2;
+      break;
+    case "idle":
+    case "wait":
+      k = REST.jobWeight.idle;
+      break;
+    case "goHome":
+      k = 0.3;
+      break;
+    default:
+      k = w * 0.8;
+  }
+  const cond = (1.25 - 0.25 * fit(v)) * (1.2 - 0.2 * (v.morale / 100)) * (1.3 - 0.3 * hpFrac(v));
+  return REST.dayCost / DAY_HOURS * k * cond;
+}
+var bedKind = (v) => v.job === "fight" ? "barracks" : "house";
+function bedsTaken(sim, b, except) {
+  return sim.villagers.filter((o) => o !== except && (o.phase === "sleep" && o.inside === b.id || o.phase === "goHome" && o.target === b.id)).length;
+}
+function freeBed(sim, v) {
+  const b = sim.building(bedKind(v));
+  return b && bedsTaken(sim, b, v) < levelDef(b).slots ? b : void 0;
+}
+function bedFactor(sim, v) {
+  const b = v.inside === null ? void 0 : sim.getBuilding(v.inside);
+  return b && (b.kind === "house" || b.kind === "barracks") ? REST.sleepAt[b.kind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
+}
+function sleepRate(sim, v) {
+  const base = (sim.resting ? REST.sleepNight : REST.sleepDay) / NIGHT_HOURS;
+  const q = (0.8 + 0.4 * fit(v)) * (0.85 + 0.15 * (v.morale / 100)) * (0.7 + 0.3 * hpFrac(v)) * Math.max(0.3, 1 - v.strain * REST.strain.recoveryLoss);
+  return base * q * bedFactor(sim, v);
+}
+function sleepLocked(_sim, v) {
+  return v.lockUntil > 0 && v.energy < v.lockUntil && (v.phase === "sleep" || v.phase === "goHome");
+}
+function restFactor(sim, v) {
+  const night = sim.resting ? REST.nightEfficiency : 1;
+  const tired = v.energy >= REST.tiredBelow ? 1 : REST.tiredEfficiency + (1 - REST.tiredEfficiency) * (v.energy / REST.tiredBelow);
+  return night * tired;
+}
+function torchCount(sim) {
+  return (sim.toolStock.torch1 ?? 0) + sim.wornTools.filter((w) => w.id === "torch1" && w.dur > 0).length;
+}
+function ensureTorch(sim, v) {
+  if (v.torch) return true;
+  if ((sim.toolStock.torch1 ?? 0) > 0) {
+    sim.toolStock.torch1--;
+    v.torch = { dur: REST.torchBurn };
+    return true;
+  }
+  let best = -1;
+  sim.wornTools.forEach((w, i) => {
+    if (w.id === "torch1" && w.dur > 0 && (best < 0 || w.dur > sim.wornTools[best].dur)) best = i;
+  });
+  if (best >= 0) {
+    v.torch = { dur: sim.wornTools.splice(best, 1)[0].dur };
+    return true;
+  }
+  return false;
+}
+function returnTorch(sim, v) {
+  const t = v.torch;
+  if (!t) return;
+  v.torch = null;
+  if (t.dur <= 5) return;
+  if (t.dur >= REST.torchBurn - 1) sim.toolStock.torch1 = (sim.toolStock.torch1 ?? 0) + 1;
+  else sim.wornTools.push({ id: "torch1", dur: t.dur });
+}
+function giveTorch(sim, ids) {
+  let short = false, given = 0;
+  for (const v of sim.mine(ids)) {
+    if (v.torch) continue;
+    if (ensureTorch(sim, v)) {
+      given++;
+      sim.say(`${v.name} c\u1EA7m \u0111u\u1ED1c.`);
+    } else short = true;
+  }
+  return short && !given ? "Kho h\u1EBFt \u0111u\u1ED1c, h\xE3y ch\u1EBF th\xEAm \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o" : null;
+}
+function onShift(sim, v) {
+  if (v.nightOwl) return true;
+  const night = sim.resting;
+  if (v.job === "fight" || v.job === "idle") return !night;
+  if (v.shift === "both") return true;
+  return v.shift === "night" ? night : !night;
+}
+function onDuty(sim, v) {
+  if (!onShift(sim, v)) return false;
+  if (sim.resting && v.job !== "fight" && v.job !== "idle") return ensureTorch(sim, v);
+  return true;
+}
+function callUp(sim, v) {
+  if (sleepLocked(sim, v) || v.energy < REST.tired) return false;
+  if (onShift(sim, v)) return true;
+  if (v.job === "fight") {
+    v.nightOwl = true;
+    return true;
+  }
+  if (v.job === "idle") return false;
+  if (sim.resting && !ensureTorch(sim, v)) return false;
+  v.nightOwl = true;
+  return true;
+}
+function tickEnergy(sim, v, dt) {
+  const top = maxEnergy(sim, v);
+  if (v.phase === "sleep") {
+    v.energy = Math.min(top, v.energy + sleepRate(sim, v) * dt);
+    v.strain = Math.max(0, v.strain - (sim.resting ? REST.strain.nightSleep : REST.strain.daySleep) * dt);
+  } else if (!sim.dev.noTire) {
+    const working = v.job !== "idle" && (v.phase === "work" || v.phase === "build" || v.phase === "craft" || v.phase === "inside" || v.phase === "fight");
+    v.energy = Math.max(0, v.energy - drainRate(sim, v) * dt);
+    if (sim.resting && working) {
+      v.strain = Math.min(100, v.strain + REST.strain.nightWork * dt);
+      if (v.job !== "fight") v.morale = Math.max(0, v.morale - REST.strain.moraleLoss * dt);
+    }
+  }
+  if (v.energy > top) v.energy = top;
+  if (v.torch && sim.resting && v.phase !== "sleep") {
+    v.torch.dur -= dt;
+    if (v.torch.dur <= 0) {
+      v.torch = null;
+      sim.say(`\u0110u\u1ED1c c\u1EE7a ${v.name} \u0111\xE3 ch\xE1y h\u1EBFt.`);
+    }
+  }
+}
+function shouldSleep(sim, v, fighting) {
+  if (fighting) return false;
+  if (v.lockUntil > 0) {
+    if (v.energy >= v.lockUntil) v.lockUntil = 0;
+    else return true;
+  }
+  if (v.energy < REST.tired) {
+    const collapse = v.energy < REST.collapse;
+    v.lockUntil = collapse ? REST.wakeAfterCollapse : REST.wakeAfterTired;
+    if (collapse) v.strain = Math.min(100, v.strain + REST.strain.collapse);
+    sim.say(`${v.name} ${collapse ? "ki\u1EC7t s\u1EE9c, ng\xE3 xu\u1ED1ng ng\u1EE7 say" : "m\u1EC7t, \u0111i ng\u1EE7"}.`);
+    return true;
+  }
+  return !onDuty(sim, v);
+}
+function bedsIn(sim, kind) {
+  const b = sim.building(kind);
+  return b ? levelDef(b).slots : 0;
 }
 
 // src/sim/sim.ts
@@ -4317,7 +4695,7 @@ var Sim = class _Sim {
     this.projectiles = [];
     this.nextAid = 1;
     /** Test switches driven by the dev menu; all off in a normal game. */
-    this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false };
+    this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false };
     /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
     this.pendingTribe = null;
     this.acc = 0;
@@ -4344,6 +4722,7 @@ var Sim = class _Sim {
     this.frnd = mulberry32(seed ^ 2135587861);
     this.wrnd = mulberry32(seed ^ 1540483477);
     RES_NAME.coin = CURRENCY[this.era];
+    this.researched.add("torch1");
     this.world.setSeason(this.season);
     this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
     this.resting = isRestTime(this.tod, this.season);
@@ -4382,6 +4761,59 @@ var Sim = class _Sim {
   /** Rest hours: mid-dusk to mid-dawn. */
   get restTime() {
     return this.resting;
+  }
+  // ---------------------------------------------------------------- energy, shifts and torches
+  /** → rest.sleepLocked */
+  sleepLocked(v) {
+    return sleepLocked(this, v);
+  }
+  /** → rest.callUp */
+  callUp(v) {
+    return callUp(this, v);
+  }
+  /** → rest.returnTorch */
+  returnTorch(v) {
+    returnTorch(this, v);
+  }
+  /** → rest.giveTorch */
+  giveTorch(ids) {
+    return giveTorch(this, ids);
+  }
+  /** → rest.torchCount */
+  torchCount() {
+    return torchCount(this);
+  }
+  /** → rest.restFactor */
+  restFactor(v) {
+    return restFactor(this, v);
+  }
+  /** → rest.shouldSleep */
+  shouldSleep(v, fighting) {
+    return shouldSleep(this, v, fighting);
+  }
+  /** → rest.tickEnergy */
+  tickEnergy(v, dt) {
+    tickEnergy(this, v, dt);
+  }
+  /** → rest.bedsIn */
+  bedsIn(kind) {
+    return bedsIn(this, kind);
+  }
+  /** → rest.freeBed */
+  freeBed(v) {
+    return freeBed(this, v);
+  }
+  /** → rest.bedsTaken */
+  bedsTaken(b) {
+    return bedsTaken(this, b);
+  }
+  /** Choose when a villager works. */
+  setShift(ids, shift) {
+    for (const v of this.mine(ids)) v.shift = shift;
+  }
+  /** → rest.maxEnergy */
+  maxEnergy(v) {
+    return maxEnergy(this, v);
   }
   // ---------------------------------------------------------------- saving
   /** The whole game as plain JSON data (see save.ts). Settings are not in it. */
@@ -4627,6 +5059,14 @@ var Sim = class _Sim {
   exitBuilding(v) {
     return exitBuilding(this, v);
   }
+  /** → houses.sleepIn */
+  sleepIn(v, b) {
+    return sleepIn(this, v, b);
+  }
+  /** → houses.sleepers */
+  sleepers(b) {
+    return sleepers(this, b);
+  }
   /** → houses.releaseStaff */
   releaseStaff(ids) {
     return releaseStaff(this, ids);
@@ -4678,6 +5118,14 @@ var Sim = class _Sim {
   /** → commands.setJob */
   setJob(ids, job) {
     return setJob(this, ids, job);
+  }
+  /** → commands.enlist */
+  enlist(ids) {
+    return enlist(this, ids);
+  }
+  /** → commands.discharge */
+  discharge(ids) {
+    return discharge(this, ids);
   }
   /** → commands.targetAt */
   targetAt(x, y) {

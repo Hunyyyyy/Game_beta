@@ -16,6 +16,7 @@ export interface LogLine { t: number; text: string }
 export interface Hold { kind: string; tier: number }
 /** What a unit is attacking: another unit (player or tribe) or an animal. */
 export interface Target { kind: 'unit' | 'animal'; id: number }
+export type Shift = 'day' | 'night' | 'both';
 export type Stance = 'aggressive' | 'defensive' | 'retreat';
 /** One queued order (Shift + right click). */
 export type OrderStep = { k: 'move'; x: number; y: number } | { k: 'attackMove'; x: number; y: number } | { k: 'attack'; t: Target };
@@ -103,8 +104,20 @@ export interface Villager {
   /** Only tribal people: their role and where their camp is. */
   ai: FoeAI | null;
   bed: number;      // reserved sleeping tile by the campfire (-1 if none)
-  /** Ordered by the player during rest hours: stays awake until morning. */
+  /** Called up by the player (or the alarm) off shift: stays awake until the shift changes. */
   nightOwl: boolean;
+  /** Energy (sức), 0-100: work uses it, sleep gives it back (see rest.ts). */
+  energy: number;
+  /** Tiredness that piles up from night work and collapsing; it lowers the energy ceiling and slows recovery. */
+  strain: number;
+  /** When this villager works: by day, by night, or round the clock (the player chooses). */
+  shift: Shift;
+  /** A torch in the off hand, with how long it will still burn; needed for night work. */
+  torch: { dur: number } | null;
+  /** While asleep from exhaustion: the energy they must reach before anyone can wake them. 0 = free to wake. */
+  lockUntil: number;
+  /** The torch is lit and in sight (drawn and lighting the ground); worked out each tick. */
+  lit: boolean;
   /** Gear was handed out by the player: the stores no longer swap it automatically. */
   manualGear: boolean;
   /** Building the villager is working inside (research, crafting or repair house); null when out on the map. */

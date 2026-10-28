@@ -1,8 +1,8 @@
 /** Everyday work: gathering, carrying, building, and the phase machine that decides what a villager does next. */
-import { SEASON_DEF } from './calendar';
+import { SEASON_DEF, WEATHER } from './calendar';
 import { PACE } from './constants';
 import { Building, BUILDINGS, holdsGoods, levelDef, needsWork } from './buildings';
-import { isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS } from './jobs';
+import { isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
 import { CARRY_CAP, RES_NAME } from './resources';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
 import { RESEARCH } from './research';
@@ -13,10 +13,17 @@ import { LEFT, REACH, RIGHT, Slide, Villager, XP_MULT } from './model';
 /** How fast a villager gets through crafting or research (1 = the nominal time). */
 export function workRate(sim: Sim, v: Villager, job: WorkJob): number { return workFactor(sim, v, job); }
 
+/** How the weather and the season treat work done in the open (1 = no effect). */
+export function outdoorFactor(sim: Sim, job: WorkJob): number {
+  return OUTDOOR_JOBS.includes(job) ? WEATHER[sim.weather].work * SEASON_DEF[sim.season].work : 1;
+}
+
 export function workFactor(sim: Sim, v: Villager, job: WorkJob): number {
   const stat = v.stats[JOBS[job].stat];
   const season = job === 'food' ? SEASON_DEF[sim.season].gather : 1;
-  return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * (TOOL_OF_JOB[job] ? TIER_SPEED[sim.toolTier(v, job)] : 1) * season;
+  const tier = TOOL_OF_JOB[job] ? sim.toolTier(v, job) : -1;
+  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier];
+  return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v);
 }
 
 export function gainXp(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
@@ -112,7 +119,8 @@ export function think(sim: Sim, v: Villager, dt: number): void {
     case 'goHome': {
       // at the sleeping spot: stash carried goods in the campfire (it is also a store)
       stash(sim, v);
-      v.phase = 'sleep'; v.facing = 'front';
+      const bed = v.target >= 0 ? sim.getBuilding(v.target) : undefined;
+      if (bed && bed.done) sim.sleepIn(v, bed); else { v.phase = 'sleep'; v.facing = 'front'; }
       return;
     }
     case 'sleep': return;
@@ -122,7 +130,7 @@ export function think(sim: Sim, v: Villager, dt: number): void {
 export function doWork(sim: Sim, v: Villager, dt: number): void {
   const job = v.job as WorkJob, def = JOBS[job], n = sim.world.nodes.get(v.target);
   if (!def.res || !n || n.amount <= 0) { leaveNode(sim, v); v.phase = 'idle'; return; }
-  v.progress += (dt * PACE.work * workFactor(sim, v, job)) / def.baseTime;
+  v.progress += (dt * workFactor(sim, v, job)) / def.baseTime; // gathering is timed in real seconds, see pace.json
   gainXp(sim, v, job, dt);
   const tierNow = sim.toolTier(v, job);
   wear(sim, v, job, dt);

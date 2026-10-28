@@ -42,7 +42,7 @@ export function eachSelected(sim: Sim, ids: readonly number[], fn: (v: Villager)
   for (const id of ids) { const v = sim.get(id); if (v && v.team === 'player') fn(v); }
 }
 export function heal(sim: Sim, ids: readonly number[]): void {
-  eachSelected(sim, ids, (v) => { v.health = v.maxHealth; v.down = 0; v.fullness = 100; if (v.phase === 'down') v.phase = 'idle'; });
+  eachSelected(sim, ids, (v) => { v.health = v.maxHealth; v.down = 0; v.fullness = 100; v.energy = 100; v.strain = 0; v.lockUntil = 0; if (v.phase === 'down') v.phase = 'idle'; });
 }
 
 export function addVillagers(sim: Sim, n: number): void {
