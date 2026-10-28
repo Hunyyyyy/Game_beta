@@ -194,6 +194,9 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   .log { bottom: calc(clamp(56px, 12vw, 84px) + 10px + var(--sab)); right: calc(4px + var(--sar)); }
   .toast { top: calc(40px + var(--sat)); }
 }
+.warhud { position: fixed; left: 8px; right: 150px; bottom: calc(var(--sab) + 56px); z-index: 20; display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; background: var(--hud); border: 1px solid var(--line); border-radius: 10px; max-width: 760px; }
+.warhud .btns { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); max-width: 100%; }
 </style>
 
 <div id="app">
@@ -234,6 +237,8 @@ button.danger.armed { background: var(--bad); color: #fff; border-color: var(--b
   <div class="dialog" id="dialog" hidden></div>
   <div class="dialog" id="start" hidden></div>
   <div class="modal" id="udetail" hidden></div>
+
+  <div class="warhud" id="warhud" hidden></div>
 
   <div class="sheet" id="sheet">
     <div class="card" id="placeBar" hidden>

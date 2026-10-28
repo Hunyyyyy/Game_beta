@@ -1,0 +1,49 @@
+{
+  "name": "Bãi tập (cấp 2, bãi rào)",
+  "name_en": "Drill Ground (Tier 2)",
+  "type": "prop",
+  "size": [100,64],
+  "anchor": [50,58],
+  "footprint": [2,30,96,28],
+  "seed": 42,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": {"line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "earth": "#86704e", "earthL": "#9a8460", "wood": "#8a6238", "woodD": "#5e4026", "straw": "#c9a84e", "strawD": "#9a7c32", "stone": "#8e9498", "stoneD": "#60676b", "flag": "#b03a2e", "flagD": "#7d2a20"},
+  "layers": [
+    {"shape": "ellipse", "cx": 50, "cy": 56, "rx": 46, "ry": 5, "color": "shadow", "alpha": 0.25},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "rect", "x": 4, "y": 28, "w": 92, "h": 26, "color": "earth"},
+      {"shape": "scatter", "count": 30, "area": [4,28,92,26], "size": [1,2], "colors": ["dirt", "earthL", "stone"], "onlyOver": ["earth"]}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "rect", "x": 4, "y": 28, "w": 92, "h": 2, "color": "woodD"},
+      {"shape": "rect", "x": 4, "y": 52, "w": 92, "h": 2, "color": "woodD"},
+      {"shape": "rect", "x": 4, "y": 28, "w": 2, "h": 26, "color": "woodD"},
+      {"shape": "rect", "x": 94, "y": 28, "w": 2, "h": 26, "color": "woodD"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "line", "from": [20,52], "to": [20,30], "w": 2, "color": "wood"},
+      {"shape": "line", "from": [14,38], "to": [26,38], "w": 2, "color": "wood"},
+      {"shape": "ellipse", "cx": 20, "cy": 30, "rx": 4, "ry": 4, "color": "straw"},
+      {"shape": "pixels", "at": [[19,29],[21,29]], "color": "strawD"},
+      {"shape": "line", "from": [50,52], "to": [50,30], "w": 2, "color": "wood"},
+      {"shape": "line", "from": [44,38], "to": [56,38], "w": 2, "color": "wood"},
+      {"shape": "ellipse", "cx": 50, "cy": 30, "rx": 4, "ry": 4, "color": "straw"},
+      {"shape": "pixels", "at": [[49,29],[51,29]], "color": "strawD"},
+      {"shape": "line", "from": [80,52], "to": [80,30], "w": 2, "color": "wood"},
+      {"shape": "line", "from": [74,38], "to": [86,38], "w": 2, "color": "wood"},
+      {"shape": "ellipse", "cx": 80, "cy": 30, "rx": 4, "ry": 4, "color": "straw"},
+      {"shape": "pixels", "at": [[79,29],[81,29]], "color": "strawD"}
+    ] },
+    {"shape": "group", "if": "st4", "layers": [
+      {"shape": "rect", "x": 40, "y": 44, "w": 20, "h": 3, "color": "wood"},
+      {"shape": "line", "from": [42,44], "to": [44,36], "w": 1, "color": "woodD"},
+      {"shape": "line", "from": [48,44], "to": [50,35], "w": 1, "color": "woodD"},
+      {"shape": "line", "from": [54,44], "to": [56,36], "w": 1, "color": "woodD"},
+      {"shape": "line", "from": [10,24], "to": [10,13], "w": 1, "color": "woodD"},
+      {"shape": "poly", "points": [[11,14],[21,17],[11,21]], "color": "flag"},
+      {"shape": "line", "from": [90,24], "to": [90,13], "w": 1, "color": "woodD"},
+      {"shape": "poly", "points": [[91,14],[101,17],[91,21]], "color": "flagD"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

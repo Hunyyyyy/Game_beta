@@ -9,9 +9,10 @@ import { PlaceResult } from './model';
 // ---------------------------------------------------------------- công trình
 export function addBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, done: boolean): Building {
   const d = BUILDINGS[kind];
-  const b: Building = { id: sim.nextBid++, kind, era: sim.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, staff: [], active: null, workers: 0 };
+  const b: Building = { id: sim.nextBid++, kind, era: sim.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
+  b.hp = levelDef(b).hp;
   sim.buildings.push(b);
-  for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.occ[(y + j) * sim.world.size + x + i] = 1;
+  setOcc(sim, b, 1);
   return b;
 }
 
@@ -40,6 +41,7 @@ export function buildingLimit(sim: Sim, kind: BuildingKind): number {
 /** Why a kind of building cannot be built at all right now: it is at its limit, or it needs research or another house first. */
 export function buildingLock(sim: Sim, kind: BuildingKind): string | null {
   const have = sim.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim, kind);
+  if (limit === 0) return `Cần nâng cấp Nhà chung để xây ${BUILDINGS[kind].name.toLowerCase()}`;
   if (have >= limit) return limit === 1 ? 'Mỗi công trình chỉ xây được một cái, hãy nâng cấp nó' : `Đã đủ ${limit} ${BUILDINGS[kind].name.toLowerCase()}: nâng cấp Nhà chung để xây thêm`;
   const need = sim.dev.freeBuild ? undefined : BUILDINGS[kind].requires?.find((r) => !sim.building(r));
   if (need) return `Cần dựng ${BUILDINGS[need].name} trước`;
@@ -71,7 +73,7 @@ export function upgradeBuilding(sim: Sim, id: number): string | null {
   if (why) return why;
   const next = levelDef(b, b.level + 1);
   if (!sim.dev.freeBuild) for (const r of Object.keys(next.cost) as Res[]) sim.stock[r] -= next.cost[r] ?? 0;
-  if (sim.dev.instantBuild) { b.level++; sim.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); return null; }
+  if (sim.dev.instantBuild) { b.level++; b.hp = levelDef(b).hp; sim.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); return null; }
   b.upgrading = true; b.progress = 0;
   sim.say(`Bắt đầu nâng ${BUILDINGS[b.kind].name} lên cấp ${b.level + 1} (${next.name.toLowerCase()}). Giao việc "Thợ xây" để làm.`);
   return null;
@@ -118,7 +120,7 @@ export function moveFee(sim: Sim, b: Building): Partial<Stock> {
 
 /** Send everyone who was heading for or working at this building back to idle; an order in progress is refunded. */
 export function evict(sim: Sim, b: Building): void {
-  for (const id of [...b.staff]) { const v = sim.byId.get(id); if (v) { sim.exitBuilding(v); v.job = 'idle'; v.post = -1; } }
+  for (const id of [...b.staff]) { const v = sim.byId.get(id); if (v) { sim.exitBuilding(v); if (v.job !== 'fight') v.job = 'idle'; v.post = -1; } }
   b.staff = [];
   if (b.kind === 'builder') for (const v of sim.crew()) { sim.resetTask(v); v.job = 'idle'; }
   if (b.active && (b.kind === 'lab' || b.kind === 'workshop')) { const d = sim.orderDef(b.kind === 'lab' ? 'research' : 'craft', b.active.id); if (d) sim.pay(d.cost, 1); }
@@ -134,10 +136,19 @@ export function evict(sim: Sim, b: Building): void {
 
 export function setOcc(sim: Sim, b: Building, val: number): void {
   const d = BUILDINGS[b.kind];
+  if ((b.kind === 'gate' && b.open) || b.kind === 'trap') val = 0; // an open gate is a gap in the fence, and a pit does not block the way
   for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.occ[(b.y + j) * sim.world.size + b.x + i] = val;
 }
 
 export function canDemolish(sim: Sim, b: Building): string | null { return BUILDINGS[b.kind].buildable ? null : 'Không phá được công trình này'; }
+
+/** A work falls in battle: it leaves the village with no salvage and no refund. */
+export function destroyBuilding(sim: Sim, b: Building): void {
+  evict(sim, b);
+  setOcc(sim, b, 0);
+  sim.buildings.splice(sim.buildings.indexOf(b), 1);
+  sim.fogDirty = true;
+}
 
 export function demolishBuilding(sim: Sim, id: number): string | null {
   const b = sim.getBuilding(id);

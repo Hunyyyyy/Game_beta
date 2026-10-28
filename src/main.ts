@@ -11,6 +11,7 @@ import { $, costText } from './ui/dom';
 import { Menu } from './ui/menu';
 import { MapView } from './ui/minimap';
 import { BuildingBar, Confirm } from './ui/buildbar';
+import { WarHud } from './ui/warhud';
 import { BuildingPanel, Ctx, TargetCard, UnitCard } from './ui/panels';
 import { IndexedDbStore } from './save/indexeddb';
 import { Session, AUTO_SAVE } from './save/session';
@@ -45,6 +46,7 @@ const ctx: Ctx = { sim, ctl, sprites, session, toast };
 // ---------------------------------------------------------------- panels, menu, maps
 const unitCard = new UnitCard($('ucard'), ctx, $('udetail')), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
 const buildingBar = new BuildingBar($('bbar'), ctx, renderer, new Confirm($('dialog'), ctx));
+const warHud = new WarHud($('warhud'), ctx, renderer);
 const map = new MapView(sim, cam, renderer, ctl, $('mini'), $('bigmapCanvas'), $('bigmap'));
 const menu = new Menu($('drawer'), $('drawerTabs'), $('drawerBody'), ctx, () => { const w = renderer.screenToWorld(renderer.w / 2, renderer.h / 2); return { x: w.x / TILE, y: w.y / TILE }; });
 $('btnCloseMap').addEventListener('click', () => map.close());
@@ -159,7 +161,7 @@ function updateHud(now: number) {
   // which panels show
   const chosen = sim.villagers.filter((v) => ctl.selected.has(v.id));
   const placing = !!ctl.placing, showB = ctl.selectedBuilding !== null && ctl.buildingOpen && !placing;
-  buildingPanel.update(); buildingBar.update(); unitCard.update(chosen); targetCard.update();
+  buildingPanel.update(); buildingBar.update(); unitCard.update(chosen); targetCard.update(); warHud.update();
   if (placing || !showB) $('bpanel').hidden = true;
   if (placing || showB) { $('ucard').hidden = true; unitCard.closeDetail(); }
   if (placing || showB) $('tcard').hidden = true;

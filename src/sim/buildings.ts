@@ -1,6 +1,6 @@
 import type { Stock } from './resources';
 
-export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'barracks' | 'house' | 'field';
+export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'barracks' | 'house' | 'field' | 'fence' | 'gate' | 'tower' | 'wartent' | 'drill' | 'trap';
 
 /** Eras of the game. Each era has its own building art and its own level list (L1..L3). */
 export type Era = 'stone' | 'ancient';
@@ -16,6 +16,8 @@ export interface LevelDef {
   craftSpeed: number;
   /** Villagers that can work inside (research, crafting and repair houses). */
   slots: number;
+  /** Strength of a defence work: what the raiders must wear down to get through (0 for the rest). */
+  hp: number;
 }
 
 export interface BuildingDef {
@@ -30,11 +32,13 @@ export interface BuildingDef {
   requires?: BuildingKind[];
   /** How many may stand for each campfire level 1..4, added up over every campfire. Without it a village gets one: the houses you open from a menu. */
   perFire?: number[];
+  /** Stays in placing mode after each piece, for works laid one tile at a time (the fence). */
+  repeat?: boolean;
   /** Levels per era; an era without an entry reuses the closest earlier era's levels. */
   levels: Partial<Record<Era, LevelDef[]>>;
 }
 
-const lv = (name: string, cost: Partial<Stock>, buildTime: number, cap = 0, craftSpeed = 1, slots = 0): LevelDef => ({ name, cost, buildTime, cap, craftSpeed, slots });
+const lv = (name: string, cost: Partial<Stock>, buildTime: number, cap = 0, craftSpeed = 1, slots = 0, hp = 0): LevelDef => ({ name, cost, buildTime, cap, craftSpeed, slots, hp });
 
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   // the heart of the village: it starts as a heap of firewood and every other house is held back by its level
@@ -83,6 +87,35 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     perFire: [1, 3, 3, 3],
     levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 4), lv('Gỗ', { wood: 30, stone: 10 }, 100, 0, 1.15, 8), lv('Đá', { wood: 40, stone: 30 }, 150, 0, 1.3, 12)] },
   },
+  // defence works (not "one of each": they are laid piece by piece, as many as the campfire allows). hp is what the raiders must break down.
+  fence: {
+    kind: 'fence', name: 'Hàng rào cọc', w: 1, h: 1, buildable: true, requires: ['builder'], perFire: [14, 30, 50, 70], repeat: true,
+    levels: { stone: [lv('Cọc nhọn', { wood: 2 }, 14, 0, 1, 0, 40), lv('Hàng rào đôi', { wood: 4, stone: 1 }, 24, 0, 1, 0, 120)] },
+  },
+  // slots here are the archers who can keep watch on a tower; a gate has no staff, it opens and shuts
+  gate: {
+    kind: 'gate', name: 'Cổng', w: 1, h: 1, buildable: true, requires: ['fence'], perFire: [1, 2, 3, 4],
+    levels: { stone: [lv('Cổng gỗ', { wood: 4 }, 20, 0, 1, 0, 30), lv('Cổng đôi', { wood: 6, stone: 2 }, 32, 0, 1, 0, 90)] },
+  },
+  tower: {
+    kind: 'tower', name: 'Chòi canh', w: 2, h: 2, buildable: true, requires: ['fence'], perFire: [0, 1, 2, 3],
+    levels: { stone: [lv('Chòi gỗ', { wood: 20 }, 80, 0, 1, 2, 150), lv('Chòi cao', { wood: 30, stone: 8 }, 130, 0, 1.2, 4, 300)] },
+  },
+  // where the squads, formations and plans are made: its level decides how many squads and command cards there are
+  wartent: {
+    kind: 'wartent', name: 'Lều họp chiến', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Lều da', { wood: 30, hide: 8 }, 90), lv('Lều lớn', { wood: 40, hide: 10, stone: 15 }, 140), lv('Lều thủ lĩnh', { wood: 50, stone: 40, hide: 14 }, 200)] },
+  },
+  // the drill ground: squads train their formation here
+  drill: {
+    kind: 'drill', name: 'Bãi tập', w: 3, h: 3, buildable: true, requires: ['barracks'],
+    levels: { stone: [lv('Bãi cọc', { wood: 25 }, 80), lv('Bãi rào', { wood: 30, stone: 10 }, 120), lv('Bãi đá', { wood: 35, stone: 30 }, 170)] },
+  },
+  // a pit of sharpened stakes, laid one at a time; hp is how many men it can still wound
+  trap: {
+    kind: 'trap', name: 'Hố chông', w: 1, h: 1, buildable: true, requires: ['fence'], perFire: [4, 10, 18, 28], repeat: true,
+    levels: { stone: [lv('Hố chông', { wood: 3 }, 12, 0, 1, 0, 3), lv('Hố chông sâu', { wood: 4, stone: 2 }, 20, 0, 1, 0, 6)] },
+  },
   // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
   field: {
     kind: 'field', name: 'Ruộng', w: 3, h: 3, buildable: true, requires: ['builder'], perFire: [1, 3, 3, 4],
@@ -103,6 +136,10 @@ export interface Building {
   upgrading: boolean;
   /** Moved and standing again from salvaged parts: builds in half the time. */
   rebuild: boolean;
+  /** Strength left of a defence work (fence, gate, tower); 0 for the other houses. */
+  hp: number;
+  /** A gate lets everyone through while it is open, and stops everyone while it is shut. */
+  open: boolean;
   /** Villagers working inside (research, crafting and repair houses). */
   staff: number[];
   /** The order being worked on right now (research, crafting or repair): its id and progress 0..1. */

@@ -107,7 +107,7 @@ export function think(sim: Sim, v: Villager, dt: number): void {
       gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
       if (b.progress >= 1) {
         b.progress = 1;
-        if (b.upgrading) { b.level++; b.upgrading = false; sim.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
+        if (b.upgrading) { b.level++; b.upgrading = false; b.hp = levelDef(b).hp; sim.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
         else { b.done = true; b.rebuild = false; sim.fogDirty = true; if (b.kind === 'builder') sim.trimCrew(); sim.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (RESEARCH.enabled && b.kind === 'lab' && sim.researched.size === 0) sim.say('Mở Nhà nghiên cứu, đưa một dân thông minh vào làm việc, rồi nghiên cứu bản vẽ đầu tiên.'); }
         v.phase = 'idle';
       }

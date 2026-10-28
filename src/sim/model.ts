@@ -43,6 +43,10 @@ export interface FoeAI {
   wander: number;          // seconds until the next stroll
   goal: { x: number; y: number } | null;
   raid: number;            // id of the raid party (0 = none)
+  /** Seconds a raider has been unable to get at what he is after (a fence in the way). */
+  stuck?: number;
+  /** The fence or gate he has decided to break down (building id), 0 for none. */
+  siege?: number;
 }
 /** Điểm đứng cuối cùng và hướng nhìn (luôn ngang) khi làm việc. */
 export interface Slide { x: number; y: number; face: 'left' | 'right' }
@@ -127,7 +131,56 @@ export interface Villager {
   orderCd: number;
   /** Recipe id of the tool this villager handed in for repair; the mended tool comes back to them if they still need it. */
   repairFor: string | null;
+  /** Wear of the weapon and the armour in hand: which piece it was counted for, hits left, and whether it is broken (useless until mended). */
+  /** The squad (đội) this soldier belongs to, -1 for none. */
+  squad: number;
+  gear: { w: string | null; wd: number; wb: boolean; a: string | null; ad: number; ab: boolean };
 }
+
+// ---------------------------------------------------------------- war: squads, maps, plans
+export type FormationName = 'line' | 'circle' | 'wedge' | 'horns' | 'scatter' | 'ambush';
+/** A squad (đội): soldiers who move, stand and fight in one formation under one commander. */
+export interface Squad {
+  id: number; name: string; color: string;
+  ids: number[]; leader: number;
+  formation: FormationName;
+  /** How well each formation is known, 0..100 (trained at the Bãi tập). */
+  mastery: Record<string, number>;
+  /** Until when the squad is changing formation and open to blows. */
+  switchUntil: number;
+  anchor: { x: number; y: number } | null; heading: number;
+  training: boolean;
+}
+/** What the scouts of one village brought back. */
+export interface ScoutMap { tribe: string; level: number; at: number; gaps: number }
+export interface ScoutMission { id: number; tribe: string; level: number; ids: number[]; phase: 'go' | 'watch' | 'back'; t: number; need: number; survivors: number }
+
+export type Objective = 'camp' | 'gate' | 'stores' | 'leader' | 'ambush';
+export type Route = 'main' | 'forest' | 'night';
+export type Trigger = { kind: 'time'; at: number } | { kind: 'after'; squad: number } | { kind: 'signal' } | { kind: 'leaves' };
+export type PlanStance = 'fight' | 'evade' | 'hold' | 'shoot';
+export type MissionState = 'idle' | 'wait' | 'march' | 'engaged' | 'hold' | 'withdraw' | 'done';
+/** What one squad is to do in a plan. */
+export interface Mission {
+  squad: number; objective: Objective; route: Route; trigger: Trigger; stance: PlanStance;
+  /** Share of the squad lost (0..1) at which it pulls back to the rally point. */
+  withdrawAt: number;
+  state: MissionState; initial: number;
+  /** Defence only: where the squad stands when the alarm sounds. */
+  post: 'gate' | 'fence' | 'tower' | 'reserve' | 'fire';
+}
+export type CardKind = 'go' | 'advance' | 'hold' | 'formation' | 'attack' | 'shoot' | 'retreat' | 'signal';
+/** A command card: only the cards in the plan show as buttons once the fight is on. */
+export interface Card { id: number; kind: CardKind; squad: number; arg: string }
+export interface Plan {
+  id: number; kind: 'attack' | 'defense'; tribe: string | null;
+  missions: Mission[]; cards: Card[];
+  status: 'draft' | 'running' | 'done';
+  startedAt: number; signal: boolean; nextCard: number;
+  rally: { x: number; y: number };
+}
+/** What happened in the fight that is on (or was last): the base of the campaign log. */
+export interface BattleState { on: boolean; since: number; quiet: number; ourDead: number; foeDead: number; breaches: number; shots: number; notes: string[] }
 
 /** Hunger while asleep, as a share of the waking rate. */
 export const SLEEP_HUNGER = 0.4;

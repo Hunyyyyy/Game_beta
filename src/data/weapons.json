@@ -26,6 +26,7 @@
       "cost": {
         "wood": 1
       },
+      "durability": 120,
       "time": 40,
       "tier": 1,
       "style": "swing"
@@ -39,6 +40,7 @@
       "cost": {
         "wood": 2
       },
+      "durability": 100,
       "time": 60,
       "tier": 1,
       "style": "thrust"
@@ -53,6 +55,7 @@
         "wood": 2,
         "stone": 2
       },
+      "durability": 160,
       "time": 120,
       "tier": 2,
       "style": "swing"
@@ -69,20 +72,26 @@
     "sling": {
       "name": "Dây quăng đá",
       "type": "crush",
-      "range": 7,
+      "range": 5.5,
       "damage": 5,
       "cycle": 1.8,
       "ranged": true,
+      "cost": { "hide": 1, "stone": 1 },
+      "durability": 90,
+      "time": 60,
       "style": "sling", "projectile": "stone",
       "tier": 1
     },
     "bow": {
       "name": "Cung ngắn",
       "type": "pierce",
-      "range": 11,
+      "range": 8,
       "damage": 8,
       "cycle": 2.0,
       "ranged": true,
+      "cost": { "wood": 3, "hide": 1 },
+      "durability": 110,
+      "time": 100,
       "style": "shoot", "projectile": "arrow",
       "tier": 1
     }
@@ -96,6 +105,7 @@
       "cost": {
         "hide": 3
       },
+      "durability": 200,
       "time": 100,
       "tier": 1
     }

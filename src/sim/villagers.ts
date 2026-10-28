@@ -37,7 +37,7 @@ export function makeVillager(sim: Sim, x: number, y: number, sex: Sex, team: Tea
     look: { sex, skin: pick(SKIN), hair: pick(HAIR), hide: '#8b6a45', pants: '#3f63a8' },
     x: x + 0.5, y: y + 0.5, path: [], slide: null, facing: 'front', speed: 1.6 + 0.1 * stats.agi, animClock: 0, tx: -1, ty: -1,
     stats, potential, skill, tools: emptyToolSet(), job: 'idle', phase: 'idle', slot: 0, target: -1, prefer: -1, progress: 0, frac: 0, timer: 0, order: null,
-    carry: null, fullness: 100, health: maxHpOf(stats.vit), starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, post: -1, nightOwl: false, energy: 100, strain: 0, shift: 'day', torch: null, lockUntil: 0, lit: false, manualGear: false, inside: null, orderCd: 0, repairFor: null,
+    carry: null, fullness: 100, health: maxHpOf(stats.vit), starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, post: -1, nightOwl: false, energy: 100, strain: 0, shift: 'day', torch: null, lockUntil: 0, lit: false, manualGear: false, inside: null, orderCd: 0, repairFor: null, squad: -1, gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
     team, maxHealth: maxHpOf(stats.vit), weapon: null, armor: null, morale: MORALE.start, stance: 'aggressive',
     fight: { mode: 'none', target: null, dest: null, anchor: null, repath: 0, scan: 0 }, queue: [], atkCd: 0, down: 0, rescue: 0, fleeT: 0, calm: 99, loot: -1, leader: false, swing: null, flinch: 0, ai: null,
   };
@@ -66,7 +66,8 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   // working inside a house: no walking, no fighting, nobody sees them; but worn out or off shift they come out and go to bed
   // (asleep in a bed is another thing: they stay in until rested, and a threat or the morning brings them out below)
   if (v.inside !== null && v.phase !== 'sleep') {
-    if (sim.shouldSleep(v, false)) { sim.exitBuilding(v); goHome(sim, v); } else { sim.animate(v, dt); return; }
+    const onWatch = v.job === 'fight' && v.post >= 0 && sim.tribes.some((t) => t.raid); // the garrison of a tower stays up while a raid is on
+    if (sim.shouldSleep(v, onWatch)) { sim.exitBuilding(v); goHome(sim, v); } else { sim.animate(v, dt); return; }
   }
 
   // ---- combat decides first: fighting, fleeing, rescuing, hunting ----

@@ -7,7 +7,7 @@ import type { Ctx } from './panels';
 
 /** What the button that opens a building's panel is called. */
 const OPEN_LABEL: Record<BuildingKind, string> = {
-  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', workshop: 'Chế tạo', lab: 'Nghiên cứu', repair: 'Sửa đồ', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', barracks: 'Người trong lều', house: 'Người trong nhà', field: 'Người làm ruộng',
+  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', workshop: 'Chế tạo', lab: 'Nghiên cứu', repair: 'Sửa đồ', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', barracks: 'Người trong lều', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', drill: 'Xem bãi tập', trap: 'Hố chông',
 };
 
 interface Ask {
@@ -49,6 +49,7 @@ export class Confirm {
 export class BuildingBar {
   private readonly who = h('div', { class: 'who' });
   private readonly open = h('button', { class: 'sm primary' }) as HTMLButtonElement;
+  private readonly gate = h('button', { class: 'sm primary' }) as HTMLButtonElement;
   private readonly upgrade = h('button', { class: 'sm', text: 'Nâng cấp' }) as HTMLButtonElement;
   private readonly move = h('button', { class: 'sm', text: 'Dời' }) as HTMLButtonElement;
   private readonly demolish = h('button', { class: 'sm danger', text: 'Phá bỏ' }) as HTMLButtonElement;
@@ -57,8 +58,9 @@ export class BuildingBar {
 
   constructor(private readonly root: HTMLElement, private readonly c: Ctx, private readonly r: Renderer, private readonly confirm: Confirm) {
     const { ctl } = c;
-    root.append(this.who, h('div', { class: 'btns' }, this.open, this.upgrade, this.move, this.demolish));
+    root.append(this.who, h('div', { class: 'btns' }, this.open, this.gate, this.upgrade, this.move, this.demolish));
     this.open.addEventListener('click', () => { if (this.id !== null) ctl.selectBuilding(this.id, true); });
+    this.gate.addEventListener('click', () => { const b = this.cur(); if (b) { const e = c.sim.toggleGate(b.id); if (e) c.toast(e); ctl.onChange(); } });
     this.upgrade.addEventListener('click', () => { const b = this.cur(); if (b) this.askUpgrade(b); });
     this.move.addEventListener('click', () => { const b = this.cur(); if (b) ctl.startMoving(b.id); });
     this.demolish.addEventListener('click', () => { const b = this.cur(); if (b) this.askDemolish(b); });
@@ -96,8 +98,9 @@ export class BuildingBar {
     this.id = b.id;
     const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
     const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
-    this.who.replaceChildren(h('b', { text: def.name }), ` · ${state}`);
-    this.open.textContent = OPEN_LABEL[b.kind]; this.open.hidden = !b.done;
+    this.who.replaceChildren(h('b', { text: def.name }), ` · ${state}${b.done && lv.hp ? ` · bền ${Math.max(0, Math.round(b.hp))}/${lv.hp}` : ''}`);
+    this.open.textContent = OPEN_LABEL[b.kind]; this.open.hidden = !b.done || b.kind === 'fence' || b.kind === 'gate';
+    this.gate.hidden = !(b.kind === 'gate' && b.done); this.gate.textContent = b.open ? 'Đóng cổng' : 'Mở cổng';
     this.upgrade.hidden = !(canGrow(b.kind) && b.done && !b.upgrading && b.level < top);
     this.move.hidden = this.demolish.hidden = !def.buildable;
     const fee = sim.moveFee(b);

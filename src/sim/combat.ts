@@ -23,12 +23,16 @@ export interface WeaponDef {
   cost?: Partial<Stock>;
   time?: number;
   tier?: number;
+  /** Blows (or shots) before it is worn out; foes' gear does not wear. */
+  durability?: number;
 }
 export interface ArmorDef extends Record<DmgType, number> {
   name: string;
   cost?: Partial<Stock>;
   time?: number;
   tier?: number;
+  /** Blows taken before it is worn out. */
+  durability?: number;
 }
 
 /** What a fighter's body does while armed. Hands for work have their own animations; these are for people who carry a weapon. */

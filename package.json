@@ -8,6 +8,7 @@
     "viewer": "node tools/build-viewer.mjs && node tools/build-blueprint-viewer.mjs",
     "typecheck": "tsc --noEmit",
     "test:sim": "esbuild test/sim.test.ts --bundle --platform=node --outfile=dist/sim.test.cjs --loader:.json=json && node dist/sim.test.cjs",
+    "check:ui": "esbuild tools/check-ui.ts --bundle --platform=node --outfile=dist/check-ui.cjs --loader:.json=json --log-level=error && node dist/check-ui.cjs && esbuild tools/check-art.ts --bundle --platform=node --outfile=dist/check-art.cjs --loader:.json=json --log-level=error && node dist/check-art.cjs",
     "economy": "esbuild tools/economy.ts --bundle --platform=node --outfile=dist/economy.cjs --loader:.json=json && node dist/economy.cjs",
     "test:ui": "node test/ui.cjs",
     "test:arch": "node test/architecture.cjs",

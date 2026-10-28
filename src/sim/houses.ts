@@ -86,15 +86,15 @@ export function assignField(sim: Sim, ids: readonly number[], fieldId: number): 
 /** The house this villager is posted to: the one of their staff job, or the Ruộng the player gave them. */
 function postOf(sim: Sim, v: Villager): Building | undefined {
   if (isStaffJob(v.job)) return sim.building(STAFF_BUILDING[v.job]);
-  const b = v.job === 'food' && v.post >= 0 ? sim.getBuilding(v.post) : undefined;
-  return b && b.kind === 'field' ? b : undefined;
+  const b = (v.job === 'food' || v.job === 'fight') && v.post >= 0 ? sim.getBuilding(v.post) : undefined;
+  return b && (v.job === 'food' ? b.kind === 'field' : b.kind === 'tower') ? b : undefined;
 }
 
 export function planStaff(sim: Sim, v: Villager): void {
-  if (!isStaffJob(v.job) && !(v.job === 'food' && v.post >= 0)) return;
+  if (!isStaffJob(v.job) && !((v.job === 'food' || v.job === 'fight') && v.post >= 0)) return;
   const b = postOf(sim, v);
-  if (!b) { if (v.job === 'food') v.post = -1; else v.job = 'idle'; return; }
-  if (staffCount(sim, b) >= levelDef(b).slots) { v.job = 'idle'; v.post = -1; sim.say(`${v.name} không còn chỗ trong ${BUILDINGS[b.kind].name.toLowerCase()}.`); return; }
+  if (!b) { if (v.job === 'food' || v.job === 'fight') v.post = -1; else v.job = 'idle'; return; }
+  if (staffCount(sim, b) >= levelDef(b).slots) { if (v.job !== 'fight') v.job = 'idle'; v.post = -1; sim.say(`${v.name} không còn chỗ trong ${BUILDINGS[b.kind].name.toLowerCase()}.`); return; }
   const d = BUILDINGS[b.kind];
   if (sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { v.target = b.id; v.phase = 'goStaff'; return; }
   sim.wait(v, 3);

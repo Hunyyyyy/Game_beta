@@ -22,7 +22,7 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 |---|---|---|
 | **Dữ liệu và luật thuần** | `constants` `resources` `rng` `calendar` `buildings` `jobs` `tools` `combat` `research` `world` `fog` `path` `model` | Bảng số, kiểu dữ liệu, hàm thuần. Không import `Sim`, không có trạng thái của ván chơi. Số liệu chính nằm ở `src/data/*.json`. |
 | **Hệ thống làng** | `construction` `economy` `works` `houses` `inventory` `commands` `labor` `movement` `villagers` `environment` | Hành vi. Mỗi hàm nhận `sim` làm tham số đầu. |
-| **Hệ thống sinh vật** | `battle` `fauna` `tribes` | Chiến đấu, thú, bộ tộc. Cùng kiểu hàm nhận `sim`. |
+| **Hệ thống sinh vật** | `battle` `fauna` `tribes` `army` `scouting` | Chiến đấu, thú, bộ tộc, đội và trận pháp, trinh sát. Cùng kiểu hàm nhận `sim`. |
 | **Lưu game** | `codec` (dữ liệu), `save` | `save.ts` đổi `Sim` thành JSON thuần có số phiên bản và ngược lại; `codec.ts` lo `Map`/`Set`/số vô cực và nén chuỗi lặp. Không biết nơi lưu. |
 | **Lõi** | `sim.ts` | Giữ toàn bộ trạng thái, chạy `advance`/`tick`, và có một hàm chuyển tiếp cho mỗi thao tác công khai. |
 | **Công cụ thử** | `dev.ts` | Menu Dev. Chỉ dùng trong lúc phát triển. |
@@ -40,6 +40,8 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 | `labor` | Việc hằng ngày: thu hoạch, làm ruộng, mang vác, xây; máy trạng thái của dân | `think` `doWork` `doFarm` `planBuild` |
 | `movement` | Đi lại: đường đi, bước chân, chỗ đứng, tư thế vẽ | `pathTo` `moveUnit` `animate` |
 | `villagers` | Tạo dân và một ngày của dân: đói, máu, ngủ | `makeVillager` `tickVillager` |
+| `defense` | Hàng rào, cổng, chòi canh: mở đóng cổng, phá công trình phòng thủ, cung thủ trên chòi | `toggleGate` `damageWork` `towerBonus` `assignTower` |
+| `warplan` | Kế hoạch chiến: nhiệm vụ cho từng đội, thẻ lệnh, kế hoạch phòng thủ, trống báo động | `newPlan` `startPlan` `playCard` `soundAlarm` |
 | `environment` | Đồng hồ, mùa, thời tiết, tầm nhìn | `tickCalendar` `refreshFog` |
 | `rest` | Sức (năng lượng), ngủ, ca làm, đuốc, mệt mỏi tích lũy | `tickEnergy` `shouldSleep` `callUp` `ensureTorch` |
 
@@ -155,3 +157,21 @@ Mọi con số ở `src/data/rest.json`; logic ở `src/sim/rest.ts`.
 Công trình mở từ menu (thợ xây, kho, chế tạo, nghiên cứu, sửa đồ, kho công cụ, kho vũ khí) chỉ có **một** cái. Nhà dân, Lều chiến binh và Ruộng có `perFire` trong `buildings.ts`: số cái tối đa theo cấp Nhà chung 1 đến 4, cộng dồn qua mọi đống lửa (`buildingLimit`). Cấp tối đa của mỗi cái vẫn theo `levelCapByFire`. Giường tính trên mọi nhà cùng loại (`bedsIn`, `freeBed` chọn nhà gần nhất còn giường).
 
 Ruộng: người chơi chọn ai vào làm (`houses.assignField`, như các nhà làm việc); họ làm bên trong, thức ăn về thẳng kho (`labor.tickFarms`), và `Villager.post` ghi ruộng họ được giao. Dân Hái lượm không được giao thì chỉ hái bụi quả. Một ruộng một người làm; cấp ruộng nhân tốc độ (`craftSpeed`); mùa nhân bằng `farm` trong `seasons.json`; thời gian cho một đơn vị ở `pace.json` (`gather.farm`). Muốn cân bằng lại thì chạy `npm run economy`: đo dân làm ra bao nhiêu mỗi ngày game và so ruộng của từng cấp lửa với nhu cầu ăn.
+
+## Quân chủng và phòng thủ (M6.1, M6.2)
+
+`formations.ts` (lớp dữ liệu) + `data/units.json`: ba quân chủng bộ, cung, kỵ. Vũ khí tầm xa làm ra cung thủ, còn lại là bộ binh; kỵ thú chưa có trong game nhưng bảng khắc chế đã sẵn. `battle.armMultiplier` nhân hệ số vào mỗi đòn: bộ binh đánh cung ×1,5, cung đánh kỵ ×1,5, kỵ đánh bộ ×1,5, ngược lại ×0,67. Cung thủ bị áp sát trong 2 ô bắn yếu một nửa; đứng cạnh chòi canh thì bắn mạnh ×1,25 và xa thêm 2 ô.
+
+`defense.ts` (hệ thống làng): `fence`, `gate`, `tower` trong `buildings.ts` có `hp` mỗi cấp, đặt từng đoạn (`repeat`), số lượng tối đa theo cấp lửa (`perFire`). Hàng rào và cổng đóng chiếm ô (`world.occ`) nên chặn đường mọi người; cổng mở thì trống ô (`setOcc` biết). Kẻ tập kích không tìm được đường tới đích trong vài giây thì quay sang phá đoạn rào gần nhất (`tribes.siegeBrain`, `noteStuck`). Cung thủ lên chòi bằng `Villager.post` và neo đứng cạnh chòi.
+
+Công cụ Dev cho thử chiến đấu: `dev.combatReady` (mở hết), `raiseArmy`, `defenseLine`, `garrisonTowers`, `enemyWave`.
+
+## Chiến lược (M6.3 đến M6.8)
+
+- `army.ts`: đội (`Squad`), trận pháp (hàng ngang, vòng tròn, mũi nhọn, sừng bò, rải quân, phục kích; số liệu `data/formations.json`), độ thuần thục luyện ở Bãi tập, `attackFactor` và `takenFactor` (nhân vào mỗi đòn trong `battle.ts`, bị chặn ở ×3,5), cụm (`clusters`, vẽ cờ cụm và giảm hình khi trận lớn), và nhật ký trận (`tickBattle`, `noteBattle`).
+- `scouting.ts`: cử trinh sát, rủi ro chết từng người, bản đồ ba cấp có tuổi (mất 10% mỗi ngày), bản đồ hở khi thiếu người.
+- `warplan.ts`: kế hoạch tấn công (mỗi đội một nhiệm vụ: mục tiêu theo cấp bản đồ, hướng tiến, giờ xuất phát, thái độ, điều kiện rút), thẻ lệnh (giới hạn theo cấp Lều họp chiến), mẫu phòng thủ và trống báo động.
+- `simwar.ts`: nửa chuyển tiếp của `Sim` cho phần chiến, trộn vào `Sim` để `sim.ts` không quá 650 dòng.
+- Chòi canh: cung thủ vào trong (như nhà làm việc) và bắn ra; hố chông là công trình đặt từng cái.
+- Vũ khí và giáp mòn theo số đòn (`wearGear`): hết bền thì mất hẳn một nửa số lần, nửa kia hỏng và chủ nhân tự mang tới Nhà sửa chữa. Dân hết máu thì chết hẳn, không còn trạng thái ngã.
+- Chưa làm: mô phỏng theo cụm thay cho mô phỏng từng người, kỵ thú, hỏa công, dụ thú, cắt đường lương, tù binh, gián điệp, NPC tự xây rào và đặt bẫy.
