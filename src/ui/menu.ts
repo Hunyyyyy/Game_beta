@@ -52,13 +52,14 @@ export class Menu {
   // ---------------------------------------------------------------- build
   private buildPage(): HTMLElement {
     const { sim, ctl } = this.c, page = h('div', { class: 'page' });
-    page.append(hint('Xây dựng', 'Mỗi loại công trình chỉ xây MỘT cái trong cả game; muốn mạnh hơn thì nâng cấp nó. Chọn công trình rồi chạm lên bản đồ để chọn chỗ. Nếu đang chọn dân, họ sẽ tự đi xây.'));
+    page.append(hint('Xây dựng', 'Nhà làm việc (thợ xây, kho, chế tạo, nghiên cứu, sửa đồ, kho công cụ, kho vũ khí) chỉ xây MỘT cái, muốn mạnh hơn thì nâng cấp. Nhà dân, Lều chiến binh và Ruộng xây được nhiều cái, số lượng tăng khi nâng cấp Nhà chung. Chọn công trình rồi chạm lên bản đồ để chọn chỗ. Nếu đang chọn dân, họ sẽ tự đi xây.'));
     const rows: Array<() => void> = [];
     const ROLE: Partial<Record<BuildingKind, string>> = {
       builder: 'Dân làm thợ xây ở đây (do bạn chọn). Phải có nhà này mới dựng được các công trình khác.', storage: 'Cất tài nguyên.', lab: 'Nghiên cứu bản vẽ, mở công trình và tự động hóa. Dân thông minh làm việc bên trong.',
       workshop: 'Chế tạo công cụ, vũ khí, giáp theo bản vẽ. Dân làm việc bên trong.', repair: 'Sửa công cụ đã mòn. Dân làm việc bên trong.',
       barracks: 'Chiến binh ngủ ở đây (vào lều, hiện thành danh sách) và hồi sức nhanh hơn nằm cạnh đống lửa. Mỗi cấp thêm giường. Cần nghiên cứu mới xây được.',
       house: 'Dân thường ngủ ở đây (vào nhà, hiện thành danh sách) và hồi sức đầy đủ. Không có nhà hoặc hết giường thì dân ngủ cạnh đống lửa, hồi sức chậm hơn. Cần nghiên cứu mới xây được.',
+      field: 'Dân bạn chọn vào ruộng làm việc bên trong (không hiện trên bản đồ), thức ăn về thẳng kho, đều quanh năm hơn bụi quả (bụi quả không mọc lại). Mỗi ruộng một người, nâng cấp để làm nhanh hơn. Cần nghiên cứu mới xây được.',
       toolstore: 'Cất công cụ cho dân tự lấy.', armory: 'Cất vũ khí và giáp cho dân tự lấy.',
     };
     for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
@@ -69,7 +70,9 @@ export class Menu {
       rows.push(() => {
         const lock = sim.buildingLock(kind), poor = !sim.dev.freeBuild && !(Object.keys(lv.cost) as Array<keyof typeof lv.cost>).every((k) => sim.stock[k as keyof typeof sim.stock] >= (lv.cost[k] ?? 0));
         btn.disabled = !!lock || poor; status.textContent = lock ?? (poor ? 'Chưa đủ vật liệu' : '');
-        btn.textContent = sim.buildings.some((b) => b.kind === kind) ? 'Đã xây' : 'Đặt';
+        const have = sim.buildings.filter((b) => b.kind === kind).length, limit = sim.buildingLimit(kind);
+        btn.textContent = have >= limit ? 'Đã đủ' : 'Đặt';
+        if (limit > 1 && !lock) status.textContent = `Đã có ${have}/${limit}${poor ? ' · chưa đủ vật liệu' : ''}`;
       });
     }
     this.updaters.push(() => rows.forEach((f) => f()));

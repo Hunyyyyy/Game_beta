@@ -37,7 +37,7 @@ export function assignCrew(sim: Sim, ids: readonly number[]): string | null {
     if (v.job === 'build') continue;
     if (v.job === 'fight') { err = 'Chiến binh do đống lửa trại quản lý: giải ngũ trước'; continue; }
     if (crew(sim).length >= levelDef(house).slots) { err = `${BUILDINGS.builder.name} cấp ${house.level} chỉ chứa ${levelDef(house).slots} thợ`; continue; }
-    sim.resetTask(v); sim.clearCombat(v); v.job = 'build'; v.prefer = -1;
+    sim.resetTask(v); sim.clearCombat(v); v.job = 'build'; v.prefer = -1; v.post = -1;
   }
   return err;
 }
@@ -62,17 +62,39 @@ export function assignStaff(sim: Sim, ids: readonly number[], job: 'craft' | 're
     if (v.inside === b.id) { v.job = job; continue; }
     if (v.job === 'fight') { err = 'Chiến binh do đống lửa trại quản lý: giải ngũ trước'; continue; }
     if (staffCount(sim, b) >= levelDef(b).slots) { err = `${BUILDINGS[b.kind].name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} người`; continue; }
-    sim.resetTask(v); sim.clearCombat(v); v.job = job; v.prefer = -1;
+    sim.resetTask(v); sim.clearCombat(v); v.job = job; v.prefer = -1; v.post = -1;
     planStaff(sim, v);
   }
   return err;
 }
 
+/** Put villagers to work on a Ruộng the player chose: they go inside and grow food for the store. Returns an error or null. */
+export function assignField(sim: Sim, ids: readonly number[], fieldId: number): string | null {
+  const b = sim.getBuilding(fieldId);
+  if (!b || b.kind !== 'field' || !b.done) return 'Ruộng chưa dựng xong';
+  let err: string | null = null;
+  for (const v of sim.mine(ids)) {
+    if (v.post === b.id && v.job === 'food') continue;
+    if (v.job === 'fight') { err = 'Chiến binh do đống lửa trại quản lý: giải ngũ trước'; continue; }
+    if (staffCount(sim, b) >= levelDef(b).slots) { err = `${BUILDINGS.field.name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} người`; continue; }
+    sim.resetTask(v); sim.clearCombat(v); v.job = 'food'; v.prefer = -1; v.post = b.id;
+    planStaff(sim, v);
+  }
+  return err;
+}
+
+/** The house this villager is posted to: the one of their staff job, or the Ruộng the player gave them. */
+function postOf(sim: Sim, v: Villager): Building | undefined {
+  if (isStaffJob(v.job)) return sim.building(STAFF_BUILDING[v.job]);
+  const b = v.job === 'food' && v.post >= 0 ? sim.getBuilding(v.post) : undefined;
+  return b && b.kind === 'field' ? b : undefined;
+}
+
 export function planStaff(sim: Sim, v: Villager): void {
-  if (!isStaffJob(v.job)) return;
-  const b = sim.building(STAFF_BUILDING[v.job]);
-  if (!b) { v.job = 'idle'; return; }
-  if (staffCount(sim, b) >= levelDef(b).slots) { v.job = 'idle'; sim.say(`${v.name} không còn chỗ trong ${BUILDINGS[b.kind].name.toLowerCase()}.`); return; }
+  if (!isStaffJob(v.job) && !(v.job === 'food' && v.post >= 0)) return;
+  const b = postOf(sim, v);
+  if (!b) { if (v.job === 'food') v.post = -1; else v.job = 'idle'; return; }
+  if (staffCount(sim, b) >= levelDef(b).slots) { v.job = 'idle'; v.post = -1; sim.say(`${v.name} không còn chỗ trong ${BUILDINGS[b.kind].name.toLowerCase()}.`); return; }
   const d = BUILDINGS[b.kind];
   if (sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { v.target = b.id; v.phase = 'goStaff'; return; }
   sim.wait(v, 3);
@@ -80,7 +102,7 @@ export function planStaff(sim: Sim, v: Villager): void {
 
 export function enterBuilding(sim: Sim, v: Villager): void {
   const b = sim.getBuilding(v.target);
-  if (!b || !b.done || !isStaffJob(v.job) || STAFF_BUILDING[v.job] !== b.kind || b.staff.length >= levelDef(b).slots) { v.phase = 'idle'; if (isStaffJob(v.job)) v.job = 'idle'; return; }
+  if (!b || !b.done || postOf(sim, v)?.id !== b.id || b.staff.length >= levelDef(b).slots) { v.phase = 'idle'; if (isStaffJob(v.job)) v.job = 'idle'; return; }
   b.staff.push(v.id); v.inside = b.id; v.phase = 'inside'; v.path = []; v.slide = null;
   const d = BUILDINGS[b.kind]; v.x = b.x + d.w / 2; v.y = b.y + d.h / 2; v.facing = 'front';
   sim.say(`${v.name} vào ${BUILDINGS[b.kind].name.toLowerCase()} làm việc.`);
@@ -112,5 +134,5 @@ export function exitBuilding(sim: Sim, v: Villager): void {
 
 /** "Cho ra": send the staff out to the map, idle. */
 export function releaseStaff(sim: Sim, ids: readonly number[]): void {
-  for (const v of sim.mine(ids)) if (v.inside !== null) { exitBuilding(sim, v); v.job = 'idle'; sim.fogDirty = true; }
+  for (const v of sim.mine(ids)) if (v.inside !== null) { exitBuilding(sim, v); v.job = 'idle'; v.post = -1; sim.fogDirty = true; }
 }

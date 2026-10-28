@@ -1,6 +1,6 @@
 import type { Stock } from './resources';
 
-export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'barracks' | 'house';
+export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'barracks' | 'house' | 'field';
 
 /** Eras of the game. Each era has its own building art and its own level list (L1..L3). */
 export type Era = 'stone' | 'ancient';
@@ -28,6 +28,8 @@ export interface BuildingDef {
   upgradable?: boolean;
   /** Kinds that must stand, finished, before this one can be placed: the order the village grows in. */
   requires?: BuildingKind[];
+  /** How many may stand for each campfire level 1..4, added up over every campfire. Without it a village gets one: the houses you open from a menu. */
+  perFire?: number[];
   /** Levels per era; an era without an entry reuses the closest earlier era's levels. */
   levels: Partial<Record<Era, LevelDef[]>>;
 }
@@ -72,12 +74,19 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   // where soldiers sleep, out of sight, as a list (slots = beds, craftSpeed = how well they rest); without a bed they sleep by the campfire
   barracks: {
     kind: 'barracks', name: 'Lều chiến binh', w: 2, h: 2, buildable: true, requires: ['builder'],
+    perFire: [1, 2, 2, 2],
     levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 3), lv('Gỗ', { wood: 25, hide: 6 }, 100, 0, 1.1, 5), lv('Đá', { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 8)] },
   },
   // where everyone who is not a soldier sleeps, out of sight, as a list; without a bed they sleep by the campfire and rest slower
   house: {
     kind: 'house', name: 'Nhà dân', w: 2, h: 2, buildable: true, requires: ['builder'],
+    perFire: [1, 3, 3, 3],
     levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 4), lv('Gỗ', { wood: 30, stone: 10 }, 100, 0, 1.15, 8), lv('Đá', { wood: 40, stone: 30 }, 150, 0, 1.3, 12)] },
+  },
+  // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
+  field: {
+    kind: 'field', name: 'Ruộng', w: 3, h: 3, buildable: true, requires: ['builder'], perFire: [1, 3, 3, 4],
+    levels: { stone: [lv('Đất vỡ', { wood: 10 }, 70, 0, 1, 1), lv('Luống đắp', { wood: 15, stone: 5 }, 110, 0, 1.4, 1), lv('Bờ đá', { wood: 20, stone: 15 }, 160, 0, 1.8, 1)] },
   },
 };
 

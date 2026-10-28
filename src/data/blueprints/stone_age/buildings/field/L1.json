@@ -1,0 +1,71 @@
+{
+  "name": "Ruộng (cấp 1, đất vỡ)",
+  "name_en": "Field (Tier 1, Broken Soil)",
+  "type": "prop",
+  "size": [100,64],
+  "anchor": [50,58],
+  "footprint": [2,30,96,28],
+  "seed": 21,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": {"line": "#2b1d10", "shadow": "#000000", "soil": "#6a4a2c", "soilL": "#86613a", "soilD": "#4d341e", "furrow": "#3c2815", "dirt": "#7a6244", "wood": "#8a6238", "rope": "#d8c690", "leaf": "#6fa83c", "leafL": "#9ccc4e"},
+  "layers": [
+    {"shape": "ellipse", "cx": 50, "cy": 56, "rx": 46, "ry": 5, "color": "shadow", "alpha": 0.25},
+    {"shape": "poly", "points": [[14,26],[86,26],[94,54],[6,54]], "color": "dirt", "alpha": 0.5, "ifNot": "st1"},
+    {"shape": "rect", "x": 6, "y": 28, "w": 2, "h": 6, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 92, "y": 28, "w": 2, "h": 6, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 6, "y": 48, "w": 2, "h": 6, "color": "wood", "ifNot": "st1"},
+    {"shape": "rect", "x": 92, "y": 48, "w": 2, "h": 6, "color": "wood", "ifNot": "st1"},
+    {"shape": "line", "from": [7,29], "to": [93,29], "w": 1, "color": "rope", "ifNot": "st1"},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "poly", "points": [[14,26],[86,26],[94,54],[6,54]], "color": "soil"},
+      {"shape": "scatter", "count": 40, "area": [10,28,80,24], "size": [1,2], "colors": ["soilL", "soilD", "furrow"], "onlyOver": ["soil"]}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "line", "from": [15.2,30], "to": [84.8,30], "w": 2, "color": "furrow"},
+      {"shape": "line", "from": [13.6,35], "to": [86.4,35], "w": 2, "color": "furrow"},
+      {"shape": "line", "from": [12,40], "to": [88,40], "w": 2, "color": "furrow"},
+      {"shape": "line", "from": [10.4,45], "to": [89.6,45], "w": 2, "color": "furrow"},
+      {"shape": "line", "from": [8.8,50], "to": [91.2,50], "w": 2, "color": "furrow"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "line", "from": [15.2,30], "to": [84.8,30], "w": 1, "color": "soilL", "alpha": 0.6},
+      {"shape": "line", "from": [13.6,35], "to": [86.4,35], "w": 1, "color": "soilL", "alpha": 0.6},
+      {"shape": "line", "from": [12,40], "to": [88,40], "w": 1, "color": "soilL", "alpha": 0.6},
+      {"shape": "line", "from": [10.4,45], "to": [89.6,45], "w": 1, "color": "soilL", "alpha": 0.6},
+      {"shape": "line", "from": [8.8,50], "to": [91.2,50], "w": 1, "color": "soilL", "alpha": 0.6}
+    ] },
+    {"shape": "group", "if": "st4", "layers": [
+      {"shape": "pixels", "at": [[14,29],[14,28]], "color": "leaf"},
+      {"shape": "pixels", "at": [[13,27],[15,27]], "color": "leafL"},
+      {"shape": "pixels", "at": [[42,29],[42,28]], "color": "leaf"},
+      {"shape": "pixels", "at": [[41,27],[43,27]], "color": "leafL"},
+      {"shape": "pixels", "at": [[70,29],[70,28]], "color": "leaf"},
+      {"shape": "pixels", "at": [[69,27],[71,27]], "color": "leafL"},
+      {"shape": "pixels", "at": [[28,34],[28,33]], "color": "leaf"},
+      {"shape": "pixels", "at": [[27,32],[29,32]], "color": "leafL"},
+      {"shape": "pixels", "at": [[56,34],[56,33]], "color": "leaf"},
+      {"shape": "pixels", "at": [[55,32],[57,32]], "color": "leafL"},
+      {"shape": "pixels", "at": [[82,34],[82,33]], "color": "leaf"},
+      {"shape": "pixels", "at": [[81,32],[83,32]], "color": "leafL"},
+      {"shape": "pixels", "at": [[14,39],[14,38]], "color": "leaf"},
+      {"shape": "pixels", "at": [[13,37],[15,37]], "color": "leafL"},
+      {"shape": "pixels", "at": [[42,39],[42,38]], "color": "leaf"},
+      {"shape": "pixels", "at": [[41,37],[43,37]], "color": "leafL"},
+      {"shape": "pixels", "at": [[70,39],[70,38]], "color": "leaf"},
+      {"shape": "pixels", "at": [[69,37],[71,37]], "color": "leafL"},
+      {"shape": "pixels", "at": [[28,44],[28,43]], "color": "leaf"},
+      {"shape": "pixels", "at": [[27,42],[29,42]], "color": "leafL"},
+      {"shape": "pixels", "at": [[56,44],[56,43]], "color": "leaf"},
+      {"shape": "pixels", "at": [[55,42],[57,42]], "color": "leafL"},
+      {"shape": "pixels", "at": [[82,44],[82,43]], "color": "leaf"},
+      {"shape": "pixels", "at": [[81,42],[83,42]], "color": "leafL"},
+      {"shape": "pixels", "at": [[14,49],[14,48]], "color": "leaf"},
+      {"shape": "pixels", "at": [[13,47],[15,47]], "color": "leafL"},
+      {"shape": "pixels", "at": [[42,49],[42,48]], "color": "leaf"},
+      {"shape": "pixels", "at": [[41,47],[43,47]], "color": "leafL"},
+      {"shape": "pixels", "at": [[70,49],[70,48]], "color": "leaf"},
+      {"shape": "pixels", "at": [[69,47],[71,47]], "color": "leafL"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

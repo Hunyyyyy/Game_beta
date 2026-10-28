@@ -29,6 +29,9 @@ import barracksL3 from '../data/blueprints/stone_age/buildings/barracks/L3.json'
 import houseL1 from '../data/blueprints/stone_age/buildings/house/L1.json';
 import houseL2 from '../data/blueprints/stone_age/buildings/house/L2.json';
 import houseL3 from '../data/blueprints/stone_age/buildings/house/L3.json';
+import fieldL1 from '../data/blueprints/stone_age/buildings/field/L1.json';
+import fieldL2 from '../data/blueprints/stone_age/buildings/field/L2.json';
+import fieldL3 from '../data/blueprints/stone_age/buildings/field/L3.json';
 import campfireL2 from '../data/blueprints/stone_age/buildings/campfire/L2.json';
 import campfireL3 from '../data/blueprints/stone_age/buildings/campfire/L3.json';
 import campfireL4 from '../data/blueprints/stone_age/buildings/campfire/L4.json';
@@ -102,6 +105,7 @@ const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>
     armory: [armoryL1, armoryL2, armoryL3],
     barracks: [barracksL1, barracksL2, barracksL3],
     house: [houseL1, houseL2, houseL3],
+    field: [fieldL1, fieldL2, fieldL3],
   },
 };
 const TINTS: Partial<Record<BuildingKind, Record<string, string>>> = {}; // no reused drawings left: every house has its own art

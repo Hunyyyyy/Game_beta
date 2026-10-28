@@ -94,7 +94,7 @@ function jobFor(sim: Sim, ids: readonly number[], job: Job): string | null {
   if (job === 'craft' || job === 'research' || job === 'repair') return sim.assignStaff(ids, job);
   if (job === 'build') return sim.assignCrew(ids);
   for (const v of mine(sim, ids)) {
-    resetTask(sim, v); clearCombat(sim, v); v.job = job; v.prefer = -1;
+    resetTask(sim, v); clearCombat(sim, v); v.job = job; v.prefer = -1; v.post = -1;
     keepWatch(sim, v);
   }
   return null;
@@ -106,7 +106,7 @@ export function enlist(sim: Sim, ids: readonly number[]): number {
   let n = 0;
   for (const v of mine(sim, ids)) {
     if (v.job === 'fight') continue;
-    resetTask(sim, v); clearCombat(sim, v); v.job = 'fight'; v.prefer = -1; v.fight.anchor = null;
+    resetTask(sim, v); clearCombat(sim, v); v.job = 'fight'; v.prefer = -1; v.post = -1; v.fight.anchor = null;
     keepWatch(sim, v); n++;
   }
   return n;

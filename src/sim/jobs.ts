@@ -35,6 +35,9 @@ export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 
 export const STAFF_BUILDING = { craft: 'workshop', research: 'lab', repair: 'repair' } as const;
 export const isStaffJob = (j: Job): j is keyof typeof STAFF_BUILDING => j in STAFF_BUILDING;
 
+/** Seconds of a farmer's work for one unit of food from a field of the first level. */
+export const FARM_TIME = paceJson.gather.farm;
+
 /** Kinh nghiệm cần để lên cấp 1..5 (giây làm việc, chưa nhân tốc độ học). */
 export const XP_LEVELS = [60, 150, 300, 500, 800];
 export const MAX_LEVEL = 5;

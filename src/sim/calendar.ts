@@ -13,6 +13,8 @@ export interface SeasonDef {
   daylight: number;
   /** Gathering productivity multiplier. */
   gather: number;
+  /** Same for working a field: the soil gives a little even in winter. */
+  farm: number;
   /** How fast outdoor work goes in this season (winter cold slows it). */
   work: number;
   enter: string;

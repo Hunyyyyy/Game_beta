@@ -71,6 +71,7 @@ export interface Villager {
   phase: Phase;
   slot: number;     // chỗ đứng đã giữ bên cạnh nguồn: 1 = trái, 2 = phải, 0 = chưa giữ
   target: number;   // chỉ số ô nguồn hoặc id công trình đang nhắm
+  post: number;     // id Ruộng mà người chơi giao cho làm (nghề Hái lượm); -1 nếu không
   prefer: number;   // mục tiêu người chơi chỉ định (-1 nếu không)
   progress: number;
   frac: number;     // phần lẻ của sản lượng chưa nhận

@@ -47,10 +47,16 @@ export function bedsTaken(sim: Sim, b: Building, except?: Villager): number {
   return sim.villagers.filter((o) => o !== except && ((o.phase === 'sleep' && o.inside === b.id) || (o.phase === 'goHome' && o.target === b.id))).length;
 }
 
-/** Where the villager sleeps: a finished house of the right kind with a free bed, or nothing (they sleep by the campfire). */
+/** Where the villager sleeps: the nearest finished house of the right kind with a free bed, or nothing (they sleep by the campfire). */
 export function freeBed(sim: Sim, v: Villager): Building | undefined {
-  const b = sim.building(bedKind(v));
-  return b && bedsTaken(sim, b, v) < levelDef(b).slots ? b : undefined;
+  const kind = bedKind(v);
+  let best: Building | undefined, bd = Infinity;
+  for (const b of sim.buildings) {
+    if (b.kind !== kind || !b.done || bedsTaken(sim, b, v) >= levelDef(b).slots) continue;
+    const d = Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y);
+    if (d < bd) { bd = d; best = b; }
+  }
+  return best;
 }
 
 /** How well the place they sleep in lets them rest: the house they are inside (and its level), else the campfire's slower rest. */
@@ -175,5 +181,5 @@ export function shouldSleep(sim: Sim, v: Villager, fighting: boolean): boolean {
   return !onDuty(sim, v);
 }
 
-/** Beds in the finished house of a kind (0 when there is none). */
-export function bedsIn(sim: Sim, kind: 'barracks' | 'house'): number { const b = sim.building(kind); return b ? levelDef(b).slots : 0; }
+/** Beds in all the finished houses of a kind (0 when there is none). */
+export function bedsIn(sim: Sim, kind: 'barracks' | 'house'): number { return sim.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0); }

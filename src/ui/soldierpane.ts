@@ -27,8 +27,8 @@ export class SoldierPane {
   update(): void {
     const { sim, ctl, toast } = this.c;
     const soldiers = sim.villagers.filter((v) => v.job === 'fight'), civilians = sim.villagers.filter((v) => v.job !== 'fight');
-    const tent = sim.building('barracks'), beds = sim.bedsIn('barracks');
-    this.head.textContent = `Chiến binh (${soldiers.length}) · ${tent ? `Lều chiến binh ${beds} giường` : 'chưa có Lều chiến binh'}`;
+    const beds = sim.bedsIn('barracks');
+    this.head.textContent = `Chiến binh (${soldiers.length}) · ${beds ? `Lều chiến binh ${beds} giường` : 'chưa có Lều chiến binh'}`;
     this.poolHead.textContent = `Dân có thể tuyển (${civilians.length})`;
     const key = `${soldiers.map((v) => v.id).join()}|${civilians.map((v) => v.id).join()}`;
     if (key !== this.key) {

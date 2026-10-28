@@ -2,7 +2,7 @@
 import { SEASON_DEF, WEATHER } from './calendar';
 import { PACE } from './constants';
 import { Building, BUILDINGS, holdsGoods, levelDef, needsWork } from './buildings';
-import { isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
+import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
 import { CARRY_CAP, RES_NAME } from './resources';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
 import { RESEARCH } from './research';
@@ -18,9 +18,9 @@ export function outdoorFactor(sim: Sim, job: WorkJob): number {
   return OUTDOOR_JOBS.includes(job) ? WEATHER[sim.weather].work * SEASON_DEF[sim.season].work : 1;
 }
 
-export function workFactor(sim: Sim, v: Villager, job: WorkJob): number {
+export function workFactor(sim: Sim, v: Villager, job: WorkJob, field = false): number {
   const stat = v.stats[JOBS[job].stat];
-  const season = job === 'food' ? SEASON_DEF[sim.season].gather : 1;
+  const season = job === 'food' ? SEASON_DEF[sim.season][field ? 'farm' : 'gather'] : 1;
   const tier = TOOL_OF_JOB[job] ? sim.toolTier(v, job) : -1;
   const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier];
   return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v);
@@ -154,10 +154,27 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
   } else if (v.carry.amount >= CARRY_CAP[res] || sim.needTool(v, job)) { leaveNode(sim, v); v.phase = 'idle'; }
 }
 
+/** The fields work: whoever the player put inside one grows food straight into the store, faster in a field of a higher level, with a hoe, and with the season. */
+export function tickFarms(sim: Sim, dt: number): void {
+  for (const b of sim.buildings) {
+    if (b.kind !== 'field' || !b.done) continue;
+    for (const id of b.staff) {
+      const v = sim.byId.get(id);
+      if (!v || v.phase !== 'inside' || v.job !== 'food' || sim.stock.food >= sim.capacity('food')) continue;
+      v.progress += (dt * workFactor(sim, v, 'food', true) * levelDef(b).craftSpeed) / FARM_TIME;
+      gainXp(sim, v, 'food', dt); wear(sim, v, 'food', dt);
+      if (v.progress < 1) continue;
+      v.progress -= 1;
+      const acc = v.frac + TIER_YIELD[sim.toolTier(v, 'food')], whole = Math.floor(acc);
+      v.frac = acc - whole; sim.stock.food = Math.min(sim.capacity('food'), sim.stock.food + whole);
+    }
+  }
+}
+
 export function plan(sim: Sim, v: Villager): void {
   if (v.job === 'hunt' || v.job === 'fight') { wait(sim, v, 1); return; } // combat code drives these jobs
   if (v.job === 'build') { if (!sim.planTool(v, 'build')) planBuild(sim, v); return; }
-  if (isStaffJob(v.job)) { sim.planStaff(v); return; }
+  if (isStaffJob(v.job) || (v.job === 'food' && v.post >= 0)) { sim.planStaff(v); return; }
   const def = JOBS[v.job as WorkJob], res = def.res!;
   if (v.carry && (v.carry.res !== res || v.carry.amount >= CARRY_CAP[v.carry.res])) { planDeliver(sim, v); return; }
   if (sim.stock[res] >= sim.capacity(res)) {

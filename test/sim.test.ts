@@ -4,7 +4,7 @@ import { renderAnimal } from '../src/character/animal-rig.js';
 import { Sim } from '../src/sim/sim';
 import { DAY_LENGTH, PACE } from '../src/sim/constants';
 import { Tile } from '../src/sim/world';
-import { lightAt, rollWeather, seasonOf, SEASONS } from '../src/sim/calendar';
+import { lightAt, rollWeather, SEASON_DEF, seasonOf, SEASONS } from '../src/sim/calendar';
 import { RECIPE_BY_ID, TIER_DURABILITY } from '../src/sim/tools';
 import { levelDef, levelsOf, maxLevel } from '../src/sim/buildings';
 import { ANIMALS, ARMORS, COMBAT_STATES, cycleOf, damageOf, MORALE, poseOf, RULES, SPECIES, STYLES, TRIBES, TRIBE_IDS, WEAPONS, zoneOf } from '../src/sim/combat';
@@ -1263,6 +1263,56 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(sol.weapon === 'spear' && sol.anim === 'thrust_charge' && sol.hold?.kind === 'spear', 'the soldier walks with the spear in hand');
   run(sm, 25);
   ok(Math.hypot(sol.x - gx, sol.y - gy) < 3 && sol.job === 'fight', 'and stands at the spot they were sent to');
+}
+
+{
+  // how many beds, tents and fields a village may have grows with the campfire, and several houses of a kind work together
+  const sm = mk(1337); reveal(sm); const fire = sm.campfire()!; sm.dev.freeBuild = true; // the order of building is tested elsewhere
+  const put = (kind: Parameters<Sim['canPlace']>[0]) => (sm.buildingLock(kind) ? null : putBuilding(sm, kind));
+  const limits = (f: number) => { fire.level = f; return [sm.buildingLimit('house'), sm.buildingLimit('barracks'), sm.buildingLimit('field'), sm.buildingLimit('storage')].join(); };
+  ok(limits(1) === '1,1,1,1' && limits(2) === '3,2,3,1' && limits(3) === '3,2,3,1' && limits(4) === '3,2,4,1', 'houses, tents and fields: 1 at fire level 1, more as it grows; menu houses stay one');
+  fire.level = 1;
+  const h1 = put('house'); ok(!!h1 && sm.buildingLock('house') !== null, 'the first Nhà dân goes up and then a second is refused at campfire level 1');
+  fire.level = 2;
+  ok(sm.buildingLock('house') === null, 'raising the campfire lets another be built');
+  const h2 = put('house'), h3 = put('house');
+  ok(!!h2 && !!h3 && sm.buildingLock('house') !== null && sm.bedsIn('house') === 12, 'three houses, then the limit holds, and their beds add up (12)');
+  const tired = sm.villagers.slice(0, 3); tired.forEach((v) => { v.phase = 'idle'; });
+  ok(tired.every((v) => { const b = sm.freeBed(v); return !!b && [h1, h2, h3].some((x) => x!.id === b.id); }), 'a tired villager finds a bed in the nearest house with room');
+}
+{
+  // a field gives steady food to those the player puts inside; nobody is sent there by the game, one per field, a higher level is faster
+  const farmed = (level: number, seasonDay = 2, post = true) => {
+    const sm = mk(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; o.energy = 100; });
+    for (const n of sm.world.nodes.values()) if (n.kind === 'bush') n.amount = 0;
+    sm.time = DAY_LENGTH * (seasonDay - 1) + DAY_LENGTH * 0.3; sm.dev.noTire = true;
+    const [a, b] = sm.villagers; sm.setJob([a.id], 'food'); sm.setJob([b.id], 'food'); sm.dev.freeBuild = sm.dev.instantBuild = true;
+    const f = putBuilding(sm, 'field'); f.level = level;
+    const err = post ? sm.assignField([a.id, b.id], f.id) : null;
+    sm.stock.food = 0; run(sm, 600);
+    return { sm, a, b, f, err, food: sm.stock.food };
+  };
+  const none = farmed(1, 2, false), l1 = farmed(1), l3 = farmed(3);
+  ok(none.food === 0 && none.a.inside === null, 'a gatherer nobody posted to the field brings nothing when the bushes are bare');
+  ok(l1.food > 4, `the farmer inside brings food while the bushes are bare (${l1.food})`);
+  ok(l3.food > l1.food * 1.4, `a higher field level is faster (${l1.food} -> ${l3.food})`);
+  ok(l1.f.staff.length === 1 && l1.err !== null && [l1.a, l1.b].filter((v) => v.inside === l1.f.id && v.phase === 'inside').length === 1, 'one farmer fits a field; the second is told there is no room');
+  const sm2 = l1.sm, who = [l1.a, l1.b].find((v) => v.inside === l1.f.id)!;
+  ok(who.job === 'food' && who.post === l1.f.id, 'the farmer keeps the gatherer job and knows their field');
+  sm2.setJob([who.id], 'wood');
+  ok(who.inside === null && who.post === -1 && who.job === 'wood' && l1.f.staff.length === 0, 'a job button takes them out of the field');
+  sm2.assignField([who.id], l1.f.id); run(sm2, 5); ok(who.inside === l1.f.id, 'and the field takes them back'); sm2.releaseStaff([who.id]);
+  ok(who.inside === null && who.post === -1 && who.job === 'idle', '"Cho ra" lets them out');
+  sm2.assignField([who.id], l1.f.id); run(sm2, 5); sm2.demolishBuilding(l1.f.id); run(sm2, 1);
+  ok(who.inside === null && who.post === -1 && who.job === 'idle', 'pulling the field down puts the farmer out and idle');
+  ok(SEASON_DEF.winter.farm > 0 && SEASON_DEF.winter.farm < SEASON_DEF.winter.work && SEASON_DEF.autumn.farm > SEASON_DEF.spring.farm, 'fields give a little in winter and most in autumn');
+}
+{
+  // the Ruộng must be researched, and the Nhà thợ xây stands first
+  RESEARCH.enabled = true; const lock = new Sim(1337); lock.dev.freeBuild = false; putBuilding(lock, 'builder');
+  ok(lock.buildingLock('field') === 'Cần nghiên cứu: Làm ruộng', 'a field needs the "Làm ruộng" research');
+  lock.researched.add('farming'); ok(lock.buildingLock('field') === null, 'researched, a field can be placed');
+  RESEARCH.enabled = false;
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');

@@ -31,13 +31,13 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 
 | Tệp | Trách nhiệm | Ví dụ hàm |
 |---|---|---|
-| `construction` | Đặt, nâng cấp, dời, phá công trình; công trình cho làng thứ gì (chỗ chứa, dân tối đa, tốc độ xây) | `placeBuilding` `upgradeBuilding` `buildingLock` `popCap` |
+| `construction` | Đặt, nâng cấp, dời, phá công trình; công trình cho làng thứ gì (chỗ chứa, dân tối đa, tốc độ xây) | `placeBuilding` `upgradeBuilding` `buildingLock` `buildingLimit` `popCap` |
 | `economy` | Kho chung: trả chi phí, đổi chác, thức ăn hỏng | `pay` `barter` `syncFood` |
 | `works` | Hàng đợi và tiến độ của nhà nghiên cứu, chế tạo, sửa chữa | `queueResearch` `queueCraft` `tickWorks` |
 | `houses` | Ai làm việc hoặc ngủ ở nhà nào: đội thợ xây, người trong nhà, người nằm giường | `assignCrew` `assignStaff` `releaseStaff` `sleepIn` `sleepers` |
 | `inventory` | Công cụ, vũ khí, giáp: phát, hao mòn, trả kho, lấy, đặt chế | `assignTool` `repairTool` `assignGear` `planTool` |
 | `commands` | Lệnh của người chơi: đi, làm, đánh, giữ chỗ, đổi nghề, tuyển và giải ngũ lính | `orderMove` `orderWork` `setJob` `enlist` `discharge` |
-| `labor` | Việc hằng ngày: thu hoạch, mang vác, xây; máy trạng thái của dân | `think` `doWork` `planBuild` |
+| `labor` | Việc hằng ngày: thu hoạch, làm ruộng, mang vác, xây; máy trạng thái của dân | `think` `doWork` `doFarm` `planBuild` |
 | `movement` | Đi lại: đường đi, bước chân, chỗ đứng, tư thế vẽ | `pathTo` `moveUnit` `animate` |
 | `villagers` | Tạo dân và một ngày của dân: đói, máu, ngủ | `makeVillager` `tickVillager` |
 | `environment` | Đồng hồ, mùa, thời tiết, tầm nhìn | `tickCalendar` `refreshFog` |
@@ -149,3 +149,9 @@ Mọi con số ở `src/data/rest.json`; logic ở `src/sim/rest.ts`.
 - **Ca làm** (`shift`: ban ngày, ban đêm, cả ngày lẫn đêm) do người chơi đặt cho từng dân, mặc định ban ngày. Lệnh giao việc lúc ngoài ca gọi dân dậy nếu họ đủ sức (ban đêm cần đuốc).
 - **Làm việc ban đêm cần đuốc** (cầm tay trái, cháy hết sau 10 phút, vẫn còn thì trả lại kho lúc sáng) và chỉ đạt **70%** hiệu suất; lính canh đêm không cần đuốc. Đuốc làm ở Nhà chế tạo (bản vẽ có sẵn từ đầu), phát tay hoặc tự cấp cho ca đêm từ kho. Người cầm đuốc thấy xa 6 ô và tỏa sáng.
 - **Chống bóc lột:** làm đêm tích lũy `strain` (mệt mỏi). Strain hạ sức tối đa và làm hồi sức chậm, giảm dần khi ngủ đêm; làm ca đêm liên tục thì không kịp hồi.
+
+## Số lượng công trình và ruộng
+
+Công trình mở từ menu (thợ xây, kho, chế tạo, nghiên cứu, sửa đồ, kho công cụ, kho vũ khí) chỉ có **một** cái. Nhà dân, Lều chiến binh và Ruộng có `perFire` trong `buildings.ts`: số cái tối đa theo cấp Nhà chung 1 đến 4, cộng dồn qua mọi đống lửa (`buildingLimit`). Cấp tối đa của mỗi cái vẫn theo `levelCapByFire`. Giường tính trên mọi nhà cùng loại (`bedsIn`, `freeBed` chọn nhà gần nhất còn giường).
+
+Ruộng: người chơi chọn ai vào làm (`houses.assignField`, như các nhà làm việc); họ làm bên trong, thức ăn về thẳng kho (`labor.tickFarms`), và `Villager.post` ghi ruộng họ được giao. Dân Hái lượm không được giao thì chỉ hái bụi quả. Một ruộng một người làm; cấp ruộng nhân tốc độ (`craftSpeed`); mùa nhân bằng `farm` trong `seasons.json`; thời gian cho một đơn vị ở `pace.json` (`gather.farm`). Muốn cân bằng lại thì chạy `npm run economy`: đo dân làm ra bao nhiêu mỗi ngày game và so ruộng của từng cấp lửa với nhu cầu ăn.

@@ -208,6 +208,8 @@ export class Sim {
   addBuilding(kind: BuildingKind, x: number, y: number, done: boolean): Building { return construction.addBuilding(this, kind, x, y, done); }
 
 
+  /** → construction.buildingLimit */
+  buildingLimit(kind: BuildingKind): number { return construction.buildingLimit(this, kind); }
   /** → construction.buildingLock */
   buildingLock(kind: BuildingKind): string | null { return construction.buildingLock(this, kind); }
 
@@ -280,11 +282,15 @@ export class Sim {
   /** → works.storeCap */
   storeCap(cat: 'tool' | 'gear'): number { return works.storeCap(this, cat); }
 
+  /** → labor.tickFarms */
+  tickFarms(dt: number): void { return labor.tickFarms(this, dt); }
   /** → works.tickWorks */
   tickWorks(dt: number): void { return works.tickWorks(this, dt); }
 
   /** → houses.bestFor */
   bestFor(job: 'craft' | 'research' | 'repair'): Villager | null { return houses.bestFor(this, job); }
+  /** → houses.assignField */
+  assignField(ids: readonly number[], fieldId: number): string | null { return houses.assignField(this, ids, fieldId); }
   /** → houses.houseRate */
   houseRate(b: Building): number { return houses.houseRate(this, b); }
   /** → houses.staffCount */
@@ -411,7 +417,7 @@ export class Sim {
     this.syncFood();
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
-    this.tickWorks(dt);
+    this.tickWorks(dt); this.tickFarms(dt);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     this.moraleClock += dt;

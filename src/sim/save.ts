@@ -14,7 +14,7 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
@@ -80,6 +80,11 @@ export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disabl
     }
     if (!d.researched.includes('torch1')) d.researched.push('torch1');
     return { ...d, version: 2 };
+  },
+  // 2 -> 3: a gatherer can be posted to a Ruộng
+  2: (d) => {
+    for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) v.post ??= -1;
+    return { ...d, version: 3 };
   },
 };
 

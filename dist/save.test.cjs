@@ -121,10 +121,10 @@ var PACE = { work: WORK_DAY / DAY_LENGTH };
 
 // src/data/seasons.json
 var seasons_default = {
-  spring: { name: "Xu\xE2n", daylight: 0.6, work: 1, gather: 0.8, enter: "M\xF9a xu\xE2n \u0111\u1EBFn: b\u1EE5i c\xE2y ra hoa, v\xE0i h\xF4m n\u1EEFa s\u1EBD c\xF3 qu\u1EA3. Hay m\u01B0a." },
-  summer: { name: "H\u1EA1", daylight: 0.6, work: 1.05, gather: 1.2, enter: "M\xF9a h\u1EA1: ng\xE0y d\xE0i h\u01A1n, qu\u1EA3 ch\xEDn nhi\u1EC1u. Coi ch\u1EEBng gi\xF4ng s\xE9t." },
-  autumn: { name: "Thu", daylight: 0.6, work: 1, gather: 1.4, enter: "M\xF9a thu: qu\u1EA3 nhi\u1EC1u nh\u1EA5t n\u0103m. M\xF9a \u0111\xF4ng s\u1EAFp t\u1EDBi, h\xE3y chu\u1EA9n b\u1ECB." },
-  winter: { name: "\u0110\xF4ng", daylight: 0.6, work: 0.8, gather: 0, enter: "M\xF9a \u0111\xF4ng: b\u1EE5i qu\u1EA3 tr\u1EE5i h\u1EBFt, ng\xE0y ng\u1EAFn l\u1EA1i. S\u1ED1ng b\u1EB1ng th\u1EE9c \u0103n \u0111\xE3 t\xEDch tr\u1EEF." }
+  spring: { name: "Xu\xE2n", daylight: 0.6, work: 1, gather: 0.8, farm: 0.9, enter: "M\xF9a xu\xE2n \u0111\u1EBFn: b\u1EE5i c\xE2y ra hoa, v\xE0i h\xF4m n\u1EEFa s\u1EBD c\xF3 qu\u1EA3. Hay m\u01B0a." },
+  summer: { name: "H\u1EA1", daylight: 0.6, work: 1.05, gather: 1.2, farm: 1.2, enter: "M\xF9a h\u1EA1: ng\xE0y d\xE0i h\u01A1n, qu\u1EA3 ch\xEDn nhi\u1EC1u. Coi ch\u1EEBng gi\xF4ng s\xE9t." },
+  autumn: { name: "Thu", daylight: 0.6, work: 1, gather: 1.4, farm: 1.4, enter: "M\xF9a thu: qu\u1EA3 nhi\u1EC1u nh\u1EA5t n\u0103m. M\xF9a \u0111\xF4ng s\u1EAFp t\u1EDBi, h\xE3y chu\u1EA9n b\u1ECB." },
+  winter: { name: "\u0110\xF4ng", daylight: 0.6, work: 0.8, gather: 0, farm: 0.25, enter: "M\xF9a \u0111\xF4ng: b\u1EE5i qu\u1EA3 tr\u1EE5i h\u1EBFt, ng\xE0y ng\u1EAFn l\u1EA1i. S\u1ED1ng b\u1EB1ng th\u1EE9c \u0103n \u0111\xE3 t\xEDch tr\u1EEF." }
 };
 
 // src/data/weather.json
@@ -272,6 +272,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
+    perFire: [1, 2, 2, 2],
     levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 3), lv("G\u1ED7", { wood: 25, hide: 6 }, 100, 0, 1.1, 5), lv("\u0110\xE1", { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 8)] }
   },
   // where everyone who is not a soldier sleeps, out of sight, as a list; without a bed they sleep by the campfire and rest slower
@@ -282,7 +283,19 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
+    perFire: [1, 3, 3, 3],
     levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 4), lv("G\u1ED7", { wood: 30, stone: 10 }, 100, 0, 1.15, 8), lv("\u0110\xE1", { wood: 40, stone: 30 }, 150, 0, 1.3, 12)] }
+  },
+  // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
+  field: {
+    kind: "field",
+    name: "Ru\u1ED9ng",
+    w: 3,
+    h: 3,
+    buildable: true,
+    requires: ["builder"],
+    perFire: [1, 3, 3, 4],
+    levels: { stone: [lv("\u0110\u1EA5t v\u1EE1", { wood: 10 }, 70, 0, 1, 1), lv("Lu\u1ED1ng \u0111\u1EAFp", { wood: 15, stone: 5 }, 110, 0, 1.4, 1), lv("B\u1EDD \u0111\xE1", { wood: 20, stone: 15 }, 160, 0, 1.8, 1)] }
   }
 };
 function levelsOf(kind, era) {
@@ -2245,8 +2258,8 @@ function foeBrain(sim, f, t, ai, dt) {
 
 // src/data/pace.json
 var pace_default = {
-  _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
-  gather: { wood: 11, stone: 17, food: 6 },
+  _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
+  gather: { wood: 11, stone: 17, food: 6, farm: 70 },
   bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
   outdoor: ["wood", "stone", "food", "build"]
 };
@@ -2267,6 +2280,7 @@ var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1
 var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "repair", "hunt", "fight"];
 var STAFF_BUILDING = { craft: "workshop", research: "lab", repair: "repair" };
 var isStaffJob = (j) => j in STAFF_BUILDING;
+var FARM_TIME = pace_default.gather.farm;
 var XP_LEVELS = [60, 150, 300, 500, 800];
 var MAX_LEVEL = 5;
 var CREW_BUILDING = { build: "builder" };
@@ -2292,10 +2306,11 @@ var research_default = {
     { id: "hoe2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c l\xEAn c\u1EA5p 2.", requires: ["hoe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 10, coin: 6 }, time: 340, unlocks: { recipes: ["hoe2"] } },
     { id: "hammer2", name: "B\u1EA3n v\u1EBD B\xFAa \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD B\xFAa l\xEAn c\u1EA5p 2.", requires: ["hammer1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 360, unlocks: { recipes: ["hammer2"] } },
     { id: "mace2", name: "B\u1EA3n v\u1EBD Ch\xF9y \u0111\xE1", desc: "V\u1EBD c\xE1ch bu\u1ED9c \u0111\u1EA7u \u0111\xE1 n\u1EB7ng v\xE0o c\xE1n th\xE0nh ch\xF9y.", requires: ["club1", "axe2"], needLevel: 3, minInt: 8, cost: { stone: 30, coin: 10 }, time: 600, unlocks: { recipes: ["mace2"] } },
-    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { storage: 2, workshop: 2, lab: 2, repair: 2, toolstore: 2, armory: 2, house: 2, barracks: 2 } } },
-    { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber", "pick1"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { storage: 3, workshop: 3, lab: 3, repair: 3, toolstore: 3, armory: 3, house: 3, barracks: 3 } } },
+    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { storage: 2, workshop: 2, lab: 2, repair: 2, toolstore: 2, armory: 2, house: 2, barracks: 2, field: 2 } } },
+    { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber", "pick1"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { storage: 3, workshop: 3, lab: 3, repair: 3, toolstore: 3, armory: 3, house: 3, barracks: 3, field: 3 } } },
     { id: "house", name: "Nh\xE0 d\xE2n", desc: "D\u1EF1ng nh\xE0 cho d\xE2n ng\u1EE7: ng\u1EE7 trong nh\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["house"] } },
     { id: "barracks", name: "L\u1EC1u chi\u1EBFn binh", desc: "D\u1EF1ng l\u1EC1u cho chi\u1EBFn binh ng\u1EE7 v\xE0 ngh\u1EC9 ng\u01A1i; l\xEDnh \u0111\u01B0\u1EE3c tuy\u1EC3n \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["barracks"] } },
+    { id: "farming", name: "L\xE0m ru\u1ED9ng", desc: "V\u1EE1 \u0111\u1EA5t l\xE0m ru\u1ED9ng: th\u1EE9c \u0103n \u0111\u1EC1u quanh n\u0103m, kh\xF4ng nh\u01B0 b\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n.", requires: ["hoe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 220, unlocks: { buildings: ["field"] } },
     { id: "tool_store", name: "Kho c\xF4ng c\u1EE5", desc: "Cho ph\xE9p d\u1EF1ng Kho c\xF4ng c\u1EE5 \u0111\u1EC3 c\u1EA5t r\xECu, cu\u1ED1c, b\xFAa.", requires: ["hammer1", "axe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 200, unlocks: { buildings: ["toolstore"] } },
     { id: "armory", name: "Kho v\u0169 kh\xED", desc: "Cho ph\xE9p d\u1EF1ng Kho v\u0169 kh\xED \u0111\u1EC3 c\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["armory"] } },
     { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: ["tool_store"], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
@@ -2341,8 +2356,14 @@ function footprintError(sim, kind, x, y, ignore) {
   }
   return null;
 }
+function buildingLimit(sim, kind) {
+  const per = BUILDINGS[kind].perFire;
+  if (!per) return 1;
+  return sim.buildings.reduce((n, f) => n + (f.kind === "campfire" ? per[Math.min(per.length, f.level) - 1] : 0), 0);
+}
 function buildingLock(sim, kind) {
-  if (sim.buildings.some((b) => b.kind === kind)) return "M\u1ED7i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y \u0111\u01B0\u1EE3c m\u1ED9t c\xE1i, h\xE3y n\xE2ng c\u1EA5p n\xF3";
+  const have = sim.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim, kind);
+  if (have >= limit) return limit === 1 ? "M\u1ED7i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y \u0111\u01B0\u1EE3c m\u1ED9t c\xE1i, h\xE3y n\xE2ng c\u1EA5p n\xF3" : `\u0110\xE3 \u0111\u1EE7 ${limit} ${BUILDINGS[kind].name.toLowerCase()}: n\xE2ng c\u1EA5p Nh\xE0 chung \u0111\u1EC3 x\xE2y th\xEAm`;
   const need = sim.dev.freeBuild ? void 0 : BUILDINGS[kind].requires?.find((r) => !sim.building(r));
   if (need) return `C\u1EA7n d\u1EF1ng ${BUILDINGS[need].name} tr\u01B0\u1EDBc`;
   if (!sim.dev.freeBuild && !buildingOpen(sim.researched, kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForBuilding(kind)?.name ?? "?"}`;
@@ -2428,6 +2449,7 @@ function evict(sim, b) {
     if (v) {
       sim.exitBuilding(v);
       v.job = "idle";
+      v.post = -1;
     }
   }
   b.staff = [];
@@ -2449,9 +2471,13 @@ function evict(sim, b) {
   for (const v of sim.villagers) {
     if (v.target !== b.id) continue;
     if (v.phase === "goSite" || v.phase === "build" || v.phase === "goEquip" || v.phase === "goStaff" || v.phase === "goOrder") {
-      if (isStaffJob(v.job)) v.job = "idle";
+      if (isStaffJob(v.job) || v.post === b.id) v.job = "idle";
       sim.resetTask(v);
     }
+  }
+  for (const v of sim.villagers) if (v.post === b.id) {
+    v.post = -1;
+    if (v.job === "food" && v.phase === "idle") v.job = "idle";
   }
 }
 function setOcc(sim, b, val) {
@@ -2826,6 +2852,7 @@ function assignCrew(sim, ids) {
     sim.clearCombat(v);
     v.job = "build";
     v.prefer = -1;
+    v.post = -1;
   }
   return err;
 }
@@ -2863,19 +2890,50 @@ function assignStaff(sim, ids, job) {
     sim.clearCombat(v);
     v.job = job;
     v.prefer = -1;
+    v.post = -1;
     planStaff(sim, v);
   }
   return err;
 }
+function assignField(sim, ids, fieldId) {
+  const b = sim.getBuilding(fieldId);
+  if (!b || b.kind !== "field" || !b.done) return "Ru\u1ED9ng ch\u01B0a d\u1EF1ng xong";
+  let err = null;
+  for (const v of sim.mine(ids)) {
+    if (v.post === b.id && v.job === "food") continue;
+    if (v.job === "fight") {
+      err = "Chi\u1EBFn binh do \u0111\u1ED1ng l\u1EEDa tr\u1EA1i qu\u1EA3n l\xFD: gi\u1EA3i ng\u0169 tr\u01B0\u1EDBc";
+      continue;
+    }
+    if (staffCount(sim, b) >= levelDef(b).slots) {
+      err = `${BUILDINGS.field.name} c\u1EA5p ${b.level} ch\u1EC9 ch\u1EE9a ${levelDef(b).slots} ng\u01B0\u1EDDi`;
+      continue;
+    }
+    sim.resetTask(v);
+    sim.clearCombat(v);
+    v.job = "food";
+    v.prefer = -1;
+    v.post = b.id;
+    planStaff(sim, v);
+  }
+  return err;
+}
+function postOf(sim, v) {
+  if (isStaffJob(v.job)) return sim.building(STAFF_BUILDING[v.job]);
+  const b = v.job === "food" && v.post >= 0 ? sim.getBuilding(v.post) : void 0;
+  return b && b.kind === "field" ? b : void 0;
+}
 function planStaff(sim, v) {
-  if (!isStaffJob(v.job)) return;
-  const b = sim.building(STAFF_BUILDING[v.job]);
+  if (!isStaffJob(v.job) && !(v.job === "food" && v.post >= 0)) return;
+  const b = postOf(sim, v);
   if (!b) {
-    v.job = "idle";
+    if (v.job === "food") v.post = -1;
+    else v.job = "idle";
     return;
   }
   if (staffCount(sim, b) >= levelDef(b).slots) {
     v.job = "idle";
+    v.post = -1;
     sim.say(`${v.name} kh\xF4ng c\xF2n ch\u1ED7 trong ${BUILDINGS[b.kind].name.toLowerCase()}.`);
     return;
   }
@@ -2889,7 +2947,7 @@ function planStaff(sim, v) {
 }
 function enterBuilding(sim, v) {
   const b = sim.getBuilding(v.target);
-  if (!b || !b.done || !isStaffJob(v.job) || STAFF_BUILDING[v.job] !== b.kind || b.staff.length >= levelDef(b).slots) {
+  if (!b || !b.done || postOf(sim, v)?.id !== b.id || b.staff.length >= levelDef(b).slots) {
     v.phase = "idle";
     if (isStaffJob(v.job)) v.job = "idle";
     return;
@@ -2937,6 +2995,7 @@ function releaseStaff(sim, ids) {
   for (const v of sim.mine(ids)) if (v.inside !== null) {
     exitBuilding(sim, v);
     v.job = "idle";
+    v.post = -1;
     sim.fogDirty = true;
   }
 }
@@ -3336,6 +3395,7 @@ function jobFor(sim, ids, job) {
     clearCombat(sim, v);
     v.job = job;
     v.prefer = -1;
+    v.post = -1;
     keepWatch(sim, v);
   }
   return null;
@@ -3348,6 +3408,7 @@ function enlist(sim, ids) {
     clearCombat(sim, v);
     v.job = "fight";
     v.prefer = -1;
+    v.post = -1;
     v.fight.anchor = null;
     keepWatch(sim, v);
     n++;
@@ -3500,9 +3561,9 @@ function workRate(sim, v, job) {
 function outdoorFactor(sim, job) {
   return OUTDOOR_JOBS.includes(job) ? WEATHER[sim.weather].work * SEASON_DEF[sim.season].work : 1;
 }
-function workFactor(sim, v, job) {
+function workFactor(sim, v, job, field = false) {
   const stat = v.stats[JOBS[job].stat];
-  const season = job === "food" ? SEASON_DEF[sim.season].gather : 1;
+  const season = job === "food" ? SEASON_DEF[sim.season][field ? "farm" : "gather"] : 1;
   const tier = TOOL_OF_JOB[job] ? sim.toolTier(v, job) : -1;
   const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier];
   return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v);
@@ -3699,6 +3760,23 @@ function doWork(sim, v, dt) {
     v.phase = "idle";
   }
 }
+function tickFarms(sim, dt) {
+  for (const b of sim.buildings) {
+    if (b.kind !== "field" || !b.done) continue;
+    for (const id of b.staff) {
+      const v = sim.byId.get(id);
+      if (!v || v.phase !== "inside" || v.job !== "food" || sim.stock.food >= sim.capacity("food")) continue;
+      v.progress += dt * workFactor(sim, v, "food", true) * levelDef(b).craftSpeed / FARM_TIME;
+      gainXp(sim, v, "food", dt);
+      wear(sim, v, "food", dt);
+      if (v.progress < 1) continue;
+      v.progress -= 1;
+      const acc = v.frac + TIER_YIELD[sim.toolTier(v, "food")], whole = Math.floor(acc);
+      v.frac = acc - whole;
+      sim.stock.food = Math.min(sim.capacity("food"), sim.stock.food + whole);
+    }
+  }
+}
 function plan(sim, v) {
   if (v.job === "hunt" || v.job === "fight") {
     wait(sim, v, 1);
@@ -3708,7 +3786,7 @@ function plan(sim, v) {
     if (!sim.planTool(v, "build")) planBuild(sim, v);
     return;
   }
-  if (isStaffJob(v.job)) {
+  if (isStaffJob(v.job) || v.job === "food" && v.post >= 0) {
     sim.planStaff(v);
     return;
   }
@@ -4144,6 +4222,7 @@ function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
     hold: null,
     bad: /* @__PURE__ */ new Map(),
     bed: -1,
+    post: -1,
     nightOwl: false,
     energy: 100,
     strain: 0,
@@ -4359,7 +4438,7 @@ function unpackRuns(runs, target) {
 }
 
 // src/sim/save.ts
-var SAVE_VERSION = 2;
+var SAVE_VERSION = 3;
 var SAVED = {
   /** Single values. */
   scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
@@ -4408,6 +4487,11 @@ var MIGRATIONS = {
     }
     if (!d.researched.includes("torch1")) d.researched.push("torch1");
     return { ...d, version: 2 };
+  },
+  // 2 -> 3: a gatherer can be posted to a Ruộng
+  2: (d) => {
+    for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) v.post ??= -1;
+    return { ...d, version: 3 };
   }
 };
 function migrate(raw) {
@@ -4474,7 +4558,7 @@ var rest_default = {
   nightCost: 30,
   sleepNight: 60,
   sleepDay: 30,
-  sleepAt: { campfire: 0.6, house: 1, barracks: 1 },
+  sleepAt: { campfire: 0.6, house: 1, barracks: 1.6 },
   nightEfficiency: 0.7,
   tiredEfficiency: 0.7,
   tiredBelow: 40,
@@ -4529,8 +4613,17 @@ function bedsTaken(sim, b, except) {
   return sim.villagers.filter((o) => o !== except && (o.phase === "sleep" && o.inside === b.id || o.phase === "goHome" && o.target === b.id)).length;
 }
 function freeBed(sim, v) {
-  const b = sim.building(bedKind(v));
-  return b && bedsTaken(sim, b, v) < levelDef(b).slots ? b : void 0;
+  const kind = bedKind(v);
+  let best, bd = Infinity;
+  for (const b of sim.buildings) {
+    if (b.kind !== kind || !b.done || bedsTaken(sim, b, v) >= levelDef(b).slots) continue;
+    const d = Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y);
+    if (d < bd) {
+      bd = d;
+      best = b;
+    }
+  }
+  return best;
 }
 function bedFactor(sim, v) {
   const b = v.inside === null ? void 0 : sim.getBuilding(v.inside);
@@ -4650,8 +4743,7 @@ function shouldSleep(sim, v, fighting) {
   return !onDuty(sim, v);
 }
 function bedsIn(sim, kind) {
-  const b = sim.building(kind);
-  return b ? levelDef(b).slots : 0;
+  return sim.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0);
 }
 
 // src/sim/sim.ts
@@ -4891,6 +4983,10 @@ var Sim = class _Sim {
   addBuilding(kind, x, y, done) {
     return addBuilding(this, kind, x, y, done);
   }
+  /** → construction.buildingLimit */
+  buildingLimit(kind) {
+    return buildingLimit(this, kind);
+  }
   /** → construction.buildingLock */
   buildingLock(kind) {
     return buildingLock(this, kind);
@@ -5003,6 +5099,10 @@ var Sim = class _Sim {
   storeCap(cat) {
     return storeCap(this, cat);
   }
+  /** → labor.tickFarms */
+  tickFarms(dt) {
+    return tickFarms(this, dt);
+  }
   /** → works.tickWorks */
   tickWorks(dt) {
     return tickWorks(this, dt);
@@ -5010,6 +5110,10 @@ var Sim = class _Sim {
   /** → houses.bestFor */
   bestFor(job) {
     return bestFor(this, job);
+  }
+  /** → houses.assignField */
+  assignField(ids, fieldId) {
+    return assignField(this, ids, fieldId);
   }
   /** → houses.houseRate */
   houseRate(b) {
@@ -5202,6 +5306,7 @@ var Sim = class _Sim {
     tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt);
+    this.tickFarms(dt);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     this.moraleClock += dt;

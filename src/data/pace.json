@@ -1,6 +1,6 @@
 {
-  "_note": "How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key \"work\").",
-  "gather": { "wood": 11, "stone": 17, "food": 6 },
+  "_note": "How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key \"work\").",
+  "gather": { "wood": 11, "stone": 17, "food": 6, "farm": 70 },
   "bare": { "wood": 0.6, "stone": 0.5, "food": 0.9, "build": 0.8 },
   "outdoor": ["wood", "stone", "food", "build"]
 }

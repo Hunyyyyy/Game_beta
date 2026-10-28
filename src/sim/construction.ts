@@ -30,9 +30,17 @@ export function footprintError(sim: Sim, kind: BuildingKind, x: number, y: numbe
   return null;
 }
 
-/** Why a kind of building cannot be built at all right now: one per game, and some need research first. */
+/** How many of a kind may stand now: one for the houses opened from a menu, and for beds and fields a number that grows with every campfire's level. */
+export function buildingLimit(sim: Sim, kind: BuildingKind): number {
+  const per = BUILDINGS[kind].perFire;
+  if (!per) return 1;
+  return sim.buildings.reduce((n, f) => n + (f.kind === 'campfire' ? per[Math.min(per.length, f.level) - 1] : 0), 0);
+}
+
+/** Why a kind of building cannot be built at all right now: it is at its limit, or it needs research or another house first. */
 export function buildingLock(sim: Sim, kind: BuildingKind): string | null {
-  if (sim.buildings.some((b) => b.kind === kind)) return 'Mỗi công trình chỉ xây được một cái, hãy nâng cấp nó';
+  const have = sim.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim, kind);
+  if (have >= limit) return limit === 1 ? 'Mỗi công trình chỉ xây được một cái, hãy nâng cấp nó' : `Đã đủ ${limit} ${BUILDINGS[kind].name.toLowerCase()}: nâng cấp Nhà chung để xây thêm`;
   const need = sim.dev.freeBuild ? undefined : BUILDINGS[kind].requires?.find((r) => !sim.building(r));
   if (need) return `Cần dựng ${BUILDINGS[need].name} trước`;
   if (!sim.dev.freeBuild && !buildingOpen(sim.researched, kind)) return `Cần nghiên cứu: ${techForBuilding(kind)?.name ?? '?'}`;
@@ -110,7 +118,7 @@ export function moveFee(sim: Sim, b: Building): Partial<Stock> {
 
 /** Send everyone who was heading for or working at this building back to idle; an order in progress is refunded. */
 export function evict(sim: Sim, b: Building): void {
-  for (const id of [...b.staff]) { const v = sim.byId.get(id); if (v) { sim.exitBuilding(v); v.job = 'idle'; } }
+  for (const id of [...b.staff]) { const v = sim.byId.get(id); if (v) { sim.exitBuilding(v); v.job = 'idle'; v.post = -1; } }
   b.staff = [];
   if (b.kind === 'builder') for (const v of sim.crew()) { sim.resetTask(v); v.job = 'idle'; }
   if (b.active && (b.kind === 'lab' || b.kind === 'workshop')) { const d = sim.orderDef(b.kind === 'lab' ? 'research' : 'craft', b.active.id); if (d) sim.pay(d.cost, 1); }
@@ -119,8 +127,9 @@ export function evict(sim: Sim, b: Building): void {
   for (const v of sim.sleepers(b)) { sim.exitBuilding(v); v.phase = 'idle'; v.target = -1; v.path = []; }
   for (const v of sim.villagers) {
     if (v.target !== b.id) continue;
-    if (v.phase === 'goSite' || v.phase === 'build' || v.phase === 'goEquip' || v.phase === 'goStaff' || v.phase === 'goOrder') { if (isStaffJob(v.job)) v.job = 'idle'; sim.resetTask(v); }
+    if (v.phase === 'goSite' || v.phase === 'build' || v.phase === 'goEquip' || v.phase === 'goStaff' || v.phase === 'goOrder') { if (isStaffJob(v.job) || v.post === b.id) v.job = 'idle'; sim.resetTask(v); }
   }
+  for (const v of sim.villagers) if (v.post === b.id) { v.post = -1; if (v.job === 'food' && v.phase === 'idle') v.job = 'idle'; }
 }
 
 export function setOcc(sim: Sim, b: Building, val: number): void {

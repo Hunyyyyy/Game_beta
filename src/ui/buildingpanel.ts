@@ -31,7 +31,7 @@ export class BuildingPanel {
   private readonly bedHead = { house: h('h3'), barracks: h('h3') }; private readonly bedList = { house: h('div'), barracks: h('div') };
   private readonly bedKey = { house: '', barracks: '' };
   private readonly info = h('div', { class: 'kv' });
-  private readonly staffBoxes: Record<'build' | 'craft' | 'research' | 'repair', StaffBox>;
+  private readonly staffBoxes: Record<'build' | 'craft' | 'research' | 'repair' | 'farm', StaffBox>;
   private readonly activeBoxes: Record<'craft' | 'research' | 'repair', ActiveBox>;
   private readonly queueNote = { craft: h('div', { class: 'kv' }), research: h('div', { class: 'kv' }), repair: h('div', { class: 'kv' }) };
   private readonly goodsNote = h('p', { class: 'sub' }); private readonly goodsHint = hint(this.goodsNote, '');
@@ -42,7 +42,7 @@ export class BuildingPanel {
     const { sim, ctl, sprites } = c;
     root.className = 'modal';
     const recipeNm = (id: string) => (RECIPE_BY_ID[id] ? recipeName(RECIPE_BY_ID[id]) : id);
-    this.staffBoxes = { build: new StaffBox(c, 'build'), craft: new StaffBox(c, 'craft'), research: new StaffBox(c, 'research'), repair: new StaffBox(c, 'repair') };
+    this.staffBoxes = { build: new StaffBox(c, 'build'), craft: new StaffBox(c, 'craft'), research: new StaffBox(c, 'research'), repair: new StaffBox(c, 'repair'), farm: new StaffBox(c, 'farm') };
     this.activeBoxes = {
       craft: new ActiveBox(c, recipeNm, (id) => sim.orderDef('craft', id)?.time ?? 1),
       research: new ActiveBox(c, (id) => TECHS.find((t) => t.id === id)?.name ?? id, (id) => sim.orderDef('research', id)?.time ?? 1),
@@ -66,6 +66,7 @@ export class BuildingPanel {
     this.soldiers = new SoldierPane(c);
     this.tabs.barracks = [{ label: 'Người trong lều', page: page(hint(this.bedHead.barracks, 'Chiến binh vào lều ngủ khi trời tối hoặc kiệt sức: họ biến mất khỏi bản đồ, hiện ở danh sách này, không có hình ngủ. Hồi sức đầy đủ, cấp cao hơn hồi nhanh hơn. Hết giường thì lính ngủ bên đống lửa, hồi chậm hơn. Lính được tuyển ở đống lửa trại.'), this.bedList.barracks) }];
     this.tabs.house = [{ label: 'Người trong nhà', page: page(hint(this.bedHead.house, 'Dân thường vào nhà ngủ khi trời tối hoặc kiệt sức: họ biến mất khỏi bản đồ, hiện ở danh sách này, không có hình ngủ. Hồi sức đầy đủ, cấp cao hơn hồi nhanh hơn. Hết giường thì dân ngủ bên đống lửa, hồi chậm hơn.'), this.bedList.house) }];
+    this.tabs.field = [{ label: 'Người làm ruộng', page: page(this.staffBoxes.farm.root) }];
     this.tabs.builder = [{ label: 'Thợ xây', page: page(this.staffBoxes.build.root) }];
     this.tabs.campfire = [
       { label: 'Dân', page: page(this.people.root, h('div', { class: 'btns' }, h('button', { class: 'sm', text: 'Chọn tất cả dân', onclick: () => { ctl.selected.clear(); ctl.selectAll(); ctl.closeBuilding(); } }))) },
@@ -108,7 +109,7 @@ export class BuildingPanel {
     const groups: Array<[string, (id: string) => boolean]> = [
       ['Bản vẽ công cụ', (id) => /^(axe|pick|hoe|hammer|torch)\d$/.test(id)],
       ['Bản vẽ vũ khí, giáp', (id) => /^(club|spear|mace|hide)\d$/.test(id)],
-      ['Xây dựng', (id) => ['timber', 'masonry', 'tool_store', 'armory', 'house', 'barracks'].includes(id)],
+      ['Xây dựng', (id) => ['timber', 'masonry', 'tool_store', 'armory', 'house', 'barracks', 'farming'].includes(id)],
       ['Tự động hóa', (id) => id.startsWith('auto_')],
     ];
     this.tabs.lab = [{ label: 'Đang làm', page: page(this.staffBoxes.research.root, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian và người thông minh trong nhà: càng nhiều và càng thông minh càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research) }];
@@ -171,6 +172,7 @@ export class BuildingPanel {
     switch (b.kind) {
       case 'barracks': return `Cấp ${b.level}: ${lv.slots} giường cho chiến binh · hồi sức ×${lv.craftSpeed.toLocaleString('vi')} (cạnh đống lửa chỉ ×${REST.sleepAt.campfire.toLocaleString('vi')})`;
       case 'house': return `Cấp ${b.level}: ${lv.slots} giường cho dân · hồi sức ×${lv.craftSpeed.toLocaleString('vi')} (cạnh đống lửa chỉ ×${REST.sleepAt.campfire.toLocaleString('vi')})`;
+      case 'field': return `Cấp ${b.level}: ${lv.slots} nông dân làm một lúc · năng suất ×${lv.craftSpeed.toLocaleString('vi')} (cuốc đá làm nhanh hơn)`;
       case 'builder': return `Cấp ${b.level}: chứa ${lv.slots} thợ xây · xây nhanh ×${lv.craftSpeed.toLocaleString('vi')}`;
       case 'workshop': return `Cấp ${b.level}: chứa ${lv.slots} người chế tạo · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
       case 'lab': return `Cấp ${b.level}: chứa ${lv.slots} nhà nghiên cứu · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
@@ -195,6 +197,7 @@ export class BuildingPanel {
     if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity()}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity())) * 100)}%`; }
     if ((b.kind === 'storage' || b.kind === 'campfire') && ready) for (const t of this.barterBtns) { t.btn.textContent = `Đổi ${BARTER[t.res]} ${RES_NAME[t.res].toLowerCase()} → 1 ${RES_NAME.coin.toLowerCase()}`; t.btn.disabled = sim.stock[t.res] < BARTER[t.res]; }
     if ((b.kind === 'barracks' || b.kind === 'house') && ready) this.updateBeds(b);
+    if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
     if (b.kind === 'workshop' && ready) this.updateWorkshop(b);
     if (b.kind === 'lab' && ready) this.updateLab(b);
     if (b.kind === 'repair' && ready) this.updateRepair(b);
@@ -264,7 +267,7 @@ export class BuildingPanel {
   private updateBeds(b: Building): void {
     const kind = b.kind as 'house' | 'barracks', sleepers = this.c.sim.sleepers(b), inside = sleepers.filter((v) => v.inside === b.id);
     this.bedHead[kind].textContent = `Đang ngủ (${inside.length}/${levelDef(b).slots} giường)${sleepers.length > inside.length ? ` · ${sleepers.length - inside.length} đang tới` : ''}`;
-    const key = `${sleepers.map((v) => `${v.id}${v.inside === b.id}${Math.round(v.energy)}`).join()}|${kind}`;
+    const key = `${sleepers.map((v) => `${v.id}${v.inside === b.id}${Math.round(v.energy)}`).join()}|${kind}|${b.id}`;
     if (key === this.bedKey[kind]) return;
     this.bedKey[kind] = key;
     this.bedList[kind].replaceChildren(...(sleepers.length ? sleeperRows(this.c.sim, sleepers) : [h('p', { class: 'sub', text: kind === 'barracks' ? 'Chưa có chiến binh nào trong lều. Lính vào lều khi trời tối hoặc khi kiệt sức.' : 'Chưa có ai trong nhà. Dân vào nhà khi trời tối hoặc khi kiệt sức.' })]));

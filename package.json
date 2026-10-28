@@ -8,6 +8,7 @@
     "viewer": "node tools/build-viewer.mjs && node tools/build-blueprint-viewer.mjs",
     "typecheck": "tsc --noEmit",
     "test:sim": "esbuild test/sim.test.ts --bundle --platform=node --outfile=dist/sim.test.cjs --loader:.json=json && node dist/sim.test.cjs",
+    "economy": "esbuild tools/economy.ts --bundle --platform=node --outfile=dist/economy.cjs --loader:.json=json && node dist/economy.cjs",
     "test:ui": "node test/ui.cjs",
     "test:arch": "node test/architecture.cjs",
     "test": "npm run typecheck && npm run test:sim && npm run test:save && npm run test:arch",
