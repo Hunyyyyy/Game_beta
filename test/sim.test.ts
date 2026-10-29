@@ -7,7 +7,7 @@ import { Tile } from '../src/sim/world';
 import { lightAt, rollWeather, SEASON_DEF, seasonOf, SEASONS, WEATHER } from '../src/sim/calendar';
 import { RECIPE_BY_ID, TIER_DURABILITY } from '../src/sim/tools';
 import { levelDef, levelsOf, maxLevel } from '../src/sim/buildings';
-import { ARMS, armOfWeapon, clampTactical, clusterize, COMMAND, FORMATION_IDS, FORMATIONS, formationOffsets, iconCount, masteryFactor, matchup } from '../src/sim/formations';
+import { ARMS, armOfWeapon, clampTactical, clusterize, COMMAND, FORMATION_IDS, FORMATIONS, formationOffsets, iconCount, masteryFactor, matchup, SQUAD_MAX, SQUAD_MIN, drawFormation } from '../src/sim/formations';
 import { launchRaid, raidAdvised } from '../src/sim/tribes';
 import { ANIMALS, ARMORS, COMBAT_STATES, cycleOf, damageOf, MORALE, poseOf, RULES, SPECIES, STYLES, TRIBES, TRIBE_IDS, WEAPONS, zoneOf } from '../src/sim/combat';
 import { armMultiplier, fireProjectile, swingTimes, weaponOf } from '../src/sim/battle';
@@ -1553,6 +1553,70 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const back = Sim.fromSave(JSON.parse(JSON.stringify(sm.toSave())));
   ok(back.squads.length === 3 && back.plans.length === 2 && back.plans[0].missions.length === sm.plans[0].missions.length && back.maps.length === sm.maps.length && back.battleReports.length === 1, 'squads, plans, maps and the log are kept by a save');
   ok(back.villagers.filter((v) => v.squad >= 0).length === sm.villagers.filter((v) => v.squad >= 0).length, 'and so is who belongs to which squad');
+}
+
+{
+  // ======== the plan map: what each level of map shows of a camp ========
+  const sm = mk(1337); reveal(sm); sm.dev.freeBuild = false;
+  ok(sm.tribeIntel('axe') === null, 'no map, no intel');
+  dev.giveMaps(sm, 1);
+  const i1 = sm.tribeIntel('axe')!, t = tribeById(sm, 'axe');
+  ok(i1.level === 1 && i1.people.length === 0 && i1.soldiers === null && i1.structures.every((x) => x.kind === 'fire') && i1.population >= 2, 'level 1 shows only the fire and a rough head count');
+  ok(i1.box.x1 - i1.box.x0 <= 2 * (i1.yard + 24) && i1.box.x0 <= Math.floor(t.camp.x) - i1.yard - 24 + 1 && !!i1.toUs, 'the map covers the camp and 24 tiles round it, and tells the way in');
+  dev.giveMaps(sm, 2);
+  const i2 = sm.tribeIntel('axe')!;
+  ok(i2.level === 2 && i2.people.length > 0 && i2.people.every((p) => p.mark === 'unknown') && i2.soldiers === null, 'level 2 shows people as shapes, not who is a soldier');
+  dev.giveMaps(sm, 3);
+  const i3 = sm.tribeIntel('axe')!, warriors = t.unitIds.map((u) => sm.get(u)!).filter((u) => u.health > 0 && u.ai!.role !== 'civ').length;
+  ok(i3.level === 3 && !!i3.soldiers && i3.soldiers.foot + i3.soldiers.archer + i3.soldiers.cavalry === warriors && i3.people.filter((p) => p.leader).length === 1 && i3.structures.some((x) => x.kind === 'pile'), 'level 3 counts the soldiers by arm and shows the stores and the chief');
+  const before = JSON.stringify(sm.toSave());
+  sm.tribeIntel('axe');
+  ok(JSON.stringify(sm.toSave()) === before, 'reading a map changes nothing in the game');
+  sm.maps.find((m) => m.tribe === 'axe' && m.level === 3)!.gaps = 2;
+  const holed = sm.tribeIntel('axe')!;
+  ok(holed.level === 2 && holed.soldiers === null, 'a level 3 map with gaps counts as level 2');
+}
+
+{
+  // ======== the plan drawn on the map: what was seen, the row, the arrow and how long it takes ========
+  const sm = mk(1337); reveal(sm); sm.dev.freeBuild = false; sm.dev.god = true;
+  const t = tribeById(sm, 'axe');
+  sm.maps.push({ tribe: 'axe', level: 3, at: sm.time, gaps: 0, seen: [{ x: t.camp.x + 2, y: t.camp.y - 3, arm: 'archer', weapon: 'bow', civ: false, leader: false }, { x: t.camp.x - 2, y: t.camp.y, arm: 'foot', weapon: 'club', civ: false, leader: true }] });
+  for (const u of t.unitIds) { const f = sm.get(u)!; f.x = t.camp.x + 20; f.y = t.camp.y + 20; } // they all walk away after the scouts have gone
+  const seen = sm.tribeIntel('axe')!;
+  ok(seen.people.length === 2 && seen.people[0].x === t.camp.x + 2 && seen.people[0].y === t.camp.y - 3 && seen.people[0].mark === 'archer' && seen.people[1].leader, 'people stand on the map where the scouts saw them, not where they are now');
+  ok(seen.soldiers?.archer === 1 && seen.soldiers?.foot === 1, 'and the count of soldiers is of that day');
+
+  dev.combatReady(sm); dev.formSquads(sm);
+  const [a] = sm.squads, plan = sm.newPlan('attack', 'axe');
+  const n = sm.squadUnits(a).length;
+  const o = { x: t.camp.x, y: t.camp.y + 30 }, row = drawFormation('line', o, { x: o.x + 100, y: o.y }, t.camp);
+  ok(row.cells.length === SQUAD_MAX && Math.abs(row.cells[1].x - row.cells[0].x - COMMAND.cell) < 1e-9, 'a line drawn far makes 15 squares one cell apart, from the point pressed');
+  ok(drawFormation('line', o, { x: o.x + 0.2, y: o.y }, t.camp).cells.length === 1 && sm.deploySquad(plan, a.id, undefined, drawFormation('line', o, { x: o.x + 2.7, y: o.y }, t.camp).cells, 0, o, o) !== null, 'a drag too short makes fewer than 3 cells, and they cannot be made into a squad');
+  const ring = drawFormation('circle', o, { x: o.x + 4, y: o.y }, t.camp);
+  ok(ring.cells.length >= 1 && ring.cells.every((c) => Math.abs(Math.hypot(c.x - o.x, c.y - o.y) - 4) < 1e-9), 'a circle takes the drag as its radius');
+  for (const f of FORMATION_IDS) { const d = drawFormation(f, o, { x: o.x + 7, y: o.y - 5 }, t.camp); ok(d.cells.length >= 1 && d.cells.length <= SQUAD_MAX, `${f} drawn on the map has at most 15 cells`); }
+  const cells = drawFormation('line', o, { x: o.x + 20, y: o.y }, t.camp).cells.slice(0, n);
+  ok(sm.deploySquad(plan, a.id, undefined, cells, 0, o, { x: o.x + 20, y: o.y }) === null && plan.missions[0].deploy!.cells.length === n, 'a squad is put on the map as the cells drawn for it');
+  ok(sm.deploySquad(plan, a.id, undefined, cells.slice(0, 2), 0, o, o) !== null, 'two cells are too few');
+  const empty = sm.createSquad('Rỗng').squad!;
+  ok(sm.deploySquad(plan, empty.id, 'wedge', drawFormation('wedge', o, { x: o.x + 6, y: o.y }, t.camp).cells, 0, o, o) === null && sm.squadUnits(empty).length === 0 && plan.missions.some((x) => x.squad === empty.id && x.deploy), 'a formation can be planned for a squad that has no soldiers yet');
+  ok(plan.missions[0].withdrawAt === 0 && sm.squadUnits(a).length === n, 'a squad placed on the map does not withdraw until told to, and its soldiers are left as they were');
+  sm.setMissionPath(plan, a.id, [{ x: t.camp.x, y: t.camp.y + 20 }, { x: t.camp.x, y: t.camp.y }]);
+  const m = plan.missions[0], route = sm.routeTime(a, sm.missionStart(m)!, m.path);
+  ok(route.legs.length === 2 && route.total > 0 && Math.abs(route.length - (10 + 20)) < 1e-6, 'the time of an arrow is worked out leg by leg');
+  const slow = sm.squadPace(a); a.formation = 'circle';
+  ok(sm.squadPace(a) < slow && sm.routeTime(a, sm.missionStart(m)!, m.path).total > route.total, 'a slower formation takes longer to walk the same arrow');
+  a.formation = 'line';
+  const big = sm.createSquad('Lớn').squad!, many = dev.raiseArmy(sm, 'spear', 17).map((v) => v.id);
+  const full = sm.joinSquad(many, big.id);
+  ok(big.ids.length === 15 && !!full, 'a squad holds at most 15 soldiers');
+  const old = JSON.parse(JSON.stringify(sm.toSave()));
+  old.version = 5; for (const p of old.lists.plans) for (const q of p.missions) { delete q.deploy; delete q.path; delete q.retreat; delete q.leg; }
+  const back = Sim.fromSave(old);
+  ok(back.plans[0].missions[0].path.length === 0 && back.plans[0].missions[0].deploy === null, 'a save from before the plan was drawn on the map is brought forward');
+  const back2 = Sim.fromSave(JSON.parse(JSON.stringify(sm.toSave())));
+  ok(JSON.stringify(back2.plans[0].missions[0].path) === JSON.stringify(m.path) && back2.maps.some((x) => x.seen?.length === 2), 'the row, the arrow and what was seen are kept by a save');
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');

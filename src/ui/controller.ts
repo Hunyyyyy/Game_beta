@@ -13,8 +13,7 @@ export class Controller {
   readonly selected = new Set<number>();
   readonly markers: Marker[] = [];
   box: Box | null = null;
-  onChange: () => void = () => {};
-  /** Short message for the player. */
+  onChange: () => void = () => {};  /** Short message for the player. */
   onToast: (text: string) => void = () => {};
   /** Selecting several villagers: taps toggle, drags draw a box. */
   multi = false;

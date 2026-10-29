@@ -12,6 +12,7 @@ import type { Ctx } from './ctx';
 import { PeoplePane } from './peoplepane';
 import { ActiveBox, StaffBox } from './housebox';
 import { SoldierPane, sleeperRows } from './soldierpane';
+import { WarPanel } from './warpanel';
 
 export class BuildingPanel {
   private readonly title = h('b'); private readonly state = h('span');
@@ -27,6 +28,10 @@ export class BuildingPanel {
   private readonly goodRows: Array<{ id: string; num: HTMLElement; row: HTMLElement }> = [];
   private readonly people: PeoplePane;
   private readonly soldiers: SoldierPane;
+  /** The war council held in the Lều họp chiến. */
+  private readonly war: WarPanel;
+  /** The speed to go back to when the tent is left (it opens the game paused, as a war council does). */
+  private resume = 0; private inTent = false;
   /** The people lying in the Nhà dân and the Lều chiến binh. */
   private readonly bedHead = { house: h('h3'), barracks: h('h3') }; private readonly bedList = { house: h('div'), barracks: h('div') };
   private readonly bedKey = { house: '', barracks: '' };
@@ -69,6 +74,8 @@ export class BuildingPanel {
     this.tabs.barracks = [{ label: 'Người trong lều', page: page(hint(this.bedHead.barracks, 'Chiến binh vào lều ngủ khi trời tối hoặc kiệt sức: họ biến mất khỏi bản đồ, hiện ở danh sách này, không có hình ngủ. Hồi sức đầy đủ, cấp cao hơn hồi nhanh hơn. Hết giường thì lính ngủ bên đống lửa, hồi chậm hơn. Lính được tuyển ở đống lửa trại.'), this.bedList.barracks) }];
     this.tabs.house = [{ label: 'Người trong nhà', page: page(hint(this.bedHead.house, 'Dân thường vào nhà ngủ khi trời tối hoặc kiệt sức: họ biến mất khỏi bản đồ, hiện ở danh sách này, không có hình ngủ. Hồi sức đầy đủ, cấp cao hơn hồi nhanh hơn. Hết giường thì dân ngủ bên đống lửa, hồi chậm hơn.'), this.bedList.house) }];
     this.tabs.field = [{ label: 'Người làm ruộng', page: page(this.staffBoxes.farm.root) }];
+    this.war = new WarPanel(c);
+    this.tabs.wartent = [{ label: 'Họp chiến', page: page(this.war.root) }];
     this.tabs.tower = [{ label: 'Cung thủ canh', page: page(hint(this.towerHead, 'Cung thủ đứng trên chòi bắn xa hơn 2 ô và mạnh hơn một phần tư, và kẻ địch phải phá chòi mới hạ được họ. Chỉ chiến binh cầm cung hoặc dây quăng đá mới lên được. Chế cung và dây quăng ở Nhà chế tạo.'), this.towerList) }];
     this.tabs.fence = []; this.tabs.gate = [];
     this.tabs.builder = [{ label: 'Thợ xây', page: page(this.staffBoxes.build.root) }];
@@ -182,6 +189,7 @@ export class BuildingPanel {
       case 'workshop': return `Cấp ${b.level}: chứa ${lv.slots} người chế tạo · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
       case 'lab': return `Cấp ${b.level}: chứa ${lv.slots} nhà nghiên cứu · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
       case 'repair': return `Cấp ${b.level}: chứa ${lv.slots} thợ sửa · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
+      case 'wartent': return `Cấp ${b.level}: tối đa ${this.c.sim.squadLimit()} đội, ${this.c.sim.cardLimit()} thẻ lệnh cho một kế hoạch · vào lều là game tạm dừng`;
       case 'storage': return `Sức chứa ${lv.cap} mỗi loại`;
       case 'toolstore': case 'armory': return `Chứa tối đa ${lv.cap} món`;
       default: return `Nơi dân ngủ quanh lửa · chứa ${lv.cap} mỗi loại · tối đa ${this.c.sim.popCap()} dân · các nhà khác lên được cấp ${levelCapByFire(b.level)}`;
@@ -191,6 +199,10 @@ export class BuildingPanel {
   update(): void {
     const { sim, ctl } = this.c, b = this.current();
     this.root.hidden = !b || !ctl.buildingOpen;
+    const inTent = !!b && ctl.buildingOpen && b.kind === 'wartent' && b.done;
+    if (inTent && !this.inTent) { this.resume = sim.speed; sim.speed = 0; }
+    else if (!inTent && this.inTent) { if (this.resume > 0 && sim.speed === 0) sim.speed = this.resume; this.resume = 0; }
+    this.inTent = inTent;
     if (!b) { if (ctl.selectedBuilding !== null) ctl.selectedBuilding = null; return; }
     if (!ctl.buildingOpen) return;
     const def = BUILDINGS[b.kind], lv = levelDef(b), top = maxLevel(b.kind, b.era), ready = b.done;
@@ -204,6 +216,7 @@ export class BuildingPanel {
     if ((b.kind === 'barracks' || b.kind === 'house') && ready) this.updateBeds(b);
     if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
     if (b.kind === 'tower' && ready) this.updateTower(b);
+    if (b.kind === 'wartent' && ready) this.war.update();
     if (b.kind === 'workshop' && ready) this.updateWorkshop(b);
     if (b.kind === 'lab' && ready) this.updateLab(b);
     if (b.kind === 'repair' && ready) this.updateRepair(b);

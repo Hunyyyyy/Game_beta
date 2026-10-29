@@ -1078,12 +1078,12 @@ function poly(b, pts, c) {
     y1 = Math.max(y1, y);
   }
   for (let y = Math.floor(y0); y <= Math.ceil(y1); y++) for (let x = Math.floor(x0); x <= Math.ceil(x1); x++) {
-    let inside = false;
+    let inside2 = false;
     for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
       const [xi, yi] = pts[i], [xj, yj] = pts[j], px = x + 0.5, py = y + 0.5;
-      if (yi > py !== yj > py && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+      if (yi > py !== yj > py && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside2 = !inside2;
     }
-    if (inside) put2(b, x, y, c);
+    if (inside2) put2(b, x, y, c);
   }
 }
 function outline2(b, c) {
@@ -1108,11 +1108,11 @@ function colors(def) {
   return { base, light: hex(P.light), dark: hex(P.dark), acc: hex(P.accent), eye: hex(P.eye), far: shade(base, 0.72), rim: shade(hex(P.dark), 0.5), beak: P.beak ? hex(P.beak) : hex(P.accent) };
 }
 function quadruped(b, def, f) {
-  const S = def.shape, C = colors(def), has = (n) => S.feature === n || Array.isArray(S.features) && S.features.includes(n), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
-  const legL = Math.max(2, S.legL * (1 - lay * 0.75)), bodyH = S.bodyH * (1 - 0.18 * side);
+  const S2 = def.shape, C = colors(def), has = (n) => S2.feature === n || Array.isArray(S2.features) && S2.features.includes(n), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
+  const legL = Math.max(2, S2.legL * (1 - lay * 0.75)), bodyH = S2.bodyH * (1 - 0.18 * side);
   const rise = num(f, "rise", 0), bob = num(f, "bob", 0);
   const cx = b.w / 2 - 4, cy = gy - legL - bodyH / 2 + 1 + bob + lay * 1.5;
-  const hipX = cx - S.bodyL / 2 + 3, shX = cx + S.bodyL / 2 - 3, jy = cy + bodyH / 2 - 1;
+  const hipX = cx - S2.bodyL / 2 + 3, shX = cx + S2.bodyL / 2 - 3, jy = cy + bodyH / 2 - 1;
   const leg = (x, p, col, w) => {
     const a = num(p, "a", 0), lift = num(p, "lift", 0);
     const fx = x + Math.sin(rad2(a)) * legL, fy = Math.min(gy, jy + Math.cos(rad2(a)) * legL - lift);
@@ -1120,44 +1120,44 @@ function quadruped(b, def, f) {
     put2(b, fx, fy, C.dark);
     put2(b, fx + (a > 0 ? 1 : 0), fy, C.dark);
   };
-  const thick = S.legL > 10 ? 2 : 2;
+  const thick = S2.legL > 10 ? 2 : 2;
   leg(hipX - 1, f.br, C.far, thick);
   leg(shX - 1, f.fr, C.far, thick);
   for (let i = 0; i <= 4; i++) {
     const t = i / 4;
-    ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t, S.bodyL / 4 + 1.5, bodyH / 2, C.base);
+    ell(b, cx - S2.bodyL / 2 + 2 + t * (S2.bodyL - 4), cy - rise * t, S2.bodyL / 4 + 1.5, bodyH / 2, C.base);
   }
   for (let i = 0; i <= 4; i++) {
     const t = i / 4;
-    ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t + bodyH * 0.22, S.bodyL / 4 + 0.5, bodyH * 0.27, C.light);
+    ell(b, cx - S2.bodyL / 2 + 2 + t * (S2.bodyL - 4), cy - rise * t + bodyH * 0.22, S2.bodyL / 4 + 0.5, bodyH * 0.27, C.light);
   }
   for (let i = 0; i <= 4; i++) {
     const t = i / 4;
-    ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t - bodyH * 0.32, S.bodyL / 4 + 1, bodyH * 0.2, C.dark);
+    ell(b, cx - S2.bodyL / 2 + 2 + t * (S2.bodyL - 4), cy - rise * t - bodyH * 0.32, S2.bodyL / 4 + 1, bodyH * 0.2, C.dark);
   }
   if (has("antlers")) for (const [dx, dy2] of [[-4, -1], [0, -2], [4, -1], [-2, 1], [2, 1]]) put2(b, cx + dx, cy - bodyH * 0.2 + dy2, C.light);
-  if (has("tusks")) for (let i = 0; i < S.bodyL - 4; i += 2) put2(b, cx - S.bodyL / 2 + 3 + i, cy - bodyH / 2 - 1 - rise * (i / S.bodyL), C.dark);
+  if (has("tusks")) for (let i = 0; i < S2.bodyL - 4; i += 2) put2(b, cx - S2.bodyL / 2 + 3 + i, cy - bodyH / 2 - 1 - rise * (i / S2.bodyL), C.dark);
   if (has("bear")) ell(b, shX - 1, cy - bodyH / 2 - rise, 4, 3, C.base);
-  if (has("shaggy")) for (let i = 0; i < S.bodyL - 2; i += 2) {
-    const sx2 = cx - S.bodyL / 2 + 2 + i;
+  if (has("shaggy")) for (let i = 0; i < S2.bodyL - 2; i += 2) {
+    const sx2 = cx - S2.bodyL / 2 + 2 + i;
     line2(b, sx2, cy + bodyH / 2 - 2, sx2 - 1, cy + bodyH / 2 + 3, 1, C.dark);
   }
   leg(hipX + 1, f.bl, C.base, thick);
   leg(shX + 1, f.fl, C.base, thick);
-  const sx = shX + 1, sy = cy - bodyH / 2 + 2 - rise, ang = rad2(num(f.head, "a", S.neckA)), dy = num(f.head, "dy", 0);
-  const hx = sx + Math.cos(ang) * S.neck, hy = sy - Math.sin(ang) * S.neck + dy;
+  const sx = shX + 1, sy = cy - bodyH / 2 + 2 - rise, ang = rad2(num(f.head, "a", S2.neckA)), dy = num(f.head, "dy", 0);
+  const hx = sx + Math.cos(ang) * S2.neck, hy = sy - Math.sin(ang) * S2.neck + dy;
   line2(b, sx, sy, hx, hy, Math.max(2, Math.round(bodyH * 0.45)), C.base);
-  if (has("mane")) ell(b, hx - 2, hy + 1, S.headR + 3, S.headR + 3, C.dark);
-  if (has("trunk")) ell(b, hx - 1, hy - S.headR * 0.6, S.headR * 0.9, S.headR * 0.8, C.base);
-  ell(b, hx, hy, S.headR * 1.1, S.headR, C.base);
+  if (has("mane")) ell(b, hx - 2, hy + 1, S2.headR + 3, S2.headR + 3, C.dark);
+  if (has("trunk")) ell(b, hx - 1, hy - S2.headR * 0.6, S2.headR * 0.9, S2.headR * 0.8, C.base);
+  ell(b, hx, hy, S2.headR * 1.1, S2.headR, C.base);
   const open = num(f, "mouth", 0) > 0.5;
-  ell(b, hx + S.headR + S.snout / 2 - 1, hy + 1 - (open ? 1 : 0), S.snout / 2 + 1, S.headR * 0.55, C.light);
-  const nx = hx + S.headR + S.snout - 1;
+  ell(b, hx + S2.headR + S2.snout / 2 - 1, hy + 1 - (open ? 1 : 0), S2.snout / 2 + 1, S2.headR * 0.55, C.light);
+  const nx = hx + S2.headR + S2.snout - 1;
   put2(b, nx, hy + (open ? 0 : 1), C.dark);
   if (open) {
-    rect2(b, hx + 1, hy + 1, S.snout + 2, 2, C.rim);
-    put2(b, hx + S.headR + 1, hy + 1, C.acc);
-    put2(b, hx + S.headR + 3, hy + 1, C.acc);
+    rect2(b, hx + 1, hy + 1, S2.snout + 2, 2, C.rim);
+    put2(b, hx + S2.headR + 1, hy + 1, C.acc);
+    put2(b, hx + S2.headR + 3, hy + 1, C.acc);
   }
   if (has("tusks")) {
     put2(b, nx - 1, hy + 2, C.acc);
@@ -1166,17 +1166,17 @@ function quadruped(b, def, f) {
   const asleep = lay > 0.5;
   if (asleep) put2(b, hx + 1, hy - 1, C.dark);
   else put2(b, hx + 1, hy - 1, C.eye);
-  const earL = S.ear || 3;
-  if (has("bear")) ell(b, hx - 2, hy - S.headR + 1, 1.8, 1.8, C.dark);
-  else poly(b, [[hx - 2, hy - S.headR + 1], [hx - 3 - (asleep ? 2 : 0), hy - S.headR - earL + (asleep ? 3 : 0)], [hx, hy - S.headR]], C.dark);
+  const earL = S2.ear || 3;
+  if (has("bear")) ell(b, hx - 2, hy - S2.headR + 1, 1.8, 1.8, C.dark);
+  else poly(b, [[hx - 2, hy - S2.headR + 1], [hx - 3 - (asleep ? 2 : 0), hy - S2.headR - earL + (asleep ? 3 : 0)], [hx, hy - S2.headR]], C.dark);
   if (has("antlers")) {
-    const t = hy - S.headR;
+    const t = hy - S2.headR;
     line2(b, hx, t, hx - 3, t - 7, 1, C.acc);
     line2(b, hx - 1, t - 3, hx + 2, t - 6, 1, C.acc);
     line2(b, hx - 2, t - 5, hx - 5, t - 8, 1, C.acc);
   }
   if (has("horns")) {
-    const t = hy - S.headR, h2 = S.horn || 5, back = !!S.hornBack;
+    const t = hy - S2.headR, h2 = S2.horn || 5, back = !!S2.hornBack;
     for (const dx of [-1, 1]) {
       const bx = hx + dx, tipx = back ? bx - h2 * 0.8 : bx + (dx > 0 ? 3 : -1), tipy = t - h2 * (back ? 0.9 : 0.8);
       line2(b, bx, t, tipx, tipy, 1, C.acc);
@@ -1184,7 +1184,7 @@ function quadruped(b, def, f) {
     }
   }
   if (has("palmate")) {
-    const t = hy - S.headR;
+    const t = hy - S2.headR;
     for (const side2 of [-1, 1]) {
       const bx = hx + side2 * 2;
       line2(b, bx, t, bx + side2 * 4, t - 5, 1, C.acc);
@@ -1192,44 +1192,44 @@ function quadruped(b, def, f) {
     }
   }
   if (has("trunk")) {
-    const tl2 = S.trunk || 12, sway = num(f, "bob", 0);
-    line2(b, hx + S.headR - 1, hy + 1, hx + S.headR + 1 + sway, hy + tl2 * 0.7, 3, C.base);
-    line2(b, hx + S.headR + 1 + sway, hy + tl2 * 0.7, hx + S.headR + 3 + sway, hy + tl2, 2, C.base);
-    line2(b, hx + S.headR - 2, hy + 2, hx + S.headR + 5, hy + 8, 2, C.acc);
-    put2(b, hx + S.headR + 6, hy + 7, C.acc);
+    const tl2 = S2.trunk || 12, sway = num(f, "bob", 0);
+    line2(b, hx + S2.headR - 1, hy + 1, hx + S2.headR + 1 + sway, hy + tl2 * 0.7, 3, C.base);
+    line2(b, hx + S2.headR + 1 + sway, hy + tl2 * 0.7, hx + S2.headR + 3 + sway, hy + tl2, 2, C.base);
+    line2(b, hx + S2.headR - 2, hy + 2, hx + S2.headR + 5, hy + 8, 2, C.acc);
+    put2(b, hx + S2.headR + 6, hy + 7, C.acc);
   }
-  const tb = [cx - S.bodyL / 2 - 1, cy - bodyH * 0.25], ta = rad2(num(f.tail !== void 0 ? { a: f.tail } : null, "a", 15)), tl = S.tail;
+  const tb = [cx - S2.bodyL / 2 - 1, cy - bodyH * 0.25], ta = rad2(num(f.tail !== void 0 ? { a: f.tail } : null, "a", 15)), tl = S2.tail;
   const tx = tb[0] - Math.cos(ta) * tl, ty = tb[1] - Math.sin(ta) * tl;
   line2(b, tb[0], tb[1], tx, ty, has("bushy") ? 3 : 2, C.base);
   if (has("bushy")) ell(b, tx, ty, 2, 2, C.dark);
   outline2(b, C.rim);
 }
 function hopper(b, def, f) {
-  const S = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
+  const S2 = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
   const lift = num(f, "lift", 0), stretch = num(f, "stretch", 0), crouch = num(f, "crouch", 0);
-  const bodyH = S.bodyH - crouch * 0.6 - side * 1.5, L = S.bodyL + stretch, cx = b.w / 2 - 2;
+  const bodyH = S2.bodyH - crouch * 0.6 - side * 1.5, L = S2.bodyL + stretch, cx = b.w / 2 - 2;
   const cy = gy - bodyH / 2 - 2 - lift + lay * 1.5, hind0 = cx - L / 2 + 2, jy = cy + bodyH / 2 - 1;
-  const ha = rad2(num(f.hind, "a", 0)), hl = S.legL * 1.4;
-  const fx = hind0 + Math.sin(ha) * hl, fy = Math.min(gy, jy + Math.cos(ha) * S.legL);
+  const ha = rad2(num(f.hind, "a", 0)), hl = S2.legL * 1.4;
+  const fx = hind0 + Math.sin(ha) * hl, fy = Math.min(gy, jy + Math.cos(ha) * S2.legL);
   line2(b, hind0, jy, fx, fy, 2, C.far);
   rect2(b, Math.round(fx), Math.round(fy), 3, 1, C.dark);
   ell(b, cx, cy, L / 2, bodyH / 2, C.base);
   ell(b, cx + 1, cy + bodyH * 0.25, L / 2 - 1, bodyH * 0.27, C.light);
   ell(b, hind0 + 1, cy + 1, 3.5, bodyH / 2, C.base);
-  const fa = rad2(num(f.fore, "a", 0)), fl = S.legL * 0.8, fx0 = cx + L / 2 - 1;
+  const fa = rad2(num(f.fore, "a", 0)), fl = S2.legL * 0.8, fx0 = cx + L / 2 - 1;
   line2(b, fx0, jy, fx0 + Math.sin(fa) * fl, Math.min(gy, jy + Math.cos(fa) * fl), 1, C.base);
   const hx = cx + L / 2 + 1, hy = cy - 1 + num(f, "headDy", 0) + lay;
-  ell(b, hx, hy, S.headR, S.headR * 0.9, C.base);
-  ell(b, hx + S.headR - 1, hy + 1, 1.8, 1.2, C.light);
-  put2(b, hx + S.headR + 1, hy + 1, C.dark);
+  ell(b, hx, hy, S2.headR, S2.headR * 0.9, C.base);
+  ell(b, hx + S2.headR - 1, hy + 1, 1.8, 1.2, C.light);
+  put2(b, hx + S2.headR + 1, hy + 1, C.dark);
   if (num(f, "mouth", 0) > 0.5) {
-    put2(b, hx + S.headR, hy + 2, C.rim);
-    put2(b, hx + S.headR - 1, hy + 2, C.acc);
+    put2(b, hx + S2.headR, hy + 2, C.rim);
+    put2(b, hx + S2.headR - 1, hy + 2, C.acc);
   }
   put2(b, hx + 1, hy - 1, lay > 0.5 ? C.dark : C.eye);
-  const e = rad2(num(f, "ear", 10)), el2 = S.ear;
+  const e = rad2(num(f, "ear", 10)), el2 = S2.ear;
   for (const ox of [-1, 1]) {
-    const bx = hx - 1 + ox, by = hy - S.headR + 1, tx = bx - Math.sin(e) * el2 - ox * 0.5, ty = by - Math.cos(e) * el2;
+    const bx = hx - 1 + ox, by = hy - S2.headR + 1, tx = bx - Math.sin(e) * el2 - ox * 0.5, ty = by - Math.cos(e) * el2;
     line2(b, bx, by, tx, ty, 2, C.base);
     line2(b, bx, by - 1, tx, ty + 1, 1, C.light);
   }
@@ -1237,8 +1237,8 @@ function hopper(b, def, f) {
   outline2(b, C.rim);
 }
 function biped(b, def, f) {
-  const S = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
-  const legL = Math.max(2, S.legL * (1 - lay * 0.7)), bodyH = S.bodyH - side * 2, bob = num(f, "bob", 0);
+  const S2 = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
+  const legL = Math.max(2, S2.legL * (1 - lay * 0.7)), bodyH = S2.bodyH - side * 2, bob = num(f, "bob", 0);
   const cx = b.w / 2 - 2, cy = gy - legL - bodyH / 2 + bob + lay;
   const leg = (x, p, col) => {
     const a = num(p, "a", 0), lift = num(p, "lift", 0), jy = cy + bodyH / 2 - 1;
@@ -1247,42 +1247,42 @@ function biped(b, def, f) {
     rect2(b, Math.round(fx), Math.round(fy), 3, 1, col);
   };
   leg(cx - 1, f.r, shade(C.beak, 0.7));
-  ell(b, cx - 2, cy + 1, S.bodyL / 2 - 1, bodyH / 2, C.base);
-  ell(b, cx + 1, cy, S.bodyL / 2 - 1, bodyH / 2, C.base);
-  ell(b, cx, cy + bodyH * 0.25, S.bodyL / 2 - 2, bodyH * 0.27, C.light);
+  ell(b, cx - 2, cy + 1, S2.bodyL / 2 - 1, bodyH / 2, C.base);
+  ell(b, cx + 1, cy, S2.bodyL / 2 - 1, bodyH / 2, C.base);
+  ell(b, cx, cy + bodyH * 0.25, S2.bodyL / 2 - 2, bodyH * 0.27, C.light);
   const ta = num(f, "tail", 0);
   for (const base of [35, 55, 75]) {
     const a = rad2(base + ta);
-    line2(b, cx - S.bodyL / 2 + 1, cy - 1, cx - S.bodyL / 2 + 1 - Math.cos(a) * S.tail, cy - 1 - Math.sin(a) * S.tail, 1, base === 55 ? C.dark : C.base);
+    line2(b, cx - S2.bodyL / 2 + 1, cy - 1, cx - S2.bodyL / 2 + 1 - Math.cos(a) * S2.tail, cy - 1 - Math.sin(a) * S2.tail, 1, base === 55 ? C.dark : C.base);
   }
   const flap = num(f, "wing", 0);
   ell(b, cx - 1, cy, 3.5, 2.5, C.dark);
   if (flap > 25) line2(b, cx - 1, cy - 1, cx - 2 - flap / 14, cy - 2 - flap / 10, 2, C.dark);
   leg(cx + 1, f.l, C.beak);
-  const nx = cx + S.bodyL / 2 - 2, ny = cy - bodyH / 2 + 2, nk = f.neck || {};
-  const hx = nx + 2 + num(nk, "dx", 0), hy = ny - S.neck * 0.8 + num(nk, "dy", 0) + num(f, "headDy", 0) + lay * 2;
+  const nx = cx + S2.bodyL / 2 - 2, ny = cy - bodyH / 2 + 2, nk = f.neck || {};
+  const hx = nx + 2 + num(nk, "dx", 0), hy = ny - S2.neck * 0.8 + num(nk, "dy", 0) + num(f, "headDy", 0) + lay * 2;
   line2(b, nx, ny, hx, hy, 2, C.base);
-  ell(b, hx, hy, S.headR + 0.5, S.headR, C.base);
+  ell(b, hx, hy, S2.headR + 0.5, S2.headR, C.base);
   const open = num(f, "mouth", 0) > 0.5;
-  poly(b, [[hx + S.headR, hy - 1], [hx + S.headR + 3, hy + (open ? -1 : 0)], [hx + S.headR, hy + 1]], C.beak);
-  if (open) put2(b, hx + S.headR + 1, hy + 1, C.rim);
+  poly(b, [[hx + S2.headR, hy - 1], [hx + S2.headR + 3, hy + (open ? -1 : 0)], [hx + S2.headR, hy + 1]], C.beak);
+  if (open) put2(b, hx + S2.headR + 1, hy + 1, C.rim);
   put2(b, hx, hy - 1, lay > 0.5 ? C.dark : C.eye);
-  rect2(b, hx - 1, hy - S.headR - 1, 2, 2, C.acc);
-  put2(b, hx + S.headR, hy + 2, C.acc);
+  rect2(b, hx - 1, hy - S2.headR - 1, 2, 2, C.acc);
+  put2(b, hx + S2.headR, hy + 2, C.acc);
   outline2(b, C.rim);
 }
 function fish(b, def, f) {
-  const S = def.shape, C = colors(def), flip = num(f, "flip", 0) >= 0.5;
+  const S2 = def.shape, C = colors(def), flip = num(f, "flip", 0) >= 0.5;
   const bend = num(f, "bend", 0), fin = num(f, "fin", 0), cx = b.w / 2 + 2, cy = b.h / 2 + num(f, "bob", 0) - (flip ? 1 : 0);
-  const rx = cx - S.bodyL / 2, ry = cy + bend * 0.4, T = S.tail + fin;
+  const rx = cx - S2.bodyL / 2, ry = cy + bend * 0.4, T = S2.tail + fin;
   poly(b, [[rx - T, ry - 3 + bend * 0.5], [rx, ry], [rx - T, ry + 3 + bend * 0.5]], C.acc);
-  poly(b, [[cx + S.bodyL / 2, cy], [cx + 3, cy - S.bodyH / 2], [cx - 3, cy - S.bodyH / 3 + bend * 0.15], [rx, ry - 1], [rx, ry + 1], [cx - 3, cy + S.bodyH / 3 + bend * 0.15], [cx + 3, cy + S.bodyH / 2]], C.base);
-  poly(b, [[cx + S.bodyL / 2 - 1, cy + 1], [cx - 3, cy + 1 + bend * 0.1], [cx - 3, cy + S.bodyH / 3 + bend * 0.15], [cx + 3, cy + S.bodyH / 2 - 1]], C.light);
-  poly(b, [[cx - 1, cy - S.bodyH / 2 + 1], [cx + 2, cy - S.bodyH / 2 - 2], [cx + 3, cy - S.bodyH / 2 + 1]], C.acc);
-  poly(b, [[cx + 1, cy + S.bodyH / 3], [cx - 1, cy + S.bodyH / 3 + 2], [cx + 2, cy + S.bodyH / 3 + 1]], C.acc);
+  poly(b, [[cx + S2.bodyL / 2, cy], [cx + 3, cy - S2.bodyH / 2], [cx - 3, cy - S2.bodyH / 3 + bend * 0.15], [rx, ry - 1], [rx, ry + 1], [cx - 3, cy + S2.bodyH / 3 + bend * 0.15], [cx + 3, cy + S2.bodyH / 2]], C.base);
+  poly(b, [[cx + S2.bodyL / 2 - 1, cy + 1], [cx - 3, cy + 1 + bend * 0.1], [cx - 3, cy + S2.bodyH / 3 + bend * 0.15], [cx + 3, cy + S2.bodyH / 2 - 1]], C.light);
+  poly(b, [[cx - 1, cy - S2.bodyH / 2 + 1], [cx + 2, cy - S2.bodyH / 2 - 2], [cx + 3, cy - S2.bodyH / 2 + 1]], C.acc);
+  poly(b, [[cx + 1, cy + S2.bodyH / 3], [cx - 1, cy + S2.bodyH / 3 + 2], [cx + 2, cy + S2.bodyH / 3 + 1]], C.acc);
   for (let i = 0; i < 4; i++) put2(b, cx - 2 + i * 2, cy - 1 + i % 2 * 2, C.dark);
-  put2(b, cx + S.bodyL / 2 - 3, cy - 1, flip ? C.dark : C.eye);
-  if (num(f, "mouth", 0) > 0.5) put2(b, cx + S.bodyL / 2, cy, C.rim);
+  put2(b, cx + S2.bodyL / 2 - 3, cy - 1, flip ? C.dark : C.eye);
+  if (num(f, "mouth", 0) > 0.5) put2(b, cx + S2.bodyL / 2, cy, C.rim);
   outline2(b, C.rim);
   if (flip) flipY(b);
 }
@@ -1802,12 +1802,12 @@ var quadruped_default = {
     };
   }
   function pip(px, py, pts) {
-    var inside = false;
+    var inside2 = false;
     for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
       var xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1];
-      if (yi > py !== yj > py && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+      if (yi > py !== yj > py && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside2 = !inside2;
     }
-    return inside;
+    return inside2;
   }
   function area(s, ctx2, rng) {
     var a = Array.isArray(s.area) && s.area.length === 4 ? s.area : [0, 0, ctx2.w, ctx2.h];
@@ -7633,7 +7633,7 @@ var SURRENDER = tribes_default.surrender;
 var MORALE = tribes_default.morale;
 function relationLabel(score) {
   let name = RELATION.labels[0][1];
-  for (const [from, label] of RELATION.labels) if (score >= from) name = label;
+  for (const [from, label2] of RELATION.labels) if (score >= from) name = label2;
   return name;
 }
 var ringOf = (distance) => Math.max(1, Math.min(20, Math.ceil(distance / 4.8)));
@@ -12116,6 +12116,55 @@ function tickScouts(sim2, dt) {
     }
   }
 }
+var MARGIN = 24;
+var YARD = 7;
+var WORKS = {
+  fire: { level: 1, label: "\u0110\u1ED1ng l\u1EEDa" },
+  tower: { level: 2, label: "Ch\xF2i canh" },
+  fence: { level: 2, label: "H\xE0ng r\xE0o" },
+  gate: { level: 2, label: "C\u1ED5ng" },
+  pile: { level: 3, label: "Kho l\u01B0\u01A1ng" }
+};
+var spread = (id, salt) => {
+  const x = Math.sin(id * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+};
+function tribeIntel(sim2, tribe) {
+  const t = tribeOf(sim2, tribe);
+  if (!t) return null;
+  const level = sim2.dev.freeBuild ? 3 : mapLevel(sim2, tribe);
+  if (!level) return null;
+  const held = sim2.maps.filter((m) => m.tribe === tribe && m.level >= level).sort((a, b) => b.at - a.at)[0];
+  const accuracy = sim2.dev.freeBuild || !held ? 1 : mapAccuracy(sim2, held), gaps = sim2.dev.freeBuild ? 0 : held?.gaps ?? 0;
+  const N = sim2.world.size, r = YARD + MARGIN;
+  const box = { x0: Math.max(0, Math.floor(t.camp.x) - r), y0: Math.max(0, Math.floor(t.camp.y) - r), x1: Math.min(N, Math.floor(t.camp.x) + r), y1: Math.min(N, Math.floor(t.camp.y) + r) };
+  const fire = sim2.campfire(), dx = (fire?.x ?? sim2.world.start.x) - t.camp.x, dy = (fire?.y ?? sim2.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
+  const alive = t.unitIds.map((u) => sim2.get(u)).filter((u) => !!u && u.health > 0);
+  const blur = (1 - accuracy) * 5, soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
+  const people = [];
+  if (level >= 2) for (const u of alive) {
+    if (spread(u.id, 1) < Math.min(0.6, gaps * 0.2)) continue;
+    const warrior = u.ai?.role !== "civ", arm = armOfWeapon(u.weapon);
+    const mark = level < 3 ? "unknown" : warrior ? arm : "civ";
+    if (soldiers && warrior) soldiers[arm]++;
+    people.push({ x: u.x + (spread(u.id, 2) - 0.5) * 2 * blur, y: u.y + (spread(u.id, 3) - 0.5) * 2 * blur, mark, leader: level >= 3 && u.id === t.leaderId });
+  }
+  return {
+    tribe,
+    name: t.def.name,
+    level,
+    accuracy,
+    gaps,
+    box,
+    camp: { ...t.camp },
+    yard: YARD,
+    toUs: len > 0 ? { x: dx / len, y: dy / len } : null,
+    population: Math.max(2, Math.round(alive.length / 2) * 2),
+    structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, x: p.x, y: p.y, w: p.w, h: p.h })),
+    people,
+    soldiers
+  };
+}
 
 // src/sim/warplan.ts
 var NEED_LEVEL = { camp: 1, gate: 2, ambush: 2, stores: 3, leader: 3 };
@@ -12454,6 +12503,14 @@ var WAR = {
   /** → scouting.mapAccuracy */
   mapAccuracy(m) {
     return mapAccuracy(this, m);
+  },
+  /** → scouting.tribeIntel */
+  tribeIntel(tribe) {
+    return tribeIntel(this, tribe);
+  },
+  /** → warplan.objectivePos */
+  missionTarget(plan2, m) {
+    return objectivePos(this, plan2, m);
   },
   /** → scouting.startScout */
   startScout(ids, tribe, level) {
@@ -14253,9 +14310,9 @@ function h(tag, props = {}, ...kids) {
   return el2;
 }
 var helpButton = () => h("button", { class: "q", type: "button", "aria-label": "H\u01B0\u1EDBng d\u1EABn", "aria-expanded": "false", text: "?" });
-function hint(label, text) {
+function hint(label2, text) {
   const tip = h("p", { class: "sub hintbody", hidden: true, text });
-  const head = h("div", { class: "hinthead" }, typeof label === "string" ? h("h3", { text: label }) : label, helpButton());
+  const head = h("div", { class: "hinthead" }, typeof label2 === "string" ? h("h3", { text: label2 }) : label2, helpButton());
   return Object.assign(h("div", { class: "hint" }, head, tip), { tip });
 }
 if (typeof document !== "undefined") document.addEventListener("click", (e) => {
@@ -14273,6 +14330,305 @@ function iconCanvas(src) {
   return c;
 }
 var costText = (c, names) => Object.keys(c).filter((k) => (c[k] ?? 0) > 0).map((k) => `${c[k]} ${names[k].toLowerCase()}`).join(" + ") || "mi\u1EC5n ph\xED";
+
+// src/ui/minimap.ts
+var TERRAIN = {
+  [Tile.Grass]: [134, 163, 85],
+  [Tile.Water]: [63, 111, 154],
+  [Tile.Tree]: [47, 82, 34],
+  [Tile.Rock]: [120, 125, 128],
+  [Tile.Mud]: [122, 100, 66],
+  [Tile.Bush]: [150, 70, 60]
+};
+var MapView = class {
+  constructor(sim2, cam2, r, ctl2, mini, big, overlay) {
+    this.sim = sim2;
+    this.cam = cam2;
+    this.r = r;
+    this.ctl = ctl2;
+    this.mini = mini;
+    this.big = big;
+    this.overlay = overlay;
+    this.base = document.createElement("canvas");
+    this.ver = -1;
+    this.builds = -1;
+    this.frame = 0;
+    this.N = sim2.world.size;
+    this.base.width = this.base.height = mini.width = mini.height = big.width = big.height = this.N;
+    this.bctx = this.base.getContext("2d");
+    mini.addEventListener("click", () => this.open());
+    big.addEventListener("click", (e) => {
+      const b = big.getBoundingClientRect();
+      ctl2.centerOn((e.clientX - b.left) / b.width * this.N * TILE, (e.clientY - b.top) / b.height * this.N * TILE);
+      this.close();
+    });
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) this.close();
+    });
+  }
+  get isOpen() {
+    return !this.overlay.hidden;
+  }
+  open() {
+    this.overlay.hidden = false;
+  }
+  close() {
+    this.overlay.hidden = true;
+  }
+  redrawBase() {
+    const { sim: sim2, N } = this;
+    if (sim2.fog.version === this.ver && sim2.buildings.length === this.builds) return;
+    this.ver = sim2.fog.version;
+    this.builds = sim2.buildings.length;
+    const img = this.bctx.createImageData(N, N), s = sim2.fog.state;
+    for (let i = 0; i < N * N; i++) {
+      const c = sim2.world.occ[i] ? [200, 150, 80] : TERRAIN[sim2.world.tiles[i]], k = s[i] === 2 ? 1 : s[i] === 1 ? 0.55 : 0;
+      img.data[i * 4] = c[0] * k + 8 * (1 - k);
+      img.data[i * 4 + 1] = c[1] * k + 10 * (1 - k);
+      img.data[i * 4 + 2] = c[2] * k + 20 * (1 - k);
+      img.data[i * 4 + 3] = 255;
+    }
+    this.bctx.putImageData(img, 0, 0);
+  }
+  paint(ctx2, dot) {
+    const { sim: sim2, N } = this, seen = (x2, y2) => sim2.fog.state[Math.floor(y2) * N + Math.floor(x2)] === 2;
+    ctx2.drawImage(this.base, 0, 0);
+    for (const t of sim2.tribes) {
+      if (t.state === "adopted" || sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] === 0) continue;
+      ctx2.fillStyle = t.state === "destroyed" ? "#555" : t.state === "free" ? sim2.tribeHostile(t.id) ? "#e0452a" : "#e0a22a" : "#6fc06f";
+      ctx2.fillRect(t.camp.x - dot, t.camp.y - dot, dot * 2, dot * 2);
+    }
+    ctx2.fillStyle = "#ffffff";
+    for (const v of sim2.villagers) if (v.inside === null) ctx2.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
+    ctx2.fillStyle = "#ff5a4a";
+    for (const f of sim2.foes) if (seen(f.x, f.y)) ctx2.fillRect(f.x - dot / 2, f.y - dot / 2, dot, dot);
+    for (const a of sim2.animals) if (a.state !== "dead" && seen(a.x, a.y)) {
+      ctx2.fillStyle = a.species === "wolf" ? "#ff5a4a" : "#e8d4a8";
+      ctx2.fillRect(a.x - dot / 3, a.y - dot / 3, dot * 0.7, dot * 0.7);
+    }
+    const z = this.cam.zoom, x = this.cam.x / TILE, y = this.cam.y / TILE, w = this.r.w / z / TILE, h2 = this.r.h / z / TILE;
+    ctx2.strokeStyle = "#ffffff";
+    ctx2.lineWidth = Math.max(1, dot / 2);
+    ctx2.strokeRect(x, y, w, h2);
+  }
+  draw() {
+    this.frame++;
+    if (this.isOpen) {
+      this.redrawBase();
+      this.paint(this.big.getContext("2d"), 2.2);
+      return;
+    }
+    if (this.frame % 3) return;
+    this.redrawBase();
+    this.paint(this.mini.getContext("2d"), 3);
+  }
+};
+
+// src/ui/planmap.ts
+var S = 8;
+var ARROW_FROM = 27;
+var MARK_NAME = { civ: "D\xE2n th\u01B0\u1EDDng", unknown: "C\xF3 ng\u01B0\u1EDDi (ch\u01B0a r\xF5 lo\u1EA1i)", foot: ARM_NAME.foot, archer: ARM_NAME.archer, cavalry: ARM_NAME.cavalry };
+var MARK_COLOR = { civ: "#d8d2c0", unknown: "#b9b2a0", foot: "#e0452a", archer: "#e0452a", cavalry: "#e0452a" };
+var WORK_COLOR = { fire: "#f08a24", tower: "#6b4a2a", pile: "#a9743a", fence: "#8a6a3a", gate: "#e8d18a" };
+var LEVEL_NOTE = [
+  "",
+  "C\u1EA5p 1 (l\u01B0\u1EE3c \u0111\u1ED3): ch\u1EC9 bi\u1EBFt v\u1ECB tr\xED, s\u1ED1 d\xE2n \u01B0\u1EDBc ch\u1EEBng v\xE0 h\u01B0\u1EDBng v\xE0o l\xE0ng. C\u1EED th\xEAm trinh s\xE1t \u0111\u1EC3 bi\u1EBFt \u0111\u1ECBa h\xECnh v\xE0 c\xF4ng tr\xECnh.",
+  "C\u1EA5p 2 (\u0111\u1ECBa h\xECnh): th\u1EA5y \u0111\u1EA5t, r\u1EEBng, n\u01B0\u1EDBc, c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 v\xE0 b\xF3ng ng\u01B0\u1EDDi; ch\u01B0a bi\u1EBFt ai l\xE0 l\xEDnh. C\u1EA5p 3 cho s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i, kho v\xE0 th\u1EE7 l\u0129nh.",
+  "C\u1EA5p 3 (\u0111\u1ED9i h\xECnh): th\u1EA5y c\u1EA3 l\xEDnh t\u1EEBng lo\u1EA1i, kho l\u01B0\u01A1ng v\xE0 th\u1EE7 l\u0129nh."
+];
+var inside = (i, x, y) => x >= i.box.x0 && x < i.box.x1 && y >= i.box.y0 && y < i.box.y1;
+var clampTo = (i, x, y) => ({ x: Math.max(i.box.x0 + 1, Math.min(i.box.x1 - 1, x)), y: Math.max(i.box.y0 + 1, Math.min(i.box.y1 - 1, y)) });
+function drawMark(ctx2, mark, px, py) {
+  ctx2.fillStyle = MARK_COLOR[mark];
+  ctx2.strokeStyle = "#1a1208";
+  ctx2.lineWidth = 1;
+  ctx2.beginPath();
+  if (mark === "foot") ctx2.rect(px - 3, py - 3, 6, 6);
+  else if (mark === "archer") {
+    ctx2.moveTo(px, py - 4);
+    ctx2.lineTo(px + 4, py + 3);
+    ctx2.lineTo(px - 4, py + 3);
+    ctx2.closePath();
+  } else if (mark === "cavalry") {
+    ctx2.moveTo(px, py - 4);
+    ctx2.lineTo(px + 4, py);
+    ctx2.lineTo(px, py + 4);
+    ctx2.lineTo(px - 4, py);
+    ctx2.closePath();
+  } else ctx2.arc(px, py, mark === "civ" ? 2 : 2.5, 0, Math.PI * 2);
+  ctx2.fill();
+  ctx2.stroke();
+}
+function label(ctx2, text, x, y, size = 10) {
+  ctx2.font = `bold ${size}px sans-serif`;
+  ctx2.textAlign = "center";
+  ctx2.strokeStyle = "#1a1208";
+  ctx2.lineWidth = 3;
+  ctx2.fillStyle = "#fff";
+  ctx2.strokeText(text, x, y);
+  ctx2.fillText(text, x, y);
+}
+function drawWork(ctx2, kind, name, px, py, pw, ph) {
+  ctx2.lineWidth = 1.5;
+  ctx2.strokeStyle = "#1a1208";
+  ctx2.fillStyle = WORK_COLOR[kind] ?? "#8a6a3a";
+  if (kind === "fire") {
+    const cx = px + pw / 2, cy = py + ph / 2, r = Math.max(pw, ph) / 2;
+    ctx2.beginPath();
+    ctx2.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx2.fill();
+    ctx2.stroke();
+    ctx2.fillStyle = "#ffe27a";
+    ctx2.beginPath();
+    ctx2.arc(cx, cy, r / 2, 0, Math.PI * 2);
+    ctx2.fill();
+  } else if (kind === "tower") {
+    ctx2.beginPath();
+    ctx2.moveTo(px + pw / 2, py - 2);
+    ctx2.lineTo(px + pw + 2, py + ph);
+    ctx2.lineTo(px - 2, py + ph);
+    ctx2.closePath();
+    ctx2.fill();
+    ctx2.stroke();
+  } else {
+    ctx2.fillRect(px, py, pw, ph);
+    ctx2.strokeRect(px, py, pw, ph);
+  }
+  label(ctx2, name, px + pw / 2, py + ph + 11);
+}
+function arrow(ctx2, x0, y0, x1, y1, text) {
+  const a = Math.atan2(y1 - y0, x1 - x0);
+  ctx2.strokeStyle = ctx2.fillStyle = "#ffffff";
+  ctx2.lineWidth = 3;
+  ctx2.beginPath();
+  ctx2.moveTo(x0, y0);
+  ctx2.lineTo(x1, y1);
+  ctx2.stroke();
+  ctx2.beginPath();
+  ctx2.moveTo(x1, y1);
+  ctx2.lineTo(x1 - 10 * Math.cos(a - 0.45), y1 - 10 * Math.sin(a - 0.45));
+  ctx2.lineTo(x1 - 10 * Math.cos(a + 0.45), y1 - 10 * Math.sin(a + 0.45));
+  ctx2.closePath();
+  ctx2.fill();
+  label(ctx2, text, x0, y0 - 6, 11);
+}
+function paint(ctx2, sim2, i, plan2) {
+  const { box } = i, N = sim2.world.size, X = (x) => (x - box.x0) * S, Y = (y) => (y - box.y0) * S;
+  const W2 = (box.x1 - box.x0) * S, H2 = (box.y1 - box.y0) * S;
+  ctx2.fillStyle = "#d9c9a0";
+  ctx2.fillRect(0, 0, W2, H2);
+  if (i.level >= 2) for (let y = box.y0; y < box.y1; y++) for (let x = box.x0; x < box.x1; x++) {
+    const c = sim2.world.occ[y * N + x] ? [150, 130, 90] : TERRAIN[sim2.world.tiles[y * N + x]] ?? TERRAIN[Tile.Grass];
+    ctx2.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+    ctx2.fillRect(X(x), Y(y), S, S);
+  }
+  ctx2.strokeStyle = "rgba(0,0,0,0.12)";
+  ctx2.lineWidth = 1;
+  ctx2.beginPath();
+  for (let x = box.x0; x <= box.x1; x += 6) {
+    ctx2.moveTo(X(x), 0);
+    ctx2.lineTo(X(x), H2);
+  }
+  for (let y = box.y0; y <= box.y1; y += 6) {
+    ctx2.moveTo(0, Y(y));
+    ctx2.lineTo(W2, Y(y));
+  }
+  ctx2.stroke();
+  ctx2.setLineDash([5, 4]);
+  ctx2.strokeStyle = "rgba(255,255,255,0.75)";
+  ctx2.lineWidth = 1.5;
+  ctx2.beginPath();
+  ctx2.arc(X(i.camp.x), Y(i.camp.y), i.yard * S, 0, Math.PI * 2);
+  ctx2.stroke();
+  ctx2.setLineDash([]);
+  for (const s of i.structures) drawWork(ctx2, s.kind, s.label, X(s.x), Y(s.y), s.w * S, s.h * S);
+  for (const p of i.people) {
+    if (!inside(i, p.x, p.y)) continue;
+    if (p.leader) {
+      ctx2.strokeStyle = "#ffd23a";
+      ctx2.lineWidth = 2.5;
+      ctx2.beginPath();
+      ctx2.arc(X(p.x), Y(p.y), 7, 0, Math.PI * 2);
+      ctx2.stroke();
+    }
+    drawMark(ctx2, p.mark, X(p.x), Y(p.y));
+  }
+  if (i.toUs) {
+    const at = (d) => ({ x: X(i.camp.x + i.toUs.x * d), y: Y(i.camp.y + i.toUs.y * d) }), a = at(ARROW_FROM), b = at(i.yard + 3);
+    arrow(ctx2, a.x, a.y, b.x, b.y, "\u0110\u01B0\u1EDDng v\xE0o");
+  }
+  if (plan2?.kind !== "attack") return;
+  const spot = (x, y) => {
+    const p = clampTo(i, x, y);
+    return { x: X(p.x), y: Y(p.y) };
+  };
+  const disc = (x, y, color, text) => {
+    const p = spot(x, y);
+    ctx2.fillStyle = color;
+    ctx2.strokeStyle = "#1a1208";
+    ctx2.lineWidth = 2;
+    ctx2.beginPath();
+    ctx2.arc(p.x, p.y, 8, 0, Math.PI * 2);
+    ctx2.fill();
+    ctx2.stroke();
+    label(ctx2, text, p.x, p.y + 3.5);
+    return p;
+  };
+  disc(plan2.rally.x, plan2.rally.y, "#6a6a6a", "\u2691");
+  for (const m of plan2.missions) {
+    const sq = sim2.squadById(m.squad), goal = sim2.missionTarget(plan2, m);
+    if (!sq || !goal) continue;
+    const c = sim2.squadCenter(sq) ?? plan2.rally, g2 = spot(goal.x, goal.y);
+    ctx2.strokeStyle = sq.color;
+    ctx2.lineWidth = 3;
+    ctx2.beginPath();
+    ctx2.arc(g2.x, g2.y, 9, 0, Math.PI * 2);
+    ctx2.moveTo(g2.x - 13, g2.y);
+    ctx2.lineTo(g2.x + 13, g2.y);
+    ctx2.moveTo(g2.x, g2.y - 13);
+    ctx2.lineTo(g2.x, g2.y + 13);
+    ctx2.stroke();
+    const from = spot(c.x, c.y);
+    ctx2.setLineDash([6, 4]);
+    ctx2.beginPath();
+    ctx2.moveTo(from.x, from.y);
+    ctx2.lineTo(g2.x, g2.y);
+    ctx2.stroke();
+    ctx2.setLineDash([]);
+    disc(c.x, c.y, sq.color, sq.name.slice(-1));
+  }
+}
+function legend(i, plan2) {
+  const items = [];
+  for (const s of i.structures) if (!items.some((x) => x[1] === s.label)) items.push([WORK_COLOR[s.kind] ?? "#8a6a3a", s.label]);
+  for (const m of new Set(i.people.map((p) => p.mark))) items.push([MARK_COLOR[m], MARK_NAME[m]]);
+  if (i.people.some((p) => p.leader)) items.push(["#ffd23a", "Th\u1EE7 l\u0129nh (v\xF2ng v\xE0ng)"]);
+  if (plan2?.kind === "attack") items.push(["#6a6a6a", "Ch\u1ED7 h\u1EB9n"], ["#4aa0e0", "\u0110\u1ED9i c\u1EE7a ta v\xE0 m\u1EE5c ti\xEAu (c\xF9ng m\xE0u)"]);
+  return h("div", { class: "btns", style: "gap:10px;flex-wrap:wrap" }, ...items.map(([color, text]) => h(
+    "small",
+    {},
+    h("span", { style: `display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;background:${color};border:1px solid #1a1208` }),
+    text
+  )));
+}
+function planMap(sim2, tribeId, plan2) {
+  const intel = sim2.tribeIntel(tribeId);
+  if (!intel) return h("p", { class: "sub", text: 'Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 l\xE0ng n\xE0y: c\u1EED trinh s\xE1t \u1EDF trang "Trinh s\xE1t, b\u1EA3n \u0111\u1ED3" \u0111\u1EC3 v\u1EBD.' });
+  const { box } = intel;
+  const canvas2 = h("canvas", { width: (box.x1 - box.x0) * S, height: (box.y1 - box.y0) * S, class: "planmap", style: "width:100%;max-width:520px;aspect-ratio:1;border:2px solid #1a1208;border-radius:4px;background:#2a2218" });
+  const ctx2 = canvas2.getContext("2d");
+  if (ctx2) paint(ctx2, sim2, intel, plan2);
+  const age = intel.accuracy >= 0.95 ? "b\xE1o c\xE1o m\u1EDBi" : intel.accuracy >= 0.7 ? "b\xE1o c\xE1o h\u01A1i c\u0169" : intel.accuracy >= 0.4 ? "b\xE1o c\xE1o \u0111\xE3 c\u0169, ch\u1ED7 ng\u01B0\u1EDDi \u0111\u1EE9ng ch\u1EC9 l\xE0 \u01B0\u1EDBc ch\u1EEBng" : "b\xE1o c\xE1o r\u1EA5t c\u0169";
+  const s = intel.soldiers, army = s ? `L\xEDnh: ${s.foot} ${ARM_NAME.foot.toLowerCase()}, ${s.archer} ${ARM_NAME.archer.toLowerCase()}, ${s.cavalry} ${ARM_NAME.cavalry.toLowerCase()} \xB7 ` : "";
+  return h(
+    "div",
+    { style: "display:flex;flex-direction:column;gap:6px" },
+    h("div", { class: "nm" }, h("b", { text: `B\u1EA3n \u0111\u1ED3 ${intel.name}` }), h("small", { text: `${army}kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi \xB7 ${age}${intel.gaps ? " \xB7 c\xF2n h\u1EDF" : ""}` })),
+    canvas2,
+    legend(intel, plan2),
+    h("small", { class: "sub", text: `V\xF9ng v\u1EBD: khu tr\u1EA1i v\xE0 24 \xF4 xung quanh. ${LEVEL_NOTE[intel.level]}` })
+  );
+}
 
 // src/ui/warpanel.ts
 var TABS = [["squads", "\u0110\u1ED9i v\xE0 tr\u1EADn ph\xE1p"], ["maps", "Trinh s\xE1t, b\u1EA3n \u0111\u1ED3"], ["plan", "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"], ["defense", "Ph\xF2ng th\u1EE7"], ["log", "Nh\u1EADt k\xFD tr\u1EADn"]];
@@ -14307,8 +14663,8 @@ var WarPanel = class {
     this.targetTribe = "";
     this.newLevel = {};
     const bar2 = h("div", { class: "btns tabs" });
-    for (const [t, label] of TABS) {
-      const b = h("button", { class: "sm", text: label, pressed: t === this.tab, onclick: () => {
+    for (const [t, label2] of TABS) {
+      const b = h("button", { class: "sm", text: label2, pressed: t === this.tab, onclick: () => {
         this.tab = t;
         this.key = "";
         this.update();
@@ -14570,6 +14926,8 @@ var WarPanel = class {
         this.refresh();
       } })
     ));
+    const mapTribe = plan2?.tribe ?? this.targetTribe;
+    if (mapTribe) out.push(planMap(sim2, mapTribe, plan2));
     if (!plan2) {
       out.push(h("p", { class: "sub", text: "Ch\u1ECDn l\xE0ng c\u1EA7n \u0111\xE1nh r\u1ED3i l\u1EADp k\u1EBF ho\u1EA1ch. M\u1ED7i \u0111\u1ED9i c\xF3 th\u1EC3 nh\u1EADn m\u1ED9t nhi\u1EC7m v\u1EE5." }));
       return out;
@@ -14701,8 +15059,8 @@ var Menu = class {
     this.placesList = h("div");
     /** The speed to go back to when the war tent is left (it opens the game paused, as a war council does). */
     this.resume = 0;
-    for (const [t, label] of TABS2) {
-      const b = h("button", { class: "sm", text: label, pressed: t === this.tab, onclick: () => this.show(t) });
+    for (const [t, label2] of TABS2) {
+      const b = h("button", { class: "sm", text: label2, pressed: t === this.tab, onclick: () => this.show(t) });
       this.tabBtns.set(t, b);
       tabs.append(b);
     }
@@ -14951,9 +15309,9 @@ var Menu = class {
       ctl2.onChange();
       this.update();
     } });
-    const row = (label, ...kids) => h("div", { class: "devrow" }, h("span", { text: label }), ...kids);
-    const toggle = (label, key, tip) => {
-      const b = h("button", { class: "sm", text: label, title: tip, pressed: sim2.dev[key], onclick: () => {
+    const row = (label2, ...kids) => h("div", { class: "devrow" }, h("span", { text: label2 }), ...kids);
+    const toggle = (label2, key, tip) => {
+      const b = h("button", { class: "sm", text: label2, title: tip, pressed: sim2.dev[key], onclick: () => {
         sim2.dev[key] = !sim2.dev[key];
         b.setAttribute("aria-pressed", String(sim2.dev[key]));
       } });
@@ -15006,7 +15364,7 @@ var Menu = class {
       raiseArmy(sim2, k, n);
     }))));
     page.append(h("p", { class: "sub", text: "\u0110\u1ECBch t\u1EDBi (R\xECu \u0110\xE1):" }));
-    const wave = (label, weapons) => btn(label, () => {
+    const wave = (label2, weapons) => btn(label2, () => {
       const e = enemyWave(sim2, "axe", weapons);
       if (e) toast(e);
     });
@@ -15130,99 +15488,6 @@ var Menu = class {
       h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), `: t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD ${gameDays(30)} ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p.`),
       h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
     );
-  }
-};
-
-// src/ui/minimap.ts
-var TERRAIN = {
-  [Tile.Grass]: [134, 163, 85],
-  [Tile.Water]: [63, 111, 154],
-  [Tile.Tree]: [47, 82, 34],
-  [Tile.Rock]: [120, 125, 128],
-  [Tile.Mud]: [122, 100, 66],
-  [Tile.Bush]: [150, 70, 60]
-};
-var MapView = class {
-  constructor(sim2, cam2, r, ctl2, mini, big, overlay) {
-    this.sim = sim2;
-    this.cam = cam2;
-    this.r = r;
-    this.ctl = ctl2;
-    this.mini = mini;
-    this.big = big;
-    this.overlay = overlay;
-    this.base = document.createElement("canvas");
-    this.ver = -1;
-    this.builds = -1;
-    this.frame = 0;
-    this.N = sim2.world.size;
-    this.base.width = this.base.height = mini.width = mini.height = big.width = big.height = this.N;
-    this.bctx = this.base.getContext("2d");
-    mini.addEventListener("click", () => this.open());
-    big.addEventListener("click", (e) => {
-      const b = big.getBoundingClientRect();
-      ctl2.centerOn((e.clientX - b.left) / b.width * this.N * TILE, (e.clientY - b.top) / b.height * this.N * TILE);
-      this.close();
-    });
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) this.close();
-    });
-  }
-  get isOpen() {
-    return !this.overlay.hidden;
-  }
-  open() {
-    this.overlay.hidden = false;
-  }
-  close() {
-    this.overlay.hidden = true;
-  }
-  redrawBase() {
-    const { sim: sim2, N } = this;
-    if (sim2.fog.version === this.ver && sim2.buildings.length === this.builds) return;
-    this.ver = sim2.fog.version;
-    this.builds = sim2.buildings.length;
-    const img = this.bctx.createImageData(N, N), s = sim2.fog.state;
-    for (let i = 0; i < N * N; i++) {
-      const c = sim2.world.occ[i] ? [200, 150, 80] : TERRAIN[sim2.world.tiles[i]], k = s[i] === 2 ? 1 : s[i] === 1 ? 0.55 : 0;
-      img.data[i * 4] = c[0] * k + 8 * (1 - k);
-      img.data[i * 4 + 1] = c[1] * k + 10 * (1 - k);
-      img.data[i * 4 + 2] = c[2] * k + 20 * (1 - k);
-      img.data[i * 4 + 3] = 255;
-    }
-    this.bctx.putImageData(img, 0, 0);
-  }
-  paint(ctx2, dot) {
-    const { sim: sim2, N } = this, seen = (x2, y2) => sim2.fog.state[Math.floor(y2) * N + Math.floor(x2)] === 2;
-    ctx2.drawImage(this.base, 0, 0);
-    for (const t of sim2.tribes) {
-      if (t.state === "adopted" || sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] === 0) continue;
-      ctx2.fillStyle = t.state === "destroyed" ? "#555" : t.state === "free" ? sim2.tribeHostile(t.id) ? "#e0452a" : "#e0a22a" : "#6fc06f";
-      ctx2.fillRect(t.camp.x - dot, t.camp.y - dot, dot * 2, dot * 2);
-    }
-    ctx2.fillStyle = "#ffffff";
-    for (const v of sim2.villagers) if (v.inside === null) ctx2.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
-    ctx2.fillStyle = "#ff5a4a";
-    for (const f of sim2.foes) if (seen(f.x, f.y)) ctx2.fillRect(f.x - dot / 2, f.y - dot / 2, dot, dot);
-    for (const a of sim2.animals) if (a.state !== "dead" && seen(a.x, a.y)) {
-      ctx2.fillStyle = a.species === "wolf" ? "#ff5a4a" : "#e8d4a8";
-      ctx2.fillRect(a.x - dot / 3, a.y - dot / 3, dot * 0.7, dot * 0.7);
-    }
-    const z = this.cam.zoom, x = this.cam.x / TILE, y = this.cam.y / TILE, w = this.r.w / z / TILE, h2 = this.r.h / z / TILE;
-    ctx2.strokeStyle = "#ffffff";
-    ctx2.lineWidth = Math.max(1, dot / 2);
-    ctx2.strokeRect(x, y, w, h2);
-  }
-  draw() {
-    this.frame++;
-    if (this.isOpen) {
-      this.redrawBase();
-      this.paint(this.big.getContext("2d"), 2.2);
-      return;
-    }
-    if (this.frame % 3) return;
-    this.redrawBase();
-    this.paint(this.mini.getContext("2d"), 3);
   }
 };
 
@@ -15540,19 +15805,19 @@ var UnitCard = class {
       else ctl2.clearSelection();
       ctl2.onChange();
     } }));
-    this.stanceBtns = STANCES.map(([s, label, tip]) => h("button", { class: "sm", "data-stance": s, pressed: false, text: label, title: tip, onclick: () => {
+    this.stanceBtns = STANCES.map(([s, label2, tip]) => h("button", { class: "sm", "data-stance": s, pressed: false, text: label2, title: tip, onclick: () => {
       sim2.setStance(ids(), s);
       ctl2.onChange();
     } }));
     const gearRow = h("div", { class: "btns", role: "group", "aria-label": "Ph\xE1t \u0111\u1ED3" });
-    const addGear = (label, kind, slot, title) => {
+    const addGear = (label2, kind, slot, title) => {
       const btn = h("button", { class: "sm", title, onclick: () => {
         const e = sim2.assignGear(ids(), kind, slot);
         if (e) c.toast(e);
         else ctl2.clearSelection();
         ctl2.onChange();
       } });
-      this.gearBtns.push({ btn, kind, slot, label });
+      this.gearBtns.push({ btn, kind, slot, label: label2 });
       gearRow.append(btn);
     };
     for (const id of CRAFTED_WEAPONS) addGear(WEAPONS[id].name, id, "weapon", `Ph\xE1t ${WEAPONS[id].name.toLowerCase()} t\u1EEB kho X\u01B0\u1EDFng cho d\xE2n \u0111ang ch\u1ECDn`);
@@ -15968,12 +16233,12 @@ var StaffBox = class {
     this.root.append(hint(this.head, job === "build" ? 'Ch\u1EC9 th\u1EE3 x\xE2y c\u1EE7a nh\xE0 n\xE0y m\u1EDBi d\u1EF1ng v\xE0 n\xE2ng c\u1EA5p \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh. B\u1EA1n ch\u1ECDn ai l\xE0m th\u1EE3 x\xE2y: b\u1EA5m "Th\xEAm ng\u01B0\u1EDDi" r\u1ED3i ch\u1ECDn trong danh s\xE1ch.' : job === "farm" ? "Ru\u1ED9ng cho th\u1EE9c \u0103n \u0111\u1EC1u quanh n\u0103m, \xEDt nh\u1EA5t v\xE0o m\xF9a \u0111\xF4ng, c\xF2n b\u1EE5i qu\u1EA3 th\xEC kh\xF4ng m\u1ECDc l\u1EA1i. D\xE2n b\u1EA1n ch\u1ECDn v\xE0o ru\u1ED9ng l\xE0m vi\u1EC7c b\xEAn trong, th\u1EE9c \u0103n v\u1EC1 th\u1EB3ng kho. M\u1ED7i ru\u1ED9ng m\u1ED9t ng\u01B0\u1EDDi, ru\u1ED9ng c\u1EA5p cao h\u01A1n l\xE0m nhanh h\u01A1n." : 'D\xE2n v\xE0o trong nh\xE0 l\xE0m vi\u1EC7c, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3 v\xE0 kh\xF4ng b\u1ECB t\u1EA5n c\xF4ng. B\u1EA1n ch\u1ECDn ai v\xE0o: b\u1EA5m "Th\xEAm ng\u01B0\u1EDDi" r\u1ED3i ch\u1ECDn trong danh s\xE1ch.'), this.list, h("div", { class: "btns" }, this.add), this.picker);
   }
   update(b) {
-    const { sim: sim2 } = this.c, slots = levelDef(b).slots, jobKey = this.job === "farm" ? "food" : this.job, stat = JOBS[jobKey].stat, label = this.job === "farm" ? "N\xF4ng d\xE2n" : JOB_NAME[this.job];
+    const { sim: sim2 } = this.c, slots = levelDef(b).slots, jobKey = this.job === "farm" ? "food" : this.job, stat = JOBS[jobKey].stat, label2 = this.job === "farm" ? "N\xF4ng d\xE2n" : JOB_NAME[this.job];
     const crew2 = this.job === "build", staff = crew2 ? sim2.crew() : b.staff.map((id) => sim2.get(id)).filter((v) => !!v);
     const count = crew2 ? staff.length : sim2.staffCount(b), full = count >= slots;
     this.head.textContent = `${crew2 ? "Th\u1EE3 x\xE2y" : this.job === "farm" ? "N\xF4ng d\xE2n" : "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c"} (${count}/${slots}) \xB7 n\xE2ng c\u1EA5p nh\xE0 \u0111\u1EC3 ch\u1EE9a th\xEAm`;
     this.add.disabled = full && !this.open;
-    this.add.textContent = this.open ? "Xong" : `Th\xEAm ng\u01B0\u1EDDi ${label.toLowerCase()}`;
+    this.add.textContent = this.open ? "Xong" : `Th\xEAm ng\u01B0\u1EDDi ${label2.toLowerCase()}`;
     const key = `${b.id}|${staff.map((v) => `${v.id}.${v.stats[stat]}`).join()}`;
     if (key !== this.key) {
       this.key = key;
@@ -15995,14 +16260,14 @@ var StaffBox = class {
     if (pk === this.pickKey) return;
     this.pickKey = pk;
     this.picker.replaceChildren(
-      h("p", { class: "sub", text: full ? "Nh\xE0 \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: cho m\u1ED9t ng\u01B0\u1EDDi ra ho\u1EB7c n\xE2ng c\u1EA5p nh\xE0." : `Ch\u1ECDn ai l\xE0m ${label.toLowerCase()}:` }),
+      h("p", { class: "sub", text: full ? "Nh\xE0 \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: cho m\u1ED9t ng\u01B0\u1EDDi ra ho\u1EB7c n\xE2ng c\u1EA5p nh\xE0." : `Ch\u1ECDn ai l\xE0m ${label2.toLowerCase()}:` }),
       ...pool.map((v) => h(
         "div",
         { class: "row" },
         h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${v.stats[stat]} \xB7 \u0111ang ${JOB_NAME[v.job].toLowerCase()}` })),
         h("button", { class: "sm", text: "V\xE0o l\xE0m", disabled: full, onclick: () => {
           const e = crew2 ? sim2.assignCrew([v.id]) : this.job === "farm" ? sim2.assignField([v.id], b.id) : sim2.assignStaff([v.id], this.job);
-          this.c.toast(e ?? `${v.name}: ${label}`);
+          this.c.toast(e ?? `${v.name}: ${label2}`);
           this.c.ctl.onChange();
         } })
       ))
@@ -16429,7 +16694,7 @@ var BuildingPanel = class {
     const key = `${b.id}|${crew2.map((v) => v.id).join()}|${archers.map((v) => `${v.id}.${v.post}`).join()}|${crew2.length >= slots}`;
     if (key === this.towerKey) return;
     this.towerKey = key;
-    const row = (v, label, fn) => h("div", { class: "row" }, h("div", { class: "nm" }, v.name, h("small", { text: WEAPONS[v.weapon ?? "fist"].name })), h("button", { class: "sm", text: label, disabled: label === "L\xEAn ch\xF2i" && crew2.length >= slots, onclick: () => {
+    const row = (v, label2, fn) => h("div", { class: "row" }, h("div", { class: "nm" }, v.name, h("small", { text: WEAPONS[v.weapon ?? "fist"].name })), h("button", { class: "sm", text: label2, disabled: label2 === "L\xEAn ch\xF2i" && crew2.length >= slots, onclick: () => {
       fn();
       ctl2.onChange();
     } }));
@@ -16448,8 +16713,8 @@ var BuildingPanel = class {
   }
   /** Who lies in the beds of a Nhà dân or a Lều chiến binh, with their strength. Rebuilt only when the sleepers change. */
   updateBeds(b) {
-    const kind = b.kind, sleepers2 = this.c.sim.sleepers(b), inside = sleepers2.filter((v) => v.inside === b.id);
-    this.bedHead[kind].textContent = `\u0110ang ng\u1EE7 (${inside.length}/${levelDef(b).slots} gi\u01B0\u1EDDng)${sleepers2.length > inside.length ? ` \xB7 ${sleepers2.length - inside.length} \u0111ang t\u1EDBi` : ""}`;
+    const kind = b.kind, sleepers2 = this.c.sim.sleepers(b), inside2 = sleepers2.filter((v) => v.inside === b.id);
+    this.bedHead[kind].textContent = `\u0110ang ng\u1EE7 (${inside2.length}/${levelDef(b).slots} gi\u01B0\u1EDDng)${sleepers2.length > inside2.length ? ` \xB7 ${sleepers2.length - inside2.length} \u0111ang t\u1EDBi` : ""}`;
     const key = `${sleepers2.map((v) => `${v.id}${v.inside === b.id}${Math.round(v.energy)}`).join()}|${kind}|${b.id}`;
     if (key === this.bedKey[kind]) return;
     this.bedKey[kind] = key;

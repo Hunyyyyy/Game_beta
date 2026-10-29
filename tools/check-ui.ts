@@ -74,7 +74,8 @@ step('war tent pages and the battle HUD, with squads, maps, plans and a fight on
   dev.enemyWave(sim, 'axe', ['club', 'bow', 'spear']);
   for (let i = 0; i < 200; i++) (sim as unknown as { tick(d: number): void }).tick(0.05);
   const war = new WarPanel(ctx), hud = new WarHud(el(), ctx, renderer);
-  for (const t of ['squads', 'maps', 'plan', 'defense', 'log'] as const) { try { war.open(t); } catch (e) { throw new Error(`war tab ${t}: ${(e as Error).stack?.split(String.fromCharCode(10)).slice(0, 3).join(' | ')}`); } }
+  for (const t of ['maps', 'plan', 'defense', 'log'] as const) { try { war.open(t); } catch (e) { throw new Error(`war tab ${t}: ${(e as Error).stack?.split(String.fromCharCode(10)).slice(0, 3).join(' | ')}`); } }
+  war.openMap('axe'); war.closeMap();
   hud.update(); renderer.draw(0, new Set(), null, [], null, null, null);
   renderer.reduceFigures = true; renderer.draw(0, new Set(), null, [], null, null, null);
 });

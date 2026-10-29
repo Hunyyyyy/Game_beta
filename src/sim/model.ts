@@ -152,8 +152,33 @@ export interface Squad {
   training: boolean;
 }
 /** What the scouts of one village brought back. */
-export interface ScoutMap { tribe: string; level: number; at: number; gaps: number }
-export interface ScoutMission { id: number; tribe: string; level: number; ids: number[]; phase: 'go' | 'watch' | 'back'; t: number; need: number; survivors: number }
+/** A person as the scouts saw him on the day they came: where he stood and what he carried. Whatever he does afterwards the map keeps. */
+export interface Seen { x: number; y: number; arm: 'foot' | 'archer' | 'cavalry'; weapon: string | null; civ: boolean; leader: boolean }
+export interface ScoutMap { tribe: string; level: number; at: number; gaps: number; seen?: Seen[] }
+export interface Pt { x: number; y: number }
+/** What a map of a village shows, as the planning screen draws it: the camp and 24 tiles round it. Each field appears only at the level that reveals it. */
+export type IntelMark = 'civ' | 'unknown' | 'foot' | 'archer' | 'cavalry';
+export interface TribeIntel {
+  tribe: string; name: string;
+  /** 1 sketch, 2 ground and works, 3 men by arm, stores and chief. */
+  level: number;
+  /** 0..1: how much of the report still holds. */
+  accuracy: number; gaps: number;
+  /** The tiles drawn, inclusive of x0,y0 and exclusive of x1,y1. */
+  box: { x0: number; y0: number; x1: number; y1: number };
+  camp: { x: number; y: number };
+  /** The yard of the camp itself; the rest of the box is the 24 tiles round it. */
+  yard: number;
+  /** Where our village lies from there, as a unit vector. */
+  toUs: { x: number; y: number } | null;
+  /** About how many people live there (rounded). */
+  population: number;
+  structures: Array<{ kind: string; label: string; detail: string; x: number; y: number; w: number; h: number }>;
+  people: Array<{ x: number; y: number; mark: IntelMark; leader: boolean; weapon: string | null }>;
+  /** Soldiers by arm, level 3 only. */
+  soldiers: { foot: number; archer: number; cavalry: number } | null;
+}
+export interface ScoutMission { id: number; tribe: string; level: number; ids: number[]; phase: 'go' | 'watch' | 'back'; t: number; need: number; survivors: number; seen?: Seen[] }
 
 export type Objective = 'camp' | 'gate' | 'stores' | 'leader' | 'ambush';
 export type Route = 'main' | 'forest' | 'night';
@@ -166,6 +191,14 @@ export interface Mission {
   /** Share of the squad lost (0..1) at which it pulls back to the rally point. */
   withdrawAt: number;
   state: MissionState; initial: number;
+  /** Attack only. Where the squad forms up, drawn on the enemy map (tile coordinates): one cell for each soldier, the way they face, and the drag (o to p) that made the shape; null until placed. */
+  deploy: { cells: Pt[]; heading: number; o: Pt; p: Pt; kind?: FormationName } | null;
+  /** The arrow the squad follows from where it stands, point by point; the last is where it fights. Empty: it goes for `objective`. */
+  path: Pt[];
+  /** Where it falls back to when `withdrawAt` is crossed; empty: the rally point. */
+  retreat: Pt[];
+  /** Which point of `path` (or of `retreat`, once withdrawing) it is walking to. */
+  leg: number;
   /** Defence only: where the squad stands when the alarm sounds. */
   post: 'gate' | 'fence' | 'tower' | 'reserve' | 'fire';
 }

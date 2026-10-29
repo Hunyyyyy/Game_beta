@@ -3,7 +3,8 @@ import * as army from './army';
 import * as scouting from './scouting';
 import * as warplan from './warplan';
 import type { Ent } from './battle';
-import type { CardKind, FormationName, Objective, Plan, ScoutMap, Squad, Villager } from './model';
+import type { FormationId } from './formations';
+import type { CardKind, FormationName, Mission, Objective, Plan, Pt, ScoutMap, Squad, TribeIntel, Villager } from './model';
 import type { Sim } from './sim';
 
 export const WAR = {
@@ -26,7 +27,7 @@ export const WAR = {
   /** → army.formationOpen */
   formationOpen(this: Sim, f: FormationName): boolean { return army.formationOpen(this, f); },
   /** → army.squadMove */
-  squadMove(this: Sim, s: Squad, x: number, y: number, mode: 'attack' | 'move' | 'hold'): void { return army.squadMove(this, s, x, y, mode); },
+  squadMove(this: Sim, s: Squad, x: number, y: number, mode: 'attack' | 'move' | 'hold', heading?: number): void { return army.squadMove(this, s, x, y, mode, heading); },
   /** → army.squadUnits */
   squadUnits(this: Sim, s: Squad): Villager[] { return army.squadUnits(this, s); },
   /** → army.squadCenter */
@@ -49,6 +50,10 @@ export const WAR = {
   mapLevel(this: Sim, tribe: string): number { return scouting.mapLevel(this, tribe); },
   /** → scouting.mapAccuracy */
   mapAccuracy(this: Sim, m: ScoutMap): number { return scouting.mapAccuracy(this, m); },
+  /** → scouting.tribeIntel */
+  tribeIntel(this: Sim, tribe: string): TribeIntel | null { return scouting.tribeIntel(this, tribe); },
+  /** → warplan.objectivePos */
+  missionTarget(this: Sim, plan: Plan, m: Mission): { x: number; y: number } | null { return warplan.objectivePos(this, plan, m); },
   /** → scouting.startScout */
   startScout(this: Sim, ids: readonly number[], tribe: string, level: number): string | null { return scouting.startScout(this, ids, tribe, level); },
   /** → scouting.scoutsNeeded */
@@ -56,7 +61,19 @@ export const WAR = {
   /** → warplan.newPlan */
   newPlan(this: Sim, kind: 'attack' | 'defense', tribe: string | null): Plan { return warplan.newPlan(this, kind, tribe); },
   /** → warplan.addMission */
-  addMission(this: Sim, plan: Plan, squadId: number): string | null { return warplan.addMission(this, plan, squadId); },
+  addMission(this: Sim, plan: Plan, squadId: number, withdrawAt?: number): string | null { return warplan.addMission(this, plan, squadId, withdrawAt); },
+  /** → warplan.removeMission */
+  removeMission(this: Sim, plan: Plan, squadId: number): void { return warplan.removeMission(plan, squadId); },
+  /** → warplan.deploySquad */
+  deploySquad(this: Sim, plan: Plan, squadId: number, kind: FormationId | undefined, cells: readonly Pt[], heading: number, o: Pt, p: Pt): string | null { return warplan.deploySquad(this, plan, squadId, kind, cells, heading, o, p); },
+  /** → warplan.setMissionPath */
+  setMissionPath(this: Sim, plan: Plan, squadId: number, pts: readonly Pt[], retreat?: boolean): string | null { return warplan.setMissionPath(this, plan, squadId, pts, retreat); },
+  /** → warplan.squadPace */
+  squadPace(this: Sim, s: Squad): number { return warplan.squadPace(this, s); },
+  /** → warplan.routeTime */
+  routeTime(this: Sim, s: Squad, from: Pt, pts: readonly Pt[]): warplan.RouteTime { return warplan.routeTime(this, s, from, pts); },
+  /** → warplan.missionStart */
+  missionStart(this: Sim, m: Mission, toward?: Pt): Pt | null { return warplan.missionStart(this, m, toward); },
   /** → warplan.addCard */
   addCard(this: Sim, plan: Plan, kind: CardKind, squadId: number, arg?: string): string | null { return warplan.addCard(this, plan, kind, squadId, arg); },
   /** → warplan.removeCard */

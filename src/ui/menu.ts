@@ -10,10 +10,9 @@ import { TOOL_KINDS, TOOL_NAME, TIER_NAME } from '../sim/tools';
 import { canAdopt, canTribute } from '../sim/tribes';
 import { costText, h, helpButton, hint } from './dom';
 import type { Ctx } from './panels';
-import { WarPanel } from './warpanel';
 
-type Tab = 'build' | 'places' | 'tribes' | 'war' | 'game' | 'dev' | 'help';
-const TABS: Array<[Tab, string]> = [['build', 'Xây'], ['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['war', 'Chiến'], ['game', 'Ván chơi'], ['dev', 'Dev'], ['help', '?']];
+type Tab = 'build' | 'places' | 'tribes' | 'game' | 'dev' | 'help';
+const TABS: Array<[Tab, string]> = [['build', 'Xây'], ['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['game', 'Ván chơi'], ['dev', 'Dev'], ['help', '?']];
 const SEASON_NAME: Record<Season, string> = { spring: 'Xuân', summer: 'Hạ', autumn: 'Thu', winter: 'Đông' };
 const PERSONALITY = { peaceful: 'Hòa bình', aggressive: 'Hiếu chiến', ambusher: 'Hay phục kích' } as const;
 
@@ -33,7 +32,6 @@ export class Menu {
     }
     tabs.append(h('span', { class: 'spacer' }), h('button', { class: 'sm', text: '✕', title: 'Đóng menu', onclick: () => this.close() }));
     this.pages.set('build', this.buildPage()); this.pages.set('places', this.placesPage()); this.pages.set('tribes', this.tribesPage());
-    const war = new WarPanel(c); this.pages.set('war', war.root); this.updaters.push(() => war.update());
     this.pages.set('game', this.gamePage()); this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
     for (const p of this.pages.values()) body.append(p);
     this.show(this.tab);
@@ -41,14 +39,9 @@ export class Menu {
 
   get isOpen(): boolean { return !this.drawer.hidden; }
   open(tab?: Tab): void { this.drawer.hidden = false; if (tab) this.show(tab); this.update(); }
-  close(): void { this.drawer.hidden = true; if (this.tab === 'war' && this.resume > 0 && this.c.sim.speed === 0) { this.c.sim.speed = this.resume; this.resume = 0; } }
+  close(): void { this.drawer.hidden = true; }
   toggle(): void { if (this.isOpen) this.close(); else this.open(); }
-  /** The speed to go back to when the war tent is left (it opens the game paused, as a war council does). */
-  private resume = 0;
   show(tab: Tab): void {
-    const { sim } = this.c;
-    if (tab === 'war' && this.tab !== 'war') { this.resume = sim.speed; sim.speed = 0; }
-    else if (tab !== 'war' && this.tab === 'war' && this.resume > 0 && sim.speed === 0) { sim.speed = this.resume; this.resume = 0; }
     this.tab = tab;
     for (const [t, b] of this.tabBtns) b.setAttribute('aria-pressed', String(t === tab));
     for (const [t, p] of this.pages) p.hidden = t !== tab;

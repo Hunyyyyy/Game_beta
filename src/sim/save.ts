@@ -14,7 +14,7 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 8;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
@@ -99,6 +99,28 @@ export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disabl
     d.scalars.nextSquad ??= 1; d.scalars.nextMission ??= 1; d.scalars.nextPlan ??= 1; d.scalars.alarmUntil ??= 0;
     d.records.battle ??= { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] };
     return { ...d, version: 5 };
+  },
+  // 5 -> 6: a mission carries the row, the arrow and the way back drawn on the enemy map (older missions go for their objective)
+  5: (d) => {
+    for (const p of d.lists.plans as Array<{ missions: Array<Record<string, unknown>> }>) for (const m of p.missions) { m.line ??= null; m.path ??= []; m.retreat ??= []; m.leg ??= 0; }
+    return { ...d, version: 6 };
+  },
+  // 6 -> 7: a squad is placed on the enemy map by a point and a heading, not by a row between two points
+  6: (d) => {
+    for (const p of d.lists.plans as Array<{ missions: Array<Record<string, unknown>> }>) for (const m of p.missions) {
+      const l = m.line as { a: { x: number; y: number }; b: { x: number; y: number } } | null | undefined;
+      m.deploy ??= l ? { x: (l.a.x + l.b.x) / 2, y: (l.a.y + l.b.y) / 2, heading: Math.atan2(l.b.y - l.a.y, l.b.x - l.a.x) - Math.PI / 2 } : null;
+      delete m.line;
+    }
+    return { ...d, version: 7 };
+  },
+  // 7 -> 8: a squad is placed as the cells drawn for it, not by a point and a heading (a squad placed the old way is simply not placed)
+  7: (d) => {
+    for (const p of d.lists.plans as Array<{ missions: Array<Record<string, unknown>> }>) for (const m of p.missions) {
+      const dep = m.deploy as { cells?: unknown } | null | undefined;
+      if (!dep || !Array.isArray(dep.cells)) m.deploy = null;
+    }
+    return { ...d, version: 8 };
   },
 };
 

@@ -24,7 +24,7 @@ export interface Tribe {
   id: TribeId;
   def: TribeDef;
   camp: { x: number; y: number };   // centre of the fire
-  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' }>;
+  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' | 'tower' | 'fence' | 'gate' }>;
   relation: number;                  // -100..100
   state: TribeState;
   angryUntil: number;                // sim time: being attacked keeps them hostile for a while

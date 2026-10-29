@@ -51,7 +51,6 @@ const map = new MapView(sim, cam, renderer, ctl, $('mini'), $('bigmapCanvas'), $
 const menu = new Menu($('drawer'), $('drawerTabs'), $('drawerBody'), ctx, () => { const w = renderer.screenToWorld(renderer.w / 2, renderer.h / 2); return { x: w.x / TILE, y: w.y / TILE }; });
 $('btnCloseMap').addEventListener('click', () => map.close());
 $('btnMenu').addEventListener('click', () => { menu.toggle(); });
-
 // ---------------------------------------------------------------- landscape on phones
 // A phone held upright gets a prompt (and the game pauses until it is turned); fullscreen plus an orientation lock is tried where the browser allows it.
 const rotateEl = $('rotate'), fullBtn = $<HTMLButtonElement>('btnFull');

@@ -91,6 +91,78 @@ details.fold > .btns, details.fold > .kv { margin-top: 4px; }
 .modal > .cardhead b { font-size: 16px; }
 .modal > .cardhead span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .modal > .cardhead .x { flex: none; }
+/* the war tent's full-screen planning view: a map to drag and zoom, with the squads and the plan on a board beside it */
+.planfull .pstage { position: relative; flex: 1; min-height: 0; display: flex; background: #1a1510; }
+.pview { position: relative; flex: 1; min-width: 0; overflow: hidden; color: #ecdfc4; --fg: #ecdfc4; --muted: #b8a888; --panel: rgba(26,20,13,.93); --panel-2: rgba(58,45,30,.92); --line: rgba(255,255,255,.2); --accent: #e0b43c; }
+.pview .sub, .pview small { color: #c9bb9a; }
+.chip { font: inherit; font-size: 13px; font-weight: 600; color: var(--fg); background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 3px 10px; min-height: 28px; cursor: pointer; white-space: nowrap; transition: background .12s, border-color .12s; }
+.chip:hover:not([disabled]) { border-color: var(--accent); }
+.chip.on { background: var(--accent); color: #1a1208; border-color: transparent; }
+.chip.danger { border-color: #d9534f; color: #ffb4a8; }
+.chip.danger.on { background: #d9534f; color: #fff; }
+.chip[disabled] { opacity: .4; cursor: default; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pcard { position: absolute; right: 10px; top: 10px; z-index: 3; width: min(340px, calc(100% - 20px)); max-height: calc(100% - 90px); overflow: auto; display: grid; gap: 6px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.5); }
+.pcard[hidden] { display: none; }
+.psec { display: grid; gap: 4px; }
+.ptitle { text-transform: uppercase; letter-spacing: .05em; font-size: 11px; }
+.phead { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.phead i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid #1a1208; flex: none; }
+.phead small { flex: 1; min-width: 0; }
+.pdesc { margin: 0; padding: 8px 10px; background: rgba(255,255,255,.07); border-left: 3px solid var(--accent); border-radius: 4px; font-size: 13px; line-height: 1.45; }
+.rrow { display: grid; grid-template-columns: 1fr auto auto; gap: 4px; align-items: center; padding: 2px 4px 2px 8px; background: var(--panel-2); border-radius: 3px; }
+.rwho { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.rwho b { flex: none; max-width: 55%; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rwho small { min-width: 0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rrow .chip { width: 26px; min-height: 26px; padding: 0; border-radius: 3px; }
+.proster { gap: 4px; }
+.proster > .chip { justify-self: start; }
+.rdrop { display: grid; gap: 0; max-height: 180px; overflow: auto; padding: 2px; background: rgba(0,0,0,.28); border: 1px solid var(--line); border-radius: 3px; }
+.rpick { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; padding: 3px 6px; border-radius: 2px; cursor: pointer; }
+.rpick:hover { background: rgba(255,255,255,.08); }
+.rpick input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+.pbar { display: grid; gap: 6px; }
+.psteps { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pdot { width: 28px; height: 28px; min-height: 28px; padding: 0; border-radius: 4px; border: 1px solid var(--line); background: transparent; color: var(--fg); font-size: 12px; font-weight: 800; cursor: pointer; }
+.pdot.done { border-color: var(--accent); color: var(--accent); }
+.pdot.now { background: var(--accent); color: #1a1208; border-color: transparent; }
+.pstep { display: flex; justify-content: space-between; align-items: baseline; }
+.pstep b { font-size: 16px; }
+.pbody2 { display: grid; gap: 8px; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.opts.three { grid-template-columns: repeat(3, 1fr); }
+.opt { position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "i t" "i n"; column-gap: 8px; row-gap: 0; align-items: center; text-align: left; padding: 9px 10px; min-height: 62px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; color: var(--fg); cursor: pointer; }
+.opt .oi { grid-area: i; font-size: 24px; line-height: 1; width: 30px; text-align: center; }
+.opt b { grid-area: t; font-size: 13px; }
+.opt small { grid-area: n; font-size: 11px; line-height: 1.25; }
+.opts.three .opt { grid-template-columns: 1fr; grid-template-areas: "i" "t" "n"; justify-items: center; text-align: center; min-height: 66px; padding: 8px 4px; }
+.opt:hover:not([disabled]) { border-color: var(--accent); }
+.opt.on { border-color: var(--accent); background: rgba(224,180,60,.2); }
+.opt.on::after { content: "✓"; position: absolute; right: 8px; top: 4px; color: var(--accent); font-weight: 800; }
+.opt[disabled] { opacity: .4; cursor: default; }
+.pnav { display: flex; justify-content: space-between; gap: 8px; }
+.ov { display: grid; gap: 6px; }
+.ovrow { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "i l e" "i v e"; column-gap: 10px; align-items: center; text-align: left; padding: 8px 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; color: var(--fg); cursor: pointer; }
+.ovrow .oi { grid-area: i; font-size: 22px; }
+.ovrow small { grid-area: l; }
+.ovrow b { grid-area: v; font-size: 13px; }
+.ovrow em { grid-area: e; font-style: normal; font-size: 12px; color: var(--accent); }
+.ptray { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ptray details { flex-basis: 100%; font-size: 12px; }
+.ptray summary { cursor: pointer; color: #ffd27a; }
+@media (max-width: 800px) { .pcard { left: 10px; right: 10px; top: auto; bottom: calc(60px + var(--sab)); width: auto; max-height: 50%; } }
+.planmap { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.planmap:active { cursor: grabbing; }
+.pinfo { position: absolute; left: 10px; top: 10px; z-index: 2; max-width: min(360px, calc(100% - 20px)); display: grid; gap: 4px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+.pinfo summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+.ptools { position: absolute; left: 10px; bottom: calc(10px + var(--sab)); z-index: 2; display: flex; gap: 6px; }
+.ptools .zoom { width: 40px; height: 40px; font-size: 20px; padding: 0; }
+.pact { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 2; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 20px); padding: 6px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.35); font-size: 13px; }
+.pact[hidden] { display: none; }
+.pnote { position: absolute; left: 50%; bottom: calc(14px + var(--sab)); transform: translateX(-50%); z-index: 2; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; width: min(560px, calc(100% - 100px)); padding: 8px 12px; background: var(--panel); border: 1px solid var(--accent); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.4); font-size: 13px; }
+.pnote[hidden] { display: none; }
+.ppop { position: absolute; z-index: 4; width: 260px; display: grid; gap: 6px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.45); }
+.ppop[hidden] { display: none; }
 .mbody { overflow: auto; flex: 1; padding: 10px 12px 16px; display: grid; gap: 10px; align-content: start; width: 100%; max-width: 860px; margin: 0 auto; -webkit-overflow-scrolling: touch; }
 .mbody.cols { max-width: 1100px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 .mbody h3 { margin: 0; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
@@ -1126,8 +1198,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     lastAnchor = [Math.round(hx), Math.round(hy)];
     const kind = ov && ov.kind || tool.kind || "axe";
     const def = handTools[kind] || handTools.axe;
-    const T = tiers_default[tier] || tiers_default[Math.max(...Object.keys(tiers_default).map(Number).filter((n) => n > 0))];
-    const col = { head: hexRgb(T.head), light: hexRgb(T.light), dark: hexRgb(T.dark), wood: P.wood };
+    const T2 = tiers_default[tier] || tiers_default[Math.max(...Object.keys(tiers_default).map(Number).filter((n) => n > 0))];
+    const col = { head: hexRgb(T2.head), light: hexRgb(T2.light), dark: hexRgb(T2.dark), wood: P.wood };
     const gx = Math.round(hx), gy = Math.round(hy);
     const pose = tool.pose && def.poses && def.poses[tool.pose];
     if (pose) {
@@ -1555,8 +1627,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
   function fish(b, def, f) {
     const S = def.shape, C = colors(def), flip = num(f, "flip", 0) >= 0.5;
     const bend = num(f, "bend", 0), fin = num(f, "fin", 0), cx = b.w / 2 + 2, cy = b.h / 2 + num(f, "bob", 0) - (flip ? 1 : 0);
-    const rx = cx - S.bodyL / 2, ry = cy + bend * 0.4, T = S.tail + fin;
-    poly(b, [[rx - T, ry - 3 + bend * 0.5], [rx, ry], [rx - T, ry + 3 + bend * 0.5]], C.acc);
+    const rx = cx - S.bodyL / 2, ry = cy + bend * 0.4, T2 = S.tail + fin;
+    poly(b, [[rx - T2, ry - 3 + bend * 0.5], [rx, ry], [rx - T2, ry + 3 + bend * 0.5]], C.acc);
     poly(b, [[cx + S.bodyL / 2, cy], [cx + 3, cy - S.bodyH / 2], [cx - 3, cy - S.bodyH / 3 + bend * 0.15], [rx, ry - 1], [rx, ry + 1], [cx - 3, cy + S.bodyH / 3 + bend * 0.15], [cx + 3, cy + S.bodyH / 2]], C.base);
     poly(b, [[cx + S.bodyL / 2 - 1, cy + 1], [cx - 3, cy + 1 + bend * 0.1], [cx - 3, cy + S.bodyH / 3 + bend * 0.15], [cx + 3, cy + S.bodyH / 2 - 1]], C.light);
     poly(b, [[cx - 1, cy - S.bodyH / 2 + 1], [cx + 2, cy - S.bodyH / 2 - 2], [cx + 3, cy - S.bodyH / 2 + 1]], C.acc);
@@ -1907,7 +1979,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
   (function(root) {
     "use strict";
     var OPS_LIMIT = 6e6;
-    var clamp2 = function(v, a, b) {
+    var clamp3 = function(v, a, b) {
       return Math.max(a, Math.min(b, v));
     };
     function mulberry322(a) {
@@ -1954,7 +2026,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         });
       }
       if (m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?\s*\)$/i.exec(c)) {
-        return [clamp2(+m[1], 0, 255) | 0, clamp2(+m[2], 0, 255) | 0, clamp2(+m[3], 0, 255) | 0, m[4] === void 0 ? 255 : Math.round(clamp2(+m[4], 0, 1) * 255)];
+        return [clamp3(+m[1], 0, 255) | 0, clamp3(+m[2], 0, 255) | 0, clamp3(+m[3], 0, 255) | 0, m[4] === void 0 ? 255 : Math.round(clamp3(+m[4], 0, 1) * 255)];
       }
       if (c === "none" || c === "transparent") return [0, 0, 0, 0];
       return null;
@@ -2170,7 +2242,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         });
       },
       scatter: function(s, ctx2, rng) {
-        var a = area(s, ctx2, rng), n = clamp2(Math.round(num2(s.count, 10, ctx2, rng)), 0, 5e3), p = painter(s, ctx2, rng);
+        var a = area(s, ctx2, rng), n = clamp3(Math.round(num2(s.count, 10, ctx2, rng)), 0, 5e3), p = painter(s, ctx2, rng);
         var sz = Array.isArray(s.size) ? s.size : [s.size === void 0 ? 1 : s.size, s.size === void 0 ? 1 : s.size];
         var cw = Math.max(1, Math.round(num2(sz[0], 1, ctx2, rng))), ch = Math.max(1, Math.round(num2(sz[1], cw, ctx2, rng)));
         for (var i = 0; i < n; i++) {
@@ -2179,7 +2251,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         }
       },
       noise: function(s, ctx2, rng, id) {
-        var a = area(s, ctx2, rng), scale = Math.max(1, num2(s.scale, 4, ctx2, rng)), oct = clamp2(Math.round(num2(s.octaves, 1, ctx2, rng)), 1, 4);
+        var a = area(s, ctx2, rng), scale = Math.max(1, num2(s.scale, 4, ctx2, rng)), oct = clamp3(Math.round(num2(s.octaves, 1, ctx2, rng)), 1, 4);
         var contrast = num2(s.contrast, 1.8, ctx2, rng);
         var bands = Array.isArray(s.bands) ? s.bands.slice().sort(function(p, q2) {
           return p[0] - q2[0];
@@ -2200,7 +2272,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
             amp *= 0.5;
             f *= 2;
           }
-          v = clamp2((v / norm - 0.5) * contrast + 0.5, 0, 0.9999);
+          v = clamp3((v / norm - 0.5) * contrast + 0.5, 0, 0.9999);
           var k = -1;
           for (var q = 0; q < bands.length; q++) if (v >= bands[q][0]) k = q;
           if (k >= 0 && cols[k]) put3(ctx2, s, x, y, cols[k]);
@@ -2224,8 +2296,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
           else if (dir === "up") t = 1 - (y + 0.5) / a[3];
           else if (dir === "right") t = (x + 0.5) / a[2];
           else if (dir === "left") t = 1 - (x + 0.5) / a[2];
-          else t = clamp2(Math.hypot((x + 0.5) / a[2] - 0.5, (y + 0.5) / a[3] - 0.5) * 2, 0, 1);
-          var pos = clamp2(t, 0, 1) * steps, i = Math.min(steps - 1, Math.floor(pos)), fr = pos - i;
+          else t = clamp3(Math.hypot((x + 0.5) / a[2] - 0.5, (y + 0.5) / a[3] - 0.5) * 2, 0, 1);
+          var pos = clamp3(t, 0, 1) * steps, i = Math.min(steps - 1, Math.floor(pos)), fr = pos - i;
           var th = (BAYER[(y + a[1] & 3) * 4 + (x + a[0] & 3)] + 0.5) / 16;
           put3(ctx2, s, a[0] + x, a[1] + y, fr > th ? cols[i + 1] : cols[i]);
         }
@@ -2305,7 +2377,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       }
       var sh = over ? Object.assign({}, s, { _over: over }) : s;
       var rep = s.repeat && typeof s.repeat === "object" ? s.repeat : null;
-      var n = rep ? clamp2(Math.round(rep.n === void 0 ? 1 : rep.n), 0, 500) : 1;
+      var n = rep ? clamp3(Math.round(rep.n === void 0 ? 1 : rep.n), 0, 500) : 1;
       for (var i = 0; i < n; i++) {
         if (rep && rep.phase && ctx2.frame % rep.phase !== i % rep.phase) continue;
         var seed2 = (Math.imul(ctx2.seed, 7919) ^ hstr(id) ^ Math.imul(i + 1, 1013)) >>> 0;
@@ -2360,9 +2432,9 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       if (!def || typeof def !== "object" || Array.isArray(def)) throw new Error("JSON ph\u1EA3i l\xE0 m\u1ED9t object { ... }");
       if (!Array.isArray(def.layers)) throw new Error('Thi\u1EBFu m\u1EA3ng "layers": [ ... ]');
       var size = Array.isArray(def.size) ? def.size : [32, 32];
-      var w = clamp2(Math.round(+size[0] || 32), 1, 512), h2 = clamp2(Math.round(+size[1] || 32), 1, 512);
+      var w = clamp3(Math.round(+size[0] || 32), 1, 512), h2 = clamp3(Math.round(+size[1] || 32), 1, 512);
       var seed2 = (opts.seed !== void 0 ? opts.seed : def.seed !== void 0 ? def.seed : 1) | 0;
-      var nf = def.animate && def.animate.frames > 1 ? clamp2(Math.round(def.animate.frames), 2, 16) : 1;
+      var nf = def.animate && def.animate.frames > 1 ? clamp3(Math.round(def.animate.frames), 2, 16) : 1;
       var params = Object.assign({}, def.params || {}, opts.params || {});
       var wrap = def.wrap !== void 0 ? !!def.wrap : def.type === "tile";
       var palette2 = Object.assign({}, def.palette && typeof def.palette === "object" ? def.palette : {});
@@ -7917,7 +7989,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
   var MORALE = tribes_default.morale;
   function relationLabel(score) {
     let name = RELATION.labels[0][1];
-    for (const [from, label] of RELATION.labels) if (score >= from) name = label;
+    for (const [from, label2] of RELATION.labels) if (score >= from) name = label2;
     return name;
   }
   var ringOf = (distance) => Math.max(1, Math.min(20, Math.ceil(distance / 4.8)));
@@ -7964,6 +8036,9 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     info: [0.95, 1, 1.1, 1.2],
     infoCounter: 1.1,
     squadLimit: [3, 4, 6],
+    squadMin: 3,
+    squadMax: 15,
+    cell: 1.3,
     cardBase: 4,
     cardPerLevel: 2,
     mapDecayPerDay: 0.1,
@@ -7984,6 +8059,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
   var FORMATION_IDS = Object.keys(formations_default.formations);
   var FORMATIONS = formations_default.formations;
   var COMMAND = formations_default;
+  var SQUAD_MIN = COMMAND.squadMin;
+  var SQUAD_MAX = COMMAND.squadMax;
   var masteryFactor = (mastery) => COMMAND.mastery.min + (COMMAND.mastery.max - COMMAND.mastery.min) * Math.max(0, Math.min(100, mastery)) / 100;
   var clampTactical = (x) => Math.max(1 / COMMAND.cap, Math.min(COMMAND.cap, x));
   function formationOffsets(kind, n) {
@@ -8028,6 +8105,59 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     return out;
   }
   var placeOffset = (o, heading, cx, cy) => [cx + o[0] * Math.cos(heading) - o[1] * Math.sin(heading), cy + o[0] * Math.sin(heading) + o[1] * Math.cos(heading)];
+  function drawFormation(kind, o, p, toward) {
+    const S = COMMAND.cell, dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy), ang = d > 0.01 ? Math.atan2(dy, dx) : 0, ux = Math.cos(ang), uy = Math.sin(ang);
+    const clampN = (n) => Math.max(1, Math.min(SQUAD_MAX, n));
+    const at = (along, side) => ({ x: o.x + ux * along - uy * side, y: o.y + uy * along + ux * side });
+    const sign = -uy * (toward.x - o.x) + ux * (toward.y - o.y) >= 0 ? 1 : -1, face2 = Math.atan2(ux * sign, -uy * sign);
+    const cells = [];
+    switch (kind) {
+      case "circle": {
+        const R2 = d, n = clampN(Math.round(2 * Math.PI * R2 / S));
+        for (let i = 0; i < n; i++) cells.push({ x: o.x + Math.cos(ang + 2 * Math.PI * i / n) * R2, y: o.y + Math.sin(ang + 2 * Math.PI * i / n) * R2 });
+        return { cells, heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
+      }
+      case "wedge": {
+        const half = 0.6, step2 = S * Math.cos(half), n = clampN(1 + 2 * Math.floor(d / step2));
+        cells.push({ x: o.x, y: o.y });
+        for (let k = 1; cells.length < n; k++) {
+          cells.push(at(k * step2, -k * S * Math.sin(half)));
+          if (cells.length < n) cells.push(at(k * step2, k * S * Math.sin(half)));
+        }
+        return { cells, heading: ang + Math.PI };
+      }
+      case "horns": {
+        const n = clampN(Math.floor(d / S) + 1), bend = Math.min(3, d * 0.25), forward = ang - Math.PI / 2;
+        for (let i = 0; i < n; i++) {
+          const t = n === 1 ? 0.5 : i / (n - 1), c = at(d * t, 0), off = bend * (2 * t - 1) ** 2;
+          cells.push({ x: c.x + Math.cos(forward) * off, y: c.y + Math.sin(forward) * off });
+        }
+        return { cells, heading: forward };
+      }
+      case "scatter": {
+        let g = 2.6, w = Math.abs(dx), hh = Math.abs(dy), cols = 1, rows = 1;
+        for (let guard = 0; guard < 40; guard++) {
+          cols = Math.floor(w / g) + 1;
+          rows = Math.floor(hh / g) + 1;
+          if (cols * rows <= SQUAD_MAX) break;
+          g *= 1.1;
+        }
+        const x0 = Math.min(o.x, p.x), y0 = Math.min(o.y, p.y), sx = cols > 1 ? w / (cols - 1) : g, sy = rows > 1 ? hh / (rows - 1) : g;
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ x: x0 + c * Math.min(sx, g * 1.4), y: y0 + r * Math.min(sy, g * 1.4) });
+        return { cells: cells.slice(0, SQUAD_MAX), heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
+      }
+      case "ambush": {
+        const n = clampN(Math.floor(d / (S * 0.7)) + 1);
+        for (let i = 0; i < n; i++) cells.push(at(S * 0.7 * i, i % 2 ? 0.6 : -0.6));
+        return { cells, heading: face2 };
+      }
+      default: {
+        const n = clampN(Math.floor(d / S) + 1);
+        for (let i = 0; i < n; i++) cells.push(at(S * i, 0));
+        return { cells, heading: face2 };
+      }
+    }
+  }
   function clusterize(units, size = COMMAND.clusterSize) {
     const groups = /* @__PURE__ */ new Map();
     for (const u of units) {
@@ -9114,12 +9244,12 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
   }
   function launchCustomRaid(sim2, t, weapons, armor) {
     const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
-    const dx = t.camp.x - fx, dy = t.camp.y - fy, len = Math.max(1, Math.hypot(dx, dy)), dist = Math.min(26, len);
+    const dx = t.camp.x - fx, dy = t.camp.y - fy, len = Math.max(1, Math.hypot(dx, dy)), dist2 = Math.min(26, len);
     const id = ++sim2.nextRaid, power = ringPower(ringOf(len));
     t.relation = Math.min(t.relation, -60);
     t.raid = { id, phase: "march", t: 0, max: 900, size: weapons.length };
     weapons.forEach((weapon, i) => {
-      const ang = i / weapons.length * Math.PI * 2, gx = Math.floor(fx + dx / len * dist + Math.cos(ang) * 2), gy = Math.floor(fy + dy / len * dist + Math.sin(ang) * 2);
+      const ang = i / weapons.length * Math.PI * 2, gx = Math.floor(fx + dx / len * dist2 + Math.cos(ang) * 2), gy = Math.floor(fy + dy / len * dist2 + Math.sin(ang) * 2);
       const spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
       const f = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < 0.5 ? "m" : "f", t.id, sim2.frnd);
       f.look.hide = t.def.look.hide;
@@ -9227,8 +9357,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       return false;
     }
     const w = weaponOf(f), d = BUILDINGS[b.kind], cx = b.x + d.w / 2, cy = b.y + d.h / 2;
-    const dist = Math.hypot(cx - f.x, cy - f.y) - Math.max(d.w, d.h) / 2;
-    if (dist <= (w.ranged ? 1.2 : w.range) + 0.6) {
+    const dist2 = Math.hypot(cx - f.x, cy - f.y) - Math.max(d.w, d.h) / 2;
+    if (dist2 <= (w.ranged ? 1.2 : w.range) + 0.6) {
       f.path = [];
       f.slide = null;
       f.phase = "fight";
@@ -11663,7 +11793,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
   }
 
   // src/sim/save.ts
-  var SAVE_VERSION = 5;
+  var SAVE_VERSION = 8;
   var SAVED = {
     /** Single values. */
     scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
@@ -11740,6 +11870,33 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       (_e = d.scalars).alarmUntil ?? (_e.alarmUntil = 0);
       (_f = d.records).battle ?? (_f.battle = { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] });
       return { ...d, version: 5 };
+    },
+    // 5 -> 6: a mission carries the row, the arrow and the way back drawn on the enemy map (older missions go for their objective)
+    5: (d) => {
+      for (const p of d.lists.plans) for (const m of p.missions) {
+        m.line ?? (m.line = null);
+        m.path ?? (m.path = []);
+        m.retreat ?? (m.retreat = []);
+        m.leg ?? (m.leg = 0);
+      }
+      return { ...d, version: 6 };
+    },
+    // 6 -> 7: a squad is placed on the enemy map by a point and a heading, not by a row between two points
+    6: (d) => {
+      for (const p of d.lists.plans) for (const m of p.missions) {
+        const l = m.line;
+        m.deploy ?? (m.deploy = l ? { x: (l.a.x + l.b.x) / 2, y: (l.a.y + l.b.y) / 2, heading: Math.atan2(l.b.y - l.a.y, l.b.x - l.a.x) - Math.PI / 2 } : null);
+        delete m.line;
+      }
+      return { ...d, version: 7 };
+    },
+    // 7 -> 8: a squad is placed as the cells drawn for it, not by a point and a heading (a squad placed the old way is simply not placed)
+    7: (d) => {
+      for (const p of d.lists.plans) for (const m of p.missions) {
+        const dep = m.deploy;
+        if (!dep || !Array.isArray(dep.cells)) m.deploy = null;
+      }
+      return { ...d, version: 8 };
     }
   };
   function migrate(raw) {
@@ -12016,9 +12173,9 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     let best, bd = radius;
     for (const b of sim2.buildings) {
       if (!b.done || !isDefense(b)) continue;
-      const d = BUILDINGS[b.kind], dist = Math.hypot(b.x + d.w / 2 - x, b.y + d.h / 2 - y);
-      if (dist <= bd) {
-        bd = dist;
+      const d = BUILDINGS[b.kind], dist2 = Math.hypot(b.x + d.w / 2 - x, b.y + d.h / 2 - y);
+      if (dist2 <= bd) {
+        bd = dist2;
         best = b;
       }
     }
@@ -12147,6 +12304,10 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         continue;
       }
       if (v.squad === s.id) continue;
+      if (s.ids.length >= SQUAD_MAX) {
+        err = `M\u1ED9t \u0111\u1ED9i ch\u1EC9 c\xF3 t\u1ED1i \u0111a ${SQUAD_MAX} ng\u01B0\u1EDDi`;
+        continue;
+      }
       leaveSquad(sim2, [v.id]);
       v.squad = s.id;
       s.ids.push(v.id);
@@ -12194,11 +12355,11 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     if (s.anchor) squadMove(sim2, s, s.anchor.x, s.anchor.y, "hold");
     return null;
   }
-  function squadMove(sim2, s, x, y, mode) {
+  function squadMove(sim2, s, x, y, mode, heading) {
     const us = squadUnits(sim2, s);
     if (!us.length) return;
     const c = squadCenter(sim2, s);
-    s.heading = Math.hypot(x - c.x, y - c.y) > 1 ? Math.atan2(y - c.y, x - c.x) : s.heading;
+    s.heading = heading ?? (Math.hypot(x - c.x, y - c.y) > 1 ? Math.atan2(y - c.y, x - c.x) : s.heading);
     s.anchor = { x, y };
     us.sort((a, b) => (armOfWeapon(effWeapon(a)) === "archer" ? 1 : 0) - (armOfWeapon(effWeapon(b)) === "archer" ? 1 : 0) || a.id - b.id);
     const offs = formationOffsets(s.formation, us.length), taken = /* @__PURE__ */ new Set();
@@ -12378,6 +12539,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
           m.t = 0;
           for (const v of alive) if (sim2.frnd() < deathChance(sim2, m, v.stats.agi)) sim2.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
           m.survivors = alive.filter((v) => v.health > 0 && sim2.byId.has(v.id)).length;
+          if (m.survivors && m.level >= 2) m.seen = seenNow(sim2, tribeOf(sim2, m.tribe));
           sim2.say(m.survivors ? `Trinh s\xE1t \u0111ang quan s\xE1t ${t.def.name}.` : "Trinh s\xE1t b\u1ECB b\u1EAFt g\u1EB7p, kh\xF4ng ai tho\xE1t.");
         }
       } else if (m.phase === "watch") {
@@ -12392,7 +12554,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         if (home || m.t > 600) {
           const pieces = alive.length, gaps = Math.max(0, m.need - pieces);
           const old = sim2.maps.findIndex((x) => x.tribe === m.tribe && x.level === m.level);
-          const map2 = { tribe: m.tribe, level: m.level, at: sim2.time, gaps };
+          const map2 = { tribe: m.tribe, level: m.level, at: sim2.time, gaps, seen: m.seen };
           if (old >= 0) sim2.maps[old] = map2;
           else sim2.maps.push(map2);
           sim2.say(`Trinh s\xE1t v\u1EC1: b\u1EA3n \u0111\u1ED3 c\u1EA5p ${m.level} c\u1EE7a ${t.def.name}${gaps ? `, nh\u01B0ng c\xF2n h\u1EDF (thi\u1EBFu ${gaps} m\u1EA3nh)` : " \u0111\u1EA7y \u0111\u1EE7"}.`);
@@ -12400,6 +12562,71 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         }
       }
     }
+  }
+  var MARGIN = 24;
+  var YARD = 7;
+  var WORKS = {
+    fire: { level: 1, label: "\u0110\u1ED1ng l\u1EEDa" },
+    tower: { level: 2, label: "Ch\xF2i canh" },
+    fence: { level: 2, label: "H\xE0ng r\xE0o" },
+    gate: { level: 2, label: "C\u1ED5ng" },
+    pile: { level: 3, label: "Kho l\u01B0\u01A1ng" }
+  };
+  var spread = (id, salt) => {
+    const x = Math.sin(id * 12.9898 + salt * 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  function seenNow(sim2, t) {
+    const out = [];
+    for (const id of t.unitIds) {
+      const u = sim2.get(id);
+      if (!u || u.health <= 0) continue;
+      out.push({ x: Math.round(u.x * 10) / 10, y: Math.round(u.y * 10) / 10, arm: armOfWeapon(u.weapon), weapon: u.weapon ?? null, civ: u.ai?.role === "civ", leader: u.id === t.leaderId });
+    }
+    return out;
+  }
+  var WORK_INFO = {
+    fire: "\u0110\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD: t\xE2m l\xE0ng, quanh \u0111\xE2y d\xE2n v\xE0 l\xEDnh t\u1EE5 l\u1EA1i.",
+    tower: "Ch\xF2i canh: cung th\u1EE7 \u0111\u1EE9ng cao b\u1EAFn xa h\u01A1n, ph\u1EA3i ph\xE1 ch\xF2i m\u1EDBi h\u1EA1 \u0111\u01B0\u1EE3c h\u1ECD.",
+    fence: "H\xE0ng r\xE0o: ch\u1EB7n \u0111\u01B0\u1EDDng, ph\u1EA3i ph\xE1 ho\u1EB7c \u0111i v\xF2ng.",
+    gate: "C\u1ED5ng: l\u1ED1i v\xE0o l\xE0ng, \u0111\xF3ng th\xEC ch\u1EB7n \u0111\u01B0\u1EDDng.",
+    pile: "Kho l\u01B0\u01A1ng: ch\u1ED7 h\u1ECD c\u1EA5t th\u1EE9c \u0103n v\xE0 \u0111\u1ED3 c\u1ED1ng n\u1EA1p."
+  };
+  function tribeIntel(sim2, tribe) {
+    const t = tribeOf(sim2, tribe);
+    if (!t) return null;
+    const level = sim2.dev.freeBuild ? 3 : mapLevel(sim2, tribe);
+    if (!level) return null;
+    const held = sim2.maps.filter((m) => m.tribe === tribe && (m.gaps > 0 ? m.level - 1 : m.level) >= level).sort((a, b) => b.at - a.at)[0];
+    const accuracy = sim2.dev.freeBuild || !held ? 1 : mapAccuracy(sim2, held), gaps = sim2.dev.freeBuild ? 0 : held?.gaps ?? 0;
+    const N = sim2.world.size, r = YARD + MARGIN;
+    const box = { x0: Math.max(0, Math.floor(t.camp.x) - r), y0: Math.max(0, Math.floor(t.camp.y) - r), x1: Math.min(N, Math.floor(t.camp.x) + r), y1: Math.min(N, Math.floor(t.camp.y) + r) };
+    const fire = sim2.campfire(), dx = (fire?.x ?? sim2.world.start.x) - t.camp.x, dy = (fire?.y ?? sim2.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
+    const seen = sim2.dev.freeBuild || !held?.seen ? seenNow(sim2, t) : held.seen;
+    const soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
+    const people = [];
+    if (level >= 2) seen.forEach((u, i) => {
+      if (spread(i + 1, 1) < Math.min(0.6, gaps * 0.2)) return;
+      const mark = level < 3 ? "unknown" : u.civ ? "civ" : u.arm;
+      if (soldiers && !u.civ) soldiers[u.arm]++;
+      people.push({ x: u.x, y: u.y, mark, leader: level >= 3 && u.leader, weapon: level >= 3 ? u.weapon : null });
+    });
+    const loot = Object.entries(t.loot).filter(([, v]) => (v ?? 0) > 0).map(([k, v]) => `${Math.round(v)} ${RES_NAME[k].toLowerCase()}`).join(", ");
+    return {
+      tribe,
+      name: t.def.name,
+      level,
+      accuracy,
+      gaps,
+      box,
+      camp: { ...t.camp },
+      yard: YARD,
+      toUs: len > 0 ? { x: dx / len, y: dy / len } : null,
+      population: Math.max(2, Math.round(seen.length / 2) * 2),
+      structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === "pile" && loot ? `${WORK_INFO.pile} C\xF3 kho\u1EA3ng ${loot}.` : WORK_INFO[p.kind] ?? "", x: p.x, y: p.y, w: p.w, h: p.h })),
+      people,
+      soldiers
+    };
   }
 
   // src/sim/warplan.ts
@@ -12415,11 +12642,80 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     sim2.plans.push(plan2);
     return plan2;
   }
-  function addMission(sim2, plan2, squadId) {
+  function addMission(sim2, plan2, squadId, withdrawAt = 0.5) {
     if (!sim2.squadById(squadId)) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
     if (plan2.missions.some((m) => m.squad === squadId)) return "\u0110\u1ED9i n\xE0y \u0111\xE3 c\xF3 nhi\u1EC7m v\u1EE5";
-    plan2.missions.push({ squad: squadId, objective: "camp", route: "main", trigger: { kind: "time", at: 0 }, stance: "fight", withdrawAt: 0.5, state: "idle", initial: 0, post: "gate" });
+    plan2.missions.push({ squad: squadId, objective: "camp", route: "main", trigger: { kind: "time", at: 0 }, stance: "fight", withdrawAt, state: "idle", initial: 0, post: "gate", deploy: null, path: [], retreat: [], leg: 0 });
     return null;
+  }
+  function removeMission(plan2, squadId) {
+    plan2.missions = plan2.missions.filter((m) => m.squad !== squadId);
+    plan2.cards = plan2.cards.filter((c) => c.squad !== squadId);
+  }
+  function drawable(sim2, plan2, squadId) {
+    if (plan2.status === "running") return "K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y: kh\xF4ng v\u1EBD l\u1EA1i \u0111\u01B0\u1EE3c";
+    const s = sim2.squadById(squadId);
+    if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+    if (!plan2.missions.some((m) => m.squad === squadId)) addMission(sim2, plan2, squadId, 0);
+    return plan2.missions.find((m) => m.squad === squadId);
+  }
+  function deploySquad(sim2, plan2, squadId, kind, cells, heading, o, p) {
+    const s = sim2.squadById(squadId);
+    if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+    if (plan2.status === "running") return "K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y: kh\xF4ng v\u1EBD l\u1EA1i \u0111\u01B0\u1EE3c";
+    if (cells.length < SQUAD_MIN || cells.length > SQUAD_MAX) return `\u0110\u1ED9i h\xECnh c\xF3 t\u1EEB ${SQUAD_MIN} \u0111\u1EBFn ${SQUAD_MAX} \xF4`;
+    if (kind && !sim2.formationOpen(kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${FORMATIONS[kind].name}`;
+    if (kind && kind !== s.formation) {
+      const e = sim2.setFormation(s.id, kind);
+      if (e) return e;
+    }
+    const m = drawable(sim2, plan2, squadId);
+    if (typeof m === "string") return m;
+    const N = sim2.world.size, keep = (v) => Math.max(1, Math.min(N - 2, v));
+    m.deploy = { cells: cells.map((c) => ({ x: keep(c.x), y: keep(c.y) })), heading, o: { x: o.x, y: o.y }, p: { x: p.x, y: p.y }, kind: s.formation };
+    return null;
+  }
+  function setMissionPath(sim2, plan2, squadId, pts, retreat = false) {
+    const m = drawable(sim2, plan2, squadId);
+    if (typeof m === "string") return m;
+    const list = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
+    if (retreat) m.retreat = list;
+    else m.path = list;
+    return null;
+  }
+  function squadPace(sim2, s) {
+    const us = sim2.squadUnits(s), base = us.length ? Math.min(...us.map((v) => 1.6 + 0.1 * v.stats.agi)) : 2.1;
+    return base * FORMATIONS[s.formation].speed * WEATHER[sim2.weather].speed;
+  }
+  function routeTime(sim2, s, from, pts) {
+    const pace = squadPace(sim2, s) || 1, legs = [], blocked = [];
+    let at = from, length = 0;
+    for (const p of pts) {
+      const d = Math.hypot(p.x - at.x, p.y - at.y), steps = Math.max(1, Math.ceil(d * 2));
+      let bad = 0;
+      for (let i = 0; i <= steps; i++) if (sim2.world.isBlocked(Math.floor(at.x + (p.x - at.x) * i / steps), Math.floor(at.y + (p.y - at.y) * i / steps))) bad++;
+      const share = bad / (steps + 1);
+      legs.push(d * (1 + 1.5 * share) / pace);
+      blocked.push(share > 0.1);
+      length += d;
+      at = p;
+    }
+    return { legs, total: legs.reduce((a, b) => a + b, 0), length, blocked };
+  }
+  function missionStart(sim2, m, toward) {
+    const d = m.deploy;
+    if (d) {
+      const kind = d.kind ?? sim2.squadById(m.squad)?.formation ?? "line", n = d.cells.length;
+      if (kind === "wedge") return { x: d.o.x, y: d.o.y };
+      if (kind === "horns") return { x: (d.cells[0].x + d.cells[n - 1].x) / 2, y: (d.cells[0].y + d.cells[n - 1].y) / 2 };
+      if (kind === "circle") {
+        const t = toward ?? m.path[0], r = Math.hypot(d.p.x - d.o.x, d.p.y - d.o.y), len = t ? Math.hypot(t.x - d.o.x, t.y - d.o.y) : 0;
+        return len > 0.01 ? { x: d.o.x + (t.x - d.o.x) / len * r, y: d.o.y + (t.y - d.o.y) / len * r } : { x: d.o.x, y: d.o.y };
+      }
+      return { x: d.cells.reduce((a, c) => a + c.x, 0) / n, y: d.cells.reduce((a, c) => a + c.y, 0) / n };
+    }
+    const s = sim2.squadById(m.squad);
+    return s ? sim2.squadCenter(s) : null;
   }
   function addCard(sim2, plan2, kind, squadId, arg = "") {
     if (plan2.cards.length >= sim2.cardLimit()) return `L\u1EC1u h\u1ECDp chi\u1EBFn ch\u1EC9 cho ${sim2.cardLimit()} th\u1EBB l\u1EC7nh: n\xE2ng c\u1EA5p l\u1EC1u ho\u1EB7c b\u1ECF b\u1EDBt`;
@@ -12452,10 +12748,12 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     for (const m of plan2.missions) {
       const s = sim2.squadById(m.squad), n = s ? sim2.squadUnits(s).length : 0, name = s?.name ?? "?";
       if (!n) out.push(`\u2717 ${name} ch\u01B0a c\xF3 l\xEDnh.`);
-      else if (plan2.kind === "attack" && !canTarget(sim2, m.objective, plan2.tribe)) out.push(`\u2717 ${name} nh\u1EAFm "${OBJECTIVE_NAME[m.objective]}" nh\u01B0ng b\u1EA3n \u0111\u1ED3 ch\u01B0a \u0111\u1EE7 c\u1EA5p.`);
+      else if (plan2.kind === "attack" && !m.path.length && !canTarget(sim2, m.objective, plan2.tribe)) out.push(`\u2717 ${name} nh\u1EAFm "${OBJECTIVE_NAME[m.objective]}" nh\u01B0ng b\u1EA3n \u0111\u1ED3 ch\u01B0a \u0111\u1EE7 c\u1EA5p.`);
+      else if (plan2.kind === "attack" && !m.path.length) out.push(`${name} ch\u01B0a c\xF3 m\u0169i t\xEAn: s\u1EBD ti\u1EBFn th\u1EB3ng v\xE0o \u0111\u1ED1ng l\u1EEDa c\u1EE7a \u0111\u1ECBch.`);
       else if (m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
       else if (m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
       if (s && n && !sim2.squadCenter(s)) out.push(`${name} ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng.`);
+      if (s && plan2.kind === "attack" && m.withdrawAt > 0 && !m.retreat.length && m.path.length) out.push(`${name} s\u1EBD r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n v\xEC ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt.`);
       if (s && plan2.kind === "attack" && m.route === "night") out.push(`${name} \u0111i \u0111\u01B0\u1EDDng v\xF2ng ban \u0111\xEAm: s\u1EBD ch\u1EDD \u0111\u1EBFn t\u1ED1i m\u1EDBi xu\u1EA5t ph\xE1t.`);
     }
     if (plan2.kind === "attack") {
@@ -12488,7 +12786,33 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         return { ...t.camp };
     }
   }
+  function goLeg(sim2, s, m, pts) {
+    const p = pts[Math.min(m.leg, pts.length - 1)], last2 = m.leg >= pts.length - 1;
+    const mode = m.state === "withdraw" || m.stance === "evade" ? "move" : last2 && m.stance === "hold" ? "hold" : "attack";
+    sim2.squadMove(s, p.x, p.y, mode);
+  }
+  function pathStep(sim2, m, s, c) {
+    if (m.state !== "march") return;
+    const p = m.path[m.leg];
+    if (!p || Math.hypot(p.x - c.x, p.y - c.y) > 3.5) return;
+    if (m.leg < m.path.length - 1) {
+      m.leg++;
+      goLeg(sim2, s, m, m.path);
+      return;
+    }
+    m.state = "engaged";
+    sim2.noteBattle("note", `${s.name} t\u1EDBi ch\u1ED7 t\u1EA5n c\xF4ng.`);
+  }
   function dispatch(sim2, plan2, m, s) {
+    if (m.path.length) {
+      m.state = "march";
+      m.leg = 0;
+      goLeg(sim2, s, m, m.path);
+      if (m.stance === "shoot") {
+        for (const v of sim2.squadUnits(s)) if (!v.weapon || !(v.weapon === "bow" || v.weapon === "sling")) sim2.orderHold([v.id]);
+      }
+      return;
+    }
     const pos = objectivePos(sim2, plan2, m);
     if (!pos) return;
     m.state = "march";
@@ -12516,6 +12840,18 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     const raiders = t.unitIds.map((u) => sim2.get(u)).filter((u) => u && u.ai?.role !== "civ");
     return raiders.length > 0 && raiders.some((u) => Math.hypot(u.x - t.camp.x, u.y - t.camp.y) > 9);
   }
+  function assemble(sim2, s, d) {
+    const us = sim2.squadUnits(s).sort((a, b) => (armOfWeapon(a.weapon) === "archer" ? 1 : 0) - (armOfWeapon(b.weapon) === "archer" ? 1 : 0) || a.id - b.id);
+    const front = (c) => c.x * Math.cos(d.heading) + c.y * Math.sin(d.heading);
+    const cells = d.cells.slice().sort((a, b) => front(b) - front(a)), taken = /* @__PURE__ */ new Set();
+    s.heading = d.heading;
+    s.anchor = { x: cells.reduce((a, c) => a + c.x, 0) / cells.length, y: cells.reduce((a, c) => a + c.y, 0) / cells.length };
+    us.forEach((v, i) => {
+      const c = cells[Math.min(i, cells.length - 1)], spot = sim2.nearestFree(Math.floor(c.x), Math.floor(c.y), taken) ?? [Math.floor(c.x), Math.floor(c.y)];
+      taken.add(spot[1] * sim2.world.size + spot[0]);
+      sim2.orderMove([v.id], spot[0], spot[1]);
+    });
+  }
   function startPlan(sim2, plan2) {
     const bad = reviewPlan(sim2, plan2).find((l) => l.startsWith("\u2717"));
     if (bad) return bad.slice(2);
@@ -12524,6 +12860,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       const s = sim2.squadById(m.squad);
       m.state = "wait";
       m.initial = sim2.squadUnits(s).length;
+      m.leg = 0;
+      if (m.deploy) assemble(sim2, s, m.deploy);
     }
     plan2.status = "running";
     plan2.startedAt = sim2.time;
@@ -12547,7 +12885,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         const alive = sim2.squadUnits(s).length, c = sim2.squadCenter(s);
         if (m.state === "wait" && triggered(sim2, plan2, m)) dispatch(sim2, plan2, m, s);
         else if (m.state === "march" || m.state === "engaged") {
-          const pos = objectivePos(sim2, plan2, m);
+          const pos = m.path.length ? null : objectivePos(sim2, plan2, m);
+          if (m.path.length) pathStep(sim2, m, s, c);
           if (pos) {
             const d = Math.hypot(pos.x - c.x, pos.y - c.y);
             if (m.state === "march" && d < 9) {
@@ -12557,13 +12896,25 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
             } else if (m.state === "march" && m.route === "forest" && d > 12 && Math.hypot((s.anchor?.x ?? 0) - c.x, (s.anchor?.y ?? 0) - c.y) < 4) dispatch(sim2, plan2, { ...m, route: "main" }, s);
           }
           const lost = m.initial ? 1 - alive / m.initial : 0, morale = sim2.squadUnits(s).reduce((a, v) => a + v.morale, 0) / alive;
-          if (lost >= m.withdrawAt || morale < 25) {
+          if (m.withdrawAt > 0 && (lost >= m.withdrawAt || morale < 25)) {
             m.state = "withdraw";
-            sim2.squadMove(s, plan2.rally.x, plan2.rally.y, "move");
+            m.leg = 0;
+            if (m.retreat.length) goLeg(sim2, s, m, m.retreat);
+            else sim2.squadMove(s, plan2.rally.x, plan2.rally.y, "move");
             sim2.noteBattle("note", `${s.name} r\xFAt lui sau khi m\u1EA5t ${Math.round(lost * 100)}% qu\xE2n.`);
             sim2.say(`${s.name} r\xFAt lui!`);
           }
-        } else if (m.state === "withdraw" && Math.hypot(plan2.rally.x - c.x, plan2.rally.y - c.y) < 7) m.state = "done";
+        } else if (m.state === "withdraw") {
+          if (m.retreat.length) {
+            const p = m.retreat[m.leg];
+            if (p && Math.hypot(p.x - c.x, p.y - c.y) < 3.5) {
+              if (m.leg < m.retreat.length - 1) {
+                m.leg++;
+                goLeg(sim2, s, m, m.retreat);
+              } else m.state = "done";
+            }
+          } else if (Math.hypot(plan2.rally.x - c.x, plan2.rally.y - c.y) < 7) m.state = "done";
+        }
       }
       if (plan2.missions.every((m) => m.state === "done" || m.state === "idle") || !t || t.state !== "free") {
         plan2.status = "done";
@@ -12610,7 +12961,9 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         break;
       case "retreat":
         m.state = "withdraw";
-        sim2.squadMove(s, plan2.rally.x, plan2.rally.y, "move");
+        m.leg = 0;
+        if (m.retreat.length) goLeg(sim2, s, m, m.retreat);
+        else sim2.squadMove(s, plan2.rally.x, plan2.rally.y, "move");
         sim2.noteBattle("note", `${s.name} \u0111\u01B0\u1EE3c l\u1EC7nh r\xFAt.`);
         break;
     }
@@ -12693,8 +13046,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       return formationOpen(this, f);
     },
     /** → army.squadMove */
-    squadMove(s, x, y, mode) {
-      return squadMove(this, s, x, y, mode);
+    squadMove(s, x, y, mode, heading) {
+      return squadMove(this, s, x, y, mode, heading);
     },
     /** → army.squadUnits */
     squadUnits(s) {
@@ -12740,6 +13093,14 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     mapAccuracy(m) {
       return mapAccuracy(this, m);
     },
+    /** → scouting.tribeIntel */
+    tribeIntel(tribe) {
+      return tribeIntel(this, tribe);
+    },
+    /** → warplan.objectivePos */
+    missionTarget(plan2, m) {
+      return objectivePos(this, plan2, m);
+    },
     /** → scouting.startScout */
     startScout(ids, tribe, level) {
       return startScout(this, ids, tribe, level);
@@ -12753,8 +13114,32 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       return newPlan(this, kind, tribe);
     },
     /** → warplan.addMission */
-    addMission(plan2, squadId) {
-      return addMission(this, plan2, squadId);
+    addMission(plan2, squadId, withdrawAt) {
+      return addMission(this, plan2, squadId, withdrawAt);
+    },
+    /** → warplan.removeMission */
+    removeMission(plan2, squadId) {
+      return removeMission(plan2, squadId);
+    },
+    /** → warplan.deploySquad */
+    deploySquad(plan2, squadId, kind, cells, heading, o, p) {
+      return deploySquad(this, plan2, squadId, kind, cells, heading, o, p);
+    },
+    /** → warplan.setMissionPath */
+    setMissionPath(plan2, squadId, pts, retreat) {
+      return setMissionPath(this, plan2, squadId, pts, retreat);
+    },
+    /** → warplan.squadPace */
+    squadPace(s) {
+      return squadPace(this, s);
+    },
+    /** → warplan.routeTime */
+    routeTime(s, from, pts) {
+      return routeTime(this, s, from, pts);
+    },
+    /** → warplan.missionStart */
+    missionStart(m, toward) {
+      return missionStart(this, m, toward);
     },
     /** → warplan.addCard */
     addCard(plan2, kind, squadId, arg) {
@@ -13783,13 +14168,13 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     moveGesture() {
       const g = this.gesture;
       if (!g) return;
-      const [a, b] = [...this.touches.values()], mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist = Math.hypot(a.x - b.x, a.y - b.y);
+      const [a, b] = [...this.touches.values()], mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist2 = Math.hypot(a.x - b.x, a.y - b.y);
       this.cam.x -= (mid.x - g.mid.x) / this.cam.zoom;
       this.cam.y -= (mid.y - g.mid.y) / this.cam.zoom;
       g.mid = mid;
       if (g.dist > 0) {
-        g.acc *= dist / g.dist;
-        g.dist = dist;
+        g.acc *= dist2 / g.dist;
+        g.dist = dist2;
         if (g.acc > 1.3) {
           this.zoomAt(mid, 1);
           g.acc = 1;
@@ -14252,9 +14637,9 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     return el;
   }
   var helpButton = () => h("button", { class: "q", type: "button", "aria-label": "H\u01B0\u1EDBng d\u1EABn", "aria-expanded": "false", text: "?" });
-  function hint(label, text) {
+  function hint(label2, text) {
     const tip = h("p", { class: "sub hintbody", hidden: true, text });
-    const head = h("div", { class: "hinthead" }, typeof label === "string" ? h("h3", { text: label }) : label, helpButton());
+    const head = h("div", { class: "hinthead" }, typeof label2 === "string" ? h("h3", { text: label2 }) : label2, helpButton());
     return Object.assign(h("div", { class: "hint" }, head, tip), { tip });
   }
   if (typeof document !== "undefined") document.addEventListener("click", (e) => {
@@ -14560,417 +14945,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     return plan2;
   }
 
-  // src/ui/warpanel.ts
-  var TABS = [["squads", "\u0110\u1ED9i v\xE0 tr\u1EADn ph\xE1p"], ["maps", "Trinh s\xE1t, b\u1EA3n \u0111\u1ED3"], ["plan", "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"], ["defense", "Ph\xF2ng th\u1EE7"], ["log", "Nh\u1EADt k\xFD tr\u1EADn"]];
-  var ROUTE_NAME = { main: "\u0110\u01B0\u1EDDng ch\xEDnh", forest: "\u0110\u01B0\u1EDDng r\u1EEBng (v\xF2ng s\u01B0\u1EDDn)", night: "\u0110\u01B0\u1EDDng v\xF2ng ban \u0111\xEAm" };
-  var STANCE_NAME = { fight: "\u0110\xE1nh", evade: "N\xE9, ch\u1EC9 \u0111i", hold: "Gi\u1EEF y\xEAn", shoot: "Ch\u1EC9 b\u1EAFn" };
-  var POST_NAME = { gate: "Gi\u1EEF c\u1ED5ng", fence: "\u0110\u1EE9ng sau h\xE0ng r\xE0o", tower: "L\xEAn ch\xF2i canh", reserve: "Ph\u1EA3n k\xEDch (v\u1EC1 l\u1EEDa)", fire: "Quanh \u0111\u1ED1ng l\u1EEDa" };
-  var CARD_NAME = { go: "Xu\u1EA5t ph\xE1t", advance: "Ti\u1EBFn", hold: "Gi\u1EEF", formation: "\u0110\u1ED5i tr\u1EADn", attack: "T\u1EA5n c\xF4ng m\u1EE5c ti\xEAu", shoot: "B\u1EAFn", retreat: "R\xFAt", signal: "Ph\xE1t t\xEDn hi\u1EC7u" };
-  var CARD_KINDS = ["go", "advance", "hold", "formation", "attack", "shoot", "retreat", "signal"];
-  var TIMES = [0, 30, 60, 120, 240, 480];
-  function select(opts, cur, onPick) {
-    const el = document.createElement("select");
-    for (const o of opts) {
-      const op = document.createElement("option");
-      op.value = o.v;
-      op.textContent = o.label;
-      op.disabled = !!o.disabled;
-      if (o.v === cur) op.selected = true;
-      el.append(op);
-    }
-    el.value = cur;
-    el.addEventListener("change", () => onPick(el.value));
-    return el;
-  }
-  var WarPanel = class {
-    constructor(c) {
-      this.c = c;
-      this.root = h("div", { class: "page" });
-      this.tab = "squads";
-      this.body = h("div");
-      this.tabBtns = /* @__PURE__ */ new Map();
-      this.key = "";
-      this.targetTribe = "";
-      this.newLevel = {};
-      const bar = h("div", { class: "btns tabs" });
-      for (const [t, label] of TABS) {
-        const b = h("button", { class: "sm", text: label, pressed: t === this.tab, onclick: () => {
-          this.tab = t;
-          this.key = "";
-          this.update();
-        } });
-        this.tabBtns.set(t, b);
-        bar.append(b);
-      }
-      this.root.append(hint("L\u1EC1u h\u1ECDp chi\u1EBFn", "L\u1EADp \u0111\u1ED9i (chia l\xEDnh theo lo\u1EA1i), ch\u1ECDn tr\u1EADn ph\xE1p, c\u1EED trinh s\xE1t v\u1EBD b\u1EA3n \u0111\u1ED3 l\xE0ng \u0111\u1ECBch, r\u1ED3i l\u1EADp k\u1EBF ho\u1EA1ch: m\u1ED7i \u0111\u1ED9i m\u1ED9t nhi\u1EC7m v\u1EE5, m\u1ED9t h\u01B0\u1EDBng ti\u1EBFn, m\u1ED9t gi\u1EDD xu\u1EA5t ph\xE1t. Th\u1EBB l\u1EC7nh b\u1EA1n g\u1EAFn v\xE0o k\u1EBF ho\u1EA1ch s\u1EBD hi\u1EC7n th\xE0nh n\xFAt khi \u0111\xE1nh. V\xE0o l\u1EC1u l\xE0 game t\u1EA1m d\u1EEBng."), bar, this.body);
-    }
-    /** Show one of the pages (used by tests). */
-    open(t) {
-      this.tab = t;
-      this.key = "";
-      this.update();
-    }
-    get sim() {
-      return this.c.sim;
-    }
-    refresh() {
-      this.key = "";
-      this.c.ctl.onChange();
-    }
-    toast(e) {
-      if (e) this.c.toast(e);
-    }
-    update() {
-      const { sim: sim2 } = this, plan2 = (k) => sim2.plans.find((p) => p.kind === k);
-      for (const [t, b] of this.tabBtns) b.setAttribute("aria-pressed", String(t === this.tab));
-      const soldiers = sim2.villagers.filter((v) => v.job === "fight");
-      const key = [
-        this.tab,
-        sim2.squads.map((s) => `${s.id}.${s.name}.${s.formation}.${s.ids.join("/")}.${s.leader}.${Math.round(s.mastery[s.formation] / 5)}.${s.training}`).join(),
-        soldiers.map((v) => `${v.id}.${v.squad}.${v.weapon}`).join(),
-        JSON.stringify(sim2.maps),
-        JSON.stringify(sim2.scouts.map((m) => [m.id, m.phase])),
-        JSON.stringify(plan2("attack")),
-        JSON.stringify(plan2("defense")),
-        sim2.battleReports.length,
-        sim2.battle.on,
-        this.targetTribe,
-        sim2.tribes.map((t) => t.state).join(),
-        sim2.squadLimit(),
-        sim2.cardLimit()
-      ].join("|");
-      if (key === this.key) return;
-      this.key = key;
-      this.body.replaceChildren(...{ squads: () => this.squadsPage(), maps: () => this.mapsPage(), plan: () => this.planPage(), defense: () => this.defensePage(), log: () => this.logPage() }[this.tab]());
-    }
-    // ---------------------------------------------------------------- squads and formations
-    armCounts(vs) {
-      const n = { foot: 0, archer: 0, cavalry: 0 };
-      for (const v of vs) n[armOfWeapon(v.weapon)]++;
-      return ["foot", "archer", "cavalry"].filter((a) => n[a]).map((a) => `${n[a]} ${ARM_NAME[a].toLowerCase()}`).join(" \xB7 ") || "ch\u01B0a c\xF3 l\xEDnh";
-    }
-    squadsPage() {
-      const { sim: sim2 } = this, c = this.c;
-      const free = sim2.villagers.filter((v) => v.job === "fight" && v.squad < 0), out = [];
-      out.push(h("h3", { text: `\u0110\u1ED9i (${sim2.squads.length}/${sim2.squadLimit()})` }));
-      if (!sim2.squadLimit()) out.push(h("p", { class: "sub", text: "C\u1EA7n d\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn (nghi\xEAn c\u1EE9u H\u1ED9i \u0111\u1ED3ng chi\u1EBFn) \u0111\u1EC3 l\u1EADp \u0111\u1ED9i." }));
-      out.push(h(
-        "div",
-        { class: "btns" },
-        h("button", { class: "sm primary", text: "L\u1EADp \u0111\u1ED9i m\u1EDBi", onclick: () => {
-          this.toast(sim2.createSquad().reason);
-          this.refresh();
-        } }),
-        h("button", { class: "sm", text: "Ch\u1ECDn h\u1EBFt l\xEDnh", onclick: () => {
-          c.ctl.selected.clear();
-          for (const v of sim2.villagers) if (v.job === "fight") c.ctl.selected.add(v.id);
-          c.ctl.onChange();
-        } })
-      ));
-      for (const s of sim2.squads) {
-        const us = sim2.squadUnits(s), hp = us.length ? Math.round(100 * us.reduce((a, v) => a + v.health / v.maxHealth, 0) / us.length) : 0, leader = sim2.get(s.leader);
-        const fm = FORMATIONS[s.formation];
-        out.push(h(
-          "div",
-          { class: "row", style: `border-left:5px solid ${s.color};padding-left:8px;flex-direction:column;align-items:stretch` },
-          h("div", { class: "nm" }, h("b", { text: s.name }), h("small", { text: `${this.armCounts(us)} \xB7 m\xE1u ${hp}% \xB7 ch\u1EC9 huy ${leader?.name ?? "ch\u01B0a c\xF3"}` })),
-          h(
-            "div",
-            { class: "btns" },
-            select(FORMATION_IDS.map((f) => ({ v: f, label: `${FORMATIONS[f].name}${sim2.formationOpen(f) ? "" : " (c\u1EA7n nghi\xEAn c\u1EE9u)"}`, disabled: !sim2.formationOpen(f) })), s.formation, (f) => {
-              this.toast(sim2.setFormation(s.id, f));
-              this.refresh();
-            }),
-            h("small", { text: `thu\u1EA7n th\u1EE5c ${Math.round(s.mastery[s.formation])}%${s.switchUntil > sim2.time ? " \xB7 \u0111ang \u0111\u1ED5i tr\u1EADn" : ""}` })
-          ),
-          h("small", { class: "sub", text: fm.note }),
-          h(
-            "div",
-            { class: "btns" },
-            h("button", { class: "sm", text: "Ch\u1ECDn tr\xEAn b\u1EA3n \u0111\u1ED3", onclick: () => {
-              c.ctl.selected.clear();
-              for (const v of us) c.ctl.selected.add(v.id);
-              c.ctl.onChange();
-            } }),
-            h("button", { class: "sm", text: s.training ? "Th\xF4i luy\u1EC7n" : "Luy\u1EC7n \u1EDF b\xE3i t\u1EADp", onclick: () => {
-              this.toast(sim2.trainSquad(s.id, !s.training));
-              this.refresh();
-            } }),
-            h("button", { class: "sm", text: "Nh\u1EADn h\u1EBFt l\xEDnh r\u1EA3nh", disabled: !free.length, onclick: () => {
-              sim2.joinSquad(free.map((v) => v.id), s.id);
-              this.refresh();
-            } }),
-            h("button", { class: "sm danger", text: "Gi\u1EA3i t\xE1n", onclick: () => {
-              sim2.disbandSquad(s.id);
-              this.refresh();
-            } })
-          ),
-          ...us.map((v) => h(
-            "div",
-            { class: "row" },
-            h("div", { class: "nm" }, v.name, h("small", { text: `${ARM_NAME[armOfWeapon(v.weapon)]} \xB7 ${WEAPONS[v.weapon ?? "fist"].name}${v.id === s.leader ? " \xB7 ch\u1EC9 huy" : ""}` })),
-            h("button", { class: "sm", text: "Ch\u1EC9 huy", disabled: v.id === s.leader, onclick: () => {
-              sim2.setCommander(s.id, v.id);
-              this.refresh();
-            } }),
-            h("button", { class: "sm", text: "Ra", onclick: () => {
-              sim2.leaveSquad([v.id]);
-              this.refresh();
-            } })
-          ))
-        ));
-      }
-      out.push(h("h3", { text: `L\xEDnh ch\u01B0a v\xE0o \u0111\u1ED9i (${free.length})` }));
-      if (!free.length) out.push(h("p", { class: "sub", text: "Tuy\u1EC3n l\xEDnh \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i (tab L\xEDnh), r\u1ED3i x\u1EBFp v\xE0o \u0111\u1ED9i \u1EDF \u0111\xE2y." }));
-      for (const v of free) out.push(h(
-        "div",
-        { class: "row" },
-        h("div", { class: "nm" }, v.name, h("small", { text: `${ARM_NAME[armOfWeapon(v.weapon)]} \xB7 ${WEAPONS[v.weapon ?? "fist"].name}` })),
-        select([{ v: "", label: "V\xE0o \u0111\u1ED9i\u2026" }, ...sim2.squads.map((s) => ({ v: String(s.id), label: s.name }))], "", (id) => {
-          if (id) {
-            this.toast(sim2.joinSquad([v.id], Number(id)));
-            this.refresh();
-          }
-        })
-      ));
-      return out;
-    }
-    // ---------------------------------------------------------------- scouting and maps
-    ageWords(at) {
-      const days = Math.floor((this.sim.time - at) / DAY_LENGTH);
-      return days <= 0 ? "b\xE1o c\xE1o trong ng\xE0y" : days === 1 ? "b\xE1o c\xE1o t\u1EEB h\xF4m qua" : days < 4 ? `b\xE1o c\xE1o t\u1EEB ${days} h\xF4m tr\u01B0\u1EDBc` : "\u0111\xE3 c\u0169";
-    }
-    mapsPage() {
-      const { sim: sim2 } = this, c = this.c, out = [];
-      out.push(hint("Trinh s\xE1t v\xE0 b\u1EA3n \u0111\u1ED3", "Mu\u1ED1n \u0111\xE1nh m\u1ED9t l\xE0ng ph\u1EA3i c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EE7a n\xF3. C\u1EA5p 1 cho v\u1ECB tr\xED v\xE0 s\u1ED1 d\xE2n; c\u1EA5p 2 cho \u0111\u01B0\u1EDDng v\xE0o, c\u1ED5ng v\xE0 ch\u1ED7 ph\u1EE5c k\xEDch; c\u1EA5p 3 cho s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i, kho v\xE0 th\u1EE7 l\u0129nh. Trinh s\xE1t c\xF3 th\u1EC3 ch\u1EBFt, b\u1EA3n \u0111\u1ED3 m\u1EA5t 10% \u0111\u1ED9 ch\xEDnh x\xE1c m\u1ED7i ng\xE0y. Ch\u1ECDn d\xE2n tr\xEAn b\u1EA3n \u0111\u1ED3 r\u1ED3i c\u1EED \u0111i, ho\u1EB7c b\u1EA5m c\u1EED \u0111\u1EC3 game t\u1EF1 l\u1EA5y ng\u01B0\u1EDDi r\u1EA3nh."));
-      if (!sim2.dev.freeBuild && !sim2.researched.has("scout")) out.push(h("p", { class: "sub", text: 'C\u1EA7n nghi\xEAn c\u1EE9u "Trinh s\xE1t" \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u.' }));
-      for (const t of sim2.tribes) {
-        const maps = sim2.maps.filter((m) => m.tribe === t.id).sort((a, b) => b.level - a.level), best = maps[0], level = sim2.mapLevel(t.id);
-        const next = this.newLevel[t.id] ?? Math.min(3, level + 1), need = sim2.scoutsNeeded(t.id, next);
-        out.push(h(
-          "div",
-          { class: "row", style: "flex-direction:column;align-items:stretch" },
-          h("div", { class: "nm" }, h("b", { text: t.def.name }), h("small", { text: best ? `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${level || best.level}${best.gaps ? " (c\xF2n h\u1EDF)" : ""}, ${this.ageWords(best.at)}` : "Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3" })),
-          h(
-            "div",
-            { class: "btns" },
-            select([1, 2, 3].map((l) => ({ v: String(l), label: `C\u1EA5p ${l}` })), String(next), (l) => {
-              this.newLevel[t.id] = Number(l);
-              this.refresh();
-            }),
-            h("small", { text: `c\u1EA7n ${need} trinh s\xE1t cho \u0111\u1EE7` }),
-            h("button", { class: "sm primary", text: "C\u1EED trinh s\xE1t", disabled: sim2.scouts.some((m) => m.tribe === t.id), onclick: () => {
-              const chosen = [...c.ctl.selected].filter((id) => sim2.get(id)?.team === "player");
-              const ids = chosen.length ? chosen : sim2.villagers.filter((v) => v.job !== "fight" && v.inside === null).slice(0, need).map((v) => v.id);
-              this.toast(sim2.startScout(ids, t.id, next));
-              this.refresh();
-            } })
-          )
-        ));
-      }
-      if (sim2.scouts.length) out.push(h("h3", { text: "\u0110ang \u0111i trinh s\xE1t" }));
-      for (const m of sim2.scouts) out.push(h("p", { class: "sub", text: `${sim2.tribes.find((t) => t.id === m.tribe)?.def.name}: ${m.ids.length} ng\u01B0\u1EDDi, ${{ go: "\u0111ang t\u1EDBi", watch: "\u0111ang quan s\xE1t", back: "\u0111ang v\u1EC1" }[m.phase]} (b\u1EA3n \u0111\u1ED3 c\u1EA5p ${m.level})` }));
-      return out;
-    }
-    // ---------------------------------------------------------------- the attack plan
-    missionCard(plan2, m, defense) {
-      const { sim: sim2 } = this, s = sim2.squadById(m.squad), draft = plan2.status !== "running";
-      const kids = [h("div", { class: "nm" }, h("b", { text: s?.name ?? "?" }), h("small", { text: defense ? POST_NAME[m.post] : `${{ idle: "ch\u01B0a b\u1EAFt \u0111\u1EA7u", wait: "ch\u1EDD l\u1EC7nh", march: "\u0111ang ti\u1EBFn", engaged: "\u0111ang giao chi\u1EBFn", hold: "gi\u1EEF v\u1ECB tr\xED", withdraw: "\u0111ang r\xFAt", done: "xong" }[m.state]}` }))];
-      if (defense) kids.push(h("div", { class: "btns" }, select(Object.keys(POST_NAME).map((p) => ({ v: p, label: POST_NAME[p] })), m.post, (p) => {
-        m.post = p;
-        this.refresh();
-      })));
-      else {
-        const trig = m.trigger.kind;
-        kids.push(
-          h(
-            "div",
-            { class: "btns" },
-            select(Object.keys(OBJECTIVE_NAME).map((o) => ({ v: o, label: OBJECTIVE_NAME[o], disabled: !sim2.canTarget(o, plan2.tribe) })), m.objective, (o) => {
-              m.objective = o;
-              this.refresh();
-            }),
-            select(Object.keys(ROUTE_NAME).map((r) => ({ v: r, label: ROUTE_NAME[r] })), m.route, (r) => {
-              m.route = r;
-              this.refresh();
-            })
-          ),
-          h(
-            "div",
-            { class: "btns" },
-            select([{ v: "time", label: "Theo gi\u1EDD" }, { v: "after", label: "Sau khi \u0111\u1ED9i kh\xE1c giao chi\u1EBFn" }, { v: "signal", label: "Khi c\xF3 t\xEDn hi\u1EC7u" }, { v: "leaves", label: "Khi \u0111\u1ECBch r\u1EDDi l\xE0ng" }], trig, (k) => {
-              m.trigger = k === "time" ? { kind: "time", at: 0 } : k === "after" ? { kind: "after", squad: plan2.missions.find((x) => x.squad !== m.squad)?.squad ?? -1 } : { kind: k };
-              this.refresh();
-            }),
-            m.trigger.kind === "time" ? select(TIMES.map((t) => ({ v: String(t), label: t ? `sau ${t} gi\xE2y` : "ngay" })), String(m.trigger.at), (t) => {
-              m.trigger = { kind: "time", at: Number(t) };
-              this.refresh();
-            }) : null,
-            m.trigger.kind === "after" ? select(plan2.missions.filter((x) => x.squad !== m.squad).map((x) => ({ v: String(x.squad), label: sim2.squadById(x.squad)?.name ?? "?" })), String(m.trigger.squad), (q) => {
-              m.trigger = { kind: "after", squad: Number(q) };
-              this.refresh();
-            }) : null
-          ),
-          h(
-            "div",
-            { class: "btns" },
-            select(Object.keys(STANCE_NAME).map((x) => ({ v: x, label: STANCE_NAME[x] })), m.stance, (x) => {
-              m.stance = x;
-              this.refresh();
-            }),
-            select([0.2, 0.35, 0.5, 0.7].map((x) => ({ v: String(x), label: `R\xFAt khi m\u1EA5t ${Math.round(x * 100)}%` })), String(m.withdrawAt), (x) => {
-              m.withdrawAt = Number(x);
-              this.refresh();
-            })
-          )
-        );
-      }
-      if (draft) kids.push(h("button", { class: "sm", text: "B\u1ECF nhi\u1EC7m v\u1EE5", onclick: () => {
-        plan2.missions.splice(plan2.missions.indexOf(m), 1);
-        this.refresh();
-      } }));
-      return h("div", { class: "row", style: `border-left:5px solid ${s?.color ?? "#888"};padding-left:8px;flex-direction:column;align-items:stretch` }, ...kids);
-    }
-    addMissionRow(plan2) {
-      const { sim: sim2 } = this, open = sim2.squads.filter((s) => !plan2.missions.some((m) => m.squad === s.id));
-      return h("div", { class: "btns" }, select([{ v: "", label: "Giao nhi\u1EC7m v\u1EE5 cho \u0111\u1ED9i\u2026" }, ...open.map((s) => ({ v: String(s.id), label: s.name }))], "", (id) => {
-        if (id) {
-          this.toast(sim2.addMission(plan2, Number(id)));
-          this.refresh();
-        }
-      }));
-    }
-    planPage() {
-      const { sim: sim2 } = this, out = [], plan2 = sim2.plans.find((p) => p.kind === "attack");
-      const targets = sim2.tribes.filter((t) => t.state === "free");
-      if (!this.targetTribe || !targets.some((t) => t.id === this.targetTribe)) this.targetTribe = targets[0]?.id ?? "";
-      out.push(h(
-        "div",
-        { class: "btns" },
-        select(targets.map((t) => ({ v: t.id, label: t.def.name })), this.targetTribe, (t) => {
-          this.targetTribe = t;
-          this.refresh();
-        }),
-        h("button", { class: "sm primary", text: "L\u1EADp k\u1EBF ho\u1EA1ch m\u1EDBi", disabled: !this.targetTribe || plan2?.status === "running", onclick: () => {
-          sim2.newPlan("attack", this.targetTribe);
-          this.refresh();
-        } })
-      ));
-      if (!plan2) {
-        out.push(h("p", { class: "sub", text: "Ch\u1ECDn l\xE0ng c\u1EA7n \u0111\xE1nh r\u1ED3i l\u1EADp k\u1EBF ho\u1EA1ch. M\u1ED7i \u0111\u1ED9i c\xF3 th\u1EC3 nh\u1EADn m\u1ED9t nhi\u1EC7m v\u1EE5." }));
-        return out;
-      }
-      out.push(h("h3", { text: `K\u1EBF ho\u1EA1ch \u0111\xE1nh ${sim2.tribes.find((t) => t.id === plan2.tribe)?.def.name ?? "?"} \xB7 ${{ draft: "\u0111ang so\u1EA1n", running: "\u0111ang ch\u1EA1y", done: "\u0111\xE3 xong" }[plan2.status]}` }));
-      for (const l of sim2.reviewPlan(plan2)) out.push(h("p", { class: l.startsWith("\u2717") ? "why" : "sub", text: l }));
-      for (const m of plan2.missions) out.push(this.missionCard(plan2, m, false));
-      if (plan2.status !== "running") out.push(this.addMissionRow(plan2));
-      out.push(h("h3", { text: `Th\u1EBB l\u1EC7nh (${plan2.cards.length}/${sim2.cardLimit()})` }), h("p", { class: "sub", text: "Khi \u0111\xE1nh, ch\u1EC9 nh\u1EEFng th\u1EBB n\xE0y hi\u1EC7n th\xE0nh n\xFAt. Th\xEAm \xEDt m\xE0 ch\u1EAFc: l\u1EC1u c\u1EA5p cao cho nhi\u1EC1u th\u1EBB h\u01A1n." }));
-      for (const cd of plan2.cards) out.push(h(
-        "div",
-        { class: "row" },
-        h("div", { class: "nm" }, `${CARD_NAME[cd.kind]}${cd.squad >= 0 && cd.kind !== "signal" ? ` \xB7 ${sim2.squadById(cd.squad)?.name ?? "?"}` : ""}${cd.arg ? ` \xB7 ${FORMATIONS[cd.arg]?.name ?? OBJECTIVE_NAME[cd.arg] ?? cd.arg}` : ""}`),
-        plan2.status === "running" ? h("button", { class: "sm", text: "D\xF9ng", onclick: () => {
-          this.toast(sim2.playCard(plan2, cd.id));
-          this.refresh();
-        } }) : null,
-        h("button", { class: "sm", text: "B\u1ECF th\u1EBB", onclick: () => {
-          sim2.removeCard(plan2, cd.id);
-          this.refresh();
-        } })
-      ));
-      out.push(this.cardAdder(plan2));
-      out.push(h(
-        "div",
-        { class: "btns" },
-        plan2.status === "draft" ? h("button", { class: "sm primary", text: "B\u1EAFt \u0111\u1EA7u t\u1EA5n c\xF4ng", onclick: () => {
-          this.toast(sim2.startPlan(plan2));
-          this.refresh();
-        } }) : null,
-        plan2.status === "running" ? h("button", { class: "sm danger", text: "D\u1EEBng k\u1EBF ho\u1EA1ch", onclick: () => {
-          plan2.status = "done";
-          this.refresh();
-        } }) : null,
-        plan2.status === "done" ? h("button", { class: "sm", text: "So\u1EA1n l\u1EA1i", onclick: () => {
-          plan2.status = "draft";
-          for (const m of plan2.missions) {
-            m.state = "idle";
-          }
-          this.refresh();
-        } }) : null
-      ));
-      return out;
-    }
-    /** Pick a card kind, its squad and what it carries, and add it to the plan. */
-    cardAdder(plan2) {
-      const { sim: sim2 } = this;
-      let kind = "go", squad = String(sim2.squads[0]?.id ?? ""), arg = "";
-      const argSel = h("span");
-      const fill = () => {
-        argSel.replaceChildren();
-        if (kind === "formation") {
-          arg = arg && FORMATIONS[arg] ? arg : "line";
-          argSel.append(select(FORMATION_IDS.map((f) => ({ v: f, label: FORMATIONS[f].name })), arg, (v) => {
-            arg = v;
-          }));
-        } else if (kind === "attack") {
-          arg = arg && OBJECTIVE_NAME[arg] ? arg : "camp";
-          argSel.append(select(Object.keys(OBJECTIVE_NAME).map((o) => ({ v: o, label: OBJECTIVE_NAME[o] })), arg, (v) => {
-            arg = v;
-          }));
-        } else arg = "";
-      };
-      fill();
-      return h(
-        "div",
-        { class: "btns" },
-        select(CARD_KINDS.map((k) => ({ v: k, label: CARD_NAME[k] })), kind, (k) => {
-          kind = k;
-          fill();
-        }),
-        select(sim2.squads.map((s) => ({ v: String(s.id), label: s.name })), squad, (s) => {
-          squad = s;
-        }),
-        argSel,
-        h("button", { class: "sm primary", text: "Th\xEAm th\u1EBB", onclick: () => {
-          this.toast(sim2.addCard(plan2, kind, kind === "signal" ? -1 : Number(squad), arg));
-          this.refresh();
-        } })
-      );
-    }
-    // ---------------------------------------------------------------- defence
-    defensePage() {
-      const { sim: sim2 } = this, out = [], plan2 = sim2.plans.find((p) => p.kind === "defense");
-      out.push(hint("K\u1EBF ho\u1EA1ch ph\xF2ng th\u1EE7", "M\u1EABu ph\xF2ng th\u1EE7: m\u1ED7i \u0111\u1ED9i \u0111\u1EE9ng \u1EDF \u0111\xE2u khi tr\u1ED1ng b\xE1o \u0111\u1ED9ng. Khi \u0111\xE1nh tr\u1ED1ng, d\xE2n v\u1EC1 \u0111\u1ED1ng l\u1EEDa v\xE0 c\xE1c \u0111\u1ED9i v\u1EC1 \u0111\xFAng v\u1ECB tr\xED; \u0111\u1ED9i \u0111\u1EE9ng ch\xF2i s\u1EBD cho cung th\u1EE7 l\xEAn ch\xF2i. Kh\xF4ng c\xF3 m\u1EABu th\xEC m\u1ECDi \u0111\u1ED9i \u0111\u1EE9ng quanh \u0111\u1ED1ng l\u1EEDa."));
-      out.push(h(
-        "div",
-        { class: "btns" },
-        h("button", { class: "sm primary", text: plan2 ? "So\u1EA1n m\u1EABu m\u1EDBi" : "L\u1EADp m\u1EABu ph\xF2ng th\u1EE7", onclick: () => {
-          sim2.newPlan("defense", null);
-          this.refresh();
-        } }),
-        h("button", { class: "sm danger", text: sim2.alarmUntil > sim2.time ? "\u0110ang b\xE1o \u0111\u1ED9ng" : "\u0110\xE1nh tr\u1ED1ng b\xE1o \u0111\u1ED9ng", disabled: sim2.alarmUntil > sim2.time, onclick: () => {
-          this.toast(sim2.soundAlarm());
-          this.refresh();
-        } })
-      ));
-      if (!plan2) return out;
-      for (const m of plan2.missions) out.push(this.missionCard(plan2, m, true));
-      out.push(this.addMissionRow(plan2));
-      return out;
-    }
-    // ---------------------------------------------------------------- the log
-    logPage() {
-      const { sim: sim2 } = this, b = sim2.battle, out = [];
-      out.push(h("h3", { text: b.on ? "\u0110ang c\xF3 giao tranh" : "Kh\xF4ng c\xF3 giao tranh" }));
-      if (b.on) out.push(h("p", { class: "sub", text: `Ta m\u1EA5t ${b.ourDead}, \u0111\u1ECBch m\u1EA5t ${b.foeDead}${b.breaches ? `, ${b.breaches} \u0111o\u1EA1n r\xE0o b\u1ECB ph\xE1` : ""}${b.shots ? `, cung tr\xEAn ch\xF2i b\u1EAFn ${b.shots} ph\xE1t` : ""}.` }), ...b.notes.map((n) => h("p", { class: "sub", text: n })));
-      if (!sim2.battleReports.length) out.push(h("p", { class: "sub", text: "Ch\u01B0a c\xF3 tr\u1EADn n\xE0o k\u1EBFt th\xFAc. Sau m\u1ED7i tr\u1EADn, b\u1EA3n t\xF3m t\u1EAFt hi\u1EC7n \u1EDF \u0111\xE2y \u0111\u1EC3 b\u1EA1n ch\u1EC9nh k\u1EBF ho\u1EA1ch l\u1EA7n sau." }));
-      for (const r of [...sim2.battleReports].reverse()) out.push(h("div", { class: "row", style: "flex-direction:column;align-items:stretch" }, ...r.lines.map((l) => h("small", { text: l }))));
-      return out;
-    }
-  };
-
   // src/ui/menu.ts
-  var TABS2 = [["build", "X\xE2y"], ["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["war", "Chi\u1EBFn"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
+  var TABS = [["build", "X\xE2y"], ["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
   var SEASON_NAME = { spring: "Xu\xE2n", summer: "H\u1EA1", autumn: "Thu", winter: "\u0110\xF4ng" };
   var PERSONALITY = { peaceful: "H\xF2a b\xECnh", aggressive: "Hi\u1EBFu chi\u1EBFn", ambusher: "Hay ph\u1EE5c k\xEDch" };
   var Menu = class {
@@ -14985,10 +14961,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       this.updaters = [];
       this.placesKey = "";
       this.placesList = h("div");
-      /** The speed to go back to when the war tent is left (it opens the game paused, as a war council does). */
-      this.resume = 0;
-      for (const [t, label] of TABS2) {
-        const b = h("button", { class: "sm", text: label, pressed: t === this.tab, onclick: () => this.show(t) });
+      for (const [t, label2] of TABS) {
+        const b = h("button", { class: "sm", text: label2, pressed: t === this.tab, onclick: () => this.show(t) });
         this.tabBtns.set(t, b);
         tabs.append(b);
       }
@@ -14996,9 +14970,6 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       this.pages.set("build", this.buildPage());
       this.pages.set("places", this.placesPage());
       this.pages.set("tribes", this.tribesPage());
-      const war = new WarPanel(c);
-      this.pages.set("war", war.root);
-      this.updaters.push(() => war.update());
       this.pages.set("game", this.gamePage());
       this.pages.set("dev", this.devPage());
       this.pages.set("help", this.helpPage());
@@ -15015,24 +14986,12 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     }
     close() {
       this.drawer.hidden = true;
-      if (this.tab === "war" && this.resume > 0 && this.c.sim.speed === 0) {
-        this.c.sim.speed = this.resume;
-        this.resume = 0;
-      }
     }
     toggle() {
       if (this.isOpen) this.close();
       else this.open();
     }
     show(tab) {
-      const { sim: sim2 } = this.c;
-      if (tab === "war" && this.tab !== "war") {
-        this.resume = sim2.speed;
-        sim2.speed = 0;
-      } else if (tab !== "war" && this.tab === "war" && this.resume > 0 && sim2.speed === 0) {
-        sim2.speed = this.resume;
-        this.resume = 0;
-      }
       this.tab = tab;
       for (const [t, b] of this.tabBtns) b.setAttribute("aria-pressed", String(t === tab));
       for (const [t, p] of this.pages) p.hidden = t !== tab;
@@ -15237,9 +15196,9 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         ctl2.onChange();
         this.update();
       } });
-      const row = (label, ...kids) => h("div", { class: "devrow" }, h("span", { text: label }), ...kids);
-      const toggle = (label, key, tip) => {
-        const b = h("button", { class: "sm", text: label, title: tip, pressed: sim2.dev[key], onclick: () => {
+      const row = (label2, ...kids) => h("div", { class: "devrow" }, h("span", { text: label2 }), ...kids);
+      const toggle = (label2, key, tip) => {
+        const b = h("button", { class: "sm", text: label2, title: tip, pressed: sim2.dev[key], onclick: () => {
           sim2.dev[key] = !sim2.dev[key];
           b.setAttribute("aria-pressed", String(sim2.dev[key]));
         } });
@@ -15292,7 +15251,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         raiseArmy(sim2, k, n);
       }))));
       page.append(h("p", { class: "sub", text: "\u0110\u1ECBch t\u1EDBi (R\xECu \u0110\xE1):" }));
-      const wave = (label, weapons) => btn(label, () => {
+      const wave = (label2, weapons) => btn(label2, () => {
         const e = enemyWave(sim2, "axe", weapons);
         if (e) toast2(e);
       });
@@ -15687,6 +15646,1743 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     }
   };
 
+  // src/ui/planmap.ts
+  var ARROW_FROM = 27;
+  var T = 16;
+  var MIN_K = 4;
+  var MAX_K = 64;
+  var HOLD_MS = 450;
+  var RING = 100;
+  var ITEM = 38;
+  var MARK_NAME = { civ: "D\xE2n th\u01B0\u1EDDng", unknown: "C\xF3 ng\u01B0\u1EDDi (ch\u01B0a r\xF5 lo\u1EA1i)", foot: ARM_NAME.foot, archer: ARM_NAME.archer, cavalry: ARM_NAME.cavalry };
+  var MARK_COLOR = { civ: "#d8d2c0", unknown: "#b9b2a0", foot: "#e0452a", archer: "#e0452a", cavalry: "#e0452a" };
+  var WORK_COLOR = { fire: "#f08a24", tower: "#6b4a2a", pile: "#a9743a", fence: "#8a6a3a", gate: "#e8d18a" };
+  var LEVEL_NOTE = [
+    "",
+    "C\u1EA5p 1 (l\u01B0\u1EE3c \u0111\u1ED3): ch\u1EC9 bi\u1EBFt v\u1ECB tr\xED, s\u1ED1 d\xE2n \u01B0\u1EDBc ch\u1EEBng v\xE0 h\u01B0\u1EDBng v\xE0o l\xE0ng. C\u1EED th\xEAm trinh s\xE1t \u0111\u1EC3 bi\u1EBFt \u0111\u1ECBa h\xECnh v\xE0 c\xF4ng tr\xECnh.",
+    "C\u1EA5p 2 (\u0111\u1ECBa h\xECnh): th\u1EA5y \u0111\u1EA5t, r\u1EEBng, n\u01B0\u1EDBc, c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 v\xE0 b\xF3ng ng\u01B0\u1EDDi; ch\u01B0a bi\u1EBFt ai l\xE0 l\xEDnh. C\u1EA5p 3 cho s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i, kho v\xE0 th\u1EE7 l\u0129nh.",
+    "C\u1EA5p 3 (\u0111\u1ED9i h\xECnh): th\u1EA5y c\u1EA3 l\xEDnh t\u1EEBng lo\u1EA1i, kho l\u01B0\u01A1ng v\xE0 th\u1EE7 l\u0129nh."
+  ];
+  function fmtTime(sec) {
+    const s = Math.round(sec);
+    return s < 60 ? `${s} gi\xE2y` : `${Math.floor(s / 60)} ph\xFAt ${s % 60} gi\xE2y`;
+  }
+  var fmtShort = (sec) => {
+    const s = Math.round(sec);
+    return s < 60 ? `${s}s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  };
+  var clamp2 = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  var dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  function hash(x, y, salt = 0) {
+    let n = x * 374761393 + y * 668265263 + salt * 1442695041 | 0;
+    n = Math.imul(n ^ n >>> 13, 1274126177);
+    return ((n ^ n >>> 16) >>> 0) / 4294967296;
+  }
+  function drawMark(ctx2, mark, px, py, u, fill = MARK_COLOR[mark]) {
+    ctx2.fillStyle = fill;
+    ctx2.strokeStyle = "#1a1208";
+    ctx2.lineWidth = 1.2;
+    const r = 3.6 * u;
+    ctx2.beginPath();
+    if (mark === "foot") ctx2.rect(px - r, py - r, 2 * r, 2 * r);
+    else if (mark === "archer") {
+      ctx2.moveTo(px, py - r - 1);
+      ctx2.lineTo(px + r + 1, py + r);
+      ctx2.lineTo(px - r - 1, py + r);
+      ctx2.closePath();
+    } else if (mark === "cavalry") {
+      ctx2.moveTo(px, py - r - 1);
+      ctx2.lineTo(px + r + 1, py);
+      ctx2.lineTo(px, py + r + 1);
+      ctx2.lineTo(px - r - 1, py);
+      ctx2.closePath();
+    } else ctx2.arc(px, py, (mark === "civ" ? 2.4 : 3) * u, 0, Math.PI * 2);
+    ctx2.fill();
+    ctx2.stroke();
+  }
+  function label(ctx2, text, x, y, size, color = "#fff") {
+    ctx2.font = `bold ${Math.round(size)}px sans-serif`;
+    ctx2.textAlign = "center";
+    ctx2.strokeStyle = "#1a1208";
+    ctx2.lineWidth = 3;
+    ctx2.fillStyle = color;
+    ctx2.strokeText(text, x, y);
+    ctx2.fillText(text, x, y);
+  }
+  function paintGround(g, sim2, i) {
+    const { box } = i, N = sim2.world.size, w = sim2.world;
+    for (let y = box.y0; y < box.y1; y++) for (let x = box.x0; x < box.x1; x++) {
+      const px = (x - box.x0) * T, py = (y - box.y0) * T, t = w.tiles[y * N + x], shade2 = (hash(x, y) - 0.5) * 14;
+      const col = (r, gg, b) => `rgb(${Math.round(r + shade2)},${Math.round(gg + shade2)},${Math.round(b + shade2)})`;
+      const base = t === Tile.Water ? col(63, 111, 154) : t === Tile.Mud ? col(122, 100, 66) : t === Tile.Rock ? col(124, 130, 120) : col(134, 163, 85);
+      g.fillStyle = base;
+      g.fillRect(px, py, T, T);
+      if (w.occ[y * N + x]) {
+        g.fillStyle = col(150, 130, 90);
+        g.fillRect(px, py, T, T);
+        g.fillStyle = "rgba(70,50,25,0.35)";
+        for (let k = 0; k < 3; k++) g.fillRect(px + hash(x, y, k + 3) * (T - 2), py + hash(x, y, k + 7) * (T - 2), 2, 2);
+        continue;
+      }
+      if (t === Tile.Grass || t === Tile.Bush || t === Tile.Tree) {
+        g.strokeStyle = "rgba(70,100,40,0.55)";
+        g.lineWidth = 1;
+        g.beginPath();
+        for (let k = 0; k < 2; k++) {
+          const tx = px + 2 + hash(x, y, k + 11) * (T - 4), ty = py + 4 + hash(x, y, k + 13) * (T - 6);
+          g.moveTo(tx, ty);
+          g.lineTo(tx - 1, ty - 3);
+          g.moveTo(tx, ty);
+          g.lineTo(tx + 1.5, ty - 3);
+        }
+        g.stroke();
+      }
+      if (t === Tile.Tree) {
+        g.fillStyle = "rgba(0,0,0,0.22)";
+        g.beginPath();
+        g.ellipse(px + T / 2 + 1, py + T - 3, T * 0.36, T * 0.14, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "#5a3d22";
+        g.fillRect(px + T / 2 - 1.5, py + T * 0.55, 3, T * 0.35);
+        g.fillStyle = col(36, 76, 30);
+        g.beginPath();
+        g.arc(px + T / 2, py + T * 0.4, T * 0.4, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = col(62, 110, 44);
+        g.beginPath();
+        g.arc(px + T / 2 - 2, py + T * 0.34, T * 0.22, 0, Math.PI * 2);
+        g.fill();
+      } else if (t === Tile.Rock) {
+        g.fillStyle = col(96, 102, 104);
+        g.beginPath();
+        g.moveTo(px + 2, py + T - 3);
+        g.lineTo(px + 4, py + 5);
+        g.lineTo(px + T * 0.55, py + 2);
+        g.lineTo(px + T - 2, py + 7);
+        g.lineTo(px + T - 3, py + T - 3);
+        g.closePath();
+        g.fill();
+        g.fillStyle = col(150, 156, 156);
+        g.beginPath();
+        g.moveTo(px + 5, py + 6);
+        g.lineTo(px + T * 0.55, py + 3);
+        g.lineTo(px + T * 0.6, py + 8);
+        g.lineTo(px + 6, py + 9);
+        g.closePath();
+        g.fill();
+      } else if (t === Tile.Bush) {
+        g.fillStyle = col(52, 104, 42);
+        g.beginPath();
+        g.arc(px + T / 2, py + T * 0.58, T * 0.34, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "#c0392b";
+        for (let k = 0; k < 4; k++) {
+          g.beginPath();
+          g.arc(px + 4 + hash(x, y, k + 21) * (T - 8), py + 6 + hash(x, y, k + 23) * (T - 10), 1.5, 0, Math.PI * 2);
+          g.fill();
+        }
+      } else if (t === Tile.Water) {
+        g.strokeStyle = "rgba(210,235,255,0.55)";
+        g.lineWidth = 1;
+        g.beginPath();
+        for (let k = 0; k < 2; k++) {
+          const wy = py + 4 + k * 7 + hash(x, y, k + 31) * 2, wx = px + 1 + hash(x, y, k + 33) * 4;
+          g.moveTo(wx, wy);
+          g.quadraticCurveTo(wx + 3, wy - 2, wx + 6, wy);
+          g.quadraticCurveTo(wx + 9, wy + 2, wx + 12, wy);
+        }
+        g.stroke();
+      } else if (t === Tile.Mud) {
+        g.fillStyle = "rgba(60,40,20,0.35)";
+        for (let k = 0; k < 3; k++) g.fillRect(px + hash(x, y, k + 41) * (T - 3), py + hash(x, y, k + 43) * (T - 3), 3, 2);
+      }
+    }
+  }
+  function glyph(ctx2, kind, cx, cy, color) {
+    const offs = formationOffsets(kind, 7), s = 4.2, mx = offs.reduce((a, o) => a + o[0], 0) / offs.length, my = offs.reduce((a, o) => a + o[1], 0) / offs.length;
+    ctx2.fillStyle = color;
+    for (const [fx, fy] of offs) {
+      ctx2.beginPath();
+      ctx2.arc(cx + (fy - my) * s, cy - (fx - mx) * s, 2.1, 0, Math.PI * 2);
+      ctx2.fill();
+    }
+  }
+  var PlanMapView = class {
+    constructor(sim2, ev) {
+      this.sim = sim2;
+      this.ev = ev;
+      this.root = h("div", { class: "pview" });
+      this.canvas = h("canvas", { class: "planmap" });
+      this.pop = h("div", { class: "ppop", hidden: true });
+      this.note = h("div", { class: "pnote", hidden: true });
+      this.ground = document.createElement("canvas");
+      this.groundKey = "";
+      this.intel = null;
+      this.tribe = "";
+      this.ui = { selected: -1, mode: "pan", modeSquad: -1 };
+      this.routes = /* @__PURE__ */ new Map();
+      /** Pixels per tile, and the tile at the middle of the screen. */
+      this.k = 12;
+      this.cx = 0;
+      this.cy = 0;
+      this.W = 0;
+      this.H = 0;
+      this.targets = [];
+      this.pts = /* @__PURE__ */ new Map();
+      this.gesture = "none";
+      /** The arrow (or way back) while one of its handles is held: a copy of its points with that one moved, drawn faint and dashed until it is let go. */
+      this.edit = null;
+      /** An arrow not yet placed: where its head would go, following the pointer. */
+      this.arrowAim = null;
+      /** The ring of formations while it is open: where it was pressed (screen), where it sits, the same place on the ground, and the item under the finger. */
+      this.ring = null;
+      /** A formation picked from the ring, waiting for the drag that sizes it. */
+      this.making = null;
+      /** While a formation is being shaped: where the finger is on the ground, and where the drag began. */
+      this.aim = null;
+      this.sizeFrom = null;
+      /** Editing a formation: the white dot at its origin has been picked up, and the whole shape moves with the pointer. */
+      this.moving = null;
+      this.hold = null;
+      this.downAt = { x: 0, y: 0 };
+      this.moved = false;
+      this.pinch = 0;
+      this.queued = false;
+      this.root.append(this.canvas, this.pop, this.note);
+      const at = (e) => {
+        const b = this.canvas.getBoundingClientRect();
+        return { x: e.clientX - b.left, y: e.clientY - b.top };
+      };
+      this.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+      this.canvas.addEventListener("pointerdown", (e) => {
+        this.canvas.setPointerCapture?.(e.pointerId);
+        const p = at(e);
+        this.pts.set(e.pointerId, p);
+        this.downAt = p;
+        this.moved = false;
+        this.pinch = 0;
+        this.stopHold();
+        if (this.pts.size > 1) {
+          this.gesture = "pan";
+          this.edit = null;
+          this.ring = null;
+          this.aim = null;
+          return;
+        }
+        const w = this.world(p), left = e.button === 0, ui = this.ui, arrows = (ui.mode === "path" || ui.mode === "retreat") && !!this.plan;
+        if (!left) {
+          const hit = arrows ? this.handleAt(p) : null;
+          if (hit?.kind === "vertex") {
+            const list = this.listOf(ui.mode === "retreat");
+            this.ev.onPath(ui.modeSquad, list.filter((_, i) => i !== hit.idx), ui.mode === "retreat");
+            this.gesture = "none";
+            return;
+          }
+          this.gesture = "pan";
+        } else if (this.making) {
+          this.gesture = "size";
+          this.aim = w;
+          this.sizeFrom = this.making.at;
+        } else if (ui.mode === "edit" && this.deployOf(ui.modeSquad)) {
+          const dep = this.deployOf(ui.modeSquad);
+          this.gesture = "size";
+          this.aim = w;
+          this.sizeFrom = dep.o;
+          if (dist(this.scr(dep.o), p) < 16) this.moving = { o0: dep.o, p0: dep.p, grab: w };
+        } else if (arrows) {
+          const retreat = ui.mode === "retreat", list = this.listOf(retreat), hit = this.handleAt(p);
+          if (hit) {
+            const pts = list.map((q) => ({ ...q }));
+            if (hit.kind === "mid") pts.splice(hit.idx, 0, this.clampInBox(w));
+            this.edit = { pts, retreat, idx: hit.idx };
+            this.gesture = "node";
+          } else if (!list.length) {
+            this.gesture = "arrow";
+            this.arrowAim = this.clampInBox(w);
+          } else this.gesture = "pan";
+        } else {
+          this.gesture = "pan";
+          if (this.intel && ui.mode === "pan" && this.inBox(w)) this.hold = setTimeout(() => this.openRing(), HOLD_MS);
+        }
+      });
+      this.canvas.addEventListener("pointermove", (e) => {
+        const prev = this.pts.get(e.pointerId);
+        if (!prev) {
+          this.hover(at(e));
+          return;
+        }
+        const cur = at(e);
+        this.pts.set(e.pointerId, cur);
+        if (Math.hypot(cur.x - this.downAt.x, cur.y - this.downAt.y) > 6) {
+          this.moved = true;
+          if (this.gesture === "pan") this.stopHold();
+        }
+        if (this.pts.size === 2) {
+          const [a, b] = [...this.pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (this.pinch > 0 && d > 0) this.zoom(d / this.pinch, (a.x + b.x) / 2, (a.y + b.y) / 2);
+          this.pinch = d;
+        } else if (this.gesture === "pan") {
+          this.cx -= (cur.x - prev.x) / this.k;
+          this.cy -= (cur.y - prev.y) / this.k;
+          this.limit();
+        } else if (this.gesture === "menu" && this.ring) {
+          this.ring.hover = this.itemAt(cur);
+        } else if (this.gesture === "size") {
+          this.aim = this.world(cur);
+        } else if (this.gesture === "node" && this.edit) {
+          this.edit.pts[this.edit.idx] = this.clampInBox(this.world(cur));
+        } else if (this.gesture === "arrow") {
+          this.arrowAim = this.clampInBox(this.world(cur));
+        }
+        this.redraw();
+      });
+      const up = (e) => {
+        if (!this.pts.has(e.pointerId)) return;
+        const alone = this.pts.size === 1, ok = e.type === "pointerup" && alone;
+        this.stopHold();
+        if (ok) {
+          if (this.gesture === "menu") this.pickFromRing();
+          else if (this.gesture === "size") this.finishSize();
+          else if (this.gesture === "node") this.finishNode();
+          else if (this.gesture === "arrow") this.finishArrow(this.clampInBox(this.world(at(e))));
+          else if (this.gesture === "pan" && !this.moved) this.click(at(e));
+        }
+        this.pts.delete(e.pointerId);
+        this.pinch = 0;
+        if (!this.pts.size) {
+          this.gesture = "none";
+          this.edit = null;
+          this.moving = null;
+          this.ring = null;
+          this.syncShape();
+          this.redraw();
+        }
+      };
+      this.canvas.addEventListener("pointerup", up);
+      this.canvas.addEventListener("pointercancel", up);
+      this.canvas.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const p = at(e);
+        this.zoom(Math.exp(-e.deltaY * 15e-4), p.x, p.y);
+        this.redraw();
+      }, { passive: false });
+      if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => {
+        this.resize();
+        this.draw();
+      }).observe(this.root);
+    }
+    /** Show the map of a village with the plan on it (call again whenever either, or what the player is doing, changes). */
+    show(tribe, plan2, ui) {
+      const changed = tribe !== this.tribe;
+      this.tribe = tribe;
+      this.plan = plan2;
+      this.ui = ui;
+      this.intel = this.sim.tribeIntel(tribe);
+      this.routes.clear();
+      for (const m of plan2?.missions ?? []) {
+        const s = this.sim.squadById(m.squad), start = this.sim.missionStart(m);
+        if (!s || !start) continue;
+        const go = m.path.length ? this.sim.routeTime(s, start, m.path) : null, from = m.path.length ? m.path[m.path.length - 1] : start;
+        this.routes.set(m.squad, { start, go, back: m.retreat.length ? this.sim.routeTime(s, from, m.retreat) : null });
+      }
+      this.canvas.style.cursor = ui.mode === "pan" ? "grab" : ui.mode === "trim" ? "pointer" : "crosshair";
+      if (changed) {
+        this.pop.hidden = true;
+        this.making = null;
+      }
+      this.syncShape();
+      if (!(ui.mode === "path" || ui.mode === "retreat") || this.listOf(ui.mode === "retreat").length) this.arrowAim = null;
+      this.resize();
+      if (changed) this.fit();
+      this.say();
+      this.draw();
+    }
+    /** Make the whole map fit the screen. */
+    fit() {
+      const i = this.intel;
+      if (!i) return;
+      const bw = i.box.x1 - i.box.x0, bh = i.box.y1 - i.box.y0;
+      this.k = clamp2(Math.min(this.W / bw, this.H / bh) * 0.96, MIN_K, MAX_K);
+      this.cx = (i.box.x0 + i.box.x1) / 2;
+      this.cy = (i.box.y0 + i.box.y1) / 2;
+      this.redraw();
+    }
+    zoomBy(f) {
+      this.zoom(f, this.W / 2, this.H / 2);
+      this.redraw();
+    }
+    resize() {
+      const w = this.root.clientWidth || 800, hh = this.root.clientHeight || 500, dpr = globalThis.devicePixelRatio || 1;
+      this.W = w;
+      this.H = hh;
+      if (this.canvas.width !== Math.round(w * dpr) || this.canvas.height !== Math.round(hh * dpr)) {
+        this.canvas.width = Math.round(w * dpr);
+        this.canvas.height = Math.round(hh * dpr);
+      }
+    }
+    /** Zoom by a factor, keeping the tile under the screen point where it is. */
+    zoom(f, sx, sy) {
+      const wx = this.cx + (sx - this.W / 2) / this.k, wy = this.cy + (sy - this.H / 2) / this.k;
+      this.k = clamp2(this.k * f, MIN_K, MAX_K);
+      this.cx = wx - (sx - this.W / 2) / this.k;
+      this.cy = wy - (sy - this.H / 2) / this.k;
+      this.limit();
+    }
+    /** Keep the middle of the screen on the map. */
+    limit() {
+      const i = this.intel;
+      if (i) {
+        this.cx = clamp2(this.cx, i.box.x0, i.box.x1);
+        this.cy = clamp2(this.cy, i.box.y0, i.box.y1);
+      }
+    }
+    redraw() {
+      if (this.queued) return;
+      this.queued = true;
+      const go = () => {
+        this.queued = false;
+        this.draw();
+      };
+      if (typeof requestAnimationFrame === "function") requestAnimationFrame(go);
+      else go();
+    }
+    sx(x) {
+      return (x - this.cx) * this.k + this.W / 2;
+    }
+    sy(y) {
+      return (y - this.cy) * this.k + this.H / 2;
+    }
+    world(p) {
+      return { x: this.cx + (p.x - this.W / 2) / this.k, y: this.cy + (p.y - this.H / 2) / this.k };
+    }
+    scr(p) {
+      return { x: this.sx(p.x), y: this.sy(p.y) };
+    }
+    inBox(w) {
+      const b = this.intel.box;
+      return w.x >= b.x0 && w.x < b.x1 && w.y >= b.y0 && w.y < b.y1;
+    }
+    // ---------------------------------------------------------------- the ring of formations
+    stopHold() {
+      if (this.hold !== null) {
+        clearTimeout(this.hold);
+        this.hold = null;
+      }
+    }
+    /** A formation is waiting for its drag (or its editing): the shape follows the pointer as soon as it moves, a mouse needing no button held. */
+    hover(p) {
+      const ui = this.ui, w = this.world(p);
+      if ((ui.mode === "path" || ui.mode === "retreat") && this.plan) {
+        if (!this.listOf(ui.mode === "retreat").length) {
+          this.arrowAim = this.clampInBox(w);
+          this.redraw();
+        }
+        return;
+      }
+      if (this.making) {
+        this.sizeFrom = this.making.at;
+        this.aim = w;
+      } else if (ui.mode === "edit" && this.deployOf(ui.modeSquad)) {
+        const dep = this.deployOf(ui.modeSquad);
+        if (dist(this.scr(dep.o), p) < 16) {
+          this.sizeFrom = dep.o;
+          this.aim = dep.p;
+        } else {
+          this.sizeFrom = dep.o;
+          this.aim = w;
+        }
+      } else return;
+      this.redraw();
+    }
+    /** Put the shape on show where nothing has been dragged yet: the origin of a formation just chosen, or the one being edited as it stands. */
+    syncShape() {
+      if (this.gesture === "size") return;
+      if (this.making) {
+        this.sizeFrom = this.making.at;
+        this.aim ?? (this.aim = this.making.at);
+        return;
+      }
+      const dep = this.ui.mode === "edit" ? this.deployOf(this.ui.modeSquad) : null;
+      this.sizeFrom = dep ? dep.o : null;
+      this.aim = dep ? dep.p : null;
+    }
+    deployOf(id) {
+      return this.plan?.missions.find((x) => x.squad === id)?.deploy ?? null;
+    }
+    openRing() {
+      this.hold = null;
+      if (this.gesture !== "pan" || this.moved || this.pts.size !== 1) return;
+      const press = this.downAt, edge = RING + ITEM + 10;
+      const centre = { x: clamp2(press.x, edge, Math.max(edge, this.W - edge)), y: clamp2(press.y, edge, Math.max(edge, this.H - edge)) };
+      this.ring = { press, centre, world: this.world(press), hover: -1 };
+      this.gesture = "menu";
+      this.pop.hidden = true;
+      this.redraw();
+    }
+    itemCentre(i) {
+      const a = -Math.PI / 2 + i * 2 * Math.PI / FORMATION_IDS.length, c = this.ring.centre;
+      return { x: c.x + Math.cos(a) * RING, y: c.y + Math.sin(a) * RING };
+    }
+    itemAt(p) {
+      for (let i = 0; i < FORMATION_IDS.length; i++) if (dist(p, this.itemCentre(i)) <= ITEM + 4) return i;
+      return -1;
+    }
+    /** The finger is lifted over an item: that formation is the one to size. Anywhere else, the ring closes. */
+    pickFromRing() {
+      const r = this.ring;
+      this.ring = null;
+      if (!r || r.hover < 0) return;
+      const kind = FORMATION_IDS[r.hover];
+      if (!this.sim.formationOpen(kind)) {
+        this.ev.onNotice(`C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EC3 d\xF9ng ${FORMATIONS[kind].name}`);
+        return;
+      }
+      this.making = { kind, at: r.world };
+      this.sizeFrom = r.world;
+      this.aim = r.world;
+      this.say();
+    }
+    /** The cells the drag makes right now, in the formation being shaped: a new one from the ring, or the one of the squad being put down again or stretched. */
+    shape() {
+      if (!this.aim || !this.sizeFrom || !this.intel) return null;
+      const mode = this.ui.mode, kind = this.making?.kind ?? (mode === "edit" ? this.sim.squadById(this.ui.modeSquad)?.formation : void 0);
+      if (!kind) return null;
+      let o = this.sizeFrom, p = this.aim;
+      const mv = this.moving;
+      if (mv) {
+        const dx = this.aim.x - mv.grab.x, dy = this.aim.y - mv.grab.y;
+        o = { x: mv.o0.x + dx, y: mv.o0.y + dy };
+        p = { x: mv.p0.x + dx, y: mv.p0.y + dy };
+      }
+      return { d: drawFormation(kind, o, p, this.intel.camp), kind, o, p };
+    }
+    /** The drag ends: the cells it made become the squad's, if there are 3 or more. Fewer is not allowed, and the formation stays to be dragged again. A tap on the origin calls it off. */
+    finishSize() {
+      const sh = this.shape(), fresh = !!this.making;
+      if (!sh || !this.moving && dist(sh.o, sh.p) < 1.5) {
+        this.making = null;
+        this.say();
+        return;
+      }
+      if (sh.d.cells.length < SQUAD_MIN) {
+        this.ev.onNotice(`C\u1EA7n \xEDt nh\u1EA5t ${SQUAD_MIN} \xF4: k\xE9o xa h\u01A1n (\u0111ang c\xF3 ${sh.d.cells.length})`);
+        return;
+      }
+      this.making = null;
+      this.say();
+      if (fresh) this.ev.onNew(sh.kind, sh.o, sh.p, sh.d.cells, sh.d.heading);
+      else this.ev.onReshape(this.ui.modeSquad, sh.o, sh.p, sh.d.cells, sh.d.heading);
+    }
+    say() {
+      const m = this.making;
+      this.note.hidden = !m;
+      if (!m) return;
+      const how = {
+        line: "c\xE1c \xF4 x\u1EBFp th\xE0nh h\xE0ng t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF",
+        circle: "\u0111i\u1EC3m \u0111\xE3 ch\u1ECDn l\xE0 t\xE2m, kho\u1EA3ng k\xE9o l\xE0 b\xE1n k\xEDnh",
+        wedge: "\u0111i\u1EC3m \u0111\xE3 ch\u1ECDn l\xE0 m\u0169i nh\u1ECDn, hai c\xE1nh ch\u1EA1y v\u1EC1 ph\xEDa con tr\u1ECF",
+        horns: "m\u1ED9t h\xE0ng t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF, hai \u0111\u1EA7u cong ra tr\u01B0\u1EDBc",
+        scatter: "c\xE1c \xF4 r\u1EA3i k\xEDn khung t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF",
+        ambush: "hai h\xE0ng so le t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF"
+      };
+      this.note.replaceChildren(
+        h("b", { text: FORMATIONS[m.kind].name }),
+        h("span", { text: `K\xE9o ra t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn: ${how[m.kind]} (${SQUAD_MIN} \u0111\u1EBFn ${SQUAD_MAX} \xF4; d\u01B0\u1EDBi ${SQUAD_MIN} \xF4 l\xE0 \xF4 \u0111\u1ECF, kh\xF4ng t\u1EA1o \u0111\u01B0\u1EE3c). B\u1EA5m \u0111\u1EC3 ch\u1ED1t; b\u1EA5m ngay \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn l\xE0 h\u1EE7y. L\xEDnh \u0111\u01B0a v\xE0o \u0111\u1ED9i sau.` }),
+        h("button", { class: "sm", text: "H\u1EE7y", onclick: () => {
+          this.making = null;
+          this.say();
+          this.redraw();
+        } })
+      );
+    }
+    // ---------------------------------------------------------------- pressing
+    click(p) {
+      if (this.ui.mode === "trim") {
+        const cs = this.cellsOf(this.ui.modeSquad), at = cs.map((c, i) => ({ i, d: dist(p, this.scr(c)) })).filter((x) => x.d < Math.max(14, this.k * 0.7)).sort((a, b) => a.d - b.d)[0];
+        if (at) this.ev.onTrim(this.ui.modeSquad, at.i);
+        return;
+      }
+      const near2 = (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)));
+      if (near2) {
+        this.pop.hidden = true;
+        this.ev.onSelect(near2.squad);
+        return;
+      }
+      const hit = this.targets.map((t) => ({ t, d: Math.hypot(t.x - p.x, t.y - p.y) })).filter((x) => x.d <= x.t.r).sort((a, b) => a.d - b.d)[0];
+      if (hit) {
+        this.showPop(p, hit.t.title, hit.t.text);
+        return;
+      }
+      this.pop.hidden = true;
+      this.ev.onSelect(-1);
+    }
+    showPop(p, title, text) {
+      this.pop.replaceChildren(h("b", { text: title }), h("p", { class: "sub", text }), h("button", { class: "sm", text: "\u0110\xF3ng", onclick: () => {
+        this.pop.hidden = true;
+      } }));
+      this.pop.style.left = `${clamp2(p.x + 14, 8, Math.max(8, this.W - 280))}px`;
+      this.pop.style.top = `${clamp2(p.y + 14, 8, Math.max(8, this.H - 150))}px`;
+      this.pop.hidden = false;
+    }
+    // ---------------------------------------------------------------- the arrow
+    clampInBox(w) {
+      const b = this.intel?.box;
+      return b ? { x: clamp2(w.x, b.x0 + 0.5, b.x1 - 0.5), y: clamp2(w.y, b.y0 + 0.5, b.y1 - 0.5) } : w;
+    }
+    /** The points of the arrow (or of the way back) of the squad being drawn for. */
+    listOf(retreat) {
+      const m = this.plan?.missions.find((x) => x.squad === this.ui.modeSquad);
+      return (retreat ? m?.retreat : m?.path) ?? [];
+    }
+    /** Where a squad's arrow starts now, the arrow being drawn or dragged counting: a circle's starts on its rim on the side the arrow points to. */
+    startOf(m) {
+      let toward;
+      if (this.ui.mode === "path" && m.squad === this.ui.modeSquad) toward = this.edit && !this.edit.retreat ? this.edit.pts[0] : !m.path.length ? this.arrowAim ?? void 0 : void 0;
+      return this.sim.missionStart(m, toward);
+    }
+    /** Where the arrow (or the way back) starts: the middle of the squad, and for the way back the end of the arrow. */
+    baseOf(retreat) {
+      const mission = this.plan?.missions.find((x) => x.squad === this.ui.modeSquad), start = mission ? this.startOf(mission) : null, path = this.listOf(false);
+      return retreat && path.length ? path[path.length - 1] : start;
+    }
+    /** The handle of the arrow under a screen point: a point of it (the last is the head), or the middle of one of its legs. */
+    handleAt(p) {
+      const retreat = this.ui.mode === "retreat", pts = this.listOf(retreat), base = this.baseOf(retreat);
+      if (!base || !pts.length) return null;
+      const nodes = [base, ...pts];
+      for (let i = pts.length - 1; i >= 0; i--) if (dist(p, this.scr(nodes[i + 1])) <= 16) return { kind: "vertex", idx: i };
+      for (let k = 0; k < pts.length; k++) {
+        const a = this.scr(nodes[k]), b = this.scr(nodes[k + 1]);
+        if (dist(p, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }) <= 14) return { kind: "mid", idx: k };
+      }
+      return null;
+    }
+    /** A handle is let go: the arrow takes its new shape (it becomes solid). A press that did not move changes nothing. */
+    finishNode() {
+      const e = this.edit;
+      if (!e || !this.moved) return;
+      this.ev.onPath(this.ui.modeSquad, e.pts, e.retreat);
+    }
+    /** The first leg of an arrow is placed where the pointer was let go. */
+    finishArrow(w) {
+      const base = this.baseOf(this.ui.mode === "retreat");
+      if (base && dist(base, w) < 1) return;
+      this.ev.onPath(this.ui.modeSquad, [w], this.ui.mode === "retreat");
+    }
+    // ---------------------------------------------------------------- drawing
+    groundFor(i) {
+      const key = `${i.tribe}:${i.level}`;
+      if (key !== this.groundKey) {
+        this.groundKey = key;
+        this.ground.width = (i.box.x1 - i.box.x0) * T;
+        this.ground.height = (i.box.y1 - i.box.y0) * T;
+        const g = this.ground.getContext("2d");
+        if (g && i.level >= 2) paintGround(g, this.sim, i);
+      }
+      return this.ground;
+    }
+    draw() {
+      const ctx2 = this.canvas.getContext("2d"), i = this.intel, { plan: plan2 } = this;
+      if (!ctx2) return;
+      const dpr = this.W ? this.canvas.width / this.W : 1;
+      ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx2.fillStyle = "#1a1510";
+      ctx2.fillRect(0, 0, this.W, this.H);
+      this.targets = [];
+      if (!i) {
+        label(ctx2, "Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 l\xE0ng n\xE0y", this.W / 2, this.H / 2, 16);
+        return;
+      }
+      const k = this.k, u = clamp2(k / 12, 0.8, 2.4), { box } = i;
+      const bx = this.sx(box.x0), by = this.sy(box.y0), bw = (box.x1 - box.x0) * k, bh = (box.y1 - box.y0) * k;
+      ctx2.fillStyle = "#d9c9a0";
+      ctx2.fillRect(bx, by, bw, bh);
+      if (i.level >= 2) {
+        ctx2.imageSmoothingEnabled = k < T;
+        ctx2.drawImage(this.groundFor(i), bx, by, bw, bh);
+      }
+      ctx2.strokeStyle = "rgba(0,0,0,0.16)";
+      ctx2.lineWidth = 1;
+      ctx2.beginPath();
+      for (let x = box.x0; x <= box.x1; x += 6) {
+        ctx2.moveTo(this.sx(x), by);
+        ctx2.lineTo(this.sx(x), by + bh);
+      }
+      for (let y = box.y0; y <= box.y1; y += 6) {
+        ctx2.moveTo(bx, this.sy(y));
+        ctx2.lineTo(bx + bw, this.sy(y));
+      }
+      ctx2.stroke();
+      ctx2.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx2.lineWidth = 2;
+      ctx2.strokeRect(bx, by, bw, bh);
+      ctx2.setLineDash([6, 5]);
+      ctx2.strokeStyle = "rgba(255,255,255,0.8)";
+      ctx2.lineWidth = 1.5;
+      ctx2.beginPath();
+      ctx2.arc(this.sx(i.camp.x), this.sy(i.camp.y), i.yard * k, 0, Math.PI * 2);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+      for (const s of i.structures) this.work(ctx2, s, u);
+      for (const p of i.people) this.person(ctx2, p, u);
+      if (i.toUs) {
+        const at = (d) => ({ x: this.sx(i.camp.x + i.toUs.x * d), y: this.sy(i.camp.y + i.toUs.y * d) }), a = at(ARROW_FROM), b = at(i.yard + 3);
+        this.arrowhead(ctx2, a.x, a.y, b.x, b.y, "#ffffff", 3, u);
+        label(ctx2, "\u0110\u01B0\u1EDDng v\xE0o", a.x, a.y - 8, 11 * u);
+      }
+      if (plan2?.kind === "attack") for (const m of plan2.missions) this.squad(ctx2, m.squad, u);
+      this.preview(ctx2, u);
+      this.drawRing(ctx2);
+    }
+    work(ctx2, s, u) {
+      const px = this.sx(s.x), py = this.sy(s.y), pw = s.w * this.k, ph = s.h * this.k, cx = px + pw / 2, cy = py + ph / 2;
+      ctx2.lineWidth = 1.5;
+      ctx2.strokeStyle = "#1a1208";
+      ctx2.fillStyle = WORK_COLOR[s.kind] ?? "#8a6a3a";
+      if (s.kind === "fire") {
+        const r = Math.max(pw, ph) / 2;
+        ctx2.fillStyle = "#6a6358";
+        ctx2.beginPath();
+        ctx2.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.stroke();
+        ctx2.fillStyle = "#f08a24";
+        ctx2.beginPath();
+        ctx2.moveTo(cx, cy - r * 0.8);
+        ctx2.quadraticCurveTo(cx + r * 0.6, cy, cx, cy + r * 0.5);
+        ctx2.quadraticCurveTo(cx - r * 0.6, cy, cx, cy - r * 0.8);
+        ctx2.fill();
+        ctx2.fillStyle = "#ffe27a";
+        ctx2.beginPath();
+        ctx2.arc(cx, cy + r * 0.1, r * 0.25, 0, Math.PI * 2);
+        ctx2.fill();
+      } else if (s.kind === "tower") {
+        ctx2.beginPath();
+        ctx2.moveTo(cx, py - 2);
+        ctx2.lineTo(px + pw + 2, py + ph);
+        ctx2.lineTo(px - 2, py + ph);
+        ctx2.closePath();
+        ctx2.fill();
+        ctx2.stroke();
+      } else if (s.kind === "pile") {
+        ctx2.fillRect(px, py, pw, ph);
+        ctx2.strokeRect(px, py, pw, ph);
+        ctx2.strokeStyle = "rgba(40,25,10,0.7)";
+        ctx2.beginPath();
+        ctx2.moveTo(px, py + ph / 2);
+        ctx2.lineTo(px + pw, py + ph / 2);
+        ctx2.moveTo(px + pw / 2, py);
+        ctx2.lineTo(px + pw / 2, py + ph);
+        ctx2.stroke();
+      } else {
+        ctx2.fillRect(px, py, pw, ph);
+        ctx2.strokeRect(px, py, pw, ph);
+      }
+      this.targets.push({ x: cx, y: cy, r: Math.max(pw, ph) / 2 + 6 * u, title: s.label, text: s.detail });
+    }
+    person(ctx2, p, u) {
+      const x = this.sx(p.x), y = this.sy(p.y), i = this.intel;
+      if (p.leader) {
+        ctx2.strokeStyle = "#ffd23a";
+        ctx2.lineWidth = 2.5;
+        ctx2.beginPath();
+        ctx2.arc(x, y, 7.5 * u, 0, Math.PI * 2);
+        ctx2.stroke();
+      }
+      drawMark(ctx2, p.mark, x, y, u);
+      const armed = p.weapon ? `C\u1EA7m ${WEAPONS[p.weapon]?.name ?? p.weapon}. ` : "", old = "\u0110\u1EE9ng \u0111\xE2y l\xFAc trinh s\xE1t t\u1EDBi; gi\u1EDD c\xF3 th\u1EC3 \u0111\xE3 \u0111i ch\u1ED7 kh\xE1c.";
+      const text = p.leader ? `${armed}Th\u1EE7 l\u0129nh c\u1EE7a ${i.name}: h\u1EA1 \u0111\u01B0\u1EE3c \xF4ng ta th\xEC l\xE0ng d\u1EC5 khu\u1EA5t ph\u1EE5c. ${old}` : p.mark === "unknown" ? `Trinh s\xE1t th\u1EA5y b\xF3ng ng\u01B0\u1EDDi nh\u01B0ng ch\u01B0a r\xF5 l\xEDnh hay d\xE2n: c\u1EA7n b\u1EA3n \u0111\u1ED3 c\u1EA5p 3. ${old}` : `${armed}${old}`;
+      this.targets.push({ x, y, r: 9 * u, title: p.leader ? `${MARK_NAME[p.mark]} \xB7 Th\u1EE7 l\u0129nh` : MARK_NAME[p.mark], text });
+    }
+    arrowhead(ctx2, x0, y0, x1, y1, color, w, u) {
+      const a = Math.atan2(y1 - y0, x1 - x0), s = 10 * u;
+      ctx2.strokeStyle = ctx2.fillStyle = color;
+      ctx2.lineWidth = w;
+      ctx2.beginPath();
+      ctx2.moveTo(x0, y0);
+      ctx2.lineTo(x1, y1);
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(x1, y1);
+      ctx2.lineTo(x1 - s * Math.cos(a - 0.45), y1 - s * Math.sin(a - 0.45));
+      ctx2.lineTo(x1 - s * Math.cos(a + 0.45), y1 - s * Math.sin(a + 0.45));
+      ctx2.closePath();
+      ctx2.fill();
+    }
+    /** A polyline in screen space with an arrowhead at its end, outlined so it shows on any ground. Faint and dashed while it is being dragged. */
+    route(ctx2, pts, color, u, style) {
+      if (pts.length < 2) return;
+      const trace = () => {
+        ctx2.beginPath();
+        ctx2.moveTo(pts[0].x, pts[0].y);
+        for (const p of pts.slice(1)) ctx2.lineTo(p.x, p.y);
+      };
+      const faint = style === "faint", w = (style === "back" ? 3 : 4.5) * u * 0.7;
+      ctx2.lineJoin = "round";
+      ctx2.lineCap = "round";
+      ctx2.globalAlpha = faint ? 0.45 : 1;
+      ctx2.setLineDash(faint ? [10, 8] : []);
+      ctx2.strokeStyle = "rgba(20,12,4,0.7)";
+      ctx2.lineWidth = w + 3;
+      trace();
+      ctx2.stroke();
+      ctx2.strokeStyle = style === "back" ? "#bfe3ff" : color;
+      ctx2.lineWidth = w;
+      trace();
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+      const a = pts[pts.length - 2], b = pts[pts.length - 1], head = 13 * u, ang = Math.atan2(b.y - a.y, b.x - a.x);
+      ctx2.fillStyle = style === "back" ? "#bfe3ff" : color;
+      ctx2.strokeStyle = "rgba(20,12,4,0.85)";
+      ctx2.lineWidth = 1.5;
+      ctx2.beginPath();
+      ctx2.moveTo(b.x + Math.cos(ang) * head * 0.5, b.y + Math.sin(ang) * head * 0.5);
+      ctx2.lineTo(b.x - Math.cos(ang - 0.6) * head, b.y - Math.sin(ang - 0.6) * head);
+      ctx2.lineTo(b.x - Math.cos(ang + 0.6) * head, b.y - Math.sin(ang + 0.6) * head);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.stroke();
+      ctx2.globalAlpha = 1;
+    }
+    /** The handles of the arrow being drawn: a dot at each point (the head bigger), and a small ring in the middle of every leg that bends it when pulled. */
+    handles(ctx2, nodes, color, u) {
+      for (let k = 0; k < nodes.length - 1; k++) {
+        const a = this.scr(nodes[k]), b = this.scr(nodes[k + 1]);
+        ctx2.fillStyle = "rgba(255,255,255,0.55)";
+        ctx2.strokeStyle = color;
+        ctx2.lineWidth = 2;
+        ctx2.beginPath();
+        ctx2.arc((a.x + b.x) / 2, (a.y + b.y) / 2, 5 * u, 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.stroke();
+      }
+      for (let i = 1; i < nodes.length; i++) {
+        const q = this.scr(nodes[i]), head = i === nodes.length - 1;
+        ctx2.fillStyle = "#ffffff";
+        ctx2.strokeStyle = color;
+        ctx2.lineWidth = 3;
+        ctx2.beginPath();
+        ctx2.arc(q.x, q.y, (head ? 8 : 6.5) * u, 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.stroke();
+      }
+    }
+    /** The cells of a squad as placed. */
+    cellsOf(id) {
+      return this.plan?.missions.find((x) => x.squad === id)?.deploy?.cells ?? [];
+    }
+    /** Cells of a formation as squares one tile wide: the foot soldiers in front, the archers behind (the soldier's mark inside once the square is big enough). */
+    cells(ctx2, slots, arms, color, u, selected, ghost = false) {
+      const side = Math.max(6, this.k * 0.88);
+      ctx2.globalAlpha = ghost ? 0.4 : 1;
+      slots.forEach((c, j) => {
+        const q = this.scr(c);
+        ctx2.fillStyle = color;
+        ctx2.fillRect(q.x - side / 2, q.y - side / 2, side, side);
+        ctx2.strokeStyle = selected ? "#ffffff" : "#1a1208";
+        ctx2.lineWidth = selected ? 2.5 : 1.5;
+        ctx2.strokeRect(q.x - side / 2, q.y - side / 2, side, side);
+        if (side >= 12) drawMark(ctx2, arms[j] ?? "foot", q.x, q.y, Math.min(u, side / 12), "rgba(255,255,255,0.9)");
+      });
+      ctx2.globalAlpha = 1;
+    }
+    /** A circle whose arrow points into the ring: each soldier is shown marching to the middle, and the label says so. */
+    converge(ctx2, m, first, color, u) {
+      const d = m.deploy;
+      if (!d || !first || (d.kind ?? this.sim.squadById(m.squad)?.formation) !== "circle") return;
+      const r = dist(d.o, d.p);
+      if (dist(d.o, first) >= r) return;
+      const c = this.scr(d.o);
+      ctx2.strokeStyle = color;
+      ctx2.fillStyle = color;
+      ctx2.lineWidth = 2.5 * u * 0.7;
+      ctx2.globalAlpha = 0.95;
+      for (const q of d.cells) {
+        const a = this.scr(q), e = { x: a.x + (c.x - a.x) * 0.6, y: a.y + (c.y - a.y) * 0.6 }, ang = Math.atan2(e.y - a.y, e.x - a.x), s = 6 * u;
+        ctx2.beginPath();
+        ctx2.moveTo(a.x, a.y);
+        ctx2.lineTo(e.x, e.y);
+        ctx2.stroke();
+        ctx2.beginPath();
+        ctx2.moveTo(e.x + Math.cos(ang) * s, e.y + Math.sin(ang) * s);
+        ctx2.lineTo(e.x - Math.cos(ang - 0.6) * s, e.y - Math.sin(ang - 0.6) * s);
+        ctx2.lineTo(e.x - Math.cos(ang + 0.6) * s, e.y - Math.sin(ang + 0.6) * s);
+        ctx2.closePath();
+        ctx2.fill();
+      }
+      ctx2.globalAlpha = 1;
+      label(ctx2, "Ti\u1EBFn v\xE0o t\xE2m", c.x, c.y + 4 * u, 12 * u, "#ffe27a");
+    }
+    /** One squad on the map: its cells, the arrow it follows with the time of each leg, and the way back. */
+    squad(ctx2, id, u) {
+      const { sim: sim2 } = this, s = sim2.squadById(id), m = this.plan?.missions.find((x) => x.squad === id);
+      if (!s || !m) return;
+      const sel = this.ui.selected === id, color = s.color, r = this.routes.get(id);
+      const drawing = (this.ui.mode === "path" || this.ui.mode === "retreat") && this.ui.modeSquad === id, back = this.ui.mode === "retreat";
+      const dragged = (retreat) => drawing && this.edit && this.edit.retreat === retreat ? this.edit.pts : null;
+      const goPts = dragged(false) ?? m.path, backPts = dragged(true) ?? m.retreat;
+      const pending2 = drawing && this.arrowAim && !this.listOf(back).length ? this.arrowAim : null;
+      const start = this.startOf(m);
+      if (start && (goPts.length || pending2 && !back)) {
+        const list = goPts.length ? goPts : [pending2], nodes = [start, ...list], pts = nodes.map((q) => this.scr(q));
+        const faint = !!dragged(false) || !goPts.length && !!pending2, t = faint ? sim2.routeTime(s, start, list) : r?.go;
+        this.route(ctx2, pts, color, u, faint ? "faint" : "solid");
+        t?.legs.forEach((tt, j) => {
+          const p = pts[j], q = pts[j + 1], bad = t.blocked[j];
+          label(ctx2, `${fmtShort(tt)}${bad ? " \u26A0" : ""}`, (p.x + q.x) / 2, (p.y + q.y) / 2 - 12 * u, 11 * u, bad ? "#ff9a8a" : "#fff");
+        });
+        const end = pts[pts.length - 1];
+        if (t) label(ctx2, `t\u1EDBi sau ${fmtShort(t.total)}`, end.x, end.y - 16 * u, 11 * u, "#ffe27a");
+        if (drawing && !back && goPts.length) this.handles(ctx2, nodes, color, u);
+        this.converge(ctx2, m, goPts.length ? goPts[0] : pending2, color, u);
+      }
+      const base = goPts.length ? goPts[goPts.length - 1] : start;
+      if (base && (backPts.length || pending2 && back)) {
+        const list = backPts.length ? backPts : [pending2], nodes = [base, ...list], pts = nodes.map((q) => this.scr(q));
+        const faint = !!dragged(true) || !backPts.length && !!pending2, t = faint ? sim2.routeTime(s, base, list) : r?.back;
+        this.route(ctx2, pts, color, u, faint ? "faint" : "back");
+        const e = pts[pts.length - 1];
+        label(ctx2, `r\xFAt${t ? ` ${fmtShort(t.total)}` : ""}`, e.x, e.y - 16 * u, 11 * u, "#bfe3ff");
+        if (drawing && back && backPts.length) this.handles(ctx2, nodes, color, u);
+      }
+      if (m.deploy) {
+        const units = sim2.squadUnits(s).sort((a, b) => (armOfWeapon(a.weapon) === "archer" ? 1 : 0) - (armOfWeapon(b.weapon) === "archer" ? 1 : 0) || a.id - b.id);
+        this.cells(ctx2, m.deploy.cells, units.map((v) => armOfWeapon(v.weapon)), color, u, sel);
+        const c = this.scr(r?.start ?? m.deploy.cells[0]), top = Math.min(...m.deploy.cells.map((q) => this.sy(q.y)));
+        label(ctx2, `${s.name} \xB7 ${m.deploy.cells.length} \xF4${units.length ? ` \xB7 ${units.length} l\xEDnh` : ""}`, c.x, top - 12 * u, 12 * u, sel ? "#ffe27a" : "#fff");
+        if (this.ui.mode === "trim" && this.ui.modeSquad === id) {
+          ctx2.strokeStyle = "#ffffff";
+          ctx2.lineWidth = 2.5;
+          ctx2.beginPath();
+          for (const q of m.deploy.cells) {
+            const w = this.scr(q), e = Math.max(3, this.k * 0.28);
+            ctx2.moveTo(w.x - e, w.y - e);
+            ctx2.lineTo(w.x + e, w.y + e);
+            ctx2.moveTo(w.x + e, w.y - e);
+            ctx2.lineTo(w.x - e, w.y + e);
+          }
+          ctx2.stroke();
+        }
+      }
+    }
+    /** What is being made right now: the squares the drag makes for the formation, from the point pressed to the finger. */
+    preview(ctx2, u) {
+      const sh = this.shape();
+      if (sh) {
+        const o = this.scr(sh.o), e = this.scr(sh.p), shown = sh.d.cells, ok = shown.length >= SQUAD_MIN, s = this.making ? void 0 : this.sim.squadById(this.ui.modeSquad);
+        ctx2.setLineDash([5, 5]);
+        ctx2.strokeStyle = "rgba(255,255,255,0.85)";
+        ctx2.lineWidth = 2;
+        ctx2.beginPath();
+        if (sh.kind === "circle") ctx2.arc(o.x, o.y, dist(o, e), 0, Math.PI * 2);
+        else {
+          ctx2.moveTo(o.x, o.y);
+          ctx2.lineTo(e.x, e.y);
+        }
+        ctx2.stroke();
+        ctx2.setLineDash([]);
+        this.cells(ctx2, shown, Array(shown.length).fill("foot"), ok ? s?.color ?? "#ffd23a" : "#d9534f", u, true, true);
+        ctx2.fillStyle = "#fff";
+        ctx2.beginPath();
+        ctx2.arc(o.x, o.y, this.ui.mode === "edit" ? 6 : 4, 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.strokeStyle = "#1a1208";
+        ctx2.lineWidth = 1.5;
+        ctx2.stroke();
+        label(ctx2, ok ? `${shown.length} \xF4` : `${shown.length} \xF4: c\u1EA7n \xEDt nh\u1EA5t ${SQUAD_MIN}`, e.x, e.y - 16 * u, 13 * u, ok ? "#ffe27a" : "#ff9a8a");
+      }
+    }
+    /** The ring of formations, drawn over everything while the finger is held; the one under the finger lights up and tells what it is. */
+    drawRing(ctx2) {
+      const r = this.ring;
+      if (!r) return;
+      ctx2.fillStyle = "rgba(0,0,0,0.3)";
+      ctx2.fillRect(0, 0, this.W, this.H);
+      ctx2.strokeStyle = "rgba(255,255,255,0.45)";
+      ctx2.lineWidth = 2;
+      ctx2.beginPath();
+      ctx2.arc(r.centre.x, r.centre.y, RING, 0, Math.PI * 2);
+      ctx2.stroke();
+      ctx2.fillStyle = "#fff";
+      ctx2.beginPath();
+      ctx2.arc(r.press.x, r.press.y, 6, 0, Math.PI * 2);
+      ctx2.fill();
+      ctx2.strokeStyle = "#1a1208";
+      ctx2.lineWidth = 2;
+      ctx2.stroke();
+      FORMATION_IDS.forEach((f, i) => {
+        const c = this.itemCentre(i), open = this.sim.formationOpen(f), hot2 = i === r.hover;
+        ctx2.fillStyle = hot2 ? open ? "#ffd23a" : "#a05a50" : open ? "rgba(40,30,20,0.94)" : "rgba(40,30,20,0.62)";
+        ctx2.strokeStyle = hot2 ? "#fff" : "rgba(255,255,255,0.75)";
+        ctx2.lineWidth = hot2 ? 3 : 2;
+        ctx2.beginPath();
+        ctx2.arc(c.x, c.y, ITEM + (hot2 ? 4 : 0), 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.stroke();
+        glyph(ctx2, f, c.x, c.y - 9, hot2 ? "#1a1208" : open ? "#fff" : "#9a9080");
+        label(ctx2, FORMATIONS[f].name, c.x, c.y + 21, 11, hot2 ? "#1a1208" : open ? "#fff" : "#9a9080");
+      });
+      const hot = r.hover >= 0 ? FORMATION_IDS[r.hover] : null;
+      if (hot) label(ctx2, this.sim.formationOpen(hot) ? FORMATIONS[hot].note : `C\u1EA7n nghi\xEAn c\u1EE9u: ${FORMATIONS[hot].name}`, this.W / 2, this.H - 24, 13);
+    }
+  };
+  function planMapInfo(sim2, tribeId) {
+    const i = sim2.tribeIntel(tribeId);
+    if (!i) return h("p", { class: "sub", text: "Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 l\xE0ng n\xE0y: c\u1EED trinh s\xE1t \u0111\u1EC3 v\u1EBD." });
+    const age = i.accuracy >= 0.95 ? "b\xE1o c\xE1o m\u1EDBi" : i.accuracy >= 0.7 ? "b\xE1o c\xE1o h\u01A1i c\u0169" : i.accuracy >= 0.4 ? "b\xE1o c\xE1o \u0111\xE3 c\u0169" : "b\xE1o c\xE1o r\u1EA5t c\u0169";
+    const s = i.soldiers, army = s ? `L\xEDnh: ${s.foot} ${ARM_NAME.foot.toLowerCase()}, ${s.archer} ${ARM_NAME.archer.toLowerCase()}, ${s.cavalry} ${ARM_NAME.cavalry.toLowerCase()} \xB7 ` : "";
+    const items = [];
+    for (const w of i.structures) if (!items.some((x) => x[1] === w.label)) items.push([WORK_COLOR[w.kind] ?? "#8a6a3a", w.label]);
+    for (const m of new Set(i.people.map((p) => p.mark))) items.push([MARK_COLOR[m], MARK_NAME[m]]);
+    if (i.people.some((p) => p.leader)) items.push(["#ffd23a", "Th\u1EE7 l\u0129nh (v\xF2ng v\xE0ng)"]);
+    const legend = h("div", { class: "btns", style: "gap:8px;flex-wrap:wrap" }, ...items.map(([color, text]) => h(
+      "small",
+      {},
+      h("span", { style: `display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;background:${color};border:1px solid #1a1208` }),
+      text
+    )));
+    return h(
+      "div",
+      { style: "display:grid;gap:4px" },
+      h("div", { class: "nm" }, h("b", { text: `B\u1EA3n \u0111\u1ED3 ${i.name}` }), h("small", { text: `${army}kho\u1EA3ng ${i.population} ng\u01B0\u1EDDi \xB7 ${age}${i.gaps ? " \xB7 c\xF2n h\u1EDF" : ""}` })),
+      h("small", { class: "sub", text: "Nh\u1EA5n gi\u1EEF m\u1ED9t \u0111i\u1EC3m tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 l\u1EADp \u0111\u1ED9i. B\u1EA5m v\xE0o l\u1EEDa, kho, l\xEDnh \u0111\u1EC3 xem ch\xFA th\xEDch." }),
+      h("details", {}, h("summary", { text: "Ch\xFA gi\u1EA3i v\xE0 c\u1EA5p b\u1EA3n \u0111\u1ED3" }), legend, h("small", { class: "sub", text: `V\xF9ng v\u1EBD: khu tr\u1EA1i v\xE0 24 \xF4 xung quanh. ${LEVEL_NOTE[i.level]}` }))
+    );
+  }
+
+  // src/ui/warpanel.ts
+  var TABS2 = [["maps", "Trinh s\xE1t, b\u1EA3n \u0111\u1ED3"], ["plan", "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"], ["defense", "Ph\xF2ng th\u1EE7"], ["log", "Nh\u1EADt k\xFD tr\u1EADn"]];
+  var STANCE_NAME = { fight: "\u0110\xE1nh", evade: "N\xE9, ch\u1EC9 \u0111i", hold: "Gi\u1EEF y\xEAn", shoot: "Ch\u1EC9 b\u1EAFn" };
+  var POST_NAME = { gate: "Gi\u1EEF c\u1ED5ng", fence: "\u0110\u1EE9ng sau h\xE0ng r\xE0o", tower: "L\xEAn ch\xF2i canh", reserve: "Ph\u1EA3n k\xEDch (v\u1EC1 l\u1EEDa)", fire: "Quanh \u0111\u1ED1ng l\u1EEDa" };
+  var CARD_NAME = { go: "Xu\u1EA5t ph\xE1t", advance: "Ti\u1EBFn", hold: "Gi\u1EEF", formation: "\u0110\u1ED5i tr\u1EADn", attack: "T\u1EA5n c\xF4ng m\u1EE5c ti\xEAu", shoot: "B\u1EAFn", retreat: "R\xFAt", signal: "Ph\xE1t t\xEDn hi\u1EC7u" };
+  var CARD_KINDS = ["go", "advance", "hold", "formation", "shoot", "retreat"];
+  var WITHDRAW = [0, 0.2, 0.35, 0.5, 0.7];
+  var TIMES = [0, 30, 60, 120, 240, 480];
+  var STANCE_ICON = { fight: "\u2694", evade: "\u{1F463}", hold: "\u{1F6E1}", shoot: "\u{1F3F9}" };
+  var STEP_NAME = { action: "H\xE0nh \u0111\u1ED9ng", start: "B\u1EAFt \u0111\u1EA7u", when: "Gi\u1EDD \u0111\xE1nh", after: "Ch\u1EDD \u0111\u1ED9i", cards: "Th\u1EBB l\u1EC7nh", retreat: "R\xFAt lui", overview: "T\u1ED5ng k\u1EBFt" };
+  var STANCE_NOTE = { fight: "Giao chi\u1EBFn v\u1EDBi k\u1EBB \u0111\u1ECBch g\u1EB7p tr\xEAn \u0111\u01B0\u1EDDng", evade: "\u0110i t\u1EDBi n\u01A1i, kh\xF4ng \u0111\xE1nh tr\u1EA3", hold: "T\u1EDBi n\u01A1i r\u1ED3i \u0111\u1EE9ng canh gi\u1EEF ch\u1ED7", shoot: "Cung th\u1EE7 b\u1EAFn, b\u1ED9 binh \u0111\u1EE9ng y\xEAn" };
+  var timeChip = (t) => t === 0 ? "Ngay" : t < 60 ? `${t} gi\xE2y` : `${t / 60} ph\xFAt`;
+  function select(opts, cur, onPick) {
+    const el = document.createElement("select");
+    for (const o of opts) {
+      const op = document.createElement("option");
+      op.value = o.v;
+      op.textContent = o.label;
+      op.disabled = !!o.disabled;
+      if (o.v === cur) op.selected = true;
+      el.append(op);
+    }
+    el.value = cur;
+    el.addEventListener("change", () => onPick(el.value));
+    return el;
+  }
+  var WarPanel = class {
+    constructor(c) {
+      this.c = c;
+      this.root = h("div", { class: "page" });
+      this.tab = "maps";
+      this.body = h("div");
+      this.tabBtns = /* @__PURE__ */ new Map();
+      this.key = "";
+      /** The village whose map is open full-screen for planning ('' when none). */
+      this.openTribe = "";
+      this.full = h("div", { class: "modal planfull", hidden: true });
+      this.fullTitle = h("b");
+      this.fullState = h("span");
+      this.info = h("div", { class: "pinfo" });
+      this.card = h("div", { class: "pcard", hidden: true });
+      /** The orders of the chosen squad are open on the map, and its "Đổi trận" row with them. */
+      this.orderOpen = false;
+      this.formRow = false;
+      /** The step of the order shown on the card, and the squad it is for. */
+      this.step = "action";
+      this.cardSquad = -1;
+      /** Squads whose orders have already opened by themselves after their first arrow. */
+      this.ordered = /* @__PURE__ */ new Set();
+      /** The soldiers of the chosen squad are on show (instead of its orders), the list of soldiers to add is open, and the ones ticked in it. */
+      this.rosterOpen = false;
+      this.addOpen = false;
+      this.rosterSquad = -1;
+      this.picked = /* @__PURE__ */ new Set();
+      this.roster = h("div", { class: "pcard proster", hidden: true });
+      /** The squad whose "Xóa đội" was pressed once: it asks to be pressed again. */
+      this.confirmDel = -1;
+      /** The squad chosen on the map, and what a drag on the map draws for it. */
+      this.sel = -1;
+      this.mode = "pan";
+      this.modeSquad = -1;
+      this.bar = h("div", { class: "pact", hidden: true });
+      this.newLevel = {};
+      const bar = h("div", { class: "btns tabs" });
+      for (const [t, label2] of TABS2) {
+        const b = h("button", { class: "sm", text: label2, pressed: t === this.tab, onclick: () => {
+          this.tab = t;
+          this.key = "";
+          this.update();
+        } });
+        this.tabBtns.set(t, b);
+        bar.append(b);
+      }
+      this.root.append(hint("L\u1EC1u h\u1ECDp chi\u1EBFn", "C\u1EED trinh s\xE1t v\u1EBD b\u1EA3n \u0111\u1ED3 l\xE0ng \u0111\u1ECBch, r\u1ED3i m\u1EDF b\u1EA3n \u0111\u1ED3 \u0111\xF3: nh\u1EA5n gi\u1EEF m\u1ED9t \u0111i\u1EC3m \u0111\u1EC3 l\u1EADp \u0111\u1ED9i, \u0111\u01B0a l\xEDnh v\xE0o \u0111\u1ED9i, v\u1EBD \u0111\u1ED9i h\xECnh v\xE0 m\u0169i t\xEAn, r\u1ED3i ra l\u1EC7nh cho t\u1EEBng \u0111\u1ED9i. Th\u1EBB l\u1EC7nh b\u1EA1n g\u1EAFn v\xE0o k\u1EBF ho\u1EA1ch s\u1EBD hi\u1EC7n th\xE0nh n\xFAt khi \u0111\xE1nh. V\xE0o l\u1EC1u l\xE0 game t\u1EA1m d\u1EEBng."), bar, this.body);
+      this.view = new PlanMapView(c.sim, { onSelect: (id) => {
+        this.sel = id;
+        this.refresh();
+      }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back) => this.drewPath(id, pts, back) });
+      const tool = (text, title, f) => h("button", { class: "zoom", text, title, onclick: f });
+      this.view.root.append(this.info, this.bar, this.card, this.roster, h("div", { class: "ptools" }, tool("+", "Ph\xF3ng to", () => this.view.zoomBy(1.4)), tool("\u2212", "Thu nh\u1ECF", () => this.view.zoomBy(1 / 1.4)), tool("\u2922", "V\u1EEBa khung", () => this.view.fit())));
+      this.full.append(h("div", { class: "cardhead" }, this.fullTitle, this.fullState, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => this.closeMap() })), h("div", { class: "pstage" }, this.view.root));
+      (document.body ?? document.documentElement).append(this.full);
+    }
+    /** Show one of the pages (used by tests). */
+    open(t) {
+      this.tab = t;
+      this.key = "";
+      this.update();
+    }
+    /** Open the map held of a village full-screen and start planning on it (used by the list and by tests). */
+    openMap(tribe) {
+      const { sim: sim2 } = this;
+      if (!sim2.dev.freeBuild && !sim2.mapLevel(tribe)) {
+        this.toast("B\u1EA3n \u0111\u1ED3 n\xE0y \u0111\xE3 qu\xE1 c\u0169 ho\u1EB7c ch\u01B0a c\xF3: h\xE3y c\u1EED trinh s\xE1t");
+        return;
+      }
+      if (!sim2.plans.some((p) => p.kind === "attack")) sim2.newPlan("attack", tribe);
+      this.tab = "plan";
+      this.openTribe = tribe;
+      this.sel = -1;
+      this.mode = "pan";
+      this.modeSquad = -1;
+      this.refresh();
+    }
+    closeMap() {
+      this.openTribe = "";
+      this.sel = -1;
+      this.mode = "pan";
+      this.modeSquad = -1;
+      this.refresh();
+    }
+    /** The button that removes a squad for good: its soldiers go back to those without a squad. It asks to be pressed twice. */
+    deleteButton(id) {
+      const armed = this.confirmDel === id;
+      return h("button", {
+        class: armed ? "chip danger on" : "chip",
+        text: armed ? "\u{1F5D1} B\u1EA5m l\u1EA1i \u0111\u1EC3 x\xF3a \u0111\u1ED9i" : "\u{1F5D1} X\xF3a \u0111\u1ED9i",
+        title: "X\xF3a h\u1EB3n \u0111\u1ED9i n\xE0y, l\xEDnh tr\u1EDF v\u1EC1 h\xE0ng l\xEDnh ch\u01B0a c\xF3 \u0111\u1ED9i",
+        onclick: () => {
+          if (!armed) {
+            this.confirmDel = id;
+            this.key = "";
+            this.c.ctl.onChange();
+            return;
+          }
+          this.sim.disbandSquad(id);
+          if (this.sel === id) this.sel = -1;
+          if (this.modeSquad === id) {
+            this.mode = "pan";
+            this.modeSquad = -1;
+          }
+          this.refresh();
+        }
+      });
+    }
+    attackPlan() {
+      return this.c.sim.plans.find((p) => p.kind === "attack" && p.tribe === this.openTribe);
+    }
+    /** From now a drag on the map draws the row, the arrow or the way back of a squad. */
+    startDraw(mode, squad) {
+      const plan2 = this.attackPlan();
+      if (!plan2) {
+        this.toast("L\u1EADp k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng tr\u01B0\u1EDBc");
+        return;
+      }
+      if (plan2.status === "running") {
+        this.toast("K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y: kh\xF4ng v\u1EBD l\u1EA1i \u0111\u01B0\u1EE3c");
+        return;
+      }
+      this.mode = mode;
+      this.modeSquad = squad;
+      this.sel = squad;
+      this.refresh();
+    }
+    stopDraw() {
+      const id = this.modeSquad, drewArrow = this.mode === "path" && !!this.attackPlan()?.missions.find((m) => m.squad === id)?.path.length;
+      this.mode = "pan";
+      this.modeSquad = -1;
+      if (drewArrow && !this.ordered.has(id)) {
+        this.ordered.add(id);
+        this.orderOpen = true;
+        this.cardSquad = -1;
+      }
+      this.refresh();
+    }
+    /** An existing squad is put down again, or stretched, with the cells of a new drag. */
+    reshaped(squad, o, p, cells, heading) {
+      const plan2 = this.attackPlan();
+      if (plan2) this.toast(this.sim.deploySquad(plan2, squad, void 0, cells, heading, o, p));
+      this.mode = "pan";
+      this.modeSquad = -1;
+      this.sel = squad;
+      this.refresh();
+    }
+    /** A cell is taken out of the squad's formation. */
+    trimmed(squad, index) {
+      const plan2 = this.attackPlan(), d = plan2?.missions.find((m) => m.squad === squad)?.deploy;
+      if (!plan2 || !d) return;
+      if (d.cells.length <= SQUAD_MIN) {
+        this.toast(`\u0110\u1ED9i h\xECnh c\u1EA7n \xEDt nh\u1EA5t ${SQUAD_MIN} \xF4`);
+        return;
+      }
+      this.toast(this.sim.deploySquad(plan2, squad, void 0, d.cells.filter((_, i) => i !== index), d.heading, d.o, d.p));
+      this.refresh();
+    }
+    /** A squad is made on the map: the formation chosen from the ring, with the cells the drag made (3 to 15). No soldiers are needed yet. */
+    newSquad(kind, o, p, cells, heading) {
+      const { sim: sim2 } = this;
+      let plan2 = this.attackPlan();
+      if (!plan2 && !sim2.plans.some((q) => q.kind === "attack")) plan2 = sim2.newPlan("attack", this.openTribe);
+      if (!plan2) {
+        this.toast("\u0110ang c\xF3 m\u1ED9t k\u1EBF ho\u1EA1ch kh\xE1c: l\u1EADp k\u1EBF ho\u1EA1ch m\u1EDBi \u1EDF b\u1EA3ng b\xEAn ph\u1EA3i");
+        return;
+      }
+      if (plan2.status === "running") {
+        this.toast("K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y: kh\xF4ng l\u1EADp th\xEAm \u0111\u1ED9i \u0111\u01B0\u1EE3c");
+        return;
+      }
+      if (!sim2.formationOpen(kind)) {
+        this.toast(`C\u1EA7n nghi\xEAn c\u1EE9u: ${FORMATIONS[kind].name}`);
+        return;
+      }
+      const made = sim2.createSquad();
+      if (!made.squad) {
+        this.toast(made.reason);
+        return;
+      }
+      const err = sim2.deploySquad(plan2, made.squad.id, kind, cells, heading, o, p);
+      if (err) {
+        sim2.disbandSquad(made.squad.id);
+        this.toast(err);
+        return;
+      }
+      this.sel = made.squad.id;
+      this.rosterOpen = true;
+      this.orderOpen = false;
+      this.addOpen = false;
+      this.refresh();
+    }
+    drewPath(squad, pts, retreat) {
+      const plan2 = this.attackPlan();
+      if (plan2) this.toast(this.sim.setMissionPath(plan2, squad, pts, retreat));
+      this.refresh();
+    }
+    get sim() {
+      return this.c.sim;
+    }
+    refresh() {
+      this.confirmDel = -1;
+      this.key = "";
+      this.c.ctl.onChange();
+    }
+    toast(e) {
+      if (e) this.c.toast(e);
+    }
+    update() {
+      const { sim: sim2 } = this, plan2 = (k) => sim2.plans.find((p) => p.kind === k);
+      for (const [t, b] of this.tabBtns) b.setAttribute("aria-pressed", String(t === this.tab));
+      const soldiers = sim2.villagers.filter((v) => v.job === "fight");
+      const key = [
+        this.tab,
+        sim2.squads.map((s) => `${s.id}.${s.name}.${s.formation}.${s.ids.join("/")}.${s.leader}.${Math.round(s.mastery[s.formation] / 5)}.${s.training}`).join(),
+        soldiers.map((v) => `${v.id}.${v.squad}.${v.weapon}`).join(),
+        JSON.stringify(sim2.maps),
+        JSON.stringify(sim2.scouts.map((m) => [m.id, m.phase])),
+        JSON.stringify(plan2("attack")),
+        JSON.stringify(plan2("defense")),
+        sim2.battleReports.length,
+        sim2.battle.on,
+        this.openTribe,
+        this.orderOpen,
+        this.formRow,
+        this.rosterOpen,
+        this.addOpen,
+        [...this.picked].join("."),
+        this.sel,
+        this.mode,
+        this.modeSquad,
+        sim2.tribes.map((t) => t.state).join(),
+        sim2.squadLimit(),
+        sim2.cardLimit()
+      ].join("|");
+      if (key === this.key) return;
+      this.key = key;
+      this.full.hidden = !this.openTribe;
+      if (this.openTribe) this.fillFull();
+      this.body.replaceChildren(...{ maps: () => this.mapsPage(), plan: () => this.planPage(), defense: () => this.defensePage(), log: () => this.logPage() }[this.tab]());
+    }
+    // ---------------------------------------------------------------- scouting and maps
+    ageWords(at) {
+      const days = Math.floor((this.sim.time - at) / DAY_LENGTH);
+      return days <= 0 ? "b\xE1o c\xE1o trong ng\xE0y" : days === 1 ? "b\xE1o c\xE1o t\u1EEB h\xF4m qua" : days < 4 ? `b\xE1o c\xE1o t\u1EEB ${days} h\xF4m tr\u01B0\u1EDBc` : "\u0111\xE3 c\u0169";
+    }
+    mapsPage() {
+      const { sim: sim2 } = this, c = this.c, out = [];
+      out.push(hint("Trinh s\xE1t v\xE0 b\u1EA3n \u0111\u1ED3", "Mu\u1ED1n \u0111\xE1nh m\u1ED9t l\xE0ng ph\u1EA3i c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EE7a n\xF3. C\u1EA5p 1 cho v\u1ECB tr\xED v\xE0 s\u1ED1 d\xE2n; c\u1EA5p 2 cho \u0111\u01B0\u1EDDng v\xE0o, c\u1ED5ng v\xE0 ch\u1ED7 ph\u1EE5c k\xEDch; c\u1EA5p 3 cho s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i, kho v\xE0 th\u1EE7 l\u0129nh. Trinh s\xE1t c\xF3 th\u1EC3 ch\u1EBFt, b\u1EA3n \u0111\u1ED3 m\u1EA5t 10% \u0111\u1ED9 ch\xEDnh x\xE1c m\u1ED7i ng\xE0y. Ch\u1ECDn d\xE2n tr\xEAn b\u1EA3n \u0111\u1ED3 r\u1ED3i c\u1EED \u0111i, ho\u1EB7c b\u1EA5m c\u1EED \u0111\u1EC3 game t\u1EF1 l\u1EA5y ng\u01B0\u1EDDi r\u1EA3nh."));
+      if (!sim2.dev.freeBuild && !sim2.researched.has("scout")) out.push(h("p", { class: "sub", text: 'C\u1EA7n nghi\xEAn c\u1EE9u "Trinh s\xE1t" \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u.' }));
+      for (const t of sim2.tribes) {
+        const maps = sim2.maps.filter((m) => m.tribe === t.id).sort((a, b) => b.level - a.level), best = maps[0], level = sim2.mapLevel(t.id);
+        const next = this.newLevel[t.id] ?? Math.min(3, level + 1), need = sim2.scoutsNeeded(t.id, next);
+        out.push(h(
+          "div",
+          { class: "row", style: "flex-direction:column;align-items:stretch" },
+          h("div", { class: "nm" }, h("b", { text: t.def.name }), h("small", { text: best ? `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${level || best.level}${best.gaps ? " (c\xF2n h\u1EDF)" : ""}, ${this.ageWords(best.at)}` : "Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3" })),
+          h(
+            "div",
+            { class: "btns" },
+            select([1, 2, 3].map((l) => ({ v: String(l), label: `C\u1EA5p ${l}` })), String(next), (l) => {
+              this.newLevel[t.id] = Number(l);
+              this.refresh();
+            }),
+            h("small", { text: `c\u1EA7n ${need} trinh s\xE1t cho \u0111\u1EE7` }),
+            h("button", { class: "sm primary", text: "C\u1EED trinh s\xE1t", disabled: sim2.scouts.some((m) => m.tribe === t.id), onclick: () => {
+              const chosen = [...c.ctl.selected].filter((id) => sim2.get(id)?.team === "player");
+              const ids = chosen.length ? chosen : sim2.villagers.filter((v) => v.job !== "fight" && v.inside === null).slice(0, need).map((v) => v.id);
+              this.toast(sim2.startScout(ids, t.id, next));
+              this.refresh();
+            } })
+          )
+        ));
+      }
+      if (sim2.scouts.length) out.push(h("h3", { text: "\u0110ang \u0111i trinh s\xE1t" }));
+      for (const m of sim2.scouts) out.push(h("p", { class: "sub", text: `${sim2.tribes.find((t) => t.id === m.tribe)?.def.name}: ${m.ids.length} ng\u01B0\u1EDDi, ${{ go: "\u0111ang t\u1EDBi", watch: "\u0111ang quan s\xE1t", back: "\u0111ang v\u1EC1" }[m.phase]} (b\u1EA3n \u0111\u1ED3 c\u1EA5p ${m.level})` }));
+      return out;
+    }
+    // ---------------------------------------------------------------- the attack plan
+    /** A squad's post in the defence plan. */
+    missionCard(plan2, m) {
+      const { sim: sim2 } = this, s = sim2.squadById(m.squad), draft = plan2.status !== "running";
+      return h(
+        "div",
+        { class: "row", style: `border-left:5px solid ${s?.color ?? "#888"};padding-left:8px;flex-direction:column;align-items:stretch` },
+        h("div", { class: "nm" }, h("b", { text: s?.name ?? "?" }), h("small", { text: POST_NAME[m.post] })),
+        h("div", { class: "btns" }, select(Object.keys(POST_NAME).map((p) => ({ v: p, label: POST_NAME[p] })), m.post, (p) => {
+          m.post = p;
+          this.refresh();
+        })),
+        draft ? h("button", { class: "sm", text: "B\u1ECF nhi\u1EC7m v\u1EE5", onclick: () => {
+          plan2.missions.splice(plan2.missions.indexOf(m), 1);
+          this.refresh();
+        } }) : null
+      );
+    }
+    addMissionRow(plan2) {
+      const { sim: sim2 } = this, open = sim2.squads.filter((s) => !plan2.missions.some((m) => m.squad === s.id));
+      return h("div", { class: "btns" }, select([{ v: "", label: "Giao nhi\u1EC7m v\u1EE5 cho \u0111\u1ED9i\u2026" }, ...open.map((s) => ({ v: String(s.id), label: s.name }))], "", (id) => {
+        if (id) {
+          this.toast(sim2.addMission(plan2, Number(id)));
+          this.refresh();
+        }
+      }));
+    }
+    /** The maps we hold, one row each; pressing a row opens that map full-screen to plan on. */
+    planPage() {
+      const { sim: sim2 } = this, out = [];
+      out.push(hint("B\u1EA3n \u0111\u1ED3 \u0111\xE3 thu th\u1EADp", 'B\u1EA5m v\xE0o m\u1ED9t b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 m\u1EDF to\xE0n m\xE0n h\xECnh v\xE0 l\u1EADp k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng tr\xEAn \u0111\xF3: th\u1EA5y khu tr\u1EA1i \u0111\u1ECBch v\xE0 24 \xF4 quanh n\xF3, r\u1ED3i giao nhi\u1EC7m v\u1EE5 cho t\u1EEBng \u0111\u1ED9i. B\u1EA3n \u0111\u1ED3 c\u1EA5p cao h\u01A1n cho th\u1EA5y nhi\u1EC1u h\u01A1n; b\u1EA3n \u0111\u1ED3 c\u0169 th\xEC k\xE9m ch\xEDnh x\xE1c. Mu\u1ED1n c\xF3 b\u1EA3n \u0111\u1ED3 m\u1EDBi, c\u1EED trinh s\xE1t \u1EDF trang "Trinh s\xE1t, b\u1EA3n \u0111\u1ED3".'));
+      const rows = sim2.tribes.filter((t) => t.state === "free" && (sim2.dev.freeBuild || sim2.maps.some((m) => m.tribe === t.id)));
+      if (!rows.length) out.push(h("p", { class: "sub", text: 'Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 n\xE0o. C\u1EED trinh s\xE1t \u1EDF trang "Trinh s\xE1t, b\u1EA3n \u0111\u1ED3" \u0111\u1EC3 v\u1EBD b\u1EA3n \u0111\u1ED3 m\u1ED9t l\xE0ng.' }));
+      for (const t of rows) {
+        const best = sim2.maps.filter((m) => m.tribe === t.id).sort((a, b) => b.level - a.level)[0], level = sim2.dev.freeBuild ? 3 : sim2.mapLevel(t.id);
+        const plan2 = sim2.plans.find((p) => p.kind === "attack" && p.tribe === t.id);
+        const what = level ? `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${level}${best?.gaps ? " (c\xF2n h\u1EDF)" : ""}${best ? `, ${this.ageWords(best.at)}` : ""}` : "B\u1EA3n \u0111\u1ED3 \u0111\xE3 qu\xE1 c\u0169, c\u1EA7n c\u1EED trinh s\xE1t l\u1EA1i";
+        const state = plan2 ? ` \xB7 k\u1EBF ho\u1EA1ch ${{ draft: "\u0111ang so\u1EA1n", running: "\u0111ang ch\u1EA1y", done: "\u0111\xE3 xong" }[plan2.status]}` : "";
+        out.push(h(
+          "div",
+          { class: "row", style: `cursor:${level ? "pointer" : "default"};${level ? "" : "opacity:.6"}`, onclick: () => this.openMap(t.id) },
+          h("div", { class: "nm" }, h("b", { text: t.def.name }), h("small", { text: what + state })),
+          h("button", { class: "sm primary", text: "M\u1EDF b\u1EA3n \u0111\u1ED3", disabled: !level })
+        ));
+      }
+      return out;
+    }
+    /** A button in the look of the map's overlays: a rounded chip that lights when it is the choice made. */
+    chip(text, on, f, opts = {}) {
+      return h("button", { class: `chip${on ? " on" : ""}${opts.danger ? " danger" : ""}`, text, title: opts.title, disabled: opts.disabled, onclick: f });
+    }
+    /** Fill the full-screen planning view: the map keeps its place and zoom; what lies over it (the squads, the strip, the orders) is made again. */
+    fillFull() {
+      const { sim: sim2 } = this, t = sim2.tribes.find((x) => x.id === this.openTribe), plan2 = this.attackPlan();
+      this.fullTitle.textContent = `L\u1EADp k\u1EBF ho\u1EA1ch \u0111\xE1nh ${t?.def.name ?? "?"}`;
+      this.fullState.textContent = plan2 ? { draft: "\u0111ang so\u1EA1n", running: "\u0111ang ch\u1EA1y", done: "\u0111\xE3 xong" }[plan2.status] : "ch\u01B0a c\xF3 k\u1EBF ho\u1EA1ch";
+      this.info.replaceChildren(planMapInfo(sim2, this.openTribe), this.tray(plan2));
+      this.view.show(this.openTribe, plan2, { selected: this.sel, mode: this.mode, modeSquad: this.modeSquad });
+      this.fillBar(plan2);
+      this.fillCard(plan2);
+      this.fillRoster(plan2);
+    }
+    /** The squads of the plan as chips, to choose one without hunting for it on the map, and the remarks of the war council. */
+    tray(plan2) {
+      const { sim: sim2 } = this, out = [];
+      if (!plan2) {
+        const other = sim2.plans.find((p) => p.kind === "attack");
+        out.push(this.chip("\uFF0B L\u1EADp k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng", false, () => {
+          sim2.newPlan("attack", this.openTribe);
+          this.refresh();
+        }, { disabled: other?.status === "running", title: other ? "Thay k\u1EBF ho\u1EA1ch \u0111ang so\u1EA1n b\u1EB1ng k\u1EBF ho\u1EA1ch cho l\xE0ng n\xE0y" : "Ch\u01B0a c\xF3 k\u1EBF ho\u1EA1ch cho l\xE0ng n\xE0y" }));
+        return h("div", { class: "ptray" }, ...out);
+      }
+      for (const m of plan2.missions) {
+        const s = m.deploy ? sim2.squadById(m.squad) : void 0;
+        if (s) out.push(h("button", { class: `chip${this.sel === s.id ? " on" : ""}`, style: `border-left:7px solid ${s.color}`, title: "Ch\u1ECDn \u0111\u1ED9i n\xE0y", text: s.name, onclick: () => {
+          this.sel = s.id;
+          this.refresh();
+        } }));
+      }
+      if (!plan2.missions.some((m) => m.deploy && sim2.squadById(m.squad))) out.push(h("small", { class: "sub", text: "Ch\u01B0a c\xF3 \u0111\u1ED9i n\xE0o tr\xEAn b\u1EA3n \u0111\u1ED3: nh\u1EA5n gi\u1EEF m\u1ED9t \u0111i\u1EC3m \u0111\u1EC3 l\u1EADp \u0111\u1ED9i." }));
+      if (plan2.status === "running") out.push(this.chip("\u25A0 D\u1EEBng k\u1EBF ho\u1EA1ch", false, () => {
+        plan2.status = "done";
+        this.refresh();
+      }, { danger: true }));
+      if (plan2.status === "done") out.push(this.chip("\u21BA So\u1EA1n l\u1EA1i", false, () => {
+        plan2.status = "draft";
+        for (const m of plan2.missions) m.state = "idle";
+        this.refresh();
+      }));
+      const notes = sim2.reviewPlan(plan2);
+      const tray = h("div", { class: "ptray" }, ...out);
+      if (notes.length) tray.append(h("details", {}, h("summary", { text: `\u26A0 ${notes.length} l\u01B0u \xFD c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn` }), ...notes.map((l) => h("p", { class: l.startsWith("\u2717") ? "why" : "sub", text: l }))));
+      return tray;
+    }
+    /** The strip over the map: what a press or a drag does now, or what can be done with the squad that was pressed. */
+    fillBar(plan2) {
+      const { sim: sim2 } = this, id = this.mode === "pan" ? this.sel : this.modeSquad;
+      const named = plan2?.missions.some((m) => m.squad === id && m.deploy) ? sim2.squadById(id) : void 0;
+      this.bar.hidden = !plan2 || !named;
+      if (!plan2 || !named) return;
+      const kids = [h("b", { text: named.name })];
+      if (this.mode !== "pan") {
+        const what = {
+          edit: "\u0111\u1ED9i h\xECnh: r\xEA chu\u1ED9t \u0111\u1EC3 \u0111\u1ED5i \u0111\u1ED9 d\xE0i ho\u1EB7c b\xE1n k\xEDnh, k\xE9o ch\u1EA5m tr\u1EAFng \u1EDF g\u1ED1c \u0111\u1EC3 d\u1EDDi c\u1EA3 \u0111\u1ED9i h\xECnh, b\u1EA5m \u0111\u1EC3 ch\u1ED1t (\xEDt nh\u1EA5t 3 \xF4)",
+          trim: "\u0111\u1ED9i h\xECnh: b\u1EA5m v\xE0o \xF4 mu\u1ED1n b\u1ECF, \xEDt nh\u1EA5t c\xF2n 3 \xF4",
+          path: "m\u0169i t\xEAn: b\u1EA5m n\u01A1i \u0111\u1ED9i c\u1EA7n t\u1EDBi (m\u0169i t\xEAn \u0111i th\u1EB3ng theo chu\u1ED9t), r\u1ED3i k\xE9o ch\u1EA5m tr\xF2n nh\u1ECF gi\u1EEFa m\u1ED7i \u0111o\u1EA1n \u0111\u1EC3 u\u1ED1n, k\xE9o \u0111\u1EA7u m\u0169i t\xEAn \u0111\u1EC3 \u0111\u1ED5i n\u01A1i t\u1EDBi, b\u1EA5m chu\u1ED9t ph\u1EA3i v\xE0o m\u1ED9t ch\u1EA5m \u0111\u1EC3 b\u1ECF ch\u1EA5m \u0111\xF3",
+          retreat: "\u0111\u01B0\u1EDDng r\xFAt: b\u1EA5m n\u01A1i \u0111\u1ED9i r\xFAt v\u1EC1, r\u1ED3i k\xE9o c\xE1c ch\u1EA5m nh\u01B0 m\u0169i t\xEAn"
+        }[this.mode];
+        kids.push(h("span", { text: `V\u1EBD ${what}. Chu\u1ED9t ph\u1EA3i k\xE9o ho\u1EB7c hai ng\xF3n \u0111\u1EC3 di chuy\u1EC3n b\u1EA3n \u0111\u1ED3.` }));
+        if (this.mode === "edit") kids.push(this.chip("H\u1EE7y", false, () => this.stopDraw()));
+        else if (this.mode === "trim") kids.push(this.chip("Xong", true, () => this.stopDraw()));
+        else kids.push(this.chip("X\xF3a", false, () => {
+          this.toast(sim2.setMissionPath(plan2, named.id, [], this.mode === "retreat"));
+          this.refresh();
+        }), this.chip("Xong", true, () => this.stopDraw()));
+        this.bar.replaceChildren(...kids);
+        return;
+      }
+      const placed = plan2.missions.some((m) => m.squad === named.id && m.deploy), hasArrow = plan2.missions.some((m) => m.squad === named.id && m.path.length > 0);
+      if (placed) kids.push(
+        this.chip("\u{1F465} L\xEDnh", this.rosterOpen, () => {
+          this.rosterOpen = !this.rosterOpen;
+          this.orderOpen = false;
+          this.refresh();
+        }, { title: "L\xEDnh c\u1EE7a \u0111\u1ED9i: th\xEAm, b\u1ECF, ch\u1ECDn ch\u1EC9 huy" }),
+        this.chip("\u27A4 M\u0169i t\xEAn", false, () => this.startDraw("path", named.id), { title: "V\u1EBD \u0111\u01B0\u1EDDng \u0111\u1ED9i \u0111i" }),
+        this.chip("\u2630 L\u1EC7nh", this.orderOpen && hasArrow, () => {
+          this.orderOpen = !this.orderOpen;
+          this.rosterOpen = false;
+          this.refresh();
+        }, { disabled: !hasArrow, title: hasArrow ? "H\xE0nh \u0111\u1ED9ng, gi\u1EDD \u0111\xE1nh, r\xFAt lui, th\u1EBB l\u1EC7nh" : "V\u1EBD m\u0169i t\xEAn cho \u0111\u1ED9i tr\u01B0\u1EDBc, r\u1ED3i m\u1EDBi ra l\u1EC7nh \u0111\u01B0\u1EE3c" }),
+        this.chip("\u270E S\u1EEDa l\u1EA1i", false, () => this.startDraw("edit", named.id), { title: "\u0110\u1ED5i \u0111\u1ED9 d\xE0i, b\xE1n k\xEDnh, ch\u1ED7 \u0111\u1EE9ng" }),
+        this.chip("\u2702 B\u1EDBt \xF4", false, () => this.startDraw("trim", named.id))
+      );
+      kids.push(this.deleteButton(named.id));
+      this.bar.replaceChildren(...kids);
+    }
+    /** The soldiers of the chosen squad, kept short: name, role, weapon, who commands and a minus to take one out. Below it a drop-down of ticks to add soldiers who have no squad. */
+    fillRoster(plan2) {
+      const { sim: sim2 } = this, sq = sim2.squadById(this.sel), m = plan2?.missions.find((x) => x.squad === this.sel);
+      this.roster.hidden = !(this.rosterOpen && plan2 && sq && m?.deploy && this.mode === "pan");
+      if (this.roster.hidden || !sq || !m?.deploy) return;
+      if (this.rosterSquad !== sq.id) {
+        this.rosterSquad = sq.id;
+        this.picked.clear();
+        this.addOpen = false;
+      }
+      const units = sim2.squadUnits(sq), cells = m.deploy.cells.length, room = Math.max(0, cells - units.length);
+      const free = sim2.villagers.filter((v) => v.job === "fight" && v.squad < 0);
+      for (const id of [...this.picked]) if (!free.some((v) => v.id === id)) this.picked.delete(id);
+      const who = (v) => `${ARM_NAME[armOfWeapon(v.weapon)]} \xB7 ${WEAPONS[v.weapon ?? "fist"].name}`;
+      const out = [h(
+        "div",
+        { class: "phead" },
+        h("i", { style: `background:${sq.color}` }),
+        h("b", { text: sq.name }),
+        h("small", { text: `${units.length}/${cells} l\xEDnh` }),
+        h("button", { class: "chip", text: "\u2715", title: "\u0110\xF3ng", onclick: () => {
+          this.rosterOpen = false;
+          this.refresh();
+        } })
+      )];
+      if (!units.length) out.push(h("p", { class: "sub", text: "Ch\u01B0a c\xF3 l\xEDnh trong \u0111\u1ED9i." }));
+      for (const v of units) out.push(h(
+        "div",
+        { class: "rrow" },
+        h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: who(v) })),
+        h("button", { class: `chip${v.id === sq.leader ? " on" : ""}`, text: "\u2605", title: v.id === sq.leader ? "Ch\u1EC9 huy c\u1EE7a \u0111\u1ED9i" : "\u0110\u1EB7t l\xE0m ch\u1EC9 huy", onclick: () => {
+          sim2.setCommander(sq.id, v.id);
+          this.refresh();
+        } }),
+        h("button", { class: "chip danger", text: "\u2212", title: "B\u1ECF kh\u1ECFi \u0111\u1ED9i", onclick: () => {
+          sim2.leaveSquad([v.id]);
+          this.refresh();
+        } })
+      ));
+      out.push(this.chip(
+        `\uFF0B Th\xEAm l\xEDnh \u25BE${free.length ? ` (${free.length})` : ""}`,
+        this.addOpen,
+        () => {
+          this.addOpen = !this.addOpen;
+          this.refresh();
+        },
+        { disabled: !free.length || !room, title: !room ? "\u0110\u1ED9i h\xECnh \u0111\xE3 \u0111\u1EE7 \xF4" : !free.length ? "Kh\xF4ng c\xF2n l\xEDnh n\xE0o ch\u01B0a c\xF3 \u0111\u1ED9i" : "Ch\u1ECDn l\xEDnh ch\u01B0a c\xF3 \u0111\u1ED9i \u0111\u1EC3 th\xEAm v\xE0o" }
+      ));
+      if (!room) out.push(h("small", { class: "sub", text: `\u0110\u1ED9i h\xECnh c\xF3 ${cells} \xF4 v\xE0 \u0111\xE3 \u0111\u1EE7 l\xEDnh: b\u1EA5m \u270E S\u1EEDa l\u1EA1i \u0111\u1EC3 th\xEAm \xF4.` }));
+      else if (!free.length) out.push(h("small", { class: "sub", text: "Kh\xF4ng c\xF2n l\xEDnh n\xE0o ch\u01B0a c\xF3 \u0111\u1ED9i: tuy\u1EC3n th\xEAm \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i." }));
+      if (this.addOpen && free.length && room) {
+        const list = h("div", { class: "rdrop" });
+        for (const v of free) {
+          const box = h("input", { type: "checkbox" });
+          box.checked = this.picked.has(v.id);
+          box.disabled = !box.checked && this.picked.size >= room;
+          box.addEventListener("change", () => {
+            if (box.checked) this.picked.add(v.id);
+            else this.picked.delete(v.id);
+            this.refresh();
+          });
+          list.append(h("label", { class: "rpick" }, box, h("span", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: who(v) }))));
+        }
+        out.push(
+          list,
+          this.chip(`Th\xEAm ${this.picked.size} l\xEDnh`, true, () => {
+            this.toast(sim2.joinSquad([...this.picked], sq.id));
+            this.picked.clear();
+            this.addOpen = false;
+            this.refresh();
+          }, { disabled: !this.picked.size }),
+          h("small", { class: "sub", text: `C\xF2n ch\u1ED7 cho ${room - this.picked.size} l\xEDnh.` })
+        );
+      }
+      this.roster.replaceChildren(...out);
+    }
+    /** One choice of a step: a big tile with a picture, a name and a line saying what it means. */
+    tile(icon, title, note, on, f, opts = {}) {
+      return h(
+        "button",
+        { class: `opt${on ? " on" : ""}`, disabled: opts.disabled, style: opts.color ? `border-left:6px solid ${opts.color}` : void 0, onclick: f },
+        h("span", { class: "oi", text: icon }),
+        h("b", { text: title }),
+        h("small", { text: note })
+      );
+    }
+    /** The steps this order goes through: action, start, what the start needs, withdrawing (unless it waits for a signal), and the overview. */
+    stepsOf(m) {
+      const kind = m.trigger.kind, steps = ["action", "start"];
+      if (kind === "signal") steps.push("cards");
+      else if (m.stance === "fight" && kind === "time") steps.push("when");
+      else if (m.stance === "fight" && kind === "after") steps.push("after");
+      if (kind !== "signal") steps.push("retreat");
+      steps.push("overview");
+      return steps;
+    }
+    /** What the squad is ordered to do, in plain sentences: when it sets out and what it does, the way it goes, and when it falls back. */
+    describe(plan2, sq, m) {
+      const { sim: sim2 } = this, t = m.trigger, signal = t.kind === "signal";
+      const doing = { fight: "ti\u1EBFn theo m\u0169i t\xEAn v\xE0 giao chi\u1EBFn v\u1EDBi k\u1EBB \u0111\u1ECBch g\u1EB7p tr\xEAn \u0111\u01B0\u1EDDng", evade: "\u0111i theo m\u0169i t\xEAn t\u1EDBi n\u01A1i m\xE0 kh\xF4ng \u0111\xE1nh tr\u1EA3", hold: "\u0111i t\u1EDBi cu\u1ED1i m\u0169i t\xEAn r\u1ED3i \u0111\u1EE9ng gi\u1EEF ch\u1ED7", shoot: "ti\u1EBFn theo m\u0169i t\xEAn, cung th\u1EE7 b\u1EAFn c\xF2n b\u1ED9 binh \u0111\u1EE9ng y\xEAn" }[m.stance];
+      const first = signal ? `${sq.name} \u0111\u1EE9ng ch\u1EDD t\xEDn hi\u1EC7u, r\u1ED3i ${doing}.` : `${this.startWords(m)}, ${sq.name} ${doing}.`;
+      const start = sim2.missionStart(m), go = start && m.path.length ? sim2.routeTime(sq, start, m.path) : null;
+      const way = !m.deploy ? "\u0110\u1ED9i ch\u01B0a c\xF3 \u0111\u1ED9i h\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3." : go ? `\u0110\u01B0\u1EDDng \u0111i d\xE0i ${Math.round(go.length)} \xF4, m\u1EA5t kho\u1EA3ng ${fmtTime(go.total)}${go.blocked.some(Boolean) ? ", c\xF3 \u0111o\u1EA1n b\u1ECB ch\u1EAFn n\xEAn ph\u1EA3i \u0111i v\xF2ng" : ""}.` : "Ch\u01B0a v\u1EBD m\u0169i t\xEAn (b\u1EA5m \u27A4 M\u0169i t\xEAn) n\xEAn \u0111\u1ED9i s\u1EBD ti\u1EBFn th\u1EB3ng v\xE0o \u0111\u1ED1ng l\u1EEDa c\u1EE7a \u0111\u1ECBch.";
+      let end = "";
+      if (signal) {
+        const names = plan2.cards.filter((cd) => cd.kind === "signal" || cd.squad === sq.id).map((cd) => CARD_NAME[cd.kind]);
+        end = names.length ? `Th\u1EBB l\u1EC7nh: ${names.join(", ")}.` : "Ch\u01B0a c\xF3 th\u1EBB l\u1EC7nh n\xE0o n\xEAn \u0111\u1ED9i s\u1EBD \u0111\u1EE9ng \u0111\u1EE3i m\xE3i.";
+      } else if (m.withdrawAt > 0) {
+        const back = m.retreat.length ? sim2.routeTime(sq, m.path.length ? m.path[m.path.length - 1] : start ?? m.retreat[0], m.retreat) : null;
+        end = `R\xFAt lui khi m\u1EA5t ${Math.round(m.withdrawAt * 100)}% qu\xE2n${back ? `, theo \u0111\u01B0\u1EDDng r\xFAt \u0111\xE3 v\u1EBD (m\u1EA5t kho\u1EA3ng ${fmtTime(back.total)})` : ", v\u1EC1 ch\u1ED7 h\u1EB9n v\xEC ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt"}.`;
+      } else end = "Kh\xF4ng r\xFAt lui, \u0111\xE1nh t\u1EDBi c\xF9ng.";
+      return `${first} ${way} ${end}`;
+    }
+    /** In words: when the squad sets out. */
+    startWords(m) {
+      const t = m.trigger;
+      return t.kind === "time" ? t.at ? `Sau ${timeChip(t.at)}` : "Ngay khi k\u1EBF ho\u1EA1ch ch\u1EA1y" : t.kind === "after" ? `Sau khi ${this.sim.squadById(t.squad)?.name ?? "\u0111\u1ED9i kh\xE1c"} giao chi\u1EBFn` : t.kind === "signal" ? "Khi c\xF3 t\xEDn hi\u1EC7u" : "Khi \u0111\u1ECBch r\u1EDDi l\xE0ng";
+    }
+    /** The orders of the chosen squad as a card on the map, one step at a time: a step, its choices as big tiles, and the way on. The last step is the overview. */
+    fillCard(plan2) {
+      const { sim: sim2 } = this, sq = sim2.squadById(this.sel), m = plan2?.missions.find((x) => x.squad === this.sel);
+      this.card.hidden = !(this.orderOpen && plan2 && sq && m && m.path.length > 0 && this.mode === "pan");
+      if (this.card.hidden || !plan2 || !sq || !m) return;
+      if (this.cardSquad !== sq.id) {
+        this.cardSquad = sq.id;
+        this.step = "action";
+        this.formRow = false;
+      }
+      const steps = this.stepsOf(m);
+      if (!steps.includes(this.step)) this.step = steps.includes("start") ? "start" : steps[0];
+      const at = steps.indexOf(this.step), draft = plan2.status !== "running", others = plan2.missions.filter((x) => x.squad !== sq.id), kind = m.trigger.kind, fight = m.stance === "fight";
+      const go = (to) => {
+        this.step = to;
+        this.refresh();
+      };
+      const next = () => go(steps[Math.min(steps.length - 1, at + 1)]);
+      const head = h(
+        "div",
+        { class: "phead" },
+        h("i", { style: `background:${sq.color}` }),
+        h("b", { text: sq.name }),
+        h("small", { text: `${m.deploy?.cells.length ?? 0} \xF4 \xB7 ${sim2.squadUnits(sq).length} l\xEDnh \xB7 ${sim2.squadPace(sq).toFixed(1)} \xF4/gi\xE2y` }),
+        h("button", { class: "chip", text: "\u2715", title: "\u0110\xF3ng", onclick: () => {
+          this.orderOpen = false;
+          this.refresh();
+        } })
+      );
+      const dots = h("div", { class: "psteps" }, ...steps.map((st, i) => h("button", { class: `pdot${i === at ? " now" : i < at ? " done" : ""}`, text: String(i + 1), title: STEP_NAME[st], onclick: () => go(st) })));
+      const title = h("div", { class: "pstep" }, h("b", { text: STEP_NAME[this.step] }), h("small", { text: `B\u01B0\u1EDBc ${at + 1}/${steps.length}` }));
+      const body = [];
+      const opts = (cls, ...kids) => h("div", { class: `opts ${cls}` }, ...kids);
+      if (!draft) body.push(h("p", { class: "why", text: "K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y: ch\u1EC9 xem \u0111\u01B0\u1EE3c." }));
+      switch (this.step) {
+        case "action":
+          body.push(opts("", ...Object.keys(STANCE_NAME).map((x) => this.tile(STANCE_ICON[x], STANCE_NAME[x], STANCE_NOTE[x], m.stance === x, () => {
+            m.stance = x;
+            if (x !== "fight" && (kind === "after" || m.trigger.kind === "time" && m.trigger.at > 0)) m.trigger = { kind: "time", at: 0 };
+            next();
+          }, { disabled: !draft }))));
+          break;
+        case "start": {
+          const when = fight ? [["time", "\u23F1", "Theo gi\u1EDD", "Xu\u1EA5t ph\xE1t v\xE0o l\xFAc \u0111\xE3 h\u1EB9n"], ["after", "\u{1F517}", "Sau \u0111\u1ED9i kh\xE1c", "\u0110\u1EE3i m\u1ED9t \u0111\u1ED9i giao chi\u1EBFn r\u1ED3i m\u1EDBi \u0111\xE1nh"], ["signal", "\u{1F4EF}", "Khi c\xF3 t\xEDn hi\u1EC7u", "Ch\u1EDD b\u1EA1n b\u1EA5m th\u1EBB l\u1EC7nh"]] : [["time", "\u25B6", "Ngay", "Xu\u1EA5t ph\xE1t khi k\u1EBF ho\u1EA1ch ch\u1EA1y"], ["signal", "\u{1F4EF}", "Khi c\xF3 t\xEDn hi\u1EC7u", "Ch\u1EDD b\u1EA1n b\u1EA5m th\u1EBB l\u1EC7nh"]];
+          if (kind === "leaves") when.push(["leaves", "\u{1F6AA}", "Khi \u0111\u1ECBch r\u1EDDi l\xE0ng", "\u0110\u1EE3i \u0111\u1ECBch ra kh\u1ECFi l\xE0ng"]);
+          const cur = when.some((w) => w[0] === kind) ? kind : "time";
+          body.push(opts("", ...when.map(([k, icon, name, note]) => this.tile(icon, name, k === "after" && !others.length ? "Ch\u01B0a c\xF3 \u0111\u1ED9i n\xE0o kh\xE1c" : note, k === cur, () => {
+            m.trigger = k === "time" ? { kind: "time", at: 0 } : k === "after" ? { kind: "after", squad: others[0]?.squad ?? -1 } : { kind: k };
+            this.step = k === "signal" ? "cards" : k === "time" && fight ? "when" : k === "after" ? "after" : "retreat";
+            this.refresh();
+          }, { disabled: !draft || k === "after" && !others.length }))));
+          break;
+        }
+        case "when":
+          body.push(opts("three", ...TIMES.map((t) => this.tile("\u23F1", timeChip(t), t ? "sau khi ch\u1EA1y" : "khi ch\u1EA1y", m.trigger.kind === "time" && m.trigger.at === t, () => {
+            m.trigger = { kind: "time", at: t };
+            next();
+          }, { disabled: !draft }))));
+          break;
+        case "after":
+          body.push(others.length ? opts("", ...others.map((x) => {
+            const q = sim2.squadById(x.squad);
+            return this.tile("\u{1F517}", q?.name ?? "?", "giao chi\u1EBFn r\u1ED3i m\u1EDBi xu\u1EA5t ph\xE1t", m.trigger.kind === "after" && m.trigger.squad === x.squad, () => {
+              m.trigger = { kind: "after", squad: x.squad };
+              next();
+            }, { disabled: !draft, color: q?.color });
+          })) : h("p", { class: "sub", text: "Ch\u01B0a c\xF3 \u0111\u1ED9i n\xE0o kh\xE1c trong k\u1EBF ho\u1EA1ch." }));
+          break;
+        case "cards":
+          body.push(...this.cardTiles(plan2, sq.id, draft, opts));
+          break;
+        case "retreat": {
+          body.push(opts("three", ...WITHDRAW.map((x) => this.tile(x ? "\u21A9" : "\u2716", x ? `${Math.round(x * 100)}%` : "Kh\xF4ng r\xFAt", x ? "m\u1EA5t ch\u1EEBng \u0111\xF3 qu\xE2n th\xEC r\xFAt" : "\u0111\xE1nh t\u1EDBi c\xF9ng", m.withdrawAt === x, () => {
+            m.withdrawAt = x;
+            if (x > 0 && !m.retreat.length) this.startDraw("retreat", sq.id);
+            else if (x === 0) next();
+            else this.refresh();
+          }, { disabled: !draft }))));
+          if (m.withdrawAt > 0) {
+            const back = m.retreat.length ? sim2.routeTime(sq, m.path.length ? m.path[m.path.length - 1] : sim2.missionStart(m) ?? m.retreat[0], m.retreat) : null;
+            body.push(
+              h("p", { class: "sub", text: back ? `\u0110\u01B0\u1EDDng r\xFAt ${m.retreat.length} \u0111i\u1EC3m, \u0111i m\u1EA5t ${fmtTime(back.total)}.` : "Ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt: \u0111\u1ED9i s\u1EBD r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n." }),
+              opts(
+                "",
+                this.tile("\u27A4", back ? "N\u1ED1i th\xEAm" : "V\u1EBD \u0111\u01B0\u1EDDng r\xFAt", "tr\xEAn b\u1EA3n \u0111\u1ED3", false, () => this.startDraw("retreat", sq.id), { disabled: !draft }),
+                ...back ? [this.tile("\u{1F5D1}", "X\xF3a \u0111\u01B0\u1EDDng r\xFAt", "r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n", false, () => {
+                  sim2.setMissionPath(plan2, sq.id, [], true);
+                  this.refresh();
+                }, { disabled: !draft })] : []
+              )
+            );
+          }
+          break;
+        }
+        default: {
+          const row = (icon, label2, value, to) => h("button", { class: "ovrow", onclick: () => go(to) }, h("span", { class: "oi", text: icon }), h("small", { text: label2 }), h("b", { text: value }), h("em", { text: "S\u1EEDa" }));
+          const rows = [row(STANCE_ICON[m.stance], "H\xE0nh \u0111\u1ED9ng", STANCE_NAME[m.stance], "action"), row("\u23F1", "B\u1EAFt \u0111\u1EA7u", this.startWords(m), "start")];
+          if (kind === "signal") rows.push(row("\u{1F4EF}", "Th\u1EBB l\u1EC7nh", `${plan2.cards.filter((cd) => cd.kind === "signal" || cd.squad === sq.id).length} th\u1EBB`, "cards"));
+          else rows.push(row("\u21A9", "R\xFAt lui", m.withdrawAt > 0 ? `Khi m\u1EA5t ${Math.round(m.withdrawAt * 100)}% \xB7 ${m.retreat.length ? `${m.retreat.length} \u0111i\u1EC3m` : "v\u1EC1 ch\u1ED7 h\u1EB9n"}` : "Kh\xF4ng r\xFAt", "retreat"));
+          body.push(h("div", { class: "ov" }, ...rows));
+          const notes = sim2.reviewPlan(plan2).filter((l) => l.includes(sq.name));
+          for (const l of notes) body.push(h("p", { class: l.startsWith("\u2717") ? "why" : "sub", text: l }));
+        }
+      }
+      const nav = h(
+        "div",
+        { class: "pnav" },
+        this.chip("\u2039 Quay l\u1EA1i", false, () => go(steps[Math.max(0, at - 1)]), { disabled: at === 0 }),
+        at === steps.length - 1 ? this.chip("\u2713 Xong", true, () => {
+          this.orderOpen = false;
+          this.refresh();
+        }) : this.chip("Ti\u1EBFp \u203A", true, () => next())
+      );
+      this.card.replaceChildren(head, h("p", { class: "pdesc", text: this.describe(plan2, sq, m) }), h("div", { class: "pbar" }, dots, title), h("div", { class: "pbody2" }, ...body), nav);
+    }
+    /** The command cards of a squad that waits for a signal, each a tile to press on or off; the signal itself is one card for the whole plan. */
+    cardTiles(plan2, squad, draft, opts) {
+      const { sim: sim2 } = this, has = (kind, arg = "") => plan2.cards.find((cd) => cd.kind === kind && (kind === "signal" || cd.squad === squad) && cd.arg === arg);
+      const toggle = (kind, arg = "") => () => {
+        const cd = has(kind, arg);
+        if (cd) sim2.removeCard(plan2, cd.id);
+        else this.toast(sim2.addCard(plan2, kind, kind === "signal" ? -1 : squad, arg));
+        this.refresh();
+      };
+      const icon = { go: "\u25B6", advance: "\u23E9", hold: "\u{1F6E1}", shoot: "\u{1F3F9}", retreat: "\u21A9", formation: "\u26F6" };
+      const out = [
+        h("p", { class: "sub", text: `\u0110\u1ED9i \u0111\u1EE9ng ch\u1EDD t\xEDn hi\u1EC7u; khi \u0111\xE1nh ch\u1EC9 nh\u1EEFng th\u1EBB n\xE0y hi\u1EC7n th\xE0nh n\xFAt. \u0110\xE3 d\xF9ng ${plan2.cards.length}/${sim2.cardLimit()} th\u1EBB.` }),
+        opts(
+          "",
+          this.tile("\u{1F4EF}", "T\xEDn hi\u1EC7u", "m\u1ED9t th\u1EBB cho c\u1EA3 k\u1EBF ho\u1EA1ch", !!has("signal"), toggle("signal"), { disabled: !draft }),
+          ...CARD_KINDS.filter((k) => k !== "formation").map((k) => this.tile(icon[k] ?? "\u2022", CARD_NAME[k], "b\u1EA5m \u0111\u1EC3 th\xEAm ho\u1EB7c b\u1ECF th\u1EBB", !!has(k), toggle(k), { disabled: !draft })),
+          this.tile("\u26F6", "\u0110\u1ED5i tr\u1EADn", "ch\u1ECDn tr\u1EADn ph\xE1p m\u1EDBi", this.formRow || plan2.cards.some((cd) => cd.kind === "formation" && cd.squad === squad), () => {
+            this.formRow = !this.formRow;
+            this.refresh();
+          })
+        )
+      ];
+      if (this.formRow) out.push(opts("three", ...FORMATION_IDS.map((f) => this.tile("\u26F6", FORMATIONS[f].name, "", !!has("formation", f), toggle("formation", f), { disabled: !draft }))));
+      return out;
+    }
+    // ---------------------------------------------------------------- defence
+    defensePage() {
+      const { sim: sim2 } = this, out = [], plan2 = sim2.plans.find((p) => p.kind === "defense");
+      out.push(hint("K\u1EBF ho\u1EA1ch ph\xF2ng th\u1EE7", "M\u1EABu ph\xF2ng th\u1EE7: m\u1ED7i \u0111\u1ED9i \u0111\u1EE9ng \u1EDF \u0111\xE2u khi tr\u1ED1ng b\xE1o \u0111\u1ED9ng. Khi \u0111\xE1nh tr\u1ED1ng, d\xE2n v\u1EC1 \u0111\u1ED1ng l\u1EEDa v\xE0 c\xE1c \u0111\u1ED9i v\u1EC1 \u0111\xFAng v\u1ECB tr\xED; \u0111\u1ED9i \u0111\u1EE9ng ch\xF2i s\u1EBD cho cung th\u1EE7 l\xEAn ch\xF2i. Kh\xF4ng c\xF3 m\u1EABu th\xEC m\u1ECDi \u0111\u1ED9i \u0111\u1EE9ng quanh \u0111\u1ED1ng l\u1EEDa."));
+      out.push(h(
+        "div",
+        { class: "btns" },
+        h("button", { class: "sm primary", text: plan2 ? "So\u1EA1n m\u1EABu m\u1EDBi" : "L\u1EADp m\u1EABu ph\xF2ng th\u1EE7", onclick: () => {
+          sim2.newPlan("defense", null);
+          this.refresh();
+        } }),
+        h("button", { class: "sm danger", text: sim2.alarmUntil > sim2.time ? "\u0110ang b\xE1o \u0111\u1ED9ng" : "\u0110\xE1nh tr\u1ED1ng b\xE1o \u0111\u1ED9ng", disabled: sim2.alarmUntil > sim2.time, onclick: () => {
+          this.toast(sim2.soundAlarm());
+          this.refresh();
+        } })
+      ));
+      if (!plan2) return out;
+      for (const m of plan2.missions) out.push(this.missionCard(plan2, m));
+      out.push(this.addMissionRow(plan2));
+      return out;
+    }
+    // ---------------------------------------------------------------- the log
+    logPage() {
+      const { sim: sim2 } = this, b = sim2.battle, out = [];
+      out.push(h("h3", { text: b.on ? "\u0110ang c\xF3 giao tranh" : "Kh\xF4ng c\xF3 giao tranh" }));
+      if (b.on) out.push(h("p", { class: "sub", text: `Ta m\u1EA5t ${b.ourDead}, \u0111\u1ECBch m\u1EA5t ${b.foeDead}${b.breaches ? `, ${b.breaches} \u0111o\u1EA1n r\xE0o b\u1ECB ph\xE1` : ""}${b.shots ? `, cung tr\xEAn ch\xF2i b\u1EAFn ${b.shots} ph\xE1t` : ""}.` }), ...b.notes.map((n) => h("p", { class: "sub", text: n })));
+      if (!sim2.battleReports.length) out.push(h("p", { class: "sub", text: "Ch\u01B0a c\xF3 tr\u1EADn n\xE0o k\u1EBFt th\xFAc. Sau m\u1ED7i tr\u1EADn, b\u1EA3n t\xF3m t\u1EAFt hi\u1EC7n \u1EDF \u0111\xE2y \u0111\u1EC3 b\u1EA1n ch\u1EC9nh k\u1EBF ho\u1EA1ch l\u1EA7n sau." }));
+      for (const r of [...sim2.battleReports].reverse()) out.push(h("div", { class: "row", style: "flex-direction:column;align-items:stretch" }, ...r.lines.map((l) => h("small", { text: l }))));
+      return out;
+    }
+  };
+
   // src/ui/warhud.ts
   var WarHud = class {
     constructor(root, c, r) {
@@ -15887,19 +17583,19 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
         else ctl2.clearSelection();
         ctl2.onChange();
       } }));
-      this.stanceBtns = STANCES.map(([s, label, tip]) => h("button", { class: "sm", "data-stance": s, pressed: false, text: label, title: tip, onclick: () => {
+      this.stanceBtns = STANCES.map(([s, label2, tip]) => h("button", { class: "sm", "data-stance": s, pressed: false, text: label2, title: tip, onclick: () => {
         sim2.setStance(ids(), s);
         ctl2.onChange();
       } }));
       const gearRow = h("div", { class: "btns", role: "group", "aria-label": "Ph\xE1t \u0111\u1ED3" });
-      const addGear = (label, kind, slot, title) => {
+      const addGear = (label2, kind, slot, title) => {
         const btn = h("button", { class: "sm", title, onclick: () => {
           const e = sim2.assignGear(ids(), kind, slot);
           if (e) c.toast(e);
           else ctl2.clearSelection();
           ctl2.onChange();
         } });
-        this.gearBtns.push({ btn, kind, slot, label });
+        this.gearBtns.push({ btn, kind, slot, label: label2 });
         gearRow.append(btn);
       };
       for (const id of CRAFTED_WEAPONS) addGear(WEAPONS[id].name, id, "weapon", `Ph\xE1t ${WEAPONS[id].name.toLowerCase()} t\u1EEB kho X\u01B0\u1EDFng cho d\xE2n \u0111ang ch\u1ECDn`);
@@ -16315,12 +18011,12 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       this.root.append(hint(this.head, job === "build" ? 'Ch\u1EC9 th\u1EE3 x\xE2y c\u1EE7a nh\xE0 n\xE0y m\u1EDBi d\u1EF1ng v\xE0 n\xE2ng c\u1EA5p \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh. B\u1EA1n ch\u1ECDn ai l\xE0m th\u1EE3 x\xE2y: b\u1EA5m "Th\xEAm ng\u01B0\u1EDDi" r\u1ED3i ch\u1ECDn trong danh s\xE1ch.' : job === "farm" ? "Ru\u1ED9ng cho th\u1EE9c \u0103n \u0111\u1EC1u quanh n\u0103m, \xEDt nh\u1EA5t v\xE0o m\xF9a \u0111\xF4ng, c\xF2n b\u1EE5i qu\u1EA3 th\xEC kh\xF4ng m\u1ECDc l\u1EA1i. D\xE2n b\u1EA1n ch\u1ECDn v\xE0o ru\u1ED9ng l\xE0m vi\u1EC7c b\xEAn trong, th\u1EE9c \u0103n v\u1EC1 th\u1EB3ng kho. M\u1ED7i ru\u1ED9ng m\u1ED9t ng\u01B0\u1EDDi, ru\u1ED9ng c\u1EA5p cao h\u01A1n l\xE0m nhanh h\u01A1n." : 'D\xE2n v\xE0o trong nh\xE0 l\xE0m vi\u1EC7c, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3 v\xE0 kh\xF4ng b\u1ECB t\u1EA5n c\xF4ng. B\u1EA1n ch\u1ECDn ai v\xE0o: b\u1EA5m "Th\xEAm ng\u01B0\u1EDDi" r\u1ED3i ch\u1ECDn trong danh s\xE1ch.'), this.list, h("div", { class: "btns" }, this.add), this.picker);
     }
     update(b) {
-      const { sim: sim2 } = this.c, slots = levelDef(b).slots, jobKey = this.job === "farm" ? "food" : this.job, stat = JOBS[jobKey].stat, label = this.job === "farm" ? "N\xF4ng d\xE2n" : JOB_NAME[this.job];
+      const { sim: sim2 } = this.c, slots = levelDef(b).slots, jobKey = this.job === "farm" ? "food" : this.job, stat = JOBS[jobKey].stat, label2 = this.job === "farm" ? "N\xF4ng d\xE2n" : JOB_NAME[this.job];
       const crew2 = this.job === "build", staff = crew2 ? sim2.crew() : b.staff.map((id) => sim2.get(id)).filter((v) => !!v);
       const count = crew2 ? staff.length : sim2.staffCount(b), full = count >= slots;
       this.head.textContent = `${crew2 ? "Th\u1EE3 x\xE2y" : this.job === "farm" ? "N\xF4ng d\xE2n" : "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c"} (${count}/${slots}) \xB7 n\xE2ng c\u1EA5p nh\xE0 \u0111\u1EC3 ch\u1EE9a th\xEAm`;
       this.add.disabled = full && !this.open;
-      this.add.textContent = this.open ? "Xong" : `Th\xEAm ng\u01B0\u1EDDi ${label.toLowerCase()}`;
+      this.add.textContent = this.open ? "Xong" : `Th\xEAm ng\u01B0\u1EDDi ${label2.toLowerCase()}`;
       const key = `${b.id}|${staff.map((v) => `${v.id}.${v.stats[stat]}`).join()}`;
       if (key !== this.key) {
         this.key = key;
@@ -16342,14 +18038,14 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       if (pk === this.pickKey) return;
       this.pickKey = pk;
       this.picker.replaceChildren(
-        h("p", { class: "sub", text: full ? "Nh\xE0 \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: cho m\u1ED9t ng\u01B0\u1EDDi ra ho\u1EB7c n\xE2ng c\u1EA5p nh\xE0." : `Ch\u1ECDn ai l\xE0m ${label.toLowerCase()}:` }),
+        h("p", { class: "sub", text: full ? "Nh\xE0 \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: cho m\u1ED9t ng\u01B0\u1EDDi ra ho\u1EB7c n\xE2ng c\u1EA5p nh\xE0." : `Ch\u1ECDn ai l\xE0m ${label2.toLowerCase()}:` }),
         ...pool.map((v) => h(
           "div",
           { class: "row" },
           h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${v.stats[stat]} \xB7 \u0111ang ${JOB_NAME[v.job].toLowerCase()}` })),
           h("button", { class: "sm", text: "V\xE0o l\xE0m", disabled: full, onclick: () => {
             const e = crew2 ? sim2.assignCrew([v.id]) : this.job === "farm" ? sim2.assignField([v.id], b.id) : sim2.assignStaff([v.id], this.job);
-            this.c.toast(e ?? `${v.name}: ${label}`);
+            this.c.toast(e ?? `${v.name}: ${label2}`);
             this.c.ctl.onChange();
           } })
         ))
@@ -16470,6 +18166,9 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       this.recRows = [];
       this.techRows = [];
       this.goodRows = [];
+      /** The speed to go back to when the tent is left (it opens the game paused, as a war council does). */
+      this.resume = 0;
+      this.inTent = false;
       /** The people lying in the Nhà dân and the Lều chiến binh. */
       this.bedHead = { house: h("h3"), barracks: h("h3") };
       this.bedList = { house: h("div"), barracks: h("div") };
@@ -16520,6 +18219,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       this.tabs.barracks = [{ label: "Ng\u01B0\u1EDDi trong l\u1EC1u", page: page(hint(this.bedHead.barracks, "Chi\u1EBFn binh v\xE0o l\u1EC1u ng\u1EE7 khi tr\u1EDDi t\u1ED1i ho\u1EB7c ki\u1EC7t s\u1EE9c: h\u1ECD bi\u1EBFn m\u1EA5t kh\u1ECFi b\u1EA3n \u0111\u1ED3, hi\u1EC7n \u1EDF danh s\xE1ch n\xE0y, kh\xF4ng c\xF3 h\xECnh ng\u1EE7. H\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7, c\u1EA5p cao h\u01A1n h\u1ED3i nhanh h\u01A1n. H\u1EBFt gi\u01B0\u1EDDng th\xEC l\xEDnh ng\u1EE7 b\xEAn \u0111\u1ED1ng l\u1EEDa, h\u1ED3i ch\u1EADm h\u01A1n. L\xEDnh \u0111\u01B0\u1EE3c tuy\u1EC3n \u1EDF \u0111\u1ED1ng l\u1EEDa tr\u1EA1i."), this.bedList.barracks) }];
       this.tabs.house = [{ label: "Ng\u01B0\u1EDDi trong nh\xE0", page: page(hint(this.bedHead.house, "D\xE2n th\u01B0\u1EDDng v\xE0o nh\xE0 ng\u1EE7 khi tr\u1EDDi t\u1ED1i ho\u1EB7c ki\u1EC7t s\u1EE9c: h\u1ECD bi\u1EBFn m\u1EA5t kh\u1ECFi b\u1EA3n \u0111\u1ED3, hi\u1EC7n \u1EDF danh s\xE1ch n\xE0y, kh\xF4ng c\xF3 h\xECnh ng\u1EE7. H\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7, c\u1EA5p cao h\u01A1n h\u1ED3i nhanh h\u01A1n. H\u1EBFt gi\u01B0\u1EDDng th\xEC d\xE2n ng\u1EE7 b\xEAn \u0111\u1ED1ng l\u1EEDa, h\u1ED3i ch\u1EADm h\u01A1n."), this.bedList.house) }];
       this.tabs.field = [{ label: "Ng\u01B0\u1EDDi l\xE0m ru\u1ED9ng", page: page(this.staffBoxes.farm.root) }];
+      this.war = new WarPanel(c);
+      this.tabs.wartent = [{ label: "H\u1ECDp chi\u1EBFn", page: page(this.war.root) }];
       this.tabs.tower = [{ label: "Cung th\u1EE7 canh", page: page(hint(this.towerHead, "Cung th\u1EE7 \u0111\u1EE9ng tr\xEAn ch\xF2i b\u1EAFn xa h\u01A1n 2 \xF4 v\xE0 m\u1EA1nh h\u01A1n m\u1ED9t ph\u1EA7n t\u01B0, v\xE0 k\u1EBB \u0111\u1ECBch ph\u1EA3i ph\xE1 ch\xF2i m\u1EDBi h\u1EA1 \u0111\u01B0\u1EE3c h\u1ECD. Ch\u1EC9 chi\u1EBFn binh c\u1EA7m cung ho\u1EB7c d\xE2y qu\u0103ng \u0111\xE1 m\u1EDBi l\xEAn \u0111\u01B0\u1EE3c. Ch\u1EBF cung v\xE0 d\xE2y qu\u0103ng \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o."), this.towerList) }];
       this.tabs.fence = [];
       this.tabs.gate = [];
@@ -16652,6 +18353,8 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
           return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} nh\xE0 nghi\xEAn c\u1EE9u \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
         case "repair":
           return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} th\u1EE3 s\u1EEDa \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+        case "wartent":
+          return `C\u1EA5p ${b.level}: t\u1ED1i \u0111a ${this.c.sim.squadLimit()} \u0111\u1ED9i, ${this.c.sim.cardLimit()} th\u1EBB l\u1EC7nh cho m\u1ED9t k\u1EBF ho\u1EA1ch \xB7 v\xE0o l\u1EC1u l\xE0 game t\u1EA1m d\u1EEBng`;
         case "storage":
           return `S\u1EE9c ch\u1EE9a ${lv2.cap} m\u1ED7i lo\u1EA1i`;
         case "toolstore":
@@ -16664,6 +18367,15 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
     update() {
       const { sim: sim2, ctl: ctl2 } = this.c, b = this.current();
       this.root.hidden = !b || !ctl2.buildingOpen;
+      const inTent = !!b && ctl2.buildingOpen && b.kind === "wartent" && b.done;
+      if (inTent && !this.inTent) {
+        this.resume = sim2.speed;
+        sim2.speed = 0;
+      } else if (!inTent && this.inTent) {
+        if (this.resume > 0 && sim2.speed === 0) sim2.speed = this.resume;
+        this.resume = 0;
+      }
+      this.inTent = inTent;
       if (!b) {
         if (ctl2.selectedBuilding !== null) ctl2.selectedBuilding = null;
         return;
@@ -16686,6 +18398,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       if ((b.kind === "barracks" || b.kind === "house") && ready) this.updateBeds(b);
       if (b.kind === "field" && ready) this.staffBoxes.farm.update(b);
       if (b.kind === "tower" && ready) this.updateTower(b);
+      if (b.kind === "wartent" && ready) this.war.update();
       if (b.kind === "workshop" && ready) this.updateWorkshop(b);
       if (b.kind === "lab" && ready) this.updateLab(b);
       if (b.kind === "repair" && ready) this.updateRepair(b);
@@ -16776,7 +18489,7 @@ select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid 
       const key = `${b.id}|${crew2.map((v) => v.id).join()}|${archers.map((v) => `${v.id}.${v.post}`).join()}|${crew2.length >= slots}`;
       if (key === this.towerKey) return;
       this.towerKey = key;
-      const row = (v, label, fn) => h("div", { class: "row" }, h("div", { class: "nm" }, v.name, h("small", { text: WEAPONS[v.weapon ?? "fist"].name })), h("button", { class: "sm", text: label, disabled: label === "L\xEAn ch\xF2i" && crew2.length >= slots, onclick: () => {
+      const row = (v, label2, fn) => h("div", { class: "row" }, h("div", { class: "nm" }, v.name, h("small", { text: WEAPONS[v.weapon ?? "fist"].name })), h("button", { class: "sm", text: label2, disabled: label2 === "L\xEAn ch\xF2i" && crew2.length >= slots, onclick: () => {
         fn();
         ctl2.onChange();
       } }));

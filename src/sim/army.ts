@@ -1,5 +1,5 @@
 /** The army: squads (đội), their formations (trận pháp) and mastery, how formations change a blow, clusters (cụm) and the log of a fight. */
-import { COMMAND, clusterize, FORMATIONS, FormationId, FORMATION_IDS, formationOffsets, masteryFactor, placeOffset, armOfWeapon, iconCount } from './formations';
+import { COMMAND, SQUAD_MAX, clusterize, FORMATIONS, FormationId, FORMATION_IDS, formationOffsets, masteryFactor, placeOffset, armOfWeapon, iconCount } from './formations';
 import { DAY_LENGTH } from './constants';
 import { effWeapon, Ent } from './battle';
 import { RESEARCH } from './research';
@@ -54,6 +54,7 @@ export function joinSquad(sim: Sim, ids: readonly number[], squadId: number): st
   for (const v of sim.mine(ids)) {
     if (v.job !== 'fight') { err = 'Chỉ chiến binh mới vào đội: tuyển ở đống lửa trại'; continue; }
     if (v.squad === s.id) continue;
+    if (s.ids.length >= SQUAD_MAX) { err = `Một đội chỉ có tối đa ${SQUAD_MAX} người`; continue; }
     leaveSquad(sim, [v.id]);
     v.squad = s.id; s.ids.push(v.id);
   }
@@ -104,11 +105,11 @@ export function setFormation(sim: Sim, squadId: number, f: FormationId): string 
  * Send the squad to a point in its formation: each soldier is given his own place (foot soldiers in front, archers behind).
  * 'attack' fights what it meets on the way, 'move' does not, 'hold' stands there on guard.
  */
-export function squadMove(sim: Sim, s: Squad, x: number, y: number, mode: 'attack' | 'move' | 'hold'): void {
+export function squadMove(sim: Sim, s: Squad, x: number, y: number, mode: 'attack' | 'move' | 'hold', heading?: number): void {
   const us = squadUnits(sim, s);
   if (!us.length) return;
   const c = squadCenter(sim, s)!;
-  s.heading = Math.hypot(x - c.x, y - c.y) > 1 ? Math.atan2(y - c.y, x - c.x) : s.heading;
+  s.heading = heading ?? (Math.hypot(x - c.x, y - c.y) > 1 ? Math.atan2(y - c.y, x - c.x) : s.heading);
   s.anchor = { x, y };
   // the front rank first: foot soldiers, then archers, each side keeping to its own offset
   us.sort((a, b) => (armOfWeapon(effWeapon(a)) === 'archer' ? 1 : 0) - (armOfWeapon(effWeapon(b)) === 'archer' ? 1 : 0) || a.id - b.id);
