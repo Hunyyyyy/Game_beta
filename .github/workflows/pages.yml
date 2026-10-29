@@ -1,10 +1,12 @@
 name: Publish game to GitHub Pages
 
-# Every push to main checks the code, builds the single-file game and publishes it at
-# https://<owner>.github.io/<repo>/ so it can be opened on a phone without anyone doing anything.
+# One site, two versions:
+#   https://<owner>.github.io/<repo>/       the release, built from main
+#   https://<owner>.github.io/<repo>/dev/   the test build, built from dev (features are merged into dev first)
+# A push to either branch rebuilds both, so the site always shows the latest of each.
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
@@ -21,19 +23,51 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+      - uses: actions/checkout@v4
+        id: dev_checkout
+        continue-on-error: true
+        with:
+          ref: dev
+          path: dev
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run test:sim
-      - run: npm run build
+          cache-dependency-path: main/package-lock.json
+
+      # main is the release: it must pass every check or nothing is published
+      - name: Check and build main
+        working-directory: main
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      # dev is for testing: if it is broken the release still goes out and /dev/ is simply left out
+      - name: Check and build dev
+        id: dev_build
+        if: steps.dev_checkout.outcome == 'success'
+        continue-on-error: true
+        working-directory: dev
+        run: |
+          npm ci
+          npm test
+          npm run build
+
       - name: Collect the site
         run: |
           mkdir _site
-          cp dist/index.html _site/index.html
+          cp main/dist/index.html _site/index.html
           touch _site/.nojekyll
+          if [ "${{ steps.dev_build.outcome }}" = "success" ]; then
+            mkdir _site/dev
+            sed 's|<title>|<title>[DEV] |' dev/dist/index.html > _site/dev/index.html
+          else
+            echo "dev was not published (missing branch or failed checks)"
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
