@@ -1,4 +1,4 @@
-import { Building, BuildingKind, BUILDINGS, Era } from '../sim/buildings';
+import { Building, BuildingKind, BUILDINGS, CLEARANCE as CLEAR, Era, needsWork, WALL_KINDS } from '../sim/buildings';
 import type { WeatherKind } from '../sim/calendar';
 import { gameDays, TILE } from '../sim/constants';
 import type { Sim, Villager } from '../sim/sim';
@@ -13,7 +13,7 @@ export interface Camera { x: number; y: number; zoom: number }
 export interface Box { x0: number; y0: number; x1: number; y1: number }
 export interface Marker { x: number; y: number; age: number }
 
-export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era }
+export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number }
 
 interface Drawable { y: number; kind: 'tree' | 'rock' | 'bush' | 'villager' | 'building' | 'animal' | 'camp'; i: number; j: number; v?: Villager; b?: Building; a?: Animal; t?: Tribe }
 
@@ -83,6 +83,91 @@ export class Renderer {
   private buildingAnchor(kind: BuildingKind, x: number, y: number): [number, number] {
     const d = BUILDINGS[kind];
     return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
+  }
+
+  /** A fence piece in a column (a neighbour above or below, none beside) is a stake with rails running down the screen to the next one: the tile picture shows a row seen from the front. Returns false when the piece is not part of a column. */
+  private drawColumnFence(b: Building, wallAt: Map<number, Building>): boolean {
+    const N = this.sim.world.size, at = (dx: number, dy: number) => wallAt.get((b.y + dy) * N + b.x + dx);
+    // a fence piece at a corner or a T (a neighbour on both axes) is drawn here too
+    if (!(at(0, -1) || at(0, 1))) return false;
+    const { ctx } = this, z = this.cam.zoom, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay), two = b.level >= 2;
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 8 * z, 3 * z, 0, 0, Math.PI * 2); ctx.fill();
+    // rails to the pieces below and beside, drawn first so that this stake and the next one stand over their ends
+    for (const [dx, dy] of [[0, 1], [-1, 0], [1, 0]]) {
+      if (!at(dx, dy)) continue;
+      const q = this.worldToScreen(ax + dx * TILE, ay + dy * TILE);
+      for (const h of two ? [20, 12, 5] : [14, 7]) { ctx.strokeStyle = two ? '#8a6238' : '#d8c690'; ctx.lineWidth = Math.max(1, (two ? 2 : 1) * z); ctx.beginPath(); ctx.moveTo(p.x, p.y - h * z); ctx.lineTo(q.x, q.y - h * z); ctx.stroke(); }
+    }
+    const w = (two ? 6 : 5) * z, hgt = (two ? 30 : 25) * z;
+    ctx.fillStyle = '#5e4026'; ctx.fillRect(Math.round(p.x - w / 2), Math.round(p.y - hgt), Math.round(w), Math.round(hgt));
+    ctx.fillStyle = '#8a6238'; ctx.beginPath(); ctx.moveTo(p.x - w / 2, p.y - hgt); ctx.lineTo(p.x, p.y - hgt - 3 * z); ctx.lineTo(p.x + w / 2, p.y - hgt); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = Math.max(1, z * 0.7); ctx.strokeRect(Math.round(p.x - w / 2) + 0.5, Math.round(p.y - hgt) + 0.5, Math.round(w), Math.round(hgt));
+    return true;
+  }
+
+  /** A gate stands taller and much wider than the fence on either side (posts 30 px out from its middle, a lintel across them), and shows plainly whether it is shut: shut, it has a red sign and cloth, planks fill the gap and the ground between the posts is barred; open, it has a green sign and cloth, the leaves stand swung out and a path is laid between the posts. It runs along the column when fence lies above or below it and none beside it. */
+  private drawGate(b: Building, wallAt: Map<number, Building>): void {
+    const { ctx } = this, z = this.cam.zoom, N = this.sim.world.size, at = (dx: number, dy: number) => wallAt.has((b.y + dy) * N + b.x + dx);
+    const col = (at(0, -1) || at(0, 1)) && !(at(-1, 0) || at(1, 0)), two = b.level >= 2, open = b.open;
+    const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 8);
+    const sign = open ? '#4fbf5a' : '#d9473f', signDark = open ? '#2a7a33' : '#8f2620';
+    // u runs along the gate, v across it (towards the viewer), h up from the ground
+    const X = (u: number, v = 0) => (col ? p.x + v * z : p.x + u * z), Y = (u: number, h: number, v = 0) => (col ? p.y + u * z : p.y + v * z) - h * z;
+    const line = (x0: number, y0: number, x1: number, y1: number, th: number, c: string) => {
+      ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = th * z + 2; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+      ctx.strokeStyle = c; ctx.lineWidth = th * z; ctx.stroke();
+    };
+    const bar = (u0: number, u1: number, h: number, th: number, c: string) => line(X(u0), Y(u0, h), X(u1), Y(u1, h), th, c);
+    const top = two ? 64 : 58, leaf = two ? '#9a9a96' : '#8a6238', U = 30;
+    // the ground between the posts: a green path when open, barred in red when shut
+    ctx.fillStyle = open ? 'rgba(90,200,90,.32)' : 'rgba(217,71,63,.30)';
+    if (col) ctx.fillRect(Math.round(p.x - 8 * z), Math.round(p.y - U * z), Math.round(16 * z), Math.round(2 * U * z));
+    else ctx.fillRect(Math.round(p.x - U * z), Math.round(p.y - 8 * z), Math.round(2 * U * z), Math.round(16 * z));
+    const post = (u: number) => {
+      const pw = (two ? 11 : 9) * z, ph = top * z, x = X(u), y = Y(u, 0);
+      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y, 10 * z, 3.5 * z, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#2b1d10'; ctx.fillRect(Math.round(x - pw / 2) - 1, Math.round(y - ph) - 1, Math.round(pw) + 2, Math.round(ph) + 2);
+      ctx.fillStyle = '#5e4026'; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph), Math.round(pw), Math.round(ph));
+      ctx.fillStyle = '#aa7c48'; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph), Math.round(pw * 0.35), Math.round(ph));
+      // cloth hung from the top of the post: red when shut, green when open
+      ctx.fillStyle = sign; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph + 6 * z), Math.round(pw), Math.round(14 * z));
+      ctx.fillStyle = signDark; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph + 17 * z), Math.round(pw), Math.round(3 * z));
+    };
+    post(-U);
+    if (open) {
+      // leaves swung out to the front, one from each post
+      for (const s of [-1, 1]) for (const h of [8, 22, 36]) line(X(s * U, 0), Y(s * U, h), X(s * (U - 4), 14), Y(s * (U - 4), h, 14), 4, leaf);
+    } else {
+      for (const h of [6, 17, 28, 39]) bar(-U + 4, U - 4, h, 5, leaf);
+      line(X(-U + 4), Y(-U + 4, 6), X(U - 4), Y(U - 4, 39), 3, '#d8c690');
+    }
+    post(U);
+    bar(-U - 8, U + 8, top, 7, '#5e4026'); bar(-U - 8, U + 8, top + 2, 2, '#aa7c48');
+    // the sign on the lintel: a disc with a bar across (shut) or an arrow through (open)
+    const cx = X(0), cy = Y(0, top + 12), r = 9 * z;
+    ctx.fillStyle = '#2b1d10'; ctx.beginPath(); ctx.arc(cx, cy, r + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = sign; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff6e8'; ctx.lineWidth = Math.max(2, 2.4 * z); ctx.lineCap = 'round'; ctx.beginPath();
+    if (open) { ctx.moveTo(cx, cy + 5 * z); ctx.lineTo(cx, cy - 5 * z); ctx.moveTo(cx - 3.5 * z, cy - 1.5 * z); ctx.lineTo(cx, cy - 5.5 * z); ctx.lineTo(cx + 3.5 * z, cy - 1.5 * z); }
+    else { ctx.moveTo(cx - 5 * z, cy); ctx.lineTo(cx + 5 * z, cy); }
+    ctx.stroke(); ctx.lineCap = 'butt';
+  }
+
+  /** Ropes and a middle stake from a fence piece to the pieces touching it at its upper corners, drawn over the pieces already standing there. */
+  private drawDiagonalRails(b: Building, wallAt: Map<number, Building>): void {
+    const { ctx } = this, N = this.sim.world.size, z = this.cam.zoom;
+    for (const dx of [-1, 1]) {
+      const o = wallAt.get((b.y - 1) * N + b.x + dx);
+      if (!o) continue;
+      // a piece beside this one in the same row or column already joins them
+      if (wallAt.has(b.y * N + b.x + dx) || wallAt.has((b.y - 1) * N + b.x)) continue;
+      const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), [bx, by] = this.buildingAnchor(o.kind, o.x, o.y);
+      const rope = (h: number) => { const p = this.worldToScreen(ax, ay - h), q = this.worldToScreen(bx, by - h); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); };
+      ctx.strokeStyle = '#d8c690'; ctx.lineWidth = Math.max(1, z); rope(12); rope(6);
+      const m = this.worldToScreen((ax + bx) / 2, (ay + by) / 2);
+      ctx.fillStyle = '#5e4026'; ctx.fillRect(Math.round(m.x - 2 * z), Math.round(m.y - 24 * z), Math.round(4 * z), Math.round(24 * z));
+      ctx.fillStyle = '#aa7c48'; ctx.fillRect(Math.round(m.x - 2 * z), Math.round(m.y - 24 * z), Math.round(4 * z), Math.round(3 * z));
+    }
   }
 
   /** Current level's sprite; while an upgrade runs the finished building stays drawn, with a progress bar. */
@@ -174,7 +259,7 @@ export class Renderer {
     }
   }
 
-  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal'; id: number } | null = null): void {
+  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null): void {
     const { ctx, cam, sim } = this, z = cam.zoom, world = sim.world, N = world.size, sp = this.sprites;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
@@ -227,6 +312,9 @@ export class Renderer {
     for (const a of sim.animals) if (seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
     for (const t of sim.tribes) if (t.state !== 'adopted' && sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: 'camp', i: 0, j: 0, t });
     list.sort((a, b) => a.y - b.y);
+    // fences laid corner to corner: their ropes do not meet in the tile sprites, so a rope and a stake are drawn across the diagonal
+    const wallAt = new Map<number, Building>();
+    for (const b of sim.buildings) if (b.kind === 'fence' || b.kind === 'gate') wallAt.set(b.y * N + b.x, b);
     for (const d of list) {
       if (d.kind === 'tree') {
         const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
@@ -238,9 +326,34 @@ export class Renderer {
         this.prop((n && n.amount === 0 ? nat.bushEmpty : nat.bush)[k], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'building' && d.b) {
         const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
-        this.prop(this.buildingProp(b), ax, ay, time);
+        if (b.kind === 'gate' && b.done) this.drawGate(b, wallAt);
+        else if (!(b.kind === 'fence' && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time);
+        if (b.kind === 'fence' || b.kind === 'gate') this.drawDiagonalRails(b, wallAt);
         const emblem = b.done ? sp.emblems[b.kind] : undefined;
         if (emblem) { const p = this.worldToScreen(ax, ay - 52); ctx.drawImage(emblem, Math.round(p.x - 8 * z), Math.round(p.y), 16 * z, 16 * z); }
+        // a house that works to orders shows how far the order has got, or sleeps when it has none
+        if (b.done && (b.kind === 'lab' || b.kind === 'workshop' || b.kind === 'repair' || b.kind === 'stable' || b.kind === 'builder')) {
+          const p = this.worldToScreen(ax, ay - 74);
+          ctx.textAlign = 'center'; ctx.lineJoin = 'round';
+          // the builders' house has no orders of its own: it is busy while any house waits to be raised or upgraded
+          if (b.kind === 'builder' && sim.buildings.some(needsWork)) { ctx.textAlign = 'start'; }
+          else if (b.active) {
+            const w = 36 * z, f = Math.max(0, Math.min(1, b.active.progress));
+            ctx.fillStyle = 'rgba(20,14,8,.8)'; ctx.fillRect(p.x - w / 2 - z, p.y - z, w + 2 * z, 8 * z);
+            ctx.fillStyle = '#6bbf59'; ctx.fillRect(p.x - w / 2, p.y, w * f, 6 * z);
+            ctx.font = `700 ${Math.max(10, 7 * z)}px system-ui, sans-serif`; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(20,14,8,.9)'; ctx.fillStyle = '#fff6e8';
+            ctx.strokeText(`${Math.floor(f * 100)}%`, p.x, p.y - 3 * z); ctx.fillText(`${Math.floor(f * 100)}%`, p.x, p.y - 3 * z);
+          } else {
+            const t = time * 1.2 + b.id * 0.7;
+            for (let i = 0; i < 4; i++) {
+              const k = (t + i * 0.5) % 2, a = Math.sin(Math.PI * Math.min(1, k / 2)), s = (7 + i * 2) * z;
+              ctx.font = `700 ${Math.max(9, s)}px system-ui, sans-serif`; ctx.fillStyle = `rgba(190,215,255,${(0.9 * a).toFixed(2)})`; ctx.strokeStyle = `rgba(20,30,60,${(0.8 * a).toFixed(2)})`; ctx.lineWidth = 2.5;
+              const x = p.x + (i * 7 - 8) * z, y = p.y - (k * 7 + i * 3) * z;
+              ctx.strokeText('z', x, y); ctx.fillText('z', x, y);
+            }
+          }
+          ctx.textAlign = 'start';
+        }
         if (!b.done || b.upgrading) {
           const p = this.worldToScreen(ax, ay), w = 40 * z;
           ctx.fillStyle = 'rgba(20,14,8,.7)'; ctx.fillRect(p.x - w / 2, p.y - 4 * z, w, 5 * z);
@@ -334,6 +447,13 @@ export class Renderer {
     // ---- bóng ma khi đặt công trình ----
     if (ghost) {
       const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
+      // the clearance of two free tiles that houses keep from each other: round every standing house and round the ghost (walls keep none)
+      if (!WALL_KINDS.has(ghost.kind)) {
+        const zone = (x: number, y: number, w: number, h: number, c: string) => { ctx.fillStyle = c; ctx.fillRect(px(x - CLEAR), py(y - CLEAR), (w + 2 * CLEAR) * ts, (h + 2 * CLEAR) * ts); };
+        for (const o of sim.buildings) if (!WALL_KINDS.has(o.kind) && o.id !== ghost.moving) zone(o.x, o.y, BUILDINGS[o.kind].w, BUILDINGS[o.kind].h, 'rgba(240,170,60,.16)');
+        ctx.strokeStyle = 'rgba(255,220,120,.9)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+        ctx.strokeRect(px(ghost.x - CLEAR), py(ghost.y - CLEAR), (d.w + 2 * CLEAR) * ts, (d.h + 2 * CLEAR) * ts); ctx.setLineDash([]);
+      }
       this.prop(sp.building(ghost.kind, ghost.era ?? sim.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
       ctx.fillStyle = ghost.ok ? 'rgba(90,200,90,.38)' : 'rgba(220,70,60,.42)';
       ctx.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
@@ -350,7 +470,11 @@ export class Renderer {
     }
     // ---- the unit or animal being inspected ----
     if (inspect) {
-      const e = inspect.kind === 'unit' ? sim.get(inspect.id) : sim.animalById.get(inspect.id);
+      if (inspect.kind === 'node') {
+        const N = sim.world.size, p = this.worldToScreen((inspect.id % N) * TILE + 16, Math.floor(inspect.id / N) * TILE + 28);
+        ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(p.x, p.y, 15 * z, 6 * z, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      const e = inspect.kind === 'unit' ? sim.get(inspect.id) : inspect.kind === 'animal' ? sim.animalById.get(inspect.id) : undefined;
       if (e) { const p = this.worldToScreen(e.x * TILE, e.y * TILE); ctx.strokeStyle = '#ff8a7a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(p.x, p.y + z, 11 * z, 5 * z, 0, 0, Math.PI * 2); ctx.stroke(); }
     }
 

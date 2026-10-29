@@ -2,19 +2,22 @@
 import { COMMAND, SQUAD_MAX, clusterize, FORMATIONS, FormationId, FORMATION_IDS, formationOffsets, masteryFactor, placeOffset, armOfWeapon, iconCount } from './formations';
 import { DAY_LENGTH } from './constants';
 import { armOf, effWeapon, Ent } from './battle';
-import { RESEARCH } from './research';
+import { RESEARCH, unlockedMax } from './research';
+import { CELLS_DEFAULT, SQUADS_DEFAULT } from './progression';
 import type { Sim } from './sim';
 import type { Squad, Villager } from './model';
 
 const COLORS = ['#e0523c', '#3c8ce0', '#e0b43c', '#5cb85c', '#a85cd8', '#3cd0c8'];
 
 // ---------------------------------------------------------------- squads
-/** How many squads the war tent allows (its level 1..3), or the most when testing with free building. */
+/** How many squads may be raised (4 to start, more with research); none without a war tent. */
 export function squadLimit(sim: Sim): number {
-  const tent = sim.building('wartent');
-  if (tent) return COMMAND.squadLimit[Math.min(COMMAND.squadLimit.length, tent.level) - 1];
-  return sim.dev.freeBuild ? COMMAND.squadLimit[COMMAND.squadLimit.length - 1] : 0;
+  if (sim.building('wartent') || sim.dev.freeBuild) return sim.dev.freeBuild ? COMMAND.squadLimit[COMMAND.squadLimit.length - 1] : unlockedMax(sim.researched, 'squads', SQUADS_DEFAULT);
+  return 0;
 }
+/** The most cells a formation has (so the most soldiers in one squad): 5 to start, more with research. */
+export const cellLimit = (sim: Sim): number => (sim.dev.freeBuild ? SQUAD_MAX : Math.min(SQUAD_MAX, unlockedMax(sim.researched, 'formationCells', CELLS_DEFAULT)));
+
 /** How many command cards a plan may hold: more for a higher tent, and two more once signals are researched. */
 export function cardLimit(sim: Sim): number {
   const tent = sim.building('wartent'), level = tent ? tent.level : sim.dev.freeBuild ? 3 : 0;
@@ -55,7 +58,7 @@ export function joinSquad(sim: Sim, ids: readonly number[], squadId: number): st
   for (const v of sim.mine(ids)) {
     if (v.job !== 'fight') { err = 'Chỉ chiến binh mới vào đội: tuyển ở trại lính'; continue; }
     if (v.squad === s.id) continue;
-    if (s.ids.length >= SQUAD_MAX) { err = `Một đội chỉ có tối đa ${SQUAD_MAX} người`; continue; }
+    if (s.ids.length >= cellLimit(sim)) { err = `Một đội chỉ có tối đa ${cellLimit(sim)} người: nghiên cứu mở rộng ô trận pháp`; continue; }
     leaveSquad(sim, [v.id]);
     v.squad = s.id; s.ids.push(v.id);
   }

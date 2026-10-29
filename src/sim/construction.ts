@@ -1,8 +1,9 @@
 /** Placing, upgrading, moving and demolishing buildings, and what the buildings give the village (room, population, build speed). */
-import { Building, BuildingKind, BUILDINGS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, levelCapByFire, POP_BY_FIRE } from './buildings';
+import { Building, BuildingKind, BUILDINGS, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, levelCapByFire, POP_BY_FIRE } from './buildings';
 import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
 import { buildingOpen, levelCap, techForBuilding, techForLevel } from './research';
+import { fireUnlockLevel, fireUpgradeNeeds } from './progression';
 import type { Sim } from './sim';
 import { PlaceResult } from './model';
 
@@ -41,6 +42,29 @@ export function footprintError(sim: Sim, kind: BuildingKind, x: number, y: numbe
     const t = w.tiles[k];
     if ((t !== 0 && t !== 4) || (w.occ[k] && !own(tx, ty))) return 'Vướng cây, đá, nước hoặc công trình';
   }
+  // houses keep 2 free tiles between them so that villagers never get boxed in; fences, gates and pits are laid tight on purpose
+  if (!WALL_KINDS.has(kind)) for (const o of sim.buildings) {
+    if (o === ignore || WALL_KINDS.has(o.kind)) continue;
+    const od = BUILDINGS[o.kind], gx = Math.max(x - (o.x + od.w), o.x - (x + d.w)), gy = Math.max(y - (o.y + od.h), o.y - (y + d.h));
+    if (Math.max(gx, gy) < CLEARANCE) return 'Cần chừa ít nhất 2 ô trống giữa các công trình để dân đi lại';
+  }
+  return null;
+}
+
+/** Level of the highest finished campfire (1 when there is none yet). */
+export const fireLevel = (sim: Sim): number => sim.buildings.reduce((m, b) => (b.kind === 'campfire' && b.done ? Math.max(m, b.level) : m), 1);
+
+/** Why the campfire may not leave its level yet: every house opened up to it must stand, finished, at that level (research does not come into it). */
+export function fireUpgradeBlock(sim: Sim, level: number): string | null {
+  const need = fireUpgradeNeeds(level);
+  if (need === null) return null;
+  for (const k of Object.keys(BUILDINGS) as BuildingKind[]) {
+    const d = BUILDINGS[k];
+    if (!d.buildable || fireUnlockLevel(k) > level) continue;
+    const mine = sim.buildings.filter((b) => b.kind === k), want = Math.min(need, maxLevel(k, sim.era));
+    if (!mine.length) return `Cần dựng ${d.name} trước khi nâng Nhà chung`;
+    if (mine.some((b) => !b.done || b.upgrading || b.level < want)) return `Cần nâng ${d.name} lên cấp ${want} trước khi nâng Nhà chung`;
+  }
   return null;
 }
 
@@ -53,6 +77,8 @@ export function buildingLimit(sim: Sim, kind: BuildingKind): number {
 
 /** Why a kind of building cannot be built at all right now: it is at its limit, or it needs research or another house first. */
 export function buildingLock(sim: Sim, kind: BuildingKind): string | null {
+  const fireNeed = fireUnlockLevel(kind);
+  if (!sim.dev.freeBuild && fireNeed > fireLevel(sim)) return `Cần nâng ${BUILDINGS.campfire.name} lên cấp ${fireNeed} để xây ${BUILDINGS[kind].name.toLowerCase()}`;
   const have = sim.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim, kind);
   if (limit === 0) return `Cần nâng cấp Nhà chung để xây ${BUILDINGS[kind].name.toLowerCase()}`;
   if (have >= limit) return limit === 1 ? 'Mỗi công trình chỉ xây được một cái, hãy nâng cấp nó' : `Đã đủ ${limit} ${BUILDINGS[kind].name.toLowerCase()}: nâng cấp Nhà chung để xây thêm`;
@@ -73,8 +99,9 @@ export function canUpgrade(sim: Sim, b: Building): string | null {
   if (b.upgrading) return 'Đang nâng cấp';
   if (b.level >= maxLevel(b.kind, b.era)) return 'Đã ở cấp cao nhất';
   if (b.level + 1 > levelCap(sim.researched, b.kind)) return `Cần nghiên cứu: ${techForLevel(b.kind, b.level + 1)?.name ?? '?'}`;
+  if (b.kind === 'campfire' && !sim.dev.freeBuild) { const why = fireUpgradeBlock(sim, b.level); if (why) return why; }
   const fire = sim.campfire();
-  if (b.kind !== 'campfire' && fire && !sim.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `Cần nâng ${BUILDINGS.campfire.name} lên cấp ${b.level + 2}`;
+  if (b.kind !== 'campfire' && fire && !sim.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `Cần nâng ${BUILDINGS.campfire.name} lên cấp ${b.level + 1}`;
   return sim.dev.freeBuild ? null : sim.missing(levelDef(b, b.level + 1).cost);
 }
 
@@ -122,14 +149,8 @@ export function salvage(sim: Sim, b: Building): Partial<Stock> {
   return out;
 }
 
-/** What moving a finished building costs: a fifth of what was paid. An unfinished one moves for free. */
-export function moveFee(sim: Sim, b: Building): Partial<Stock> {
-  const out: Partial<Stock> = {};
-  if (!b.done || sim.dev.freeBuild) return out;
-  const paid = invested(sim, b);
-  for (const r of Object.keys(paid) as Res[]) { const n = Math.ceil((paid[r] ?? 0) * 0.2); if (n > 0) out[r] = n; }
-  return out;
-}
+/** Moving a building costs nothing. */
+export function moveFee(_sim: Sim, _b: Building): Partial<Stock> { return {}; }
 
 /** Send everyone who was heading for or working at this building back to idle; an order in progress is refunded. */
 export function evict(sim: Sim, b: Building): void {
@@ -153,7 +174,11 @@ export function setOcc(sim: Sim, b: Building, val: number): void {
   for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.occ[(b.y + j) * sim.world.size + b.x + i] = val;
 }
 
-export function canDemolish(sim: Sim, b: Building): string | null { return BUILDINGS[b.kind].buildable ? null : 'Không phá được công trình này'; }
+/** A house that may stand only once cannot be torn down (it can still be raised and moved). */
+export function canDemolish(sim: Sim, b: Building): string | null {
+  if (!BUILDINGS[b.kind].buildable) return 'Không phá được công trình này';
+  return BUILDINGS[b.kind].perFire ? null : 'Công trình chỉ có một cái nên không phá bỏ được';
+}
 
 /** A work falls in battle: it leaves the village with no salvage and no refund. */
 export function destroyBuilding(sim: Sim, b: Building): void {
@@ -198,11 +223,10 @@ export function moveBuilding(sim: Sim, id: number, x: number, y: number): string
   for (const r of Object.keys(fee) as Res[]) sim.stock[r] -= fee[r] ?? 0;
   evict(sim, b);
   if (b.upgrading) { for (const r of Object.keys(levelDef(b, b.level + 1).cost) as Res[]) if (!sim.dev.freeBuild) sim.stock[r] += levelDef(b, b.level + 1).cost[r] ?? 0; b.upgrading = false; }
-  const wasDone = b.done;
+  // a finished house is lifted and set down as it is: it keeps its level and needs no builders
   setOcc(sim, b, 0); b.x = x; b.y = y; setOcc(sim, b, 1);
-  if (wasDone && !sim.dev.instantBuild) { b.done = false; b.progress = 0; b.rebuild = true; }
   sim.fogDirty = true;
-  sim.say(`${BUILDINGS[b.kind].name} được dời sang chỗ mới.${b.rebuild ? ' Giao "Thợ xây" để dựng lại.' : ''}`);
+  sim.say(`${BUILDINGS[b.kind].name} được dời sang chỗ mới.`);
   return null;
 }
 

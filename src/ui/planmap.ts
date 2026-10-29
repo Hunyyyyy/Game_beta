@@ -393,7 +393,7 @@ export class PlanMapView {
     let o = this.sizeFrom, p = this.aim;
     const mv = this.moving;
     if (mv) { const dx = this.aim.x - mv.grab.x, dy = this.aim.y - mv.grab.y; o = { x: mv.o0.x + dx, y: mv.o0.y + dy }; p = { x: mv.p0.x + dx, y: mv.p0.y + dy }; }
-    return { d: drawFormation(kind, o, p, this.intel.camp), kind, o, p };
+    return { d: drawFormation(kind, o, p, this.intel.camp, this.sim.cellLimit()), kind, o, p };
   }
 
   /** The drag ends: the cells it made become the squad's, if there are 3 or more. Fewer is not allowed, and the formation stays to be dragged again. A tap on the origin calls it off. */

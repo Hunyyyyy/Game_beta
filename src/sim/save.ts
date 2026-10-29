@@ -10,6 +10,7 @@
 import { CURRENCY, emptyStock, RES_NAME } from './resources';
 import { SIEGE, TRIBES } from './combat';
 import { maxHp } from './buildings';
+import { SCREEN_QUESTS } from './quests';
 import { decode, encode, packRuns, unpackRuns } from './codec';
 import type { Season } from './calendar';
 import type { ResourceNode } from './world';
@@ -26,7 +27,7 @@ export const SAVED = {
   /** Lists of plain data. */
   lists: ['wornTools', 'craftQueue', 'tameQueue', 'researchQueue', 'repairQueue', 'log', 'foodLots', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
   /** Handled by hand below. */
-  special: ['researched', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
+  special: ['researched', 'questSeen', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
 } as const satisfies Record<string, readonly (keyof Sim)[]>;
 
 /** Properties of Sim that are not part of a saved game, and why. */
@@ -46,6 +47,8 @@ export interface GameSave {
   records: Record<string, unknown>;
   lists: Record<string, unknown>;
   researched: string[];
+  /** Quests done; absent in a save from before quests were kept. */
+  quests?: string[];
   tribes: unknown[];
   rng: { rnd: number; frnd: number; wrnd: number };
   world: { season: Season; tiles: number[]; occ: number[]; decor: number[]; nodes: Row[] };
@@ -62,6 +65,7 @@ export function toSave(sim: Sim): GameSave {
     records: pick(SAVED.records),
     lists: pick(SAVED.lists),
     researched: [...sim.researched],
+    quests: [...sim.questSeen],
     tribes: sim.tribes.map(({ def: _def, ...t }) => encode(t)),
     rng: { rnd: sim.rnd.getState(), frnd: sim.frnd.getState(), wrnd: sim.wrnd.getState() },
     world: {
@@ -188,7 +192,7 @@ export function migrate(raw: unknown): GameSave {
 export function applySave(sim: Sim, data: GameSave): void {
   if (data.seed !== sim.seed) throw new Error(`the save is of world ${data.seed}, this game is world ${sim.seed}`);
   const w = sim.world, target = sim as unknown as Record<string, unknown>;
-  unpackRuns(data.world.tiles, w.tiles); unpackRuns(data.world.occ, w.occ); unpackRuns(data.world.decor, w.decor);
+  unpackRuns(data.world.tiles, w.tiles); unpackRuns(data.world.occ, w.occ); unpackRuns(data.world.decor, w.decor); w.decor.fill(0); // stumps of earlier saves are gone too
   w.nodes.clear();
   for (const [i, kind, res, amount, max, workers, sides, regrow] of data.world.nodes as Array<[number, ResourceNode['kind'], ResourceNode['res'], number, number, number, number, number]>) {
     w.nodes.set(i, { kind, res, amount, max, workers, sides, regrow });
@@ -200,6 +204,7 @@ export function applySave(sim: Sim, data: GameSave): void {
   for (const k of SAVED.records) { const rec = target[k] as Record<string, unknown>; for (const key of Object.keys(rec)) delete rec[key]; Object.assign(rec, k === 'stock' ? emptyStock() : {}, decode(data.records[k])); } // a save from before a material existed has no entry for it: zero
   for (const k of SAVED.lists) { const list = target[k] as unknown[]; list.length = 0; list.push(...decode<unknown[]>(data.lists[k])); }
   sim.researched.clear(); for (const id of data.researched) sim.researched.add(id);
+  sim.questSeen.clear(); for (const id of data.quests ?? SCREEN_QUESTS) sim.questSeen.add(id);
   sim.tribes.length = 0;
   for (const t of data.tribes) { const tribe = decode<Record<string, unknown>>(t); sim.tribes.push({ ...tribe, def: TRIBES[tribe.id as keyof typeof TRIBES] } as unknown as Sim['tribes'][number]); }
   sim.rnd.setState(data.rng.rnd); sim.frnd.setState(data.rng.frnd); sim.wrnd.setState(data.rng.wrnd);

@@ -8,6 +8,7 @@ import { BARTER, RES_LIST, RES_NAME } from '../sim/resources';
 import type { Villager } from '../sim/sim';
 import type { BuildingKind } from '../sim/buildings';
 import { autoOn, TECHS, unlockText } from '../sim/research';
+import { resIcon } from './resicons';
 import { RECIPE_BY_ID, RECIPES, TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, ToolKind, recipeName, recipeUse } from '../sim/tools';
 import { costText, h, hint, iconCanvas } from './dom';
 import type { Ctx } from './ctx';
@@ -111,7 +112,7 @@ export class BuildingPanel {
     for (const res of RES_LIST) {
       const num = h('b'), bar = h('b');
       this.resRows.push({ res, num, bar });
-      stockRows.push(h('div', { class: 'row' }, h('div', { class: 'nm' }, RES_NAME[res], h('small', {}, num)), h('div', { class: 'bars', style: 'width:90px;display:block' }, h('i', {}, bar))));
+      stockRows.push(h('div', { class: 'row' }, h('div', { class: 'nm' }, resIcon(res), RES_NAME[res], h('small', {}, num)), h('div', { class: 'bars', style: 'width:90px;display:block' }, h('i', {}, bar))));
     }
     this.tabs.storage = [{ label: 'Tài nguyên', page: page(...stockRows) }, { label: 'Đổi chác', page: page(barter()) }];
 

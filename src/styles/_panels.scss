@@ -103,3 +103,6 @@ button.primary.danger { background: var(--bad); color: #fff; border-color: var(-
   b { position: absolute; top: 0; bottom: 0; background: var(--accent); }
   u { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--fg); left: 50%; opacity: .5; }
 }
+
+// drawn resource pictures inside lists
+.nm .ico { width: 16px; height: 16px; display: inline-flex; vertical-align: -3px; margin-right: 5px; }

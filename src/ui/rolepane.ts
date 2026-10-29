@@ -67,7 +67,8 @@ export class RolePane {
         h('button', { class: 'chip danger', text: '−', title: lock ?? (away ? 'Đang đi trinh sát' : 'Cho nghỉ, về làm dân thường'), disabled: away || !!lock, onclick: () => { const e = sim.releaseRole([v.id]); if (e) toast(e); ctl.onChange(); this.again(); } })));
     }
     const room = Math.max(0, cap - have.length);
-    const free = sim.villagers.filter((v) => v.job !== 'fight' && v.job !== 'scout' && roleOf(v) !== role && v.down <= 0 && v.inside === null);
+    // only villagers with no trade at all are offered: whoever already holds a role, a house to work in or the crew is let go from there first
+    const free = sim.villagers.filter((v) => v.job === 'idle' && !roleOf(v) && v.down <= 0 && v.inside === null);
     const key = (v: Villager) => (STAT_OF[role] === 'scout' ? sim.scoutSkill(v) : v.stats[STAT_OF[role] as 'str']);
     free.sort((a, b) => key(b) - key(a));
     out.push(h('div', { class: 'phead' }, h('b', { text: 'Dân rảnh' }), h('small', { text: !cap ? `cần dựng ${house.toLowerCase()}` : room ? `còn chỗ cho ${room} người` : `${house.toLowerCase()} đã đủ người: nâng cấp để chứa thêm` })));

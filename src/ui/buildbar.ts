@@ -48,11 +48,11 @@ export class Confirm {
 /** The buttons of the building that was tapped, floating beneath it on the map: open it, upgrade, move, demolish. */
 export class BuildingBar {
   private readonly who = h('div', { class: 'who' });
-  private readonly open = h('button', { class: 'sm primary' }) as HTMLButtonElement;
+  private readonly open = h('button', { class: 'sm ic primary', text: '☰' }) as HTMLButtonElement;
   private readonly gate = h('button', { class: 'sm primary' }) as HTMLButtonElement;
-  private readonly upgrade = h('button', { class: 'sm', text: 'Nâng cấp' }) as HTMLButtonElement;
-  private readonly move = h('button', { class: 'sm', text: 'Dời' }) as HTMLButtonElement;
-  private readonly demolish = h('button', { class: 'sm danger', text: 'Phá bỏ' }) as HTMLButtonElement;
+  private readonly upgrade = h('button', { class: 'sm ic up', text: '⬆', title: 'Nâng cấp', 'aria-label': 'Nâng cấp' }) as HTMLButtonElement;
+  private readonly move = h('button', { class: 'sm ic', text: '✥', title: 'Di dời (miễn phí)', 'aria-label': 'Di dời' }) as HTMLButtonElement;
+  private readonly demolish = h('button', { class: 'sm ic danger', text: '✖', title: 'Phá bỏ', 'aria-label': 'Phá bỏ' }) as HTMLButtonElement;
   private id: number | null = null;
   private width = 0; private height = 0;
 
@@ -99,12 +99,11 @@ export class BuildingBar {
     const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
     const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
     this.who.replaceChildren(h('b', { text: def.name }), ` · ${state}${b.done && lv.hp ? ` · bền ${Math.max(0, Math.round(b.hp))}/${lv.hp}` : ''}`);
-    this.open.textContent = OPEN_LABEL[b.kind]; this.open.hidden = !b.done || b.kind === 'fence' || b.kind === 'gate';
+    this.open.title = OPEN_LABEL[b.kind]; this.open.setAttribute('aria-label', OPEN_LABEL[b.kind]); this.open.hidden = !b.done || b.kind === 'fence' || b.kind === 'gate';
     this.gate.hidden = !(b.kind === 'gate' && b.done); this.gate.textContent = b.open ? 'Đóng cổng' : 'Mở cổng';
     this.upgrade.hidden = !(canGrow(b.kind) && b.done && !b.upgrading && b.level < top);
-    this.move.hidden = this.demolish.hidden = !def.buildable;
-    const fee = sim.moveFee(b);
-    this.move.textContent = Object.keys(fee).length ? `Dời (${costText(fee, RES_NAME)})` : 'Dời';
+    // a house that may stand only once is never torn down
+    this.move.hidden = !def.buildable; this.demolish.hidden = !def.buildable || !def.perFire;
     this.width = this.root.offsetWidth; this.height = this.root.offsetHeight;
   }
 

@@ -6,6 +6,7 @@ import { Arm, armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formatio
 import { Animal, animalDef, die as animalDie, provoke, carcassEmpty } from './fauna';
 import { CARRY_CAP, Res, RES_NAME } from './resources';
 import type { Sim, Target, Villager } from './sim';
+import { hash2 } from './rng';
 import { BEHAVIOUR } from './combat';
 
 const ANIM = animsJson as unknown as Record<string, { fps: number; frames: unknown[]; hit?: number }>;
@@ -405,7 +406,7 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
   if (best) { v.loot = best.id; v.phase = 'goCarcass'; v.path = sim.pathTo(v, Math.floor(best.x), Math.floor(best.y), 3000); return true; }
   // living prey
   if (!threats.length) {
-    let prey: Animal | null = null; bd = 40;
+    let prey: Animal | null = null; bd = 70; // a hunter looks over everything the village has explored, not only what is near him
     for (const a of sim.animals) {
       const def = animalDef(a);
       if (a.state === 'dead' || !def.prey || sim.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
@@ -417,6 +418,16 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
   }
   if (v.carry && v.carry.amount > 0) { sim.planDeliver(v); return true; }
   if (v.phase === 'fight') { v.phase = 'idle'; v.path = []; }
+  // no game in sight: go out and look for some, in a new direction each time, over ground the village already knows
+  const lodge = sim.building('huntlodge') ?? sim.campfire(), step = Math.floor(sim.time / 8);
+  if (lodge) {
+    const ang = hash2(v.id, step, 71) * Math.PI * 2, rad = 10 + hash2(v.id, step, 72) * 26;
+    const gx = Math.floor(lodge.x + Math.cos(ang) * rad), gy = Math.floor(lodge.y + Math.sin(ang) * rad);
+    if (sim.world.inBounds(gx, gy) && sim.fog.state[gy * N + gx] > 0) {
+      const path = sim.pathTo(v, gx, gy, 2500);
+      if (path.length) { v.path = path; v.phase = 'move'; return true; }
+    }
+  }
   sim.wait(v, 2);
   return true;
 }

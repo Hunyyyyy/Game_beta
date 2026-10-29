@@ -1,5 +1,7 @@
 import { SIEGE } from './combat';
 import type { Stock } from './resources';
+import { fireBuildingMax } from './progression';
+import levelData from '../data/buildings.json';
 
 export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'infantry' | 'cavalry' | 'archery' | 'farmhouse' | 'huntlodge' | 'lumberyard' | 'quarry' | 'house' | 'field' | 'fence' | 'gate' | 'tower' | 'wartent' | 'scouttent' | 'drill' | 'trap' | 'stable';
 
@@ -7,6 +9,11 @@ export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'la
 export type Era = 'stone' | 'ancient';
 export const ERAS: Era[] = ['stone', 'ancient'];
 export const ERA_NAME: Record<Era, string> = { stone: 'Thời đại Đồ đá', ancient: 'Thời đại Cổ đại' };
+
+/** Free tiles that must lie between two houses, so that villagers never get boxed in. */
+export const CLEARANCE = 2;
+/** Works that are laid piece by piece and may touch anything. */
+export const WALL_KINDS: ReadonlySet<BuildingKind> = new Set<BuildingKind>(['fence', 'gate', 'trap']);
 
 /** One level of a building. Level 1 is the cost to place it; higher levels are upgrade costs. */
 export interface LevelDef {
@@ -41,122 +48,125 @@ export interface BuildingDef {
   levels: Partial<Record<Era, LevelDef[]>>;
 }
 
+/** Costs and numbers of every level of every house in the stone age: src/data/buildings.json. */
+const STONE_LEVELS = levelData as unknown as Record<string, LevelDef[]>;
+
 const lv = (name: string, cost: Partial<Stock>, buildTime: number, cap = 0, craftSpeed = 1, slots = 0, hp = 0): LevelDef => ({ name, cost, buildTime, cap, craftSpeed, slots, hp });
 
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   // the heart of the village: it starts as a heap of firewood and every other house is held back by its level
   campfire: {
     kind: 'campfire', name: 'Nhà chung (đống lửa trại)', w: 2, h: 2, buildable: false, upgradable: true,
-    levels: { stone: [lv('Củi lửa', {}, 0, 30), lv('Lửa trại', { wood: 20 }, 120, 45), lv('Bếp lửa lớn', { wood: 20, stone: 12 }, 240, 60), lv('Nhà chung', { wood: 50, stone: 30, hide: 10 }, 480, 90)] },
+    levels: { stone: STONE_LEVELS.campfire },
   },
   // builders belong to this house: without it nothing but the house itself can be raised
   builder: {
     kind: 'builder', name: 'Nhà thợ xây', w: 2, h: 2, buildable: true,
-    levels: { stone: [lv('Đơn sơ', { wood: 10 }, 60, 0, 1, 2), lv('Gỗ', { wood: 15, stone: 10 }, 110, 0, 1.25, 3), lv('Đá', { wood: 25, stone: 20 }, 160, 0, 1.5, 4)] },
+    levels: { stone: STONE_LEVELS.builder },
   },
   storage: {
     kind: 'storage', name: 'Kho', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 10 }, 50, 100), lv('Gỗ', { wood: 35 }, 90, 250), lv('Đá', { wood: 40, stone: 20 }, 140, 500)] },
+    levels: { stone: STONE_LEVELS.storage },
   },
   workshop: {
     kind: 'workshop', name: 'Nhà chế tạo', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 70, 0, 1, 1), lv('Gỗ', { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] },
+    levels: { stone: STONE_LEVELS.workshop },
   },
   lab: {
     kind: 'lab', name: 'Nhà nghiên cứu', w: 2, h: 2, buildable: true, requires: ['workshop'],
-    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 80, 0, 1, 1), lv('Gỗ', { wood: 20, stone: 30 }, 140, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 200, 0, 1.5, 4)] },
+    levels: { stone: STONE_LEVELS.lab },
   },
   repair: {
     kind: 'repair', name: 'Nhà sửa chữa', w: 2, h: 2, buildable: true, requires: ['workshop'],
-    levels: { stone: [lv('Đơn sơ', { wood: 15, stone: 5 }, 70, 0, 1, 1), lv('Gỗ', { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv('Đá', { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] },
+    levels: { stone: STONE_LEVELS.repair },
   },
   toolstore: {
     kind: 'toolstore', name: 'Kho công cụ', w: 2, h: 2, buildable: true, requires: ['workshop'],
-    levels: { stone: [lv('Đơn sơ', { wood: 25 }, 60, 12), lv('Gỗ', { wood: 30, stone: 15 }, 100, 30), lv('Đá', { wood: 30, stone: 40 }, 150, 60)] },
+    levels: { stone: STONE_LEVELS.toolstore },
   },
   armory: {
     kind: 'armory', name: 'Kho vũ khí', w: 2, h: 2, buildable: true, requires: ['workshop'],
-    levels: { stone: [lv('Đơn sơ', { wood: 25 }, 60, 12), lv('Gỗ', { wood: 30, stone: 15 }, 100, 30), lv('Đá', { wood: 30, stone: 40 }, 150, 60)] },
+    levels: { stone: STONE_LEVELS.armory },
   },
   // The role houses. One of each: raising its level makes room for more people (slots). The people of a role are chosen in its house, never
   // at the campfire. A soldier's camp is also where he sleeps, out of sight, as a list (craftSpeed = how well they rest).
   infantry: {
     kind: 'infantry', name: 'Trại chiến binh', names: { ancient: 'Trại bộ binh' }, w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 4), lv('Gỗ', { wood: 25, hide: 6 }, 100, 0, 1.1, 8), lv('Đá', { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 14)] },
+    levels: { stone: STONE_LEVELS.infantry },
   },
   cavalry: {
     kind: 'cavalry', name: 'Trại kỵ thú', names: { ancient: 'Trại kỵ binh' }, w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 25, hide: 8 }, 70, 0, 1, 2), lv('Gỗ', { wood: 30, hide: 10 }, 110, 0, 1.1, 4), lv('Đá', { wood: 35, stone: 25, hide: 14 }, 160, 0, 1.2, 6)] },
+    levels: { stone: STONE_LEVELS.cavalry },
   },
   archery: {
     kind: 'archery', name: 'Trại thợ ném', names: { ancient: 'Trại cung thủ' }, w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 3), lv('Gỗ', { wood: 25, hide: 6 }, 100, 0, 1.1, 6), lv('Đá', { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 10)] },
+    levels: { stone: STONE_LEVELS.archery },
   },
   farmhouse: {
     kind: 'farmhouse', name: 'Nông trại', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 50, 0, 1, 3), lv('Gỗ', { wood: 25, stone: 5 }, 90, 0, 1, 5), lv('Đá', { wood: 30, stone: 20 }, 140, 0, 1, 8)] },
+    levels: { stone: STONE_LEVELS.farmhouse },
   },
   huntlodge: {
     kind: 'huntlodge', name: 'Chòi thợ săn', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 15, hide: 3 }, 50, 0, 1, 2), lv('Gỗ', { wood: 25, hide: 5 }, 90, 0, 1, 3), lv('Đá', { wood: 30, stone: 15, hide: 8 }, 140, 0, 1, 5)] },
+    levels: { stone: STONE_LEVELS.huntlodge },
   },
   lumberyard: {
     kind: 'lumberyard', name: 'Xưởng gỗ', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 50, 0, 1, 3), lv('Gỗ', { wood: 25, stone: 5 }, 90, 0, 1, 5), lv('Đá', { wood: 30, stone: 20 }, 140, 0, 1, 8)] },
+    levels: { stone: STONE_LEVELS.lumberyard },
   },
   quarry: {
     kind: 'quarry', name: 'Xưởng đá', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 50, 0, 1, 3), lv('Gỗ', { wood: 25, stone: 5 }, 90, 0, 1, 5), lv('Đá', { wood: 30, stone: 20 }, 140, 0, 1, 8)] },
+    levels: { stone: STONE_LEVELS.quarry },
   },
   // where everyone who is not a soldier sleeps, out of sight, as a list; without a bed they sleep by the campfire and rest slower
   house: {
     kind: 'house', name: 'Nhà dân', w: 2, h: 2, buildable: true, requires: ['builder'],
     perFire: [1, 3, 3, 3],
-    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 4), lv('Gỗ', { wood: 30, stone: 10 }, 100, 0, 1.15, 8), lv('Đá', { wood: 40, stone: 30 }, 150, 0, 1.3, 12)] },
+    levels: { stone: STONE_LEVELS.house },
   },
   // defence works (not "one of each": they are laid piece by piece, as many as the campfire allows). hp is what the raiders must break down.
   fence: {
     kind: 'fence', name: 'Hàng rào cọc', w: 1, h: 1, buildable: true, requires: ['builder'], perFire: [14, 30, 50, 70], repeat: true,
-    levels: { stone: [lv('Cọc nhọn', { wood: 2 }, 14, 0, 1, 0, 40), lv('Hàng rào đôi', { wood: 4, stone: 1 }, 24, 0, 1, 0, 120)] },
+    levels: { stone: STONE_LEVELS.fence },
   },
   // slots here are the archers who can keep watch on a tower; a gate has no staff, it opens and shuts
   gate: {
     kind: 'gate', name: 'Cổng', w: 1, h: 1, buildable: true, requires: ['fence'], perFire: [1, 2, 3, 4],
-    levels: { stone: [lv('Cổng gỗ', { wood: 4 }, 20, 0, 1, 0, 30), lv('Cổng đôi', { wood: 6, stone: 2 }, 32, 0, 1, 0, 90)] },
+    levels: { stone: STONE_LEVELS.gate },
   },
   tower: {
     kind: 'tower', name: 'Chòi canh', w: 2, h: 2, buildable: true, requires: ['fence'], perFire: [0, 1, 2, 3],
-    levels: { stone: [lv('Chòi gỗ', { wood: 20 }, 80, 0, 1, 2, 150), lv('Chòi cao', { wood: 30, stone: 8 }, 130, 0, 1.2, 4, 300)] },
+    levels: { stone: STONE_LEVELS.tower },
   },
   // where the squads, formations and plans are made: its level decides how many squads and command cards there are
   wartent: {
     kind: 'wartent', name: 'Lều họp chiến', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Lều da', { wood: 30, hide: 8 }, 90), lv('Lều lớn', { wood: 40, hide: 10, stone: 15 }, 140), lv('Lều thủ lĩnh', { wood: 50, stone: 40, hide: 14 }, 200)] },
+    levels: { stone: STONE_LEVELS.wartent },
   },
   // where scouts are sent from: slots = how many may go out on one trip
   scouttent: {
     kind: 'scouttent', name: 'Trại trinh sát', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Lều da', { wood: 20, hide: 6 }, 70, 0, 1, 4), lv('Lều lớn', { wood: 30, hide: 8, stone: 10 }, 110, 0, 1, 6), lv('Lều thám thính', { wood: 40, hide: 12, stone: 25 }, 160, 0, 1, 8)] },
+    levels: { stone: STONE_LEVELS.scouttent },
   },
   // the drill ground: squads train their formation here
   drill: {
     kind: 'drill', name: 'Bãi tập', w: 3, h: 3, buildable: true, requires: ['infantry'],
-    levels: { stone: [lv('Bãi cọc', { wood: 25 }, 80), lv('Bãi rào', { wood: 30, stone: 10 }, 120), lv('Bãi đá', { wood: 35, stone: 30 }, 170)] },
+    levels: { stone: STONE_LEVELS.drill },
   },
   // a pit of sharpened stakes, laid one at a time; hp is how many men it can still wound
   trap: {
     kind: 'trap', name: 'Hố chông', w: 1, h: 1, buildable: true, requires: ['fence'], perFire: [4, 10, 18, 28], repeat: true,
-    levels: { stone: [lv('Hố chông', { wood: 3 }, 12, 0, 1, 0, 3), lv('Hố chông sâu', { wood: 4, stone: 2 }, 20, 0, 1, 0, 6)] },
+    levels: { stone: STONE_LEVELS.trap },
   },
   // where beasts are tamed to be ridden: slots = keepers who work inside, craftSpeed = how fast they get through an order; the level decides which beast (wolf, boar, elephant)
   stable: {
     kind: 'stable', name: 'Chuồng thú cưỡi', w: 2, h: 2, buildable: true, requires: ['builder'],
-    levels: { stone: [lv('Chuồng cọc', { wood: 30, hide: 6 }, 90, 0, 1, 2), lv('Chuồng gỗ', { wood: 40, hide: 8, stone: 10 }, 140, 0, 1.25, 3), lv('Chuồng đá', { wood: 45, stone: 35, hide: 12 }, 200, 0, 1.5, 4)] },
+    levels: { stone: STONE_LEVELS.stable },
   },
   // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
   field: {
     kind: 'field', name: 'Ruộng', w: 3, h: 3, buildable: true, requires: ['builder'], perFire: [1, 3, 3, 4],
-    levels: { stone: [lv('Đất vỡ', { wood: 10 }, 70, 0, 1, 1), lv('Luống đắp', { wood: 15, stone: 5 }, 110, 0, 1.4, 1), lv('Bờ đá', { wood: 20, stone: 15 }, 160, 0, 1.8, 1)] },
+    levels: { stone: STONE_LEVELS.field },
   },
 };
 
@@ -206,5 +216,5 @@ export const needsWork = (b: Building) => !b.done || b.upgrading;
 export const canGrow = (kind: BuildingKind): boolean => BUILDINGS[kind].buildable || !!BUILDINGS[kind].upgradable;
 /** Villagers the campfire can hold at each of its levels. */
 export const POP_BY_FIRE = [8, 16, 25, 40];
-/** Highest level any other house may have for a campfire level: the Nhà chung is the axis the whole village turns on. */
-export const levelCapByFire = (fireLevel: number): number => Math.max(1, fireLevel - 1);
+/** Highest level any other house may have for a campfire level: the Nhà chung is the axis the whole village turns on (data/progression.json). */
+export const levelCapByFire = (fireLevel: number): number => fireBuildingMax(fireLevel);
