@@ -1,0 +1,480 @@
+{
+ "name": "Xưởng đá (cấp 1, vách đá, tảng cắt)",
+ "name_en": "Quarry (Tier 1)",
+ "type": "prop",
+ "size": [
+  72,
+  64
+ ],
+ "anchor": [
+  36,
+  58
+ ],
+ "footprint": [
+  4,
+  32,
+  64,
+  28
+ ],
+ "seed": 11,
+ "params": {
+  "st1": 1,
+  "st2": 1,
+  "st3": 1,
+  "st4": 1
+ },
+ "palette": {
+  "line": "#2b1d10",
+  "shadow": "#000000",
+  "dirt": "#6a5238",
+  "earth": "#86704e",
+  "earthL": "#9a8460",
+  "wood": "#8a6238",
+  "woodL": "#aa7c48",
+  "woodD": "#5e4026",
+  "log": "#6b4a28",
+  "logE": "#c49a60",
+  "rope": "#d8c690",
+  "stone": "#8e9498",
+  "stoneL": "#b9bfc2",
+  "stoneD": "#60676b",
+  "chip": "#d8d2c0",
+  "hide": "#a0552f",
+  "hideL": "#c06f43",
+  "hideD": "#7a3d20",
+  "stitch": "#e8d6a8",
+  "bone": "#e4dcc4",
+  "flintL": "#7c8794",
+  "door": "#2a1a0e",
+  "flag": "#b03a2e",
+  "flagD": "#7d2a20",
+  "thatch": "#c9a84e",
+  "thatchL": "#e0c670",
+  "thatchD": "#9a7c32",
+  "wattle": "#b89a58",
+  "wattleD": "#8a7038",
+  "clay": "#b08a62",
+  "clayD": "#8c6a48",
+  "green": "#6f9a3e",
+  "greenD": "#4f7a2c",
+  "greenL": "#8fba54",
+  "hay": "#d6b85a",
+  "hayD": "#a88a38",
+  "fur": "#7a5230",
+  "furD": "#553820",
+  "furL": "#9a7048",
+  "sand": "#c4ad7c",
+  "target": "#e4dcc4",
+  "flame": "#f89628",
+  "flameL": "#ffd060",
+  "water": "#5a7f9a"
+ },
+ "layers": [
+  {
+   "shape": "ellipse",
+   "cx": 36,
+   "cy": 55,
+   "rx": 30,
+   "ry": 6,
+   "color": "shadow",
+   "alpha": 0.25
+  },
+  {
+   "shape": "rect",
+   "x": 8,
+   "y": 36,
+   "w": 56,
+   "h": 18,
+   "color": "dirt",
+   "alpha": 0.55,
+   "ifNot": "st1"
+  },
+  {
+   "shape": "rect",
+   "x": 7,
+   "y": 36,
+   "w": 2,
+   "h": 5,
+   "color": "wood",
+   "ifNot": "st1"
+  },
+  {
+   "shape": "rect",
+   "x": 63,
+   "y": 36,
+   "w": 2,
+   "h": 5,
+   "color": "wood",
+   "ifNot": "st1"
+  },
+  {
+   "shape": "rect",
+   "x": 7,
+   "y": 50,
+   "w": 2,
+   "h": 5,
+   "color": "wood",
+   "ifNot": "st1"
+  },
+  {
+   "shape": "rect",
+   "x": 63,
+   "y": 50,
+   "w": 2,
+   "h": 5,
+   "color": "wood",
+   "ifNot": "st1"
+  },
+  {
+   "shape": "line",
+   "from": [
+    9,
+    37
+   ],
+   "to": [
+    62,
+    37
+   ],
+   "w": 1,
+   "color": "rope",
+   "ifNot": "st1"
+  },
+  {
+   "shape": "group",
+   "if": "st1",
+   "layers": [
+    {
+     "shape": "ellipse",
+     "cx": 36,
+     "cy": 47,
+     "rx": 30,
+     "ry": 8,
+     "color": "earth"
+    },
+    {
+     "shape": "scatter",
+     "count": 34,
+     "area": [
+      6,
+      40,
+      60,
+      14
+     ],
+     "size": [
+      1,
+      2
+     ],
+     "colors": [
+      "dirt",
+      "chip",
+      "earthL",
+      "stoneD"
+     ],
+     "onlyOver": [
+      "earth"
+     ]
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st2",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       6,
+       54
+      ],
+      [
+       12,
+       28
+      ],
+      [
+       24,
+       14
+      ],
+      [
+       40,
+       18
+      ],
+      [
+       46,
+       34
+      ],
+      [
+       44,
+       54
+      ]
+     ],
+     "color": "stoneD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       12,
+       28
+      ],
+      [
+       24,
+       14
+      ],
+      [
+       30,
+       30
+      ],
+      [
+       18,
+       54
+      ],
+      [
+       6,
+       54
+      ]
+     ],
+     "color": "stone"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       24,
+       14
+      ],
+      [
+       40,
+       18
+      ],
+      [
+       46,
+       34
+      ],
+      [
+       34,
+       36
+      ],
+      [
+       30,
+       30
+      ]
+     ],
+     "color": "stoneL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      30,
+      30
+     ],
+     "to": [
+      34,
+      36
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.5
+    },
+    {
+     "shape": "line",
+     "from": [
+      18,
+      54
+     ],
+     "to": [
+      24,
+      40
+     ],
+     "w": 1,
+     "color": "stoneD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      34,
+      36
+     ],
+     "to": [
+      40,
+      52
+     ],
+     "w": 1,
+     "color": "stoneD",
+     "alpha": 0.7
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st3",
+   "layers": [
+    {
+     "shape": "rect",
+     "x": 48,
+     "y": 44,
+     "w": 10,
+     "h": 8,
+     "color": "stone"
+    },
+    {
+     "shape": "rect",
+     "x": 48,
+     "y": 44,
+     "w": 10,
+     "h": 2,
+     "color": "stoneL"
+    },
+    {
+     "shape": "rect",
+     "x": 48,
+     "y": 51,
+     "w": 10,
+     "h": 1,
+     "color": "stoneD"
+    },
+    {
+     "shape": "rect",
+     "x": 58,
+     "y": 46,
+     "w": 8,
+     "h": 6,
+     "color": "stoneL"
+    },
+    {
+     "shape": "rect",
+     "x": 58,
+     "y": 51,
+     "w": 8,
+     "h": 1,
+     "color": "stoneD"
+    },
+    {
+     "shape": "rect",
+     "x": 52,
+     "y": 37,
+     "w": 10,
+     "h": 7,
+     "color": "stoneD"
+    },
+    {
+     "shape": "rect",
+     "x": 52,
+     "y": 37,
+     "w": 10,
+     "h": 2,
+     "color": "stone"
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st4",
+   "layers": [
+    {
+     "shape": "line",
+     "from": [
+      46,
+      56
+     ],
+     "to": [
+      50,
+      48
+     ],
+     "w": 1,
+     "color": "woodD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       48,
+       46
+      ],
+      [
+       53,
+       47
+      ],
+      [
+       51,
+       50
+      ]
+     ],
+     "color": "flintL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      44,
+      54
+     ],
+     "to": [
+      47,
+      54
+     ],
+     "w": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       3,
+       52
+      ],
+      [
+       46,
+       56
+      ],
+      [
+       54,
+       56
+      ],
+      [
+       14,
+       56
+      ]
+     ],
+     "color": "chip"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 4,
+     "cy": 54,
+     "rx": 3,
+     "ry": 2,
+     "color": "stoneD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 4,
+     "cy": 53,
+     "rx": 3,
+     "ry": 2,
+     "color": "stone"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 66,
+     "cy": 54,
+     "rx": 3,
+     "ry": 2,
+     "color": "stoneD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 66,
+     "cy": 53,
+     "rx": 3,
+     "ry": 2,
+     "color": "stoneL"
+    }
+   ]
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  }
+ ]
+}

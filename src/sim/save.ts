@@ -14,7 +14,7 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 11;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
@@ -23,7 +23,7 @@ export const SAVED = {
   /** Objects whose keys are filled in place. */
   records: ['stock', 'toolStock', 'battle'],
   /** Lists of plain data. */
-  lists: ['wornTools', 'craftQueue', 'researchQueue', 'repairQueue', 'log', 'foodLots', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'plans', 'battleReports'],
+  lists: ['wornTools', 'craftQueue', 'researchQueue', 'repairQueue', 'log', 'foodLots', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
   /** Handled by hand below. */
   special: ['researched', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
 } as const satisfies Record<string, readonly (keyof Sim)[]>;
@@ -34,6 +34,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'speed',       // a setting
   'dev',         // test switches
   'byId', 'animalById', // rebuilt after loading
+  'threatCache', 'pathLeft', // rebuilt every tick
 ];
 
 type Row = Array<number | string>;
@@ -121,6 +122,23 @@ export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disabl
       if (!dep || !Array.isArray(dep.cells)) m.deploy = null;
     }
     return { ...d, version: 8 };
+  },
+  // 8 -> 9: villages are found before they are scouted; a village we already hold a map of counts as found
+  8: (d) => {
+    const maps = d.lists.maps as Array<{ tribe: string }>;
+    d.lists.sightings ??= [...new Set(maps.map((m) => m.tribe))].map((tribe) => ({ tribe, by: -1, at: 0, reported: true }));
+    return { ...d, version: 9 };
+  },
+  // 9 -> 10: roles belong to their houses. The Lều chiến binh becomes the Trại chiến binh; a soldier's arm is kept on him (a thrower if he carried a sling or a bow)
+  9: (d) => {
+    for (const b of d.lists.buildings as Array<{ kind: string }>) if (b.kind === 'barracks') b.kind = 'infantry';
+    for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) v.arm ??= v.job === 'fight' && (v.weapon === 'sling' || v.weapon === 'bow') ? 'archer' : 'foot';
+    return { ...d, version: 10 };
+  },
+  // 10 -> 11: a running attack is in one stage of its deployment (one that was already running is simply fighting)
+  10: (d) => {
+    for (const p of d.lists.plans as Array<Record<string, unknown>>) p.stage ??= 'fight';
+    return { ...d, version: 11 };
   },
 };
 

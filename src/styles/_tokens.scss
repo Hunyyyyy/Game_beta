@@ -1,0 +1,39 @@
+// Bo góc: một bảng chung để đổi độ vuông tròn của cả giao diện ở một chỗ.
+$radius-xs: 2px;
+$radius-sm: 3px;
+$radius: 4px;
+$radius-md: 6px;
+$radius-lg: 8px;
+$radius-xl: 10px;
+$radius-pill: 16px;
+
+// Màu của màn lập kế hoạch (nền tối, không đổi theo giao diện sáng/tối).
+$plan-ink: #1a1208;
+$plan-danger: #d9534f;
+$plan-accent: #e0b43c;
+
+// Chữ trên nền tối của màn hình game.
+$night-ink: #f5e7c4;
+$night-soft: #d9c9a6;
+
+// Phủ mờ dùng chung.
+$scrim: rgba(5, 6, 12, .6);
+$shadow-sm: 0 2px 8px rgba(0, 0, 0, .35);
+
+@mixin dark-theme {
+  --bg: #1d1710; --panel: #2a2217; --panel-2: #342a1c; --fg: #ecdfc4; --muted: #a8977a; --line: #4d3f29;
+  --accent: #e08a52; --accent-fg: #26180c; --hud: rgba(29, 23, 16, .9); --ring: #8a7048; --good: #7ac15c; --bad: #e0705f;
+  color-scheme: dark;
+}
+
+:root {
+  --bg: #f1e8d5; --panel: #e8dcc2; --panel-2: #dfd0b0; --fg: #3a2c1c; --muted: #7a6850; --line: #bfa97f;
+  --accent: #a4481f; --accent-fg: #fff6e8; --hud: rgba(241, 232, 213, .9); --ring: #6a5330; --good: #4f8a38; --bad: #b8433a;
+  --game-bg: #0b0d16;
+  // everything pinned to a screen edge keeps clear of a phone's system bars
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px); --sal: 0px; --sar: 0px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { @include dark-theme; }
+}
+:root[data-theme="dark"] { @include dark-theme; }

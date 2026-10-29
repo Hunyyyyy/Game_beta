@@ -616,8 +616,8 @@ export class PlanMapView {
       if (drawing && back && backPts.length) this.handles(ctx, nodes, color, u);
     }
     if (m.deploy) {
-      const units = sim.squadUnits(s).sort((a, b) => (armOfWeapon(a.weapon) === 'archer' ? 1 : 0) - (armOfWeapon(b.weapon) === 'archer' ? 1 : 0) || a.id - b.id);
-      this.cells(ctx, m.deploy.cells, units.map((v) => armOfWeapon(v.weapon)), color, u, sel);
+      const units = sim.squadUnits(s).sort((a, b) => (sim.armOf(a) === 'archer' ? 1 : 0) - (sim.armOf(b) === 'archer' ? 1 : 0) || a.id - b.id);
+      this.cells(ctx, m.deploy.cells, units.map((v) => sim.armOf(v)), color, u, sel);
       const c = this.scr(r?.start ?? m.deploy.cells[0]), top = Math.min(...m.deploy.cells.map((q) => this.sy(q.y)));
       label(ctx, `${s.name} · ${m.deploy.cells.length} ô${units.length ? ` · ${units.length} lính` : ''}`, c.x, top - 12 * u, 12 * u, sel ? '#ffe27a' : '#fff');
       if (this.ui.mode === 'trim' && this.ui.modeSquad === id) { // each cell shows a cross: press it to take it out

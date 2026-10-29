@@ -1,6 +1,6 @@
 /** The shapes and constants the simulation shares: villagers, their parts, and a few tables. Nothing here has behaviour. */
 import { Building } from './buildings';
-import { Job, NodeKind, Stats, WorkJob } from './jobs';
+import { Job, NodeKind, SoldierArm, Stats, WorkJob } from './jobs';
 import { Step } from './path';
 import { Res } from './resources';
 import { Recipe, ToolSet } from './tools';
@@ -72,6 +72,8 @@ export interface Villager {
   skill: Record<WorkJob, Skill>;
   tools: ToolSet;
   job: Job;
+  /** The arm of a soldier (job 'fight'): chosen by the camp that took him on. */
+  arm: SoldierArm;
   phase: Phase;
   slot: number;     // chỗ đứng đã giữ bên cạnh nguồn: 1 = trái, 2 = phải, 0 = chưa giữ
   target: number;   // chỉ số ô nguồn hoặc id công trình đang nhắm
@@ -155,6 +157,8 @@ export interface Squad {
 /** A person as the scouts saw him on the day they came: where he stood and what he carried. Whatever he does afterwards the map keeps. */
 export interface Seen { x: number; y: number; arm: 'foot' | 'archer' | 'cavalry'; weapon: string | null; civ: boolean; leader: boolean }
 export interface ScoutMap { tribe: string; level: number; at: number; gaps: number; seen?: Seen[] }
+/** What a scouting trip would be like with the people picked: the odds of a full map, how long it takes (game seconds) and why it cannot go, if it cannot. */
+export interface ScoutPlan { level: number; need: number; count: number; limit: number; chance: number; walk: number; survey: number; total: number; error: string | null }
 export interface Pt { x: number; y: number }
 /** What a map of a village shows, as the planning screen draws it: the camp and 24 tiles round it. Each field appears only at the level that reveals it. */
 export type IntelMark = 'civ' | 'unknown' | 'foot' | 'archer' | 'cavalry';
@@ -178,7 +182,13 @@ export interface TribeIntel {
   /** Soldiers by arm, level 3 only. */
   soldiers: { foot: number; archer: number; cavalry: number } | null;
 }
-export interface ScoutMission { id: number; tribe: string; level: number; ids: number[]; phase: 'go' | 'watch' | 'back'; t: number; need: number; survivors: number; seen?: Seen[] }
+/** `sent` is how many set out (older saves lack it). */
+export interface ScoutMission { id: number; tribe: string; level: number; ids: number[]; phase: 'go' | 'watch' | 'back'; t: number; need: number; survivors: number; sent?: number; seen?: Seen[] }
+/**
+ * A village somebody of ours came across while out on the map. It is `carried` in his head until he gets home alive;
+ * then it is `reported` and shows in the scouting list, with only how far it lies, until scouts are sent to draw it.
+ */
+export interface Sighting { tribe: string; by: number; at: number; reported: boolean }
 
 export type Objective = 'camp' | 'gate' | 'stores' | 'leader' | 'ambush';
 export type Route = 'main' | 'forest' | 'night';
@@ -209,8 +219,31 @@ export interface Plan {
   id: number; kind: 'attack' | 'defense'; tribe: string | null;
   missions: Mission[]; cards: Card[];
   status: 'draft' | 'running' | 'done';
+  /**
+   * Where a running attack is. `assemble`: the squads walk to the cells drawn for them; `ready`: they stand there and wait for the player to
+   * decide to fight or fall back; `fight`: the missions are carried out; `retreat`: a fight is being broken off, each squad falling back by the way drawn for it;
+   * `recall`: the army was called home before any blow, straight back to the village, and the plan goes back to a draft when they are there.
+   */
+  stage: 'assemble' | 'ready' | 'fight' | 'retreat' | 'recall';
   startedAt: number; signal: boolean; nextCard: number;
   rally: { x: number; y: number };
+}
+/**
+ * What the war council tells the player before a fight, worked out from the plan alone: our squads in it against the enemy as the map describes him.
+ * What it can say grows with the level of the map (1 a sketch, 2 adds his works, 3 his men by arm); how sure it is shrinks with it (`spread`).
+ */
+export interface Forecast {
+  level: number;
+  /** Chance our side wins, 0..1, and how far off it may be (plus or minus). */
+  chance: number; spread: number;
+  verdict: string;
+  /** Why the plan cannot go out at all, or null. */
+  blocked: string | null;
+  warnings: string[];
+  /** What may follow a victory and a defeat. */
+  win: string[]; lose: string[];
+  /** The report itself, line by line. */
+  lines: string[];
 }
 /** What happened in the fight that is on (or was last): the base of the campaign log. */
 export interface BattleState { on: boolean; since: number; quiet: number; ourDead: number; foeDead: number; breaches: number; shots: number; notes: string[] }

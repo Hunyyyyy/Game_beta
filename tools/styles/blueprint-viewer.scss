@@ -1,0 +1,31 @@
+// Trang xem thử bản vẽ vật thể (tools/blueprint-viewer.html).
+@use 'common' as *;
+
+button:hover { background: $btn-hover; }
+input[type=number] { background: $field-bg; border: 1px solid $line; border-radius: $radius; padding: 2px 4px; width: 70px; }
+a { color: #8cc4ff; text-decoration: none; }
+
+#top a { margin-left: auto; }
+#warn { color: $warn; }
+
+#main {
+  flex: 1; min-height: 0; display: grid; gap: 8px; padding: 8px;
+  grid-template-columns: 190px minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+#list { overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.item {
+  display: flex; align-items: center; gap: 8px; padding: 4px;
+  border: 2px solid transparent; border-radius: 5px; cursor: pointer;
+  &:hover { background: #262626; }
+  &.on { border-color: $accent; background: #262626; }
+  canvas { width: 44px; height: 44px; object-fit: contain; flex: none; background: #2a2a2a; }
+  &.mod span::after { content: " ●"; color: $accent; }
+}
+.stage {
+  cursor: pointer; text-align: center; font-size: 11px; color: #9ab;
+  canvas { height: 62px; width: auto; border: 2px solid #444; }
+  &:hover canvas { border-color: $accent; }
+}
+
+@include stacked('.panel', 420px);

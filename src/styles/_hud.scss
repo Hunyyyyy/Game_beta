@@ -1,0 +1,129 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+// ---- top bar ----
+.top {
+  position: absolute;
+  left: calc(6px + var(--sal));
+  right: calc(6px + var(--sar));
+  top: calc(6px + var(--sat));
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start;
+  pointer-events: none;
+  > * { pointer-events: auto; }
+}
+.hud {
+  @include hud-box($radius-lg);
+  padding: 4px 8px;
+  display: flex; flex-wrap: wrap; gap: 3px 10px; align-items: center;
+}
+.res {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-weight: 700; font-variant-numeric: tabular-nums;
+  i { width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, .35); display: inline-block; }
+  small { font-weight: 500; color: var(--muted); }
+  &#rCoin small { display: none; }
+  &.full b { color: var(--accent); }
+  &.warn small { color: var(--accent); font-weight: 700; }
+}
+.clock { font-weight: 600; }
+.grp { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.spacer { flex: 1; }
+#btnFull[hidden] { display: none; }
+
+// ---- bottom-left sheet ----
+.sheet {
+  position: absolute;
+  left: calc(6px + var(--sal));
+  bottom: calc(6px + var(--sab));
+  width: min(440px, calc(100% - 130px));
+  max-height: calc(100% - var(--top-h, 44px) - 14px);
+  overflow: auto;
+  display: grid; gap: 6px; align-content: end;
+  pointer-events: none;
+  > * { pointer-events: auto; }
+  &.folded > .card { display: none; }
+}
+.selbar { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.card {
+  @include hud-box($radius-lg);
+  padding: 6px 8px;
+  display: grid; gap: 5px;
+}
+.cardhead {
+  display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline;
+  b { font-size: 14px; }
+  span { color: var(--muted); }
+  .x { margin-left: auto; align-self: center; }
+}
+.kv {
+  display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--muted); font-size: 12px;
+  b { color: var(--fg); font-variant-numeric: tabular-nums; }
+}
+.stars { color: var(--accent); letter-spacing: 1px; }
+.bars {
+  display: grid; grid-template-columns: repeat(5, minmax(48px, 1fr)); gap: 4px 10px;
+  label { display: grid; gap: 2px; font-size: 11px; color: var(--muted); }
+  i {
+    display: block; height: 7px; border-radius: $radius; overflow: hidden;
+    background: var(--panel-2); border: 1px solid var(--line);
+    b {
+      display: block; height: 100%; width: 0; background: var(--good); transition: width .2s;
+      &.bad { background: var(--bad); }
+      &.mor { background: #6d8fd8; }
+      &.arm { background: #9aa0a4; }
+      &.en { background: #d8b13a; &.low { background: var(--bad); } }
+    }
+  }
+}
+.btns { display: flex; flex-wrap: wrap; gap: 4px; }
+.sub { color: var(--muted); font-size: 12px; margin: 0; }
+
+// ---- guidance hides behind a "?" ----
+.hint {
+  display: grid; gap: 4px; align-content: start;
+  .cardhead .q { margin-left: auto; }
+  &.nm { gap: 2px; .hinthead { font-weight: 600; } }
+}
+.hinthead {
+  display: flex; align-items: center; gap: 6px;
+  > h3 { margin: 0; }
+  > .q:only-child { margin-left: auto; }
+}
+button.q {
+  flex: none; width: 22px; height: 22px; min-height: 0; padding: 0;
+  border-radius: 50%; font-size: 12px; line-height: 1; color: var(--muted);
+  &[aria-expanded="true"] { @include accent-fill; }
+  @media (pointer: coarse) { width: 28px; height: 28px; min-height: 0; padding: 0; }
+}
+.hintbody {
+  padding: 4px 8px;
+  border-left: 2px solid var(--accent);
+  background: var(--panel-2);
+  border-radius: 0 $radius $radius 0;
+}
+.maphint {
+  position: absolute; left: 8px; top: 8px; max-width: min(260px, 60%);
+  .hintbody { color: var(--fg); background: var(--hud); }
+}
+details {
+  > summary { cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 600; padding: 2px 0; }
+  &.fold {
+    border-top: 1px solid var(--line); padding-top: 2px; display: block;
+    > .btns, > .kv { margin-top: 4px; }
+  }
+}
+
+// ---- buttons of the tapped building, floating beneath it on the map ----
+.bbar {
+  @include hud-box($radius-lg);
+  position: absolute; left: 0; top: 0; z-index: 30;
+  display: grid; gap: 4px; justify-items: center;
+  max-width: min(94vw, 440px); padding: 5px 6px;
+  will-change: transform;
+  .who {
+    font-size: 12px; color: var(--muted); text-align: center;
+    b { color: var(--fg); font-size: 13px; }
+  }
+  .btns { justify-content: center; }
+}

@@ -1,6 +1,6 @@
 import type { Stock } from './resources';
 
-export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'barracks' | 'house' | 'field' | 'fence' | 'gate' | 'tower' | 'wartent' | 'drill' | 'trap';
+export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'infantry' | 'cavalry' | 'archery' | 'farmhouse' | 'huntlodge' | 'lumberyard' | 'quarry' | 'house' | 'field' | 'fence' | 'gate' | 'tower' | 'wartent' | 'scouttent' | 'drill' | 'trap';
 
 /** Eras of the game. Each era has its own building art and its own level list (L1..L3). */
 export type Era = 'stone' | 'ancient';
@@ -22,7 +22,9 @@ export interface LevelDef {
 
 export interface BuildingDef {
   kind: BuildingKind;
+  /** Name in the first era; `names` gives the other eras the same house under another name (a stone-age tribe has no archers). */
   name: string;
+  names?: Partial<Record<Era, string>>;
   w: number;
   h: number;
   buildable: boolean;
@@ -75,11 +77,35 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     kind: 'armory', name: 'Kho vũ khí', w: 2, h: 2, buildable: true, requires: ['workshop'],
     levels: { stone: [lv('Đơn sơ', { wood: 25 }, 60, 12), lv('Gỗ', { wood: 30, stone: 15 }, 100, 30), lv('Đá', { wood: 30, stone: 40 }, 150, 60)] },
   },
-  // where soldiers sleep, out of sight, as a list (slots = beds, craftSpeed = how well they rest); without a bed they sleep by the campfire
-  barracks: {
-    kind: 'barracks', name: 'Lều chiến binh', w: 2, h: 2, buildable: true, requires: ['builder'],
-    perFire: [1, 2, 2, 2],
-    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 3), lv('Gỗ', { wood: 25, hide: 6 }, 100, 0, 1.1, 5), lv('Đá', { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 8)] },
+  // The role houses. One of each: raising its level makes room for more people (slots). The people of a role are chosen in its house, never
+  // at the campfire. A soldier's camp is also where he sleeps, out of sight, as a list (craftSpeed = how well they rest).
+  infantry: {
+    kind: 'infantry', name: 'Trại chiến binh', names: { ancient: 'Trại bộ binh' }, w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 4), lv('Gỗ', { wood: 25, hide: 6 }, 100, 0, 1.1, 8), lv('Đá', { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 14)] },
+  },
+  cavalry: {
+    kind: 'cavalry', name: 'Trại kỵ thú', names: { ancient: 'Trại kỵ binh' }, w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Đơn sơ', { wood: 25, hide: 8 }, 70, 0, 1, 2), lv('Gỗ', { wood: 30, hide: 10 }, 110, 0, 1.1, 4), lv('Đá', { wood: 35, stone: 25, hide: 14 }, 160, 0, 1.2, 6)] },
+  },
+  archery: {
+    kind: 'archery', name: 'Trại thợ ném', names: { ancient: 'Trại cung thủ' }, w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Đơn sơ', { wood: 20 }, 60, 0, 1, 3), lv('Gỗ', { wood: 25, hide: 6 }, 100, 0, 1.1, 6), lv('Đá', { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 10)] },
+  },
+  farmhouse: {
+    kind: 'farmhouse', name: 'Nông trại', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 50, 0, 1, 3), lv('Gỗ', { wood: 25, stone: 5 }, 90, 0, 1, 5), lv('Đá', { wood: 30, stone: 20 }, 140, 0, 1, 8)] },
+  },
+  huntlodge: {
+    kind: 'huntlodge', name: 'Chòi thợ săn', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Đơn sơ', { wood: 15, hide: 3 }, 50, 0, 1, 2), lv('Gỗ', { wood: 25, hide: 5 }, 90, 0, 1, 3), lv('Đá', { wood: 30, stone: 15, hide: 8 }, 140, 0, 1, 5)] },
+  },
+  lumberyard: {
+    kind: 'lumberyard', name: 'Xưởng gỗ', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 50, 0, 1, 3), lv('Gỗ', { wood: 25, stone: 5 }, 90, 0, 1, 5), lv('Đá', { wood: 30, stone: 20 }, 140, 0, 1, 8)] },
+  },
+  quarry: {
+    kind: 'quarry', name: 'Xưởng đá', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Đơn sơ', { wood: 15 }, 50, 0, 1, 3), lv('Gỗ', { wood: 25, stone: 5 }, 90, 0, 1, 5), lv('Đá', { wood: 30, stone: 20 }, 140, 0, 1, 8)] },
   },
   // where everyone who is not a soldier sleeps, out of sight, as a list; without a bed they sleep by the campfire and rest slower
   house: {
@@ -106,9 +132,14 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     kind: 'wartent', name: 'Lều họp chiến', w: 2, h: 2, buildable: true, requires: ['builder'],
     levels: { stone: [lv('Lều da', { wood: 30, hide: 8 }, 90), lv('Lều lớn', { wood: 40, hide: 10, stone: 15 }, 140), lv('Lều thủ lĩnh', { wood: 50, stone: 40, hide: 14 }, 200)] },
   },
+  // where scouts are sent from: slots = how many may go out on one trip
+  scouttent: {
+    kind: 'scouttent', name: 'Trại trinh sát', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Lều da', { wood: 20, hide: 6 }, 70, 0, 1, 4), lv('Lều lớn', { wood: 30, hide: 8, stone: 10 }, 110, 0, 1, 6), lv('Lều thám thính', { wood: 40, hide: 12, stone: 25 }, 160, 0, 1, 8)] },
+  },
   // the drill ground: squads train their formation here
   drill: {
-    kind: 'drill', name: 'Bãi tập', w: 3, h: 3, buildable: true, requires: ['barracks'],
+    kind: 'drill', name: 'Bãi tập', w: 3, h: 3, buildable: true, requires: ['infantry'],
     levels: { stone: [lv('Bãi cọc', { wood: 25 }, 80), lv('Bãi rào', { wood: 30, stone: 10 }, 120), lv('Bãi đá', { wood: 35, stone: 30 }, 170)] },
   },
   // a pit of sharpened stakes, laid one at a time; hp is how many men it can still wound
@@ -146,6 +177,9 @@ export interface Building {
   active: { id: string; progress: number } | null;
   workers: number;
 }
+
+/** What a kind of house is called in an era. */
+export const buildingName = (kind: BuildingKind, era: Era): string => BUILDINGS[kind].names?.[era] ?? BUILDINGS[kind].name;
 
 /** Level list of a building kind in an era, falling back to the closest earlier era that defines one. */
 export function levelsOf(kind: BuildingKind, era: Era): LevelDef[] {

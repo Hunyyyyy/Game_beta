@@ -35,8 +35,8 @@ export function busy(sim: Sim, v: Villager): boolean {
   return v.phase !== 'idle' || v.path.length > 0 || v.fight.mode !== 'none';
 }
 
-/** A plain order ends a civilian's job, but soldiers and hunters stay what they are. */
-export function keepSoldierJob(sim: Sim, v: Villager): void { if (v.job !== 'fight' && v.job !== 'hunt') v.job = 'idle'; }
+/** A plain order ends a civilian's job, but soldiers, scouts and hunters stay what they are. */
+export function keepSoldierJob(sim: Sim, v: Villager): void { if (v.job !== 'fight' && v.job !== 'hunt' && v.job !== 'scout') v.job = 'idle'; }
 
 /** Lệnh đi: mỗi dân nhận một ô đích riêng quanh điểm chọn; dân thôi làm nghề. With `queue`, the move waits its turn. */
 export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: number, queue = false): void {
@@ -50,10 +50,13 @@ export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: numb
     keepSoldierJob(sim, v); keepWatch(sim, v);
     if (!goal) continue;
     taken.add(goal[1] * sim.world.size + goal[0]);
-    v.path = sim.pathTo(v, goal[0], goal[1], 30000);
-    v.phase = v.path.length ? 'move' : 'idle';
     // a soldier who is sent somewhere stands guard there afterwards
     if (v.job === 'fight') { v.fight.mode = 'guard'; v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 }; }
+    // finding a way is the dear part of an order given to hundreds: past the budget of this tick a soldier is left to walk to his post when his turn comes
+    if (v.job === 'fight' && sim.pathLeft <= 0) { v.phase = 'idle'; continue; }
+    if (v.job === 'fight') sim.pathLeft--;
+    v.path = sim.pathTo(v, goal[0], goal[1], 30000);
+    v.phase = v.path.length ? 'move' : 'idle';
   }
 }
 
@@ -83,11 +86,13 @@ export function orderWork(sim: Sim, ids: readonly number[], tx: number, ty: numb
  * or null. Soldiers belong to the campfire's roster (enlist, discharge) and keep their post until discharged there.
  */
 export function setJob(sim: Sim, ids: readonly number[], job: Job): string | null {
+  const lock = sim.warLock(); if (lock) return lock;
   if (job === 'fight') return enlist(sim, ids) > 0 ? null : 'Chọn dân thường để tuyển làm chiến binh';
-  const soldiers = mine(sim, ids).filter((v) => v.job === 'fight');
-  const rest = ids.filter((id) => !soldiers.some((s) => s.id === id));
+  if (job === 'scout') return sim.enlistScouts(ids);
+  const soldiers = mine(sim, ids).filter((v) => v.job === 'fight'), scouts = mine(sim, ids).filter((v) => v.job === 'scout');
+  const rest = ids.filter((id) => !soldiers.some((s) => s.id === id) && !scouts.some((s) => s.id === id));
   const err = jobFor(sim, rest, job);
-  return err ?? (soldiers.length ? 'Chiến binh do đống lửa trại quản lý: giải ngũ họ ở đó trước' : null);
+  return err ?? (soldiers.length ? 'Chiến binh do trại lính của họ quản lý: cho họ nghỉ ở đó trước' : scouts.length ? 'Trinh sát do Trại trinh sát quản lý: cho họ nghỉ ở đó trước' : null);
 }
 
 function jobFor(sim: Sim, ids: readonly number[], job: Job): string | null {
@@ -105,7 +110,7 @@ function jobFor(sim: Sim, ids: readonly number[], job: Job): string | null {
 export function enlist(sim: Sim, ids: readonly number[]): number {
   let n = 0;
   for (const v of mine(sim, ids)) {
-    if (v.job === 'fight') continue;
+    if (v.job === 'fight' || v.job === 'scout') continue;
     resetTask(sim, v); clearCombat(sim, v); v.job = 'fight'; v.prefer = -1; v.post = -1; v.fight.anchor = null;
     keepWatch(sim, v); n++;
   }

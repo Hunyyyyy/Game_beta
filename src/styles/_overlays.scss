@@ -1,0 +1,87 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+$mini: clamp(64px, 15vw, 96px);
+
+// ---- minimap, log, toast ----
+#mini {
+  position: absolute; right: calc(6px + var(--sar)); bottom: calc(6px + var(--sab));
+  width: $mini; aspect-ratio: 1; image-rendering: pixelated;
+  border: 2px solid var(--ring); border-radius: $radius-md; background: #080a14; cursor: zoom-in;
+}
+.log {
+  position: absolute; right: calc(6px + var(--sar)); bottom: calc(#{$mini} + 14px + var(--sab));
+  max-width: min(330px, 46%); text-align: right;
+  font-size: 12px; line-height: 1.35;
+  color: $night-ink; text-shadow: 0 1px 2px #000, 0 0 4px #000;
+  pointer-events: none; display: grid; gap: 2px;
+  @media (max-width: 760px) { display: none; }
+}
+.toast {
+  position: absolute; left: 50%; top: calc(52px + var(--sat)); transform: translateX(-50%); z-index: 50;
+  background: var(--accent); color: var(--accent-fg); font-weight: 600;
+  padding: 5px 12px; border-radius: $radius-pill;
+  pointer-events: none; opacity: 0; transition: opacity .25s;
+  max-width: 90%; text-align: center;
+  &.on { opacity: 1; }
+}
+#bigmap {
+  @include full-overlay(45, rgba(5, 6, 12, .88));
+  display: grid; place-items: center;
+  .wrap { position: relative; width: min(94vh, 94vw); aspect-ratio: 1; }
+  .close { position: absolute; right: 8px; top: 8px; }
+}
+#bigmapCanvas {
+  width: 100%; height: 100%; image-rendering: pixelated;
+  border: 2px solid var(--ring); border-radius: $radius-md; background: #080a14;
+  cursor: crosshair; touch-action: none;
+}
+
+// ---- ask for landscape on a phone held upright ----
+#rotate {
+  @include full-overlay(60, rgba(11, 13, 22, .94));
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 24px; text-align: center; color: $night-ink;
+  &[hidden] { display: none; }
+  p { margin: 0; max-width: 28ch; color: $night-soft; }
+  button { min-width: 200px; }
+  .phone {
+    width: 64px; height: 36px; border: 4px solid $night-ink; border-radius: $radius-lg; position: relative;
+    animation: turn 2.4s ease-in-out infinite; transform: rotate(90deg);
+    &::after {
+      content: ''; position: absolute; right: -2px; top: 50%; width: 3px; height: 8px; margin-top: -4px;
+      background: $night-ink;
+    }
+    @media (prefers-reduced-motion: reduce) { animation: none; transform: rotate(0deg); }
+  }
+}
+@keyframes turn {
+  0%, 25% { transform: rotate(90deg); }
+  60%, 100% { transform: rotate(0deg); }
+}
+
+// ---- menu drawer ----
+#drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 40;
+  width: min(390px, 94vw);
+  background: var(--bg); border-left: 2px solid var(--ring);
+  display: flex; flex-direction: column;
+  padding-top: var(--sat); padding-bottom: var(--sab);
+  .head { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid var(--line); flex-wrap: wrap; background: var(--panel); }
+  .body { overflow: auto; padding: 8px; display: grid; gap: 8px; align-content: start; flex: 1; }
+  h3 { @include caps-title; margin: 4px 0 0; }
+  .help {
+    margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 4px;
+    b { color: var(--fg); }
+  }
+  // on a phone the menu takes the whole screen too
+  @media (max-height: 480px), (max-width: 760px) {
+    width: 100%; border-left: 0; padding-left: var(--sal); padding-right: var(--sar);
+    .body { width: 100%; max-width: 860px; margin: 0 auto; }
+  }
+}
+.devrow {
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+  > span { min-width: 7ch; font-weight: 600; }
+  b { min-width: 2.5ch; text-align: center; font-variant-numeric: tabular-nums; }
+}

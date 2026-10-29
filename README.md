@@ -86,8 +86,11 @@ src/
   render/         Vẽ đất, vật thể xếp theo y, ban đêm, sương mù
   ui/controller.ts  Chuột, bàn phím, đặt công trình
   main.ts         HUD, bảng dân, bản đồ nhỏ
+  styles/         Giao diện viết bằng SCSS: main.scss gọi các phần (tokens, base, hud, panels, war, overlays, compact); `npm run build` biên dịch rồi nhúng vào dist/index.html
 test/             sim.test.ts (lõi), ui.cjs, tools.cjs và mobile.cjs (Playwright)
 ```
+
+Giao diện: sửa `src/styles/*.scss` (không viết CSS trong `index.html`). Bo góc và màu cố định nằm ở `_tokens.scss`, kiểu dùng lại ở `_mixins.scss`. Hai trang xem thử trong `tools/` có SCSS riêng ở `tools/styles/`, build bằng `npm run viewer`.
 
 Sửa một bản vẽ trong `src/data/blueprints/*.json` rồi build lại là hình trong game đổi theo. Có thể dán JSON vào trang "Bản vẽ vật thể" để xem trước.
 
