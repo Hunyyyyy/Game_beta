@@ -13,7 +13,7 @@ export interface BlueprintResult {
 export interface BlueprintDef { [k: string]: unknown }
 
 interface Api {
-  render(def: BlueprintDef, opts?: { seed?: number; params?: Record<string, number> }): BlueprintResult;
+  render(def: BlueprintDef, opts?: { seed?: number; params?: Record<string, number>; fit?: boolean }): BlueprintResult;
 }
 export const Blueprint = (globalThis as unknown as { Blueprint: Api }).Blueprint;
 
