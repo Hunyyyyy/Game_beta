@@ -181,6 +181,10 @@ export interface TribeIntel {
   yard: number;
   /** Where our village lies from there, as a unit vector. */
   toUs: { x: number; y: number } | null;
+  /** The way in: the road a walker really takes from our fire to the edge of the yard, the part of it inside the box, as points (empty when none is found). */
+  route: Array<{ x: number; y: number }>;
+  /** Other villages whose ground reaches this map, ours too: only a name and how far their ground goes. */
+  others: Array<{ name: string; x: number; y: number; r: number; ours: boolean }>;
   /** About how many people live there (rounded). */
   population: number;
   structures: Array<{ kind: string; label: string; detail: string; x: number; y: number; w: number; h: number }>;

@@ -530,12 +530,21 @@ export class PlanMapView {
     ctx.stroke();
     ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2; ctx.strokeRect(bx, by, bw, bh);
     ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(this.sx(i.camp.x), this.sy(i.camp.y), i.yard * k, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    // under everything else: the other villages (a name and how far their ground goes) and the way in, the road a walker really takes
+    for (const o of i.others) {
+      const x = this.sx(o.x), y = this.sy(o.y);
+      ctx.setLineDash([6, 5]); ctx.strokeStyle = o.ours ? 'rgba(120,220,255,0.85)' : 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, o.r * k, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      label(ctx, o.name, x, y, 12 * u, o.ours ? '#9fe3ff' : '#fff');
+    }
+    if (i.route.length > 1) {
+      const pts = i.route.map((q) => this.scr(q));
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([2, 8]); ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y); for (const q of pts.slice(1)) ctx.lineTo(q.x, q.y); ctx.stroke(); ctx.setLineDash([]);
+      const n = pts.length, a = pts[Math.max(0, n - 4)], z = pts[n - 1];
+      this.arrowhead(ctx, a.x, a.y, z.x, z.y, '#ffffff', 3, u); label(ctx, 'Đường vào', pts[Math.floor(n / 2)].x, pts[Math.floor(n / 2)].y - 10, 11 * u);
+    }
     for (const s of i.structures) this.work(ctx, s, u);
     for (const p of i.people) this.person(ctx, p, u);
-    if (i.toUs) { // the way in: from the side where our village lies, towards the camp
-      const at = (d: number) => ({ x: this.sx(i.camp.x + i.toUs!.x * d), y: this.sy(i.camp.y + i.toUs!.y * d) }), a = at(ARROW_FROM), b = at(i.yard + 3);
-      this.arrowhead(ctx, a.x, a.y, b.x, b.y, '#ffffff', 3, u); label(ctx, 'Đường vào', a.x, a.y - 8, 11 * u);
-    }
     if (plan?.kind === 'attack') for (const m of plan.missions) this.squad(ctx, m.squad, u);
     this.preview(ctx, u);
     this.drawRing(ctx);

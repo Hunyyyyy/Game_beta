@@ -1651,6 +1651,8 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const i1 = sm.tribeIntel('axe')!, t = tribeById(sm, 'axe');
   ok(i1.level === 1 && i1.people.length === 0 && i1.soldiers === null && i1.structures.every((x) => x.kind === 'fire') && i1.population >= 2, 'level 1 shows only the fire and a rough head count');
   ok(i1.box.x1 - i1.box.x0 > i1.box.y1 - i1.box.y0 && i1.box.x0 <= Math.floor(t.camp.x) - i1.yard - 24 + 1 && i1.box.x1 >= Math.floor(t.camp.x) + i1.yard + 24 - 1 && i1.box.y0 <= Math.floor(t.camp.y) - i1.yard - 24 + 1 && !!i1.toUs, 'the map is wider than tall and covers the camp and 24 tiles round it, and tells the way in');
+  ok(i1.route.length > 1 && Math.hypot(i1.route[i1.route.length - 1].x - t.camp.x, i1.route[i1.route.length - 1].y - t.camp.y) < i1.yard + 3 && i1.route.every((q) => q.x >= i1.box.x0 && q.x < i1.box.x1 && q.y >= i1.box.y0 && q.y < i1.box.y1), 'the way in is a real road that ends at the yard and stays on the map');
+  ok(i1.route.every((q) => !sm.world.isBlocked(Math.floor(q.x), Math.floor(q.y))) && i1.others.every((o) => !!o.name && o.r > 0), 'it runs over open ground, and the other villages on the map carry only a name and a radius');
   dev.giveMaps(sm, 2);
   const i2 = sm.tribeIntel('axe')!;
   ok(i2.level === 2 && i2.people.length > 0 && i2.people.every((p) => p.mark === 'unknown') && i2.soldiers === null, 'level 2 shows people as shapes, not who is a soldier');

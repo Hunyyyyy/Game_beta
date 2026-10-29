@@ -6037,6 +6037,20 @@ var WORK_INFO = {
   gate: "C\u1ED5ng: l\u1ED1i v\xE0o l\xE0ng, \u0111\xF3ng th\xEC ch\u1EB7n \u0111\u01B0\u1EDDng.",
   pile: "Kho l\u01B0\u01A1ng: ch\u1ED7 h\u1ECD c\u1EA5t th\u1EE9c \u0103n v\xE0 \u0111\u1ED3 c\u1ED1ng n\u1EA1p."
 };
+function freeNear(sim, x, y) {
+  for (let r = 0; r <= 8; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (Math.max(Math.abs(i), Math.abs(j)) === r && !sim.world.isBlocked(Math.floor(x) + i, Math.floor(y) + j)) return [Math.floor(x) + i, Math.floor(y) + j];
+  return null;
+}
+function entryRoute(sim, camp, box, toUs) {
+  const fire = sim.campfire(), from = freeNear(sim, (fire?.x ?? sim.world.start.x) + 1, (fire?.y ?? sim.world.start.y) + 3);
+  const to = freeNear(sim, camp.x + (toUs?.x ?? 0) * (YARD + 1), camp.y + (toUs?.y ?? 0) * (YARD + 1));
+  if (!from || !to) return [];
+  const path = findPath(sim.world, from[0], from[1], to[0], to[1], 7e4);
+  const last = path[path.length - 1];
+  if (!last || last[0] !== to[0] || last[1] !== to[1]) return [];
+  const inside = path.filter(([x, y]) => x >= box.x0 && x < box.x1 && y >= box.y0 && y < box.y1);
+  return inside.filter((_, i) => i % 3 === 0 || i === inside.length - 1).map(([x, y]) => ({ x: x + 0.5, y: y + 0.5 }));
+}
 function tribeIntel(sim, tribe) {
   const t = tribeOf(sim, tribe);
   if (!t) return null;
@@ -6057,6 +6071,10 @@ function tribeIntel(sim, tribe) {
     if (soldiers && !u.civ) soldiers[u.arm]++;
     people.push({ x: u.x, y: u.y, mark, leader: level >= 3 && u.leader, weapon: level >= 3 ? u.weapon : null });
   });
+  const route = entryRoute(sim, t.camp, box, len > 0 ? { x: dx / len, y: dy / len } : null);
+  const others = sim.tribes.filter((o) => o !== t && o.state !== "adopted" && o.state !== "destroyed" && isFound(sim, o.id)).map((o) => ({ name: o.def.name, x: o.camp.x, y: o.camp.y, r: YARD, ours: false }));
+  others.push({ name: "L\xE0ng c\u1EE7a ta", x: (fire?.x ?? sim.world.start.x) + 1, y: (fire?.y ?? sim.world.start.y) + 1, r: 12, ours: true });
+  const reach = (o) => o.x > box.x0 - o.r && o.x < box.x1 + o.r && o.y > box.y0 - o.r && o.y < box.y1 + o.r;
   const loot = Object.entries(t.loot).filter(([, v]) => (v ?? 0) > 0).map(([k, v]) => `${Math.round(v)} ${RES_NAME[k].toLowerCase()}`).join(", ");
   return {
     tribe,
@@ -6068,6 +6086,8 @@ function tribeIntel(sim, tribe) {
     camp: { ...t.camp },
     yard: YARD,
     toUs: len > 0 ? { x: dx / len, y: dy / len } : null,
+    route,
+    others: others.filter(reach),
     population: Math.max(2, Math.round(seen.length / 2) * 2),
     structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === "pile" && loot ? `${WORK_INFO.pile} C\xF3 kho\u1EA3ng ${loot}.` : WORK_INFO[p.kind] ?? "", x: p.x, y: p.y, w: p.w, h: p.h })),
     people,

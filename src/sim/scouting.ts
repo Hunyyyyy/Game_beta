@@ -4,6 +4,7 @@ import { ringOf, ringPower } from './combat';
 import { DAY_LENGTH } from './constants';
 import { armOfWeapon, COMMAND } from './formations';
 import { RESEARCH } from './research';
+import { findPath } from './path';
 import { tribeOf } from './tribes';
 import type { Sim } from './sim';
 import { RES_NAME } from './resources';
@@ -241,6 +242,24 @@ const WORK_INFO: Record<string, string> = {
   fence: 'Hàng rào: chặn đường, phải phá hoặc đi vòng.', gate: 'Cổng: lối vào làng, đóng thì chặn đường.', pile: 'Kho lương: chỗ họ cất thức ăn và đồ cống nạp.',
 };
 
+/** A free tile at or near a point, or null. */
+function freeNear(sim: Sim, x: number, y: number): [number, number] | null {
+  for (let r = 0; r <= 8; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (Math.max(Math.abs(i), Math.abs(j)) === r && !sim.world.isBlocked(Math.floor(x) + i, Math.floor(y) + j)) return [Math.floor(x) + i, Math.floor(y) + j];
+  return null;
+}
+
+/** The way a walker really goes from our fire to the edge of a camp's yard (round trees, water and works), and the part of it that lies on the map, thinned out to a few points. */
+function entryRoute(sim: Sim, camp: { x: number; y: number }, box: { x0: number; y0: number; x1: number; y1: number }, toUs: { x: number; y: number } | null): Array<{ x: number; y: number }> {
+  const fire = sim.campfire(), from = freeNear(sim, (fire?.x ?? sim.world.start.x) + 1, (fire?.y ?? sim.world.start.y) + 3);
+  const to = freeNear(sim, camp.x + (toUs?.x ?? 0) * (YARD + 1), camp.y + (toUs?.y ?? 0) * (YARD + 1));
+  if (!from || !to) return [];
+  const path = findPath(sim.world, from[0], from[1], to[0], to[1], 70000);
+  const last = path[path.length - 1];
+  if (!last || last[0] !== to[0] || last[1] !== to[1]) return []; // no way through: the scouts found none
+  const inside = path.filter(([x, y]) => x >= box.x0 && x < box.x1 && y >= box.y0 && y < box.y1);
+  return inside.filter((_, i) => i % 3 === 0 || i === inside.length - 1).map(([x, y]) => ({ x: x + 0.5, y: y + 0.5 }));
+}
+
 /**
  * What our scouts know of a village, ready to draw: the camp and 24 tiles round it. Level 1 gives only the position, a rough head count and the way in;
  * level 2 adds the works (fences, towers, gates) and people as shapes; level 3 tells the men by arm, the stores and the chief.
@@ -267,10 +286,14 @@ export function tribeIntel(sim: Sim, tribe: string): TribeIntel | null {
     if (soldiers && !u.civ) soldiers[u.arm]++;
     people.push({ x: u.x, y: u.y, mark, leader: level >= 3 && u.leader, weapon: level >= 3 ? u.weapon : null });
   });
+  const route = entryRoute(sim, t.camp, box, len > 0 ? { x: dx / len, y: dy / len } : null);
+  const others: TribeIntel['others'] = sim.tribes.filter((o) => o !== t && o.state !== 'adopted' && o.state !== 'destroyed' && isFound(sim, o.id)).map((o) => ({ name: o.def.name, x: o.camp.x, y: o.camp.y, r: YARD, ours: false }));
+  others.push({ name: 'Làng của ta', x: (fire?.x ?? sim.world.start.x) + 1, y: (fire?.y ?? sim.world.start.y) + 1, r: 12, ours: true });
+  const reach = (o: TribeIntel['others'][number]) => o.x > box.x0 - o.r && o.x < box.x1 + o.r && o.y > box.y0 - o.r && o.y < box.y1 + o.r;
   const loot = Object.entries(t.loot).filter(([, v]) => (v ?? 0) > 0).map(([k, v]) => `${Math.round(v as number)} ${RES_NAME[k as keyof typeof RES_NAME].toLowerCase()}`).join(', ');
   return {
     tribe, name: t.def.name, level, accuracy, gaps, box, camp: { ...t.camp }, yard: YARD,
-    toUs: len > 0 ? { x: dx / len, y: dy / len } : null,
+    toUs: len > 0 ? { x: dx / len, y: dy / len } : null, route, others: others.filter(reach),
     population: Math.max(2, Math.round(seen.length / 2) * 2),
     structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === 'pile' && loot ? `${WORK_INFO.pile} Có khoảng ${loot}.` : WORK_INFO[p.kind] ?? '', x: p.x, y: p.y, w: p.w, h: p.h })),
     people, soldiers,

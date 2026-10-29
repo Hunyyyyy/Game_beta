@@ -30276,6 +30276,20 @@ body.war .sheet, body.war .bbar {
     gate: "C\u1ED5ng: l\u1ED1i v\xE0o l\xE0ng, \u0111\xF3ng th\xEC ch\u1EB7n \u0111\u01B0\u1EDDng.",
     pile: "Kho l\u01B0\u01A1ng: ch\u1ED7 h\u1ECD c\u1EA5t th\u1EE9c \u0103n v\xE0 \u0111\u1ED3 c\u1ED1ng n\u1EA1p."
   };
+  function freeNear(sim2, x, y) {
+    for (let r = 0; r <= 8; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (Math.max(Math.abs(i), Math.abs(j)) === r && !sim2.world.isBlocked(Math.floor(x) + i, Math.floor(y) + j)) return [Math.floor(x) + i, Math.floor(y) + j];
+    return null;
+  }
+  function entryRoute(sim2, camp, box, toUs) {
+    const fire = sim2.campfire(), from = freeNear(sim2, (fire?.x ?? sim2.world.start.x) + 1, (fire?.y ?? sim2.world.start.y) + 3);
+    const to = freeNear(sim2, camp.x + (toUs?.x ?? 0) * (YARD + 1), camp.y + (toUs?.y ?? 0) * (YARD + 1));
+    if (!from || !to) return [];
+    const path = findPath(sim2.world, from[0], from[1], to[0], to[1], 7e4);
+    const last2 = path[path.length - 1];
+    if (!last2 || last2[0] !== to[0] || last2[1] !== to[1]) return [];
+    const inside = path.filter(([x, y]) => x >= box.x0 && x < box.x1 && y >= box.y0 && y < box.y1);
+    return inside.filter((_, i) => i % 3 === 0 || i === inside.length - 1).map(([x, y]) => ({ x: x + 0.5, y: y + 0.5 }));
+  }
   function tribeIntel(sim2, tribe) {
     const t = tribeOf(sim2, tribe);
     if (!t) return null;
@@ -30296,6 +30310,10 @@ body.war .sheet, body.war .bbar {
       if (soldiers && !u.civ) soldiers[u.arm]++;
       people.push({ x: u.x, y: u.y, mark, leader: level >= 3 && u.leader, weapon: level >= 3 ? u.weapon : null });
     });
+    const route = entryRoute(sim2, t.camp, box, len > 0 ? { x: dx / len, y: dy / len } : null);
+    const others = sim2.tribes.filter((o) => o !== t && o.state !== "adopted" && o.state !== "destroyed" && isFound(sim2, o.id)).map((o) => ({ name: o.def.name, x: o.camp.x, y: o.camp.y, r: YARD, ours: false }));
+    others.push({ name: "L\xE0ng c\u1EE7a ta", x: (fire?.x ?? sim2.world.start.x) + 1, y: (fire?.y ?? sim2.world.start.y) + 1, r: 12, ours: true });
+    const reach = (o) => o.x > box.x0 - o.r && o.x < box.x1 + o.r && o.y > box.y0 - o.r && o.y < box.y1 + o.r;
     const loot = Object.entries(t.loot).filter(([, v]) => (v ?? 0) > 0).map(([k, v]) => `${Math.round(v)} ${RES_NAME[k].toLowerCase()}`).join(", ");
     return {
       tribe,
@@ -30307,6 +30325,8 @@ body.war .sheet, body.war .bbar {
       camp: { ...t.camp },
       yard: YARD,
       toUs: len > 0 ? { x: dx / len, y: dy / len } : null,
+      route,
+      others: others.filter(reach),
       population: Math.max(2, Math.round(seen.length / 2) * 2),
       structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === "pile" && loot ? `${WORK_INFO.pile} C\xF3 kho\u1EA3ng ${loot}.` : WORK_INFO[p.kind] ?? "", x: p.x, y: p.y, w: p.w, h: p.h })),
       people,
@@ -35180,7 +35200,6 @@ body.war .sheet, body.war .bbar {
   }
 
   // src/ui/planmap.ts
-  var ARROW_FROM = 27;
   var T = 16;
   var MIN_K = 4;
   var MAX_K = 64;
@@ -35896,13 +35915,35 @@ body.war .sheet, body.war .bbar {
       ctx2.arc(this.sx(i.camp.x), this.sy(i.camp.y), i.yard * k, 0, Math.PI * 2);
       ctx2.stroke();
       ctx2.setLineDash([]);
+      for (const o of i.others) {
+        const x = this.sx(o.x), y = this.sy(o.y);
+        ctx2.setLineDash([6, 5]);
+        ctx2.strokeStyle = o.ours ? "rgba(120,220,255,0.85)" : "rgba(255,255,255,0.7)";
+        ctx2.lineWidth = 2;
+        ctx2.beginPath();
+        ctx2.arc(x, y, o.r * k, 0, Math.PI * 2);
+        ctx2.stroke();
+        ctx2.setLineDash([]);
+        label(ctx2, o.name, x, y, 12 * u, o.ours ? "#9fe3ff" : "#fff");
+      }
+      if (i.route.length > 1) {
+        const pts = i.route.map((q) => this.scr(q));
+        ctx2.lineJoin = "round";
+        ctx2.lineCap = "round";
+        ctx2.setLineDash([2, 8]);
+        ctx2.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx2.lineWidth = 3;
+        ctx2.beginPath();
+        ctx2.moveTo(pts[0].x, pts[0].y);
+        for (const q of pts.slice(1)) ctx2.lineTo(q.x, q.y);
+        ctx2.stroke();
+        ctx2.setLineDash([]);
+        const n = pts.length, a = pts[Math.max(0, n - 4)], z = pts[n - 1];
+        this.arrowhead(ctx2, a.x, a.y, z.x, z.y, "#ffffff", 3, u);
+        label(ctx2, "\u0110\u01B0\u1EDDng v\xE0o", pts[Math.floor(n / 2)].x, pts[Math.floor(n / 2)].y - 10, 11 * u);
+      }
       for (const s of i.structures) this.work(ctx2, s, u);
       for (const p of i.people) this.person(ctx2, p, u);
-      if (i.toUs) {
-        const at = (d) => ({ x: this.sx(i.camp.x + i.toUs.x * d), y: this.sy(i.camp.y + i.toUs.y * d) }), a = at(ARROW_FROM), b = at(i.yard + 3);
-        this.arrowhead(ctx2, a.x, a.y, b.x, b.y, "#ffffff", 3, u);
-        label(ctx2, "\u0110\u01B0\u1EDDng v\xE0o", a.x, a.y - 8, 11 * u);
-      }
       if (plan2?.kind === "attack") for (const m of plan2.missions) this.squad(ctx2, m.squad, u);
       this.preview(ctx2, u);
       this.drawRing(ctx2);
