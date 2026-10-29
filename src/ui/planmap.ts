@@ -42,7 +42,20 @@ export interface MapEvents {
   onPath(squad: number, pts: Pt[], retreat: boolean): void;
   /** A work or a man pressed on the map while a squad is chosen: the squad is aimed at it, and its arrow runs there. */
   onTarget(squad: number, target: MissionTarget): void;
+  /** An item of the ring of a squad (opened by holding a press on it) was picked. */
+  onSquadAction(squad: number, action: SquadAction): void;
+  /** The arrow of a squad was pressed: it is to be bent. */
+  onArrow(squad: number): void;
+  /** A ring opened: every other panel gives way to it. */
+  onRing(): void;
 }
+/** What the ring of a squad offers: its orders, editing its formation, removing it, taking cells out, and its soldiers. */
+export type SquadAction = 'order' | 'edit' | 'delete' | 'trim' | 'roster';
+const SQUAD_ITEMS: Array<{ id: SquadAction; name: string; icon: string; note: string }> = [
+  { id: 'order', name: 'Lệnh', icon: '☰', note: 'Hành động, giờ đánh, rút lui, thẻ lệnh' }, { id: 'edit', name: 'Sửa', icon: '✎', note: 'Đổi độ dài, bán kính, chỗ đứng của đội hình' },
+  { id: 'delete', name: 'Xóa đội', icon: '🗑', note: 'Xóa hẳn đội, lính trở về hàng chưa có đội' }, { id: 'trim', name: 'Xóa ô', icon: '✂', note: 'Bấm vào ô muốn bỏ khỏi đội hình' },
+  { id: 'roster', name: 'Lính', icon: '👥', note: 'Thêm, bỏ lính, chọn chỉ huy' },
+];
 
 export function fmtTime(sec: number): string {
   const s = Math.round(sec);
@@ -145,7 +158,7 @@ export class PlanMapView {
   /** An arrow not yet placed: where its head would go, following the pointer. */
   private arrowAim: Pt | null = null;
   /** The ring of formations while it is open: where it was pressed (screen), where it sits, the same place on the ground, and the item under the finger. */
-  private ring: { press: Pt; centre: Pt; world: Pt; hover: number } | null = null;
+  private ring: { press: Pt; centre: Pt; world: Pt; hover: number; squad?: number } | null = null;
   /** A formation picked from the ring, waiting for the drag that sizes it. */
   private making: { kind: FormationId; at: Pt } | null = null;
   /** While a formation is being shaped: where the finger is on the ground, and where the drag began. */
@@ -179,6 +192,7 @@ export class PlanMapView {
         const retreat = ui.mode === 'retreat', list = this.listOf(retreat), hit = this.handleAt(p);
         if (hit) { // a handle of the arrow: a point is picked up, or the middle of a leg, which bends there
           const pts = list.map((q) => ({ ...q }));
+          if (hit.kind === 'mid' && !retreat && list.length >= 4) { this.ev.onNotice('Mũi tên chỉ gấp khúc tối đa 3 chỗ'); this.gesture = 'none'; return; }
           if (hit.kind === 'mid') pts.splice(hit.idx, 0, this.clampInBox(w));
           this.edit = { pts, retreat, idx: hit.idx }; this.gesture = 'node';
         } else if (!list.length && retreat) { this.gesture = 'arrow'; this.arrowAim = this.clampInBox(w); } // the way back is drawn free; the way in is only aimed at something
@@ -325,18 +339,26 @@ export class PlanMapView {
     const press = this.downAt, edge = RING + ITEM + 10;
     // near an edge the ring is moved in so that all of it shows; the press stays where it was
     const centre = { x: clamp(press.x, edge, Math.max(edge, this.W - edge)), y: clamp(press.y, edge, Math.max(edge, this.H - edge)) };
-    this.ring = { press, centre, world: this.world(press), hover: -1 };
+    const squad = this.squadAt(press);
+    this.ring = { press, centre, world: this.world(press), hover: -1, squad };
     this.gesture = 'menu';
     this.pop.hidden = true;
+    if (squad !== undefined) { this.ev.onSelect(squad); this.ev.onRing(); }
     this.redraw();
   }
 
+  /** The squad whose cell lies under a screen point, if any. */
+  private squadAt(p: Pt): number | undefined {
+    return (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)))?.squad;
+  }
+  private ringCount(): number { return this.ring?.squad !== undefined ? SQUAD_ITEMS.length : FORMATION_IDS.length; }
+
   private itemCentre(i: number): Pt {
-    const a = -Math.PI / 2 + (i * 2 * Math.PI) / FORMATION_IDS.length, c = this.ring!.centre;
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / this.ringCount(), c = this.ring!.centre;
     return { x: c.x + Math.cos(a) * RING, y: c.y + Math.sin(a) * RING };
   }
   private itemAt(p: Pt): number {
-    for (let i = 0; i < FORMATION_IDS.length; i++) if (dist(p, this.itemCentre(i)) <= ITEM + 4) return i;
+    for (let i = 0; i < this.ringCount(); i++) if (dist(p, this.itemCentre(i)) <= ITEM + 4) return i;
     return -1;
   }
 
@@ -344,6 +366,7 @@ export class PlanMapView {
   private pickFromRing(): void {
     const r = this.ring; this.ring = null;
     if (!r || r.hover < 0) return;
+    if (r.squad !== undefined) { this.ev.onSquadAction(r.squad, SQUAD_ITEMS[r.hover].id); return; }
     const kind = FORMATION_IDS[r.hover];
     if (!this.sim.formationOpen(kind)) { this.ev.onNotice(`Cần nghiên cứu để dùng ${FORMATIONS[kind].name}`); return; }
     this.making = { kind, at: r.world };
@@ -393,15 +416,31 @@ export class PlanMapView {
       return;
     }
     // a squad first, then a man, then a work
-    const near = (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)));
-    if (near) { this.pop.hidden = true; this.ev.onSelect(near.squad); return; }
+    const near = this.squadAt(p);
+    if (near !== undefined) { this.pop.hidden = true; this.ev.onSelect(near); return; }
     const hit = this.targets.map((t) => ({ t, d: Math.hypot(t.x - p.x, t.y - p.y) })).filter((x) => x.d <= x.t.r).sort((a, b) => a.d - b.d)[0];
     if (hit) {
       const sq = this.plan?.missions.find((m) => m.squad === this.ui.selected && m.deploy);
       if (hit.t.pick && sq && this.plan?.status === 'draft' && this.ui.mode !== 'retreat') { this.pop.hidden = true; this.ev.onTarget(sq.squad, hit.t.pick); return; } // a squad is chosen: this is where it goes
       this.showPop(p, hit.t.title, hit.t.text, hit.t.pick); return;
     }
+    const arrow = this.arrowAt(p);
+    if (arrow !== undefined && this.plan?.status === 'draft') { this.pop.hidden = true; this.ev.onArrow(arrow); return; } // the arrow of a squad: it is to be bent
     this.pop.hidden = true; this.ev.onSelect(-1);
+  }
+
+  /** The squad whose arrow passes within a finger's width of a screen point. */
+  private arrowAt(p: Pt): number | undefined {
+    for (const m of this.plan?.missions ?? []) {
+      const start = this.routes.get(m.squad)?.start;
+      if (!start || !m.path.length) continue;
+      const pts = [start, ...m.path].map((q) => this.scr(q));
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1], l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2, t = l2 ? clamp(((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2, 0, 1) : 0;
+        if (dist(p, { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }) <= 12) return m.squad;
+      }
+    }
+    return undefined;
   }
 
   /** What a pressed work or man is. With squads on the map and the plan still a draft, a button for each sends that squad to attack it. */
@@ -409,7 +448,7 @@ export class PlanMapView {
     const squads = pick && this.plan?.status === 'draft' ? this.plan.missions.filter((m) => m.deploy && this.sim.squadById(m.squad)) : [];
     this.pop.replaceChildren(h('b', { text: title }), h('p', { class: 'sub', text }),
       ...(squads.length ? [h('small', { text: 'Đội nào tấn công mục tiêu này?' }), h('div', { class: 'chips' }, ...squads.map((m) => h('button', { class: 'chip', text: `🎯 ${this.sim.squadById(m.squad)!.name}`, onclick: () => { this.pop.hidden = true; this.ev.onTarget(m.squad, pick!); } })))] : []),
-      h('button', { class: 'sm', text: 'Đóng', onclick: () => { this.pop.hidden = true; } }));
+      );
     this.pop.style.left = `${clamp(p.x + 14, 8, Math.max(8, this.W - 280))}px`; this.pop.style.top = `${clamp(p.y + 14, 8, Math.max(8, this.H - 150))}px`;
     this.pop.hidden = false;
   }
@@ -670,6 +709,16 @@ export class PlanMapView {
     ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(r.centre.x, r.centre.y, RING, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(r.press.x, r.press.y, 6, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#1a1208'; ctx.lineWidth = 2; ctx.stroke();
+    if (r.squad !== undefined) {
+      SQUAD_ITEMS.forEach((it, i) => {
+        const c = this.itemCentre(i), hot = i === r.hover;
+        ctx.fillStyle = hot ? '#ffd23a' : 'rgba(40,30,20,0.94)'; ctx.strokeStyle = hot ? '#fff' : 'rgba(255,255,255,0.75)'; ctx.lineWidth = hot ? 3 : 2;
+        ctx.beginPath(); ctx.arc(c.x, c.y, ITEM + (hot ? 4 : 0), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        label(ctx, it.icon, c.x, c.y - 4, 20, hot ? '#1a1208' : '#fff'); label(ctx, it.name, c.x, c.y + 21, 11, hot ? '#1a1208' : '#fff');
+      });
+      if (r.hover >= 0) label(ctx, SQUAD_ITEMS[r.hover].note, this.W / 2, this.H - 24, 13);
+      return;
+    }
     FORMATION_IDS.forEach((f, i) => {
       const c = this.itemCentre(i), open = this.sim.formationOpen(f), hot = i === r.hover;
       ctx.fillStyle = hot ? (open ? '#ffd23a' : '#a05a50') : open ? 'rgba(40,30,20,0.94)' : 'rgba(40,30,20,0.62)';

@@ -64,7 +64,7 @@
 }
 .pcard {
   @include float-box($radius-md, 0 4px 16px rgba(0, 0, 0, .5));
-  position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--ptop) + 4px); z-index: 3;
+  position: absolute; right: calc(var(--sar) + 10px); top: calc(var(--ptop) + 4px); z-index: 3; // the panel of a squad's order, soldiers or the report: top right
   width: min(340px, calc(100% - 20px)); max-height: calc(100% - var(--ptop) - 70px);
   overflow: auto;
   display: grid; gap: 6px; padding: 8px 10px;

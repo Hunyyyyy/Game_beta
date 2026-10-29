@@ -930,7 +930,7 @@ button.primary.danger {
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   position: absolute;
-  left: calc(var(--sal) + 10px);
+  right: calc(var(--sar) + 10px);
   top: calc(var(--ptop) + 4px);
   z-index: 3;
   width: min(340px, 100% - 20px);
@@ -30340,7 +30340,8 @@ body.war .sheet, body.war .bbar {
   function setMissionPath(sim2, plan2, squadId, pts, retreat = false) {
     const m = drawable(sim2, plan2, squadId);
     if (typeof m === "string") return m;
-    const list = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
+    let list = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
+    if (!retreat && list.length > 4) list = [...list.slice(0, 3), list[list.length - 1]];
     if (retreat) {
       m.retreat = list;
       return null;
@@ -30428,11 +30429,12 @@ body.war .sheet, body.war .bbar {
     for (const m of plan2.missions) {
       const s = sim2.squadById(m.squad), n = s ? sim2.squadUnits(s).length : 0, name = s?.name ?? "?";
       if (!n) out.push(`\u2717 ${name} ch\u01B0a c\xF3 l\xEDnh.`);
+      else if (isLogistics(plan2, m)) out.push(`${name} l\xE0 \u0111\u1ED9i h\u1EADu c\u1EA7n (kh\xF4ng c\xF3 m\u0169i t\xEAn): \u0111i tr\u01B0\u1EDBc ph\xE1 v\u1EADt c\u1EA3n tr\xEAn \u0111\u01B0\u1EDDng c\xE1c \u0111\u1ED9i kh\xE1c r\u1ED3i v\u1EC1 ch\u1ED7 c\u0169, kh\xF4ng ra tr\u1EADn.`);
       else if (plan2.kind === "attack" && !m.path.length && !canTarget(sim2, m.objective, plan2.tribe)) out.push(`\u2717 ${name} nh\u1EAFm "${OBJECTIVE_NAME[m.objective]}" nh\u01B0ng b\u1EA3n \u0111\u1ED3 ch\u01B0a \u0111\u1EE7 c\u1EA5p.`);
       else if (plan2.kind === "attack" && !m.path.length) out.push(`${name} ch\u01B0a c\xF3 m\u1EE5c ti\xEAu: b\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi tr\xEAn b\u1EA3n \u0111\u1ED3, n\u1EBFu kh\xF4ng s\u1EBD ti\u1EBFn th\u1EB3ng v\xE0o \u0111\u1ED1ng l\u1EEDa c\u1EE7a \u0111\u1ECBch.`);
       if (n && m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
       if (n && m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
-      if (n && m.deploy && n < m.deploy.cells.length) out.push(`\u2717 ${name} m\u1EDBi c\xF3 ${n}/${m.deploy.cells.length} l\xEDnh cho ${m.deploy.cells.length} \xF4 \u0111\u1ED9i h\xECnh: th\xEAm l\xEDnh v\xE0o \u0111\u1ED9i ho\u1EB7c b\u1EDBt \xF4 (\u2702 B\u1EDBt \xF4).`);
+      if (n && m.deploy && n < m.deploy.cells.length && !isLogistics(plan2, m)) out.push(`\u2717 ${name} m\u1EDBi c\xF3 ${n}/${m.deploy.cells.length} l\xEDnh cho ${m.deploy.cells.length} \xF4 \u0111\u1ED9i h\xECnh: th\xEAm l\xEDnh v\xE0o \u0111\u1ED9i ho\u1EB7c b\u1EDBt \xF4 (\u2702 B\u1EDBt \xF4).`);
       const unfit = s ? sim2.squadUnits(s).filter((v) => v.down > 0 || sim2.sleepLocked(v)).length : 0;
       if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
       if (s && n && !sim2.squadCenter(s)) out.push(`${name} ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng.`);
@@ -30446,16 +30448,24 @@ body.war .sheet, body.war .bbar {
     }
     return out;
   }
+  function isLogistics(plan2, m) {
+    return plan2.kind === "attack" && !m.path.length && !m.target && plan2.missions.some((x) => x.path.length > 0);
+  }
+  function supplyUnits(sim2, plan2) {
+    return plan2.missions.filter((m) => isLogistics(plan2, m)).flatMap((m) => {
+      const s = sim2.squadById(m.squad);
+      return s ? sim2.squadUnits(s) : [];
+    });
+  }
   function obstacleLines(sim2, plan2, m, name) {
     const out = [], start = sim2.missionStart(m);
     if (start && m.path.length) {
-      const hits = sim2.pathHits(start, m.path, m.target?.kind === "prop" ? m.target.at : void 0), seen = /* @__PURE__ */ new Set();
+      const hits = sim2.pathHits(start, m.path, m.target?.kind === "prop" ? m.target.at : void 0), seen = /* @__PURE__ */ new Set(), crew2 = supplyUnits(sim2, plan2).length > 0;
       for (const o of hits) {
         if (!o || o.kind === "enemy" || seen.has(`${o.x},${o.y}`)) continue;
         seen.add(`${o.x},${o.y}`);
-        const sent = plan2.clears.some((c) => c.x === o.x && c.y === o.y && !!sim2.squadById(c.squad));
         if (!o.clear) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label} \u1EDF (${o.x}, ${o.y}), kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c: h\xE3y u\u1ED1n m\u0169i t\xEAn \u0111i v\xF2ng.`);
-        else if (!sent) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label} \u1EDF (${o.x}, ${o.y}): c\u1EED m\u1ED9t \u0111\u1ED9i \u0111i ph\xE1 tr\u01B0\u1EDBc khi \u0111\xE1nh (n\xFAt \u{1FA93} tr\xEAn b\u1EA3n \u0111\u1ED3).`);
+        else if (!crew2) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label} \u1EDF (${o.x}, ${o.y}): c\u1EA7n m\u1ED9t \u0111\u1ED9i h\u1EADu c\u1EA7n (m\u1ED9t \u0111\u1ED9i kh\xF4ng v\u1EBD m\u0169i t\xEAn) c\xF3 l\xEDnh \u0111\u1EC3 ph\xE1 tr\u01B0\u1EDBc khi \u0111\xE1nh.`);
       }
     }
     if (m.deploy) {
@@ -30466,25 +30476,33 @@ body.war .sheet, body.war .bbar {
     }
     return out;
   }
+  function listClears(sim2, plan2) {
+    const todo = /* @__PURE__ */ new Map(), crew2 = plan2.missions.find((m) => isLogistics(plan2, m))?.squad ?? -1;
+    for (const m of plan2.missions) {
+      const s = sim2.squadById(m.squad), start = sim2.missionStart(m);
+      if (!s || !start || !m.path.length) continue;
+      for (const o of sim2.corridorBlocks(start, m.path, m.target?.kind === "prop" ? m.target.at : void 0)) todo.set(o.y * sim2.world.size + o.x, { squad: crew2, x: o.x, y: o.y });
+    }
+    plan2.clears = [...todo.values()].slice(0, 80);
+  }
   function crewClears(sim2, plan2) {
     plan2.clears = plan2.clears.filter((c) => {
       const o = sim2.obstacleAt(c.x, c.y);
-      return !!o && o.clear && !!sim2.squadById(c.squad);
+      return !!o && o.clear;
     });
-    for (const c of plan2.clears) {
-      const s = sim2.squadById(c.squad), ob = sim2.obstacleAt(c.x, c.y);
-      if (sim2.squadUnits(s).some((v) => v.breaks?.x === c.x && v.breaks?.y === c.y)) continue;
-      const crew2 = sim2.squadUnits(s).filter((v) => !v.breaks).sort((a, b) => Math.hypot(a.x - c.x, a.y - c.y) - Math.hypot(b.x - c.x, b.y - c.y)).slice(0, SIEGE.crew);
-      for (const v of crew2) sim2.startBreaking(v, ob, v.fight.anchor ?? void 0);
+    const crew2 = supplyUnits(sim2, plan2), busy2 = new Set(crew2.filter((v) => v.breaks).map((v) => `${v.breaks.x},${v.breaks.y}`));
+    if (!crew2.length) return;
+    for (const v of crew2) {
+      if (v.breaks) continue;
+      const c = plan2.clears.filter((q) => !busy2.has(`${q.x},${q.y}`)).sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
+      if (!c) break;
+      busy2.add(`${c.x},${c.y}`);
+      sim2.startBreaking(v, sim2.obstacleAt(c.x, c.y), v.fight.anchor ?? { x: v.x, y: v.y });
     }
   }
-  function addClear(sim2, plan2, squadId, x, y) {
-    if (plan2.status === "running") return "K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y";
-    const s = sim2.squadById(squadId), o = sim2.obstacleAt(x, y);
-    if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
-    if (!o || !o.clear || o.kind === "enemy") return "Kh\xF4ng c\xF3 g\xEC \u0111\u1EC3 ph\xE1 \u1EDF \u0111\xF3";
-    plan2.clears = plan2.clears.filter((c) => !(c.x === x && c.y === y));
-    plan2.clears.push({ squad: squadId, x, y });
+  function cancelPlan(sim2, plan2) {
+    if (plan2.status === "running") return "K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y: h\xE3y r\xFAt qu\xE2n tr\u01B0\u1EDBc";
+    sim2.plans.splice(sim2.plans.indexOf(plan2), 1);
     return null;
   }
   function objectivePos(sim2, plan2, m) {
@@ -30595,7 +30613,7 @@ body.war .sheet, body.war .bbar {
     });
   }
   function assembled(sim2, plan2) {
-    return plan2.missions.every((m) => {
+    return (!plan2.clears.length || !supplyUnits(sim2, plan2).length) && plan2.missions.every((m) => {
       const s = sim2.squadById(m.squad);
       return !s || sim2.squadUnits(s).every((v) => !v.breaks && (!v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5));
     });
@@ -30667,12 +30685,17 @@ body.war .sheet, body.war .bbar {
       m.leg = 0;
       m.block = null;
       if (m.deploy) assemble(sim2, s, m.deploy);
+      else if (isLogistics(plan2, m)) for (const v of sim2.squadUnits(s)) {
+        v.fight.mode = "guard";
+        v.fight.anchor = { x: v.x, y: v.y };
+      }
     }
     plan2.status = "running";
     plan2.stage = "assemble";
     plan2.startedAt = sim2.time;
     plan2.signal = false;
     plan2.result = "";
+    listClears(sim2, plan2);
     crewClears(sim2, plan2);
     sim2.say(`Tri\u1EC3n khai qu\xE2n \u0111\xE1nh ${sim2.tribes.find((t) => t.id === plan2.tribe)?.def.name ?? ""} b\u1EAFt \u0111\u1EA7u.`);
     return null;
@@ -30742,7 +30765,7 @@ body.war .sheet, body.war .bbar {
       const second = Math.floor(sim2.time) !== Math.floor(sim2.time - dt), half = Math.floor(sim2.time * 2) !== Math.floor((sim2.time - dt) * 2);
       for (const m of plan2.missions) {
         const s = sim2.squadById(m.squad);
-        if (!s || !sim2.squadUnits(s).length) {
+        if (!s || !sim2.squadUnits(s).length || isLogistics(plan2, m)) {
           if (m.state !== "done") {
             m.state = "done";
           }
@@ -31037,6 +31060,22 @@ body.war .sheet, body.war .bbar {
       at = p;
       return o;
     });
+  }
+  function corridorBlocks(sim2, start, pts, target) {
+    const out = /* @__PURE__ */ new Map(), N = sim2.world.size;
+    let at = start;
+    for (const p of pts) {
+      const d = Math.hypot(p.x - at.x, p.y - at.y), n = Math.max(1, Math.ceil(d * 2));
+      for (let i = 0; i <= n; i++) {
+        const cx = Math.floor(at.x + (p.x - at.x) * i / n), cy = Math.floor(at.y + (p.y - at.y) * i / n);
+        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+          const o = obstacleAt(sim2, cx + dx, cy + dy);
+          if (o && o.clear && o.kind !== "enemy" && !(target && Math.hypot(o.x - target.x, o.y - target.y) < 2)) out.set(o.y * N + o.x, o);
+        }
+      }
+      at = p;
+    }
+    return [...out.values()];
   }
   function lineSteps(sim2, from, to) {
     const out = [], d = Math.hypot(to.x - from.x, to.y - from.y), n = Math.ceil(d * 2);
@@ -31564,9 +31603,17 @@ body.war .sheet, body.war .bbar {
       const t = tribeOf(this, id);
       if (t && t.state === "free") surrender(this, t, why);
     },
-    /** → warplan.addClear */
-    addClear(plan2, squadId, x, y) {
-      return addClear(this, plan2, squadId, x, y);
+    /** → siege.corridorBlocks */
+    corridorBlocks(start, pts, target) {
+      return corridorBlocks(this, start, pts, target);
+    },
+    /** → warplan.cancelPlan */
+    cancelPlan(plan2) {
+      return cancelPlan(this, plan2);
+    },
+    /** → warplan.isLogistics */
+    isLogistics(plan2, m) {
+      return isLogistics(plan2, m);
     },
     /** → warplan.canTarget */
     canTarget(objective, tribe) {
@@ -33989,11 +34036,11 @@ body.war .sheet, body.war .bbar {
     }
   };
   var BuildingBar = class {
-    constructor(root, c, r, confirm) {
+    constructor(root, c, r, confirm2) {
       this.root = root;
       this.c = c;
       this.r = r;
-      this.confirm = confirm;
+      this.confirm = confirm2;
       this.who = h("div", { class: "who" });
       this.open = h("button", { class: "sm primary" });
       this.gate = h("button", { class: "sm primary" });
@@ -35116,11 +35163,12 @@ body.war .sheet, body.war .bbar {
   var MARK_NAME = { civ: "D\xE2n th\u01B0\u1EDDng", unknown: "C\xF3 ng\u01B0\u1EDDi (ch\u01B0a r\xF5 lo\u1EA1i)", foot: ARM_NAME.foot, archer: ARM_NAME.archer, cavalry: ARM_NAME.cavalry };
   var MARK_COLOR = { civ: "#d8d2c0", unknown: "#b9b2a0", foot: "#e0452a", archer: "#e0452a", cavalry: "#e0452a" };
   var WORK_COLOR = { fire: "#f08a24", tower: "#6b4a2a", pile: "#a9743a", fence: "#8a6a3a", gate: "#e8d18a" };
-  var LEVEL_NOTE = [
-    "",
-    "C\u1EA5p 1 (l\u01B0\u1EE3c \u0111\u1ED3): ch\u1EC9 bi\u1EBFt v\u1ECB tr\xED, s\u1ED1 d\xE2n \u01B0\u1EDBc ch\u1EEBng v\xE0 h\u01B0\u1EDBng v\xE0o l\xE0ng. C\u1EED th\xEAm trinh s\xE1t \u0111\u1EC3 bi\u1EBFt \u0111\u1ECBa h\xECnh v\xE0 c\xF4ng tr\xECnh.",
-    "C\u1EA5p 2 (\u0111\u1ECBa h\xECnh): th\u1EA5y \u0111\u1EA5t, r\u1EEBng, n\u01B0\u1EDBc, c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 v\xE0 b\xF3ng ng\u01B0\u1EDDi; ch\u01B0a bi\u1EBFt ai l\xE0 l\xEDnh. C\u1EA5p 3 cho s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i, kho v\xE0 th\u1EE7 l\u0129nh.",
-    "C\u1EA5p 3 (\u0111\u1ED9i h\xECnh): th\u1EA5y c\u1EA3 l\xEDnh t\u1EEBng lo\u1EA1i, kho l\u01B0\u01A1ng v\xE0 th\u1EE7 l\u0129nh."
+  var SQUAD_ITEMS = [
+    { id: "order", name: "L\u1EC7nh", icon: "\u2630", note: "H\xE0nh \u0111\u1ED9ng, gi\u1EDD \u0111\xE1nh, r\xFAt lui, th\u1EBB l\u1EC7nh" },
+    { id: "edit", name: "S\u1EEDa", icon: "\u270E", note: "\u0110\u1ED5i \u0111\u1ED9 d\xE0i, b\xE1n k\xEDnh, ch\u1ED7 \u0111\u1EE9ng c\u1EE7a \u0111\u1ED9i h\xECnh" },
+    { id: "delete", name: "X\xF3a \u0111\u1ED9i", icon: "\u{1F5D1}", note: "X\xF3a h\u1EB3n \u0111\u1ED9i, l\xEDnh tr\u1EDF v\u1EC1 h\xE0ng ch\u01B0a c\xF3 \u0111\u1ED9i" },
+    { id: "trim", name: "X\xF3a \xF4", icon: "\u2702", note: "B\u1EA5m v\xE0o \xF4 mu\u1ED1n b\u1ECF kh\u1ECFi \u0111\u1ED9i h\xECnh" },
+    { id: "roster", name: "L\xEDnh", icon: "\u{1F465}", note: "Th\xEAm, b\u1ECF l\xEDnh, ch\u1ECDn ch\u1EC9 huy" }
   ];
   function fmtTime(sec) {
     const s = Math.round(sec);
@@ -35353,6 +35401,11 @@ body.war .sheet, body.war .bbar {
           const retreat = ui.mode === "retreat", list = this.listOf(retreat), hit = this.handleAt(p);
           if (hit) {
             const pts = list.map((q) => ({ ...q }));
+            if (hit.kind === "mid" && !retreat && list.length >= 4) {
+              this.ev.onNotice("M\u0169i t\xEAn ch\u1EC9 g\u1EA5p kh\xFAc t\u1ED1i \u0111a 3 ch\u1ED7");
+              this.gesture = "none";
+              return;
+            }
             if (hit.kind === "mid") pts.splice(hit.idx, 0, this.clampInBox(w));
             this.edit = { pts, retreat, idx: hit.idx };
             this.gesture = "node";
@@ -35574,17 +35627,29 @@ body.war .sheet, body.war .bbar {
       if (this.gesture !== "pan" || this.moved || this.pts.size !== 1) return;
       const press = this.downAt, edge = RING + ITEM + 10;
       const centre = { x: clamp2(press.x, edge, Math.max(edge, this.W - edge)), y: clamp2(press.y, edge, Math.max(edge, this.H - edge)) };
-      this.ring = { press, centre, world: this.world(press), hover: -1 };
+      const squad = this.squadAt(press);
+      this.ring = { press, centre, world: this.world(press), hover: -1, squad };
       this.gesture = "menu";
       this.pop.hidden = true;
+      if (squad !== void 0) {
+        this.ev.onSelect(squad);
+        this.ev.onRing();
+      }
       this.redraw();
     }
+    /** The squad whose cell lies under a screen point, if any. */
+    squadAt(p) {
+      return (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)))?.squad;
+    }
+    ringCount() {
+      return this.ring?.squad !== void 0 ? SQUAD_ITEMS.length : FORMATION_IDS.length;
+    }
     itemCentre(i) {
-      const a = -Math.PI / 2 + i * 2 * Math.PI / FORMATION_IDS.length, c = this.ring.centre;
+      const a = -Math.PI / 2 + i * 2 * Math.PI / this.ringCount(), c = this.ring.centre;
       return { x: c.x + Math.cos(a) * RING, y: c.y + Math.sin(a) * RING };
     }
     itemAt(p) {
-      for (let i = 0; i < FORMATION_IDS.length; i++) if (dist(p, this.itemCentre(i)) <= ITEM + 4) return i;
+      for (let i = 0; i < this.ringCount(); i++) if (dist(p, this.itemCentre(i)) <= ITEM + 4) return i;
       return -1;
     }
     /** The finger is lifted over an item: that formation is the one to size. Anywhere else, the ring closes. */
@@ -35592,6 +35657,10 @@ body.war .sheet, body.war .bbar {
       const r = this.ring;
       this.ring = null;
       if (!r || r.hover < 0) return;
+      if (r.squad !== void 0) {
+        this.ev.onSquadAction(r.squad, SQUAD_ITEMS[r.hover].id);
+        return;
+      }
       const kind = FORMATION_IDS[r.hover];
       if (!this.sim.formationOpen(kind)) {
         this.ev.onNotice(`C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EC3 d\xF9ng ${FORMATIONS[kind].name}`);
@@ -35662,10 +35731,10 @@ body.war .sheet, body.war .bbar {
         if (at) this.ev.onTrim(this.ui.modeSquad, at.i);
         return;
       }
-      const near2 = (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)));
-      if (near2) {
+      const near2 = this.squadAt(p);
+      if (near2 !== void 0) {
         this.pop.hidden = true;
-        this.ev.onSelect(near2.squad);
+        this.ev.onSelect(near2);
         return;
       }
       const hit = this.targets.map((t) => ({ t, d: Math.hypot(t.x - p.x, t.y - p.y) })).filter((x) => x.d <= x.t.r).sort((a, b) => a.d - b.d)[0];
@@ -35679,8 +35748,27 @@ body.war .sheet, body.war .bbar {
         this.showPop(p, hit.t.title, hit.t.text, hit.t.pick);
         return;
       }
+      const arrow = this.arrowAt(p);
+      if (arrow !== void 0 && this.plan?.status === "draft") {
+        this.pop.hidden = true;
+        this.ev.onArrow(arrow);
+        return;
+      }
       this.pop.hidden = true;
       this.ev.onSelect(-1);
+    }
+    /** The squad whose arrow passes within a finger's width of a screen point. */
+    arrowAt(p) {
+      for (const m of this.plan?.missions ?? []) {
+        const start = this.routes.get(m.squad)?.start;
+        if (!start || !m.path.length) continue;
+        const pts = [start, ...m.path].map((q) => this.scr(q));
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = pts[i], b = pts[i + 1], l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2, t = l2 ? clamp2(((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2, 0, 1) : 0;
+          if (dist(p, { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }) <= 12) return m.squad;
+        }
+      }
+      return void 0;
     }
     /** What a pressed work or man is. With squads on the map and the plan still a draft, a button for each sends that squad to attack it. */
     showPop(p, title, text, pick) {
@@ -35691,10 +35779,7 @@ body.war .sheet, body.war .bbar {
         ...squads.length ? [h("small", { text: "\u0110\u1ED9i n\xE0o t\u1EA5n c\xF4ng m\u1EE5c ti\xEAu n\xE0y?" }), h("div", { class: "chips" }, ...squads.map((m) => h("button", { class: "chip", text: `\u{1F3AF} ${this.sim.squadById(m.squad).name}`, onclick: () => {
           this.pop.hidden = true;
           this.ev.onTarget(m.squad, pick);
-        } })))] : [],
-        h("button", { class: "sm", text: "\u0110\xF3ng", onclick: () => {
-          this.pop.hidden = true;
-        } })
+        } })))] : []
       );
       this.pop.style.left = `${clamp2(p.x + 14, 8, Math.max(8, this.W - 280))}px`;
       this.pop.style.top = `${clamp2(p.y + 14, 8, Math.max(8, this.H - 150))}px`;
@@ -36111,6 +36196,22 @@ body.war .sheet, body.war .bbar {
       ctx2.strokeStyle = "#1a1208";
       ctx2.lineWidth = 2;
       ctx2.stroke();
+      if (r.squad !== void 0) {
+        SQUAD_ITEMS.forEach((it, i) => {
+          const c = this.itemCentre(i), hot2 = i === r.hover;
+          ctx2.fillStyle = hot2 ? "#ffd23a" : "rgba(40,30,20,0.94)";
+          ctx2.strokeStyle = hot2 ? "#fff" : "rgba(255,255,255,0.75)";
+          ctx2.lineWidth = hot2 ? 3 : 2;
+          ctx2.beginPath();
+          ctx2.arc(c.x, c.y, ITEM + (hot2 ? 4 : 0), 0, Math.PI * 2);
+          ctx2.fill();
+          ctx2.stroke();
+          label(ctx2, it.icon, c.x, c.y - 4, 20, hot2 ? "#1a1208" : "#fff");
+          label(ctx2, it.name, c.x, c.y + 21, 11, hot2 ? "#1a1208" : "#fff");
+        });
+        if (r.hover >= 0) label(ctx2, SQUAD_ITEMS[r.hover].note, this.W / 2, this.H - 24, 13);
+        return;
+      }
       FORMATION_IDS.forEach((f, i) => {
         const c = this.itemCentre(i), open = this.sim.formationOpen(f), hot2 = i === r.hover;
         ctx2.fillStyle = hot2 ? open ? "#ffd23a" : "#a05a50" : open ? "rgba(40,30,20,0.94)" : "rgba(40,30,20,0.62)";
@@ -36127,29 +36228,6 @@ body.war .sheet, body.war .bbar {
       if (hot) label(ctx2, this.sim.formationOpen(hot) ? FORMATIONS[hot].note : `C\u1EA7n nghi\xEAn c\u1EE9u: ${FORMATIONS[hot].name}`, this.W / 2, this.H - 24, 13);
     }
   };
-  function planMapInfo(sim2, tribeId) {
-    const i = sim2.tribeIntel(tribeId);
-    if (!i) return h("p", { class: "sub", text: "Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 l\xE0ng n\xE0y: c\u1EED trinh s\xE1t \u0111\u1EC3 v\u1EBD." });
-    const age = i.accuracy >= 0.95 ? "b\xE1o c\xE1o m\u1EDBi" : i.accuracy >= 0.7 ? "b\xE1o c\xE1o h\u01A1i c\u0169" : i.accuracy >= 0.4 ? "b\xE1o c\xE1o \u0111\xE3 c\u0169" : "b\xE1o c\xE1o r\u1EA5t c\u0169";
-    const s = i.soldiers, army = s ? `L\xEDnh: ${s.foot} ${ARM_NAME.foot.toLowerCase()}, ${s.archer} ${ARM_NAME.archer.toLowerCase()}, ${s.cavalry} ${ARM_NAME.cavalry.toLowerCase()} \xB7 ` : "";
-    const items = [];
-    for (const w of i.structures) if (!items.some((x) => x[1] === w.label)) items.push([WORK_COLOR[w.kind] ?? "#8a6a3a", w.label]);
-    for (const m of new Set(i.people.map((p) => p.mark))) items.push([MARK_COLOR[m], MARK_NAME[m]]);
-    if (i.people.some((p) => p.leader)) items.push(["#ffd23a", "Th\u1EE7 l\u0129nh (v\xF2ng v\xE0ng)"]);
-    const legend = h("div", { class: "btns", style: "gap:8px;flex-wrap:wrap" }, ...items.map(([color, text]) => h(
-      "small",
-      {},
-      h("span", { style: `display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;background:${color};border:1px solid #1a1208` }),
-      text
-    )));
-    return h(
-      "div",
-      { style: "display:grid;gap:4px" },
-      h("div", { class: "nm" }, h("b", { text: `B\u1EA3n \u0111\u1ED3 ${i.name}` }), h("small", { text: `${army}kho\u1EA3ng ${i.population} ng\u01B0\u1EDDi \xB7 ${age}${i.gaps ? " \xB7 c\xF2n h\u1EDF" : ""}` })),
-      h("small", { class: "sub", text: "Nh\u1EA5n gi\u1EEF m\u1ED9t \u0111i\u1EC3m tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 l\u1EADp \u0111\u1ED9i. B\u1EA5m v\xE0o l\u1EEDa, kho, l\xEDnh \u0111\u1EC3 xem ch\xFA th\xEDch." }),
-      h("details", {}, h("summary", { text: "Ch\xFA gi\u1EA3i v\xE0 c\u1EA5p b\u1EA3n \u0111\u1ED3" }), legend, h("small", { class: "sub", text: `V\xF9ng v\u1EBD: khu tr\u1EA1i v\xE0 24 \xF4 xung quanh. ${LEVEL_NOTE[i.level]}` }))
-    );
-  }
 
   // src/ui/warpanel.ts
   var TABS2 = [["plan", "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"], ["defense", "Ph\xF2ng th\u1EE7"], ["log", "Nh\u1EADt k\xFD tr\u1EADn"]];
@@ -36210,12 +36288,14 @@ body.war .sheet, body.war .bbar {
        * Which panel of the plan view is open. Only one at a time, so that none lies over another: opening one closes the one before. Each has a button
        * on the dock at the top left (or on the squad's bar) that opens it again, and closing it leaves nothing but that button.
        */
-      this.panel = "info";
+      this.panel = null;
       this.dock = h("div", { class: "pdock" });
       /** The bar along the top of the map: close, which village, and the buttons that open the panels. */
       this.top = h("div", { class: "ptop" });
       /** The squad whose "Xóa đội" was pressed once: it asks to be pressed again. */
       this.confirmDel = -1;
+      /** "Hủy kế hoạch" was pressed once: it asks to be pressed again. */
+      this.confirmPlan = false;
       /** The squad chosen on the map, and what a drag on the map draws for it. */
       this.sel = -1;
       this.mode = "pan";
@@ -36235,9 +36315,14 @@ body.war .sheet, body.war .bbar {
       this.view = new PlanMapView(c.sim, { onSelect: (id) => {
         this.sel = id;
         this.refresh();
-      }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back) => this.drewPath(id, pts, back), onTarget: (id, target) => this.aimed(id, target) });
+      }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back) => this.drewPath(id, pts, back), onTarget: (id, target) => this.aimed(id, target), onSquadAction: (id, a) => this.squadAction(id, a), onArrow: (id) => this.startDraw("path", id), onRing: () => {
+        this.panel = null;
+        this.mode = "pan";
+        this.modeSquad = -1;
+        this.refresh();
+      } });
       const tool = (text, title, f) => h("button", { class: "zoom", text, title, onclick: f });
-      this.view.root.append(this.top, this.info, this.bar, this.card, this.roster, this.report, h("div", { class: "ptools" }, tool("+", "Ph\xF3ng to", () => this.view.zoomBy(1.4)), tool("\u2212", "Thu nh\u1ECF", () => this.view.zoomBy(1 / 1.4)), tool("\u2922", "V\u1EEBa khung", () => this.view.fit())));
+      this.view.root.append(this.top, this.bar, this.card, this.roster, this.report, h("div", { class: "ptools" }, tool("+", "Ph\xF3ng to", () => this.view.zoomBy(1.4)), tool("\u2212", "Thu nh\u1ECF", () => this.view.zoomBy(1 / 1.4)), tool("\u2922", "V\u1EEBa khung", () => this.view.fit())));
       this.top.append(h("button", { class: "chip danger", text: "\u2715 \u0110\xF3ng", title: "\u0110\xF3ng b\u1EA3n \u0111\u1ED3, v\u1EC1 m\xE0n h\xECnh game", onclick: () => this.closeMap() }), h("div", { class: "ptitle2" }, this.fullTitle, this.fullState), this.dock);
       this.full.append(h("div", { class: "pstage" }, this.view.root));
       (document.body ?? document.documentElement).append(this.full);
@@ -36280,7 +36365,7 @@ body.war .sheet, body.war .bbar {
       if (!sim2.plans.some((p) => p.kind === "attack")) sim2.newPlan("attack", tribe);
       this.tab = "plan";
       this.openTribe = tribe;
-      this.panel = "info";
+      this.panel = null;
       this.sel = -1;
       this.mode = "pan";
       this.modeSquad = -1;
@@ -36344,6 +36429,7 @@ body.war .sheet, body.war .bbar {
       this.mode = mode;
       this.modeSquad = squad;
       this.sel = squad;
+      this.panel = null;
       this.refresh();
     }
     stopDraw() {
@@ -36420,6 +36506,49 @@ body.war .sheet, body.war .bbar {
         this.orderOpen = true;
         this.cardSquad = -1;
       }
+      this.refresh();
+    }
+    /** An item of a squad's ring was picked. */
+    squadAction(squad, a) {
+      const plan2 = this.attackPlan(), m = plan2?.missions.find((x) => x.squad === squad);
+      this.sel = squad;
+      if (a === "edit") {
+        this.startDraw("edit", squad);
+        return;
+      }
+      if (a === "trim") {
+        this.startDraw("trim", squad);
+        return;
+      }
+      if (a === "roster") {
+        this.rosterOpen = true;
+        this.addOpen = false;
+        this.refresh();
+        return;
+      }
+      if (a === "order") {
+        if (!m?.path.length) {
+          this.toast("\u0110\u1ED9i kh\xF4ng c\xF3 m\u0169i t\xEAn l\xE0 \u0111\u1ED9i h\u1EADu c\u1EA7n: kh\xF4ng c\xF3 l\u1EC7nh \u0111\u1EC3 ra, n\xF3 \u0111i tr\u01B0\u1EDBc ph\xE1 v\u1EADt c\u1EA3n r\u1ED3i v\u1EC1 ch\u1ED7 c\u0169");
+          this.refresh();
+          return;
+        }
+        this.orderOpen = true;
+        this.cardSquad = -1;
+        this.refresh();
+        return;
+      }
+      const name = this.sim.squadById(squad)?.name ?? "\u0111\u1ED9i n\xE0y";
+      if (typeof confirm === "function" && !confirm(`X\xF3a ${name}? L\xEDnh tr\u1EDF v\u1EC1 h\xE0ng ch\u01B0a c\xF3 \u0111\u1ED9i.`)) {
+        this.refresh();
+        return;
+      }
+      const lock = this.sim.warLock();
+      if (lock) {
+        this.toast(lock);
+        return;
+      }
+      this.sim.disbandSquad(squad);
+      this.sel = -1;
       this.refresh();
     }
     drewPath(squad, pts, retreat) {
@@ -36534,15 +36663,12 @@ body.war .sheet, body.war .bbar {
       this.fullState.textContent = plan2 ? { draft: "\u0111ang so\u1EA1n", running: "\u0111ang ch\u1EA1y", done: "\u0111\xE3 xong" }[plan2.status] : "ch\u01B0a c\xF3 k\u1EBF ho\u1EA1ch";
       this.dock.replaceChildren(...this.dockButtons(plan2));
       if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => this.view.root.style.setProperty("--ptop", `${this.top.offsetHeight}px`));
-      const slot = this.panel === "info" ? [planMapInfo(sim2, this.openTribe)] : this.panel === "squads" ? [this.tray(plan2)] : [];
-      this.info.hidden = !slot.length;
-      this.info.replaceChildren(...slot);
       this.view.show(this.openTribe, plan2, { selected: this.sel, mode: this.mode, modeSquad: this.modeSquad });
       this.fillBar(plan2);
       this.fillCard(plan2);
       this.fillRoster(plan2);
       this.fillReport(plan2);
-      this.view.root.classList.toggle("has-panel", !this.info.hidden || !this.card.hidden || !this.roster.hidden || !this.report.hidden);
+      this.view.root.classList.toggle("has-panel", !this.card.hidden || !this.roster.hidden || !this.report.hidden);
     }
     /** The buttons at the top left, always there: one to open each panel, and the plan's own controls (deploy, fight, fall back). */
     dockButtons(plan2) {
@@ -36550,7 +36676,7 @@ body.war .sheet, body.war .bbar {
         this.setPanel(p, this.panel !== p);
         this.refresh();
       };
-      const out = [this.chip("\u24D8 L\xE0ng", this.panel === "info", open("info"), { title: "Th\xF4ng tin v\u1EC1 l\xE0ng n\xE0y" }), this.chip("\u2691 \u0110\u1ED9i", this.panel === "squads", open("squads"), { title: "C\xE1c \u0111\u1ED9i c\u1EE7a k\u1EBF ho\u1EA1ch v\xE0 l\u01B0u \xFD c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn" })];
+      const out = [];
       if (!plan2) {
         const other = sim2.plans.find((p) => p.kind === "attack");
         out.push(this.chip("\uFF0B L\u1EADp k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng", false, () => {
@@ -36560,10 +36686,22 @@ body.war .sheet, body.war .bbar {
         return out;
       }
       if (plan2.status === "draft") {
-        const why = sim2.reviewPlan(plan2).filter((l) => l.startsWith("\u2717")).map((l) => l.slice(2));
-        const title = !plan2.missions.length ? "L\u1EADp \u0111\u1ED9i v\xE0 v\u1EBD \u0111\u1ED9i h\xECnh tr\u01B0\u1EDBc" : why.length ? `Ch\u01B0a th\u1EC3 tri\u1EC3n khai: ${why.join(" \xB7 ")}` : "Xem b\xE1o c\xE1o c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn r\u1ED3i quy\u1EBFt \u0111\u1ECBnh c\xF3 tri\u1EC3n khai kh\xF4ng";
-        out.push(this.chip("\u2694 Tri\u1EC3n khai tr\u1EADn chi\u1EBFn", this.panel === "report", open("report"), { disabled: !plan2.missions.length || why.length > 0, title }));
-        if (why.length && this.panel !== "squads") out.push(h("small", { class: "why", text: `\u2717 ${why[0]}${why.length > 1 ? ` (+${why.length - 1} l\xFD do n\u1EEFa, xem \u1EDF \u2691 \u0110\u1ED9i)` : ""}` }));
+        out.push(
+          this.chip("\u2694 Tri\u1EC3n khai tr\u1EADn chi\u1EBFn", this.panel === "report", open("report"), { disabled: !plan2.missions.length, title: plan2.missions.length ? "Xem b\xE1o c\xE1o c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn (c\u1EA3 nh\u1EEFng \u0111i\u1EC1u ch\u01B0a \u1ED5n) r\u1ED3i quy\u1EBFt \u0111\u1ECBnh c\xF3 tri\u1EC3n khai kh\xF4ng" : "L\u1EADp \u0111\u1ED9i v\xE0 v\u1EBD \u0111\u1ED9i h\xECnh tr\u01B0\u1EDBc" }),
+          this.chip(this.confirmPlan ? "\u{1F5D1} B\u1EA5m l\u1EA1i \u0111\u1EC3 h\u1EE7y k\u1EBF ho\u1EA1ch" : "\u{1F5D1} H\u1EE7y k\u1EBF ho\u1EA1ch", this.confirmPlan, () => {
+            if (!this.confirmPlan) {
+              this.confirmPlan = true;
+              this.key = "";
+              this.c.ctl.onChange();
+              return;
+            }
+            this.confirmPlan = false;
+            this.toast(sim2.cancelPlan(plan2));
+            this.panel = null;
+            this.sel = -1;
+            this.refresh();
+          }, { danger: true, title: "B\u1ECF k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng \u0111ang so\u1EA1n (c\xE1c \u0111\u1ED9i v\u1EABn c\xF2n)" })
+        );
       }
       if (plan2.status === "running") {
         const act = (e) => {
@@ -36589,34 +36727,18 @@ body.war .sheet, body.war .bbar {
       return out;
     }
     /** The squads of the plan as chips, to choose one without hunting for it on the map, and the remarks of the war council. */
-    tray(plan2) {
-      const { sim: sim2 } = this, out = [];
-      if (!plan2) return h("div", { class: "ptray" }, h("small", { class: "sub", text: 'Ch\u01B0a c\xF3 k\u1EBF ho\u1EA1ch cho l\xE0ng n\xE0y: b\u1EA5m "\uFF0B L\u1EADp k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng".' }));
-      for (const m of plan2.missions) {
-        const s = m.deploy ? sim2.squadById(m.squad) : void 0;
-        if (s) out.push(h("button", { class: `chip${this.sel === s.id ? " on" : ""}`, style: `border-left:7px solid ${s.color}`, title: "Ch\u1ECDn \u0111\u1ED9i n\xE0y", text: `${s.name} \xB7 ${sim2.squadUnits(s).length}/${m.deploy.cells.length}`, onclick: () => {
-          this.sel = s.id;
-          this.refresh();
-        } }));
-      }
-      if (!plan2.missions.some((m) => m.deploy && sim2.squadById(m.squad))) out.push(h("small", { class: "sub", text: "Ch\u01B0a c\xF3 \u0111\u1ED9i n\xE0o tr\xEAn b\u1EA3n \u0111\u1ED3: nh\u1EA5n gi\u1EEF m\u1ED9t \u0111i\u1EC3m \u0111\u1EC3 l\u1EADp \u0111\u1ED9i." }));
-      const notes = sim2.reviewPlan(plan2);
-      const tray = h("div", { class: "ptray" }, ...out);
-      if (notes.length) tray.append(h("details", { open: notes.some((l) => l.startsWith("\u2717")) }, h("summary", { text: `\u26A0 ${notes.length} l\u01B0u \xFD c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn` }), ...notes.map((l) => h("p", { class: l.startsWith("\u2717") ? "why" : "sub", text: l }))));
-      return tray;
-    }
     /** The strip over the map: what a press or a drag does now, or what can be done with the squad that was pressed. */
     fillBar(plan2) {
       const { sim: sim2 } = this, id = this.mode === "pan" ? this.sel : this.modeSquad;
       const named = plan2?.missions.some((m) => m.squad === id && m.deploy) ? sim2.squadById(id) : void 0;
-      this.bar.hidden = !plan2 || !named;
-      if (!plan2 || !named) return;
+      this.bar.hidden = !plan2 || !named || this.mode === "pan";
+      if (!plan2 || !named || this.mode === "pan") return;
       const kids = [h("b", { text: named.name })];
-      if (this.mode !== "pan") {
+      {
         const what = {
           edit: "\u0111\u1ED9i h\xECnh: r\xEA chu\u1ED9t \u0111\u1EC3 \u0111\u1ED5i \u0111\u1ED9 d\xE0i ho\u1EB7c b\xE1n k\xEDnh, k\xE9o ch\u1EA5m tr\u1EAFng \u1EDF g\u1ED1c \u0111\u1EC3 d\u1EDDi c\u1EA3 \u0111\u1ED9i h\xECnh, b\u1EA5m \u0111\u1EC3 ch\u1ED1t (\xEDt nh\u1EA5t 3 \xF4)",
           trim: "\u0111\u1ED9i h\xECnh: b\u1EA5m v\xE0o \xF4 mu\u1ED1n b\u1ECF, \xEDt nh\u1EA5t c\xF2n 3 \xF4",
-          path: "m\u0169i t\xEAn: k\xE9o ch\u1EA5m tr\xF2n nh\u1ECF gi\u1EEFa m\u1ED7i \u0111o\u1EA1n \u0111\u1EC3 u\u1ED1n \u0111\u01B0\u1EDDng, b\u1EA5m chu\u1ED9t ph\u1EA3i v\xE0o m\u1ED9t ch\u1EA5m \u0111\u1EC3 b\u1ECF ch\u1EA5m \u0111\xF3. \u0110\u1EA7u m\u0169i t\xEAn n\u1EB1m c\u1ED1 \u0111\u1ECBnh tr\xEAn m\u1EE5c ti\xEAu: mu\u1ED1n \u0111\u1ED5i, b\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi kh\xE1c",
+          path: "m\u0169i t\xEAn: k\xE9o ch\u1EA5m tr\xF2n nh\u1ECF gi\u1EEFa m\u1ED7i \u0111o\u1EA1n \u0111\u1EC3 u\u1ED1n \u0111\u01B0\u1EDDng (t\u1ED1i \u0111a 3 ch\u1ED7 g\u1EA5p kh\xFAc), b\u1EA5m chu\u1ED9t ph\u1EA3i v\xE0o m\u1ED9t ch\u1EA5m \u0111\u1EC3 b\u1ECF ch\u1EA5m \u0111\xF3. \u0110i\u1EC3m \u0111\u1EA7u v\xE0 \u0111\u1EA7u m\u0169i t\xEAn c\u1ED1 \u0111\u1ECBnh: mu\u1ED1n \u0111\u1ED5i m\u1EE5c ti\xEAu, b\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi kh\xE1c. N\xFAt X\xF3a b\u1ECF m\u0169i t\xEAn: \u0111\u1ED9i th\xE0nh \u0111\u1ED9i h\u1EADu c\u1EA7n",
           retreat: "\u0111\u01B0\u1EDDng r\xFAt: b\u1EA5m n\u01A1i \u0111\u1ED9i r\xFAt v\u1EC1, r\u1ED3i k\xE9o c\xE1c ch\u1EA5m nh\u01B0 m\u0169i t\xEAn"
         }[this.mode];
         kids.push(h("span", { text: `V\u1EBD ${what}. Chu\u1ED9t ph\u1EA3i k\xE9o ho\u1EB7c hai ng\xF3n \u0111\u1EC3 di chuy\u1EC3n b\u1EA3n \u0111\u1ED3.` }));
@@ -36629,51 +36751,7 @@ body.war .sheet, body.war .bbar {
         this.bar.replaceChildren(...kids);
         return;
       }
-      const placed = plan2.missions.some((m) => m.squad === named.id && m.deploy), hasArrow = plan2.missions.some((m) => m.squad === named.id && m.path.length > 0);
-      if (placed) kids.push(
-        this.chip("\u{1F465} L\xEDnh", this.rosterOpen, () => {
-          this.rosterOpen = !this.rosterOpen;
-          this.orderOpen = false;
-          this.refresh();
-        }, { title: "L\xEDnh c\u1EE7a \u0111\u1ED9i: th\xEAm, b\u1ECF, ch\u1ECDn ch\u1EC9 huy" }),
-        this.chip("\u270E U\u1ED1n m\u0169i t\xEAn", false, () => this.startDraw("path", named.id), { disabled: !hasArrow, title: hasArrow ? "K\xE9o c\xE1c ch\u1EA5m gi\u1EEFa m\u0169i t\xEAn \u0111\u1EC3 u\u1ED1n \u0111\u01B0\u1EDDng \u0111i; \u0111\u1EA7u m\u0169i t\xEAn n\u1EB1m c\u1ED1 \u0111\u1ECBnh tr\xEAn m\u1EE5c ti\xEAu" : "Ch\u1ECDn m\u1EE5c ti\xEAu tr\u01B0\u1EDBc: b\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi tr\xEAn b\u1EA3n \u0111\u1ED3" }),
-        this.chip("\u2630 L\u1EC7nh", this.orderOpen && hasArrow, () => {
-          this.orderOpen = !this.orderOpen;
-          this.rosterOpen = false;
-          this.refresh();
-        }, { disabled: !hasArrow, title: hasArrow ? "H\xE0nh \u0111\u1ED9ng, gi\u1EDD \u0111\xE1nh, r\xFAt lui, th\u1EBB l\u1EC7nh" : "V\u1EBD m\u0169i t\xEAn cho \u0111\u1ED9i tr\u01B0\u1EDBc, r\u1ED3i m\u1EDBi ra l\u1EC7nh \u0111\u01B0\u1EE3c" }),
-        this.chip("\u270E S\u1EEDa l\u1EA1i", false, () => this.startDraw("edit", named.id), { title: "\u0110\u1ED5i \u0111\u1ED9 d\xE0i, b\xE1n k\xEDnh, ch\u1ED7 \u0111\u1EE9ng" }),
-        this.chip("\u2702 B\u1EDBt \xF4", false, () => this.startDraw("trim", named.id))
-      );
-      kids.push(this.deleteButton(named.id));
-      const mine2 = plan2.missions.find((m) => m.squad === named.id);
-      if (placed && mine2 && !mine2.target) kids.push(h("small", { class: "sub", text: "B\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 \u0111\u1EB7t m\u1EE5c ti\xEAu cho \u0111\u1ED9i: m\u0169i t\xEAn s\u1EBD ch\u1EA1y t\u1EEB \u0111\u1ED9i t\u1EDBi \u0111\xF3." }));
-      if (mine2) kids.push(...this.clearRows(plan2, mine2));
       this.bar.replaceChildren(...kids);
-    }
-    /** For each tree, rock or bush on the arrow of the squad: who is sent to break it down while the army forms up. */
-    clearRows(plan2, m) {
-      const { sim: sim2 } = this, s = sim2.squadById(m.squad), start = sim2.missionStart(m);
-      if (!s || !start || !m.path.length || plan2.status !== "draft") return [];
-      const seen = /* @__PURE__ */ new Set(), rows = [];
-      for (const o of sim2.routeTime(s, start, m.path, m.target?.kind === "prop" ? m.target.at : void 0).hits) {
-        if (!o || !o.clear || o.kind === "enemy" || seen.has(`${o.x},${o.y}`)) continue;
-        seen.add(`${o.x},${o.y}`);
-        const crew2 = plan2.clears.find((c) => c.x === o.x && c.y === o.y), squads = sim2.squads.filter((q) => plan2.missions.some((x) => x.squad === q.id));
-        rows.push(h(
-          "span",
-          { class: "pclear" },
-          h("b", { class: crew2 ? "good" : "why", text: `\u{1FA93} ${o.label} (${o.x}, ${o.y})` }),
-          select([{ v: "", label: crew2 ? "\u0110\u1ED5i \u0111\u1ED9i ph\xE1\u2026" : "C\u1EED \u0111\u1ED9i ph\xE1\u2026" }, ...squads.map((q) => ({ v: String(q.id), label: q.name }))], "", (id) => {
-            if (id) {
-              this.toast(sim2.addClear(plan2, Number(id), o.x, o.y));
-              this.refresh();
-            }
-          }),
-          crew2 ? h("small", { class: "sub", text: `${sim2.squadById(crew2.squad)?.name ?? "?"} s\u1EBD ph\xE1` }) : null
-        ));
-      }
-      return rows;
     }
     /** The report of the war council: the odds, the warnings, what a win and a loss may bring, and the details the map allows. Confirming sends the army out. */
     fillReport(plan2) {
@@ -36726,26 +36804,11 @@ body.war .sheet, body.war .bbar {
       const { sim: sim2 } = this, sq = sim2.squadById(this.sel), m = plan2?.missions.find((x) => x.squad === this.sel);
       this.roster.hidden = !(this.rosterOpen && plan2 && sq && m?.deploy && this.mode === "pan");
       if (this.roster.hidden || !sq || !m?.deploy) return;
-      if (this.rosterSquad !== sq.id) {
-        this.rosterSquad = sq.id;
-        this.picked.clear();
-        this.addOpen = false;
-      }
+      if (this.rosterSquad !== sq.id) this.rosterSquad = sq.id;
       const lock = sim2.warLock(), units = sim2.squadUnits(sq), cells = m.deploy.cells.length, room = Math.max(0, cells - units.length);
       const free = sim2.villagers.filter((v) => v.job === "fight" && v.squad < 0);
-      for (const id of [...this.picked]) if (!free.some((v) => v.id === id)) this.picked.delete(id);
       const who = (v) => `${ARM_NAME[sim2.armOf(v)]} \xB7 ${WEAPONS[v.weapon ?? "fist"].name}`;
-      const out = [h(
-        "div",
-        { class: "phead" },
-        h("i", { style: `background:${sq.color}` }),
-        h("b", { text: sq.name }),
-        h("small", { text: `${units.length}/${cells} l\xEDnh` }),
-        h("button", { class: "chip", text: "\u2715", title: "\u0110\xF3ng", onclick: () => {
-          this.rosterOpen = false;
-          this.refresh();
-        } })
-      )];
+      const out = [h("div", { class: "phead" }, h("i", { style: `background:${sq.color}` }), h("b", { text: sq.name }), h("small", { text: `${units.length}/${cells} l\xEDnh` }))];
       if (!units.length) out.push(h("p", { class: "sub", text: "Ch\u01B0a c\xF3 l\xEDnh trong \u0111\u1ED9i." }));
       for (const v of units) out.push(h(
         "div",
@@ -36760,41 +36823,17 @@ body.war .sheet, body.war .bbar {
           this.refresh();
         } })
       ));
-      out.push(this.chip(
-        `\uFF0B Th\xEAm l\xEDnh \u25BE${free.length ? ` (${free.length})` : ""}`,
-        this.addOpen,
-        () => {
-          this.addOpen = !this.addOpen;
+      out.push(h("div", { class: "phead" }, h("b", { text: "Ch\u01B0a c\xF3 \u0111\u1ED9i" }), h("small", { text: room ? `c\xF2n ch\u1ED7 cho ${room} l\xEDnh` : "\u0111\u1ED9i h\xECnh \u0111\xE3 \u0111\u1EE7 \xF4: b\u1EA5m S\u1EEDa tr\xEAn v\xF2ng n\xFAt c\u1EE7a \u0111\u1ED9i \u0111\u1EC3 th\xEAm \xF4" })));
+      if (!free.length) out.push(h("p", { class: "sub", text: "Kh\xF4ng c\xF2n l\xEDnh n\xE0o ch\u01B0a c\xF3 \u0111\u1ED9i: tuy\u1EC3n th\xEAm \u1EDF tr\u1EA1i l\xEDnh." }));
+      for (const v of free) out.push(h(
+        "div",
+        { class: "rrow rfree" },
+        h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: who(v) })),
+        h("button", { class: "chip", text: "\uFF0B", title: lock ?? (room ? "Th\xEAm v\xE0o \u0111\u1ED9i" : "\u0110\u1ED9i h\xECnh \u0111\xE3 \u0111\u1EE7 \xF4"), disabled: !!lock || !room, onclick: () => {
+          this.toast(sim2.joinSquad([v.id], sq.id));
           this.refresh();
-        },
-        { disabled: !free.length || !room || !!lock, title: lock ?? (!room ? "\u0110\u1ED9i h\xECnh \u0111\xE3 \u0111\u1EE7 \xF4" : !free.length ? "Kh\xF4ng c\xF2n l\xEDnh n\xE0o ch\u01B0a c\xF3 \u0111\u1ED9i" : "Ch\u1ECDn l\xEDnh ch\u01B0a c\xF3 \u0111\u1ED9i \u0111\u1EC3 th\xEAm v\xE0o") }
+        } })
       ));
-      if (!room) out.push(h("small", { class: "sub", text: `\u0110\u1ED9i h\xECnh c\xF3 ${cells} \xF4 v\xE0 \u0111\xE3 \u0111\u1EE7 l\xEDnh: b\u1EA5m \u270E S\u1EEDa l\u1EA1i \u0111\u1EC3 th\xEAm \xF4.` }));
-      else if (!free.length) out.push(h("small", { class: "sub", text: "Kh\xF4ng c\xF2n l\xEDnh n\xE0o ch\u01B0a c\xF3 \u0111\u1ED9i: tuy\u1EC3n th\xEAm \u1EDF tr\u1EA1i l\xEDnh." }));
-      if (this.addOpen && free.length && room) {
-        const list = h("div", { class: "rdrop" });
-        for (const v of free) {
-          const box = h("input", { type: "checkbox" });
-          box.checked = this.picked.has(v.id);
-          box.disabled = !box.checked && this.picked.size >= room;
-          box.addEventListener("change", () => {
-            if (box.checked) this.picked.add(v.id);
-            else this.picked.delete(v.id);
-            this.refresh();
-          });
-          list.append(h("label", { class: "rpick" }, box, h("span", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: who(v) }))));
-        }
-        out.push(
-          list,
-          this.chip(`Th\xEAm ${this.picked.size} l\xEDnh`, true, () => {
-            this.toast(sim2.joinSquad([...this.picked], sq.id));
-            this.picked.clear();
-            this.addOpen = false;
-            this.refresh();
-          }, { disabled: !this.picked.size || !!lock }),
-          h("small", { class: "sub", text: `C\xF2n ch\u1ED7 cho ${room - this.picked.size} l\xEDnh.` })
-        );
-      }
       this.roster.replaceChildren(...out);
     }
     /** One choice of a step: a big tile with a picture, a name and a line saying what it means. */
