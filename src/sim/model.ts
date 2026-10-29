@@ -29,6 +29,8 @@ export interface FightState {
   /** Where a defensive or holding unit stays. */
   anchor: { x: number; y: number } | null;
   repath: number; // seconds until the path to the target is recomputed
+  /** Following an arrow in a war: the way to the destination is a straight line, never found round things. */
+  strict?: boolean;
   scan: number;   // seconds until the next look for enemies
 }
 /** A missile in flight: arrows, sling stones. */
@@ -136,6 +138,8 @@ export interface Villager {
   /** Wear of the weapon and the armour in hand: which piece it was counted for, hits left, and whether it is broken (useless until mended). */
   /** The squad (đội) this soldier belongs to, -1 for none. */
   squad: number;
+  /** What a soldier of ours is hacking down in a war (a tree in the way, an enemy work); null when he is not. */
+  breaks: Breaking | null;
   gear: { w: string | null; wd: number; wb: boolean; a: string | null; ad: number; ab: boolean };
 }
 
@@ -160,6 +164,8 @@ export interface ScoutMap { tribe: string; level: number; at: number; gaps: numb
 /** What a scouting trip would be like with the people picked: the odds of a full map, how long it takes (game seconds) and why it cannot go, if it cannot. */
 export interface ScoutPlan { level: number; need: number; count: number; limit: number; chance: number; walk: number; survey: number; total: number; error: string | null }
 export interface Pt { x: number; y: number }
+/** How long a squad takes along an arrow, leg by leg. A leg that runs through water, trees or works is slower (marked `blocked`); `hits` is the first thing on each leg that shuts the way for soldiers who keep to the arrow (null: open). */
+export interface RouteTime { legs: number[]; total: number; length: number; blocked: boolean[]; hits: Array<Obstacle | null> }
 /** What a map of a village shows, as the planning screen draws it: the camp and 24 tiles round it. Each field appears only at the level that reveals it. */
 export type IntelMark = 'civ' | 'unknown' | 'foot' | 'archer' | 'cavalry';
 export interface TribeIntel {
@@ -194,7 +200,15 @@ export type Objective = 'camp' | 'gate' | 'stores' | 'leader' | 'ambush';
 export type Route = 'main' | 'forest' | 'night';
 export type Trigger = { kind: 'time'; at: number } | { kind: 'after'; squad: number } | { kind: 'signal' } | { kind: 'leaves' };
 export type PlanStance = 'fight' | 'evade' | 'hold' | 'shoot';
-export type MissionState = 'idle' | 'wait' | 'march' | 'engaged' | 'hold' | 'withdraw' | 'done';
+export type MissionState = 'idle' | 'wait' | 'march' | 'blocked' | 'engaged' | 'hold' | 'withdraw' | 'done';
+/** Something in the way on the ground: a tree, rock or bush (soldiers can clear them), the sea, a work of ours (they cannot), a work of the enemy (they break it as a target). x,y is a tile, or the corner of a work. */
+export interface Obstacle { kind: 'tree' | 'rock' | 'bush' | 'water' | 'ours' | 'enemy' | 'wall'; x: number; y: number; label: string; clear: boolean; tribe?: string }
+/** The thing a soldier is breaking down: a tree, rock or bush (x,y the tile), or a work of an enemy village (x,y its corner). */
+export interface Breaking { kind: 'node' | 'prop'; x: number; y: number; tribe?: string }
+/** What an arrow points at, chosen by pressing it on the enemy map: one of the village's works (x,y its corner), or a man (the chief when `leader`; x,y where the map showed him). `at` is where the head of the arrow is drawn. */
+export interface MissionTarget { kind: 'prop' | 'person'; x: number; y: number; at: Pt; label: string; leader: boolean }
+/** A squad that stopped because the way ahead along its arrow is shut. */
+export interface Block extends Obstacle { since: number }
 /** What one squad is to do in a plan. */
 export interface Mission {
   squad: number; objective: Objective; route: Route; trigger: Trigger; stance: PlanStance;
@@ -209,6 +223,10 @@ export interface Mission {
   retreat: Pt[];
   /** Which point of `path` (or of `retreat`, once withdrawing) it is walking to. */
   leg: number;
+  /** Attack only. What the arrow points at; its head stays on it. Null: an arrow drawn free, or none, and the squad goes for `objective`. */
+  target: MissionTarget | null;
+  /** While `state` is 'blocked': what shuts the way. */
+  block: Block | null;
   /** Defence only: where the squad stands when the alarm sounds. */
   post: 'gate' | 'fence' | 'tower' | 'reserve' | 'fire';
 }
@@ -227,6 +245,10 @@ export interface Plan {
   stage: 'assemble' | 'ready' | 'fight' | 'retreat' | 'recall';
   startedAt: number; signal: boolean; nextCard: number;
   rally: { x: number; y: number };
+  /** Attack only. Things in the way of the arrows that a squad other than the one that walks there is sent to break down while the army forms up. */
+  clears: Array<{ squad: number; x: number; y: number }>;
+  /** How the attack ended, once it has: the village is laid waste, or the army was beaten or pulled back. */
+  result: '' | 'won' | 'lost';
 }
 /**
  * What the war council tells the player before a fight, worked out from the plan alone: our squads in it against the enemy as the map describes him.

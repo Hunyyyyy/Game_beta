@@ -1,6 +1,6 @@
 import eventsJson from '../data/events.json';
 import { DAY_LENGTH } from './constants';
-import { cycleOf, WEAPONS, HOSTILE_BELOW, MORALE, RELATION, ringOf, ringPower, RULES, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
+import { cycleOf, WEAPONS, HOSTILE_BELOW, MORALE, RELATION, ringOf, ringPower, RULES, SIEGE, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
 import { engage, resolve, swingTimes, tickCommon, tickMorale, threatsOf, moraleShock, weaponOf } from './battle';
 import { BUILDINGS } from './buildings';
 import { armOfWeapon } from './formations';
@@ -24,7 +24,7 @@ export interface Tribe {
   id: TribeId;
   def: TribeDef;
   camp: { x: number; y: number };   // centre of the fire
-  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' | 'tower' | 'fence' | 'gate' }>;
+  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' | 'tower' | 'fence' | 'gate'; hp: number }>;
   relation: number;                  // -100..100
   state: TribeState;
   angryUntil: number;                // sim time: being attacked keeps them hostile for a while
@@ -86,7 +86,7 @@ function spawnTribe(sim: Sim, id: TribeId): void {
     const i = y * N + x; w.nodes.delete(i); w.tiles[i] = Tile.Grass; w.decor[i] = 0;
   }
   const props: Tribe['props'] = [
-    { x: cx, y: cy, w: 2, h: 2, kind: 'fire' }, { x: cx - 5, y: cy - 1, w: 2, h: 2, kind: 'pile' }, { x: cx + 4, y: cy + 1, w: 2, h: 2, kind: 'pile' },
+    { x: cx, y: cy, w: 2, h: 2, kind: 'fire', hp: SIEGE.propHp.fire }, { x: cx - 5, y: cy - 1, w: 2, h: 2, kind: 'pile', hp: SIEGE.propHp.pile }, { x: cx + 4, y: cy + 1, w: 2, h: 2, kind: 'pile', hp: SIEGE.propHp.pile },
   ];
   for (const p of props) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) w.occ[(p.y + j) * N + p.x + i] = 1;
   const power = ringPower(ringOf(Math.hypot(cx - s.x, cy - s.y)));
@@ -214,6 +214,7 @@ export function tickTribes(sim: Sim, dt: number): void {
 }
 
 function checkSurrender(sim: Sim, t: Tribe): void {
+  if (sim.plans.some((p) => p.kind === 'attack' && p.status === 'running' && p.tribe === t.id)) return; // a village under attack fights on: it gives up only when the war is won
   const units = t.unitIds.map((u) => sim.get(u)!).filter(Boolean), warriors = units.filter((u) => u.ai?.role !== 'civ');
   // 1. the leader is down
   if (SURRENDER.leaderDown && t.leaderId >= 0 && !t.unitIds.includes(t.leaderId) && units.length) return surrender(sim, t, 'Thủ lĩnh đã gục');
@@ -359,7 +360,7 @@ function noteStuck(sim: Sim, f: Villager, ai: NonNullable<Villager['ai']>, dt: n
   if (!blocked) { ai.stuck = 0; return; }
   ai.stuck = (ai.stuck ?? 0) + dt;
   if (ai.stuck < 3) return;
-  const wall = sim.nearestWork(f.x, f.y, 16);
+  const wall = sim.nearestWork(f.x, f.y, 16) ?? sim.nearestWork(f.x, f.y, 4, true);
   ai.stuck = 0;
   if (wall) ai.siege = wall.id;
 }

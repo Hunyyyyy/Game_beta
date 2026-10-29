@@ -2,11 +2,13 @@
 import * as army from './army';
 import * as forecast from './forecast';
 import * as scouting from './scouting';
+import * as siege from './siege';
+import { surrender, tribeOf } from './tribes';
 import * as warplan from './warplan';
 import { armOf } from './battle';
 import type { Ent } from './battle';
 import type { Arm, FormationId } from './formations';
-import type { CardKind, Forecast, FormationName, Mission, Objective, Plan, Pt, ScoutMap, ScoutPlan, Squad, TribeIntel, Villager } from './model';
+import type { CardKind, RouteTime, Forecast, FormationName, Mission, MissionTarget, Objective, Obstacle, Plan, Pt, ScoutMap, ScoutPlan, Squad, TribeIntel, Villager } from './model';
 import type { Sim } from './sim';
 
 export const WAR = {
@@ -95,7 +97,7 @@ export const WAR = {
   /** → warplan.squadPace */
   squadPace(this: Sim, s: Squad): number { return warplan.squadPace(this, s); },
   /** → warplan.routeTime */
-  routeTime(this: Sim, s: Squad, from: Pt, pts: readonly Pt[]): warplan.RouteTime { return warplan.routeTime(this, s, from, pts); },
+  routeTime(this: Sim, s: Squad, from: Pt, pts: readonly Pt[], target?: Pt): RouteTime { return warplan.routeTime(this, s, from, pts, target); },
   /** → warplan.missionStart */
   missionStart(this: Sim, m: Mission, toward?: Pt): Pt | null { return warplan.missionStart(this, m, toward); },
   /** → warplan.addCard */
@@ -116,6 +118,36 @@ export const WAR = {
   forecastPlan(this: Sim, plan: Plan): Forecast { return forecast.forecastPlan(this, plan); },
   /** → warplan.soundAlarm */
   soundAlarm(this: Sim): string | null { return warplan.soundAlarm(this); },
+  /** → siege.obstacleAt */
+  obstacleAt(this: Sim, x: number, y: number): Obstacle | null { return siege.obstacleAt(this, x, y); },
+  /** → siege.pathHits */
+  pathHits(this: Sim, start: Pt, pts: readonly Pt[], target?: Pt): Array<Obstacle | null> { return siege.pathHits(this, start, pts, target); },
+  /** → siege.lineSteps */
+  lineSteps(this: Sim, from: Pt, x: number, y: number): Array<[number, number]> { return siege.lineSteps(this, from, { x, y }); },
+  /** → siege.startBreaking */
+  startBreaking(this: Sim, v: Villager, ob: Obstacle, home?: Pt): boolean { return siege.startBreaking(this, v, ob, home); },
+  /** → siege.breakBrain */
+  breakBrain(this: Sim, v: Villager, dt: number): boolean { return siege.breakBrain(this, v, dt); },
+  /** → siege.arrowMove */
+  arrowMove(this: Sim, s: Squad, m: Mission, p: Pt, mode: 'attack' | 'hold' | 'move'): Obstacle | null { return siege.arrowMove(this, s, m, p, mode); },
+  /** → siege.haltSquad */
+  haltSquad(this: Sim, m: Mission, s: Squad, ob: Obstacle): void { return siege.haltSquad(this, m, s, ob); },
+  /** → siege.watchMarch */
+  watchMarch(this: Sim, m: Mission, s: Squad): boolean { return siege.watchMarch(this, m, s); },
+  /** → siege.blockCleared */
+  blockCleared(this: Sim, m: Mission): boolean { return siege.blockCleared(this, m); },
+  /** → siege.breakBlock */
+  breakBlock(this: Sim, plan: Plan, squadId: number, n: number): string | null { return siege.breakBlock(this, plan, squadId, n); },
+  /** → siege.targetNow */
+  targetNow(this: Sim, plan: Plan, m: Mission): siege.TargetState | null { return siege.targetNow(this, plan, m); },
+  /** → siege.tickTarget */
+  tickTarget(this: Sim, plan: Plan, m: Mission, s: Squad): boolean { return siege.tickTarget(this, plan, m, s); },
+  /** → warplan.setMissionTarget */
+  setMissionTarget(this: Sim, plan: Plan, squadId: number, target: MissionTarget): string | null { return warplan.setMissionTarget(this, plan, squadId, target); },
+  /** The village of `id` has lost the war: its people give up and ask for mercy (take them in, or make them pay tribute). */
+  conquer(this: Sim, id: string, why: string): void { const t = tribeOf(this, id as never); if (t && t.state === 'free') surrender(this, t, why); },
+  /** → warplan.addClear */
+  addClear(this: Sim, plan: Plan, squadId: number, x: number, y: number): string | null { return warplan.addClear(this, plan, squadId, x, y); },
   /** → warplan.canTarget */
   canTarget(this: Sim, objective: Objective, tribe: string | null): boolean { return warplan.canTarget(this, objective, tribe); },
 };

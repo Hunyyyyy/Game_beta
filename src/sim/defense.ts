@@ -25,11 +25,11 @@ export function setGates(sim: Sim, open: boolean): void {
   for (const b of sim.buildings) if (b.kind === 'gate' && b.done && b.open !== open) { b.open = open; sim.setOcc(b, 1); }
 }
 
-/** The nearest finished defence work to a point, within `radius` tiles (centre to centre). */
-export function nearestWork(sim: Sim, x: number, y: number, radius: number): Building | undefined {
+/** The nearest finished defence work to a point, within `radius` tiles (centre to centre). With `any`, any finished house but the fire counts: raiders with no wall in their way turn on what stands there. */
+export function nearestWork(sim: Sim, x: number, y: number, radius: number, any = false): Building | undefined {
   let best: Building | undefined, bd = radius;
   for (const b of sim.buildings) {
-    if (!b.done || !isDefense(b)) continue;
+    if (!b.done || !(any ? b.kind !== 'campfire' && b.kind !== 'trap' : isDefense(b))) continue;
     const d = BUILDINGS[b.kind], dist = Math.hypot(b.x + d.w / 2 - x, b.y + d.h / 2 - y);
     if (dist <= bd) { bd = dist; best = b; }
   }

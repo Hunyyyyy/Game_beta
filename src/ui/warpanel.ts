@@ -1,6 +1,6 @@
 import { DAY_LENGTH } from '../sim/constants';
 import { armOfWeapon, ARM_NAME, FORMATION_IDS, FORMATIONS, FormationId, SQUAD_MAX, SQUAD_MIN } from '../sim/formations';
-import type { CardKind, Mission, Plan, PlanStance, Pt, Squad, Villager } from '../sim/model';
+import type { CardKind, Mission, MissionTarget, Plan, PlanStance, Pt, Squad, Villager } from '../sim/model';
 import { WEAPONS } from '../sim/combat';
 import { h, hint } from './dom';
 import { DrawMode, fmtTime, PlanMapView, planMapInfo } from './planmap';
@@ -65,6 +65,8 @@ export class WarPanel {
    */
   private panel: PlanPanel = 'info';
   private readonly dock = h('div', { class: 'pdock' });
+  /** The bar along the top of the map: close, which village, and the buttons that open the panels. */
+  private readonly top = h('div', { class: 'ptop' });
   private setPanel(p: NonNullable<PlanPanel>, on: boolean): void { if (on) this.panel = p; else if (this.panel === p) this.panel = null; }
   private get orderOpen(): boolean { return this.panel === 'order'; } private set orderOpen(on: boolean) { this.setPanel('order', on); }
   private get rosterOpen(): boolean { return this.panel === 'roster'; } private set rosterOpen(on: boolean) { this.setPanel('roster', on); }
@@ -79,10 +81,11 @@ export class WarPanel {
     const bar = h('div', { class: 'btns tabs' });
     for (const [t, label] of TABS) { const b = h('button', { class: 'sm', text: label, pressed: t === this.tab, onclick: () => { this.tab = t; this.key = ''; this.update(); } }); this.tabBtns.set(t, b); bar.append(b); }
     this.root.append(hint('Lều họp chiến', 'Bản đồ làng địch do Trại trinh sát vẽ. Mở bản đồ đó ở trang Kế hoạch tấn công: nhấn giữ một điểm để lập đội, đưa lính vào đội, vẽ đội hình và mũi tên, rồi ra lệnh cho từng đội. Thẻ lệnh bạn gắn vào kế hoạch sẽ hiện thành nút khi đánh. Vào lều là game tạm dừng.'), bar, this.body);
-    this.view = new PlanMapView(c.sim, { onSelect: (id) => { this.sel = id; this.refresh(); }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back) => this.drewPath(id, pts, back) });
+    this.view = new PlanMapView(c.sim, { onSelect: (id) => { this.sel = id; this.refresh(); }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back) => this.drewPath(id, pts, back), onTarget: (id, target) => this.aimed(id, target) });
     const tool = (text: string, title: string, f: () => void) => h('button', { class: 'zoom', text, title, onclick: f });
-    this.view.root.append(this.dock, this.info, this.bar, this.card, this.roster, this.report, h('div', { class: 'ptools' }, tool('+', 'Phóng to', () => this.view.zoomBy(1.4)), tool('−', 'Thu nhỏ', () => this.view.zoomBy(1 / 1.4)), tool('⤢', 'Vừa khung', () => this.view.fit())));
-    this.full.append(h('div', { class: 'cardhead' }, this.fullTitle, this.fullState, h('button', { class: 'x', text: '✕ Đóng', onclick: () => this.closeMap() })), h('div', { class: 'pstage' }, this.view.root));
+    this.view.root.append(this.top, this.info, this.bar, this.card, this.roster, this.report, h('div', { class: 'ptools' }, tool('+', 'Phóng to', () => this.view.zoomBy(1.4)), tool('−', 'Thu nhỏ', () => this.view.zoomBy(1 / 1.4)), tool('⤢', 'Vừa khung', () => this.view.fit())));
+    this.top.append(h('button', { class: 'chip danger', text: '✕ Đóng', title: 'Đóng bản đồ, về màn hình game', onclick: () => this.closeMap() }), h('div', { class: 'ptitle2' }, this.fullTitle, this.fullState), this.dock);
+    this.full.append(h('div', { class: 'pstage' }, this.view.root)); // the map takes the whole screen; the bar and the panels float over it
     (document.body ?? document.documentElement).append(this.full);
   }
 
@@ -166,6 +169,14 @@ export class WarPanel {
     this.sel = made.squad.id; this.rosterOpen = true; this.orderOpen = false; this.addOpen = false; this.refresh(); // a new squad has no soldiers: its list opens to be filled
   }
 
+  /** A work or a man was pressed while a squad was chosen: the squad is aimed at it and its arrow runs there. */
+  private aimed(squad: number, target: MissionTarget): void {
+    const plan = this.attackPlan(), err = plan ? this.sim.setMissionTarget(plan, squad, target) : 'Lập kế hoạch tấn công trước';
+    this.toast(err ?? `${this.sim.squadById(squad)?.name ?? 'Đội'} sẽ tấn công ${target.label.toLowerCase()}`);
+    if (!err && !this.ordered.has(squad)) { this.ordered.add(squad); this.orderOpen = true; this.cardSquad = -1; } // its first arrow is done: the orders open on their first step
+    this.refresh();
+  }
+
   private drewPath(squad: number, pts: Pt[], retreat: boolean): void {
     const plan = this.attackPlan();
     if (plan) this.toast(this.sim.setMissionPath(plan, squad, pts, retreat));
@@ -240,6 +251,7 @@ export class WarPanel {
     this.fullTitle.textContent = `Lập kế hoạch đánh ${t?.def.name ?? '?'}`;
     this.fullState.textContent = plan ? { draft: 'đang soạn', running: 'đang chạy', done: 'đã xong' }[plan.status] : 'chưa có kế hoạch';
     this.dock.replaceChildren(...this.dockButtons(plan));
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => this.view.root.style.setProperty('--ptop', `${this.top.offsetHeight}px`)); // panels sit just under the bar, however many lines it wraps to
     const slot = this.panel === 'info' ? [planMapInfo(sim, this.openTribe)] : this.panel === 'squads' ? [this.tray(plan)] : [];
     this.info.hidden = !slot.length; this.info.replaceChildren(...slot);
     this.view.show(this.openTribe, plan, { selected: this.sel, mode: this.mode, modeSquad: this.modeSquad });
@@ -273,7 +285,7 @@ export class WarPanel {
       else if (plan.stage === 'fight') out.push(this.chip('↩ Rút lui', false, () => act(sim.withdrawPlan(plan)), { danger: true, title: 'Đang đánh: mỗi đội rút theo đường rút đã vẽ (hoặc về chỗ hẹn), kế hoạch kết thúc' }));
       else out.push(h('small', { class: 'sub', text: plan.stage === 'recall' ? 'Quân đang về làng…' : 'Quân đang rút lui…' }));
     }
-    if (plan.status === 'done') out.push(this.chip('↺ Soạn lại', false, () => { plan.status = 'draft'; for (const m of plan.missions) m.state = 'idle'; this.refresh(); }));
+    if (plan.status === 'done') out.push(h('b', { class: plan.result === 'won' ? 'good' : 'why', text: plan.result === 'won' ? '🏆 Thắng trận' : plan.result === 'lost' ? '✗ Thua trận' : 'Đã xong' }), this.chip('↺ Soạn lại', false, () => { plan.status = 'draft'; plan.stage = 'assemble'; plan.result = ''; for (const m of plan.missions) { m.state = 'idle'; m.block = null; m.leg = 0; } this.refresh(); }));
     return out;
   }
 
@@ -302,7 +314,7 @@ export class WarPanel {
     const kids: Node[] = [h('b', { text: named.name })];
     if (this.mode !== 'pan') {
       const what = { edit: 'đội hình: rê chuột để đổi độ dài hoặc bán kính, kéo chấm trắng ở gốc để dời cả đội hình, bấm để chốt (ít nhất 3 ô)', trim: 'đội hình: bấm vào ô muốn bỏ, ít nhất còn 3 ô',
-        path: 'mũi tên: bấm nơi đội cần tới (mũi tên đi thẳng theo chuột), rồi kéo chấm tròn nhỏ giữa mỗi đoạn để uốn, kéo đầu mũi tên để đổi nơi tới, bấm chuột phải vào một chấm để bỏ chấm đó', retreat: 'đường rút: bấm nơi đội rút về, rồi kéo các chấm như mũi tên' }[this.mode];
+        path: 'mũi tên: kéo chấm tròn nhỏ giữa mỗi đoạn để uốn đường, bấm chuột phải vào một chấm để bỏ chấm đó. Đầu mũi tên nằm cố định trên mục tiêu: muốn đổi, bấm vào công trình hoặc người khác', retreat: 'đường rút: bấm nơi đội rút về, rồi kéo các chấm như mũi tên' }[this.mode];
       kids.push(h('span', { text: `Vẽ ${what}. Chuột phải kéo hoặc hai ngón để di chuyển bản đồ.` }));
       if (this.mode === 'edit') kids.push(this.chip('Hủy', false, () => this.stopDraw()));
       else if (this.mode === 'trim') kids.push(this.chip('Xong', true, () => this.stopDraw()));
@@ -311,10 +323,29 @@ export class WarPanel {
       return;
     }
     const placed = plan.missions.some((m) => m.squad === named.id && m.deploy), hasArrow = plan.missions.some((m) => m.squad === named.id && m.path.length > 0);
-    if (placed) kids.push(this.chip('👥 Lính', this.rosterOpen, () => { this.rosterOpen = !this.rosterOpen; this.orderOpen = false; this.refresh(); }, { title: 'Lính của đội: thêm, bỏ, chọn chỉ huy' }), this.chip('➤ Mũi tên', false, () => this.startDraw('path', named.id), { title: 'Vẽ đường đội đi' }), this.chip('☰ Lệnh', this.orderOpen && hasArrow, () => { this.orderOpen = !this.orderOpen; this.rosterOpen = false; this.refresh(); }, { disabled: !hasArrow, title: hasArrow ? 'Hành động, giờ đánh, rút lui, thẻ lệnh' : 'Vẽ mũi tên cho đội trước, rồi mới ra lệnh được' }),
+    if (placed) kids.push(this.chip('👥 Lính', this.rosterOpen, () => { this.rosterOpen = !this.rosterOpen; this.orderOpen = false; this.refresh(); }, { title: 'Lính của đội: thêm, bỏ, chọn chỉ huy' }), this.chip('✎ Uốn mũi tên', false, () => this.startDraw('path', named.id), { disabled: !hasArrow, title: hasArrow ? 'Kéo các chấm giữa mũi tên để uốn đường đi; đầu mũi tên nằm cố định trên mục tiêu' : 'Chọn mục tiêu trước: bấm vào công trình hoặc người trên bản đồ' }), this.chip('☰ Lệnh', this.orderOpen && hasArrow, () => { this.orderOpen = !this.orderOpen; this.rosterOpen = false; this.refresh(); }, { disabled: !hasArrow, title: hasArrow ? 'Hành động, giờ đánh, rút lui, thẻ lệnh' : 'Vẽ mũi tên cho đội trước, rồi mới ra lệnh được' }),
       this.chip('✎ Sửa lại', false, () => this.startDraw('edit', named.id), { title: 'Đổi độ dài, bán kính, chỗ đứng' }), this.chip('✂ Bớt ô', false, () => this.startDraw('trim', named.id)));
     kids.push(this.deleteButton(named.id));
+    const mine = plan.missions.find((m) => m.squad === named.id);
+    if (placed && mine && !mine.target) kids.push(h('small', { class: 'sub', text: 'Bấm vào công trình hoặc người trên bản đồ để đặt mục tiêu cho đội: mũi tên sẽ chạy từ đội tới đó.' }));
+    if (mine) kids.push(...this.clearRows(plan, mine));
     this.bar.replaceChildren(...kids);
+  }
+
+  /** For each tree, rock or bush on the arrow of the squad: who is sent to break it down while the army forms up. */
+  private clearRows(plan: Plan, m: Mission): Node[] {
+    const { sim } = this, s = sim.squadById(m.squad), start = sim.missionStart(m);
+    if (!s || !start || !m.path.length || plan.status !== 'draft') return [];
+    const seen = new Set<string>(), rows: Node[] = [];
+    for (const o of sim.routeTime(s, start, m.path, m.target?.kind === 'prop' ? m.target.at : undefined).hits) {
+      if (!o || !o.clear || o.kind === 'enemy' || seen.has(`${o.x},${o.y}`)) continue;
+      seen.add(`${o.x},${o.y}`);
+      const crew = plan.clears.find((c) => c.x === o.x && c.y === o.y), squads = sim.squads.filter((q) => plan.missions.some((x) => x.squad === q.id));
+      rows.push(h('span', { class: 'pclear' }, h('b', { class: crew ? 'good' : 'why', text: `🪓 ${o.label} (${o.x}, ${o.y})` }),
+        select([{ v: '', label: crew ? 'Đổi đội phá…' : 'Cử đội phá…' }, ...squads.map((q) => ({ v: String(q.id), label: q.name }))], '', (id) => { if (id) { this.toast(sim.addClear(plan, Number(id), o.x, o.y)); this.refresh(); } }),
+        crew ? h('small', { class: 'sub', text: `${sim.squadById(crew.squad)?.name ?? '?'} sẽ phá` }) : null));
+    }
+    return rows;
   }
 
   /** The report of the war council: the odds, the warnings, what a win and a loss may bring, and the details the map allows. Confirming sends the army out. */
@@ -393,7 +424,7 @@ export class WarPanel {
     const doing = { fight: 'tiến theo mũi tên và giao chiến với kẻ địch gặp trên đường', evade: 'đi theo mũi tên tới nơi mà không đánh trả', hold: 'đi tới cuối mũi tên rồi đứng giữ chỗ', shoot: 'tiến theo mũi tên, cung thủ bắn còn bộ binh đứng yên' }[m.stance];
     const first = signal ? `${sq.name} đứng chờ tín hiệu, rồi ${doing}.` : `${this.startWords(m)}, ${sq.name} ${doing}.`;
     const start = sim.missionStart(m), go = start && m.path.length ? sim.routeTime(sq, start, m.path) : null;
-    const way = !m.deploy ? 'Đội chưa có đội hình trên bản đồ.' : go ? `Đường đi dài ${Math.round(go.length)} ô, mất khoảng ${fmtTime(go.total)}${go.blocked.some(Boolean) ? ', có đoạn bị chắn nên phải đi vòng' : ''}.` : 'Chưa vẽ mũi tên (bấm ➤ Mũi tên) nên đội sẽ tiến thẳng vào đống lửa của địch.';
+    const way = !m.deploy ? 'Đội chưa có đội hình trên bản đồ.' : go ? `Đường đi dài ${Math.round(go.length)} ô, mất khoảng ${fmtTime(go.total)}${go.hits.some((o) => o && o.kind !== 'enemy') ? ', có đoạn vướng vật cản (đỏ) cần phá hoặc uốn tránh' : ''}.` : 'Chưa chọn mục tiêu (bấm vào công trình hoặc người trên bản đồ) nên đội sẽ tiến thẳng vào đống lửa của địch.';
     let end = '';
     if (signal) {
       const names = plan.cards.filter((cd) => cd.kind === 'signal' || cd.squad === sq.id).map((cd) => CARD_NAME[cd.kind]);

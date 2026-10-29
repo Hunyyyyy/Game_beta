@@ -1,8 +1,7 @@
 import { WEAPONS } from '../sim/combat';
 import { ARM_NAME, armOfWeapon, Drawn, drawFormation, FORMATION_IDS, FORMATIONS, FormationId, formationOffsets, SQUAD_MAX, SQUAD_MIN } from '../sim/formations';
-import type { IntelMark, Mission, Plan, Pt, TribeIntel } from '../sim/model';
+import type { IntelMark, Mission, MissionTarget, Plan, Pt, RouteTime, TribeIntel } from '../sim/model';
 import type { Sim } from '../sim/sim';
-import type { RouteTime } from '../sim/warplan';
 import { Tile } from '../sim/world';
 import { h } from './dom';
 
@@ -41,6 +40,8 @@ export interface MapEvents {
   onTrim(squad: number, index: number): void;
   /** The whole arrow (or way back) of a squad, after a handle was moved, a point added or one taken out. */
   onPath(squad: number, pts: Pt[], retreat: boolean): void;
+  /** A work or a man pressed on the map while a squad is chosen: the squad is aimed at it, and its arrow runs there. */
+  onTarget(squad: number, target: MissionTarget): void;
 }
 
 export function fmtTime(sec: number): string {
@@ -50,6 +51,8 @@ export function fmtTime(sec: number): string {
 const fmtShort = (sec: number): string => { const s = Math.round(sec); return s < 60 ? `${s}s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const dist = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y);
+/** A work the arrow points at is the aim, not something in its way. */
+const aim = (m: Mission): Pt | undefined => (m.target?.kind === 'prop' ? m.target.at : undefined);
 
 /** A fixed 0..1 number for a tile, so the ground looks the same each time it is painted. */
 function hash(x: number, y: number, salt = 0): number {
@@ -134,7 +137,7 @@ export class PlanMapView {
   private routes = new Map<number, { start: Pt | null; go: RouteTime | null; back: RouteTime | null }>();
   /** Pixels per tile, and the tile at the middle of the screen. */
   private k = 12; private cx = 0; private cy = 0; private W = 0; private H = 0;
-  private targets: Array<{ x: number; y: number; r: number; title: string; text: string }> = [];
+  private targets: Array<{ x: number; y: number; r: number; title: string; text: string; pick?: MissionTarget }> = [];
   private readonly pts = new Map<number, Pt>();
   private gesture: 'none' | 'pan' | 'node' | 'arrow' | 'menu' | 'size' = 'none';
   /** The arrow (or way back) while one of its handles is held: a copy of its points with that one moved, drawn faint and dashed until it is let go. */
@@ -178,7 +181,7 @@ export class PlanMapView {
           const pts = list.map((q) => ({ ...q }));
           if (hit.kind === 'mid') pts.splice(hit.idx, 0, this.clampInBox(w));
           this.edit = { pts, retreat, idx: hit.idx }; this.gesture = 'node';
-        } else if (!list.length) { this.gesture = 'arrow'; this.arrowAim = this.clampInBox(w); } // the first leg goes straight to where the pointer is
+        } else if (!list.length && retreat) { this.gesture = 'arrow'; this.arrowAim = this.clampInBox(w); } // the way back is drawn free; the way in is only aimed at something
         else this.gesture = 'pan';
       }
       else {
@@ -236,7 +239,7 @@ export class PlanMapView {
     for (const m of plan?.missions ?? []) {
       const s = this.sim.squadById(m.squad), start = this.sim.missionStart(m);
       if (!s || !start) continue;
-      const go = m.path.length ? this.sim.routeTime(s, start, m.path) : null, from = m.path.length ? m.path[m.path.length - 1] : start;
+      const go = m.path.length ? this.sim.routeTime(s, start, m.path, aim(m)) : null, from = m.path.length ? m.path[m.path.length - 1] : start;
       this.routes.set(m.squad, { start, go, back: m.retreat.length ? this.sim.routeTime(s, from, m.retreat) : null });
     }
     this.canvas.style.cursor = ui.mode === 'pan' ? 'grab' : ui.mode === 'trim' ? 'pointer' : 'crosshair';
@@ -294,8 +297,8 @@ export class PlanMapView {
   /** A formation is waiting for its drag (or its editing): the shape follows the pointer as soon as it moves, a mouse needing no button held. */
   private hover(p: Pt): void {
     const ui = this.ui, w = this.world(p);
-    if ((ui.mode === 'path' || ui.mode === 'retreat') && this.plan) { // an arrow not placed yet follows the pointer, straight
-      if (!this.listOf(ui.mode === 'retreat').length) { this.arrowAim = this.clampInBox(w); this.redraw(); }
+    if ((ui.mode === 'path' || ui.mode === 'retreat') && this.plan) { // a way back not placed yet follows the pointer, straight
+      if (ui.mode === 'retreat' && !this.listOf(true).length) { this.arrowAim = this.clampInBox(w); this.redraw(); }
       return;
     }
     if (this.making) { this.sizeFrom = this.making.at; this.aim = w; }
@@ -393,12 +396,20 @@ export class PlanMapView {
     const near = (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)));
     if (near) { this.pop.hidden = true; this.ev.onSelect(near.squad); return; }
     const hit = this.targets.map((t) => ({ t, d: Math.hypot(t.x - p.x, t.y - p.y) })).filter((x) => x.d <= x.t.r).sort((a, b) => a.d - b.d)[0];
-    if (hit) { this.showPop(p, hit.t.title, hit.t.text); return; }
+    if (hit) {
+      const sq = this.plan?.missions.find((m) => m.squad === this.ui.selected && m.deploy);
+      if (hit.t.pick && sq && this.plan?.status === 'draft' && this.ui.mode !== 'retreat') { this.pop.hidden = true; this.ev.onTarget(sq.squad, hit.t.pick); return; } // a squad is chosen: this is where it goes
+      this.showPop(p, hit.t.title, hit.t.text, hit.t.pick); return;
+    }
     this.pop.hidden = true; this.ev.onSelect(-1);
   }
 
-  private showPop(p: Pt, title: string, text: string): void {
-    this.pop.replaceChildren(h('b', { text: title }), h('p', { class: 'sub', text }), h('button', { class: 'sm', text: 'Đóng', onclick: () => { this.pop.hidden = true; } }));
+  /** What a pressed work or man is. With squads on the map and the plan still a draft, a button for each sends that squad to attack it. */
+  private showPop(p: Pt, title: string, text: string, pick?: MissionTarget): void {
+    const squads = pick && this.plan?.status === 'draft' ? this.plan.missions.filter((m) => m.deploy && this.sim.squadById(m.squad)) : [];
+    this.pop.replaceChildren(h('b', { text: title }), h('p', { class: 'sub', text }),
+      ...(squads.length ? [h('small', { text: 'Đội nào tấn công mục tiêu này?' }), h('div', { class: 'chips' }, ...squads.map((m) => h('button', { class: 'chip', text: `🎯 ${this.sim.squadById(m.squad)!.name}`, onclick: () => { this.pop.hidden = true; this.ev.onTarget(m.squad, pick!); } })))] : []),
+      h('button', { class: 'sm', text: 'Đóng', onclick: () => { this.pop.hidden = true; } }));
     this.pop.style.left = `${clamp(p.x + 14, 8, Math.max(8, this.W - 280))}px`; this.pop.style.top = `${clamp(p.y + 14, 8, Math.max(8, this.H - 150))}px`;
     this.pop.hidden = false;
   }
@@ -428,8 +439,8 @@ export class PlanMapView {
   private handleAt(p: Pt): { kind: 'vertex' | 'mid'; idx: number } | null {
     const retreat = this.ui.mode === 'retreat', pts = this.listOf(retreat), base = this.baseOf(retreat);
     if (!base || !pts.length) return null;
-    const nodes = [base, ...pts];
-    for (let i = pts.length - 1; i >= 0; i--) if (dist(p, this.scr(nodes[i + 1])) <= 16) return { kind: 'vertex', idx: i };
+    const nodes = [base, ...pts], locked = !retreat && !!this.plan?.missions.find((x) => x.squad === this.ui.modeSquad)?.target; // the head stays on what it points at
+    for (let i = pts.length - 1; i >= 0; i--) if (!(locked && i === pts.length - 1) && dist(p, this.scr(nodes[i + 1])) <= 16) return { kind: 'vertex', idx: i };
     for (let k = 0; k < pts.length; k++) {
       const a = this.scr(nodes[k]), b = this.scr(nodes[k + 1]);
       if (dist(p, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }) <= 14) return { kind: 'mid', idx: k };
@@ -504,7 +515,7 @@ export class PlanMapView {
       ctx.fillRect(px, py, pw, ph); ctx.strokeRect(px, py, pw, ph);
       ctx.strokeStyle = 'rgba(40,25,10,0.7)'; ctx.beginPath(); ctx.moveTo(px, py + ph / 2); ctx.lineTo(px + pw, py + ph / 2); ctx.moveTo(px + pw / 2, py); ctx.lineTo(px + pw / 2, py + ph); ctx.stroke();
     } else { ctx.fillRect(px, py, pw, ph); ctx.strokeRect(px, py, pw, ph); }
-    this.targets.push({ x: cx, y: cy, r: Math.max(pw, ph) / 2 + 6 * u, title: s.label, text: s.detail });
+    this.targets.push({ x: cx, y: cy, r: Math.max(pw, ph) / 2 + 6 * u, title: s.label, text: s.detail, pick: { kind: 'prop', x: s.x, y: s.y, at: { x: s.x + s.w / 2, y: s.y + s.h / 2 }, label: s.label, leader: false } });
   }
 
   private person(ctx: CanvasRenderingContext2D, p: TribeIntel['people'][number], u: number): void {
@@ -513,7 +524,7 @@ export class PlanMapView {
     drawMark(ctx, p.mark, x, y, u);
     const armed = p.weapon ? `Cầm ${WEAPONS[p.weapon]?.name ?? p.weapon}. ` : '', old = 'Đứng đây lúc trinh sát tới; giờ có thể đã đi chỗ khác.';
     const text = p.leader ? `${armed}Thủ lĩnh của ${i.name}: hạ được ông ta thì làng dễ khuất phục. ${old}` : p.mark === 'unknown' ? `Trinh sát thấy bóng người nhưng chưa rõ lính hay dân: cần bản đồ cấp 3. ${old}` : `${armed}${old}`;
-    this.targets.push({ x, y, r: 9 * u, title: p.leader ? `${MARK_NAME[p.mark]} · Thủ lĩnh` : MARK_NAME[p.mark], text });
+    this.targets.push({ x, y, r: 9 * u, title: p.leader ? `${MARK_NAME[p.mark]} · Thủ lĩnh` : MARK_NAME[p.mark], text, pick: { kind: 'person', x: p.x, y: p.y, at: { x: p.x, y: p.y }, label: p.leader ? 'Thủ lĩnh' : MARK_NAME[p.mark], leader: p.leader } });
   }
 
   private arrowhead(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, color: string, w: number, u: number): void {
@@ -596,16 +607,25 @@ export class PlanMapView {
     const start = this.startOf(m);
     if (start && (goPts.length || (pending && !back))) {
       const list = goPts.length ? goPts : [pending!], nodes = [start, ...list], pts = nodes.map((q) => this.scr(q));
-      const faint = !!dragged(false) || (!goPts.length && !!pending), t = faint ? sim.routeTime(s, start, list) : r?.go;
+      const faint = !!dragged(false) || (!goPts.length && !!pending), t = faint ? sim.routeTime(s, start, list, aim(m)) : r?.go;
       this.route(ctx, pts, color, u, faint ? 'faint' : 'solid');
       t?.legs.forEach((tt, j) => {
-        const p = pts[j], q = pts[j + 1], bad = t.blocked[j];
-        label(ctx, `${fmtShort(tt)}${bad ? ' ⚠' : ''}`, (p.x + q.x) / 2, (p.y + q.y) / 2 - 12 * u, 11 * u, bad ? '#ff9a8a' : '#fff');
+        const p = pts[j], q = pts[j + 1], hit = t.hits[j] && t.hits[j]!.kind !== 'enemy' ? t.hits[j]! : null;
+        if (hit) { // soldiers keep to the arrow: where something shuts it, it is red, and the thing is ringed
+          ctx.strokeStyle = '#ff3b2f'; ctx.lineWidth = 5.5 * u * 0.7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+          const o = this.scr({ x: hit.x + 0.5, y: hit.y + 0.5 }); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(o.x, o.y, Math.max(8, this.k * 0.7), 0, Math.PI * 2); ctx.stroke();
+        }
+        label(ctx, hit ? `${fmtShort(tt)} ⚠ vướng ${hit.label}${hit.clear ? '' : ' (không phá được)'}` : fmtShort(tt), (p.x + q.x) / 2, (p.y + q.y) / 2 - 12 * u, 11 * u, hit ? '#ff9a8a' : '#fff');
       });
       const end = pts[pts.length - 1];
       if (t) label(ctx, `tới sau ${fmtShort(t.total)}`, end.x, end.y - 16 * u, 11 * u, '#ffe27a');
       if (drawing && !back && goPts.length) this.handles(ctx, nodes, color, u);
       this.converge(ctx, m, goPts.length ? goPts[0] : pending, color, u);
+    }
+    if (m.target && !this.edit) { // what the squad is aimed at
+      const c = this.scr(m.target.at);
+      ctx.setLineDash([4, 3]); ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(12, this.k * 1.3) * (m.target.kind === 'person' ? 0.7 : 1), 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      label(ctx, `🎯 ${m.target.label}`, c.x, c.y + Math.max(20, this.k * 1.7), 11 * u, '#ffe27a');
     }
     const base = goPts.length ? goPts[goPts.length - 1] : start;
     if (base && (backPts.length || (pending && back))) {

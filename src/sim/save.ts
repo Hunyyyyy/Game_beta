@@ -8,13 +8,14 @@
  * Settings (speed, sound, orientation lock) are not part of a game and live in src/save/settings.ts.
  */
 import { CURRENCY, emptyStock, RES_NAME } from './resources';
-import { TRIBES } from './combat';
+import { SIEGE, TRIBES } from './combat';
+import { maxHp } from './buildings';
 import { decode, encode, packRuns, unpackRuns } from './codec';
 import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
@@ -139,6 +140,18 @@ export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disabl
   10: (d) => {
     for (const p of d.lists.plans as Array<Record<string, unknown>>) p.stage ??= 'fight';
     return { ...d, version: 11 };
+  },
+  // 11 -> 12: every house has strength and can be attacked; the works of an enemy village have strength too; a plan keeps its clearing crews and how it ended,
+  // an arrow may point at a target and a squad may be halted by something in its way; a soldier may be hacking something down
+  11: (d) => {
+    for (const b of d.lists.buildings as Array<{ kind: string; level: number; era: string; hp?: number }>) b.hp ||= maxHp(b as never);
+    for (const p of d.lists.plans as Array<{ clears?: unknown; result?: unknown; missions: Array<Record<string, unknown>> }>) {
+      p.clears ??= []; p.result ??= '';
+      for (const m of p.missions) { m.target ??= null; m.block ??= null; }
+    }
+    for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) v.breaks ??= null;
+    for (const t of d.tribes as Array<{ props: Array<{ kind: string; hp?: number }> }>) for (const p of t.props) p.hp ??= SIEGE.propHp[p.kind] ?? 60;
+    return { ...d, version: 12 };
   },
 };
 

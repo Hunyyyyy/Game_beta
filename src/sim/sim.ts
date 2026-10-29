@@ -337,7 +337,7 @@ export class Sim {
   /** → defense.setGates */
   setGates(open: boolean): void { return defense.setGates(this, open); }
   /** → defense.nearestWork */
-  nearestWork(x: number, y: number, radius: number): Building | undefined { return defense.nearestWork(this, x, y, radius); }
+  nearestWork(x: number, y: number, radius: number, any = false): Building | undefined { return defense.nearestWork(this, x, y, radius, any); }
   /** → defense.damageWork */
   damageWork(b: Building, dmg: number): void { return defense.damageWork(this, b, dmg); }
   /** → defense.towerBonus */

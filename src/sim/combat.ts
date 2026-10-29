@@ -1,5 +1,6 @@
 import animalsJson from '../data/animals.json';
 import tribesJson from '../data/tribes.json';
+import siegeJson from '../data/siege.json';
 import weaponsJson from '../data/weapons.json';
 import type { Stock, Res } from './resources';
 
@@ -54,6 +55,8 @@ export function poseOf(weapon: string | null, state: CombatState): string {
 for (const id of Object.keys(WEAPONS)) WEAPONS[id].anim = poseOf(id, 'attack');
 export const ARMORS = weaponsJson.armor as unknown as Record<string, ArmorDef>;
 export const RULES = weaponsJson.rules;
+/** Breaking things down in a war: what the soldiers can destroy and how fast (siege.json). */
+export const SIEGE = siegeJson as typeof siegeJson & { clearSeconds: Record<string, number>; propHp: Record<string, number> };
 /** Weapons the player can craft, best last (used to pick what a fighter equips). */
 export const CRAFTED_WEAPONS = Object.keys(WEAPONS).filter((k) => WEAPONS[k].cost);
 

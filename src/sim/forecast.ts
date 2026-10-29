@@ -99,8 +99,8 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
   if (level < 3) w.push(`Bản đồ cấp ${level}: ${level === 1 ? 'chưa biết địch có lính hay công trình phòng thủ nào' : 'chưa biết địch có bao nhiêu lính và thuộc binh chủng nào'}, nên dự báo còn thiếu chắc chắn.`);
 
   // ---- what is at stake
-  out.win = [`Địch mất sức chiến đấu; ${t.def.name} có thể khuất phục hoặc bị xóa sổ nếu thủ lĩnh và lính gục hết.`, 'Ta lấy được những gì còn trong kho lương của họ.', `Dự kiến ta mất khoảng ${pct(lossIfWin)} số lính đã dàn trận.`];
-  out.lose = [`Phần lớn lính ra trận có thể gục; lính chết là mất hẳn, cùng vũ khí và giáp mang theo.`, 'Tinh thần dân giảm; kẻ địch bị chọc giận nên có thể kéo đến trả đũa.', 'Rút kịp thì cứu được những người còn lại, nhưng chiến lợi phẩm thì không có.'];
+  out.win = [`Thắng khi ${t.def.name} hết lính, lửa của họ tắt và mọi công trình sập; khi đó dân của họ xin hàng.`, 'Ta lấy được những gì còn trong kho lương của họ.', `Dự kiến ta mất khoảng ${pct(lossIfWin)} số lính đã dàn trận.`];
+  out.lose = ['Thua khi quân ta hết lính hoặc rút lui.', `Phần lớn lính ra trận có thể gục; lính chết là mất hẳn, cùng vũ khí và giáp mang theo.`, 'Tinh thần dân giảm; kẻ địch bị chọc giận nên có thể kéo đến trả đũa.', 'Rút kịp thì cứu được những người còn lại, nhưng chiến lợi phẩm thì không có.'];
 
   out.verdict = out.chance >= 0.8 ? 'Rất có lợi' : out.chance >= 0.6 ? 'Có lợi' : out.chance >= 0.4 ? 'Cân bằng' : out.chance >= 0.2 ? 'Bất lợi' : 'Rất bất lợi';
 
@@ -124,7 +124,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
     const s = sim.squadById(m.squad), start = s ? sim.missionStart(m) : null;
     if (!s || !start || !m.path.length) continue;
     const r = sim.routeTime(s, start, m.path);
-    L.push(`${s.name} đi ${Math.round(r.length)} ô, mất khoảng ${Math.max(1, Math.round(r.total / 60))} phút${r.blocked.some(Boolean) ? ', có đoạn bị chắn nên phải đi vòng' : ''}.`);
+    L.push(`${s.name} đi ${Math.round(r.length)} ô, mất khoảng ${Math.max(1, Math.round(r.total / 60))} phút${r.hits.some((o) => o && o.kind !== 'enemy') ? ', có đoạn vướng vật cản cần phá hoặc uốn tránh' : ''}.`);
   }
   return out;
 }

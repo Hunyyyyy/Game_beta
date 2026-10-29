@@ -252,6 +252,7 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   }
   if (v.phase === 'flee' || v.fleeT > 0 || (v.morale < MORALE.flee && threats.length)) return fleeBrain(sim, v, dt, threats);
 
+  if (v.breaks && sim.breakBrain(v, dt)) return true; // hacking down a tree or an enemy work in a war
   const fighter = isFighter(v);
   if (!fighter) {
     // Civilians do not fight: anything hostile within sight sends them running to the campfire
@@ -345,7 +346,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   // 3. attack-move: keep walking to the destination
   if (f.mode === 'attackMove' && f.dest) {
     if (Math.hypot(f.dest.x - v.x, f.dest.y - v.y) < 1.5) { f.mode = 'guard'; f.anchor = { x: f.dest.x, y: f.dest.y }; f.dest = null; v.path = []; v.phase = 'idle'; if (sim.nextOrder(v)) return true; }
-    else { if (!v.path.length && sim.pathLeft > 0) { sim.pathLeft--; v.path = sim.pathTo(v, Math.floor(f.dest.x), Math.floor(f.dest.y), 20000); } v.phase = 'move'; return true; }
+    else { if (!v.path.length && sim.pathLeft > 0) { sim.pathLeft--; v.path = f.strict ? sim.lineSteps(v, f.dest.x, f.dest.y) : sim.pathTo(v, Math.floor(f.dest.x), Math.floor(f.dest.y), 20000); } v.phase = 'move'; return true; }
   }
   if (v.post >= 0 && v.phase === 'idle' && !threats.length && !f.target) { sim.planStaff(v); if ((v.phase as string) === 'goStaff') return true; } // back to his tower after the night
   if (f.mode === 'hold') { v.phase = 'idle'; v.path = []; return true; }

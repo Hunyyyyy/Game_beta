@@ -1,5 +1,5 @@
 /** Placing, upgrading, moving and demolishing buildings, and what the buildings give the village (room, population, build speed). */
-import { Building, BuildingKind, BUILDINGS, holdsGoods, levelDef, levelsOf, maxLevel, levelCapByFire, POP_BY_FIRE } from './buildings';
+import { Building, BuildingKind, BUILDINGS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, levelCapByFire, POP_BY_FIRE } from './buildings';
 import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
 import { buildingOpen, levelCap, techForBuilding, techForLevel } from './research';
@@ -10,7 +10,7 @@ import { PlaceResult } from './model';
 export function addBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, done: boolean): Building {
   const d = BUILDINGS[kind];
   const b: Building = { id: sim.nextBid++, kind, era: sim.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
-  b.hp = levelDef(b).hp;
+  b.hp = maxHp(b);
   sim.buildings.push(b);
   setOcc(sim, b, 1);
   return b;
@@ -86,7 +86,7 @@ export function upgradeBuilding(sim: Sim, id: number): string | null {
   if (why) return why;
   const next = levelDef(b, b.level + 1);
   if (!sim.dev.freeBuild) for (const r of Object.keys(next.cost) as Res[]) sim.stock[r] -= next.cost[r] ?? 0;
-  if (sim.dev.instantBuild) { b.level++; b.hp = levelDef(b).hp; sim.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); return null; }
+  if (sim.dev.instantBuild) { b.level++; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); return null; }
   b.upgrading = true; b.progress = 0;
   sim.say(`Bắt đầu nâng ${BUILDINGS[b.kind].name} lên cấp ${b.level + 1} (${next.name.toLowerCase()}). Giao việc "Thợ xây" để làm.`);
   return null;
@@ -161,6 +161,7 @@ export function destroyBuilding(sim: Sim, b: Building): void {
   setOcc(sim, b, 0);
   sim.buildings.splice(sim.buildings.indexOf(b), 1);
   sim.fogDirty = true;
+  sim.trimRoles(); // a camp that fell takes its role from the soldiers in it
 }
 
 export function demolishBuilding(sim: Sim, id: number): string | null {

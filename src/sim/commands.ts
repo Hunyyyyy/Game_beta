@@ -9,7 +9,7 @@ import { NODE_JOB, Target, Villager } from './model';
 // ---------------------------------------------------------------- lệnh
 export function resetTask(sim: Sim, v: Villager): void {
   sim.leaveNode(v); sim.exitBuilding(v); v.order = null;
-  v.path = []; v.slide = null; v.phase = 'idle'; v.progress = 0; v.timer = 0; v.target = -1; v.bed = -1;
+  v.path = []; v.slide = null; v.phase = 'idle'; v.progress = 0; v.timer = 0; v.target = -1; v.bed = -1; v.breaks = null;
   // an order given at night does not wake anyone: they are back in bed at once and start the job in the morning
 }
 
@@ -23,7 +23,7 @@ export function keepWatch(sim: Sim, v: Villager): void {
 
 /** Drop every combat order of a unit (a new plain order replaces them). */
 export function clearCombat(sim: Sim, v: Villager): void {
-  v.fight.target = null; v.fight.mode = 'none'; v.fight.dest = null; v.fight.anchor = null; v.queue.length = 0; v.loot = -1; v.fleeT = 0;
+  v.fight.target = null; v.fight.mode = 'none'; v.fight.dest = null; v.fight.anchor = null; v.fight.strict = false; v.queue.length = 0; v.loot = -1; v.fleeT = 0;
 }
 
 export function mine(sim: Sim, ids: readonly number[]): Villager[] {

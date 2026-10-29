@@ -4,13 +4,18 @@
 // The war tent's full-screen planning view: a map to drag and zoom, with the squads and the plan on boards over it.
 // The board is dark whatever the theme, so it re-points the colour variables for everything inside.
 
-.planfull .pstage { position: relative; flex: 1; min-height: 0; display: flex; background: #1a1510; }
+// The map is the whole screen: the bar and the panels float over it and give the room back when they are closed.
+.modal.planfull { padding: 0; }
+.planfull .pstage { position: absolute; inset: 0; display: flex; background: #1a1510; }
 .pview {
   position: relative; flex: 1; min-width: 0; overflow: hidden;
   color: #ecdfc4;
   --fg: #ecdfc4; --muted: #b8a888; --panel: rgba(26, 20, 13, .93); --panel-2: rgba(58, 45, 30, .92);
   --line: rgba(255, 255, 255, .2); --accent: #{$plan-accent};
   .sub, small { color: #c9bb9a; }
+  .good { color: #8fd68a; }
+  .why { color: #ff9a8a; }
+  --ptop: 48px;
 }
 .planmap {
   position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab;
@@ -36,17 +41,31 @@
 .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 
 // ---- floating boards ----
-// The dock of buttons sits at the top left. Under it, in the same place, is the one panel that is open (the village, the squads, the orders of a
-// squad, its soldiers or the report): the plan view shows one at a time, so they never lie over each other.
+// A bar runs along the top: close, which village, and the buttons that open the panels. Under it, at the left, is the one panel that is open (the village,
+// the squads, the orders of a squad, its soldiers or the report): the plan view shows one at a time, so they never lie over each other.
+// The bar is see-through to the pointer, so the map can be dragged right up to the top edge.
+.ptop {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 6;
+  display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center;
+  padding: calc(var(--sat) + 6px) calc(var(--sar) + 10px) 14px calc(var(--sal) + 10px);
+  background: linear-gradient(rgba(20, 14, 8, .9), rgba(20, 14, 8, .6) 65%, transparent);
+  pointer-events: none;
+  > * { pointer-events: auto; }
+}
+.ptitle2 {
+  display: flex; gap: 8px; align-items: baseline; min-width: 0;
+  b { font-size: 15px; @include ellipsis; }
+  span { font-size: 12px; color: var(--muted); white-space: nowrap; }
+}
 .pdock {
-  position: absolute; left: 10px; top: 10px; z-index: 4;
-  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-  max-width: min(640px, calc(100% - 20px));
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-left: auto;
+  min-width: 0; max-width: 100%;
+  .why { font-size: 12px; max-width: 280px; }
 }
 .pcard {
   @include float-box($radius-md, 0 4px 16px rgba(0, 0, 0, .5));
-  position: absolute; left: 10px; top: 54px; z-index: 3;
-  width: min(340px, calc(100% - 20px)); max-height: calc(100% - 130px);
+  position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--ptop) + 4px); z-index: 3;
+  width: min(340px, calc(100% - 20px)); max-height: calc(100% - var(--ptop) - 70px);
   overflow: auto;
   display: grid; gap: 6px; padding: 8px 10px;
   &[hidden] { display: none; }
@@ -57,20 +76,20 @@
 }
 .pinfo {
   @include float-box($radius-lg, $shadow-sm);
-  position: absolute; left: 10px; top: 54px; z-index: 3;
-  width: min(360px, calc(100% - 20px)); max-height: calc(100% - 130px); overflow: auto;
+  position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--ptop) + 4px); z-index: 3;
+  width: min(360px, calc(100% - 20px)); max-height: calc(100% - var(--ptop) - 70px); overflow: auto;
   display: grid; gap: 4px; padding: 8px 10px;
   summary { cursor: pointer; font-size: 12px; color: var(--muted); }
   &[hidden] { display: none; }
 }
 .ptools {
-  position: absolute; left: 10px; bottom: calc(10px + var(--sab)); z-index: 2;
+  position: absolute; left: calc(var(--sal) + 10px); bottom: calc(10px + var(--sab)); z-index: 2;
   display: flex; gap: 6px;
   .zoom { width: 40px; height: 40px; font-size: 20px; padding: 0; }
 }
 .pact {
   @include float-box($radius-lg, $shadow-sm);
-  position: absolute; right: 10px; top: 54px; z-index: 2;
+  position: absolute; right: calc(var(--sar) + 10px); top: calc(var(--ptop) + 4px); z-index: 2;
   display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
   max-width: calc(100% - 400px); padding: 6px 10px; font-size: 13px;
   &[hidden] { display: none; }
@@ -106,6 +125,7 @@
   background: rgba(255, 255, 255, .07); border-left: 3px solid var(--accent); border-radius: $radius;
 }
 .pbar { display: grid; gap: 6px; }
+.pclear { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; select { font: inherit; font-size: 12px; max-width: 150px; } }
 .pbody2 { display: grid; gap: 8px; }
 .pnav { display: flex; justify-content: space-between; gap: 8px; }
 .ptray {
@@ -130,6 +150,12 @@
   max-width: min(680px, calc(100% - 190px)); padding: 8px 12px;
   b { color: var(--bad); }
   &.folded { padding: 0; background: transparent; border: 0; box-shadow: none; backdrop-filter: none; }
+}
+.wardlg {
+  flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: center;
+  padding-top: 6px; border-top: 1px solid var(--line);
+  b { color: #ffb4a8; }
+  select { font: inherit; font-size: 13px; }
 }
 // war mode: the selection and building buttons give way to the battle buttons
 body.war .sheet, body.war .bbar { display: none !important; }

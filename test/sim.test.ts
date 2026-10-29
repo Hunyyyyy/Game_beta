@@ -6,7 +6,7 @@ import { DAY_LENGTH, PACE } from '../src/sim/constants';
 import { Tile } from '../src/sim/world';
 import { lightAt, rollWeather, SEASON_DEF, seasonOf, SEASONS, WEATHER } from '../src/sim/calendar';
 import { RECIPE_BY_ID, TIER_DURABILITY } from '../src/sim/tools';
-import { levelDef, levelsOf, maxLevel } from '../src/sim/buildings';
+import { levelDef, levelsOf, maxHp, maxLevel } from '../src/sim/buildings';
 import { ARMS, armOfWeapon, clampTactical, clusterize, COMMAND, FORMATION_IDS, FORMATIONS, formationOffsets, iconCount, masteryFactor, matchup, SQUAD_MAX, SQUAD_MIN, drawFormation } from '../src/sim/formations';
 import { launchRaid, raidAdvised } from '../src/sim/tribes';
 import { ANIMALS, ARMORS, COMBAT_STATES, cycleOf, damageOf, MORALE, poseOf, RULES, SPECIES, STYLES, TRIBES, TRIBE_IDS, WEAPONS, zoneOf } from '../src/sim/combat';
@@ -1676,7 +1676,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const n = sm.squadUnits(a).length;
   const o = { x: t.camp.x, y: t.camp.y + 30 }, row = drawFormation('line', o, { x: o.x + 100, y: o.y }, t.camp);
   ok(row.cells.length === SQUAD_MAX && Math.abs(row.cells[1].x - row.cells[0].x - COMMAND.cell) < 1e-9, 'a line drawn far makes 15 squares one cell apart, from the point pressed');
-  ok(drawFormation('line', o, { x: o.x + 0.2, y: o.y }, t.camp).cells.length === 1 && sm.deploySquad(plan, a.id, undefined, drawFormation('line', o, { x: o.x + 2.7, y: o.y }, t.camp).cells, 0, o, o) !== null, 'a drag too short makes fewer than 3 cells, and they cannot be made into a squad');
+  ok(drawFormation('line', o, { x: o.x + 0.2, y: o.y }, t.camp).cells.length === 1 && sm.deploySquad(plan, a.id, undefined, drawFormation('line', o, { x: o.x + 2, y: o.y }, t.camp).cells, 0, o, o) !== null, 'a drag too short makes fewer than 3 cells, and they cannot be made into a squad');
   const ring = drawFormation('circle', o, { x: o.x + 4, y: o.y }, t.camp);
   ok(ring.cells.length >= 1 && ring.cells.every((c) => Math.abs(Math.hypot(c.x - o.x, c.y - o.y) - 4) < 1e-9), 'a circle takes the drag as its radius');
   for (const f of FORMATION_IDS) { const d = drawFormation(f, o, { x: o.x + 7, y: o.y - 5 }, t.camp); ok(d.cells.length >= 1 && d.cells.length <= SQUAD_MAX, `${f} drawn on the map has at most 15 cells`); }
@@ -1687,8 +1687,9 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(sm.deploySquad(plan, empty.id, 'wedge', drawFormation('wedge', o, { x: o.x + 6, y: o.y }, t.camp).cells, 0, o, o) === null && sm.squadUnits(empty).length === 0 && plan.missions.some((x) => x.squad === empty.id && x.deploy), 'a formation can be planned for a squad that has no soldiers yet');
   ok(plan.missions[0].withdrawAt === 0 && sm.squadUnits(a).length === n, 'a squad placed on the map does not withdraw until told to, and its soldiers are left as they were');
   sm.setMissionPath(plan, a.id, [{ x: t.camp.x, y: t.camp.y + 20 }, { x: t.camp.x, y: t.camp.y }]);
-  const m = plan.missions[0], route = sm.routeTime(a, sm.missionStart(m)!, m.path);
-  ok(route.legs.length === 2 && route.total > 0 && Math.abs(route.length - (10 + 20)) < 1e-6, 'the time of an arrow is worked out leg by leg');
+  const m = plan.missions[0], from = sm.missionStart(m)!, route = sm.routeTime(a, from, m.path);
+  const walk = Math.hypot(m.path[0].x - from.x, m.path[0].y - from.y) + Math.hypot(m.path[1].x - m.path[0].x, m.path[1].y - m.path[0].y);
+  ok(route.legs.length === 2 && route.total > 0 && Math.abs(route.length - walk) < 1e-6, 'the time of an arrow is worked out leg by leg');
   const slow = sm.squadPace(a); a.formation = 'circle';
   ok(sm.squadPace(a) < slow && sm.routeTime(a, sm.missionStart(m)!, m.path).total > route.total, 'a slower formation takes longer to walk the same arrow');
   a.formation = 'line';
@@ -1701,6 +1702,168 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(back.plans[0].missions[0].path.length === 0 && back.plans[0].missions[0].deploy === null, 'a save from before the plan was drawn on the map is brought forward');
   const back2 = Sim.fromSave(JSON.parse(JSON.stringify(sm.toSave())));
   ok(JSON.stringify(back2.plans[0].missions[0].path) === JSON.stringify(m.path) && back2.maps.some((x) => x.seen?.length === 2), 'the row, the arrow and what was seen are kept by a save');
+}
+
+{
+  // ======== war on the ground: things in the way, strict arrows, targets, winning and losing ========
+  const clearPatch = (sm: Sim, x0: number, y0: number, x1: number, y1: number) => {
+    const N = sm.world.size;
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * N + x; sm.world.nodes.delete(i); sm.world.tiles[i] = Tile.Grass; sm.world.decor[i] = 0; sm.world.occ[i] = 0; }
+  };
+  const plant = (sm: Sim, kind: 'tree' | 'rock' | 'bush', x: number, y: number) => {
+    const i = y * sm.world.size + x, info = { tree: ['wood', Tile.Tree], rock: ['stone', Tile.Rock], bush: ['food', Tile.Bush] } as const;
+    sm.world.tiles[i] = info[kind][1]; sm.world.nodes.set(i, { kind, res: info[kind][0] as never, amount: 10, max: 10, workers: 0, sides: 0, regrow: 0 });
+  };
+  const setup = (atCamp = false) => {
+    const sm = mk(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; }); sm.dev.god = true;
+    dev.combatReady(sm); dev.formSquads(sm); dev.giveMaps(sm, 1); sm.dev.freeBuild = false;
+    const fire = sm.campfire()!, camp = t_(sm, 'axe').camp;
+    const ox = atCamp ? Math.floor(camp.x) - 14 : Math.floor(fire.x) + 8, oy = atCamp ? Math.floor(camp.y) : Math.floor(fire.y) + 12;
+    clearPatch(sm, ox - 2, oy - 4, atCamp ? Math.floor(camp.x) - 7 : ox + 40, oy + 4);
+    // the dev soldiers may stand inside a house: put them on open ground south of the fire
+    const taken = new Set<number>(); let k = 0;
+    for (const v of sm.villagers.filter((o) => o.job === 'fight')) { const sp = sm.nearestFree(Math.floor(fire.x) + (k % 8) * 2, Math.floor(fire.y) + 4 + Math.floor(k / 8) * 2, taken)!; taken.add(sp[1] * sm.world.size + sp[0]); v.x = sp[0] + 0.5; v.y = sp[1] + 0.5; v.path = []; k++; }
+    const plan = sm.newPlan('attack', 'axe'), [a, b] = sm.squads, n = sm.squadUnits(a).length;
+    const cells = Array.from({ length: n }, (_, i) => ({ x: ox + (i % 2), y: oy - 2 + Math.floor(i / 2) }));
+    return { sm, plan, a, b, n, ox, oy, cells, fire };
+  };
+  const tickN = (sm: Sim, secs: number, until?: () => boolean) => { for (let i = 0; i < secs * 20 && !(until && until()); i++) (sm as unknown as { tick(d: number): void }).tick(0.05); };
+
+  {
+    // a tree in a cell of the formation is cut down by the soldier whose place it is
+    const { sm, plan, a, cells, ox, oy } = setup();
+    plant(sm, 'tree', cells[2].x, cells[2].y);
+    ok(sm.obstacleAt(cells[2].x, cells[2].y)?.kind === 'tree' && sm.obstacleAt(cells[2].x, cells[2].y)!.clear, 'a tree is an obstacle that soldiers can clear');
+    plant(sm, 'bush', ox + 20, oy); sm.world.tiles[(oy + 1) * sm.world.size + ox + 20] = Tile.Water;
+    ok(sm.obstacleAt(ox + 20, oy + 1)?.kind === 'water' && !sm.obstacleAt(ox + 20, oy + 1)!.clear, 'water is one they cannot');
+    sm.world.tiles[(oy + 1) * sm.world.size + ox + 20] = Tile.Grass;
+    ok(sm.deploySquad(plan, a.id, undefined, cells, 0, cells[0], cells[cells.length - 1]) === null, 'the formation is drawn over a tree');
+    ok(sm.reviewPlan(plan).some((l) => /dưới cây hoặc đá/.test(l)) && !sm.reviewPlan(plan).some((l) => l.startsWith('✗')), 'the council notes it but does not stop the plan');
+    ok(sm.startPlan(plan) === null, 'the plan starts');
+    tickN(sm, 200, () => plan.stage === 'ready');
+    ok(plan.stage === 'ready' && !sm.world.nodes.has(cells[2].y * sm.world.size + cells[2].x), 'the soldiers cut it down before the army is ready');
+    const keep = sm.squadUnits(a).filter((v) => v.fight.anchor && Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5).length;
+    ok(keep === sm.squadUnits(a).length && sm.squadUnits(a).every((v) => !v.breaks), 'and every soldier stands in his place');
+    ok(sm.squadUnits(a).some((v) => Math.hypot(v.x - (cells[2].x + 0.5), v.y - (cells[2].y + 0.5)) < 1.5), 'the soldier whose cell it was stands on it, the shape kept');
+  }
+  {
+    // an arrow through a rock: red, the plan will not start until a squad is sent to break it; the squad does so
+    const { sm, plan, a, b, cells, ox, oy } = setup();
+    sm.deploySquad(plan, a.id, undefined, cells, 0, cells[0], cells[cells.length - 1]);
+    plant(sm, 'rock', ox + 14, oy - 1);
+    sm.setMissionPath(plan, a.id, [{ x: ox + 30, y: oy - 1 }]);
+    const m = plan.missions[0], r = sm.routeTime(a, sm.missionStart(m)!, m.path);
+    ok(r.hits[0]?.kind === 'rock', 'the leg that runs into a rock is marked');
+    ok(sm.reviewPlan(plan).some((l) => l.startsWith('✗') && /vướng đá/.test(l)) && sm.startPlan(plan) !== null, 'and it stops the plan until the rock is dealt with');
+    ok(sm.addClear(plan, b.id, ox + 14, oy - 1) === null && sm.reviewPlan(plan).every((l) => !l.startsWith('✗')), 'sending a squad to break it clears the way');
+    ok(sm.startPlan(plan) === null, 'the plan starts');
+    tickN(sm, 300, () => plan.stage === 'ready' && !sm.world.nodes.has((oy - 1) * sm.world.size + ox + 14));
+    ok(!sm.world.nodes.has((oy - 1) * sm.world.size + ox + 14), 'the rock is broken while the army forms up');
+  }
+  {
+    // soldiers keep to the arrow: a tree appears in front of them and they halt, say so, and go on when some of them have cut it down
+    const { sm, plan, a, cells, ox, oy } = setup();
+    sm.deploySquad(plan, a.id, undefined, cells, 0, cells[0], cells[cells.length - 1]);
+    sm.setMissionPath(plan, a.id, [{ x: ox + 30, y: oy - 1 }]);
+    sm.startPlan(plan); tickN(sm, 200, () => plan.stage === 'ready');
+    plant(sm, 'tree', ox + 6, oy - 1);
+    ok(sm.engagePlan(plan) === null, 'the word is given');
+    tickN(sm, 30, () => plan.missions[0].state === 'blocked');
+    const m = plan.missions[0];
+    ok(m.state === 'blocked' && m.block?.kind === 'tree' && m.block.clear, `the squad halts with the tree ahead (${m.state})`);
+    const x0 = sm.squadCenter(a)!.x; tickN(sm, 5);
+    ok(Math.abs(sm.squadCenter(a)!.x - x0) < 1.5 && m.state === 'blocked', 'and stays where it is, not finding its own way round');
+    ok(sm.breakBlock(plan, a.id, 2) === null && sm.squadUnits(a).filter((v) => v.breaks).length === 2, 'two soldiers are sent to break it');
+    tickN(sm, 40, () => m.state === 'march');
+    ok(!sm.world.nodes.has((oy - 1) * sm.world.size + ox + 6) && (m.state === 'march' || m.state === 'engaged'), `the tree falls and the squad goes on (${m.state})`);
+    const gain = sm.stock.wood; ok(gain >= 0, 'clearing gives no wood');
+  }
+  {
+    // the sea cannot be broken: the squad stays halted and the player is told
+    const { sm, plan, a, cells, ox, oy } = setup();
+    sm.deploySquad(plan, a.id, undefined, cells, 0, cells[0], cells[cells.length - 1]);
+    sm.setMissionPath(plan, a.id, [{ x: ox + 30, y: oy - 1 }]);
+    ok(sm.startPlan(plan) === null, 'the plan starts'); tickN(sm, 200, () => plan.stage === 'ready');
+    for (let y = oy - 4; y <= oy + 4; y++) sm.world.tiles[y * sm.world.size + ox + 7] = Tile.Water;
+    sm.engagePlan(plan); tickN(sm, 30, () => plan.missions[0].state === 'blocked');
+    const m = plan.missions[0];
+    ok(m.state === 'blocked' && m.block?.kind === 'water' && !m.block.clear && sm.breakBlock(plan, a.id, 3) !== null, 'water halts the squad and cannot be broken');
+  }
+  {
+    // an arrow that points at something keeps its head there; the points between can be moved
+    const { sm, plan, a, cells, fire } = setup();
+    const t = t_(sm, 'axe'), fp = t.props.find((p) => p.kind === 'fire')!;
+    sm.deploySquad(plan, a.id, undefined, cells, 0, cells[0], cells[cells.length - 1]);
+    const tg = { kind: 'prop' as const, x: fp.x, y: fp.y, at: { x: fp.x + 1, y: fp.y + 1 }, label: 'Đống lửa', leader: false };
+    ok(sm.setMissionTarget(plan, a.id, tg) === null && plan.missions[0].path.length === 1 && plan.missions[0].path[0].x === fp.x + 1, 'pressing the fire of the village aims the squad at it, the arrow running to it');
+    sm.setMissionPath(plan, a.id, [{ x: fp.x - 9, y: fp.y - 9 }, { x: fp.x + 20, y: fp.y + 20 }]);
+    ok(plan.missions[0].path.length === 2 && plan.missions[0].path[1].x === fp.x + 1 && plan.missions[0].path[1].y === fp.y + 1, 'the head cannot be moved off it, only the points between');
+    sm.setMissionPath(plan, a.id, []);
+    ok(plan.missions[0].target === null && plan.missions[0].path.length === 0, 'clearing the arrow lets go of the target');
+    void fire;
+  }
+  {
+    // at the end of the arrow the squad breaks the works it was sent to, then goes for everything about; the war is won when nothing of the village is left
+    const { sm, plan, a, b, cells } = setup(true);
+    const t = t_(sm, 'axe'), fp = t.props.find((p) => p.kind === 'fire')!, camp = t.camp;
+    sm.deploySquad(plan, a.id, undefined, cells, 0, cells[0], cells[cells.length - 1]);
+    sm.setMissionTarget(plan, a.id, { kind: 'prop', x: fp.x, y: fp.y, at: { x: fp.x + 1, y: fp.y + 1 }, label: 'Đống lửa', leader: false });
+    ok(sm.startPlan(plan) === null, 'the plan against the village starts'); tickN(sm, 200, () => plan.stage === 'ready');
+    ok(sm.engagePlan(plan) === null, 'and the word is given');
+    for (const f of [...t.unitIds]) { const u = sm.get(f); if (!u) continue; if (u.ai?.role !== 'civ') sm.killFoe(u); else { u.x = camp.x + 30; u.y = camp.y + 30; u.path = []; u.ai.camp = { x: camp.x + 30, y: camp.y + 30 }; } } // no soldiers left; the people are far off
+    let i = 0; for (const v of sm.squadUnits(a)) { v.x = camp.x + 3 + (i % 4) * 0.7; v.y = camp.y + 3 + Math.floor(i / 4) * 0.7; v.path = []; i++; }
+    const m = plan.missions[0]; m.state = 'engaged';
+    const hp0 = fp.hp;
+    tickN(sm, 15);
+    ok(fp.hp < hp0 || !t.props.includes(fp), `the soldiers break down the fire (${hp0} -> ${t.props.includes(fp) ? Math.round(fp.hp) : 'down'})`);
+    tickN(sm, 300, () => plan.status === 'done');
+    ok(!t.props.some((p) => p.kind === 'fire') && t.props.length === 0, 'then they go on to every other work of the village');
+    ok(plan.status === 'done' && plan.result === 'won' && t.state === 'surrendered' && sm.pendingTribe === 'axe', 'with no soldiers, no fire and no works left the war is won and the people ask for mercy');
+    void b;
+  }
+  {
+    // lost: when the army is gone, or pulled back
+    const { sm, plan, a, cells } = setup();
+    sm.deploySquad(plan, a.id, undefined, cells, 0, cells[0], cells[cells.length - 1]);
+    sm.startPlan(plan); tickN(sm, 200, () => plan.stage === 'ready'); sm.engagePlan(plan);
+    sm.dev.god = false;
+    for (const v of sm.squadUnits(a)) sm.killUnit(v, 'test');
+    tickN(sm, 2);
+    ok(plan.status === 'done' && plan.result === 'lost', 'with no soldiers left the war is lost');
+    const s2 = setup();
+    s2.sm.deploySquad(s2.plan, s2.a.id, undefined, s2.cells, 0, s2.cells[0], s2.cells[s2.cells.length - 1]);
+    s2.sm.startPlan(s2.plan); tickN(s2.sm, 200, () => s2.plan.stage === 'ready'); s2.sm.engagePlan(s2.plan);
+    s2.sm.withdrawPlan(s2.plan); tickN(s2.sm, 200, () => s2.plan.status === 'done');
+    ok(s2.plan.status === 'done' && s2.plan.result === 'lost', 'pulling the army back is a defeat');
+  }
+  {
+    // soldiers do not sleep in war
+    const { sm, plan, a, cells } = setup();
+    const v = sm.squadUnits(a)[0]; sm.resting = true;
+    ok(sm.shouldSleep(v, false), 'at night a soldier off shift goes to sleep');
+    sm.deploySquad(plan, a.id, undefined, cells, 0, cells[0], cells[cells.length - 1]); sm.startPlan(plan);
+    ok(!sm.shouldSleep(v, false) && v.phase !== 'sleep', 'but not while a war is on');
+    const e0 = v.energy; tickN(sm, 20); ok(v.energy >= e0 - 0.01, 'and he does not tire either');
+  }
+  {
+    // every house has strength and can be attacked
+    const sm = mk(1337); sm.dev.god = true; const h = putBuilding(sm, 'house');
+    ok(h.hp === maxHp(h) && h.hp > 0, `a house has strength (${h.hp})`);
+    const idx = h.y * sm.world.size + h.x;
+    sm.damageWork(h, h.hp - 1); ok(sm.buildings.includes(h), 'it stands while it has strength'); sm.damageWork(h, 5);
+    ok(!sm.buildings.includes(h) && sm.world.occ[idx] === 0, 'at zero it falls and the ground is free');
+  }
+  {
+    // a save from before all this is brought forward
+    const sm = mk(1337); sm.dev.god = true; const h = putBuilding(sm, 'house');
+    const old = JSON.parse(JSON.stringify(sm.toSave())); old.version = 11;
+    for (const b of old.lists.buildings) if (b.kind === 'house') b.hp = 0;
+    for (const v of [...old.lists.villagers, ...old.lists.foes]) delete v.breaks;
+    for (const t of old.tribes) for (const p of t.props) delete p.hp;
+    const back = Sim.fromSave(old);
+    ok(back.buildings.find((b) => b.kind === 'house')!.hp === maxHp(h) && back.villagers.every((v) => v.breaks === null) && back.tribes.every((t) => t.props.every((p) => p.hp > 0)), 'houses and works get their strength, soldiers are not breaking anything');
+    ok(SAVE_VERSION === 12, 'the save format is version 12');
+  }
 }
 
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');
