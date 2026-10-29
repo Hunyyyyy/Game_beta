@@ -19,6 +19,10 @@ const armors = { hide: hideArmor };
 
 /* ---- Lõi vẽ dân pixel: không phụ thuộc DOM ---- */
 const W = 40, H = 48, CX = 20;
+/* The frame the game draws is bigger than the body: a spear held up, a bow drawn wide or a club swung back reach past the 40 x 48 of the body and would be cut off.
+   Drawing still uses body coordinates; put() shifts them by (OX, OY) into a buffer BW x BH, and renderFrame sets these for the length of one frame. */
+const PADX = 14, PADT = 16, PADB = 2, FW = W + 2 * PADX, FH = H + PADT + PADB;
+let BW = W, BH = H, OX = 0, OY = 0;
 const rad = d => d * Math.PI / 180;
 const hexRgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 const mul = (c, f) => c.map(v => Math.max(0, Math.min(255, Math.round(v * f))));
@@ -40,9 +44,9 @@ function palette(look, kind) {
 }
 
 function put(b, x, y, c, a) {
-  x = Math.round(x); y = Math.round(y);
-  if (x < 0 || y < 0 || x >= W || y >= H) return;
-  const i = (y * W + x) * 4;
+  x = Math.round(x) + OX; y = Math.round(y) + OY;
+  if (x < 0 || y < 0 || x >= BW || y >= BH) return;
+  const i = (y * BW + x) * 4;
   b[i] = c[0]; b[i + 1] = c[1]; b[i + 2] = c[2]; b[i + 3] = a === undefined ? 255 : a;
 }
 function rect(b, x, y, w, h, c) {
@@ -302,12 +306,12 @@ function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
 function outline(b, c) {
   const o = new Uint8ClampedArray(b);
   const N = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const i = (y * W + x) * 4;
+  for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+    const i = (y * BW + x) * 4;
     if (b[i + 3]) continue;
     const touch = N.some(([dx, dy]) => {
       const xx = x + dx, yy = y + dy;
-      return xx >= 0 && yy >= 0 && xx < W && yy < H && b[(yy * W + xx) * 4 + 3] > 0;
+      return xx >= 0 && yy >= 0 && xx < BW && yy < BH && b[(yy * BW + xx) * 4 + 3] > 0;
     });
     if (touch) { o[i] = c[0]; o[i + 1] = c[1]; o[i + 2] = c[2]; o[i + 3] = 255; }
   }
@@ -316,15 +320,15 @@ function outline(b, c) {
 function shadow(b, dx) {
   [[43, -7, 14], [44, -7, 14], [45, -5, 10]].forEach(([y, x0, n]) => {
     for (let i = 0; i < n; i++) {
-      const x = CX + dx + x0 + i, k = (y * W + x) * 4;
-      if (x >= 0 && x < W && !b[k + 3]) { b[k] = 0; b[k + 1] = 0; b[k + 2] = 0; b[k + 3] = 70; }
+      const x = CX + dx + x0 + i + OX, k = ((y + OY) * BW + x) * 4;
+      if (x >= 0 && x < BW && !b[k + 3]) { b[k] = 0; b[k + 1] = 0; b[k + 2] = 0; b[k + 3] = 70; }
     }
   });
 }
 function flipH(b) {
   const o = new Uint8ClampedArray(b.length);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const s = (y * W + x) * 4, d = (y * W + (W - 1 - x)) * 4;
+  for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+    const s = (y * BW + x) * 4, d = (y * BW + (BW - 1 - x)) * 4;
     o[d] = b[s]; o[d + 1] = b[s + 1]; o[d + 2] = b[s + 2]; o[d + 3] = b[s + 3];
   }
   return o;
@@ -383,12 +387,25 @@ function renderFrame(anims, name, idx, view, look, kind, toolOv, armorId, extra)
   const an = anims[name];
   const f = an.frames[((idx % an.frames.length) + an.frames.length) % an.frames.length];
   const P = palette(look, kind);
-  const b = new Uint8ClampedArray(W * H * 4);
-  const v = (view === 'left' || view === 'right') ? 'side' : view;
-  drawCharacter(b, v, f, P, look.sex, toolOv, armorId, extra);
-  const o = outline(b, P.line);
-  shadow(o, v === 'side' ? 1 : 0);
-  return view === 'left' ? flipH(o) : o;
+  BW = FW; BH = FH; OX = PADX; OY = PADT; // room round the body for what is held out from it
+  try {
+    const b = new Uint8ClampedArray(FW * FH * 4);
+    const v = (view === 'left' || view === 'right') ? 'side' : view;
+    drawCharacter(b, v, f, P, look.sex, toolOv, armorId, extra);
+    const o = outline(b, P.line);
+    shadow(o, v === 'side' ? 1 : 0);
+    return view === 'left' ? flipH(o) : o;
+  } finally { BW = W; BH = H; OX = 0; OY = 0; }
+}
+
+/* A frame cut back to the 40 x 48 of the body: the animation viewer edits poses on that grid. */
+function cropToBody(px) {
+  const o = new Uint8ClampedArray(W * H * 4);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const s = ((y + PADT) * FW + (x + PADX)) * 4, d = (y * W + x) * 4;
+    o[d] = px[s]; o[d + 1] = px[s + 1]; o[d + 2] = px[s + 2]; o[d + 3] = px[s + 3];
+  }
+  return o;
 }
 
 /* ---- Dữ liệu keyframe mặc định ---- */
@@ -434,4 +451,4 @@ function formatAnims(anims) {
     '  "' + k + '": { "fps": ' + v.fps + ', "loop": ' + v.loop + (v.hit === undefined ? '' : ', "hit": ' + v.hit) + ', "frames": [\n' +
     v.frames.map(f => '    ' + JSON.stringify(f)).join(',\n') + '\n  ] }').join(',\n') + '\n}';
 }
-export { W, H, CX, armors, renderFrame, defaultAnims, formatAnims, palette, handTools, renderTool, bakeTool, toolAnchor, unpackShapes, packPixels, HAND_Y };
+export { W, H, CX, FW, FH, PADX, PADT, cropToBody, armors, renderFrame, defaultAnims, formatAnims, palette, handTools, renderTool, bakeTool, toolAnchor, unpackShapes, packPixels, HAND_Y };
