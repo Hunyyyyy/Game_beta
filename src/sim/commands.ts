@@ -4,6 +4,7 @@ import { Job, JOB_NAME, WorkJob } from './jobs';
 import { resolve } from './battle';
 import { animalDef } from './fauna';
 import type { Sim } from './sim';
+import { hash2 } from './rng';
 import { NODE_JOB, Target, Villager } from './model';
 
 // ---------------------------------------------------------------- lệnh
@@ -58,6 +59,23 @@ export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: numb
     v.path = sim.pathTo(v, goal[0], goal[1], 30000);
     v.phase = v.path.length ? 'move' : 'idle';
   }
+}
+
+/**
+ * The Khai thác button of a tree, rock or bush: one of the three villagers nearest to it who have the matching job (chosen by chance, not by the
+ * player) is sent to work that very one. Gives the name of who went, or why nobody could.
+ */
+export function callWorker(sim: Sim, tx: number, ty: number): { name: string } | { reason: string } {
+  const node = sim.world.nodeAt(tx, ty);
+  if (!node || sim.fog.state[ty * sim.world.size + tx] === 0) return { reason: 'Không còn gì để khai thác ở đây' };
+  if (node.amount <= 0) return { reason: 'Bụi quả đã hết quả, chờ mọc lại' };
+  const job = NODE_JOB[node.kind];
+  const pool = mine(sim, sim.villagers.map((v) => v.id)).filter((v) => v.job === job && v.inside === null && v.post < 0 && v.phase !== 'sleep' && v.prefer !== ty * sim.world.size + tx);
+  if (!pool.length) return { reason: job === 'wood' ? 'Chưa có ai làm nghề đốn gỗ: giao nghề ở Xưởng gỗ' : job === 'stone' ? 'Chưa có ai làm thợ đá: giao nghề ở Xưởng đá' : 'Chưa có ai hái lượm: giao nghề ở Nông trại' };
+  pool.sort((a, b) => Math.hypot(a.x - tx, a.y - ty) - Math.hypot(b.x - tx, b.y - ty));
+  const near = pool.slice(0, 3), v = near[Math.floor(hash2(tx, ty, Math.floor(sim.time)) * near.length) % near.length];
+  orderWork(sim, [v.id], tx, ty);
+  return { name: v.name };
 }
 
 /**

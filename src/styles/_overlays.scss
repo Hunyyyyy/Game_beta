@@ -3,19 +3,11 @@
 
 $mini: clamp(64px, 15vw, 96px);
 
-// ---- minimap, log, toast ----
+// ---- minimap, toast ----
 #mini {
   position: absolute; right: calc(6px + var(--sar)); bottom: calc(6px + var(--sab));
   width: $mini; aspect-ratio: 1; image-rendering: pixelated;
   border: 2px solid var(--ring); border-radius: $radius-md; background: #080a14; cursor: zoom-in;
-}
-.log {
-  position: absolute; right: calc(6px + var(--sar)); bottom: calc(#{$mini} + 14px + var(--sab));
-  max-width: min(330px, 46%); text-align: right;
-  font-size: 12px; line-height: 1.35;
-  color: $night-ink; text-shadow: 0 1px 2px #000, 0 0 4px #000;
-  pointer-events: none; display: grid; gap: 2px;
-  @media (max-width: 760px) { display: none; }
 }
 .toast {
   position: absolute; left: 50%; top: calc(52px + var(--sat)); transform: translateX(-50%); z-index: 50;
@@ -84,4 +76,35 @@ $mini: clamp(64px, 15vw, 96px);
   display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
   > span { min-width: 7ch; font-weight: 600; }
   b { min-width: 2.5ch; text-align: center; font-variant-numeric: tabular-nums; }
+}
+
+// building bar: icon buttons
+.ic { min-width: 34px; font-size: 16px; line-height: 1; &.up { color: #6fd07a; } &.danger { color: #ff5a4d; } }
+@keyframes questPulse { 50% { transform: scale(1.18); } }
+
+// ---- quest button (left edge) and its panel ----
+.qbtn {
+  position: absolute; left: calc(6px + var(--sal)); top: 34%; z-index: 20;
+  width: 40px; height: 40px; padding: 0; font-size: 20px; line-height: 1; border-radius: $radius-md;
+  &[aria-pressed='true'] { background: var(--accent); color: var(--accent-fg); }
+}
+.qbtn .dot {
+  position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 3px; box-sizing: border-box;
+  border-radius: 50%; background: #e0372d; color: #fff; font: 700 11px/16px system-ui, sans-serif; font-style: normal; text-align: center;
+  box-shadow: 0 0 0 2px rgba(20, 14, 8, .8); animation: questPulse 1.4s ease-in-out infinite;
+}
+.qpanel {
+  @include hud-box($radius-lg);
+  position: absolute; left: calc(52px + var(--sal)); top: 34%; z-index: 20;
+  width: min(340px, calc(100% - 70px)); max-height: 56vh; overflow: auto; padding: 8px 10px; font-size: 12.5px; line-height: 1.4;
+  &[hidden] { display: none; }
+  .qhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+  .qx { background: none; border: 0; color: inherit; cursor: pointer; font-size: 14px; padding: 0 2px; }
+  .qrow { padding: 4px 0; border-top: 1px solid var(--line); }
+  .qtitle { font-weight: 600; }
+  .qrow.done { opacity: .55; .qtitle { font-weight: 500; text-decoration: line-through; } }
+  .qrow.lock { opacity: .45; }
+  .qrow.now .qtitle { color: #fff6e8; font-size: 13.5px; }
+  .qhint { margin-top: 3px; color: var(--muted); font-size: 12px; }
+  .qneed { margin-top: 3px; color: #ffb4a8; font-size: 12px; }
 }

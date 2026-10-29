@@ -19,6 +19,8 @@ import type { Sim } from './sim';
 export const WAR = {
   /** → army.squadLimit */
   squadLimit(this: Sim): number { return army.squadLimit(this); },
+  /** → army.cellLimit */
+  cellLimit(this: Sim): number { return army.cellLimit(this); },
   /** → army.cardLimit */
   cardLimit(this: Sim): number { return army.cardLimit(this); },
   /** → army.createSquad */

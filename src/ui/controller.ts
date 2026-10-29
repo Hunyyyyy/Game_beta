@@ -27,7 +27,8 @@ export class Controller {
   /** The full-screen panel of the selected building is open. */
   buildingOpen = false;
   /** Foe or animal shown in the target card. */
-  inspect: { kind: 'unit' | 'animal'; id: number } | null = null;
+  /** What was tapped: a unit, an animal, or a tree, rock or bush (id = its tile index). */
+  inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null;
   /** The campfire's people menu asked for the full page of the chosen villager. */
   openDetail = false;
   /** F pressed: the next click sends the selection to attack-move there. */
@@ -195,6 +196,7 @@ export class Controller {
       this.command(p, false); return;
     }
     if (seen) { this.inspect = { kind: seen.target.kind, id: seen.target.id }; this.selectedBuilding = null; }
+    else if ((() => { const t = this.pickTile(w.x, w.y), N = this.sim.world.size; if (!this.sim.world.nodeAt(t.x, t.y) || this.sim.fog.state[t.y * N + t.x] === 0) return false; this.inspect = { kind: 'node', id: t.y * N + t.x }; this.selectedBuilding = null; return true; })()) { /* a tree, rock or bush: its card opens */ }
     else if (b !== null) this.selectBuilding(b);
     else if (!additive) {
       // nobody selected: a tap on the ground does nothing, so say why instead of leaving it silent
@@ -262,7 +264,7 @@ export class Controller {
   ghost(): Ghost | null {
     if (!this.placing || !this.placeAt) return null;
     const b = this.moving !== null ? this.sim.getBuilding(this.moving) : undefined;
-    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era };
+    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era, moving: this.moving ?? undefined };
   }
 
   /** Why the ghost cannot be put down where it is, or null. */

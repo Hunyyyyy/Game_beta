@@ -12,6 +12,7 @@ import { hurt, tickMorale, tickProjectiles } from './battle';
 import { Animal, populate, tickAnimals } from './fauna';
 import { adoptTribe, EventState, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tributeTribe } from './tribes';
 import { recipeOpen, Tech } from './research';
+import { questViews, QuestUi, QuestView } from './quests';
 import { World } from './world';
 import * as construction from './construction';
 import * as economy from './economy';
@@ -56,6 +57,8 @@ export class Sim {
   sawCoin = false;
   /** Finished research (tech ids). Recipes and building levels stay locked until their tech is here. */
   readonly researched = new Set<string>();
+  /** Quests that have been seen done (not saved: a loaded game works them out again from what stands). */
+  readonly questSeen = new Set<string>();
   readonly log: LogLine[] = [];
   /** Current era: new buildings are built with this era's art and levels. */
   era: Era = 'stone';
@@ -413,6 +416,8 @@ export class Sim {
   /** → commands.orderMove */
   orderMove(ids: readonly number[], tx: number, ty: number, queue = false): void { return commands.orderMove(this, ids, tx, ty, queue); }
 
+  /** → commands.callWorker */
+  callWorker(tx: number, ty: number): { name: string } | { reason: string } { return commands.callWorker(this, tx, ty); }
   /** → commands.orderWork */
   orderWork(ids: readonly number[], tx: number, ty: number): { job: WorkJob; sent: number } | null { return commands.orderWork(this, ids, tx, ty); }
 
@@ -546,6 +551,8 @@ export class Sim {
   tribeAttacked(id: Exclude<Team, 'player' | 'wild'>, victim: Villager): void { tribeAttacked(this, id, victim); }
   killFoe(v: Villager, killer?: Villager): void { killFoe(this, v, killer); }
   /** The player's own campfire (the village centre). */
+  /** → quests.questViews */
+  quests(ui: QuestUi): QuestView[] { return questViews(this, ui); }
   campfire(): Building | undefined { return this.buildings.find((b) => b.kind === 'campfire' && b.done); }
   /** Close to the unit's own camp: the village fire, or the tribal camp for tribal people. */
   nearHome(v: Villager): boolean {

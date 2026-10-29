@@ -113,7 +113,7 @@ export function startBreaking(sim: Sim, v: Villager, ob: Obstacle, home?: Pt): b
 
 function stopBreaking(v: Villager): void { v.breaks = null; v.progress = 0; if (v.phase === 'fight' || v.phase === 'move') { v.phase = 'idle'; v.path = []; } }
 
-/** A tree, rock or bush is gone: the ground is bare (a tree leaves its stump) and everyone who was at it is done. */
+/** A tree, rock or bush is gone: the ground is bare (a felled tree leaves nothing) and everyone who was at it is done. */
 export function clearNode(sim: Sim, x: number, y: number): void {
   const w = sim.world, i = y * w.size + x, n = w.nodes.get(i);
   if (!n) return;
@@ -122,7 +122,6 @@ export function clearNode(sim: Sim, x: number, y: number): void {
     else if (o.target === i && (o.phase === 'goNode' || o.phase === 'work')) sim.resetTask(o); // a gatherer who was at it looks for another
   }
   w.nodes.delete(i); w.tiles[i] = Tile.Grass;
-  if (n.kind === 'tree') w.decor[i] = 1;
 }
 
 /** A blow on a work of an enemy village; at zero it falls and the ground it stood on is open. */

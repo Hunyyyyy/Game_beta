@@ -55,7 +55,7 @@ export function deploySquad(sim: Sim, plan: Plan, squadId: number, kind: Formati
   const s = sim.squadById(squadId);
   if (!s) return 'Không có đội này';
   if (plan.status === 'running') return 'Kế hoạch đang chạy: không vẽ lại được';
-  if (cells.length < SQUAD_MIN || cells.length > SQUAD_MAX) return `Đội hình có từ ${SQUAD_MIN} đến ${SQUAD_MAX} ô`;
+  if (cells.length < SQUAD_MIN || cells.length > sim.cellLimit()) return `Đội hình có từ ${SQUAD_MIN} đến ${sim.cellLimit()} ô`;
   if (kind && !sim.formationOpen(kind)) return `Cần nghiên cứu: ${FORMATIONS[kind].name}`;
   if (kind && kind !== s.formation) { const e = sim.setFormation(s.id, kind); if (e) return e; }
   const m = drawable(sim, plan, squadId);

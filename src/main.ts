@@ -6,6 +6,8 @@ import { DAY_LENGTH, TILE } from './sim/constants';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { RESEARCH } from './sim/research';
+import { CHAPTERS } from './sim/quests';
+import { resIcon } from './ui/resicons';
 import { Controller } from './ui/controller';
 import { $, costText } from './ui/dom';
 import { Menu } from './ui/menu';
@@ -107,7 +109,7 @@ window.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.target instanceof HTMLElement && /input|textarea|select/i.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
-  if (k === 'p') setSpeed(sim.speed === 0 ? 1 : 0);
+  if (k === 'p') setSpeed(sim.speed === 0 ? 1 : 0);
   else if (k === 'q') setSpeed(1); else if (k === 'e') setSpeed(2); else if (k === 'r') setSpeed(4); else if (k === 't') setSpeed(16);
   else if (k === 'b') togglePlace('storage'); else if (k === 'x') togglePlace('workshop'); else if (k === 'c') openWorkshop();
   else if (k === 'm') { if (map.isOpen) map.close(); else map.open(); }
@@ -115,7 +117,14 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ---------------------------------------------------------------- the top bar and the log
-const log = $('log'), clock = $('clock');
+const qpanel = $('qpanel'), clock = $('clock');
+// the coloured squares of the top bar give way to drawn pictures
+for (const [id, key] of [['rFood', 'food'], ['rWood', 'wood'], ['rStone', 'stone'], ['rHide', 'hide'], ['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk'], ['rTorch', 'torch'], ['rCoin', 'coin'], ['rPop', 'pop']]) $(id).querySelector('i')?.replaceWith(resIcon(key));
+// the quest button stands at the left edge and opens the quest panel; a red mark on it says a new quest is waiting
+let questOpen = false, questSeen = '';
+const btnQuest = $('btnQuest'), questDot = btnQuest.querySelector('i') as HTMLElement;
+const toggleQuests = () => { questOpen = !questOpen; logKey = ''; btnQuest.setAttribute('aria-pressed', String(questOpen)); };
+btnQuest.addEventListener('click', toggleQuests);
 let fps = 60, lastHud = 0, logKey = '', pending: string | null = null, lastTopH = -1;
 const topBar = document.querySelector('.top') as HTMLElement;
 
@@ -147,12 +156,33 @@ function updateHud(now: number) {
   const eff = [we.vision ? `tầm nhìn −${we.vision} ô` : '', we.speed < 1 ? `đi chậm ${Math.round((1 - we.speed) * 100)}%` : '', outdoor < 1 ? `làm việc ngoài trời chậm ${Math.round((1 - outdoor) * 100)}%` : ''].filter(Boolean).join(', ');
   $('clockLine').title = `${we.name}${eff ? `: ${eff}` : ''}. Hái lượm mùa ${se.name.toLowerCase()} ×${se.gather.toLocaleString('vi')}. ${Math.round(fps)} fps`;
 
-  const lines = sim.log.slice(-4), lk = lines.map((l) => l.text).join('|');
+  // the quest panel: the chapter's quests, the one in hand opened with its hint
+  const selB = ctl.selectedBuilding === null ? undefined : sim.getBuilding(ctl.selectedBuilding);
+  const views = sim.quests({ selected: selB?.kind ?? null, panel: selB && ctl.buildingOpen ? selB.kind : null, inspecting: ctl.inspect?.kind ?? null });
+  const open = views.filter((v) => v.open), cur = open[0], lk = views.map((v) => (v.done ? 'd' : v.open ? 'o' : 'l')).join('') + (cur ? `#${cur.progress}` : '#all') + (questOpen ? '+' : '');
   if (lk !== logKey) {
-    // on a narrow screen the log is hidden, so the newest line goes to the pop-up message instead
-    if (logKey && innerWidth < 760 && lines.length) toast(lines[lines.length - 1].text);
-    logKey = lk; log.replaceChildren(...lines.map((l) => { const d = document.createElement('div'); d.textContent = l.text; return d; }));
+    const prev = logKey.split('#')[0].indexOf('o') >= 0 ? views[logKey.split('#')[0].indexOf('o')] : undefined;
+    if (prev?.done) toast(`Hoàn thành: ${prev.quest.title}`);
+    logKey = lk;
+    if (questOpen) {
+      const el = (tag: string, cls: string, text: string) => { const d = document.createElement(tag); d.className = cls; d.textContent = text; return d; };
+      const isCount = (p: string) => p.split('/').length === 2 && p.split('/').every((x) => x !== '' && !isNaN(Number(x)));
+      const chap = cur?.quest.chapter ?? CHAPTERS[CHAPTERS.length - 1].id, mine = views.filter((v) => v.quest.chapter === chap);
+      const head = el('div', 'qhead', CHAPTERS.find((x) => x.id === chap)?.name ?? 'Nhiệm vụ');
+      const close = el('button', 'qx', '✕'); close.title = 'Đóng'; close.addEventListener('click', toggleQuests); head.append(close);
+      const rows = mine.map((v) => {
+        const row = document.createElement('div'); row.className = `qrow ${v.done ? 'done' : v === cur ? 'now' : v.open ? 'next' : 'lock'}`;
+        row.append(el('div', 'qtitle', `${v.done ? '✓' : v === cur ? '▸' : v.open ? '○' : '·'} ${v.quest.title}${v === cur && isCount(v.progress) ? ` (${v.progress})` : ''}`));
+        if (v === cur) { row.append(el('div', 'qhint', v.quest.hint)); if (v.progress && !isCount(v.progress)) row.append(el('div', 'qneed', v.progress)); }
+        return row;
+      });
+      qpanel.replaceChildren(head, ...(cur ? rows : [el('div', 'qrow now', 'Đã hoàn thành kế hoạch tới Nhà chung cấp 4')]));
+      qpanel.querySelector('.now')?.scrollIntoView({ block: 'nearest' });
+    }
   }
+  qpanel.hidden = !questOpen;
+  if (questOpen && cur) questSeen = cur.quest.id;
+  questDot.hidden = questOpen || !cur || cur.quest.id === questSeen;
   // the context panels keep clear of the top bar, however many rows it wraps into
   const topH = Math.ceil(topBar.getBoundingClientRect().height);
   if (topH !== lastTopH) { lastTopH = topH; document.documentElement.style.setProperty('--top-h', `${topH}px`); }

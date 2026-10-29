@@ -23,9 +23,5 @@
     bottom: calc(4px + var(--sab));
     width: clamp(56px, 12vw, 84px);
   }
-  .log {
-    bottom: calc(clamp(56px, 12vw, 84px) + 10px + var(--sab));
-    right: calc(4px + var(--sar));
-  }
   .toast { top: calc(40px + var(--sat)); }
 }

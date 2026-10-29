@@ -1,6 +1,7 @@
 import data from '../data/research.json';
 import type { BuildingKind } from './buildings';
 import type { Stock } from './resources';
+import { labLevelOf } from './progression';
 
 /** One research step. For blueprints the id is the recipe id it opens (axe1 = wood axe, axe2 = stone axe). */
 export interface Tech {
@@ -13,7 +14,7 @@ export interface Tech {
   cost: Partial<Stock>;
   /** Seconds with one average researcher at speed 1. */
   time: number;
-  unlocks: { recipes?: string[]; levels?: Partial<Record<BuildingKind, number>>; buildings?: BuildingKind[]; auto?: string[]; mounts?: string[] };
+  unlocks: { formationCells?: number; squads?: number; recipes?: string[]; levels?: Partial<Record<BuildingKind, number>>; buildings?: BuildingKind[]; auto?: string[]; mounts?: string[] };
 }
 
 /** Research is on by default; with `enabled` false every recipe, building level and automation is open. */
@@ -22,12 +23,18 @@ export const RESEARCH = { enabled: (data as unknown as { enabled: boolean }).ena
 const RECIPE_LEVEL = (data as unknown as { recipeLevel: Record<string, number> }).recipeLevel;
 export const recipeNeedLevel = (id: string): number => RECIPE_LEVEL[id] ?? 1;
 export const TECHS = (data as unknown as { techs: Tech[] }).techs;
+// which research-house level teaches a step is the plan's call (data/progression.json), not the step's
+for (const t of TECHS) t.needLevel = labLevelOf(t.id);
 export const TECH_BY_ID: Record<string, Tech> = Object.fromEntries(TECHS.map((t) => [t.id, t]));
 
 /** A recipe can be made once its blueprint step is researched. */
 export const recipeOpen = (done: ReadonlySet<string>, recipeId: string): boolean => !RESEARCH.enabled || done.has(recipeId);
 /** The blueprint step that opens a recipe. */
 export const techForRecipe = (recipeId: string): Tech | undefined => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
+
+/** The biggest value of a numeric unlock (cells of a formation, squads) among the steps done, or the default when none is. */
+export const unlockedMax = (done: ReadonlySet<string>, key: 'formationCells' | 'squads', base: number): number =>
+  TECHS.reduce((m, t) => (done.has(t.id) ? Math.max(m, t.unlocks[key] ?? 0) : m), base);
 
 /** Highest level a building kind may reach with the research done so far (1 when nothing is researched). */
 export const levelCap = (done: ReadonlySet<string>, kind: BuildingKind): number => !RESEARCH.enabled || kind === 'campfire' ? Infinity :

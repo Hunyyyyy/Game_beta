@@ -100,14 +100,13 @@ export class World {
     return this.inBounds(x, y) ? this.nodes.get(y * this.size + x) : undefined;
   }
 
-  /** Cây và đá cạn thì ô trở lại thành cỏ (cây để lại gốc); bụi quả giữ nguyên và mọc lại. */
+  /** Cây và đá cạn thì ô trở lại thành cỏ (cây không để lại gốc); bụi quả giữ nguyên và mọc lại. */
   depleted(idx: number): void {
     const n = this.nodes.get(idx);
     if (!n) return;
     if (n.kind === 'bush') { n.amount = 0; n.regrow = 240; return; }
     this.nodes.delete(idx);
     this.tiles[idx] = Tile.Grass;
-    if (n.kind === 'tree') this.decor[idx] = 1;
   }
 
   /** Winter: bushes go bare and stop regrowing. Spring: they flower and fruit again after 1–3 min (staggered per tile). */

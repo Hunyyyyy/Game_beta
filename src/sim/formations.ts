@@ -67,9 +67,9 @@ export interface Drawn { cells: Array<{ x: number; y: number }>; heading: number
  * Sừng bò: a row from o to p with both ends bent to one fixed side of the drag (so the horns turn with it). Rải quân: a loose grid filling the box between o and p. Phục kích: a staggered double row from o towards p.
  * `toward` is the point the squad faces (the enemy camp), which decides which side of a row is its front.
  */
-export function drawFormation(kind: FormationId, o: { x: number; y: number }, p: { x: number; y: number }, toward: { x: number; y: number }): Drawn {
+export function drawFormation(kind: FormationId, o: { x: number; y: number }, p: { x: number; y: number }, toward: { x: number; y: number }, max: number = SQUAD_MAX): Drawn {
   const S = COMMAND.cell, dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy), ang = d > 0.01 ? Math.atan2(dy, dx) : 0, ux = Math.cos(ang), uy = Math.sin(ang);
-  const clampN = (n: number) => Math.max(1, Math.min(SQUAD_MAX, n));
+  const clampN = (n: number) => Math.max(1, Math.min(max, n));
   const at = (along: number, side: number) => ({ x: o.x + ux * along - uy * side, y: o.y + uy * along + ux * side });
   // the perpendicular to the drag that points to `toward`: the way a row faces
   const sign = (-uy * (toward.x - o.x) + ux * (toward.y - o.y)) >= 0 ? 1 : -1, face = Math.atan2(ux * sign, -uy * sign);
@@ -94,10 +94,10 @@ export function drawFormation(kind: FormationId, o: { x: number; y: number }, p:
     }
     case 'scatter': {
       let g = 2.6, w = Math.abs(dx), hh = Math.abs(dy), cols = 1, rows = 1;
-      for (let guard = 0; guard < 40; guard++) { cols = Math.floor(w / g) + 1; rows = Math.floor(hh / g) + 1; if (cols * rows <= SQUAD_MAX) break; g *= 1.1; }
+      for (let guard = 0; guard < 40; guard++) { cols = Math.floor(w / g) + 1; rows = Math.floor(hh / g) + 1; if (cols * rows <= max) break; g *= 1.1; }
       const x0 = Math.min(o.x, p.x), y0 = Math.min(o.y, p.y), sx = cols > 1 ? w / (cols - 1) : g, sy = rows > 1 ? hh / (rows - 1) : g;
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ x: x0 + c * Math.min(sx, g * 1.4), y: y0 + r * Math.min(sy, g * 1.4) });
-      return { cells: cells.slice(0, SQUAD_MAX), heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
+      return { cells: cells.slice(0, max), heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
     }
     case 'ambush': {
       const n = clampN(Math.floor(d / (S * 0.7)) + 1);

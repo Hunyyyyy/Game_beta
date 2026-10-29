@@ -1,0 +1,182 @@
+{
+  "_note": "Kế hoạch phát triển theo cấp Nhà chung (lửa trại) và cấp Nhà nghiên cứu. Chỉnh ở đây, không sửa code. id công trình = BuildingKind trong sim/buildings.ts; id nghiên cứu = id trong data/research.json. Nhóm (groups) để gọi gọn nhiều công trình một lần. 'rest' = mọi công trình chưa được mở ở cấp thấp hơn. Mọi mục 'unlock' cộng dồn: cấp cao mở cả những gì cấp thấp đã mở. Công trình KHÔNG còn cần nghiên cứu để mở khóa (research.json không còn 'unlocks.buildings'); nghiên cứu chỉ còn bản vẽ, nâng cấp nhà, quân sự và tự động hóa.",
+  "groups": {
+    "stores": [
+      "storage",
+      "toolstore",
+      "armory"
+    ],
+    "camps": [
+      "infantry",
+      "cavalry",
+      "archery",
+      "scouttent",
+      "wartent",
+      "drill",
+      "stable"
+    ],
+    "defence": [
+      "fence",
+      "gate",
+      "tower",
+      "trap"
+    ]
+  },
+  "campfire": {
+    "_note": "unlock = công trình được xây ở cấp lửa này. upgradeNeeds: muốn nâng lửa từ cấp này lên cấp kế thì mọi công trình đã mở khóa cho cấp này phải được xây xong và nâng tới cấp này (không phụ thuộc nghiên cứu).",
+    "levels": [
+      {
+        "level": 1,
+        "unlock": [
+          "builder",
+          "workshop",
+          "repair",
+          "@stores",
+          "huntlodge"
+        ],
+        "buildingMaxLevel": 1,
+        "upgradeNeeds": {
+          "allUnlockedAtLeastLevel": 1
+        }
+      },
+      {
+        "level": 2,
+        "unlock": [
+          "lab",
+          "@camps",
+          "house",
+          "field"
+        ],
+        "buildingMaxLevel": 2,
+        "upgradeNeeds": {
+          "allUnlockedAtLeastLevel": 2
+        }
+      },
+      {
+        "level": 3,
+        "unlock": [
+          "@rest"
+        ],
+        "buildingMaxLevel": 3,
+        "upgradeNeeds": {
+          "allUnlockedAtLeastLevel": 3
+        }
+      },
+      {
+        "level": 4,
+        "unlock": [],
+        "buildingMaxLevel": 3,
+        "upgradeNeeds": null
+      }
+    ]
+  },
+  "research": {
+    "_note": "Mỗi cấp Nhà nghiên cứu mở những bản vẽ/nghiên cứu nào. 'tabs' = tab nào của giao diện được mở. 'techs' là id trong research.json (cấp 3 dùng '@rest' = tất cả còn lại). 'newTechs' là nghiên cứu MỚI cần thêm vào research.json (xem định nghĩa bên dưới). Các nghiên cứu chỉ để mở công trình đã bỏ khỏi research.json; 'timber' và 'masonry' vẫn quyết định cấp tối đa của nhà (cấp 2, cấp 3) song song với cấp Nhà chung.",
+    "levels": [
+      {
+        "level": 1,
+        "tabs": [
+          "blueprints"
+        ],
+        "techs": [
+          "hammer1",
+          "axe1",
+          "pick1",
+          "hoe1",
+          "torch1",
+          "club1",
+          "timber"
+        ],
+        "closedTabs": [
+          "military",
+          "automation"
+        ]
+      },
+      {
+        "level": 2,
+        "tabs": [
+          "blueprints",
+          "military",
+          "automation"
+        ],
+        "techs": [
+          "axe2",
+          "pick2",
+          "hoe2",
+          "hammer2",
+          "hide1",
+          "spear1",
+          "sling1",
+          "masonry",
+          "signal",
+          "scout",
+          "scout2",
+          "form_basic",
+          "form_wedge",
+          "form_cells_10",
+          "form_squads_5",
+          "auto_fetch",
+          "auto_order"
+        ],
+        "autoAll": true
+      },
+      {
+        "level": 3,
+        "tabs": [
+          "blueprints",
+          "military",
+          "automation"
+        ],
+        "techs": [
+          "@rest"
+        ]
+      }
+    ]
+  },
+  "formationDefaults": {
+    "cells": 5,
+    "squads": 4
+  },
+  "buildMenu": {
+    "_note": "Menu xây dựng hiện số lượng đã xây / tối đa (vd 0/1), không dùng chữ. Tối đa lấy từ perFire trong buildings.ts, công trình menu chỉ có 1.",
+    "showCount": true,
+    "format": "{built}/{max}",
+    "hideText": true
+  },
+  "panelActions": {
+    "_note": "Panel khi bấm vào công trình dùng icon thay chữ. 'panel' mở panel riêng của nhà (nghiên cứu, xem dân, ...). Chữ chỉ hiện ở tooltip (?).",
+    "open": {
+      "icon": "panel",
+      "tooltip": "Mở bảng"
+    },
+    "upgrade": {
+      "icon": "arrow_up",
+      "tooltip": "Nâng cấp",
+      "cost": "levelCost"
+    },
+    "move": {
+      "icon": "arrow_4way",
+      "tooltip": "Di dời",
+      "cost": "free"
+    },
+    "demolish": {
+      "icon": "x_red",
+      "tooltip": "Phá bỏ",
+      "cost": "refund"
+    }
+  },
+  "undemolishable": {
+    "_note": "Công trình chỉ được xây 1 cái thì không thể phá bỏ (vẫn nâng cấp và di dời được). Lấy từ cấu hình: mọi công trình không có perFire và không phải đường/hàng rào.",
+    "kinds": [
+      "campfire",
+      "builder",
+      "storage",
+      "workshop",
+      "lab",
+      "repair",
+      "toolstore",
+      "armory"
+    ]
+  },
+  "formationDefaults_note": "cells = số ô tối đa của một trận pháp (số lính một đội); squads = số đội lập được. Nghiên cứu form_cells_10/15 và form_squads_5/6 (trong research.json) nâng hai số này."
+}

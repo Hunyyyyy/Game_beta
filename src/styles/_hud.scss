@@ -19,6 +19,7 @@
 .res {
   display: inline-flex; align-items: center; gap: 4px;
   font-weight: 700; font-variant-numeric: tabular-nums;
+  .ico { width: 18px; height: 18px; display: inline-flex; flex: none; }
   i { width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, .35); display: inline-block; }
   small { font-weight: 500; color: var(--muted); }
   &#rCoin small { display: none; }
