@@ -223,6 +223,10 @@ export class Sim {
   get(id: number): Villager | undefined { return this.byId.get(id); }
   say(text: string): void { this.log.push({ t: this.time, text }); if (this.log.length > 40) this.log.shift(); }
 
+  /** → construction.fireLevel */
+  fireLevel(): number { return construction.fireLevel(this); }
+  /** → construction.fireUpgradeBlock */
+  fireUpgradeBlock(level: number): string | null { return construction.fireUpgradeBlock(this, level); }
   /** → construction.capacity */
   capacity(_res?: Res): number { return construction.capacity(this, _res); }
   buildingAt(x: number, y: number): Building | undefined {

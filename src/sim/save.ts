@@ -10,12 +10,14 @@
 import { CURRENCY, emptyStock, RES_NAME } from './resources';
 import { SIEGE, TRIBES } from './combat';
 import { maxHp } from './buildings';
-import { SCREEN_QUESTS } from './quests';
+import questData from '../data/quests.json';
 import { decode, encode, packRuns, unpackRuns } from './codec';
 import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
+/** Quests that teach a button or wait for the clock: a game saved before quests were kept counts them as done. */
+const SCREEN_QUESTS = questData.quests.filter((q) => ['selectBuilding', 'openBuilding', 'inspectNode', 'inspectUnit', 'inspectAnimal', 'speed', 'daytime'].includes(q.done.type)).map((q) => q.id);
 export const SAVE_VERSION = 14;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */

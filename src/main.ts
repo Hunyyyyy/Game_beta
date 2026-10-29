@@ -6,7 +6,9 @@ import { DAY_LENGTH, TILE } from './sim/constants';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { RESEARCH } from './sim/research';
-import { CHAPTERS } from './sim/quests';
+import questData from './data/quests.json';
+
+const CHAPTERS = questData.chapters;
 import { resIcon } from './ui/resicons';
 import { Controller } from './ui/controller';
 import { $, costText } from './ui/dom';
@@ -109,7 +111,8 @@ window.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.target instanceof HTMLElement && /input|textarea|select/i.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
-  if (k === 'p') setSpeed(sim.speed === 0 ? 1 : 0);
+  if (k === 'p') setSpeed(sim.speed === 0 ? 1 : 0);
+
   else if (k === 'q') setSpeed(1); else if (k === 'e') setSpeed(2); else if (k === 'r') setSpeed(4); else if (k === 't') setSpeed(16);
   else if (k === 'b') togglePlace('storage'); else if (k === 'x') togglePlace('workshop'); else if (k === 'c') openWorkshop();
   else if (k === 'm') { if (map.isOpen) map.close(); else map.open(); }

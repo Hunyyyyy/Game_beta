@@ -1,7 +1,6 @@
 /** Quests: the guided plan that leads the village to the fourth campfire level (src/data/quests.json). They are worked out from the state of the village and of the screen, so nothing is saved. */
 import data from '../data/quests.json';
 import type { BuildingKind } from './buildings';
-import { fireLevel, fireUpgradeBlock } from './construction';
 import { Job, RoleId, roleOf } from './jobs';
 import type { Res } from './resources';
 import type { Sim } from './sim';
@@ -69,8 +68,8 @@ function measure(sim: Sim, d: QuestDone, ui: QuestUi): [number, number] {
   switch (d.type) {
     case 'buildBuilding': return [sim.buildings.filter((b) => b.kind === d.kind && b.done).length, d.count];
     case 'upgradeBuilding': return yes(sim.buildings.some((b) => b.kind === d.kind && b.done && b.level >= d.level));
-    case 'upgradeFire': return yes(fireLevel(sim) >= d.level);
-    case 'fireReady': return yes(fireUpgradeBlock(sim, d.level) === null);
+    case 'upgradeFire': return yes(sim.fireLevel() >= d.level);
+    case 'fireReady': return yes(sim.fireUpgradeBlock(d.level) === null);
     case 'researchTech': return yes(sim.researched.has(d.id));
     case 'population': return [sim.villagers.length, d.count];
     case 'stock': return [Math.floor(sim.stock[d.res]), d.count];
@@ -108,7 +107,7 @@ export function questViews(sim: Sim, ui: QuestUi): QuestView[] {
     let progress = '';
     if (open) {
       const d = quest.done, [have, need] = measure(sim, d, ui);
-      if (d.type === 'fireReady' || d.type === 'upgradeFire') progress = fireUpgradeBlock(sim, d.level - 1) ?? '';
+      if (d.type === 'fireReady' || d.type === 'upgradeFire') progress = sim.fireUpgradeBlock(d.level - 1) ?? '';
       else if (need > 1) progress = `${Math.min(have, need)}/${need}`;
     }
     return { quest, done, open, progress };
