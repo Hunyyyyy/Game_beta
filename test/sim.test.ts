@@ -28,6 +28,8 @@ const run = (sim: Sim, secs: number) => { for (let i = 0; i < secs * 20; i++) (s
 /** The old test start: three idle villagers. The real start (two with jobs) has its own test. */
 const provokeFor = (sm: Sim, v: Villager, a: ReturnType<typeof spawnAnimal>) => { provoke(sm, a, v.id); a.state = 'attack'; a.target = { kind: 'unit', id: v.id }; a.timer = 99; };
 const t_ = (sm: Sim, id: string) => sm.tribes.find((x) => x.id === id)!;
+/** Every house standing at once: the whole map seen and the campfire at its top level, so nothing is locked. */
+const buildEverything = (sm: Sim) => { sm.fog.state.fill(2); sm.buildings[0].level = 4; dev.buildAll(sm); };
 const mk = (seed = 1337): Sim => { const sm = new Sim(seed); sm.dev.noArrivals = true; sm.villagers.forEach((o) => { o.job = 'idle'; }); dev.addVillagers(sm, 1); return sm; };
 /** Put a finished house of this kind on the map (the real game needs builders and the right order; most tests only need the house). */
 const putBuilding = (sm: Sim, kind: Parameters<Sim['canPlace']>[0]) => {
@@ -98,7 +100,7 @@ ok(bush[1].amount === bush[1].max, 'bụi quả mọc lại sau 240 giây');
 // cây cạn thành gốc
 const tree = [...w.nodes.entries()].find(([, n]) => n.kind === 'tree')!;
 w.depleted(tree[0]);
-ok(w.tiles[tree[0]] === Tile.Grass && w.decor[tree[0]] === 1 && !w.nodes.has(tree[0]), 'cây cạn trở thành gốc, ô đi được');
+ok(w.tiles[tree[0]] === Tile.Grass && !w.nodes.has(tree[0]), 'cây cạn trở thành ô cỏ đi được (không để lại gốc)');
 
 // ======== M2.1: công cụ, Xưởng, chỗ đứng ========
 function reveal(sm: Sim) { sm.fog.state.fill(2); }
@@ -128,7 +130,7 @@ ok(none.maxDist < 0.8 && wood1.maxDist < 0.8, `dân đứng sát cây khi đốn
   const [a, b, c] = sm.villagers; sm.villagers.forEach((o) => { o.fullness = 1e9; });
   ok(sm.queueCraft('axe1') !== null, 'no craft house: nothing can be queued');
   sm.stock.wood = 200; sm.stock.stone = 100; sm.time = DAY_LENGTH * 0.3;
-  dev.buildAll(sm);
+  buildEverything(sm);
   const kinds = ['workshop', 'lab', 'repair', 'toolstore', 'armory', 'storage'];
   ok(kinds.every((k) => sm.buildings.some((x) => x.kind === k && x.done)), 'all six houses stand');
   ok(sm.buildingLock('workshop')?.startsWith('Mỗi công trình') && sm.placeBuilding('storage', sm.world.start.x, sm.world.start.y + 6).ok === false, 'only one building of each kind may exist');
@@ -266,7 +268,7 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   const [a, b] = sm.villagers;
   ok(sm.setJob([a.id], 'build') === 'Chưa có Nhà thợ xây, hoặc chưa xây xong' && a.job === 'food', 'without the builder house nobody can be made a builder');
   ok(sm.buildingLock('storage') === 'Cần dựng Nhà thợ xây trước' && sm.buildingLock('workshop') === 'Cần dựng Nhà thợ xây trước', 'the Kho and the craft house wait for the Nhà thợ xây');
-  ok(sm.buildingLock('lab') === 'Cần dựng Nhà chế tạo trước' && sm.buildingLock('repair') === 'Cần dựng Nhà chế tạo trước', 'research and repair houses wait for the craft house');
+  ok(sm.buildingLock('lab') === 'Cần nâng Nhà chung (đống lửa trại) lên cấp 2 để xây nhà nghiên cứu' && sm.buildingLock('repair') === 'Cần dựng Nhà chế tạo trước', 'the research house waits for campfire level 2 and the repair house for the craft house');
   sm.stock.wood = 100;
   const sp = sm.world.start; let spot: [number, number] | null = null;
   for (let dx = -8; dx <= 8 && !spot; dx++) for (let dy = 3; dy <= 9 && !spot; dy++) if (!sm.canPlace('builder', sp.x + dx, sp.y + dy)) spot = [sp.x + dx, sp.y + dy];
@@ -275,18 +277,20 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   run(sm, 200);
   ok(house.done && sm.crew().length === 1, 'the builder raised the Nhà thợ xây and stays on as a builder');
   ok(sm.buildingLock('storage') === null && sm.buildingLock('lab') !== null, 'now the Kho can be placed, the research house still waits');
-  const kho = sm.placeBuilding('storage', spot![0] + 4, spot![1]).building!;
-  ok(sm.orderWork([b.id], spot![0] + 4, spot![1])?.sent === 0 && b.job === 'wood', 'a villager who is not a builder cannot be sent to raise a house');
+  let khoAt: [number, number] | null = null; // the new rules keep a gap round every house: look for a place that is free
+  for (let dx = 3; dx <= 12 && !khoAt; dx++) for (let dy = -4; dy <= 8 && !khoAt; dy++) if (!sm.canPlace('storage', spot![0] + dx, spot![1] + dy)) khoAt = [spot![0] + dx, spot![1] + dy];
+  const kho = sm.placeBuilding('storage', khoAt![0], khoAt![1]).building!;
+  ok(sm.orderWork([b.id], khoAt![0], khoAt![1])?.sent === 0 && b.job === 'wood', 'a villager who is not a builder cannot be sent to raise a house');
   ok(sm.assignCrew([b.id]) === null && sm.crew().length === 2, 'the player picks a second builder');
   const c = sm.makeVillager(sp.x, sp.y, 'm', 'player'); (sm.villagers as Villager[]).push(c); sm.registerUnit(c);
   ok(sm.assignCrew([c.id]) !== null && sm.crew().length === 2, 'the house holds two builders at level 1');
   run(sm, 300);
   ok(kho.done, 'builders raise the Kho');
   sm.releaseCrew([b.id]); ok(b.job === 'idle' && sm.crew().length === 1, 'a builder can be let go');
-  sm.demolishBuilding(house.id); ok(sm.crew().length === 0 && a.job === 'idle', 'without the house its builders go idle');
+  ok(sm.demolishBuilding(house.id) === 'Công trình chỉ có một cái nên không phá bỏ được' && sm.crew().length === 1, 'the only Nhà thợ xây cannot be pulled down, so its builders stay');
   ok(sm.popCap() === 8 && sm.buildings[0].level === 1, 'the campfire starts as firewood: eight people, thirty of each good');
   sm.stock.wood = 100; sm.stock.stone = 100; sm.stock.hide = 20;
-  ok(sm.upgradeBuilding(sm.buildings[0].id) === null && sm.buildings[0].upgrading, 'the campfire can be raised a level');
+  ok(sm.upgradeBuilding(sm.buildings[0].id) === 'Cần dựng Nhà chế tạo trước khi nâng Nhà chung' && !sm.buildings[0].upgrading, 'the campfire waits until every house it has opened is built');
 }
 
 // ======== saving: a saved game goes on exactly like the one that was never stopped ========
@@ -493,9 +497,9 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   RESEARCH.enabled = true; const lock = new Sim(1337); lock.dev.freeBuild = false;
   ok(lock.buildingLock('house') !== null && lock.buildingLock('infantry') !== null, 'the Nhà dân and the Trại chiến binh need the Nhà thợ xây first');
   putBuilding(lock, 'builder');
-  ok(lock.buildingLock('house') === 'Cần nghiên cứu: Nhà dân' && lock.buildingLock('infantry') === 'Cần nghiên cứu: Trại chiến binh', 'and both must be researched before they can be built');
-  lock.researched.add('house'); lock.researched.add('barracks');
-  ok(lock.buildingLock('house') === null && lock.buildingLock('infantry') === null, 'researched, they can be placed');
+  ok(lock.buildingLock('house') === 'Cần nâng Nhà chung (đống lửa trại) lên cấp 2 để xây nhà dân' && lock.buildingLock('infantry') === 'Cần nâng Nhà chung (đống lửa trại) lên cấp 2 để xây trại chiến binh', 'and both wait for campfire level 2 (no research opens them any more)');
+  lock.buildings[0].level = 2;
+  ok(lock.buildingLock('house') === null && lock.buildingLock('infantry') === null, 'at campfire level 2 they can be placed');
   RESEARCH.enabled = false;
 }
 
@@ -656,7 +660,7 @@ const tickN = (sm: Sim, secs: number) => run(sm, secs);
   RESEARCH.enabled = false;
   const fire = sm.buildings[0];
   ok(b.done && b.level === 1 && sm.capacity() === 130, `Kho cấp 1 (đơn sơ) chứa 100 (tổng ${sm.capacity()})`);
-  ok(sm.upgradeBuilding(b.id) === 'Cần nâng Nhà chung (đống lửa trại) lên cấp 3', 'nhà không lên cao hơn cấp của Nhà chung cho phép');
+  ok(sm.upgradeBuilding(b.id) === 'Cần nâng Nhà chung (đống lửa trại) lên cấp 2', 'nhà không lên cao hơn cấp của Nhà chung cho phép');
   fire.level = 3; // the Bếp lửa lớn lets the other houses reach level 2
   ok(sm.upgradeBuilding(b.id) !== null && !b.upgrading, 'thiếu gỗ thì không nâng cấp được');
   sm.stock.wood = 40;
@@ -1035,7 +1039,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const place = (kind: 'lab' | 'workshop' | 'toolstore') => { sm.dev.freeBuild = true; sm.dev.instantBuild = true; const sp = sm.world.start; for (let r = 3; r < 12; r++) for (let dx = -r; dx <= r; dx++) for (let dy = 3; dy <= r + 3; dy++) if (!sm.canPlace(kind, sp.x + dx * 2, sp.y + dy)) { const x = sm.placeBuilding(kind, sp.x + dx * 2, sp.y + dy); sm.dev.freeBuild = false; sm.dev.instantBuild = false; return x.building!; } sm.dev.freeBuild = false; sm.dev.instantBuild = false; throw new Error('no spot'); };
   ok(sm.queueResearch('hammer1') === 'Cần dựng Nhà nghiên cứu', 'research needs the Nhà nghiên cứu');
   const lab = place('lab'), shop = place('workshop');
-  ok(sm.buildingLock('toolstore') === 'Cần nghiên cứu: Kho công cụ', 'the Kho công cụ must be researched before it can be built');
+  ok(sm.buildingLock('toolstore') === null, 'the Kho công cụ needs no research to be built');
   ok(sm.recipeLock('axe1') === 'Chưa có bản vẽ: Rìu gỗ' && sm.queueCraft('axe1') !== null, 'nothing can be made without its blueprint');
   ok(sm.queueResearch('hammer1') === null && sm.queueResearch('hammer1') !== null, 'a blueprint step can be queued once');
   ok(sm.queueResearch('club1') !== null, 'a later step waits for the earlier one');
@@ -1073,7 +1077,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(sm.upgradeBuilding(lab.id)?.startsWith('Cần nghiên cứu: Dựng bằng gỗ') ?? false, 'the house cannot be upgraded before its research');
   sm.queueResearch('timber'); sm.dev.fastWorks = true; run(sm, 40); sm.dev.fastWorks = false;
   ok(sm.researched.has('timber'), 'timber research done');
-  ok(sm.upgradeBuilding(lab.id) === 'Cần nâng Nhà chung (đống lửa trại) lên cấp 3', 'and the Nhà chung must be big enough first'); sm.buildings[0].level = 3;
+  ok(sm.upgradeBuilding(lab.id) === 'Cần nâng Nhà chung (đống lửa trại) lên cấp 2', 'and the Nhà chung must be big enough first'); sm.buildings[0].level = 3;
   sm.dev.instantBuild = true; ok(sm.upgradeBuilding(lab.id) === null && lab.level === 2, 'now the lab goes to level 2'); sm.dev.instantBuild = false;
   ok(sm.assignStaff([b.id], 'research') === null, 'and holds a second researcher');
   run(sm, 25);
@@ -1081,8 +1085,8 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(sm.techState(TECHS.find((t) => t.id === 'axe2')!).state === 'ready', 'the stone axe step is open now');
   // the stores need research, and fetching and ordering are researched automations
   sm.stock.wood = 300; sm.stock.stone = 100; sm.stock.coin = 40;
-  ok(sm.researched.has('hammer1') && sm.queueResearch('tool_store') === null, 'the Kho công cụ can be researched');
-  sm.researched.add('tool_store'); const store = place('toolstore');
+  ok(sm.researched.has('hammer1'), 'the first blueprints are researched');
+  const store = place('toolstore');
   ok(store.kind === 'toolstore' && sm.buildingLock('toolstore') !== null, 'once built it is unique too');
   const w = sm.villagers.find((o) => o !== a && o !== b && o !== c) ?? c; w.inside = null;
   sm.exitBuilding(c); sm.setJob([c.id], 'wood'); c.tools.axe = null; sm.toolStock.axe1 = 1; sm.stock.wood = 20; run(sm, 40);
@@ -1104,7 +1108,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const sm = mk(1337); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
   const [a, b] = sm.villagers;
   ok(sm.repairTool([a.id], 'axe') === 'Cần dựng Nhà sửa chữa', 'no repair house, no repairs');
-  dev.buildAll(sm); sm.toolStock.axe1 = 2;
+  buildEverything(sm); sm.toolStock.axe1 = 2;
   ok(sm.assignTool([a.id], 'axe', 1) !== null && a.tools.axe === null, 'a villager with no job (or another) cannot be handed an axe');
   sm.setJob([a.id], 'wood'); sm.setJob([b.id], 'build');
   ok(sm.assignTool([b.id], 'axe', 1) !== null && b.tools.axe === null, 'a builder is not given an axe either');
@@ -1143,7 +1147,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   // storage limits: the craft house holds only a few items without stores
   const sm2 = mk(1337); reveal(sm2);
   ok(sm2.storeCap('tool') === 10 && sm2.storeCap('gear') === 10, 'without stores a few items are kept at the craft house');
-  dev.buildAll(sm2);
+  buildEverything(sm2);
   ok(sm2.storeCap('tool') === 12 && sm2.storeCap('gear') === 12, 'the stores hold more as they grow');
 }
 
@@ -1174,15 +1178,15 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const wood = sm.stock.wood;
   ok(sm.moveBuilding(st.id, st.x, st.y) !== null, 'moving to the same place is refused');
   ok(sm.moveBuilding(st.id, sm.buildings[0].x, sm.buildings[0].y) !== null, 'moving onto the campfire is refused');
-  ok(sm.moveBuilding(st.id, A[0], A[1]) === null && sm.stock.wood === wood - 2, 'a finished building pays a fifth of its price to move');
-  ok(!st.done && st.rebuild && st.level === 1 && sm.capacity() === 30, 'it must be rebuilt and gives no space meanwhile');
+  ok(sm.moveBuilding(st.id, A[0], A[1]) === null && sm.stock.wood === wood, 'a finished building moves for free');
+  ok(st.done && !st.rebuild && st.level === 1 && sm.capacity() === 130, 'it is lifted and set down as it is: no rebuilding, the space stays');
   const t0 = sm.time; for (let t = 0; t < 120 && !st.done; t += 0.5) run(sm, 0.5);
-  ok(st.done && sm.time - t0 < 0.75 * levelDef(st, 1).buildTime, 'rebuilding takes about half the original time');
-  ok(sm.canMove(st, A[0] + 1, A[1]) === null, 'a building may shift by one tile onto its own old ground');
+  ok(st.done && sm.time - t0 < 0.75 * levelDef(st, 1).buildTime, '(an unfinished one still pays its remaining build time)');
+  ok(sm.canMove(st, A[0], A[1] + 1) === null && sm.canMove(st, A[0] + 1, A[1]) !== null, 'a building may shift by one tile onto its own old ground, but still keeps the two free tiles round it');
   sm.setJob(ids, 'idle');
   const w2 = sm.stock.wood;
-  ok(sm.demolishBuilding(st.id) === null && sm.stock.wood === w2 + 5 && !sm.getBuilding(st.id), 'tearing it down returns half of the wood');
-  ok(sm.world.occ[A[1] * N + A[0]] === 0, 'and frees the ground');
+  ok(sm.demolishBuilding(st.id) !== null && sm.stock.wood === w2 && !!sm.getBuilding(st.id), 'the only Kho cannot be torn down');
+  ok(sm.world.occ[A[1] * N + A[0]] === 1, 'so its ground stays taken');
 }
 
 {
@@ -1233,7 +1237,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(sm.assignGear([a.id], 'spear', 'weapon') !== null, 'no workshop, no gear to hand out');
   dev.unlockResearch(sm); sm.dev.freeBuild = true; sm.dev.instantBuild = true;
   putBuilding(sm, 'builder'); const sp = sm.world.start; for (let dx = -8; dx <= 8 && !sm.hasWorkshop(); dx++) for (let dy = 3; dy <= 11; dy++) if (!sm.canPlace('workshop', sp.x + dx, sp.y + dy)) { sm.placeBuilding('workshop', sp.x + dx, sp.y + dy); break; }
-  sm.dev.freeBuild = false; dev.buildAll(sm);
+  sm.dev.freeBuild = false; buildEverything(sm);
   ok(sm.assignGear([a.id], 'spear', 'weapon') !== null && a.weapon === null, 'an empty stock hands out nothing');
   sm.toolStock.spear1 = 1; sm.toolStock.club1 = 1; sm.toolStock.hide1 = 1;
   ok(sm.assignGear([a.id], 'spear', 'weapon') === null && a.weapon === 'spear' && sm.toolStock.spear1 === 0 && a.manualGear, 'a spear is taken from the stock and given');
@@ -1306,8 +1310,8 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
 {
   // the Ruộng must be researched, and the Nhà thợ xây stands first
   RESEARCH.enabled = true; const lock = new Sim(1337); lock.dev.freeBuild = false; putBuilding(lock, 'builder');
-  ok(lock.buildingLock('field') === 'Cần nghiên cứu: Làm ruộng', 'a field needs the "Làm ruộng" research');
-  lock.researched.add('farming'); ok(lock.buildingLock('field') === null, 'researched, a field can be placed');
+  ok(lock.buildingLock('field') === 'Cần nâng Nhà chung (đống lửa trại) lên cấp 2 để xây ruộng', 'a field waits for campfire level 2');
+  lock.buildings[0].level = 2; ok(lock.buildingLock('field') === null, 'at level 2 a field can be placed');
   RESEARCH.enabled = false;
 }
 
@@ -1443,7 +1447,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const [a, b] = sm.squads;
   ok(sm.squads.length === 3 && sm.squadUnits(a).length === 10 && sm.squadUnits(b).length === 8, 'three squads of the sizes asked for');
   const tent = sm.buildings.find((x) => x.kind === 'wartent')!; tent.level = 1;
-  ok(sm.squadLimit() === 3 && sm.createSquad().squad === undefined, 'a level 1 war tent allows three squads');
+  { const fresh = mk(1337); fresh.dev.freeBuild = false; putBuilding(fresh, 'wartent'); ok(fresh.squadLimit() === 4, 'a war tent allows four squads before any research'); }
   tent.level = 3; ok(sm.squadLimit() === 6 && sm.cardLimit() === 4 + 6 + 2, 'level 3: six squads and twelve cards');
   const civ = sm.villagers.find((v) => v.job !== 'fight')!;
   ok(sm.joinSquad([civ.id], a.id) !== null && civ.squad === -1, 'only soldiers join a squad');
@@ -1539,13 +1543,13 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(sm.assignRole(ids, 'hunt') !== null && sm.roleCount('hunt') === 0, 'without a Chòi thợ săn nobody can be a hunter');
   ok(sm.assignRole(ids, 'foot') !== null, 'without a Trại chiến binh nobody can be a soldier');
   ok(sm.releaseRole(sm.villagers.filter((v) => v.job === 'wood').map((v) => v.id)) === null && sm.roleCount('wood') === 0, 'the house takes the role back');
-  dev.buildAll(sm); sm.dev.freeBuild = false;
+  buildEverything(sm); sm.dev.freeBuild = false;
   const who = sm.villagers.filter((v) => v.job === 'idle').map((v) => v.id);
   ok(sm.assignRole(who.slice(0, 2), 'archer') === null && sm.villagers.filter((v) => v.job === 'fight' && v.arm === 'archer').length === 2, 'the throwers camp makes throwers');
   ok(sm.assignRole(who.slice(2, 3), 'cavalry') === null && sm.armOf(sm.villagers.find((v) => v.arm === 'cavalry')!) === 'cavalry', 'the cavalry camp makes riders, who count as cavalry');
   const th = sm.villagers.find((v) => v.arm === 'archer')!; sm.toolStock.club1 = 3; sm.toolStock.sling1 = 3;
   ok(sm.releaseRole([th.id]) === null && th.job === 'idle', 'a soldier is let go in his camp');
-  const camp = sm.building('lumberyard')!; sm.demolishBuilding(camp.id); ok(sm.roleCount('wood') === 0 && sm.roleCapacity('wood') === 0, 'pulling a house down takes its role from those over its places');
+  const camp = sm.building('lumberyard')!; ok(sm.demolishBuilding(camp.id) === 'Công trình chỉ có một cái nên không phá bỏ được' && sm.roleCapacity('wood') > 0, 'a house there is only one of cannot be pulled down, so its role stays');
 }
 {
   // ======== M6.5: plans, cards, the alarm ========
@@ -1900,7 +1904,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
 {
   // ======== training: a day or two away from work, a few per cent of one stat, and another that pays for it ========
   const sm = mk(1337); sm.dev.freeBuild = false; sm.villagers.forEach((v) => { v.job = 'idle'; });
-  dev.buildAll(sm); sm.dev.freeBuild = false; sm.stock.food = 500; sm.stock.coin = 100;
+  buildEverything(sm); sm.dev.freeBuild = false; sm.stock.food = 500; sm.stock.coin = 100;
   const yard = sm.building('infantry')!; const men = dev.raiseArmy(sm, 'spear', 5);
   const m0 = men[0], str0 = m0.stats.str, agi0 = m0.stats.agi, vit0 = m0.stats.vit, born = { ...m0.born };
   ok(m0.born.str === str0 && m0.train === null, 'every body remembers what it was born with');
