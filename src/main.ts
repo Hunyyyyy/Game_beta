@@ -9,6 +9,7 @@ import { RESEARCH } from './sim/research';
 import { Controller } from './ui/controller';
 import { $, costText } from './ui/dom';
 import { Menu } from './ui/menu';
+import { BuildTray } from './ui/buildtray';
 import { MapView } from './ui/minimap';
 import { BuildingBar, Confirm } from './ui/buildbar';
 import { WarBar } from './ui/warbar';
@@ -47,10 +48,12 @@ const ctx: Ctx = { sim, ctl, sprites, session, toast };
 const unitCard = new UnitCard($('ucard'), ctx, $('udetail')), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
 const buildingBar = new BuildingBar($('bbar'), ctx, renderer, new Confirm($('dialog'), ctx));
 const warBar = new WarBar($('warbar'), ctx);
+const tray = new BuildTray($('tray'), ctx);
 const map = new MapView(sim, cam, renderer, ctl, $('mini'), $('bigmapCanvas'), $('bigmap'));
 const menu = new Menu($('drawer'), $('drawerTabs'), $('drawerBody'), ctx, () => { const w = renderer.screenToWorld(renderer.w / 2, renderer.h / 2); return { x: w.x / TILE, y: w.y / TILE }; });
 $('btnCloseMap').addEventListener('click', () => map.close());
-$('btnMenu').addEventListener('click', () => { menu.toggle(); });
+$('btnMenu').addEventListener('click', () => { tray.close(); menu.toggle(); });
+$('btnBuild').addEventListener('click', () => { menu.close(); tray.toggle(); });
 // ---------------------------------------------------------------- landscape on phones
 // A phone held upright gets a prompt (and the game pauses until it is turned); fullscreen plus an orientation lock is tried where the browser allows it.
 const rotateEl = $('rotate'), fullBtn = $<HTMLButtonElement>('btnFull');
@@ -93,7 +96,7 @@ foldBtn.addEventListener('click', () => { const on = !$('sheet').classList.conta
 $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
 $('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
 function setSpeed(s: number) { sim.speed = s; if (s > 0) { settings.speed = s; saveSettings(settings); } syncButtons(); }
-function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); } }
+function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); tray.close(); } }
 function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'workshop' && x.done); if (b) { ctl.selectBuilding(b.id, true); ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE); } else toast('Chưa có Xưởng'); }
 function syncButtons() {
   speedBtns.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === sim.speed)));
@@ -172,7 +175,7 @@ function updateHud(now: number) {
     $<HTMLButtonElement>('btnPlaceOk').disabled = why !== null;
     $('btnPlaceOk').textContent = moving ? '✓ Dời tới đây' : '✓ Đặt ở đây';
   }
-  menu.update();
+  menu.update(); tray.update();
   syncButtons();
 }
 ctl.onChange = () => { lastHud = 0; syncButtons(); };
