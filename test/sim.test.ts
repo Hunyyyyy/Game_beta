@@ -1650,7 +1650,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   dev.giveMaps(sm, 1);
   const i1 = sm.tribeIntel('axe')!, t = tribeById(sm, 'axe');
   ok(i1.level === 1 && i1.people.length === 0 && i1.soldiers === null && i1.structures.every((x) => x.kind === 'fire') && i1.population >= 2, 'level 1 shows only the fire and a rough head count');
-  ok(i1.box.x1 - i1.box.x0 <= 2 * (i1.yard + 24) && i1.box.x0 <= Math.floor(t.camp.x) - i1.yard - 24 + 1 && !!i1.toUs, 'the map covers the camp and 24 tiles round it, and tells the way in');
+  ok(i1.box.x1 - i1.box.x0 > i1.box.y1 - i1.box.y0 && i1.box.x0 <= Math.floor(t.camp.x) - i1.yard - 24 + 1 && i1.box.x1 >= Math.floor(t.camp.x) + i1.yard + 24 - 1 && i1.box.y0 <= Math.floor(t.camp.y) - i1.yard - 24 + 1 && !!i1.toUs, 'the map is wider than tall and covers the camp and 24 tiles round it, and tells the way in');
   dev.giveMaps(sm, 2);
   const i2 = sm.tribeIntel('axe')!;
   ok(i2.level === 2 && i2.people.length > 0 && i2.people.every((p) => p.mark === 'unknown') && i2.soldiers === null, 'level 2 shows people as shapes, not who is a soldier');
@@ -1839,6 +1839,16 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
     ok(!t.props.some((p) => p.kind === 'fire') && t.props.length === 0, 'then they go on to every other work of the village');
     ok(plan.status === 'done' && plan.result === 'won' && t.state === 'surrendered' && sm.pendingTribe === 'axe', 'with no soldiers, no fire and no works left the war is won and the people ask for mercy');
     void b;
+  }
+  {
+    // what a soldier sees to attack: night and weather cut it, a torch brings it back, an archer looks a little further
+    const { sm, a } = setup(); const v = sm.squadUnits(a)[0], day = sm.light;
+    sm.time = DAY_LENGTH * 0.3; sm.weather = 'clear';
+    ok(sm.sightOf(v) === sm.visionRadius() && sm.visionRadius() >= 6, `by day on a clear day he sees as far as the village does (${sm.sightOf(v)})`);
+    sm.weather = 'mist'; const fog = sm.sightOf(v); ok(fog < sm.sightOf({ ...v, torch: { dur: 99 } } as never), `mist cuts it (${fog}) and a torch gives it back`);
+    sm.weather = 'storm'; ok(sm.sightOf(v) < fog, 'a storm cuts it more');
+    sm.weather = 'clear'; v.weapon = 'bow'; v.arm = 'archer'; ok(sm.sightOf(v) === sm.visionRadius() + 1, 'an archer sees one tile further');
+    void day;
   }
   {
     // lost: when the army is gone, or pulled back

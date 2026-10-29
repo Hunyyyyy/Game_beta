@@ -3,6 +3,7 @@ import * as army from './army';
 import * as forecast from './forecast';
 import * as scouting from './scouting';
 import * as siege from './siege';
+import { sightOf } from './environment';
 import { surrender, tribeOf } from './tribes';
 import * as warplan from './warplan';
 import { armOf } from './battle';
@@ -152,6 +153,8 @@ export const WAR = {
   cancelPlan(this: Sim, plan: Plan): string | null { return warplan.cancelPlan(this, plan); },
   /** → warplan.isLogistics */
   isLogistics(this: Sim, plan: Plan, m: Mission): boolean { return warplan.isLogistics(plan, m); },
+  /** → environment.sightOf */
+  sightOf(this: Sim, v: Villager): number { return sightOf(this, v); },
   /** → warplan.canTarget */
   canTarget(this: Sim, objective: Objective, tribe: string | null): boolean { return warplan.canTarget(this, objective, tribe); },
 };

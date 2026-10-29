@@ -2,6 +2,7 @@
 import { isRestTime, rollWeather, seasonOf, SEASON_DEF, WEATHER } from './calendar';
 import { FIRE_VISION, NIGHT_VISION, VISION } from './constants';
 import { BUILDINGS } from './buildings';
+import { armOf } from './battle';
 import type { Sim } from './sim';
 import { Villager } from './model';
 
@@ -45,4 +46,11 @@ export function visionRadius(sim: Sim): number {
   return Math.max(1, Math.round(NIGHT_VISION + (VISION - NIGHT_VISION) * sim.light) - WEATHER[sim.weather].vision);
 }
 
+/** How far a soldier of ours sees an enemy to go for him: as far as he sees (weather and night cut it, a torch brings it back), an archer a little further. */
+export function sightOf(sim: Sim, v: Villager): number {
+  const r = visionRadius(sim);
+  return (v.torch || v.lit ? Math.max(r, TORCH_VISION) : r) + (armOf(v) === 'archer' ? ARCHER_SIGHT : 0);
+}
+/** How many tiles further an archer looks than a man on foot. */
+export const ARCHER_SIGHT = 1;
 export function fireRadius(sim: Sim): number { return Math.max(1, FIRE_VISION - WEATHER[sim.weather].vision); }

@@ -245,7 +245,8 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   if (scanNow) v.fight.scan = 0.35;
   // a unit that is hitting a chosen target and is not wavering needs no new look round him every tick: that is what makes a battle of hundreds heavy
   const looking = scanNow || v.phase === 'flee' || (v.phase === 'fight' && (!v.fight.target || v.morale < MORALE.flee));
-  const threats = looking ? threatsOf(sim, v, SIGHT + 2) : [];
+  const sight = v.team === 'player' ? sim.sightOf(v) : SIGHT; // our soldiers see as far as they see: night and weather cut it, a torch brings it back
+  const threats = looking ? threatsOf(sim, v, sight + 1) : [];
 
   if (rest) { // a threat wakes the sleeper; only a soldier then stays up for the night, everyone else runs and goes back to bed
     if (scanNow && threats.length && threats[0].d < 7) { if (isFighter(v)) v.nightOwl = true; sim.resetTask(v); } else return false;
@@ -339,7 +340,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   if (v.stance === 'retreat') {
     if (threats.length && threats[0].d < 8) { startFlee(sim, v, 6); return true; }
   } else if (threats.length && f.scan >= 0) {
-    const range = f.mode === 'hold' ? weaponOf(v).range + 1.5 : v.stance === 'defensive' ? DEFENSIVE : SIGHT;
+    const range = f.mode === 'hold' ? weaponOf(v).range + 1.5 : v.stance === 'defensive' ? Math.min(DEFENSIVE, sim.sightOf(v)) : sim.sightOf(v);
     const pick = threats.find((t) => t.d <= range && (!f.anchor || v.stance !== 'defensive' || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
     if (pick) { f.target = pick.t; const e = resolve(sim, pick.t); if (e) { engage(sim, v, e, dt); return true; } }
   }

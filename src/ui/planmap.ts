@@ -44,13 +44,13 @@ export interface MapEvents {
   onTarget(squad: number, target: MissionTarget): void;
   /** An item of the ring of a squad (opened by holding a press on it) was picked. */
   onSquadAction(squad: number, action: SquadAction): void;
-  /** The arrow of a squad was pressed: it is to be bent. */
-  onArrow(squad: number): void;
   /** A ring opened: every other panel gives way to it. */
   onRing(): void;
 }
 /** What the ring of a squad offers: its orders, editing its formation, removing it, taking cells out, and its soldiers. */
-export type SquadAction = 'order' | 'edit' | 'delete' | 'trim' | 'roster';
+export type SquadAction = 'order' | 'edit' | 'delete' | 'trim' | 'roster' | 'bend' | 'clear';
+/** What the ring of an arrow offers: bend it, or take it away. */
+const ARROW_ITEMS: Array<{ id: SquadAction; name: string; icon: string; note: string }> = [{ id: 'bend', name: 'Sửa', icon: '✎', note: '' }, { id: 'clear', name: 'Xóa', icon: '🗑', note: '' }];
 const SQUAD_ITEMS: Array<{ id: SquadAction; name: string; icon: string; note: string }> = [
   { id: 'order', name: 'Lệnh', icon: '☰', note: 'Hành động, giờ đánh, rút lui, thẻ lệnh' }, { id: 'edit', name: 'Sửa', icon: '✎', note: 'Đổi độ dài, bán kính, chỗ đứng của đội hình' },
   { id: 'delete', name: 'Xóa đội', icon: '🗑', note: 'Xóa hẳn đội, lính trở về hàng chưa có đội' }, { id: 'trim', name: 'Xóa ô', icon: '✂', note: 'Bấm vào ô muốn bỏ khỏi đội hình' },
@@ -140,7 +140,6 @@ function glyph(ctx: CanvasRenderingContext2D, kind: FormationId, cx: number, cy:
 export class PlanMapView {
   readonly root = h('div', { class: 'pview' });
   private readonly canvas = h('canvas', { class: 'planmap' });
-  private readonly pop = h('div', { class: 'ppop', hidden: true });
   private readonly note = h('div', { class: 'pnote', hidden: true });
   private readonly ground = document.createElement('canvas');
   private groundKey = '';
@@ -158,7 +157,7 @@ export class PlanMapView {
   /** An arrow not yet placed: where its head would go, following the pointer. */
   private arrowAim: Pt | null = null;
   /** The ring of formations while it is open: where it was pressed (screen), where it sits, the same place on the ground, and the item under the finger. */
-  private ring: { press: Pt; centre: Pt; world: Pt; hover: number; squad?: number } | null = null;
+  private ring: { press: Pt; centre: Pt; world: Pt; hover: number; squad?: number; arrow?: boolean } | null = null;
   /** A formation picked from the ring, waiting for the drag that sizes it. */
   private making: { kind: FormationId; at: Pt } | null = null;
   /** While a formation is being shaped: where the finger is on the ground, and where the drag began. */
@@ -169,7 +168,7 @@ export class PlanMapView {
   private downAt: Pt = { x: 0, y: 0 }; private moved = false; private pinch = 0; private queued = false;
 
   constructor(private readonly sim: Sim, private readonly ev: MapEvents) {
-    this.root.append(this.canvas, this.pop, this.note);
+    this.root.append(this.canvas, this.note);
     const at = (e: { clientX: number; clientY: number }): Pt => { const b = this.canvas.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; };
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     this.canvas.addEventListener('pointerdown', (e) => {
@@ -257,7 +256,7 @@ export class PlanMapView {
       this.routes.set(m.squad, { start, go, back: m.retreat.length ? this.sim.routeTime(s, from, m.retreat) : null });
     }
     this.canvas.style.cursor = ui.mode === 'pan' ? 'grab' : ui.mode === 'trim' ? 'pointer' : 'crosshair';
-    if (changed) { this.pop.hidden = true; this.making = null; }
+    if (changed) this.making = null;
     this.syncShape();
     if (!(ui.mode === 'path' || ui.mode === 'retreat') || this.listOf(ui.mode === 'retreat').length) this.arrowAim = null;
     this.resize();
@@ -270,8 +269,9 @@ export class PlanMapView {
   fit(): void {
     const i = this.intel; if (!i) return;
     const bw = i.box.x1 - i.box.x0, bh = i.box.y1 - i.box.y0;
-    this.k = clamp(Math.min(this.W / bw, this.H / bh) * 0.96, MIN_K, MAX_K);
+    this.k = clamp(Math.max(this.W / bw, this.H / bh), MIN_K, MAX_K); // the map covers the whole screen
     this.cx = (i.box.x0 + i.box.x1) / 2; this.cy = (i.box.y0 + i.box.y1) / 2;
+    this.limit();
     this.redraw();
   }
   zoomBy(f: number): void { this.zoom(f, this.W / 2, this.H / 2); this.redraw(); }
@@ -279,18 +279,28 @@ export class PlanMapView {
   private resize(): void {
     const w = this.root.clientWidth || 800, hh = this.root.clientHeight || 500, dpr = (globalThis as { devicePixelRatio?: number }).devicePixelRatio || 1;
     this.W = w; this.H = hh;
+    this.limit();
     if (this.canvas.width !== Math.round(w * dpr) || this.canvas.height !== Math.round(hh * dpr)) { this.canvas.width = Math.round(w * dpr); this.canvas.height = Math.round(hh * dpr); }
   }
 
   /** Zoom by a factor, keeping the tile under the screen point where it is. */
   private zoom(f: number, sx: number, sy: number): void {
     const wx = this.cx + (sx - this.W / 2) / this.k, wy = this.cy + (sy - this.H / 2) / this.k;
-    this.k = clamp(this.k * f, MIN_K, MAX_K);
+    this.k = clamp(this.k * f, this.minK(), MAX_K);
     this.cx = wx - (sx - this.W / 2) / this.k; this.cy = wy - (sy - this.H / 2) / this.k;
     this.limit();
   }
   /** Keep the middle of the screen on the map. */
-  private limit(): void { const i = this.intel; if (i) { this.cx = clamp(this.cx, i.box.x0, i.box.x1); this.cy = clamp(this.cy, i.box.y0, i.box.y1); } }
+  /** The least zoom: the map still covers the screen. */
+  private minK(): number { const i = this.intel; return i ? Math.max(MIN_K, this.W / (i.box.x1 - i.box.x0), this.H / (i.box.y1 - i.box.y0)) : MIN_K; }
+  /** Keep the screen on the map: no brown round it. */
+  private limit(): void {
+    const i = this.intel; if (!i) return;
+    this.k = Math.max(this.k, this.minK());
+    const hw = this.W / 2 / this.k, hh = this.H / 2 / this.k, mx = (i.box.x0 + i.box.x1) / 2, my = (i.box.y0 + i.box.y1) / 2;
+    this.cx = i.box.x1 - i.box.x0 <= 2 * hw ? mx : clamp(this.cx, i.box.x0 + hw, i.box.x1 - hw);
+    this.cy = i.box.y1 - i.box.y0 <= 2 * hh ? my : clamp(this.cy, i.box.y0 + hh, i.box.y1 - hh);
+  }
 
   private redraw(): void {
     if (this.queued) return;
@@ -339,11 +349,10 @@ export class PlanMapView {
     const press = this.downAt, edge = RING + ITEM + 10;
     // near an edge the ring is moved in so that all of it shows; the press stays where it was
     const centre = { x: clamp(press.x, edge, Math.max(edge, this.W - edge)), y: clamp(press.y, edge, Math.max(edge, this.H - edge)) };
-    const squad = this.squadAt(press);
-    this.ring = { press, centre, world: this.world(press), hover: -1, squad };
+    const squad = this.squadAt(press), arrow = squad === undefined && this.plan?.status === 'draft' ? this.arrowAt(press) : undefined; // a squad first, then the arrow of one
+    this.ring = { press, centre, world: this.world(press), hover: -1, squad: squad ?? arrow, arrow: arrow !== undefined };
     this.gesture = 'menu';
-    this.pop.hidden = true;
-    if (squad !== undefined) { this.ev.onSelect(squad); this.ev.onRing(); }
+    if (this.ring.squad !== undefined) { this.ev.onSelect(this.ring.squad); this.ev.onRing(); }
     this.redraw();
   }
 
@@ -351,7 +360,8 @@ export class PlanMapView {
   private squadAt(p: Pt): number | undefined {
     return (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)))?.squad;
   }
-  private ringCount(): number { return this.ring?.squad !== undefined ? SQUAD_ITEMS.length : FORMATION_IDS.length; }
+  private ringItems(): typeof SQUAD_ITEMS { return this.ring?.arrow ? ARROW_ITEMS : SQUAD_ITEMS; }
+  private ringCount(): number { return this.ring?.squad !== undefined ? this.ringItems().length : FORMATION_IDS.length; }
 
   private itemCentre(i: number): Pt {
     const a = -Math.PI / 2 + (i * 2 * Math.PI) / this.ringCount(), c = this.ring!.centre;
@@ -366,7 +376,7 @@ export class PlanMapView {
   private pickFromRing(): void {
     const r = this.ring; this.ring = null;
     if (!r || r.hover < 0) return;
-    if (r.squad !== undefined) { this.ev.onSquadAction(r.squad, SQUAD_ITEMS[r.hover].id); return; }
+    if (r.squad !== undefined) { this.ev.onSquadAction(r.squad, this.ringItems()[r.hover].id); return; }
     const kind = FORMATION_IDS[r.hover];
     if (!this.sim.formationOpen(kind)) { this.ev.onNotice(`Cần nghiên cứu để dùng ${FORMATIONS[kind].name}`); return; }
     this.making = { kind, at: r.world };
@@ -399,12 +409,7 @@ export class PlanMapView {
     const m = this.making;
     this.note.hidden = !m;
     if (!m) return;
-    const how: Record<FormationId, string> = {
-      line: 'các ô xếp thành hàng từ điểm đã chọn tới con trỏ', circle: 'điểm đã chọn là tâm, khoảng kéo là bán kính', wedge: 'điểm đã chọn là mũi nhọn, hai cánh chạy về phía con trỏ',
-      horns: 'một hàng từ điểm đã chọn tới con trỏ, hai đầu cong ra trước', scatter: 'các ô rải kín khung từ điểm đã chọn tới con trỏ', ambush: 'hai hàng so le từ điểm đã chọn tới con trỏ',
-    };
     this.note.replaceChildren(h('b', { text: FORMATIONS[m.kind].name }),
-      h('span', { text: `Kéo ra từ điểm đã chọn: ${how[m.kind]} (${SQUAD_MIN} đến ${SQUAD_MAX} ô; dưới ${SQUAD_MIN} ô là ô đỏ, không tạo được). Bấm để chốt; bấm ngay điểm đã chọn là hủy. Lính đưa vào đội sau.` }),
       h('button', { class: 'sm', text: 'Hủy', onclick: () => { this.making = null; this.say(); this.redraw(); } }));
   }
 
@@ -417,16 +422,14 @@ export class PlanMapView {
     }
     // a squad first, then a man, then a work
     const near = this.squadAt(p);
-    if (near !== undefined) { this.pop.hidden = true; this.ev.onSelect(near); return; }
+    if (near !== undefined) { this.ev.onSelect(near); return; }
     const hit = this.targets.map((t) => ({ t, d: Math.hypot(t.x - p.x, t.y - p.y) })).filter((x) => x.d <= x.t.r).sort((a, b) => a.d - b.d)[0];
     if (hit) {
       const sq = this.plan?.missions.find((m) => m.squad === this.ui.selected && m.deploy);
-      if (hit.t.pick && sq && this.plan?.status === 'draft' && this.ui.mode !== 'retreat') { this.pop.hidden = true; this.ev.onTarget(sq.squad, hit.t.pick); return; } // a squad is chosen: this is where it goes
-      this.showPop(p, hit.t.title, hit.t.text, hit.t.pick); return;
+      if (hit.t.pick && sq && this.plan?.status === 'draft' && this.ui.mode !== 'retreat') { this.ev.onTarget(sq.squad, hit.t.pick); return; } // a squad is chosen: this is where it goes
+      return;
     }
-    const arrow = this.arrowAt(p);
-    if (arrow !== undefined && this.plan?.status === 'draft') { this.pop.hidden = true; this.ev.onArrow(arrow); return; } // the arrow of a squad: it is to be bent
-    this.pop.hidden = true; this.ev.onSelect(-1);
+    this.ev.onSelect(-1);
   }
 
   /** The squad whose arrow passes within a finger's width of a screen point. */
@@ -441,16 +444,6 @@ export class PlanMapView {
       }
     }
     return undefined;
-  }
-
-  /** What a pressed work or man is. With squads on the map and the plan still a draft, a button for each sends that squad to attack it. */
-  private showPop(p: Pt, title: string, text: string, pick?: MissionTarget): void {
-    const squads = pick && this.plan?.status === 'draft' ? this.plan.missions.filter((m) => m.deploy && this.sim.squadById(m.squad)) : [];
-    this.pop.replaceChildren(h('b', { text: title }), h('p', { class: 'sub', text }),
-      ...(squads.length ? [h('small', { text: 'Đội nào tấn công mục tiêu này?' }), h('div', { class: 'chips' }, ...squads.map((m) => h('button', { class: 'chip', text: `🎯 ${this.sim.squadById(m.squad)!.name}`, onclick: () => { this.pop.hidden = true; this.ev.onTarget(m.squad, pick!); } })))] : []),
-      );
-    this.pop.style.left = `${clamp(p.x + 14, 8, Math.max(8, this.W - 280))}px`; this.pop.style.top = `${clamp(p.y + 14, 8, Math.max(8, this.H - 150))}px`;
-    this.pop.hidden = false;
   }
 
   // ---------------------------------------------------------------- the arrow
@@ -710,13 +703,12 @@ export class PlanMapView {
     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(r.press.x, r.press.y, 6, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#1a1208'; ctx.lineWidth = 2; ctx.stroke();
     if (r.squad !== undefined) {
-      SQUAD_ITEMS.forEach((it, i) => {
+      this.ringItems().forEach((it, i) => {
         const c = this.itemCentre(i), hot = i === r.hover;
         ctx.fillStyle = hot ? '#ffd23a' : 'rgba(40,30,20,0.94)'; ctx.strokeStyle = hot ? '#fff' : 'rgba(255,255,255,0.75)'; ctx.lineWidth = hot ? 3 : 2;
         ctx.beginPath(); ctx.arc(c.x, c.y, ITEM + (hot ? 4 : 0), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         label(ctx, it.icon, c.x, c.y - 4, 20, hot ? '#1a1208' : '#fff'); label(ctx, it.name, c.x, c.y + 21, 11, hot ? '#1a1208' : '#fff');
       });
-      if (r.hover >= 0) label(ctx, SQUAD_ITEMS[r.hover].note, this.W / 2, this.H - 24, 13);
       return;
     }
     FORMATION_IDS.forEach((f, i) => {
@@ -728,24 +720,6 @@ export class PlanMapView {
       label(ctx, FORMATIONS[f].name, c.x, c.y + 21, 11, hot ? '#1a1208' : open ? '#fff' : '#9a9080');
     });
     const hot = r.hover >= 0 ? FORMATION_IDS[r.hover] : null;
-    if (hot) label(ctx, this.sim.formationOpen(hot) ? FORMATIONS[hot].note : `Cần nghiên cứu: ${FORMATIONS[hot].name}`, this.W / 2, this.H - 24, 13);
+    if (hot && !this.sim.formationOpen(hot)) label(ctx, `Cần nghiên cứu: ${FORMATIONS[hot].name}`, this.W / 2, this.H - 24, 13);
   }
-}
-
-/** The panel over the map: what the scouts know of the village, the key to the signs, and what each level of map shows. */
-export function planMapInfo(sim: Sim, tribeId: string): HTMLElement {
-  const i = sim.tribeIntel(tribeId);
-  if (!i) return h('p', { class: 'sub', text: 'Chưa có bản đồ làng này: cử trinh sát để vẽ.' });
-  const age = i.accuracy >= 0.95 ? 'báo cáo mới' : i.accuracy >= 0.7 ? 'báo cáo hơi cũ' : i.accuracy >= 0.4 ? 'báo cáo đã cũ' : 'báo cáo rất cũ';
-  const s = i.soldiers, army = s ? `Lính: ${s.foot} ${ARM_NAME.foot.toLowerCase()}, ${s.archer} ${ARM_NAME.archer.toLowerCase()}, ${s.cavalry} ${ARM_NAME.cavalry.toLowerCase()} · ` : '';
-  const items: Array<[string, string]> = [];
-  for (const w of i.structures) if (!items.some((x) => x[1] === w.label)) items.push([WORK_COLOR[w.kind] ?? '#8a6a3a', w.label]);
-  for (const m of new Set(i.people.map((p) => p.mark))) items.push([MARK_COLOR[m], MARK_NAME[m]]);
-  if (i.people.some((p) => p.leader)) items.push(['#ffd23a', 'Thủ lĩnh (vòng vàng)']);
-  const legend = h('div', { class: 'btns', style: 'gap:8px;flex-wrap:wrap' }, ...items.map(([color, text]) => h('small', {},
-    h('span', { style: `display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;background:${color};border:1px solid #1a1208` }), text)));
-  return h('div', { style: 'display:grid;gap:4px' },
-    h('div', { class: 'nm' }, h('b', { text: `Bản đồ ${i.name}` }), h('small', { text: `${army}khoảng ${i.population} người · ${age}${i.gaps ? ' · còn hở' : ''}` })),
-    h('small', { class: 'sub', text: 'Nhấn giữ một điểm trên bản đồ để lập đội. Bấm vào lửa, kho, lính để xem chú thích.' }),
-    h('details', {}, h('summary', { text: 'Chú giải và cấp bản đồ' }), legend, h('small', { class: 'sub', text: `Vùng vẽ: khu trại và 24 ô xung quanh. ${LEVEL_NOTE[i.level]}` })));
 }
