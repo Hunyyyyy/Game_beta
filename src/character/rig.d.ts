@@ -13,6 +13,12 @@ export type AnimTable = Record<string, AnimDef>;
 export const W: number;
 export const H: number;
 export const CX: number;
+/** The size of a drawn frame, which has room round the body for what is held out from it, and where the body sits in it. */
+export const FW: number;
+export const FH: number;
+export const PADX: number;
+export const PADT: number;
+export function cropToBody(px: Uint8ClampedArray): Uint8ClampedArray;
 export function renderFrame(anims: AnimTable, name: string, idx: number, view: View, look: Look, carryKind?: string, tool?: { kind?: string; tier?: number }, armor?: string | null, extra?: { torch?: number }): Uint8ClampedArray;
 export function defaultAnims(): AnimTable;
 export function formatAnims(anims: AnimTable): string;

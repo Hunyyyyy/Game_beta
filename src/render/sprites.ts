@@ -1,4 +1,4 @@
-import { AnimTable, CX, H, W, renderFrame } from '../character/rig.js';
+import { AnimTable, CX, FH, FW, PADT, PADX, renderFrame } from '../character/rig.js';
 import { renderAnimal, type AnimalClips, type AnimalDef } from '../character/animal-rig.js';
 import bodiesJson from '../data/animals/bodies.json';
 import bipedClips from '../data/animals/anims/biped.json';
@@ -108,13 +108,13 @@ export const anims = animsJson as unknown as AnimTable;
 const BODIES = bodiesJson as unknown as Record<string, AnimalDef>;
 /** Each body type has its own set of clips: four legs, hopping, two legs and fish. */
 const ANIMAL_CLIPS: Record<string, AnimalClips> = { quadruped: quadrupedClips as AnimalClips, hopper: hopperClips as AnimalClips, biped: bipedClips as AnimalClips, fish: fishClips as AnimalClips };
-export const SPRITE_FEET = { x: CX, y: 42 };
+export const SPRITE_FEET = { x: CX + PADX, y: 42 + PADT };
 
 /** Một vật thể đã vẽ sẵn từ bản vẽ JSON: các khung hình + điểm neo (chân vật thể). */
 export interface Prop { frames: HTMLCanvasElement[]; ax: number; ay: number; fps: number }
 
 function make(def: unknown, seed: number, params?: Record<string, number>): Prop {
-  const res = Blueprint.render(def as BlueprintDef, { seed, params });
+  const res = Blueprint.render(def as BlueprintDef, { seed, params, fit: true }); // fit: nothing drawn past the edge of the picture is cut off
   if (res.warnings.length) console.warn('[blueprint]', (def as { name?: string }).name, res.warnings);
   return { frames: toCanvases(res), ax: res.anchor?.[0] ?? res.w >> 1, ay: res.anchor?.[1] ?? res.h - 1, fps: res.fps };
 }
@@ -320,8 +320,8 @@ export class Sprites {
     const key = `${name}|${frame}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : '-'}|${v.armor ?? '-'}|${flick ?? '-'}`;
     let c = this.vcache.get(key);
     if (!c) {
-      const [cv, g] = canvas(W, H);
-      g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === undefined ? undefined : { torch: flick })), W, H), 0, 0);
+      const [cv, g] = canvas(FW, FH);
+      g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === undefined ? undefined : { torch: flick })), FW, FH), 0, 0);
       this.vcache.set(key, cv); c = cv;
     }
     return c;

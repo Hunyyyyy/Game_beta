@@ -295,7 +295,7 @@
   }
 
   function renderFrame(def, o) {
-    var ctx = { w: o.w, h: o.h, buf: new Uint8ClampedArray(o.w * o.h * 4), palette: o.palette, seed: o.seed, frame: o.frame, params: o.params, warn: o.warn, wrap: o.wrap, ox: 0, oy: 0, flip: false, ops: 0, cc: new Map() };
+    var ctx = { w: o.w, h: o.h, buf: new Uint8ClampedArray(o.w * o.h * 4), palette: o.palette, seed: o.seed, frame: o.frame, params: o.params, warn: o.warn, wrap: o.wrap, ox: o.pad || 0, oy: o.pad || 0, flip: false, ops: 0, cc: new Map() };
     if (def.bg !== undefined) {
       var c = parseColor(def.bg, ctx.palette);
       if (c) for (var i = 0; i < o.w * o.h; i++) { ctx.buf[i * 4] = c[0]; ctx.buf[i * 4 + 1] = c[1]; ctx.buf[i * 4 + 2] = c[2]; ctx.buf[i * 4 + 3] = c[3]; }
@@ -321,7 +321,21 @@
     var palette = Object.assign({}, def.palette && typeof def.palette === 'object' ? def.palette : {});
     if (def.palettes && typeof def.palettes === 'object') Object.keys(def.palettes).forEach(function (k) { if (params[k]) Object.assign(palette, def.palettes[k]); });
     var frames = [];
-    for (var f = 0; f < nf; f++) frames.push(renderFrame(def, { w: w, h: h, seed: seed, frame: f, params: params, palette: palette, warn: warn, wrap: wrap }));
+    // opts.fit: draw with room all round, then cut the picture to what was drawn (and at least the size asked for), so that nothing is lost at an edge (a spear tip, a banner, a roof peak)
+    var P = opts.fit && !wrap && def.type !== 'tile' ? 16 : 0;
+    for (var f = 0; f < nf; f++) frames.push(renderFrame(def, { w: w + 2 * P, h: h + 2 * P, pad: P, seed: seed, frame: f, params: params, palette: palette, warn: warn, wrap: wrap }));
+    if (P) {
+      var W2 = w + 2 * P, H2 = h + 2 * P, x0 = P, y0 = P, x1 = P + w, y1 = P + h;
+      frames.forEach(function (b) { for (var y = 0; y < H2; y++) for (var x = 0; x < W2; x++) if (b[(y * W2 + x) * 4 + 3]) { if (x < x0) x0 = x; if (y < y0) y0 = y; if (x + 1 > x1) x1 = x + 1; if (y + 1 > y1) y1 = y + 1; } });
+      var cw = x1 - x0, ch = y1 - y0;
+      frames = frames.map(function (b) {
+        var o = new Uint8ClampedArray(cw * ch * 4);
+        for (var y = 0; y < ch; y++) o.set(b.subarray(((y + y0) * W2 + x0) * 4, ((y + y0) * W2 + x0 + cw) * 4), y * cw * 4);
+        return o;
+      });
+      var an = def.anchor, fp = def.footprint;
+      return { w: cw, h: ch, frames: frames, fps: (def.animate && def.animate.fps) || 4, warnings: warns, anchor: an ? [an[0] + P - x0, an[1] + P - y0] : undefined, footprint: fp ? [fp[0] + P - x0, fp[1] + P - y0, fp[2], fp[3]] : undefined, type: def.type || 'prop' };
+    }
     return { w: w, h: h, frames: frames, fps: (def.animate && def.animate.fps) || 4, warnings: warns, anchor: def.anchor, footprint: def.footprint, type: def.type || 'prop' };
   }
 
