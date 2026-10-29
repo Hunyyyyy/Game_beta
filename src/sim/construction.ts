@@ -1,6 +1,6 @@
 /** Placing, upgrading, moving and demolishing buildings, and what the buildings give the village (room, population, build speed). */
 import { Building, BuildingKind, BUILDINGS, holdsGoods, levelDef, levelsOf, maxLevel, levelCapByFire, POP_BY_FIRE } from './buildings';
-import { isStaffJob } from './jobs';
+import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
 import { buildingOpen, levelCap, techForBuilding, techForLevel } from './research';
 import type { Sim } from './sim';
@@ -14,6 +14,19 @@ export function addBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, 
   sim.buildings.push(b);
   setOcc(sim, b, 1);
   return b;
+}
+
+/** The houses a village starts with, so that its first people have a role: the Nông trại, the Xưởng gỗ and the Xưởng đá, finished, near the campfire. */
+export function placeStarters(sim: Sim): void {
+  const s = sim.world.start;
+  for (const kind of ['lumberyard', 'farmhouse', 'quarry'] as const) {
+    let done = false;
+    for (let r = 4; r < 16 && !done; r++) for (let dx = -r; dx <= r && !done; dx++) for (let dy = -r; dy <= r && !done; dy++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      const x = s.x + dx, y = s.y + dy;
+      if (footprintError(sim, kind, x, y) === null) { addBuilding(sim, kind, x, y, true); done = true; }
+    }
+  }
 }
 
 /** Why the footprint of `kind` at (x, y) is unusable, or null. `ignore` is a building that is being moved and may overlap itself. */
@@ -155,12 +168,14 @@ export function demolishBuilding(sim: Sim, id: number): string | null {
   if (!b) return 'Không tìm thấy công trình';
   const why = canDemolish(sim, b);
   if (why) return why;
+  if (Object.values(ROLES).some((r) => r.building === b.kind) && sim.warLock()) return sim.warLock(); // taking a camp down would take its role from the soldiers in it
   const back = salvage(sim, b);
   evict(sim, b);
   setOcc(sim, b, 0);
   sim.buildings.splice(sim.buildings.indexOf(b), 1);
   for (const r of Object.keys(back) as Res[]) sim.stock[r] += back[r] ?? 0;
   sim.fogDirty = true;
+  sim.trimRoles();
   sim.say(`Đã phá ${BUILDINGS[b.kind].name.toLowerCase()}${Object.keys(back).length ? `, thu lại ${Object.keys(back).map((r) => `${back[r as Res]} ${RES_NAME[r as Res].toLowerCase()}`).join(', ')}` : ''}.`);
   return null;
 }

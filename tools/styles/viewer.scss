@@ -1,0 +1,60 @@
+// Trang xem thử hoạt ảnh (tools/viewer.html).
+@use 'common' as *;
+
+button {
+  &:hover:not(:disabled) { background: $btn-hover; }
+  &:disabled { opacity: .4; cursor: default; }
+}
+input[type=number] { background: $field-bg; border: 1px solid $line; border-radius: $radius; padding: 2px 4px; color: $ink; }
+
+#hint { color: $warn; }
+
+#main {
+  flex: 1; min-height: 0; display: grid; gap: 8px; padding: 8px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .8fr) minmax(0, 1fr);
+}
+.col { min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.grow { flex: 1; }
+.g2 { flex: 1.2; }
+
+.fab {
+  position: fixed; right: 18px; bottom: 18px; z-index: 10;
+  min-width: 104px; padding: 10px 18px; font-size: 14px; font-weight: 700;
+  border-radius: 999px; background: #2f6fb3; border: 1px solid #6aa7e6; box-shadow: 0 4px 16px rgba(0, 0, 0, .6);
+  &:hover:not(:disabled) { background: #3a82cf; }
+}
+#ecv { cursor: crosshair; touch-action: none; }
+#palette { display: inline-flex; gap: 4px; align-items: center; }
+.sw {
+  width: 26px; height: 26px; border: 3px solid #666; padding: 0; color: #fff; border-radius: $radius;
+  &.on { border-color: $accent; }
+}
+#applybar button.on { border-color: $accent; color: $accent; }
+#estatus { font-size: 12px; color: #bcd; }
+
+#strip {
+  display: flex; gap: 5px; overflow-x: auto; padding-bottom: 3px;
+  canvas {
+    height: 70px; width: auto; flex: none; cursor: pointer; border: 2px solid #444;
+    &.on { border-color: $accent; }
+  }
+}
+#pgallery { display: flex; gap: 6px; overflow-x: auto; min-height: 20px; font-size: 12px; color: $dim; }
+.pg {
+  flex: none; cursor: pointer; text-align: center; font-size: 11px;
+  canvas { height: 78px; width: auto; border: 2px solid #444; }
+  &.on canvas { border-color: $accent; }
+}
+
+.tabs { display: flex; gap: 4px; }
+.tab {
+  border-radius: $radius $radius 0 0;
+  &.on { background: #3a4a5a; border-color: #6a8aa8; }
+}
+.pane {
+  flex: 1; min-height: 0; display: none; flex-direction: column; gap: 6px;
+  &.on { display: flex; }
+}
+#terr { color: $error; font-size: 12px; }
+
+@include stacked('.col', 520px);

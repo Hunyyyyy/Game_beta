@@ -23,9 +23,6 @@ import toolstoreL3 from '../data/blueprints/stone_age/buildings/toolstore/L3.jso
 import armoryL1 from '../data/blueprints/stone_age/buildings/armory/L1.json';
 import armoryL2 from '../data/blueprints/stone_age/buildings/armory/L2.json';
 import armoryL3 from '../data/blueprints/stone_age/buildings/armory/L3.json';
-import barracksL1 from '../data/blueprints/stone_age/buildings/barracks/L1.json';
-import barracksL2 from '../data/blueprints/stone_age/buildings/barracks/L2.json';
-import barracksL3 from '../data/blueprints/stone_age/buildings/barracks/L3.json';
 import houseL1 from '../data/blueprints/stone_age/buildings/house/L1.json';
 import houseL2 from '../data/blueprints/stone_age/buildings/house/L2.json';
 import houseL3 from '../data/blueprints/stone_age/buildings/house/L3.json';
@@ -40,6 +37,30 @@ import gateL1o from '../data/blueprints/stone_age/buildings/gate/L1open.json';
 import gateL2o from '../data/blueprints/stone_age/buildings/gate/L2open.json';
 import towerL1 from '../data/blueprints/stone_age/buildings/tower/L1.json';
 import towerL2 from '../data/blueprints/stone_age/buildings/tower/L2.json';
+import infantryL1 from '../data/blueprints/stone_age/buildings/infantry/L1.json';
+import infantryL2 from '../data/blueprints/stone_age/buildings/infantry/L2.json';
+import infantryL3 from '../data/blueprints/stone_age/buildings/infantry/L3.json';
+import cavalryL1 from '../data/blueprints/stone_age/buildings/cavalry/L1.json';
+import cavalryL2 from '../data/blueprints/stone_age/buildings/cavalry/L2.json';
+import cavalryL3 from '../data/blueprints/stone_age/buildings/cavalry/L3.json';
+import archeryL1 from '../data/blueprints/stone_age/buildings/archery/L1.json';
+import archeryL2 from '../data/blueprints/stone_age/buildings/archery/L2.json';
+import archeryL3 from '../data/blueprints/stone_age/buildings/archery/L3.json';
+import farmhouseL1 from '../data/blueprints/stone_age/buildings/farmhouse/L1.json';
+import farmhouseL2 from '../data/blueprints/stone_age/buildings/farmhouse/L2.json';
+import farmhouseL3 from '../data/blueprints/stone_age/buildings/farmhouse/L3.json';
+import huntlodgeL1 from '../data/blueprints/stone_age/buildings/huntlodge/L1.json';
+import huntlodgeL2 from '../data/blueprints/stone_age/buildings/huntlodge/L2.json';
+import huntlodgeL3 from '../data/blueprints/stone_age/buildings/huntlodge/L3.json';
+import lumberyardL1 from '../data/blueprints/stone_age/buildings/lumberyard/L1.json';
+import lumberyardL2 from '../data/blueprints/stone_age/buildings/lumberyard/L2.json';
+import lumberyardL3 from '../data/blueprints/stone_age/buildings/lumberyard/L3.json';
+import quarryL1 from '../data/blueprints/stone_age/buildings/quarry/L1.json';
+import quarryL2 from '../data/blueprints/stone_age/buildings/quarry/L2.json';
+import quarryL3 from '../data/blueprints/stone_age/buildings/quarry/L3.json';
+import scouttentL1 from '../data/blueprints/stone_age/buildings/scouttent/L1.json';
+import scouttentL2 from '../data/blueprints/stone_age/buildings/scouttent/L2.json';
+import scouttentL3 from '../data/blueprints/stone_age/buildings/scouttent/L3.json';
 import wartentL1 from '../data/blueprints/stone_age/buildings/wartent/L1.json';
 import wartentL2 from '../data/blueprints/stone_age/buildings/wartent/L2.json';
 import wartentL3 from '../data/blueprints/stone_age/buildings/wartent/L3.json';
@@ -121,13 +142,20 @@ const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>
     repair: [repairL1, repairL2, repairL3],
     toolstore: [toolstoreL1, toolstoreL2, toolstoreL3],
     armory: [armoryL1, armoryL2, armoryL3],
-    barracks: [barracksL1, barracksL2, barracksL3],
+    infantry: [infantryL1, infantryL2, infantryL3],
+    cavalry: [cavalryL1, cavalryL2, cavalryL3],
+    archery: [archeryL1, archeryL2, archeryL3],
+    farmhouse: [farmhouseL1, farmhouseL2, farmhouseL3],
+    huntlodge: [huntlodgeL1, huntlodgeL2, huntlodgeL3],
+    lumberyard: [lumberyardL1, lumberyardL2, lumberyardL3],
+    quarry: [quarryL1, quarryL2, quarryL3],
     house: [houseL1, houseL2, houseL3],
     field: [fieldL1, fieldL2, fieldL3],
     fence: [fenceL1, fenceL2],
     gate: [gateL1, gateL2, gateL1o, gateL2o], // the last two are the same gates standing open
     tower: [towerL1, towerL2],
     wartent: [wartentL1, wartentL2, wartentL3],
+    scouttent: [scouttentL1, scouttentL2, scouttentL3],
     drill: [drillL1, drillL2, drillL3],
     trap: [trapL1, trapL2],
   },
@@ -157,7 +185,7 @@ export class Sprites {
     this.icons.torch1 = this.torchIcon();
     this.nature('spring');
     this.emblems.lab = this.scrollEmblem();
-    this.emblems.builder = this.icons.hammer1; this.emblems.repair = this.icons.hammer2; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.barracks = this.icons.spear1;
+    this.emblems.builder = this.icons.hammer1; this.emblems.repair = this.icons.hammer2; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.infantry = this.icons.spear1; this.emblems.cavalry = this.icons.spear1; this.emblems.archery = this.icons.sling1 ?? this.icons.spear1; this.emblems.lumberyard = this.icons.axe1; this.emblems.quarry = this.icons.pick1; this.emblems.farmhouse = this.icons.hoe1; this.emblems.huntlodge = this.icons.spear1;
   }
 
   /** A torch 16x16, for the craft list. */

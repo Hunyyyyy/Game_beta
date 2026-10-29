@@ -39,8 +39,11 @@ export function drainRate(sim: Sim, v: Villager): number {
 }
 
 // ---------------------------------------------------------------- beds
-/** The house a villager sleeps in when it has room: soldiers in the Lều chiến binh, everyone else in the Nhà dân. */
-export const bedKind = (v: Pick<Villager, 'job'>): 'barracks' | 'house' => (v.job === 'fight' ? 'barracks' : 'house');
+/** Houses with beds: the camp of each arm for its soldiers, the Nhà dân for everyone else. */
+export type BedKind = 'infantry' | 'cavalry' | 'archery' | 'house';
+export const BED_KINDS: readonly BedKind[] = ['infantry', 'cavalry', 'archery', 'house'];
+/** The house a villager sleeps in when it has room: a soldier in the camp of his arm, everyone else in the Nhà dân. */
+export const bedKind = (v: Pick<Villager, 'job' | 'arm'>): BedKind => (v.job !== 'fight' ? 'house' : v.arm === 'archer' ? 'archery' : v.arm === 'cavalry' ? 'cavalry' : 'infantry');
 
 /** Beds of a house in use: those asleep inside and those on their way. */
 export function bedsTaken(sim: Sim, b: Building, except?: Villager): number {
@@ -62,7 +65,7 @@ export function freeBed(sim: Sim, v: Villager): Building | undefined {
 /** How well the place they sleep in lets them rest: the house they are inside (and its level), else the campfire's slower rest. */
 function bedFactor(sim: Sim, v: Villager): number {
   const b = v.inside === null ? undefined : sim.getBuilding(v.inside);
-  return b && (b.kind === 'house' || b.kind === 'barracks') ? REST.sleepAt[b.kind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
+  return b && (BED_KINDS as readonly string[]).includes(b.kind) ? REST.sleepAt[b.kind as BedKind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
 }
 
 /** Percentage points gained per second while asleep. Night sleep is twice as good as sleep by day. */
@@ -182,4 +185,4 @@ export function shouldSleep(sim: Sim, v: Villager, fighting: boolean): boolean {
 }
 
 /** Beds in all the finished houses of a kind (0 when there is none). */
-export function bedsIn(sim: Sim, kind: 'barracks' | 'house'): number { return sim.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0); }
+export function bedsIn(sim: Sim, kind: BedKind): number { return sim.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0); }

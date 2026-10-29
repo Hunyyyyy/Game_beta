@@ -4,7 +4,7 @@ import type { Sim } from '../sim/sim';
 import { Tile } from '../sim/world';
 import type { Controller } from './controller';
 
-const TERRAIN: Record<number, [number, number, number]> = {
+export const TERRAIN: Record<number, [number, number, number]> = {
   [Tile.Grass]: [134, 163, 85], [Tile.Water]: [63, 111, 154], [Tile.Tree]: [47, 82, 34],
   [Tile.Rock]: [120, 125, 128], [Tile.Mud]: [122, 100, 66], [Tile.Bush]: [150, 70, 60],
 };

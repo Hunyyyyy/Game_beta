@@ -57,7 +57,7 @@ export function describe(v: Villager, sim?: Sim): string {
     case 'goCarcass': t = 'đi lột da'; break;
     case 'skin': t = 'đang lột da'; break;
     case 'rescue': t = 'chạy đi cứu bạn'; break;
-    default: t = v.job === 'idle' ? 'rảnh' : v.job === 'fight' ? 'canh gác' : 'chờ việc';
+    default: t = v.job === 'idle' ? 'rảnh' : v.job === 'fight' ? 'canh gác' : v.job === 'scout' ? 'chờ lệnh trinh sát' : 'chờ việc';
   }
   return t + carry;
 }

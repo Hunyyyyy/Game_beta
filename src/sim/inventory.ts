@@ -12,7 +12,7 @@ export function toolCount(sim: Sim, kind: string, tier: number): number { const 
 
 /** Bậc công cụ dân đang dùng cho nghề này (0 = tay không). */
 export function toolTier(sim: Sim, v: Villager, job: Job): number {
-  const k = job === 'idle' ? undefined : TOOL_OF_JOB[job];
+  const k = job === 'idle' || job === 'scout' ? undefined : TOOL_OF_JOB[job];
   const t = k ? v.tools[k] : null;
   return t && t.dur > 0 ? t.tier : 0; // a broken tool works like bare hands
 }

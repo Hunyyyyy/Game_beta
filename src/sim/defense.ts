@@ -61,7 +61,7 @@ export function assignTower(sim: Sim, ids: readonly number[], towerId: number): 
   let err: string | null = null;
   for (const v of sim.mine(ids)) {
     if (v.post === b.id && v.job === 'fight') continue;
-    if (v.job !== 'fight') { err = 'Chỉ chiến binh mới lên chòi: tuyển ở đống lửa trại'; continue; }
+    if (v.job !== 'fight') { err = 'Chỉ chiến binh mới lên chòi: tuyển ở trại lính'; continue; }
     if (armOfWeapon(effWeapon(v)) !== 'archer') { err = 'Chỉ cung thủ (cầm cung hoặc dây quăng) mới lên chòi'; continue; }
     if (garrison(sim, b).length >= levelDef(b).slots) { err = `${BUILDINGS.tower.name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} cung thủ`; continue; }
     sim.resetTask(v); sim.clearCombat(v);

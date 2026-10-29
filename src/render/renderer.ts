@@ -143,7 +143,6 @@ export class Renderer {
   }
 
   /** Draw the soldiers as one figure for about three of them in a big battle (set from the war HUD). */
-  reduceFigures = false;
   /** The cluster flags drawn last frame, for taps. */
   private flags: Array<{ ids: number[]; x: number; y: number; w: number; h: number }> = [];
 
@@ -221,11 +220,9 @@ export class Renderer {
       if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
       list.push({ y: ay, kind: 'building', i: 0, j: 0, b });
     }
-    // in a big battle the soldiers can be drawn as one figure for about three of them (the clusters carry the count)
-    const figs = this.reduceFigures ? sim.drawnFigures() : null;
-    for (const v of sim.villagers) if (v.inside === null && (!figs || v.job !== 'fight' || figs.has(v.id))) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
+    for (const v of sim.villagers) if (v.inside === null) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
     const seen = (x: number, y: number) => sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
-    for (const f of sim.foes) if (seen(f.x, f.y) && (!figs || f.ai?.role === 'civ' || figs.has(f.id))) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
+    for (const f of sim.foes) if (seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
     for (const a of sim.animals) if (seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
     for (const t of sim.tribes) if (t.state !== 'adopted' && sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: 'camp', i: 0, j: 0, t });
     list.sort((a, b) => a.y - b.y);

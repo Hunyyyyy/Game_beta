@@ -204,6 +204,10 @@ export function giveMaps(sim: Sim, level = 3): void {
     const i = sim.maps.findIndex((m) => m.tribe === t.id && m.level === l), map = { tribe: t.id, level: l, at: sim.time, gaps: 0 };
     if (i >= 0) sim.maps[i] = map; else sim.maps.push(map);
   }
+  for (const t of sim.tribes) {
+    const s = sim.sightings.find((x) => x.tribe === t.id);
+    if (s) s.reported = true; else sim.sightings.push({ tribe: t.id, by: -1, at: sim.time, reported: true });
+  }
 }
 
 /** Three squads of new soldiers, each in a different formation: spearmen in a line, archers scattered, maces in a wedge. */

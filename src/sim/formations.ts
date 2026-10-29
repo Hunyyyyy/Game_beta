@@ -28,6 +28,9 @@ export interface FormationDef { name: string; tech: string; dmg: number; taken: 
 export const FORMATION_IDS = Object.keys(formationsJson.formations) as FormationId[];
 export const FORMATIONS = formationsJson.formations as unknown as Record<FormationId, FormationDef>;
 export const COMMAND = formationsJson;
+/** The fewest and the most soldiers one squad holds, which is also the fewest and the most cells a formation drawn on the map has. */
+export const SQUAD_MIN: number = COMMAND.squadMin;
+export const SQUAD_MAX: number = COMMAND.squadMax;
 
 /** How well a formation is known, 0..100, as a multiplier on its effect: 0.8 untrained up to 1.15 expert. */
 export const masteryFactor = (mastery: number): number => COMMAND.mastery.min + (COMMAND.mastery.max - COMMAND.mastery.min) * Math.max(0, Math.min(100, mastery)) / 100;
@@ -54,6 +57,60 @@ export function formationOffsets(kind: FormationId, n: number): Array<[number, n
 /** Rotate a local offset by a heading (radians) and move it to a centre. */
 export const placeOffset = (o: [number, number], heading: number, cx: number, cy: number): [number, number] =>
   [cx + o[0] * Math.cos(heading) - o[1] * Math.sin(heading), cy + o[0] * Math.sin(heading) + o[1] * Math.cos(heading)];
+
+/** A formation drawn on the map: the cells (a tile each) where the soldiers stand, and the way they face. */
+export interface Drawn { cells: Array<{ x: number; y: number }>; heading: number }
+
+/**
+ * The cells a drag from `o` to `p` makes for a formation, at most SQUAD_MAX of them, one `cell` apart. Fewer than SQUAD_MIN is a shape that cannot yet be a squad.
+ * Hàng ngang: a row from o towards p. Vòng tròn: o is the middle and the drag is the radius. Mũi nhọn: o is the tip and the two arms run back towards p.
+ * Sừng bò: a row from o to p with both ends bent to one fixed side of the drag (so the horns turn with it). Rải quân: a loose grid filling the box between o and p. Phục kích: a staggered double row from o towards p.
+ * `toward` is the point the squad faces (the enemy camp), which decides which side of a row is its front.
+ */
+export function drawFormation(kind: FormationId, o: { x: number; y: number }, p: { x: number; y: number }, toward: { x: number; y: number }): Drawn {
+  const S = COMMAND.cell, dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy), ang = d > 0.01 ? Math.atan2(dy, dx) : 0, ux = Math.cos(ang), uy = Math.sin(ang);
+  const clampN = (n: number) => Math.max(1, Math.min(SQUAD_MAX, n));
+  const at = (along: number, side: number) => ({ x: o.x + ux * along - uy * side, y: o.y + uy * along + ux * side });
+  // the perpendicular to the drag that points to `toward`: the way a row faces
+  const sign = (-uy * (toward.x - o.x) + ux * (toward.y - o.y)) >= 0 ? 1 : -1, face = Math.atan2(ux * sign, -uy * sign);
+  const cells: Drawn['cells'] = [];
+  switch (kind) {
+    case 'circle': {
+      const R = d, n = clampN(Math.round((2 * Math.PI * R) / S));
+      for (let i = 0; i < n; i++) cells.push({ x: o.x + Math.cos(ang + (2 * Math.PI * i) / n) * R, y: o.y + Math.sin(ang + (2 * Math.PI * i) / n) * R });
+      return { cells, heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
+    }
+    case 'wedge': {
+      const half = 0.6, step = S * Math.cos(half), n = clampN(1 + 2 * Math.floor(d / step));
+      cells.push({ x: o.x, y: o.y });
+      for (let k = 1; cells.length < n; k++) { cells.push(at(k * step, -k * S * Math.sin(half))); if (cells.length < n) cells.push(at(k * step, k * S * Math.sin(half))); }
+      return { cells, heading: ang + Math.PI }; // the tip leads: the squad faces away from the tail
+    }
+    case 'horns': {
+      // the horns bend to the same side of the drag however it is turned (a quarter turn anticlockwise on the screen), so turning the drag turns the whole shape
+      const n = clampN(Math.floor(d / S) + 1), bend = Math.min(3, d * 0.25), forward = ang - Math.PI / 2;
+      for (let i = 0; i < n; i++) { const t = n === 1 ? 0.5 : i / (n - 1), c = at(d * t, 0), off = bend * (2 * t - 1) ** 2; cells.push({ x: c.x + Math.cos(forward) * off, y: c.y + Math.sin(forward) * off }); } // both ends forward
+      return { cells, heading: forward };
+    }
+    case 'scatter': {
+      let g = 2.6, w = Math.abs(dx), hh = Math.abs(dy), cols = 1, rows = 1;
+      for (let guard = 0; guard < 40; guard++) { cols = Math.floor(w / g) + 1; rows = Math.floor(hh / g) + 1; if (cols * rows <= SQUAD_MAX) break; g *= 1.1; }
+      const x0 = Math.min(o.x, p.x), y0 = Math.min(o.y, p.y), sx = cols > 1 ? w / (cols - 1) : g, sy = rows > 1 ? hh / (rows - 1) : g;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ x: x0 + c * Math.min(sx, g * 1.4), y: y0 + r * Math.min(sy, g * 1.4) });
+      return { cells: cells.slice(0, SQUAD_MAX), heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
+    }
+    case 'ambush': {
+      const n = clampN(Math.floor(d / (S * 0.7)) + 1);
+      for (let i = 0; i < n; i++) cells.push(at(S * 0.7 * i, i % 2 ? 0.6 : -0.6));
+      return { cells, heading: face };
+    }
+    default: { // line
+      const n = clampN(Math.floor(d / S) + 1);
+      for (let i = 0; i < n; i++) cells.push(at(S * i, 0));
+      return { cells, heading: face };
+    }
+  }
+}
 
 // ---------------------------------------------------------------- clusters (cụm)
 export interface ClusterUnit { id: number; arm: Arm; key: string }

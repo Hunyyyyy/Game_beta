@@ -5565,6 +5565,55 @@ function tickScouts(sim, dt) {
     }
   }
 }
+var MARGIN = 24;
+var YARD = 7;
+var WORKS = {
+  fire: { level: 1, label: "\u0110\u1ED1ng l\u1EEDa" },
+  tower: { level: 2, label: "Ch\xF2i canh" },
+  fence: { level: 2, label: "H\xE0ng r\xE0o" },
+  gate: { level: 2, label: "C\u1ED5ng" },
+  pile: { level: 3, label: "Kho l\u01B0\u01A1ng" }
+};
+var spread = (id, salt) => {
+  const x = Math.sin(id * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+};
+function tribeIntel(sim, tribe) {
+  const t = tribeOf(sim, tribe);
+  if (!t) return null;
+  const level = sim.dev.freeBuild ? 3 : mapLevel(sim, tribe);
+  if (!level) return null;
+  const held = sim.maps.filter((m) => m.tribe === tribe && (m.gaps > 0 ? m.level - 1 : m.level) >= level).sort((a, b) => b.at - a.at)[0];
+  const accuracy = sim.dev.freeBuild || !held ? 1 : mapAccuracy(sim, held), gaps = sim.dev.freeBuild ? 0 : held?.gaps ?? 0;
+  const N = sim.world.size, r = YARD + MARGIN;
+  const box = { x0: Math.max(0, Math.floor(t.camp.x) - r), y0: Math.max(0, Math.floor(t.camp.y) - r), x1: Math.min(N, Math.floor(t.camp.x) + r), y1: Math.min(N, Math.floor(t.camp.y) + r) };
+  const fire = sim.campfire(), dx = (fire?.x ?? sim.world.start.x) - t.camp.x, dy = (fire?.y ?? sim.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
+  const alive = t.unitIds.map((u) => sim.get(u)).filter((u) => !!u && u.health > 0);
+  const blur = (1 - accuracy) * 5, soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
+  const people = [];
+  if (level >= 2) for (const u of alive) {
+    if (spread(u.id, 1) < Math.min(0.6, gaps * 0.2)) continue;
+    const warrior = u.ai?.role !== "civ", arm = armOfWeapon(u.weapon);
+    const mark = level < 3 ? "unknown" : warrior ? arm : "civ";
+    if (soldiers && warrior) soldiers[arm]++;
+    people.push({ x: u.x + (spread(u.id, 2) - 0.5) * 2 * blur, y: u.y + (spread(u.id, 3) - 0.5) * 2 * blur, mark, leader: level >= 3 && u.id === t.leaderId });
+  }
+  return {
+    tribe,
+    name: t.def.name,
+    level,
+    accuracy,
+    gaps,
+    box,
+    camp: { ...t.camp },
+    yard: YARD,
+    toUs: len > 0 ? { x: dx / len, y: dy / len } : null,
+    population: Math.max(2, Math.round(alive.length / 2) * 2),
+    structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, x: p.x, y: p.y, w: p.w, h: p.h })),
+    people,
+    soldiers
+  };
+}
 
 // src/sim/warplan.ts
 var NEED_LEVEL = { camp: 1, gate: 2, ambush: 2, stores: 3, leader: 3 };
@@ -5903,6 +5952,14 @@ var WAR = {
   /** → scouting.mapAccuracy */
   mapAccuracy(m) {
     return mapAccuracy(this, m);
+  },
+  /** → scouting.tribeIntel */
+  tribeIntel(tribe) {
+    return tribeIntel(this, tribe);
+  },
+  /** → warplan.objectivePos */
+  missionTarget(plan2, m) {
+    return objectivePos(this, plan2, m);
   },
   /** → scouting.startScout */
   startScout(ids, tribe, level) {

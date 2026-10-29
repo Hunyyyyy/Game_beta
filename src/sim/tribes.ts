@@ -24,7 +24,7 @@ export interface Tribe {
   id: TribeId;
   def: TribeDef;
   camp: { x: number; y: number };   // centre of the fire
-  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' }>;
+  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' | 'tower' | 'fence' | 'gate' }>;
   relation: number;                  // -100..100
   state: TribeState;
   angryUntil: number;                // sim time: being attacked keeps them hostile for a while
@@ -399,7 +399,8 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
   const radius = ai.role === 'raider' ? 12 : ai.role === 'civ' ? 9 : AGGRO[t.def.personality];
   const scanNow = f.fight.scan <= 0;
   if (scanNow) f.fight.scan = 0.4;
-  const threats = free && (scanNow || f.phase === 'fight' || f.phase === 'flee') ? threatsOf(sim, f, radius) : [];
+  const looking = scanNow || f.phase === 'flee' || (f.phase === 'fight' && (!f.fight.target || f.morale < MORALE.flee)); // see brainPlayer: a unit busy with a target needs no new look every tick
+  const threats = free && looking ? threatsOf(sim, f, radius) : [];
   if (!free) { f.fight.target = null; if (f.phase === 'fight') { f.phase = 'idle'; f.path = []; } }
 
   // fleeing: morale broke, or an unarmed civilian meets a threat
@@ -415,7 +416,7 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
 
   // a raider marches on the village, fighting what stands in the way
   if (free && ai.role === 'raider' && t.raid) {
-    if (t.raid.phase === 'retreat') { if (!f.path.length && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 4) f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 20000); f.phase = 'move'; return; }
+    if (t.raid.phase === 'retreat') { if (!f.path.length && sim.pathLeft > 0 && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 4) { sim.pathLeft--; f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 20000); } f.phase = 'move'; return; }
     if (siegeBrain(sim, f, ai, dt, threats)) return;
     if (f.fight.target) {
       const e = resolve(sim, f.fight.target);
@@ -431,7 +432,7 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
     const fire = sim.campfire(), gx = fire ? fire.x + 1 : sim.world.start.x, gy = fire ? fire.y + 1 : sim.world.start.y;
     if (Math.hypot(gx - f.x, gy - f.y) > 6) {
       f.fight.repath -= dt;
-      if (!f.path.length && f.fight.repath <= 0) { f.path = sim.pathTo(f, Math.floor(gx), Math.floor(gy), 40000); f.fight.repath = f.path.length ? 0.5 : 1.5; }
+      if (!f.path.length && f.fight.repath <= 0 && sim.pathLeft > 0) { sim.pathLeft--; f.path = sim.pathTo(f, Math.floor(gx), Math.floor(gy), 40000); f.fight.repath = f.path.length ? 0.5 : 1.5; }
       f.phase = 'move';
       noteStuck(sim, f, ai, dt, !f.path.length);
     }
