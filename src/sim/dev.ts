@@ -50,7 +50,9 @@ export function addVillagers(sim: Sim, n: number): void {
   const fire = sim.campfire(), s = sim.world.start;
   for (let i = 0; i < n; i++) {
     const a = sim.frnd() * Math.PI * 2, r = 2 + sim.frnd() * 2;
-    const v = sim.makeVillager(Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), sim.frnd() < 0.5 ? 'm' : 'f', 'player', sim.frnd);
+    // on open ground: the starter houses stand near the fire, and a villager made inside one could never walk out
+    const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim.nearestFree(gx, gy, new Set()) ?? [gx, gy];
+    const v = sim.makeVillager(spot[0], spot[1], sim.frnd() < 0.5 ? 'm' : 'f', 'player', sim.frnd);
     sim.villagers.push(v); sim.registerUnit(v);
   }
 }

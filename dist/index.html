@@ -33143,7 +33143,8 @@ body.war .sheet, body.war .bbar {
     const fire = sim2.campfire(), s = sim2.world.start;
     for (let i = 0; i < n; i++) {
       const a = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * 2;
-      const v = sim2.makeVillager(Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
+      const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+      const v = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
       sim2.villagers.push(v);
       sim2.registerUnit(v);
     }
