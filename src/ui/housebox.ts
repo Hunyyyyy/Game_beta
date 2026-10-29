@@ -1,6 +1,6 @@
 import { Building, levelDef } from '../sim/buildings';
 import { workDays } from '../sim/constants';
-import { fmtStat, JOB_NAME, JOBS, STAT_NAME } from '../sim/jobs';
+import { fmtStat, isStaffJob, JOB_NAME, JOBS, STAT_NAME } from '../sim/jobs';
 import type { Villager } from '../sim/sim';
 import { h, hint } from './dom';
 import type { Ctx } from './ctx';
@@ -33,7 +33,7 @@ export class StaffBox {
     // the choice is the player's: every villager who could go in, best at the job first
     this.picker.hidden = !this.open;
     if (!this.open) return;
-    const pool = sim.villagers.filter((v) => v.inside === null && v.down <= 0 && v.job !== 'fight' && v.job !== 'scout' && !(v.phase === 'goStaff' && v.target === b.id) && !(crew && v.job === 'build') && !(v.job === 'food' && v.post === b.id)).sort((x, y) => y.stats[stat] - x.stats[stat]);
+    const pool = sim.villagers.filter((v) => v.inside === null && v.down <= 0 && v.job !== 'fight' && v.job !== 'scout' && !(v.phase === 'goStaff' && v.target === b.id) && !isStaffJob(v.job) && v.job !== 'build' && !(v.job === 'food' && v.post >= 0)).sort((x, y) => y.stats[stat] - x.stats[stat]);
     const pk = `${b.id}|${full}|${pool.map((v) => `${v.id}.${v.job}.${v.stats[stat]}`).join()}`;
     if (pk === this.pickKey) return;
     this.pickKey = pk;

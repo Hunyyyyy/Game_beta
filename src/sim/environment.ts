@@ -17,6 +17,7 @@ export function tickCalendar(sim: Sim): void {
     const season = seasonOf(day);
     if (season !== sim.world.season) { sim.world.setSeason(season); sim.say(SEASON_DEF[season].enter); }
     if (sim.weather !== 'clear') sim.say(`Hôm nay: ${WEATHER[sim.weather].name.toLowerCase()}.`);
+    if (day > 1 && !sim.dev.noArrivals) newcomers(sim);
   }
   if (!sim.signalled && sim.tod >= 0.5) {
     sim.signalled = true;
@@ -26,6 +27,18 @@ export function tickCalendar(sim: Sim): void {
   const rest = isRestTime(sim.tod, sim.season);
   if (sim.resting !== rest) for (const v of sim.villagers) { v.nightOwl = false; if (!rest) sim.returnTorch(v); } // dusk and dawn end every call-up; torches go back at dawn
   sim.resting = rest;
+}
+
+/** Each new day 1 to 3 strangers walk in and settle by the fire. */
+function newcomers(sim: Sim): void {
+  const n = 1 + Math.floor(sim.frnd() * 3), fire = sim.campfire(), s = sim.world.start;
+  for (let i = 0; i < n; i++) {
+    const a = sim.frnd() * Math.PI * 2, r = 2 + sim.frnd() * 2;
+    const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim.nearestFree(gx, gy, new Set()) ?? [gx, gy];
+    const v = sim.makeVillager(spot[0], spot[1], sim.frnd() < 0.5 ? 'm' : 'f', 'player', sim.frnd);
+    sim.villagers.push(v); sim.registerUnit(v);
+    sim.say(`${v.name} đến làng xin ở lại.`);
+  }
 }
 
 // ---------------------------------------------------------------- vòng lặp

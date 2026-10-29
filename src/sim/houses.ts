@@ -18,7 +18,7 @@ export function bestFor(sim: Sim, job: 'craft' | 'research' | 'repair' | 'tame')
 export function houseRate(sim: Sim, b: Building): number {
   const job: WorkJob = b.kind === 'lab' ? 'research' : b.kind === 'workshop' ? 'craft' : b.kind === 'stable' ? 'tame' : 'repair';
   let r = 0;
-  for (const id of b.staff) { const v = sim.byId.get(id); if (v) r += sim.workFactor(v, job); }
+  for (const id of b.staff) { const v = sim.byId.get(id); if (v && v.phase === 'inside') r += sim.workFactor(v, job); }
   return r * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 25 : 1);
 }
 

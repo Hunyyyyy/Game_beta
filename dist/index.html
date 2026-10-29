@@ -1743,6 +1743,7 @@ body.war .sheet, body.war .bbar {
       <button class="sm" data-speed="1" aria-pressed="true" title="Tốc độ 1× (Q)">1×</button>
       <button class="sm" data-speed="2" aria-pressed="false" title="Tốc độ 2× (E)">2×</button>
       <button class="sm" data-speed="4" aria-pressed="false" title="Tốc độ 4× (R)">4×</button>
+      <button class="sm" data-speed="16" aria-pressed="false" title="Tốc độ 16× (T)">16×</button>
     </div>
     <div class="hud" id="clockLine"><span class="clock" id="clock">Ngày 1</span></div>
     <span class="spacer"></span>
@@ -30508,7 +30509,7 @@ body.war .sheet, body.war .bbar {
     let r = 0;
     for (const id of b.staff) {
       const v = sim2.byId.get(id);
-      if (v) r += sim2.workFactor(v, job);
+      if (v && v.phase === "inside") r += sim2.workFactor(v, job);
     }
     return r * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 25 : 1);
   }
@@ -32079,8 +32080,13 @@ body.war .sheet, body.war .bbar {
     if (v.inside !== null && v.phase !== "sleep") {
       const onWatch = v.job === "fight" && v.post >= 0 && sim2.tribes.some((t) => t.raid);
       if (sim2.shouldSleep(v, onWatch)) {
-        sim2.exitBuilding(v);
-        goHome(sim2, v);
+        if (atWork(sim2, v)) {
+          v.phase = "sleep";
+          v.facing = "front";
+        } else {
+          sim2.exitBuilding(v);
+          goHome(sim2, v);
+        }
       } else {
         sim2.animate(v, dt);
         return;
@@ -32093,16 +32099,23 @@ body.war .sheet, body.war .bbar {
     if (sim2.shouldSleep(v, fighting)) {
       if (!asleep) goHome(sim2, v);
     } else if (asleep) {
-      sim2.exitBuilding(v);
-      v.path = [];
-      v.slide = null;
-      v.phase = "idle";
-      v.bed = -1;
+      if (atWork(sim2, v) && v.phase === "sleep") v.phase = "inside";
+      else {
+        sim2.exitBuilding(v);
+        v.path = [];
+        v.slide = null;
+        v.phase = "idle";
+        v.bed = -1;
+      }
     }
     sim2.moveUnit(v, dt);
     if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim2.fogDirty = true;
     if (!v.path.length && !v.slide && !brained && !training) sim2.think(v, dt);
     sim2.animate(v, dt);
+  }
+  function atWork(sim2, v) {
+    const b = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
+    return !!b && b.staff.includes(v.id);
   }
   function goHome(sim2, v) {
     const owl = v.nightOwl;
@@ -32110,7 +32123,7 @@ body.war .sheet, body.war .bbar {
     sim2.resetTask(v);
     v.nightOwl = owl;
     v.phase = "sleep";
-    const bed = sim2.freeBed(v);
+    const bed = v.job === "build" ? sim2.building("builder") ?? sim2.freeBed(v) : sim2.freeBed(v);
     if (bed) {
       const bd = BUILDINGS[bed.kind];
       if (sim2.routeTo(v, sim2.ringTiles(v, bed.x, bed.y, bd.w, bd.h)) >= 0) {
@@ -32148,6 +32161,7 @@ body.war .sheet, body.war .bbar {
         sim2.say(SEASON_DEF[season].enter);
       }
       if (sim2.weather !== "clear") sim2.say(`H\xF4m nay: ${WEATHER[sim2.weather].name.toLowerCase()}.`);
+      if (day > 1 && !sim2.dev.noArrivals) newcomers(sim2);
     }
     if (!sim2.signalled && sim2.tod >= 0.5) {
       sim2.signalled = true;
@@ -32160,6 +32174,17 @@ body.war .sheet, body.war .bbar {
       if (!rest) sim2.returnTorch(v);
     }
     sim2.resting = rest;
+  }
+  function newcomers(sim2) {
+    const n = 1 + Math.floor(sim2.frnd() * 3), fire = sim2.campfire(), s = sim2.world.start;
+    for (let i = 0; i < n; i++) {
+      const a = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * 2;
+      const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+      const v = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
+      sim2.villagers.push(v);
+      sim2.registerUnit(v);
+      sim2.say(`${v.name} \u0111\u1EBFn l\xE0ng xin \u1EDF l\u1EA1i.`);
+    }
   }
   var TORCH_VISION = 6;
   function refreshFog(sim2) {
@@ -32528,7 +32553,8 @@ body.war .sheet, body.war .bbar {
   }
   function bedFactor(sim2, v) {
     const b = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
-    return b && BED_KINDS.includes(b.kind) ? REST.sleepAt[b.kind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
+    if (b && BED_KINDS.includes(b.kind)) return REST.sleepAt[b.kind] * levelDef(b).craftSpeed;
+    return b ? REST.sleepAt.house : REST.sleepAt.campfire;
   }
   function sleepRate(sim2, v) {
     const base = (sim2.resting ? REST.sleepNight : REST.sleepDay) / NIGHT_HOURS;
@@ -32590,9 +32616,10 @@ body.war .sheet, body.war .bbar {
     if (v.shift === "both") return true;
     return v.shift === "night" ? night : !night;
   }
+  var indoors = (v) => isStaffJob(v.job) || v.job === "food" && v.post >= 0;
   function onDuty(sim2, v) {
     if (!onShift(sim2, v)) return false;
-    if (sim2.resting && v.job !== "fight" && v.job !== "idle") return ensureTorch(sim2, v);
+    if (sim2.resting && v.job !== "fight" && v.job !== "idle" && !indoors(v)) return ensureTorch(sim2, v);
     return true;
   }
   function callUp(sim2, v) {
@@ -34963,7 +34990,7 @@ body.war .sheet, body.war .bbar {
       this.battleReports = [];
       this.nextAid = 1;
       /** Test switches driven by the dev menu; all off in a normal game. */
-      this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false };
+      this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false, noArrivals: false };
       /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
       this.pendingTribe = null;
       this.acc = 0;
@@ -37152,7 +37179,7 @@ body.war .sheet, body.war .bbar {
         h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EC3 v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EC3 l\xE0m \u0111\u1ED3, Nh\xE0 s\u1EEDa ch\u1EEFa \u0111\u1EC3 m\xE0i l\u1EA1i c\xF4ng c\u1EE5. M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y m\u1ED9t c\xE1i r\u1ED3i n\xE2ng c\u1EA5p (\u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u). D\xE2n v\xE0o l\xE0m b\xEAn trong nh\xE0 (hi\u1EC7n th\xE0nh danh s\xE1ch t\xEAn v\xE0 Tr\xED tu\u1EC7, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3): nh\xE0 c\u1EA5p cao ch\u1EE9a th\xEAm ng\u01B0\u1EDDi, ng\u01B0\u1EDDi th\xF4ng minh nghi\xEAn c\u1EE9u nhanh h\u01A1n. L\xFAc \u0111\u1EA7u b\u1EA1n t\u1EF1 ph\xE1t c\xF4ng c\u1EE5 v\xE0 t\u1EF1 \u0111\u01B0a \u0111i s\u1EEDa; nghi\xEAn c\u1EE9u Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, t\u1EF1 l\u1EA5y \u0111\u1ED3 v\xE0 t\u1EF1 \u0111\u1EB7t h\xE0ng th\xEC d\xE2n t\u1EF1 lo. Ti\u1EC1n (v\u1ECF s\xF2) tr\u1EA3 cho nghi\xEAn c\u1EE9u, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m ho\u1EB7c \u0111\u1ED5i h\xE0ng \u1EDF Kho. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
         h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), `: d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng ${gameDays(30)}; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh ${gameDays(3)} s\u1EBD k\xE9o h\u1ECD d\u1EADy.`),
         h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), `: t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD ${gameDays(30)} ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p.`),
-        h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
+        h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R T: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7 16\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
       );
     }
   };
@@ -38122,7 +38149,7 @@ body.war .sheet, body.war .bbar {
       }
       this.picker.hidden = !this.open;
       if (!this.open) return;
-      const pool = sim2.villagers.filter((v) => v.inside === null && v.down <= 0 && v.job !== "fight" && v.job !== "scout" && !(v.phase === "goStaff" && v.target === b.id) && !(crew2 && v.job === "build") && !(v.job === "food" && v.post === b.id)).sort((x, y) => y.stats[stat] - x.stats[stat]);
+      const pool = sim2.villagers.filter((v) => v.inside === null && v.down <= 0 && v.job !== "fight" && v.job !== "scout" && !(v.phase === "goStaff" && v.target === b.id) && !isStaffJob(v.job) && v.job !== "build" && !(v.job === "food" && v.post >= 0)).sort((x, y) => y.stats[stat] - x.stats[stat]);
       const pk = `${b.id}|${full}|${pool.map((v) => `${v.id}.${v.job}.${v.stats[stat]}`).join()}`;
       if (pk === this.pickKey) return;
       this.pickKey = pk;
@@ -41173,6 +41200,7 @@ body.war .sheet, body.war .bbar {
     else if (k === "q") setSpeed(1);
     else if (k === "e") setSpeed(2);
     else if (k === "r") setSpeed(4);
+    else if (k === "t") setSpeed(16);
     else if (k === "b") togglePlace("storage");
     else if (k === "x") togglePlace("workshop");
     else if (k === "c") openWorkshop();

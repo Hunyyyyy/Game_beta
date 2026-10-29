@@ -67,7 +67,7 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   // (asleep in a bed is another thing: they stay in until rested, and a threat or the morning brings them out below)
   if (v.inside !== null && v.phase !== 'sleep') {
     const onWatch = v.job === 'fight' && v.post >= 0 && sim.tribes.some((t) => t.raid); // the garrison of a tower stays up while a raid is on
-    if (sim.shouldSleep(v, onWatch)) { sim.exitBuilding(v); goHome(sim, v); } else { sim.animate(v, dt); return; }
+    if (sim.shouldSleep(v, onWatch)) { if (atWork(sim, v)) { v.phase = 'sleep'; v.facing = 'front'; } else { sim.exitBuilding(v); goHome(sim, v); } } else { sim.animate(v, dt); return; }
   }
 
   // ---- combat decides first: fighting, fleeing, rescuing, hunting ----
@@ -78,12 +78,18 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   const fighting = brained && (v.phase === 'fight' || v.phase === 'flee' || v.phase === 'rescue');
   const asleep = v.phase === 'goHome' || v.phase === 'sleep';
   if (sim.shouldSleep(v, fighting)) { if (!asleep) goHome(sim, v); }
-  else if (asleep) { sim.exitBuilding(v); v.path = []; v.slide = null; v.phase = 'idle'; v.bed = -1; }
+  else if (asleep) { if (atWork(sim, v) && v.phase === 'sleep') v.phase = 'inside'; else { sim.exitBuilding(v); v.path = []; v.slide = null; v.phase = 'idle'; v.bed = -1; } } // staff wake up at their bench
 
   sim.moveUnit(v, dt);
   if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim.fogDirty = true;
   if (!v.path.length && !v.slide && !brained && !training) sim.think(v, dt);
   sim.animate(v, dt);
+}
+
+/** Inside the house they work in (on its staff list): they sleep there and keep their place. */
+function atWork(sim: Sim, v: Villager): boolean {
+  const b = v.inside === null ? undefined : sim.getBuilding(v.inside);
+  return !!b && b.staff.includes(v.id);
 }
 
 /**
@@ -95,7 +101,7 @@ export function goHome(sim: Sim, v: Villager): void {
   sim.stash(v);
   sim.resetTask(v); v.nightOwl = owl;
   v.phase = 'sleep';
-  const bed = sim.freeBed(v);
+  const bed = v.job === 'build' ? sim.building('builder') ?? sim.freeBed(v) : sim.freeBed(v); // builders bunk in the Nhà thợ xây
   if (bed) {
     const bd = BUILDINGS[bed.kind];
     if (sim.routeTo(v, sim.ringTiles(v, bed.x, bed.y, bd.w, bd.h)) >= 0) { v.target = bed.id; v.phase = 'goHome'; return; }

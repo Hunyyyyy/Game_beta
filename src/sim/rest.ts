@@ -6,6 +6,7 @@
 import restJson from '../data/rest.json';
 import { Building, levelDef } from './buildings';
 import { DAY_LENGTH } from './constants';
+import { isStaffJob } from './jobs';
 import type { Sim } from './sim';
 import type { Villager } from './model';
 
@@ -65,7 +66,8 @@ export function freeBed(sim: Sim, v: Villager): Building | undefined {
 /** How well the place they sleep in lets them rest: the house they are inside (and its level), else the campfire's slower rest. */
 function bedFactor(sim: Sim, v: Villager): number {
   const b = v.inside === null ? undefined : sim.getBuilding(v.inside);
-  return b && (BED_KINDS as readonly string[]).includes(b.kind) ? REST.sleepAt[b.kind as BedKind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
+  if (b && (BED_KINDS as readonly string[]).includes(b.kind)) return REST.sleepAt[b.kind as BedKind] * levelDef(b).craftSpeed;
+  return b ? REST.sleepAt.house : REST.sleepAt.campfire; // a bunk in the workplace is as good as a plain house
 }
 
 /** Percentage points gained per second while asleep. Night sleep is twice as good as sleep by day. */
@@ -127,10 +129,13 @@ export function onShift(sim: Sim, v: Villager): boolean {
   return v.shift === 'night' ? night : !night;
 }
 
+/** Posted to a house to work inside it (craft, research, repair, tame, a Ruộng) or crew of the Nhà thợ xây's own roof. */
+const indoors = (v: Villager): boolean => isStaffJob(v.job) || (v.job === 'food' && v.post >= 0);
+
 /** Whether the villager should be up and working: on shift, and at night with a torch (soldiers on watch need none). */
 export function onDuty(sim: Sim, v: Villager): boolean {
   if (!onShift(sim, v)) return false;
-  if (sim.resting && v.job !== 'fight' && v.job !== 'idle') return ensureTorch(sim, v);
+  if (sim.resting && v.job !== 'fight' && v.job !== 'idle' && !indoors(v)) return ensureTorch(sim, v); // under a roof the night needs no torch
   return true;
 }
 
