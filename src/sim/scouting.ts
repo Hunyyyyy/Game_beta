@@ -1,6 +1,6 @@
 /** Scouting: villages found on the map, trips to draw them (three levels of map, ageing) and the scouts who do not come home. */
 import { levelDef } from './buildings';
-import { ringOf, ringPower } from './combat';
+import { ringOf, ringPower, SIEGE } from './combat';
 import { DAY_LENGTH } from './constants';
 import { armOfWeapon, COMMAND } from './formations';
 import { RESEARCH } from './research';
@@ -120,7 +120,18 @@ export function dismissScouts(sim: Sim, ids: readonly number[]): string | null {
  * How good a scout one villager is, about 0.5 to 1.7: legs (Nhanh nhẹn), wind (Thể lực) and a clear head (Trí tuệ).
  * Experience and research will add to this later; every trip reads it through here.
  */
-export const scoutSkill = (v: Pick<Villager, 'stats'>): number => (v.stats.agi + v.stats.sta + v.stats.int) / 18;
+export const scoutSkill = (v: Pick<Villager, 'stats'> & Partial<Pick<Villager, 'weapon' | 'armor' | 'torch' | 'arm'>>): number => {
+  const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta + w.int * v.stats.int) / 6; // a clear head and wind count most
+  return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
+};
+
+/** What a scout carries makes him better at the work: a weapon, armour, a torch, a mount (a rider). `table` says how much each piece is worth. */
+function gearOf(v: Partial<Pick<Villager, 'weapon' | 'armor' | 'torch' | 'arm'>>, table: { weapon: number; armor: number; torch: number; mount: number }): number {
+  return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.arm === 'cavalry' ? table.mount : 0);
+}
+
+/** How cleverly he moves: Trí tuệ to keep out of sight, Thể lực to keep going. Used for the chance of being caught and for the time spent watching. */
+const stealthOf = (v: Pick<Villager, 'stats'>): number => 0.6 * v.stats.int + 0.4 * v.stats.sta;
 
 /** Scouts a map of this level needs, in "average scouts": the level plus one, and one more for every eight of their soldiers, at most eight. */
 export const scoutsNeeded = (sim: Sim, tribe: string, level: number): number => Math.min(8, level + 1 + Math.floor(warriorsOf(sim, tribe) / 8));
@@ -132,14 +143,14 @@ export function drawChance(skills: readonly number[], need: number): number {
 }
 
 /** Game seconds the scouts spend circling and studying the village: each level takes longer, each extra scout shortens it. */
-export const surveyTime = (level: number, scouts: number): number => (0.2 * level * DAY_LENGTH) / (1 + 0.35 * (Math.max(1, scouts) - 1));
+export const surveyTime = (level: number, scouts: number, int = 6): number => (0.2 * level * DAY_LENGTH) / ((1 + 0.35 * (Math.max(1, scouts) - 1)) * Math.max(0.5, 1 + SIEGE.scout.surveyPerInt * (int - 6)));
 
 /** What a trip would be like with these people, for the list that picks them: the chance of a full map, the time it takes and what is wrong with it, if anything. */
 export function planScout(sim: Sim, ids: readonly number[], tribe: string): ScoutPlan {
   const level = scoutLevel(sim), limit = scoutLimit(sim), scouts = sim.mine(ids).filter((v) => canScout(sim, v));
   const need = scoutsNeeded(sim, tribe, Math.max(1, level)), w = whereIs(sim, tribe);
-  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed, 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
-  const survey = surveyTime(Math.max(1, level), scouts.length);
+  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
+  const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.int, 0) / scouts.length : 6);
   let error: string | null = null;
   if (!sim.dev.freeBuild && !isFound(sim, tribe)) error = 'Chưa ai tìm thấy làng này';
   else if (!tribeOf(sim, tribe as never)) error = 'Không có làng này';
@@ -170,11 +181,11 @@ export function startScout(sim: Sim, ids: readonly number[], tribe: string): str
 }
 
 /** The chance one scout is caught and killed: his own village's strength, daylight and his speed. */
-function deathChance(sim: Sim, m: ScoutMission, agi: number): number {
+function deathChance(sim: Sim, m: ScoutMission, v: Villager): number {
   const t = tribeOf(sim, m.tribe as never)!, fire = sim.campfire();
   const power = warriorsOf(sim, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
   const day = sim.weather === 'clear' && !sim.resting;
-  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, agi - 6) * 0.01));
+  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 0.005) - gearOf(v, SIEGE.scout.gearHide)));
 }
 
 export function tickScouts(sim: Sim, dt: number): void {
@@ -189,13 +200,13 @@ export function tickScouts(sim: Sim, dt: number): void {
       const near = alive.every((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
       if (near || m.t > 300) {
         m.phase = 'watch'; m.t = 0;
-        for (const v of alive) if (sim.frnd() < deathChance(sim, m, v.stats.agi)) sim.killUnit(v, 'vì bị phát hiện khi trinh sát');
+        for (const v of alive) if (sim.frnd() < deathChance(sim, m, v)) sim.killUnit(v, 'vì bị phát hiện khi trinh sát');
         m.survivors = alive.filter((v) => v.health > 0 && sim.byId.has(v.id)).length;
         if (m.survivors && m.level >= 2) m.seen = seenNow(sim, tribeOf(sim, m.tribe as never)!); // the day the scouts came is the day the map shows
         sim.say(m.survivors ? `Trinh sát đang quan sát ${t.def.name}.` : 'Trinh sát bị bắt gặp, không ai thoát.');
       }
     } else if (m.phase === 'watch') {
-      if (m.t >= surveyTime(m.level, m.survivors)) {
+      if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.int, 0) / Math.max(1, alive.length))) {
         m.phase = 'back'; m.t = 0;
         const fire = sim.campfire();
         for (const id of m.ids) if (sim.byId.has(id) && fire) sim.orderMove([id], Math.floor(fire.x + 1), Math.floor(fire.y + 3));

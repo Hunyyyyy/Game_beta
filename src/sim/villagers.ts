@@ -37,7 +37,7 @@ export function makeVillager(sim: Sim, x: number, y: number, sex: Sex, team: Tea
     look: { sex, skin: pick(SKIN), hair: pick(HAIR), hide: '#8b6a45', pants: '#3f63a8' },
     x: x + 0.5, y: y + 0.5, path: [], slide: null, facing: 'front', speed: 1.6 + 0.1 * stats.agi, animClock: 0, tx: -1, ty: -1,
     stats, potential, skill, tools: emptyToolSet(), job: 'idle', arm: 'foot', phase: 'idle', slot: 0, target: -1, prefer: -1, progress: 0, frac: 0, timer: 0, order: null,
-    carry: null, fullness: 100, health: maxHpOf(stats.vit), starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, post: -1, nightOwl: false, energy: 100, strain: 0, shift: 'day', torch: null, lockUntil: 0, lit: false, manualGear: false, inside: null, orderCd: 0, repairFor: null, squad: -1, breaks: null, gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
+    carry: null, fullness: 100, health: maxHpOf(stats.vit), starving: false, anim: 'idle', hold: null, bad: new Map(), bed: -1, post: -1, nightOwl: false, energy: 100, strain: 0, shift: 'day', torch: null, lockUntil: 0, lit: false, manualGear: false, inside: null, orderCd: 0, repairFor: null, squad: -1, born: { ...stats }, train: null, breaks: null, gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
     team, maxHealth: maxHpOf(stats.vit), weapon: null, armor: null, morale: MORALE.start, stance: 'aggressive',
     fight: { mode: 'none', target: null, dest: null, anchor: null, repath: 0, scan: 0 }, queue: [], atkCd: 0, down: 0, rescue: 0, fleeT: 0, calm: 99, loot: -1, leader: false, swing: null, flinch: 0, ai: null,
   };
@@ -71,7 +71,8 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   }
 
   // ---- combat decides first: fighting, fleeing, rescuing, hunting ----
-  const brained = brainPlayer(sim, v, dt);
+  const training = !!v.train && sim.trainStep(v, dt); // away at training: no work, no guard duty
+  const brained = training ? false : brainPlayer(sim, v, dt);
 
   // ---- energy and sleep: worn out, or off shift, they sleep; a soldier in a fight fights on ----
   const fighting = brained && (v.phase === 'fight' || v.phase === 'flee' || v.phase === 'rescue');
@@ -81,7 +82,7 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
 
   sim.moveUnit(v, dt);
   if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim.fogDirty = true;
-  if (!v.path.length && !v.slide && !brained) sim.think(v, dt);
+  if (!v.path.length && !v.slide && !brained && !training) sim.think(v, dt);
   sim.animate(v, dt);
 }
 

@@ -1,4 +1,5 @@
 import { DAY_LENGTH } from '../sim/constants';
+import { fmtStat } from '../sim/jobs';
 import type { Villager } from '../sim/model';
 import { h, hint } from './dom';
 import { RolePane } from './rolepane';
@@ -48,7 +49,7 @@ export class ScoutPane {
   }
 
   private statsOf(v: Villager): string {
-    return `Nhanh ${v.stats.agi} · Thể lực ${v.stats.sta} · Trí tuệ ${v.stats.int} · điểm ${(this.c.sim.scoutSkill(v) * 10).toFixed(1)}`;
+    return `Nhanh ${fmtStat(v.stats.agi)} · Thể lực ${fmtStat(v.stats.sta)} · Trí tuệ ${fmtStat(v.stats.int)} · điểm ${(this.c.sim.scoutSkill(v) * 10).toFixed(1)}${v.weapon ? ' · vũ khí' : ''}${v.armor ? ' · giáp' : ''}${v.torch ? ' · đuốc' : ''}`;
   }
 
   private again(): void { this.key = ''; this.changed(); }
@@ -94,12 +95,13 @@ export class ScoutPane {
     const ids = [...this.picked], plan = sim.planScout(ids, tribe);
     const list = h('div', { class: 'rdrop' });
     if (!people.length) list.append(h('p', { class: 'sub', text: 'Không có trinh sát nào rảnh để đi: tuyển thêm, hoặc đợi họ về.' }));
-    for (const v of people) {
-      const box = h('input', { type: 'checkbox' }) as HTMLInputElement;
-      box.checked = this.picked.has(v.id); box.disabled = !box.checked && this.picked.size >= limit;
-      box.addEventListener('change', () => { if (box.checked) this.picked.add(v.id); else this.picked.delete(v.id); this.again(); });
-      list.append(h('label', { class: 'rpick' }, box, h('span', { class: 'rwho' }, h('b', { text: v.name }),
-        h('small', { text: this.statsOf(v) }))));
+    // chosen scouts first, each with a minus; the others with a plus (a trip takes at most what the camp allows)
+    for (const v of [...people.filter((o) => this.picked.has(o.id)), ...people.filter((o) => !this.picked.has(o.id))]) {
+      const on = this.picked.has(v.id);
+      list.append(h('div', { class: `rrow${on ? '' : ' rfree'}`, style: 'grid-template-columns:1fr auto auto' }, h('div', { class: 'rwho' }, h('b', { text: v.name }), h('small', { text: this.statsOf(v) })),
+        h('button', { class: 'chip', text: '⚙', title: 'Giao việc và chi tiết: vũ khí, giáp, đuốc cho trinh sát', onclick: () => { const { ctl } = this.c; ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding(); } }),
+        on ? h('button', { class: 'chip danger', text: '−', title: 'Không cử người này', onclick: () => { this.picked.delete(v.id); this.again(); } })
+          : h('button', { class: 'chip', text: '＋', title: this.picked.size >= limit ? `Trại chỉ cho đi ${limit} người một chuyến` : 'Cử người này đi', disabled: this.picked.size >= limit, onclick: () => { this.picked.add(v.id); this.again(); } })));
     }
     const odds = plan.count < 2 ? 'Cần ít nhất 2 người mới có cơ hội vẽ đủ chi tiết' : `Tỉ lệ vẽ đủ chi tiết: ${Math.round(plan.chance * 100)}%`;
     return h('div', { class: 'proster', style: 'display:grid;gap:4px' }, list,

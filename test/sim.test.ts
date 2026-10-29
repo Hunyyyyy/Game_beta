@@ -1893,9 +1893,52 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
     for (const t of old.tribes) for (const p of t.props) delete p.hp;
     const back = Sim.fromSave(old);
     ok(back.buildings.find((b) => b.kind === 'house')!.hp === maxHp(h) && back.villagers.every((v) => v.breaks === null) && back.tribes.every((t) => t.props.every((p) => p.hp > 0)), 'houses and works get their strength, soldiers are not breaking anything');
-    ok(SAVE_VERSION === 12, 'the save format is version 12');
+    ok(SAVE_VERSION === 13, 'the save format is version 13');
   }
 }
 
+{
+  // ======== training: a day or two away from work, a few per cent of one stat, and another that pays for it ========
+  const sm = mk(1337); sm.dev.freeBuild = false; sm.villagers.forEach((v) => { v.job = 'idle'; });
+  dev.buildAll(sm); sm.dev.freeBuild = false; sm.stock.food = 500; sm.stock.coin = 100;
+  const yard = sm.building('infantry')!; const men = dev.raiseArmy(sm, 'spear', 5);
+  const m0 = men[0], str0 = m0.stats.str, agi0 = m0.stats.agi, vit0 = m0.stats.vit, born = { ...m0.born };
+  ok(m0.born.str === str0 && m0.train === null, 'every body remembers what it was born with');
+  const info = sm.trainInfo(yard)!;
+  ok(info.main === 'str' && info.partner === 'vit' && info.cost === 'agi' && info.cap === 8, 'the Trại chiến binh trains strength with health, at the price of agility, up to 8 at level 1');
+  const food0 = sm.stock.food, coin0 = sm.stock.coin, price = sm.trainCost(str0, 0);
+  ok(sm.startTraining([m0.id], yard.id, 0) === null && !!m0.train && sm.stock.food === food0 - price.food && sm.stock.coin === coin0 - price.coin, `sending him costs food and coin (${price.food} + ${price.coin})`);
+  ok(sm.trainees(yard).includes(m0) && sm.trainCost(str0, 2).coin === price.coin + 5 && sm.trainTime(10) > sm.trainTime(4), 'care costs more coin and a higher stat takes longer');
+  run(sm, sm.trainTime(str0) + 5);
+  ok(m0.train === null && m0.stats.str > str0 && m0.stats.str <= str0 * 1.05 + 0.01, `a day on, he is stronger by 1 to 5% (${str0} -> ${m0.stats.str})`);
+  ok(m0.stats.vit >= vit0 && m0.stats.agi < agi0 && m0.stats.agi >= Math.max(3, born.agi * 0.6) - 0.001, `his health rose a little and agility paid for it, not below the floor (${agi0} -> ${m0.stats.agi})`);
+  ok(m0.maxHealth === Math.round(40 + 8 * m0.stats.vit), 'and his health follows his vitality');
+  // care softens the price
+  const a = men[1], b = men[2]; a.stats.str = b.stats.str = 6; a.stats.agi = b.stats.agi = 9; a.born.agi = b.born.agi = 9;
+  sm.startTraining([a.id], yard.id, 0); sm.startTraining([b.id], yard.id, 2); run(sm, sm.trainTime(6) + 5);
+  ok(9 - a.stats.agi > 9 - b.stats.agi && b.stats.agi < 9, `more care, less lost (${(9 - a.stats.agi).toFixed(2)} against ${(9 - b.stats.agi).toFixed(2)})`);
+  // the floor and the ceiling
+  const c = men[3]; c.stats.str = 6; c.stats.agi = 3; c.born.agi = 5; sm.startTraining([c.id], yard.id, 0); run(sm, sm.trainTime(6) + 5);
+  ok(c.stats.agi >= 3, 'a stat never falls below its floor');
+  const d = men[4]; d.stats.str = 8; ok(sm.startTraining([d.id], yard.id, 0) !== null && !d.train, 'a stat at the ceiling of the house cannot be trained further');
+  // refusals
+  sm.stock.food = 500; ok(sm.startTraining([men[1].id], yard.id, 0) === null, 'he can go again'); sm.stock.coin = 0; ok(sm.startTraining([men[3].id], yard.id, 0) !== null, 'with no coin nobody goes');
+  sm.cancelTraining([men[1].id]); ok(men[1].train === null, 'and can be called back');
+  // saved
+  sm.stock.coin = 50; sm.startTraining([men[3].id], yard.id, 1);
+  const back = Sim.fromSave(JSON.parse(JSON.stringify(sm.toSave()))), bm = back.get(men[3].id)!;
+  ok(!!bm.train && bm.train.stat === 'str' && bm.born.agi === men[3].born.agi, 'training and the born stats are kept by a save');
+  const old = JSON.parse(JSON.stringify(sm.toSave())); old.version = 12; for (const v of old.lists.villagers) { delete v.born; delete v.train; }
+  ok(Sim.fromSave(old).villagers.every((v) => !!v.born && v.train === null), 'a save from before training is brought forward');
+}
+{
+  // ======== scouts: gear helps, and a clever head and wind keep them out of sight ========
+  const sm = mk(1337); const v = sm.villagers[0]; v.stats.agi = v.stats.sta = v.stats.int = 6; v.weapon = null; v.armor = null; v.torch = null;
+  const bare = sm.scoutSkill(v); ok(Math.abs(bare - 1) < 1e-9, 'an average scout bare-handed scores 1');
+  v.weapon = 'club'; const w = sm.scoutSkill(v); v.armor = 'hide'; const wa = sm.scoutSkill(v); v.torch = { dur: 99 }; const wat = sm.scoutSkill(v);
+  ok(w > bare && wa > w && wat > wa, 'a weapon, armour and a torch each make him a better scout');
+  v.weapon = null; v.armor = null; v.torch = null; const dull = sm.scoutSkill(v); v.stats.int = 10; const sharp = sm.scoutSkill(v); v.stats.int = 6; v.stats.sta = 10; const fit = sm.scoutSkill(v);
+  ok(sharp > dull && fit > dull && sharp - dull > fit - dull, 'a clearer head and more wind both help, the head more');
+}
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');
 process.exit(fails ? 1 : 0);

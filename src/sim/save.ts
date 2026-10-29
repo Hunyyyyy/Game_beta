@@ -15,7 +15,7 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
@@ -153,6 +153,12 @@ export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disabl
     for (const t of d.tribes as Array<{ props: Array<{ kind: string; hp?: number }> }>) for (const p of t.props) p.hp ??= SIEGE.propHp[p.kind] ?? 60;
     return { ...d, version: 12 };
   },
+};
+
+MIGRATIONS[12] = (d) => {
+  // 12 -> 13: stats may have a fraction after training; every body remembers the stats it was born with and may be away at training
+  for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) { v.born ??= { ...(v.stats as object) }; v.train ??= null; }
+  return { ...d, version: 13 };
 };
 
 export function migrate(raw: unknown): GameSave {

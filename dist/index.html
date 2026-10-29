@@ -1927,7 +1927,29 @@ body.war .sheet, body.war .bbar {
     buildingHpPerTile: 45,
     crew: 3,
     driftMax: 14,
-    reach: 1.6
+    reach: 1.6,
+    scout: {
+      gearSkill: {
+        weapon: 0.05,
+        armor: 0.08,
+        torch: 0.06,
+        mount: 0.2
+      },
+      gearHide: {
+        weapon: 0.03,
+        armor: 0.05,
+        torch: 0.04,
+        mount: 0.06
+      },
+      weights: {
+        agi: 0.25,
+        sta: 0.35,
+        int: 0.4
+      },
+      stealthPerPoint: 0.015,
+      surveyPerInt: 0.04,
+      walkPerSta: 0.02
+    }
   };
 
   // src/data/weapons.json
@@ -26894,7 +26916,43 @@ body.war .sheet, body.war .bbar {
     outdoor: ["wood", "stone", "food", "build"]
   };
 
+  // src/data/training.json
+  var training_default = {
+    _note: "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
+    dayBase: 0.6,
+    dayPerStat: 0.12,
+    foodBase: 4,
+    coinBase: 1,
+    coinPerStat: 0.3333,
+    gain: [0.01, 0.05],
+    partnerShare: 0.5,
+    floor: 0.6,
+    floorMin: 3,
+    caps: [8, 12, 16],
+    care: [
+      { name: "Kh\xF4ng", coin: 0, penalty: 0.8 },
+      { name: "C\u1EA9n th\u1EADn", coin: 2, penalty: 0.4 },
+      { name: "Chu \u0111\xE1o", coin: 5, penalty: 0.15 }
+    ],
+    profiles: {
+      infantry: { main: "str", partner: "vit", cost: "agi" },
+      archery: { main: "agi", partner: "sta", cost: "str" },
+      cavalry: { main: "agi", partner: "sta", cost: "int" },
+      lumberyard: { main: "str", partner: "vit", cost: "agi" },
+      quarry: { main: "str", partner: "vit", cost: "agi" },
+      farmhouse: { main: "agi", partner: "sta", cost: "str" },
+      huntlodge: { main: "agi", partner: "sta", cost: "str" },
+      builder: { main: "sta", partner: "str", cost: "int" },
+      workshop: { main: "int", cost: "sta" },
+      lab: { main: "int", cost: "sta" },
+      repair: { main: "agi", partner: "int", cost: "vit" },
+      scouttent: { main: "agi", partner: "sta", cost: "str" }
+    }
+  };
+
   // src/sim/jobs.ts
+  var TRAINING = training_default;
+  var fmtStat = (x) => String(Math.round(x * 10) / 10);
   var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", int: "Tr\xED tu\u1EC7", sta: "Th\u1EC3 l\u1EF1c" };
   var JOBS = {
     wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
@@ -29075,6 +29133,8 @@ body.war .sheet, body.war .bbar {
       orderCd: 0,
       repairFor: null,
       squad: -1,
+      born: { ...stats },
+      train: null,
       breaks: null,
       gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
       team,
@@ -29138,7 +29198,8 @@ body.war .sheet, body.war .bbar {
         return;
       }
     }
-    const brained = brainPlayer(sim2, v, dt);
+    const training = !!v.train && sim2.trainStep(v, dt);
+    const brained = training ? false : brainPlayer(sim2, v, dt);
     const fighting = brained && (v.phase === "fight" || v.phase === "flee" || v.phase === "rescue");
     const asleep = v.phase === "goHome" || v.phase === "sleep";
     if (sim2.shouldSleep(v, fighting)) {
@@ -29152,7 +29213,7 @@ body.war .sheet, body.war .bbar {
     }
     sim2.moveUnit(v, dt);
     if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim2.fogDirty = true;
-    if (!v.path.length && !v.slide && !brained) sim2.think(v, dt);
+    if (!v.path.length && !v.slide && !brained && !training) sim2.think(v, dt);
     sim2.animate(v, dt);
   }
   function goHome(sim2, v) {
@@ -29287,7 +29348,7 @@ body.war .sheet, body.war .bbar {
   }
 
   // src/sim/save.ts
-  var SAVE_VERSION = 12;
+  var SAVE_VERSION = 13;
   var SAVED = {
     /** Single values. */
     scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
@@ -29426,6 +29487,13 @@ body.war .sheet, body.war .bbar {
       for (const t of d.tribes) for (const p of t.props) p.hp ?? (p.hp = SIEGE.propHp[p.kind] ?? 60);
       return { ...d, version: 12 };
     }
+  };
+  MIGRATIONS[12] = (d) => {
+    for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+      v.born ?? (v.born = { ...v.stats });
+      v.train ?? (v.train = null);
+    }
+    return { ...d, version: 13 };
   };
   function migrate(raw) {
     let d = raw;
@@ -30158,18 +30226,25 @@ body.war .sheet, body.war .bbar {
     }
     return n ? null : away ? "\u0110ang \u0111i trinh s\xE1t: \u0111\u1EE3i h\u1ECD v\u1EC1" : "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 cho ngh\u1EC9";
   }
-  var scoutSkill = (v) => (v.stats.agi + v.stats.sta + v.stats.int) / 18;
+  var scoutSkill = (v) => {
+    const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta + w.int * v.stats.int) / 6;
+    return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
+  };
+  function gearOf(v, table) {
+    return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.arm === "cavalry" ? table.mount : 0);
+  }
+  var stealthOf = (v) => 0.6 * v.stats.int + 0.4 * v.stats.sta;
   var scoutsNeeded = (sim2, tribe, level) => Math.min(8, level + 1 + Math.floor(warriorsOf(sim2, tribe) / 8));
   function drawChance(skills, need) {
     if (skills.length < 2) return 0;
     return Math.min(0.95, skills.reduce((a, b) => a + b, 0) / need);
   }
-  var surveyTime = (level, scouts) => 0.2 * level * DAY_LENGTH / (1 + 0.35 * (Math.max(1, scouts) - 1));
+  var surveyTime = (level, scouts, int = 6) => 0.2 * level * DAY_LENGTH / ((1 + 0.35 * (Math.max(1, scouts) - 1)) * Math.max(0.5, 1 + SIEGE.scout.surveyPerInt * (int - 6)));
   function planScout(sim2, ids, tribe) {
     const level = scoutLevel(sim2), limit = scoutLimit(sim2), scouts = sim2.mine(ids).filter((v) => canScout(sim2, v));
     const need = scoutsNeeded(sim2, tribe, Math.max(1, level)), w = whereIs(sim2, tribe);
-    const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed, 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
-    const survey = surveyTime(Math.max(1, level), scouts.length);
+    const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
+    const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.int, 0) / scouts.length : 6);
     let error = null;
     if (!sim2.dev.freeBuild && !isFound(sim2, tribe)) error = "Ch\u01B0a ai t\xECm th\u1EA5y l\xE0ng n\xE0y";
     else if (!tribeOf(sim2, tribe)) error = "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
@@ -30197,11 +30272,11 @@ body.war .sheet, body.war .bbar {
     sim2.say(`${scouts.length} trinh s\xE1t l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ${t.def.name} \u0111\u1EC3 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p ${Math.max(1, plan2.level)}: kho\u1EA3ng ${Math.round(plan2.chance * 100)}% v\u1EBD \u0111\u1EE7 chi ti\u1EBFt, c\u1EA3 chuy\u1EBFn m\u1EA5t ch\u1EEBng ${Math.max(1, Math.round(plan2.total / 60))} ph\xFAt.`);
     return null;
   }
-  function deathChance(sim2, m, agi) {
+  function deathChance(sim2, m, v) {
     const t = tribeOf(sim2, m.tribe), fire = sim2.campfire();
     const power = warriorsOf(sim2, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
     const day = sim2.weather === "clear" && !sim2.resting;
-    return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim2.resting ? 0.1 : 0) - Math.max(0, agi - 6) * 0.01));
+    return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim2.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 5e-3) - gearOf(v, SIEGE.scout.gearHide)));
   }
   function tickScouts(sim2, dt) {
     tickSightings(sim2, dt);
@@ -30220,13 +30295,13 @@ body.war .sheet, body.war .bbar {
         if (near2 || m.t > 300) {
           m.phase = "watch";
           m.t = 0;
-          for (const v of alive) if (sim2.frnd() < deathChance(sim2, m, v.stats.agi)) sim2.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
+          for (const v of alive) if (sim2.frnd() < deathChance(sim2, m, v)) sim2.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
           m.survivors = alive.filter((v) => v.health > 0 && sim2.byId.has(v.id)).length;
           if (m.survivors && m.level >= 2) m.seen = seenNow(sim2, tribeOf(sim2, m.tribe));
           sim2.say(m.survivors ? `Trinh s\xE1t \u0111ang quan s\xE1t ${t.def.name}.` : "Trinh s\xE1t b\u1ECB b\u1EAFt g\u1EB7p, kh\xF4ng ai tho\xE1t.");
         }
       } else if (m.phase === "watch") {
-        if (m.t >= surveyTime(m.level, m.survivors)) {
+        if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.int, 0) / Math.max(1, alive.length))) {
           m.phase = "back";
           m.t = 0;
           const fire = sim2.campfire();
@@ -30478,8 +30553,8 @@ body.war .sheet, body.war .bbar {
       if (n && m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
       if (n && m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
       if (n && m.deploy && n < m.deploy.cells.length && !isLogistics(plan2, m)) out.push(`\u2717 ${name} m\u1EDBi c\xF3 ${n}/${m.deploy.cells.length} l\xEDnh cho ${m.deploy.cells.length} \xF4 \u0111\u1ED9i h\xECnh: th\xEAm l\xEDnh v\xE0o \u0111\u1ED9i ho\u1EB7c b\u1EDBt \xF4 (\u2702 B\u1EDBt \xF4).`);
-      const unfit = s ? sim2.squadUnits(s).filter((v) => v.down > 0 || sim2.sleepLocked(v)).length : 0;
-      if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
+      const unfit = s ? sim2.squadUnits(s).filter((v) => v.down > 0 || v.train || sim2.sleepLocked(v)).length : 0;
+      if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng, \u0111ang hu\u1EA5n luy\u1EC7n ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
       if (s && n && !sim2.squadCenter(s)) out.push(`${name} ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng.`);
       if (s && plan2.kind === "attack" && m.withdrawAt > 0 && !m.retreat.length && m.path.length) out.push(`${name} s\u1EBD r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n v\xEC ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt.`);
       if (s && plan2.kind === "attack" && m.route === "night") out.push(`${name} \u0111i \u0111\u01B0\u1EDDng v\xF2ng ban \u0111\xEAm: s\u1EBD ch\u1EDD \u0111\u1EBFn t\u1ED1i m\u1EDBi xu\u1EA5t ph\xE1t.`);
@@ -31375,6 +31450,95 @@ body.war .sheet, body.war .bbar {
     return true;
   }
 
+  // src/sim/training.ts
+  var profileOf = (b) => TRAINING.profiles[b.kind];
+  var trainCap = (b) => TRAINING.caps[Math.max(0, Math.min(TRAINING.caps.length, b.level) - 1)];
+  function members(sim2, b) {
+    const role = ROLE_IDS.find((r) => ROLES[r].building === b.kind);
+    const inHouse = role ? sim2.villagers.filter((v) => roleOf(v) === role) : b.kind === "builder" ? sim2.crew() : b.staff.map((id) => sim2.get(id)).filter((v) => !!v);
+    const away = sim2.villagers.filter((v) => v.train?.house === b.id && !inHouse.includes(v));
+    return [...inHouse, ...away];
+  }
+  function trainCost(stat, care) {
+    return { food: Math.round(TRAINING.foodBase + stat), coin: Math.round(TRAINING.coinBase + stat * TRAINING.coinPerStat) + TRAINING.care[care].coin };
+  }
+  var trainTime = (stat) => (TRAINING.dayBase + TRAINING.dayPerStat * stat) * DAY_LENGTH;
+  function startTraining(sim2, ids, houseId, care) {
+    const lock = sim2.warLock();
+    if (lock) return "\u0110ang c\xF3 chi\u1EBFn tranh: kh\xF4ng hu\u1EA5n luy\u1EC7n \u0111\u01B0\u1EE3c";
+    const b = sim2.getBuilding(houseId), p = b ? profileOf(b) : void 0;
+    if (!b || !p || !TRAINING.care[care]) return "Nh\xE0 n\xE0y kh\xF4ng hu\u1EA5n luy\u1EC7n \u0111\u01B0\u1EE3c";
+    if (!b.done) return "Nh\xE0 ch\u01B0a d\u1EF1ng xong";
+    const cap = trainCap(b), mine2 = members(sim2, b);
+    let err = null, n = 0;
+    for (const v of sim2.mine(ids)) {
+      if (!mine2.includes(v) || v.train) continue;
+      if (v.stats[p.main] >= cap) {
+        err = `${v.name} \u0111\xE3 t\u1EDBi tr\u1EA7n ${fmtStat(cap)} ${STAT_NAME[p.main].toLowerCase()} c\u1EE7a nh\xE0 c\u1EA5p ${b.level}: n\xE2ng c\u1EA5p nh\xE0`;
+        continue;
+      }
+      const cost = trainCost(v.stats[p.main], care), short = sim2.missing(cost);
+      if (short) {
+        err = short;
+        break;
+      }
+      sim2.pay(cost);
+      sim2.exitBuilding(v);
+      sim2.resetTask(v);
+      v.train = { house: b.id, stat: p.main, left: trainTime(v.stats[p.main]), total: trainTime(v.stats[p.main]), care, cap };
+      n++;
+    }
+    if (n) sim2.say(`${n} ng\u01B0\u1EDDi v\xE0o hu\u1EA5n luy\u1EC7n ${STAT_NAME[p.main].toLowerCase()} \u1EDF ${BUILDINGS[b.kind].name.toLowerCase()}.`);
+    return n ? null : err ?? "Ch\u1ECDn ng\u01B0\u1EDDi trong nh\xE0 \u0111\u1EC3 hu\u1EA5n luy\u1EC7n";
+  }
+  function cancelTraining(sim2, ids) {
+    for (const v of sim2.mine(ids)) if (v.train) {
+      v.train = null;
+      v.phase = "idle";
+      v.path = [];
+    }
+  }
+  function finish(sim2, v) {
+    const t = v.train, b = sim2.getBuilding(t.house), p = b ? profileOf(b) : void 0;
+    v.train = null;
+    if (!p) return;
+    const [lo, hi] = TRAINING.gain, r = lo + sim2.rnd() * (hi - lo), main = v.stats[p.main], next = Math.min(t.cap, main * (1 + r)), got = Math.max(0, next - main);
+    const round = (x) => Math.round(x * 100) / 100;
+    v.stats[p.main] = round(main + got);
+    if (p.partner) v.stats[p.partner] = round(Math.max(v.stats[p.partner], Math.min(t.cap, v.stats[p.partner] + got * TRAINING.partnerShare)));
+    const floor = Math.max(TRAINING.floorMin, v.born[p.cost] * TRAINING.floor);
+    v.stats[p.cost] = round(Math.max(Math.min(floor, v.stats[p.cost]), v.stats[p.cost] - got * TRAINING.care[t.care].penalty));
+    const ratio = v.maxHealth > 0 ? v.health / v.maxHealth : 1;
+    v.maxHealth = Math.round(maxHpOf(v.stats.vit));
+    v.health = v.maxHealth * ratio;
+    if (!v.squad || v.squad < 0) v.speed = 1.6 + 0.1 * v.stats.agi;
+    sim2.say(`${v.name} hu\u1EA5n luy\u1EC7n xong: ${STAT_NAME[p.main].toLowerCase()} ${fmtStat(main)} \u2192 ${fmtStat(v.stats[p.main])}, ${STAT_NAME[p.cost].toLowerCase()} ${fmtStat(v.stats[p.cost])}.`);
+  }
+  function trainStep(sim2, v, dt) {
+    const t = v.train;
+    if (!t) return false;
+    t.left -= dt;
+    if (t.left <= 0) {
+      finish(sim2, v);
+      return false;
+    }
+    if (v.phase === "sleep" || v.phase === "goHome") return true;
+    const b = sim2.getBuilding(t.house);
+    if (!b) {
+      v.train = null;
+      return false;
+    }
+    const d = BUILDINGS[b.kind];
+    if (!v.path.length && Math.hypot(b.x + d.w / 2 - v.x, b.y + d.h / 2 - v.y) > d.w + 2) {
+      if (sim2.pathLeft > 0) {
+        sim2.pathLeft--;
+        sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h), 3);
+      }
+      v.phase = v.path.length ? "move" : "idle";
+    } else if (!v.path.length) v.phase = "idle";
+    return true;
+  }
+
   // src/sim/simwar.ts
   var WAR = {
     /** → army.squadLimit */
@@ -31657,6 +31821,35 @@ body.war .sheet, body.war .bbar {
     /** → warplan.isLogistics */
     isLogistics(plan2, m) {
       return isLogistics(plan2, m);
+    },
+    /** → training.startTraining */
+    startTraining(ids, houseId, care) {
+      return startTraining(this, ids, houseId, care);
+    },
+    /** → training.cancelTraining */
+    cancelTraining(ids) {
+      return cancelTraining(this, ids);
+    },
+    /** → training.trainStep */
+    trainStep(v, dt) {
+      return trainStep(this, v, dt);
+    },
+    /** → training.profileOf, trainCap */
+    trainInfo(b) {
+      const p = profileOf(b);
+      return p ? { ...p, cap: trainCap(b) } : null;
+    },
+    /** → training.trainCost */
+    trainCost(stat, care) {
+      return trainCost(stat, care);
+    },
+    /** → training.trainTime */
+    trainTime(stat) {
+      return trainTime(stat);
+    },
+    /** → training.members */
+    trainees(b) {
+      return members(this, b);
     },
     /** → environment.sightOf */
     sightOf(v) {
@@ -34586,18 +34779,18 @@ body.war .sheet, body.war .bbar {
         g.btn.textContent = n >= 0 ? `${g.label} (${n})` : g.label;
         g.btn.disabled = g.kind !== null && n <= 0 && !chosen.every((o) => (g.slot === "weapon" ? o.weapon : o.armor) === g.kind);
       }
-      this.gearTip.textContent = chosen.every((o) => o.job === "fight" || o.job === "hunt") ? chosen[0].manualGear ? "\u0110\u1ED3 do b\u1EA1n ph\xE1t: X\u01B0\u1EDFng kh\xF4ng t\u1EF1 \u0111\u1ED5i." : "X\u01B0\u1EDFng t\u1EF1 ph\xE1t \u0111\u1ED3 t\u1ED1t nh\u1EA5t c\xF2n trong kho." : "Ch\u1EC9 Chi\u1EBFn binh v\xE0 Th\u1EE3 s\u0103n c\u1EA7m v\u0169 kh\xED \u0111i theo; d\xE2n th\u01B0\u1EDDng kh\xF4ng chi\u1EBFn \u0111\u1EA5u m\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i khi c\xF3 \u0111\u1ECBch.";
+      this.gearTip.textContent = chosen.every((o) => o.job === "scout") ? "V\u0169 kh\xED, gi\xE1p v\xE0 \u0111u\u1ED1c gi\xFAp trinh s\xE1t v\u1EBD \u0111\u1EE7 b\u1EA3n \u0111\u1ED3 h\u01A1n v\xE0 \xEDt b\u1ECB b\u1EAFt h\u01A1n." : chosen.every((o) => o.job === "fight" || o.job === "hunt") ? chosen[0].manualGear ? "\u0110\u1ED3 do b\u1EA1n ph\xE1t: X\u01B0\u1EDFng kh\xF4ng t\u1EF1 \u0111\u1ED5i." : "X\u01B0\u1EDFng t\u1EF1 ph\xE1t \u0111\u1ED3 t\u1ED1t nh\u1EA5t c\xF2n trong kho." : "Ch\u1EC9 Chi\u1EBFn binh v\xE0 Th\u1EE3 s\u0103n c\u1EA7m v\u0169 kh\xED \u0111i theo; d\xE2n th\u01B0\u1EDDng kh\xF4ng chi\u1EBFn \u0111\u1EA5u m\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i khi c\xF3 \u0111\u1ECBch.";
       this.gear.innerHTML = `M\xE1u <b>${Math.ceil(v.health)}/${v.maxHealth}</b> \xB7 V\u0169 kh\xED <b>${w}</b> \xB7 Gi\xE1p <b>${v.armor ? ARMORS[v.armor].name : "\u2014"}</b>${v.armor ? ` (${armorText(ARMORS[v.armor], false)})` : ""}${v.leader ? " \xB7 <b>Th\u1EE7 l\u0129nh</b>" : ""}`;
       const sk = `${v.id}|${WORK_JOBS.map((j) => v.skill[j].level).join("")}|${Object.values(v.stats).join()}`;
       if (sk !== this.statsKey) {
         this.statsKey = sk;
-        this.stats.innerHTML = Object.keys(STAT_NAME).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(" \xB7 ");
+        this.stats.innerHTML = Object.keys(STAT_NAME).map((k) => `${STAT_NAME[k]} <b>${fmtStat(v.stats[k])}</b>`).join(" \xB7 ");
         this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>c\u1EA5p ${v.skill[j].level}</b>`).join(" \xB7 ");
       }
       const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
       this.toolsSec.hidden = only === null;
       this.combatSec.hidden = !chosen.every((o) => o.job === "fight");
-      this.gearSec.hidden = !chosen.every((o) => o.job === "fight" || o.job === "hunt");
+      this.gearSec.hidden = !chosen.every((o) => o.job === "fight" || o.job === "hunt" || o.job === "scout");
       for (const r of this.toolRows) {
         r.row.hidden = r.k !== only;
         const t = v.tools[r.k];
@@ -34851,12 +35044,17 @@ body.war .sheet, body.war .bbar {
         this.list.replaceChildren(...staff.length ? staff.map((v) => h(
           "div",
           { class: "row" },
-          h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${v.stats[stat]} \xB7 ${JOBS[jobKey].name} c\u1EA5p ${v.skill[jobKey].level}` })),
-          h("button", { class: "sm", text: crew2 ? "Cho ngh\u1EC9" : "Cho ra", onclick: () => {
+          h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${fmtStat(v.stats[stat])} \xB7 ${JOBS[jobKey].name} c\u1EA5p ${v.skill[jobKey].level}` })),
+          h("div", { class: "btns" }, h("button", { class: "sm", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: c\xF4ng c\u1EE5", onclick: () => {
+            this.c.ctl.selected.clear();
+            this.c.ctl.selected.add(v.id);
+            this.c.ctl.openDetail = true;
+            this.c.ctl.closeBuilding();
+          } }), h("button", { class: "sm", text: "\u2212", title: crew2 ? "Cho ngh\u1EC9" : "Cho ra", onclick: () => {
             if (crew2) sim2.releaseCrew([v.id]);
             else sim2.releaseStaff([v.id]);
             this.c.ctl.onChange();
-          } })
+          } }))
         )) : [h("p", { class: "sub", text: crew2 ? "Ch\u01B0a c\xF3 th\u1EE3 x\xE2y n\xE0o: ch\u01B0a d\u1EF1ng \u0111\u01B0\u1EE3c g\xEC." : "Ch\u01B0a c\xF3 ai l\xE0m vi\u1EC7c \u1EDF \u0111\xE2y." })]);
       }
       this.picker.hidden = !this.open;
@@ -34870,8 +35068,8 @@ body.war .sheet, body.war .bbar {
         ...pool.map((v) => h(
           "div",
           { class: "row" },
-          h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${v.stats[stat]} \xB7 \u0111ang ${JOB_NAME[v.job].toLowerCase()}` })),
-          h("button", { class: "sm", text: "V\xE0o l\xE0m", disabled: full, onclick: () => {
+          h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${fmtStat(v.stats[stat])} \xB7 \u0111ang ${JOB_NAME[v.job].toLowerCase()}` })),
+          h("button", { class: "sm", text: "\uFF0B", title: "V\xE0o l\xE0m", disabled: full, onclick: () => {
             const e = crew2 ? sim2.assignCrew([v.id]) : this.job === "farm" ? sim2.assignField([v.id], b.id) : sim2.assignStaff([v.id], this.job);
             this.c.toast(e ?? `${v.name}: ${label2}`);
             this.c.ctl.onChange();
@@ -34932,8 +35130,6 @@ body.war .sheet, body.war .bbar {
       this.role = role;
       this.changed = changed;
       this.root = h("div", { class: "page" });
-      this.open = false;
-      this.picked = /* @__PURE__ */ new Set();
       this.key = "";
     }
     update() {
@@ -34946,10 +35142,8 @@ body.war .sheet, body.war .bbar {
       const { sim: sim2 } = this.c;
       return [
         this.role,
-        this.open,
-        [...this.picked].join("."),
         sim2.roleCapacity(this.role),
-        sim2.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? "" : "i"}${Math.round(v.energy / 5)}`).join(),
+        sim2.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? "" : "i"}${Math.round(v.energy / 5)}${v.stats.str}${v.stats.agi}${v.stats.int}${v.stats.sta}`).join(),
         sim2.scouts.map((m) => m.ids.join(".")).join("|"),
         sim2.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join()
       ].join("|");
@@ -34960,8 +35154,8 @@ body.war .sheet, body.war .bbar {
     }
     statLine(v) {
       const { sim: sim2 } = this.c, s = STAT_OF[this.role];
-      if (s === "scout") return `Nhanh ${v.stats.agi} \xB7 Th\u1EC3 l\u1EF1c ${v.stats.sta} \xB7 Tr\xED tu\u1EC7 ${v.stats.int} \xB7 \u0111i\u1EC3m ${(sim2.scoutSkill(v) * 10).toFixed(1)}`;
-      return `${STAT_NAME[s]} ${v.stats[s]}`;
+      if (s === "scout") return `Nhanh ${fmtStat(v.stats.agi)} \xB7 Th\u1EC3 l\u1EF1c ${fmtStat(v.stats.sta)} \xB7 Tr\xED tu\u1EC7 ${fmtStat(v.stats.int)} \xB7 \u0111i\u1EC3m ${(sim2.scoutSkill(v) * 10).toFixed(1)}`;
+      return `${STAT_NAME[s]} ${fmtStat(v.stats[s])}`;
     }
     render() {
       const { sim: sim2, ctl: ctl2, toast: toast2 } = this.c, role = this.role, def = ROLES[role], era = sim2.era;
@@ -34973,8 +35167,14 @@ body.war .sheet, body.war .bbar {
         const away = sim2.scouts.some((m) => m.ids.includes(v.id));
         out.push(h(
           "div",
-          { class: "rrow", style: `grid-template-columns:1fr ${def.job === "fight" ? "auto auto" : "auto"}` },
+          { class: "rrow", style: `grid-template-columns:1fr ${def.job === "fight" ? "auto auto auto" : "auto auto"}` },
           h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: `${describe(v, sim2)} \xB7 ${this.statLine(v)}` })),
+          h("button", { class: "chip", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: c\xF4ng c\u1EE5, trang b\u1ECB", onclick: () => {
+            ctl2.selected.clear();
+            ctl2.selected.add(v.id);
+            ctl2.openDetail = true;
+            ctl2.closeBuilding();
+          } }),
           def.job === "fight" ? h("button", { class: "chip", text: "\u25CE", title: "Ch\u1ECDn tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ra l\u1EC7nh", onclick: () => {
             if (v.inside !== null) {
               toast2(`${v.name} \u0111ang ng\u1EE7 trong tr\u1EA1i`);
@@ -34997,51 +35197,33 @@ body.war .sheet, body.war .bbar {
       const free = sim2.villagers.filter((v) => v.job !== "fight" && v.job !== "scout" && roleOf(v) !== role && v.down <= 0 && v.inside === null);
       const key = (v) => STAT_OF[role] === "scout" ? sim2.scoutSkill(v) : v.stats[STAT_OF[role]];
       free.sort((a, b) => key(b) - key(a));
-      for (const id of [...this.picked]) if (!free.some((v) => v.id === id)) this.picked.delete(id);
-      out.push(h("button", {
-        class: `chip${this.open ? " on" : ""}`,
-        style: "justify-self:start",
-        text: `\uFF0B Giao vi\u1EC7c \u25BE${free.length ? ` (${free.length})` : ""}`,
-        disabled: !free.length || !room || !!lock,
-        title: lock ? lock : !cap ? `C\u1EA7n d\u1EF1ng ${house}` : !room ? `${house} \u0111\xE3 \u0111\u1EE7 ch\u1ED7: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` : !free.length ? "Kh\xF4ng c\xF2n d\xE2n r\u1EA3nh" : "Ch\u1ECDn d\xE2n \u0111\u1EC3 giao vi\u1EC7c n\xE0y",
-        onclick: () => {
-          this.open = !this.open;
-          this.again();
-        }
-      }));
-      if (cap && !room) out.push(h("small", { class: "sub", text: `${house} \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm.` }));
-      if (this.open && free.length && room) {
-        const list = h("div", { class: "rdrop" });
-        for (const v of free) {
-          const box = h("input", { type: "checkbox" });
-          box.checked = this.picked.has(v.id);
-          box.disabled = !box.checked && this.picked.size >= room;
-          box.addEventListener("change", () => {
-            if (box.checked) this.picked.add(v.id);
-            else this.picked.delete(v.id);
-            this.again();
-          });
-          const now = roleOf(v);
-          list.append(h("label", { class: "rpick" }, box, h("span", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: `${now ? roleName(now, era) : "r\u1EA3nh"} \xB7 ${this.statLine(v)}` }))));
-        }
-        out.push(
-          list,
+      out.push(h("div", { class: "phead" }, h("b", { text: "D\xE2n r\u1EA3nh" }), h("small", { text: !cap ? `c\u1EA7n d\u1EF1ng ${house.toLowerCase()}` : room ? `c\xF2n ch\u1ED7 cho ${room} ng\u01B0\u1EDDi` : `${house.toLowerCase()} \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` })));
+      if (!free.length) out.push(h("p", { class: "sub", text: "Kh\xF4ng c\xF2n d\xE2n r\u1EA3nh." }));
+      for (const v of free) {
+        const now = roleOf(v);
+        out.push(h(
+          "div",
+          { class: "rrow rfree", style: "grid-template-columns:1fr auto auto" },
+          h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: `${now ? roleName(now, era) : "r\u1EA3nh"} \xB7 ${this.statLine(v)}` })),
+          h("button", { class: "chip", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: c\xF4ng c\u1EE5, trang b\u1ECB", onclick: () => {
+            ctl2.selected.clear();
+            ctl2.selected.add(v.id);
+            ctl2.openDetail = true;
+            ctl2.closeBuilding();
+          } }),
           h("button", {
-            class: "chip on",
-            style: "justify-self:start",
-            text: `Giao ${this.picked.size} ng\u01B0\u1EDDi`,
-            disabled: !this.picked.size,
+            class: "chip",
+            text: "\uFF0B",
+            title: lock ?? (!cap ? `C\u1EA7n d\u1EF1ng ${house}` : !room ? `${house} \u0111\xE3 \u0111\u1EE7 ch\u1ED7: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` : "Giao vi\u1EC7c n\xE0y"),
+            disabled: !!lock || !room,
             onclick: () => {
-              const e = sim2.assignRole([...this.picked], role);
+              const e = sim2.assignRole([v.id], role);
               if (e) toast2(e);
-              this.picked.clear();
-              this.open = false;
               ctl2.onChange();
               this.again();
             }
-          }),
-          h("small", { class: "sub", text: `C\xF2n ch\u1ED7 cho ${room - this.picked.size} ng\u01B0\u1EDDi.` })
-        );
+          })
+        ));
       }
       return [h("div", { class: "proster", style: "display:grid;gap:6px" }, ...out)];
     }
@@ -35096,7 +35278,7 @@ body.war .sheet, body.war .bbar {
       return sim2.villagers.filter((v) => sim2.canScout(v)).sort((a, b) => sim2.scoutSkill(b) - sim2.scoutSkill(a));
     }
     statsOf(v) {
-      return `Nhanh ${v.stats.agi} \xB7 Th\u1EC3 l\u1EF1c ${v.stats.sta} \xB7 Tr\xED tu\u1EC7 ${v.stats.int} \xB7 \u0111i\u1EC3m ${(this.c.sim.scoutSkill(v) * 10).toFixed(1)}`;
+      return `Nhanh ${fmtStat(v.stats.agi)} \xB7 Th\u1EC3 l\u1EF1c ${fmtStat(v.stats.sta)} \xB7 Tr\xED tu\u1EC7 ${fmtStat(v.stats.int)} \xB7 \u0111i\u1EC3m ${(this.c.sim.scoutSkill(v) * 10).toFixed(1)}${v.weapon ? " \xB7 v\u0169 kh\xED" : ""}${v.armor ? " \xB7 gi\xE1p" : ""}${v.torch ? " \xB7 \u0111u\u1ED1c" : ""}`;
     }
     again() {
       this.key = "";
@@ -35150,21 +35332,27 @@ body.war .sheet, body.war .bbar {
       const ids = [...this.picked], plan2 = sim2.planScout(ids, tribe);
       const list = h("div", { class: "rdrop" });
       if (!people.length) list.append(h("p", { class: "sub", text: "Kh\xF4ng c\xF3 trinh s\xE1t n\xE0o r\u1EA3nh \u0111\u1EC3 \u0111i: tuy\u1EC3n th\xEAm, ho\u1EB7c \u0111\u1EE3i h\u1ECD v\u1EC1." }));
-      for (const v of people) {
-        const box = h("input", { type: "checkbox" });
-        box.checked = this.picked.has(v.id);
-        box.disabled = !box.checked && this.picked.size >= limit;
-        box.addEventListener("change", () => {
-          if (box.checked) this.picked.add(v.id);
-          else this.picked.delete(v.id);
-          this.again();
-        });
-        list.append(h("label", { class: "rpick" }, box, h(
-          "span",
-          { class: "rwho" },
-          h("b", { text: v.name }),
-          h("small", { text: this.statsOf(v) })
-        )));
+      for (const v of [...people.filter((o) => this.picked.has(o.id)), ...people.filter((o) => !this.picked.has(o.id))]) {
+        const on = this.picked.has(v.id);
+        list.append(h(
+          "div",
+          { class: `rrow${on ? "" : " rfree"}`, style: "grid-template-columns:1fr auto auto" },
+          h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: this.statsOf(v) })),
+          h("button", { class: "chip", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: v\u0169 kh\xED, gi\xE1p, \u0111u\u1ED1c cho trinh s\xE1t", onclick: () => {
+            const { ctl: ctl2 } = this.c;
+            ctl2.selected.clear();
+            ctl2.selected.add(v.id);
+            ctl2.openDetail = true;
+            ctl2.closeBuilding();
+          } }),
+          on ? h("button", { class: "chip danger", text: "\u2212", title: "Kh\xF4ng c\u1EED ng\u01B0\u1EDDi n\xE0y", onclick: () => {
+            this.picked.delete(v.id);
+            this.again();
+          } }) : h("button", { class: "chip", text: "\uFF0B", title: this.picked.size >= limit ? `Tr\u1EA1i ch\u1EC9 cho \u0111i ${limit} ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn` : "C\u1EED ng\u01B0\u1EDDi n\xE0y \u0111i", disabled: this.picked.size >= limit, onclick: () => {
+            this.picked.add(v.id);
+            this.again();
+          } })
+        ));
       }
       const odds = plan2.count < 2 ? "C\u1EA7n \xEDt nh\u1EA5t 2 ng\u01B0\u1EDDi m\u1EDBi c\xF3 c\u01A1 h\u1ED9i v\u1EBD \u0111\u1EE7 chi ti\u1EBFt" : `T\u1EC9 l\u1EC7 v\u1EBD \u0111\u1EE7 chi ti\u1EBFt: ${Math.round(plan2.chance * 100)}%`;
       return h(
@@ -35190,6 +35378,70 @@ body.war .sheet, body.war .bbar {
           }
         })
       );
+    }
+  };
+
+  // src/ui/trainpane.ts
+  var TrainPane = class {
+    constructor(c, kind) {
+      this.c = c;
+      this.kind = kind;
+      this.root = h("div", { class: "page" });
+      this.care = 1;
+      this.key = "";
+    }
+    update(b) {
+      const { sim: sim2 } = this.c, who = sim2.trainees(b);
+      const k = [b.id, b.level, this.care, Math.floor(sim2.stock.food / 4), Math.floor(sim2.stock.coin), who.map((v) => `${v.id}.${v.stats.str}.${v.stats.agi}.${v.stats.int}.${v.stats.sta}.${v.stats.vit}.${v.train ? Math.floor(v.train.left / 20) : "w"}`).join()].join("|");
+      if (k === this.key) return;
+      this.key = k;
+      this.root.replaceChildren(...this.render(b, who));
+    }
+    again() {
+      this.key = "";
+      this.c.ctl.onChange();
+    }
+    render(b, who) {
+      const { sim: sim2, toast: toast2, ctl: ctl2 } = this.c, info = sim2.trainInfo(b);
+      if (!info) return [h("p", { class: "sub", text: "Nh\xE0 n\xE0y kh\xF4ng hu\u1EA5n luy\u1EC7n." })];
+      const lock = sim2.warLock(), care = TRAINING.care[this.care];
+      const out = [hint("Hu\u1EA5n luy\u1EC7n", `Ng\u01B0\u1EDDi c\u1EE7a nh\xE0 \u0111i luy\u1EC7n m\u1ED9t ng\xE0y ho\u1EB7c h\u01A1n (ch\u1EC9 s\u1ED1 c\xE0ng cao c\xE0ng l\xE2u) v\xE0 kh\xF4ng l\xE0m vi\u1EC7c trong l\xFAc \u0111\xF3. M\u1ED7i \u0111\u1EE3t t\u0103ng ng\u1EABu nhi\xEAn 1 \u0111\u1EBFn 5% ${STAT_NAME[info.main].toLowerCase()}${info.partner ? `, ${STAT_NAME[info.partner].toLowerCase()} \u0111i k\xE8m t\u0103ng m\u1ED9t n\u1EEDa` : ""}; \u0111\u1ED5i l\u1EA1i ${STAT_NAME[info.cost].toLowerCase()} gi\u1EA3m, nh\u01B0ng kh\xF4ng t\u1EE5t d\u01B0\u1EDBi 60% l\xFAc sinh v\xE0 kh\xF4ng d\u01B0\u1EDBi 3. Tr\u1EA3 l\u01B0\u01A1ng th\u1EF1c v\xE0 ti\u1EC1n khi b\u1EAFt \u0111\u1EA7u; b\u1ECF th\xEAm ti\u1EC1n \u0111\u1EC3 gi\u1EA3m m\u1EE9c t\u1EE5t. Tr\u1EA7n c\u1EE7a nh\xE0 c\u1EA5p ${b.level} l\xE0 ${info.cap}.`)];
+      out.push(h("p", { class: "sub", text: `Luy\u1EC7n ${STAT_NAME[info.main].toLowerCase()} \xB7 \u0111\u1ED5i l\u1EA1i gi\u1EA3m ${STAT_NAME[info.cost].toLowerCase()} \xB7 tr\u1EA7n ${info.cap}` }));
+      out.push(h("div", { class: "btns" }, ...TRAINING.care.map((cr, i) => h("button", { class: `chip${i === this.care ? " on" : ""}`, text: `${cr.name} (+${cr.coin} ti\u1EC1n, gi\u1EA3m \xD7${cr.penalty})`, title: `Ch\u1EC9 s\u1ED1 \u0111\u1ED5i l\u1EA1i m\u1EA5t ${cr.penalty} l\u1EA7n m\u1EE9c t\u0103ng`, onclick: () => {
+        this.care = i;
+        this.again();
+      } }))));
+      if (!who.length) out.push(h("p", { class: "sub", text: "Ch\u01B0a c\xF3 ai trong nh\xE0." }));
+      for (const v of who) {
+        const t = v.train, cost = sim2.trainCost(v.stats[info.main], this.care), full = v.stats[info.main] >= info.cap;
+        const status = t ? `\u0111ang luy\u1EC7n, c\xF2n ${workDays(t.left)}` : full ? "\u0111\xE3 t\u1EDBi tr\u1EA7n" : `${cost.food} l\u01B0\u01A1ng th\u1EF1c + ${cost.coin + 0} ti\u1EC1n \xB7 ${workDays(sim2.trainTime(v.stats[info.main]))}`;
+        out.push(h(
+          "div",
+          { class: "rrow", style: "grid-template-columns:1fr auto auto" },
+          h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: `${STAT_NAME[info.main]} ${fmtStat(v.stats[info.main])}/${info.cap} \xB7 ${STAT_NAME[info.cost]} ${fmtStat(v.stats[info.cost])} \xB7 ${status}` })),
+          h("button", { class: "chip", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: c\xF4ng c\u1EE5, trang b\u1ECB", onclick: () => {
+            ctl2.selected.clear();
+            ctl2.selected.add(v.id);
+            ctl2.openDetail = true;
+            ctl2.closeBuilding();
+          } }),
+          t ? h("button", { class: "chip danger", text: "\u2212", title: "G\u1ECDi v\u1EC1 l\xE0m vi\u1EC7c (m\u1EA5t c\xF4ng \u0111\xE3 tr\u1EA3)", onclick: () => {
+            sim2.cancelTraining([v.id]);
+            this.again();
+          } }) : h("button", {
+            class: "chip",
+            text: "\uFF0B",
+            title: lock ? "\u0110ang c\xF3 chi\u1EBFn tranh" : full ? "\u0110\xE3 t\u1EDBi tr\u1EA7n c\u1EE7a nh\xE0 n\xE0y" : `\u0110i luy\u1EC7n: ${cost.food} l\u01B0\u01A1ng th\u1EF1c + ${cost.coin} ti\u1EC1n (${care.name})`,
+            disabled: !!lock || full,
+            onclick: () => {
+              const e = sim2.startTraining([v.id], b.id, this.care);
+              if (e) toast2(e);
+              this.again();
+            }
+          })
+        ));
+      }
+      return [h("div", { class: "proster", style: "display:grid;gap:6px" }, ...out)];
     }
   };
 
@@ -37139,6 +37391,7 @@ body.war .sheet, body.war .bbar {
       this.goodRows = [];
       /** The people of each role house, kept in the house that gives the role. */
       this.rolePanes = {};
+      this.trainPanes = {};
       /** The speed to go back to when the tent is left (it opens the game paused, as a war council does). */
       this.resume = 0;
       this.inTent = false;
@@ -37157,6 +37410,7 @@ body.war .sheet, body.war .bbar {
       this.toolList = h("div");
       this.toolKey = "";
       this.repairInfo = h("div", { class: "kv" });
+      var _a;
       const { sim: sim2, ctl: ctl2, sprites: sprites2 } = c;
       root.className = "modal";
       const recipeNm = (id) => RECIPE_BY_ID[id] ? recipeName(RECIPE_BY_ID[id]) : id;
@@ -37296,6 +37550,11 @@ body.war .sheet, body.war .bbar {
         goods.append(row);
       }
       this.tabs.toolstore = this.tabs.armory = [{ label: "Kho", page: goods }];
+      for (const kind of Object.keys(TRAINING.profiles)) {
+        const pane = new TrainPane(c, kind);
+        this.trainPanes[kind] = pane;
+        ((_a = this.tabs)[kind] ?? (_a[kind] = [])).push({ label: "Hu\u1EA5n luy\u1EC7n", page: page(pane.root) });
+      }
       root.append(
         h("div", { class: "cardhead" }, this.title, this.state, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => ctl2.closePanel() })),
         h("div", { class: "mbody" }, this.info, this.tabBar, ...this.pages)
@@ -37392,6 +37651,7 @@ body.war .sheet, body.war .bbar {
       }
       if ((b.kind === "infantry" || b.kind === "cavalry" || b.kind === "archery" || b.kind === "house") && ready) this.updateBeds(b);
       if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind].update();
+      if (this.trainPanes[b.kind] && ready) this.trainPanes[b.kind].update(b);
       if (b.kind === "field" && ready) this.staffBoxes.farm.update(b);
       if (b.kind === "tower" && ready) this.updateTower(b);
       if (b.kind === "wartent" && ready) this.war.update();

@@ -1,6 +1,6 @@
 /** The shapes and constants the simulation shares: villagers, their parts, and a few tables. Nothing here has behaviour. */
 import { Building } from './buildings';
-import { Job, NodeKind, SoldierArm, Stats, WorkJob } from './jobs';
+import { Job, NodeKind, SoldierArm, StatKey, Stats, WorkJob } from './jobs';
 import { Step } from './path';
 import { Res } from './resources';
 import { Recipe, ToolSet } from './tools';
@@ -138,6 +138,10 @@ export interface Villager {
   /** Wear of the weapon and the armour in hand: which piece it was counted for, hits left, and whether it is broken (useless until mended). */
   /** The squad (đội) this soldier belongs to, -1 for none. */
   squad: number;
+  /** The stats this body was born with: training can lower a stat only so far below them. */
+  born: Stats;
+  /** Away at training in the house of his role: which house, which stat, seconds left and in all, how careful (index of TRAINING.care) and the ceiling. Null when he is not. */
+  train: { house: number; stat: StatKey; left: number; total: number; care: number; cap: number } | null;
   /** What a soldier of ours is hacking down in a war (a tree in the way, an enemy work); null when he is not. */
   breaks: Breaking | null;
   gear: { w: string | null; wd: number; wb: boolean; a: string | null; ad: number; ab: boolean };

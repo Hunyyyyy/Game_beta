@@ -308,7 +308,29 @@ var siege_default = {
   buildingHpPerTile: 45,
   crew: 3,
   driftMax: 14,
-  reach: 1.6
+  reach: 1.6,
+  scout: {
+    gearSkill: {
+      weapon: 0.05,
+      armor: 0.08,
+      torch: 0.06,
+      mount: 0.2
+    },
+    gearHide: {
+      weapon: 0.03,
+      armor: 0.05,
+      torch: 0.04,
+      mount: 0.06
+    },
+    weights: {
+      agi: 0.25,
+      sta: 0.35,
+      int: 0.4
+    },
+    stealthPerPoint: 0.015,
+    surveyPerInt: 0.04,
+    walkPerSta: 0.02
+  }
 };
 
 // src/data/weapons.json
@@ -2678,7 +2700,44 @@ var pace_default = {
   outdoor: ["wood", "stone", "food", "build"]
 };
 
+// src/data/training.json
+var training_default = {
+  _note: "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
+  dayBase: 0.6,
+  dayPerStat: 0.12,
+  foodBase: 4,
+  coinBase: 1,
+  coinPerStat: 0.3333,
+  gain: [0.01, 0.05],
+  partnerShare: 0.5,
+  floor: 0.6,
+  floorMin: 3,
+  caps: [8, 12, 16],
+  care: [
+    { name: "Kh\xF4ng", coin: 0, penalty: 0.8 },
+    { name: "C\u1EA9n th\u1EADn", coin: 2, penalty: 0.4 },
+    { name: "Chu \u0111\xE1o", coin: 5, penalty: 0.15 }
+  ],
+  profiles: {
+    infantry: { main: "str", partner: "vit", cost: "agi" },
+    archery: { main: "agi", partner: "sta", cost: "str" },
+    cavalry: { main: "agi", partner: "sta", cost: "int" },
+    lumberyard: { main: "str", partner: "vit", cost: "agi" },
+    quarry: { main: "str", partner: "vit", cost: "agi" },
+    farmhouse: { main: "agi", partner: "sta", cost: "str" },
+    huntlodge: { main: "agi", partner: "sta", cost: "str" },
+    builder: { main: "sta", partner: "str", cost: "int" },
+    workshop: { main: "int", cost: "sta" },
+    lab: { main: "int", cost: "sta" },
+    repair: { main: "agi", partner: "int", cost: "vit" },
+    scouttent: { main: "agi", partner: "sta", cost: "str" }
+  }
+};
+
 // src/sim/jobs.ts
+var TRAINING = training_default;
+var fmtStat = (x) => String(Math.round(x * 10) / 10);
+var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", int: "Tr\xED tu\u1EC7", sta: "Th\u1EC3 l\u1EF1c" };
 var JOBS = {
   wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
   stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
@@ -4838,6 +4897,8 @@ function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
     orderCd: 0,
     repairFor: null,
     squad: -1,
+    born: { ...stats },
+    train: null,
     breaks: null,
     gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
     team,
@@ -4901,7 +4962,8 @@ function tickVillager(sim, v, dt) {
       return;
     }
   }
-  const brained = brainPlayer(sim, v, dt);
+  const training = !!v.train && sim.trainStep(v, dt);
+  const brained = training ? false : brainPlayer(sim, v, dt);
   const fighting = brained && (v.phase === "fight" || v.phase === "flee" || v.phase === "rescue");
   const asleep = v.phase === "goHome" || v.phase === "sleep";
   if (sim.shouldSleep(v, fighting)) {
@@ -4915,7 +4977,7 @@ function tickVillager(sim, v, dt) {
   }
   sim.moveUnit(v, dt);
   if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim.fogDirty = true;
-  if (!v.path.length && !v.slide && !brained) sim.think(v, dt);
+  if (!v.path.length && !v.slide && !brained && !training) sim.think(v, dt);
   sim.animate(v, dt);
 }
 function goHome(sim, v) {
@@ -5050,7 +5112,7 @@ function unpackRuns(runs, target) {
 }
 
 // src/sim/save.ts
-var SAVE_VERSION = 12;
+var SAVE_VERSION = 13;
 var SAVED = {
   /** Single values. */
   scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
@@ -5187,6 +5249,13 @@ var MIGRATIONS = {
     for (const t of d.tribes) for (const p of t.props) p.hp ??= SIEGE.propHp[p.kind] ?? 60;
     return { ...d, version: 12 };
   }
+};
+MIGRATIONS[12] = (d) => {
+  for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+    v.born ??= { ...v.stats };
+    v.train ??= null;
+  }
+  return { ...d, version: 13 };
 };
 function migrate(raw) {
   let d = raw;
@@ -5919,18 +5988,25 @@ function dismissScouts(sim, ids) {
   }
   return n ? null : away ? "\u0110ang \u0111i trinh s\xE1t: \u0111\u1EE3i h\u1ECD v\u1EC1" : "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 cho ngh\u1EC9";
 }
-var scoutSkill = (v) => (v.stats.agi + v.stats.sta + v.stats.int) / 18;
+var scoutSkill = (v) => {
+  const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta + w.int * v.stats.int) / 6;
+  return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
+};
+function gearOf(v, table) {
+  return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.arm === "cavalry" ? table.mount : 0);
+}
+var stealthOf = (v) => 0.6 * v.stats.int + 0.4 * v.stats.sta;
 var scoutsNeeded = (sim, tribe, level) => Math.min(8, level + 1 + Math.floor(warriorsOf(sim, tribe) / 8));
 function drawChance(skills, need) {
   if (skills.length < 2) return 0;
   return Math.min(0.95, skills.reduce((a, b) => a + b, 0) / need);
 }
-var surveyTime = (level, scouts) => 0.2 * level * DAY_LENGTH / (1 + 0.35 * (Math.max(1, scouts) - 1));
+var surveyTime = (level, scouts, int = 6) => 0.2 * level * DAY_LENGTH / ((1 + 0.35 * (Math.max(1, scouts) - 1)) * Math.max(0.5, 1 + SIEGE.scout.surveyPerInt * (int - 6)));
 function planScout(sim, ids, tribe) {
   const level = scoutLevel(sim), limit = scoutLimit(sim), scouts = sim.mine(ids).filter((v) => canScout(sim, v));
   const need = scoutsNeeded(sim, tribe, Math.max(1, level)), w = whereIs(sim, tribe);
-  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed, 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
-  const survey = surveyTime(Math.max(1, level), scouts.length);
+  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
+  const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.int, 0) / scouts.length : 6);
   let error = null;
   if (!sim.dev.freeBuild && !isFound(sim, tribe)) error = "Ch\u01B0a ai t\xECm th\u1EA5y l\xE0ng n\xE0y";
   else if (!tribeOf(sim, tribe)) error = "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
@@ -5958,11 +6034,11 @@ function startScout(sim, ids, tribe) {
   sim.say(`${scouts.length} trinh s\xE1t l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ${t.def.name} \u0111\u1EC3 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p ${Math.max(1, plan2.level)}: kho\u1EA3ng ${Math.round(plan2.chance * 100)}% v\u1EBD \u0111\u1EE7 chi ti\u1EBFt, c\u1EA3 chuy\u1EBFn m\u1EA5t ch\u1EEBng ${Math.max(1, Math.round(plan2.total / 60))} ph\xFAt.`);
   return null;
 }
-function deathChance(sim, m, agi) {
+function deathChance(sim, m, v) {
   const t = tribeOf(sim, m.tribe), fire = sim.campfire();
   const power = warriorsOf(sim, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
   const day = sim.weather === "clear" && !sim.resting;
-  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, agi - 6) * 0.01));
+  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 5e-3) - gearOf(v, SIEGE.scout.gearHide)));
 }
 function tickScouts(sim, dt) {
   tickSightings(sim, dt);
@@ -5981,13 +6057,13 @@ function tickScouts(sim, dt) {
       if (near2 || m.t > 300) {
         m.phase = "watch";
         m.t = 0;
-        for (const v of alive) if (sim.frnd() < deathChance(sim, m, v.stats.agi)) sim.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
+        for (const v of alive) if (sim.frnd() < deathChance(sim, m, v)) sim.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
         m.survivors = alive.filter((v) => v.health > 0 && sim.byId.has(v.id)).length;
         if (m.survivors && m.level >= 2) m.seen = seenNow(sim, tribeOf(sim, m.tribe));
         sim.say(m.survivors ? `Trinh s\xE1t \u0111ang quan s\xE1t ${t.def.name}.` : "Trinh s\xE1t b\u1ECB b\u1EAFt g\u1EB7p, kh\xF4ng ai tho\xE1t.");
       }
     } else if (m.phase === "watch") {
-      if (m.t >= surveyTime(m.level, m.survivors)) {
+      if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.int, 0) / Math.max(1, alive.length))) {
         m.phase = "back";
         m.t = 0;
         const fire = sim.campfire();
@@ -6239,8 +6315,8 @@ function reviewPlan(sim, plan2) {
     if (n && m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
     if (n && m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
     if (n && m.deploy && n < m.deploy.cells.length && !isLogistics(plan2, m)) out.push(`\u2717 ${name} m\u1EDBi c\xF3 ${n}/${m.deploy.cells.length} l\xEDnh cho ${m.deploy.cells.length} \xF4 \u0111\u1ED9i h\xECnh: th\xEAm l\xEDnh v\xE0o \u0111\u1ED9i ho\u1EB7c b\u1EDBt \xF4 (\u2702 B\u1EDBt \xF4).`);
-    const unfit = s ? sim.squadUnits(s).filter((v) => v.down > 0 || sim.sleepLocked(v)).length : 0;
-    if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
+    const unfit = s ? sim.squadUnits(s).filter((v) => v.down > 0 || v.train || sim.sleepLocked(v)).length : 0;
+    if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng, \u0111ang hu\u1EA5n luy\u1EC7n ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
     if (s && n && !sim.squadCenter(s)) out.push(`${name} ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng.`);
     if (s && plan2.kind === "attack" && m.withdrawAt > 0 && !m.retreat.length && m.path.length) out.push(`${name} s\u1EBD r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n v\xEC ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt.`);
     if (s && plan2.kind === "attack" && m.route === "night") out.push(`${name} \u0111i \u0111\u01B0\u1EDDng v\xF2ng ban \u0111\xEAm: s\u1EBD ch\u1EDD \u0111\u1EBFn t\u1ED1i m\u1EDBi xu\u1EA5t ph\xE1t.`);
@@ -7136,6 +7212,95 @@ function tickTarget(sim, plan2, m, s) {
   return true;
 }
 
+// src/sim/training.ts
+var profileOf = (b) => TRAINING.profiles[b.kind];
+var trainCap = (b) => TRAINING.caps[Math.max(0, Math.min(TRAINING.caps.length, b.level) - 1)];
+function members(sim, b) {
+  const role = ROLE_IDS.find((r) => ROLES[r].building === b.kind);
+  const inHouse = role ? sim.villagers.filter((v) => roleOf(v) === role) : b.kind === "builder" ? sim.crew() : b.staff.map((id) => sim.get(id)).filter((v) => !!v);
+  const away = sim.villagers.filter((v) => v.train?.house === b.id && !inHouse.includes(v));
+  return [...inHouse, ...away];
+}
+function trainCost(stat, care) {
+  return { food: Math.round(TRAINING.foodBase + stat), coin: Math.round(TRAINING.coinBase + stat * TRAINING.coinPerStat) + TRAINING.care[care].coin };
+}
+var trainTime = (stat) => (TRAINING.dayBase + TRAINING.dayPerStat * stat) * DAY_LENGTH;
+function startTraining(sim, ids, houseId, care) {
+  const lock = sim.warLock();
+  if (lock) return "\u0110ang c\xF3 chi\u1EBFn tranh: kh\xF4ng hu\u1EA5n luy\u1EC7n \u0111\u01B0\u1EE3c";
+  const b = sim.getBuilding(houseId), p = b ? profileOf(b) : void 0;
+  if (!b || !p || !TRAINING.care[care]) return "Nh\xE0 n\xE0y kh\xF4ng hu\u1EA5n luy\u1EC7n \u0111\u01B0\u1EE3c";
+  if (!b.done) return "Nh\xE0 ch\u01B0a d\u1EF1ng xong";
+  const cap = trainCap(b), mine2 = members(sim, b);
+  let err = null, n = 0;
+  for (const v of sim.mine(ids)) {
+    if (!mine2.includes(v) || v.train) continue;
+    if (v.stats[p.main] >= cap) {
+      err = `${v.name} \u0111\xE3 t\u1EDBi tr\u1EA7n ${fmtStat(cap)} ${STAT_NAME[p.main].toLowerCase()} c\u1EE7a nh\xE0 c\u1EA5p ${b.level}: n\xE2ng c\u1EA5p nh\xE0`;
+      continue;
+    }
+    const cost = trainCost(v.stats[p.main], care), short = sim.missing(cost);
+    if (short) {
+      err = short;
+      break;
+    }
+    sim.pay(cost);
+    sim.exitBuilding(v);
+    sim.resetTask(v);
+    v.train = { house: b.id, stat: p.main, left: trainTime(v.stats[p.main]), total: trainTime(v.stats[p.main]), care, cap };
+    n++;
+  }
+  if (n) sim.say(`${n} ng\u01B0\u1EDDi v\xE0o hu\u1EA5n luy\u1EC7n ${STAT_NAME[p.main].toLowerCase()} \u1EDF ${BUILDINGS[b.kind].name.toLowerCase()}.`);
+  return n ? null : err ?? "Ch\u1ECDn ng\u01B0\u1EDDi trong nh\xE0 \u0111\u1EC3 hu\u1EA5n luy\u1EC7n";
+}
+function cancelTraining(sim, ids) {
+  for (const v of sim.mine(ids)) if (v.train) {
+    v.train = null;
+    v.phase = "idle";
+    v.path = [];
+  }
+}
+function finish(sim, v) {
+  const t = v.train, b = sim.getBuilding(t.house), p = b ? profileOf(b) : void 0;
+  v.train = null;
+  if (!p) return;
+  const [lo, hi] = TRAINING.gain, r = lo + sim.rnd() * (hi - lo), main2 = v.stats[p.main], next = Math.min(t.cap, main2 * (1 + r)), got = Math.max(0, next - main2);
+  const round = (x) => Math.round(x * 100) / 100;
+  v.stats[p.main] = round(main2 + got);
+  if (p.partner) v.stats[p.partner] = round(Math.max(v.stats[p.partner], Math.min(t.cap, v.stats[p.partner] + got * TRAINING.partnerShare)));
+  const floor = Math.max(TRAINING.floorMin, v.born[p.cost] * TRAINING.floor);
+  v.stats[p.cost] = round(Math.max(Math.min(floor, v.stats[p.cost]), v.stats[p.cost] - got * TRAINING.care[t.care].penalty));
+  const ratio = v.maxHealth > 0 ? v.health / v.maxHealth : 1;
+  v.maxHealth = Math.round(maxHpOf(v.stats.vit));
+  v.health = v.maxHealth * ratio;
+  if (!v.squad || v.squad < 0) v.speed = 1.6 + 0.1 * v.stats.agi;
+  sim.say(`${v.name} hu\u1EA5n luy\u1EC7n xong: ${STAT_NAME[p.main].toLowerCase()} ${fmtStat(main2)} \u2192 ${fmtStat(v.stats[p.main])}, ${STAT_NAME[p.cost].toLowerCase()} ${fmtStat(v.stats[p.cost])}.`);
+}
+function trainStep(sim, v, dt) {
+  const t = v.train;
+  if (!t) return false;
+  t.left -= dt;
+  if (t.left <= 0) {
+    finish(sim, v);
+    return false;
+  }
+  if (v.phase === "sleep" || v.phase === "goHome") return true;
+  const b = sim.getBuilding(t.house);
+  if (!b) {
+    v.train = null;
+    return false;
+  }
+  const d = BUILDINGS[b.kind];
+  if (!v.path.length && Math.hypot(b.x + d.w / 2 - v.x, b.y + d.h / 2 - v.y) > d.w + 2) {
+    if (sim.pathLeft > 0) {
+      sim.pathLeft--;
+      sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h), 3);
+    }
+    v.phase = v.path.length ? "move" : "idle";
+  } else if (!v.path.length) v.phase = "idle";
+  return true;
+}
+
 // src/sim/simwar.ts
 var WAR = {
   /** → army.squadLimit */
@@ -7418,6 +7583,35 @@ var WAR = {
   /** → warplan.isLogistics */
   isLogistics(plan2, m) {
     return isLogistics(plan2, m);
+  },
+  /** → training.startTraining */
+  startTraining(ids, houseId, care) {
+    return startTraining(this, ids, houseId, care);
+  },
+  /** → training.cancelTraining */
+  cancelTraining(ids) {
+    return cancelTraining(this, ids);
+  },
+  /** → training.trainStep */
+  trainStep(v, dt) {
+    return trainStep(this, v, dt);
+  },
+  /** → training.profileOf, trainCap */
+  trainInfo(b) {
+    const p = profileOf(b);
+    return p ? { ...p, cap: trainCap(b) } : null;
+  },
+  /** → training.trainCost */
+  trainCost(stat, care) {
+    return trainCost(stat, care);
+  },
+  /** → training.trainTime */
+  trainTime(stat) {
+    return trainTime(stat);
+  },
+  /** → training.members */
+  trainees(b) {
+    return members(this, b);
   },
   /** → environment.sightOf */
   sightOf(v) {

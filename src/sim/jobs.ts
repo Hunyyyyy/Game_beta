@@ -1,6 +1,7 @@
 import type { BuildingKind, Era } from './buildings';
 import type { Res } from './resources';
 import paceJson from '../data/pace.json';
+import trainingJson from '../data/training.json';
 
 export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'repair' | 'hunt' | 'fight' | 'scout';
 /** Jobs with a work skill, a potential and a tool. Soldiers have them for the sake of the tables; scouts are a role like soldiers and have none. */
@@ -8,6 +9,12 @@ export type WorkJob = Exclude<Job, 'idle' | 'scout'>;
 export type StatKey = 'vit' | 'str' | 'agi' | 'int' | 'sta';
 export type Stats = Record<StatKey, number>;
 export type NodeKind = 'tree' | 'rock' | 'bush';
+
+/** Training in a role's house (training.json): which stat a house trains, which comes with it, and which pays for it. */
+export interface TrainProfile { main: StatKey; partner?: StatKey; cost: StatKey }
+export const TRAINING = trainingJson as unknown as { dayBase: number; dayPerStat: number; foodBase: number; coinBase: number; coinPerStat: number; gain: [number, number]; partnerShare: number; floor: number; floorMin: number; caps: number[]; care: Array<{ name: string; coin: number; penalty: number }>; profiles: Record<string, TrainProfile> };
+/** A stat as the player reads it: whole, or with one digit after the point. */
+export const fmtStat = (x: number): string => String(Math.round(x * 10) / 10);
 
 export const STAT_NAME: Record<StatKey, string> = { vit: 'Sức khỏe', str: 'Sức mạnh', agi: 'Nhanh nhẹn', int: 'Trí tuệ', sta: 'Thể lực' };
 

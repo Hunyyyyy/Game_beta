@@ -1,13 +1,16 @@
-/** The war half of the Sim facade: squads, formations, scouting and plans. Kept apart so sim.ts stays within its size; sim.ts mixes it in. */
+/** The war half of the Sim facade: squads, formations, scouting and plans (and, as it grew, training). Kept apart so sim.ts stays within its size; sim.ts mixes it in. */
 import * as army from './army';
 import * as forecast from './forecast';
 import * as scouting from './scouting';
 import * as siege from './siege';
 import { sightOf } from './environment';
+import * as training from './training';
 import { surrender, tribeOf } from './tribes';
 import * as warplan from './warplan';
 import { armOf } from './battle';
 import type { Ent } from './battle';
+import type { Building } from './buildings';
+import type { StatKey } from './jobs';
 import type { Arm, FormationId } from './formations';
 import type { CardKind, RouteTime, Forecast, FormationName, Mission, MissionTarget, Objective, Obstacle, Plan, Pt, ScoutMap, ScoutPlan, Squad, TribeIntel, Villager } from './model';
 import type { Sim } from './sim';
@@ -153,6 +156,20 @@ export const WAR = {
   cancelPlan(this: Sim, plan: Plan): string | null { return warplan.cancelPlan(this, plan); },
   /** → warplan.isLogistics */
   isLogistics(this: Sim, plan: Plan, m: Mission): boolean { return warplan.isLogistics(plan, m); },
+  /** → training.startTraining */
+  startTraining(this: Sim, ids: readonly number[], houseId: number, care: number): string | null { return training.startTraining(this, ids, houseId, care); },
+  /** → training.cancelTraining */
+  cancelTraining(this: Sim, ids: readonly number[]): void { return training.cancelTraining(this, ids); },
+  /** → training.trainStep */
+  trainStep(this: Sim, v: Villager, dt: number): boolean { return training.trainStep(this, v, dt); },
+  /** → training.profileOf, trainCap */
+  trainInfo(this: Sim, b: Building): { main: StatKey; partner?: StatKey; cost: StatKey; cap: number } | null { const p = training.profileOf(b); return p ? { ...p, cap: training.trainCap(b) } : null; },
+  /** → training.trainCost */
+  trainCost(this: Sim, stat: number, care: number): { food: number; coin: number } { return training.trainCost(stat, care); },
+  /** → training.trainTime */
+  trainTime(this: Sim, stat: number): number { return training.trainTime(stat); },
+  /** → training.members */
+  trainees(this: Sim, b: Building): Villager[] { return training.members(this, b); },
   /** → environment.sightOf */
   sightOf(this: Sim, v: Villager): number { return sightOf(this, v); },
   /** → warplan.canTarget */

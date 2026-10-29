@@ -1,5 +1,5 @@
 import { ARMORS, CRAFTED_WEAPONS, WEAPONS } from '../sim/combat';
-import { JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS, WorkJob } from '../sim/jobs';
+import { fmtStat, JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS, WorkJob } from '../sim/jobs';
 import type { Villager } from '../sim/sim';
 import { TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, TOOL_OF_JOB, ToolKind } from '../sim/tools';
 import { h, hint } from './dom';
@@ -115,19 +115,19 @@ export class UnitCard {
     }
     if (!this.open) return;
     for (const g of this.gearBtns) { const n = g.kind ? sim0.toolCount(g.kind, g.kind === 'hide' ? 1 : WEAPONS[g.kind].tier ?? 1) : -1; g.btn.textContent = n >= 0 ? `${g.label} (${n})` : g.label; g.btn.disabled = g.kind !== null && n <= 0 && !chosen.every((o) => (g.slot === 'weapon' ? o.weapon : o.armor) === g.kind); }
-    this.gearTip.textContent = chosen.every((o) => o.job === 'fight' || o.job === 'hunt') ? (chosen[0].manualGear ? 'Đồ do bạn phát: Xưởng không tự đổi.' : 'Xưởng tự phát đồ tốt nhất còn trong kho.') : 'Chỉ Chiến binh và Thợ săn cầm vũ khí đi theo; dân thường không chiến đấu mà chạy về lửa trại khi có địch.';
+    this.gearTip.textContent = chosen.every((o) => o.job === 'scout') ? 'Vũ khí, giáp và đuốc giúp trinh sát vẽ đủ bản đồ hơn và ít bị bắt hơn.' : chosen.every((o) => o.job === 'fight' || o.job === 'hunt') ? (chosen[0].manualGear ? 'Đồ do bạn phát: Xưởng không tự đổi.' : 'Xưởng tự phát đồ tốt nhất còn trong kho.') : 'Chỉ Chiến binh và Thợ săn cầm vũ khí đi theo; dân thường không chiến đấu mà chạy về lửa trại khi có địch.';
     this.gear.innerHTML = `Máu <b>${Math.ceil(v.health)}/${v.maxHealth}</b> · Vũ khí <b>${w}</b> · Giáp <b>${v.armor ? ARMORS[v.armor].name : '—'}</b>${v.armor ? ` (${armorText(ARMORS[v.armor], false)})` : ''}${v.leader ? ' · <b>Thủ lĩnh</b>' : ''}`;
     const sk = `${v.id}|${WORK_JOBS.map((j) => v.skill[j].level).join('')}|${Object.values(v.stats).join()}`;
     if (sk !== this.statsKey) {
       this.statsKey = sk;
-      this.stats.innerHTML = (Object.keys(STAT_NAME) as StatKey[]).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(' · ');
+      this.stats.innerHTML = (Object.keys(STAT_NAME) as StatKey[]).map((k) => `${STAT_NAME[k]} <b>${fmtStat(v.stats[k])}</b>`).join(' · ');
       this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>cấp ${v.skill[j].level}</b>`).join(' · ');
     }
     // the tool follows the job: only the one the chosen villagers use is offered
     const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job as WorkJob] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
     this.toolsSec.hidden = only === null;
     this.combatSec.hidden = !chosen.every((o) => o.job === 'fight'); // only soldiers get fighting orders
-    this.gearSec.hidden = !chosen.every((o) => o.job === 'fight' || o.job === 'hunt');
+    this.gearSec.hidden = !chosen.every((o) => o.job === 'fight' || o.job === 'hunt' || o.job === 'scout');
     for (const r of this.toolRows) {
       r.row.hidden = r.k !== only;
       const t = v.tools[r.k];

@@ -15,6 +15,8 @@ import { PeoplePane } from './peoplepane';
 import { ActiveBox, StaffBox } from './housebox';
 import { ScoutPane } from './scoutpane';
 import { RolePane } from './rolepane';
+import { TrainPane } from './trainpane';
+import { TRAINING } from '../sim/jobs';
 import { sleeperRows } from './soldierpane';
 import { WarPanel } from './warpanel';
 
@@ -33,6 +35,7 @@ export class BuildingPanel {
   private readonly people: PeoplePane;
   /** The people of each role house, kept in the house that gives the role. */
   private readonly rolePanes = {} as Partial<Record<BuildingKind, RolePane>>;
+  private readonly trainPanes = {} as Partial<Record<BuildingKind, TrainPane>>;
   /** The war council held in the Lều họp chiến. */
   private readonly war: WarPanel;
   /** Where scouts are picked and sent, in the Trại trinh sát. */
@@ -172,6 +175,13 @@ export class BuildingPanel {
     }
     this.tabs.toolstore = this.tabs.armory = [{ label: 'Kho', page: goods }];
 
+    // every house with people in it can send them off to train
+    for (const kind of Object.keys(TRAINING.profiles) as BuildingKind[]) {
+      const pane = new TrainPane(c, kind);
+      this.trainPanes[kind] = pane;
+      (this.tabs[kind] ??= []).push({ label: 'Huấn luyện', page: page(pane.root) });
+    }
+
     root.append(
       h('div', { class: 'cardhead' }, this.title, this.state, h('button', { class: 'x', text: '✕ Đóng', onclick: () => ctl.closePanel() })),
       h('div', { class: 'mbody' }, this.info, this.tabBar, ...this.pages),
@@ -233,6 +243,7 @@ export class BuildingPanel {
     if ((b.kind === 'storage' || b.kind === 'campfire') && ready) for (const t of this.barterBtns) { t.btn.textContent = `Đổi ${BARTER[t.res]} ${RES_NAME[t.res].toLowerCase()} → 1 ${RES_NAME.coin.toLowerCase()}`; t.btn.disabled = sim.stock[t.res] < BARTER[t.res]; }
     if ((b.kind === 'infantry' || b.kind === 'cavalry' || b.kind === 'archery' || b.kind === 'house') && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
+    if (this.trainPanes[b.kind] && ready) this.trainPanes[b.kind]!.update(b);
     if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
     if (b.kind === 'tower' && ready) this.updateTower(b);
     if (b.kind === 'wartent' && ready) this.war.update();
