@@ -25,13 +25,33 @@ export type QuestDone =
   | { type: 'speed'; atLeast: number }
   | { type: 'selectBuilding'; kind: BuildingKind }
   | { type: 'openBuilding'; kind: BuildingKind }
-  | { type: 'inspectNode' };
+  | { type: 'inspectNode' }
+  | { type: 'inspectUnit' }
+  | { type: 'inspectAnimal' }
+  /** Some squad has this many soldiers in it. */
+  | { type: 'squadSize'; count: number }
+  /** Some squad stands in this formation. */
+  | { type: 'squadFormation'; id: string }
+  /** This many soldiers carry a weapon or a piece of armour. */
+  | { type: 'equipped'; slot: 'weapon' | 'armor'; count: number }
+  /** A scouting trip has gone out (or a map has come back). */
+  | { type: 'scoutSent' }
+  /** The scouts hold a map of a village at this level or better. */
+  | { type: 'hasMap'; level: number }
+  /** A defence plan has been drawn. */
+  | { type: 'planDefense' }
+  /** An attack plan has a squad with an arrow drawn to its target. */
+  | { type: 'planArrow' }
+  /** An attack plan has been sent out: the army is on the march or fighting (or it is over). */
+  | { type: 'planRunning' }
+  /** A plan has been carried to its end, won or lost. */
+  | { type: 'planDone'; result?: 'won' | 'lost' };
 export interface Quest { id: string; chapter: number; title: string; hint: string; after: string[]; done: QuestDone }
 export interface Chapter { id: number; name: string }
 
 export const QUESTS = data.quests as Quest[];
 /** Quests that teach a button or wait for the clock: a game saved before quests were kept counts them as done. */
-export const SCREEN_QUESTS = QUESTS.filter((q) => ['selectBuilding', 'openBuilding', 'inspectNode', 'speed', 'daytime'].includes(q.done.type)).map((q) => q.id);
+export const SCREEN_QUESTS = QUESTS.filter((q) => ['selectBuilding', 'openBuilding', 'inspectNode', 'inspectUnit', 'inspectAnimal', 'speed', 'daytime'].includes(q.done.type)).map((q) => q.id);
 export const CHAPTERS = data.chapters as Chapter[];
 
 /** What the player has on the screen right now (the quests that teach the buttons look at it). */
@@ -65,6 +85,17 @@ function measure(sim: Sim, d: QuestDone, ui: QuestUi): [number, number] {
     case 'selectBuilding': return yes(ui.selected === d.kind || ui.panel === d.kind);
     case 'openBuilding': return yes(ui.panel === d.kind);
     case 'inspectNode': return yes(ui.inspecting === 'node');
+    case 'inspectUnit': return yes(ui.inspecting === 'unit');
+    case 'inspectAnimal': return yes(ui.inspecting === 'animal');
+    case 'squadSize': return [Math.max(0, ...sim.squads.map((q) => q.ids.length)), d.count];
+    case 'squadFormation': return yes(sim.squads.some((q) => q.formation === d.id));
+    case 'equipped': return [sim.villagers.filter((v) => v.team === 'player' && v.job === 'fight' && (d.slot === 'weapon' ? v.gear.w : v.gear.a) !== null).length, d.count];
+    case 'scoutSent': return yes(sim.scouts.length > 0 || sim.maps.length > 0);
+    case 'hasMap': return yes(sim.maps.some((m) => m.level >= d.level));
+    case 'planDefense': return yes(sim.plans.some((pl) => pl.kind === 'defense'));
+    case 'planArrow': return yes(sim.plans.some((pl) => pl.kind === 'attack' && pl.missions.some((m) => m.path.length > 0)));
+    case 'planRunning': return yes(sim.plans.some((pl) => pl.kind === 'attack' && (pl.status === 'running' || pl.status === 'done')));
+    case 'planDone': return yes(sim.plans.some((pl) => pl.status === 'done' && (!d.result || pl.result === d.result)));
   }
 }
 
