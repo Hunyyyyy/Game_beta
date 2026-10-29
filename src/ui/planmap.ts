@@ -140,6 +140,7 @@ function glyph(ctx: CanvasRenderingContext2D, kind: FormationId, cx: number, cy:
 export class PlanMapView {
   readonly root = h('div', { class: 'pview' });
   private readonly canvas = h('canvas', { class: 'planmap' });
+  private readonly pop = h('div', { class: 'ppop', hidden: true });
   private readonly note = h('div', { class: 'pnote', hidden: true });
   private readonly ground = document.createElement('canvas');
   private groundKey = '';
@@ -168,7 +169,7 @@ export class PlanMapView {
   private downAt: Pt = { x: 0, y: 0 }; private moved = false; private pinch = 0; private queued = false;
 
   constructor(private readonly sim: Sim, private readonly ev: MapEvents) {
-    this.root.append(this.canvas, this.note);
+    this.root.append(this.canvas, this.pop, this.note);
     const at = (e: { clientX: number; clientY: number }): Pt => { const b = this.canvas.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; };
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     this.canvas.addEventListener('pointerdown', (e) => {
@@ -256,7 +257,7 @@ export class PlanMapView {
       this.routes.set(m.squad, { start, go, back: m.retreat.length ? this.sim.routeTime(s, from, m.retreat) : null });
     }
     this.canvas.style.cursor = ui.mode === 'pan' ? 'grab' : ui.mode === 'trim' ? 'pointer' : 'crosshair';
-    if (changed) this.making = null;
+    if (changed) { this.pop.hidden = true; this.making = null; }
     this.syncShape();
     if (!(ui.mode === 'path' || ui.mode === 'retreat') || this.listOf(ui.mode === 'retreat').length) this.arrowAim = null;
     this.resize();
@@ -422,14 +423,14 @@ export class PlanMapView {
     }
     // a squad first, then a man, then a work
     const near = this.squadAt(p);
-    if (near !== undefined) { this.ev.onSelect(near); return; }
+    if (near !== undefined) { this.pop.hidden = true; this.ev.onSelect(near); return; }
     const hit = this.targets.map((t) => ({ t, d: Math.hypot(t.x - p.x, t.y - p.y) })).filter((x) => x.d <= x.t.r).sort((a, b) => a.d - b.d)[0];
     if (hit) {
       const sq = this.plan?.missions.find((m) => m.squad === this.ui.selected && m.deploy);
-      if (hit.t.pick && sq && this.plan?.status === 'draft' && this.ui.mode !== 'retreat') { this.ev.onTarget(sq.squad, hit.t.pick); return; } // a squad is chosen: this is where it goes
-      return;
+      if (hit.t.pick && sq && this.plan?.status === 'draft' && this.ui.mode !== 'retreat') this.ev.onTarget(sq.squad, hit.t.pick); // a squad is chosen: this is where it goes
+      this.showPop(p, hit.t.title, hit.t.text); return;
     }
-    this.ev.onSelect(-1);
+    this.pop.hidden = true; this.ev.onSelect(-1);
   }
 
   /** The squad whose arrow passes within a finger's width of a screen point. */
@@ -444,6 +445,13 @@ export class PlanMapView {
       }
     }
     return undefined;
+  }
+
+  /** What a pressed work or man is. It has no button: pressing anywhere else closes it. */
+  private showPop(p: Pt, title: string, text: string): void {
+    this.pop.replaceChildren(h('b', { text: title }), h('p', { class: 'sub', text }));
+    this.pop.style.left = `${clamp(p.x + 14, 8, Math.max(8, this.W - 280))}px`; this.pop.style.top = `${clamp(p.y + 14, 8, Math.max(8, this.H - 150))}px`;
+    this.pop.hidden = false;
   }
 
   // ---------------------------------------------------------------- the arrow

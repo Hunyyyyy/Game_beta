@@ -1060,6 +1060,7 @@ button.primary.danger {
   position: absolute;
   z-index: 4;
   width: 260px;
+  pointer-events: none;
   display: grid;
   gap: 6px;
   padding: 8px 10px;
@@ -35348,6 +35349,7 @@ body.war .sheet, body.war .bbar {
       this.ev = ev;
       this.root = h("div", { class: "pview" });
       this.canvas = h("canvas", { class: "planmap" });
+      this.pop = h("div", { class: "ppop", hidden: true });
       this.note = h("div", { class: "pnote", hidden: true });
       this.ground = document.createElement("canvas");
       this.groundKey = "";
@@ -35382,7 +35384,7 @@ body.war .sheet, body.war .bbar {
       this.moved = false;
       this.pinch = 0;
       this.queued = false;
-      this.root.append(this.canvas, this.note);
+      this.root.append(this.canvas, this.pop, this.note);
       const at = (e) => {
         const b = this.canvas.getBoundingClientRect();
         return { x: e.clientX - b.left, y: e.clientY - b.top };
@@ -35525,7 +35527,10 @@ body.war .sheet, body.war .bbar {
         this.routes.set(m.squad, { start, go, back: m.retreat.length ? this.sim.routeTime(s, from, m.retreat) : null });
       }
       this.canvas.style.cursor = ui.mode === "pan" ? "grab" : ui.mode === "trim" ? "pointer" : "crosshair";
-      if (changed) this.making = null;
+      if (changed) {
+        this.pop.hidden = true;
+        this.making = null;
+      }
       this.syncShape();
       if (!(ui.mode === "path" || ui.mode === "retreat") || this.listOf(ui.mode === "retreat").length) this.arrowAim = null;
       this.resize();
@@ -35758,18 +35763,18 @@ body.war .sheet, body.war .bbar {
       }
       const near2 = this.squadAt(p);
       if (near2 !== void 0) {
+        this.pop.hidden = true;
         this.ev.onSelect(near2);
         return;
       }
       const hit = this.targets.map((t) => ({ t, d: Math.hypot(t.x - p.x, t.y - p.y) })).filter((x) => x.d <= x.t.r).sort((a, b) => a.d - b.d)[0];
       if (hit) {
         const sq = this.plan?.missions.find((m) => m.squad === this.ui.selected && m.deploy);
-        if (hit.t.pick && sq && this.plan?.status === "draft" && this.ui.mode !== "retreat") {
-          this.ev.onTarget(sq.squad, hit.t.pick);
-          return;
-        }
+        if (hit.t.pick && sq && this.plan?.status === "draft" && this.ui.mode !== "retreat") this.ev.onTarget(sq.squad, hit.t.pick);
+        this.showPop(p, hit.t.title, hit.t.text);
         return;
       }
+      this.pop.hidden = true;
       this.ev.onSelect(-1);
     }
     /** The squad whose arrow passes within a finger's width of a screen point. */
@@ -35784,6 +35789,13 @@ body.war .sheet, body.war .bbar {
         }
       }
       return void 0;
+    }
+    /** What a pressed work or man is. It has no button: pressing anywhere else closes it. */
+    showPop(p, title, text) {
+      this.pop.replaceChildren(h("b", { text: title }), h("p", { class: "sub", text }));
+      this.pop.style.left = `${clamp2(p.x + 14, 8, Math.max(8, this.W - 280))}px`;
+      this.pop.style.top = `${clamp2(p.y + 14, 8, Math.max(8, this.H - 150))}px`;
+      this.pop.hidden = false;
     }
     // ---------------------------------------------------------------- the arrow
     clampInBox(w) {
