@@ -7,7 +7,7 @@ import { Villager } from './model';
 
 // ---------------------------------------------------------------- working inside a house
 /** The villager best suited to work in a house who is not already doing it: free hands first, soldiers never, then the best stat for the job. */
-export function bestFor(sim: Sim, job: 'craft' | 'research' | 'repair'): Villager | null {
+export function bestFor(sim: Sim, job: 'craft' | 'research' | 'repair' | 'tame'): Villager | null {
   const stat = JOBS[job].stat;
   const pool = sim.villagers.filter((v) => v.down <= 0 && v.inside === null && v.job !== job && v.job !== 'fight' && v.job !== 'hunt' && v.job !== 'scout');
   pool.sort((a, b) => (a.job === 'idle' ? 0 : 1) - (b.job === 'idle' ? 0 : 1) || b.stats[stat] - a.stats[stat]);
@@ -16,7 +16,7 @@ export function bestFor(sim: Sim, job: 'craft' | 'research' | 'repair'): Village
 
 /** How fast a house gets through its active order: everyone inside, the house level and the dev speed-up. */
 export function houseRate(sim: Sim, b: Building): number {
-  const job: WorkJob = b.kind === 'lab' ? 'research' : b.kind === 'workshop' ? 'craft' : 'repair';
+  const job: WorkJob = b.kind === 'lab' ? 'research' : b.kind === 'workshop' ? 'craft' : b.kind === 'stable' ? 'tame' : 'repair';
   let r = 0;
   for (const id of b.staff) { const v = sim.byId.get(id); if (v) r += sim.workFactor(v, job); }
   return r * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 25 : 1);
@@ -56,7 +56,7 @@ export function releaseCrew(sim: Sim, ids: readonly number[]): void {
 }
 
 /** Put villagers to work inside the matching house (job craft, research or repair). Returns an error or null. */
-export function assignStaff(sim: Sim, ids: readonly number[], job: 'craft' | 'research' | 'repair'): string | null {
+export function assignStaff(sim: Sim, ids: readonly number[], job: 'craft' | 'research' | 'repair' | 'tame'): string | null {
   const lock = sim.warLock(); if (lock) return lock;
   const b = sim.building(STAFF_BUILDING[job]);
   if (!b) return `Chưa có ${BUILDINGS[STAFF_BUILDING[job]].name}, hoặc chưa xây xong`;

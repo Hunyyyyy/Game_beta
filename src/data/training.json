@@ -1,0 +1,33 @@
+{
+  "_note": "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
+  "dayBase": 0.6,
+  "dayPerStat": 0.12,
+  "foodBase": 4,
+  "coinBase": 1,
+  "coinPerStat": 0.3333,
+  "gain": [0.01, 0.05],
+  "partnerShare": 0.5,
+  "floor": 0.6,
+  "floorMin": 3,
+  "caps": [8, 12, 16],
+  "care": [
+    { "name": "Không", "coin": 0, "penalty": 0.8 },
+    { "name": "Cẩn thận", "coin": 2, "penalty": 0.4 },
+    { "name": "Chu đáo", "coin": 5, "penalty": 0.15 }
+  ],
+  "profiles": {
+    "infantry":   { "main": "str", "partner": "vit", "cost": "agi" },
+    "archery":    { "main": "agi", "partner": "sta", "cost": "str" },
+    "cavalry":    { "main": "agi", "partner": "sta", "cost": "int" },
+    "lumberyard": { "main": "str", "partner": "vit", "cost": "agi" },
+    "quarry":     { "main": "str", "partner": "vit", "cost": "agi" },
+    "farmhouse":  { "main": "agi", "partner": "sta", "cost": "str" },
+    "huntlodge":  { "main": "agi", "partner": "sta", "cost": "str" },
+    "builder":    { "main": "sta", "partner": "str", "cost": "int" },
+    "workshop":   { "main": "int", "cost": "sta" },
+    "lab":        { "main": "int", "cost": "sta" },
+    "stable":     { "main": "agi", "partner": "sta", "cost": "str" },
+    "repair":     { "main": "agi", "partner": "int", "cost": "vit" },
+    "scouttent":  { "main": "agi", "partner": "sta", "cost": "str" }
+  }
+}

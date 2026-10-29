@@ -96,7 +96,7 @@ export function setJob(sim: Sim, ids: readonly number[], job: Job): string | nul
 }
 
 function jobFor(sim: Sim, ids: readonly number[], job: Job): string | null {
-  if (job === 'craft' || job === 'research' || job === 'repair') return sim.assignStaff(ids, job);
+  if (job === 'craft' || job === 'research' || job === 'repair' || job === 'tame') return sim.assignStaff(ids, job);
   if (job === 'build') return sim.assignCrew(ids);
   for (const v of mine(sim, ids)) {
     resetTask(sim, v); clearCombat(sim, v); v.job = job; v.prefer = -1; v.post = -1;

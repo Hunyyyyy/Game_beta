@@ -1,6 +1,6 @@
 /** The shapes and constants the simulation shares: villagers, their parts, and a few tables. Nothing here has behaviour. */
 import { Building } from './buildings';
-import { Job, NodeKind, SoldierArm, Stats, WorkJob } from './jobs';
+import { Job, MountKind, NodeKind, SoldierArm, StatKey, Stats, WorkJob } from './jobs';
 import { Step } from './path';
 import { Res } from './resources';
 import { Recipe, ToolSet } from './tools';
@@ -138,6 +138,12 @@ export interface Villager {
   /** Wear of the weapon and the armour in hand: which piece it was counted for, hits left, and whether it is broken (useless until mended). */
   /** The squad (đội) this soldier belongs to, -1 for none. */
   squad: number;
+  /** The beast he rides, given from the stable (null for none). The riders of the Trại kỵ thú ride the beast of their camp without one: see `sim.mountOf`. */
+  mount: MountKind | null;
+  /** The stats this body was born with: training can lower a stat only so far below them. */
+  born: Stats;
+  /** Away at training in the house of his role: which house, which stat, seconds left and in all, how careful (index of TRAINING.care) and the ceiling. Null when he is not. */
+  train: { house: number; stat: StatKey; left: number; total: number; care: number; cap: number } | null;
   /** What a soldier of ours is hacking down in a war (a tree in the way, an enemy work); null when he is not. */
   breaks: Breaking | null;
   gear: { w: string | null; wd: number; wb: boolean; a: string | null; ad: number; ab: boolean };
@@ -181,6 +187,10 @@ export interface TribeIntel {
   yard: number;
   /** Where our village lies from there, as a unit vector. */
   toUs: { x: number; y: number } | null;
+  /** The way in: the road a walker really takes from our fire to the edge of the yard, the part of it inside the box, as points (empty when none is found). */
+  route: Array<{ x: number; y: number }>;
+  /** Other villages whose ground reaches this map, ours too: only a name and how far their ground goes. */
+  others: Array<{ name: string; x: number; y: number; r: number; ours: boolean }>;
   /** About how many people live there (rounded). */
   population: number;
   structures: Array<{ kind: string; label: string; detail: string; x: number; y: number; w: number; h: number }>;

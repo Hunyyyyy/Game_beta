@@ -16,5 +16,27 @@
   "buildingHpPerTile": 45,
   "crew": 3,
   "driftMax": 14,
-  "reach": 1.6
+  "reach": 1.6,
+  "scout": {
+    "gearSkill": {
+      "weapon": 0.05,
+      "armor": 0.08,
+      "torch": 0.06,
+      "mount": 0.2
+    },
+    "gearHide": {
+      "weapon": 0.03,
+      "armor": 0.05,
+      "torch": 0.04,
+      "mount": 0.06
+    },
+    "weights": {
+      "agi": 0.25,
+      "sta": 0.35,
+      "int": 0.4
+    },
+    "stealthPerPoint": 0.015,
+    "surveyPerInt": 0.04,
+    "walkPerSta": 0.02
+  }
 }

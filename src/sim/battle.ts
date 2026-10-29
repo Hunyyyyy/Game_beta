@@ -31,7 +31,7 @@ export function resolve(sim: Sim, t: Target | null): Ent | null {
 /** The weapon that counts: a broken one is no better than fists until it is mended. */
 export const effWeapon = (v: Villager): string | null => (v.team === 'player' && v.gear.wb && v.gear.w === v.weapon ? null : v.weapon);
 /** The arm of a unit: a rider of ours counts as cavalry whatever he carries, anyone else by his weapon. */
-export const armOf = (v: Villager): Arm => (v.team === 'player' && v.job === 'fight' && v.arm === 'cavalry' ? 'cavalry' : armOfWeapon(effWeapon(v)));
+export const armOf = (v: Villager): Arm => (v.team === 'player' && v.job === 'fight' && (v.arm === 'cavalry' || v.mount) ? 'cavalry' : armOfWeapon(effWeapon(v)));
 export const weaponOf = (v: Villager): WeaponDef => WEAPONS[effWeapon(v) ?? 'fist'] ?? WEAPONS.fist;
 const armorOf = (v: Villager): ArmorDef | null => (v.armor && !(v.team === 'player' && v.gear.ab && v.gear.a === v.armor) ? ARMORS[v.armor] ?? null : null);
 /** Can this unit's side see the spot? Our own people shoot only at what they can see; the foe has no fog. */
@@ -109,7 +109,7 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   const v = sim.get(target.id);
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === 'player') return;
-  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === 'player' ? sim.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) : 1);
+  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === 'player' ? sim.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) * sim.mountGuard(v) : 1);
   v.health -= final; v.calm = 0; v.flinch = 0.3;
   if (armor) sim.wearGear(v, 'armor');
   const behind = (v.facing === 'right' && from.x < v.x) || (v.facing === 'left' && from.x > v.x);

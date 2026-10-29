@@ -1,5 +1,5 @@
 import { buildingName } from '../sim/buildings';
-import { JOBS, ROLES, STAT_NAME, roleName, roleOf } from '../sim/jobs';
+import { fmtStat, JOBS, ROLES, STAT_NAME, roleName, roleOf } from '../sim/jobs';
 import type { RoleId } from '../sim/jobs';
 import type { Villager } from '../sim/model';
 import { describe } from './describe';
@@ -27,8 +27,6 @@ const HELP: Record<RoleId, string> = {
  */
 export class RolePane {
   readonly root = h('div', { class: 'page' });
-  private open = false;
-  private readonly picked = new Set<number>();
   private key = '';
 
   /** `changed` asks whoever shows this pane to draw it again. */
@@ -43,7 +41,7 @@ export class RolePane {
 
   stateKey(): string {
     const { sim } = this.c;
-    return [this.role, this.open, [...this.picked].join('.'), sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${Math.round(v.energy / 5)}`).join(),
+    return [this.role, sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${Math.round(v.energy / 5)}${v.stats.str}${v.stats.agi}${v.stats.int}${v.stats.sta}`).join(),
       sim.scouts.map((m) => m.ids.join('.')).join('|'), sim.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join()].join('|');
   }
 
@@ -51,8 +49,8 @@ export class RolePane {
 
   private statLine(v: Villager): string {
     const { sim } = this.c, s = STAT_OF[this.role];
-    if (s === 'scout') return `Nhanh ${v.stats.agi} · Thể lực ${v.stats.sta} · Trí tuệ ${v.stats.int} · điểm ${(sim.scoutSkill(v) * 10).toFixed(1)}`;
-    return `${STAT_NAME[s]} ${v.stats[s]}`;
+    if (s === 'scout') return `Nhanh ${fmtStat(v.stats.agi)} · Thể lực ${fmtStat(v.stats.sta)} · Trí tuệ ${fmtStat(v.stats.int)} · điểm ${(sim.scoutSkill(v) * 10).toFixed(1)}`;
+    return `${STAT_NAME[s]} ${fmtStat(v.stats[s])}`;
   }
 
   render(): Node[] {
@@ -63,7 +61,8 @@ export class RolePane {
     if (!have.length) out.push(h('p', { class: 'sub', text: 'Chưa có ai giữ việc này.' }));
     for (const v of have) {
       const away = sim.scouts.some((m) => m.ids.includes(v.id));
-      out.push(h('div', { class: 'rrow', style: `grid-template-columns:1fr ${def.job === 'fight' ? 'auto auto' : 'auto'}` }, h('div', { class: 'rwho' }, h('b', { text: v.name }), h('small', { text: `${describe(v, sim)} · ${this.statLine(v)}` })),
+      out.push(h('div', { class: 'rrow', style: `grid-template-columns:1fr ${def.job === 'fight' ? 'auto auto auto' : 'auto auto'}` }, h('div', { class: 'rwho' }, h('b', { text: v.name }), h('small', { text: `${describe(v, sim)} · ${this.statLine(v)}` })),
+        h('button', { class: 'chip', text: '⚙', title: 'Giao việc và chi tiết: công cụ, trang bị', onclick: () => { ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding(); } }),
         def.job === 'fight' ? h('button', { class: 'chip', text: '◎', title: 'Chọn trên bản đồ để ra lệnh', onclick: () => { if (v.inside !== null) { toast(`${v.name} đang ngủ trong trại`); return; } ctl.selected.clear(); ctl.selected.add(v.id); ctl.focusSelection(); ctl.closeBuilding(); } }) : null,
         h('button', { class: 'chip danger', text: '−', title: lock ?? (away ? 'Đang đi trinh sát' : 'Cho nghỉ, về làm dân thường'), disabled: away || !!lock, onclick: () => { const e = sim.releaseRole([v.id]); if (e) toast(e); ctl.onChange(); this.again(); } })));
     }
@@ -71,23 +70,15 @@ export class RolePane {
     const free = sim.villagers.filter((v) => v.job !== 'fight' && v.job !== 'scout' && roleOf(v) !== role && v.down <= 0 && v.inside === null);
     const key = (v: Villager) => (STAT_OF[role] === 'scout' ? sim.scoutSkill(v) : v.stats[STAT_OF[role] as 'str']);
     free.sort((a, b) => key(b) - key(a));
-    for (const id of [...this.picked]) if (!free.some((v) => v.id === id)) this.picked.delete(id);
-    out.push(h('button', { class: `chip${this.open ? ' on' : ''}`, style: 'justify-self:start', text: `＋ Giao việc ▾${free.length ? ` (${free.length})` : ''}`, disabled: !free.length || !room || !!lock,
-      title: lock ? lock : !cap ? `Cần dựng ${house}` : !room ? `${house} đã đủ chỗ: nâng cấp để chứa thêm` : !free.length ? 'Không còn dân rảnh' : 'Chọn dân để giao việc này',
-      onclick: () => { this.open = !this.open; this.again(); } }));
-    if (cap && !room) out.push(h('small', { class: 'sub', text: `${house} đã đủ người: nâng cấp để chứa thêm.` }));
-    if (this.open && free.length && room) {
-      const list = h('div', { class: 'rdrop' });
-      for (const v of free) {
-        const box = h('input', { type: 'checkbox' }) as HTMLInputElement;
-        box.checked = this.picked.has(v.id); box.disabled = !box.checked && this.picked.size >= room;
-        box.addEventListener('change', () => { if (box.checked) this.picked.add(v.id); else this.picked.delete(v.id); this.again(); });
-        const now = roleOf(v);
-        list.append(h('label', { class: 'rpick' }, box, h('span', { class: 'rwho' }, h('b', { text: v.name }), h('small', { text: `${now ? roleName(now, era) : 'rảnh'} · ${this.statLine(v)}` }))));
-      }
-      out.push(list, h('button', { class: 'chip on', style: 'justify-self:start', text: `Giao ${this.picked.size} người`, disabled: !this.picked.size,
-        onclick: () => { const e = sim.assignRole([...this.picked], role); if (e) toast(e); this.picked.clear(); this.open = false; ctl.onChange(); this.again(); } }),
-      h('small', { class: 'sub', text: `Còn chỗ cho ${room - this.picked.size} người.` }));
+    out.push(h('div', { class: 'phead' }, h('b', { text: 'Dân rảnh' }), h('small', { text: !cap ? `cần dựng ${house.toLowerCase()}` : room ? `còn chỗ cho ${room} người` : `${house.toLowerCase()} đã đủ người: nâng cấp để chứa thêm` })));
+    if (!free.length) out.push(h('p', { class: 'sub', text: 'Không còn dân rảnh.' }));
+    // one press on the plus gives the role to that villager
+    for (const v of free) {
+      const now = roleOf(v);
+      out.push(h('div', { class: 'rrow rfree', style: 'grid-template-columns:1fr auto auto' }, h('div', { class: 'rwho' }, h('b', { text: v.name }), h('small', { text: `${now ? roleName(now, era) : 'rảnh'} · ${this.statLine(v)}` })),
+        h('button', { class: 'chip', text: '⚙', title: 'Giao việc và chi tiết: công cụ, trang bị', onclick: () => { ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding(); } }),
+        h('button', { class: 'chip', text: '＋', title: lock ?? (!cap ? `Cần dựng ${house}` : !room ? `${house} đã đủ chỗ: nâng cấp để chứa thêm` : 'Giao việc này'), disabled: !!lock || !room,
+          onclick: () => { const e = sim.assignRole([v.id], role); if (e) toast(e); ctl.onChange(); this.again(); } })));
     }
     return [h('div', { class: 'proster', style: 'display:grid;gap:6px' }, ...out)];
   }

@@ -308,7 +308,29 @@ var siege_default = {
   buildingHpPerTile: 45,
   crew: 3,
   driftMax: 14,
-  reach: 1.6
+  reach: 1.6,
+  scout: {
+    gearSkill: {
+      weapon: 0.05,
+      armor: 0.08,
+      torch: 0.06,
+      mount: 0.2
+    },
+    gearHide: {
+      weapon: 0.03,
+      armor: 0.05,
+      torch: 0.04,
+      mount: 0.06
+    },
+    weights: {
+      agi: 0.25,
+      sta: 0.35,
+      int: 0.4
+    },
+    stealthPerPoint: 0.015,
+    surveyPerInt: 0.04,
+    walkPerSta: 0.02
+  }
 };
 
 // src/data/weapons.json
@@ -701,6 +723,16 @@ var BUILDINGS = {
     perFire: [4, 10, 18, 28],
     repeat: true,
     levels: { stone: [lv("H\u1ED1 ch\xF4ng", { wood: 3 }, 12, 0, 1, 0, 3), lv("H\u1ED1 ch\xF4ng s\xE2u", { wood: 4, stone: 2 }, 20, 0, 1, 0, 6)] }
+  },
+  // where beasts are tamed to be ridden: slots = keepers who work inside, craftSpeed = how fast they get through an order; the level decides which beast (wolf, boar, elephant)
+  stable: {
+    kind: "stable",
+    name: "Chu\u1ED3ng th\xFA c\u01B0\u1EE1i",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["builder"],
+    levels: { stone: [lv("Chu\u1ED3ng c\u1ECDc", { wood: 30, hide: 6 }, 90, 0, 1, 2), lv("Chu\u1ED3ng g\u1ED7", { wood: 40, hide: 8, stone: 10 }, 140, 0, 1.25, 3), lv("Chu\u1ED3ng \u0111\xE1", { wood: 45, stone: 35, hide: 12 }, 200, 0, 1.5, 4)] }
   },
   // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
   field: {
@@ -1642,7 +1674,7 @@ function resolve(sim, t) {
   return a && a.state !== "dead" ? { kind: "animal", a } : null;
 }
 var effWeapon = (v) => v.team === "player" && v.gear.wb && v.gear.w === v.weapon ? null : v.weapon;
-var armOf = (v) => v.team === "player" && v.job === "fight" && v.arm === "cavalry" ? "cavalry" : armOfWeapon(effWeapon(v));
+var armOf = (v) => v.team === "player" && v.job === "fight" && (v.arm === "cavalry" || v.mount) ? "cavalry" : armOfWeapon(effWeapon(v));
 var weaponOf = (v) => WEAPONS[effWeapon(v) ?? "fist"] ?? WEAPONS.fist;
 var armorOf = (v) => v.armor && !(v.team === "player" && v.gear.ab && v.gear.a === v.armor) ? ARMORS[v.armor] ?? null : null;
 function canSee(sim, v, x, y) {
@@ -1711,7 +1743,7 @@ function hurt(sim, target, dmg, type, from, src) {
   const v = sim.get(target.id);
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === "player") return;
-  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === "player" ? sim.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) : 1);
+  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === "player" ? sim.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) * sim.mountGuard(v) : 1);
   v.health -= final;
   v.calm = 0;
   v.flinch = 0.3;
@@ -2678,7 +2710,57 @@ var pace_default = {
   outdoor: ["wood", "stone", "food", "build"]
 };
 
+// src/data/mounts.json
+var mounts_default = {
+  _note: "Mounts. A beast is tamed in the Chu\u1ED3ng th\xFA (the level of the stable decides which) and given to a villager like a tool; the riders of the Tr\u1EA1i k\u1EF5 th\xFA ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
+  kinds: {
+    wolf: { name: "S\xF3i", tier: 1, species: "wolf", speed: 1.6, guard: 0.95, ride: 9, cost: { food: 25, hide: 2, coin: 3 }, time: 240, tech: "tame_wolf" },
+    boar: { name: "L\u1EE3n r\u1EEBng", tier: 2, species: "boar", speed: 1.3, guard: 0.85, ride: 8, cost: { food: 40, hide: 4, coin: 5 }, time: 360, tech: "tame_boar" },
+    elephant: { name: "Voi", tier: 3, species: "mammoth", speed: 1.15, guard: 0.65, ride: 19, cost: { food: 80, hide: 8, coin: 12 }, time: 600, tech: "tame_elephant" }
+  }
+};
+
+// src/data/training.json
+var training_default = {
+  _note: "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
+  dayBase: 0.6,
+  dayPerStat: 0.12,
+  foodBase: 4,
+  coinBase: 1,
+  coinPerStat: 0.3333,
+  gain: [0.01, 0.05],
+  partnerShare: 0.5,
+  floor: 0.6,
+  floorMin: 3,
+  caps: [8, 12, 16],
+  care: [
+    { name: "Kh\xF4ng", coin: 0, penalty: 0.8 },
+    { name: "C\u1EA9n th\u1EADn", coin: 2, penalty: 0.4 },
+    { name: "Chu \u0111\xE1o", coin: 5, penalty: 0.15 }
+  ],
+  profiles: {
+    infantry: { main: "str", partner: "vit", cost: "agi" },
+    archery: { main: "agi", partner: "sta", cost: "str" },
+    cavalry: { main: "agi", partner: "sta", cost: "int" },
+    lumberyard: { main: "str", partner: "vit", cost: "agi" },
+    quarry: { main: "str", partner: "vit", cost: "agi" },
+    farmhouse: { main: "agi", partner: "sta", cost: "str" },
+    huntlodge: { main: "agi", partner: "sta", cost: "str" },
+    builder: { main: "sta", partner: "str", cost: "int" },
+    workshop: { main: "int", cost: "sta" },
+    lab: { main: "int", cost: "sta" },
+    stable: { main: "agi", partner: "sta", cost: "str" },
+    repair: { main: "agi", partner: "int", cost: "vit" },
+    scouttent: { main: "agi", partner: "sta", cost: "str" }
+  }
+};
+
 // src/sim/jobs.ts
+var TRAINING = training_default;
+var MOUNT_KINDS = ["wolf", "boar", "elephant"];
+var MOUNTS = mounts_default.kinds;
+var fmtStat = (x) => String(Math.round(x * 10) / 10);
+var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", int: "Tr\xED tu\u1EC7", sta: "Th\u1EC3 l\u1EF1c" };
 var JOBS = {
   wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
   stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
@@ -2687,11 +2769,12 @@ var JOBS = {
   craft: { name: "Ch\u1EBF t\u1EA1o", stat: "int", baseTime: 1, anim: "craft" },
   research: { name: "Nghi\xEAn c\u1EE9u", stat: "int", baseTime: 1, anim: "gather" },
   repair: { name: "S\u1EEDa ch\u1EEFa", stat: "agi", baseTime: 1, anim: "craft" },
+  tame: { name: "Thu\u1EA7n th\xFA", stat: "agi", baseTime: 1, anim: "craft" },
   hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
   fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
 };
-var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", repair: "S\u1EEDa ch\u1EEFa", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh", scout: "Trinh s\xE1t" };
-var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "repair", "hunt", "fight"];
+var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", repair: "S\u1EEDa ch\u1EEFa", tame: "Thu\u1EA7n th\xFA", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh", scout: "Trinh s\xE1t" };
+var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "repair", "tame", "hunt", "fight"];
 var ROLES = {
   wood: { job: "wood", building: "lumberyard", names: { stone: "\u0110\u1ED1n g\u1ED7", ancient: "Ti\u1EC1u phu" } },
   stone: { job: "stone", building: "quarry", names: { stone: "Th\u1EE3 \u0111\xE1", ancient: "Th\u1EE3 m\u1ECF" } },
@@ -2719,7 +2802,7 @@ function roleOf(v) {
       return null;
   }
 }
-var STAFF_BUILDING = { craft: "workshop", research: "lab", repair: "repair" };
+var STAFF_BUILDING = { craft: "workshop", research: "lab", repair: "repair", tame: "stable" };
 var isStaffJob = (j) => j in STAFF_BUILDING;
 var FARM_TIME = pace_default.gather.farm;
 var XP_LEVELS = [60, 150, 300, 500, 800];
@@ -2774,7 +2857,11 @@ var research_default = {
     { id: "tool_store", name: "Kho c\xF4ng c\u1EE5", desc: "Cho ph\xE9p d\u1EF1ng Kho c\xF4ng c\u1EE5 \u0111\u1EC3 c\u1EA5t r\xECu, cu\u1ED1c, b\xFAa.", requires: ["hammer1", "axe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 200, unlocks: { buildings: ["toolstore"] } },
     { id: "armory", name: "Kho v\u0169 kh\xED", desc: "Cho ph\xE9p d\u1EF1ng Kho v\u0169 kh\xED \u0111\u1EC3 c\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["armory"] } },
     { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: ["tool_store"], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
-    { id: "auto_order", name: "T\u1EF1 nh\u1EDD ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa", desc: "D\xE2n thi\u1EBFu \u0111\u1ED3 t\u1EF1 t\u1EDBi nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EB7t h\xE0ng, t\u1EDBi nh\xE0 s\u1EEDa ch\u1EEFa nh\u1EDD s\u1EEDa \u0111\u1ED3 h\u1ECFng.", requires: ["auto_fetch"], needLevel: 2, minInt: 7, cost: { wood: 10, coin: 8 }, time: 360, unlocks: { auto: ["order"] } }
+    { id: "auto_order", name: "T\u1EF1 nh\u1EDD ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa", desc: "D\xE2n thi\u1EBFu \u0111\u1ED3 t\u1EF1 t\u1EDBi nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EB7t h\xE0ng, t\u1EDBi nh\xE0 s\u1EEDa ch\u1EEFa nh\u1EDD s\u1EEDa \u0111\u1ED3 h\u1ECFng.", requires: ["auto_fetch"], needLevel: 2, minInt: 7, cost: { wood: 10, coin: 8 }, time: 360, unlocks: { auto: ["order"] } },
+    { id: "stable", name: "Thu\u1EA7n th\xFA", desc: "D\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i: d\xE2n l\xE0m trong chu\u1ED3ng thu\u1EA7n h\xF3a th\xFA \u0111\u1EC3 ph\xE1t cho ng\u01B0\u1EDDi \u0111i c\u01B0\u1EE1i. Ch\u01B0a thu\u1EA7n h\xF3a \u0111\u01B0\u1EE3c con n\xE0o cho t\u1EDBi khi nghi\xEAn c\u1EE9u t\u1EEBng lo\xE0i.", requires: ["barracks", "hide1"], needLevel: 1, minInt: 6, cost: { wood: 20, hide: 4, coin: 5 }, time: 240, unlocks: { buildings: ["stable"] } },
+    { id: "tame_wolf", name: "Thu\u1EA7n h\xF3a s\xF3i", desc: "Nu\xF4i s\xF3i con t\u1EEB b\xE9 \u0111\u1EC3 c\u01B0\u1EE1i: ch\u1EA1y nhanh nh\u1EA5t, nh\u01B0ng m\u1ECFng manh. Chu\u1ED3ng c\u1EA5p 1.", requires: ["stable"], needLevel: 1, minInt: 6, cost: { food: 20, hide: 2, coin: 4 }, time: 240, unlocks: { mounts: ["wolf"] } },
+    { id: "tame_boar", name: "Thu\u1EA7n h\xF3a l\u1EE3n r\u1EEBng", desc: "Hu\u1EA5n luy\u1EC7n l\u1EE3n r\u1EEBng l\xE0m th\xFA c\u01B0\u1EE1i: ch\u1EADm h\u01A1n s\xF3i nh\u01B0ng d\xE0y da, \u0111\u1EE1 \u0111\xF2n t\u1ED1t. Chu\u1ED3ng c\u1EA5p 2.", requires: ["tame_wolf", "timber"], needLevel: 2, minInt: 7, cost: { food: 30, hide: 4, coin: 6 }, time: 340, unlocks: { mounts: ["boar"] } },
+    { id: "tame_elephant", name: "Thu\u1EA7n h\xF3a voi", desc: "Thu\u1EA7n voi l\u1EDBn l\xE0m th\xFA c\u01B0\u1EE1i: ch\u1EADm nh\u01B0ng nh\u01B0 m\u1ED9t b\u1EE9c t\u01B0\u1EDDng, ch\u1ECBu \u0111\u01B0\u1EE3c h\u1EA7u h\u1EBFt \u0111\xF2n \u0111\xE1nh. Chu\u1ED3ng c\u1EA5p 3.", requires: ["tame_boar", "masonry"], needLevel: 3, minInt: 8, cost: { food: 50, hide: 8, coin: 12 }, time: 520, unlocks: { mounts: ["elephant"] } }
   ]
 };
 
@@ -3322,7 +3409,7 @@ function bestFor(sim, job) {
   return pool[0] ?? null;
 }
 function houseRate(sim, b) {
-  const job = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "repair";
+  const job = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : b.kind === "stable" ? "tame" : "repair";
   let r = 0;
   for (const id of b.staff) {
     const v = sim.byId.get(id);
@@ -3988,7 +4075,7 @@ function setJob(sim, ids, job) {
   return err ?? (soldiers.length ? "Chi\u1EBFn binh do tr\u1EA1i l\xEDnh c\u1EE7a h\u1ECD qu\u1EA3n l\xFD: cho h\u1ECD ngh\u1EC9 \u1EDF \u0111\xF3 tr\u01B0\u1EDBc" : scouts.length ? "Trinh s\xE1t do Tr\u1EA1i trinh s\xE1t qu\u1EA3n l\xFD: cho h\u1ECD ngh\u1EC9 \u1EDF \u0111\xF3 tr\u01B0\u1EDBc" : null);
 }
 function jobFor(sim, ids, job) {
-  if (job === "craft" || job === "research" || job === "repair") return sim.assignStaff(ids, job);
+  if (job === "craft" || job === "research" || job === "repair" || job === "tame") return sim.assignStaff(ids, job);
   if (job === "build") return sim.assignCrew(ids);
   for (const v of mine(sim, ids)) {
     resetTask(sim, v);
@@ -4635,7 +4722,7 @@ function nearestFree(sim, tx, ty, taken) {
   return null;
 }
 function moveUnit(sim, v, dt) {
-  const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.armor ? 1 : 1);
+  const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.team === "player" ? sim.mountSpeed(v) : 1);
   if (v.swing) return;
   let left = walk * dt;
   while (left > 0 && v.path.length) {
@@ -4780,8 +4867,8 @@ function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
   for (const k of STAT_KEYS) stats[k] = 3 + Math.floor(r() * 8);
   const potential = {}, skill = {};
   for (const j of WORK_JOBS) {
-    if (j === "hunt" || j === "fight" || j === "research") {
-      const k = j === "hunt" ? stats.agi : j === "research" ? stats.int : stats.str;
+    if (j === "hunt" || j === "fight" || j === "research" || j === "tame") {
+      const k = j === "hunt" || j === "tame" ? stats.agi : j === "research" ? stats.int : stats.str;
       potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1;
       skill[j] = { xp: 0, level: 0 };
       continue;
@@ -4838,6 +4925,9 @@ function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
     orderCd: 0,
     repairFor: null,
     squad: -1,
+    born: { ...stats },
+    train: null,
+    mount: null,
     breaks: null,
     gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
     team,
@@ -4901,7 +4991,8 @@ function tickVillager(sim, v, dt) {
       return;
     }
   }
-  const brained = brainPlayer(sim, v, dt);
+  const training = !!v.train && sim.trainStep(v, dt);
+  const brained = training ? false : brainPlayer(sim, v, dt);
   const fighting = brained && (v.phase === "fight" || v.phase === "flee" || v.phase === "rescue");
   const asleep = v.phase === "goHome" || v.phase === "sleep";
   if (sim.shouldSleep(v, fighting)) {
@@ -4915,7 +5006,7 @@ function tickVillager(sim, v, dt) {
   }
   sim.moveUnit(v, dt);
   if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim.fogDirty = true;
-  if (!v.path.length && !v.slide && !brained) sim.think(v, dt);
+  if (!v.path.length && !v.slide && !brained && !training) sim.think(v, dt);
   sim.animate(v, dt);
 }
 function goHome(sim, v) {
@@ -5050,14 +5141,14 @@ function unpackRuns(runs, target) {
 }
 
 // src/sim/save.ts
-var SAVE_VERSION = 12;
+var SAVE_VERSION = 14;
 var SAVED = {
   /** Single values. */
   scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
   /** Objects whose keys are filled in place. */
   records: ["stock", "toolStock", "battle"],
   /** Lists of plain data. */
-  lists: ["wornTools", "craftQueue", "researchQueue", "repairQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
+  lists: ["wornTools", "craftQueue", "tameQueue", "researchQueue", "repairQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
   /** Handled by hand below. */
   special: ["researched", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
 };
@@ -5187,6 +5278,23 @@ var MIGRATIONS = {
     for (const t of d.tribes) for (const p of t.props) p.hp ??= SIEGE.propHp[p.kind] ?? 60;
     return { ...d, version: 12 };
   }
+};
+MIGRATIONS[12] = (d) => {
+  for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+    v.born ??= { ...v.stats };
+    v.train ??= null;
+  }
+  return { ...d, version: 13 };
+};
+MIGRATIONS[13] = (d) => {
+  d.lists.tameQueue ??= [];
+  for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+    v.mount ??= null;
+    const sk = v.skill, pot = v.potential, st = v.stats;
+    sk.tame ??= { xp: 0, level: 0 };
+    pot.tame ??= st.agi >= 9 ? 3 : st.agi >= 6 ? 2 : 1;
+  }
+  return { ...d, version: 14 };
 };
 function migrate(raw) {
   let d = raw;
@@ -5919,18 +6027,25 @@ function dismissScouts(sim, ids) {
   }
   return n ? null : away ? "\u0110ang \u0111i trinh s\xE1t: \u0111\u1EE3i h\u1ECD v\u1EC1" : "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 cho ngh\u1EC9";
 }
-var scoutSkill = (v) => (v.stats.agi + v.stats.sta + v.stats.int) / 18;
+var scoutSkill = (v) => {
+  const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta + w.int * v.stats.int) / 6;
+  return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
+};
+function gearOf(v, table) {
+  return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.mount || v.arm === "cavalry" ? table.mount : 0);
+}
+var stealthOf = (v) => 0.6 * v.stats.int + 0.4 * v.stats.sta;
 var scoutsNeeded = (sim, tribe, level) => Math.min(8, level + 1 + Math.floor(warriorsOf(sim, tribe) / 8));
 function drawChance(skills, need) {
   if (skills.length < 2) return 0;
   return Math.min(0.95, skills.reduce((a, b) => a + b, 0) / need);
 }
-var surveyTime = (level, scouts) => 0.2 * level * DAY_LENGTH / (1 + 0.35 * (Math.max(1, scouts) - 1));
+var surveyTime = (level, scouts, int = 6) => 0.2 * level * DAY_LENGTH / ((1 + 0.35 * (Math.max(1, scouts) - 1)) * Math.max(0.5, 1 + SIEGE.scout.surveyPerInt * (int - 6)));
 function planScout(sim, ids, tribe) {
   const level = scoutLevel(sim), limit = scoutLimit(sim), scouts = sim.mine(ids).filter((v) => canScout(sim, v));
   const need = scoutsNeeded(sim, tribe, Math.max(1, level)), w = whereIs(sim, tribe);
-  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed, 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
-  const survey = surveyTime(Math.max(1, level), scouts.length);
+  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * sim.mountSpeed(v) * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
+  const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.int, 0) / scouts.length : 6);
   let error = null;
   if (!sim.dev.freeBuild && !isFound(sim, tribe)) error = "Ch\u01B0a ai t\xECm th\u1EA5y l\xE0ng n\xE0y";
   else if (!tribeOf(sim, tribe)) error = "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
@@ -5958,11 +6073,11 @@ function startScout(sim, ids, tribe) {
   sim.say(`${scouts.length} trinh s\xE1t l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ${t.def.name} \u0111\u1EC3 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p ${Math.max(1, plan2.level)}: kho\u1EA3ng ${Math.round(plan2.chance * 100)}% v\u1EBD \u0111\u1EE7 chi ti\u1EBFt, c\u1EA3 chuy\u1EBFn m\u1EA5t ch\u1EEBng ${Math.max(1, Math.round(plan2.total / 60))} ph\xFAt.`);
   return null;
 }
-function deathChance(sim, m, agi) {
+function deathChance(sim, m, v) {
   const t = tribeOf(sim, m.tribe), fire = sim.campfire();
   const power = warriorsOf(sim, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
   const day = sim.weather === "clear" && !sim.resting;
-  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, agi - 6) * 0.01));
+  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 5e-3) - gearOf(v, SIEGE.scout.gearHide)));
 }
 function tickScouts(sim, dt) {
   tickSightings(sim, dt);
@@ -5981,13 +6096,13 @@ function tickScouts(sim, dt) {
       if (near2 || m.t > 300) {
         m.phase = "watch";
         m.t = 0;
-        for (const v of alive) if (sim.frnd() < deathChance(sim, m, v.stats.agi)) sim.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
+        for (const v of alive) if (sim.frnd() < deathChance(sim, m, v)) sim.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
         m.survivors = alive.filter((v) => v.health > 0 && sim.byId.has(v.id)).length;
         if (m.survivors && m.level >= 2) m.seen = seenNow(sim, tribeOf(sim, m.tribe));
         sim.say(m.survivors ? `Trinh s\xE1t \u0111ang quan s\xE1t ${t.def.name}.` : "Trinh s\xE1t b\u1ECB b\u1EAFt g\u1EB7p, kh\xF4ng ai tho\xE1t.");
       }
     } else if (m.phase === "watch") {
-      if (m.t >= surveyTime(m.level, m.survivors)) {
+      if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.int, 0) / Math.max(1, alive.length))) {
         m.phase = "back";
         m.t = 0;
         const fire = sim.campfire();
@@ -6037,6 +6152,20 @@ var WORK_INFO = {
   gate: "C\u1ED5ng: l\u1ED1i v\xE0o l\xE0ng, \u0111\xF3ng th\xEC ch\u1EB7n \u0111\u01B0\u1EDDng.",
   pile: "Kho l\u01B0\u01A1ng: ch\u1ED7 h\u1ECD c\u1EA5t th\u1EE9c \u0103n v\xE0 \u0111\u1ED3 c\u1ED1ng n\u1EA1p."
 };
+function freeNear(sim, x, y) {
+  for (let r = 0; r <= 8; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (Math.max(Math.abs(i), Math.abs(j)) === r && !sim.world.isBlocked(Math.floor(x) + i, Math.floor(y) + j)) return [Math.floor(x) + i, Math.floor(y) + j];
+  return null;
+}
+function entryRoute(sim, camp, box, toUs) {
+  const fire = sim.campfire(), from = freeNear(sim, (fire?.x ?? sim.world.start.x) + 1, (fire?.y ?? sim.world.start.y) + 3);
+  const to = freeNear(sim, camp.x + (toUs?.x ?? 0) * (YARD + 1), camp.y + (toUs?.y ?? 0) * (YARD + 1));
+  if (!from || !to) return [];
+  const path = findPath(sim.world, from[0], from[1], to[0], to[1], 7e4);
+  const last = path[path.length - 1];
+  if (!last || last[0] !== to[0] || last[1] !== to[1]) return [];
+  const inside = path.filter(([x, y]) => x >= box.x0 && x < box.x1 && y >= box.y0 && y < box.y1);
+  return inside.filter((_, i) => i % 3 === 0 || i === inside.length - 1).map(([x, y]) => ({ x: x + 0.5, y: y + 0.5 }));
+}
 function tribeIntel(sim, tribe) {
   const t = tribeOf(sim, tribe);
   if (!t) return null;
@@ -6057,6 +6186,10 @@ function tribeIntel(sim, tribe) {
     if (soldiers && !u.civ) soldiers[u.arm]++;
     people.push({ x: u.x, y: u.y, mark, leader: level >= 3 && u.leader, weapon: level >= 3 ? u.weapon : null });
   });
+  const route = entryRoute(sim, t.camp, box, len > 0 ? { x: dx / len, y: dy / len } : null);
+  const others = sim.tribes.filter((o) => o !== t && o.state !== "adopted" && o.state !== "destroyed" && isFound(sim, o.id)).map((o) => ({ name: o.def.name, x: o.camp.x, y: o.camp.y, r: YARD, ours: false }));
+  others.push({ name: "L\xE0ng c\u1EE7a ta", x: (fire?.x ?? sim.world.start.x) + 1, y: (fire?.y ?? sim.world.start.y) + 1, r: 12, ours: true });
+  const reach = (o) => o.x > box.x0 - o.r && o.x < box.x1 + o.r && o.y > box.y0 - o.r && o.y < box.y1 + o.r;
   const loot = Object.entries(t.loot).filter(([, v]) => (v ?? 0) > 0).map(([k, v]) => `${Math.round(v)} ${RES_NAME[k].toLowerCase()}`).join(", ");
   return {
     tribe,
@@ -6068,6 +6201,8 @@ function tribeIntel(sim, tribe) {
     camp: { ...t.camp },
     yard: YARD,
     toUs: len > 0 ? { x: dx / len, y: dy / len } : null,
+    route,
+    others: others.filter(reach),
     population: Math.max(2, Math.round(seen.length / 2) * 2),
     structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === "pile" && loot ? `${WORK_INFO.pile} C\xF3 kho\u1EA3ng ${loot}.` : WORK_INFO[p.kind] ?? "", x: p.x, y: p.y, w: p.w, h: p.h })),
     people,
@@ -6149,7 +6284,7 @@ function setMissionTarget(sim, plan2, squadId, target) {
   return null;
 }
 function squadPace(sim, s) {
-  const us = sim.squadUnits(s), base = us.length ? Math.min(...us.map((v) => 1.6 + 0.1 * v.stats.agi)) : 2.1;
+  const us = sim.squadUnits(s), base = us.length ? Math.min(...us.map((v) => (1.6 + 0.1 * v.stats.agi) * sim.mountSpeed(v))) : 2.1;
   return base * FORMATIONS[s.formation].speed * WEATHER[sim.weather].speed;
 }
 function routeTime(sim, s, from, pts, target) {
@@ -6219,8 +6354,8 @@ function reviewPlan(sim, plan2) {
     if (n && m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
     if (n && m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
     if (n && m.deploy && n < m.deploy.cells.length && !isLogistics(plan2, m)) out.push(`\u2717 ${name} m\u1EDBi c\xF3 ${n}/${m.deploy.cells.length} l\xEDnh cho ${m.deploy.cells.length} \xF4 \u0111\u1ED9i h\xECnh: th\xEAm l\xEDnh v\xE0o \u0111\u1ED9i ho\u1EB7c b\u1EDBt \xF4 (\u2702 B\u1EDBt \xF4).`);
-    const unfit = s ? sim.squadUnits(s).filter((v) => v.down > 0 || sim.sleepLocked(v)).length : 0;
-    if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
+    const unfit = s ? sim.squadUnits(s).filter((v) => v.down > 0 || v.train || sim.sleepLocked(v)).length : 0;
+    if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng, \u0111ang hu\u1EA5n luy\u1EC7n ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
     if (s && n && !sim.squadCenter(s)) out.push(`${name} ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng.`);
     if (s && plan2.kind === "attack" && m.withdrawAt > 0 && !m.retreat.length && m.path.length) out.push(`${name} s\u1EBD r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n v\xEC ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt.`);
     if (s && plan2.kind === "attack" && m.route === "night") out.push(`${name} \u0111i \u0111\u01B0\u1EDDng v\xF2ng ban \u0111\xEAm: s\u1EBD ch\u1EDD \u0111\u1EBFn t\u1ED1i m\u1EDBi xu\u1EA5t ph\xE1t.`);
@@ -7116,6 +7251,201 @@ function tickTarget(sim, plan2, m, s) {
   return true;
 }
 
+// src/sim/training.ts
+var profileOf = (b) => TRAINING.profiles[b.kind];
+var trainCap = (b) => TRAINING.caps[Math.max(0, Math.min(TRAINING.caps.length, b.level) - 1)];
+function members(sim, b) {
+  const role = ROLE_IDS.find((r) => ROLES[r].building === b.kind);
+  const inHouse = role ? sim.villagers.filter((v) => roleOf(v) === role) : b.kind === "builder" ? sim.crew() : b.staff.map((id) => sim.get(id)).filter((v) => !!v);
+  const away = sim.villagers.filter((v) => v.train?.house === b.id && !inHouse.includes(v));
+  return [...inHouse, ...away];
+}
+function trainCost(stat, care) {
+  return { food: Math.round(TRAINING.foodBase + stat), coin: Math.round(TRAINING.coinBase + stat * TRAINING.coinPerStat) + TRAINING.care[care].coin };
+}
+var trainTime = (stat) => (TRAINING.dayBase + TRAINING.dayPerStat * stat) * DAY_LENGTH;
+function startTraining(sim, ids, houseId, care) {
+  const lock = sim.warLock();
+  if (lock) return "\u0110ang c\xF3 chi\u1EBFn tranh: kh\xF4ng hu\u1EA5n luy\u1EC7n \u0111\u01B0\u1EE3c";
+  const b = sim.getBuilding(houseId), p = b ? profileOf(b) : void 0;
+  if (!b || !p || !TRAINING.care[care]) return "Nh\xE0 n\xE0y kh\xF4ng hu\u1EA5n luy\u1EC7n \u0111\u01B0\u1EE3c";
+  if (!b.done) return "Nh\xE0 ch\u01B0a d\u1EF1ng xong";
+  const cap = trainCap(b), mine2 = members(sim, b);
+  let err = null, n = 0;
+  for (const v of sim.mine(ids)) {
+    if (!mine2.includes(v) || v.train) continue;
+    if (v.stats[p.main] >= cap) {
+      err = `${v.name} \u0111\xE3 t\u1EDBi tr\u1EA7n ${fmtStat(cap)} ${STAT_NAME[p.main].toLowerCase()} c\u1EE7a nh\xE0 c\u1EA5p ${b.level}: n\xE2ng c\u1EA5p nh\xE0`;
+      continue;
+    }
+    const cost = trainCost(v.stats[p.main], care), short = sim.missing(cost);
+    if (short) {
+      err = short;
+      break;
+    }
+    sim.pay(cost);
+    sim.exitBuilding(v);
+    sim.resetTask(v);
+    v.train = { house: b.id, stat: p.main, left: trainTime(v.stats[p.main]), total: trainTime(v.stats[p.main]), care, cap };
+    n++;
+  }
+  if (n) sim.say(`${n} ng\u01B0\u1EDDi v\xE0o hu\u1EA5n luy\u1EC7n ${STAT_NAME[p.main].toLowerCase()} \u1EDF ${BUILDINGS[b.kind].name.toLowerCase()}.`);
+  return n ? null : err ?? "Ch\u1ECDn ng\u01B0\u1EDDi trong nh\xE0 \u0111\u1EC3 hu\u1EA5n luy\u1EC7n";
+}
+function cancelTraining(sim, ids) {
+  for (const v of sim.mine(ids)) if (v.train) {
+    v.train = null;
+    v.phase = "idle";
+    v.path = [];
+  }
+}
+function finish(sim, v) {
+  const t = v.train, b = sim.getBuilding(t.house), p = b ? profileOf(b) : void 0;
+  v.train = null;
+  if (!p) return;
+  const [lo, hi] = TRAINING.gain, r = lo + sim.rnd() * (hi - lo), main2 = v.stats[p.main], next = Math.min(t.cap, main2 * (1 + r)), got = Math.max(0, next - main2);
+  const round = (x) => Math.round(x * 100) / 100;
+  v.stats[p.main] = round(main2 + got);
+  if (p.partner) v.stats[p.partner] = round(Math.max(v.stats[p.partner], Math.min(t.cap, v.stats[p.partner] + got * TRAINING.partnerShare)));
+  const floor = Math.max(TRAINING.floorMin, v.born[p.cost] * TRAINING.floor);
+  v.stats[p.cost] = round(Math.max(Math.min(floor, v.stats[p.cost]), v.stats[p.cost] - got * TRAINING.care[t.care].penalty));
+  const ratio = v.maxHealth > 0 ? v.health / v.maxHealth : 1;
+  v.maxHealth = Math.round(maxHpOf(v.stats.vit));
+  v.health = v.maxHealth * ratio;
+  if (!v.squad || v.squad < 0) v.speed = 1.6 + 0.1 * v.stats.agi;
+  sim.say(`${v.name} hu\u1EA5n luy\u1EC7n xong: ${STAT_NAME[p.main].toLowerCase()} ${fmtStat(main2)} \u2192 ${fmtStat(v.stats[p.main])}, ${STAT_NAME[p.cost].toLowerCase()} ${fmtStat(v.stats[p.cost])}.`);
+}
+function trainStep(sim, v, dt) {
+  const t = v.train;
+  if (!t) return false;
+  t.left -= dt;
+  if (t.left <= 0) {
+    finish(sim, v);
+    return false;
+  }
+  if (v.phase === "sleep" || v.phase === "goHome") return true;
+  const b = sim.getBuilding(t.house);
+  if (!b) {
+    v.train = null;
+    return false;
+  }
+  const d = BUILDINGS[b.kind];
+  if (!v.path.length && Math.hypot(b.x + d.w / 2 - v.x, b.y + d.h / 2 - v.y) > d.w + 2) {
+    if (sim.pathLeft > 0) {
+      sim.pathLeft--;
+      sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h), 3);
+    }
+    v.phase = v.path.length ? "move" : "idle";
+  } else if (!v.path.length) v.phase = "idle";
+  return true;
+}
+
+// src/sim/mounts.ts
+var stockKey = (k) => `mount_${k}`;
+var tamedCount = (sim, k) => sim.toolStock[stockKey(k)] ?? 0;
+var STOCK_CAP = 12;
+function tameLock(sim, k) {
+  const d = MOUNTS[k], stable = sim.building("stable");
+  if (!stable) return "C\u1EA7n d\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i";
+  if (RESEARCH.enabled && !sim.dev.freeBuild && !sim.researched.has(d.tech)) return `C\u1EA7n nghi\xEAn c\u1EE9u: Thu\u1EA7n h\xF3a ${d.name.toLowerCase()}`;
+  if (stable.level < d.tier) return `C\u1EA7n Chu\u1ED3ng th\xFA c\u01B0\u1EE1i c\u1EA5p ${d.tier}`;
+  return null;
+}
+function queueTame(sim, k) {
+  if (!MOUNTS[k]) return "Kh\xF4ng c\xF3 lo\xE0i n\xE0y";
+  const lock = tameLock(sim, k);
+  if (lock) return lock;
+  if (sim.tameQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
+  sim.tameQueue.push(k);
+  return null;
+}
+function unqueueTame(sim, k) {
+  const i = sim.tameQueue.lastIndexOf(k);
+  if (i >= 0) sim.tameQueue.splice(i, 1);
+}
+function tickTame(sim, dt) {
+  for (const b of sim.buildings) {
+    if (b.kind !== "stable" || !b.done) continue;
+    const staff = b.staff.map((id) => sim.byId.get(id)).filter((v) => !!v);
+    if (!staff.length) continue;
+    if (!b.active) {
+      const i = sim.tameQueue.findIndex((k3) => !tameLock(sim, k3) && sim.affordable(MOUNTS[k3].cost));
+      if (i < 0) {
+        if (sim.tameQueue.length && sim.time - sim.lastMatWarn > 30) {
+          sim.lastMatWarn = sim.time;
+          sim.say("\u0110\u01A1n thu\u1EA7n th\xFA \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
+        }
+        continue;
+      }
+      const k2 = sim.tameQueue.splice(i, 1)[0];
+      sim.pay(MOUNTS[k2].cost);
+      b.active = { id: k2, progress: 0 };
+    }
+    const k = b.active.id, d = MOUNTS[k];
+    if (!d) {
+      b.active = null;
+      continue;
+    }
+    let rate = 0;
+    for (const v of staff) {
+      rate += sim.workFactor(v, "tame");
+      sim.gainXp(v, "tame", dt);
+    }
+    b.active.progress = Math.min(1, b.active.progress + dt * PACE.work * rate * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 25 : 1) / d.time);
+    if (b.active.progress < 1) continue;
+    if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim, m), 0) >= STOCK_CAP) {
+      if (sim.time - sim.lastFullWarn > 30) {
+        sim.lastFullWarn = sim.time;
+        sim.say("Chu\u1ED3ng \u0111\xE3 \u0111\u1EA7y th\xFA ch\u01B0a c\xF3 ng\u01B0\u1EDDi c\u01B0\u1EE1i: s\u1EA3n ph\u1EA9m ch\u1EDD ch\u1ED7.");
+      }
+      continue;
+    }
+    sim.toolStock[stockKey(k)] = tamedCount(sim, k) + 1;
+    b.active = null;
+    sim.say(`\u0110\xE3 thu\u1EA7n xong m\u1ED9t con ${d.name.toLowerCase()}.`);
+  }
+}
+function campBeast(sim) {
+  const camp = sim.building("cavalry");
+  return MOUNT_KINDS[Math.max(0, Math.min(MOUNT_KINDS.length, camp?.level ?? 1) - 1)];
+}
+function mountOf(sim, v) {
+  if (v.team !== "player") return null;
+  return v.mount ?? (v.job === "fight" && v.arm === "cavalry" ? campBeast(sim) : null);
+}
+var mountSpeed = (sim, v) => {
+  const k = mountOf(sim, v);
+  return k ? MOUNTS[k].speed : 1;
+};
+var mountGuard = (sim, v) => {
+  const k = mountOf(sim, v);
+  return k ? MOUNTS[k].guard : 1;
+};
+function assignMount(sim, ids, kind) {
+  let given = 0, short = false, riders = false;
+  for (const v of sim.mine(ids)) {
+    if (v.mount === kind) continue;
+    if (kind && v.job === "fight" && v.arm === "cavalry") {
+      riders = true;
+      continue;
+    }
+    if (kind && tamedCount(sim, kind) <= 0) {
+      short = true;
+      continue;
+    }
+    if (v.mount) sim.toolStock[stockKey(v.mount)] = tamedCount(sim, v.mount) + 1;
+    if (kind) sim.toolStock[stockKey(kind)]--;
+    v.mount = kind;
+    given++;
+    if (kind) {
+      v.speed = 1.6 + 0.1 * v.stats.agi;
+      sim.say(`${v.name} \u0111\u01B0\u1EE3c giao m\u1ED9t con ${MOUNTS[kind].name.toLowerCase()} \u0111\u1EC3 c\u01B0\u1EE1i.`);
+    } else sim.say(`${v.name} tr\u1EA3 th\xFA v\u1EC1 chu\u1ED3ng.`);
+  }
+  if (given) return null;
+  return riders ? "K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA \u0111\xE3 c\xF3 th\xFA c\u1EE7a tr\u1EA1i" : short ? `Chu\u1ED3ng h\u1EBFt ${kind ? MOUNTS[kind].name.toLowerCase() : "th\xFA"} \u0111\xE3 thu\u1EA7n: h\xE3y thu\u1EA7n th\xEAm` : null;
+}
+
 // src/sim/simwar.ts
 var WAR = {
   /** → army.squadLimit */
@@ -7399,6 +7729,71 @@ var WAR = {
   isLogistics(plan2, m) {
     return isLogistics(plan2, m);
   },
+  /** → training.startTraining */
+  startTraining(ids, houseId, care) {
+    return startTraining(this, ids, houseId, care);
+  },
+  /** → training.cancelTraining */
+  cancelTraining(ids) {
+    return cancelTraining(this, ids);
+  },
+  /** → training.trainStep */
+  trainStep(v, dt) {
+    return trainStep(this, v, dt);
+  },
+  /** → training.profileOf, trainCap */
+  trainInfo(b) {
+    const p = profileOf(b);
+    return p ? { ...p, cap: trainCap(b) } : null;
+  },
+  /** → training.trainCost */
+  trainCost(stat, care) {
+    return trainCost(stat, care);
+  },
+  /** → training.trainTime */
+  trainTime(stat) {
+    return trainTime(stat);
+  },
+  /** → training.members */
+  trainees(b) {
+    return members(this, b);
+  },
+  /** → mounts.queueTame */
+  queueTame(k) {
+    return queueTame(this, k);
+  },
+  /** → mounts.unqueueTame */
+  unqueueTame(k) {
+    return unqueueTame(this, k);
+  },
+  /** → mounts.tameLock */
+  tameLock(k) {
+    return tameLock(this, k);
+  },
+  /** → mounts.tamedCount */
+  tamedCount(k) {
+    return tamedCount(this, k);
+  },
+  /** → mounts.tickTame */
+  tickTame(dt) {
+    return tickTame(this, dt);
+  },
+  /** → mounts.mountOf */
+  mountOf(v) {
+    return mountOf(this, v);
+  },
+  /** → mounts.mountSpeed */
+  mountSpeed(v) {
+    return mountSpeed(this, v);
+  },
+  /** → mounts.mountGuard */
+  mountGuard(v) {
+    return mountGuard(this, v);
+  },
+  /** → mounts.assignMount */
+  assignMount(ids, kind) {
+    return assignMount(this, ids, kind);
+  },
   /** → environment.sightOf */
   sightOf(v) {
     return sightOf(this, v);
@@ -7422,6 +7817,7 @@ var Sim = class _Sim {
     this.wornTools = [];
     /** Hàng đợi chế tác (mã công thức). */
     this.craftQueue = [];
+    this.tameQueue = [];
     /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
     this.researchQueue = [];
     /** Tools waiting to be mended in the Nhà sửa chữa (recipe ids such as axe1). */
@@ -8062,6 +8458,7 @@ var Sim = class _Sim {
     tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt);
+    this.tickTame(dt);
     this.tickFarms(dt);
     this.tickTowers(dt);
     this.tickTraps(dt);

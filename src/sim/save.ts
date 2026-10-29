@@ -15,7 +15,7 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 14;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
@@ -24,7 +24,7 @@ export const SAVED = {
   /** Objects whose keys are filled in place. */
   records: ['stock', 'toolStock', 'battle'],
   /** Lists of plain data. */
-  lists: ['wornTools', 'craftQueue', 'researchQueue', 'repairQueue', 'log', 'foodLots', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
+  lists: ['wornTools', 'craftQueue', 'tameQueue', 'researchQueue', 'repairQueue', 'log', 'foodLots', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
   /** Handled by hand below. */
   special: ['researched', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
 } as const satisfies Record<string, readonly (keyof Sim)[]>;
@@ -153,6 +153,23 @@ export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disabl
     for (const t of d.tribes as Array<{ props: Array<{ kind: string; hp?: number }> }>) for (const p of t.props) p.hp ??= SIEGE.propHp[p.kind] ?? 60;
     return { ...d, version: 12 };
   },
+};
+
+MIGRATIONS[12] = (d) => {
+  // 12 -> 13: stats may have a fraction after training; every body remembers the stats it was born with and may be away at training
+  for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) { v.born ??= { ...(v.stats as object) }; v.train ??= null; }
+  return { ...d, version: 13 };
+};
+
+MIGRATIONS[13] = (d) => {
+  // 13 -> 14: beasts to ride: the stable's queue, the beast a villager rides, and the skill and potential for taming
+  d.lists.tameQueue ??= [];
+  for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) {
+    v.mount ??= null;
+    const sk = v.skill as Record<string, unknown>, pot = v.potential as Record<string, number>, st = v.stats as Record<string, number>;
+    sk.tame ??= { xp: 0, level: 0 }; pot.tame ??= st.agi >= 9 ? 3 : st.agi >= 6 ? 2 : 1;
+  }
+  return { ...d, version: 14 };
 };
 
 export function migrate(raw: unknown): GameSave {

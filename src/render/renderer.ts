@@ -6,6 +6,7 @@ import type { Animal } from '../sim/fauna';
 import type { Tribe } from '../sim/tribes';
 import { hash2 } from '../sim/rng';
 import { Tile } from '../sim/world';
+import { MOUNTS } from '../sim/jobs';
 import { Prop, Sprites, SPRITE_FEET } from './sprites';
 
 export interface Camera { x: number; y: number; zoom: number }
@@ -260,20 +261,28 @@ export class Renderer {
           else { const [ax, ay] = this.buildingAnchor('storage', p.x, p.y); this.prop(sp0.building('storage', 'stone', 1, 4), ax, ay, time, t.state === 'destroyed' ? 0.5 : 1); }
         }
       } else if (d.v) {
-        const s = sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
+        const rode = d.v.phase !== 'sleep' && d.v.phase !== 'down' ? sim.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === 'down';
+        const s = sp.villager(d.v, rode && !fighting ? 'idle' : undefined), fx = d.v.x * TILE, fy = d.v.y * TILE;
+        let lift = 0;
+        if (rode) { // a beast under him: it walks when he walks, and he sits on its back
+          const m = MOUNTS[rode], moving = d.v.path.length > 0 || !!d.v.slide, beast = sp.mount(m.species, moving, d.v.animClock, d.v.facing === 'left' ? -1 : 1), box = sp.animalBox(m.species);
+          ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(Math.round((fx - cx) * z), Math.round((fy - cy) * z), box.w * 0.3 * z, box.h * 0.1 * z, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.drawImage(beast, Math.round((fx - box.ax - cx) * z), Math.round((fy - box.ay - cy) * z), beast.width * z, beast.height * z);
+          lift = m.ride + (moving ? Math.abs(Math.sin(d.v.animClock * 8)) : 0);
+        }
         if (d.v.phase === 'sleep' || d.v.phase === 'down') {
           // lying asleep: sprite rotated 90°, head to the left
           ctx.save(); ctx.translate(Math.round((fx + 16 - cx) * z), Math.round((fy - 2 - cy) * z)); ctx.rotate(-Math.PI / 2);
           ctx.drawImage(s, -SPRITE_FEET.x * z, -SPRITE_FEET.y * z, s.width * z, s.height * z); ctx.restore();
-        } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
+        } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - lift - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
         const v = d.v;
         // a small badge tells soldiers (red) and hunters (amber) from civilians
         if (v.team === 'player' && (v.job === 'fight' || v.job === 'hunt') && v.phase !== 'flee' && v.phase !== 'sleep' && v.phase !== 'down') {
-          const p = this.worldToScreen(fx, fy - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
+          const p = this.worldToScreen(fx, fy - lift - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
           ctx.fillStyle = 'rgba(20,14,8,.85)'; ctx.fillRect(p.x - 3 * u, p.y - 4 * u, 6 * u, 7 * u);
           ctx.fillStyle = v.job === 'fight' ? '#d9534f' : '#e0a23c'; ctx.fillRect(p.x - 2 * u, p.y - 3 * u, 4 * u, 4 * u); ctx.fillRect(p.x - u, p.y + u, 2 * u, u);
         }
-        if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - 46, v.health / v.maxHealth, v.team === 'player' ? '#6bbf59' : '#d9534f');
+        if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - lift - 46, v.health / v.maxHealth, v.team === 'player' ? '#6bbf59' : '#d9534f');
         if (v.down > 0) { ctx.fillStyle = '#ffd27a'; ctx.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 30); ctx.fillText(gameDays(v.down), p.x, p.y); }
         if (v.phase === 'flee') { ctx.fillStyle = '#fff6e8'; ctx.font = `700 ${Math.max(12, 7 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 50); ctx.fillText('!', p.x, p.y); }
       }

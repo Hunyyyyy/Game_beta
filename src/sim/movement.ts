@@ -28,7 +28,7 @@ export function nearestFree(sim: Sim, tx: number, ty: number, taken: Set<number>
 
 /** Follow the path and the final slide step; shared by villagers and tribal people. */
 export function moveUnit(sim: Sim, v: Villager, dt: number): void {
-  const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === 'flee' ? 1.3 : 1) * (v.armor ? 1 : 1);
+  const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === 'flee' ? 1.3 : 1) * (v.team === 'player' ? sim.mountSpeed(v) : 1); // a rider on his beast walks faster
   if (v.swing) return; // a blow in progress plants the feet
   let left = walk * dt;
   while (left > 0 && v.path.length) {

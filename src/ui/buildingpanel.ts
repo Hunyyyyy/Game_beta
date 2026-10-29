@@ -15,6 +15,8 @@ import { PeoplePane } from './peoplepane';
 import { ActiveBox, StaffBox } from './housebox';
 import { ScoutPane } from './scoutpane';
 import { RolePane } from './rolepane';
+import { TrainPane } from './trainpane';
+import { MOUNT_KINDS, MOUNTS, MountKind, TRAINING } from '../sim/jobs';
 import { sleeperRows } from './soldierpane';
 import { WarPanel } from './warpanel';
 
@@ -33,6 +35,7 @@ export class BuildingPanel {
   private readonly people: PeoplePane;
   /** The people of each role house, kept in the house that gives the role. */
   private readonly rolePanes = {} as Partial<Record<BuildingKind, RolePane>>;
+  private readonly trainPanes = {} as Partial<Record<BuildingKind, TrainPane>>;
   /** The war council held in the Lều họp chiến. */
   private readonly war: WarPanel;
   /** Where scouts are picked and sent, in the Trại trinh sát. */
@@ -45,8 +48,10 @@ export class BuildingPanel {
   /** The archers posted on a tower. */
   private readonly towerHead = h('h3'); private readonly towerList = h('div'); private towerKey = '';
   private readonly info = h('div', { class: 'kv' });
-  private readonly staffBoxes: Record<'build' | 'craft' | 'research' | 'repair' | 'farm', StaffBox>;
-  private readonly activeBoxes: Record<'craft' | 'research' | 'repair', ActiveBox>;
+  private readonly staffBoxes: Record<'build' | 'craft' | 'research' | 'repair' | 'tame' | 'farm', StaffBox>;
+  private readonly activeBoxes: Record<'craft' | 'research' | 'repair' | 'tame', ActiveBox>;
+  private readonly mountRows: Array<{ k: MountKind; have: HTMLElement; row: HTMLElement; lock: HTMLElement; btns: HTMLButtonElement[] }> = [];
+  private readonly mountNote = h('div', { class: 'kv' });
   private readonly queueNote = { craft: h('div', { class: 'kv' }), research: h('div', { class: 'kv' }), repair: h('div', { class: 'kv' }) };
   private readonly goodsNote = h('p', { class: 'sub' }); private readonly goodsHint = hint(this.goodsNote, '');
   private readonly toolList = h('div'); private toolKey = '';
@@ -56,11 +61,12 @@ export class BuildingPanel {
     const { sim, ctl, sprites } = c;
     root.className = 'modal';
     const recipeNm = (id: string) => (RECIPE_BY_ID[id] ? recipeName(RECIPE_BY_ID[id]) : id);
-    this.staffBoxes = { build: new StaffBox(c, 'build'), craft: new StaffBox(c, 'craft'), research: new StaffBox(c, 'research'), repair: new StaffBox(c, 'repair'), farm: new StaffBox(c, 'farm') };
+    this.staffBoxes = { build: new StaffBox(c, 'build'), craft: new StaffBox(c, 'craft'), research: new StaffBox(c, 'research'), repair: new StaffBox(c, 'repair'), tame: new StaffBox(c, 'tame'), farm: new StaffBox(c, 'farm') };
     this.activeBoxes = {
       craft: new ActiveBox(c, recipeNm, (id) => sim.orderDef('craft', id)?.time ?? 1),
       research: new ActiveBox(c, (id) => TECHS.find((t) => t.id === id)?.name ?? id, (id) => sim.orderDef('research', id)?.time ?? 1),
       repair: new ActiveBox(c, (id) => `sửa ${recipeNm(id).toLowerCase()}`, (id) => sim.orderDef('repair', id)?.time ?? 1),
+      tame: new ActiveBox(c, (id) => `thuần ${MOUNTS[id as MountKind]?.name.toLowerCase() ?? id}`, (id) => MOUNTS[id as MountKind]?.time ?? 1),
     };
 
     const page = (...kids: Array<HTMLElement | null>) => { const el = h('div', { class: 'tabpage', hidden: true }, ...kids); this.pages.push(el); return el; };
@@ -172,6 +178,28 @@ export class BuildingPanel {
     }
     this.tabs.toolstore = this.tabs.armory = [{ label: 'Kho', page: goods }];
 
+    // the stable: keepers inside, and the beasts that can be tamed (each needs its research and a high enough stable)
+    const beasts = page(hint('Thuần thú', 'Dân làm việc trong chuồng thuần hóa từng con thú theo đơn: tốn lương thực, da và tiền, mất nhiều thời gian (càng đông và càng nhanh nhẹn càng nhanh). Con xong vào chuồng; giao cho từng người ở trang "Giao việc và chi tiết" của họ, như giao công cụ. Mỗi loài cần nghiên cứu riêng và chuồng đủ cấp: sói (cấp 1), lợn rừng (cấp 2), voi (cấp 3). Kỵ binh của Trại kỵ thú không cần thú của chuồng: họ cưỡi con của trại.'));
+    for (const k of MOUNT_KINDS) {
+      const d = MOUNTS[k], have = h('span', { class: 'have' }), lock = h('small', { class: 'lock' });
+      const minus = h('button', { class: 'sm', text: '−', title: 'Bớt một đơn', onclick: () => { sim.unqueueTame(k); ctl.onChange(); } }) as HTMLButtonElement;
+      const plus = h('button', { class: 'sm', text: '+', title: 'Thêm một đơn vào hàng đợi', onclick: () => { const e = sim.queueTame(k); if (e) c.toast(e); ctl.onChange(); } }) as HTMLButtonElement;
+      const row = h('div', { class: 'rec' }, h('div', { class: 'nm' }, d.name, h('small', {}, `${costText(d.cost, RES_NAME)} · ${workDays(d.time)} · đi nhanh ×${d.speed}, đỡ ${Math.round((1 - d.guard) * 100)}% đòn`), lock), h('div', { class: 'qty' }, have, minus, plus));
+      this.mountRows.push({ k, have, row, lock, btns: [minus, plus] });
+      beasts.append(row);
+    }
+    this.tabs.stable = [
+      { label: 'Đang làm', page: page(this.staffBoxes.tame.root, h('h3', { text: 'Đang thuần' }), this.activeBoxes.tame.root, this.mountNote) },
+      { label: 'Thuần thú', page: beasts },
+    ];
+
+    // every house with people in it can send them off to train
+    for (const kind of Object.keys(TRAINING.profiles) as BuildingKind[]) {
+      const pane = new TrainPane(c, kind);
+      this.trainPanes[kind] = pane;
+      (this.tabs[kind] ??= []).push({ label: 'Huấn luyện', page: page(pane.root) });
+    }
+
     root.append(
       h('div', { class: 'cardhead' }, this.title, this.state, h('button', { class: 'x', text: '✕ Đóng', onclick: () => ctl.closePanel() })),
       h('div', { class: 'mbody' }, this.info, this.tabBar, ...this.pages),
@@ -204,6 +232,7 @@ export class BuildingPanel {
       case 'workshop': return `Cấp ${b.level}: chứa ${lv.slots} người chế tạo · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
       case 'lab': return `Cấp ${b.level}: chứa ${lv.slots} nhà nghiên cứu · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
       case 'repair': return `Cấp ${b.level}: chứa ${lv.slots} thợ sửa · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
+      case 'stable': return `Cấp ${b.level}: chứa ${lv.slots} người thuần thú · tốc độ ×${lv.craftSpeed.toLocaleString('vi')} · thuần được ${MOUNT_KINDS.filter((k) => MOUNTS[k].tier <= b.level).map((k) => MOUNTS[k].name.toLowerCase()).join(', ')}`;
       case 'wartent': return `Cấp ${b.level}: tối đa ${this.c.sim.squadLimit()} đội, ${this.c.sim.cardLimit()} thẻ lệnh cho một kế hoạch · vào lều là game tạm dừng`;
       case 'farmhouse': case 'huntlodge': case 'lumberyard': case 'quarry': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} người · nâng cấp để chứa thêm`;
       case 'scouttent': return `Cấp ${b.level}: cử tối đa ${lv.slots} trinh sát một chuyến · tab Trinh sát để chọn người và làng cần dò`;
@@ -233,6 +262,7 @@ export class BuildingPanel {
     if ((b.kind === 'storage' || b.kind === 'campfire') && ready) for (const t of this.barterBtns) { t.btn.textContent = `Đổi ${BARTER[t.res]} ${RES_NAME[t.res].toLowerCase()} → 1 ${RES_NAME.coin.toLowerCase()}`; t.btn.disabled = sim.stock[t.res] < BARTER[t.res]; }
     if ((b.kind === 'infantry' || b.kind === 'cavalry' || b.kind === 'archery' || b.kind === 'house') && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
+    if (this.trainPanes[b.kind] && ready) this.trainPanes[b.kind]!.update(b);
     if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
     if (b.kind === 'tower' && ready) this.updateTower(b);
     if (b.kind === 'wartent' && ready) this.war.update();
@@ -240,6 +270,7 @@ export class BuildingPanel {
     if (b.kind === 'workshop' && ready) this.updateWorkshop(b);
     if (b.kind === 'lab' && ready) this.updateLab(b);
     if (b.kind === 'repair' && ready) this.updateRepair(b);
+    if (b.kind === 'stable' && ready) this.updateStable(b);
     if (b.kind === 'toolstore' || b.kind === 'armory') if (ready) this.updateGoods(b);
   }
 
@@ -267,6 +298,18 @@ export class BuildingPanel {
       r.note.textContent = busy ? 'Đợi nghiên cứu hiện tại xong' : short ? short : st.state === 'locked' ? (st.why ?? '') : st.state === 'active' ? 'Đang nghiên cứu…' : st.state === 'queued' ? (block ?? 'Đã trả vật liệu, chờ bắt đầu') : st.state === 'done' ? 'Đã nghiên cứu' : '';
       r.btn.textContent = { done: '✓ Xong', active: 'Đang làm', queued: 'Hủy đơn', ready: 'Nghiên cứu', locked: 'Khóa' }[st.state];
       r.btn.disabled = st.state === 'done' || st.state === 'active' || st.state === 'locked' || busy || !!short;
+    }
+  }
+
+  private updateStable(b: Building): void {
+    const { sim } = this.c;
+    this.staffBoxes.tame.update(b); this.activeBoxes.tame.update(b);
+    this.mountNote.textContent = `Hàng đợi ${sim.tameQueue.length}: ${sim.tameQueue.map((k) => MOUNTS[k as MountKind]?.name.toLowerCase()).join(', ') || 'trống'} · trong chuồng: ${MOUNT_KINDS.map((k) => `${sim.tamedCount(k)} ${MOUNTS[k].name.toLowerCase()}`).join(', ')}`;
+    for (const r of this.mountRows) {
+      const lock = sim.tameLock(r.k);
+      r.have.textContent = lock ? '' : `chuồng ${sim.tamedCount(r.k)} · đợi ${sim.tameQueue.filter((x) => x === r.k).length}`;
+      r.row.classList.toggle('locked', !!lock); r.lock.textContent = lock ?? '';
+      for (const btn of r.btns) btn.disabled = !!lock;
     }
   }
 

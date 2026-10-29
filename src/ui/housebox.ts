@@ -1,6 +1,6 @@
 import { Building, levelDef } from '../sim/buildings';
 import { workDays } from '../sim/constants';
-import { JOB_NAME, JOBS, STAT_NAME } from '../sim/jobs';
+import { fmtStat, JOB_NAME, JOBS, STAT_NAME } from '../sim/jobs';
 import type { Villager } from '../sim/sim';
 import { h, hint } from './dom';
 import type { Ctx } from './ctx';
@@ -12,7 +12,7 @@ export class StaffBox {
   private readonly head = h('h3'); private readonly list = h('div'); private readonly picker = h('div', { class: 'picker' });
   private key = ''; private pickKey = ''; private open = false;
   private readonly add: HTMLButtonElement;
-  constructor(private readonly c: Ctx, private readonly job: 'craft' | 'research' | 'repair' | 'build' | 'farm') {
+  constructor(private readonly c: Ctx, private readonly job: 'craft' | 'research' | 'repair' | 'tame' | 'build' | 'farm') {
     this.add = h('button', { class: 'sm primary', onclick: () => { this.open = !this.open; this.pickKey = ''; c.ctl.onChange(); } }) as HTMLButtonElement;
     this.root.append(hint(this.head, job === 'build' ? 'Chỉ thợ xây của nhà này mới dựng và nâng cấp được công trình. Bạn chọn ai làm thợ xây: bấm "Thêm người" rồi chọn trong danh sách.' : job === 'farm' ? 'Ruộng cho thức ăn đều quanh năm, ít nhất vào mùa đông, còn bụi quả thì không mọc lại. Dân bạn chọn vào ruộng làm việc bên trong, thức ăn về thẳng kho. Mỗi ruộng một người, ruộng cấp cao hơn làm nhanh hơn.' : 'Dân vào trong nhà làm việc, không hiện trên bản đồ và không bị tấn công. Bạn chọn ai vào: bấm "Thêm người" rồi chọn trong danh sách.'), this.list, h('div', { class: 'btns' }, this.add), this.picker);
   }
@@ -27,8 +27,8 @@ export class StaffBox {
     if (key !== this.key) {
       this.key = key;
       this.list.replaceChildren(...(staff.length ? staff.map((v) => h('div', { class: 'row' },
-        h('div', { class: 'nm' }, v.name, h('small', { text: `${STAT_NAME[stat]} ${v.stats[stat]} · ${JOBS[jobKey].name} cấp ${v.skill[jobKey].level}` })),
-        h('button', { class: 'sm', text: crew ? 'Cho nghỉ' : 'Cho ra', onclick: () => { if (crew) sim.releaseCrew([v.id]); else sim.releaseStaff([v.id]); this.c.ctl.onChange(); } }))) : [h('p', { class: 'sub', text: crew ? 'Chưa có thợ xây nào: chưa dựng được gì.' : 'Chưa có ai làm việc ở đây.' })]));
+        h('div', { class: 'nm' }, v.name, h('small', { text: `${STAT_NAME[stat]} ${fmtStat(v.stats[stat])} · ${JOBS[jobKey].name} cấp ${v.skill[jobKey].level}` })),
+        h('div', { class: 'btns' }, h('button', { class: 'sm', text: '⚙', title: 'Giao việc và chi tiết: công cụ', onclick: () => { this.c.ctl.selected.clear(); this.c.ctl.selected.add(v.id); this.c.ctl.openDetail = true; this.c.ctl.closeBuilding(); } }), h('button', { class: 'sm', text: '−', title: crew ? 'Cho nghỉ' : 'Cho ra', onclick: () => { if (crew) sim.releaseCrew([v.id]); else sim.releaseStaff([v.id]); this.c.ctl.onChange(); } })))) : [h('p', { class: 'sub', text: crew ? 'Chưa có thợ xây nào: chưa dựng được gì.' : 'Chưa có ai làm việc ở đây.' })]));
     }
     // the choice is the player's: every villager who could go in, best at the job first
     this.picker.hidden = !this.open;
@@ -39,8 +39,8 @@ export class StaffBox {
     this.pickKey = pk;
     this.picker.replaceChildren(h('p', { class: 'sub', text: full ? 'Nhà đã đủ người: cho một người ra hoặc nâng cấp nhà.' : `Chọn ai làm ${label.toLowerCase()}:` }),
       ...pool.map((v) => h('div', { class: 'row' },
-        h('div', { class: 'nm' }, v.name, h('small', { text: `${STAT_NAME[stat]} ${v.stats[stat]} · đang ${JOB_NAME[v.job].toLowerCase()}` })),
-        h('button', { class: 'sm', text: 'Vào làm', disabled: full, onclick: () => { const e = crew ? sim.assignCrew([v.id]) : this.job === 'farm' ? sim.assignField([v.id], b.id) : sim.assignStaff([v.id], this.job as 'craft' | 'research' | 'repair'); this.c.toast(e ?? `${v.name}: ${label}`); this.c.ctl.onChange(); } }))));
+        h('div', { class: 'nm' }, v.name, h('small', { text: `${STAT_NAME[stat]} ${fmtStat(v.stats[stat])} · đang ${JOB_NAME[v.job].toLowerCase()}` })),
+        h('button', { class: 'sm', text: '＋', title: 'Vào làm', disabled: full, onclick: () => { const e = crew ? sim.assignCrew([v.id]) : this.job === 'farm' ? sim.assignField([v.id], b.id) : sim.assignStaff([v.id], this.job as 'craft' | 'research' | 'repair' | 'tame'); this.c.toast(e ?? `${v.name}: ${label}`); this.c.ctl.onChange(); } }))));
   }
 }
 

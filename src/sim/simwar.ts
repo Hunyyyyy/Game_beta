@@ -1,13 +1,17 @@
-/** The war half of the Sim facade: squads, formations, scouting and plans. Kept apart so sim.ts stays within its size; sim.ts mixes it in. */
+/** The war half of the Sim facade: squads, formations, scouting and plans (and, as it grew, training). Kept apart so sim.ts stays within its size; sim.ts mixes it in. */
 import * as army from './army';
 import * as forecast from './forecast';
 import * as scouting from './scouting';
 import * as siege from './siege';
 import { sightOf } from './environment';
+import * as training from './training';
+import * as mounts from './mounts';
 import { surrender, tribeOf } from './tribes';
 import * as warplan from './warplan';
 import { armOf } from './battle';
 import type { Ent } from './battle';
+import type { Building } from './buildings';
+import type { MountKind, StatKey } from './jobs';
 import type { Arm, FormationId } from './formations';
 import type { CardKind, RouteTime, Forecast, FormationName, Mission, MissionTarget, Objective, Obstacle, Plan, Pt, ScoutMap, ScoutPlan, Squad, TribeIntel, Villager } from './model';
 import type { Sim } from './sim';
@@ -153,6 +157,38 @@ export const WAR = {
   cancelPlan(this: Sim, plan: Plan): string | null { return warplan.cancelPlan(this, plan); },
   /** → warplan.isLogistics */
   isLogistics(this: Sim, plan: Plan, m: Mission): boolean { return warplan.isLogistics(plan, m); },
+  /** → training.startTraining */
+  startTraining(this: Sim, ids: readonly number[], houseId: number, care: number): string | null { return training.startTraining(this, ids, houseId, care); },
+  /** → training.cancelTraining */
+  cancelTraining(this: Sim, ids: readonly number[]): void { return training.cancelTraining(this, ids); },
+  /** → training.trainStep */
+  trainStep(this: Sim, v: Villager, dt: number): boolean { return training.trainStep(this, v, dt); },
+  /** → training.profileOf, trainCap */
+  trainInfo(this: Sim, b: Building): { main: StatKey; partner?: StatKey; cost: StatKey; cap: number } | null { const p = training.profileOf(b); return p ? { ...p, cap: training.trainCap(b) } : null; },
+  /** → training.trainCost */
+  trainCost(this: Sim, stat: number, care: number): { food: number; coin: number } { return training.trainCost(stat, care); },
+  /** → training.trainTime */
+  trainTime(this: Sim, stat: number): number { return training.trainTime(stat); },
+  /** → training.members */
+  trainees(this: Sim, b: Building): Villager[] { return training.members(this, b); },
+  /** → mounts.queueTame */
+  queueTame(this: Sim, k: MountKind): string | null { return mounts.queueTame(this, k); },
+  /** → mounts.unqueueTame */
+  unqueueTame(this: Sim, k: MountKind): void { return mounts.unqueueTame(this, k); },
+  /** → mounts.tameLock */
+  tameLock(this: Sim, k: MountKind): string | null { return mounts.tameLock(this, k); },
+  /** → mounts.tamedCount */
+  tamedCount(this: Sim, k: MountKind): number { return mounts.tamedCount(this, k); },
+  /** → mounts.tickTame */
+  tickTame(this: Sim, dt: number): void { return mounts.tickTame(this, dt); },
+  /** → mounts.mountOf */
+  mountOf(this: Sim, v: Villager): MountKind | null { return mounts.mountOf(this, v); },
+  /** → mounts.mountSpeed */
+  mountSpeed(this: Sim, v: Villager): number { return mounts.mountSpeed(this, v); },
+  /** → mounts.mountGuard */
+  mountGuard(this: Sim, v: Villager): number { return mounts.mountGuard(this, v); },
+  /** → mounts.assignMount */
+  assignMount(this: Sim, ids: readonly number[], kind: MountKind | null): string | null { return mounts.assignMount(this, ids, kind); },
   /** → environment.sightOf */
   sightOf(this: Sim, v: Villager): number { return sightOf(this, v); },
   /** → warplan.canTarget */

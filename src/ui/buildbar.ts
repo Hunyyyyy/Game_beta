@@ -7,7 +7,7 @@ import type { Ctx } from './panels';
 
 /** What the button that opens a building's panel is called. */
 const OPEN_LABEL: Record<BuildingKind, string> = {
-  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', workshop: 'Chế tạo', lab: 'Nghiên cứu', repair: 'Sửa đồ', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông',
+  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', workshop: 'Chế tạo', lab: 'Nghiên cứu', repair: 'Sửa đồ', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông', stable: 'Thuần thú',
 };
 
 interface Ask {

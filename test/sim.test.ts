@@ -1651,6 +1651,8 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const i1 = sm.tribeIntel('axe')!, t = tribeById(sm, 'axe');
   ok(i1.level === 1 && i1.people.length === 0 && i1.soldiers === null && i1.structures.every((x) => x.kind === 'fire') && i1.population >= 2, 'level 1 shows only the fire and a rough head count');
   ok(i1.box.x1 - i1.box.x0 > i1.box.y1 - i1.box.y0 && i1.box.x0 <= Math.floor(t.camp.x) - i1.yard - 24 + 1 && i1.box.x1 >= Math.floor(t.camp.x) + i1.yard + 24 - 1 && i1.box.y0 <= Math.floor(t.camp.y) - i1.yard - 24 + 1 && !!i1.toUs, 'the map is wider than tall and covers the camp and 24 tiles round it, and tells the way in');
+  ok(i1.route.length > 1 && Math.hypot(i1.route[i1.route.length - 1].x - t.camp.x, i1.route[i1.route.length - 1].y - t.camp.y) < i1.yard + 3 && i1.route.every((q) => q.x >= i1.box.x0 && q.x < i1.box.x1 && q.y >= i1.box.y0 && q.y < i1.box.y1), 'the way in is a real road that ends at the yard and stays on the map');
+  ok(i1.route.every((q) => !sm.world.isBlocked(Math.floor(q.x), Math.floor(q.y))) && i1.others.every((o) => !!o.name && o.r > 0), 'it runs over open ground, and the other villages on the map carry only a name and a radius');
   dev.giveMaps(sm, 2);
   const i2 = sm.tribeIntel('axe')!;
   ok(i2.level === 2 && i2.people.length > 0 && i2.people.every((p) => p.mark === 'unknown') && i2.soldiers === null, 'level 2 shows people as shapes, not who is a soldier');
@@ -1891,9 +1893,85 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
     for (const t of old.tribes) for (const p of t.props) delete p.hp;
     const back = Sim.fromSave(old);
     ok(back.buildings.find((b) => b.kind === 'house')!.hp === maxHp(h) && back.villagers.every((v) => v.breaks === null) && back.tribes.every((t) => t.props.every((p) => p.hp > 0)), 'houses and works get their strength, soldiers are not breaking anything');
-    ok(SAVE_VERSION === 12, 'the save format is version 12');
+    ok(SAVE_VERSION === 14, 'the save format is version 14');
   }
 }
 
+{
+  // ======== training: a day or two away from work, a few per cent of one stat, and another that pays for it ========
+  const sm = mk(1337); sm.dev.freeBuild = false; sm.villagers.forEach((v) => { v.job = 'idle'; });
+  dev.buildAll(sm); sm.dev.freeBuild = false; sm.stock.food = 500; sm.stock.coin = 100;
+  const yard = sm.building('infantry')!; const men = dev.raiseArmy(sm, 'spear', 5);
+  const m0 = men[0], str0 = m0.stats.str, agi0 = m0.stats.agi, vit0 = m0.stats.vit, born = { ...m0.born };
+  ok(m0.born.str === str0 && m0.train === null, 'every body remembers what it was born with');
+  const info = sm.trainInfo(yard)!;
+  ok(info.main === 'str' && info.partner === 'vit' && info.cost === 'agi' && info.cap === 8, 'the Trại chiến binh trains strength with health, at the price of agility, up to 8 at level 1');
+  const food0 = sm.stock.food, coin0 = sm.stock.coin, price = sm.trainCost(str0, 0);
+  ok(sm.startTraining([m0.id], yard.id, 0) === null && !!m0.train && sm.stock.food === food0 - price.food && sm.stock.coin === coin0 - price.coin, `sending him costs food and coin (${price.food} + ${price.coin})`);
+  ok(sm.trainees(yard).includes(m0) && sm.trainCost(str0, 2).coin === price.coin + 5 && sm.trainTime(10) > sm.trainTime(4), 'care costs more coin and a higher stat takes longer');
+  run(sm, sm.trainTime(str0) + 5);
+  ok(m0.train === null && m0.stats.str > str0 && m0.stats.str <= str0 * 1.05 + 0.01, `a day on, he is stronger by 1 to 5% (${str0} -> ${m0.stats.str})`);
+  ok(m0.stats.vit >= vit0 && m0.stats.agi < agi0 && m0.stats.agi >= Math.max(3, born.agi * 0.6) - 0.001, `his health rose a little and agility paid for it, not below the floor (${agi0} -> ${m0.stats.agi})`);
+  ok(m0.maxHealth === Math.round(40 + 8 * m0.stats.vit), 'and his health follows his vitality');
+  // care softens the price
+  const a = men[1], b = men[2]; a.stats.str = b.stats.str = 6; a.stats.agi = b.stats.agi = 9; a.born.agi = b.born.agi = 9;
+  sm.startTraining([a.id], yard.id, 0); sm.startTraining([b.id], yard.id, 2); run(sm, sm.trainTime(6) + 5);
+  ok(9 - a.stats.agi > 9 - b.stats.agi && b.stats.agi < 9, `more care, less lost (${(9 - a.stats.agi).toFixed(2)} against ${(9 - b.stats.agi).toFixed(2)})`);
+  // the floor and the ceiling
+  const c = men[3]; c.stats.str = 6; c.stats.agi = 3; c.born.agi = 5; sm.startTraining([c.id], yard.id, 0); run(sm, sm.trainTime(6) + 5);
+  ok(c.stats.agi >= 3, 'a stat never falls below its floor');
+  const d = men[4]; d.stats.str = 8; ok(sm.startTraining([d.id], yard.id, 0) !== null && !d.train, 'a stat at the ceiling of the house cannot be trained further');
+  // refusals
+  sm.stock.food = 500; ok(sm.startTraining([men[1].id], yard.id, 0) === null, 'he can go again'); sm.stock.coin = 0; ok(sm.startTraining([men[3].id], yard.id, 0) !== null, 'with no coin nobody goes');
+  sm.cancelTraining([men[1].id]); ok(men[1].train === null, 'and can be called back');
+  // saved
+  sm.stock.coin = 50; sm.startTraining([men[3].id], yard.id, 1);
+  const back = Sim.fromSave(JSON.parse(JSON.stringify(sm.toSave()))), bm = back.get(men[3].id)!;
+  ok(!!bm.train && bm.train.stat === 'str' && bm.born.agi === men[3].born.agi, 'training and the born stats are kept by a save');
+  const old = JSON.parse(JSON.stringify(sm.toSave())); old.version = 12; for (const v of old.lists.villagers) { delete v.born; delete v.train; }
+  ok(Sim.fromSave(old).villagers.every((v) => !!v.born && v.train === null), 'a save from before training is brought forward');
+}
+{
+  // ======== scouts: gear helps, and a clever head and wind keep them out of sight ========
+  const sm = mk(1337); const v = sm.villagers[0]; v.stats.agi = v.stats.sta = v.stats.int = 6; v.weapon = null; v.armor = null; v.torch = null;
+  const bare = sm.scoutSkill(v); ok(Math.abs(bare - 1) < 1e-9, 'an average scout bare-handed scores 1');
+  v.weapon = 'club'; const w = sm.scoutSkill(v); v.armor = 'hide'; const wa = sm.scoutSkill(v); v.torch = { dur: 99 }; const wat = sm.scoutSkill(v);
+  ok(w > bare && wa > w && wat > wa, 'a weapon, armour and a torch each make him a better scout');
+  v.weapon = null; v.armor = null; v.torch = null; const dull = sm.scoutSkill(v); v.stats.int = 10; const sharp = sm.scoutSkill(v); v.stats.int = 6; v.stats.sta = 10; const fit = sm.scoutSkill(v);
+  ok(sharp > dull && fit > dull && sharp - dull > fit - dull, 'a clearer head and more wind both help, the head more');
+}
+{
+  // ======== mounts: tamed in the stable, given like a tool, ridden ========
+  const sm = mk(1337); sm.dev.freeBuild = false; sm.villagers.forEach((v) => { v.job = 'idle'; });
+  dev.combatReady(sm); sm.dev.freeBuild = false; sm.stock.food = 900; sm.stock.hide = 50; sm.stock.coin = 100; sm.stock.wood = 200;
+  const stable = sm.building('stable')!;
+  ok(!!stable && stable.level >= 1 && sm.tameLock('wolf') === null, 'a stable stands and a wolf may be tamed');
+  RESEARCH.enabled = true; sm.researched.delete('tame_boar'); ok(sm.tameLock('boar') !== null, 'a beast needs its own research'); RESEARCH.enabled = false;
+  dev.addVillagers(sm, 4); sm.villagers.forEach((v) => { if (v.job !== 'fight') v.job = 'idle'; });
+  const keeper = sm.villagers.find((v) => v.job === 'idle')!;
+  ok(sm.assignStaff([keeper.id], 'tame') === null, 'a villager can work in the stable');
+  ok(sm.queueTame('wolf') === null && sm.tameQueue.length === 1, 'an order to tame a wolf is queued');
+  const food0 = sm.stock.food; sm.dev.fastWorks = true; run(sm, 400);
+  ok(sm.tamedCount('wolf') === 1 && sm.stock.food < food0 && sm.tameQueue.length === 0, 'the keepers tame it, paying food, hide and coin');
+  const rider = sm.villagers.find((v) => v.job === 'idle' && v.id !== keeper.id)!, v0 = rider.speed;
+  ok(sm.mountOf(rider) === null && sm.mountSpeed(rider) === 1, 'on foot he has no beast');
+  ok(sm.assignMount([rider.id], 'wolf') === null && rider.mount === 'wolf' && sm.tamedCount('wolf') === 0, 'a wolf is given to him from the stable');
+  ok(sm.mountOf(rider) === 'wolf' && sm.mountSpeed(rider) > 1.5 && sm.mountGuard(rider) < 1, 'he rides: faster, and takes less of a blow');
+  ok(sm.assignMount([rider.id], 'wolf') === null && sm.assignMount([keeper.id], 'wolf') !== null, 'with no beast left nobody else can be given one');
+  ok(sm.assignMount([rider.id], null) === null && rider.mount === null && sm.tamedCount('wolf') === 1, 'it goes back to the stable');
+  void v0;
+  // soldiers with a beast count as cavalry; the riders of the camp ride the beast of its level
+  const men = dev.raiseArmy(sm, 'spear', 2); const foot = men[0];
+  ok(sm.armOf(foot) === 'foot', 'a foot soldier is foot'); sm.assignMount([foot.id], 'wolf'); ok(sm.armOf(foot) === 'cavalry', 'with a beast he counts as cavalry');
+  const camp = sm.building('cavalry')!; sm.assignRole([sm.villagers.find((v) => v.job === 'idle' && v.id !== keeper.id)!.id], 'cavalry');
+  const lancer = sm.villagers.find((v) => v.job === 'fight' && v.arm === 'cavalry');
+  if (lancer) { camp.level = 1; const a = sm.mountOf(lancer); camp.level = 2; const b2 = sm.mountOf(lancer); camp.level = 3; const c2 = sm.mountOf(lancer); ok(a === 'wolf' && b2 === 'boar' && c2 === 'elephant', 'the riders of the Trại kỵ thú ride a wolf, a boar, an elephant by the level of the camp, with no beast from the stable'); }
+  else ok(false, 'a rider of the camp exists');
+  // saved
+  const back = Sim.fromSave(JSON.parse(JSON.stringify(sm.toSave())));
+  ok(back.get(foot.id)!.mount === 'wolf' && back.tameQueue.length === sm.tameQueue.length, 'the beast and the queue are kept by a save');
+  const old = JSON.parse(JSON.stringify(sm.toSave())); old.version = 13; delete old.lists.tameQueue; for (const v of old.lists.villagers) { delete v.mount; delete v.skill.tame; delete v.potential.tame; }
+  const fwd = Sim.fromSave(old); ok(fwd.villagers.every((v) => v.mount === null && v.skill.tame.level === 0 && v.potential.tame >= 1), 'a save from before mounts is brought forward');
+}
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');
 process.exit(fails ? 1 : 0);

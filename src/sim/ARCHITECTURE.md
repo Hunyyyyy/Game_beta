@@ -41,6 +41,8 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 | `movement` | Đi lại: đường đi, bước chân, chỗ đứng, tư thế vẽ | `pathTo` `moveUnit` `animate` |
 | `villagers` | Tạo dân và một ngày của dân: đói, máu, ngủ | `makeVillager` `tickVillager` |
 | `defense` | Hàng rào, cổng, chòi canh: mở đóng cổng, phá công trình phòng thủ, cung thủ trên chòi | `toggleGate` `damageWork` `towerBonus` `assignTower` |
+| `mounts` | Thú cưỡi: Chuồng thú cưỡi thuần sói, lợn rừng, voi theo đơn (cần nghiên cứu và cấp chuồng), phát cho người như công cụ (`Villager.mount`), người cưỡi đi nhanh và đỡ đòn hơn, lính có thú tính là kỵ binh; lính Trại kỵ thú cưỡi thú theo cấp trại | `queueTame` `tickTame` `assignMount` `mountOf` |
+| `training` | Huấn luyện trong nhà của vai trò: người đi luyện một ngày hoặc hơn, tăng 1–5% một chỉ số, chỉ số "đổi lại" giảm (ít hơn nếu bỏ thêm tiền), có sàn theo chỉ số lúc sinh và trần theo cấp nhà; trả lương thực và tiền | `startTraining` `cancelTraining` `trainStep` |
 | `siege` | Chiến trận trên mặt đất: vật cản (cây, đá, bụi, nước, công trình), lính phá vật cản, đội đi theo mũi tên theo đường thẳng, dừng khi 6 ô phía trước bị chắn, mục tiêu của mũi tên và việc tự đánh mọi thứ khi mục tiêu mất | `obstacleAt` `arrowMove` `watchMarch` `breakBlock` `breakBrain` `tickTarget` |
 | `warplan` | Kế hoạch chiến: nhiệm vụ cho từng đội, thẻ lệnh, kế hoạch phòng thủ, trống báo động | `newPlan` `startPlan` `playCard` `soundAlarm` |
 | `roles` | Vai trò gắn với công trình: giao và thu hồi, sức chứa theo cấp công trình | `assignRole` `releaseRole` `roleCapacity` `trimRoles` |
