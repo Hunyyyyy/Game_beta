@@ -1,4 +1,4 @@
-import { BUILDINGS, BuildingKind, levelDef, levelsOf } from '../sim/buildings';
+import { BUILDINGS, levelDef } from '../sim/buildings';
 import { relationLabel, WEAPONS, RELATION, TribeId } from '../sim/combat';
 import { SEASONS, Season, WEATHER, WeatherKind } from '../sim/calendar';
 import { gameDays, TILE, workDays } from '../sim/constants';
@@ -11,14 +11,14 @@ import { canAdopt, canTribute } from '../sim/tribes';
 import { costText, h, helpButton, hint } from './dom';
 import type { Ctx } from './panels';
 
-type Tab = 'build' | 'places' | 'tribes' | 'game' | 'dev' | 'help';
-const TABS: Array<[Tab, string]> = [['build', 'Xây'], ['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['game', 'Ván chơi'], ['dev', 'Dev'], ['help', '?']];
+type Tab = 'places' | 'tribes' | 'game' | 'dev' | 'help';
+const TABS: Array<[Tab, string]> = [['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['game', 'Ván chơi'], ['dev', 'Dev'], ['help', '?']];
 const SEASON_NAME: Record<Season, string> = { spring: 'Xuân', summer: 'Hạ', autumn: 'Thu', winter: 'Đông' };
 const PERSONALITY = { peaceful: 'Hòa bình', aggressive: 'Hiếu chiến', ambusher: 'Hay phục kích' } as const;
 
 /** The slide-in menu: what to build, what is built, the tribes, the dev tools and the controls. */
 export class Menu {
-  private tab: Tab = 'build';
+  private tab: Tab = 'places';
   private readonly tabBtns = new Map<Tab, HTMLButtonElement>();
   private readonly pages = new Map<Tab, HTMLElement>();
   private readonly updaters: Array<() => void> = [];
@@ -31,7 +31,7 @@ export class Menu {
       this.tabBtns.set(t, b); tabs.append(b);
     }
     tabs.append(h('span', { class: 'spacer' }), h('button', { class: 'sm', text: '✕', title: 'Đóng menu', onclick: () => this.close() }));
-    this.pages.set('build', this.buildPage()); this.pages.set('places', this.placesPage()); this.pages.set('tribes', this.tribesPage());
+    this.pages.set('places', this.placesPage()); this.pages.set('tribes', this.tribesPage());
     this.pages.set('game', this.gamePage()); this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
     for (const p of this.pages.values()) body.append(p);
     this.show(this.tab);
@@ -48,50 +48,6 @@ export class Menu {
     this.body.scrollTop = 0; this.update();
   }
   update(): void { if (this.isOpen) for (const u of this.updaters) u(); }
-
-  // ---------------------------------------------------------------- build
-  private buildPage(): HTMLElement {
-    const { sim, ctl } = this.c, page = h('div', { class: 'page' });
-    page.append(hint('Xây dựng', 'Nhà làm việc (thợ xây, kho, chế tạo, nghiên cứu, sửa đồ, kho công cụ, kho vũ khí) chỉ xây MỘT cái, muốn mạnh hơn thì nâng cấp. Nhà dân, Lều chiến binh và Ruộng xây được nhiều cái, số lượng tăng khi nâng cấp Nhà chung. Chọn công trình rồi chạm lên bản đồ để chọn chỗ. Nếu đang chọn dân, họ sẽ tự đi xây.'));
-    const rows: Array<() => void> = [];
-    const ROLE: Partial<Record<BuildingKind, string>> = {
-      builder: 'Dân làm thợ xây ở đây (do bạn chọn). Phải có nhà này mới dựng được các công trình khác.', storage: 'Cất tài nguyên.', lab: 'Nghiên cứu bản vẽ, mở công trình và tự động hóa. Dân thông minh làm việc bên trong.',
-      workshop: 'Chế tạo công cụ, vũ khí, giáp theo bản vẽ. Dân làm việc bên trong.', repair: 'Sửa công cụ đã mòn. Dân làm việc bên trong.',
-      infantry: 'Trại của chiến binh cận chiến: tuyển và cho nghỉ ở đây, họ cũng ngủ ở đây và hồi sức nhanh hơn nằm cạnh đống lửa. Chỉ xây một cái; nâng cấp để chứa thêm người. Cần nghiên cứu mới xây được.',
-      cavalry: 'Trại của người cưỡi thú: xung phong nhanh, khắc người ném nhưng sợ giáo. Chỉ xây một cái; nâng cấp để chứa thêm người. Cần nghiên cứu Trại kỵ thú.',
-      archery: 'Trại của người ném đá, bắn ná: đánh từ xa, lên được chòi canh. Chỉ xây một cái; nâng cấp để chứa thêm người. Cần nghiên cứu Trại thợ ném.',
-      farmhouse: 'Giao việc hái lượm ở đây: người được giao ra bụi quả và mang thức ăn về. Chỉ xây một cái; nâng cấp để thêm người.',
-      huntlodge: 'Giao việc săn bắn ở đây: người được giao đi săn thú. Chỉ xây một cái; nâng cấp để thêm người.',
-      lumberyard: 'Giao việc đốn gỗ ở đây. Chỉ xây một cái; nâng cấp để thêm người.',
-      quarry: 'Giao việc đục đá ở đây. Chỉ xây một cái; nâng cấp để thêm người.',
-      house: 'Dân thường ngủ ở đây (vào nhà, hiện thành danh sách) và hồi sức đầy đủ. Không có nhà hoặc hết giường thì dân ngủ cạnh đống lửa, hồi sức chậm hơn. Cần nghiên cứu mới xây được.',
-      field: 'Dân bạn chọn vào ruộng làm việc bên trong (không hiện trên bản đồ), thức ăn về thẳng kho, đều quanh năm hơn bụi quả (bụi quả không mọc lại). Mỗi ruộng một người, nâng cấp để làm nhanh hơn. Cần nghiên cứu mới xây được.',
-      wartent: 'Nơi lập đội, chọn trận pháp, lập kế hoạch và thẻ lệnh cho trận đánh. Cấp càng cao càng nhiều đội và thẻ lệnh. Cần nghiên cứu Hội đồng chiến.',
-      scouttent: 'Nơi cử trinh sát đi vẽ bản đồ làng khác. Cấp càng cao càng cử được nhiều người một chuyến. Cần nghiên cứu Trinh sát.',
-      stable: 'Dân làm trong chuồng thuần hóa thú (sói, lợn rừng, voi) để giao cho người cưỡi, như giao công cụ: đi nhanh hơn, đỡ đòn hơn. Chỉ xây một cái; nâng cấp để thuần được thú lớn hơn. Cần nghiên cứu Thuần thú.',
-      drill: 'Bãi tập: các đội luyện trận pháp ở đây, độ thuần thục tăng dần. Cần Lều chiến binh và nghiên cứu.',
-      trap: 'Hố chông gài sẵn: địch bước vào bị thương, mỗi hố làm bị thương vài người. Đặt từng cái một. Cần nghiên cứu Đào hào.',
-      fence: 'Chặn đường, tạo chỗ thắt: địch phải phá rào mới vào được. Đặt từng đoạn một, cứ chạm tiếp để đặt đoạn kế. Cấp 2 (hàng rào đôi) bền gấp ba. Số đoạn tối đa tăng theo Nhà chung. Cần nghiên cứu.',
-      gate: 'Chỗ ra vào của hàng rào. Mở thì ai cũng qua được, đóng thì chặn tất cả kể cả dân mình. Chạm vào cổng để mở hoặc đóng. Cần nghiên cứu.',
-      tower: 'Cung thủ đứng trên chòi bắn xa hơn và mạnh hơn. Chạm vào chòi để chọn cung thủ lên canh. Cần Nhà chung cấp 2 và nghiên cứu.',
-      toolstore: 'Cất công cụ cho dân tự lấy.', armory: 'Cất vũ khí và giáp cho dân tự lấy.',
-    };
-    for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
-      const d = BUILDINGS[kind]; if (!d.buildable) continue;
-      const lv = levelsOf(kind, sim.era)[0], btn = h('button', { class: 'primary', text: 'Đặt', onclick: () => { ctl.startPlacing(kind); this.close(); } }) as HTMLButtonElement, status = h('small', { class: 'lock' });
-      const role = ROLE[kind];
-      page.append(h('div', { class: 'row' }, h('div', { class: 'nm hint' }, h('div', { class: 'hinthead' }, d.name, role ? helpButton() : null), h('small', { text: `${lv.name}: ${costText(lv.cost, RES_NAME)} · xây ~${workDays(lv.buildTime)}` }), status, role ? h('small', { class: 'hintbody', hidden: true, text: role }) : null), btn));
-      rows.push(() => {
-        const lock = sim.buildingLock(kind), poor = !sim.dev.freeBuild && !(Object.keys(lv.cost) as Array<keyof typeof lv.cost>).every((k) => sim.stock[k as keyof typeof sim.stock] >= (lv.cost[k] ?? 0));
-        btn.disabled = !!lock || poor; status.textContent = lock ?? (poor ? 'Chưa đủ vật liệu' : '');
-        const have = sim.buildings.filter((b) => b.kind === kind).length, limit = sim.buildingLimit(kind);
-        btn.textContent = have >= limit ? 'Đã đủ' : 'Đặt';
-        if (limit > 1 && !lock) status.textContent = `Đã có ${have}/${limit}${poor ? ' · chưa đủ vật liệu' : ''}`;
-      });
-    }
-    this.updaters.push(() => rows.forEach((f) => f()));
-    return page;
-  }
 
   // ---------------------------------------------------------------- built buildings
   private placesPage(): HTMLElement {
@@ -253,7 +209,7 @@ export class Menu {
       h('li', {}, h('b', { text: 'Ra lệnh' }), ': máy tính: chuột phải. Điện thoại: khi đã chọn dân, chạm lên đất, cây, đá, bụi quả, công trường hay kẻ địch. Giữ Shift (máy tính) để xếp lệnh nối nhau.'),
       h('li', {}, h('b', { text: 'Kéo bản đồ' }), ': máy tính: giữ chuột phải rồi kéo (hoặc W A S D). Điện thoại: hai ngón tay; chụm hoặc mở hai ngón để thu phóng.'),
       h('li', {}, h('b', { text: 'Bản đồ nhỏ' }), ': bấm vào để mở bản đồ lớn, chạm một chỗ để nhảy tới đó.'),
-      h('li', {}, h('b', { text: 'Công trình' }), `: mở Menu → Xây để đặt. Mở Menu → Công trình, hoặc bấm vào công trình trên bản đồ: lửa trại cho xem dân, Kho cho xem tài nguyên, Nhà nghiên cứu để vẽ bản vẽ, Nhà chế tạo để làm đồ, Nhà sửa chữa để mài lại công cụ. Mỗi loại công trình chỉ xây một cái rồi nâng cấp (đơn sơ → gỗ → đá, mỗi bước phải nghiên cứu). Dân vào làm bên trong nhà (hiện thành danh sách tên và Trí tuệ, không hiện trên bản đồ): nhà cấp cao chứa thêm người, người thông minh nghiên cứu nhanh hơn. Lúc đầu bạn tự phát công cụ và tự đưa đi sửa; nghiên cứu Kho công cụ, Kho vũ khí, tự lấy đồ và tự đặt hàng thì dân tự lo. Tiền (vỏ sò) trả cho nghiên cứu, nhặt khi hái lượm hoặc đổi hàng ở Kho. Trong bảng công trình còn có nút Dời (tốn 1/5 vật liệu, phải dựng lại) và Phá bỏ (thu lại một nửa).`),
+      h('li', {}, h('b', { text: 'Công trình' }), `: bấm 🔨 Xây (góc trên) để chọn công trình rồi chạm bản đồ đặt. Mở Menu → Công trình, hoặc bấm vào công trình trên bản đồ: lửa trại cho xem dân, Kho cho xem tài nguyên, Nhà nghiên cứu để vẽ bản vẽ, Nhà chế tạo để làm đồ, Nhà sửa chữa để mài lại công cụ. Mỗi loại công trình chỉ xây một cái rồi nâng cấp (đơn sơ → gỗ → đá, mỗi bước phải nghiên cứu). Dân vào làm bên trong nhà (hiện thành danh sách tên và Trí tuệ, không hiện trên bản đồ): nhà cấp cao chứa thêm người, người thông minh nghiên cứu nhanh hơn. Lúc đầu bạn tự phát công cụ và tự đưa đi sửa; nghiên cứu Kho công cụ, Kho vũ khí, tự lấy đồ và tự đặt hàng thì dân tự lo. Tiền (vỏ sò) trả cho nghiên cứu, nhặt khi hái lượm hoặc đổi hàng ở Kho. Trong bảng công trình còn có nút Dời (tốn 1/5 vật liệu, phải dựng lại) và Phá bỏ (thu lại một nửa).`),
       h('li', {}, h('b', { text: 'Chiến đấu' }), `: dân thường không đánh nhau, thấy địch là chạy về lửa trại. Muốn có lính thì giao nghề Chiến binh (huy hiệu đỏ trên đầu) hoặc Thợ săn (huy hiệu vàng), phát vũ khí ở thẻ dân → Chiến đấu, rồi chạm vào thú hoặc địch. Thế đứng: Chủ động, Phòng thủ, Rút lui. F: tấn công–đi, H: giữ chỗ, G: dừng. Người bị thương nặng ngã xuống ${gameDays(30)}; một người khác đứng cạnh ${gameDays(3)} sẽ kéo họ dậy.`),
       h('li', {}, h('b', { text: 'Bộ tộc' }), `: tặng thức ăn để tăng quan hệ. Hạ thủ lĩnh, chiếm đống lửa của họ ${gameDays(30)} hoặc làm sụp tinh thần để họ xin hàng, rồi chọn thu nạp hoặc cống nạp.`),
       h('li', {}, h('b', { text: 'Phím' }), ': P tạm dừng, Q E R T: tốc độ 1× 2× 4× 16×, B xây Kho, X xây Xưởng, 1–9 gọi nhóm (Ctrl + số để lưu), Space nhảy tới dân đang chọn, Esc bỏ chọn.'),

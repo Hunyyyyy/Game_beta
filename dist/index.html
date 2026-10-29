@@ -463,6 +463,119 @@ details.fold > .btns, details.fold > .kv {
   justify-content: center;
 }
 
+.tray {
+  position: absolute;
+  left: calc(6px + var(--sal));
+  right: calc(6px + var(--sar));
+  bottom: calc(6px + var(--sab));
+  z-index: 6;
+  background: var(--hud);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  backdrop-filter: blur(2px);
+  padding: 6px;
+  display: grid;
+  gap: 6px;
+}
+.tray .head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+}
+.tray .tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tray .cards {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.tray .card2 {
+  position: relative;
+  flex: 0 0 auto;
+  width: 112px;
+  padding: 4px 6px 6px;
+  display: grid;
+  gap: 1px;
+  justify-items: center;
+  text-align: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.tray .card2 .pic {
+  width: 100%;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  background: var(--panel-2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.tray .card2 .pic canvas {
+  max-width: 92%;
+  max-height: 50px;
+  width: auto;
+  height: auto;
+  image-rendering: pixelated;
+}
+.tray .card2 b {
+  font-size: 13px;
+}
+.tray .card2 small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.2;
+}
+.tray .card2 .state {
+  color: var(--accent);
+  font-weight: 700;
+  min-height: 1.2em;
+}
+.tray .card2 .info {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.tray .card2:disabled {
+  opacity: 0.55;
+}
+.tray .card2:not(:disabled):hover {
+  border-color: var(--accent);
+}
+
+body.war .tray {
+  display: none !important;
+}
+
+@media (max-height: 480px) {
+  .tray {
+    left: calc(4px + var(--sal));
+    right: calc(4px + var(--sar));
+    bottom: calc(4px + var(--sab));
+    padding: 4px;
+    gap: 4px;
+  }
+  .tray .card2 {
+    width: 92px;
+  }
+  .tray .card2 .pic {
+    height: 38px;
+  }
+  .tray .card2 .pic canvas {
+    max-height: 34px;
+  }
+  .tray .card2 small {
+    font-size: 10px;
+  }
+}
 .modal {
   position: fixed;
   inset: 0;
@@ -1748,7 +1861,8 @@ body.war .sheet, body.war .bbar {
     <div class="hud" id="clockLine"><span class="clock" id="clock">Ngày 1</span></div>
     <span class="spacer"></span>
     <button id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
-    <button id="btnMenu" class="primary" title="Menu (Tab)">☰ Menu</button>
+    <button id="btnBuild" class="primary" title="Xây dựng (B)">🔨 Xây</button>
+    <button id="btnMenu" title="Menu (Tab)">☰ Menu</button>
   </div>
 
   <div class="log" id="log" aria-live="polite"></div>
@@ -1756,6 +1870,7 @@ body.war .sheet, body.war .bbar {
   <div class="toast" id="toast" role="status"></div>
 
   <div class="bbar" id="bbar" hidden></div>
+  <div class="tray" id="tray" hidden></div>
   <div class="modal" id="bpanel" hidden></div>
   <div class="dialog" id="dialog" hidden></div>
   <div class="dialog" id="start" hidden></div>
@@ -36744,7 +36859,7 @@ body.war .sheet, body.war .bbar {
   }
 
   // src/ui/menu.ts
-  var TABS = [["build", "X\xE2y"], ["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
+  var TABS = [["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
   var SEASON_NAME = { spring: "Xu\xE2n", summer: "H\u1EA1", autumn: "Thu", winter: "\u0110\xF4ng" };
   var PERSONALITY = { peaceful: "H\xF2a b\xECnh", aggressive: "Hi\u1EBFu chi\u1EBFn", ambusher: "Hay ph\u1EE5c k\xEDch" };
   var Menu = class {
@@ -36753,7 +36868,7 @@ body.war .sheet, body.war .bbar {
       this.body = body;
       this.c = c;
       this.center = center;
-      this.tab = "build";
+      this.tab = "places";
       this.tabBtns = /* @__PURE__ */ new Map();
       this.pages = /* @__PURE__ */ new Map();
       this.updaters = [];
@@ -36765,7 +36880,6 @@ body.war .sheet, body.war .bbar {
         tabs.append(b);
       }
       tabs.append(h("span", { class: "spacer" }), h("button", { class: "sm", text: "\u2715", title: "\u0110\xF3ng menu", onclick: () => this.close() }));
-      this.pages.set("build", this.buildPage());
       this.pages.set("places", this.placesPage());
       this.pages.set("tribes", this.tribesPage());
       this.pages.set("game", this.gamePage());
@@ -36798,58 +36912,6 @@ body.war .sheet, body.war .bbar {
     }
     update() {
       if (this.isOpen) for (const u of this.updaters) u();
-    }
-    // ---------------------------------------------------------------- build
-    buildPage() {
-      const { sim: sim2, ctl: ctl2 } = this.c, page = h("div", { class: "page" });
-      page.append(hint("X\xE2y d\u1EF1ng", "Nh\xE0 l\xE0m vi\u1EC7c (th\u1EE3 x\xE2y, kho, ch\u1EBF t\u1EA1o, nghi\xEAn c\u1EE9u, s\u1EEDa \u0111\u1ED3, kho c\xF4ng c\u1EE5, kho v\u0169 kh\xED) ch\u1EC9 x\xE2y M\u1ED8T c\xE1i, mu\u1ED1n m\u1EA1nh h\u01A1n th\xEC n\xE2ng c\u1EA5p. Nh\xE0 d\xE2n, L\u1EC1u chi\u1EBFn binh v\xE0 Ru\u1ED9ng x\xE2y \u0111\u01B0\u1EE3c nhi\u1EC1u c\xE1i, s\u1ED1 l\u01B0\u1EE3ng t\u0103ng khi n\xE2ng c\u1EA5p Nh\xE0 chung. Ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7. N\u1EBFu \u0111ang ch\u1ECDn d\xE2n, h\u1ECD s\u1EBD t\u1EF1 \u0111i x\xE2y."));
-      const rows = [];
-      const ROLE = {
-        builder: "D\xE2n l\xE0m th\u1EE3 x\xE2y \u1EDF \u0111\xE2y (do b\u1EA1n ch\u1ECDn). Ph\u1EA3i c\xF3 nh\xE0 n\xE0y m\u1EDBi d\u1EF1ng \u0111\u01B0\u1EE3c c\xE1c c\xF4ng tr\xECnh kh\xE1c.",
-        storage: "C\u1EA5t t\xE0i nguy\xEAn.",
-        lab: "Nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD, m\u1EDF c\xF4ng tr\xECnh v\xE0 t\u1EF1 \u0111\u1ED9ng h\xF3a. D\xE2n th\xF4ng minh l\xE0m vi\u1EC7c b\xEAn trong.",
-        workshop: "Ch\u1EBF t\u1EA1o c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p theo b\u1EA3n v\u1EBD. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong.",
-        repair: "S\u1EEDa c\xF4ng c\u1EE5 \u0111\xE3 m\xF2n. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong.",
-        infantry: "Tr\u1EA1i c\u1EE7a chi\u1EBFn binh c\u1EADn chi\u1EBFn: tuy\u1EC3n v\xE0 cho ngh\u1EC9 \u1EDF \u0111\xE2y, h\u1ECD c\u0169ng ng\u1EE7 \u1EDF \u0111\xE2y v\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
-        cavalry: "Tr\u1EA1i c\u1EE7a ng\u01B0\u1EDDi c\u01B0\u1EE1i th\xFA: xung phong nhanh, kh\u1EAFc ng\u01B0\u1EDDi n\xE9m nh\u01B0ng s\u1EE3 gi\xE1o. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi. C\u1EA7n nghi\xEAn c\u1EE9u Tr\u1EA1i k\u1EF5 th\xFA.",
-        archery: "Tr\u1EA1i c\u1EE7a ng\u01B0\u1EDDi n\xE9m \u0111\xE1, b\u1EAFn n\xE1: \u0111\xE1nh t\u1EEB xa, l\xEAn \u0111\u01B0\u1EE3c ch\xF2i canh. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi. C\u1EA7n nghi\xEAn c\u1EE9u Tr\u1EA1i th\u1EE3 n\xE9m.",
-        farmhouse: "Giao vi\u1EC7c h\xE1i l\u01B0\u1EE3m \u1EDF \u0111\xE2y: ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c giao ra b\u1EE5i qu\u1EA3 v\xE0 mang th\u1EE9c \u0103n v\u1EC1. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
-        huntlodge: "Giao vi\u1EC7c s\u0103n b\u1EAFn \u1EDF \u0111\xE2y: ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c giao \u0111i s\u0103n th\xFA. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
-        lumberyard: "Giao vi\u1EC7c \u0111\u1ED1n g\u1ED7 \u1EDF \u0111\xE2y. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
-        quarry: "Giao vi\u1EC7c \u0111\u1EE5c \u0111\xE1 \u1EDF \u0111\xE2y. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
-        house: "D\xE2n th\u01B0\u1EDDng ng\u1EE7 \u1EDF \u0111\xE2y (v\xE0o nh\xE0, hi\u1EC7n th\xE0nh danh s\xE1ch) v\xE0 h\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7. Kh\xF4ng c\xF3 nh\xE0 ho\u1EB7c h\u1EBFt gi\u01B0\u1EDDng th\xEC d\xE2n ng\u1EE7 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa, h\u1ED3i s\u1EE9c ch\u1EADm h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
-        field: "D\xE2n b\u1EA1n ch\u1ECDn v\xE0o ru\u1ED9ng l\xE0m vi\u1EC7c b\xEAn trong (kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3), th\u1EE9c \u0103n v\u1EC1 th\u1EB3ng kho, \u0111\u1EC1u quanh n\u0103m h\u01A1n b\u1EE5i qu\u1EA3 (b\u1EE5i qu\u1EA3 kh\xF4ng m\u1ECDc l\u1EA1i). M\u1ED7i ru\u1ED9ng m\u1ED9t ng\u01B0\u1EDDi, n\xE2ng c\u1EA5p \u0111\u1EC3 l\xE0m nhanh h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
-        wartent: "N\u01A1i l\u1EADp \u0111\u1ED9i, ch\u1ECDn tr\u1EADn ph\xE1p, l\u1EADp k\u1EBF ho\u1EA1ch v\xE0 th\u1EBB l\u1EC7nh cho tr\u1EADn \u0111\xE1nh. C\u1EA5p c\xE0ng cao c\xE0ng nhi\u1EC1u \u0111\u1ED9i v\xE0 th\u1EBB l\u1EC7nh. C\u1EA7n nghi\xEAn c\u1EE9u H\u1ED9i \u0111\u1ED3ng chi\u1EBFn.",
-        scouttent: "N\u01A1i c\u1EED trinh s\xE1t \u0111i v\u1EBD b\u1EA3n \u0111\u1ED3 l\xE0ng kh\xE1c. C\u1EA5p c\xE0ng cao c\xE0ng c\u1EED \u0111\u01B0\u1EE3c nhi\u1EC1u ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn. C\u1EA7n nghi\xEAn c\u1EE9u Trinh s\xE1t.",
-        stable: "D\xE2n l\xE0m trong chu\u1ED3ng thu\u1EA7n h\xF3a th\xFA (s\xF3i, l\u1EE3n r\u1EEBng, voi) \u0111\u1EC3 giao cho ng\u01B0\u1EDDi c\u01B0\u1EE1i, nh\u01B0 giao c\xF4ng c\u1EE5: \u0111i nhanh h\u01A1n, \u0111\u1EE1 \u0111\xF2n h\u01A1n. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 thu\u1EA7n \u0111\u01B0\u1EE3c th\xFA l\u1EDBn h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u Thu\u1EA7n th\xFA.",
-        drill: "B\xE3i t\u1EADp: c\xE1c \u0111\u1ED9i luy\u1EC7n tr\u1EADn ph\xE1p \u1EDF \u0111\xE2y, \u0111\u1ED9 thu\u1EA7n th\u1EE5c t\u0103ng d\u1EA7n. C\u1EA7n L\u1EC1u chi\u1EBFn binh v\xE0 nghi\xEAn c\u1EE9u.",
-        trap: "H\u1ED1 ch\xF4ng g\xE0i s\u1EB5n: \u0111\u1ECBch b\u01B0\u1EDBc v\xE0o b\u1ECB th\u01B0\u01A1ng, m\u1ED7i h\u1ED1 l\xE0m b\u1ECB th\u01B0\u01A1ng v\xE0i ng\u01B0\u1EDDi. \u0110\u1EB7t t\u1EEBng c\xE1i m\u1ED9t. C\u1EA7n nghi\xEAn c\u1EE9u \u0110\xE0o h\xE0o.",
-        fence: "Ch\u1EB7n \u0111\u01B0\u1EDDng, t\u1EA1o ch\u1ED7 th\u1EAFt: \u0111\u1ECBch ph\u1EA3i ph\xE1 r\xE0o m\u1EDBi v\xE0o \u0111\u01B0\u1EE3c. \u0110\u1EB7t t\u1EEBng \u0111o\u1EA1n m\u1ED9t, c\u1EE9 ch\u1EA1m ti\u1EBFp \u0111\u1EC3 \u0111\u1EB7t \u0111o\u1EA1n k\u1EBF. C\u1EA5p 2 (h\xE0ng r\xE0o \u0111\xF4i) b\u1EC1n g\u1EA5p ba. S\u1ED1 \u0111o\u1EA1n t\u1ED1i \u0111a t\u0103ng theo Nh\xE0 chung. C\u1EA7n nghi\xEAn c\u1EE9u.",
-        gate: "Ch\u1ED7 ra v\xE0o c\u1EE7a h\xE0ng r\xE0o. M\u1EDF th\xEC ai c\u0169ng qua \u0111\u01B0\u1EE3c, \u0111\xF3ng th\xEC ch\u1EB7n t\u1EA5t c\u1EA3 k\u1EC3 c\u1EA3 d\xE2n m\xECnh. Ch\u1EA1m v\xE0o c\u1ED5ng \u0111\u1EC3 m\u1EDF ho\u1EB7c \u0111\xF3ng. C\u1EA7n nghi\xEAn c\u1EE9u.",
-        tower: "Cung th\u1EE7 \u0111\u1EE9ng tr\xEAn ch\xF2i b\u1EAFn xa h\u01A1n v\xE0 m\u1EA1nh h\u01A1n. Ch\u1EA1m v\xE0o ch\xF2i \u0111\u1EC3 ch\u1ECDn cung th\u1EE7 l\xEAn canh. C\u1EA7n Nh\xE0 chung c\u1EA5p 2 v\xE0 nghi\xEAn c\u1EE9u.",
-        toolstore: "C\u1EA5t c\xF4ng c\u1EE5 cho d\xE2n t\u1EF1 l\u1EA5y.",
-        armory: "C\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p cho d\xE2n t\u1EF1 l\u1EA5y."
-      };
-      for (const kind of Object.keys(BUILDINGS)) {
-        const d = BUILDINGS[kind];
-        if (!d.buildable) continue;
-        const lv2 = levelsOf(kind, sim2.era)[0], btn = h("button", { class: "primary", text: "\u0110\u1EB7t", onclick: () => {
-          ctl2.startPlacing(kind);
-          this.close();
-        } }), status = h("small", { class: "lock" });
-        const role = ROLE[kind];
-        page.append(h("div", { class: "row" }, h("div", { class: "nm hint" }, h("div", { class: "hinthead" }, d.name, role ? helpButton() : null), h("small", { text: `${lv2.name}: ${costText(lv2.cost, RES_NAME)} \xB7 x\xE2y ~${workDays(lv2.buildTime)}` }), status, role ? h("small", { class: "hintbody", hidden: true, text: role }) : null), btn));
-        rows.push(() => {
-          const lock = sim2.buildingLock(kind), poor = !sim2.dev.freeBuild && !Object.keys(lv2.cost).every((k) => sim2.stock[k] >= (lv2.cost[k] ?? 0));
-          btn.disabled = !!lock || poor;
-          status.textContent = lock ?? (poor ? "Ch\u01B0a \u0111\u1EE7 v\u1EADt li\u1EC7u" : "");
-          const have = sim2.buildings.filter((b) => b.kind === kind).length, limit = sim2.buildingLimit(kind);
-          btn.textContent = have >= limit ? "\u0110\xE3 \u0111\u1EE7" : "\u0110\u1EB7t";
-          if (limit > 1 && !lock) status.textContent = `\u0110\xE3 c\xF3 ${have}/${limit}${poor ? " \xB7 ch\u01B0a \u0111\u1EE7 v\u1EADt li\u1EC7u" : ""}`;
-        });
-      }
-      this.updaters.push(() => rows.forEach((f) => f()));
-      return page;
     }
     // ---------------------------------------------------------------- built buildings
     placesPage() {
@@ -37176,11 +37238,125 @@ body.war .sheet, body.war .bbar {
         h("li", {}, h("b", { text: "Ra l\u1EC7nh" }), ": m\xE1y t\xEDnh: chu\u1ED9t ph\u1EA3i. \u0110i\u1EC7n tho\u1EA1i: khi \u0111\xE3 ch\u1ECDn d\xE2n, ch\u1EA1m l\xEAn \u0111\u1EA5t, c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3, c\xF4ng tr\u01B0\u1EDDng hay k\u1EBB \u0111\u1ECBch. Gi\u1EEF Shift (m\xE1y t\xEDnh) \u0111\u1EC3 x\u1EBFp l\u1EC7nh n\u1ED1i nhau."),
         h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: hai ng\xF3n tay; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
         h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
-        h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EC3 v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EC3 l\xE0m \u0111\u1ED3, Nh\xE0 s\u1EEDa ch\u1EEFa \u0111\u1EC3 m\xE0i l\u1EA1i c\xF4ng c\u1EE5. M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y m\u1ED9t c\xE1i r\u1ED3i n\xE2ng c\u1EA5p (\u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u). D\xE2n v\xE0o l\xE0m b\xEAn trong nh\xE0 (hi\u1EC7n th\xE0nh danh s\xE1ch t\xEAn v\xE0 Tr\xED tu\u1EC7, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3): nh\xE0 c\u1EA5p cao ch\u1EE9a th\xEAm ng\u01B0\u1EDDi, ng\u01B0\u1EDDi th\xF4ng minh nghi\xEAn c\u1EE9u nhanh h\u01A1n. L\xFAc \u0111\u1EA7u b\u1EA1n t\u1EF1 ph\xE1t c\xF4ng c\u1EE5 v\xE0 t\u1EF1 \u0111\u01B0a \u0111i s\u1EEDa; nghi\xEAn c\u1EE9u Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, t\u1EF1 l\u1EA5y \u0111\u1ED3 v\xE0 t\u1EF1 \u0111\u1EB7t h\xE0ng th\xEC d\xE2n t\u1EF1 lo. Ti\u1EC1n (v\u1ECF s\xF2) tr\u1EA3 cho nghi\xEAn c\u1EE9u, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m ho\u1EB7c \u0111\u1ED5i h\xE0ng \u1EDF Kho. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
+        h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: b\u1EA5m \u{1F528} X\xE2y (g\xF3c tr\xEAn) \u0111\u1EC3 ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m b\u1EA3n \u0111\u1ED3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EC3 v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EC3 l\xE0m \u0111\u1ED3, Nh\xE0 s\u1EEDa ch\u1EEFa \u0111\u1EC3 m\xE0i l\u1EA1i c\xF4ng c\u1EE5. M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y m\u1ED9t c\xE1i r\u1ED3i n\xE2ng c\u1EA5p (\u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u). D\xE2n v\xE0o l\xE0m b\xEAn trong nh\xE0 (hi\u1EC7n th\xE0nh danh s\xE1ch t\xEAn v\xE0 Tr\xED tu\u1EC7, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3): nh\xE0 c\u1EA5p cao ch\u1EE9a th\xEAm ng\u01B0\u1EDDi, ng\u01B0\u1EDDi th\xF4ng minh nghi\xEAn c\u1EE9u nhanh h\u01A1n. L\xFAc \u0111\u1EA7u b\u1EA1n t\u1EF1 ph\xE1t c\xF4ng c\u1EE5 v\xE0 t\u1EF1 \u0111\u01B0a \u0111i s\u1EEDa; nghi\xEAn c\u1EE9u Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, t\u1EF1 l\u1EA5y \u0111\u1ED3 v\xE0 t\u1EF1 \u0111\u1EB7t h\xE0ng th\xEC d\xE2n t\u1EF1 lo. Ti\u1EC1n (v\u1ECF s\xF2) tr\u1EA3 cho nghi\xEAn c\u1EE9u, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m ho\u1EB7c \u0111\u1ED5i h\xE0ng \u1EDF Kho. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
         h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), `: d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng ${gameDays(30)}; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh ${gameDays(3)} s\u1EBD k\xE9o h\u1ECD d\u1EADy.`),
         h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), `: t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD ${gameDays(30)} ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p.`),
         h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R T: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7 16\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
       );
+    }
+  };
+
+  // src/ui/buildtray.ts
+  var ROLE = {
+    builder: "D\xE2n l\xE0m th\u1EE3 x\xE2y \u1EDF \u0111\xE2y (do b\u1EA1n ch\u1ECDn). Ph\u1EA3i c\xF3 nh\xE0 n\xE0y m\u1EDBi d\u1EF1ng \u0111\u01B0\u1EE3c c\xE1c c\xF4ng tr\xECnh kh\xE1c.",
+    storage: "C\u1EA5t t\xE0i nguy\xEAn.",
+    lab: "Nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD, m\u1EDF c\xF4ng tr\xECnh v\xE0 t\u1EF1 \u0111\u1ED9ng h\xF3a. D\xE2n th\xF4ng minh l\xE0m vi\u1EC7c b\xEAn trong.",
+    workshop: "Ch\u1EBF t\u1EA1o c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p theo b\u1EA3n v\u1EBD. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong.",
+    repair: "S\u1EEDa c\xF4ng c\u1EE5 \u0111\xE3 m\xF2n. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong.",
+    infantry: "Tr\u1EA1i c\u1EE7a chi\u1EBFn binh c\u1EADn chi\u1EBFn: tuy\u1EC3n v\xE0 cho ngh\u1EC9 \u1EDF \u0111\xE2y, h\u1ECD c\u0169ng ng\u1EE7 \u1EDF \u0111\xE2y v\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
+    cavalry: "Tr\u1EA1i c\u1EE7a ng\u01B0\u1EDDi c\u01B0\u1EE1i th\xFA: xung phong nhanh, kh\u1EAFc ng\u01B0\u1EDDi n\xE9m nh\u01B0ng s\u1EE3 gi\xE1o. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi. C\u1EA7n nghi\xEAn c\u1EE9u Tr\u1EA1i k\u1EF5 th\xFA.",
+    archery: "Tr\u1EA1i c\u1EE7a ng\u01B0\u1EDDi n\xE9m \u0111\xE1, b\u1EAFn n\xE1: \u0111\xE1nh t\u1EEB xa, l\xEAn \u0111\u01B0\u1EE3c ch\xF2i canh. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi. C\u1EA7n nghi\xEAn c\u1EE9u Tr\u1EA1i th\u1EE3 n\xE9m.",
+    farmhouse: "Giao vi\u1EC7c h\xE1i l\u01B0\u1EE3m \u1EDF \u0111\xE2y: ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c giao ra b\u1EE5i qu\u1EA3 v\xE0 mang th\u1EE9c \u0103n v\u1EC1. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
+    huntlodge: "Giao vi\u1EC7c s\u0103n b\u1EAFn \u1EDF \u0111\xE2y: ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c giao \u0111i s\u0103n th\xFA. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
+    lumberyard: "Giao vi\u1EC7c \u0111\u1ED1n g\u1ED7 \u1EDF \u0111\xE2y. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
+    quarry: "Giao vi\u1EC7c \u0111\u1EE5c \u0111\xE1 \u1EDF \u0111\xE2y. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
+    house: "D\xE2n th\u01B0\u1EDDng ng\u1EE7 \u1EDF \u0111\xE2y (v\xE0o nh\xE0, hi\u1EC7n th\xE0nh danh s\xE1ch) v\xE0 h\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7. Kh\xF4ng c\xF3 nh\xE0 ho\u1EB7c h\u1EBFt gi\u01B0\u1EDDng th\xEC d\xE2n ng\u1EE7 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa, h\u1ED3i s\u1EE9c ch\u1EADm h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
+    field: "D\xE2n b\u1EA1n ch\u1ECDn v\xE0o ru\u1ED9ng l\xE0m vi\u1EC7c b\xEAn trong (kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3), th\u1EE9c \u0103n v\u1EC1 th\u1EB3ng kho, \u0111\u1EC1u quanh n\u0103m h\u01A1n b\u1EE5i qu\u1EA3 (b\u1EE5i qu\u1EA3 kh\xF4ng m\u1ECDc l\u1EA1i). M\u1ED7i ru\u1ED9ng m\u1ED9t ng\u01B0\u1EDDi, n\xE2ng c\u1EA5p \u0111\u1EC3 l\xE0m nhanh h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
+    wartent: "N\u01A1i l\u1EADp \u0111\u1ED9i, ch\u1ECDn tr\u1EADn ph\xE1p, l\u1EADp k\u1EBF ho\u1EA1ch v\xE0 th\u1EBB l\u1EC7nh cho tr\u1EADn \u0111\xE1nh. C\u1EA5p c\xE0ng cao c\xE0ng nhi\u1EC1u \u0111\u1ED9i v\xE0 th\u1EBB l\u1EC7nh. C\u1EA7n nghi\xEAn c\u1EE9u H\u1ED9i \u0111\u1ED3ng chi\u1EBFn.",
+    scouttent: "N\u01A1i c\u1EED trinh s\xE1t \u0111i v\u1EBD b\u1EA3n \u0111\u1ED3 l\xE0ng kh\xE1c. C\u1EA5p c\xE0ng cao c\xE0ng c\u1EED \u0111\u01B0\u1EE3c nhi\u1EC1u ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn. C\u1EA7n nghi\xEAn c\u1EE9u Trinh s\xE1t.",
+    stable: "D\xE2n l\xE0m trong chu\u1ED3ng thu\u1EA7n h\xF3a th\xFA (s\xF3i, l\u1EE3n r\u1EEBng, voi) \u0111\u1EC3 giao cho ng\u01B0\u1EDDi c\u01B0\u1EE1i, nh\u01B0 giao c\xF4ng c\u1EE5: \u0111i nhanh h\u01A1n, \u0111\u1EE1 \u0111\xF2n h\u01A1n. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 thu\u1EA7n \u0111\u01B0\u1EE3c th\xFA l\u1EDBn h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u Thu\u1EA7n th\xFA.",
+    drill: "B\xE3i t\u1EADp: c\xE1c \u0111\u1ED9i luy\u1EC7n tr\u1EADn ph\xE1p \u1EDF \u0111\xE2y, \u0111\u1ED9 thu\u1EA7n th\u1EE5c t\u0103ng d\u1EA7n. C\u1EA7n L\u1EC1u chi\u1EBFn binh v\xE0 nghi\xEAn c\u1EE9u.",
+    trap: "H\u1ED1 ch\xF4ng g\xE0i s\u1EB5n: \u0111\u1ECBch b\u01B0\u1EDBc v\xE0o b\u1ECB th\u01B0\u01A1ng, m\u1ED7i h\u1ED1 l\xE0m b\u1ECB th\u01B0\u01A1ng v\xE0i ng\u01B0\u1EDDi. \u0110\u1EB7t t\u1EEBng c\xE1i m\u1ED9t. C\u1EA7n nghi\xEAn c\u1EE9u \u0110\xE0o h\xE0o.",
+    fence: "Ch\u1EB7n \u0111\u01B0\u1EDDng, t\u1EA1o ch\u1ED7 th\u1EAFt: \u0111\u1ECBch ph\u1EA3i ph\xE1 r\xE0o m\u1EDBi v\xE0o \u0111\u01B0\u1EE3c. \u0110\u1EB7t t\u1EEBng \u0111o\u1EA1n m\u1ED9t, c\u1EE9 ch\u1EA1m ti\u1EBFp \u0111\u1EC3 \u0111\u1EB7t \u0111o\u1EA1n k\u1EBF. C\u1EA5p 2 (h\xE0ng r\xE0o \u0111\xF4i) b\u1EC1n g\u1EA5p ba. S\u1ED1 \u0111o\u1EA1n t\u1ED1i \u0111a t\u0103ng theo Nh\xE0 chung. C\u1EA7n nghi\xEAn c\u1EE9u.",
+    gate: "Ch\u1ED7 ra v\xE0o c\u1EE7a h\xE0ng r\xE0o. M\u1EDF th\xEC ai c\u0169ng qua \u0111\u01B0\u1EE3c, \u0111\xF3ng th\xEC ch\u1EB7n t\u1EA5t c\u1EA3 k\u1EC3 c\u1EA3 d\xE2n m\xECnh. Ch\u1EA1m v\xE0o c\u1ED5ng \u0111\u1EC3 m\u1EDF ho\u1EB7c \u0111\xF3ng. C\u1EA7n nghi\xEAn c\u1EE9u.",
+    tower: "Cung th\u1EE7 \u0111\u1EE9ng tr\xEAn ch\xF2i b\u1EAFn xa h\u01A1n v\xE0 m\u1EA1nh h\u01A1n. Ch\u1EA1m v\xE0o ch\xF2i \u0111\u1EC3 ch\u1ECDn cung th\u1EE7 l\xEAn canh. C\u1EA7n Nh\xE0 chung c\u1EA5p 2 v\xE0 nghi\xEAn c\u1EE9u.",
+    toolstore: "C\u1EA5t c\xF4ng c\u1EE5 cho d\xE2n t\u1EF1 l\u1EA5y.",
+    armory: "C\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p cho d\xE2n t\u1EF1 l\u1EA5y."
+  };
+  var GROUPS = [
+    ["Thi\u1EBFt y\u1EBFu", ["builder", "storage", "house", "field"]],
+    ["S\u1EA3n xu\u1EA5t", ["workshop", "lab", "repair", "toolstore", "armory"]],
+    ["T\xE0i nguy\xEAn", ["farmhouse", "huntlodge", "lumberyard", "quarry", "stable"]],
+    ["Qu\xE2n s\u1EF1", ["infantry", "cavalry", "archery", "wartent", "scouttent", "drill"]],
+    ["Ph\xF2ng th\u1EE7", ["fence", "gate", "tower", "trap"]]
+  ];
+  var BuildTray = class {
+    constructor(root, c) {
+      this.root = root;
+      this.c = c;
+      this.group = 0;
+      this.key = "";
+      this.tabs = h("div", { class: "tabs" });
+      this.cards = h("div", { class: "cards" });
+      this.refresh = [];
+      GROUPS.forEach(([name], i) => this.tabs.append(h("button", { class: "sm", text: name, pressed: i === 0, onclick: () => {
+        this.group = i;
+        this.key = "";
+        this.update();
+      } })));
+      root.append(h("div", { class: "head" }, this.tabs, h("button", { class: "sm", text: "\u2715", title: "\u0110\xF3ng", onclick: () => this.close() })), this.cards);
+    }
+    get isOpen() {
+      return !this.root.hidden;
+    }
+    open() {
+      this.root.hidden = false;
+      this.key = "";
+      this.update();
+    }
+    close() {
+      this.root.hidden = true;
+    }
+    toggle() {
+      if (this.isOpen) this.close();
+      else this.open();
+    }
+    update() {
+      if (!this.isOpen) return;
+      const { sim: sim2, ctl: ctl2, sprites: sprites2 } = this.c;
+      [...this.tabs.children].forEach((b, i) => b.setAttribute("aria-pressed", String(i === this.group)));
+      const key = `${this.group}|${sim2.era}`;
+      if (key !== this.key) {
+        this.key = key;
+        this.refresh.length = 0;
+        this.cards.scrollLeft = 0;
+        const kinds = GROUPS[this.group][1].filter((k) => BUILDINGS[k].buildable);
+        this.cards.replaceChildren(...kinds.map((kind) => {
+          const lv2 = levelsOf(kind, sim2.era)[0], d = BUILDINGS[kind];
+          let pic;
+          try {
+            pic = iconCanvas(sprites2.building(kind, sim2.era, 1, 4).frames[0]);
+          } catch {
+            pic = h("span", { text: d.name[0] });
+          }
+          const state = h("small", { class: "state" }), card = h(
+            "button",
+            { class: "card2", onclick: () => {
+              ctl2.startPlacing(kind);
+              this.close();
+            } },
+            h("span", { class: "pic" }, pic),
+            h("b", { text: d.name }),
+            h("small", { text: costText(lv2.cost, RES_NAME) }),
+            state
+          );
+          const role = ROLE[kind];
+          if (role) card.title = role;
+          const info = h("span", { class: "info", text: "\u24D8", title: "C\xF4ng d\u1EE5ng", onclick: (e) => {
+            e.stopPropagation();
+            this.c.toast(`${d.name}: ${role ?? ""}`);
+          } });
+          if (role) card.append(info);
+          this.refresh.push(() => {
+            const lock = sim2.buildingLock(kind), poor = !sim2.dev.freeBuild && !Object.keys(lv2.cost).every((k) => sim2.stock[k] >= (lv2.cost[k] ?? 0));
+            const have = sim2.buildings.filter((b) => b.kind === kind).length, limit = sim2.buildingLimit(kind);
+            card.disabled = !!lock || poor || have >= limit;
+            state.textContent = lock ?? (have >= limit ? "\u0110\xE3 \u0111\u1EE7" : poor ? "Ch\u01B0a \u0111\u1EE7 v\u1EADt li\u1EC7u" : limit > 1 ? `\u0110\xE3 c\xF3 ${have}/${limit}` : "");
+          });
+          return card;
+        }));
+      }
+      this.refresh.forEach((f) => f());
     }
   };
 
@@ -41087,6 +41263,7 @@ body.war .sheet, body.war .bbar {
   var buildingPanel = new BuildingPanel($("bpanel"), ctx);
   var buildingBar = new BuildingBar($("bbar"), ctx, renderer, new Confirm($("dialog"), ctx));
   var warBar = new WarBar($("warbar"), ctx);
+  var tray = new BuildTray($("tray"), ctx);
   var map = new MapView(sim, cam, renderer, ctl, $("mini"), $("bigmapCanvas"), $("bigmap"));
   var menu = new Menu($("drawer"), $("drawerTabs"), $("drawerBody"), ctx, () => {
     const w = renderer.screenToWorld(renderer.w / 2, renderer.h / 2);
@@ -41094,7 +41271,12 @@ body.war .sheet, body.war .bbar {
   });
   $("btnCloseMap").addEventListener("click", () => map.close());
   $("btnMenu").addEventListener("click", () => {
+    tray.close();
     menu.toggle();
+  });
+  $("btnBuild").addEventListener("click", () => {
+    menu.close();
+    tray.toggle();
   });
   var rotateEl = $("rotate");
   var fullBtn = $("btnFull");
@@ -41178,6 +41360,7 @@ body.war .sheet, body.war .bbar {
     else {
       ctl.startPlacing(kind);
       menu.close();
+      tray.close();
     }
   }
   function openWorkshop() {
@@ -41302,6 +41485,7 @@ body.war .sheet, body.war .bbar {
       $("btnPlaceOk").textContent = moving ? "\u2713 D\u1EDDi t\u1EDBi \u0111\xE2y" : "\u2713 \u0110\u1EB7t \u1EDF \u0111\xE2y";
     }
     menu.update();
+    tray.update();
     syncButtons();
   }
   ctl.onChange = () => {

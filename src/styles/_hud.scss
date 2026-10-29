@@ -127,3 +127,33 @@ details {
   }
   .btns { justify-content: center; }
 }
+
+// ---- build tray: the bottom shelf of buildings to place ----
+.tray {
+  position: absolute;
+  left: calc(6px + var(--sal)); right: calc(6px + var(--sar)); bottom: calc(6px + var(--sab));
+  z-index: 6;
+  @include hud-box($radius-xl);
+  padding: 6px;
+  display: grid; gap: 6px;
+  .head { display: flex; gap: 6px; align-items: center; justify-content: space-between; }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  .cards { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .card2 {
+    position: relative; flex: 0 0 auto; width: 112px; padding: 4px 6px 6px; display: grid; gap: 1px; justify-items: center; text-align: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: $radius-lg;
+    .pic { width: 100%; height: 56px; display: grid; place-items: center; background: var(--panel-2); border-radius: $radius-md; overflow: hidden; }
+    .pic canvas { max-width: 92%; max-height: 50px; width: auto; height: auto; image-rendering: pixelated; }
+    b { font-size: 13px; }
+    small { color: var(--muted); font-size: 11px; line-height: 1.2; }
+    .state { color: var(--accent); font-weight: 700; min-height: 1.2em; }
+    .info { position: absolute; top: 4px; right: 6px; font-size: 14px; color: var(--muted); }
+    &:disabled { opacity: .55; }
+    &:not(:disabled):hover { border-color: var(--accent); }
+  }
+}
+body.war .tray { display: none !important; }
+@media (max-height: 480px) {
+  .tray { left: calc(4px + var(--sal)); right: calc(4px + var(--sar)); bottom: calc(4px + var(--sab)); padding: 4px; gap: 4px; }
+  .tray .card2 { width: 92px; .pic { height: 38px; } .pic canvas { max-height: 34px; } small { font-size: 10px; } }
+}
