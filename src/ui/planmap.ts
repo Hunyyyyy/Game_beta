@@ -358,7 +358,7 @@ export class PlanMapView {
 
   /** The squad whose cell lies under a screen point, if any. */
   private squadAt(p: Pt): number | undefined {
-    return (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)))?.squad;
+    return (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(9, this.k * 0.5)))?.squad; // on a cell itself: the arrow, which starts in the middle of the squad, is pressed everywhere else
   }
   private ringItems(): typeof SQUAD_ITEMS { return this.ring?.arrow ? ARROW_ITEMS : SQUAD_ITEMS; }
   private ringCount(): number { return this.ring?.squad !== undefined ? this.ringItems().length : FORMATION_IDS.length; }
@@ -376,7 +376,7 @@ export class PlanMapView {
   private pickFromRing(): void {
     const r = this.ring; this.ring = null;
     if (!r || r.hover < 0) return;
-    if (r.squad !== undefined) { this.ev.onSquadAction(r.squad, this.ringItems()[r.hover].id); return; }
+    if (r.squad !== undefined) { this.ev.onSquadAction(r.squad, (r.arrow ? ARROW_ITEMS : SQUAD_ITEMS)[r.hover].id); return; }
     const kind = FORMATION_IDS[r.hover];
     if (!this.sim.formationOpen(kind)) { this.ev.onNotice(`Cần nghiên cứu để dùng ${FORMATIONS[kind].name}`); return; }
     this.making = { kind, at: r.world };

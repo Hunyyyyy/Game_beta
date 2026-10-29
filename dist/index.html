@@ -35670,7 +35670,7 @@ body.war .sheet, body.war .bbar {
     }
     /** The squad whose cell lies under a screen point, if any. */
     squadAt(p) {
-      return (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)))?.squad;
+      return (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(9, this.k * 0.5)))?.squad;
     }
     ringItems() {
       return this.ring?.arrow ? ARROW_ITEMS : SQUAD_ITEMS;
@@ -35692,7 +35692,7 @@ body.war .sheet, body.war .bbar {
       this.ring = null;
       if (!r || r.hover < 0) return;
       if (r.squad !== void 0) {
-        this.ev.onSquadAction(r.squad, this.ringItems()[r.hover].id);
+        this.ev.onSquadAction(r.squad, (r.arrow ? ARROW_ITEMS : SQUAD_ITEMS)[r.hover].id);
         return;
       }
       const kind = FORMATION_IDS[r.hover];
