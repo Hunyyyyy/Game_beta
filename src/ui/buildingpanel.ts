@@ -264,6 +264,7 @@ export class BuildingPanel {
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
     if (this.trainPanes[b.kind] && ready) this.trainPanes[b.kind]!.update(b);
     if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
+    if (b.kind === 'builder' && ready) this.staffBoxes.build.update(b);
     if (b.kind === 'tower' && ready) this.updateTower(b);
     if (b.kind === 'wartent' && ready) this.war.update();
     if (b.kind === 'scouttent' && ready) this.scoutPane.update();
