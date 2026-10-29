@@ -253,8 +253,10 @@ export function tribeIntel(sim: Sim, tribe: string): TribeIntel | null {
   if (!level) return null;
   const held = sim.maps.filter((m) => m.tribe === tribe && (m.gaps > 0 ? m.level - 1 : m.level) >= level).sort((a, b) => b.at - a.at)[0];
   const accuracy = sim.dev.freeBuild || !held ? 1 : mapAccuracy(sim, held), gaps = sim.dev.freeBuild ? 0 : held?.gaps ?? 0;
-  const N = sim.world.size, r = YARD + MARGIN;
-  const box = { x0: Math.max(0, Math.floor(t.camp.x) - r), y0: Math.max(0, Math.floor(t.camp.y) - r), x1: Math.min(N, Math.floor(t.camp.x) + r), y1: Math.min(N, Math.floor(t.camp.y) + r) };
+  // the map is drawn as wide as a screen, so that no part of it is bare: the camp and the ground round it, wider than tall, moved in when the camp is near the edge of the world
+  const N = sim.world.size, ry = YARD + MARGIN, rx = Math.round(ry * 1.9);
+  const x0 = Math.max(0, Math.min(N - 2 * rx, Math.floor(t.camp.x) - rx)), y0 = Math.max(0, Math.min(N - 2 * ry, Math.floor(t.camp.y) - ry));
+  const box = { x0, y0, x1: x0 + 2 * rx, y1: y0 + 2 * ry };
   const fire = sim.campfire(), dx = (fire?.x ?? sim.world.start.x) - t.camp.x, dy = (fire?.y ?? sim.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
   const seen = sim.dev.freeBuild || !held?.seen ? seenNow(sim, t) : held.seen; // a map from before scouts kept what they saw shows the village as it is
   const soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;

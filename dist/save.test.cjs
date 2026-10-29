@@ -1846,7 +1846,8 @@ function brainPlayer(sim, v, dt) {
   const scanNow = v.fight.scan <= 0;
   if (scanNow) v.fight.scan = 0.35;
   const looking = scanNow || v.phase === "flee" || v.phase === "fight" && (!v.fight.target || v.morale < MORALE.flee);
-  const threats = looking ? threatsOf(sim, v, SIGHT + 2) : [];
+  const sight = v.team === "player" ? sim.sightOf(v) : SIGHT;
+  const threats = looking ? threatsOf(sim, v, sight + 1) : [];
   if (rest) {
     if (scanNow && threats.length && threats[0].d < 7) {
       if (isFighter(v)) v.nightOwl = true;
@@ -1983,7 +1984,7 @@ function fightBrain(sim, v, dt, threats) {
       return true;
     }
   } else if (threats.length && f.scan >= 0) {
-    const range = f.mode === "hold" ? weaponOf(v).range + 1.5 : v.stance === "defensive" ? DEFENSIVE : SIGHT;
+    const range = f.mode === "hold" ? weaponOf(v).range + 1.5 : v.stance === "defensive" ? Math.min(DEFENSIVE, sim.sightOf(v)) : sim.sightOf(v);
     const pick = threats.find((t) => t.d <= range && (!f.anchor || v.stance !== "defensive" || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
     if (pick) {
       f.target = pick.t;
@@ -4992,6 +4993,11 @@ function refreshFog(sim) {
 function visionRadius(sim) {
   return Math.max(1, Math.round(NIGHT_VISION + (VISION - NIGHT_VISION) * sim.light) - WEATHER[sim.weather].vision);
 }
+function sightOf(sim, v) {
+  const r = visionRadius(sim);
+  return (v.torch || v.lit ? Math.max(r, TORCH_VISION) : r) + (armOf(v) === "archer" ? ARCHER_SIGHT : 0);
+}
+var ARCHER_SIGHT = 1;
 function fireRadius(sim) {
   return Math.max(1, FIRE_VISION - WEATHER[sim.weather].vision);
 }
@@ -6038,8 +6044,9 @@ function tribeIntel(sim, tribe) {
   if (!level) return null;
   const held = sim.maps.filter((m) => m.tribe === tribe && (m.gaps > 0 ? m.level - 1 : m.level) >= level).sort((a, b) => b.at - a.at)[0];
   const accuracy = sim.dev.freeBuild || !held ? 1 : mapAccuracy(sim, held), gaps = sim.dev.freeBuild ? 0 : held?.gaps ?? 0;
-  const N = sim.world.size, r = YARD + MARGIN;
-  const box = { x0: Math.max(0, Math.floor(t.camp.x) - r), y0: Math.max(0, Math.floor(t.camp.y) - r), x1: Math.min(N, Math.floor(t.camp.x) + r), y1: Math.min(N, Math.floor(t.camp.y) + r) };
+  const N = sim.world.size, ry = YARD + MARGIN, rx = Math.round(ry * 1.9);
+  const x0 = Math.max(0, Math.min(N - 2 * rx, Math.floor(t.camp.x) - rx)), y0 = Math.max(0, Math.min(N - 2 * ry, Math.floor(t.camp.y) - ry));
+  const box = { x0, y0, x1: x0 + 2 * rx, y1: y0 + 2 * ry };
   const fire = sim.campfire(), dx = (fire?.x ?? sim.world.start.x) - t.camp.x, dy = (fire?.y ?? sim.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
   const seen = sim.dev.freeBuild || !held?.seen ? seenNow(sim, t) : held.seen;
   const soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
@@ -7391,6 +7398,10 @@ var WAR = {
   /** → warplan.isLogistics */
   isLogistics(plan2, m) {
     return isLogistics(plan2, m);
+  },
+  /** → environment.sightOf */
+  sightOf(v) {
+    return sightOf(this, v);
   },
   /** → warplan.canTarget */
   canTarget(objective, tribe) {

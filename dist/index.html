@@ -1443,6 +1443,21 @@ body.war .sheet, body.war .bbar {
   color: var(--accent);
 }
 
+.guide {
+  display: grid;
+  gap: 8px;
+}
+
+.gstep {
+  padding: 8px 10px;
+  background: var(--panel-2);
+  border-radius: 4px;
+}
+.gstep p {
+  margin: 4px 0 0;
+  line-height: 1.45;
+}
+
 #mini {
   position: absolute;
   right: calc(6px + var(--sar));
@@ -26022,7 +26037,8 @@ body.war .sheet, body.war .bbar {
     const scanNow = v.fight.scan <= 0;
     if (scanNow) v.fight.scan = 0.35;
     const looking = scanNow || v.phase === "flee" || v.phase === "fight" && (!v.fight.target || v.morale < MORALE.flee);
-    const threats = looking ? threatsOf(sim2, v, SIGHT + 2) : [];
+    const sight = v.team === "player" ? sim2.sightOf(v) : SIGHT;
+    const threats = looking ? threatsOf(sim2, v, sight + 1) : [];
     if (rest) {
       if (scanNow && threats.length && threats[0].d < 7) {
         if (isFighter(v)) v.nightOwl = true;
@@ -26159,7 +26175,7 @@ body.war .sheet, body.war .bbar {
         return true;
       }
     } else if (threats.length && f.scan >= 0) {
-      const range = f.mode === "hold" ? weaponOf(v).range + 1.5 : v.stance === "defensive" ? DEFENSIVE : SIGHT;
+      const range = f.mode === "hold" ? weaponOf(v).range + 1.5 : v.stance === "defensive" ? Math.min(DEFENSIVE, sim2.sightOf(v)) : sim2.sightOf(v);
       const pick = threats.find((t) => t.d <= range && (!f.anchor || v.stance !== "defensive" || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
       if (pick) {
         f.target = pick.t;
@@ -29213,6 +29229,11 @@ body.war .sheet, body.war .bbar {
   function visionRadius(sim2) {
     return Math.max(1, Math.round(NIGHT_VISION + (VISION - NIGHT_VISION) * sim2.light) - WEATHER[sim2.weather].vision);
   }
+  function sightOf(sim2, v) {
+    const r = visionRadius(sim2);
+    return (v.torch || v.lit ? Math.max(r, TORCH_VISION) : r) + (armOf(v) === "archer" ? ARCHER_SIGHT : 0);
+  }
+  var ARCHER_SIGHT = 1;
   function fireRadius(sim2) {
     return Math.max(1, FIRE_VISION - WEATHER[sim2.weather].vision);
   }
@@ -30261,8 +30282,9 @@ body.war .sheet, body.war .bbar {
     if (!level) return null;
     const held = sim2.maps.filter((m) => m.tribe === tribe && (m.gaps > 0 ? m.level - 1 : m.level) >= level).sort((a, b) => b.at - a.at)[0];
     const accuracy = sim2.dev.freeBuild || !held ? 1 : mapAccuracy(sim2, held), gaps = sim2.dev.freeBuild ? 0 : held?.gaps ?? 0;
-    const N = sim2.world.size, r = YARD + MARGIN;
-    const box = { x0: Math.max(0, Math.floor(t.camp.x) - r), y0: Math.max(0, Math.floor(t.camp.y) - r), x1: Math.min(N, Math.floor(t.camp.x) + r), y1: Math.min(N, Math.floor(t.camp.y) + r) };
+    const N = sim2.world.size, ry = YARD + MARGIN, rx = Math.round(ry * 1.9);
+    const x0 = Math.max(0, Math.min(N - 2 * rx, Math.floor(t.camp.x) - rx)), y0 = Math.max(0, Math.min(N - 2 * ry, Math.floor(t.camp.y) - ry));
+    const box = { x0, y0, x1: x0 + 2 * rx, y1: y0 + 2 * ry };
     const fire = sim2.campfire(), dx = (fire?.x ?? sim2.world.start.x) - t.camp.x, dy = (fire?.y ?? sim2.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
     const seen = sim2.dev.freeBuild || !held?.seen ? seenNow(sim2, t) : held.seen;
     const soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
@@ -31614,6 +31636,10 @@ body.war .sheet, body.war .bbar {
     /** → warplan.isLogistics */
     isLogistics(plan2, m) {
       return isLogistics(plan2, m);
+    },
+    /** → environment.sightOf */
+    sightOf(v) {
+      return sightOf(this, v);
     },
     /** → warplan.canTarget */
     canTarget(objective, tribe) {
@@ -35163,6 +35189,7 @@ body.war .sheet, body.war .bbar {
   var MARK_NAME = { civ: "D\xE2n th\u01B0\u1EDDng", unknown: "C\xF3 ng\u01B0\u1EDDi (ch\u01B0a r\xF5 lo\u1EA1i)", foot: ARM_NAME.foot, archer: ARM_NAME.archer, cavalry: ARM_NAME.cavalry };
   var MARK_COLOR = { civ: "#d8d2c0", unknown: "#b9b2a0", foot: "#e0452a", archer: "#e0452a", cavalry: "#e0452a" };
   var WORK_COLOR = { fire: "#f08a24", tower: "#6b4a2a", pile: "#a9743a", fence: "#8a6a3a", gate: "#e8d18a" };
+  var ARROW_ITEMS = [{ id: "bend", name: "S\u1EEDa", icon: "\u270E", note: "" }, { id: "clear", name: "X\xF3a", icon: "\u{1F5D1}", note: "" }];
   var SQUAD_ITEMS = [
     { id: "order", name: "L\u1EC7nh", icon: "\u2630", note: "H\xE0nh \u0111\u1ED9ng, gi\u1EDD \u0111\xE1nh, r\xFAt lui, th\u1EBB l\u1EC7nh" },
     { id: "edit", name: "S\u1EEDa", icon: "\u270E", note: "\u0110\u1ED5i \u0111\u1ED9 d\xE0i, b\xE1n k\xEDnh, ch\u1ED7 \u0111\u1EE9ng c\u1EE7a \u0111\u1ED9i h\xECnh" },
@@ -35321,7 +35348,6 @@ body.war .sheet, body.war .bbar {
       this.ev = ev;
       this.root = h("div", { class: "pview" });
       this.canvas = h("canvas", { class: "planmap" });
-      this.pop = h("div", { class: "ppop", hidden: true });
       this.note = h("div", { class: "pnote", hidden: true });
       this.ground = document.createElement("canvas");
       this.groundKey = "";
@@ -35356,7 +35382,7 @@ body.war .sheet, body.war .bbar {
       this.moved = false;
       this.pinch = 0;
       this.queued = false;
-      this.root.append(this.canvas, this.pop, this.note);
+      this.root.append(this.canvas, this.note);
       const at = (e) => {
         const b = this.canvas.getBoundingClientRect();
         return { x: e.clientX - b.left, y: e.clientY - b.top };
@@ -35499,10 +35525,7 @@ body.war .sheet, body.war .bbar {
         this.routes.set(m.squad, { start, go, back: m.retreat.length ? this.sim.routeTime(s, from, m.retreat) : null });
       }
       this.canvas.style.cursor = ui.mode === "pan" ? "grab" : ui.mode === "trim" ? "pointer" : "crosshair";
-      if (changed) {
-        this.pop.hidden = true;
-        this.making = null;
-      }
+      if (changed) this.making = null;
       this.syncShape();
       if (!(ui.mode === "path" || ui.mode === "retreat") || this.listOf(ui.mode === "retreat").length) this.arrowAim = null;
       this.resize();
@@ -35515,9 +35538,10 @@ body.war .sheet, body.war .bbar {
       const i = this.intel;
       if (!i) return;
       const bw = i.box.x1 - i.box.x0, bh = i.box.y1 - i.box.y0;
-      this.k = clamp2(Math.min(this.W / bw, this.H / bh) * 0.96, MIN_K, MAX_K);
+      this.k = clamp2(Math.max(this.W / bw, this.H / bh), MIN_K, MAX_K);
       this.cx = (i.box.x0 + i.box.x1) / 2;
       this.cy = (i.box.y0 + i.box.y1) / 2;
+      this.limit();
       this.redraw();
     }
     zoomBy(f) {
@@ -35528,6 +35552,7 @@ body.war .sheet, body.war .bbar {
       const w = this.root.clientWidth || 800, hh = this.root.clientHeight || 500, dpr = globalThis.devicePixelRatio || 1;
       this.W = w;
       this.H = hh;
+      this.limit();
       if (this.canvas.width !== Math.round(w * dpr) || this.canvas.height !== Math.round(hh * dpr)) {
         this.canvas.width = Math.round(w * dpr);
         this.canvas.height = Math.round(hh * dpr);
@@ -35536,18 +35561,25 @@ body.war .sheet, body.war .bbar {
     /** Zoom by a factor, keeping the tile under the screen point where it is. */
     zoom(f, sx, sy) {
       const wx = this.cx + (sx - this.W / 2) / this.k, wy = this.cy + (sy - this.H / 2) / this.k;
-      this.k = clamp2(this.k * f, MIN_K, MAX_K);
+      this.k = clamp2(this.k * f, this.minK(), MAX_K);
       this.cx = wx - (sx - this.W / 2) / this.k;
       this.cy = wy - (sy - this.H / 2) / this.k;
       this.limit();
     }
     /** Keep the middle of the screen on the map. */
+    /** The least zoom: the map still covers the screen. */
+    minK() {
+      const i = this.intel;
+      return i ? Math.max(MIN_K, this.W / (i.box.x1 - i.box.x0), this.H / (i.box.y1 - i.box.y0)) : MIN_K;
+    }
+    /** Keep the screen on the map: no brown round it. */
     limit() {
       const i = this.intel;
-      if (i) {
-        this.cx = clamp2(this.cx, i.box.x0, i.box.x1);
-        this.cy = clamp2(this.cy, i.box.y0, i.box.y1);
-      }
+      if (!i) return;
+      this.k = Math.max(this.k, this.minK());
+      const hw = this.W / 2 / this.k, hh = this.H / 2 / this.k, mx = (i.box.x0 + i.box.x1) / 2, my = (i.box.y0 + i.box.y1) / 2;
+      this.cx = i.box.x1 - i.box.x0 <= 2 * hw ? mx : clamp2(this.cx, i.box.x0 + hw, i.box.x1 - hw);
+      this.cy = i.box.y1 - i.box.y0 <= 2 * hh ? my : clamp2(this.cy, i.box.y0 + hh, i.box.y1 - hh);
     }
     redraw() {
       if (this.queued) return;
@@ -35627,12 +35659,11 @@ body.war .sheet, body.war .bbar {
       if (this.gesture !== "pan" || this.moved || this.pts.size !== 1) return;
       const press = this.downAt, edge = RING + ITEM + 10;
       const centre = { x: clamp2(press.x, edge, Math.max(edge, this.W - edge)), y: clamp2(press.y, edge, Math.max(edge, this.H - edge)) };
-      const squad = this.squadAt(press);
-      this.ring = { press, centre, world: this.world(press), hover: -1, squad };
+      const squad = this.squadAt(press), arrow = squad === void 0 && this.plan?.status === "draft" ? this.arrowAt(press) : void 0;
+      this.ring = { press, centre, world: this.world(press), hover: -1, squad: squad ?? arrow, arrow: arrow !== void 0 };
       this.gesture = "menu";
-      this.pop.hidden = true;
-      if (squad !== void 0) {
-        this.ev.onSelect(squad);
+      if (this.ring.squad !== void 0) {
+        this.ev.onSelect(this.ring.squad);
         this.ev.onRing();
       }
       this.redraw();
@@ -35641,8 +35672,11 @@ body.war .sheet, body.war .bbar {
     squadAt(p) {
       return (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)))?.squad;
     }
+    ringItems() {
+      return this.ring?.arrow ? ARROW_ITEMS : SQUAD_ITEMS;
+    }
     ringCount() {
-      return this.ring?.squad !== void 0 ? SQUAD_ITEMS.length : FORMATION_IDS.length;
+      return this.ring?.squad !== void 0 ? this.ringItems().length : FORMATION_IDS.length;
     }
     itemCentre(i) {
       const a = -Math.PI / 2 + i * 2 * Math.PI / this.ringCount(), c = this.ring.centre;
@@ -35658,7 +35692,7 @@ body.war .sheet, body.war .bbar {
       this.ring = null;
       if (!r || r.hover < 0) return;
       if (r.squad !== void 0) {
-        this.ev.onSquadAction(r.squad, SQUAD_ITEMS[r.hover].id);
+        this.ev.onSquadAction(r.squad, this.ringItems()[r.hover].id);
         return;
       }
       const kind = FORMATION_IDS[r.hover];
@@ -35706,17 +35740,8 @@ body.war .sheet, body.war .bbar {
       const m = this.making;
       this.note.hidden = !m;
       if (!m) return;
-      const how = {
-        line: "c\xE1c \xF4 x\u1EBFp th\xE0nh h\xE0ng t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF",
-        circle: "\u0111i\u1EC3m \u0111\xE3 ch\u1ECDn l\xE0 t\xE2m, kho\u1EA3ng k\xE9o l\xE0 b\xE1n k\xEDnh",
-        wedge: "\u0111i\u1EC3m \u0111\xE3 ch\u1ECDn l\xE0 m\u0169i nh\u1ECDn, hai c\xE1nh ch\u1EA1y v\u1EC1 ph\xEDa con tr\u1ECF",
-        horns: "m\u1ED9t h\xE0ng t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF, hai \u0111\u1EA7u cong ra tr\u01B0\u1EDBc",
-        scatter: "c\xE1c \xF4 r\u1EA3i k\xEDn khung t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF",
-        ambush: "hai h\xE0ng so le t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF"
-      };
       this.note.replaceChildren(
         h("b", { text: FORMATIONS[m.kind].name }),
-        h("span", { text: `K\xE9o ra t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn: ${how[m.kind]} (${SQUAD_MIN} \u0111\u1EBFn ${SQUAD_MAX} \xF4; d\u01B0\u1EDBi ${SQUAD_MIN} \xF4 l\xE0 \xF4 \u0111\u1ECF, kh\xF4ng t\u1EA1o \u0111\u01B0\u1EE3c). B\u1EA5m \u0111\u1EC3 ch\u1ED1t; b\u1EA5m ngay \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn l\xE0 h\u1EE7y. L\xEDnh \u0111\u01B0a v\xE0o \u0111\u1ED9i sau.` }),
         h("button", { class: "sm", text: "H\u1EE7y", onclick: () => {
           this.making = null;
           this.say();
@@ -35733,7 +35758,6 @@ body.war .sheet, body.war .bbar {
       }
       const near2 = this.squadAt(p);
       if (near2 !== void 0) {
-        this.pop.hidden = true;
         this.ev.onSelect(near2);
         return;
       }
@@ -35741,20 +35765,11 @@ body.war .sheet, body.war .bbar {
       if (hit) {
         const sq = this.plan?.missions.find((m) => m.squad === this.ui.selected && m.deploy);
         if (hit.t.pick && sq && this.plan?.status === "draft" && this.ui.mode !== "retreat") {
-          this.pop.hidden = true;
           this.ev.onTarget(sq.squad, hit.t.pick);
           return;
         }
-        this.showPop(p, hit.t.title, hit.t.text, hit.t.pick);
         return;
       }
-      const arrow = this.arrowAt(p);
-      if (arrow !== void 0 && this.plan?.status === "draft") {
-        this.pop.hidden = true;
-        this.ev.onArrow(arrow);
-        return;
-      }
-      this.pop.hidden = true;
       this.ev.onSelect(-1);
     }
     /** The squad whose arrow passes within a finger's width of a screen point. */
@@ -35769,21 +35784,6 @@ body.war .sheet, body.war .bbar {
         }
       }
       return void 0;
-    }
-    /** What a pressed work or man is. With squads on the map and the plan still a draft, a button for each sends that squad to attack it. */
-    showPop(p, title, text, pick) {
-      const squads = pick && this.plan?.status === "draft" ? this.plan.missions.filter((m) => m.deploy && this.sim.squadById(m.squad)) : [];
-      this.pop.replaceChildren(
-        h("b", { text: title }),
-        h("p", { class: "sub", text }),
-        ...squads.length ? [h("small", { text: "\u0110\u1ED9i n\xE0o t\u1EA5n c\xF4ng m\u1EE5c ti\xEAu n\xE0y?" }), h("div", { class: "chips" }, ...squads.map((m) => h("button", { class: "chip", text: `\u{1F3AF} ${this.sim.squadById(m.squad).name}`, onclick: () => {
-          this.pop.hidden = true;
-          this.ev.onTarget(m.squad, pick);
-        } })))] : []
-      );
-      this.pop.style.left = `${clamp2(p.x + 14, 8, Math.max(8, this.W - 280))}px`;
-      this.pop.style.top = `${clamp2(p.y + 14, 8, Math.max(8, this.H - 150))}px`;
-      this.pop.hidden = false;
     }
     // ---------------------------------------------------------------- the arrow
     clampInBox(w) {
@@ -36197,7 +36197,7 @@ body.war .sheet, body.war .bbar {
       ctx2.lineWidth = 2;
       ctx2.stroke();
       if (r.squad !== void 0) {
-        SQUAD_ITEMS.forEach((it, i) => {
+        this.ringItems().forEach((it, i) => {
           const c = this.itemCentre(i), hot2 = i === r.hover;
           ctx2.fillStyle = hot2 ? "#ffd23a" : "rgba(40,30,20,0.94)";
           ctx2.strokeStyle = hot2 ? "#fff" : "rgba(255,255,255,0.75)";
@@ -36209,7 +36209,6 @@ body.war .sheet, body.war .bbar {
           label(ctx2, it.icon, c.x, c.y - 4, 20, hot2 ? "#1a1208" : "#fff");
           label(ctx2, it.name, c.x, c.y + 21, 11, hot2 ? "#1a1208" : "#fff");
         });
-        if (r.hover >= 0) label(ctx2, SQUAD_ITEMS[r.hover].note, this.W / 2, this.H - 24, 13);
         return;
       }
       FORMATION_IDS.forEach((f, i) => {
@@ -36225,12 +36224,12 @@ body.war .sheet, body.war .bbar {
         label(ctx2, FORMATIONS[f].name, c.x, c.y + 21, 11, hot2 ? "#1a1208" : open ? "#fff" : "#9a9080");
       });
       const hot = r.hover >= 0 ? FORMATION_IDS[r.hover] : null;
-      if (hot) label(ctx2, this.sim.formationOpen(hot) ? FORMATIONS[hot].note : `C\u1EA7n nghi\xEAn c\u1EE9u: ${FORMATIONS[hot].name}`, this.W / 2, this.H - 24, 13);
+      if (hot && !this.sim.formationOpen(hot)) label(ctx2, `C\u1EA7n nghi\xEAn c\u1EE9u: ${FORMATIONS[hot].name}`, this.W / 2, this.H - 24, 13);
     }
   };
 
   // src/ui/warpanel.ts
-  var TABS2 = [["plan", "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"], ["defense", "Ph\xF2ng th\u1EE7"], ["log", "Nh\u1EADt k\xFD tr\u1EADn"]];
+  var TABS2 = [["plan", "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"], ["defense", "Ph\xF2ng th\u1EE7"], ["log", "Nh\u1EADt k\xFD tr\u1EADn"], ["guide", "H\u01B0\u1EDBng d\u1EABn"]];
   var STANCE_NAME = { fight: "\u0110\xE1nh", evade: "N\xE9, ch\u1EC9 \u0111i", hold: "Gi\u1EEF y\xEAn", shoot: "Ch\u1EC9 b\u1EAFn" };
   var POST_NAME = { gate: "Gi\u1EEF c\u1ED5ng", fence: "\u0110\u1EE9ng sau h\xE0ng r\xE0o", tower: "L\xEAn ch\xF2i canh", reserve: "Ph\u1EA3n k\xEDch (v\u1EC1 l\u1EEDa)", fire: "Quanh \u0111\u1ED1ng l\u1EEDa" };
   var CARD_NAME = { go: "Xu\u1EA5t ph\xE1t", advance: "Ti\u1EBFn", hold: "Gi\u1EEF", formation: "\u0110\u1ED5i tr\u1EADn", attack: "T\u1EA5n c\xF4ng m\u1EE5c ti\xEAu", shoot: "B\u1EAFn", retreat: "R\xFAt", signal: "Ph\xE1t t\xEDn hi\u1EC7u" };
@@ -36314,8 +36313,12 @@ body.war .sheet, body.war .bbar {
       this.root.append(hint("L\u1EC1u h\u1ECDp chi\u1EBFn", "B\u1EA3n \u0111\u1ED3 l\xE0ng \u0111\u1ECBch do Tr\u1EA1i trinh s\xE1t v\u1EBD. M\u1EDF b\u1EA3n \u0111\u1ED3 \u0111\xF3 \u1EDF trang K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng: nh\u1EA5n gi\u1EEF m\u1ED9t \u0111i\u1EC3m \u0111\u1EC3 l\u1EADp \u0111\u1ED9i, \u0111\u01B0a l\xEDnh v\xE0o \u0111\u1ED9i, v\u1EBD \u0111\u1ED9i h\xECnh v\xE0 m\u0169i t\xEAn, r\u1ED3i ra l\u1EC7nh cho t\u1EEBng \u0111\u1ED9i. Th\u1EBB l\u1EC7nh b\u1EA1n g\u1EAFn v\xE0o k\u1EBF ho\u1EA1ch s\u1EBD hi\u1EC7n th\xE0nh n\xFAt khi \u0111\xE1nh. V\xE0o l\u1EC1u l\xE0 game t\u1EA1m d\u1EEBng."), bar, this.body);
       this.view = new PlanMapView(c.sim, { onSelect: (id) => {
         this.sel = id;
+        if (this.mode === "path") {
+          this.mode = "pan";
+          this.modeSquad = -1;
+        }
         this.refresh();
-      }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back) => this.drewPath(id, pts, back), onTarget: (id, target) => this.aimed(id, target), onSquadAction: (id, a) => this.squadAction(id, a), onArrow: (id) => this.startDraw("path", id), onRing: () => {
+      }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back) => this.drewPath(id, pts, back), onTarget: (id, target) => this.aimed(id, target), onSquadAction: (id, a) => this.squadAction(id, a), onRing: () => {
         this.panel = null;
         this.mode = "pan";
         this.modeSquad = -1;
@@ -36436,11 +36439,6 @@ body.war .sheet, body.war .bbar {
       const id = this.modeSquad, drewArrow = this.mode === "path" && !!this.attackPlan()?.missions.find((m) => m.squad === id)?.path.length;
       this.mode = "pan";
       this.modeSquad = -1;
-      if (drewArrow && !this.ordered.has(id)) {
-        this.ordered.add(id);
-        this.orderOpen = true;
-        this.cardSquad = -1;
-      }
       this.refresh();
     }
     /** An existing squad is put down again, or stretched, with the cells of a new drag. */
@@ -36501,11 +36499,6 @@ body.war .sheet, body.war .bbar {
     aimed(squad, target) {
       const plan2 = this.attackPlan(), err = plan2 ? this.sim.setMissionTarget(plan2, squad, target) : "L\u1EADp k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng tr\u01B0\u1EDBc";
       this.toast(err ?? `${this.sim.squadById(squad)?.name ?? "\u0110\u1ED9i"} s\u1EBD t\u1EA5n c\xF4ng ${target.label.toLowerCase()}`);
-      if (!err && !this.ordered.has(squad)) {
-        this.ordered.add(squad);
-        this.orderOpen = true;
-        this.cardSquad = -1;
-      }
       this.refresh();
     }
     /** An item of a squad's ring was picked. */
@@ -36514,6 +36507,15 @@ body.war .sheet, body.war .bbar {
       this.sel = squad;
       if (a === "edit") {
         this.startDraw("edit", squad);
+        return;
+      }
+      if (a === "bend") {
+        this.startDraw("path", squad);
+        return;
+      }
+      if (a === "clear") {
+        if (plan2) this.toast(this.sim.setMissionPath(plan2, squad, []));
+        this.refresh();
         return;
       }
       if (a === "trim") {
@@ -36554,6 +36556,10 @@ body.war .sheet, body.war .bbar {
     drewPath(squad, pts, retreat) {
       const plan2 = this.attackPlan();
       if (plan2) this.toast(this.sim.setMissionPath(plan2, squad, pts, retreat));
+      if (!retreat) {
+        this.mode = "pan";
+        this.modeSquad = -1;
+      }
       this.refresh();
     }
     get sim() {
@@ -36598,7 +36604,26 @@ body.war .sheet, body.war .bbar {
       this.key = key;
       this.full.hidden = !this.openTribe;
       if (this.openTribe) this.fillFull();
-      this.body.replaceChildren(...{ plan: () => this.planPage(), defense: () => this.defensePage(), log: () => this.logPage() }[this.tab]());
+      this.body.replaceChildren(...{ plan: () => this.planPage(), defense: () => this.defensePage(), log: () => this.logPage(), guide: () => this.guidePage() }[this.tab]());
+    }
+    // ---------------------------------------------------------------- the guide
+    /** Every step from the first scout to the button that sends the army out, in order. */
+    guidePage() {
+      const steps = [
+        ["D\u1EF1ng nh\xE0 c\u1EA7n thi\u1EBFt", "D\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn (\u0111ang \u1EDF \u0111\xE2y), Tr\u1EA1i trinh s\xE1t v\xE0 \xEDt nh\u1EA5t m\u1ED9t tr\u1EA1i chi\u1EBFn binh. Nghi\xEAn c\u1EE9u nh\u1EEFng c\xF4ng ngh\u1EC7 m\u1EDF c\xE1c nh\xE0 v\xE0 tr\u1EADn ph\xE1p \u0111\xF3 n\u1EBFu b\u1EA3ng nghi\xEAn c\u1EE9u \u0111ang b\u1EADt."],
+        ["T\xECm l\xE0ng \u0111\u1ECBch", "B\u1EA5t k\u1EF3 ai c\u1EE7a l\xE0ng \u0111i t\u1EDBi g\u1EA7n m\u1ED9t l\xE0ng l\u1EA1 r\u1ED3i v\u1EC1 t\u1EDBi \u0111\u1ED1ng l\u1EEDa s\u1EBD b\xE1o tin: l\xE0ng \u0111\xF3 hi\u1EC7n trong danh s\xE1ch l\xE0ng c\u1EE7a trang K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng, ch\u1EC9 c\xF3 h\u01B0\u1EDBng v\xE0 kho\u1EA3ng c\xE1ch. Ng\u01B0\u1EDDi ch\u1EBFt d\u1ECDc \u0111\u01B0\u1EDDng th\xEC tin ch\u1EBFt theo."],
+        ["C\u1EED trinh s\xE1t v\u1EBD b\u1EA3n \u0111\u1ED3", "\u1EDE Tr\u1EA1i trinh s\xE1t, cho d\xE2n l\xE0m trinh s\xE1t r\u1ED3i c\u1EED h\u1ECD t\u1EDBi l\xE0ng \u0111\xF3. C\xE0ng nhi\u1EC1u trinh s\xE1t c\xE0ng \xEDt ch\u1ED7 h\u1EDF. C\xF3 ba c\u1EA5p b\u1EA3n \u0111\u1ED3: 1 l\xE0 v\u1ECB tr\xED v\xE0 \u0111\u1ED1ng l\u1EEDa, 2 th\xEAm c\xF4ng tr\xECnh v\xE0 b\xF3ng ng\u01B0\u1EDDi, 3 th\xEAm l\xEDnh t\u1EEBng lo\u1EA1i, kho l\u01B0\u01A1ng v\xE0 th\u1EE7 l\u0129nh. B\u1EA3n \u0111\u1ED3 c\u0169 d\u1EA7n theo ng\xE0y; qu\xE1 c\u0169 th\xEC kh\xF4ng d\xF9ng \u0111\u01B0\u1EE3c n\u1EEFa."],
+        ["Tuy\u1EC3n v\xE0 trang b\u1ECB l\xEDnh", "Giao vai tr\xF2 chi\u1EBFn binh \u1EDF tr\u1EA1i chi\u1EBFn binh, ch\u1EBF v\u0169 kh\xED v\xE0 gi\xE1p \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o, ph\xE1t cho l\xEDnh. L\xEDnh c\u1EA7n kh\u1ECFe, kh\xF4ng b\u1ECB th\u01B0\u01A1ng v\xE0 kh\xF4ng ng\u1EE7 say h\u1ED3i s\u1EE9c m\u1EDBi ra tr\u1EADn \u0111\u01B0\u1EE3c."],
+        ["M\u1EDF b\u1EA3n \u0111\u1ED3 l\xE0ng", 'Trang "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng": b\u1EA5m v\xE0o l\xE0ng \u0111\xE3 c\xF3 b\u1EA3n \u0111\u1ED3. B\u1EA3n \u0111\u1ED3 m\u1EDF to\xE0n m\xE0n h\xECnh; k\xE9o \u0111\u1EC3 di chuy\u1EC3n, cu\u1ED9n ho\u1EB7c hai ng\xF3n \u0111\u1EC3 ph\xF3ng to thu nh\u1ECF.'],
+        ["L\u1EADp \u0111\u1ED9i", "Nh\u1EA5n gi\u1EEF m\u1ED9t ch\u1ED7 tr\u1ED1ng tr\xEAn b\u1EA3n \u0111\u1ED3: v\xF2ng tr\u1EADn ph\xE1p hi\u1EC7n ra, r\xEA t\u1EDBi m\u1ED9t tr\u1EADn r\u1ED3i th\u1EA3. Sau \u0111\xF3 k\xE9o t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn \u0111\u1EC3 v\u1EBD \u0111\u1ED9i h\xECnh, t\u1EEB 3 \u0111\u1EBFn 15 \xF4. M\u1ED7i \xF4 l\xE0 ch\u1ED7 c\u1EE7a m\u1ED9t l\xEDnh."],
+        ["\u0110\u01B0a l\xEDnh v\xE0o \u0111\u1ED9i", 'Nh\u1EA5n gi\u1EEF \u0111\u1ED9i, ch\u1ECDn "L\xEDnh", r\u1ED3i b\u1EA5m d\u1EA5u \uFF0B b\xEAn ph\u1EA3i t\xEAn m\u1ED7i l\xEDnh ch\u01B0a c\xF3 \u0111\u1ED9i. \u0110\u1ED9i c\u1EA7n \u0111\u1EE7 l\xEDnh cho s\u1ED1 \xF4 \u0111\xE3 v\u1EBD; \xF4 th\u1EEBa th\xEC d\xF9ng "S\u1EEDa" ho\u1EB7c "X\xF3a \xF4" \u0111\u1EC3 b\u1EDBt.'],
+        ["Ch\u1ECDn m\u1EE5c ti\xEAu", "B\u1EA5m v\xE0o \u0111\u1ED9i \u0111\u1EC3 ch\u1ECDn, r\u1ED3i b\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi tr\xEAn b\u1EA3n \u0111\u1ED3: m\u0169i t\xEAn ch\u1EA1y t\u1EEB \u0111\u1ED9i t\u1EDBi \u0111\xF3 v\xE0 \u0111\u1EA7u m\u0169i t\xEAn n\u1EB1m c\u1ED1 \u0111\u1ECBnh tr\xEAn m\u1EE5c ti\xEAu. Nh\u1EA5n gi\u1EEF m\u0169i t\xEAn \u0111\u1EC3 S\u1EEDa (k\xE9o c\xE1c ch\u1EA5m gi\u1EEFa, t\u1ED1i \u0111a 3 ch\u1ED7 g\u1EA5p kh\xFAc) ho\u1EB7c X\xF3a. Mu\u1ED1n \u0111\u1ED5i m\u1EE5c ti\xEAu th\xEC ch\u1ECDn l\u1EA1i \u0111\u1ED9i v\xE0 m\u1EE5c ti\xEAu kh\xE1c."],
+        ["V\u1EADt c\u1EA3n tr\xEAn \u0111\u01B0\u1EDDng", "\u0110o\u1EA1n m\u0169i t\xEAn m\xE0u \u0111\u1ECF l\xE0 ch\u1ED7 c\xF3 v\u1EADt c\u1EA3n. C\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3: l\u1EADp m\u1ED9t \u0111\u1ED9i h\u1EADu c\u1EA7n, t\u1EE9c m\u1ED9t \u0111\u1ED9i c\xF3 l\xEDnh nh\u01B0ng kh\xF4ng v\u1EBD m\u0169i t\xEAn; n\xF3 \u0111i tr\u01B0\u1EDBc ph\xE1 h\u1EBFt m\u1ED9t l\u1EA7n r\u1ED3i v\u1EC1 ch\u1ED7 c\u0169. N\u01B0\u1EDBc v\xE0 c\xF4ng tr\xECnh c\u1EE7a l\xE0ng kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c: h\xE3y u\u1ED1n m\u0169i t\xEAn \u0111i v\xF2ng."],
+        ["Ra l\u1EC7nh cho \u0111\u1ED9i", 'Nh\u1EA5n gi\u1EEF \u0111\u1ED9i, ch\u1ECDn "L\u1EC7nh": th\xE1i \u0111\u1ED9 khi t\u1EDBi n\u01A1i, gi\u1EDD xu\u1EA5t ph\xE1t ho\u1EB7c ch\u1EDD \u0111\u1ED9i kh\xE1c hay t\xEDn hi\u1EC7u, khi n\xE0o r\xFAt lui v\xE0 \u0111\u01B0\u1EDDng r\xFAt. Th\u1EBB l\u1EC7nh b\u1EA1n g\u1EAFn v\xE0o k\u1EBF ho\u1EA1ch s\u1EBD th\xE0nh n\xFAt khi \u0111\xE1nh.'],
+        ["Tri\u1EC3n khai", 'B\u1EA5m "\u2694 Tri\u1EC3n khai tr\u1EADn chi\u1EBFn" v\xE0 \u0111\u1ECDc b\xE1o c\xE1o c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn: c\xE1c d\xF2ng \u2717 l\xE0 \u0111i\u1EC1u \u0111ang ch\u1EB7n, s\u1EEDa xong m\u1EDBi x\xE1c nh\u1EADn \u0111\u01B0\u1EE3c. Sau khi x\xE1c nh\u1EADn, qu\xE2n v\xE0o v\u1ECB tr\xED v\xE0 ch\u1EDD; b\u1EA1n b\u1EA5m "\u0110\xE1nh" ho\u1EB7c "R\xFAt" ngay tr\xEAn m\xE0n h\xECnh game.'],
+        ["Th\u1EAFng v\xE0 thua", "Th\u1EAFng khi l\xE0ng \u0111\u1ECBch h\u1EBFt l\xEDnh, l\u1EEDa t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh s\u1EADp. Thua khi qu\xE2n ta h\u1EBFt l\xEDnh ho\u1EB7c r\xFAt lui. Trong tr\u1EADn, l\xEDnh kh\xF4ng ng\u1EE7; tr\u1EDDi t\u1ED1i, s\u01B0\u01A1ng hay m\u01B0a l\xE0m h\u1ECD th\u1EA5y ng\u1EAFn h\u01A1n tr\u1EEB khi c\u1EA7m \u0111u\u1ED1c, cung th\u1EE7 nh\xECn xa h\u01A1n m\u1ED9t ch\xFAt."]
+      ];
+      return [h("div", { class: "guide" }, ...steps.map(([title, text], i) => h("div", { class: "gstep" }, h("b", { text: `${i + 1}. ${title}` }), h("p", { class: "sub", text }))))];
     }
     // ---------------------------------------------------------------- the maps we hold
     ageWords(at) {
@@ -36731,17 +36756,10 @@ body.war .sheet, body.war .bbar {
     fillBar(plan2) {
       const { sim: sim2 } = this, id = this.mode === "pan" ? this.sel : this.modeSquad;
       const named = plan2?.missions.some((m) => m.squad === id && m.deploy) ? sim2.squadById(id) : void 0;
-      this.bar.hidden = !plan2 || !named || this.mode === "pan";
-      if (!plan2 || !named || this.mode === "pan") return;
+      this.bar.hidden = !plan2 || !named || this.mode === "pan" || this.mode === "path";
+      if (!plan2 || !named || this.mode === "pan" || this.mode === "path") return;
       const kids = [h("b", { text: named.name })];
       {
-        const what = {
-          edit: "\u0111\u1ED9i h\xECnh: r\xEA chu\u1ED9t \u0111\u1EC3 \u0111\u1ED5i \u0111\u1ED9 d\xE0i ho\u1EB7c b\xE1n k\xEDnh, k\xE9o ch\u1EA5m tr\u1EAFng \u1EDF g\u1ED1c \u0111\u1EC3 d\u1EDDi c\u1EA3 \u0111\u1ED9i h\xECnh, b\u1EA5m \u0111\u1EC3 ch\u1ED1t (\xEDt nh\u1EA5t 3 \xF4)",
-          trim: "\u0111\u1ED9i h\xECnh: b\u1EA5m v\xE0o \xF4 mu\u1ED1n b\u1ECF, \xEDt nh\u1EA5t c\xF2n 3 \xF4",
-          path: "m\u0169i t\xEAn: k\xE9o ch\u1EA5m tr\xF2n nh\u1ECF gi\u1EEFa m\u1ED7i \u0111o\u1EA1n \u0111\u1EC3 u\u1ED1n \u0111\u01B0\u1EDDng (t\u1ED1i \u0111a 3 ch\u1ED7 g\u1EA5p kh\xFAc), b\u1EA5m chu\u1ED9t ph\u1EA3i v\xE0o m\u1ED9t ch\u1EA5m \u0111\u1EC3 b\u1ECF ch\u1EA5m \u0111\xF3. \u0110i\u1EC3m \u0111\u1EA7u v\xE0 \u0111\u1EA7u m\u0169i t\xEAn c\u1ED1 \u0111\u1ECBnh: mu\u1ED1n \u0111\u1ED5i m\u1EE5c ti\xEAu, b\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi kh\xE1c. N\xFAt X\xF3a b\u1ECF m\u0169i t\xEAn: \u0111\u1ED9i th\xE0nh \u0111\u1ED9i h\u1EADu c\u1EA7n",
-          retreat: "\u0111\u01B0\u1EDDng r\xFAt: b\u1EA5m n\u01A1i \u0111\u1ED9i r\xFAt v\u1EC1, r\u1ED3i k\xE9o c\xE1c ch\u1EA5m nh\u01B0 m\u0169i t\xEAn"
-        }[this.mode];
-        kids.push(h("span", { text: `V\u1EBD ${what}. Chu\u1ED9t ph\u1EA3i k\xE9o ho\u1EB7c hai ng\xF3n \u0111\u1EC3 di chuy\u1EC3n b\u1EA3n \u0111\u1ED3.` }));
         if (this.mode === "edit") kids.push(this.chip("H\u1EE7y", false, () => this.stopDraw()));
         else if (this.mode === "trim") kids.push(this.chip("Xong", true, () => this.stopDraw()));
         else kids.push(this.chip("X\xF3a", false, () => {
@@ -36775,8 +36793,6 @@ body.war .sheet, body.war .bbar {
         ),
         ...f.blocked ? [h("div", { class: "psec" }, h("b", { text: "\u2717 Ch\u01B0a th\u1EC3 tri\u1EC3n khai:" }), ...f.blocked.split("\n").map((x) => h("p", { class: "why", text: x })))] : [],
         ...list("\u26A0 C\u1EA3nh b\xE1o", f.warnings),
-        ...list("N\u1EBFu th\u1EAFng", f.win),
-        ...list("N\u1EBFu thua", f.lose),
         h("details", { open: true }, h("summary", { text: "B\xE1o c\xE1o chi ti\u1EBFt" }), ...f.lines.map((x) => h("p", { class: "sub", text: x }))),
         h(
           "div",
