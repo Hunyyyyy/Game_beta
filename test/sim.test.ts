@@ -1758,11 +1758,26 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
     sm.setMissionPath(plan, a.id, [{ x: ox + 30, y: oy - 1 }]);
     const m = plan.missions[0], r = sm.routeTime(a, sm.missionStart(m)!, m.path);
     ok(r.hits[0]?.kind === 'rock', 'the leg that runs into a rock is marked');
-    ok(sm.reviewPlan(plan).some((l) => l.startsWith('✗') && /vướng đá/.test(l)) && sm.startPlan(plan) !== null, 'and it stops the plan until the rock is dealt with');
-    ok(sm.addClear(plan, b.id, ox + 14, oy - 1) === null && sm.reviewPlan(plan).every((l) => !l.startsWith('✗')), 'sending a squad to break it clears the way');
-    ok(sm.startPlan(plan) === null, 'the plan starts');
-    tickN(sm, 300, () => plan.stage === 'ready' && !sm.world.nodes.has((oy - 1) * sm.world.size + ox + 14));
-    ok(!sm.world.nodes.has((oy - 1) * sm.world.size + ox + 14), 'the rock is broken while the army forms up');
+    ok(sm.reviewPlan(plan).some((l) => l.startsWith('✗') && /vướng đá.*đội hậu cần/.test(l)) && sm.startPlan(plan) !== null, 'and it stops the plan until there is a supply squad');
+    const b0 = sm.squadUnits(b).slice(0, 3), bpos = b0.map((v) => ({ x: v.x, y: v.y }));
+    sm.addMission(plan, b.id);
+    ok(sm.isLogistics(plan, plan.missions[1]) && !sm.isLogistics(plan, plan.missions[0]) && sm.reviewPlan(plan).every((l) => !l.startsWith('✗')), 'a squad with no arrow is the supply squad, and with one the way can be cleared');
+    ok(sm.startPlan(plan) === null && plan.clears.length > 0, 'the plan starts with a list of things to clear');
+    tickN(sm, 400, () => plan.stage === 'ready');
+    ok(plan.stage === 'ready' && !sm.world.nodes.has((oy - 1) * sm.world.size + ox + 14) && plan.clears.length === 0, 'the rock is broken, once, before the army is ready');
+    ok(b0.every((v, i) => !v.breaks && Math.hypot(v.x - bpos[i].x, v.y - bpos[i].y) < 4), 'and the supply soldiers are back where they stood');
+    sm.engagePlan(plan); tickN(sm, 2);
+    ok(plan.missions[1].state === 'done' && plan.status === 'running', 'the supply squad does not go to war');
+  }
+  {
+    // the supply squad is wiped out while it works: the army is not left waiting for ever
+    const { sm, plan, a, b, cells, ox, oy } = setup();
+    sm.deploySquad(plan, a.id, undefined, cells, 0, cells[0], cells[cells.length - 1]);
+    plant(sm, 'rock', ox + 14, oy - 1); sm.setMissionPath(plan, a.id, [{ x: ox + 30, y: oy - 1 }]); sm.addMission(plan, b.id);
+    ok(sm.startPlan(plan) === null, 'the plan starts'); sm.dev.god = false;
+    for (const v of sm.squadUnits(b)) sm.killUnit(v, 'test');
+    tickN(sm, 400, () => plan.stage === 'ready');
+    ok(plan.stage === 'ready' && sm.world.nodes.has((oy - 1) * sm.world.size + ox + 14), 'with no supply soldier left the army forms up anyway, the rock left for the halted squad');
   }
   {
     // soldiers keep to the arrow: a tree appears in front of them and they halt, say so, and go on when some of them have cut it down

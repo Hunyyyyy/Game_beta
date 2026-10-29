@@ -146,8 +146,12 @@ export const WAR = {
   setMissionTarget(this: Sim, plan: Plan, squadId: number, target: MissionTarget): string | null { return warplan.setMissionTarget(this, plan, squadId, target); },
   /** The village of `id` has lost the war: its people give up and ask for mercy (take them in, or make them pay tribute). */
   conquer(this: Sim, id: string, why: string): void { const t = tribeOf(this, id as never); if (t && t.state === 'free') surrender(this, t, why); },
-  /** → warplan.addClear */
-  addClear(this: Sim, plan: Plan, squadId: number, x: number, y: number): string | null { return warplan.addClear(this, plan, squadId, x, y); },
+  /** → siege.corridorBlocks */
+  corridorBlocks(this: Sim, start: Pt, pts: readonly Pt[], target?: Pt): Obstacle[] { return siege.corridorBlocks(this, start, pts, target); },
+  /** → warplan.cancelPlan */
+  cancelPlan(this: Sim, plan: Plan): string | null { return warplan.cancelPlan(this, plan); },
+  /** → warplan.isLogistics */
+  isLogistics(this: Sim, plan: Plan, m: Mission): boolean { return warplan.isLogistics(plan, m); },
   /** → warplan.canTarget */
   canTarget(this: Sim, objective: Objective, tribe: string | null): boolean { return warplan.canTarget(this, objective, tribe); },
 };

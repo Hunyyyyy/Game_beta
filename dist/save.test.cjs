@@ -6117,7 +6117,8 @@ function deploySquad(sim, plan2, squadId, kind, cells, heading, o, p) {
 function setMissionPath(sim, plan2, squadId, pts, retreat = false) {
   const m = drawable(sim, plan2, squadId);
   if (typeof m === "string") return m;
-  const list = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
+  let list = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
+  if (!retreat && list.length > 4) list = [...list.slice(0, 3), list[list.length - 1]];
   if (retreat) {
     m.retreat = list;
     return null;
@@ -6205,11 +6206,12 @@ function reviewPlan(sim, plan2) {
   for (const m of plan2.missions) {
     const s = sim.squadById(m.squad), n = s ? sim.squadUnits(s).length : 0, name = s?.name ?? "?";
     if (!n) out.push(`\u2717 ${name} ch\u01B0a c\xF3 l\xEDnh.`);
+    else if (isLogistics(plan2, m)) out.push(`${name} l\xE0 \u0111\u1ED9i h\u1EADu c\u1EA7n (kh\xF4ng c\xF3 m\u0169i t\xEAn): \u0111i tr\u01B0\u1EDBc ph\xE1 v\u1EADt c\u1EA3n tr\xEAn \u0111\u01B0\u1EDDng c\xE1c \u0111\u1ED9i kh\xE1c r\u1ED3i v\u1EC1 ch\u1ED7 c\u0169, kh\xF4ng ra tr\u1EADn.`);
     else if (plan2.kind === "attack" && !m.path.length && !canTarget(sim, m.objective, plan2.tribe)) out.push(`\u2717 ${name} nh\u1EAFm "${OBJECTIVE_NAME[m.objective]}" nh\u01B0ng b\u1EA3n \u0111\u1ED3 ch\u01B0a \u0111\u1EE7 c\u1EA5p.`);
     else if (plan2.kind === "attack" && !m.path.length) out.push(`${name} ch\u01B0a c\xF3 m\u1EE5c ti\xEAu: b\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi tr\xEAn b\u1EA3n \u0111\u1ED3, n\u1EBFu kh\xF4ng s\u1EBD ti\u1EBFn th\u1EB3ng v\xE0o \u0111\u1ED1ng l\u1EEDa c\u1EE7a \u0111\u1ECBch.`);
     if (n && m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
     if (n && m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
-    if (n && m.deploy && n < m.deploy.cells.length) out.push(`\u2717 ${name} m\u1EDBi c\xF3 ${n}/${m.deploy.cells.length} l\xEDnh cho ${m.deploy.cells.length} \xF4 \u0111\u1ED9i h\xECnh: th\xEAm l\xEDnh v\xE0o \u0111\u1ED9i ho\u1EB7c b\u1EDBt \xF4 (\u2702 B\u1EDBt \xF4).`);
+    if (n && m.deploy && n < m.deploy.cells.length && !isLogistics(plan2, m)) out.push(`\u2717 ${name} m\u1EDBi c\xF3 ${n}/${m.deploy.cells.length} l\xEDnh cho ${m.deploy.cells.length} \xF4 \u0111\u1ED9i h\xECnh: th\xEAm l\xEDnh v\xE0o \u0111\u1ED9i ho\u1EB7c b\u1EDBt \xF4 (\u2702 B\u1EDBt \xF4).`);
     const unfit = s ? sim.squadUnits(s).filter((v) => v.down > 0 || sim.sleepLocked(v)).length : 0;
     if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
     if (s && n && !sim.squadCenter(s)) out.push(`${name} ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng.`);
@@ -6223,16 +6225,24 @@ function reviewPlan(sim, plan2) {
   }
   return out;
 }
+function isLogistics(plan2, m) {
+  return plan2.kind === "attack" && !m.path.length && !m.target && plan2.missions.some((x) => x.path.length > 0);
+}
+function supplyUnits(sim, plan2) {
+  return plan2.missions.filter((m) => isLogistics(plan2, m)).flatMap((m) => {
+    const s = sim.squadById(m.squad);
+    return s ? sim.squadUnits(s) : [];
+  });
+}
 function obstacleLines(sim, plan2, m, name) {
   const out = [], start = sim.missionStart(m);
   if (start && m.path.length) {
-    const hits = sim.pathHits(start, m.path, m.target?.kind === "prop" ? m.target.at : void 0), seen = /* @__PURE__ */ new Set();
+    const hits = sim.pathHits(start, m.path, m.target?.kind === "prop" ? m.target.at : void 0), seen = /* @__PURE__ */ new Set(), crew2 = supplyUnits(sim, plan2).length > 0;
     for (const o of hits) {
       if (!o || o.kind === "enemy" || seen.has(`${o.x},${o.y}`)) continue;
       seen.add(`${o.x},${o.y}`);
-      const sent = plan2.clears.some((c) => c.x === o.x && c.y === o.y && !!sim.squadById(c.squad));
       if (!o.clear) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label} \u1EDF (${o.x}, ${o.y}), kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c: h\xE3y u\u1ED1n m\u0169i t\xEAn \u0111i v\xF2ng.`);
-      else if (!sent) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label} \u1EDF (${o.x}, ${o.y}): c\u1EED m\u1ED9t \u0111\u1ED9i \u0111i ph\xE1 tr\u01B0\u1EDBc khi \u0111\xE1nh (n\xFAt \u{1FA93} tr\xEAn b\u1EA3n \u0111\u1ED3).`);
+      else if (!crew2) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label} \u1EDF (${o.x}, ${o.y}): c\u1EA7n m\u1ED9t \u0111\u1ED9i h\u1EADu c\u1EA7n (m\u1ED9t \u0111\u1ED9i kh\xF4ng v\u1EBD m\u0169i t\xEAn) c\xF3 l\xEDnh \u0111\u1EC3 ph\xE1 tr\u01B0\u1EDBc khi \u0111\xE1nh.`);
     }
   }
   if (m.deploy) {
@@ -6243,25 +6253,33 @@ function obstacleLines(sim, plan2, m, name) {
   }
   return out;
 }
+function listClears(sim, plan2) {
+  const todo = /* @__PURE__ */ new Map(), crew2 = plan2.missions.find((m) => isLogistics(plan2, m))?.squad ?? -1;
+  for (const m of plan2.missions) {
+    const s = sim.squadById(m.squad), start = sim.missionStart(m);
+    if (!s || !start || !m.path.length) continue;
+    for (const o of sim.corridorBlocks(start, m.path, m.target?.kind === "prop" ? m.target.at : void 0)) todo.set(o.y * sim.world.size + o.x, { squad: crew2, x: o.x, y: o.y });
+  }
+  plan2.clears = [...todo.values()].slice(0, 80);
+}
 function crewClears(sim, plan2) {
   plan2.clears = plan2.clears.filter((c) => {
     const o = sim.obstacleAt(c.x, c.y);
-    return !!o && o.clear && !!sim.squadById(c.squad);
+    return !!o && o.clear;
   });
-  for (const c of plan2.clears) {
-    const s = sim.squadById(c.squad), ob = sim.obstacleAt(c.x, c.y);
-    if (sim.squadUnits(s).some((v) => v.breaks?.x === c.x && v.breaks?.y === c.y)) continue;
-    const crew2 = sim.squadUnits(s).filter((v) => !v.breaks).sort((a, b) => Math.hypot(a.x - c.x, a.y - c.y) - Math.hypot(b.x - c.x, b.y - c.y)).slice(0, SIEGE.crew);
-    for (const v of crew2) sim.startBreaking(v, ob, v.fight.anchor ?? void 0);
+  const crew2 = supplyUnits(sim, plan2), busy2 = new Set(crew2.filter((v) => v.breaks).map((v) => `${v.breaks.x},${v.breaks.y}`));
+  if (!crew2.length) return;
+  for (const v of crew2) {
+    if (v.breaks) continue;
+    const c = plan2.clears.filter((q) => !busy2.has(`${q.x},${q.y}`)).sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
+    if (!c) break;
+    busy2.add(`${c.x},${c.y}`);
+    sim.startBreaking(v, sim.obstacleAt(c.x, c.y), v.fight.anchor ?? { x: v.x, y: v.y });
   }
 }
-function addClear(sim, plan2, squadId, x, y) {
-  if (plan2.status === "running") return "K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y";
-  const s = sim.squadById(squadId), o = sim.obstacleAt(x, y);
-  if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
-  if (!o || !o.clear || o.kind === "enemy") return "Kh\xF4ng c\xF3 g\xEC \u0111\u1EC3 ph\xE1 \u1EDF \u0111\xF3";
-  plan2.clears = plan2.clears.filter((c) => !(c.x === x && c.y === y));
-  plan2.clears.push({ squad: squadId, x, y });
+function cancelPlan(sim, plan2) {
+  if (plan2.status === "running") return "K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y: h\xE3y r\xFAt qu\xE2n tr\u01B0\u1EDBc";
+  sim.plans.splice(sim.plans.indexOf(plan2), 1);
   return null;
 }
 function objectivePos(sim, plan2, m) {
@@ -6372,7 +6390,7 @@ function assemble(sim, s, d) {
   });
 }
 function assembled(sim, plan2) {
-  return plan2.missions.every((m) => {
+  return (!plan2.clears.length || !supplyUnits(sim, plan2).length) && plan2.missions.every((m) => {
     const s = sim.squadById(m.squad);
     return !s || sim.squadUnits(s).every((v) => !v.breaks && (!v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5));
   });
@@ -6444,12 +6462,17 @@ function startPlan(sim, plan2) {
     m.leg = 0;
     m.block = null;
     if (m.deploy) assemble(sim, s, m.deploy);
+    else if (isLogistics(plan2, m)) for (const v of sim.squadUnits(s)) {
+      v.fight.mode = "guard";
+      v.fight.anchor = { x: v.x, y: v.y };
+    }
   }
   plan2.status = "running";
   plan2.stage = "assemble";
   plan2.startedAt = sim.time;
   plan2.signal = false;
   plan2.result = "";
+  listClears(sim, plan2);
   crewClears(sim, plan2);
   sim.say(`Tri\u1EC3n khai qu\xE2n \u0111\xE1nh ${sim.tribes.find((t) => t.id === plan2.tribe)?.def.name ?? ""} b\u1EAFt \u0111\u1EA7u.`);
   return null;
@@ -6519,7 +6542,7 @@ function tickPlans(sim, dt) {
     const second = Math.floor(sim.time) !== Math.floor(sim.time - dt), half = Math.floor(sim.time * 2) !== Math.floor((sim.time - dt) * 2);
     for (const m of plan2.missions) {
       const s = sim.squadById(m.squad);
-      if (!s || !sim.squadUnits(s).length) {
+      if (!s || !sim.squadUnits(s).length || isLogistics(plan2, m)) {
         if (m.state !== "done") {
           m.state = "done";
         }
@@ -6814,6 +6837,22 @@ function pathHits(sim, start, pts, target) {
     at = p;
     return o;
   });
+}
+function corridorBlocks(sim, start, pts, target) {
+  const out = /* @__PURE__ */ new Map(), N = sim.world.size;
+  let at = start;
+  for (const p of pts) {
+    const d = Math.hypot(p.x - at.x, p.y - at.y), n = Math.max(1, Math.ceil(d * 2));
+    for (let i = 0; i <= n; i++) {
+      const cx = Math.floor(at.x + (p.x - at.x) * i / n), cy = Math.floor(at.y + (p.y - at.y) * i / n);
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const o = obstacleAt(sim, cx + dx, cy + dy);
+        if (o && o.clear && o.kind !== "enemy" && !(target && Math.hypot(o.x - target.x, o.y - target.y) < 2)) out.set(o.y * N + o.x, o);
+      }
+    }
+    at = p;
+  }
+  return [...out.values()];
 }
 function lineSteps(sim, from, to) {
   const out = [], d = Math.hypot(to.x - from.x, to.y - from.y), n = Math.ceil(d * 2);
@@ -7341,9 +7380,17 @@ var WAR = {
     const t = tribeOf(this, id);
     if (t && t.state === "free") surrender(this, t, why);
   },
-  /** → warplan.addClear */
-  addClear(plan2, squadId, x, y) {
-    return addClear(this, plan2, squadId, x, y);
+  /** → siege.corridorBlocks */
+  corridorBlocks(start, pts, target) {
+    return corridorBlocks(this, start, pts, target);
+  },
+  /** → warplan.cancelPlan */
+  cancelPlan(plan2) {
+    return cancelPlan(this, plan2);
+  },
+  /** → warplan.isLogistics */
+  isLogistics(plan2, m) {
+    return isLogistics(plan2, m);
   },
   /** → warplan.canTarget */
   canTarget(objective, tribe) {

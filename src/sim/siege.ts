@@ -62,6 +62,24 @@ export function pathHits(sim: Sim, start: Pt, pts: readonly Pt[], target?: Pt): 
   return pts.map((p) => { const o = firstBlock(sim, at, p, Infinity, skip); at = p; return o; });
 }
 
+/** Every tree, rock or bush within two tiles of an arrow (the width of a formation), nearest to the start first: what the supply squad clears. */
+export function corridorBlocks(sim: Sim, start: Pt, pts: readonly Pt[], target?: Pt): Obstacle[] {
+  const out = new Map<number, Obstacle>(), N = sim.world.size;
+  let at = start;
+  for (const p of pts) {
+    const d = Math.hypot(p.x - at.x, p.y - at.y), n = Math.max(1, Math.ceil(d * 2));
+    for (let i = 0; i <= n; i++) {
+      const cx = Math.floor(at.x + ((p.x - at.x) * i) / n), cy = Math.floor(at.y + ((p.y - at.y) * i) / n);
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const o = obstacleAt(sim, cx + dx, cy + dy);
+        if (o && o.clear && o.kind !== 'enemy' && !(target && Math.hypot(o.x - target.x, o.y - target.y) < 2)) out.set(o.y * N + o.x, o);
+      }
+    }
+    at = p;
+  }
+  return [...out.values()];
+}
+
 /** The straight run of tiles from a walker to a point, up to the first shut tile (not included). */
 export function lineSteps(sim: Sim, from: Pt, to: Pt): Array<[number, number]> {
   const out: Array<[number, number]> = [], d = Math.hypot(to.x - from.x, to.y - from.y), n = Math.ceil(d * 2);

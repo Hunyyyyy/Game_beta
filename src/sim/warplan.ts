@@ -69,7 +69,8 @@ export function deploySquad(sim: Sim, plan: Plan, squadId: number, kind: Formati
 export function setMissionPath(sim: Sim, plan: Plan, squadId: number, pts: readonly Pt[], retreat = false): string | null {
   const m = drawable(sim, plan, squadId);
   if (typeof m === 'string') return m;
-  const list = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
+  let list = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
+  if (!retreat && list.length > 4) list = [...list.slice(0, 3), list[list.length - 1]]; // at most three bends, and the head
   if (retreat) { m.retreat = list; return null; }
   // an arrow that points at something keeps its head on it: only the points between can be moved, and clearing the arrow lets go of the target
   if (m.target && list.length) list[list.length - 1] = { ...m.target.at };
@@ -165,11 +166,12 @@ export function reviewPlan(sim: Sim, plan: Plan): string[] {
   for (const m of plan.missions) {
     const s = sim.squadById(m.squad), n = s ? sim.squadUnits(s).length : 0, name = s?.name ?? '?';
     if (!n) out.push(`✗ ${name} chưa có lính.`);
+    else if (isLogistics(plan, m)) out.push(`${name} là đội hậu cần (không có mũi tên): đi trước phá vật cản trên đường các đội khác rồi về chỗ cũ, không ra trận.`);
     else if (plan.kind === 'attack' && !m.path.length && !canTarget(sim, m.objective, plan.tribe)) out.push(`✗ ${name} nhắm "${OBJECTIVE_NAME[m.objective]}" nhưng bản đồ chưa đủ cấp.`);
     else if (plan.kind === 'attack' && !m.path.length) out.push(`${name} chưa có mục tiêu: bấm vào công trình hoặc người trên bản đồ, nếu không sẽ tiến thẳng vào đống lửa của địch.`);
     if (n && m.trigger.kind === 'signal' && !plan.cards.some((c) => c.kind === 'signal')) out.push(`${name} chờ tín hiệu mà kế hoạch không có thẻ Phát tín hiệu: sẽ không bao giờ xuất phát.`);
     if (n && m.trigger.kind === 'after' && !plan.missions.some((x) => x.squad === (m.trigger as { squad: number }).squad)) out.push(`✗ ${name} chờ một đội không có trong kế hoạch.`);
-    if (n && m.deploy && n < m.deploy.cells.length) out.push(`✗ ${name} mới có ${n}/${m.deploy.cells.length} lính cho ${m.deploy.cells.length} ô đội hình: thêm lính vào đội hoặc bớt ô (✂ Bớt ô).`);
+    if (n && m.deploy && n < m.deploy.cells.length && !isLogistics(plan, m)) out.push(`✗ ${name} mới có ${n}/${m.deploy.cells.length} lính cho ${m.deploy.cells.length} ô đội hình: thêm lính vào đội hoặc bớt ô (✂ Bớt ô).`);
     const unfit = s ? sim.squadUnits(s).filter((v) => v.down > 0 || sim.sleepLocked(v)).length : 0;
     if (unfit) out.push(`✗ ${name}: ${unfit} lính đang bị thương hoặc ngủ say hồi sức, chưa đi được: đợi họ khỏe hoặc đưa ra khỏi đội.`);
     if (s && n && !sim.squadCenter(s)) out.push(`${name} chưa có chỗ đứng.`);
@@ -184,17 +186,26 @@ export function reviewPlan(sim: Sim, plan: Plan): string[] {
   return out;
 }
 
+/** A squad with no arrow in a plan whose other squads have one is the supply squad (đội hậu cần): it does not fight, it goes ahead and clears the way for the rest. */
+export function isLogistics(plan: Plan, m: Mission): boolean {
+  return plan.kind === 'attack' && !m.path.length && !m.target && plan.missions.some((x) => x.path.length > 0);
+}
+
+/** Supply squads of the plan that still have soldiers. */
+function supplyUnits(sim: Sim, plan: Plan): Array<ReturnType<Sim['squadUnits']>[number]> {
+  return plan.missions.filter((m) => isLogistics(plan, m)).flatMap((m) => { const s = sim.squadById(m.squad); return s ? sim.squadUnits(s) : []; });
+}
+
 /** What stands in the way of a squad of the plan: on its arrow (red: soldiers keep to the arrow and halt there) and in the cells of its formation. Lines that start with ✗ stop the plan from starting. */
 function obstacleLines(sim: Sim, plan: Plan, m: Mission, name: string): string[] {
   const out: string[] = [], start = sim.missionStart(m);
   if (start && m.path.length) {
-    const hits = sim.pathHits(start, m.path, m.target?.kind === 'prop' ? m.target.at : undefined), seen = new Set<string>();
+    const hits = sim.pathHits(start, m.path, m.target?.kind === 'prop' ? m.target.at : undefined), seen = new Set<string>(), crew = supplyUnits(sim, plan).length > 0;
     for (const o of hits) {
       if (!o || o.kind === 'enemy' || seen.has(`${o.x},${o.y}`)) continue;
       seen.add(`${o.x},${o.y}`);
-      const sent = plan.clears.some((c) => c.x === o.x && c.y === o.y && !!sim.squadById(c.squad));
       if (!o.clear) out.push(`✗ ${name}: mũi tên vướng ${o.label} ở (${o.x}, ${o.y}), không phá được: hãy uốn mũi tên đi vòng.`);
-      else if (!sent) out.push(`✗ ${name}: mũi tên vướng ${o.label} ở (${o.x}, ${o.y}): cử một đội đi phá trước khi đánh (nút 🪓 trên bản đồ).`);
+      else if (!crew) out.push(`✗ ${name}: mũi tên vướng ${o.label} ở (${o.x}, ${o.y}): cần một đội hậu cần (một đội không vẽ mũi tên) có lính để phá trước khi đánh.`);
     }
   }
   if (m.deploy) {
@@ -206,25 +217,35 @@ function obstacleLines(sim: Sim, plan: Plan, m: Mission, name: string): string[]
   return out;
 }
 
-/** Send the tree-cutters: for each thing in the plan's clearing list that still stands, a crew of the squad that was named breaks it. Run again now and then in case they were driven off. */
+/** At deployment: every tree, rock or bush on the arrows of the other squads (and a couple of tiles either side, for the width of a formation) goes on the supply squads' list. */
+function listClears(sim: Sim, plan: Plan): void {
+  const todo = new Map<number, { squad: number; x: number; y: number }>(), crew = plan.missions.find((m) => isLogistics(plan, m))?.squad ?? -1;
+  for (const m of plan.missions) {
+    const s = sim.squadById(m.squad), start = sim.missionStart(m);
+    if (!s || !start || !m.path.length) continue;
+    for (const o of sim.corridorBlocks(start, m.path, m.target?.kind === 'prop' ? m.target.at : undefined)) todo.set(o.y * sim.world.size + o.x, { squad: crew, x: o.x, y: o.y });
+  }
+  plan.clears = [...todo.values()].slice(0, 80);
+}
+
+/** The supply soldiers break the listed things one after another, nearest first, and go back where they stood when none is left. Run again now and then. */
 function crewClears(sim: Sim, plan: Plan): void {
-  plan.clears = plan.clears.filter((c) => { const o = sim.obstacleAt(c.x, c.y); return !!o && o.clear && !!sim.squadById(c.squad); });
-  for (const c of plan.clears) {
-    const s = sim.squadById(c.squad)!, ob = sim.obstacleAt(c.x, c.y)!;
-    if (sim.squadUnits(s).some((v) => v.breaks?.x === c.x && v.breaks?.y === c.y)) continue;
-    const crew = sim.squadUnits(s).filter((v) => !v.breaks).sort((a, b) => Math.hypot(a.x - c.x, a.y - c.y) - Math.hypot(b.x - c.x, b.y - c.y)).slice(0, SIEGE.crew);
-    for (const v of crew) sim.startBreaking(v, ob, v.fight.anchor ?? undefined);
+  plan.clears = plan.clears.filter((c) => { const o = sim.obstacleAt(c.x, c.y); return !!o && o.clear; });
+  const crew = supplyUnits(sim, plan), busy = new Set(crew.filter((v) => v.breaks).map((v) => `${v.breaks!.x},${v.breaks!.y}`));
+  if (!crew.length) return; // nobody left to do it: whatever stays is dealt with by the squads that are halted by it
+  for (const v of crew) {
+    if (v.breaks) continue;
+    const c = plan.clears.filter((q) => !busy.has(`${q.x},${q.y}`)).sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
+    if (!c) break;
+    busy.add(`${c.x},${c.y}`);
+    sim.startBreaking(v, sim.obstacleAt(c.x, c.y)!, v.fight.anchor ?? { x: v.x, y: v.y });
   }
 }
 
-/** Ask a squad to break down a thing that stands in the way of the arrows. Returns an error or null. */
-export function addClear(sim: Sim, plan: Plan, squadId: number, x: number, y: number): string | null {
-  if (plan.status === 'running') return 'Kế hoạch đang chạy';
-  const s = sim.squadById(squadId), o = sim.obstacleAt(x, y);
-  if (!s) return 'Không có đội này';
-  if (!o || !o.clear || o.kind === 'enemy') return 'Không có gì để phá ở đó';
-  plan.clears = plan.clears.filter((c) => !(c.x === x && c.y === y));
-  plan.clears.push({ squad: squadId, x, y });
+/** Call off a plan that is still being drawn. Returns an error or null. */
+export function cancelPlan(sim: Sim, plan: Plan): string | null {
+  if (plan.status === 'running') return 'Kế hoạch đang chạy: hãy rút quân trước';
+  sim.plans.splice(sim.plans.indexOf(plan), 1);
   return null;
 }
 
@@ -320,7 +341,7 @@ function assemble(sim: Sim, s: Squad, d: NonNullable<Mission['deploy']>): void {
 
 /** Whether every soldier of the plan stands at the cell he was sent to. */
 function assembled(sim: Sim, plan: Plan): boolean {
-  return plan.missions.every((m) => { const s = sim.squadById(m.squad); return !s || sim.squadUnits(s).every((v) => !v.breaks && (!v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5)); });
+  return (!plan.clears.length || !supplyUnits(sim, plan).length) && plan.missions.every((m) => { const s = sim.squadById(m.squad); return !s || sim.squadUnits(s).every((v) => !v.breaks && (!v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5)); });
 }
 
 /** Soldiers of the plan who are not at their cell and not on their way (they could not set out at once, or the way was blocked) are sent again. Once a second. */
@@ -382,9 +403,10 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
     const s = sim.squadById(m.squad)!; m.state = 'wait'; m.initial = sim.squadUnits(s).length; m.leg = 0;
     m.block = null;
     if (m.deploy) assemble(sim, s, m.deploy); // go to the cells it was given, facing the way it was set, and wait there
+    else if (isLogistics(plan, m)) for (const v of sim.squadUnits(s)) { v.fight.mode = 'guard'; v.fight.anchor = { x: v.x, y: v.y }; } // supply soldiers hold where they stand, and come back to it
   }
   plan.status = 'running'; plan.stage = 'assemble'; plan.startedAt = sim.time; plan.signal = false; plan.result = '';
-  crewClears(sim, plan);
+  listClears(sim, plan); crewClears(sim, plan);
   sim.say(`Triển khai quân đánh ${sim.tribes.find((t) => t.id === plan.tribe)?.def.name ?? ''} bắt đầu.`);
   return null;
 }
@@ -438,7 +460,7 @@ export function tickPlans(sim: Sim, dt: number): void {
     const second = Math.floor(sim.time) !== Math.floor(sim.time - dt), half = Math.floor(sim.time * 2) !== Math.floor((sim.time - dt) * 2);
     for (const m of plan.missions) {
       const s = sim.squadById(m.squad);
-      if (!s || !sim.squadUnits(s).length) { if (m.state !== 'done') { m.state = 'done'; } continue; }
+      if (!s || !sim.squadUnits(s).length || isLogistics(plan, m)) { if (m.state !== 'done') { m.state = 'done'; } continue; } // the supply squad has done its work
       const alive = sim.squadUnits(s).length, c = sim.squadCenter(s)!;
       if (m.state === 'wait' && triggered(sim, plan, m)) dispatch(sim, plan, m, s);
       else if (m.state === 'blocked') {
