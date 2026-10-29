@@ -6,7 +6,7 @@ import { RES_LIST, Res } from './resources';
 import type { FormationName, Plan, Sim, Villager } from './sim';
 import type { StatKey } from './jobs';
 import { launchCustomRaid, launchRaid, launchWolves, surrender, tribeOf } from './tribes';
-import { BUILDINGS, BuildingKind, levelDef, POP_BY_FIRE } from './buildings';
+import { BUILDINGS, BuildingKind, levelDef, maxHp, POP_BY_FIRE } from './buildings';
 import { TECHS } from './research';
 import { STAFF_BUILDING } from './jobs';
 import { RECIPES, TIER_DURABILITY } from './tools';
@@ -106,7 +106,7 @@ export function buildAll(sim: Sim): void {
 }
 /** Raise every building to its top level at once. */
 export function maxBuildings(sim: Sim): void {
-  for (const b of sim.buildings) { const top = BUILDINGS[b.kind].levels.stone!.length; if (b.done && b.level < top) { b.level = top; b.upgrading = false; b.hp = levelDef(b).hp; } }
+  for (const b of sim.buildings) { const top = BUILDINGS[b.kind].levels.stone!.length; if (b.done && b.level < top) { b.level = top; b.upgrading = false; b.hp = maxHp(b); } }
 }
 /** Wear the tools of the given villagers down to a fraction of their life (0 = broken). */
 export function wearTools(sim: Sim, ids: readonly number[], frac: number): void {
@@ -169,7 +169,7 @@ export function defenseLine(sim: Sim, half = 8): number {
     put(d === 0 ? 'gate' : 'fence', cx + d, cy + half);
   }
   put('tower', cx - half - 1, cy - half - 2); put('tower', cx + half, cy - half - 2);
-  for (const b of sim.buildings) if (b.done && (b.kind === 'fence' || b.kind === 'gate' || b.kind === 'tower')) { b.level = BUILDINGS[b.kind].levels.stone!.length; b.hp = levelDef(b).hp; }
+  for (const b of sim.buildings) if (b.done && (b.kind === 'fence' || b.kind === 'gate' || b.kind === 'tower')) { b.level = BUILDINGS[b.kind].levels.stone!.length; b.hp = maxHp(b); }
   sim.dev.freeBuild = was.f; sim.dev.instantBuild = was.i;
   return n;
 }
@@ -203,6 +203,10 @@ export function giveMaps(sim: Sim, level = 3): void {
   for (const t of sim.tribes) for (let l = 1; l <= level; l++) {
     const i = sim.maps.findIndex((m) => m.tribe === t.id && m.level === l), map = { tribe: t.id, level: l, at: sim.time, gaps: 0 };
     if (i >= 0) sim.maps[i] = map; else sim.maps.push(map);
+  }
+  for (const t of sim.tribes) {
+    const s = sim.sightings.find((x) => x.tribe === t.id);
+    if (s) s.reported = true; else sim.sightings.push({ tribe: t.id, by: -1, at: sim.time, reported: true });
   }
 }
 

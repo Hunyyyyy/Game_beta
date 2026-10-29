@@ -13,8 +13,7 @@ export class Controller {
   readonly selected = new Set<number>();
   readonly markers: Marker[] = [];
   box: Box | null = null;
-  onChange: () => void = () => {};
-  /** Short message for the player. */
+  onChange: () => void = () => {};  /** Short message for the player. */
   onToast: (text: string) => void = () => {};
   /** Selecting several villagers: taps toggle, drags draw a box. */
   multi = false;
@@ -340,7 +339,7 @@ export class Controller {
         this.onToast(n ? 'Lột da, lấy thịt' : 'Chỉ Thợ săn lột da: giao nghề Thợ săn bằng nút nghề trước');
       } else {
         const n = this.sim.orderAttack(ids, seen.target, queue);
-        this.onToast(n ? (seen.kind === 'foe' ? 'Tấn công' : 'Săn') : seen.kind === 'foe' ? 'Chỉ chiến binh mới đánh: tuyển lính ở đống lửa trại' : 'Chỉ Thợ săn hoặc chiến binh mới săn thú: giao nghề Thợ săn bằng nút nghề trước');
+        this.onToast(n ? (seen.kind === 'foe' ? 'Tấn công' : 'Săn') : seen.kind === 'foe' ? 'Chỉ chiến binh mới đánh: tuyển lính ở trại lính' : 'Chỉ Thợ săn hoặc chiến binh mới săn thú: giao nghề Thợ săn bằng nút nghề trước');
       }
       this.markers.push({ x: w.x, y: w.y, age: 0 }); this.onChange(); return;
     }

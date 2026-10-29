@@ -39,8 +39,11 @@ export function drainRate(sim: Sim, v: Villager): number {
 }
 
 // ---------------------------------------------------------------- beds
-/** The house a villager sleeps in when it has room: soldiers in the Lều chiến binh, everyone else in the Nhà dân. */
-export const bedKind = (v: Pick<Villager, 'job'>): 'barracks' | 'house' => (v.job === 'fight' ? 'barracks' : 'house');
+/** Houses with beds: the camp of each arm for its soldiers, the Nhà dân for everyone else. */
+export type BedKind = 'infantry' | 'cavalry' | 'archery' | 'house';
+export const BED_KINDS: readonly BedKind[] = ['infantry', 'cavalry', 'archery', 'house'];
+/** The house a villager sleeps in when it has room: a soldier in the camp of his arm, everyone else in the Nhà dân. */
+export const bedKind = (v: Pick<Villager, 'job' | 'arm'>): BedKind => (v.job !== 'fight' ? 'house' : v.arm === 'archer' ? 'archery' : v.arm === 'cavalry' ? 'cavalry' : 'infantry');
 
 /** Beds of a house in use: those asleep inside and those on their way. */
 export function bedsTaken(sim: Sim, b: Building, except?: Villager): number {
@@ -62,7 +65,7 @@ export function freeBed(sim: Sim, v: Villager): Building | undefined {
 /** How well the place they sleep in lets them rest: the house they are inside (and its level), else the campfire's slower rest. */
 function bedFactor(sim: Sim, v: Villager): number {
   const b = v.inside === null ? undefined : sim.getBuilding(v.inside);
-  return b && (b.kind === 'house' || b.kind === 'barracks') ? REST.sleepAt[b.kind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
+  return b && (BED_KINDS as readonly string[]).includes(b.kind) ? REST.sleepAt[b.kind as BedKind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
 }
 
 /** Percentage points gained per second while asleep. Night sleep is twice as good as sleep by day. */
@@ -117,6 +120,7 @@ export function giveTorch(sim: Sim, ids: readonly number[]): string | null {
 /** Whether the villager's shift has them up right now (before torches and tiredness are looked at). */
 export function onShift(sim: Sim, v: Villager): boolean {
   if (v.nightOwl) return true; // called up by the player or the alarm until the shift changes
+  if (v.job === 'fight' && sim.warLock()) return true; // in a war the army is on its feet, night or day
   const night = sim.resting;
   if (v.job === 'fight' || v.job === 'idle') return !night;
   if (v.shift === 'both') return true;
@@ -150,7 +154,7 @@ export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
   if (v.phase === 'sleep') {
     v.energy = Math.min(top, v.energy + sleepRate(sim, v) * dt);
     v.strain = Math.max(0, v.strain - (sim.resting ? REST.strain.nightSleep : REST.strain.daySleep) * dt);
-  } else if (!sim.dev.noTire) {
+  } else if (!sim.dev.noTire && !(v.job === 'fight' && sim.warLock())) {
     const working = v.job !== 'idle' && (v.phase === 'work' || v.phase === 'build' || v.phase === 'craft' || v.phase === 'inside' || v.phase === 'fight');
     v.energy = Math.max(0, v.energy - drainRate(sim, v) * dt);
     if (sim.resting && working) { v.strain = Math.min(100, v.strain + REST.strain.nightWork * dt); if (v.job !== 'fight') v.morale = Math.max(0, v.morale - REST.strain.moraleLoss * dt); }
@@ -168,6 +172,7 @@ export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
  */
 export function shouldSleep(sim: Sim, v: Villager, fighting: boolean): boolean {
   if (fighting) return false;
+  if (v.job === 'fight' && sim.warLock()) { v.lockUntil = 0; return false; } // soldiers do not sleep while a war is on
   if (v.lockUntil > 0) {
     if (v.energy >= v.lockUntil) v.lockUntil = 0; else return true;
   }
@@ -182,4 +187,4 @@ export function shouldSleep(sim: Sim, v: Villager, fighting: boolean): boolean {
 }
 
 /** Beds in all the finished houses of a kind (0 when there is none). */
-export function bedsIn(sim: Sim, kind: 'barracks' | 'house'): number { return sim.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0); }
+export function bedsIn(sim: Sim, kind: BedKind): number { return sim.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0); }

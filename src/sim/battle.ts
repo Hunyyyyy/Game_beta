@@ -2,7 +2,7 @@ import animsJson from '../data/anims.json';
 import { ANIMALS, ARMORS, ArmorDef, CRAFTED_WEAPONS, cycleOf, damageOf, DmgType, MORALE, RULES, Team, TRIBES, WeaponDef, WEAPONS } from './combat';
 import { WEATHER } from './calendar';
 import { gameDays } from './constants';
-import { armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formations';
+import { Arm, armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formations';
 import { Animal, animalDef, die as animalDie, provoke, carcassEmpty } from './fauna';
 import { CARRY_CAP, Res, RES_NAME } from './resources';
 import type { Sim, Target, Villager } from './sim';
@@ -30,6 +30,8 @@ export function resolve(sim: Sim, t: Target | null): Ent | null {
 
 /** The weapon that counts: a broken one is no better than fists until it is mended. */
 export const effWeapon = (v: Villager): string | null => (v.team === 'player' && v.gear.wb && v.gear.w === v.weapon ? null : v.weapon);
+/** The arm of a unit: a rider of ours counts as cavalry whatever he carries, anyone else by his weapon. */
+export const armOf = (v: Villager): Arm => (v.team === 'player' && v.job === 'fight' && v.arm === 'cavalry' ? 'cavalry' : armOfWeapon(effWeapon(v)));
 export const weaponOf = (v: Villager): WeaponDef => WEAPONS[effWeapon(v) ?? 'fist'] ?? WEAPONS.fist;
 const armorOf = (v: Villager): ArmorDef | null => (v.armor && !(v.team === 'player' && v.gear.ab && v.gear.a === v.armor) ? ARMORS[v.armor] ?? null : null);
 /** Can this unit's side see the spot? Our own people shoot only at what they can see; the foe has no fog. */
@@ -48,11 +50,35 @@ export function teamsHostile(sim: Sim, a: Team, b: Team): boolean {
 export interface Threat { t: Target; x: number; y: number; d: number; name: string }
 
 /** Enemies of `v` within `radius`, nearest first. Player units only notice what they can see. */
+/** Tiles on a side of a cell of the grid that finds who is near whom. */
+const CELL = 8;
+/** The units of one side sorted into cells, built once a tick the first time anyone looks (a battle of hundreds would otherwise compare every pair). */
+function sideGrid(sim: Sim, side: 'foes' | 'mine'): Map<number, Villager[]> {
+  let c = sim.threatCache;
+  if (!c || c.time !== sim.time) c = sim.threatCache = { time: sim.time, foes: null, mine: null };
+  if (!c[side]) {
+    const g = new Map<number, Villager[]>();
+    for (const o of side === 'foes' ? sim.foes : sim.villagers) {
+      if (o.health <= 0) continue;
+      const k = Math.floor(o.y / CELL) * 1024 + Math.floor(o.x / CELL), cell = g.get(k);
+      if (cell) cell.push(o); else g.set(k, [o]);
+    }
+    c[side] = g;
+  }
+  return c[side]!;
+}
+
+/** Everyone of the other side within `radius` of the unit that is hostile and in the open, from the cells round it. */
+function nearbyOthers(sim: Sim, v: Villager, radius: number): Villager[] {
+  const g = sideGrid(sim, v.team === 'player' ? 'foes' : 'mine'), r = Math.ceil((radius + 1) / CELL), cx = Math.floor(v.x / CELL), cy = Math.floor(v.y / CELL), out: Villager[] = [];
+  for (let j = cy - r; j <= cy + r; j++) for (let i = cx - r; i <= cx + r; i++) { const cell = g.get(j * 1024 + i); if (cell) for (const o of cell) out.push(o); }
+  return out;
+}
+
 export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   const out: Threat[] = [], N = sim.world.size, player = v.team === 'player';
   const seen = (x: number, y: number) => !player || sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
-  const pool = player ? sim.foes : sim.villagers;
-  for (const o of pool) {
+  for (const o of nearbyOthers(sim, v, radius)) {
     if (o.health <= 0 || o.down > 0 || o.inside !== null || !teamsHostile(sim, v.team, o.team)) continue;
     const d = Math.hypot(o.x - v.x, o.y - v.y);
     if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name });
@@ -124,7 +150,7 @@ export function startSwing(sim: Sim, v: Villager, target: Target): void {
 
 /** What the arms do to each other: foot beats archers, archers beat riders, riders beat foot (units.json). Animals are no arm. */
 export function armMultiplier(attacker: Villager, e: Ent): number {
-  return e.kind === 'unit' ? matchup(armOfWeapon(effWeapon(attacker)), armOfWeapon(effWeapon(e.v)), effWeapon(attacker)) : 1;
+  return e.kind === 'unit' ? matchup(armOf(attacker), armOf(e.v), effWeapon(attacker)) : 1;
 }
 
 /** Loose an arrow or a stone from a point (the archer, or the tower he stands in): it must be seen and within reach, and it flies. */
@@ -217,13 +243,16 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   v.fight.scan -= dt;
   const scanNow = v.fight.scan <= 0;
   if (scanNow) v.fight.scan = 0.35;
-  const threats = scanNow || v.phase === 'flee' || v.phase === 'fight' ? threatsOf(sim, v, SIGHT + 2) : [];
+  // a unit that is hitting a chosen target and is not wavering needs no new look round him every tick: that is what makes a battle of hundreds heavy
+  const looking = scanNow || v.phase === 'flee' || (v.phase === 'fight' && (!v.fight.target || v.morale < MORALE.flee));
+  const threats = looking ? threatsOf(sim, v, SIGHT + 2) : [];
 
   if (rest) { // a threat wakes the sleeper; only a soldier then stays up for the night, everyone else runs and goes back to bed
     if (scanNow && threats.length && threats[0].d < 7) { if (isFighter(v)) v.nightOwl = true; sim.resetTask(v); } else return false;
   }
   if (v.phase === 'flee' || v.fleeT > 0 || (v.morale < MORALE.flee && threats.length)) return fleeBrain(sim, v, dt, threats);
 
+  if (v.breaks && sim.breakBrain(v, dt)) return true; // hacking down a tree or an enemy work in a war
   const fighter = isFighter(v);
   if (!fighter) {
     // Civilians do not fight: anything hostile within sight sends them running to the campfire
@@ -279,7 +308,7 @@ export function engage(sim: Sim, v: Villager, e: Ent, dt: number): void {
   }
   if (v.swing) return; // finish the blow before moving
   v.fight.repath -= dt;
-  if (v.fight.repath <= 0 || !v.path.length) { v.fight.repath = 0.5; v.path = sim.pathTo(v, Math.floor(x), Math.floor(y), 3500); if (!v.path.length) v.fight.repath = 1.5; }
+  if ((v.fight.repath <= 0 || !v.path.length) && sim.pathLeft > 0) { sim.pathLeft--; v.fight.repath = 0.5; v.path = sim.pathTo(v, Math.floor(x), Math.floor(y), 3500); if (!v.path.length) v.fight.repath = 1.5; }
 }
 
 function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {
@@ -317,7 +346,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   // 3. attack-move: keep walking to the destination
   if (f.mode === 'attackMove' && f.dest) {
     if (Math.hypot(f.dest.x - v.x, f.dest.y - v.y) < 1.5) { f.mode = 'guard'; f.anchor = { x: f.dest.x, y: f.dest.y }; f.dest = null; v.path = []; v.phase = 'idle'; if (sim.nextOrder(v)) return true; }
-    else { if (!v.path.length) v.path = sim.pathTo(v, Math.floor(f.dest.x), Math.floor(f.dest.y), 20000); v.phase = 'move'; return true; }
+    else { if (!v.path.length && sim.pathLeft > 0) { sim.pathLeft--; v.path = f.strict ? sim.lineSteps(v, f.dest.x, f.dest.y) : sim.pathTo(v, Math.floor(f.dest.x), Math.floor(f.dest.y), 20000); } v.phase = 'move'; return true; }
   }
   if (v.post >= 0 && v.phase === 'idle' && !threats.length && !f.target) { sim.planStaff(v); if ((v.phase as string) === 'goStaff') return true; } // back to his tower after the night
   if (f.mode === 'hold') { v.phase = 'idle'; v.path = []; return true; }
@@ -327,7 +356,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   if (v.job === 'fight') {
     // the post: where the unit was told to stand, else beside the village fire
     const fire = sim.campfire(), post = f.mode === 'guard' && f.anchor ? { x: f.anchor.x, y: f.anchor.y, slack: 2 } : fire ? { x: fire.x + 1 + (v.id % 3) - 1, y: fire.y + 3, slack: 5 } : null;
-    if (post && v.phase === 'idle' && !v.path.length && Math.hypot(v.x - post.x, v.y - post.y) > post.slack) { v.path = sim.pathTo(v, Math.floor(post.x), Math.floor(post.y), 4000); v.phase = 'move'; return true; }
+    if (post && v.phase === 'idle' && !v.path.length && Math.hypot(v.x - post.x, v.y - post.y) > post.slack) { if (sim.pathLeft <= 0) return true; sim.pathLeft--; v.path = sim.pathTo(v, Math.floor(post.x), Math.floor(post.y), 30000); v.phase = v.path.length ? 'move' : 'idle'; return true; }
     return v.phase === 'move' || v.phase === 'idle';
   }
   return false;
@@ -399,6 +428,7 @@ export function bestWeapon(sim: Sim, v: Villager): string | null {
   for (const id of CRAFTED_WEAPONS) {
     if (sim.toolCount(id, WEAPONS[id].tier ?? 1) <= 0) continue;
     if (id === 'mace' && v.job !== 'fight') continue; // the heavy mace is a soldier's weapon, not a hunter's
+    if (v.job === 'fight' && (v.arm === 'archer') !== !!WEAPONS[id].ranged) continue; // the throwers' camp arms throwers, the others carry blows
     if (score(id) > bs) { bs = score(id); best = id; }
   }
   return best;

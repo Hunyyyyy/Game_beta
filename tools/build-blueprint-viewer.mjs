@@ -1,4 +1,5 @@
 import { build } from 'esbuild';
+import { scss } from './scss.mjs';
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -24,5 +25,5 @@ const virtual = {
 const out = await build({ entryPoints: ['tools/blueprint-viewer-entry.js'], bundle: true, write: false, format: 'iife', loader: { '.json': 'json' }, plugins: [virtual] });
 const js = out.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 mkdirSync('dist', { recursive: true });
-writeFileSync('dist/blueprint-viewer.html', readFileSync('tools/blueprint-viewer.html', 'utf8').replace('/*BUNDLE*/', () => js));
+writeFileSync('dist/blueprint-viewer.html', readFileSync('tools/blueprint-viewer.html', 'utf8').replace('/*STYLE*/', () => scss('tools/styles/blueprint-viewer.scss')).replace('/*BUNDLE*/', () => js));
 console.log('built dist/blueprint-viewer.html (' + files.length + ' blueprints)');

@@ -1,7 +1,7 @@
 /** Everyday work: gathering, carrying, building, and the phase machine that decides what a villager does next. */
 import { SEASON_DEF, WEATHER } from './calendar';
 import { PACE } from './constants';
-import { Building, BUILDINGS, holdsGoods, levelDef, needsWork } from './buildings';
+import { Building, BUILDINGS, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
 import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
 import { CARRY_CAP, RES_NAME } from './resources';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
@@ -107,7 +107,7 @@ export function think(sim: Sim, v: Villager, dt: number): void {
       gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
       if (b.progress >= 1) {
         b.progress = 1;
-        if (b.upgrading) { b.level++; b.upgrading = false; b.hp = levelDef(b).hp; sim.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
+        if (b.upgrading) { b.level++; b.upgrading = false; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
         else { b.done = true; b.rebuild = false; sim.fogDirty = true; if (b.kind === 'builder') sim.trimCrew(); sim.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (RESEARCH.enabled && b.kind === 'lab' && sim.researched.size === 0) sim.say('Mở Nhà nghiên cứu, đưa một dân thông minh vào làm việc, rồi nghiên cứu bản vẽ đầu tiên.'); }
         v.phase = 'idle';
       }
@@ -172,7 +172,7 @@ export function tickFarms(sim: Sim, dt: number): void {
 }
 
 export function plan(sim: Sim, v: Villager): void {
-  if (v.job === 'hunt' || v.job === 'fight') { wait(sim, v, 1); return; } // combat code drives these jobs
+  if (v.job === 'hunt' || v.job === 'fight' || v.job === 'scout') { wait(sim, v, 1); return; } // combat code (and the scouting trip) drives these jobs
   if (v.job === 'build') { if (!sim.planTool(v, 'build')) planBuild(sim, v); return; }
   if (isStaffJob(v.job) || (v.job === 'food' && v.post >= 0)) { sim.planStaff(v); return; }
   const def = JOBS[v.job as WorkJob], res = def.res!;

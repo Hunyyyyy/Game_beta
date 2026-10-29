@@ -1,0 +1,57 @@
+@use 'tokens' as *;
+
+@mixin ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// a button or row lit in the accent colour
+@mixin accent-fill {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
+
+// the translucent box of the HUD (top bar, cards, building bar)
+@mixin hud-box($radius) {
+  background: var(--hud);
+  border: 1px solid var(--line);
+  border-radius: $radius;
+  backdrop-filter: blur(2px);
+}
+
+// a panel floating over the planning map
+@mixin float-box($radius, $shadow) {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: $radius;
+  box-shadow: $shadow;
+}
+
+// a name with a note under it, in lists
+@mixin name-note {
+  font-weight: 600;
+  small {
+    display: block;
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 12px;
+  }
+}
+
+// a heading in small capitals
+@mixin caps-title {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+@mixin full-overlay($z, $bg: $scrim) {
+  position: fixed;
+  inset: 0;
+  z-index: $z;
+  background: $bg;
+}

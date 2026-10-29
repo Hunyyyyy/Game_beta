@@ -1,6 +1,6 @@
 import eventsJson from '../data/events.json';
 import { DAY_LENGTH } from './constants';
-import { cycleOf, WEAPONS, HOSTILE_BELOW, MORALE, RELATION, ringOf, ringPower, RULES, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
+import { cycleOf, WEAPONS, HOSTILE_BELOW, MORALE, RELATION, ringOf, ringPower, RULES, SIEGE, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
 import { engage, resolve, swingTimes, tickCommon, tickMorale, threatsOf, moraleShock, weaponOf } from './battle';
 import { BUILDINGS } from './buildings';
 import { armOfWeapon } from './formations';
@@ -24,7 +24,7 @@ export interface Tribe {
   id: TribeId;
   def: TribeDef;
   camp: { x: number; y: number };   // centre of the fire
-  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' }>;
+  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' | 'tower' | 'fence' | 'gate'; hp: number }>;
   relation: number;                  // -100..100
   state: TribeState;
   angryUntil: number;                // sim time: being attacked keeps them hostile for a while
@@ -86,7 +86,7 @@ function spawnTribe(sim: Sim, id: TribeId): void {
     const i = y * N + x; w.nodes.delete(i); w.tiles[i] = Tile.Grass; w.decor[i] = 0;
   }
   const props: Tribe['props'] = [
-    { x: cx, y: cy, w: 2, h: 2, kind: 'fire' }, { x: cx - 5, y: cy - 1, w: 2, h: 2, kind: 'pile' }, { x: cx + 4, y: cy + 1, w: 2, h: 2, kind: 'pile' },
+    { x: cx, y: cy, w: 2, h: 2, kind: 'fire', hp: SIEGE.propHp.fire }, { x: cx - 5, y: cy - 1, w: 2, h: 2, kind: 'pile', hp: SIEGE.propHp.pile }, { x: cx + 4, y: cy + 1, w: 2, h: 2, kind: 'pile', hp: SIEGE.propHp.pile },
   ];
   for (const p of props) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) w.occ[(p.y + j) * N + p.x + i] = 1;
   const power = ringPower(ringOf(Math.hypot(cx - s.x, cy - s.y)));
@@ -214,6 +214,7 @@ export function tickTribes(sim: Sim, dt: number): void {
 }
 
 function checkSurrender(sim: Sim, t: Tribe): void {
+  if (sim.plans.some((p) => p.kind === 'attack' && p.status === 'running' && p.tribe === t.id)) return; // a village under attack fights on: it gives up only when the war is won
   const units = t.unitIds.map((u) => sim.get(u)!).filter(Boolean), warriors = units.filter((u) => u.ai?.role !== 'civ');
   // 1. the leader is down
   if (SURRENDER.leaderDown && t.leaderId >= 0 && !t.unitIds.includes(t.leaderId) && units.length) return surrender(sim, t, 'Thủ lĩnh đã gục');
@@ -359,7 +360,7 @@ function noteStuck(sim: Sim, f: Villager, ai: NonNullable<Villager['ai']>, dt: n
   if (!blocked) { ai.stuck = 0; return; }
   ai.stuck = (ai.stuck ?? 0) + dt;
   if (ai.stuck < 3) return;
-  const wall = sim.nearestWork(f.x, f.y, 16);
+  const wall = sim.nearestWork(f.x, f.y, 16) ?? sim.nearestWork(f.x, f.y, 4, true);
   ai.stuck = 0;
   if (wall) ai.siege = wall.id;
 }
@@ -399,7 +400,8 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
   const radius = ai.role === 'raider' ? 12 : ai.role === 'civ' ? 9 : AGGRO[t.def.personality];
   const scanNow = f.fight.scan <= 0;
   if (scanNow) f.fight.scan = 0.4;
-  const threats = free && (scanNow || f.phase === 'fight' || f.phase === 'flee') ? threatsOf(sim, f, radius) : [];
+  const looking = scanNow || f.phase === 'flee' || (f.phase === 'fight' && (!f.fight.target || f.morale < MORALE.flee)); // see brainPlayer: a unit busy with a target needs no new look every tick
+  const threats = free && looking ? threatsOf(sim, f, radius) : [];
   if (!free) { f.fight.target = null; if (f.phase === 'fight') { f.phase = 'idle'; f.path = []; } }
 
   // fleeing: morale broke, or an unarmed civilian meets a threat
@@ -415,7 +417,7 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
 
   // a raider marches on the village, fighting what stands in the way
   if (free && ai.role === 'raider' && t.raid) {
-    if (t.raid.phase === 'retreat') { if (!f.path.length && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 4) f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 20000); f.phase = 'move'; return; }
+    if (t.raid.phase === 'retreat') { if (!f.path.length && sim.pathLeft > 0 && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 4) { sim.pathLeft--; f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 20000); } f.phase = 'move'; return; }
     if (siegeBrain(sim, f, ai, dt, threats)) return;
     if (f.fight.target) {
       const e = resolve(sim, f.fight.target);
@@ -431,7 +433,7 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
     const fire = sim.campfire(), gx = fire ? fire.x + 1 : sim.world.start.x, gy = fire ? fire.y + 1 : sim.world.start.y;
     if (Math.hypot(gx - f.x, gy - f.y) > 6) {
       f.fight.repath -= dt;
-      if (!f.path.length && f.fight.repath <= 0) { f.path = sim.pathTo(f, Math.floor(gx), Math.floor(gy), 40000); f.fight.repath = f.path.length ? 0.5 : 1.5; }
+      if (!f.path.length && f.fight.repath <= 0 && sim.pathLeft > 0) { sim.pathLeft--; f.path = sim.pathTo(f, Math.floor(gx), Math.floor(gy), 40000); f.fight.repath = f.path.length ? 0.5 : 1.5; }
       f.phase = 'move';
       noteStuck(sim, f, ai, dt, !f.path.length);
     }

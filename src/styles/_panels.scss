@@ -1,0 +1,105 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+// ---- full-screen panels: building details, villager details ----
+.modal {
+  position: fixed; inset: 0; z-index: 42;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  padding: var(--sat) var(--sar) var(--sab) var(--sal);
+  &[hidden] { display: none; }
+  > .cardhead {
+    padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line);
+    align-items: center; flex-wrap: nowrap;
+    b { font-size: 16px; }
+    span { min-width: 0; @include ellipsis; }
+    .x { flex: none; }
+  }
+}
+.mbody {
+  overflow: auto; flex: 1; padding: 10px 12px 16px;
+  display: grid; gap: 10px; align-content: start;
+  width: 100%; max-width: 860px; margin: 0 auto;
+  -webkit-overflow-scrolling: touch;
+  &.cols { max-width: 1100px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  h3 { @include caps-title; }
+  section { display: grid; gap: 6px; align-content: start; }
+  .bars { grid-template-columns: repeat(5, 1fr); }
+}
+.tabpage { display: grid; gap: 6px; align-content: start; }
+.tabs { position: sticky; top: 0; z-index: 1; background: var(--bg); padding: 2px 0 4px; }
+.split {
+  display: grid; grid-template-columns: minmax(200px, 1fr) minmax(240px, 1.1fr); gap: 10px; align-items: start;
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+.plist { display: grid; gap: 2px; }
+button.vrow {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  width: 100%; text-align: left; font-weight: 400;
+  padding: 5px 8px; min-height: 0; border-radius: $radius-md;
+  small { color: var(--muted); }
+  &.on { @include accent-fill; small { color: var(--accent-fg); } }
+}
+.ppane {
+  position: sticky; top: 36px; display: grid; gap: 6px; padding: 8px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: $radius-lg;
+}
+.picker {
+  display: grid; gap: 2px; padding: 4px 8px;
+  background: var(--panel-2); border-left: 2px solid var(--accent); border-radius: 0 $radius $radius 0;
+}
+#ucard .open { margin-left: auto; }
+
+// ---- confirm dialog: upgrade and demolish ----
+.dialog {
+  @include full-overlay(48);
+  display: grid; place-items: center; padding: 12px;
+  > .card { width: min(380px, 100%); max-height: 100%; overflow: auto; background: var(--bg); gap: 8px; padding: 10px 12px; }
+  h3 { margin: 0; font-size: 15px; color: var(--fg); text-transform: none; letter-spacing: 0; }
+  .costs {
+    display: grid; gap: 2px;
+    div { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+    .short { color: var(--bad); font-weight: 700; }
+  }
+  .why { color: var(--bad); font-weight: 600; margin: 0; }
+  .btns { justify-content: flex-end; }
+}
+button.danger {
+  color: var(--bad);
+  &.armed { background: var(--bad); color: #fff; border-color: var(--bad); }
+}
+button.primary.danger { background: var(--bad); color: #fff; border-color: var(--bad); }
+
+// ---- lists ----
+.row {
+  display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center;
+  padding: 4px 0; border-top: 1px solid var(--line);
+  &:first-child { border-top: 0; }
+  .nm { @include name-note; }
+}
+.rec {
+  display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center;
+  padding: 3px 0; border-top: 1px solid var(--line);
+  canvas { width: 32px; height: 32px; image-rendering: pixelated; }
+  .qty { display: inline-flex; gap: 4px; align-items: center; font-variant-numeric: tabular-nums; }
+  .have { min-width: 9ch; text-align: right; color: var(--muted); font-size: 12px; }
+}
+.rec.locked, .tech.locked { opacity: .55; }
+.tech {
+  display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+  padding: 4px 0; border-top: 1px solid var(--line);
+  .nm { @include name-note; }
+  &.done .nm { color: var(--good); }
+}
+.lock { display: block; color: var(--bad); }
+.vrow {
+  display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center;
+  padding: 3px 0; border-top: 1px solid var(--line); cursor: pointer;
+  small { color: var(--muted); }
+}
+.tribe-bar {
+  height: 6px; border-radius: $radius-sm; background: var(--panel-2); border: 1px solid var(--line);
+  position: relative; overflow: hidden;
+  b { position: absolute; top: 0; bottom: 0; background: var(--accent); }
+  u { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--fg); left: 50%; opacity: .5; }
+}

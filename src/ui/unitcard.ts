@@ -35,7 +35,7 @@ export class UnitCard {
       return h('div', { class: 'bars' }, h('label', {}, 'No', h('i', {}, full)), energyLabel, h('label', {}, 'Máu', h('i', {}, health)), h('label', {}, 'Tinh thần', h('i', {}, morale)), armorLabel);
     };
     // builders, crafters, researchers and menders are chosen in their houses; here only the plain jobs
-    this.jobBtns = PLAIN_JOBS.map((j) => h('button', { class: 'sm', 'data-job': j, pressed: false, text: JOB_NAME[j], onclick: () => { const e = sim.setJob(ids(), j); if (e) c.toast(e); else ctl.clearSelection(); ctl.onChange(); } }));
+    this.jobBtns = [];
     this.stanceBtns = STANCES.map(([s, label, tip]) => h('button', { class: 'sm', 'data-stance': s, pressed: false, text: label, title: tip, onclick: () => { sim.setStance(ids(), s); ctl.onChange(); } }));
     // Handing out gear from the workshop's stock: soldiers carry what they are given
     const gearRow = h('div', { class: 'btns', role: 'group', 'aria-label': 'Phát đồ' });
@@ -76,7 +76,7 @@ export class UnitCard {
         h('section', {}, h('h3', { text: 'Tình trạng' }), makeBars(), this.gear),
         h('section', {}, hint('Ca làm và sức', 'Dưới 20% sức dân phải đi ngủ và không gọi dậy được tới khi hồi đủ (50%, hoặc 60% nếu kiệt sức dưới 10%). Ngủ đêm hồi sức nhanh hơn ngủ ngày. Ngủ trong Nhà dân (chiến binh: Lều chiến binh) hồi sức đầy đủ; chưa có nhà hoặc hết giường thì nằm cạnh đống lửa, hồi chậm hơn. Làm việc ban đêm cần đuốc và đạt 70% hiệu suất. Làm ca đêm liên tục làm dân mệt mỏi tích lũy: sức tối đa giảm và hồi sức chậm.'), this.rest,
           h('div', { class: 'btns', role: 'group', 'aria-label': 'Ca làm' }, ...(['day', 'night', 'both'] as const).map((sh) => { const btn = h('button', { class: 'sm', text: SHIFT_LABEL[sh], title: SHIFT_TIP[sh], 'data-shift': sh, pressed: false, onclick: () => { sim.setShift(ids(), sh); ctl.onChange(); } }) as HTMLButtonElement; this.shiftBtns.push(btn); return btn; }), this.torchBtn)),
-        this.jobSec = h('section', {}, hint('Giao nghề', 'Nghề chỉ đổi khi bạn bấm các nút này; chuột phải lên cây, đá, bụi quả hay thú không đổi nghề của ai. Chiến binh được tuyển và giải ngũ ở đống lửa trại; thợ xây, chế tạo, nghiên cứu, sửa chữa chọn ở nhà tương ứng.'), h('div', { class: 'btns', role: 'group', 'aria-label': 'Giao nghề' }, ...this.jobBtns)),
+        this.jobSec = h('section', {}, hint('Nghề', 'Nghề do công trình của nó quản lý: mở Nông trại, Xưởng gỗ, Xưởng đá, Chòi thợ săn, các trại lính hay Trại trinh sát để giao việc hoặc cho nghỉ. Chuột phải lên cây, đá, bụi quả hay thú chỉ làm người đã có nghề đó đi tới đó.')),
         this.combatSec = h('section', {}, h('h3', { text: 'Chiến đấu' }),
           h('div', { class: 'btns', role: 'group', 'aria-label': 'Thế đứng' }, ...this.stanceBtns),
           h('div', { class: 'btns' },
@@ -126,7 +126,6 @@ export class UnitCard {
     // the tool follows the job: only the one the chosen villagers use is offered
     const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job as WorkJob] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
     this.toolsSec.hidden = only === null;
-    this.jobSec.hidden = chosen.every((o) => o.job === 'fight'); // soldiers are discharged at the campfire, not given another job here
     this.combatSec.hidden = !chosen.every((o) => o.job === 'fight'); // only soldiers get fighting orders
     this.gearSec.hidden = !chosen.every((o) => o.job === 'fight' || o.job === 'hunt');
     for (const r of this.toolRows) {

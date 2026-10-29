@@ -10,10 +10,9 @@ import { TOOL_KINDS, TOOL_NAME, TIER_NAME } from '../sim/tools';
 import { canAdopt, canTribute } from '../sim/tribes';
 import { costText, h, helpButton, hint } from './dom';
 import type { Ctx } from './panels';
-import { WarPanel } from './warpanel';
 
-type Tab = 'build' | 'places' | 'tribes' | 'war' | 'game' | 'dev' | 'help';
-const TABS: Array<[Tab, string]> = [['build', 'Xây'], ['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['war', 'Chiến'], ['game', 'Ván chơi'], ['dev', 'Dev'], ['help', '?']];
+type Tab = 'build' | 'places' | 'tribes' | 'game' | 'dev' | 'help';
+const TABS: Array<[Tab, string]> = [['build', 'Xây'], ['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['game', 'Ván chơi'], ['dev', 'Dev'], ['help', '?']];
 const SEASON_NAME: Record<Season, string> = { spring: 'Xuân', summer: 'Hạ', autumn: 'Thu', winter: 'Đông' };
 const PERSONALITY = { peaceful: 'Hòa bình', aggressive: 'Hiếu chiến', ambusher: 'Hay phục kích' } as const;
 
@@ -33,7 +32,6 @@ export class Menu {
     }
     tabs.append(h('span', { class: 'spacer' }), h('button', { class: 'sm', text: '✕', title: 'Đóng menu', onclick: () => this.close() }));
     this.pages.set('build', this.buildPage()); this.pages.set('places', this.placesPage()); this.pages.set('tribes', this.tribesPage());
-    const war = new WarPanel(c); this.pages.set('war', war.root); this.updaters.push(() => war.update());
     this.pages.set('game', this.gamePage()); this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
     for (const p of this.pages.values()) body.append(p);
     this.show(this.tab);
@@ -41,14 +39,9 @@ export class Menu {
 
   get isOpen(): boolean { return !this.drawer.hidden; }
   open(tab?: Tab): void { this.drawer.hidden = false; if (tab) this.show(tab); this.update(); }
-  close(): void { this.drawer.hidden = true; if (this.tab === 'war' && this.resume > 0 && this.c.sim.speed === 0) { this.c.sim.speed = this.resume; this.resume = 0; } }
+  close(): void { this.drawer.hidden = true; }
   toggle(): void { if (this.isOpen) this.close(); else this.open(); }
-  /** The speed to go back to when the war tent is left (it opens the game paused, as a war council does). */
-  private resume = 0;
   show(tab: Tab): void {
-    const { sim } = this.c;
-    if (tab === 'war' && this.tab !== 'war') { this.resume = sim.speed; sim.speed = 0; }
-    else if (tab !== 'war' && this.tab === 'war' && this.resume > 0 && sim.speed === 0) { sim.speed = this.resume; this.resume = 0; }
     this.tab = tab;
     for (const [t, b] of this.tabBtns) b.setAttribute('aria-pressed', String(t === tab));
     for (const [t, p] of this.pages) p.hidden = t !== tab;
@@ -64,10 +57,17 @@ export class Menu {
     const ROLE: Partial<Record<BuildingKind, string>> = {
       builder: 'Dân làm thợ xây ở đây (do bạn chọn). Phải có nhà này mới dựng được các công trình khác.', storage: 'Cất tài nguyên.', lab: 'Nghiên cứu bản vẽ, mở công trình và tự động hóa. Dân thông minh làm việc bên trong.',
       workshop: 'Chế tạo công cụ, vũ khí, giáp theo bản vẽ. Dân làm việc bên trong.', repair: 'Sửa công cụ đã mòn. Dân làm việc bên trong.',
-      barracks: 'Chiến binh ngủ ở đây (vào lều, hiện thành danh sách) và hồi sức nhanh hơn nằm cạnh đống lửa. Mỗi cấp thêm giường. Cần nghiên cứu mới xây được.',
+      infantry: 'Trại của chiến binh cận chiến: tuyển và cho nghỉ ở đây, họ cũng ngủ ở đây và hồi sức nhanh hơn nằm cạnh đống lửa. Chỉ xây một cái; nâng cấp để chứa thêm người. Cần nghiên cứu mới xây được.',
+      cavalry: 'Trại của người cưỡi thú: xung phong nhanh, khắc người ném nhưng sợ giáo. Chỉ xây một cái; nâng cấp để chứa thêm người. Cần nghiên cứu Trại kỵ thú.',
+      archery: 'Trại của người ném đá, bắn ná: đánh từ xa, lên được chòi canh. Chỉ xây một cái; nâng cấp để chứa thêm người. Cần nghiên cứu Trại thợ ném.',
+      farmhouse: 'Giao việc hái lượm ở đây: người được giao ra bụi quả và mang thức ăn về. Chỉ xây một cái; nâng cấp để thêm người.',
+      huntlodge: 'Giao việc săn bắn ở đây: người được giao đi săn thú. Chỉ xây một cái; nâng cấp để thêm người.',
+      lumberyard: 'Giao việc đốn gỗ ở đây. Chỉ xây một cái; nâng cấp để thêm người.',
+      quarry: 'Giao việc đục đá ở đây. Chỉ xây một cái; nâng cấp để thêm người.',
       house: 'Dân thường ngủ ở đây (vào nhà, hiện thành danh sách) và hồi sức đầy đủ. Không có nhà hoặc hết giường thì dân ngủ cạnh đống lửa, hồi sức chậm hơn. Cần nghiên cứu mới xây được.',
       field: 'Dân bạn chọn vào ruộng làm việc bên trong (không hiện trên bản đồ), thức ăn về thẳng kho, đều quanh năm hơn bụi quả (bụi quả không mọc lại). Mỗi ruộng một người, nâng cấp để làm nhanh hơn. Cần nghiên cứu mới xây được.',
       wartent: 'Nơi lập đội, chọn trận pháp, lập kế hoạch và thẻ lệnh cho trận đánh. Cấp càng cao càng nhiều đội và thẻ lệnh. Cần nghiên cứu Hội đồng chiến.',
+      scouttent: 'Nơi cử trinh sát đi vẽ bản đồ làng khác. Cấp càng cao càng cử được nhiều người một chuyến. Cần nghiên cứu Trinh sát.',
       drill: 'Bãi tập: các đội luyện trận pháp ở đây, độ thuần thục tăng dần. Cần Lều chiến binh và nghiên cứu.',
       trap: 'Hố chông gài sẵn: địch bước vào bị thương, mỗi hố làm bị thương vài người. Đặt từng cái một. Cần nghiên cứu Đào hào.',
       fence: 'Chặn đường, tạo chỗ thắt: địch phải phá rào mới vào được. Đặt từng đoạn một, cứ chạm tiếp để đặt đoạn kế. Cấp 2 (hàng rào đôi) bền gấp ba. Số đoạn tối đa tăng theo Nhà chung. Cần nghiên cứu.',

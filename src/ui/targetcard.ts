@@ -17,7 +17,7 @@ export class TargetCard {
     this.attack.addEventListener('click', () => {
       const t = c.ctl.inspect;
       if (!t || !c.ctl.selected.size) { c.toast('Hãy chọn dân trước'); return; }
-      if (!c.sim.orderAttack([...c.ctl.selected], { kind: t.kind, id: t.id })) c.toast(t.kind === 'unit' ? 'Chỉ chiến binh mới đánh: tuyển lính ở đống lửa trại' : 'Chỉ Thợ săn hoặc chiến binh mới săn thú');
+      if (!c.sim.orderAttack([...c.ctl.selected], { kind: t.kind, id: t.id })) c.toast(t.kind === 'unit' ? 'Chỉ chiến binh mới đánh: tuyển lính ở trại lính' : 'Chỉ Thợ săn hoặc chiến binh mới săn thú');
       c.ctl.onChange();
     });
     this.loot.addEventListener('click', () => {

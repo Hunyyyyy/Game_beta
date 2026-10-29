@@ -41,7 +41,10 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 | `movement` | Đi lại: đường đi, bước chân, chỗ đứng, tư thế vẽ | `pathTo` `moveUnit` `animate` |
 | `villagers` | Tạo dân và một ngày của dân: đói, máu, ngủ | `makeVillager` `tickVillager` |
 | `defense` | Hàng rào, cổng, chòi canh: mở đóng cổng, phá công trình phòng thủ, cung thủ trên chòi | `toggleGate` `damageWork` `towerBonus` `assignTower` |
+| `siege` | Chiến trận trên mặt đất: vật cản (cây, đá, bụi, nước, công trình), lính phá vật cản, đội đi theo mũi tên theo đường thẳng, dừng khi 6 ô phía trước bị chắn, mục tiêu của mũi tên và việc tự đánh mọi thứ khi mục tiêu mất | `obstacleAt` `arrowMove` `watchMarch` `breakBlock` `breakBrain` `tickTarget` |
 | `warplan` | Kế hoạch chiến: nhiệm vụ cho từng đội, thẻ lệnh, kế hoạch phòng thủ, trống báo động | `newPlan` `startPlan` `playCard` `soundAlarm` |
+| `roles` | Vai trò gắn với công trình: giao và thu hồi, sức chứa theo cấp công trình | `assignRole` `releaseRole` `roleCapacity` `trimRoles` |
+| `forecast` | Báo cáo của hội đồng chiến về một kế hoạch: tỉ lệ thắng, cảnh báo, hậu quả, chi tiết theo cấp bản đồ | `forecastPlan` |
 | `environment` | Đồng hồ, mùa, thời tiết, tầm nhìn | `tickCalendar` `refreshFog` |
 | `rest` | Sức (năng lượng), ngủ, ca làm, đuốc, mệt mỏi tích lũy | `tickEnergy` `shouldSleep` `callUp` `ensureTorch` |
 
@@ -121,6 +124,50 @@ Kiểu `throw` (lao) mới là bản sao của `thrust` để sẵn chỗ; chưa
 
 Muốn **đổi cơ chế chiến đấu** (tốc độ ra đòn, thời điểm trúng, tầm, đạn): thời điểm trúng nằm ở `hit` và `fps` của hoạt ảnh `attack`; chu kỳ giữa hai đòn nằm ở `cycle` của vũ khí; luật tính sát thương ở `src/sim/battle.ts`.
 
+## Luồng một trận đánh (kế hoạch tấn công)
+
+1. **Lập kế hoạch** trên bản đồ địch: đội, đội hình, mũi tên, đường rút (`warplan`).
+2. **Triển khai trận chiến** (nút trên bản đồ): hội đồng chiến đưa báo cáo (`sim.forecastPlan`), người chơi xác nhận (`sim.startPlan`): bảng kế hoạch đóng lại, game chạy tiếp ở **chế độ chiến tranh** (`body.war`, `src/ui/warbar.ts`): các nút chọn người và công trình ẩn đi, chỉ còn thanh trạng thái và các nút Đánh / Rút. Báo cáo chỉ đọc kế hoạch và bản đồ đang có, không đọc địch thật: tỉ lệ thắng tính theo Lanchester (số lính × √(sát thương × máu)), nhân với khắc binh chủng và công trình phòng thủ khi bản đồ cho biết. Bản đồ cấp càng cao thì báo cáo càng nhiều dòng và `spread` (độ lệch) càng nhỏ: cấp 1 chỉ có dân số ước chừng, cấp 2 thêm công trình, cấp 3 thêm lính từng binh chủng, thủ lĩnh, phần đóng góp từng đội.
+3. `plan.stage`: `assemble` (lính đi tới đúng ô của đội hình) → `ready` (đứng chờ; không nhiệm vụ nào chạy) → người chơi chọn `sim.engagePlan` (→ `fight`, các đội đi theo mũi tên và đánh mục tiêu đầu mũi tên) hoặc `sim.withdrawPlan`. Rút **trước khi đánh** (`assemble`/`ready`) là hủy trận: toàn quân đi thẳng về làng (`recall`), không theo đường rút vẽ trên bản đồ địch, rồi kế hoạch trở lại bản nháp để sửa hoặc triển khai lại. Rút **khi đã đánh** (`fight`) là rút lui (`retreat`): mỗi đội lui theo đường rút đã vẽ hoặc về chỗ hẹn, và kế hoạch kết thúc.
+3b. **Khóa trận (`sim.warLock`).** Từ lúc một kế hoạch tấn công được triển khai (`status: 'running'`, cho tới khi kết thúc hoặc về bản nháp) không ai đổi được vai trò hay bị bỏ khỏi quân: `assignRole`, `releaseRole`, `setJob`, tuyển và cho nghỉ trinh sát, giao thợ vào nhà, `joinSquad`, `leaveSquad`, `disbandSquad`, `setCommander` và phá trại của vai trò đều bị từ chối (hàm trả `string` thì trả lý do, hàm `void` thì không làm gì). Giao diện làm mờ các nút đó. Nhờ vậy quân số trong kế hoạch không đổi giữa chừng, trừ khi có người chết.
+3c. **Kiểm tra lại lúc triển khai.** `startPlan` đọc lại trạng thái lính ngay lúc bấm (không dùng báo cáo đã vẽ từ trước): đội thiếu lính so với ô, đội không có lính, hoặc lính bị thương hay ngủ say hồi sức (không đi được) đều chặn (`✗` trong `reviewPlan`). Trong giai đoạn `assemble`, mỗi giây lính nào chưa tới ô mà không đang đi sẽ được sai đi lại (`regather`); sau 150 giây chưa đủ thì sang `ready` và báo còn bao nhiêu lính chưa tới.
+4. Tới cuối mũi tên mà không còn địch trong 12 ô thì đội giữ vị trí, giữ đội hình và đánh mọi thứ xung quanh, không đuổi theo.
+5. Tín hiệu và thẻ lệnh chưa dùng trong trận thật; giao diện không còn cho chọn.
+
+**Trận đông (hiệu năng).** Mọi lính được mô phỏng thật, không gom cụm. Ba biện pháp giữ trận mấy trăm người mỗi bên chạy được: (a) lưới ô 8×8 để mỗi lính chỉ xét kẻ địch ở ô gần (`threatCache`, dựng lại mỗi nhịp); (b) lính đang đánh một mục tiêu và tinh thần ổn thì không nhìn quanh mỗi nhịp; (c) ngân sách tìm đường mỗi nhịp (`Sim.pathLeft`, `PATH_BUDGET`): lệnh cho cả đạo quân được tìm đường dần qua vài nhịp thay vì cùng lúc. Cả ba là trạng thái dựng lại, không lưu.
+
+## Vai trò và công trình
+
+Đống lửa trại chỉ cho xem tổng số dân và việc đang làm; **không giao việc ở đó**. Mỗi vai trò thuộc một công trình (`ROLES` trong `jobs.ts`), giao và thu hồi bằng `sim.assignRole` / `sim.releaseRole` (giao diện ở `src/ui/rolepane.ts`, tab trong bảng công trình):
+
+| Vai trò (đồ đá → cổ đại) | Công trình (đồ đá → cổ đại) |
+|---|---|
+| Chiến binh → Bộ binh | Trại chiến binh → Trại bộ binh (`infantry`) |
+| Kỵ thú → Kỵ binh | Trại kỵ thú → Trại kỵ binh (`cavalry`) |
+| Thợ ném → Cung thủ | Trại thợ ném → Trại cung thủ (`archery`) |
+| Trinh sát | Trại trinh sát (`scouttent`) |
+| Hái lượm → Nông dân | Nông trại (`farmhouse`) |
+| Thợ săn | Chòi thợ săn (`huntlodge`) |
+| Đốn gỗ → Tiều phu | Xưởng gỗ (`lumberyard`) |
+| Thợ đá → Thợ mỏ | Xưởng đá (`quarry`) |
+
+- Mỗi công trình **chỉ xây một cái**; `slots` của cấp công trình là số người tối đa của vai trò. Phá công trình thì người vượt chỗ mất vai trò (`trimRoles`).
+- Tên đổi theo thời kỳ (`names` của công trình, `ROLES[..].names`), ý nghĩa giữ nguyên. Thêm thời kỳ mới thì thêm tên, không đổi `id`.
+- Binh chủng của lính là `Villager.arm`, do trại quyết định; trại thợ ném chỉ trang bị vũ khí bắn, hai trại kia chỉ vũ khí cận chiến. Lính cưỡi thú (`cavalry`) được tính là kỵ binh trong `armOf` (mọi chỗ tính khắc chế dùng `armOf`, không dùng `armOfWeapon` trực tiếp cho lính của ta). Lính ngủ trong trại của mình.
+- Làng khởi đầu có sẵn Nông trại, Xưởng gỗ, Xưởng đá (`placeStarters`) để hai người đầu tiên có việc. Các công trình còn lại mở bằng nghiên cứu hoặc có sẵn từ đầu.
+- `setJob` vẫn là lệnh thô (test, menu Dev); giao diện chỉ dùng `assignRole`.
+
+## Trinh sát
+
+Logic ở `src/sim/scouting.ts`, giao diện ở `src/ui/scoutpane.ts` (dùng trong Trại trinh sát và Lều họp chiến).
+
+1. **Tìm thấy làng** (`Sighting`, `sim.sightings`): bất kỳ dân hoặc lính nào đi qua cách trại một làng chưa ai biết dưới 14 ô thì mang tin trong đầu; về tới lửa trại (hoặc vào nhà) còn sống thì tin vào danh sách, chỉ ghi "cách đây N ô về phía X". Chết giữa đường thì tin mất, người khác thấy lại được.
+2. **Cấp bản đồ** theo nghiên cứu: `scout` cấp 1, `scout2` cấp 2, `scout3` cấp 3. Chuyến đi luôn vẽ cấp cao nhất đã nghiên cứu, không chọn cấp thấp hơn.
+3. **Trinh sát là một vai trò như lính** (`job: 'scout'`, không có kỹ năng nghề): tuyển và cho nghỉ ở **Trại trinh sát** (`scouttent`) bằng `assignRole(ids, 'scout')` / `releaseRole`. `slots` của cấp lều là số trinh sát tối đa. Trinh sát không vào nhà làm việc, nút nghề không đổi được họ, và không thể cho nghỉ khi đang đi chuyến. Chỉ trinh sát mới được cử.
+4. **Tỉ lệ vẽ đủ chi tiết** (`drawChance`): tổng điểm (`scoutSkill`: Nhanh nhẹn + Thể lực + Trí tuệ, chia 18) của những người **về tới nhà**, chia cho mức cần (`scoutsNeeded`: cấp + 1, thêm 1 cho mỗi 8 lính địch), tối đa 95%. Dưới 2 người thì là 0: một mình không bao giờ vẽ đủ. Trượt thì bản đồ "hở" (`gaps`), hiện thiếu người và vật. Kinh nghiệm và nghiên cứu sẽ cộng vào `scoutSkill` sau.
+5. **Thời gian** (`surveyTime`): thám thính dài theo cấp, chia cho `1 + 0,35 × (số người − 1)`. Đi và về là đi bộ thật nên không rút ngắn.
+6. Giao diện hỏi trước `sim.planScout(ids, tribe)` (tỉ lệ, thời gian, lý do không đi được) rồi mới gọi `sim.startScout(ids, tribe)`.
+
 ## Nhịp thời gian
 
 Một ngày game là 20 phút thật (`DAY_LENGTH = 1200` giây): 12 phút ban ngày, 8 phút ban đêm. Có hai loại thời gian, để chỉnh riêng:
@@ -136,7 +183,7 @@ Giây công trôi với tỷ lệ `PACE.work` (`WORK_DAY / DAY_LENGTH`), nên m�
 
 Mốc hiện tại (dân tay không, trời nắng, 12 phút ban ngày): khoảng 32 gỗ, 28 đá, hơn 80 thức ăn; 15 gỗ đầu tiên mất khoảng 3 đến 4 phút. Test `how long gathering takes` giữ các mốc này.
 
-**Nghề chỉ đổi bằng nút.** Chuột phải lên cây, đá, bụi quả, công trường hay thú không bao giờ đổi nghề của ai: người đã có đúng nghề thì đi tới chỗ đó, người khác bị bỏ qua (`orderWork`, `orderAttack`, `orderLoot` trả về số người nhận lệnh). Duy nhất một ngoại lệ: trước khi có Nhà thợ xây thì ai được chuột phải lên nền của nó sẽ dựng nó. **Chiến binh** do đống lửa trại quản lý (tab Lính: `enlist` tuyển, `discharge` giải ngũ và trả vũ khí, giáp về kho); nút nghề và các nhà không đổi được nghề của lính. Nhà dân và Lều chiến binh, như mọi công trình mới, phải nghiên cứu (`house`, `barracks` trong `research.json`) rồi mới xây được.
+**Nghề chỉ đổi ở công trình của nó.** Chuột phải lên cây, đá, bụi quả, công trường hay thú không bao giờ đổi nghề của ai: người đã có đúng nghề thì đi tới chỗ đó, người khác bị bỏ qua (`orderWork`, `orderAttack`, `orderLoot` trả về số người nhận lệnh). Duy nhất một ngoại lệ: trước khi có Nhà thợ xây thì ai được chuột phải lên nền của nó sẽ dựng nó. Mọi vai trò (chiến binh, trinh sát, hái lượm, thợ săn, đốn gỗ, thợ đá) giao và thu hồi ở công trình của vai trò đó, xem mục *Vai trò và công trình*. Nhà dân và các trại, như mọi công trình mới, phải nghiên cứu rồi mới xây được.
 
 **Ban đêm:** mọi người ngủ và lệnh lúc đó chờ đến sáng, trừ chiến binh. Dân bạn chọn làm chiến binh hoặc ra lệnh cho chiến binh vào ban đêm thì dậy trực tới sáng (`keepWatch` trong `commands.ts`).
 
@@ -170,7 +217,10 @@ Công cụ Dev cho thử chiến đấu: `dev.combatReady` (mở hết), `raiseA
 
 - `army.ts`: đội (`Squad`), trận pháp (hàng ngang, vòng tròn, mũi nhọn, sừng bò, rải quân, phục kích; số liệu `data/formations.json`), độ thuần thục luyện ở Bãi tập, `attackFactor` và `takenFactor` (nhân vào mỗi đòn trong `battle.ts`, bị chặn ở ×3,5), cụm (`clusters`, vẽ cờ cụm và giảm hình khi trận lớn), và nhật ký trận (`tickBattle`, `noteBattle`).
 - `scouting.ts`: cử trinh sát, rủi ro chết từng người, bản đồ ba cấp có tuổi (mất 10% mỗi ngày), bản đồ hở khi thiếu người.
-- `warplan.ts`: kế hoạch tấn công (mỗi đội một nhiệm vụ: mục tiêu theo cấp bản đồ, hướng tiến, giờ xuất phát, thái độ, điều kiện rút), thẻ lệnh (giới hạn theo cấp Lều họp chiến), mẫu phòng thủ và trống báo động.
+  `tribeIntel` đổi bản đồ thành thứ để vẽ: khu trại và 24 ô quanh nó, mỗi cấp chỉ lộ phần của mình (cấp 1 vị trí, số dân ước chừng, hướng vào; cấp 2 địa hình, công trình, bóng người; cấp 3 lính từng quân chủng, kho, thủ lĩnh). Người trên bản đồ đứng đúng chỗ trinh sát thấy lúc họ tới (`ScoutMap.seen`, chụp ở đầu pha quan sát, cấp 2 trở lên); sau đó họ đi đâu cũng không đổi bản đồ. Bản đồ hở bỏ bớt người; hàm chỉ đọc, không tiêu số ngẫu nhiên. Bản đồ cũ (chưa có `seen`) vẫn hiện làng như hiện tại. Bản lưu phiên bản 8: nhiệm vụ có `deploy` (các ô), `path`, `retreat`, `leg`. Giao diện vẽ ở `ui/planmap.ts` (trang Kế hoạch tấn công liệt kê các bản đồ đã có, bấm vào thì mở toàn màn hình: bản đồ kéo và zoom được, bảng bên cạnh để lập đội và kế hoạch, bấm điểm trên bản đồ để chọn mục tiêu; bản đồ kèm đội của ta và mục tiêu từng nhiệm vụ qua `missionTarget`). Công trình của bộ tộc nằm trong `Tribe.props`; hiện mới có lửa và kho, hàng rào/chòi/cổng sẽ tự hiện trên bản đồ cấp 2 khi bộ tộc có.
+- `warplan.ts`: kế hoạch tấn công (mỗi đội một nhiệm vụ: đội hình vẽ trên bản đồ `deploy` (3 đến 15 ô vuông, mỗi ô một lính, `drawFormation` ra các ô theo kiểu trận khi kéo từ điểm chọn tới con trỏ; `deploySquad` chỉ ghi các ô: lập kế hoạch chưa cần lính, lính đưa vào đội sau), mũi tên đi `path` từng điểm, đường rút `retreat`, thái độ, giờ xuất phát hoặc đội phải giao chiến trước hoặc tín hiệu, điều kiện rút; `withdrawAt` 0 là không rút; tọa độ là ô thật của bản đồ chiến. `routeTime` tính thời gian đi từng đoạn theo tốc độ của người chậm nhất, trận pháp và thời tiết. Nhiệm vụ không có `path` vẫn đi theo `objective` như cũ), thẻ lệnh (giới hạn theo cấp Lều họp chiến), mẫu phòng thủ và trống báo động.
+- `siege.ts`: chiến trận trên mặt đất (`data/siege.json`). `obstacleAt` nói ô nào bị chắn bởi gì (cây, đá, bụi quả: phá được; nước, công trình của làng: không; công trình của địch: là mục tiêu, phá bằng đòn đánh). Lính phá vật cản bằng `Villager.breaks` (`startBreaking`, `breakBrain` được `brainPlayer` gọi): cây, đá, bụi chịu tổng công của các lính đứng đó, rất nhanh và không cho tài nguyên; công trình địch (`Tribe.props[].hp`) chịu đòn theo vũ khí (`damageProp`). Khi triển khai, ô đội hình nằm dưới cây hoặc đá thì lính của ô đó tự phá rồi vào chỗ; vật cản trên mũi tên thì kế hoạch (`reviewPlan`) báo đỏ `✗` cho tới khi `Plan.clears` cử một đội phá (`addClear`), nước và công trình của làng thì không phá được (phải uốn mũi tên). Khi đánh, đội đi mũi tên theo đường thẳng (`arrowMove`, `FightState.strict`: không tự tìm đường): hai lần mỗi giây `watchMarch` xem 6 ô phía trước từng lính, nếu bị chắn thì cả đội dừng (`Mission.state = 'blocked'`, `Mission.block`), người chơi bấm "Phá vật thể" (`breakBlock`, cử n lính). Mũi tên chỉ vào một mục tiêu (`Mission.target`, đặt bằng `setMissionTarget`, đầu mũi tên cố định): tới nơi, lính tự tìm mục tiêu (`targetNow`); mục tiêu mất thì lính đánh mọi thứ quanh đó; mục tiêu đã dời quá `driftMax` khỏi chỗ trong kế hoạch thì đội đứng ở cuối mũi tên, giữ đội hình, đánh những gì ở gần (`tickTarget`).
+- Thắng, thua: thắng khi làng địch không còn lính, lửa đã tắt và mọi công trình đã sập (`Plan.result = 'won'`, rồi làng xin hàng); thua khi ta hết lính hoặc rút lui (`'lost'`). Làng bị đánh không đầu hàng giữa chừng (`checkSurrender` bỏ qua). Lính trong đội không ngủ và không mệt khi đang có trận (`rest.shouldSleep`). Mọi công trình của làng có máu (`buildings.maxHp`) và có thể bị đánh.
 - `simwar.ts`: nửa chuyển tiếp của `Sim` cho phần chiến, trộn vào `Sim` để `sim.ts` không quá 650 dòng.
 - Chòi canh: cung thủ vào trong (như nhà làm việc) và bắn ra; hố chông là công trình đặt từng cái.
 - Vũ khí và giáp mòn theo số đòn (`wearGear`): hết bền thì mất hẳn một nửa số lần, nửa kia hỏng và chủ nhân tự mang tới Nhà sửa chữa. Dân hết máu thì chết hẳn, không còn trạng thái ngã.

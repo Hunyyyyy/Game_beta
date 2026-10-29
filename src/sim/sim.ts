@@ -1,8 +1,8 @@
 import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, WeatherKind } from './calendar';
-import { DAY_LENGTH, START_TIME, TICK } from './constants';
+import { DAY_LENGTH, PATH_BUDGET, START_TIME, TICK } from './constants';
 import { Building, BuildingKind, BUILDINGS, Era } from './buildings';
 import { Fog } from './fog';
-import { Job, WorkJob } from './jobs';
+import { Job, RoleId, WorkJob } from './jobs';
 import { Step } from './path';
 import { CURRENCY, emptyStock, Res, RES_NAME, Stock } from './resources';
 import { mulberry32, Rng } from './rng';
@@ -25,12 +25,13 @@ import * as villagers from './villagers';
 import * as environment from './environment';
 import * as save from './save';
 import * as rest from './rest';
+import * as roles from './roles';
 import * as defense from './defense';
 import * as army from './army';
 import * as scouting from './scouting';
 import * as warplan from './warplan';
 import { WAR, WarApi } from './simwar';
-import { BattleState, CardKind, FormationName, LogLine, Objective, PlaceResult, Plan, Projectile, ScoutMap, ScoutMission, Sex, Shift, Squad, Target, Villager } from './model';
+import { BattleState, CardKind, FormationName, LogLine, Objective, PlaceResult, Plan, Projectile, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
 import type { Ent } from './battle';
 export * from './model';
 
@@ -65,6 +66,10 @@ export class Sim {
   readonly byId = new Map<number, Villager>();
   /** Tribal people (enemies, neutrals, tributaries); they share the Villager body but never work. */
   readonly foes: Villager[] = [];
+  /** Who stands in which cell of the map this tick, for finding enemies near a unit (see battle.ts). Rebuilt every tick, never saved. */
+  /** Searches for a way that may still be made this tick: a large army given an order at once would otherwise stall the game for a moment. Refilled every tick, never saved. */
+  pathLeft = 0;
+  threatCache: { time: number; foes: Map<number, Villager[]> | null; mine: Map<number, Villager[]> | null } | null = null;
   readonly tribes: Tribe[] = [];
   /** Scheduled wolf packs and tribal raids. */
   readonly events: EventState[] = [];
@@ -77,6 +82,8 @@ export class Sim {
   nextSquad = 1;
   readonly maps: ScoutMap[] = [];
   readonly scouts: ScoutMission[] = [];
+  /** Villages found by anyone who wandered near them (see Sighting). */
+  readonly sightings: Sighting[] = [];
   nextMission = 1;
   readonly plans: Plan[] = [];
   nextPlan = 1;
@@ -132,8 +139,9 @@ export class Sim {
     // two villagers to start: a gatherer, whose work feeds both of them, and a woodcutter
     const spots: Array<[number, number, Sex, Job]> = [[-1, 1, 'm', 'food'], [1, 1, 'f', 'wood']];
     for (const [dx, dy, sex, job] of spots) this.spawn(s.x + dx, s.y + dy, sex).job = job;
-    this.say('Hai người đầu tiên đã đến bên đống lửa: một người hái lượm, một người đốn gỗ. Chọn một dân rồi chuột phải lên cây, đá hay bụi quả để giao việc. Dựng Nhà thợ xây trước, rồi các công trình khác.');
+    this.say('Hai người đầu tiên đã đến bên đống lửa: một người hái lượm, một người đốn gỗ. Việc của mỗi người do công trình của nghề đó quản lý: mở Nông trại, Xưởng gỗ hay Xưởng đá cạnh đống lửa để giao việc. Dựng Nhà thợ xây trước, rồi các công trình khác.');
     this.refreshFog();
+    construction.placeStarters(this);
     populate(this);
     spawnTribes(this);
   }
@@ -167,8 +175,20 @@ export class Sim {
   shouldSleep(v: Villager, fighting: boolean): boolean { return rest.shouldSleep(this, v, fighting); }
   /** → rest.tickEnergy */
   tickEnergy(v: Villager, dt: number): void { rest.tickEnergy(this, v, dt); }
+  /** → roles.warLock */
+  warLock(): string | null { return roles.warLock(this); }
+  /** → roles.assignRole */
+  assignRole(ids: readonly number[], role: RoleId): string | null { return roles.assignRole(this, ids, role); }
+  /** → roles.releaseRole */
+  releaseRole(ids: readonly number[]): string | null { return roles.releaseRole(this, ids); }
+  /** → roles.roleCapacity */
+  roleCapacity(role: RoleId): number { return roles.roleCapacity(this, role); }
+  /** → roles.roleCount */
+  roleCount(role: RoleId): number { return roles.roleCount(this, role); }
+  /** → roles.trimRoles */
+  trimRoles(): void { return roles.trimRoles(this); }
   /** → rest.bedsIn */
-  bedsIn(kind: 'barracks' | 'house'): number { return rest.bedsIn(this, kind); }
+  bedsIn(kind: rest.BedKind): number { return rest.bedsIn(this, kind); }
   /** → rest.freeBed */
   freeBed(v: Villager): Building | undefined { return rest.freeBed(this, v); }
   /** → rest.bedsTaken */
@@ -317,7 +337,7 @@ export class Sim {
   /** → defense.setGates */
   setGates(open: boolean): void { return defense.setGates(this, open); }
   /** → defense.nearestWork */
-  nearestWork(x: number, y: number, radius: number): Building | undefined { return defense.nearestWork(this, x, y, radius); }
+  nearestWork(x: number, y: number, radius: number, any = false): Building | undefined { return defense.nearestWork(this, x, y, radius, any); }
   /** → defense.damageWork */
   damageWork(b: Building, dmg: number): void { return defense.damageWork(this, b, dmg); }
   /** → defense.towerBonus */
@@ -455,6 +475,7 @@ export class Sim {
 
   tick(dt: number): void {
     this.time += dt;
+    this.pathLeft = PATH_BUDGET;
     this.tickCalendar();
     this.world.tick(dt);
     this.syncFood();

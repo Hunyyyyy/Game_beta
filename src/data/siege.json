@@ -1,0 +1,20 @@
+{
+  "_note": "War on the ground: what soldiers can break down, and how fast. Seconds are for one soldier; several soldiers at one object add up.",
+  "lookAhead": 6,
+  "clearSeconds": {
+    "tree": 3,
+    "rock": 5,
+    "bush": 1.5
+  },
+  "propHp": {
+    "fire": 160,
+    "pile": 70,
+    "tower": 150,
+    "fence": 40,
+    "gate": 40
+  },
+  "buildingHpPerTile": 45,
+  "crew": 3,
+  "driftMax": 14,
+  "reach": 1.6
+}

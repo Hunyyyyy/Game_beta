@@ -25,11 +25,11 @@ export function setGates(sim: Sim, open: boolean): void {
   for (const b of sim.buildings) if (b.kind === 'gate' && b.done && b.open !== open) { b.open = open; sim.setOcc(b, 1); }
 }
 
-/** The nearest finished defence work to a point, within `radius` tiles (centre to centre). */
-export function nearestWork(sim: Sim, x: number, y: number, radius: number): Building | undefined {
+/** The nearest finished defence work to a point, within `radius` tiles (centre to centre). With `any`, any finished house but the fire counts: raiders with no wall in their way turn on what stands there. */
+export function nearestWork(sim: Sim, x: number, y: number, radius: number, any = false): Building | undefined {
   let best: Building | undefined, bd = radius;
   for (const b of sim.buildings) {
-    if (!b.done || !isDefense(b)) continue;
+    if (!b.done || !(any ? b.kind !== 'campfire' && b.kind !== 'trap' : isDefense(b))) continue;
     const d = BUILDINGS[b.kind], dist = Math.hypot(b.x + d.w / 2 - x, b.y + d.h / 2 - y);
     if (dist <= bd) { bd = dist; best = b; }
   }
@@ -61,7 +61,7 @@ export function assignTower(sim: Sim, ids: readonly number[], towerId: number): 
   let err: string | null = null;
   for (const v of sim.mine(ids)) {
     if (v.post === b.id && v.job === 'fight') continue;
-    if (v.job !== 'fight') { err = 'Chỉ chiến binh mới lên chòi: tuyển ở đống lửa trại'; continue; }
+    if (v.job !== 'fight') { err = 'Chỉ chiến binh mới lên chòi: tuyển ở trại lính'; continue; }
     if (armOfWeapon(effWeapon(v)) !== 'archer') { err = 'Chỉ cung thủ (cầm cung hoặc dây quăng) mới lên chòi'; continue; }
     if (garrison(sim, b).length >= levelDef(b).slots) { err = `${BUILDINGS.tower.name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} cung thủ`; continue; }
     sim.resetTask(v); sim.clearCombat(v);

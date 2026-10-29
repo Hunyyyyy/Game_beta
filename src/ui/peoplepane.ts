@@ -30,9 +30,8 @@ export class PeoplePane {
     const { sim, ctl, toast } = c;
     this.armorLabel.append(h('i', {}, this.bar.armor));    const energyLabel = h('label', {}, 'Sức', h('i', {}, this.energy));
     for (const sh of ['day', 'night', 'both'] as const) this.shiftBtns.push(h('button', { class: 'sm', text: SHIFT_LABEL[sh], title: SHIFT_TIP[sh], 'data-shift': sh, pressed: false, onclick: () => { const v = this.villager(); if (!v) return; sim.setShift([v.id], sh); ctl.onChange(); } }) as HTMLButtonElement);
-    this.jobBtns = PLAIN_JOBS.map((j) => h('button', { class: 'sm', 'data-job': j, pressed: false, text: JOB_NAME[j], onclick: () => { const v = this.villager(); if (!v) return; const e = sim.setJob([v.id], j); if (e) toast(e); ctl.onChange(); } }) as HTMLButtonElement);
-    this.jobBox = h('div', {}, h('h3', { text: 'Giao việc' }), h('div', { class: 'btns', role: 'group', 'aria-label': 'Giao việc' }, ...this.jobBtns),
-      h('p', { class: 'sub', text: 'Thợ xây, chế tạo, nghiên cứu và sửa chữa do bạn chọn ở nhà tương ứng.' }));
+    this.jobBtns = [];
+    this.jobBox = h('div', {}, h('h3', { text: 'Việc đang làm' }), h('p', { class: 'sub', text: 'Việc của mỗi người do công trình của nó quản lý (Nông trại, Xưởng gỗ, Xưởng đá, Chòi thợ săn, các trại lính, Trại trinh sát, Nhà thợ xây…). Mở công trình đó để giao việc hoặc cho nghỉ; đống lửa chỉ cho xem.' }));
     this.where.addEventListener('click', () => {
       const v = this.villager(); if (!v) return;
       if (v.inside !== null) { ctl.selectBuilding(v.inside, true); return; }
@@ -58,7 +57,7 @@ export class PeoplePane {
 
   update(): void {
     const { sim } = this.c, vs = sim.villagers;
-    this.count.innerHTML = `Dân <b>${vs.length}/${sim.popCap()}</b> · đang làm việc <b>${vs.filter((v) => v.job !== 'idle').length}</b> · lính <b>${vs.filter((v) => v.job === 'fight').length}</b> · thợ săn <b>${vs.filter((v) => v.job === 'hunt').length}</b> · thức ăn <b>${Math.floor(sim.stock.food)}</b> (sống được ~${(sim.stock.food / Math.max(1, vs.length * 5)).toFixed(1)} ngày)`;
+    this.count.innerHTML = `Dân <b>${vs.length}/${sim.popCap()}</b> · đang làm việc <b>${vs.filter((v) => v.job !== 'idle').length}</b> · lính <b>${vs.filter((v) => v.job === 'fight').length}</b> · trinh sát <b>${vs.filter((v) => v.job === 'scout').length}</b> · thợ săn <b>${vs.filter((v) => v.job === 'hunt').length}</b> · thức ăn <b>${Math.floor(sim.stock.food)}</b> (sống được ~${(sim.stock.food / Math.max(1, vs.length * 5)).toFixed(1)} ngày)`;
     const key = vs.map((v) => v.id).join();
     if (key !== this.key) {
       this.key = key; this.rows.clear();
@@ -87,7 +86,6 @@ export class PeoplePane {
     this.energy.style.width = `${v.energy}%`; this.energy.className = v.energy < 20 ? 'en low' : 'en';
     this.restLine.innerHTML = energyText(sim, v);
     this.shiftBtns.forEach((b) => b.setAttribute('aria-pressed', String(v.shift === b.dataset.shift)));
-    this.jobBox.hidden = v.job === 'fight'; // soldiers are managed in the Lính tab
     this.where.textContent = v.inside !== null ? (v.phase === 'sleep' ? 'Mở nhà đang ngủ' : 'Mở nhà đang làm') : 'Đi tới';
   }
 }

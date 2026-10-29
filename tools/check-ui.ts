@@ -9,7 +9,7 @@ import { MapView } from '../src/ui/minimap';
 import { BuildingBar, Confirm } from '../src/ui/buildbar';
 import { BuildingPanel, Ctx, TargetCard, UnitCard } from '../src/ui/panels';
 import { WarPanel } from '../src/ui/warpanel';
-import { WarHud } from '../src/ui/warhud';
+import { WarBar } from '../src/ui/warbar';
 import { MemoryStore } from '../src/save/store';
 import { Session } from '../src/save/session';
 import { BUILDINGS, BuildingKind, maxLevel } from '../src/sim/buildings';
@@ -73,8 +73,31 @@ step('war tent pages and the battle HUD, with squads, maps, plans and a fight on
   const plan = sim.plans.find((p) => p.kind === 'attack')!; sim.startPlan(plan);
   dev.enemyWave(sim, 'axe', ['club', 'bow', 'spear']);
   for (let i = 0; i < 200; i++) (sim as unknown as { tick(d: number): void }).tick(0.05);
-  const war = new WarPanel(ctx), hud = new WarHud(el(), ctx, renderer);
-  for (const t of ['squads', 'maps', 'plan', 'defense', 'log'] as const) { try { war.open(t); } catch (e) { throw new Error(`war tab ${t}: ${(e as Error).stack?.split(String.fromCharCode(10)).slice(0, 3).join(' | ')}`); } }
-  hud.update(); renderer.draw(0, new Set(), null, [], null, null, null);
-  renderer.reduceFigures = true; renderer.draw(0, new Set(), null, [], null, null, null);
+  const war = new WarPanel(ctx);
+  for (const t of ['plan', 'defense', 'log'] as const) { try { war.open(t); } catch (e) { throw new Error(`war tab ${t}: ${(e as Error).stack?.split(String.fromCharCode(10)).slice(0, 3).join(' | ')}`); } }
+  war.openMap('axe'); war.closeMap();
+  renderer.draw(0, new Set(), null, [], null, null, null);
+});
+
+step('deploying a plan: panels closed, war mode on, the screen goes on updating', () => {
+  const sim2 = new Sim(1337);
+  dev.combatReady(sim2); dev.giveMaps(sim2, 3); dev.formSquads(sim2); const plan = dev.sampleAttack(sim2)!;
+  const c2: Ctx = { ...ctx, sim: sim2 };
+  const warPanel = new WarPanel(c2), tent = new BuildingPanel(el(), c2), warBar = new WarBar(el(), c2);
+  const fire = sim2.campfire()!, wt = sim2.building('wartent')!;
+  void fire; c2.ctl.selectedBuilding = wt.id; c2.ctl.buildingOpen = true;
+  warPanel.openMap('axe');
+  for (let i = 0; i < 3; i++) { warPanel.update(); tent.update(); }
+  const err = sim2.startPlan(plan);
+  if (err) throw new Error(`the sample plan would not start: ${err}`);
+  warPanel.closeMap(); c2.ctl.closeBuilding();
+  if (!(warPanel as unknown as { full: { hidden: boolean } }).full.hidden) throw new Error('the full-screen map stays over the game after the plan is deployed');
+  { // the same, when only the building panel is closed and the map is left open
+    const t2 = new BuildingPanel(el(), c2), w2 = (t2 as unknown as { war: WarPanel }).war;
+    c2.ctl.selectedBuilding = wt.id; c2.ctl.buildingOpen = true; t2.update(); w2.openMap('axe'); t2.update();
+    c2.ctl.closeBuilding(); t2.update();
+    if (w2.mapOpen) throw new Error('a map is left open without its tent');
+  }
+  for (let i = 0; i < 400; i++) { (sim2 as unknown as { tick(d: number): void }).tick(0.05); tent.update(); warBar.update(); warPanel.update(); }
+  if (!warBar.active) throw new Error('war mode is not on');
 });
