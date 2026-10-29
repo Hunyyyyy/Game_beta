@@ -28,7 +28,7 @@ const run = (sim: Sim, secs: number) => { for (let i = 0; i < secs * 20; i++) (s
 /** The old test start: three idle villagers. The real start (two with jobs) has its own test. */
 const provokeFor = (sm: Sim, v: Villager, a: ReturnType<typeof spawnAnimal>) => { provoke(sm, a, v.id); a.state = 'attack'; a.target = { kind: 'unit', id: v.id }; a.timer = 99; };
 const t_ = (sm: Sim, id: string) => sm.tribes.find((x) => x.id === id)!;
-const mk = (seed = 1337): Sim => { const sm = new Sim(seed); sm.villagers.forEach((o) => { o.job = 'idle'; }); dev.addVillagers(sm, 1); return sm; };
+const mk = (seed = 1337): Sim => { const sm = new Sim(seed); sm.dev.noArrivals = true; sm.villagers.forEach((o) => { o.job = 'idle'; }); dev.addVillagers(sm, 1); return sm; };
 /** Put a finished house of this kind on the map (the real game needs builders and the right order; most tests only need the house). */
 const putBuilding = (sm: Sim, kind: Parameters<Sim['canPlace']>[0]) => {
   const was = { f: sm.dev.freeBuild, i: sm.dev.instantBuild }; sm.dev.freeBuild = sm.dev.instantBuild = true;
@@ -1975,3 +1975,22 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
 }
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');
 process.exit(fails ? 1 : 0);
+
+{
+  // mỗi ngày có 1-3 dân mới đến
+  const sm = new Sim(21), n0 = sm.villagers.length;
+  tickN(sm, DAY_LENGTH * 1.05);
+  const got = sm.villagers.length - n0;
+  ok(got >= 1 && got <= 3, `ngày mới có 1-3 dân đến (${got})`);
+}
+{
+  // thợ trong nhà chế tạo ngủ ngay trong nhà (vẫn trong danh sách), ca đêm hoặc cả hai thì dậy làm không cần đuốc
+  const sm = mk(5); reveal(sm); sm.villagers.forEach((o) => { o.fullness = 1e9; });
+  const w = putBuilding(sm, 'workshop'), v = sm.villagers[0]; v.energy = 100;
+  dev.setTimeOfDay(sm, 0.3); sm.assignStaff([v.id], 'craft'); tickN(sm, 60);
+  ok(v.phase === 'inside' && w.staff.includes(v.id), 'vào làm trong nhà');
+  dev.setTimeOfDay(sm, 0.9); tickN(sm, 10);
+  ok(v.phase === 'sleep' && v.inside === w.id && w.staff.includes(v.id), `ngủ ngay trong nhà chế tạo, vẫn trong danh sách (${v.phase})`);
+  sm.setShift([v.id], 'both'); tickN(sm, 5);
+  ok(v.phase === 'inside' && !v.torch, `chọn làm đêm thì dậy làm, không cần đuốc (${v.phase})`);
+}

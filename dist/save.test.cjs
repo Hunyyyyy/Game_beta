@@ -3413,7 +3413,7 @@ function houseRate(sim, b) {
   let r = 0;
   for (const id of b.staff) {
     const v = sim.byId.get(id);
-    if (v) r += sim.workFactor(v, job);
+    if (v && v.phase === "inside") r += sim.workFactor(v, job);
   }
   return r * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 25 : 1);
 }
@@ -4984,8 +4984,13 @@ function tickVillager(sim, v, dt) {
   if (v.inside !== null && v.phase !== "sleep") {
     const onWatch = v.job === "fight" && v.post >= 0 && sim.tribes.some((t) => t.raid);
     if (sim.shouldSleep(v, onWatch)) {
-      sim.exitBuilding(v);
-      goHome(sim, v);
+      if (atWork(sim, v)) {
+        v.phase = "sleep";
+        v.facing = "front";
+      } else {
+        sim.exitBuilding(v);
+        goHome(sim, v);
+      }
     } else {
       sim.animate(v, dt);
       return;
@@ -4998,16 +5003,23 @@ function tickVillager(sim, v, dt) {
   if (sim.shouldSleep(v, fighting)) {
     if (!asleep) goHome(sim, v);
   } else if (asleep) {
-    sim.exitBuilding(v);
-    v.path = [];
-    v.slide = null;
-    v.phase = "idle";
-    v.bed = -1;
+    if (atWork(sim, v) && v.phase === "sleep") v.phase = "inside";
+    else {
+      sim.exitBuilding(v);
+      v.path = [];
+      v.slide = null;
+      v.phase = "idle";
+      v.bed = -1;
+    }
   }
   sim.moveUnit(v, dt);
   if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim.fogDirty = true;
   if (!v.path.length && !v.slide && !brained && !training) sim.think(v, dt);
   sim.animate(v, dt);
+}
+function atWork(sim, v) {
+  const b = v.inside === null ? void 0 : sim.getBuilding(v.inside);
+  return !!b && b.staff.includes(v.id);
 }
 function goHome(sim, v) {
   const owl = v.nightOwl;
@@ -5015,7 +5027,7 @@ function goHome(sim, v) {
   sim.resetTask(v);
   v.nightOwl = owl;
   v.phase = "sleep";
-  const bed = sim.freeBed(v);
+  const bed = v.job === "build" ? sim.building("builder") ?? sim.freeBed(v) : sim.freeBed(v);
   if (bed) {
     const bd = BUILDINGS[bed.kind];
     if (sim.routeTo(v, sim.ringTiles(v, bed.x, bed.y, bd.w, bd.h)) >= 0) {
@@ -5053,6 +5065,7 @@ function tickCalendar(sim) {
       sim.say(SEASON_DEF[season].enter);
     }
     if (sim.weather !== "clear") sim.say(`H\xF4m nay: ${WEATHER[sim.weather].name.toLowerCase()}.`);
+    if (day > 1 && !sim.dev.noArrivals) newcomers(sim);
   }
   if (!sim.signalled && sim.tod >= 0.5) {
     sim.signalled = true;
@@ -5065,6 +5078,17 @@ function tickCalendar(sim) {
     if (!rest) sim.returnTorch(v);
   }
   sim.resting = rest;
+}
+function newcomers(sim) {
+  const n = 1 + Math.floor(sim.frnd() * 3), fire = sim.campfire(), s = sim.world.start;
+  for (let i = 0; i < n; i++) {
+    const a = sim.frnd() * Math.PI * 2, r = 2 + sim.frnd() * 2;
+    const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+    const v = sim.makeVillager(spot[0], spot[1], sim.frnd() < 0.5 ? "m" : "f", "player", sim.frnd);
+    sim.villagers.push(v);
+    sim.registerUnit(v);
+    sim.say(`${v.name} \u0111\u1EBFn l\xE0ng xin \u1EDF l\u1EA1i.`);
+  }
 }
 var TORCH_VISION = 6;
 function refreshFog(sim) {
@@ -5430,7 +5454,8 @@ function freeBed(sim, v) {
 }
 function bedFactor(sim, v) {
   const b = v.inside === null ? void 0 : sim.getBuilding(v.inside);
-  return b && BED_KINDS.includes(b.kind) ? REST.sleepAt[b.kind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
+  if (b && BED_KINDS.includes(b.kind)) return REST.sleepAt[b.kind] * levelDef(b).craftSpeed;
+  return b ? REST.sleepAt.house : REST.sleepAt.campfire;
 }
 function sleepRate(sim, v) {
   const base = (sim.resting ? REST.sleepNight : REST.sleepDay) / NIGHT_HOURS;
@@ -5492,9 +5517,10 @@ function onShift(sim, v) {
   if (v.shift === "both") return true;
   return v.shift === "night" ? night : !night;
 }
+var indoors = (v) => isStaffJob(v.job) || v.job === "food" && v.post >= 0;
 function onDuty(sim, v) {
   if (!onShift(sim, v)) return false;
-  if (sim.resting && v.job !== "fight" && v.job !== "idle") return ensureTorch(sim, v);
+  if (sim.resting && v.job !== "fight" && v.job !== "idle" && !indoors(v)) return ensureTorch(sim, v);
   return true;
 }
 function callUp(sim, v) {
@@ -7865,7 +7891,7 @@ var Sim = class _Sim {
     this.battleReports = [];
     this.nextAid = 1;
     /** Test switches driven by the dev menu; all off in a normal game. */
-    this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false };
+    this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false, noArrivals: false };
     /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
     this.pendingTribe = null;
     this.acc = 0;

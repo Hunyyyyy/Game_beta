@@ -105,7 +105,7 @@ window.addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLElement && /input|textarea|select/i.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
   if (k === 'p') setSpeed(sim.speed === 0 ? 1 : 0);
-  else if (k === 'q') setSpeed(1); else if (k === 'e') setSpeed(2); else if (k === 'r') setSpeed(4);
+  else if (k === 'q') setSpeed(1); else if (k === 'e') setSpeed(2); else if (k === 'r') setSpeed(4); else if (k === 't') setSpeed(16);
   else if (k === 'b') togglePlace('storage'); else if (k === 'x') togglePlace('workshop'); else if (k === 'c') openWorkshop();
   else if (k === 'm') { if (map.isOpen) map.close(); else map.open(); }
   else if (k === 'tab') { e.preventDefault(); menu.toggle(); }
