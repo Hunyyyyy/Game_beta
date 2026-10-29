@@ -1,7 +1,7 @@
 import { SIEGE } from './combat';
 import type { Stock } from './resources';
 
-export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'infantry' | 'cavalry' | 'archery' | 'farmhouse' | 'huntlodge' | 'lumberyard' | 'quarry' | 'house' | 'field' | 'fence' | 'gate' | 'tower' | 'wartent' | 'scouttent' | 'drill' | 'trap';
+export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'infantry' | 'cavalry' | 'archery' | 'farmhouse' | 'huntlodge' | 'lumberyard' | 'quarry' | 'house' | 'field' | 'fence' | 'gate' | 'tower' | 'wartent' | 'scouttent' | 'drill' | 'trap' | 'stable';
 
 /** Eras of the game. Each era has its own building art and its own level list (L1..L3). */
 export type Era = 'stone' | 'ancient';
@@ -147,6 +147,11 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   trap: {
     kind: 'trap', name: 'Hố chông', w: 1, h: 1, buildable: true, requires: ['fence'], perFire: [4, 10, 18, 28], repeat: true,
     levels: { stone: [lv('Hố chông', { wood: 3 }, 12, 0, 1, 0, 3), lv('Hố chông sâu', { wood: 4, stone: 2 }, 20, 0, 1, 0, 6)] },
+  },
+  // where beasts are tamed to be ridden: slots = keepers who work inside, craftSpeed = how fast they get through an order; the level decides which beast (wolf, boar, elephant)
+  stable: {
+    kind: 'stable', name: 'Chuồng thú cưỡi', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: [lv('Chuồng cọc', { wood: 30, hide: 6 }, 90, 0, 1, 2), lv('Chuồng gỗ', { wood: 40, hide: 8, stone: 10 }, 140, 0, 1.25, 3), lv('Chuồng đá', { wood: 45, stone: 35, hide: 12 }, 200, 0, 1.5, 4)] },
   },
   // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
   field: {

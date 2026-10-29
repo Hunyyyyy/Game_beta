@@ -94,7 +94,7 @@ export function setMissionTarget(sim: Sim, plan: Plan, squadId: number, target: 
 
 /** Tiles a second the squad walks at: its slowest soldier (an average one while it has none), in its formation, in today's weather. */
 export function squadPace(sim: Sim, s: Squad): number {
-  const us = sim.squadUnits(s), base = us.length ? Math.min(...us.map((v) => 1.6 + 0.1 * v.stats.agi)) : 2.1;
+  const us = sim.squadUnits(s), base = us.length ? Math.min(...us.map((v) => (1.6 + 0.1 * v.stats.agi) * sim.mountSpeed(v))) : 2.1;
   return base * FORMATIONS[s.formation].speed * WEATHER[sim.weather].speed;
 }
 

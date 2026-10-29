@@ -68,6 +68,7 @@ export class Menu {
       field: 'Dân bạn chọn vào ruộng làm việc bên trong (không hiện trên bản đồ), thức ăn về thẳng kho, đều quanh năm hơn bụi quả (bụi quả không mọc lại). Mỗi ruộng một người, nâng cấp để làm nhanh hơn. Cần nghiên cứu mới xây được.',
       wartent: 'Nơi lập đội, chọn trận pháp, lập kế hoạch và thẻ lệnh cho trận đánh. Cấp càng cao càng nhiều đội và thẻ lệnh. Cần nghiên cứu Hội đồng chiến.',
       scouttent: 'Nơi cử trinh sát đi vẽ bản đồ làng khác. Cấp càng cao càng cử được nhiều người một chuyến. Cần nghiên cứu Trinh sát.',
+      stable: 'Dân làm trong chuồng thuần hóa thú (sói, lợn rừng, voi) để giao cho người cưỡi, như giao công cụ: đi nhanh hơn, đỡ đòn hơn. Chỉ xây một cái; nâng cấp để thuần được thú lớn hơn. Cần nghiên cứu Thuần thú.',
       drill: 'Bãi tập: các đội luyện trận pháp ở đây, độ thuần thục tăng dần. Cần Lều chiến binh và nghiên cứu.',
       trap: 'Hố chông gài sẵn: địch bước vào bị thương, mỗi hố làm bị thương vài người. Đặt từng cái một. Cần nghiên cứu Đào hào.',
       fence: 'Chặn đường, tạo chỗ thắt: địch phải phá rào mới vào được. Đặt từng đoạn một, cứ chạm tiếp để đặt đoạn kế. Cấp 2 (hàng rào đôi) bền gấp ba. Số đoạn tối đa tăng theo Nhà chung. Cần nghiên cứu.',

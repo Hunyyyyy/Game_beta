@@ -26,6 +26,7 @@
     "builder":    { "main": "sta", "partner": "str", "cost": "int" },
     "workshop":   { "main": "int", "cost": "sta" },
     "lab":        { "main": "int", "cost": "sta" },
+    "stable":     { "main": "agi", "partner": "sta", "cost": "str" },
     "repair":     { "main": "agi", "partner": "int", "cost": "vit" },
     "scouttent":  { "main": "agi", "partner": "sta", "cost": "str" }
   }

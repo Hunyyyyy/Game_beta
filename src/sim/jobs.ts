@@ -1,9 +1,10 @@
 import type { BuildingKind, Era } from './buildings';
 import type { Res } from './resources';
 import paceJson from '../data/pace.json';
+import mountsJson from '../data/mounts.json';
 import trainingJson from '../data/training.json';
 
-export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'repair' | 'hunt' | 'fight' | 'scout';
+export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'repair' | 'tame' | 'hunt' | 'fight' | 'scout';
 /** Jobs with a work skill, a potential and a tool. Soldiers have them for the sake of the tables; scouts are a role like soldiers and have none. */
 export type WorkJob = Exclude<Job, 'idle' | 'scout'>;
 export type StatKey = 'vit' | 'str' | 'agi' | 'int' | 'sta';
@@ -13,6 +14,11 @@ export type NodeKind = 'tree' | 'rock' | 'bush';
 /** Training in a role's house (training.json): which stat a house trains, which comes with it, and which pays for it. */
 export interface TrainProfile { main: StatKey; partner?: StatKey; cost: StatKey }
 export const TRAINING = trainingJson as unknown as { dayBase: number; dayPerStat: number; foodBase: number; coinBase: number; coinPerStat: number; gain: [number, number]; partnerShare: number; floor: number; floorMin: number; caps: number[]; care: Array<{ name: string; coin: number; penalty: number }>; profiles: Record<string, TrainProfile> };
+/** Mounts (mounts.json): a beast is tamed in the stable, given like a tool, and carries its rider faster and safer. */
+export type MountKind = 'wolf' | 'boar' | 'elephant';
+export const MOUNT_KINDS: MountKind[] = ['wolf', 'boar', 'elephant'];
+export interface MountDef { name: string; tier: number; species: string; speed: number; guard: number; ride: number; cost: Partial<Record<Res, number>>; time: number; tech: string }
+export const MOUNTS = mountsJson.kinds as unknown as Record<MountKind, MountDef>;
 /** A stat as the player reads it: whole, or with one digit after the point. */
 export const fmtStat = (x: number): string => String(Math.round(x * 10) / 10);
 
@@ -35,11 +41,12 @@ export const JOBS: Record<WorkJob, JobDef> = {
   craft: { name: 'Chế tạo', stat: 'int', baseTime: 1, anim: 'craft' },
   research: { name: 'Nghiên cứu', stat: 'int', baseTime: 1, anim: 'gather' },
   repair: { name: 'Sửa chữa', stat: 'agi', baseTime: 1, anim: 'craft' },
+  tame: { name: 'Thuần thú', stat: 'agi', baseTime: 1, anim: 'craft' },
   hunt: { name: 'Thợ săn', stat: 'agi', baseTime: 1, anim: 'thrust_attack' },
   fight: { name: 'Chiến binh', stat: 'str', baseTime: 1, anim: 'swing_attack' },
 };
-export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', repair: 'Sửa chữa', hunt: 'Thợ săn', fight: 'Chiến binh', scout: 'Trinh sát' };
-export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 'research', 'repair', 'hunt', 'fight'];
+export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', repair: 'Sửa chữa', tame: 'Thuần thú', hunt: 'Thợ săn', fight: 'Chiến binh', scout: 'Trinh sát' };
+export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 'research', 'repair', 'tame', 'hunt', 'fight'];
 /** The arm a soldier belongs to, decided by the camp that took him on. Riders count as cavalry whatever they carry. */
 export type SoldierArm = 'foot' | 'archer' | 'cavalry';
 
@@ -72,7 +79,7 @@ export function roleOf(v: { job: Job; arm: SoldierArm; post: number }): RoleId |
 }
 
 /** Jobs done inside a building: the villager walks in and works from the list there. */
-export const STAFF_BUILDING = { craft: 'workshop', research: 'lab', repair: 'repair' } as const;
+export const STAFF_BUILDING = { craft: 'workshop', research: 'lab', repair: 'repair', tame: 'stable' } as const;
 export const isStaffJob = (j: Job): j is keyof typeof STAFF_BUILDING => j in STAFF_BUILDING;
 
 /** Seconds of a farmer's work for one unit of food from a field of the first level. */

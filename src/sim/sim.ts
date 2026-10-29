@@ -47,6 +47,7 @@ export class Sim {
   readonly wornTools: Array<{ id: string; dur: number }> = [];
   /** Hàng đợi chế tác (mã công thức). */
   readonly craftQueue: string[] = [];
+  readonly tameQueue: string[] = [];
   /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
   readonly researchQueue: string[] = [];
   /** Tools waiting to be mended in the Nhà sửa chữa (recipe ids such as axe1). */
@@ -327,7 +328,7 @@ export class Sim {
   tickWorks(dt: number): void { return works.tickWorks(this, dt); }
 
   /** → houses.bestFor */
-  bestFor(job: 'craft' | 'research' | 'repair'): Villager | null { return houses.bestFor(this, job); }
+  bestFor(job: 'craft' | 'research' | 'repair' | 'tame'): Villager | null { return houses.bestFor(this, job); }
   /** → defense.tickTraps */
   tickTraps(dt: number): void { return defense.tickTraps(this, dt); }
   /** → defense.tickTowers */
@@ -373,7 +374,7 @@ export class Sim {
   releaseCrew(ids: readonly number[]): void { return houses.releaseCrew(this, ids); }
 
   /** → houses.assignStaff */
-  assignStaff(ids: readonly number[], job: 'craft' | 'research' | 'repair'): string | null { return houses.assignStaff(this, ids, job); }
+  assignStaff(ids: readonly number[], job: 'craft' | 'research' | 'repair' | 'tame'): string | null { return houses.assignStaff(this, ids, job); }
   /** → houses.planStaff */
   planStaff(v: Villager): void { return houses.planStaff(this, v); }
   /** → houses.enterBuilding */
@@ -481,7 +482,7 @@ export class Sim {
     this.syncFood();
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
-    this.tickWorks(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
+    this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     this.moraleClock += dt;

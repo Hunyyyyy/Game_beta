@@ -1,5 +1,5 @@
 import { ARMORS, CRAFTED_WEAPONS, WEAPONS } from '../sim/combat';
-import { fmtStat, JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS, WorkJob } from '../sim/jobs';
+import { fmtStat, MOUNT_KINDS, MOUNTS, MountKind, JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS, WorkJob } from '../sim/jobs';
 import type { Villager } from '../sim/sim';
 import { TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, TOOL_OF_JOB, ToolKind } from '../sim/tools';
 import { h, hint } from './dom';
@@ -19,6 +19,8 @@ export class UnitCard {
   private readonly toolRows: Array<{ k: ToolKind; row: HTMLElement; state: HTMLElement; give: Array<{ btn: HTMLButtonElement; tier: number }>; back: HTMLButtonElement; repair: HTMLButtonElement; drop: HTMLButtonElement }> = [];
   private combatSec!: HTMLElement; private gearSec!: HTMLElement; private toolsSec!: HTMLElement; private jobSec!: HTMLElement;
   private readonly jobBtns: HTMLButtonElement[]; private readonly stanceBtns: HTMLButtonElement[];
+  private readonly mountBtns: Array<{ btn: HTMLButtonElement; kind: MountKind | null }> = [];
+  private mountSec!: HTMLElement;
   private readonly gearBtns: Array<{ btn: HTMLButtonElement; kind: string | null; slot: 'weapon' | 'armor'; label: string }> = [];
   private gearTip!: HTMLElement;
   private statsKey = '';
@@ -48,6 +50,11 @@ export class UnitCard {
     addGear('Trả vũ khí', null, 'weapon', 'Trả vũ khí về kho Xưởng'); addGear('Trả giáp', null, 'armor', 'Trả giáp về kho Xưởng');
     gearRow.append(h('button', { class: 'sm', text: 'Tự nhận đồ', title: 'Để Xưởng tự phát và đổi đồ cho người này (khi làm Chiến binh hoặc Thợ săn)', onclick: () => { sim.autoGear(ids()); ctl.clearSelection(); ctl.onChange(); } }));
 
+    const mountRow = h('div', { class: 'btns', role: 'group', 'aria-label': 'Giao thú cưỡi' });
+    for (const kind of [null, ...MOUNT_KINDS] as Array<MountKind | null>) {
+      const btn = h('button', { class: 'sm', title: kind ? `Giao một con ${MOUNTS[kind].name.toLowerCase()} từ Chuồng thú cưỡi` : 'Trả thú về chuồng', onclick: () => { const e = sim.assignMount(ids(), kind); if (e) c.toast(e); ctl.onChange(); } });
+      this.mountBtns.push({ btn, kind }); mountRow.append(btn);
+    }
     const gearHint = hint(h('p', { class: 'sub', text: 'Phát đồ (lấy từ kho Xưởng):' }), '');
     this.gearTip = gearHint.tip;
 
@@ -85,6 +92,7 @@ export class UnitCard {
             h('button', { class: 'sm', text: 'Tấn công–đi (F)', title: 'Chọn một điểm: đi tới đó và đánh mọi địch gặp trên đường', onclick: () => { ctl.attackMoveArmed = true; this.closeDetail(); c.toast('Chạm vào điểm đến'); ctl.onChange(); } })),
         ),
         this.gearSec = h('section', {}, h('h3', { text: 'Trang bị' }), gearHint, gearRow),
+        this.mountSec = h('section', {}, hint('Thú cưỡi', 'Thú do Chuồng thú cưỡi thuần hóa, giao cho từng người như công cụ: người cưỡi đi nhanh hơn và đỡ đòn hơn, lính có thú tính là kỵ binh. Kỵ binh của Trại kỵ thú không cần thú giao riêng: họ cưỡi con của trại.'), mountRow),
         this.toolsSec = toolsSec,
         h('section', {}, h('h3', { text: 'Chỉ số và kỹ năng' }), this.stats, this.skills),
       ),
@@ -127,6 +135,8 @@ export class UnitCard {
     const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job as WorkJob] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
     this.toolsSec.hidden = only === null;
     this.combatSec.hidden = !chosen.every((o) => o.job === 'fight'); // only soldiers get fighting orders
+    this.mountSec.hidden = chosen.every((o) => o.job === 'fight' && o.arm === 'cavalry');
+    for (const m of this.mountBtns) { const n = m.kind ? sim0.tamedCount(m.kind) : -1; m.btn.textContent = m.kind ? `${MOUNTS[m.kind].name} (${n})${chosen.every((o) => o.mount === m.kind) ? ' ✓' : ''}` : 'Đi bộ'; m.btn.disabled = m.kind !== null && n <= 0 && !chosen.every((o) => o.mount === m.kind); }
     this.gearSec.hidden = !chosen.every((o) => o.job === 'fight' || o.job === 'hunt' || o.job === 'scout');
     for (const r of this.toolRows) {
       r.row.hidden = r.k !== only;

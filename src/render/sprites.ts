@@ -43,6 +43,9 @@ import infantryL3 from '../data/blueprints/stone_age/buildings/infantry/L3.json'
 import cavalryL1 from '../data/blueprints/stone_age/buildings/cavalry/L1.json';
 import cavalryL2 from '../data/blueprints/stone_age/buildings/cavalry/L2.json';
 import cavalryL3 from '../data/blueprints/stone_age/buildings/cavalry/L3.json';
+import stableL1 from '../data/blueprints/stone_age/buildings/stable/L1.json';
+import stableL2 from '../data/blueprints/stone_age/buildings/stable/L2.json';
+import stableL3 from '../data/blueprints/stone_age/buildings/stable/L3.json';
 import archeryL1 from '../data/blueprints/stone_age/buildings/archery/L1.json';
 import archeryL2 from '../data/blueprints/stone_age/buildings/archery/L2.json';
 import archeryL3 from '../data/blueprints/stone_age/buildings/archery/L3.json';
@@ -144,6 +147,7 @@ const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>
     armory: [armoryL1, armoryL2, armoryL3],
     infantry: [infantryL1, infantryL2, infantryL3],
     cavalry: [cavalryL1, cavalryL2, cavalryL3],
+    stable: [stableL1, stableL2, stableL3],
     archery: [archeryL1, archeryL2, archeryL3],
     farmhouse: [farmhouseL1, farmhouseL2, farmhouseL3],
     huntlodge: [huntlodgeL1, huntlodgeL2, huntlodgeL3],
@@ -185,7 +189,7 @@ export class Sprites {
     this.icons.torch1 = this.torchIcon();
     this.nature('spring');
     this.emblems.lab = this.scrollEmblem();
-    this.emblems.builder = this.icons.hammer1; this.emblems.repair = this.icons.hammer2; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.infantry = this.icons.spear1; this.emblems.cavalry = this.icons.spear1; this.emblems.archery = this.icons.sling1 ?? this.icons.spear1; this.emblems.lumberyard = this.icons.axe1; this.emblems.quarry = this.icons.pick1; this.emblems.farmhouse = this.icons.hoe1; this.emblems.huntlodge = this.icons.spear1;
+    this.emblems.builder = this.icons.hammer1; this.emblems.repair = this.icons.hammer2; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.infantry = this.icons.spear1; this.emblems.cavalry = this.icons.spear1; this.emblems.archery = this.icons.sling1 ?? this.icons.spear1; this.emblems.lumberyard = this.icons.axe1; this.emblems.quarry = this.icons.pick1; this.emblems.farmhouse = this.icons.hoe1; this.emblems.huntlodge = this.icons.spear1; this.emblems.stable = this.icons.hoe1;
   }
 
   /** A torch 16x16, for the craft list. */
@@ -290,8 +294,22 @@ export class Sprites {
     return c;
   }
 
-  villager(v: Villager): HTMLCanvasElement {
-    const name = v.anim in anims ? v.anim : 'idle';
+  /** A beast under a rider, walking when the rider moves and standing when he stands, facing the way he faces. */
+  mount(species: string, moving: boolean, clock: number, dir: 1 | -1): HTMLCanvasElement {
+    const def = BODIES[species], clips = ANIMAL_CLIPS[def.body], name = moving ? 'walk' : 'idle', clip = clips[name] ?? clips.idle, n = clip.frames.length, frame = Math.floor(clock * clip.fps) % n;
+    const key = `${species}|ride|${name}|${frame}|${dir}`;
+    let c = this.animalCache.get(key);
+    if (!c) {
+      const r = renderAnimal(def, clip, frame), [cv, g] = canvas(r.w, r.h);
+      g.putImageData(new ImageData(new Uint8ClampedArray(r.data), r.w, r.h), 0, 0);
+      if (dir === -1) { const [mv, mg] = canvas(r.w, r.h); mg.translate(r.w, 0); mg.scale(-1, 1); mg.drawImage(cv, 0, 0); c = mv; } else c = cv;
+      this.animalCache.set(key, c);
+    }
+    return c;
+  }
+  /** The villager as drawn; `pose` makes him stand in one animation (a rider sits still on his beast). */
+  villager(v: Villager, pose?: string): HTMLCanvasElement {
+    const name = pose ?? (v.anim in anims ? v.anim : 'idle');
     const def = anims[name];
     const rate = def.gait ? Math.min(1.6, v.speed / 1.5) : 1; // walking animations step faster when the villager is quick
     const step = Math.floor(v.animClock * def.fps * rate);

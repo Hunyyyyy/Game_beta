@@ -120,14 +120,14 @@ export function dismissScouts(sim: Sim, ids: readonly number[]): string | null {
  * How good a scout one villager is, about 0.5 to 1.7: legs (Nhanh nhẹn), wind (Thể lực) and a clear head (Trí tuệ).
  * Experience and research will add to this later; every trip reads it through here.
  */
-export const scoutSkill = (v: Pick<Villager, 'stats'> & Partial<Pick<Villager, 'weapon' | 'armor' | 'torch' | 'arm'>>): number => {
+export const scoutSkill = (v: Pick<Villager, 'stats'> & Partial<Pick<Villager, 'weapon' | 'armor' | 'torch' | 'arm' | 'mount'>>): number => {
   const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta + w.int * v.stats.int) / 6; // a clear head and wind count most
   return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
 };
 
 /** What a scout carries makes him better at the work: a weapon, armour, a torch, a mount (a rider). `table` says how much each piece is worth. */
-function gearOf(v: Partial<Pick<Villager, 'weapon' | 'armor' | 'torch' | 'arm'>>, table: { weapon: number; armor: number; torch: number; mount: number }): number {
-  return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.arm === 'cavalry' ? table.mount : 0);
+function gearOf(v: Partial<Pick<Villager, 'weapon' | 'armor' | 'torch' | 'arm' | 'mount'>>, table: { weapon: number; armor: number; torch: number; mount: number }): number {
+  return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.mount || v.arm === 'cavalry' ? table.mount : 0);
 }
 
 /** How cleverly he moves: Trí tuệ to keep out of sight, Thể lực to keep going. Used for the chance of being caught and for the time spent watching. */
@@ -149,7 +149,7 @@ export const surveyTime = (level: number, scouts: number, int = 6): number => (0
 export function planScout(sim: Sim, ids: readonly number[], tribe: string): ScoutPlan {
   const level = scoutLevel(sim), limit = scoutLimit(sim), scouts = sim.mine(ids).filter((v) => canScout(sim, v));
   const need = scoutsNeeded(sim, tribe, Math.max(1, level)), w = whereIs(sim, tribe);
-  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
+  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * sim.mountSpeed(v) * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
   const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.int, 0) / scouts.length : 6);
   let error: string | null = null;
   if (!sim.dev.freeBuild && !isFound(sim, tribe)) error = 'Chưa ai tìm thấy làng này';

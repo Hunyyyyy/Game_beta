@@ -2348,6 +2348,16 @@ body.war .sheet, body.war .bbar {
       repeat: true,
       levels: { stone: [lv("H\u1ED1 ch\xF4ng", { wood: 3 }, 12, 0, 1, 0, 3), lv("H\u1ED1 ch\xF4ng s\xE2u", { wood: 4, stone: 2 }, 20, 0, 1, 0, 6)] }
     },
+    // where beasts are tamed to be ridden: slots = keepers who work inside, craftSpeed = how fast they get through an order; the level decides which beast (wolf, boar, elephant)
+    stable: {
+      kind: "stable",
+      name: "Chu\u1ED3ng th\xFA c\u01B0\u1EE1i",
+      w: 2,
+      h: 2,
+      buildable: true,
+      requires: ["builder"],
+      levels: { stone: [lv("Chu\u1ED3ng c\u1ECDc", { wood: 30, hide: 6 }, 90, 0, 1, 2), lv("Chu\u1ED3ng g\u1ED7", { wood: 40, hide: 8, stone: 10 }, 140, 0, 1.25, 3), lv("Chu\u1ED3ng \u0111\xE1", { wood: 45, stone: 35, hide: 12 }, 200, 0, 1.5, 4)] }
+    },
     // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
     field: {
       kind: "field",
@@ -2566,6 +2576,115 @@ body.war .sheet, body.war .bbar {
       }
     }
   };
+
+  // src/data/pace.json
+  var pace_default = {
+    _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
+    gather: { wood: 11, stone: 17, food: 6, farm: 70 },
+    bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
+    outdoor: ["wood", "stone", "food", "build"]
+  };
+
+  // src/data/mounts.json
+  var mounts_default = {
+    _note: "Mounts. A beast is tamed in the Chu\u1ED3ng th\xFA (the level of the stable decides which) and given to a villager like a tool; the riders of the Tr\u1EA1i k\u1EF5 th\xFA ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
+    kinds: {
+      wolf: { name: "S\xF3i", tier: 1, species: "wolf", speed: 1.6, guard: 0.95, ride: 9, cost: { food: 25, hide: 2, coin: 3 }, time: 240, tech: "tame_wolf" },
+      boar: { name: "L\u1EE3n r\u1EEBng", tier: 2, species: "boar", speed: 1.3, guard: 0.85, ride: 8, cost: { food: 40, hide: 4, coin: 5 }, time: 360, tech: "tame_boar" },
+      elephant: { name: "Voi", tier: 3, species: "mammoth", speed: 1.15, guard: 0.65, ride: 19, cost: { food: 80, hide: 8, coin: 12 }, time: 600, tech: "tame_elephant" }
+    }
+  };
+
+  // src/data/training.json
+  var training_default = {
+    _note: "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
+    dayBase: 0.6,
+    dayPerStat: 0.12,
+    foodBase: 4,
+    coinBase: 1,
+    coinPerStat: 0.3333,
+    gain: [0.01, 0.05],
+    partnerShare: 0.5,
+    floor: 0.6,
+    floorMin: 3,
+    caps: [8, 12, 16],
+    care: [
+      { name: "Kh\xF4ng", coin: 0, penalty: 0.8 },
+      { name: "C\u1EA9n th\u1EADn", coin: 2, penalty: 0.4 },
+      { name: "Chu \u0111\xE1o", coin: 5, penalty: 0.15 }
+    ],
+    profiles: {
+      infantry: { main: "str", partner: "vit", cost: "agi" },
+      archery: { main: "agi", partner: "sta", cost: "str" },
+      cavalry: { main: "agi", partner: "sta", cost: "int" },
+      lumberyard: { main: "str", partner: "vit", cost: "agi" },
+      quarry: { main: "str", partner: "vit", cost: "agi" },
+      farmhouse: { main: "agi", partner: "sta", cost: "str" },
+      huntlodge: { main: "agi", partner: "sta", cost: "str" },
+      builder: { main: "sta", partner: "str", cost: "int" },
+      workshop: { main: "int", cost: "sta" },
+      lab: { main: "int", cost: "sta" },
+      stable: { main: "agi", partner: "sta", cost: "str" },
+      repair: { main: "agi", partner: "int", cost: "vit" },
+      scouttent: { main: "agi", partner: "sta", cost: "str" }
+    }
+  };
+
+  // src/sim/jobs.ts
+  var TRAINING = training_default;
+  var MOUNT_KINDS = ["wolf", "boar", "elephant"];
+  var MOUNTS = mounts_default.kinds;
+  var fmtStat = (x) => String(Math.round(x * 10) / 10);
+  var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", int: "Tr\xED tu\u1EC7", sta: "Th\u1EC3 l\u1EF1c" };
+  var JOBS = {
+    wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
+    stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
+    food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: pace_default.gather.food, anim: "gather" },
+    build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
+    craft: { name: "Ch\u1EBF t\u1EA1o", stat: "int", baseTime: 1, anim: "craft" },
+    research: { name: "Nghi\xEAn c\u1EE9u", stat: "int", baseTime: 1, anim: "gather" },
+    repair: { name: "S\u1EEDa ch\u1EEFa", stat: "agi", baseTime: 1, anim: "craft" },
+    tame: { name: "Thu\u1EA7n th\xFA", stat: "agi", baseTime: 1, anim: "craft" },
+    hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
+    fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
+  };
+  var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", repair: "S\u1EEDa ch\u1EEFa", tame: "Thu\u1EA7n th\xFA", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh", scout: "Trinh s\xE1t" };
+  var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "repair", "tame", "hunt", "fight"];
+  var ROLES = {
+    wood: { job: "wood", building: "lumberyard", names: { stone: "\u0110\u1ED1n g\u1ED7", ancient: "Ti\u1EC1u phu" } },
+    stone: { job: "stone", building: "quarry", names: { stone: "Th\u1EE3 \u0111\xE1", ancient: "Th\u1EE3 m\u1ECF" } },
+    food: { job: "food", building: "farmhouse", names: { stone: "H\xE1i l\u01B0\u1EE3m", ancient: "N\xF4ng d\xE2n" } },
+    hunt: { job: "hunt", building: "huntlodge", names: { stone: "Th\u1EE3 s\u0103n", ancient: "Th\u1EE3 s\u0103n" } },
+    foot: { job: "fight", arm: "foot", building: "infantry", names: { stone: "Chi\u1EBFn binh", ancient: "B\u1ED9 binh" } },
+    cavalry: { job: "fight", arm: "cavalry", building: "cavalry", names: { stone: "K\u1EF5 th\xFA", ancient: "K\u1EF5 binh" } },
+    archer: { job: "fight", arm: "archer", building: "archery", names: { stone: "Th\u1EE3 n\xE9m", ancient: "Cung th\u1EE7" } },
+    scout: { job: "scout", building: "scouttent", names: { stone: "Trinh s\xE1t", ancient: "Trinh s\xE1t" } }
+  };
+  var ROLE_IDS = Object.keys(ROLES);
+  var roleName = (role, era) => ROLES[role].names[era];
+  function roleOf(v) {
+    switch (v.job) {
+      case "fight":
+        return v.arm === "archer" ? "archer" : v.arm === "cavalry" ? "cavalry" : "foot";
+      case "food":
+        return v.post < 0 ? "food" : null;
+      case "wood":
+      case "stone":
+      case "hunt":
+      case "scout":
+        return v.job;
+      default:
+        return null;
+    }
+  }
+  var STAFF_BUILDING = { craft: "workshop", research: "lab", repair: "repair", tame: "stable" };
+  var isStaffJob = (j) => j in STAFF_BUILDING;
+  var FARM_TIME = pace_default.gather.farm;
+  var XP_LEVELS = [60, 150, 300, 500, 800];
+  var MAX_LEVEL = 5;
+  var CREW_BUILDING = { build: "builder" };
+  var BARE_HANDS = pace_default.bare;
+  var OUTDOOR_JOBS = pace_default.outdoor;
 
   // src/data/handtools/tiers.json
   var tiers_default = {
@@ -11688,8 +11807,2793 @@ body.war .sheet, body.war .bbar {
     ]
   };
 
-  // src/data/blueprints/stone_age/buildings/archery/L1.json
+  // src/data/blueprints/stone_age/buildings/stable/L1.json
   var L1_default14 = {
+    name: "Chu\u1ED3ng th\xFA c\u01B0\u1EE1i (c\u1EA5p 1, chu\u1ED3ng c\u1ECDc)",
+    name_en: "Beast Stable (Tier 1)",
+    type: "prop",
+    size: [
+      72,
+      64
+    ],
+    anchor: [
+      36,
+      58
+    ],
+    footprint: [
+      4,
+      32,
+      64,
+      28
+    ],
+    seed: 51,
+    params: {
+      st1: 1,
+      st2: 1,
+      st3: 1,
+      st4: 1
+    },
+    palette: {
+      line: "#2b1d10",
+      shadow: "#000000",
+      dirt: "#6a5238",
+      earth: "#86704e",
+      earthL: "#9a8460",
+      wood: "#8a6238",
+      woodL: "#aa7c48",
+      woodD: "#5e4026",
+      log: "#6b4a28",
+      logE: "#c49a60",
+      rope: "#d8c690",
+      stone: "#8e9498",
+      stoneL: "#b9bfc2",
+      stoneD: "#60676b",
+      chip: "#d8d2c0",
+      hide: "#a0552f",
+      hideL: "#c06f43",
+      hideD: "#7a3d20",
+      stitch: "#e8d6a8",
+      bone: "#e4dcc4",
+      flintL: "#7c8794",
+      door: "#2a1a0e",
+      flag: "#4f7a2c",
+      flagD: "#355a1e",
+      thatch: "#c9a84e",
+      thatchL: "#e0c670",
+      thatchD: "#9a7c32",
+      wattle: "#b89a58",
+      wattleD: "#8a7038",
+      clay: "#b08a62",
+      clayD: "#8c6a48",
+      green: "#6f9a3e",
+      greenD: "#4f7a2c",
+      greenL: "#8fba54",
+      hay: "#d6b85a",
+      hayD: "#a88a38",
+      fur: "#7a5230",
+      furD: "#553820",
+      furL: "#9a7048",
+      sand: "#c4ad7c",
+      target: "#e4dcc4",
+      flame: "#f89628",
+      flameL: "#ffd060",
+      water: "#5a7f9a"
+    },
+    layers: [
+      {
+        shape: "ellipse",
+        cx: 36,
+        cy: 55,
+        rx: 30,
+        ry: 6,
+        color: "shadow",
+        alpha: 0.25
+      },
+      {
+        shape: "rect",
+        x: 8,
+        y: 36,
+        w: 56,
+        h: 18,
+        color: "dirt",
+        alpha: 0.55,
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 7,
+        y: 36,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 63,
+        y: 36,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 7,
+        y: 50,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 63,
+        y: 50,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "line",
+        from: [
+          9,
+          37
+        ],
+        to: [
+          62,
+          37
+        ],
+        w: 1,
+        color: "rope",
+        ifNot: "st1"
+      },
+      {
+        shape: "group",
+        if: "st1",
+        layers: [
+          {
+            shape: "ellipse",
+            cx: 36,
+            cy: 47,
+            rx: 30,
+            ry: 8,
+            color: "earth"
+          },
+          {
+            shape: "scatter",
+            count: 34,
+            area: [
+              6,
+              40,
+              60,
+              14
+            ],
+            size: [
+              1,
+              2
+            ],
+            colors: [
+              "dirt",
+              "chip",
+              "earthL",
+              "stoneD"
+            ],
+            onlyOver: [
+              "earth"
+            ]
+          }
+        ]
+      },
+      {
+        shape: "group",
+        if: "st2",
+        layers: [
+          {
+            shape: "rect",
+            x: 8,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 8,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 16,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 16,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 24,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 24,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 32,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 32,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 40,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 40,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 48,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 48,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 56,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 56,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 64,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 64,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 8,
+            y: 40,
+            w: 2,
+            h: 11,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 62,
+            y: 40,
+            w: 2,
+            h: 11,
+            color: "wood"
+          }
+        ]
+      },
+      {
+        shape: "group",
+        if: "st3",
+        layers: [
+          {
+            shape: "line",
+            from: [
+              9,
+              38
+            ],
+            to: [
+              63,
+              38
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              9,
+              52
+            ],
+            to: [
+              63,
+              52
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              9,
+              41
+            ],
+            to: [
+              9,
+              52
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              63,
+              41
+            ],
+            to: [
+              63,
+              52
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "rect",
+            x: 12,
+            y: 18,
+            w: 2,
+            h: 24,
+            color: "woodD"
+          },
+          {
+            shape: "rect",
+            x: 34,
+            y: 18,
+            w: 2,
+            h: 24,
+            color: "woodD"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                8,
+                22
+              ],
+              [
+                24,
+                10
+              ],
+              [
+                40,
+                22
+              ]
+            ],
+            color: "thatch"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                8,
+                22
+              ],
+              [
+                24,
+                10
+              ],
+              [
+                24,
+                22
+              ]
+            ],
+            color: "thatchL"
+          },
+          {
+            shape: "line",
+            from: [
+              24,
+              10
+            ],
+            to: [
+              40,
+              22
+            ],
+            w: 1,
+            color: "thatchD"
+          },
+          {
+            shape: "line",
+            from: [
+              8,
+              22
+            ],
+            to: [
+              40,
+              22
+            ],
+            w: 1,
+            color: "woodD"
+          }
+        ]
+      },
+      {
+        shape: "group",
+        if: "st4",
+        layers: [
+          {
+            shape: "ellipse",
+            cx: 54,
+            cy: 47,
+            rx: 7,
+            ry: 3,
+            color: "hayD"
+          },
+          {
+            shape: "ellipse",
+            cx: 54,
+            cy: 46,
+            rx: 6,
+            ry: 3,
+            color: "hay"
+          },
+          {
+            shape: "line",
+            from: [
+              49,
+              46
+            ],
+            to: [
+              59,
+              46
+            ],
+            w: 1,
+            color: "hayD",
+            alpha: 0.7
+          },
+          {
+            shape: "rect",
+            x: 20,
+            y: 50,
+            w: 14,
+            h: 3,
+            color: "woodD"
+          },
+          {
+            shape: "rect",
+            x: 21,
+            y: 49,
+            w: 12,
+            h: 2,
+            color: "woodL"
+          },
+          {
+            shape: "ellipse",
+            cx: 28,
+            cy: 42,
+            rx: 7,
+            ry: 4,
+            color: "fur"
+          },
+          {
+            shape: "ellipse",
+            cx: 28,
+            cy: 41,
+            rx: 6,
+            ry: 2,
+            color: "furL"
+          },
+          {
+            shape: "line",
+            from: [
+              23,
+              45
+            ],
+            to: [
+              23,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              26,
+              45
+            ],
+            to: [
+              26,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              30,
+              45
+            ],
+            to: [
+              30,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              33,
+              45
+            ],
+            to: [
+              33,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                33,
+                40
+              ],
+              [
+                36,
+                34
+              ],
+              [
+                38,
+                36
+              ],
+              [
+                35,
+                42
+              ]
+            ],
+            color: "fur"
+          },
+          {
+            shape: "ellipse",
+            cx: 38,
+            cy: 35,
+            rx: 3,
+            ry: 2,
+            color: "fur"
+          },
+          {
+            shape: "pixels",
+            at: [
+              [
+                39,
+                34
+              ]
+            ],
+            color: "line"
+          },
+          {
+            shape: "line",
+            from: [
+              21,
+              41
+            ],
+            to: [
+              18,
+              45
+            ],
+            w: 1,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              34,
+              37
+            ],
+            to: [
+              32,
+              34
+            ],
+            w: 1,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              62,
+              52
+            ],
+            to: [
+              62,
+              22
+            ],
+            w: 1,
+            color: "woodD"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                63,
+                22
+              ],
+              [
+                71,
+                24
+              ],
+              [
+                63,
+                28
+              ]
+            ],
+            color: "flag"
+          },
+          {
+            shape: "pixels",
+            at: [
+              [
+                40,
+                45
+              ],
+              [
+                44,
+                49
+              ],
+              [
+                16,
+                46
+              ]
+            ],
+            color: "hay"
+          }
+        ]
+      },
+      {
+        shape: "rect",
+        x: 14,
+        y: 22,
+        w: 2,
+        h: 20,
+        color: "woodD"
+      },
+      {
+        shape: "rect",
+        x: 13,
+        y: 22,
+        w: 4,
+        h: 1,
+        color: "wood"
+      },
+      {
+        shape: "ellipse",
+        cx: 15,
+        cy: 21,
+        rx: 4,
+        ry: 3,
+        color: "chip"
+      },
+      {
+        shape: "rect",
+        x: 13,
+        y: 20,
+        w: 1,
+        h: 2,
+        color: "line"
+      },
+      {
+        shape: "rect",
+        x: 16,
+        y: 20,
+        w: 1,
+        h: 2,
+        color: "line"
+      },
+      {
+        shape: "rect",
+        x: 44,
+        y: 46,
+        w: 16,
+        h: 5,
+        color: "woodD"
+      },
+      {
+        shape: "rect",
+        x: 45,
+        y: 47,
+        w: 14,
+        h: 3,
+        color: "water"
+      },
+      {
+        shape: "ellipse",
+        cx: 28,
+        cy: 50,
+        rx: 6,
+        ry: 3,
+        color: "hay"
+      },
+      {
+        shape: "ellipse",
+        cx: 28,
+        cy: 49,
+        rx: 4,
+        ry: 2,
+        color: "hayD"
+      },
+      {
+        shape: "outline",
+        color: "line"
+      }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/stable/L2.json
+  var L2_default13 = {
+    name: "Chu\u1ED3ng th\xFA c\u01B0\u1EE1i (c\u1EA5p 2, chu\u1ED3ng g\u1ED7)",
+    name_en: "Beast Stable (Tier 2)",
+    type: "prop",
+    size: [
+      72,
+      64
+    ],
+    anchor: [
+      36,
+      58
+    ],
+    footprint: [
+      4,
+      32,
+      64,
+      28
+    ],
+    seed: 52,
+    params: {
+      st1: 1,
+      st2: 1,
+      st3: 1,
+      st4: 1
+    },
+    palette: {
+      line: "#2b1d10",
+      shadow: "#000000",
+      dirt: "#6a5238",
+      earth: "#86704e",
+      earthL: "#9a8460",
+      wood: "#8a6238",
+      woodL: "#aa7c48",
+      woodD: "#5e4026",
+      log: "#6b4a28",
+      logE: "#c49a60",
+      rope: "#d8c690",
+      stone: "#8e9498",
+      stoneL: "#b9bfc2",
+      stoneD: "#60676b",
+      chip: "#d8d2c0",
+      hide: "#a0552f",
+      hideL: "#c06f43",
+      hideD: "#7a3d20",
+      stitch: "#e8d6a8",
+      bone: "#e4dcc4",
+      flintL: "#7c8794",
+      door: "#2a1a0e",
+      flag: "#4f7a2c",
+      flagD: "#355a1e",
+      thatch: "#c9a84e",
+      thatchL: "#e0c670",
+      thatchD: "#9a7c32",
+      wattle: "#b89a58",
+      wattleD: "#8a7038",
+      clay: "#b08a62",
+      clayD: "#8c6a48",
+      green: "#6f9a3e",
+      greenD: "#4f7a2c",
+      greenL: "#8fba54",
+      hay: "#d6b85a",
+      hayD: "#a88a38",
+      fur: "#7a5230",
+      furD: "#553820",
+      furL: "#9a7048",
+      sand: "#c4ad7c",
+      target: "#e4dcc4",
+      flame: "#f89628",
+      flameL: "#ffd060",
+      water: "#5a7f9a"
+    },
+    layers: [
+      {
+        shape: "ellipse",
+        cx: 36,
+        cy: 55,
+        rx: 30,
+        ry: 6,
+        color: "shadow",
+        alpha: 0.25
+      },
+      {
+        shape: "rect",
+        x: 8,
+        y: 36,
+        w: 56,
+        h: 18,
+        color: "dirt",
+        alpha: 0.55,
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 7,
+        y: 36,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 63,
+        y: 36,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 7,
+        y: 50,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 63,
+        y: 50,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "line",
+        from: [
+          9,
+          37
+        ],
+        to: [
+          62,
+          37
+        ],
+        w: 1,
+        color: "rope",
+        ifNot: "st1"
+      },
+      {
+        shape: "group",
+        if: "st1",
+        layers: [
+          {
+            shape: "ellipse",
+            cx: 36,
+            cy: 47,
+            rx: 30,
+            ry: 8,
+            color: "earth"
+          },
+          {
+            shape: "scatter",
+            count: 34,
+            area: [
+              6,
+              40,
+              60,
+              14
+            ],
+            size: [
+              1,
+              2
+            ],
+            colors: [
+              "dirt",
+              "chip",
+              "earthL",
+              "stoneD"
+            ],
+            onlyOver: [
+              "earth"
+            ]
+          }
+        ]
+      },
+      {
+        shape: "group",
+        if: "st2",
+        layers: [
+          {
+            shape: "rect",
+            x: 8,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 8,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 16,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 16,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 24,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 24,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 32,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 32,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 40,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 40,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 48,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 48,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 56,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 56,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 64,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 64,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 8,
+            y: 40,
+            w: 2,
+            h: 11,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 62,
+            y: 40,
+            w: 2,
+            h: 11,
+            color: "wood"
+          }
+        ]
+      },
+      {
+        shape: "group",
+        if: "st3",
+        layers: [
+          {
+            shape: "line",
+            from: [
+              9,
+              38
+            ],
+            to: [
+              63,
+              38
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              9,
+              52
+            ],
+            to: [
+              63,
+              52
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              9,
+              41
+            ],
+            to: [
+              9,
+              52
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              63,
+              41
+            ],
+            to: [
+              63,
+              52
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              9,
+              45
+            ],
+            to: [
+              9,
+              45
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "rect",
+            x: 12,
+            y: 18,
+            w: 2,
+            h: 24,
+            color: "woodD"
+          },
+          {
+            shape: "rect",
+            x: 34,
+            y: 18,
+            w: 2,
+            h: 24,
+            color: "woodD"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                8,
+                22
+              ],
+              [
+                24,
+                10
+              ],
+              [
+                40,
+                22
+              ]
+            ],
+            color: "thatch"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                8,
+                22
+              ],
+              [
+                24,
+                10
+              ],
+              [
+                24,
+                22
+              ]
+            ],
+            color: "thatchL"
+          },
+          {
+            shape: "line",
+            from: [
+              24,
+              10
+            ],
+            to: [
+              40,
+              22
+            ],
+            w: 1,
+            color: "thatchD"
+          },
+          {
+            shape: "line",
+            from: [
+              8,
+              22
+            ],
+            to: [
+              40,
+              22
+            ],
+            w: 1,
+            color: "woodD"
+          },
+          {
+            shape: "rect",
+            x: 10,
+            y: 38,
+            w: 28,
+            h: 2,
+            color: "woodD"
+          },
+          {
+            shape: "rect",
+            x: 10,
+            y: 30,
+            w: 28,
+            h: 8,
+            color: "wattle",
+            alpha: 0.5
+          },
+          {
+            shape: "line",
+            from: [
+              10,
+              34
+            ],
+            to: [
+              38,
+              34
+            ],
+            w: 1,
+            color: "wattleD"
+          }
+        ]
+      },
+      {
+        shape: "group",
+        if: "st4",
+        layers: [
+          {
+            shape: "ellipse",
+            cx: 54,
+            cy: 47,
+            rx: 7,
+            ry: 3,
+            color: "hayD"
+          },
+          {
+            shape: "ellipse",
+            cx: 54,
+            cy: 46,
+            rx: 6,
+            ry: 3,
+            color: "hay"
+          },
+          {
+            shape: "line",
+            from: [
+              49,
+              46
+            ],
+            to: [
+              59,
+              46
+            ],
+            w: 1,
+            color: "hayD",
+            alpha: 0.7
+          },
+          {
+            shape: "rect",
+            x: 20,
+            y: 50,
+            w: 14,
+            h: 3,
+            color: "woodD"
+          },
+          {
+            shape: "rect",
+            x: 21,
+            y: 49,
+            w: 12,
+            h: 2,
+            color: "woodL"
+          },
+          {
+            shape: "ellipse",
+            cx: 28,
+            cy: 42,
+            rx: 7,
+            ry: 4,
+            color: "fur"
+          },
+          {
+            shape: "ellipse",
+            cx: 28,
+            cy: 41,
+            rx: 6,
+            ry: 2,
+            color: "furL"
+          },
+          {
+            shape: "line",
+            from: [
+              23,
+              45
+            ],
+            to: [
+              23,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              26,
+              45
+            ],
+            to: [
+              26,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              30,
+              45
+            ],
+            to: [
+              30,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              33,
+              45
+            ],
+            to: [
+              33,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                33,
+                40
+              ],
+              [
+                36,
+                34
+              ],
+              [
+                38,
+                36
+              ],
+              [
+                35,
+                42
+              ]
+            ],
+            color: "fur"
+          },
+          {
+            shape: "ellipse",
+            cx: 38,
+            cy: 35,
+            rx: 3,
+            ry: 2,
+            color: "fur"
+          },
+          {
+            shape: "pixels",
+            at: [
+              [
+                39,
+                34
+              ]
+            ],
+            color: "line"
+          },
+          {
+            shape: "line",
+            from: [
+              21,
+              41
+            ],
+            to: [
+              18,
+              45
+            ],
+            w: 1,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              34,
+              37
+            ],
+            to: [
+              32,
+              34
+            ],
+            w: 1,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              62,
+              52
+            ],
+            to: [
+              62,
+              22
+            ],
+            w: 1,
+            color: "woodD"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                63,
+                22
+              ],
+              [
+                71,
+                24
+              ],
+              [
+                63,
+                28
+              ]
+            ],
+            color: "flag"
+          },
+          {
+            shape: "pixels",
+            at: [
+              [
+                40,
+                45
+              ],
+              [
+                44,
+                49
+              ],
+              [
+                16,
+                46
+              ]
+            ],
+            color: "hay"
+          }
+        ]
+      },
+      {
+        shape: "rect",
+        x: 14,
+        y: 22,
+        w: 2,
+        h: 20,
+        color: "woodD"
+      },
+      {
+        shape: "rect",
+        x: 13,
+        y: 22,
+        w: 4,
+        h: 1,
+        color: "wood"
+      },
+      {
+        shape: "ellipse",
+        cx: 15,
+        cy: 21,
+        rx: 4,
+        ry: 3,
+        color: "chip"
+      },
+      {
+        shape: "rect",
+        x: 13,
+        y: 20,
+        w: 1,
+        h: 2,
+        color: "line"
+      },
+      {
+        shape: "rect",
+        x: 16,
+        y: 20,
+        w: 1,
+        h: 2,
+        color: "line"
+      },
+      {
+        shape: "rect",
+        x: 44,
+        y: 46,
+        w: 16,
+        h: 5,
+        color: "woodD"
+      },
+      {
+        shape: "rect",
+        x: 45,
+        y: 47,
+        w: 14,
+        h: 3,
+        color: "water"
+      },
+      {
+        shape: "ellipse",
+        cx: 28,
+        cy: 50,
+        rx: 6,
+        ry: 3,
+        color: "hay"
+      },
+      {
+        shape: "ellipse",
+        cx: 28,
+        cy: 49,
+        rx: 4,
+        ry: 2,
+        color: "hayD"
+      },
+      {
+        shape: "rect",
+        x: 50,
+        y: 36,
+        w: 2,
+        h: 10,
+        color: "woodD"
+      },
+      {
+        shape: "rect",
+        x: 49,
+        y: 35,
+        w: 4,
+        h: 2,
+        color: "flag"
+      },
+      {
+        shape: "outline",
+        color: "line"
+      }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/stable/L3.json
+  var L3_default10 = {
+    name: "Chu\u1ED3ng th\xFA c\u01B0\u1EE1i (c\u1EA5p 3, chu\u1ED3ng \u0111\xE1, v\xF2m ng\xE0)",
+    name_en: "Beast Stable (Tier 3)",
+    type: "prop",
+    size: [
+      72,
+      64
+    ],
+    anchor: [
+      36,
+      58
+    ],
+    footprint: [
+      4,
+      32,
+      64,
+      28
+    ],
+    seed: 53,
+    params: {
+      st1: 1,
+      st2: 1,
+      st3: 1,
+      st4: 1
+    },
+    palette: {
+      line: "#2b1d10",
+      shadow: "#000000",
+      dirt: "#6a5238",
+      earth: "#86704e",
+      earthL: "#9a8460",
+      wood: "#8a6238",
+      woodL: "#aa7c48",
+      woodD: "#5e4026",
+      log: "#6b4a28",
+      logE: "#c49a60",
+      rope: "#d8c690",
+      stone: "#8e9498",
+      stoneL: "#b9bfc2",
+      stoneD: "#60676b",
+      chip: "#d8d2c0",
+      hide: "#a0552f",
+      hideL: "#c06f43",
+      hideD: "#7a3d20",
+      stitch: "#e8d6a8",
+      bone: "#e4dcc4",
+      flintL: "#7c8794",
+      door: "#2a1a0e",
+      flag: "#4f7a2c",
+      flagD: "#355a1e",
+      thatch: "#c9a84e",
+      thatchL: "#e0c670",
+      thatchD: "#9a7c32",
+      wattle: "#b89a58",
+      wattleD: "#8a7038",
+      clay: "#b08a62",
+      clayD: "#8c6a48",
+      green: "#6f9a3e",
+      greenD: "#4f7a2c",
+      greenL: "#8fba54",
+      hay: "#d6b85a",
+      hayD: "#a88a38",
+      fur: "#7a5230",
+      furD: "#553820",
+      furL: "#9a7048",
+      sand: "#c4ad7c",
+      target: "#e4dcc4",
+      flame: "#f89628",
+      flameL: "#ffd060",
+      water: "#5a7f9a"
+    },
+    layers: [
+      {
+        shape: "ellipse",
+        cx: 36,
+        cy: 55,
+        rx: 30,
+        ry: 6,
+        color: "shadow",
+        alpha: 0.25
+      },
+      {
+        shape: "rect",
+        x: 8,
+        y: 36,
+        w: 56,
+        h: 18,
+        color: "dirt",
+        alpha: 0.55,
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 7,
+        y: 36,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 63,
+        y: 36,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 7,
+        y: 50,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "rect",
+        x: 63,
+        y: 50,
+        w: 2,
+        h: 5,
+        color: "wood",
+        ifNot: "st1"
+      },
+      {
+        shape: "line",
+        from: [
+          9,
+          37
+        ],
+        to: [
+          62,
+          37
+        ],
+        w: 1,
+        color: "rope",
+        ifNot: "st1"
+      },
+      {
+        shape: "group",
+        if: "st1",
+        layers: [
+          {
+            shape: "ellipse",
+            cx: 36,
+            cy: 47,
+            rx: 30,
+            ry: 8,
+            color: "earth"
+          },
+          {
+            shape: "scatter",
+            count: 34,
+            area: [
+              6,
+              40,
+              60,
+              14
+            ],
+            size: [
+              1,
+              2
+            ],
+            colors: [
+              "dirt",
+              "chip",
+              "earthL",
+              "stoneD"
+            ],
+            onlyOver: [
+              "earth"
+            ]
+          }
+        ]
+      },
+      {
+        shape: "group",
+        if: "st2",
+        layers: [
+          {
+            shape: "rect",
+            x: 8,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 8,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 16,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 16,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 24,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 24,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 32,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 32,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 40,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 40,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 48,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 48,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 56,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 56,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 64,
+            y: 36,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 64,
+            y: 50,
+            w: 2,
+            h: 6,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 8,
+            y: 40,
+            w: 2,
+            h: 11,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 62,
+            y: 40,
+            w: 2,
+            h: 11,
+            color: "wood"
+          },
+          {
+            shape: "rect",
+            x: 6,
+            y: 50,
+            w: 60,
+            h: 4,
+            color: "stone"
+          },
+          {
+            shape: "rect",
+            x: 6,
+            y: 50,
+            w: 60,
+            h: 1,
+            color: "stoneL"
+          },
+          {
+            shape: "rect",
+            x: 6,
+            y: 53,
+            w: 60,
+            h: 1,
+            color: "stoneD"
+          },
+          {
+            shape: "line",
+            from: [
+              12,
+              50
+            ],
+            to: [
+              12,
+              53
+            ],
+            w: 1,
+            color: "stoneD"
+          },
+          {
+            shape: "line",
+            from: [
+              20,
+              50
+            ],
+            to: [
+              20,
+              53
+            ],
+            w: 1,
+            color: "stoneD"
+          },
+          {
+            shape: "line",
+            from: [
+              28,
+              50
+            ],
+            to: [
+              28,
+              53
+            ],
+            w: 1,
+            color: "stoneD"
+          },
+          {
+            shape: "line",
+            from: [
+              36,
+              50
+            ],
+            to: [
+              36,
+              53
+            ],
+            w: 1,
+            color: "stoneD"
+          },
+          {
+            shape: "line",
+            from: [
+              44,
+              50
+            ],
+            to: [
+              44,
+              53
+            ],
+            w: 1,
+            color: "stoneD"
+          },
+          {
+            shape: "line",
+            from: [
+              52,
+              50
+            ],
+            to: [
+              52,
+              53
+            ],
+            w: 1,
+            color: "stoneD"
+          },
+          {
+            shape: "line",
+            from: [
+              60,
+              50
+            ],
+            to: [
+              60,
+              53
+            ],
+            w: 1,
+            color: "stoneD"
+          }
+        ]
+      },
+      {
+        shape: "group",
+        if: "st3",
+        layers: [
+          {
+            shape: "line",
+            from: [
+              9,
+              38
+            ],
+            to: [
+              63,
+              38
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              9,
+              52
+            ],
+            to: [
+              63,
+              52
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              9,
+              41
+            ],
+            to: [
+              9,
+              52
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              63,
+              41
+            ],
+            to: [
+              63,
+              52
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "line",
+            from: [
+              9,
+              45
+            ],
+            to: [
+              9,
+              45
+            ],
+            w: 1,
+            color: "woodL"
+          },
+          {
+            shape: "rect",
+            x: 12,
+            y: 18,
+            w: 2,
+            h: 24,
+            color: "woodD"
+          },
+          {
+            shape: "rect",
+            x: 34,
+            y: 18,
+            w: 2,
+            h: 24,
+            color: "woodD"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                8,
+                22
+              ],
+              [
+                24,
+                10
+              ],
+              [
+                40,
+                22
+              ]
+            ],
+            color: "hide"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                8,
+                22
+              ],
+              [
+                24,
+                10
+              ],
+              [
+                24,
+                22
+              ]
+            ],
+            color: "hideL"
+          },
+          {
+            shape: "line",
+            from: [
+              24,
+              10
+            ],
+            to: [
+              40,
+              22
+            ],
+            w: 1,
+            color: "hideD"
+          },
+          {
+            shape: "line",
+            from: [
+              8,
+              22
+            ],
+            to: [
+              40,
+              22
+            ],
+            w: 1,
+            color: "woodD"
+          },
+          {
+            shape: "rect",
+            x: 10,
+            y: 38,
+            w: 28,
+            h: 2,
+            color: "woodD"
+          },
+          {
+            shape: "rect",
+            x: 10,
+            y: 30,
+            w: 28,
+            h: 8,
+            color: "wattle",
+            alpha: 0.5
+          },
+          {
+            shape: "line",
+            from: [
+              10,
+              34
+            ],
+            to: [
+              38,
+              34
+            ],
+            w: 1,
+            color: "wattleD"
+          }
+        ]
+      },
+      {
+        shape: "group",
+        if: "st4",
+        layers: [
+          {
+            shape: "ellipse",
+            cx: 54,
+            cy: 47,
+            rx: 7,
+            ry: 3,
+            color: "hayD"
+          },
+          {
+            shape: "ellipse",
+            cx: 54,
+            cy: 46,
+            rx: 6,
+            ry: 3,
+            color: "hay"
+          },
+          {
+            shape: "line",
+            from: [
+              49,
+              46
+            ],
+            to: [
+              59,
+              46
+            ],
+            w: 1,
+            color: "hayD",
+            alpha: 0.7
+          },
+          {
+            shape: "rect",
+            x: 20,
+            y: 50,
+            w: 14,
+            h: 3,
+            color: "woodD"
+          },
+          {
+            shape: "rect",
+            x: 21,
+            y: 49,
+            w: 12,
+            h: 2,
+            color: "water"
+          },
+          {
+            shape: "ellipse",
+            cx: 28,
+            cy: 42,
+            rx: 7,
+            ry: 4,
+            color: "fur"
+          },
+          {
+            shape: "ellipse",
+            cx: 28,
+            cy: 41,
+            rx: 6,
+            ry: 2,
+            color: "furL"
+          },
+          {
+            shape: "line",
+            from: [
+              23,
+              45
+            ],
+            to: [
+              23,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              26,
+              45
+            ],
+            to: [
+              26,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              30,
+              45
+            ],
+            to: [
+              30,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              33,
+              45
+            ],
+            to: [
+              33,
+              48
+            ],
+            w: 2,
+            color: "furD"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                33,
+                40
+              ],
+              [
+                36,
+                34
+              ],
+              [
+                38,
+                36
+              ],
+              [
+                35,
+                42
+              ]
+            ],
+            color: "fur"
+          },
+          {
+            shape: "ellipse",
+            cx: 38,
+            cy: 35,
+            rx: 3,
+            ry: 2,
+            color: "fur"
+          },
+          {
+            shape: "pixels",
+            at: [
+              [
+                39,
+                34
+              ]
+            ],
+            color: "line"
+          },
+          {
+            shape: "line",
+            from: [
+              21,
+              41
+            ],
+            to: [
+              18,
+              45
+            ],
+            w: 1,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              34,
+              37
+            ],
+            to: [
+              32,
+              34
+            ],
+            w: 1,
+            color: "furD"
+          },
+          {
+            shape: "line",
+            from: [
+              62,
+              52
+            ],
+            to: [
+              62,
+              22
+            ],
+            w: 1,
+            color: "woodD"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                63,
+                22
+              ],
+              [
+                71,
+                24
+              ],
+              [
+                63,
+                28
+              ]
+            ],
+            color: "flag"
+          },
+          {
+            shape: "pixels",
+            at: [
+              [
+                40,
+                45
+              ],
+              [
+                44,
+                49
+              ],
+              [
+                16,
+                46
+              ]
+            ],
+            color: "hay"
+          },
+          {
+            shape: "ellipse",
+            cx: 46,
+            cy: 38,
+            rx: 7,
+            ry: 4,
+            color: "furD"
+          },
+          {
+            shape: "ellipse",
+            cx: 46,
+            cy: 37,
+            rx: 6,
+            ry: 2,
+            color: "fur"
+          },
+          {
+            shape: "line",
+            from: [
+              51,
+              41
+            ],
+            to: [
+              51,
+              44
+            ],
+            w: 2,
+            color: "line"
+          },
+          {
+            shape: "line",
+            from: [
+              48,
+              41
+            ],
+            to: [
+              48,
+              44
+            ],
+            w: 2,
+            color: "line"
+          },
+          {
+            shape: "line",
+            from: [
+              44,
+              41
+            ],
+            to: [
+              44,
+              44
+            ],
+            w: 2,
+            color: "line"
+          },
+          {
+            shape: "line",
+            from: [
+              41,
+              41
+            ],
+            to: [
+              41,
+              44
+            ],
+            w: 2,
+            color: "line"
+          },
+          {
+            shape: "poly",
+            points: [
+              [
+                41,
+                36
+              ],
+              [
+                38,
+                30
+              ],
+              [
+                36,
+                32
+              ],
+              [
+                39,
+                38
+              ]
+            ],
+            color: "furD"
+          },
+          {
+            shape: "ellipse",
+            cx: 36,
+            cy: 31,
+            rx: 3,
+            ry: 2,
+            color: "furD"
+          },
+          {
+            shape: "pixels",
+            at: [
+              [
+                35,
+                30
+              ]
+            ],
+            color: "line"
+          },
+          {
+            shape: "line",
+            from: [
+              53,
+              37
+            ],
+            to: [
+              56,
+              41
+            ],
+            w: 1,
+            color: "line"
+          },
+          {
+            shape: "line",
+            from: [
+              40,
+              33
+            ],
+            to: [
+              42,
+              30
+            ],
+            w: 1,
+            color: "line"
+          },
+          {
+            shape: "line",
+            from: [
+              6,
+              52
+            ],
+            to: [
+              6,
+              42
+            ],
+            w: 1,
+            color: "woodD"
+          },
+          {
+            shape: "ellipse",
+            cx: 6,
+            cy: 40,
+            rx: 2,
+            ry: 3,
+            color: "flame"
+          },
+          {
+            shape: "ellipse",
+            cx: 6,
+            cy: 40,
+            rx: 1,
+            ry: 2,
+            color: "flameL"
+          }
+        ]
+      },
+      {
+        shape: "rect",
+        x: 14,
+        y: 22,
+        w: 2,
+        h: 20,
+        color: "woodD"
+      },
+      {
+        shape: "rect",
+        x: 13,
+        y: 22,
+        w: 4,
+        h: 1,
+        color: "wood"
+      },
+      {
+        shape: "ellipse",
+        cx: 15,
+        cy: 21,
+        rx: 4,
+        ry: 3,
+        color: "chip"
+      },
+      {
+        shape: "rect",
+        x: 13,
+        y: 20,
+        w: 1,
+        h: 2,
+        color: "line"
+      },
+      {
+        shape: "rect",
+        x: 16,
+        y: 20,
+        w: 1,
+        h: 2,
+        color: "line"
+      },
+      {
+        shape: "rect",
+        x: 44,
+        y: 46,
+        w: 16,
+        h: 5,
+        color: "woodD"
+      },
+      {
+        shape: "rect",
+        x: 45,
+        y: 47,
+        w: 14,
+        h: 3,
+        color: "water"
+      },
+      {
+        shape: "ellipse",
+        cx: 28,
+        cy: 50,
+        rx: 6,
+        ry: 3,
+        color: "hay"
+      },
+      {
+        shape: "ellipse",
+        cx: 28,
+        cy: 49,
+        rx: 4,
+        ry: 2,
+        color: "hayD"
+      },
+      {
+        shape: "rect",
+        x: 50,
+        y: 36,
+        w: 2,
+        h: 10,
+        color: "woodD"
+      },
+      {
+        shape: "rect",
+        x: 49,
+        y: 35,
+        w: 4,
+        h: 2,
+        color: "flag"
+      },
+      {
+        shape: "line",
+        from: [
+          26,
+          40
+        ],
+        to: [
+          36,
+          26
+        ],
+        w: 2,
+        color: "chip"
+      },
+      {
+        shape: "line",
+        from: [
+          36,
+          26
+        ],
+        to: [
+          46,
+          40
+        ],
+        w: 2,
+        color: "chip"
+      },
+      {
+        shape: "line",
+        from: [
+          26,
+          40
+        ],
+        to: [
+          26,
+          44
+        ],
+        w: 2,
+        color: "chip"
+      },
+      {
+        shape: "line",
+        from: [
+          46,
+          40
+        ],
+        to: [
+          46,
+          44
+        ],
+        w: 2,
+        color: "chip"
+      },
+      {
+        shape: "outline",
+        color: "line"
+      }
+    ]
+  };
+
+  // src/data/blueprints/stone_age/buildings/archery/L1.json
+  var L1_default15 = {
     name: "Tr\u1EA1i th\u1EE3 n\xE9m (c\u1EA5p 1, b\xE3i bia r\u01A1m)",
     name_en: "Thrower Camp (Tier 1)",
     type: "prop",
@@ -12144,7 +15048,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/archery/L2.json
-  var L2_default13 = {
+  var L2_default14 = {
     name: "Tr\u1EA1i th\u1EE3 n\xE9m (c\u1EA5p 2, b\xE3i bia, gi\xE1 n\xE1, m\xE1i)",
     name_en: "Thrower Camp (Tier 2)",
     type: "prop",
@@ -12735,7 +15639,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/archery/L3.json
-  var L3_default10 = {
+  var L3_default11 = {
     name: "Tr\u1EA1i th\u1EE3 n\xE9m (c\u1EA5p 3, b\xE3i bia, t\u01B0\u1EDDng \u0111\xE1, m\xE1i da)",
     name_en: "Thrower Camp (Tier 3)",
     type: "prop",
@@ -13499,7 +16403,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/farmhouse/L1.json
-  var L1_default15 = {
+  var L1_default16 = {
     name: "N\xF4ng tr\u1EA1i (c\u1EA5p 1, nh\xE0 \u0111an ph\xEAn, \u0111\u1ED1ng r\u01A1m)",
     name_en: "Farmstead (Tier 1)",
     type: "prop",
@@ -14076,7 +16980,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/farmhouse/L2.json
-  var L2_default14 = {
+  var L2_default15 = {
     name: "N\xF4ng tr\u1EA1i (c\u1EA5p 2, nh\xE0 tr\xE1t \u0111\u1EA5t, \u1ED1ng kh\xF3i)",
     name_en: "Farmstead (Tier 2)",
     type: "prop",
@@ -14688,7 +17592,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/farmhouse/L3.json
-  var L3_default11 = {
+  var L3_default12 = {
     name: "N\xF4ng tr\u1EA1i (c\u1EA5p 3, nh\xE0 n\u1EC1n \u0111\xE1, \u1ED1ng kh\xF3i)",
     name_en: "Farmstead (Tier 3)",
     type: "prop",
@@ -15371,7 +18275,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/huntlodge/L1.json
-  var L1_default16 = {
+  var L1_default17 = {
     name: "Ch\xF2i th\u1EE3 s\u0103n (c\u1EA5p 1, ch\xF2i da tr\xEAn c\u1ECDc)",
     name_en: "Hunters' Lodge (Tier 1)",
     type: "prop",
@@ -15945,7 +18849,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/huntlodge/L2.json
-  var L2_default15 = {
+  var L2_default16 = {
     name: "Ch\xF2i th\u1EE3 s\u0103n (c\u1EA5p 2, ch\xF2i g\u1ED7 tr\xEAn c\u1ECDc)",
     name_en: "Hunters' Lodge (Tier 2)",
     type: "prop",
@@ -16575,7 +19479,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/huntlodge/L3.json
-  var L3_default12 = {
+  var L3_default13 = {
     name: "Ch\xF2i th\u1EE3 s\u0103n (c\u1EA5p 3, ch\xF2i n\u1EC1n \u0111\xE1, s\u1EEBng)",
     name_en: "Hunters' Lodge (Tier 3)",
     type: "prop",
@@ -17294,7 +20198,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/lumberyard/L1.json
-  var L1_default17 = {
+  var L1_default18 = {
     name: "X\u01B0\u1EDFng g\u1ED7 (c\u1EA5p 1, kh\xFAc g\u1ED7 v\xE0 g\u1ED1c ch\u1EB7t)",
     name_en: "Lumberyard (Tier 1)",
     type: "prop",
@@ -17821,7 +20725,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/lumberyard/L2.json
-  var L2_default16 = {
+  var L2_default17 = {
     name: "X\u01B0\u1EDFng g\u1ED7 (c\u1EA5p 2, m\xE1i tranh, \u0111\u1ED1ng v\xE1n)",
     name_en: "Lumberyard (Tier 2)",
     type: "prop",
@@ -18429,7 +21333,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/lumberyard/L3.json
-  var L3_default13 = {
+  var L3_default14 = {
     name: "X\u01B0\u1EDFng g\u1ED7 (c\u1EA5p 3, n\u1EC1n \u0111\xE1, m\xE1i da)",
     name_en: "Lumberyard (Tier 3)",
     type: "prop",
@@ -19168,7 +22072,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/quarry/L1.json
-  var L1_default18 = {
+  var L1_default19 = {
     name: "X\u01B0\u1EDFng \u0111\xE1 (c\u1EA5p 1, v\xE1ch \u0111\xE1, t\u1EA3ng c\u1EAFt)",
     name_en: "Quarry (Tier 1)",
     type: "prop",
@@ -19650,7 +22554,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/quarry/L2.json
-  var L2_default17 = {
+  var L2_default18 = {
     name: "X\u01B0\u1EDFng \u0111\xE1 (c\u1EA5p 2, t\u1EA3ng c\u1EAFt, xe tr\u01B0\u1EE3t)",
     name_en: "Quarry (Tier 2)",
     type: "prop",
@@ -20182,7 +23086,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/quarry/L3.json
-  var L3_default14 = {
+  var L3_default15 = {
     name: "X\u01B0\u1EDFng \u0111\xE1 (c\u1EA5p 3, gi\xE0n t\u1EDDi, t\u1EA3ng l\u1EDBn)",
     name_en: "Quarry (Tier 3)",
     type: "prop",
@@ -20782,7 +23686,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/scouttent/L1.json
-  var L1_default19 = {
+  var L1_default20 = {
     name: "Tr\u1EA1i trinh s\xE1t (c\u1EA5p 1, l\u1EC1u da, b\u1EA3ng \u0111\u1ED3)",
     name_en: "Scout Camp (Tier 1)",
     type: "prop",
@@ -21343,7 +24247,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/scouttent/L2.json
-  var L2_default18 = {
+  var L2_default19 = {
     name: "Tr\u1EA1i trinh s\xE1t (c\u1EA5p 2, l\u1EC1u, th\xE1p canh, b\u1EA3ng \u0111\u1ED3)",
     name_en: "Scout Camp (Tier 2)",
     type: "prop",
@@ -21970,7 +24874,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/scouttent/L3.json
-  var L3_default15 = {
+  var L3_default16 = {
     name: "Tr\u1EA1i trinh s\xE1t (c\u1EA5p 3, l\u1EC1u n\u1EC1n \u0111\xE1, th\xE1p cao)",
     name_en: "Scout Camp (Tier 3)",
     type: "prop",
@@ -22715,7 +25619,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/wartent/L1.json
-  var L1_default20 = {
+  var L1_default21 = {
     name: "L\u1EC1u h\u1ECDp chi\u1EBFn (c\u1EA5p 1, l\u1EC1u da)",
     name_en: "War Tent (Tier 1)",
     type: "prop",
@@ -22754,7 +25658,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/wartent/L2.json
-  var L2_default19 = {
+  var L2_default20 = {
     name: "L\u1EC1u h\u1ECDp chi\u1EBFn (c\u1EA5p 2, l\u1EC1u l\u1EDBn)",
     name_en: "War Tent (Tier 2)",
     type: "prop",
@@ -22797,7 +25701,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/wartent/L3.json
-  var L3_default16 = {
+  var L3_default17 = {
     name: "L\u1EC1u h\u1ECDp chi\u1EBFn (c\u1EA5p 3, l\u1EC1u th\u1EE7 l\u0129nh)",
     name_en: "War Tent (Tier 3)",
     type: "prop",
@@ -22844,7 +25748,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/drill/L1.json
-  var L1_default21 = {
+  var L1_default22 = {
     name: "B\xE3i t\u1EADp (c\u1EA5p 1, b\xE3i c\u1ECDc)",
     name_en: "Drill Ground (Tier 1)",
     type: "prop",
@@ -22890,7 +25794,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/drill/L2.json
-  var L2_default20 = {
+  var L2_default21 = {
     name: "B\xE3i t\u1EADp (c\u1EA5p 2, b\xE3i r\xE0o)",
     name_en: "Drill Ground (Tier 2)",
     type: "prop",
@@ -22941,7 +25845,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/drill/L3.json
-  var L3_default17 = {
+  var L3_default18 = {
     name: "B\xE3i t\u1EADp (c\u1EA5p 3, b\xE3i \u0111\xE1)",
     name_en: "Drill Ground (Tier 3)",
     type: "prop",
@@ -22992,7 +25896,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/trap/L1.json
-  var L1_default22 = {
+  var L1_default23 = {
     name: "H\u1ED1 ch\xF4ng (c\u1EA5p 1)",
     name_en: "Pit Trap (Tier 1)",
     type: "prop",
@@ -23023,7 +25927,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/trap/L2.json
-  var L2_default21 = {
+  var L2_default22 = {
     name: "H\u1ED1 ch\xF4ng (c\u1EA5p 2, h\u1ED1 s\xE2u)",
     name_en: "Pit Trap (Tier 2)",
     type: "prop",
@@ -23058,7 +25962,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/campfire/L2.json
-  var L2_default22 = {
+  var L2_default23 = {
     name: "L\u1EEDa tr\u1EA1i (c\u1EA5p 2, v\xF2ng l\u1EEDa c\xF3 gh\u1EBF g\u1ED7)",
     name_en: "Campfire (Tier 2, Fire Circle with Log Seats)",
     type: "prop",
@@ -23140,7 +26044,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/campfire/L3.json
-  var L3_default18 = {
+  var L3_default19 = {
     name: "B\u1EBFp l\u1EEDa l\u1EDBn (c\u1EA5p 3, gi\xE1 n\u01B0\u1EDBng, n\u1ED3i \u0111\u1EA5t, gi\xE0n ph\u01A1i)",
     name_en: "Great Hearth (Tier 3, Spit, Clay Pot, Drying Rack)",
     type: "prop",
@@ -23357,7 +26261,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/storage/L1.json
-  var L1_default23 = {
+  var L1_default24 = {
     name: "Kho (c\u1EA5p 1, b\xE3i ch\u1EA5t \u0111\u1ED3)",
     type: "prop",
     size: [72, 64],
@@ -23457,7 +26361,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/storage/L2.json
-  var L2_default23 = {
+  var L2_default24 = {
     name: "Kho (c\u1EA5p 2, gi\xE0n g\u1ED7)",
     type: "prop",
     size: [72, 64],
@@ -23540,7 +26444,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/storage/L3.json
-  var L3_default19 = {
+  var L3_default20 = {
     name: "Kho (c\u1EA5p 3, h\u1ED1 ch\u1EE9a l\xF3t \u0111\xE1)",
     type: "prop",
     size: [72, 64],
@@ -23605,7 +26509,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/workshop/L1.json
-  var L1_default24 = {
+  var L1_default25 = {
     name: "B\xE3i ch\u1EBF t\u1EA1o (c\u1EA5p 1, b\xE3i \u0111\xE1 \u0111\u01A1n s\u01A1)",
     name_en: "Crafting Ground (Tier 1, Rough Stone Ground)",
     type: "prop",
@@ -23673,7 +26577,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/workshop/L2.json
-  var L2_default24 = {
+  var L2_default25 = {
     name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c (c\u1EA5p 2, gi\xE1 g\u1ED7)",
     type: "prop",
     size: [72, 64],
@@ -23735,7 +26639,7 @@ body.war .sheet, body.war .bbar {
   };
 
   // src/data/blueprints/stone_age/buildings/workshop/L3.json
-  var L3_default20 = {
+  var L3_default21 = {
     name: "X\u01B0\u1EDFng ch\u1EBF t\xE1c (c\u1EA5p 3, b\xE3i l\xE1t \u0111\xE1)",
     type: "prop",
     size: [72, 64],
@@ -24659,31 +27563,32 @@ body.war .sheet, body.war .bbar {
   var stage = (st) => ({ st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) });
   var BUILDING_ART = {
     stone: {
-      campfire: [L1_default, L2_default22, L3_default18, L4_default],
+      campfire: [L1_default, L2_default23, L3_default19, L4_default],
       builder: [L1_default2, L2_default, L3_default],
-      storage: [L1_default23, L2_default23, L3_default19],
-      workshop: [L1_default24, L2_default24, L3_default20],
+      storage: [L1_default24, L2_default24, L3_default20],
+      workshop: [L1_default25, L2_default25, L3_default21],
       lab: [L1_default3, L2_default2, L3_default2],
       repair: [L1_default4, L2_default3, L3_default3],
       toolstore: [L1_default5, L2_default4, L3_default4],
       armory: [L1_default6, L2_default5, L3_default5],
       infantry: [L1_default12, L2_default11, L3_default8],
       cavalry: [L1_default13, L2_default12, L3_default9],
-      archery: [L1_default14, L2_default13, L3_default10],
-      farmhouse: [L1_default15, L2_default14, L3_default11],
-      huntlodge: [L1_default16, L2_default15, L3_default12],
-      lumberyard: [L1_default17, L2_default16, L3_default13],
-      quarry: [L1_default18, L2_default17, L3_default14],
+      stable: [L1_default14, L2_default13, L3_default10],
+      archery: [L1_default15, L2_default14, L3_default11],
+      farmhouse: [L1_default16, L2_default15, L3_default12],
+      huntlodge: [L1_default17, L2_default16, L3_default13],
+      lumberyard: [L1_default18, L2_default17, L3_default14],
+      quarry: [L1_default19, L2_default18, L3_default15],
       house: [L1_default7, L2_default6, L3_default6],
       field: [L1_default8, L2_default7, L3_default7],
       fence: [L1_default9, L2_default8],
       gate: [L1_default10, L2_default9, L1open_default, L2open_default],
       // the last two are the same gates standing open
       tower: [L1_default11, L2_default10],
-      wartent: [L1_default20, L2_default19, L3_default16],
-      scouttent: [L1_default19, L2_default18, L3_default15],
-      drill: [L1_default21, L2_default20, L3_default17],
-      trap: [L1_default22, L2_default21]
+      wartent: [L1_default21, L2_default20, L3_default17],
+      scouttent: [L1_default20, L2_default19, L3_default16],
+      drill: [L1_default22, L2_default21, L3_default18],
+      trap: [L1_default23, L2_default22]
     }
   };
   var TINTS = {};
@@ -24719,6 +27624,7 @@ body.war .sheet, body.war .bbar {
       this.emblems.quarry = this.icons.pick1;
       this.emblems.farmhouse = this.icons.hoe1;
       this.emblems.huntlodge = this.icons.spear1;
+      this.emblems.stable = this.icons.hoe1;
     }
     /** A torch 16x16, for the craft list. */
     torchIcon() {
@@ -24841,8 +27747,28 @@ body.war .sheet, body.war .bbar {
       }
       return c;
     }
-    villager(v) {
-      const name = v.anim in anims ? v.anim : "idle";
+    /** A beast under a rider, walking when the rider moves and standing when he stands, facing the way he faces. */
+    mount(species, moving, clock2, dir) {
+      const def = BODIES[species], clips = ANIMAL_CLIPS[def.body], name = moving ? "walk" : "idle", clip = clips[name] ?? clips.idle, n = clip.frames.length, frame2 = Math.floor(clock2 * clip.fps) % n;
+      const key = `${species}|ride|${name}|${frame2}|${dir}`;
+      let c = this.animalCache.get(key);
+      if (!c) {
+        const r = renderAnimal(def, clip, frame2), [cv, g] = canvas(r.w, r.h);
+        g.putImageData(new ImageData(new Uint8ClampedArray(r.data), r.w, r.h), 0, 0);
+        if (dir === -1) {
+          const [mv, mg] = canvas(r.w, r.h);
+          mg.translate(r.w, 0);
+          mg.scale(-1, 1);
+          mg.drawImage(cv, 0, 0);
+          c = mv;
+        } else c = cv;
+        this.animalCache.set(key, c);
+      }
+      return c;
+    }
+    /** The villager as drawn; `pose` makes him stand in one animation (a rider sits still on his beast). */
+    villager(v, pose) {
+      const name = pose ?? (v.anim in anims ? v.anim : "idle");
       const def = anims[name];
       const rate = def.gait ? Math.min(1.6, v.speed / 1.5) : 1;
       const step2 = Math.floor(v.animClock * def.fps * rate);
@@ -25130,24 +28056,35 @@ body.war .sheet, body.war .bbar {
             }
           }
         } else if (d.v) {
-          const s = sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
+          const rode = d.v.phase !== "sleep" && d.v.phase !== "down" ? sim2.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === "down";
+          const s = sp.villager(d.v, rode && !fighting ? "idle" : void 0), fx = d.v.x * TILE, fy = d.v.y * TILE;
+          let lift = 0;
+          if (rode) {
+            const m = MOUNTS[rode], moving = d.v.path.length > 0 || !!d.v.slide, beast = sp.mount(m.species, moving, d.v.animClock, d.v.facing === "left" ? -1 : 1), box2 = sp.animalBox(m.species);
+            ctx2.fillStyle = "rgba(0,0,0,.22)";
+            ctx2.beginPath();
+            ctx2.ellipse(Math.round((fx - cx) * z), Math.round((fy - cy) * z), box2.w * 0.3 * z, box2.h * 0.1 * z, 0, 0, Math.PI * 2);
+            ctx2.fill();
+            ctx2.drawImage(beast, Math.round((fx - box2.ax - cx) * z), Math.round((fy - box2.ay - cy) * z), beast.width * z, beast.height * z);
+            lift = m.ride + (moving ? Math.abs(Math.sin(d.v.animClock * 8)) : 0);
+          }
           if (d.v.phase === "sleep" || d.v.phase === "down") {
             ctx2.save();
             ctx2.translate(Math.round((fx + 16 - cx) * z), Math.round((fy - 2 - cy) * z));
             ctx2.rotate(-Math.PI / 2);
             ctx2.drawImage(s, -SPRITE_FEET.x * z, -SPRITE_FEET.y * z, s.width * z, s.height * z);
             ctx2.restore();
-          } else ctx2.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
+          } else ctx2.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - lift - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
           const v = d.v;
           if (v.team === "player" && (v.job === "fight" || v.job === "hunt") && v.phase !== "flee" && v.phase !== "sleep" && v.phase !== "down") {
-            const p = this.worldToScreen(fx, fy - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
+            const p = this.worldToScreen(fx, fy - lift - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
             ctx2.fillStyle = "rgba(20,14,8,.85)";
             ctx2.fillRect(p.x - 3 * u, p.y - 4 * u, 6 * u, 7 * u);
             ctx2.fillStyle = v.job === "fight" ? "#d9534f" : "#e0a23c";
             ctx2.fillRect(p.x - 2 * u, p.y - 3 * u, 4 * u, 4 * u);
             ctx2.fillRect(p.x - u, p.y + u, 2 * u, u);
           }
-          if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - 46, v.health / v.maxHealth, v.team === "player" ? "#6bbf59" : "#d9534f");
+          if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - lift - 46, v.health / v.maxHealth, v.team === "player" ? "#6bbf59" : "#d9534f");
           if (v.down > 0) {
             ctx2.fillStyle = "#ffd27a";
             ctx2.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`;
@@ -25856,7 +28793,7 @@ body.war .sheet, body.war .bbar {
     return a && a.state !== "dead" ? { kind: "animal", a } : null;
   }
   var effWeapon = (v) => v.team === "player" && v.gear.wb && v.gear.w === v.weapon ? null : v.weapon;
-  var armOf = (v) => v.team === "player" && v.job === "fight" && v.arm === "cavalry" ? "cavalry" : armOfWeapon(effWeapon(v));
+  var armOf = (v) => v.team === "player" && v.job === "fight" && (v.arm === "cavalry" || v.mount) ? "cavalry" : armOfWeapon(effWeapon(v));
   var weaponOf = (v) => WEAPONS[effWeapon(v) ?? "fist"] ?? WEAPONS.fist;
   var armorOf = (v) => v.armor && !(v.team === "player" && v.gear.ab && v.gear.a === v.armor) ? ARMORS[v.armor] ?? null : null;
   function canSee(sim2, v, x, y) {
@@ -25925,7 +28862,7 @@ body.war .sheet, body.war .bbar {
     const v = sim2.get(target.id);
     if (!v || v.health <= 0) return;
     if (sim2.dev.god && v.team === "player") return;
-    const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === "player" ? sim2.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) : 1);
+    const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === "player" ? sim2.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) * sim2.mountGuard(v) : 1);
     v.health -= final;
     v.calm = 0;
     v.flinch = 0.3;
@@ -26908,101 +29845,6 @@ body.war .sheet, body.war .bbar {
     void DAY_LENGTH;
   }
 
-  // src/data/pace.json
-  var pace_default = {
-    _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
-    gather: { wood: 11, stone: 17, food: 6, farm: 70 },
-    bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
-    outdoor: ["wood", "stone", "food", "build"]
-  };
-
-  // src/data/training.json
-  var training_default = {
-    _note: "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
-    dayBase: 0.6,
-    dayPerStat: 0.12,
-    foodBase: 4,
-    coinBase: 1,
-    coinPerStat: 0.3333,
-    gain: [0.01, 0.05],
-    partnerShare: 0.5,
-    floor: 0.6,
-    floorMin: 3,
-    caps: [8, 12, 16],
-    care: [
-      { name: "Kh\xF4ng", coin: 0, penalty: 0.8 },
-      { name: "C\u1EA9n th\u1EADn", coin: 2, penalty: 0.4 },
-      { name: "Chu \u0111\xE1o", coin: 5, penalty: 0.15 }
-    ],
-    profiles: {
-      infantry: { main: "str", partner: "vit", cost: "agi" },
-      archery: { main: "agi", partner: "sta", cost: "str" },
-      cavalry: { main: "agi", partner: "sta", cost: "int" },
-      lumberyard: { main: "str", partner: "vit", cost: "agi" },
-      quarry: { main: "str", partner: "vit", cost: "agi" },
-      farmhouse: { main: "agi", partner: "sta", cost: "str" },
-      huntlodge: { main: "agi", partner: "sta", cost: "str" },
-      builder: { main: "sta", partner: "str", cost: "int" },
-      workshop: { main: "int", cost: "sta" },
-      lab: { main: "int", cost: "sta" },
-      repair: { main: "agi", partner: "int", cost: "vit" },
-      scouttent: { main: "agi", partner: "sta", cost: "str" }
-    }
-  };
-
-  // src/sim/jobs.ts
-  var TRAINING = training_default;
-  var fmtStat = (x) => String(Math.round(x * 10) / 10);
-  var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", int: "Tr\xED tu\u1EC7", sta: "Th\u1EC3 l\u1EF1c" };
-  var JOBS = {
-    wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
-    stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
-    food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: pace_default.gather.food, anim: "gather" },
-    build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
-    craft: { name: "Ch\u1EBF t\u1EA1o", stat: "int", baseTime: 1, anim: "craft" },
-    research: { name: "Nghi\xEAn c\u1EE9u", stat: "int", baseTime: 1, anim: "gather" },
-    repair: { name: "S\u1EEDa ch\u1EEFa", stat: "agi", baseTime: 1, anim: "craft" },
-    hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
-    fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
-  };
-  var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", repair: "S\u1EEDa ch\u1EEFa", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh", scout: "Trinh s\xE1t" };
-  var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "repair", "hunt", "fight"];
-  var ROLES = {
-    wood: { job: "wood", building: "lumberyard", names: { stone: "\u0110\u1ED1n g\u1ED7", ancient: "Ti\u1EC1u phu" } },
-    stone: { job: "stone", building: "quarry", names: { stone: "Th\u1EE3 \u0111\xE1", ancient: "Th\u1EE3 m\u1ECF" } },
-    food: { job: "food", building: "farmhouse", names: { stone: "H\xE1i l\u01B0\u1EE3m", ancient: "N\xF4ng d\xE2n" } },
-    hunt: { job: "hunt", building: "huntlodge", names: { stone: "Th\u1EE3 s\u0103n", ancient: "Th\u1EE3 s\u0103n" } },
-    foot: { job: "fight", arm: "foot", building: "infantry", names: { stone: "Chi\u1EBFn binh", ancient: "B\u1ED9 binh" } },
-    cavalry: { job: "fight", arm: "cavalry", building: "cavalry", names: { stone: "K\u1EF5 th\xFA", ancient: "K\u1EF5 binh" } },
-    archer: { job: "fight", arm: "archer", building: "archery", names: { stone: "Th\u1EE3 n\xE9m", ancient: "Cung th\u1EE7" } },
-    scout: { job: "scout", building: "scouttent", names: { stone: "Trinh s\xE1t", ancient: "Trinh s\xE1t" } }
-  };
-  var ROLE_IDS = Object.keys(ROLES);
-  var roleName = (role, era) => ROLES[role].names[era];
-  function roleOf(v) {
-    switch (v.job) {
-      case "fight":
-        return v.arm === "archer" ? "archer" : v.arm === "cavalry" ? "cavalry" : "foot";
-      case "food":
-        return v.post < 0 ? "food" : null;
-      case "wood":
-      case "stone":
-      case "hunt":
-      case "scout":
-        return v.job;
-      default:
-        return null;
-    }
-  }
-  var STAFF_BUILDING = { craft: "workshop", research: "lab", repair: "repair" };
-  var isStaffJob = (j) => j in STAFF_BUILDING;
-  var FARM_TIME = pace_default.gather.farm;
-  var XP_LEVELS = [60, 150, 300, 500, 800];
-  var MAX_LEVEL = 5;
-  var CREW_BUILDING = { build: "builder" };
-  var BARE_HANDS = pace_default.bare;
-  var OUTDOOR_JOBS = pace_default.outdoor;
-
   // src/data/research.json
   var research_default = {
     enabled: true,
@@ -27049,7 +29891,11 @@ body.war .sheet, body.war .bbar {
       { id: "tool_store", name: "Kho c\xF4ng c\u1EE5", desc: "Cho ph\xE9p d\u1EF1ng Kho c\xF4ng c\u1EE5 \u0111\u1EC3 c\u1EA5t r\xECu, cu\u1ED1c, b\xFAa.", requires: ["hammer1", "axe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 200, unlocks: { buildings: ["toolstore"] } },
       { id: "armory", name: "Kho v\u0169 kh\xED", desc: "Cho ph\xE9p d\u1EF1ng Kho v\u0169 kh\xED \u0111\u1EC3 c\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["armory"] } },
       { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: ["tool_store"], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
-      { id: "auto_order", name: "T\u1EF1 nh\u1EDD ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa", desc: "D\xE2n thi\u1EBFu \u0111\u1ED3 t\u1EF1 t\u1EDBi nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EB7t h\xE0ng, t\u1EDBi nh\xE0 s\u1EEDa ch\u1EEFa nh\u1EDD s\u1EEDa \u0111\u1ED3 h\u1ECFng.", requires: ["auto_fetch"], needLevel: 2, minInt: 7, cost: { wood: 10, coin: 8 }, time: 360, unlocks: { auto: ["order"] } }
+      { id: "auto_order", name: "T\u1EF1 nh\u1EDD ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa", desc: "D\xE2n thi\u1EBFu \u0111\u1ED3 t\u1EF1 t\u1EDBi nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EB7t h\xE0ng, t\u1EDBi nh\xE0 s\u1EEDa ch\u1EEFa nh\u1EDD s\u1EEDa \u0111\u1ED3 h\u1ECFng.", requires: ["auto_fetch"], needLevel: 2, minInt: 7, cost: { wood: 10, coin: 8 }, time: 360, unlocks: { auto: ["order"] } },
+      { id: "stable", name: "Thu\u1EA7n th\xFA", desc: "D\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i: d\xE2n l\xE0m trong chu\u1ED3ng thu\u1EA7n h\xF3a th\xFA \u0111\u1EC3 ph\xE1t cho ng\u01B0\u1EDDi \u0111i c\u01B0\u1EE1i. Ch\u01B0a thu\u1EA7n h\xF3a \u0111\u01B0\u1EE3c con n\xE0o cho t\u1EDBi khi nghi\xEAn c\u1EE9u t\u1EEBng lo\xE0i.", requires: ["barracks", "hide1"], needLevel: 1, minInt: 6, cost: { wood: 20, hide: 4, coin: 5 }, time: 240, unlocks: { buildings: ["stable"] } },
+      { id: "tame_wolf", name: "Thu\u1EA7n h\xF3a s\xF3i", desc: "Nu\xF4i s\xF3i con t\u1EEB b\xE9 \u0111\u1EC3 c\u01B0\u1EE1i: ch\u1EA1y nhanh nh\u1EA5t, nh\u01B0ng m\u1ECFng manh. Chu\u1ED3ng c\u1EA5p 1.", requires: ["stable"], needLevel: 1, minInt: 6, cost: { food: 20, hide: 2, coin: 4 }, time: 240, unlocks: { mounts: ["wolf"] } },
+      { id: "tame_boar", name: "Thu\u1EA7n h\xF3a l\u1EE3n r\u1EEBng", desc: "Hu\u1EA5n luy\u1EC7n l\u1EE3n r\u1EEBng l\xE0m th\xFA c\u01B0\u1EE1i: ch\u1EADm h\u01A1n s\xF3i nh\u01B0ng d\xE0y da, \u0111\u1EE1 \u0111\xF2n t\u1ED1t. Chu\u1ED3ng c\u1EA5p 2.", requires: ["tame_wolf", "timber"], needLevel: 2, minInt: 7, cost: { food: 30, hide: 4, coin: 6 }, time: 340, unlocks: { mounts: ["boar"] } },
+      { id: "tame_elephant", name: "Thu\u1EA7n h\xF3a voi", desc: "Thu\u1EA7n voi l\u1EDBn l\xE0m th\xFA c\u01B0\u1EE1i: ch\u1EADm nh\u01B0ng nh\u01B0 m\u1ED9t b\u1EE9c t\u01B0\u1EDDng, ch\u1ECBu \u0111\u01B0\u1EE3c h\u1EA7u h\u1EBFt \u0111\xF2n \u0111\xE1nh. Chu\u1ED3ng c\u1EA5p 3.", requires: ["tame_boar", "masonry"], needLevel: 3, minInt: 8, cost: { food: 50, hide: 8, coin: 12 }, time: 520, unlocks: { mounts: ["elephant"] } }
     ]
   };
 
@@ -27069,12 +29915,13 @@ body.war .sheet, body.war .bbar {
     return !RESEARCH.enabled || !t || done.has(t.id);
   };
   var autoOn = (done, key) => !RESEARCH.enabled || TECHS.some((t) => done.has(t.id) && t.unlocks.auto?.includes(key));
-  var KIND_NAME = { storage: "Kho", workshop: "Nh\xE0 ch\u1EBF t\u1EA1o", lab: "Nh\xE0 nghi\xEAn c\u1EE9u", repair: "Nh\xE0 s\u1EEDa ch\u1EEFa", toolstore: "Kho c\xF4ng c\u1EE5", armory: "Kho v\u0169 kh\xED", infantry: "Tr\u1EA1i chi\u1EBFn binh", cavalry: "Tr\u1EA1i k\u1EF5 th\xFA", archery: "Tr\u1EA1i th\u1EE3 n\xE9m", farmhouse: "N\xF4ng tr\u1EA1i", huntlodge: "Ch\xF2i th\u1EE3 s\u0103n", lumberyard: "X\u01B0\u1EDFng g\u1ED7", quarry: "X\u01B0\u1EDFng \u0111\xE1", house: "Nh\xE0 d\xE2n", field: "Ru\u1ED9ng", fence: "H\xE0ng r\xE0o", gate: "C\u1ED5ng", tower: "Ch\xF2i canh", wartent: "L\u1EC1u h\u1ECDp chi\u1EBFn", scouttent: "Tr\u1EA1i trinh s\xE1t", drill: "B\xE3i t\u1EADp", trap: "H\u1ED1 ch\xF4ng" };
+  var KIND_NAME = { storage: "Kho", workshop: "Nh\xE0 ch\u1EBF t\u1EA1o", lab: "Nh\xE0 nghi\xEAn c\u1EE9u", repair: "Nh\xE0 s\u1EEDa ch\u1EEFa", toolstore: "Kho c\xF4ng c\u1EE5", armory: "Kho v\u0169 kh\xED", infantry: "Tr\u1EA1i chi\u1EBFn binh", cavalry: "Tr\u1EA1i k\u1EF5 th\xFA", archery: "Tr\u1EA1i th\u1EE3 n\xE9m", farmhouse: "N\xF4ng tr\u1EA1i", huntlodge: "Ch\xF2i th\u1EE3 s\u0103n", lumberyard: "X\u01B0\u1EDFng g\u1ED7", quarry: "X\u01B0\u1EDFng \u0111\xE1", house: "Nh\xE0 d\xE2n", field: "Ru\u1ED9ng", fence: "H\xE0ng r\xE0o", gate: "C\u1ED5ng", tower: "Ch\xF2i canh", wartent: "L\u1EC1u h\u1ECDp chi\u1EBFn", scouttent: "Tr\u1EA1i trinh s\xE1t", drill: "B\xE3i t\u1EADp", trap: "H\u1ED1 ch\xF4ng", stable: "Chu\u1ED3ng th\xFA c\u01B0\u1EE1i" };
   var unlockText = (t, recipeName2) => {
     const parts = [...(t.unlocks.recipes ?? []).map(recipeName2)];
     const lv2 = Object.values(t.unlocks.levels ?? {})[0];
     if (lv2) parts.push(`m\u1ECDi nh\xE0 l\xEAn c\u1EA5p ${lv2}`);
     for (const k of t.unlocks.buildings ?? []) parts.push(`x\xE2y ${KIND_NAME[k] ?? k}`);
+    for (const m of t.unlocks.mounts ?? []) parts.push(`thu\u1EA7n h\xF3a ${{ wolf: "s\xF3i", boar: "l\u1EE3n r\u1EEBng", elephant: "voi" }[m] ?? m}`);
     if (t.unlocks.auto?.includes("fetch")) parts.push("d\xE2n t\u1EF1 l\u1EA5y \u0111\u1ED3 \u1EDF kho");
     if (t.unlocks.auto?.includes("order")) parts.push("d\xE2n t\u1EF1 \u0111\u1EB7t ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa");
     return parts.join(", ");
@@ -27617,7 +30464,7 @@ body.war .sheet, body.war .bbar {
     return pool[0] ?? null;
   }
   function houseRate(sim2, b) {
-    const job = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "repair";
+    const job = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : b.kind === "stable" ? "tame" : "repair";
     let r = 0;
     for (const id of b.staff) {
       const v = sim2.byId.get(id);
@@ -28283,7 +31130,7 @@ body.war .sheet, body.war .bbar {
     return err ?? (soldiers.length ? "Chi\u1EBFn binh do tr\u1EA1i l\xEDnh c\u1EE7a h\u1ECD qu\u1EA3n l\xFD: cho h\u1ECD ngh\u1EC9 \u1EDF \u0111\xF3 tr\u01B0\u1EDBc" : scouts.length ? "Trinh s\xE1t do Tr\u1EA1i trinh s\xE1t qu\u1EA3n l\xFD: cho h\u1ECD ngh\u1EC9 \u1EDF \u0111\xF3 tr\u01B0\u1EDBc" : null);
   }
   function jobFor(sim2, ids, job) {
-    if (job === "craft" || job === "research" || job === "repair") return sim2.assignStaff(ids, job);
+    if (job === "craft" || job === "research" || job === "repair" || job === "tame") return sim2.assignStaff(ids, job);
     if (job === "build") return sim2.assignCrew(ids);
     for (const v of mine(sim2, ids)) {
       resetTask(sim2, v);
@@ -28930,7 +31777,7 @@ body.war .sheet, body.war .bbar {
     return null;
   }
   function moveUnit(sim2, v, dt) {
-    const walk = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.armor ? 1 : 1);
+    const walk = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.team === "player" ? sim2.mountSpeed(v) : 1);
     if (v.swing) return;
     let left = walk * dt;
     while (left > 0 && v.path.length) {
@@ -29075,8 +31922,8 @@ body.war .sheet, body.war .bbar {
     for (const k of STAT_KEYS) stats[k] = 3 + Math.floor(r() * 8);
     const potential = {}, skill = {};
     for (const j of WORK_JOBS) {
-      if (j === "hunt" || j === "fight" || j === "research") {
-        const k = j === "hunt" ? stats.agi : j === "research" ? stats.int : stats.str;
+      if (j === "hunt" || j === "fight" || j === "research" || j === "tame") {
+        const k = j === "hunt" || j === "tame" ? stats.agi : j === "research" ? stats.int : stats.str;
         potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1;
         skill[j] = { xp: 0, level: 0 };
         continue;
@@ -29135,6 +31982,7 @@ body.war .sheet, body.war .bbar {
       squad: -1,
       born: { ...stats },
       train: null,
+      mount: null,
       breaks: null,
       gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
       team,
@@ -29348,14 +32196,14 @@ body.war .sheet, body.war .bbar {
   }
 
   // src/sim/save.ts
-  var SAVE_VERSION = 13;
+  var SAVE_VERSION = 14;
   var SAVED = {
     /** Single values. */
     scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
     /** Objects whose keys are filled in place. */
     records: ["stock", "toolStock", "battle"],
     /** Lists of plain data. */
-    lists: ["wornTools", "craftQueue", "researchQueue", "repairQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
+    lists: ["wornTools", "craftQueue", "tameQueue", "researchQueue", "repairQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
     /** Handled by hand below. */
     special: ["researched", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
   };
@@ -29494,6 +32342,17 @@ body.war .sheet, body.war .bbar {
       v.train ?? (v.train = null);
     }
     return { ...d, version: 13 };
+  };
+  MIGRATIONS[13] = (d) => {
+    var _a;
+    (_a = d.lists).tameQueue ?? (_a.tameQueue = []);
+    for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+      v.mount ?? (v.mount = null);
+      const sk = v.skill, pot = v.potential, st = v.stats;
+      sk.tame ?? (sk.tame = { xp: 0, level: 0 });
+      pot.tame ?? (pot.tame = st.agi >= 9 ? 3 : st.agi >= 6 ? 2 : 1);
+    }
+    return { ...d, version: 14 };
   };
   function migrate(raw) {
     let d = raw;
@@ -30231,7 +33090,7 @@ body.war .sheet, body.war .bbar {
     return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
   };
   function gearOf(v, table) {
-    return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.arm === "cavalry" ? table.mount : 0);
+    return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.mount || v.arm === "cavalry" ? table.mount : 0);
   }
   var stealthOf = (v) => 0.6 * v.stats.int + 0.4 * v.stats.sta;
   var scoutsNeeded = (sim2, tribe, level) => Math.min(8, level + 1 + Math.floor(warriorsOf(sim2, tribe) / 8));
@@ -30243,7 +33102,7 @@ body.war .sheet, body.war .bbar {
   function planScout(sim2, ids, tribe) {
     const level = scoutLevel(sim2), limit = scoutLimit(sim2), scouts = sim2.mine(ids).filter((v) => canScout(sim2, v));
     const need = scoutsNeeded(sim2, tribe, Math.max(1, level)), w = whereIs(sim2, tribe);
-    const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
+    const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * sim2.mountSpeed(v) * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
     const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.int, 0) / scouts.length : 6);
     let error = null;
     if (!sim2.dev.freeBuild && !isFound(sim2, tribe)) error = "Ch\u01B0a ai t\xECm th\u1EA5y l\xE0ng n\xE0y";
@@ -30483,7 +33342,7 @@ body.war .sheet, body.war .bbar {
     return null;
   }
   function squadPace(sim2, s) {
-    const us = sim2.squadUnits(s), base = us.length ? Math.min(...us.map((v) => 1.6 + 0.1 * v.stats.agi)) : 2.1;
+    const us = sim2.squadUnits(s), base = us.length ? Math.min(...us.map((v) => (1.6 + 0.1 * v.stats.agi) * sim2.mountSpeed(v))) : 2.1;
     return base * FORMATIONS[s.formation].speed * WEATHER[sim2.weather].speed;
   }
   function routeTime(sim2, s, from, pts, target) {
@@ -31539,6 +34398,112 @@ body.war .sheet, body.war .bbar {
     return true;
   }
 
+  // src/sim/mounts.ts
+  var stockKey = (k) => `mount_${k}`;
+  var tamedCount = (sim2, k) => sim2.toolStock[stockKey(k)] ?? 0;
+  var STOCK_CAP = 12;
+  function tameLock(sim2, k) {
+    const d = MOUNTS[k], stable = sim2.building("stable");
+    if (!stable) return "C\u1EA7n d\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i";
+    if (RESEARCH.enabled && !sim2.dev.freeBuild && !sim2.researched.has(d.tech)) return `C\u1EA7n nghi\xEAn c\u1EE9u: Thu\u1EA7n h\xF3a ${d.name.toLowerCase()}`;
+    if (stable.level < d.tier) return `C\u1EA7n Chu\u1ED3ng th\xFA c\u01B0\u1EE1i c\u1EA5p ${d.tier}`;
+    return null;
+  }
+  function queueTame(sim2, k) {
+    if (!MOUNTS[k]) return "Kh\xF4ng c\xF3 lo\xE0i n\xE0y";
+    const lock = tameLock(sim2, k);
+    if (lock) return lock;
+    if (sim2.tameQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
+    sim2.tameQueue.push(k);
+    return null;
+  }
+  function unqueueTame(sim2, k) {
+    const i = sim2.tameQueue.lastIndexOf(k);
+    if (i >= 0) sim2.tameQueue.splice(i, 1);
+  }
+  function tickTame(sim2, dt) {
+    for (const b of sim2.buildings) {
+      if (b.kind !== "stable" || !b.done) continue;
+      const staff = b.staff.map((id) => sim2.byId.get(id)).filter((v) => !!v);
+      if (!staff.length) continue;
+      if (!b.active) {
+        const i = sim2.tameQueue.findIndex((k3) => !tameLock(sim2, k3) && sim2.affordable(MOUNTS[k3].cost));
+        if (i < 0) {
+          if (sim2.tameQueue.length && sim2.time - sim2.lastMatWarn > 30) {
+            sim2.lastMatWarn = sim2.time;
+            sim2.say("\u0110\u01A1n thu\u1EA7n th\xFA \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
+          }
+          continue;
+        }
+        const k2 = sim2.tameQueue.splice(i, 1)[0];
+        sim2.pay(MOUNTS[k2].cost);
+        b.active = { id: k2, progress: 0 };
+      }
+      const k = b.active.id, d = MOUNTS[k];
+      if (!d) {
+        b.active = null;
+        continue;
+      }
+      let rate = 0;
+      for (const v of staff) {
+        rate += sim2.workFactor(v, "tame");
+        sim2.gainXp(v, "tame", dt);
+      }
+      b.active.progress = Math.min(1, b.active.progress + dt * PACE.work * rate * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 25 : 1) / d.time);
+      if (b.active.progress < 1) continue;
+      if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim2, m), 0) >= STOCK_CAP) {
+        if (sim2.time - sim2.lastFullWarn > 30) {
+          sim2.lastFullWarn = sim2.time;
+          sim2.say("Chu\u1ED3ng \u0111\xE3 \u0111\u1EA7y th\xFA ch\u01B0a c\xF3 ng\u01B0\u1EDDi c\u01B0\u1EE1i: s\u1EA3n ph\u1EA9m ch\u1EDD ch\u1ED7.");
+        }
+        continue;
+      }
+      sim2.toolStock[stockKey(k)] = tamedCount(sim2, k) + 1;
+      b.active = null;
+      sim2.say(`\u0110\xE3 thu\u1EA7n xong m\u1ED9t con ${d.name.toLowerCase()}.`);
+    }
+  }
+  function campBeast(sim2) {
+    const camp = sim2.building("cavalry");
+    return MOUNT_KINDS[Math.max(0, Math.min(MOUNT_KINDS.length, camp?.level ?? 1) - 1)];
+  }
+  function mountOf(sim2, v) {
+    if (v.team !== "player") return null;
+    return v.mount ?? (v.job === "fight" && v.arm === "cavalry" ? campBeast(sim2) : null);
+  }
+  var mountSpeed = (sim2, v) => {
+    const k = mountOf(sim2, v);
+    return k ? MOUNTS[k].speed : 1;
+  };
+  var mountGuard = (sim2, v) => {
+    const k = mountOf(sim2, v);
+    return k ? MOUNTS[k].guard : 1;
+  };
+  function assignMount(sim2, ids, kind) {
+    let given = 0, short = false, riders = false;
+    for (const v of sim2.mine(ids)) {
+      if (v.mount === kind) continue;
+      if (kind && v.job === "fight" && v.arm === "cavalry") {
+        riders = true;
+        continue;
+      }
+      if (kind && tamedCount(sim2, kind) <= 0) {
+        short = true;
+        continue;
+      }
+      if (v.mount) sim2.toolStock[stockKey(v.mount)] = tamedCount(sim2, v.mount) + 1;
+      if (kind) sim2.toolStock[stockKey(kind)]--;
+      v.mount = kind;
+      given++;
+      if (kind) {
+        v.speed = 1.6 + 0.1 * v.stats.agi;
+        sim2.say(`${v.name} \u0111\u01B0\u1EE3c giao m\u1ED9t con ${MOUNTS[kind].name.toLowerCase()} \u0111\u1EC3 c\u01B0\u1EE1i.`);
+      } else sim2.say(`${v.name} tr\u1EA3 th\xFA v\u1EC1 chu\u1ED3ng.`);
+    }
+    if (given) return null;
+    return riders ? "K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA \u0111\xE3 c\xF3 th\xFA c\u1EE7a tr\u1EA1i" : short ? `Chu\u1ED3ng h\u1EBFt ${kind ? MOUNTS[kind].name.toLowerCase() : "th\xFA"} \u0111\xE3 thu\u1EA7n: h\xE3y thu\u1EA7n th\xEAm` : null;
+  }
+
   // src/sim/simwar.ts
   var WAR = {
     /** → army.squadLimit */
@@ -31851,6 +34816,42 @@ body.war .sheet, body.war .bbar {
     trainees(b) {
       return members(this, b);
     },
+    /** → mounts.queueTame */
+    queueTame(k) {
+      return queueTame(this, k);
+    },
+    /** → mounts.unqueueTame */
+    unqueueTame(k) {
+      return unqueueTame(this, k);
+    },
+    /** → mounts.tameLock */
+    tameLock(k) {
+      return tameLock(this, k);
+    },
+    /** → mounts.tamedCount */
+    tamedCount(k) {
+      return tamedCount(this, k);
+    },
+    /** → mounts.tickTame */
+    tickTame(dt) {
+      return tickTame(this, dt);
+    },
+    /** → mounts.mountOf */
+    mountOf(v) {
+      return mountOf(this, v);
+    },
+    /** → mounts.mountSpeed */
+    mountSpeed(v) {
+      return mountSpeed(this, v);
+    },
+    /** → mounts.mountGuard */
+    mountGuard(v) {
+      return mountGuard(this, v);
+    },
+    /** → mounts.assignMount */
+    assignMount(ids, kind) {
+      return assignMount(this, ids, kind);
+    },
     /** → environment.sightOf */
     sightOf(v) {
       return sightOf(this, v);
@@ -31874,6 +34875,7 @@ body.war .sheet, body.war .bbar {
       this.wornTools = [];
       /** Hàng đợi chế tác (mã công thức). */
       this.craftQueue = [];
+      this.tameQueue = [];
       /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
       this.researchQueue = [];
       /** Tools waiting to be mended in the Nhà sửa chữa (recipe ids such as axe1). */
@@ -32514,6 +35516,7 @@ body.war .sheet, body.war .bbar {
       tickProjectiles(this, dt);
       for (const v of [...this.villagers]) this.tickVillager(v, dt);
       this.tickWorks(dt);
+      this.tickTame(dt);
       this.tickFarms(dt);
       this.tickTowers(dt);
       this.tickTraps(dt);
@@ -33751,6 +36754,7 @@ body.war .sheet, body.war .bbar {
         field: "D\xE2n b\u1EA1n ch\u1ECDn v\xE0o ru\u1ED9ng l\xE0m vi\u1EC7c b\xEAn trong (kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3), th\u1EE9c \u0103n v\u1EC1 th\u1EB3ng kho, \u0111\u1EC1u quanh n\u0103m h\u01A1n b\u1EE5i qu\u1EA3 (b\u1EE5i qu\u1EA3 kh\xF4ng m\u1ECDc l\u1EA1i). M\u1ED7i ru\u1ED9ng m\u1ED9t ng\u01B0\u1EDDi, n\xE2ng c\u1EA5p \u0111\u1EC3 l\xE0m nhanh h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
         wartent: "N\u01A1i l\u1EADp \u0111\u1ED9i, ch\u1ECDn tr\u1EADn ph\xE1p, l\u1EADp k\u1EBF ho\u1EA1ch v\xE0 th\u1EBB l\u1EC7nh cho tr\u1EADn \u0111\xE1nh. C\u1EA5p c\xE0ng cao c\xE0ng nhi\u1EC1u \u0111\u1ED9i v\xE0 th\u1EBB l\u1EC7nh. C\u1EA7n nghi\xEAn c\u1EE9u H\u1ED9i \u0111\u1ED3ng chi\u1EBFn.",
         scouttent: "N\u01A1i c\u1EED trinh s\xE1t \u0111i v\u1EBD b\u1EA3n \u0111\u1ED3 l\xE0ng kh\xE1c. C\u1EA5p c\xE0ng cao c\xE0ng c\u1EED \u0111\u01B0\u1EE3c nhi\u1EC1u ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn. C\u1EA7n nghi\xEAn c\u1EE9u Trinh s\xE1t.",
+        stable: "D\xE2n l\xE0m trong chu\u1ED3ng thu\u1EA7n h\xF3a th\xFA (s\xF3i, l\u1EE3n r\u1EEBng, voi) \u0111\u1EC3 giao cho ng\u01B0\u1EDDi c\u01B0\u1EE1i, nh\u01B0 giao c\xF4ng c\u1EE5: \u0111i nhanh h\u01A1n, \u0111\u1EE1 \u0111\xF2n h\u01A1n. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 thu\u1EA7n \u0111\u01B0\u1EE3c th\xFA l\u1EDBn h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u Thu\u1EA7n th\xFA.",
         drill: "B\xE3i t\u1EADp: c\xE1c \u0111\u1ED9i luy\u1EC7n tr\u1EADn ph\xE1p \u1EDF \u0111\xE2y, \u0111\u1ED9 thu\u1EA7n th\u1EE5c t\u0103ng d\u1EA7n. C\u1EA7n L\u1EC1u chi\u1EBFn binh v\xE0 nghi\xEAn c\u1EE9u.",
         trap: "H\u1ED1 ch\xF4ng g\xE0i s\u1EB5n: \u0111\u1ECBch b\u01B0\u1EDBc v\xE0o b\u1ECB th\u01B0\u01A1ng, m\u1ED7i h\u1ED1 l\xE0m b\u1ECB th\u01B0\u01A1ng v\xE0i ng\u01B0\u1EDDi. \u0110\u1EB7t t\u1EEBng c\xE1i m\u1ED9t. C\u1EA7n nghi\xEAn c\u1EE9u \u0110\xE0o h\xE0o.",
         fence: "Ch\u1EB7n \u0111\u01B0\u1EDDng, t\u1EA1o ch\u1ED7 th\u1EAFt: \u0111\u1ECBch ph\u1EA3i ph\xE1 r\xE0o m\u1EDBi v\xE0o \u0111\u01B0\u1EE3c. \u0110\u1EB7t t\u1EEBng \u0111o\u1EA1n m\u1ED9t, c\u1EE9 ch\u1EA1m ti\u1EBFp \u0111\u1EC3 \u0111\u1EB7t \u0111o\u1EA1n k\u1EBF. C\u1EA5p 2 (h\xE0ng r\xE0o \u0111\xF4i) b\u1EC1n g\u1EA5p ba. S\u1ED1 \u0111o\u1EA1n t\u1ED1i \u0111a t\u0103ng theo Nh\xE0 chung. C\u1EA7n nghi\xEAn c\u1EE9u.",
@@ -34231,7 +37235,8 @@ body.war .sheet, body.war .bbar {
     wartent: "M\u1EDF L\u1EC1u h\u1ECDp chi\u1EBFn",
     scouttent: "Xem trinh s\xE1t",
     drill: "Xem b\xE3i t\u1EADp",
-    trap: "H\u1ED1 ch\xF4ng"
+    trap: "H\u1ED1 ch\xF4ng",
+    stable: "Thu\u1EA7n th\xFA"
   };
   var Confirm = class {
     constructor(root, c) {
@@ -34606,6 +37611,7 @@ body.war .sheet, body.war .bbar {
       this.stats = h("div", { class: "kv" });
       this.skills = h("div", { class: "kv" });
       this.toolRows = [];
+      this.mountBtns = [];
       this.gearBtns = [];
       this.statsKey = "";
       this.open = false;
@@ -34642,6 +37648,16 @@ body.war .sheet, body.war .bbar {
         ctl2.clearSelection();
         ctl2.onChange();
       } }));
+      const mountRow = h("div", { class: "btns", role: "group", "aria-label": "Giao th\xFA c\u01B0\u1EE1i" });
+      for (const kind of [null, ...MOUNT_KINDS]) {
+        const btn = h("button", { class: "sm", title: kind ? `Giao m\u1ED9t con ${MOUNTS[kind].name.toLowerCase()} t\u1EEB Chu\u1ED3ng th\xFA c\u01B0\u1EE1i` : "Tr\u1EA3 th\xFA v\u1EC1 chu\u1ED3ng", onclick: () => {
+          const e = sim2.assignMount(ids(), kind);
+          if (e) c.toast(e);
+          ctl2.onChange();
+        } });
+        this.mountBtns.push({ btn, kind });
+        mountRow.append(btn);
+      }
       const gearHint = hint(h("p", { class: "sub", text: "Ph\xE1t \u0111\u1ED3 (l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng):" }), "");
       this.gearTip = gearHint.tip;
       const toolsSec = h("section", {}, hint("C\xF4ng c\u1EE5", 'M\u1ED7i ngh\u1EC1 d\xF9ng m\u1ED9t c\xF4ng c\u1EE5 (\u0111\u1ED1n g\u1ED7: r\xECu, th\u1EE3 \u0111\xE1: cu\u1ED1c chim, h\xE1i l\u01B0\u1EE3m: cu\u1ED1c, th\u1EE3 x\xE2y: b\xFAa) v\xE0 m\u1ED7i d\xE2n ch\u1EC9 c\u1EA7m m\u1ED9t c\xF4ng c\u1EE5. \u0110\u1ED5i ngh\u1EC1 th\xEC c\xF4ng c\u1EE5 tr\u1EA3 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n. "\u0110i s\u1EEDa": d\xE2n t\u1EF1 mang c\xF4ng c\u1EE5 t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa, s\u1EEDa xong \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i. Sau khi nghi\xEAn c\u1EE9u "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 c\xF3 Kho c\xF4ng c\u1EE5, d\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng \u0111\u1ED3 s\u1EBD t\u1EF1 \u0111i l\u1EA5y.'));
@@ -34731,6 +37747,7 @@ body.war .sheet, body.war .bbar {
             )
           ),
           this.gearSec = h("section", {}, h("h3", { text: "Trang b\u1ECB" }), gearHint, gearRow),
+          this.mountSec = h("section", {}, hint("Th\xFA c\u01B0\u1EE1i", "Th\xFA do Chu\u1ED3ng th\xFA c\u01B0\u1EE1i thu\u1EA7n h\xF3a, giao cho t\u1EEBng ng\u01B0\u1EDDi nh\u01B0 c\xF4ng c\u1EE5: ng\u01B0\u1EDDi c\u01B0\u1EE1i \u0111i nhanh h\u01A1n v\xE0 \u0111\u1EE1 \u0111\xF2n h\u01A1n, l\xEDnh c\xF3 th\xFA t\xEDnh l\xE0 k\u1EF5 binh. K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA kh\xF4ng c\u1EA7n th\xFA giao ri\xEAng: h\u1ECD c\u01B0\u1EE1i con c\u1EE7a tr\u1EA1i."), mountRow),
           this.toolsSec = toolsSec,
           h("section", {}, h("h3", { text: "Ch\u1EC9 s\u1ED1 v\xE0 k\u1EF9 n\u0103ng" }), this.stats, this.skills)
         )
@@ -34790,6 +37807,12 @@ body.war .sheet, body.war .bbar {
       const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
       this.toolsSec.hidden = only === null;
       this.combatSec.hidden = !chosen.every((o) => o.job === "fight");
+      this.mountSec.hidden = chosen.every((o) => o.job === "fight" && o.arm === "cavalry");
+      for (const m of this.mountBtns) {
+        const n = m.kind ? sim0.tamedCount(m.kind) : -1;
+        m.btn.textContent = m.kind ? `${MOUNTS[m.kind].name} (${n})${chosen.every((o) => o.mount === m.kind) ? " \u2713" : ""}` : "\u0110i b\u1ED9";
+        m.btn.disabled = m.kind !== null && n <= 0 && !chosen.every((o) => o.mount === m.kind);
+      }
       this.gearSec.hidden = !chosen.every((o) => o.job === "fight" || o.job === "hunt" || o.job === "scout");
       for (const r of this.toolRows) {
         r.row.hidden = r.k !== only;
@@ -37404,6 +40427,8 @@ body.war .sheet, body.war .bbar {
       this.towerList = h("div");
       this.towerKey = "";
       this.info = h("div", { class: "kv" });
+      this.mountRows = [];
+      this.mountNote = h("div", { class: "kv" });
       this.queueNote = { craft: h("div", { class: "kv" }), research: h("div", { class: "kv" }), repair: h("div", { class: "kv" }) };
       this.goodsNote = h("p", { class: "sub" });
       this.goodsHint = hint(this.goodsNote, "");
@@ -37414,11 +40439,12 @@ body.war .sheet, body.war .bbar {
       const { sim: sim2, ctl: ctl2, sprites: sprites2 } = c;
       root.className = "modal";
       const recipeNm = (id) => RECIPE_BY_ID[id] ? recipeName(RECIPE_BY_ID[id]) : id;
-      this.staffBoxes = { build: new StaffBox(c, "build"), craft: new StaffBox(c, "craft"), research: new StaffBox(c, "research"), repair: new StaffBox(c, "repair"), farm: new StaffBox(c, "farm") };
+      this.staffBoxes = { build: new StaffBox(c, "build"), craft: new StaffBox(c, "craft"), research: new StaffBox(c, "research"), repair: new StaffBox(c, "repair"), tame: new StaffBox(c, "tame"), farm: new StaffBox(c, "farm") };
       this.activeBoxes = {
         craft: new ActiveBox(c, recipeNm, (id) => sim2.orderDef("craft", id)?.time ?? 1),
         research: new ActiveBox(c, (id) => TECHS.find((t) => t.id === id)?.name ?? id, (id) => sim2.orderDef("research", id)?.time ?? 1),
-        repair: new ActiveBox(c, (id) => `s\u1EEDa ${recipeNm(id).toLowerCase()}`, (id) => sim2.orderDef("repair", id)?.time ?? 1)
+        repair: new ActiveBox(c, (id) => `s\u1EEDa ${recipeNm(id).toLowerCase()}`, (id) => sim2.orderDef("repair", id)?.time ?? 1),
+        tame: new ActiveBox(c, (id) => `thu\u1EA7n ${MOUNTS[id]?.name.toLowerCase() ?? id}`, (id) => MOUNTS[id]?.time ?? 1)
       };
       const page = (...kids) => {
         const el = h("div", { class: "tabpage", hidden: true }, ...kids);
@@ -37550,6 +40576,26 @@ body.war .sheet, body.war .bbar {
         goods.append(row);
       }
       this.tabs.toolstore = this.tabs.armory = [{ label: "Kho", page: goods }];
+      const beasts = page(hint("Thu\u1EA7n th\xFA", 'D\xE2n l\xE0m vi\u1EC7c trong chu\u1ED3ng thu\u1EA7n h\xF3a t\u1EEBng con th\xFA theo \u0111\u01A1n: t\u1ED1n l\u01B0\u01A1ng th\u1EF1c, da v\xE0 ti\u1EC1n, m\u1EA5t nhi\u1EC1u th\u1EDDi gian (c\xE0ng \u0111\xF4ng v\xE0 c\xE0ng nhanh nh\u1EB9n c\xE0ng nhanh). Con xong v\xE0o chu\u1ED3ng; giao cho t\u1EEBng ng\u01B0\u1EDDi \u1EDF trang "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" c\u1EE7a h\u1ECD, nh\u01B0 giao c\xF4ng c\u1EE5. M\u1ED7i lo\xE0i c\u1EA7n nghi\xEAn c\u1EE9u ri\xEAng v\xE0 chu\u1ED3ng \u0111\u1EE7 c\u1EA5p: s\xF3i (c\u1EA5p 1), l\u1EE3n r\u1EEBng (c\u1EA5p 2), voi (c\u1EA5p 3). K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA kh\xF4ng c\u1EA7n th\xFA c\u1EE7a chu\u1ED3ng: h\u1ECD c\u01B0\u1EE1i con c\u1EE7a tr\u1EA1i.'));
+      for (const k of MOUNT_KINDS) {
+        const d = MOUNTS[k], have = h("span", { class: "have" }), lock = h("small", { class: "lock" });
+        const minus = h("button", { class: "sm", text: "\u2212", title: "B\u1EDBt m\u1ED9t \u0111\u01A1n", onclick: () => {
+          sim2.unqueueTame(k);
+          ctl2.onChange();
+        } });
+        const plus = h("button", { class: "sm", text: "+", title: "Th\xEAm m\u1ED9t \u0111\u01A1n v\xE0o h\xE0ng \u0111\u1EE3i", onclick: () => {
+          const e = sim2.queueTame(k);
+          if (e) c.toast(e);
+          ctl2.onChange();
+        } });
+        const row = h("div", { class: "rec" }, h("div", { class: "nm" }, d.name, h("small", {}, `${costText(d.cost, RES_NAME)} \xB7 ${workDays(d.time)} \xB7 \u0111i nhanh \xD7${d.speed}, \u0111\u1EE1 ${Math.round((1 - d.guard) * 100)}% \u0111\xF2n`), lock), h("div", { class: "qty" }, have, minus, plus));
+        this.mountRows.push({ k, have, row, lock, btns: [minus, plus] });
+        beasts.append(row);
+      }
+      this.tabs.stable = [
+        { label: "\u0110ang l\xE0m", page: page(this.staffBoxes.tame.root, h("h3", { text: "\u0110ang thu\u1EA7n" }), this.activeBoxes.tame.root, this.mountNote) },
+        { label: "Thu\u1EA7n th\xFA", page: beasts }
+      ];
       for (const kind of Object.keys(TRAINING.profiles)) {
         const pane = new TrainPane(c, kind);
         this.trainPanes[kind] = pane;
@@ -37599,6 +40645,8 @@ body.war .sheet, body.war .bbar {
           return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} nh\xE0 nghi\xEAn c\u1EE9u \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
         case "repair":
           return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} th\u1EE3 s\u1EEDa \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+        case "stable":
+          return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} ng\u01B0\u1EDDi thu\u1EA7n th\xFA \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")} \xB7 thu\u1EA7n \u0111\u01B0\u1EE3c ${MOUNT_KINDS.filter((k) => MOUNTS[k].tier <= b.level).map((k) => MOUNTS[k].name.toLowerCase()).join(", ")}`;
         case "wartent":
           return `C\u1EA5p ${b.level}: t\u1ED1i \u0111a ${this.c.sim.squadLimit()} \u0111\u1ED9i, ${this.c.sim.cardLimit()} th\u1EBB l\u1EC7nh cho m\u1ED9t k\u1EBF ho\u1EA1ch \xB7 v\xE0o l\u1EC1u l\xE0 game t\u1EA1m d\u1EEBng`;
         case "farmhouse":
@@ -37659,6 +40707,7 @@ body.war .sheet, body.war .bbar {
       if (b.kind === "workshop" && ready) this.updateWorkshop(b);
       if (b.kind === "lab" && ready) this.updateLab(b);
       if (b.kind === "repair" && ready) this.updateRepair(b);
+      if (b.kind === "stable" && ready) this.updateStable(b);
       if (b.kind === "toolstore" || b.kind === "armory") {
         if (ready) this.updateGoods(b);
       }
@@ -37690,6 +40739,19 @@ body.war .sheet, body.war .bbar {
         r.note.textContent = busy2 ? "\u0110\u1EE3i nghi\xEAn c\u1EE9u hi\u1EC7n t\u1EA1i xong" : short ? short : st.state === "locked" ? st.why ?? "" : st.state === "active" ? "\u0110ang nghi\xEAn c\u1EE9u\u2026" : st.state === "queued" ? block ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u, ch\u1EDD b\u1EAFt \u0111\u1EA7u" : st.state === "done" ? "\u0110\xE3 nghi\xEAn c\u1EE9u" : "";
         r.btn.textContent = { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state];
         r.btn.disabled = st.state === "done" || st.state === "active" || st.state === "locked" || busy2 || !!short;
+      }
+    }
+    updateStable(b) {
+      const { sim: sim2 } = this.c;
+      this.staffBoxes.tame.update(b);
+      this.activeBoxes.tame.update(b);
+      this.mountNote.textContent = `H\xE0ng \u0111\u1EE3i ${sim2.tameQueue.length}: ${sim2.tameQueue.map((k) => MOUNTS[k]?.name.toLowerCase()).join(", ") || "tr\u1ED1ng"} \xB7 trong chu\u1ED3ng: ${MOUNT_KINDS.map((k) => `${sim2.tamedCount(k)} ${MOUNTS[k].name.toLowerCase()}`).join(", ")}`;
+      for (const r of this.mountRows) {
+        const lock = sim2.tameLock(r.k);
+        r.have.textContent = lock ? "" : `chu\u1ED3ng ${sim2.tamedCount(r.k)} \xB7 \u0111\u1EE3i ${sim2.tameQueue.filter((x) => x === r.k).length}`;
+        r.row.classList.toggle("locked", !!lock);
+        r.lock.textContent = lock ?? "";
+        for (const btn of r.btns) btn.disabled = !!lock;
       }
     }
     updateRepair(b) {
