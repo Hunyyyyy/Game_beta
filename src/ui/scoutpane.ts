@@ -49,7 +49,7 @@ export class ScoutPane {
   }
 
   private statsOf(v: Villager): string {
-    return `Nhanh ${fmtStat(v.stats.agi)} · Thể lực ${fmtStat(v.stats.sta)} · Trí tuệ ${fmtStat(v.stats.int)} · điểm ${(this.c.sim.scoutSkill(v) * 10).toFixed(1)}${v.weapon ? ' · vũ khí' : ''}${v.armor ? ' · giáp' : ''}${v.torch ? ' · đuốc' : ''}`;
+    return `Nhanh ${fmtStat(v.stats.agi)} · Thể lực ${fmtStat(v.stats.sta)} · điểm ${(this.c.sim.scoutSkill(v) * 10).toFixed(1)}${v.weapon ? ' · vũ khí' : ''}${v.armor ? ' · giáp' : ''}${v.torch ? ' · đuốc' : ''}`;
   }
 
   private again(): void { this.key = ''; this.changed(); }
@@ -62,10 +62,9 @@ export class ScoutPane {
   render(): Node[] {
     const { sim } = this.c, out: Node[] = [];
     const level = sim.scoutLevel(), limit = sim.scoutLimit();
-    out.push(hint('Trinh sát và bản đồ', 'Dân, lính hay trinh sát đi quanh bản đồ mà gặp một ngôi làng, khi trở về sẽ báo lại: ở đây chỉ ghi làng đó cách bao xa. Muốn biết thêm phải cử trinh sát. Bản đồ vẽ ra ở cấp cao nhất bạn đã nghiên cứu. Trinh sát là một vai trò như lính: tuyển ở trên, số lượng tối đa theo cấp trại. Mỗi chuyến cần nhiều người, mà người giỏi (Nhanh nhẹn, Thể lực, Trí tuệ) đáng giá hơn: một mình thì không bao giờ vẽ đủ. Càng đông thì đi càng nhanh. Trinh sát có thể chết, bản đồ mất 10% độ chính xác mỗi ngày.'));
+    out.push(hint('Trinh sát và bản đồ', 'Dân, lính hay trinh sát đi quanh bản đồ mà gặp một ngôi làng, khi trở về sẽ báo lại: ở đây chỉ ghi làng đó cách bao xa. Muốn biết thêm phải cử trinh sát. Bản đồ vẽ ra ở cấp bằng cấp Trại trinh sát: lều cấp 1 vẽ bản đồ cấp 1, lều cấp 2 cấp 2, lều cấp 3 cấp 3. Trinh sát là một vai trò như lính: tuyển ở trên, số lượng tối đa theo cấp trại. Mỗi chuyến cần nhiều người, mà người giỏi (Nhanh nhẹn, Thể lực) đáng giá hơn: một mình thì không bao giờ vẽ đủ. Càng đông thì đi càng nhanh. Trinh sát có thể chết, bản đồ mất 10% độ chính xác mỗi ngày.'));
     out.push(h('p', { class: 'sub', text: `Bản đồ vẽ được: ${LEVEL_NAME[level]}. ${limit ? `Trại trinh sát cho cử tối đa ${limit} người một chuyến.` : 'Chưa có Trại trinh sát.'}` }));
-    if (!sim.dev.freeBuild && !level) out.push(h('p', { class: 'sub', text: 'Cần nghiên cứu "Trinh sát" ở Nhà nghiên cứu, rồi dựng Trại trinh sát.' }));
-    else if (!sim.dev.freeBuild && !limit) out.push(h('p', { class: 'sub', text: 'Hãy dựng Trại trinh sát.' }));
+    if (!sim.dev.freeBuild && !limit) out.push(h('p', { class: 'sub', text: 'Hãy dựng Trại trinh sát.' }));
 
     out.push(...this.people.render());
     out.push(h('h3', { text: 'Làng đã phát hiện' }));
@@ -76,7 +75,7 @@ export class ScoutPane {
       const trip = sim.scouts.find((m) => m.tribe === t.id), plan = sim.planScout([], t.id);
       const far = where ? `cách đây khoảng ${where.dist} ô về phía ${where.dir}` : '';
       const known = best ? `Bản đồ cấp ${sim.mapLevel(t.id) || best.level}${best.gaps ? ' (còn hở)' : ''}, ${this.ageWords(best.at)}` : 'Chưa vẽ bản đồ';
-      const blocked = plan.error === 'Cần nghiên cứu: Trinh sát' || plan.error === 'Cần dựng Trại trinh sát';
+      const blocked = plan.error === 'Cần dựng Trại trinh sát';
       out.push(h('div', { class: 'row', style: 'flex-direction:column;align-items:stretch' },
         h('div', { class: 'nm' }, h('b', { text: best ? t.def.name : 'Một ngôi làng' }), h('small', { text: best ? `${far} · ${known}` : `Phát hiện ${far}. ${known}.` })),
         trip

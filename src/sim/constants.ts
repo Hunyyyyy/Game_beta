@@ -21,5 +21,5 @@ export const gameDays = (secs: number): string => {
  */
 export const WORK_DAY = 240;
 export const PACE = { work: WORK_DAY / DAY_LENGTH };
-/** Work seconds (build, craft, research and repair times) as days: "1 ngày", "0,25 ngày". */
+/** Work seconds (build, craft and research times) as days: "1 ngày", "0,25 ngày". */
 export const workDays = (workSecs: number): string => gameDays(workSecs / PACE.work);

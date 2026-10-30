@@ -4,10 +4,10 @@ import paceJson from '../data/pace.json';
 import mountsJson from '../data/mounts.json';
 import trainingJson from '../data/training.json';
 
-export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'repair' | 'tame' | 'hunt' | 'fight' | 'scout';
+export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'tame' | 'hunt' | 'fight' | 'scout';
 /** Jobs with a work skill, a potential and a tool. Soldiers have them for the sake of the tables; scouts are a role like soldiers and have none. */
 export type WorkJob = Exclude<Job, 'idle' | 'scout'>;
-export type StatKey = 'vit' | 'str' | 'agi' | 'int' | 'sta';
+export type StatKey = 'vit' | 'str' | 'agi' | 'sta';
 export type Stats = Record<StatKey, number>;
 export type NodeKind = 'tree' | 'rock' | 'bush';
 
@@ -22,7 +22,7 @@ export const MOUNTS = mountsJson.kinds as unknown as Record<MountKind, MountDef>
 /** A stat as the player reads it: whole, or with one digit after the point. */
 export const fmtStat = (x: number): string => String(Math.round(x * 10) / 10);
 
-export const STAT_NAME: Record<StatKey, string> = { vit: 'Sức khỏe', str: 'Sức mạnh', agi: 'Nhanh nhẹn', int: 'Trí tuệ', sta: 'Thể lực' };
+export const STAT_NAME: Record<StatKey, string> = { vit: 'Sức khỏe', str: 'Sức mạnh', agi: 'Nhanh nhẹn', sta: 'Thể lực' };
 
 export interface JobDef {
   name: string;
@@ -38,15 +38,14 @@ export const JOBS: Record<WorkJob, JobDef> = {
   stone: { name: 'Thợ đá', stat: 'str', res: 'stone', node: 'rock', baseTime: paceJson.gather.stone, anim: 'mine' },
   food: { name: 'Hái lượm', stat: 'agi', res: 'food', node: 'bush', baseTime: paceJson.gather.food, anim: 'gather' },
   build: { name: 'Thợ xây', stat: 'sta', baseTime: 1, anim: 'build' },
-  craft: { name: 'Chế tạo', stat: 'int', baseTime: 1, anim: 'craft' },
-  research: { name: 'Nghiên cứu', stat: 'int', baseTime: 1, anim: 'gather' },
-  repair: { name: 'Sửa chữa', stat: 'agi', baseTime: 1, anim: 'craft' },
+  craft: { name: 'Chế tạo', stat: 'agi', baseTime: 1, anim: 'craft' },
+  research: { name: 'Nghiên cứu', stat: 'sta', baseTime: 1, anim: 'gather' },
   tame: { name: 'Thuần thú', stat: 'agi', baseTime: 1, anim: 'craft' },
   hunt: { name: 'Thợ săn', stat: 'agi', baseTime: 1, anim: 'thrust_attack' },
   fight: { name: 'Chiến binh', stat: 'str', baseTime: 1, anim: 'swing_attack' },
 };
-export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', repair: 'Sửa chữa', tame: 'Thuần thú', hunt: 'Thợ săn', fight: 'Chiến binh', scout: 'Trinh sát' };
-export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 'research', 'repair', 'tame', 'hunt', 'fight'];
+export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', tame: 'Thuần thú', hunt: 'Thợ săn', fight: 'Chiến binh', scout: 'Trinh sát' };
+export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 'research', 'tame', 'hunt', 'fight'];
 /** The arm a soldier belongs to, decided by the camp that took him on. Riders count as cavalry whatever they carry. */
 export type SoldierArm = 'foot' | 'archer' | 'cavalry';
 
@@ -79,7 +78,7 @@ export function roleOf(v: { job: Job; arm: SoldierArm; post: number }): RoleId |
 }
 
 /** Jobs done inside a building: the villager walks in and works from the list there. */
-export const STAFF_BUILDING = { craft: 'workshop', research: 'lab', repair: 'repair', tame: 'stable' } as const;
+export const STAFF_BUILDING = { craft: 'workshop', research: 'lab', tame: 'stable' } as const;
 export const isStaffJob = (j: Job): j is keyof typeof STAFF_BUILDING => j in STAFF_BUILDING;
 
 /** Seconds of a farmer's work for one unit of food from a field of the first level. */

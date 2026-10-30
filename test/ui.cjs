@@ -21,7 +21,7 @@ const pressText = (p, text) => p.evaluate((t) => { for (const b of document.quer
 /** A clear patch of grass near the village, revealed, daytime, villagers fed: the stage for fights. */
 const prepare = (p) => p.evaluate(() => {
   const g = window.__game, s = g.sim, c = { x: s.world.start.x + 10, y: s.world.start.y + 8 };
-  s.speed = 0; s.fog.state.fill(2); s.fog.version++; s.time = 240 * 0.3; s.villagers.forEach((v) => { v.fullness = 1e9; });
+  s.speed = 0; s.fog.state.fill(2); s.fog.version++; s.time = 240 * 0.3; s.villagers.forEach((v) => { });
   for (let y = c.y - 9; y <= c.y + 9; y++) for (let x = c.x - 9; x <= c.x + 9; x++) { const i = y * s.world.size + x; s.world.tiles[i] = 0; s.world.nodes.delete(i); s.world.occ[i] = 0; }
   g.ctl.centerOn(c.x * 32, c.y * 32); return c;
 });
@@ -230,12 +230,12 @@ const prepare = (p) => p.evaluate(() => {
     await pressText(p, '✕ Đóng'); await p.waitForTimeout(100);
     await state(p, () => { const s = window.__game.sim; s.dev.freeBuild = false; s.stock.wood = 0; s.stock.stone = 0; });
     ok(await pressText(p, 'Nâng cấp'), 'the bar has an upgrade button'); await p.waitForTimeout(100);
-    ok(await shown(p, '#dialog') && await p.evaluate(() => document.getElementById('dialog').innerText.includes('Gỗ') && document.getElementById('dialog').querySelector('button.primary').disabled), 'upgrade shows the materials it needs, and cannot be confirmed without them');
+    ok(await shown(p, '#dialog') && await p.evaluate(() => document.getElementById('dialog').innerText.includes('Gỗ') && document.getElementById('dialog').querySelector('.dbtns button:last-child').disabled), 'upgrade shows the materials it needs, and cannot be confirmed without them');
     await pressText(p, 'Hủy'); await p.waitForTimeout(100);
     ok(!(await shown(p, '#dialog')) && await state(p, () => window.__game.sim.buildings.find((x) => x.kind === 'workshop').level === 1), 'Hủy closes the dialog and changes nothing');
     await state(p, () => { const s = window.__game.sim; s.stock.wood = 200; s.stock.stone = 200; s.researched.add('timber'); });
     await pressText(p, 'Nâng cấp'); await p.waitForTimeout(100);
-    await p.evaluate(() => document.querySelector('#dialog button.primary').click()); await p.waitForTimeout(150);
+    await p.evaluate(() => document.querySelector('#dialog .dbtns button:last-child').click()); await p.waitForTimeout(150);
     ok(await state(p, () => { const b = window.__game.sim.buildings.find((x) => x.kind === 'workshop'); return b.upgrading || b.level === 2; }) && await state(p, () => window.__game.sim.stock.wood < 200), 'confirming pays the materials and starts the upgrade');
     await state(p, () => { const s = window.__game.sim; s.dev.freeBuild = true; });
     const old = await state(p, () => { const b = window.__game.sim.buildings.find((x) => x.kind === 'workshop'); return { x: b.x, y: b.y }; });
@@ -250,7 +250,7 @@ const prepare = (p) => p.evaluate(() => {
     await p.waitForTimeout(200);
     await pressText(p, 'Phá bỏ'); await p.waitForTimeout(100);
     ok(await shown(p, '#dialog') && await state(p, () => window.__game.sim.buildings.some((b) => b.kind === 'workshop')), 'Phá bỏ only asks to confirm');
-    await p.evaluate(() => document.querySelector('#dialog button.primary').click());
+    await p.evaluate(() => document.querySelector('#dialog .dbtns button:last-child').click());
     await p.waitForTimeout(150);
     ok(await state(p, () => !window.__game.sim.buildings.some((b) => b.kind === 'workshop')), 'confirming tears the craft house down');
     // storage and big map

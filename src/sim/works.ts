@@ -1,4 +1,4 @@
-/** What the houses are working on: the research, crafting and repair queues and the progress they make. */
+/** What the houses are working on: the research and crafting queues and the progress they make. */
 import { PACE } from './constants';
 import { Building, BuildingKind, levelDef } from './buildings';
 import { WorkJob } from './jobs';
@@ -9,24 +9,18 @@ import type { Sim } from './sim';
 import { Villager } from './model';
 
 // ---------------------------------------------------------------- chế tác
-// ---------------------------------------------------------------- research, crafting and repair
-/** Cost and time of an order in one of the three queues. A repair costs half the materials and 60% of the time of making the tool. */
-export function orderDef(sim: Sim, kind: 'research' | 'craft' | 'repair', id: string): { cost: Partial<Stock>; time: number } | null {
+// ---------------------------------------------------------------- research and crafting
+/** Cost and time of an order in one of the two queues. */
+export function orderDef(sim: Sim, kind: 'research' | 'craft', id: string): { cost: Partial<Stock>; time: number } | null {
   if (kind === 'research') { const t = TECH_BY_ID[id]; return t ? { cost: t.cost, time: t.time } : null; }
   const r = RECIPE_BY_ID[id]; if (!r) return null;
-  if (kind === 'craft') return { cost: r.cost, time: r.time };
-  const half: Partial<Stock> = {};
-  for (const k of Object.keys(r.cost) as Res[]) half[k] = Math.ceil((r.cost[k] ?? 0) / 2);
-  return { cost: half, time: Math.ceil(r.time * 1.5) };
+  return { cost: r.cost, time: r.time };
 }
 
 /** Level of a finished building of a kind (0 when there is none). */
 export function levelOfKind(sim: Sim, kind: BuildingKind): number { return sim.building(kind)?.level ?? 0; }
 
 export function workshopLevel(sim: Sim): number { return levelOfKind(sim, 'workshop'); }
-
-/** The smartest villager working inside a building, 0 when it is empty. */
-export function bestIntInside(sim: Sim, b: Building): number { return b.staff.reduce((m, id) => Math.max(m, sim.byId.get(id)?.stats.int ?? 0), 0); }
 
 /** Why a recipe cannot be made yet (blueprint or crafting-house level), or null. */
 export function recipeLock(sim: Sim, id: string): string | null {
@@ -38,9 +32,6 @@ export function recipeLock(sim: Sim, id: string): string | null {
 }
 
 export function recipeOpen(sim: Sim, id: string): boolean { return recipeLock(sim, id) === null; }
-
-/** The smartest villager's Trí tuệ. */
-export function bestInt(sim: Sim): number { return sim.villagers.reduce((m, v) => Math.max(m, v.stats.int), 0); }
 
 /** Where a research stands: done, being worked on, queued, ready to start or locked (with the reason). */
 export function techState(sim: Sim, t: Tech): { state: 'done' | 'active' | 'queued' | 'ready' | 'locked'; why?: string } {
@@ -55,12 +46,11 @@ export function techState(sim: Sim, t: Tech): { state: 'done' | 'active' | 'queu
   return { state: 'ready' };
 }
 
-/** Whether a queued research could start now: someone inside is bright enough. Null when it can, else the reason. */
+/** Whether a queued research could start now: someone works inside. Null when it can, else the reason. */
 export function researchBlock(sim: Sim, t: Tech): string | null {
   const lab = sim.building('lab');
   if (!lab || !lab.staff.length) return 'Chưa có người làm việc trong Nhà nghiên cứu';
-  const best = bestIntInside(sim, lab);
-  return best >= t.minInt ? null : `Cần người Trí tuệ ${t.minInt} trở lên trong nhà (giỏi nhất: ${best})`;
+  return null;
 }
 
 /** The research under way or waiting to start. Only one at a time: the next waits until it is done. */
@@ -98,14 +88,6 @@ export function queueCraft(sim: Sim, id: string): string | null {
   return null;
 }
 
-export function queueRepair(sim: Sim, id: string): string | null {
-  if (!RECIPE_BY_ID[id]) return 'Công thức không tồn tại';
-  if (!sim.building('repair')) return 'Cần dựng Nhà sửa chữa trước';
-  if (sim.repairQueue.length >= 12) return 'Hàng đợi sửa đã đầy';
-  sim.repairQueue.push(id);
-  return null;
-}
-
 export function unqueue(sim: Sim, queue: string[], id: string): void { const i = queue.lastIndexOf(id); if (i >= 0) queue.splice(i, 1); }
 
 export function unqueueCraft(sim: Sim, id: string): void { unqueue(sim, sim.craftQueue, id); }
@@ -126,22 +108,20 @@ export function storeCap(sim: Sim, cat: 'tool' | 'gear'): number { const b = sim
 /** Work done inside the houses: each has one active order, advanced by everyone working there. */
 export function tickWorks(sim: Sim, dt: number): void {
   for (const b of sim.buildings) {
-    if (!b.done || (b.kind !== 'lab' && b.kind !== 'workshop' && b.kind !== 'repair')) continue;
-    const kind = b.kind === 'lab' ? 'research' : b.kind === 'workshop' ? 'craft' : 'repair';
-    const queue = kind === 'research' ? sim.researchQueue : kind === 'craft' ? sim.craftQueue : sim.repairQueue;
+    if (!b.done || (b.kind !== 'lab' && b.kind !== 'workshop')) continue;
+    const kind = b.kind === 'lab' ? 'research' : 'craft';
+    const queue = kind === 'research' ? sim.researchQueue : sim.craftQueue;
     const staff = b.staff.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v);
     if (!staff.length) continue;
     if (!b.active) {
-      const best = bestIntInside(sim, b);
       const i = queue.findIndex((id) => {
         const d = orderDef(sim, kind, id);
         if (!d || (kind !== 'research' && !sim.affordable(d.cost))) return false; // research was paid when it was queued
-        if (kind === 'research') return best >= (TECH_BY_ID[id]?.minInt ?? 0);
         if (kind === 'craft') return recipeOpen(sim, id);
         return true;
       });
       if (i < 0) {
-        if (queue.length && sim.time - sim.lastMatWarn > 30) { sim.lastMatWarn = sim.time; sim.say(kind === 'research' ? 'Nghiên cứu đang chờ: chưa có người đủ thông minh trong nhà.' : 'Đơn đang chờ: thiếu nguyên liệu.'); }
+        if (queue.length && sim.time - sim.lastMatWarn > 30) { sim.lastMatWarn = sim.time; sim.say(kind === 'research' ? 'Nghiên cứu đang chờ.' : 'Đơn đang chờ: thiếu nguyên liệu.'); }
         continue;
       }
       const id = queue[i], d = orderDef(sim, kind, id)!;
@@ -161,29 +141,12 @@ export function tickWorks(sim: Sim, dt: number): void {
       sim.say(`Nhà nghiên cứu đã hoàn thành "${TECH_BY_ID[id].name}".`);
     } else {
       const r = RECIPE_BY_ID[id], cat = isGear(r.kind) ? 'gear' : 'tool';
-      if (kind === 'repair') {
-        const owner = sim.villagers.find((o) => o.repairFor === id), k = r.kind as ToolKind;
-        if (owner && isGear(r.kind)) { // mended weapon or armour goes back into its owner's hands
-          owner.repairFor = null;
-          if (r.kind === 'hide') { if (!owner.armor) { owner.armor = 'hide'; owner.gear.a = null; } } else if (!owner.weapon) { owner.weapon = r.kind; owner.gear.w = null; }
-          b.active = null; sim.say(`Đã sửa xong ${recipeName(r).toLowerCase()}, trả lại cho ${owner.name}.`);
-          continue;
-        }
-        if (owner) {
-          owner.repairFor = null;
-          if (TOOL_OF_JOB[owner.job as WorkJob] === k && !sim.heldTool(owner)) {
-            owner.tools[k] = { tier: r.tier, dur: TIER_DURABILITY[r.tier] }; b.active = null;
-            sim.say(`Đã sửa xong ${recipeName(r).toLowerCase()}, trả lại cho ${owner.name}.`);
-            continue;
-          }
-        }
-      }
       if (storeUsed(sim, cat) >= storeCap(sim, cat)) { // finished but nowhere to put it
         if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say(cat === 'tool' ? 'Kho công cụ đã đầy, sản phẩm chờ chỗ.' : 'Kho vũ khí đã đầy, sản phẩm chờ chỗ.'); }
         continue;
       }
       sim.toolStock[id] = (sim.toolStock[id] ?? 0) + 1; b.active = null;
-      sim.say(kind === 'craft' ? `Đã chế xong ${recipeName(r).toLowerCase()}.` : `Đã sửa xong ${recipeName(r).toLowerCase()}.`);
+      sim.say(`Đã chế xong ${recipeName(r).toLowerCase()}.`);
     }
   }
 }

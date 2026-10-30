@@ -18,13 +18,7 @@
       <span class="res" id="rCoin" title="Tiền"><i style="background:#e8e0c8;border-radius:50%"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rPop" title="Số dân"><i style="background:#e8c4a0"></i><b>0</b><small>/40</small></span>
     </div>
-    <div class="hud grp" role="group" aria-label="Tốc độ game">
-      <button class="sm" data-speed="0" aria-pressed="false" title="Tạm dừng (P)">❚❚</button>
-      <button class="sm" data-speed="1" aria-pressed="true" title="Tốc độ 1× (Q)">1×</button>
-      <button class="sm" data-speed="2" aria-pressed="false" title="Tốc độ 2× (E)">2×</button>
-      <button class="sm" data-speed="4" aria-pressed="false" title="Tốc độ 4× (R)">4×</button>
-      <button class="sm" data-speed="16" aria-pressed="false" title="Tốc độ 16× (T)">16×</button>
-    </div>
+    <button class="sm speedbtn" id="btnSpeed" title="Tốc độ game: bấm để đổi 1× → 2× → 4× → 16× rồi về 1× (Q E R T chọn nhanh, P tạm dừng)">1×</button>
     <div class="hud" id="clockLine"><span class="clock" id="clock">Ngày 1</span></div>
     <span class="spacer"></span>
     <button id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
@@ -33,16 +27,18 @@
   </div>
 
   <button class="qbtn" id="btnQuest" title="Nhiệm vụ" aria-pressed="false">📜<i class="dot" hidden>!</i></button>
-  <div class="qpanel" id="qpanel" hidden></div>
+  <div id="qpanel" hidden></div>
+  <button class="qbtn nbtn" id="btnNotice" title="Thông báo: việc sắp tới hoặc đang diễn ra trong làng" aria-pressed="false">🔔<i class="dot" hidden>!</i></button>
+  <div id="npanel" hidden></div>
   <canvas id="mini" aria-label="Bản đồ nhỏ, bấm để mở bản đồ lớn" title="Bấm để mở bản đồ lớn"></canvas>
   <div class="toast" id="toast" role="status"></div>
 
   <div class="bbar" id="bbar" hidden></div>
   <div class="tray" id="tray" hidden></div>
-  <div class="modal" id="bpanel" hidden></div>
-  <div class="dialog" id="dialog" hidden></div>
-  <div class="dialog" id="start" hidden></div>
-  <div class="modal" id="udetail" hidden></div>
+  <div id="bpanel" hidden></div>
+  <div id="dialog" hidden></div>
+  <div id="start" hidden></div>
+  <div id="udetail" hidden></div>
 
   <div class="warbar" id="warbar" hidden></div>
 
@@ -54,8 +50,8 @@
       </div>
       <div class="btns"><button id="btnPlaceOk" class="primary">✓ Đặt ở đây</button><button id="btnPlaceNo">✕ Hủy</button></div>
     </div>
-    <div class="card" id="tcard" hidden></div>
-    <div class="card" id="ucard" hidden></div>
+    <div id="tcard" hidden></div>
+    <div id="ucard" hidden></div>
     <div class="selbar">
       <button id="btnMulti" aria-pressed="false" title="Bật để chạm từng dân hoặc kéo khung chọn nhiều dân">Chọn nhiều</button>
       <button id="btnAll" title="Chọn tất cả dân (Ctrl+A)">Chọn hết</button>

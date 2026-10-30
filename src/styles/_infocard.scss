@@ -1,0 +1,35 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+// ---- the card over the map for a villager or a house (src/ui/infocard.ts): the parchment, small ----
+.infocard {
+  @include parchment-theme;
+  background: linear-gradient(#e7d3a4, #d6bd86); border: 3px solid #8a6a36; border-radius: 10px; box-shadow: 0 4px 16px rgba(0, 0, 0, .55);
+  padding: 8px 10px; display: grid; gap: 6px; min-width: 240px;
+  .ihead { display: flex; align-items: center; gap: 10px; }
+  .ipic {
+    flex: none; width: 48px; height: 48px; display: grid; place-items: center; background: #1d160e; border: 2px solid #6b5a3a; border-radius: 8px; overflow: hidden;
+    canvas { max-width: 100%; max-height: 100%; image-rendering: pixelated; }
+    &.glyph { font-size: 24px; }
+  }
+  .iwho { flex: 1; min-width: 0; display: grid; gap: 1px; b { font-size: 15px; } small { color: #6a5a3a; font-size: 12px; } }
+  .iclose {
+    flex: none; width: 26px; height: 26px; padding: 0; border-radius: 50%; font-size: 13px; line-height: 1; cursor: pointer;
+    color: #3a2c1c; background: #efe0b8; border: 1px solid #8a6a36;
+    &:hover { background: #b8322a; color: #fff; border-color: #6a1c16; }
+  }
+  .iline { font-size: 12.5px; color: #5a4a2c; }
+  .iacts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; button { @include parchment-button; padding: 5px 12px; } }
+}
+.bbar.infocard { display: grid; justify-items: stretch; padding: 8px 10px; }
+
+// ---- the build menu and the bar of placing a house take the parchment too, with lit buttons ----
+.tray, #placeBar {
+  @include parchment-theme;
+  background: linear-gradient(#e7d3a4, #d6bd86); border: 3px solid #8a6a36; box-shadow: 0 4px 16px rgba(0, 0, 0, .5);
+  button.sm, .btns button, .head button { @include parchment-button; }
+  .card2 { background: rgba(255, 255, 255, .4); border-color: #b89a5e; .pic { background: #1d160e; } &:not(:disabled):hover { border-color: #e0a23c; } }
+  .state { color: #a4481f; }
+}
+.sheet { &.folded > .infocard { display: none; } }
+.infocard .ipic .ico { width: 34px; height: 34px; }

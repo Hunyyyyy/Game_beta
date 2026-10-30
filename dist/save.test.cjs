@@ -323,9 +323,8 @@ var siege_default = {
       mount: 0.06
     },
     weights: {
-      agi: 0.25,
-      sta: 0.35,
-      int: 0.4
+      agi: 0.5,
+      sta: 0.5
     },
     stealthPerPoint: 0.015,
     surveyPerInt: 0.04,
@@ -335,7 +334,7 @@ var siege_default = {
 
 // src/data/weapons.json
 var weapons_default = {
-  _note: 'type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor. cost/time/tier only for what the player can craft; others are used by tribes. style: which set of fighting animations the weapon uses (see "styles"); anims overrides single states for one weapon; projectile: what a ranged weapon fires.',
+  _note: `type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor (the attack speed of the weapon). Every blow or shot does the weapon damage plus the damage stat of the fighter. crit: base chance of a critical blow or shot, 0 to 1 (none have any; research gives it, never above rules.critMax). A critical one does critDamage times the damage (1.25 = 125% of a normal blow, 4 = four times), or the weapon's own critDamage. The research of each weapon (aspd, crit, critd in researchtree.json) is added to the weapon of whoever holds it: aspd by a percent, crit and critd by real points (0.5 = half a percent of chance; 100 = one more time the damage). cost/time/tier only for what the player can craft; others are used by tribes. style: which set of fighting animations the weapon uses (see "styles"); anims overrides single states for one weapon; projectile: what a ranged weapon fires.`,
   styles: {
     fist: { name: "Tay kh\xF4ng", idle: "idle", walk: "walk", guard: "fist_guard", charge: "fist_charge", attack: "fist_attack" },
     swing: { name: "Vung, ch\xE9m, \u0111\u1EADp (g\u1EADy, ch\xF9y, r\xECu, ki\u1EBFm)", idle: "swing_idle", walk: "swing_walk", guard: "swing_guard", charge: "swing_charge", attack: "swing_attack" },
@@ -451,6 +450,9 @@ var weapons_default = {
   },
   rules: {
     backstab: 1.25,
+    tierMult: { "2": { damage: 1.4 } },
+    critMax: 0.1,
+    critDamage: 1.25,
     strengthDamage: 0.6,
     agilityBase: 1.3,
     agilityStep: 0.04,
@@ -469,7 +471,10 @@ function poseOf(weapon, state) {
   const w = weapon ? WEAPONS[weapon] : WEAPONS.fist;
   return w?.anims?.[state] ?? STYLES[w?.style ?? "fist"]?.[state] ?? STYLES.fist[state];
 }
-for (const id of Object.keys(WEAPONS)) WEAPONS[id].anim = poseOf(id, "attack");
+for (const id of Object.keys(WEAPONS)) {
+  WEAPONS[id].id = id;
+  WEAPONS[id].anim = poseOf(id, "attack");
+}
 var ARMORS = weapons_default.armor;
 var RULES = weapons_default.rules;
 var SIEGE = siege_default;
@@ -489,13 +494,403 @@ var ringPower = (ring) => 0.8 + 0.06 * (ring - 1);
 var maxHpOf = (vit) => 40 + 8 * vit;
 var cycleOf = (weaponCycle, agi) => weaponCycle * (RULES.agilityBase - RULES.agilityStep * agi);
 function damageOf(w, strength, armor, backstab) {
-  const base = w.damage + (w.ranged ? 0 : RULES.strengthDamage * strength);
+  const base = w.damage + RULES.strengthDamage * strength;
   return base * (1 - (armor ? armor[w.type] : 0)) * (backstab ? RULES.backstab : 1);
 }
 
+// src/data/progression.json
+var progression_default = {
+  _note: "K\u1EBF ho\u1EA1ch ph\xE1t tri\u1EC3n theo c\u1EA5p Nh\xE0 chung (l\u1EEDa tr\u1EA1i) v\xE0 c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u. Ch\u1EC9nh \u1EDF \u0111\xE2y, kh\xF4ng s\u1EEDa code. id c\xF4ng tr\xECnh = BuildingKind trong sim/buildings.ts; id nghi\xEAn c\u1EE9u = id trong data/research.json. Nh\xF3m (groups) \u0111\u1EC3 g\u1ECDi g\u1ECDn nhi\u1EC1u c\xF4ng tr\xECnh m\u1ED9t l\u1EA7n. 'rest' = m\u1ECDi c\xF4ng tr\xECnh ch\u01B0a \u0111\u01B0\u1EE3c m\u1EDF \u1EDF c\u1EA5p th\u1EA5p h\u01A1n. M\u1ECDi m\u1EE5c 'unlock' c\u1ED9ng d\u1ED3n: c\u1EA5p cao m\u1EDF c\u1EA3 nh\u1EEFng g\xEC c\u1EA5p th\u1EA5p \u0111\xE3 m\u1EDF. C\xF4ng tr\xECnh KH\xD4NG c\xF2n c\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EC3 m\u1EDF kh\xF3a (research.json kh\xF4ng c\xF2n 'unlocks.buildings'); nghi\xEAn c\u1EE9u ch\u1EC9 c\xF2n b\u1EA3n v\u1EBD, n\xE2ng c\u1EA5p nh\xE0, qu\xE2n s\u1EF1 v\xE0 t\u1EF1 \u0111\u1ED9ng h\xF3a.",
+  groups: {
+    stores: [
+      "storage",
+      "toolstore",
+      "armory"
+    ],
+    camps: [
+      "infantry",
+      "cavalry",
+      "archery",
+      "scouttent",
+      "wartent",
+      "drill",
+      "stable"
+    ],
+    defence: [
+      "fence",
+      "gate",
+      "tower",
+      "trap"
+    ]
+  },
+  campfire: {
+    _note: "unlock = c\xF4ng tr\xECnh \u0111\u01B0\u1EE3c x\xE2y \u1EDF c\u1EA5p l\u1EEDa n\xE0y. upgradeNeeds: mu\u1ED1n n\xE2ng l\u1EEDa t\u1EEB c\u1EA5p n\xE0y l\xEAn c\u1EA5p k\u1EBF th\xEC m\u1ECDi c\xF4ng tr\xECnh \u0111\xE3 m\u1EDF kh\xF3a cho c\u1EA5p n\xE0y ph\u1EA3i \u0111\u01B0\u1EE3c x\xE2y xong v\xE0 n\xE2ng t\u1EDBi c\u1EA5p n\xE0y (kh\xF4ng ph\u1EE5 thu\u1ED9c nghi\xEAn c\u1EE9u).",
+    levels: [
+      {
+        level: 1,
+        unlock: [
+          "builder",
+          "workshop",
+          "@stores",
+          "huntlodge"
+        ],
+        buildingMaxLevel: 1,
+        upgradeNeeds: {
+          allUnlockedAtLeastLevel: 1
+        }
+      },
+      {
+        level: 2,
+        unlock: [
+          "lab",
+          "@camps",
+          "house",
+          "field"
+        ],
+        buildingMaxLevel: 2,
+        upgradeNeeds: {
+          allUnlockedAtLeastLevel: 2
+        }
+      },
+      {
+        level: 3,
+        unlock: [
+          "@rest"
+        ],
+        buildingMaxLevel: 3,
+        upgradeNeeds: {
+          allUnlockedAtLeastLevel: 3
+        }
+      },
+      {
+        level: 4,
+        unlock: [],
+        buildingMaxLevel: 3,
+        upgradeNeeds: null
+      }
+    ]
+  },
+  research: {
+    _note: "M\u1ED7i c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u m\u1EDF nh\u1EEFng b\u1EA3n v\u1EBD/nghi\xEAn c\u1EE9u n\xE0o. 'tabs' = tab n\xE0o c\u1EE7a giao di\u1EC7n \u0111\u01B0\u1EE3c m\u1EDF. 'techs' l\xE0 id trong research.json (c\u1EA5p 3 d\xF9ng '@rest' = t\u1EA5t c\u1EA3 c\xF2n l\u1EA1i). 'newTechs' l\xE0 nghi\xEAn c\u1EE9u M\u1EDAI c\u1EA7n th\xEAm v\xE0o research.json (xem \u0111\u1ECBnh ngh\u0129a b\xEAn d\u01B0\u1EDBi). C\xE1c nghi\xEAn c\u1EE9u ch\u1EC9 \u0111\u1EC3 m\u1EDF c\xF4ng tr\xECnh \u0111\xE3 b\u1ECF kh\u1ECFi research.json; 'timber' v\xE0 'masonry' v\u1EABn quy\u1EBFt \u0111\u1ECBnh c\u1EA5p t\u1ED1i \u0111a c\u1EE7a nh\xE0 (c\u1EA5p 2, c\u1EA5p 3) song song v\u1EDBi c\u1EA5p Nh\xE0 chung.",
+    levels: [
+      {
+        level: 1,
+        tabs: [
+          "blueprints"
+        ],
+        techs: [
+          "timber"
+        ],
+        closedTabs: [
+          "military",
+          "automation"
+        ]
+      },
+      {
+        level: 2,
+        tabs: [
+          "blueprints",
+          "military",
+          "automation"
+        ],
+        techs: [
+          "masonry",
+          "signal",
+          "form_basic",
+          "form_wedge",
+          "form_cells_10",
+          "form_squads_5",
+          "auto_fetch",
+          "auto_order"
+        ],
+        autoAll: true
+      },
+      {
+        level: 3,
+        tabs: [
+          "blueprints",
+          "military",
+          "automation"
+        ],
+        techs: [
+          "@rest"
+        ]
+      }
+    ]
+  },
+  formationDefaults: {
+    cells: 5,
+    squads: 4
+  },
+  buildMenu: {
+    _note: "Menu x\xE2y d\u1EF1ng hi\u1EC7n s\u1ED1 l\u01B0\u1EE3ng \u0111\xE3 x\xE2y / t\u1ED1i \u0111a (vd 0/1), kh\xF4ng d\xF9ng ch\u1EEF. T\u1ED1i \u0111a l\u1EA5y t\u1EEB perFire trong buildings.ts, c\xF4ng tr\xECnh menu ch\u1EC9 c\xF3 1.",
+    showCount: true,
+    format: "{built}/{max}",
+    hideText: true
+  },
+  panelActions: {
+    _note: "Panel khi b\u1EA5m v\xE0o c\xF4ng tr\xECnh d\xF9ng icon thay ch\u1EEF. 'panel' m\u1EDF panel ri\xEAng c\u1EE7a nh\xE0 (nghi\xEAn c\u1EE9u, xem d\xE2n, ...). Ch\u1EEF ch\u1EC9 hi\u1EC7n \u1EDF tooltip (?).",
+    open: {
+      icon: "panel",
+      tooltip: "M\u1EDF b\u1EA3ng"
+    },
+    upgrade: {
+      icon: "arrow_up",
+      tooltip: "N\xE2ng c\u1EA5p",
+      cost: "levelCost"
+    },
+    move: {
+      icon: "arrow_4way",
+      tooltip: "Di d\u1EDDi",
+      cost: "free"
+    },
+    demolish: {
+      icon: "x_red",
+      tooltip: "Ph\xE1 b\u1ECF",
+      cost: "refund"
+    }
+  },
+  undemolishable: {
+    _note: "C\xF4ng tr\xECnh ch\u1EC9 \u0111\u01B0\u1EE3c x\xE2y 1 c\xE1i th\xEC kh\xF4ng th\u1EC3 ph\xE1 b\u1ECF (v\u1EABn n\xE2ng c\u1EA5p v\xE0 di d\u1EDDi \u0111\u01B0\u1EE3c). L\u1EA5y t\u1EEB c\u1EA5u h\xECnh: m\u1ECDi c\xF4ng tr\xECnh kh\xF4ng c\xF3 perFire v\xE0 kh\xF4ng ph\u1EA3i \u0111\u01B0\u1EDDng/h\xE0ng r\xE0o.",
+    kinds: [
+      "campfire",
+      "builder",
+      "storage",
+      "workshop",
+      "lab",
+      "toolstore",
+      "armory"
+    ]
+  },
+  formationDefaults_note: "cells = s\u1ED1 \xF4 t\u1ED1i \u0111a c\u1EE7a m\u1ED9t tr\u1EADn ph\xE1p (s\u1ED1 l\xEDnh m\u1ED9t \u0111\u1ED9i); squads = s\u1ED1 \u0111\u1ED9i l\u1EADp \u0111\u01B0\u1EE3c. Nghi\xEAn c\u1EE9u form_cells_10/15 v\xE0 form_squads_5/6 (trong research.json) n\xE2ng hai s\u1ED1 n\xE0y."
+};
+
+// src/data/quests.json
+var quests_default = {
+  _note: "Nhi\u1EC7m v\u1EE5 h\u01B0\u1EDBng d\u1EABn, l\xE0m theo th\u1EE9 t\u1EF1 t\u1EDBi Nh\xE0 chung c\u1EA5p 4 v\xE0 ch\u01B0\u01A1ng t\xE1c chi\u1EBFn. M\u1ED7i nhi\u1EC7m v\u1EE5: id, chapter (ch\u01B0\u01A1ng), title (ti\xEAu \u0111\u1EC1 ng\u1EAFn), hint (h\u01B0\u1EDBng d\u1EABn chi ti\u1EBFt, ch\u1EC9 hi\u1EC7n \u1EDF nhi\u1EC7m v\u1EE5 \u0111\u1EA7u ti\xEAn \u0111ang m\u1EDF), after (c\xE1c nhi\u1EC7m v\u1EE5 ph\u1EA3i xong tr\u01B0\u1EDBc), done (\u0111i\u1EC1u ki\u1EC7n). Lo\u1EA1i \u0111i\u1EC1u ki\u1EC7n (done.type): inspectUnit inspectAnimal squadSize{count} squadFormation{id} equipped{slot weapon|armor,count} scoutSent hasMap{level} planDefense planArrow planRunning planDone{result?}; c\xE1c lo\u1EA1i c\u0169: buildBuilding{kind,count} upgradeBuilding{kind,level} upgradeFire{level} fireReady{level: m\u1ECDi nh\xE0 \u0111\xE3 m\u1EDF \u0111\u1EA1t c\u1EA5p \u0111\xF3 th\xEC m\u1EDBi \u0111\u01B0\u1EE3c r\u1EDDi c\u1EA5p l\u1EEDa} researchTech{id} population{count} stock{res,count} hasRole{role,count} jobCount{job,count} staffIn{kind,count} haveTool{kind,tier,count} torches{count} createSquad{count} daytime{day: s\xE1ng ng\xE0y \u0111\xF3} speed{atLeast} selectBuilding{kind} openBuilding{kind} inspectNode. Nhi\u1EC7m v\u1EE5 \u0111\xE3 xong th\xEC xong lu\xF4n, v\xE0 nhi\u1EC7m v\u1EE5 n\xE0o \u0111\u1EE9ng tr\u01B0\u1EDBc m\u1ED9t nhi\u1EC7m v\u1EE5 \u0111\xE3 xong c\u0169ng \u0111\u01B0\u1EE3c t\xEDnh l\xE0 xong. Th\xEAm nhi\u1EC7m v\u1EE5 b\u1EB1ng c\xE1ch th\xEAm m\u1ED9t d\xF2ng v\xE0o quests.",
+  chapters: [{ id: 1, name: "Ch\u01B0\u01A1ng 1 \xB7 Nh\u1EEFng ng\xE0y \u0111\u1EA7u b\xEAn \u0111\u1ED1ng l\u1EEDa" }, { id: 2, name: "Ch\u01B0\u01A1ng 2 \xB7 Nghi\xEAn c\u1EE9u v\xE0 m\u1EDF r\u1ED9ng" }, { id: 3, name: "Ch\u01B0\u01A1ng 3 \xB7 Ph\xF2ng th\u1EE7 v\xE0 qu\xE2n \u0111\u1ED9i" }, { id: 4, name: "Ch\u01B0\u01A1ng 4 \xB7 T\xE1c chi\u1EBFn v\xE0 th\xFA c\u01B0\u1EE1i" }],
+  quests: [
+    { id: "c1_select", chapter: 1, title: "L\xE0m quen v\u1EDBi l\xE0ng", hint: "B\u1EA1n c\xF3 hai ng\u01B0\u1EDDi: m\u1ED9t h\xE1i l\u01B0\u1EE3m (nu\xF4i c\u1EA3 l\xE0ng) v\xE0 m\u1ED9t \u0111\u1ED1n g\u1ED7. M\u1ED7i ngh\u1EC1 do m\u1ED9t nh\xE0 qu\u1EA3n l\xFD. B\u1EA5m v\xE0o X\u01B0\u1EDFng g\u1ED7 (nh\xE0 g\u1ED7 nh\u1ECF c\u1EA1nh \u0111\u1ED1ng l\u1EEDa) \u0111\u1EC3 ch\u1ECDn n\xF3.", after: [], done: { type: "selectBuilding", kind: "lumberyard" } },
+    { id: "c1_open", chapter: 1, title: "M\u1EDF b\u1EA3ng X\u01B0\u1EDFng g\u1ED7", hint: "M\u1ED9t thanh n\xFAt n\u1ED5i l\xEAn d\u01B0\u1EDBi nh\xE0: \u2630 m\u1EDF b\u1EA3ng, \u2B06 n\xE2ng c\u1EA5p, \u2725 di d\u1EDDi, \u2716 ph\xE1 b\u1ECF. B\u1EA5m \u2630 \u0111\u1EC3 xem ai \u0111ang \u0111\u1ED1n g\u1ED7 v\xE0 nh\xE0 c\xF2n m\u1EA5y ch\u1ED7. \u0110\xF3ng b\u1EA3ng b\u1EB1ng \u2715 khi xem xong.", after: ["c1_select"], done: { type: "openBuilding", kind: "lumberyard" } },
+    { id: "c1_node", chapter: 1, title: "Xem m\u1ED9t c\xE1i c\xE2y", hint: 'B\u1EA5m v\xE0o m\u1ED9t c\xE1i c\xE2y g\u1EA7n \u0111\xF3: th\u1EBB hi\u1EC7n t\xEAn, thanh m\xE1u (l\u01B0\u1EE3ng g\u1ED7 c\xF2n l\u1EA1i) v\xE0 n\xFAt "Khai th\xE1c". N\xFAt n\xE0y t\u1EF1 g\u1ECDi m\u1ED9t ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7 \u1EDF g\u1EA7n t\u1EDBi ch\u1EB7t \u0111\xFAng c\xE2y \u0111\xF3, kh\xF4ng c\u1EA7n ch\u1ECDn d\xE2n.', after: ["c1_open"], done: { type: "inspectNode" } },
+    { id: "c1_unit", chapter: 1, title: "Xem m\u1ED9t ng\u01B0\u1EDDi d\xE2n", hint: 'B\u1EA5m v\xE0o m\u1ED9t ng\u01B0\u1EDDi d\xE2n tr\xEAn b\u1EA3n \u0111\u1ED3: th\u1EBB hi\u1EC7n t\xEAn, vi\u1EC7c \u0111ang l\xE0m v\xE0 c\xE1c thanh No (\u0111\xF3i), S\u1EE9c (m\u1EC7t), M\xE1u, Tinh th\u1EA7n, Gi\xE1p. N\xFAt "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" m\u1EDF b\u1EA3ng \u2699 v\u1EDBi c\xF4ng c\u1EE5, ca l\xE0m (ban ng\xE0y, ban \u0111\xEAm, c\u1EA3 hai) v\xE0 ch\u1EC9 s\u1ED1. B\u1EA5m "B\u1ECF ch\u1ECDn" \u0111\u1EC3 \u0111\xF3ng th\u1EBB.', after: ["c1_node"], done: { type: "inspectUnit" } },
+    { id: "c1_animal", chapter: 1, title: "Xem m\u1ED9t con th\xFA", hint: "Th\xFA r\u1EEBng \u0111i lang thang quanh l\xE0ng. B\u1EA5m v\xE0o m\u1ED9t con th\xFA \u0111\u1EC3 xem m\xE1u v\xE0 t\xEDnh t\xECnh (th\xFA hi\u1EC1n b\u1ECF ch\u1EA1y, th\xFA d\u1EEF x\xF4ng v\xE0o c\u1EAFn). Vi\u1EC7c s\u0103n \u0111\u1EC3 th\u1EE3 s\u0103n lo; \u0111\u1EEBng \u0111\u1EC3 d\xE2n y\u1EBFu \u0111i m\u1ED9t m\xECnh v\xE0o n\u01A1i c\xF3 th\xFA d\u1EEF.", after: ["c1_unit"], done: { type: "inspectAnimal" } },
+    { id: "c1_wood", chapter: 1, title: "C\xF3 10 g\u1ED7 trong kho", hint: 'B\u1EA5m "Khai th\xE1c" \u1EDF c\xE2y \u0111\u1EC3 ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7 l\xE0m vi\u1EC7c. G\u1ED7 \u0111\u01B0\u1EE3c mang v\u1EC1 Nh\xE0 chung (\u0111\u1ED1ng l\u1EEDa). Thanh tr\xEAn c\xF9ng cho bi\u1EBFt \u0111ang c\xF3 bao nhi\xEAu g\u1ED7. C\u1EA7n 10 g\u1ED7 \u0111\u1EC3 d\u1EF1ng nh\xE0 \u0111\u1EA7u ti\xEAn.', after: ["c1_node"], done: { type: "stock", res: "wood", count: 10 } },
+    { id: "c1_speed", chapter: 1, title: "Tua nhanh qua \u0111\xEAm", hint: "M\u1ED9t ng\xE0y game c\xF3 12 ph\xFAt ban ng\xE0y v\xE0 8 ph\xFAt ban \u0111\xEAm; ban \u0111\xEAm d\xE2n \u0111i ng\u1EE7 v\xE0 kh\xF4ng l\xE0m vi\u1EC7c. B\u1EA5m 16\xD7 \u1EDF thanh t\u1ED1c \u0111\u1ED9 ph\xEDa tr\xEAn \u0111\u1EC3 tua qua \u0111\xEAm. Nh\u1EDB tr\u1EDF l\u1EA1i 1\xD7 khi c\u1EA7n ra l\u1EC7nh k\u1EF9.", after: ["c1_wood"], done: { type: "speed", atLeast: 16 } },
+    { id: "c1_day2", chapter: 1, title: "Ch\u1EDD tr\u1EDDi s\xE1ng ng\xE0y 2", hint: 'M\u1ED7i ng\xE0y m\u1EDBi, m\u1ED9t \u0111\u1EBFn ba ng\u01B0\u1EDDi l\u1EA1 \u0111\u1EBFn xin \u1EDF l\u1EA1i c\u1EA1nh \u0111\u1ED1ng l\u1EEDa. \u0110\u1EE3i t\u1EDBi s\xE1ng ng\xE0y 2 (\u0111\u1ED3ng h\u1ED3 tr\xEAn c\xF9ng ghi "Ng\xE0y 2 \xB7 ban ng\xE0y") r\u1ED3i gi\u1EA3m t\u1ED1c \u0111\u1ED9.', after: ["c1_speed"], done: { type: "daytime", day: 2 } },
+    { id: "c1_pop", chapter: 1, title: "\u0110\xF3n ng\u01B0\u1EDDi m\u1EDBi", hint: "Ng\u01B0\u1EDDi m\u1EDBi \u0111\u1EBFn ch\u01B0a c\xF3 ngh\u1EC1: h\u1ECD \u0111\u1EE9ng r\u1EA3nh quanh l\u1EEDa. Nh\xE0 chung c\u1EA5p 1 ch\u1EE9a \u0111\u01B0\u1EE3c 8 ng\u01B0\u1EDDi. Nh\u1EDB gi\u1EEF l\u01B0\u01A1ng th\u1EF1c \u0111\u1EE7 cho m\u1ECDi ng\u01B0\u1EDDi \u0103n.", after: ["c1_day2"], done: { type: "population", count: 3 } },
+    { id: "c1_wood2", chapter: 1, title: "Th\xEAm m\u1ED9t ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7", hint: 'M\u1EDF X\u01B0\u1EDFng g\u1ED7 (\u2630), trong danh s\xE1ch "D\xE2n r\u1EA3nh" b\u1EA5m \uFF0B c\u1EA1nh m\u1ED9t ng\u01B0\u1EDDi \u0111\u1EC3 giao ngh\u1EC1 \u0111\u1ED1n g\u1ED7. Danh s\xE1ch ch\u1EC9 hi\u1EC7n ng\u01B0\u1EDDi ch\u01B0a c\xF3 ngh\u1EC1; mu\u1ED1n \u0111\u1ED5i ngh\u1EC1 c\u1EE7a ai th\xEC b\u1EA5m \u2212 \u1EDF nh\xE0 c\u0169 tr\u01B0\u1EDBc.', after: ["c1_pop"], done: { type: "hasRole", role: "wood", count: 2 } },
+    { id: "c1_builder", chapter: 1, title: "D\u1EF1ng Nh\xE0 th\u1EE3 x\xE2y", hint: 'B\u1EA5m n\xFAt "X\xE2y" (g\xF3c ph\u1EA3i tr\xEAn), tab "Thi\u1EBFt y\u1EBFu", ch\u1ECDn Nh\xE0 th\u1EE3 x\xE2y (10 g\u1ED7). Khung v\xE0ng n\xE9t \u0111\u1EE9t l\xE0 ch\u1ED7 tr\u1ED1ng 2 \xF4 c\u1EA7n c\xF3 quanh m\u1ED7i nh\xE0; ch\u1EA1m v\xE0o v\xF9ng cam c\u1EE7a nh\xE0 kh\xE1c th\xEC kh\xF4ng \u0111\u1EB7t \u0111\u01B0\u1EE3c. Ch\u01B0a c\xF3 th\u1EE3 n\xEAn h\xE3y ch\u1ECDn m\u1ED9t d\xE2n r\u1ED3i ch\u1EA1m v\xE0o n\u1EC1n nh\xE0 \u0111\u1EC3 h\u1ECD d\u1EF1ng.', after: ["c1_wood2"], done: { type: "buildBuilding", kind: "builder", count: 1 } },
+    { id: "c1_crew", chapter: 1, title: "Giao vi\u1EC7c th\u1EE3 x\xE2y", hint: 'Ch\u1ECDn Nh\xE0 th\u1EE3 x\xE2y, b\u1EA5m \u2630, tab "Th\u1EE3 x\xE2y", r\u1ED3i b\u1EA5m \uFF0B \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi l\xE0m th\u1EE3. T\u1EEB gi\u1EDD m\u1ECDi n\u1EC1n nh\xE0 v\xE0 vi\u1EC7c n\xE2ng c\u1EA5p \u0111\u1EC1u do h\u1ECD l\xE0m. Nh\xE0 th\u1EE3 x\xE2y hi\u1EC7n "zzzz" khi h\u1EBFt vi\u1EC7c.', after: ["c1_builder"], done: { type: "jobCount", job: "build", count: 1 } },
+    { id: "c1_storage", chapter: 1, title: "D\u1EF1ng Kho", hint: 'Tab "Thi\u1EBFt y\u1EBFu" c\xF3 Kho. Kho ch\u1EE9a g\u1ED7, \u0111\xE1, th\u1EE9c \u0103n... m\u1ED7i lo\u1EA1i c\xF3 gi\u1EDBi h\u1EA1n; kho \u0111\u1EA7y th\xEC d\xE2n \u0111\u1EE9ng ch\u1EDD. N\xE2ng c\u1EA5p Kho \u0111\u1EC3 ch\u1EE9a nhi\u1EC1u h\u01A1n. M\u1ED7i lo\u1EA1i nh\xE0 ch\u1EC9 x\xE2y \u0111\u01B0\u1EE3c m\u1ED9t c\xE1i.', after: ["c1_crew"], done: { type: "buildBuilding", kind: "storage", count: 1 } },
+    { id: "c1_farmhouse", chapter: 1, title: "M\u1EDF N\xF4ng tr\u1EA1i", hint: "N\xF4ng tr\u1EA1i (nh\xE0 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa) qu\u1EA3n l\xFD ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m. Ch\u1ECDn n\xF3 r\u1ED3i b\u1EA5m \u2630 \u0111\u1EC3 xem ai \u0111ang h\xE1i qu\u1EA3 v\xE0 nh\xE0 c\xF2n m\u1EA5y ch\u1ED7.", after: ["c1_storage"], done: { type: "openBuilding", kind: "farmhouse" } },
+    { id: "c1_stone", chapter: 1, title: "Giao th\u1EE3 \u0111\xE1", hint: "M\u1EDF X\u01B0\u1EDFng \u0111\xE1 (nh\xE0 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa) b\u1EB1ng \u2630 r\u1ED3i b\u1EA5m \uFF0B \u1EDF m\u1ED9t ng\u01B0\u1EDDi r\u1EA3nh. \u0110\xE1 c\u1EA7n \u0111\u1EC3 n\xE2ng c\u1EA5p nh\xE0 l\xEAn c\u1EA5p 2 v\xE0 n\xE2ng Nh\xE0 chung.", after: ["c1_storage"], done: { type: "hasRole", role: "stone", count: 1 } },
+    { id: "c1_food", chapter: 1, title: "D\u1EF1 tr\u1EEF 30 th\u1EE9c \u0103n", hint: "M\u1ED7i ng\u01B0\u1EDDi \u0103n kho\u1EA3ng 2,5 th\u1EE9c \u0103n m\u1ED9t ng\xE0y. N\xF4ng tr\u1EA1i qu\u1EA3n l\xFD ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m: th\xEAm ng\u01B0\u1EDDi h\xE1i \u1EDF \u0111\xF3. Qu\u1EA3 h\u1ECFng sau 3 ng\xE0y n\u1EBFu kh\xF4ng \u0103n, v\xE0 b\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n m\u1ED7i m\xF9a.", after: ["c1_farmhouse"], done: { type: "stock", res: "food", count: 30 } },
+    { id: "c1_workshop", chapter: 1, title: "D\u1EF1ng Nh\xE0 ch\u1EBF t\u1EA1o", hint: 'Tab "S\u1EA3n xu\u1EA5t": Nh\xE0 ch\u1EBF t\u1EA1o. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong nh\xE0 \u0111\u1EC3 l\xE0m c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p.', after: ["c1_storage"], done: { type: "buildBuilding", kind: "workshop", count: 1 } },
+    { id: "c1_workshop_staff", chapter: 1, title: "\u0110\u01B0a ng\u01B0\u1EDDi v\xE0o Nh\xE0 ch\u1EBF t\u1EA1o", hint: 'M\u1EDF Nh\xE0 ch\u1EBF t\u1EA1o (\u2630), tab "\u0110ang l\xE0m", b\u1EA5m \uFF0B \u0111\u1EC3 cho m\u1ED9t ng\u01B0\u1EDDi r\u1EA3nh v\xE0o l\xE0m. Ng\u01B0\u1EDDi c\xE0ng kh\xE9o l\xE0m c\xE0ng nhanh. Kh\xF4ng c\xF3 ng\u01B0\u1EDDi th\xEC nh\xE0 hi\u1EC7n "zzzz".', after: ["c1_workshop"], done: { type: "staffIn", kind: "workshop", count: 1 } },
+    { id: "c1_torch", chapter: 1, title: "Ch\u1EBF m\u1ED9t c\xE2y \u0111u\u1ED1c", hint: 'Tab "C\xF4ng c\u1EE5" c\u1EE7a Nh\xE0 ch\u1EBF t\u1EA1o c\xF3 \u0110u\u1ED1c (b\u1EA3n v\u1EBD bi\u1EBFt s\u1EB5n): b\u1EA5m + \u0111\u1EC3 \u0111\u1EB7t \u0111\u01A1n, c\u1EA7n g\u1ED7. \u0110u\u1ED1c cho ph\xE9p l\xE0m vi\u1EC7c ban \u0111\xEAm v\u1EDBi 70% hi\u1EC7u su\u1EA5t, nh\u01B0ng l\xE0m \u0111\xEAm li\xEAn t\u1EE5c khi\u1EBFn d\xE2n m\u1EC7t.', after: ["c1_workshop_staff"], done: { type: "torches", count: 1 } },
+    { id: "c1_toolstore", chapter: 1, title: "D\u1EF1ng Kho c\xF4ng c\u1EE5", hint: 'C\u1EA5t r\xECu, cu\u1ED1c, b\xFAa l\xE0m ra \u0111\u1EC3 ph\xE1t cho d\xE2n. Mu\u1ED1n d\xE2n t\u1EF1 l\u1EA5y \u0111\u1ED3 \u1EDF kho th\xEC ph\u1EA3i nghi\xEAn c\u1EE9u "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho" (ch\u01B0\u01A1ng 2).', after: ["c1_workshop"], done: { type: "buildBuilding", kind: "toolstore", count: 1 } },
+    { id: "c1_armory", chapter: 1, title: "D\u1EF1ng Kho v\u0169 kh\xED", hint: "C\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p cho th\u1EE3 s\u0103n v\xE0 l\xEDnh.", after: ["c1_workshop"], done: { type: "buildBuilding", kind: "armory", count: 1 } },
+    { id: "c1_hide", chapter: 1, title: "Ki\u1EBFm 3 da", hint: 'Ch\xF2i th\u1EE3 s\u0103n c\u1EA7n 3 da, m\xE0 da ch\u1EC9 c\xF3 khi s\u0103n th\xFA. H\xE1i l\u01B0\u1EE3m \u0111\xF4i khi nh\u1EB7t \u0111\u01B0\u1EE3c v\u1ECF s\xF2 (ti\u1EC1n); m\u1EDF Kho (\u2630), tab "\u0110\u1ED5i ch\xE1c" \u0111\u1EC3 \u0111\u1ED5i v\u1ECF s\xF2 l\u1EA5y da.', after: ["c1_storage"], done: { type: "stock", res: "hide", count: 3 } },
+    { id: "c1_lodge", chapter: 1, title: "D\u1EF1ng Ch\xF2i th\u1EE3 s\u0103n", hint: 'Tab "T\xE0i nguy\xEAn": Ch\xF2i th\u1EE3 s\u0103n. Th\u1EE3 s\u0103n t\u1EF1 \u0111i t\xECm v\xE0 s\u0103n th\xFA, t\u1EF1 l\u1ED9t da mang v\u1EC1, kh\xF4ng c\u1EA7n ch\u1EC9 \u0111\u1EA1o.', after: ["c1_hide"], done: { type: "buildBuilding", kind: "huntlodge", count: 1 } },
+    { id: "c1_hunter", chapter: 1, title: "Giao ngh\u1EC1 th\u1EE3 s\u0103n", hint: "M\u1EDF Ch\xF2i th\u1EE3 s\u0103n (\u2630) v\xE0 b\u1EA5m \uFF0B \u1EDF m\u1ED9t ng\u01B0\u1EDDi nhanh nh\u1EB9n. H\u1EBFt m\u1ED3i g\u1EA7n h\u1ECD s\u1EBD t\u1EF1 \u0111i tu\u1EA7n t\xECm th\xFA; v\u1EC1 sau ch\u1EBF d\xE2y qu\u0103ng ho\u1EB7c gi\xE1o cho h\u1ECD \u0111\u1EC3 an to\xE0n h\u01A1n.", after: ["c1_lodge"], done: { type: "hasRole", role: "hunt", count: 1 } },
+    { id: "c1_ready", chapter: 1, title: "D\u1EF1ng \u0111\u1EE7 nh\xE0 c\u1EA5p 1", hint: "Nh\xE0 chung ch\u1EC9 n\xE2ng c\u1EA5p khi m\u1ECDi nh\xE0 \u0111\xE3 m\u1EDF \u1EDF c\u1EA5p 1 \u0111\u1EC1u x\xE2y xong: Nh\xE0 th\u1EE3 x\xE2y, Kho, Nh\xE0 ch\u1EBF t\u1EA1o, Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, Ch\xF2i th\u1EE3 s\u0103n v\xE0 ba nh\xE0 s\u1EB5n c\xF3. D\xF2ng d\u01B0\u1EDBi nhi\u1EC7m v\u1EE5 cho bi\u1EBFt c\xF2n thi\u1EBFu nh\xE0 n\xE0o.", after: ["c1_stone", "c1_food", "c1_torch", "c1_toolstore", "c1_armory", "c1_hunter"], done: { type: "fireReady", level: 1 } },
+    { id: "c1_fire2", chapter: 1, title: "N\xE2ng Nh\xE0 chung l\xEAn c\u1EA5p 2", hint: "Ch\u1ECDn \u0111\u1ED1ng l\u1EEDa, b\u1EA5m \u2B06 r\u1ED3i x\xE1c nh\u1EADn (c\u1EA7n 20 g\u1ED7), giao th\u1EE3 x\xE2y l\xE0m. C\u1EA5p 2 m\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, c\xE1c tr\u1EA1i l\xEDnh, nh\xE0 d\xE2n v\xE0 ru\u1ED9ng; l\xE0ng ch\u1EE9a 16 ng\u01B0\u1EDDi, nh\xE0 n\xE2ng \u0111\u01B0\u1EE3c l\xEAn c\u1EA5p 2.", after: ["c1_ready"], done: { type: "upgradeFire", level: 2 } },
+    { id: "c2_lab", chapter: 2, title: "D\u1EF1ng Nh\xE0 nghi\xEAn c\u1EE9u", hint: 'Tab "S\u1EA3n xu\u1EA5t": Nh\xE0 nghi\xEAn c\u1EE9u. M\u1ECDi c\xF4ng c\u1EE5 v\xE0 v\u0169 kh\xED ch\u1EC9 l\xE0m \u0111\u01B0\u1EE3c sau khi nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD \u1EDF \u0111\xE2y.', after: ["c1_fire2"], done: { type: "buildBuilding", kind: "lab", count: 1 } },
+    { id: "c2_lab_staff", chapter: 2, title: "\u0110\u01B0a ng\u01B0\u1EDDi v\xE0o nghi\xEAn c\u1EE9u", hint: 'M\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u (\u2630), tab "\u0110ang l\xE0m", b\u1EA5m \uFF0B. Ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng \u0111\xF4ng, nghi\xEAn c\u1EE9u c\xE0ng nhanh. Nh\xE0 hi\u1EC7n % ti\u1EBFn \u0111\u1ED9 khi \u0111ang nghi\xEAn c\u1EE9u.', after: ["c2_lab"], done: { type: "staffIn", kind: "lab", count: 1 } },
+    { id: "c2_craft_axe", chapter: 2, title: "Ch\u1EBF m\u1ED9t c\xE1i r\xECu", hint: 'Nh\xE0 ch\u1EBF t\u1EA1o (\u2630), tab "C\xF4ng c\u1EE5": \u0111\u1EB7t R\xECu g\u1ED7. R\xECu xong v\xE0o Kho c\xF4ng c\u1EE5; \u0111\u01B0a cho ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7 \u1EDF th\u1EBB c\u1EE7a h\u1ECD (\u2699), ho\u1EB7c \u0111\u1EC3 d\xE2n t\u1EF1 l\u1EA5y sau khi nghi\xEAn c\u1EE9u t\u1EF1 \u0111\u1ED9ng h\xF3a.', after: ["c2_lab_staff", "c1_workshop_staff"], done: { type: "haveTool", kind: "axe", tier: 1, count: 1 } },
+    { id: "c2_timber", chapter: 2, title: "Nghi\xEAn c\u1EE9u D\u1EF1ng b\u1EB1ng g\u1ED7", hint: "Cho ph\xE9p n\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7). N\u1EB1m \u1EDF tab Ph\xE1t tri\u1EC3n, th\u1EBB N\xE2ng c\u1EA5p c\xF4ng tr\xECnh c\u1EE7a Nh\xE0 nghi\xEAn c\u1EE9u.", after: ["c2_lab_staff"], done: { type: "researchTech", id: "timber" } },
+    { id: "c2_house", chapter: 2, title: "D\u1EF1ng Nh\xE0 d\xE2n", hint: 'Tab "Thi\u1EBFt y\u1EBFu": Nh\xE0 d\xE2n. D\xE2n th\u01B0\u1EDDng ng\u1EE7 \u1EDF \u0111\xE2y v\xE0 h\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7; kh\xF4ng c\xF3 gi\u01B0\u1EDDng th\xEC h\u1ECD ng\u1EE7 c\u1EA1nh l\u1EEDa, h\u1ED3i s\u1EE9c ch\u1EADm h\u01A1n.', after: ["c1_fire2"], done: { type: "buildBuilding", kind: "house", count: 1 } },
+    { id: "c2_field", chapter: 2, title: "L\xE0m m\u1ED9t Ru\u1ED9ng", hint: 'Tab "Thi\u1EBFt y\u1EBFu": Ru\u1ED9ng. Ru\u1ED9ng cho th\u1EE9c \u0103n \u0111\u1EC1u quanh n\u0103m, kh\xF4ng nh\u01B0 b\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n.', after: ["c1_fire2"], done: { type: "buildBuilding", kind: "field", count: 1 } },
+    { id: "c2_farmer", chapter: 2, title: "C\u1EED ng\u01B0\u1EDDi l\xE0m ru\u1ED9ng", hint: "M\u1EDF Ru\u1ED9ng (\u2630) v\xE0 b\u1EA5m \uFF0B \u0111\u1EC3 c\u1EED m\u1ED9t ng\u01B0\u1EDDi. M\u1ED9t ru\u1ED9ng m\u1ED9t ng\u01B0\u1EDDi; n\xE2ng c\u1EA5p ru\u1ED9ng \u0111\u1EC3 l\xE0m nhanh h\u01A1n. Th\u1EE9c \u0103n v\u1EC1 th\u1EB3ng kho.", after: ["c2_field"], done: { type: "staffIn", kind: "field", count: 1 } },
+    { id: "c2_upgrade", chapter: 2, title: "N\xE2ng Kho l\xEAn c\u1EA5p 2", hint: "Ch\u1ECDn Kho, b\u1EA5m \u2B06, x\xE1c nh\u1EADn r\u1ED3i giao th\u1EE3 x\xE2y. Nh\xE0 v\u1EABn d\xF9ng \u0111\u01B0\u1EE3c trong l\xFAc n\xE2ng. M\u1ED7i c\u1EA5p t\u1ED1n nhi\u1EC1u v\u1EADt li\u1EC7u h\u01A1n nh\u01B0ng ch\u1EE9a v\xE0 l\xE0m vi\u1EC7c t\u1ED1t h\u01A1n.", after: ["c2_timber"], done: { type: "upgradeBuilding", kind: "storage", level: 2 } },
+    { id: "c2_barracks", chapter: 2, title: "D\u1EF1ng Tr\u1EA1i chi\u1EBFn binh", hint: 'Tab "Qu\xE2n s\u1EF1": Tr\u1EA1i chi\u1EBFn binh. L\xEDnh ng\u1EE7 \u1EDF \u0111\xE2y v\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh l\u1EEDa.', after: ["c1_fire2"], done: { type: "buildBuilding", kind: "infantry", count: 1 } },
+    { id: "c2_soldier", chapter: 2, title: "Tuy\u1EC3n m\u1ED9t chi\u1EBFn binh", hint: "M\u1EDF Tr\u1EA1i chi\u1EBFn binh (\u2630) v\xE0 b\u1EA5m \uFF0B. L\xEDnh canh g\xE1c, \u0111\xE1nh \u0111\u1ECBch v\xE0 th\xFA d\u1EEF. V\u1EC1 sau ch\u1EBF g\u1EADy chi\u1EBFn (nghi\xEAn c\u1EE9u B\u1EA3n v\u1EBD G\u1EADy chi\u1EBFn) v\xE0 \xE1o da cho h\u1ECD.", after: ["c2_barracks"], done: { type: "hasRole", role: "foot", count: 1 } },
+    { id: "c2_soldiers3", chapter: 2, title: "C\xF3 3 chi\u1EBFn binh", hint: "M\u1EDF Tr\u1EA1i chi\u1EBFn binh (\u2630) v\xE0 b\u1EA5m \uFF0B th\xEAm hai ng\u01B0\u1EDDi n\u1EEFa. L\xEDnh \u0103n nh\u01B0 d\xE2n nh\u01B0ng kh\xF4ng l\xE0m vi\u1EC7c nh\xE0; \u0111\u1EEBng tuy\u1EC3n h\u1EBFt ng\u01B0\u1EDDi \u0111ang l\xE0m ra l\u01B0\u01A1ng th\u1EF1c. L\xEDnh ng\u1EE7 \u1EDF tr\u1EA1i v\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n.", after: ["c2_soldier"], done: { type: "hasRole", role: "foot", count: 3 } },
+    { id: "c2_club_make", chapter: 2, title: "Ch\u1EBF 3 g\u1EADy chi\u1EBFn", hint: 'Nh\xE0 ch\u1EBF t\u1EA1o (\u2630), tab "V\u0169 kh\xED": \u0111\u1EB7t 3 G\u1EADy chi\u1EBFn. Ch\xFAng v\xE0o Kho v\u0169 kh\xED, n\xEAn c\u1EA7n Kho v\u0169 kh\xED \u0111\xE3 d\u1EF1ng.', after: ["c2_lab_staff", "c2_barracks", "c1_armory"], done: { type: "haveTool", kind: "club", tier: 1, count: 3 } },
+    { id: "c2_equip", chapter: 2, title: "Trang b\u1ECB g\u1EADy cho 2 l\xEDnh", hint: 'B\u1EA5m m\u1ED9t l\xEDnh, n\xFAt "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" (\u2699), m\u1EE5c v\u0169 kh\xED, ch\u1ECDn G\u1EADy chi\u1EBFn. L\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\xE1nh m\u1EA1nh h\u01A1n nhi\u1EC1u; v\u0169 kh\xED c\u0169ng m\xF2n d\u1EA7n v\xE0 c\u1EA7n s\u1EEDa nh\u01B0 c\xF4ng c\u1EE5.', after: ["c2_club_make", "c2_soldiers3"], done: { type: "equipped", slot: "weapon", count: 2 } },
+    { id: "c2_armor_make", chapter: 2, title: "Ch\u1EBF m\u1ED9t \xE1o da", hint: 'Nh\xE0 ch\u1EBF t\u1EA1o (\u2630), tab "\xC1o gi\xE1p": \u0111\u1EB7t \xC1o da. \xC1o xong v\xE0o Kho v\u0169 kh\xED.', after: ["c2_lab_staff", "c2_equip"], done: { type: "haveTool", kind: "hide", tier: 1, count: 1 } },
+    { id: "c2_armor_wear", chapter: 2, title: "M\u1EB7c \xE1o da cho m\u1ED9t l\xEDnh", hint: "C\u0169ng \u1EDF b\u1EA3ng \u2699 c\u1EE7a l\xEDnh, m\u1EE5c gi\xE1p. Gi\xE1p gi\u1EA3m s\xE1t th\u01B0\u01A1ng nh\u01B0ng n\u1EB7ng n\xEAn t\u1ED1n s\u1EE9c h\u01A1n m\u1ED9t ch\xFAt.", after: ["c2_armor_make"], done: { type: "equipped", slot: "armor", count: 1 } },
+    { id: "c2_wartent", chapter: 2, title: "D\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn", hint: "N\u01A1i l\u1EADp \u0111\u1ED9i, ch\u1ECDn tr\u1EADn ph\xE1p v\xE0 k\u1EBF ho\u1EA1ch. M\u1EDF n\xF3 th\xEC game t\u1EA1m d\u1EEBng.", after: ["c2_barracks"], done: { type: "buildBuilding", kind: "wartent", count: 1 } },
+    { id: "c2_scouttent", chapter: 2, title: "D\u1EF1ng Tr\u1EA1i trinh s\xE1t", hint: 'N\xFAt \u{1F528} X\xE2y, tab "Qu\xE2n s\u1EF1": Tr\u1EA1i trinh s\xE1t. Trinh s\xE1t \u0111i v\u1EBD b\u1EA3n \u0111\u1ED3 l\xE0ng kh\xE1c \u0111\u1EC3 b\u1EA1n bi\u1EBFt \u0111\u1ECBch c\xF3 bao nhi\xEAu l\xEDnh tr\u01B0\u1EDBc khi \u0111\xE1nh. C\u1EA5p tr\u1EA1i c\xE0ng cao, v\u1EBD \u0111\u01B0\u1EE3c b\u1EA3n \u0111\u1ED3 c\xE0ng chi ti\u1EBFt v\xE0 m\u1ED9t chuy\u1EBFn c\u1EED \u0111\u01B0\u1EE3c c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi.', after: ["c2_lab_staff"], done: { type: "buildBuilding", kind: "scouttent", count: 1 } },
+    { id: "c2_scouts", chapter: 2, title: "Tuy\u1EC3n m\u1ED9t trinh s\xE1t", hint: "M\u1EDF Tr\u1EA1i trinh s\xE1t (\u2630), b\u1EA5m \uFF0B \u1EDF m\u1ED9t ng\u01B0\u1EDDi nhanh nh\u1EB9n. Cho h\u1ECD \u0111u\u1ED1c v\xE0 gi\xE1p (\u2699) th\xEC \u0111i an to\xE0n v\xE0 th\xE0nh c\xF4ng h\u01A1n.", after: ["c2_scouttent"], done: { type: "hasRole", role: "scout", count: 1 } },
+    { id: "c2_find", chapter: 2, title: "T\xECm m\u1ED9t ng\xF4i l\xE0ng", hint: 'L\xE0ng kh\xE1c ch\u1EC9 hi\u1EC7n khi ng\u01B0\u1EDDi c\u1EE7a b\u1EA1n \u0111i ngang qua r\u1ED3i v\u1EC1 t\u1EDBi \u0111\u1ED1ng l\u1EEDa. Cho d\xE2n ho\u1EB7c l\xEDnh \u0111i quanh b\u1EA3n \u0111\u1ED3 (b\u1EA5m b\u1EA3n \u0111\u1ED3 nh\u1ECF \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn). L\xE0ng t\xECm th\u1EA5y hi\u1EC7n trong Tr\u1EA1i trinh s\xE1t, m\u1EE5c "L\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n".', after: ["c2_scouts"], done: { type: "scoutSent" } },
+    { id: "c2_map", chapter: 2, title: "C\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p 1 c\u1EE7a m\u1ED9t l\xE0ng", hint: 'Tr\u1EA1i trinh s\xE1t: ch\u1ECDn l\xE0ng, ch\u1ECDn ng\u01B0\u1EDDi \u0111i, b\u1EA5m "L\xEAn \u0111\u01B0\u1EDDng". H\u1ECD \u0111i, quan s\xE1t r\u1ED3i v\u1EC1, m\u1EA5t v\xE0i ph\xFAt game; tua nhanh n\u1EBFu mu\u1ED1n ch\u1EDD. B\u1EA3n \u0111\u1ED3 c\u1EA5p 1 cho bi\u1EBFt v\u1ECB tr\xED v\xE0 \u0111\u1ED1ng l\u1EEDa c\u1EE7a l\xE0ng.', after: ["c2_find"], done: { type: "hasMap", level: 1 } },
+    { id: "c2_form_tech", chapter: 2, title: "Nghi\xEAn c\u1EE9u Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", hint: '\u1EDE Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p 2, tab "Qu\xE2n s\u1EF1 b\u1EADc 1", r\u1ED3i tab "Chi\u1EBFn \u0111\u1EA5u b\u1EADc 1". M\u1EDF H\xE0ng ngang v\xE0 V\xF2ng tr\xF2n. Kh\xF4ng c\xF3 tr\u1EADn ph\xE1p th\xEC kh\xF4ng l\u1EADp \u0111\u01B0\u1EE3c \u0111\u1ED9i.', after: ["c2_lab_staff"], done: { type: "researchTech", id: "form_basic" } },
+    { id: "c2_squad", chapter: 2, title: "L\u1EADp m\u1ED9t \u0111\u1ED9i", hint: 'M\u1EDF L\u1EC1u h\u1ECDp chi\u1EBFn, tab "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng", b\u1EA5m v\xE0o l\xE0ng \u0111\xE3 c\xF3 b\u1EA3n \u0111\u1ED3: b\u1EA3n \u0111\u1ED3 m\u1EDF to\xE0n m\xE0n h\xECnh. Nh\u1EA5n gi\u1EEF m\u1ED9t ch\u1ED7 tr\u1ED1ng, r\xEA t\u1EDBi m\u1ED9t tr\u1EADn ph\xE1p trong v\xF2ng tr\xF2n r\u1ED3i th\u1EA3, k\xE9o \u0111\u1EC3 v\u1EBD \u0111\u1ED9i h\xECnh (3 \u0111\u1EBFn 15 \xF4, m\u1ED7i \xF4 l\xE0 ch\u1ED7 c\u1EE7a m\u1ED9t l\xEDnh). M\u1EB7c \u0111\u1ECBnh l\u1EADp \u0111\u01B0\u1EE3c 4 \u0111\u1ED9i, m\u1ED7i tr\u1EADn 5 \xF4; nghi\xEAn c\u1EE9u m\u1EDF r\u1ED9ng \u1EDF tab "Qu\xE2n s\u1EF1".', after: ["c2_wartent", "c2_soldier", "c2_map", "c2_form_tech"], done: { type: "createSquad", count: 1 } },
+    { id: "c2_squad_fill", chapter: 2, title: "Cho 3 l\xEDnh v\xE0o \u0111\u1ED9i", hint: 'Nh\u1EA5n gi\u1EEF \u0111\u1ED9i v\u1EEBa l\u1EADp, ch\u1ECDn "L\xEDnh", r\u1ED3i b\u1EA5m d\u1EA5u \uFF0B b\xEAn ph\u1EA3i t\xEAn t\u1EEBng l\xEDnh ch\u01B0a c\xF3 \u0111\u1ED9i. \u2605 \u0111\u1EB7t l\xE0m ch\u1EC9 huy. \u0110\u1ED9i c\u1EA7n \u0111\u1EE7 l\xEDnh cho s\u1ED1 \xF4 \u0111\xE3 v\u1EBD; \xF4 th\u1EEBa th\xEC d\xF9ng "S\u1EEDa" ho\u1EB7c "X\xF3a \xF4" \u0111\u1EC3 b\u1EDBt.', after: ["c2_squad", "c2_soldiers3"], done: { type: "squadSize", count: 3 } },
+    { id: "c2_auto", chapter: 2, title: "Nghi\xEAn c\u1EE9u T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", hint: "D\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng c\xF4ng c\u1EE5 s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y, kh\xF4ng c\u1EA7n ph\xE1t tay. Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p 2 m\u1EDBi m\u1EDF tab T\u1EF1 \u0111\u1ED9ng h\xF3a.", after: ["c2_lab_staff", "c1_toolstore"], done: { type: "researchTech", id: "auto_fetch" } },
+    { id: "c2_masonry", chapter: 2, title: "Nghi\xEAn c\u1EE9u X\xE2y b\u1EB1ng \u0111\xE1", hint: "Cho ph\xE9p n\xE2ng nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1), c\u1EA7n cho l\u1EEDa c\u1EA5p 3.", after: ["c2_timber"], done: { type: "researchTech", id: "masonry" } },
+    { id: "c2_ready", chapter: 2, title: "N\xE2ng \u0111\u1EE7 nh\xE0 l\xEAn c\u1EA5p 2", hint: "Mu\u1ED1n n\xE2ng Nh\xE0 chung l\xEAn c\u1EA5p 3, m\u1ECDi nh\xE0 \u0111\xE3 m\u1EDF \u1EDF c\u1EA5p 2 (k\u1EC3 c\u1EA3 c\xE1c tr\u1EA1i, L\u1EC1u h\u1ECDp chi\u1EBFn, B\xE3i t\u1EADp, Chu\u1ED3ng th\xFA c\u01B0\u1EE1i, Tr\u1EA1i trinh s\xE1t) ph\u1EA3i c\xF3 m\u1EB7t v\xE0 \u0111\u1EA1t c\u1EA5p 2. D\xF2ng d\u01B0\u1EDBi nhi\u1EC7m v\u1EE5 cho bi\u1EBFt c\xF2n thi\u1EBFu g\xEC.", after: ["c2_upgrade", "c2_house", "c2_field", "c2_squad_fill", "c2_lab_staff", "c2_armor_wear"], done: { type: "fireReady", level: 2 } },
+    { id: "c2_fire3", chapter: 2, title: "N\xE2ng Nh\xE0 chung l\xEAn c\u1EA5p 3", hint: "C\u1EA7n 20 g\u1ED7 v\xE0 12 \u0111\xE1. C\u1EA5p 3 m\u1EDF m\u1ECDi c\xF4ng tr\xECnh c\xF2n l\u1EA1i: h\xE0ng r\xE0o, c\u1ED5ng, ch\xF2i canh, h\u1ED1 ch\xF4ng, n\xF4ng tr\u1EA1i, x\u01B0\u1EDFng g\u1ED7, x\u01B0\u1EDFng \u0111\xE1...", after: ["c2_ready"], done: { type: "upgradeFire", level: 3 } },
+    { id: "c3_fence", chapter: 3, title: "D\u1EF1ng h\xE0ng r\xE0o quanh l\xE0ng", hint: 'Tab "Ph\xF2ng th\u1EE7": H\xE0ng r\xE0o. Ch\u1EA1m ti\u1EBFp \u0111\u1EC3 \u0111\u1EB7t t\u1EEBng \u0111o\u1EA1n; r\xE0o \u0111\u1EB7t d\u1ECDc, ngang, g\xF3c \u0111\u1EC1u t\u1EF1 n\u1ED1i. R\xE0o ch\u1EB7n \u0111\u01B0\u1EDDng v\xE0 bu\u1ED9c \u0111\u1ECBch ph\u1EA3i ph\xE1. Nh\u1EDB ch\u1EEBa l\u1ED1i cho d\xE2n \u0111i l\u1EA1i.', after: ["c2_fire3"], done: { type: "buildBuilding", kind: "fence", count: 10 } },
+    { id: "c3_gate", chapter: 3, title: "D\u1EF1ng m\u1ED9t c\xE1i C\u1ED5ng", hint: "C\u1ED5ng to v\xE0 cao h\u01A1n r\xE0o. Ch\u1ECDn c\u1ED5ng r\u1ED3i b\u1EA5m n\xFAt M\u1EDF/\u0110\xF3ng c\u1ED5ng: bi\u1EC3n xanh l\xE0 m\u1EDF, bi\u1EC3n \u0111\u1ECF l\xE0 \u0111\xF3ng. C\u1ED5ng \u0111\xF3ng ch\u1EB7n c\u1EA3 d\xE2n m\xECnh.", after: ["c3_fence"], done: { type: "buildBuilding", kind: "gate", count: 1 } },
+    { id: "c3_tower", chapter: 3, title: "D\u1EF1ng Ch\xF2i canh", hint: "Cung th\u1EE7 tr\xEAn ch\xF2i b\u1EAFn xa v\xE0 m\u1EA1nh h\u01A1n. Ch\xF2i c\u1EA7n c\xF3 h\xE0ng r\xE0o l\xE0m \u0111i\u1EC1u ki\u1EC7n.", after: ["c3_fence"], done: { type: "buildBuilding", kind: "tower", count: 1 } },
+    { id: "c3_archery", chapter: 3, title: "D\u1EF1ng Tr\u1EA1i th\u1EE3 n\xE9m", hint: 'N\xFAt \u{1F528} X\xE2y, tab "Qu\xE2n s\u1EF1": Tr\u1EA1i th\u1EE3 n\xE9m. Ng\u01B0\u1EDDi n\xE9m \u0111\xE1 \u0111\xE1nh t\u1EEB xa v\xE0 l\xEAn \u0111\u01B0\u1EE3c ch\xF2i canh. H\u1ECD c\u1EA7n D\xE2y qu\u0103ng \u0111\xE1, ch\u1EBF \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o.', after: ["c3_tower"], done: { type: "buildBuilding", kind: "archery", count: 1 } },
+    { id: "c3_archer", chapter: 3, title: "C\xF3 m\u1ED9t th\u1EE3 n\xE9m \u0111\xE1", hint: "M\u1EDF Tr\u1EA1i th\u1EE3 n\xE9m (\u2630), b\u1EA5m \uFF0B. Trang b\u1ECB D\xE2y qu\u0103ng \u0111\xE1 cho h\u1ECD \u1EDF b\u1EA3ng \u2699.", after: ["c3_archery"], done: { type: "hasRole", role: "archer", count: 1 } },
+    { id: "c3_garrison", chapter: 3, title: "Cho th\u1EE3 n\xE9m l\xEAn ch\xF2i canh", hint: "Ch\u1ECDn Ch\xF2i canh, b\u1EA5m \u2630 r\u1ED3i \uFF0B \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi canh. Ng\u01B0\u1EDDi tr\xEAn ch\xF2i b\u1EAFn xa v\xE0 m\u1EA1nh h\u01A1n, v\xE0 kh\xF3 b\u1ECB \u0111\xE1nh h\u01A1n ng\u01B0\u1EDDi \u0111\u1EE9ng d\u01B0\u1EDBi \u0111\u1EA5t.", after: ["c3_archer"], done: { type: "staffIn", kind: "tower", count: 1 } },
+    { id: "c3_defplan", chapter: 3, title: "L\u1EADp m\u1EABu ph\xF2ng th\u1EE7", hint: 'L\u1EC1u h\u1ECDp chi\u1EBFn, tab "Ph\xF2ng th\u1EE7", b\u1EA5m "L\u1EADp m\u1EABu ph\xF2ng th\u1EE7" r\u1ED3i giao v\u1ECB tr\xED cho t\u1EEBng \u0111\u1ED9i. Khi c\xF3 tin \u0111\u1ECBch t\u1EDBi, "\u0110\xE1nh tr\u1ED1ng b\xE1o \u0111\u1ED9ng": d\xE2n v\u1EC1 \u0111\u1ED1ng l\u1EEDa, c\xE1c \u0111\u1ED9i v\u1EC1 \u0111\xFAng ch\u1ED7, \u0111\u1ED9i \u0111\u1EE9ng ch\xF2i cho cung th\u1EE7 l\xEAn ch\xF2i.', after: ["c3_gate", "c2_squad_fill"], done: { type: "planDefense" } },
+    { id: "c3_trap", chapter: 3, title: "G\xE0i h\u1ED1 ch\xF4ng", hint: "H\u1ED1 ch\xF4ng g\xE0i tr\xEAn \u0111\u01B0\u1EDDng \u0111\u1ECBch t\u1EDBi, m\u1ED7i h\u1ED1 l\xE0m b\u1ECB th\u01B0\u01A1ng v\xE0i ng\u01B0\u1EDDi. \u0110\u1EB7t t\u1EEBng c\xE1i m\u1ED9t.", after: ["c3_fence"], done: { type: "buildBuilding", kind: "trap", count: 2 } },
+    { id: "c3_signal", chapter: 3, title: "Nghi\xEAn c\u1EE9u T\xEDn hi\u1EC7u", hint: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED. Th\xEAm th\u1EBB l\u1EC7nh cho k\u1EBF ho\u1EA1ch.", after: ["c3_tower"], done: { type: "researchTech", id: "signal" } },
+    { id: "c3_wedge", chapter: 3, title: "Nghi\xEAn c\u1EE9u Tr\u1EADn m\u0169i nh\u1ECDn", hint: "Tr\u1EADn xung phong ph\xE1 h\xE0ng. Luy\u1EC7n thu\u1EA7n th\u1EE5c \u1EDF B\xE3i t\u1EADp.", after: ["c2_squad"], done: { type: "researchTech", id: "form_wedge" } },
+    { id: "c3_ready", chapter: 3, title: "N\xE2ng \u0111\u1EE7 nh\xE0 l\xEAn c\u1EA5p 3", hint: "M\u1ECDi nh\xE0 \u0111\xE3 m\u1EDF \u1EDF c\u1EA5p 3 ph\u1EA3i c\xF3 m\u1EB7t v\xE0 \u0111\u1EA1t c\u1EA5p 3 (h\xE0ng r\xE0o, c\u1ED5ng, ch\xF2i canh v\xE0 h\u1ED1 ch\xF4ng \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a c\u1EE7a ch\xFAng). D\xF2ng d\u01B0\u1EDBi nhi\u1EC7m v\u1EE5 cho bi\u1EBFt c\xF2n thi\u1EBFu g\xEC.", after: ["c3_gate", "c3_tower", "c3_trap", "c2_masonry", "c3_signal", "c3_garrison", "c3_defplan"], done: { type: "fireReady", level: 3 } },
+    { id: "c3_target", chapter: 3, title: "Ch\u1ECDn m\u1EE5c ti\xEAu cho \u0111\u1ED9i", hint: 'M\u1EDF b\u1EA3n \u0111\u1ED3 c\u1EE7a l\xE0ng \u0111\u1ECBch (L\u1EC1u h\u1ECDp chi\u1EBFn, "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"). B\u1EA5m v\xE0o \u0111\u1ED9i \u0111\u1EC3 ch\u1ECDn, r\u1ED3i b\u1EA5m v\xE0o m\u1ED9t c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi c\u1EE7a \u0111\u1ECBch: m\u0169i t\xEAn ch\u1EA1y t\u1EEB \u0111\u1ED9i t\u1EDBi \u0111\xF3. Nh\u1EA5n gi\u1EEF m\u0169i t\xEAn \u0111\u1EC3 S\u1EEDa (k\xE9o c\xE1c ch\u1EA5m gi\u1EEFa, t\u1ED1i \u0111a 3 ch\u1ED7 g\u1EA5p kh\xFAc) ho\u1EB7c X\xF3a. Ch\u1ECDn m\u1EE5c ti\xEAu nh\u1ECF tr\u01B0\u1EDBc, nh\u01B0 m\u1ED9t kho hay m\u1ED9t nh\xE0. \u0110o\u1EA1n m\u0169i t\xEAn m\xE0u \u0111\u1ECF l\xE0 ch\u1ED7 c\xF3 v\u1EADt c\u1EA3n: c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3 th\xEC l\u1EADp m\u1ED9t \u0111\u1ED9i h\u1EADu c\u1EA7n (c\xF3 l\xEDnh nh\u01B0ng kh\xF4ng v\u1EBD m\u0169i t\xEAn) \u0111i tr\u01B0\u1EDBc ph\xE1 h\u1EBFt; n\u01B0\u1EDBc v\xE0 c\xF4ng tr\xECnh c\u1EE7a l\xE0ng kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c n\xEAn h\xE3y u\u1ED1n m\u0169i t\xEAn \u0111i v\xF2ng.', after: ["c2_fire3", "c2_squad_fill"], done: { type: "planArrow" } },
+    { id: "c3_deploy", chapter: 3, title: "Tri\u1EC3n khai qu\xE2n", hint: 'B\u1EA5m "\u2694 Tri\u1EC3n khai tr\u1EADn chi\u1EBFn", \u0111\u1ECDc b\xE1o c\xE1o c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn: c\xE1c d\xF2ng \u2717 l\xE0 \u0111i\u1EC1u \u0111ang ch\u1EB7n, s\u1EEDa xong m\u1EDBi x\xE1c nh\u1EADn \u0111\u01B0\u1EE3c. X\xE1c nh\u1EADn: c\xE1c \u0111\u1ED9i \u0111i t\u1EDBi \xF4 \u0111\xE3 v\u1EBD r\u1ED3i \u0111\u1EE9ng ch\u1EDD. L\xE0ng c\u1EE7a b\u1EA1n v\u1EABn c\u1EA7n ng\u01B0\u1EDDi canh.', after: ["c3_target"], done: { type: "planRunning" } },
+    { id: "c3_trial", chapter: 3, title: "Chi\u1EBFn \u0111\u1EA5u th\u1EED", hint: 'Khi c\u1EA3 \u0111\u1ED9i \u0111\xE3 v\xE0o v\u1ECB tr\xED, b\u1EA5m "\u2694 \u0110\xE1nh" tr\xEAn m\xE0n h\xECnh game. N\u1EBFu th\u1EA5y s\u1EAFp thua, b\u1EA5m "\u21A9 R\xFAt lui": m\u1ED7i \u0111\u1ED9i r\xFAt theo \u0111\u01B0\u1EDDng \u0111\xE3 v\u1EBD. Th\u1EAFng hay thua \u0111\u1EC1u t\xEDnh, v\xEC \u0111\xE2y l\xE0 tr\u1EADn th\u1EED: xem \u0111\u1ED9i \u0111\xE1nh ra sao \u1EDF "Nh\u1EADt k\xFD tr\u1EADn" v\xE0 ch\u1EC9nh k\u1EBF ho\u1EA1ch cho l\u1EA7n sau.', after: ["c3_deploy"], done: { type: "planDone" } },
+    { id: "c3_fire4", chapter: 3, title: "N\xE2ng Nh\xE0 chung l\xEAn c\u1EA5p 4", hint: "C\u1EA7n 50 g\u1ED7, 30 \u0111\xE1 v\xE0 10 da. Ho\xE0n th\xE0nh k\u1EBF ho\u1EA1ch: l\xE0ng ch\u1EE9a 40 ng\u01B0\u1EDDi v\xE0 \u0111\xE3 \u0111\u1EE7 m\u1EA1nh \u0111\u1EC3 t\u1EF1 v\u1EC7.", after: ["c3_ready"], done: { type: "upgradeFire", level: 4 } },
+    { id: "c4_win", chapter: 4, title: "Th\u1EAFng m\u1ED9t tr\u1EADn", hint: "\u0110\xE1nh l\u1EA1i sau khi s\u1EEDa k\u1EBF ho\u1EA1ch: th\xEAm \u0111\u1ED9i, m\u1EB7c gi\xE1p cho l\xEDnh, \u0111\xE1nh v\xE0o l\xFAc tr\u1EDDi s\xE1ng \u0111\u1EC3 l\xEDnh nh\xECn xa h\u01A1n, hay ch\u1EDD c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p 2 (\u0111\u01B0\u1EDDng v\xE0o, h\xE0ng r\xE0o) v\xE0 c\u1EA5p 3 (s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i). Th\u1EAFng l\xE0 h\u1EBFt l\xEDnh \u0111\u1ECBch, l\u1EEDa t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh s\u1EADp.", after: ["c3_trial", "c3_fire4"], done: { type: "planDone", result: "won" } },
+    { id: "c4_wedge", chapter: 4, title: "L\u1EADp m\u1ED9t \u0111\u1ED9i M\u0169i nh\u1ECDn", hint: "Sau khi nghi\xEAn c\u1EE9u Tr\u1EADn m\u0169i nh\u1ECDn: xung phong \xD71,4 khi lao v\xE0o \u0111\u1ECBch nh\u01B0ng hai c\xE1nh y\u1EBFu. H\u1EE3p v\u1EDBi k\u1EBB \u0111\u1ECBch \u0111\u1EE9ng th\u01B0a. L\u1EADp \u0111\u1ED9i m\u1EDBi tr\xEAn b\u1EA3n \u0111\u1ED3 l\xE0ng, nh\u1EA5n gi\u1EEF r\u1ED3i ch\u1ECDn M\u0169i nh\u1ECDn.", after: ["c3_wedge", "c2_map"], done: { type: "squadFormation", id: "wedge" } },
+    { id: "c4_stable", chapter: 4, title: "D\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i", hint: 'N\xFAt \u{1F528} X\xE2y, tab "T\xE0i nguy\xEAn": Chu\u1ED3ng th\xFA c\u01B0\u1EE1i. D\xE2n l\xE0m trong chu\u1ED3ng thu\u1EA7n h\xF3a th\xFA r\u1ED3i giao cho ng\u01B0\u1EDDi c\u01B0\u1EE1i nh\u01B0 giao c\xF4ng c\u1EE5. Chu\u1ED3ng c\u1EA5p 1 thu\u1EA7n \u0111\u01B0\u1EE3c s\xF3i, c\u1EA5p 2 l\u1EE3n r\u1EEBng, c\u1EA5p 3 voi.', after: ["c3_fire4"], done: { type: "buildBuilding", kind: "stable", count: 1 } },
+    { id: "c4_cavalry", chapter: 4, title: "D\u1EF1ng Tr\u1EA1i k\u1EF5 th\xFA", hint: 'N\xFAt \u{1F528} X\xE2y, tab "Qu\xE2n s\u1EF1": Tr\u1EA1i k\u1EF5 th\xFA. L\xEDnh luy\u1EC7n trong tr\u1EA1i c\u01B0\u1EE1i th\xFA theo c\u1EA5p tr\u1EA1i m\xE0 kh\xF4ng c\u1EA7n ai giao th\xFA.', after: ["c4_stable"], done: { type: "buildBuilding", kind: "cavalry", count: 1 } }
+  ]
+};
+
+// src/sim/progression.ts
+var GROUPS = progression_default.groups;
+var FIRE = progression_default.campfire.levels;
+var LAB = progression_default.research.levels;
+var CELLS_DEFAULT = progression_default.formationDefaults.cells;
+var SQUADS_DEFAULT = progression_default.formationDefaults.squads;
+var names = (list) => list.flatMap((k) => k.startsWith("@") ? GROUPS[k.slice(1)] ?? [] : [k]);
+function fireUnlockLevel(kind) {
+  for (const f of FIRE) if (names(f.unlock).includes(kind)) return f.level;
+  return FIRE.find((f) => f.unlock.includes("@rest"))?.level ?? 1;
+}
+var fireBuildingMax = (fireLevel2) => FIRE[Math.min(FIRE.length, Math.max(1, fireLevel2)) - 1].buildingMaxLevel;
+var fireUpgradeNeeds = (fireLevel2) => FIRE[Math.min(FIRE.length, Math.max(1, fireLevel2)) - 1].upgradeNeeds?.allUnlockedAtLeastLevel ?? null;
+function labLevelOf(techId) {
+  for (const l of LAB) if (l.techs.includes(techId)) return l.level;
+  return LAB[LAB.length - 1].level;
+}
+var SCREEN_QUESTS = quests_default.quests.filter((q) => ["selectBuilding", "openBuilding", "inspectNode", "inspectUnit", "inspectAnimal", "speed", "daytime"].includes(q.done.type)).map((q) => q.id);
+
+// src/data/buildings.json
+var buildings_default = {
+  _note: "Chi ph\xED x\xE2y v\xE0 n\xE2ng c\u1EA5p t\u1EEBng c\xF4ng tr\xECnh (th\u1EDDi \u0111\u1EA1i \u0111\u1ED3 \u0111\xE1). M\u1ED7i c\xF4ng tr\xECnh l\xE0 danh s\xE1ch c\u1EA5p: c\u1EA5p 1 l\xE0 chi ph\xED X\xC2Y, c\u1EA5p 2 tr\u1EDF l\xEAn l\xE0 chi ph\xED N\xC2NG C\u1EA4P. cost = v\u1EADt li\u1EC7u (wood, stone, hide, ...); buildTime = gi\xE2y c\xF4ng cho m\u1ED9t th\u1EE3 h\u1EC7 s\u1ED1 1; cap = s\u1EE9c ch\u1EE9a (kho) ho\u1EB7c s\u1ED1 m\xF3n (kho c\xF4ng c\u1EE5/v\u0169 kh\xED); craftSpeed = t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c; slots = s\u1ED1 d\xE2n l\xE0m b\xEAn trong; hp = \u0111\u1ED9 b\u1EC1n c\u1EE7a h\xE0ng r\xE0o/c\u1ED5ng/ch\xF2i/h\u1ED1 ch\xF4ng. S\u1ED1 l\u01B0\u1EE3ng t\u1ED1i \u0111a theo c\u1EA5p l\u1EEDa (perFire) n\u1EB1m trong buildings.ts. N\xE2ng c\u1EA5p ch\u1EC9 t\u0103ng s\u1EE9c ch\u1EE9a (cap, slots) v\xE0 \u0111\u1ED9 b\u1EC1n (hp); craftSpeed lu\xF4n l\xE0 1: t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c, x\xE2y v\xE0 ngh\u1EC9 ng\u01A1i kh\xF4ng t\u0103ng theo c\u1EA5p nh\xE0.",
+  campfire: [
+    { name: "C\u1EE7i l\u1EEDa", cost: {}, buildTime: 0, cap: 30, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "L\u1EEDa tr\u1EA1i", cost: { wood: 20 }, buildTime: 120, cap: 45, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "B\u1EBFp l\u1EEDa l\u1EDBn", cost: { wood: 20, stone: 12 }, buildTime: 240, cap: 60, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "Nh\xE0 chung", cost: { wood: 50, stone: 30, hide: 10 }, buildTime: 480, cap: 90, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  builder: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 10 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 15, stone: 10 }, buildTime: 110, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 25, stone: 20 }, buildTime: 160, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
+  ],
+  storage: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 10 }, buildTime: 50, cap: 100, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 35 }, buildTime: 90, cap: 250, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 40, stone: 20 }, buildTime: 140, cap: 500, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  workshop: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15 }, buildTime: 70, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 15, stone: 30 }, buildTime: 120, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 50 }, buildTime: 180, cap: 0, craftSpeed: 1, slots: 3, hp: 0 }
+  ],
+  lab: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 80, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 20, stone: 30 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 50 }, buildTime: 200, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
+  ],
+  toolstore: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 25 }, buildTime: 60, cap: 12, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 30, stone: 15 }, buildTime: 100, cap: 30, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 40 }, buildTime: 150, cap: 60, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  armory: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 25 }, buildTime: 60, cap: 12, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 30, stone: 15 }, buildTime: 100, cap: 30, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 40 }, buildTime: 150, cap: 60, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  infantry: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 4, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, hide: 6 }, buildTime: 100, cap: 0, craftSpeed: 1, slots: 8, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 25, hide: 10 }, buildTime: 150, cap: 0, craftSpeed: 1, slots: 14, hp: 0 }
+  ],
+  cavalry: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 25, hide: 8 }, buildTime: 70, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 30, hide: 10 }, buildTime: 110, cap: 0, craftSpeed: 1, slots: 4, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 35, stone: 25, hide: 14 }, buildTime: 160, cap: 0, craftSpeed: 1, slots: 6, hp: 0 }
+  ],
+  archery: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, hide: 6 }, buildTime: 100, cap: 0, craftSpeed: 1, slots: 6, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 25, hide: 10 }, buildTime: 150, cap: 0, craftSpeed: 1, slots: 10, hp: 0 }
+  ],
+  farmhouse: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, stone: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 5, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 20 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
+  ],
+  huntlodge: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15, hide: 3 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, hide: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 15, hide: 8 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 5, hp: 0 }
+  ],
+  lumberyard: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, stone: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 5, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 20 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
+  ],
+  quarry: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, stone: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 5, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 20 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
+  ],
+  house: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 4, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 30, stone: 10 }, buildTime: 100, cap: 0, craftSpeed: 1, slots: 8, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 40, stone: 30 }, buildTime: 150, cap: 0, craftSpeed: 1, slots: 12, hp: 0 }
+  ],
+  fence: [
+    { name: "C\u1ECDc nh\u1ECDn", cost: { wood: 2 }, buildTime: 14, cap: 0, craftSpeed: 1, slots: 0, hp: 40 },
+    { name: "H\xE0ng r\xE0o \u0111\xF4i", cost: { wood: 4, stone: 1 }, buildTime: 24, cap: 0, craftSpeed: 1, slots: 0, hp: 120 }
+  ],
+  gate: [
+    { name: "C\u1ED5ng g\u1ED7", cost: { wood: 4 }, buildTime: 20, cap: 0, craftSpeed: 1, slots: 0, hp: 30 },
+    { name: "C\u1ED5ng \u0111\xF4i", cost: { wood: 6, stone: 2 }, buildTime: 32, cap: 0, craftSpeed: 1, slots: 0, hp: 90 }
+  ],
+  tower: [
+    { name: "Ch\xF2i g\u1ED7", cost: { wood: 20 }, buildTime: 80, cap: 0, craftSpeed: 1, slots: 2, hp: 150 },
+    { name: "Ch\xF2i cao", cost: { wood: 30, stone: 8 }, buildTime: 130, cap: 0, craftSpeed: 1, slots: 4, hp: 300 }
+  ],
+  wartent: [
+    { name: "L\u1EC1u da", cost: { wood: 30, hide: 8 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "L\u1EC1u l\u1EDBn", cost: { wood: 40, hide: 10, stone: 15 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "L\u1EC1u th\u1EE7 l\u0129nh", cost: { wood: 50, stone: 40, hide: 14 }, buildTime: 200, cap: 0, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  scouttent: [
+    { name: "L\u1EC1u da", cost: { wood: 20, hide: 6 }, buildTime: 70, cap: 0, craftSpeed: 1, slots: 4, hp: 0 },
+    { name: "L\u1EC1u l\u1EDBn", cost: { wood: 30, hide: 8, stone: 10 }, buildTime: 110, cap: 0, craftSpeed: 1, slots: 6, hp: 0 },
+    { name: "L\u1EC1u th\xE1m th\xEDnh", cost: { wood: 40, hide: 12, stone: 25 }, buildTime: 160, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
+  ],
+  drill: [
+    { name: "B\xE3i c\u1ECDc", cost: { wood: 25 }, buildTime: 80, cap: 0, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "B\xE3i r\xE0o", cost: { wood: 30, stone: 10 }, buildTime: 120, cap: 0, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "B\xE3i \u0111\xE1", cost: { wood: 35, stone: 30 }, buildTime: 170, cap: 0, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  trap: [
+    { name: "H\u1ED1 ch\xF4ng", cost: { wood: 3 }, buildTime: 12, cap: 0, craftSpeed: 1, slots: 0, hp: 3 },
+    { name: "H\u1ED1 ch\xF4ng s\xE2u", cost: { wood: 4, stone: 2 }, buildTime: 20, cap: 0, craftSpeed: 1, slots: 0, hp: 6 }
+  ],
+  stable: [
+    { name: "Chu\u1ED3ng c\u1ECDc", cost: { wood: 30, hide: 6 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "Chu\u1ED3ng g\u1ED7", cost: { wood: 40, hide: 8, stone: 10 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "Chu\u1ED3ng \u0111\xE1", cost: { wood: 45, stone: 35, hide: 12 }, buildTime: 200, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
+  ],
+  field: [
+    { name: "\u0110\u1EA5t v\u1EE1", cost: { wood: 10 }, buildTime: 70, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
+    { name: "Lu\u1ED1ng \u0111\u1EAFp", cost: { wood: 15, stone: 5 }, buildTime: 110, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
+    { name: "B\u1EDD \u0111\xE1", cost: { wood: 20, stone: 15 }, buildTime: 160, cap: 0, craftSpeed: 1, slots: 1, hp: 0 }
+  ]
+};
+
 // src/sim/buildings.ts
 var ERAS = ["stone", "ancient"];
-var lv = (name, cost, buildTime, cap = 0, craftSpeed = 1, slots = 0, hp = 0) => ({ name, cost, buildTime, cap, craftSpeed, slots, hp });
+var CLEARANCE = 2;
+var WALL_KINDS = /* @__PURE__ */ new Set(["fence", "gate", "trap"]);
+var STONE_LEVELS = buildings_default;
 var BUILDINGS = {
   // the heart of the village: it starts as a heap of firewood and every other house is held back by its level
   campfire: {
@@ -505,7 +900,7 @@ var BUILDINGS = {
     h: 2,
     buildable: false,
     upgradable: true,
-    levels: { stone: [lv("C\u1EE7i l\u1EEDa", {}, 0, 30), lv("L\u1EEDa tr\u1EA1i", { wood: 20 }, 120, 45), lv("B\u1EBFp l\u1EEDa l\u1EDBn", { wood: 20, stone: 12 }, 240, 60), lv("Nh\xE0 chung", { wood: 50, stone: 30, hide: 10 }, 480, 90)] }
+    levels: { stone: STONE_LEVELS.campfire }
   },
   // builders belong to this house: without it nothing but the house itself can be raised
   builder: {
@@ -514,7 +909,7 @@ var BUILDINGS = {
     w: 2,
     h: 2,
     buildable: true,
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 60, 0, 1, 2), lv("G\u1ED7", { wood: 15, stone: 10 }, 110, 0, 1.25, 3), lv("\u0110\xE1", { wood: 25, stone: 20 }, 160, 0, 1.5, 4)] }
+    levels: { stone: STONE_LEVELS.builder }
   },
   storage: {
     kind: "storage",
@@ -523,7 +918,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 50, 100), lv("G\u1ED7", { wood: 35 }, 90, 250), lv("\u0110\xE1", { wood: 40, stone: 20 }, 140, 500)] }
+    levels: { stone: STONE_LEVELS.storage }
   },
   workshop: {
     kind: "workshop",
@@ -532,7 +927,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 70, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] }
+    levels: { stone: STONE_LEVELS.workshop }
   },
   lab: {
     kind: "lab",
@@ -541,16 +936,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 80, 0, 1, 1), lv("G\u1ED7", { wood: 20, stone: 30 }, 140, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 200, 0, 1.5, 4)] }
-  },
-  repair: {
-    kind: "repair",
-    name: "Nh\xE0 s\u1EEDa ch\u1EEFa",
-    w: 2,
-    h: 2,
-    buildable: true,
-    requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15, stone: 5 }, 70, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] }
+    levels: { stone: STONE_LEVELS.lab }
   },
   toolstore: {
     kind: "toolstore",
@@ -559,7 +945,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 60, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 100, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 150, 60)] }
+    levels: { stone: STONE_LEVELS.toolstore }
   },
   armory: {
     kind: "armory",
@@ -568,7 +954,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 60, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 100, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 150, 60)] }
+    levels: { stone: STONE_LEVELS.armory }
   },
   // The role houses. One of each: raising its level makes room for more people (slots). The people of a role are chosen in its house, never
   // at the campfire. A soldier's camp is also where he sleeps, out of sight, as a list (craftSpeed = how well they rest).
@@ -580,7 +966,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 4), lv("G\u1ED7", { wood: 25, hide: 6 }, 100, 0, 1.1, 8), lv("\u0110\xE1", { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 14)] }
+    levels: { stone: STONE_LEVELS.infantry }
   },
   cavalry: {
     kind: "cavalry",
@@ -590,7 +976,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25, hide: 8 }, 70, 0, 1, 2), lv("G\u1ED7", { wood: 30, hide: 10 }, 110, 0, 1.1, 4), lv("\u0110\xE1", { wood: 35, stone: 25, hide: 14 }, 160, 0, 1.2, 6)] }
+    levels: { stone: STONE_LEVELS.cavalry }
   },
   archery: {
     kind: "archery",
@@ -600,7 +986,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 3), lv("G\u1ED7", { wood: 25, hide: 6 }, 100, 0, 1.1, 6), lv("\u0110\xE1", { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 10)] }
+    levels: { stone: STONE_LEVELS.archery }
   },
   farmhouse: {
     kind: "farmhouse",
@@ -609,7 +995,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 50, 0, 1, 3), lv("G\u1ED7", { wood: 25, stone: 5 }, 90, 0, 1, 5), lv("\u0110\xE1", { wood: 30, stone: 20 }, 140, 0, 1, 8)] }
+    levels: { stone: STONE_LEVELS.farmhouse }
   },
   huntlodge: {
     kind: "huntlodge",
@@ -618,7 +1004,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15, hide: 3 }, 50, 0, 1, 2), lv("G\u1ED7", { wood: 25, hide: 5 }, 90, 0, 1, 3), lv("\u0110\xE1", { wood: 30, stone: 15, hide: 8 }, 140, 0, 1, 5)] }
+    levels: { stone: STONE_LEVELS.huntlodge }
   },
   lumberyard: {
     kind: "lumberyard",
@@ -627,7 +1013,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 50, 0, 1, 3), lv("G\u1ED7", { wood: 25, stone: 5 }, 90, 0, 1, 5), lv("\u0110\xE1", { wood: 30, stone: 20 }, 140, 0, 1, 8)] }
+    levels: { stone: STONE_LEVELS.lumberyard }
   },
   quarry: {
     kind: "quarry",
@@ -636,7 +1022,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 50, 0, 1, 3), lv("G\u1ED7", { wood: 25, stone: 5 }, 90, 0, 1, 5), lv("\u0110\xE1", { wood: 30, stone: 20 }, 140, 0, 1, 8)] }
+    levels: { stone: STONE_LEVELS.quarry }
   },
   // where everyone who is not a soldier sleeps, out of sight, as a list; without a bed they sleep by the campfire and rest slower
   house: {
@@ -647,7 +1033,7 @@ var BUILDINGS = {
     buildable: true,
     requires: ["builder"],
     perFire: [1, 3, 3, 3],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 4), lv("G\u1ED7", { wood: 30, stone: 10 }, 100, 0, 1.15, 8), lv("\u0110\xE1", { wood: 40, stone: 30 }, 150, 0, 1.3, 12)] }
+    levels: { stone: STONE_LEVELS.house }
   },
   // defence works (not "one of each": they are laid piece by piece, as many as the campfire allows). hp is what the raiders must break down.
   fence: {
@@ -659,7 +1045,7 @@ var BUILDINGS = {
     requires: ["builder"],
     perFire: [14, 30, 50, 70],
     repeat: true,
-    levels: { stone: [lv("C\u1ECDc nh\u1ECDn", { wood: 2 }, 14, 0, 1, 0, 40), lv("H\xE0ng r\xE0o \u0111\xF4i", { wood: 4, stone: 1 }, 24, 0, 1, 0, 120)] }
+    levels: { stone: STONE_LEVELS.fence }
   },
   // slots here are the archers who can keep watch on a tower; a gate has no staff, it opens and shuts
   gate: {
@@ -670,7 +1056,7 @@ var BUILDINGS = {
     buildable: true,
     requires: ["fence"],
     perFire: [1, 2, 3, 4],
-    levels: { stone: [lv("C\u1ED5ng g\u1ED7", { wood: 4 }, 20, 0, 1, 0, 30), lv("C\u1ED5ng \u0111\xF4i", { wood: 6, stone: 2 }, 32, 0, 1, 0, 90)] }
+    levels: { stone: STONE_LEVELS.gate }
   },
   tower: {
     kind: "tower",
@@ -680,7 +1066,7 @@ var BUILDINGS = {
     buildable: true,
     requires: ["fence"],
     perFire: [0, 1, 2, 3],
-    levels: { stone: [lv("Ch\xF2i g\u1ED7", { wood: 20 }, 80, 0, 1, 2, 150), lv("Ch\xF2i cao", { wood: 30, stone: 8 }, 130, 0, 1.2, 4, 300)] }
+    levels: { stone: STONE_LEVELS.tower }
   },
   // where the squads, formations and plans are made: its level decides how many squads and command cards there are
   wartent: {
@@ -690,7 +1076,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("L\u1EC1u da", { wood: 30, hide: 8 }, 90), lv("L\u1EC1u l\u1EDBn", { wood: 40, hide: 10, stone: 15 }, 140), lv("L\u1EC1u th\u1EE7 l\u0129nh", { wood: 50, stone: 40, hide: 14 }, 200)] }
+    levels: { stone: STONE_LEVELS.wartent }
   },
   // where scouts are sent from: slots = how many may go out on one trip
   scouttent: {
@@ -700,7 +1086,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("L\u1EC1u da", { wood: 20, hide: 6 }, 70, 0, 1, 4), lv("L\u1EC1u l\u1EDBn", { wood: 30, hide: 8, stone: 10 }, 110, 0, 1, 6), lv("L\u1EC1u th\xE1m th\xEDnh", { wood: 40, hide: 12, stone: 25 }, 160, 0, 1, 8)] }
+    levels: { stone: STONE_LEVELS.scouttent }
   },
   // the drill ground: squads train their formation here
   drill: {
@@ -710,7 +1096,7 @@ var BUILDINGS = {
     h: 3,
     buildable: true,
     requires: ["infantry"],
-    levels: { stone: [lv("B\xE3i c\u1ECDc", { wood: 25 }, 80), lv("B\xE3i r\xE0o", { wood: 30, stone: 10 }, 120), lv("B\xE3i \u0111\xE1", { wood: 35, stone: 30 }, 170)] }
+    levels: { stone: STONE_LEVELS.drill }
   },
   // a pit of sharpened stakes, laid one at a time; hp is how many men it can still wound
   trap: {
@@ -722,7 +1108,7 @@ var BUILDINGS = {
     requires: ["fence"],
     perFire: [4, 10, 18, 28],
     repeat: true,
-    levels: { stone: [lv("H\u1ED1 ch\xF4ng", { wood: 3 }, 12, 0, 1, 0, 3), lv("H\u1ED1 ch\xF4ng s\xE2u", { wood: 4, stone: 2 }, 20, 0, 1, 0, 6)] }
+    levels: { stone: STONE_LEVELS.trap }
   },
   // where beasts are tamed to be ridden: slots = keepers who work inside, craftSpeed = how fast they get through an order; the level decides which beast (wolf, boar, elephant)
   stable: {
@@ -732,7 +1118,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("Chu\u1ED3ng c\u1ECDc", { wood: 30, hide: 6 }, 90, 0, 1, 2), lv("Chu\u1ED3ng g\u1ED7", { wood: 40, hide: 8, stone: 10 }, 140, 0, 1.25, 3), lv("Chu\u1ED3ng \u0111\xE1", { wood: 45, stone: 35, hide: 12 }, 200, 0, 1.5, 4)] }
+    levels: { stone: STONE_LEVELS.stable }
   },
   // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
   field: {
@@ -743,7 +1129,7 @@ var BUILDINGS = {
     buildable: true,
     requires: ["builder"],
     perFire: [1, 3, 3, 4],
-    levels: { stone: [lv("\u0110\u1EA5t v\u1EE1", { wood: 10 }, 70, 0, 1, 1), lv("Lu\u1ED1ng \u0111\u1EAFp", { wood: 15, stone: 5 }, 110, 0, 1.4, 1), lv("B\u1EDD \u0111\xE1", { wood: 20, stone: 15 }, 160, 0, 1.8, 1)] }
+    levels: { stone: STONE_LEVELS.field }
   }
 };
 var buildingName = (kind, era) => BUILDINGS[kind].names?.[era] ?? BUILDINGS[kind].name;
@@ -761,7 +1147,7 @@ var maxLevel = (kind, era) => levelsOf(kind, era).length;
 var holdsGoods = (b) => b.kind === "storage" || b.kind === "campfire";
 var needsWork = (b) => !b.done || b.upgrading;
 var POP_BY_FIRE = [8, 16, 25, 40];
-var levelCapByFire = (fireLevel) => Math.max(1, fireLevel - 1);
+var levelCapByFire = (fireLevel2) => fireBuildingMax(fireLevel2);
 
 // src/sim/fog.ts
 var Fog = class {
@@ -1340,7 +1726,7 @@ var World = class {
   nodeAt(x, y) {
     return this.inBounds(x, y) ? this.nodes.get(y * this.size + x) : void 0;
   }
-  /** Cây và đá cạn thì ô trở lại thành cỏ (cây để lại gốc); bụi quả giữ nguyên và mọc lại. */
+  /** Cây và đá cạn thì ô trở lại thành cỏ (cây không để lại gốc); bụi quả giữ nguyên và mọc lại. */
   depleted(idx) {
     const n = this.nodes.get(idx);
     if (!n) return;
@@ -1351,7 +1737,6 @@ var World = class {
     }
     this.nodes.delete(idx);
     this.tiles[idx] = Tile.Grass;
-    if (n.kind === "tree") this.decor[idx] = 1;
   }
   /** Winter: bushes go bare and stop regrowing. Spring: they flower and fruit again after 1–3 min (staggered per tile). */
   setSeason(season) {
@@ -1656,6 +2041,778 @@ function die(sim, a) {
   a.carcass = BEHAVIOUR.carcassSeconds;
 }
 
+// src/data/stats.json
+var stats_default = {
+  _note: "C\xF4ng th\u1EE9c ch\u1EC9 s\u1ED1 c\u1EE7a m\u1ECDi NPC l\xE0 ng\u01B0\u1EDDi. Gi\xE1 tr\u1ECB = g\u1ED1c \xD7 h\u1EC7 s\u1ED1 c\xE1 nh\xE2n \xD7 h\u1EC7 s\u1ED1 b\u1EADc \xD7 (1 + t\u1ED5ng % nghi\xEAn c\u1EE9u / 100). M\u1ED7i ch\u1EC9 s\u1ED1 t\xEDnh ri\xEAng, kh\xF4ng \u0111\u1ECDc ch\u1EC9 s\u1ED1 kh\xE1c (ngo\u1EA1i tr\u1EEB t\xE1c d\u1EE5ng c\u1EE7a Tr\xED tu\u1EC7, ghi \u1EDF intEffect). base = gi\xE1 tr\u1ECB g\u1ED1c c\u1EE7a ch\u1EC9 s\u1ED1. stars: tr\u1ECDng s\u1ED1 xu\u1EA5t hi\u1EC7n c\u1EE7a 1 \u0111\u1EBFn 5 sao; t\u1ED5ng 8 h\u1EC7 s\u1ED1 c\xE1 nh\xE2n c\u1EE7a m\u1ED9t ng\u01B0\u1EDDi b\u1EB1ng 8 \xD7 (budgetBase + budgetPerStar \xD7 sao), m\u1ED7i h\u1EC7 s\u1ED1 \u0111\u01B0\u1EE3c r\xFAt ng\u1EABu nhi\xEAn quanh 1 v\u1EDBi \u0111\u1ED9 l\u1EC7ch spread r\u1ED3i b\u1ECB gi\u1EDBi h\u1EA1n trong [min, max], n\xEAn kh\xF4ng ai qu\xE1 cao hay qu\xE1 th\u1EA5p. tierMult[b\u1EADc] = h\u1EC7 s\u1ED1 nh\xE2n l\xEAn g\u1ED1c c\u1EE7a c\u1EA3 vai tr\xF2 khi \u0111\xE3 nghi\xEAn c\u1EE9u b\u1EADc \u0111\xF3. defense.k: % gi\u1EA3m s\xE1t th\u01B0\u01A1ng = \u0111i\u1EC3m th\u1EE7 / (\u0111i\u1EC3m th\u1EE7 + k). intEffect: m\u1ED7i 100% Tr\xED tu\u1EC7 tr\xEAn g\u1ED1c th\xEC t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c t\u0103ng work v\xE0 s\u1EE9c ti\xEAu hao gi\u1EA3m drain (theo t\u1EF7 l\u1EC7). legacy: c\xE1c ch\u1ED7 c\u0169 c\u1EE7a game v\u1EABn \u0111\u1ECDc 4 ch\u1EC9 s\u1ED1 c\u0169 (S\u1EE9c kh\u1ECFe, S\u1EE9c m\u1EA1nh, Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c), n\xEAn ch\xFAng \u0111\u01B0\u1EE3c t\xEDnh ng\u01B0\u1EE3c t\u1EEB gi\xE1 tr\u1ECB m\u1EDBi theo c\xE1c h\u1EC7 s\u1ED1 n\xE0y.",
+  base: { hp: 100, atk: 10, defm: 20, defr: 20, move: 2, work: 1, int: 10, sta: 100 },
+  stars: { weights: [30, 30, 25, 10, 5], budgetBase: 0.92, budgetPerStar: 0.04, spread: 0.3, min: 0.8, max: 1.25 },
+  tierMult: {
+    "2": { hp: 1.5, atk: 1.4, defm: 1.4, defr: 1.4, move: 1.1, work: 1.2, int: 1.2, sta: 1.3 }
+  },
+  defense: { k: 100 },
+  intEffect: { work: 0.5, drain: 0.5 },
+  staDrainRef: 100,
+  legacy: { hpBase: 40, hpPerVit: 8, strengthDamage: 0.6, atkToDamage: 0.4, speedBase: 1.6, speedPerAgi: 0.1, staScale: 0.065, vitFromHp: true }
+};
+
+// src/data/pace.json
+var pace_default = {
+  _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
+  gather: { wood: 11, stone: 17, food: 6, farm: 70 },
+  bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
+  outdoor: ["wood", "stone", "food", "build"]
+};
+
+// src/data/mounts.json
+var mounts_default = {
+  _note: "Mounts. A beast is tamed in the Chu\u1ED3ng th\xFA (the level of the stable decides which) and given to a villager like a tool; the riders of the Tr\u1EA1i k\u1EF5 th\xFA ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
+  kinds: {
+    wolf: { name: "S\xF3i", tier: 1, species: "wolf", speed: 1.6, guard: 0.95, ride: 9, cost: { food: 25, hide: 2, coin: 3 }, time: 240 },
+    boar: { name: "L\u1EE3n r\u1EEBng", tier: 2, species: "boar", speed: 1.3, guard: 0.85, ride: 8, cost: { food: 40, hide: 4, coin: 5 }, time: 360 },
+    elephant: { name: "Voi", tier: 3, species: "mammoth", speed: 1.15, guard: 0.65, ride: 19, cost: { food: 80, hide: 8, coin: 12 }, time: 600 }
+  }
+};
+
+// src/data/training.json
+var training_default = {
+  _note: "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
+  dayBase: 0.6,
+  dayPerStat: 0.12,
+  foodBase: 4,
+  coinBase: 1,
+  coinPerStat: 0.3333,
+  gain: [0.01, 0.05],
+  partnerShare: 0.5,
+  floor: 0.6,
+  floorMin: 3,
+  caps: [8, 12, 16],
+  care: [
+    { name: "Kh\xF4ng", coin: 0, penalty: 0.8 },
+    { name: "C\u1EA9n th\u1EADn", coin: 2, penalty: 0.4 },
+    { name: "Chu \u0111\xE1o", coin: 5, penalty: 0.15 }
+  ],
+  profiles: {
+    infantry: { main: "str", partner: "vit", cost: "agi" },
+    archery: { main: "agi", partner: "sta", cost: "str" },
+    cavalry: { main: "agi", partner: "sta", cost: "vit" },
+    lumberyard: { main: "str", partner: "vit", cost: "agi" },
+    quarry: { main: "str", partner: "vit", cost: "agi" },
+    farmhouse: { main: "agi", partner: "sta", cost: "str" },
+    huntlodge: { main: "agi", partner: "sta", cost: "str" },
+    builder: { main: "sta", partner: "str", cost: "vit" },
+    workshop: { main: "agi", cost: "sta" },
+    lab: { main: "sta", cost: "agi" },
+    stable: { main: "agi", partner: "sta", cost: "str" },
+    scouttent: { main: "agi", partner: "sta", cost: "str" }
+  }
+};
+
+// src/sim/jobs.ts
+var TRAINING = training_default;
+var MOUNT_KINDS = ["wolf", "boar", "elephant"];
+var MOUNTS = mounts_default.kinds;
+var fmtStat = (x) => String(Math.round(x * 10) / 10);
+var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", sta: "Th\u1EC3 l\u1EF1c" };
+var JOBS = {
+  wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
+  stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
+  food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: pace_default.gather.food, anim: "gather" },
+  build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
+  craft: { name: "Ch\u1EBF t\u1EA1o", stat: "agi", baseTime: 1, anim: "craft" },
+  research: { name: "Nghi\xEAn c\u1EE9u", stat: "sta", baseTime: 1, anim: "gather" },
+  tame: { name: "Thu\u1EA7n th\xFA", stat: "agi", baseTime: 1, anim: "craft" },
+  hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
+  fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
+};
+var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", tame: "Thu\u1EA7n th\xFA", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh", scout: "Trinh s\xE1t" };
+var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "tame", "hunt", "fight"];
+var ROLES = {
+  wood: { job: "wood", building: "lumberyard", names: { stone: "\u0110\u1ED1n g\u1ED7", ancient: "Ti\u1EC1u phu" } },
+  stone: { job: "stone", building: "quarry", names: { stone: "Th\u1EE3 \u0111\xE1", ancient: "Th\u1EE3 m\u1ECF" } },
+  food: { job: "food", building: "farmhouse", names: { stone: "H\xE1i l\u01B0\u1EE3m", ancient: "N\xF4ng d\xE2n" } },
+  hunt: { job: "hunt", building: "huntlodge", names: { stone: "Th\u1EE3 s\u0103n", ancient: "Th\u1EE3 s\u0103n" } },
+  foot: { job: "fight", arm: "foot", building: "infantry", names: { stone: "Chi\u1EBFn binh", ancient: "B\u1ED9 binh" } },
+  cavalry: { job: "fight", arm: "cavalry", building: "cavalry", names: { stone: "K\u1EF5 th\xFA", ancient: "K\u1EF5 binh" } },
+  archer: { job: "fight", arm: "archer", building: "archery", names: { stone: "Th\u1EE3 n\xE9m", ancient: "Cung th\u1EE7" } },
+  scout: { job: "scout", building: "scouttent", names: { stone: "Trinh s\xE1t", ancient: "Trinh s\xE1t" } }
+};
+var ROLE_IDS = Object.keys(ROLES);
+var roleName = (role, era) => ROLES[role].names[era];
+function roleOf(v) {
+  switch (v.job) {
+    case "fight":
+      return v.arm === "archer" ? "archer" : v.arm === "cavalry" ? "cavalry" : "foot";
+    case "food":
+      return v.post < 0 ? "food" : null;
+    case "wood":
+    case "stone":
+    case "hunt":
+    case "scout":
+      return v.job;
+    default:
+      return null;
+  }
+}
+var STAFF_BUILDING = { craft: "workshop", research: "lab", tame: "stable" };
+var isStaffJob = (j) => j in STAFF_BUILDING;
+var FARM_TIME = pace_default.gather.farm;
+var XP_LEVELS = [60, 150, 300, 500, 800];
+var MAX_LEVEL = 5;
+var CREW_BUILDING = { build: "builder" };
+var BARE_HANDS = pace_default.bare;
+var OUTDOOR_JOBS = pace_default.outdoor;
+
+// src/sim/tools.ts
+var TOOL_KINDS = ["axe", "pick", "hoe", "hammer"];
+var TOOL_NAME = { axe: "R\xECu", pick: "Cu\u1ED1c chim", hoe: "Cu\u1ED1c", hammer: "B\xFAa" };
+var TOOL_OF_JOB = { wood: "axe", stone: "pick", food: "hoe", build: "hammer" };
+var TIER_NAME = ["Tay kh\xF4ng", "G\u1ED7", "\u0110\xE1"];
+var TIER_SPEED = [0.6, 1, 1.4];
+var TIER_YIELD = [1, 1.25, 1.6];
+var TIER_DURABILITY = [0, 240, 600];
+var GEAR_KINDS = ["club", "spear", "mace", "sling", "bow", "hide"];
+var isGear = (k) => GEAR_KINDS.includes(k);
+var isWeaponKind = (k) => k in WEAPONS;
+var R = (kind, tier, cost, time) => ({ id: `${kind}${tier}`, kind, tier, cost, time });
+var gearRecipe = (kind) => {
+  const d = kind === "hide" ? ARMORS.hide : WEAPONS[kind];
+  return R(kind, d.tier ?? 1, d.cost ?? {}, d.time ?? 60);
+};
+var RECIPES = [
+  R("axe", 1, { wood: 3 }, 24),
+  R("axe", 2, { wood: 2, stone: 3 }, 40),
+  R("pick", 1, { wood: 4 }, 28),
+  R("pick", 2, { wood: 2, stone: 4 }, 44),
+  R("hoe", 1, { wood: 3 }, 24),
+  R("hoe", 2, { wood: 2, stone: 2 }, 36),
+  R("hammer", 1, { wood: 3 }, 24),
+  R("hammer", 2, { wood: 2, stone: 3 }, 36),
+  R("torch", 1, { wood: 2 }, 12),
+  ...GEAR_KINDS.map(gearRecipe)
+];
+var RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
+var recipeName = (r) => {
+  if (r.kind === "hide") return ARMORS.hide.name;
+  if (r.kind === "torch") return "\u0110u\u1ED1c";
+  if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
+  return `${TOOL_NAME[r.kind]} ${TIER_NAME[r.tier].toLowerCase()}`;
+};
+var emptyToolSet = () => ({ axe: null, pick: null, hoe: null, hammer: null });
+
+// src/data/research.json
+var research_default = {
+  enabled: true,
+  _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Tools, weapons, armour and torches have no blueprint (recipe id: axe1 is the wood axe, axe2 the stone one): the level of the Nh\xE0 ch\u1EBF t\u1EA1o alone (recipeLevel) decides which can be made. cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, levels (highest level per building kind), buildings (kinds that may be built), auto (fetch: villagers fetch tools from the stores; order: villagers order crafting and repair themselves). Set enabled to false to open everything.",
+  recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1, sling1: 1, bow1: 2 },
+  techs: [
+    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: [], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { builder: 2, storage: 2, workshop: 2, lab: 2, toolstore: 2, armory: 2, house: 2, infantry: 2, cavalry: 2, archery: 2, farmhouse: 2, huntlodge: 2, lumberyard: 2, quarry: 2, scouttent: 2, field: 2, wartent: 2, drill: 2, stable: 2, fence: 2, gate: 2, tower: 2, trap: 2 } } },
+    { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { builder: 3, storage: 3, workshop: 3, lab: 3, toolstore: 3, armory: 3, house: 3, infantry: 3, cavalry: 3, archery: 3, farmhouse: 3, huntlodge: 3, lumberyard: 3, quarry: 3, scouttent: 3, field: 3, wartent: 3, drill: 3, stable: 3 } } },
+    { id: "signal", name: "T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)", desc: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED; th\u1EBB l\u1EC7nh Ph\xE1t t\xEDn hi\u1EC7u cho c\xE1c \u0111\u1ED9i.", requires: [], needLevel: 2, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: {} },
+    { id: "form_basic", name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", desc: "H\xE0ng ngang v\xE0 v\xF2ng tr\xF2n.", requires: [], needLevel: 1, minInt: 6, cost: { wood: 12, coin: 4 }, time: 240, unlocks: {} },
+    { id: "form_wedge", name: "Tr\u1EADn m\u0169i nh\u1ECDn", desc: "Xung phong ph\xE1 h\xE0ng.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_horns", name: "Tr\u1EADn s\u1EEBng b\xF2", desc: "Bao hai c\xE1nh, \u0111\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_scatter", name: "Tr\u1EADn r\u1EA3i qu\xE2n", desc: "Gi\u1EA3m thi\u1EC7t h\u1EA1i t\u1EEB cung v\xE0 l\u1EEDa.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_ambush", name: "Tr\u1EADn ph\u1EE5c k\xEDch", desc: "\u0110\xF2n \u0111\u1EA7u m\u1EA1nh g\u1EA5p \u0111\xF4i v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: [], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
+    { id: "auto_order", name: "T\u1EF1 nh\u1EDD ch\u1EBF t\u1EA1o", desc: "D\xE2n thi\u1EBFu \u0111\u1ED3 t\u1EF1 t\u1EDBi nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EB7t h\xE0ng.", requires: ["auto_fetch"], needLevel: 2, minInt: 7, cost: { wood: 10, coin: 8 }, time: 360, unlocks: { auto: ["order"] } },
+    { id: "form_cells_10", name: "M\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p (10)", desc: "M\u1ED7i tr\u1EADn ph\xE1p c\xF3 10 \xF4 thay v\xEC 5.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 280, unlocks: { formationCells: 10 } },
+    { id: "form_cells_15", name: "M\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p (15)", desc: "M\u1ED7i tr\u1EADn ph\xE1p c\xF3 15 \xF4.", requires: ["form_cells_10"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { formationCells: 15 } },
+    { id: "form_squads_5", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (5)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 5 \u0111\u1ED9i thay v\xEC 4.", requires: ["form_cells_10"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 280, unlocks: { squads: 5 } },
+    { id: "form_squads_6", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (6)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 6 \u0111\u1ED9i.", requires: ["form_squads_5"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { squads: 6 } }
+  ]
+};
+
+// src/data/researchtree.json
+var researchtree_default = {
+  _note: "C\xE2y nghi\xEAn c\u1EE9u ch\u1EC9 s\u1ED1 trong Nh\xE0 nghi\xEAn c\u1EE9u. M\u1ED7i \xF4 l\xE0 m\u1ED9t d\xE2y: m\u1ED9t ch\u1EC9 s\u1ED1 c\u1EE7a m\u1ED9t vai tr\xF2. S\u1ED0 C\u1EA4P C\u1EE6A M\u1ED6I CH\u1EC8 S\u1ED0 b\u1EB1ng s\u1ED1 ph\u1EA7n t\u1EED c\u1EE7a m\u1EA3ng steps c\u1EE7a n\xF3 (th\xEAm hay b\u1EDBt s\u1ED1 trong steps l\xE0 th\xEAm hay b\u1EDBt c\u1EA5p, m\u1ED7i ch\u1EC9 s\u1ED1 t\u1EF1 \u0111\u1EB7t ri\xEAng); tiers ri\xEAng c\u1EE7a ch\u1EC9 s\u1ED1 (n\u1EBFu ghi) thay cho tiers chung b\xEAn d\u01B0\u1EDBi, s\u1ED1 cu\u1ED1i \u0111\u01B0\u1EE3c d\xF9ng ti\u1EBFp cho c\xE1c c\u1EA5p cao h\u01A1n. Ng\u01B0\u1EDDi ch\u01A1i t\u1EF1 ch\u1ECDn \xF4 n\xE0o c\u0169ng \u0111\u01B0\u1EE3c (ch\u1ECDn ch\u1EC9 s\u1ED1 v\xF4 d\u1EE5ng cho vai tr\xF2 th\xEC l\xE0 l\u1ED7 c\u1EE7a h\u1ECD). steps[stat] = % c\u1ED9ng th\xEAm \u1EDF t\u1EEBng c\u1EA5p, gi\u1EA3m d\u1EA7n nh\u01B0ng c\xF3 s\xE0n; t\u1ED5ng % c\u1ED9ng d\u1ED3n c\u1EE7a m\u1ED9t \xF4 l\xE0 ph\u1EA7n c\u1ED9ng th\xEAm c\u1EE7a ch\u1EC9 s\u1ED1 \u0111\xF3 cho c\u1EA3 vai tr\xF2 (g\u1ED1c \xD7 (1 + t\u1ED5ng% / 100)). cost = v\u1EADt li\u1EC7u c\u1EE7a c\u1EA5p 1 (c\u1ED9ng th\xEAm ti\u1EC1n t\u0103ng d\u1EA7n), nh\xE2n 'growth.cost' m\u1ED7i c\u1EA5p; time (gi\xE2y c\xF4ng) nh\xE2n 'growth.time' m\u1ED7i c\u1EA5p. tiers[n-1] = c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA7n cho c\u1EA5p n. Ch\u01B0a n\u1ED1i v\xE0o c\xF4ng th\u1EE9c chi\u1EBFn \u0111\u1EA5u v\xE0 l\xE0m vi\u1EC7c: xem statBonus trong sim/research.ts.",
+  tiers: [1, 1, 1, 2, 2, 2, 3, 3, 3, 3],
+  growth: {
+    cost: 1.5,
+    time: 1.25
+  },
+  stats: {
+    hp: {
+      name: "M\xE1u",
+      short: "M\xE1u",
+      steps: [12.5, 6, 3, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 120,
+      about: "M\xE1u t\u1ED1i \u0111a."
+    },
+    atk: {
+      name: "S\u1EE9c m\u1EA1nh",
+      short: "S\xE1t th\u01B0\u01A1ng",
+      steps: [8, 4, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 120,
+      about: "S\xE1t th\u01B0\u01A1ng m\u1ED7i \u0111\xF2n \u0111\xE1nh."
+    },
+    aspd: {
+      name: "T\u1ED1c \u0111\u1ED9 \u0111\xE1nh",
+      short: "T\u1ED1c \u0111\xE1nh",
+      steps: [5, 2.5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 120,
+      about: "T\u1ED1c \u0111\u1ED9 \u0111\xE1nh c\u1EE7a v\u0169 kh\xED: ai c\u1EA7m n\xF3 \u0111\xE1nh v\xE0 b\u1EAFn nhanh h\u01A1n, th\u1EDDi gian gi\u1EEFa hai \u0111\xF2n ng\u1EAFn l\u1EA1i."
+    },
+    crit: {
+      name: "T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng",
+      short: "Ch\xED m\u1EA1ng",
+      steps: [0.5, 1, 1, 1, 1],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 130,
+      about: "T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng c\u1EE7a v\u0169 kh\xED, t\xEDnh tr\xEAn 100%: m\u1ED7i c\u1EA5p c\u1ED9ng th\u1EB3ng v\xE0o x\xE1c su\u1EA5t (0,5% l\xE0 n\u1EEDa ph\u1EA7n tr\u0103m). T\u1ED1i \u0111a 10%."
+    },
+    critd: {
+      name: "S\xE1t th\u01B0\u01A1ng ch\xED m\u1EA1ng",
+      short: "ST ch\xED m\u1EA1ng",
+      steps: [20, 10, 5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 130,
+      about: "S\xE1t th\u01B0\u01A1ng c\u1EE7a \u0111\xF2n ch\xED m\u1EA1ng t\xEDnh tr\xEAn 100% \u0111\xF2n th\u01B0\u1EDDng, g\u1ED1c 125%: m\u1ED7i c\u1EA5p c\u1ED9ng th\u1EB3ng v\xE0o (400% l\xE0 g\u1EA5p 4 l\u1EA7n \u0111\xF2n th\u01B0\u1EDDng)."
+    },
+    tspd: {
+      name: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\u1EDBi c\xF4ng c\u1EE5",
+      short: "T\u1ED1c \u0111\u1ED9",
+      steps: [6, 5, 4, 3, 3],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 110,
+      about: "Ai c\u1EA7m c\xF4ng c\u1EE5 n\xE0y l\xE0m vi\u1EC7c nhanh h\u01A1n (c\u1ED9ng v\xE0o h\u1EC7 s\u1ED1 c\u1EE7a c\xF4ng c\u1EE5)."
+    },
+    tyield: {
+      name: "S\u1EA3n l\u01B0\u1EE3ng",
+      short: "S\u1EA3n l\u01B0\u1EE3ng",
+      steps: [4, 4, 3, 3, 2],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 110,
+      about: "M\u1ED7i l\u1EA7n khai th\xE1c thu \u0111\u01B0\u1EE3c nhi\u1EC1u h\u01A1n khi c\u1EA7m c\xF4ng c\u1EE5 n\xE0y."
+    },
+    tdur: {
+      name: "\u0110\u1ED9 b\u1EC1n",
+      short: "\u0110\u1ED9 b\u1EC1n",
+      steps: [10, 10, 10, 5, 5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 110,
+      about: "C\xF4ng c\u1EE5 l\xE2u h\u1ECFng h\u01A1n (th\u1EDDi gian l\xE0m vi\u1EC7c tr\u01B0\u1EDBc khi g\xE3y d\xE0i ra)."
+    },
+    defm: {
+      name: "Ph\xF2ng th\u1EE7 c\u1EADn chi\u1EBFn",
+      short: "Th\u1EE7 c\u1EADn",
+      steps: [10, 5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 140,
+      about: "Gi\u1EA3m s\xE1t th\u01B0\u01A1ng nh\u1EADn t\u1EEB l\xEDnh c\u1EADn chi\u1EBFn."
+    },
+    defr: {
+      name: "Ph\xF2ng th\u1EE7 t\u1EA7m xa",
+      short: "Th\u1EE7 xa",
+      steps: [10, 5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 140,
+      about: "Gi\u1EA3m s\xE1t th\u01B0\u01A1ng nh\u1EADn t\u1EEB l\xEDnh t\u1EA7m xa."
+    },
+    move: {
+      name: "T\u1ED1c \u0111\u1ED9 di chuy\u1EC3n",
+      short: "Ch\u1EA1y",
+      steps: [2.5, 2.5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 100,
+      about: "T\u1ED1c \u0111\u1ED9 \u0111i v\xE0 ch\u1EA1y."
+    },
+    work: {
+      name: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c",
+      short: "L\xE0m vi\u1EC7c",
+      steps: [5, 2.5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 2
+      },
+      time: 110,
+      about: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c: khai th\xE1c, x\xE2y, ch\u1EBF t\u1EA1o, nghi\xEAn c\u1EE9u."
+    },
+    int: {
+      name: "Tr\xED tu\u1EC7",
+      short: "Tr\xED tu\u1EC7",
+      steps: [5, 2.5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 4
+      },
+      time: 130,
+      about: "Tr\xED tu\u1EC7: t\u0103ng t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\xE0 gi\u1EA3m s\u1EE9c ti\xEAu hao khi l\xE0m vi\u1EC7c."
+    },
+    sta: {
+      name: "S\u1EE9c",
+      short: "S\u1EE9c",
+      steps: [8, 4, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 5
+      },
+      time: 110,
+      about: "S\u1EE9c b\u1EC1n: l\xE0m vi\u1EC7c v\xE0 chi\u1EBFn \u0111\u1EA5u \u0111\u01B0\u1EE3c l\xE2u."
+    }
+  },
+  roles: {
+    foot: {
+      name: "B\u1ED9 binh",
+      building: "infantry"
+    },
+    cavalry: {
+      name: "K\u1EF5 th\xFA",
+      building: "cavalry"
+    },
+    archer: {
+      name: "Th\u1EE3 n\xE9m",
+      building: "archery"
+    },
+    scout: {
+      name: "Trinh s\xE1t",
+      building: "scouttent"
+    },
+    wood: {
+      name: "\u0110\u1ED1n g\u1ED7",
+      building: "lumberyard"
+    },
+    stone: {
+      name: "Th\u1EE3 \u0111\xE1",
+      building: "quarry"
+    },
+    food: {
+      name: "H\xE1i l\u01B0\u1EE3m",
+      building: "farmhouse"
+    },
+    hunt: {
+      name: "Th\u1EE3 s\u0103n",
+      building: "huntlodge"
+    },
+    build: {
+      name: "Th\u1EE3 x\xE2y",
+      building: "builder"
+    },
+    craft: {
+      name: "Th\u1EE3 ch\u1EBF t\u1EA1o",
+      building: "workshop"
+    },
+    research: {
+      name: "Nh\xE0 nghi\xEAn c\u1EE9u",
+      building: "lab"
+    },
+    tame: {
+      name: "Thu\u1EA7n th\xFA",
+      building: "stable"
+    },
+    club: {
+      name: "G\u1EADy g\u1ED7",
+      weapon: "club"
+    },
+    spear: {
+      name: "Gi\xE1o g\u1ED7",
+      weapon: "spear"
+    },
+    mace: {
+      name: "Ch\xF9y \u0111\xE1",
+      weapon: "mace"
+    },
+    sling: {
+      name: "D\xE2y qu\u0103ng \u0111\xE1",
+      weapon: "sling"
+    },
+    bow: {
+      name: "Cung ng\u1EAFn",
+      weapon: "bow"
+    },
+    basic: {
+      name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n",
+      building: "drill",
+      formation: true,
+      needs: "form_basic"
+    },
+    wedge: {
+      name: "M\u0169i nh\u1ECDn",
+      building: "drill",
+      formation: true,
+      needs: "form_wedge"
+    },
+    horns: {
+      name: "S\u1EEBng b\xF2",
+      building: "drill",
+      formation: true,
+      needs: "form_horns"
+    },
+    scatter: {
+      name: "R\u1EA3i qu\xE2n",
+      building: "drill",
+      formation: true,
+      needs: "form_scatter"
+    },
+    ambush: {
+      name: "Ph\u1EE5c k\xEDch",
+      building: "drill",
+      formation: true,
+      needs: "form_ambush"
+    },
+    axe: {
+      name: "R\xECu",
+      tool: "axe"
+    },
+    pick: {
+      name: "Cu\u1ED1c chim",
+      tool: "pick"
+    },
+    hoe: {
+      name: "Cu\u1ED1c",
+      tool: "hoe"
+    },
+    hammer: {
+      name: "B\xFAa",
+      tool: "hammer"
+    },
+    farm: {
+      name: "N\xF4ng d\xE2n",
+      building: "field"
+    }
+  },
+  tabs: {
+    _note: "Qu\xE2n s\u1EF1 m\u1EDF khi Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EA1t c\u1EA5p needLab; tab V\u0169 kh\xED ch\u1EC9 m\u1EDF khi Qu\xE2n s\u1EF1 \u0111\xE3 m\u1EDF. Hai tab X\xE2y d\u1EF1ng v\xE0 Kinh t\u1EBF m\u1EDF s\u1EB5n.",
+    military: {
+      needLab: 2
+    }
+  },
+  chains: {
+    _note: "M\u1ED7i nh\xF3m l\xE0 m\u1ED9t chu\u1ED7i ch\u1EC9 s\u1ED1 \u0111i t\u1EEB tr\xEAn xu\u1ED1ng d\u01B0\u1EDBi (order). C\u1EA5p n c\u1EE7a m\u1ED9t ch\u1EC9 s\u1ED1 c\u1EA7n ch\u1EC9 s\u1ED1 ngay ph\xEDa tr\xEAn \u0111\u1EA1t c\u1EA5p n; ch\u1EC9 s\u1ED1 \u0111\u1EA7u chu\u1ED7i c\u1EA5p n c\u1EA7n ch\u1EC9 s\u1ED1 cu\u1ED1i chu\u1ED7i \u0111\u1EA1t c\u1EA5p n-1. Qu\xE2n s\u1EF1: M\xE1u, Th\u1EE7 c\u1EADn, Th\u1EE7 xa, Ch\u1EA1y, S\xE1t th\u01B0\u01A1ng, S\u1EE9c. C\xF4ng c\u1EE5 (tab C\xF4ng c\u1EE5 b\u1EADc 1): m\u1ED7i C\xD4NG C\u1EE4 (r\xECu, cu\u1ED1c chim, cu\u1ED1c, b\xFAa) m\u1ED9t c\u1ED9t T\u1ED1c \u0111\u1ED9, S\u1EA3n l\u01B0\u1EE3ng (kh\xF4ng c\xF3 \u1EDF b\xFAa), \u0110\u1ED9 b\u1EC1n; ai c\u1EA7m c\xF4ng c\u1EE5 \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng, b\u1EADc c\u1EE7a c\xF4ng c\u1EE5 (g\u1ED7, \u0111\xE1) do c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. Tr\u1EADn ph\xE1p (tab Chi\u1EBFn \u0111\u1EA5u, nh\xE1nh Ch\u1EC9 s\u1ED1 tr\u1EADn ph\xE1p): m\u1ED7i tr\u1EADn (c\u01A1 b\u1EA3n g\u1ED3m H\xE0ng ngang v\xE0 V\xF2ng tr\xF2n) m\u1ED9t c\u1ED9t, c\xF9ng chu\u1ED7i ch\u1EC9 s\u1ED1 qu\xE2n, chia l\xE0m hai \u0111o\u1EA1n (layout) v\u1EDBi \xF4 tr\u1EADn ph\xE1p \u1EDF gi\u1EEFa v\xE0 m\u1EDF r\u1ED9ng \u0111\u1ED9i \u1EDF cu\u1ED1i; gates: ch\u1EC9 s\u1ED1 n\xE0y c\u1EA5p 1 c\u1EA7n nghi\xEAn c\u1EE9u \u0111\xF3; l\xEDnh \u0111\u1EE9ng trong \u0111\u1ED9i \u0111ang d\xF9ng tr\u1EADn \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng th\xEAm, v\xE0 m\u1ED7i b\u01B0\u1EDBc ch\u1EC9 \u0111\u01B0\u1EE3c scale (0,5) l\u1EA7n ph\u1EA7n c\u1EE7a Qu\xE2n s\u1EF1; m\u1ED7i tr\u1EADn ch\u1EC9 nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c khi \u0111\xE3 m\u1EDF tr\u1EADn (needs). V\u0169 kh\xED (tab V\u0169 kh\xED b\u1EADc 1): m\u1ED7i V\u0168 KH\xCD (kh\xF4ng ph\u1EA3i m\u1ED7i vai tr\xF2) m\u1ED9t c\u1ED9t T\u1ED1c \u0111\u1ED9 \u0111\xE1nh, T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng, S\xE1t th\u01B0\u01A1ng ch\xED m\u1EA1ng (hai ch\u1EC9 s\u1ED1 n\xE0y t\xEDnh b\u1EB1ng % th\u1EADt: 0,5% x\xE1c su\u1EA5t; 400% l\xE0 g\u1EA5p 4 l\u1EA7n \u0111\xF2n th\u01B0\u1EDDng); ai c\u1EA7m v\u0169 kh\xED \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng ch\u1EC9 s\u1ED1 c\u1EE7a n\xF3; khi c\u1EA3 ba ch\u1EC9 s\u1ED1 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a th\xEC m\u1EDF v\u0169 kh\xED b\u1EADc 2 c\u1EE7a v\u0169 kh\xED \u0111\xF3 (finalTier): s\xE1t th\u01B0\u01A1ng g\u1ED1c c\u1EE7a v\u0169 kh\xED nh\xE2n rules.tierMult trong weapons.json, cho m\u1ECDi ng\u01B0\u1EDDi c\u1EA7m v\u0169 kh\xED \u0111\xF3. Kinh t\u1EBF (ngh\u1EC1): Ch\u1EA1y, L\xE0m vi\u1EC7c, S\u1EE9c, Tr\xED tu\u1EC7. Ph\xE1t tri\u1EC3n (th\u1EE3 x\xE2y, th\u1EE3 ch\u1EBF t\u1EA1o, nh\xE0 nghi\xEAn c\u1EE9u): L\xE0m vi\u1EC7c, S\u1EE9c, Tr\xED tu\u1EC7 (Tr\xED tu\u1EC7 \u1EDF cu\u1ED1i v\xEC n\xF3 c\u0169ng t\u0103ng t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\xE0 gi\u1EA3m s\u1EE9c ti\xEAu hao khi l\xE0m vi\u1EC7c). finalTier: \xF4 cu\u1ED1i c\u1ED9t, m\u1EDF b\u1EADc 2 khi m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a vai tr\xF2 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a; c\xF3 \u1EDF Qu\xE2n s\u1EF1, Kinh t\u1EBF, Ph\xE1t tri\u1EC3n v\xE0 V\u0169 kh\xED. B\u1EADc 2 nh\xE2n m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a c\u1EA3 vai tr\xF2 theo tierMult trong stats.json.",
+    military: {
+      roles: ["foot", "cavalry", "archer", "scout"],
+      order: ["hp", "defm", "defr", "move", "atk", "sta"],
+      finalTier: {
+        tier: 2,
+        roles: ["foot", "cavalry", "archer", "scout"],
+        needLab: 3,
+        cost: {
+          food: 200,
+          wood: 120,
+          hide: 20,
+          coin: 20
+        },
+        time: 1200
+      }
+    },
+    weapon: {
+      roles: ["club", "spear", "mace", "sling", "bow"],
+      order: ["aspd", "crit", "critd"],
+      finalTier: {
+        tier: 2,
+        roles: ["club", "spear", "mace", "sling", "bow"],
+        needLab: 3,
+        cost: { wood: 100, stone: 60, hide: 10, coin: 15 },
+        time: 900
+      }
+    },
+    formation: {
+      roles: ["basic", "wedge", "horns", "scatter", "ambush"],
+      order: ["hp", "defm", "defr", "move", "atk", "sta"],
+      scale: 0.5,
+      gates: { move: "form_cells_10" },
+      layout: [
+        { stats: ["hp", "defm", "defr"] },
+        { techs: ["form_cells_10", "form_squads_5"] },
+        { stats: ["move", "atk", "sta"] },
+        { techs: ["form_cells_15", "form_squads_6"] }
+      ]
+    },
+    tool: {
+      roles: ["axe", "pick", "hoe"],
+      order: ["tspd", "tyield", "tdur"]
+    },
+    hammer: {
+      roles: ["hammer"],
+      order: ["tspd", "tdur"]
+    },
+    economy: {
+      roles: ["wood", "stone", "food", "hunt", "farm", "tame"],
+      order: ["move", "work", "sta", "int"],
+      finalTier: {
+        tier: 2,
+        roles: ["wood", "stone", "food", "hunt", "farm", "tame"],
+        needLab: 3,
+        cost: { food: 150, wood: 100, stone: 40, coin: 15 },
+        time: 1e3
+      }
+    },
+    development: {
+      roles: ["build", "craft", "research"],
+      order: ["work", "sta", "int"],
+      finalTier: {
+        tier: 2,
+        roles: ["build", "craft", "research"],
+        needLab: 3,
+        cost: { wood: 100, stone: 60, hide: 10, coin: 20 },
+        time: 1e3
+      }
+    }
+  }
+};
+
+// src/sim/research.ts
+var RESEARCH = { enabled: research_default.enabled };
+var RECIPE_LEVEL = research_default.recipeLevel;
+var recipeNeedLevel = (id) => RECIPE_LEVEL[id] ?? 1;
+var TECHS = research_default.techs;
+for (const t of TECHS) t.needLevel = labLevelOf(t.id);
+var TECH_BY_ID = Object.fromEntries(TECHS.map((t) => [t.id, t]));
+var STAT_IDS = Object.keys(researchtree_default.stats);
+var STAT_DEF = researchtree_default.stats;
+var TREE_ROLES = researchtree_default.roles;
+var statLevels = (stat) => STAT_DEF[stat].steps.length;
+var labNeeded = (stat, n) => {
+  const t = STAT_DEF[stat].tiers ?? researchtree_default.tiers;
+  return t[Math.min(n, t.length) - 1];
+};
+var TREE_TABS = researchtree_default.tabs;
+var CHAINS = Object.fromEntries(Object.entries(researchtree_default.chains).filter(([, c]) => typeof c !== "string"));
+var ROLE_SCALE = {};
+for (const c of Object.values(CHAINS)) if (c.scale !== void 0) for (const r of c.roles) ROLE_SCALE[r] = c.scale;
+var statTechId = (role, stat, n) => `${role}_${stat}_${n}`;
+var STAT_TECHS = [];
+for (const def of Object.values(CHAINS)) for (const role of def.roles) for (const stat of def.order) {
+  const s = STAT_DEF[stat], chain = def.order, at = chain.indexOf(stat);
+  for (let n = 1; n <= statLevels(stat); n++) {
+    const cost = {};
+    for (const [res, amount] of Object.entries(s.cost)) cost[res] = Math.max(1, Math.round(amount * researchtree_default.growth.cost ** (n - 1)));
+    cost.coin = (cost.coin ?? 0) + Math.floor(n / 2);
+    const t = {
+      id: statTechId(role, stat, n),
+      name: `${s.name} \xB7 ${TREE_ROLES[role].name} ${n}`,
+      desc: `${s.about} C\u1ED9ng ${s.steps[n - 1] * (ROLE_SCALE[role] ?? 1)}% cho ${TREE_ROLES[role].formation ? "l\xEDnh \u0111\u1EE9ng trong tr\u1EADn " : ""}${TREE_ROLES[role].name.toLowerCase()}.`,
+      requires: [...n > 1 ? [statTechId(role, stat, n - 1)] : at === 0 && TREE_ROLES[role].needs ? [TREE_ROLES[role].needs] : [], ...n === 1 && def.gates?.[stat] ? [def.gates[stat]] : [], ...chain && at > 0 ? [statTechId(role, chain[at - 1], Math.min(n, statLevels(chain[at - 1])))] : [], ...chain && at === 0 && n > 1 ? [statTechId(role, chain[chain.length - 1], Math.min(n - 1, statLevels(chain[chain.length - 1])))] : []],
+      needLevel: labNeeded(stat, n),
+      cost,
+      time: Math.round(s.time * researchtree_default.growth.time ** (n - 1)),
+      unlocks: { bonus: { role, stat, pct: s.steps[n - 1] * (ROLE_SCALE[role] ?? 1) } }
+    };
+    STAT_TECHS.push(t);
+    TECH_BY_ID[t.id] = t;
+  }
+}
+var tierTechId = (role, tier) => `${role}_tier${tier}`;
+var TIER_TECH_OF = {};
+for (const c of Object.values(CHAINS)) {
+  if (!c.finalTier) continue;
+  const ft = c.finalTier;
+  for (const role of ft.roles) {
+    const t = {
+      id: tierTechId(role, ft.tier),
+      name: `${TREE_ROLES[role].name} b\u1EADc ${ft.tier}`,
+      desc: TREE_ROLES[role].weapon ? `M\u1EDF ${TREE_ROLES[role].name.toLowerCase()} b\u1EADc ${ft.tier}: m\u1ECDi ng\u01B0\u1EDDi c\u1EA7m n\xF3 g\xE2y s\xE1t th\u01B0\u01A1ng nhi\u1EC1u h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EE7 m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a v\u0169 kh\xED n\xE0y.` : `M\u1EDF b\u1EADc ${ft.tier} c\u1EE7a ${TREE_ROLES[role].name.toLowerCase()}: m\u1ECDi ng\u01B0\u1EDDi l\xE0m vai tr\xF2 n\xE0y m\u1EA1nh h\u01A1n ngay. C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EE7 m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a h\u1ECD.`,
+      requires: c.order.map((stat) => statTechId(role, stat, statLevels(stat))),
+      needLevel: ft.needLab,
+      cost: ft.cost,
+      time: ft.time,
+      unlocks: { tier: { role, tier: ft.tier } }
+    };
+    STAT_TECHS.push(t);
+    TECH_BY_ID[t.id] = t;
+    TIER_TECH_OF[role] = t;
+  }
+}
+var soldierTier = (done, role) => {
+  let n = 1;
+  for (let k = 2; k <= 6; k++) if (done.has(tierTechId(role, k))) n = k;
+  return n;
+};
+function lineLevel(done, role, stat) {
+  let n = 0;
+  while (n < statLevels(stat) && done.has(statTechId(role, stat, n + 1))) n++;
+  return n;
+}
+var statBonus = (done, role, stat) => STAT_DEF[stat].steps.slice(0, lineLevel(done, role, stat)).reduce((a, b) => a + b, 0) * (ROLE_SCALE[role] ?? 1);
+var NO_BLUEPRINT = /^(club|spear|mace|sling|bow|hide|axe|pick|hoe|hammer|torch)\d$/;
+var recipeOpen = (done, recipeId) => !RESEARCH.enabled || NO_BLUEPRINT.test(recipeId) || done.has(recipeId);
+var techForRecipe = (recipeId) => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
+var unlockedMax = (done, key, base) => TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks[key] ?? 0) : m, base);
+var levelCap = (done, kind) => !RESEARCH.enabled || kind === "campfire" ? Infinity : TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks.levels?.[kind] ?? 1) : m, 1);
+var techForLevel = (kind, level) => TECHS.find((t) => (t.unlocks.levels?.[kind] ?? 0) >= level);
+var techForBuilding = (kind) => TECHS.find((t) => t.unlocks.buildings?.includes(kind));
+var buildingOpen = (done, kind) => {
+  const t = techForBuilding(kind);
+  return !RESEARCH.enabled || !t || done.has(t.id);
+};
+var autoOn = (done, key) => !RESEARCH.enabled || TECHS.some((t) => done.has(t.id) && t.unlocks.auto?.includes(key));
+
+// src/sim/statsys.ts
+var BASE = stats_default.base;
+var IDS = Object.keys(stats_default.base);
+var TIER_MULT = stats_default.tierMult;
+var L = stats_default.legacy;
+function rollFactors(r) {
+  const w = stats_default.stars.weights, total = w.reduce((a, b) => a + b, 0);
+  let x = r() * total, stars = 1;
+  for (let i = 0; i < w.length; i++) {
+    x -= w[i];
+    if (x <= 0) {
+      stars = i + 1;
+      break;
+    }
+    stars = i + 1;
+  }
+  const budget = IDS.length * (stats_default.stars.budgetBase + stats_default.stars.budgetPerStar * stars), { min, max } = stats_default.stars;
+  let f = IDS.map(() => 1 - stats_default.stars.spread / 2 + r() * stats_default.stars.spread);
+  for (let k = 0; k < 8; k++) {
+    const s = f.reduce((a, b) => a + b, 0);
+    f = f.map((v) => Math.max(min, Math.min(max, v * budget / s)));
+  }
+  return { stars, fac: Object.fromEntries(IDS.map((id, i) => [id, f[i]])) };
+}
+function treeRole(v) {
+  const r = roleOf(v);
+  if (r) return r;
+  switch (v.job) {
+    case "build":
+      return "build";
+    case "craft":
+      return "craft";
+    case "research":
+      return "research";
+    case "tame":
+      return "tame";
+    case "food":
+      return "farm";
+    default:
+      return null;
+  }
+}
+function statValue(sim, v, stat) {
+  const role = v.team === "player" ? treeRole(v) : null;
+  const tier = role && TREE_ROLES[role] ? soldierTier(sim.researched, role) : 1;
+  const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
+  const squad = v.team === "player" && v.squad >= 0 ? sim.squads.find((q) => q.id === v.squad) : void 0;
+  const bonus = (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ""), stat) : 0);
+  return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + bonus / 100);
+}
+var rawValue = (fac, stat) => BASE[stat] * fac[stat];
+function legacyStats(value) {
+  return {
+    vit: (value("hp") - L.hpBase) / L.hpPerVit,
+    str: value("atk") * L.atkToDamage / L.strengthDamage,
+    agi: (value("move") - L.speedBase) / L.speedPerAgi,
+    sta: value("sta") * L.staScale
+  };
+}
+function applyStats(sim, v) {
+  if (v.team !== "player") return;
+  const val = (s) => statValue(sim, v, s), l = legacyStats(val);
+  v.stats.vit = l.vit;
+  v.stats.str = l.str;
+  v.stats.agi = l.agi;
+  v.stats.sta = l.sta;
+  const hp = Math.round(val("hp"));
+  if (hp !== v.maxHealth) {
+    const ratio = v.maxHealth > 0 ? v.health / v.maxHealth : 1;
+    v.maxHealth = hp;
+    v.health = Math.min(hp, hp * ratio);
+  }
+  if (v.squad < 0 && !v.mount) v.speed = val("move");
+}
+function guardCut(sim, v, ranged) {
+  const d = statValue(sim, v, ranged ? "defr" : "defm");
+  return d / (d + stats_default.defense.k);
+}
+function workSpeed(sim, v) {
+  return statValue(sim, v, "work") * (1 + stats_default.intEffect.work * (statValue(sim, v, "int") / BASE.int - 1));
+}
+function drainScale(sim, v) {
+  const reserve = Math.max(0.3, statValue(sim, v, "sta") / stats_default.staDrainRef), spare = Math.max(0.4, 1 + stats_default.intEffect.drain * (statValue(sim, v, "int") / BASE.int - 1));
+  return 1 / (reserve * spare);
+}
+function weaponDamage(sim, v, w) {
+  if (v.team !== "player") return w.damage;
+  const tier = soldierTier(sim.researched, w.id);
+  return tier > 1 ? w.damage * (RULES.tierMult[String(tier)]?.damage ?? 1) : w.damage;
+}
+function toolBonus(sim, v, job, stat) {
+  const kind = TOOL_OF_JOB[job], tool = kind ? v.tools[kind] : null;
+  return v.team === "player" && kind && tool && tool.dur > 0 ? statBonus(sim.researched, kind, stat) : 0;
+}
+var weaponBonus = (sim, v, w, stat) => v.team === "player" ? statBonus(sim.researched, w.id, stat) : 0;
+var swingCycle = (sim, v, w) => cycleOf(w.cycle, v.stats.agi) / (1 + weaponBonus(sim, v, w, "aspd") / 100);
+var critChance = (sim, v, w) => Math.min((w.crit ?? 0) + weaponBonus(sim, v, w, "crit") / 100, RULES.critMax);
+var critMult = (sim, v, w) => (w.critDamage ?? RULES.critDamage) + weaponBonus(sim, v, w, "critd") / 100;
+
 // src/sim/battle.ts
 var ANIM = anims_default;
 function swingTimes(anim) {
@@ -1743,7 +2900,8 @@ function hurt(sim, target, dmg, type, from, src) {
   const v = sim.get(target.id);
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === "player") return;
-  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === "player" ? sim.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) * sim.mountGuard(v) : 1);
+  const missile = !!src.unit && weaponOf(src.unit).ranged === true;
+  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (1 - guardCut(sim, v, missile)) * (v.team === "player" ? sim.takenFactor(v, missile) * sim.mountGuard(v) : 1);
   v.health -= final;
   v.calm = 0;
   v.flinch = 0.3;
@@ -1774,11 +2932,15 @@ function moraleShock(sim, who, amount) {
 function startSwing(sim, v, target) {
   const w = weaponOf(v), { hitAt, end } = swingTimes(w.anim);
   v.swing = { t: 0, hitAt, end, target };
-  v.atkCd = cycleOf(w.cycle, v.stats.agi);
+  v.atkCd = swingCycle(sim, v, w);
   v.anim = w.anim;
   v.animClock = 0;
   const e = resolve(sim, target);
   if (e) v.facing = entX(e) >= v.x ? "right" : "left";
+}
+function critRoll(sim, v, w) {
+  const c = critChance(sim, v, w);
+  return c > 0 && sim.frnd() < c ? critMult(sim, v, w) : 1;
 }
 function armMultiplier(attacker, e) {
   return e.kind === "unit" ? matchup(armOf(attacker), armOf(e.v), effWeapon(attacker)) : 1;
@@ -1786,7 +2948,7 @@ function armMultiplier(attacker, e) {
 function fireProjectile(sim, v, e, from, mult, rangeBonus) {
   const w = weaponOf(v), tx = entX(e), ty = entY(e), d = Math.hypot(tx - from.x, ty - from.y);
   if (d > w.range + rangeBonus + 1 || !canSee(sim, v, tx, ty)) return false;
-  const shot = w.damage * clampTactical(armMultiplier(v, e) * mult * sim.attackFactor(v, e)) * WEATHER[sim.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
+  const shot = (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * critRoll(sim, v, w) * clampTactical(armMultiplier(v, e) * mult * sim.attackFactor(v, e)) * WEATHER[sim.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
   if (v.inside !== null) sim.noteBattle("shot");
   const target = e.kind === "unit" ? { kind: "unit", id: e.v.id } : { kind: "animal", id: e.a.id };
   sim.projectiles.push({ x: from.x, y: from.y - 0.4, tx, ty, speed: 14, dmg: shot, type: w.type, from, src: v.id, team: v.team, target, chance: d <= (w.range + rangeBonus) / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? "stone" });
@@ -1805,7 +2967,7 @@ function resolveSwing(sim, v, target) {
   let behind = false;
   if (e.kind === "unit") behind = e.v.facing === "right" && v.x < e.v.x || e.v.facing === "left" && v.x > e.v.x;
   else behind = e.a.dir === 1 && v.x < e.a.x || e.a.dir === -1 && v.x > e.a.x;
-  hurt(sim, target, damageOf(w, v.stats.str, null, behind) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
+  hurt(sim, target, damageOf({ ...w, damage: weaponDamage(sim, v, w) }, v.stats.str, null, behind) * critRoll(sim, v, w) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
   if (v.weapon) sim.wearGear(v, "weapon");
 }
 function tickProjectiles(sim, dt) {
@@ -1982,7 +3144,7 @@ function fightBrain(sim, v, dt, threats) {
   const f = v.fight;
   if (v.phase === "skin" || v.phase === "goCarcass") return huntBrain(sim, v, dt, threats);
   if (f.mode === "hold" && !f.anchor) f.anchor = { x: v.x, y: v.y };
-  if (!threats.length && !f.target && v.phase !== "fight" && (sim.planGearRepair(v) || sim.planEquipGear(v) || sim.planGearErrand(v))) return true;
+  if (!threats.length && !f.target && v.phase !== "fight" && (sim.planEquipGear(v) || sim.planGearErrand(v))) return true;
   if (v.stance === "retreat" && f.mode !== "attack" && f.target) f.target = null;
   if (f.target) {
     const e = resolve(sim, f.target);
@@ -2152,7 +3314,7 @@ function huntBrain(sim, v, dt, threats) {
   }
   if (!threats.length) {
     let prey = null;
-    bd = 40;
+    bd = 70;
     for (const a of sim.animals) {
       const def = animalDef(a);
       if (a.state === "dead" || !def.prey || sim.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
@@ -2176,6 +3338,19 @@ function huntBrain(sim, v, dt, threats) {
   if (v.phase === "fight") {
     v.phase = "idle";
     v.path = [];
+  }
+  const lodge = sim.building("huntlodge") ?? sim.campfire(), step2 = Math.floor(sim.time / 8);
+  if (lodge) {
+    const ang = hash2(v.id, step2, 71) * Math.PI * 2, rad = 10 + hash2(v.id, step2, 72) * 26;
+    const gx = Math.floor(lodge.x + Math.cos(ang) * rad), gy = Math.floor(lodge.y + Math.sin(ang) * rad);
+    if (sim.world.inBounds(gx, gy) && sim.fog.state[gy * N + gx] > 0) {
+      const path = sim.pathTo(v, gx, gy, 2500);
+      if (path.length) {
+        v.path = path;
+        v.phase = "move";
+        return true;
+      }
+    }
   }
   sim.wait(v, 2);
   return true;
@@ -2702,186 +3877,6 @@ function foeBrain(sim, f, t, ai, dt) {
   void DAY_LENGTH;
 }
 
-// src/data/pace.json
-var pace_default = {
-  _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
-  gather: { wood: 11, stone: 17, food: 6, farm: 70 },
-  bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
-  outdoor: ["wood", "stone", "food", "build"]
-};
-
-// src/data/mounts.json
-var mounts_default = {
-  _note: "Mounts. A beast is tamed in the Chu\u1ED3ng th\xFA (the level of the stable decides which) and given to a villager like a tool; the riders of the Tr\u1EA1i k\u1EF5 th\xFA ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
-  kinds: {
-    wolf: { name: "S\xF3i", tier: 1, species: "wolf", speed: 1.6, guard: 0.95, ride: 9, cost: { food: 25, hide: 2, coin: 3 }, time: 240, tech: "tame_wolf" },
-    boar: { name: "L\u1EE3n r\u1EEBng", tier: 2, species: "boar", speed: 1.3, guard: 0.85, ride: 8, cost: { food: 40, hide: 4, coin: 5 }, time: 360, tech: "tame_boar" },
-    elephant: { name: "Voi", tier: 3, species: "mammoth", speed: 1.15, guard: 0.65, ride: 19, cost: { food: 80, hide: 8, coin: 12 }, time: 600, tech: "tame_elephant" }
-  }
-};
-
-// src/data/training.json
-var training_default = {
-  _note: "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
-  dayBase: 0.6,
-  dayPerStat: 0.12,
-  foodBase: 4,
-  coinBase: 1,
-  coinPerStat: 0.3333,
-  gain: [0.01, 0.05],
-  partnerShare: 0.5,
-  floor: 0.6,
-  floorMin: 3,
-  caps: [8, 12, 16],
-  care: [
-    { name: "Kh\xF4ng", coin: 0, penalty: 0.8 },
-    { name: "C\u1EA9n th\u1EADn", coin: 2, penalty: 0.4 },
-    { name: "Chu \u0111\xE1o", coin: 5, penalty: 0.15 }
-  ],
-  profiles: {
-    infantry: { main: "str", partner: "vit", cost: "agi" },
-    archery: { main: "agi", partner: "sta", cost: "str" },
-    cavalry: { main: "agi", partner: "sta", cost: "int" },
-    lumberyard: { main: "str", partner: "vit", cost: "agi" },
-    quarry: { main: "str", partner: "vit", cost: "agi" },
-    farmhouse: { main: "agi", partner: "sta", cost: "str" },
-    huntlodge: { main: "agi", partner: "sta", cost: "str" },
-    builder: { main: "sta", partner: "str", cost: "int" },
-    workshop: { main: "int", cost: "sta" },
-    lab: { main: "int", cost: "sta" },
-    stable: { main: "agi", partner: "sta", cost: "str" },
-    repair: { main: "agi", partner: "int", cost: "vit" },
-    scouttent: { main: "agi", partner: "sta", cost: "str" }
-  }
-};
-
-// src/sim/jobs.ts
-var TRAINING = training_default;
-var MOUNT_KINDS = ["wolf", "boar", "elephant"];
-var MOUNTS = mounts_default.kinds;
-var fmtStat = (x) => String(Math.round(x * 10) / 10);
-var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", int: "Tr\xED tu\u1EC7", sta: "Th\u1EC3 l\u1EF1c" };
-var JOBS = {
-  wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
-  stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
-  food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: pace_default.gather.food, anim: "gather" },
-  build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
-  craft: { name: "Ch\u1EBF t\u1EA1o", stat: "int", baseTime: 1, anim: "craft" },
-  research: { name: "Nghi\xEAn c\u1EE9u", stat: "int", baseTime: 1, anim: "gather" },
-  repair: { name: "S\u1EEDa ch\u1EEFa", stat: "agi", baseTime: 1, anim: "craft" },
-  tame: { name: "Thu\u1EA7n th\xFA", stat: "agi", baseTime: 1, anim: "craft" },
-  hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
-  fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
-};
-var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", repair: "S\u1EEDa ch\u1EEFa", tame: "Thu\u1EA7n th\xFA", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh", scout: "Trinh s\xE1t" };
-var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "repair", "tame", "hunt", "fight"];
-var ROLES = {
-  wood: { job: "wood", building: "lumberyard", names: { stone: "\u0110\u1ED1n g\u1ED7", ancient: "Ti\u1EC1u phu" } },
-  stone: { job: "stone", building: "quarry", names: { stone: "Th\u1EE3 \u0111\xE1", ancient: "Th\u1EE3 m\u1ECF" } },
-  food: { job: "food", building: "farmhouse", names: { stone: "H\xE1i l\u01B0\u1EE3m", ancient: "N\xF4ng d\xE2n" } },
-  hunt: { job: "hunt", building: "huntlodge", names: { stone: "Th\u1EE3 s\u0103n", ancient: "Th\u1EE3 s\u0103n" } },
-  foot: { job: "fight", arm: "foot", building: "infantry", names: { stone: "Chi\u1EBFn binh", ancient: "B\u1ED9 binh" } },
-  cavalry: { job: "fight", arm: "cavalry", building: "cavalry", names: { stone: "K\u1EF5 th\xFA", ancient: "K\u1EF5 binh" } },
-  archer: { job: "fight", arm: "archer", building: "archery", names: { stone: "Th\u1EE3 n\xE9m", ancient: "Cung th\u1EE7" } },
-  scout: { job: "scout", building: "scouttent", names: { stone: "Trinh s\xE1t", ancient: "Trinh s\xE1t" } }
-};
-var ROLE_IDS = Object.keys(ROLES);
-var roleName = (role, era) => ROLES[role].names[era];
-function roleOf(v) {
-  switch (v.job) {
-    case "fight":
-      return v.arm === "archer" ? "archer" : v.arm === "cavalry" ? "cavalry" : "foot";
-    case "food":
-      return v.post < 0 ? "food" : null;
-    case "wood":
-    case "stone":
-    case "hunt":
-    case "scout":
-      return v.job;
-    default:
-      return null;
-  }
-}
-var STAFF_BUILDING = { craft: "workshop", research: "lab", repair: "repair", tame: "stable" };
-var isStaffJob = (j) => j in STAFF_BUILDING;
-var FARM_TIME = pace_default.gather.farm;
-var XP_LEVELS = [60, 150, 300, 500, 800];
-var MAX_LEVEL = 5;
-var CREW_BUILDING = { build: "builder" };
-var BARE_HANDS = pace_default.bare;
-var OUTDOOR_JOBS = pace_default.outdoor;
-
-// src/data/research.json
-var research_default = {
-  enabled: true,
-  _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Every tool, weapon and armour has ONE blueprint that is raised step by step (tech id = recipe id: axe1 is the wood axe, axe2 the stone one); a recipe can only be made once its blueprint step is researched and the Nh\xE0 ch\u1EBF t\u1EA1o is high enough (recipeLevel). cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, levels (highest level per building kind), buildings (kinds that may be built), auto (fetch: villagers fetch tools from the stores; order: villagers order crafting and repair themselves). Set enabled to false to open everything.",
-  recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1, sling1: 1, bow1: 2 },
-  techs: [
-    { id: "hammer1", name: "B\u1EA3n v\u1EBD B\xFAa g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo b\xFAa g\u1ED7 \u0111\u1EC3 d\u1EF1ng nh\xE0 nhanh h\u01A1n.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["hammer1"] } },
-    { id: "axe1", name: "B\u1EA3n v\u1EBD R\xECu g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo r\xECu g\u1ED7 \u0111\u1EC3 \u0111\u1ED1n c\xE2y.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["axe1"] } },
-    { id: "pick1", name: "B\u1EA3n v\u1EBD Cu\u1ED1c chim g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo cu\u1ED1c chim g\u1ED7 \u0111\u1EC3 \u0111\u1EE5c \u0111\xE1.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 160, unlocks: { recipes: ["pick1"] } },
-    { id: "hoe1", name: "B\u1EA3n v\u1EBD Cu\u1ED1c g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo cu\u1ED1c g\u1ED7 \u0111\u1EC3 h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 140, unlocks: { recipes: ["hoe1"] } },
-    { id: "torch1", name: "B\u1EA3n v\u1EBD \u0110u\u1ED1c", desc: "Qu\u1EA5n nh\u1EF1a v\xE0 c\xE0nh kh\xF4 th\xE0nh \u0111u\u1ED1c \u0111\u1EC3 l\xE0m vi\u1EC7c \u0111\u01B0\u1EE3c ban \u0111\xEAm.", requires: [], needLevel: 1, minInt: 3, cost: { wood: 4, coin: 1 }, time: 120, unlocks: { recipes: ["torch1"] } },
-    { id: "club1", name: "B\u1EA3n v\u1EBD G\u1EADy chi\u1EBFn", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo g\u1EADy chi\u1EBFn \u0111\u1EC3 t\u1EF1 v\u1EC7 v\xE0 \u0111i s\u0103n.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 180, unlocks: { recipes: ["club1"] } },
-    { id: "hide1", name: "B\u1EA3n v\u1EBD \xC1o da", desc: "V\u1EBD c\xE1ch kh\xE2u da th\xFA th\xE0nh \xE1o gi\xE1p.", requires: ["axe1"], needLevel: 1, minInt: 6, cost: { hide: 4, coin: 4 }, time: 240, unlocks: { recipes: ["hide1"] } },
-    { id: "spear1", name: "B\u1EA3n v\u1EBD Gi\xE1o v\xF3t nh\u1ECDn", desc: "V\u1EBD c\xE1ch v\xF3t gi\xE1o c\xF3 t\u1EA7m \u0111\xE2m xa h\u01A1n g\u1EADy.", requires: ["club1"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 5 }, time: 320, unlocks: { recipes: ["spear1"] } },
-    { id: "sling1", name: "B\u1EA3n v\u1EBD D\xE2y qu\u0103ng \u0111\xE1", desc: "V\u1EBD c\xE1ch b\u1EC7n d\xE2y qu\u0103ng \u0111\xE1: cung th\u1EE7 t\u1EA7m ng\u1EAFn, b\u1EAFn t\u1EEB xa.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 200, unlocks: { recipes: ["sling1"] } },
-    { id: "bow1", name: "B\u1EA3n v\u1EBD Cung ng\u1EAFn", desc: "V\u1EBD c\xE1ch u\u1ED1n cung v\xE0 v\xF3t t\xEAn: cung th\u1EE7 t\u1EA7m xa.", requires: ["sling1", "spear1"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 5 }, time: 320, unlocks: { recipes: ["bow1"] } },
-    { id: "axe2", name: "B\u1EA3n v\u1EBD R\xECu \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD R\xECu l\xEAn c\u1EA5p 2: l\u01B0\u1EE1i \u0111\xE1 b\u1EC1n v\xE0 nhanh h\u01A1n g\u1ED7.", requires: ["axe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 380, unlocks: { recipes: ["axe2"] } },
-    { id: "pick2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c chim \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c chim l\xEAn c\u1EA5p 2.", requires: ["pick1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 380, unlocks: { recipes: ["pick2"] } },
-    { id: "hoe2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c l\xEAn c\u1EA5p 2.", requires: ["hoe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 10, coin: 6 }, time: 340, unlocks: { recipes: ["hoe2"] } },
-    { id: "hammer2", name: "B\u1EA3n v\u1EBD B\xFAa \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD B\xFAa l\xEAn c\u1EA5p 2.", requires: ["hammer1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 360, unlocks: { recipes: ["hammer2"] } },
-    { id: "mace2", name: "B\u1EA3n v\u1EBD Ch\xF9y \u0111\xE1", desc: "V\u1EBD c\xE1ch bu\u1ED9c \u0111\u1EA7u \u0111\xE1 n\u1EB7ng v\xE0o c\xE1n th\xE0nh ch\xF9y.", requires: ["club1", "axe2"], needLevel: 3, minInt: 8, cost: { stone: 30, coin: 10 }, time: 600, unlocks: { recipes: ["mace2"] } },
-    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { storage: 2, workshop: 2, lab: 2, repair: 2, toolstore: 2, armory: 2, house: 2, infantry: 2, cavalry: 2, archery: 2, farmhouse: 2, huntlodge: 2, lumberyard: 2, quarry: 2, scouttent: 2, field: 2, fence: 2, gate: 2, tower: 2 } } },
-    { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber", "pick1"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { storage: 3, workshop: 3, lab: 3, repair: 3, toolstore: 3, armory: 3, house: 3, infantry: 3, cavalry: 3, archery: 3, farmhouse: 3, huntlodge: 3, lumberyard: 3, quarry: 3, scouttent: 3, field: 3 } } },
-    { id: "house", name: "Nh\xE0 d\xE2n", desc: "D\u1EF1ng nh\xE0 cho d\xE2n ng\u1EE7: ng\u1EE7 trong nh\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["house"] } },
-    { id: "barracks", name: "Tr\u1EA1i chi\u1EBFn binh", desc: "D\u1EF1ng tr\u1EA1i b\u1ED9 binh: tuy\u1EC3n chi\u1EBFn binh c\u1EADn chi\u1EBFn, h\u1ECD ng\u1EE7 \u1EDF \u0111\xE2y. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["infantry"] } },
-    { id: "camp_archery", name: "Tr\u1EA1i th\u1EE3 n\xE9m", desc: "D\u1EF1ng tr\u1EA1i cho ng\u01B0\u1EDDi n\xE9m \u0111\xE1, b\u1EAFn n\xE1: tuy\u1EC3n v\xE0 cho h\u1ECD ng\u1EE7 \u1EDF \u0111\xE2y.", requires: ["barracks", "sling1"], needLevel: 1, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["archery"] } },
-    { id: "camp_cavalry", name: "Tr\u1EA1i k\u1EF5 th\xFA", desc: "D\u1EF1ng tr\u1EA1i cho ng\u01B0\u1EDDi c\u01B0\u1EE1i th\xFA: xung phong nhanh, kh\u1EAFc cung th\u1EE7 nh\u01B0ng s\u1EE3 gi\xE1o.", requires: ["barracks", "spear1"], needLevel: 1, minInt: 7, cost: { wood: 20, hide: 6, coin: 6 }, time: 260, unlocks: { buildings: ["cavalry"] } },
-    { id: "farming", name: "L\xE0m ru\u1ED9ng", desc: "V\u1EE1 \u0111\u1EA5t l\xE0m ru\u1ED9ng: th\u1EE9c \u0103n \u0111\u1EC1u quanh n\u0103m, kh\xF4ng nh\u01B0 b\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n.", requires: ["hoe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 220, unlocks: { buildings: ["field"] } },
-    { id: "fence", name: "H\xE0ng r\xE0o c\u1ECDc", desc: "\u0110\xF3ng c\u1ECDc nh\u1ECDn ch\u1EB7n \u0111\u01B0\u1EDDng, t\u1EA1o ch\u1ED7 th\u1EAFt; l\xEAn c\u1EA5p hai th\xE0nh h\xE0ng r\xE0o \u0111\xF4i \u0111\u1EAFp \u0111\u1EA5t.", requires: ["hammer1", "timber"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["fence"] } },
-    { id: "gate", name: "C\u1ED5ng h\xE0ng r\xE0o", desc: "C\u1ED5ng \u0111\u1EC3 ng\u01B0\u1EDDi m\xECnh ra v\xE0o, \u0111\xF3ng l\u1EA1i th\xEC ch\u1EB7n m\u1ECDi ng\u01B0\u1EDDi.", requires: ["fence"], needLevel: 1, minInt: 5, cost: { wood: 12, coin: 3 }, time: 160, unlocks: { buildings: ["gate"] } },
-    { id: "tower", name: "Ch\xF2i canh", desc: "Ch\xF2i cao cho cung th\u1EE7: b\u1EAFn xa h\u01A1n v\xE0 m\u1EA1nh h\u01A1n.", requires: ["fence"], needLevel: 2, minInt: 6, cost: { wood: 20, coin: 4 }, time: 240, unlocks: { buildings: ["tower"] } },
-    { id: "pit", name: "\u0110\xE0o h\xE0o, h\u1ED1 ch\xF4ng", desc: "\u0110\xE0o h\u1ED1 g\xE0i c\u1ECDc nh\u1ECDn tr\xEAn \u0111\u01B0\u1EDDng \u0111\u1ECBch t\u1EDBi.", requires: ["fence", "pick1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["trap"] } },
-    { id: "signal", name: "T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)", desc: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED; th\u1EBB l\u1EC7nh Ph\xE1t t\xEDn hi\u1EC7u cho c\xE1c \u0111\u1ED9i.", requires: ["tower"], needLevel: 2, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: {} },
-    { id: "scout", name: "Trinh s\xE1t", desc: "D\u1EF1ng Tr\u1EA1i trinh s\xE1t v\xE0 c\u1EED ng\u01B0\u1EDDi \u0111i v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p 1 c\u1EE7a m\u1ED9t l\xE0ng (v\u1ECB tr\xED, s\u1ED1 d\xE2n, h\u01B0\u1EDBng v\xE0o l\xE0ng).", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 200, unlocks: { buildings: ["scouttent"] } },
-    { id: "scout2", name: "V\u1EBD b\u1EA3n \u0111\u1ED3 \u0111\u1ECBa h\xECnh", desc: "Trinh s\xE1t v\u1EBD \u0111\u01B0\u1EE3c b\u1EA3n \u0111\u1ED3 c\u1EA5p 2: \u0111\u01B0\u1EDDng v\xE0o, h\xE0ng r\xE0o, c\u1ED5ng, ch\xF2i canh v\xE0 h\xECnh b\xF3ng ng\u01B0\u1EDDi.", requires: ["scout", "timber"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 4 }, time: 240, unlocks: {} },
-    { id: "scout3", name: "V\u1EBD b\u1EA3n \u0111\u1ED3 chi ti\u1EBFt", desc: "Trinh s\xE1t v\u1EBD \u0111\u01B0\u1EE3c b\u1EA3n \u0111\u1ED3 c\u1EA5p 3: s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i, kho l\u01B0\u01A1ng v\xE0 th\u1EE7 l\u0129nh.", requires: ["scout2", "masonry"], needLevel: 2, minInt: 8, cost: { wood: 15, stone: 10, coin: 6 }, time: 280, unlocks: {} },
-    { id: "council", name: "H\u1ED9i \u0111\u1ED3ng chi\u1EBFn", desc: "D\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn: l\u1EADp \u0111\u1ED9i, k\u1EBF ho\u1EA1ch v\xE0 th\u1EBB l\u1EC7nh.", requires: ["scout"], needLevel: 1, minInt: 6, cost: { wood: 15, coin: 4 }, time: 240, unlocks: { buildings: ["wartent"] } },
-    { id: "drill", name: "B\xE3i t\u1EADp", desc: "D\u1EF1ng b\xE3i luy\u1EC7n tr\u1EADn ph\xE1p cho c\xE1c \u0111\u1ED9i.", requires: ["council", "barracks"], needLevel: 1, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["drill"] } },
-    { id: "form_basic", name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", desc: "H\xE0ng ngang v\xE0 v\xF2ng tr\xF2n.", requires: ["drill"], needLevel: 1, minInt: 6, cost: { wood: 12, coin: 4 }, time: 240, unlocks: {} },
-    { id: "form_wedge", name: "Tr\u1EADn m\u0169i nh\u1ECDn", desc: "Xung phong ph\xE1 h\xE0ng.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-    { id: "form_horns", name: "Tr\u1EADn s\u1EEBng b\xF2", desc: "Bao hai c\xE1nh, \u0111\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-    { id: "form_scatter", name: "Tr\u1EADn r\u1EA3i qu\xE2n", desc: "Gi\u1EA3m thi\u1EC7t h\u1EA1i t\u1EEB cung v\xE0 l\u1EEDa.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-    { id: "form_ambush", name: "Tr\u1EADn ph\u1EE5c k\xEDch", desc: "\u0110\xF2n \u0111\u1EA7u m\u1EA1nh g\u1EA5p \u0111\xF4i v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-    { id: "tool_store", name: "Kho c\xF4ng c\u1EE5", desc: "Cho ph\xE9p d\u1EF1ng Kho c\xF4ng c\u1EE5 \u0111\u1EC3 c\u1EA5t r\xECu, cu\u1ED1c, b\xFAa.", requires: ["hammer1", "axe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 200, unlocks: { buildings: ["toolstore"] } },
-    { id: "armory", name: "Kho v\u0169 kh\xED", desc: "Cho ph\xE9p d\u1EF1ng Kho v\u0169 kh\xED \u0111\u1EC3 c\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["armory"] } },
-    { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: ["tool_store"], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
-    { id: "auto_order", name: "T\u1EF1 nh\u1EDD ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa", desc: "D\xE2n thi\u1EBFu \u0111\u1ED3 t\u1EF1 t\u1EDBi nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EB7t h\xE0ng, t\u1EDBi nh\xE0 s\u1EEDa ch\u1EEFa nh\u1EDD s\u1EEDa \u0111\u1ED3 h\u1ECFng.", requires: ["auto_fetch"], needLevel: 2, minInt: 7, cost: { wood: 10, coin: 8 }, time: 360, unlocks: { auto: ["order"] } },
-    { id: "stable", name: "Thu\u1EA7n th\xFA", desc: "D\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i: d\xE2n l\xE0m trong chu\u1ED3ng thu\u1EA7n h\xF3a th\xFA \u0111\u1EC3 ph\xE1t cho ng\u01B0\u1EDDi \u0111i c\u01B0\u1EE1i. Ch\u01B0a thu\u1EA7n h\xF3a \u0111\u01B0\u1EE3c con n\xE0o cho t\u1EDBi khi nghi\xEAn c\u1EE9u t\u1EEBng lo\xE0i.", requires: ["barracks", "hide1"], needLevel: 1, minInt: 6, cost: { wood: 20, hide: 4, coin: 5 }, time: 240, unlocks: { buildings: ["stable"] } },
-    { id: "tame_wolf", name: "Thu\u1EA7n h\xF3a s\xF3i", desc: "Nu\xF4i s\xF3i con t\u1EEB b\xE9 \u0111\u1EC3 c\u01B0\u1EE1i: ch\u1EA1y nhanh nh\u1EA5t, nh\u01B0ng m\u1ECFng manh. Chu\u1ED3ng c\u1EA5p 1.", requires: ["stable"], needLevel: 1, minInt: 6, cost: { food: 20, hide: 2, coin: 4 }, time: 240, unlocks: { mounts: ["wolf"] } },
-    { id: "tame_boar", name: "Thu\u1EA7n h\xF3a l\u1EE3n r\u1EEBng", desc: "Hu\u1EA5n luy\u1EC7n l\u1EE3n r\u1EEBng l\xE0m th\xFA c\u01B0\u1EE1i: ch\u1EADm h\u01A1n s\xF3i nh\u01B0ng d\xE0y da, \u0111\u1EE1 \u0111\xF2n t\u1ED1t. Chu\u1ED3ng c\u1EA5p 2.", requires: ["tame_wolf", "timber"], needLevel: 2, minInt: 7, cost: { food: 30, hide: 4, coin: 6 }, time: 340, unlocks: { mounts: ["boar"] } },
-    { id: "tame_elephant", name: "Thu\u1EA7n h\xF3a voi", desc: "Thu\u1EA7n voi l\u1EDBn l\xE0m th\xFA c\u01B0\u1EE1i: ch\u1EADm nh\u01B0ng nh\u01B0 m\u1ED9t b\u1EE9c t\u01B0\u1EDDng, ch\u1ECBu \u0111\u01B0\u1EE3c h\u1EA7u h\u1EBFt \u0111\xF2n \u0111\xE1nh. Chu\u1ED3ng c\u1EA5p 3.", requires: ["tame_boar", "masonry"], needLevel: 3, minInt: 8, cost: { food: 50, hide: 8, coin: 12 }, time: 520, unlocks: { mounts: ["elephant"] } }
-  ]
-};
-
-// src/sim/research.ts
-var RESEARCH = { enabled: research_default.enabled };
-var RECIPE_LEVEL = research_default.recipeLevel;
-var recipeNeedLevel = (id) => RECIPE_LEVEL[id] ?? 1;
-var TECHS = research_default.techs;
-var TECH_BY_ID = Object.fromEntries(TECHS.map((t) => [t.id, t]));
-var recipeOpen = (done, recipeId) => !RESEARCH.enabled || done.has(recipeId);
-var techForRecipe = (recipeId) => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
-var levelCap = (done, kind) => !RESEARCH.enabled || kind === "campfire" ? Infinity : TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks.levels?.[kind] ?? 1) : m, 1);
-var techForLevel = (kind, level) => TECHS.find((t) => (t.unlocks.levels?.[kind] ?? 0) >= level);
-var techForBuilding = (kind) => TECHS.find((t) => t.unlocks.buildings?.includes(kind));
-var buildingOpen = (done, kind) => {
-  const t = techForBuilding(kind);
-  return !RESEARCH.enabled || !t || done.has(t.id);
-};
-var autoOn = (done, key) => !RESEARCH.enabled || TECHS.some((t) => done.has(t.id) && t.unlocks.auto?.includes(key));
-
 // src/sim/construction.ts
 function addBuilding(sim, kind, x, y, done) {
   const d = BUILDINGS[kind];
@@ -2916,6 +3911,24 @@ function footprintError(sim, kind, x, y, ignore) {
     const t = w.tiles[k];
     if (t !== 0 && t !== 4 || w.occ[k] && !own(tx, ty)) return "V\u01B0\u1EDBng c\xE2y, \u0111\xE1, n\u01B0\u1EDBc ho\u1EB7c c\xF4ng tr\xECnh";
   }
+  if (!WALL_KINDS.has(kind)) for (const o of sim.buildings) {
+    if (o === ignore || WALL_KINDS.has(o.kind)) continue;
+    const od = BUILDINGS[o.kind], gx = Math.max(x - (o.x + od.w), o.x - (x + d.w)), gy = Math.max(y - (o.y + od.h), o.y - (y + d.h));
+    if (Math.max(gx, gy) < CLEARANCE) return "C\u1EA7n ch\u1EEBa \xEDt nh\u1EA5t 2 \xF4 tr\u1ED1ng gi\u1EEFa c\xE1c c\xF4ng tr\xECnh \u0111\u1EC3 d\xE2n \u0111i l\u1EA1i";
+  }
+  return null;
+}
+var fireLevel = (sim) => sim.buildings.reduce((m, b) => b.kind === "campfire" && b.done ? Math.max(m, b.level) : m, 1);
+function fireUpgradeBlock(sim, level) {
+  const need = fireUpgradeNeeds(level);
+  if (need === null) return null;
+  for (const k of Object.keys(BUILDINGS)) {
+    const d = BUILDINGS[k];
+    if (!d.buildable || fireUnlockLevel(k) > level) continue;
+    const mine2 = sim.buildings.filter((b) => b.kind === k), want = Math.min(need, maxLevel(k, sim.era));
+    if (!mine2.length) return `C\u1EA7n d\u1EF1ng ${d.name} tr\u01B0\u1EDBc khi n\xE2ng Nh\xE0 chung`;
+    if (mine2.some((b) => !b.done || b.upgrading || b.level < want)) return `C\u1EA7n n\xE2ng ${d.name} l\xEAn c\u1EA5p ${want} tr\u01B0\u1EDBc khi n\xE2ng Nh\xE0 chung`;
+  }
   return null;
 }
 function buildingLimit(sim, kind) {
@@ -2924,6 +3937,8 @@ function buildingLimit(sim, kind) {
   return sim.buildings.reduce((n, f) => n + (f.kind === "campfire" ? per[Math.min(per.length, f.level) - 1] : 0), 0);
 }
 function buildingLock(sim, kind) {
+  const fireNeed = fireUnlockLevel(kind);
+  if (!sim.dev.freeBuild && fireNeed > fireLevel(sim)) return `C\u1EA7n n\xE2ng ${BUILDINGS.campfire.name} l\xEAn c\u1EA5p ${fireNeed} \u0111\u1EC3 x\xE2y ${BUILDINGS[kind].name.toLowerCase()}`;
   const have = sim.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim, kind);
   if (limit === 0) return `C\u1EA7n n\xE2ng c\u1EA5p Nh\xE0 chung \u0111\u1EC3 x\xE2y ${BUILDINGS[kind].name.toLowerCase()}`;
   if (have >= limit) return limit === 1 ? "M\u1ED7i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y \u0111\u01B0\u1EE3c m\u1ED9t c\xE1i, h\xE3y n\xE2ng c\u1EA5p n\xF3" : `\u0110\xE3 \u0111\u1EE7 ${limit} ${BUILDINGS[kind].name.toLowerCase()}: n\xE2ng c\u1EA5p Nh\xE0 chung \u0111\u1EC3 x\xE2y th\xEAm`;
@@ -2940,8 +3955,12 @@ function canUpgrade(sim, b) {
   if (b.upgrading) return "\u0110ang n\xE2ng c\u1EA5p";
   if (b.level >= maxLevel(b.kind, b.era)) return "\u0110\xE3 \u1EDF c\u1EA5p cao nh\u1EA5t";
   if (b.level + 1 > levelCap(sim.researched, b.kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForLevel(b.kind, b.level + 1)?.name ?? "?"}`;
+  if (b.kind === "campfire" && !sim.dev.freeBuild) {
+    const why = fireUpgradeBlock(sim, b.level);
+    if (why) return why;
+  }
   const fire = sim.campfire();
-  if (b.kind !== "campfire" && fire && !sim.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `C\u1EA7n n\xE2ng ${BUILDINGS.campfire.name} l\xEAn c\u1EA5p ${b.level + 2}`;
+  if (b.kind !== "campfire" && fire && !sim.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `C\u1EA7n n\xE2ng ${BUILDINGS.campfire.name} l\xEAn c\u1EA5p ${b.level + 1}`;
   return sim.dev.freeBuild ? null : sim.missing(levelDef(b, b.level + 1).cost);
 }
 function upgradeBuilding(sim, id) {
@@ -2997,15 +4016,8 @@ function salvage(sim, b) {
   }
   return out;
 }
-function moveFee(sim, b) {
-  const out = {};
-  if (!b.done || sim.dev.freeBuild) return out;
-  const paid = invested(sim, b);
-  for (const r of Object.keys(paid)) {
-    const n = Math.ceil((paid[r] ?? 0) * 0.2);
-    if (n > 0) out[r] = n;
-  }
-  return out;
+function moveFee(_sim, _b) {
+  return {};
 }
 function evict(sim, b) {
   for (const id of [...b.staff]) {
@@ -3050,7 +4062,8 @@ function setOcc(sim, b, val) {
   for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.occ[(b.y + j) * sim.world.size + b.x + i] = val;
 }
 function canDemolish(sim, b) {
-  return BUILDINGS[b.kind].buildable ? null : "Kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
+  if (!BUILDINGS[b.kind].buildable) return "Kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
+  return BUILDINGS[b.kind].perFire ? null : "C\xF4ng tr\xECnh ch\u1EC9 c\xF3 m\u1ED9t c\xE1i n\xEAn kh\xF4ng ph\xE1 b\u1ECF \u0111\u01B0\u1EE3c";
 }
 function destroyBuilding(sim, b) {
   evict(sim, b);
@@ -3092,18 +4105,12 @@ function moveBuilding(sim, id, x, y) {
     for (const r of Object.keys(levelDef(b, b.level + 1).cost)) if (!sim.dev.freeBuild) sim.stock[r] += levelDef(b, b.level + 1).cost[r] ?? 0;
     b.upgrading = false;
   }
-  const wasDone = b.done;
   setOcc(sim, b, 0);
   b.x = x;
   b.y = y;
   setOcc(sim, b, 1);
-  if (wasDone && !sim.dev.instantBuild) {
-    b.done = false;
-    b.progress = 0;
-    b.rebuild = true;
-  }
   sim.fogDirty = true;
-  sim.say(`${BUILDINGS[b.kind].name} \u0111\u01B0\u1EE3c d\u1EDDi sang ch\u1ED7 m\u1EDBi.${b.rebuild ? ' Giao "Th\u1EE3 x\xE2y" \u0111\u1EC3 d\u1EF1ng l\u1EA1i.' : ""}`);
+  sim.say(`${BUILDINGS[b.kind].name} \u0111\u01B0\u1EE3c d\u1EDDi sang ch\u1ED7 m\u1EDBi.`);
   return null;
 }
 function capacity(sim, _res) {
@@ -3118,6 +4125,89 @@ function popCap(sim) {
 function crewSpeed(sim) {
   const h = sim.building("builder");
   return h ? levelDef(h).craftSpeed : 1;
+}
+
+// src/sim/quests.ts
+var QUESTS = quests_default.quests;
+var CHAPTERS = quests_default.chapters;
+function measure(sim, d, ui) {
+  const yes = (b) => [b ? 1 : 0, 1];
+  switch (d.type) {
+    case "buildBuilding":
+      return [sim.buildings.filter((b) => b.kind === d.kind && b.done).length, d.count];
+    case "upgradeBuilding":
+      return yes(sim.buildings.some((b) => b.kind === d.kind && b.done && b.level >= d.level));
+    case "upgradeFire":
+      return yes(fireLevel(sim) >= d.level);
+    case "fireReady":
+      return yes(fireUpgradeBlock(sim, d.level) === null);
+    case "researchTech":
+      return yes(sim.researched.has(d.id));
+    case "population":
+      return [sim.villagers.length, d.count];
+    case "stock":
+      return [Math.floor(sim.stock[d.res]), d.count];
+    case "hasRole":
+      return [sim.villagers.filter((v) => roleOf(v) === d.role).length, d.count];
+    case "jobCount":
+      return [sim.villagers.filter((v) => v.job === d.job).length, d.count];
+    case "staffIn":
+      return [sim.buildings.filter((b) => b.kind === d.kind).reduce((n, b) => n + b.staff.length, 0), d.count];
+    case "haveTool":
+      return [sim.toolCount(d.kind, d.tier), d.count];
+    case "torches":
+      return [sim.torchCount(), d.count];
+    case "createSquad":
+      return [sim.squads.length, d.count];
+    case "daytime":
+      return yes(sim.day >= d.day && sim.part === "day");
+    case "speed":
+      return yes(sim.speed >= d.atLeast);
+    case "selectBuilding":
+      return yes(ui.selected === d.kind || ui.panel === d.kind);
+    case "openBuilding":
+      return yes(ui.panel === d.kind);
+    case "inspectNode":
+      return yes(ui.inspecting === "node");
+    case "inspectUnit":
+      return yes(ui.inspecting === "unit");
+    case "inspectAnimal":
+      return yes(ui.inspecting === "animal");
+    case "squadSize":
+      return [Math.max(0, ...sim.squads.map((q) => q.ids.length)), d.count];
+    case "squadFormation":
+      return yes(sim.squads.some((q) => q.formation === d.id));
+    case "equipped":
+      return [sim.villagers.filter((v) => v.team === "player" && v.job === "fight" && (d.slot === "weapon" ? v.gear.w : v.gear.a) !== null).length, d.count];
+    case "scoutSent":
+      return yes(sim.scouts.length > 0 || sim.maps.length > 0);
+    case "hasMap":
+      return yes(sim.maps.some((m) => m.level >= d.level));
+    case "planDefense":
+      return yes(sim.plans.some((pl) => pl.kind === "defense"));
+    case "planArrow":
+      return yes(sim.plans.some((pl) => pl.kind === "attack" && pl.missions.some((m) => m.path.length > 0)));
+    case "planRunning":
+      return yes(sim.plans.some((pl) => pl.kind === "attack" && (pl.status === "running" || pl.status === "done")));
+    case "planDone":
+      return yes(sim.plans.some((pl) => pl.status === "done" && (!d.result || pl.result === d.result)));
+  }
+}
+function questViews(sim, ui) {
+  for (const q of QUESTS) if (!sim.questSeen.has(q.id) && q.after.every((a) => sim.questSeen.has(a))) {
+    const [have, need] = measure(sim, q.done, ui);
+    if (have >= need) sim.questSeen.add(q.id);
+  }
+  return QUESTS.map((quest) => {
+    const done = sim.questSeen.has(quest.id), open = !done && quest.after.every((a) => sim.questSeen.has(a));
+    let progress = "";
+    if (open) {
+      const d = quest.done, [have, need] = measure(sim, d, ui);
+      if (d.type === "fireReady" || d.type === "upgradeFire") progress = fireUpgradeBlock(sim, d.level - 1) ?? "";
+      else if (need > 1) progress = `${Math.min(have, need)}/${need}`;
+    }
+    return { quest, done, open, progress };
+  });
 }
 
 // src/sim/economy.ts
@@ -3169,43 +4259,6 @@ function foodSpoilingWithin(sim, secs) {
   return Math.min(n, sim.stock.food);
 }
 
-// src/sim/tools.ts
-var TOOL_KINDS = ["axe", "pick", "hoe", "hammer"];
-var TOOL_NAME = { axe: "R\xECu", pick: "Cu\u1ED1c chim", hoe: "Cu\u1ED1c", hammer: "B\xFAa" };
-var TOOL_OF_JOB = { wood: "axe", stone: "pick", food: "hoe", build: "hammer" };
-var TIER_NAME = ["Tay kh\xF4ng", "G\u1ED7", "\u0110\xE1"];
-var TIER_SPEED = [0.6, 1, 1.4];
-var TIER_YIELD = [1, 1.25, 1.6];
-var TIER_DURABILITY = [0, 240, 600];
-var GEAR_KINDS = ["club", "spear", "mace", "sling", "bow", "hide"];
-var isGear = (k) => GEAR_KINDS.includes(k);
-var isWeaponKind = (k) => k in WEAPONS;
-var R = (kind, tier, cost, time) => ({ id: `${kind}${tier}`, kind, tier, cost, time });
-var gearRecipe = (kind) => {
-  const d = kind === "hide" ? ARMORS.hide : WEAPONS[kind];
-  return R(kind, d.tier ?? 1, d.cost ?? {}, d.time ?? 60);
-};
-var RECIPES = [
-  R("axe", 1, { wood: 3 }, 24),
-  R("axe", 2, { wood: 2, stone: 3 }, 40),
-  R("pick", 1, { wood: 4 }, 28),
-  R("pick", 2, { wood: 2, stone: 4 }, 44),
-  R("hoe", 1, { wood: 3 }, 24),
-  R("hoe", 2, { wood: 2, stone: 2 }, 36),
-  R("hammer", 1, { wood: 3 }, 24),
-  R("hammer", 2, { wood: 2, stone: 3 }, 36),
-  R("torch", 1, { wood: 2 }, 12),
-  ...GEAR_KINDS.map(gearRecipe)
-];
-var RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
-var recipeName = (r) => {
-  if (r.kind === "hide") return ARMORS.hide.name;
-  if (r.kind === "torch") return "\u0110u\u1ED1c";
-  if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
-  return `${TOOL_NAME[r.kind]} ${TIER_NAME[r.tier].toLowerCase()}`;
-};
-var emptyToolSet = () => ({ axe: null, pick: null, hoe: null, hammer: null });
-
 // src/sim/works.ts
 function orderDef(sim, kind, id) {
   if (kind === "research") {
@@ -3214,19 +4267,13 @@ function orderDef(sim, kind, id) {
   }
   const r = RECIPE_BY_ID[id];
   if (!r) return null;
-  if (kind === "craft") return { cost: r.cost, time: r.time };
-  const half = {};
-  for (const k of Object.keys(r.cost)) half[k] = Math.ceil((r.cost[k] ?? 0) / 2);
-  return { cost: half, time: Math.ceil(r.time * 1.5) };
+  return { cost: r.cost, time: r.time };
 }
 function levelOfKind(sim, kind) {
   return sim.building(kind)?.level ?? 0;
 }
 function workshopLevel(sim) {
   return levelOfKind(sim, "workshop");
-}
-function bestIntInside(sim, b) {
-  return b.staff.reduce((m, id) => Math.max(m, sim.byId.get(id)?.stats.int ?? 0), 0);
 }
 function recipeLock(sim, id) {
   if (!RESEARCH.enabled) return null;
@@ -3252,8 +4299,7 @@ function techState(sim, t) {
 function researchBlock(sim, t) {
   const lab = sim.building("lab");
   if (!lab || !lab.staff.length) return "Ch\u01B0a c\xF3 ng\u01B0\u1EDDi l\xE0m vi\u1EC7c trong Nh\xE0 nghi\xEAn c\u1EE9u";
-  const best = bestIntInside(sim, lab);
-  return best >= t.minInt ? null : `C\u1EA7n ng\u01B0\u1EDDi Tr\xED tu\u1EC7 ${t.minInt} tr\u1EDF l\xEAn trong nh\xE0 (gi\u1ECFi nh\u1EA5t: ${best})`;
+  return null;
 }
 function currentResearch(sim) {
   return sim.building("lab")?.active?.id ?? sim.researchQueue[0] ?? null;
@@ -3286,13 +4332,6 @@ function queueCraft(sim, id) {
   sim.craftQueue.push(id);
   return null;
 }
-function queueRepair(sim, id) {
-  if (!RECIPE_BY_ID[id]) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
-  if (!sim.building("repair")) return "C\u1EA7n d\u1EF1ng Nh\xE0 s\u1EEDa ch\u1EEFa tr\u01B0\u1EDBc";
-  if (sim.repairQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i s\u1EEDa \u0111\xE3 \u0111\u1EA7y";
-  sim.repairQueue.push(id);
-  return null;
-}
 function unqueue(sim, queue, id) {
   const i = queue.lastIndexOf(id);
   if (i >= 0) queue.splice(i, 1);
@@ -3314,24 +4353,22 @@ function storeCap(sim, cat) {
 }
 function tickWorks(sim, dt) {
   for (const b of sim.buildings) {
-    if (!b.done || b.kind !== "lab" && b.kind !== "workshop" && b.kind !== "repair") continue;
-    const kind = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "repair";
-    const queue = kind === "research" ? sim.researchQueue : kind === "craft" ? sim.craftQueue : sim.repairQueue;
+    if (!b.done || b.kind !== "lab" && b.kind !== "workshop") continue;
+    const kind = b.kind === "lab" ? "research" : "craft";
+    const queue = kind === "research" ? sim.researchQueue : sim.craftQueue;
     const staff = b.staff.map((id2) => sim.byId.get(id2)).filter((v) => !!v);
     if (!staff.length) continue;
     if (!b.active) {
-      const best = bestIntInside(sim, b);
       const i = queue.findIndex((id3) => {
         const d3 = orderDef(sim, kind, id3);
         if (!d3 || kind !== "research" && !sim.affordable(d3.cost)) return false;
-        if (kind === "research") return best >= (TECH_BY_ID[id3]?.minInt ?? 0);
         if (kind === "craft") return recipeOpen2(sim, id3);
         return true;
       });
       if (i < 0) {
         if (queue.length && sim.time - sim.lastMatWarn > 30) {
           sim.lastMatWarn = sim.time;
-          sim.say(kind === "research" ? "Nghi\xEAn c\u1EE9u \u0111ang ch\u1EDD: ch\u01B0a c\xF3 ng\u01B0\u1EDDi \u0111\u1EE7 th\xF4ng minh trong nh\xE0." : "\u0110\u01A1n \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
+          sim.say(kind === "research" ? "Nghi\xEAn c\u1EE9u \u0111ang ch\u1EDD." : "\u0110\u01A1n \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
         }
         continue;
       }
@@ -3360,33 +4397,6 @@ function tickWorks(sim, dt) {
       sim.say(`Nh\xE0 nghi\xEAn c\u1EE9u \u0111\xE3 ho\xE0n th\xE0nh "${TECH_BY_ID[id].name}".`);
     } else {
       const r = RECIPE_BY_ID[id], cat = isGear(r.kind) ? "gear" : "tool";
-      if (kind === "repair") {
-        const owner = sim.villagers.find((o) => o.repairFor === id), k = r.kind;
-        if (owner && isGear(r.kind)) {
-          owner.repairFor = null;
-          if (r.kind === "hide") {
-            if (!owner.armor) {
-              owner.armor = "hide";
-              owner.gear.a = null;
-            }
-          } else if (!owner.weapon) {
-            owner.weapon = r.kind;
-            owner.gear.w = null;
-          }
-          b.active = null;
-          sim.say(`\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}, tr\u1EA3 l\u1EA1i cho ${owner.name}.`);
-          continue;
-        }
-        if (owner) {
-          owner.repairFor = null;
-          if (TOOL_OF_JOB[owner.job] === k && !sim.heldTool(owner)) {
-            owner.tools[k] = { tier: r.tier, dur: TIER_DURABILITY[r.tier] };
-            b.active = null;
-            sim.say(`\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}, tr\u1EA3 l\u1EA1i cho ${owner.name}.`);
-            continue;
-          }
-        }
-      }
       if (storeUsed(sim, cat) >= storeCap(sim, cat)) {
         if (sim.time - sim.lastFullWarn > 30) {
           sim.lastFullWarn = sim.time;
@@ -3396,7 +4406,7 @@ function tickWorks(sim, dt) {
       }
       sim.toolStock[id] = (sim.toolStock[id] ?? 0) + 1;
       b.active = null;
-      sim.say(kind === "craft" ? `\u0110\xE3 ch\u1EBF xong ${recipeName(r).toLowerCase()}.` : `\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}.`);
+      sim.say(`\u0110\xE3 ch\u1EBF xong ${recipeName(r).toLowerCase()}.`);
     }
   }
 }
@@ -3409,7 +4419,7 @@ function bestFor(sim, job) {
   return pool[0] ?? null;
 }
 function houseRate(sim, b) {
-  const job = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : b.kind === "stable" ? "tame" : "repair";
+  const job = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "tame";
   let r = 0;
   for (const id of b.staff) {
     const v = sim.byId.get(id);
@@ -3687,37 +4697,7 @@ function discardTool(sim, ids, k) {
     sim.say(`${v.name} v\u1EE9t ${TOOL_NAME[k].toLowerCase()}.`);
   }
 }
-function repairTool(sim, ids, k) {
-  const house = sim.building("repair");
-  if (!house) return "C\u1EA7n d\u1EF1ng Nh\xE0 s\u1EEDa ch\u1EEFa";
-  let err = null, n = 0;
-  for (const v of sim.mine(ids)) {
-    const t = v.tools[k];
-    if (!t) continue;
-    if (t.dur >= TIER_DURABILITY[t.tier] - 1e-6) {
-      err = "C\xF4ng c\u1EE5 c\xF2n m\u1EDBi, ch\u01B0a c\u1EA7n s\u1EEDa";
-      continue;
-    }
-    if (sim.repairQueue.length >= 12) {
-      err = "H\xE0ng \u0111\u1EE3i s\u1EEDa \u0111\xE3 \u0111\u1EA7y";
-      continue;
-    }
-    sim.leaveNode(v);
-    v.path = [];
-    v.slide = null;
-    v.order = `repair:${k}`;
-    if (!goTo(sim, v, house, "goOrder")) {
-      v.order = null;
-      err = `${v.name} kh\xF4ng t\u1EDBi \u0111\u01B0\u1EE3c Nh\xE0 s\u1EEDa ch\u1EEFa`;
-      continue;
-    }
-    n++;
-    sim.say(`${v.name} mang ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()} t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa.`);
-  }
-  return n ? null : err;
-}
 var gearName = (slot, id) => (slot === "armor" ? ARMORS[id]?.name : WEAPONS[id]?.name)?.toLowerCase() ?? id;
-var gearId = (slot, id) => slot === "armor" ? "hide1" : `${id}${WEAPONS[id]?.tier ?? 1}`;
 function wearGear(sim, v, slot) {
   if (v.team !== "player") return;
   const id = slot === "weapon" ? v.weapon : v.armor, g = v.gear;
@@ -3739,33 +4719,17 @@ function wearGear(sim, v, slot) {
     }
     if (g.ab || --g.ad > 0) return;
   }
-  if (sim.frnd() < 0.5) {
-    if (slot === "weapon") {
-      v.weapon = null;
-      g.w = null;
-      g.wb = false;
-    } else {
-      v.armor = null;
-      g.a = null;
-      g.ab = false;
-    }
-    v.manualGear = false;
-    sim.say(`${v.name} l\xE0m v\u1EE1 ${gearName(slot, id)}, m\u1EA5t h\u1EB3n.`);
+  if (slot === "weapon") {
+    v.weapon = null;
+    g.w = null;
+    g.wb = false;
   } else {
-    if (slot === "weapon") g.wb = true;
-    else g.ab = true;
-    sim.say(`${gearName(slot, id)} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng, c\u1EA7n mang \u0111i s\u1EEDa.`);
+    v.armor = null;
+    g.a = null;
+    g.ab = false;
   }
-}
-function planGearRepair(sim, v) {
-  if (v.job !== "fight" && v.job !== "hunt" || v.phase === "fight" || v.orderCd > 0 || v.team !== "player") return false;
-  const house = sim.building("repair");
-  if (!house || sim.repairQueue.length >= 12 || !(v.gear.wb && v.gear.w === v.weapon) && !(v.gear.ab && v.gear.a === v.armor)) return false;
-  v.orderCd = 30;
-  v.order = "repair:gear";
-  if (goTo(sim, v, house, "goOrder")) return true;
-  v.order = null;
-  return false;
+  v.manualGear = false;
+  sim.say(`${v.name} l\xE0m v\u1EE1 ${gearName(slot, id)}, m\u1EA5t h\u1EB3n.`);
 }
 function giveGear(sim, ids, kind, slot) {
   for (const v of sim.mine(ids)) {
@@ -3846,11 +4810,7 @@ function planTool(sim, v, job) {
   if (store && needTool(sim, v, job)) return goTo(sim, v, store, "goEquip");
   if (!autoOn(sim.researched, "order") || v.orderCd > 0) return false;
   v.orderCd = 45;
-  const t = v.tools[k], repairHouse = sim.building("repair"), craftHouse = sim.building("workshop");
-  if (t && t.dur <= 0 && repairHouse && sim.repairQueue.length < 12) {
-    v.order = `repair:${k}`;
-    return goTo(sim, v, repairHouse, "goOrder");
-  }
+  const craftHouse = sim.building("workshop");
   if (!craftHouse) return false;
   let id = "";
   for (let tier = 2; tier >= 1; tier--) if (sim.recipeOpen(`${k}${tier}`)) {
@@ -3875,31 +4835,6 @@ function errand(sim, v) {
   const [what, id] = o.split(":");
   if (what === "craft") {
     if (sim.queueCraft(id) === null) sim.say(`${v.name} nh\u1EDD ch\u1EBF ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`);
-  } else if (what === "repair" && id === "gear") {
-    for (const slot of ["weapon", "armor"]) {
-      const piece = slot === "weapon" ? v.weapon : v.armor, broken = slot === "weapon" ? v.gear.wb && v.gear.w === v.weapon : v.gear.ab && v.gear.a === v.armor;
-      if (!piece || !broken || v.repairFor) continue;
-      if (sim.queueRepair(gearId(slot, piece)) === null) {
-        v.repairFor = gearId(slot, piece);
-        if (slot === "weapon") {
-          v.weapon = null;
-          v.gear.w = null;
-          v.gear.wb = false;
-        } else {
-          v.armor = null;
-          v.gear.a = null;
-          v.gear.ab = false;
-        }
-        sim.say(`${v.name} nh\u1EDD s\u1EEDa ${gearName(slot, piece)}.`);
-      }
-    }
-  } else if (what === "repair") {
-    const k = id, t = v.tools[k];
-    if (t && t.dur < TIER_DURABILITY[t.tier] - 1e-6 && sim.queueRepair(toolId(sim, k, t.tier)) === null) {
-      v.tools[k] = null;
-      v.repairFor = toolId(sim, k, t.tier);
-      sim.say(`${v.name} nh\u1EDD s\u1EEDa ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}.`);
-    }
   }
 }
 function equip(sim, v) {
@@ -3969,7 +4904,6 @@ var NAMES_F = ["Tia", "Noa", "Ma", "Pa", "K\xEA", "Ly", "Sa"];
 var HAIR = ["#4a2e1a", "#2b1b10", "#6b3f1d", "#c98a3a", "#7a5a3a"];
 var SKIN = ["#d9a371", "#e8c4a0", "#c58a5c", "#b87850"];
 var NODE_JOB = { tree: "wood", rock: "stone", bush: "food" };
-var STAT_KEYS = ["vit", "str", "agi", "int", "sta"];
 var XP_MULT = [0, 1, 1.5, 2];
 var REACH = { tree: 0.55, rock: 0.62, bush: 0.5 };
 var LEFT = 1;
@@ -4041,6 +4975,18 @@ function orderMove(sim, ids, tx, ty, queue = false) {
     v.phase = v.path.length ? "move" : "idle";
   }
 }
+function callWorker(sim, tx, ty) {
+  const node = sim.world.nodeAt(tx, ty);
+  if (!node || sim.fog.state[ty * sim.world.size + tx] === 0) return { reason: "Kh\xF4ng c\xF2n g\xEC \u0111\u1EC3 khai th\xE1c \u1EDF \u0111\xE2y" };
+  if (node.amount <= 0) return { reason: "B\u1EE5i qu\u1EA3 \u0111\xE3 h\u1EBFt qu\u1EA3, ch\u1EDD m\u1ECDc l\u1EA1i" };
+  const job = NODE_JOB[node.kind];
+  const pool = mine(sim, sim.villagers.map((v2) => v2.id)).filter((v2) => v2.job === job && v2.inside === null && v2.post < 0 && v2.phase !== "sleep" && v2.prefer !== ty * sim.world.size + tx);
+  if (!pool.length) return { reason: job === "wood" ? "Ch\u01B0a c\xF3 ai l\xE0m ngh\u1EC1 \u0111\u1ED1n g\u1ED7: giao ngh\u1EC1 \u1EDF X\u01B0\u1EDFng g\u1ED7" : job === "stone" ? "Ch\u01B0a c\xF3 ai l\xE0m th\u1EE3 \u0111\xE1: giao ngh\u1EC1 \u1EDF X\u01B0\u1EDFng \u0111\xE1" : "Ch\u01B0a c\xF3 ai h\xE1i l\u01B0\u1EE3m: giao ngh\u1EC1 \u1EDF N\xF4ng tr\u1EA1i" };
+  pool.sort((a, b) => Math.hypot(a.x - tx, a.y - ty) - Math.hypot(b.x - tx, b.y - ty));
+  const near2 = pool.slice(0, 3), v = near2[Math.floor(hash2(tx, ty, Math.floor(sim.time)) * near2.length) % near2.length];
+  orderWork(sim, [v.id], tx, ty);
+  return { name: v.name };
+}
 function orderWork(sim, ids, tx, ty) {
   if (!sim.world.inBounds(tx, ty)) return null;
   const idx = ty * sim.world.size + tx;
@@ -4075,7 +5021,7 @@ function setJob(sim, ids, job) {
   return err ?? (soldiers.length ? "Chi\u1EBFn binh do tr\u1EA1i l\xEDnh c\u1EE7a h\u1ECD qu\u1EA3n l\xFD: cho h\u1ECD ngh\u1EC9 \u1EDF \u0111\xF3 tr\u01B0\u1EDBc" : scouts.length ? "Trinh s\xE1t do Tr\u1EA1i trinh s\xE1t qu\u1EA3n l\xFD: cho h\u1ECD ngh\u1EC9 \u1EDF \u0111\xF3 tr\u01B0\u1EDBc" : null);
 }
 function jobFor(sim, ids, job) {
-  if (job === "craft" || job === "research" || job === "repair" || job === "tame") return sim.assignStaff(ids, job);
+  if (job === "craft" || job === "research" || job === "tame") return sim.assignStaff(ids, job);
   if (job === "build") return sim.assignCrew(ids);
   for (const v of mine(sim, ids)) {
     resetTask(sim, v);
@@ -4250,11 +5196,10 @@ function outdoorFactor(sim, job) {
   return OUTDOOR_JOBS.includes(job) ? WEATHER[sim.weather].work * SEASON_DEF[sim.season].work : 1;
 }
 function workFactor(sim, v, job, field = false) {
-  const stat = v.stats[JOBS[job].stat];
   const season = job === "food" ? SEASON_DEF[sim.season][field ? "farm" : "gather"] : 1;
   const tier = TOOL_OF_JOB[job] ? sim.toolTier(v, job) : -1;
-  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier];
-  return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v);
+  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier] * (1 + toolBonus(sim, v, job, "tspd") / 100);
+  return workSpeed(sim, v) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v);
 }
 function gainXp(sim, v, job, dt) {
   const s = v.skill[job];
@@ -4268,10 +5213,10 @@ function gainXp(sim, v, job, dt) {
 function wear(sim, v, job, dt) {
   const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
   if (!k || !t || t.dur <= 0) return;
-  t.dur -= dt * PACE.work;
+  t.dur -= dt * PACE.work / (1 + toolBonus(sim, v, job, "tdur") / 100);
   if (t.dur <= 0) {
-    t.dur = 0;
-    sim.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng.`);
+    v.tools[k] = null;
+    sim.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng, v\u1EE9t b\u1ECF.`);
   }
 }
 function leaveNode(sim, v) {
@@ -4378,7 +5323,7 @@ function think(sim, v, dt) {
           sim.fogDirty = true;
           if (b.kind === "builder") sim.trimCrew();
           sim.say(`${BUILDINGS[b.kind].name} \u0111\xE3 d\u1EF1ng xong.`);
-          if (RESEARCH.enabled && b.kind === "lab" && sim.researched.size === 0) sim.say("M\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, \u0111\u01B0a m\u1ED9t d\xE2n th\xF4ng minh v\xE0o l\xE0m vi\u1EC7c, r\u1ED3i nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD \u0111\u1EA7u ti\xEAn.");
+          if (RESEARCH.enabled && b.kind === "lab" && sim.researched.size === 0) sim.say("M\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, \u0111\u01B0a m\u1ED9t d\xE2n v\xE0o l\xE0m vi\u1EC7c, r\u1ED3i nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD \u0111\u1EA7u ti\xEAn.");
         }
         v.phase = "idle";
       }
@@ -4419,7 +5364,7 @@ function doWork(sim, v, dt) {
   wear(sim, v, job, dt);
   if (v.progress < 1) return;
   v.progress -= 1;
-  const res = def.res, acc = v.frac + TIER_YIELD[tierNow], whole = Math.floor(acc);
+  const res = def.res, acc = v.frac + TIER_YIELD[tierNow] * (1 + toolBonus(sim, v, job, "tyield") / 100), whole = Math.floor(acc);
   const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
   const take = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have));
   v.frac = acc - whole;
@@ -4460,7 +5405,7 @@ function tickFarms(sim, dt) {
       wear(sim, v, "food", dt);
       if (v.progress < 1) continue;
       v.progress -= 1;
-      const acc = v.frac + TIER_YIELD[sim.toolTier(v, "food")], whole = Math.floor(acc);
+      const acc = v.frac + TIER_YIELD[sim.toolTier(v, "food")] * (1 + toolBonus(sim, v, "food", "tyield") / 100), whole = Math.floor(acc);
       v.frac = acc - whole;
       sim.stock.food = Math.min(sim.capacity("food"), sim.stock.food + whole);
     }
@@ -4863,12 +5808,11 @@ function spawn(sim, x, y, sex) {
 }
 function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
   const r = rnd, pick = (a) => a[Math.floor(r() * a.length)];
-  const stats = {};
-  for (const k of STAT_KEYS) stats[k] = 3 + Math.floor(r() * 8);
+  const { stars, fac } = rollFactors(r), stats = legacyStats((s) => rawValue(fac, s));
   const potential = {}, skill = {};
   for (const j of WORK_JOBS) {
     if (j === "hunt" || j === "fight" || j === "research" || j === "tame") {
-      const k = j === "hunt" || j === "tame" ? stats.agi : j === "research" ? stats.int : stats.str;
+      const k = j === "hunt" || j === "tame" ? stats.agi : j === "research" ? stats.sta : stats.str;
       potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1;
       skill[j] = { xp: 0, level: 0 };
       continue;
@@ -4886,7 +5830,7 @@ function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
     path: [],
     slide: null,
     facing: "front",
-    speed: 1.6 + 0.1 * stats.agi,
+    speed: rawValue(fac, "move"),
     animClock: 0,
     tx: -1,
     ty: -1,
@@ -4906,7 +5850,7 @@ function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
     order: null,
     carry: null,
     fullness: 100,
-    health: maxHpOf(stats.vit),
+    health: Math.round(rawValue(fac, "hp")),
     starving: false,
     anim: "idle",
     hold: null,
@@ -4923,15 +5867,17 @@ function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
     manualGear: false,
     inside: null,
     orderCd: 0,
-    repairFor: null,
     squad: -1,
+    stars,
+    fac,
+    statClock: 0,
     born: { ...stats },
     train: null,
     mount: null,
     breaks: null,
     gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
     team,
-    maxHealth: maxHpOf(stats.vit),
+    maxHealth: Math.round(rawValue(fac, "hp")),
     weapon: null,
     armor: null,
     morale: MORALE.start,
@@ -4952,6 +5898,10 @@ function makeVillager(sim, x, y, sex, team, rnd = sim.rnd) {
 }
 function tickVillager(sim, v, dt) {
   tickCommon(sim, v, dt);
+  if ((v.statClock = (v.statClock ?? 0) - dt) <= 0) {
+    v.statClock = 1 + v.id % 10 / 10;
+    applyStats(sim, v);
+  }
   if (v.down > 0) {
     tickDown(sim, v, dt);
     sim.animate(v, dt);
@@ -5172,9 +6122,9 @@ var SAVED = {
   /** Objects whose keys are filled in place. */
   records: ["stock", "toolStock", "battle"],
   /** Lists of plain data. */
-  lists: ["wornTools", "craftQueue", "tameQueue", "researchQueue", "repairQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
+  lists: ["wornTools", "craftQueue", "tameQueue", "researchQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
   /** Handled by hand below. */
-  special: ["researched", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
+  special: ["researched", "questSeen", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
 };
 function toSave(sim) {
   const w = sim.world;
@@ -5186,6 +6136,7 @@ function toSave(sim) {
     records: pick(SAVED.records),
     lists: pick(SAVED.lists),
     researched: [...sim.researched],
+    quests: [...sim.questSeen],
     tribes: sim.tribes.map(({ def: _def, ...t }) => encode(t)),
     rng: { rnd: sim.rnd.getState(), frnd: sim.frnd.getState(), wrnd: sim.wrnd.getState() },
     world: {
@@ -5337,6 +6288,7 @@ function applySave(sim, data) {
   unpackRuns(data.world.tiles, w.tiles);
   unpackRuns(data.world.occ, w.occ);
   unpackRuns(data.world.decor, w.decor);
+  w.decor.fill(0);
   w.nodes.clear();
   for (const [i, kind, res, amount, max, workers, sides, regrow] of data.world.nodes) {
     w.nodes.set(i, { kind, res, amount, max, workers, sides, regrow });
@@ -5357,6 +6309,8 @@ function applySave(sim, data) {
   }
   sim.researched.clear();
   for (const id of data.researched) sim.researched.add(id);
+  sim.questSeen.clear();
+  for (const id of data.quests ?? SCREEN_QUESTS) sim.questSeen.add(id);
   sim.tribes.length = 0;
   for (const t of data.tribes) {
     const tribe = decode(t);
@@ -5389,7 +6343,7 @@ var rest_default = {
   tiredEfficiency: 0.7,
   tiredBelow: 40,
   torchBurn: 600,
-  jobWeight: { wood: 1, stone: 1, build: 0.95, fight: 0.8, hunt: 0.9, food: 0.7, craft: 0.6, repair: 0.6, research: 0.5, idle: 0.15 },
+  jobWeight: { wood: 1, stone: 1, build: 0.95, fight: 0.8, hunt: 0.9, food: 0.7, craft: 0.6, research: 0.5, idle: 0.15 },
   strain: { nightWork: 0.1, collapse: 15, nightSleep: 0.12, daySleep: 0.03, capLoss: 0.4, recoveryLoss: 67e-4, moraleLoss: 4e-3 }
 };
 
@@ -5432,7 +6386,7 @@ function drainRate(sim, v) {
       k = w * 0.8;
   }
   const cond = (1.25 - 0.25 * fit(v)) * (1.2 - 0.2 * (v.morale / 100)) * (1.3 - 0.3 * hpFrac(v));
-  return REST.dayCost / DAY_HOURS * k * cond;
+  return REST.dayCost / DAY_HOURS * k * cond * drainScale(sim, v);
 }
 var BED_KINDS = ["infantry", "cavalry", "archery", "house"];
 var bedKind = (v) => v.job !== "fight" ? "house" : v.arm === "archer" ? "archery" : v.arm === "cavalry" ? "cavalry" : "infantry";
@@ -5729,7 +6683,7 @@ function tickTowers(sim, _dt) {
       const w = weaponOf(v);
       if (!w.ranged) continue;
       const bonus = towerBonus(sim, v), threat = threatsOf(sim, v, w.range + bonus.range + 1)[0], e = threat && resolve(sim, threat.t);
-      if (e && fireProjectile(sim, v, e, from, bonus.damage, bonus.range)) v.atkCd = cycleOf(w.cycle, v.stats.agi);
+      if (e && fireProjectile(sim, v, e, from, bonus.damage, bonus.range)) v.atkCd = swingCycle(sim, v, w);
     }
   }
 }
@@ -5737,10 +6691,10 @@ function tickTowers(sim, _dt) {
 // src/sim/army.ts
 var COLORS = ["#e0523c", "#3c8ce0", "#e0b43c", "#5cb85c", "#a85cd8", "#3cd0c8"];
 function squadLimit(sim) {
-  const tent = sim.building("wartent");
-  if (tent) return COMMAND.squadLimit[Math.min(COMMAND.squadLimit.length, tent.level) - 1];
-  return sim.dev.freeBuild ? COMMAND.squadLimit[COMMAND.squadLimit.length - 1] : 0;
+  if (sim.building("wartent") || sim.dev.freeBuild) return sim.dev.freeBuild ? COMMAND.squadLimit[COMMAND.squadLimit.length - 1] : unlockedMax(sim.researched, "squads", SQUADS_DEFAULT);
+  return 0;
 }
+var cellLimit = (sim) => sim.dev.freeBuild ? SQUAD_MAX : Math.min(SQUAD_MAX, unlockedMax(sim.researched, "formationCells", CELLS_DEFAULT));
 function cardLimit(sim) {
   const tent = sim.building("wartent"), level = tent ? tent.level : sim.dev.freeBuild ? 3 : 0;
   return level ? COMMAND.cardBase + COMMAND.cardPerLevel * level + (!RESEARCH.enabled || sim.researched.has("signal") ? 2 : 0) : 0;
@@ -5780,8 +6734,8 @@ function joinSquad(sim, ids, squadId) {
       continue;
     }
     if (v.squad === s.id) continue;
-    if (s.ids.length >= SQUAD_MAX) {
-      err = `M\u1ED9t \u0111\u1ED9i ch\u1EC9 c\xF3 t\u1ED1i \u0111a ${SQUAD_MAX} ng\u01B0\u1EDDi`;
+    if (s.ids.length >= cellLimit(sim)) {
+      err = `M\u1ED9t \u0111\u1ED9i ch\u1EC9 c\xF3 t\u1ED1i \u0111a ${cellLimit(sim)} ng\u01B0\u1EDDi: nghi\xEAn c\u1EE9u m\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p`;
       continue;
     }
     leaveSquad(sim, [v.id]);
@@ -6004,12 +6958,9 @@ function tickSightings(sim, dt) {
     if (finder) sim.sightings.push({ tribe: t.id, by: finder.id, at: sim.time, reported: false });
   }
 }
-var LEVEL_TECH = ["scout", "scout2", "scout3"];
 function scoutLevel(sim) {
-  if (sim.dev.freeBuild || !RESEARCH.enabled) return 3;
-  let n = 0;
-  while (n < LEVEL_TECH.length && sim.researched.has(LEVEL_TECH[n])) n++;
-  return n;
+  if (sim.dev.freeBuild) return 3;
+  return sim.buildings.reduce((n, b) => b.kind === "scouttent" && b.done ? Math.max(n, Math.min(3, b.level)) : n, 0);
 }
 function scoutLimit(sim) {
   return sim.dev.freeBuild ? 8 : sim.buildings.reduce((n, b) => n + (b.kind === "scouttent" && b.done ? levelDef(b).slots : 0), 0);
@@ -6021,7 +6972,6 @@ function enlistScouts(sim, ids) {
   const lock = sim.warLock();
   if (lock) return lock;
   const limit = scoutLimit(sim);
-  if (RESEARCH.enabled && !sim.dev.freeBuild && !scoutLevel(sim)) return "C\u1EA7n nghi\xEAn c\u1EE9u: Trinh s\xE1t";
   if (!limit) return "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
   const pick = sim.mine(ids).filter((v) => v.job !== "fight" && v.job !== "scout"), room = limit - scoutRoster(sim).length;
   if (!pick.length) return "Ch\u1ECDn d\xE2n th\u01B0\u1EDDng \u0111\u1EC3 tuy\u1EC3n l\xE0m trinh s\xE1t";
@@ -6054,13 +7004,13 @@ function dismissScouts(sim, ids) {
   return n ? null : away ? "\u0110ang \u0111i trinh s\xE1t: \u0111\u1EE3i h\u1ECD v\u1EC1" : "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 cho ngh\u1EC9";
 }
 var scoutSkill = (v) => {
-  const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta + w.int * v.stats.int) / 6;
+  const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta) / 6;
   return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
 };
 function gearOf(v, table) {
   return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.mount || v.arm === "cavalry" ? table.mount : 0);
 }
-var stealthOf = (v) => 0.6 * v.stats.int + 0.4 * v.stats.sta;
+var stealthOf = (v) => 0.6 * v.stats.agi + 0.4 * v.stats.sta;
 var scoutsNeeded = (sim, tribe, level) => Math.min(8, level + 1 + Math.floor(warriorsOf(sim, tribe) / 8));
 function drawChance(skills, need) {
   if (skills.length < 2) return 0;
@@ -6071,11 +7021,10 @@ function planScout(sim, ids, tribe) {
   const level = scoutLevel(sim), limit = scoutLimit(sim), scouts = sim.mine(ids).filter((v) => canScout(sim, v));
   const need = scoutsNeeded(sim, tribe, Math.max(1, level)), w = whereIs(sim, tribe);
   const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * sim.mountSpeed(v) * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
-  const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.int, 0) / scouts.length : 6);
+  const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.agi, 0) / scouts.length : 6);
   let error = null;
   if (!sim.dev.freeBuild && !isFound(sim, tribe)) error = "Ch\u01B0a ai t\xECm th\u1EA5y l\xE0ng n\xE0y";
   else if (!tribeOf(sim, tribe)) error = "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
-  else if (RESEARCH.enabled && !sim.dev.freeBuild && !level) error = "C\u1EA7n nghi\xEAn c\u1EE9u: Trinh s\xE1t";
   else if (!limit) error = "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
   else if (sim.scouts.some((m) => m.tribe === tribe)) error = "\u0110\xE3 c\xF3 trinh s\xE1t \u0111ang \u0111i l\xE0ng n\xE0y";
   else if (!scouts.length) error = "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 c\u1EED \u0111i (tuy\u1EC3n \u1EDF Tr\u1EA1i trinh s\xE1t)";
@@ -6128,7 +7077,7 @@ function tickScouts(sim, dt) {
         sim.say(m.survivors ? `Trinh s\xE1t \u0111ang quan s\xE1t ${t.def.name}.` : "Trinh s\xE1t b\u1ECB b\u1EAFt g\u1EB7p, kh\xF4ng ai tho\xE1t.");
       }
     } else if (m.phase === "watch") {
-      if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.int, 0) / Math.max(1, alive.length))) {
+      if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.agi, 0) / Math.max(1, alive.length))) {
         m.phase = "back";
         m.t = 0;
         const fire = sim.campfire();
@@ -6270,7 +7219,7 @@ function deploySquad(sim, plan2, squadId, kind, cells, heading, o, p) {
   const s = sim.squadById(squadId);
   if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
   if (plan2.status === "running") return "K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y: kh\xF4ng v\u1EBD l\u1EA1i \u0111\u01B0\u1EE3c";
-  if (cells.length < SQUAD_MIN || cells.length > SQUAD_MAX) return `\u0110\u1ED9i h\xECnh c\xF3 t\u1EEB ${SQUAD_MIN} \u0111\u1EBFn ${SQUAD_MAX} \xF4`;
+  if (cells.length < SQUAD_MIN || cells.length > sim.cellLimit()) return `\u0110\u1ED9i h\xECnh c\xF3 t\u1EEB ${SQUAD_MIN} \u0111\u1EBFn ${sim.cellLimit()} \xF4`;
   if (kind && !sim.formationOpen(kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${FORMATIONS[kind].name}`;
   if (kind && kind !== s.formation) {
     const e = sim.setFormation(s.id, kind);
@@ -6852,7 +7801,7 @@ function soundAlarm(sim) {
 var SPREAD = [0.4, 0.35, 0.2, 0.1];
 var AVERAGE_STAT = 6.5;
 function dps(weapon, str, agi, armor) {
-  const w = WEAPONS[weapon ?? "fist"] ?? WEAPONS.fist, base = w.damage + (w.ranged ? 0 : RULES.strengthDamage * str);
+  const w = WEAPONS[weapon ?? "fist"] ?? WEAPONS.fist, base = w.damage + RULES.strengthDamage * str;
   return base * (1 - (armor ? armor[w.type] : 0)) / cycleOf(w.cycle, agi);
 }
 var armOf2 = (sim, v) => sim.armOf(v);
@@ -6939,26 +7888,26 @@ function forecastPlan(sim, plan2) {
   out.win = [`Th\u1EAFng khi ${t.def.name} h\u1EBFt l\xEDnh, l\u1EEDa c\u1EE7a h\u1ECD t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh s\u1EADp; khi \u0111\xF3 d\xE2n c\u1EE7a h\u1ECD xin h\xE0ng.`, "Ta l\u1EA5y \u0111\u01B0\u1EE3c nh\u1EEFng g\xEC c\xF2n trong kho l\u01B0\u01A1ng c\u1EE7a h\u1ECD.", `D\u1EF1 ki\u1EBFn ta m\u1EA5t kho\u1EA3ng ${pct(lossIfWin)} s\u1ED1 l\xEDnh \u0111\xE3 d\xE0n tr\u1EADn.`];
   out.lose = ["Thua khi qu\xE2n ta h\u1EBFt l\xEDnh ho\u1EB7c r\xFAt lui.", `Ph\u1EA7n l\u1EDBn l\xEDnh ra tr\u1EADn c\xF3 th\u1EC3 g\u1EE5c; l\xEDnh ch\u1EBFt l\xE0 m\u1EA5t h\u1EB3n, c\xF9ng v\u0169 kh\xED v\xE0 gi\xE1p mang theo.`, "Tinh th\u1EA7n d\xE2n gi\u1EA3m; k\u1EBB \u0111\u1ECBch b\u1ECB ch\u1ECDc gi\u1EADn n\xEAn c\xF3 th\u1EC3 k\xE9o \u0111\u1EBFn tr\u1EA3 \u0111\u0169a.", "R\xFAt k\u1ECBp th\xEC c\u1EE9u \u0111\u01B0\u1EE3c nh\u1EEFng ng\u01B0\u1EDDi c\xF2n l\u1EA1i, nh\u01B0ng chi\u1EBFn l\u1EE3i ph\u1EA9m th\xEC kh\xF4ng c\xF3."];
   out.verdict = out.chance >= 0.8 ? "R\u1EA5t c\xF3 l\u1EE3i" : out.chance >= 0.6 ? "C\xF3 l\u1EE3i" : out.chance >= 0.4 ? "C\xE2n b\u1EB1ng" : out.chance >= 0.2 ? "B\u1EA5t l\u1EE3i" : "R\u1EA5t b\u1EA5t l\u1EE3i";
-  const L = out.lines;
-  L.push(`Qu\xE2n ta: ${count} l\xEDnh trong ${perSquad.length} \u0111\u1ED9i${arms.archer || arms.cavalry ? ` (${arms.foot} b\u1ED9 binh, ${arms.archer} b\u1EAFn xa, ${arms.cavalry} k\u1EF5)` : ""}.`);
+  const L2 = out.lines;
+  L2.push(`Qu\xE2n ta: ${count} l\xEDnh trong ${perSquad.length} \u0111\u1ED9i${arms.archer || arms.cavalry ? ` (${arms.foot} b\u1ED9 binh, ${arms.archer} b\u1EAFn xa, ${arms.cavalry} k\u1EF5)` : ""}.`);
   if (level === 1) {
-    L.push(`L\xE0ng ${t.def.name} c\xF3 kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi; \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED.`);
-    L.push("Ch\u01B0a r\xF5 v\u0169 kh\xED, c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 hay th\u1EE7 l\u0129nh: c\u1EA7n b\u1EA3n \u0111\u1ED3 c\u1EA5p 2 v\xE0 3 \u0111\u1EC3 bi\u1EBFt th\xEAm.");
+    L2.push(`L\xE0ng ${t.def.name} c\xF3 kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi; \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED.`);
+    L2.push("Ch\u01B0a r\xF5 v\u0169 kh\xED, c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 hay th\u1EE7 l\u0129nh: c\u1EA7n b\u1EA3n \u0111\u1ED3 c\u1EA5p 2 v\xE0 3 \u0111\u1EC3 bi\u1EBFt th\xEAm.");
   } else {
-    L.push(`L\xE0ng ${t.def.name}: kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi${level >= 3 ? `, trong \u0111\xF3 ${men} l\xEDnh` : `, \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED`}.`);
-    L.push(works > 1 ? `Ph\xF2ng th\u1EE7: ${towers} ch\xF2i canh, ${fences} \u0111o\u1EA1n r\xE0o, ${gates} c\u1ED5ng (t\u0103ng kho\u1EA3ng ${pct(works - 1)} s\u1EE9c \u0111\u1ECBch).` : "Ch\u01B0a th\u1EA5y c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 n\xE0o.");
+    L2.push(`L\xE0ng ${t.def.name}: kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi${level >= 3 ? `, trong \u0111\xF3 ${men} l\xEDnh` : `, \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED`}.`);
+    L2.push(works > 1 ? `Ph\xF2ng th\u1EE7: ${towers} ch\xF2i canh, ${fences} \u0111o\u1EA1n r\xE0o, ${gates} c\u1ED5ng (t\u0103ng kho\u1EA3ng ${pct(works - 1)} s\u1EE9c \u0111\u1ECBch).` : "Ch\u01B0a th\u1EA5y c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 n\xE0o.");
   }
   if (level >= 3 && soldiers) {
-    L.push(`L\xEDnh \u0111\u1ECBch: ${soldiers.foot} b\u1ED9 binh, ${soldiers.archer} cung th\u1EE7, ${soldiers.cavalry} k\u1EF5 th\xFA${chief > 1 ? "; c\xF3 th\u1EE7 l\u0129nh \u0111i c\xF9ng" : ""}.`);
-    L.push(match > 1.05 ? "Binh ch\u1EE7ng c\u1EE7a ta kh\u1EAFc binh ch\u1EE7ng \u0111\u1ECBch." : match < 0.95 ? "Binh ch\u1EE7ng \u0111\u1ECBch kh\u1EAFc qu\xE2n ta: n\xEAn \u0111\u1ED5i \u0111\u1ED9i h\xECnh." : "Binh ch\u1EE7ng hai b\xEAn ngang nhau.");
-    L.push(`S\u1EE9c m\u1EA1nh quy \u0111\u1ED5i: ta ${Math.round(ours)} so v\u1EDBi \u0111\u1ECBch ${Math.round(theirs)}.`);
-    for (const q of perSquad) L.push(`${q.name}: ${q.n} l\xEDnh, \u0111\xF3ng g\xF3p ${ours > 0 ? pct(q.worth * match / ours) : "0%"} s\u1EE9c m\u1EA1nh c\u1EE7a ta.`);
+    L2.push(`L\xEDnh \u0111\u1ECBch: ${soldiers.foot} b\u1ED9 binh, ${soldiers.archer} cung th\u1EE7, ${soldiers.cavalry} k\u1EF5 th\xFA${chief > 1 ? "; c\xF3 th\u1EE7 l\u0129nh \u0111i c\xF9ng" : ""}.`);
+    L2.push(match > 1.05 ? "Binh ch\u1EE7ng c\u1EE7a ta kh\u1EAFc binh ch\u1EE7ng \u0111\u1ECBch." : match < 0.95 ? "Binh ch\u1EE7ng \u0111\u1ECBch kh\u1EAFc qu\xE2n ta: n\xEAn \u0111\u1ED5i \u0111\u1ED9i h\xECnh." : "Binh ch\u1EE7ng hai b\xEAn ngang nhau.");
+    L2.push(`S\u1EE9c m\u1EA1nh quy \u0111\u1ED5i: ta ${Math.round(ours)} so v\u1EDBi \u0111\u1ECBch ${Math.round(theirs)}.`);
+    for (const q of perSquad) L2.push(`${q.name}: ${q.n} l\xEDnh, \u0111\xF3ng g\xF3p ${ours > 0 ? pct(q.worth * match / ours) : "0%"} s\u1EE9c m\u1EA1nh c\u1EE7a ta.`);
   }
   if (level >= 2) for (const m of plan2.missions) {
     const s = sim.squadById(m.squad), start = s ? sim.missionStart(m) : null;
     if (!s || !start || !m.path.length) continue;
     const r = sim.routeTime(s, start, m.path);
-    L.push(`${s.name} \u0111i ${Math.round(r.length)} \xF4, m\u1EA5t kho\u1EA3ng ${Math.max(1, Math.round(r.total / 60))} ph\xFAt${r.hits.some((o) => o && o.kind !== "enemy") ? ", c\xF3 \u0111o\u1EA1n v\u01B0\u1EDBng v\u1EADt c\u1EA3n c\u1EA7n ph\xE1 ho\u1EB7c u\u1ED1n tr\xE1nh" : ""}.`);
+    L2.push(`${s.name} \u0111i ${Math.round(r.length)} \xF4, m\u1EA5t kho\u1EA3ng ${Math.max(1, Math.round(r.total / 60))} ph\xFAt${r.hits.some((o) => o && o.kind !== "enemy") ? ", c\xF3 \u0111o\u1EA1n v\u01B0\u1EDBng v\u1EADt c\u1EA3n c\u1EA7n ph\xE1 ho\u1EB7c u\u1ED1n tr\xE1nh" : ""}.`);
   }
   return out;
 }
@@ -7069,7 +8018,6 @@ function clearNode(sim, x, y) {
   }
   w.nodes.delete(i);
   w.tiles[i] = Tile.Grass;
-  if (n.kind === "tree") w.decor[i] = 1;
 }
 function damageProp(sim, tribeId, x, y, dmg) {
   const t = sim.tribes.find((q) => q.id === tribeId), i = t ? t.props.findIndex((q) => q.x === x && q.y === y) : -1;
@@ -7110,8 +8058,8 @@ function breakBrain(sim, v, dt) {
     if (!v.swing && v.atkCd <= 0) {
       const { hitAt, end } = swingTimes(w.anim);
       v.swing = { t: 0, hitAt, end, target: { kind: "unit", id: -1 } };
-      v.atkCd = cycleOf(w.cycle, v.stats.agi);
-      if (b.kind === "prop") damageProp(sim, b.tribe, b.x, b.y, (w.damage + (w.ranged ? 0 : RULES.strengthDamage * v.stats.str)) * (w.type === "slash" ? 1.5 : 1));
+      v.atkCd = swingCycle(sim, v, w);
+      if (b.kind === "prop") damageProp(sim, b.tribe, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * (w.type === "slash" ? 1.5 : 1));
     }
     if (b.kind === "node") {
       const kind = sim.world.nodeAt(b.x, b.y).kind;
@@ -7373,7 +8321,6 @@ var STOCK_CAP = 12;
 function tameLock(sim, k) {
   const d = MOUNTS[k], stable = sim.building("stable");
   if (!stable) return "C\u1EA7n d\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i";
-  if (RESEARCH.enabled && !sim.dev.freeBuild && !sim.researched.has(d.tech)) return `C\u1EA7n nghi\xEAn c\u1EE9u: Thu\u1EA7n h\xF3a ${d.name.toLowerCase()}`;
   if (stable.level < d.tier) return `C\u1EA7n Chu\u1ED3ng th\xFA c\u01B0\u1EE1i c\u1EA5p ${d.tier}`;
   return null;
 }
@@ -7477,6 +8424,10 @@ var WAR = {
   /** → army.squadLimit */
   squadLimit() {
     return squadLimit(this);
+  },
+  /** → army.cellLimit */
+  cellLimit() {
+    return cellLimit(this);
   },
   /** → army.cardLimit */
   cardLimit() {
@@ -7846,12 +8797,12 @@ var Sim = class _Sim {
     this.tameQueue = [];
     /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
     this.researchQueue = [];
-    /** Tools waiting to be mended in the Nhà sửa chữa (recipe ids such as axe1). */
-    this.repairQueue = [];
     this.coinFrac = 0;
     this.sawCoin = false;
     /** Finished research (tech ids). Recipes and building levels stay locked until their tech is here. */
     this.researched = /* @__PURE__ */ new Set();
+    /** Quests that have been seen done (not saved: a loaded game works them out again from what stands). */
+    this.questSeen = /* @__PURE__ */ new Set();
     this.log = [];
     /** Current era: new buildings are built with this era's art and levels. */
     this.era = "stone";
@@ -8164,10 +9115,6 @@ var Sim = class _Sim {
   orderDef(kind, id) {
     return orderDef(this, kind, id);
   }
-  /** → works.bestIntInside */
-  bestIntInside(b) {
-    return bestIntInside(this, b);
-  }
   /** → works.recipeLock */
   recipeLock(id) {
     return recipeLock(this, id);
@@ -8199,10 +9146,6 @@ var Sim = class _Sim {
   /** → works.queueCraft */
   queueCraft(id) {
     return queueCraft(this, id);
-  }
-  /** → works.queueRepair */
-  queueRepair(id) {
-    return queueRepair(this, id);
   }
   /** → works.unqueueCraft */
   unqueueCraft(id) {
@@ -8368,10 +9311,6 @@ var Sim = class _Sim {
   discardTool(ids, k) {
     return discardTool(this, ids, k);
   }
-  /** → inventory.repairTool */
-  repairTool(ids, k) {
-    return repairTool(this, ids, k);
-  }
   /** → economy.barter */
   barter(res) {
     return barter(this, res);
@@ -8391,6 +9330,10 @@ var Sim = class _Sim {
   /** → commands.orderMove */
   orderMove(ids, tx, ty, queue = false) {
     return orderMove(this, ids, tx, ty, queue);
+  }
+  /** → commands.callWorker */
+  callWorker(tx, ty) {
+    return callWorker(this, tx, ty);
   }
   /** → commands.orderWork */
   orderWork(ids, tx, ty) {
@@ -8589,6 +9532,10 @@ var Sim = class _Sim {
     killFoe(this, v, killer);
   }
   /** The player's own campfire (the village centre). */
+  /** → quests.questViews */
+  quests(ui) {
+    return questViews(this, ui);
+  }
   campfire() {
     return this.buildings.find((b) => b.kind === "campfire" && b.done);
   }
@@ -8661,10 +9608,6 @@ var Sim = class _Sim {
   /** → inventory.wearGear */
   wearGear(v, slot) {
     return wearGear(this, v, slot);
-  }
-  /** → inventory.planGearRepair */
-  planGearRepair(v) {
-    return planGearRepair(this, v);
   }
   /** → inventory.planEquipGear */
   planEquipGear(v) {

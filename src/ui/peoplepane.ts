@@ -1,54 +1,45 @@
-import { JOB_NAME, JOBS, STAT_NAME, StatKey, WORK_JOBS } from '../sim/jobs';
+import { JOB_NAME, roleName, roleOf } from '../sim/jobs';
 import type { Villager } from '../sim/sim';
 import { ARMORS } from '../sim/combat';
 import type { Ctx } from './ctx';
-import { armorLevel, ARMOR_FULL, armorText, describe, energyText, PLAIN_JOBS, SHIFT_LABEL, SHIFT_TIP, stars } from './describe';
+import { armorText, describe } from './describe';
 import { h } from './dom';
+import { dlg } from './gamedialog';
+import { avatar, personTile } from './people';
+import { statIcon } from './resicons';
+import { UnitDetail } from './unitdetail';
 
 /**
- * The village's people, as seen from the campfire: a list on the left and, beside it, the menu of whoever was picked.
- * Picking a name only opens the menu; going to them on the map is a button of its own.
+ * The village's people, as seen from the campfire: a list on the left and, beside it, the same details the detail dialog gives (stats, shift, gear, tools) for whoever was picked.
+ * Picking a name only opens the details; going to them on the map is a button of its own.
  */
 export class PeoplePane {
   readonly root = h('div', { class: 'split' });
   private readonly count = h('div', { class: 'kv' });
-  private readonly list = h('div', { class: 'plist' });
+  private readonly list = h('div', { class: 'dlist' });
   private readonly pane = h('div', { class: 'ppane', hidden: true });
-  private readonly rows = new Map<number, { row: HTMLElement; st: HTMLElement; hp: HTMLElement }>();
+  private readonly rows = new Map<number, { row: HTMLElement; note: HTMLElement }>();
   private key = '';
   private picked: number | null = null;
-  // the menu of the picked villager
-  private readonly name = h('b'); private readonly state = h('span'); private readonly facts = h('div', { class: 'kv' }); private readonly skills = h('div', { class: 'kv' });
-  private readonly bar = { full: h('b'), health: h('b'), morale: h('b', { class: 'mor' }), armor: h('b', { class: 'arm' }) };
-  private readonly armorLabel = h('label', {}, 'Giáp');
-  private readonly energy = h('b', { class: 'en' }); private readonly restLine = h('div', { class: 'kv' });
-  private readonly shiftBtns: HTMLButtonElement[] = [];
-  private readonly jobBtns: HTMLButtonElement[]; private readonly jobBox: HTMLElement;
+  // the details of the picked villager
+  private readonly face = h('div', { class: 'dpic' }); private faceKey = '';
+  private readonly name = h('b', { class: 'dtitle' }); private readonly state = h('small', { class: 'dsub' });
+  private readonly vitals = h('div', { class: 'dpills' });
+  private readonly detail: UnitDetail;
   private readonly where = h('button', { class: 'sm primary', text: 'Đi tới' });
 
   constructor(private readonly c: Ctx) {
-    const { sim, ctl, toast } = c;
-    this.armorLabel.append(h('i', {}, this.bar.armor));    const energyLabel = h('label', {}, 'Sức', h('i', {}, this.energy));
-    for (const sh of ['day', 'night', 'both'] as const) this.shiftBtns.push(h('button', { class: 'sm', text: SHIFT_LABEL[sh], title: SHIFT_TIP[sh], 'data-shift': sh, pressed: false, onclick: () => { const v = this.villager(); if (!v) return; sim.setShift([v.id], sh); ctl.onChange(); } }) as HTMLButtonElement);
-    this.jobBtns = [];
-    this.jobBox = h('div', {}, h('h3', { text: 'Việc đang làm' }), h('p', { class: 'sub', text: 'Việc của mỗi người do công trình của nó quản lý (Nông trại, Xưởng gỗ, Xưởng đá, Chòi thợ săn, các trại lính, Trại trinh sát, Nhà thợ xây…). Mở công trình đó để giao việc hoặc cho nghỉ; đống lửa chỉ cho xem.' }));
+    const { ctl } = c;
+    this.detail = new UnitDetail(c, { ids: () => (this.picked === null ? [] : [this.picked]), leave: () => ctl.closeBuilding() });
     this.where.addEventListener('click', () => {
       const v = this.villager(); if (!v) return;
       if (v.inside !== null) { ctl.selectBuilding(v.inside, true); return; }
       ctl.selected.clear(); ctl.selected.add(v.id); ctl.focusSelection(); ctl.closeBuilding();
     });
-    const more = h('button', { class: 'sm', text: 'Công cụ, trang bị, chỉ số', onclick: () => {
-      const v = this.villager(); if (!v || v.inside !== null) { toast('Dân đang ở trong nhà: mở nhà để cho họ ra'); return; }
-      ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding();
-    } });
-    const labels = (...names: string[]) => names.map((n, i) => h('label', {}, n, h('i', {}, [this.bar.full, this.bar.health, this.bar.morale][i])));
     this.pane.append(
-      h('div', { class: 'cardhead' }, this.name, this.state),
-      h('div', { class: 'bars' }, ...labels('No', 'Máu', 'Tinh thần'), energyLabel, this.armorLabel),
-      this.restLine, h('div', { class: 'btns', role: 'group', 'aria-label': 'Ca làm' }, ...this.shiftBtns),
-      this.facts, this.skills,
-      this.jobBox,
-      h('div', { class: 'btns' }, this.where, more),
+      h('div', { class: 'dhead' }, this.face, h('div', { class: 'dwho' }, this.name, this.state)),
+      this.vitals, this.detail.body,
+      h('div', { class: 'btns' }, this.where),
     );
     this.root.append(h('div', {}, this.count, this.list), this.pane);
   }
@@ -62,30 +53,28 @@ export class PeoplePane {
     if (key !== this.key) {
       this.key = key; this.rows.clear();
       this.list.replaceChildren(...vs.map((v) => {
-        const st = h('small'), hp = h('small');
-        const row = h('button', { class: 'vrow', type: 'button', onclick: () => { this.picked = v.id; this.update(); } }, h('span', {}, h('b', { text: v.name }), ' ', st), hp);
-        this.rows.set(v.id, { row, st, hp });
+        const row = personTile(this.c, v, { vitals: false, note: describe(v, sim), trade: true });
+        row.classList.add('pick'); row.addEventListener('click', () => { this.picked = v.id; this.update(); });
+        this.rows.set(v.id, { row, note: row.querySelector('.dmore') as HTMLElement });
         return row;
       }));
       if (this.picked !== null && !sim.get(this.picked)) this.picked = null;
     }
-    for (const v of vs) { const r = this.rows.get(v.id); if (r) { r.st.textContent = `· ${describe(v, sim)}`; r.hp.textContent = `${Math.ceil(v.health)}/${v.maxHealth}`; r.row.classList.toggle('on', v.id === this.picked); } }
+    for (const v of vs) { const r = this.rows.get(v.id); if (r) { r.note.textContent = `${describe(v, sim)} · ${Math.ceil(v.health)}/${v.maxHealth}`; r.row.classList.toggle('now', v.id === this.picked); } }
 
     const v = this.villager();
     this.pane.hidden = !v;
     if (!v) return;
-    this.name.textContent = v.name; this.state.textContent = describe(v, sim);
-    this.bar.full.style.width = `${v.fullness}%`; this.bar.health.style.width = `${(v.health / v.maxHealth) * 100}%`; this.bar.morale.style.width = `${v.morale}%`;
-    this.bar.health.className = v.health / v.maxHealth < 0.35 ? 'bad' : '';
-    const ad = v.armor ? ARMORS[v.armor] : null;
-    this.bar.armor.style.width = `${ad ? Math.min(100, (armorLevel(ad) / ARMOR_FULL) * 100) : 0}%`;
-    this.armorLabel.title = ad ? armorText(ad) : 'Không mặc giáp';
-    this.facts.innerHTML = (Object.keys(STAT_NAME) as StatKey[]).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(' · ');
-    this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>cấp ${v.skill[j].level}</b>`).join(' · ');
-    this.jobBtns.forEach((b) => b.setAttribute('aria-pressed', String(v.job === b.dataset.job)));
-    this.energy.style.width = `${v.energy}%`; this.energy.className = v.energy < 20 ? 'en low' : 'en';
-    this.restLine.innerHTML = energyText(sim, v);
-    this.shiftBtns.forEach((b) => b.setAttribute('aria-pressed', String(v.shift === b.dataset.shift)));
+    const fk = `${v.id}|${v.armor}`;
+    if (fk !== this.faceKey) { this.faceKey = fk; this.face.replaceChildren(avatar(this.c, v)); }
+    const role = roleOf(v);
+    this.name.textContent = v.name; this.state.textContent = role ? roleName(role, sim.era) : JOB_NAME[v.job]; // the job, not what they are doing
+    const hp = v.health / v.maxHealth, ad = v.armor ? ARMORS[v.armor] : null;
+    this.vitals.replaceChildren(
+      dlg.pill(statIcon('hp'), `${Math.ceil(v.health)}/${v.maxHealth}`, hp < 0.35 ? 'bad' : hp < 0.7 ? 'warn' : undefined, 'Máu'),
+      dlg.pill(statIcon('sta'), `${Math.round(v.energy)}%`, v.energy < 20 ? 'bad' : v.energy < 50 ? 'warn' : undefined, 'Sức'),
+      dlg.pill(statIcon('defm'), ad ? ad.name : 'không giáp', undefined, ad ? armorText(ad) : 'Không mặc giáp'));
+    this.detail.update([v]);
     this.where.textContent = v.inside !== null ? (v.phase === 'sleep' ? 'Mở nhà đang ngủ' : 'Mở nhà đang làm') : 'Đi tới';
   }
 }

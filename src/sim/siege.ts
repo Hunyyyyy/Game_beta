@@ -3,7 +3,8 @@
  * a squad on its arrow, which walks it in straight lines and does not find its own way: when the tiles ahead are shut it halts and tells the player, who can send
  * some soldiers to break the thing down; and at the end of the arrow, the squad going for what the arrow points at, and once that is gone, for everything about.
  */
-import { cycleOf, RULES, SIEGE } from './combat';
+import { RULES, SIEGE } from './combat';
+import { swingCycle, weaponDamage } from './statsys';
 import { armOf, swingTimes, threatsOf, weaponOf } from './battle';
 import { FORMATIONS, formationOffsets, placeOffset } from './formations';
 import { Tile } from './world';
@@ -157,8 +158,8 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
     if (!v.swing && v.atkCd <= 0) {
       const { hitAt, end } = swingTimes(w.anim);
       v.swing = { t: 0, hitAt, end, target: { kind: 'unit', id: -1 } }; // the blow has no living target: the work takes it
-      v.atkCd = cycleOf(w.cycle, v.stats.agi);
-      if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (w.damage + (w.ranged ? 0 : RULES.strengthDamage * v.stats.str)) * (w.type === 'slash' ? 1.5 : 1));
+      v.atkCd = swingCycle(sim, v, w);
+      if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * (w.type === 'slash' ? 1.5 : 1));
     }
     if (b.kind === 'node') {
       const kind = sim.world.nodeAt(b.x, b.y)!.kind;

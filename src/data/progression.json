@@ -30,7 +30,6 @@
         "unlock": [
           "builder",
           "workshop",
-          "repair",
           "@stores",
           "huntlodge"
         ],
@@ -79,12 +78,6 @@
           "blueprints"
         ],
         "techs": [
-          "hammer1",
-          "axe1",
-          "pick1",
-          "hoe1",
-          "torch1",
-          "club1",
           "timber"
         ],
         "closedTabs": [
@@ -100,17 +93,8 @@
           "automation"
         ],
         "techs": [
-          "axe2",
-          "pick2",
-          "hoe2",
-          "hammer2",
-          "hide1",
-          "spear1",
-          "sling1",
           "masonry",
           "signal",
-          "scout",
-          "scout2",
           "form_basic",
           "form_wedge",
           "form_cells_10",
@@ -173,7 +157,6 @@
       "storage",
       "workshop",
       "lab",
-      "repair",
       "toolstore",
       "armory"
     ]

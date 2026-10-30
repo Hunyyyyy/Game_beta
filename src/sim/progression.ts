@@ -1,4 +1,5 @@
 import data from '../data/progression.json';
+import quests from '../data/quests.json';
 import type { BuildingKind } from './buildings';
 
 /** The plan the village grows by (src/data/progression.json): what each campfire level opens, what each research-house level teaches, and the quests that lead to it. */
@@ -29,3 +30,6 @@ export function labLevelOf(techId: string): number {
   for (const l of LAB) if (l.techs.includes(techId)) return l.level;
   return LAB[LAB.length - 1].level;
 }
+
+/** Quests that wait for something done on the screen (selecting, opening, looking): the sim cannot see them, so a save keeps which were seen. */
+export const SCREEN_QUESTS: string[] = (quests.quests as Array<{ id: string; done: { type: string } }>).filter((q) => ['selectBuilding', 'openBuilding', 'inspectNode', 'inspectUnit', 'inspectAnimal', 'speed', 'daytime'].includes(q.done.type)).map((q) => q.id);

@@ -100,7 +100,7 @@ export function orderWork(sim: Sim, ids: readonly number[], tx: number, ty: numb
 }
 
 /**
- * Give villagers a job with the job buttons. Craft, research and repair mean working inside the matching house; the result is an error
+ * Give villagers a job with the job buttons. Craft, research and tame mean working inside the matching house; the result is an error
  * or null. Soldiers belong to the campfire's roster (enlist, discharge) and keep their post until discharged there.
  */
 export function setJob(sim: Sim, ids: readonly number[], job: Job): string | null {
@@ -114,7 +114,7 @@ export function setJob(sim: Sim, ids: readonly number[], job: Job): string | nul
 }
 
 function jobFor(sim: Sim, ids: readonly number[], job: Job): string | null {
-  if (job === 'craft' || job === 'research' || job === 'repair' || job === 'tame') return sim.assignStaff(ids, job);
+  if (job === 'craft' || job === 'research' || job === 'tame') return sim.assignStaff(ids, job);
   if (job === 'build') return sim.assignCrew(ids);
   for (const v of mine(sim, ids)) {
     resetTask(sim, v); clearCombat(sim, v); v.job = job; v.prefer = -1; v.post = -1;

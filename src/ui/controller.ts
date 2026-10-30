@@ -248,7 +248,7 @@ export class Controller {
     this.onChange();
   }
 
-  selectBuilding(id: number, open = false): void { this.selectedBuilding = id; this.buildingOpen = open; this.inspect = null; this.onChange(); }
+  selectBuilding(id: number, open = false): void { this.selectedBuilding = id; this.buildingOpen = open; this.inspect = null; this.selected.clear(); this.onChange(); } // a house and a villager are never shown together
   /** Close the panel but keep the building selected. */
   closePanel(): void { this.buildingOpen = false; this.onChange(); }
   closeBuilding(): void { this.selectedBuilding = null; this.buildingOpen = false; this.onChange(); }

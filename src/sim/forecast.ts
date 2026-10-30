@@ -16,7 +16,7 @@ const AVERAGE_STAT = 6.5;
 
 /** Damage a second of a fighter with a weapon, against someone wearing `armor`. */
 function dps(weapon: string | null, str: number, agi: number, armor: Record<DmgType, number> | null): number {
-  const w = WEAPONS[weapon ?? 'fist'] ?? WEAPONS.fist, base = w.damage + (w.ranged ? 0 : RULES.strengthDamage * str);
+  const w = WEAPONS[weapon ?? 'fist'] ?? WEAPONS.fist, base = w.damage + RULES.strengthDamage * str;
   return (base * (1 - (armor ? armor[w.type] : 0))) / cycleOf(w.cycle, agi);
 }
 
@@ -37,7 +37,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
   // ---- our side: the squads in the plan, each worth what it is ordered to do
   const enemyArmor = t.def.armor ? ARMORS.hide : null;
   const enemyWeapons = t.def.weapons, enemyType = (WEAPONS[enemyWeapons[0]] ?? WEAPONS.fist).type;
-  let strength = 0, count = 0, hurt = 0, bare = 0, unarmored = 0, morale = 0;
+  let strength = 0, count = 0, hurt = 0, bare = 0, unarmored = 0;
   const arms: Record<Arm, number> = { foot: 0, archer: 0, cavalry: 0 };
   const perSquad: Array<{ name: string; n: number; worth: number; arms: Record<Arm, number> }> = [];
   for (const m of plan.missions) {
@@ -46,12 +46,11 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
     let worth = 0;
     for (const v of us) {
       const armor = v.armor ? ARMORS[v.armor] ?? null : null, hp = v.health / (1 - (armor ? armor[enemyType] : 0));
-      const unit = Math.sqrt(dps(v.weapon, v.stats.str, v.stats.agi, enemyArmor) * hp) * Math.min(1.1, Math.max(0.7, v.morale / 70));
+      const unit = Math.sqrt(dps(v.weapon, v.stats.str, v.stats.agi, enemyArmor) * hp);
       worth += unit * w; count++; sa[armOf(sim, v)]++; arms[armOf(sim, v)]++;
       if (v.health < 0.6 * v.maxHealth) hurt++;
       if (!v.weapon) bare++;
       if (!v.armor) unarmored++;
-      morale += v.morale;
     }
     strength += worth; perSquad.push({ name: s.name, n: us.length, worth, arms: sa });
   }
@@ -91,7 +90,6 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
   if (bare) w.push(`${bare} lính chưa có vũ khí, đánh bằng tay không.`);
   if (unarmored && count > 1) w.push(`${unarmored} lính chưa có giáp.`);
   if (hurt) w.push(`${hurt} lính đang bị thương nặng.`);
-  if (count && morale / count < 50) w.push('Tinh thần quân thấp, dễ bỏ chạy giữa trận.');
   const home = sim.villagers.filter((v) => v.job === 'fight' && v.health > 0 && !plan.missions.some((m) => sim.squadById(m.squad)?.ids.includes(v.id))).length;
   if (home < 3) w.push(`Chỉ còn ${home} lính giữ làng: nếu địch đánh vào lúc này thì khó chống.`);
   if (sim.resting) w.push('Đang ban đêm: quân đi chậm và nhìn kém.');
@@ -100,7 +98,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
 
   // ---- what is at stake
   out.win = [`Thắng khi ${t.def.name} hết lính, lửa của họ tắt và mọi công trình sập; khi đó dân của họ xin hàng.`, 'Ta lấy được những gì còn trong kho lương của họ.', `Dự kiến ta mất khoảng ${pct(lossIfWin)} số lính đã dàn trận.`];
-  out.lose = ['Thua khi quân ta hết lính hoặc rút lui.', `Phần lớn lính ra trận có thể gục; lính chết là mất hẳn, cùng vũ khí và giáp mang theo.`, 'Tinh thần dân giảm; kẻ địch bị chọc giận nên có thể kéo đến trả đũa.', 'Rút kịp thì cứu được những người còn lại, nhưng chiến lợi phẩm thì không có.'];
+  out.lose = ['Thua khi quân ta hết lính hoặc rút lui.', `Phần lớn lính ra trận có thể gục; lính chết là mất hẳn, cùng vũ khí và giáp mang theo.`, 'Kẻ địch bị chọc giận nên có thể kéo đến trả đũa.', 'Rút kịp thì cứu được những người còn lại, nhưng chiến lợi phẩm thì không có.'];
 
   out.verdict = out.chance >= 0.8 ? 'Rất có lợi' : out.chance >= 0.6 ? 'Có lợi' : out.chance >= 0.4 ? 'Cân bằng' : out.chance >= 0.2 ? 'Bất lợi' : 'Rất bất lợi';
 

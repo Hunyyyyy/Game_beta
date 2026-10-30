@@ -55,3 +55,19 @@
   z-index: $z;
   background: $bg;
 }
+
+// the colours of the parchment: every ordinary control inside takes them through the variables (dialogs, the cards over the map, the build menu)
+@mixin parchment-theme {
+  --bg: #e7d3a4; --panel: #efe0b8; --panel-2: #e2cf9d; --fg: #3a2c1c; --muted: #6a5a3a; --line: #b89a5e; --ring: #8a6a36;
+  --accent: #a4481f; --accent-fg: #fff6e8; --good: #3f7a2c; --bad: #b8322a;
+  color: #3a2c1c;
+}
+// a button in the colours of the parchment, lit: small buttons on a scroll or a card
+@mixin parchment-button {
+  color: #3a2c1c; background: linear-gradient(#f6e9c4, #dcc690); border: 1px solid #8a6a36; border-radius: 6px; padding: 4px 10px;
+  font: 700 12.5px system-ui, sans-serif; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55);
+  &:hover:not(:disabled) { filter: brightness(1.07); }
+  &[aria-pressed='true'], &.primary { color: #fff6e8; background: linear-gradient(#58957f, #2f6a5c); border-color: #1c4a40; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25); }
+  &.danger { color: #fff6e8; background: linear-gradient(#cf6050, #9a2f26); border-color: #6a1c16; }
+  &:disabled { opacity: .5; cursor: default; }
+}

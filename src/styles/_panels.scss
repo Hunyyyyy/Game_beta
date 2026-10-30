@@ -50,20 +50,6 @@ button.vrow {
 }
 #ucard .open { margin-left: auto; }
 
-// ---- confirm dialog: upgrade and demolish ----
-.dialog {
-  @include full-overlay(48);
-  display: grid; place-items: center; padding: 12px;
-  > .card { width: min(380px, 100%); max-height: 100%; overflow: auto; background: var(--bg); gap: 8px; padding: 10px 12px; }
-  h3 { margin: 0; font-size: 15px; color: var(--fg); text-transform: none; letter-spacing: 0; }
-  .costs {
-    display: grid; gap: 2px;
-    div { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
-    .short { color: var(--bad); font-weight: 700; }
-  }
-  .why { color: var(--bad); font-weight: 600; margin: 0; }
-  .btns { justify-content: flex-end; }
-}
 button.danger {
   color: var(--bad);
   &.armed { background: var(--bad); color: #fff; border-color: var(--bad); }
@@ -106,3 +92,90 @@ button.primary.danger { background: var(--bad); color: #fff; border-color: var(-
 
 // drawn resource pictures inside lists
 .nm .ico { width: 16px; height: 16px; display: inline-flex; vertical-align: -3px; margin-right: 5px; }
+
+// ---- research tree (Nhà nghiên cứu) ----
+.ttree {
+  .tsec > h3 { margin: 10px 0 4px; }
+  .trow {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 8px 4px;
+    &.lines { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; }
+  }
+  .trole { margin-bottom: 6px; border-top: 1px solid var(--line); .thead { display: flex; align-items: center; gap: 6px; padding-top: 6px; .tpic canvas { width: 28px; height: 28px; } } }
+  .tnode {
+    position: relative; z-index: 1; flex: none; width: 82px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 5px 3px 4px;
+    background: #1d160e; color: #fff6e8; border: 2px solid #6b5a3a; border-radius: 8px; cursor: pointer; font: inherit;
+    .tpic { display: grid; place-items: center; width: 56px; height: 56px; canvas { max-width: 100%; max-height: 100%; image-rendering: pixelated; } &.stat .ico { width: 44px; height: 44px; } }
+    .tname { font-size: 11px; line-height: 1.1; text-align: center; min-height: 24px; display: grid; place-items: center; }
+    .tbar { width: 100%; height: 8px; background: #0e0a06; border: 1px solid #000; border-radius: 4px; overflow: hidden; b { display: block; height: 100%; background: #e0a23c; } }
+    small { font-size: 10px; color: #d8c690; }
+    .tlock { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 20px; text-shadow: 0 0 4px #000; }
+    &.locked { filter: grayscale(.8); opacity: .65; }
+    &.done { border-color: #e0b43c; .tbar b { background: #6bbf59; } }
+    &.busy { border-color: #6bbf59; animation: techPulse 1.4s ease-in-out infinite; }
+    &.picked { outline: 2px solid #fff6e8; outline-offset: 1px; }
+  }
+}
+@keyframes techPulse { 50% { box-shadow: 0 0 8px #6bbf59; } }
+
+// tabs drawn as pictures (the research house)
+.tabs.icontabs {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; margin-bottom: 8px;
+  .tabcard {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; background: #1d160e; color: #fff6e8;
+    border: 2px solid #6b5a3a; border-radius: 10px; cursor: pointer; font: 600 12px system-ui, sans-serif;
+    .tpic { display: grid; place-items: center; width: 56px; height: 56px; canvas { max-width: 100%; max-height: 100%; image-rendering: pixelated; } }
+    &[aria-pressed='true'] { border-color: #e0b43c; background: #2c2113; }
+  }
+}
+
+// the research house: Quân sự, Xây dựng, Kinh tế on one level joined by a line, Vũ khí under Quân sự
+.tabs.icontabs.treetabs {
+  position: relative; grid-template-columns: repeat(3, minmax(86px, 1fr)); row-gap: 22px;
+  &::before { content: ''; position: absolute; left: 17%; right: 17%; top: 46px; border-top: 3px solid #b8903c; opacity: .55; }
+  .tabcard { position: relative; z-index: 1; }
+  .tabcard.under { &::before { content: ''; position: absolute; left: 50%; top: -22px; height: 22px; border-left: 3px solid #b8903c; opacity: .55; } }
+  .tabcard.locked { filter: grayscale(.8); opacity: .7; }
+  .tabcard .tlock { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 22px; text-shadow: 0 0 4px #000; }
+}
+.labhead { display: grid; gap: 6px; margin-bottom: 8px; }
+
+// a tab of the research house opens as a panel over the whole one
+.mbody { position: relative; }
+.subpanel {
+  position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; background: var(--panel); border-radius: inherit; overflow: hidden;
+  .subhead { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  .subbody { flex: 1; overflow: auto; padding: 8px; }
+  &[hidden] { display: none; }
+}
+
+// the military chains: a column for each role, its stats one under the other, joined by short lines
+.ttree .tcols { display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 10px; }
+.ttree .tcol { flex: none; width: 88px; display: flex; flex-direction: column; align-items: center; .thead { flex-direction: column; text-align: center; padding-bottom: 6px; } }
+.ttree .tlink { width: 0; height: 14px; border-left: 3px solid #b8903c; opacity: .6; }
+.ttree .tpic.small { width: 34px; height: 34px; .ico { width: 30px; height: 30px; } }
+
+// the military columns share the whole width of the panel
+.ttree .tcols { justify-content: space-evenly; overflow-x: auto; }
+.ttree .tcol { flex: 1 1 96px; min-width: 96px; max-width: 170px; .thead b { white-space: nowrap; } .tnode { width: 100%; max-width: 140px; } .tlink { height: 16px; } }
+.ttree .tladder { display: flex; flex-direction: column; align-items: center; padding: 4px 0 10px; .tstep { display: flex; gap: 12px; justify-content: center; } .tlink { width: 0; height: 20px; border-left: 3px solid #b8903c; opacity: .6; } }
+
+// the columns of a chain fill the whole width of the panel
+.ttree, .ttree .tbody, .ttree .tsec { width: 100%; }
+.ttree .tcols { gap: 8px; justify-content: stretch; }
+.ttree .tcol { flex: 1 1 0; max-width: none; min-width: 84px; align-items: center; .tnode { width: 100%; max-width: 180px; } }
+
+// one size for every picture, header and square of the research house, so that no column or row sits out of line
+.ttree {
+  .tpic { width: 56px; height: 56px; canvas, svg { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; } &.stat .ico { width: 100%; height: 100%; } }
+  .tnode { min-height: 124px; justify-content: flex-start; }
+  .tname { min-height: 26px; }
+  .tcol {
+    .thead { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 88px; width: 100%; padding: 0 0 6px; text-align: center;
+      .tpic { width: 72px; height: 56px; } b { white-space: nowrap; font-size: 13px; } }
+  }
+  .trole .thead { height: 40px; .tpic { width: 36px; height: 32px; } }
+  .trow { align-items: stretch; }
+  .tstep, .tladder .tstep { align-items: stretch; }
+}
+.tabs.icontabs .tabcard { min-height: 98px; justify-content: flex-start; .tpic { width: 56px; height: 56px; canvas { width: 100%; height: 100%; object-fit: contain; } } }
+.mbody.subopen { overflow: hidden; }

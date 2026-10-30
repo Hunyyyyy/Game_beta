@@ -327,12 +327,12 @@ export class Renderer {
       } else if (d.kind === 'building' && d.b) {
         const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
         if (b.kind === 'gate' && b.done) this.drawGate(b, wallAt);
-        else if (!(b.kind === 'fence' && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time);
+        else if (!(b.kind === 'fence' && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id ? 0.5 : 1); // the house being carried stays dim where it stands
         if (b.kind === 'fence' || b.kind === 'gate') this.drawDiagonalRails(b, wallAt);
         const emblem = b.done ? sp.emblems[b.kind] : undefined;
         if (emblem) { const p = this.worldToScreen(ax, ay - 52); ctx.drawImage(emblem, Math.round(p.x - 8 * z), Math.round(p.y), 16 * z, 16 * z); }
         // a house that works to orders shows how far the order has got, or sleeps when it has none
-        if (b.done && (b.kind === 'lab' || b.kind === 'workshop' || b.kind === 'repair' || b.kind === 'stable' || b.kind === 'builder')) {
+        if (b.done && (b.kind === 'lab' || b.kind === 'workshop' || b.kind === 'stable' || b.kind === 'builder')) {
           const p = this.worldToScreen(ax, ay - 74);
           ctx.textAlign = 'center'; ctx.lineJoin = 'round';
           // the builders' house has no orders of its own: it is busy while any house waits to be raised or upgraded
@@ -447,7 +447,7 @@ export class Renderer {
     // ---- bóng ma khi đặt công trình ----
     if (ghost) {
       const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
-      // the clearance of two free tiles that houses keep from each other: round every standing house and round the ghost (walls keep none)
+      // the free tile that houses keep from each other: round every standing house and round the ghost (walls keep none)
       if (!WALL_KINDS.has(ghost.kind)) {
         const zone = (x: number, y: number, w: number, h: number, c: string) => { ctx.fillStyle = c; ctx.fillRect(px(x - CLEAR), py(y - CLEAR), (w + 2 * CLEAR) * ts, (h + 2 * CLEAR) * ts); };
         for (const o of sim.buildings) if (!WALL_KINDS.has(o.kind) && o.id !== ghost.moving) zone(o.x, o.y, BUILDINGS[o.kind].w, BUILDINGS[o.kind].h, 'rgba(240,170,60,.16)');

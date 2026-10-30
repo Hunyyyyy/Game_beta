@@ -3,7 +3,6 @@ import { levelDef } from './buildings';
 import { ringOf, ringPower, SIEGE } from './combat';
 import { DAY_LENGTH } from './constants';
 import { armOfWeapon, COMMAND } from './formations';
-import { RESEARCH } from './research';
 import { findPath } from './path';
 import { tribeOf } from './tribes';
 import type { Sim } from './sim';
@@ -68,13 +67,10 @@ export function tickSightings(sim: Sim, dt: number): void {
 }
 
 // ---------------------------------------------------------------- sending scouts
-/** The research that opens each level of map: a trip always draws the highest one researched. */
-const LEVEL_TECH = ['scout', 'scout2', 'scout3'];
+/** The level of map a trip draws: the level of the best Trại trinh sát (1 to 3), none without one. No research is needed. */
 export function scoutLevel(sim: Sim): number {
-  if (sim.dev.freeBuild || !RESEARCH.enabled) return 3;
-  let n = 0;
-  while (n < LEVEL_TECH.length && sim.researched.has(LEVEL_TECH[n])) n++;
-  return n;
+  if (sim.dev.freeBuild) return 3;
+  return sim.buildings.reduce((n, b) => (b.kind === 'scouttent' && b.done ? Math.max(n, Math.min(3, b.level)) : n), 0);
 }
 
 /** How many scouts the Trại trinh sát holds: its slots, added up. They are all the scouts the village can have, and so all that can go on one trip. */
@@ -95,7 +91,6 @@ export const scoutRoster = (sim: Sim): Villager[] => sim.villagers.filter((v) =>
 export function enlistScouts(sim: Sim, ids: readonly number[]): string | null {
   const lock = sim.warLock(); if (lock) return lock;
   const limit = scoutLimit(sim);
-  if (RESEARCH.enabled && !sim.dev.freeBuild && !scoutLevel(sim)) return 'Cần nghiên cứu: Trinh sát';
   if (!limit) return 'Cần dựng Trại trinh sát';
   const pick = sim.mine(ids).filter((v) => v.job !== 'fight' && v.job !== 'scout'), room = limit - scoutRoster(sim).length;
   if (!pick.length) return 'Chọn dân thường để tuyển làm trinh sát';
@@ -117,11 +112,11 @@ export function dismissScouts(sim: Sim, ids: readonly number[]): string | null {
 }
 
 /**
- * How good a scout one villager is, about 0.5 to 1.7: legs (Nhanh nhẹn), wind (Thể lực) and a clear head (Trí tuệ).
+ * How good a scout one villager is, about 0.5 to 1.7: legs (Nhanh nhẹn), wind (Thể lực) and the legs and wind to keep out of sight.
  * Experience and research will add to this later; every trip reads it through here.
  */
 export const scoutSkill = (v: Pick<Villager, 'stats'> & Partial<Pick<Villager, 'weapon' | 'armor' | 'torch' | 'arm' | 'mount'>>): number => {
-  const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta + w.int * v.stats.int) / 6; // a clear head and wind count most
+  const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta) / 6;
   return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
 };
 
@@ -130,8 +125,8 @@ function gearOf(v: Partial<Pick<Villager, 'weapon' | 'armor' | 'torch' | 'arm' |
   return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.mount || v.arm === 'cavalry' ? table.mount : 0);
 }
 
-/** How cleverly he moves: Trí tuệ to keep out of sight, Thể lực to keep going. Used for the chance of being caught and for the time spent watching. */
-const stealthOf = (v: Pick<Villager, 'stats'>): number => 0.6 * v.stats.int + 0.4 * v.stats.sta;
+/** How well he keeps out of sight: Nhanh nhẹn to slip by, Thể lực to keep going. Used for the chance of being caught and for the time spent watching. */
+const stealthOf = (v: Pick<Villager, 'stats'>): number => 0.6 * v.stats.agi + 0.4 * v.stats.sta;
 
 /** Scouts a map of this level needs, in "average scouts": the level plus one, and one more for every eight of their soldiers, at most eight. */
 export const scoutsNeeded = (sim: Sim, tribe: string, level: number): number => Math.min(8, level + 1 + Math.floor(warriorsOf(sim, tribe) / 8));
@@ -150,11 +145,10 @@ export function planScout(sim: Sim, ids: readonly number[], tribe: string): Scou
   const level = scoutLevel(sim), limit = scoutLimit(sim), scouts = sim.mine(ids).filter((v) => canScout(sim, v));
   const need = scoutsNeeded(sim, tribe, Math.max(1, level)), w = whereIs(sim, tribe);
   const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * sim.mountSpeed(v) * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
-  const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.int, 0) / scouts.length : 6);
+  const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.agi, 0) / scouts.length : 6);
   let error: string | null = null;
   if (!sim.dev.freeBuild && !isFound(sim, tribe)) error = 'Chưa ai tìm thấy làng này';
   else if (!tribeOf(sim, tribe as never)) error = 'Không có làng này';
-  else if (RESEARCH.enabled && !sim.dev.freeBuild && !level) error = 'Cần nghiên cứu: Trinh sát';
   else if (!limit) error = 'Cần dựng Trại trinh sát';
   else if (sim.scouts.some((m) => m.tribe === tribe)) error = 'Đã có trinh sát đang đi làng này';
   else if (!scouts.length) error = 'Chọn trinh sát để cử đi (tuyển ở Trại trinh sát)';
@@ -206,7 +200,7 @@ export function tickScouts(sim: Sim, dt: number): void {
         sim.say(m.survivors ? `Trinh sát đang quan sát ${t.def.name}.` : 'Trinh sát bị bắt gặp, không ai thoát.');
       }
     } else if (m.phase === 'watch') {
-      if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.int, 0) / Math.max(1, alive.length))) {
+      if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.agi, 0) / Math.max(1, alive.length))) {
         m.phase = 'back'; m.t = 0;
         const fire = sim.campfire();
         for (const id of m.ids) if (sim.byId.has(id) && fire) sim.orderMove([id], Math.floor(fire.x + 1), Math.floor(fire.y + 3));

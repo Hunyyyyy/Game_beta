@@ -20,8 +20,8 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 
 | Lớp | Tệp | Việc |
 |---|---|---|
-| **Dữ liệu và luật thuần** | `constants` `resources` `rng` `calendar` `buildings` `jobs` `tools` `combat` `research` `world` `fog` `path` `model` | Bảng số, kiểu dữ liệu, hàm thuần. Không import `Sim`, không có trạng thái của ván chơi. Số liệu chính nằm ở `src/data/*.json`. |
-| **Hệ thống làng** | `construction` `economy` `works` `houses` `inventory` `commands` `labor` `movement` `villagers` `environment` | Hành vi. Mỗi hàm nhận `sim` làm tham số đầu. |
+| **Dữ liệu và luật thuần** | `constants` `resources` `rng` `calendar` `buildings` `jobs` `tools` `combat` `research` `world` `fog` `path` `model` `formations` `statsys` `progression` | Bảng số, kiểu dữ liệu, hàm thuần. Không import `Sim`, không có trạng thái của ván chơi. Số liệu chính nằm ở `src/data/*.json`. |
+| **Hệ thống làng** | `construction` `economy` `works` `houses` `inventory` `commands` `labor` `movement` `villagers` `environment` `notices` | Hành vi. Mỗi hàm nhận `sim` làm tham số đầu. |
 | **Hệ thống sinh vật** | `battle` `fauna` `tribes` `army` `scouting` | Chiến đấu, thú, bộ tộc, đội và trận pháp, trinh sát. Cùng kiểu hàm nhận `sim`. |
 | **Lưu game** | `codec` (dữ liệu), `save` | `save.ts` đổi `Sim` thành JSON thuần có số phiên bản và ngược lại; `codec.ts` lo `Map`/`Set`/số vô cực và nén chuỗi lặp. Không biết nơi lưu. |
 | **Lõi** | `sim.ts` | Giữ toàn bộ trạng thái, chạy `advance`/`tick`, và có một hàm chuyển tiếp cho mỗi thao tác công khai. |
@@ -32,14 +32,14 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 | Tệp | Trách nhiệm | Ví dụ hàm |
 |---|---|---|
 | `construction` | Đặt, nâng cấp, dời, phá công trình; công trình cho làng thứ gì (chỗ chứa, dân tối đa, tốc độ xây) | `placeBuilding` `upgradeBuilding` `buildingLock` `buildingLimit` `popCap` |
-| `economy` | Kho chung: trả chi phí, đổi chác, thức ăn hỏng | `pay` `barter` `syncFood` |
+| `economy` | Kho chung: trả chi phí, đổi chác, bữa ăn cuối ngày | `pay` `barter` `feedPot` `eatDay` |
 | `works` | Hàng đợi và tiến độ của nhà nghiên cứu, chế tạo, sửa chữa | `queueResearch` `queueCraft` `tickWorks` |
 | `houses` | Ai làm việc hoặc ngủ ở nhà nào: đội thợ xây, người trong nhà, người nằm giường | `assignCrew` `assignStaff` `releaseStaff` `sleepIn` `sleepers` |
 | `inventory` | Công cụ, vũ khí, giáp: phát, hao mòn, trả kho, lấy, đặt chế | `assignTool` `repairTool` `assignGear` `planTool` |
 | `commands` | Lệnh của người chơi: đi, làm, đánh, giữ chỗ, đổi nghề, tuyển và giải ngũ lính | `orderMove` `orderWork` `setJob` `enlist` `discharge` |
 | `labor` | Việc hằng ngày: thu hoạch, làm ruộng, mang vác, xây; máy trạng thái của dân | `think` `doWork` `doFarm` `planBuild` |
 | `movement` | Đi lại: đường đi, bước chân, chỗ đứng, tư thế vẽ | `pathTo` `moveUnit` `animate` |
-| `villagers` | Tạo dân và một ngày của dân: đói, máu, ngủ | `makeVillager` `tickVillager` |
+| `villagers` | Tạo dân và một ngày của dân: máu, ngủ | `makeVillager` `tickVillager` |
 | `defense` | Hàng rào, cổng, chòi canh: mở đóng cổng, phá công trình phòng thủ, cung thủ trên chòi | `toggleGate` `damageWork` `towerBonus` `assignTower` |
 | `mounts` | Thú cưỡi: Chuồng thú cưỡi thuần sói, lợn rừng, voi theo đơn (cần nghiên cứu và cấp chuồng), phát cho người như công cụ (`Villager.mount`), người cưỡi đi nhanh và đỡ đòn hơn, lính có thú tính là kỵ binh; lính Trại kỵ thú cưỡi thú theo cấp trại | `queueTame` `tickTame` `assignMount` `mountOf` |
 | `training` | Huấn luyện trong nhà của vai trò: người đi luyện một ngày hoặc hơn, tăng 1–5% một chỉ số, chỉ số "đổi lại" giảm (ít hơn nếu bỏ thêm tiền), có sàn theo chỉ số lúc sinh và trần theo cấp nhà; trả lương thực và tiền | `startTraining` `cancelTraining` `trainStep` |
@@ -48,6 +48,7 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 | `progression` (lớp dữ liệu) | Kế hoạch phát triển theo cấp Nhà chung và cấp Nhà nghiên cứu (`data/progression.json`) | `fireUnlockLevel` `fireBuildingMax` `labLevelOf` |
 | `warplan` | Kế hoạch chiến: nhiệm vụ cho từng đội, thẻ lệnh, kế hoạch phòng thủ, trống báo động | `newPlan` `startPlan` `playCard` `soundAlarm` |
 | `roles` | Vai trò gắn với công trình: giao và thu hồi, sức chứa theo cấp công trình | `assignRole` `releaseRole` `roleCapacity` `trimRoles` |
+| `notices` | Tin báo cho người chơi về việc sắp tới hoặc đang diễn ra (thiếu ăn cuối ngày, chuẩn bị mùa đông, sói và bộ tộc sắp đánh cần bao nhiêu lính…), tính lại từ trạng thái mỗi lần hỏi, không lưu | `noticesOf` |
 | `forecast` | Báo cáo của hội đồng chiến về một kế hoạch: tỉ lệ thắng, cảnh báo, hậu quả, chi tiết theo cấp bản đồ | `forecastPlan` |
 | `environment` | Đồng hồ, mùa, thời tiết, tầm nhìn | `tickCalendar` `refreshFog` |
 | `rest` | Sức (năng lượng), ngủ, ca làm, đuốc, mệt mỏi tích lũy | `tickEnergy` `shouldSleep` `callUp` `ensureTorch` |
@@ -138,7 +139,7 @@ Muốn **đổi cơ chế chiến đấu** (tốc độ ra đòn, thời điểm
 4. Tới cuối mũi tên mà không còn địch trong 12 ô thì đội giữ vị trí, giữ đội hình và đánh mọi thứ xung quanh, không đuổi theo.
 5. Tín hiệu và thẻ lệnh chưa dùng trong trận thật; giao diện không còn cho chọn.
 
-**Trận đông (hiệu năng).** Mọi lính được mô phỏng thật, không gom cụm. Ba biện pháp giữ trận mấy trăm người mỗi bên chạy được: (a) lưới ô 8×8 để mỗi lính chỉ xét kẻ địch ở ô gần (`threatCache`, dựng lại mỗi nhịp); (b) lính đang đánh một mục tiêu và tinh thần ổn thì không nhìn quanh mỗi nhịp; (c) ngân sách tìm đường mỗi nhịp (`Sim.pathLeft`, `PATH_BUDGET`): lệnh cho cả đạo quân được tìm đường dần qua vài nhịp thay vì cùng lúc. Cả ba là trạng thái dựng lại, không lưu.
+**Trận đông (hiệu năng).** Mọi lính được mô phỏng thật, không gom cụm. Ba biện pháp giữ trận mấy trăm người mỗi bên chạy được: (a) lưới ô 8×8 để mỗi lính chỉ xét kẻ địch ở ô gần (`threatCache`, dựng lại mỗi nhịp); (b) lính đang đánh một mục tiêu thì không nhìn quanh mỗi nhịp; (c) ngân sách tìm đường mỗi nhịp (`Sim.pathLeft`, `PATH_BUDGET`): lệnh cho cả đạo quân được tìm đường dần qua vài nhịp thay vì cùng lúc. Cả ba là trạng thái dựng lại, không lưu.
 
 ## Vai trò và công trình
 
@@ -191,11 +192,21 @@ Mốc hiện tại (dân tay không, trời nắng, 12 phút ban ngày): khoản
 
 **Ban đêm:** mọi người ngủ và lệnh lúc đó chờ đến sáng, trừ chiến binh. Dân bạn chọn làm chiến binh hoặc ra lệnh cho chiến binh vào ban đêm thì dậy trực tới sáng (`keepWatch` trong `commands.ts`).
 
+## Thức ăn
+
+Dân không có thang "no". Làng ăn chung một bữa vào cuối mỗi ngày game (`economy.eatDay`, gọi khi đổi ngày trong `tickCalendar`, trước khi người mới tới). Số liệu ở `src/data/food.json`.
+
+- **Khẩu phần:** mỗi dân 2, mỗi lính (`job === 'fight'`) 3 thức ăn ở lửa trại cấp 1, tăng 1 mỗi cấp lửa (`rationAt`). Tổng cần = `economy.foodNeed`.
+- **Phần ăn của lửa trại (`Sim.foodPot`):** thức ăn thu về được dồn vào đây trước cho đến khi đủ bữa kế (`economy.feedPot`, mỗi nhịp), dư mới ở lại kho. Thanh tài nguyên hiện kho + phần ăn.
+- **Thiếu ăn:** cuối ngày lấy từ phần ăn rồi tới kho. Phần thiếu chia cho phần cần ra tỉ lệ thiếu; `Sim.foodPenalty = maxPenalty (20%) × tỉ lệ thiếu`, hiệu lực cả ngày kế rồi tính lại ở bữa sau, đủ ăn thì về 0.
+- **Áp vào dân của ta:** `statValue` nhân `1 − foodPenalty` cho mọi chỉ số trừ `hp` (di chuyển, sức mạnh, hai phòng thủ, tốc độ làm việc, trí tuệ, sức). Máu tối đa không đổi, nhưng tốc độ hồi máu nhân `1 − foodPenalty` (`tickVillager`). Tốc đánh: `swingCycle` chia thêm `1 − foodPenalty` (giữ nguyên nhanh nhẹn như trước khi bị phạt để không tính hai lần).
+- Dân bộ tộc không ăn theo luật này.
+
 ## Sức, ngủ, ca làm và đuốc
 
 Mọi con số ở `src/data/rest.json`; logic ở `src/sim/rest.ts`.
 
-- **Sức (`energy`, 0 đến 100)** tụt khi làm, hồi khi ngủ. Một ngày làm nặng tốn khoảng 40 đến 50 điểm, ca đêm khoảng 30. Mỗi nghề có hệ số riêng (`jobWeight`: đốn gỗ, đục đá nặng nhất, nghiên cứu nhẹ nhất). Dân khỏe (Sức khỏe, Thể lực), tinh thần và máu cao thì tụt chậm và hồi nhanh.
+- **Sức (`energy`, 0 đến 100)** tụt khi làm, hồi khi ngủ. Một ngày làm nặng tốn khoảng 40 đến 50 điểm, ca đêm khoảng 30. Mỗi nghề có hệ số riêng (`jobWeight`: đốn gỗ, đục đá nặng nhất, nghiên cứu nhẹ nhất). Dân khỏe (Sức khỏe, Thể lực), máu cao thì tụt chậm và hồi nhanh.
 - **Dưới 20%** dân phải đi ngủ và **không gọi dậy được** tới 50% (hoặc 60% nếu ngã xuống ngủ khi dưới 10%). Trên 20% đang ngủ thì lệnh của người chơi gọi dậy được.
 - **Chiến binh** đánh tới cùng, bất kể sức; xong trận mà sức dưới 10% thì ngủ dài tới 60%.
 - **Ngủ đêm** hồi khoảng 60 điểm mỗi đêm, ngủ ngày một nửa, nhân với chỗ nằm (`sleepAt` trong `rest.json`). Hết sức hay tới giờ ngủ, dân đi bộ tới giường: dân thường tới **Nhà dân** (`house`, hồi ×1), chiến binh tới **Lều chiến binh** (`barracks`, hồi ×1); cấp nhà cao hơn nhân thêm `craftSpeed`. Vào giường là vào trong nhà (`inside`, `phase: sleep`): biến khỏi bản đồ, hiện thành danh sách trong nhà, không có hình ngủ. Chưa có nhà hoặc hết giường (`slots`) thì ngủ trên đất cạnh đống lửa, hồi chỉ ×0,6. Có địch tới gần thì người trong nhà bị đánh thức và ra ngoài.

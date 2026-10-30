@@ -9,7 +9,7 @@ const { chromium } = require('playwright');
     for (let y = cy - 3; y <= cy + 3; y++) for (let x = cx - 4; x <= cx + 6; x++) { const i = y * N + x; w.tiles[i] = 0; w.nodes.delete(i); }
     const plant = (x, y, kind, tile) => { const i = y * N + x; w.tiles[i] = tile; w.nodes.set(i, { kind, res: kind === 'tree' ? 'wood' : 'stone', amount: 10, max: 10, workers: 0, sides: 0, regrow: 0 }); };
     plant(cx - 1, cy, 'tree', 2); plant(cx, cy, 'tree', 2); plant(cx + 1, cy, 'tree', 2); plant(cx + 4, cy, 'rock', 3);
-    s.villagers.forEach(v => { v.fullness = 1e9; v.tools.axe = { tier: 2, dur: 600 }; v.tools.pick = { tier: 2, dur: 600 }; });
+    s.villagers.forEach(v => { v.tools.axe = { tier: 2, dur: 600 }; v.tools.pick = { tier: 2, dur: 600 }; });
     s.orderWork([s.villagers[0].id, s.villagers[1].id], cx, cy);
     s.orderWork([s.villagers[2].id], cx + 4, cy);
     g.cam.zoom = 4; g.ctl.centerOn((cx + 2) * 32, cy * 32); s.speed = 4;

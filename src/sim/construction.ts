@@ -42,11 +42,11 @@ export function footprintError(sim: Sim, kind: BuildingKind, x: number, y: numbe
     const t = w.tiles[k];
     if ((t !== 0 && t !== 4) || (w.occ[k] && !own(tx, ty))) return 'Vướng cây, đá, nước hoặc công trình';
   }
-  // houses keep 2 free tiles between them so that villagers never get boxed in; fences, gates and pits are laid tight on purpose
+  // houses keep a free tile between them (CLEARANCE) so that villagers never get boxed in; fences, gates and pits are laid tight on purpose
   if (!WALL_KINDS.has(kind)) for (const o of sim.buildings) {
     if (o === ignore || WALL_KINDS.has(o.kind)) continue;
     const od = BUILDINGS[o.kind], gx = Math.max(x - (o.x + od.w), o.x - (x + d.w)), gy = Math.max(y - (o.y + od.h), o.y - (y + d.h));
-    if (Math.max(gx, gy) < CLEARANCE) return 'Cần chừa ít nhất 2 ô trống giữa các công trình để dân đi lại';
+    if (Math.max(gx, gy) < CLEARANCE) return `Cần chừa ít nhất ${CLEARANCE} ô trống giữa các công trình để dân đi lại`;
   }
   return null;
 }
@@ -176,8 +176,7 @@ export function setOcc(sim: Sim, b: Building, val: number): void {
 
 /** A house that may stand only once cannot be torn down (it can still be raised and moved). */
 export function canDemolish(sim: Sim, b: Building): string | null {
-  if (!BUILDINGS[b.kind].buildable) return 'Không phá được công trình này';
-  return BUILDINGS[b.kind].perFire ? null : 'Công trình chỉ có một cái nên không phá bỏ được';
+  return BUILDINGS[b.kind].buildable ? null : 'Không phá được công trình này';
 }
 
 /** A work falls in battle: it leaves the village with no salvage and no refund. */

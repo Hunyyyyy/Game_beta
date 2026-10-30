@@ -43,7 +43,7 @@ export function describe(v: Villager, sim?: Sim): string {
     case 'build': t = 'đang xây'; break;
     case 'goStaff': t = 'đi vào nhà làm việc'; break;
     case 'inside': t = v.job === 'food' ? 'đang làm ruộng' : `đang ${JOBS[v.job as 'craft'].name.toLowerCase()} trong nhà`; break;
-    case 'goOrder': t = v.order?.startsWith('repair') ? 'đem đồ hỏng đi sửa' : 'đi đặt chế tạo'; break;
+    case 'goOrder': t = 'đi đặt chế tạo'; break;
     case 'goEquip': t = 'đi lấy đồ ở kho'; break;
     case 'wait': t = (sim && waitReason(v, sim)) || 'chờ việc'; break;
     case 'goHome': { const bed = sim && v.target >= 0 ? sim.getBuilding(v.target) : undefined; t = bed ? `đi vào ${BUILDINGS[bed.kind].name.toLowerCase()} ngủ` : 'về lửa trại ngủ'; break; }
