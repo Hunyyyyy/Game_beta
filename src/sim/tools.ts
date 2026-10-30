@@ -1,5 +1,5 @@
 import type { WorkJob } from './jobs';
-import { ARMORS, WEAPONS } from './combat';
+import { ARMORS, RULES, WEAPONS } from './combat';
 import type { Stock } from './resources';
 
 export type ToolKind = 'axe' | 'pick' | 'hoe' | 'hammer';
@@ -46,7 +46,7 @@ export const recipeName = (r: Recipe) => {
 export const recipeUse = (r: Recipe) => {
   if (r.kind === 'hide') return 'giáp, giảm sát thương';
   if (r.kind === 'torch') return 'làm việc ban đêm (hiệu suất 70%), nhìn xa hơn trong tối';
-  if (isWeaponKind(r.kind)) { const w = WEAPONS[r.kind]; return `${{ pierce: 'đâm', slash: 'chém', crush: 'đập' }[w.type]} ${w.damage} · tầm ${w.range}`; }
+  if (isWeaponKind(r.kind)) { const w = WEAPONS[r.kind]; return `${{ pierce: 'đâm', slash: 'chém', crush: 'đập' }[w.type]} ${w.damage} · ${(1 / w.cycle).toFixed(2)} đòn/giây · chí mạng đòn ${Math.round((w.critDamage ?? RULES.critDamage) * 100)}% · tầm ${w.range}`; }
   return TOOL_USE[r.kind as ToolKind];
 };
 

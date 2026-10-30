@@ -1,7 +1,7 @@
 import eventsJson from '../data/events.json';
 import { DAY_LENGTH } from './constants';
-import { cycleOf, WEAPONS, HOSTILE_BELOW, MORALE, RELATION, ringOf, ringPower, RULES, SIEGE, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
-import { engage, resolve, swingTimes, tickCommon, tickMorale, threatsOf, moraleShock, weaponOf } from './battle';
+import { cycleOf, WEAPONS, HOSTILE_BELOW, RELATION, ringOf, ringPower, RULES, SIEGE, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
+import { engage, resolve, swingTimes, tickCommon, threatsOf, weaponOf } from './battle';
 import { BUILDINGS } from './buildings';
 import { armOfWeapon } from './formations';
 import { SEASON_DAYS } from './calendar';
@@ -135,7 +135,6 @@ export function killFoe(sim: Sim, v: Villager, killer?: Villager): void {
   if (!t) return;
   t.unitIds = t.unitIds.filter((u) => u !== v.id);
   if (v.ai?.role === 'raider') sim.noteBattle('foes');
-  moraleShock(sim, v, MORALE.allyDeath);
   if (killer?.team === 'player') {
     t.relation = Math.max(-100, t.relation + (v.ai?.role === 'civ' ? RELATION.killCivilian : RELATION.killWarrior));
     t.angryUntil = sim.time + 120;
@@ -202,7 +201,6 @@ export function tickTribes(sim: Sim, dt: number): void {
   sim.tribeClock = 0;
   for (const t of sim.tribes) {
     t.unitIds = t.unitIds.filter((u) => { const f = sim.get(u); return !!f && f.health > 0; });
-    for (const u of t.unitIds) tickMorale(sim, sim.get(u)!);
     if (t.state === 'free' && t.unitIds.length === 0) { t.state = 'destroyed'; t.raid = null; sim.say(`${t.def.name} đã bị xóa sổ.`); continue; }
     if (t.state === 'tribute' && sim.day >= t.nextTribute) {
       t.nextTribute = sim.day + SEASON_DAYS;
@@ -220,11 +218,9 @@ function checkSurrender(sim: Sim, t: Tribe): void {
   if (SURRENDER.leaderDown && t.leaderId >= 0 && !t.unitIds.includes(t.leaderId) && units.length) return surrender(sim, t, 'Thủ lĩnh đã gục');
   // 2. the player holds their fire for 30 seconds with no warrior left near it
   const intruders = sim.villagers.filter((v) => v.health > 0 && v.down <= 0 && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 5).length;
-  const defenders = warriors.filter((w) => Math.hypot(w.x - t.camp.x, w.y - t.camp.y) < 9 && w.morale >= MORALE.flee).length;
+  const defenders = warriors.filter((w) => Math.hypot(w.x - t.camp.x, w.y - t.camp.y) < 9).length;
   t.holdT = intruders > 0 && defenders === 0 && tribeHostile(sim, t.id) ? t.holdT + 1 : 0;
   if (t.holdT >= SURRENDER.holdCampSeconds) return surrender(sim, t, 'Đống lửa của họ đã bị chiếm');
-  // 3. the whole group has lost heart
-  if (warriors.length && warriors.reduce((a, w) => a + w.morale, 0) / warriors.length < SURRENDER.moraleBelow) surrender(sim, t, 'Tinh thần sụp đổ');
 }
 
 export function surrender(sim: Sim, t: Tribe, why: string): void {
@@ -241,9 +237,8 @@ function manageRaid(sim: Sim, t: Tribe): void {
   if (!r) return;
   r.t += 1;
   const raiders = t.unitIds.map((u) => sim.get(u)!).filter((u) => u?.ai?.raid === r.id);
-  const heart = raiders.length ? raiders.reduce((a, u) => a + u.morale, 0) / raiders.length : 0;
   const playerAlive = sim.villagers.some((v) => v.health > 0);
-  if (r.phase === 'march' && (raiders.length === 0 || r.t > r.max || heart < MORALE.flee || !playerAlive)) {
+  if (r.phase === 'march' && (raiders.length === 0 || r.t > r.max || !playerAlive)) {
     r.phase = 'retreat'; if (raiders.length) sim.say(`Quân ${t.def.name} rút lui.`);
   }
   if (r.phase === 'retreat') {
@@ -400,16 +395,15 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
   const radius = ai.role === 'raider' ? 12 : ai.role === 'civ' ? 9 : AGGRO[t.def.personality];
   const scanNow = f.fight.scan <= 0;
   if (scanNow) f.fight.scan = 0.4;
-  const looking = scanNow || f.phase === 'flee' || (f.phase === 'fight' && (!f.fight.target || f.morale < MORALE.flee)); // see brainPlayer: a unit busy with a target needs no new look every tick
+  const looking = scanNow || f.phase === 'flee' || (f.phase === 'fight' && !f.fight.target); // see brainPlayer: a unit busy with a target needs no new look every tick
   const threats = free && looking ? threatsOf(sim, f, radius) : [];
   if (!free) { f.fight.target = null; if (f.phase === 'fight') { f.phase = 'idle'; f.path = []; } }
 
-  // fleeing: morale broke, or an unarmed civilian meets a threat
-  if (free && (f.fleeT > 0 || (f.morale < MORALE.flee && threats.length) || (ai.role === 'civ' && threats.length && threats[0].d < 8))) {
+  // fleeing: an unarmed civilian meets a threat
+  if (free && (f.fleeT > 0 || (ai.role === 'civ' && threats.length && threats[0].d < 8))) {
     if (f.fleeT <= 0) { f.fleeT = 6; f.fight.target = null; f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3000); }
     f.fleeT -= dt; f.phase = 'flee';
     if (threats.length && threats[0].d < 6) f.fleeT = Math.max(f.fleeT, 2);
-    if (f.fleeT <= 0 && f.morale < MORALE.fleeRecover) f.fleeT = 1;
     if (!f.path.length && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 3) f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3000);
     return;
   }

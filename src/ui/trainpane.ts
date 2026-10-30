@@ -18,7 +18,7 @@ export class TrainPane {
 
   update(b: Building): void {
     const { sim } = this.c, who = sim.trainees(b);
-    const k = [b.id, b.level, this.care, Math.floor(sim.stock.food / 4), Math.floor(sim.stock.coin), who.map((v) => `${v.id}.${v.stats.str}.${v.stats.agi}.${v.stats.int}.${v.stats.sta}.${v.stats.vit}.${v.train ? Math.floor(v.train.left / 20) : 'w'}`).join()].join('|');
+    const k = [b.id, b.level, this.care, Math.floor(sim.stock.food / 4), Math.floor(sim.stock.coin), who.map((v) => `${v.id}.${v.stats.str}.${v.stats.agi}.${v.stats.sta}.${v.stats.vit}.${v.train ? Math.floor(v.train.left / 20) : 'w'}`).join()].join('|');
     if (k === this.key) return;
     this.key = k;
     this.root.replaceChildren(...this.render(b, who));

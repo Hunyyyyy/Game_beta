@@ -27,10 +27,5 @@
     "killWarrior": -10, "killCivilian": -25, "attackedPeaceful": -30,
     "tributeAt": 60, "joinAt": 90
   },
-  "surrender": { "leaderDown": true, "holdCampSeconds": 30, "moraleBelow": 10 },
-  "morale": {
-    "start": 70, "flee": 25, "fleeRecover": 45, "surrender": 10,
-    "allyDeath": -15, "outnumbered": -0.8, "outnumbering": 0.5, "nearHome": 0.5, "night": -0.3,
-    "leaderNear": 0.3, "leaderFar": -0.2, "winBonus": 20, "backstab": -5, "calm": 0.1
-  }
+  "surrender": { "leaderDown": true, "holdCampSeconds": 30 }
 }

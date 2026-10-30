@@ -1,0 +1,12 @@
+{
+  "_note": "Công thức chỉ số của mọi NPC là người. Giá trị = gốc × hệ số cá nhân × hệ số bậc × (1 + tổng % nghiên cứu / 100). Mỗi chỉ số tính riêng, không đọc chỉ số khác (ngoại trừ tác dụng của Trí tuệ, ghi ở intEffect). base = giá trị gốc của chỉ số. stars: trọng số xuất hiện của 1 đến 5 sao; tổng 8 hệ số cá nhân của một người bằng 8 × (budgetBase + budgetPerStar × sao), mỗi hệ số được rút ngẫu nhiên quanh 1 với độ lệch spread rồi bị giới hạn trong [min, max], nên không ai quá cao hay quá thấp. tierMult[bậc] = hệ số nhân lên gốc của cả vai trò khi đã nghiên cứu bậc đó. defense.k: % giảm sát thương = điểm thủ / (điểm thủ + k). intEffect: mỗi 100% Trí tuệ trên gốc thì tốc độ làm việc tăng work và sức tiêu hao giảm drain (theo tỷ lệ). legacy: các chỗ cũ của game vẫn đọc 4 chỉ số cũ (Sức khỏe, Sức mạnh, Nhanh nhẹn, Thể lực), nên chúng được tính ngược từ giá trị mới theo các hệ số này.",
+  "base": { "hp": 100, "atk": 10, "defm": 20, "defr": 20, "move": 2.0, "work": 1.0, "int": 10, "sta": 100 },
+  "stars": { "weights": [30, 30, 25, 10, 5], "budgetBase": 0.92, "budgetPerStar": 0.04, "spread": 0.3, "min": 0.8, "max": 1.25 },
+  "tierMult": {
+    "2": { "hp": 1.5, "atk": 1.4, "defm": 1.4, "defr": 1.4, "move": 1.1, "work": 1.2, "int": 1.2, "sta": 1.3 }
+  },
+  "defense": { "k": 100 },
+  "intEffect": { "work": 0.5, "drain": 0.5 },
+  "staDrainRef": 100,
+  "legacy": { "hpBase": 40, "hpPerVit": 8, "strengthDamage": 0.6, "atkToDamage": 0.4, "speedBase": 1.6, "speedPerAgi": 0.1, "staScale": 0.065, "vitFromHp": true }
+}

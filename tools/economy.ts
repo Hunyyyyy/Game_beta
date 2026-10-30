@@ -7,7 +7,7 @@ import { Sim } from '../src/sim/sim';
 import { DAY_LENGTH } from '../src/sim/constants';
 import { BUILDINGS, levelCapByFire, POP_BY_FIRE } from '../src/sim/buildings';
 import { SEASON_DEF } from '../src/sim/calendar';
-import { FOOD_NUTRITION } from '../src/sim/resources';
+import { rationAt } from '../src/sim/resources';
 import type { BuildingKind } from '../src/sim/buildings';
 import type { WorkJob } from '../src/sim/jobs';
 
@@ -16,14 +16,13 @@ const DAYS = 3;
 /** First day of each season (the year is four seasons of 5 days). */
 const SEASON_START = { spring: 1, summer: 6, autumn: 11, winter: 16 } as const;
 type Season = keyof typeof SEASON_START;
-const FOOD_PER_PERSON = 100 / FOOD_NUTRITION; // a day's hunger is 100 points and one food gives FOOD_NUTRITION
 
 interface Run { job: WorkJob; field?: 1 | 2 | 3; season: Season }
 
 function measure(seed: number, run: Run): number {
   const sm = new Sim(seed);
   sm.fog.state.fill(2); sm.events.length = 0; sm.nextRaid = 1e9; sm.animals.length = 0; sm.animalById.clear();
-  sm.villagers.forEach((v) => { v.fullness = 1e9; v.tools.axe = { tier: 1, dur: 1e6 }; v.tools.pick = { tier: 1, dur: 1e6 }; v.tools.hoe = { tier: 1, dur: 1e6 }; });
+  sm.villagers.forEach((v) => { v.tools.axe = { tier: 1, dur: 1e6 }; v.tools.pick = { tier: 1, dur: 1e6 }; v.tools.hoe = { tier: 1, dur: 1e6 }; });
   sm.time = DAY_LENGTH * (SEASON_START[run.season] - 1) + DAY_LENGTH * 0.25;
   let fieldId = -1;
   if (run.field) {
@@ -56,7 +55,7 @@ function measure(seed: number, run: Run): number {
 const avg = (run: Run) => SEEDS.reduce((a, s) => a + measure(s, run), 0) / SEEDS.length;
 const f1 = (n: number) => n.toFixed(1);
 
-console.log(`Mỗi người ăn ${FOOD_PER_PERSON} thức ăn mỗi ngày game. Số liệu: trung bình ${SEEDS.length} seed x ${DAYS} ngày, một dân cuốc/rìu gỗ.\n`);
+console.log(`Mỗi dân ăn ${rationAt(1, false)} thức ăn mỗi ngày game ở lửa cấp 1 (tăng theo cấp lửa). Số liệu: trung bình ${SEEDS.length} seed x ${DAYS} ngày, một dân cuốc/rìu gỗ.\n`);
 const flat: Array<[string, Run]> = [['Đốn gỗ (mùa xuân)', { job: 'wood', season: 'spring' }], ['Đục đá (mùa xuân)', { job: 'stone', season: 'spring' }], ['Hái bụi quả (mùa hạ)', { job: 'food', season: 'summer' }]];
 for (const [name, r] of flat) console.log(`${name.padEnd(24)} ${f1(avg(r)).padStart(6)} / người / ngày`);
 
@@ -73,7 +72,7 @@ console.log('\nKế hoạch theo cấp Nhà chung (một lửa), ruộng nuôi b
 console.log('lửa  dân  ruộng x cấp   cần/ngày  có/ngày (năm)  có/ngày (đông)  đủ?');
 for (let fire = 1; fire <= 4; fire++) {
   const pop = POP_BY_FIRE[fire - 1], count = BUILDINGS.field.perFire![fire - 1], lvl = Math.min(3, levelCapByFire(fire)) as 1 | 2 | 3;
-  const y = fieldYield[lvl], year = (count * (y.spring + y.summer + y.autumn + y.winter)) / 4, winter = count * y.winter, need = pop * FOOD_PER_PERSON;
+  const y = fieldYield[lvl], year = (count * (y.spring + y.summer + y.autumn + y.winter)) / 4, winter = count * y.winter, need = pop * rationAt(fire, false);
   console.log(`${fire}    ${String(pop).padStart(3)}  ${count} x ${lvl}        ${f1(need).padStart(6)}    ${f1(year).padStart(8)} (${Math.round((100 * year) / need)}%)   ${f1(winter).padStart(8)} (${Math.round((100 * winter) / need)}%)  ${year >= need * 0.6 ? 'ruộng nuôi ≥ 60%' : 'THIẾU'}`);
 }
 void SEASON_DEF;

@@ -93,18 +93,5 @@ $mini: clamp(64px, 15vw, 96px);
   border-radius: 50%; background: #e0372d; color: #fff; font: 700 11px/16px system-ui, sans-serif; font-style: normal; text-align: center;
   box-shadow: 0 0 0 2px rgba(20, 14, 8, .8); animation: questPulse 1.4s ease-in-out infinite;
 }
-.qpanel {
-  @include hud-box($radius-lg);
-  position: absolute; left: calc(52px + var(--sal)); top: 34%; z-index: 20;
-  width: min(340px, calc(100% - 70px)); max-height: 56vh; overflow: auto; padding: 8px 10px; font-size: 12.5px; line-height: 1.4;
-  &[hidden] { display: none; }
-  .qhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
-  .qx { background: none; border: 0; color: inherit; cursor: pointer; font-size: 14px; padding: 0 2px; }
-  .qrow { padding: 4px 0; border-top: 1px solid var(--line); }
-  .qtitle { font-weight: 600; }
-  .qrow.done { opacity: .55; .qtitle { font-weight: 500; text-decoration: line-through; } }
-  .qrow.lock { opacity: .45; }
-  .qrow.now .qtitle { color: #fff6e8; font-size: 13.5px; }
-  .qhint { margin-top: 3px; color: var(--muted); font-size: 12px; }
-  .qneed { margin-top: 3px; color: #ffb4a8; font-size: 12px; }
-}
+.nbtn { top: calc(34% + 48px); }
+.nbtn .dot.calm { background: #d8b13a; color: #26180c; animation: none; }

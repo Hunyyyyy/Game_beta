@@ -478,8 +478,8 @@ export function tickPlans(sim: Sim, dt: number): void {
             if (pos.target) sim.orderAttack(sim.squadUnits(s).map((v) => v.id), { kind: 'unit', id: pos.target });
           } else if (m.state === 'march' && m.route === 'forest' && d > 12 && Math.hypot((s.anchor?.x ?? 0) - c.x, (s.anchor?.y ?? 0) - c.y) < 4) dispatch(sim, plan, { ...m, route: 'main' }, s); // reached the flank: now go in
         }
-        const lost = m.initial ? 1 - alive / m.initial : 0, morale = sim.squadUnits(s).reduce((a, v) => a + v.morale, 0) / alive;
-        if (m.withdrawAt > 0 && (lost >= m.withdrawAt || morale < 25)) {
+        const lost = m.initial ? 1 - alive / m.initial : 0;
+        if (m.withdrawAt > 0 && lost >= m.withdrawAt) {
           m.state = 'withdraw'; m.leg = 0; m.block = null;
           if (m.retreat.length) goLeg(sim, s, m, m.retreat); else sim.squadMove(s, plan.rally.x, plan.rally.y, 'move'); sim.noteBattle('note', `${s.name} rút lui sau khi mất ${Math.round(lost * 100)}% quân.`); sim.say(`${s.name} rút lui!`); }
       } else if (m.state === 'withdraw') {

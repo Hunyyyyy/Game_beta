@@ -8,7 +8,7 @@ import { CURRENCY, emptyStock, Res, RES_NAME, Stock } from './resources';
 import { mulberry32, Rng } from './rng';
 import { Tool, ToolKind } from './tools';
 import { Team, TribeId } from './combat';
-import { hurt, tickMorale, tickProjectiles } from './battle';
+import { hurt, tickProjectiles } from './battle';
 import { Animal, populate, tickAnimals } from './fauna';
 import { adoptTribe, EventState, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tributeTribe } from './tribes';
 import { recipeOpen, Tech } from './research';
@@ -16,6 +16,7 @@ import { questViews, QuestUi, QuestView } from './quests';
 import { World } from './world';
 import * as construction from './construction';
 import * as economy from './economy';
+import * as notices from './notices';
 import * as works from './works';
 import * as houses from './houses';
 import * as inventory from './inventory';
@@ -32,7 +33,7 @@ import * as army from './army';
 import * as scouting from './scouting';
 import * as warplan from './warplan';
 import { WAR, WarApi } from './simwar';
-import { BattleState, CardKind, FormationName, LogLine, Objective, PlaceResult, Plan, Projectile, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
+import { BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
 import type { Ent } from './battle';
 export * from './model';
 
@@ -51,8 +52,6 @@ export class Sim {
   readonly tameQueue: string[] = [];
   /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
   readonly researchQueue: string[] = [];
-  /** Tools waiting to be mended in the Nhà sửa chữa (recipe ids such as axe1). */
-  readonly repairQueue: string[] = [];
   coinFrac = 0;
   sawCoin = false;
   /** Finished research (tech ids). Recipes and building levels stay locked until their tech is here. */
@@ -98,7 +97,7 @@ export class Sim {
   readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  readonly dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false, noArrivals: false };
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, noTire: false, noArrivals: false };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
   /** Called when something dies (UI refresh hook). */
@@ -110,7 +109,7 @@ export class Sim {
   nextVid = 1;
   nextBid = 1;
   readonly rnd: Rng;
-  moraleClock = 0;
+  leaderClock = 0;
   /** Seconds since the tribes were last looked after (they are tended once a second). */
   tribeClock = 0;
   lastFullWarn = -999;
@@ -123,8 +122,17 @@ export class Sim {
   signalled = false;
   resting = false;
   lastVision = -1;
-  /** Stored food split into lots, oldest eaten first; each lot has an expiry time. */
-  readonly foodLots: Array<{ amount: number; exp: number }> = [];
+  /** Food in the pot of the campfire: the meal of the coming end of day, filled before the store (see economy.feedPot). */
+  foodPot = 0;
+  /** How much the whole village is weakened today for going short at the last meal (0..FOOD.maxPenalty). */
+  foodPenalty = 0;
+  /** Food that came in today, and the total (pot + store) seen last tick (-1: not yet); the incomes of the last three days. Only to tell the player what the village earns. */
+  foodIncome = 0;
+  foodSeen = -1;
+  readonly foodDays: number[] = [];
+  /** What the gatherers of each trade ('wood', 'stone', 'food', 'hunt', 'farm') brought in today and yesterday, for the card of their house. */
+  readonly yieldNow: Record<string, number> = {};
+  readonly yieldPrev: Record<string, number> = {};
 
   constructor(readonly seed = 1337) {
     this.world = new World(seed);
@@ -139,7 +147,7 @@ export class Sim {
     this.resting = isRestTime(this.tod, this.season);
     const s = this.world.start;
     this.addBuilding('campfire', s.x - 1, s.y - 2, true);
-    this.stock.food = 20; // enough for two people for two days
+    this.stock.food = 20; // the first meals of the two who start (4 a day)
     // two villagers to start: a gatherer, whose work feeds both of them, and a woodcutter
     const spots: Array<[number, number, Sex, Job]> = [[-1, 1, 'm', 'food'], [1, 1, 'f', 'wood']];
     for (const [dx, dy, sex, job] of spots) this.spawn(s.x + dx, s.y + dy, sex).job = job;
@@ -218,8 +226,6 @@ export class Sim {
   visionRadius(): number { return environment.visionRadius(this); }
   /** → environment.fireRadius */
   fireRadius(): number { return environment.fireRadius(this); }
-  /** → economy.foodSpoilingWithin */
-  foodSpoilingWithin(secs: number): number { return economy.foodSpoilingWithin(this, secs); }
   get(id: number): Villager | undefined { return this.byId.get(id); }
   say(text: string): void { this.log.push({ t: this.time, text }); if (this.log.length > 40) this.log.shift(); }
 
@@ -286,9 +292,7 @@ export class Sim {
   moveBuilding(id: number, x: number, y: number): string | null { return construction.moveBuilding(this, id, x, y); }
 
   /** → works.orderDef */
-  orderDef(kind: 'research' | 'craft' | 'repair', id: string): { cost: Partial<Stock>; time: number } | null { return works.orderDef(this, kind, id); }
-  /** → works.bestIntInside */
-  bestIntInside(b: Building): number { return works.bestIntInside(this, b); }
+  orderDef(kind: 'research' | 'craft', id: string): { cost: Partial<Stock>; time: number } | null { return works.orderDef(this, kind, id); }
   /** → works.recipeLock */
   recipeLock(id: string): string | null { return works.recipeLock(this, id); }
   /** → works.recipeOpen */
@@ -308,8 +312,6 @@ export class Sim {
   researchShort(t: Tech): string | null { return works.researchShort(this, t); }
   /** → works.queueCraft */
   queueCraft(id: string): string | null { return works.queueCraft(this, id); }
-  /** → works.queueRepair */
-  queueRepair(id: string): string | null { return works.queueRepair(this, id); }
   /** → works.unqueueCraft */
   unqueueCraft(id: string): void { return works.unqueueCraft(this, id); }
   /** → works.unqueueResearch */
@@ -331,7 +333,7 @@ export class Sim {
   tickWorks(dt: number): void { return works.tickWorks(this, dt); }
 
   /** → houses.bestFor */
-  bestFor(job: 'craft' | 'research' | 'repair' | 'tame'): Villager | null { return houses.bestFor(this, job); }
+  bestFor(job: 'craft' | 'research' | 'tame'): Villager | null { return houses.bestFor(this, job); }
   /** → defense.tickTraps */
   tickTraps(dt: number): void { return defense.tickTraps(this, dt); }
   /** → defense.tickTowers */
@@ -377,7 +379,7 @@ export class Sim {
   releaseCrew(ids: readonly number[]): void { return houses.releaseCrew(this, ids); }
 
   /** → houses.assignStaff */
-  assignStaff(ids: readonly number[], job: 'craft' | 'research' | 'repair' | 'tame'): string | null { return houses.assignStaff(this, ids, job); }
+  assignStaff(ids: readonly number[], job: 'craft' | 'research' | 'tame'): string | null { return houses.assignStaff(this, ids, job); }
   /** → houses.planStaff */
   planStaff(v: Villager): void { return houses.planStaff(this, v); }
   /** → houses.enterBuilding */
@@ -399,8 +401,14 @@ export class Sim {
   assignTool(ids: readonly number[], k: ToolKind, tier: number): string | null { return inventory.assignTool(this, ids, k, tier); }
   /** → inventory.discardTool */
   discardTool(ids: readonly number[], k: ToolKind): void { return inventory.discardTool(this, ids, k); }
-  /** → inventory.repairTool */
-  repairTool(ids: readonly number[], k: ToolKind): string | null { return inventory.repairTool(this, ids, k); }
+  /** → economy.foodNeed */
+  foodNeed(): number { return economy.foodNeed(this); }
+  /** → notices.noticesOf */
+  notices(): Notice[] { return notices.noticesOf(this); }
+  /** → economy.noteYield */
+  noteYield(key: string, n: number): void { return economy.noteYield(this, key, n); }
+  /** → economy.eatDay */
+  eatDay(): void { return economy.eatDay(this); }
   /** → economy.barter */
   barter(res: Exclude<Res, 'coin'>): string | null { return economy.barter(this, res); }
 
@@ -484,23 +492,20 @@ export class Sim {
     this.pathLeft = PATH_BUDGET;
     this.tickCalendar();
     this.world.tick(dt);
-    this.syncFood();
+    economy.feedPot(this); economy.trackFood(this);
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
-    this.moraleClock += dt;
-    if (this.moraleClock >= 1) { this.moraleClock = 0; for (const v of this.villagers) if (v.down <= 0) tickMorale(this, v); this.pickLeaders(); }
+    this.leaderClock += dt;
+    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); }
     if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
     if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
   }
 
   /** → environment.tickCalendar */
   tickCalendar(): void { return environment.tickCalendar(this); }
-
-  /** → economy.syncFood */
-  syncFood(): void { return economy.syncFood(this); }
 
   /** → villagers.tickVillager */
   tickVillager(v: Villager, dt: number): void { return villagers.tickVillager(this, v, dt); }
@@ -534,8 +539,8 @@ export class Sim {
   adoptFoe(v: Villager): void {
     const i = this.foes.indexOf(v);
     if (i >= 0) this.foes.splice(i, 1);
-    v.team = 'player'; v.ai = null; v.job = 'idle'; v.phase = 'idle'; v.path = []; v.morale = 50; v.leader = false; v.fleeT = 0;
-    this.clearCombat(v); v.health = Math.max(v.health, v.maxHealth * 0.6); v.fullness = 70;
+    v.team = 'player'; v.ai = null; v.job = 'idle'; v.phase = 'idle'; v.path = []; v.leader = false; v.fleeT = 0;
+    this.clearCombat(v); v.health = Math.max(v.health, v.maxHealth * 0.6);
     this.villagers.push(v); this.fogDirty = true;
   }
   /** Diplomacy buttons: 'gift', 'tribute', 'adopt'. Returns an error text or null. */
@@ -554,12 +559,6 @@ export class Sim {
   /** → quests.questViews */
   quests(ui: QuestUi): QuestView[] { return questViews(this, ui); }
   campfire(): Building | undefined { return this.buildings.find((b) => b.kind === 'campfire' && b.done); }
-  /** Close to the unit's own camp: the village fire, or the tribal camp for tribal people. */
-  nearHome(v: Villager): boolean {
-    if (v.ai) return Math.hypot(v.x - v.ai.camp.x, v.y - v.ai.camp.y) < 10;
-    const f = this.campfire();
-    return !!f && Math.hypot(v.x - f.x - 1, v.y - f.y - 1) < 10;
-  }
   /** Another fighter within 7 tiles of the animal: a boar is only worth attacking in a group. */
   packNear(v: Villager, a: Animal): boolean {
     return this.villagers.some((o) => o !== v && o.health > 0 && o.down <= 0 && (o.job === 'hunt' || o.job === 'fight') && Math.hypot(o.x - a.x, o.y - a.y) < 7);
@@ -612,8 +611,6 @@ export class Sim {
 
   /** → inventory.wearGear */
   wearGear(v: Villager, slot: 'weapon' | 'armor'): void { return inventory.wearGear(this, v, slot); }
-  /** → inventory.planGearRepair */
-  planGearRepair(v: Villager): boolean { return inventory.planGearRepair(this, v); }
   /** → inventory.planEquipGear */
   planEquipGear(v: Villager): boolean { return inventory.planEquipGear(this, v); }
   /** → inventory.planGearErrand */

@@ -51,7 +51,7 @@ export interface Chapter { id: number; name: string }
 
 export const QUESTS = data.quests as Quest[];
 /** Quests that teach a button or wait for the clock: a game saved before quests were kept counts them as done. */
-export const SCREEN_QUESTS = QUESTS.filter((q) => ['selectBuilding', 'openBuilding', 'inspectNode', 'inspectUnit', 'inspectAnimal', 'speed', 'daytime'].includes(q.done.type)).map((q) => q.id);
+export { SCREEN_QUESTS } from './progression';
 export const CHAPTERS = data.chapters as Chapter[];
 
 /** What the player has on the screen right now (the quests that teach the buttons look at it). */
@@ -73,7 +73,7 @@ function measure(sim: Sim, d: QuestDone, ui: QuestUi): [number, number] {
     case 'fireReady': return yes(fireUpgradeBlock(sim, d.level) === null);
     case 'researchTech': return yes(sim.researched.has(d.id));
     case 'population': return [sim.villagers.length, d.count];
-    case 'stock': return [Math.floor(sim.stock[d.res]), d.count];
+    case 'stock': return [Math.floor(sim.stock[d.res] + (d.res === 'food' ? sim.foodPot : 0)), d.count];
     case 'hasRole': return [sim.villagers.filter((v) => roleOf(v) === d.role).length, d.count];
     case 'jobCount': return [sim.villagers.filter((v) => v.job === d.job).length, d.count];
     case 'staffIn': return [sim.buildings.filter((b) => b.kind === d.kind).reduce((n, b) => n + b.staff.length, 0), d.count];

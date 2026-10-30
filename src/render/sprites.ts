@@ -14,9 +14,6 @@ import builderL3 from '../data/blueprints/stone_age/buildings/builder/L3.json';
 import labL1 from '../data/blueprints/stone_age/buildings/lab/L1.json';
 import labL2 from '../data/blueprints/stone_age/buildings/lab/L2.json';
 import labL3 from '../data/blueprints/stone_age/buildings/lab/L3.json';
-import repairL1 from '../data/blueprints/stone_age/buildings/repair/L1.json';
-import repairL2 from '../data/blueprints/stone_age/buildings/repair/L2.json';
-import repairL3 from '../data/blueprints/stone_age/buildings/repair/L3.json';
 import toolstoreL1 from '../data/blueprints/stone_age/buildings/toolstore/L1.json';
 import toolstoreL2 from '../data/blueprints/stone_age/buildings/toolstore/L2.json';
 import toolstoreL3 from '../data/blueprints/stone_age/buildings/toolstore/L3.json';
@@ -142,7 +139,6 @@ const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>
     storage: [storageL1, storageL2, storageL3],
     workshop: [workshopL1, workshopL2, workshopL3],
     lab: [labL1, labL2, labL3],
-    repair: [repairL1, repairL2, repairL3],
     toolstore: [toolstoreL1, toolstoreL2, toolstoreL3],
     armory: [armoryL1, armoryL2, armoryL3],
     infantry: [infantryL1, infantryL2, infantryL3],
@@ -189,7 +185,7 @@ export class Sprites {
     this.icons.torch1 = this.torchIcon();
     this.nature('spring');
     this.emblems.lab = this.scrollEmblem();
-    this.emblems.builder = this.icons.hammer1; this.emblems.repair = this.icons.hammer2; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.infantry = this.icons.spear1; this.emblems.cavalry = this.icons.spear1; this.emblems.archery = this.icons.sling1 ?? this.icons.spear1; this.emblems.lumberyard = this.icons.axe1; this.emblems.quarry = this.icons.pick1; this.emblems.farmhouse = this.icons.hoe1; this.emblems.huntlodge = this.icons.spear1; this.emblems.stable = this.icons.hoe1;
+    this.emblems.builder = this.icons.hammer1; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.infantry = this.icons.spear1; this.emblems.cavalry = this.icons.spear1; this.emblems.archery = this.icons.sling1 ?? this.icons.spear1; this.emblems.lumberyard = this.icons.axe1; this.emblems.quarry = this.icons.pick1; this.emblems.farmhouse = this.icons.hoe1; this.emblems.huntlodge = this.icons.spear1; this.emblems.stable = this.icons.hoe1;
   }
 
   /** A torch 16x16, for the craft list. */
@@ -242,7 +238,7 @@ export class Sprites {
       let set = this.buildingCache.get(key);
       if (!set) {
         const tint = TINTS[kind];
-        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(tint ? { ...(def as object), palettes: { tint } } : def, kind === 'workshop' || kind === 'lab' || kind === 'repair' || kind === 'builder' ? 9 : 5, { ...stage(st), ...(tint ? { tint: 1 } : {}) })));
+        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(tint ? { ...(def as object), palettes: { tint } } : def, kind === 'workshop' || kind === 'lab' || kind === 'builder' ? 9 : 5, { ...stage(st), ...(tint ? { tint: 1 } : {}) })));
         this.buildingCache.set(key, set);
       }
       return set;

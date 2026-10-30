@@ -1,3 +1,4 @@
+import type { StatId } from './research';
 /** The shapes and constants the simulation shares: villagers, their parts, and a few tables. Nothing here has behaviour. */
 import { Building } from './buildings';
 import { Job, MountKind, NodeKind, SoldierArm, StatKey, Stats, WorkJob } from './jobs';
@@ -86,9 +87,7 @@ export interface Villager {
   timer: number;
   order: string | null; // đơn chế tác đang làm
   carry: { res: Res; amount: number } | null;
-  fullness: number; // 100 = no, 0 = đói lả
   health: number;
-  starving: boolean;
   anim: string;
   hold: Hold | null;
   bad: Map<number, number>; // nguồn không tới được -> hết hạn
@@ -96,7 +95,6 @@ export interface Villager {
   maxHealth: number;
   weapon: string | null;  // crafted weapon id (club, spear, mace); null = fists
   armor: string | null;   // armour id (hide)
-  morale: number;         // 0..100
   stance: Stance;
   fight: FightState;
   queue: OrderStep[];
@@ -106,7 +104,7 @@ export interface Villager {
   fleeT: number;          // seconds left running away
   calm: number;           // seconds since the last threat was near
   loot: number;           // carcass id being skinned (-1 none)
-  leader: boolean;        // best fighter of a group of 5+: boosts morale
+  leader: boolean;        // best fighter of a group of 5+
   /** A blow in progress: damage lands when the animation reaches its hit frame. */
   swing: { t: number; hitAt: number; end: number; target: Target } | null;
   flinch: number;         // seconds left of the 'hit' animation
@@ -129,17 +127,20 @@ export interface Villager {
   lit: boolean;
   /** Gear was handed out by the player: the stores no longer swap it automatically. */
   manualGear: boolean;
-  /** Building the villager is working inside (research, crafting or repair house); null when out on the map. */
+  /** Building the villager is working inside (research or crafting house); null when out on the map. */
   inside: number | null;
   /** Seconds until the villager may go and place another order for a tool. */
   orderCd: number;
-  /** Recipe id of the tool this villager handed in for repair; the mended tool comes back to them if they still need it. */
-  repairFor: string | null;
   /** Wear of the weapon and the armour in hand: which piece it was counted for, hits left, and whether it is broken (useless until mended). */
   /** The squad (đội) this soldier belongs to, -1 for none. */
   squad: number;
   /** The beast he rides, given from the stable (null for none). The riders of the Trại kỵ thú ride the beast of their camp without one: see `sim.mountOf`. */
   mount: MountKind | null;
+  /** Stars (1 to 5) and the personal factor of each of the eight stats (data/stats.json); absent in a save from before, which counts as all 1. */
+  stars: number;
+  fac: Record<StatId, number>;
+  /** Seconds until the stats are brought in line with research again. */
+  statClock: number;
   /** The stats this body was born with: training can lower a stat only so far below them. */
   born: Stats;
   /** Away at training in the house of his role: which house, which stat, seconds left and in all, how careful (index of TRAINING.care) and the ceiling. Null when he is not. */
@@ -280,18 +281,34 @@ export interface Forecast {
 /** What happened in the fight that is on (or was last): the base of the campaign log. */
 export interface BattleState { on: boolean; since: number; quiet: number; ourDead: number; foeDead: number; breaches: number; shots: number; notes: string[] }
 
-/** Hunger while asleep, as a share of the waking rate. */
-export const SLEEP_HUNGER = 0.4;
-
 export const NAMES_M = ['Bo', 'Rô', 'Gia', 'Mun', 'Lô', 'Tù', 'Đa'];
 export const NAMES_F = ['Tia', 'Noa', 'Ma', 'Pa', 'Kê', 'Ly', 'Sa'];
 export const HAIR = ['#4a2e1a', '#2b1b10', '#6b3f1d', '#c98a3a', '#7a5a3a'];
 export const SKIN = ['#d9a371', '#e8c4a0', '#c58a5c', '#b87850'];
 export const NODE_JOB: Record<NodeKind, WorkJob> = { tree: 'wood', rock: 'stone', bush: 'food' };
-export const STAT_KEYS = ['vit', 'str', 'agi', 'int', 'sta'] as const;
+export const STAT_KEYS = ['vit', 'str', 'agi', 'sta'] as const;
 export const XP_MULT = [0, 1, 1.5, 2];
 /** Khoảng cách ngang (ô) từ tâm vật thể tới chỗ dân đứng khi làm. */
 export const REACH: Record<NodeKind, number> = { tree: 0.55, rock: 0.62, bush: 0.5 };
 export const LEFT = 1, RIGHT = 2;
 
 export interface PlaceResult { ok: boolean; reason?: string; building?: Building }
+
+/** A heads-up for the player about something coming (or going on) in the village, worked out afresh from the state of the game: it is not saved. */
+export interface Notice {
+  /** Stable for the same matter (not for its level), so the screen can tell which ones the player has seen. */
+  id: string;
+  level: 'info' | 'warn' | 'urgent';
+  /** The picture: the key of a resource icon ('food'), or a single character. */
+  icon: string;
+  /** A few words. */
+  title: string;
+  /** When: "cuối ngày", "còn 3 ngày"… */
+  when: string;
+  /** One short line with the numbers. */
+  body: string;
+  /** The longer reason and what to do about it, shown as a tip. */
+  tip: string;
+  /** A building to go to for it (the screen opens it), with the word for the button. */
+  action?: { building: string; label: string };
+}

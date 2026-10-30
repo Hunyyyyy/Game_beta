@@ -1,8 +1,717 @@
 "use strict";
 
+// src/data/animals.json
+var animals_default = {
+  _note: "zone = map ring 1..4 (each 24 tiles from the campfire). speed in tiles/s. flee: distance that makes it run. aggro: distance at which a predator starts hunting. herd: [min,max] group size. habitat water = lives in water tiles. Art lives in animals/bodies.json. drops: other materials the body gives when skinned (bone, fat, feather, tusk), on top of meat (becomes food) and hide. A species is just a key here plus an entry in bodies.json; the list below is in spawn order.",
+  rabbit: { name: "Th\u1ECF", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2.2, flee: 6, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 2], count: 36, prey: true, nocturnal: false },
+  fowl: { name: "G\xE0 r\u1EEBng", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2, flee: 5, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 3], count: 20, prey: true, nocturnal: false, drops: { feather: 2 } },
+  deer: { name: "H\u01B0\u01A1u", hp: 60, damage: 4, type: "crush", cycle: 1.6, range: 1, speed: 2.6, flee: 7, aggro: 0, meat: 20, hide: 3, zones: [1, 3], herd: [3, 5], count: 18, prey: true, nocturnal: false, cornered: true, drops: { bone: 2, fat: 2 } },
+  boar: { name: "L\u1EE3n r\u1EEBng", hp: 90, damage: 10, type: "pierce", cycle: 1.5, range: 1, speed: 2.1, flee: 0, aggro: 0, meat: 25, hide: 3, zones: [1, 3], herd: [1, 2], count: 8, prey: true, nocturnal: false, defends: true, drops: { bone: 2, fat: 4 } },
+  wolf: { name: "S\xF3i", hp: 55, damage: 7, type: "slash", cycle: 1.2, range: 1, speed: 2.9, flee: 0, aggro: 9, meat: 8, hide: 2, zones: [2, 3], herd: [4, 6], count: 12, prey: false, nocturnal: true, fearsFire: 5, drops: { bone: 2 } },
+  fish: { name: "C\xE1", hp: 1, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.4, flee: 3, aggro: 0, meat: 3, hide: 0, zones: [1, 3], herd: [3, 6], count: 36, prey: true, nocturnal: false, habitat: "water" },
+  aurochs: { name: "B\xF2 r\u1EEBng", hp: 130, damage: 12, type: "crush", cycle: 1.8, range: 1, speed: 2, flee: 0, aggro: 0, meat: 45, hide: 6, drops: { bone: 3, fat: 4 }, zones: [1, 3], herd: [2, 4], count: 6, prey: true, nocturnal: false, defends: true },
+  duck: { name: "V\u1ECBt tr\u1EDDi", hp: 8, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.9, flee: 5, aggro: 0, meat: 3, hide: 0, drops: { feather: 2 }, zones: [1, 2], herd: [2, 4], count: 14, prey: true, nocturnal: false },
+  fox: { name: "C\xE1o", hp: 25, damage: 4, type: "pierce", cycle: 1, range: 1, speed: 2.8, flee: 0, aggro: 4, meat: 4, hide: 1, zones: [2, 3], herd: [1, 1], count: 8, prey: false, nocturnal: true, fearsFire: 4 },
+  ibex: { name: "D\xEA n\xFAi", hp: 50, damage: 5, type: "crush", cycle: 1.5, range: 1, speed: 3, flee: 9, aggro: 0, meat: 14, hide: 2, drops: { bone: 2 }, zones: [2, 4], herd: [3, 5], count: 10, prey: true, nocturnal: false, cornered: true },
+  elk: { name: "Nai s\u1EEBng t\u1EA5m", hp: 160, damage: 10, type: "crush", cycle: 1.8, range: 1, speed: 2.4, flee: 0, aggro: 0, meat: 55, hide: 7, drops: { bone: 4, fat: 5 }, zones: [2, 3], herd: [1, 3], count: 6, prey: true, nocturnal: false, defends: true },
+  bear: { name: "G\u1EA5u n\xE2u", hp: 240, damage: 20, type: "slash", cycle: 1.9, range: 1, speed: 2.2, flee: 0, aggro: 6, meat: 45, hide: 9, drops: { bone: 5, fat: 10 }, zones: [3, 4], herd: [1, 1], count: 4, prey: false, nocturnal: false },
+  lion: { name: "S\u01B0 t\u1EED hang", hp: 130, damage: 16, type: "slash", cycle: 1.3, range: 1, speed: 3.3, flee: 0, aggro: 11, meat: 28, hide: 6, drops: { bone: 3, fat: 3 }, zones: [3, 4], herd: [1, 3], count: 5, prey: false, nocturnal: true, fearsFire: 6 },
+  mammoth: { name: "Voi ma m\xFAt", hp: 450, damage: 28, type: "crush", cycle: 2.6, range: 1, speed: 1.5, flee: 0, aggro: 0, meat: 120, hide: 16, drops: { bone: 14, fat: 24, tusk: 2 }, zones: [3, 4], herd: [2, 3], count: 6, prey: true, nocturnal: false, defends: true },
+  pike: { name: "C\xE1 ch\xF3", hp: 2, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.8, flee: 4, aggro: 0, meat: 6, hide: 0, drops: { bone: 1 }, zones: [1, 3], herd: [1, 2], count: 16, prey: true, nocturnal: false, habitat: "water" },
+  behaviour: {
+    fleeBurst: 8,
+    tiredSeconds: 6,
+    tiredSpeed: 0.5,
+    carcassSeconds: 90,
+    skinSeconds: 3,
+    breedMonth: "spring",
+    breedMinFemales: 2,
+    breedChance: 0.35,
+    regionRadius: 28
+  }
+};
+
+// src/data/tribes.json
+var tribes_default = {
+  _note: "distance = tiles from the player's campfire (map is 192 wide, so zone ring = 24 tiles). Strength multiplier = 0.8 + 0.06 * (ring - 1), ring = ceil(distance / 4.8). reward is shown to the player; techs come in M5.",
+  spring: {
+    name: "Su\u1ED1i Ngu\u1ED3n",
+    personality: "peaceful",
+    angle: 200,
+    distance: 30,
+    civilians: 8,
+    warriors: 4,
+    weapons: ["club", "spear"],
+    armor: false,
+    look: { hide: "#7a8a4a", pants: "#4a6a8a" },
+    relation: 0,
+    reward: "D\u1EC5 giao th\u01B0\u01A1ng v\xE0 thu n\u1EA1p; h\u1ECDc T4 B\u1EC7n s\u1EE3i",
+    tribute: { food: 12, wood: 6, coin: 3 }
+  },
+  axe: {
+    name: "R\xECu \u0110\xE1",
+    personality: "aggressive",
+    angle: 320,
+    distance: 45,
+    civilians: 15,
+    warriors: 10,
+    weapons: ["hatchet", "mace"],
+    armor: true,
+    look: { hide: "#8a3a24", pants: "#6a2a1a" },
+    relation: -20,
+    reward: "L\xEDnh ch\xF9y, b\xED quy\u1EBFt ch\u1EBF ch\xF9y \u0111\xE1",
+    tribute: { stone: 10, food: 10, coin: 4 }
+  },
+  swamp: {
+    name: "\u0110\u1EA7m L\u1EA7y",
+    personality: "ambusher",
+    angle: 80,
+    distance: 55,
+    civilians: 12,
+    warriors: 8,
+    weapons: ["sling", "club"],
+    armor: false,
+    look: { hide: "#5a6a50", pants: "#3a4a3a" },
+    relation: -10,
+    reward: "\u0110\u1EA5t s\xE9t, s\u1EE3i; h\u1ECDc T5 D\xE2y qu\u0103ng \u0111\xE1",
+    tribute: { food: 10, wood: 10, coin: 3 }
+  },
+  relation: {
+    labels: [[-100, "Th\xF9 \u0111\u1ECBch"], [-40, "Trung l\u1EADp"], [20, "Th\xE2n thi\u1EC7n"], [60, "C\u1ED1ng n\u1EA1p"], [90, "Thu ph\u1EE5c"]],
+    giftFood: 10,
+    giftGain: 5,
+    killWarrior: -10,
+    killCivilian: -25,
+    attackedPeaceful: -30,
+    tributeAt: 60,
+    joinAt: 90
+  },
+  surrender: { leaderDown: true, holdCampSeconds: 30, moraleBelow: 10 },
+  morale: {
+    start: 70,
+    flee: 25,
+    fleeRecover: 45,
+    surrender: 10,
+    allyDeath: -15,
+    outnumbered: -0.8,
+    outnumbering: 0.5,
+    nearHome: 0.5,
+    night: -0.3,
+    leaderNear: 0.3,
+    leaderFar: -0.2,
+    winBonus: 20,
+    backstab: -5,
+    calm: 0.1
+  }
+};
+
+// src/data/siege.json
+var siege_default = {
+  _note: "War on the ground: what soldiers can break down, and how fast. Seconds are for one soldier; several soldiers at one object add up.",
+  lookAhead: 6,
+  clearSeconds: {
+    tree: 3,
+    rock: 5,
+    bush: 1.5
+  },
+  propHp: {
+    fire: 160,
+    pile: 70,
+    tower: 150,
+    fence: 40,
+    gate: 40
+  },
+  buildingHpPerTile: 45,
+  crew: 3,
+  driftMax: 14,
+  reach: 1.6,
+  scout: {
+    gearSkill: {
+      weapon: 0.05,
+      armor: 0.08,
+      torch: 0.06,
+      mount: 0.2
+    },
+    gearHide: {
+      weapon: 0.03,
+      armor: 0.05,
+      torch: 0.04,
+      mount: 0.06
+    },
+    weights: {
+      agi: 0.5,
+      sta: 0.5
+    },
+    stealthPerPoint: 0.015,
+    surveyPerInt: 0.04,
+    walkPerSta: 0.02
+  }
+};
+
+// src/data/weapons.json
+var weapons_default = {
+  _note: `type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor (the attack speed of the weapon). Every blow or shot does the weapon damage plus the damage stat of the fighter. crit: base chance of a critical blow or shot, 0 to 1 (none have any; research gives it, never above rules.critMax). A critical one does critDamage times the damage (1.25 = 125% of a normal blow, 4 = four times), or the weapon's own critDamage. The research of each weapon (aspd, crit, critd in researchtree.json) is added to the weapon of whoever holds it: aspd by a percent, crit and critd by real points (0.5 = half a percent of chance; 100 = one more time the damage). cost/time/tier only for what the player can craft; others are used by tribes. style: which set of fighting animations the weapon uses (see "styles"); anims overrides single states for one weapon; projectile: what a ranged weapon fires.`,
+  styles: {
+    fist: { name: "Tay kh\xF4ng", idle: "idle", walk: "walk", guard: "fist_guard", charge: "fist_charge", attack: "fist_attack" },
+    swing: { name: "Vung, ch\xE9m, \u0111\u1EADp (g\u1EADy, ch\xF9y, r\xECu, ki\u1EBFm)", idle: "swing_idle", walk: "swing_walk", guard: "swing_guard", charge: "swing_charge", attack: "swing_attack" },
+    thrust: { name: "\u0110\xE2m (gi\xE1o, th\u01B0\u01A1ng)", idle: "thrust_idle", walk: "thrust_walk", guard: "thrust_guard", charge: "thrust_charge", attack: "thrust_attack" },
+    shoot: { name: "B\u1EAFn (cung, n\u1ECF, s\xFAng)", idle: "shoot_idle", walk: "shoot_walk", guard: "shoot_guard", charge: "shoot_charge", attack: "shoot_attack" },
+    sling: { name: "Qu\u0103ng \u0111\xE1 (d\xE2y qu\u0103ng, n\xE1)", idle: "sling_idle", walk: "sling_walk", guard: "sling_guard", charge: "sling_charge", attack: "sling_attack" },
+    throw: { name: "N\xE9m (lao, ph\xF3ng lao)", idle: "throw_idle", walk: "throw_walk", guard: "throw_guard", charge: "throw_charge", attack: "throw_attack" }
+  },
+  weapons: {
+    fist: {
+      name: "Tay kh\xF4ng",
+      type: "crush",
+      range: 1,
+      damage: 2,
+      cycle: 1,
+      style: "fist"
+    },
+    club: {
+      name: "G\u1EADy g\u1ED7",
+      type: "crush",
+      range: 1,
+      damage: 4,
+      cycle: 1.2,
+      cost: {
+        wood: 1
+      },
+      durability: 120,
+      time: 40,
+      tier: 1,
+      style: "swing"
+    },
+    spear: {
+      name: "Gi\xE1o g\u1ED7",
+      type: "pierce",
+      range: 1.5,
+      damage: 7,
+      cycle: 1.4,
+      cost: {
+        wood: 2
+      },
+      durability: 100,
+      time: 60,
+      tier: 1,
+      style: "thrust"
+    },
+    mace: {
+      name: "Ch\xF9y \u0111\xE1",
+      type: "crush",
+      range: 1,
+      damage: 10,
+      cycle: 1.8,
+      cost: {
+        wood: 2,
+        stone: 2
+      },
+      durability: 160,
+      time: 120,
+      tier: 2,
+      style: "swing"
+    },
+    hatchet: {
+      name: "R\xECu \u0111\xE1",
+      type: "slash",
+      range: 1,
+      damage: 8,
+      cycle: 1.3,
+      style: "swing",
+      anims: { attack: "slash" },
+      tier: 2
+    },
+    sling: {
+      name: "D\xE2y qu\u0103ng \u0111\xE1",
+      type: "crush",
+      range: 5.5,
+      damage: 5,
+      cycle: 1.8,
+      ranged: true,
+      cost: { hide: 1, stone: 1 },
+      durability: 90,
+      time: 60,
+      style: "sling",
+      projectile: "stone",
+      tier: 1
+    },
+    bow: {
+      name: "Cung ng\u1EAFn",
+      type: "pierce",
+      range: 8,
+      damage: 8,
+      cycle: 2,
+      ranged: true,
+      cost: { wood: 3, hide: 1 },
+      durability: 110,
+      time: 100,
+      style: "shoot",
+      projectile: "arrow",
+      tier: 1
+    }
+  },
+  armor: {
+    hide: {
+      name: "\xC1o da th\xFA",
+      pierce: 0.1,
+      slash: 0.2,
+      crush: 0.1,
+      cost: {
+        hide: 3
+      },
+      durability: 200,
+      time: 100,
+      tier: 1
+    }
+  },
+  rules: {
+    backstab: 1.25,
+    tierMult: { "2": { damage: 1.4 } },
+    critMax: 0.1,
+    critDamage: 1.25,
+    strengthDamage: 0.6,
+    agilityBase: 1.3,
+    agilityStep: 0.04,
+    rangedHitNear: 0.9,
+    rangedHitFar: 0.7,
+    downedSeconds: 30,
+    rescueSeconds: 3,
+    rescueHp: 0.3
+  }
+};
+
+// src/sim/combat.ts
+var STYLES = weapons_default.styles;
+var WEAPONS = weapons_default.weapons;
+function poseOf(weapon, state) {
+  const w = weapon ? WEAPONS[weapon] : WEAPONS.fist;
+  return w?.anims?.[state] ?? STYLES[w?.style ?? "fist"]?.[state] ?? STYLES.fist[state];
+}
+for (const id of Object.keys(WEAPONS)) {
+  WEAPONS[id].id = id;
+  WEAPONS[id].anim = poseOf(id, "attack");
+}
+var ARMORS = weapons_default.armor;
+var RULES = weapons_default.rules;
+var SIEGE = siege_default;
+var CRAFTED_WEAPONS = Object.keys(WEAPONS).filter((k) => WEAPONS[k].cost);
+var SPECIES = Object.keys(animals_default).filter((k) => !k.startsWith("_") && k !== "behaviour");
+var ANIMALS = Object.fromEntries(SPECIES.map((s) => [s, animals_default[s]]));
+var BEHAVIOUR = animals_default.behaviour;
+var TRIBE_IDS = ["spring", "axe", "swamp"];
+var TRIBES = Object.fromEntries(TRIBE_IDS.map((t) => [t, tribes_default[t]]));
+var RELATION = tribes_default.relation;
+var HOSTILE_BELOW = RELATION.labels[1][0];
+var SURRENDER = tribes_default.surrender;
+var MORALE = tribes_default.morale;
+function relationLabel(score) {
+  let name = RELATION.labels[0][1];
+  for (const [from, label2] of RELATION.labels) if (score >= from) name = label2;
+  return name;
+}
+var ringOf = (distance) => Math.max(1, Math.min(20, Math.ceil(distance / 4.8)));
+var zoneOf = (distance) => Math.max(1, Math.min(4, Math.ceil(distance / 24)));
+var ringPower = (ring) => 0.8 + 0.06 * (ring - 1);
+var maxHpOf = (vit) => 40 + 8 * vit;
+var cycleOf = (weaponCycle, agi) => weaponCycle * (RULES.agilityBase - RULES.agilityStep * agi);
+function damageOf(w, strength, armor, backstab) {
+  const base = w.damage + RULES.strengthDamage * strength;
+  return base * (1 - (armor ? armor[w.type] : 0)) * (backstab ? RULES.backstab : 1);
+}
+
+// src/data/progression.json
+var progression_default = {
+  _note: "K\u1EBF ho\u1EA1ch ph\xE1t tri\u1EC3n theo c\u1EA5p Nh\xE0 chung (l\u1EEDa tr\u1EA1i) v\xE0 c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u. Ch\u1EC9nh \u1EDF \u0111\xE2y, kh\xF4ng s\u1EEDa code. id c\xF4ng tr\xECnh = BuildingKind trong sim/buildings.ts; id nghi\xEAn c\u1EE9u = id trong data/research.json. Nh\xF3m (groups) \u0111\u1EC3 g\u1ECDi g\u1ECDn nhi\u1EC1u c\xF4ng tr\xECnh m\u1ED9t l\u1EA7n. 'rest' = m\u1ECDi c\xF4ng tr\xECnh ch\u01B0a \u0111\u01B0\u1EE3c m\u1EDF \u1EDF c\u1EA5p th\u1EA5p h\u01A1n. M\u1ECDi m\u1EE5c 'unlock' c\u1ED9ng d\u1ED3n: c\u1EA5p cao m\u1EDF c\u1EA3 nh\u1EEFng g\xEC c\u1EA5p th\u1EA5p \u0111\xE3 m\u1EDF. C\xF4ng tr\xECnh KH\xD4NG c\xF2n c\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EC3 m\u1EDF kh\xF3a (research.json kh\xF4ng c\xF2n 'unlocks.buildings'); nghi\xEAn c\u1EE9u ch\u1EC9 c\xF2n b\u1EA3n v\u1EBD, n\xE2ng c\u1EA5p nh\xE0, qu\xE2n s\u1EF1 v\xE0 t\u1EF1 \u0111\u1ED9ng h\xF3a.",
+  groups: {
+    stores: [
+      "storage",
+      "toolstore",
+      "armory"
+    ],
+    camps: [
+      "infantry",
+      "cavalry",
+      "archery",
+      "scouttent",
+      "wartent",
+      "drill",
+      "stable"
+    ],
+    defence: [
+      "fence",
+      "gate",
+      "tower",
+      "trap"
+    ]
+  },
+  campfire: {
+    _note: "unlock = c\xF4ng tr\xECnh \u0111\u01B0\u1EE3c x\xE2y \u1EDF c\u1EA5p l\u1EEDa n\xE0y. upgradeNeeds: mu\u1ED1n n\xE2ng l\u1EEDa t\u1EEB c\u1EA5p n\xE0y l\xEAn c\u1EA5p k\u1EBF th\xEC m\u1ECDi c\xF4ng tr\xECnh \u0111\xE3 m\u1EDF kh\xF3a cho c\u1EA5p n\xE0y ph\u1EA3i \u0111\u01B0\u1EE3c x\xE2y xong v\xE0 n\xE2ng t\u1EDBi c\u1EA5p n\xE0y (kh\xF4ng ph\u1EE5 thu\u1ED9c nghi\xEAn c\u1EE9u).",
+    levels: [
+      {
+        level: 1,
+        unlock: [
+          "builder",
+          "workshop",
+          "@stores",
+          "huntlodge"
+        ],
+        buildingMaxLevel: 1,
+        upgradeNeeds: {
+          allUnlockedAtLeastLevel: 1
+        }
+      },
+      {
+        level: 2,
+        unlock: [
+          "lab",
+          "@camps",
+          "house",
+          "field"
+        ],
+        buildingMaxLevel: 2,
+        upgradeNeeds: {
+          allUnlockedAtLeastLevel: 2
+        }
+      },
+      {
+        level: 3,
+        unlock: [
+          "@rest"
+        ],
+        buildingMaxLevel: 3,
+        upgradeNeeds: {
+          allUnlockedAtLeastLevel: 3
+        }
+      },
+      {
+        level: 4,
+        unlock: [],
+        buildingMaxLevel: 3,
+        upgradeNeeds: null
+      }
+    ]
+  },
+  research: {
+    _note: "M\u1ED7i c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u m\u1EDF nh\u1EEFng b\u1EA3n v\u1EBD/nghi\xEAn c\u1EE9u n\xE0o. 'tabs' = tab n\xE0o c\u1EE7a giao di\u1EC7n \u0111\u01B0\u1EE3c m\u1EDF. 'techs' l\xE0 id trong research.json (c\u1EA5p 3 d\xF9ng '@rest' = t\u1EA5t c\u1EA3 c\xF2n l\u1EA1i). 'newTechs' l\xE0 nghi\xEAn c\u1EE9u M\u1EDAI c\u1EA7n th\xEAm v\xE0o research.json (xem \u0111\u1ECBnh ngh\u0129a b\xEAn d\u01B0\u1EDBi). C\xE1c nghi\xEAn c\u1EE9u ch\u1EC9 \u0111\u1EC3 m\u1EDF c\xF4ng tr\xECnh \u0111\xE3 b\u1ECF kh\u1ECFi research.json; 'timber' v\xE0 'masonry' v\u1EABn quy\u1EBFt \u0111\u1ECBnh c\u1EA5p t\u1ED1i \u0111a c\u1EE7a nh\xE0 (c\u1EA5p 2, c\u1EA5p 3) song song v\u1EDBi c\u1EA5p Nh\xE0 chung.",
+    levels: [
+      {
+        level: 1,
+        tabs: [
+          "blueprints"
+        ],
+        techs: [
+          "timber"
+        ],
+        closedTabs: [
+          "military",
+          "automation"
+        ]
+      },
+      {
+        level: 2,
+        tabs: [
+          "blueprints",
+          "military",
+          "automation"
+        ],
+        techs: [
+          "masonry",
+          "signal",
+          "form_basic",
+          "form_wedge",
+          "form_cells_10",
+          "form_squads_5",
+          "auto_fetch",
+          "auto_order"
+        ],
+        autoAll: true
+      },
+      {
+        level: 3,
+        tabs: [
+          "blueprints",
+          "military",
+          "automation"
+        ],
+        techs: [
+          "@rest"
+        ]
+      }
+    ]
+  },
+  formationDefaults: {
+    cells: 5,
+    squads: 4
+  },
+  buildMenu: {
+    _note: "Menu x\xE2y d\u1EF1ng hi\u1EC7n s\u1ED1 l\u01B0\u1EE3ng \u0111\xE3 x\xE2y / t\u1ED1i \u0111a (vd 0/1), kh\xF4ng d\xF9ng ch\u1EEF. T\u1ED1i \u0111a l\u1EA5y t\u1EEB perFire trong buildings.ts, c\xF4ng tr\xECnh menu ch\u1EC9 c\xF3 1.",
+    showCount: true,
+    format: "{built}/{max}",
+    hideText: true
+  },
+  panelActions: {
+    _note: "Panel khi b\u1EA5m v\xE0o c\xF4ng tr\xECnh d\xF9ng icon thay ch\u1EEF. 'panel' m\u1EDF panel ri\xEAng c\u1EE7a nh\xE0 (nghi\xEAn c\u1EE9u, xem d\xE2n, ...). Ch\u1EEF ch\u1EC9 hi\u1EC7n \u1EDF tooltip (?).",
+    open: {
+      icon: "panel",
+      tooltip: "M\u1EDF b\u1EA3ng"
+    },
+    upgrade: {
+      icon: "arrow_up",
+      tooltip: "N\xE2ng c\u1EA5p",
+      cost: "levelCost"
+    },
+    move: {
+      icon: "arrow_4way",
+      tooltip: "Di d\u1EDDi",
+      cost: "free"
+    },
+    demolish: {
+      icon: "x_red",
+      tooltip: "Ph\xE1 b\u1ECF",
+      cost: "refund"
+    }
+  },
+  undemolishable: {
+    _note: "C\xF4ng tr\xECnh ch\u1EC9 \u0111\u01B0\u1EE3c x\xE2y 1 c\xE1i th\xEC kh\xF4ng th\u1EC3 ph\xE1 b\u1ECF (v\u1EABn n\xE2ng c\u1EA5p v\xE0 di d\u1EDDi \u0111\u01B0\u1EE3c). L\u1EA5y t\u1EEB c\u1EA5u h\xECnh: m\u1ECDi c\xF4ng tr\xECnh kh\xF4ng c\xF3 perFire v\xE0 kh\xF4ng ph\u1EA3i \u0111\u01B0\u1EDDng/h\xE0ng r\xE0o.",
+    kinds: [
+      "campfire",
+      "builder",
+      "storage",
+      "workshop",
+      "lab",
+      "toolstore",
+      "armory"
+    ]
+  },
+  formationDefaults_note: "cells = s\u1ED1 \xF4 t\u1ED1i \u0111a c\u1EE7a m\u1ED9t tr\u1EADn ph\xE1p (s\u1ED1 l\xEDnh m\u1ED9t \u0111\u1ED9i); squads = s\u1ED1 \u0111\u1ED9i l\u1EADp \u0111\u01B0\u1EE3c. Nghi\xEAn c\u1EE9u form_cells_10/15 v\xE0 form_squads_5/6 (trong research.json) n\xE2ng hai s\u1ED1 n\xE0y."
+};
+
+// src/data/quests.json
+var quests_default = {
+  _note: "Nhi\u1EC7m v\u1EE5 h\u01B0\u1EDBng d\u1EABn, l\xE0m theo th\u1EE9 t\u1EF1 t\u1EDBi Nh\xE0 chung c\u1EA5p 4 v\xE0 ch\u01B0\u01A1ng t\xE1c chi\u1EBFn. M\u1ED7i nhi\u1EC7m v\u1EE5: id, chapter (ch\u01B0\u01A1ng), title (ti\xEAu \u0111\u1EC1 ng\u1EAFn), hint (h\u01B0\u1EDBng d\u1EABn chi ti\u1EBFt, ch\u1EC9 hi\u1EC7n \u1EDF nhi\u1EC7m v\u1EE5 \u0111\u1EA7u ti\xEAn \u0111ang m\u1EDF), after (c\xE1c nhi\u1EC7m v\u1EE5 ph\u1EA3i xong tr\u01B0\u1EDBc), done (\u0111i\u1EC1u ki\u1EC7n). Lo\u1EA1i \u0111i\u1EC1u ki\u1EC7n (done.type): inspectUnit inspectAnimal squadSize{count} squadFormation{id} equipped{slot weapon|armor,count} scoutSent hasMap{level} planDefense planArrow planRunning planDone{result?}; c\xE1c lo\u1EA1i c\u0169: buildBuilding{kind,count} upgradeBuilding{kind,level} upgradeFire{level} fireReady{level: m\u1ECDi nh\xE0 \u0111\xE3 m\u1EDF \u0111\u1EA1t c\u1EA5p \u0111\xF3 th\xEC m\u1EDBi \u0111\u01B0\u1EE3c r\u1EDDi c\u1EA5p l\u1EEDa} researchTech{id} population{count} stock{res,count} hasRole{role,count} jobCount{job,count} staffIn{kind,count} haveTool{kind,tier,count} torches{count} createSquad{count} daytime{day: s\xE1ng ng\xE0y \u0111\xF3} speed{atLeast} selectBuilding{kind} openBuilding{kind} inspectNode. Nhi\u1EC7m v\u1EE5 \u0111\xE3 xong th\xEC xong lu\xF4n, v\xE0 nhi\u1EC7m v\u1EE5 n\xE0o \u0111\u1EE9ng tr\u01B0\u1EDBc m\u1ED9t nhi\u1EC7m v\u1EE5 \u0111\xE3 xong c\u0169ng \u0111\u01B0\u1EE3c t\xEDnh l\xE0 xong. Th\xEAm nhi\u1EC7m v\u1EE5 b\u1EB1ng c\xE1ch th\xEAm m\u1ED9t d\xF2ng v\xE0o quests.",
+  chapters: [{ id: 1, name: "Ch\u01B0\u01A1ng 1 \xB7 Nh\u1EEFng ng\xE0y \u0111\u1EA7u b\xEAn \u0111\u1ED1ng l\u1EEDa" }, { id: 2, name: "Ch\u01B0\u01A1ng 2 \xB7 Nghi\xEAn c\u1EE9u v\xE0 m\u1EDF r\u1ED9ng" }, { id: 3, name: "Ch\u01B0\u01A1ng 3 \xB7 Ph\xF2ng th\u1EE7 v\xE0 qu\xE2n \u0111\u1ED9i" }, { id: 4, name: "Ch\u01B0\u01A1ng 4 \xB7 T\xE1c chi\u1EBFn v\xE0 th\xFA c\u01B0\u1EE1i" }],
+  quests: [
+    { id: "c1_select", chapter: 1, title: "L\xE0m quen v\u1EDBi l\xE0ng", hint: "B\u1EA1n c\xF3 hai ng\u01B0\u1EDDi: m\u1ED9t h\xE1i l\u01B0\u1EE3m (nu\xF4i c\u1EA3 l\xE0ng) v\xE0 m\u1ED9t \u0111\u1ED1n g\u1ED7. M\u1ED7i ngh\u1EC1 do m\u1ED9t nh\xE0 qu\u1EA3n l\xFD. B\u1EA5m v\xE0o X\u01B0\u1EDFng g\u1ED7 (nh\xE0 g\u1ED7 nh\u1ECF c\u1EA1nh \u0111\u1ED1ng l\u1EEDa) \u0111\u1EC3 ch\u1ECDn n\xF3.", after: [], done: { type: "selectBuilding", kind: "lumberyard" } },
+    { id: "c1_open", chapter: 1, title: "M\u1EDF b\u1EA3ng X\u01B0\u1EDFng g\u1ED7", hint: "M\u1ED9t thanh n\xFAt n\u1ED5i l\xEAn d\u01B0\u1EDBi nh\xE0: \u2630 m\u1EDF b\u1EA3ng, \u2B06 n\xE2ng c\u1EA5p, \u2725 di d\u1EDDi, \u2716 ph\xE1 b\u1ECF. B\u1EA5m \u2630 \u0111\u1EC3 xem ai \u0111ang \u0111\u1ED1n g\u1ED7 v\xE0 nh\xE0 c\xF2n m\u1EA5y ch\u1ED7. \u0110\xF3ng b\u1EA3ng b\u1EB1ng \u2715 khi xem xong.", after: ["c1_select"], done: { type: "openBuilding", kind: "lumberyard" } },
+    { id: "c1_node", chapter: 1, title: "Xem m\u1ED9t c\xE1i c\xE2y", hint: 'B\u1EA5m v\xE0o m\u1ED9t c\xE1i c\xE2y g\u1EA7n \u0111\xF3: th\u1EBB hi\u1EC7n t\xEAn, thanh m\xE1u (l\u01B0\u1EE3ng g\u1ED7 c\xF2n l\u1EA1i) v\xE0 n\xFAt "Khai th\xE1c". N\xFAt n\xE0y t\u1EF1 g\u1ECDi m\u1ED9t ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7 \u1EDF g\u1EA7n t\u1EDBi ch\u1EB7t \u0111\xFAng c\xE2y \u0111\xF3, kh\xF4ng c\u1EA7n ch\u1ECDn d\xE2n.', after: ["c1_open"], done: { type: "inspectNode" } },
+    { id: "c1_unit", chapter: 1, title: "Xem m\u1ED9t ng\u01B0\u1EDDi d\xE2n", hint: 'B\u1EA5m v\xE0o m\u1ED9t ng\u01B0\u1EDDi d\xE2n tr\xEAn b\u1EA3n \u0111\u1ED3: th\u1EBB hi\u1EC7n t\xEAn, vi\u1EC7c \u0111ang l\xE0m v\xE0 c\xE1c thanh No (\u0111\xF3i), S\u1EE9c (m\u1EC7t), M\xE1u, Tinh th\u1EA7n, Gi\xE1p. N\xFAt "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" m\u1EDF b\u1EA3ng \u2699 v\u1EDBi c\xF4ng c\u1EE5, ca l\xE0m (ban ng\xE0y, ban \u0111\xEAm, c\u1EA3 hai) v\xE0 ch\u1EC9 s\u1ED1. B\u1EA5m "B\u1ECF ch\u1ECDn" \u0111\u1EC3 \u0111\xF3ng th\u1EBB.', after: ["c1_node"], done: { type: "inspectUnit" } },
+    { id: "c1_animal", chapter: 1, title: "Xem m\u1ED9t con th\xFA", hint: "Th\xFA r\u1EEBng \u0111i lang thang quanh l\xE0ng. B\u1EA5m v\xE0o m\u1ED9t con th\xFA \u0111\u1EC3 xem m\xE1u v\xE0 t\xEDnh t\xECnh (th\xFA hi\u1EC1n b\u1ECF ch\u1EA1y, th\xFA d\u1EEF x\xF4ng v\xE0o c\u1EAFn). Vi\u1EC7c s\u0103n \u0111\u1EC3 th\u1EE3 s\u0103n lo; \u0111\u1EEBng \u0111\u1EC3 d\xE2n y\u1EBFu \u0111i m\u1ED9t m\xECnh v\xE0o n\u01A1i c\xF3 th\xFA d\u1EEF.", after: ["c1_unit"], done: { type: "inspectAnimal" } },
+    { id: "c1_wood", chapter: 1, title: "C\xF3 10 g\u1ED7 trong kho", hint: 'B\u1EA5m "Khai th\xE1c" \u1EDF c\xE2y \u0111\u1EC3 ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7 l\xE0m vi\u1EC7c. G\u1ED7 \u0111\u01B0\u1EE3c mang v\u1EC1 Nh\xE0 chung (\u0111\u1ED1ng l\u1EEDa). Thanh tr\xEAn c\xF9ng cho bi\u1EBFt \u0111ang c\xF3 bao nhi\xEAu g\u1ED7. C\u1EA7n 10 g\u1ED7 \u0111\u1EC3 d\u1EF1ng nh\xE0 \u0111\u1EA7u ti\xEAn.', after: ["c1_node"], done: { type: "stock", res: "wood", count: 10 } },
+    { id: "c1_speed", chapter: 1, title: "Tua nhanh qua \u0111\xEAm", hint: "M\u1ED9t ng\xE0y game c\xF3 12 ph\xFAt ban ng\xE0y v\xE0 8 ph\xFAt ban \u0111\xEAm; ban \u0111\xEAm d\xE2n \u0111i ng\u1EE7 v\xE0 kh\xF4ng l\xE0m vi\u1EC7c. B\u1EA5m 16\xD7 \u1EDF thanh t\u1ED1c \u0111\u1ED9 ph\xEDa tr\xEAn \u0111\u1EC3 tua qua \u0111\xEAm. Nh\u1EDB tr\u1EDF l\u1EA1i 1\xD7 khi c\u1EA7n ra l\u1EC7nh k\u1EF9.", after: ["c1_wood"], done: { type: "speed", atLeast: 16 } },
+    { id: "c1_day2", chapter: 1, title: "Ch\u1EDD tr\u1EDDi s\xE1ng ng\xE0y 2", hint: 'M\u1ED7i ng\xE0y m\u1EDBi, m\u1ED9t \u0111\u1EBFn ba ng\u01B0\u1EDDi l\u1EA1 \u0111\u1EBFn xin \u1EDF l\u1EA1i c\u1EA1nh \u0111\u1ED1ng l\u1EEDa. \u0110\u1EE3i t\u1EDBi s\xE1ng ng\xE0y 2 (\u0111\u1ED3ng h\u1ED3 tr\xEAn c\xF9ng ghi "Ng\xE0y 2 \xB7 ban ng\xE0y") r\u1ED3i gi\u1EA3m t\u1ED1c \u0111\u1ED9.', after: ["c1_speed"], done: { type: "daytime", day: 2 } },
+    { id: "c1_pop", chapter: 1, title: "\u0110\xF3n ng\u01B0\u1EDDi m\u1EDBi", hint: "Ng\u01B0\u1EDDi m\u1EDBi \u0111\u1EBFn ch\u01B0a c\xF3 ngh\u1EC1: h\u1ECD \u0111\u1EE9ng r\u1EA3nh quanh l\u1EEDa. Nh\xE0 chung c\u1EA5p 1 ch\u1EE9a \u0111\u01B0\u1EE3c 8 ng\u01B0\u1EDDi. Nh\u1EDB gi\u1EEF l\u01B0\u01A1ng th\u1EF1c \u0111\u1EE7 cho m\u1ECDi ng\u01B0\u1EDDi \u0103n.", after: ["c1_day2"], done: { type: "population", count: 3 } },
+    { id: "c1_wood2", chapter: 1, title: "Th\xEAm m\u1ED9t ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7", hint: 'M\u1EDF X\u01B0\u1EDFng g\u1ED7 (\u2630), trong danh s\xE1ch "D\xE2n r\u1EA3nh" b\u1EA5m \uFF0B c\u1EA1nh m\u1ED9t ng\u01B0\u1EDDi \u0111\u1EC3 giao ngh\u1EC1 \u0111\u1ED1n g\u1ED7. Danh s\xE1ch ch\u1EC9 hi\u1EC7n ng\u01B0\u1EDDi ch\u01B0a c\xF3 ngh\u1EC1; mu\u1ED1n \u0111\u1ED5i ngh\u1EC1 c\u1EE7a ai th\xEC b\u1EA5m \u2212 \u1EDF nh\xE0 c\u0169 tr\u01B0\u1EDBc.', after: ["c1_pop"], done: { type: "hasRole", role: "wood", count: 2 } },
+    { id: "c1_builder", chapter: 1, title: "D\u1EF1ng Nh\xE0 th\u1EE3 x\xE2y", hint: 'B\u1EA5m n\xFAt "X\xE2y" (g\xF3c ph\u1EA3i tr\xEAn), tab "Thi\u1EBFt y\u1EBFu", ch\u1ECDn Nh\xE0 th\u1EE3 x\xE2y (10 g\u1ED7). Khung v\xE0ng n\xE9t \u0111\u1EE9t l\xE0 ch\u1ED7 tr\u1ED1ng 2 \xF4 c\u1EA7n c\xF3 quanh m\u1ED7i nh\xE0; ch\u1EA1m v\xE0o v\xF9ng cam c\u1EE7a nh\xE0 kh\xE1c th\xEC kh\xF4ng \u0111\u1EB7t \u0111\u01B0\u1EE3c. Ch\u01B0a c\xF3 th\u1EE3 n\xEAn h\xE3y ch\u1ECDn m\u1ED9t d\xE2n r\u1ED3i ch\u1EA1m v\xE0o n\u1EC1n nh\xE0 \u0111\u1EC3 h\u1ECD d\u1EF1ng.', after: ["c1_wood2"], done: { type: "buildBuilding", kind: "builder", count: 1 } },
+    { id: "c1_crew", chapter: 1, title: "Giao vi\u1EC7c th\u1EE3 x\xE2y", hint: 'Ch\u1ECDn Nh\xE0 th\u1EE3 x\xE2y, b\u1EA5m \u2630, tab "Th\u1EE3 x\xE2y", r\u1ED3i b\u1EA5m \uFF0B \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi l\xE0m th\u1EE3. T\u1EEB gi\u1EDD m\u1ECDi n\u1EC1n nh\xE0 v\xE0 vi\u1EC7c n\xE2ng c\u1EA5p \u0111\u1EC1u do h\u1ECD l\xE0m. Nh\xE0 th\u1EE3 x\xE2y hi\u1EC7n "zzzz" khi h\u1EBFt vi\u1EC7c.', after: ["c1_builder"], done: { type: "jobCount", job: "build", count: 1 } },
+    { id: "c1_storage", chapter: 1, title: "D\u1EF1ng Kho", hint: 'Tab "Thi\u1EBFt y\u1EBFu" c\xF3 Kho. Kho ch\u1EE9a g\u1ED7, \u0111\xE1, th\u1EE9c \u0103n... m\u1ED7i lo\u1EA1i c\xF3 gi\u1EDBi h\u1EA1n; kho \u0111\u1EA7y th\xEC d\xE2n \u0111\u1EE9ng ch\u1EDD. N\xE2ng c\u1EA5p Kho \u0111\u1EC3 ch\u1EE9a nhi\u1EC1u h\u01A1n. M\u1ED7i lo\u1EA1i nh\xE0 ch\u1EC9 x\xE2y \u0111\u01B0\u1EE3c m\u1ED9t c\xE1i.', after: ["c1_crew"], done: { type: "buildBuilding", kind: "storage", count: 1 } },
+    { id: "c1_farmhouse", chapter: 1, title: "M\u1EDF N\xF4ng tr\u1EA1i", hint: "N\xF4ng tr\u1EA1i (nh\xE0 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa) qu\u1EA3n l\xFD ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m. Ch\u1ECDn n\xF3 r\u1ED3i b\u1EA5m \u2630 \u0111\u1EC3 xem ai \u0111ang h\xE1i qu\u1EA3 v\xE0 nh\xE0 c\xF2n m\u1EA5y ch\u1ED7.", after: ["c1_storage"], done: { type: "openBuilding", kind: "farmhouse" } },
+    { id: "c1_stone", chapter: 1, title: "Giao th\u1EE3 \u0111\xE1", hint: "M\u1EDF X\u01B0\u1EDFng \u0111\xE1 (nh\xE0 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa) b\u1EB1ng \u2630 r\u1ED3i b\u1EA5m \uFF0B \u1EDF m\u1ED9t ng\u01B0\u1EDDi r\u1EA3nh. \u0110\xE1 c\u1EA7n \u0111\u1EC3 n\xE2ng c\u1EA5p nh\xE0 l\xEAn c\u1EA5p 2 v\xE0 n\xE2ng Nh\xE0 chung.", after: ["c1_storage"], done: { type: "hasRole", role: "stone", count: 1 } },
+    { id: "c1_food", chapter: 1, title: "D\u1EF1 tr\u1EEF 30 th\u1EE9c \u0103n", hint: "M\u1ED7i ng\u01B0\u1EDDi \u0103n kho\u1EA3ng 2,5 th\u1EE9c \u0103n m\u1ED9t ng\xE0y. N\xF4ng tr\u1EA1i qu\u1EA3n l\xFD ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m: th\xEAm ng\u01B0\u1EDDi h\xE1i \u1EDF \u0111\xF3. Qu\u1EA3 h\u1ECFng sau 3 ng\xE0y n\u1EBFu kh\xF4ng \u0103n, v\xE0 b\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n m\u1ED7i m\xF9a.", after: ["c1_farmhouse"], done: { type: "stock", res: "food", count: 30 } },
+    { id: "c1_workshop", chapter: 1, title: "D\u1EF1ng Nh\xE0 ch\u1EBF t\u1EA1o", hint: 'Tab "S\u1EA3n xu\u1EA5t": Nh\xE0 ch\u1EBF t\u1EA1o. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong nh\xE0 \u0111\u1EC3 l\xE0m c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p.', after: ["c1_storage"], done: { type: "buildBuilding", kind: "workshop", count: 1 } },
+    { id: "c1_workshop_staff", chapter: 1, title: "\u0110\u01B0a ng\u01B0\u1EDDi v\xE0o Nh\xE0 ch\u1EBF t\u1EA1o", hint: 'M\u1EDF Nh\xE0 ch\u1EBF t\u1EA1o (\u2630), tab "\u0110ang l\xE0m", b\u1EA5m \uFF0B \u0111\u1EC3 cho m\u1ED9t ng\u01B0\u1EDDi r\u1EA3nh v\xE0o l\xE0m. Ng\u01B0\u1EDDi c\xE0ng kh\xE9o l\xE0m c\xE0ng nhanh. Kh\xF4ng c\xF3 ng\u01B0\u1EDDi th\xEC nh\xE0 hi\u1EC7n "zzzz".', after: ["c1_workshop"], done: { type: "staffIn", kind: "workshop", count: 1 } },
+    { id: "c1_torch", chapter: 1, title: "Ch\u1EBF m\u1ED9t c\xE2y \u0111u\u1ED1c", hint: 'Tab "C\xF4ng c\u1EE5" c\u1EE7a Nh\xE0 ch\u1EBF t\u1EA1o c\xF3 \u0110u\u1ED1c (b\u1EA3n v\u1EBD bi\u1EBFt s\u1EB5n): b\u1EA5m + \u0111\u1EC3 \u0111\u1EB7t \u0111\u01A1n, c\u1EA7n g\u1ED7. \u0110u\u1ED1c cho ph\xE9p l\xE0m vi\u1EC7c ban \u0111\xEAm v\u1EDBi 70% hi\u1EC7u su\u1EA5t, nh\u01B0ng l\xE0m \u0111\xEAm li\xEAn t\u1EE5c khi\u1EBFn d\xE2n m\u1EC7t.', after: ["c1_workshop_staff"], done: { type: "torches", count: 1 } },
+    { id: "c1_toolstore", chapter: 1, title: "D\u1EF1ng Kho c\xF4ng c\u1EE5", hint: 'C\u1EA5t r\xECu, cu\u1ED1c, b\xFAa l\xE0m ra \u0111\u1EC3 ph\xE1t cho d\xE2n. Mu\u1ED1n d\xE2n t\u1EF1 l\u1EA5y \u0111\u1ED3 \u1EDF kho th\xEC ph\u1EA3i nghi\xEAn c\u1EE9u "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho" (ch\u01B0\u01A1ng 2).', after: ["c1_workshop"], done: { type: "buildBuilding", kind: "toolstore", count: 1 } },
+    { id: "c1_armory", chapter: 1, title: "D\u1EF1ng Kho v\u0169 kh\xED", hint: "C\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p cho th\u1EE3 s\u0103n v\xE0 l\xEDnh.", after: ["c1_workshop"], done: { type: "buildBuilding", kind: "armory", count: 1 } },
+    { id: "c1_hide", chapter: 1, title: "Ki\u1EBFm 3 da", hint: 'Ch\xF2i th\u1EE3 s\u0103n c\u1EA7n 3 da, m\xE0 da ch\u1EC9 c\xF3 khi s\u0103n th\xFA. H\xE1i l\u01B0\u1EE3m \u0111\xF4i khi nh\u1EB7t \u0111\u01B0\u1EE3c v\u1ECF s\xF2 (ti\u1EC1n); m\u1EDF Kho (\u2630), tab "\u0110\u1ED5i ch\xE1c" \u0111\u1EC3 \u0111\u1ED5i v\u1ECF s\xF2 l\u1EA5y da.', after: ["c1_storage"], done: { type: "stock", res: "hide", count: 3 } },
+    { id: "c1_lodge", chapter: 1, title: "D\u1EF1ng Ch\xF2i th\u1EE3 s\u0103n", hint: 'Tab "T\xE0i nguy\xEAn": Ch\xF2i th\u1EE3 s\u0103n. Th\u1EE3 s\u0103n t\u1EF1 \u0111i t\xECm v\xE0 s\u0103n th\xFA, t\u1EF1 l\u1ED9t da mang v\u1EC1, kh\xF4ng c\u1EA7n ch\u1EC9 \u0111\u1EA1o.', after: ["c1_hide"], done: { type: "buildBuilding", kind: "huntlodge", count: 1 } },
+    { id: "c1_hunter", chapter: 1, title: "Giao ngh\u1EC1 th\u1EE3 s\u0103n", hint: "M\u1EDF Ch\xF2i th\u1EE3 s\u0103n (\u2630) v\xE0 b\u1EA5m \uFF0B \u1EDF m\u1ED9t ng\u01B0\u1EDDi nhanh nh\u1EB9n. H\u1EBFt m\u1ED3i g\u1EA7n h\u1ECD s\u1EBD t\u1EF1 \u0111i tu\u1EA7n t\xECm th\xFA; v\u1EC1 sau ch\u1EBF d\xE2y qu\u0103ng ho\u1EB7c gi\xE1o cho h\u1ECD \u0111\u1EC3 an to\xE0n h\u01A1n.", after: ["c1_lodge"], done: { type: "hasRole", role: "hunt", count: 1 } },
+    { id: "c1_ready", chapter: 1, title: "D\u1EF1ng \u0111\u1EE7 nh\xE0 c\u1EA5p 1", hint: "Nh\xE0 chung ch\u1EC9 n\xE2ng c\u1EA5p khi m\u1ECDi nh\xE0 \u0111\xE3 m\u1EDF \u1EDF c\u1EA5p 1 \u0111\u1EC1u x\xE2y xong: Nh\xE0 th\u1EE3 x\xE2y, Kho, Nh\xE0 ch\u1EBF t\u1EA1o, Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, Ch\xF2i th\u1EE3 s\u0103n v\xE0 ba nh\xE0 s\u1EB5n c\xF3. D\xF2ng d\u01B0\u1EDBi nhi\u1EC7m v\u1EE5 cho bi\u1EBFt c\xF2n thi\u1EBFu nh\xE0 n\xE0o.", after: ["c1_stone", "c1_food", "c1_torch", "c1_toolstore", "c1_armory", "c1_hunter"], done: { type: "fireReady", level: 1 } },
+    { id: "c1_fire2", chapter: 1, title: "N\xE2ng Nh\xE0 chung l\xEAn c\u1EA5p 2", hint: "Ch\u1ECDn \u0111\u1ED1ng l\u1EEDa, b\u1EA5m \u2B06 r\u1ED3i x\xE1c nh\u1EADn (c\u1EA7n 20 g\u1ED7), giao th\u1EE3 x\xE2y l\xE0m. C\u1EA5p 2 m\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, c\xE1c tr\u1EA1i l\xEDnh, nh\xE0 d\xE2n v\xE0 ru\u1ED9ng; l\xE0ng ch\u1EE9a 16 ng\u01B0\u1EDDi, nh\xE0 n\xE2ng \u0111\u01B0\u1EE3c l\xEAn c\u1EA5p 2.", after: ["c1_ready"], done: { type: "upgradeFire", level: 2 } },
+    { id: "c2_lab", chapter: 2, title: "D\u1EF1ng Nh\xE0 nghi\xEAn c\u1EE9u", hint: 'Tab "S\u1EA3n xu\u1EA5t": Nh\xE0 nghi\xEAn c\u1EE9u. M\u1ECDi c\xF4ng c\u1EE5 v\xE0 v\u0169 kh\xED ch\u1EC9 l\xE0m \u0111\u01B0\u1EE3c sau khi nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD \u1EDF \u0111\xE2y.', after: ["c1_fire2"], done: { type: "buildBuilding", kind: "lab", count: 1 } },
+    { id: "c2_lab_staff", chapter: 2, title: "\u0110\u01B0a ng\u01B0\u1EDDi v\xE0o nghi\xEAn c\u1EE9u", hint: 'M\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u (\u2630), tab "\u0110ang l\xE0m", b\u1EA5m \uFF0B. Ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng \u0111\xF4ng, nghi\xEAn c\u1EE9u c\xE0ng nhanh. Nh\xE0 hi\u1EC7n % ti\u1EBFn \u0111\u1ED9 khi \u0111ang nghi\xEAn c\u1EE9u.', after: ["c2_lab"], done: { type: "staffIn", kind: "lab", count: 1 } },
+    { id: "c2_craft_axe", chapter: 2, title: "Ch\u1EBF m\u1ED9t c\xE1i r\xECu", hint: 'Nh\xE0 ch\u1EBF t\u1EA1o (\u2630), tab "C\xF4ng c\u1EE5": \u0111\u1EB7t R\xECu g\u1ED7. R\xECu xong v\xE0o Kho c\xF4ng c\u1EE5; \u0111\u01B0a cho ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7 \u1EDF th\u1EBB c\u1EE7a h\u1ECD (\u2699), ho\u1EB7c \u0111\u1EC3 d\xE2n t\u1EF1 l\u1EA5y sau khi nghi\xEAn c\u1EE9u t\u1EF1 \u0111\u1ED9ng h\xF3a.', after: ["c2_lab_staff", "c1_workshop_staff"], done: { type: "haveTool", kind: "axe", tier: 1, count: 1 } },
+    { id: "c2_timber", chapter: 2, title: "Nghi\xEAn c\u1EE9u D\u1EF1ng b\u1EB1ng g\u1ED7", hint: "Cho ph\xE9p n\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7). N\u1EB1m \u1EDF tab Ph\xE1t tri\u1EC3n, th\u1EBB N\xE2ng c\u1EA5p c\xF4ng tr\xECnh c\u1EE7a Nh\xE0 nghi\xEAn c\u1EE9u.", after: ["c2_lab_staff"], done: { type: "researchTech", id: "timber" } },
+    { id: "c2_house", chapter: 2, title: "D\u1EF1ng Nh\xE0 d\xE2n", hint: 'Tab "Thi\u1EBFt y\u1EBFu": Nh\xE0 d\xE2n. D\xE2n th\u01B0\u1EDDng ng\u1EE7 \u1EDF \u0111\xE2y v\xE0 h\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7; kh\xF4ng c\xF3 gi\u01B0\u1EDDng th\xEC h\u1ECD ng\u1EE7 c\u1EA1nh l\u1EEDa, h\u1ED3i s\u1EE9c ch\u1EADm h\u01A1n.', after: ["c1_fire2"], done: { type: "buildBuilding", kind: "house", count: 1 } },
+    { id: "c2_field", chapter: 2, title: "L\xE0m m\u1ED9t Ru\u1ED9ng", hint: 'Tab "Thi\u1EBFt y\u1EBFu": Ru\u1ED9ng. Ru\u1ED9ng cho th\u1EE9c \u0103n \u0111\u1EC1u quanh n\u0103m, kh\xF4ng nh\u01B0 b\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n.', after: ["c1_fire2"], done: { type: "buildBuilding", kind: "field", count: 1 } },
+    { id: "c2_farmer", chapter: 2, title: "C\u1EED ng\u01B0\u1EDDi l\xE0m ru\u1ED9ng", hint: "M\u1EDF Ru\u1ED9ng (\u2630) v\xE0 b\u1EA5m \uFF0B \u0111\u1EC3 c\u1EED m\u1ED9t ng\u01B0\u1EDDi. M\u1ED9t ru\u1ED9ng m\u1ED9t ng\u01B0\u1EDDi; n\xE2ng c\u1EA5p ru\u1ED9ng \u0111\u1EC3 l\xE0m nhanh h\u01A1n. Th\u1EE9c \u0103n v\u1EC1 th\u1EB3ng kho.", after: ["c2_field"], done: { type: "staffIn", kind: "field", count: 1 } },
+    { id: "c2_upgrade", chapter: 2, title: "N\xE2ng Kho l\xEAn c\u1EA5p 2", hint: "Ch\u1ECDn Kho, b\u1EA5m \u2B06, x\xE1c nh\u1EADn r\u1ED3i giao th\u1EE3 x\xE2y. Nh\xE0 v\u1EABn d\xF9ng \u0111\u01B0\u1EE3c trong l\xFAc n\xE2ng. M\u1ED7i c\u1EA5p t\u1ED1n nhi\u1EC1u v\u1EADt li\u1EC7u h\u01A1n nh\u01B0ng ch\u1EE9a v\xE0 l\xE0m vi\u1EC7c t\u1ED1t h\u01A1n.", after: ["c2_timber"], done: { type: "upgradeBuilding", kind: "storage", level: 2 } },
+    { id: "c2_barracks", chapter: 2, title: "D\u1EF1ng Tr\u1EA1i chi\u1EBFn binh", hint: 'Tab "Qu\xE2n s\u1EF1": Tr\u1EA1i chi\u1EBFn binh. L\xEDnh ng\u1EE7 \u1EDF \u0111\xE2y v\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh l\u1EEDa.', after: ["c1_fire2"], done: { type: "buildBuilding", kind: "infantry", count: 1 } },
+    { id: "c2_soldier", chapter: 2, title: "Tuy\u1EC3n m\u1ED9t chi\u1EBFn binh", hint: "M\u1EDF Tr\u1EA1i chi\u1EBFn binh (\u2630) v\xE0 b\u1EA5m \uFF0B. L\xEDnh canh g\xE1c, \u0111\xE1nh \u0111\u1ECBch v\xE0 th\xFA d\u1EEF. V\u1EC1 sau ch\u1EBF g\u1EADy chi\u1EBFn (nghi\xEAn c\u1EE9u B\u1EA3n v\u1EBD G\u1EADy chi\u1EBFn) v\xE0 \xE1o da cho h\u1ECD.", after: ["c2_barracks"], done: { type: "hasRole", role: "foot", count: 1 } },
+    { id: "c2_soldiers3", chapter: 2, title: "C\xF3 3 chi\u1EBFn binh", hint: "M\u1EDF Tr\u1EA1i chi\u1EBFn binh (\u2630) v\xE0 b\u1EA5m \uFF0B th\xEAm hai ng\u01B0\u1EDDi n\u1EEFa. L\xEDnh \u0103n nh\u01B0 d\xE2n nh\u01B0ng kh\xF4ng l\xE0m vi\u1EC7c nh\xE0; \u0111\u1EEBng tuy\u1EC3n h\u1EBFt ng\u01B0\u1EDDi \u0111ang l\xE0m ra l\u01B0\u01A1ng th\u1EF1c. L\xEDnh ng\u1EE7 \u1EDF tr\u1EA1i v\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n.", after: ["c2_soldier"], done: { type: "hasRole", role: "foot", count: 3 } },
+    { id: "c2_club_make", chapter: 2, title: "Ch\u1EBF 3 g\u1EADy chi\u1EBFn", hint: 'Nh\xE0 ch\u1EBF t\u1EA1o (\u2630), tab "V\u0169 kh\xED": \u0111\u1EB7t 3 G\u1EADy chi\u1EBFn. Ch\xFAng v\xE0o Kho v\u0169 kh\xED, n\xEAn c\u1EA7n Kho v\u0169 kh\xED \u0111\xE3 d\u1EF1ng.', after: ["c2_lab_staff", "c2_barracks", "c1_armory"], done: { type: "haveTool", kind: "club", tier: 1, count: 3 } },
+    { id: "c2_equip", chapter: 2, title: "Trang b\u1ECB g\u1EADy cho 2 l\xEDnh", hint: 'B\u1EA5m m\u1ED9t l\xEDnh, n\xFAt "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" (\u2699), m\u1EE5c v\u0169 kh\xED, ch\u1ECDn G\u1EADy chi\u1EBFn. L\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\xE1nh m\u1EA1nh h\u01A1n nhi\u1EC1u; v\u0169 kh\xED c\u0169ng m\xF2n d\u1EA7n v\xE0 c\u1EA7n s\u1EEDa nh\u01B0 c\xF4ng c\u1EE5.', after: ["c2_club_make", "c2_soldiers3"], done: { type: "equipped", slot: "weapon", count: 2 } },
+    { id: "c2_armor_make", chapter: 2, title: "Ch\u1EBF m\u1ED9t \xE1o da", hint: 'Nh\xE0 ch\u1EBF t\u1EA1o (\u2630), tab "\xC1o gi\xE1p": \u0111\u1EB7t \xC1o da. \xC1o xong v\xE0o Kho v\u0169 kh\xED.', after: ["c2_lab_staff", "c2_equip"], done: { type: "haveTool", kind: "hide", tier: 1, count: 1 } },
+    { id: "c2_armor_wear", chapter: 2, title: "M\u1EB7c \xE1o da cho m\u1ED9t l\xEDnh", hint: "C\u0169ng \u1EDF b\u1EA3ng \u2699 c\u1EE7a l\xEDnh, m\u1EE5c gi\xE1p. Gi\xE1p gi\u1EA3m s\xE1t th\u01B0\u01A1ng nh\u01B0ng n\u1EB7ng n\xEAn t\u1ED1n s\u1EE9c h\u01A1n m\u1ED9t ch\xFAt.", after: ["c2_armor_make"], done: { type: "equipped", slot: "armor", count: 1 } },
+    { id: "c2_wartent", chapter: 2, title: "D\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn", hint: "N\u01A1i l\u1EADp \u0111\u1ED9i, ch\u1ECDn tr\u1EADn ph\xE1p v\xE0 k\u1EBF ho\u1EA1ch. M\u1EDF n\xF3 th\xEC game t\u1EA1m d\u1EEBng.", after: ["c2_barracks"], done: { type: "buildBuilding", kind: "wartent", count: 1 } },
+    { id: "c2_scouttent", chapter: 2, title: "D\u1EF1ng Tr\u1EA1i trinh s\xE1t", hint: 'N\xFAt \u{1F528} X\xE2y, tab "Qu\xE2n s\u1EF1": Tr\u1EA1i trinh s\xE1t. Trinh s\xE1t \u0111i v\u1EBD b\u1EA3n \u0111\u1ED3 l\xE0ng kh\xE1c \u0111\u1EC3 b\u1EA1n bi\u1EBFt \u0111\u1ECBch c\xF3 bao nhi\xEAu l\xEDnh tr\u01B0\u1EDBc khi \u0111\xE1nh. C\u1EA5p tr\u1EA1i c\xE0ng cao, v\u1EBD \u0111\u01B0\u1EE3c b\u1EA3n \u0111\u1ED3 c\xE0ng chi ti\u1EBFt v\xE0 m\u1ED9t chuy\u1EBFn c\u1EED \u0111\u01B0\u1EE3c c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi.', after: ["c2_lab_staff"], done: { type: "buildBuilding", kind: "scouttent", count: 1 } },
+    { id: "c2_scouts", chapter: 2, title: "Tuy\u1EC3n m\u1ED9t trinh s\xE1t", hint: "M\u1EDF Tr\u1EA1i trinh s\xE1t (\u2630), b\u1EA5m \uFF0B \u1EDF m\u1ED9t ng\u01B0\u1EDDi nhanh nh\u1EB9n. Cho h\u1ECD \u0111u\u1ED1c v\xE0 gi\xE1p (\u2699) th\xEC \u0111i an to\xE0n v\xE0 th\xE0nh c\xF4ng h\u01A1n.", after: ["c2_scouttent"], done: { type: "hasRole", role: "scout", count: 1 } },
+    { id: "c2_find", chapter: 2, title: "T\xECm m\u1ED9t ng\xF4i l\xE0ng", hint: 'L\xE0ng kh\xE1c ch\u1EC9 hi\u1EC7n khi ng\u01B0\u1EDDi c\u1EE7a b\u1EA1n \u0111i ngang qua r\u1ED3i v\u1EC1 t\u1EDBi \u0111\u1ED1ng l\u1EEDa. Cho d\xE2n ho\u1EB7c l\xEDnh \u0111i quanh b\u1EA3n \u0111\u1ED3 (b\u1EA5m b\u1EA3n \u0111\u1ED3 nh\u1ECF \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn). L\xE0ng t\xECm th\u1EA5y hi\u1EC7n trong Tr\u1EA1i trinh s\xE1t, m\u1EE5c "L\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n".', after: ["c2_scouts"], done: { type: "scoutSent" } },
+    { id: "c2_map", chapter: 2, title: "C\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p 1 c\u1EE7a m\u1ED9t l\xE0ng", hint: 'Tr\u1EA1i trinh s\xE1t: ch\u1ECDn l\xE0ng, ch\u1ECDn ng\u01B0\u1EDDi \u0111i, b\u1EA5m "L\xEAn \u0111\u01B0\u1EDDng". H\u1ECD \u0111i, quan s\xE1t r\u1ED3i v\u1EC1, m\u1EA5t v\xE0i ph\xFAt game; tua nhanh n\u1EBFu mu\u1ED1n ch\u1EDD. B\u1EA3n \u0111\u1ED3 c\u1EA5p 1 cho bi\u1EBFt v\u1ECB tr\xED v\xE0 \u0111\u1ED1ng l\u1EEDa c\u1EE7a l\xE0ng.', after: ["c2_find"], done: { type: "hasMap", level: 1 } },
+    { id: "c2_form_tech", chapter: 2, title: "Nghi\xEAn c\u1EE9u Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", hint: '\u1EDE Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p 2, tab "Qu\xE2n s\u1EF1 b\u1EADc 1", r\u1ED3i tab "Chi\u1EBFn \u0111\u1EA5u b\u1EADc 1". M\u1EDF H\xE0ng ngang v\xE0 V\xF2ng tr\xF2n. Kh\xF4ng c\xF3 tr\u1EADn ph\xE1p th\xEC kh\xF4ng l\u1EADp \u0111\u01B0\u1EE3c \u0111\u1ED9i.', after: ["c2_lab_staff"], done: { type: "researchTech", id: "form_basic" } },
+    { id: "c2_squad", chapter: 2, title: "L\u1EADp m\u1ED9t \u0111\u1ED9i", hint: 'M\u1EDF L\u1EC1u h\u1ECDp chi\u1EBFn, tab "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng", b\u1EA5m v\xE0o l\xE0ng \u0111\xE3 c\xF3 b\u1EA3n \u0111\u1ED3: b\u1EA3n \u0111\u1ED3 m\u1EDF to\xE0n m\xE0n h\xECnh. Nh\u1EA5n gi\u1EEF m\u1ED9t ch\u1ED7 tr\u1ED1ng, r\xEA t\u1EDBi m\u1ED9t tr\u1EADn ph\xE1p trong v\xF2ng tr\xF2n r\u1ED3i th\u1EA3, k\xE9o \u0111\u1EC3 v\u1EBD \u0111\u1ED9i h\xECnh (3 \u0111\u1EBFn 15 \xF4, m\u1ED7i \xF4 l\xE0 ch\u1ED7 c\u1EE7a m\u1ED9t l\xEDnh). M\u1EB7c \u0111\u1ECBnh l\u1EADp \u0111\u01B0\u1EE3c 4 \u0111\u1ED9i, m\u1ED7i tr\u1EADn 5 \xF4; nghi\xEAn c\u1EE9u m\u1EDF r\u1ED9ng \u1EDF tab "Qu\xE2n s\u1EF1".', after: ["c2_wartent", "c2_soldier", "c2_map", "c2_form_tech"], done: { type: "createSquad", count: 1 } },
+    { id: "c2_squad_fill", chapter: 2, title: "Cho 3 l\xEDnh v\xE0o \u0111\u1ED9i", hint: 'Nh\u1EA5n gi\u1EEF \u0111\u1ED9i v\u1EEBa l\u1EADp, ch\u1ECDn "L\xEDnh", r\u1ED3i b\u1EA5m d\u1EA5u \uFF0B b\xEAn ph\u1EA3i t\xEAn t\u1EEBng l\xEDnh ch\u01B0a c\xF3 \u0111\u1ED9i. \u2605 \u0111\u1EB7t l\xE0m ch\u1EC9 huy. \u0110\u1ED9i c\u1EA7n \u0111\u1EE7 l\xEDnh cho s\u1ED1 \xF4 \u0111\xE3 v\u1EBD; \xF4 th\u1EEBa th\xEC d\xF9ng "S\u1EEDa" ho\u1EB7c "X\xF3a \xF4" \u0111\u1EC3 b\u1EDBt.', after: ["c2_squad", "c2_soldiers3"], done: { type: "squadSize", count: 3 } },
+    { id: "c2_auto", chapter: 2, title: "Nghi\xEAn c\u1EE9u T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", hint: "D\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng c\xF4ng c\u1EE5 s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y, kh\xF4ng c\u1EA7n ph\xE1t tay. Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p 2 m\u1EDBi m\u1EDF tab T\u1EF1 \u0111\u1ED9ng h\xF3a.", after: ["c2_lab_staff", "c1_toolstore"], done: { type: "researchTech", id: "auto_fetch" } },
+    { id: "c2_masonry", chapter: 2, title: "Nghi\xEAn c\u1EE9u X\xE2y b\u1EB1ng \u0111\xE1", hint: "Cho ph\xE9p n\xE2ng nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1), c\u1EA7n cho l\u1EEDa c\u1EA5p 3.", after: ["c2_timber"], done: { type: "researchTech", id: "masonry" } },
+    { id: "c2_ready", chapter: 2, title: "N\xE2ng \u0111\u1EE7 nh\xE0 l\xEAn c\u1EA5p 2", hint: "Mu\u1ED1n n\xE2ng Nh\xE0 chung l\xEAn c\u1EA5p 3, m\u1ECDi nh\xE0 \u0111\xE3 m\u1EDF \u1EDF c\u1EA5p 2 (k\u1EC3 c\u1EA3 c\xE1c tr\u1EA1i, L\u1EC1u h\u1ECDp chi\u1EBFn, B\xE3i t\u1EADp, Chu\u1ED3ng th\xFA c\u01B0\u1EE1i, Tr\u1EA1i trinh s\xE1t) ph\u1EA3i c\xF3 m\u1EB7t v\xE0 \u0111\u1EA1t c\u1EA5p 2. D\xF2ng d\u01B0\u1EDBi nhi\u1EC7m v\u1EE5 cho bi\u1EBFt c\xF2n thi\u1EBFu g\xEC.", after: ["c2_upgrade", "c2_house", "c2_field", "c2_squad_fill", "c2_lab_staff", "c2_armor_wear"], done: { type: "fireReady", level: 2 } },
+    { id: "c2_fire3", chapter: 2, title: "N\xE2ng Nh\xE0 chung l\xEAn c\u1EA5p 3", hint: "C\u1EA7n 20 g\u1ED7 v\xE0 12 \u0111\xE1. C\u1EA5p 3 m\u1EDF m\u1ECDi c\xF4ng tr\xECnh c\xF2n l\u1EA1i: h\xE0ng r\xE0o, c\u1ED5ng, ch\xF2i canh, h\u1ED1 ch\xF4ng, n\xF4ng tr\u1EA1i, x\u01B0\u1EDFng g\u1ED7, x\u01B0\u1EDFng \u0111\xE1...", after: ["c2_ready"], done: { type: "upgradeFire", level: 3 } },
+    { id: "c3_fence", chapter: 3, title: "D\u1EF1ng h\xE0ng r\xE0o quanh l\xE0ng", hint: 'Tab "Ph\xF2ng th\u1EE7": H\xE0ng r\xE0o. Ch\u1EA1m ti\u1EBFp \u0111\u1EC3 \u0111\u1EB7t t\u1EEBng \u0111o\u1EA1n; r\xE0o \u0111\u1EB7t d\u1ECDc, ngang, g\xF3c \u0111\u1EC1u t\u1EF1 n\u1ED1i. R\xE0o ch\u1EB7n \u0111\u01B0\u1EDDng v\xE0 bu\u1ED9c \u0111\u1ECBch ph\u1EA3i ph\xE1. Nh\u1EDB ch\u1EEBa l\u1ED1i cho d\xE2n \u0111i l\u1EA1i.', after: ["c2_fire3"], done: { type: "buildBuilding", kind: "fence", count: 10 } },
+    { id: "c3_gate", chapter: 3, title: "D\u1EF1ng m\u1ED9t c\xE1i C\u1ED5ng", hint: "C\u1ED5ng to v\xE0 cao h\u01A1n r\xE0o. Ch\u1ECDn c\u1ED5ng r\u1ED3i b\u1EA5m n\xFAt M\u1EDF/\u0110\xF3ng c\u1ED5ng: bi\u1EC3n xanh l\xE0 m\u1EDF, bi\u1EC3n \u0111\u1ECF l\xE0 \u0111\xF3ng. C\u1ED5ng \u0111\xF3ng ch\u1EB7n c\u1EA3 d\xE2n m\xECnh.", after: ["c3_fence"], done: { type: "buildBuilding", kind: "gate", count: 1 } },
+    { id: "c3_tower", chapter: 3, title: "D\u1EF1ng Ch\xF2i canh", hint: "Cung th\u1EE7 tr\xEAn ch\xF2i b\u1EAFn xa v\xE0 m\u1EA1nh h\u01A1n. Ch\xF2i c\u1EA7n c\xF3 h\xE0ng r\xE0o l\xE0m \u0111i\u1EC1u ki\u1EC7n.", after: ["c3_fence"], done: { type: "buildBuilding", kind: "tower", count: 1 } },
+    { id: "c3_archery", chapter: 3, title: "D\u1EF1ng Tr\u1EA1i th\u1EE3 n\xE9m", hint: 'N\xFAt \u{1F528} X\xE2y, tab "Qu\xE2n s\u1EF1": Tr\u1EA1i th\u1EE3 n\xE9m. Ng\u01B0\u1EDDi n\xE9m \u0111\xE1 \u0111\xE1nh t\u1EEB xa v\xE0 l\xEAn \u0111\u01B0\u1EE3c ch\xF2i canh. H\u1ECD c\u1EA7n D\xE2y qu\u0103ng \u0111\xE1, ch\u1EBF \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o.', after: ["c3_tower"], done: { type: "buildBuilding", kind: "archery", count: 1 } },
+    { id: "c3_archer", chapter: 3, title: "C\xF3 m\u1ED9t th\u1EE3 n\xE9m \u0111\xE1", hint: "M\u1EDF Tr\u1EA1i th\u1EE3 n\xE9m (\u2630), b\u1EA5m \uFF0B. Trang b\u1ECB D\xE2y qu\u0103ng \u0111\xE1 cho h\u1ECD \u1EDF b\u1EA3ng \u2699.", after: ["c3_archery"], done: { type: "hasRole", role: "archer", count: 1 } },
+    { id: "c3_garrison", chapter: 3, title: "Cho th\u1EE3 n\xE9m l\xEAn ch\xF2i canh", hint: "Ch\u1ECDn Ch\xF2i canh, b\u1EA5m \u2630 r\u1ED3i \uFF0B \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi canh. Ng\u01B0\u1EDDi tr\xEAn ch\xF2i b\u1EAFn xa v\xE0 m\u1EA1nh h\u01A1n, v\xE0 kh\xF3 b\u1ECB \u0111\xE1nh h\u01A1n ng\u01B0\u1EDDi \u0111\u1EE9ng d\u01B0\u1EDBi \u0111\u1EA5t.", after: ["c3_archer"], done: { type: "staffIn", kind: "tower", count: 1 } },
+    { id: "c3_defplan", chapter: 3, title: "L\u1EADp m\u1EABu ph\xF2ng th\u1EE7", hint: 'L\u1EC1u h\u1ECDp chi\u1EBFn, tab "Ph\xF2ng th\u1EE7", b\u1EA5m "L\u1EADp m\u1EABu ph\xF2ng th\u1EE7" r\u1ED3i giao v\u1ECB tr\xED cho t\u1EEBng \u0111\u1ED9i. Khi c\xF3 tin \u0111\u1ECBch t\u1EDBi, "\u0110\xE1nh tr\u1ED1ng b\xE1o \u0111\u1ED9ng": d\xE2n v\u1EC1 \u0111\u1ED1ng l\u1EEDa, c\xE1c \u0111\u1ED9i v\u1EC1 \u0111\xFAng ch\u1ED7, \u0111\u1ED9i \u0111\u1EE9ng ch\xF2i cho cung th\u1EE7 l\xEAn ch\xF2i.', after: ["c3_gate", "c2_squad_fill"], done: { type: "planDefense" } },
+    { id: "c3_trap", chapter: 3, title: "G\xE0i h\u1ED1 ch\xF4ng", hint: "H\u1ED1 ch\xF4ng g\xE0i tr\xEAn \u0111\u01B0\u1EDDng \u0111\u1ECBch t\u1EDBi, m\u1ED7i h\u1ED1 l\xE0m b\u1ECB th\u01B0\u01A1ng v\xE0i ng\u01B0\u1EDDi. \u0110\u1EB7t t\u1EEBng c\xE1i m\u1ED9t.", after: ["c3_fence"], done: { type: "buildBuilding", kind: "trap", count: 2 } },
+    { id: "c3_signal", chapter: 3, title: "Nghi\xEAn c\u1EE9u T\xEDn hi\u1EC7u", hint: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED. Th\xEAm th\u1EBB l\u1EC7nh cho k\u1EBF ho\u1EA1ch.", after: ["c3_tower"], done: { type: "researchTech", id: "signal" } },
+    { id: "c3_wedge", chapter: 3, title: "Nghi\xEAn c\u1EE9u Tr\u1EADn m\u0169i nh\u1ECDn", hint: "Tr\u1EADn xung phong ph\xE1 h\xE0ng. Luy\u1EC7n thu\u1EA7n th\u1EE5c \u1EDF B\xE3i t\u1EADp.", after: ["c2_squad"], done: { type: "researchTech", id: "form_wedge" } },
+    { id: "c3_ready", chapter: 3, title: "N\xE2ng \u0111\u1EE7 nh\xE0 l\xEAn c\u1EA5p 3", hint: "M\u1ECDi nh\xE0 \u0111\xE3 m\u1EDF \u1EDF c\u1EA5p 3 ph\u1EA3i c\xF3 m\u1EB7t v\xE0 \u0111\u1EA1t c\u1EA5p 3 (h\xE0ng r\xE0o, c\u1ED5ng, ch\xF2i canh v\xE0 h\u1ED1 ch\xF4ng \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a c\u1EE7a ch\xFAng). D\xF2ng d\u01B0\u1EDBi nhi\u1EC7m v\u1EE5 cho bi\u1EBFt c\xF2n thi\u1EBFu g\xEC.", after: ["c3_gate", "c3_tower", "c3_trap", "c2_masonry", "c3_signal", "c3_garrison", "c3_defplan"], done: { type: "fireReady", level: 3 } },
+    { id: "c3_target", chapter: 3, title: "Ch\u1ECDn m\u1EE5c ti\xEAu cho \u0111\u1ED9i", hint: 'M\u1EDF b\u1EA3n \u0111\u1ED3 c\u1EE7a l\xE0ng \u0111\u1ECBch (L\u1EC1u h\u1ECDp chi\u1EBFn, "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"). B\u1EA5m v\xE0o \u0111\u1ED9i \u0111\u1EC3 ch\u1ECDn, r\u1ED3i b\u1EA5m v\xE0o m\u1ED9t c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi c\u1EE7a \u0111\u1ECBch: m\u0169i t\xEAn ch\u1EA1y t\u1EEB \u0111\u1ED9i t\u1EDBi \u0111\xF3. Nh\u1EA5n gi\u1EEF m\u0169i t\xEAn \u0111\u1EC3 S\u1EEDa (k\xE9o c\xE1c ch\u1EA5m gi\u1EEFa, t\u1ED1i \u0111a 3 ch\u1ED7 g\u1EA5p kh\xFAc) ho\u1EB7c X\xF3a. Ch\u1ECDn m\u1EE5c ti\xEAu nh\u1ECF tr\u01B0\u1EDBc, nh\u01B0 m\u1ED9t kho hay m\u1ED9t nh\xE0. \u0110o\u1EA1n m\u0169i t\xEAn m\xE0u \u0111\u1ECF l\xE0 ch\u1ED7 c\xF3 v\u1EADt c\u1EA3n: c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3 th\xEC l\u1EADp m\u1ED9t \u0111\u1ED9i h\u1EADu c\u1EA7n (c\xF3 l\xEDnh nh\u01B0ng kh\xF4ng v\u1EBD m\u0169i t\xEAn) \u0111i tr\u01B0\u1EDBc ph\xE1 h\u1EBFt; n\u01B0\u1EDBc v\xE0 c\xF4ng tr\xECnh c\u1EE7a l\xE0ng kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c n\xEAn h\xE3y u\u1ED1n m\u0169i t\xEAn \u0111i v\xF2ng.', after: ["c2_fire3", "c2_squad_fill"], done: { type: "planArrow" } },
+    { id: "c3_deploy", chapter: 3, title: "Tri\u1EC3n khai qu\xE2n", hint: 'B\u1EA5m "\u2694 Tri\u1EC3n khai tr\u1EADn chi\u1EBFn", \u0111\u1ECDc b\xE1o c\xE1o c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn: c\xE1c d\xF2ng \u2717 l\xE0 \u0111i\u1EC1u \u0111ang ch\u1EB7n, s\u1EEDa xong m\u1EDBi x\xE1c nh\u1EADn \u0111\u01B0\u1EE3c. X\xE1c nh\u1EADn: c\xE1c \u0111\u1ED9i \u0111i t\u1EDBi \xF4 \u0111\xE3 v\u1EBD r\u1ED3i \u0111\u1EE9ng ch\u1EDD. L\xE0ng c\u1EE7a b\u1EA1n v\u1EABn c\u1EA7n ng\u01B0\u1EDDi canh.', after: ["c3_target"], done: { type: "planRunning" } },
+    { id: "c3_trial", chapter: 3, title: "Chi\u1EBFn \u0111\u1EA5u th\u1EED", hint: 'Khi c\u1EA3 \u0111\u1ED9i \u0111\xE3 v\xE0o v\u1ECB tr\xED, b\u1EA5m "\u2694 \u0110\xE1nh" tr\xEAn m\xE0n h\xECnh game. N\u1EBFu th\u1EA5y s\u1EAFp thua, b\u1EA5m "\u21A9 R\xFAt lui": m\u1ED7i \u0111\u1ED9i r\xFAt theo \u0111\u01B0\u1EDDng \u0111\xE3 v\u1EBD. Th\u1EAFng hay thua \u0111\u1EC1u t\xEDnh, v\xEC \u0111\xE2y l\xE0 tr\u1EADn th\u1EED: xem \u0111\u1ED9i \u0111\xE1nh ra sao \u1EDF "Nh\u1EADt k\xFD tr\u1EADn" v\xE0 ch\u1EC9nh k\u1EBF ho\u1EA1ch cho l\u1EA7n sau.', after: ["c3_deploy"], done: { type: "planDone" } },
+    { id: "c3_fire4", chapter: 3, title: "N\xE2ng Nh\xE0 chung l\xEAn c\u1EA5p 4", hint: "C\u1EA7n 50 g\u1ED7, 30 \u0111\xE1 v\xE0 10 da. Ho\xE0n th\xE0nh k\u1EBF ho\u1EA1ch: l\xE0ng ch\u1EE9a 40 ng\u01B0\u1EDDi v\xE0 \u0111\xE3 \u0111\u1EE7 m\u1EA1nh \u0111\u1EC3 t\u1EF1 v\u1EC7.", after: ["c3_ready"], done: { type: "upgradeFire", level: 4 } },
+    { id: "c4_win", chapter: 4, title: "Th\u1EAFng m\u1ED9t tr\u1EADn", hint: "\u0110\xE1nh l\u1EA1i sau khi s\u1EEDa k\u1EBF ho\u1EA1ch: th\xEAm \u0111\u1ED9i, m\u1EB7c gi\xE1p cho l\xEDnh, \u0111\xE1nh v\xE0o l\xFAc tr\u1EDDi s\xE1ng \u0111\u1EC3 l\xEDnh nh\xECn xa h\u01A1n, hay ch\u1EDD c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p 2 (\u0111\u01B0\u1EDDng v\xE0o, h\xE0ng r\xE0o) v\xE0 c\u1EA5p 3 (s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i). Th\u1EAFng l\xE0 h\u1EBFt l\xEDnh \u0111\u1ECBch, l\u1EEDa t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh s\u1EADp.", after: ["c3_trial", "c3_fire4"], done: { type: "planDone", result: "won" } },
+    { id: "c4_wedge", chapter: 4, title: "L\u1EADp m\u1ED9t \u0111\u1ED9i M\u0169i nh\u1ECDn", hint: "Sau khi nghi\xEAn c\u1EE9u Tr\u1EADn m\u0169i nh\u1ECDn: xung phong \xD71,4 khi lao v\xE0o \u0111\u1ECBch nh\u01B0ng hai c\xE1nh y\u1EBFu. H\u1EE3p v\u1EDBi k\u1EBB \u0111\u1ECBch \u0111\u1EE9ng th\u01B0a. L\u1EADp \u0111\u1ED9i m\u1EDBi tr\xEAn b\u1EA3n \u0111\u1ED3 l\xE0ng, nh\u1EA5n gi\u1EEF r\u1ED3i ch\u1ECDn M\u0169i nh\u1ECDn.", after: ["c3_wedge", "c2_map"], done: { type: "squadFormation", id: "wedge" } },
+    { id: "c4_stable", chapter: 4, title: "D\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i", hint: 'N\xFAt \u{1F528} X\xE2y, tab "T\xE0i nguy\xEAn": Chu\u1ED3ng th\xFA c\u01B0\u1EE1i. D\xE2n l\xE0m trong chu\u1ED3ng thu\u1EA7n h\xF3a th\xFA r\u1ED3i giao cho ng\u01B0\u1EDDi c\u01B0\u1EE1i nh\u01B0 giao c\xF4ng c\u1EE5. Chu\u1ED3ng c\u1EA5p 1 thu\u1EA7n \u0111\u01B0\u1EE3c s\xF3i, c\u1EA5p 2 l\u1EE3n r\u1EEBng, c\u1EA5p 3 voi.', after: ["c3_fire4"], done: { type: "buildBuilding", kind: "stable", count: 1 } },
+    { id: "c4_cavalry", chapter: 4, title: "D\u1EF1ng Tr\u1EA1i k\u1EF5 th\xFA", hint: 'N\xFAt \u{1F528} X\xE2y, tab "Qu\xE2n s\u1EF1": Tr\u1EA1i k\u1EF5 th\xFA. L\xEDnh luy\u1EC7n trong tr\u1EA1i c\u01B0\u1EE1i th\xFA theo c\u1EA5p tr\u1EA1i m\xE0 kh\xF4ng c\u1EA7n ai giao th\xFA.', after: ["c4_stable"], done: { type: "buildBuilding", kind: "cavalry", count: 1 } }
+  ]
+};
+
+// src/sim/progression.ts
+var GROUPS = progression_default.groups;
+var FIRE = progression_default.campfire.levels;
+var LAB = progression_default.research.levels;
+var CELLS_DEFAULT = progression_default.formationDefaults.cells;
+var SQUADS_DEFAULT = progression_default.formationDefaults.squads;
+var names = (list) => list.flatMap((k) => k.startsWith("@") ? GROUPS[k.slice(1)] ?? [] : [k]);
+function fireUnlockLevel(kind) {
+  for (const f of FIRE) if (names(f.unlock).includes(kind)) return f.level;
+  return FIRE.find((f) => f.unlock.includes("@rest"))?.level ?? 1;
+}
+var fireBuildingMax = (fireLevel2) => FIRE[Math.min(FIRE.length, Math.max(1, fireLevel2)) - 1].buildingMaxLevel;
+var fireUpgradeNeeds = (fireLevel2) => FIRE[Math.min(FIRE.length, Math.max(1, fireLevel2)) - 1].upgradeNeeds?.allUnlockedAtLeastLevel ?? null;
+function labLevelOf(techId) {
+  for (const l of LAB) if (l.techs.includes(techId)) return l.level;
+  return LAB[LAB.length - 1].level;
+}
+var SCREEN_QUESTS = quests_default.quests.filter((q) => ["selectBuilding", "openBuilding", "inspectNode", "inspectUnit", "inspectAnimal", "speed", "daytime"].includes(q.done.type)).map((q) => q.id);
+
+// src/data/buildings.json
+var buildings_default = {
+  _note: "Chi ph\xED x\xE2y v\xE0 n\xE2ng c\u1EA5p t\u1EEBng c\xF4ng tr\xECnh (th\u1EDDi \u0111\u1EA1i \u0111\u1ED3 \u0111\xE1). M\u1ED7i c\xF4ng tr\xECnh l\xE0 danh s\xE1ch c\u1EA5p: c\u1EA5p 1 l\xE0 chi ph\xED X\xC2Y, c\u1EA5p 2 tr\u1EDF l\xEAn l\xE0 chi ph\xED N\xC2NG C\u1EA4P. cost = v\u1EADt li\u1EC7u (wood, stone, hide, ...); buildTime = gi\xE2y c\xF4ng cho m\u1ED9t th\u1EE3 h\u1EC7 s\u1ED1 1; cap = s\u1EE9c ch\u1EE9a (kho) ho\u1EB7c s\u1ED1 m\xF3n (kho c\xF4ng c\u1EE5/v\u0169 kh\xED); craftSpeed = t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c; slots = s\u1ED1 d\xE2n l\xE0m b\xEAn trong; hp = \u0111\u1ED9 b\u1EC1n c\u1EE7a h\xE0ng r\xE0o/c\u1ED5ng/ch\xF2i/h\u1ED1 ch\xF4ng. S\u1ED1 l\u01B0\u1EE3ng t\u1ED1i \u0111a theo c\u1EA5p l\u1EEDa (perFire) n\u1EB1m trong buildings.ts. N\xE2ng c\u1EA5p ch\u1EC9 t\u0103ng s\u1EE9c ch\u1EE9a (cap, slots) v\xE0 \u0111\u1ED9 b\u1EC1n (hp); craftSpeed lu\xF4n l\xE0 1: t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c, x\xE2y v\xE0 ngh\u1EC9 ng\u01A1i kh\xF4ng t\u0103ng theo c\u1EA5p nh\xE0.",
+  campfire: [
+    { name: "C\u1EE7i l\u1EEDa", cost: {}, buildTime: 0, cap: 30, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "L\u1EEDa tr\u1EA1i", cost: { wood: 20 }, buildTime: 120, cap: 45, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "B\u1EBFp l\u1EEDa l\u1EDBn", cost: { wood: 20, stone: 12 }, buildTime: 240, cap: 60, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "Nh\xE0 chung", cost: { wood: 50, stone: 30, hide: 10 }, buildTime: 480, cap: 90, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  builder: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 10 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 15, stone: 10 }, buildTime: 110, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 25, stone: 20 }, buildTime: 160, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
+  ],
+  storage: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 10 }, buildTime: 50, cap: 100, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 35 }, buildTime: 90, cap: 250, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 40, stone: 20 }, buildTime: 140, cap: 500, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  workshop: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15 }, buildTime: 70, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 15, stone: 30 }, buildTime: 120, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 50 }, buildTime: 180, cap: 0, craftSpeed: 1, slots: 3, hp: 0 }
+  ],
+  lab: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 80, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 20, stone: 30 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 50 }, buildTime: 200, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
+  ],
+  toolstore: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 25 }, buildTime: 60, cap: 12, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 30, stone: 15 }, buildTime: 100, cap: 30, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 40 }, buildTime: 150, cap: 60, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  armory: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 25 }, buildTime: 60, cap: 12, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 30, stone: 15 }, buildTime: 100, cap: 30, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 40 }, buildTime: 150, cap: 60, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  infantry: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 4, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, hide: 6 }, buildTime: 100, cap: 0, craftSpeed: 1, slots: 8, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 25, hide: 10 }, buildTime: 150, cap: 0, craftSpeed: 1, slots: 14, hp: 0 }
+  ],
+  cavalry: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 25, hide: 8 }, buildTime: 70, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 30, hide: 10 }, buildTime: 110, cap: 0, craftSpeed: 1, slots: 4, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 35, stone: 25, hide: 14 }, buildTime: 160, cap: 0, craftSpeed: 1, slots: 6, hp: 0 }
+  ],
+  archery: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, hide: 6 }, buildTime: 100, cap: 0, craftSpeed: 1, slots: 6, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 25, hide: 10 }, buildTime: 150, cap: 0, craftSpeed: 1, slots: 10, hp: 0 }
+  ],
+  farmhouse: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, stone: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 5, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 20 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
+  ],
+  huntlodge: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15, hide: 3 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, hide: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 15, hide: 8 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 5, hp: 0 }
+  ],
+  lumberyard: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, stone: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 5, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 20 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
+  ],
+  quarry: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, stone: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 5, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 20 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
+  ],
+  house: [
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 4, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 30, stone: 10 }, buildTime: 100, cap: 0, craftSpeed: 1, slots: 8, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 40, stone: 30 }, buildTime: 150, cap: 0, craftSpeed: 1, slots: 12, hp: 0 }
+  ],
+  fence: [
+    { name: "C\u1ECDc nh\u1ECDn", cost: { wood: 2 }, buildTime: 14, cap: 0, craftSpeed: 1, slots: 0, hp: 40 },
+    { name: "H\xE0ng r\xE0o \u0111\xF4i", cost: { wood: 4, stone: 1 }, buildTime: 24, cap: 0, craftSpeed: 1, slots: 0, hp: 120 }
+  ],
+  gate: [
+    { name: "C\u1ED5ng g\u1ED7", cost: { wood: 4 }, buildTime: 20, cap: 0, craftSpeed: 1, slots: 0, hp: 30 },
+    { name: "C\u1ED5ng \u0111\xF4i", cost: { wood: 6, stone: 2 }, buildTime: 32, cap: 0, craftSpeed: 1, slots: 0, hp: 90 }
+  ],
+  tower: [
+    { name: "Ch\xF2i g\u1ED7", cost: { wood: 20 }, buildTime: 80, cap: 0, craftSpeed: 1, slots: 2, hp: 150 },
+    { name: "Ch\xF2i cao", cost: { wood: 30, stone: 8 }, buildTime: 130, cap: 0, craftSpeed: 1, slots: 4, hp: 300 }
+  ],
+  wartent: [
+    { name: "L\u1EC1u da", cost: { wood: 30, hide: 8 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "L\u1EC1u l\u1EDBn", cost: { wood: 40, hide: 10, stone: 15 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "L\u1EC1u th\u1EE7 l\u0129nh", cost: { wood: 50, stone: 40, hide: 14 }, buildTime: 200, cap: 0, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  scouttent: [
+    { name: "L\u1EC1u da", cost: { wood: 20, hide: 6 }, buildTime: 70, cap: 0, craftSpeed: 1, slots: 4, hp: 0 },
+    { name: "L\u1EC1u l\u1EDBn", cost: { wood: 30, hide: 8, stone: 10 }, buildTime: 110, cap: 0, craftSpeed: 1, slots: 6, hp: 0 },
+    { name: "L\u1EC1u th\xE1m th\xEDnh", cost: { wood: 40, hide: 12, stone: 25 }, buildTime: 160, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
+  ],
+  drill: [
+    { name: "B\xE3i c\u1ECDc", cost: { wood: 25 }, buildTime: 80, cap: 0, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "B\xE3i r\xE0o", cost: { wood: 30, stone: 10 }, buildTime: 120, cap: 0, craftSpeed: 1, slots: 0, hp: 0 },
+    { name: "B\xE3i \u0111\xE1", cost: { wood: 35, stone: 30 }, buildTime: 170, cap: 0, craftSpeed: 1, slots: 0, hp: 0 }
+  ],
+  trap: [
+    { name: "H\u1ED1 ch\xF4ng", cost: { wood: 3 }, buildTime: 12, cap: 0, craftSpeed: 1, slots: 0, hp: 3 },
+    { name: "H\u1ED1 ch\xF4ng s\xE2u", cost: { wood: 4, stone: 2 }, buildTime: 20, cap: 0, craftSpeed: 1, slots: 0, hp: 6 }
+  ],
+  stable: [
+    { name: "Chu\u1ED3ng c\u1ECDc", cost: { wood: 30, hide: 6 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "Chu\u1ED3ng g\u1ED7", cost: { wood: 40, hide: 8, stone: 10 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+    { name: "Chu\u1ED3ng \u0111\xE1", cost: { wood: 45, stone: 35, hide: 12 }, buildTime: 200, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
+  ],
+  field: [
+    { name: "\u0110\u1EA5t v\u1EE1", cost: { wood: 10 }, buildTime: 70, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
+    { name: "Lu\u1ED1ng \u0111\u1EAFp", cost: { wood: 15, stone: 5 }, buildTime: 110, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
+    { name: "B\u1EDD \u0111\xE1", cost: { wood: 20, stone: 15 }, buildTime: 160, cap: 0, craftSpeed: 1, slots: 1, hp: 0 }
+  ]
+};
+
 // src/sim/buildings.ts
 var ERAS = ["stone", "ancient"];
-var lv = (name, cost, buildTime, cap = 0, craftSpeed = 1, slots = 0, hp = 0) => ({ name, cost, buildTime, cap, craftSpeed, slots, hp });
+var CLEARANCE = 2;
+var WALL_KINDS = /* @__PURE__ */ new Set(["fence", "gate", "trap"]);
+var STONE_LEVELS = buildings_default;
 var BUILDINGS = {
   // the heart of the village: it starts as a heap of firewood and every other house is held back by its level
   campfire: {
@@ -12,7 +721,7 @@ var BUILDINGS = {
     h: 2,
     buildable: false,
     upgradable: true,
-    levels: { stone: [lv("C\u1EE7i l\u1EEDa", {}, 0, 30), lv("L\u1EEDa tr\u1EA1i", { wood: 20 }, 120, 45), lv("B\u1EBFp l\u1EEDa l\u1EDBn", { wood: 20, stone: 12 }, 240, 60), lv("Nh\xE0 chung", { wood: 50, stone: 30, hide: 10 }, 480, 90)] }
+    levels: { stone: STONE_LEVELS.campfire }
   },
   // builders belong to this house: without it nothing but the house itself can be raised
   builder: {
@@ -21,7 +730,7 @@ var BUILDINGS = {
     w: 2,
     h: 2,
     buildable: true,
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 60, 0, 1, 2), lv("G\u1ED7", { wood: 15, stone: 10 }, 110, 0, 1.25, 3), lv("\u0110\xE1", { wood: 25, stone: 20 }, 160, 0, 1.5, 4)] }
+    levels: { stone: STONE_LEVELS.builder }
   },
   storage: {
     kind: "storage",
@@ -30,7 +739,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 10 }, 50, 100), lv("G\u1ED7", { wood: 35 }, 90, 250), lv("\u0110\xE1", { wood: 40, stone: 20 }, 140, 500)] }
+    levels: { stone: STONE_LEVELS.storage }
   },
   workshop: {
     kind: "workshop",
@@ -39,7 +748,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 70, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] }
+    levels: { stone: STONE_LEVELS.workshop }
   },
   lab: {
     kind: "lab",
@@ -48,16 +757,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 80, 0, 1, 1), lv("G\u1ED7", { wood: 20, stone: 30 }, 140, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 200, 0, 1.5, 4)] }
-  },
-  repair: {
-    kind: "repair",
-    name: "Nh\xE0 s\u1EEDa ch\u1EEFa",
-    w: 2,
-    h: 2,
-    buildable: true,
-    requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15, stone: 5 }, 70, 0, 1, 1), lv("G\u1ED7", { wood: 15, stone: 30 }, 120, 0, 1.25, 2), lv("\u0110\xE1", { wood: 30, stone: 50 }, 180, 0, 1.5, 3)] }
+    levels: { stone: STONE_LEVELS.lab }
   },
   toolstore: {
     kind: "toolstore",
@@ -66,7 +766,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 60, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 100, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 150, 60)] }
+    levels: { stone: STONE_LEVELS.toolstore }
   },
   armory: {
     kind: "armory",
@@ -75,7 +775,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["workshop"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25 }, 60, 12), lv("G\u1ED7", { wood: 30, stone: 15 }, 100, 30), lv("\u0110\xE1", { wood: 30, stone: 40 }, 150, 60)] }
+    levels: { stone: STONE_LEVELS.armory }
   },
   // The role houses. One of each: raising its level makes room for more people (slots). The people of a role are chosen in its house, never
   // at the campfire. A soldier's camp is also where he sleeps, out of sight, as a list (craftSpeed = how well they rest).
@@ -87,7 +787,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 4), lv("G\u1ED7", { wood: 25, hide: 6 }, 100, 0, 1.1, 8), lv("\u0110\xE1", { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 14)] }
+    levels: { stone: STONE_LEVELS.infantry }
   },
   cavalry: {
     kind: "cavalry",
@@ -97,7 +797,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 25, hide: 8 }, 70, 0, 1, 2), lv("G\u1ED7", { wood: 30, hide: 10 }, 110, 0, 1.1, 4), lv("\u0110\xE1", { wood: 35, stone: 25, hide: 14 }, 160, 0, 1.2, 6)] }
+    levels: { stone: STONE_LEVELS.cavalry }
   },
   archery: {
     kind: "archery",
@@ -107,7 +807,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 3), lv("G\u1ED7", { wood: 25, hide: 6 }, 100, 0, 1.1, 6), lv("\u0110\xE1", { wood: 30, stone: 25, hide: 10 }, 150, 0, 1.2, 10)] }
+    levels: { stone: STONE_LEVELS.archery }
   },
   farmhouse: {
     kind: "farmhouse",
@@ -116,7 +816,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 50, 0, 1, 3), lv("G\u1ED7", { wood: 25, stone: 5 }, 90, 0, 1, 5), lv("\u0110\xE1", { wood: 30, stone: 20 }, 140, 0, 1, 8)] }
+    levels: { stone: STONE_LEVELS.farmhouse }
   },
   huntlodge: {
     kind: "huntlodge",
@@ -125,7 +825,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15, hide: 3 }, 50, 0, 1, 2), lv("G\u1ED7", { wood: 25, hide: 5 }, 90, 0, 1, 3), lv("\u0110\xE1", { wood: 30, stone: 15, hide: 8 }, 140, 0, 1, 5)] }
+    levels: { stone: STONE_LEVELS.huntlodge }
   },
   lumberyard: {
     kind: "lumberyard",
@@ -134,7 +834,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 50, 0, 1, 3), lv("G\u1ED7", { wood: 25, stone: 5 }, 90, 0, 1, 5), lv("\u0110\xE1", { wood: 30, stone: 20 }, 140, 0, 1, 8)] }
+    levels: { stone: STONE_LEVELS.lumberyard }
   },
   quarry: {
     kind: "quarry",
@@ -143,7 +843,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 15 }, 50, 0, 1, 3), lv("G\u1ED7", { wood: 25, stone: 5 }, 90, 0, 1, 5), lv("\u0110\xE1", { wood: 30, stone: 20 }, 140, 0, 1, 8)] }
+    levels: { stone: STONE_LEVELS.quarry }
   },
   // where everyone who is not a soldier sleeps, out of sight, as a list; without a bed they sleep by the campfire and rest slower
   house: {
@@ -154,7 +854,7 @@ var BUILDINGS = {
     buildable: true,
     requires: ["builder"],
     perFire: [1, 3, 3, 3],
-    levels: { stone: [lv("\u0110\u01A1n s\u01A1", { wood: 20 }, 60, 0, 1, 4), lv("G\u1ED7", { wood: 30, stone: 10 }, 100, 0, 1.15, 8), lv("\u0110\xE1", { wood: 40, stone: 30 }, 150, 0, 1.3, 12)] }
+    levels: { stone: STONE_LEVELS.house }
   },
   // defence works (not "one of each": they are laid piece by piece, as many as the campfire allows). hp is what the raiders must break down.
   fence: {
@@ -166,7 +866,7 @@ var BUILDINGS = {
     requires: ["builder"],
     perFire: [14, 30, 50, 70],
     repeat: true,
-    levels: { stone: [lv("C\u1ECDc nh\u1ECDn", { wood: 2 }, 14, 0, 1, 0, 40), lv("H\xE0ng r\xE0o \u0111\xF4i", { wood: 4, stone: 1 }, 24, 0, 1, 0, 120)] }
+    levels: { stone: STONE_LEVELS.fence }
   },
   // slots here are the archers who can keep watch on a tower; a gate has no staff, it opens and shuts
   gate: {
@@ -177,7 +877,7 @@ var BUILDINGS = {
     buildable: true,
     requires: ["fence"],
     perFire: [1, 2, 3, 4],
-    levels: { stone: [lv("C\u1ED5ng g\u1ED7", { wood: 4 }, 20, 0, 1, 0, 30), lv("C\u1ED5ng \u0111\xF4i", { wood: 6, stone: 2 }, 32, 0, 1, 0, 90)] }
+    levels: { stone: STONE_LEVELS.gate }
   },
   tower: {
     kind: "tower",
@@ -187,7 +887,7 @@ var BUILDINGS = {
     buildable: true,
     requires: ["fence"],
     perFire: [0, 1, 2, 3],
-    levels: { stone: [lv("Ch\xF2i g\u1ED7", { wood: 20 }, 80, 0, 1, 2, 150), lv("Ch\xF2i cao", { wood: 30, stone: 8 }, 130, 0, 1.2, 4, 300)] }
+    levels: { stone: STONE_LEVELS.tower }
   },
   // where the squads, formations and plans are made: its level decides how many squads and command cards there are
   wartent: {
@@ -197,7 +897,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("L\u1EC1u da", { wood: 30, hide: 8 }, 90), lv("L\u1EC1u l\u1EDBn", { wood: 40, hide: 10, stone: 15 }, 140), lv("L\u1EC1u th\u1EE7 l\u0129nh", { wood: 50, stone: 40, hide: 14 }, 200)] }
+    levels: { stone: STONE_LEVELS.wartent }
   },
   // where scouts are sent from: slots = how many may go out on one trip
   scouttent: {
@@ -207,7 +907,7 @@ var BUILDINGS = {
     h: 2,
     buildable: true,
     requires: ["builder"],
-    levels: { stone: [lv("L\u1EC1u da", { wood: 20, hide: 6 }, 70, 0, 1, 4), lv("L\u1EC1u l\u1EDBn", { wood: 30, hide: 8, stone: 10 }, 110, 0, 1, 6), lv("L\u1EC1u th\xE1m th\xEDnh", { wood: 40, hide: 12, stone: 25 }, 160, 0, 1, 8)] }
+    levels: { stone: STONE_LEVELS.scouttent }
   },
   // the drill ground: squads train their formation here
   drill: {
@@ -217,7 +917,7 @@ var BUILDINGS = {
     h: 3,
     buildable: true,
     requires: ["infantry"],
-    levels: { stone: [lv("B\xE3i c\u1ECDc", { wood: 25 }, 80), lv("B\xE3i r\xE0o", { wood: 30, stone: 10 }, 120), lv("B\xE3i \u0111\xE1", { wood: 35, stone: 30 }, 170)] }
+    levels: { stone: STONE_LEVELS.drill }
   },
   // a pit of sharpened stakes, laid one at a time; hp is how many men it can still wound
   trap: {
@@ -229,7 +929,17 @@ var BUILDINGS = {
     requires: ["fence"],
     perFire: [4, 10, 18, 28],
     repeat: true,
-    levels: { stone: [lv("H\u1ED1 ch\xF4ng", { wood: 3 }, 12, 0, 1, 0, 3), lv("H\u1ED1 ch\xF4ng s\xE2u", { wood: 4, stone: 2 }, 20, 0, 1, 0, 6)] }
+    levels: { stone: STONE_LEVELS.trap }
+  },
+  // where beasts are tamed to be ridden: slots = keepers who work inside, craftSpeed = how fast they get through an order; the level decides which beast (wolf, boar, elephant)
+  stable: {
+    kind: "stable",
+    name: "Chu\u1ED3ng th\xFA c\u01B0\u1EE1i",
+    w: 2,
+    h: 2,
+    buildable: true,
+    requires: ["builder"],
+    levels: { stone: STONE_LEVELS.stable }
   },
   // slots = farmers at once, craftSpeed = how fast they work the soil; food comes in with the seasons (seasons.json "farm"), bushes are only the start
   field: {
@@ -240,7 +950,7 @@ var BUILDINGS = {
     buildable: true,
     requires: ["builder"],
     perFire: [1, 3, 3, 4],
-    levels: { stone: [lv("\u0110\u1EA5t v\u1EE1", { wood: 10 }, 70, 0, 1, 1), lv("Lu\u1ED1ng \u0111\u1EAFp", { wood: 15, stone: 5 }, 110, 0, 1.4, 1), lv("B\u1EDD \u0111\xE1", { wood: 20, stone: 15 }, 160, 0, 1.8, 1)] }
+    levels: { stone: STONE_LEVELS.field }
   }
 };
 var buildingName = (kind, era) => BUILDINGS[kind].names?.[era] ?? BUILDINGS[kind].name;
@@ -253,12 +963,13 @@ function levelsOf(kind, era) {
   return defs.stone;
 }
 var levelDef = (b, level = b.level) => levelsOf(b.kind, b.era)[level - 1];
+var maxHp = (b) => levelDef(b).hp || Math.round(SIEGE.buildingHpPerTile * BUILDINGS[b.kind].w * BUILDINGS[b.kind].h * (1 + 0.5 * (b.level - 1)));
 var maxLevel = (kind, era) => levelsOf(kind, era).length;
 var holdsGoods = (b) => b.kind === "storage" || b.kind === "campfire";
 var needsWork = (b) => !b.done || b.upgrading;
 var canGrow = (kind) => BUILDINGS[kind].buildable || !!BUILDINGS[kind].upgradable;
 var POP_BY_FIRE = [8, 16, 25, 40];
-var levelCapByFire = (fireLevel) => Math.max(1, fireLevel - 1);
+var levelCapByFire = (fireLevel2) => fireBuildingMax(fireLevel2);
 
 // src/sim/constants.ts
 var TILE = 32;
@@ -406,7 +1117,7 @@ var World = class {
   nodeAt(x, y) {
     return this.inBounds(x, y) ? this.nodes.get(y * this.size + x) : void 0;
   }
-  /** Cây và đá cạn thì ô trở lại thành cỏ (cây để lại gốc); bụi quả giữ nguyên và mọc lại. */
+  /** Cây và đá cạn thì ô trở lại thành cỏ (cây không để lại gốc); bụi quả giữ nguyên và mọc lại. */
   depleted(idx) {
     const n = this.nodes.get(idx);
     if (!n) return;
@@ -417,7 +1128,6 @@ var World = class {
     }
     this.nodes.delete(idx);
     this.tiles[idx] = Tile.Grass;
-    if (n.kind === "tree") this.decor[idx] = 1;
   }
   /** Winter: bushes go bare and stop regrowing. Spring: they flower and fruit again after 1–3 min (staggered per tile). */
   setSeason(season) {
@@ -448,6 +1158,113 @@ var World = class {
     }
   }
 };
+
+// src/data/pace.json
+var pace_default = {
+  _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
+  gather: { wood: 11, stone: 17, food: 6, farm: 70 },
+  bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
+  outdoor: ["wood", "stone", "food", "build"]
+};
+
+// src/data/mounts.json
+var mounts_default = {
+  _note: "Mounts. A beast is tamed in the Chu\u1ED3ng th\xFA (the level of the stable decides which) and given to a villager like a tool; the riders of the Tr\u1EA1i k\u1EF5 th\xFA ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
+  kinds: {
+    wolf: { name: "S\xF3i", tier: 1, species: "wolf", speed: 1.6, guard: 0.95, ride: 9, cost: { food: 25, hide: 2, coin: 3 }, time: 240 },
+    boar: { name: "L\u1EE3n r\u1EEBng", tier: 2, species: "boar", speed: 1.3, guard: 0.85, ride: 8, cost: { food: 40, hide: 4, coin: 5 }, time: 360 },
+    elephant: { name: "Voi", tier: 3, species: "mammoth", speed: 1.15, guard: 0.65, ride: 19, cost: { food: 80, hide: 8, coin: 12 }, time: 600 }
+  }
+};
+
+// src/data/training.json
+var training_default = {
+  _note: "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
+  dayBase: 0.6,
+  dayPerStat: 0.12,
+  foodBase: 4,
+  coinBase: 1,
+  coinPerStat: 0.3333,
+  gain: [0.01, 0.05],
+  partnerShare: 0.5,
+  floor: 0.6,
+  floorMin: 3,
+  caps: [8, 12, 16],
+  care: [
+    { name: "Kh\xF4ng", coin: 0, penalty: 0.8 },
+    { name: "C\u1EA9n th\u1EADn", coin: 2, penalty: 0.4 },
+    { name: "Chu \u0111\xE1o", coin: 5, penalty: 0.15 }
+  ],
+  profiles: {
+    infantry: { main: "str", partner: "vit", cost: "agi" },
+    archery: { main: "agi", partner: "sta", cost: "str" },
+    cavalry: { main: "agi", partner: "sta", cost: "vit" },
+    lumberyard: { main: "str", partner: "vit", cost: "agi" },
+    quarry: { main: "str", partner: "vit", cost: "agi" },
+    farmhouse: { main: "agi", partner: "sta", cost: "str" },
+    huntlodge: { main: "agi", partner: "sta", cost: "str" },
+    builder: { main: "sta", partner: "str", cost: "vit" },
+    workshop: { main: "agi", cost: "sta" },
+    lab: { main: "sta", cost: "agi" },
+    stable: { main: "agi", partner: "sta", cost: "str" },
+    scouttent: { main: "agi", partner: "sta", cost: "str" }
+  }
+};
+
+// src/sim/jobs.ts
+var TRAINING = training_default;
+var MOUNT_KINDS = ["wolf", "boar", "elephant"];
+var MOUNTS = mounts_default.kinds;
+var fmtStat = (x) => String(Math.round(x * 10) / 10);
+var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", sta: "Th\u1EC3 l\u1EF1c" };
+var JOBS = {
+  wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
+  stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
+  food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: pace_default.gather.food, anim: "gather" },
+  build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
+  craft: { name: "Ch\u1EBF t\u1EA1o", stat: "agi", baseTime: 1, anim: "craft" },
+  research: { name: "Nghi\xEAn c\u1EE9u", stat: "sta", baseTime: 1, anim: "gather" },
+  tame: { name: "Thu\u1EA7n th\xFA", stat: "agi", baseTime: 1, anim: "craft" },
+  hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
+  fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
+};
+var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", tame: "Thu\u1EA7n th\xFA", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh", scout: "Trinh s\xE1t" };
+var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "tame", "hunt", "fight"];
+var ROLES = {
+  wood: { job: "wood", building: "lumberyard", names: { stone: "\u0110\u1ED1n g\u1ED7", ancient: "Ti\u1EC1u phu" } },
+  stone: { job: "stone", building: "quarry", names: { stone: "Th\u1EE3 \u0111\xE1", ancient: "Th\u1EE3 m\u1ECF" } },
+  food: { job: "food", building: "farmhouse", names: { stone: "H\xE1i l\u01B0\u1EE3m", ancient: "N\xF4ng d\xE2n" } },
+  hunt: { job: "hunt", building: "huntlodge", names: { stone: "Th\u1EE3 s\u0103n", ancient: "Th\u1EE3 s\u0103n" } },
+  foot: { job: "fight", arm: "foot", building: "infantry", names: { stone: "Chi\u1EBFn binh", ancient: "B\u1ED9 binh" } },
+  cavalry: { job: "fight", arm: "cavalry", building: "cavalry", names: { stone: "K\u1EF5 th\xFA", ancient: "K\u1EF5 binh" } },
+  archer: { job: "fight", arm: "archer", building: "archery", names: { stone: "Th\u1EE3 n\xE9m", ancient: "Cung th\u1EE7" } },
+  scout: { job: "scout", building: "scouttent", names: { stone: "Trinh s\xE1t", ancient: "Trinh s\xE1t" } }
+};
+var ROLE_IDS = Object.keys(ROLES);
+var roleName = (role, era) => ROLES[role].names[era];
+function roleOf(v) {
+  switch (v.job) {
+    case "fight":
+      return v.arm === "archer" ? "archer" : v.arm === "cavalry" ? "cavalry" : "foot";
+    case "food":
+      return v.post < 0 ? "food" : null;
+    case "wood":
+    case "stone":
+    case "hunt":
+    case "scout":
+      return v.job;
+    default:
+      return null;
+  }
+}
+var STAFF_BUILDING = { craft: "workshop", research: "lab", tame: "stable" };
+var isStaffJob = (j) => j in STAFF_BUILDING;
+var FARM_TIME = pace_default.gather.farm;
+var XP_LEVELS = [60, 150, 300, 500, 800];
+var MAX_LEVEL = 5;
+var CREW_BUILDING = { build: "builder" };
+var BARE_HANDS = pace_default.bare;
+var OUTDOOR_JOBS = pace_default.outdoor;
 
 // src/data/handtools/tiers.json
 var tiers_default = {
@@ -713,6 +1530,15 @@ var armors = { hide: hide_default };
 var W = 40;
 var H = 48;
 var CX = 20;
+var PADX = 14;
+var PADT = 16;
+var PADB = 2;
+var FW = W + 2 * PADX;
+var FH = H + PADT + PADB;
+var BW = W;
+var BH = H;
+var OX = 0;
+var OY = 0;
 var rad = (d) => d * Math.PI / 180;
 var hexRgb = (h2) => [parseInt(h2.slice(1, 3), 16), parseInt(h2.slice(3, 5), 16), parseInt(h2.slice(5, 7), 16)];
 var mul = (c, f) => c.map((v) => Math.max(0, Math.min(255, Math.round(v * f))));
@@ -748,10 +1574,10 @@ function palette(look, kind) {
   };
 }
 function put(b, x, y, c, a) {
-  x = Math.round(x);
-  y = Math.round(y);
-  if (x < 0 || y < 0 || x >= W || y >= H) return;
-  const i = (y * W + x) * 4;
+  x = Math.round(x) + OX;
+  y = Math.round(y) + OY;
+  if (x < 0 || y < 0 || x >= BW || y >= BH) return;
+  const i = (y * BW + x) * 4;
   b[i] = c[0];
   b[i + 1] = c[1];
   b[i + 2] = c[2];
@@ -965,23 +1791,23 @@ function drawCharacter(b, view2, f, P, sex, ov, armorId, extra) {
   const tDx = side ? Math.trunc(lean / 2) : 0, hDx = side ? lean : 0;
   const hipY = 35 + bob, shY = 27 + bob, TY = 25 + bob, HY = 14 + bob;
   const gl = (o, k, d) => o && typeof o[k] === "number" ? o[k] : d;
-  const leg = (L, hx, col) => {
-    const a = rad(gl(L, "a", 0));
+  const leg = (L2, hx, col) => {
+    const a = rad(gl(L2, "a", 0));
     const fx = side ? hx + 7 * Math.sin(a) : hx;
-    const fy = 42 - gl(L, "lift", 0) - 7 * (1 - Math.cos(a));
+    const fy = 42 - gl(L2, "lift", 0) - 7 * (1 - Math.cos(a));
     line(b, hx, hipY, fx, fy, 3, col);
     rect(b, Math.round(fx) - 1, Math.round(fy) + 1, 3, 1, P.skinD);
     if (AD && col !== P.skinD) drawWrap(b, AD.wraps && AD.wraps.leg, AC, (hx + fx) / 2, fy - gl(AD.wraps && AD.wraps.leg, "dy", 4));
   };
   const armPts = (A, sx) => {
-    const a1 = gl(A, "a", 0), a2 = a1 + gl(A, "b", 0), L = 3.5;
+    const a1 = gl(A, "a", 0), a2 = a1 + gl(A, "b", 0), L2 = 3.5;
     if (side) {
-      const ex = sx + L * Math.sin(rad(a1)), ey2 = shY + L * Math.cos(rad(a1));
-      return { sx, ex, ey: ey2, hx: ex + L * Math.sin(rad(a2)), hy: ey2 + L * Math.cos(rad(a2)) };
+      const ex = sx + L2 * Math.sin(rad(a1)), ey2 = shY + L2 * Math.cos(rad(a1));
+      return { sx, ex, ey: ey2, hx: ex + L2 * Math.sin(rad(a2)), hy: ey2 + L2 * Math.cos(rad(a2)) };
     }
     const k = hold && !back ? 0.55 : 0;
-    const ey = shY + L * Math.cos(rad(a1));
-    return { sx, ex: sx + (CX - sx) * k * 0.4, ey, hx: sx + (CX - sx) * k, hy: ey + L * Math.cos(rad(a2)) };
+    const ey = shY + L2 * Math.cos(rad(a1));
+    return { sx, ex: sx + (CX - sx) * k * 0.4, ey, hx: sx + (CX - sx) * k, hy: ey + L2 * Math.cos(rad(a2)) };
   };
   const arm = (p, col) => {
     line(b, p.sx, shY, p.ex, p.ey, 3, col);
@@ -1049,12 +1875,12 @@ function drawCharacter(b, view2, f, P, sex, ov, armorId, extra) {
 function outline(b, c) {
   const o = new Uint8ClampedArray(b);
   const N = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const i = (y * W + x) * 4;
+  for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+    const i = (y * BW + x) * 4;
     if (b[i + 3]) continue;
     const touch = N.some(([dx, dy]) => {
       const xx = x + dx, yy = y + dy;
-      return xx >= 0 && yy >= 0 && xx < W && yy < H && b[(yy * W + xx) * 4 + 3] > 0;
+      return xx >= 0 && yy >= 0 && xx < BW && yy < BH && b[(yy * BW + xx) * 4 + 3] > 0;
     });
     if (touch) {
       o[i] = c[0];
@@ -1068,8 +1894,8 @@ function outline(b, c) {
 function shadow(b, dx) {
   [[43, -7, 14], [44, -7, 14], [45, -5, 10]].forEach(([y, x0, n]) => {
     for (let i = 0; i < n; i++) {
-      const x = CX + dx + x0 + i, k = (y * W + x) * 4;
-      if (x >= 0 && x < W && !b[k + 3]) {
+      const x = CX + dx + x0 + i + OX, k = ((y + OY) * BW + x) * 4;
+      if (x >= 0 && x < BW && !b[k + 3]) {
         b[k] = 0;
         b[k + 1] = 0;
         b[k + 2] = 0;
@@ -1080,8 +1906,8 @@ function shadow(b, dx) {
 }
 function flipH(b) {
   const o = new Uint8ClampedArray(b.length);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const s = (y * W + x) * 4, d = (y * W + (W - 1 - x)) * 4;
+  for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+    const s = (y * BW + x) * 4, d = (y * BW + (BW - 1 - x)) * 4;
     o[d] = b[s];
     o[d + 1] = b[s + 1];
     o[d + 2] = b[s + 2];
@@ -1094,12 +1920,23 @@ function renderFrame(anims2, name, idx, view2, look, kind, toolOv, armorId, extr
   const an = anims2[name];
   const f = an.frames[(idx % an.frames.length + an.frames.length) % an.frames.length];
   const P = palette(look, kind);
-  const b = new Uint8ClampedArray(W * H * 4);
-  const v = view2 === "left" || view2 === "right" ? "side" : view2;
-  drawCharacter(b, v, f, P, look.sex, toolOv, armorId, extra);
-  const o = outline(b, P.line);
-  shadow(o, v === "side" ? 1 : 0);
-  return view2 === "left" ? flipH(o) : o;
+  BW = FW;
+  BH = FH;
+  OX = PADX;
+  OY = PADT;
+  try {
+    const b = new Uint8ClampedArray(FW * FH * 4);
+    const v = view2 === "left" || view2 === "right" ? "side" : view2;
+    drawCharacter(b, v, f, P, look.sex, toolOv, armorId, extra);
+    const o = outline(b, P.line);
+    shadow(o, v === "side" ? 1 : 0);
+    return view2 === "left" ? flipH(o) : o;
+  } finally {
+    BW = W;
+    BH = H;
+    OX = 0;
+    OY = 0;
+  }
 }
 
 // src/character/animal-rig.js
@@ -1177,11 +2014,11 @@ function colors(def) {
   return { base, light: hex(P.light), dark: hex(P.dark), acc: hex(P.accent), eye: hex(P.eye), far: shade(base, 0.72), rim: shade(hex(P.dark), 0.5), beak: P.beak ? hex(P.beak) : hex(P.accent) };
 }
 function quadruped(b, def, f) {
-  const S = def.shape, C = colors(def), has = (n) => S.feature === n || Array.isArray(S.features) && S.features.includes(n), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
-  const legL = Math.max(2, S.legL * (1 - lay * 0.75)), bodyH = S.bodyH * (1 - 0.18 * side);
+  const S2 = def.shape, C = colors(def), has = (n) => S2.feature === n || Array.isArray(S2.features) && S2.features.includes(n), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
+  const legL = Math.max(2, S2.legL * (1 - lay * 0.75)), bodyH = S2.bodyH * (1 - 0.18 * side);
   const rise = num(f, "rise", 0), bob = num(f, "bob", 0);
   const cx = b.w / 2 - 4, cy = gy - legL - bodyH / 2 + 1 + bob + lay * 1.5;
-  const hipX = cx - S.bodyL / 2 + 3, shX = cx + S.bodyL / 2 - 3, jy = cy + bodyH / 2 - 1;
+  const hipX = cx - S2.bodyL / 2 + 3, shX = cx + S2.bodyL / 2 - 3, jy = cy + bodyH / 2 - 1;
   const leg = (x, p, col, w) => {
     const a = num(p, "a", 0), lift = num(p, "lift", 0);
     const fx = x + Math.sin(rad2(a)) * legL, fy = Math.min(gy, jy + Math.cos(rad2(a)) * legL - lift);
@@ -1189,44 +2026,44 @@ function quadruped(b, def, f) {
     put2(b, fx, fy, C.dark);
     put2(b, fx + (a > 0 ? 1 : 0), fy, C.dark);
   };
-  const thick = S.legL > 10 ? 2 : 2;
+  const thick = S2.legW || 2;
   leg(hipX - 1, f.br, C.far, thick);
   leg(shX - 1, f.fr, C.far, thick);
   for (let i = 0; i <= 4; i++) {
     const t = i / 4;
-    ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t, S.bodyL / 4 + 1.5, bodyH / 2, C.base);
+    ell(b, cx - S2.bodyL / 2 + 2 + t * (S2.bodyL - 4), cy - rise * t, S2.bodyL / 4 + 1.5, bodyH / 2, C.base);
   }
   for (let i = 0; i <= 4; i++) {
     const t = i / 4;
-    ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t + bodyH * 0.22, S.bodyL / 4 + 0.5, bodyH * 0.27, C.light);
+    ell(b, cx - S2.bodyL / 2 + 2 + t * (S2.bodyL - 4), cy - rise * t + bodyH * 0.22, S2.bodyL / 4 + 0.5, bodyH * 0.27, C.light);
   }
   for (let i = 0; i <= 4; i++) {
     const t = i / 4;
-    ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t - bodyH * 0.32, S.bodyL / 4 + 1, bodyH * 0.2, C.dark);
+    ell(b, cx - S2.bodyL / 2 + 2 + t * (S2.bodyL - 4), cy - rise * t - bodyH * 0.32, S2.bodyL / 4 + 1, bodyH * 0.2, C.dark);
   }
   if (has("antlers")) for (const [dx, dy2] of [[-4, -1], [0, -2], [4, -1], [-2, 1], [2, 1]]) put2(b, cx + dx, cy - bodyH * 0.2 + dy2, C.light);
-  if (has("tusks")) for (let i = 0; i < S.bodyL - 4; i += 2) put2(b, cx - S.bodyL / 2 + 3 + i, cy - bodyH / 2 - 1 - rise * (i / S.bodyL), C.dark);
+  if (has("tusks")) for (let i = 0; i < S2.bodyL - 4; i += 2) put2(b, cx - S2.bodyL / 2 + 3 + i, cy - bodyH / 2 - 1 - rise * (i / S2.bodyL), C.dark);
   if (has("bear")) ell(b, shX - 1, cy - bodyH / 2 - rise, 4, 3, C.base);
-  if (has("shaggy")) for (let i = 0; i < S.bodyL - 2; i += 2) {
-    const sx2 = cx - S.bodyL / 2 + 2 + i;
+  if (has("shaggy")) for (let i = 0; i < S2.bodyL - 2; i += 2) {
+    const sx2 = cx - S2.bodyL / 2 + 2 + i;
     line2(b, sx2, cy + bodyH / 2 - 2, sx2 - 1, cy + bodyH / 2 + 3, 1, C.dark);
   }
   leg(hipX + 1, f.bl, C.base, thick);
   leg(shX + 1, f.fl, C.base, thick);
-  const sx = shX + 1, sy = cy - bodyH / 2 + 2 - rise, ang = rad2(num(f.head, "a", S.neckA)), dy = num(f.head, "dy", 0);
-  const hx = sx + Math.cos(ang) * S.neck, hy = sy - Math.sin(ang) * S.neck + dy;
+  const sx = shX + 1, sy = cy - bodyH / 2 + 2 - rise, ang = rad2(num(f.head, "a", S2.neckA)), dy = num(f.head, "dy", 0);
+  const hx = sx + Math.cos(ang) * S2.neck, hy = sy - Math.sin(ang) * S2.neck + dy;
   line2(b, sx, sy, hx, hy, Math.max(2, Math.round(bodyH * 0.45)), C.base);
-  if (has("mane")) ell(b, hx - 2, hy + 1, S.headR + 3, S.headR + 3, C.dark);
-  if (has("trunk")) ell(b, hx - 1, hy - S.headR * 0.6, S.headR * 0.9, S.headR * 0.8, C.base);
-  ell(b, hx, hy, S.headR * 1.1, S.headR, C.base);
+  if (has("mane")) ell(b, hx - 2, hy + 1, S2.headR + 3, S2.headR + 3, C.dark);
+  if (has("trunk")) ell(b, hx - 1, hy - S2.headR * 0.6, S2.headR * 0.9, S2.headR * 0.8, C.base);
+  ell(b, hx, hy, S2.headR * 1.1, S2.headR, C.base);
   const open = num(f, "mouth", 0) > 0.5;
-  ell(b, hx + S.headR + S.snout / 2 - 1, hy + 1 - (open ? 1 : 0), S.snout / 2 + 1, S.headR * 0.55, C.light);
-  const nx = hx + S.headR + S.snout - 1;
+  ell(b, hx + S2.headR + S2.snout / 2 - 1, hy + 1 - (open ? 1 : 0), S2.snout / 2 + 1, S2.headR * 0.55, C.light);
+  const nx = hx + S2.headR + S2.snout - 1;
   put2(b, nx, hy + (open ? 0 : 1), C.dark);
   if (open) {
-    rect2(b, hx + 1, hy + 1, S.snout + 2, 2, C.rim);
-    put2(b, hx + S.headR + 1, hy + 1, C.acc);
-    put2(b, hx + S.headR + 3, hy + 1, C.acc);
+    rect2(b, hx + 1, hy + 1, S2.snout + 2, 2, C.rim);
+    put2(b, hx + S2.headR + 1, hy + 1, C.acc);
+    put2(b, hx + S2.headR + 3, hy + 1, C.acc);
   }
   if (has("tusks")) {
     put2(b, nx - 1, hy + 2, C.acc);
@@ -1235,17 +2072,17 @@ function quadruped(b, def, f) {
   const asleep = lay > 0.5;
   if (asleep) put2(b, hx + 1, hy - 1, C.dark);
   else put2(b, hx + 1, hy - 1, C.eye);
-  const earL = S.ear || 3;
-  if (has("bear")) ell(b, hx - 2, hy - S.headR + 1, 1.8, 1.8, C.dark);
-  else poly(b, [[hx - 2, hy - S.headR + 1], [hx - 3 - (asleep ? 2 : 0), hy - S.headR - earL + (asleep ? 3 : 0)], [hx, hy - S.headR]], C.dark);
+  const earL = S2.ear || 3;
+  if (has("bear")) ell(b, hx - 2, hy - S2.headR + 1, 1.8, 1.8, C.dark);
+  else poly(b, [[hx - 2, hy - S2.headR + 1], [hx - 3 - (asleep ? 2 : 0), hy - S2.headR - earL + (asleep ? 3 : 0)], [hx, hy - S2.headR]], C.dark);
   if (has("antlers")) {
-    const t = hy - S.headR;
+    const t = hy - S2.headR;
     line2(b, hx, t, hx - 3, t - 7, 1, C.acc);
     line2(b, hx - 1, t - 3, hx + 2, t - 6, 1, C.acc);
     line2(b, hx - 2, t - 5, hx - 5, t - 8, 1, C.acc);
   }
   if (has("horns")) {
-    const t = hy - S.headR, h2 = S.horn || 5, back = !!S.hornBack;
+    const t = hy - S2.headR, h2 = S2.horn || 5, back = !!S2.hornBack;
     for (const dx of [-1, 1]) {
       const bx = hx + dx, tipx = back ? bx - h2 * 0.8 : bx + (dx > 0 ? 3 : -1), tipy = t - h2 * (back ? 0.9 : 0.8);
       line2(b, bx, t, tipx, tipy, 1, C.acc);
@@ -1253,7 +2090,7 @@ function quadruped(b, def, f) {
     }
   }
   if (has("palmate")) {
-    const t = hy - S.headR;
+    const t = hy - S2.headR;
     for (const side2 of [-1, 1]) {
       const bx = hx + side2 * 2;
       line2(b, bx, t, bx + side2 * 4, t - 5, 1, C.acc);
@@ -1261,44 +2098,44 @@ function quadruped(b, def, f) {
     }
   }
   if (has("trunk")) {
-    const tl2 = S.trunk || 12, sway = num(f, "bob", 0);
-    line2(b, hx + S.headR - 1, hy + 1, hx + S.headR + 1 + sway, hy + tl2 * 0.7, 3, C.base);
-    line2(b, hx + S.headR + 1 + sway, hy + tl2 * 0.7, hx + S.headR + 3 + sway, hy + tl2, 2, C.base);
-    line2(b, hx + S.headR - 2, hy + 2, hx + S.headR + 5, hy + 8, 2, C.acc);
-    put2(b, hx + S.headR + 6, hy + 7, C.acc);
+    const tl2 = S2.trunk || 12, sway = num(f, "bob", 0);
+    line2(b, hx + S2.headR - 1, hy + 1, hx + S2.headR + 1 + sway, hy + tl2 * 0.7, 3, C.base);
+    line2(b, hx + S2.headR + 1 + sway, hy + tl2 * 0.7, hx + S2.headR + 3 + sway, hy + tl2, 2, C.base);
+    line2(b, hx + S2.headR - 2, hy + 3, hx + S2.headR + 5, hy + 9, 2, C.acc);
+    put2(b, hx + S2.headR + 6, hy + 8, C.acc);
   }
-  const tb = [cx - S.bodyL / 2 - 1, cy - bodyH * 0.25], ta = rad2(num(f.tail !== void 0 ? { a: f.tail } : null, "a", 15)), tl = S.tail;
+  const tb = [cx - S2.bodyL / 2 - 1, cy - bodyH * 0.25], ta = rad2(num(f.tail !== void 0 ? { a: f.tail } : null, "a", 15)), tl = S2.tail;
   const tx = tb[0] - Math.cos(ta) * tl, ty = tb[1] - Math.sin(ta) * tl;
   line2(b, tb[0], tb[1], tx, ty, has("bushy") ? 3 : 2, C.base);
   if (has("bushy")) ell(b, tx, ty, 2, 2, C.dark);
   outline2(b, C.rim);
 }
 function hopper(b, def, f) {
-  const S = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
+  const S2 = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
   const lift = num(f, "lift", 0), stretch = num(f, "stretch", 0), crouch = num(f, "crouch", 0);
-  const bodyH = S.bodyH - crouch * 0.6 - side * 1.5, L = S.bodyL + stretch, cx = b.w / 2 - 2;
-  const cy = gy - bodyH / 2 - 2 - lift + lay * 1.5, hind0 = cx - L / 2 + 2, jy = cy + bodyH / 2 - 1;
-  const ha = rad2(num(f.hind, "a", 0)), hl = S.legL * 1.4;
-  const fx = hind0 + Math.sin(ha) * hl, fy = Math.min(gy, jy + Math.cos(ha) * S.legL);
+  const bodyH = S2.bodyH - crouch * 0.6 - side * 1.5, L2 = S2.bodyL + stretch, cx = b.w / 2 - 2;
+  const cy = gy - bodyH / 2 - 2 - lift + lay * 1.5, hind0 = cx - L2 / 2 + 2, jy = cy + bodyH / 2 - 1;
+  const ha = rad2(num(f.hind, "a", 0)), hl = S2.legL * 1.4;
+  const fx = hind0 + Math.sin(ha) * hl, fy = Math.min(gy, jy + Math.cos(ha) * S2.legL);
   line2(b, hind0, jy, fx, fy, 2, C.far);
   rect2(b, Math.round(fx), Math.round(fy), 3, 1, C.dark);
-  ell(b, cx, cy, L / 2, bodyH / 2, C.base);
-  ell(b, cx + 1, cy + bodyH * 0.25, L / 2 - 1, bodyH * 0.27, C.light);
+  ell(b, cx, cy, L2 / 2, bodyH / 2, C.base);
+  ell(b, cx + 1, cy + bodyH * 0.25, L2 / 2 - 1, bodyH * 0.27, C.light);
   ell(b, hind0 + 1, cy + 1, 3.5, bodyH / 2, C.base);
-  const fa = rad2(num(f.fore, "a", 0)), fl = S.legL * 0.8, fx0 = cx + L / 2 - 1;
+  const fa = rad2(num(f.fore, "a", 0)), fl = S2.legL * 0.8, fx0 = cx + L2 / 2 - 1;
   line2(b, fx0, jy, fx0 + Math.sin(fa) * fl, Math.min(gy, jy + Math.cos(fa) * fl), 1, C.base);
-  const hx = cx + L / 2 + 1, hy = cy - 1 + num(f, "headDy", 0) + lay;
-  ell(b, hx, hy, S.headR, S.headR * 0.9, C.base);
-  ell(b, hx + S.headR - 1, hy + 1, 1.8, 1.2, C.light);
-  put2(b, hx + S.headR + 1, hy + 1, C.dark);
+  const hx = cx + L2 / 2 + 1, hy = cy - 1 + num(f, "headDy", 0) + lay;
+  ell(b, hx, hy, S2.headR, S2.headR * 0.9, C.base);
+  ell(b, hx + S2.headR - 1, hy + 1, 1.8, 1.2, C.light);
+  put2(b, hx + S2.headR + 1, hy + 1, C.dark);
   if (num(f, "mouth", 0) > 0.5) {
-    put2(b, hx + S.headR, hy + 2, C.rim);
-    put2(b, hx + S.headR - 1, hy + 2, C.acc);
+    put2(b, hx + S2.headR, hy + 2, C.rim);
+    put2(b, hx + S2.headR - 1, hy + 2, C.acc);
   }
   put2(b, hx + 1, hy - 1, lay > 0.5 ? C.dark : C.eye);
-  const e = rad2(num(f, "ear", 10)), el2 = S.ear;
+  const e = rad2(num(f, "ear", 10)), el2 = S2.ear;
   for (const ox of [-1, 1]) {
-    const bx = hx - 1 + ox, by = hy - S.headR + 1, tx = bx - Math.sin(e) * el2 - ox * 0.5, ty = by - Math.cos(e) * el2;
+    const bx = hx - 1 + ox, by = hy - S2.headR + 1, tx = bx - Math.sin(e) * el2 - ox * 0.5, ty = by - Math.cos(e) * el2;
     line2(b, bx, by, tx, ty, 2, C.base);
     line2(b, bx, by - 1, tx, ty + 1, 1, C.light);
   }
@@ -1306,8 +2143,8 @@ function hopper(b, def, f) {
   outline2(b, C.rim);
 }
 function biped(b, def, f) {
-  const S = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
-  const legL = Math.max(2, S.legL * (1 - lay * 0.7)), bodyH = S.bodyH - side * 2, bob = num(f, "bob", 0);
+  const S2 = def.shape, C = colors(def), gy = b.h - 2, lay = num(f, "lay", 0), side = num(f, "side", 0);
+  const legL = Math.max(2, S2.legL * (1 - lay * 0.7)), bodyH = S2.bodyH - side * 2, bob = num(f, "bob", 0);
   const cx = b.w / 2 - 2, cy = gy - legL - bodyH / 2 + bob + lay;
   const leg = (x, p, col) => {
     const a = num(p, "a", 0), lift = num(p, "lift", 0), jy = cy + bodyH / 2 - 1;
@@ -1316,42 +2153,42 @@ function biped(b, def, f) {
     rect2(b, Math.round(fx), Math.round(fy), 3, 1, col);
   };
   leg(cx - 1, f.r, shade(C.beak, 0.7));
-  ell(b, cx - 2, cy + 1, S.bodyL / 2 - 1, bodyH / 2, C.base);
-  ell(b, cx + 1, cy, S.bodyL / 2 - 1, bodyH / 2, C.base);
-  ell(b, cx, cy + bodyH * 0.25, S.bodyL / 2 - 2, bodyH * 0.27, C.light);
+  ell(b, cx - 2, cy + 1, S2.bodyL / 2 - 1, bodyH / 2, C.base);
+  ell(b, cx + 1, cy, S2.bodyL / 2 - 1, bodyH / 2, C.base);
+  ell(b, cx, cy + bodyH * 0.25, S2.bodyL / 2 - 2, bodyH * 0.27, C.light);
   const ta = num(f, "tail", 0);
   for (const base of [35, 55, 75]) {
     const a = rad2(base + ta);
-    line2(b, cx - S.bodyL / 2 + 1, cy - 1, cx - S.bodyL / 2 + 1 - Math.cos(a) * S.tail, cy - 1 - Math.sin(a) * S.tail, 1, base === 55 ? C.dark : C.base);
+    line2(b, cx - S2.bodyL / 2 + 1, cy - 1, cx - S2.bodyL / 2 + 1 - Math.cos(a) * S2.tail, cy - 1 - Math.sin(a) * S2.tail, 1, base === 55 ? C.dark : C.base);
   }
   const flap = num(f, "wing", 0);
   ell(b, cx - 1, cy, 3.5, 2.5, C.dark);
   if (flap > 25) line2(b, cx - 1, cy - 1, cx - 2 - flap / 14, cy - 2 - flap / 10, 2, C.dark);
   leg(cx + 1, f.l, C.beak);
-  const nx = cx + S.bodyL / 2 - 2, ny = cy - bodyH / 2 + 2, nk = f.neck || {};
-  const hx = nx + 2 + num(nk, "dx", 0), hy = ny - S.neck * 0.8 + num(nk, "dy", 0) + num(f, "headDy", 0) + lay * 2;
+  const nx = cx + S2.bodyL / 2 - 2, ny = cy - bodyH / 2 + 2, nk = f.neck || {};
+  const hx = nx + 2 + num(nk, "dx", 0), hy = ny - S2.neck * 0.8 + num(nk, "dy", 0) + num(f, "headDy", 0) + lay * 2;
   line2(b, nx, ny, hx, hy, 2, C.base);
-  ell(b, hx, hy, S.headR + 0.5, S.headR, C.base);
+  ell(b, hx, hy, S2.headR + 0.5, S2.headR, C.base);
   const open = num(f, "mouth", 0) > 0.5;
-  poly(b, [[hx + S.headR, hy - 1], [hx + S.headR + 3, hy + (open ? -1 : 0)], [hx + S.headR, hy + 1]], C.beak);
-  if (open) put2(b, hx + S.headR + 1, hy + 1, C.rim);
+  poly(b, [[hx + S2.headR, hy - 1], [hx + S2.headR + 3, hy + (open ? -1 : 0)], [hx + S2.headR, hy + 1]], C.beak);
+  if (open) put2(b, hx + S2.headR + 1, hy + 1, C.rim);
   put2(b, hx, hy - 1, lay > 0.5 ? C.dark : C.eye);
-  rect2(b, hx - 1, hy - S.headR - 1, 2, 2, C.acc);
-  put2(b, hx + S.headR, hy + 2, C.acc);
+  rect2(b, hx - 1, hy - S2.headR - 1, 2, 2, C.acc);
+  put2(b, hx + S2.headR, hy + 2, C.acc);
   outline2(b, C.rim);
 }
 function fish(b, def, f) {
-  const S = def.shape, C = colors(def), flip = num(f, "flip", 0) >= 0.5;
+  const S2 = def.shape, C = colors(def), flip = num(f, "flip", 0) >= 0.5;
   const bend = num(f, "bend", 0), fin = num(f, "fin", 0), cx = b.w / 2 + 2, cy = b.h / 2 + num(f, "bob", 0) - (flip ? 1 : 0);
-  const rx = cx - S.bodyL / 2, ry = cy + bend * 0.4, T2 = S.tail + fin;
+  const rx = cx - S2.bodyL / 2, ry = cy + bend * 0.4, T2 = S2.tail + fin;
   poly(b, [[rx - T2, ry - 3 + bend * 0.5], [rx, ry], [rx - T2, ry + 3 + bend * 0.5]], C.acc);
-  poly(b, [[cx + S.bodyL / 2, cy], [cx + 3, cy - S.bodyH / 2], [cx - 3, cy - S.bodyH / 3 + bend * 0.15], [rx, ry - 1], [rx, ry + 1], [cx - 3, cy + S.bodyH / 3 + bend * 0.15], [cx + 3, cy + S.bodyH / 2]], C.base);
-  poly(b, [[cx + S.bodyL / 2 - 1, cy + 1], [cx - 3, cy + 1 + bend * 0.1], [cx - 3, cy + S.bodyH / 3 + bend * 0.15], [cx + 3, cy + S.bodyH / 2 - 1]], C.light);
-  poly(b, [[cx - 1, cy - S.bodyH / 2 + 1], [cx + 2, cy - S.bodyH / 2 - 2], [cx + 3, cy - S.bodyH / 2 + 1]], C.acc);
-  poly(b, [[cx + 1, cy + S.bodyH / 3], [cx - 1, cy + S.bodyH / 3 + 2], [cx + 2, cy + S.bodyH / 3 + 1]], C.acc);
+  poly(b, [[cx + S2.bodyL / 2, cy], [cx + 3, cy - S2.bodyH / 2], [cx - 3, cy - S2.bodyH / 3 + bend * 0.15], [rx, ry - 1], [rx, ry + 1], [cx - 3, cy + S2.bodyH / 3 + bend * 0.15], [cx + 3, cy + S2.bodyH / 2]], C.base);
+  poly(b, [[cx + S2.bodyL / 2 - 1, cy + 1], [cx - 3, cy + 1 + bend * 0.1], [cx - 3, cy + S2.bodyH / 3 + bend * 0.15], [cx + 3, cy + S2.bodyH / 2 - 1]], C.light);
+  poly(b, [[cx - 1, cy - S2.bodyH / 2 + 1], [cx + 2, cy - S2.bodyH / 2 - 2], [cx + 3, cy - S2.bodyH / 2 + 1]], C.acc);
+  poly(b, [[cx + 1, cy + S2.bodyH / 3], [cx - 1, cy + S2.bodyH / 3 + 2], [cx + 2, cy + S2.bodyH / 3 + 1]], C.acc);
   for (let i = 0; i < 4; i++) put2(b, cx - 2 + i * 2, cy - 1 + i % 2 * 2, C.dark);
-  put2(b, cx + S.bodyL / 2 - 3, cy - 1, flip ? C.dark : C.eye);
-  if (num(f, "mouth", 0) > 0.5) put2(b, cx + S.bodyL / 2, cy, C.rim);
+  put2(b, cx + S2.bodyL / 2 - 3, cy - 1, flip ? C.dark : C.eye);
+  if (num(f, "mouth", 0) > 0.5) put2(b, cx + S2.bodyL / 2, cy, C.rim);
   outline2(b, C.rim);
   if (flip) flipY(b);
 }
@@ -1369,105 +2206,105 @@ var bodies_default = {
   rabbit: {
     name: "Th\u1ECF",
     body: "hopper",
-    size: [22, 18],
+    size: [34, 24],
     palette: { base: "#b5a58c", light: "#e8e0d0", dark: "#7a6a55", accent: "#ffffff", eye: "#2a1c14" },
     shape: { bodyL: 9, bodyH: 7, legL: 5, headR: 3, ear: 7 }
   },
   fowl: {
     name: "G\xE0 r\u1EEBng",
     body: "biped",
-    size: [20, 22],
+    size: [28, 26],
     palette: { base: "#a0603a", light: "#d49a5a", dark: "#6a3a20", accent: "#c8283a", beak: "#e0b040", eye: "#1a1210" },
     shape: { bodyL: 10, bodyH: 8, legL: 6, neck: 5, headR: 2, tail: 6 }
   },
   deer: {
     name: "H\u01B0\u01A1u",
     body: "quadruped",
-    size: [48, 42],
+    size: [48, 54],
     palette: { base: "#a8743c", light: "#e8d4a8", dark: "#6a4420", accent: "#d8c8a0", eye: "#1a1210" },
     shape: { bodyL: 20, bodyH: 9, legL: 14, neck: 11, neckA: 55, headR: 3.5, snout: 4, tail: 3, feature: "antlers", ear: 4 }
   },
   boar: {
     name: "L\u1EE3n r\u1EEBng",
     body: "quadruped",
-    size: [40, 26],
+    size: [40, 34],
     palette: { base: "#5a4a3c", light: "#8a7660", dark: "#342a22", accent: "#f0e8d0", eye: "#1a1210" },
     shape: { bodyL: 18, bodyH: 11, legL: 6, neck: 5, neckA: 8, headR: 4, snout: 5, tail: 3, feature: "tusks", ear: 3 }
   },
   wolf: {
     name: "S\xF3i",
     body: "quadruped",
-    size: [40, 28],
+    size: [52, 36],
     palette: { base: "#7a7a80", light: "#b8b8bc", dark: "#4a4a50", accent: "#f4f4f4", eye: "#e0b030" },
     shape: { bodyL: 17, bodyH: 8, legL: 9, neck: 6, neckA: 30, headR: 3.5, snout: 5, tail: 8, feature: "bushy", ear: 4 }
   },
   fish: {
     name: "C\xE1",
     body: "fish",
-    size: [22, 12],
+    size: [26, 16],
     palette: { base: "#6a9aaa", light: "#c8dce0", dark: "#3a6070", accent: "#e8b040", eye: "#101820" },
     shape: { bodyL: 12, bodyH: 6, tail: 5 }
   },
   aurochs: {
     name: "B\xF2 r\u1EEBng",
     body: "quadruped",
-    size: [54, 38],
+    size: [54, 42],
     palette: { base: "#4a3a2c", light: "#8a7458", dark: "#2c2118", accent: "#efe6cc", eye: "#1a1210" },
     shape: { bodyL: 24, bodyH: 12, legL: 9, neck: 7, neckA: 20, headR: 4.5, snout: 4, tail: 5, feature: "horns", horn: 5, ear: 3 }
   },
   duck: {
     name: "V\u1ECBt tr\u1EDDi",
     body: "biped",
-    size: [20, 18],
+    size: [28, 22],
     palette: { base: "#8a7a5a", light: "#c8b890", dark: "#5a4a30", accent: "#2a7a5a", beak: "#e0a830", eye: "#1a1210" },
     shape: { bodyL: 10, bodyH: 7, legL: 4, neck: 4, headR: 2, tail: 3 }
   },
   fox: {
     name: "C\xE1o",
     body: "quadruped",
-    size: [36, 22],
+    size: [48, 28],
     palette: { base: "#b8662a", light: "#f0e4d0", dark: "#6a3a18", accent: "#fafafa", eye: "#1a1210" },
     shape: { bodyL: 12, bodyH: 6, legL: 6, neck: 4, neckA: 20, headR: 3, snout: 3, tail: 9, feature: "bushy", ear: 4 }
   },
   ibex: {
     name: "D\xEA n\xFAi",
     body: "quadruped",
-    size: [42, 38],
+    size: [42, 44],
     palette: { base: "#8a7a62", light: "#c8baa0", dark: "#544838", accent: "#d8cdb0", eye: "#1a1210" },
     shape: { bodyL: 16, bodyH: 8, legL: 11, neck: 7, neckA: 45, headR: 3, snout: 3, tail: 2, feature: "horns", horn: 8, hornBack: true, ear: 3 }
   },
   elk: {
     name: "Nai s\u1EEBng t\u1EA5m",
     body: "quadruped",
-    size: [58, 56],
+    size: [58, 64],
     palette: { base: "#5e4430", light: "#94785a", dark: "#3a2a1c", accent: "#d8c8a0", eye: "#1a1210" },
     shape: { bodyL: 22, bodyH: 11, legL: 18, neck: 12, neckA: 50, headR: 4.5, snout: 5, tail: 3, feature: "palmate", ear: 4 }
   },
   bear: {
     name: "G\u1EA5u n\xE2u",
     body: "quadruped",
-    size: [52, 36],
+    size: [52, 38],
     palette: { base: "#5a3e2a", light: "#80593c", dark: "#34221a", accent: "#e8d8b8", eye: "#1a1210" },
     shape: { bodyL: 22, bodyH: 14, legL: 8, neck: 6, neckA: 10, headR: 5, snout: 4, tail: 2, feature: "bear", ear: 2 }
   },
   lion: {
     name: "S\u01B0 t\u1EED hang",
     body: "quadruped",
-    size: [54, 32],
+    size: [62, 38],
     palette: { base: "#c4a060", light: "#e8d4a0", dark: "#7a5a30", accent: "#f4ecd8", eye: "#e0b030" },
     shape: { bodyL: 22, bodyH: 9, legL: 10, neck: 7, neckA: 25, headR: 4.5, snout: 3, tail: 10, features: ["mane", "bushy"], ear: 3 }
   },
   mammoth: {
     name: "Voi ma m\xFAt",
     body: "quadruped",
-    size: [72, 56],
+    size: [72, 60],
     palette: { base: "#6a4a30", light: "#8e6a46", dark: "#3e2a1a", accent: "#f4ecd0", eye: "#1a1210" },
-    shape: { bodyL: 30, bodyH: 20, legL: 14, neck: 7, neckA: 20, headR: 7, snout: 3, tail: 3, features: ["trunk", "shaggy"], trunk: 13, ear: 4 }
+    shape: { bodyL: 28, bodyH: 22, legL: 9, legW: 6, neck: 6, neckA: 5, headR: 7, snout: 2, tail: 3, features: ["trunk", "shaggy"], trunk: 20, ear: 6 }
   },
   pike: {
     name: "C\xE1 ch\xF3",
     body: "fish",
-    size: [28, 12],
+    size: [32, 16],
     palette: { base: "#6a8a5a", light: "#d0dcb8", dark: "#3a5430", accent: "#c8b040", eye: "#101820" },
     shape: { bodyL: 18, bodyH: 5, tail: 6 }
   }
@@ -2126,7 +2963,7 @@ var quadruped_default = {
     });
   }
   function renderFrame2(def, o) {
-    var ctx2 = { w: o.w, h: o.h, buf: new Uint8ClampedArray(o.w * o.h * 4), palette: o.palette, seed: o.seed, frame: o.frame, params: o.params, warn: o.warn, wrap: o.wrap, ox: 0, oy: 0, flip: false, ops: 0, cc: /* @__PURE__ */ new Map() };
+    var ctx2 = { w: o.w, h: o.h, buf: new Uint8ClampedArray(o.w * o.h * 4), palette: o.palette, seed: o.seed, frame: o.frame, params: o.params, warn: o.warn, wrap: o.wrap, ox: o.pad || 0, oy: o.pad || 0, flip: false, ops: 0, cc: /* @__PURE__ */ new Map() };
     if (def.bg !== void 0) {
       var c = parseColor(def.bg, ctx2.palette);
       if (c) for (var i = 0; i < o.w * o.h; i++) {
@@ -2158,7 +2995,27 @@ var quadruped_default = {
       if (params[k]) Object.assign(palette2, def.palettes[k]);
     });
     var frames = [];
-    for (var f = 0; f < nf; f++) frames.push(renderFrame2(def, { w, h: h2, seed, frame: f, params, palette: palette2, warn, wrap }));
+    var P = opts.fit && !wrap && def.type !== "tile" ? 16 : 0;
+    for (var f = 0; f < nf; f++) frames.push(renderFrame2(def, { w: w + 2 * P, h: h2 + 2 * P, pad: P, seed, frame: f, params, palette: palette2, warn, wrap }));
+    if (P) {
+      var W2 = w + 2 * P, H2 = h2 + 2 * P, x0 = P, y0 = P, x1 = P + w, y1 = P + h2;
+      frames.forEach(function(b) {
+        for (var y = 0; y < H2; y++) for (var x = 0; x < W2; x++) if (b[(y * W2 + x) * 4 + 3]) {
+          if (x < x0) x0 = x;
+          if (y < y0) y0 = y;
+          if (x + 1 > x1) x1 = x + 1;
+          if (y + 1 > y1) y1 = y + 1;
+        }
+      });
+      var cw = x1 - x0, ch = y1 - y0;
+      frames = frames.map(function(b) {
+        var o = new Uint8ClampedArray(cw * ch * 4);
+        for (var y = 0; y < ch; y++) o.set(b.subarray(((y + y0) * W2 + x0) * 4, ((y + y0) * W2 + x0 + cw) * 4), y * cw * 4);
+        return o;
+      });
+      var an = def.anchor, fp = def.footprint;
+      return { w: cw, h: ch, frames, fps: def.animate && def.animate.fps || 4, warnings: warns, anchor: an ? [an[0] + P - x0, an[1] + P - y0] : void 0, footprint: fp ? [fp[0] + P - x0, fp[1] + P - y0, fp[2], fp[3]] : void 0, type: def.type || "prop" };
+    }
     return { w, h: h2, frames, fps: def.animate && def.animate.fps || 4, warnings: warns, anchor: def.anchor, footprint: def.footprint, type: def.type || "prop" };
   }
   root.Blueprint = { render, parseColor, mulberry32: mulberry322 };
@@ -2978,226 +3835,8 @@ var L3_default2 = {
   ]
 };
 
-// src/data/blueprints/stone_age/buildings/repair/L1.json
-var L1_default4 = {
-  name: "B\xE3i m\xE0i s\u1EEDa (c\u1EA5p 1, \u0111\xE1 m\xE0i v\xE0 l\u1EEDa nh\u1ECF)",
-  name_en: "Mending Ground (Tier 1, Whetstone and Small Fire)",
-  type: "prop",
-  size: [72, 64],
-  anchor: [36, 58],
-  footprint: [4, 32, 64, 28],
-  seed: 9,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428", fire: "#f08a2a", fireL: "#ffd27a", fireD: "#6a1e0e", smoke: "#c8ccd0", bone: "#e4dcc4", boneD: "#b8ac90", water: "#5c86a8", waterL: "#8fb4cf" },
-  layers: [
-    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
-    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
-    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
-    { shape: "group", if: "st1", layers: [
-      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
-      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
-      { shape: "ellipse", cx: 52, cy: 50, rx: 8, ry: 3, color: "mat" },
-      { shape: "scatter", count: 8, area: [46, 48, 12, 4], size: [2, 1], colors: ["matL", "matD"], onlyOver: ["mat"] }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "ellipse", cx: 22, cy: 49, rx: 11, ry: 4, color: "stoneD" },
-      { shape: "ellipse", cx: 22, cy: 48, rx: 11, ry: 4, color: "stone" },
-      { shape: "ellipse", cx: 22, cy: 47, rx: 8, ry: 2, color: "stoneL" },
-      { shape: "line", from: [15, 48], to: [29, 47], w: 1, color: "stoneD" },
-      { shape: "line", from: [16, 50], to: [28, 49], w: 1, color: "stoneD", alpha: 0.6 },
-      { shape: "ellipse", cx: 37, cy: 52, rx: 4, ry: 2, color: "stoneD" },
-      { shape: "ellipse", cx: 37, cy: 51, rx: 3, ry: 1, color: "water" },
-      { shape: "pixels", at: [[36, 51]], color: "waterL" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "line", from: [44, 49], to: [50, 47], w: 1, color: "woodD" },
-      { shape: "line", from: [52, 46], to: [56, 45], w: 1, color: "woodD" },
-      { shape: "rect", x: 57, y: 43, w: 4, h: 3, color: "stoneD" },
-      { shape: "pixels", at: [[57, 43]], color: "stoneL" },
-      { shape: "line", from: [48, 53], to: [54, 51], w: 1, color: "woodD" },
-      { shape: "line", from: [56, 50], to: [60, 49], w: 1, color: "woodD" },
-      { shape: "ellipse", cx: 60, cy: 49, rx: 2, ry: 1, color: "stoneD" },
-      { shape: "pixels", at: [[59, 48]], color: "stoneL" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "ellipse", cx: 58, cy: 44, rx: 5.4, ry: 2.7, color: "fireD" },
-      { shape: "ellipse", cx: 58, cy: 43, rx: 3.6, ry: 1.8, color: "fire" },
-      { shape: "ellipse", cx: 58, cy: 42, rx: 1.8, ry: 1, color: "fireL" },
-      { shape: "scatter", count: 6, area: [54, 38, 8, 3], size: 1, colors: ["smoke"], alpha: 0.5 },
-      { shape: "line", from: [10, 52], to: [12, 36], w: 1, color: "wood" },
-      { shape: "line", from: [13, 52], to: [14, 35], w: 1, color: "woodL" },
-      { shape: "line", from: [16, 52], to: [16, 37], w: 1, color: "wood" },
-      { shape: "pixels", at: [[9, 49], [14, 48]], color: "rope" },
-      { shape: "ellipse", cx: 30, cy: 54, rx: 2, ry: 1, color: "bone" },
-      { shape: "pixels", at: [[29, 54], [32, 54]], color: "boneD" }
-    ] },
-    { shape: "outline", color: "line" }
-  ]
-};
-
-// src/data/blueprints/stone_age/buildings/repair/L2.json
-var L2_default3 = {
-  name: "L\xE1n s\u1EEDa (c\u1EA5p 2, m\xE1i tranh, gi\xE1 treo, b\xE1nh m\xE0i)",
-  name_en: "Mending Lean-to (Tier 2, Thatch Roof, Tool Rack, Grinding Wheel)",
-  type: "prop",
-  size: [72, 64],
-  anchor: [36, 58],
-  footprint: [4, 32, 64, 28],
-  seed: 9,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", thatch: "#c2a85a", thatchL: "#dcc678", thatchD: "#8f7a38", water: "#5c86a8", waterL: "#8fb4cf", green: "#6f8a46", greenD: "#4e6530" },
-  layers: [
-    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
-    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
-    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
-    { shape: "group", if: "st1", layers: [
-      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 8, color: "earth" },
-      { shape: "scatter", count: 34, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL", "stoneD"], onlyOver: ["earth"] },
-      { shape: "rect", x: 14, y: 45, w: 44, h: 9, color: "woodD", alpha: 0.35 }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "rect", x: 10, y: 20, w: 2, h: 23, color: "wood" },
-      { shape: "rect", x: 10, y: 20, w: 1, h: 23, color: "woodL" },
-      { shape: "rect", x: 60, y: 20, w: 2, h: 23, color: "wood" },
-      { shape: "rect", x: 60, y: 20, w: 1, h: 23, color: "woodL" },
-      { shape: "rect", x: 6, y: 30, w: 2, h: 25, color: "wood" },
-      { shape: "rect", x: 6, y: 30, w: 1, h: 25, color: "woodL" },
-      { shape: "rect", x: 64, y: 30, w: 2, h: 25, color: "wood" },
-      { shape: "rect", x: 64, y: 30, w: 1, h: 25, color: "woodL" },
-      { shape: "rect", x: 9, y: 19, w: 54, h: 2, color: "woodD" },
-      { shape: "rect", x: 5, y: 30, w: 62, h: 2, color: "woodD" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "poly", points: [[3, 31], [13, 16], [59, 16], [69, 31]], color: "thatch" },
-      { shape: "poly", points: [[3, 31], [69, 31], [67, 35], [5, 35]], color: "thatchD" },
-      { shape: "line", from: [13, 16], to: [59, 16], w: 1, color: "thatchL" },
-      { shape: "line", from: [14, 18], to: [8, 31], w: 1, color: "thatchD", alpha: 0.6 },
-      { shape: "line", from: [26, 17], to: [22, 31], w: 1, color: "thatchD", alpha: 0.6 },
-      { shape: "line", from: [38, 17], to: [38, 31], w: 1, color: "thatchD", alpha: 0.6 },
-      { shape: "line", from: [50, 17], to: [54, 31], w: 1, color: "thatchD", alpha: 0.6 },
-      { shape: "line", from: [58, 18], to: [65, 31], w: 1, color: "thatchD", alpha: 0.6 },
-      { shape: "scatter", count: 30, area: [8, 17, 56, 14], size: 1, colors: ["thatchL", "thatchD"], onlyOver: ["thatch"] },
-      { shape: "rect", x: 4, y: 33, w: 64, h: 1, color: "green" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "rect", x: 15, y: 36, w: 42, h: 2, color: "woodD" },
-      { shape: "line", from: [20, 38], to: [20, 44], w: 1, color: "rope" },
-      { shape: "rect", x: 18, y: 44, w: 5, h: 2, color: "stoneD" },
-      { shape: "line", from: [30, 38], to: [30, 45], w: 1, color: "rope" },
-      { shape: "line", from: [28, 45], to: [32, 45], w: 1, color: "stoneD" },
-      { shape: "line", from: [40, 38], to: [40, 44], w: 1, color: "rope" },
-      { shape: "rect", x: 38, y: 44, w: 5, h: 3, color: "stone" },
-      { shape: "line", from: [50, 38], to: [50, 46], w: 1, color: "woodD" },
-      { shape: "ellipse", cx: 30, cy: 50, rx: 3, ry: 5, color: "stoneD" },
-      { shape: "ellipse", cx: 29, cy: 50, rx: 3, ry: 4, color: "stone" },
-      { shape: "ellipse", cx: 29, cy: 49, rx: 1, ry: 2, color: "stoneL" },
-      { shape: "rect", x: 24, y: 49, w: 12, h: 2, color: "woodD" },
-      { shape: "rect", x: 44, y: 50, w: 14, h: 4, color: "woodD" },
-      { shape: "rect", x: 45, y: 50, w: 12, h: 2, color: "water" },
-      { shape: "pixels", at: [[47, 50], [52, 51]], color: "waterL" },
-      { shape: "ellipse", cx: 10, cy: 52, rx: 3, ry: 1, color: "greenD" },
-      { shape: "ellipse", cx: 10, cy: 51, rx: 3, ry: 1, color: "green" }
-    ] },
-    { shape: "outline", color: "line" }
-  ]
-};
-
-// src/data/blueprints/stone_age/buildings/repair/L3.json
-var L3_default3 = {
-  name: "X\u01B0\u1EDFng s\u1EEDa (c\u1EA5p 3, b\xE0n \u0111\xE1, b\xE1nh m\xE0i l\u1EDBn, l\xF2 nh\u1ECF)",
-  name_en: "Mending Workshop (Tier 3, Stone Bench, Great Wheel, Small Forge)",
-  type: "prop",
-  size: [72, 64],
-  anchor: [36, 58],
-  footprint: [4, 32, 64, 28],
-  seed: 9,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", fire: "#f08a2a", fireL: "#ffd27a", fireD: "#6a1e0e", water: "#5c86a8", clay: "#a8643c", clayD: "#7a4526", green: "#6f8a46", greenD: "#4e6530" },
-  layers: [
-    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
-    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
-    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
-    { shape: "group", if: "st1", layers: [
-      { shape: "ellipse", cx: 36, cy: 48, rx: 31, ry: 8, color: "stoneD" },
-      { shape: "ellipse", cx: 36, cy: 47, rx: 30, ry: 7, color: "stone" },
-      { shape: "scatter", count: 40, area: [7, 41, 58, 12], size: [3, 1], colors: ["stoneL", "stoneD", "chip"], onlyOver: ["stone"] },
-      { shape: "line", from: [10, 46], to: [62, 46], w: 1, color: "stoneD", alpha: 0.5 }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "rect", x: 8, y: 27, w: 56, h: 9, color: "stoneD" },
-      { shape: "rect", x: 8, y: 27, w: 56, h: 2, color: "stone" },
-      { shape: "rect", x: 8, y: 27, w: 56, h: 1, color: "stoneL" },
-      { shape: "scatter", count: 26, area: [9, 29, 54, 6], size: 1, colors: ["stone", "stoneL"], onlyOver: ["stoneD"] },
-      { shape: "rect", x: 5, y: 14, w: 3, h: 38, color: "woodD" },
-      { shape: "rect", x: 5, y: 14, w: 1, h: 38, color: "wood" },
-      { shape: "rect", x: 64, y: 14, w: 3, h: 38, color: "woodD" },
-      { shape: "rect", x: 64, y: 14, w: 1, h: 38, color: "wood" },
-      { shape: "rect", x: 4, y: 13, w: 64, h: 3, color: "log" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "poly", points: [[3, 16], [14, 6], [58, 6], [69, 16]], color: "wood" },
-      { shape: "poly", points: [[3, 16], [69, 16], [68, 20], [4, 20]], color: "woodD" },
-      { shape: "line", from: [14, 6], to: [58, 6], w: 1, color: "woodL" },
-      { shape: "line", from: [22, 6], to: [18, 16], w: 1, color: "woodD" },
-      { shape: "line", from: [36, 6], to: [36, 16], w: 1, color: "woodD" },
-      { shape: "line", from: [50, 6], to: [54, 16], w: 1, color: "woodD" },
-      { shape: "rect", x: 4, y: 21, w: 64, h: 1, color: "green" },
-      { shape: "rect", x: 4, y: 22, w: 64, h: 1, color: "greenD" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "rect", x: 12, y: 30, w: 48, h: 1, color: "woodD" },
-      { shape: "line", from: [18, 30], to: [18, 21], w: 1, color: "woodD" },
-      { shape: "rect", x: 16, y: 20, w: 3, h: 2, color: "stoneD" },
-      { shape: "pixels", at: [[18, 20]], color: "stoneL" },
-      { shape: "line", from: [26, 30], to: [26, 21], w: 1, color: "woodD" },
-      { shape: "line", from: [23, 22], to: [29, 20], w: 1, color: "stoneD" },
-      { shape: "pixels", at: [[23, 22]], color: "stoneL" },
-      { shape: "line", from: [34, 30], to: [34, 22], w: 1, color: "woodD" },
-      { shape: "rect", x: 32, y: 19, w: 5, h: 3, color: "stone" },
-      { shape: "rect", x: 32, y: 19, w: 5, h: 1, color: "stoneL" },
-      { shape: "line", from: [42, 30], to: [42, 20], w: 1, color: "woodD" },
-      { shape: "line", from: [42, 20], to: [46, 21], w: 1, color: "woodD" },
-      { shape: "pixels", at: [[46, 22]], color: "stoneD" },
-      { shape: "line", from: [50, 30], to: [50, 21], w: 1, color: "woodD" },
-      { shape: "rect", x: 48, y: 20, w: 3, h: 2, color: "stoneD" },
-      { shape: "pixels", at: [[50, 20]], color: "stoneL" },
-      { shape: "rect", x: 10, y: 44, w: 22, h: 5, color: "stoneD" },
-      { shape: "rect", x: 10, y: 43, w: 22, h: 3, color: "stone" },
-      { shape: "rect", x: 10, y: 43, w: 22, h: 1, color: "stoneL" },
-      { shape: "rect", x: 12, y: 49, w: 3, h: 5, color: "stoneD" },
-      { shape: "rect", x: 28, y: 49, w: 3, h: 5, color: "stoneD" },
-      { shape: "ellipse", cx: 44, cy: 46, rx: 3, ry: 6, color: "stoneD" },
-      { shape: "ellipse", cx: 43, cy: 46, rx: 3, ry: 5, color: "stone" },
-      { shape: "ellipse", cx: 43, cy: 45, rx: 1, ry: 2, color: "stoneL" },
-      { shape: "rect", x: 38, y: 45, w: 12, h: 2, color: "woodD" },
-      { shape: "rect", x: 52, y: 49, w: 10, h: 4, color: "stoneD" },
-      { shape: "rect", x: 53, y: 48, w: 8, h: 2, color: "water" },
-      { shape: "ellipse", cx: 14, cy: 53, rx: 3, ry: 2, color: "clayD" },
-      { shape: "ellipse", cx: 14, cy: 52, rx: 3, ry: 1, color: "clay" },
-      { shape: "ellipse", cx: 22, cy: 54, rx: 3, ry: 2, color: "clayD" },
-      { shape: "ellipse", cx: 22, cy: 53, rx: 3, ry: 1, color: "clay" },
-      { shape: "ellipse", cx: 60, cy: 40, rx: 4.800000000000001, ry: 2.4000000000000004, color: "fireD" },
-      { shape: "ellipse", cx: 60, cy: 39, rx: 3.2, ry: 1.6, color: "fire" },
-      { shape: "ellipse", cx: 60, cy: 38, rx: 1.6, ry: 1, color: "fireL" }
-    ] },
-    { shape: "outline", color: "line" }
-  ]
-};
-
 // src/data/blueprints/stone_age/buildings/toolstore/L1.json
-var L1_default5 = {
+var L1_default4 = {
   name: "Gi\xE1 c\xF4ng c\u1EE5 (c\u1EA5p 1, gi\xE1 ch\xE9o c\u1ECDc)",
   name_en: "Tool Rack (Tier 1, Crossed Poles)",
   type: "prop",
@@ -3265,7 +3904,7 @@ var L1_default5 = {
 };
 
 // src/data/blueprints/stone_age/buildings/toolstore/L2.json
-var L2_default4 = {
+var L2_default3 = {
   name: "L\xE1n c\xF4ng c\u1EE5 (c\u1EA5p 2, m\xE1i da xanh l\u1EE5c, hai gi\xE1)",
   name_en: "Tool Shed (Tier 2, Teal Hide Roof, Two Racks)",
   type: "prop",
@@ -3337,7 +3976,7 @@ var L2_default4 = {
 };
 
 // src/data/blueprints/stone_age/buildings/toolstore/L3.json
-var L3_default4 = {
+var L3_default3 = {
   name: "Kho c\xF4ng c\u1EE5 (c\u1EA5p 3, t\u01B0\u1EDDng \u0111\xE1 th\u1EA5p, m\xE1i v\xE1n)",
   name_en: "Tool Store (Tier 3, Low Stone Walls, Plank Roof)",
   type: "prop",
@@ -3415,7 +4054,7 @@ var L3_default4 = {
 };
 
 // src/data/blueprints/stone_age/buildings/armory/L1.json
-var L1_default6 = {
+var L1_default5 = {
   name: "Gi\xE1 gi\xE1o (c\u1EA5p 1, gi\xE1 ba ch\xE2n)",
   name_en: "Spear Stand (Tier 1, Tripod)",
   type: "prop",
@@ -3481,7 +4120,7 @@ var L1_default6 = {
 };
 
 // src/data/blueprints/stone_age/buildings/armory/L2.json
-var L2_default5 = {
+var L2_default4 = {
   name: "L\xE1n v\u0169 kh\xED (c\u1EA5p 2, m\xE1i da, gi\xE1 gi\xE1o v\xE0 khi\xEAn)",
   name_en: "Weapon Shed (Tier 2, Hide Roof, Spear and Shield Racks)",
   type: "prop",
@@ -3568,7 +4207,7 @@ var L2_default5 = {
 };
 
 // src/data/blueprints/stone_age/buildings/armory/L3.json
-var L3_default5 = {
+var L3_default4 = {
   name: "Kho v\u0169 kh\xED (c\u1EA5p 3, t\u01B0\u1EDDng \u0111\xE1, c\u1EDD da \u0111\u1ECF)",
   name_en: "Armoury (Tier 3, Stone Walls, Red Hide Banner)",
   type: "prop",
@@ -3649,7 +4288,7 @@ var L3_default5 = {
 };
 
 // src/data/blueprints/stone_age/buildings/house/L1.json
-var L1_default7 = {
+var L1_default6 = {
   name: "Nh\xE0 d\xE2n (c\u1EA5p 1, l\u1EC1u c\u1ECF tranh)",
   name_en: "Dwelling (Tier 1, Thatch Hut)",
   type: "prop",
@@ -3721,7 +4360,7 @@ var L1_default7 = {
 };
 
 // src/data/blueprints/stone_age/buildings/house/L2.json
-var L2_default6 = {
+var L2_default5 = {
   name: "Nh\xE0 d\xE2n (c\u1EA5p 2, nh\xE0 g\u1ED7 m\xE1i tranh)",
   name_en: "Dwelling (Tier 2, Log House, Thatch Roof)",
   type: "prop",
@@ -3812,7 +4451,7 @@ var L2_default6 = {
 };
 
 // src/data/blueprints/stone_age/buildings/house/L3.json
-var L3_default6 = {
+var L3_default5 = {
   name: "Nh\xE0 d\xE2n (c\u1EA5p 3, nh\xE0 n\u1EC1n \u0111\xE1)",
   name_en: "Dwelling (Tier 3, Stone-footed House)",
   type: "prop",
@@ -3910,7 +4549,7 @@ var L3_default6 = {
 };
 
 // src/data/blueprints/stone_age/buildings/field/L1.json
-var L1_default8 = {
+var L1_default7 = {
   name: "Ru\u1ED9ng (c\u1EA5p 1, \u0111\u1EA5t v\u1EE1)",
   name_en: "Field (Tier 1, Broken Soil)",
   type: "prop",
@@ -3983,7 +4622,7 @@ var L1_default8 = {
 };
 
 // src/data/blueprints/stone_age/buildings/field/L2.json
-var L2_default7 = {
+var L2_default6 = {
   name: "Ru\u1ED9ng (c\u1EA5p 2, lu\u1ED1ng \u0111\u1EAFp)",
   name_en: "Field (Tier 2, Raised Beds)",
   type: "prop",
@@ -4092,7 +4731,7 @@ var L2_default7 = {
 };
 
 // src/data/blueprints/stone_age/buildings/field/L3.json
-var L3_default7 = {
+var L3_default6 = {
   name: "Ru\u1ED9ng (c\u1EA5p 3, b\u1EDD \u0111\xE1)",
   name_en: "Field (Tier 3, Stone Border)",
   type: "prop",
@@ -4258,7 +4897,7 @@ var L3_default7 = {
 };
 
 // src/data/blueprints/stone_age/buildings/fence/L1.json
-var L1_default9 = {
+var L1_default8 = {
   name: "H\xE0ng r\xE0o c\u1ECDc (c\u1EA5p 1, c\u1ECDc nh\u1ECDn)",
   name_en: "Fence (Tier 1, Stakes)",
   type: "prop",
@@ -4290,7 +4929,7 @@ var L1_default9 = {
 };
 
 // src/data/blueprints/stone_age/buildings/fence/L2.json
-var L2_default8 = {
+var L2_default7 = {
   name: "H\xE0ng r\xE0o c\u1ECDc (c\u1EA5p 2, h\xE0ng r\xE0o \u0111\xF4i)",
   name_en: "Fence (Tier 2, Double Palisade)",
   type: "prop",
@@ -4328,7 +4967,7 @@ var L2_default8 = {
 };
 
 // src/data/blueprints/stone_age/buildings/gate/L1.json
-var L1_default10 = {
+var L1_default9 = {
   name: "C\u1ED5ng (c\u1EA5p 1, c\u1ED5ng g\u1ED7, \u0111\xF3ng)",
   name_en: "Gate (Tier 1, Shut)",
   type: "prop",
@@ -4361,7 +5000,7 @@ var L1_default10 = {
 };
 
 // src/data/blueprints/stone_age/buildings/gate/L2.json
-var L2_default9 = {
+var L2_default8 = {
   name: "C\u1ED5ng (c\u1EA5p 2, c\u1ED5ng \u0111\xF4i, \u0111\xF3ng)",
   name_en: "Gate (Tier 2, Shut)",
   type: "prop",
@@ -4456,7 +5095,7 @@ var L2open_default = {
 };
 
 // src/data/blueprints/stone_age/buildings/tower/L1.json
-var L1_default11 = {
+var L1_default10 = {
   name: "Ch\xF2i canh (c\u1EA5p 1, ch\xF2i g\u1ED7)",
   name_en: "Watchtower (Tier 1, Timber)",
   type: "prop",
@@ -4495,7 +5134,7 @@ var L1_default11 = {
 };
 
 // src/data/blueprints/stone_age/buildings/tower/L2.json
-var L2_default10 = {
+var L2_default9 = {
   name: "Ch\xF2i canh (c\u1EA5p 2, ch\xF2i cao)",
   name_en: "Watchtower (Tier 2, Tall)",
   type: "prop",
@@ -4537,7 +5176,7 @@ var L2_default10 = {
 };
 
 // src/data/blueprints/stone_age/buildings/infantry/L1.json
-var L1_default12 = {
+var L1_default11 = {
   name: "Tr\u1EA1i chi\u1EBFn binh (c\u1EA5p 1, l\u1EC1u da, gi\xE1 gi\xE1o)",
   name_en: "Infantry Camp (Tier 1)",
   type: "prop",
@@ -5197,7 +5836,7 @@ var L1_default12 = {
 };
 
 // src/data/blueprints/stone_age/buildings/infantry/L2.json
-var L2_default11 = {
+var L2_default10 = {
   name: "Tr\u1EA1i chi\u1EBFn binh (c\u1EA5p 2, l\u1EC1u da, r\xE0o c\u1ECDc)",
   name_en: "Infantry Camp (Tier 2)",
   type: "prop",
@@ -6055,7 +6694,7 @@ var L2_default11 = {
 };
 
 // src/data/blueprints/stone_age/buildings/infantry/L3.json
-var L3_default8 = {
+var L3_default7 = {
   name: "Tr\u1EA1i chi\u1EBFn binh (c\u1EA5p 3, l\u1EC1u da, t\u01B0\u1EDDng \u0111\xE1)",
   name_en: "Infantry Camp (Tier 3)",
   type: "prop",
@@ -7086,7 +7725,7 @@ var L3_default8 = {
 };
 
 // src/data/blueprints/stone_age/buildings/cavalry/L1.json
-var L1_default13 = {
+var L1_default12 = {
   name: "Tr\u1EA1i k\u1EF5 th\xFA (c\u1EA5p 1, chu\u1ED3ng c\u1ECDc, m\xE1i tranh)",
   name_en: "Beast-Rider Camp (Tier 1)",
   type: "prop",
@@ -7793,7 +8432,7 @@ var L1_default13 = {
 };
 
 // src/data/blueprints/stone_age/buildings/cavalry/L2.json
-var L2_default12 = {
+var L2_default11 = {
   name: "Tr\u1EA1i k\u1EF5 th\xFA (c\u1EA5p 2, chu\u1ED3ng r\xE0o, m\xE1i tranh)",
   name_en: "Beast-Rider Camp (Tier 2)",
   type: "prop",
@@ -8543,7 +9182,7 @@ var L2_default12 = {
 };
 
 // src/data/blueprints/stone_age/buildings/cavalry/L3.json
-var L3_default9 = {
+var L3_default8 = {
   name: "Tr\u1EA1i k\u1EF5 th\xFA (c\u1EA5p 3, chu\u1ED3ng \u0111\xE1, m\xE1i da)",
   name_en: "Beast-Rider Camp (Tier 3)",
   type: "prop",
@@ -9562,6 +10201,2791 @@ var L3_default9 = {
           color: "flameL"
         }
       ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/stable/L1.json
+var L1_default13 = {
+  name: "Chu\u1ED3ng th\xFA c\u01B0\u1EE1i (c\u1EA5p 1, chu\u1ED3ng c\u1ECDc)",
+  name_en: "Beast Stable (Tier 1)",
+  type: "prop",
+  size: [
+    72,
+    64
+  ],
+  anchor: [
+    36,
+    58
+  ],
+  footprint: [
+    4,
+    32,
+    64,
+    28
+  ],
+  seed: 51,
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    bone: "#e4dcc4",
+    flintL: "#7c8794",
+    door: "#2a1a0e",
+    flag: "#4f7a2c",
+    flagD: "#355a1e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    wattle: "#b89a58",
+    wattleD: "#8a7038",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    green: "#6f9a3e",
+    greenD: "#4f7a2c",
+    greenL: "#8fba54",
+    hay: "#d6b85a",
+    hayD: "#a88a38",
+    fur: "#7a5230",
+    furD: "#553820",
+    furL: "#9a7048",
+    sand: "#c4ad7c",
+    target: "#e4dcc4",
+    flame: "#f89628",
+    flameL: "#ffd060",
+    water: "#5a7f9a"
+  },
+  layers: [
+    {
+      shape: "ellipse",
+      cx: 36,
+      cy: 55,
+      rx: 30,
+      ry: 6,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "rect",
+      x: 8,
+      y: 36,
+      w: 56,
+      h: 18,
+      color: "dirt",
+      alpha: 0.55,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        9,
+        37
+      ],
+      to: [
+        62,
+        37
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "ellipse",
+          cx: 36,
+          cy: 47,
+          rx: 30,
+          ry: 8,
+          color: "earth"
+        },
+        {
+          shape: "scatter",
+          count: 34,
+          area: [
+            6,
+            40,
+            60,
+            14
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "dirt",
+            "chip",
+            "earthL",
+            "stoneD"
+          ],
+          onlyOver: [
+            "earth"
+          ]
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "rect",
+          x: 8,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 24,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 24,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 32,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 32,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 40,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 40,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 64,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 64,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 40,
+          w: 2,
+          h: 11,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 62,
+          y: 40,
+          w: 2,
+          h: 11,
+          color: "wood"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            9,
+            38
+          ],
+          to: [
+            63,
+            38
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            9,
+            52
+          ],
+          to: [
+            63,
+            52
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            9,
+            41
+          ],
+          to: [
+            9,
+            52
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            63,
+            41
+          ],
+          to: [
+            63,
+            52
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 18,
+          w: 2,
+          h: 24,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 18,
+          w: 2,
+          h: 24,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              8,
+              22
+            ],
+            [
+              24,
+              10
+            ],
+            [
+              40,
+              22
+            ]
+          ],
+          color: "thatch"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              8,
+              22
+            ],
+            [
+              24,
+              10
+            ],
+            [
+              24,
+              22
+            ]
+          ],
+          color: "thatchL"
+        },
+        {
+          shape: "line",
+          from: [
+            24,
+            10
+          ],
+          to: [
+            40,
+            22
+          ],
+          w: 1,
+          color: "thatchD"
+        },
+        {
+          shape: "line",
+          from: [
+            8,
+            22
+          ],
+          to: [
+            40,
+            22
+          ],
+          w: 1,
+          color: "woodD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "ellipse",
+          cx: 54,
+          cy: 47,
+          rx: 7,
+          ry: 3,
+          color: "hayD"
+        },
+        {
+          shape: "ellipse",
+          cx: 54,
+          cy: 46,
+          rx: 6,
+          ry: 3,
+          color: "hay"
+        },
+        {
+          shape: "line",
+          from: [
+            49,
+            46
+          ],
+          to: [
+            59,
+            46
+          ],
+          w: 1,
+          color: "hayD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 20,
+          y: 50,
+          w: 14,
+          h: 3,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 21,
+          y: 49,
+          w: 12,
+          h: 2,
+          color: "woodL"
+        },
+        {
+          shape: "ellipse",
+          cx: 28,
+          cy: 42,
+          rx: 7,
+          ry: 4,
+          color: "fur"
+        },
+        {
+          shape: "ellipse",
+          cx: 28,
+          cy: 41,
+          rx: 6,
+          ry: 2,
+          color: "furL"
+        },
+        {
+          shape: "line",
+          from: [
+            23,
+            45
+          ],
+          to: [
+            23,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            26,
+            45
+          ],
+          to: [
+            26,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            30,
+            45
+          ],
+          to: [
+            30,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            33,
+            45
+          ],
+          to: [
+            33,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              33,
+              40
+            ],
+            [
+              36,
+              34
+            ],
+            [
+              38,
+              36
+            ],
+            [
+              35,
+              42
+            ]
+          ],
+          color: "fur"
+        },
+        {
+          shape: "ellipse",
+          cx: 38,
+          cy: 35,
+          rx: 3,
+          ry: 2,
+          color: "fur"
+        },
+        {
+          shape: "pixels",
+          at: [
+            [
+              39,
+              34
+            ]
+          ],
+          color: "line"
+        },
+        {
+          shape: "line",
+          from: [
+            21,
+            41
+          ],
+          to: [
+            18,
+            45
+          ],
+          w: 1,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            34,
+            37
+          ],
+          to: [
+            32,
+            34
+          ],
+          w: 1,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            62,
+            52
+          ],
+          to: [
+            62,
+            22
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              63,
+              22
+            ],
+            [
+              71,
+              24
+            ],
+            [
+              63,
+              28
+            ]
+          ],
+          color: "flag"
+        },
+        {
+          shape: "pixels",
+          at: [
+            [
+              40,
+              45
+            ],
+            [
+              44,
+              49
+            ],
+            [
+              16,
+              46
+            ]
+          ],
+          color: "hay"
+        }
+      ]
+    },
+    {
+      shape: "rect",
+      x: 14,
+      y: 22,
+      w: 2,
+      h: 20,
+      color: "woodD"
+    },
+    {
+      shape: "rect",
+      x: 13,
+      y: 22,
+      w: 4,
+      h: 1,
+      color: "wood"
+    },
+    {
+      shape: "ellipse",
+      cx: 15,
+      cy: 21,
+      rx: 4,
+      ry: 3,
+      color: "chip"
+    },
+    {
+      shape: "rect",
+      x: 13,
+      y: 20,
+      w: 1,
+      h: 2,
+      color: "line"
+    },
+    {
+      shape: "rect",
+      x: 16,
+      y: 20,
+      w: 1,
+      h: 2,
+      color: "line"
+    },
+    {
+      shape: "rect",
+      x: 44,
+      y: 46,
+      w: 16,
+      h: 5,
+      color: "woodD"
+    },
+    {
+      shape: "rect",
+      x: 45,
+      y: 47,
+      w: 14,
+      h: 3,
+      color: "water"
+    },
+    {
+      shape: "ellipse",
+      cx: 28,
+      cy: 50,
+      rx: 6,
+      ry: 3,
+      color: "hay"
+    },
+    {
+      shape: "ellipse",
+      cx: 28,
+      cy: 49,
+      rx: 4,
+      ry: 2,
+      color: "hayD"
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/stable/L2.json
+var L2_default12 = {
+  name: "Chu\u1ED3ng th\xFA c\u01B0\u1EE1i (c\u1EA5p 2, chu\u1ED3ng g\u1ED7)",
+  name_en: "Beast Stable (Tier 2)",
+  type: "prop",
+  size: [
+    72,
+    64
+  ],
+  anchor: [
+    36,
+    58
+  ],
+  footprint: [
+    4,
+    32,
+    64,
+    28
+  ],
+  seed: 52,
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    bone: "#e4dcc4",
+    flintL: "#7c8794",
+    door: "#2a1a0e",
+    flag: "#4f7a2c",
+    flagD: "#355a1e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    wattle: "#b89a58",
+    wattleD: "#8a7038",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    green: "#6f9a3e",
+    greenD: "#4f7a2c",
+    greenL: "#8fba54",
+    hay: "#d6b85a",
+    hayD: "#a88a38",
+    fur: "#7a5230",
+    furD: "#553820",
+    furL: "#9a7048",
+    sand: "#c4ad7c",
+    target: "#e4dcc4",
+    flame: "#f89628",
+    flameL: "#ffd060",
+    water: "#5a7f9a"
+  },
+  layers: [
+    {
+      shape: "ellipse",
+      cx: 36,
+      cy: 55,
+      rx: 30,
+      ry: 6,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "rect",
+      x: 8,
+      y: 36,
+      w: 56,
+      h: 18,
+      color: "dirt",
+      alpha: 0.55,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        9,
+        37
+      ],
+      to: [
+        62,
+        37
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "ellipse",
+          cx: 36,
+          cy: 47,
+          rx: 30,
+          ry: 8,
+          color: "earth"
+        },
+        {
+          shape: "scatter",
+          count: 34,
+          area: [
+            6,
+            40,
+            60,
+            14
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "dirt",
+            "chip",
+            "earthL",
+            "stoneD"
+          ],
+          onlyOver: [
+            "earth"
+          ]
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "rect",
+          x: 8,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 24,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 24,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 32,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 32,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 40,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 40,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 64,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 64,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 40,
+          w: 2,
+          h: 11,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 62,
+          y: 40,
+          w: 2,
+          h: 11,
+          color: "wood"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            9,
+            38
+          ],
+          to: [
+            63,
+            38
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            9,
+            52
+          ],
+          to: [
+            63,
+            52
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            9,
+            41
+          ],
+          to: [
+            9,
+            52
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            63,
+            41
+          ],
+          to: [
+            63,
+            52
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            9,
+            45
+          ],
+          to: [
+            9,
+            45
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 18,
+          w: 2,
+          h: 24,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 18,
+          w: 2,
+          h: 24,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              8,
+              22
+            ],
+            [
+              24,
+              10
+            ],
+            [
+              40,
+              22
+            ]
+          ],
+          color: "thatch"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              8,
+              22
+            ],
+            [
+              24,
+              10
+            ],
+            [
+              24,
+              22
+            ]
+          ],
+          color: "thatchL"
+        },
+        {
+          shape: "line",
+          from: [
+            24,
+            10
+          ],
+          to: [
+            40,
+            22
+          ],
+          w: 1,
+          color: "thatchD"
+        },
+        {
+          shape: "line",
+          from: [
+            8,
+            22
+          ],
+          to: [
+            40,
+            22
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 38,
+          w: 28,
+          h: 2,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 30,
+          w: 28,
+          h: 8,
+          color: "wattle",
+          alpha: 0.5
+        },
+        {
+          shape: "line",
+          from: [
+            10,
+            34
+          ],
+          to: [
+            38,
+            34
+          ],
+          w: 1,
+          color: "wattleD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "ellipse",
+          cx: 54,
+          cy: 47,
+          rx: 7,
+          ry: 3,
+          color: "hayD"
+        },
+        {
+          shape: "ellipse",
+          cx: 54,
+          cy: 46,
+          rx: 6,
+          ry: 3,
+          color: "hay"
+        },
+        {
+          shape: "line",
+          from: [
+            49,
+            46
+          ],
+          to: [
+            59,
+            46
+          ],
+          w: 1,
+          color: "hayD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 20,
+          y: 50,
+          w: 14,
+          h: 3,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 21,
+          y: 49,
+          w: 12,
+          h: 2,
+          color: "woodL"
+        },
+        {
+          shape: "ellipse",
+          cx: 28,
+          cy: 42,
+          rx: 7,
+          ry: 4,
+          color: "fur"
+        },
+        {
+          shape: "ellipse",
+          cx: 28,
+          cy: 41,
+          rx: 6,
+          ry: 2,
+          color: "furL"
+        },
+        {
+          shape: "line",
+          from: [
+            23,
+            45
+          ],
+          to: [
+            23,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            26,
+            45
+          ],
+          to: [
+            26,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            30,
+            45
+          ],
+          to: [
+            30,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            33,
+            45
+          ],
+          to: [
+            33,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              33,
+              40
+            ],
+            [
+              36,
+              34
+            ],
+            [
+              38,
+              36
+            ],
+            [
+              35,
+              42
+            ]
+          ],
+          color: "fur"
+        },
+        {
+          shape: "ellipse",
+          cx: 38,
+          cy: 35,
+          rx: 3,
+          ry: 2,
+          color: "fur"
+        },
+        {
+          shape: "pixels",
+          at: [
+            [
+              39,
+              34
+            ]
+          ],
+          color: "line"
+        },
+        {
+          shape: "line",
+          from: [
+            21,
+            41
+          ],
+          to: [
+            18,
+            45
+          ],
+          w: 1,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            34,
+            37
+          ],
+          to: [
+            32,
+            34
+          ],
+          w: 1,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            62,
+            52
+          ],
+          to: [
+            62,
+            22
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              63,
+              22
+            ],
+            [
+              71,
+              24
+            ],
+            [
+              63,
+              28
+            ]
+          ],
+          color: "flag"
+        },
+        {
+          shape: "pixels",
+          at: [
+            [
+              40,
+              45
+            ],
+            [
+              44,
+              49
+            ],
+            [
+              16,
+              46
+            ]
+          ],
+          color: "hay"
+        }
+      ]
+    },
+    {
+      shape: "rect",
+      x: 14,
+      y: 22,
+      w: 2,
+      h: 20,
+      color: "woodD"
+    },
+    {
+      shape: "rect",
+      x: 13,
+      y: 22,
+      w: 4,
+      h: 1,
+      color: "wood"
+    },
+    {
+      shape: "ellipse",
+      cx: 15,
+      cy: 21,
+      rx: 4,
+      ry: 3,
+      color: "chip"
+    },
+    {
+      shape: "rect",
+      x: 13,
+      y: 20,
+      w: 1,
+      h: 2,
+      color: "line"
+    },
+    {
+      shape: "rect",
+      x: 16,
+      y: 20,
+      w: 1,
+      h: 2,
+      color: "line"
+    },
+    {
+      shape: "rect",
+      x: 44,
+      y: 46,
+      w: 16,
+      h: 5,
+      color: "woodD"
+    },
+    {
+      shape: "rect",
+      x: 45,
+      y: 47,
+      w: 14,
+      h: 3,
+      color: "water"
+    },
+    {
+      shape: "ellipse",
+      cx: 28,
+      cy: 50,
+      rx: 6,
+      ry: 3,
+      color: "hay"
+    },
+    {
+      shape: "ellipse",
+      cx: 28,
+      cy: 49,
+      rx: 4,
+      ry: 2,
+      color: "hayD"
+    },
+    {
+      shape: "rect",
+      x: 50,
+      y: 36,
+      w: 2,
+      h: 10,
+      color: "woodD"
+    },
+    {
+      shape: "rect",
+      x: 49,
+      y: 35,
+      w: 4,
+      h: 2,
+      color: "flag"
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ]
+};
+
+// src/data/blueprints/stone_age/buildings/stable/L3.json
+var L3_default9 = {
+  name: "Chu\u1ED3ng th\xFA c\u01B0\u1EE1i (c\u1EA5p 3, chu\u1ED3ng \u0111\xE1, v\xF2m ng\xE0)",
+  name_en: "Beast Stable (Tier 3)",
+  type: "prop",
+  size: [
+    72,
+    64
+  ],
+  anchor: [
+    36,
+    58
+  ],
+  footprint: [
+    4,
+    32,
+    64,
+    28
+  ],
+  seed: 53,
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    bone: "#e4dcc4",
+    flintL: "#7c8794",
+    door: "#2a1a0e",
+    flag: "#4f7a2c",
+    flagD: "#355a1e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    wattle: "#b89a58",
+    wattleD: "#8a7038",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    green: "#6f9a3e",
+    greenD: "#4f7a2c",
+    greenL: "#8fba54",
+    hay: "#d6b85a",
+    hayD: "#a88a38",
+    fur: "#7a5230",
+    furD: "#553820",
+    furL: "#9a7048",
+    sand: "#c4ad7c",
+    target: "#e4dcc4",
+    flame: "#f89628",
+    flameL: "#ffd060",
+    water: "#5a7f9a"
+  },
+  layers: [
+    {
+      shape: "ellipse",
+      cx: 36,
+      cy: 55,
+      rx: 30,
+      ry: 6,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "rect",
+      x: 8,
+      y: 36,
+      w: 56,
+      h: 18,
+      color: "dirt",
+      alpha: 0.55,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        9,
+        37
+      ],
+      to: [
+        62,
+        37
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "ellipse",
+          cx: 36,
+          cy: 47,
+          rx: 30,
+          ry: 8,
+          color: "earth"
+        },
+        {
+          shape: "scatter",
+          count: 34,
+          area: [
+            6,
+            40,
+            60,
+            14
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "dirt",
+            "chip",
+            "earthL",
+            "stoneD"
+          ],
+          onlyOver: [
+            "earth"
+          ]
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "rect",
+          x: 8,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 24,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 24,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 32,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 32,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 40,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 40,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 64,
+          y: 36,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 64,
+          y: 50,
+          w: 2,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 40,
+          w: 2,
+          h: 11,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 62,
+          y: 40,
+          w: 2,
+          h: 11,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 6,
+          y: 50,
+          w: 60,
+          h: 4,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 6,
+          y: 50,
+          w: 60,
+          h: 1,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 6,
+          y: 53,
+          w: 60,
+          h: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            12,
+            50
+          ],
+          to: [
+            12,
+            53
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            20,
+            50
+          ],
+          to: [
+            20,
+            53
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            28,
+            50
+          ],
+          to: [
+            28,
+            53
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            36,
+            50
+          ],
+          to: [
+            36,
+            53
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            44,
+            50
+          ],
+          to: [
+            44,
+            53
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            52,
+            50
+          ],
+          to: [
+            52,
+            53
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            60,
+            50
+          ],
+          to: [
+            60,
+            53
+          ],
+          w: 1,
+          color: "stoneD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            9,
+            38
+          ],
+          to: [
+            63,
+            38
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            9,
+            52
+          ],
+          to: [
+            63,
+            52
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            9,
+            41
+          ],
+          to: [
+            9,
+            52
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            63,
+            41
+          ],
+          to: [
+            63,
+            52
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            9,
+            45
+          ],
+          to: [
+            9,
+            45
+          ],
+          w: 1,
+          color: "woodL"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 18,
+          w: 2,
+          h: 24,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 18,
+          w: 2,
+          h: 24,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              8,
+              22
+            ],
+            [
+              24,
+              10
+            ],
+            [
+              40,
+              22
+            ]
+          ],
+          color: "hide"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              8,
+              22
+            ],
+            [
+              24,
+              10
+            ],
+            [
+              24,
+              22
+            ]
+          ],
+          color: "hideL"
+        },
+        {
+          shape: "line",
+          from: [
+            24,
+            10
+          ],
+          to: [
+            40,
+            22
+          ],
+          w: 1,
+          color: "hideD"
+        },
+        {
+          shape: "line",
+          from: [
+            8,
+            22
+          ],
+          to: [
+            40,
+            22
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 38,
+          w: 28,
+          h: 2,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 30,
+          w: 28,
+          h: 8,
+          color: "wattle",
+          alpha: 0.5
+        },
+        {
+          shape: "line",
+          from: [
+            10,
+            34
+          ],
+          to: [
+            38,
+            34
+          ],
+          w: 1,
+          color: "wattleD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "ellipse",
+          cx: 54,
+          cy: 47,
+          rx: 7,
+          ry: 3,
+          color: "hayD"
+        },
+        {
+          shape: "ellipse",
+          cx: 54,
+          cy: 46,
+          rx: 6,
+          ry: 3,
+          color: "hay"
+        },
+        {
+          shape: "line",
+          from: [
+            49,
+            46
+          ],
+          to: [
+            59,
+            46
+          ],
+          w: 1,
+          color: "hayD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 20,
+          y: 50,
+          w: 14,
+          h: 3,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 21,
+          y: 49,
+          w: 12,
+          h: 2,
+          color: "water"
+        },
+        {
+          shape: "ellipse",
+          cx: 28,
+          cy: 42,
+          rx: 7,
+          ry: 4,
+          color: "fur"
+        },
+        {
+          shape: "ellipse",
+          cx: 28,
+          cy: 41,
+          rx: 6,
+          ry: 2,
+          color: "furL"
+        },
+        {
+          shape: "line",
+          from: [
+            23,
+            45
+          ],
+          to: [
+            23,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            26,
+            45
+          ],
+          to: [
+            26,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            30,
+            45
+          ],
+          to: [
+            30,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            33,
+            45
+          ],
+          to: [
+            33,
+            48
+          ],
+          w: 2,
+          color: "furD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              33,
+              40
+            ],
+            [
+              36,
+              34
+            ],
+            [
+              38,
+              36
+            ],
+            [
+              35,
+              42
+            ]
+          ],
+          color: "fur"
+        },
+        {
+          shape: "ellipse",
+          cx: 38,
+          cy: 35,
+          rx: 3,
+          ry: 2,
+          color: "fur"
+        },
+        {
+          shape: "pixels",
+          at: [
+            [
+              39,
+              34
+            ]
+          ],
+          color: "line"
+        },
+        {
+          shape: "line",
+          from: [
+            21,
+            41
+          ],
+          to: [
+            18,
+            45
+          ],
+          w: 1,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            34,
+            37
+          ],
+          to: [
+            32,
+            34
+          ],
+          w: 1,
+          color: "furD"
+        },
+        {
+          shape: "line",
+          from: [
+            62,
+            52
+          ],
+          to: [
+            62,
+            22
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              63,
+              22
+            ],
+            [
+              71,
+              24
+            ],
+            [
+              63,
+              28
+            ]
+          ],
+          color: "flag"
+        },
+        {
+          shape: "pixels",
+          at: [
+            [
+              40,
+              45
+            ],
+            [
+              44,
+              49
+            ],
+            [
+              16,
+              46
+            ]
+          ],
+          color: "hay"
+        },
+        {
+          shape: "ellipse",
+          cx: 46,
+          cy: 38,
+          rx: 7,
+          ry: 4,
+          color: "furD"
+        },
+        {
+          shape: "ellipse",
+          cx: 46,
+          cy: 37,
+          rx: 6,
+          ry: 2,
+          color: "fur"
+        },
+        {
+          shape: "line",
+          from: [
+            51,
+            41
+          ],
+          to: [
+            51,
+            44
+          ],
+          w: 2,
+          color: "line"
+        },
+        {
+          shape: "line",
+          from: [
+            48,
+            41
+          ],
+          to: [
+            48,
+            44
+          ],
+          w: 2,
+          color: "line"
+        },
+        {
+          shape: "line",
+          from: [
+            44,
+            41
+          ],
+          to: [
+            44,
+            44
+          ],
+          w: 2,
+          color: "line"
+        },
+        {
+          shape: "line",
+          from: [
+            41,
+            41
+          ],
+          to: [
+            41,
+            44
+          ],
+          w: 2,
+          color: "line"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              41,
+              36
+            ],
+            [
+              38,
+              30
+            ],
+            [
+              36,
+              32
+            ],
+            [
+              39,
+              38
+            ]
+          ],
+          color: "furD"
+        },
+        {
+          shape: "ellipse",
+          cx: 36,
+          cy: 31,
+          rx: 3,
+          ry: 2,
+          color: "furD"
+        },
+        {
+          shape: "pixels",
+          at: [
+            [
+              35,
+              30
+            ]
+          ],
+          color: "line"
+        },
+        {
+          shape: "line",
+          from: [
+            53,
+            37
+          ],
+          to: [
+            56,
+            41
+          ],
+          w: 1,
+          color: "line"
+        },
+        {
+          shape: "line",
+          from: [
+            40,
+            33
+          ],
+          to: [
+            42,
+            30
+          ],
+          w: 1,
+          color: "line"
+        },
+        {
+          shape: "line",
+          from: [
+            6,
+            52
+          ],
+          to: [
+            6,
+            42
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 6,
+          cy: 40,
+          rx: 2,
+          ry: 3,
+          color: "flame"
+        },
+        {
+          shape: "ellipse",
+          cx: 6,
+          cy: 40,
+          rx: 1,
+          ry: 2,
+          color: "flameL"
+        }
+      ]
+    },
+    {
+      shape: "rect",
+      x: 14,
+      y: 22,
+      w: 2,
+      h: 20,
+      color: "woodD"
+    },
+    {
+      shape: "rect",
+      x: 13,
+      y: 22,
+      w: 4,
+      h: 1,
+      color: "wood"
+    },
+    {
+      shape: "ellipse",
+      cx: 15,
+      cy: 21,
+      rx: 4,
+      ry: 3,
+      color: "chip"
+    },
+    {
+      shape: "rect",
+      x: 13,
+      y: 20,
+      w: 1,
+      h: 2,
+      color: "line"
+    },
+    {
+      shape: "rect",
+      x: 16,
+      y: 20,
+      w: 1,
+      h: 2,
+      color: "line"
+    },
+    {
+      shape: "rect",
+      x: 44,
+      y: 46,
+      w: 16,
+      h: 5,
+      color: "woodD"
+    },
+    {
+      shape: "rect",
+      x: 45,
+      y: 47,
+      w: 14,
+      h: 3,
+      color: "water"
+    },
+    {
+      shape: "ellipse",
+      cx: 28,
+      cy: 50,
+      rx: 6,
+      ry: 3,
+      color: "hay"
+    },
+    {
+      shape: "ellipse",
+      cx: 28,
+      cy: 49,
+      rx: 4,
+      ry: 2,
+      color: "hayD"
+    },
+    {
+      shape: "rect",
+      x: 50,
+      y: 36,
+      w: 2,
+      h: 10,
+      color: "woodD"
+    },
+    {
+      shape: "rect",
+      x: 49,
+      y: 35,
+      w: 4,
+      h: 2,
+      color: "flag"
+    },
+    {
+      shape: "line",
+      from: [
+        26,
+        40
+      ],
+      to: [
+        36,
+        26
+      ],
+      w: 2,
+      color: "chip"
+    },
+    {
+      shape: "line",
+      from: [
+        36,
+        26
+      ],
+      to: [
+        46,
+        40
+      ],
+      w: 2,
+      color: "chip"
+    },
+    {
+      shape: "line",
+      from: [
+        26,
+        40
+      ],
+      to: [
+        26,
+        44
+      ],
+      w: 2,
+      color: "chip"
+    },
+    {
+      shape: "line",
+      from: [
+        46,
+        40
+      ],
+      to: [
+        46,
+        44
+      ],
+      w: 2,
+      color: "chip"
     },
     {
       shape: "outline",
@@ -22525,9 +25949,9 @@ var bow_default2 = {
 var anims = anims_default;
 var BODIES = bodies_default;
 var ANIMAL_CLIPS = { quadruped: quadruped_default, hopper: hopper_default, biped: biped_default, fish: fish_default };
-var SPRITE_FEET = { x: CX, y: 42 };
+var SPRITE_FEET = { x: CX + PADX, y: 42 + PADT };
 function make(def, seed, params) {
-  const res = Blueprint.render(def, { seed, params });
+  const res = Blueprint.render(def, { seed, params, fit: true });
   if (res.warnings.length) console.warn("[blueprint]", def.name, res.warnings);
   return { frames: toCanvases(res), ax: res.anchor?.[0] ?? res.w >> 1, ay: res.anchor?.[1] ?? res.h - 1, fps: res.fps };
 }
@@ -22546,22 +25970,22 @@ var BUILDING_ART = {
     storage: [L1_default23, L2_default23, L3_default19],
     workshop: [L1_default24, L2_default24, L3_default20],
     lab: [L1_default3, L2_default2, L3_default2],
-    repair: [L1_default4, L2_default3, L3_default3],
-    toolstore: [L1_default5, L2_default4, L3_default4],
-    armory: [L1_default6, L2_default5, L3_default5],
-    infantry: [L1_default12, L2_default11, L3_default8],
-    cavalry: [L1_default13, L2_default12, L3_default9],
+    toolstore: [L1_default4, L2_default3, L3_default3],
+    armory: [L1_default5, L2_default4, L3_default4],
+    infantry: [L1_default11, L2_default10, L3_default7],
+    cavalry: [L1_default12, L2_default11, L3_default8],
+    stable: [L1_default13, L2_default12, L3_default9],
     archery: [L1_default14, L2_default13, L3_default10],
     farmhouse: [L1_default15, L2_default14, L3_default11],
     huntlodge: [L1_default16, L2_default15, L3_default12],
     lumberyard: [L1_default17, L2_default16, L3_default13],
     quarry: [L1_default18, L2_default17, L3_default14],
-    house: [L1_default7, L2_default6, L3_default6],
-    field: [L1_default8, L2_default7, L3_default7],
-    fence: [L1_default9, L2_default8],
-    gate: [L1_default10, L2_default9, L1open_default, L2open_default],
+    house: [L1_default6, L2_default5, L3_default5],
+    field: [L1_default7, L2_default6, L3_default6],
+    fence: [L1_default8, L2_default7],
+    gate: [L1_default9, L2_default8, L1open_default, L2open_default],
     // the last two are the same gates standing open
-    tower: [L1_default11, L2_default10],
+    tower: [L1_default10, L2_default9],
     wartent: [L1_default20, L2_default19, L3_default16],
     scouttent: [L1_default19, L2_default18, L3_default15],
     drill: [L1_default21, L2_default20, L3_default17],
@@ -22591,7 +26015,6 @@ var Sprites = class {
     this.nature("spring");
     this.emblems.lab = this.scrollEmblem();
     this.emblems.builder = this.icons.hammer1;
-    this.emblems.repair = this.icons.hammer2;
     this.emblems.toolstore = this.icons.axe2;
     this.emblems.armory = this.icons.club1;
     this.emblems.infantry = this.icons.spear1;
@@ -22601,6 +26024,7 @@ var Sprites = class {
     this.emblems.quarry = this.icons.pick1;
     this.emblems.farmhouse = this.icons.hoe1;
     this.emblems.huntlodge = this.icons.spear1;
+    this.emblems.stable = this.icons.hoe1;
   }
   /** A torch 16x16, for the craft list. */
   torchIcon() {
@@ -22667,7 +26091,7 @@ var Sprites = class {
       let set = this.buildingCache.get(key);
       if (!set) {
         const tint = TINTS[kind];
-        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(tint ? { ...def, palettes: { tint } } : def, kind === "workshop" || kind === "lab" || kind === "repair" || kind === "builder" ? 9 : 5, { ...stage(st), ...tint ? { tint: 1 } : {} })));
+        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(tint ? { ...def, palettes: { tint } } : def, kind === "workshop" || kind === "lab" || kind === "builder" ? 9 : 5, { ...stage(st), ...tint ? { tint: 1 } : {} })));
         this.buildingCache.set(key, set);
       }
       return set;
@@ -22676,8 +26100,8 @@ var Sprites = class {
   }
   /** Sprite of a building at its level and construction stage (0..4). */
   building(kind, era, level, st) {
-    const lv2 = this.buildingSet(kind, era);
-    return lv2[Math.min(lv2.length, Math.max(1, level)) - 1][st];
+    const lv = this.buildingSet(kind, era);
+    return lv[Math.min(lv.length, Math.max(1, level)) - 1][st];
   }
   /** Sprite size of a species and where its feet are (the sprite is drawn with this point on the animal's position). */
   animalBox(species) {
@@ -22723,8 +26147,28 @@ var Sprites = class {
     }
     return c;
   }
-  villager(v) {
-    const name = v.anim in anims ? v.anim : "idle";
+  /** A beast under a rider, walking when the rider moves and standing when he stands, facing the way he faces. */
+  mount(species, moving, clock, dir) {
+    const def = BODIES[species], clips = ANIMAL_CLIPS[def.body], name = moving ? "walk" : "idle", clip = clips[name] ?? clips.idle, n = clip.frames.length, frame = Math.floor(clock * clip.fps) % n;
+    const key = `${species}|ride|${name}|${frame}|${dir}`;
+    let c = this.animalCache.get(key);
+    if (!c) {
+      const r = renderAnimal(def, clip, frame), [cv, g2] = canvas(r.w, r.h);
+      g2.putImageData(new ImageData(new Uint8ClampedArray(r.data), r.w, r.h), 0, 0);
+      if (dir === -1) {
+        const [mv, mg] = canvas(r.w, r.h);
+        mg.translate(r.w, 0);
+        mg.scale(-1, 1);
+        mg.drawImage(cv, 0, 0);
+        c = mv;
+      } else c = cv;
+      this.animalCache.set(key, c);
+    }
+    return c;
+  }
+  /** The villager as drawn; `pose` makes him stand in one animation (a rider sits still on his beast). */
+  villager(v, pose) {
+    const name = pose ?? (v.anim in anims ? v.anim : "idle");
     const def = anims[name];
     const rate = def.gait ? Math.min(1.6, v.speed / 1.5) : 1;
     const step3 = Math.floor(v.animClock * def.fps * rate);
@@ -22734,8 +26178,8 @@ var Sprites = class {
     const key = `${name}|${frame}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : "-"}|${v.armor ?? "-"}|${flick ?? "-"}`;
     let c = this.vcache.get(key);
     if (!c) {
-      const [cv, g2] = canvas(W, H);
-      g2.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === void 0 ? void 0 : { torch: flick })), W, H), 0, 0);
+      const [cv, g2] = canvas(FW, FH);
+      g2.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === void 0 ? void 0 : { torch: flick })), FW, FH), 0, 0);
       this.vcache.set(key, cv);
       c = cv;
     }
@@ -22812,6 +26256,144 @@ var Renderer = class {
   buildingAnchor(kind, x, y) {
     const d = BUILDINGS[kind];
     return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
+  }
+  /** A fence piece in a column (a neighbour above or below, none beside) is a stake with rails running down the screen to the next one: the tile picture shows a row seen from the front. Returns false when the piece is not part of a column. */
+  drawColumnFence(b, wallAt) {
+    const N = this.sim.world.size, at = (dx, dy) => wallAt.get((b.y + dy) * N + b.x + dx);
+    if (!(at(0, -1) || at(0, 1))) return false;
+    const { ctx: ctx2 } = this, z = this.cam.zoom, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay), two = b.level >= 2;
+    ctx2.fillStyle = "rgba(0,0,0,.25)";
+    ctx2.beginPath();
+    ctx2.ellipse(p.x, p.y, 8 * z, 3 * z, 0, 0, Math.PI * 2);
+    ctx2.fill();
+    for (const [dx, dy] of [[0, 1], [-1, 0], [1, 0]]) {
+      if (!at(dx, dy)) continue;
+      const q = this.worldToScreen(ax + dx * TILE, ay + dy * TILE);
+      for (const h2 of two ? [20, 12, 5] : [14, 7]) {
+        ctx2.strokeStyle = two ? "#8a6238" : "#d8c690";
+        ctx2.lineWidth = Math.max(1, (two ? 2 : 1) * z);
+        ctx2.beginPath();
+        ctx2.moveTo(p.x, p.y - h2 * z);
+        ctx2.lineTo(q.x, q.y - h2 * z);
+        ctx2.stroke();
+      }
+    }
+    const w = (two ? 6 : 5) * z, hgt = (two ? 30 : 25) * z;
+    ctx2.fillStyle = "#5e4026";
+    ctx2.fillRect(Math.round(p.x - w / 2), Math.round(p.y - hgt), Math.round(w), Math.round(hgt));
+    ctx2.fillStyle = "#8a6238";
+    ctx2.beginPath();
+    ctx2.moveTo(p.x - w / 2, p.y - hgt);
+    ctx2.lineTo(p.x, p.y - hgt - 3 * z);
+    ctx2.lineTo(p.x + w / 2, p.y - hgt);
+    ctx2.closePath();
+    ctx2.fill();
+    ctx2.strokeStyle = "#2b1d10";
+    ctx2.lineWidth = Math.max(1, z * 0.7);
+    ctx2.strokeRect(Math.round(p.x - w / 2) + 0.5, Math.round(p.y - hgt) + 0.5, Math.round(w), Math.round(hgt));
+    return true;
+  }
+  /** A gate stands taller and much wider than the fence on either side (posts 30 px out from its middle, a lintel across them), and shows plainly whether it is shut: shut, it has a red sign and cloth, planks fill the gap and the ground between the posts is barred; open, it has a green sign and cloth, the leaves stand swung out and a path is laid between the posts. It runs along the column when fence lies above or below it and none beside it. */
+  drawGate(b, wallAt) {
+    const { ctx: ctx2 } = this, z = this.cam.zoom, N = this.sim.world.size, at = (dx, dy) => wallAt.has((b.y + dy) * N + b.x + dx);
+    const col = (at(0, -1) || at(0, 1)) && !(at(-1, 0) || at(1, 0)), two = b.level >= 2, open = b.open;
+    const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 8);
+    const sign = open ? "#4fbf5a" : "#d9473f", signDark = open ? "#2a7a33" : "#8f2620";
+    const X = (u, v = 0) => col ? p.x + v * z : p.x + u * z, Y = (u, h2, v = 0) => (col ? p.y + u * z : p.y + v * z) - h2 * z;
+    const line3 = (x0, y0, x1, y1, th, c) => {
+      ctx2.strokeStyle = "#2b1d10";
+      ctx2.lineWidth = th * z + 2;
+      ctx2.beginPath();
+      ctx2.moveTo(x0, y0);
+      ctx2.lineTo(x1, y1);
+      ctx2.stroke();
+      ctx2.strokeStyle = c;
+      ctx2.lineWidth = th * z;
+      ctx2.stroke();
+    };
+    const bar2 = (u0, u1, h2, th, c) => line3(X(u0), Y(u0, h2), X(u1), Y(u1, h2), th, c);
+    const top = two ? 64 : 58, leaf = two ? "#9a9a96" : "#8a6238", U = 30;
+    ctx2.fillStyle = open ? "rgba(90,200,90,.32)" : "rgba(217,71,63,.30)";
+    if (col) ctx2.fillRect(Math.round(p.x - 8 * z), Math.round(p.y - U * z), Math.round(16 * z), Math.round(2 * U * z));
+    else ctx2.fillRect(Math.round(p.x - U * z), Math.round(p.y - 8 * z), Math.round(2 * U * z), Math.round(16 * z));
+    const post = (u) => {
+      const pw = (two ? 11 : 9) * z, ph = top * z, x = X(u), y = Y(u, 0);
+      ctx2.fillStyle = "rgba(0,0,0,.28)";
+      ctx2.beginPath();
+      ctx2.ellipse(x, y, 10 * z, 3.5 * z, 0, 0, Math.PI * 2);
+      ctx2.fill();
+      ctx2.fillStyle = "#2b1d10";
+      ctx2.fillRect(Math.round(x - pw / 2) - 1, Math.round(y - ph) - 1, Math.round(pw) + 2, Math.round(ph) + 2);
+      ctx2.fillStyle = "#5e4026";
+      ctx2.fillRect(Math.round(x - pw / 2), Math.round(y - ph), Math.round(pw), Math.round(ph));
+      ctx2.fillStyle = "#aa7c48";
+      ctx2.fillRect(Math.round(x - pw / 2), Math.round(y - ph), Math.round(pw * 0.35), Math.round(ph));
+      ctx2.fillStyle = sign;
+      ctx2.fillRect(Math.round(x - pw / 2), Math.round(y - ph + 6 * z), Math.round(pw), Math.round(14 * z));
+      ctx2.fillStyle = signDark;
+      ctx2.fillRect(Math.round(x - pw / 2), Math.round(y - ph + 17 * z), Math.round(pw), Math.round(3 * z));
+    };
+    post(-U);
+    if (open) {
+      for (const s of [-1, 1]) for (const h2 of [8, 22, 36]) line3(X(s * U, 0), Y(s * U, h2), X(s * (U - 4), 14), Y(s * (U - 4), h2, 14), 4, leaf);
+    } else {
+      for (const h2 of [6, 17, 28, 39]) bar2(-U + 4, U - 4, h2, 5, leaf);
+      line3(X(-U + 4), Y(-U + 4, 6), X(U - 4), Y(U - 4, 39), 3, "#d8c690");
+    }
+    post(U);
+    bar2(-U - 8, U + 8, top, 7, "#5e4026");
+    bar2(-U - 8, U + 8, top + 2, 2, "#aa7c48");
+    const cx = X(0), cy = Y(0, top + 12), r = 9 * z;
+    ctx2.fillStyle = "#2b1d10";
+    ctx2.beginPath();
+    ctx2.arc(cx, cy, r + 2, 0, Math.PI * 2);
+    ctx2.fill();
+    ctx2.fillStyle = sign;
+    ctx2.beginPath();
+    ctx2.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx2.fill();
+    ctx2.strokeStyle = "#fff6e8";
+    ctx2.lineWidth = Math.max(2, 2.4 * z);
+    ctx2.lineCap = "round";
+    ctx2.beginPath();
+    if (open) {
+      ctx2.moveTo(cx, cy + 5 * z);
+      ctx2.lineTo(cx, cy - 5 * z);
+      ctx2.moveTo(cx - 3.5 * z, cy - 1.5 * z);
+      ctx2.lineTo(cx, cy - 5.5 * z);
+      ctx2.lineTo(cx + 3.5 * z, cy - 1.5 * z);
+    } else {
+      ctx2.moveTo(cx - 5 * z, cy);
+      ctx2.lineTo(cx + 5 * z, cy);
+    }
+    ctx2.stroke();
+    ctx2.lineCap = "butt";
+  }
+  /** Ropes and a middle stake from a fence piece to the pieces touching it at its upper corners, drawn over the pieces already standing there. */
+  drawDiagonalRails(b, wallAt) {
+    const { ctx: ctx2 } = this, N = this.sim.world.size, z = this.cam.zoom;
+    for (const dx of [-1, 1]) {
+      const o = wallAt.get((b.y - 1) * N + b.x + dx);
+      if (!o) continue;
+      if (wallAt.has(b.y * N + b.x + dx) || wallAt.has((b.y - 1) * N + b.x)) continue;
+      const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), [bx, by] = this.buildingAnchor(o.kind, o.x, o.y);
+      const rope = (h2) => {
+        const p = this.worldToScreen(ax, ay - h2), q = this.worldToScreen(bx, by - h2);
+        ctx2.beginPath();
+        ctx2.moveTo(p.x, p.y);
+        ctx2.lineTo(q.x, q.y);
+        ctx2.stroke();
+      };
+      ctx2.strokeStyle = "#d8c690";
+      ctx2.lineWidth = Math.max(1, z);
+      rope(12);
+      rope(6);
+      const m = this.worldToScreen((ax + bx) / 2, (ay + by) / 2);
+      ctx2.fillStyle = "#5e4026";
+      ctx2.fillRect(Math.round(m.x - 2 * z), Math.round(m.y - 24 * z), Math.round(4 * z), Math.round(24 * z));
+      ctx2.fillStyle = "#aa7c48";
+      ctx2.fillRect(Math.round(m.x - 2 * z), Math.round(m.y - 24 * z), Math.round(4 * z), Math.round(3 * z));
+    }
   }
   /** Current level's sprite; while an upgrade runs the finished building stays drawn, with a progress bar. */
   buildingProp(b) {
@@ -22961,6 +26543,8 @@ var Renderer = class {
     for (const a of sim2.animals) if (seen(a.x, a.y)) list.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
     for (const t of sim2.tribes) if (t.state !== "adopted" && sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: "camp", i: 0, j: 0, t });
     list.sort((a, b) => a.y - b.y);
+    const wallAt = /* @__PURE__ */ new Map();
+    for (const b of sim2.buildings) if (b.kind === "fence" || b.kind === "gate") wallAt.set(b.y * N + b.x, b);
     for (const d of list) {
       if (d.kind === "tree") {
         const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
@@ -22972,11 +26556,46 @@ var Renderer = class {
         this.prop((n && n.amount === 0 ? nat.bushEmpty : nat.bush)[k], d.i * TILE + 16, d.y, time);
       } else if (d.kind === "building" && d.b) {
         const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
-        this.prop(this.buildingProp(b), ax, ay, time);
+        if (b.kind === "gate" && b.done) this.drawGate(b, wallAt);
+        else if (!(b.kind === "fence" && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time);
+        if (b.kind === "fence" || b.kind === "gate") this.drawDiagonalRails(b, wallAt);
         const emblem = b.done ? sp.emblems[b.kind] : void 0;
         if (emblem) {
           const p = this.worldToScreen(ax, ay - 52);
           ctx2.drawImage(emblem, Math.round(p.x - 8 * z), Math.round(p.y), 16 * z, 16 * z);
+        }
+        if (b.done && (b.kind === "lab" || b.kind === "workshop" || b.kind === "stable" || b.kind === "builder")) {
+          const p = this.worldToScreen(ax, ay - 74);
+          ctx2.textAlign = "center";
+          ctx2.lineJoin = "round";
+          if (b.kind === "builder" && sim2.buildings.some(needsWork)) {
+            ctx2.textAlign = "start";
+          } else if (b.active) {
+            const w = 36 * z, f = Math.max(0, Math.min(1, b.active.progress));
+            ctx2.fillStyle = "rgba(20,14,8,.8)";
+            ctx2.fillRect(p.x - w / 2 - z, p.y - z, w + 2 * z, 8 * z);
+            ctx2.fillStyle = "#6bbf59";
+            ctx2.fillRect(p.x - w / 2, p.y, w * f, 6 * z);
+            ctx2.font = `700 ${Math.max(10, 7 * z)}px system-ui, sans-serif`;
+            ctx2.lineWidth = 3;
+            ctx2.strokeStyle = "rgba(20,14,8,.9)";
+            ctx2.fillStyle = "#fff6e8";
+            ctx2.strokeText(`${Math.floor(f * 100)}%`, p.x, p.y - 3 * z);
+            ctx2.fillText(`${Math.floor(f * 100)}%`, p.x, p.y - 3 * z);
+          } else {
+            const t = time * 1.2 + b.id * 0.7;
+            for (let i = 0; i < 4; i++) {
+              const k = (t + i * 0.5) % 2, a = Math.sin(Math.PI * Math.min(1, k / 2)), s = (7 + i * 2) * z;
+              ctx2.font = `700 ${Math.max(9, s)}px system-ui, sans-serif`;
+              ctx2.fillStyle = `rgba(190,215,255,${(0.9 * a).toFixed(2)})`;
+              ctx2.strokeStyle = `rgba(20,30,60,${(0.8 * a).toFixed(2)})`;
+              ctx2.lineWidth = 2.5;
+              const x = p.x + (i * 7 - 8) * z, y = p.y - (k * 7 + i * 3) * z;
+              ctx2.strokeText("z", x, y);
+              ctx2.fillText("z", x, y);
+            }
+          }
+          ctx2.textAlign = "start";
         }
         if (!b.done || b.upgrading) {
           const p = this.worldToScreen(ax, ay), w = 40 * z;
@@ -23012,24 +26631,35 @@ var Renderer = class {
           }
         }
       } else if (d.v) {
-        const s = sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
+        const rode = d.v.phase !== "sleep" && d.v.phase !== "down" ? sim2.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === "down";
+        const s = sp.villager(d.v, rode && !fighting ? "idle" : void 0), fx = d.v.x * TILE, fy = d.v.y * TILE;
+        let lift = 0;
+        if (rode) {
+          const m = MOUNTS[rode], moving = d.v.path.length > 0 || !!d.v.slide, beast = sp.mount(m.species, moving, d.v.animClock, d.v.facing === "left" ? -1 : 1), box2 = sp.animalBox(m.species);
+          ctx2.fillStyle = "rgba(0,0,0,.22)";
+          ctx2.beginPath();
+          ctx2.ellipse(Math.round((fx - cx) * z), Math.round((fy - cy) * z), box2.w * 0.3 * z, box2.h * 0.1 * z, 0, 0, Math.PI * 2);
+          ctx2.fill();
+          ctx2.drawImage(beast, Math.round((fx - box2.ax - cx) * z), Math.round((fy - box2.ay - cy) * z), beast.width * z, beast.height * z);
+          lift = m.ride + (moving ? Math.abs(Math.sin(d.v.animClock * 8)) : 0);
+        }
         if (d.v.phase === "sleep" || d.v.phase === "down") {
           ctx2.save();
           ctx2.translate(Math.round((fx + 16 - cx) * z), Math.round((fy - 2 - cy) * z));
           ctx2.rotate(-Math.PI / 2);
           ctx2.drawImage(s, -SPRITE_FEET.x * z, -SPRITE_FEET.y * z, s.width * z, s.height * z);
           ctx2.restore();
-        } else ctx2.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
+        } else ctx2.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - lift - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
         const v = d.v;
         if (v.team === "player" && (v.job === "fight" || v.job === "hunt") && v.phase !== "flee" && v.phase !== "sleep" && v.phase !== "down") {
-          const p = this.worldToScreen(fx, fy - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
+          const p = this.worldToScreen(fx, fy - lift - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
           ctx2.fillStyle = "rgba(20,14,8,.85)";
           ctx2.fillRect(p.x - 3 * u, p.y - 4 * u, 6 * u, 7 * u);
           ctx2.fillStyle = v.job === "fight" ? "#d9534f" : "#e0a23c";
           ctx2.fillRect(p.x - 2 * u, p.y - 3 * u, 4 * u, 4 * u);
           ctx2.fillRect(p.x - u, p.y + u, 2 * u, u);
         }
-        if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - 46, v.health / v.maxHealth, v.team === "player" ? "#6bbf59" : "#d9534f");
+        if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - lift - 46, v.health / v.maxHealth, v.team === "player" ? "#6bbf59" : "#d9534f");
         if (v.down > 0) {
           ctx2.fillStyle = "#ffd27a";
           ctx2.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`;
@@ -23091,6 +26721,18 @@ var Renderer = class {
     }
     if (ghost) {
       const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
+      if (!WALL_KINDS.has(ghost.kind)) {
+        const zone = (x, y, w, h2, c) => {
+          ctx2.fillStyle = c;
+          ctx2.fillRect(px(x - CLEARANCE), py(y - CLEARANCE), (w + 2 * CLEARANCE) * ts, (h2 + 2 * CLEARANCE) * ts);
+        };
+        for (const o of sim2.buildings) if (!WALL_KINDS.has(o.kind) && o.id !== ghost.moving) zone(o.x, o.y, BUILDINGS[o.kind].w, BUILDINGS[o.kind].h, "rgba(240,170,60,.16)");
+        ctx2.strokeStyle = "rgba(255,220,120,.9)";
+        ctx2.lineWidth = 2;
+        ctx2.setLineDash([6, 4]);
+        ctx2.strokeRect(px(ghost.x - CLEARANCE), py(ghost.y - CLEARANCE), (d.w + 2 * CLEARANCE) * ts, (d.h + 2 * CLEARANCE) * ts);
+        ctx2.setLineDash([]);
+      }
       this.prop(sp.building(ghost.kind, ghost.era ?? sim2.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
       ctx2.fillStyle = ghost.ok ? "rgba(90,200,90,.38)" : "rgba(220,70,60,.42)";
       ctx2.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
@@ -23115,7 +26757,15 @@ var Renderer = class {
       }
     }
     if (inspect) {
-      const e = inspect.kind === "unit" ? sim2.get(inspect.id) : sim2.animalById.get(inspect.id);
+      if (inspect.kind === "node") {
+        const N2 = sim2.world.size, p = this.worldToScreen(inspect.id % N2 * TILE + 16, Math.floor(inspect.id / N2) * TILE + 28);
+        ctx2.strokeStyle = "#ffe27a";
+        ctx2.lineWidth = 2;
+        ctx2.beginPath();
+        ctx2.ellipse(p.x, p.y, 15 * z, 6 * z, 0, 0, Math.PI * 2);
+        ctx2.stroke();
+      }
+      const e = inspect.kind === "unit" ? sim2.get(inspect.id) : inspect.kind === "animal" ? sim2.animalById.get(inspect.id) : void 0;
       if (e) {
         const p = this.worldToScreen(e.x * TILE, e.y * TILE);
         ctx2.strokeStyle = "#ff8a7a";
@@ -23273,275 +26923,6 @@ var CARRY_CAP = { wood: 4, stone: 4, food: 10, hide: 10, bone: 6, fat: 6, feathe
 var FOOD_NUTRITION = 20;
 var FOOD_SPOIL_DAYS = 3;
 
-// src/data/animals.json
-var animals_default = {
-  _note: "zone = map ring 1..4 (each 24 tiles from the campfire). speed in tiles/s. flee: distance that makes it run. aggro: distance at which a predator starts hunting. herd: [min,max] group size. habitat water = lives in water tiles. Art lives in animals/bodies.json. drops: other materials the body gives when skinned (bone, fat, feather, tusk), on top of meat (becomes food) and hide. A species is just a key here plus an entry in bodies.json; the list below is in spawn order.",
-  rabbit: { name: "Th\u1ECF", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2.2, flee: 6, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 2], count: 36, prey: true, nocturnal: false },
-  fowl: { name: "G\xE0 r\u1EEBng", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2, flee: 5, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 3], count: 20, prey: true, nocturnal: false, drops: { feather: 2 } },
-  deer: { name: "H\u01B0\u01A1u", hp: 60, damage: 4, type: "crush", cycle: 1.6, range: 1, speed: 2.6, flee: 7, aggro: 0, meat: 20, hide: 3, zones: [1, 3], herd: [3, 5], count: 18, prey: true, nocturnal: false, cornered: true, drops: { bone: 2, fat: 2 } },
-  boar: { name: "L\u1EE3n r\u1EEBng", hp: 90, damage: 10, type: "pierce", cycle: 1.5, range: 1, speed: 2.1, flee: 0, aggro: 0, meat: 25, hide: 3, zones: [1, 3], herd: [1, 2], count: 8, prey: true, nocturnal: false, defends: true, drops: { bone: 2, fat: 4 } },
-  wolf: { name: "S\xF3i", hp: 55, damage: 7, type: "slash", cycle: 1.2, range: 1, speed: 2.9, flee: 0, aggro: 9, meat: 8, hide: 2, zones: [2, 3], herd: [4, 6], count: 12, prey: false, nocturnal: true, fearsFire: 5, drops: { bone: 2 } },
-  fish: { name: "C\xE1", hp: 1, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.4, flee: 3, aggro: 0, meat: 3, hide: 0, zones: [1, 3], herd: [3, 6], count: 36, prey: true, nocturnal: false, habitat: "water" },
-  aurochs: { name: "B\xF2 r\u1EEBng", hp: 130, damage: 12, type: "crush", cycle: 1.8, range: 1, speed: 2, flee: 0, aggro: 0, meat: 45, hide: 6, drops: { bone: 3, fat: 4 }, zones: [1, 3], herd: [2, 4], count: 6, prey: true, nocturnal: false, defends: true },
-  duck: { name: "V\u1ECBt tr\u1EDDi", hp: 8, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.9, flee: 5, aggro: 0, meat: 3, hide: 0, drops: { feather: 2 }, zones: [1, 2], herd: [2, 4], count: 14, prey: true, nocturnal: false },
-  fox: { name: "C\xE1o", hp: 25, damage: 4, type: "pierce", cycle: 1, range: 1, speed: 2.8, flee: 0, aggro: 4, meat: 4, hide: 1, zones: [2, 3], herd: [1, 1], count: 8, prey: false, nocturnal: true, fearsFire: 4 },
-  ibex: { name: "D\xEA n\xFAi", hp: 50, damage: 5, type: "crush", cycle: 1.5, range: 1, speed: 3, flee: 9, aggro: 0, meat: 14, hide: 2, drops: { bone: 2 }, zones: [2, 4], herd: [3, 5], count: 10, prey: true, nocturnal: false, cornered: true },
-  elk: { name: "Nai s\u1EEBng t\u1EA5m", hp: 160, damage: 10, type: "crush", cycle: 1.8, range: 1, speed: 2.4, flee: 0, aggro: 0, meat: 55, hide: 7, drops: { bone: 4, fat: 5 }, zones: [2, 3], herd: [1, 3], count: 6, prey: true, nocturnal: false, defends: true },
-  bear: { name: "G\u1EA5u n\xE2u", hp: 240, damage: 20, type: "slash", cycle: 1.9, range: 1, speed: 2.2, flee: 0, aggro: 6, meat: 45, hide: 9, drops: { bone: 5, fat: 10 }, zones: [3, 4], herd: [1, 1], count: 4, prey: false, nocturnal: false },
-  lion: { name: "S\u01B0 t\u1EED hang", hp: 130, damage: 16, type: "slash", cycle: 1.3, range: 1, speed: 3.3, flee: 0, aggro: 11, meat: 28, hide: 6, drops: { bone: 3, fat: 3 }, zones: [3, 4], herd: [1, 3], count: 5, prey: false, nocturnal: true, fearsFire: 6 },
-  mammoth: { name: "Voi ma m\xFAt", hp: 450, damage: 28, type: "crush", cycle: 2.6, range: 1, speed: 1.5, flee: 0, aggro: 0, meat: 120, hide: 16, drops: { bone: 14, fat: 24, tusk: 2 }, zones: [3, 4], herd: [2, 3], count: 6, prey: true, nocturnal: false, defends: true },
-  pike: { name: "C\xE1 ch\xF3", hp: 2, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.8, flee: 4, aggro: 0, meat: 6, hide: 0, drops: { bone: 1 }, zones: [1, 3], herd: [1, 2], count: 16, prey: true, nocturnal: false, habitat: "water" },
-  behaviour: {
-    fleeBurst: 8,
-    tiredSeconds: 6,
-    tiredSpeed: 0.5,
-    carcassSeconds: 90,
-    skinSeconds: 3,
-    breedMonth: "spring",
-    breedMinFemales: 2,
-    breedChance: 0.35,
-    regionRadius: 28
-  }
-};
-
-// src/data/tribes.json
-var tribes_default = {
-  _note: "distance = tiles from the player's campfire (map is 192 wide, so zone ring = 24 tiles). Strength multiplier = 0.8 + 0.06 * (ring - 1), ring = ceil(distance / 4.8). reward is shown to the player; techs come in M5.",
-  spring: {
-    name: "Su\u1ED1i Ngu\u1ED3n",
-    personality: "peaceful",
-    angle: 200,
-    distance: 30,
-    civilians: 8,
-    warriors: 4,
-    weapons: ["club", "spear"],
-    armor: false,
-    look: { hide: "#7a8a4a", pants: "#4a6a8a" },
-    relation: 0,
-    reward: "D\u1EC5 giao th\u01B0\u01A1ng v\xE0 thu n\u1EA1p; h\u1ECDc T4 B\u1EC7n s\u1EE3i",
-    tribute: { food: 12, wood: 6, coin: 3 }
-  },
-  axe: {
-    name: "R\xECu \u0110\xE1",
-    personality: "aggressive",
-    angle: 320,
-    distance: 45,
-    civilians: 15,
-    warriors: 10,
-    weapons: ["hatchet", "mace"],
-    armor: true,
-    look: { hide: "#8a3a24", pants: "#6a2a1a" },
-    relation: -20,
-    reward: "L\xEDnh ch\xF9y, b\xED quy\u1EBFt ch\u1EBF ch\xF9y \u0111\xE1",
-    tribute: { stone: 10, food: 10, coin: 4 }
-  },
-  swamp: {
-    name: "\u0110\u1EA7m L\u1EA7y",
-    personality: "ambusher",
-    angle: 80,
-    distance: 55,
-    civilians: 12,
-    warriors: 8,
-    weapons: ["sling", "club"],
-    armor: false,
-    look: { hide: "#5a6a50", pants: "#3a4a3a" },
-    relation: -10,
-    reward: "\u0110\u1EA5t s\xE9t, s\u1EE3i; h\u1ECDc T5 D\xE2y qu\u0103ng \u0111\xE1",
-    tribute: { food: 10, wood: 10, coin: 3 }
-  },
-  relation: {
-    labels: [[-100, "Th\xF9 \u0111\u1ECBch"], [-40, "Trung l\u1EADp"], [20, "Th\xE2n thi\u1EC7n"], [60, "C\u1ED1ng n\u1EA1p"], [90, "Thu ph\u1EE5c"]],
-    giftFood: 10,
-    giftGain: 5,
-    killWarrior: -10,
-    killCivilian: -25,
-    attackedPeaceful: -30,
-    tributeAt: 60,
-    joinAt: 90
-  },
-  surrender: { leaderDown: true, holdCampSeconds: 30, moraleBelow: 10 },
-  morale: {
-    start: 70,
-    flee: 25,
-    fleeRecover: 45,
-    surrender: 10,
-    allyDeath: -15,
-    outnumbered: -0.8,
-    outnumbering: 0.5,
-    nearHome: 0.5,
-    night: -0.3,
-    leaderNear: 0.3,
-    leaderFar: -0.2,
-    winBonus: 20,
-    backstab: -5,
-    calm: 0.1
-  }
-};
-
-// src/data/weapons.json
-var weapons_default = {
-  _note: 'type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor. cost/time/tier only for what the player can craft; others are used by tribes. style: which set of fighting animations the weapon uses (see "styles"); anims overrides single states for one weapon; projectile: what a ranged weapon fires.',
-  styles: {
-    fist: { name: "Tay kh\xF4ng", idle: "idle", walk: "walk", guard: "fist_guard", charge: "fist_charge", attack: "fist_attack" },
-    swing: { name: "Vung, ch\xE9m, \u0111\u1EADp (g\u1EADy, ch\xF9y, r\xECu, ki\u1EBFm)", idle: "swing_idle", walk: "swing_walk", guard: "swing_guard", charge: "swing_charge", attack: "swing_attack" },
-    thrust: { name: "\u0110\xE2m (gi\xE1o, th\u01B0\u01A1ng)", idle: "thrust_idle", walk: "thrust_walk", guard: "thrust_guard", charge: "thrust_charge", attack: "thrust_attack" },
-    shoot: { name: "B\u1EAFn (cung, n\u1ECF, s\xFAng)", idle: "shoot_idle", walk: "shoot_walk", guard: "shoot_guard", charge: "shoot_charge", attack: "shoot_attack" },
-    sling: { name: "Qu\u0103ng \u0111\xE1 (d\xE2y qu\u0103ng, n\xE1)", idle: "sling_idle", walk: "sling_walk", guard: "sling_guard", charge: "sling_charge", attack: "sling_attack" },
-    throw: { name: "N\xE9m (lao, ph\xF3ng lao)", idle: "throw_idle", walk: "throw_walk", guard: "throw_guard", charge: "throw_charge", attack: "throw_attack" }
-  },
-  weapons: {
-    fist: {
-      name: "Tay kh\xF4ng",
-      type: "crush",
-      range: 1,
-      damage: 2,
-      cycle: 1,
-      style: "fist"
-    },
-    club: {
-      name: "G\u1EADy g\u1ED7",
-      type: "crush",
-      range: 1,
-      damage: 4,
-      cycle: 1.2,
-      cost: {
-        wood: 1
-      },
-      durability: 120,
-      time: 40,
-      tier: 1,
-      style: "swing"
-    },
-    spear: {
-      name: "Gi\xE1o g\u1ED7",
-      type: "pierce",
-      range: 1.5,
-      damage: 7,
-      cycle: 1.4,
-      cost: {
-        wood: 2
-      },
-      durability: 100,
-      time: 60,
-      tier: 1,
-      style: "thrust"
-    },
-    mace: {
-      name: "Ch\xF9y \u0111\xE1",
-      type: "crush",
-      range: 1,
-      damage: 10,
-      cycle: 1.8,
-      cost: {
-        wood: 2,
-        stone: 2
-      },
-      durability: 160,
-      time: 120,
-      tier: 2,
-      style: "swing"
-    },
-    hatchet: {
-      name: "R\xECu \u0111\xE1",
-      type: "slash",
-      range: 1,
-      damage: 8,
-      cycle: 1.3,
-      style: "swing",
-      anims: { attack: "slash" },
-      tier: 2
-    },
-    sling: {
-      name: "D\xE2y qu\u0103ng \u0111\xE1",
-      type: "crush",
-      range: 5.5,
-      damage: 5,
-      cycle: 1.8,
-      ranged: true,
-      cost: { hide: 1, stone: 1 },
-      durability: 90,
-      time: 60,
-      style: "sling",
-      projectile: "stone",
-      tier: 1
-    },
-    bow: {
-      name: "Cung ng\u1EAFn",
-      type: "pierce",
-      range: 8,
-      damage: 8,
-      cycle: 2,
-      ranged: true,
-      cost: { wood: 3, hide: 1 },
-      durability: 110,
-      time: 100,
-      style: "shoot",
-      projectile: "arrow",
-      tier: 1
-    }
-  },
-  armor: {
-    hide: {
-      name: "\xC1o da th\xFA",
-      pierce: 0.1,
-      slash: 0.2,
-      crush: 0.1,
-      cost: {
-        hide: 3
-      },
-      durability: 200,
-      time: 100,
-      tier: 1
-    }
-  },
-  rules: {
-    backstab: 1.25,
-    strengthDamage: 0.6,
-    agilityBase: 1.3,
-    agilityStep: 0.04,
-    rangedHitNear: 0.9,
-    rangedHitFar: 0.7,
-    downedSeconds: 30,
-    rescueSeconds: 3,
-    rescueHp: 0.3
-  }
-};
-
-// src/sim/combat.ts
-var STYLES = weapons_default.styles;
-var WEAPONS = weapons_default.weapons;
-function poseOf(weapon, state) {
-  const w = weapon ? WEAPONS[weapon] : WEAPONS.fist;
-  return w?.anims?.[state] ?? STYLES[w?.style ?? "fist"]?.[state] ?? STYLES.fist[state];
-}
-for (const id of Object.keys(WEAPONS)) WEAPONS[id].anim = poseOf(id, "attack");
-var ARMORS = weapons_default.armor;
-var RULES = weapons_default.rules;
-var CRAFTED_WEAPONS = Object.keys(WEAPONS).filter((k) => WEAPONS[k].cost);
-var SPECIES = Object.keys(animals_default).filter((k) => !k.startsWith("_") && k !== "behaviour");
-var ANIMALS = Object.fromEntries(SPECIES.map((s) => [s, animals_default[s]]));
-var BEHAVIOUR = animals_default.behaviour;
-var TRIBE_IDS = ["spring", "axe", "swamp"];
-var TRIBES = Object.fromEntries(TRIBE_IDS.map((t) => [t, tribes_default[t]]));
-var RELATION = tribes_default.relation;
-var HOSTILE_BELOW = RELATION.labels[1][0];
-var SURRENDER = tribes_default.surrender;
-var MORALE = tribes_default.morale;
-function relationLabel(score) {
-  let name = RELATION.labels[0][1];
-  for (const [from, label2] of RELATION.labels) if (score >= from) name = label2;
-  return name;
-}
-var ringOf = (distance) => Math.max(1, Math.min(20, Math.ceil(distance / 4.8)));
-var zoneOf = (distance) => Math.max(1, Math.min(4, Math.ceil(distance / 24)));
-var ringPower = (ring) => 0.8 + 0.06 * (ring - 1);
-var maxHpOf = (vit) => 40 + 8 * vit;
-var cycleOf = (weaponCycle, agi) => weaponCycle * (RULES.agilityBase - RULES.agilityStep * agi);
-function damageOf(w, strength, armor, backstab) {
-  const base = w.damage + (w.ranged ? 0 : RULES.strengthDamage * strength);
-  return base * (1 - (armor ? armor[w.type] : 0)) * (backstab ? RULES.backstab : 1);
-}
-
 // src/data/units.json
 var units_default = {
   _note: "Arms of the army and what beats what. A weapon decides its arm: ranged weapons (sling, bow) make an archer, everything else a foot soldier; a rider (cavalry) is a soldier on a tamed beast, which the game does not have yet but the table is ready for. beats[attacker][defender] multiplies the damage an attacker does. Foot beats archers, archers beat riders, riders beat foot. The small bonuses are on top of that.",
@@ -23645,29 +27026,29 @@ function formationOffsets(kind, n) {
   return out;
 }
 var placeOffset = (o, heading, cx, cy) => [cx + o[0] * Math.cos(heading) - o[1] * Math.sin(heading), cy + o[0] * Math.sin(heading) + o[1] * Math.cos(heading)];
-function drawFormation(kind, o, p, toward) {
-  const S = COMMAND.cell, dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy), ang = d > 0.01 ? Math.atan2(dy, dx) : 0, ux = Math.cos(ang), uy = Math.sin(ang);
-  const clampN = (n) => Math.max(1, Math.min(SQUAD_MAX, n));
+function drawFormation(kind, o, p, toward, max = SQUAD_MAX) {
+  const S2 = COMMAND.cell, dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy), ang = d > 0.01 ? Math.atan2(dy, dx) : 0, ux = Math.cos(ang), uy = Math.sin(ang);
+  const clampN = (n) => Math.max(1, Math.min(max, n));
   const at = (along, side) => ({ x: o.x + ux * along - uy * side, y: o.y + uy * along + ux * side });
   const sign = -uy * (toward.x - o.x) + ux * (toward.y - o.y) >= 0 ? 1 : -1, face2 = Math.atan2(ux * sign, -uy * sign);
   const cells = [];
   switch (kind) {
     case "circle": {
-      const R2 = d, n = clampN(Math.round(2 * Math.PI * R2 / S));
+      const R2 = d, n = clampN(Math.round(2 * Math.PI * R2 / S2));
       for (let i = 0; i < n; i++) cells.push({ x: o.x + Math.cos(ang + 2 * Math.PI * i / n) * R2, y: o.y + Math.sin(ang + 2 * Math.PI * i / n) * R2 });
       return { cells, heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
     }
     case "wedge": {
-      const half = 0.6, step3 = S * Math.cos(half), n = clampN(1 + 2 * Math.floor(d / step3));
+      const half = 0.6, step3 = S2 * Math.cos(half), n = clampN(1 + 2 * Math.floor(d / step3));
       cells.push({ x: o.x, y: o.y });
       for (let k = 1; cells.length < n; k++) {
-        cells.push(at(k * step3, -k * S * Math.sin(half)));
-        if (cells.length < n) cells.push(at(k * step3, k * S * Math.sin(half)));
+        cells.push(at(k * step3, -k * S2 * Math.sin(half)));
+        if (cells.length < n) cells.push(at(k * step3, k * S2 * Math.sin(half)));
       }
       return { cells, heading: ang + Math.PI };
     }
     case "horns": {
-      const n = clampN(Math.floor(d / S) + 1), bend = Math.min(3, d * 0.25), forward = ang - Math.PI / 2;
+      const n = clampN(Math.floor(d / S2) + 1), bend = Math.min(3, d * 0.25), forward = ang - Math.PI / 2;
       for (let i = 0; i < n; i++) {
         const t = n === 1 ? 0.5 : i / (n - 1), c = at(d * t, 0), off = bend * (2 * t - 1) ** 2;
         cells.push({ x: c.x + Math.cos(forward) * off, y: c.y + Math.sin(forward) * off });
@@ -23679,21 +27060,21 @@ function drawFormation(kind, o, p, toward) {
       for (let guard = 0; guard < 40; guard++) {
         cols = Math.floor(w / g2) + 1;
         rows = Math.floor(hh / g2) + 1;
-        if (cols * rows <= SQUAD_MAX) break;
+        if (cols * rows <= max) break;
         g2 *= 1.1;
       }
       const x0 = Math.min(o.x, p.x), y0 = Math.min(o.y, p.y), sx = cols > 1 ? w / (cols - 1) : g2, sy = rows > 1 ? hh / (rows - 1) : g2;
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ x: x0 + c * Math.min(sx, g2 * 1.4), y: y0 + r * Math.min(sy, g2 * 1.4) });
-      return { cells: cells.slice(0, SQUAD_MAX), heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
+      return { cells: cells.slice(0, max), heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
     }
     case "ambush": {
-      const n = clampN(Math.floor(d / (S * 0.7)) + 1);
-      for (let i = 0; i < n; i++) cells.push(at(S * 0.7 * i, i % 2 ? 0.6 : -0.6));
+      const n = clampN(Math.floor(d / (S2 * 0.7)) + 1);
+      for (let i = 0; i < n; i++) cells.push(at(S2 * 0.7 * i, i % 2 ? 0.6 : -0.6));
       return { cells, heading: face2 };
     }
     default: {
-      const n = clampN(Math.floor(d / S) + 1);
-      for (let i = 0; i < n; i++) cells.push(at(S * i, 0));
+      const n = clampN(Math.floor(d / S2) + 1);
+      for (let i = 0; i < n; i++) cells.push(at(S2 * i, 0));
       return { cells, heading: face2 };
     }
   }
@@ -23986,6 +27367,681 @@ function die(sim2, a) {
   a.carcass = BEHAVIOUR.carcassSeconds;
 }
 
+// src/data/stats.json
+var stats_default = {
+  _note: "C\xF4ng th\u1EE9c ch\u1EC9 s\u1ED1 c\u1EE7a m\u1ECDi NPC l\xE0 ng\u01B0\u1EDDi. Gi\xE1 tr\u1ECB = g\u1ED1c \xD7 h\u1EC7 s\u1ED1 c\xE1 nh\xE2n \xD7 h\u1EC7 s\u1ED1 b\u1EADc \xD7 (1 + t\u1ED5ng % nghi\xEAn c\u1EE9u / 100). M\u1ED7i ch\u1EC9 s\u1ED1 t\xEDnh ri\xEAng, kh\xF4ng \u0111\u1ECDc ch\u1EC9 s\u1ED1 kh\xE1c (ngo\u1EA1i tr\u1EEB t\xE1c d\u1EE5ng c\u1EE7a Tr\xED tu\u1EC7, ghi \u1EDF intEffect). base = gi\xE1 tr\u1ECB g\u1ED1c c\u1EE7a ch\u1EC9 s\u1ED1. stars: tr\u1ECDng s\u1ED1 xu\u1EA5t hi\u1EC7n c\u1EE7a 1 \u0111\u1EBFn 5 sao; t\u1ED5ng 8 h\u1EC7 s\u1ED1 c\xE1 nh\xE2n c\u1EE7a m\u1ED9t ng\u01B0\u1EDDi b\u1EB1ng 8 \xD7 (budgetBase + budgetPerStar \xD7 sao), m\u1ED7i h\u1EC7 s\u1ED1 \u0111\u01B0\u1EE3c r\xFAt ng\u1EABu nhi\xEAn quanh 1 v\u1EDBi \u0111\u1ED9 l\u1EC7ch spread r\u1ED3i b\u1ECB gi\u1EDBi h\u1EA1n trong [min, max], n\xEAn kh\xF4ng ai qu\xE1 cao hay qu\xE1 th\u1EA5p. tierMult[b\u1EADc] = h\u1EC7 s\u1ED1 nh\xE2n l\xEAn g\u1ED1c c\u1EE7a c\u1EA3 vai tr\xF2 khi \u0111\xE3 nghi\xEAn c\u1EE9u b\u1EADc \u0111\xF3. defense.k: % gi\u1EA3m s\xE1t th\u01B0\u01A1ng = \u0111i\u1EC3m th\u1EE7 / (\u0111i\u1EC3m th\u1EE7 + k). intEffect: m\u1ED7i 100% Tr\xED tu\u1EC7 tr\xEAn g\u1ED1c th\xEC t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c t\u0103ng work v\xE0 s\u1EE9c ti\xEAu hao gi\u1EA3m drain (theo t\u1EF7 l\u1EC7). legacy: c\xE1c ch\u1ED7 c\u0169 c\u1EE7a game v\u1EABn \u0111\u1ECDc 4 ch\u1EC9 s\u1ED1 c\u0169 (S\u1EE9c kh\u1ECFe, S\u1EE9c m\u1EA1nh, Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c), n\xEAn ch\xFAng \u0111\u01B0\u1EE3c t\xEDnh ng\u01B0\u1EE3c t\u1EEB gi\xE1 tr\u1ECB m\u1EDBi theo c\xE1c h\u1EC7 s\u1ED1 n\xE0y.",
+  base: { hp: 100, atk: 10, defm: 20, defr: 20, move: 2, work: 1, int: 10, sta: 100 },
+  stars: { weights: [30, 30, 25, 10, 5], budgetBase: 0.92, budgetPerStar: 0.04, spread: 0.3, min: 0.8, max: 1.25 },
+  tierMult: {
+    "2": { hp: 1.5, atk: 1.4, defm: 1.4, defr: 1.4, move: 1.1, work: 1.2, int: 1.2, sta: 1.3 }
+  },
+  defense: { k: 100 },
+  intEffect: { work: 0.5, drain: 0.5 },
+  staDrainRef: 100,
+  legacy: { hpBase: 40, hpPerVit: 8, strengthDamage: 0.6, atkToDamage: 0.4, speedBase: 1.6, speedPerAgi: 0.1, staScale: 0.065, vitFromHp: true }
+};
+
+// src/sim/tools.ts
+var TOOL_KINDS = ["axe", "pick", "hoe", "hammer"];
+var TOOL_NAME = { axe: "R\xECu", pick: "Cu\u1ED1c chim", hoe: "Cu\u1ED1c", hammer: "B\xFAa" };
+var TOOL_USE = { axe: "\u0111\u1ED1n g\u1ED7", pick: "\u0111\u1EE5c \u0111\xE1", hoe: "h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7", hammer: "d\u1EF1ng c\xF4ng tr\xECnh" };
+var TOOL_OF_JOB = { wood: "axe", stone: "pick", food: "hoe", build: "hammer" };
+var TIER_NAME = ["Tay kh\xF4ng", "G\u1ED7", "\u0110\xE1"];
+var TIER_SPEED = [0.6, 1, 1.4];
+var TIER_YIELD = [1, 1.25, 1.6];
+var TIER_DURABILITY = [0, 240, 600];
+var GEAR_KINDS = ["club", "spear", "mace", "sling", "bow", "hide"];
+var isGear = (k) => GEAR_KINDS.includes(k);
+var isWeaponKind = (k) => k in WEAPONS;
+var R = (kind, tier, cost, time) => ({ id: `${kind}${tier}`, kind, tier, cost, time });
+var gearRecipe = (kind) => {
+  const d = kind === "hide" ? ARMORS.hide : WEAPONS[kind];
+  return R(kind, d.tier ?? 1, d.cost ?? {}, d.time ?? 60);
+};
+var RECIPES = [
+  R("axe", 1, { wood: 3 }, 24),
+  R("axe", 2, { wood: 2, stone: 3 }, 40),
+  R("pick", 1, { wood: 4 }, 28),
+  R("pick", 2, { wood: 2, stone: 4 }, 44),
+  R("hoe", 1, { wood: 3 }, 24),
+  R("hoe", 2, { wood: 2, stone: 2 }, 36),
+  R("hammer", 1, { wood: 3 }, 24),
+  R("hammer", 2, { wood: 2, stone: 3 }, 36),
+  R("torch", 1, { wood: 2 }, 12),
+  ...GEAR_KINDS.map(gearRecipe)
+];
+var RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
+var recipeName = (r) => {
+  if (r.kind === "hide") return ARMORS.hide.name;
+  if (r.kind === "torch") return "\u0110u\u1ED1c";
+  if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
+  return `${TOOL_NAME[r.kind]} ${TIER_NAME[r.tier].toLowerCase()}`;
+};
+var recipeUse = (r) => {
+  if (r.kind === "hide") return "gi\xE1p, gi\u1EA3m s\xE1t th\u01B0\u01A1ng";
+  if (r.kind === "torch") return "l\xE0m vi\u1EC7c ban \u0111\xEAm (hi\u1EC7u su\u1EA5t 70%), nh\xECn xa h\u01A1n trong t\u1ED1i";
+  if (isWeaponKind(r.kind)) {
+    const w = WEAPONS[r.kind];
+    return `${{ pierce: "\u0111\xE2m", slash: "ch\xE9m", crush: "\u0111\u1EADp" }[w.type]} ${w.damage} \xB7 ${(1 / w.cycle).toFixed(2)} \u0111\xF2n/gi\xE2y \xB7 ch\xED m\u1EA1ng \u0111\xF2n ${Math.round((w.critDamage ?? RULES.critDamage) * 100)}% \xB7 t\u1EA7m ${w.range}`;
+  }
+  return TOOL_USE[r.kind];
+};
+var emptyToolSet = () => ({ axe: null, pick: null, hoe: null, hammer: null });
+
+// src/data/research.json
+var research_default = {
+  enabled: true,
+  _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Tools, weapons, armour and torches have no blueprint (recipe id: axe1 is the wood axe, axe2 the stone one): the level of the Nh\xE0 ch\u1EBF t\u1EA1o alone (recipeLevel) decides which can be made. cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, levels (highest level per building kind), buildings (kinds that may be built), auto (fetch: villagers fetch tools from the stores; order: villagers order crafting and repair themselves). Set enabled to false to open everything.",
+  recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1, sling1: 1, bow1: 2 },
+  techs: [
+    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: [], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { builder: 2, storage: 2, workshop: 2, lab: 2, toolstore: 2, armory: 2, house: 2, infantry: 2, cavalry: 2, archery: 2, farmhouse: 2, huntlodge: 2, lumberyard: 2, quarry: 2, scouttent: 2, field: 2, wartent: 2, drill: 2, stable: 2, fence: 2, gate: 2, tower: 2, trap: 2 } } },
+    { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { builder: 3, storage: 3, workshop: 3, lab: 3, toolstore: 3, armory: 3, house: 3, infantry: 3, cavalry: 3, archery: 3, farmhouse: 3, huntlodge: 3, lumberyard: 3, quarry: 3, scouttent: 3, field: 3, wartent: 3, drill: 3, stable: 3 } } },
+    { id: "signal", name: "T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)", desc: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED; th\u1EBB l\u1EC7nh Ph\xE1t t\xEDn hi\u1EC7u cho c\xE1c \u0111\u1ED9i.", requires: [], needLevel: 2, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: {} },
+    { id: "form_basic", name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", desc: "H\xE0ng ngang v\xE0 v\xF2ng tr\xF2n.", requires: [], needLevel: 1, minInt: 6, cost: { wood: 12, coin: 4 }, time: 240, unlocks: {} },
+    { id: "form_wedge", name: "Tr\u1EADn m\u0169i nh\u1ECDn", desc: "Xung phong ph\xE1 h\xE0ng.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_horns", name: "Tr\u1EADn s\u1EEBng b\xF2", desc: "Bao hai c\xE1nh, \u0111\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_scatter", name: "Tr\u1EADn r\u1EA3i qu\xE2n", desc: "Gi\u1EA3m thi\u1EC7t h\u1EA1i t\u1EEB cung v\xE0 l\u1EEDa.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "form_ambush", name: "Tr\u1EADn ph\u1EE5c k\xEDch", desc: "\u0110\xF2n \u0111\u1EA7u m\u1EA1nh g\u1EA5p \u0111\xF4i v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+    { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: [], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
+    { id: "auto_order", name: "T\u1EF1 nh\u1EDD ch\u1EBF t\u1EA1o", desc: "D\xE2n thi\u1EBFu \u0111\u1ED3 t\u1EF1 t\u1EDBi nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EB7t h\xE0ng.", requires: ["auto_fetch"], needLevel: 2, minInt: 7, cost: { wood: 10, coin: 8 }, time: 360, unlocks: { auto: ["order"] } },
+    { id: "form_cells_10", name: "M\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p (10)", desc: "M\u1ED7i tr\u1EADn ph\xE1p c\xF3 10 \xF4 thay v\xEC 5.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 280, unlocks: { formationCells: 10 } },
+    { id: "form_cells_15", name: "M\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p (15)", desc: "M\u1ED7i tr\u1EADn ph\xE1p c\xF3 15 \xF4.", requires: ["form_cells_10"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { formationCells: 15 } },
+    { id: "form_squads_5", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (5)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 5 \u0111\u1ED9i thay v\xEC 4.", requires: ["form_cells_10"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 280, unlocks: { squads: 5 } },
+    { id: "form_squads_6", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (6)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 6 \u0111\u1ED9i.", requires: ["form_squads_5"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { squads: 6 } }
+  ]
+};
+
+// src/data/researchtree.json
+var researchtree_default = {
+  _note: "C\xE2y nghi\xEAn c\u1EE9u ch\u1EC9 s\u1ED1 trong Nh\xE0 nghi\xEAn c\u1EE9u. M\u1ED7i \xF4 l\xE0 m\u1ED9t d\xE2y: m\u1ED9t ch\u1EC9 s\u1ED1 c\u1EE7a m\u1ED9t vai tr\xF2. S\u1ED0 C\u1EA4P C\u1EE6A M\u1ED6I CH\u1EC8 S\u1ED0 b\u1EB1ng s\u1ED1 ph\u1EA7n t\u1EED c\u1EE7a m\u1EA3ng steps c\u1EE7a n\xF3 (th\xEAm hay b\u1EDBt s\u1ED1 trong steps l\xE0 th\xEAm hay b\u1EDBt c\u1EA5p, m\u1ED7i ch\u1EC9 s\u1ED1 t\u1EF1 \u0111\u1EB7t ri\xEAng); tiers ri\xEAng c\u1EE7a ch\u1EC9 s\u1ED1 (n\u1EBFu ghi) thay cho tiers chung b\xEAn d\u01B0\u1EDBi, s\u1ED1 cu\u1ED1i \u0111\u01B0\u1EE3c d\xF9ng ti\u1EBFp cho c\xE1c c\u1EA5p cao h\u01A1n. Ng\u01B0\u1EDDi ch\u01A1i t\u1EF1 ch\u1ECDn \xF4 n\xE0o c\u0169ng \u0111\u01B0\u1EE3c (ch\u1ECDn ch\u1EC9 s\u1ED1 v\xF4 d\u1EE5ng cho vai tr\xF2 th\xEC l\xE0 l\u1ED7 c\u1EE7a h\u1ECD). steps[stat] = % c\u1ED9ng th\xEAm \u1EDF t\u1EEBng c\u1EA5p, gi\u1EA3m d\u1EA7n nh\u01B0ng c\xF3 s\xE0n; t\u1ED5ng % c\u1ED9ng d\u1ED3n c\u1EE7a m\u1ED9t \xF4 l\xE0 ph\u1EA7n c\u1ED9ng th\xEAm c\u1EE7a ch\u1EC9 s\u1ED1 \u0111\xF3 cho c\u1EA3 vai tr\xF2 (g\u1ED1c \xD7 (1 + t\u1ED5ng% / 100)). cost = v\u1EADt li\u1EC7u c\u1EE7a c\u1EA5p 1 (c\u1ED9ng th\xEAm ti\u1EC1n t\u0103ng d\u1EA7n), nh\xE2n 'growth.cost' m\u1ED7i c\u1EA5p; time (gi\xE2y c\xF4ng) nh\xE2n 'growth.time' m\u1ED7i c\u1EA5p. tiers[n-1] = c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA7n cho c\u1EA5p n. Ch\u01B0a n\u1ED1i v\xE0o c\xF4ng th\u1EE9c chi\u1EBFn \u0111\u1EA5u v\xE0 l\xE0m vi\u1EC7c: xem statBonus trong sim/research.ts.",
+  tiers: [1, 1, 1, 2, 2, 2, 3, 3, 3, 3],
+  growth: {
+    cost: 1.5,
+    time: 1.25
+  },
+  stats: {
+    hp: {
+      name: "M\xE1u",
+      short: "M\xE1u",
+      steps: [12.5, 6, 3, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 120,
+      about: "M\xE1u t\u1ED1i \u0111a."
+    },
+    atk: {
+      name: "S\u1EE9c m\u1EA1nh",
+      short: "S\xE1t th\u01B0\u01A1ng",
+      steps: [8, 4, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 120,
+      about: "S\xE1t th\u01B0\u01A1ng m\u1ED7i \u0111\xF2n \u0111\xE1nh."
+    },
+    aspd: {
+      name: "T\u1ED1c \u0111\u1ED9 \u0111\xE1nh",
+      short: "T\u1ED1c \u0111\xE1nh",
+      steps: [5, 2.5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 120,
+      about: "T\u1ED1c \u0111\u1ED9 \u0111\xE1nh c\u1EE7a v\u0169 kh\xED: ai c\u1EA7m n\xF3 \u0111\xE1nh v\xE0 b\u1EAFn nhanh h\u01A1n, th\u1EDDi gian gi\u1EEFa hai \u0111\xF2n ng\u1EAFn l\u1EA1i."
+    },
+    crit: {
+      name: "T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng",
+      short: "Ch\xED m\u1EA1ng",
+      steps: [0.5, 1, 1, 1, 1],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 130,
+      about: "T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng c\u1EE7a v\u0169 kh\xED, t\xEDnh tr\xEAn 100%: m\u1ED7i c\u1EA5p c\u1ED9ng th\u1EB3ng v\xE0o x\xE1c su\u1EA5t (0,5% l\xE0 n\u1EEDa ph\u1EA7n tr\u0103m). T\u1ED1i \u0111a 10%."
+    },
+    critd: {
+      name: "S\xE1t th\u01B0\u01A1ng ch\xED m\u1EA1ng",
+      short: "ST ch\xED m\u1EA1ng",
+      steps: [20, 10, 5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 130,
+      about: "S\xE1t th\u01B0\u01A1ng c\u1EE7a \u0111\xF2n ch\xED m\u1EA1ng t\xEDnh tr\xEAn 100% \u0111\xF2n th\u01B0\u1EDDng, g\u1ED1c 125%: m\u1ED7i c\u1EA5p c\u1ED9ng th\u1EB3ng v\xE0o (400% l\xE0 g\u1EA5p 4 l\u1EA7n \u0111\xF2n th\u01B0\u1EDDng)."
+    },
+    tspd: {
+      name: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\u1EDBi c\xF4ng c\u1EE5",
+      short: "T\u1ED1c \u0111\u1ED9",
+      steps: [6, 5, 4, 3, 3],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 110,
+      about: "Ai c\u1EA7m c\xF4ng c\u1EE5 n\xE0y l\xE0m vi\u1EC7c nhanh h\u01A1n (c\u1ED9ng v\xE0o h\u1EC7 s\u1ED1 c\u1EE7a c\xF4ng c\u1EE5)."
+    },
+    tyield: {
+      name: "S\u1EA3n l\u01B0\u1EE3ng",
+      short: "S\u1EA3n l\u01B0\u1EE3ng",
+      steps: [4, 4, 3, 3, 2],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 110,
+      about: "M\u1ED7i l\u1EA7n khai th\xE1c thu \u0111\u01B0\u1EE3c nhi\u1EC1u h\u01A1n khi c\u1EA7m c\xF4ng c\u1EE5 n\xE0y."
+    },
+    tdur: {
+      name: "\u0110\u1ED9 b\u1EC1n",
+      short: "\u0110\u1ED9 b\u1EC1n",
+      steps: [10, 10, 10, 5, 5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 110,
+      about: "C\xF4ng c\u1EE5 l\xE2u h\u1ECFng h\u01A1n (th\u1EDDi gian l\xE0m vi\u1EC7c tr\u01B0\u1EDBc khi g\xE3y d\xE0i ra)."
+    },
+    defm: {
+      name: "Ph\xF2ng th\u1EE7 c\u1EADn chi\u1EBFn",
+      short: "Th\u1EE7 c\u1EADn",
+      steps: [10, 5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 140,
+      about: "Gi\u1EA3m s\xE1t th\u01B0\u01A1ng nh\u1EADn t\u1EEB l\xEDnh c\u1EADn chi\u1EBFn."
+    },
+    defr: {
+      name: "Ph\xF2ng th\u1EE7 t\u1EA7m xa",
+      short: "Th\u1EE7 xa",
+      steps: [10, 5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 140,
+      about: "Gi\u1EA3m s\xE1t th\u01B0\u01A1ng nh\u1EADn t\u1EEB l\xEDnh t\u1EA7m xa."
+    },
+    move: {
+      name: "T\u1ED1c \u0111\u1ED9 di chuy\u1EC3n",
+      short: "Ch\u1EA1y",
+      steps: [2.5, 2.5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 1
+      },
+      time: 100,
+      about: "T\u1ED1c \u0111\u1ED9 \u0111i v\xE0 ch\u1EA1y."
+    },
+    work: {
+      name: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c",
+      short: "L\xE0m vi\u1EC7c",
+      steps: [5, 2.5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 2
+      },
+      time: 110,
+      about: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c: khai th\xE1c, x\xE2y, ch\u1EBF t\u1EA1o, nghi\xEAn c\u1EE9u."
+    },
+    int: {
+      name: "Tr\xED tu\u1EC7",
+      short: "Tr\xED tu\u1EC7",
+      steps: [5, 2.5, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 4
+      },
+      time: 130,
+      about: "Tr\xED tu\u1EC7: t\u0103ng t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\xE0 gi\u1EA3m s\u1EE9c ti\xEAu hao khi l\xE0m vi\u1EC7c."
+    },
+    sta: {
+      name: "S\u1EE9c",
+      short: "S\u1EE9c",
+      steps: [8, 4, 2.5, 2.5, 2.5],
+      cost: {
+        food: 10,
+        wood: 10,
+        stone: 5,
+        hide: 1,
+        coin: 5
+      },
+      time: 110,
+      about: "S\u1EE9c b\u1EC1n: l\xE0m vi\u1EC7c v\xE0 chi\u1EBFn \u0111\u1EA5u \u0111\u01B0\u1EE3c l\xE2u."
+    }
+  },
+  roles: {
+    foot: {
+      name: "B\u1ED9 binh",
+      building: "infantry"
+    },
+    cavalry: {
+      name: "K\u1EF5 th\xFA",
+      building: "cavalry"
+    },
+    archer: {
+      name: "Th\u1EE3 n\xE9m",
+      building: "archery"
+    },
+    scout: {
+      name: "Trinh s\xE1t",
+      building: "scouttent"
+    },
+    wood: {
+      name: "\u0110\u1ED1n g\u1ED7",
+      building: "lumberyard"
+    },
+    stone: {
+      name: "Th\u1EE3 \u0111\xE1",
+      building: "quarry"
+    },
+    food: {
+      name: "H\xE1i l\u01B0\u1EE3m",
+      building: "farmhouse"
+    },
+    hunt: {
+      name: "Th\u1EE3 s\u0103n",
+      building: "huntlodge"
+    },
+    build: {
+      name: "Th\u1EE3 x\xE2y",
+      building: "builder"
+    },
+    craft: {
+      name: "Th\u1EE3 ch\u1EBF t\u1EA1o",
+      building: "workshop"
+    },
+    research: {
+      name: "Nh\xE0 nghi\xEAn c\u1EE9u",
+      building: "lab"
+    },
+    tame: {
+      name: "Thu\u1EA7n th\xFA",
+      building: "stable"
+    },
+    club: {
+      name: "G\u1EADy g\u1ED7",
+      weapon: "club"
+    },
+    spear: {
+      name: "Gi\xE1o g\u1ED7",
+      weapon: "spear"
+    },
+    mace: {
+      name: "Ch\xF9y \u0111\xE1",
+      weapon: "mace"
+    },
+    sling: {
+      name: "D\xE2y qu\u0103ng \u0111\xE1",
+      weapon: "sling"
+    },
+    bow: {
+      name: "Cung ng\u1EAFn",
+      weapon: "bow"
+    },
+    basic: {
+      name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n",
+      building: "drill",
+      formation: true,
+      needs: "form_basic"
+    },
+    wedge: {
+      name: "M\u0169i nh\u1ECDn",
+      building: "drill",
+      formation: true,
+      needs: "form_wedge"
+    },
+    horns: {
+      name: "S\u1EEBng b\xF2",
+      building: "drill",
+      formation: true,
+      needs: "form_horns"
+    },
+    scatter: {
+      name: "R\u1EA3i qu\xE2n",
+      building: "drill",
+      formation: true,
+      needs: "form_scatter"
+    },
+    ambush: {
+      name: "Ph\u1EE5c k\xEDch",
+      building: "drill",
+      formation: true,
+      needs: "form_ambush"
+    },
+    axe: {
+      name: "R\xECu",
+      tool: "axe"
+    },
+    pick: {
+      name: "Cu\u1ED1c chim",
+      tool: "pick"
+    },
+    hoe: {
+      name: "Cu\u1ED1c",
+      tool: "hoe"
+    },
+    hammer: {
+      name: "B\xFAa",
+      tool: "hammer"
+    },
+    farm: {
+      name: "N\xF4ng d\xE2n",
+      building: "field"
+    }
+  },
+  tabs: {
+    _note: "Qu\xE2n s\u1EF1 m\u1EDF khi Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EA1t c\u1EA5p needLab; tab V\u0169 kh\xED ch\u1EC9 m\u1EDF khi Qu\xE2n s\u1EF1 \u0111\xE3 m\u1EDF. Hai tab X\xE2y d\u1EF1ng v\xE0 Kinh t\u1EBF m\u1EDF s\u1EB5n.",
+    military: {
+      needLab: 2
+    }
+  },
+  chains: {
+    _note: "M\u1ED7i nh\xF3m l\xE0 m\u1ED9t chu\u1ED7i ch\u1EC9 s\u1ED1 \u0111i t\u1EEB tr\xEAn xu\u1ED1ng d\u01B0\u1EDBi (order). C\u1EA5p n c\u1EE7a m\u1ED9t ch\u1EC9 s\u1ED1 c\u1EA7n ch\u1EC9 s\u1ED1 ngay ph\xEDa tr\xEAn \u0111\u1EA1t c\u1EA5p n; ch\u1EC9 s\u1ED1 \u0111\u1EA7u chu\u1ED7i c\u1EA5p n c\u1EA7n ch\u1EC9 s\u1ED1 cu\u1ED1i chu\u1ED7i \u0111\u1EA1t c\u1EA5p n-1. Qu\xE2n s\u1EF1: M\xE1u, Th\u1EE7 c\u1EADn, Th\u1EE7 xa, Ch\u1EA1y, S\xE1t th\u01B0\u01A1ng, S\u1EE9c. C\xF4ng c\u1EE5 (tab C\xF4ng c\u1EE5 b\u1EADc 1): m\u1ED7i C\xD4NG C\u1EE4 (r\xECu, cu\u1ED1c chim, cu\u1ED1c, b\xFAa) m\u1ED9t c\u1ED9t T\u1ED1c \u0111\u1ED9, S\u1EA3n l\u01B0\u1EE3ng (kh\xF4ng c\xF3 \u1EDF b\xFAa), \u0110\u1ED9 b\u1EC1n; ai c\u1EA7m c\xF4ng c\u1EE5 \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng, b\u1EADc c\u1EE7a c\xF4ng c\u1EE5 (g\u1ED7, \u0111\xE1) do c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. Tr\u1EADn ph\xE1p (tab Chi\u1EBFn \u0111\u1EA5u, nh\xE1nh Ch\u1EC9 s\u1ED1 tr\u1EADn ph\xE1p): m\u1ED7i tr\u1EADn (c\u01A1 b\u1EA3n g\u1ED3m H\xE0ng ngang v\xE0 V\xF2ng tr\xF2n) m\u1ED9t c\u1ED9t, c\xF9ng chu\u1ED7i ch\u1EC9 s\u1ED1 qu\xE2n, chia l\xE0m hai \u0111o\u1EA1n (layout) v\u1EDBi \xF4 tr\u1EADn ph\xE1p \u1EDF gi\u1EEFa v\xE0 m\u1EDF r\u1ED9ng \u0111\u1ED9i \u1EDF cu\u1ED1i; gates: ch\u1EC9 s\u1ED1 n\xE0y c\u1EA5p 1 c\u1EA7n nghi\xEAn c\u1EE9u \u0111\xF3; l\xEDnh \u0111\u1EE9ng trong \u0111\u1ED9i \u0111ang d\xF9ng tr\u1EADn \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng th\xEAm, v\xE0 m\u1ED7i b\u01B0\u1EDBc ch\u1EC9 \u0111\u01B0\u1EE3c scale (0,5) l\u1EA7n ph\u1EA7n c\u1EE7a Qu\xE2n s\u1EF1; m\u1ED7i tr\u1EADn ch\u1EC9 nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c khi \u0111\xE3 m\u1EDF tr\u1EADn (needs). V\u0169 kh\xED (tab V\u0169 kh\xED b\u1EADc 1): m\u1ED7i V\u0168 KH\xCD (kh\xF4ng ph\u1EA3i m\u1ED7i vai tr\xF2) m\u1ED9t c\u1ED9t T\u1ED1c \u0111\u1ED9 \u0111\xE1nh, T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng, S\xE1t th\u01B0\u01A1ng ch\xED m\u1EA1ng (hai ch\u1EC9 s\u1ED1 n\xE0y t\xEDnh b\u1EB1ng % th\u1EADt: 0,5% x\xE1c su\u1EA5t; 400% l\xE0 g\u1EA5p 4 l\u1EA7n \u0111\xF2n th\u01B0\u1EDDng); ai c\u1EA7m v\u0169 kh\xED \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng ch\u1EC9 s\u1ED1 c\u1EE7a n\xF3; khi c\u1EA3 ba ch\u1EC9 s\u1ED1 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a th\xEC m\u1EDF v\u0169 kh\xED b\u1EADc 2 c\u1EE7a v\u0169 kh\xED \u0111\xF3 (finalTier): s\xE1t th\u01B0\u01A1ng g\u1ED1c c\u1EE7a v\u0169 kh\xED nh\xE2n rules.tierMult trong weapons.json, cho m\u1ECDi ng\u01B0\u1EDDi c\u1EA7m v\u0169 kh\xED \u0111\xF3. Kinh t\u1EBF (ngh\u1EC1): Ch\u1EA1y, L\xE0m vi\u1EC7c, S\u1EE9c, Tr\xED tu\u1EC7. Ph\xE1t tri\u1EC3n (th\u1EE3 x\xE2y, th\u1EE3 ch\u1EBF t\u1EA1o, nh\xE0 nghi\xEAn c\u1EE9u): L\xE0m vi\u1EC7c, S\u1EE9c, Tr\xED tu\u1EC7 (Tr\xED tu\u1EC7 \u1EDF cu\u1ED1i v\xEC n\xF3 c\u0169ng t\u0103ng t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\xE0 gi\u1EA3m s\u1EE9c ti\xEAu hao khi l\xE0m vi\u1EC7c). finalTier: \xF4 cu\u1ED1i c\u1ED9t, m\u1EDF b\u1EADc 2 khi m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a vai tr\xF2 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a; c\xF3 \u1EDF Qu\xE2n s\u1EF1, Kinh t\u1EBF, Ph\xE1t tri\u1EC3n v\xE0 V\u0169 kh\xED. B\u1EADc 2 nh\xE2n m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a c\u1EA3 vai tr\xF2 theo tierMult trong stats.json.",
+    military: {
+      roles: ["foot", "cavalry", "archer", "scout"],
+      order: ["hp", "defm", "defr", "move", "atk", "sta"],
+      finalTier: {
+        tier: 2,
+        roles: ["foot", "cavalry", "archer", "scout"],
+        needLab: 3,
+        cost: {
+          food: 200,
+          wood: 120,
+          hide: 20,
+          coin: 20
+        },
+        time: 1200
+      }
+    },
+    weapon: {
+      roles: ["club", "spear", "mace", "sling", "bow"],
+      order: ["aspd", "crit", "critd"],
+      finalTier: {
+        tier: 2,
+        roles: ["club", "spear", "mace", "sling", "bow"],
+        needLab: 3,
+        cost: { wood: 100, stone: 60, hide: 10, coin: 15 },
+        time: 900
+      }
+    },
+    formation: {
+      roles: ["basic", "wedge", "horns", "scatter", "ambush"],
+      order: ["hp", "defm", "defr", "move", "atk", "sta"],
+      scale: 0.5,
+      gates: { move: "form_cells_10" },
+      layout: [
+        { stats: ["hp", "defm", "defr"] },
+        { techs: ["form_cells_10", "form_squads_5"] },
+        { stats: ["move", "atk", "sta"] },
+        { techs: ["form_cells_15", "form_squads_6"] }
+      ]
+    },
+    tool: {
+      roles: ["axe", "pick", "hoe"],
+      order: ["tspd", "tyield", "tdur"]
+    },
+    hammer: {
+      roles: ["hammer"],
+      order: ["tspd", "tdur"]
+    },
+    economy: {
+      roles: ["wood", "stone", "food", "hunt", "farm", "tame"],
+      order: ["move", "work", "sta", "int"],
+      finalTier: {
+        tier: 2,
+        roles: ["wood", "stone", "food", "hunt", "farm", "tame"],
+        needLab: 3,
+        cost: { food: 150, wood: 100, stone: 40, coin: 15 },
+        time: 1e3
+      }
+    },
+    development: {
+      roles: ["build", "craft", "research"],
+      order: ["work", "sta", "int"],
+      finalTier: {
+        tier: 2,
+        roles: ["build", "craft", "research"],
+        needLab: 3,
+        cost: { wood: 100, stone: 60, hide: 10, coin: 20 },
+        time: 1e3
+      }
+    }
+  }
+};
+
+// src/sim/research.ts
+var RESEARCH = { enabled: research_default.enabled };
+var RECIPE_LEVEL = research_default.recipeLevel;
+var recipeNeedLevel = (id) => RECIPE_LEVEL[id] ?? 1;
+var TECHS = research_default.techs;
+for (const t of TECHS) t.needLevel = labLevelOf(t.id);
+var TECH_BY_ID = Object.fromEntries(TECHS.map((t) => [t.id, t]));
+var STAT_IDS = Object.keys(researchtree_default.stats);
+var STAT_DEF = researchtree_default.stats;
+var TREE_ROLES = researchtree_default.roles;
+var statLevels = (stat) => STAT_DEF[stat].steps.length;
+var labNeeded = (stat, n) => {
+  const t = STAT_DEF[stat].tiers ?? researchtree_default.tiers;
+  return t[Math.min(n, t.length) - 1];
+};
+var TREE_TABS = researchtree_default.tabs;
+var CHAINS = Object.fromEntries(Object.entries(researchtree_default.chains).filter(([, c]) => typeof c !== "string"));
+var ROLE_SCALE = {};
+for (const c of Object.values(CHAINS)) if (c.scale !== void 0) for (const r of c.roles) ROLE_SCALE[r] = c.scale;
+var statTechId = (role, stat, n) => `${role}_${stat}_${n}`;
+var STAT_TECHS = [];
+for (const def of Object.values(CHAINS)) for (const role of def.roles) for (const stat of def.order) {
+  const s = STAT_DEF[stat], chain = def.order, at = chain.indexOf(stat);
+  for (let n = 1; n <= statLevels(stat); n++) {
+    const cost = {};
+    for (const [res, amount] of Object.entries(s.cost)) cost[res] = Math.max(1, Math.round(amount * researchtree_default.growth.cost ** (n - 1)));
+    cost.coin = (cost.coin ?? 0) + Math.floor(n / 2);
+    const t = {
+      id: statTechId(role, stat, n),
+      name: `${s.name} \xB7 ${TREE_ROLES[role].name} ${n}`,
+      desc: `${s.about} C\u1ED9ng ${s.steps[n - 1] * (ROLE_SCALE[role] ?? 1)}% cho ${TREE_ROLES[role].formation ? "l\xEDnh \u0111\u1EE9ng trong tr\u1EADn " : ""}${TREE_ROLES[role].name.toLowerCase()}.`,
+      requires: [...n > 1 ? [statTechId(role, stat, n - 1)] : at === 0 && TREE_ROLES[role].needs ? [TREE_ROLES[role].needs] : [], ...n === 1 && def.gates?.[stat] ? [def.gates[stat]] : [], ...chain && at > 0 ? [statTechId(role, chain[at - 1], Math.min(n, statLevels(chain[at - 1])))] : [], ...chain && at === 0 && n > 1 ? [statTechId(role, chain[chain.length - 1], Math.min(n - 1, statLevels(chain[chain.length - 1])))] : []],
+      needLevel: labNeeded(stat, n),
+      cost,
+      time: Math.round(s.time * researchtree_default.growth.time ** (n - 1)),
+      unlocks: { bonus: { role, stat, pct: s.steps[n - 1] * (ROLE_SCALE[role] ?? 1) } }
+    };
+    STAT_TECHS.push(t);
+    TECH_BY_ID[t.id] = t;
+  }
+}
+var tierTechId = (role, tier) => `${role}_tier${tier}`;
+var TIER_TECH_OF = {};
+for (const c of Object.values(CHAINS)) {
+  if (!c.finalTier) continue;
+  const ft = c.finalTier;
+  for (const role of ft.roles) {
+    const t = {
+      id: tierTechId(role, ft.tier),
+      name: `${TREE_ROLES[role].name} b\u1EADc ${ft.tier}`,
+      desc: TREE_ROLES[role].weapon ? `M\u1EDF ${TREE_ROLES[role].name.toLowerCase()} b\u1EADc ${ft.tier}: m\u1ECDi ng\u01B0\u1EDDi c\u1EA7m n\xF3 g\xE2y s\xE1t th\u01B0\u01A1ng nhi\u1EC1u h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EE7 m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a v\u0169 kh\xED n\xE0y.` : `M\u1EDF b\u1EADc ${ft.tier} c\u1EE7a ${TREE_ROLES[role].name.toLowerCase()}: m\u1ECDi ng\u01B0\u1EDDi l\xE0m vai tr\xF2 n\xE0y m\u1EA1nh h\u01A1n ngay. C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EE7 m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a h\u1ECD.`,
+      requires: c.order.map((stat) => statTechId(role, stat, statLevels(stat))),
+      needLevel: ft.needLab,
+      cost: ft.cost,
+      time: ft.time,
+      unlocks: { tier: { role, tier: ft.tier } }
+    };
+    STAT_TECHS.push(t);
+    TECH_BY_ID[t.id] = t;
+    TIER_TECH_OF[role] = t;
+  }
+}
+var soldierTier = (done, role) => {
+  let n = 1;
+  for (let k = 2; k <= 6; k++) if (done.has(tierTechId(role, k))) n = k;
+  return n;
+};
+function lineLevel(done, role, stat) {
+  let n = 0;
+  while (n < statLevels(stat) && done.has(statTechId(role, stat, n + 1))) n++;
+  return n;
+}
+var statBonus = (done, role, stat) => STAT_DEF[stat].steps.slice(0, lineLevel(done, role, stat)).reduce((a, b) => a + b, 0) * (ROLE_SCALE[role] ?? 1);
+var NO_BLUEPRINT = /^(club|spear|mace|sling|bow|hide|axe|pick|hoe|hammer|torch)\d$/;
+var recipeOpen = (done, recipeId) => !RESEARCH.enabled || NO_BLUEPRINT.test(recipeId) || done.has(recipeId);
+var techForRecipe = (recipeId) => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
+var unlockedMax = (done, key, base) => TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks[key] ?? 0) : m, base);
+var levelCap = (done, kind) => !RESEARCH.enabled || kind === "campfire" ? Infinity : TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks.levels?.[kind] ?? 1) : m, 1);
+var techForLevel = (kind, level) => TECHS.find((t) => (t.unlocks.levels?.[kind] ?? 0) >= level);
+var techForBuilding = (kind) => TECHS.find((t) => t.unlocks.buildings?.includes(kind));
+var buildingOpen = (done, kind) => {
+  const t = techForBuilding(kind);
+  return !RESEARCH.enabled || !t || done.has(t.id);
+};
+var autoOn = (done, key) => !RESEARCH.enabled || TECHS.some((t) => done.has(t.id) && t.unlocks.auto?.includes(key));
+
+// src/sim/statsys.ts
+var BASE = stats_default.base;
+var IDS = Object.keys(stats_default.base);
+var TIER_MULT = stats_default.tierMult;
+var L = stats_default.legacy;
+function rollFactors(r) {
+  const w = stats_default.stars.weights, total = w.reduce((a, b) => a + b, 0);
+  let x = r() * total, stars2 = 1;
+  for (let i = 0; i < w.length; i++) {
+    x -= w[i];
+    if (x <= 0) {
+      stars2 = i + 1;
+      break;
+    }
+    stars2 = i + 1;
+  }
+  const budget = IDS.length * (stats_default.stars.budgetBase + stats_default.stars.budgetPerStar * stars2), { min, max } = stats_default.stars;
+  let f = IDS.map(() => 1 - stats_default.stars.spread / 2 + r() * stats_default.stars.spread);
+  for (let k = 0; k < 8; k++) {
+    const s = f.reduce((a, b) => a + b, 0);
+    f = f.map((v) => Math.max(min, Math.min(max, v * budget / s)));
+  }
+  return { stars: stars2, fac: Object.fromEntries(IDS.map((id, i) => [id, f[i]])) };
+}
+function treeRole(v) {
+  const r = roleOf(v);
+  if (r) return r;
+  switch (v.job) {
+    case "build":
+      return "build";
+    case "craft":
+      return "craft";
+    case "research":
+      return "research";
+    case "tame":
+      return "tame";
+    case "food":
+      return "farm";
+    default:
+      return null;
+  }
+}
+function statValue(sim2, v, stat) {
+  const role = v.team === "player" ? treeRole(v) : null;
+  const tier = role && TREE_ROLES[role] ? soldierTier(sim2.researched, role) : 1;
+  const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
+  const squad = v.team === "player" && v.squad >= 0 ? sim2.squads.find((q) => q.id === v.squad) : void 0;
+  const bonus = (role ? statBonus(sim2.researched, role, stat) : 0) + (squad ? statBonus(sim2.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ""), stat) : 0);
+  return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + bonus / 100);
+}
+var rawValue = (fac, stat) => BASE[stat] * fac[stat];
+function legacyStats(value) {
+  return {
+    vit: (value("hp") - L.hpBase) / L.hpPerVit,
+    str: value("atk") * L.atkToDamage / L.strengthDamage,
+    agi: (value("move") - L.speedBase) / L.speedPerAgi,
+    sta: value("sta") * L.staScale
+  };
+}
+function applyStats(sim2, v) {
+  if (v.team !== "player") return;
+  const val = (s) => statValue(sim2, v, s), l = legacyStats(val);
+  v.stats.vit = l.vit;
+  v.stats.str = l.str;
+  v.stats.agi = l.agi;
+  v.stats.sta = l.sta;
+  const hp = Math.round(val("hp"));
+  if (hp !== v.maxHealth) {
+    const ratio = v.maxHealth > 0 ? v.health / v.maxHealth : 1;
+    v.maxHealth = hp;
+    v.health = Math.min(hp, hp * ratio);
+  }
+  if (v.squad < 0 && !v.mount) v.speed = val("move");
+}
+function guardCut(sim2, v, ranged) {
+  const d = statValue(sim2, v, ranged ? "defr" : "defm");
+  return d / (d + stats_default.defense.k);
+}
+function workSpeed(sim2, v) {
+  return statValue(sim2, v, "work") * (1 + stats_default.intEffect.work * (statValue(sim2, v, "int") / BASE.int - 1));
+}
+function drainScale(sim2, v) {
+  const reserve = Math.max(0.3, statValue(sim2, v, "sta") / stats_default.staDrainRef), spare = Math.max(0.4, 1 + stats_default.intEffect.drain * (statValue(sim2, v, "int") / BASE.int - 1));
+  return 1 / (reserve * spare);
+}
+function weaponDamage(sim2, v, w) {
+  if (v.team !== "player") return w.damage;
+  const tier = soldierTier(sim2.researched, w.id);
+  return tier > 1 ? w.damage * (RULES.tierMult[String(tier)]?.damage ?? 1) : w.damage;
+}
+function toolBonus(sim2, v, job, stat) {
+  const kind = TOOL_OF_JOB[job], tool = kind ? v.tools[kind] : null;
+  return v.team === "player" && kind && tool && tool.dur > 0 ? statBonus(sim2.researched, kind, stat) : 0;
+}
+var weaponBonus = (sim2, v, w, stat) => v.team === "player" ? statBonus(sim2.researched, w.id, stat) : 0;
+var swingCycle = (sim2, v, w) => cycleOf(w.cycle, v.stats.agi) / (1 + weaponBonus(sim2, v, w, "aspd") / 100);
+var critChance = (sim2, v, w) => Math.min((w.crit ?? 0) + weaponBonus(sim2, v, w, "crit") / 100, RULES.critMax);
+var critMult = (sim2, v, w) => (w.critDamage ?? RULES.critDamage) + weaponBonus(sim2, v, w, "critd") / 100;
+
 // src/sim/battle.ts
 var ANIM = anims_default;
 function swingTimes(anim) {
@@ -24004,7 +28060,7 @@ function resolve(sim2, t) {
   return a && a.state !== "dead" ? { kind: "animal", a } : null;
 }
 var effWeapon = (v) => v.team === "player" && v.gear.wb && v.gear.w === v.weapon ? null : v.weapon;
-var armOf = (v) => v.team === "player" && v.job === "fight" && v.arm === "cavalry" ? "cavalry" : armOfWeapon(effWeapon(v));
+var armOf = (v) => v.team === "player" && v.job === "fight" && (v.arm === "cavalry" || v.mount) ? "cavalry" : armOfWeapon(effWeapon(v));
 var weaponOf = (v) => WEAPONS[effWeapon(v) ?? "fist"] ?? WEAPONS.fist;
 var armorOf = (v) => v.armor && !(v.team === "player" && v.gear.ab && v.gear.a === v.armor) ? ARMORS[v.armor] ?? null : null;
 function canSee(sim2, v, x, y) {
@@ -24073,7 +28129,8 @@ function hurt(sim2, target, dmg, type, from, src) {
   const v = sim2.get(target.id);
   if (!v || v.health <= 0) return;
   if (sim2.dev.god && v.team === "player") return;
-  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === "player" ? sim2.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) : 1);
+  const missile = !!src.unit && weaponOf(src.unit).ranged === true;
+  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (1 - guardCut(sim2, v, missile)) * (v.team === "player" ? sim2.takenFactor(v, missile) * sim2.mountGuard(v) : 1);
   v.health -= final;
   v.calm = 0;
   v.flinch = 0.3;
@@ -24104,11 +28161,15 @@ function moraleShock(sim2, who, amount) {
 function startSwing(sim2, v, target) {
   const w = weaponOf(v), { hitAt, end } = swingTimes(w.anim);
   v.swing = { t: 0, hitAt, end, target };
-  v.atkCd = cycleOf(w.cycle, v.stats.agi);
+  v.atkCd = swingCycle(sim2, v, w);
   v.anim = w.anim;
   v.animClock = 0;
   const e = resolve(sim2, target);
   if (e) v.facing = entX(e) >= v.x ? "right" : "left";
+}
+function critRoll(sim2, v, w) {
+  const c = critChance(sim2, v, w);
+  return c > 0 && sim2.frnd() < c ? critMult(sim2, v, w) : 1;
 }
 function armMultiplier(attacker, e) {
   return e.kind === "unit" ? matchup(armOf(attacker), armOf(e.v), effWeapon(attacker)) : 1;
@@ -24116,7 +28177,7 @@ function armMultiplier(attacker, e) {
 function fireProjectile(sim2, v, e, from, mult, rangeBonus) {
   const w = weaponOf(v), tx = entX(e), ty = entY(e), d = Math.hypot(tx - from.x, ty - from.y);
   if (d > w.range + rangeBonus + 1 || !canSee(sim2, v, tx, ty)) return false;
-  const shot = w.damage * clampTactical(armMultiplier(v, e) * mult * sim2.attackFactor(v, e)) * WEATHER[sim2.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
+  const shot = (weaponDamage(sim2, v, w) + RULES.strengthDamage * v.stats.str) * critRoll(sim2, v, w) * clampTactical(armMultiplier(v, e) * mult * sim2.attackFactor(v, e)) * WEATHER[sim2.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
   if (v.inside !== null) sim2.noteBattle("shot");
   const target = e.kind === "unit" ? { kind: "unit", id: e.v.id } : { kind: "animal", id: e.a.id };
   sim2.projectiles.push({ x: from.x, y: from.y - 0.4, tx, ty, speed: 14, dmg: shot, type: w.type, from, src: v.id, team: v.team, target, chance: d <= (w.range + rangeBonus) / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? "stone" });
@@ -24135,7 +28196,7 @@ function resolveSwing(sim2, v, target) {
   let behind = false;
   if (e.kind === "unit") behind = e.v.facing === "right" && v.x < e.v.x || e.v.facing === "left" && v.x > e.v.x;
   else behind = e.a.dir === 1 && v.x < e.a.x || e.a.dir === -1 && v.x > e.a.x;
-  hurt(sim2, target, damageOf(w, v.stats.str, null, behind) * clampTactical(arm * sim2.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
+  hurt(sim2, target, damageOf({ ...w, damage: weaponDamage(sim2, v, w) }, v.stats.str, null, behind) * critRoll(sim2, v, w) * clampTactical(arm * sim2.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
   if (v.weapon) sim2.wearGear(v, "weapon");
 }
 function tickProjectiles(sim2, dt) {
@@ -24208,7 +28269,8 @@ function brainPlayer(sim2, v, dt) {
   const scanNow = v.fight.scan <= 0;
   if (scanNow) v.fight.scan = 0.35;
   const looking = scanNow || v.phase === "flee" || v.phase === "fight" && (!v.fight.target || v.morale < MORALE.flee);
-  const threats = looking ? threatsOf(sim2, v, SIGHT + 2) : [];
+  const sight = v.team === "player" ? sim2.sightOf(v) : SIGHT;
+  const threats = looking ? threatsOf(sim2, v, sight + 1) : [];
   if (rest) {
     if (scanNow && threats.length && threats[0].d < 7) {
       if (isFighter(v)) v.nightOwl = true;
@@ -24216,6 +28278,7 @@ function brainPlayer(sim2, v, dt) {
     } else return false;
   }
   if (v.phase === "flee" || v.fleeT > 0 || v.morale < MORALE.flee && threats.length) return fleeBrain(sim2, v, dt, threats);
+  if (v.breaks && sim2.breakBrain(v, dt)) return true;
   const fighter = isFighter(v);
   if (!fighter) {
     if (threats.length && threats[0].d < 6 && v.phase !== "fight") {
@@ -24310,7 +28373,7 @@ function fightBrain(sim2, v, dt, threats) {
   const f = v.fight;
   if (v.phase === "skin" || v.phase === "goCarcass") return huntBrain(sim2, v, dt, threats);
   if (f.mode === "hold" && !f.anchor) f.anchor = { x: v.x, y: v.y };
-  if (!threats.length && !f.target && v.phase !== "fight" && (sim2.planGearRepair(v) || sim2.planEquipGear(v) || sim2.planGearErrand(v))) return true;
+  if (!threats.length && !f.target && v.phase !== "fight" && (sim2.planEquipGear(v) || sim2.planGearErrand(v))) return true;
   if (v.stance === "retreat" && f.mode !== "attack" && f.target) f.target = null;
   if (f.target) {
     const e = resolve(sim2, f.target);
@@ -24344,7 +28407,7 @@ function fightBrain(sim2, v, dt, threats) {
       return true;
     }
   } else if (threats.length && f.scan >= 0) {
-    const range = f.mode === "hold" ? weaponOf(v).range + 1.5 : v.stance === "defensive" ? DEFENSIVE : SIGHT;
+    const range = f.mode === "hold" ? weaponOf(v).range + 1.5 : v.stance === "defensive" ? Math.min(DEFENSIVE, sim2.sightOf(v)) : sim2.sightOf(v);
     const pick = threats.find((t) => t.d <= range && (!f.anchor || v.stance !== "defensive" || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
     if (pick) {
       f.target = pick.t;
@@ -24366,7 +28429,7 @@ function fightBrain(sim2, v, dt, threats) {
     } else {
       if (!v.path.length && sim2.pathLeft > 0) {
         sim2.pathLeft--;
-        v.path = sim2.pathTo(v, Math.floor(f.dest.x), Math.floor(f.dest.y), 2e4);
+        v.path = f.strict ? sim2.lineSteps(v, f.dest.x, f.dest.y) : sim2.pathTo(v, Math.floor(f.dest.x), Math.floor(f.dest.y), 2e4);
       }
       v.phase = "move";
       return true;
@@ -24480,7 +28543,7 @@ function huntBrain(sim2, v, dt, threats) {
   }
   if (!threats.length) {
     let prey = null;
-    bd = 40;
+    bd = 70;
     for (const a of sim2.animals) {
       const def = animalDef(a);
       if (a.state === "dead" || !def.prey || sim2.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
@@ -24504,6 +28567,19 @@ function huntBrain(sim2, v, dt, threats) {
   if (v.phase === "fight") {
     v.phase = "idle";
     v.path = [];
+  }
+  const lodge = sim2.building("huntlodge") ?? sim2.campfire(), step3 = Math.floor(sim2.time / 8);
+  if (lodge) {
+    const ang = hash2(v.id, step3, 71) * Math.PI * 2, rad3 = 10 + hash2(v.id, step3, 72) * 26;
+    const gx = Math.floor(lodge.x + Math.cos(ang) * rad3), gy = Math.floor(lodge.y + Math.sin(ang) * rad3);
+    if (sim2.world.inBounds(gx, gy) && sim2.fog.state[gy * N + gx] > 0) {
+      const path = sim2.pathTo(v, gx, gy, 2500);
+      if (path.length) {
+        v.path = path;
+        v.phase = "move";
+        return true;
+      }
+    }
   }
   sim2.wait(v, 2);
   return true;
@@ -24574,9 +28650,9 @@ function spawnTribe(sim2, id) {
     w.decor[i] = 0;
   }
   const props = [
-    { x: cx, y: cy, w: 2, h: 2, kind: "fire" },
-    { x: cx - 5, y: cy - 1, w: 2, h: 2, kind: "pile" },
-    { x: cx + 4, y: cy + 1, w: 2, h: 2, kind: "pile" }
+    { x: cx, y: cy, w: 2, h: 2, kind: "fire", hp: SIEGE.propHp.fire },
+    { x: cx - 5, y: cy - 1, w: 2, h: 2, kind: "pile", hp: SIEGE.propHp.pile },
+    { x: cx + 4, y: cy + 1, w: 2, h: 2, kind: "pile", hp: SIEGE.propHp.pile }
   ];
   for (const p of props) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) w.occ[(p.y + j) * N + p.x + i] = 1;
   const power = ringPower(ringOf(Math.hypot(cx - s.x, cy - s.y)));
@@ -24745,6 +28821,7 @@ function tickTribes(sim2, dt) {
   }
 }
 function checkSurrender(sim2, t) {
+  if (sim2.plans.some((p) => p.kind === "attack" && p.status === "running" && p.tribe === t.id)) return;
   const units = t.unitIds.map((u) => sim2.get(u)).filter(Boolean), warriors = units.filter((u) => u.ai?.role !== "civ");
   if (SURRENDER.leaderDown && t.leaderId >= 0 && !t.unitIds.includes(t.leaderId) && units.length) return surrender(sim2, t, "Th\u1EE7 l\u0129nh \u0111\xE3 g\u1EE5c");
   const intruders = sim2.villagers.filter((v) => v.health > 0 && v.down <= 0 && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 5).length;
@@ -24915,7 +28992,7 @@ function noteStuck(sim2, f, ai, dt, blocked) {
   }
   ai.stuck = (ai.stuck ?? 0) + dt;
   if (ai.stuck < 3) return;
-  const wall = sim2.nearestWork(f.x, f.y, 16);
+  const wall = sim2.nearestWork(f.x, f.y, 16) ?? sim2.nearestWork(f.x, f.y, 4, true);
   ai.stuck = 0;
   if (wall) ai.siege = wall.id;
 }
@@ -25053,147 +29130,11 @@ function foeBrain(sim2, f, t, ai, dt) {
   void DAY_LENGTH;
 }
 
-// src/data/pace.json
-var pace_default = {
-  _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
-  gather: { wood: 11, stone: 17, food: 6, farm: 70 },
-  bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
-  outdoor: ["wood", "stone", "food", "build"]
-};
-
-// src/sim/jobs.ts
-var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", int: "Tr\xED tu\u1EC7", sta: "Th\u1EC3 l\u1EF1c" };
-var JOBS = {
-  wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
-  stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
-  food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: pace_default.gather.food, anim: "gather" },
-  build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
-  craft: { name: "Ch\u1EBF t\u1EA1o", stat: "int", baseTime: 1, anim: "craft" },
-  research: { name: "Nghi\xEAn c\u1EE9u", stat: "int", baseTime: 1, anim: "gather" },
-  repair: { name: "S\u1EEDa ch\u1EEFa", stat: "agi", baseTime: 1, anim: "craft" },
-  hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
-  fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
-};
-var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", repair: "S\u1EEDa ch\u1EEFa", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh", scout: "Trinh s\xE1t" };
-var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "repair", "hunt", "fight"];
-var ROLES = {
-  wood: { job: "wood", building: "lumberyard", names: { stone: "\u0110\u1ED1n g\u1ED7", ancient: "Ti\u1EC1u phu" } },
-  stone: { job: "stone", building: "quarry", names: { stone: "Th\u1EE3 \u0111\xE1", ancient: "Th\u1EE3 m\u1ECF" } },
-  food: { job: "food", building: "farmhouse", names: { stone: "H\xE1i l\u01B0\u1EE3m", ancient: "N\xF4ng d\xE2n" } },
-  hunt: { job: "hunt", building: "huntlodge", names: { stone: "Th\u1EE3 s\u0103n", ancient: "Th\u1EE3 s\u0103n" } },
-  foot: { job: "fight", arm: "foot", building: "infantry", names: { stone: "Chi\u1EBFn binh", ancient: "B\u1ED9 binh" } },
-  cavalry: { job: "fight", arm: "cavalry", building: "cavalry", names: { stone: "K\u1EF5 th\xFA", ancient: "K\u1EF5 binh" } },
-  archer: { job: "fight", arm: "archer", building: "archery", names: { stone: "Th\u1EE3 n\xE9m", ancient: "Cung th\u1EE7" } },
-  scout: { job: "scout", building: "scouttent", names: { stone: "Trinh s\xE1t", ancient: "Trinh s\xE1t" } }
-};
-var ROLE_IDS = Object.keys(ROLES);
-var roleName = (role, era) => ROLES[role].names[era];
-function roleOf(v) {
-  switch (v.job) {
-    case "fight":
-      return v.arm === "archer" ? "archer" : v.arm === "cavalry" ? "cavalry" : "foot";
-    case "food":
-      return v.post < 0 ? "food" : null;
-    case "wood":
-    case "stone":
-    case "hunt":
-    case "scout":
-      return v.job;
-    default:
-      return null;
-  }
-}
-var STAFF_BUILDING = { craft: "workshop", research: "lab", repair: "repair" };
-var isStaffJob = (j) => j in STAFF_BUILDING;
-var FARM_TIME = pace_default.gather.farm;
-var XP_LEVELS = [60, 150, 300, 500, 800];
-var MAX_LEVEL = 5;
-var CREW_BUILDING = { build: "builder" };
-var BARE_HANDS = pace_default.bare;
-var OUTDOOR_JOBS = pace_default.outdoor;
-
-// src/data/research.json
-var research_default = {
-  enabled: true,
-  _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Every tool, weapon and armour has ONE blueprint that is raised step by step (tech id = recipe id: axe1 is the wood axe, axe2 the stone one); a recipe can only be made once its blueprint step is researched and the Nh\xE0 ch\u1EBF t\u1EA1o is high enough (recipeLevel). cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, levels (highest level per building kind), buildings (kinds that may be built), auto (fetch: villagers fetch tools from the stores; order: villagers order crafting and repair themselves). Set enabled to false to open everything.",
-  recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1, sling1: 1, bow1: 2 },
-  techs: [
-    { id: "hammer1", name: "B\u1EA3n v\u1EBD B\xFAa g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo b\xFAa g\u1ED7 \u0111\u1EC3 d\u1EF1ng nh\xE0 nhanh h\u01A1n.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["hammer1"] } },
-    { id: "axe1", name: "B\u1EA3n v\u1EBD R\xECu g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo r\xECu g\u1ED7 \u0111\u1EC3 \u0111\u1ED1n c\xE2y.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 150, unlocks: { recipes: ["axe1"] } },
-    { id: "pick1", name: "B\u1EA3n v\u1EBD Cu\u1ED1c chim g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo cu\u1ED1c chim g\u1ED7 \u0111\u1EC3 \u0111\u1EE5c \u0111\xE1.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 160, unlocks: { recipes: ["pick1"] } },
-    { id: "hoe1", name: "B\u1EA3n v\u1EBD Cu\u1ED1c g\u1ED7", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo cu\u1ED1c g\u1ED7 \u0111\u1EC3 h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7.", requires: [], needLevel: 1, minInt: 4, cost: { wood: 6, coin: 2 }, time: 140, unlocks: { recipes: ["hoe1"] } },
-    { id: "torch1", name: "B\u1EA3n v\u1EBD \u0110u\u1ED1c", desc: "Qu\u1EA5n nh\u1EF1a v\xE0 c\xE0nh kh\xF4 th\xE0nh \u0111u\u1ED1c \u0111\u1EC3 l\xE0m vi\u1EC7c \u0111\u01B0\u1EE3c ban \u0111\xEAm.", requires: [], needLevel: 1, minInt: 3, cost: { wood: 4, coin: 1 }, time: 120, unlocks: { recipes: ["torch1"] } },
-    { id: "club1", name: "B\u1EA3n v\u1EBD G\u1EADy chi\u1EBFn", desc: "V\u1EBD c\xE1ch \u0111\u1EBDo g\u1EADy chi\u1EBFn \u0111\u1EC3 t\u1EF1 v\u1EC7 v\xE0 \u0111i s\u0103n.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 180, unlocks: { recipes: ["club1"] } },
-    { id: "hide1", name: "B\u1EA3n v\u1EBD \xC1o da", desc: "V\u1EBD c\xE1ch kh\xE2u da th\xFA th\xE0nh \xE1o gi\xE1p.", requires: ["axe1"], needLevel: 1, minInt: 6, cost: { hide: 4, coin: 4 }, time: 240, unlocks: { recipes: ["hide1"] } },
-    { id: "spear1", name: "B\u1EA3n v\u1EBD Gi\xE1o v\xF3t nh\u1ECDn", desc: "V\u1EBD c\xE1ch v\xF3t gi\xE1o c\xF3 t\u1EA7m \u0111\xE2m xa h\u01A1n g\u1EADy.", requires: ["club1"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 5 }, time: 320, unlocks: { recipes: ["spear1"] } },
-    { id: "sling1", name: "B\u1EA3n v\u1EBD D\xE2y qu\u0103ng \u0111\xE1", desc: "V\u1EBD c\xE1ch b\u1EC7n d\xE2y qu\u0103ng \u0111\xE1: cung th\u1EE7 t\u1EA7m ng\u1EAFn, b\u1EAFn t\u1EEB xa.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 200, unlocks: { recipes: ["sling1"] } },
-    { id: "bow1", name: "B\u1EA3n v\u1EBD Cung ng\u1EAFn", desc: "V\u1EBD c\xE1ch u\u1ED1n cung v\xE0 v\xF3t t\xEAn: cung th\u1EE7 t\u1EA7m xa.", requires: ["sling1", "spear1"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 5 }, time: 320, unlocks: { recipes: ["bow1"] } },
-    { id: "axe2", name: "B\u1EA3n v\u1EBD R\xECu \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD R\xECu l\xEAn c\u1EA5p 2: l\u01B0\u1EE1i \u0111\xE1 b\u1EC1n v\xE0 nhanh h\u01A1n g\u1ED7.", requires: ["axe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 380, unlocks: { recipes: ["axe2"] } },
-    { id: "pick2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c chim \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c chim l\xEAn c\u1EA5p 2.", requires: ["pick1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 380, unlocks: { recipes: ["pick2"] } },
-    { id: "hoe2", name: "B\u1EA3n v\u1EBD Cu\u1ED1c \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD Cu\u1ED1c l\xEAn c\u1EA5p 2.", requires: ["hoe1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 10, coin: 6 }, time: 340, unlocks: { recipes: ["hoe2"] } },
-    { id: "hammer2", name: "B\u1EA3n v\u1EBD B\xFAa \u0111\xE1 (n\xE2ng c\u1EA5p)", desc: "N\xE2ng b\u1EA3n v\u1EBD B\xFAa l\xEAn c\u1EA5p 2.", requires: ["hammer1"], needLevel: 2, minInt: 6, cost: { wood: 10, stone: 15, coin: 6 }, time: 360, unlocks: { recipes: ["hammer2"] } },
-    { id: "mace2", name: "B\u1EA3n v\u1EBD Ch\xF9y \u0111\xE1", desc: "V\u1EBD c\xE1ch bu\u1ED9c \u0111\u1EA7u \u0111\xE1 n\u1EB7ng v\xE0o c\xE1n th\xE0nh ch\xF9y.", requires: ["club1", "axe2"], needLevel: 3, minInt: 8, cost: { stone: 30, coin: 10 }, time: 600, unlocks: { recipes: ["mace2"] } },
-    { id: "timber", name: "D\u1EF1ng b\u1EB1ng g\u1ED7", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 2 (g\u1ED7).", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 20, coin: 3 }, time: 200, unlocks: { levels: { storage: 2, workshop: 2, lab: 2, repair: 2, toolstore: 2, armory: 2, house: 2, infantry: 2, cavalry: 2, archery: 2, farmhouse: 2, huntlodge: 2, lumberyard: 2, quarry: 2, scouttent: 2, field: 2, fence: 2, gate: 2, tower: 2 } } },
-    { id: "masonry", name: "X\xE2y b\u1EB1ng \u0111\xE1", desc: "N\xE2ng c\xE1c nh\xE0 l\xEAn c\u1EA5p 3 (\u0111\xE1).", requires: ["timber", "pick1"], needLevel: 2, minInt: 7, cost: { wood: 10, stone: 40, coin: 8 }, time: 420, unlocks: { levels: { storage: 3, workshop: 3, lab: 3, repair: 3, toolstore: 3, armory: 3, house: 3, infantry: 3, cavalry: 3, archery: 3, farmhouse: 3, huntlodge: 3, lumberyard: 3, quarry: 3, scouttent: 3, field: 3 } } },
-    { id: "house", name: "Nh\xE0 d\xE2n", desc: "D\u1EF1ng nh\xE0 cho d\xE2n ng\u1EE7: ng\u1EE7 trong nh\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa.", requires: ["hammer1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["house"] } },
-    { id: "barracks", name: "Tr\u1EA1i chi\u1EBFn binh", desc: "D\u1EF1ng tr\u1EA1i b\u1ED9 binh: tuy\u1EC3n chi\u1EBFn binh c\u1EADn chi\u1EBFn, h\u1ECD ng\u1EE7 \u1EDF \u0111\xE2y. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["infantry"] } },
-    { id: "camp_archery", name: "Tr\u1EA1i th\u1EE3 n\xE9m", desc: "D\u1EF1ng tr\u1EA1i cho ng\u01B0\u1EDDi n\xE9m \u0111\xE1, b\u1EAFn n\xE1: tuy\u1EC3n v\xE0 cho h\u1ECD ng\u1EE7 \u1EDF \u0111\xE2y.", requires: ["barracks", "sling1"], needLevel: 1, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["archery"] } },
-    { id: "camp_cavalry", name: "Tr\u1EA1i k\u1EF5 th\xFA", desc: "D\u1EF1ng tr\u1EA1i cho ng\u01B0\u1EDDi c\u01B0\u1EE1i th\xFA: xung phong nhanh, kh\u1EAFc cung th\u1EE7 nh\u01B0ng s\u1EE3 gi\xE1o.", requires: ["barracks", "spear1"], needLevel: 1, minInt: 7, cost: { wood: 20, hide: 6, coin: 6 }, time: 260, unlocks: { buildings: ["cavalry"] } },
-    { id: "farming", name: "L\xE0m ru\u1ED9ng", desc: "V\u1EE1 \u0111\u1EA5t l\xE0m ru\u1ED9ng: th\u1EE9c \u0103n \u0111\u1EC1u quanh n\u0103m, kh\xF4ng nh\u01B0 b\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n.", requires: ["hoe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 220, unlocks: { buildings: ["field"] } },
-    { id: "fence", name: "H\xE0ng r\xE0o c\u1ECDc", desc: "\u0110\xF3ng c\u1ECDc nh\u1ECDn ch\u1EB7n \u0111\u01B0\u1EDDng, t\u1EA1o ch\u1ED7 th\u1EAFt; l\xEAn c\u1EA5p hai th\xE0nh h\xE0ng r\xE0o \u0111\xF4i \u0111\u1EAFp \u0111\u1EA5t.", requires: ["hammer1", "timber"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["fence"] } },
-    { id: "gate", name: "C\u1ED5ng h\xE0ng r\xE0o", desc: "C\u1ED5ng \u0111\u1EC3 ng\u01B0\u1EDDi m\xECnh ra v\xE0o, \u0111\xF3ng l\u1EA1i th\xEC ch\u1EB7n m\u1ECDi ng\u01B0\u1EDDi.", requires: ["fence"], needLevel: 1, minInt: 5, cost: { wood: 12, coin: 3 }, time: 160, unlocks: { buildings: ["gate"] } },
-    { id: "tower", name: "Ch\xF2i canh", desc: "Ch\xF2i cao cho cung th\u1EE7: b\u1EAFn xa h\u01A1n v\xE0 m\u1EA1nh h\u01A1n.", requires: ["fence"], needLevel: 2, minInt: 6, cost: { wood: 20, coin: 4 }, time: 240, unlocks: { buildings: ["tower"] } },
-    { id: "pit", name: "\u0110\xE0o h\xE0o, h\u1ED1 ch\xF4ng", desc: "\u0110\xE0o h\u1ED1 g\xE0i c\u1ECDc nh\u1ECDn tr\xEAn \u0111\u01B0\u1EDDng \u0111\u1ECBch t\u1EDBi.", requires: ["fence", "pick1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 3 }, time: 200, unlocks: { buildings: ["trap"] } },
-    { id: "signal", name: "T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)", desc: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED; th\u1EBB l\u1EC7nh Ph\xE1t t\xEDn hi\u1EC7u cho c\xE1c \u0111\u1ED9i.", requires: ["tower"], needLevel: 2, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: {} },
-    { id: "scout", name: "Trinh s\xE1t", desc: "D\u1EF1ng Tr\u1EA1i trinh s\xE1t v\xE0 c\u1EED ng\u01B0\u1EDDi \u0111i v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p 1 c\u1EE7a m\u1ED9t l\xE0ng (v\u1ECB tr\xED, s\u1ED1 d\xE2n, h\u01B0\u1EDBng v\xE0o l\xE0ng).", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 8, coin: 3 }, time: 200, unlocks: { buildings: ["scouttent"] } },
-    { id: "scout2", name: "V\u1EBD b\u1EA3n \u0111\u1ED3 \u0111\u1ECBa h\xECnh", desc: "Trinh s\xE1t v\u1EBD \u0111\u01B0\u1EE3c b\u1EA3n \u0111\u1ED3 c\u1EA5p 2: \u0111\u01B0\u1EDDng v\xE0o, h\xE0ng r\xE0o, c\u1ED5ng, ch\xF2i canh v\xE0 h\xECnh b\xF3ng ng\u01B0\u1EDDi.", requires: ["scout", "timber"], needLevel: 2, minInt: 6, cost: { wood: 12, coin: 4 }, time: 240, unlocks: {} },
-    { id: "scout3", name: "V\u1EBD b\u1EA3n \u0111\u1ED3 chi ti\u1EBFt", desc: "Trinh s\xE1t v\u1EBD \u0111\u01B0\u1EE3c b\u1EA3n \u0111\u1ED3 c\u1EA5p 3: s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i, kho l\u01B0\u01A1ng v\xE0 th\u1EE7 l\u0129nh.", requires: ["scout2", "masonry"], needLevel: 2, minInt: 8, cost: { wood: 15, stone: 10, coin: 6 }, time: 280, unlocks: {} },
-    { id: "council", name: "H\u1ED9i \u0111\u1ED3ng chi\u1EBFn", desc: "D\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn: l\u1EADp \u0111\u1ED9i, k\u1EBF ho\u1EA1ch v\xE0 th\u1EBB l\u1EC7nh.", requires: ["scout"], needLevel: 1, minInt: 6, cost: { wood: 15, coin: 4 }, time: 240, unlocks: { buildings: ["wartent"] } },
-    { id: "drill", name: "B\xE3i t\u1EADp", desc: "D\u1EF1ng b\xE3i luy\u1EC7n tr\u1EADn ph\xE1p cho c\xE1c \u0111\u1ED9i.", requires: ["council", "barracks"], needLevel: 1, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["drill"] } },
-    { id: "form_basic", name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", desc: "H\xE0ng ngang v\xE0 v\xF2ng tr\xF2n.", requires: ["drill"], needLevel: 1, minInt: 6, cost: { wood: 12, coin: 4 }, time: 240, unlocks: {} },
-    { id: "form_wedge", name: "Tr\u1EADn m\u0169i nh\u1ECDn", desc: "Xung phong ph\xE1 h\xE0ng.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-    { id: "form_horns", name: "Tr\u1EADn s\u1EEBng b\xF2", desc: "Bao hai c\xE1nh, \u0111\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-    { id: "form_scatter", name: "Tr\u1EADn r\u1EA3i qu\xE2n", desc: "Gi\u1EA3m thi\u1EC7t h\u1EA1i t\u1EEB cung v\xE0 l\u1EEDa.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-    { id: "form_ambush", name: "Tr\u1EADn ph\u1EE5c k\xEDch", desc: "\u0110\xF2n \u0111\u1EA7u m\u1EA1nh g\u1EA5p \u0111\xF4i v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-    { id: "tool_store", name: "Kho c\xF4ng c\u1EE5", desc: "Cho ph\xE9p d\u1EF1ng Kho c\xF4ng c\u1EE5 \u0111\u1EC3 c\u1EA5t r\xECu, cu\u1ED1c, b\xFAa.", requires: ["hammer1", "axe1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 200, unlocks: { buildings: ["toolstore"] } },
-    { id: "armory", name: "Kho v\u0169 kh\xED", desc: "Cho ph\xE9p d\u1EF1ng Kho v\u0169 kh\xED \u0111\u1EC3 c\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p.", requires: ["club1"], needLevel: 1, minInt: 5, cost: { wood: 15, coin: 4 }, time: 220, unlocks: { buildings: ["armory"] } },
-    { id: "auto_fetch", name: "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho", desc: "D\xE2n c\xF3 c\xF4ng c\u1EE5 ho\u1EB7c v\u0169 kh\xED tr\u1ED1ng hay h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi kho l\u1EA5y.", requires: ["tool_store"], needLevel: 2, minInt: 6, cost: { wood: 10, coin: 6 }, time: 300, unlocks: { auto: ["fetch"] } },
-    { id: "auto_order", name: "T\u1EF1 nh\u1EDD ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa", desc: "D\xE2n thi\u1EBFu \u0111\u1ED3 t\u1EF1 t\u1EDBi nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EB7t h\xE0ng, t\u1EDBi nh\xE0 s\u1EEDa ch\u1EEFa nh\u1EDD s\u1EEDa \u0111\u1ED3 h\u1ECFng.", requires: ["auto_fetch"], needLevel: 2, minInt: 7, cost: { wood: 10, coin: 8 }, time: 360, unlocks: { auto: ["order"] } }
-  ]
-};
-
-// src/sim/research.ts
-var RESEARCH = { enabled: research_default.enabled };
-var RECIPE_LEVEL = research_default.recipeLevel;
-var recipeNeedLevel = (id) => RECIPE_LEVEL[id] ?? 1;
-var TECHS = research_default.techs;
-var TECH_BY_ID = Object.fromEntries(TECHS.map((t) => [t.id, t]));
-var recipeOpen = (done, recipeId) => !RESEARCH.enabled || done.has(recipeId);
-var techForRecipe = (recipeId) => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
-var levelCap = (done, kind) => !RESEARCH.enabled || kind === "campfire" ? Infinity : TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks.levels?.[kind] ?? 1) : m, 1);
-var techForLevel = (kind, level) => TECHS.find((t) => (t.unlocks.levels?.[kind] ?? 0) >= level);
-var techForBuilding = (kind) => TECHS.find((t) => t.unlocks.buildings?.includes(kind));
-var buildingOpen = (done, kind) => {
-  const t = techForBuilding(kind);
-  return !RESEARCH.enabled || !t || done.has(t.id);
-};
-var autoOn = (done, key) => !RESEARCH.enabled || TECHS.some((t) => done.has(t.id) && t.unlocks.auto?.includes(key));
-var KIND_NAME = { storage: "Kho", workshop: "Nh\xE0 ch\u1EBF t\u1EA1o", lab: "Nh\xE0 nghi\xEAn c\u1EE9u", repair: "Nh\xE0 s\u1EEDa ch\u1EEFa", toolstore: "Kho c\xF4ng c\u1EE5", armory: "Kho v\u0169 kh\xED", infantry: "Tr\u1EA1i chi\u1EBFn binh", cavalry: "Tr\u1EA1i k\u1EF5 th\xFA", archery: "Tr\u1EA1i th\u1EE3 n\xE9m", farmhouse: "N\xF4ng tr\u1EA1i", huntlodge: "Ch\xF2i th\u1EE3 s\u0103n", lumberyard: "X\u01B0\u1EDFng g\u1ED7", quarry: "X\u01B0\u1EDFng \u0111\xE1", house: "Nh\xE0 d\xE2n", field: "Ru\u1ED9ng", fence: "H\xE0ng r\xE0o", gate: "C\u1ED5ng", tower: "Ch\xF2i canh", wartent: "L\u1EC1u h\u1ECDp chi\u1EBFn", scouttent: "Tr\u1EA1i trinh s\xE1t", drill: "B\xE3i t\u1EADp", trap: "H\u1ED1 ch\xF4ng" };
-var unlockText = (t, recipeName2) => {
-  const parts = [...(t.unlocks.recipes ?? []).map(recipeName2)];
-  const lv2 = Object.values(t.unlocks.levels ?? {})[0];
-  if (lv2) parts.push(`m\u1ECDi nh\xE0 l\xEAn c\u1EA5p ${lv2}`);
-  for (const k of t.unlocks.buildings ?? []) parts.push(`x\xE2y ${KIND_NAME[k] ?? k}`);
-  if (t.unlocks.auto?.includes("fetch")) parts.push("d\xE2n t\u1EF1 l\u1EA5y \u0111\u1ED3 \u1EDF kho");
-  if (t.unlocks.auto?.includes("order")) parts.push("d\xE2n t\u1EF1 \u0111\u1EB7t ch\u1EBF t\u1EA1o v\xE0 s\u1EEDa ch\u1EEFa");
-  return parts.join(", ");
-};
-
 // src/sim/construction.ts
 function addBuilding(sim2, kind, x, y, done) {
   const d = BUILDINGS[kind];
   const b = { id: sim2.nextBid++, kind, era: sim2.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
-  b.hp = levelDef(b).hp;
+  b.hp = maxHp(b);
   sim2.buildings.push(b);
   setOcc(sim2, b, 1);
   return b;
@@ -25223,6 +29164,24 @@ function footprintError(sim2, kind, x, y, ignore) {
     const t = w.tiles[k];
     if (t !== 0 && t !== 4 || w.occ[k] && !own(tx, ty)) return "V\u01B0\u1EDBng c\xE2y, \u0111\xE1, n\u01B0\u1EDBc ho\u1EB7c c\xF4ng tr\xECnh";
   }
+  if (!WALL_KINDS.has(kind)) for (const o of sim2.buildings) {
+    if (o === ignore || WALL_KINDS.has(o.kind)) continue;
+    const od = BUILDINGS[o.kind], gx = Math.max(x - (o.x + od.w), o.x - (x + d.w)), gy = Math.max(y - (o.y + od.h), o.y - (y + d.h));
+    if (Math.max(gx, gy) < CLEARANCE) return "C\u1EA7n ch\u1EEBa \xEDt nh\u1EA5t 2 \xF4 tr\u1ED1ng gi\u1EEFa c\xE1c c\xF4ng tr\xECnh \u0111\u1EC3 d\xE2n \u0111i l\u1EA1i";
+  }
+  return null;
+}
+var fireLevel = (sim2) => sim2.buildings.reduce((m, b) => b.kind === "campfire" && b.done ? Math.max(m, b.level) : m, 1);
+function fireUpgradeBlock(sim2, level) {
+  const need = fireUpgradeNeeds(level);
+  if (need === null) return null;
+  for (const k of Object.keys(BUILDINGS)) {
+    const d = BUILDINGS[k];
+    if (!d.buildable || fireUnlockLevel(k) > level) continue;
+    const mine2 = sim2.buildings.filter((b) => b.kind === k), want = Math.min(need, maxLevel(k, sim2.era));
+    if (!mine2.length) return `C\u1EA7n d\u1EF1ng ${d.name} tr\u01B0\u1EDBc khi n\xE2ng Nh\xE0 chung`;
+    if (mine2.some((b) => !b.done || b.upgrading || b.level < want)) return `C\u1EA7n n\xE2ng ${d.name} l\xEAn c\u1EA5p ${want} tr\u01B0\u1EDBc khi n\xE2ng Nh\xE0 chung`;
+  }
   return null;
 }
 function buildingLimit(sim2, kind) {
@@ -25231,6 +29190,8 @@ function buildingLimit(sim2, kind) {
   return sim2.buildings.reduce((n, f) => n + (f.kind === "campfire" ? per[Math.min(per.length, f.level) - 1] : 0), 0);
 }
 function buildingLock(sim2, kind) {
+  const fireNeed = fireUnlockLevel(kind);
+  if (!sim2.dev.freeBuild && fireNeed > fireLevel(sim2)) return `C\u1EA7n n\xE2ng ${BUILDINGS.campfire.name} l\xEAn c\u1EA5p ${fireNeed} \u0111\u1EC3 x\xE2y ${BUILDINGS[kind].name.toLowerCase()}`;
   const have = sim2.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim2, kind);
   if (limit === 0) return `C\u1EA7n n\xE2ng c\u1EA5p Nh\xE0 chung \u0111\u1EC3 x\xE2y ${BUILDINGS[kind].name.toLowerCase()}`;
   if (have >= limit) return limit === 1 ? "M\u1ED7i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y \u0111\u01B0\u1EE3c m\u1ED9t c\xE1i, h\xE3y n\xE2ng c\u1EA5p n\xF3" : `\u0110\xE3 \u0111\u1EE7 ${limit} ${BUILDINGS[kind].name.toLowerCase()}: n\xE2ng c\u1EA5p Nh\xE0 chung \u0111\u1EC3 x\xE2y th\xEAm`;
@@ -25247,8 +29208,12 @@ function canUpgrade(sim2, b) {
   if (b.upgrading) return "\u0110ang n\xE2ng c\u1EA5p";
   if (b.level >= maxLevel(b.kind, b.era)) return "\u0110\xE3 \u1EDF c\u1EA5p cao nh\u1EA5t";
   if (b.level + 1 > levelCap(sim2.researched, b.kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForLevel(b.kind, b.level + 1)?.name ?? "?"}`;
+  if (b.kind === "campfire" && !sim2.dev.freeBuild) {
+    const why = fireUpgradeBlock(sim2, b.level);
+    if (why) return why;
+  }
   const fire = sim2.campfire();
-  if (b.kind !== "campfire" && fire && !sim2.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `C\u1EA7n n\xE2ng ${BUILDINGS.campfire.name} l\xEAn c\u1EA5p ${b.level + 2}`;
+  if (b.kind !== "campfire" && fire && !sim2.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `C\u1EA7n n\xE2ng ${BUILDINGS.campfire.name} l\xEAn c\u1EA5p ${b.level + 1}`;
   return sim2.dev.freeBuild ? null : sim2.missing(levelDef(b, b.level + 1).cost);
 }
 function upgradeBuilding(sim2, id) {
@@ -25260,7 +29225,7 @@ function upgradeBuilding(sim2, id) {
   if (!sim2.dev.freeBuild) for (const r of Object.keys(next.cost)) sim2.stock[r] -= next.cost[r] ?? 0;
   if (sim2.dev.instantBuild) {
     b.level++;
-    b.hp = levelDef(b).hp;
+    b.hp = maxHp(b);
     sim2.say(`${BUILDINGS[b.kind].name} l\xEAn c\u1EA5p ${b.level} ngay (dev).`);
     return null;
   }
@@ -25304,15 +29269,8 @@ function salvage(sim2, b) {
   }
   return out;
 }
-function moveFee(sim2, b) {
-  const out = {};
-  if (!b.done || sim2.dev.freeBuild) return out;
-  const paid = invested(sim2, b);
-  for (const r of Object.keys(paid)) {
-    const n = Math.ceil((paid[r] ?? 0) * 0.2);
-    if (n > 0) out[r] = n;
-  }
-  return out;
+function moveFee(_sim, _b) {
+  return {};
 }
 function evict(sim2, b) {
   for (const id of [...b.staff]) {
@@ -25357,13 +29315,15 @@ function setOcc(sim2, b, val) {
   for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim2.world.occ[(b.y + j) * sim2.world.size + b.x + i] = val;
 }
 function canDemolish(sim2, b) {
-  return BUILDINGS[b.kind].buildable ? null : "Kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
+  if (!BUILDINGS[b.kind].buildable) return "Kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
+  return BUILDINGS[b.kind].perFire ? null : "C\xF4ng tr\xECnh ch\u1EC9 c\xF3 m\u1ED9t c\xE1i n\xEAn kh\xF4ng ph\xE1 b\u1ECF \u0111\u01B0\u1EE3c";
 }
 function destroyBuilding(sim2, b) {
   evict(sim2, b);
   setOcc(sim2, b, 0);
   sim2.buildings.splice(sim2.buildings.indexOf(b), 1);
   sim2.fogDirty = true;
+  sim2.trimRoles();
 }
 function demolishBuilding(sim2, id) {
   const b = sim2.getBuilding(id);
@@ -25398,18 +29358,12 @@ function moveBuilding(sim2, id, x, y) {
     for (const r of Object.keys(levelDef(b, b.level + 1).cost)) if (!sim2.dev.freeBuild) sim2.stock[r] += levelDef(b, b.level + 1).cost[r] ?? 0;
     b.upgrading = false;
   }
-  const wasDone = b.done;
   setOcc(sim2, b, 0);
   b.x = x;
   b.y = y;
   setOcc(sim2, b, 1);
-  if (wasDone && !sim2.dev.instantBuild) {
-    b.done = false;
-    b.progress = 0;
-    b.rebuild = true;
-  }
   sim2.fogDirty = true;
-  sim2.say(`${BUILDINGS[b.kind].name} \u0111\u01B0\u1EE3c d\u1EDDi sang ch\u1ED7 m\u1EDBi.${b.rebuild ? ' Giao "Th\u1EE3 x\xE2y" \u0111\u1EC3 d\u1EF1ng l\u1EA1i.' : ""}`);
+  sim2.say(`${BUILDINGS[b.kind].name} \u0111\u01B0\u1EE3c d\u1EDDi sang ch\u1ED7 m\u1EDBi.`);
   return null;
 }
 function capacity(sim2, _res) {
@@ -25424,6 +29378,89 @@ function popCap(sim2) {
 function crewSpeed(sim2) {
   const h2 = sim2.building("builder");
   return h2 ? levelDef(h2).craftSpeed : 1;
+}
+
+// src/sim/quests.ts
+var QUESTS = quests_default.quests;
+var CHAPTERS = quests_default.chapters;
+function measure(sim2, d, ui) {
+  const yes = (b) => [b ? 1 : 0, 1];
+  switch (d.type) {
+    case "buildBuilding":
+      return [sim2.buildings.filter((b) => b.kind === d.kind && b.done).length, d.count];
+    case "upgradeBuilding":
+      return yes(sim2.buildings.some((b) => b.kind === d.kind && b.done && b.level >= d.level));
+    case "upgradeFire":
+      return yes(fireLevel(sim2) >= d.level);
+    case "fireReady":
+      return yes(fireUpgradeBlock(sim2, d.level) === null);
+    case "researchTech":
+      return yes(sim2.researched.has(d.id));
+    case "population":
+      return [sim2.villagers.length, d.count];
+    case "stock":
+      return [Math.floor(sim2.stock[d.res]), d.count];
+    case "hasRole":
+      return [sim2.villagers.filter((v) => roleOf(v) === d.role).length, d.count];
+    case "jobCount":
+      return [sim2.villagers.filter((v) => v.job === d.job).length, d.count];
+    case "staffIn":
+      return [sim2.buildings.filter((b) => b.kind === d.kind).reduce((n, b) => n + b.staff.length, 0), d.count];
+    case "haveTool":
+      return [sim2.toolCount(d.kind, d.tier), d.count];
+    case "torches":
+      return [sim2.torchCount(), d.count];
+    case "createSquad":
+      return [sim2.squads.length, d.count];
+    case "daytime":
+      return yes(sim2.day >= d.day && sim2.part === "day");
+    case "speed":
+      return yes(sim2.speed >= d.atLeast);
+    case "selectBuilding":
+      return yes(ui.selected === d.kind || ui.panel === d.kind);
+    case "openBuilding":
+      return yes(ui.panel === d.kind);
+    case "inspectNode":
+      return yes(ui.inspecting === "node");
+    case "inspectUnit":
+      return yes(ui.inspecting === "unit");
+    case "inspectAnimal":
+      return yes(ui.inspecting === "animal");
+    case "squadSize":
+      return [Math.max(0, ...sim2.squads.map((q) => q.ids.length)), d.count];
+    case "squadFormation":
+      return yes(sim2.squads.some((q) => q.formation === d.id));
+    case "equipped":
+      return [sim2.villagers.filter((v) => v.team === "player" && v.job === "fight" && (d.slot === "weapon" ? v.gear.w : v.gear.a) !== null).length, d.count];
+    case "scoutSent":
+      return yes(sim2.scouts.length > 0 || sim2.maps.length > 0);
+    case "hasMap":
+      return yes(sim2.maps.some((m) => m.level >= d.level));
+    case "planDefense":
+      return yes(sim2.plans.some((pl) => pl.kind === "defense"));
+    case "planArrow":
+      return yes(sim2.plans.some((pl) => pl.kind === "attack" && pl.missions.some((m) => m.path.length > 0)));
+    case "planRunning":
+      return yes(sim2.plans.some((pl) => pl.kind === "attack" && (pl.status === "running" || pl.status === "done")));
+    case "planDone":
+      return yes(sim2.plans.some((pl) => pl.status === "done" && (!d.result || pl.result === d.result)));
+  }
+}
+function questViews(sim2, ui) {
+  for (const q of QUESTS) if (!sim2.questSeen.has(q.id) && q.after.every((a) => sim2.questSeen.has(a))) {
+    const [have, need] = measure(sim2, q.done, ui);
+    if (have >= need) sim2.questSeen.add(q.id);
+  }
+  return QUESTS.map((quest) => {
+    const done = sim2.questSeen.has(quest.id), open = !done && quest.after.every((a) => sim2.questSeen.has(a));
+    let progress = "";
+    if (open) {
+      const d = quest.done, [have, need] = measure(sim2, d, ui);
+      if (d.type === "fireReady" || d.type === "upgradeFire") progress = fireUpgradeBlock(sim2, d.level - 1) ?? "";
+      else if (need > 1) progress = `${Math.min(have, need)}/${need}`;
+    }
+    return { quest, done, open, progress };
+  });
 }
 
 // src/sim/economy.ts
@@ -25475,53 +29512,6 @@ function foodSpoilingWithin(sim2, secs) {
   return Math.min(n, sim2.stock.food);
 }
 
-// src/sim/tools.ts
-var TOOL_KINDS = ["axe", "pick", "hoe", "hammer"];
-var TOOL_NAME = { axe: "R\xECu", pick: "Cu\u1ED1c chim", hoe: "Cu\u1ED1c", hammer: "B\xFAa" };
-var TOOL_USE = { axe: "\u0111\u1ED1n g\u1ED7", pick: "\u0111\u1EE5c \u0111\xE1", hoe: "h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7", hammer: "d\u1EF1ng c\xF4ng tr\xECnh" };
-var TOOL_OF_JOB = { wood: "axe", stone: "pick", food: "hoe", build: "hammer" };
-var TIER_NAME = ["Tay kh\xF4ng", "G\u1ED7", "\u0110\xE1"];
-var TIER_SPEED = [0.6, 1, 1.4];
-var TIER_YIELD = [1, 1.25, 1.6];
-var TIER_DURABILITY = [0, 240, 600];
-var GEAR_KINDS = ["club", "spear", "mace", "sling", "bow", "hide"];
-var isGear = (k) => GEAR_KINDS.includes(k);
-var isWeaponKind = (k) => k in WEAPONS;
-var R = (kind, tier, cost, time) => ({ id: `${kind}${tier}`, kind, tier, cost, time });
-var gearRecipe = (kind) => {
-  const d = kind === "hide" ? ARMORS.hide : WEAPONS[kind];
-  return R(kind, d.tier ?? 1, d.cost ?? {}, d.time ?? 60);
-};
-var RECIPES = [
-  R("axe", 1, { wood: 3 }, 24),
-  R("axe", 2, { wood: 2, stone: 3 }, 40),
-  R("pick", 1, { wood: 4 }, 28),
-  R("pick", 2, { wood: 2, stone: 4 }, 44),
-  R("hoe", 1, { wood: 3 }, 24),
-  R("hoe", 2, { wood: 2, stone: 2 }, 36),
-  R("hammer", 1, { wood: 3 }, 24),
-  R("hammer", 2, { wood: 2, stone: 3 }, 36),
-  R("torch", 1, { wood: 2 }, 12),
-  ...GEAR_KINDS.map(gearRecipe)
-];
-var RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
-var recipeName = (r) => {
-  if (r.kind === "hide") return ARMORS.hide.name;
-  if (r.kind === "torch") return "\u0110u\u1ED1c";
-  if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
-  return `${TOOL_NAME[r.kind]} ${TIER_NAME[r.tier].toLowerCase()}`;
-};
-var recipeUse = (r) => {
-  if (r.kind === "hide") return "gi\xE1p, gi\u1EA3m s\xE1t th\u01B0\u01A1ng";
-  if (r.kind === "torch") return "l\xE0m vi\u1EC7c ban \u0111\xEAm (hi\u1EC7u su\u1EA5t 70%), nh\xECn xa h\u01A1n trong t\u1ED1i";
-  if (isWeaponKind(r.kind)) {
-    const w = WEAPONS[r.kind];
-    return `${{ pierce: "\u0111\xE2m", slash: "ch\xE9m", crush: "\u0111\u1EADp" }[w.type]} ${w.damage} \xB7 t\u1EA7m ${w.range}`;
-  }
-  return TOOL_USE[r.kind];
-};
-var emptyToolSet = () => ({ axe: null, pick: null, hoe: null, hammer: null });
-
 // src/sim/works.ts
 function orderDef(sim2, kind, id) {
   if (kind === "research") {
@@ -25530,19 +29520,13 @@ function orderDef(sim2, kind, id) {
   }
   const r = RECIPE_BY_ID[id];
   if (!r) return null;
-  if (kind === "craft") return { cost: r.cost, time: r.time };
-  const half = {};
-  for (const k of Object.keys(r.cost)) half[k] = Math.ceil((r.cost[k] ?? 0) / 2);
-  return { cost: half, time: Math.ceil(r.time * 1.5) };
+  return { cost: r.cost, time: r.time };
 }
 function levelOfKind(sim2, kind) {
   return sim2.building(kind)?.level ?? 0;
 }
 function workshopLevel(sim2) {
   return levelOfKind(sim2, "workshop");
-}
-function bestIntInside(sim2, b) {
-  return b.staff.reduce((m, id) => Math.max(m, sim2.byId.get(id)?.stats.int ?? 0), 0);
 }
 function recipeLock(sim2, id) {
   if (!RESEARCH.enabled) return null;
@@ -25568,8 +29552,7 @@ function techState(sim2, t) {
 function researchBlock(sim2, t) {
   const lab = sim2.building("lab");
   if (!lab || !lab.staff.length) return "Ch\u01B0a c\xF3 ng\u01B0\u1EDDi l\xE0m vi\u1EC7c trong Nh\xE0 nghi\xEAn c\u1EE9u";
-  const best = bestIntInside(sim2, lab);
-  return best >= t.minInt ? null : `C\u1EA7n ng\u01B0\u1EDDi Tr\xED tu\u1EC7 ${t.minInt} tr\u1EDF l\xEAn trong nh\xE0 (gi\u1ECFi nh\u1EA5t: ${best})`;
+  return null;
 }
 function currentResearch(sim2) {
   return sim2.building("lab")?.active?.id ?? sim2.researchQueue[0] ?? null;
@@ -25602,13 +29585,6 @@ function queueCraft(sim2, id) {
   sim2.craftQueue.push(id);
   return null;
 }
-function queueRepair(sim2, id) {
-  if (!RECIPE_BY_ID[id]) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
-  if (!sim2.building("repair")) return "C\u1EA7n d\u1EF1ng Nh\xE0 s\u1EEDa ch\u1EEFa tr\u01B0\u1EDBc";
-  if (sim2.repairQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i s\u1EEDa \u0111\xE3 \u0111\u1EA7y";
-  sim2.repairQueue.push(id);
-  return null;
-}
 function unqueue(sim2, queue, id) {
   const i = queue.lastIndexOf(id);
   if (i >= 0) queue.splice(i, 1);
@@ -25630,24 +29606,22 @@ function storeCap(sim2, cat) {
 }
 function tickWorks(sim2, dt) {
   for (const b of sim2.buildings) {
-    if (!b.done || b.kind !== "lab" && b.kind !== "workshop" && b.kind !== "repair") continue;
-    const kind = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "repair";
-    const queue = kind === "research" ? sim2.researchQueue : kind === "craft" ? sim2.craftQueue : sim2.repairQueue;
+    if (!b.done || b.kind !== "lab" && b.kind !== "workshop") continue;
+    const kind = b.kind === "lab" ? "research" : "craft";
+    const queue = kind === "research" ? sim2.researchQueue : sim2.craftQueue;
     const staff = b.staff.map((id2) => sim2.byId.get(id2)).filter((v) => !!v);
     if (!staff.length) continue;
     if (!b.active) {
-      const best = bestIntInside(sim2, b);
       const i = queue.findIndex((id3) => {
         const d3 = orderDef(sim2, kind, id3);
         if (!d3 || kind !== "research" && !sim2.affordable(d3.cost)) return false;
-        if (kind === "research") return best >= (TECH_BY_ID[id3]?.minInt ?? 0);
         if (kind === "craft") return recipeOpen2(sim2, id3);
         return true;
       });
       if (i < 0) {
         if (queue.length && sim2.time - sim2.lastMatWarn > 30) {
           sim2.lastMatWarn = sim2.time;
-          sim2.say(kind === "research" ? "Nghi\xEAn c\u1EE9u \u0111ang ch\u1EDD: ch\u01B0a c\xF3 ng\u01B0\u1EDDi \u0111\u1EE7 th\xF4ng minh trong nh\xE0." : "\u0110\u01A1n \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
+          sim2.say(kind === "research" ? "Nghi\xEAn c\u1EE9u \u0111ang ch\u1EDD." : "\u0110\u01A1n \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
         }
         continue;
       }
@@ -25676,33 +29650,6 @@ function tickWorks(sim2, dt) {
       sim2.say(`Nh\xE0 nghi\xEAn c\u1EE9u \u0111\xE3 ho\xE0n th\xE0nh "${TECH_BY_ID[id].name}".`);
     } else {
       const r = RECIPE_BY_ID[id], cat = isGear(r.kind) ? "gear" : "tool";
-      if (kind === "repair") {
-        const owner = sim2.villagers.find((o) => o.repairFor === id), k = r.kind;
-        if (owner && isGear(r.kind)) {
-          owner.repairFor = null;
-          if (r.kind === "hide") {
-            if (!owner.armor) {
-              owner.armor = "hide";
-              owner.gear.a = null;
-            }
-          } else if (!owner.weapon) {
-            owner.weapon = r.kind;
-            owner.gear.w = null;
-          }
-          b.active = null;
-          sim2.say(`\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}, tr\u1EA3 l\u1EA1i cho ${owner.name}.`);
-          continue;
-        }
-        if (owner) {
-          owner.repairFor = null;
-          if (TOOL_OF_JOB[owner.job] === k && !sim2.heldTool(owner)) {
-            owner.tools[k] = { tier: r.tier, dur: TIER_DURABILITY[r.tier] };
-            b.active = null;
-            sim2.say(`\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}, tr\u1EA3 l\u1EA1i cho ${owner.name}.`);
-            continue;
-          }
-        }
-      }
       if (storeUsed(sim2, cat) >= storeCap(sim2, cat)) {
         if (sim2.time - sim2.lastFullWarn > 30) {
           sim2.lastFullWarn = sim2.time;
@@ -25712,7 +29659,7 @@ function tickWorks(sim2, dt) {
       }
       sim2.toolStock[id] = (sim2.toolStock[id] ?? 0) + 1;
       b.active = null;
-      sim2.say(kind === "craft" ? `\u0110\xE3 ch\u1EBF xong ${recipeName(r).toLowerCase()}.` : `\u0110\xE3 s\u1EEDa xong ${recipeName(r).toLowerCase()}.`);
+      sim2.say(`\u0110\xE3 ch\u1EBF xong ${recipeName(r).toLowerCase()}.`);
     }
   }
 }
@@ -25725,11 +29672,11 @@ function bestFor(sim2, job) {
   return pool[0] ?? null;
 }
 function houseRate(sim2, b) {
-  const job = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "repair";
+  const job = b.kind === "lab" ? "research" : b.kind === "workshop" ? "craft" : "tame";
   let r = 0;
   for (const id of b.staff) {
     const v = sim2.byId.get(id);
-    if (v) r += sim2.workFactor(v, job);
+    if (v && v.phase === "inside") r += sim2.workFactor(v, job);
   }
   return r * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 25 : 1);
 }
@@ -26003,37 +29950,7 @@ function discardTool(sim2, ids, k) {
     sim2.say(`${v.name} v\u1EE9t ${TOOL_NAME[k].toLowerCase()}.`);
   }
 }
-function repairTool(sim2, ids, k) {
-  const house = sim2.building("repair");
-  if (!house) return "C\u1EA7n d\u1EF1ng Nh\xE0 s\u1EEDa ch\u1EEFa";
-  let err = null, n = 0;
-  for (const v of sim2.mine(ids)) {
-    const t = v.tools[k];
-    if (!t) continue;
-    if (t.dur >= TIER_DURABILITY[t.tier] - 1e-6) {
-      err = "C\xF4ng c\u1EE5 c\xF2n m\u1EDBi, ch\u01B0a c\u1EA7n s\u1EEDa";
-      continue;
-    }
-    if (sim2.repairQueue.length >= 12) {
-      err = "H\xE0ng \u0111\u1EE3i s\u1EEDa \u0111\xE3 \u0111\u1EA7y";
-      continue;
-    }
-    sim2.leaveNode(v);
-    v.path = [];
-    v.slide = null;
-    v.order = `repair:${k}`;
-    if (!goTo(sim2, v, house, "goOrder")) {
-      v.order = null;
-      err = `${v.name} kh\xF4ng t\u1EDBi \u0111\u01B0\u1EE3c Nh\xE0 s\u1EEDa ch\u1EEFa`;
-      continue;
-    }
-    n++;
-    sim2.say(`${v.name} mang ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()} t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa.`);
-  }
-  return n ? null : err;
-}
 var gearName = (slot, id) => (slot === "armor" ? ARMORS[id]?.name : WEAPONS[id]?.name)?.toLowerCase() ?? id;
-var gearId = (slot, id) => slot === "armor" ? "hide1" : `${id}${WEAPONS[id]?.tier ?? 1}`;
 function wearGear(sim2, v, slot) {
   if (v.team !== "player") return;
   const id = slot === "weapon" ? v.weapon : v.armor, g2 = v.gear;
@@ -26055,33 +29972,17 @@ function wearGear(sim2, v, slot) {
     }
     if (g2.ab || --g2.ad > 0) return;
   }
-  if (sim2.frnd() < 0.5) {
-    if (slot === "weapon") {
-      v.weapon = null;
-      g2.w = null;
-      g2.wb = false;
-    } else {
-      v.armor = null;
-      g2.a = null;
-      g2.ab = false;
-    }
-    v.manualGear = false;
-    sim2.say(`${v.name} l\xE0m v\u1EE1 ${gearName(slot, id)}, m\u1EA5t h\u1EB3n.`);
+  if (slot === "weapon") {
+    v.weapon = null;
+    g2.w = null;
+    g2.wb = false;
   } else {
-    if (slot === "weapon") g2.wb = true;
-    else g2.ab = true;
-    sim2.say(`${gearName(slot, id)} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng, c\u1EA7n mang \u0111i s\u1EEDa.`);
+    v.armor = null;
+    g2.a = null;
+    g2.ab = false;
   }
-}
-function planGearRepair(sim2, v) {
-  if (v.job !== "fight" && v.job !== "hunt" || v.phase === "fight" || v.orderCd > 0 || v.team !== "player") return false;
-  const house = sim2.building("repair");
-  if (!house || sim2.repairQueue.length >= 12 || !(v.gear.wb && v.gear.w === v.weapon) && !(v.gear.ab && v.gear.a === v.armor)) return false;
-  v.orderCd = 30;
-  v.order = "repair:gear";
-  if (goTo(sim2, v, house, "goOrder")) return true;
-  v.order = null;
-  return false;
+  v.manualGear = false;
+  sim2.say(`${v.name} l\xE0m v\u1EE1 ${gearName(slot, id)}, m\u1EA5t h\u1EB3n.`);
 }
 function giveGear(sim2, ids, kind, slot) {
   for (const v of sim2.mine(ids)) {
@@ -26162,11 +30063,7 @@ function planTool(sim2, v, job) {
   if (store && needTool(sim2, v, job)) return goTo(sim2, v, store, "goEquip");
   if (!autoOn(sim2.researched, "order") || v.orderCd > 0) return false;
   v.orderCd = 45;
-  const t = v.tools[k], repairHouse = sim2.building("repair"), craftHouse = sim2.building("workshop");
-  if (t && t.dur <= 0 && repairHouse && sim2.repairQueue.length < 12) {
-    v.order = `repair:${k}`;
-    return goTo(sim2, v, repairHouse, "goOrder");
-  }
+  const craftHouse = sim2.building("workshop");
   if (!craftHouse) return false;
   let id = "";
   for (let tier = 2; tier >= 1; tier--) if (sim2.recipeOpen(`${k}${tier}`)) {
@@ -26191,31 +30088,6 @@ function errand(sim2, v) {
   const [what, id] = o.split(":");
   if (what === "craft") {
     if (sim2.queueCraft(id) === null) sim2.say(`${v.name} nh\u1EDD ch\u1EBF ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`);
-  } else if (what === "repair" && id === "gear") {
-    for (const slot of ["weapon", "armor"]) {
-      const piece = slot === "weapon" ? v.weapon : v.armor, broken = slot === "weapon" ? v.gear.wb && v.gear.w === v.weapon : v.gear.ab && v.gear.a === v.armor;
-      if (!piece || !broken || v.repairFor) continue;
-      if (sim2.queueRepair(gearId(slot, piece)) === null) {
-        v.repairFor = gearId(slot, piece);
-        if (slot === "weapon") {
-          v.weapon = null;
-          v.gear.w = null;
-          v.gear.wb = false;
-        } else {
-          v.armor = null;
-          v.gear.a = null;
-          v.gear.ab = false;
-        }
-        sim2.say(`${v.name} nh\u1EDD s\u1EEDa ${gearName(slot, piece)}.`);
-      }
-    }
-  } else if (what === "repair") {
-    const k = id, t = v.tools[k];
-    if (t && t.dur < TIER_DURABILITY[t.tier] - 1e-6 && sim2.queueRepair(toolId(sim2, k, t.tier)) === null) {
-      v.tools[k] = null;
-      v.repairFor = toolId(sim2, k, t.tier);
-      sim2.say(`${v.name} nh\u1EDD s\u1EEDa ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}.`);
-    }
   }
 }
 function equip(sim2, v) {
@@ -26285,7 +30157,6 @@ var NAMES_F = ["Tia", "Noa", "Ma", "Pa", "K\xEA", "Ly", "Sa"];
 var HAIR = ["#4a2e1a", "#2b1b10", "#6b3f1d", "#c98a3a", "#7a5a3a"];
 var SKIN = ["#d9a371", "#e8c4a0", "#c58a5c", "#b87850"];
 var NODE_JOB = { tree: "wood", rock: "stone", bush: "food" };
-var STAT_KEYS = ["vit", "str", "agi", "int", "sta"];
 var XP_MULT = [0, 1, 1.5, 2];
 var REACH = { tree: 0.55, rock: 0.62, bush: 0.5 };
 var LEFT = 1;
@@ -26303,6 +30174,7 @@ function resetTask(sim2, v) {
   v.timer = 0;
   v.target = -1;
   v.bed = -1;
+  v.breaks = null;
 }
 function keepWatch(sim2, v) {
   if (v.job !== "idle") sim2.callUp(v);
@@ -26312,6 +30184,7 @@ function clearCombat(sim2, v) {
   v.fight.mode = "none";
   v.fight.dest = null;
   v.fight.anchor = null;
+  v.fight.strict = false;
   v.queue.length = 0;
   v.loot = -1;
   v.fleeT = 0;
@@ -26355,6 +30228,18 @@ function orderMove(sim2, ids, tx, ty, queue = false) {
     v.phase = v.path.length ? "move" : "idle";
   }
 }
+function callWorker(sim2, tx, ty) {
+  const node = sim2.world.nodeAt(tx, ty);
+  if (!node || sim2.fog.state[ty * sim2.world.size + tx] === 0) return { reason: "Kh\xF4ng c\xF2n g\xEC \u0111\u1EC3 khai th\xE1c \u1EDF \u0111\xE2y" };
+  if (node.amount <= 0) return { reason: "B\u1EE5i qu\u1EA3 \u0111\xE3 h\u1EBFt qu\u1EA3, ch\u1EDD m\u1ECDc l\u1EA1i" };
+  const job = NODE_JOB[node.kind];
+  const pool = mine(sim2, sim2.villagers.map((v2) => v2.id)).filter((v2) => v2.job === job && v2.inside === null && v2.post < 0 && v2.phase !== "sleep" && v2.prefer !== ty * sim2.world.size + tx);
+  if (!pool.length) return { reason: job === "wood" ? "Ch\u01B0a c\xF3 ai l\xE0m ngh\u1EC1 \u0111\u1ED1n g\u1ED7: giao ngh\u1EC1 \u1EDF X\u01B0\u1EDFng g\u1ED7" : job === "stone" ? "Ch\u01B0a c\xF3 ai l\xE0m th\u1EE3 \u0111\xE1: giao ngh\u1EC1 \u1EDF X\u01B0\u1EDFng \u0111\xE1" : "Ch\u01B0a c\xF3 ai h\xE1i l\u01B0\u1EE3m: giao ngh\u1EC1 \u1EDF N\xF4ng tr\u1EA1i" };
+  pool.sort((a, b) => Math.hypot(a.x - tx, a.y - ty) - Math.hypot(b.x - tx, b.y - ty));
+  const near2 = pool.slice(0, 3), v = near2[Math.floor(hash2(tx, ty, Math.floor(sim2.time)) * near2.length) % near2.length];
+  orderWork(sim2, [v.id], tx, ty);
+  return { name: v.name };
+}
 function orderWork(sim2, ids, tx, ty) {
   if (!sim2.world.inBounds(tx, ty)) return null;
   const idx = ty * sim2.world.size + tx;
@@ -26389,7 +30274,7 @@ function setJob(sim2, ids, job) {
   return err ?? (soldiers.length ? "Chi\u1EBFn binh do tr\u1EA1i l\xEDnh c\u1EE7a h\u1ECD qu\u1EA3n l\xFD: cho h\u1ECD ngh\u1EC9 \u1EDF \u0111\xF3 tr\u01B0\u1EDBc" : scouts.length ? "Trinh s\xE1t do Tr\u1EA1i trinh s\xE1t qu\u1EA3n l\xFD: cho h\u1ECD ngh\u1EC9 \u1EDF \u0111\xF3 tr\u01B0\u1EDBc" : null);
 }
 function jobFor(sim2, ids, job) {
-  if (job === "craft" || job === "research" || job === "repair") return sim2.assignStaff(ids, job);
+  if (job === "craft" || job === "research" || job === "tame") return sim2.assignStaff(ids, job);
   if (job === "build") return sim2.assignCrew(ids);
   for (const v of mine(sim2, ids)) {
     resetTask(sim2, v);
@@ -26564,11 +30449,10 @@ function outdoorFactor(sim2, job) {
   return OUTDOOR_JOBS.includes(job) ? WEATHER[sim2.weather].work * SEASON_DEF[sim2.season].work : 1;
 }
 function workFactor(sim2, v, job, field = false) {
-  const stat = v.stats[JOBS[job].stat];
   const season = job === "food" ? SEASON_DEF[sim2.season][field ? "farm" : "gather"] : 1;
   const tier = TOOL_OF_JOB[job] ? sim2.toolTier(v, job) : -1;
-  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier];
-  return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim2, job) * sim2.restFactor(v);
+  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier] * (1 + toolBonus(sim2, v, job, "tspd") / 100);
+  return workSpeed(sim2, v) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim2, job) * sim2.restFactor(v);
 }
 function gainXp(sim2, v, job, dt) {
   const s = v.skill[job];
@@ -26582,10 +30466,10 @@ function gainXp(sim2, v, job, dt) {
 function wear(sim2, v, job, dt) {
   const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
   if (!k || !t || t.dur <= 0) return;
-  t.dur -= dt * PACE.work;
+  t.dur -= dt * PACE.work / (1 + toolBonus(sim2, v, job, "tdur") / 100);
   if (t.dur <= 0) {
-    t.dur = 0;
-    sim2.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng.`);
+    v.tools[k] = null;
+    sim2.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng, v\u1EE9t b\u1ECF.`);
   }
 }
 function leaveNode(sim2, v) {
@@ -26684,7 +30568,7 @@ function think(sim2, v, dt) {
         if (b.upgrading) {
           b.level++;
           b.upgrading = false;
-          b.hp = levelDef(b).hp;
+          b.hp = maxHp(b);
           sim2.say(`${BUILDINGS[b.kind].name} \u0111\xE3 l\xEAn c\u1EA5p ${b.level} (${levelDef(b).name.toLowerCase()}).`);
         } else {
           b.done = true;
@@ -26692,7 +30576,7 @@ function think(sim2, v, dt) {
           sim2.fogDirty = true;
           if (b.kind === "builder") sim2.trimCrew();
           sim2.say(`${BUILDINGS[b.kind].name} \u0111\xE3 d\u1EF1ng xong.`);
-          if (RESEARCH.enabled && b.kind === "lab" && sim2.researched.size === 0) sim2.say("M\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, \u0111\u01B0a m\u1ED9t d\xE2n th\xF4ng minh v\xE0o l\xE0m vi\u1EC7c, r\u1ED3i nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD \u0111\u1EA7u ti\xEAn.");
+          if (RESEARCH.enabled && b.kind === "lab" && sim2.researched.size === 0) sim2.say("M\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, \u0111\u01B0a m\u1ED9t d\xE2n v\xE0o l\xE0m vi\u1EC7c, r\u1ED3i nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD \u0111\u1EA7u ti\xEAn.");
         }
         v.phase = "idle";
       }
@@ -26733,7 +30617,7 @@ function doWork(sim2, v, dt) {
   wear(sim2, v, job, dt);
   if (v.progress < 1) return;
   v.progress -= 1;
-  const res = def.res, acc = v.frac + TIER_YIELD[tierNow], whole = Math.floor(acc);
+  const res = def.res, acc = v.frac + TIER_YIELD[tierNow] * (1 + toolBonus(sim2, v, job, "tyield") / 100), whole = Math.floor(acc);
   const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
   const take = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have));
   v.frac = acc - whole;
@@ -26774,7 +30658,7 @@ function tickFarms(sim2, dt) {
       wear(sim2, v, "food", dt);
       if (v.progress < 1) continue;
       v.progress -= 1;
-      const acc = v.frac + TIER_YIELD[sim2.toolTier(v, "food")], whole = Math.floor(acc);
+      const acc = v.frac + TIER_YIELD[sim2.toolTier(v, "food")] * (1 + toolBonus(sim2, v, "food", "tyield") / 100), whole = Math.floor(acc);
       v.frac = acc - whole;
       sim2.stock.food = Math.min(sim2.capacity("food"), sim2.stock.food + whole);
     }
@@ -27036,7 +30920,7 @@ function nearestFree(sim2, tx, ty, taken) {
   return null;
 }
 function moveUnit(sim2, v, dt) {
-  const walk = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.armor ? 1 : 1);
+  const walk = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.team === "player" ? sim2.mountSpeed(v) : 1);
   if (v.swing) return;
   let left = walk * dt;
   while (left > 0 && v.path.length) {
@@ -27177,12 +31061,11 @@ function spawn(sim2, x, y, sex) {
 }
 function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
   const r = rnd, pick = (a) => a[Math.floor(r() * a.length)];
-  const stats = {};
-  for (const k of STAT_KEYS) stats[k] = 3 + Math.floor(r() * 8);
+  const { stars: stars2, fac } = rollFactors(r), stats = legacyStats((s) => rawValue(fac, s));
   const potential = {}, skill = {};
   for (const j of WORK_JOBS) {
-    if (j === "hunt" || j === "fight" || j === "research") {
-      const k = j === "hunt" ? stats.agi : j === "research" ? stats.int : stats.str;
+    if (j === "hunt" || j === "fight" || j === "research" || j === "tame") {
+      const k = j === "hunt" || j === "tame" ? stats.agi : j === "research" ? stats.sta : stats.str;
       potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1;
       skill[j] = { xp: 0, level: 0 };
       continue;
@@ -27200,7 +31083,7 @@ function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
     path: [],
     slide: null,
     facing: "front",
-    speed: 1.6 + 0.1 * stats.agi,
+    speed: rawValue(fac, "move"),
     animClock: 0,
     tx: -1,
     ty: -1,
@@ -27220,7 +31103,7 @@ function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
     order: null,
     carry: null,
     fullness: 100,
-    health: maxHpOf(stats.vit),
+    health: Math.round(rawValue(fac, "hp")),
     starving: false,
     anim: "idle",
     hold: null,
@@ -27237,11 +31120,17 @@ function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
     manualGear: false,
     inside: null,
     orderCd: 0,
-    repairFor: null,
     squad: -1,
+    stars: stars2,
+    fac,
+    statClock: 0,
+    born: { ...stats },
+    train: null,
+    mount: null,
+    breaks: null,
     gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
     team,
-    maxHealth: maxHpOf(stats.vit),
+    maxHealth: Math.round(rawValue(fac, "hp")),
     weapon: null,
     armor: null,
     morale: MORALE.start,
@@ -27262,6 +31151,10 @@ function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
 }
 function tickVillager(sim2, v, dt) {
   tickCommon(sim2, v, dt);
+  if ((v.statClock = (v.statClock ?? 0) - dt) <= 0) {
+    v.statClock = 1 + v.id % 10 / 10;
+    applyStats(sim2, v);
+  }
   if (v.down > 0) {
     tickDown(sim2, v, dt);
     sim2.animate(v, dt);
@@ -27294,29 +31187,42 @@ function tickVillager(sim2, v, dt) {
   if (v.inside !== null && v.phase !== "sleep") {
     const onWatch = v.job === "fight" && v.post >= 0 && sim2.tribes.some((t) => t.raid);
     if (sim2.shouldSleep(v, onWatch)) {
-      sim2.exitBuilding(v);
-      goHome(sim2, v);
+      if (atWork(sim2, v)) {
+        v.phase = "sleep";
+        v.facing = "front";
+      } else {
+        sim2.exitBuilding(v);
+        goHome(sim2, v);
+      }
     } else {
       sim2.animate(v, dt);
       return;
     }
   }
-  const brained = brainPlayer(sim2, v, dt);
+  const training = !!v.train && sim2.trainStep(v, dt);
+  const brained = training ? false : brainPlayer(sim2, v, dt);
   const fighting = brained && (v.phase === "fight" || v.phase === "flee" || v.phase === "rescue");
   const asleep = v.phase === "goHome" || v.phase === "sleep";
   if (sim2.shouldSleep(v, fighting)) {
     if (!asleep) goHome(sim2, v);
   } else if (asleep) {
-    sim2.exitBuilding(v);
-    v.path = [];
-    v.slide = null;
-    v.phase = "idle";
-    v.bed = -1;
+    if (atWork(sim2, v) && v.phase === "sleep") v.phase = "inside";
+    else {
+      sim2.exitBuilding(v);
+      v.path = [];
+      v.slide = null;
+      v.phase = "idle";
+      v.bed = -1;
+    }
   }
   sim2.moveUnit(v, dt);
   if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim2.fogDirty = true;
-  if (!v.path.length && !v.slide && !brained) sim2.think(v, dt);
+  if (!v.path.length && !v.slide && !brained && !training) sim2.think(v, dt);
   sim2.animate(v, dt);
+}
+function atWork(sim2, v) {
+  const b = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
+  return !!b && b.staff.includes(v.id);
 }
 function goHome(sim2, v) {
   const owl = v.nightOwl;
@@ -27324,7 +31230,7 @@ function goHome(sim2, v) {
   sim2.resetTask(v);
   v.nightOwl = owl;
   v.phase = "sleep";
-  const bed = sim2.freeBed(v);
+  const bed = v.job === "build" ? sim2.building("builder") ?? sim2.freeBed(v) : sim2.freeBed(v);
   if (bed) {
     const bd = BUILDINGS[bed.kind];
     if (sim2.routeTo(v, sim2.ringTiles(v, bed.x, bed.y, bd.w, bd.h)) >= 0) {
@@ -27362,6 +31268,7 @@ function tickCalendar(sim2) {
       sim2.say(SEASON_DEF[season].enter);
     }
     if (sim2.weather !== "clear") sim2.say(`H\xF4m nay: ${WEATHER[sim2.weather].name.toLowerCase()}.`);
+    if (day > 1 && !sim2.dev.noArrivals) newcomers(sim2);
   }
   if (!sim2.signalled && sim2.tod >= 0.5) {
     sim2.signalled = true;
@@ -27374,6 +31281,17 @@ function tickCalendar(sim2) {
     if (!rest) sim2.returnTorch(v);
   }
   sim2.resting = rest;
+}
+function newcomers(sim2) {
+  const n = 1 + Math.floor(sim2.frnd() * 3), fire = sim2.campfire(), s = sim2.world.start;
+  for (let i = 0; i < n; i++) {
+    const a = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * 2;
+    const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+    const v = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
+    sim2.villagers.push(v);
+    sim2.registerUnit(v);
+    sim2.say(`${v.name} \u0111\u1EBFn l\xE0ng xin \u1EDF l\u1EA1i.`);
+  }
 }
 var TORCH_VISION = 6;
 function refreshFog(sim2) {
@@ -27393,6 +31311,11 @@ function refreshFog(sim2) {
 function visionRadius(sim2) {
   return Math.max(1, Math.round(NIGHT_VISION + (VISION - NIGHT_VISION) * sim2.light) - WEATHER[sim2.weather].vision);
 }
+function sightOf(sim2, v) {
+  const r = visionRadius(sim2);
+  return (v.torch || v.lit ? Math.max(r, TORCH_VISION) : r) + (armOf(v) === "archer" ? ARCHER_SIGHT : 0);
+}
+var ARCHER_SIGHT = 1;
 function fireRadius(sim2) {
   return Math.max(1, FIRE_VISION - WEATHER[sim2.weather].vision);
 }
@@ -27445,16 +31368,16 @@ function unpackRuns(runs, target) {
 }
 
 // src/sim/save.ts
-var SAVE_VERSION = 11;
+var SAVE_VERSION = 14;
 var SAVED = {
   /** Single values. */
   scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
   /** Objects whose keys are filled in place. */
   records: ["stock", "toolStock", "battle"],
   /** Lists of plain data. */
-  lists: ["wornTools", "craftQueue", "researchQueue", "repairQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
+  lists: ["wornTools", "craftQueue", "tameQueue", "researchQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
   /** Handled by hand below. */
-  special: ["researched", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
+  special: ["researched", "questSeen", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
 };
 function toSave(sim2) {
   const w = sim2.world;
@@ -27466,6 +31389,7 @@ function toSave(sim2) {
     records: pick(SAVED.records),
     lists: pick(SAVED.lists),
     researched: [...sim2.researched],
+    quests: [...sim2.questSeen],
     tribes: sim2.tribes.map(({ def: _def, ...t }) => encode(t)),
     rng: { rnd: sim2.rnd.getState(), frnd: sim2.frnd.getState(), wrnd: sim2.wrnd.getState() },
     world: {
@@ -27565,7 +31489,40 @@ var MIGRATIONS = {
   10: (d) => {
     for (const p of d.lists.plans) p.stage ??= "fight";
     return { ...d, version: 11 };
+  },
+  // 11 -> 12: every house has strength and can be attacked; the works of an enemy village have strength too; a plan keeps its clearing crews and how it ended,
+  // an arrow may point at a target and a squad may be halted by something in its way; a soldier may be hacking something down
+  11: (d) => {
+    for (const b of d.lists.buildings) b.hp ||= maxHp(b);
+    for (const p of d.lists.plans) {
+      p.clears ??= [];
+      p.result ??= "";
+      for (const m of p.missions) {
+        m.target ??= null;
+        m.block ??= null;
+      }
+    }
+    for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) v.breaks ??= null;
+    for (const t of d.tribes) for (const p of t.props) p.hp ??= SIEGE.propHp[p.kind] ?? 60;
+    return { ...d, version: 12 };
   }
+};
+MIGRATIONS[12] = (d) => {
+  for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+    v.born ??= { ...v.stats };
+    v.train ??= null;
+  }
+  return { ...d, version: 13 };
+};
+MIGRATIONS[13] = (d) => {
+  d.lists.tameQueue ??= [];
+  for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+    v.mount ??= null;
+    const sk = v.skill, pot = v.potential, st = v.stats;
+    sk.tame ??= { xp: 0, level: 0 };
+    pot.tame ??= st.agi >= 9 ? 3 : st.agi >= 6 ? 2 : 1;
+  }
+  return { ...d, version: 14 };
 };
 function migrate(raw) {
   let d = raw;
@@ -27584,6 +31541,7 @@ function applySave(sim2, data) {
   unpackRuns(data.world.tiles, w.tiles);
   unpackRuns(data.world.occ, w.occ);
   unpackRuns(data.world.decor, w.decor);
+  w.decor.fill(0);
   w.nodes.clear();
   for (const [i, kind, res, amount, max, workers, sides, regrow] of data.world.nodes) {
     w.nodes.set(i, { kind, res, amount, max, workers, sides, regrow });
@@ -27604,6 +31562,8 @@ function applySave(sim2, data) {
   }
   sim2.researched.clear();
   for (const id of data.researched) sim2.researched.add(id);
+  sim2.questSeen.clear();
+  for (const id of data.quests ?? SCREEN_QUESTS) sim2.questSeen.add(id);
   sim2.tribes.length = 0;
   for (const t of data.tribes) {
     const tribe = decode(t);
@@ -27636,7 +31596,7 @@ var rest_default = {
   tiredEfficiency: 0.7,
   tiredBelow: 40,
   torchBurn: 600,
-  jobWeight: { wood: 1, stone: 1, build: 0.95, fight: 0.8, hunt: 0.9, food: 0.7, craft: 0.6, repair: 0.6, research: 0.5, idle: 0.15 },
+  jobWeight: { wood: 1, stone: 1, build: 0.95, fight: 0.8, hunt: 0.9, food: 0.7, craft: 0.6, research: 0.5, idle: 0.15 },
   strain: { nightWork: 0.1, collapse: 15, nightSleep: 0.12, daySleep: 0.03, capLoss: 0.4, recoveryLoss: 67e-4, moraleLoss: 4e-3 }
 };
 
@@ -27679,7 +31639,7 @@ function drainRate(sim2, v) {
       k = w * 0.8;
   }
   const cond = (1.25 - 0.25 * fit(v)) * (1.2 - 0.2 * (v.morale / 100)) * (1.3 - 0.3 * hpFrac(v));
-  return REST.dayCost / DAY_HOURS * k * cond;
+  return REST.dayCost / DAY_HOURS * k * cond * drainScale(sim2, v);
 }
 var BED_KINDS = ["infantry", "cavalry", "archery", "house"];
 var bedKind = (v) => v.job !== "fight" ? "house" : v.arm === "archer" ? "archery" : v.arm === "cavalry" ? "cavalry" : "infantry";
@@ -27701,7 +31661,8 @@ function freeBed(sim2, v) {
 }
 function bedFactor(sim2, v) {
   const b = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
-  return b && BED_KINDS.includes(b.kind) ? REST.sleepAt[b.kind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
+  if (b && BED_KINDS.includes(b.kind)) return REST.sleepAt[b.kind] * levelDef(b).craftSpeed;
+  return b ? REST.sleepAt.house : REST.sleepAt.campfire;
 }
 function sleepRate(sim2, v) {
   const base = (sim2.resting ? REST.sleepNight : REST.sleepDay) / NIGHT_HOURS;
@@ -27757,14 +31718,16 @@ function giveTorch(sim2, ids) {
 }
 function onShift(sim2, v) {
   if (v.nightOwl) return true;
+  if (v.job === "fight" && sim2.warLock()) return true;
   const night = sim2.resting;
   if (v.job === "fight" || v.job === "idle") return !night;
   if (v.shift === "both") return true;
   return v.shift === "night" ? night : !night;
 }
+var indoors = (v) => isStaffJob(v.job) || v.job === "food" && v.post >= 0;
 function onDuty(sim2, v) {
   if (!onShift(sim2, v)) return false;
-  if (sim2.resting && v.job !== "fight" && v.job !== "idle") return ensureTorch(sim2, v);
+  if (sim2.resting && v.job !== "fight" && v.job !== "idle" && !indoors(v)) return ensureTorch(sim2, v);
   return true;
 }
 function callUp(sim2, v) {
@@ -27784,7 +31747,7 @@ function tickEnergy(sim2, v, dt) {
   if (v.phase === "sleep") {
     v.energy = Math.min(top, v.energy + sleepRate(sim2, v) * dt);
     v.strain = Math.max(0, v.strain - (sim2.resting ? REST.strain.nightSleep : REST.strain.daySleep) * dt);
-  } else if (!sim2.dev.noTire) {
+  } else if (!sim2.dev.noTire && !(v.job === "fight" && sim2.warLock())) {
     const working = v.job !== "idle" && (v.phase === "work" || v.phase === "build" || v.phase === "craft" || v.phase === "inside" || v.phase === "fight");
     v.energy = Math.max(0, v.energy - drainRate(sim2, v) * dt);
     if (sim2.resting && working) {
@@ -27803,6 +31766,10 @@ function tickEnergy(sim2, v, dt) {
 }
 function shouldSleep(sim2, v, fighting) {
   if (fighting) return false;
+  if (v.job === "fight" && sim2.warLock()) {
+    v.lockUntil = 0;
+    return false;
+  }
   if (v.lockUntil > 0) {
     if (v.energy >= v.lockUntil) v.lockUntil = 0;
     else return true;
@@ -27883,10 +31850,10 @@ function setGates(sim2, open) {
     sim2.setOcc(b, 1);
   }
 }
-function nearestWork(sim2, x, y, radius) {
+function nearestWork(sim2, x, y, radius, any = false) {
   let best, bd = radius;
   for (const b of sim2.buildings) {
-    if (!b.done || !isDefense(b)) continue;
+    if (!b.done || !(any ? b.kind !== "campfire" && b.kind !== "trap" : isDefense(b))) continue;
     const d = BUILDINGS[b.kind], dist2 = Math.hypot(b.x + d.w / 2 - x, b.y + d.h / 2 - y);
     if (dist2 <= bd) {
       bd = dist2;
@@ -27969,7 +31936,7 @@ function tickTowers(sim2, _dt) {
       const w = weaponOf(v);
       if (!w.ranged) continue;
       const bonus = towerBonus(sim2, v), threat = threatsOf(sim2, v, w.range + bonus.range + 1)[0], e = threat && resolve(sim2, threat.t);
-      if (e && fireProjectile(sim2, v, e, from, bonus.damage, bonus.range)) v.atkCd = cycleOf(w.cycle, v.stats.agi);
+      if (e && fireProjectile(sim2, v, e, from, bonus.damage, bonus.range)) v.atkCd = swingCycle(sim2, v, w);
     }
   }
 }
@@ -27977,10 +31944,10 @@ function tickTowers(sim2, _dt) {
 // src/sim/army.ts
 var COLORS = ["#e0523c", "#3c8ce0", "#e0b43c", "#5cb85c", "#a85cd8", "#3cd0c8"];
 function squadLimit(sim2) {
-  const tent = sim2.building("wartent");
-  if (tent) return COMMAND.squadLimit[Math.min(COMMAND.squadLimit.length, tent.level) - 1];
-  return sim2.dev.freeBuild ? COMMAND.squadLimit[COMMAND.squadLimit.length - 1] : 0;
+  if (sim2.building("wartent") || sim2.dev.freeBuild) return sim2.dev.freeBuild ? COMMAND.squadLimit[COMMAND.squadLimit.length - 1] : unlockedMax(sim2.researched, "squads", SQUADS_DEFAULT);
+  return 0;
 }
+var cellLimit = (sim2) => sim2.dev.freeBuild ? SQUAD_MAX : Math.min(SQUAD_MAX, unlockedMax(sim2.researched, "formationCells", CELLS_DEFAULT));
 function cardLimit(sim2) {
   const tent = sim2.building("wartent"), level = tent ? tent.level : sim2.dev.freeBuild ? 3 : 0;
   return level ? COMMAND.cardBase + COMMAND.cardPerLevel * level + (!RESEARCH.enabled || sim2.researched.has("signal") ? 2 : 0) : 0;
@@ -28020,8 +31987,8 @@ function joinSquad(sim2, ids, squadId) {
       continue;
     }
     if (v.squad === s.id) continue;
-    if (s.ids.length >= SQUAD_MAX) {
-      err = `M\u1ED9t \u0111\u1ED9i ch\u1EC9 c\xF3 t\u1ED1i \u0111a ${SQUAD_MAX} ng\u01B0\u1EDDi`;
+    if (s.ids.length >= cellLimit(sim2)) {
+      err = `M\u1ED9t \u0111\u1ED9i ch\u1EC9 c\xF3 t\u1ED1i \u0111a ${cellLimit(sim2)} ng\u01B0\u1EDDi: nghi\xEAn c\u1EE9u m\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p`;
       continue;
     }
     leaveSquad(sim2, [v.id]);
@@ -28244,12 +32211,9 @@ function tickSightings(sim2, dt) {
     if (finder) sim2.sightings.push({ tribe: t.id, by: finder.id, at: sim2.time, reported: false });
   }
 }
-var LEVEL_TECH = ["scout", "scout2", "scout3"];
 function scoutLevel(sim2) {
-  if (sim2.dev.freeBuild || !RESEARCH.enabled) return 3;
-  let n = 0;
-  while (n < LEVEL_TECH.length && sim2.researched.has(LEVEL_TECH[n])) n++;
-  return n;
+  if (sim2.dev.freeBuild) return 3;
+  return sim2.buildings.reduce((n, b) => b.kind === "scouttent" && b.done ? Math.max(n, Math.min(3, b.level)) : n, 0);
 }
 function scoutLimit(sim2) {
   return sim2.dev.freeBuild ? 8 : sim2.buildings.reduce((n, b) => n + (b.kind === "scouttent" && b.done ? levelDef(b).slots : 0), 0);
@@ -28261,7 +32225,6 @@ function enlistScouts(sim2, ids) {
   const lock = sim2.warLock();
   if (lock) return lock;
   const limit = scoutLimit(sim2);
-  if (RESEARCH.enabled && !sim2.dev.freeBuild && !scoutLevel(sim2)) return "C\u1EA7n nghi\xEAn c\u1EE9u: Trinh s\xE1t";
   if (!limit) return "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
   const pick = sim2.mine(ids).filter((v) => v.job !== "fight" && v.job !== "scout"), room = limit - scoutRoster(sim2).length;
   if (!pick.length) return "Ch\u1ECDn d\xE2n th\u01B0\u1EDDng \u0111\u1EC3 tuy\u1EC3n l\xE0m trinh s\xE1t";
@@ -28293,22 +32256,28 @@ function dismissScouts(sim2, ids) {
   }
   return n ? null : away ? "\u0110ang \u0111i trinh s\xE1t: \u0111\u1EE3i h\u1ECD v\u1EC1" : "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 cho ngh\u1EC9";
 }
-var scoutSkill = (v) => (v.stats.agi + v.stats.sta + v.stats.int) / 18;
+var scoutSkill = (v) => {
+  const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta) / 6;
+  return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
+};
+function gearOf(v, table) {
+  return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.mount || v.arm === "cavalry" ? table.mount : 0);
+}
+var stealthOf = (v) => 0.6 * v.stats.agi + 0.4 * v.stats.sta;
 var scoutsNeeded = (sim2, tribe, level) => Math.min(8, level + 1 + Math.floor(warriorsOf(sim2, tribe) / 8));
 function drawChance(skills, need) {
   if (skills.length < 2) return 0;
   return Math.min(0.95, skills.reduce((a, b) => a + b, 0) / need);
 }
-var surveyTime = (level, scouts) => 0.2 * level * DAY_LENGTH / (1 + 0.35 * (Math.max(1, scouts) - 1));
+var surveyTime = (level, scouts, int = 6) => 0.2 * level * DAY_LENGTH / ((1 + 0.35 * (Math.max(1, scouts) - 1)) * Math.max(0.5, 1 + SIEGE.scout.surveyPerInt * (int - 6)));
 function planScout(sim2, ids, tribe) {
   const level = scoutLevel(sim2), limit = scoutLimit(sim2), scouts = sim2.mine(ids).filter((v) => canScout(sim2, v));
   const need = scoutsNeeded(sim2, tribe, Math.max(1, level)), w = whereIs(sim2, tribe);
-  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed, 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
-  const survey = surveyTime(Math.max(1, level), scouts.length);
+  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * sim2.mountSpeed(v) * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
+  const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.agi, 0) / scouts.length : 6);
   let error = null;
   if (!sim2.dev.freeBuild && !isFound(sim2, tribe)) error = "Ch\u01B0a ai t\xECm th\u1EA5y l\xE0ng n\xE0y";
   else if (!tribeOf(sim2, tribe)) error = "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
-  else if (RESEARCH.enabled && !sim2.dev.freeBuild && !level) error = "C\u1EA7n nghi\xEAn c\u1EE9u: Trinh s\xE1t";
   else if (!limit) error = "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
   else if (sim2.scouts.some((m) => m.tribe === tribe)) error = "\u0110\xE3 c\xF3 trinh s\xE1t \u0111ang \u0111i l\xE0ng n\xE0y";
   else if (!scouts.length) error = "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 c\u1EED \u0111i (tuy\u1EC3n \u1EDF Tr\u1EA1i trinh s\xE1t)";
@@ -28332,11 +32301,11 @@ function startScout(sim2, ids, tribe) {
   sim2.say(`${scouts.length} trinh s\xE1t l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ${t.def.name} \u0111\u1EC3 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p ${Math.max(1, plan2.level)}: kho\u1EA3ng ${Math.round(plan2.chance * 100)}% v\u1EBD \u0111\u1EE7 chi ti\u1EBFt, c\u1EA3 chuy\u1EBFn m\u1EA5t ch\u1EEBng ${Math.max(1, Math.round(plan2.total / 60))} ph\xFAt.`);
   return null;
 }
-function deathChance(sim2, m, agi) {
+function deathChance(sim2, m, v) {
   const t = tribeOf(sim2, m.tribe), fire = sim2.campfire();
   const power = warriorsOf(sim2, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
   const day = sim2.weather === "clear" && !sim2.resting;
-  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim2.resting ? 0.1 : 0) - Math.max(0, agi - 6) * 0.01));
+  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim2.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 5e-3) - gearOf(v, SIEGE.scout.gearHide)));
 }
 function tickScouts(sim2, dt) {
   tickSightings(sim2, dt);
@@ -28355,13 +32324,13 @@ function tickScouts(sim2, dt) {
       if (near2 || m.t > 300) {
         m.phase = "watch";
         m.t = 0;
-        for (const v of alive) if (sim2.frnd() < deathChance(sim2, m, v.stats.agi)) sim2.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
+        for (const v of alive) if (sim2.frnd() < deathChance(sim2, m, v)) sim2.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
         m.survivors = alive.filter((v) => v.health > 0 && sim2.byId.has(v.id)).length;
         if (m.survivors && m.level >= 2) m.seen = seenNow(sim2, tribeOf(sim2, m.tribe));
         sim2.say(m.survivors ? `Trinh s\xE1t \u0111ang quan s\xE1t ${t.def.name}.` : "Trinh s\xE1t b\u1ECB b\u1EAFt g\u1EB7p, kh\xF4ng ai tho\xE1t.");
       }
     } else if (m.phase === "watch") {
-      if (m.t >= surveyTime(m.level, m.survivors)) {
+      if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.agi, 0) / Math.max(1, alive.length))) {
         m.phase = "back";
         m.t = 0;
         const fire = sim2.campfire();
@@ -28411,6 +32380,20 @@ var WORK_INFO = {
   gate: "C\u1ED5ng: l\u1ED1i v\xE0o l\xE0ng, \u0111\xF3ng th\xEC ch\u1EB7n \u0111\u01B0\u1EDDng.",
   pile: "Kho l\u01B0\u01A1ng: ch\u1ED7 h\u1ECD c\u1EA5t th\u1EE9c \u0103n v\xE0 \u0111\u1ED3 c\u1ED1ng n\u1EA1p."
 };
+function freeNear(sim2, x, y) {
+  for (let r = 0; r <= 8; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (Math.max(Math.abs(i), Math.abs(j)) === r && !sim2.world.isBlocked(Math.floor(x) + i, Math.floor(y) + j)) return [Math.floor(x) + i, Math.floor(y) + j];
+  return null;
+}
+function entryRoute(sim2, camp, box, toUs) {
+  const fire = sim2.campfire(), from = freeNear(sim2, (fire?.x ?? sim2.world.start.x) + 1, (fire?.y ?? sim2.world.start.y) + 3);
+  const to = freeNear(sim2, camp.x + (toUs?.x ?? 0) * (YARD + 1), camp.y + (toUs?.y ?? 0) * (YARD + 1));
+  if (!from || !to) return [];
+  const path = findPath(sim2.world, from[0], from[1], to[0], to[1], 7e4);
+  const last = path[path.length - 1];
+  if (!last || last[0] !== to[0] || last[1] !== to[1]) return [];
+  const inside = path.filter(([x, y]) => x >= box.x0 && x < box.x1 && y >= box.y0 && y < box.y1);
+  return inside.filter((_, i) => i % 3 === 0 || i === inside.length - 1).map(([x, y]) => ({ x: x + 0.5, y: y + 0.5 }));
+}
 function tribeIntel(sim2, tribe) {
   const t = tribeOf(sim2, tribe);
   if (!t) return null;
@@ -28418,8 +32401,9 @@ function tribeIntel(sim2, tribe) {
   if (!level) return null;
   const held = sim2.maps.filter((m) => m.tribe === tribe && (m.gaps > 0 ? m.level - 1 : m.level) >= level).sort((a, b) => b.at - a.at)[0];
   const accuracy = sim2.dev.freeBuild || !held ? 1 : mapAccuracy(sim2, held), gaps = sim2.dev.freeBuild ? 0 : held?.gaps ?? 0;
-  const N = sim2.world.size, r = YARD + MARGIN;
-  const box = { x0: Math.max(0, Math.floor(t.camp.x) - r), y0: Math.max(0, Math.floor(t.camp.y) - r), x1: Math.min(N, Math.floor(t.camp.x) + r), y1: Math.min(N, Math.floor(t.camp.y) + r) };
+  const N = sim2.world.size, ry = YARD + MARGIN, rx = Math.round(ry * 1.9);
+  const x0 = Math.max(0, Math.min(N - 2 * rx, Math.floor(t.camp.x) - rx)), y0 = Math.max(0, Math.min(N - 2 * ry, Math.floor(t.camp.y) - ry));
+  const box = { x0, y0, x1: x0 + 2 * rx, y1: y0 + 2 * ry };
   const fire = sim2.campfire(), dx = (fire?.x ?? sim2.world.start.x) - t.camp.x, dy = (fire?.y ?? sim2.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
   const seen = sim2.dev.freeBuild || !held?.seen ? seenNow(sim2, t) : held.seen;
   const soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
@@ -28430,6 +32414,10 @@ function tribeIntel(sim2, tribe) {
     if (soldiers && !u.civ) soldiers[u.arm]++;
     people.push({ x: u.x, y: u.y, mark, leader: level >= 3 && u.leader, weapon: level >= 3 ? u.weapon : null });
   });
+  const route = entryRoute(sim2, t.camp, box, len > 0 ? { x: dx / len, y: dy / len } : null);
+  const others = sim2.tribes.filter((o) => o !== t && o.state !== "adopted" && o.state !== "destroyed" && isFound(sim2, o.id)).map((o) => ({ name: o.def.name, x: o.camp.x, y: o.camp.y, r: YARD, ours: false }));
+  others.push({ name: "L\xE0ng c\u1EE7a ta", x: (fire?.x ?? sim2.world.start.x) + 1, y: (fire?.y ?? sim2.world.start.y) + 1, r: 12, ours: true });
+  const reach = (o) => o.x > box.x0 - o.r && o.x < box.x1 + o.r && o.y > box.y0 - o.r && o.y < box.y1 + o.r;
   const loot = Object.entries(t.loot).filter(([, v]) => (v ?? 0) > 0).map(([k, v]) => `${Math.round(v)} ${RES_NAME[k].toLowerCase()}`).join(", ");
   return {
     tribe,
@@ -28441,6 +32429,8 @@ function tribeIntel(sim2, tribe) {
     camp: { ...t.camp },
     yard: YARD,
     toUs: len > 0 ? { x: dx / len, y: dy / len } : null,
+    route,
+    others: others.filter(reach),
     population: Math.max(2, Math.round(seen.length / 2) * 2),
     structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === "pile" && loot ? `${WORK_INFO.pile} C\xF3 kho\u1EA3ng ${loot}.` : WORK_INFO[p.kind] ?? "", x: p.x, y: p.y, w: p.w, h: p.h })),
     people,
@@ -28457,14 +32447,14 @@ function newPlan(sim2, kind, tribe) {
   const old = sim2.plans.findIndex((p) => p.kind === kind && p.status !== "running");
   if (old >= 0) sim2.plans.splice(old, 1);
   const fire = sim2.campfire();
-  const plan2 = { id: sim2.nextPlan++, kind, tribe, missions: [], cards: [], status: "draft", stage: "assemble", startedAt: 0, signal: false, nextCard: 1, rally: { x: (fire?.x ?? sim2.world.start.x) + 1.5, y: (fire?.y ?? sim2.world.start.y) + 6 } };
+  const plan2 = { id: sim2.nextPlan++, kind, tribe, missions: [], cards: [], status: "draft", stage: "assemble", startedAt: 0, signal: false, nextCard: 1, clears: [], result: "", rally: { x: (fire?.x ?? sim2.world.start.x) + 1.5, y: (fire?.y ?? sim2.world.start.y) + 6 } };
   sim2.plans.push(plan2);
   return plan2;
 }
 function addMission(sim2, plan2, squadId, withdrawAt = 0.5) {
   if (!sim2.squadById(squadId)) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
   if (plan2.missions.some((m) => m.squad === squadId)) return "\u0110\u1ED9i n\xE0y \u0111\xE3 c\xF3 nhi\u1EC7m v\u1EE5";
-  plan2.missions.push({ squad: squadId, objective: "camp", route: "main", trigger: { kind: "time", at: 0 }, stance: "fight", withdrawAt, state: "idle", initial: 0, post: "gate", deploy: null, path: [], retreat: [], leg: 0 });
+  plan2.missions.push({ squad: squadId, objective: "camp", route: "main", trigger: { kind: "time", at: 0 }, stance: "fight", withdrawAt, state: "idle", initial: 0, post: "gate", deploy: null, path: [], retreat: [], leg: 0, target: null, block: null });
   return null;
 }
 function removeMission(plan2, squadId) {
@@ -28482,7 +32472,7 @@ function deploySquad(sim2, plan2, squadId, kind, cells, heading, o, p) {
   const s = sim2.squadById(squadId);
   if (!s) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
   if (plan2.status === "running") return "K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y: kh\xF4ng v\u1EBD l\u1EA1i \u0111\u01B0\u1EE3c";
-  if (cells.length < SQUAD_MIN || cells.length > SQUAD_MAX) return `\u0110\u1ED9i h\xECnh c\xF3 t\u1EEB ${SQUAD_MIN} \u0111\u1EBFn ${SQUAD_MAX} \xF4`;
+  if (cells.length < SQUAD_MIN || cells.length > sim2.cellLimit()) return `\u0110\u1ED9i h\xECnh c\xF3 t\u1EEB ${SQUAD_MIN} \u0111\u1EBFn ${sim2.cellLimit()} \xF4`;
   if (kind && !sim2.formationOpen(kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${FORMATIONS[kind].name}`;
   if (kind && kind !== s.formation) {
     const e = sim2.setFormation(s.id, kind);
@@ -28497,16 +32487,35 @@ function deploySquad(sim2, plan2, squadId, kind, cells, heading, o, p) {
 function setMissionPath(sim2, plan2, squadId, pts, retreat = false) {
   const m = drawable(sim2, plan2, squadId);
   if (typeof m === "string") return m;
-  const list = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
-  if (retreat) m.retreat = list;
-  else m.path = list;
+  let list = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
+  if (!retreat && list.length > 4) list = [...list.slice(0, 3), list[list.length - 1]];
+  if (retreat) {
+    m.retreat = list;
+    return null;
+  }
+  if (m.target && list.length) list[list.length - 1] = { ...m.target.at };
+  if (m.target && !list.length) m.target = null;
+  m.path = list;
+  return null;
+}
+function setMissionTarget(sim2, plan2, squadId, target) {
+  const m = drawable(sim2, plan2, squadId);
+  if (typeof m === "string") return m;
+  const t = sim2.tribes.find((x) => x.id === plan2.tribe);
+  if (!t) return "Ch\u01B0a ch\u1ECDn l\xE0ng \u0111\u1EC3 \u0111\xE1nh";
+  if (!m.deploy) return "\u0110\u1EB7t \u0111\u1ED9i h\xECnh c\u1EE7a \u0111\u1ED9i l\xEAn b\u1EA3n \u0111\u1ED3 tr\u01B0\u1EDBc";
+  if (target.kind === "prop" && !t.props.some((p) => p.x === target.x && p.y === target.y)) return "C\xF4ng tr\xECnh n\xE0y kh\xF4ng c\xF2n";
+  m.target = { ...target, at: { ...target.at } };
+  m.path = [{ ...target.at }];
+  m.block = null;
+  m.objective = target.kind === "person" ? target.leader ? "leader" : "camp" : target.label === "Kho l\u01B0\u01A1ng" ? "stores" : "camp";
   return null;
 }
 function squadPace(sim2, s) {
-  const us = sim2.squadUnits(s), base = us.length ? Math.min(...us.map((v) => 1.6 + 0.1 * v.stats.agi)) : 2.1;
+  const us = sim2.squadUnits(s), base = us.length ? Math.min(...us.map((v) => (1.6 + 0.1 * v.stats.agi) * sim2.mountSpeed(v))) : 2.1;
   return base * FORMATIONS[s.formation].speed * WEATHER[sim2.weather].speed;
 }
-function routeTime(sim2, s, from, pts) {
+function routeTime(sim2, s, from, pts, target) {
   const pace = squadPace(sim2, s) || 1, legs = [], blocked = [];
   let at = from, length = 0;
   for (const p of pts) {
@@ -28519,7 +32528,7 @@ function routeTime(sim2, s, from, pts) {
     length += d;
     at = p;
   }
-  return { legs, total: legs.reduce((a, b) => a + b, 0), length, blocked };
+  return { legs, total: legs.reduce((a, b) => a + b, 0), length, blocked, hits: sim2.pathHits(from, pts, target) };
 }
 function missionStart(sim2, m, toward) {
   const d = m.deploy;
@@ -28567,22 +32576,81 @@ function reviewPlan(sim2, plan2) {
   for (const m of plan2.missions) {
     const s = sim2.squadById(m.squad), n = s ? sim2.squadUnits(s).length : 0, name = s?.name ?? "?";
     if (!n) out.push(`\u2717 ${name} ch\u01B0a c\xF3 l\xEDnh.`);
+    else if (isLogistics(plan2, m)) out.push(`${name} l\xE0 \u0111\u1ED9i h\u1EADu c\u1EA7n (kh\xF4ng c\xF3 m\u0169i t\xEAn): \u0111i tr\u01B0\u1EDBc ph\xE1 v\u1EADt c\u1EA3n tr\xEAn \u0111\u01B0\u1EDDng c\xE1c \u0111\u1ED9i kh\xE1c r\u1ED3i v\u1EC1 ch\u1ED7 c\u0169, kh\xF4ng ra tr\u1EADn.`);
     else if (plan2.kind === "attack" && !m.path.length && !canTarget(sim2, m.objective, plan2.tribe)) out.push(`\u2717 ${name} nh\u1EAFm "${OBJECTIVE_NAME[m.objective]}" nh\u01B0ng b\u1EA3n \u0111\u1ED3 ch\u01B0a \u0111\u1EE7 c\u1EA5p.`);
-    else if (plan2.kind === "attack" && !m.path.length) out.push(`${name} ch\u01B0a c\xF3 m\u0169i t\xEAn: s\u1EBD ti\u1EBFn th\u1EB3ng v\xE0o \u0111\u1ED1ng l\u1EEDa c\u1EE7a \u0111\u1ECBch.`);
-    else if (m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
-    else if (m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
-    if (n && m.deploy && n < m.deploy.cells.length) out.push(`\u2717 ${name} m\u1EDBi c\xF3 ${n}/${m.deploy.cells.length} l\xEDnh cho ${m.deploy.cells.length} \xF4 \u0111\u1ED9i h\xECnh: th\xEAm l\xEDnh v\xE0o \u0111\u1ED9i ho\u1EB7c b\u1EDBt \xF4 (\u2702 B\u1EDBt \xF4).`);
-    const unfit = s ? sim2.squadUnits(s).filter((v) => v.down > 0 || sim2.sleepLocked(v)).length : 0;
-    if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
+    else if (plan2.kind === "attack" && !m.path.length) out.push(`${name} ch\u01B0a c\xF3 m\u1EE5c ti\xEAu: b\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi tr\xEAn b\u1EA3n \u0111\u1ED3, n\u1EBFu kh\xF4ng s\u1EBD ti\u1EBFn th\u1EB3ng v\xE0o \u0111\u1ED1ng l\u1EEDa c\u1EE7a \u0111\u1ECBch.`);
+    if (n && m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
+    if (n && m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
+    if (n && m.deploy && n < m.deploy.cells.length && !isLogistics(plan2, m)) out.push(`\u2717 ${name} m\u1EDBi c\xF3 ${n}/${m.deploy.cells.length} l\xEDnh cho ${m.deploy.cells.length} \xF4 \u0111\u1ED9i h\xECnh: th\xEAm l\xEDnh v\xE0o \u0111\u1ED9i ho\u1EB7c b\u1EDBt \xF4 (\u2702 B\u1EDBt \xF4).`);
+    const unfit = s ? sim2.squadUnits(s).filter((v) => v.down > 0 || v.train || sim2.sleepLocked(v)).length : 0;
+    if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng, \u0111ang hu\u1EA5n luy\u1EC7n ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
     if (s && n && !sim2.squadCenter(s)) out.push(`${name} ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng.`);
     if (s && plan2.kind === "attack" && m.withdrawAt > 0 && !m.retreat.length && m.path.length) out.push(`${name} s\u1EBD r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n v\xEC ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt.`);
     if (s && plan2.kind === "attack" && m.route === "night") out.push(`${name} \u0111i \u0111\u01B0\u1EDDng v\xF2ng ban \u0111\xEAm: s\u1EBD ch\u1EDD \u0111\u1EBFn t\u1ED1i m\u1EDBi xu\u1EA5t ph\xE1t.`);
+    if (s && plan2.kind === "attack") out.push(...obstacleLines(sim2, plan2, m, name));
   }
   if (plan2.kind === "attack") {
     const starts = plan2.missions.filter((m) => m.trigger.kind === "time" && m.trigger.at <= 0).length;
     if (plan2.missions.length && !starts && !plan2.cards.some((c) => c.kind === "go")) out.push("Kh\xF4ng \u0111\u1ED9i n\xE0o c\xF3 gi\u1EDD xu\u1EA5t ph\xE1t: h\xE3y th\xEAm th\u1EBB Xu\u1EA5t ph\xE1t ho\u1EB7c \u0111\u1EB7t gi\u1EDD.");
   }
   return out;
+}
+function isLogistics(plan2, m) {
+  return plan2.kind === "attack" && !m.path.length && !m.target && plan2.missions.some((x) => x.path.length > 0);
+}
+function supplyUnits(sim2, plan2) {
+  return plan2.missions.filter((m) => isLogistics(plan2, m)).flatMap((m) => {
+    const s = sim2.squadById(m.squad);
+    return s ? sim2.squadUnits(s) : [];
+  });
+}
+function obstacleLines(sim2, plan2, m, name) {
+  const out = [], start = sim2.missionStart(m);
+  if (start && m.path.length) {
+    const hits = sim2.pathHits(start, m.path, m.target?.kind === "prop" ? m.target.at : void 0), seen = /* @__PURE__ */ new Set(), crew2 = supplyUnits(sim2, plan2).length > 0;
+    for (const o of hits) {
+      if (!o || o.kind === "enemy" || seen.has(`${o.x},${o.y}`)) continue;
+      seen.add(`${o.x},${o.y}`);
+      if (!o.clear) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label} \u1EDF (${o.x}, ${o.y}), kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c: h\xE3y u\u1ED1n m\u0169i t\xEAn \u0111i v\xF2ng.`);
+      else if (!crew2) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label} \u1EDF (${o.x}, ${o.y}): c\u1EA7n m\u1ED9t \u0111\u1ED9i h\u1EADu c\u1EA7n (m\u1ED9t \u0111\u1ED9i kh\xF4ng v\u1EBD m\u0169i t\xEAn) c\xF3 l\xEDnh \u0111\u1EC3 ph\xE1 tr\u01B0\u1EDBc khi \u0111\xE1nh.`);
+    }
+  }
+  if (m.deploy) {
+    const under = m.deploy.cells.map((c) => sim2.obstacleAt(Math.floor(c.x), Math.floor(c.y))).filter((o) => !!o);
+    const cut = under.filter((o) => o.clear && o.kind !== "enemy").length, stuck = under.length - cut;
+    if (cut) out.push(`${name}: ${cut} \xF4 \u0111\u1ED9i h\xECnh n\u1EB1m d\u01B0\u1EDBi c\xE2y ho\u1EB7c \u0111\xE1, l\xEDnh s\u1EBD t\u1EF1 ph\xE1 khi tri\u1EC3n khai.`);
+    if (stuck) out.push(`${name}: ${stuck} \xF4 \u0111\u1ED9i h\xECnh n\u1EB1m tr\xEAn n\u01B0\u1EDBc ho\u1EB7c c\xF4ng tr\xECnh, kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c: l\xEDnh \u0111\u1EE9ng l\u1EC7ch ra, \u0111\u1ED9i h\xECnh b\u1ECB m\xE9o.`);
+  }
+  return out;
+}
+function listClears(sim2, plan2) {
+  const todo = /* @__PURE__ */ new Map(), crew2 = plan2.missions.find((m) => isLogistics(plan2, m))?.squad ?? -1;
+  for (const m of plan2.missions) {
+    const s = sim2.squadById(m.squad), start = sim2.missionStart(m);
+    if (!s || !start || !m.path.length) continue;
+    for (const o of sim2.corridorBlocks(start, m.path, m.target?.kind === "prop" ? m.target.at : void 0)) todo.set(o.y * sim2.world.size + o.x, { squad: crew2, x: o.x, y: o.y });
+  }
+  plan2.clears = [...todo.values()].slice(0, 80);
+}
+function crewClears(sim2, plan2) {
+  plan2.clears = plan2.clears.filter((c) => {
+    const o = sim2.obstacleAt(c.x, c.y);
+    return !!o && o.clear;
+  });
+  const crew2 = supplyUnits(sim2, plan2), busy2 = new Set(crew2.filter((v) => v.breaks).map((v) => `${v.breaks.x},${v.breaks.y}`));
+  if (!crew2.length) return;
+  for (const v of crew2) {
+    if (v.breaks) continue;
+    const c = plan2.clears.filter((q) => !busy2.has(`${q.x},${q.y}`)).sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
+    if (!c) break;
+    busy2.add(`${c.x},${c.y}`);
+    sim2.startBreaking(v, sim2.obstacleAt(c.x, c.y), v.fight.anchor ?? { x: v.x, y: v.y });
+  }
+}
+function cancelPlan(sim2, plan2) {
+  if (plan2.status === "running") return "K\u1EBF ho\u1EA1ch \u0111ang ch\u1EA1y: h\xE3y r\xFAt qu\xE2n tr\u01B0\u1EDBc";
+  sim2.plans.splice(sim2.plans.indexOf(plan2), 1);
+  return null;
 }
 function objectivePos(sim2, plan2, m) {
   const t = sim2.tribes.find((x) => x.id === plan2.tribe);
@@ -28611,7 +32679,12 @@ function objectivePos(sim2, plan2, m) {
 function goLeg(sim2, s, m, pts) {
   const p = pts[Math.min(m.leg, pts.length - 1)], last = m.leg >= pts.length - 1;
   const mode = m.state === "withdraw" || m.stance === "evade" ? "move" : last && m.stance === "hold" ? "hold" : "attack";
-  sim2.squadMove(s, p.x, p.y, mode);
+  if (m.state === "withdraw" || pts !== m.path) {
+    sim2.squadMove(s, p.x, p.y, mode);
+    return;
+  }
+  const ob = sim2.arrowMove(s, m, p, mode);
+  if (ob) sim2.haltSquad(m, s, ob);
 }
 function pathStep(sim2, m, s, c) {
   if (m.state !== "march") return;
@@ -28625,7 +32698,7 @@ function pathStep(sim2, m, s, c) {
   m.state = "engaged";
   sim2.noteBattle("note", `${s.name} t\u1EDBi ch\u1ED7 t\u1EA5n c\xF4ng.`);
   const end = m.path[m.path.length - 1];
-  if (m.stance === "evade" || !end) return;
+  if (m.target || m.stance === "evade" || !end) return;
   const about = sim2.foes.some((f) => f.health > 0 && f.ai && f.ai.role !== "civ" && Math.hypot(f.x - end.x, f.y - end.y) < 12);
   if (!about) {
     sim2.squadMove(s, end.x, end.y, "hold");
@@ -28676,15 +32749,20 @@ function assemble(sim2, s, d) {
   s.heading = d.heading;
   s.anchor = { x: cells.reduce((a, c) => a + c.x, 0) / cells.length, y: cells.reduce((a, c) => a + c.y, 0) / cells.length };
   us.forEach((v, i) => {
-    const c = cells[Math.min(i, cells.length - 1)], spot = sim2.nearestFree(Math.floor(c.x), Math.floor(c.y), taken) ?? [Math.floor(c.x), Math.floor(c.y)];
+    const c = cells[Math.min(i, cells.length - 1)], ob = sim2.obstacleAt(Math.floor(c.x), Math.floor(c.y));
+    if (ob?.clear && ob.kind !== "enemy" && sim2.startBreaking(v, ob, { x: Math.floor(c.x) + 0.5, y: Math.floor(c.y) + 0.5 })) {
+      taken.add(Math.floor(c.y) * sim2.world.size + Math.floor(c.x));
+      return;
+    }
+    const spot = sim2.nearestFree(Math.floor(c.x), Math.floor(c.y), taken) ?? [Math.floor(c.x), Math.floor(c.y)];
     taken.add(spot[1] * sim2.world.size + spot[0]);
     sim2.orderMove([v.id], spot[0], spot[1]);
   });
 }
 function assembled(sim2, plan2) {
-  return plan2.missions.every((m) => {
+  return (!plan2.clears.length || !supplyUnits(sim2, plan2).length) && plan2.missions.every((m) => {
     const s = sim2.squadById(m.squad);
-    return !s || sim2.squadUnits(s).every((v) => !v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5);
+    return !s || sim2.squadUnits(s).every((v) => !v.breaks && (!v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5));
   });
 }
 function regather(sim2, plan2) {
@@ -28693,7 +32771,10 @@ function regather(sim2, plan2) {
     if (!s) continue;
     for (const v of sim2.squadUnits(s)) {
       const a = v.fight.anchor;
-      if (a && v.phase !== "fight" && !v.path.length && v.down <= 0 && Math.hypot(v.x - a.x, v.y - a.y) >= 2.5) sim2.orderMove([v.id], Math.floor(a.x), Math.floor(a.y));
+      if (!a || v.breaks || v.phase === "fight" || v.path.length || v.down > 0 || Math.hypot(v.x - a.x, v.y - a.y) < 2.5) continue;
+      const ob = sim2.obstacleAt(Math.floor(a.x), Math.floor(a.y));
+      if (ob?.clear && ob.kind !== "enemy" && sim2.startBreaking(v, ob, a)) continue;
+      sim2.orderMove([v.id], Math.floor(a.x), Math.floor(a.y));
     }
   }
 }
@@ -28749,14 +32830,47 @@ function startPlan(sim2, plan2) {
     m.state = "wait";
     m.initial = sim2.squadUnits(s).length;
     m.leg = 0;
+    m.block = null;
     if (m.deploy) assemble(sim2, s, m.deploy);
+    else if (isLogistics(plan2, m)) for (const v of sim2.squadUnits(s)) {
+      v.fight.mode = "guard";
+      v.fight.anchor = { x: v.x, y: v.y };
+    }
   }
   plan2.status = "running";
   plan2.stage = "assemble";
   plan2.startedAt = sim2.time;
   plan2.signal = false;
+  plan2.result = "";
+  listClears(sim2, plan2);
+  crewClears(sim2, plan2);
   sim2.say(`Tri\u1EC3n khai qu\xE2n \u0111\xE1nh ${sim2.tribes.find((t) => t.id === plan2.tribe)?.def.name ?? ""} b\u1EAFt \u0111\u1EA7u.`);
   return null;
+}
+function endCheck(sim2, plan2, t) {
+  if (!t) {
+    plan2.status = "done";
+    plan2.result = "lost";
+    return;
+  }
+  const armed = t.unitIds.some((id) => {
+    const u = sim2.get(id);
+    return !!u && u.health > 0 && u.ai?.role !== "civ";
+  });
+  if (t.state !== "free" || !armed && t.props.length === 0) {
+    plan2.status = "done";
+    plan2.result = "won";
+    sim2.say(`Chi\u1EBFn th\u1EAFng! ${t.def.name} kh\xF4ng c\xF2n l\xEDnh, l\u1EEDa t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh \u0111\xE3 s\u1EADp.`);
+    sim2.noteBattle("note", `${t.def.name} b\u1ECB san b\u1EB1ng.`);
+    if (t.state === "free") sim2.conquer(t.id, "L\xE0ng b\u1ECB san b\u1EB1ng");
+    return;
+  }
+  if (plan2.missions.every((m) => m.state === "done" || m.state === "idle")) {
+    plan2.status = "done";
+    plan2.result = "lost";
+    const left = plan2.missions.some((m) => m.initial > 0 && (sim2.squadById(m.squad) ? sim2.squadUnits(sim2.squadById(m.squad)).length : 0) > 0);
+    sim2.say(left ? "Thua tr\u1EADn: qu\xE2n ta \u0111\xE3 r\xFAt kh\u1ECFi chi\u1EBFn tr\u01B0\u1EDDng." : "Thua tr\u1EADn: qu\xE2n ta kh\xF4ng c\xF2n ai.");
+  }
 }
 function tickPlans(sim2, dt) {
   if (sim2.alarmUntil > 0 && sim2.time > sim2.alarmUntil) sim2.alarmUntil = 0;
@@ -28764,8 +32878,11 @@ function tickPlans(sim2, dt) {
     if (plan2.kind !== "attack" || plan2.status !== "running") continue;
     const t = sim2.tribes.find((x) => x.id === plan2.tribe);
     if (plan2.stage === "assemble") {
-      if (Math.floor(sim2.time) !== Math.floor(sim2.time - dt)) regather(sim2, plan2);
-      const late = sim2.time - plan2.startedAt > 150;
+      if (Math.floor(sim2.time) !== Math.floor(sim2.time - dt)) {
+        regather(sim2, plan2);
+        crewClears(sim2, plan2);
+      }
+      const late = sim2.time - plan2.startedAt > 150 + 60 * plan2.clears.length;
       if (assembled(sim2, plan2) || late) {
         plan2.stage = "ready";
         const missing2 = plan2.missions.reduce((a, m) => {
@@ -28792,9 +32909,10 @@ function tickPlans(sim2, dt) {
       continue;
     }
     if (plan2.stage === "assemble" || plan2.stage === "ready") continue;
+    const second = Math.floor(sim2.time) !== Math.floor(sim2.time - dt), half = Math.floor(sim2.time * 2) !== Math.floor((sim2.time - dt) * 2);
     for (const m of plan2.missions) {
       const s = sim2.squadById(m.squad);
-      if (!s || !sim2.squadUnits(s).length) {
+      if (!s || !sim2.squadUnits(s).length || isLogistics(plan2, m)) {
         if (m.state !== "done") {
           m.state = "done";
         }
@@ -28802,9 +32920,19 @@ function tickPlans(sim2, dt) {
       }
       const alive = sim2.squadUnits(s).length, c = sim2.squadCenter(s);
       if (m.state === "wait" && triggered(sim2, plan2, m)) dispatch(sim2, plan2, m, s);
-      else if (m.state === "march" || m.state === "engaged") {
+      else if (m.state === "blocked") {
+        if (second && sim2.blockCleared(m)) {
+          m.block = null;
+          m.state = "march";
+          goLeg(sim2, s, m, m.path);
+          sim2.say(`${s.name} \u0111i ti\u1EBFp.`);
+        }
+      }
+      if (m.state === "march" || m.state === "engaged" || m.state === "blocked") {
+        if (m.state === "march" && m.path.length && half && sim2.watchMarch(m, s)) continue;
+        if (second && m.state !== "blocked") sim2.tickTarget(plan2, m, s);
         const pos = m.path.length ? null : objectivePos(sim2, plan2, m);
-        if (m.path.length) pathStep(sim2, m, s, c);
+        if (m.path.length && m.state !== "blocked") pathStep(sim2, m, s, c);
         if (pos) {
           const d = Math.hypot(pos.x - c.x, pos.y - c.y);
           if (m.state === "march" && d < 9) {
@@ -28817,6 +32945,7 @@ function tickPlans(sim2, dt) {
         if (m.withdrawAt > 0 && (lost >= m.withdrawAt || morale < 25)) {
           m.state = "withdraw";
           m.leg = 0;
+          m.block = null;
           if (m.retreat.length) goLeg(sim2, s, m, m.retreat);
           else sim2.squadMove(s, plan2.rally.x, plan2.rally.y, "move");
           sim2.noteBattle("note", `${s.name} r\xFAt lui sau khi m\u1EA5t ${Math.round(lost * 100)}% qu\xE2n.`);
@@ -28834,12 +32963,7 @@ function tickPlans(sim2, dt) {
         } else if (Math.hypot(plan2.rally.x - c.x, plan2.rally.y - c.y) < 7) m.state = "done";
       }
     }
-    if (plan2.missions.every((m) => m.state === "done" || m.state === "idle") || !t || t.state !== "free") {
-      plan2.status = "done";
-      sim2.say("K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng k\u1EBFt th\xFAc.");
-      if (t && t.state !== "free") sim2.noteBattle("note", `${t.def.name} \u0111\xE3 khu\u1EA5t ph\u1EE5c.`);
-    }
-    void dt;
+    endCheck(sim2, plan2, t);
   }
 }
 function playCard(sim2, plan2, cardId) {
@@ -28860,6 +32984,7 @@ function playCard(sim2, plan2, cardId) {
     case "go":
     case "advance":
       if (m.state === "withdraw" || m.state === "done") return `${s.name} \u0111\xE3 r\xFAt`;
+      if (m.state === "blocked") return `${s.name} \u0111ang b\u1ECB ch\u1EB7n: c\u1EED l\xEDnh ph\xE1 v\u1EADt c\u1EA3n tr\u01B0\u1EDBc`;
       if (!m.initial) m.initial = sim2.squadUnits(s).length;
       dispatch(sim2, plan2, m, s);
       break;
@@ -28929,7 +33054,7 @@ function soundAlarm(sim2) {
 var SPREAD = [0.4, 0.35, 0.2, 0.1];
 var AVERAGE_STAT = 6.5;
 function dps(weapon, str, agi, armor) {
-  const w = WEAPONS[weapon ?? "fist"] ?? WEAPONS.fist, base = w.damage + (w.ranged ? 0 : RULES.strengthDamage * str);
+  const w = WEAPONS[weapon ?? "fist"] ?? WEAPONS.fist, base = w.damage + RULES.strengthDamage * str;
   return base * (1 - (armor ? armor[w.type] : 0)) / cycleOf(w.cycle, agi);
 }
 var armOf2 = (sim2, v) => sim2.armOf(v);
@@ -29013,31 +33138,538 @@ function forecastPlan(sim2, plan2) {
   if (sim2.resting) w.push("\u0110ang ban \u0111\xEAm: qu\xE2n \u0111i ch\u1EADm v\xE0 nh\xECn k\xE9m.");
   if (sim2.weather !== "clear") w.push("Th\u1EDDi ti\u1EBFt x\u1EA5u: qu\xE2n \u0111i ch\u1EADm h\u01A1n.");
   if (level < 3) w.push(`B\u1EA3n \u0111\u1ED3 c\u1EA5p ${level}: ${level === 1 ? "ch\u01B0a bi\u1EBFt \u0111\u1ECBch c\xF3 l\xEDnh hay c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 n\xE0o" : "ch\u01B0a bi\u1EBFt \u0111\u1ECBch c\xF3 bao nhi\xEAu l\xEDnh v\xE0 thu\u1ED9c binh ch\u1EE7ng n\xE0o"}, n\xEAn d\u1EF1 b\xE1o c\xF2n thi\u1EBFu ch\u1EAFc ch\u1EAFn.`);
-  out.win = [`\u0110\u1ECBch m\u1EA5t s\u1EE9c chi\u1EBFn \u0111\u1EA5u; ${t.def.name} c\xF3 th\u1EC3 khu\u1EA5t ph\u1EE5c ho\u1EB7c b\u1ECB x\xF3a s\u1ED5 n\u1EBFu th\u1EE7 l\u0129nh v\xE0 l\xEDnh g\u1EE5c h\u1EBFt.`, "Ta l\u1EA5y \u0111\u01B0\u1EE3c nh\u1EEFng g\xEC c\xF2n trong kho l\u01B0\u01A1ng c\u1EE7a h\u1ECD.", `D\u1EF1 ki\u1EBFn ta m\u1EA5t kho\u1EA3ng ${pct(lossIfWin)} s\u1ED1 l\xEDnh \u0111\xE3 d\xE0n tr\u1EADn.`];
-  out.lose = [`Ph\u1EA7n l\u1EDBn l\xEDnh ra tr\u1EADn c\xF3 th\u1EC3 g\u1EE5c; l\xEDnh ch\u1EBFt l\xE0 m\u1EA5t h\u1EB3n, c\xF9ng v\u0169 kh\xED v\xE0 gi\xE1p mang theo.`, "Tinh th\u1EA7n d\xE2n gi\u1EA3m; k\u1EBB \u0111\u1ECBch b\u1ECB ch\u1ECDc gi\u1EADn n\xEAn c\xF3 th\u1EC3 k\xE9o \u0111\u1EBFn tr\u1EA3 \u0111\u0169a.", "R\xFAt k\u1ECBp th\xEC c\u1EE9u \u0111\u01B0\u1EE3c nh\u1EEFng ng\u01B0\u1EDDi c\xF2n l\u1EA1i, nh\u01B0ng chi\u1EBFn l\u1EE3i ph\u1EA9m th\xEC kh\xF4ng c\xF3."];
+  out.win = [`Th\u1EAFng khi ${t.def.name} h\u1EBFt l\xEDnh, l\u1EEDa c\u1EE7a h\u1ECD t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh s\u1EADp; khi \u0111\xF3 d\xE2n c\u1EE7a h\u1ECD xin h\xE0ng.`, "Ta l\u1EA5y \u0111\u01B0\u1EE3c nh\u1EEFng g\xEC c\xF2n trong kho l\u01B0\u01A1ng c\u1EE7a h\u1ECD.", `D\u1EF1 ki\u1EBFn ta m\u1EA5t kho\u1EA3ng ${pct(lossIfWin)} s\u1ED1 l\xEDnh \u0111\xE3 d\xE0n tr\u1EADn.`];
+  out.lose = ["Thua khi qu\xE2n ta h\u1EBFt l\xEDnh ho\u1EB7c r\xFAt lui.", `Ph\u1EA7n l\u1EDBn l\xEDnh ra tr\u1EADn c\xF3 th\u1EC3 g\u1EE5c; l\xEDnh ch\u1EBFt l\xE0 m\u1EA5t h\u1EB3n, c\xF9ng v\u0169 kh\xED v\xE0 gi\xE1p mang theo.`, "Tinh th\u1EA7n d\xE2n gi\u1EA3m; k\u1EBB \u0111\u1ECBch b\u1ECB ch\u1ECDc gi\u1EADn n\xEAn c\xF3 th\u1EC3 k\xE9o \u0111\u1EBFn tr\u1EA3 \u0111\u0169a.", "R\xFAt k\u1ECBp th\xEC c\u1EE9u \u0111\u01B0\u1EE3c nh\u1EEFng ng\u01B0\u1EDDi c\xF2n l\u1EA1i, nh\u01B0ng chi\u1EBFn l\u1EE3i ph\u1EA9m th\xEC kh\xF4ng c\xF3."];
   out.verdict = out.chance >= 0.8 ? "R\u1EA5t c\xF3 l\u1EE3i" : out.chance >= 0.6 ? "C\xF3 l\u1EE3i" : out.chance >= 0.4 ? "C\xE2n b\u1EB1ng" : out.chance >= 0.2 ? "B\u1EA5t l\u1EE3i" : "R\u1EA5t b\u1EA5t l\u1EE3i";
-  const L = out.lines;
-  L.push(`Qu\xE2n ta: ${count} l\xEDnh trong ${perSquad.length} \u0111\u1ED9i${arms.archer || arms.cavalry ? ` (${arms.foot} b\u1ED9 binh, ${arms.archer} b\u1EAFn xa, ${arms.cavalry} k\u1EF5)` : ""}.`);
+  const L2 = out.lines;
+  L2.push(`Qu\xE2n ta: ${count} l\xEDnh trong ${perSquad.length} \u0111\u1ED9i${arms.archer || arms.cavalry ? ` (${arms.foot} b\u1ED9 binh, ${arms.archer} b\u1EAFn xa, ${arms.cavalry} k\u1EF5)` : ""}.`);
   if (level === 1) {
-    L.push(`L\xE0ng ${t.def.name} c\xF3 kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi; \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED.`);
-    L.push("Ch\u01B0a r\xF5 v\u0169 kh\xED, c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 hay th\u1EE7 l\u0129nh: c\u1EA7n b\u1EA3n \u0111\u1ED3 c\u1EA5p 2 v\xE0 3 \u0111\u1EC3 bi\u1EBFt th\xEAm.");
+    L2.push(`L\xE0ng ${t.def.name} c\xF3 kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi; \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED.`);
+    L2.push("Ch\u01B0a r\xF5 v\u0169 kh\xED, c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 hay th\u1EE7 l\u0129nh: c\u1EA7n b\u1EA3n \u0111\u1ED3 c\u1EA5p 2 v\xE0 3 \u0111\u1EC3 bi\u1EBFt th\xEAm.");
   } else {
-    L.push(`L\xE0ng ${t.def.name}: kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi${level >= 3 ? `, trong \u0111\xF3 ${men} l\xEDnh` : `, \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED`}.`);
-    L.push(works > 1 ? `Ph\xF2ng th\u1EE7: ${towers} ch\xF2i canh, ${fences} \u0111o\u1EA1n r\xE0o, ${gates} c\u1ED5ng (t\u0103ng kho\u1EA3ng ${pct(works - 1)} s\u1EE9c \u0111\u1ECBch).` : "Ch\u01B0a th\u1EA5y c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 n\xE0o.");
+    L2.push(`L\xE0ng ${t.def.name}: kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi${level >= 3 ? `, trong \u0111\xF3 ${men} l\xEDnh` : `, \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED`}.`);
+    L2.push(works > 1 ? `Ph\xF2ng th\u1EE7: ${towers} ch\xF2i canh, ${fences} \u0111o\u1EA1n r\xE0o, ${gates} c\u1ED5ng (t\u0103ng kho\u1EA3ng ${pct(works - 1)} s\u1EE9c \u0111\u1ECBch).` : "Ch\u01B0a th\u1EA5y c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 n\xE0o.");
   }
   if (level >= 3 && soldiers) {
-    L.push(`L\xEDnh \u0111\u1ECBch: ${soldiers.foot} b\u1ED9 binh, ${soldiers.archer} cung th\u1EE7, ${soldiers.cavalry} k\u1EF5 th\xFA${chief > 1 ? "; c\xF3 th\u1EE7 l\u0129nh \u0111i c\xF9ng" : ""}.`);
-    L.push(match > 1.05 ? "Binh ch\u1EE7ng c\u1EE7a ta kh\u1EAFc binh ch\u1EE7ng \u0111\u1ECBch." : match < 0.95 ? "Binh ch\u1EE7ng \u0111\u1ECBch kh\u1EAFc qu\xE2n ta: n\xEAn \u0111\u1ED5i \u0111\u1ED9i h\xECnh." : "Binh ch\u1EE7ng hai b\xEAn ngang nhau.");
-    L.push(`S\u1EE9c m\u1EA1nh quy \u0111\u1ED5i: ta ${Math.round(ours)} so v\u1EDBi \u0111\u1ECBch ${Math.round(theirs)}.`);
-    for (const q of perSquad) L.push(`${q.name}: ${q.n} l\xEDnh, \u0111\xF3ng g\xF3p ${ours > 0 ? pct(q.worth * match / ours) : "0%"} s\u1EE9c m\u1EA1nh c\u1EE7a ta.`);
+    L2.push(`L\xEDnh \u0111\u1ECBch: ${soldiers.foot} b\u1ED9 binh, ${soldiers.archer} cung th\u1EE7, ${soldiers.cavalry} k\u1EF5 th\xFA${chief > 1 ? "; c\xF3 th\u1EE7 l\u0129nh \u0111i c\xF9ng" : ""}.`);
+    L2.push(match > 1.05 ? "Binh ch\u1EE7ng c\u1EE7a ta kh\u1EAFc binh ch\u1EE7ng \u0111\u1ECBch." : match < 0.95 ? "Binh ch\u1EE7ng \u0111\u1ECBch kh\u1EAFc qu\xE2n ta: n\xEAn \u0111\u1ED5i \u0111\u1ED9i h\xECnh." : "Binh ch\u1EE7ng hai b\xEAn ngang nhau.");
+    L2.push(`S\u1EE9c m\u1EA1nh quy \u0111\u1ED5i: ta ${Math.round(ours)} so v\u1EDBi \u0111\u1ECBch ${Math.round(theirs)}.`);
+    for (const q of perSquad) L2.push(`${q.name}: ${q.n} l\xEDnh, \u0111\xF3ng g\xF3p ${ours > 0 ? pct(q.worth * match / ours) : "0%"} s\u1EE9c m\u1EA1nh c\u1EE7a ta.`);
   }
   if (level >= 2) for (const m of plan2.missions) {
     const s = sim2.squadById(m.squad), start = s ? sim2.missionStart(m) : null;
     if (!s || !start || !m.path.length) continue;
     const r = sim2.routeTime(s, start, m.path);
-    L.push(`${s.name} \u0111i ${Math.round(r.length)} \xF4, m\u1EA5t kho\u1EA3ng ${Math.max(1, Math.round(r.total / 60))} ph\xFAt${r.blocked.some(Boolean) ? ", c\xF3 \u0111o\u1EA1n b\u1ECB ch\u1EAFn n\xEAn ph\u1EA3i \u0111i v\xF2ng" : ""}.`);
+    L2.push(`${s.name} \u0111i ${Math.round(r.length)} \xF4, m\u1EA5t kho\u1EA3ng ${Math.max(1, Math.round(r.total / 60))} ph\xFAt${r.hits.some((o) => o && o.kind !== "enemy") ? ", c\xF3 \u0111o\u1EA1n v\u01B0\u1EDBng v\u1EADt c\u1EA3n c\u1EA7n ph\xE1 ho\u1EB7c u\u1ED1n tr\xE1nh" : ""}.`);
   }
   return out;
+}
+
+// src/sim/siege.ts
+var NODE_NAME = { tree: "c\xE2y", rock: "\u0111\xE1", bush: "b\u1EE5i qu\u1EA3" };
+var PROP_NAME = { fire: "\u0110\u1ED1ng l\u1EEDa", pile: "Kho l\u01B0\u01A1ng", tower: "Ch\xF2i canh", fence: "H\xE0ng r\xE0o", gate: "C\u1ED5ng" };
+var propHp = (kind) => SIEGE.propHp[kind] ?? 60;
+function propOnTile(sim2, x, y) {
+  for (const tribe of sim2.tribes) for (const prop of tribe.props) if (x >= prop.x && x < prop.x + prop.w && y >= prop.y && y < prop.y + prop.h) return { tribe, prop };
+  return void 0;
+}
+function obstacleAt(sim2, x, y) {
+  const w = sim2.world, N = w.size;
+  if (!w.inBounds(x, y)) return { kind: "wall", x, y, label: "r\xECa b\u1EA3n \u0111\u1ED3", clear: false };
+  const node = w.nodeAt(x, y);
+  if (node) return { kind: node.kind, x, y, label: NODE_NAME[node.kind], clear: true };
+  const t = w.at(x, y);
+  if (t === Tile.Water) return { kind: "water", x, y, label: "n\u01B0\u1EDBc", clear: false };
+  if (w.occ[y * N + x]) {
+    const found = propOnTile(sim2, x, y);
+    if (found) return { kind: "enemy", x: found.prop.x, y: found.prop.y, label: PROP_NAME[found.prop.kind] ?? "c\xF4ng tr\xECnh", clear: true, tribe: found.tribe.id };
+    const b = sim2.buildingAt(x, y);
+    return b ? { kind: "ours", x, y, label: "c\xF4ng tr\xECnh c\u1EE7a l\xE0ng", clear: false } : { kind: "wall", x, y, label: "v\u1EADt c\u1EA3n", clear: false };
+  }
+  if (t !== Tile.Grass && t !== Tile.Mud) return { kind: "wall", x, y, label: "v\u1EADt c\u1EA3n", clear: false };
+  return null;
+}
+function firstBlock(sim2, from, to, reach = Infinity, skip) {
+  const d = Math.hypot(to.x - from.x, to.y - from.y), n = Math.ceil(Math.min(d, reach) * 2), sx = Math.floor(from.x), sy = Math.floor(from.y);
+  for (let i = 1; i <= n; i++) {
+    const f = Math.min(d, reach) / d * (i / n) || 0, x = Math.floor(from.x + (to.x - from.x) * f), y = Math.floor(from.y + (to.y - from.y) * f);
+    if (x === sx && y === sy) continue;
+    const o = obstacleAt(sim2, x, y);
+    if (o && !(skip && skip(o))) return o;
+  }
+  return null;
+}
+function pathHits(sim2, start, pts, target) {
+  const skip = (o) => o.kind === "enemy" && !!target && Math.abs(o.x - target.x) < 3 && Math.abs(o.y - target.y) < 3;
+  let at = start;
+  return pts.map((p) => {
+    const o = firstBlock(sim2, at, p, Infinity, skip);
+    at = p;
+    return o;
+  });
+}
+function corridorBlocks(sim2, start, pts, target) {
+  const out = /* @__PURE__ */ new Map(), N = sim2.world.size;
+  let at = start;
+  for (const p of pts) {
+    const d = Math.hypot(p.x - at.x, p.y - at.y), n = Math.max(1, Math.ceil(d * 2));
+    for (let i = 0; i <= n; i++) {
+      const cx = Math.floor(at.x + (p.x - at.x) * i / n), cy = Math.floor(at.y + (p.y - at.y) * i / n);
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const o = obstacleAt(sim2, cx + dx, cy + dy);
+        if (o && o.clear && o.kind !== "enemy" && !(target && Math.hypot(o.x - target.x, o.y - target.y) < 2)) out.set(o.y * N + o.x, o);
+      }
+    }
+    at = p;
+  }
+  return [...out.values()];
+}
+function lineSteps(sim2, from, to) {
+  const out = [], d = Math.hypot(to.x - from.x, to.y - from.y), n = Math.ceil(d * 2);
+  let lx = Math.floor(from.x), ly = Math.floor(from.y);
+  for (let i = 1; i <= n; i++) {
+    const x = Math.floor(from.x + (to.x - from.x) * i / n), y = Math.floor(from.y + (to.y - from.y) * i / n);
+    if (x === lx && y === ly) continue;
+    if (sim2.world.isBlocked(x, y)) break;
+    out.push([x, y]);
+    lx = x;
+    ly = y;
+  }
+  return out;
+}
+function breakBox(sim2, b) {
+  if (b.kind === "node") return sim2.world.nodeAt(b.x, b.y) ? { x: b.x, y: b.y, w: 1, h: 1 } : null;
+  const p = sim2.tribes.find((t) => t.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y);
+  return p ? { x: p.x, y: p.y, w: p.w, h: p.h } : null;
+}
+function startBreaking(sim2, v, ob, home) {
+  if (v.job !== "fight" || v.down > 0 || !ob.clear) return false;
+  sim2.resetTask(v);
+  sim2.clearCombat(v);
+  if (home) {
+    v.fight.mode = "guard";
+    v.fight.anchor = { x: home.x, y: home.y };
+  }
+  v.breaks = ob.kind === "enemy" ? { kind: "prop", x: ob.x, y: ob.y, tribe: ob.tribe } : { kind: "node", x: ob.x, y: ob.y };
+  v.progress = 0;
+  return true;
+}
+function stopBreaking(v) {
+  v.breaks = null;
+  v.progress = 0;
+  if (v.phase === "fight" || v.phase === "move") {
+    v.phase = "idle";
+    v.path = [];
+  }
+}
+function clearNode(sim2, x, y) {
+  const w = sim2.world, i = y * w.size + x, n = w.nodes.get(i);
+  if (!n) return;
+  for (const o of sim2.villagers) {
+    if (o.breaks?.kind === "node" && o.breaks.x === x && o.breaks.y === y) stopBreaking(o);
+    else if (o.target === i && (o.phase === "goNode" || o.phase === "work")) sim2.resetTask(o);
+  }
+  w.nodes.delete(i);
+  w.tiles[i] = Tile.Grass;
+}
+function damageProp(sim2, tribeId, x, y, dmg) {
+  const t = sim2.tribes.find((q) => q.id === tribeId), i = t ? t.props.findIndex((q) => q.x === x && q.y === y) : -1;
+  if (!t || i < 0) return;
+  const p = t.props[i];
+  p.hp = (p.hp ?? propHp(p.kind)) - dmg;
+  t.angryUntil = Math.max(t.angryUntil, sim2.time + 120);
+  if (p.hp > 0) return;
+  t.props.splice(i, 1);
+  const N = sim2.world.size;
+  for (let j = 0; j < p.h; j++) for (let k = 0; k < p.w; k++) sim2.world.occ[(p.y + j) * N + p.x + k] = 0;
+  sim2.say(`${PROP_NAME[p.kind] ?? "C\xF4ng tr\xECnh"} c\u1EE7a ${t.def.name} \u0111\xE3 b\u1ECB ph\xE1.`);
+  sim2.noteBattle("note", `${PROP_NAME[p.kind] ?? "C\xF4ng tr\xECnh"} c\u1EE7a ${t.def.name} b\u1ECB ph\xE1.`);
+  sim2.noteBattle("breach");
+}
+function breakBrain(sim2, v, dt) {
+  const b = v.breaks;
+  if (!b) return false;
+  const box = breakBox(sim2, b);
+  if (!box) {
+    stopBreaking(v);
+    return false;
+  }
+  v.fight.scan -= dt;
+  if (v.fight.scan <= 0) {
+    v.fight.scan = 0.4;
+    if (threatsOf(sim2, v, 3.5).length) {
+      stopBreaking(v);
+      return false;
+    }
+  }
+  const w = weaponOf(v), dx = Math.max(box.x - v.x, 0, v.x - (box.x + box.w)), dy = Math.max(box.y - v.y, 0, v.y - (box.y + box.h));
+  if (Math.hypot(dx, dy) <= SIEGE.reach + (b.kind === "prop" && !w.ranged ? w.range * 0.5 : 0)) {
+    v.path = [];
+    v.slide = null;
+    v.phase = "fight";
+    v.facing = box.x + box.w / 2 >= v.x ? "right" : "left";
+    if (!v.swing && v.atkCd <= 0) {
+      const { hitAt, end } = swingTimes(w.anim);
+      v.swing = { t: 0, hitAt, end, target: { kind: "unit", id: -1 } };
+      v.atkCd = swingCycle(sim2, v, w);
+      if (b.kind === "prop") damageProp(sim2, b.tribe, b.x, b.y, (weaponDamage(sim2, v, w) + RULES.strengthDamage * v.stats.str) * (w.type === "slash" ? 1.5 : 1));
+    }
+    if (b.kind === "node") {
+      const kind = sim2.world.nodeAt(b.x, b.y).kind;
+      v.progress += dt / SIEGE.clearSeconds[kind];
+      let sum = 0;
+      for (const o of sim2.villagers) if (o.breaks?.kind === "node" && o.breaks.x === b.x && o.breaks.y === b.y) sum += o.progress;
+      if (sum >= 1) clearNode(sim2, b.x, b.y);
+    }
+    return true;
+  }
+  v.fight.repath -= dt;
+  if (!v.path.length && v.fight.repath <= 0 && sim2.pathLeft > 0) {
+    sim2.pathLeft--;
+    v.fight.repath = 1;
+    if (sim2.routeTo(v, sim2.ringTiles(v, box.x, box.y, box.w, box.h), 3) < 0) {
+      stopBreaking(v);
+      return false;
+    }
+  }
+  v.phase = v.path.length ? "move" : "idle";
+  return true;
+}
+function legSpots(sim2, s, p) {
+  const us = sim2.squadUnits(s).sort((a, b) => (armOf(a) === "archer" ? 1 : 0) - (armOf(b) === "archer" ? 1 : 0) || a.id - b.id);
+  const offs = formationOffsets(s.formation, us.length), out = /* @__PURE__ */ new Map(), N = sim2.world.size;
+  us.forEach((v, i) => {
+    const [px, py] = placeOffset(offs[i], s.heading, p.x, p.y);
+    out.set(v.id, { x: Math.min(N - 1, Math.max(0, Math.floor(px))) + 0.5, y: Math.min(N - 1, Math.max(0, Math.floor(py))) + 0.5 });
+  });
+  return out;
+}
+var aimSkip = (m) => (o) => o.kind === "enemy" && m.target?.kind === "prop" && Math.abs(o.x - m.target.x) < 3 && Math.abs(o.y - m.target.y) < 3;
+function arrowMove(sim2, s, m, p, mode) {
+  const us = sim2.squadUnits(s), c = sim2.squadCenter(s);
+  if (!us.length || !c) return null;
+  if (Math.hypot(p.x - c.x, p.y - c.y) > 1) s.heading = Math.atan2(p.y - c.y, p.x - c.x);
+  s.anchor = { x: p.x, y: p.y };
+  const spots = legSpots(sim2, s, p), skip = aimSkip(m);
+  let block = null;
+  for (const v of us) {
+    const spot = spots.get(v.id);
+    v.speed = (1.6 + 0.1 * v.stats.agi) * FORMATIONS[s.formation].speed;
+    sim2.orderAttackMove([v.id], spot.x, spot.y);
+    v.fight.strict = true;
+    if (mode === "hold") v.fight.anchor = { x: spot.x, y: spot.y };
+    if (mode === "move") {
+      v.fight.mode = "guard";
+      v.fight.dest = null;
+      v.fight.anchor = { x: spot.x, y: spot.y };
+    }
+    v.path = lineSteps(sim2, v, spot);
+    v.phase = v.path.length ? "move" : "idle";
+    block ??= firstBlock(sim2, v, spot, SIEGE.lookAhead, skip);
+  }
+  return block;
+}
+function haltSquad(sim2, m, s, ob) {
+  m.state = "blocked";
+  m.block = { ...ob, since: sim2.time };
+  const us = sim2.squadUnits(s);
+  sim2.orderHold(us.map((v) => v.id));
+  if (ob.kind === "enemy") for (const v of us) startBreaking(sim2, v, ob);
+  sim2.say(ob.clear ? `${s.name} kh\xF4ng th\u1EC3 \u0111i ti\u1EBFp: v\u01B0\u1EDBng ${ob.label}.` : `${s.name} kh\xF4ng th\u1EC3 \u0111i ti\u1EBFp: v\u01B0\u1EDBng ${ob.label}, kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c.`);
+  sim2.noteBattle("note", `${s.name} b\u1ECB ch\u1EB7n b\u1EDFi ${ob.label}.`);
+}
+function watchMarch(sim2, m, s) {
+  const p = m.path[Math.min(m.leg, m.path.length - 1)];
+  if (!p) return false;
+  const spots = legSpots(sim2, s, p), skip = aimSkip(m);
+  for (const v of sim2.squadUnits(s)) {
+    const spot = spots.get(v.id);
+    if (v.breaks || v.phase === "fight" || v.down > 0) continue;
+    const ob = firstBlock(sim2, v, spot, SIEGE.lookAhead, skip);
+    if (ob) {
+      haltSquad(sim2, m, s, ob);
+      return true;
+    }
+    if (!v.path.length && Math.hypot(spot.x - v.x, spot.y - v.y) > 1.5) {
+      v.path = lineSteps(sim2, v, spot);
+      v.phase = v.path.length ? "move" : "idle";
+    }
+  }
+  return false;
+}
+function blockCleared(sim2, m) {
+  const b = m.block;
+  if (!b) return true;
+  if (b.kind === "enemy") return !propOnTile(sim2, b.x, b.y);
+  const now = obstacleAt(sim2, b.x, b.y);
+  return !now || now.kind !== b.kind;
+}
+function breakBlock(sim2, plan2, squadId, n) {
+  const m = plan2.missions.find((x) => x.squad === squadId), s = sim2.squadById(squadId);
+  if (plan2.status !== "running" || !m || !s) return "\u0110\u1ED9i n\xE0y kh\xF4ng \u1EDF trong tr\u1EADn";
+  if (m.state !== "blocked" || !m.block) return `${s.name} kh\xF4ng b\u1ECB ch\u1EB7n`;
+  if (!m.block.clear) return `Kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c ${m.block.label}: h\xE3y r\xFAt ho\u1EB7c \u0111i \u0111\u01B0\u1EDDng kh\xE1c`;
+  const ob = { ...m.block }, us = sim2.squadUnits(s).filter((v) => !v.breaks).sort((a, b) => Math.hypot(a.x - ob.x, a.y - ob.y) - Math.hypot(b.x - ob.x, b.y - ob.y));
+  let sent = 0;
+  for (const v of us.slice(0, Math.max(1, Math.min(Math.round(n), us.length)))) if (startBreaking(sim2, v, ob)) sent++;
+  if (!sent) return "Kh\xF4ng c\xF2n ai \u0111\u1EC3 c\u1EED \u0111i ph\xE1";
+  sim2.say(`${sent} l\xEDnh ${s.name} \u0111i ph\xE1 ${ob.label}.`);
+  return null;
+}
+function targetNow(sim2, plan2, m) {
+  const tg = m.target, t = sim2.tribes.find((q) => q.id === plan2.tribe);
+  if (!tg || !t) return null;
+  if (tg.kind === "prop") {
+    const p = t.props.find((q) => q.x === tg.x && q.y === tg.y);
+    return p ? { state: "live", prop: { x: p.x, y: p.y, tribe: t.id }, x: p.x + p.w / 2, y: p.y + p.h / 2 } : { state: "gone" };
+  }
+  const alive = t.unitIds.map((id) => sim2.get(id)).filter((u) => !!u && u.health > 0);
+  const pool = tg.leader ? alive.filter((u) => u.id === t.leaderId) : alive.filter((u) => u.ai?.role !== "civ");
+  if (!pool.length) return tg.leader || !alive.length ? { state: "gone" } : { state: "moved" };
+  const best = pool.slice().sort((a, b) => Math.hypot(a.x - tg.x, a.y - tg.y) - Math.hypot(b.x - tg.x, b.y - tg.y))[0];
+  return Math.hypot(best.x - tg.x, best.y - tg.y) <= SIEGE.driftMax ? { state: "live", unit: best.id, x: best.x, y: best.y } : { state: "moved" };
+}
+var idle = (v) => !v.breaks && !v.fight.target && v.phase !== "fight" && v.phase !== "flee" && v.down <= 0;
+function rampage(sim2, plan2, s) {
+  const t = sim2.tribes.find((q) => q.id === plan2.tribe);
+  if (!t) return;
+  const foes = t.unitIds.map((id) => sim2.get(id)).filter((u) => !!u && u.health > 0 && u.ai?.role !== "civ");
+  for (const v of sim2.squadUnits(s)) {
+    if (!idle(v)) continue;
+    const near2 = foes.slice().sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
+    if (near2) {
+      sim2.orderAttack([v.id], { kind: "unit", id: near2.id });
+      continue;
+    }
+    const p = t.props.slice().sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
+    if (p) startBreaking(sim2, v, { kind: "enemy", x: p.x, y: p.y, label: p.kind, clear: true, tribe: t.id });
+  }
+}
+function around(sim2, plan2, s) {
+  const t = sim2.tribes.find((q) => q.id === plan2.tribe);
+  if (!t) return;
+  for (const v of sim2.squadUnits(s)) {
+    if (!idle(v)) continue;
+    const p = t.props.find((q) => Math.hypot(q.x + q.w / 2 - v.x, q.y + q.h / 2 - v.y) < 5);
+    if (p) startBreaking(sim2, v, { kind: "enemy", x: p.x, y: p.y, label: p.kind, clear: true, tribe: t.id }, v.fight.anchor ?? { x: v.x, y: v.y });
+  }
+}
+function tickTarget(sim2, plan2, m, s) {
+  if (!m.target || m.stance === "evade" || m.stance === "hold") return false;
+  const ts = targetNow(sim2, plan2, m);
+  if (!ts) return false;
+  if (m.state === "march" && ts.state !== "gone") return true;
+  if (m.state === "march") m.state = "engaged";
+  if (ts.state === "gone") {
+    rampage(sim2, plan2, s);
+    return true;
+  }
+  if (ts.state === "moved") {
+    const end = m.path[m.path.length - 1];
+    if (end && (!s.anchor || Math.hypot(s.anchor.x - end.x, s.anchor.y - end.y) > 1)) sim2.squadMove(s, end.x, end.y, "hold");
+    around(sim2, plan2, s);
+    return true;
+  }
+  for (const v of sim2.squadUnits(s)) {
+    if (!idle(v)) continue;
+    if (ts.prop) startBreaking(sim2, v, { kind: "enemy", x: ts.prop.x, y: ts.prop.y, label: "c\xF4ng tr\xECnh", clear: true, tribe: ts.prop.tribe });
+    else if (ts.unit !== void 0) sim2.orderAttack([v.id], { kind: "unit", id: ts.unit });
+  }
+  return true;
+}
+
+// src/sim/training.ts
+var profileOf = (b) => TRAINING.profiles[b.kind];
+var trainCap = (b) => TRAINING.caps[Math.max(0, Math.min(TRAINING.caps.length, b.level) - 1)];
+function members(sim2, b) {
+  const role = ROLE_IDS.find((r) => ROLES[r].building === b.kind);
+  const inHouse = role ? sim2.villagers.filter((v) => roleOf(v) === role) : b.kind === "builder" ? sim2.crew() : b.staff.map((id) => sim2.get(id)).filter((v) => !!v);
+  const away = sim2.villagers.filter((v) => v.train?.house === b.id && !inHouse.includes(v));
+  return [...inHouse, ...away];
+}
+function trainCost(stat, care) {
+  return { food: Math.round(TRAINING.foodBase + stat), coin: Math.round(TRAINING.coinBase + stat * TRAINING.coinPerStat) + TRAINING.care[care].coin };
+}
+var trainTime = (stat) => (TRAINING.dayBase + TRAINING.dayPerStat * stat) * DAY_LENGTH;
+function startTraining(sim2, ids, houseId, care) {
+  const lock = sim2.warLock();
+  if (lock) return "\u0110ang c\xF3 chi\u1EBFn tranh: kh\xF4ng hu\u1EA5n luy\u1EC7n \u0111\u01B0\u1EE3c";
+  const b = sim2.getBuilding(houseId), p = b ? profileOf(b) : void 0;
+  if (!b || !p || !TRAINING.care[care]) return "Nh\xE0 n\xE0y kh\xF4ng hu\u1EA5n luy\u1EC7n \u0111\u01B0\u1EE3c";
+  if (!b.done) return "Nh\xE0 ch\u01B0a d\u1EF1ng xong";
+  const cap = trainCap(b), mine2 = members(sim2, b);
+  let err = null, n = 0;
+  for (const v of sim2.mine(ids)) {
+    if (!mine2.includes(v) || v.train) continue;
+    if (v.stats[p.main] >= cap) {
+      err = `${v.name} \u0111\xE3 t\u1EDBi tr\u1EA7n ${fmtStat(cap)} ${STAT_NAME[p.main].toLowerCase()} c\u1EE7a nh\xE0 c\u1EA5p ${b.level}: n\xE2ng c\u1EA5p nh\xE0`;
+      continue;
+    }
+    const cost = trainCost(v.stats[p.main], care), short = sim2.missing(cost);
+    if (short) {
+      err = short;
+      break;
+    }
+    sim2.pay(cost);
+    sim2.exitBuilding(v);
+    sim2.resetTask(v);
+    v.train = { house: b.id, stat: p.main, left: trainTime(v.stats[p.main]), total: trainTime(v.stats[p.main]), care, cap };
+    n++;
+  }
+  if (n) sim2.say(`${n} ng\u01B0\u1EDDi v\xE0o hu\u1EA5n luy\u1EC7n ${STAT_NAME[p.main].toLowerCase()} \u1EDF ${BUILDINGS[b.kind].name.toLowerCase()}.`);
+  return n ? null : err ?? "Ch\u1ECDn ng\u01B0\u1EDDi trong nh\xE0 \u0111\u1EC3 hu\u1EA5n luy\u1EC7n";
+}
+function cancelTraining(sim2, ids) {
+  for (const v of sim2.mine(ids)) if (v.train) {
+    v.train = null;
+    v.phase = "idle";
+    v.path = [];
+  }
+}
+function finish(sim2, v) {
+  const t = v.train, b = sim2.getBuilding(t.house), p = b ? profileOf(b) : void 0;
+  v.train = null;
+  if (!p) return;
+  const [lo, hi] = TRAINING.gain, r = lo + sim2.rnd() * (hi - lo), main = v.stats[p.main], next = Math.min(t.cap, main * (1 + r)), got = Math.max(0, next - main);
+  const round = (x) => Math.round(x * 100) / 100;
+  v.stats[p.main] = round(main + got);
+  if (p.partner) v.stats[p.partner] = round(Math.max(v.stats[p.partner], Math.min(t.cap, v.stats[p.partner] + got * TRAINING.partnerShare)));
+  const floor = Math.max(TRAINING.floorMin, v.born[p.cost] * TRAINING.floor);
+  v.stats[p.cost] = round(Math.max(Math.min(floor, v.stats[p.cost]), v.stats[p.cost] - got * TRAINING.care[t.care].penalty));
+  const ratio = v.maxHealth > 0 ? v.health / v.maxHealth : 1;
+  v.maxHealth = Math.round(maxHpOf(v.stats.vit));
+  v.health = v.maxHealth * ratio;
+  if (!v.squad || v.squad < 0) v.speed = 1.6 + 0.1 * v.stats.agi;
+  sim2.say(`${v.name} hu\u1EA5n luy\u1EC7n xong: ${STAT_NAME[p.main].toLowerCase()} ${fmtStat(main)} \u2192 ${fmtStat(v.stats[p.main])}, ${STAT_NAME[p.cost].toLowerCase()} ${fmtStat(v.stats[p.cost])}.`);
+}
+function trainStep(sim2, v, dt) {
+  const t = v.train;
+  if (!t) return false;
+  t.left -= dt;
+  if (t.left <= 0) {
+    finish(sim2, v);
+    return false;
+  }
+  if (v.phase === "sleep" || v.phase === "goHome") return true;
+  const b = sim2.getBuilding(t.house);
+  if (!b) {
+    v.train = null;
+    return false;
+  }
+  const d = BUILDINGS[b.kind];
+  if (!v.path.length && Math.hypot(b.x + d.w / 2 - v.x, b.y + d.h / 2 - v.y) > d.w + 2) {
+    if (sim2.pathLeft > 0) {
+      sim2.pathLeft--;
+      sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h), 3);
+    }
+    v.phase = v.path.length ? "move" : "idle";
+  } else if (!v.path.length) v.phase = "idle";
+  return true;
+}
+
+// src/sim/mounts.ts
+var stockKey = (k) => `mount_${k}`;
+var tamedCount = (sim2, k) => sim2.toolStock[stockKey(k)] ?? 0;
+var STOCK_CAP = 12;
+function tameLock(sim2, k) {
+  const d = MOUNTS[k], stable = sim2.building("stable");
+  if (!stable) return "C\u1EA7n d\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i";
+  if (stable.level < d.tier) return `C\u1EA7n Chu\u1ED3ng th\xFA c\u01B0\u1EE1i c\u1EA5p ${d.tier}`;
+  return null;
+}
+function queueTame(sim2, k) {
+  if (!MOUNTS[k]) return "Kh\xF4ng c\xF3 lo\xE0i n\xE0y";
+  const lock = tameLock(sim2, k);
+  if (lock) return lock;
+  if (sim2.tameQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
+  sim2.tameQueue.push(k);
+  return null;
+}
+function unqueueTame(sim2, k) {
+  const i = sim2.tameQueue.lastIndexOf(k);
+  if (i >= 0) sim2.tameQueue.splice(i, 1);
+}
+function tickTame(sim2, dt) {
+  for (const b of sim2.buildings) {
+    if (b.kind !== "stable" || !b.done) continue;
+    const staff = b.staff.map((id) => sim2.byId.get(id)).filter((v) => !!v);
+    if (!staff.length) continue;
+    if (!b.active) {
+      const i = sim2.tameQueue.findIndex((k3) => !tameLock(sim2, k3) && sim2.affordable(MOUNTS[k3].cost));
+      if (i < 0) {
+        if (sim2.tameQueue.length && sim2.time - sim2.lastMatWarn > 30) {
+          sim2.lastMatWarn = sim2.time;
+          sim2.say("\u0110\u01A1n thu\u1EA7n th\xFA \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
+        }
+        continue;
+      }
+      const k2 = sim2.tameQueue.splice(i, 1)[0];
+      sim2.pay(MOUNTS[k2].cost);
+      b.active = { id: k2, progress: 0 };
+    }
+    const k = b.active.id, d = MOUNTS[k];
+    if (!d) {
+      b.active = null;
+      continue;
+    }
+    let rate = 0;
+    for (const v of staff) {
+      rate += sim2.workFactor(v, "tame");
+      sim2.gainXp(v, "tame", dt);
+    }
+    b.active.progress = Math.min(1, b.active.progress + dt * PACE.work * rate * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 25 : 1) / d.time);
+    if (b.active.progress < 1) continue;
+    if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim2, m), 0) >= STOCK_CAP) {
+      if (sim2.time - sim2.lastFullWarn > 30) {
+        sim2.lastFullWarn = sim2.time;
+        sim2.say("Chu\u1ED3ng \u0111\xE3 \u0111\u1EA7y th\xFA ch\u01B0a c\xF3 ng\u01B0\u1EDDi c\u01B0\u1EE1i: s\u1EA3n ph\u1EA9m ch\u1EDD ch\u1ED7.");
+      }
+      continue;
+    }
+    sim2.toolStock[stockKey(k)] = tamedCount(sim2, k) + 1;
+    b.active = null;
+    sim2.say(`\u0110\xE3 thu\u1EA7n xong m\u1ED9t con ${d.name.toLowerCase()}.`);
+  }
+}
+function campBeast(sim2) {
+  const camp = sim2.building("cavalry");
+  return MOUNT_KINDS[Math.max(0, Math.min(MOUNT_KINDS.length, camp?.level ?? 1) - 1)];
+}
+function mountOf(sim2, v) {
+  if (v.team !== "player") return null;
+  return v.mount ?? (v.job === "fight" && v.arm === "cavalry" ? campBeast(sim2) : null);
+}
+var mountSpeed = (sim2, v) => {
+  const k = mountOf(sim2, v);
+  return k ? MOUNTS[k].speed : 1;
+};
+var mountGuard = (sim2, v) => {
+  const k = mountOf(sim2, v);
+  return k ? MOUNTS[k].guard : 1;
+};
+function assignMount(sim2, ids, kind) {
+  let given = 0, short = false, riders = false;
+  for (const v of sim2.mine(ids)) {
+    if (v.mount === kind) continue;
+    if (kind && v.job === "fight" && v.arm === "cavalry") {
+      riders = true;
+      continue;
+    }
+    if (kind && tamedCount(sim2, kind) <= 0) {
+      short = true;
+      continue;
+    }
+    if (v.mount) sim2.toolStock[stockKey(v.mount)] = tamedCount(sim2, v.mount) + 1;
+    if (kind) sim2.toolStock[stockKey(kind)]--;
+    v.mount = kind;
+    given++;
+    if (kind) {
+      v.speed = 1.6 + 0.1 * v.stats.agi;
+      sim2.say(`${v.name} \u0111\u01B0\u1EE3c giao m\u1ED9t con ${MOUNTS[kind].name.toLowerCase()} \u0111\u1EC3 c\u01B0\u1EE1i.`);
+    } else sim2.say(`${v.name} tr\u1EA3 th\xFA v\u1EC1 chu\u1ED3ng.`);
+  }
+  if (given) return null;
+  return riders ? "K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA \u0111\xE3 c\xF3 th\xFA c\u1EE7a tr\u1EA1i" : short ? `Chu\u1ED3ng h\u1EBFt ${kind ? MOUNTS[kind].name.toLowerCase() : "th\xFA"} \u0111\xE3 thu\u1EA7n: h\xE3y thu\u1EA7n th\xEAm` : null;
 }
 
 // src/sim/simwar.ts
@@ -29045,6 +33677,10 @@ var WAR = {
   /** → army.squadLimit */
   squadLimit() {
     return squadLimit(this);
+  },
+  /** → army.cellLimit */
+  cellLimit() {
+    return cellLimit(this);
   },
   /** → army.cardLimit */
   cardLimit() {
@@ -29211,8 +33847,8 @@ var WAR = {
     return squadPace(this, s);
   },
   /** → warplan.routeTime */
-  routeTime(s, from, pts) {
-    return routeTime(this, s, from, pts);
+  routeTime(s, from, pts, target) {
+    return routeTime(this, s, from, pts, target);
   },
   /** → warplan.missionStart */
   missionStart(m, toward) {
@@ -29254,6 +33890,144 @@ var WAR = {
   soundAlarm() {
     return soundAlarm(this);
   },
+  /** → siege.obstacleAt */
+  obstacleAt(x, y) {
+    return obstacleAt(this, x, y);
+  },
+  /** → siege.pathHits */
+  pathHits(start, pts, target) {
+    return pathHits(this, start, pts, target);
+  },
+  /** → siege.lineSteps */
+  lineSteps(from, x, y) {
+    return lineSteps(this, from, { x, y });
+  },
+  /** → siege.startBreaking */
+  startBreaking(v, ob, home) {
+    return startBreaking(this, v, ob, home);
+  },
+  /** → siege.breakBrain */
+  breakBrain(v, dt) {
+    return breakBrain(this, v, dt);
+  },
+  /** → siege.arrowMove */
+  arrowMove(s, m, p, mode) {
+    return arrowMove(this, s, m, p, mode);
+  },
+  /** → siege.haltSquad */
+  haltSquad(m, s, ob) {
+    return haltSquad(this, m, s, ob);
+  },
+  /** → siege.watchMarch */
+  watchMarch(m, s) {
+    return watchMarch(this, m, s);
+  },
+  /** → siege.blockCleared */
+  blockCleared(m) {
+    return blockCleared(this, m);
+  },
+  /** → siege.breakBlock */
+  breakBlock(plan2, squadId, n) {
+    return breakBlock(this, plan2, squadId, n);
+  },
+  /** → siege.targetNow */
+  targetNow(plan2, m) {
+    return targetNow(this, plan2, m);
+  },
+  /** → siege.tickTarget */
+  tickTarget(plan2, m, s) {
+    return tickTarget(this, plan2, m, s);
+  },
+  /** → warplan.setMissionTarget */
+  setMissionTarget(plan2, squadId, target) {
+    return setMissionTarget(this, plan2, squadId, target);
+  },
+  /** The village of `id` has lost the war: its people give up and ask for mercy (take them in, or make them pay tribute). */
+  conquer(id, why) {
+    const t = tribeOf(this, id);
+    if (t && t.state === "free") surrender(this, t, why);
+  },
+  /** → siege.corridorBlocks */
+  corridorBlocks(start, pts, target) {
+    return corridorBlocks(this, start, pts, target);
+  },
+  /** → warplan.cancelPlan */
+  cancelPlan(plan2) {
+    return cancelPlan(this, plan2);
+  },
+  /** → warplan.isLogistics */
+  isLogistics(plan2, m) {
+    return isLogistics(plan2, m);
+  },
+  /** → training.startTraining */
+  startTraining(ids, houseId, care) {
+    return startTraining(this, ids, houseId, care);
+  },
+  /** → training.cancelTraining */
+  cancelTraining(ids) {
+    return cancelTraining(this, ids);
+  },
+  /** → training.trainStep */
+  trainStep(v, dt) {
+    return trainStep(this, v, dt);
+  },
+  /** → training.profileOf, trainCap */
+  trainInfo(b) {
+    const p = profileOf(b);
+    return p ? { ...p, cap: trainCap(b) } : null;
+  },
+  /** → training.trainCost */
+  trainCost(stat, care) {
+    return trainCost(stat, care);
+  },
+  /** → training.trainTime */
+  trainTime(stat) {
+    return trainTime(stat);
+  },
+  /** → training.members */
+  trainees(b) {
+    return members(this, b);
+  },
+  /** → mounts.queueTame */
+  queueTame(k) {
+    return queueTame(this, k);
+  },
+  /** → mounts.unqueueTame */
+  unqueueTame(k) {
+    return unqueueTame(this, k);
+  },
+  /** → mounts.tameLock */
+  tameLock(k) {
+    return tameLock(this, k);
+  },
+  /** → mounts.tamedCount */
+  tamedCount(k) {
+    return tamedCount(this, k);
+  },
+  /** → mounts.tickTame */
+  tickTame(dt) {
+    return tickTame(this, dt);
+  },
+  /** → mounts.mountOf */
+  mountOf(v) {
+    return mountOf(this, v);
+  },
+  /** → mounts.mountSpeed */
+  mountSpeed(v) {
+    return mountSpeed(this, v);
+  },
+  /** → mounts.mountGuard */
+  mountGuard(v) {
+    return mountGuard(this, v);
+  },
+  /** → mounts.assignMount */
+  assignMount(ids, kind) {
+    return assignMount(this, ids, kind);
+  },
+  /** → environment.sightOf */
+  sightOf(v) {
+    return sightOf(this, v);
+  },
   /** → warplan.canTarget */
   canTarget(objective, tribe) {
     return canTarget(this, objective, tribe);
@@ -29273,14 +34047,15 @@ var Sim = class _Sim {
     this.wornTools = [];
     /** Hàng đợi chế tác (mã công thức). */
     this.craftQueue = [];
+    this.tameQueue = [];
     /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
     this.researchQueue = [];
-    /** Tools waiting to be mended in the Nhà sửa chữa (recipe ids such as axe1). */
-    this.repairQueue = [];
     this.coinFrac = 0;
     this.sawCoin = false;
     /** Finished research (tech ids). Recipes and building levels stay locked until their tech is here. */
     this.researched = /* @__PURE__ */ new Set();
+    /** Quests that have been seen done (not saved: a loaded game works them out again from what stands). */
+    this.questSeen = /* @__PURE__ */ new Set();
     this.log = [];
     /** Current era: new buildings are built with this era's art and levels. */
     this.era = "stone";
@@ -29320,7 +34095,7 @@ var Sim = class _Sim {
     this.battleReports = [];
     this.nextAid = 1;
     /** Test switches driven by the dev menu; all off in a normal game. */
-    this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false };
+    this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false, noArrivals: false };
     /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
     this.pendingTribe = null;
     this.acc = 0;
@@ -29593,10 +34368,6 @@ var Sim = class _Sim {
   orderDef(kind, id) {
     return orderDef(this, kind, id);
   }
-  /** → works.bestIntInside */
-  bestIntInside(b) {
-    return bestIntInside(this, b);
-  }
   /** → works.recipeLock */
   recipeLock(id) {
     return recipeLock(this, id);
@@ -29628,10 +34399,6 @@ var Sim = class _Sim {
   /** → works.queueCraft */
   queueCraft(id) {
     return queueCraft(this, id);
-  }
-  /** → works.queueRepair */
-  queueRepair(id) {
-    return queueRepair(this, id);
   }
   /** → works.unqueueCraft */
   unqueueCraft(id) {
@@ -29686,8 +34453,8 @@ var Sim = class _Sim {
     return setGates(this, open);
   }
   /** → defense.nearestWork */
-  nearestWork(x, y, radius) {
-    return nearestWork(this, x, y, radius);
+  nearestWork(x, y, radius, any = false) {
+    return nearestWork(this, x, y, radius, any);
   }
   /** → defense.damageWork */
   damageWork(b, dmg) {
@@ -29797,10 +34564,6 @@ var Sim = class _Sim {
   discardTool(ids, k) {
     return discardTool(this, ids, k);
   }
-  /** → inventory.repairTool */
-  repairTool(ids, k) {
-    return repairTool(this, ids, k);
-  }
   /** → economy.barter */
   barter(res) {
     return barter(this, res);
@@ -29820,6 +34583,10 @@ var Sim = class _Sim {
   /** → commands.orderMove */
   orderMove(ids, tx, ty, queue = false) {
     return orderMove(this, ids, tx, ty, queue);
+  }
+  /** → commands.callWorker */
+  callWorker(tx, ty) {
+    return callWorker(this, tx, ty);
   }
   /** → commands.orderWork */
   orderWork(ids, tx, ty) {
@@ -29913,6 +34680,7 @@ var Sim = class _Sim {
     tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt);
+    this.tickTame(dt);
     this.tickFarms(dt);
     this.tickTowers(dt);
     this.tickTraps(dt);
@@ -30017,6 +34785,10 @@ var Sim = class _Sim {
     killFoe(this, v, killer);
   }
   /** The player's own campfire (the village centre). */
+  /** → quests.questViews */
+  quests(ui) {
+    return questViews(this, ui);
+  }
   campfire() {
     return this.buildings.find((b) => b.kind === "campfire" && b.done);
   }
@@ -30090,10 +34862,6 @@ var Sim = class _Sim {
   wearGear(v, slot) {
     return wearGear(this, v, slot);
   }
-  /** → inventory.planGearRepair */
-  planGearRepair(v) {
-    return planGearRepair(this, v);
-  }
   /** → inventory.planEquipGear */
   planEquipGear(v) {
     return planEquipGear(this, v);
@@ -30136,7 +34904,7 @@ function stockWorkshop(sim2, n) {
   for (const r of RECIPES) sim2.toolStock[r.id] = (sim2.toolStock[r.id] ?? 0) + n;
 }
 function unlockResearch(sim2) {
-  for (const t of TECHS) sim2.researched.add(t.id);
+  for (const t of [...TECHS, ...STAT_TECHS]) sim2.researched.add(t.id);
 }
 function resetResearch(sim2) {
   sim2.researched.clear();
@@ -30175,7 +34943,8 @@ function addVillagers(sim2, n) {
   const fire = sim2.campfire(), s = sim2.world.start;
   for (let i = 0; i < n; i++) {
     const a = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * 2;
-    const v = sim2.makeVillager(Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
+    const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+    const v = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
     sim2.villagers.push(v);
     sim2.registerUnit(v);
   }
@@ -30250,7 +35019,7 @@ function maxBuildings(sim2) {
     if (b.done && b.level < top) {
       b.level = top;
       b.upgrading = false;
-      b.hp = levelDef(b).hp;
+      b.hp = maxHp(b);
     }
   }
 }
@@ -30260,7 +35029,7 @@ function wearTools(sim2, ids, frac) {
   });
 }
 function staffAll(sim2) {
-  for (const job of ["research", "craft", "repair"]) {
+  for (const job of ["research", "craft"]) {
     const b = sim2.building(STAFF_BUILDING[job]);
     if (!b) continue;
     while (sim2.staffCount(b) < levelDef(b).slots) {
@@ -30331,7 +35100,7 @@ function defenseLine(sim2, half = 8) {
   put3("tower", cx + half, cy - half - 2);
   for (const b of sim2.buildings) if (b.done && (b.kind === "fence" || b.kind === "gate" || b.kind === "tower")) {
     b.level = BUILDINGS[b.kind].levels.stone.length;
-    b.hp = levelDef(b).hp;
+    b.hp = maxHp(b);
   }
   sim2.dev.freeBuild = was.f;
   sim2.dev.instantBuild = was.i;
@@ -30444,6 +35213,7 @@ var Controller = class {
     /** The full-screen panel of the selected building is open. */
     this.buildingOpen = false;
     /** Foe or animal shown in the target card. */
+    /** What was tapped: a unit, an animal, or a tree, rock or bush (id = its tile index). */
     this.inspect = null;
     /** The campfire's people menu asked for the full page of the chosen villager. */
     this.openDetail = false;
@@ -30686,6 +35456,13 @@ var Controller = class {
     if (seen) {
       this.inspect = { kind: seen.target.kind, id: seen.target.id };
       this.selectedBuilding = null;
+    } else if ((() => {
+      const t = this.pickTile(w.x, w.y), N = this.sim.world.size;
+      if (!this.sim.world.nodeAt(t.x, t.y) || this.sim.fog.state[t.y * N + t.x] === 0) return false;
+      this.inspect = { kind: "node", id: t.y * N + t.x };
+      this.selectedBuilding = null;
+      return true;
+    })()) {
     } else if (b !== null) this.selectBuilding(b);
     else if (!additive) {
       if (touch && !this.selected.size && !this.selectedBuilding && !this.inspect) this.onToast("Ch\u1EA1m v\xE0o m\u1ED9t d\xE2n \u0111\u1EC3 ch\u1ECDn tr\u01B0\u1EDBc, r\u1ED3i ch\u1EA1m \u0111\u1EA5t \u0111\u1EC3 ra l\u1EC7nh");
@@ -30771,7 +35548,7 @@ var Controller = class {
   ghost() {
     if (!this.placing || !this.placeAt) return null;
     const b = this.moving !== null ? this.sim.getBuilding(this.moving) : void 0;
-    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era };
+    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era, moving: this.moving ?? void 0 };
   }
   /** Why the ghost cannot be put down where it is, or null. */
   placeProblem() {
@@ -31068,10 +35845,10 @@ function iconCanvas(src) {
   c.getContext("2d").drawImage(src, 0, 0);
   return c;
 }
-var costText = (c, names) => Object.keys(c).filter((k) => (c[k] ?? 0) > 0).map((k) => `${c[k]} ${names[k].toLowerCase()}`).join(" + ") || "mi\u1EC5n ph\xED";
+var costText = (c, names2) => Object.keys(c).filter((k) => (c[k] ?? 0) > 0).map((k) => `${c[k]} ${names2[k].toLowerCase()}`).join(" + ") || "mi\u1EC5n ph\xED";
 
 // src/ui/menu.ts
-var TABS = [["build", "X\xE2y"], ["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
+var TABS = [["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
 var SEASON_NAME = { spring: "Xu\xE2n", summer: "H\u1EA1", autumn: "Thu", winter: "\u0110\xF4ng" };
 var PERSONALITY = { peaceful: "H\xF2a b\xECnh", aggressive: "Hi\u1EBFu chi\u1EBFn", ambusher: "Hay ph\u1EE5c k\xEDch" };
 var Menu = class {
@@ -31080,7 +35857,7 @@ var Menu = class {
     this.body = body;
     this.c = c;
     this.center = center;
-    this.tab = "build";
+    this.tab = "places";
     this.tabBtns = /* @__PURE__ */ new Map();
     this.pages = /* @__PURE__ */ new Map();
     this.updaters = [];
@@ -31092,7 +35869,6 @@ var Menu = class {
       tabs.append(b);
     }
     tabs.append(h("span", { class: "spacer" }), h("button", { class: "sm", text: "\u2715", title: "\u0110\xF3ng menu", onclick: () => this.close() }));
-    this.pages.set("build", this.buildPage());
     this.pages.set("places", this.placesPage());
     this.pages.set("tribes", this.tribesPage());
     this.pages.set("game", this.gamePage());
@@ -31125,57 +35901,6 @@ var Menu = class {
   }
   update() {
     if (this.isOpen) for (const u of this.updaters) u();
-  }
-  // ---------------------------------------------------------------- build
-  buildPage() {
-    const { sim: sim2, ctl: ctl2 } = this.c, page = h("div", { class: "page" });
-    page.append(hint("X\xE2y d\u1EF1ng", "Nh\xE0 l\xE0m vi\u1EC7c (th\u1EE3 x\xE2y, kho, ch\u1EBF t\u1EA1o, nghi\xEAn c\u1EE9u, s\u1EEDa \u0111\u1ED3, kho c\xF4ng c\u1EE5, kho v\u0169 kh\xED) ch\u1EC9 x\xE2y M\u1ED8T c\xE1i, mu\u1ED1n m\u1EA1nh h\u01A1n th\xEC n\xE2ng c\u1EA5p. Nh\xE0 d\xE2n, L\u1EC1u chi\u1EBFn binh v\xE0 Ru\u1ED9ng x\xE2y \u0111\u01B0\u1EE3c nhi\u1EC1u c\xE1i, s\u1ED1 l\u01B0\u1EE3ng t\u0103ng khi n\xE2ng c\u1EA5p Nh\xE0 chung. Ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7. N\u1EBFu \u0111ang ch\u1ECDn d\xE2n, h\u1ECD s\u1EBD t\u1EF1 \u0111i x\xE2y."));
-    const rows = [];
-    const ROLE = {
-      builder: "D\xE2n l\xE0m th\u1EE3 x\xE2y \u1EDF \u0111\xE2y (do b\u1EA1n ch\u1ECDn). Ph\u1EA3i c\xF3 nh\xE0 n\xE0y m\u1EDBi d\u1EF1ng \u0111\u01B0\u1EE3c c\xE1c c\xF4ng tr\xECnh kh\xE1c.",
-      storage: "C\u1EA5t t\xE0i nguy\xEAn.",
-      lab: "Nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD, m\u1EDF c\xF4ng tr\xECnh v\xE0 t\u1EF1 \u0111\u1ED9ng h\xF3a. D\xE2n th\xF4ng minh l\xE0m vi\u1EC7c b\xEAn trong.",
-      workshop: "Ch\u1EBF t\u1EA1o c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p theo b\u1EA3n v\u1EBD. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong.",
-      repair: "S\u1EEDa c\xF4ng c\u1EE5 \u0111\xE3 m\xF2n. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong.",
-      infantry: "Tr\u1EA1i c\u1EE7a chi\u1EBFn binh c\u1EADn chi\u1EBFn: tuy\u1EC3n v\xE0 cho ngh\u1EC9 \u1EDF \u0111\xE2y, h\u1ECD c\u0169ng ng\u1EE7 \u1EDF \u0111\xE2y v\xE0 h\u1ED3i s\u1EE9c nhanh h\u01A1n n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
-      cavalry: "Tr\u1EA1i c\u1EE7a ng\u01B0\u1EDDi c\u01B0\u1EE1i th\xFA: xung phong nhanh, kh\u1EAFc ng\u01B0\u1EDDi n\xE9m nh\u01B0ng s\u1EE3 gi\xE1o. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi. C\u1EA7n nghi\xEAn c\u1EE9u Tr\u1EA1i k\u1EF5 th\xFA.",
-      archery: "Tr\u1EA1i c\u1EE7a ng\u01B0\u1EDDi n\xE9m \u0111\xE1, b\u1EAFn n\xE1: \u0111\xE1nh t\u1EEB xa, l\xEAn \u0111\u01B0\u1EE3c ch\xF2i canh. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm ng\u01B0\u1EDDi. C\u1EA7n nghi\xEAn c\u1EE9u Tr\u1EA1i th\u1EE3 n\xE9m.",
-      farmhouse: "Giao vi\u1EC7c h\xE1i l\u01B0\u1EE3m \u1EDF \u0111\xE2y: ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c giao ra b\u1EE5i qu\u1EA3 v\xE0 mang th\u1EE9c \u0103n v\u1EC1. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
-      huntlodge: "Giao vi\u1EC7c s\u0103n b\u1EAFn \u1EDF \u0111\xE2y: ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c giao \u0111i s\u0103n th\xFA. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
-      lumberyard: "Giao vi\u1EC7c \u0111\u1ED1n g\u1ED7 \u1EDF \u0111\xE2y. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
-      quarry: "Giao vi\u1EC7c \u0111\u1EE5c \u0111\xE1 \u1EDF \u0111\xE2y. Ch\u1EC9 x\xE2y m\u1ED9t c\xE1i; n\xE2ng c\u1EA5p \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
-      house: "D\xE2n th\u01B0\u1EDDng ng\u1EE7 \u1EDF \u0111\xE2y (v\xE0o nh\xE0, hi\u1EC7n th\xE0nh danh s\xE1ch) v\xE0 h\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7. Kh\xF4ng c\xF3 nh\xE0 ho\u1EB7c h\u1EBFt gi\u01B0\u1EDDng th\xEC d\xE2n ng\u1EE7 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa, h\u1ED3i s\u1EE9c ch\u1EADm h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
-      field: "D\xE2n b\u1EA1n ch\u1ECDn v\xE0o ru\u1ED9ng l\xE0m vi\u1EC7c b\xEAn trong (kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3), th\u1EE9c \u0103n v\u1EC1 th\u1EB3ng kho, \u0111\u1EC1u quanh n\u0103m h\u01A1n b\u1EE5i qu\u1EA3 (b\u1EE5i qu\u1EA3 kh\xF4ng m\u1ECDc l\u1EA1i). M\u1ED7i ru\u1ED9ng m\u1ED9t ng\u01B0\u1EDDi, n\xE2ng c\u1EA5p \u0111\u1EC3 l\xE0m nhanh h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u m\u1EDBi x\xE2y \u0111\u01B0\u1EE3c.",
-      wartent: "N\u01A1i l\u1EADp \u0111\u1ED9i, ch\u1ECDn tr\u1EADn ph\xE1p, l\u1EADp k\u1EBF ho\u1EA1ch v\xE0 th\u1EBB l\u1EC7nh cho tr\u1EADn \u0111\xE1nh. C\u1EA5p c\xE0ng cao c\xE0ng nhi\u1EC1u \u0111\u1ED9i v\xE0 th\u1EBB l\u1EC7nh. C\u1EA7n nghi\xEAn c\u1EE9u H\u1ED9i \u0111\u1ED3ng chi\u1EBFn.",
-      scouttent: "N\u01A1i c\u1EED trinh s\xE1t \u0111i v\u1EBD b\u1EA3n \u0111\u1ED3 l\xE0ng kh\xE1c. C\u1EA5p c\xE0ng cao c\xE0ng c\u1EED \u0111\u01B0\u1EE3c nhi\u1EC1u ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn. C\u1EA7n nghi\xEAn c\u1EE9u Trinh s\xE1t.",
-      drill: "B\xE3i t\u1EADp: c\xE1c \u0111\u1ED9i luy\u1EC7n tr\u1EADn ph\xE1p \u1EDF \u0111\xE2y, \u0111\u1ED9 thu\u1EA7n th\u1EE5c t\u0103ng d\u1EA7n. C\u1EA7n L\u1EC1u chi\u1EBFn binh v\xE0 nghi\xEAn c\u1EE9u.",
-      trap: "H\u1ED1 ch\xF4ng g\xE0i s\u1EB5n: \u0111\u1ECBch b\u01B0\u1EDBc v\xE0o b\u1ECB th\u01B0\u01A1ng, m\u1ED7i h\u1ED1 l\xE0m b\u1ECB th\u01B0\u01A1ng v\xE0i ng\u01B0\u1EDDi. \u0110\u1EB7t t\u1EEBng c\xE1i m\u1ED9t. C\u1EA7n nghi\xEAn c\u1EE9u \u0110\xE0o h\xE0o.",
-      fence: "Ch\u1EB7n \u0111\u01B0\u1EDDng, t\u1EA1o ch\u1ED7 th\u1EAFt: \u0111\u1ECBch ph\u1EA3i ph\xE1 r\xE0o m\u1EDBi v\xE0o \u0111\u01B0\u1EE3c. \u0110\u1EB7t t\u1EEBng \u0111o\u1EA1n m\u1ED9t, c\u1EE9 ch\u1EA1m ti\u1EBFp \u0111\u1EC3 \u0111\u1EB7t \u0111o\u1EA1n k\u1EBF. C\u1EA5p 2 (h\xE0ng r\xE0o \u0111\xF4i) b\u1EC1n g\u1EA5p ba. S\u1ED1 \u0111o\u1EA1n t\u1ED1i \u0111a t\u0103ng theo Nh\xE0 chung. C\u1EA7n nghi\xEAn c\u1EE9u.",
-      gate: "Ch\u1ED7 ra v\xE0o c\u1EE7a h\xE0ng r\xE0o. M\u1EDF th\xEC ai c\u0169ng qua \u0111\u01B0\u1EE3c, \u0111\xF3ng th\xEC ch\u1EB7n t\u1EA5t c\u1EA3 k\u1EC3 c\u1EA3 d\xE2n m\xECnh. Ch\u1EA1m v\xE0o c\u1ED5ng \u0111\u1EC3 m\u1EDF ho\u1EB7c \u0111\xF3ng. C\u1EA7n nghi\xEAn c\u1EE9u.",
-      tower: "Cung th\u1EE7 \u0111\u1EE9ng tr\xEAn ch\xF2i b\u1EAFn xa h\u01A1n v\xE0 m\u1EA1nh h\u01A1n. Ch\u1EA1m v\xE0o ch\xF2i \u0111\u1EC3 ch\u1ECDn cung th\u1EE7 l\xEAn canh. C\u1EA7n Nh\xE0 chung c\u1EA5p 2 v\xE0 nghi\xEAn c\u1EE9u.",
-      toolstore: "C\u1EA5t c\xF4ng c\u1EE5 cho d\xE2n t\u1EF1 l\u1EA5y.",
-      armory: "C\u1EA5t v\u0169 kh\xED v\xE0 gi\xE1p cho d\xE2n t\u1EF1 l\u1EA5y."
-    };
-    for (const kind of Object.keys(BUILDINGS)) {
-      const d = BUILDINGS[kind];
-      if (!d.buildable) continue;
-      const lv2 = levelsOf(kind, sim2.era)[0], btn = h("button", { class: "primary", text: "\u0110\u1EB7t", onclick: () => {
-        ctl2.startPlacing(kind);
-        this.close();
-      } }), status = h("small", { class: "lock" });
-      const role = ROLE[kind];
-      page.append(h("div", { class: "row" }, h("div", { class: "nm hint" }, h("div", { class: "hinthead" }, d.name, role ? helpButton() : null), h("small", { text: `${lv2.name}: ${costText(lv2.cost, RES_NAME)} \xB7 x\xE2y ~${workDays(lv2.buildTime)}` }), status, role ? h("small", { class: "hintbody", hidden: true, text: role }) : null), btn));
-      rows.push(() => {
-        const lock = sim2.buildingLock(kind), poor = !sim2.dev.freeBuild && !Object.keys(lv2.cost).every((k) => sim2.stock[k] >= (lv2.cost[k] ?? 0));
-        btn.disabled = !!lock || poor;
-        status.textContent = lock ?? (poor ? "Ch\u01B0a \u0111\u1EE7 v\u1EADt li\u1EC7u" : "");
-        const have = sim2.buildings.filter((b) => b.kind === kind).length, limit = sim2.buildingLimit(kind);
-        btn.textContent = have >= limit ? "\u0110\xE3 \u0111\u1EE7" : "\u0110\u1EB7t";
-        if (limit > 1 && !lock) status.textContent = `\u0110\xE3 c\xF3 ${have}/${limit}${poor ? " \xB7 ch\u01B0a \u0111\u1EE7 v\u1EADt li\u1EC7u" : ""}`;
-      });
-    }
-    this.updaters.push(() => rows.forEach((f) => f()));
-    return page;
   }
   // ---------------------------------------------------------------- built buildings
   placesPage() {
@@ -31409,14 +36134,14 @@ var Menu = class {
       toggle("B\u1EA5t t\u1EED", "god", "D\xE2n kh\xF4ng nh\u1EADn s\xE1t th\u01B0\u01A1ng"),
       toggle("Kh\xF4ng \u0111\xF3i", "noHunger", "D\xE2n kh\xF4ng b\u1ECB \u0111\xF3i"),
       toggle("Kh\xF4ng m\u1EC7t", "noTire", "S\u1EE9c c\u1EE7a d\xE2n kh\xF4ng t\u1EE5t khi l\xE0m vi\u1EC7c"),
-      toggle("L\xE0m vi\u1EC7c nhanh \xD725", "fastWorks", "Nghi\xEAn c\u1EE9u, ch\u1EBF t\u1EA1o, s\u1EEDa ch\u1EEFa nhanh g\u1EA5p 25 l\u1EA7n")
+      toggle("L\xE0m vi\u1EC7c nhanh \xD725", "fastWorks", "Nghi\xEAn c\u1EE9u, ch\u1EBF t\u1EA1o nhanh g\u1EA5p 25 l\u1EA7n")
     ), h("div", { class: "devrow" }, btn("Kh\xE1m ph\xE1 to\xE0n b\u1EA3n \u0111\u1ED3", () => revealMap(sim2))));
     const rsec = h("div", {}, h("h3", { text: "Nghi\xEAn c\u1EE9u" }), h("div", { class: "devrow" }, btn("M\u1EDF h\u1EBFt nghi\xEAn c\u1EE9u", () => unlockResearch(sim2), "M\u1ECDi c\xF4ng th\u1EE9c v\xE0 c\u1EA5p c\xF4ng tr\xECnh"), btn("Kh\xF3a l\u1EA1i h\u1EBFt", () => resetResearch(sim2))));
     page.append(rsec);
     this.updaters.push(() => {
       rsec.hidden = !RESEARCH.enabled;
     });
-    page.append(hint("Nh\xE0 v\xE0 lu\u1ED3ng ch\u1EBF t\u1EA1o", 'Th\u1EED lu\u1ED3ng: m\u1EDF h\u1EBFt nghi\xEAn c\u1EE9u ho\u1EB7c d\u1EF1ng s\u1EB5n nh\xE0 \u2192 b\u1EADt "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 "t\u1EF1 \u0111\u1EB7t h\xE0ng" \u2192 l\xE0m h\u1ECFng c\xF4ng c\u1EE5 d\xE2n \u0111ang ch\u1ECDn \u2192 xem h\u1ECD t\u1EDBi Kho, Nh\xE0 ch\u1EBF t\u1EA1o, Nh\xE0 s\u1EEDa ch\u1EEFa.'));
+    page.append(hint("Nh\xE0 v\xE0 lu\u1ED3ng ch\u1EBF t\u1EA1o", 'Th\u1EED lu\u1ED3ng: m\u1EDF h\u1EBFt nghi\xEAn c\u1EE9u ho\u1EB7c d\u1EF1ng s\u1EB5n nh\xE0 \u2192 b\u1EADt "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 "t\u1EF1 \u0111\u1EB7t h\xE0ng" \u2192 l\xE0m h\u1ECFng c\xF4ng c\u1EE5 d\xE2n \u0111ang ch\u1ECDn \u2192 xem h\u1ECD t\u1EDBi Kho, Nh\xE0 ch\u1EBF t\u1EA1o.'));
     page.append(h("div", { class: "devrow" }, btn("D\u1EF1ng s\u1EB5n m\u1ECDi nh\xE0", () => buildAll(sim2), "X\xE2y xong ngay c\xE1c nh\xE0 c\xF2n thi\u1EBFu, b\u1ECF qua nghi\xEAn c\u1EE9u"), btn("N\xE2ng m\u1ECDi nh\xE0 t\u1ED1i \u0111a", () => maxBuildings(sim2)), btn("X\u1EBFp ng\u01B0\u1EDDi v\xE0o c\xE1c nh\xE0", () => staffAll(sim2), "M\u1ED7i nh\xE0 \u0111\u1EA7y ng\u01B0\u1EDDi l\xE0m vi\u1EC7c ph\xF9 h\u1EE3p nh\u1EA5t")));
     page.append(h("div", { class: "devrow" }, btn("L\xE0m h\u1ECFng c\xF4ng c\u1EE5 c\u1EE7a d\xE2n ch\u1ECDn", () => wearTools(sim2, sel(), 0)), btn("M\xF2n c\xF2n 50%", () => wearTools(sim2, sel(), 0.5)), btn("Thu h\u1EBFt c\xF4ng c\u1EE5", () => {
       for (const k of TOOL_KINDS) sim2.giveTool(sel(), k, 0);
@@ -31502,10 +36227,10 @@ var Menu = class {
       h("li", {}, h("b", { text: "Ra l\u1EC7nh" }), ": m\xE1y t\xEDnh: chu\u1ED9t ph\u1EA3i. \u0110i\u1EC7n tho\u1EA1i: khi \u0111\xE3 ch\u1ECDn d\xE2n, ch\u1EA1m l\xEAn \u0111\u1EA5t, c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3, c\xF4ng tr\u01B0\u1EDDng hay k\u1EBB \u0111\u1ECBch. Gi\u1EEF Shift (m\xE1y t\xEDnh) \u0111\u1EC3 x\u1EBFp l\u1EC7nh n\u1ED1i nhau."),
       h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: hai ng\xF3n tay; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
       h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
-      h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: m\u1EDF Menu \u2192 X\xE2y \u0111\u1EC3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EC3 v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EC3 l\xE0m \u0111\u1ED3, Nh\xE0 s\u1EEDa ch\u1EEFa \u0111\u1EC3 m\xE0i l\u1EA1i c\xF4ng c\u1EE5. M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y m\u1ED9t c\xE1i r\u1ED3i n\xE2ng c\u1EA5p (\u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u). D\xE2n v\xE0o l\xE0m b\xEAn trong nh\xE0 (hi\u1EC7n th\xE0nh danh s\xE1ch t\xEAn v\xE0 Tr\xED tu\u1EC7, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3): nh\xE0 c\u1EA5p cao ch\u1EE9a th\xEAm ng\u01B0\u1EDDi, ng\u01B0\u1EDDi th\xF4ng minh nghi\xEAn c\u1EE9u nhanh h\u01A1n. L\xFAc \u0111\u1EA7u b\u1EA1n t\u1EF1 ph\xE1t c\xF4ng c\u1EE5 v\xE0 t\u1EF1 \u0111\u01B0a \u0111i s\u1EEDa; nghi\xEAn c\u1EE9u Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, t\u1EF1 l\u1EA5y \u0111\u1ED3 v\xE0 t\u1EF1 \u0111\u1EB7t h\xE0ng th\xEC d\xE2n t\u1EF1 lo. Ti\u1EC1n (v\u1ECF s\xF2) tr\u1EA3 cho nghi\xEAn c\u1EE9u, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m ho\u1EB7c \u0111\u1ED5i h\xE0ng \u1EDF Kho. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
+      h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: b\u1EA5m \u{1F528} X\xE2y (g\xF3c tr\xEAn) \u0111\u1EC3 ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m b\u1EA3n \u0111\u1ED3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EC3 v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EC3 l\xE0m \u0111\u1ED3. M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y m\u1ED9t c\xE1i r\u1ED3i n\xE2ng c\u1EA5p (\u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u). D\xE2n v\xE0o l\xE0m b\xEAn trong nh\xE0 (hi\u1EC7n th\xE0nh danh s\xE1ch t\xEAn, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3): nh\xE0 c\u1EA5p cao ch\u1EE9a th\xEAm ng\u01B0\u1EDDi, c\xE0ng \u0111\xF4ng c\xE0ng nghi\xEAn c\u1EE9u nhanh. L\xFAc \u0111\u1EA7u b\u1EA1n t\u1EF1 ph\xE1t c\xF4ng c\u1EE5; nghi\xEAn c\u1EE9u Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, t\u1EF1 l\u1EA5y \u0111\u1ED3 v\xE0 t\u1EF1 \u0111\u1EB7t h\xE0ng th\xEC d\xE2n t\u1EF1 lo. Ti\u1EC1n (v\u1ECF s\xF2) tr\u1EA3 cho nghi\xEAn c\u1EE9u, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m ho\u1EB7c \u0111\u1ED5i h\xE0ng \u1EDF Kho. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
       h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), `: d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng ${gameDays(30)}; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh ${gameDays(3)} s\u1EBD k\xE9o h\u1ECD d\u1EADy.`),
       h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), `: t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD ${gameDays(30)} ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p.`),
-      h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
+      h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R T: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7 16\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
     );
   }
 };
@@ -31610,7 +36335,6 @@ var OPEN_LABEL = {
   storage: "Kho",
   workshop: "Ch\u1EBF t\u1EA1o",
   lab: "Nghi\xEAn c\u1EE9u",
-  repair: "S\u1EEDa \u0111\u1ED3",
   toolstore: "Kho c\xF4ng c\u1EE5",
   armory: "Kho v\u0169 kh\xED",
   infantry: "Qu\u1EA3n l\xFD l\xEDnh",
@@ -31628,7 +36352,8 @@ var OPEN_LABEL = {
   wartent: "M\u1EDF L\u1EC1u h\u1ECDp chi\u1EBFn",
   scouttent: "Xem trinh s\xE1t",
   drill: "Xem b\xE3i t\u1EADp",
-  trap: "H\u1ED1 ch\xF4ng"
+  trap: "H\u1ED1 ch\xF4ng",
+  stable: "Thu\u1EA7n th\xFA"
 };
 var Confirm = class {
   constructor(root, c) {
@@ -31673,17 +36398,17 @@ var Confirm = class {
   }
 };
 var BuildingBar = class {
-  constructor(root, c, r, confirm) {
+  constructor(root, c, r, confirm2) {
     this.root = root;
     this.c = c;
     this.r = r;
-    this.confirm = confirm;
+    this.confirm = confirm2;
     this.who = h("div", { class: "who" });
-    this.open = h("button", { class: "sm primary" });
+    this.open = h("button", { class: "sm ic primary", text: "\u2630" });
     this.gate = h("button", { class: "sm primary" });
-    this.upgrade = h("button", { class: "sm", text: "N\xE2ng c\u1EA5p" });
-    this.move = h("button", { class: "sm", text: "D\u1EDDi" });
-    this.demolish = h("button", { class: "sm danger", text: "Ph\xE1 b\u1ECF" });
+    this.upgrade = h("button", { class: "sm ic up", text: "\u2B06", title: "N\xE2ng c\u1EA5p", "aria-label": "N\xE2ng c\u1EA5p" });
+    this.move = h("button", { class: "sm ic", text: "\u2725", title: "Di d\u1EDDi (mi\u1EC5n ph\xED)", "aria-label": "Di d\u1EDDi" });
+    this.demolish = h("button", { class: "sm ic danger", text: "\u2716", title: "Ph\xE1 b\u1ECF", "aria-label": "Ph\xE1 b\u1ECF" });
     this.id = null;
     this.width = 0;
     this.height = 0;
@@ -31758,17 +36483,17 @@ var BuildingBar = class {
       return;
     }
     this.id = b.id;
-    const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv2 = levelDef(b);
-    const state = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%` : canGrow(b.kind) ? `c\u1EA5p ${b.level}/${top} \xB7 ${lv2.name.toLowerCase()}` : lv2.name.toLowerCase();
-    this.who.replaceChildren(h("b", { text: def.name }), ` \xB7 ${state}${b.done && lv2.hp ? ` \xB7 b\u1EC1n ${Math.max(0, Math.round(b.hp))}/${lv2.hp}` : ""}`);
-    this.open.textContent = OPEN_LABEL[b.kind];
+    const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
+    const state = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%` : canGrow(b.kind) ? `c\u1EA5p ${b.level}/${top} \xB7 ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
+    this.who.replaceChildren(h("b", { text: def.name }), ` \xB7 ${state}${b.done && lv.hp ? ` \xB7 b\u1EC1n ${Math.max(0, Math.round(b.hp))}/${lv.hp}` : ""}`);
+    this.open.title = OPEN_LABEL[b.kind];
+    this.open.setAttribute("aria-label", OPEN_LABEL[b.kind]);
     this.open.hidden = !b.done || b.kind === "fence" || b.kind === "gate";
     this.gate.hidden = !(b.kind === "gate" && b.done);
     this.gate.textContent = b.open ? "\u0110\xF3ng c\u1ED5ng" : "M\u1EDF c\u1ED5ng";
     this.upgrade.hidden = !(canGrow(b.kind) && b.done && !b.upgrading && b.level < top);
-    this.move.hidden = this.demolish.hidden = !def.buildable;
-    const fee = sim2.moveFee(b);
-    this.move.textContent = Object.keys(fee).length ? `D\u1EDDi (${costText(fee, RES_NAME)})` : "D\u1EDDi";
+    this.move.hidden = !def.buildable;
+    this.demolish.hidden = !def.buildable || !def.perFire;
     this.width = this.root.offsetWidth;
     this.height = this.root.offsetHeight;
   }
@@ -31830,7 +36555,7 @@ function describe(v, sim2) {
       t = v.job === "food" ? "\u0111ang l\xE0m ru\u1ED9ng" : `\u0111ang ${JOBS[v.job].name.toLowerCase()} trong nh\xE0`;
       break;
     case "goOrder":
-      t = v.order?.startsWith("repair") ? "\u0111em \u0111\u1ED3 h\u1ECFng \u0111i s\u1EEDa" : "\u0111i \u0111\u1EB7t ch\u1EBF t\u1EA1o";
+      t = "\u0111i \u0111\u1EB7t ch\u1EBF t\u1EA1o";
       break;
     case "goEquip":
       t = "\u0111i l\u1EA5y \u0111\u1ED3 \u1EDF kho";
@@ -31906,6 +36631,7 @@ var UnitCard = class {
     this.stats = h("div", { class: "kv" });
     this.skills = h("div", { class: "kv" });
     this.toolRows = [];
+    this.mountBtns = [];
     this.gearBtns = [];
     this.statsKey = "";
     this.open = false;
@@ -31942,9 +36668,19 @@ var UnitCard = class {
       ctl2.clearSelection();
       ctl2.onChange();
     } }));
+    const mountRow = h("div", { class: "btns", role: "group", "aria-label": "Giao th\xFA c\u01B0\u1EE1i" });
+    for (const kind of [null, ...MOUNT_KINDS]) {
+      const btn = h("button", { class: "sm", title: kind ? `Giao m\u1ED9t con ${MOUNTS[kind].name.toLowerCase()} t\u1EEB Chu\u1ED3ng th\xFA c\u01B0\u1EE1i` : "Tr\u1EA3 th\xFA v\u1EC1 chu\u1ED3ng", onclick: () => {
+        const e = sim2.assignMount(ids(), kind);
+        if (e) c.toast(e);
+        ctl2.onChange();
+      } });
+      this.mountBtns.push({ btn, kind });
+      mountRow.append(btn);
+    }
     const gearHint = hint(h("p", { class: "sub", text: "Ph\xE1t \u0111\u1ED3 (l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng):" }), "");
     this.gearTip = gearHint.tip;
-    const toolsSec = h("section", {}, hint("C\xF4ng c\u1EE5", 'M\u1ED7i ngh\u1EC1 d\xF9ng m\u1ED9t c\xF4ng c\u1EE5 (\u0111\u1ED1n g\u1ED7: r\xECu, th\u1EE3 \u0111\xE1: cu\u1ED1c chim, h\xE1i l\u01B0\u1EE3m: cu\u1ED1c, th\u1EE3 x\xE2y: b\xFAa) v\xE0 m\u1ED7i d\xE2n ch\u1EC9 c\u1EA7m m\u1ED9t c\xF4ng c\u1EE5. \u0110\u1ED5i ngh\u1EC1 th\xEC c\xF4ng c\u1EE5 tr\u1EA3 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n. "\u0110i s\u1EEDa": d\xE2n t\u1EF1 mang c\xF4ng c\u1EE5 t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa, s\u1EEDa xong \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i. Sau khi nghi\xEAn c\u1EE9u "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 c\xF3 Kho c\xF4ng c\u1EE5, d\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng \u0111\u1ED3 s\u1EBD t\u1EF1 \u0111i l\u1EA5y.'));
+    const toolsSec = h("section", {}, hint("C\xF4ng c\u1EE5", 'M\u1ED7i ngh\u1EC1 d\xF9ng m\u1ED9t c\xF4ng c\u1EE5 (\u0111\u1ED1n g\u1ED7: r\xECu, th\u1EE3 \u0111\xE1: cu\u1ED1c chim, h\xE1i l\u01B0\u1EE3m: cu\u1ED1c, th\u1EE3 x\xE2y: b\xFAa) v\xE0 m\u1ED7i d\xE2n ch\u1EC9 c\u1EA7m m\u1ED9t c\xF4ng c\u1EE5. \u0110\u1ED5i ngh\u1EC1 th\xEC c\xF4ng c\u1EE5 tr\u1EA3 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n. "\u0110i s\u1EEDa": c\xF4ng c\u1EE5 h\u1ECFng th\xEC b\u1ECB v\u1EE9t, d\xE2n t\u1EF1 l\u1EA5y ho\u1EB7c \u0111\u1EB7t c\xE1i m\u1EDBi. Sau khi nghi\xEAn c\u1EE9u "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 c\xF3 Kho c\xF4ng c\u1EE5, d\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng \u0111\u1ED3 s\u1EBD t\u1EF1 \u0111i l\u1EA5y.'));
     for (const k of TOOL_KINDS) {
       const state = h("small"), give = [1, 2].map((tier) => ({ tier, btn: h("button", { class: "sm", onclick: () => {
         const e = sim2.assignTool(ids(), k, tier);
@@ -31957,19 +36693,13 @@ var UnitCard = class {
         ctl2.clearSelection();
         ctl2.onChange();
       } });
-      const repair = h("button", { class: "sm", text: "\u0110i s\u1EEDa", title: "D\xE2n mang c\xF4ng c\u1EE5 t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa", onclick: () => {
-        const e = sim2.repairTool(ids(), k);
-        if (e) c.toast(e);
-        else ctl2.clearSelection();
-        ctl2.onChange();
-      } });
       const drop = h("button", { class: "sm", text: "B\u1ECF", title: "V\u1EE9t c\xF4ng c\u1EE5, k\u1EC3 c\u1EA3 khi ch\u01B0a h\u1ECFng", onclick: () => {
         sim2.discardTool(ids(), k);
         ctl2.clearSelection();
         ctl2.onChange();
       } });
-      const row = h("div", { class: "row" }, h("div", { class: "nm" }, TOOL_NAME[k], state), h("div", { class: "btns" }, ...give.map((g2) => g2.btn), back, repair, drop));
-      this.toolRows.push({ k, row, state, give, back, repair, drop });
+      const row = h("div", { class: "row" }, h("div", { class: "nm" }, TOOL_NAME[k], state), h("div", { class: "btns" }, ...give.map((g2) => g2.btn), back, drop));
+      this.toolRows.push({ k, row, state, give, back, drop });
       toolsSec.append(row);
     }
     this.torchBtn.addEventListener("click", () => {
@@ -32031,6 +36761,7 @@ var UnitCard = class {
           )
         ),
         this.gearSec = h("section", {}, h("h3", { text: "Trang b\u1ECB" }), gearHint, gearRow),
+        this.mountSec = h("section", {}, hint("Th\xFA c\u01B0\u1EE1i", "Th\xFA do Chu\u1ED3ng th\xFA c\u01B0\u1EE1i thu\u1EA7n h\xF3a, giao cho t\u1EEBng ng\u01B0\u1EDDi nh\u01B0 c\xF4ng c\u1EE5: ng\u01B0\u1EDDi c\u01B0\u1EE1i \u0111i nhanh h\u01A1n v\xE0 \u0111\u1EE1 \u0111\xF2n h\u01A1n, l\xEDnh c\xF3 th\xFA t\xEDnh l\xE0 k\u1EF5 binh. K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA kh\xF4ng c\u1EA7n th\xFA giao ri\xEAng: h\u1ECD c\u01B0\u1EE1i con c\u1EE7a tr\u1EA1i."), mountRow),
         this.toolsSec = toolsSec,
         h("section", {}, h("h3", { text: "Ch\u1EC9 s\u1ED1 v\xE0 k\u1EF9 n\u0103ng" }), this.stats, this.skills)
       )
@@ -32079,18 +36810,24 @@ var UnitCard = class {
       g2.btn.textContent = n >= 0 ? `${g2.label} (${n})` : g2.label;
       g2.btn.disabled = g2.kind !== null && n <= 0 && !chosen.every((o) => (g2.slot === "weapon" ? o.weapon : o.armor) === g2.kind);
     }
-    this.gearTip.textContent = chosen.every((o) => o.job === "fight" || o.job === "hunt") ? chosen[0].manualGear ? "\u0110\u1ED3 do b\u1EA1n ph\xE1t: X\u01B0\u1EDFng kh\xF4ng t\u1EF1 \u0111\u1ED5i." : "X\u01B0\u1EDFng t\u1EF1 ph\xE1t \u0111\u1ED3 t\u1ED1t nh\u1EA5t c\xF2n trong kho." : "Ch\u1EC9 Chi\u1EBFn binh v\xE0 Th\u1EE3 s\u0103n c\u1EA7m v\u0169 kh\xED \u0111i theo; d\xE2n th\u01B0\u1EDDng kh\xF4ng chi\u1EBFn \u0111\u1EA5u m\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i khi c\xF3 \u0111\u1ECBch.";
+    this.gearTip.textContent = chosen.every((o) => o.job === "scout") ? "V\u0169 kh\xED, gi\xE1p v\xE0 \u0111u\u1ED1c gi\xFAp trinh s\xE1t v\u1EBD \u0111\u1EE7 b\u1EA3n \u0111\u1ED3 h\u01A1n v\xE0 \xEDt b\u1ECB b\u1EAFt h\u01A1n." : chosen.every((o) => o.job === "fight" || o.job === "hunt") ? chosen[0].manualGear ? "\u0110\u1ED3 do b\u1EA1n ph\xE1t: X\u01B0\u1EDFng kh\xF4ng t\u1EF1 \u0111\u1ED5i." : "X\u01B0\u1EDFng t\u1EF1 ph\xE1t \u0111\u1ED3 t\u1ED1t nh\u1EA5t c\xF2n trong kho." : "Ch\u1EC9 Chi\u1EBFn binh v\xE0 Th\u1EE3 s\u0103n c\u1EA7m v\u0169 kh\xED \u0111i theo; d\xE2n th\u01B0\u1EDDng kh\xF4ng chi\u1EBFn \u0111\u1EA5u m\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i khi c\xF3 \u0111\u1ECBch.";
     this.gear.innerHTML = `M\xE1u <b>${Math.ceil(v.health)}/${v.maxHealth}</b> \xB7 V\u0169 kh\xED <b>${w}</b> \xB7 Gi\xE1p <b>${v.armor ? ARMORS[v.armor].name : "\u2014"}</b>${v.armor ? ` (${armorText(ARMORS[v.armor], false)})` : ""}${v.leader ? " \xB7 <b>Th\u1EE7 l\u0129nh</b>" : ""}`;
     const sk = `${v.id}|${WORK_JOBS.map((j) => v.skill[j].level).join("")}|${Object.values(v.stats).join()}`;
     if (sk !== this.statsKey) {
       this.statsKey = sk;
-      this.stats.innerHTML = Object.keys(STAT_NAME).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(" \xB7 ");
+      this.stats.innerHTML = `<span class="stars">${stars(v.stars ?? 1)}</span> ` + [["hp", 0], ["atk", 0], ["defm", 0], ["defr", 0], ["move", 1], ["work", 1], ["sta", 0]].map(([k, d]) => `${STAT_DEF[k].short} <b>${Math.round(statValue(sim0, v, k) * 10 ** d) / 10 ** d}</b>`).join(" \xB7 ");
       this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>c\u1EA5p ${v.skill[j].level}</b>`).join(" \xB7 ");
     }
     const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
     this.toolsSec.hidden = only === null;
     this.combatSec.hidden = !chosen.every((o) => o.job === "fight");
-    this.gearSec.hidden = !chosen.every((o) => o.job === "fight" || o.job === "hunt");
+    this.mountSec.hidden = chosen.every((o) => o.job === "fight" && o.arm === "cavalry");
+    for (const m of this.mountBtns) {
+      const n = m.kind ? sim0.tamedCount(m.kind) : -1;
+      m.btn.textContent = m.kind ? `${MOUNTS[m.kind].name} (${n})${chosen.every((o) => o.mount === m.kind) ? " \u2713" : ""}` : "\u0110i b\u1ED9";
+      m.btn.disabled = m.kind !== null && n <= 0 && !chosen.every((o) => o.mount === m.kind);
+    }
+    this.gearSec.hidden = !chosen.every((o) => o.job === "fight" || o.job === "hunt" || o.job === "scout");
     for (const r of this.toolRows) {
       r.row.hidden = r.k !== only;
       const t = v.tools[r.k];
@@ -32100,7 +36837,6 @@ var UnitCard = class {
         g2.btn.textContent = `${TIER_NAME[g2.tier]} (${n})`;
         g2.btn.disabled = n <= 0;
       }
-      r.repair.disabled = !t || t.dur >= TIER_DURABILITY[t.tier] - 1e-6;
       r.back.disabled = r.drop.disabled = !t;
     }
     this.jobBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.job === b.dataset.job))));
@@ -32120,6 +36856,7 @@ var TargetCard = class {
     this.info = h("span");
     this.hp = h("b", { class: "bad" });
     this.line = h("div", { class: "kv" });
+    this.harvest = h("button", { class: "sm primary", text: "Khai th\xE1c" });
     this.attack = h("button", { class: "sm primary", text: "T\u1EA5n c\xF4ng" });
     this.loot = h("button", { class: "sm", text: "L\u1ED9t da, l\u1EA5y th\u1ECBt" });
     root.append(
@@ -32129,11 +36866,18 @@ var TargetCard = class {
       } })),
       h("div", { class: "bars" }, h("label", {}, "M\xE1u", h("i", {}, this.hp))),
       this.line,
-      h("div", { class: "btns" }, this.attack, this.loot)
+      h("div", { class: "btns" }, this.harvest, this.attack, this.loot)
     );
+    this.harvest.addEventListener("click", () => {
+      const t = c.ctl.inspect;
+      if (!t || t.kind !== "node") return;
+      const N = c.sim.world.size, r = c.sim.callWorker(t.id % N, Math.floor(t.id / N));
+      c.toast("name" in r ? `${r.name} \u0111i khai th\xE1c` : r.reason);
+      c.ctl.onChange();
+    });
     this.attack.addEventListener("click", () => {
       const t = c.ctl.inspect;
-      if (!t || !c.ctl.selected.size) {
+      if (!t || t.kind === "node" || !c.ctl.selected.size) {
         c.toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
         return;
       }
@@ -32154,6 +36898,24 @@ var TargetCard = class {
     const t = this.c.ctl.inspect, { sim: sim2 } = this.c;
     if (!t) {
       this.root.hidden = true;
+      return;
+    }
+    this.harvest.hidden = t.kind !== "node";
+    if (t.kind === "node") {
+      const N = sim2.world.size, n = sim2.world.nodeAt(t.id % N, Math.floor(t.id / N));
+      if (!n) {
+        this.c.ctl.inspect = null;
+        this.root.hidden = true;
+        return;
+      }
+      this.root.hidden = false;
+      this.name.textContent = { tree: "C\xE2y", rock: "T\u1EA3ng \u0111\xE1", bush: "B\u1EE5i qu\u1EA3" }[n.kind];
+      this.info.textContent = `cho ${RES_NAME[n.res].toLowerCase()}${n.workers ? ` \xB7 ${n.workers} ng\u01B0\u1EDDi \u0111ang l\xE0m` : ""}`;
+      this.hp.style.width = `${Math.max(0, n.amount) / Math.max(1, n.max) * 100}%`;
+      this.line.innerHTML = n.kind === "bush" && n.amount <= 0 ? "H\u1EBFt qu\u1EA3, \u0111ang ch\u1EDD m\u1ECDc l\u1EA1i" : `M\xE1u <b>${Math.ceil(n.amount)}/${n.max}</b>`;
+      this.harvest.disabled = n.kind === "bush" && n.amount <= 0;
+      this.attack.hidden = true;
+      this.loot.hidden = true;
       return;
     }
     if (t.kind === "unit") {
@@ -32188,6 +36950,291 @@ var TargetCard = class {
     this.attack.hidden = dead;
     this.attack.textContent = d.prey ? "S\u0103n" : "T\u1EA5n c\xF4ng";
     this.loot.hidden = !dead;
+  }
+};
+
+// src/ui/resicons.ts
+var O = "#2b1d10";
+var S = `stroke="${O}" stroke-width=".9" stroke-linejoin="round"`;
+var ART = {
+  food: `<path d="M8 5.5V2.5" stroke="#5e4026" stroke-width="1.2"/><path d="M8 3.6q3.2-2.4 5.2.2q-2.4 2.2-5.2-.2z" fill="#4f9a3a" ${S}/><circle cx="5.2" cy="10.2" r="3.6" fill="#d2483a" ${S}/><circle cx="11" cy="10.8" r="3.3" fill="#e0603f" ${S}/><circle cx="4.1" cy="9" r="1" fill="#ffd6c8"/><circle cx="10" cy="9.8" r=".9" fill="#ffd6c8"/>`,
+  wood: `<rect x="1.8" y="8.6" width="12" height="5" rx="1.4" fill="#8a5a2c" ${S}/><rect x="3" y="3" width="12" height="5.6" rx="1.4" fill="#9a6a35" ${S}/><ellipse cx="3.6" cy="5.8" rx="1.9" ry="2.8" fill="#dcae6e" ${S}/><ellipse cx="3.6" cy="5.8" rx=".8" ry="1.4" fill="none" stroke="#9a6a35" stroke-width=".7"/><path d="M7 4.6h5M8 7h5M5 10.8h7" stroke="#6a4420" stroke-width=".7"/>`,
+  stone: `<polygon points="1.8,12.6 2.8,7 6.4,3.6 11.6,4.4 14.2,9.4 12.4,13.2 5.2,13.4" fill="#9aa0a4" ${S}/><polygon points="2.8,7 6.4,3.6 8.6,6 5.6,9" fill="#c4c9cc"/><polygon points="14.2,9.4 12.4,13.2 8,13.3 10,9.8" fill="#6f777b"/>`,
+  hide: `<path d="M3 2.8L6 4h4l3-1.2 1.4 4.2-2.2 2 1 4.4-3-1.2L8 14.2l-2.2-2-3 1.2 1-4.4-2.2-2z" fill="#a0552f" ${S}/><path d="M6.4 6.4q1.6 1 3.2 0M7 9.4q1 .8 2 0" stroke="#7a3a1c" stroke-width=".8" fill="none"/><circle cx="5.2" cy="5.4" r=".8" fill="#c9784a"/><circle cx="11" cy="9.6" r=".8" fill="#c9784a"/>`,
+  bone: `<g transform="rotate(-38 8 8)"><rect x="3.4" y="6.6" width="9.2" height="2.8" fill="#e4dcc4" ${S}/><circle cx="3.2" cy="6.2" r="1.9" fill="#e4dcc4" ${S}/><circle cx="3.2" cy="9.8" r="1.9" fill="#e4dcc4" ${S}/><circle cx="12.8" cy="6.2" r="1.9" fill="#e4dcc4" ${S}/><circle cx="12.8" cy="9.8" r="1.9" fill="#e4dcc4" ${S}/><rect x="4.4" y="7.2" width="7.2" height="1.6" fill="#e4dcc4"/></g>`,
+  fat: `<path d="M2.4 10.4C2.4 5.4 5 3.6 8 3.6s5.6 1.8 5.6 6.8c0 2.6-2.6 3.6-5.6 3.6s-5.6-1-5.6-3.6z" fill="#f0e2b0" ${S}/><ellipse cx="6" cy="7" rx="1.8" ry="1.1" fill="#fff8dc"/><path d="M5 11.6q3 1 6 0" stroke="#d2bf80" stroke-width=".8" fill="none"/>`,
+  feather: `<path d="M13.6 2.2C6.4 2 2.8 6.6 3 13.2 9.4 13.4 13.8 9.6 13.6 2.2z" fill="#7aa0c8" ${S}/><path d="M3 13.2L11.4 4.6" stroke="${O}" stroke-width=".9"/><path d="M6 10.4l-2.4.4M8.4 8l-3 .2M10.6 6l-2.6.2" stroke="#4d6f96" stroke-width=".7"/>`,
+  tusk: `<path d="M3.6 2.8C11.6 2.4 14.4 8.8 11.2 14 11.4 8.8 8.4 6.2 3.6 6z" fill="#fff6e0" ${S}/><path d="M5 4q5 .4 7 4" stroke="#d8c8a0" stroke-width=".8" fill="none"/>`,
+  coin: `<path d="M1.8 12.4C1.4 6 4.6 2.6 8 2.6s6.6 3.4 6.2 9.8z" fill="#f0d8c4" ${S}/><path d="M8 12.2V3.2M5.2 12.2L4.4 4.6M10.8 12.2l.8-7.6M3 12.2l-.6-4M13 12.2l.6-4" stroke="#c89a82" stroke-width=".8"/><rect x="5.8" y="12.4" width="4.4" height="2" rx=".8" fill="#d8b8a0" ${S}/>`,
+  torch: `<rect x="7" y="7.4" width="2.2" height="7.6" rx=".6" fill="#8a6238" ${S}/><path d="M8.1 .8C12.6 5 11.6 8.6 8.1 8.6S3.6 5 8.1.8z" fill="#f89628" ${S}/><path d="M8.1 4C10.2 6 9.8 7.8 8.1 7.8S6 6 8.1 4z" fill="#ffe27a"/>`,
+  stat_hp: `<path d="M8 14C2 9.6 1.4 5.4 4 3.8 5.8 2.7 7.4 3.6 8 5.2 8.6 3.6 10.2 2.7 12 3.8 14.6 5.4 14 9.6 8 14z" fill="#e0483c" ${S}/><path d="M4.6 5.2q.8-.8 1.8-.2" stroke="#ffd0c8" stroke-width=".9" fill="none"/>`,
+  stat_atk: `<path d="M13.4 2.6L6 10" stroke="${O}" stroke-width="3.6" stroke-linecap="round"/><path d="M13.4 2.6L6 10" stroke="#d4dade" stroke-width="2" stroke-linecap="round"/><path d="M4.2 8.4l3.4 3.4" stroke="${O}" stroke-width="3" stroke-linecap="round"/><path d="M4.2 8.4l3.4 3.4" stroke="#b5532f" stroke-width="1.5" stroke-linecap="round"/><path d="M5.6 10.4L3 13" stroke="#8a6238" stroke-width="2" stroke-linecap="round"/>`,
+  stat_defm: `<path d="M8 1.6l5.4 2v4.2c0 3.2-2.4 5.2-5.4 6.6-3-1.4-5.4-3.4-5.4-6.6V3.6z" fill="#7f9cc8" ${S}/><path d="M8 3.4v9M4.4 7.2h7.2" stroke="#dfe8f6" stroke-width="1.2"/>`,
+  stat_defr: `<path d="M8 1.6l5.4 2v4.2c0 3.2-2.4 5.2-5.4 6.6-3-1.4-5.4-3.4-5.4-6.6V3.6z" fill="#c9a064" ${S}/><circle cx="8" cy="8" r="2.6" fill="none" stroke="#fff0cc" stroke-width="1"/><circle cx="8" cy="8" r=".9" fill="#fff0cc"/>`,
+  stat_move: `<path d="M2.6 3.6L7 8l-4.4 4.4M7.6 3.6L12 8l-4.4 4.4" stroke="${O}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M2.6 3.6L7 8l-4.4 4.4M7.6 3.6L12 8l-4.4 4.4" stroke="#5cc866" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  stat_work: `<path d="M9.4 6.6L3.4 12.6" stroke="${O}" stroke-width="3.2" stroke-linecap="round"/><path d="M9.4 6.6L3.4 12.6" stroke="#9a6a35" stroke-width="1.6" stroke-linecap="round"/><rect x="7" y="2.6" width="7" height="4" rx="1" fill="#9aa0a4" transform="rotate(30 10.5 4.6)" ${S}/>`,
+  stat_int: `<path d="M8 1.8a4.6 4.6 0 0 1 2.6 8.4c-.5.4-.6.8-.6 1.4H6c0-.6-.1-1-.6-1.4A4.6 4.6 0 0 1 8 1.8z" fill="#f3d65e" ${S}/><rect x="6" y="12" width="4" height="1.8" rx=".8" fill="#9aa0a4" ${S}/><path d="M6.6 5.4q1.4-1.2 2.8 0" stroke="#fff6c8" stroke-width=".9" fill="none"/>`,
+  stat_aspd: `<circle cx="8" cy="9.2" r="5" fill="#e8ecef" ${S}/><path d="M8 9.2V5.8M8 9.2l2.3 1.5" stroke="${O}" stroke-width="1.3" stroke-linecap="round" fill="none"/><rect x="6.4" y="1.4" width="3.2" height="1.8" rx=".6" fill="#9aa0a4" ${S}/>`,
+  stat_crit: `<path d="M8 1.4l1.6 4.2 4.4.4-3.4 2.8 1.1 4.3L8 10.9 4.3 13.1l1.1-4.3L2 6l4.4-.4z" fill="#f26a3c" ${S}/><circle cx="8" cy="8" r="1.6" fill="#fff0cc"/>`,
+  stat_critd: `<path d="M8 1.2l1.4 3.6 3.8-.6-2.2 3.2 2.6 2.8-3.8-.2L8 14.8 6.2 10l-3.8.2L5 7.4 2.8 4.2l3.8.6z" fill="#c8322c" ${S}/><path d="M10.8 2.8L5.4 11.6" stroke="#fff0cc" stroke-width="1.2" stroke-linecap="round"/>`,
+  stat_sta: `<path d="M9.4 1.4L3.6 9h3.8l-.9 5.6 5.9-8H8.6z" fill="#f2b232" ${S}/>`,
+  role_foot: `<path d="M8 1.8l5 1.8v4c0 3-2.2 5-5 6.2-2.8-1.2-5-3.2-5-6.2v-4z" fill="#7f9cc8" ${S}/><path d="M12.6 1.6L7 8.4" stroke="${O}" stroke-width="3.2" stroke-linecap="round"/><path d="M12.6 1.6L7 8.4" stroke="#d4dade" stroke-width="1.7" stroke-linecap="round"/>`,
+  role_cavalry: `<path d="M2.4 12.6c.4-3 1.6-5 4-5.8l1.4-2.8 1.6 1 2.4-.2.6 1.6-1.4 1.2c1.6.6 2.4 2.2 2.4 5H10l-.6-2.4-2.6.4-.4 2H2.4z" fill="#b5835a" ${S}/><circle cx="10.6" cy="4.8" r=".6" fill="${O}"/>`,
+  role_archer: `<path d="M3.4 2.6c6 1.4 8.2 6.4 6.8 11" stroke="${O}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M3.4 2.6c6 1.4 8.2 6.4 6.8 11" stroke="#9a6a35" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M3 13.4L13.4 3" stroke="#d4dade" stroke-width="1.2"/><path d="M13.4 3l-3.4.4 1.8 1.8z" fill="#d4dade"/>`,
+  role_scout: `<path d="M1.6 8s2.4-4.6 6.4-4.6S14.4 8 14.4 8 12 12.6 8 12.6 1.6 8 1.6 8z" fill="#f1ead6" ${S}/><circle cx="8" cy="8" r="2.6" fill="#4a7a9c" ${S}/><circle cx="8" cy="8" r="1" fill="${O}"/>`,
+  role_tame: `<ellipse cx="8" cy="10.4" rx="3.6" ry="3" fill="#b5835a" ${S}/><circle cx="3.6" cy="6.4" r="1.6" fill="#b5835a" ${S}/><circle cx="6.4" cy="3.8" r="1.6" fill="#b5835a" ${S}/><circle cx="9.8" cy="3.8" r="1.6" fill="#b5835a" ${S}/><circle cx="12.6" cy="6.4" r="1.6" fill="#b5835a" ${S}/>`,
+  formation: `<circle cx="8" cy="3.4" r="1.7" fill="#c9a064" ${S}/><circle cx="4" cy="8" r="1.7" fill="#c9a064" ${S}/><circle cx="12" cy="8" r="1.7" fill="#c9a064" ${S}/><circle cx="2.4" cy="12.6" r="1.7" fill="#c9a064" ${S}/><circle cx="8" cy="12.6" r="1.7" fill="#c9a064" ${S}/><circle cx="13.6" cy="12.6" r="1.7" fill="#c9a064" ${S}/>`,
+  clock: `<circle cx="8" cy="8.4" r="5.6" fill="#f1ead6" ${S}/><path d="M8 4.8v3.8l2.6 1.6" stroke="#2b1d10" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M6 1.6h4" stroke="#2b1d10" stroke-width="1.4" stroke-linecap="round"/>`,
+  pop: `<circle cx="8" cy="4.8" r="3" fill="#e8c4a0" ${S}/><path d="M2.4 14.6C2.4 9 13.6 9 13.6 14.6z" fill="#b5532f" ${S}/>`
+};
+function resIcon(key) {
+  const el2 = document.createElement("span");
+  el2.className = "ico";
+  el2.setAttribute("aria-hidden", "true");
+  el2.innerHTML = `<svg viewBox="0 0 16 16" width="100%" height="100%">${ART[key] ?? ""}</svg>`;
+  return el2;
+}
+var statIcon = (stat) => resIcon(`stat_${stat}`);
+
+// src/ui/techtree.ts
+var TechTree = class {
+  constructor(c) {
+    this.c = c;
+    this.root = h("div", { class: "ttree" });
+    this.detail = h("div", { class: "tdetail" });
+    this.dialog = h("div", { class: "tdialog", hidden: true }, this.detail);
+    this.body = h("div", { class: "tbody" });
+    this.nodes = [];
+    this.picked = null;
+    this.key = "";
+    this.root.append(this.body, this.dialog);
+    this.dialog.addEventListener("click", (e) => {
+      if (e.target === this.dialog) {
+        this.picked = null;
+        this.showDetail();
+        this.update(true);
+      }
+    });
+  }
+  /** The picture of a research that stands alone: what it opens, drawn the way the build menu draws houses. */
+  pic(kind, level = 1) {
+    const { sim: sim2, sprites: sprites2 } = this.c;
+    try {
+      const p = sprites2.building(kind, sim2.era, level, 4).frames[0];
+      return h("span", { class: "tpic" }, iconCanvas(p));
+    } catch {
+      return h("span", { class: "tpic", text: "?" });
+    }
+  }
+  /** The picture on top of a column: the house of a role, or the weapon itself. */
+  headPic(def) {
+    if (def.tool) {
+      const icon = this.c.sprites.icons[`${def.tool}1`];
+      if (icon) return h("span", { class: "tpic" }, iconCanvas(icon));
+    }
+    if (def.weapon) {
+      const icon = this.c.sprites.icons[`${def.weapon}${WEAPONS[def.weapon]?.tier ?? 1}`];
+      if (icon) return h("span", { class: "tpic" }, iconCanvas(icon));
+    }
+    return this.pic(def.building ?? "lab", 1);
+  }
+  techPic(t) {
+    const { sprites: sprites2 } = this.c, r = t.unlocks.recipes?.[0];
+    if (r && sprites2.icons[r]) return h("span", { class: "tpic" }, iconCanvas(sprites2.icons[r]));
+    const lv = t.unlocks.levels;
+    if (lv) return this.pic("storage", Math.max(...Object.values(lv)));
+    if (t.unlocks.auto) return this.pic("toolstore", 2);
+    if (t.unlocks.mounts) return this.pic("stable", 1);
+    if (t.id.startsWith("form_") || t.id === "signal") return this.pic("drill", 1);
+    if (t.id.startsWith("scout")) return this.pic("scouttent", 1);
+    return this.pic("lab", 1);
+  }
+  make(pic, name, max, techOf, level, extra = {}) {
+    const bar2 = h("b"), count = h("small"), lock = h("span", { class: "tlock", text: "\u{1F512}" });
+    const el2 = h("button", { class: "tnode", type: "button" }, pic, h("span", { class: "tname", text: name }), h("span", { class: "tbar" }, bar2), count, lock);
+    const node = { el: el2, bar: bar2, count, lock, techOf, level, max, ...extra };
+    el2.addEventListener("click", () => {
+      this.picked = node;
+      this.showDetail();
+      this.update(true);
+    });
+    this.nodes.push(node);
+    return node;
+  }
+  /** Research that stands alone, laid out as pictures in one grid, the ones with fewer steps before them first (what `requires` says). */
+  addSingles(title, techs) {
+    const ids = new Set(techs.map((t) => t.id)), depth = /* @__PURE__ */ new Map();
+    const dep = (t) => {
+      const d = depth.get(t.id);
+      if (d !== void 0) return d;
+      const n = Math.max(-1, ...t.requires.filter((r) => ids.has(r)).map((r) => dep(TECH_BY_ID[r]))) + 1;
+      depth.set(t.id, n);
+      return n;
+    };
+    const sorted = [...techs].sort((a, b) => dep(a) - dep(b));
+    this.body.append(h("section", { class: "tsec" }, h("h3", { text: title }), h("div", { class: "trow" }, ...sorted.map((t) => this.make(this.techPic(t), t.name.replace(/^Bản vẽ /, ""), 1, () => this.c.sim.researched.has(t.id) ? null : t, () => this.c.sim.researched.has(t.id) ? 1 : 0).el))));
+  }
+  /** Research that comes one after another, drawn as a tree from the top down: one row for each step of the chain, joined by a short line (dựng bằng gỗ, then xây bằng đá). */
+  addLadder(title, techs) {
+    const ids = new Set(techs.map((t) => t.id)), depth = /* @__PURE__ */ new Map();
+    const dep = (t) => {
+      const d = depth.get(t.id);
+      if (d !== void 0) return d;
+      const n = Math.max(-1, ...t.requires.filter((r) => ids.has(r)).map((r) => dep(TECH_BY_ID[r]))) + 1;
+      depth.set(t.id, n);
+      return n;
+    };
+    const rows = [];
+    for (const t of techs) (rows[dep(t)] ??= []).push(t);
+    const col = h("div", { class: "tladder" });
+    rows.filter(Boolean).forEach((row, i) => {
+      if (i) col.append(h("span", { class: "tlink" }));
+      col.append(h("div", { class: "tstep" }, ...row.map((t) => this.make(this.techPic(t), t.name, 1, () => this.c.sim.researched.has(t.id) ? null : t, () => this.c.sim.researched.has(t.id) ? 1 : 0).el)));
+    });
+    this.body.append(h("section", { class: "tsec" }, h("h3", { text: title }), col));
+  }
+  /** A row for each role, a square for each of the eight stats: the player picks which to raise. */
+  addRoles(title, roles) {
+    const sec = h("section", { class: "tsec" }, h("h3", { text: title }));
+    for (const role of roles) {
+      const def = TREE_ROLES[role];
+      const row = h("div", { class: "trow lines" }, ...STAT_IDS.map((stat) => {
+        const pic = h("span", { class: "tpic stat" }, statIcon(stat));
+        return this.make(pic, STAT_DEF[stat].short, statLevels(stat), () => {
+          const n = lineLevel(this.c.sim.researched, role, stat);
+          return n >= statLevels(stat) ? null : TECH_BY_ID[statTechId(role, stat, n + 1)];
+        }, () => lineLevel(this.c.sim.researched, role, stat), { role, stat }).el;
+      }));
+      sec.append(h("div", { class: "trole" }, h("div", { class: "thead" }, this.headPic(def), h("b", { text: def.name })), row));
+    }
+    this.body.append(sec);
+  }
+  /** A column for each role, its stats one under the other in the order they open: each opens when the one above has reached the same level, and the first one waits for the last of the level before. */
+  addChains(title, roles, chain) {
+    const cols = roles.map((role) => {
+      const def = TREE_ROLES[role];
+      const nodes = CHAINS[chain].order.map((stat) => this.make(
+        h("span", { class: "tpic stat" }, statIcon(stat)),
+        STAT_DEF[stat].short,
+        statLevels(stat),
+        () => {
+          const n = lineLevel(this.c.sim.researched, role, stat);
+          return n >= statLevels(stat) ? null : TECH_BY_ID[statTechId(role, stat, n + 1)];
+        },
+        () => lineLevel(this.c.sim.researched, role, stat),
+        { role, stat }
+      ).el);
+      const tier = CHAINS[chain].finalTier ? TIER_TECH_OF[role] : void 0;
+      const last = tier ? [h("span", { class: "tlink" }), this.make(def.weapon || !["foot", "cavalry", "archer", "scout", "tame"].includes(role) ? this.headPic(def) : h("span", { class: "tpic stat" }, resIcon(`role_${role}`)), `B\u1EADc ${tier.unlocks.tier.tier}`, 1, () => this.c.sim.researched.has(tier.id) ? null : tier, () => this.c.sim.researched.has(tier.id) ? 1 : 0).el] : [];
+      return h("div", { class: "tcol" }, h("div", { class: "thead" }, this.headPic(def), h("b", { text: def.name })), ...nodes.flatMap((el2, i) => i ? [h("span", { class: "tlink" }), el2] : [el2]), ...last);
+    });
+    this.body.append(h("section", { class: "tsec" }, h("h3", { text: title }), h("div", { class: "tcols" }, ...cols)));
+  }
+  /** The tree of the formations: a column for each (its unlock on top, then the first stats), the research shared by all of them joined below (cells), the rest of the stats, and the research shared again (squads). The parts and their order come from the chain's layout. */
+  addFormations(title, chain) {
+    const def = CHAINS[chain], layout = def.layout ?? [{ stats: def.order }], { sim: sim2 } = this.c;
+    const link = () => h("span", { class: "tlink" });
+    const done = (t) => sim2.researched.has(t.id);
+    const techNode = (t) => this.make(this.techPic(t), t.name, 1, () => done(t) ? null : t, () => done(t) ? 1 : 0).el;
+    const stat = (role, s) => this.make(
+      h("span", { class: "tpic stat" }, statIcon(s)),
+      STAT_DEF[s].short,
+      statLevels(s),
+      () => {
+        const n = lineLevel(sim2.researched, role, s);
+        return n >= statLevels(s) ? null : TECH_BY_ID[statTechId(role, s, n + 1)];
+      },
+      () => lineLevel(sim2.researched, role, s),
+      { role, stat: s }
+    ).el;
+    const parts = [];
+    let first = true;
+    for (const part of layout) {
+      if (part.stats) {
+        const head = first;
+        first = false;
+        const stats = part.stats;
+        parts.push(h("div", { class: "tcols" }, ...def.roles.map((role) => {
+          const r = TREE_ROLES[role], unlock = r.needs ? TECH_BY_ID[r.needs] : null;
+          const nodes = [...head && unlock ? [techNode(unlock)] : [], ...stats.map((s) => stat(role, s))];
+          return h("div", { class: "tcol" }, ...head ? [h("div", { class: "thead" }, this.headPic(r), h("b", { text: r.name }))] : [], ...nodes.flatMap((el2, i) => i ? [link(), el2] : [el2]));
+        })));
+      } else if (part.techs) {
+        parts.push(h("div", { class: "tladder" }, link(), ...part.techs.flatMap((id, i) => [...i ? [link()] : [], h("div", { class: "tstep" }, techNode(TECH_BY_ID[id]))]), link()));
+      }
+    }
+    this.body.append(h("section", { class: "tsec" }, h("h3", { text: title }), ...parts));
+  }
+  /** The tapped square as a dialog over the tree, like a scroll: its picture and level bar, what it gives now and next, the cost as pictures, and the button. Tapping outside, or ✕, puts it away. */
+  showDetail() {
+    const n = this.picked, { sim: sim2, toast, ctl: ctl2 } = this.c;
+    this.dialog.hidden = !n;
+    if (!n) return;
+    const t = n.techOf(), lvl = n.level(), line3 = !!n.role;
+    const title = line3 ? `${STAT_DEF[n.stat].name} \xB7 ${TREE_ROLES[n.role].name}` : t?.name ?? n.el.querySelector(".tname")?.textContent ?? "";
+    const src = n.el.querySelector("canvas"), icon = src ? iconCanvas(src) : n.el.querySelector(".tpic")?.cloneNode(true);
+    const bar2 = h("i", { class: "dbar" }, h("b", { style: `width:${lvl / n.max * 100}%` }), h("span", { text: n.max > 1 ? `${lvl}/${n.max}` : lvl ? "\u2713" : "" }));
+    const now = line3 ? statBonus(sim2.researched, n.role, n.stat) : 0, next = line3 && t ? t.unlocks.bonus.pct : 0;
+    const close = h("button", { class: "dclose", text: "\u2715", title: "\u0110\xF3ng", onclick: () => {
+      this.picked = null;
+      this.showDetail();
+      this.update(true);
+    } });
+    const head = h("div", { class: "dhead" }, h("div", { class: "dpic" }, ...icon ? [icon] : []), h("div", { class: "dwho" }, h("b", { class: "dtitle", text: title }), bar2), close);
+    if (!t) {
+      this.detail.replaceChildren(head, h("p", { class: "dtext", text: line3 ? `\u0110\xE3 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a ${n.max}: ${STAT_DEF[n.stat].name.toLowerCase()} c\u1EE7a ${TREE_ROLES[n.role].name.toLowerCase()} +${now}%.` : "Nghi\xEAn c\u1EE9u n\xE0y \u0111\xE3 xong." }));
+      return;
+    }
+    const st = sim2.techState(t), busy2 = st.state === "ready" && sim2.currentResearch() !== null, short = st.state === "ready" && !busy2 ? sim2.researchShort(t) : null, block = st.state === "queued" ? sim2.researchBlock(t) : null;
+    const note = busy2 ? "\u0110\u1EE3i nghi\xEAn c\u1EE9u hi\u1EC7n t\u1EA1i xong" : short ?? (st.state === "locked" ? st.why ?? "" : st.state === "active" ? "\u0110ang nghi\xEAn c\u1EE9u\u2026" : st.state === "queued" ? block ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u, ch\u1EDD b\u1EAFt \u0111\u1EA7u" : "");
+    const btn = h("button", {
+      class: "dgo",
+      text: { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state],
+      disabled: st.state === "done" || st.state === "active" || st.state === "locked" || busy2 || !!short,
+      onclick: () => {
+        if (st.state === "queued") sim2.unqueueResearch(t.id);
+        else {
+          const e = sim2.queueResearch(t.id);
+          if (e) toast(e);
+          else this.picked = null;
+        }
+        ctl2.onChange();
+        this.showDetail();
+        this.update(true);
+      }
+    });
+    const costs = Object.keys(t.cost).filter((r) => (t.cost[r] ?? 0) > 0).map((r) => {
+      const need = t.cost[r] ?? 0, have = Math.floor(sim2.stock[r]);
+      return h("span", { class: `dcost${have < need ? " short" : ""}`, title: RES_NAME[r] }, resIcon(r), h("b", { text: String(need) }), h("small", { text: `/${have}` }));
+    });
+    this.detail.replaceChildren(
+      head,
+      ...line3 ? [h("div", { class: "dline" }, h("span", { text: `Hi\u1EC7n t\u1EA1i: +${now}%` }), h("span", { text: `C\u1EA5p ti\u1EBFp theo: +${next}%` }))] : [],
+      h("p", { class: "dtext", text: line3 ? STAT_DEF[n.stat].about : t.desc }),
+      h("div", { class: "dcosts" }, ...costs, h("span", { class: "dcost", title: "Th\u1EDDi gian" }, resIcon("clock"), h("b", { text: workDays(t.time) }))),
+      ...t.needLevel > 1 ? [h("small", { class: "dneed", text: `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${t.needLevel}` })] : [],
+      ...note ? [h("small", { class: "lock", text: note })] : [],
+      btn
+    );
+  }
+  /** Refresh the squares (their bars and locks) every frame the panel shows; the detail only when something changed. */
+  update(force = false) {
+    const { sim: sim2 } = this.c, act = sim2.building("lab")?.active;
+    const key = `${sim2.researchQueue.join()}|${act?.id}|${Math.floor((act?.progress ?? 0) * 20)}|${sim2.researched.size}|${sim2.building("lab")?.level}|${this.picked ? 1 : 0}|${Math.floor(Object.values(sim2.stock).reduce((a, b) => a + b, 0))}`;
+    if (!force && key === this.key) return;
+    this.key = key;
+    for (const n of this.nodes) {
+      const t = n.techOf(), lvl = n.level(), st = t ? sim2.techState(t).state : "done";
+      n.el.classList.toggle("locked", st === "locked");
+      n.el.classList.toggle("done", st === "done");
+      n.el.classList.toggle("busy", st === "active" || st === "queued");
+      n.el.classList.toggle("picked", n === this.picked);
+      n.lock.hidden = st !== "locked";
+      const running = act && t && act.id === t.id ? act.progress : null;
+      n.bar.style.width = `${(lvl + (running ?? 0)) / n.max * 100}%`;
+      n.count.textContent = running !== null ? `${Math.floor(running * 100)}%` : n.max > 1 ? `${lvl}/${n.max}` : st === "done" ? "\u2713" : "";
+    }
+    if (this.picked) this.showDetail();
   }
 };
 
@@ -32247,7 +37294,7 @@ var PeoplePane = class {
       ctl2.openDetail = true;
       ctl2.closeBuilding();
     } });
-    const labels = (...names) => names.map((n, i) => h("label", {}, n, h("i", {}, [this.bar.full, this.bar.health, this.bar.morale][i])));
+    const labels = (...names2) => names2.map((n, i) => h("label", {}, n, h("i", {}, [this.bar.full, this.bar.health, this.bar.morale][i])));
     this.pane.append(
       h("div", { class: "cardhead" }, this.name, this.state),
       h("div", { class: "bars" }, ...labels("No", "M\xE1u", "Tinh th\u1EA7n"), energyLabel, this.armorLabel),
@@ -32344,17 +37391,22 @@ var StaffBox = class {
       this.list.replaceChildren(...staff.length ? staff.map((v) => h(
         "div",
         { class: "row" },
-        h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${v.stats[stat]} \xB7 ${JOBS[jobKey].name} c\u1EA5p ${v.skill[jobKey].level}` })),
-        h("button", { class: "sm", text: crew2 ? "Cho ngh\u1EC9" : "Cho ra", onclick: () => {
+        h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${fmtStat(v.stats[stat])} \xB7 ${JOBS[jobKey].name} c\u1EA5p ${v.skill[jobKey].level}` })),
+        h("div", { class: "btns" }, h("button", { class: "sm", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: c\xF4ng c\u1EE5", onclick: () => {
+          this.c.ctl.selected.clear();
+          this.c.ctl.selected.add(v.id);
+          this.c.ctl.openDetail = true;
+          this.c.ctl.closeBuilding();
+        } }), h("button", { class: "sm", text: "\u2212", title: crew2 ? "Cho ngh\u1EC9" : "Cho ra", onclick: () => {
           if (crew2) sim2.releaseCrew([v.id]);
           else sim2.releaseStaff([v.id]);
           this.c.ctl.onChange();
-        } })
+        } }))
       )) : [h("p", { class: "sub", text: crew2 ? "Ch\u01B0a c\xF3 th\u1EE3 x\xE2y n\xE0o: ch\u01B0a d\u1EF1ng \u0111\u01B0\u1EE3c g\xEC." : "Ch\u01B0a c\xF3 ai l\xE0m vi\u1EC7c \u1EDF \u0111\xE2y." })]);
     }
     this.picker.hidden = !this.open;
     if (!this.open) return;
-    const pool = sim2.villagers.filter((v) => v.inside === null && v.down <= 0 && v.job !== "fight" && v.job !== "scout" && !(v.phase === "goStaff" && v.target === b.id) && !(crew2 && v.job === "build") && !(v.job === "food" && v.post === b.id)).sort((x, y) => y.stats[stat] - x.stats[stat]);
+    const pool = sim2.villagers.filter((v) => v.inside === null && v.down <= 0 && v.job !== "fight" && v.job !== "scout" && !(v.phase === "goStaff" && v.target === b.id) && !isStaffJob(v.job) && v.job !== "build" && !(v.job === "food" && v.post >= 0)).sort((x, y) => y.stats[stat] - x.stats[stat]);
     const pk = `${b.id}|${full}|${pool.map((v) => `${v.id}.${v.job}.${v.stats[stat]}`).join()}`;
     if (pk === this.pickKey) return;
     this.pickKey = pk;
@@ -32363,8 +37415,8 @@ var StaffBox = class {
       ...pool.map((v) => h(
         "div",
         { class: "row" },
-        h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${v.stats[stat]} \xB7 \u0111ang ${JOB_NAME[v.job].toLowerCase()}` })),
-        h("button", { class: "sm", text: "V\xE0o l\xE0m", disabled: full, onclick: () => {
+        h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${fmtStat(v.stats[stat])} \xB7 \u0111ang ${JOB_NAME[v.job].toLowerCase()}` })),
+        h("button", { class: "sm", text: "\uFF0B", title: "V\xE0o l\xE0m", disabled: full, onclick: () => {
           const e = crew2 ? sim2.assignCrew([v.id]) : this.job === "farm" ? sim2.assignField([v.id], b.id) : sim2.assignStaff([v.id], this.job);
           this.c.toast(e ?? `${v.name}: ${label2}`);
           this.c.ctl.onChange();
@@ -32416,7 +37468,7 @@ var HELP = {
   foot: "Chi\u1EBFn binh c\u1EADn chi\u1EBFn do tr\u1EA1i n\xE0y tuy\u1EC3n v\xE0 cho ngh\u1EC9, kh\xF4ng ph\u1EA3i \u1EDF \u0111\u1ED1ng l\u1EEDa. H\u1ECD canh g\xE1c, \u0111\xE1nh \u0111\u1ECBch v\xE0 th\xFA d\u1EEF, ng\u1EE7 trong tr\u1EA1i. Nh\u1EDB ch\u1EBF v\u0169 kh\xED v\xE0 gi\xE1p cho h\u1ECD. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm.",
   cavalry: "Ng\u01B0\u1EDDi c\u01B0\u1EE1i th\xFA do tr\u1EA1i n\xE0y tuy\u1EC3n v\xE0 cho ngh\u1EC9. H\u1ECD xung phong nhanh, kh\u1EAFc ng\u01B0\u1EDDi n\xE9m nh\u01B0ng s\u1EE3 gi\xE1o. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm.",
   archer: "Ng\u01B0\u1EDDi n\xE9m \u0111\xE1, b\u1EAFn n\xE1 do tr\u1EA1i n\xE0y tuy\u1EC3n v\xE0 cho ngh\u1EC9. H\u1ECD \u0111\xE1nh t\u1EEB xa v\xE0 c\xF3 th\u1EC3 l\xEAn ch\xF2i canh. Ch\u1EC9 d\xF9ng v\u0169 kh\xED b\u1EAFn. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm.",
-  scout: "Trinh s\xE1t do Tr\u1EA1i trinh s\xE1t tuy\u1EC3n v\xE0 cho ngh\u1EC9. Trinh s\xE1t t\u1ED1t c\u1EA7n Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c v\xE0 Tr\xED tu\u1EC7. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm."
+  scout: "Trinh s\xE1t do Tr\u1EA1i trinh s\xE1t tuy\u1EC3n v\xE0 cho ngh\u1EC9. Trinh s\xE1t t\u1ED1t c\u1EA7n Nhanh nh\u1EB9n v\xE0 Th\u1EC3 l\u1EF1c. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm."
 };
 var RolePane = class {
   /** `changed` asks whoever shows this pane to draw it again. */
@@ -32425,8 +37477,6 @@ var RolePane = class {
     this.role = role;
     this.changed = changed;
     this.root = h("div", { class: "page" });
-    this.open = false;
-    this.picked = /* @__PURE__ */ new Set();
     this.key = "";
   }
   update() {
@@ -32439,10 +37489,8 @@ var RolePane = class {
     const { sim: sim2 } = this.c;
     return [
       this.role,
-      this.open,
-      [...this.picked].join("."),
       sim2.roleCapacity(this.role),
-      sim2.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? "" : "i"}${Math.round(v.energy / 5)}`).join(),
+      sim2.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? "" : "i"}${Math.round(v.energy / 5)}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
       sim2.scouts.map((m) => m.ids.join(".")).join("|"),
       sim2.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join()
     ].join("|");
@@ -32453,8 +37501,8 @@ var RolePane = class {
   }
   statLine(v) {
     const { sim: sim2 } = this.c, s = STAT_OF[this.role];
-    if (s === "scout") return `Nhanh ${v.stats.agi} \xB7 Th\u1EC3 l\u1EF1c ${v.stats.sta} \xB7 Tr\xED tu\u1EC7 ${v.stats.int} \xB7 \u0111i\u1EC3m ${(sim2.scoutSkill(v) * 10).toFixed(1)}`;
-    return `${STAT_NAME[s]} ${v.stats[s]}`;
+    if (s === "scout") return `Nhanh ${fmtStat(v.stats.agi)} \xB7 Th\u1EC3 l\u1EF1c ${fmtStat(v.stats.sta)} \xB7 \u0111i\u1EC3m ${(sim2.scoutSkill(v) * 10).toFixed(1)}`;
+    return `${STAT_NAME[s]} ${fmtStat(v.stats[s])}`;
   }
   render() {
     const { sim: sim2, ctl: ctl2, toast } = this.c, role = this.role, def = ROLES[role], era = sim2.era;
@@ -32466,8 +37514,14 @@ var RolePane = class {
       const away = sim2.scouts.some((m) => m.ids.includes(v.id));
       out.push(h(
         "div",
-        { class: "rrow", style: `grid-template-columns:1fr ${def.job === "fight" ? "auto auto" : "auto"}` },
+        { class: "rrow", style: `grid-template-columns:1fr ${def.job === "fight" ? "auto auto auto" : "auto auto"}` },
         h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: `${describe(v, sim2)} \xB7 ${this.statLine(v)}` })),
+        h("button", { class: "chip", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: c\xF4ng c\u1EE5, trang b\u1ECB", onclick: () => {
+          ctl2.selected.clear();
+          ctl2.selected.add(v.id);
+          ctl2.openDetail = true;
+          ctl2.closeBuilding();
+        } }),
         def.job === "fight" ? h("button", { class: "chip", text: "\u25CE", title: "Ch\u1ECDn tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ra l\u1EC7nh", onclick: () => {
           if (v.inside !== null) {
             toast(`${v.name} \u0111ang ng\u1EE7 trong tr\u1EA1i`);
@@ -32487,54 +37541,36 @@ var RolePane = class {
       ));
     }
     const room = Math.max(0, cap - have.length);
-    const free = sim2.villagers.filter((v) => v.job !== "fight" && v.job !== "scout" && roleOf(v) !== role && v.down <= 0 && v.inside === null);
+    const free = sim2.villagers.filter((v) => v.job === "idle" && !roleOf(v) && v.down <= 0 && v.inside === null);
     const key = (v) => STAT_OF[role] === "scout" ? sim2.scoutSkill(v) : v.stats[STAT_OF[role]];
     free.sort((a, b) => key(b) - key(a));
-    for (const id of [...this.picked]) if (!free.some((v) => v.id === id)) this.picked.delete(id);
-    out.push(h("button", {
-      class: `chip${this.open ? " on" : ""}`,
-      style: "justify-self:start",
-      text: `\uFF0B Giao vi\u1EC7c \u25BE${free.length ? ` (${free.length})` : ""}`,
-      disabled: !free.length || !room || !!lock,
-      title: lock ? lock : !cap ? `C\u1EA7n d\u1EF1ng ${house}` : !room ? `${house} \u0111\xE3 \u0111\u1EE7 ch\u1ED7: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` : !free.length ? "Kh\xF4ng c\xF2n d\xE2n r\u1EA3nh" : "Ch\u1ECDn d\xE2n \u0111\u1EC3 giao vi\u1EC7c n\xE0y",
-      onclick: () => {
-        this.open = !this.open;
-        this.again();
-      }
-    }));
-    if (cap && !room) out.push(h("small", { class: "sub", text: `${house} \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm.` }));
-    if (this.open && free.length && room) {
-      const list = h("div", { class: "rdrop" });
-      for (const v of free) {
-        const box = h("input", { type: "checkbox" });
-        box.checked = this.picked.has(v.id);
-        box.disabled = !box.checked && this.picked.size >= room;
-        box.addEventListener("change", () => {
-          if (box.checked) this.picked.add(v.id);
-          else this.picked.delete(v.id);
-          this.again();
-        });
-        const now = roleOf(v);
-        list.append(h("label", { class: "rpick" }, box, h("span", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: `${now ? roleName(now, era) : "r\u1EA3nh"} \xB7 ${this.statLine(v)}` }))));
-      }
-      out.push(
-        list,
+    out.push(h("div", { class: "phead" }, h("b", { text: "D\xE2n r\u1EA3nh" }), h("small", { text: !cap ? `c\u1EA7n d\u1EF1ng ${house.toLowerCase()}` : room ? `c\xF2n ch\u1ED7 cho ${room} ng\u01B0\u1EDDi` : `${house.toLowerCase()} \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` })));
+    if (!free.length) out.push(h("p", { class: "sub", text: "Kh\xF4ng c\xF2n d\xE2n r\u1EA3nh." }));
+    for (const v of free) {
+      const now = roleOf(v);
+      out.push(h(
+        "div",
+        { class: "rrow rfree", style: "grid-template-columns:1fr auto auto" },
+        h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: `${now ? roleName(now, era) : "r\u1EA3nh"} \xB7 ${this.statLine(v)}` })),
+        h("button", { class: "chip", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: c\xF4ng c\u1EE5, trang b\u1ECB", onclick: () => {
+          ctl2.selected.clear();
+          ctl2.selected.add(v.id);
+          ctl2.openDetail = true;
+          ctl2.closeBuilding();
+        } }),
         h("button", {
-          class: "chip on",
-          style: "justify-self:start",
-          text: `Giao ${this.picked.size} ng\u01B0\u1EDDi`,
-          disabled: !this.picked.size,
+          class: "chip",
+          text: "\uFF0B",
+          title: lock ?? (!cap ? `C\u1EA7n d\u1EF1ng ${house}` : !room ? `${house} \u0111\xE3 \u0111\u1EE7 ch\u1ED7: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` : "Giao vi\u1EC7c n\xE0y"),
+          disabled: !!lock || !room,
           onclick: () => {
-            const e = sim2.assignRole([...this.picked], role);
+            const e = sim2.assignRole([v.id], role);
             if (e) toast(e);
-            this.picked.clear();
-            this.open = false;
             ctl2.onChange();
             this.again();
           }
-        }),
-        h("small", { class: "sub", text: `C\xF2n ch\u1ED7 cho ${room - this.picked.size} ng\u01B0\u1EDDi.` })
-      );
+        })
+      ));
     }
     return [h("div", { class: "proster", style: "display:grid;gap:6px" }, ...out)];
   }
@@ -32589,7 +37625,7 @@ var ScoutPane = class {
     return sim2.villagers.filter((v) => sim2.canScout(v)).sort((a, b) => sim2.scoutSkill(b) - sim2.scoutSkill(a));
   }
   statsOf(v) {
-    return `Nhanh ${v.stats.agi} \xB7 Th\u1EC3 l\u1EF1c ${v.stats.sta} \xB7 Tr\xED tu\u1EC7 ${v.stats.int} \xB7 \u0111i\u1EC3m ${(this.c.sim.scoutSkill(v) * 10).toFixed(1)}`;
+    return `Nhanh ${fmtStat(v.stats.agi)} \xB7 Th\u1EC3 l\u1EF1c ${fmtStat(v.stats.sta)} \xB7 \u0111i\u1EC3m ${(this.c.sim.scoutSkill(v) * 10).toFixed(1)}${v.weapon ? " \xB7 v\u0169 kh\xED" : ""}${v.armor ? " \xB7 gi\xE1p" : ""}${v.torch ? " \xB7 \u0111u\u1ED1c" : ""}`;
   }
   again() {
     this.key = "";
@@ -32602,10 +37638,9 @@ var ScoutPane = class {
   render() {
     const { sim: sim2 } = this.c, out = [];
     const level = sim2.scoutLevel(), limit = sim2.scoutLimit();
-    out.push(hint("Trinh s\xE1t v\xE0 b\u1EA3n \u0111\u1ED3", "D\xE2n, l\xEDnh hay trinh s\xE1t \u0111i quanh b\u1EA3n \u0111\u1ED3 m\xE0 g\u1EB7p m\u1ED9t ng\xF4i l\xE0ng, khi tr\u1EDF v\u1EC1 s\u1EBD b\xE1o l\u1EA1i: \u1EDF \u0111\xE2y ch\u1EC9 ghi l\xE0ng \u0111\xF3 c\xE1ch bao xa. Mu\u1ED1n bi\u1EBFt th\xEAm ph\u1EA3i c\u1EED trinh s\xE1t. B\u1EA3n \u0111\u1ED3 v\u1EBD ra \u1EDF c\u1EA5p cao nh\u1EA5t b\u1EA1n \u0111\xE3 nghi\xEAn c\u1EE9u. Trinh s\xE1t l\xE0 m\u1ED9t vai tr\xF2 nh\u01B0 l\xEDnh: tuy\u1EC3n \u1EDF tr\xEAn, s\u1ED1 l\u01B0\u1EE3ng t\u1ED1i \u0111a theo c\u1EA5p tr\u1EA1i. M\u1ED7i chuy\u1EBFn c\u1EA7n nhi\u1EC1u ng\u01B0\u1EDDi, m\xE0 ng\u01B0\u1EDDi gi\u1ECFi (Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c, Tr\xED tu\u1EC7) \u0111\xE1ng gi\xE1 h\u01A1n: m\u1ED9t m\xECnh th\xEC kh\xF4ng bao gi\u1EDD v\u1EBD \u0111\u1EE7. C\xE0ng \u0111\xF4ng th\xEC \u0111i c\xE0ng nhanh. Trinh s\xE1t c\xF3 th\u1EC3 ch\u1EBFt, b\u1EA3n \u0111\u1ED3 m\u1EA5t 10% \u0111\u1ED9 ch\xEDnh x\xE1c m\u1ED7i ng\xE0y."));
+    out.push(hint("Trinh s\xE1t v\xE0 b\u1EA3n \u0111\u1ED3", "D\xE2n, l\xEDnh hay trinh s\xE1t \u0111i quanh b\u1EA3n \u0111\u1ED3 m\xE0 g\u1EB7p m\u1ED9t ng\xF4i l\xE0ng, khi tr\u1EDF v\u1EC1 s\u1EBD b\xE1o l\u1EA1i: \u1EDF \u0111\xE2y ch\u1EC9 ghi l\xE0ng \u0111\xF3 c\xE1ch bao xa. Mu\u1ED1n bi\u1EBFt th\xEAm ph\u1EA3i c\u1EED trinh s\xE1t. B\u1EA3n \u0111\u1ED3 v\u1EBD ra \u1EDF c\u1EA5p b\u1EB1ng c\u1EA5p Tr\u1EA1i trinh s\xE1t: l\u1EC1u c\u1EA5p 1 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p 1, l\u1EC1u c\u1EA5p 2 c\u1EA5p 2, l\u1EC1u c\u1EA5p 3 c\u1EA5p 3. Trinh s\xE1t l\xE0 m\u1ED9t vai tr\xF2 nh\u01B0 l\xEDnh: tuy\u1EC3n \u1EDF tr\xEAn, s\u1ED1 l\u01B0\u1EE3ng t\u1ED1i \u0111a theo c\u1EA5p tr\u1EA1i. M\u1ED7i chuy\u1EBFn c\u1EA7n nhi\u1EC1u ng\u01B0\u1EDDi, m\xE0 ng\u01B0\u1EDDi gi\u1ECFi (Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c) \u0111\xE1ng gi\xE1 h\u01A1n: m\u1ED9t m\xECnh th\xEC kh\xF4ng bao gi\u1EDD v\u1EBD \u0111\u1EE7. C\xE0ng \u0111\xF4ng th\xEC \u0111i c\xE0ng nhanh. Trinh s\xE1t c\xF3 th\u1EC3 ch\u1EBFt, b\u1EA3n \u0111\u1ED3 m\u1EA5t 10% \u0111\u1ED9 ch\xEDnh x\xE1c m\u1ED7i ng\xE0y."));
     out.push(h("p", { class: "sub", text: `B\u1EA3n \u0111\u1ED3 v\u1EBD \u0111\u01B0\u1EE3c: ${LEVEL_NAME[level]}. ${limit ? `Tr\u1EA1i trinh s\xE1t cho c\u1EED t\u1ED1i \u0111a ${limit} ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn.` : "Ch\u01B0a c\xF3 Tr\u1EA1i trinh s\xE1t."}` }));
-    if (!sim2.dev.freeBuild && !level) out.push(h("p", { class: "sub", text: 'C\u1EA7n nghi\xEAn c\u1EE9u "Trinh s\xE1t" \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, r\u1ED3i d\u1EF1ng Tr\u1EA1i trinh s\xE1t.' }));
-    else if (!sim2.dev.freeBuild && !limit) out.push(h("p", { class: "sub", text: "H\xE3y d\u1EF1ng Tr\u1EA1i trinh s\xE1t." }));
+    if (!sim2.dev.freeBuild && !limit) out.push(h("p", { class: "sub", text: "H\xE3y d\u1EF1ng Tr\u1EA1i trinh s\xE1t." }));
     out.push(...this.people.render());
     out.push(h("h3", { text: "L\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n" }));
     const found = sim2.tribes.filter((t) => t.state !== "destroyed" && sim2.isFound(t.id));
@@ -32615,7 +37650,7 @@ var ScoutPane = class {
       const trip = sim2.scouts.find((m) => m.tribe === t.id), plan2 = sim2.planScout([], t.id);
       const far = where ? `c\xE1ch \u0111\xE2y kho\u1EA3ng ${where.dist} \xF4 v\u1EC1 ph\xEDa ${where.dir}` : "";
       const known = best ? `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${sim2.mapLevel(t.id) || best.level}${best.gaps ? " (c\xF2n h\u1EDF)" : ""}, ${this.ageWords(best.at)}` : "Ch\u01B0a v\u1EBD b\u1EA3n \u0111\u1ED3";
-      const blocked = plan2.error === "C\u1EA7n nghi\xEAn c\u1EE9u: Trinh s\xE1t" || plan2.error === "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
+      const blocked = plan2.error === "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
       out.push(h(
         "div",
         { class: "row", style: "flex-direction:column;align-items:stretch" },
@@ -32643,21 +37678,27 @@ var ScoutPane = class {
     const ids = [...this.picked], plan2 = sim2.planScout(ids, tribe);
     const list = h("div", { class: "rdrop" });
     if (!people.length) list.append(h("p", { class: "sub", text: "Kh\xF4ng c\xF3 trinh s\xE1t n\xE0o r\u1EA3nh \u0111\u1EC3 \u0111i: tuy\u1EC3n th\xEAm, ho\u1EB7c \u0111\u1EE3i h\u1ECD v\u1EC1." }));
-    for (const v of people) {
-      const box = h("input", { type: "checkbox" });
-      box.checked = this.picked.has(v.id);
-      box.disabled = !box.checked && this.picked.size >= limit;
-      box.addEventListener("change", () => {
-        if (box.checked) this.picked.add(v.id);
-        else this.picked.delete(v.id);
-        this.again();
-      });
-      list.append(h("label", { class: "rpick" }, box, h(
-        "span",
-        { class: "rwho" },
-        h("b", { text: v.name }),
-        h("small", { text: this.statsOf(v) })
-      )));
+    for (const v of [...people.filter((o) => this.picked.has(o.id)), ...people.filter((o) => !this.picked.has(o.id))]) {
+      const on = this.picked.has(v.id);
+      list.append(h(
+        "div",
+        { class: `rrow${on ? "" : " rfree"}`, style: "grid-template-columns:1fr auto auto" },
+        h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: this.statsOf(v) })),
+        h("button", { class: "chip", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: v\u0169 kh\xED, gi\xE1p, \u0111u\u1ED1c cho trinh s\xE1t", onclick: () => {
+          const { ctl: ctl2 } = this.c;
+          ctl2.selected.clear();
+          ctl2.selected.add(v.id);
+          ctl2.openDetail = true;
+          ctl2.closeBuilding();
+        } }),
+        on ? h("button", { class: "chip danger", text: "\u2212", title: "Kh\xF4ng c\u1EED ng\u01B0\u1EDDi n\xE0y", onclick: () => {
+          this.picked.delete(v.id);
+          this.again();
+        } }) : h("button", { class: "chip", text: "\uFF0B", title: this.picked.size >= limit ? `Tr\u1EA1i ch\u1EC9 cho \u0111i ${limit} ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn` : "C\u1EED ng\u01B0\u1EDDi n\xE0y \u0111i", disabled: this.picked.size >= limit, onclick: () => {
+          this.picked.add(v.id);
+          this.again();
+        } })
+      ));
     }
     const odds = plan2.count < 2 ? "C\u1EA7n \xEDt nh\u1EA5t 2 ng\u01B0\u1EDDi m\u1EDBi c\xF3 c\u01A1 h\u1ED9i v\u1EBD \u0111\u1EE7 chi ti\u1EBFt" : `T\u1EC9 l\u1EC7 v\u1EBD \u0111\u1EE7 chi ti\u1EBFt: ${Math.round(plan2.chance * 100)}%`;
     return h(
@@ -32693,7 +37734,6 @@ function sleeperRows(sim2, list) {
 }
 
 // src/ui/planmap.ts
-var ARROW_FROM = 27;
 var T = 16;
 var MIN_K = 4;
 var MAX_K = 64;
@@ -32703,11 +37743,13 @@ var ITEM = 38;
 var MARK_NAME = { civ: "D\xE2n th\u01B0\u1EDDng", unknown: "C\xF3 ng\u01B0\u1EDDi (ch\u01B0a r\xF5 lo\u1EA1i)", foot: ARM_NAME.foot, archer: ARM_NAME.archer, cavalry: ARM_NAME.cavalry };
 var MARK_COLOR = { civ: "#d8d2c0", unknown: "#b9b2a0", foot: "#e0452a", archer: "#e0452a", cavalry: "#e0452a" };
 var WORK_COLOR = { fire: "#f08a24", tower: "#6b4a2a", pile: "#a9743a", fence: "#8a6a3a", gate: "#e8d18a" };
-var LEVEL_NOTE = [
-  "",
-  "C\u1EA5p 1 (l\u01B0\u1EE3c \u0111\u1ED3): ch\u1EC9 bi\u1EBFt v\u1ECB tr\xED, s\u1ED1 d\xE2n \u01B0\u1EDBc ch\u1EEBng v\xE0 h\u01B0\u1EDBng v\xE0o l\xE0ng. C\u1EED th\xEAm trinh s\xE1t \u0111\u1EC3 bi\u1EBFt \u0111\u1ECBa h\xECnh v\xE0 c\xF4ng tr\xECnh.",
-  "C\u1EA5p 2 (\u0111\u1ECBa h\xECnh): th\u1EA5y \u0111\u1EA5t, r\u1EEBng, n\u01B0\u1EDBc, c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 v\xE0 b\xF3ng ng\u01B0\u1EDDi; ch\u01B0a bi\u1EBFt ai l\xE0 l\xEDnh. C\u1EA5p 3 cho s\u1ED1 l\xEDnh t\u1EEBng lo\u1EA1i, kho v\xE0 th\u1EE7 l\u0129nh.",
-  "C\u1EA5p 3 (\u0111\u1ED9i h\xECnh): th\u1EA5y c\u1EA3 l\xEDnh t\u1EEBng lo\u1EA1i, kho l\u01B0\u01A1ng v\xE0 th\u1EE7 l\u0129nh."
+var ARROW_ITEMS = [{ id: "bend", name: "S\u1EEDa", icon: "\u270E", note: "" }, { id: "clear", name: "X\xF3a", icon: "\u{1F5D1}", note: "" }];
+var SQUAD_ITEMS = [
+  { id: "order", name: "L\u1EC7nh", icon: "\u2630", note: "H\xE0nh \u0111\u1ED9ng, gi\u1EDD \u0111\xE1nh, r\xFAt lui, th\u1EBB l\u1EC7nh" },
+  { id: "edit", name: "S\u1EEDa", icon: "\u270E", note: "\u0110\u1ED5i \u0111\u1ED9 d\xE0i, b\xE1n k\xEDnh, ch\u1ED7 \u0111\u1EE9ng c\u1EE7a \u0111\u1ED9i h\xECnh" },
+  { id: "delete", name: "X\xF3a \u0111\u1ED9i", icon: "\u{1F5D1}", note: "X\xF3a h\u1EB3n \u0111\u1ED9i, l\xEDnh tr\u1EDF v\u1EC1 h\xE0ng ch\u01B0a c\xF3 \u0111\u1ED9i" },
+  { id: "trim", name: "X\xF3a \xF4", icon: "\u2702", note: "B\u1EA5m v\xE0o \xF4 mu\u1ED1n b\u1ECF kh\u1ECFi \u0111\u1ED9i h\xECnh" },
+  { id: "roster", name: "L\xEDnh", icon: "\u{1F465}", note: "Th\xEAm, b\u1ECF l\xEDnh, ch\u1ECDn ch\u1EC9 huy" }
 ];
 function fmtTime(sec) {
   const s = Math.round(sec);
@@ -32719,6 +37761,7 @@ var fmtShort = (sec) => {
 };
 var clamp2 = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 var dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+var aim = (m) => m.target?.kind === "prop" ? m.target.at : void 0;
 function hash(x, y, salt = 0) {
   let n = x * 374761393 + y * 668265263 + salt * 1442695041 | 0;
   n = Math.imul(n ^ n >>> 13, 1274126177);
@@ -32939,10 +37982,15 @@ var PlanMapView = class {
         const retreat = ui.mode === "retreat", list = this.listOf(retreat), hit = this.handleAt(p);
         if (hit) {
           const pts = list.map((q) => ({ ...q }));
+          if (hit.kind === "mid" && !retreat && list.length >= 4) {
+            this.ev.onNotice("M\u0169i t\xEAn ch\u1EC9 g\u1EA5p kh\xFAc t\u1ED1i \u0111a 3 ch\u1ED7");
+            this.gesture = "none";
+            return;
+          }
           if (hit.kind === "mid") pts.splice(hit.idx, 0, this.clampInBox(w));
           this.edit = { pts, retreat, idx: hit.idx };
           this.gesture = "node";
-        } else if (!list.length) {
+        } else if (!list.length && retreat) {
           this.gesture = "arrow";
           this.arrowAim = this.clampInBox(w);
         } else this.gesture = "pan";
@@ -33028,7 +38076,7 @@ var PlanMapView = class {
     for (const m of plan2?.missions ?? []) {
       const s = this.sim.squadById(m.squad), start = this.sim.missionStart(m);
       if (!s || !start) continue;
-      const go = m.path.length ? this.sim.routeTime(s, start, m.path) : null, from = m.path.length ? m.path[m.path.length - 1] : start;
+      const go = m.path.length ? this.sim.routeTime(s, start, m.path, aim(m)) : null, from = m.path.length ? m.path[m.path.length - 1] : start;
       this.routes.set(m.squad, { start, go, back: m.retreat.length ? this.sim.routeTime(s, from, m.retreat) : null });
     }
     this.canvas.style.cursor = ui.mode === "pan" ? "grab" : ui.mode === "trim" ? "pointer" : "crosshair";
@@ -33048,9 +38096,10 @@ var PlanMapView = class {
     const i = this.intel;
     if (!i) return;
     const bw = i.box.x1 - i.box.x0, bh = i.box.y1 - i.box.y0;
-    this.k = clamp2(Math.min(this.W / bw, this.H / bh) * 0.96, MIN_K, MAX_K);
+    this.k = clamp2(Math.max(this.W / bw, this.H / bh), MIN_K, MAX_K);
     this.cx = (i.box.x0 + i.box.x1) / 2;
     this.cy = (i.box.y0 + i.box.y1) / 2;
+    this.limit();
     this.redraw();
   }
   zoomBy(f) {
@@ -33061,6 +38110,7 @@ var PlanMapView = class {
     const w = this.root.clientWidth || 800, hh = this.root.clientHeight || 500, dpr = globalThis.devicePixelRatio || 1;
     this.W = w;
     this.H = hh;
+    this.limit();
     if (this.canvas.width !== Math.round(w * dpr) || this.canvas.height !== Math.round(hh * dpr)) {
       this.canvas.width = Math.round(w * dpr);
       this.canvas.height = Math.round(hh * dpr);
@@ -33069,18 +38119,25 @@ var PlanMapView = class {
   /** Zoom by a factor, keeping the tile under the screen point where it is. */
   zoom(f, sx, sy) {
     const wx = this.cx + (sx - this.W / 2) / this.k, wy = this.cy + (sy - this.H / 2) / this.k;
-    this.k = clamp2(this.k * f, MIN_K, MAX_K);
+    this.k = clamp2(this.k * f, this.minK(), MAX_K);
     this.cx = wx - (sx - this.W / 2) / this.k;
     this.cy = wy - (sy - this.H / 2) / this.k;
     this.limit();
   }
   /** Keep the middle of the screen on the map. */
+  /** The least zoom: the map still covers the screen. */
+  minK() {
+    const i = this.intel;
+    return i ? Math.max(MIN_K, this.W / (i.box.x1 - i.box.x0), this.H / (i.box.y1 - i.box.y0)) : MIN_K;
+  }
+  /** Keep the screen on the map: no brown round it. */
   limit() {
     const i = this.intel;
-    if (i) {
-      this.cx = clamp2(this.cx, i.box.x0, i.box.x1);
-      this.cy = clamp2(this.cy, i.box.y0, i.box.y1);
-    }
+    if (!i) return;
+    this.k = Math.max(this.k, this.minK());
+    const hw = this.W / 2 / this.k, hh = this.H / 2 / this.k, mx = (i.box.x0 + i.box.x1) / 2, my = (i.box.y0 + i.box.y1) / 2;
+    this.cx = i.box.x1 - i.box.x0 <= 2 * hw ? mx : clamp2(this.cx, i.box.x0 + hw, i.box.x1 - hw);
+    this.cy = i.box.y1 - i.box.y0 <= 2 * hh ? my : clamp2(this.cy, i.box.y0 + hh, i.box.y1 - hh);
   }
   redraw() {
     if (this.queued) return;
@@ -33119,7 +38176,7 @@ var PlanMapView = class {
   hover(p) {
     const ui = this.ui, w = this.world(p);
     if ((ui.mode === "path" || ui.mode === "retreat") && this.plan) {
-      if (!this.listOf(ui.mode === "retreat").length) {
+      if (ui.mode === "retreat" && !this.listOf(true).length) {
         this.arrowAim = this.clampInBox(w);
         this.redraw();
       }
@@ -33160,17 +38217,31 @@ var PlanMapView = class {
     if (this.gesture !== "pan" || this.moved || this.pts.size !== 1) return;
     const press = this.downAt, edge = RING + ITEM + 10;
     const centre = { x: clamp2(press.x, edge, Math.max(edge, this.W - edge)), y: clamp2(press.y, edge, Math.max(edge, this.H - edge)) };
-    this.ring = { press, centre, world: this.world(press), hover: -1 };
+    const squad = this.squadAt(press), arrow = squad === void 0 && this.plan?.status === "draft" ? this.arrowAt(press) : void 0;
+    this.ring = { press, centre, world: this.world(press), hover: -1, squad: squad ?? arrow, arrow: arrow !== void 0 };
     this.gesture = "menu";
-    this.pop.hidden = true;
+    if (this.ring.squad !== void 0) {
+      this.ev.onSelect(this.ring.squad);
+      this.ev.onRing();
+    }
     this.redraw();
   }
+  /** The squad whose cell lies under a screen point, if any. */
+  squadAt(p) {
+    return (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(9, this.k * 0.5)))?.squad;
+  }
+  ringItems() {
+    return this.ring?.arrow ? ARROW_ITEMS : SQUAD_ITEMS;
+  }
+  ringCount() {
+    return this.ring?.squad !== void 0 ? this.ringItems().length : FORMATION_IDS.length;
+  }
   itemCentre(i) {
-    const a = -Math.PI / 2 + i * 2 * Math.PI / FORMATION_IDS.length, c = this.ring.centre;
+    const a = -Math.PI / 2 + i * 2 * Math.PI / this.ringCount(), c = this.ring.centre;
     return { x: c.x + Math.cos(a) * RING, y: c.y + Math.sin(a) * RING };
   }
   itemAt(p) {
-    for (let i = 0; i < FORMATION_IDS.length; i++) if (dist(p, this.itemCentre(i)) <= ITEM + 4) return i;
+    for (let i = 0; i < this.ringCount(); i++) if (dist(p, this.itemCentre(i)) <= ITEM + 4) return i;
     return -1;
   }
   /** The finger is lifted over an item: that formation is the one to size. Anywhere else, the ring closes. */
@@ -33178,6 +38249,10 @@ var PlanMapView = class {
     const r = this.ring;
     this.ring = null;
     if (!r || r.hover < 0) return;
+    if (r.squad !== void 0) {
+      this.ev.onSquadAction(r.squad, (r.arrow ? ARROW_ITEMS : SQUAD_ITEMS)[r.hover].id);
+      return;
+    }
     const kind = FORMATION_IDS[r.hover];
     if (!this.sim.formationOpen(kind)) {
       this.ev.onNotice(`C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EC3 d\xF9ng ${FORMATIONS[kind].name}`);
@@ -33200,7 +38275,7 @@ var PlanMapView = class {
       o = { x: mv.o0.x + dx, y: mv.o0.y + dy };
       p = { x: mv.p0.x + dx, y: mv.p0.y + dy };
     }
-    return { d: drawFormation(kind, o, p, this.intel.camp), kind, o, p };
+    return { d: drawFormation(kind, o, p, this.intel.camp, this.sim.cellLimit()), kind, o, p };
   }
   /** The drag ends: the cells it made become the squad's, if there are 3 or more. Fewer is not allowed, and the formation stays to be dragged again. A tap on the origin calls it off. */
   finishSize() {
@@ -33223,17 +38298,8 @@ var PlanMapView = class {
     const m = this.making;
     this.note.hidden = !m;
     if (!m) return;
-    const how = {
-      line: "c\xE1c \xF4 x\u1EBFp th\xE0nh h\xE0ng t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF",
-      circle: "\u0111i\u1EC3m \u0111\xE3 ch\u1ECDn l\xE0 t\xE2m, kho\u1EA3ng k\xE9o l\xE0 b\xE1n k\xEDnh",
-      wedge: "\u0111i\u1EC3m \u0111\xE3 ch\u1ECDn l\xE0 m\u0169i nh\u1ECDn, hai c\xE1nh ch\u1EA1y v\u1EC1 ph\xEDa con tr\u1ECF",
-      horns: "m\u1ED9t h\xE0ng t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF, hai \u0111\u1EA7u cong ra tr\u01B0\u1EDBc",
-      scatter: "c\xE1c \xF4 r\u1EA3i k\xEDn khung t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF",
-      ambush: "hai h\xE0ng so le t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn t\u1EDBi con tr\u1ECF"
-    };
     this.note.replaceChildren(
       h("b", { text: FORMATIONS[m.kind].name }),
-      h("span", { text: `K\xE9o ra t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn: ${how[m.kind]} (${SQUAD_MIN} \u0111\u1EBFn ${SQUAD_MAX} \xF4; d\u01B0\u1EDBi ${SQUAD_MIN} \xF4 l\xE0 \xF4 \u0111\u1ECF, kh\xF4ng t\u1EA1o \u0111\u01B0\u1EE3c). B\u1EA5m \u0111\u1EC3 ch\u1ED1t; b\u1EA5m ngay \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn l\xE0 h\u1EE7y. L\xEDnh \u0111\u01B0a v\xE0o \u0111\u1ED9i sau.` }),
       h("button", { class: "sm", text: "H\u1EE7y", onclick: () => {
         this.making = null;
         this.say();
@@ -33248,24 +38314,38 @@ var PlanMapView = class {
       if (at) this.ev.onTrim(this.ui.modeSquad, at.i);
       return;
     }
-    const near2 = (this.plan?.missions ?? []).find((m) => m.deploy && this.cellsOf(m.squad).some((c) => dist(p, this.scr(c)) < Math.max(14, this.k * 0.7)));
-    if (near2) {
+    const near2 = this.squadAt(p);
+    if (near2 !== void 0) {
       this.pop.hidden = true;
-      this.ev.onSelect(near2.squad);
+      this.ev.onSelect(near2);
       return;
     }
     const hit = this.targets.map((t) => ({ t, d: Math.hypot(t.x - p.x, t.y - p.y) })).filter((x) => x.d <= x.t.r).sort((a, b) => a.d - b.d)[0];
     if (hit) {
+      const sq = this.plan?.missions.find((m) => m.squad === this.ui.selected && m.deploy);
+      if (hit.t.pick && sq && this.plan?.status === "draft" && this.ui.mode !== "retreat") this.ev.onTarget(sq.squad, hit.t.pick);
       this.showPop(p, hit.t.title, hit.t.text);
       return;
     }
     this.pop.hidden = true;
     this.ev.onSelect(-1);
   }
+  /** The squad whose arrow passes within a finger's width of a screen point. */
+  arrowAt(p) {
+    for (const m of this.plan?.missions ?? []) {
+      const start = this.routes.get(m.squad)?.start;
+      if (!start || !m.path.length) continue;
+      const pts = [start, ...m.path].map((q) => this.scr(q));
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1], l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2, t = l2 ? clamp2(((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2, 0, 1) : 0;
+        if (dist(p, { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }) <= 12) return m.squad;
+      }
+    }
+    return void 0;
+  }
+  /** What a pressed work or man is. It has no button: pressing anywhere else closes it. */
   showPop(p, title, text) {
-    this.pop.replaceChildren(h("b", { text: title }), h("p", { class: "sub", text }), h("button", { class: "sm", text: "\u0110\xF3ng", onclick: () => {
-      this.pop.hidden = true;
-    } }));
+    this.pop.replaceChildren(h("b", { text: title }), h("p", { class: "sub", text }));
     this.pop.style.left = `${clamp2(p.x + 14, 8, Math.max(8, this.W - 280))}px`;
     this.pop.style.top = `${clamp2(p.y + 14, 8, Math.max(8, this.H - 150))}px`;
     this.pop.hidden = false;
@@ -33295,8 +38375,8 @@ var PlanMapView = class {
   handleAt(p) {
     const retreat = this.ui.mode === "retreat", pts = this.listOf(retreat), base = this.baseOf(retreat);
     if (!base || !pts.length) return null;
-    const nodes = [base, ...pts];
-    for (let i = pts.length - 1; i >= 0; i--) if (dist(p, this.scr(nodes[i + 1])) <= 16) return { kind: "vertex", idx: i };
+    const nodes = [base, ...pts], locked = !retreat && !!this.plan?.missions.find((x) => x.squad === this.ui.modeSquad)?.target;
+    for (let i = pts.length - 1; i >= 0; i--) if (!(locked && i === pts.length - 1) && dist(p, this.scr(nodes[i + 1])) <= 16) return { kind: "vertex", idx: i };
     for (let k = 0; k < pts.length; k++) {
       const a = this.scr(nodes[k]), b = this.scr(nodes[k + 1]);
       if (dist(p, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }) <= 14) return { kind: "mid", idx: k };
@@ -33369,13 +38449,35 @@ var PlanMapView = class {
     ctx2.arc(this.sx(i.camp.x), this.sy(i.camp.y), i.yard * k, 0, Math.PI * 2);
     ctx2.stroke();
     ctx2.setLineDash([]);
+    for (const o of i.others) {
+      const x = this.sx(o.x), y = this.sy(o.y);
+      ctx2.setLineDash([6, 5]);
+      ctx2.strokeStyle = o.ours ? "rgba(120,220,255,0.85)" : "rgba(255,255,255,0.7)";
+      ctx2.lineWidth = 2;
+      ctx2.beginPath();
+      ctx2.arc(x, y, o.r * k, 0, Math.PI * 2);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+      label(ctx2, o.name, x, y, 12 * u, o.ours ? "#9fe3ff" : "#fff");
+    }
+    if (i.route.length > 1) {
+      const pts = i.route.map((q) => this.scr(q));
+      ctx2.lineJoin = "round";
+      ctx2.lineCap = "round";
+      ctx2.setLineDash([2, 8]);
+      ctx2.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx2.lineWidth = 3;
+      ctx2.beginPath();
+      ctx2.moveTo(pts[0].x, pts[0].y);
+      for (const q of pts.slice(1)) ctx2.lineTo(q.x, q.y);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+      const n = pts.length, a = pts[Math.max(0, n - 4)], z = pts[n - 1];
+      this.arrowhead(ctx2, a.x, a.y, z.x, z.y, "#ffffff", 3, u);
+      label(ctx2, "\u0110\u01B0\u1EDDng v\xE0o", pts[Math.floor(n / 2)].x, pts[Math.floor(n / 2)].y - 10, 11 * u);
+    }
     for (const s of i.structures) this.work(ctx2, s, u);
     for (const p of i.people) this.person(ctx2, p, u);
-    if (i.toUs) {
-      const at = (d) => ({ x: this.sx(i.camp.x + i.toUs.x * d), y: this.sy(i.camp.y + i.toUs.y * d) }), a = at(ARROW_FROM), b = at(i.yard + 3);
-      this.arrowhead(ctx2, a.x, a.y, b.x, b.y, "#ffffff", 3, u);
-      label(ctx2, "\u0110\u01B0\u1EDDng v\xE0o", a.x, a.y - 8, 11 * u);
-    }
     if (plan2?.kind === "attack") for (const m of plan2.missions) this.squad(ctx2, m.squad, u);
     this.preview(ctx2, u);
     this.drawRing(ctx2);
@@ -33424,7 +38526,7 @@ var PlanMapView = class {
       ctx2.fillRect(px, py, pw, ph);
       ctx2.strokeRect(px, py, pw, ph);
     }
-    this.targets.push({ x: cx, y: cy, r: Math.max(pw, ph) / 2 + 6 * u, title: s.label, text: s.detail });
+    this.targets.push({ x: cx, y: cy, r: Math.max(pw, ph) / 2 + 6 * u, title: s.label, text: s.detail, pick: { kind: "prop", x: s.x, y: s.y, at: { x: s.x + s.w / 2, y: s.y + s.h / 2 }, label: s.label, leader: false } });
   }
   person(ctx2, p, u) {
     const x = this.sx(p.x), y = this.sy(p.y), i = this.intel;
@@ -33438,7 +38540,7 @@ var PlanMapView = class {
     drawMark(ctx2, p.mark, x, y, u);
     const armed = p.weapon ? `C\u1EA7m ${WEAPONS[p.weapon]?.name ?? p.weapon}. ` : "", old = "\u0110\u1EE9ng \u0111\xE2y l\xFAc trinh s\xE1t t\u1EDBi; gi\u1EDD c\xF3 th\u1EC3 \u0111\xE3 \u0111i ch\u1ED7 kh\xE1c.";
     const text = p.leader ? `${armed}Th\u1EE7 l\u0129nh c\u1EE7a ${i.name}: h\u1EA1 \u0111\u01B0\u1EE3c \xF4ng ta th\xEC l\xE0ng d\u1EC5 khu\u1EA5t ph\u1EE5c. ${old}` : p.mark === "unknown" ? `Trinh s\xE1t th\u1EA5y b\xF3ng ng\u01B0\u1EDDi nh\u01B0ng ch\u01B0a r\xF5 l\xEDnh hay d\xE2n: c\u1EA7n b\u1EA3n \u0111\u1ED3 c\u1EA5p 3. ${old}` : `${armed}${old}`;
-    this.targets.push({ x, y, r: 9 * u, title: p.leader ? `${MARK_NAME[p.mark]} \xB7 Th\u1EE7 l\u0129nh` : MARK_NAME[p.mark], text });
+    this.targets.push({ x, y, r: 9 * u, title: p.leader ? `${MARK_NAME[p.mark]} \xB7 Th\u1EE7 l\u0129nh` : MARK_NAME[p.mark], text, pick: { kind: "person", x: p.x, y: p.y, at: { x: p.x, y: p.y }, label: p.leader ? "Th\u1EE7 l\u0129nh" : MARK_NAME[p.mark], leader: p.leader } });
   }
   arrowhead(ctx2, x0, y0, x1, y1, color, w, u) {
     const a = Math.atan2(y1 - y0, x1 - x0), s = 10 * u;
@@ -33571,16 +38673,41 @@ var PlanMapView = class {
     const start = this.startOf(m);
     if (start && (goPts.length || pending && !back)) {
       const list = goPts.length ? goPts : [pending], nodes = [start, ...list], pts = nodes.map((q) => this.scr(q));
-      const faint = !!dragged(false) || !goPts.length && !!pending, t = faint ? sim2.routeTime(s, start, list) : r?.go;
+      const faint = !!dragged(false) || !goPts.length && !!pending, t = faint ? sim2.routeTime(s, start, list, aim(m)) : r?.go;
       this.route(ctx2, pts, color, u, faint ? "faint" : "solid");
       t?.legs.forEach((tt, j) => {
-        const p = pts[j], q = pts[j + 1], bad = t.blocked[j];
-        label(ctx2, `${fmtShort(tt)}${bad ? " \u26A0" : ""}`, (p.x + q.x) / 2, (p.y + q.y) / 2 - 12 * u, 11 * u, bad ? "#ff9a8a" : "#fff");
+        const p = pts[j], q = pts[j + 1], hit = t.hits[j] && t.hits[j].kind !== "enemy" ? t.hits[j] : null;
+        if (hit) {
+          ctx2.strokeStyle = "#ff3b2f";
+          ctx2.lineWidth = 5.5 * u * 0.7;
+          ctx2.lineCap = "round";
+          ctx2.beginPath();
+          ctx2.moveTo(p.x, p.y);
+          ctx2.lineTo(q.x, q.y);
+          ctx2.stroke();
+          const o = this.scr({ x: hit.x + 0.5, y: hit.y + 0.5 });
+          ctx2.lineWidth = 2.5;
+          ctx2.beginPath();
+          ctx2.arc(o.x, o.y, Math.max(8, this.k * 0.7), 0, Math.PI * 2);
+          ctx2.stroke();
+        }
+        label(ctx2, hit ? `${fmtShort(tt)} \u26A0 v\u01B0\u1EDBng ${hit.label}${hit.clear ? "" : " (kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c)"}` : fmtShort(tt), (p.x + q.x) / 2, (p.y + q.y) / 2 - 12 * u, 11 * u, hit ? "#ff9a8a" : "#fff");
       });
       const end = pts[pts.length - 1];
       if (t) label(ctx2, `t\u1EDBi sau ${fmtShort(t.total)}`, end.x, end.y - 16 * u, 11 * u, "#ffe27a");
       if (drawing && !back && goPts.length) this.handles(ctx2, nodes, color, u);
       this.converge(ctx2, m, goPts.length ? goPts[0] : pending, color, u);
+    }
+    if (m.target && !this.edit) {
+      const c = this.scr(m.target.at);
+      ctx2.setLineDash([4, 3]);
+      ctx2.strokeStyle = color;
+      ctx2.lineWidth = 3;
+      ctx2.beginPath();
+      ctx2.arc(c.x, c.y, Math.max(12, this.k * 1.3) * (m.target.kind === "person" ? 0.7 : 1), 0, Math.PI * 2);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+      label(ctx2, `\u{1F3AF} ${m.target.label}`, c.x, c.y + Math.max(20, this.k * 1.7), 11 * u, "#ffe27a");
     }
     const base = goPts.length ? goPts[goPts.length - 1] : start;
     if (base && (backPts.length || pending && back)) {
@@ -33656,6 +38783,21 @@ var PlanMapView = class {
     ctx2.strokeStyle = "#1a1208";
     ctx2.lineWidth = 2;
     ctx2.stroke();
+    if (r.squad !== void 0) {
+      this.ringItems().forEach((it, i) => {
+        const c = this.itemCentre(i), hot2 = i === r.hover;
+        ctx2.fillStyle = hot2 ? "#ffd23a" : "rgba(40,30,20,0.94)";
+        ctx2.strokeStyle = hot2 ? "#fff" : "rgba(255,255,255,0.75)";
+        ctx2.lineWidth = hot2 ? 3 : 2;
+        ctx2.beginPath();
+        ctx2.arc(c.x, c.y, ITEM + (hot2 ? 4 : 0), 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.stroke();
+        label(ctx2, it.icon, c.x, c.y - 4, 20, hot2 ? "#1a1208" : "#fff");
+        label(ctx2, it.name, c.x, c.y + 21, 11, hot2 ? "#1a1208" : "#fff");
+      });
+      return;
+    }
     FORMATION_IDS.forEach((f, i) => {
       const c = this.itemCentre(i), open = this.sim.formationOpen(f), hot2 = i === r.hover;
       ctx2.fillStyle = hot2 ? open ? "#ffd23a" : "#a05a50" : open ? "rgba(40,30,20,0.94)" : "rgba(40,30,20,0.62)";
@@ -33669,35 +38811,12 @@ var PlanMapView = class {
       label(ctx2, FORMATIONS[f].name, c.x, c.y + 21, 11, hot2 ? "#1a1208" : open ? "#fff" : "#9a9080");
     });
     const hot = r.hover >= 0 ? FORMATION_IDS[r.hover] : null;
-    if (hot) label(ctx2, this.sim.formationOpen(hot) ? FORMATIONS[hot].note : `C\u1EA7n nghi\xEAn c\u1EE9u: ${FORMATIONS[hot].name}`, this.W / 2, this.H - 24, 13);
+    if (hot && !this.sim.formationOpen(hot)) label(ctx2, `C\u1EA7n nghi\xEAn c\u1EE9u: ${FORMATIONS[hot].name}`, this.W / 2, this.H - 24, 13);
   }
 };
-function planMapInfo(sim2, tribeId) {
-  const i = sim2.tribeIntel(tribeId);
-  if (!i) return h("p", { class: "sub", text: "Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 l\xE0ng n\xE0y: c\u1EED trinh s\xE1t \u0111\u1EC3 v\u1EBD." });
-  const age = i.accuracy >= 0.95 ? "b\xE1o c\xE1o m\u1EDBi" : i.accuracy >= 0.7 ? "b\xE1o c\xE1o h\u01A1i c\u0169" : i.accuracy >= 0.4 ? "b\xE1o c\xE1o \u0111\xE3 c\u0169" : "b\xE1o c\xE1o r\u1EA5t c\u0169";
-  const s = i.soldiers, army = s ? `L\xEDnh: ${s.foot} ${ARM_NAME.foot.toLowerCase()}, ${s.archer} ${ARM_NAME.archer.toLowerCase()}, ${s.cavalry} ${ARM_NAME.cavalry.toLowerCase()} \xB7 ` : "";
-  const items = [];
-  for (const w of i.structures) if (!items.some((x) => x[1] === w.label)) items.push([WORK_COLOR[w.kind] ?? "#8a6a3a", w.label]);
-  for (const m of new Set(i.people.map((p) => p.mark))) items.push([MARK_COLOR[m], MARK_NAME[m]]);
-  if (i.people.some((p) => p.leader)) items.push(["#ffd23a", "Th\u1EE7 l\u0129nh (v\xF2ng v\xE0ng)"]);
-  const legend = h("div", { class: "btns", style: "gap:8px;flex-wrap:wrap" }, ...items.map(([color, text]) => h(
-    "small",
-    {},
-    h("span", { style: `display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;background:${color};border:1px solid #1a1208` }),
-    text
-  )));
-  return h(
-    "div",
-    { style: "display:grid;gap:4px" },
-    h("div", { class: "nm" }, h("b", { text: `B\u1EA3n \u0111\u1ED3 ${i.name}` }), h("small", { text: `${army}kho\u1EA3ng ${i.population} ng\u01B0\u1EDDi \xB7 ${age}${i.gaps ? " \xB7 c\xF2n h\u1EDF" : ""}` })),
-    h("small", { class: "sub", text: "Nh\u1EA5n gi\u1EEF m\u1ED9t \u0111i\u1EC3m tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 l\u1EADp \u0111\u1ED9i. B\u1EA5m v\xE0o l\u1EEDa, kho, l\xEDnh \u0111\u1EC3 xem ch\xFA th\xEDch." }),
-    h("details", {}, h("summary", { text: "Ch\xFA gi\u1EA3i v\xE0 c\u1EA5p b\u1EA3n \u0111\u1ED3" }), legend, h("small", { class: "sub", text: `V\xF9ng v\u1EBD: khu tr\u1EA1i v\xE0 24 \xF4 xung quanh. ${LEVEL_NOTE[i.level]}` }))
-  );
-}
 
 // src/ui/warpanel.ts
-var TABS2 = [["plan", "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"], ["defense", "Ph\xF2ng th\u1EE7"], ["log", "Nh\u1EADt k\xFD tr\u1EADn"]];
+var TABS2 = [["plan", "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng"], ["defense", "Ph\xF2ng th\u1EE7"], ["log", "Nh\u1EADt k\xFD tr\u1EADn"], ["guide", "H\u01B0\u1EDBng d\u1EABn"]];
 var STANCE_NAME = { fight: "\u0110\xE1nh", evade: "N\xE9, ch\u1EC9 \u0111i", hold: "Gi\u1EEF y\xEAn", shoot: "Ch\u1EC9 b\u1EAFn" };
 var POST_NAME = { gate: "Gi\u1EEF c\u1ED5ng", fence: "\u0110\u1EE9ng sau h\xE0ng r\xE0o", tower: "L\xEAn ch\xF2i canh", reserve: "Ph\u1EA3n k\xEDch (v\u1EC1 l\u1EEDa)", fire: "Quanh \u0111\u1ED1ng l\u1EEDa" };
 var CARD_NAME = { go: "Xu\u1EA5t ph\xE1t", advance: "Ti\u1EBFn", hold: "Gi\u1EEF", formation: "\u0110\u1ED5i tr\u1EADn", attack: "T\u1EA5n c\xF4ng m\u1EE5c ti\xEAu", shoot: "B\u1EAFn", retreat: "R\xFAt", signal: "Ph\xE1t t\xEDn hi\u1EC7u" };
@@ -33755,10 +38874,14 @@ var WarPanel = class {
      * Which panel of the plan view is open. Only one at a time, so that none lies over another: opening one closes the one before. Each has a button
      * on the dock at the top left (or on the squad's bar) that opens it again, and closing it leaves nothing but that button.
      */
-    this.panel = "info";
+    this.panel = null;
     this.dock = h("div", { class: "pdock" });
+    /** The bar along the top of the map: close, which village, and the buttons that open the panels. */
+    this.top = h("div", { class: "ptop" });
     /** The squad whose "Xóa đội" was pressed once: it asks to be pressed again. */
     this.confirmDel = -1;
+    /** "Hủy kế hoạch" was pressed once: it asks to be pressed again. */
+    this.confirmPlan = false;
     /** The squad chosen on the map, and what a drag on the map draws for it. */
     this.sel = -1;
     this.mode = "pan";
@@ -33777,11 +38900,21 @@ var WarPanel = class {
     this.root.append(hint("L\u1EC1u h\u1ECDp chi\u1EBFn", "B\u1EA3n \u0111\u1ED3 l\xE0ng \u0111\u1ECBch do Tr\u1EA1i trinh s\xE1t v\u1EBD. M\u1EDF b\u1EA3n \u0111\u1ED3 \u0111\xF3 \u1EDF trang K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng: nh\u1EA5n gi\u1EEF m\u1ED9t \u0111i\u1EC3m \u0111\u1EC3 l\u1EADp \u0111\u1ED9i, \u0111\u01B0a l\xEDnh v\xE0o \u0111\u1ED9i, v\u1EBD \u0111\u1ED9i h\xECnh v\xE0 m\u0169i t\xEAn, r\u1ED3i ra l\u1EC7nh cho t\u1EEBng \u0111\u1ED9i. Th\u1EBB l\u1EC7nh b\u1EA1n g\u1EAFn v\xE0o k\u1EBF ho\u1EA1ch s\u1EBD hi\u1EC7n th\xE0nh n\xFAt khi \u0111\xE1nh. V\xE0o l\u1EC1u l\xE0 game t\u1EA1m d\u1EEBng."), bar2, this.body);
     this.view = new PlanMapView(c.sim, { onSelect: (id) => {
       this.sel = id;
+      if (this.mode === "path") {
+        this.mode = "pan";
+        this.modeSquad = -1;
+      }
       this.refresh();
-    }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back) => this.drewPath(id, pts, back) });
+    }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back) => this.drewPath(id, pts, back), onTarget: (id, target) => this.aimed(id, target), onSquadAction: (id, a) => this.squadAction(id, a), onRing: () => {
+      this.panel = null;
+      this.mode = "pan";
+      this.modeSquad = -1;
+      this.refresh();
+    } });
     const tool = (text, title, f) => h("button", { class: "zoom", text, title, onclick: f });
-    this.view.root.append(this.dock, this.info, this.bar, this.card, this.roster, this.report, h("div", { class: "ptools" }, tool("+", "Ph\xF3ng to", () => this.view.zoomBy(1.4)), tool("\u2212", "Thu nh\u1ECF", () => this.view.zoomBy(1 / 1.4)), tool("\u2922", "V\u1EEBa khung", () => this.view.fit())));
-    this.full.append(h("div", { class: "cardhead" }, this.fullTitle, this.fullState, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => this.closeMap() })), h("div", { class: "pstage" }, this.view.root));
+    this.view.root.append(this.top, this.bar, this.card, this.roster, this.report, h("div", { class: "ptools" }, tool("+", "Ph\xF3ng to", () => this.view.zoomBy(1.4)), tool("\u2212", "Thu nh\u1ECF", () => this.view.zoomBy(1 / 1.4)), tool("\u2922", "V\u1EEBa khung", () => this.view.fit())));
+    this.top.append(h("button", { class: "chip danger", text: "\u2715 \u0110\xF3ng", title: "\u0110\xF3ng b\u1EA3n \u0111\u1ED3, v\u1EC1 m\xE0n h\xECnh game", onclick: () => this.closeMap() }), h("div", { class: "ptitle2" }, this.fullTitle, this.fullState), this.dock);
+    this.full.append(h("div", { class: "pstage" }, this.view.root));
     (document.body ?? document.documentElement).append(this.full);
   }
   setPanel(p, on) {
@@ -33822,7 +38955,7 @@ var WarPanel = class {
     if (!sim2.plans.some((p) => p.kind === "attack")) sim2.newPlan("attack", tribe);
     this.tab = "plan";
     this.openTribe = tribe;
-    this.panel = "info";
+    this.panel = null;
     this.sel = -1;
     this.mode = "pan";
     this.modeSquad = -1;
@@ -33886,17 +39019,13 @@ var WarPanel = class {
     this.mode = mode;
     this.modeSquad = squad;
     this.sel = squad;
+    this.panel = null;
     this.refresh();
   }
   stopDraw() {
     const id = this.modeSquad, drewArrow = this.mode === "path" && !!this.attackPlan()?.missions.find((m) => m.squad === id)?.path.length;
     this.mode = "pan";
     this.modeSquad = -1;
-    if (drewArrow && !this.ordered.has(id)) {
-      this.ordered.add(id);
-      this.orderOpen = true;
-      this.cardSquad = -1;
-    }
     this.refresh();
   }
   /** An existing squad is put down again, or stretched, with the cells of a new drag. */
@@ -33953,9 +39082,71 @@ var WarPanel = class {
     this.addOpen = false;
     this.refresh();
   }
+  /** A work or a man was pressed while a squad was chosen: the squad is aimed at it and its arrow runs there. */
+  aimed(squad, target) {
+    const plan2 = this.attackPlan(), err = plan2 ? this.sim.setMissionTarget(plan2, squad, target) : "L\u1EADp k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng tr\u01B0\u1EDBc";
+    this.toast(err ?? `${this.sim.squadById(squad)?.name ?? "\u0110\u1ED9i"} s\u1EBD t\u1EA5n c\xF4ng ${target.label.toLowerCase()}`);
+    this.refresh();
+  }
+  /** An item of a squad's ring was picked. */
+  squadAction(squad, a) {
+    const plan2 = this.attackPlan(), m = plan2?.missions.find((x) => x.squad === squad);
+    this.sel = squad;
+    if (a === "edit") {
+      this.startDraw("edit", squad);
+      return;
+    }
+    if (a === "bend") {
+      this.startDraw("path", squad);
+      return;
+    }
+    if (a === "clear") {
+      if (plan2) this.toast(this.sim.setMissionPath(plan2, squad, []));
+      this.refresh();
+      return;
+    }
+    if (a === "trim") {
+      this.startDraw("trim", squad);
+      return;
+    }
+    if (a === "roster") {
+      this.rosterOpen = true;
+      this.addOpen = false;
+      this.refresh();
+      return;
+    }
+    if (a === "order") {
+      if (!m?.path.length) {
+        this.toast("\u0110\u1ED9i kh\xF4ng c\xF3 m\u0169i t\xEAn l\xE0 \u0111\u1ED9i h\u1EADu c\u1EA7n: kh\xF4ng c\xF3 l\u1EC7nh \u0111\u1EC3 ra, n\xF3 \u0111i tr\u01B0\u1EDBc ph\xE1 v\u1EADt c\u1EA3n r\u1ED3i v\u1EC1 ch\u1ED7 c\u0169");
+        this.refresh();
+        return;
+      }
+      this.orderOpen = true;
+      this.cardSquad = -1;
+      this.refresh();
+      return;
+    }
+    const name = this.sim.squadById(squad)?.name ?? "\u0111\u1ED9i n\xE0y";
+    if (typeof confirm === "function" && !confirm(`X\xF3a ${name}? L\xEDnh tr\u1EDF v\u1EC1 h\xE0ng ch\u01B0a c\xF3 \u0111\u1ED9i.`)) {
+      this.refresh();
+      return;
+    }
+    const lock = this.sim.warLock();
+    if (lock) {
+      this.toast(lock);
+      return;
+    }
+    this.sim.disbandSquad(squad);
+    this.sel = -1;
+    this.refresh();
+  }
   drewPath(squad, pts, retreat) {
     const plan2 = this.attackPlan();
     if (plan2) this.toast(this.sim.setMissionPath(plan2, squad, pts, retreat));
+    if (!retreat) {
+      this.mode = "pan";
+      this.modeSquad = -1;
+    }
     this.refresh();
   }
   get sim() {
@@ -34000,7 +39191,26 @@ var WarPanel = class {
     this.key = key;
     this.full.hidden = !this.openTribe;
     if (this.openTribe) this.fillFull();
-    this.body.replaceChildren(...{ plan: () => this.planPage(), defense: () => this.defensePage(), log: () => this.logPage() }[this.tab]());
+    this.body.replaceChildren(...{ plan: () => this.planPage(), defense: () => this.defensePage(), log: () => this.logPage(), guide: () => this.guidePage() }[this.tab]());
+  }
+  // ---------------------------------------------------------------- the guide
+  /** Every step from the first scout to the button that sends the army out, in order. */
+  guidePage() {
+    const steps = [
+      ["D\u1EF1ng nh\xE0 c\u1EA7n thi\u1EBFt", "D\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn (\u0111ang \u1EDF \u0111\xE2y), Tr\u1EA1i trinh s\xE1t v\xE0 \xEDt nh\u1EA5t m\u1ED9t tr\u1EA1i chi\u1EBFn binh. Nghi\xEAn c\u1EE9u nh\u1EEFng c\xF4ng ngh\u1EC7 m\u1EDF c\xE1c nh\xE0 v\xE0 tr\u1EADn ph\xE1p \u0111\xF3 n\u1EBFu b\u1EA3ng nghi\xEAn c\u1EE9u \u0111ang b\u1EADt."],
+      ["T\xECm l\xE0ng \u0111\u1ECBch", "B\u1EA5t k\u1EF3 ai c\u1EE7a l\xE0ng \u0111i t\u1EDBi g\u1EA7n m\u1ED9t l\xE0ng l\u1EA1 r\u1ED3i v\u1EC1 t\u1EDBi \u0111\u1ED1ng l\u1EEDa s\u1EBD b\xE1o tin: l\xE0ng \u0111\xF3 hi\u1EC7n trong danh s\xE1ch l\xE0ng c\u1EE7a trang K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng, ch\u1EC9 c\xF3 h\u01B0\u1EDBng v\xE0 kho\u1EA3ng c\xE1ch. Ng\u01B0\u1EDDi ch\u1EBFt d\u1ECDc \u0111\u01B0\u1EDDng th\xEC tin ch\u1EBFt theo."],
+      ["C\u1EED trinh s\xE1t v\u1EBD b\u1EA3n \u0111\u1ED3", "\u1EDE Tr\u1EA1i trinh s\xE1t, cho d\xE2n l\xE0m trinh s\xE1t r\u1ED3i c\u1EED h\u1ECD t\u1EDBi l\xE0ng \u0111\xF3. C\xE0ng nhi\u1EC1u trinh s\xE1t c\xE0ng \xEDt ch\u1ED7 h\u1EDF. C\xF3 ba c\u1EA5p b\u1EA3n \u0111\u1ED3: 1 l\xE0 v\u1ECB tr\xED v\xE0 \u0111\u1ED1ng l\u1EEDa, 2 th\xEAm c\xF4ng tr\xECnh v\xE0 b\xF3ng ng\u01B0\u1EDDi, 3 th\xEAm l\xEDnh t\u1EEBng lo\u1EA1i, kho l\u01B0\u01A1ng v\xE0 th\u1EE7 l\u0129nh. B\u1EA3n \u0111\u1ED3 c\u0169 d\u1EA7n theo ng\xE0y; qu\xE1 c\u0169 th\xEC kh\xF4ng d\xF9ng \u0111\u01B0\u1EE3c n\u1EEFa."],
+      ["Tuy\u1EC3n v\xE0 trang b\u1ECB l\xEDnh", "Giao vai tr\xF2 chi\u1EBFn binh \u1EDF tr\u1EA1i chi\u1EBFn binh, ch\u1EBF v\u0169 kh\xED v\xE0 gi\xE1p \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o, ph\xE1t cho l\xEDnh. L\xEDnh c\u1EA7n kh\u1ECFe, kh\xF4ng b\u1ECB th\u01B0\u01A1ng v\xE0 kh\xF4ng ng\u1EE7 say h\u1ED3i s\u1EE9c m\u1EDBi ra tr\u1EADn \u0111\u01B0\u1EE3c."],
+      ["M\u1EDF b\u1EA3n \u0111\u1ED3 l\xE0ng", 'Trang "K\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng": b\u1EA5m v\xE0o l\xE0ng \u0111\xE3 c\xF3 b\u1EA3n \u0111\u1ED3. B\u1EA3n \u0111\u1ED3 m\u1EDF to\xE0n m\xE0n h\xECnh; k\xE9o \u0111\u1EC3 di chuy\u1EC3n, cu\u1ED9n ho\u1EB7c hai ng\xF3n \u0111\u1EC3 ph\xF3ng to thu nh\u1ECF.'],
+      ["L\u1EADp \u0111\u1ED9i", "Nh\u1EA5n gi\u1EEF m\u1ED9t ch\u1ED7 tr\u1ED1ng tr\xEAn b\u1EA3n \u0111\u1ED3: v\xF2ng tr\u1EADn ph\xE1p hi\u1EC7n ra, r\xEA t\u1EDBi m\u1ED9t tr\u1EADn r\u1ED3i th\u1EA3. Sau \u0111\xF3 k\xE9o t\u1EEB \u0111i\u1EC3m \u0111\xE3 ch\u1ECDn \u0111\u1EC3 v\u1EBD \u0111\u1ED9i h\xECnh, t\u1EEB 3 \u0111\u1EBFn 15 \xF4. M\u1ED7i \xF4 l\xE0 ch\u1ED7 c\u1EE7a m\u1ED9t l\xEDnh."],
+      ["\u0110\u01B0a l\xEDnh v\xE0o \u0111\u1ED9i", 'Nh\u1EA5n gi\u1EEF \u0111\u1ED9i, ch\u1ECDn "L\xEDnh", r\u1ED3i b\u1EA5m d\u1EA5u \uFF0B b\xEAn ph\u1EA3i t\xEAn m\u1ED7i l\xEDnh ch\u01B0a c\xF3 \u0111\u1ED9i. \u0110\u1ED9i c\u1EA7n \u0111\u1EE7 l\xEDnh cho s\u1ED1 \xF4 \u0111\xE3 v\u1EBD; \xF4 th\u1EEBa th\xEC d\xF9ng "S\u1EEDa" ho\u1EB7c "X\xF3a \xF4" \u0111\u1EC3 b\u1EDBt.'],
+      ["Ch\u1ECDn m\u1EE5c ti\xEAu", "B\u1EA5m v\xE0o \u0111\u1ED9i \u0111\u1EC3 ch\u1ECDn, r\u1ED3i b\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi tr\xEAn b\u1EA3n \u0111\u1ED3: m\u0169i t\xEAn ch\u1EA1y t\u1EEB \u0111\u1ED9i t\u1EDBi \u0111\xF3 v\xE0 \u0111\u1EA7u m\u0169i t\xEAn n\u1EB1m c\u1ED1 \u0111\u1ECBnh tr\xEAn m\u1EE5c ti\xEAu. Nh\u1EA5n gi\u1EEF m\u0169i t\xEAn \u0111\u1EC3 S\u1EEDa (k\xE9o c\xE1c ch\u1EA5m gi\u1EEFa, t\u1ED1i \u0111a 3 ch\u1ED7 g\u1EA5p kh\xFAc) ho\u1EB7c X\xF3a. Mu\u1ED1n \u0111\u1ED5i m\u1EE5c ti\xEAu th\xEC ch\u1ECDn l\u1EA1i \u0111\u1ED9i v\xE0 m\u1EE5c ti\xEAu kh\xE1c."],
+      ["V\u1EADt c\u1EA3n tr\xEAn \u0111\u01B0\u1EDDng", "\u0110o\u1EA1n m\u0169i t\xEAn m\xE0u \u0111\u1ECF l\xE0 ch\u1ED7 c\xF3 v\u1EADt c\u1EA3n. C\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3: l\u1EADp m\u1ED9t \u0111\u1ED9i h\u1EADu c\u1EA7n, t\u1EE9c m\u1ED9t \u0111\u1ED9i c\xF3 l\xEDnh nh\u01B0ng kh\xF4ng v\u1EBD m\u0169i t\xEAn; n\xF3 \u0111i tr\u01B0\u1EDBc ph\xE1 h\u1EBFt m\u1ED9t l\u1EA7n r\u1ED3i v\u1EC1 ch\u1ED7 c\u0169. N\u01B0\u1EDBc v\xE0 c\xF4ng tr\xECnh c\u1EE7a l\xE0ng kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c: h\xE3y u\u1ED1n m\u0169i t\xEAn \u0111i v\xF2ng."],
+      ["Ra l\u1EC7nh cho \u0111\u1ED9i", 'Nh\u1EA5n gi\u1EEF \u0111\u1ED9i, ch\u1ECDn "L\u1EC7nh": th\xE1i \u0111\u1ED9 khi t\u1EDBi n\u01A1i, gi\u1EDD xu\u1EA5t ph\xE1t ho\u1EB7c ch\u1EDD \u0111\u1ED9i kh\xE1c hay t\xEDn hi\u1EC7u, khi n\xE0o r\xFAt lui v\xE0 \u0111\u01B0\u1EDDng r\xFAt. Th\u1EBB l\u1EC7nh b\u1EA1n g\u1EAFn v\xE0o k\u1EBF ho\u1EA1ch s\u1EBD th\xE0nh n\xFAt khi \u0111\xE1nh.'],
+      ["Tri\u1EC3n khai", 'B\u1EA5m "\u2694 Tri\u1EC3n khai tr\u1EADn chi\u1EBFn" v\xE0 \u0111\u1ECDc b\xE1o c\xE1o c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn: c\xE1c d\xF2ng \u2717 l\xE0 \u0111i\u1EC1u \u0111ang ch\u1EB7n, s\u1EEDa xong m\u1EDBi x\xE1c nh\u1EADn \u0111\u01B0\u1EE3c. Sau khi x\xE1c nh\u1EADn, qu\xE2n v\xE0o v\u1ECB tr\xED v\xE0 ch\u1EDD; b\u1EA1n b\u1EA5m "\u0110\xE1nh" ho\u1EB7c "R\xFAt" ngay tr\xEAn m\xE0n h\xECnh game.'],
+      ["Th\u1EAFng v\xE0 thua", "Th\u1EAFng khi l\xE0ng \u0111\u1ECBch h\u1EBFt l\xEDnh, l\u1EEDa t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh s\u1EADp. Thua khi qu\xE2n ta h\u1EBFt l\xEDnh ho\u1EB7c r\xFAt lui. Trong tr\u1EADn, l\xEDnh kh\xF4ng ng\u1EE7; tr\u1EDDi t\u1ED1i, s\u01B0\u01A1ng hay m\u01B0a l\xE0m h\u1ECD th\u1EA5y ng\u1EAFn h\u01A1n tr\u1EEB khi c\u1EA7m \u0111u\u1ED1c, cung th\u1EE7 nh\xECn xa h\u01A1n m\u1ED9t ch\xFAt."]
+    ];
+    return [h("div", { class: "guide" }, ...steps.map(([title, text], i) => h("div", { class: "gstep" }, h("b", { text: `${i + 1}. ${title}` }), h("p", { class: "sub", text }))))];
   }
   // ---------------------------------------------------------------- the maps we hold
   ageWords(at) {
@@ -34064,15 +39274,13 @@ var WarPanel = class {
     this.fullTitle.textContent = `L\u1EADp k\u1EBF ho\u1EA1ch \u0111\xE1nh ${t?.def.name ?? "?"}`;
     this.fullState.textContent = plan2 ? { draft: "\u0111ang so\u1EA1n", running: "\u0111ang ch\u1EA1y", done: "\u0111\xE3 xong" }[plan2.status] : "ch\u01B0a c\xF3 k\u1EBF ho\u1EA1ch";
     this.dock.replaceChildren(...this.dockButtons(plan2));
-    const slot = this.panel === "info" ? [planMapInfo(sim2, this.openTribe)] : this.panel === "squads" ? [this.tray(plan2)] : [];
-    this.info.hidden = !slot.length;
-    this.info.replaceChildren(...slot);
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => this.view.root.style.setProperty("--ptop", `${this.top.offsetHeight}px`));
     this.view.show(this.openTribe, plan2, { selected: this.sel, mode: this.mode, modeSquad: this.modeSquad });
     this.fillBar(plan2);
     this.fillCard(plan2);
     this.fillRoster(plan2);
     this.fillReport(plan2);
-    this.view.root.classList.toggle("has-panel", !this.info.hidden || !this.card.hidden || !this.roster.hidden || !this.report.hidden);
+    this.view.root.classList.toggle("has-panel", !this.card.hidden || !this.roster.hidden || !this.report.hidden);
   }
   /** The buttons at the top left, always there: one to open each panel, and the plan's own controls (deploy, fight, fall back). */
   dockButtons(plan2) {
@@ -34080,7 +39288,7 @@ var WarPanel = class {
       this.setPanel(p, this.panel !== p);
       this.refresh();
     };
-    const out = [this.chip("\u24D8 L\xE0ng", this.panel === "info", open("info"), { title: "Th\xF4ng tin v\u1EC1 l\xE0ng n\xE0y" }), this.chip("\u2691 \u0110\u1ED9i", this.panel === "squads", open("squads"), { title: "C\xE1c \u0111\u1ED9i c\u1EE7a k\u1EBF ho\u1EA1ch v\xE0 l\u01B0u \xFD c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn" })];
+    const out = [];
     if (!plan2) {
       const other = sim2.plans.find((p) => p.kind === "attack");
       out.push(this.chip("\uFF0B L\u1EADp k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng", false, () => {
@@ -34090,10 +39298,22 @@ var WarPanel = class {
       return out;
     }
     if (plan2.status === "draft") {
-      const why = sim2.reviewPlan(plan2).filter((l) => l.startsWith("\u2717")).map((l) => l.slice(2));
-      const title = !plan2.missions.length ? "L\u1EADp \u0111\u1ED9i v\xE0 v\u1EBD \u0111\u1ED9i h\xECnh tr\u01B0\u1EDBc" : why.length ? `Ch\u01B0a th\u1EC3 tri\u1EC3n khai: ${why.join(" \xB7 ")}` : "Xem b\xE1o c\xE1o c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn r\u1ED3i quy\u1EBFt \u0111\u1ECBnh c\xF3 tri\u1EC3n khai kh\xF4ng";
-      out.push(this.chip("\u2694 Tri\u1EC3n khai tr\u1EADn chi\u1EBFn", this.panel === "report", open("report"), { disabled: !plan2.missions.length || why.length > 0, title }));
-      if (why.length && this.panel !== "squads") out.push(h("small", { class: "why", text: `\u2717 ${why[0]}${why.length > 1 ? ` (+${why.length - 1} l\xFD do n\u1EEFa, xem \u1EDF \u2691 \u0110\u1ED9i)` : ""}` }));
+      out.push(
+        this.chip("\u2694 Tri\u1EC3n khai tr\u1EADn chi\u1EBFn", this.panel === "report", open("report"), { disabled: !plan2.missions.length, title: plan2.missions.length ? "Xem b\xE1o c\xE1o c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn (c\u1EA3 nh\u1EEFng \u0111i\u1EC1u ch\u01B0a \u1ED5n) r\u1ED3i quy\u1EBFt \u0111\u1ECBnh c\xF3 tri\u1EC3n khai kh\xF4ng" : "L\u1EADp \u0111\u1ED9i v\xE0 v\u1EBD \u0111\u1ED9i h\xECnh tr\u01B0\u1EDBc" }),
+        this.chip(this.confirmPlan ? "\u{1F5D1} B\u1EA5m l\u1EA1i \u0111\u1EC3 h\u1EE7y k\u1EBF ho\u1EA1ch" : "\u{1F5D1} H\u1EE7y k\u1EBF ho\u1EA1ch", this.confirmPlan, () => {
+          if (!this.confirmPlan) {
+            this.confirmPlan = true;
+            this.key = "";
+            this.c.ctl.onChange();
+            return;
+          }
+          this.confirmPlan = false;
+          this.toast(sim2.cancelPlan(plan2));
+          this.panel = null;
+          this.sel = -1;
+          this.refresh();
+        }, { danger: true, title: "B\u1ECF k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng \u0111ang so\u1EA1n (c\xE1c \u0111\u1ED9i v\u1EABn c\xF2n)" })
+      );
     }
     if (plan2.status === "running") {
       const act = (e) => {
@@ -34105,45 +39325,28 @@ var WarPanel = class {
       else if (plan2.stage === "fight") out.push(this.chip("\u21A9 R\xFAt lui", false, () => act(sim2.withdrawPlan(plan2)), { danger: true, title: "\u0110ang \u0111\xE1nh: m\u1ED7i \u0111\u1ED9i r\xFAt theo \u0111\u01B0\u1EDDng r\xFAt \u0111\xE3 v\u1EBD (ho\u1EB7c v\u1EC1 ch\u1ED7 h\u1EB9n), k\u1EBF ho\u1EA1ch k\u1EBFt th\xFAc" }));
       else out.push(h("small", { class: "sub", text: plan2.stage === "recall" ? "Qu\xE2n \u0111ang v\u1EC1 l\xE0ng\u2026" : "Qu\xE2n \u0111ang r\xFAt lui\u2026" }));
     }
-    if (plan2.status === "done") out.push(this.chip("\u21BA So\u1EA1n l\u1EA1i", false, () => {
+    if (plan2.status === "done") out.push(h("b", { class: plan2.result === "won" ? "good" : "why", text: plan2.result === "won" ? "\u{1F3C6} Th\u1EAFng tr\u1EADn" : plan2.result === "lost" ? "\u2717 Thua tr\u1EADn" : "\u0110\xE3 xong" }), this.chip("\u21BA So\u1EA1n l\u1EA1i", false, () => {
       plan2.status = "draft";
-      for (const m of plan2.missions) m.state = "idle";
+      plan2.stage = "assemble";
+      plan2.result = "";
+      for (const m of plan2.missions) {
+        m.state = "idle";
+        m.block = null;
+        m.leg = 0;
+      }
       this.refresh();
     }));
     return out;
   }
   /** The squads of the plan as chips, to choose one without hunting for it on the map, and the remarks of the war council. */
-  tray(plan2) {
-    const { sim: sim2 } = this, out = [];
-    if (!plan2) return h("div", { class: "ptray" }, h("small", { class: "sub", text: 'Ch\u01B0a c\xF3 k\u1EBF ho\u1EA1ch cho l\xE0ng n\xE0y: b\u1EA5m "\uFF0B L\u1EADp k\u1EBF ho\u1EA1ch t\u1EA5n c\xF4ng".' }));
-    for (const m of plan2.missions) {
-      const s = m.deploy ? sim2.squadById(m.squad) : void 0;
-      if (s) out.push(h("button", { class: `chip${this.sel === s.id ? " on" : ""}`, style: `border-left:7px solid ${s.color}`, title: "Ch\u1ECDn \u0111\u1ED9i n\xE0y", text: `${s.name} \xB7 ${sim2.squadUnits(s).length}/${m.deploy.cells.length}`, onclick: () => {
-        this.sel = s.id;
-        this.refresh();
-      } }));
-    }
-    if (!plan2.missions.some((m) => m.deploy && sim2.squadById(m.squad))) out.push(h("small", { class: "sub", text: "Ch\u01B0a c\xF3 \u0111\u1ED9i n\xE0o tr\xEAn b\u1EA3n \u0111\u1ED3: nh\u1EA5n gi\u1EEF m\u1ED9t \u0111i\u1EC3m \u0111\u1EC3 l\u1EADp \u0111\u1ED9i." }));
-    const notes = sim2.reviewPlan(plan2);
-    const tray = h("div", { class: "ptray" }, ...out);
-    if (notes.length) tray.append(h("details", { open: notes.some((l) => l.startsWith("\u2717")) }, h("summary", { text: `\u26A0 ${notes.length} l\u01B0u \xFD c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn` }), ...notes.map((l) => h("p", { class: l.startsWith("\u2717") ? "why" : "sub", text: l }))));
-    return tray;
-  }
   /** The strip over the map: what a press or a drag does now, or what can be done with the squad that was pressed. */
   fillBar(plan2) {
     const { sim: sim2 } = this, id = this.mode === "pan" ? this.sel : this.modeSquad;
     const named = plan2?.missions.some((m) => m.squad === id && m.deploy) ? sim2.squadById(id) : void 0;
-    this.bar.hidden = !plan2 || !named;
-    if (!plan2 || !named) return;
+    this.bar.hidden = !plan2 || !named || this.mode === "pan" || this.mode === "path";
+    if (!plan2 || !named || this.mode === "pan" || this.mode === "path") return;
     const kids = [h("b", { text: named.name })];
-    if (this.mode !== "pan") {
-      const what = {
-        edit: "\u0111\u1ED9i h\xECnh: r\xEA chu\u1ED9t \u0111\u1EC3 \u0111\u1ED5i \u0111\u1ED9 d\xE0i ho\u1EB7c b\xE1n k\xEDnh, k\xE9o ch\u1EA5m tr\u1EAFng \u1EDF g\u1ED1c \u0111\u1EC3 d\u1EDDi c\u1EA3 \u0111\u1ED9i h\xECnh, b\u1EA5m \u0111\u1EC3 ch\u1ED1t (\xEDt nh\u1EA5t 3 \xF4)",
-        trim: "\u0111\u1ED9i h\xECnh: b\u1EA5m v\xE0o \xF4 mu\u1ED1n b\u1ECF, \xEDt nh\u1EA5t c\xF2n 3 \xF4",
-        path: "m\u0169i t\xEAn: b\u1EA5m n\u01A1i \u0111\u1ED9i c\u1EA7n t\u1EDBi (m\u0169i t\xEAn \u0111i th\u1EB3ng theo chu\u1ED9t), r\u1ED3i k\xE9o ch\u1EA5m tr\xF2n nh\u1ECF gi\u1EEFa m\u1ED7i \u0111o\u1EA1n \u0111\u1EC3 u\u1ED1n, k\xE9o \u0111\u1EA7u m\u0169i t\xEAn \u0111\u1EC3 \u0111\u1ED5i n\u01A1i t\u1EDBi, b\u1EA5m chu\u1ED9t ph\u1EA3i v\xE0o m\u1ED9t ch\u1EA5m \u0111\u1EC3 b\u1ECF ch\u1EA5m \u0111\xF3",
-        retreat: "\u0111\u01B0\u1EDDng r\xFAt: b\u1EA5m n\u01A1i \u0111\u1ED9i r\xFAt v\u1EC1, r\u1ED3i k\xE9o c\xE1c ch\u1EA5m nh\u01B0 m\u0169i t\xEAn"
-      }[this.mode];
-      kids.push(h("span", { text: `V\u1EBD ${what}. Chu\u1ED9t ph\u1EA3i k\xE9o ho\u1EB7c hai ng\xF3n \u0111\u1EC3 di chuy\u1EC3n b\u1EA3n \u0111\u1ED3.` }));
+    {
       if (this.mode === "edit") kids.push(this.chip("H\u1EE7y", false, () => this.stopDraw()));
       else if (this.mode === "trim") kids.push(this.chip("Xong", true, () => this.stopDraw()));
       else kids.push(this.chip("X\xF3a", false, () => {
@@ -34153,23 +39356,6 @@ var WarPanel = class {
       this.bar.replaceChildren(...kids);
       return;
     }
-    const placed = plan2.missions.some((m) => m.squad === named.id && m.deploy), hasArrow = plan2.missions.some((m) => m.squad === named.id && m.path.length > 0);
-    if (placed) kids.push(
-      this.chip("\u{1F465} L\xEDnh", this.rosterOpen, () => {
-        this.rosterOpen = !this.rosterOpen;
-        this.orderOpen = false;
-        this.refresh();
-      }, { title: "L\xEDnh c\u1EE7a \u0111\u1ED9i: th\xEAm, b\u1ECF, ch\u1ECDn ch\u1EC9 huy" }),
-      this.chip("\u27A4 M\u0169i t\xEAn", false, () => this.startDraw("path", named.id), { title: "V\u1EBD \u0111\u01B0\u1EDDng \u0111\u1ED9i \u0111i" }),
-      this.chip("\u2630 L\u1EC7nh", this.orderOpen && hasArrow, () => {
-        this.orderOpen = !this.orderOpen;
-        this.rosterOpen = false;
-        this.refresh();
-      }, { disabled: !hasArrow, title: hasArrow ? "H\xE0nh \u0111\u1ED9ng, gi\u1EDD \u0111\xE1nh, r\xFAt lui, th\u1EBB l\u1EC7nh" : "V\u1EBD m\u0169i t\xEAn cho \u0111\u1ED9i tr\u01B0\u1EDBc, r\u1ED3i m\u1EDBi ra l\u1EC7nh \u0111\u01B0\u1EE3c" }),
-      this.chip("\u270E S\u1EEDa l\u1EA1i", false, () => this.startDraw("edit", named.id), { title: "\u0110\u1ED5i \u0111\u1ED9 d\xE0i, b\xE1n k\xEDnh, ch\u1ED7 \u0111\u1EE9ng" }),
-      this.chip("\u2702 B\u1EDBt \xF4", false, () => this.startDraw("trim", named.id))
-    );
-    kids.push(this.deleteButton(named.id));
     this.bar.replaceChildren(...kids);
   }
   /** The report of the war council: the odds, the warnings, what a win and a loss may bring, and the details the map allows. Confirming sends the army out. */
@@ -34194,8 +39380,6 @@ var WarPanel = class {
       ),
       ...f.blocked ? [h("div", { class: "psec" }, h("b", { text: "\u2717 Ch\u01B0a th\u1EC3 tri\u1EC3n khai:" }), ...f.blocked.split("\n").map((x) => h("p", { class: "why", text: x })))] : [],
       ...list("\u26A0 C\u1EA3nh b\xE1o", f.warnings),
-      ...list("N\u1EBFu th\u1EAFng", f.win),
-      ...list("N\u1EBFu thua", f.lose),
       h("details", { open: true }, h("summary", { text: "B\xE1o c\xE1o chi ti\u1EBFt" }), ...f.lines.map((x) => h("p", { class: "sub", text: x }))),
       h(
         "div",
@@ -34223,26 +39407,11 @@ var WarPanel = class {
     const { sim: sim2 } = this, sq = sim2.squadById(this.sel), m = plan2?.missions.find((x) => x.squad === this.sel);
     this.roster.hidden = !(this.rosterOpen && plan2 && sq && m?.deploy && this.mode === "pan");
     if (this.roster.hidden || !sq || !m?.deploy) return;
-    if (this.rosterSquad !== sq.id) {
-      this.rosterSquad = sq.id;
-      this.picked.clear();
-      this.addOpen = false;
-    }
+    if (this.rosterSquad !== sq.id) this.rosterSquad = sq.id;
     const lock = sim2.warLock(), units = sim2.squadUnits(sq), cells = m.deploy.cells.length, room = Math.max(0, cells - units.length);
     const free = sim2.villagers.filter((v) => v.job === "fight" && v.squad < 0);
-    for (const id of [...this.picked]) if (!free.some((v) => v.id === id)) this.picked.delete(id);
     const who = (v) => `${ARM_NAME[sim2.armOf(v)]} \xB7 ${WEAPONS[v.weapon ?? "fist"].name}`;
-    const out = [h(
-      "div",
-      { class: "phead" },
-      h("i", { style: `background:${sq.color}` }),
-      h("b", { text: sq.name }),
-      h("small", { text: `${units.length}/${cells} l\xEDnh` }),
-      h("button", { class: "chip", text: "\u2715", title: "\u0110\xF3ng", onclick: () => {
-        this.rosterOpen = false;
-        this.refresh();
-      } })
-    )];
+    const out = [h("div", { class: "phead" }, h("i", { style: `background:${sq.color}` }), h("b", { text: sq.name }), h("small", { text: `${units.length}/${cells} l\xEDnh` }))];
     if (!units.length) out.push(h("p", { class: "sub", text: "Ch\u01B0a c\xF3 l\xEDnh trong \u0111\u1ED9i." }));
     for (const v of units) out.push(h(
       "div",
@@ -34257,41 +39426,17 @@ var WarPanel = class {
         this.refresh();
       } })
     ));
-    out.push(this.chip(
-      `\uFF0B Th\xEAm l\xEDnh \u25BE${free.length ? ` (${free.length})` : ""}`,
-      this.addOpen,
-      () => {
-        this.addOpen = !this.addOpen;
+    out.push(h("div", { class: "phead" }, h("b", { text: "Ch\u01B0a c\xF3 \u0111\u1ED9i" }), h("small", { text: room ? `c\xF2n ch\u1ED7 cho ${room} l\xEDnh` : "\u0111\u1ED9i h\xECnh \u0111\xE3 \u0111\u1EE7 \xF4: b\u1EA5m S\u1EEDa tr\xEAn v\xF2ng n\xFAt c\u1EE7a \u0111\u1ED9i \u0111\u1EC3 th\xEAm \xF4" })));
+    if (!free.length) out.push(h("p", { class: "sub", text: "Kh\xF4ng c\xF2n l\xEDnh n\xE0o ch\u01B0a c\xF3 \u0111\u1ED9i: tuy\u1EC3n th\xEAm \u1EDF tr\u1EA1i l\xEDnh." }));
+    for (const v of free) out.push(h(
+      "div",
+      { class: "rrow rfree" },
+      h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: who(v) })),
+      h("button", { class: "chip", text: "\uFF0B", title: lock ?? (room ? "Th\xEAm v\xE0o \u0111\u1ED9i" : "\u0110\u1ED9i h\xECnh \u0111\xE3 \u0111\u1EE7 \xF4"), disabled: !!lock || !room, onclick: () => {
+        this.toast(sim2.joinSquad([v.id], sq.id));
         this.refresh();
-      },
-      { disabled: !free.length || !room || !!lock, title: lock ?? (!room ? "\u0110\u1ED9i h\xECnh \u0111\xE3 \u0111\u1EE7 \xF4" : !free.length ? "Kh\xF4ng c\xF2n l\xEDnh n\xE0o ch\u01B0a c\xF3 \u0111\u1ED9i" : "Ch\u1ECDn l\xEDnh ch\u01B0a c\xF3 \u0111\u1ED9i \u0111\u1EC3 th\xEAm v\xE0o") }
+      } })
     ));
-    if (!room) out.push(h("small", { class: "sub", text: `\u0110\u1ED9i h\xECnh c\xF3 ${cells} \xF4 v\xE0 \u0111\xE3 \u0111\u1EE7 l\xEDnh: b\u1EA5m \u270E S\u1EEDa l\u1EA1i \u0111\u1EC3 th\xEAm \xF4.` }));
-    else if (!free.length) out.push(h("small", { class: "sub", text: "Kh\xF4ng c\xF2n l\xEDnh n\xE0o ch\u01B0a c\xF3 \u0111\u1ED9i: tuy\u1EC3n th\xEAm \u1EDF tr\u1EA1i l\xEDnh." }));
-    if (this.addOpen && free.length && room) {
-      const list = h("div", { class: "rdrop" });
-      for (const v of free) {
-        const box = h("input", { type: "checkbox" });
-        box.checked = this.picked.has(v.id);
-        box.disabled = !box.checked && this.picked.size >= room;
-        box.addEventListener("change", () => {
-          if (box.checked) this.picked.add(v.id);
-          else this.picked.delete(v.id);
-          this.refresh();
-        });
-        list.append(h("label", { class: "rpick" }, box, h("span", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: who(v) }))));
-      }
-      out.push(
-        list,
-        this.chip(`Th\xEAm ${this.picked.size} l\xEDnh`, true, () => {
-          this.toast(sim2.joinSquad([...this.picked], sq.id));
-          this.picked.clear();
-          this.addOpen = false;
-          this.refresh();
-        }, { disabled: !this.picked.size || !!lock }),
-        h("small", { class: "sub", text: `C\xF2n ch\u1ED7 cho ${room - this.picked.size} l\xEDnh.` })
-      );
-    }
     this.roster.replaceChildren(...out);
   }
   /** One choice of a step: a big tile with a picture, a name and a line saying what it means. */
@@ -34320,11 +39465,11 @@ var WarPanel = class {
     const doing = { fight: "ti\u1EBFn theo m\u0169i t\xEAn v\xE0 giao chi\u1EBFn v\u1EDBi k\u1EBB \u0111\u1ECBch g\u1EB7p tr\xEAn \u0111\u01B0\u1EDDng", evade: "\u0111i theo m\u0169i t\xEAn t\u1EDBi n\u01A1i m\xE0 kh\xF4ng \u0111\xE1nh tr\u1EA3", hold: "\u0111i t\u1EDBi cu\u1ED1i m\u0169i t\xEAn r\u1ED3i \u0111\u1EE9ng gi\u1EEF ch\u1ED7", shoot: "ti\u1EBFn theo m\u0169i t\xEAn, cung th\u1EE7 b\u1EAFn c\xF2n b\u1ED9 binh \u0111\u1EE9ng y\xEAn" }[m.stance];
     const first = signal ? `${sq.name} \u0111\u1EE9ng ch\u1EDD t\xEDn hi\u1EC7u, r\u1ED3i ${doing}.` : `${this.startWords(m)}, ${sq.name} ${doing}.`;
     const start = sim2.missionStart(m), go = start && m.path.length ? sim2.routeTime(sq, start, m.path) : null;
-    const way = !m.deploy ? "\u0110\u1ED9i ch\u01B0a c\xF3 \u0111\u1ED9i h\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3." : go ? `\u0110\u01B0\u1EDDng \u0111i d\xE0i ${Math.round(go.length)} \xF4, m\u1EA5t kho\u1EA3ng ${fmtTime(go.total)}${go.blocked.some(Boolean) ? ", c\xF3 \u0111o\u1EA1n b\u1ECB ch\u1EAFn n\xEAn ph\u1EA3i \u0111i v\xF2ng" : ""}.` : "Ch\u01B0a v\u1EBD m\u0169i t\xEAn (b\u1EA5m \u27A4 M\u0169i t\xEAn) n\xEAn \u0111\u1ED9i s\u1EBD ti\u1EBFn th\u1EB3ng v\xE0o \u0111\u1ED1ng l\u1EEDa c\u1EE7a \u0111\u1ECBch.";
+    const way = !m.deploy ? "\u0110\u1ED9i ch\u01B0a c\xF3 \u0111\u1ED9i h\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3." : go ? `\u0110\u01B0\u1EDDng \u0111i d\xE0i ${Math.round(go.length)} \xF4, m\u1EA5t kho\u1EA3ng ${fmtTime(go.total)}${go.hits.some((o) => o && o.kind !== "enemy") ? ", c\xF3 \u0111o\u1EA1n v\u01B0\u1EDBng v\u1EADt c\u1EA3n (\u0111\u1ECF) c\u1EA7n ph\xE1 ho\u1EB7c u\u1ED1n tr\xE1nh" : ""}.` : "Ch\u01B0a ch\u1ECDn m\u1EE5c ti\xEAu (b\u1EA5m v\xE0o c\xF4ng tr\xECnh ho\u1EB7c ng\u01B0\u1EDDi tr\xEAn b\u1EA3n \u0111\u1ED3) n\xEAn \u0111\u1ED9i s\u1EBD ti\u1EBFn th\u1EB3ng v\xE0o \u0111\u1ED1ng l\u1EEDa c\u1EE7a \u0111\u1ECBch.";
     let end = "";
     if (signal) {
-      const names = plan2.cards.filter((cd) => cd.kind === "signal" || cd.squad === sq.id).map((cd) => CARD_NAME[cd.kind]);
-      end = names.length ? `Th\u1EBB l\u1EC7nh: ${names.join(", ")}.` : "Ch\u01B0a c\xF3 th\u1EBB l\u1EC7nh n\xE0o n\xEAn \u0111\u1ED9i s\u1EBD \u0111\u1EE9ng \u0111\u1EE3i m\xE3i.";
+      const names2 = plan2.cards.filter((cd) => cd.kind === "signal" || cd.squad === sq.id).map((cd) => CARD_NAME[cd.kind]);
+      end = names2.length ? `Th\u1EBB l\u1EC7nh: ${names2.join(", ")}.` : "Ch\u01B0a c\xF3 th\u1EBB l\u1EC7nh n\xE0o n\xEAn \u0111\u1ED9i s\u1EBD \u0111\u1EE9ng \u0111\u1EE3i m\xE3i.";
     } else if (m.withdrawAt > 0) {
       const back = m.retreat.length ? sim2.routeTime(sq, m.path.length ? m.path[m.path.length - 1] : start ?? m.retreat[0], m.retreat) : null;
       end = `R\xFAt lui khi m\u1EA5t ${Math.round(m.withdrawAt * 100)}% qu\xE2n${back ? `, theo \u0111\u01B0\u1EDDng r\xFAt \u0111\xE3 v\u1EBD (m\u1EA5t kho\u1EA3ng ${fmtTime(back.total)})` : ", v\u1EC1 ch\u1ED7 h\u1EB9n v\xEC ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt"}.`;
@@ -34524,10 +39669,21 @@ var BuildingPanel = class {
     this.resRows = [];
     this.barterBtns = [];
     this.recRows = [];
-    this.techRows = [];
+    this.trees = [];
     this.goodRows = [];
     /** The people of each role house, kept in the house that gives the role. */
     this.rolePanes = {};
+    this.labHead = h("div", { class: "labhead" });
+    /** The research house: the tab that is open, as a panel laid over the whole one (null while the grid of tabs shows). */
+    this.labSub = null;
+    this.mbody = h("div", { class: "mbody" });
+    this.subTitle = h("b");
+    this.subBody = h("div", { class: "subbody" });
+    this.sub = h("div", { class: "subpanel", hidden: true }, h("div", { class: "subhead" }, h("button", { class: "sm", text: "\u2039 Quay l\u1EA1i", onclick: () => {
+      this.labSub = null;
+      this.tabKey = "";
+      this.update();
+    } }), this.subTitle), this.subBody);
     /** The speed to go back to when the tent is left (it opens the game paused, as a war council does). */
     this.resume = 0;
     this.inTent = false;
@@ -34540,20 +39696,19 @@ var BuildingPanel = class {
     this.towerList = h("div");
     this.towerKey = "";
     this.info = h("div", { class: "kv" });
-    this.queueNote = { craft: h("div", { class: "kv" }), research: h("div", { class: "kv" }), repair: h("div", { class: "kv" }) };
+    this.mountRows = [];
+    this.mountNote = h("div", { class: "kv" });
+    this.queueNote = { craft: h("div", { class: "kv" }), research: h("div", { class: "kv" }) };
     this.goodsNote = h("p", { class: "sub" });
     this.goodsHint = hint(this.goodsNote, "");
-    this.toolList = h("div");
-    this.toolKey = "";
-    this.repairInfo = h("div", { class: "kv" });
     const { sim: sim2, ctl: ctl2, sprites: sprites2 } = c;
     root.className = "modal";
     const recipeNm = (id) => RECIPE_BY_ID[id] ? recipeName(RECIPE_BY_ID[id]) : id;
-    this.staffBoxes = { build: new StaffBox(c, "build"), craft: new StaffBox(c, "craft"), research: new StaffBox(c, "research"), repair: new StaffBox(c, "repair"), farm: new StaffBox(c, "farm") };
+    this.staffBoxes = { build: new StaffBox(c, "build"), craft: new StaffBox(c, "craft"), research: new StaffBox(c, "research"), tame: new StaffBox(c, "tame"), farm: new StaffBox(c, "farm") };
     this.activeBoxes = {
       craft: new ActiveBox(c, recipeNm, (id) => sim2.orderDef("craft", id)?.time ?? 1),
       research: new ActiveBox(c, (id) => TECHS.find((t) => t.id === id)?.name ?? id, (id) => sim2.orderDef("research", id)?.time ?? 1),
-      repair: new ActiveBox(c, (id) => `s\u1EEDa ${recipeNm(id).toLowerCase()}`, (id) => sim2.orderDef("repair", id)?.time ?? 1)
+      tame: new ActiveBox(c, (id) => `thu\u1EA7n ${MOUNTS[id]?.name.toLowerCase() ?? id}`, (id) => MOUNTS[id]?.time ?? 1)
     };
     const page = (...kids) => {
       const el2 = h("div", { class: "tabpage", hidden: true }, ...kids);
@@ -34612,7 +39767,7 @@ var BuildingPanel = class {
     for (const res of RES_LIST) {
       const num2 = h("b"), bar2 = h("b");
       this.resRows.push({ res, num: num2, bar: bar2 });
-      stockRows.push(h("div", { class: "row" }, h("div", { class: "nm" }, RES_NAME[res], h("small", {}, num2)), h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, bar2))));
+      stockRows.push(h("div", { class: "row" }, h("div", { class: "nm" }, resIcon(res), RES_NAME[res], h("small", {}, num2)), h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, bar2))));
     }
     this.tabs.storage = [{ label: "T\xE0i nguy\xEAn", page: page(...stockRows) }, { label: "\u0110\u1ED5i ch\xE1c", page: page(barter2()) }];
     const section = (el2, list) => {
@@ -34646,36 +39801,37 @@ var BuildingPanel = class {
       { label: "V\u0169 kh\xED", page: shop(RECIPES.filter((r) => r.kind in WEAPONS)) },
       { label: "\xC1o gi\xE1p", page: shop(RECIPES.filter((r) => r.kind === "hide")) }
     ];
-    const groups = [
-      ["B\u1EA3n v\u1EBD c\xF4ng c\u1EE5", (id) => /^(axe|pick|hoe|hammer|torch)\d$/.test(id)],
-      ["B\u1EA3n v\u1EBD v\u0169 kh\xED, gi\xE1p", (id) => /^(club|spear|mace|sling|bow|hide)\d$/.test(id)],
-      ["X\xE2y d\u1EF1ng", (id) => ["timber", "masonry", "tool_store", "armory", "house", "barracks", "camp_archery", "camp_cavalry", "farming", "fence", "gate", "tower", "pit"].includes(id)],
-      ["Qu\xE2n s\u1EF1", (id) => ["scout", "scout2", "scout3", "council", "drill", "signal"].includes(id) || id.startsWith("form_")],
-      ["T\u1EF1 \u0111\u1ED9ng h\xF3a", (id) => id.startsWith("auto_")]
-    ];
-    this.tabs.lab = [{ label: "\u0110ang l\xE0m", page: page(this.staffBoxes.research.root, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian v\xE0 ng\u01B0\u1EDDi th\xF4ng minh trong nh\xE0: c\xE0ng nhi\u1EC1u v\xE0 c\xE0ng th\xF4ng minh c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research) }];
-    for (const [title, test] of groups) {
-      const el2 = page();
-      for (const t of TECHS.filter((x) => test(x.id))) {
-        const note = h("small", { class: "lock" }), btn = h("button", { class: "sm" });
-        btn.addEventListener("click", () => {
-          const st = sim2.techState(t).state;
-          if (st === "queued") sim2.unqueueResearch(t.id);
-          else {
-            const e = sim2.queueResearch(t.id);
-            if (e) c.toast(e);
-          }
-          ctl2.onChange();
-        });
-        const row = h("div", { class: "tech" }, h("div", { class: "nm" }, t.name, h("small", {}, `${t.desc} M\u1EDF: ${unlockText(t, recipeNm)}.`), h("small", {}, `${costText(t.cost, RES_NAME)} \xB7 ${workDays(t.time)} \xB7 Tr\xED tu\u1EC7 \u2265 ${t.minInt}${t.needLevel > 1 ? ` \xB7 nh\xE0 c\u1EA5p ${t.needLevel}` : ""}`), note), btn);
-        this.techRows.push({ id: t.id, row, btn, note });
-        el2.append(row);
-      }
-      this.tabs.lab.push({ label: title, page: el2 });
-    }
-    this.tabs.repair = [
-      { label: "\u0110ang l\xE0m", page: page(this.staffBoxes.repair.root, h("h3", { text: "\u0110ang s\u1EEDa" }), this.activeBoxes.repair.root, this.queueNote.repair, this.repairInfo) },
-      { label: "C\xF4ng c\u1EE5 c\u1EE7a d\xE2n", page: page(hint("C\xF4ng c\u1EE5 c\u1EE7a d\xE2n", '"\u0110i s\u1EEDa": d\xE2n mang c\xF4ng c\u1EE5 \u0111\xE3 m\xF2n t\u1EDBi Nh\xE0 s\u1EEDa ch\u1EEFa, t\u1ED1n n\u1EEDa nguy\xEAn li\u1EC7u v\xE0 m\u1EA5t 1,5 l\u1EA7n th\u1EDDi gian ch\u1EBF (c\xF4ng c\u1EE5 \u0111\xE1 l\xE2u h\u01A1n c\xF4ng c\u1EE5 g\u1ED7). S\u1EEDa xong c\xF4ng c\u1EE5 \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i cho \u0111\xFAng ng\u01B0\u1EDDi \u0111\xF3; trong l\xFAc ch\u1EDD h\u1ECD l\xE0m vi\u1EC7c tay kh\xF4ng. C\u0169ng c\xF3 th\u1EC3 v\u1EE9t b\u1ECF, k\u1EC3 c\u1EA3 khi ch\u01B0a h\u1ECFng.'), this.toolList) }
+    const tree = (fill) => {
+      const t = new TechTree(c);
+      fill(t);
+      this.trees.push(t);
+      return page(t.root);
+    };
+    const only = (test) => TECHS.filter((x) => test(x.id));
+    const labLevel = () => sim2.building("lab")?.level ?? 0;
+    const militaryLock = () => sim2.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${TREE_TABS.military.needLab} \u0111\u1EC3 m\u1EDF Qu\xE2n s\u1EF1`;
+    this.labHead.append(this.staffBoxes.research.root, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian: c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research);
+    this.tabs.lab = [
+      { label: "Qu\xE2n s\u1EF1 b\u1EADc 1", icon: "infantry", lock: militaryLock, page: tree((t) => {
+        t.addChains("Ch\u1EC9 s\u1ED1 qu\xE2n", ["foot", "cavalry", "archer", "scout"], "military");
+      }) },
+      { label: "Ph\xE1t tri\u1EC3n b\u1EADc 1", icon: "builder", page: tree((t) => t.addChains("Ch\u1EC9 s\u1ED1 nh\xE0 l\xE0m vi\u1EC7c", ["build", "craft", "research"], "development")) },
+      { label: "Kinh t\u1EBF b\u1EADc 1", icon: "storage", page: tree((t) => {
+        t.addChains("Ch\u1EC9 s\u1ED1 ngh\u1EC1", ["wood", "stone", "food", "hunt", "farm", "tame"], "economy");
+      }) },
+      { label: "N\xE2ng c\u1EA5p c\xF4ng tr\xECnh b\u1EADc 1", icon: "storage", under: 1, page: tree((t) => t.addLadder("D\u1EF1ng b\u1EB1ng g\u1ED7, r\u1ED3i x\xE2y b\u1EB1ng \u0111\xE1", only((id) => id === "timber" || id === "masonry"))) },
+      { label: "C\xF4ng c\u1EE5 b\u1EADc 1", icon: "workshop", under: 2, page: tree((t) => {
+        t.addChains("Ch\u1EC9 s\u1ED1 c\xF4ng c\u1EE5", ["axe", "pick", "hoe"], "tool");
+        t.addChains("B\xFAa", ["hammer"], "hammer");
+      }) },
+      { label: "T\u1EF1 \u0111\u1ED9ng h\xF3a b\u1EADc 1", icon: "toolstore", under: 2, page: tree((t) => t.addSingles("D\xE2n t\u1EF1 l\xE0m", only((id) => id.startsWith("auto_")))) },
+      { label: "Chi\u1EBFn \u0111\u1EA5u b\u1EADc 1", icon: "drill", under: 0, lock: () => militaryLock() && "C\u1EA7n m\u1EDF Qu\xE2n s\u1EF1 tr\u01B0\u1EDBc", page: tree((t) => {
+        t.addSingles("T\xEDn hi\u1EC7u", only((id) => id === "signal"));
+        t.addFormations("Tr\u1EADn ph\xE1p", "formation");
+      }) },
+      { label: "V\u0169 kh\xED b\u1EADc 1", icon: "armory", under: 0, lock: () => militaryLock() && "C\u1EA7n m\u1EDF Qu\xE2n s\u1EF1 tr\u01B0\u1EDBc", page: tree((t) => {
+        t.addChains("Ch\u1EC9 s\u1ED1 t\u1EEBng v\u0169 kh\xED", ["club", "spear", "mace", "sling", "bow"], "weapon");
+      }) }
     ];
     const goods = page(this.goodsHint);
     const goodsRows = (cat) => RECIPES.filter((r) => cat === "gear" === isGearKind(r.kind));
@@ -34685,23 +39841,81 @@ var BuildingPanel = class {
       goods.append(row);
     }
     this.tabs.toolstore = this.tabs.armory = [{ label: "Kho", page: goods }];
+    const beasts = page(hint("Thu\u1EA7n th\xFA", 'D\xE2n l\xE0m vi\u1EC7c trong chu\u1ED3ng thu\u1EA7n h\xF3a t\u1EEBng con th\xFA theo \u0111\u01A1n: t\u1ED1n l\u01B0\u01A1ng th\u1EF1c, da v\xE0 ti\u1EC1n, m\u1EA5t nhi\u1EC1u th\u1EDDi gian (c\xE0ng \u0111\xF4ng v\xE0 c\xE0ng nhanh nh\u1EB9n c\xE0ng nhanh). Con xong v\xE0o chu\u1ED3ng; giao cho t\u1EEBng ng\u01B0\u1EDDi \u1EDF trang "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" c\u1EE7a h\u1ECD, nh\u01B0 giao c\xF4ng c\u1EE5. M\u1ED7i lo\xE0i c\u1EA7n chu\u1ED3ng \u0111\u1EE7 c\u1EA5p, kh\xF4ng c\u1EA7n nghi\xEAn c\u1EE9u: s\xF3i (c\u1EA5p 1), l\u1EE3n r\u1EEBng (c\u1EA5p 2), voi (c\u1EA5p 3). K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA kh\xF4ng c\u1EA7n th\xFA c\u1EE7a chu\u1ED3ng: h\u1ECD c\u01B0\u1EE1i con c\u1EE7a tr\u1EA1i.'));
+    for (const k of MOUNT_KINDS) {
+      const d = MOUNTS[k], have = h("span", { class: "have" }), lock = h("small", { class: "lock" });
+      const minus = h("button", { class: "sm", text: "\u2212", title: "B\u1EDBt m\u1ED9t \u0111\u01A1n", onclick: () => {
+        sim2.unqueueTame(k);
+        ctl2.onChange();
+      } });
+      const plus = h("button", { class: "sm", text: "+", title: "Th\xEAm m\u1ED9t \u0111\u01A1n v\xE0o h\xE0ng \u0111\u1EE3i", onclick: () => {
+        const e = sim2.queueTame(k);
+        if (e) c.toast(e);
+        ctl2.onChange();
+      } });
+      const row = h("div", { class: "rec" }, h("div", { class: "nm" }, d.name, h("small", {}, `${costText(d.cost, RES_NAME)} \xB7 ${workDays(d.time)} \xB7 \u0111i nhanh \xD7${d.speed}, \u0111\u1EE1 ${Math.round((1 - d.guard) * 100)}% \u0111\xF2n`), lock), h("div", { class: "qty" }, have, minus, plus));
+      this.mountRows.push({ k, have, row, lock, btns: [minus, plus] });
+      beasts.append(row);
+    }
+    this.tabs.stable = [
+      { label: "\u0110ang l\xE0m", page: page(this.staffBoxes.tame.root, h("h3", { text: "\u0110ang thu\u1EA7n" }), this.activeBoxes.tame.root, this.mountNote) },
+      { label: "Thu\u1EA7n th\xFA", page: beasts }
+    ];
+    this.mbody.append(this.info, this.labHead, this.tabBar, ...this.pages, this.sub);
     root.append(
       h("div", { class: "cardhead" }, this.title, this.state, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => ctl2.closePanel() })),
-      h("div", { class: "mbody" }, this.info, this.tabBar, ...this.pages)
+      this.mbody
     );
   }
   /** Show the tab buttons of the building and the page of the chosen one. */
   showTabs(kind, ready) {
     const tabs = ready ? this.tabs[kind] ?? [] : [];
-    const key = `${kind}:${tabs.length}`;
+    const locks = tabs.map((t) => t.lock?.() ?? null);
+    const key = `${kind}:${tabs.length}:${locks.map((l) => l ? 1 : 0).join("")}`;
+    this.labHead.hidden = !(kind === "lab" && ready);
     if (key !== this.tabKey) {
       this.tabKey = key;
-      this.tabBar.replaceChildren(...tabs.map((t, i) => h("button", { class: "sm", text: t.label, role: "tab", onclick: () => {
-        this.tabAt[kind] = i;
-        this.showTabs(kind, true);
-      } })));
+      const pictures = tabs.some((t) => t.icon);
+      this.tabBar.classList.toggle("icontabs", pictures);
+      this.tabBar.classList.toggle("treetabs", pictures && kind === "lab");
+      this.tabBar.replaceChildren(...tabs.map((t, i) => {
+        const go = () => {
+          if (locks[i]) {
+            this.c.toast(locks[i]);
+            return;
+          }
+          this.tabAt[kind] = i;
+          if (kind === "lab") this.labSub = i;
+          this.showTabs(kind, true);
+        };
+        if (!pictures) return h("button", { class: "sm", text: t.label, role: "tab", onclick: go });
+        let pic;
+        try {
+          pic = h("span", { class: "tpic" }, iconCanvas(this.c.sprites.building(t.icon ?? kind, this.c.sim.era, 1, 4).frames[0]));
+        } catch {
+          pic = h("span", { class: "tpic", text: "?" });
+        }
+        return h("button", { class: `tabcard${locks[i] ? " locked" : ""}${t.under !== void 0 ? " under" : ""}`, style: t.under !== void 0 ? `grid-column:${t.under + 1};grid-row:${2 + tabs.slice(0, i).filter((o) => o.under === t.under).length}` : void 0, role: "tab", title: locks[i] ?? t.label, onclick: go }, pic, h("span", { text: t.label }), locks[i] ? h("span", { class: "tlock", text: "\u{1F512}" }) : null);
+      }));
     }
-    const at = Math.min(this.tabAt[kind] ?? 0, Math.max(0, tabs.length - 1));
+    if (kind === "lab" && ready) {
+      const open = this.labSub !== null && !locks[this.labSub] ? this.labSub : null;
+      this.sub.hidden = open === null;
+      this.tabBar.hidden = false;
+      this.mbody.classList.toggle("subopen", open !== null);
+      if (open !== null) this.mbody.scrollTop = 0;
+      for (const p of this.pages) p.hidden = open === null || tabs[open].page !== p;
+      if (open !== null) {
+        this.subTitle.textContent = tabs[open].label;
+        if (this.subBody.firstChild !== tabs[open].page) this.subBody.replaceChildren(tabs[open].page);
+      }
+      [...this.tabBar.children].forEach((el2, i) => el2.setAttribute("aria-pressed", String(i === open)));
+      return;
+    }
+    this.sub.hidden = true;
+    this.mbody.classList.remove("subopen");
+    let at = Math.min(this.tabAt[kind] ?? 0, Math.max(0, tabs.length - 1));
+    if (locks[at]) at = Math.max(0, locks.findIndex((l) => !l));
     this.tabBar.hidden = tabs.length < 2;
     [...this.tabBar.children].forEach((el2, i) => el2.setAttribute("aria-pressed", String(i === at)));
     for (const p of this.pages) p.hidden = tabs[at]?.page !== p;
@@ -34711,40 +39925,40 @@ var BuildingPanel = class {
     return id === null ? void 0 : this.c.sim.getBuilding(id);
   }
   infoText(b) {
-    const lv2 = levelDef(b);
+    const lv = levelDef(b);
     switch (b.kind) {
       case "infantry":
       case "cavalry":
       case "archery":
-        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} ng\u01B0\u1EDDi, m\u1ED7i ng\u01B0\u1EDDi m\u1ED9t gi\u01B0\u1EDDng \xB7 h\u1ED3i s\u1EE9c \xD7${lv2.craftSpeed.toLocaleString("vi")} (c\u1EA1nh \u0111\u1ED1ng l\u1EEDa ch\u1EC9 \xD7${rest_default.sleepAt.campfire.toLocaleString("vi")})`;
+        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv.slots} ng\u01B0\u1EDDi, m\u1ED7i ng\u01B0\u1EDDi m\u1ED9t gi\u01B0\u1EDDng \xB7 h\u1ED3i s\u1EE9c \xD7${lv.craftSpeed.toLocaleString("vi")} (c\u1EA1nh \u0111\u1ED1ng l\u1EEDa ch\u1EC9 \xD7${rest_default.sleepAt.campfire.toLocaleString("vi")})`;
       case "house":
-        return `C\u1EA5p ${b.level}: ${lv2.slots} gi\u01B0\u1EDDng cho d\xE2n \xB7 h\u1ED3i s\u1EE9c \xD7${lv2.craftSpeed.toLocaleString("vi")} (c\u1EA1nh \u0111\u1ED1ng l\u1EEDa ch\u1EC9 \xD7${rest_default.sleepAt.campfire.toLocaleString("vi")})`;
+        return `C\u1EA5p ${b.level}: ${lv.slots} gi\u01B0\u1EDDng cho d\xE2n \xB7 h\u1ED3i s\u1EE9c \xD7${lv.craftSpeed.toLocaleString("vi")} (c\u1EA1nh \u0111\u1ED1ng l\u1EEDa ch\u1EC9 \xD7${rest_default.sleepAt.campfire.toLocaleString("vi")})`;
       case "field":
-        return `C\u1EA5p ${b.level}: ${lv2.slots} n\xF4ng d\xE2n l\xE0m m\u1ED9t l\xFAc \xB7 n\u0103ng su\u1EA5t \xD7${lv2.craftSpeed.toLocaleString("vi")} (cu\u1ED1c \u0111\xE1 l\xE0m nhanh h\u01A1n)`;
+        return `C\u1EA5p ${b.level}: ${lv.slots} n\xF4ng d\xE2n l\xE0m m\u1ED9t l\xFAc \xB7 n\u0103ng su\u1EA5t \xD7${lv.craftSpeed.toLocaleString("vi")} (cu\u1ED1c \u0111\xE1 l\xE0m nhanh h\u01A1n)`;
       case "builder":
-        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} th\u1EE3 x\xE2y \xB7 x\xE2y nhanh \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv.slots} th\u1EE3 x\xE2y \xB7 x\xE2y nhanh \xD7${lv.craftSpeed.toLocaleString("vi")}`;
       case "workshop":
-        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} ng\u01B0\u1EDDi ch\u1EBF t\u1EA1o \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv.slots} ng\u01B0\u1EDDi ch\u1EBF t\u1EA1o \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv.craftSpeed.toLocaleString("vi")}`;
       case "lab":
-        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} nh\xE0 nghi\xEAn c\u1EE9u \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
-      case "repair":
-        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv2.slots} th\u1EE3 s\u1EEDa \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv2.craftSpeed.toLocaleString("vi")}`;
+        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv.slots} nh\xE0 nghi\xEAn c\u1EE9u \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv.craftSpeed.toLocaleString("vi")}`;
+      case "stable":
+        return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv.slots} ng\u01B0\u1EDDi thu\u1EA7n th\xFA \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv.craftSpeed.toLocaleString("vi")} \xB7 thu\u1EA7n \u0111\u01B0\u1EE3c ${MOUNT_KINDS.filter((k) => MOUNTS[k].tier <= b.level).map((k) => MOUNTS[k].name.toLowerCase()).join(", ")}`;
       case "wartent":
         return `C\u1EA5p ${b.level}: t\u1ED1i \u0111a ${this.c.sim.squadLimit()} \u0111\u1ED9i, ${this.c.sim.cardLimit()} th\u1EBB l\u1EC7nh cho m\u1ED9t k\u1EBF ho\u1EA1ch \xB7 v\xE0o l\u1EC1u l\xE0 game t\u1EA1m d\u1EEBng`;
       case "farmhouse":
       case "huntlodge":
       case "lumberyard":
       case "quarry":
-        return `C\u1EA5p ${b.level}: giao vi\u1EC7c cho t\u1ED1i \u0111a ${lv2.slots} ng\u01B0\u1EDDi \xB7 n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm`;
+        return `C\u1EA5p ${b.level}: giao vi\u1EC7c cho t\u1ED1i \u0111a ${lv.slots} ng\u01B0\u1EDDi \xB7 n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm`;
       case "scouttent":
-        return `C\u1EA5p ${b.level}: c\u1EED t\u1ED1i \u0111a ${lv2.slots} trinh s\xE1t m\u1ED9t chuy\u1EBFn \xB7 tab Trinh s\xE1t \u0111\u1EC3 ch\u1ECDn ng\u01B0\u1EDDi v\xE0 l\xE0ng c\u1EA7n d\xF2`;
+        return `C\u1EA5p ${b.level}: c\u1EED t\u1ED1i \u0111a ${lv.slots} trinh s\xE1t m\u1ED9t chuy\u1EBFn \xB7 tab Trinh s\xE1t \u0111\u1EC3 ch\u1ECDn ng\u01B0\u1EDDi v\xE0 l\xE0ng c\u1EA7n d\xF2`;
       case "storage":
-        return `S\u1EE9c ch\u1EE9a ${lv2.cap} m\u1ED7i lo\u1EA1i`;
+        return `S\u1EE9c ch\u1EE9a ${lv.cap} m\u1ED7i lo\u1EA1i`;
       case "toolstore":
       case "armory":
-        return `Ch\u1EE9a t\u1ED1i \u0111a ${lv2.cap} m\xF3n`;
+        return `Ch\u1EE9a t\u1ED1i \u0111a ${lv.cap} m\xF3n`;
       default:
-        return `N\u01A1i d\xE2n ng\u1EE7 quanh l\u1EEDa \xB7 ch\u1EE9a ${lv2.cap} m\u1ED7i lo\u1EA1i \xB7 t\u1ED1i \u0111a ${this.c.sim.popCap()} d\xE2n \xB7 c\xE1c nh\xE0 kh\xE1c l\xEAn \u0111\u01B0\u1EE3c c\u1EA5p ${levelCapByFire(b.level)}`;
+        return `N\u01A1i d\xE2n ng\u1EE7 quanh l\u1EEDa \xB7 ch\u1EE9a ${lv.cap} m\u1ED7i lo\u1EA1i \xB7 t\u1ED1i \u0111a ${this.c.sim.popCap()} d\xE2n \xB7 c\xE1c nh\xE0 kh\xE1c l\xEAn \u0111\u01B0\u1EE3c c\u1EA5p ${levelCapByFire(b.level)}`;
     }
   }
   update() {
@@ -34765,8 +39979,9 @@ var BuildingPanel = class {
       return;
     }
     if (!ctl2.buildingOpen) return;
-    const def = BUILDINGS[b.kind], lv2 = levelDef(b), top = maxLevel(b.kind, b.era), ready = b.done;
-    this.title.textContent = `${buildingName(b.kind, b.era)}${def.buildable ? ` \xB7 c\u1EA5p ${b.level}/${top} (${lv2.name.toLowerCase()})` : ""}`;
+    if (b.kind !== "lab") this.labSub = null;
+    const def = BUILDINGS[b.kind], lv = levelDef(b), top = maxLevel(b.kind, b.era), ready = b.done;
+    this.title.textContent = `${buildingName(b.kind, b.era)}${def.buildable ? ` \xB7 c\u1EA5p ${b.level}/${top} (${lv.name.toLowerCase()})` : ""}`;
     this.state.textContent = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%` : "\u0111ang d\xF9ng";
     this.showTabs(b.kind, ready);
     this.info.textContent = !b.done ? "Giao d\xE2n l\xE0m Th\u1EE3 x\xE2y \u0111\u1EC3 d\u1EF1ng c\xF4ng tr\xECnh n\xE0y." : this.infoText(b);
@@ -34782,12 +39997,13 @@ var BuildingPanel = class {
     if ((b.kind === "infantry" || b.kind === "cavalry" || b.kind === "archery" || b.kind === "house") && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind].update();
     if (b.kind === "field" && ready) this.staffBoxes.farm.update(b);
+    if (b.kind === "builder" && ready) this.staffBoxes.build.update(b);
     if (b.kind === "tower" && ready) this.updateTower(b);
     if (b.kind === "wartent" && ready) this.war.update();
     if (b.kind === "scouttent" && ready) this.scoutPane.update();
     if (b.kind === "workshop" && ready) this.updateWorkshop(b);
     if (b.kind === "lab" && ready) this.updateLab(b);
-    if (b.kind === "repair" && ready) this.updateRepair(b);
+    if (b.kind === "stable" && ready) this.updateStable(b);
     if (b.kind === "toolstore" || b.kind === "armory") {
       if (ready) this.updateGoods(b);
     }
@@ -34810,52 +40026,21 @@ var BuildingPanel = class {
     this.staffBoxes.research.update(b);
     this.activeBoxes.research.update(b);
     const waiting = sim2.researchQueue[0];
-    this.queueNote.research.textContent = `${waiting ? `Ch\u1EDD b\u1EAFt \u0111\u1EA7u: ${TECHS.find((t) => t.id === waiting)?.name ?? waiting}` : "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9"} \xB7 Ng\u01B0\u1EDDi gi\u1ECFi nh\u1EA5t trong nh\xE0: Tr\xED tu\u1EC7 ${sim2.bestIntInside(b)}`;
-    for (const r of this.techRows) {
-      const t = TECHS.find((x) => x.id === r.id), st = sim2.techState(t), block = st.state === "queued" ? sim2.researchBlock(t) : null;
-      r.row.classList.toggle("locked", st.state === "locked");
-      r.row.classList.toggle("done", st.state === "done");
-      const busy2 = st.state === "ready" && sim2.currentResearch() !== null, short = st.state === "ready" && !busy2 ? sim2.researchShort(t) : null;
-      r.note.textContent = busy2 ? "\u0110\u1EE3i nghi\xEAn c\u1EE9u hi\u1EC7n t\u1EA1i xong" : short ? short : st.state === "locked" ? st.why ?? "" : st.state === "active" ? "\u0110ang nghi\xEAn c\u1EE9u\u2026" : st.state === "queued" ? block ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u, ch\u1EDD b\u1EAFt \u0111\u1EA7u" : st.state === "done" ? "\u0110\xE3 nghi\xEAn c\u1EE9u" : "";
-      r.btn.textContent = { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state];
-      r.btn.disabled = st.state === "done" || st.state === "active" || st.state === "locked" || busy2 || !!short;
-    }
+    this.queueNote.research.textContent = `${waiting ? `Ch\u1EDD b\u1EAFt \u0111\u1EA7u: ${TECH_BY_ID[waiting]?.name ?? waiting}` : "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9"}`;
+    for (const t of this.trees) t.update();
   }
-  updateRepair(b) {
-    const { sim: sim2, ctl: ctl2 } = this.c;
-    this.staffBoxes.repair.update(b);
-    this.activeBoxes.repair.update(b);
-    this.queueNote.repair.textContent = `H\xE0ng \u0111\u1EE3i s\u1EEDa ${sim2.repairQueue.length}: ${sim2.repairQueue.map((id) => recipeName(RECIPE_BY_ID[id]).toLowerCase()).join(", ") || "tr\u1ED1ng"}`;
-    this.repairInfo.textContent = "";
-    const rows = [];
-    for (const v of sim2.villagers) for (const k of TOOL_KINDS) {
-      const t = v.tools[k];
-      if (t) rows.push({ v, k, t });
+  updateStable(b) {
+    const { sim: sim2 } = this.c;
+    this.staffBoxes.tame.update(b);
+    this.activeBoxes.tame.update(b);
+    this.mountNote.textContent = `H\xE0ng \u0111\u1EE3i ${sim2.tameQueue.length}: ${sim2.tameQueue.map((k) => MOUNTS[k]?.name.toLowerCase()).join(", ") || "tr\u1ED1ng"} \xB7 trong chu\u1ED3ng: ${MOUNT_KINDS.map((k) => `${sim2.tamedCount(k)} ${MOUNTS[k].name.toLowerCase()}`).join(", ")}`;
+    for (const r of this.mountRows) {
+      const lock = sim2.tameLock(r.k);
+      r.have.textContent = lock ? "" : `chu\u1ED3ng ${sim2.tamedCount(r.k)} \xB7 \u0111\u1EE3i ${sim2.tameQueue.filter((x) => x === r.k).length}`;
+      r.row.classList.toggle("locked", !!lock);
+      r.lock.textContent = lock ?? "";
+      for (const btn of r.btns) btn.disabled = !!lock;
     }
-    const key = rows.map((r) => `${r.v.id}${r.k}${r.t.tier}${Math.ceil(r.t.dur / TIER_DURABILITY[r.t.tier] * 10)}`).join();
-    if (key === this.toolKey) return;
-    this.toolKey = key;
-    this.toolList.replaceChildren(...rows.length ? rows.map(({ v, k, t }) => {
-      const pct3 = Math.round(t.dur / TIER_DURABILITY[t.tier] * 100), whole = pct3 >= 100;
-      return h(
-        "div",
-        { class: "row" },
-        h("div", { class: "nm" }, `${v.name}: ${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()}`, h("small", { text: t.dur <= 0 ? "\u0111\xE3 h\u1ECFng" : `c\xF2n ${pct3}% \u0111\u1ED9 b\u1EC1n` })),
-        h(
-          "div",
-          { class: "btns" },
-          h("button", { class: "sm", text: "\u0110i s\u1EEDa", disabled: whole || v.phase === "goOrder", onclick: () => {
-            const e = sim2.repairTool([v.id], k);
-            if (e) this.c.toast(e);
-            ctl2.onChange();
-          } }),
-          h("button", { class: "sm", text: "B\u1ECF", onclick: () => {
-            sim2.discardTool([v.id], k);
-            ctl2.onChange();
-          } })
-        )
-      );
-    }) : [h("p", { class: "sub", text: "Ch\u01B0a c\xF3 d\xE2n n\xE0o c\u1EA7m c\xF4ng c\u1EE5." })]);
   }
   updateGoods(b) {
     const { sim: sim2 } = this.c, cat = b.kind === "toolstore" ? "tool" : "gear";
@@ -34911,6 +40096,8 @@ var WarBar = class {
     this.key = "";
     /** Folded away: only a button to open it again stays on the screen. */
     this.folded = false;
+    /** How many soldiers the player picked to break down what halted each squad. */
+    this.crew = /* @__PURE__ */ new Map();
   }
   /** The attack that is deployed, if any. */
   plan() {
@@ -34918,6 +40105,29 @@ var WarBar = class {
   }
   get active() {
     return !!this.plan();
+  }
+  /** A squad that cannot go on along its arrow: what is in the way, and the soldiers to send to break it down (they work fast and gather nothing). */
+  blockedRow(plan2, m, act) {
+    const { sim: sim2 } = this.c, s = sim2.squadById(m.squad), b = m.block, alive = sim2.squadUnits(s).length, working = sim2.squadUnits(s).filter((v) => v.breaks).length;
+    const n = Math.min(alive, this.crew.get(m.squad) ?? Math.min(3, alive)), pick = document.createElement("select");
+    for (let i = 1; i <= alive; i++) {
+      const o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = `${i} l\xEDnh`;
+      pick.append(o);
+    }
+    pick.value = String(Math.max(1, n));
+    pick.addEventListener("change", () => {
+      this.crew.set(m.squad, Number(pick.value));
+    });
+    const why = b.kind === "enemy" ? `\u0111ang ph\xE1 ${b.label.toLowerCase()} ch\u1EAFn \u0111\u01B0\u1EDDng` : b.clear ? `v\u01B0\u1EDBng ${b.label} \u1EDF (${b.x}, ${b.y})` : `v\u01B0\u1EDBng ${b.label} \u1EDF (${b.x}, ${b.y}), kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c`;
+    return h(
+      "div",
+      { class: "wardlg" },
+      h("b", { text: `\u26D4 ${s.name} kh\xF4ng th\u1EC3 di chuy\u1EC3n ti\u1EBFp` }),
+      h("span", { text: working ? `${why} \xB7 ${working} l\xEDnh \u0111ang ph\xE1\u2026` : why }),
+      ...b.clear && b.kind !== "enemy" ? [pick, h("button", { class: "sm primary", text: "\u{1FA93} Ph\xE1 v\u1EADt th\u1EC3", title: "C\u1EED s\u1ED1 l\xEDnh n\xE0y trong \u0111\u1ED9i \u0111i ph\xE1 v\u1EADt c\u1EA3n: h\u1ECD ph\xE1 r\u1EA5t nhanh v\xE0 kh\xF4ng nh\u1EADn t\xE0i nguy\xEAn", onclick: () => act(sim2.breakBlock(plan2, m.squad, Number(pick.value))) })] : !b.clear ? [h("small", { text: "H\xE3y r\xFAt lui ho\u1EB7c ch\u1EDD." })] : []
+    );
   }
   update() {
     const { sim: sim2, toast } = this.c, plan2 = this.plan();
@@ -34934,7 +40144,8 @@ var WarBar = class {
     const inPlace = units.filter((v) => !v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5).length;
     const camp = sim2.tribes.find((t) => t.id === plan2.tribe)?.camp, ours = units.length;
     const theirs = camp ? sim2.foes.filter((f) => f.health > 0 && f.ai && f.ai.role !== "civ" && Math.hypot(f.x - camp.x, f.y - camp.y) < 40).length : 0;
-    const key = [plan2.id, plan2.stage, inPlace, ours, Math.floor(theirs / 3), sim2.battle.on, this.folded].join("|");
+    const blocked = plan2.missions.filter((m) => m.state === "blocked" && m.block);
+    const key = [plan2.id, plan2.stage, inPlace, ours, Math.floor(theirs / 3), sim2.battle.on, this.folded, blocked.map((m) => `${m.squad}:${m.block.x},${m.block.y}:${sim2.squadUnits(sim2.squadById(m.squad)).length}:${this.crew.get(m.squad) ?? 0}`).join()].join("|");
     if (key === this.key) return;
     this.key = key;
     const act = (e) => {
@@ -34964,7 +40175,13 @@ var WarBar = class {
       this.root.replaceChildren(h("button", { class: "sm danger", text: "\u2694 Chi\u1EBFn tranh \u25B8", title: "M\u1EDF l\u1EA1i b\u1EA3ng chi\u1EBFn \u0111\u1EA5u", onclick: fold(false) }));
       return;
     }
-    this.root.replaceChildren(h("b", { text: "\u2694 Ch\u1EBF \u0111\u1ED9 chi\u1EBFn tranh" }), h("span", { text: state }), ...buttons, h("button", { class: "sm", text: "\u25BE \u1EA8n", title: "\u1EA8n b\u1EA3ng, ch\u1EC9 \u0111\u1EC3 l\u1EA1i m\u1ED9t n\xFAt m\u1EDF l\u1EA1i", onclick: fold(true) }));
+    this.root.replaceChildren(
+      h("b", { text: "\u2694 Ch\u1EBF \u0111\u1ED9 chi\u1EBFn tranh" }),
+      h("span", { text: state }),
+      ...buttons,
+      h("button", { class: "sm", text: "\u25BE \u1EA8n", title: "\u1EA8n b\u1EA3ng, ch\u1EC9 \u0111\u1EC3 l\u1EA1i m\u1ED9t n\xFAt m\u1EDF l\u1EA1i", onclick: fold(true) }),
+      ...blocked.map((m) => this.blockedRow(plan2, m, act))
+    );
   }
 };
 
@@ -35161,7 +40378,7 @@ step2("panels update for every kind of building", () => {
   }
 });
 step2("every building has art for each level and stage, and every recipe an icon", () => {
-  for (const kind of Object.keys(BUILDINGS)) for (let lv2 = 1; lv2 <= maxLevel(kind, "stone") + (kind === "gate" ? 2 : 0); lv2++) for (let st = 0; st <= 4; st++) sprites.building(kind, "stone", lv2, st);
+  for (const kind of Object.keys(BUILDINGS)) for (let lv = 1; lv <= maxLevel(kind, "stone") + (kind === "gate" ? 2 : 0); lv++) for (let st = 0; st <= 4; st++) sprites.building(kind, "stone", lv, st);
   const missing2 = RECIPES.filter((r) => !sprites.icons[r.id]).map((r) => r.id);
   if (missing2.length) throw new Error(`no icon for ${missing2.join(", ")}`);
 });

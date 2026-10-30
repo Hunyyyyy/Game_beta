@@ -5,8 +5,8 @@ import type { Ctx } from './ctx';
 
 /** What each house is for, shown when the card's ⓘ is tapped. */
 const ROLE: Partial<Record<BuildingKind, string>> = {
-builder: 'Dân làm thợ xây ở đây (do bạn chọn). Phải có nhà này mới dựng được các công trình khác.', storage: 'Cất tài nguyên.', lab: 'Nghiên cứu bản vẽ, quân sự và tự động hóa. Dân thông minh làm việc bên trong.',
-workshop: 'Chế tạo công cụ, vũ khí, giáp theo bản vẽ. Dân làm việc bên trong.', repair: 'Sửa công cụ đã mòn. Dân làm việc bên trong.',
+builder: 'Dân làm thợ xây ở đây (do bạn chọn). Phải có nhà này mới dựng được các công trình khác.', storage: 'Cất tài nguyên.', lab: 'Nghiên cứu bản vẽ, quân sự và tự động hóa. Dân làm việc bên trong.',
+workshop: 'Chế tạo công cụ, vũ khí, giáp theo bản vẽ. Dân làm việc bên trong.',
 infantry: 'Trại của chiến binh cận chiến: tuyển và cho nghỉ ở đây, họ cũng ngủ ở đây và hồi sức nhanh hơn nằm cạnh đống lửa. Chỉ xây một cái; nâng cấp để chứa thêm người.',
 cavalry: 'Trại của người cưỡi thú: xung phong nhanh, khắc người ném nhưng sợ giáo. Chỉ xây một cái; nâng cấp để chứa thêm người.',
 archery: 'Trại của người ném đá, bắn ná: đánh từ xa, lên được chòi canh. Chỉ xây một cái; nâng cấp để chứa thêm người.',
@@ -30,7 +30,7 @@ toolstore: 'Cất công cụ cho dân tự lấy.', armory: 'Cất vũ khí và 
 /** The build categories, in the order of the tabs. */
 const GROUPS: Array<[string, BuildingKind[]]> = [
   ['Thiết yếu', ['builder', 'storage', 'house', 'field']],
-  ['Sản xuất', ['workshop', 'lab', 'repair', 'toolstore', 'armory']],
+  ['Sản xuất', ['workshop', 'lab', 'toolstore', 'armory']],
   ['Tài nguyên', ['farmhouse', 'huntlodge', 'lumberyard', 'quarry', 'stable']],
   ['Quân sự', ['infantry', 'cavalry', 'archery', 'wartent', 'scouttent', 'drill']],
   ['Phòng thủ', ['fence', 'gate', 'tower', 'trap']],

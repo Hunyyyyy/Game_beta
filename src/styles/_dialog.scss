@@ -1,0 +1,113 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+// ---- the dialog of the game (src/ui/gamedialog.ts): one scroll for the research details, the quests, the notices, a question, the start ----
+// the dark backdrop; a click on it closes the dialog
+.gdlg-back {
+  display: grid; place-items: center; padding: 12px; background: rgba(0, 0, 0, .6);
+  &.fixed { position: fixed; inset: 0; z-index: 48; }
+  &.inside { position: absolute; inset: 0; z-index: 20; }
+}
+// the scroll itself
+.gdlg {
+  // a drawn picture without a size of its own (the food in a tile, a resource in a line) is one line high, not as wide as the page
+  .ico { display: inline-flex; flex: none; width: 18px; height: 18px; vertical-align: middle; }
+
+  position: relative; width: min(340px, 100%); max-height: 100%; overflow: auto; display: grid; gap: 8px; padding: 14px 16px 16px;
+  background: linear-gradient(#e7d3a4, #d6bd86); color: #3a2c1c; border: 3px solid #8a6a36; border-radius: 10px; box-shadow: 0 6px 24px rgba(0, 0, 0, .6);
+  .dhead { display: flex; align-items: center; gap: 12px; padding-right: 22px; }
+  .dpic { flex: none; display: grid; place-items: center; width: 64px; height: 64px; background: #1d160e; border: 2px solid #6b5a3a; border-radius: 8px; canvas { max-width: 100%; max-height: 100%; image-rendering: pixelated; } .ico { width: 48px; height: 48px; } }
+  .dwho { flex: 1; display: grid; gap: 5px; }
+  .dtitle { font-size: 15px; }
+  .dbar { position: relative; display: block; height: 14px; background: #2a1f12; border: 1px solid #000; border-radius: 7px; overflow: hidden; b { display: block; height: 100%; background: #e0a23c; } span { position: absolute; inset: 0; display: grid; place-items: center; font: 700 10px system-ui, sans-serif; color: #fff6e8; text-shadow: 0 1px 2px #000; } }
+  .dclose { position: absolute; top: 6px; right: 8px; background: none; border: 0; color: #5a3a14; font-size: 18px; cursor: pointer; }
+  .dline { display: grid; gap: 2px; text-align: center; font-weight: 700; background: rgba(255, 255, 255, .35); border-radius: 6px; padding: 5px; span:first-child { color: #6a4a18; } span:last-child { color: #2f7a2c; } }
+  .dtext { margin: 0; font-size: 12.5px; line-height: 1.4; background: rgba(120, 90, 40, .16); border-radius: 6px; padding: 6px 8px; }
+  .dcosts { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; }
+  .dcost { display: inline-flex; align-items: center; gap: 3px; .ico { width: 22px; height: 22px; } small { color: #6a5a3a; } &.short b { color: #b8322a; } }
+  .dneed { text-align: center; color: #6a4a18; }
+  .lock { text-align: center; color: #b8322a; }
+  .dgo { justify-self: center; min-width: 150px; padding: 8px 18px; font: 700 14px system-ui, sans-serif; color: #fff6e8; background: linear-gradient(#4d8a7a, #2f6a5c); border: 2px solid #1c4a40; border-radius: 8px; cursor: pointer; &:disabled { filter: grayscale(.7); opacity: .6; cursor: default; } }
+  &.wide { width: min(440px, 100%); }
+  .dsub { color: #6a5a3a; font-size: 12px; }
+  .dpic.glyph { font-size: 30px; line-height: 1; }
+  .dwho .dbar.thin { height: 10px; }
+  // a list of tiles
+  .dlist { display: grid; gap: 8px; }
+  .dempty { margin: 18px 0; text-align: center; color: #6a5a3a; font-size: 14px; }
+  .dtile {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(255, 255, 255, .35); border: 1px solid #b89a5e; border-radius: 8px;
+    .dpic { width: 44px; height: 44px; font-size: 22px; .ico { width: 28px; height: 28px; } }
+    .dmain { flex: 1; min-width: 0; display: grid; gap: 3px; }
+    .dname { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; b { font-size: 13.5px; } }
+    .dmore { font-size: 12.5px; color: #5a4a2c; }
+    .dtext { padding: 4px 6px; }
+    &.now { background: rgba(255, 255, 255, .6); border-color: #e0a23c; box-shadow: inset 3px 0 0 #e0a23c; align-items: flex-start; .dname b { font-size: 14.5px; } }
+    &.done { opacity: .6; .dname b { font-weight: 500; text-decoration: line-through; } .dpic { border-color: #4f8a38; } }
+    &.lock { opacity: .5; }
+    &.urgent { border-color: #c8322c; box-shadow: inset 3px 0 0 #c8322c; }
+    &.warn { border-color: #d8a23a; box-shadow: inset 3px 0 0 #d8a23a; }
+    &.info { border-color: #4d8a7a; box-shadow: inset 3px 0 0 #4d8a7a; }
+  }
+  .dchip { padding: 1px 7px; border-radius: $radius-pill; background: rgba(120, 90, 40, .2); color: #5a3a14; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .dgo.sm { min-width: 0; padding: 5px 10px; font-size: 12.5px; white-space: nowrap; }
+  // the buttons at the foot of a question
+  .dbtns { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; .dgo { min-width: 110px; } }
+  .dgo.alt { color: #3a2c1c; background: linear-gradient(#efe0b8, #d8c28c); border-color: #8a6a36; }
+  .dgo.bad { background: linear-gradient(#c8584a, #9a2f26); border-color: #6a1c16; }
+  .dwhy { margin: 0; text-align: center; color: #b8322a; font-weight: 700; }
+}
+
+// ---- inside the scroll, the ordinary controls take the colours of the parchment ----
+.gdlg {
+  @include parchment-theme;
+  .dbody { display: grid; gap: 14px; }
+  section { display: grid; gap: 6px; align-content: start; }
+  section > h3, .hinthead h3 { margin: 0; font-size: 13px; color: #6a4a18; text-transform: none; letter-spacing: 0; }
+  button.sm { @include parchment-button; }
+}
+// the stats of a person: a picture, the name, the number
+.gdlg .dstats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; }
+.gdlg .dstat {
+  display: flex; align-items: center; gap: 6px; min-width: 0; padding: 3px 6px; border-radius: 6px; background: rgba(255, 255, 255, .3);
+  .dsico { flex: none; display: inline-flex; width: 20px; height: 20px; }
+  .dsname { flex: 1; min-width: 0; font-size: 12.5px; @include ellipsis; }
+  b { font-variant-numeric: tabular-nums; font-size: 13.5px; }
+  &.up b { color: #2f7a2c; }
+  &.down b { color: #b8322a; }
+}
+@media (max-width: 420px) { .gdlg .dstats { grid-template-columns: 1fr; } }
+
+// ---- parts for people and houses ----
+.gdlg {
+  .dpill { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px 1px 4px; border-radius: $radius-pill; background: rgba(255, 255, 255, .45); border: 1px solid #b89a5e; font-size: 12px; white-space: nowrap;
+    .dpp { display: inline-flex; width: 15px; height: 15px; .ico { width: 15px; height: 15px; } }
+    b { font-variant-numeric: tabular-nums; }
+    &.good { border-color: #4f8a38; color: #2f6a1c; }
+    &.warn { border-color: #d8a23a; color: #8a5a10; }
+    &.bad { border-color: #c8322c; color: #b8322a; background: rgba(200, 50, 44, .12); } }
+  .dpills { display: flex; flex-wrap: wrap; gap: 4px; }
+  .dslots { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: #5a3a14;
+    i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #8a6a36; background: transparent; &.on { background: #e0a23c; } } }
+  .dring { --p: 0; flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#e0a23c calc(var(--p) * 1%), rgba(60, 40, 10, .22) 0);
+    > span { width: 36px; height: 36px; border-radius: 50%; background: #efe0b8; display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #3a2c1c; } }
+  .dacts { flex: none; display: flex; gap: 4px; align-items: center; }
+  .dgo.ic { min-width: 30px; width: 30px; height: 30px; padding: 0; border-radius: 8px; font-size: 14px; line-height: 1; }
+  .dhouse { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 4px 2px; b { font-size: 14px; color: #5a3a14; } }
+}
+
+// ---- the panel of a building is a scroll too: the head stays, the body scrolls, tabs and pages take the colours of the parchment ----
+.gdlg.gbuild {
+  width: min(720px, 100%); height: min(680px, 100%); display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden;
+  > .dhead { padding: 12px 40px 10px 14px; border-bottom: 2px solid #8a6a36; background: rgba(120, 90, 40, .14); }
+  > .mbody { flex: 1; min-height: 0; max-width: none; margin: 0; padding: 10px 14px 14px; }
+  .tabs { background: #e7d3a4; }
+}
+
+// ---- the people of the campfire: a list of tiles to pick from, the details of the picked one beside it ----
+.gdlg {
+  .split { grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.2fr); }
+  .dtile.pick { cursor: pointer; &:hover { border-color: #e0a23c; } }
+  .ppane { position: static; background: rgba(255, 255, 255, .25); border-color: #b89a5e;
+    .dhead { padding-right: 0; } }
+}

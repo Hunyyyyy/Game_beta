@@ -3,6 +3,7 @@
  * slower; soldiers fight on whatever their energy and sleep long afterwards; nobody can be worked night after night (strain).
  * All the numbers are in src/data/rest.json.
  */
+import { drainScale } from './statsys';
 import restJson from '../data/rest.json';
 import { Building, levelDef } from './buildings';
 import { DAY_LENGTH } from './constants';
@@ -35,8 +36,8 @@ export function drainRate(sim: Sim, v: Villager): number {
     case 'goHome': k = 0.3; break;
     default: k = w * 0.8; // on the way somewhere
   }
-  const cond = (1.25 - 0.25 * fit(v)) * (1.2 - 0.2 * (v.morale / 100)) * (1.3 - 0.3 * hpFrac(v));
-  return (REST.dayCost / DAY_HOURS) * k * cond;
+  const cond = (1.25 - 0.25 * fit(v)) * (1.3 - 0.3 * hpFrac(v));
+  return (REST.dayCost / DAY_HOURS) * k * cond * drainScale(sim, v);
 }
 
 // ---------------------------------------------------------------- beds
@@ -73,7 +74,7 @@ function bedFactor(sim: Sim, v: Villager): number {
 /** Percentage points gained per second while asleep. Night sleep is twice as good as sleep by day. */
 export function sleepRate(sim: Sim, v: Villager): number {
   const base = (sim.resting ? REST.sleepNight : REST.sleepDay) / NIGHT_HOURS;
-  const q = (0.8 + 0.4 * fit(v)) * (0.85 + 0.15 * (v.morale / 100)) * (0.7 + 0.3 * hpFrac(v)) * Math.max(0.3, 1 - v.strain * REST.strain.recoveryLoss);
+  const q = (0.8 + 0.4 * fit(v)) * (0.7 + 0.3 * hpFrac(v)) * Math.max(0.3, 1 - v.strain * REST.strain.recoveryLoss);
   return base * q * bedFactor(sim, v);
 }
 
@@ -129,7 +130,7 @@ export function onShift(sim: Sim, v: Villager): boolean {
   return v.shift === 'night' ? night : !night;
 }
 
-/** Posted to a house to work inside it (craft, research, repair, tame, a Ruộng) or crew of the Nhà thợ xây's own roof. */
+/** Posted to a house to work inside it (craft, research, tame, a Ruộng) or crew of the Nhà thợ xây's own roof. */
 const indoors = (v: Villager): boolean => isStaffJob(v.job) || (v.job === 'food' && v.post >= 0);
 
 /** Whether the villager should be up and working: on shift, and at night with a torch (soldiers on watch need none). */
@@ -162,7 +163,7 @@ export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
   } else if (!sim.dev.noTire && !(v.job === 'fight' && sim.warLock())) {
     const working = v.job !== 'idle' && (v.phase === 'work' || v.phase === 'build' || v.phase === 'craft' || v.phase === 'inside' || v.phase === 'fight');
     v.energy = Math.max(0, v.energy - drainRate(sim, v) * dt);
-    if (sim.resting && working) { v.strain = Math.min(100, v.strain + REST.strain.nightWork * dt); if (v.job !== 'fight') v.morale = Math.max(0, v.morale - REST.strain.moraleLoss * dt); }
+    if (sim.resting && working) { v.strain = Math.min(100, v.strain + REST.strain.nightWork * dt); }
   }
   if (v.energy > top) v.energy = top;
   if (v.torch && sim.resting && v.phase !== 'sleep') {

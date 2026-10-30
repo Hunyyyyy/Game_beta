@@ -71,7 +71,6 @@
     b {
       display: block; height: 100%; width: 0; background: var(--good); transition: width .2s;
       &.bad { background: var(--bad); }
-      &.mor { background: #6d8fd8; }
       &.arm { background: #9aa0a4; }
       &.en { background: #d8b13a; &.low { background: var(--bad); } }
     }

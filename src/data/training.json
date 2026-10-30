@@ -18,16 +18,15 @@
   "profiles": {
     "infantry":   { "main": "str", "partner": "vit", "cost": "agi" },
     "archery":    { "main": "agi", "partner": "sta", "cost": "str" },
-    "cavalry":    { "main": "agi", "partner": "sta", "cost": "int" },
+    "cavalry":    { "main": "agi", "partner": "sta", "cost": "vit" },
     "lumberyard": { "main": "str", "partner": "vit", "cost": "agi" },
     "quarry":     { "main": "str", "partner": "vit", "cost": "agi" },
     "farmhouse":  { "main": "agi", "partner": "sta", "cost": "str" },
     "huntlodge":  { "main": "agi", "partner": "sta", "cost": "str" },
-    "builder":    { "main": "sta", "partner": "str", "cost": "int" },
-    "workshop":   { "main": "int", "cost": "sta" },
-    "lab":        { "main": "int", "cost": "sta" },
+    "builder":    { "main": "sta", "partner": "str", "cost": "vit" },
+    "workshop":   { "main": "agi", "cost": "sta" },
+    "lab":        { "main": "sta", "cost": "agi" },
     "stable":     { "main": "agi", "partner": "sta", "cost": "str" },
-    "repair":     { "main": "agi", "partner": "int", "cost": "vit" },
     "scouttent":  { "main": "agi", "partner": "sta", "cost": "str" }
   }
 }

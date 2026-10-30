@@ -6,7 +6,6 @@
 import { PACE } from './constants';
 import { levelDef } from './buildings';
 import { MOUNT_KINDS, MOUNTS, MountKind } from './jobs';
-import { RESEARCH } from './research';
 import type { Sim } from './sim';
 import type { Villager } from './model';
 
@@ -16,11 +15,10 @@ export const tamedCount = (sim: Sim, k: MountKind): number => sim.toolStock[stoc
 /** Most tamed beasts the stables can hold unridden. */
 const STOCK_CAP = 12;
 
-/** Why a kind of beast cannot be tamed yet (research, or the stable is too low), or null. */
+/** Why a kind of beast cannot be tamed yet (no stable, or it is too low a level), or null. */
 export function tameLock(sim: Sim, k: MountKind): string | null {
   const d = MOUNTS[k], stable = sim.building('stable');
   if (!stable) return 'Cần dựng Chuồng thú cưỡi';
-  if (RESEARCH.enabled && !sim.dev.freeBuild && !sim.researched.has(d.tech)) return `Cần nghiên cứu: Thuần hóa ${d.name.toLowerCase()}`;
   if (stable.level < d.tier) return `Cần Chuồng thú cưỡi cấp ${d.tier}`;
   return null;
 }

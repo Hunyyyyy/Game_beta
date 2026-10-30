@@ -87,7 +87,7 @@ function step(sim: Sim, a: Animal, tx: number, ty: number, speed: number, dt: nu
   const dx = tx - a.x, dy = ty - a.y, d = Math.hypot(dx, dy);
   if (d < 0.05) return true;
   const k = Math.min(d, speed * dt) / d, sx = dx * k, sy = dy * k, w = sim.world, water = ANIMALS[a.species].habitat === 'water';
-  // wolves never step into firelight, whatever they are doing
+  // animals that fear fire (the fox and the lion; not the wolf) never step into firelight, whatever they are doing
   const fear = ANIMALS[a.species].fearsFire;
   if (fear) { const nf = fireDistance(sim, a.x + sx, a.y + sy); if (nf < fear && nf < fireDistance(sim, a.x, a.y)) return false; }
   const free = (x: number, y: number) => water ? isWater(sim, Math.floor(x), Math.floor(y)) : w.inBounds(Math.floor(x), Math.floor(y)) && !w.isBlocked(Math.floor(x), Math.floor(y));

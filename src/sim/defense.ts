@@ -1,6 +1,6 @@
 /** Defence works: fences and gates that stop people, and towers where archers keep watch. */
 import { Building, BUILDINGS, levelDef } from './buildings';
-import { cycleOf } from './combat';
+import { swingCycle } from './statsys';
 import { effWeapon, fireProjectile, hurt, resolve, threatsOf, weaponOf } from './battle';
 import { armOfWeapon, UNIT_RULES } from './formations';
 import type { Sim } from './sim';
@@ -101,7 +101,7 @@ export function tickTowers(sim: Sim, _dt: number): void {
       const w = weaponOf(v);
       if (!w.ranged) continue;
       const bonus = towerBonus(sim, v), threat = threatsOf(sim, v, w.range + bonus.range + 1)[0], e = threat && resolve(sim, threat.t);
-      if (e && fireProjectile(sim, v, e, from, bonus.damage, bonus.range)) v.atkCd = cycleOf(w.cycle, v.stats.agi);
+      if (e && fireProjectile(sim, v, e, from, bonus.damage, bonus.range)) v.atkCd = swingCycle(sim, v, w);
     }
   }
 }

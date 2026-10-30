@@ -10,22 +10,22 @@
 import { CURRENCY, emptyStock, RES_NAME } from './resources';
 import { SIEGE, TRIBES } from './combat';
 import { maxHp } from './buildings';
-import { SCREEN_QUESTS } from './quests';
+import { SCREEN_QUESTS } from './progression';
 import { decode, encode, packRuns, unpackRuns } from './codec';
 import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 17;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
-  scalars: ['era', 'time', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'moraleClock', 'tribeClock', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
+  scalars: ['era', 'time', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
-  records: ['stock', 'toolStock', 'battle'],
+  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev'],
   /** Lists of plain data. */
-  lists: ['wornTools', 'craftQueue', 'tameQueue', 'researchQueue', 'repairQueue', 'log', 'foodLots', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
+  lists: ['wornTools', 'craftQueue', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
   /** Handled by hand below. */
   special: ['researched', 'questSeen', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
 } as const satisfies Record<string, readonly (keyof Sim)[]>;
@@ -37,6 +37,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'dev',         // test switches
   'byId', 'animalById', // rebuilt after loading
   'threatCache', 'pathLeft', // rebuilt every tick
+  'leaderClock', // a timer: leaders are picked again within a second of loading
 ];
 
 type Row = Array<number | string>;
@@ -174,6 +175,24 @@ MIGRATIONS[13] = (d) => {
     sk.tame ??= { xp: 0, level: 0 }; pot.tame ??= st.agi >= 9 ? 3 : st.agi >= 6 ? 2 : 1;
   }
   return { ...d, version: 14 };
+};
+
+MIGRATIONS[14] = (d) => {
+  // 14 -> 15: no hunger in a villager; the village eats at the end of each day (the pot of the campfire, and the weakness of a short meal)
+  d.scalars.foodPot ??= 0; d.scalars.foodPenalty ??= 0;
+  return { ...d, version: 15 };
+};
+
+MIGRATIONS[15] = (d) => {
+  // 15 -> 16: the village keeps what it earns in food a day, to warn the player (none known yet)
+  d.scalars.foodIncome ??= 0; d.scalars.foodSeen ??= -1; d.lists.foodDays ??= [];
+  return { ...d, version: 16 };
+};
+
+MIGRATIONS[16] = (d) => {
+  // 16 -> 17: the houses of the gatherers show what was brought in today and yesterday (none counted yet)
+  d.records.yieldNow ??= {}; d.records.yieldPrev ??= {};
+  return { ...d, version: 17 };
 };
 
 export function migrate(raw: unknown): GameSave {

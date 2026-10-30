@@ -31,9 +31,8 @@
       "mount": 0.06
     },
     "weights": {
-      "agi": 0.25,
-      "sta": 0.35,
-      "int": 0.4
+      "agi": 0.5,
+      "sta": 0.5
     },
     "stealthPerPoint": 0.015,
     "surveyPerInt": 0.04,

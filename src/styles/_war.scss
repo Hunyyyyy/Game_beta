@@ -5,7 +5,7 @@
 // The board is dark whatever the theme, so it re-points the colour variables for everything inside.
 
 // The map is the whole screen: the bar and the panels float over it and give the room back when they are closed.
-.modal.planfull { padding: 0; }
+.modal.planfull { padding: 0; z-index: 50; } // over the dialog of the war tent
 .planfull .pstage { position: absolute; inset: 0; display: flex; background: #1a1510; }
 .pview {
   position: relative; flex: 1; min-width: 0; overflow: hidden;

@@ -3,15 +3,15 @@ import type { Stock } from './resources';
 import { fireBuildingMax } from './progression';
 import levelData from '../data/buildings.json';
 
-export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'repair' | 'toolstore' | 'armory' | 'infantry' | 'cavalry' | 'archery' | 'farmhouse' | 'huntlodge' | 'lumberyard' | 'quarry' | 'house' | 'field' | 'fence' | 'gate' | 'tower' | 'wartent' | 'scouttent' | 'drill' | 'trap' | 'stable';
+export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'toolstore' | 'armory' | 'infantry' | 'cavalry' | 'archery' | 'farmhouse' | 'huntlodge' | 'lumberyard' | 'quarry' | 'house' | 'field' | 'fence' | 'gate' | 'tower' | 'wartent' | 'scouttent' | 'drill' | 'trap' | 'stable';
 
 /** Eras of the game. Each era has its own building art and its own level list (L1..L3). */
 export type Era = 'stone' | 'ancient';
 export const ERAS: Era[] = ['stone', 'ancient'];
 export const ERA_NAME: Record<Era, string> = { stone: 'Thời đại Đồ đá', ancient: 'Thời đại Cổ đại' };
 
-/** Free tiles that must lie between two houses, so that villagers never get boxed in. */
-export const CLEARANCE = 2;
+/** Free tiles that must lie between two houses, so that villagers never get boxed in: one is enough to walk through. */
+export const CLEARANCE = 1;
 /** Works that are laid piece by piece and may touch anything. */
 export const WALL_KINDS: ReadonlySet<BuildingKind> = new Set<BuildingKind>(['fence', 'gate', 'trap']);
 
@@ -22,7 +22,7 @@ export interface LevelDef {
   buildTime: number; // seconds for a builder with factor 1.0
   cap: number;       // storage per resource (Kho), items held (Kho công cụ, Kho vũ khí)
   craftSpeed: number;
-  /** Villagers that can work inside (research, crafting and repair houses). */
+  /** Villagers that can work inside (research and crafting houses). */
   slots: number;
   /** Strength of a defence work: what the raiders must wear down to get through (0 for the rest). */
   hp: number;
@@ -75,10 +75,6 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   lab: {
     kind: 'lab', name: 'Nhà nghiên cứu', w: 2, h: 2, buildable: true, requires: ['workshop'],
     levels: { stone: STONE_LEVELS.lab },
-  },
-  repair: {
-    kind: 'repair', name: 'Nhà sửa chữa', w: 2, h: 2, buildable: true, requires: ['workshop'],
-    levels: { stone: STONE_LEVELS.repair },
   },
   toolstore: {
     kind: 'toolstore', name: 'Kho công cụ', w: 2, h: 2, buildable: true, requires: ['workshop'],
@@ -187,9 +183,9 @@ export interface Building {
   hp: number;
   /** A gate lets everyone through while it is open, and stops everyone while it is shut. */
   open: boolean;
-  /** Villagers working inside (research, crafting and repair houses). */
+  /** Villagers working inside (research and crafting houses). */
   staff: number[];
-  /** The order being worked on right now (research, crafting or repair): its id and progress 0..1. */
+  /** The order being worked on right now (research or crafting): its id and progress 0..1. */
   active: { id: string; progress: number } | null;
   workers: number;
 }

@@ -2,11 +2,12 @@ import { Camera, Renderer } from './render/renderer';
 import { Sprites } from './render/sprites';
 import { BUILDINGS, BuildingKind } from './sim/buildings';
 import { DAY_PART_NAME, dayInSeason, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
-import { DAY_LENGTH, TILE } from './sim/constants';
+import { TILE } from './sim/constants';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { RESEARCH } from './sim/research';
-import { CHAPTERS } from './sim/quests';
+import { Journal } from './ui/journal';
+import { dlg, GameDialog } from './ui/gamedialog';
 import { resIcon } from './ui/resicons';
 import { Controller } from './ui/controller';
 import { $, costText } from './ui/dom';
@@ -28,6 +29,7 @@ const settings = loadSettings();
 const session = new Session(sim, IndexedDbStore.available() ? new IndexedDbStore() : new MemoryStore());
 sim.speed = settings.speed;
 let started = false; // true once the player has answered the "continue?" question
+const startDialog = new GameDialog($('start'), { modal: true }); // only its own buttons close it
 const view = $<HTMLCanvasElement>('view');
 const cam: Camera = { x: 0, y: 0, zoom: Math.min(view.clientWidth, view.clientHeight) < 700 ? 1 : 2 };
 const sprites = new Sprites();
@@ -87,8 +89,10 @@ window.addEventListener('resize', syncRotate); window.addEventListener('orientat
 fullBtn.hidden = !matchMedia('(pointer: coarse)').matches && !document.fullscreenEnabled;
 
 // ---------------------------------------------------------------- buttons and keys
-const speedBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-speed]')];
-speedBtns.forEach((b) => b.addEventListener('click', () => setSpeed(Number(b.dataset.speed))));
+// one button for the speed of the game: each press goes to the next speed, and from the last one back to the first
+const SPEEDS = [1, 2, 4, 16];
+const speedBtn = $<HTMLButtonElement>('btnSpeed');
+speedBtn.addEventListener('click', () => setSpeed(SPEEDS[(SPEEDS.indexOf(sim.speed) + 1) % SPEEDS.length]));
 const multiBtn = $<HTMLButtonElement>('btnMulti');
 multiBtn.addEventListener('click', () => ctl.setMulti(!ctl.multi));
 $('btnAll').addEventListener('click', () => ctl.selectAll());
@@ -101,7 +105,7 @@ function setSpeed(s: number) { sim.speed = s; if (s > 0) { settings.speed = s; s
 function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); tray.close(); } }
 function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'workshop' && x.done); if (b) { ctl.selectBuilding(b.id, true); ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE); } else toast('Chưa có Xưởng'); }
 function syncButtons() {
-  speedBtns.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === sim.speed)));
+  speedBtn.textContent = sim.speed === 0 ? '❚❚' : `${sim.speed}×`; speedBtn.setAttribute('aria-pressed', String(sim.speed === 0));
   multiBtn.setAttribute('aria-pressed', String(ctl.multi));
   $('btnNone').hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
 }
@@ -109,7 +113,8 @@ window.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.target instanceof HTMLElement && /input|textarea|select/i.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
-  if (k === 'p') setSpeed(sim.speed === 0 ? 1 : 0);
+  if (k === 'p') setSpeed(sim.speed === 0 ? 1 : 0);
+
   else if (k === 'q') setSpeed(1); else if (k === 'e') setSpeed(2); else if (k === 'r') setSpeed(4); else if (k === 't') setSpeed(16);
   else if (k === 'b') togglePlace('storage'); else if (k === 'x') togglePlace('workshop'); else if (k === 'c') openWorkshop();
   else if (k === 'm') { if (map.isOpen) map.close(); else map.open(); }
@@ -117,14 +122,11 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ---------------------------------------------------------------- the top bar and the log
-const qpanel = $('qpanel'), clock = $('clock');
+const clock = $('clock');
 // the coloured squares of the top bar give way to drawn pictures
 for (const [id, key] of [['rFood', 'food'], ['rWood', 'wood'], ['rStone', 'stone'], ['rHide', 'hide'], ['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk'], ['rTorch', 'torch'], ['rCoin', 'coin'], ['rPop', 'pop']]) $(id).querySelector('i')?.replaceWith(resIcon(key));
-// the quest button stands at the left edge and opens the quest panel; a red mark on it says a new quest is waiting
-let questOpen = false, questSeen = '';
-const btnQuest = $('btnQuest'), questDot = btnQuest.querySelector('i') as HTMLElement;
-const toggleQuests = () => { questOpen = !questOpen; logKey = ''; btnQuest.setAttribute('aria-pressed', String(questOpen)); };
-btnQuest.addEventListener('click', toggleQuests);
+// the quest and notice buttons stand at the left edge; each opens its window over the map, and a red mark says something new is waiting
+const journal = new Journal(ctx, { quests: $('qpanel'), notices: $('npanel') }, { quests: $('btnQuest'), notices: $('btnNotice') });
 let fps = 60, lastHud = 0, logKey = '', pending: string | null = null, lastTopH = -1;
 const topBar = document.querySelector('.top') as HTMLElement;
 
@@ -138,10 +140,11 @@ function setRes(id: string, val: number, cap: number, note = '') {
 function updateHud(now: number) {
   if (now - lastHud < 150) return;
   lastHud = now;
-  const spoil = Math.floor(sim.foodSpoilingWithin(DAY_LENGTH)), cap = sim.capacity();
-  setRes('rFood', sim.stock.food, cap, spoil > 0 ? ` · ${spoil}⚠` : '');
-  $('rFood').classList.toggle('warn', spoil > 0);
-  $('rFood').title = `Thức ăn. Quả hỏng sau 3 ngày nếu chưa ăn; dân ăn lứa cũ trước.${spoil > 0 ? ` ${spoil} thức ăn sẽ hỏng trong 1 ngày tới.` : ''}`;
+  const cap = sim.capacity();
+  const need = sim.foodNeed(), pen = sim.foodPenalty;
+  setRes('rFood', sim.stock.food + sim.foodPot, cap);
+  $('rFood').classList.toggle('warn', pen > 0);
+  $('rFood').title = `Thức ăn: kho ${Math.floor(sim.stock.food)} + phần ăn của lửa trại ${Math.floor(sim.foodPot)}/${need}. Cuối mỗi ngày làng ăn ${need}; thiếu thì cả làng yếu đi.${pen > 0 ? ` Đang yếu ${Math.round(pen * 1000) / 10}% vì bữa trước thiếu ăn.` : ''}`;
   setRes('rWood', sim.stock.wood, cap); setRes('rStone', sim.stock.stone, cap); setRes('rHide', sim.stock.hide, cap); setRes('rCoin', sim.stock.coin, cap); $('rCoin').title = `${RES_NAME.coin}: tiền của làng, nhặt khi hái lượm, đổi hàng ở Kho, nhận từ bộ tộc. Dùng để trả cho nghiên cứu.`;
   { const el = $('rTorch'), n = sim.torchCount(); el.hidden = n <= 0; if (n > 0) el.querySelector('b')!.textContent = String(n); }
   for (const [id, res] of [['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk']] as const) {
@@ -156,33 +159,16 @@ function updateHud(now: number) {
   const eff = [we.vision ? `tầm nhìn −${we.vision} ô` : '', we.speed < 1 ? `đi chậm ${Math.round((1 - we.speed) * 100)}%` : '', outdoor < 1 ? `làm việc ngoài trời chậm ${Math.round((1 - outdoor) * 100)}%` : ''].filter(Boolean).join(', ');
   $('clockLine').title = `${we.name}${eff ? `: ${eff}` : ''}. Hái lượm mùa ${se.name.toLowerCase()} ×${se.gather.toLocaleString('vi')}. ${Math.round(fps)} fps`;
 
-  // the quest panel: the chapter's quests, the one in hand opened with its hint
+  // quests and notices: the windows are drawn by the journal; here only the toast when a quest is done
   const selB = ctl.selectedBuilding === null ? undefined : sim.getBuilding(ctl.selectedBuilding);
   const views = sim.quests({ selected: selB?.kind ?? null, panel: selB && ctl.buildingOpen ? selB.kind : null, inspecting: ctl.inspect?.kind ?? null });
-  const open = views.filter((v) => v.open), cur = open[0], lk = views.map((v) => (v.done ? 'd' : v.open ? 'o' : 'l')).join('') + (cur ? `#${cur.progress}` : '#all') + (questOpen ? '+' : '');
+  const lk = views.map((v) => (v.done ? 'd' : v.open ? 'o' : 'l')).join('');
   if (lk !== logKey) {
-    const prev = logKey.split('#')[0].indexOf('o') >= 0 ? views[logKey.split('#')[0].indexOf('o')] : undefined;
+    const prev = logKey.indexOf('o') >= 0 ? views[logKey.indexOf('o')] : undefined;
     if (prev?.done) toast(`Hoàn thành: ${prev.quest.title}`);
     logKey = lk;
-    if (questOpen) {
-      const el = (tag: string, cls: string, text: string) => { const d = document.createElement(tag); d.className = cls; d.textContent = text; return d; };
-      const isCount = (p: string) => p.split('/').length === 2 && p.split('/').every((x) => x !== '' && !isNaN(Number(x)));
-      const chap = cur?.quest.chapter ?? CHAPTERS[CHAPTERS.length - 1].id, mine = views.filter((v) => v.quest.chapter === chap);
-      const head = el('div', 'qhead', CHAPTERS.find((x) => x.id === chap)?.name ?? 'Nhiệm vụ');
-      const close = el('button', 'qx', '✕'); close.title = 'Đóng'; close.addEventListener('click', toggleQuests); head.append(close);
-      const rows = mine.map((v) => {
-        const row = document.createElement('div'); row.className = `qrow ${v.done ? 'done' : v === cur ? 'now' : v.open ? 'next' : 'lock'}`;
-        row.append(el('div', 'qtitle', `${v.done ? '✓' : v === cur ? '▸' : v.open ? '○' : '·'} ${v.quest.title}${v === cur && isCount(v.progress) ? ` (${v.progress})` : ''}`));
-        if (v === cur) { row.append(el('div', 'qhint', v.quest.hint)); if (v.progress && !isCount(v.progress)) row.append(el('div', 'qneed', v.progress)); }
-        return row;
-      });
-      qpanel.replaceChildren(head, ...(cur ? rows : [el('div', 'qrow now', 'Đã hoàn thành kế hoạch tới Nhà chung cấp 4')]));
-      qpanel.querySelector('.now')?.scrollIntoView({ block: 'nearest' });
-    }
   }
-  qpanel.hidden = !questOpen;
-  if (questOpen && cur) questSeen = cur.quest.id;
-  questDot.hidden = questOpen || !cur || cur.quest.id === questSeen;
+  journal.update(views, sim.notices());
   // the context panels keep clear of the top bar, however many rows it wraps into
   const topH = Math.ceil(topBar.getBoundingClientRect().height);
   if (topH !== lastTopH) { lastTopH = topH; document.documentElement.style.setProperty('--top-h', `${topH}px`); }
@@ -231,7 +217,7 @@ syncRotate();
 
 // ---------------------------------------------------------------- continue a saved game
 // The game starts at once with a new world. If there is a save, a question comes first and the game waits for the answer.
-function begin(): void { started = true; $('start').hidden = true; setSpeed(settings.speed); }
+function begin(): void { started = true; startDialog.hide(); setSpeed(settings.speed); }
 document.addEventListener('visibilitychange', () => { if (document.hidden && started) void session.save(); });
 void (async () => {
   const latest = await session.latest();
@@ -246,12 +232,8 @@ void (async () => {
   if (params.get('continue') === '1' && latest.seed === seed) { await resume(); return; }
   sim.speed = 0; syncButtons();
   const when = new Date(latest.savedAt).toLocaleString('vi');
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = `<h3>Làng Đồ Đá</h3><p class="sub">Có ván đang chơi dở: ngày ${latest.day}, ${latest.population} dân (lưu lúc ${when}).</p>`;
-  const btns = document.createElement('div'); btns.className = 'btns';
-  const go = document.createElement('button'); go.className = 'primary'; go.textContent = 'Tiếp tục'; go.addEventListener('click', () => { void resume(); });
-  const fresh = document.createElement('button'); fresh.textContent = 'Ván mới'; fresh.title = 'Bản lưu cũ vẫn còn cho tới khi ván mới tự lưu lần đầu (đầu ngày hôm sau)'; fresh.addEventListener('click', begin);
-  btns.append(go, fresh); card.append(btns);
-  $('start').replaceChildren(card); $('start').hidden = false;
+  const fresh = dlg.button('Ván mới', begin, { tone: 'alt' }); fresh.title = 'Bản lưu cũ vẫn còn cho tới khi ván mới tự lưu lần đầu (đầu ngày hôm sau)';
+  startDialog.show(dlg.card({ label: 'Làng Đồ Đá' },
+    dlg.head({ pic: '🔥', title: 'Làng Đồ Đá', sub: `Có ván đang chơi dở: ngày ${latest.day}, ${latest.population} dân (lưu lúc ${when}).` }),
+    dlg.buttons(dlg.button('Tiếp tục', () => { void resume(); }), fresh)));
 })();

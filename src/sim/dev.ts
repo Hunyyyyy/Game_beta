@@ -7,7 +7,7 @@ import type { FormationName, Plan, Sim, Villager } from './sim';
 import type { StatKey } from './jobs';
 import { launchCustomRaid, launchRaid, launchWolves, surrender, tribeOf } from './tribes';
 import { BUILDINGS, BuildingKind, levelDef, maxHp, POP_BY_FIRE } from './buildings';
-import { TECHS } from './research';
+import { STAT_TECHS, TECHS } from './research';
 import { STAFF_BUILDING } from './jobs';
 import { RECIPES, TIER_DURABILITY } from './tools';
 import { Tile } from './world';
@@ -25,7 +25,7 @@ export function stockWorkshop(sim: Sim, n: number): void {
 }
 
 /** Open every technology at once, or forget them all. */
-export function unlockResearch(sim: Sim): void { for (const t of TECHS) sim.researched.add(t.id); }
+export function unlockResearch(sim: Sim): void { for (const t of [...TECHS, ...STAT_TECHS]) sim.researched.add(t.id); }
 export function resetResearch(sim: Sim): void { sim.researched.clear(); }
 
 /** Change one stat of the given villagers by `delta`; the numbers that follow from it are recomputed. */
@@ -43,7 +43,7 @@ export function eachSelected(sim: Sim, ids: readonly number[], fn: (v: Villager)
   for (const id of ids) { const v = sim.get(id); if (v && v.team === 'player') fn(v); }
 }
 export function heal(sim: Sim, ids: readonly number[]): void {
-  eachSelected(sim, ids, (v) => { v.health = v.maxHealth; v.down = 0; v.fullness = 100; v.energy = 100; v.strain = 0; v.lockUntil = 0; if (v.phase === 'down') v.phase = 'idle'; });
+  eachSelected(sim, ids, (v) => { v.health = v.maxHealth; v.down = 0; v.energy = 100; v.strain = 0; v.lockUntil = 0; if (v.phase === 'down') v.phase = 'idle'; });
 }
 
 export function addVillagers(sim: Sim, n: number): void {
@@ -114,9 +114,9 @@ export function maxBuildings(sim: Sim): void {
 export function wearTools(sim: Sim, ids: readonly number[], frac: number): void {
   eachSelected(sim, ids, (v) => { for (const t of Object.values(v.tools)) if (t) t.dur = Math.min(t.dur, Math.max(0, TIER_DURABILITY[t.tier] * frac)); });
 }
-/** Fill the research, crafting and repair houses with the best villagers for each. */
+/** Fill the research and crafting houses with the best villagers for each. */
 export function staffAll(sim: Sim): void {
-  for (const job of ['research', 'craft', 'repair'] as const) {
+  for (const job of ['research', 'craft'] as const) {
     const b = sim.building(STAFF_BUILDING[job]); if (!b) continue;
     while (sim.staffCount(b) < levelDef(b).slots) { const v = sim.bestFor(job); if (!v) break; sim.assignStaff([v.id], job); }
   }

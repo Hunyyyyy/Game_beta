@@ -1,5 +1,5 @@
 import animsJson from '../data/anims.json';
-import { ANIMALS, ARMORS, ArmorDef, CRAFTED_WEAPONS, cycleOf, damageOf, DmgType, MORALE, RULES, Team, TRIBES, WeaponDef, WEAPONS } from './combat';
+import { ANIMALS, ARMORS, ArmorDef, CRAFTED_WEAPONS, cycleOf, damageOf, DmgType, RULES, Team, TRIBES, WeaponDef, WEAPONS } from './combat';
 import { WEATHER } from './calendar';
 import { gameDays } from './constants';
 import { Arm, armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formations';
@@ -7,6 +7,7 @@ import { Animal, animalDef, die as animalDie, provoke, carcassEmpty } from './fa
 import { CARRY_CAP, Res, RES_NAME } from './resources';
 import type { Sim, Target, Villager } from './sim';
 import { hash2 } from './rng';
+import { critChance, critMult, guardCut, swingCycle, weaponDamage } from './statsys';
 import { BEHAVIOUR } from './combat';
 
 const ANIM = animsJson as unknown as Record<string, { fps: number; frames: unknown[]; hit?: number }>;
@@ -110,11 +111,10 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   const v = sim.get(target.id);
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === 'player') return;
-  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (v.team === 'player' ? sim.takenFactor(v, !!src.unit && weaponOf(src.unit).ranged === true) * sim.mountGuard(v) : 1);
+  const missile = !!src.unit && weaponOf(src.unit).ranged === true;
+  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (1 - guardCut(sim, v, missile)) * (v.team === 'player' ? sim.takenFactor(v, missile) * sim.mountGuard(v) : 1);
   v.health -= final; v.calm = 0; v.flinch = 0.3;
   if (armor) sim.wearGear(v, 'armor');
-  const behind = (v.facing === 'right' && from.x < v.x) || (v.facing === 'left' && from.x > v.x);
-  if (behind) v.morale = Math.max(0, v.morale + MORALE.backstab);
   if (src.unit && src.unit.team === 'player' && v.team !== 'player') sim.tribeAttacked(v.team as Exclude<Team, 'player' | 'wild'>, v);
   if (v.health > 0) {
     // a unit that is hit and cannot fight back looks for cover; fighters answer the blow
@@ -128,25 +128,24 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
 /** A villager with no health left is dead for good: nobody picks them up, nothing brings them back. */
 function fallUnit(sim: Sim, v: Villager): void {
   sim.resetTask(v); v.queue.length = 0; v.swing = null;
-  moraleShock(sim, v, MORALE.allyDeath);
   sim.noteBattle('ours');
   sim.killUnit(v, 'tử trận');
-}
-
-/** Allies within 8 tiles lose heart when a comrade falls. */
-export function moraleShock(sim: Sim, who: Villager, amount: number): void {
-  const pool = who.team === 'player' ? sim.villagers : sim.foes.filter((f) => f.team === who.team);
-  for (const o of pool) if (o !== who && o.health > 0 && Math.hypot(o.x - who.x, o.y - who.y) < 8) o.morale = Math.max(0, Math.min(100, o.morale + amount));
 }
 
 // ---------------------------------------------------------------- swinging and shooting
 export function startSwing(sim: Sim, v: Villager, target: Target): void {
   const w = weaponOf(v), { hitAt, end } = swingTimes(w.anim);
   v.swing = { t: 0, hitAt, end, target };
-  v.atkCd = cycleOf(w.cycle, v.stats.agi);
+  v.atkCd = swingCycle(sim, v, w);
   v.anim = w.anim; v.animClock = 0;
   const e = resolve(sim, target);
   if (e) v.facing = entX(e) >= v.x ? 'right' : 'left';
+}
+
+/** Damage multiplier of one blow or shot: the critical multiplier when the weapon rolls a critical (chance at most RULES.critMax), else 1. */
+function critRoll(sim: Sim, v: Villager, w: WeaponDef): number {
+  const c = critChance(sim, v, w);
+  return c > 0 && sim.frnd() < c ? critMult(sim, v, w) : 1;
 }
 
 /** What the arms do to each other: foot beats archers, archers beat riders, riders beat foot (units.json). Animals are no arm. */
@@ -159,7 +158,7 @@ export function fireProjectile(sim: Sim, v: Villager, e: Ent, from: { x: number;
   const w = weaponOf(v), tx = entX(e), ty = entY(e), d = Math.hypot(tx - from.x, ty - from.y);
   if (d > w.range + rangeBonus + 1 || !canSee(sim, v, tx, ty)) return false;
   // an archer with the enemy in his face shoots badly, rain and storm spoil the aim
-  const shot = w.damage * clampTactical(armMultiplier(v, e) * mult * sim.attackFactor(v, e)) * WEATHER[sim.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
+  const shot = (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * critRoll(sim, v, w) * clampTactical(armMultiplier(v, e) * mult * sim.attackFactor(v, e)) * WEATHER[sim.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
   if (v.inside !== null) sim.noteBattle('shot');
   const target: Target = e.kind === 'unit' ? { kind: 'unit', id: e.v.id } : { kind: 'animal', id: e.a.id };
   sim.projectiles.push({ x: from.x, y: from.y - 0.4, tx, ty, speed: 14, dmg: shot, type: w.type, from, src: v.id, team: v.team, target, chance: d <= (w.range + rangeBonus) / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? 'stone' });
@@ -176,7 +175,7 @@ function resolveSwing(sim: Sim, v: Villager, target: Target): void {
   let behind = false;
   if (e.kind === 'unit') behind = (e.v.facing === 'right' && v.x < e.v.x) || (e.v.facing === 'left' && v.x > e.v.x);
   else behind = (e.a.dir === 1 && v.x < e.a.x) || (e.a.dir === -1 && v.x > e.a.x);
-  hurt(sim, target, damageOf(w, v.stats.str, null, behind) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
+  hurt(sim, target, damageOf({ ...w, damage: weaponDamage(sim, v, w) }, v.stats.str, null, behind) * critRoll(sim, v, w) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
   if (v.weapon) sim.wearGear(v, 'weapon');
 }
 
@@ -205,21 +204,6 @@ export function tickCommon(sim: Sim, v: Villager, dt: number): void {
   }
 }
 
-/** Once a second: morale drifts with the situation. */
-export function tickMorale(sim: Sim, v: Villager): void {
-  const near = threatsOf(sim, v, 9);
-  const allies = (v.team === 'player' ? sim.villagers : sim.foes.filter((f) => f.team === v.team)).filter((o) => o !== v && o.health > 0 && o.down <= 0 && Math.hypot(o.x - v.x, o.y - v.y) < 8).length;
-  let m = v.morale;
-  if (near.length) {
-    m += near.length > allies + 1 ? MORALE.outnumbered : near.length < allies ? MORALE.outnumbering : 0;
-  } else m += (MORALE.start - m) * 0.04 + MORALE.calm;
-  if (sim.nearHome(v)) m += MORALE.nearHome * (near.length ? 1 : 0.2);
-  if (v.team === 'player' && sim.restTime && !sim.nearHome(v)) m += MORALE.night;
-  if (v.leader) m += 0.2;
-  else { const lead = (v.team === 'player' ? sim.villagers : sim.foes.filter((f) => f.team === v.team)).find((o) => o.leader && o.health > 0 && Math.hypot(o.x - v.x, o.y - v.y) < 8); if (lead) m += MORALE.leaderNear; else if (allies >= 4) m += MORALE.leaderFar; }
-  v.morale = Math.max(0, Math.min(100, m));
-}
-
 // ---------------------------------------------------------------- wounded and rescue
 /** Count down a fallen unit; a friend standing beside it for a few seconds gets it back on its feet. */
 export function tickDown(sim: Sim, v: Villager, dt: number): void {
@@ -227,7 +211,7 @@ export function tickDown(sim: Sim, v: Villager, dt: number): void {
   const helper = sim.villagers.some((o) => o !== v && o.health > 0 && o.down <= 0 && o.phase !== 'flee' && Math.hypot(o.x - v.x, o.y - v.y) < 1.6);
   v.rescue = helper ? v.rescue + dt : Math.max(0, v.rescue - dt);
   if (v.rescue >= RULES.rescueSeconds) {
-    v.down = 0; v.rescue = 0; v.health = v.maxHealth * RULES.rescueHp; v.phase = 'idle'; v.morale = Math.max(v.morale, 40);
+    v.down = 0; v.rescue = 0; v.health = v.maxHealth * RULES.rescueHp; v.phase = 'idle';
     sim.say(`${v.name} đã được đỡ dậy.`);
     return;
   }
@@ -245,14 +229,14 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   const scanNow = v.fight.scan <= 0;
   if (scanNow) v.fight.scan = 0.35;
   // a unit that is hitting a chosen target and is not wavering needs no new look round him every tick: that is what makes a battle of hundreds heavy
-  const looking = scanNow || v.phase === 'flee' || (v.phase === 'fight' && (!v.fight.target || v.morale < MORALE.flee));
+  const looking = scanNow || v.phase === 'flee' || (v.phase === 'fight' && !v.fight.target);
   const sight = v.team === 'player' ? sim.sightOf(v) : SIGHT; // our soldiers see as far as they see: night and weather cut it, a torch brings it back
   const threats = looking ? threatsOf(sim, v, sight + 1) : [];
 
   if (rest) { // a threat wakes the sleeper; only a soldier then stays up for the night, everyone else runs and goes back to bed
     if (scanNow && threats.length && threats[0].d < 7) { if (isFighter(v)) v.nightOwl = true; sim.resetTask(v); } else return false;
   }
-  if (v.phase === 'flee' || v.fleeT > 0 || (v.morale < MORALE.flee && threats.length)) return fleeBrain(sim, v, dt, threats);
+  if (v.phase === 'flee' || v.fleeT > 0) return fleeBrain(sim, v, dt, threats);
 
   if (v.breaks && sim.breakBrain(v, dt)) return true; // hacking down a tree or an enemy work in a war
   const fighter = isFighter(v);
@@ -278,7 +262,7 @@ function fleeBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
   v.fleeT -= dt;
   if (threats.length && threats[0].d < 6) v.fleeT = Math.max(v.fleeT, 3); // keep running while they are close
   if (!v.path.length && sim.campfire() && Math.hypot(v.x - sim.campfire()!.x - 1, v.y - sim.campfire()!.y - 1) > 3) { const f = sim.campfire()!; v.path = sim.pathTo(v, Math.floor(f.x + 1), Math.floor(f.y + 2), 4000); }
-  if (v.fleeT <= 0 && v.morale >= MORALE.fleeRecover - 10) { v.phase = 'idle'; v.fleeT = 0; v.path = []; return false; }
+  if (v.fleeT <= 0) { v.phase = 'idle'; v.fleeT = 0; v.path = []; return false; }
   return true;
 }
 
@@ -318,7 +302,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   if (v.phase === 'skin' || v.phase === 'goCarcass') return huntBrain(sim, v, dt, threats);
   if (f.mode === 'hold' && !f.anchor) f.anchor = { x: v.x, y: v.y };
   // equipment first, but never in the middle of a fight
-  if (!threats.length && !f.target && v.phase !== 'fight' && (sim.planGearRepair(v) || sim.planEquipGear(v) || sim.planGearErrand(v))) return true;
+  if (!threats.length && !f.target && v.phase !== 'fight' && (sim.planEquipGear(v) || sim.planGearErrand(v))) return true;
 
   // retreat stance beats a target the unit picked for itself; only a direct attack order overrides it
   if (v.stance === 'retreat' && f.mode !== 'attack' && f.target) f.target = null;

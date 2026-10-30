@@ -13,6 +13,6 @@
   "tiredEfficiency": 0.7,
   "tiredBelow": 40,
   "torchBurn": 600,
-  "jobWeight": { "wood": 1, "stone": 1, "build": 0.95, "fight": 0.8, "hunt": 0.9, "food": 0.7, "craft": 0.6, "repair": 0.6, "research": 0.5, "idle": 0.15 },
-  "strain": { "nightWork": 0.1, "collapse": 15, "nightSleep": 0.12, "daySleep": 0.03, "capLoss": 0.4, "recoveryLoss": 0.0067, "moraleLoss": 0.004 }
+  "jobWeight": { "wood": 1, "stone": 1, "build": 0.95, "fight": 0.8, "hunt": 0.9, "food": 0.7, "craft": 0.6, "research": 0.5, "idle": 0.15 },
+  "strain": { "nightWork": 0.1, "collapse": 15, "nightSleep": 0.12, "daySleep": 0.03, "capLoss": 0.4, "recoveryLoss": 0.0067 }
 }
