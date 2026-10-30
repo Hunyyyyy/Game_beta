@@ -2,13 +2,15 @@
 import { buildingName } from '../sim/buildings';
 import type { BuildingKind } from '../sim/buildings';
 import type { Notice } from '../sim/model';
-import { CHAPTERS } from '../sim/quests';
-import type { QuestView } from '../sim/quests';
+import type { Sim } from '../sim/sim';
+import questData from '../data/quests.json';
 import type { Ctx } from './ctx';
 import { dlg, GameDialog } from './gamedialog';
 import { resIcon } from './resicons';
 
 type Which = 'quests' | 'notices';
+type QuestView = ReturnType<Sim['quests']>[number];
+const CHAPTERS = questData.chapters; // the data of the chapters is read here: the screen does not reach into the quest system
 const isCount = (p: string): boolean => p.split('/').length === 2 && p.split('/').every((x) => x !== '' && !isNaN(Number(x)));
 
 export class Journal {

@@ -9,10 +9,9 @@ const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++
 
 // the layers, see src/sim/ARCHITECTURE.md
 const DATA = ['codec', 'constants', 'resources', 'rng', 'calendar', 'buildings', 'jobs', 'tools', 'combat', 'research', 'world', 'fog', 'path', 'model', 'formations', 'statsys', 'progression'];
-const VILLAGE = ['warplan', 'siege', 'training', 'mounts', 'construction', 'economy', 'works', 'houses', 'inventory', 'commands', 'labor', 'movement', 'villagers', 'environment', 'rest', 'defense', 'roles', 'forecast', 'notices'];
+const VILLAGE = ['quests', 'warplan', 'siege', 'training', 'mounts', 'construction', 'economy', 'works', 'houses', 'inventory', 'commands', 'labor', 'movement', 'villagers', 'environment', 'rest', 'defense', 'roles', 'forecast', 'notices'];
 const CREATURES = ['battle', 'fauna', 'tribes', 'army', 'scouting'];
 const CORE = ['sim', 'simwar'];
-const GUIDE = ['quests'];
 const PERSISTENCE = ['save'];
 const TOOLING = ['dev'];
 
@@ -24,7 +23,7 @@ const imports = (file) => {
   return out;
 };
 const simFiles = fs.readdirSync(path.join(root, 'sim')).filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts')).map((f) => f.replace(/\.ts$/, ''));
-const known = new Set([...DATA, ...VILLAGE, ...CREATURES, ...CORE, ...GUIDE, ...PERSISTENCE, ...TOOLING]);
+const known = new Set([...DATA, ...VILLAGE, ...CREATURES, ...CORE, ...PERSISTENCE, ...TOOLING]);
 ok(simFiles.every((f) => known.has(f)), 'every file in src/sim belongs to a layer (new files must be added to test/architecture.cjs and ARCHITECTURE.md): ' + simFiles.filter((f) => !known.has(f)).join(', '));
 
 const local = (imp) => (imp.from.startsWith('./') ? imp.from.slice(2) : null);
@@ -43,7 +42,6 @@ const check = (name, layer, allowed, { simAsType = true } = {}) => {
 for (const f of DATA.filter((f) => simFiles.includes(f))) check(f, 'data', DATA, { simAsType: false });
 for (const f of VILLAGE) if (simFiles.includes(f)) check(f, 'village system', [...DATA, 'battle', 'fauna']);
 for (const f of CREATURES) if (simFiles.includes(f)) check(f, 'creature system', [...DATA, ...CREATURES]);
-check('quests', 'quest guide', [...DATA, ...VILLAGE, ...CREATURES]);
 check('dev', 'dev tools', [...DATA, ...CREATURES]);
 check('save', 'persistence', [...DATA]);
 

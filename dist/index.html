@@ -32177,6 +32177,89 @@ body.war .sheet, body.war .bbar {
     void DAY_LENGTH;
   }
 
+  // src/sim/quests.ts
+  var QUESTS = quests_default.quests;
+  var CHAPTERS = quests_default.chapters;
+  function measure(sim2, d, ui) {
+    const yes = (b) => [b ? 1 : 0, 1];
+    switch (d.type) {
+      case "buildBuilding":
+        return [sim2.buildings.filter((b) => b.kind === d.kind && b.done).length, d.count];
+      case "upgradeBuilding":
+        return yes(sim2.buildings.some((b) => b.kind === d.kind && b.done && b.level >= d.level));
+      case "upgradeFire":
+        return yes(sim2.fireLevel() >= d.level);
+      case "fireReady":
+        return yes(sim2.fireUpgradeBlock(d.level) === null);
+      case "researchTech":
+        return yes(sim2.researched.has(d.id));
+      case "population":
+        return [sim2.villagers.length, d.count];
+      case "stock":
+        return [Math.floor(sim2.stock[d.res] + (d.res === "food" ? sim2.foodPot : 0)), d.count];
+      case "hasRole":
+        return [sim2.villagers.filter((v) => roleOf(v) === d.role).length, d.count];
+      case "jobCount":
+        return [sim2.villagers.filter((v) => v.job === d.job).length, d.count];
+      case "staffIn":
+        return [sim2.buildings.filter((b) => b.kind === d.kind).reduce((n, b) => n + b.staff.length, 0), d.count];
+      case "haveTool":
+        return [sim2.toolCount(d.kind, d.tier), d.count];
+      case "torches":
+        return [sim2.torchCount(), d.count];
+      case "createSquad":
+        return [sim2.squads.length, d.count];
+      case "daytime":
+        return yes(sim2.day >= d.day && sim2.part === "day");
+      case "speed":
+        return yes(sim2.speed >= d.atLeast);
+      case "selectBuilding":
+        return yes(ui.selected === d.kind || ui.panel === d.kind);
+      case "openBuilding":
+        return yes(ui.panel === d.kind);
+      case "inspectNode":
+        return yes(ui.inspecting === "node");
+      case "inspectUnit":
+        return yes(ui.inspecting === "unit");
+      case "inspectAnimal":
+        return yes(ui.inspecting === "animal");
+      case "squadSize":
+        return [Math.max(0, ...sim2.squads.map((q) => q.ids.length)), d.count];
+      case "squadFormation":
+        return yes(sim2.squads.some((q) => q.formation === d.id));
+      case "equipped":
+        return [sim2.villagers.filter((v) => v.team === "player" && v.job === "fight" && (d.slot === "weapon" ? v.gear.w : v.gear.a) !== null).length, d.count];
+      case "scoutSent":
+        return yes(sim2.scouts.length > 0 || sim2.maps.length > 0);
+      case "hasMap":
+        return yes(sim2.maps.some((m) => m.level >= d.level));
+      case "planDefense":
+        return yes(sim2.plans.some((pl) => pl.kind === "defense"));
+      case "planArrow":
+        return yes(sim2.plans.some((pl) => pl.kind === "attack" && pl.missions.some((m) => m.path.length > 0)));
+      case "planRunning":
+        return yes(sim2.plans.some((pl) => pl.kind === "attack" && (pl.status === "running" || pl.status === "done")));
+      case "planDone":
+        return yes(sim2.plans.some((pl) => pl.status === "done" && (!d.result || pl.result === d.result)));
+    }
+  }
+  function questViews(sim2, ui) {
+    for (const q of QUESTS) if (!sim2.questSeen.has(q.id) && q.after.every((a) => sim2.questSeen.has(a))) {
+      const [have, need] = measure(sim2, q.done, ui);
+      if (have >= need) sim2.questSeen.add(q.id);
+    }
+    return QUESTS.map((quest) => {
+      const done = sim2.questSeen.has(quest.id), open = !done && quest.after.every((a) => sim2.questSeen.has(a));
+      let progress = "";
+      if (open) {
+        const d = quest.done, [have, need] = measure(sim2, d, ui);
+        if (d.type === "fireReady" || d.type === "upgradeFire") progress = sim2.fireUpgradeBlock(d.level - 1) ?? "";
+        else if (need > 1) progress = `${Math.min(have, need)}/${need}`;
+      }
+      return { quest, done, open, progress };
+    });
+  }
+
   // src/sim/construction.ts
   function addBuilding(sim2, kind, x, y, done) {
     const d = BUILDINGS[kind];
@@ -32424,89 +32507,6 @@ body.war .sheet, body.war .bbar {
   function crewSpeed(sim2) {
     const h3 = sim2.building("builder");
     return h3 ? levelDef(h3).craftSpeed : 1;
-  }
-
-  // src/sim/quests.ts
-  var QUESTS = quests_default.quests;
-  var CHAPTERS = quests_default.chapters;
-  function measure(sim2, d, ui) {
-    const yes = (b) => [b ? 1 : 0, 1];
-    switch (d.type) {
-      case "buildBuilding":
-        return [sim2.buildings.filter((b) => b.kind === d.kind && b.done).length, d.count];
-      case "upgradeBuilding":
-        return yes(sim2.buildings.some((b) => b.kind === d.kind && b.done && b.level >= d.level));
-      case "upgradeFire":
-        return yes(fireLevel(sim2) >= d.level);
-      case "fireReady":
-        return yes(fireUpgradeBlock(sim2, d.level) === null);
-      case "researchTech":
-        return yes(sim2.researched.has(d.id));
-      case "population":
-        return [sim2.villagers.length, d.count];
-      case "stock":
-        return [Math.floor(sim2.stock[d.res] + (d.res === "food" ? sim2.foodPot : 0)), d.count];
-      case "hasRole":
-        return [sim2.villagers.filter((v) => roleOf(v) === d.role).length, d.count];
-      case "jobCount":
-        return [sim2.villagers.filter((v) => v.job === d.job).length, d.count];
-      case "staffIn":
-        return [sim2.buildings.filter((b) => b.kind === d.kind).reduce((n, b) => n + b.staff.length, 0), d.count];
-      case "haveTool":
-        return [sim2.toolCount(d.kind, d.tier), d.count];
-      case "torches":
-        return [sim2.torchCount(), d.count];
-      case "createSquad":
-        return [sim2.squads.length, d.count];
-      case "daytime":
-        return yes(sim2.day >= d.day && sim2.part === "day");
-      case "speed":
-        return yes(sim2.speed >= d.atLeast);
-      case "selectBuilding":
-        return yes(ui.selected === d.kind || ui.panel === d.kind);
-      case "openBuilding":
-        return yes(ui.panel === d.kind);
-      case "inspectNode":
-        return yes(ui.inspecting === "node");
-      case "inspectUnit":
-        return yes(ui.inspecting === "unit");
-      case "inspectAnimal":
-        return yes(ui.inspecting === "animal");
-      case "squadSize":
-        return [Math.max(0, ...sim2.squads.map((q) => q.ids.length)), d.count];
-      case "squadFormation":
-        return yes(sim2.squads.some((q) => q.formation === d.id));
-      case "equipped":
-        return [sim2.villagers.filter((v) => v.team === "player" && v.job === "fight" && (d.slot === "weapon" ? v.gear.w : v.gear.a) !== null).length, d.count];
-      case "scoutSent":
-        return yes(sim2.scouts.length > 0 || sim2.maps.length > 0);
-      case "hasMap":
-        return yes(sim2.maps.some((m) => m.level >= d.level));
-      case "planDefense":
-        return yes(sim2.plans.some((pl) => pl.kind === "defense"));
-      case "planArrow":
-        return yes(sim2.plans.some((pl) => pl.kind === "attack" && pl.missions.some((m) => m.path.length > 0)));
-      case "planRunning":
-        return yes(sim2.plans.some((pl) => pl.kind === "attack" && (pl.status === "running" || pl.status === "done")));
-      case "planDone":
-        return yes(sim2.plans.some((pl) => pl.status === "done" && (!d.result || pl.result === d.result)));
-    }
-  }
-  function questViews(sim2, ui) {
-    for (const q of QUESTS) if (!sim2.questSeen.has(q.id) && q.after.every((a) => sim2.questSeen.has(a))) {
-      const [have, need] = measure(sim2, q.done, ui);
-      if (have >= need) sim2.questSeen.add(q.id);
-    }
-    return QUESTS.map((quest) => {
-      const done = sim2.questSeen.has(quest.id), open = !done && quest.after.every((a) => sim2.questSeen.has(a));
-      let progress = "";
-      if (open) {
-        const d = quest.done, [have, need] = measure(sim2, d, ui);
-        if (d.type === "fireReady" || d.type === "upgradeFire") progress = fireUpgradeBlock(sim2, d.level - 1) ?? "";
-        else if (need > 1) progress = `${Math.min(have, need)}/${need}`;
-      }
-      return { quest, done, open, progress };
-    });
   }
 
   // src/sim/economy.ts
@@ -37482,6 +37482,14 @@ body.war .sheet, body.war .bbar {
       this.log.push({ t: this.time, text });
       if (this.log.length > 40) this.log.shift();
     }
+    /** → construction.fireLevel */
+    fireLevel() {
+      return fireLevel(this);
+    }
+    /** → construction.fireUpgradeBlock */
+    fireUpgradeBlock(level) {
+      return fireUpgradeBlock(this, level);
+    }
     /** → construction.capacity */
     capacity(_res) {
       return capacity(this, _res);
@@ -38305,6 +38313,7 @@ body.war .sheet, body.war .bbar {
   var statIcon = (stat) => resIcon(`stat_${stat}`);
 
   // src/ui/journal.ts
+  var CHAPTERS2 = quests_default.chapters;
   var isCount = (p) => p.split("/").length === 2 && p.split("/").every((x) => x !== "" && !isNaN(Number(x)));
   var Journal = class {
     constructor(c, roots, button) {
@@ -38377,7 +38386,7 @@ body.war .sheet, body.war .bbar {
     }
     // ---------------------------------------------------------------- quests
     drawQuests(views, cur) {
-      const chap = cur?.quest.chapter ?? CHAPTERS[CHAPTERS.length - 1].id, mine2 = views.filter((v) => v.quest.chapter === chap);
+      const chap = cur?.quest.chapter ?? CHAPTERS2[CHAPTERS2.length - 1].id, mine2 = views.filter((v) => v.quest.chapter === chap);
       const done = mine2.filter((v) => v.done).length;
       const tiles = mine2.map((v) => {
         const state = v.done ? "done" : v === cur ? "now" : v.open ? "next" : "lock", counting = v === cur && isCount(v.progress);
@@ -38389,7 +38398,7 @@ body.war .sheet, body.war .bbar {
       });
       this.win.quests.show(dlg.card(
         { wide: true, label: "Nhi\u1EC7m v\u1EE5" },
-        dlg.head({ pic: "\u{1F4DC}", title: "Nhi\u1EC7m v\u1EE5", sub: CHAPTERS.find((x) => x.id === chap)?.name, bar: cur ? { value: done, max: mine2.length, label: `${done}/${mine2.length}` } : void 0, onClose: () => this.close() }),
+        dlg.head({ pic: "\u{1F4DC}", title: "Nhi\u1EC7m v\u1EE5", sub: CHAPTERS2.find((x) => x.id === chap)?.name, bar: cur ? { value: done, max: mine2.length, label: `${done}/${mine2.length}` } : void 0, onClose: () => this.close() }),
         dlg.list(...cur ? tiles : [dlg.empty("\u0110\xE3 ho\xE0n th\xE0nh k\u1EBF ho\u1EA1ch t\u1EDBi Nh\xE0 chung c\u1EA5p 4.")])
       ));
       this.win.quests.root.querySelector(".now")?.scrollIntoView({ block: "nearest" });

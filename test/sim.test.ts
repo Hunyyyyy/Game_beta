@@ -31,6 +31,8 @@ const run = (sim: Sim, secs: number) => { for (let i = 0; i < secs * 20; i++) (s
 /** The old test start: three idle villagers. The real start (two with jobs) has its own test. */
 const provokeFor = (sm: Sim, v: Villager, a: ReturnType<typeof spawnAnimal>) => { provoke(sm, a, v.id); a.state = 'attack'; a.target = { kind: 'unit', id: v.id }; a.timer = 99; };
 const t_ = (sm: Sim, id: string) => sm.tribes.find((x) => x.id === id)!;
+/** Every house standing at once: the whole map seen and the campfire at its top level, so nothing is locked. */
+const buildEverything = (sm: Sim) => { sm.fog.state.fill(2); sm.buildings[0].level = 4; dev.buildAll(sm); };
 const mk = (seed = 1337): Sim => { const sm = new Sim(seed); sm.dev.noArrivals = true; sm.villagers.forEach((o) => { o.job = 'idle'; }); dev.addVillagers(sm, 1); return sm; };
 /** Put a finished house of this kind on the map (the real game needs builders and the right order; most tests only need the house). */
 const putBuilding = (sm: Sim, kind: Parameters<Sim['canPlace']>[0]) => {
@@ -1078,7 +1080,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   // storage limits: the craft house holds only a few items without stores
   const sm2 = mk(1337); reveal(sm2);
   ok(sm2.storeCap('tool') === 10 && sm2.storeCap('gear') === 10, 'without stores a few items are kept at the craft house');
-  dev.buildAll(sm2);
+  buildEverything(sm2);
   ok(sm2.storeCap('tool') === 12 && sm2.storeCap('gear') === 12, 'the stores hold more as they grow');
 }
 
@@ -1165,7 +1167,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(sm.assignGear([a.id], 'spear', 'weapon') !== null, 'no workshop, no gear to hand out');
   dev.unlockResearch(sm); sm.dev.freeBuild = true; sm.dev.instantBuild = true;
   putBuilding(sm, 'builder'); const sp = sm.world.start; for (let dx = -8; dx <= 8 && !sm.hasWorkshop(); dx++) for (let dy = 3; dy <= 11; dy++) if (!sm.canPlace('workshop', sp.x + dx, sp.y + dy)) { sm.placeBuilding('workshop', sp.x + dx, sp.y + dy); break; }
-  sm.dev.freeBuild = false; dev.buildAll(sm);
+  sm.dev.freeBuild = false; buildEverything(sm);
   ok(sm.assignGear([a.id], 'spear', 'weapon') !== null && a.weapon === null, 'an empty stock hands out nothing');
   sm.toolStock.spear1 = 1; sm.toolStock.club1 = 1; sm.toolStock.hide1 = 1;
   ok(sm.assignGear([a.id], 'spear', 'weapon') === null && a.weapon === 'spear' && sm.toolStock.spear1 === 0 && a.manualGear, 'a spear is taken from the stock and given');
