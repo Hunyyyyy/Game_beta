@@ -13,21 +13,21 @@
       "name": "Tay không",
       "type": "crush",
       "range": 1,
-      "damage": 2,
-      "cycle": 1.0,
+      "damage": 0.75,
+      "cycle": 1.75,
       "style": "fist"
     },
     "club": {
       "name": "Gậy gỗ",
       "type": "crush",
       "range": 1,
-      "damage": 4,
-      "cycle": 1.2,
+      "damage": 2,
+      "cycle": 1.5,
       "cost": {
-        "wood": 1
+        "wood": 2
       },
-      "durability": 120,
-      "time": 40,
+      "durability": 80,
+      "time": 20,
       "tier": 1,
       "style": "swing"
     },
@@ -35,13 +35,13 @@
       "name": "Giáo gỗ",
       "type": "pierce",
       "range": 1.5,
-      "damage": 7,
+      "damage": 5,
       "cycle": 1.4,
       "cost": {
-        "wood": 2
+        "wood": 5
       },
-      "durability": 100,
-      "time": 60,
+      "durability": 120,
+      "time": 30,
       "tier": 1,
       "style": "thrust"
     },
@@ -49,14 +49,14 @@
       "name": "Chùy đá",
       "type": "crush",
       "range": 1,
-      "damage": 10,
-      "cycle": 1.8,
+      "damage": 1,
+      "cycle": 1.2,
       "cost": {
-        "wood": 2,
-        "stone": 2
+        "wood": 20,
+        "stone": 10
       },
-      "durability": 160,
-      "time": 120,
+      "durability": 120,
+      "time": 100,
       "tier": 2,
       "style": "swing"
     },
@@ -73,10 +73,10 @@
       "name": "Dây quăng đá",
       "type": "crush",
       "range": 5.5,
-      "damage": 5,
-      "cycle": 1.8,
+      "damage": 4,
+      "cycle": 2,
       "ranged": true,
-      "cost": { "hide": 1, "stone": 1 },
+      "cost": {"wood":5, "hide": 3, "stone": 5 },
       "durability": 90,
       "time": 60,
       "style": "sling", "projectile": "stone",
@@ -89,7 +89,7 @@
       "damage": 8,
       "cycle": 2.0,
       "ranged": true,
-      "cost": { "wood": 3, "hide": 1 },
+      "cost": { "wood": 30, "hide": 10 },
       "durability": 110,
       "time": 100,
       "style": "shoot", "projectile": "arrow",
@@ -103,7 +103,7 @@
       "slash": 0.2,
       "crush": 0.1,
       "cost": {
-        "hide": 3
+        "hide": 30
       },
       "durability": 200,
       "time": 100,
