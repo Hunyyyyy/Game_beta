@@ -48276,7 +48276,7 @@ body.war .sheet, body.war .bbar {
   }
   var civilian = (v) => v.job !== "fight" && v.job !== "hunt" && v.job !== "scout";
   function hides(sim2, v) {
-    return v.inside !== null && v.phase === "sleep" && civilian(v) && attackReason(sim2) !== null;
+    return v.inside !== null && v.phase === "sleep" && (civilian(v) && attackReason(sim2) !== null || quartered(sim2, v));
   }
   function sleepLocked(sim2, v) {
     if (hides(sim2, v)) return false;
@@ -48376,8 +48376,7 @@ body.war .sheet, body.war .bbar {
   }
   function quartered(sim2, v) {
     if (v.team !== "player" || v.job !== "fight" || v.guard || v.post >= 0) return false;
-    if (v.fight.mode !== "none" || v.fight.target || v.nightOwl) return false;
-    if (sim2.alarmUntil > sim2.time || sim2.battle.on || v.squad >= 0 && sim2.plans.some((p) => p.status === "running")) return false;
+    if (sim2.alarmUntil > sim2.time || sim2.warLock()) return false;
     const camp = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
     return !!camp && camp.kind === homeKind(v) || !!freeBed(sim2, v);
   }
@@ -48392,6 +48391,7 @@ body.war .sheet, body.war .bbar {
       return false;
     }
     if (quartered(sim2, v)) return true;
+    if (sim2.warLock() && v.team === "player" && v.job !== "fight" && !awayScout(sim2, v)) return true;
     if (v.lockUntil > 0) {
       if (v.energy >= v.lockUntil) v.lockUntil = 0;
       else return true;
