@@ -48276,7 +48276,7 @@ body.war .sheet, body.war .bbar {
   }
   var civilian = (v) => v.job !== "fight" && v.job !== "hunt" && v.job !== "scout";
   function hides(sim2, v) {
-    return v.inside !== null && v.phase === "sleep" && civilian(v) && attackReason(sim2) !== null;
+    return v.inside !== null && v.phase === "sleep" && (civilian(v) && attackReason(sim2) !== null || quartered(sim2, v));
   }
   function sleepLocked(sim2, v) {
     if (hides(sim2, v)) return false;
@@ -48376,8 +48376,7 @@ body.war .sheet, body.war .bbar {
   }
   function quartered(sim2, v) {
     if (v.team !== "player" || v.job !== "fight" || v.guard || v.post >= 0) return false;
-    if (v.fight.mode !== "none" || v.fight.target || v.nightOwl) return false;
-    if (sim2.alarmUntil > sim2.time || sim2.battle.on || v.squad >= 0 && sim2.plans.some((p) => p.status === "running")) return false;
+    if (sim2.alarmUntil > sim2.time || sim2.warLock()) return false;
     const camp = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
     return !!camp && camp.kind === homeKind(v) || !!freeBed(sim2, v);
   }
@@ -48392,6 +48391,7 @@ body.war .sheet, body.war .bbar {
       return false;
     }
     if (quartered(sim2, v)) return true;
+    if (sim2.warLock() && v.team === "player" && v.job !== "fight" && !awayScout(sim2, v)) return true;
     if (v.lockUntil > 0) {
       if (v.energy >= v.lockUntil) v.lockUntil = 0;
       else return true;
@@ -53841,7 +53841,7 @@ body.war .sheet, body.war .bbar {
       const p = this.pos(e);
       this.el.focus();
       if (e.pointerType === "touch") {
-        this.touches.set(e.pointerId, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: performance.now() });
+        this.touches.set(e.pointerId, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: performance.now(), px: p.x, py: p.y });
         if (this.touches.size === 1) this.tapDead = false;
         if (this.touches.size === 2) this.startGesture();
         return;
@@ -53919,7 +53919,7 @@ body.war .sheet, body.war .bbar {
         } else if (l && !l.moved) this.activate(p, false, e.shiftKey || e.ctrlKey);
       }
     }
-    // ---------------------------------------------------------------- two-finger pan and pinch
+    // ---------------------------------------------------------------- two-finger pan and pinch, or one finger held and one dragging
     startGesture() {
       this.tapDead = true;
       this.box = null;
@@ -53929,7 +53929,28 @@ body.war .sheet, body.war .bbar {
     moveGesture() {
       const g = this.gesture;
       if (!g) return;
-      const [a, b] = [...this.touches.values()], mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist2 = Math.hypot(a.x - b.x, a.y - b.y);
+      const [a, b] = [...this.touches.values()];
+      const held = (t) => Math.hypot(t.x - t.sx, t.y - t.sy) < 14;
+      const holdA = held(a), holdB = held(b);
+      if (holdA !== holdB) {
+        const m = holdA ? b : a;
+        this.cam.x -= (m.x - m.px) / this.cam.zoom;
+        this.cam.y -= (m.y - m.py) / this.cam.zoom;
+        a.px = a.x;
+        a.py = a.y;
+        b.px = b.x;
+        b.py = b.y;
+        g.mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+        g.dist = Math.hypot(a.x - b.x, a.y - b.y);
+        g.acc = 1;
+        this.clamp();
+        return;
+      }
+      a.px = a.x;
+      a.py = a.y;
+      b.px = b.x;
+      b.py = b.y;
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist2 = Math.hypot(a.x - b.x, a.y - b.y);
       this.cam.x -= (mid.x - g.mid.x) / this.cam.zoom;
       this.cam.y -= (mid.y - g.mid.y) / this.cam.zoom;
       g.mid = mid;
@@ -55051,7 +55072,7 @@ body.war .sheet, body.war .bbar {
         { class: "help" },
         h("li", {}, h("b", { text: "Ch\u1ECDn d\xE2n" }), ': b\u1EA5m v\xE0o d\xE2n. B\u1EA5m \u0111\xFAp \u0111\u1EC3 ch\u1ECDn m\u1ECDi d\xE2n c\xF9ng ngh\u1EC1 \u0111ang hi\u1EC7n tr\xEAn m\xE0n h\xECnh. "Ch\u1ECDn nhi\u1EC1u" \u0111\u1EC3 b\u1EA5m t\u1EEBng ng\u01B0\u1EDDi ho\u1EB7c k\xE9o khung; "Ch\u1ECDn h\u1EBFt" ch\u1ECDn c\u1EA3 l\xE0ng.'),
         h("li", {}, h("b", { text: "Ra l\u1EC7nh" }), ": m\xE1y t\xEDnh: chu\u1ED9t ph\u1EA3i. \u0110i\u1EC7n tho\u1EA1i: khi \u0111\xE3 ch\u1ECDn d\xE2n, ch\u1EA1m l\xEAn \u0111\u1EA5t, c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3, c\xF4ng tr\u01B0\u1EDDng hay k\u1EBB \u0111\u1ECBch. Gi\u1EEF Shift (m\xE1y t\xEDnh) \u0111\u1EC3 x\u1EBFp l\u1EC7nh n\u1ED1i nhau."),
-        h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: hai ng\xF3n tay; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
+        h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: m\u1ED9t ng\xF3n \u0111\u1EB7t gi\u1EEF y\xEAn, m\u1ED9t ng\xF3n k\xE9o (b\u1EA3n \u0111\u1ED3 \u0111i theo ng\xF3n k\xE9o); ho\u1EB7c hai ng\xF3n c\xF9ng k\xE9o; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
         h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
         h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: b\u1EA5m \u{1F528} X\xE2y (g\xF3c tr\xEAn) \u0111\u1EC3 ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m b\u1EA3n \u0111\u1ED3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EC3 v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EC3 l\xE0m \u0111\u1ED3. M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y m\u1ED9t c\xE1i r\u1ED3i n\xE2ng c\u1EA5p (\u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u). D\xE2n v\xE0o l\xE0m b\xEAn trong nh\xE0 (hi\u1EC7n th\xE0nh danh s\xE1ch t\xEAn, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3): nh\xE0 c\u1EA5p cao ch\u1EE9a th\xEAm ng\u01B0\u1EDDi, c\xE0ng \u0111\xF4ng c\xE0ng nghi\xEAn c\u1EE9u nhanh. L\xFAc \u0111\u1EA7u b\u1EA1n t\u1EF1 ph\xE1t c\xF4ng c\u1EE5; nghi\xEAn c\u1EE9u Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, t\u1EF1 l\u1EA5y \u0111\u1ED3 v\xE0 t\u1EF1 \u0111\u1EB7t h\xE0ng th\xEC d\xE2n t\u1EF1 lo. Ti\u1EC1n (v\u1ECF s\xF2) tr\u1EA3 cho nghi\xEAn c\u1EE9u, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m ho\u1EB7c \u0111\u1ED5i h\xE0ng \u1EDF Kho. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
         h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), `: d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng ${gameDays(30)}; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh ${gameDays(3)} s\u1EBD k\xE9o h\u1ECD d\u1EADy.`),

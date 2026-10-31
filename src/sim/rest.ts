@@ -116,7 +116,7 @@ const civilian = (v: Pick<Villager, 'job'>): boolean => v.job !== 'fight' && v.j
  * to run. Only a fighter leaves: a villager the player makes a soldier or a hunter goes out at once.
  */
 export function hides(sim: Sim, v: Villager): boolean {
-  return v.inside !== null && v.phase === 'sleep' && civilian(v) && attackReason(sim) !== null;
+  return v.inside !== null && v.phase === 'sleep' && ((civilian(v) && attackReason(sim) !== null) || quartered(sim, v)); // a soldier in his camp stays there whatever comes
 }
 
 /** Asleep and not to be woken: they fell asleep worn out and have not rested enough yet. */
@@ -217,12 +217,11 @@ export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
 
 /**
  * The soldiers of the camps (not the guards) stay inside their own camp, out of sight and listed there, so that they are easy to look after. They come
- * out when the player calls the army, a battle or a plan is on, or they were given an order; once that is done they go back in.
+ * out only when the player calls the army or a war is on, whatever else happens; when that is over they go back in.
  */
 export function quartered(sim: Sim, v: Villager): boolean {
   if (v.team !== 'player' || v.job !== 'fight' || v.guard || v.post >= 0) return false;
-  if (v.fight.mode !== 'none' || v.fight.target || v.nightOwl) return false;
-  if (sim.alarmUntil > sim.time || sim.battle.on || (v.squad >= 0 && sim.plans.some((p) => p.status === 'running'))) return false;
+  if (sim.alarmUntil > sim.time || sim.warLock()) return false;
   const camp = v.inside === null ? undefined : sim.getBuilding(v.inside);
   return (!!camp && camp.kind === homeKind(v)) || !!freeBed(sim, v); // only when there is a bed for him in his camp
 }
@@ -236,6 +235,7 @@ export function shouldSleep(sim: Sim, v: Villager, fighting: boolean): boolean {
   if (awayScout(sim, v)) { v.lockUntil = 0; return false; } // a scout on a trip works day and night until the map is drawn and he is home
   if (v.job === 'fight' && sim.warLock()) { v.lockUntil = 0; return false; } // soldiers do not sleep while a war is on
   if (quartered(sim, v)) return true; // the soldiers of the camps wait inside their camp until the army is called out
+  if (sim.warLock() && v.team === 'player' && v.job !== 'fight' && !awayScout(sim, v)) return true; // in a war the villagers go indoors and stop working
   if (v.lockUntil > 0) {
     if (v.energy >= v.lockUntil) v.lockUntil = 0; else return true;
   }

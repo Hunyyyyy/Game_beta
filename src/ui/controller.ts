@@ -44,7 +44,7 @@ export class Controller {
   private left: { x: number; y: number; moved: boolean } | null = null;
   private right: { x: number; y: number; moved: boolean } | null = null;
   // touch
-  private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number }>();
+  private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; px: number; py: number }>();
   private gesture: { dist: number; mid: { x: number; y: number }; acc: number } | null = null;
   private tapDead = false;
 
@@ -78,7 +78,7 @@ export class Controller {
     const p = this.pos(e);
     this.el.focus();
     if (e.pointerType === 'touch') {
-      this.touches.set(e.pointerId, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: performance.now() });
+      this.touches.set(e.pointerId, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: performance.now(), px: p.x, py: p.y });
       if (this.touches.size === 1) this.tapDead = false;
       if (this.touches.size === 2) this.startGesture();
       return;
@@ -134,7 +134,7 @@ export class Controller {
     }
   }
 
-  // ---------------------------------------------------------------- two-finger pan and pinch
+  // ---------------------------------------------------------------- two-finger pan and pinch, or one finger held and one dragging
   private startGesture(): void {
     this.tapDead = true; this.box = null;
     const [a, b] = [...this.touches.values()];
@@ -142,7 +142,19 @@ export class Controller {
   }
   private moveGesture(): void {
     const g = this.gesture; if (!g) return;
-    const [a, b] = [...this.touches.values()], mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist = Math.hypot(a.x - b.x, a.y - b.y);
+    const [a, b] = [...this.touches.values()];
+    // one finger holds still and the other drags: the camera follows the dragging finger, one to one (no zoom)
+    const held = (t: { x: number; y: number; sx: number; sy: number }) => Math.hypot(t.x - t.sx, t.y - t.sy) < 14;
+    const holdA = held(a), holdB = held(b);
+    if (holdA !== holdB) {
+      const m = holdA ? b : a;
+      this.cam.x -= (m.x - m.px) / this.cam.zoom; this.cam.y -= (m.y - m.py) / this.cam.zoom;
+      a.px = a.x; a.py = a.y; b.px = b.x; b.py = b.y;
+      g.mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; g.dist = Math.hypot(a.x - b.x, a.y - b.y); g.acc = 1;
+      this.clamp(); return;
+    }
+    a.px = a.x; a.py = a.y; b.px = b.x; b.py = b.y;
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist = Math.hypot(a.x - b.x, a.y - b.y);
     this.cam.x -= (mid.x - g.mid.x) / this.cam.zoom; this.cam.y -= (mid.y - g.mid.y) / this.cam.zoom;
     g.mid = mid;
     if (g.dist > 0) {
