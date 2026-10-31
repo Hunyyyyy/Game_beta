@@ -62,7 +62,7 @@
     {"name":"Đá","cost":{"wood":30,"stone":20},"buildTime":140,"cap":0,"craftSpeed":1,"slots":8,"hp":0}
   ],
   "huntlodge": [
-    {"name":"Đơn sơ","cost":{"wood":15,"hide":3},"buildTime":50,"cap":0,"craftSpeed":1,"slots":1,"hp":0},
+    {"name":"Đơn sơ","cost":{"wood":15},"buildTime":50,"cap":0,"craftSpeed":1,"slots":1,"hp":0},
     {"name":"Gỗ","cost":{"wood":25,"hide":5},"buildTime":90,"cap":0,"craftSpeed":1,"slots":2,"hp":0},
     {"name":"Đá","cost":{"wood":30,"stone":15,"hide":8},"buildTime":140,"cap":0,"craftSpeed":1,"slots":4,"hp":0}
   ],
