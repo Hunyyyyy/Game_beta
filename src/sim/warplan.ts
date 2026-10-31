@@ -516,6 +516,16 @@ export function playCard(sim: Sim, plan: Plan, cardId: number): string | null {
 
 // ---------------------------------------------------------------- the alarm drum and the defence
 /** Sound the drum: the people run for the fire and the squads take the posts of the defence plan (or stand about the fire). Returns an error or null. */
+/** The player calls the army out: the soldiers of the camps leave their houses and stand ready until it is stood down (or a battle ends). */
+export function callArmy(sim: Sim): string | null {
+  if (!sim.villagers.some((v) => v.job === 'fight' && !v.guard)) return 'Chưa có lính nào trong các trại';
+  sim.alarmUntil = sim.time + 900;
+  sim.say('Gọi quân đội: lính ra khỏi trại, sẵn sàng chiến đấu.');
+  return null;
+}
+/** Send the army back to its camps. */
+export function standDown(sim: Sim): void { if (sim.alarmUntil > sim.time) { sim.alarmUntil = 0; sim.say('Quân đội về trại.'); } }
+
 export function soundAlarm(sim: Sim): string | null {
   if (RESEARCH.enabled && !sim.dev.freeBuild && !sim.researched.has('signal')) return 'Cần nghiên cứu: Tín hiệu (trống, khói)';
   sim.alarmUntil = sim.time + 180;

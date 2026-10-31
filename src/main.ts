@@ -104,6 +104,7 @@ $('btnNone').addEventListener('click', () => ctl.clearSelection());
 $('btnHome').addEventListener('click', () => { const f = sim.campfire(), s = sim.world.start; ctl.centerOn(((f ? f.x + 1 : s.x) ) * TILE, ((f ? f.y + 1 : s.y)) * TILE); });
 const foldBtn = $<HTMLButtonElement>('btnFold');
 foldBtn.addEventListener('click', () => { const on = !$('sheet').classList.contains('folded'); $('sheet').classList.toggle('folded', on); foldBtn.setAttribute('aria-pressed', String(on)); foldBtn.textContent = on ? 'Hiện bảng' : 'Ẩn bảng'; });
+$('btnArmy').addEventListener('click', () => { if (sim.alarmUntil > sim.time) sim.standDown(); else { const e = sim.callArmy(); if (e) toast(e); } syncButtons(); });
 $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
 $('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
 function setSpeed(s: number) { sim.speed = s; if (s > 0) { settings.speed = s; saveSettings(settings); } syncButtons(); }
@@ -112,6 +113,7 @@ function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'worksh
 function syncButtons() {
   speedBtn.textContent = sim.speed === 0 ? '❚❚' : `${sim.speed}×`; speedBtn.setAttribute('aria-pressed', String(sim.speed === 0));
   multiBtn.setAttribute('aria-pressed', String(ctl.multi));
+  { const on = sim.alarmUntil > sim.time, army = $('btnArmy'); army.setAttribute('aria-pressed', String(on)); army.textContent = on ? 'Cho quân về' : 'Gọi quân'; army.hidden = !sim.villagers.some((v) => v.job === 'fight' && !v.guard); }
   $('btnNone').hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
 }
 window.addEventListener('keydown', (e) => {
