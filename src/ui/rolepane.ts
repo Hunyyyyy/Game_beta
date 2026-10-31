@@ -18,7 +18,7 @@ const HELP: Record<RoleId, string> = {
   stone: 'Thợ đá do Xưởng đá quản lý: họ ra đá và mang về kho. Nâng cấp xưởng để thêm người.',
   food: 'Người hái lượm do Nông trại quản lý: họ ra bụi quả và mang thức ăn về kho. Người làm ruộng thì giao ở từng Ruộng. Nâng cấp nông trại để thêm người.',
   hunt: 'Thợ săn do Chòi thợ săn quản lý: họ đi săn thú và mang thịt, da về. Nên chế giáo hoặc dây quăng cho họ. Nâng cấp chòi để thêm người.',
-  foot: 'Chiến binh cận chiến do trại này tuyển và cho nghỉ, không phải ở đống lửa. Họ canh gác, đánh địch và thú dữ, ngủ trong trại. Nhớ chế vũ khí và giáp cho họ. Nâng cấp trại để chứa thêm.',
+  foot: 'Chiến binh cận chiến do trại này tuyển và cho nghỉ, không phải ở đống lửa. Họ ở trong trại (không hiện trên bản đồ) và chỉ ra ngoài khi bạn bấm "Gọi quân", khi có trận hoặc khi được ra lệnh; việc canh gác giao cho Lính gác. Nhớ chế vũ khí và giáp cho họ. Nâng cấp trại để chứa thêm.',
   cavalry: 'Người cưỡi thú do trại này tuyển và cho nghỉ. Họ xung phong nhanh, khắc người ném nhưng sợ giáo. Nâng cấp trại để chứa thêm.',
   archer: 'Người ném đá, bắn ná do trại này tuyển và cho nghỉ. Họ đánh từ xa và có thể lên chòi canh. Chỉ dùng vũ khí bắn. Nâng cấp trại để chứa thêm.',
   guard: 'Lính gác do Trại lính gác quản lý: chọn trong số lính của các trại (bộ, kỵ, ném). Mỗi người có một chỗ gác riêng, đứng đó canh làng, ra tay khi thấy công trình bị phá, dân bị tấn công hoặc kẻ lạ tiến vào, rồi quay về chỗ gác. Muốn đổi chỗ gác: chọn lính rồi chạm lên bản đồ. Họ nhìn xa hơn lính thường 5 ô và không vào đội tác chiến. Nâng cấp trại để chứa 6, 12, 18 người.',

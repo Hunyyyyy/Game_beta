@@ -373,7 +373,12 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
     } else {
       const dead = f.target.kind === 'animal' ? sim.animalById.get(f.target.id) : undefined;
       f.target = null;
-      if (f.mode === 'attack') { if (v.job === 'fight') { f.mode = 'guard'; f.anchor = v.guard || (v.team === 'player' && v.squad < 0) ? homeSpot(sim, v) ?? { x: v.x, y: v.y } : { x: v.x, y: v.y }; } else f.mode = 'none'; } // done: back to the post, or the camp
+      if (f.mode === 'attack') {
+        if (v.job !== 'fight') f.mode = 'none';
+        else if (v.guard) { f.mode = 'guard'; f.anchor = homeSpot(sim, v) ?? { x: v.x, y: v.y }; } // done: back to his post
+        else if (v.team === 'player' && v.squad < 0) { f.mode = 'none'; f.anchor = null; } // done: back to the camp (see rest.quartered)
+        else { f.mode = 'guard'; f.anchor = { x: v.x, y: v.y }; }
+      }
       if (dead && dead.state === 'dead' && v.job === 'hunt') v.loot = dead.id; // only a hunter goes to skin it; a soldier keeps his post
       if (v.phase === 'fight') { v.phase = 'idle'; v.path = []; }
       if (sim.nextOrder(v)) return true;
