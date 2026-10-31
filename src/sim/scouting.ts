@@ -171,6 +171,14 @@ export function planScout(sim: Sim, ids: readonly number[], tribe: string): Scou
   return { level, need, count: scouts.length, limit, chance: drawChance(scouts.map(scoutSkill), need), walk, survey, total: 2 * walk + survey, error };
 }
 
+/** Walk a scout to a tile. A scout on a trip answers to no order of the player, so Sim.orderMove would skip him: the trip moves him itself. */
+function walkScout(sim: Sim, v: Villager, x: number, y: number): void {
+  const goal = sim.nearestFree(x, y, new Set()) ?? [x, y];
+  sim.resetTask(v); sim.clearCombat(v);
+  v.path = sim.pathTo(v, goal[0], goal[1], 30000);
+  v.phase = v.path.length ? 'move' : 'idle';
+}
+
 /** Where scout number i of a trip stands to watch a village: on the side facing ours, 15 tiles from its fire. */
 function watchSpot(sim: Sim, t: NonNullable<ReturnType<typeof tribeOf>>, i: number): [number, number] {
   const fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y;
@@ -184,10 +192,10 @@ function keepGoing(sim: Sim, m: ScoutMission, t: NonNullable<ReturnType<typeof t
   const fire = sim.campfire();
   alive.forEach((v, i) => {
     if (v.path.length || v.slide || v.phase === 'move' || v.phase === 'sleep' || v.phase === 'goHome' || v.phase === 'flee' || v.inside !== null) return;
-    if (m.phase === 'back') { if (fire && Math.hypot(v.x - fire.x, v.y - fire.y) >= 7) sim.orderMove([v.id], Math.floor(fire.x + 1), Math.floor(fire.y + 3)); return; }
+    if (m.phase === 'back') { if (fire && Math.hypot(v.x - fire.x, v.y - fire.y) >= 7) walkScout(sim, v, Math.floor(fire.x + 1), Math.floor(fire.y + 3)); return; }
     if (Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22) return; // there already
     const spot = watchSpot(sim, t, i);
-    sim.orderMove([v.id], spot[0], spot[1]);
+    walkScout(sim, v, spot[0], spot[1]);
   });
 }
 
@@ -238,7 +246,7 @@ export function recallScouts(sim: Sim, tribe: string): string | null {
 function sendHome(sim: Sim, m: ScoutMission): void {
   m.phase = 'back'; m.t = 0;
   const fire = sim.campfire();
-  for (const id of m.ids) if (sim.byId.has(id) && fire) sim.orderMove([id], Math.floor(fire.x + 1), Math.floor(fire.y + 3));
+  for (const id of m.ids) { const v = sim.byId.get(id); if (v && fire) walkScout(sim, v, Math.floor(fire.x + 1), Math.floor(fire.y + 3)); }
 }
 
 /** The progress of the map of a village and every condition of it, top to bottom: green when done, red when not. */
