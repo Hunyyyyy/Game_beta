@@ -3,7 +3,7 @@
   "arms": {
     "foot": "Bộ binh",
     "archer": "Cung thủ",
-    "cavalry": "Kỵ thú"
+    "cavalry": "Kỵ binh"
   },
   "beats": {
     "foot":    { "foot": 1.0,  "archer": 1.5,  "cavalry": 0.67 },

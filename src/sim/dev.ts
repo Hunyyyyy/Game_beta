@@ -5,7 +5,7 @@ import { spawnAnimal } from './fauna';
 import { RES_LIST, Res } from './resources';
 import type { FormationName, Plan, Sim, Villager } from './sim';
 import type { StatKey } from './jobs';
-import { launchCustomRaid, launchRaid, launchWolves, surrender, tribeOf } from './tribes';
+import { launchBeasts, launchCustomRaid, launchRaid, surrender, tribeOf } from './tribes';
 import { BUILDINGS, BuildingKind, levelDef, maxHp, POP_BY_FIRE } from './buildings';
 import { STAT_TECHS, TECHS } from './research';
 import { STAFF_BUILDING } from './jobs';
@@ -68,7 +68,7 @@ export function setSeason(sim: Sim, season: Season): void {
 export function setWeather(sim: Sim, kind: WeatherKind): void { sim.weather = kind; }
 
 // ---- events and creatures
-export function wolvesNow(sim: Sim, n: number): void { launchWolves(sim, n); }
+export function wolvesNow(sim: Sim, n: number): void { launchBeasts(sim, n, 'wolf'); }
 export function raidNow(sim: Sim, id: TribeId, size: number): string | null {
   const t = tribeOf(sim, id);
   if (!t) return 'Không có bộ tộc này';

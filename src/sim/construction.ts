@@ -4,6 +4,7 @@ import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
 import { buildingOpen, levelCap, techForBuilding, techForLevel } from './research';
 import { fireUnlockLevel, fireUpgradeNeeds } from './progression';
+import startJson from '../data/start.json';
 import type { Sim } from './sim';
 import { PlaceResult } from './model';
 
@@ -20,7 +21,7 @@ export function addBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, 
 /** The houses a village starts with, so that its first people have a role: the Nông trại, the Xưởng gỗ and the Xưởng đá, finished, near the campfire. */
 export function placeStarters(sim: Sim): void {
   const s = sim.world.start;
-  for (const kind of ['lumberyard', 'farmhouse', 'quarry'] as const) {
+  for (const kind of startJson.buildings as BuildingKind[]) {
     let done = false;
     for (let r = 4; r < 16 && !done; r++) for (let dx = -r; dx <= r && !done; dx++) for (let dy = -r; dy <= r && !done; dy++) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;

@@ -3229,19 +3229,19 @@ body.war .sheet, body.war .bbar {
     _note: "zone = map ring 1..4 (each 24 tiles from the campfire). speed in tiles/s. flee: distance that makes it run. aggro: distance at which a predator starts hunting. herd: [min,max] group size. habitat water = lives in water tiles. Art lives in animals/bodies.json. drops: other materials the body gives when skinned (bone, fat, feather, tusk), on top of meat (becomes food) and hide. A species is just a key here plus an entry in bodies.json; the list below is in spawn order.",
     rabbit: { name: "Th\u1ECF", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2.2, flee: 6, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 2], count: 36, prey: true, nocturnal: false },
     fowl: { name: "G\xE0 r\u1EEBng", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2, flee: 5, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 3], count: 20, prey: true, nocturnal: false, drops: { feather: 2 } },
-    deer: { name: "H\u01B0\u01A1u", hp: 60, damage: 4, type: "crush", cycle: 1.6, range: 1, speed: 2.6, flee: 7, aggro: 0, meat: 20, hide: 3, zones: [1, 3], herd: [3, 5], count: 18, prey: true, nocturnal: false, cornered: true, drops: { bone: 2, fat: 2 } },
-    boar: { name: "L\u1EE3n r\u1EEBng", hp: 90, damage: 10, type: "pierce", cycle: 1.5, range: 1, speed: 2.1, flee: 0, aggro: 0, meat: 25, hide: 3, zones: [1, 3], herd: [1, 2], count: 8, prey: true, nocturnal: false, defends: true, drops: { bone: 2, fat: 4 } },
+    deer: { name: "H\u01B0\u01A1u", hp: 60, damage: 4, type: "crush", cycle: 1.6, range: 1, speed: 2.6, flee: 7, aggro: 0, meat: 20, hide: 10, zones: [1, 3], herd: [3, 5], count: 18, prey: true, nocturnal: false, cornered: true, drops: { bone: 2, fat: 2 } },
+    boar: { name: "L\u1EE3n r\u1EEBng", hp: 90, damage: 10, type: "pierce", cycle: 1.5, range: 1, speed: 2.1, flee: 0, aggro: 0, meat: 25, hide: 10, zones: [1, 3], herd: [1, 2], count: 8, prey: true, nocturnal: false, defends: true, drops: { bone: 2, fat: 4 } },
     wolf: { name: "S\xF3i", hp: 55, damage: 7, type: "slash", cycle: 1.2, range: 1, speed: 2.9, flee: 0, aggro: 9, meat: 8, hide: 2, zones: [2, 3], herd: [4, 6], count: 12, prey: false, nocturnal: true, drops: { bone: 2 } },
-    fish: { name: "C\xE1", hp: 1, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.4, flee: 3, aggro: 0, meat: 3, hide: 0, zones: [1, 3], herd: [3, 6], count: 36, prey: true, nocturnal: false, habitat: "water" },
-    aurochs: { name: "B\xF2 r\u1EEBng", hp: 130, damage: 12, type: "crush", cycle: 1.8, range: 1, speed: 2, flee: 0, aggro: 0, meat: 45, hide: 6, drops: { bone: 3, fat: 4 }, zones: [1, 3], herd: [2, 4], count: 6, prey: true, nocturnal: false, defends: true },
+    fish: { name: "C\xE1", hp: 1, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 0, flee: 3, aggro: 0, meat: 3, hide: 0, zones: [1, 3], herd: [3, 6], count: 36, prey: true, nocturnal: false, habitat: "water" },
+    aurochs: { name: "B\xF2 r\u1EEBng", hp: 130, damage: 12, type: "crush", cycle: 1.8, range: 1, speed: 2, flee: 0, aggro: 0, meat: 45, hide: 20, drops: { bone: 3, fat: 4 }, zones: [1, 3], herd: [2, 4], count: 6, prey: true, nocturnal: false, defends: true },
     duck: { name: "V\u1ECBt tr\u1EDDi", hp: 8, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.9, flee: 5, aggro: 0, meat: 3, hide: 0, drops: { feather: 2 }, zones: [1, 2], herd: [2, 4], count: 14, prey: true, nocturnal: false },
     fox: { name: "C\xE1o", hp: 25, damage: 4, type: "pierce", cycle: 1, range: 1, speed: 2.8, flee: 0, aggro: 4, meat: 4, hide: 1, zones: [2, 3], herd: [1, 1], count: 8, prey: false, nocturnal: true, fearsFire: 4 },
     ibex: { name: "D\xEA n\xFAi", hp: 50, damage: 5, type: "crush", cycle: 1.5, range: 1, speed: 3, flee: 9, aggro: 0, meat: 14, hide: 2, drops: { bone: 2 }, zones: [2, 4], herd: [3, 5], count: 10, prey: true, nocturnal: false, cornered: true },
-    elk: { name: "Nai s\u1EEBng t\u1EA5m", hp: 160, damage: 10, type: "crush", cycle: 1.8, range: 1, speed: 2.4, flee: 0, aggro: 0, meat: 55, hide: 7, drops: { bone: 4, fat: 5 }, zones: [2, 3], herd: [1, 3], count: 6, prey: true, nocturnal: false, defends: true },
-    bear: { name: "G\u1EA5u n\xE2u", hp: 240, damage: 20, type: "slash", cycle: 1.9, range: 1, speed: 2.2, flee: 0, aggro: 6, meat: 45, hide: 9, drops: { bone: 5, fat: 10 }, zones: [3, 4], herd: [1, 1], count: 4, prey: false, nocturnal: false },
+    elk: { name: "Nai s\u1EEBng t\u1EA5m", hp: 160, damage: 10, type: "crush", cycle: 1.8, range: 1, speed: 2.4, flee: 0, aggro: 0, meat: 55, hide: 22, drops: { bone: 4, fat: 5 }, zones: [2, 3], herd: [1, 3], count: 6, prey: true, nocturnal: false, defends: true },
+    bear: { name: "G\u1EA5u n\xE2u", hp: 240, damage: 20, type: "slash", cycle: 1.9, range: 1, speed: 2.2, flee: 0, aggro: 6, meat: 45, hide: 30, drops: { bone: 5, fat: 10 }, zones: [3, 4], herd: [1, 1], count: 4, prey: false, nocturnal: false },
     lion: { name: "S\u01B0 t\u1EED hang", hp: 130, damage: 16, type: "slash", cycle: 1.3, range: 1, speed: 3.3, flee: 0, aggro: 11, meat: 28, hide: 6, drops: { bone: 3, fat: 3 }, zones: [3, 4], herd: [1, 3], count: 5, prey: false, nocturnal: true, fearsFire: 6 },
     mammoth: { name: "Voi ma m\xFAt", hp: 450, damage: 28, type: "crush", cycle: 2.6, range: 1, speed: 1.5, flee: 0, aggro: 0, meat: 120, hide: 16, drops: { bone: 14, fat: 24, tusk: 2 }, zones: [3, 4], herd: [2, 3], count: 6, prey: true, nocturnal: false, defends: true },
-    pike: { name: "C\xE1 ch\xF3", hp: 2, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.8, flee: 4, aggro: 0, meat: 6, hide: 0, drops: { bone: 1 }, zones: [1, 3], herd: [1, 2], count: 16, prey: true, nocturnal: false, habitat: "water" },
+    pike: { name: "C\xE1 ch\xF3", hp: 2, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 0, flee: 4, aggro: 0, meat: 6, hide: 0, drops: { bone: 1 }, zones: [1, 3], herd: [1, 2], count: 16, prey: true, nocturnal: false, habitat: "water" },
     behaviour: {
       fleeBurst: 8,
       tiredSeconds: 6,
@@ -3372,21 +3372,21 @@ body.war .sheet, body.war .bbar {
         name: "Tay kh\xF4ng",
         type: "crush",
         range: 1,
-        damage: 2,
-        cycle: 1,
+        damage: 0.75,
+        cycle: 1.75,
         style: "fist"
       },
       club: {
         name: "G\u1EADy g\u1ED7",
         type: "crush",
         range: 1,
-        damage: 4,
-        cycle: 1.2,
+        damage: 2,
+        cycle: 1.5,
         cost: {
-          wood: 1
+          wood: 2
         },
-        durability: 120,
-        time: 40,
+        durability: 80,
+        time: 20,
         tier: 1,
         style: "swing"
       },
@@ -3394,13 +3394,13 @@ body.war .sheet, body.war .bbar {
         name: "Gi\xE1o g\u1ED7",
         type: "pierce",
         range: 1.5,
-        damage: 7,
+        damage: 5,
         cycle: 1.4,
         cost: {
-          wood: 2
+          wood: 5
         },
-        durability: 100,
-        time: 60,
+        durability: 120,
+        time: 30,
         tier: 1,
         style: "thrust"
       },
@@ -3408,14 +3408,14 @@ body.war .sheet, body.war .bbar {
         name: "Ch\xF9y \u0111\xE1",
         type: "crush",
         range: 1,
-        damage: 10,
-        cycle: 1.8,
+        damage: 1,
+        cycle: 1.2,
         cost: {
-          wood: 2,
-          stone: 2
+          wood: 20,
+          stone: 10
         },
-        durability: 160,
-        time: 120,
+        durability: 120,
+        time: 100,
         tier: 2,
         style: "swing"
       },
@@ -3433,10 +3433,10 @@ body.war .sheet, body.war .bbar {
         name: "D\xE2y qu\u0103ng \u0111\xE1",
         type: "crush",
         range: 5.5,
-        damage: 5,
-        cycle: 1.8,
+        damage: 4,
+        cycle: 2,
         ranged: true,
-        cost: { hide: 1, stone: 1 },
+        cost: { wood: 5, hide: 3, stone: 5 },
         durability: 90,
         time: 60,
         style: "sling",
@@ -3450,7 +3450,7 @@ body.war .sheet, body.war .bbar {
         damage: 8,
         cycle: 2,
         ranged: true,
-        cost: { wood: 3, hide: 1 },
+        cost: { wood: 30, hide: 10 },
         durability: 110,
         time: 100,
         style: "shoot",
@@ -3465,7 +3465,7 @@ body.war .sheet, body.war .bbar {
         slash: 0.2,
         crush: 0.1,
         cost: {
-          hide: 3
+          hide: 30
         },
         durability: 200,
         time: 100,
@@ -3798,14 +3798,14 @@ body.war .sheet, body.war .bbar {
     _note: "Chi ph\xED x\xE2y v\xE0 n\xE2ng c\u1EA5p t\u1EEBng c\xF4ng tr\xECnh (th\u1EDDi \u0111\u1EA1i \u0111\u1ED3 \u0111\xE1). M\u1ED7i c\xF4ng tr\xECnh l\xE0 danh s\xE1ch c\u1EA5p: c\u1EA5p 1 l\xE0 chi ph\xED X\xC2Y, c\u1EA5p 2 tr\u1EDF l\xEAn l\xE0 chi ph\xED N\xC2NG C\u1EA4P. cost = v\u1EADt li\u1EC7u (wood, stone, hide, ...); buildTime = gi\xE2y c\xF4ng cho m\u1ED9t th\u1EE3 h\u1EC7 s\u1ED1 1; cap = s\u1EE9c ch\u1EE9a (kho) ho\u1EB7c s\u1ED1 m\xF3n (kho c\xF4ng c\u1EE5/v\u0169 kh\xED); craftSpeed = t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c; slots = s\u1ED1 d\xE2n l\xE0m b\xEAn trong; hp = \u0111\u1ED9 b\u1EC1n c\u1EE7a h\xE0ng r\xE0o/c\u1ED5ng/ch\xF2i/h\u1ED1 ch\xF4ng. S\u1ED1 l\u01B0\u1EE3ng t\u1ED1i \u0111a theo c\u1EA5p l\u1EEDa (perFire) n\u1EB1m trong buildings.ts. N\xE2ng c\u1EA5p ch\u1EC9 t\u0103ng s\u1EE9c ch\u1EE9a (cap, slots) v\xE0 \u0111\u1ED9 b\u1EC1n (hp); craftSpeed lu\xF4n l\xE0 1: t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c, x\xE2y v\xE0 ngh\u1EC9 ng\u01A1i kh\xF4ng t\u0103ng theo c\u1EA5p nh\xE0.",
     campfire: [
       { name: "C\u1EE7i l\u1EEDa", cost: {}, buildTime: 0, cap: 30, craftSpeed: 1, slots: 0, hp: 0 },
-      { name: "L\u1EEDa tr\u1EA1i", cost: { wood: 20 }, buildTime: 120, cap: 45, craftSpeed: 1, slots: 0, hp: 0 },
-      { name: "B\u1EBFp l\u1EEDa l\u1EDBn", cost: { wood: 20, stone: 12 }, buildTime: 240, cap: 60, craftSpeed: 1, slots: 0, hp: 0 },
-      { name: "Nh\xE0 chung", cost: { wood: 50, stone: 30, hide: 10 }, buildTime: 480, cap: 90, craftSpeed: 1, slots: 0, hp: 0 }
+      { name: "L\u1EEDa tr\u1EA1i", cost: { wood: 100 }, buildTime: 120, cap: 45, craftSpeed: 1, slots: 0, hp: 0 },
+      { name: "B\u1EBFp l\u1EEDa l\u1EDBn", cost: { food: 100, wood: 250, stone: 200, hide: 50, coin: 30 }, buildTime: 240, cap: 60, craftSpeed: 1, slots: 0, hp: 0 },
+      { name: "Nh\xE0 chung", cost: { food: 800, wood: 500, stone: 400, hide: 200, coin: 100 }, buildTime: 480, cap: 90, craftSpeed: 1, slots: 0, hp: 0 }
     ],
     builder: [
       { name: "\u0110\u01A1n s\u01A1", cost: { wood: 10 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
-      { name: "G\u1ED7", cost: { wood: 15, stone: 10 }, buildTime: 110, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
-      { name: "\u0110\xE1", cost: { wood: 25, stone: 20 }, buildTime: 160, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
+      { name: "G\u1ED7", cost: { wood: 50, stone: 30 }, buildTime: 110, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
+      { name: "\u0110\xE1", cost: { wood: 60, stone: 50 }, buildTime: 160, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
     ],
     storage: [
       { name: "\u0110\u01A1n s\u01A1", cost: { wood: 10 }, buildTime: 50, cap: 100, craftSpeed: 1, slots: 0, hp: 0 },
@@ -3819,7 +3819,7 @@ body.war .sheet, body.war .bbar {
     ],
     lab: [
       { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 80, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
-      { name: "G\u1ED7", cost: { wood: 20, stone: 30 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+      { name: "G\u1ED7", cost: { wood: 200, stone: 100, hide: 20, coin: 10 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
       { name: "\u0110\xE1", cost: { wood: 30, stone: 50 }, buildTime: 200, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
     ],
     toolstore: [
@@ -3858,7 +3858,7 @@ body.war .sheet, body.war .bbar {
       { name: "\u0110\xE1", cost: { wood: 30, stone: 20 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
     ],
     huntlodge: [
-      { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15, hide: 3 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
+      { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
       { name: "G\u1ED7", cost: { wood: 25, hide: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
       { name: "\u0110\xE1", cost: { wood: 30, stone: 15, hide: 8 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
     ],
@@ -4519,9 +4519,9 @@ body.war .sheet, body.war .bbar {
   var mounts_default = {
     _note: "Mounts. A beast is tamed in the Chu\u1ED3ng th\xFA (the level of the stable decides which) and given to a villager like a tool; the riders of the Tr\u1EA1i k\u1EF5 th\xFA ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
     kinds: {
-      wolf: { name: "S\xF3i", tier: 1, species: "wolf", speed: 1.6, guard: 0.95, ride: 9, cost: { food: 25, hide: 2, coin: 3 }, time: 240 },
-      boar: { name: "L\u1EE3n r\u1EEBng", tier: 2, species: "boar", speed: 1.3, guard: 0.85, ride: 8, cost: { food: 40, hide: 4, coin: 5 }, time: 360 },
-      elephant: { name: "Voi", tier: 3, species: "mammoth", speed: 1.15, guard: 0.65, ride: 19, cost: { food: 80, hide: 8, coin: 12 }, time: 600 }
+      wolf: { name: "S\xF3i", tier: 1, species: "wolf", speed: 1.7, guard: 0.95, ride: 9, cost: { food: 50, hide: 20, coin: 10 }, time: 240 },
+      boar: { name: "L\u1EE3n r\u1EEBng", tier: 2, species: "boar", speed: 1.4, guard: 0.85, ride: 8, cost: { food: 100, hide: 40, coin: 20 }, time: 360 },
+      elephant: { name: "Voi", tier: 3, species: "mammoth", speed: 1.15, guard: 0.65, ride: 19, cost: { food: 200, hide: 60, coin: 30 }, time: 600 }
     }
   };
 
@@ -44594,7 +44594,7 @@ body.war .sheet, body.war .bbar {
     arms: {
       foot: "B\u1ED9 binh",
       archer: "Cung th\u1EE7",
-      cavalry: "K\u1EF5 th\xFA"
+      cavalry: "K\u1EF5 binh"
     },
     beats: {
       foot: { foot: 1, archer: 1.5, cavalry: 0.67 },
@@ -46517,11 +46517,14 @@ body.war .sheet, body.war .bbar {
 
   // src/data/events.json
   var events_default = {
-    _note: "day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
+    _note: "kind beasts: species = id in animals.json (wolf, bear, lion...). kind raid: tribe = who attacks; size = how many guards the tribe sends, OR army = own make-up { weapon: count } (weapons of weapons.json: club, spear, mace, hatchet = foot; sling, bow = archers), with armor (default true). Enemy cavalry is not supported yet. day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
     events: [
-      { id: "wolves_summer", kind: "wolves", day: 6, spread: 2, size: 4, night: true, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm..." },
+      { id: "wolves_summer_1", kind: "beasts", species: "wolf", day: 3, spread: 0, size: 2, night: false, warnDays: 2, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm..." },
+      { id: "wolves_summer_2", kind: "beasts", species: "wolf", day: 6, spread: 0, size: 6, night: false, warnDays: 2, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm b\u1EA7y s\xF3i tr\u1EA3 th\xF9..." },
+      { id: "wolves_summer_3", kind: "beasts", species: "wolf", day: 8, spread: 0, size: 10, night: true, warnDays: 2, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm b\u1EA7y s\xF3i t\u1ED5ng t\u1EA5n c\xF4ng..." },
       { id: "axe_scout", kind: "raid", tribe: "axe", day: 10, spread: 2, size: 5, night: false, warnDays: 1, warn: "Kh\xF3i b\u1ED1c l\xEAn t\u1EEB ph\xEDa t\u1ED9c R\xECu \u0110\xE1, c\xF3 l\u1EBD h\u1ECD \u0111ang c\u1EED ng\u01B0\u1EDDi d\xF2 x\xE9t." },
-      { id: "wolves_winter", kind: "wolves", day: 16, spread: 4, size: 8, night: true, warn: "D\u1EA5u ch\xE2n s\xF3i \u0111\u1EA7y quanh l\xE0ng." },
+      { id: "wolves_winter", kind: "beasts", species: "wolf", day: 16, spread: 4, size: 8, night: true, warn: "D\u1EA5u ch\xE2n s\xF3i \u0111\u1EA7y quanh l\xE0ng." },
+      { id: "bear_autumn", kind: "beasts", species: "bear", day: 13, spread: 1, size: 2, night: true, warn: "Nh\u1EEFng v\u1EBFt c\xE0o s\xE2u tr\xEAn th\xE2n c\xE2y quanh l\xE0ng: c\xF3 g\u1EA5u." },
       { id: "swamp_raid", kind: "raid", tribe: "swamp", day: 21, spread: 4, size: 8, night: true, warnDays: 0, warn: "" },
       { id: "axe_war", kind: "raid", tribe: "axe", day: 26, spread: 4, size: 18, night: false, warnDays: 1, warn: "Ti\u1EBFng tr\u1ED1ng chi\u1EBFn vang l\xEAn: t\u1ED9c R\xECu \u0110\xE1 s\u1EAFp \u0111\xE1nh l\u1EDBn." }
     ]
@@ -46803,11 +46806,11 @@ body.war .sheet, body.war .bbar {
     const arch = picks.filter((g) => armOfWeapon(g.weapon) === "archer").length;
     sim2.say(`Qu\xE2n ${t.def.name} (${n} ng\u01B0\u1EDDi${sim2.mapLevel(t.id) >= 3 ? `: ${arch} cung th\u1EE7, ${n - arch} b\u1ED9 binh` : ""}) \u0111ang ti\u1EBFn v\xE0o l\xE0ng!`);
   }
-  function launchCustomRaid(sim2, t, weapons, armor) {
+  function launchCustomRaid(sim2, t, weapons, armor, angers = true) {
     const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
     const dx = t.camp.x - fx, dy = t.camp.y - fy, len = Math.max(1, Math.hypot(dx, dy)), dist2 = Math.min(26, len);
     const id = ++sim2.nextRaid, power = ringPower(ringOf(len));
-    t.relation = Math.min(t.relation, -60);
+    if (angers) t.relation = Math.min(t.relation, -60);
     t.raid = { id, phase: "march", t: 0, max: 900, size: weapons.length };
     weapons.forEach((weapon, i) => {
       const ang = i / weapons.length * Math.PI * 2, gx = Math.floor(fx + dx / len * dist2 + Math.cos(ang) * 2), gy = Math.floor(fy + dy / len * dist2 + Math.sin(ang) * 2);
@@ -46827,7 +46830,7 @@ body.war .sheet, body.war .bbar {
     t.angryUntil = sim2.time + 400;
     sim2.say(`Qu\xE2n ${t.def.name} (${weapons.length} ng\u01B0\u1EDDi) \u0111ang ti\u1EBFn v\xE0o l\xE0ng!`);
   }
-  function launchWolves(sim2, size) {
+  function launchBeasts(sim2, size, species = "wolf") {
     const fire = sim2.campfire(), s = sim2.world.start, cx = fire ? fire.x + 1 : s.x, cy = fire ? fire.y + 1 : s.y;
     let placed = 0;
     const ang0 = sim2.frnd() * Math.PI * 2;
@@ -46835,18 +46838,19 @@ body.war .sheet, body.war .bbar {
       const a = ang0 + (sim2.frnd() - 0.5) * 0.8, d = 26 + sim2.frnd() * 6;
       const x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d, tx = Math.floor(x), ty = Math.floor(y);
       if (!sim2.world.inBounds(tx, ty) || sim2.world.isBlocked(tx, ty)) continue;
-      const w = spawnAnimal(sim2, "wolf", x, y, 9e3 + sim2.nextRaid, true);
+      const w = spawnAnimal(sim2, species, x, y, 9e3 + sim2.nextRaid, true);
       w.state = "graze";
       w.timer = 0;
       placed++;
     }
     sim2.nextRaid++;
-    if (placed) sim2.say("B\u1EA7y s\xF3i \u0111\xF3i k\xE9o t\u1EDBi quanh l\xE0ng! \u0110\u1ED1t l\u1EEDa v\xE0 gi\u1EEF d\xE2n g\u1EA7n \u0111\u1ED1ng l\u1EEDa.");
+    if (placed) sim2.say(`${species === "wolf" ? "B\u1EA7y s\xF3i \u0111\xF3i" : `${ANIMALS[species].name} (${placed} con)`} k\xE9o t\u1EDBi quanh l\xE0ng! \u0110\u1ED1t l\u1EEDa v\xE0 gi\u1EEF d\xE2n g\u1EA7n \u0111\u1ED1ng l\u1EEDa.`);
   }
+  var armyWeapons = (army) => Object.entries(army).flatMap(([w, n]) => Array.from({ length: n }, () => w));
   function initEvents(sim2) {
     for (const e of events_default.events) {
-      const fireDay = e.day + Math.floor(sim2.frnd() * (e.spread + 1));
-      sim2.events.push({ id: e.id, kind: e.kind, tribe: e.tribe, fireDay, warnDay: fireDay - (e.warnDays ?? 1), size: e.size, night: e.night, warn: e.warn, warned: !e.warn, fired: false });
+      const fireDay = e.day + Math.floor(sim2.frnd() * (e.spread + 1)), size = e.army ? armyWeapons(e.army).length : e.size ?? 1;
+      sim2.events.push({ id: e.id, kind: e.kind, tribe: e.tribe, species: e.species, army: e.army, armor: e.armor, fireDay, warnDay: fireDay - (e.warnDays ?? 1), size, night: e.night, warn: e.warn, warned: !e.warn, fired: false });
     }
   }
   function tickEvents(sim2) {
@@ -46860,11 +46864,11 @@ body.war .sheet, body.war .bbar {
       const ready = e.night ? sim2.restTime : sim2.tod >= 0.28 && !sim2.restTime;
       if (!ready) continue;
       e.fired = true;
-      if (e.kind === "wolves") launchWolves(sim2, e.size);
+      if (e.kind === "beasts") launchBeasts(sim2, e.size, e.species ?? "wolf");
       else if (e.tribe) {
         const t = tribeOf(sim2, e.tribe);
         if (t && t.state === "free") {
-          if (raidAdvised(sim2, t, e.size) || e.fireDay >= e.warnDay + 4) launchRaid(sim2, t, e.size);
+          if (raidAdvised(sim2, t, e.size) || e.fireDay >= e.warnDay + 4) e.army ? launchCustomRaid(sim2, t, armyWeapons(e.army), e.armor ?? true, false) : launchRaid(sim2, t, e.size);
           else {
             e.fired = false;
             e.fireDay = sim2.day + 1;
@@ -47129,6 +47133,20 @@ body.war .sheet, body.war .bbar {
     });
   }
 
+  // src/data/start.json
+  var start_default = {
+    _note: "Kh\u1EDFi \u0111\u1EA7u m\u1ED9t v\xE1n. campfire: v\u1ECB tr\xED \u0111\u1ED1ng l\u1EEDa so v\u1EDBi \u0111i\u1EC3m xu\u1EA5t ph\xE1t. stock: t\xE0i nguy\xEAn c\xF3 s\u1EB5n (kh\xF3a nh\u01B0 trong kho). villagers: d\xE2n c\xF3 m\u1EB7t t\u1EEB \u0111\u1EA7u (dx, dy so v\u1EDBi \u0111i\u1EC3m xu\u1EA5t ph\xE1t; sex 'm'/'f'; job l\xE0 ngh\u1EC1). buildings: c\xF4ng tr\xECnh d\u1EF1ng s\u1EB5n quanh \u0111\u1ED1ng l\u1EEDa, theo th\u1EE9 t\u1EF1. arrivals: m\u1ED7i ng\xE0y m\u1EDBi (t\u1EEB ng\xE0y firstDay) c\xF3 min..max ng\u01B0\u1EDDi l\u1EA1 t\u1EDBi xin \u1EDF, femaleChance = x\xE1c su\u1EA5t l\xE0 n\u1EEF.",
+    campfire: { dx: -1, dy: -2 },
+    stock: { food: 30, wood: 10 },
+    villagers: [
+      { dx: -1, dy: 1, sex: "m", job: "food" },
+      { dx: 0, dy: 1, sex: "m", job: "stone" },
+      { dx: 1, dy: 1, sex: "f", job: "wood" }
+    ],
+    buildings: ["lumberyard", "farmhouse", "quarry"],
+    arrivals: { firstDay: 2, min: 1, max: 3, femaleChance: 0.5 }
+  };
+
   // src/sim/construction.ts
   function addBuilding(sim2, kind, x, y, done, level = 1) {
     const d = BUILDINGS[kind];
@@ -47140,7 +47158,7 @@ body.war .sheet, body.war .bbar {
   }
   function placeStarters(sim2) {
     const s = sim2.world.start;
-    for (const kind of ["lumberyard", "farmhouse", "quarry"]) {
+    for (const kind of start_default.buildings) {
       let done = false;
       for (let r = 4; r < 16 && !done; r++) for (let dx = -r; dx <= r && !done; dx++) for (let dy = -r; dy <= r && !done; dy++) {
         if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
@@ -48663,14 +48681,14 @@ body.war .sheet, body.war .bbar {
     const have = `${soldiers.length} l\xEDnh, ${armed} c\xF3 v\u0169 kh\xED`;
     for (const e of sim2.events) {
       if (e.fired || !e.warned) continue;
-      const wolves = e.kind === "wolves", need = Math.max(3, Math.ceil(e.size * (wolves ? 0.6 : 0.7)));
+      const wolves = e.kind === "beasts", beast = e.species ? ANIMALS[e.species].name : "S\xF3i", need = Math.max(3, Math.ceil(e.size * (wolves ? 0.6 : 0.7)));
       const tribe = e.tribe ? sim2.tribes.find((t) => t.id === e.tribe) : void 0;
       const left = e.fireDay - sim2.day, ready = soldiers.length >= need && armed >= Math.ceil(need / 2);
       out.push({
         id: `ev:${e.id}`,
         level: ready ? "info" : left <= 1 ? "urgent" : "warn",
         icon: "stat_atk",
-        title: wolves ? "S\xF3i s\u1EAFp t\u1EA5n c\xF4ng" : `${tribe?.def.name ?? "M\u1ED9t b\u1ED9 t\u1ED9c"} s\u1EAFp \u0111\xE1nh`,
+        title: wolves ? `${beast} s\u1EAFp t\u1EA5n c\xF4ng` : `${tribe?.def.name ?? "M\u1ED9t b\u1ED9 t\u1ED9c"} s\u1EAFp \u0111\xE1nh`,
         when: left <= 0 ? e.night ? "\u0111\xEAm nay" : "h\xF4m nay" : `c\xF2n ${left} ng\xE0y`,
         body: ready ? `Kho\u1EA3ng ${e.size} ${wolves ? "con" : "ng\u01B0\u1EDDi"} \xB7 \u0111\xE3 \u0111\u1EE7 l\xEDnh (${have})` : `Kho\u1EA3ng ${e.size} ${wolves ? "con" : "ng\u01B0\u1EDDi"} \xB7 c\u1EA7n \u2265${need} l\xEDnh, \u0111ang c\xF3 ${have}`,
         tip: `${e.warn || "M\u1ED9t cu\u1ED9c t\u1EA5n c\xF4ng \u0111ang t\u1EDBi."} Tuy\u1EC3n th\xEAm l\xEDnh \u1EDF tr\u1EA1i chi\u1EBFn binh, ch\u1EBF v\u0169 kh\xED v\xE0 gi\xE1p cho h\u1ECD, v\xE0 d\u1EF1ng h\xE0ng r\xE0o, ch\xF2i canh tr\u01B0\u1EDBc khi ch\xFAng t\u1EDBi.`,
@@ -48678,16 +48696,16 @@ body.war .sheet, body.war .bbar {
       });
     }
     const fire = sim2.campfire(), cx = fire ? fire.x + 1 : sim2.world.start.x, cy = fire ? fire.y + 1 : sim2.world.start.y;
-    const pack = sim2.animals.filter((a) => a.species === "wolf" && a.state !== "dead" && Math.hypot(a.x - cx, a.y - cy) < 30).length;
+    const pack = sim2.animals.filter((a) => (a.species === "wolf" || a.raid) && a.state !== "dead" && Math.hypot(a.x - cx, a.y - cy) < 30).length;
     if (pack) {
       out.push({
         id: "wolves-here",
         level: soldiers.length < 3 ? "urgent" : "warn",
         icon: "stat_atk",
-        title: "S\xF3i \u0111ang \u1EDF g\u1EA7n l\xE0ng",
+        title: "Th\xFA d\u1EEF \u0111ang \u1EDF g\u1EA7n l\xE0ng",
         when: "ngay b\xE2y gi\u1EDD",
         body: `${pack} con \xB7 ${have}${soldiers.length < 3 ? " \xB7 c\u1EA7n th\xEAm l\xEDnh" : ""}`,
-        tip: "S\xF3i kh\xF4ng s\u1EE3 l\u1EEDa v\xE0 t\u1EA5n c\xF4ng d\xE2n. C\u1EA7n c\xF3 l\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\u1EC3 \u0111\xE1nh \u0111u\u1ED5i; d\xE2n th\u01B0\u1EDDng s\u1EBD ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i.",
+        tip: "Th\xFA d\u1EEF kh\xF4ng s\u1EE3 l\u1EEDa v\xE0 t\u1EA5n c\xF4ng d\xE2n. C\u1EA7n c\xF3 l\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\u1EC3 \u0111\xE1nh \u0111u\u1ED5i; d\xE2n th\u01B0\u1EDDng s\u1EBD ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i.",
         action: CAMP
       });
     }
@@ -50077,7 +50095,7 @@ body.war .sheet, body.war .bbar {
       }
       if (sim2.weather !== "clear") sim2.say(`H\xF4m nay: ${WEATHER[sim2.weather].name.toLowerCase()}.`);
       sim2.eatDay();
-      if (day > 1 && !sim2.dev.noArrivals) newcomers(sim2);
+      if (day >= start_default.arrivals.firstDay && !sim2.dev.noArrivals) newcomers(sim2);
     }
     if (!sim2.signalled && sim2.tod >= 0.5) {
       sim2.signalled = true;
@@ -50092,11 +50110,12 @@ body.war .sheet, body.war .bbar {
     sim2.resting = rest;
   }
   function newcomers(sim2) {
-    const n = 1 + Math.floor(sim2.frnd() * 3), fire = sim2.campfire(), s = sim2.world.start;
+    const { min, max, femaleChance } = start_default.arrivals;
+    const n = min + Math.floor(sim2.frnd() * (max - min + 1)), fire = sim2.campfire(), s = sim2.world.start;
     for (let i = 0; i < n; i++) {
       const a = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * 2;
       const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
-      const v = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
+      const v = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < femaleChance ? "f" : "m", "player", sim2.frnd);
       sim2.villagers.push(v);
       sim2.registerUnit(v);
       sim2.say(`${v.name} \u0111\u1EBFn l\xE0ng xin \u1EDF l\u1EA1i.`);
@@ -52616,10 +52635,9 @@ body.war .sheet, body.war .bbar {
       this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
       this.resting = isRestTime(this.tod, this.season);
       const s = this.world.start;
-      this.addBuilding("campfire", s.x - 1, s.y - 2, true);
-      this.stock.food = 20;
-      const spots = [[-1, 1, "m", "food"], [1, 1, "f", "wood"]];
-      for (const [dx, dy, sex, job] of spots) this.spawn(s.x + dx, s.y + dy, sex).job = job;
+      this.addBuilding("campfire", s.x + start_default.campfire.dx, s.y + start_default.campfire.dy, true);
+      for (const [res, n] of Object.entries(start_default.stock)) this.stock[res] = n;
+      for (const p of start_default.villagers) this.spawn(s.x + p.dx, s.y + p.dy, p.sex).job = p.job;
       this.say("Hai ng\u01B0\u1EDDi \u0111\u1EA7u ti\xEAn \u0111\xE3 \u0111\u1EBFn b\xEAn \u0111\u1ED1ng l\u1EEDa: m\u1ED9t ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m, m\u1ED9t ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7. Vi\u1EC7c c\u1EE7a m\u1ED7i ng\u01B0\u1EDDi do c\xF4ng tr\xECnh c\u1EE7a ngh\u1EC1 \u0111\xF3 qu\u1EA3n l\xFD: m\u1EDF N\xF4ng tr\u1EA1i, X\u01B0\u1EDFng g\u1ED7 hay X\u01B0\u1EDFng \u0111\xE1 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa \u0111\u1EC3 giao vi\u1EC7c. D\u1EF1ng Nh\xE0 th\u1EE3 x\xE2y tr\u01B0\u1EDBc, r\u1ED3i c\xE1c c\xF4ng tr\xECnh kh\xE1c.");
       this.refreshFog();
       placeStarters(this);
@@ -54485,7 +54503,7 @@ body.war .sheet, body.war .bbar {
     sim2.weather = kind;
   }
   function wolvesNow(sim2, n) {
-    launchWolves(sim2, n);
+    launchBeasts(sim2, n, "wolf");
   }
   function raidNow(sim2, id, size) {
     const t = tribeOf(sim2, id);
