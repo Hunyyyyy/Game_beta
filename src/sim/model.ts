@@ -210,6 +210,8 @@ export interface ScoutMission {
   rolled?: number[];
   /** Called back by the player before the map was finished. */
   recall?: boolean;
+  /** Seconds until the scouts are looked over for one who has stopped on the way. */
+  nudge?: number;
 }
 /**
  * A village somebody of ours came across while out on the map. It is `carried` in his head until he gets home alive;
