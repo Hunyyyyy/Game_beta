@@ -55796,7 +55796,7 @@ body.war .sheet, body.war .bbar {
   var UnitDetail = class {
     /**
      * `ids` are the villagers the orders go to; `leave` is called when an order needs the player back on the map.
-     * `after` runs once a gear or tool order is done (by default the selection is dropped).
+     * `after` runs once a gear or tool order is done (by default nothing: the dialog stays as it is).
      */
     constructor(c, o) {
       this.c = c;
@@ -55809,7 +55809,7 @@ body.war .sheet, body.war .bbar {
       this.combatSec = null;
       this.gearSec = null;
       this.gearSel = [];
-      const { sim: sim2, ctl: ctl2 } = c, ids = o.ids, after = o.after ?? (() => ctl2.clearSelection());
+      const { sim: sim2, ctl: ctl2 } = c, ids = o.ids, after = o.after ?? (() => void 0);
       this.stanceBtns = STANCES.map(([s, label2, tip]) => h("button", { class: "sm", "data-stance": s, pressed: false, text: label2, title: tip, onclick: () => {
         sim2.setStance(ids(), s);
         ctl2.onChange();
@@ -56691,7 +56691,7 @@ body.war .sheet, body.war .bbar {
       }
       this.picker.hidden = !this.open;
       if (!this.open) return;
-      const pool = sim2.villagers.filter((v) => v.inside === null && v.down <= 0 && v.job !== "fight" && v.job !== "scout" && !(v.phase === "goStaff" && v.target === b.id) && !isStaffJob(v.job) && v.job !== "build" && !(v.job === "food" && v.post >= 0)).sort((x, y) => y.stats[stat] - x.stats[stat]);
+      const pool = sim2.villagers.filter((v) => (v.inside === null || v.phase === "sleep" && !sim2.sleepLocked(v)) && v.down <= 0 && v.job !== "fight" && v.job !== "scout" && !(v.phase === "goStaff" && v.target === b.id) && !isStaffJob(v.job) && v.job !== "build" && !(v.job === "food" && v.post >= 0)).sort((x, y) => y.stats[stat] - x.stats[stat]);
       const pk = `${b.id}|${full}|${pool.map((v) => `${v.id}.${v.job}.${v.stats[stat]}`).join()}`;
       if (pk === this.pickKey) return;
       this.pickKey = pk;
@@ -59150,7 +59150,7 @@ body.war .sheet, body.war .bbar {
       const only = (test) => TECHS.filter((x) => test(x.id));
       const labLevel = () => sim2.building("lab")?.level ?? 0;
       const militaryLock = () => sim2.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${TREE_TABS.military.needLab} \u0111\u1EC3 m\u1EDF Qu\xE2n s\u1EF1`;
-      this.progSec.lab = h("div", {}, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian: c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research);
+      this.progSec.lab = h("div", {}, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian: c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research, this.staffBoxes.research.root);
       this.tabs.lab = [
         { label: "Qu\xE2n s\u1EF1 b\u1EADc 1", icon: "infantry", lock: militaryLock, page: tree((t) => {
           t.addChains("Ch\u1EC9 s\u1ED1 qu\xE2n", ["foot", "cavalry", "archer", "scout"], "military");
@@ -59171,8 +59171,7 @@ body.war .sheet, body.war .bbar {
         }) },
         { label: "V\u0169 kh\xED b\u1EADc 1", icon: "armory", under: 0, lock: () => militaryLock() && "C\u1EA7n m\u1EDF Qu\xE2n s\u1EF1 tr\u01B0\u1EDBc", page: tree((t) => {
           t.addChains("Ch\u1EC9 s\u1ED1 t\u1EEBng v\u0169 kh\xED", ["club", "spear", "mace", "sling", "bow"], "weapon");
-        }) },
-        { label: "Ng\u01B0\u1EDDi nghi\xEAn c\u1EE9u", icon: "lab", page: page(this.staffBoxes.research.root) }
+        }) }
       ];
       const goods = page(this.goodsHint, this.goodsBar);
       const goodsRows = (cat) => RECIPES.filter((r) => cat === "gear" === isGearKind(r.kind));
