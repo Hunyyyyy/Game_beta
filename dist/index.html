@@ -44521,6 +44521,19 @@ body.war .sheet, body.war .bbar {
     });
   }
 
+  // src/data/start.json
+  var start_default = {
+    _note: "Kh\u1EDFi \u0111\u1EA7u m\u1ED9t v\xE1n. campfire: v\u1ECB tr\xED \u0111\u1ED1ng l\u1EEDa so v\u1EDBi \u0111i\u1EC3m xu\u1EA5t ph\xE1t. stock: t\xE0i nguy\xEAn c\xF3 s\u1EB5n (kh\xF3a nh\u01B0 trong kho). villagers: d\xE2n c\xF3 m\u1EB7t t\u1EEB \u0111\u1EA7u (dx, dy so v\u1EDBi \u0111i\u1EC3m xu\u1EA5t ph\xE1t; sex 'm'/'f'; job l\xE0 ngh\u1EC1). buildings: c\xF4ng tr\xECnh d\u1EF1ng s\u1EB5n quanh \u0111\u1ED1ng l\u1EEDa, theo th\u1EE9 t\u1EF1. arrivals: m\u1ED7i ng\xE0y m\u1EDBi (t\u1EEB ng\xE0y firstDay) c\xF3 min..max ng\u01B0\u1EDDi l\u1EA1 t\u1EDBi xin \u1EDF, femaleChance = x\xE1c su\u1EA5t l\xE0 n\u1EEF.",
+    campfire: { dx: -1, dy: -2 },
+    stock: { food: 20 },
+    villagers: [
+      { dx: -1, dy: 1, sex: "m", job: "food" },
+      { dx: 1, dy: 1, sex: "f", job: "wood" }
+    ],
+    buildings: ["lumberyard", "farmhouse", "quarry"],
+    arrivals: { firstDay: 2, min: 1, max: 3, femaleChance: 0.5 }
+  };
+
   // src/sim/construction.ts
   function addBuilding(sim2, kind, x, y, done, level = 1) {
     const d = BUILDINGS[kind];
@@ -44532,7 +44545,7 @@ body.war .sheet, body.war .bbar {
   }
   function placeStarters(sim2) {
     const s = sim2.world.start;
-    for (const kind of ["lumberyard", "farmhouse", "quarry"]) {
+    for (const kind of start_default.buildings) {
       let done = false;
       for (let r = 4; r < 16 && !done; r++) for (let dx = -r; dx <= r && !done; dx++) for (let dy = -r; dy <= r && !done; dy++) {
         if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
@@ -47413,7 +47426,7 @@ body.war .sheet, body.war .bbar {
       }
       if (sim2.weather !== "clear") sim2.say(`H\xF4m nay: ${WEATHER[sim2.weather].name.toLowerCase()}.`);
       sim2.eatDay();
-      if (day > 1 && !sim2.dev.noArrivals) newcomers(sim2);
+      if (day >= start_default.arrivals.firstDay && !sim2.dev.noArrivals) newcomers(sim2);
     }
     if (!sim2.signalled && sim2.tod >= 0.5) {
       sim2.signalled = true;
@@ -47428,11 +47441,12 @@ body.war .sheet, body.war .bbar {
     sim2.resting = rest;
   }
   function newcomers(sim2) {
-    const n = 1 + Math.floor(sim2.frnd() * 3), fire = sim2.campfire(), s = sim2.world.start;
+    const { min, max, femaleChance } = start_default.arrivals;
+    const n = min + Math.floor(sim2.frnd() * (max - min + 1)), fire = sim2.campfire(), s = sim2.world.start;
     for (let i = 0; i < n; i++) {
       const a = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * 2;
       const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
-      const v = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
+      const v = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < femaleChance ? "f" : "m", "player", sim2.frnd);
       sim2.villagers.push(v);
       sim2.registerUnit(v);
       sim2.say(`${v.name} \u0111\u1EBFn l\xE0ng xin \u1EDF l\u1EA1i.`);
@@ -49868,10 +49882,9 @@ body.war .sheet, body.war .bbar {
       this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
       this.resting = isRestTime(this.tod, this.season);
       const s = this.world.start;
-      this.addBuilding("campfire", s.x - 1, s.y - 2, true);
-      this.stock.food = 20;
-      const spots = [[-1, 1, "m", "food"], [1, 1, "f", "wood"]];
-      for (const [dx, dy, sex, job] of spots) this.spawn(s.x + dx, s.y + dy, sex).job = job;
+      this.addBuilding("campfire", s.x + start_default.campfire.dx, s.y + start_default.campfire.dy, true);
+      for (const [res, n] of Object.entries(start_default.stock)) this.stock[res] = n;
+      for (const p of start_default.villagers) this.spawn(s.x + p.dx, s.y + p.dy, p.sex).job = p.job;
       this.say("Hai ng\u01B0\u1EDDi \u0111\u1EA7u ti\xEAn \u0111\xE3 \u0111\u1EBFn b\xEAn \u0111\u1ED1ng l\u1EEDa: m\u1ED9t ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m, m\u1ED9t ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7. Vi\u1EC7c c\u1EE7a m\u1ED7i ng\u01B0\u1EDDi do c\xF4ng tr\xECnh c\u1EE7a ngh\u1EC1 \u0111\xF3 qu\u1EA3n l\xFD: m\u1EDF N\xF4ng tr\u1EA1i, X\u01B0\u1EDFng g\u1ED7 hay X\u01B0\u1EDFng \u0111\xE1 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa \u0111\u1EC3 giao vi\u1EC7c. D\u1EF1ng Nh\xE0 th\u1EE3 x\xE2y tr\u01B0\u1EDBc, r\u1ED3i c\xE1c c\xF4ng tr\xECnh kh\xE1c.");
       this.refreshFog();
       placeStarters(this);

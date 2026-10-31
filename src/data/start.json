@@ -1,0 +1,12 @@
+{
+  "_note": "Khởi đầu một ván. campfire: vị trí đống lửa so với điểm xuất phát. stock: tài nguyên có sẵn (khóa như trong kho). villagers: dân có mặt từ đầu (dx, dy so với điểm xuất phát; sex 'm'/'f'; job là nghề). buildings: công trình dựng sẵn quanh đống lửa, theo thứ tự. arrivals: mỗi ngày mới (từ ngày firstDay) có min..max người lạ tới xin ở, femaleChance = xác suất là nữ.",
+  "campfire": { "dx": -1, "dy": -2 },
+  "stock": { "food": 20,"wood": 10 },
+  "villagers": [
+    { "dx": -1, "dy": 1, "sex": "m", "job": "food" },
+    { "dx": 0, "dy": 1, "sex": "m", "job": "stone" },
+    { "dx": 1, "dy": 1, "sex": "f", "job": "wood" }
+  ],
+  "buildings": [],
+  "arrivals": { "firstDay": 2, "min": 1, "max": 3, "femaleChance": 0.5 }
+}

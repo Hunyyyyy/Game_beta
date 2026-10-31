@@ -3,6 +3,7 @@ import { isRestTime, rollWeather, seasonOf, SEASON_DEF, WEATHER } from './calend
 import { FIRE_VISION, NIGHT_VISION, VISION } from './constants';
 import { BUILDINGS, buildingSight } from './buildings';
 import { armOf } from './battle';
+import startJson from '../data/start.json';
 import type { Sim } from './sim';
 import { Villager } from './model';
 
@@ -18,7 +19,7 @@ export function tickCalendar(sim: Sim): void {
     if (season !== sim.world.season) { sim.world.setSeason(season); sim.say(SEASON_DEF[season].enter); }
     if (sim.weather !== 'clear') sim.say(`Hôm nay: ${WEATHER[sim.weather].name.toLowerCase()}.`);
     sim.eatDay(); // the day that has just ended is paid for before anyone new walks in
-    if (day > 1 && !sim.dev.noArrivals) newcomers(sim);
+    if (day >= startJson.arrivals.firstDay && !sim.dev.noArrivals) newcomers(sim);
   }
   if (!sim.signalled && sim.tod >= 0.5) {
     sim.signalled = true;
@@ -30,13 +31,14 @@ export function tickCalendar(sim: Sim): void {
   sim.resting = rest;
 }
 
-/** Each new day 1 to 3 strangers walk in and settle by the fire. */
+/** Each new day a few strangers walk in and settle by the fire (how many: start.json "arrivals"). */
 function newcomers(sim: Sim): void {
-  const n = 1 + Math.floor(sim.frnd() * 3), fire = sim.campfire(), s = sim.world.start;
+  const { min, max, femaleChance } = startJson.arrivals;
+  const n = min + Math.floor(sim.frnd() * (max - min + 1)), fire = sim.campfire(), s = sim.world.start;
   for (let i = 0; i < n; i++) {
     const a = sim.frnd() * Math.PI * 2, r = 2 + sim.frnd() * 2;
     const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim.nearestFree(gx, gy, new Set()) ?? [gx, gy];
-    const v = sim.makeVillager(spot[0], spot[1], sim.frnd() < 0.5 ? 'm' : 'f', 'player', sim.frnd);
+    const v = sim.makeVillager(spot[0], spot[1], sim.frnd() < femaleChance ? 'f' : 'm', 'player', sim.frnd);
     sim.villagers.push(v); sim.registerUnit(v);
     sim.say(`${v.name} đến làng xin ở lại.`);
   }

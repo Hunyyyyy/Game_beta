@@ -14,6 +14,7 @@ import { adoptTribe, EventState, giftTribe, killFoe, spawnTribes, tickFoe, tickT
 import { recipeOpen, Tech } from './research';
 import { questViews, QuestUi, QuestView } from './quests';
 import { World } from './world';
+import startJson from '../data/start.json';
 import * as construction from './construction';
 import * as economy from './economy';
 import * as notices from './notices';
@@ -154,11 +155,9 @@ export class Sim {
     this.nextWeather = rollWeather(seasonOf(this.day + 1), this.wrnd());
     this.resting = isRestTime(this.tod, this.season);
     const s = this.world.start;
-    this.addBuilding('campfire', s.x - 1, s.y - 2, true);
-    this.stock.food = 20; // the first meals of the two who start (4 a day)
-    // two villagers to start: a gatherer, whose work feeds both of them, and a woodcutter
-    const spots: Array<[number, number, Sex, Job]> = [[-1, 1, 'm', 'food'], [1, 1, 'f', 'wood']];
-    for (const [dx, dy, sex, job] of spots) this.spawn(s.x + dx, s.y + dy, sex).job = job;
+    this.addBuilding('campfire', s.x + startJson.campfire.dx, s.y + startJson.campfire.dy, true);
+    for (const [res, n] of Object.entries(startJson.stock)) this.stock[res as Res] = n; // the first meals of those who start
+    for (const p of startJson.villagers) this.spawn(s.x + p.dx, s.y + p.dy, p.sex as Sex).job = p.job as Job;
     this.say('Hai người đầu tiên đã đến bên đống lửa: một người hái lượm, một người đốn gỗ. Việc của mỗi người do công trình của nghề đó quản lý: mở Nông trại, Xưởng gỗ hay Xưởng đá cạnh đống lửa để giao việc. Dựng Nhà thợ xây trước, rồi các công trình khác.');
     this.refreshFog();
     construction.placeStarters(this);
