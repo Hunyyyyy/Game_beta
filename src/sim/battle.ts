@@ -382,8 +382,9 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   // 2. auto-engage by stance
   if (v.stance === 'retreat') {
     if (threats.length && threats[0].d < 8) { startFlee(sim, v, 6, threats[0]); return true; }
-  } else if (threats.length && f.scan >= 0 && mayEngage(sim, v)) {
-    const range = f.mode === 'hold' ? weaponOf(v).range + 1.5 : v.stance === 'defensive' ? Math.min(DEFENSIVE, sim.sightOf(v)) : sim.sightOf(v);
+  } else if (threats.length && f.scan >= 0) {
+    // a soldier of a camp, with no alarm and no order, only defends himself against what comes close
+    const range = !mayEngage(sim, v) ? Math.min(DEFENSIVE, sim.sightOf(v)) : f.mode === 'hold' ? weaponOf(v).range + 1.5 : v.stance === 'defensive' ? Math.min(DEFENSIVE, sim.sightOf(v)) : sim.sightOf(v);
     // a guard goes for what harms the village: a stranger with a weapon, or a beast that is really attacking
     const pick = threats.find((t) => (!v.guard || t.t.kind === 'unit' || sim.animalById.get(t.t.id)?.state === 'attack') && t.d <= range && (!f.anchor || v.stance !== 'defensive' || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
     if (pick) { f.target = pick.t; const e = resolve(sim, pick.t); if (e) { engage(sim, v, e, dt); return true; } }
