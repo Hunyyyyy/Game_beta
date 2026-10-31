@@ -1,6 +1,7 @@
 /** Heads-up for the player: what is coming or going on in the village, worked out afresh from the state of the game (nothing here is saved). */
 import { dayInSeason, SEASON_DAYS, seasonOf } from './calendar';
 import { BUILDINGS } from './buildings';
+import { ANIMALS } from './combat';
 import { FOOD, RES_LIST, RES_NAME } from './resources';
 import type { Notice } from './model';
 import type { Sim } from './sim';
@@ -121,12 +122,12 @@ function eventNotices(sim: Sim): Notice[] {
   const have = `${soldiers.length} lính, ${armed} có vũ khí`;
   for (const e of sim.events) {
     if (e.fired || !e.warned) continue;
-    const wolves = e.kind === 'wolves', need = Math.max(3, Math.ceil(e.size * (wolves ? 0.6 : 0.7)));
+    const wolves = e.kind === 'beasts', beast = e.species ? ANIMALS[e.species].name : 'Sói', need = Math.max(3, Math.ceil(e.size * (wolves ? 0.6 : 0.7)));
     const tribe = e.tribe ? sim.tribes.find((t) => t.id === e.tribe) : undefined;
     const left = e.fireDay - sim.day, ready = soldiers.length >= need && armed >= Math.ceil(need / 2);
     out.push({
       id: `ev:${e.id}`, level: ready ? 'info' : left <= 1 ? 'urgent' : 'warn', icon: 'stat_atk',
-      title: wolves ? 'Sói sắp tấn công' : `${tribe?.def.name ?? 'Một bộ tộc'} sắp đánh`, when: left <= 0 ? (e.night ? 'đêm nay' : 'hôm nay') : `còn ${left} ngày`,
+      title: wolves ? `${beast} sắp tấn công` : `${tribe?.def.name ?? 'Một bộ tộc'} sắp đánh`, when: left <= 0 ? (e.night ? 'đêm nay' : 'hôm nay') : `còn ${left} ngày`,
       body: ready ? `Khoảng ${e.size} ${wolves ? 'con' : 'người'} · đã đủ lính (${have})` : `Khoảng ${e.size} ${wolves ? 'con' : 'người'} · cần ≥${need} lính, đang có ${have}`,
       tip: `${e.warn || 'Một cuộc tấn công đang tới.'} Tuyển thêm lính ở trại chiến binh, chế vũ khí và giáp cho họ, và dựng hàng rào, chòi canh trước khi chúng tới.`,
       action: CAMP,
@@ -134,12 +135,12 @@ function eventNotices(sim: Sim): Notice[] {
   }
   // the attacks that are here now
   const fire = sim.campfire(), cx = fire ? fire.x + 1 : sim.world.start.x, cy = fire ? fire.y + 1 : sim.world.start.y;
-  const pack = sim.animals.filter((a) => a.species === 'wolf' && a.state !== 'dead' && Math.hypot(a.x - cx, a.y - cy) < 30).length;
+  const pack = sim.animals.filter((a) => (a.species === 'wolf' || a.raid) && a.state !== 'dead' && Math.hypot(a.x - cx, a.y - cy) < 30).length;
   if (pack) {
     out.push({
-      id: 'wolves-here', level: soldiers.length < 3 ? 'urgent' : 'warn', icon: 'stat_atk', title: 'Sói đang ở gần làng', when: 'ngay bây giờ',
+      id: 'wolves-here', level: soldiers.length < 3 ? 'urgent' : 'warn', icon: 'stat_atk', title: 'Thú dữ đang ở gần làng', when: 'ngay bây giờ',
       body: `${pack} con · ${have}${soldiers.length < 3 ? ' · cần thêm lính' : ''}`,
-      tip: 'Sói không sợ lửa và tấn công dân. Cần có lính cầm vũ khí để đánh đuổi; dân thường sẽ chạy về lửa trại.', action: CAMP,
+      tip: 'Thú dữ không sợ lửa và tấn công dân. Cần có lính cầm vũ khí để đánh đuổi; dân thường sẽ chạy về lửa trại.', action: CAMP,
     });
   }
   for (const t of sim.tribes) {

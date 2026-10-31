@@ -2,14 +2,14 @@
   "_note": "Chi phí xây và nâng cấp từng công trình (thời đại đồ đá). Mỗi công trình là danh sách cấp: cấp 1 là chi phí XÂY, cấp 2 trở lên là chi phí NÂNG CẤP. cost = vật liệu (wood, stone, hide, ...); buildTime = giây công cho một thợ hệ số 1; cap = sức chứa (kho) hoặc số món (kho công cụ/vũ khí); craftSpeed = tốc độ làm việc; slots = số dân làm bên trong; hp = độ bền của hàng rào/cổng/chòi/hố chông. Số lượng tối đa theo cấp lửa (perFire) nằm trong buildings.ts. Nâng cấp chỉ tăng sức chứa (cap, slots) và độ bền (hp); craftSpeed luôn là 1: tốc độ làm việc, xây và nghỉ ngơi không tăng theo cấp nhà.",
   "campfire": [
     {"name":"Củi lửa","cost":{},"buildTime":0,"cap":30,"craftSpeed":1,"slots":0,"hp":0},
-    {"name":"Lửa trại","cost":{"wood":20},"buildTime":120,"cap":45,"craftSpeed":1,"slots":0,"hp":0},
-    {"name":"Bếp lửa lớn","cost":{"wood":20,"stone":12},"buildTime":240,"cap":60,"craftSpeed":1,"slots":0,"hp":0},
-    {"name":"Nhà chung","cost":{"wood":50,"stone":30,"hide":10},"buildTime":480,"cap":90,"craftSpeed":1,"slots":0,"hp":0}
+    {"name":"Lửa trại","cost":{"wood":100},"buildTime":120,"cap":45,"craftSpeed":1,"slots":0,"hp":0},
+    {"name":"Bếp lửa lớn","cost":{"food":100,"wood":250,"stone":200,"hide":50,"coin":30},"buildTime":240,"cap":60,"craftSpeed":1,"slots":0,"hp":0},
+    {"name":"Nhà chung","cost":{"food":800,"wood":500,"stone":400,"hide":200,"coin":100},"buildTime":480,"cap":90,"craftSpeed":1,"slots":0,"hp":0}
   ],
   "builder": [
     {"name":"Đơn sơ","cost":{"wood":10},"buildTime":60,"cap":0,"craftSpeed":1,"slots":2,"hp":0},
-    {"name":"Gỗ","cost":{"wood":15,"stone":10},"buildTime":110,"cap":0,"craftSpeed":1,"slots":3,"hp":0},
-    {"name":"Đá","cost":{"wood":25,"stone":20},"buildTime":160,"cap":0,"craftSpeed":1,"slots":4,"hp":0}
+    {"name":"Gỗ","cost":{"wood":50,"stone":30},"buildTime":110,"cap":0,"craftSpeed":1,"slots":3,"hp":0},
+    {"name":"Đá","cost":{"wood":60,"stone":50},"buildTime":160,"cap":0,"craftSpeed":1,"slots":4,"hp":0}
   ],
   "storage": [
     {"name":"Đơn sơ","cost":{"wood":10},"buildTime":50,"cap":100,"craftSpeed":1,"slots":0,"hp":0},
@@ -23,7 +23,7 @@
   ],
   "lab": [
     {"name":"Đơn sơ","cost":{"wood":20},"buildTime":80,"cap":0,"craftSpeed":1,"slots":1,"hp":0},
-    {"name":"Gỗ","cost":{"wood":20,"stone":30},"buildTime":140,"cap":0,"craftSpeed":1,"slots":2,"hp":0},
+    {"name":"Gỗ","cost":{"wood":200,"stone":100,"hide":20,"coin":10},"buildTime":140,"cap":0,"craftSpeed":1,"slots":2,"hp":0},
     {"name":"Đá","cost":{"wood":30,"stone":50},"buildTime":200,"cap":0,"craftSpeed":1,"slots":4,"hp":0}
   ],
   "toolstore": [

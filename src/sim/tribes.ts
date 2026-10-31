@@ -1,6 +1,6 @@
 import eventsJson from '../data/events.json';
 import { DAY_LENGTH } from './constants';
-import { cycleOf, WEAPONS, HOSTILE_BELOW, RELATION, ringOf, ringPower, RULES, SIEGE, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
+import { ANIMALS, cycleOf, Species, WEAPONS, HOSTILE_BELOW, RELATION, ringOf, ringPower, RULES, SIEGE, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
 import { engage, resolve, swingTimes, tickCommon, threatsOf, weaponOf } from './battle';
 import { BUILDINGS } from './buildings';
 import { armOfWeapon } from './formations';
@@ -39,8 +39,13 @@ export interface Tribe {
 
 export interface EventState {
   id: string;
-  kind: 'wolves' | 'raid';
+  kind: 'beasts' | 'raid';
   tribe?: TribeId;
+  /** beasts: the animal of animals.json that comes. */
+  species?: Species;
+  /** raid: a make-up chosen in events.json (weapon -> how many); without it the tribe sends its own guards. */
+  army?: Record<string, number>;
+  armor?: boolean;
   fireDay: number;
   warnDay: number;
   size: number;
@@ -274,11 +279,11 @@ export function launchRaid(sim: Sim, t: Tribe, size: number): void {
 }
 
 /** A raid of a chosen make-up, for the dev tools: the weapons of each man are given, they start part-way to the village and march at once. */
-export function launchCustomRaid(sim: Sim, t: Tribe, weapons: string[], armor: boolean): void {
+export function launchCustomRaid(sim: Sim, t: Tribe, weapons: string[], armor: boolean, angers = true): void {
   const fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y;
   const dx = t.camp.x - fx, dy = t.camp.y - fy, len = Math.max(1, Math.hypot(dx, dy)), dist = Math.min(26, len);
   const id = ++sim.nextRaid, power = ringPower(ringOf(len));
-  t.relation = Math.min(t.relation, -60);
+  if (angers) t.relation = Math.min(t.relation, -60);
   t.raid = { id, phase: 'march', t: 0, max: 900, size: weapons.length };
   weapons.forEach((weapon, i) => {
     const ang = (i / weapons.length) * Math.PI * 2, gx = Math.floor(fx + (dx / len) * dist + Math.cos(ang) * 2), gy = Math.floor(fy + (dy / len) * dist + Math.sin(ang) * 2);
@@ -294,7 +299,8 @@ export function launchCustomRaid(sim: Sim, t: Tribe, weapons: string[], armor: b
   sim.say(`Quân ${t.def.name} (${weapons.length} người) đang tiến vào làng!`);
 }
 
-export function launchWolves(sim: Sim, size: number): void {
+/** A pack of `species` (an animal of animals.json) comes at the village from about 28 tiles away. */
+export function launchBeasts(sim: Sim, size: number, species: Species = 'wolf'): void {
   const fire = sim.campfire(), s = sim.world.start, cx = fire ? fire.x + 1 : s.x, cy = fire ? fire.y + 1 : s.y;
   let placed = 0;
   const ang0 = sim.frnd() * Math.PI * 2;
@@ -302,18 +308,21 @@ export function launchWolves(sim: Sim, size: number): void {
     const a = ang0 + (sim.frnd() - 0.5) * 0.8, d = 26 + sim.frnd() * 6;
     const x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d, tx = Math.floor(x), ty = Math.floor(y);
     if (!sim.world.inBounds(tx, ty) || sim.world.isBlocked(tx, ty)) continue;
-    const w = spawnAnimal(sim, 'wolf', x, y, 9000 + sim.nextRaid, true);
+    const w = spawnAnimal(sim, species, x, y, 9000 + sim.nextRaid, true);
     w.state = 'graze'; w.timer = 0; placed++;
   }
   sim.nextRaid++;
-  if (placed) sim.say('Bầy sói đói kéo tới quanh làng! Đốt lửa và giữ dân gần đống lửa.');
+  if (placed) sim.say(`${species === 'wolf' ? 'Bầy sói đói' : `${ANIMALS[species].name} (${placed} con)`} kéo tới quanh làng! Đốt lửa và giữ dân gần đống lửa.`);
 }
+
+/** events.json "army": { "spear": 3, "bow": 2 } -> ['spear', 'spear', 'spear', 'bow', 'bow'] */
+export const armyWeapons = (army: Record<string, number>): string[] => Object.entries(army).flatMap(([w, n]) => Array.from({ length: n }, () => w));
 
 // ---------------------------------------------------------------- scheduled events
 function initEvents(sim: Sim): void {
-  for (const e of eventsJson.events as Array<{ id: string; kind: 'wolves' | 'raid'; tribe?: TribeId; day: number; spread: number; size: number; night: boolean; warnDays?: number; warn: string }>) {
-    const fireDay = e.day + Math.floor(sim.frnd() * (e.spread + 1));
-    sim.events.push({ id: e.id, kind: e.kind, tribe: e.tribe, fireDay, warnDay: fireDay - (e.warnDays ?? 1), size: e.size, night: e.night, warn: e.warn, warned: !e.warn, fired: false });
+  for (const e of eventsJson.events as Array<{ id: string; kind: 'beasts' | 'raid'; species?: Species; tribe?: TribeId; army?: Record<string, number>; armor?: boolean; day: number; spread: number; size?: number; night: boolean; warnDays?: number; warn: string }>) {
+    const fireDay = e.day + Math.floor(sim.frnd() * (e.spread + 1)), size = e.army ? armyWeapons(e.army).length : e.size ?? 1;
+    sim.events.push({ id: e.id, kind: e.kind, tribe: e.tribe, species: e.species, army: e.army, armor: e.armor, fireDay, warnDay: fireDay - (e.warnDays ?? 1), size, night: e.night, warn: e.warn, warned: !e.warn, fired: false });
   }
 }
 
@@ -325,10 +334,10 @@ function tickEvents(sim: Sim): void {
     const ready = e.night ? sim.restTime : sim.tod >= 0.28 && !sim.restTime;
     if (!ready) continue;
     e.fired = true;
-    if (e.kind === 'wolves') launchWolves(sim, e.size);
+    if (e.kind === 'beasts') launchBeasts(sim, e.size, e.species ?? 'wolf');
     else if (e.tribe) {
       const t = tribeOf(sim, e.tribe);
-      if (t && t.state === 'free') { if (raidAdvised(sim, t, e.size) || e.fireDay >= e.warnDay + 4) launchRaid(sim, t, e.size); else { e.fired = false; e.fireDay = sim.day + 1; e.warned = true; sim.say(`${t.def.name} thấy làng đông quân và hoãn tập kích.`); } }
+      if (t && t.state === 'free') { if (raidAdvised(sim, t, e.size) || e.fireDay >= e.warnDay + 4) (e.army ? launchCustomRaid(sim, t, armyWeapons(e.army), e.armor ?? true, false) : launchRaid(sim, t, e.size)); else { e.fired = false; e.fireDay = sim.day + 1; e.warned = true; sim.say(`${t.def.name} thấy làng đông quân và hoãn tập kích.`); } }
     }
   }
 }

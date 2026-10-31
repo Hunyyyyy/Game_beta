@@ -1,9 +1,12 @@
 {
-  "_note": "day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
+  "_note": "kind beasts: species = id in animals.json (wolf, bear, lion...). kind raid: tribe = who attacks; size = how many guards the tribe sends, OR army = own make-up { weapon: count } (weapons of weapons.json: club, spear, mace, hatchet = foot; sling, bow = archers), with armor (default true). Enemy cavalry is not supported yet. day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
   "events": [
-    { "id": "wolves_summer", "kind": "wolves", "day": 6,  "spread": 2, "size": 4, "night": true,  "warn": "Tiếng hú vang lên từ xa trong đêm..." },
+    { "id": "wolves_summer_1", "kind": "beasts", "species": "wolf", "day": 3,  "spread": 0, "size": 2, "night": false,"warnDays": 2,  "warn": "Tiếng hú vang lên từ xa trong đêm..." },
+    { "id": "wolves_summer_2", "kind": "beasts", "species": "wolf", "day": 6,  "spread": 0, "size": 6, "night": false,"warnDays": 2,  "warn": "Tiếng hú vang lên từ xa trong đêm bầy sói trả thù..." },
+    { "id": "wolves_summer_3", "kind": "beasts", "species": "wolf", "day": 8,  "spread": 0, "size": 10, "night": true,"warnDays": 2,  "warn": "Tiếng hú vang lên từ xa trong đêm bầy sói tổng tấn công..." },
     { "id": "axe_scout",     "kind": "raid",   "tribe": "axe",   "day": 10, "spread": 2, "size": 5,  "night": false, "warnDays": 1, "warn": "Khói bốc lên từ phía tộc Rìu Đá, có lẽ họ đang cử người dò xét." },
-    { "id": "wolves_winter", "kind": "wolves", "day": 16, "spread": 4, "size": 8, "night": true,  "warn": "Dấu chân sói đầy quanh làng." },
+    { "id": "wolves_winter", "kind": "beasts", "species": "wolf", "day": 16, "spread": 4, "size": 8, "night": true,  "warn": "Dấu chân sói đầy quanh làng." },
+    { "id": "bear_autumn",   "kind": "beasts", "species": "bear", "day": 13, "spread": 1, "size": 2, "night": true, "warn": "Những vết cào sâu trên thân cây quanh làng: có gấu." },
     { "id": "swamp_raid",    "kind": "raid",   "tribe": "swamp", "day": 21, "spread": 4, "size": 8,  "night": true,  "warnDays": 0, "warn": "" },
     { "id": "axe_war",       "kind": "raid",   "tribe": "axe",   "day": 26, "spread": 4, "size": 18, "night": false, "warnDays": 1, "warn": "Tiếng trống chiến vang lên: tộc Rìu Đá sắp đánh lớn." }
   ]
