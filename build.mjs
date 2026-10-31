@@ -1,5 +1,6 @@
 import { build } from 'esbuild';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { scss } from './tools/scss.mjs';
 
 const out = await build({
   entryPoints: ['src/main.ts'],
@@ -7,7 +8,8 @@ const out = await build({
 });
 const js = out.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 const tpl = readFileSync('src/index.html', 'utf8');
-const page = tpl.replace('/*BUNDLE*/', () => js);
+const css = scss('src/styles/main.scss');
+const page = tpl.replace('/*STYLE*/', () => css).replace('/*BUNDLE*/', () => js);
 mkdirSync('dist', { recursive: true });
 // artifact.html: mảnh HTML (không doctype) để dán vào trang bao ngoài; index.html: tệp chạy độc lập.
 writeFileSync('dist/artifact.html', page);

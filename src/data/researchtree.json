@@ -1,0 +1,404 @@
+{
+  "_note": "Cây nghiên cứu chỉ số trong Nhà nghiên cứu. Mỗi ô là một dây: một chỉ số của một vai trò. SỐ CẤP CỦA MỖI CHỈ SỐ bằng số phần tử của mảng steps của nó (thêm hay bớt số trong steps là thêm hay bớt cấp, mỗi chỉ số tự đặt riêng); tiers riêng của chỉ số (nếu ghi) thay cho tiers chung bên dưới, số cuối được dùng tiếp cho các cấp cao hơn. Người chơi tự chọn ô nào cũng được (chọn chỉ số vô dụng cho vai trò thì là lỗ của họ). steps[stat] = % cộng thêm ở từng cấp, giảm dần nhưng có sàn; tổng % cộng dồn của một ô là phần cộng thêm của chỉ số đó cho cả vai trò (gốc × (1 + tổng% / 100)). cost = vật liệu của cấp 1 (cộng thêm tiền tăng dần), nhân 'growth.cost' mỗi cấp; time (giây công) nhân 'growth.time' mỗi cấp. tiers[n-1] = cấp Nhà nghiên cứu cần cho cấp n. Chưa nối vào công thức chiến đấu và làm việc: xem statBonus trong sim/research.ts.",
+  "tiers": [1, 1, 1, 2, 2, 2, 3, 3, 3, 3],
+  "growth": {
+    "cost": 1.5,
+    "time": 1.25
+  },
+  "stats": {
+    "hp": {
+      "name": "Máu",
+      "short": "Máu",
+      "steps": [12.5, 6, 3, 2.5, 2.5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 120,
+      "about": "Máu tối đa."
+    },
+    "atk": {
+      "name": "Sức mạnh",
+      "short": "Sát thương",
+      "steps": [8, 4, 2.5, 2.5, 2.5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 120,
+      "about": "Sát thương mỗi đòn đánh."
+    },
+    "aspd": {
+      "name": "Tốc độ đánh",
+      "short": "Tốc đánh",
+      "steps": [ 5, 2.5, 2.5, 2.5, 2.5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 120,
+      "about": "Tốc độ đánh của vũ khí: ai cầm nó đánh và bắn nhanh hơn, thời gian giữa hai đòn ngắn lại."
+    },
+    "crit": {
+      "name": "Tỉ lệ chí mạng",
+      "short": "Chí mạng",
+      "steps": [0.5, 1, 1, 1, 1],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 130,
+      "about": "Tỉ lệ chí mạng của vũ khí, tính trên 100%: mỗi cấp cộng thẳng vào xác suất (0,5% là nửa phần trăm). Tối đa 10%."
+    },
+    "critd": {
+      "name": "Sát thương chí mạng",
+      "short": "ST chí mạng",
+      "steps": [20, 10, 5, 2.5, 2.5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 130,
+      "about": "Sát thương của đòn chí mạng tính trên 100% đòn thường, gốc 125%: mỗi cấp cộng thẳng vào (400% là gấp 4 lần đòn thường)."
+    },
+    "tspd": {
+      "name": "Tốc độ làm việc với công cụ",
+      "short": "Tốc độ",
+      "steps": [6, 5, 4, 3, 3],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 110,
+      "about": "Ai cầm công cụ này làm việc nhanh hơn (cộng vào hệ số của công cụ)."
+    },
+    "tyield": {
+      "name": "Sản lượng",
+      "short": "Sản lượng",
+      "steps": [4, 4, 3, 3, 2],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 110,
+      "about": "Mỗi lần khai thác thu được nhiều hơn khi cầm công cụ này."
+    },
+    "tdur": {
+      "name": "Độ bền",
+      "short": "Độ bền",
+      "steps": [10, 10, 10, 5, 5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 110,
+      "about": "Công cụ lâu hỏng hơn (thời gian làm việc trước khi gãy dài ra)."
+    },
+    "defm": {
+      "name": "Phòng thủ cận chiến",
+      "short": "Thủ cận",
+      "steps": [10, 5, 2.5, 2.5, 2.5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 140,
+      "about": "Giảm sát thương nhận từ lính cận chiến."
+    },
+    "defr": {
+      "name": "Phòng thủ tầm xa",
+      "short": "Thủ xa",
+      "steps": [10, 5, 2.5, 2.5, 2.5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 140,
+      "about": "Giảm sát thương nhận từ lính tầm xa."
+    },
+    "move": {
+      "name": "Tốc độ di chuyển",
+      "short": "Chạy",
+      "steps": [2.5, 2.5, 2.5, 2.5, 2.5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 100,
+      "about": "Tốc độ đi và chạy."
+    },
+    "work": {
+      "name": "Tốc độ làm việc",
+      "short": "Làm việc",
+      "steps": [5, 2.5, 2.5, 2.5, 2.5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 2
+      },
+      "time": 110,
+      "about": "Tốc độ làm việc: khai thác, xây, chế tạo, nghiên cứu."
+    },
+    "int": {
+      "name": "Trí tuệ",
+      "short": "Trí tuệ",
+      "steps": [5, 2.5, 2.5, 2.5, 2.5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 4
+      },
+      "time": 130,
+      "about": "Trí tuệ: tăng tốc độ làm việc và giảm sức tiêu hao khi làm việc."
+    },
+    "sta": {
+      "name": "Sức",
+      "short": "Sức",
+      "steps": [8, 4, 2.5, 2.5, 2.5],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 5
+      },
+      "time": 110,
+      "about": "Sức bền: làm việc và chiến đấu được lâu."
+    }
+  },
+  "roles": {
+    "foot": {
+      "name": "Bộ binh",
+      "building": "infantry"
+    },
+    "cavalry": {
+      "name": "Kỵ thú",
+      "building": "cavalry"
+    },
+    "archer": {
+      "name": "Thợ ném",
+      "building": "archery"
+    },
+    "scout": {
+      "name": "Trinh sát",
+      "building": "scouttent"
+    },
+    "wood": {
+      "name": "Đốn gỗ",
+      "building": "lumberyard"
+    },
+    "stone": {
+      "name": "Thợ đá",
+      "building": "quarry"
+    },
+    "food": {
+      "name": "Hái lượm",
+      "building": "farmhouse"
+    },
+    "hunt": {
+      "name": "Thợ săn",
+      "building": "huntlodge"
+    },
+    "build": {
+      "name": "Thợ xây",
+      "building": "builder"
+    },
+    "craft": {
+      "name": "Thợ chế tạo",
+      "building": "workshop"
+    },
+    "research": {
+      "name": "Nhà nghiên cứu",
+      "building": "lab"
+    },
+    "tame": {
+      "name": "Thuần thú",
+      "building": "stable"
+    },
+    "club": {
+      "name": "Gậy gỗ",
+      "weapon": "club"
+    },
+    "spear": {
+      "name": "Giáo gỗ",
+      "weapon": "spear"
+    },
+    "mace": {
+      "name": "Chùy đá",
+      "weapon": "mace"
+    },
+    "sling": {
+      "name": "Dây quăng đá",
+      "weapon": "sling"
+    },
+    "bow": {
+      "name": "Cung ngắn",
+      "weapon": "bow"
+    },
+    "basic": {
+      "name": "Trận pháp cơ bản",
+      "building": "drill",
+      "formation": true,
+      "needs": "form_basic"
+    },
+    "wedge": {
+      "name": "Mũi nhọn",
+      "building": "drill",
+      "formation": true,
+      "needs": "form_wedge"
+    },
+    "horns": {
+      "name": "Sừng bò",
+      "building": "drill",
+      "formation": true,
+      "needs": "form_horns"
+    },
+    "scatter": {
+      "name": "Rải quân",
+      "building": "drill",
+      "formation": true,
+      "needs": "form_scatter"
+    },
+    "ambush": {
+      "name": "Phục kích",
+      "building": "drill",
+      "formation": true,
+      "needs": "form_ambush"
+    },
+    "axe": {
+      "name": "Rìu",
+      "tool": "axe"
+    },
+    "pick": {
+      "name": "Cuốc chim",
+      "tool": "pick"
+    },
+    "hoe": {
+      "name": "Cuốc",
+      "tool": "hoe"
+    },
+    "hammer": {
+      "name": "Búa",
+      "tool": "hammer"
+    },
+    "farm": {
+      "name": "Nông dân",
+      "building": "field"
+    }
+  },
+  "tabs": {
+    "_note": "Quân sự mở khi Nhà nghiên cứu đạt cấp needLab; tab Vũ khí chỉ mở khi Quân sự đã mở. Hai tab Xây dựng và Kinh tế mở sẵn.",
+    "military": {
+      "needLab": 2
+    }
+  },
+  "chains": {
+    "_note": "Mỗi nhóm là một chuỗi chỉ số đi từ trên xuống dưới (order). Cấp n của một chỉ số cần chỉ số ngay phía trên đạt cấp n; chỉ số đầu chuỗi cấp n cần chỉ số cuối chuỗi đạt cấp n-1. Quân sự: Máu, Thủ cận, Thủ xa, Chạy, Sát thương, Sức. Công cụ (tab Công cụ bậc 1): mỗi CÔNG CỤ (rìu, cuốc chim, cuốc, búa) một cột Tốc độ, Sản lượng (không có ở búa), Độ bền; ai cầm công cụ đó được cộng, bậc của công cụ (gỗ, đá) do cấp Nhà chế tạo. Trận pháp (tab Chiến đấu, nhánh Chỉ số trận pháp): mỗi trận (cơ bản gồm Hàng ngang và Vòng tròn) một cột, cùng chuỗi chỉ số quân, chia làm hai đoạn (layout) với ô trận pháp ở giữa và mở rộng đội ở cuối; gates: chỉ số này cấp 1 cần nghiên cứu đó; lính đứng trong đội đang dùng trận đó được cộng thêm, và mỗi bước chỉ được scale (0,5) lần phần của Quân sự; mỗi trận chỉ nghiên cứu được khi đã mở trận (needs). Vũ khí (tab Vũ khí bậc 1): mỗi VŨ KHÍ (không phải mỗi vai trò) một cột Tốc độ đánh, Tỉ lệ chí mạng, Sát thương chí mạng (hai chỉ số này tính bằng % thật: 0,5% xác suất; 400% là gấp 4 lần đòn thường); ai cầm vũ khí đó được cộng chỉ số của nó; khi cả ba chỉ số đạt cấp tối đa thì mở vũ khí bậc 2 của vũ khí đó (finalTier): sát thương gốc của vũ khí nhân rules.tierMult trong weapons.json, cho mọi người cầm vũ khí đó. Kinh tế (nghề): Chạy, Làm việc, Sức, Trí tuệ. Phát triển (thợ xây, thợ chế tạo, nhà nghiên cứu): Làm việc, Sức, Trí tuệ (Trí tuệ ở cuối vì nó cũng tăng tốc độ làm việc và giảm sức tiêu hao khi làm việc). finalTier: ô cuối cột, mở bậc 2 khi mọi chỉ số của vai trò đạt cấp tối đa; có ở Quân sự, Kinh tế, Phát triển và Vũ khí. Bậc 2 nhân mọi chỉ số của cả vai trò theo tierMult trong stats.json.",
+    "military": {
+      "roles": ["foot", "cavalry", "archer", "scout"],
+      "order": ["hp", "defm", "defr", "move", "atk", "sta"],
+      "finalTier": {
+        "tier": 2,
+        "roles": ["foot", "cavalry", "archer", "scout"],
+        "needLab": 3,
+        "cost": {
+          "food": 200,
+          "wood": 120,
+          "hide": 20,
+          "coin": 20
+        },
+        "time": 1200
+      }
+    },
+    "weapon": {
+      "roles": ["club", "spear", "mace", "sling", "bow"],
+      "order": ["aspd", "crit", "critd"],
+      "finalTier": {
+        "tier": 2,
+        "roles": ["club", "spear", "mace", "sling", "bow"],
+        "needLab": 3,
+        "cost": { "wood": 100, "stone": 60, "hide": 10, "coin": 15 },
+        "time": 900
+      }
+    },
+    "formation": {
+      "roles": ["basic", "wedge", "horns", "scatter", "ambush"],
+      "order": ["hp", "defm", "defr", "move", "atk", "sta"],
+      "scale": 0.5,
+      "gates": { "move": "form_cells_10" },
+      "layout": [
+        { "stats": ["hp", "defm", "defr"] },
+        { "techs": ["form_cells_10", "form_squads_5"] },
+        { "stats": ["move", "atk", "sta"] },
+        { "techs": ["form_cells_15", "form_squads_6"] }
+      ]
+    },
+    "tool": {
+      "roles": ["axe", "pick", "hoe"],
+      "order": ["tspd", "tyield", "tdur"]
+    },
+    "hammer": {
+      "roles": ["hammer"],
+      "order": ["tspd", "tdur"]
+    },
+    "economy": {
+      "roles": ["wood", "stone", "food", "hunt", "farm", "tame"],
+      "order": ["move", "work", "sta", "int"],
+      "finalTier": {
+        "tier": 2,
+        "roles": ["wood", "stone", "food", "hunt", "farm", "tame"],
+        "needLab": 3,
+        "cost": { "food": 150, "wood": 100, "stone": 40, "coin": 15 },
+        "time": 1000
+      }
+    },
+    "development": {
+      "roles": ["build", "craft", "research"],
+      "order": ["work", "sta", "int"],
+      "finalTier": {
+        "tier": 2,
+        "roles": ["build", "craft", "research"],
+        "needLab": 3,
+        "cost": { "wood": 100, "stone": 60, "hide": 10, "coin": 20 },
+        "time": 1000
+      }
+    }
+  }
+}

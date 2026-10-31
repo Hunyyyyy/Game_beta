@@ -1,4 +1,4 @@
-import { Building, BuildingKind, BUILDINGS, Era } from '../sim/buildings';
+import { Building, BuildingKind, BUILDINGS, CLEARANCE as CLEAR, Era, buildingSight, maxHp, needsWork, WALL_KINDS } from '../sim/buildings';
 import type { WeatherKind } from '../sim/calendar';
 import { gameDays, TILE } from '../sim/constants';
 import type { Sim, Villager } from '../sim/sim';
@@ -6,15 +6,16 @@ import type { Animal } from '../sim/fauna';
 import type { Tribe } from '../sim/tribes';
 import { hash2 } from '../sim/rng';
 import { Tile } from '../sim/world';
+import { MOUNTS } from '../sim/jobs';
 import { Prop, Sprites, SPRITE_FEET } from './sprites';
 
 export interface Camera { x: number; y: number; zoom: number }
 export interface Box { x0: number; y0: number; x1: number; y1: number }
 export interface Marker { x: number; y: number; age: number }
 
-export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era }
+export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number }
 
-interface Drawable { y: number; kind: 'tree' | 'rock' | 'bush' | 'villager' | 'building' | 'animal' | 'camp'; i: number; j: number; v?: Villager; b?: Building; a?: Animal; t?: Tribe }
+interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp'; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe }
 
 const FOG_RGB = [8, 10, 20];
 /** Weather particles: drop/flake count (per 1000×700 px), extra dimming, wind slant, lightning chance. */
@@ -79,15 +80,138 @@ export class Renderer {
   }
 
   /** Điểm neo của công trình: giữa mép dưới ô chiếm, hơi nhích lên. */
+  /**
+   * A house that has been hurt shows it: a bar of what is left, smoke once it has lost 30%, flames once it has lost 70% (at nothing it falls).
+   * Every house does it, the tower no more than the others.
+   */
+  private drawDamage(b: Building, ax: number, ay: number, time: number): void {
+    if (!b.done) return;
+    const { ctx, cam: { zoom: z } } = this, ratio = Math.max(0, Math.min(1, b.hp / Math.max(1, maxHp(b))));
+    if (ratio >= 1) return;
+    const top = b.kind === 'tower' ? 86 : b.kind === 'fence' || b.kind === 'gate' ? 30 : 62;
+    this.bar(ax, ay - top, ratio, ratio > 0.7 ? '#6bbf59' : ratio > 0.3 ? '#e0b43c' : '#d9503c');
+    if (b.kind === 'fence' || b.kind === 'gate') return;
+    const wide = BUILDINGS[b.kind].w * TILE * 0.35, roof = b.kind === 'tower' ? 70 : 44;
+    if (ratio <= 0.7) { // smoke rising from the roof
+      for (let k = 0; k < 4; k++) {
+        const t = (time * 0.45 + k * 0.25 + b.id * 0.13) % 1, p = this.worldToScreen(ax - wide * 0.5 + k * wide * 0.33 + Math.sin(time * 1.3 + k) * 3 * t, ay - roof - t * 34);
+        ctx.fillStyle = `rgba(${ratio <= 0.3 ? '55,52,52' : '120,120,126'},${(0.5 * (1 - t)).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, (3 + t * 7) * z, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    if (ratio <= 0.3) { // flames over it
+      for (let k = 0; k < 4; k++) {
+        const flick = 0.7 + 0.3 * Math.sin(time * 11 + k * 2.1 + b.id), h = (9 + k % 2 * 4) * flick * z, p = this.worldToScreen(ax - wide * 0.7 + k * wide * 0.47, ay - roof + 8 - (k % 2) * 6);
+        ctx.fillStyle = '#e8641e'; ctx.beginPath(); ctx.moveTo(p.x - 4 * z, p.y); ctx.lineTo(p.x, p.y - h); ctx.lineTo(p.x + 4 * z, p.y); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#f7c24a'; ctx.beginPath(); ctx.moveTo(p.x - 2 * z, p.y); ctx.lineTo(p.x, p.y - h * 0.65); ctx.lineTo(p.x + 2 * z, p.y); ctx.closePath(); ctx.fill();
+      }
+    }
+  }
+
+  /** The circle a tower sees, and shoots, as far as: drawn round the tower when it is chosen, and round the one being placed or carried. */
+  private drawSight(cxTile: number, cyTile: number, tiles: number): void {
+    const { ctx } = this, z = this.cam.zoom, p = this.worldToScreen(cxTile * TILE, cyTile * TILE), r = tiles * TILE * z;
+    ctx.fillStyle = 'rgba(255,226,140,.08)'; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,226,140,.7)'; ctx.lineWidth = 2; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  /** The side (left or right) each villager last faced, for riders. */
+  private readonly sideOf = new WeakMap<Villager, 'left' | 'right'>();
+
   private buildingAnchor(kind: BuildingKind, x: number, y: number): [number, number] {
     const d = BUILDINGS[kind];
     return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
   }
 
+  /** A fence piece in a column (a neighbour above or below, none beside) is a stake with rails running down the screen to the next one: the tile picture shows a row seen from the front. Returns false when the piece is not part of a column. */
+  private drawColumnFence(b: Building, wallAt: Map<number, Building>): boolean {
+    const N = this.sim.world.size, at = (dx: number, dy: number) => wallAt.get((b.y + dy) * N + b.x + dx);
+    // a fence piece at a corner or a T (a neighbour on both axes) is drawn here too
+    if (!(at(0, -1) || at(0, 1))) return false;
+    const { ctx } = this, z = this.cam.zoom, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay), two = b.level >= 2;
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 8 * z, 3 * z, 0, 0, Math.PI * 2); ctx.fill();
+    // rails to the pieces below and beside, drawn first so that this stake and the next one stand over their ends
+    for (const [dx, dy] of [[0, 1], [-1, 0], [1, 0]]) {
+      if (!at(dx, dy)) continue;
+      const q = this.worldToScreen(ax + dx * TILE, ay + dy * TILE);
+      for (const h of two ? [20, 12, 5] : [14, 7]) { ctx.strokeStyle = two ? '#8a6238' : '#d8c690'; ctx.lineWidth = Math.max(1, (two ? 2 : 1) * z); ctx.beginPath(); ctx.moveTo(p.x, p.y - h * z); ctx.lineTo(q.x, q.y - h * z); ctx.stroke(); }
+    }
+    const w = (two ? 6 : 5) * z, hgt = (two ? 30 : 25) * z;
+    ctx.fillStyle = '#5e4026'; ctx.fillRect(Math.round(p.x - w / 2), Math.round(p.y - hgt), Math.round(w), Math.round(hgt));
+    ctx.fillStyle = '#8a6238'; ctx.beginPath(); ctx.moveTo(p.x - w / 2, p.y - hgt); ctx.lineTo(p.x, p.y - hgt - 3 * z); ctx.lineTo(p.x + w / 2, p.y - hgt); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = Math.max(1, z * 0.7); ctx.strokeRect(Math.round(p.x - w / 2) + 0.5, Math.round(p.y - hgt) + 0.5, Math.round(w), Math.round(hgt));
+    return true;
+  }
+
+  /** A gate stands taller and much wider than the fence on either side (posts 30 px out from its middle, a lintel across them), and shows plainly whether it is shut: shut, it has a red sign and cloth, planks fill the gap and the ground between the posts is barred; open, it has a green sign and cloth, the leaves stand swung out and a path is laid between the posts. It runs along the column when fence lies above or below it and none beside it. */
+  private drawGate(b: Building, wallAt: Map<number, Building>): void {
+    const { ctx } = this, z = this.cam.zoom, N = this.sim.world.size, at = (dx: number, dy: number) => wallAt.has((b.y + dy) * N + b.x + dx);
+    const col = (at(0, -1) || at(0, 1)) && !(at(-1, 0) || at(1, 0)), two = b.level >= 2, open = b.open;
+    const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 8);
+    const sign = open ? '#4fbf5a' : '#d9473f', signDark = open ? '#2a7a33' : '#8f2620';
+    // u runs along the gate, v across it (towards the viewer), h up from the ground
+    const X = (u: number, v = 0) => (col ? p.x + v * z : p.x + u * z), Y = (u: number, h: number, v = 0) => (col ? p.y + u * z : p.y + v * z) - h * z;
+    const line = (x0: number, y0: number, x1: number, y1: number, th: number, c: string) => {
+      ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = th * z + 2; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+      ctx.strokeStyle = c; ctx.lineWidth = th * z; ctx.stroke();
+    };
+    const bar = (u0: number, u1: number, h: number, th: number, c: string) => line(X(u0), Y(u0, h), X(u1), Y(u1, h), th, c);
+    const top = two ? 64 : 58, leaf = two ? '#9a9a96' : '#8a6238', U = 30;
+    // the ground between the posts: a green path when open, barred in red when shut
+    ctx.fillStyle = open ? 'rgba(90,200,90,.32)' : 'rgba(217,71,63,.30)';
+    if (col) ctx.fillRect(Math.round(p.x - 8 * z), Math.round(p.y - U * z), Math.round(16 * z), Math.round(2 * U * z));
+    else ctx.fillRect(Math.round(p.x - U * z), Math.round(p.y - 8 * z), Math.round(2 * U * z), Math.round(16 * z));
+    const post = (u: number) => {
+      const pw = (two ? 11 : 9) * z, ph = top * z, x = X(u), y = Y(u, 0);
+      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y, 10 * z, 3.5 * z, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#2b1d10'; ctx.fillRect(Math.round(x - pw / 2) - 1, Math.round(y - ph) - 1, Math.round(pw) + 2, Math.round(ph) + 2);
+      ctx.fillStyle = '#5e4026'; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph), Math.round(pw), Math.round(ph));
+      ctx.fillStyle = '#aa7c48'; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph), Math.round(pw * 0.35), Math.round(ph));
+      // cloth hung from the top of the post: red when shut, green when open
+      ctx.fillStyle = sign; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph + 6 * z), Math.round(pw), Math.round(14 * z));
+      ctx.fillStyle = signDark; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph + 17 * z), Math.round(pw), Math.round(3 * z));
+    };
+    post(-U);
+    if (open) {
+      // leaves swung out to the front, one from each post
+      for (const s of [-1, 1]) for (const h of [8, 22, 36]) line(X(s * U, 0), Y(s * U, h), X(s * (U - 4), 14), Y(s * (U - 4), h, 14), 4, leaf);
+    } else {
+      for (const h of [6, 17, 28, 39]) bar(-U + 4, U - 4, h, 5, leaf);
+      line(X(-U + 4), Y(-U + 4, 6), X(U - 4), Y(U - 4, 39), 3, '#d8c690');
+    }
+    post(U);
+    bar(-U - 8, U + 8, top, 7, '#5e4026'); bar(-U - 8, U + 8, top + 2, 2, '#aa7c48');
+    // the sign on the lintel: a disc with a bar across (shut) or an arrow through (open)
+    const cx = X(0), cy = Y(0, top + 12), r = 9 * z;
+    ctx.fillStyle = '#2b1d10'; ctx.beginPath(); ctx.arc(cx, cy, r + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = sign; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff6e8'; ctx.lineWidth = Math.max(2, 2.4 * z); ctx.lineCap = 'round'; ctx.beginPath();
+    if (open) { ctx.moveTo(cx, cy + 5 * z); ctx.lineTo(cx, cy - 5 * z); ctx.moveTo(cx - 3.5 * z, cy - 1.5 * z); ctx.lineTo(cx, cy - 5.5 * z); ctx.lineTo(cx + 3.5 * z, cy - 1.5 * z); }
+    else { ctx.moveTo(cx - 5 * z, cy); ctx.lineTo(cx + 5 * z, cy); }
+    ctx.stroke(); ctx.lineCap = 'butt';
+  }
+
+  /** Ropes and a middle stake from a fence piece to the pieces touching it at its upper corners, drawn over the pieces already standing there. */
+  private drawDiagonalRails(b: Building, wallAt: Map<number, Building>): void {
+    const { ctx } = this, N = this.sim.world.size, z = this.cam.zoom;
+    for (const dx of [-1, 1]) {
+      const o = wallAt.get((b.y - 1) * N + b.x + dx);
+      if (!o) continue;
+      // a piece beside this one in the same row or column already joins them
+      if (wallAt.has(b.y * N + b.x + dx) || wallAt.has((b.y - 1) * N + b.x)) continue;
+      const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), [bx, by] = this.buildingAnchor(o.kind, o.x, o.y);
+      const rope = (h: number) => { const p = this.worldToScreen(ax, ay - h), q = this.worldToScreen(bx, by - h); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); };
+      ctx.strokeStyle = '#d8c690'; ctx.lineWidth = Math.max(1, z); rope(12); rope(6);
+      const m = this.worldToScreen((ax + bx) / 2, (ay + by) / 2);
+      ctx.fillStyle = '#5e4026'; ctx.fillRect(Math.round(m.x - 2 * z), Math.round(m.y - 24 * z), Math.round(4 * z), Math.round(24 * z));
+      ctx.fillStyle = '#aa7c48'; ctx.fillRect(Math.round(m.x - 2 * z), Math.round(m.y - 24 * z), Math.round(4 * z), Math.round(3 * z));
+    }
+  }
+
   /** Current level's sprite; while an upgrade runs the finished building stays drawn, with a progress bar. */
   private buildingProp(b: Building): Prop {
     const st = b.done ? 4 : Math.min(3, Math.floor(b.progress * 4));
-    return this.sprites.building(b.kind, b.era, b.level, st);
+    return this.sprites.building(b.kind, b.era, b.kind === 'gate' && b.open ? b.level + 2 : b.level, st);
   }
 
   /** Rain, snow, mist, lightning in screen space; particle positions derive from time, so no state is kept. */
@@ -142,7 +266,52 @@ export class Renderer {
     ctx.fillStyle = color; ctx.fillRect(p.x - w / 2, p.y, w * Math.max(0, Math.min(1, frac)), 2 * z);
   }
 
-  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal'; id: number } | null = null): void {
+  /** Draw the soldiers as one figure for about three of them in a big battle (set from the war HUD). */
+  /** The cluster flags drawn last frame, for taps. */
+  private flags: Array<{ ids: number[]; x: number; y: number; w: number; h: number }> = [];
+
+  /** The cluster whose flag is under the screen point, if any. */
+  flagAt(px: number, py: number): number[] | null {
+    for (const f of this.flags) if (px >= f.x && px <= f.x + f.w && py >= f.y && py <= f.y + f.h) return f.ids;
+    return null;
+  }
+
+  /** A small flag over each cluster of soldiers: how many are left, how well they are, and which arm and squad they are. */
+  private drawClusters(selected: ReadonlySet<number>): void {
+    const { ctx, cam, sim } = this, z = cam.zoom, N = sim.world.size;
+    this.flags = [];
+    if (!sim.squads.length && !sim.battle.on) return;
+    const ARM = { foot: '#d9a441', archer: '#5aa0d9', cavalry: '#c05ad9' };
+    const ARM_LETTER = { foot: 'B', archer: 'C', cavalry: 'K' };
+    ctx.font = `700 ${Math.max(10, 5 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center';
+    for (const c of sim.clusters()) {
+      if (c.side !== 'player' && sim.fog.state[Math.floor(c.y) * N + Math.floor(c.x)] !== 2) continue;
+      const p = this.worldToScreen(c.x * TILE, c.y * TILE - 38), w = 30 * z * 0.7, h = 11 * z * 0.7, x = Math.round(p.x - w / 2), y = Math.round(p.y - h);
+      const chosen = c.ids.some((id) => selected.has(id));
+      ctx.fillStyle = c.color; ctx.globalAlpha = 0.92; ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1;
+      ctx.strokeStyle = chosen ? '#ffffff' : ARM[c.arm]; ctx.lineWidth = chosen ? 2 : 1.5; ctx.strokeRect(x + 0.5, y + 0.5, w, h);
+      ctx.fillStyle = '#ffffff'; ctx.fillText(`${ARM_LETTER[c.arm]} ${c.n}`, p.x, y + h * 0.78);
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x, y + h + 1, w, 3);
+      ctx.fillStyle = c.hp > 0.5 ? '#6ac24a' : c.hp > 0.25 ? '#e0b43c' : '#d9503c'; ctx.fillRect(x, y + h + 1, w * Math.max(0, Math.min(1, c.hp)), 3);
+      this.flags.push({ ids: c.ids, x, y, w, h: h + 4 });
+    }
+  }
+
+  /**
+   * A mountain is one mass, not a peak on every tile: the whole of it is rocky ground, and peaks stand on it only now and then, small at the foot,
+   * larger up the slope, tallest and snow-capped at the heart. Whether a tile carries a peak, and how big, comes from how deep in the mountain it is.
+   */
+  private peakAt(world: Sim['world'], i: number, j: number): 'low' | 'mid' | 'high' | null {
+    const inside = (x: number, y: number) => world.at(x, y) === Tile.Mountain && world.inBounds(x, y);
+    const reach = (dx: number, dy: number) => { let n = 0; while (n < 4 && inside(i + dx * (n + 1), j + dy * (n + 1))) n++; return n; };
+    const depth = Math.min(reach(1, 0), reach(-1, 0), reach(0, 1), reach(0, -1)); // 0 on the rim, up to 4 at the heart
+    const step = depth >= 3 ? 3 : 2;
+    const ci = Math.floor(i / step), cj = Math.floor(j / step);
+    if (i !== ci * step + Math.floor(hash2(ci, cj, 41) * step) || j !== cj * step + Math.floor(hash2(ci, cj, 42) * step)) return null;
+    return depth >= 3 ? 'high' : depth === 2 ? 'mid' : 'low';
+  }
+
+  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null): void {
     const { ctx, cam, sim } = this, z = cam.zoom, world = sim.world, N = world.size, sp = this.sprites;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
@@ -162,14 +331,10 @@ export class Renderer {
           const w = nat.water[Math.floor(r * nat.water.length)];
           img = w.frames[Math.floor(time * w.fps + hash2(i >> 2, j >> 2, 5) * 4) % w.frames.length];
         } else if (t === Tile.Mud) img = nat.mud[Math.floor(r * nat.mud.length)];
+        else if (t === Tile.Mountain) img = nat.mountainFloor[Math.floor(r * nat.mountainFloor.length)];
         else img = nat.grass[Math.floor(r * nat.grass.length)];
         ctx.drawImage(img, px(i), py(j), ts, ts);
       }
-    }
-    // gốc cây là vật trang trí nằm sát đất
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-      if (!world.decor[j * N + i]) continue;
-      this.prop(nat.stump[Math.floor(hash2(i, j, 31) * nat.stump.length)], i * TILE + 16, j * TILE + 26, time);
     }
     const trees = nat.trees;
 
@@ -180,6 +345,7 @@ export class Renderer {
         const t = world.at(i, j);
         if (t === Tile.Tree) list.push({ y: j * TILE + 28, kind: 'tree', i, j });
         else if (t === Tile.Rock) list.push({ y: j * TILE + 28, kind: 'rock', i, j });
+        else if (t === Tile.Mountain) { const p = this.peakAt(world, i, j); if (p) list.push({ y: j * TILE + 30, kind: 'mountain', i, j, peak: p }); }
         else if (t === Tile.Bush) list.push({ y: j * TILE + 28, kind: 'bush', i, j });
       }
     }
@@ -195,10 +361,16 @@ export class Renderer {
     for (const a of sim.animals) if (seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
     for (const t of sim.tribes) if (t.state !== 'adopted' && sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: 'camp', i: 0, j: 0, t });
     list.sort((a, b) => a.y - b.y);
+    // fences laid corner to corner: their ropes do not meet in the tile sprites, so a rope and a stake are drawn across the diagonal
+    const wallAt = new Map<number, Building>();
+    for (const b of sim.buildings) if (b.kind === 'fence' || b.kind === 'gate') wallAt.set(b.y * N + b.x, b);
     for (const d of list) {
       if (d.kind === 'tree') {
         const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
         this.prop(p, d.i * TILE + 16, d.y, time);
+      } else if (d.kind === 'mountain') {
+        const set = nat.peaks[d.peak ?? 'low'];
+        this.prop(set[Math.floor(hash2(d.i, d.j, 24) * set.length)], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'rock') {
         this.prop(nat.rocks[Math.floor(hash2(d.i, d.j, 22) * nat.rocks.length)], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'bush') {
@@ -206,9 +378,35 @@ export class Renderer {
         this.prop((n && n.amount === 0 ? nat.bushEmpty : nat.bush)[k], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'building' && d.b) {
         const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
-        this.prop(this.buildingProp(b), ax, ay, time);
+        if (b.kind === 'gate' && b.done) this.drawGate(b, wallAt);
+        else if (!(b.kind === 'fence' && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id ? 0.5 : 1); // the house being carried stays dim where it stands
+        if (b.kind === 'fence' || b.kind === 'gate') this.drawDiagonalRails(b, wallAt);
+        this.drawDamage(b, ax, ay, time);
         const emblem = b.done ? sp.emblems[b.kind] : undefined;
         if (emblem) { const p = this.worldToScreen(ax, ay - 52); ctx.drawImage(emblem, Math.round(p.x - 8 * z), Math.round(p.y), 16 * z, 16 * z); }
+        // a house that works to orders shows how far the order has got, or sleeps when it has none
+        if (b.done && (b.kind === 'lab' || b.kind === 'workshop' || b.kind === 'stable' || b.kind === 'builder')) {
+          const p = this.worldToScreen(ax, ay - 74);
+          ctx.textAlign = 'center'; ctx.lineJoin = 'round';
+          // the builders' house has no orders of its own: it is busy while any house waits to be raised or upgraded
+          if (b.kind === 'builder' && sim.buildings.some(needsWork)) { ctx.textAlign = 'start'; }
+          else if (b.active) {
+            const w = 36 * z, f = Math.max(0, Math.min(1, b.active.progress));
+            ctx.fillStyle = 'rgba(20,14,8,.8)'; ctx.fillRect(p.x - w / 2 - z, p.y - z, w + 2 * z, 8 * z);
+            ctx.fillStyle = '#6bbf59'; ctx.fillRect(p.x - w / 2, p.y, w * f, 6 * z);
+            ctx.font = `700 ${Math.max(10, 7 * z)}px system-ui, sans-serif`; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(20,14,8,.9)'; ctx.fillStyle = '#fff6e8';
+            ctx.strokeText(`${Math.floor(f * 100)}%`, p.x, p.y - 3 * z); ctx.fillText(`${Math.floor(f * 100)}%`, p.x, p.y - 3 * z);
+          } else {
+            const t = time * 1.2 + b.id * 0.7;
+            for (let i = 0; i < 4; i++) {
+              const k = (t + i * 0.5) % 2, a = Math.sin(Math.PI * Math.min(1, k / 2)), s = (7 + i * 2) * z;
+              ctx.font = `700 ${Math.max(9, s)}px system-ui, sans-serif`; ctx.fillStyle = `rgba(190,215,255,${(0.9 * a).toFixed(2)})`; ctx.strokeStyle = `rgba(20,30,60,${(0.8 * a).toFixed(2)})`; ctx.lineWidth = 2.5;
+              const x = p.x + (i * 7 - 8) * z, y = p.y - (k * 7 + i * 3) * z;
+              ctx.strokeText('z', x, y); ctx.fillText('z', x, y);
+            }
+          }
+          ctx.textAlign = 'start';
+        }
         if (!b.done || b.upgrading) {
           const p = this.worldToScreen(ax, ay), w = 40 * z;
           ctx.fillStyle = 'rgba(20,14,8,.7)'; ctx.fillRect(p.x - w / 2, p.y - 4 * z, w, 5 * z);
@@ -229,20 +427,31 @@ export class Renderer {
           else { const [ax, ay] = this.buildingAnchor('storage', p.x, p.y); this.prop(sp0.building('storage', 'stone', 1, 4), ax, ay, time, t.state === 'destroyed' ? 0.5 : 1); }
         }
       } else if (d.v) {
-        const s = sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
+        const rode = d.v.phase !== 'sleep' && d.v.phase !== 'down' ? sim.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === 'down';
+        // a rider is seen from the side, the way his beast faces: up and down the screen he keeps the side he last had
+        if (d.v.facing === 'left' || d.v.facing === 'right') this.sideOf.set(d.v, d.v.facing);
+        const side = this.sideOf.get(d.v) ?? 'right', moving0 = d.v.path.length > 0 || !!d.v.slide;
+        const s = rode && !fighting ? sp.villager(d.v, moving0 ? 'ride_walk' : 'ride', side) : sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
+        let lift = 0;
+        if (rode) { // a beast under him: it walks when he walks, and he sits on its back in the seated animations (ride, ride_walk in anims.json: the same two for every beast)
+          const m = MOUNTS[rode], moving = moving0, beast = sp.mount(m.species, moving, d.v.animClock, side === 'left' ? -1 : 1), box = sp.animalBox(m.species);
+          ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(Math.round((fx - cx) * z), Math.round((fy - cy) * z), box.w * 0.3 * z, box.h * 0.1 * z, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.drawImage(beast, Math.round((fx - box.ax - cx) * z), Math.round((fy - box.ay - cy) * z), beast.width * z, beast.height * z);
+          lift = m.ride + 1; // the seated animations bob by themselves
+        }
         if (d.v.phase === 'sleep' || d.v.phase === 'down') {
           // lying asleep: sprite rotated 90°, head to the left
           ctx.save(); ctx.translate(Math.round((fx + 16 - cx) * z), Math.round((fy - 2 - cy) * z)); ctx.rotate(-Math.PI / 2);
           ctx.drawImage(s, -SPRITE_FEET.x * z, -SPRITE_FEET.y * z, s.width * z, s.height * z); ctx.restore();
-        } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
+        } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - lift - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
         const v = d.v;
         // a small badge tells soldiers (red) and hunters (amber) from civilians
         if (v.team === 'player' && (v.job === 'fight' || v.job === 'hunt') && v.phase !== 'flee' && v.phase !== 'sleep' && v.phase !== 'down') {
-          const p = this.worldToScreen(fx, fy - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
+          const p = this.worldToScreen(fx, fy - lift - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
           ctx.fillStyle = 'rgba(20,14,8,.85)'; ctx.fillRect(p.x - 3 * u, p.y - 4 * u, 6 * u, 7 * u);
           ctx.fillStyle = v.job === 'fight' ? '#d9534f' : '#e0a23c'; ctx.fillRect(p.x - 2 * u, p.y - 3 * u, 4 * u, 4 * u); ctx.fillRect(p.x - u, p.y + u, 2 * u, u);
         }
-        if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - 46, v.health / v.maxHealth, v.team === 'player' ? '#6bbf59' : '#d9534f');
+        if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - lift - 46, v.health / v.maxHealth, v.team === 'player' ? '#6bbf59' : '#d9534f');
         if (v.down > 0) { ctx.fillStyle = '#ffd27a'; ctx.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 30); ctx.fillText(gameDays(v.down), p.x, p.y); }
         if (v.phase === 'flee') { ctx.fillStyle = '#fff6e8'; ctx.font = `700 ${Math.max(12, 7 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 50); ctx.fillText('!', p.x, p.y); }
       }
@@ -294,7 +503,15 @@ export class Renderer {
     // ---- bóng ma khi đặt công trình ----
     if (ghost) {
       const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
+      // the free tile that houses keep from each other: round every standing house and round the ghost (walls keep none)
+      if (!WALL_KINDS.has(ghost.kind)) {
+        const zone = (x: number, y: number, w: number, h: number, c: string) => { ctx.fillStyle = c; ctx.fillRect(px(x - CLEAR), py(y - CLEAR), (w + 2 * CLEAR) * ts, (h + 2 * CLEAR) * ts); };
+        for (const o of sim.buildings) if (!WALL_KINDS.has(o.kind) && o.id !== ghost.moving) zone(o.x, o.y, BUILDINGS[o.kind].w, BUILDINGS[o.kind].h, 'rgba(240,170,60,.16)');
+        ctx.strokeStyle = 'rgba(255,220,120,.9)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+        ctx.strokeRect(px(ghost.x - CLEAR), py(ghost.y - CLEAR), (d.w + 2 * CLEAR) * ts, (d.h + 2 * CLEAR) * ts); ctx.setLineDash([]);
+      }
       this.prop(sp.building(ghost.kind, ghost.era ?? sim.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
+      if (ghost.kind === 'tower') this.drawSight(ghost.x + d.w / 2, ghost.y + d.h / 2, buildingSight({ kind: 'tower', level: ghost.level ?? 1, done: true }));
       ctx.fillStyle = ghost.ok ? 'rgba(90,200,90,.38)' : 'rgba(220,70,60,.42)';
       ctx.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
       ctx.strokeStyle = ghost.ok ? '#bff0b0' : '#ffb4a8'; ctx.lineWidth = 2;
@@ -310,7 +527,11 @@ export class Renderer {
     }
     // ---- the unit or animal being inspected ----
     if (inspect) {
-      const e = inspect.kind === 'unit' ? sim.get(inspect.id) : sim.animalById.get(inspect.id);
+      if (inspect.kind === 'node') {
+        const N = sim.world.size, p = this.worldToScreen((inspect.id % N) * TILE + 16, Math.floor(inspect.id / N) * TILE + 28);
+        ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(p.x, p.y, 15 * z, 6 * z, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      const e = inspect.kind === 'unit' ? sim.get(inspect.id) : inspect.kind === 'animal' ? sim.animalById.get(inspect.id) : undefined;
       if (e) { const p = this.worldToScreen(e.x * TILE, e.y * TILE); ctx.strokeStyle = '#ff8a7a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(p.x, p.y + z, 11 * z, 5 * z, 0, 0, Math.PI * 2); ctx.stroke(); }
     }
 
@@ -320,6 +541,7 @@ export class Renderer {
       const d = BUILDINGS[sb.kind];
       ctx.strokeStyle = '#f5e7c4'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
       ctx.strokeRect(px(sb.x) + 1, py(sb.y) + 1, d.w * ts - 2, d.h * ts - 2); ctx.setLineDash([]);
+      if (sb.kind === 'tower' && sb.done) this.drawSight(sb.x + d.w / 2, sb.y + d.h / 2, buildingSight(sb));
     }
 
     // ---- đánh dấu lệnh, vòng chọn ----
@@ -336,6 +558,7 @@ export class Renderer {
       ctx.fillStyle = '#f5e7c4'; ctx.font = `600 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center';
       ctx.fillText(v.name, p.x, p.y - 44 * z);
     }
+    this.drawClusters(selected);
     if (box) {
       const x = Math.min(box.x0, box.x1), y = Math.min(box.y0, box.y1), w = Math.abs(box.x1 - box.x0), h = Math.abs(box.y1 - box.y0);
       ctx.fillStyle = 'rgba(245,231,196,.14)'; ctx.fillRect(x, y, w, h);

@@ -1,0 +1,41 @@
+{
+  "_note": "War on the ground: what soldiers can break down, and how fast. Seconds are for one soldier; several soldiers at one object add up.",
+  "lookAhead": 6,
+  "clearSeconds": {
+    "tree": 3,
+    "rock": 5,
+    "bush": 1.5
+  },
+  "propHp": {
+    "fire": 160,
+    "pile": 70,
+    "tower": 150,
+    "fence": 40,
+    "gate": 40
+  },
+  "buildingHpPerTile": 45,
+  "crew": 3,
+  "driftMax": 14,
+  "reach": 1.6,
+  "scout": {
+    "gearSkill": {
+      "weapon": 0.05,
+      "armor": 0.08,
+      "torch": 0.06,
+      "mount": 0.2
+    },
+    "gearHide": {
+      "weapon": 0.03,
+      "armor": 0.05,
+      "torch": 0.04,
+      "mount": 0.06
+    },
+    "weights": {
+      "agi": 0.5,
+      "sta": 0.5
+    },
+    "stealthPerPoint": 0.015,
+    "surveyPerInt": 0.04,
+    "walkPerSta": 0.02
+  }
+}

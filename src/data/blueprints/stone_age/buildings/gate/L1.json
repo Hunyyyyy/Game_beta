@@ -1,0 +1,31 @@
+{
+  "name": "Cổng (cấp 1, cổng gỗ, đóng)",
+  "name_en": "Gate (Tier 1, Shut)",
+  "type": "prop",
+  "size": [32,44],
+  "anchor": [16,38],
+  "footprint": [0,26,32,14],
+  "seed": 32,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": {"line": "#2b1d10", "shadow": "#000000", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "rope": "#d8c690", "door": "#2a1a0e"},
+  "layers": [
+    {"shape": "ellipse", "cx": 16, "cy": 38, "rx": 15, "ry": 3, "color": "shadow", "alpha": 0.25},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "rect", "x": 0, "y": 7, "w": 5, "h": 31, "color": "woodD"},
+      {"shape": "poly", "points": [[0,7],[2.5,4],[5,7]], "color": "wood"},
+      {"shape": "rect", "x": 27, "y": 7, "w": 5, "h": 31, "color": "woodD"},
+      {"shape": "poly", "points": [[27,7],[29.5,4],[32,7]], "color": "wood"}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "line", "from": [2,9], "to": [30,9], "w": 3, "color": "wood"},
+      {"shape": "rect", "x": 5, "y": 12, "w": 22, "h": 26, "color": "wood"},
+      {"shape": "line", "from": [16,12], "to": [16,38], "w": 1, "color": "woodD"},
+      {"shape": "line", "from": [5,20], "to": [27,20], "w": 1, "color": "woodD"},
+      {"shape": "line", "from": [5,30], "to": [27,30], "w": 1, "color": "woodD"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "rect", "x": 14, "y": 24, "w": 4, "h": 3, "color": "rope"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

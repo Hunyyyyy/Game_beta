@@ -1,20 +1,22 @@
 import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, WeatherKind } from './calendar';
-import { DAY_LENGTH, START_TIME, TICK } from './constants';
+import { DAY_LENGTH, PATH_BUDGET, START_TIME, TICK } from './constants';
 import { Building, BuildingKind, BUILDINGS, Era } from './buildings';
 import { Fog } from './fog';
-import { Job, WorkJob } from './jobs';
+import { Job, RoleId, WorkJob } from './jobs';
 import { Step } from './path';
 import { CURRENCY, emptyStock, Res, RES_NAME, Stock } from './resources';
-import { mulberry32, Rng } from './rng';
+import { mix32, mulberry32, Rng } from './rng';
 import { Tool, ToolKind } from './tools';
 import { Team, TribeId } from './combat';
-import { hurt, tickMorale, tickProjectiles } from './battle';
-import { Animal, populate, tickAnimals } from './fauna';
+import { hurt, tickProjectiles } from './battle';
+import { Animal, populateChunk, tickAnimals } from './fauna';
 import { adoptTribe, EventState, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tributeTribe } from './tribes';
 import { recipeOpen, Tech } from './research';
+import { questViews, QuestUi, QuestView } from './quests';
 import { World } from './world';
 import * as construction from './construction';
 import * as economy from './economy';
+import * as notices from './notices';
 import * as works from './works';
 import * as houses from './houses';
 import * as inventory from './inventory';
@@ -25,8 +27,19 @@ import * as villagers from './villagers';
 import * as environment from './environment';
 import * as save from './save';
 import * as rest from './rest';
-import { LogLine, PlaceResult, Projectile, Sex, Shift, Target, Villager } from './model';
+import * as roles from './roles';
+import * as idle from './idle';
+import * as defense from './defense';
+import * as army from './army';
+import * as scouting from './scouting';
+import * as warplan from './warplan';
+import { WAR, WarApi } from './simwar';
+import { BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
+import type { Ent } from './battle';
 export * from './model';
+
+/** How far round each villager the land is kept made (tiles): more than the longest sight, so there is always ground ahead. */
+const STREAM_REACH = 40;
 
 export class Sim {
   readonly world: World;
@@ -40,14 +53,15 @@ export class Sim {
   readonly wornTools: Array<{ id: string; dur: number }> = [];
   /** Hàng đợi chế tác (mã công thức). */
   readonly craftQueue: string[] = [];
+  readonly tameQueue: string[] = [];
   /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
   readonly researchQueue: string[] = [];
-  /** Tools waiting to be mended in the Nhà sửa chữa (recipe ids such as axe1). */
-  readonly repairQueue: string[] = [];
   coinFrac = 0;
   sawCoin = false;
   /** Finished research (tech ids). Recipes and building levels stay locked until their tech is here. */
   readonly researched = new Set<string>();
+  /** Quests that have been seen done (not saved: a loaded game works them out again from what stands). */
+  readonly questSeen = new Set<string>();
   readonly log: LogLine[] = [];
   /** Current era: new buildings are built with this era's art and levels. */
   era: Era = 'stone';
@@ -59,6 +73,10 @@ export class Sim {
   readonly byId = new Map<number, Villager>();
   /** Tribal people (enemies, neutrals, tributaries); they share the Villager body but never work. */
   readonly foes: Villager[] = [];
+  /** Who stands in which cell of the map this tick, for finding enemies near a unit (see battle.ts). Rebuilt every tick, never saved. */
+  /** Searches for a way that may still be made this tick: a large army given an order at once would otherwise stall the game for a moment. Refilled every tick, never saved. */
+  pathLeft = 0;
+  threatCache: { time: number; foes: Map<number, Villager[]> | null; mine: Map<number, Villager[]> | null } | null = null;
   readonly tribes: Tribe[] = [];
   /** Scheduled wolf packs and tribal raids. */
   readonly events: EventState[] = [];
@@ -66,9 +84,24 @@ export class Sim {
   readonly animals: Animal[] = [];
   readonly animalById = new Map<number, Animal>();
   readonly projectiles: Projectile[] = [];
+  /** War: squads, what the scouts have learnt, scouting trips, battle plans, the alarm and the fight that is on. */
+  readonly squads: Squad[] = [];
+  nextSquad = 1;
+  readonly maps: ScoutMap[] = [];
+  readonly scouts: ScoutMission[] = [];
+  /** Villages found by anyone who wandered near them (see Sighting). */
+  readonly sightings: Sighting[] = [];
+  nextMission = 1;
+  readonly plans: Plan[] = [];
+  nextPlan = 1;
+  /** Game seconds until which the alarm drum is sounding (0 = quiet). */
+  alarmUntil = 0;
+  readonly battle: BattleState = { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] };
+  /** The summaries of past fights, newest last. */
+  readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  readonly dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false };
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, noTire: false, noArrivals: false };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
   /** Called when something dies (UI refresh hook). */
@@ -80,7 +113,7 @@ export class Sim {
   nextVid = 1;
   nextBid = 1;
   readonly rnd: Rng;
-  moraleClock = 0;
+  leaderClock = 0;
   /** Seconds since the tribes were last looked after (they are tended once a second). */
   tribeClock = 0;
   lastFullWarn = -999;
@@ -93,15 +126,29 @@ export class Sim {
   signalled = false;
   resting = false;
   lastVision = -1;
-  /** Stored food split into lots, oldest eaten first; each lot has an expiry time. */
-  readonly foodLots: Array<{ amount: number; exp: number }> = [];
+  /** Food in the pot of the campfire: the meal of the coming end of day, filled before the store (see economy.feedPot). */
+  foodPot = 0;
+  /** How much the whole village is weakened today for going short at the last meal (0..FOOD.maxPenalty). */
+  foodPenalty = 0;
+  /** Food that came in today, and the total (pot + store) seen last tick (-1: not yet); the incomes of the last three days. Only to tell the player what the village earns. */
+  foodIncome = 0;
+  foodSeen = -1;
+  readonly foodDays: number[] = [];
+  /** What the gatherers of each trade ('wood', 'stone', 'food', 'hunt', 'farm') brought in today and yesterday, for the card of their house. */
+  /** The highest level a house of each kind had when it fell in battle: a new one of that kind is raised at that level (paying for the levels), not from level 1. */
+  readonly ruins: Partial<Record<BuildingKind, number>> = {};
+  /** How much of the map of a village ("tribe:level") scouts brought home unfinished, 0..1: the next scouts go on from there. */
+  readonly drafts: Record<string, number> = {};
+  readonly yieldNow: Record<string, number> = {};
+  readonly yieldPrev: Record<string, number> = {};
 
   constructor(readonly seed = 1337) {
     this.world = new World(seed);
     this.fog = new Fog(this.world);
-    this.rnd = mulberry32(seed ^ 0x9e3779b9);
-    this.frnd = mulberry32(seed ^ 0x7f4a7c15);
-    this.wrnd = mulberry32(seed ^ 0x5bd1e995);
+    // every stream starts from its own mixed seed: neighbouring seeds do not give neighbouring dice
+    this.rnd = mulberry32(mix32(seed ^ 0x9e3779b9));
+    this.frnd = mulberry32(mix32(seed ^ 0x7f4a7c15));
+    this.wrnd = mulberry32(mix32(seed ^ 0x5bd1e995));
     RES_NAME.coin = CURRENCY[this.era];
     this.researched.add('torch1'); // fire is known from the first day: torches can be made as soon as there is a craft house
     this.world.setSeason(this.season);
@@ -109,13 +156,16 @@ export class Sim {
     this.resting = isRestTime(this.tod, this.season);
     const s = this.world.start;
     this.addBuilding('campfire', s.x - 1, s.y - 2, true);
-    this.stock.food = 20; // enough for two people for two days
+    this.stock.food = 20; // the first meals of the two who start (4 a day)
     // two villagers to start: a gatherer, whose work feeds both of them, and a woodcutter
     const spots: Array<[number, number, Sex, Job]> = [[-1, 1, 'm', 'food'], [1, 1, 'f', 'wood']];
     for (const [dx, dy, sex, job] of spots) this.spawn(s.x + dx, s.y + dy, sex).job = job;
-    this.say('Hai người đầu tiên đã đến bên đống lửa: một người hái lượm, một người đốn gỗ. Chọn một dân rồi chuột phải lên cây, đá hay bụi quả để giao việc. Dựng Nhà thợ xây trước, rồi các công trình khác.');
+    this.say('Hai người đầu tiên đã đến bên đống lửa: một người hái lượm, một người đốn gỗ. Việc của mỗi người do công trình của nghề đó quản lý: mở Nông trại, Xưởng gỗ hay Xưởng đá cạnh đống lửa để giao việc. Dựng Nhà thợ xây trước, rồi các công trình khác.');
     this.refreshFog();
-    populate(this);
+    construction.placeStarters(this);
+    // the herds of the land made so far, and of every chunk made from now on
+    for (const [cx, cy] of this.world.readyChunks()) populateChunk(this, cx, cy);
+    this.world.onChunk = (cx, cy) => populateChunk(this, cx, cy);
     spawnTribes(this);
   }
 
@@ -148,8 +198,26 @@ export class Sim {
   shouldSleep(v: Villager, fighting: boolean): boolean { return rest.shouldSleep(this, v, fighting); }
   /** → rest.tickEnergy */
   tickEnergy(v: Villager, dt: number): void { rest.tickEnergy(this, v, dt); }
+  /** → roles.warLock */
+  warLock(): string | null { return roles.warLock(this); }
+  /** → roles.assignRole */
+  assignRole(ids: readonly number[], role: RoleId): string | null { return roles.assignRole(this, ids, role); }
+  /** → roles.releaseRole */
+  releaseRole(ids: readonly number[]): string | null { return roles.releaseRole(this, ids); }
+  /** → roles.roleCapacity */
+  roleCapacity(role: RoleId): number { return roles.roleCapacity(this, role); }
+  /** → roles.roleCount */
+  roleCount(role: RoleId): number { return roles.roleCount(this, role); }
+  /** → roles.guardCandidates */
+  guardCandidates(): Villager[] { return roles.guardCandidates(this); }
+  /** → roles.trimRoles */
+  trimRoles(): void { return roles.trimRoles(this); }
   /** → rest.bedsIn */
-  bedsIn(kind: 'barracks' | 'house'): number { return rest.bedsIn(this, kind); }
+  bedsIn(kind: BuildingKind): number { return rest.bedsIn(this, kind); }
+  /** → rest.attackReason */
+  attackReason(): string | null { return rest.attackReason(this); }
+  /** → rest.hides */
+  hides(v: Villager): boolean { return rest.hides(this, v); }
   /** → rest.freeBed */
   freeBed(v: Villager): Building | undefined { return rest.freeBed(this, v); }
   /** → rest.bedsTaken */
@@ -175,11 +243,19 @@ export class Sim {
   visionRadius(): number { return environment.visionRadius(this); }
   /** → environment.fireRadius */
   fireRadius(): number { return environment.fireRadius(this); }
-  /** → economy.foodSpoilingWithin */
-  foodSpoilingWithin(secs: number): number { return economy.foodSpoilingWithin(this, secs); }
   get(id: number): Villager | undefined { return this.byId.get(id); }
   say(text: string): void { this.log.push({ t: this.time, text }); if (this.log.length > 40) this.log.shift(); }
 
+  /** → construction.startLevel */
+  startLevel(kind: BuildingKind): number { return construction.startLevel(this, kind); }
+  /** → construction.startCost */
+  startCost(kind: BuildingKind): Partial<Stock> { return construction.startCost(this, kind); }
+  /** → idle.homeKind */
+  homeKind(v: Villager): BuildingKind { return idle.homeKind(v); }
+  /** → construction.fireLevel */
+  fireLevel(): number { return construction.fireLevel(this); }
+  /** → construction.fireUpgradeBlock */
+  fireUpgradeBlock(level: number): string | null { return construction.fireUpgradeBlock(this, level); }
   /** → construction.capacity */
   capacity(_res?: Res): number { return construction.capacity(this, _res); }
   buildingAt(x: number, y: number): Building | undefined {
@@ -243,16 +319,14 @@ export class Sim {
   moveBuilding(id: number, x: number, y: number): string | null { return construction.moveBuilding(this, id, x, y); }
 
   /** → works.orderDef */
-  orderDef(kind: 'research' | 'craft' | 'repair', id: string): { cost: Partial<Stock>; time: number } | null { return works.orderDef(this, kind, id); }
-  /** → works.bestIntInside */
-  bestIntInside(b: Building): number { return works.bestIntInside(this, b); }
+  orderDef(kind: 'research' | 'craft', id: string): { cost: Partial<Stock>; time: number } | null { return works.orderDef(this, kind, id); }
   /** → works.recipeLock */
   recipeLock(id: string): string | null { return works.recipeLock(this, id); }
   /** → works.recipeOpen */
   recipeOpen(id: string): boolean { return works.recipeOpen(this, id); }
 
   /** → works.techState */
-  techState(t: Tech): { state: 'done' | 'active' | 'queued' | 'ready' | 'locked'; why?: string } { return works.techState(this, t); }
+  techState(t: Tech): { state: 'done' | 'active' | 'queued' | 'ready' | 'locked'; why?: string; lacks?: string[] } { return works.techState(this, t); }
   /** → works.researchBlock */
   researchBlock(t: Tech): string | null { return works.researchBlock(this, t); }
 
@@ -265,8 +339,6 @@ export class Sim {
   researchShort(t: Tech): string | null { return works.researchShort(this, t); }
   /** → works.queueCraft */
   queueCraft(id: string): string | null { return works.queueCraft(this, id); }
-  /** → works.queueRepair */
-  queueRepair(id: string): string | null { return works.queueRepair(this, id); }
   /** → works.unqueueCraft */
   unqueueCraft(id: string): void { return works.unqueueCraft(this, id); }
   /** → works.unqueueResearch */
@@ -288,7 +360,31 @@ export class Sim {
   tickWorks(dt: number): void { return works.tickWorks(this, dt); }
 
   /** → houses.bestFor */
-  bestFor(job: 'craft' | 'research' | 'repair'): Villager | null { return houses.bestFor(this, job); }
+  bestFor(job: 'craft' | 'research' | 'tame'): Villager | null { return houses.bestFor(this, job); }
+  /** → defense.tickTraps */
+  tickTraps(dt: number): void { return defense.tickTraps(this, dt); }
+  /** → defense.tickTowers */
+  tickTowers(dt: number): void { return defense.tickTowers(this, dt); }
+  /** → defense.toggleGate */
+  toggleGate(id: number): string | null { return defense.toggleGate(this, id); }
+  /** → defense.setGates */
+  setGates(open: boolean): void { return defense.setGates(this, open); }
+  /** → defense.nearestWork */
+  nearestWork(x: number, y: number, radius: number, any = false): Building | undefined { return defense.nearestWork(this, x, y, radius, any); }
+  /** → defense.damageWork */
+  damageWork(b: Building, dmg: number): void { return defense.damageWork(this, b, dmg); }
+  /** → defense.towerBonus */
+  towerBonus(v: Villager): { damage: number; range: number } { return defense.towerBonus(this, v); }
+  /** → defense.garrison */
+  garrison(b: Building): Villager[] { return defense.garrison(this, b); }
+  /** → defense.assignTower */
+  assignTower(ids: readonly number[], towerId: number): string | null { return defense.assignTower(this, ids, towerId); }
+  /** → defense.leaveTower */
+  leaveTower(ids: readonly number[]): void { return defense.leaveTower(this, ids); }
+  /** → construction.destroyBuilding */
+  destroyBuilding(b: Building): void { return construction.destroyBuilding(this, b); }
+  /** → construction.setOcc */
+  setOcc(b: Building, val: number): void { return construction.setOcc(this, b, val); }
   /** → houses.assignField */
   assignField(ids: readonly number[], fieldId: number): string | null { return houses.assignField(this, ids, fieldId); }
   /** → houses.houseRate */
@@ -310,7 +406,7 @@ export class Sim {
   releaseCrew(ids: readonly number[]): void { return houses.releaseCrew(this, ids); }
 
   /** → houses.assignStaff */
-  assignStaff(ids: readonly number[], job: 'craft' | 'research' | 'repair'): string | null { return houses.assignStaff(this, ids, job); }
+  assignStaff(ids: readonly number[], job: 'craft' | 'research' | 'tame'): string | null { return houses.assignStaff(this, ids, job); }
   /** → houses.planStaff */
   planStaff(v: Villager): void { return houses.planStaff(this, v); }
   /** → houses.enterBuilding */
@@ -332,8 +428,20 @@ export class Sim {
   assignTool(ids: readonly number[], k: ToolKind, tier: number): string | null { return inventory.assignTool(this, ids, k, tier); }
   /** → inventory.discardTool */
   discardTool(ids: readonly number[], k: ToolKind): void { return inventory.discardTool(this, ids, k); }
-  /** → inventory.repairTool */
-  repairTool(ids: readonly number[], k: ToolKind): string | null { return inventory.repairTool(this, ids, k); }
+  /** → economy.foodNeed */
+  foodNeed(): number { return economy.foodNeed(this); }
+  /** → notices.noticesOf */
+  notices(): Notice[] { return notices.noticesOf(this); }
+  /** → economy.noteYield */
+  noteYield(key: string, n: number): void { return economy.noteYield(this, key, n); }
+  /** → economy.eatDay */
+  eatDay(): void { return economy.eatDay(this); }
+  /** → economy.deposit */
+  deposit(res: Res, amount: number): number { return economy.deposit(this, res, amount); }
+  /** → economy.hasRoom */
+  hasRoom(res: Res): boolean { return economy.hasRoom(this, res); }
+  /** → economy.dailyYield */
+  dailyYield(b: Building): { amount: number; people: number } | null { return economy.dailyYield(this, b); }
   /** → economy.barter */
   barter(res: Exclude<Res, 'coin'>): string | null { return economy.barter(this, res); }
 
@@ -349,8 +457,14 @@ export class Sim {
   /** → commands.orderMove */
   orderMove(ids: readonly number[], tx: number, ty: number, queue = false): void { return commands.orderMove(this, ids, tx, ty, queue); }
 
+  /** → commands.callWorker */
+  callWorker(tx: number, ty: number): { name: string } | { reason: string } { return commands.callWorker(this, tx, ty); }
   /** → commands.orderWork */
-  orderWork(ids: readonly number[], tx: number, ty: number): { job: WorkJob; sent: number } | null { return commands.orderWork(this, ids, tx, ty); }
+  orderWork(ids: readonly number[], tx: number, ty: number): { job: WorkJob; sent: number; err: string | null } | null { return commands.orderWork(this, ids, tx, ty); }
+  /** → commands.recallFar */
+  recallFar(): number { return commands.recallFar(this); }
+  /** → commands.autoHunter */
+  autoHunter(ids: readonly number[], target: Target): string | null { return commands.autoHunter(this, ids, target); }
 
   /** → commands.setJob */
   setJob(ids: readonly number[], job: Job): string | null { return commands.setJob(this, ids, job); }
@@ -391,7 +505,7 @@ export class Sim {
   /** → inventory.assignGear */
   assignGear(ids: readonly number[], kind: string | null, slot: 'weapon' | 'armor'): string | null { return inventory.assignGear(this, ids, kind, slot); }
   /** → inventory.autoGear */
-  autoGear(ids: readonly number[]): void { return inventory.autoGear(this, ids); }
+  autoGear(ids: readonly number[]): string | null { return inventory.autoGear(this, ids); }
 
   /** → inventory.giveTool */
   giveTool(ids: readonly number[], kind: ToolKind, tier: number): void { return inventory.giveTool(this, ids, kind, tier); }
@@ -412,25 +526,33 @@ export class Sim {
 
   tick(dt: number): void {
     this.time += dt;
+    this.pathLeft = PATH_BUDGET;
     this.tickCalendar();
     this.world.tick(dt);
-    this.syncFood();
+    this.streamWorld(dt);
+    economy.feedPot(this); economy.trackFood(this);
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
-    this.tickWorks(dt); this.tickFarms(dt);
+    this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
-    this.moraleClock += dt;
-    if (this.moraleClock >= 1) { this.moraleClock = 0; for (const v of this.villagers) if (v.down <= 0) tickMorale(this, v); this.pickLeaders(); }
+    this.leaderClock += dt;
+    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); }
     if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
     if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
   }
 
+  private streamClock = 0;
+  /** Make the land round the people as they walk out: twice a second, every villager out on the map has the land within STREAM_REACH made (see World.ensure). */
+  private streamWorld(dt: number): void {
+    this.streamClock -= dt;
+    if (this.streamClock > 0) return;
+    this.streamClock = 0.5;
+    for (const v of this.villagers) if (v.inside === null) this.world.ensure(v.x, v.y, STREAM_REACH);
+  }
+
   /** → environment.tickCalendar */
   tickCalendar(): void { return environment.tickCalendar(this); }
-
-  /** → economy.syncFood */
-  syncFood(): void { return economy.syncFood(this); }
 
   /** → villagers.tickVillager */
   tickVillager(v: Villager, dt: number): void { return villagers.tickVillager(this, v, dt); }
@@ -464,8 +586,8 @@ export class Sim {
   adoptFoe(v: Villager): void {
     const i = this.foes.indexOf(v);
     if (i >= 0) this.foes.splice(i, 1);
-    v.team = 'player'; v.ai = null; v.job = 'idle'; v.phase = 'idle'; v.path = []; v.morale = 50; v.leader = false; v.fleeT = 0;
-    this.clearCombat(v); v.health = Math.max(v.health, v.maxHealth * 0.6); v.fullness = 70;
+    v.team = 'player'; v.ai = null; v.job = 'idle'; v.phase = 'idle'; v.path = []; v.leader = false; v.fleeT = 0;
+    this.clearCombat(v); v.health = Math.max(v.health, v.maxHealth * 0.6);
     this.villagers.push(v); this.fogDirty = true;
   }
   /** Diplomacy buttons: 'gift', 'tribute', 'adopt'. Returns an error text or null. */
@@ -481,13 +603,9 @@ export class Sim {
   tribeAttacked(id: Exclude<Team, 'player' | 'wild'>, victim: Villager): void { tribeAttacked(this, id, victim); }
   killFoe(v: Villager, killer?: Villager): void { killFoe(this, v, killer); }
   /** The player's own campfire (the village centre). */
+  /** → quests.questViews */
+  quests(ui: QuestUi): QuestView[] { return questViews(this, ui); }
   campfire(): Building | undefined { return this.buildings.find((b) => b.kind === 'campfire' && b.done); }
-  /** Close to the unit's own camp: the village fire, or the tribal camp for tribal people. */
-  nearHome(v: Villager): boolean {
-    if (v.ai) return Math.hypot(v.x - v.ai.camp.x, v.y - v.ai.camp.y) < 10;
-    const f = this.campfire();
-    return !!f && Math.hypot(v.x - f.x - 1, v.y - f.y - 1) < 10;
-  }
   /** Another fighter within 7 tiles of the animal: a boar is only worth attacking in a group. */
   packNear(v: Villager, a: Animal): boolean {
     return this.villagers.some((o) => o !== v && o.health > 0 && o.down <= 0 && (o.job === 'hunt' || o.job === 'fight') && Math.hypot(o.x - a.x, o.y - a.y) < 7);
@@ -538,6 +656,8 @@ export class Sim {
   /** → inventory.equip */
   equip(v: Villager): void { return inventory.equip(this, v); }
 
+  /** → inventory.wearGear */
+  wearGear(v: Villager, slot: 'weapon' | 'armor'): void { return inventory.wearGear(this, v, slot); }
   /** → inventory.planEquipGear */
   planEquipGear(v: Villager): boolean { return inventory.planEquipGear(this, v); }
   /** → inventory.planGearErrand */
@@ -551,7 +671,7 @@ export class Sim {
   pathTo(v: Villager, gx: number, gy: number, maxNodes = 14000): Step[] { return movement.pathTo(this, v, gx, gy, maxNodes); }
 
   /** → movement.routeTo */
-  routeTo(v: Villager, tiles: Array<[number, number]>, tries = 3): number { return movement.routeTo(this, v, tiles, tries); }
+  routeTo(v: Villager, tiles: Array<[number, number]>, tries = 3, maxNodes = 14000): number { return movement.routeTo(this, v, tiles, tries, maxNodes); }
 
 
   /** → labor.planDeliver */
@@ -563,3 +683,6 @@ export class Sim {
 
 }
 
+/** The war methods (squads, formations, scouting, plans) live in simwar.ts and are added here. */
+export interface Sim extends WarApi {}
+Object.assign(Sim.prototype, WAR);

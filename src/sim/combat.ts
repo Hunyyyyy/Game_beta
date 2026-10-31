@@ -1,16 +1,23 @@
 import animalsJson from '../data/animals.json';
 import tribesJson from '../data/tribes.json';
+import siegeJson from '../data/siege.json';
 import weaponsJson from '../data/weapons.json';
 import type { Stock, Res } from './resources';
 
 export type DmgType = 'pierce' | 'slash' | 'crush';
 
 export interface WeaponDef {
+  /** The key in weapons.json, set when the data is read. */
+  id: string;
   name: string;
   type: DmgType;
   range: number;
   damage: number;
   cycle: number;
+  /** Base chance (0..1) of a critical blow or shot, before research; never above RULES.critMax in the end. */
+  crit?: number;
+  /** Share of the damage a critical blow adds (1.25 = 125% more); RULES.critDamage when not written. */
+  critDamage?: number;
   ranged?: boolean;
   /** Which set of fighting animations it uses: a key of `styles` in weapons.json (swing, thrust, shoot, sling, throw, fist). */
   style: string;
@@ -23,12 +30,16 @@ export interface WeaponDef {
   cost?: Partial<Stock>;
   time?: number;
   tier?: number;
+  /** Blows (or shots) before it is worn out; foes' gear does not wear. */
+  durability?: number;
 }
 export interface ArmorDef extends Record<DmgType, number> {
   name: string;
   cost?: Partial<Stock>;
   time?: number;
   tier?: number;
+  /** Blows taken before it is worn out. */
+  durability?: number;
 }
 
 /** What a fighter's body does while armed. Hands for work have their own animations; these are for people who carry a weapon. */
@@ -47,9 +58,11 @@ export function poseOf(weapon: string | null, state: CombatState): string {
   const w = weapon ? WEAPONS[weapon] : WEAPONS.fist;
   return w?.anims?.[state] ?? STYLES[w?.style ?? 'fist']?.[state] ?? STYLES.fist[state];
 }
-for (const id of Object.keys(WEAPONS)) WEAPONS[id].anim = poseOf(id, 'attack');
+for (const id of Object.keys(WEAPONS)) { WEAPONS[id].id = id; WEAPONS[id].anim = poseOf(id, 'attack'); }
 export const ARMORS = weaponsJson.armor as unknown as Record<string, ArmorDef>;
 export const RULES = weaponsJson.rules;
+/** Breaking things down in a war: what the soldiers can destroy and how fast (siege.json). */
+export const SIEGE = siegeJson as typeof siegeJson & { clearSeconds: Record<string, number>; propHp: Record<string, number> };
 /** Weapons the player can craft, best last (used to pick what a fighter equips). */
 export const CRAFTED_WEAPONS = Object.keys(WEAPONS).filter((k) => WEAPONS[k].cost);
 
@@ -105,7 +118,6 @@ export const RELATION = tribesJson.relation;
 /** Below this relation a tribe is hostile (the start of the 'Trung lập' band). */
 export const HOSTILE_BELOW = RELATION.labels[1][0] as number;
 export const SURRENDER = tribesJson.surrender;
-export const MORALE = tribesJson.morale;
 
 /** Team of a unit: the player, a tribe, or wild animals. */
 export type Team = 'player' | TribeId | 'wild';
@@ -131,6 +143,6 @@ export const cycleOf = (weaponCycle: number, agi: number) => weaponCycle * (RULE
 
 /** Damage of one blow after armour; `strength` adds to melee only. */
 export function damageOf(w: { damage: number; type: DmgType; ranged?: boolean }, strength: number, armor: ArmorDef | null, backstab: boolean): number {
-  const base = w.damage + (w.ranged ? 0 : RULES.strengthDamage * strength);
+  const base = w.damage + RULES.strengthDamage * strength;
   return base * (1 - (armor ? armor[w.type] : 0)) * (backstab ? RULES.backstab : 1);
 }

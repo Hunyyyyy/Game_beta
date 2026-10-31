@@ -1,0 +1,29 @@
+{
+  "name": "Hố chông (cấp 1)",
+  "name_en": "Pit Trap (Tier 1)",
+  "type": "prop",
+  "size": [32,44],
+  "anchor": [16,38],
+  "footprint": [0,26,32,14],
+  "seed": 43,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": {"line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "pit": "#2a1a0e", "spike": "#d8c690", "straw": "#c9a84e", "strawD": "#9a7c32"},
+  "layers": [
+    {"shape": "ellipse", "cx": 16, "cy": 38, "rx": 14, "ry": 4, "color": "shadow", "alpha": 0.2},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "ellipse", "cx": 16, "cy": 34, "rx": 13, "ry": 5, "color": "dirt"},
+      {"shape": "ellipse", "cx": 16, "cy": 34, "rx": 10, "ry": 4, "color": "pit"}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "line", "from": [8,36], "to": [7,28], "w": 1, "color": "spike"},
+      {"shape": "pixels", "at": [[7,27]], "color": "spike"},
+      {"shape": "line", "from": [14,36], "to": [15,28], "w": 1, "color": "spike"},
+      {"shape": "pixels", "at": [[15,27]], "color": "spike"}
+    ] },
+    {"shape": "group", "if": "st3", "layers": [
+      {"shape": "poly", "points": [[6,33],[16,30],[26,33],[16,36]], "color": "straw", "alpha": 0.85},
+      {"shape": "pixels", "at": [[10,33],[18,32],[22,34]], "color": "strawD", "alpha": 1}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

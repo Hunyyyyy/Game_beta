@@ -1,0 +1,11 @@
+// Giao diện của game. build.mjs biên dịch tệp này và nhúng vào src/index.html (thay /*STYLE*/).
+// Thứ tự @use cũng là thứ tự trong CSS: tệp sau đè tệp trước khi cùng độ ưu tiên.
+@use 'tokens';
+@use 'base';
+@use 'hud';
+@use 'panels';
+@use 'war';
+@use 'dialog';
+@use 'infocard';
+@use 'overlays';
+@use 'compact';

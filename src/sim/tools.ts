@@ -1,5 +1,5 @@
 import type { WorkJob } from './jobs';
-import { ARMORS, WEAPONS } from './combat';
+import { ARMORS, RULES, WEAPONS } from './combat';
 import type { Stock } from './resources';
 
 export type ToolKind = 'axe' | 'pick' | 'hoe' | 'hammer';
@@ -16,8 +16,8 @@ export const TIER_YIELD = [1, 1.25, 1.6];    // đơn vị thu được mỗi l�
 export const TIER_DURABILITY = [0, 240, 600]; // giây làm việc trước khi gãy
 
 /** Gear a fighter wears: crafted weapons and armour share the recipe, stock and equip flow of tools. */
-export type GearKind = 'club' | 'spear' | 'mace' | 'hide';
-export const GEAR_KINDS: GearKind[] = ['club', 'spear', 'mace', 'hide'];
+export type GearKind = 'club' | 'spear' | 'mace' | 'sling' | 'bow' | 'hide';
+export const GEAR_KINDS: GearKind[] = ['club', 'spear', 'mace', 'sling', 'bow', 'hide'];
 export const isGear = (k: string): k is GearKind => (GEAR_KINDS as string[]).includes(k);
 export const isWeaponKind = (k: string) => k in WEAPONS;
 
@@ -46,7 +46,7 @@ export const recipeName = (r: Recipe) => {
 export const recipeUse = (r: Recipe) => {
   if (r.kind === 'hide') return 'giáp, giảm sát thương';
   if (r.kind === 'torch') return 'làm việc ban đêm (hiệu suất 70%), nhìn xa hơn trong tối';
-  if (isWeaponKind(r.kind)) { const w = WEAPONS[r.kind]; return `${{ pierce: 'đâm', slash: 'chém', crush: 'đập' }[w.type]} ${w.damage} · tầm ${w.range}`; }
+  if (isWeaponKind(r.kind)) { const w = WEAPONS[r.kind]; return `${{ pierce: 'đâm', slash: 'chém', crush: 'đập' }[w.type]} ${w.damage} · ${(1 / w.cycle).toFixed(2)} đòn/giây · chí mạng đòn ${Math.round((w.critDamage ?? RULES.critDamage) * 100)}% · tầm ${w.range}`; }
   return TOOL_USE[r.kind as ToolKind];
 };
 

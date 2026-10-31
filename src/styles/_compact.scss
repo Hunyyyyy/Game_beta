@@ -1,0 +1,27 @@
+// A phone held sideways has little height: everything pinned to an edge shrinks and moves closer to it.
+// Kept last so it overrides the rules above.
+
+@media (max-height: 480px) {
+  body { font-size: 12px; }
+  .top {
+    gap: 4px;
+    left: calc(4px + var(--sal));
+    right: calc(4px + var(--sar));
+    top: calc(4px + var(--sat));
+  }
+  .hud { padding: 2px 6px; gap: 2px 8px; }
+  .res:not(.warn):not(.full) small { display: none; }
+  .sheet {
+    max-height: min(60%, calc(100% - var(--top-h, 40px) - 10px));
+    width: min(340px, calc(100% - 120px));
+    left: calc(4px + var(--sal));
+    bottom: calc(4px + var(--sab));
+  }
+  .card { padding: 4px 6px; gap: 3px; }
+  #mini {
+    right: calc(4px + var(--sar));
+    bottom: calc(4px + var(--sab));
+    width: clamp(56px, 12vw, 84px);
+  }
+  .toast { top: calc(40px + var(--sat)); }
+}

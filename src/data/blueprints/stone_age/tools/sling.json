@@ -1,0 +1,19 @@
+{
+  "name": "Dây quăng đá",
+  "type": "prop",
+  "size": [16, 16],
+  "anchor": [8, 15],
+  "params": {"stone": 0},
+  "palette": { "line": "#2b1d10", "hide": "#a0552f", "hideL": "#c06f43", "hideD": "#7a3d20", "bind": "#d8c690", "st": "#8e9498", "stL": "#c0c6c8", "stD": "#60676b" },
+  "layers": [
+    { "shape": "line", "from": [3, 14], "to": [6, 8], "w": 1, "color": "bind" },
+    { "shape": "line", "from": [13, 14], "to": [10, 8], "w": 1, "color": "bind" },
+    { "shape": "poly", "points": [[5, 7], [11, 7], [8, 12]], "color": "hide" },
+    { "shape": "poly", "points": [[5, 7], [8, 7], [8, 12]], "color": "hideL" },
+    { "shape": "pixels", "at": [[8, 11], [7, 10], [9, 10]], "color": "hideD" },
+    { "shape": "ellipse", "cx": 8, "cy": 6, "rx": 2, "ry": 2, "color": "st" },
+    { "shape": "pixels", "at": [[7, 5], [8, 5]], "color": "stL" },
+    { "shape": "pixels", "at": [[9, 7]], "color": "stD" },
+    { "shape": "outline", "color": "line" }
+  ]
+}

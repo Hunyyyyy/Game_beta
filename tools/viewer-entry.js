@@ -1,4 +1,4 @@
-import { W, H, CX, HAND_Y, formatAnims, renderFrame, renderTool, bakeTool, toolAnchor, unpackShapes, packPixels, handTools } from '../src/character/rig.js';
+import { W, H, CX, HAND_Y, cropToBody, formatAnims, renderFrame, renderTool, bakeTool, toolAnchor, unpackShapes, packPixels, handTools } from '../src/character/rig.js';
 import defaultAnims from '../src/data/anims.json';
 import tiers from '../src/data/handtools/tiers.json';
 
@@ -127,7 +127,7 @@ function drawToolPreview() {
 
 function render(f, v) {
   try {
-    tg.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, cur, f, v, look, $('carry').value, { tier: +$('tier').value, kind: $('tkind').value || undefined })), W, H), 0, 0);
+    tg.putImageData(new ImageData(new Uint8ClampedArray(cropToBody(renderFrame(anims, cur, f, v, look, $('carry').value, { tier: +$('tier').value, kind: $('tkind').value || undefined }))), W, H), 0, 0);
     return null;
   } catch (e) { return e; }
 }

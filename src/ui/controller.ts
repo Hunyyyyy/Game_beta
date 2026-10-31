@@ -13,8 +13,7 @@ export class Controller {
   readonly selected = new Set<number>();
   readonly markers: Marker[] = [];
   box: Box | null = null;
-  onChange: () => void = () => {};
-  /** Short message for the player. */
+  onChange: () => void = () => {};  /** Short message for the player. */
   onToast: (text: string) => void = () => {};
   /** Selecting several villagers: taps toggle, drags draw a box. */
   multi = false;
@@ -28,9 +27,12 @@ export class Controller {
   /** The full-screen panel of the selected building is open. */
   buildingOpen = false;
   /** Foe or animal shown in the target card. */
-  inspect: { kind: 'unit' | 'animal'; id: number } | null = null;
+  /** What was tapped: a unit, an animal, or a tree, rock or bush (id = its tile index). */
+  inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null;
   /** The campfire's people menu asked for the full page of the chosen villager. */
   openDetail = false;
+  /** The house whose dialog the villager's detail was opened from: closing the detail brings it back. */
+  detailFrom: number | null = null;
   /** F pressed: the next click sends the selection to attack-move there. */
   attackMoveArmed = false;
   /** Saved selections, keys 1-9 (Ctrl + number saves, number recalls). */
@@ -42,7 +44,7 @@ export class Controller {
   private left: { x: number; y: number; moved: boolean } | null = null;
   private right: { x: number; y: number; moved: boolean } | null = null;
   // touch
-  private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number }>();
+  private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; px: number; py: number }>();
   private gesture: { dist: number; mid: { x: number; y: number }; acc: number } | null = null;
   private tapDead = false;
 
@@ -76,7 +78,7 @@ export class Controller {
     const p = this.pos(e);
     this.el.focus();
     if (e.pointerType === 'touch') {
-      this.touches.set(e.pointerId, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: performance.now() });
+      this.touches.set(e.pointerId, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: performance.now(), px: p.x, py: p.y });
       if (this.touches.size === 1) this.tapDead = false;
       if (this.touches.size === 2) this.startGesture();
       return;
@@ -132,7 +134,7 @@ export class Controller {
     }
   }
 
-  // ---------------------------------------------------------------- two-finger pan and pinch
+  // ---------------------------------------------------------------- two-finger pan and pinch, or one finger held and one dragging
   private startGesture(): void {
     this.tapDead = true; this.box = null;
     const [a, b] = [...this.touches.values()];
@@ -140,7 +142,19 @@ export class Controller {
   }
   private moveGesture(): void {
     const g = this.gesture; if (!g) return;
-    const [a, b] = [...this.touches.values()], mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist = Math.hypot(a.x - b.x, a.y - b.y);
+    const [a, b] = [...this.touches.values()];
+    // one finger holds still and the other drags: the camera follows the dragging finger, one to one (no zoom)
+    const held = (t: { x: number; y: number; sx: number; sy: number }) => Math.hypot(t.x - t.sx, t.y - t.sy) < 14;
+    const holdA = held(a), holdB = held(b);
+    if (holdA !== holdB) {
+      const m = holdA ? b : a;
+      this.cam.x -= (m.x - m.px) / this.cam.zoom; this.cam.y -= (m.y - m.py) / this.cam.zoom;
+      a.px = a.x; a.py = a.y; b.px = b.x; b.py = b.y;
+      g.mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; g.dist = Math.hypot(a.x - b.x, a.y - b.y); g.acc = 1;
+      this.clamp(); return;
+    }
+    a.px = a.x; a.py = a.y; b.px = b.x; b.py = b.y;
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist = Math.hypot(a.x - b.x, a.y - b.y);
     this.cam.x -= (mid.x - g.mid.x) / this.cam.zoom; this.cam.y -= (mid.y - g.mid.y) / this.cam.zoom;
     g.mid = mid;
     if (g.dist > 0) {
@@ -176,6 +190,8 @@ export class Controller {
   private activate(p: { x: number; y: number }, touch: boolean, additive: boolean): void {
     if (this.attackMoveArmed) { this.attackMove(p, additive); return; }
     if (this.placing) { if (touch) { this.placeAt = this.originAt(p); this.onChange(); } else this.confirmPlace(additive); return; }
+    const flag = this.r.flagAt(p.x, p.y); // a tap on the flag of a cluster picks all its soldiers
+    if (flag) { if (!additive) this.selected.clear(); for (const fid of flag) if (this.sim.get(fid)?.team === 'player') this.selected.add(fid); this.selectedBuilding = null; this.inspect = null; this.onChange(); return; }
     const id = this.hit(p, touch);
     if (this.multi) { if (id !== null) { this.toggle(id); this.onChange(); } return; }
     const b = this.buildingUnder(p), w = this.r.screenToWorld(p.x, p.y);
@@ -194,6 +210,7 @@ export class Controller {
       this.command(p, false); return;
     }
     if (seen) { this.inspect = { kind: seen.target.kind, id: seen.target.id }; this.selectedBuilding = null; }
+    else if ((() => { const t = this.pickTile(w.x, w.y), N = this.sim.world.size; if (!this.sim.world.nodeAt(t.x, t.y) || this.sim.fog.state[t.y * N + t.x] === 0) return false; this.inspect = { kind: 'node', id: t.y * N + t.x }; this.selectedBuilding = null; return true; })()) { /* a tree, rock or bush: its card opens */ }
     else if (b !== null) this.selectBuilding(b);
     else if (!additive) {
       // nobody selected: a tap on the ground does nothing, so say why instead of leaving it silent
@@ -245,7 +262,7 @@ export class Controller {
     this.onChange();
   }
 
-  selectBuilding(id: number, open = false): void { this.selectedBuilding = id; this.buildingOpen = open; this.inspect = null; this.onChange(); }
+  selectBuilding(id: number, open = false): void { this.selectedBuilding = id; this.buildingOpen = open; this.inspect = null; this.selected.clear(); this.onChange(); } // a house and a villager are never shown together
   /** Close the panel but keep the building selected. */
   closePanel(): void { this.buildingOpen = false; this.onChange(); }
   closeBuilding(): void { this.selectedBuilding = null; this.buildingOpen = false; this.onChange(); }
@@ -261,7 +278,7 @@ export class Controller {
   ghost(): Ghost | null {
     if (!this.placing || !this.placeAt) return null;
     const b = this.moving !== null ? this.sim.getBuilding(this.moving) : undefined;
-    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era };
+    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era, moving: this.moving ?? undefined };
   }
 
   /** Why the ghost cannot be put down where it is, or null. */
@@ -302,7 +319,7 @@ export class Controller {
     // Có dân đang chọn thì tự giao việc xây cho họ.
     const ids = [...this.selected];
     if (ids.length && res.building && needsWork(res.building)) this.sim.orderWork(ids, o.x, o.y);
-    if (!keep) { this.placing = null; this.placeAt = null; }
+    if (!keep && !d.repeat) { this.placing = null; this.placeAt = null; }
     this.onChange();
   }
 
@@ -327,26 +344,28 @@ export class Controller {
   command(p: { x: number; y: number }, queue = false): void {
     if (!this.selected.size) return;
     const w = this.r.screenToWorld(p.x, p.y), ids = [...this.selected];
+    if (ids.every((id) => this.sim.scouts.some((m) => m.ids.includes(id)))) { this.onToast(ids.length > 1 ? 'Các trinh sát đang làm nhiệm vụ: đợi họ về' : 'Trinh sát đang làm nhiệm vụ: đợi họ về'); return; }
     const worn = ids.filter((id) => { const o = this.sim.get(id); return !!o && this.sim.sleepLocked(o); });
     if (worn.length === ids.length) { this.onToast(ids.length > 1 ? 'Họ đang ngủ say, chưa gọi dậy được' : `${this.sim.get(ids[0])?.name} đang ngủ say, chưa gọi dậy được`); return; }
     // an enemy, an animal or a carcass under the cursor beats ground orders
     const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
     if (seen) {
-      // a click never gives anyone a job: only soldiers fight and only hunters hunt, the rest are told how to get the job
+      // only soldiers fight and only hunters hunt; a villager with no job becomes a hunter by being sent at game, one who has a job keeps it
+      const noHunter = 'Chỉ Thợ săn hoặc chiến binh mới săn thú: dân đã có nghề khác chỉ đổi nghề ở công trình của nghề đó';
       if (seen.kind === 'carcass') {
-        const n = this.sim.orderLoot(ids, seen.target.id);
-        this.onToast(n ? 'Lột da, lấy thịt' : 'Chỉ Thợ săn lột da: giao nghề Thợ săn bằng nút nghề trước');
+        const why = this.sim.autoHunter(ids, seen.target), n = this.sim.orderLoot(ids, seen.target.id);
+        this.onToast(n ? 'Lột da, lấy thịt' : why ?? noHunter);
       } else {
-        const n = this.sim.orderAttack(ids, seen.target, queue);
-        this.onToast(n ? (seen.kind === 'foe' ? 'Tấn công' : 'Săn') : seen.kind === 'foe' ? 'Chỉ chiến binh mới đánh: tuyển lính ở đống lửa trại' : 'Chỉ Thợ săn hoặc chiến binh mới săn thú: giao nghề Thợ săn bằng nút nghề trước');
+        const why = seen.kind === 'foe' ? null : this.sim.autoHunter(ids, seen.target), n = this.sim.orderAttack(ids, seen.target, queue);
+        this.onToast(n ? (seen.kind === 'foe' ? 'Tấn công' : 'Săn') : seen.kind === 'foe' ? 'Chỉ chiến binh mới đánh: tuyển lính ở trại lính' : why ?? noHunter);
       }
       this.markers.push({ x: w.x, y: w.y, age: 0 }); this.onChange(); return;
     }
     const { x: tx, y: ty } = this.pickTile(w.x, w.y);
     if (!this.sim.world.inBounds(tx, ty)) return;
-    // a tree, rock, bush or building site: those who already have that job go to it; a click gives no one a job
+    // a tree, rock, bush or building site: those who have that job go to it, and a villager with no job takes it if its house has room
     const work = this.sim.orderWork(ids, tx, ty);
-    if (work) this.onToast(work.sent ? JOB_NAME[work.job] : work.job === 'build' ? 'Chỉ thợ xây của Nhà thợ xây mới xây: chọn thợ ở nhà đó' : `Chưa là ${JOB_NAME[work.job].toLowerCase()}: giao nghề bằng nút nghề trước`);
+    if (work) this.onToast(work.sent ? (work.err ? `${JOB_NAME[work.job]} (${work.err})` : JOB_NAME[work.job]) : work.job === 'build' ? 'Chỉ thợ xây của Nhà thợ xây mới xây: chọn thợ ở nhà đó' : work.err ?? `Dân đã có nghề khác: chỉ đổi nghề ở công trình của nghề ${JOB_NAME[work.job].toLowerCase()}`);
     else this.sim.orderMove(ids, tx, ty, queue);
     this.markers.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, age: 0 });
     if (work?.sent) this.releaseCivilians(queue); // a job lets the villager go; plain moves keep them chosen so they can be sent on again

@@ -1,0 +1,654 @@
+{
+ "name": "Bãi tập (cấp 1, bãi cọc)",
+ "name_en": "Drill Ground (Tier 1)",
+ "size": [
+  100,
+  64
+ ],
+ "anchor": [
+  50,
+  58
+ ],
+ "footprint": [
+  2,
+  30,
+  96,
+  28
+ ],
+ "seed": 42,
+ "layers": [
+  {
+   "shape": "ellipse",
+   "cx": 50,
+   "cy": 56,
+   "rx": 46,
+   "ry": 5,
+   "color": "shadow",
+   "alpha": 0.25
+  },
+  {
+   "shape": "poly",
+   "points": [
+    [
+     14,
+     26
+    ],
+    [
+     86,
+     26
+    ],
+    [
+     94,
+     54
+    ],
+    [
+     6,
+     54
+    ]
+   ],
+   "color": "dirt",
+   "alpha": 0.5,
+   "ifNot": "st1"
+  },
+  {
+   "shape": "rect",
+   "x": 6,
+   "y": 28,
+   "w": 2,
+   "h": 6,
+   "color": "wood",
+   "ifNot": "st1"
+  },
+  {
+   "shape": "rect",
+   "x": 92,
+   "y": 28,
+   "w": 2,
+   "h": 6,
+   "color": "wood",
+   "ifNot": "st1"
+  },
+  {
+   "shape": "rect",
+   "x": 4,
+   "y": 50,
+   "w": 2,
+   "h": 6,
+   "color": "wood",
+   "ifNot": "st1"
+  },
+  {
+   "shape": "rect",
+   "x": 94,
+   "y": 50,
+   "w": 2,
+   "h": 6,
+   "color": "wood",
+   "ifNot": "st1"
+  },
+  {
+   "shape": "line",
+   "from": [
+    8,
+    29
+   ],
+   "to": [
+    91,
+    29
+   ],
+   "w": 1,
+   "color": "rope",
+   "ifNot": "st1"
+  },
+  {
+   "shape": "group",
+   "if": "st1",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       14,
+       24
+      ],
+      [
+       86,
+       24
+      ],
+      [
+       96,
+       54
+      ],
+      [
+       4,
+       54
+      ]
+     ],
+     "color": "earth",
+     "alpha": 1.0
+    },
+    {
+     "shape": "scatter",
+     "count": 50,
+     "area": [
+      8,
+      28,
+      84,
+      26
+     ],
+     "size": [
+      1,
+      2
+     ],
+     "colors": [
+      "dirt",
+      "earthL",
+      "chip"
+     ],
+     "onlyOver": [
+      "earth"
+     ]
+    },
+    {
+     "shape": "ellipse",
+     "cx": 50,
+     "cy": 44,
+     "rx": 30,
+     "ry": 9,
+     "color": "sandD",
+     "alpha": 0.6
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st2",
+   "layers": [
+    {
+     "shape": "line",
+     "from": [
+      12,
+      32
+     ],
+     "to": [
+      12,
+      24
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      30,
+      30
+     ],
+     "to": [
+      30,
+      22
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      70,
+      30
+     ],
+     "to": [
+      70,
+      22
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      88,
+      32
+     ],
+     "to": [
+      88,
+      24
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      14,
+      52
+     ],
+     "to": [
+      14,
+      44
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      86,
+      52
+     ],
+     "to": [
+      86,
+      44
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      12,
+      25
+     ],
+     "to": [
+      30,
+      22
+     ],
+     "w": 1,
+     "color": "rope"
+    },
+    {
+     "shape": "line",
+     "from": [
+      70,
+      22
+     ],
+     "to": [
+      88,
+      25
+     ],
+     "w": 1,
+     "color": "rope"
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st3",
+   "layers": [
+    {
+     "shape": "line",
+     "from": [
+      34,
+      46
+     ],
+     "to": [
+      34,
+      30.0
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      28.0,
+      35.0
+     ],
+     "to": [
+      40.0,
+      35.0
+     ],
+     "w": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 34,
+     "cy": 38.0,
+     "rx": 4.0,
+     "ry": 6.0,
+     "color": "straw"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 34,
+     "cy": 38.0,
+     "rx": 4.0,
+     "ry": 6.0,
+     "color": "strawD",
+     "alpha": 0.35
+    },
+    {
+     "shape": "ellipse",
+     "cx": 34,
+     "cy": 28.0,
+     "rx": 3.0,
+     "ry": 3.0,
+     "color": "straw"
+    },
+    {
+     "shape": "line",
+     "from": [
+      31,
+      40.0
+     ],
+     "to": [
+      37,
+      40.0
+     ],
+     "w": 1,
+     "color": "rope"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 34,
+     "cy": 47,
+     "rx": 5,
+     "ry": 2,
+     "color": "dirt"
+    },
+    {
+     "shape": "line",
+     "from": [
+      66,
+      46
+     ],
+     "to": [
+      66,
+      30.0
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      60.0,
+      35.0
+     ],
+     "to": [
+      72.0,
+      35.0
+     ],
+     "w": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 66,
+     "cy": 38.0,
+     "rx": 4.0,
+     "ry": 6.0,
+     "color": "straw"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 66,
+     "cy": 38.0,
+     "rx": 4.0,
+     "ry": 6.0,
+     "color": "strawD",
+     "alpha": 0.35
+    },
+    {
+     "shape": "ellipse",
+     "cx": 66,
+     "cy": 28.0,
+     "rx": 3.0,
+     "ry": 3.0,
+     "color": "straw"
+    },
+    {
+     "shape": "line",
+     "from": [
+      63,
+      40.0
+     ],
+     "to": [
+      69,
+      40.0
+     ],
+     "w": 1,
+     "color": "rope"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 66,
+     "cy": 47,
+     "rx": 5,
+     "ry": 2,
+     "color": "dirt"
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st4",
+   "layers": [
+    {
+     "shape": "line",
+     "from": [
+      8,
+      42
+     ],
+     "to": [
+      8,
+      30
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      22,
+      42
+     ],
+     "to": [
+      22,
+      30
+     ],
+     "w": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      7,
+      34
+     ],
+     "to": [
+      23,
+      34
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      11,
+      34
+     ],
+     "to": [
+      10,
+      27
+     ],
+     "w": 1,
+     "color": "stoneL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      15,
+      34
+     ],
+     "to": [
+      15,
+      26
+     ],
+     "w": 2,
+     "color": "woodL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      19,
+      34
+     ],
+     "to": [
+      20,
+      27
+     ],
+     "w": 1,
+     "color": "stoneL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      83,
+      42
+     ],
+     "to": [
+      85,
+      28
+     ],
+     "w": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      93,
+      42
+     ],
+     "to": [
+      91,
+      28
+     ],
+     "w": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 88,
+     "cy": 28,
+     "rx": 8,
+     "ry": 8,
+     "color": "hideD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 88,
+     "cy": 28,
+     "rx": 6,
+     "ry": 6,
+     "color": "sack"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 88,
+     "cy": 28,
+     "rx": 4,
+     "ry": 4,
+     "color": "berry"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 88,
+     "cy": 28,
+     "rx": 2,
+     "ry": 2,
+     "color": "stitch"
+    },
+    {
+     "shape": "rect",
+     "x": 46,
+     "y": 50,
+     "w": 3,
+     "h": 3,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 50,
+     "y": 50,
+     "w": 3,
+     "h": 3,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 54,
+     "y": 50,
+     "w": 3,
+     "h": 3,
+     "color": "wood"
+    }
+   ]
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  }
+ ],
+ "type": "prop",
+ "params": {
+  "st1": 1,
+  "st2": 1,
+  "st3": 1,
+  "st4": 1
+ },
+ "palette": {
+  "line": "#2b1d10",
+  "shadow": "#000000",
+  "dirt": "#6a5238",
+  "earth": "#86704e",
+  "earthL": "#9a8460",
+  "wood": "#8a6238",
+  "woodL": "#aa7c48",
+  "woodD": "#5e4026",
+  "log": "#6b4a28",
+  "logE": "#c49a60",
+  "rope": "#d8c690",
+  "stone": "#8e9498",
+  "stoneL": "#b9bfc2",
+  "stoneD": "#60676b",
+  "chip": "#d8d2c0",
+  "hide": "#a0552f",
+  "hideL": "#c06f43",
+  "hideD": "#7a3d20",
+  "stitch": "#e8d6a8",
+  "door": "#2a1a0e",
+  "thatch": "#c9a84e",
+  "thatchL": "#e0c670",
+  "thatchD": "#9a7c32",
+  "sack": "#c9b27a",
+  "sackD": "#9d8756",
+  "wicker": "#b89a58",
+  "wickerD": "#8a7038",
+  "berry": "#c23a3a",
+  "herb": "#6f7d3a",
+  "clay": "#b08a62",
+  "clayD": "#8c6a48",
+  "straw": "#d8bf62",
+  "strawL": "#ecd88a",
+  "strawD": "#a8893a",
+  "smoke": "#c8ccd0",
+  "iron": "#454a52",
+  "slate": "#58606a",
+  "slateL": "#7a8490",
+  "water": "#4f7fa8",
+  "waterL": "#8fbfdf",
+  "soil": "#6a4a2c",
+  "soilL": "#86613a",
+  "soilD": "#4d341e",
+  "furrow": "#3c2815",
+  "leaf": "#6fa83c",
+  "leafL": "#9ccc4e",
+  "leafD": "#4a7a28",
+  "sand": "#cdb98a",
+  "sandD": "#b09c6e",
+  "flag": "#b8322a",
+  "teal": "#4f8a86"
+ }
+}

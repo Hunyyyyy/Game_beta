@@ -2,28 +2,38 @@ import { Camera, Renderer } from './render/renderer';
 import { Sprites } from './render/sprites';
 import { BUILDINGS, BuildingKind } from './sim/buildings';
 import { DAY_PART_NAME, dayInSeason, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
-import { DAY_LENGTH, TILE } from './sim/constants';
+import { TILE } from './sim/constants';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { RESEARCH } from './sim/research';
+import { Journal } from './ui/journal';
+import { dlg, GameDialog } from './ui/gamedialog';
+import { resIcon } from './ui/resicons';
 import { Controller } from './ui/controller';
 import { $, costText } from './ui/dom';
 import { Menu } from './ui/menu';
+import { BuildTray } from './ui/buildtray';
 import { MapView } from './ui/minimap';
 import { BuildingBar, Confirm } from './ui/buildbar';
+import { WarBar } from './ui/warbar';
 import { BuildingPanel, Ctx, TargetCard, UnitCard } from './ui/panels';
+import { newSeed } from './sim/rng';
 import { IndexedDbStore } from './save/indexeddb';
 import { Session, AUTO_SAVE } from './save/session';
 import { loadSettings, saveSettings } from './save/settings';
 import { MemoryStore } from './save/store';
 
-const seed = Number(new URLSearchParams(location.search).get('seed')) || 1337;
+// a new game is a new world: a random seed (it decides the land, the herds and where the village starts), kept in the address so that reloading the page gives the same world
+const seedParam = Number(new URLSearchParams(location.search).get('seed')) || 0;
+const seed = seedParam || newSeed();
+if (!seedParam) { try { history.replaceState(null, '', `?seed=${seed}`); } catch { /* an address that cannot be changed: the world is just not remembered */ } }
 
 const sim = new Sim(seed);
 const settings = loadSettings();
 const session = new Session(sim, IndexedDbStore.available() ? new IndexedDbStore() : new MemoryStore());
 sim.speed = settings.speed;
 let started = false; // true once the player has answered the "continue?" question
+const startDialog = new GameDialog($('start'), { modal: true }); // only its own buttons close it
 const view = $<HTMLCanvasElement>('view');
 const cam: Camera = { x: 0, y: 0, zoom: Math.min(view.clientWidth, view.clientHeight) < 700 ? 1 : 2 };
 const sprites = new Sprites();
@@ -45,11 +55,13 @@ const ctx: Ctx = { sim, ctl, sprites, session, toast };
 // ---------------------------------------------------------------- panels, menu, maps
 const unitCard = new UnitCard($('ucard'), ctx, $('udetail')), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
 const buildingBar = new BuildingBar($('bbar'), ctx, renderer, new Confirm($('dialog'), ctx));
+const warBar = new WarBar($('warbar'), ctx);
+const tray = new BuildTray($('tray'), ctx);
 const map = new MapView(sim, cam, renderer, ctl, $('mini'), $('bigmapCanvas'), $('bigmap'));
 const menu = new Menu($('drawer'), $('drawerTabs'), $('drawerBody'), ctx, () => { const w = renderer.screenToWorld(renderer.w / 2, renderer.h / 2); return { x: w.x / TILE, y: w.y / TILE }; });
 $('btnCloseMap').addEventListener('click', () => map.close());
-$('btnMenu').addEventListener('click', () => { menu.toggle(); });
-
+$('btnMenu').addEventListener('click', () => { tray.close(); menu.toggle(); });
+$('btnBuild').addEventListener('click', () => { menu.close(); tray.toggle(); });
 // ---------------------------------------------------------------- landscape on phones
 // A phone held upright gets a prompt (and the game pauses until it is turned); fullscreen plus an orientation lock is tried where the browser allows it.
 const rotateEl = $('rotate'), fullBtn = $<HTMLButtonElement>('btnFull');
@@ -81,22 +93,27 @@ window.addEventListener('resize', syncRotate); window.addEventListener('orientat
 fullBtn.hidden = !matchMedia('(pointer: coarse)').matches && !document.fullscreenEnabled;
 
 // ---------------------------------------------------------------- buttons and keys
-const speedBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-speed]')];
-speedBtns.forEach((b) => b.addEventListener('click', () => setSpeed(Number(b.dataset.speed))));
+// one button for the speed of the game: each press goes to the next speed, and from the last one back to the first
+const SPEEDS = [1, 2, 4, 16];
+const speedBtn = $<HTMLButtonElement>('btnSpeed');
+speedBtn.addEventListener('click', () => setSpeed(SPEEDS[(SPEEDS.indexOf(sim.speed) + 1) % SPEEDS.length]));
 const multiBtn = $<HTMLButtonElement>('btnMulti');
 multiBtn.addEventListener('click', () => ctl.setMulti(!ctl.multi));
 $('btnAll').addEventListener('click', () => ctl.selectAll());
 $('btnNone').addEventListener('click', () => ctl.clearSelection());
+$('btnHome').addEventListener('click', () => { const f = sim.campfire(), s = sim.world.start; ctl.centerOn(((f ? f.x + 1 : s.x) ) * TILE, ((f ? f.y + 1 : s.y)) * TILE); });
 const foldBtn = $<HTMLButtonElement>('btnFold');
 foldBtn.addEventListener('click', () => { const on = !$('sheet').classList.contains('folded'); $('sheet').classList.toggle('folded', on); foldBtn.setAttribute('aria-pressed', String(on)); foldBtn.textContent = on ? 'Hiện bảng' : 'Ẩn bảng'; });
+$('btnArmy').addEventListener('click', () => { if (sim.alarmUntil > sim.time) sim.standDown(); else { const e = sim.callArmy(); if (e) toast(e); } syncButtons(); });
 $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
 $('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
 function setSpeed(s: number) { sim.speed = s; if (s > 0) { settings.speed = s; saveSettings(settings); } syncButtons(); }
-function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); } }
+function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); tray.close(); } }
 function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'workshop' && x.done); if (b) { ctl.selectBuilding(b.id, true); ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE); } else toast('Chưa có Xưởng'); }
 function syncButtons() {
-  speedBtns.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === sim.speed)));
+  speedBtn.textContent = sim.speed === 0 ? '❚❚' : `${sim.speed}×`; speedBtn.setAttribute('aria-pressed', String(sim.speed === 0));
   multiBtn.setAttribute('aria-pressed', String(ctl.multi));
+  { const on = sim.alarmUntil > sim.time, army = $('btnArmy'); army.setAttribute('aria-pressed', String(on)); army.textContent = on ? 'Cho quân về' : 'Gọi quân'; army.hidden = !sim.villagers.some((v) => v.job === 'fight' && !v.guard); }
   $('btnNone').hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
 }
 window.addEventListener('keydown', (e) => {
@@ -104,14 +121,20 @@ window.addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLElement && /input|textarea|select/i.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
   if (k === 'p') setSpeed(sim.speed === 0 ? 1 : 0);
-  else if (k === 'q') setSpeed(1); else if (k === 'e') setSpeed(2); else if (k === 'r') setSpeed(4);
+
+  else if (k === 'q') setSpeed(1); else if (k === 'e') setSpeed(2); else if (k === 'r') setSpeed(4); else if (k === 't') setSpeed(16);
   else if (k === 'b') togglePlace('storage'); else if (k === 'x') togglePlace('workshop'); else if (k === 'c') openWorkshop();
   else if (k === 'm') { if (map.isOpen) map.close(); else map.open(); }
   else if (k === 'tab') { e.preventDefault(); menu.toggle(); }
 });
 
 // ---------------------------------------------------------------- the top bar and the log
-const log = $('log'), clock = $('clock');
+const clock = $('clock');
+const REGION_NAME = { plains: 'Đồng bằng', sparse: 'Rừng thưa', dense: 'Rừng rậm', mountain: 'Núi', water: 'Vùng nước' } as const;
+// the coloured squares of the top bar give way to drawn pictures
+for (const [id, key] of [['rFood', 'food'], ['rWood', 'wood'], ['rStone', 'stone'], ['rHide', 'hide'], ['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk'], ['rTorch', 'torch'], ['rCoin', 'coin'], ['rPop', 'pop']]) $(id).querySelector('i')?.replaceWith(resIcon(key));
+// the quest and notice buttons stand at the left edge; each opens its window over the map, and a red mark says something new is waiting
+const journal = new Journal(ctx, { quests: $('qpanel'), notices: $('npanel') }, { quests: $('btnQuest'), notices: $('btnNotice') });
 let fps = 60, lastHud = 0, logKey = '', pending: string | null = null, lastTopH = -1;
 const topBar = document.querySelector('.top') as HTMLElement;
 
@@ -125,10 +148,11 @@ function setRes(id: string, val: number, cap: number, note = '') {
 function updateHud(now: number) {
   if (now - lastHud < 150) return;
   lastHud = now;
-  const spoil = Math.floor(sim.foodSpoilingWithin(DAY_LENGTH)), cap = sim.capacity();
-  setRes('rFood', sim.stock.food, cap, spoil > 0 ? ` · ${spoil}⚠` : '');
-  $('rFood').classList.toggle('warn', spoil > 0);
-  $('rFood').title = `Thức ăn. Quả hỏng sau 3 ngày nếu chưa ăn; dân ăn lứa cũ trước.${spoil > 0 ? ` ${spoil} thức ăn sẽ hỏng trong 1 ngày tới.` : ''}`;
+  const cap = sim.capacity();
+  const need = sim.foodNeed(), pen = sim.foodPenalty;
+  setRes('rFood', sim.stock.food, cap); // the pot of the campfire is filled first: only what is over is in the store
+  $('rFood').classList.toggle('warn', pen > 0);
+  $('rFood').title = `Thức ăn: kho ${Math.floor(sim.stock.food)} + phần ăn của lửa trại ${Math.floor(sim.foodPot)}/${need}. Cuối mỗi ngày làng ăn ${need}; thiếu thì cả làng yếu đi.${pen > 0 ? ` Đang yếu ${Math.round(pen * 1000) / 10}% vì bữa trước thiếu ăn.` : ''}`;
   setRes('rWood', sim.stock.wood, cap); setRes('rStone', sim.stock.stone, cap); setRes('rHide', sim.stock.hide, cap); setRes('rCoin', sim.stock.coin, cap); $('rCoin').title = `${RES_NAME.coin}: tiền của làng, nhặt khi hái lượm, đổi hàng ở Kho, nhận từ bộ tộc. Dùng để trả cho nghiên cứu.`;
   { const el = $('rTorch'), n = sim.torchCount(); el.hidden = n <= 0; if (n > 0) el.querySelector('b')!.textContent = String(n); }
   for (const [id, res] of [['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk']] as const) {
@@ -138,17 +162,25 @@ function updateHud(now: number) {
   $('rPop').querySelector('b')!.textContent = String(sim.villagers.length); $('rPop').querySelector('small')!.textContent = `/${sim.popCap()}`;
   for (const r of RES_LIST) void RES_NAME[r];
   const se = SEASON_DEF[sim.season], we = WEATHER[sim.weather], year = yearOf(sim.day);
-  clock.textContent = `${year > 1 ? `Năm ${year} · ` : ''}Ngày ${sim.day} · ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} · ${DAY_PART_NAME[sim.part]} · ${we.name}`;
+  // the region under the middle of the screen, once somebody has been there (what lies in the dark is not told)
+  const mid = renderer.screenToWorld(renderer.w / 2, renderer.h / 2), mx = Math.floor(mid.x / TILE), my = Math.floor(mid.y / TILE);
+  const region = sim.world.inBounds(mx, my) ? (sim.fog.state[my * sim.world.size + mx] > 0 ? REGION_NAME[sim.world.regionAt(mx, my)] : 'Vùng chưa khám phá') : 'Ngoài bản đồ';
+  { const f = sim.campfire(), s = sim.world.start; $('btnHome').hidden = Math.hypot(mid.x / TILE - (f ? f.x + 1 : s.x), mid.y / TILE - (f ? f.y + 1 : s.y)) < 30; } // the camera is far from the village: a way back
+  clock.textContent = `${year > 1 ? `Năm ${year} · ` : ''}Ngày ${sim.day} · ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} · ${DAY_PART_NAME[sim.part]} · ${we.name} · ${region}`;
   const outdoor = we.work * se.work;
   const eff = [we.vision ? `tầm nhìn −${we.vision} ô` : '', we.speed < 1 ? `đi chậm ${Math.round((1 - we.speed) * 100)}%` : '', outdoor < 1 ? `làm việc ngoài trời chậm ${Math.round((1 - outdoor) * 100)}%` : ''].filter(Boolean).join(', ');
   $('clockLine').title = `${we.name}${eff ? `: ${eff}` : ''}. Hái lượm mùa ${se.name.toLowerCase()} ×${se.gather.toLocaleString('vi')}. ${Math.round(fps)} fps`;
 
-  const lines = sim.log.slice(-4), lk = lines.map((l) => l.text).join('|');
+  // quests and notices: the windows are drawn by the journal; here only the toast when a quest is done
+  const selB = ctl.selectedBuilding === null ? undefined : sim.getBuilding(ctl.selectedBuilding);
+  const views = sim.quests({ selected: selB?.kind ?? null, panel: selB && ctl.buildingOpen ? selB.kind : null, inspecting: ctl.inspect?.kind ?? null });
+  const lk = views.map((v) => (v.done ? 'd' : v.open ? 'o' : 'l')).join('');
   if (lk !== logKey) {
-    // on a narrow screen the log is hidden, so the newest line goes to the pop-up message instead
-    if (logKey && innerWidth < 760 && lines.length) toast(lines[lines.length - 1].text);
-    logKey = lk; log.replaceChildren(...lines.map((l) => { const d = document.createElement('div'); d.textContent = l.text; return d; }));
+    const prev = logKey.indexOf('o') >= 0 ? views[logKey.indexOf('o')] : undefined;
+    if (prev?.done) toast(`Hoàn thành: ${prev.quest.title}`);
+    logKey = lk;
   }
+  journal.update(views, sim.notices());
   // the context panels keep clear of the top bar, however many rows it wraps into
   const topH = Math.ceil(topBar.getBoundingClientRect().height);
   if (topH !== lastTopH) { lastTopH = topH; document.documentElement.style.setProperty('--top-h', `${topH}px`); }
@@ -160,6 +192,7 @@ function updateHud(now: number) {
   const chosen = sim.villagers.filter((v) => ctl.selected.has(v.id));
   const placing = !!ctl.placing, showB = ctl.selectedBuilding !== null && ctl.buildingOpen && !placing;
   buildingPanel.update(); buildingBar.update(); unitCard.update(chosen); targetCard.update();
+  warBar.update(); document.body.classList.toggle('war', warBar.active); // war mode: the selection and building buttons give way to the battle buttons
   if (placing || !showB) $('bpanel').hidden = true;
   if (placing || showB) { $('ucard').hidden = true; unitCard.closeDetail(); }
   if (placing || showB) $('tcard').hidden = true;
@@ -170,7 +203,7 @@ function updateHud(now: number) {
     $<HTMLButtonElement>('btnPlaceOk').disabled = why !== null;
     $('btnPlaceOk').textContent = moving ? '✓ Dời tới đây' : '✓ Đặt ở đây';
   }
-  menu.update();
+  menu.update(); tray.update();
   syncButtons();
 }
 ctl.onChange = () => { lastHud = 0; syncButtons(); };
@@ -196,7 +229,7 @@ syncRotate();
 
 // ---------------------------------------------------------------- continue a saved game
 // The game starts at once with a new world. If there is a save, a question comes first and the game waits for the answer.
-function begin(): void { started = true; $('start').hidden = true; setSpeed(settings.speed); }
+function begin(): void { started = true; startDialog.hide(); setSpeed(settings.speed); }
 document.addEventListener('visibilitychange', () => { if (document.hidden && started) void session.save(); });
 void (async () => {
   const latest = await session.latest();
@@ -211,12 +244,8 @@ void (async () => {
   if (params.get('continue') === '1' && latest.seed === seed) { await resume(); return; }
   sim.speed = 0; syncButtons();
   const when = new Date(latest.savedAt).toLocaleString('vi');
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = `<h3>Làng Đồ Đá</h3><p class="sub">Có ván đang chơi dở: ngày ${latest.day}, ${latest.population} dân (lưu lúc ${when}).</p>`;
-  const btns = document.createElement('div'); btns.className = 'btns';
-  const go = document.createElement('button'); go.className = 'primary'; go.textContent = 'Tiếp tục'; go.addEventListener('click', () => { void resume(); });
-  const fresh = document.createElement('button'); fresh.textContent = 'Ván mới'; fresh.title = 'Bản lưu cũ vẫn còn cho tới khi ván mới tự lưu lần đầu (đầu ngày hôm sau)'; fresh.addEventListener('click', begin);
-  btns.append(go, fresh); card.append(btns);
-  $('start').replaceChildren(card); $('start').hidden = false;
+  const fresh = dlg.button('Ván mới', begin, { tone: 'alt' }); fresh.title = 'Bản lưu cũ vẫn còn cho tới khi ván mới tự lưu lần đầu (đầu ngày hôm sau)';
+  startDialog.show(dlg.card({ label: 'Làng Đồ Đá' },
+    dlg.head({ pic: '🔥', title: 'Làng Đồ Đá', sub: `Có ván đang chơi dở: ngày ${latest.day}, ${latest.population} dân (lưu lúc ${when}).` }),
+    dlg.buttons(dlg.button('Tiếp tục', () => { void resume(); }), fresh)));
 })();

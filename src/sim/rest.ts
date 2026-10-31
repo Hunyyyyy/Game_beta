@@ -3,13 +3,23 @@
  * slower; soldiers fight on whatever their energy and sleep long afterwards; nobody can be worked night after night (strain).
  * All the numbers are in src/data/rest.json.
  */
+import { drainScale } from './statsys';
 import restJson from '../data/rest.json';
 import { Building, levelDef } from './buildings';
 import { DAY_LENGTH } from './constants';
+import { SEASONS, sunTimes, TWILIGHT } from './calendar';
+import { isStaffJob } from './jobs';
+import { homeKind } from './idle';
+import { awayScout } from './scouting';
+import type { BuildingKind } from './buildings';
 import type { Sim } from './sim';
 import type { Villager } from './model';
 
 export const REST = restJson;
+/** Seconds of rest time (mid-dusk to mid-dawn) in an average night over the seasons. */
+const NIGHT_AVG = DAY_LENGTH * SEASONS.reduce((n, s) => { const { rise, set } = sunTimes(s); return n + (rise - TWILIGHT / 2) + (1 - set - TWILIGHT / 2); }, 0) / SEASONS.length;
+/** How long a new torch burns: two average nights (it only burns while its bearer is out in the dark). What burns is used up for good; a part-burnt torch goes back to the store and the next night's bearer takes it up. */
+export const TORCH_LIFE = 2 * NIGHT_AVG;
 /** Seconds of waking hours in a day and of night (the window the villagers sleep in). */
 const DAY_HOURS = DAY_LENGTH * 0.65, NIGHT_HOURS = DAY_LENGTH * 0.35;
 const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
@@ -34,13 +44,16 @@ export function drainRate(sim: Sim, v: Villager): number {
     case 'goHome': k = 0.3; break;
     default: k = w * 0.8; // on the way somewhere
   }
-  const cond = (1.25 - 0.25 * fit(v)) * (1.2 - 0.2 * (v.morale / 100)) * (1.3 - 0.3 * hpFrac(v));
-  return (REST.dayCost / DAY_HOURS) * k * cond;
+  const cond = (1.25 - 0.25 * fit(v)) * (1.3 - 0.3 * hpFrac(v));
+  return (REST.dayCost / DAY_HOURS) * k * cond * drainScale(sim, v);
 }
 
 // ---------------------------------------------------------------- beds
-/** The house a villager sleeps in when it has room: soldiers in the Lều chiến binh, everyone else in the Nhà dân. */
-export const bedKind = (v: Pick<Villager, 'job'>): 'barracks' | 'house' => (v.job === 'fight' ? 'barracks' : 'house');
+/** Houses whose level also says how well people rest in them: the camp of each arm for its soldiers and the Nhà dân (any other house with beds is as good as a plain Nhà dân). */
+export type BedKind = 'infantry' | 'cavalry' | 'archery' | 'guardpost' | 'house';
+export const BED_KINDS: readonly BedKind[] = ['infantry', 'cavalry', 'archery', 'guardpost', 'house'];
+/** Every house a villager can sleep in: the house of each trade, the camps, the builders' house and the Nhà dân. Where one sleeps: `homeKind` in idle.ts. */
+export const SLEEP_HOUSES: readonly BuildingKind[] = ['house', 'builder', 'lumberyard', 'quarry', 'farmhouse', 'huntlodge', 'scouttent', 'infantry', 'cavalry', 'archery', 'guardpost'];
 
 /** Beds of a house in use: those asleep inside and those on their way. */
 export function bedsTaken(sim: Sim, b: Building, except?: Villager): number {
@@ -49,7 +62,7 @@ export function bedsTaken(sim: Sim, b: Building, except?: Villager): number {
 
 /** Where the villager sleeps: the nearest finished house of the right kind with a free bed, or nothing (they sleep by the campfire). */
 export function freeBed(sim: Sim, v: Villager): Building | undefined {
-  const kind = bedKind(v);
+  const kind = homeKind(v);
   let best: Building | undefined, bd = Infinity;
   for (const b of sim.buildings) {
     if (b.kind !== kind || !b.done || bedsTaken(sim, b, v) >= levelDef(b).slots) continue;
@@ -62,18 +75,53 @@ export function freeBed(sim: Sim, v: Villager): Building | undefined {
 /** How well the place they sleep in lets them rest: the house they are inside (and its level), else the campfire's slower rest. */
 function bedFactor(sim: Sim, v: Villager): number {
   const b = v.inside === null ? undefined : sim.getBuilding(v.inside);
-  return b && (b.kind === 'house' || b.kind === 'barracks') ? REST.sleepAt[b.kind] * levelDef(b).craftSpeed : REST.sleepAt.campfire;
+  if (b && (BED_KINDS as readonly string[]).includes(b.kind)) return REST.sleepAt[b.kind as BedKind] * levelDef(b).craftSpeed;
+  return b ? REST.sleepAt.house : REST.sleepAt.campfire; // a bunk in the workplace is as good as a plain house
 }
 
 /** Percentage points gained per second while asleep. Night sleep is twice as good as sleep by day. */
 export function sleepRate(sim: Sim, v: Villager): number {
+  if (civilian(v) && attackReason(sim) !== null) return 0; // no rest while the village is attacked
   const base = (sim.resting ? REST.sleepNight : REST.sleepDay) / NIGHT_HOURS;
-  const q = (0.8 + 0.4 * fit(v)) * (0.85 + 0.15 * (v.morale / 100)) * (0.7 + 0.3 * hpFrac(v)) * Math.max(0.3, 1 - v.strain * REST.strain.recoveryLoss);
+  const q = (0.8 + 0.4 * fit(v)) * (0.7 + 0.3 * hpFrac(v)) * Math.max(0.3, 1 - v.strain * REST.strain.recoveryLoss);
   return base * q * bedFactor(sim, v);
 }
 
+// ---------------------------------------------------------------- an attack on the village
+const attackCache = new WeakMap<Sim, { t: number; why: string | null }>();
+/**
+ * Why the village counts as under attack right now, or null: a tribe's raid has marched in, or beasts are fighting people near the fire.
+ * Worked out once a tick, for everyone who asks.
+ */
+export function attackReason(sim: Sim): string | null {
+  const c = attackCache.get(sim);
+  if (c && c.t === sim.time) return c.why;
+  let why: string | null = null;
+  const raid = sim.tribes.find((t) => t.raid && t.raid.phase === 'march');
+  if (raid) why = `${raid.def.name} đang tiến vào làng`;
+  else {
+    const fire = sim.campfire(), cx = fire ? fire.x + 1 : sim.world.start.x, cy = fire ? fire.y + 1 : sim.world.start.y;
+    const beast = sim.animals.find((a) => a.state === 'attack' && a.target?.kind === 'unit' && Math.hypot(a.x - cx, a.y - cy) < 30);
+    if (beast) why = 'Thú dữ đang tấn công người gần làng';
+  }
+  attackCache.set(sim, { t: sim.time, why });
+  return why;
+}
+
+/** Whoever is not a fighter (soldier, hunter, scout). */
+const civilian = (v: Pick<Villager, 'job'>): boolean => v.job !== 'fight' && v.job !== 'hunt' && v.job !== 'scout';
+
+/**
+ * Under attack the people lying in a house keep their heads down: they do not rest, they do not come out when morning comes, and nothing wakes them
+ * to run. Only a fighter leaves: a villager the player makes a soldier or a hunter goes out at once.
+ */
+export function hides(sim: Sim, v: Villager): boolean {
+  return v.inside !== null && v.phase === 'sleep' && ((civilian(v) && attackReason(sim) !== null) || quartered(sim, v)); // a soldier in his camp stays there whatever comes
+}
+
 /** Asleep and not to be woken: they fell asleep worn out and have not rested enough yet. */
-export function sleepLocked(_sim: Sim, v: Villager): boolean {
+export function sleepLocked(sim: Sim, v: Villager): boolean {
+  if (hides(sim, v)) return false; // they are not asleep, they are hiding: the player may give them work (a soldier's or a hunter's) at any time
   return v.lockUntil > 0 && v.energy < v.lockUntil && (v.phase === 'sleep' || v.phase === 'goHome');
 }
 
@@ -91,7 +139,7 @@ export function torchCount(sim: Sim): number { return (sim.toolStock.torch1 ?? 0
 /** Put a torch in the villager's hand from the store. Returns whether they have one. */
 export function ensureTorch(sim: Sim, v: Villager): boolean {
   if (v.torch) return true;
-  if ((sim.toolStock.torch1 ?? 0) > 0) { sim.toolStock.torch1--; v.torch = { dur: REST.torchBurn }; return true; }
+  if ((sim.toolStock.torch1 ?? 0) > 0) { sim.toolStock.torch1--; v.torch = { dur: TORCH_LIFE }; return true; }
   let best = -1;
   sim.wornTools.forEach((w, i) => { if (w.id === 'torch1' && w.dur > 0 && (best < 0 || w.dur > sim.wornTools[best].dur)) best = i; });
   if (best >= 0) { v.torch = { dur: sim.wornTools.splice(best, 1)[0].dur }; return true; }
@@ -103,7 +151,7 @@ export function returnTorch(sim: Sim, v: Villager): void {
   const t = v.torch; if (!t) return;
   v.torch = null;
   if (t.dur <= 5) return;
-  if (t.dur >= REST.torchBurn - 1) sim.toolStock.torch1 = (sim.toolStock.torch1 ?? 0) + 1; else sim.wornTools.push({ id: 'torch1', dur: t.dur });
+  if (t.dur >= TORCH_LIFE - 1) sim.toolStock.torch1 = (sim.toolStock.torch1 ?? 0) + 1; else sim.wornTools.push({ id: 'torch1', dur: t.dur });
 }
 
 /** The player hands torches out. Returns an error or null. */
@@ -117,16 +165,21 @@ export function giveTorch(sim: Sim, ids: readonly number[]): string | null {
 /** Whether the villager's shift has them up right now (before torches and tiredness are looked at). */
 export function onShift(sim: Sim, v: Villager): boolean {
   if (v.nightOwl) return true; // called up by the player or the alarm until the shift changes
+  if (v.job === 'fight' && sim.warLock()) return true; // in a war the army is on its feet, night or day
   const night = sim.resting;
-  if (v.job === 'fight' || v.job === 'idle') return !night;
+  if (v.job === 'idle') return v.shift === 'both' || !night; // a free villager is on his feet by day only, unless he was sent out by hand
+  if (v.job === 'fight') return !night;
   if (v.shift === 'both') return true;
   return v.shift === 'night' ? night : !night;
 }
 
+/** Posted to a house to work inside it (craft, research, tame, a Ruộng) or crew of the Nhà thợ xây's own roof. */
+const indoors = (v: Villager): boolean => isStaffJob(v.job) || (v.job === 'food' && v.post >= 0);
+
 /** Whether the villager should be up and working: on shift, and at night with a torch (soldiers on watch need none). */
 export function onDuty(sim: Sim, v: Villager): boolean {
   if (!onShift(sim, v)) return false;
-  if (sim.resting && v.job !== 'fight' && v.job !== 'idle') return ensureTorch(sim, v);
+  if (sim.resting && v.job !== 'fight' && v.job !== 'idle' && !indoors(v)) return ensureTorch(sim, v); // under a roof the night needs no torch
   return true;
 }
 
@@ -150,10 +203,10 @@ export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
   if (v.phase === 'sleep') {
     v.energy = Math.min(top, v.energy + sleepRate(sim, v) * dt);
     v.strain = Math.max(0, v.strain - (sim.resting ? REST.strain.nightSleep : REST.strain.daySleep) * dt);
-  } else if (!sim.dev.noTire) {
+  } else if (!sim.dev.noTire && !(v.job === 'fight' && sim.warLock()) && !awayScout(sim, v)) {
     const working = v.job !== 'idle' && (v.phase === 'work' || v.phase === 'build' || v.phase === 'craft' || v.phase === 'inside' || v.phase === 'fight');
     v.energy = Math.max(0, v.energy - drainRate(sim, v) * dt);
-    if (sim.resting && working) { v.strain = Math.min(100, v.strain + REST.strain.nightWork * dt); if (v.job !== 'fight') v.morale = Math.max(0, v.morale - REST.strain.moraleLoss * dt); }
+    if (sim.resting && working) { v.strain = Math.min(100, v.strain + REST.strain.nightWork * dt); }
   }
   if (v.energy > top) v.energy = top;
   if (v.torch && sim.resting && v.phase !== 'sleep') {
@@ -163,11 +216,26 @@ export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
 }
 
 /**
+ * The soldiers of the camps (not the guards) stay inside their own camp, out of sight and listed there, so that they are easy to look after. They come
+ * out only when the player calls the army or a war is on, whatever else happens; when that is over they go back in.
+ */
+export function quartered(sim: Sim, v: Villager): boolean {
+  if (v.team !== 'player' || v.job !== 'fight' || v.guard || v.post >= 0) return false;
+  if (sim.alarmUntil > sim.time || sim.warLock()) return false;
+  const camp = v.inside === null ? undefined : sim.getBuilding(v.inside);
+  return (!!camp && camp.kind === homeKind(v)) || !!freeBed(sim, v); // only when there is a bed for him in his camp
+}
+
+/**
  * Should the villager be asleep now? Worn out, they sleep and cannot be woken until rested; off shift they sleep (and may be called up);
  * a soldier in a fight fights on whatever his energy.
  */
 export function shouldSleep(sim: Sim, v: Villager, fighting: boolean): boolean {
   if (fighting) return false;
+  if (awayScout(sim, v)) { v.lockUntil = 0; return false; } // a scout on a trip works day and night until the map is drawn and he is home
+  if (v.job === 'fight' && sim.warLock()) { v.lockUntil = 0; return false; } // soldiers do not sleep while a war is on
+  if (quartered(sim, v)) return true; // the soldiers of the camps wait inside their camp until the army is called out
+  if (sim.warLock() && v.team === 'player' && v.job !== 'fight' && !awayScout(sim, v)) return true; // in a war the villagers go indoors and stop working
   if (v.lockUntil > 0) {
     if (v.energy >= v.lockUntil) v.lockUntil = 0; else return true;
   }
@@ -182,4 +250,4 @@ export function shouldSleep(sim: Sim, v: Villager, fighting: boolean): boolean {
 }
 
 /** Beds in all the finished houses of a kind (0 when there is none). */
-export function bedsIn(sim: Sim, kind: 'barracks' | 'house'): number { return sim.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0); }
+export function bedsIn(sim: Sim, kind: BuildingKind): number { return sim.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0); }

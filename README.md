@@ -1,6 +1,6 @@
 # Làng Đồ Đá — M2.2 (nghề, tài nguyên, công cụ, Xưởng chế tác)
 
-Game xây làng / RTS thời đồ đá, chạy trên trình duyệt. M1 có bản đồ, sương mù, chọn và ra lệnh. M2 thêm kinh tế: dân đốn gỗ, đục đá, hái quả, dựng Kho, biết đói và đi ăn. Mọi vật thể trên bản đồ (cỏ, bùn, nước, cây, đá, bụi quả, gốc cây, đống lửa, Kho, Xưởng chế tác, biểu tượng công cụ) được vẽ từ **bản vẽ JSON** trong `src/data/blueprints/`.
+Game xây làng / RTS thời đồ đá, chạy trên trình duyệt. M1 có bản đồ, sương mù, chọn và ra lệnh. M2 thêm kinh tế: dân đốn gỗ, đục đá, hái quả, dựng Kho, ăn một bữa chung mỗi cuối ngày. Mọi vật thể trên bản đồ (cỏ, bùn, nước, cây, đá, bụi quả, gốc cây, đống lửa, Kho, Xưởng chế tác, biểu tượng công cụ) được vẽ từ **bản vẽ JSON** trong `src/data/blueprints/`.
 
 ## Chạy
 
@@ -29,14 +29,14 @@ Thêm `?seed=123` vào địa chỉ để sinh bản đồ khác.
 |---|---|
 | 1 ngày game | 240 giây (4 phút) |
 | Tốc độ đi | 1,6 + 0,1 × Nhanh nhẹn (ô/giây) |
-| Tốc độ làm | (0,5 + 0,1 × chỉ số chính) × (1 + 0,2 × cấp), ×0,7 khi đói dưới 25 |
+| Tốc độ làm | (0,5 + 0,1 × chỉ số chính) × (1 + 0,2 × cấp) |
 | Chỉ số chính | Gỗ, Đá: Sức mạnh · Thức ăn: Nhanh nhẹn · Xây: Thể lực |
 | Thời gian cho 1 đơn vị (hệ số 1) | Gỗ 12 giây · Đá 18 giây · Quả 20 giây |
 | Sức mang | 4 gỗ hoặc đá · 10 thức ăn |
 | Nguồn | Cây 10 gỗ (cạn thì để lại gốc) · đá 14 · bụi quả 6, mọc lại sau 240 giây |
 | Nhà chung | dựng sẵn, chứa 50 mỗi loại |
 | Kho | 10 gỗ, 20 giây (hệ số 1), chứa 100 mỗi loại; 4 giai đoạn xây |
-| Đói | no tụt 100 mỗi ngày; dưới 50 thì ăn 2 thức ăn (hồi 50); hết ăn thì chết sau khoảng 1,5 ngày |
+| Bữa ăn | cuối mỗi ngày game, dân ăn 2 thức ăn, lính 3 (tăng theo cấp lửa trại); thiếu thì cả làng yếu đi tới 20% trong ngày kế (`src/data/food.json`) |
 | Công cụ | Rìu → đốn gỗ · Cuốc chim → đục đá · Cuốc → hái lượm · Búa → xây |
 | Bậc công cụ | Tay không: tốc độ ×0,6, sản lượng ×1 · Gỗ: ×1, ×1,25 · Đá: ×1,4, ×1,6 |
 | Độ bền | Gỗ 240 giây làm việc, đá 600 giây, hết thì gãy |
@@ -77,7 +77,7 @@ src/
     fog.ts        Sương mù
     path.ts       A* 8 hướng
     tools.ts      Công cụ, bậc chất lượng, công thức chế tác
-    sim.ts        Dân, AI nghề, kho, xây dựng, chế tác, đói, lệnh
+    sim.ts        Dân, AI nghề, kho, xây dựng, chế tác, bữa ăn, lệnh
   blueprint/      Bộ vẽ JSON (engine.js) và cầu nối TypeScript
   data/blueprints/  Bản vẽ JSON: grass, mud, water, tree_round, tree_pine, rock, bush, stump, campfire, storage, workshop, tool_axe, tool_pick, tool_hoe, tool_hammer
   data/anims.json   Hoạt ảnh dân: idle, walk, carry_walk, chop, mine, dig, gather, build, craft
@@ -86,8 +86,11 @@ src/
   render/         Vẽ đất, vật thể xếp theo y, ban đêm, sương mù
   ui/controller.ts  Chuột, bàn phím, đặt công trình
   main.ts         HUD, bảng dân, bản đồ nhỏ
+  styles/         Giao diện viết bằng SCSS: main.scss gọi các phần (tokens, base, hud, panels, war, overlays, compact); `npm run build` biên dịch rồi nhúng vào dist/index.html
 test/             sim.test.ts (lõi), ui.cjs, tools.cjs và mobile.cjs (Playwright)
 ```
+
+Giao diện: sửa `src/styles/*.scss` (không viết CSS trong `index.html`). Bo góc và màu cố định nằm ở `_tokens.scss`, kiểu dùng lại ở `_mixins.scss`. Hai trang xem thử trong `tools/` có SCSS riêng ở `tools/styles/`, build bằng `npm run viewer`.
 
 Sửa một bản vẽ trong `src/data/blueprints/*.json` rồi build lại là hình trong game đổi theo. Có thể dán JSON vào trang "Bản vẽ vật thể" để xem trước.
 

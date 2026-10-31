@@ -1,9 +1,11 @@
 export const TILE = 32;        // px mỗi ô
-export const MAP_SIZE = 192;   // ô mỗi cạnh
+export const MAP_SIZE = 960;   // ô mỗi cạnh
 export const VISION = 7;       // villager sight radius by day (tiles)
 export const NIGHT_VISION = 3; // at night, without fire
 export const FIRE_VISION = 8;  // campfire, day and night
 export const TICK = 1 / 20;    // bước mô phỏng cố định (giây game)
+/** How many searches for a way the soldiers may start in one tick (see Sim.pathLeft). */
+export const PATH_BUDGET = 6;
 export const DAY_LENGTH = 1200; // 1 ngày game = 20 phút thật: 12 phút ban ngày, 8 phút ban đêm (kể cả hoàng hôn, bình minh)
 export const START_TIME = DAY_LENGTH * 0.25; // vào game lúc sáng sớm
 
@@ -19,5 +21,5 @@ export const gameDays = (secs: number): string => {
  */
 export const WORK_DAY = 240;
 export const PACE = { work: WORK_DAY / DAY_LENGTH };
-/** Work seconds (build, craft, research and repair times) as days: "1 ngày", "0,25 ngày". */
+/** Work seconds (build, craft and research times) as days: "1 ngày", "0,25 ngày". */
 export const workDays = (workSecs: number): string => gameDays(workSecs / PACE.work);

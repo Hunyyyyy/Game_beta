@@ -1,5 +1,5 @@
 {
-  "_note": "type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor. cost/time/tier only for what the player can craft; others are used by tribes. style: which set of fighting animations the weapon uses (see \"styles\"); anims overrides single states for one weapon; projectile: what a ranged weapon fires.",
+  "_note": "type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor (the attack speed of the weapon). Every blow or shot does the weapon damage plus the damage stat of the fighter. crit: base chance of a critical blow or shot, 0 to 1 (none have any; research gives it, never above rules.critMax). A critical one does critDamage times the damage (1.25 = 125% of a normal blow, 4 = four times), or the weapon's own critDamage. The research of each weapon (aspd, crit, critd in researchtree.json) is added to the weapon of whoever holds it: aspd by a percent, crit and critd by real points (0.5 = half a percent of chance; 100 = one more time the damage). cost/time/tier only for what the player can craft; others are used by tribes. style: which set of fighting animations the weapon uses (see \"styles\"); anims overrides single states for one weapon; projectile: what a ranged weapon fires.",
   "styles": {
     "fist":   { "name": "Tay không",                            "idle": "idle",        "walk": "walk",        "guard": "fist_guard",   "charge": "fist_charge",   "attack": "fist_attack" },
     "swing":  { "name": "Vung, chém, đập (gậy, chùy, rìu, kiếm)", "idle": "swing_idle",  "walk": "swing_walk",  "guard": "swing_guard",  "charge": "swing_charge",  "attack": "swing_attack" },
@@ -26,6 +26,7 @@
       "cost": {
         "wood": 1
       },
+      "durability": 120,
       "time": 40,
       "tier": 1,
       "style": "swing"
@@ -39,6 +40,7 @@
       "cost": {
         "wood": 2
       },
+      "durability": 100,
       "time": 60,
       "tier": 1,
       "style": "thrust"
@@ -53,6 +55,7 @@
         "wood": 2,
         "stone": 2
       },
+      "durability": 160,
       "time": 120,
       "tier": 2,
       "style": "swing"
@@ -69,20 +72,26 @@
     "sling": {
       "name": "Dây quăng đá",
       "type": "crush",
-      "range": 7,
+      "range": 5.5,
       "damage": 5,
       "cycle": 1.8,
       "ranged": true,
+      "cost": { "hide": 1, "stone": 1 },
+      "durability": 90,
+      "time": 60,
       "style": "sling", "projectile": "stone",
       "tier": 1
     },
     "bow": {
       "name": "Cung ngắn",
       "type": "pierce",
-      "range": 11,
+      "range": 8,
       "damage": 8,
       "cycle": 2.0,
       "ranged": true,
+      "cost": { "wood": 3, "hide": 1 },
+      "durability": 110,
+      "time": 100,
       "style": "shoot", "projectile": "arrow",
       "tier": 1
     }
@@ -96,12 +105,16 @@
       "cost": {
         "hide": 3
       },
+      "durability": 200,
       "time": 100,
       "tier": 1
     }
   },
   "rules": {
     "backstab": 1.25,
+    "tierMult": { "2": { "damage": 1.4 } },
+    "critMax": 0.1,
+    "critDamage": 1.25,
     "strengthDamage": 0.6,
     "agilityBase": 1.3,
     "agilityStep": 0.04,

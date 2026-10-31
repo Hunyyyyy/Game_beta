@@ -1,0 +1,8 @@
+{
+  "_note": "Mounts. A beast is tamed in the Chuồng thú (the level of the stable decides which) and given to a villager like a tool; the riders of the Trại kỵ thú ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
+  "kinds": {
+    "wolf":     { "name": "Sói",  "tier": 1, "species": "wolf",    "speed": 1.6,  "guard": 0.95, "ride": 9,  "cost": { "food": 25, "hide": 2, "coin": 3 },  "time": 240 },
+    "boar":     { "name": "Lợn rừng", "tier": 2, "species": "boar", "speed": 1.3,  "guard": 0.85, "ride": 8,  "cost": { "food": 40, "hide": 4, "coin": 5 },  "time": 360 },
+    "elephant": { "name": "Voi",  "tier": 3, "species": "mammoth", "speed": 1.15, "guard": 0.65, "ride": 19, "cost": { "food": 80, "hide": 8, "coin": 12 }, "time": 600 }
+  }
+}

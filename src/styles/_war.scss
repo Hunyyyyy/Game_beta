@@ -1,0 +1,245 @@
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+// The war tent's full-screen planning view: a map to drag and zoom, with the squads and the plan on boards over it.
+// The board is dark whatever the theme, so it re-points the colour variables for everything inside.
+
+// The map is the whole screen: the bar and the panels float over it and give the room back when they are closed.
+.modal.planfull { padding: 0; z-index: 50; } // over the dialog of the war tent
+.planfull .pstage { position: absolute; inset: 0; display: flex; background: #1a1510; }
+.pview {
+  position: relative; flex: 1; min-width: 0; overflow: hidden;
+  color: #ecdfc4;
+  --fg: #ecdfc4; --muted: #b8a888; --panel: rgba(26, 20, 13, .93); --panel-2: rgba(58, 45, 30, .92);
+  --line: rgba(255, 255, 255, .2); --accent: #{$plan-accent};
+  .sub, small { color: #c9bb9a; }
+  .good { color: #8fd68a; }
+  .why { color: #ff9a8a; }
+  --ptop: 48px;
+}
+.planmap {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab;
+  &:active { cursor: grabbing; }
+}
+
+// ---- buttons ----
+.chip {
+  font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--fg); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: $radius;
+  padding: 3px 10px; min-height: 28px;
+  cursor: pointer; white-space: nowrap;
+  transition: background .12s, border-color .12s;
+  &:hover:not([disabled]) { border-color: var(--accent); }
+  &.on { background: var(--accent); color: $plan-ink; border-color: transparent; }
+  &.danger {
+    border-color: $plan-danger; color: #ffb4a8;
+    &.on { background: $plan-danger; color: #fff; }
+  }
+  &[disabled] { opacity: .4; cursor: default; }
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+// ---- floating boards ----
+// A bar runs along the top: close, which village, and the buttons that open the panels. Under it, at the left, is the one panel that is open (the village,
+// the squads, the orders of a squad, its soldiers or the report): the plan view shows one at a time, so they never lie over each other.
+// The bar is see-through to the pointer, so the map can be dragged right up to the top edge.
+.ptop {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 6;
+  display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center;
+  padding: calc(var(--sat) + 6px) calc(var(--sar) + 10px) 14px calc(var(--sal) + 10px);
+  background: linear-gradient(rgba(20, 14, 8, .9), rgba(20, 14, 8, .6) 65%, transparent);
+  pointer-events: none;
+  > * { pointer-events: auto; }
+}
+.ptitle2 {
+  display: flex; gap: 8px; align-items: baseline; min-width: 0;
+  b { font-size: 15px; @include ellipsis; }
+  span { font-size: 12px; color: var(--muted); white-space: nowrap; }
+}
+.pdock {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-left: auto;
+  min-width: 0; max-width: 100%;
+  .why { font-size: 12px; max-width: 280px; }
+}
+.pcard {
+  @include float-box($radius-md, 0 4px 16px rgba(0, 0, 0, .5));
+  position: absolute; right: calc(var(--sar) + 10px); top: calc(var(--ptop) + 4px); z-index: 3; // the panel of a squad's order, soldiers or the report: top right
+  width: min(340px, calc(100% - 20px)); max-height: calc(100% - var(--ptop) - 70px);
+  overflow: auto;
+  display: grid; gap: 6px; padding: 8px 10px;
+  &[hidden] { display: none; }
+  @media (max-width: 800px) {
+    left: 10px; right: 10px; top: auto; bottom: calc(60px + var(--sab));
+    width: auto; max-height: 50%;
+  }
+}
+.pinfo {
+  @include float-box($radius-lg, $shadow-sm);
+  position: absolute; left: calc(var(--sal) + 10px); top: calc(var(--ptop) + 4px); z-index: 3;
+  width: min(360px, calc(100% - 20px)); max-height: calc(100% - var(--ptop) - 70px); overflow: auto;
+  display: grid; gap: 4px; padding: 8px 10px;
+  summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+  &[hidden] { display: none; }
+}
+.ptools {
+  position: absolute; left: calc(var(--sal) + 10px); bottom: calc(10px + var(--sab)); z-index: 2;
+  display: flex; gap: 6px;
+  .zoom { width: 40px; height: 40px; font-size: 20px; padding: 0; }
+}
+.pact {
+  @include float-box($radius-lg, $shadow-sm);
+  position: absolute; right: calc(var(--sar) + 10px); top: calc(var(--ptop) + 4px); z-index: 2;
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
+  max-width: calc(100% - 400px); padding: 6px 10px; font-size: 13px;
+  &[hidden] { display: none; }
+  // on a narrow screen the bar takes the width and a panel would meet it: while a panel is open the bar waits behind it
+  @media (max-width: 800px) { left: 10px; max-width: none; justify-content: flex-start; }
+  .has-panel & { @media (max-width: 800px) { display: none; } }
+}
+.pnote {
+  @include float-box($radius-lg, 0 2px 8px rgba(0, 0, 0, .4));
+  border-color: var(--accent);
+  position: absolute; left: 50%; bottom: calc(14px + var(--sab)); transform: translateX(-50%); z-index: 2;
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;
+  width: min(560px, calc(100% - 100px)); padding: 8px 12px; font-size: 13px;
+  &[hidden] { display: none; }
+}
+.ppop {
+  @include float-box($radius-lg, 0 2px 10px rgba(0, 0, 0, .45));
+  position: absolute; z-index: 4; width: 260px; pointer-events: none; // it has no button: a press anywhere closes it
+  display: grid; gap: 6px; padding: 8px 10px;
+  &[hidden] { display: none; }
+}
+
+// ---- inside a board ----
+.psec { display: grid; gap: 4px; }
+.ptitle { text-transform: uppercase; letter-spacing: .05em; font-size: 11px; }
+.phead {
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  i { width: 12px; height: 12px; border-radius: $radius-sm; border: 1px solid $plan-ink; flex: none; }
+  small { flex: 1; min-width: 0; }
+}
+.pdesc {
+  margin: 0; padding: 8px 10px; font-size: 13px; line-height: 1.45;
+  background: rgba(255, 255, 255, .07); border-left: 3px solid var(--accent); border-radius: $radius;
+}
+.pbar { display: grid; gap: 6px; }
+.pclear { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; select { font: inherit; font-size: 12px; max-width: 150px; } }
+.pbody2 { display: grid; gap: 8px; }
+.pnav { display: flex; justify-content: space-between; gap: 8px; }
+.ptray {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  details { flex-basis: 100%; font-size: 12px; }
+  summary { cursor: pointer; color: #ffd27a; }
+}
+
+// ---- the soldiers of a squad: one line each, a star and a minus, and a tick list to add more ----
+.preport {
+  width: min(420px, calc(100% - 20px));
+  .oddsbar { display: flex; height: 10px; border: 1px solid var(--line); border-radius: $radius-sm; overflow: hidden; }
+  .oddsbar .win { background: #6ac24a; }
+  .oddsbar .lose { background: #d9503c; }
+  details > summary { color: var(--fg); }
+}
+.warbar {
+  @include hud-box($radius-lg);
+  border-color: $plan-danger;
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab) + 12px); z-index: 20;
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center;
+  max-width: min(680px, calc(100% - 190px)); padding: 8px 12px;
+  b { color: var(--bad); }
+  &.folded { padding: 0; background: transparent; border: 0; box-shadow: none; backdrop-filter: none; }
+}
+.wardlg {
+  flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: center;
+  padding-top: 6px; border-top: 1px solid var(--line);
+  b { color: #ffb4a8; }
+  select { font: inherit; font-size: 13px; }
+}
+// war mode: the selection and building buttons give way to the battle buttons
+body.war .sheet, body.war .bbar { display: none !important; }
+.proster {
+  gap: 4px;
+  > .chip { justify-self: start; }
+}
+.rrow {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 4px; align-items: center;
+  padding: 2px 4px 2px 8px; background: var(--panel-2); border-radius: $radius-sm;
+  .chip { width: 26px; min-height: 26px; padding: 0; border-radius: $radius-sm; }
+}
+.rwho {
+  display: flex; gap: 8px; align-items: baseline; min-width: 0;
+  b { flex: none; max-width: 55%; font-size: 13px; @include ellipsis; }
+  small { min-width: 0; font-size: 12px; @include ellipsis; }
+}
+.rdrop {
+  display: grid; gap: 0; max-height: 180px; overflow: auto; padding: 2px;
+  background: rgba(0, 0, 0, .28); border: 1px solid var(--line); border-radius: $radius-sm;
+}
+.rpick {
+  display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center;
+  padding: 3px 6px; border-radius: $radius-xs; cursor: pointer;
+  &:hover { background: rgba(255, 255, 255, .08); }
+  input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+}
+
+// ---- the steps of an order ----
+.psteps { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pdot {
+  width: 28px; height: 28px; min-height: 28px; padding: 0;
+  border-radius: $radius; border: 1px solid var(--line);
+  background: transparent; color: var(--fg);
+  font-size: 12px; font-weight: 800; cursor: pointer;
+  &.done { border-color: var(--accent); color: var(--accent); }
+  &.now { background: var(--accent); color: $plan-ink; border-color: transparent; }
+}
+.pstep {
+  display: flex; justify-content: space-between; align-items: baseline;
+  b { font-size: 16px; }
+}
+.opts {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  &.three {
+    grid-template-columns: repeat(3, 1fr);
+    .opt {
+      grid-template-columns: 1fr; grid-template-areas: "i" "t" "n";
+      justify-items: center; text-align: center; min-height: 66px; padding: 8px 4px;
+    }
+  }
+}
+.opt {
+  position: relative;
+  display: grid; grid-template-columns: auto 1fr; grid-template-areas: "i t" "i n";
+  column-gap: 8px; row-gap: 0; align-items: center; text-align: left;
+  padding: 9px 10px; min-height: 62px;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: $radius-md;
+  color: var(--fg); cursor: pointer;
+  .oi { grid-area: i; font-size: 24px; line-height: 1; width: 30px; text-align: center; }
+  b { grid-area: t; font-size: 13px; }
+  small { grid-area: n; font-size: 11px; line-height: 1.25; }
+  &:hover:not([disabled]) { border-color: var(--accent); }
+  &.on {
+    border-color: var(--accent); background: rgba(224, 180, 60, .2);
+    &::after { content: "✓"; position: absolute; right: 8px; top: 4px; color: var(--accent); font-weight: 800; }
+  }
+  &[disabled] { opacity: .4; cursor: default; }
+}
+.ov { display: grid; gap: 6px; }
+.ovrow {
+  display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "i l e" "i v e";
+  column-gap: 10px; align-items: center; text-align: left;
+  padding: 8px 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: $radius;
+  color: var(--fg); cursor: pointer;
+  .oi { grid-area: i; font-size: 22px; }
+  small { grid-area: l; }
+  b { grid-area: v; font-size: 13px; }
+  em { grid-area: e; font-style: normal; font-size: 12px; color: var(--accent); }
+}
+
+// ---- the guide tab of the war tent ----
+.guide { display: grid; gap: 8px; }
+.gstep {
+  padding: 8px 10px; background: var(--panel-2); border-radius: $radius;
+  p { margin: 4px 0 0; line-height: 1.45; }
+}

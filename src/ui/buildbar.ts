@@ -1,14 +1,20 @@
-import { BUILDINGS, Building, BuildingKind, canGrow, levelCapByFire, levelDef, maxLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, BuildingKind, canGrow, levelCapByFire, levelDef, maxHp, maxLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
 import { RES_NAME, Res, Stock } from '../sim/resources';
 import type { Renderer } from '../render/renderer';
-import { costText, h } from './dom';
+import { costText, h, iconCanvas } from './dom';
+import { dlg, GameDialog } from './gamedialog';
+import { InfoCard } from './infocard';
+import { resIcon } from './resicons';
 import type { Ctx } from './panels';
 
 /** What the button that opens a building's panel is called. */
 const OPEN_LABEL: Record<BuildingKind, string> = {
-  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', workshop: 'Chế tạo', lab: 'Nghiên cứu', repair: 'Sửa đồ', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', barracks: 'Người trong lều', house: 'Người trong nhà', field: 'Người làm ruộng',
+  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', workshop: 'Chế tạo', lab: 'Nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', guardpost: 'Quản lý lính gác', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông', stable: 'Thuần thú',
 };
+
+/** The gatherers whose work a house shows (see Sim.yieldNow). */
+const YIELD_OF: Partial<Record<BuildingKind, string>> = { lumberyard: 'wood', quarry: 'stone', farmhouse: 'food', field: 'farm', huntlodge: 'hunt' };
 
 interface Ask {
   title: string; lines?: string[]; cost?: Partial<Stock>; costTitle?: string;
@@ -18,57 +24,41 @@ interface Ask {
 
 /** A small confirmation over the whole game: what it does, what it takes, and two buttons. */
 export class Confirm {
-  constructor(private readonly root: HTMLElement, private readonly c: Ctx) {
-    // Esc closes the dialog instead of also dropping the selection behind it
-    window.addEventListener('keydown', (e) => { if (!root.hidden && e.key === 'Escape') { e.stopImmediatePropagation(); this.close(); } }, true);
-    root.addEventListener('click', (e) => { if (e.target === root) this.close(); });
-  }
+  private readonly win: GameDialog;
+  constructor(root: HTMLElement, private readonly c: Ctx) { this.win = new GameDialog(root); }
 
-  close(): void { this.root.hidden = true; this.root.replaceChildren(); }
+  close(): void { this.win.hide(); }
 
   ask(a: Ask): void {
     const { sim } = this.c;
     const rows = a.cost ? (Object.keys(a.cost) as Res[]).filter((r) => (a.cost![r] ?? 0) > 0) : [];
-    const ok = h('button', { class: `primary${a.danger ? ' danger' : ''}`, text: a.ok, disabled: !!a.why, onclick: () => { this.close(); a.onOk(); } });
-    const card = h('div', { class: 'card', role: 'dialog', 'aria-modal': 'true', 'aria-label': a.title },
-      h('h3', { text: a.title }),
-      ...(a.lines ?? []).map((t) => h('p', { class: 'sub', text: t })),
-      rows.length ? h('div', { class: 'costs' }, h('b', { text: a.costTitle ?? 'Cần' }), ...rows.map((r) => {
-        const need = a.cost![r] ?? 0, have = Math.floor(sim.stock[r]), short = have < need;
-        return h('div', { class: short ? 'short' : '' }, h('span', { text: RES_NAME[r] }), h('span', { text: `${need} (có ${have})` }));
-      })) : null,
-      a.why ? h('p', { class: 'why', text: a.why }) : null,
-      h('div', { class: 'btns' }, h('button', { text: 'Hủy', onclick: () => this.close() }), ok));
-    this.root.replaceChildren(card);
-    this.root.hidden = false;
+    const ok = dlg.button(a.ok, () => { this.close(); a.onOk(); }, { disabled: !!a.why, tone: a.danger ? 'bad' : undefined });
+    this.win.show(dlg.card({ label: a.title },
+      dlg.head({ title: a.title, onClose: () => this.close() }),
+      ...(a.lines ?? []).map((t) => dlg.text(t)),
+      rows.length ? dlg.note(a.costTitle ?? 'Cần', false) : null,
+      rows.length ? dlg.costs(...rows.map((r) => { const need = a.cost![r] ?? 0, have = Math.floor(sim.stock[r]); return dlg.cost(resIcon(r), String(need), String(have), have < need, RES_NAME[r]); })) : null,
+      a.why ? dlg.why(a.why) : null,
+      dlg.buttons(dlg.button('Hủy', () => this.close(), { tone: 'alt' }), ok)));
     ok.focus();
   }
 }
 
-/** The buttons of the building that was tapped, floating beneath it on the map: open it, upgrade, move, demolish. */
+/** The card of the building that was tapped, floating beneath it on the map: what it is, what it brings in, and open, upgrade, move, demolish. */
 export class BuildingBar {
-  private readonly who = h('div', { class: 'who' });
-  private readonly open = h('button', { class: 'sm primary' }) as HTMLButtonElement;
-  private readonly upgrade = h('button', { class: 'sm', text: 'Nâng cấp' }) as HTMLButtonElement;
-  private readonly move = h('button', { class: 'sm', text: 'Dời' }) as HTMLButtonElement;
-  private readonly demolish = h('button', { class: 'sm danger', text: 'Phá bỏ' }) as HTMLButtonElement;
+  private readonly card: InfoCard;
   private id: number | null = null;
   private width = 0; private height = 0;
 
   constructor(private readonly root: HTMLElement, private readonly c: Ctx, private readonly r: Renderer, private readonly confirm: Confirm) {
-    const { ctl } = c;
-    root.append(this.who, h('div', { class: 'btns' }, this.open, this.upgrade, this.move, this.demolish));
-    this.open.addEventListener('click', () => { if (this.id !== null) ctl.selectBuilding(this.id, true); });
-    this.upgrade.addEventListener('click', () => { const b = this.cur(); if (b) this.askUpgrade(b); });
-    this.move.addEventListener('click', () => { const b = this.cur(); if (b) ctl.startMoving(b.id); });
-    this.demolish.addEventListener('click', () => { const b = this.cur(); if (b) this.askDemolish(b); });
+    this.card = new InfoCard(root);
   }
 
   private cur(): Building | undefined { return this.id === null ? undefined : this.c.sim.getBuilding(this.id); }
 
   private askUpgrade(b: Building): void {
     const { sim, ctl, toast } = this.c, def = BUILDINGS[b.kind], nx = levelDef(b, b.level + 1);
-    const gain = b.kind === 'campfire' ? `kho chứa ${nx.cap} mỗi loại, ${POP_BY_FIRE[b.level]} dân, các nhà khác lên được cấp ${levelCapByFire(b.level + 1)}` : b.kind === 'storage' ? `chứa ${nx.cap} mỗi loại` : b.kind === 'toolstore' || b.kind === 'armory' ? `chứa ${nx.cap} món` : b.kind === 'house' || b.kind === 'barracks' ? `${nx.slots} giường, hồi sức ×${nx.craftSpeed.toLocaleString('vi')}` : b.kind === 'field' ? `năng suất ×${nx.craftSpeed.toLocaleString('vi')}` : `chứa ${nx.slots} người, tốc độ ×${nx.craftSpeed.toLocaleString('vi')}`;
+    const gain = b.kind === 'campfire' ? `kho chứa ${nx.cap} mỗi loại, ${POP_BY_FIRE[b.level]} dân, các nhà khác lên được cấp ${levelCapByFire(b.level + 1)}` : b.kind === 'storage' ? `chứa ${nx.cap} mỗi loại` : b.kind === 'toolstore' || b.kind === 'armory' ? `chứa ${nx.cap} món` : b.kind === 'house' || b.kind === 'infantry' || b.kind === 'cavalry' || b.kind === 'archery' ? `${nx.slots} giường, hồi sức ×${nx.craftSpeed.toLocaleString('vi')}` : b.kind === 'field' ? `năng suất ×${nx.craftSpeed.toLocaleString('vi')}` : `chứa ${nx.slots} người, tốc độ ×${nx.craftSpeed.toLocaleString('vi')}`;
     this.confirm.ask({
       title: `Nâng ${def.name} lên cấp ${b.level + 1}?`,
       lines: [`${nx.name}: ${gain}. Vật liệu trả ngay, rồi giao Thợ xây để làm (~${workDays(nx.buildTime)}).${sim.dev.freeBuild ? ' Đang bật xây miễn phí.' : ''}`],
@@ -87,21 +77,38 @@ export class BuildingBar {
     });
   }
 
-  /** Refresh what the buttons say and which ones show. */
+  /** What the house makes in a day from the people who work for it, for the houses of the gatherers. */
+  private yieldLine(b: Building): string | undefined {
+    const key = YIELD_OF[b.kind]; if (!key || !b.done) return undefined;
+    const y = this.c.sim.dailyYield(b); if (!y) return undefined;
+    const unit = key === 'hunt' ? 'sản vật' : key === 'wood' ? 'gỗ' : key === 'stone' ? 'đá' : 'thức ăn';
+    return y.people ? `Sản xuất ~${Math.round(y.amount)} ${unit}/ngày · ${y.people} người đang làm` : `Chưa có ai làm việc: chưa sản xuất ${unit}`;
+  }
+
+  /** Refresh what the card says and which buttons show; called as often as the screen is drawn. */
   update(): void {
-    const { sim, ctl } = this.c, b = ctl.selectedBuilding === null ? undefined : sim.getBuilding(ctl.selectedBuilding);
+    const { sim, ctl, toast } = this.c, b = ctl.selectedBuilding === null ? undefined : sim.getBuilding(ctl.selectedBuilding);
     const show = !!b && !ctl.buildingOpen && !ctl.placing;
     this.root.hidden = !show;
     if (!b || !show) { this.id = null; return; }
     this.id = b.id;
     const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
     const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
-    this.who.replaceChildren(h('b', { text: def.name }), ` · ${state}`);
-    this.open.textContent = OPEN_LABEL[b.kind]; this.open.hidden = !b.done;
-    this.upgrade.hidden = !(canGrow(b.kind) && b.done && !b.upgrading && b.level < top);
-    this.move.hidden = this.demolish.hidden = !def.buildable;
-    const fee = sim.moveFee(b);
-    this.move.textContent = Object.keys(fee).length ? `Dời (${costText(fee, RES_NAME)})` : 'Dời';
+    const hp = b.done ? ` · bền ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? ' · đang cháy' : b.hp <= maxHp(b) * 0.7 ? ' · bốc khói' : ''}` : '';
+    const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < top;
+    this.card.set({
+      picKey: `${b.kind}${b.level}${b.done}`,
+      pic: () => { try { return iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0]); } catch { return '🏠'; } },
+      title: def.name, sub: state + hp, line: this.yieldLine(b),
+      onClose: () => ctl.closeBuilding(),
+      actions: [
+        { id: 'open', label: OPEN_LABEL[b.kind], tone: 'primary', hidden: !b.done || b.kind === 'fence' || b.kind === 'gate', onClick: () => ctl.selectBuilding(b.id, true) },
+        { id: 'gate', label: b.open ? 'Đóng cổng' : 'Mở cổng', tone: 'primary', hidden: !(b.kind === 'gate' && b.done), onClick: () => { const e = sim.toggleGate(b.id); if (e) toast(e); ctl.onChange(); } },
+        { id: 'up', label: 'Nâng cấp', hidden: !upgradable, onClick: () => this.askUpgrade(b) },
+        { id: 'move', label: 'Di dời', title: 'Di dời (miễn phí)', hidden: !def.buildable, onClick: () => ctl.startMoving(b.id) },
+        { id: 'del', label: 'Phá bỏ', tone: 'danger', hidden: !def.buildable, onClick: () => this.askDemolish(b) },
+      ],
+    });
     this.width = this.root.offsetWidth; this.height = this.root.offsetHeight;
   }
 

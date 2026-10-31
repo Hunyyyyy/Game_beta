@@ -12,7 +12,7 @@ export function toolCount(sim: Sim, kind: string, tier: number): number { const 
 
 /** Bậc công cụ dân đang dùng cho nghề này (0 = tay không). */
 export function toolTier(sim: Sim, v: Villager, job: Job): number {
-  const k = job === 'idle' ? undefined : TOOL_OF_JOB[job];
+  const k = job === 'idle' || job === 'scout' ? undefined : TOOL_OF_JOB[job];
   const t = k ? v.tools[k] : null;
   return t && t.dur > 0 ? t.tier : 0; // a broken tool works like bare hands
 }
@@ -68,21 +68,24 @@ export function discardTool(sim: Sim, ids: readonly number[], k: ToolKind): void
   for (const v of sim.mine(ids)) if (v.tools[k]) { v.tools[k] = null; sim.say(`${v.name} vứt ${TOOL_NAME[k].toLowerCase()}.`); }
 }
 
-/** Send villagers who hold a worn tool to the Nhà sửa chữa on foot: they hand it in there and are without it until it is mended. */
-export function repairTool(sim: Sim, ids: readonly number[], k: ToolKind): string | null {
-  const house = sim.building('repair');
-  if (!house) return 'Cần dựng Nhà sửa chữa';
-  let err: string | null = null, n = 0;
-  for (const v of sim.mine(ids)) {
-    const t = v.tools[k]; if (!t) continue;
-    if (t.dur >= TIER_DURABILITY[t.tier] - 1e-6) { err = 'Công cụ còn mới, chưa cần sửa'; continue; }
-    if (sim.repairQueue.length >= 12) { err = 'Hàng đợi sửa đã đầy'; continue; }
-    sim.leaveNode(v); v.path = []; v.slide = null; v.order = `repair:${k}`;
-    if (!goTo(sim, v, house, 'goOrder')) { v.order = null; err = `${v.name} không tới được Nhà sửa chữa`; continue; }
-    n++;
-    sim.say(`${v.name} mang ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()} tới Nhà sửa chữa.`);
-  }
-  return n ? null : err;
+// ---------------------------------------------------------------- weapons and armour wear out
+const gearName = (slot: 'weapon' | 'armor', id: string) => (slot === 'armor' ? ARMORS[id]?.name : WEAPONS[id]?.name)?.toLowerCase() ?? id;
+const gearId = (slot: 'weapon' | 'armor', id: string) => (slot === 'armor' ? 'hide1' : `${id}${WEAPONS[id]?.tier ?? 1}`);
+
+/**
+ * One blow struck (weapon) or taken (armour). Worn to nothing, the piece is lost for good. Only our own people's gear wears.
+ */
+export function wearGear(sim: Sim, v: Villager, slot: 'weapon' | 'armor'): void {
+  if (v.team !== 'player') return;
+  const id = slot === 'weapon' ? v.weapon : v.armor, g = v.gear;
+  if (!id) return;
+  const max = (slot === 'weapon' ? WEAPONS[id]?.durability : ARMORS[id]?.durability) ?? 0;
+  if (!max) return;
+  if (slot === 'weapon') { if (g.w !== id) { g.w = id; g.wd = max; g.wb = false; } if (g.wb || --g.wd > 0) return; }
+  else { if (g.a !== id) { g.a = id; g.ad = max; g.ab = false; } if (g.ab || --g.ad > 0) return; }
+  if (slot === 'weapon') { v.weapon = null; g.w = null; g.wb = false; } else { v.armor = null; g.a = null; g.ab = false; }
+  v.manualGear = false;
+  sim.say(`${v.name} làm vỡ ${gearName(slot, id)}, mất hẳn.`);
 }
 
 /** Hand a weapon (club, spear, mace) or the hide armour straight to villagers; null takes it away. */
@@ -113,7 +116,12 @@ export function assignGear(sim: Sim, ids: readonly number[], kind: string | null
 }
 
 /** Let the workshop hand out and swap gear by itself again. */
-export function autoGear(sim: Sim, ids: readonly number[]): void { for (const v of sim.mine(ids)) v.manualGear = false; }
+/** Let the stores hand out gear on their own. Only once fetching is researched; until then the player picks every weapon and armour. Returns an error or null. */
+export function autoGear(sim: Sim, ids: readonly number[]): string | null {
+  if (!autoOn(sim.researched, 'fetch')) return 'Chưa nghiên cứu "Tự lấy đồ trong kho": hãy tự chọn đồ cho dân';
+  for (const v of sim.mine(ids)) v.manualGear = false;
+  return null;
+}
 
 /** Cấp công cụ ngay cho dân đã chọn, không cần Xưởng hay nguyên liệu. tier 0 = thu lại (tay không). */
 export function giveTool(sim: Sim, ids: readonly number[], kind: ToolKind, tier: number): void {
@@ -149,7 +157,7 @@ export function goTo(sim: Sim, v: Villager, b: Building, phase: 'goEquip' | 'goO
   v.target = b.id; v.phase = phase; return true;
 }
 
-/** Without a usable tool: fetch one from the Kho công cụ, else (once researched) go and order or repair one. */
+/** Without a usable tool: fetch one from the Kho công cụ, else (once researched) go and order one. */
 export function planTool(sim: Sim, v: Villager, job: WorkJob): boolean {
   const k = TOOL_OF_JOB[job];
   if (!k || !toolLacking(sim, v, job)) return false;
@@ -157,8 +165,7 @@ export function planTool(sim: Sim, v: Villager, job: WorkJob): boolean {
   if (store && needTool(sim, v, job)) return goTo(sim, v, store, 'goEquip');
   if (!autoOn(sim.researched, 'order') || v.orderCd > 0) return false;
   v.orderCd = 45;
-  const t = v.tools[k], repairHouse = sim.building('repair'), craftHouse = sim.building('workshop');
-  if (t && t.dur <= 0 && repairHouse && sim.repairQueue.length < 12) { v.order = `repair:${k}`; return goTo(sim, v, repairHouse, 'goOrder'); }
+  const craftHouse = sim.building('workshop');
   if (!craftHouse) return false;
   // order the best tool the blueprints allow, unless enough are already made or on their way
   let id = '';
@@ -179,10 +186,8 @@ export function errand(sim: Sim, v: Villager): void {
   if (!o || !b || !b.done) return;
   const [what, id] = o.split(':');
   if (what === 'craft') { if (sim.queueCraft(id) === null) sim.say(`${v.name} nhờ chế ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`); }
-  else if (what === 'repair') {
-    const k = id as ToolKind, t = v.tools[k];
-    if (t && t.dur < TIER_DURABILITY[t.tier] - 1e-6 && sim.queueRepair(toolId(sim, k, t.tier)) === null) { v.tools[k] = null; v.repairFor = toolId(sim, k, t.tier); sim.say(`${v.name} nhờ sửa ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}.`); }
-  }
+
+
 }
 
 /** Take a tool, or weapon and armour, from the store the villager stands at. */

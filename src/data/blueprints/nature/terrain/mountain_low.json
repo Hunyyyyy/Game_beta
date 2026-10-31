@@ -1,0 +1,309 @@
+{
+ "name": "Chân núi",
+ "type": "prop",
+ "size": [
+  56,
+  44
+ ],
+ "anchor": [
+  28,
+  40
+ ],
+ "footprint": [
+  5,
+  29,
+  47,
+  11
+ ],
+ "seed": 11,
+ "palette": {
+  "rock": "#80766c",
+  "rockL": "#a89d90",
+  "rockD": "#574f48",
+  "crack": "#3a342f",
+  "moss": "#5f7a3e",
+  "line": "#25211d",
+  "shadow": "#000000",
+  "snow": "#f1f5f8",
+  "snowD": "#c6d3de"
+ },
+ "params": {
+  "autumn": 0,
+  "winter": 0,
+  "burnt": 0
+ },
+ "palettes": {
+  "autumn": {
+   "moss": "#8a7a3a"
+  },
+  "winter": {
+   "moss": "#dfe6ee",
+   "rock": "#8c8a88"
+  },
+  "burnt": {
+   "moss": "#2e2a26",
+   "rockL": "#7a7470",
+   "snow": "#bdb7b0",
+   "snowD": "#8f8a84"
+  }
+ },
+ "layers": [
+  {
+   "shape": "poly",
+   "points": [
+    [
+     1.2,
+     40.2
+    ],
+    [
+     8.2,
+     26.8
+    ],
+    [
+     15.2,
+     19.1
+    ],
+    [
+     21.0,
+     8.6
+    ],
+    [
+     28.0,
+     1.9
+    ],
+    [
+     35.0,
+     9.6
+    ],
+    [
+     40.8,
+     18.2
+    ],
+    [
+     49.0,
+     26.8
+    ],
+    [
+     54.8,
+     40.2
+    ],
+    [
+     28.0,
+     42.1
+    ]
+   ],
+   "color": "rock",
+   "jitter": 1.4
+  },
+  {
+   "shape": "poly",
+   "points": [
+    [
+     1.2,
+     40.2
+    ],
+    [
+     8.2,
+     26.8
+    ],
+    [
+     15.2,
+     19.1
+    ],
+    [
+     21.0,
+     8.6
+    ],
+    [
+     28.0,
+     1.9
+    ],
+    [
+     30.3,
+     17.2
+    ],
+    [
+     25.7,
+     30.6
+    ],
+    [
+     21.0,
+     41.1
+    ]
+   ],
+   "color": "rockL",
+   "clip": "inside"
+  },
+  {
+   "shape": "poly",
+   "points": [
+    [
+     28.0,
+     1.9
+    ],
+    [
+     35.0,
+     9.6
+    ],
+    [
+     40.8,
+     18.2
+    ],
+    [
+     49.0,
+     26.8
+    ],
+    [
+     54.8,
+     40.2
+    ],
+    [
+     28.0,
+     42.1
+    ],
+    [
+     32.7,
+     28.7
+    ],
+    [
+     30.3,
+     17.2
+    ]
+   ],
+   "color": "rockD",
+   "clip": "inside"
+  },
+  {
+   "shape": "line",
+   "from": [
+    28.0,
+    1.9
+   ],
+   "to": [
+    30.3,
+    17.2
+   ],
+   "color": "crack"
+  },
+  {
+   "shape": "line",
+   "from": [
+    30.3,
+    17.2
+   ],
+   "to": [
+    32.7,
+    28.7
+   ],
+   "color": "crack"
+  },
+  {
+   "shape": "line",
+   "from": [
+    18.7,
+    24.9
+   ],
+   "to": [
+    23.3,
+    34.4
+   ],
+   "color": "crack"
+  },
+  {
+   "shape": "line",
+   "from": [
+    40.8,
+    26.8
+   ],
+   "to": [
+    43.2,
+    36.3
+   ],
+   "color": "crack"
+  },
+  {
+   "shape": "scatter",
+   "count": 49,
+   "area": [
+    5,
+    8,
+    50,
+    38
+   ],
+   "size": 1,
+   "colors": [
+    "rockL",
+    "rockD",
+    "crack"
+   ],
+   "onlyOver": [
+    "rock",
+    "rockL",
+    "rockD"
+   ]
+  },
+  {
+   "shape": "ellipse",
+   "cx": 10.5,
+   "cy": 36.3,
+   "rx": 7.0,
+   "ry": 1.9,
+   "color": "moss",
+   "alpha": 0.8,
+   "clip": "inside"
+  },
+  {
+   "shape": "ellipse",
+   "cx": 46.7,
+   "cy": 37.3,
+   "rx": 5.8,
+   "ry": 1.7,
+   "color": "moss",
+   "alpha": 0.8,
+   "clip": "inside"
+  },
+  {
+   "shape": "bevel",
+   "light": "#ffffff",
+   "lightAlpha": 0.2,
+   "dark": "#000000",
+   "darkAlpha": 0.3
+  },
+  {
+   "shape": "scatter",
+   "if": "winter",
+   "count": 78,
+   "area": [
+    7,
+    13,
+    49,
+    29
+   ],
+   "size": [
+    3,
+    1
+   ],
+   "color": "snow",
+   "onlyOver": [
+    "rock",
+    "rockL",
+    "rockD",
+    "moss"
+   ]
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  },
+  {
+   "shape": "ellipse",
+   "cx": 28.0,
+   "cy": 41.1,
+   "rx": 26.8,
+   "ry": 3,
+   "color": "shadow",
+   "alpha": 0.3,
+   "mode": "under"
+  }
+ ]
+}

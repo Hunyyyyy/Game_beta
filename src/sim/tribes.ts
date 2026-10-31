@@ -1,7 +1,9 @@
 import eventsJson from '../data/events.json';
 import { DAY_LENGTH } from './constants';
-import { HOSTILE_BELOW, MORALE, RELATION, ringOf, ringPower, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
-import { engage, resolve, tickCommon, tickMorale, threatsOf, moraleShock } from './battle';
+import { cycleOf, WEAPONS, HOSTILE_BELOW, RELATION, ringOf, ringPower, RULES, SIEGE, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
+import { engage, resolve, swingTimes, tickCommon, threatsOf, weaponOf } from './battle';
+import { BUILDINGS } from './buildings';
+import { armOfWeapon } from './formations';
 import { SEASON_DAYS } from './calendar';
 import { spawnAnimal } from './fauna';
 import type { Stock } from './resources';
@@ -22,7 +24,7 @@ export interface Tribe {
   id: TribeId;
   def: TribeDef;
   camp: { x: number; y: number };   // centre of the fire
-  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' }>;
+  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' | 'tower' | 'fence' | 'gate'; hp: number }>;
   relation: number;                  // -100..100
   state: TribeState;
   angryUntil: number;                // sim time: being attacked keeps them hostile for a while
@@ -64,7 +66,7 @@ function campFits(sim: Sim, cx: number, cy: number): boolean {
   const w = sim.world, r = 7;
   for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) {
     if (!w.inBounds(x, y)) return false;
-    if (Math.hypot(x - cx, y - cy) <= r && w.at(x, y) === Tile.Water) return false;
+    if (Math.hypot(x - cx, y - cy) <= r && (w.at(x, y) === Tile.Water || w.at(x, y) === Tile.Mountain)) return false;
   }
   return true;
 }
@@ -75,16 +77,21 @@ function spawnTribe(sim: Sim, id: TribeId): void {
   search: for (let dd = 0; dd <= 24; dd += 3) for (const sign of dd ? [1, -1] : [1]) for (let da = 0; da <= 90; da += 15) for (const as of da ? [1, -1] : [1]) {
     const ang = ((def.angle + da * as) * Math.PI) / 180, d = def.distance + dd * sign;
     const x = Math.round(s.x + Math.cos(ang) * d), y = Math.round(s.y + Math.sin(ang) * d);
-    if (x > 9 && y > 9 && x < N - 9 && y < N - 9 && campFits(sim, x, y)) { cx = x; cy = y; break search; }
+    if (!(x > 9 && y > 9 && x < N - 9 && y < N - 9)) continue;
+    w.ensure(x, y, 10); // the land must exist before it can be judged
+    if (campFits(sim, x, y)) { cx = x; cy = y; break search; }
   }
   if (cx < 0) return;
+  // the land between the village and the camp is made too, so that raiders and scouts can walk it (a chunk that does not exist yet is a wall)
+  const gap = Math.hypot(cx - s.x, cy - s.y);
+  for (let k = 0; k <= gap; k += 16) w.ensure(s.x + ((cx - s.x) * k) / gap, s.y + ((cy - s.y) * k) / gap, 24);
   // clear a round yard
   for (let y = cy - 7; y <= cy + 7; y++) for (let x = cx - 7; x <= cx + 7; x++) {
     if (Math.hypot(x - cx, y - cy) > 6.5) continue;
     const i = y * N + x; w.nodes.delete(i); w.tiles[i] = Tile.Grass; w.decor[i] = 0;
   }
   const props: Tribe['props'] = [
-    { x: cx, y: cy, w: 2, h: 2, kind: 'fire' }, { x: cx - 5, y: cy - 1, w: 2, h: 2, kind: 'pile' }, { x: cx + 4, y: cy + 1, w: 2, h: 2, kind: 'pile' },
+    { x: cx, y: cy, w: 2, h: 2, kind: 'fire', hp: SIEGE.propHp.fire }, { x: cx - 5, y: cy - 1, w: 2, h: 2, kind: 'pile', hp: SIEGE.propHp.pile }, { x: cx + 4, y: cy + 1, w: 2, h: 2, kind: 'pile', hp: SIEGE.propHp.pile },
   ];
   for (const p of props) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) w.occ[(p.y + j) * N + p.x + i] = 1;
   const power = ringPower(ringOf(Math.hypot(cx - s.x, cy - s.y)));
@@ -132,7 +139,7 @@ export function killFoe(sim: Sim, v: Villager, killer?: Villager): void {
   sim.removeFoe(v);
   if (!t) return;
   t.unitIds = t.unitIds.filter((u) => u !== v.id);
-  moraleShock(sim, v, MORALE.allyDeath);
+  if (v.ai?.role === 'raider') sim.noteBattle('foes');
   if (killer?.team === 'player') {
     t.relation = Math.max(-100, t.relation + (v.ai?.role === 'civ' ? RELATION.killCivilian : RELATION.killWarrior));
     t.angryUntil = sim.time + 120;
@@ -199,7 +206,6 @@ export function tickTribes(sim: Sim, dt: number): void {
   sim.tribeClock = 0;
   for (const t of sim.tribes) {
     t.unitIds = t.unitIds.filter((u) => { const f = sim.get(u); return !!f && f.health > 0; });
-    for (const u of t.unitIds) tickMorale(sim, sim.get(u)!);
     if (t.state === 'free' && t.unitIds.length === 0) { t.state = 'destroyed'; t.raid = null; sim.say(`${t.def.name} đã bị xóa sổ.`); continue; }
     if (t.state === 'tribute' && sim.day >= t.nextTribute) {
       t.nextTribute = sim.day + SEASON_DAYS;
@@ -211,16 +217,15 @@ export function tickTribes(sim: Sim, dt: number): void {
 }
 
 function checkSurrender(sim: Sim, t: Tribe): void {
+  if (sim.plans.some((p) => p.kind === 'attack' && p.status === 'running' && p.tribe === t.id)) return; // a village under attack fights on: it gives up only when the war is won
   const units = t.unitIds.map((u) => sim.get(u)!).filter(Boolean), warriors = units.filter((u) => u.ai?.role !== 'civ');
   // 1. the leader is down
   if (SURRENDER.leaderDown && t.leaderId >= 0 && !t.unitIds.includes(t.leaderId) && units.length) return surrender(sim, t, 'Thủ lĩnh đã gục');
   // 2. the player holds their fire for 30 seconds with no warrior left near it
   const intruders = sim.villagers.filter((v) => v.health > 0 && v.down <= 0 && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 5).length;
-  const defenders = warriors.filter((w) => Math.hypot(w.x - t.camp.x, w.y - t.camp.y) < 9 && w.morale >= MORALE.flee).length;
+  const defenders = warriors.filter((w) => Math.hypot(w.x - t.camp.x, w.y - t.camp.y) < 9).length;
   t.holdT = intruders > 0 && defenders === 0 && tribeHostile(sim, t.id) ? t.holdT + 1 : 0;
   if (t.holdT >= SURRENDER.holdCampSeconds) return surrender(sim, t, 'Đống lửa của họ đã bị chiếm');
-  // 3. the whole group has lost heart
-  if (warriors.length && warriors.reduce((a, w) => a + w.morale, 0) / warriors.length < SURRENDER.moraleBelow) surrender(sim, t, 'Tinh thần sụp đổ');
 }
 
 export function surrender(sim: Sim, t: Tribe, why: string): void {
@@ -237,9 +242,8 @@ function manageRaid(sim: Sim, t: Tribe): void {
   if (!r) return;
   r.t += 1;
   const raiders = t.unitIds.map((u) => sim.get(u)!).filter((u) => u?.ai?.raid === r.id);
-  const heart = raiders.length ? raiders.reduce((a, u) => a + u.morale, 0) / raiders.length : 0;
   const playerAlive = sim.villagers.some((v) => v.health > 0);
-  if (r.phase === 'march' && (raiders.length === 0 || r.t > r.max || heart < MORALE.flee || !playerAlive)) {
+  if (r.phase === 'march' && (raiders.length === 0 || r.t > r.max || !playerAlive)) {
     r.phase = 'retreat'; if (raiders.length) sim.say(`Quân ${t.def.name} rút lui.`);
   }
   if (r.phase === 'retreat') {
@@ -248,15 +252,46 @@ function manageRaid(sim: Sim, t: Tribe): void {
   }
 }
 
+/** The weak do not attack: a chief who sees many more soldiers than he can send waits another day. */
+export function raidAdvised(sim: Sim, t: Tribe, size: number): boolean {
+  const ours = sim.villagers.filter((v) => v.job === 'fight').length, theirs = Math.min(size, t.unitIds.filter((u) => sim.get(u)?.ai?.role === 'guard').length);
+  return ours < 6 || theirs >= ours * 0.35;
+}
+
 export function launchRaid(sim: Sim, t: Tribe, size: number): void {
   const guards = t.unitIds.map((u) => sim.get(u)!).filter((u) => u?.ai?.role === 'guard').sort((a, b) => b.maxHealth - a.maxHealth);
   const n = Math.min(size, guards.length);
   if (n < 3 || t.raid) return;
   const id = ++sim.nextRaid;
   t.raid = { id, phase: 'march', t: 0, max: 200, size: n };
-  for (const g of guards.slice(0, n)) { g.ai!.role = 'raider'; g.ai!.raid = id; g.fight.target = null; g.path = []; g.fleeT = 0; }
+  // a clever chief answers what he sees: many archers in the village, he sends foot soldiers to close with them; mostly foot, he adds archers
+  const ours = sim.villagers.filter((v) => v.job === 'fight'), oursArch = ours.filter((v) => armOfWeapon(v.weapon) === 'archer').length, wantArch = ours.length >= 4 && oursArch * 2 <= ours.length ? Math.floor(n / 3) : 0;
+  const melee = t.def.weapons.filter((w) => !WEAPONS[w]?.ranged), picks = guards.slice(0, n);
+  picks.forEach((g, i) => { g.ai!.role = 'raider'; g.ai!.raid = id; g.fight.target = null; g.path = []; g.fleeT = 0; g.weapon = i < wantArch ? (i % 2 ? 'sling' : 'bow') : melee[i % Math.max(1, melee.length)] ?? g.weapon; });
   t.angryUntil = sim.time + 400;
-  sim.say(`Quân ${t.def.name} (${n} người) đang tiến vào làng!`);
+  const arch = picks.filter((g) => armOfWeapon(g.weapon) === 'archer').length;
+  sim.say(`Quân ${t.def.name} (${n} người${sim.mapLevel(t.id) >= 3 ? `: ${arch} cung thủ, ${n - arch} bộ binh` : ''}) đang tiến vào làng!`);
+}
+
+/** A raid of a chosen make-up, for the dev tools: the weapons of each man are given, they start part-way to the village and march at once. */
+export function launchCustomRaid(sim: Sim, t: Tribe, weapons: string[], armor: boolean): void {
+  const fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y;
+  const dx = t.camp.x - fx, dy = t.camp.y - fy, len = Math.max(1, Math.hypot(dx, dy)), dist = Math.min(26, len);
+  const id = ++sim.nextRaid, power = ringPower(ringOf(len));
+  t.relation = Math.min(t.relation, -60);
+  t.raid = { id, phase: 'march', t: 0, max: 900, size: weapons.length };
+  weapons.forEach((weapon, i) => {
+    const ang = (i / weapons.length) * Math.PI * 2, gx = Math.floor(fx + (dx / len) * dist + Math.cos(ang) * 2), gy = Math.floor(fy + (dy / len) * dist + Math.sin(ang) * 2);
+    const spot = sim.nearestFree(gx, gy, new Set()) ?? [gx, gy];
+    const f = sim.makeVillager(spot[0], spot[1], sim.frnd() < 0.5 ? 'm' : 'f', t.id, sim.frnd);
+    f.look.hide = t.def.look.hide; f.look.pants = t.def.look.pants;
+    f.stats.str = Math.round(f.stats.str * power + 1); f.maxHealth = Math.round(maxHpOf(f.stats.vit) * power); f.health = f.maxHealth;
+    f.weapon = weapon; f.armor = armor ? 'hide' : null;
+    f.ai = { role: 'raider', camp: t.camp, wander: 0, goal: null, raid: id };
+    sim.addFoe(f); t.unitIds.push(f.id);
+  });
+  t.angryUntil = sim.time + 400;
+  sim.say(`Quân ${t.def.name} (${weapons.length} người) đang tiến vào làng!`);
 }
 
 export function launchWolves(sim: Sim, size: number): void {
@@ -293,7 +328,7 @@ function tickEvents(sim: Sim): void {
     if (e.kind === 'wolves') launchWolves(sim, e.size);
     else if (e.tribe) {
       const t = tribeOf(sim, e.tribe);
-      if (t && t.state === 'free') launchRaid(sim, t, e.size);
+      if (t && t.state === 'free') { if (raidAdvised(sim, t, e.size) || e.fireDay >= e.warnDay + 4) launchRaid(sim, t, e.size); else { e.fired = false; e.fireDay = sim.day + 1; e.warned = true; sim.say(`${t.def.name} thấy làng đông quân và hoãn tập kích.`); } }
     }
   }
 }
@@ -320,33 +355,93 @@ export function tickFoe(sim: Sim, f: Villager, dt: number): void {
   sim.animate(f, dt);
 }
 
+/** A raider who cannot get where he is going for a few seconds turns on the nearest fence or gate. */
+function noteStuck(sim: Sim, f: Villager, ai: NonNullable<Villager['ai']>, dt: number, blocked: boolean): void {
+  if (!blocked) { ai.stuck = 0; return; }
+  ai.stuck = (ai.stuck ?? 0) + dt;
+  if (ai.stuck < 3) return;
+  const wall = sim.nearestWork(f.x, f.y, 16) ?? sim.nearestWork(f.x, f.y, 4, true);
+  ai.stuck = 0;
+  if (wall) ai.siege = wall.id;
+}
+
+/** Breaking a fence down: walk up to it and strike it. True while he is at it. */
+function siegeBrain(sim: Sim, f: Villager, ai: NonNullable<Villager['ai']>, dt: number, threats: Array<{ d: number }>): boolean {
+  if (!ai.siege) return false;
+  if (threats.length && threats[0].d <= weaponOf(f).range + 1.5) return false; // someone in reach: fight him first
+  const b = sim.getBuilding(ai.siege);
+  if (!b) { ai.siege = 0; f.path = []; return false; } // it has fallen: the way is open
+  const w = weaponOf(f), d = BUILDINGS[b.kind], cx = b.x + d.w / 2, cy = b.y + d.h / 2;
+  const dist = Math.hypot(cx - f.x, cy - f.y) - Math.max(d.w, d.h) / 2;
+  if (dist <= (w.ranged ? 1.2 : w.range) + 0.6) {
+    f.path = []; f.slide = null; f.phase = 'fight'; f.facing = cx >= f.x ? 'right' : 'left';
+    if (f.atkCd <= 0 && !f.swing) {
+      const { hitAt, end } = swingTimes(w.anim);
+      f.swing = { t: 0, hitAt, end, target: { kind: 'unit', id: -1 } }; // the blow has no living target: the work takes it at once
+      f.atkCd = cycleOf(w.cycle, f.stats.agi);
+      sim.damageWork(b, (w.damage + (w.ranged ? 0 : RULES.strengthDamage * f.stats.str)) * (w.type === 'slash' ? 1.5 : 1));
+    }
+    return true;
+  }
+  f.fight.repath -= dt;
+  if (!f.path.length && f.fight.repath <= 0) {
+    const ring = sim.ringTiles(f, b.x, b.y, d.w, d.h);
+    f.path = ring.length ? sim.pathTo(f, ring[0][0], ring[0][1], 4000) : [];
+    f.fight.repath = 1;
+    if (!f.path.length) { ai.siege = 0; return false; }
+  }
+  f.phase = 'move';
+  return true;
+}
+
 function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai']>, dt: number): void {
   const free = t.state === 'free';
   f.fight.scan -= dt;
   const radius = ai.role === 'raider' ? 12 : ai.role === 'civ' ? 9 : AGGRO[t.def.personality];
   const scanNow = f.fight.scan <= 0;
   if (scanNow) f.fight.scan = 0.4;
-  const threats = free && (scanNow || f.phase === 'fight' || f.phase === 'flee') ? threatsOf(sim, f, radius) : [];
+  const looking = scanNow || f.phase === 'flee' || (f.phase === 'fight' && !f.fight.target); // see brainPlayer: a unit busy with a target needs no new look every tick
+  const threats = free && looking ? threatsOf(sim, f, radius).filter((x) => !(ai.skip && sim.time < ai.skip.until && x.t.kind === 'unit' && x.t.id === ai.skip.id)) : [];
   if (!free) { f.fight.target = null; if (f.phase === 'fight') { f.phase = 'idle'; f.path = []; } }
 
-  // fleeing: morale broke, or an unarmed civilian meets a threat
-  if (free && (f.fleeT > 0 || (f.morale < MORALE.flee && threats.length) || (ai.role === 'civ' && threats.length && threats[0].d < 8))) {
+  // fleeing: an unarmed civilian meets a threat
+  if (free && (f.fleeT > 0 || (ai.role === 'civ' && threats.length && threats[0].d < 8))) {
     if (f.fleeT <= 0) { f.fleeT = 6; f.fight.target = null; f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3000); }
     f.fleeT -= dt; f.phase = 'flee';
     if (threats.length && threats[0].d < 6) f.fleeT = Math.max(f.fleeT, 2);
-    if (f.fleeT <= 0 && f.morale < MORALE.fleeRecover) f.fleeT = 1;
     if (!f.path.length && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 3) f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3000);
     return;
   }
   if (f.phase === 'flee') { f.phase = 'idle'; f.path = []; }
+  // one who was shot from a tower (or stuck at a wall) goes for that work before anything else
+  if (free && ai.siege && ai.role !== 'civ') {
+    const sb = sim.getBuilding(ai.siege);
+    if (!sb || Math.hypot(sb.x - f.x, sb.y - f.y) > 45) ai.siege = 0;
+    else if (siegeBrain(sim, f, ai, dt, threats)) return;
+  }
 
   // a raider marches on the village, fighting what stands in the way
   if (free && ai.role === 'raider' && t.raid) {
-    if (t.raid.phase === 'retreat') { if (!f.path.length && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 4) f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 20000); f.phase = 'move'; return; }
-    if (f.fight.target) { const e = resolve(sim, f.fight.target); if (e) { engage(sim, f, e, dt); return; } f.fight.target = null; f.phase = 'idle'; }
+    if (t.raid.phase === 'retreat') { if (!f.path.length && sim.pathLeft > 0 && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 4) { sim.pathLeft--; f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 20000); } f.phase = 'move'; return; }
+    if (siegeBrain(sim, f, ai, dt, threats)) return;
+    if (f.fight.target) {
+      const e = resolve(sim, f.fight.target);
+      if (e) {
+        engage(sim, f, e, dt);
+        const ex = e.kind === 'unit' ? e.v.x : e.a.x, ey = e.kind === 'unit' ? e.v.y : e.a.y;
+        noteStuck(sim, f, ai, dt, !f.path.length && !f.swing && Math.hypot(ex - f.x, ey - f.y) > weaponOf(f).range + 2);
+        return;
+      }
+      f.fight.target = null; f.phase = 'idle';
+    }
     if (threats.length) { f.fight.target = threats[0].t; return; }
     const fire = sim.campfire(), gx = fire ? fire.x + 1 : sim.world.start.x, gy = fire ? fire.y + 1 : sim.world.start.y;
-    if (Math.hypot(gx - f.x, gy - f.y) > 6) { if (!f.path.length) f.path = sim.pathTo(f, Math.floor(gx), Math.floor(gy), 40000); f.phase = 'move'; }
+    if (Math.hypot(gx - f.x, gy - f.y) > 6) {
+      f.fight.repath -= dt;
+      if (!f.path.length && f.fight.repath <= 0 && sim.pathLeft > 0) { sim.pathLeft--; f.path = sim.pathTo(f, Math.floor(gx), Math.floor(gy), 40000); f.fight.repath = f.path.length ? 0.5 : 1.5; }
+      f.phase = 'move';
+      noteStuck(sim, f, ai, dt, !f.path.length);
+    }
     else { const v = sim.villagers.find((o) => o.health > 0 && o.down <= 0 && o.inside === null); if (v) f.fight.target = { kind: 'unit', id: v.id }; }
     return;
   }

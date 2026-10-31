@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python \"C:/Users/ACER/AppData/Local/Temp/claude/e--Game-beta/7e3fb723-ef07-43c6-8e34-0537e6b752be/scratchpad/ui10.py\")",
+      "Bash(npx tsc *)",
+      "Bash(grep -i '\\\\.md$')",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('src/data/progression.json','utf8'\\)\\);console.log\\('ok'\\)\")",
+      "Bash(npm run *)"
+    ]
+  }
+}

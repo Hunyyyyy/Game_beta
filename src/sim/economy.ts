@@ -1,7 +1,16 @@
-/** The village stock: paying costs, trading goods for shells, and food that spoils. */
-import { DAY_LENGTH } from './constants';
-import { BARTER, FOOD_SPOIL_DAYS, Res, RES_NAME, Stock } from './resources';
+/** The village stock: paying costs, trading goods for shells, and the meal the village eats at the end of each day. */
+import { BARTER, FOOD, rationAt, Res, RES_NAME, Stock } from './resources';
 import type { Sim } from './sim';
+import paceJson from '../data/pace.json';
+import { Building, levelDef } from './buildings';
+import { DAY_LENGTH } from './constants';
+import { FARM_TIME, JOBS, roleOf } from './jobs';
+import type { WorkJob } from './jobs';
+import { workFactor } from './labor';
+import { REST } from './rest';
+import { toolBonus } from './statsys';
+import { TIER_YIELD } from './tools';
+import type { Villager } from './model';
 
 /** Reason the stock cannot pay `cost`, or null. */
 export function missing(sim: Sim, cost: Partial<Stock>): string | null {
@@ -22,33 +31,100 @@ export function barter(sim: Sim, res: Exclude<Res, 'coin'>): string | null {
   return null;
 }
 
-/** Reconcile lots with the stock: gains open a new lot, losses come off the oldest; expired lots spoil. */
-export function syncFood(sim: Sim): void {
-  const lots = sim.foodLots, cur = sim.stock.food;
-  let sum = 0;
-  for (const l of lots) sum += l.amount;
-  if (cur > sum) {
-    const exp = sim.time + FOOD_SPOIL_DAYS * DAY_LENGTH, last = lots[lots.length - 1];
-    if (last && exp - last.exp < 30) last.amount += cur - sum; else lots.push({ amount: cur - sum, exp });
-  } else if (cur < sum) {
-    let take = sum - cur;
-    while (take > 0 && lots.length) {
-      const l = lots[0], k = Math.min(l.amount, take);
-      l.amount -= k; take -= k;
-      if (l.amount <= 0) lots.shift();
-    }
-  }
-  let spoiled = 0;
-  while (lots.length && lots[0].exp <= sim.time) spoiled += lots.shift()!.amount;
-  if (spoiled > 0) {
-    sim.stock.food = Math.max(0, sim.stock.food - spoiled);
-    sim.say(`${Math.round(spoiled)} thức ăn để quá ${FOOD_SPOIL_DAYS} ngày đã hỏng.`);
-  }
+// ---------------------------------------------------------------- the daily meal (src/data/food.json)
+/** What the village eats at the end of this day: a ration for every villager and a bigger one for every soldier, by the level of the campfire. */
+export function foodNeed(sim: Sim): number {
+  const level = sim.campfire()?.level ?? 1;
+  let n = 0;
+  for (const v of sim.villagers) n += rationAt(level, v.job === 'fight');
+  return n;
 }
 
-/** Stored food that will spoil within the next `secs` seconds. */
-export function foodSpoilingWithin(sim: Sim, secs: number): number {
-  let n = 0;
-  for (const l of sim.foodLots) if (l.exp <= sim.time + secs) n += l.amount;
-  return Math.min(n, sim.stock.food);
+/** Put what was gathered into the village: food fills the pot of the campfire first, and only what is over goes to the store (up to its capacity). Returns how much was taken. */
+export function deposit(sim: Sim, res: Res, amount: number): number {
+  let left = amount, taken = 0;
+  if (res === 'food') { const toPot = Math.max(0, Math.min(left, foodNeed(sim) - sim.foodPot)); sim.foodPot += toPot; left -= toPot; taken += toPot; }
+  const toStore = Math.max(0, Math.min(left, sim.capacity(res) - sim.stock[res]));
+  sim.stock[res] += toStore;
+  return taken + toStore;
+}
+
+/** Whether a gatherer of this good can still put something down: the store has room, or (food) the pot of the campfire does. */
+export function hasRoom(sim: Sim, res: Res): boolean { return sim.stock[res] < sim.capacity(res) || (res === 'food' && sim.foodPot < foodNeed(sim)); }
+
+/** Food that comes in goes to the pot of the campfire first, until it holds the day's meal; only what is over stays in the store. */
+export function feedPot(sim: Sim): void {
+  const room = foodNeed(sim) - sim.foodPot;
+  if (room <= 0 || sim.stock.food <= 0) return;
+  const k = Math.min(room, sim.stock.food);
+  sim.foodPot += k; sim.stock.food -= k;
+}
+
+/** The end of a day: the village eats from the pot, then from the store. What is short weakens everyone the day after, up to FOOD.maxPenalty when nothing is left. */
+export function eatDay(sim: Sim): void {
+  rollYield(sim);
+  trackFood(sim);
+  sim.foodDays.push(sim.foodIncome); if (sim.foodDays.length > 3) sim.foodDays.shift();
+  sim.foodIncome = 0;
+  const need = foodNeed(sim);
+  const fromPot = Math.min(sim.foodPot, need), fromStore = Math.min(sim.stock.food, need - fromPot), short = need - fromPot - fromStore;
+  sim.foodPot -= fromPot; sim.stock.food -= fromStore;
+  const was = sim.foodPenalty;
+  sim.foodPenalty = need > 0 ? (FOOD.maxPenalty * short) / need : 0;
+  if (short > 0) sim.say(`Thiếu ${Math.ceil(short)}/${need} thức ăn: cả làng yếu đi ${Math.round(sim.foodPenalty * 1000) / 10}% trong ngày tới.`);
+  else if (was > 0) sim.say('Đủ ăn rồi: làng khỏe lại.');
+  sim.foodSeen = sim.stock.food + sim.foodPot; // what was eaten is not a loss to count against the next day
+}
+
+// ---------------------------------------------------------------- what the village earns in food (for the heads-up notices)
+/** Add up the food that comes in (a rise of pot + store); what goes out is not income. Called every tick. */
+export function trackFood(sim: Sim): void {
+  const total = sim.stock.food + sim.foodPot;
+  if (sim.foodSeen >= 0 && total > sim.foodSeen) sim.foodIncome += total - sim.foodSeen;
+  sim.foodSeen = total;
+}
+
+// ---------------------------------------------------------------- what the gatherers bring in a day (shown on the houses of the gatherers)
+/** Count what a villager of a trade brought in: `key` is the trade ('wood', 'stone', 'food', 'hunt') or 'farm' for a field. */
+export function noteYield(sim: Sim, key: string, n: number): void {
+  if (n > 0) sim.yieldNow[key] = (sim.yieldNow[key] ?? 0) + n;
+}
+
+/** A new day: today's count becomes yesterday's. */
+export function rollYield(sim: Sim): void {
+  for (const k of Object.keys(sim.yieldPrev)) delete sim.yieldPrev[k];
+  Object.assign(sim.yieldPrev, sim.yieldNow);
+  for (const k of Object.keys(sim.yieldNow)) delete sim.yieldNow[k];
+}
+
+// ---------------------------------------------------------------- what a house brings in per day, worked out from who works there
+/** Seconds of work a villager puts in over one day, by their shift (the night counts at the night efficiency). */
+function workSeconds(v: Villager): number {
+  const day = DAY_LENGTH * 0.65, night = DAY_LENGTH * 0.35 * REST.nightEfficiency;
+  return v.shift === 'night' ? night : v.shift === 'both' ? day + night : day;
+}
+
+/**
+ * What a house of the gatherers makes in a day, in the unit of what it gathers: for each person who works for it, their speed (stats, tool, skill,
+ * season) over the time of their shift, times what a tool gets out of each go. Tiredness and the night are left out; walking and carrying cost a
+ * share of the time (pace.json "gatherDuty"). Null for a house that does not gather.
+ */
+export function dailyYield(sim: Sim, b: Building): { amount: number; people: number } | null {
+  let workers: Villager[], job: WorkJob;
+  switch (b.kind) {
+    case 'lumberyard': job = 'wood'; workers = sim.villagers.filter((v) => roleOf(v) === 'wood'); break;
+    case 'quarry': job = 'stone'; workers = sim.villagers.filter((v) => roleOf(v) === 'stone'); break;
+    case 'farmhouse': job = 'food'; workers = sim.villagers.filter((v) => roleOf(v) === 'food'); break;
+    case 'huntlodge': job = 'hunt'; workers = sim.villagers.filter((v) => roleOf(v) === 'hunt'); break;
+    case 'field': job = 'food'; workers = sim.villagers.filter((v) => v.job === 'food' && v.post === b.id); break;
+    default: return null;
+  }
+  let amount = 0;
+  for (const v of workers) {
+    const speed = workFactor(sim, v, job, b.kind === 'field') / Math.max(0.01, sim.restFactor(v)), secs = workSeconds(v);
+    if (job === 'hunt') { amount += paceJson.huntPerDay * speed * (secs / (DAY_LENGTH * 0.65)); continue; }
+    const per = TIER_YIELD[sim.toolTier(v, job)] * (1 + toolBonus(sim, v, job, 'tyield') / 100);
+    amount += b.kind === 'field' ? (speed * levelDef(b).craftSpeed * per * secs) / FARM_TIME : (speed * per * secs * paceJson.gatherDuty) / JOBS[job].baseTime;
+  }
+  return { amount, people: workers.length };
 }

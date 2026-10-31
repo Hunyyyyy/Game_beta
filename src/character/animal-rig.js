@@ -73,7 +73,7 @@ function quadruped(b, def, f) {
     const fx = x + Math.sin(rad(a)) * legL, fy = Math.min(gy, jy + Math.cos(rad(a)) * legL - lift);
     line(b, x, jy, fx, fy, w, col); put(b, fx, fy, C.dark); put(b, fx + (a > 0 ? 1 : 0), fy, C.dark);
   };
-  const thick = S.legL > 10 ? 2 : 2;
+  const thick = S.legW || 2;
   leg(hipX - 1, f.br, C.far, thick); leg(shX - 1, f.fr, C.far, thick);
   // body: a chain of ellipses so the front can rise (rearing, pouncing)
   for (let i = 0; i <= 4; i++) { const t = i / 4; ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t, S.bodyL / 4 + 1.5, bodyH / 2, C.base); }
@@ -124,7 +124,7 @@ function quadruped(b, def, f) {
   if (has('trunk')) {
     const tl = S.trunk || 12, sway = num(f, 'bob', 0);
     line(b, hx + S.headR - 1, hy + 1, hx + S.headR + 1 + sway, hy + tl * 0.7, 3, C.base); line(b, hx + S.headR + 1 + sway, hy + tl * 0.7, hx + S.headR + 3 + sway, hy + tl, 2, C.base);
-    line(b, hx + S.headR - 2, hy + 2, hx + S.headR + 5, hy + 8, 2, C.acc); put(b, hx + S.headR + 6, hy + 7, C.acc); // tusk curling forward
+    line(b, hx + S.headR - 2, hy + 3, hx + S.headR + 5, hy + 9, 2, C.acc); put(b, hx + S.headR + 6, hy + 8, C.acc); // tusk curling forward
   }
   // tail
   const tb = [cx - S.bodyL / 2 - 1, cy - bodyH * 0.25], ta = rad(num(f.tail !== undefined ? { a: f.tail } : null, 'a', 15)), tl = S.tail;

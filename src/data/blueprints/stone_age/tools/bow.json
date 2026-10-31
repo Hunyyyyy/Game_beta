@@ -1,0 +1,18 @@
+{
+  "name": "Cung ngắn",
+  "type": "prop",
+  "size": [16, 16],
+  "anchor": [8, 15],
+  "params": {"stone": 0},
+  "palette": { "line": "#2b1d10", "handle": "#8a5e34", "handleL": "#aa7c48", "bind": "#d8c690", "st": "#8e9498", "stL": "#c0c6c8", "feather": "#e4dcc4" },
+  "layers": [
+    { "shape": "line", "from": [6, 1], "to": [11, 5], "w": 1, "color": "handle" },
+    { "shape": "line", "from": [11, 5], "to": [11, 10], "w": 1, "color": "handleL" },
+    { "shape": "line", "from": [11, 10], "to": [6, 14], "w": 1, "color": "handle" },
+    { "shape": "line", "from": [6, 1], "to": [6, 14], "w": 1, "color": "bind" },
+    { "shape": "line", "from": [1, 8], "to": [10, 8], "w": 1, "color": "handleL" },
+    { "shape": "poly", "points": [[10, 6], [14, 8], [10, 10]], "color": "stL" },
+    { "shape": "pixels", "at": [[2, 7], [2, 9], [3, 7], [3, 9]], "color": "feather" },
+    { "shape": "outline", "color": "line" }
+  ]
+}

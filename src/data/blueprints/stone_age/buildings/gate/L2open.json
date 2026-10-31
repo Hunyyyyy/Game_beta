@@ -1,0 +1,29 @@
+{
+  "name": "Cổng (cấp 2, cổng đôi, mở)",
+  "name_en": "Gate (Tier 2, Open)",
+  "type": "prop",
+  "size": [32,44],
+  "anchor": [16,38],
+  "footprint": [0,26,32,14],
+  "seed": 32,
+  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
+  "palette": {"line": "#2b1d10", "shadow": "#000000", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "rope": "#d8c690", "stone": "#8e9498", "stoneD": "#60676b"},
+  "layers": [
+    {"shape": "ellipse", "cx": 16, "cy": 38, "rx": 15, "ry": 3, "color": "shadow", "alpha": 0.25},
+    {"shape": "group", "if": "st1", "layers": [
+      {"shape": "rect", "x": 0, "y": 7, "w": 5, "h": 31, "color": "woodD"},
+      {"shape": "poly", "points": [[0,7],[2.5,4],[5,7]], "color": "wood"},
+      {"shape": "rect", "x": 27, "y": 7, "w": 5, "h": 31, "color": "woodD"},
+      {"shape": "poly", "points": [[27,7],[29.5,4],[32,7]], "color": "wood"},
+      {"shape": "rect", "x": 0, "y": 32, "w": 5, "h": 6, "color": "stoneD"},
+      {"shape": "rect", "x": 27, "y": 32, "w": 5, "h": 6, "color": "stoneD"}
+    ] },
+    {"shape": "group", "if": "st2", "layers": [
+      {"shape": "line", "from": [2,9], "to": [30,9], "w": 3, "color": "wood"},
+      {"shape": "line", "from": [2,14], "to": [30,14], "w": 2, "color": "woodD"},
+      {"shape": "rect", "x": 5, "y": 12, "w": 4, "h": 26, "color": "woodL"},
+      {"shape": "rect", "x": 23, "y": 12, "w": 4, "h": 26, "color": "woodL"}
+    ] },
+    {"shape": "outline", "color": "line"}
+  ]
+}

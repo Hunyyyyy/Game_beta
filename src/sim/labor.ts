@@ -1,7 +1,8 @@
 /** Everyday work: gathering, carrying, building, and the phase machine that decides what a villager does next. */
+import { toolBonus, workSpeed } from './statsys';
 import { SEASON_DEF, WEATHER } from './calendar';
 import { PACE } from './constants';
-import { Building, BUILDINGS, holdsGoods, levelDef, needsWork } from './buildings';
+import { Building, BUILDINGS, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
 import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
 import { CARRY_CAP, RES_NAME } from './resources';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
@@ -19,11 +20,10 @@ export function outdoorFactor(sim: Sim, job: WorkJob): number {
 }
 
 export function workFactor(sim: Sim, v: Villager, job: WorkJob, field = false): number {
-  const stat = v.stats[JOBS[job].stat];
   const season = job === 'food' ? SEASON_DEF[sim.season][field ? 'farm' : 'gather'] : 1;
   const tier = TOOL_OF_JOB[job] ? sim.toolTier(v, job) : -1;
-  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier];
-  return (0.5 + 0.1 * stat) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v);
+  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier] * (1 + toolBonus(sim, v, job as WorkJob, 'tspd') / 100);
+  return workSpeed(sim, v) * (1 + 0.2 * v.skill[job].level) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v);
 }
 
 export function gainXp(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
@@ -33,12 +33,12 @@ export function gainXp(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
   if (s.xp >= XP_LEVELS[s.level]) { s.level++; sim.say(`${v.name} lên cấp ${s.level} nghề ${JOB_NAME[job].toLowerCase()}.`); }
 }
 
-/** Tools wear with working time; at zero they are broken and the villager works as if bare-handed until a new tool or a repair. */
+/** Tools wear with working time; at zero they are broken and thrown away, and the villager works as if bare-handed until a new tool. */
 export function wear(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
   const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
   if (!k || !t || t.dur <= 0) return;
-  t.dur -= dt * PACE.work;
-  if (t.dur <= 0) { t.dur = 0; sim.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} của ${v.name} đã hỏng.`); }
+  t.dur -= (dt * PACE.work) / (1 + toolBonus(sim, v, job, 'tdur') / 100);
+  if (t.dur <= 0) { v.tools[k] = null; sim.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} của ${v.name} đã hỏng, vứt bỏ.`); }
 }
 
 export function leaveNode(sim: Sim, v: Villager): void {
@@ -107,8 +107,8 @@ export function think(sim: Sim, v: Villager, dt: number): void {
       gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
       if (b.progress >= 1) {
         b.progress = 1;
-        if (b.upgrading) { b.level++; b.upgrading = false; sim.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
-        else { b.done = true; b.rebuild = false; sim.fogDirty = true; if (b.kind === 'builder') sim.trimCrew(); sim.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (RESEARCH.enabled && b.kind === 'lab' && sim.researched.size === 0) sim.say('Mở Nhà nghiên cứu, đưa một dân thông minh vào làm việc, rồi nghiên cứu bản vẽ đầu tiên.'); }
+        if (b.upgrading) { b.level++; b.upgrading = false; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
+        else { b.done = true; b.rebuild = false; sim.fogDirty = true; if (b.kind === 'builder') sim.trimCrew(); sim.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (RESEARCH.enabled && b.kind === 'lab' && sim.researched.size === 0) sim.say('Mở Nhà nghiên cứu, đưa một dân vào làm việc, rồi nghiên cứu bản vẽ đầu tiên.'); }
         v.phase = 'idle';
       }
       return;
@@ -137,7 +137,7 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
   if (v.progress < 1) return;
   v.progress -= 1;
   // sản lượng mỗi lần theo chất lượng công cụ, phần lẻ cộng dồn sang lần sau
-  const res = def.res, acc = v.frac + TIER_YIELD[tierNow], whole = Math.floor(acc);
+  const res = def.res, acc = v.frac + TIER_YIELD[tierNow] * (1 + toolBonus(sim, v, job as WorkJob, 'tyield') / 100), whole = Math.floor(acc);
   const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
   const take = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have));
   v.frac = acc - whole;
@@ -149,7 +149,8 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
     if (sim.coinFrac >= 1) { sim.coinFrac -= 1; if (sim.stock.coin < sim.capacity()) { sim.stock.coin++; if (!sim.sawCoin) { sim.sawCoin = true; sim.say(`${v.name} nhặt được một ${RES_NAME.coin.toLowerCase()}: dân làng dùng nó để trao đổi.`); } } }
   }
   if (n.amount <= 0) {
-    const idx = v.target; leaveNode(sim, v); sim.world.depleted(idx); v.phase = 'idle';
+    const idx = v.target, N = sim.world.size; leaveNode(sim, v);
+    sim.world.depleted(idx, (x, y) => sim.fog.state[y * N + x] > 0 && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y)); v.phase = 'idle';
     if (n.kind === 'tree') sim.say('Một cây đã được đốn xong.');
   } else if (v.carry.amount >= CARRY_CAP[res] || sim.needTool(v, job)) { leaveNode(sim, v); v.phase = 'idle'; }
 }
@@ -160,26 +161,27 @@ export function tickFarms(sim: Sim, dt: number): void {
     if (b.kind !== 'field' || !b.done) continue;
     for (const id of b.staff) {
       const v = sim.byId.get(id);
-      if (!v || v.phase !== 'inside' || v.job !== 'food' || sim.stock.food >= sim.capacity('food')) continue;
+      if (!v || v.phase !== 'inside' || v.job !== 'food' || !sim.hasRoom('food')) continue;
       v.progress += (dt * workFactor(sim, v, 'food', true) * levelDef(b).craftSpeed) / FARM_TIME;
       gainXp(sim, v, 'food', dt); wear(sim, v, 'food', dt);
       if (v.progress < 1) continue;
       v.progress -= 1;
-      const acc = v.frac + TIER_YIELD[sim.toolTier(v, 'food')], whole = Math.floor(acc);
-      v.frac = acc - whole; sim.stock.food = Math.min(sim.capacity('food'), sim.stock.food + whole);
+      const acc = v.frac + TIER_YIELD[sim.toolTier(v, 'food')] * (1 + toolBonus(sim, v, 'food', 'tyield') / 100), whole = Math.floor(acc);
+      v.frac = acc - whole;
+      sim.noteYield('farm', sim.deposit('food', whole));
     }
   }
 }
 
 export function plan(sim: Sim, v: Villager): void {
-  if (v.job === 'hunt' || v.job === 'fight') { wait(sim, v, 1); return; } // combat code drives these jobs
+  if (v.job === 'hunt' || v.job === 'fight' || v.job === 'scout') { wait(sim, v, 1); return; } // combat code (and the scouting trip) drives these jobs
   if (v.job === 'build') { if (!sim.planTool(v, 'build')) planBuild(sim, v); return; }
   if (isStaffJob(v.job) || (v.job === 'food' && v.post >= 0)) { sim.planStaff(v); return; }
   const def = JOBS[v.job as WorkJob], res = def.res!;
   if (v.carry && (v.carry.res !== res || v.carry.amount >= CARRY_CAP[v.carry.res])) { planDeliver(sim, v); return; }
-  if (sim.stock[res] >= sim.capacity(res)) {
+  if (!sim.hasRoom(res)) {
     if (v.carry) { planDeliver(sim, v); return; }
-    if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say(`Kho đã đầy ${RES_NAME[res].toLowerCase()}, hãy xây thêm Kho.`); }
+    if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say(`Kho đã đầy ${RES_NAME[res].toLowerCase()}, hãy nâng cấp Kho.`); }
     wait(sim, v, 3); return;
   }
   if (sim.planTool(v, v.job as WorkJob)) return;
@@ -243,8 +245,8 @@ export function planDeliver(sim: Sim, v: Villager): void {
 /** Put what a villager carries into the store on the spot (they pass the fire on their way to bed). */
 export function stash(sim: Sim, v: Villager): void {
   const c = v.carry; if (!c) return;
-  const moved = Math.min(Math.max(0, sim.capacity(c.res) - sim.stock[c.res]), c.amount);
-  sim.stock[c.res] += moved; c.amount -= moved;
+  const moved = sim.deposit(c.res, c.amount);
+  c.amount -= moved; sim.noteYield(v.job, moved);
   if (c.amount <= 0) v.carry = null;
 }
 
@@ -252,8 +254,8 @@ export function unload(sim: Sim, v: Villager): void {
   const c = v.carry, st = sim.getBuilding(v.target);
   if (st) faceBuilding(sim, v, st);
   if (!c) { v.phase = 'idle'; return; }
-  const space = Math.max(0, sim.capacity(c.res) - sim.stock[c.res]), moved = Math.min(space, c.amount);
-  sim.stock[c.res] += moved; c.amount -= moved;
+  const moved = sim.deposit(c.res, c.amount);
+  c.amount -= moved; sim.noteYield(v.job, moved);
   if (c.amount <= 0) { v.carry = null; v.phase = 'idle'; return; }
   if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say(`Kho đã đầy ${RES_NAME[c.res].toLowerCase()}, hãy xây thêm Kho.`); }
   wait(sim, v, 3);
