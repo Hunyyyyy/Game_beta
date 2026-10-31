@@ -65,6 +65,9 @@
   section { display: grid; gap: 6px; align-content: start; }
   section > h3, .hinthead h3 { margin: 0; font-size: 13px; color: #6a4a18; text-transform: none; letter-spacing: 0; }
   button.sm { @include parchment-button; }
+  select { color: #3a2c1c; background: linear-gradient(#f6e9c4, #dcc690); border: 1px solid #8a6a36; border-radius: 6px; font: 700 12.5px system-ui, sans-serif; }
+  .foodline { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; .ico { width: 18px; height: 18px; } }
+  .hint .hintbody { color: #5a4a2c; }
 }
 // the stats of a person: a picture, the name, the number
 .gdlg .dstats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; }
@@ -110,4 +113,25 @@
   .dtile.pick { cursor: pointer; &:hover { border-color: #e0a23c; } }
   .ppane { position: static; background: rgba(255, 255, 255, .25); border-color: #b89a5e;
     .dhead { padding-right: 0; } }
+  .ppane { gap: 4px; padding: 6px 8px;
+    .dbody { gap: 6px; }
+    .dhead .dpic { width: 40px; height: 40px; .ico { width: 28px; height: 28px; } }
+    .dhead { display: flex; align-items: center; gap: 8px; .dwho { flex: 1; min-width: 0; } }
+    .dstats { gap: 3px 6px; } }
+  .dlist { gap: 5px; }
+}
+// the people tab of the campfire fits the dialog on a wide screen: nothing scrolls
+@media (min-width: 641px) {
+  .gdlg.gbuild > .mbody.fit { overflow: hidden; gap: 6px; }
+}
+
+// the steps of drawing a map, from the top down: green done, red not yet
+.gdlg .flow {
+  display: grid; gap: 0; justify-items: stretch;
+  .step { display: flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 8px; border: 1px solid; font-size: 12.5px; b { width: 14px; text-align: center; } }
+  .step.done { color: #2f6a1c; background: rgba(79, 138, 56, .16); border-color: #4f8a38; }
+  .step.todo { color: #b8322a; background: rgba(200, 50, 44, .1); border-color: #c8322c; }
+  .link { width: 2px; height: 7px; margin-left: 16px; }
+  .link.done { background: #4f8a38; }
+  .link.todo { background: #c8322c; }
 }

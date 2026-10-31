@@ -3,7 +3,7 @@ export const $ = <T extends HTMLElement>(id: string) => document.getElementById(
 type Kid = Node | string | number | null | false | undefined;
 interface Props {
   class?: string; text?: string; title?: string; style?: string; hidden?: boolean; disabled?: boolean; pressed?: boolean;
-  onclick?: (e: MouseEvent) => void; [attr: string]: unknown;
+  onclick?: (e: MouseEvent) => void; onchange?: (e: Event) => void; [attr: string]: unknown;
 }
 
 /** Tiny element builder: h('button', { class: 'sm', onclick }, 'Text'). */
@@ -16,7 +16,7 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Props = 
     else if (k === 'hidden') el.hidden = !!v;
     else if (k === 'disabled') (el as unknown as HTMLButtonElement).disabled = !!v;
     else if (k === 'pressed') el.setAttribute('aria-pressed', String(!!v));
-    else if (k === 'onclick') el.addEventListener('click', v as EventListener);
+    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v as EventListener); // onclick, onchange…: any handler
     else el.setAttribute(k, String(v));
   }
   for (const kid of kids) if (kid !== null && kid !== false && kid !== undefined) el.append(kid instanceof Node ? kid : String(kid));

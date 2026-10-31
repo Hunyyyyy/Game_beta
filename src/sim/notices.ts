@@ -1,7 +1,7 @@
 /** Heads-up for the player: what is coming or going on in the village, worked out afresh from the state of the game (nothing here is saved). */
 import { dayInSeason, SEASON_DAYS, seasonOf } from './calendar';
 import { BUILDINGS } from './buildings';
-import { FOOD } from './resources';
+import { FOOD, RES_LIST, RES_NAME } from './resources';
 import type { Notice } from './model';
 import type { Sim } from './sim';
 
@@ -14,6 +14,39 @@ const CAMP = { building: 'infantry', label: BUILDINGS.infantry.name };
 /** The notices of the moment, the most pressing first. */
 export function noticesOf(sim: Sim): Notice[] {
   const out: Notice[] = [];
+  // the village is under attack: who hides, who may go out
+  const why = sim.attackReason();
+  if (why) {
+    const hiding = sim.villagers.filter((v) => sim.hides(v)).length;
+    out.push({
+      id: 'under-attack', level: 'urgent', icon: 'stat_atk', title: 'Làng đang bị tấn công', when: 'ngay bây giờ',
+      body: `${why}${hiding ? ` · ${hiding} dân đang trốn trong nhà` : ''}`,
+      tip: 'Khi làng bị tấn công, dân thường không ngủ và không hồi sức được, và ai đang ở trong nhà sẽ không ra ngoài kể cả khi trời sáng. Chỉ lính và thợ săn ra ngoài: giao nghề lính ở trại chiến binh, hoặc thợ săn ở Chòi thợ săn, để họ ra chiến đấu.',
+      action: CAMP,
+    });
+  }
+  // villagers sent out by hand (free, on the night shift) who are running low: they must come back, and will of themselves when too weak to go on
+  const fireAt = sim.campfire(), fx = fireAt ? fireAt.x + 1 : sim.world.start.x, fy = fireAt ? fireAt.y + 1 : sim.world.start.y;
+  const far = sim.villagers.filter((v) => v.job === 'idle' && v.shift === 'both' && v.inside === null && v.energy < 40 && v.phase !== 'sleep' && v.phase !== 'goHome' && Math.hypot(v.x - fx, v.y - fy) > 20);
+  if (far.length) {
+    const low = Math.min(...far.map((v) => v.energy));
+    out.push({
+      id: 'explorers-tired', level: low < 25 ? 'urgent' : 'warn', icon: 'stat_sta', title: 'Dân đi xa đã cạn sức', when: 'cần quay về',
+      body: `${far.slice(0, 3).map((v) => `${v.name} (${Math.round(v.energy)}%)`).join(', ')}${far.length > 3 ? ` và ${far.length - 3} người nữa` : ''} · cách làng hơn 20 ô`,
+      tip: 'Dân được bạn sai đi khám phá làm cả ngày lẫn đêm. Khi sức xuống dưới 20% họ tự quay về làng nghỉ, nhưng đường xa thì rất lâu: hãy ra lệnh cho họ về sớm.',
+      action: { building: 'campfire', label: 'Về làng' },
+    });
+  }
+  // a full store stops the gatherers: say so and say what to do
+  const full = RES_LIST.filter((r) => r !== 'coin' && sim.capacity(r) > 0 && sim.stock[r] >= sim.capacity(r));
+  if (full.length) {
+    out.push({
+      id: 'storage-full', level: 'warn', icon: full[0], title: 'Kho đã đầy', when: 'ngay bây giờ',
+      body: `${full.map((r) => RES_NAME[r].toLowerCase()).join(', ')}: dân không thu thêm được nữa`,
+      tip: 'Nâng cấp Kho (hoặc nâng Nhà chung) để chứa thêm, hoặc dùng bớt vật liệu vào việc xây dựng và chế tạo.',
+      action: { building: 'storage', label: 'Kho' },
+    });
+  }
   const need = sim.foodNeed();
   if (need <= 0) return out;
   const have = sim.stock.food + sim.foodPot, avg = sim.foodDays.length ? sim.foodDays.reduce((a, b) => a + b, 0) / sim.foodDays.length : null, earn = avg ?? 0;

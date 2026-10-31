@@ -66,7 +66,7 @@ function campFits(sim: Sim, cx: number, cy: number): boolean {
   const w = sim.world, r = 7;
   for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) {
     if (!w.inBounds(x, y)) return false;
-    if (Math.hypot(x - cx, y - cy) <= r && w.at(x, y) === Tile.Water) return false;
+    if (Math.hypot(x - cx, y - cy) <= r && (w.at(x, y) === Tile.Water || w.at(x, y) === Tile.Mountain)) return false;
   }
   return true;
 }
@@ -77,9 +77,14 @@ function spawnTribe(sim: Sim, id: TribeId): void {
   search: for (let dd = 0; dd <= 24; dd += 3) for (const sign of dd ? [1, -1] : [1]) for (let da = 0; da <= 90; da += 15) for (const as of da ? [1, -1] : [1]) {
     const ang = ((def.angle + da * as) * Math.PI) / 180, d = def.distance + dd * sign;
     const x = Math.round(s.x + Math.cos(ang) * d), y = Math.round(s.y + Math.sin(ang) * d);
-    if (x > 9 && y > 9 && x < N - 9 && y < N - 9 && campFits(sim, x, y)) { cx = x; cy = y; break search; }
+    if (!(x > 9 && y > 9 && x < N - 9 && y < N - 9)) continue;
+    w.ensure(x, y, 10); // the land must exist before it can be judged
+    if (campFits(sim, x, y)) { cx = x; cy = y; break search; }
   }
   if (cx < 0) return;
+  // the land between the village and the camp is made too, so that raiders and scouts can walk it (a chunk that does not exist yet is a wall)
+  const gap = Math.hypot(cx - s.x, cy - s.y);
+  for (let k = 0; k <= gap; k += 16) w.ensure(s.x + ((cx - s.x) * k) / gap, s.y + ((cy - s.y) * k) / gap, 24);
   // clear a round yard
   for (let y = cy - 7; y <= cy + 7; y++) for (let x = cx - 7; x <= cx + 7; x++) {
     if (Math.hypot(x - cx, y - cy) > 6.5) continue;
@@ -396,7 +401,7 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
   const scanNow = f.fight.scan <= 0;
   if (scanNow) f.fight.scan = 0.4;
   const looking = scanNow || f.phase === 'flee' || (f.phase === 'fight' && !f.fight.target); // see brainPlayer: a unit busy with a target needs no new look every tick
-  const threats = free && looking ? threatsOf(sim, f, radius) : [];
+  const threats = free && looking ? threatsOf(sim, f, radius).filter((x) => !(ai.skip && sim.time < ai.skip.until && x.t.kind === 'unit' && x.t.id === ai.skip.id)) : [];
   if (!free) { f.fight.target = null; if (f.phase === 'fight') { f.phase = 'idle'; f.path = []; } }
 
   // fleeing: an unarmed civilian meets a threat
@@ -408,6 +413,12 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
     return;
   }
   if (f.phase === 'flee') { f.phase = 'idle'; f.path = []; }
+  // one who was shot from a tower (or stuck at a wall) goes for that work before anything else
+  if (free && ai.siege && ai.role !== 'civ') {
+    const sb = sim.getBuilding(ai.siege);
+    if (!sb || Math.hypot(sb.x - f.x, sb.y - f.y) > 45) ai.siege = 0;
+    else if (siegeBrain(sim, f, ai, dt, threats)) return;
+  }
 
   // a raider marches on the village, fighting what stands in the way
   if (free && ai.role === 'raider' && t.raid) {

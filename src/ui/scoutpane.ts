@@ -1,8 +1,10 @@
 import { DAY_LENGTH } from '../sim/constants';
-import { fmtStat } from '../sim/jobs';
 import type { Villager } from '../sim/model';
 import { h, hint } from './dom';
+import { dlg } from './gamedialog';
+import { detailButton, personTile } from './people';
 import { RolePane } from './rolepane';
+import { resIcon, statIcon } from './resicons';
 import type { Ctx } from './ctx';
 
 const PHASE = { go: 'đang tới', watch: 'đang thám thính', back: 'đang về' } as const;
@@ -12,15 +14,19 @@ const LEVEL_NAME = ['chưa có', 'cấp 1: vị trí, số dân, hướng vào l
 const minutes = (sec: number): string => `${Math.max(1, Math.round(sec / 60))} phút`;
 
 /**
- * The scouting list: the villages somebody found (with only how far they lie), a button to send scouts to each, and the picker that
- * chooses the scouts and says how likely a full map is. Used in the Trại trinh sát and in the war tent.
+ * The scouting pages of the Trại trinh sát. Two pages, each its own tab: the scouts themselves (taken on and let go here like the soldiers in their
+ * camps) and the villages somebody found. The villages page is a list with the details of the chosen one beside it, like the people of the campfire:
+ * the map the village has, the scouts to send (picked the way people are added to any house) and the report of how the trip would go.
  */
 export class ScoutPane {
-  readonly root = h('div', { class: 'page' });
-  /** The village whose scout picker is open ('' when none) and the people ticked in it. */
-  private open = '';
+  /** The page of the scouts. */
+  readonly roster = h('div', { class: 'page' });
+  /** The page of the villages: the list on the left, the chosen village on the right. */
+  readonly villages = h('div', { class: 'split' });
+  /** The village chosen in the list ('' for none), whether the picker of scouts is open, and the people picked to go. */
+  private sel = '';
+  private open = false;
   private readonly picked = new Set<number>();
-  /** The scouts themselves: taken on and let go here, like the soldiers in their camps. */
   private readonly people: RolePane;
   private key = '';
 
@@ -32,24 +38,21 @@ export class ScoutPane {
     const k = this.stateKey();
     if (k === this.key) return;
     this.key = k;
-    this.root.replaceChildren(...this.render());
+    this.roster.replaceChildren(...this.renderRoster());
+    this.villages.replaceChildren(...this.renderVillages());
   }
 
-  /** Everything the page shows, as one string: a panel that embeds this one adds it to its own. */
+  /** Everything the pages show, as one string. */
   stateKey(): string {
     const { sim } = this.c;
-    return [this.open, [...this.picked].join('.'), this.people.stateKey(), JSON.stringify(sim.sightings.map((s) => [s.tribe, s.reported])), JSON.stringify(sim.maps.map((m) => [m.tribe, m.level, m.gaps, Math.floor(m.at)])),
-      JSON.stringify(sim.scouts.map((m) => [m.id, m.phase, m.ids.length])), sim.scoutLevel(), sim.scoutLimit(), this.candidates().map((v) => v.id).join('.'), Math.floor(sim.time / DAY_LENGTH), sim.dev.freeBuild].join('|');
+    return [this.sel, this.open, [...this.picked].join('.'), this.people.stateKey(), JSON.stringify(sim.sightings.map((s) => [s.tribe, s.reported])), JSON.stringify(sim.maps.map((m) => [m.tribe, m.level, m.gaps, Math.floor(m.at)])),
+      JSON.stringify(sim.scouts.map((m) => [m.id, m.phase, m.ids.length, Math.floor((m.progress ?? 0) * 50)])), JSON.stringify(sim.drafts), sim.scoutLevel(), sim.scoutLimit(), this.candidates().map((v) => `${v.id}${Math.round(v.energy / 10)}`).join('.'), Math.floor(sim.time / DAY_LENGTH), sim.dev.freeBuild].join('|');
   }
 
   /** The scouts who can be sent now, the sharpest first. */
   private candidates(): Villager[] {
     const { sim } = this.c;
     return sim.villagers.filter((v) => sim.canScout(v)).sort((a, b) => sim.scoutSkill(b) - sim.scoutSkill(a));
-  }
-
-  private statsOf(v: Villager): string {
-    return `Nhanh ${fmtStat(v.stats.agi)} · Thể lực ${fmtStat(v.stats.sta)} · điểm ${(this.c.sim.scoutSkill(v) * 10).toFixed(1)}${v.weapon ? ' · vũ khí' : ''}${v.armor ? ' · giáp' : ''}${v.torch ? ' · đuốc' : ''}`;
   }
 
   private again(): void { this.key = ''; this.changed(); }
@@ -59,59 +62,102 @@ export class ScoutPane {
     return days <= 0 ? 'báo cáo trong ngày' : days === 1 ? 'báo cáo từ hôm qua' : days < 4 ? `báo cáo từ ${days} hôm trước` : 'đã cũ';
   }
 
-  render(): Node[] {
-    const { sim } = this.c, out: Node[] = [];
-    const level = sim.scoutLevel(), limit = sim.scoutLimit();
-    out.push(hint('Trinh sát và bản đồ', 'Dân, lính hay trinh sát đi quanh bản đồ mà gặp một ngôi làng, khi trở về sẽ báo lại: ở đây chỉ ghi làng đó cách bao xa. Muốn biết thêm phải cử trinh sát. Bản đồ vẽ ra ở cấp bằng cấp Trại trinh sát: lều cấp 1 vẽ bản đồ cấp 1, lều cấp 2 cấp 2, lều cấp 3 cấp 3. Trinh sát là một vai trò như lính: tuyển ở trên, số lượng tối đa theo cấp trại. Mỗi chuyến cần nhiều người, mà người giỏi (Nhanh nhẹn, Thể lực) đáng giá hơn: một mình thì không bao giờ vẽ đủ. Càng đông thì đi càng nhanh. Trinh sát có thể chết, bản đồ mất 10% độ chính xác mỗi ngày.'));
-    out.push(h('p', { class: 'sub', text: `Bản đồ vẽ được: ${LEVEL_NAME[level]}. ${limit ? `Trại trinh sát cho cử tối đa ${limit} người một chuyến.` : 'Chưa có Trại trinh sát.'}` }));
-    if (!sim.dev.freeBuild && !limit) out.push(h('p', { class: 'sub', text: 'Hãy dựng Trại trinh sát.' }));
-
+  // ---------------------------------------------------------------- the scouts
+  private renderRoster(): Node[] {
+    const { sim } = this.c, level = sim.scoutLevel(), limit = sim.scoutLimit();
+    const out: Node[] = [hint('Trinh sát', 'Trinh sát là một vai trò, tuyển từ lính kỵ của Trại kỵ thú và cho nghỉ ở đây: số lượng tối đa theo cấp trại. Mỗi chuyến cần nhiều người, mà người giỏi (Nhanh nhẹn, Thể lực) đáng giá hơn: một mình thì không bao giờ vẽ đủ. Càng đông thì đi càng nhanh. Trinh sát có thể chết.')];
+    out.push(dlg.line('Bản đồ vẽ được', LEVEL_NAME[level]));
+    if (!sim.dev.freeBuild && !limit) out.push(dlg.why('Hãy dựng Trại trinh sát.'));
     out.push(...this.people.render());
-    out.push(h('h3', { text: 'Làng đã phát hiện' }));
-    const found = sim.tribes.filter((t) => t.state !== 'destroyed' && sim.isFound(t.id));
-    if (!found.length) out.push(h('p', { class: 'sub', text: 'Chưa ai phát hiện ngôi làng nào. Cho dân hoặc lính đi quanh bản đồ: gặp làng nào rồi trở về thì sẽ báo ở đây.' }));
-    for (const t of found) {
-      const maps = sim.maps.filter((m) => m.tribe === t.id).sort((a, b) => b.level - a.level), best = maps[0], where = sim.whereIs(t.id);
-      const trip = sim.scouts.find((m) => m.tribe === t.id), plan = sim.planScout([], t.id);
-      const far = where ? `cách đây khoảng ${where.dist} ô về phía ${where.dir}` : '';
-      const known = best ? `Bản đồ cấp ${sim.mapLevel(t.id) || best.level}${best.gaps ? ' (còn hở)' : ''}, ${this.ageWords(best.at)}` : 'Chưa vẽ bản đồ';
-      const blocked = plan.error === 'Cần dựng Trại trinh sát';
-      out.push(h('div', { class: 'row', style: 'flex-direction:column;align-items:stretch' },
-        h('div', { class: 'nm' }, h('b', { text: best ? t.def.name : 'Một ngôi làng' }), h('small', { text: best ? `${far} · ${known}` : `Phát hiện ${far}. ${known}.` })),
-        trip
-          ? h('small', { class: 'sub', text: `${trip.ids.length} trinh sát ${PHASE[trip.phase]} (bản đồ cấp ${trip.level})` })
-          : h('div', { class: 'btns' }, h('button', { class: 'sm primary', text: this.open === t.id ? 'Đóng' : 'Cử trinh sát', disabled: blocked, title: blocked ? plan.error ?? '' : 'Chọn những người đi trinh sát',
-            onclick: () => { this.open = this.open === t.id ? '' : t.id; this.picked.clear(); this.again(); } })),
-        this.open === t.id && !trip ? this.picker(t.id) : null));
-    }
     return out;
   }
 
-  /** The list of people to pick from, with what the trip would be like for the ones ticked so far. */
-  private picker(tribe: string): HTMLElement {
-    const { sim } = this.c, people = this.candidates(), limit = sim.scoutLimit();
-    for (const id of [...this.picked]) if (!people.some((v) => v.id === id)) this.picked.delete(id);
-    const ids = [...this.picked], plan = sim.planScout(ids, tribe);
-    const list = h('div', { class: 'rdrop' });
-    if (!people.length) list.append(h('p', { class: 'sub', text: 'Không có trinh sát nào rảnh để đi: tuyển thêm, hoặc đợi họ về.' }));
-    // chosen scouts first, each with a minus; the others with a plus (a trip takes at most what the camp allows)
-    for (const v of [...people.filter((o) => this.picked.has(o.id)), ...people.filter((o) => !this.picked.has(o.id))]) {
-      const on = this.picked.has(v.id);
-      list.append(h('div', { class: `rrow${on ? '' : ' rfree'}`, style: 'grid-template-columns:1fr auto auto' }, h('div', { class: 'rwho' }, h('b', { text: v.name }), h('small', { text: this.statsOf(v) })),
-        h('button', { class: 'chip', text: '⚙', title: 'Giao việc và chi tiết: vũ khí, giáp, đuốc cho trinh sát', onclick: () => { const { ctl } = this.c; ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding(); } }),
-        on ? h('button', { class: 'chip danger', text: '−', title: 'Không cử người này', onclick: () => { this.picked.delete(v.id); this.again(); } })
-          : h('button', { class: 'chip', text: '＋', title: this.picked.size >= limit ? `Trại chỉ cho đi ${limit} người một chuyến` : 'Cử người này đi', disabled: this.picked.size >= limit, onclick: () => { this.picked.add(v.id); this.again(); } })));
-    }
-    const odds = plan.count < 2 ? 'Cần ít nhất 2 người mới có cơ hội vẽ đủ chi tiết' : `Tỉ lệ vẽ đủ chi tiết: ${Math.round(plan.chance * 100)}%`;
-    return h('div', { class: 'proster', style: 'display:grid;gap:4px' }, list,
-      h('small', { class: 'sub', text: `Đã chọn ${plan.count}/${limit} · bản đồ cấp ${Math.max(1, plan.level)}` }),
-      h('small', { class: 'sub', text: `${odds} (mức cần khoảng ${plan.need} người trung bình, chỉ tính người trở về)` }),
-      plan.count ? h('small', { class: 'sub', text: `Cả chuyến đi về mất chừng ${minutes(plan.total)} (đi ${minutes(plan.walk)}, thám thính ${minutes(plan.survey)}; đông người thì thám thính nhanh hơn)` }) : null,
-      h('button', { class: 'sm primary', text: 'Lên đường', disabled: !!plan.error, title: plan.error ?? 'Cử những người đã chọn',
-        onclick: () => {
-          const e = sim.startScout(ids, tribe);
-          if (e) this.c.toast(e); else { this.open = ''; this.picked.clear(); }
-          this.again();
-        } }));
+  // ---------------------------------------------------------------- the villages
+  private renderVillages(): Node[] {
+    const { sim } = this.c, found = sim.tribes.filter((t) => t.state !== 'destroyed' && sim.isFound(t.id));
+    if (this.sel && !found.some((t) => t.id === this.sel)) this.sel = '';
+    const list = h('div', {}, hint('Làng đã phát hiện', 'Dân, lính hay trinh sát đi quanh bản đồ mà gặp một ngôi làng, khi trở về sẽ báo lại: chỉ ghi làng đó cách bao xa. Muốn biết thêm phải cử trinh sát. Bản đồ vẽ ra ở cấp bằng cấp Trại trinh sát (lều cấp 1 vẽ bản đồ cấp 1, và cứ thế). Bản đồ mất 10% độ chính xác mỗi ngày.'),
+      found.length ? dlg.list(...found.map((t) => this.villageTile(t.id))) : dlg.empty('Chưa ai phát hiện ngôi làng nào. Cho dân hoặc lính đi quanh bản đồ: gặp làng nào rồi trở về thì sẽ báo ở đây.'));
+    const pane = h('div', { class: 'ppane' }, this.sel ? this.detail(this.sel) : dlg.empty('Chọn một ngôi làng ở bên trái để xem bản đồ và cử trinh sát.'));
+    return [list, pane];
+  }
+
+  /** One village in the list: its name, how far, what the map shows and whether scouts are out there. */
+  private villageTile(id: string): HTMLElement {
+    const { sim } = this.c, t = sim.tribes.find((x) => x.id === id)!, best = sim.maps.filter((m) => m.tribe === id).sort((a, b) => b.level - a.level)[0], where = sim.whereIs(id), trip = sim.scouts.find((m) => m.tribe === id);
+    const known = best ? t.def.name : 'Một ngôi làng';
+    const tile = dlg.tile({ pic: '🏕', name: known, chip: trip ? dlg.chip(`${trip.ids.length} trinh sát ${PHASE[trip.phase]}`) : best ? dlg.chip(`Bản đồ cấp ${sim.mapLevel(id) || best.level}`) : dlg.chip('Chưa vẽ'), state: id === this.sel ? 'now' : undefined },
+      [dlg.more(where ? `Cách khoảng ${where.dist} ô, hướng ${where.dir}` : ''), best ? dlg.more(`${best.gaps ? 'Còn hở · ' : ''}${this.ageWords(best.at)}`) : null]);
+    tile.classList.add('pick');
+    tile.addEventListener('click', () => { this.sel = id === this.sel ? '' : id; this.open = false; this.picked.clear(); this.again(); });
+    return tile;
+  }
+
+  /** The chosen village: the map it has, the scouts going, and how the trip would turn out. */
+  private detail(id: string): Node {
+    const { sim } = this.c, t = sim.tribes.find((x) => x.id === id)!, maps = sim.maps.filter((m) => m.tribe === id).sort((a, b) => b.level - a.level), best = maps[0], where = sim.whereIs(id), trip = sim.scouts.find((m) => m.tribe === id);
+    const body = h('div', { class: 'pside' });
+    body.append(h('div', { class: 'dhead' }, h('div', { class: 'dpic glyph', text: '🏕' }), h('div', { class: 'dwho' }, h('b', { class: 'dtitle', text: best ? t.def.name : 'Một ngôi làng' }), h('small', { class: 'dsub', text: where ? `Cách khoảng ${where.dist} ô, hướng ${where.dir}` : '' }))));
+    // what is known of it
+    if (best) {
+      const days = Math.floor((sim.time - best.at) / DAY_LENGTH), accuracy = Math.max(0, 1 - 0.1 * days);
+      body.append(h('div', { class: 'dpills' },
+        dlg.pill(resIcon('role_scout'), `Bản đồ cấp ${sim.mapLevel(id) || best.level}`, undefined, 'Cấp bản đồ đã vẽ'),
+        dlg.pill(resIcon('clock'), this.ageWords(best.at), days >= 3 ? 'warn' : undefined, 'Báo cáo cũ hay mới'),
+        best.gaps ? dlg.pill('❔', 'còn hở', 'warn', 'Bản đồ còn chỗ chưa vẽ') : null),
+        dlg.bar(Math.round(accuracy * 100), 100, `độ chính xác ${Math.round(accuracy * 100)}%`));
+    } else body.append(dlg.note('Chưa vẽ bản đồ: cử trinh sát để biết thêm.', false));
+    const plan0 = sim.planScout([], id);
+    if (!trip && plan0.error === 'Cần dựng Trại trinh sát') { body.append(dlg.why(plan0.error)); return body; }
+    // the drawing of the map: how much is done and every condition of it, from the top down (green done, red not yet)
+    const flow = sim.scoutFlow(id), pct = Math.round(flow.progress * 100);
+    body.append(dlg.bar(pct, 100, `Bản đồ cấp ${flow.level} vẽ được ${pct}%`));
+    if (trip) body.append(dlg.line('Đang đi trinh sát', `${trip.ids.length} người ${PHASE[trip.phase]}`));
+    else if (!flow.steps.every((st) => st.done) && flow.progress > 0) body.append(dlg.note(`Đã vẽ dở ${pct}%: cử trinh sát đi vẽ tiếp từ chỗ đó.`, false));
+    body.append(h('div', { class: 'flow' }, ...flow.steps.flatMap((st, i) => [i ? h('span', { class: `link ${flow.steps[i - 1].done ? 'done' : 'todo'}` }) : null, h('div', { class: `step ${st.done ? 'done' : 'todo'}` }, h('b', { text: st.done ? '✓' : '✗' }), h('span', { text: st.label }))])));
+    if (trip) body.append(trip.phase === 'back' ? dlg.note('Trinh sát đang trên đường về.', false) : dlg.button('Gọi trinh sát về', () => { const e = sim.recallScouts(id); this.c.toast(e ?? 'Đã gọi trinh sát về: họ mang về phần đã vẽ'); this.again(); }, { tone: 'alt', title: 'Gọi về khi chưa vẽ xong: phần đã vẽ được giữ, người khác vẽ tiếp' }));
+    if (trip?.phase === 'back') return body;
+
+    // who goes: the same list as the people of a house, with the button to add more
+    const people = this.candidates(), limit = sim.scoutLimit();
+    for (const pid of [...this.picked]) if (!people.some((v) => v.id === pid)) this.picked.delete(pid);
+    const goers = people.filter((v) => this.picked.has(v.id)), others = people.filter((v) => !this.picked.has(v.id)), ids = goers.map((v) => v.id), plan = sim.planScout(ids, id);
+    const full = goers.length >= limit - (trip?.ids.length ?? 0);
+    const add = h('button', { class: 'sm primary', text: this.open ? 'Xong' : trip ? 'Cử thêm trinh sát tới' : 'Thêm người đi trinh sát', disabled: full && !this.open, onclick: () => { this.open = !this.open; this.again(); } });
+    body.append(hint(h('div', { class: 'dhouse' }, h('b', { text: 'Người đi trinh sát' }), dlg.slots(goers.length + (trip?.ids.length ?? 0), limit), h('small', { class: 'dsub', text: 'nâng cấp trại để cử thêm' })),
+      'Trinh sát làm cả ngày lẫn đêm và chỉ về khi vẽ xong bản đồ. Càng đông và càng giỏi (Nhanh nhẹn, Thể lực) thì vẽ càng nhanh. Nếu trinh sát chết, cử người khác tới vẽ tiếp: phần đã vẽ vẫn còn. Bản đồ chỉ có khi trinh sát trở về.'));
+    body.append(goers.length ? dlg.list(...goers.map((v) => this.scoutTile(v, '−', () => { this.picked.delete(v.id); this.again(); }, false))) : dlg.empty('Chưa chọn ai đi.'), add);
+    if (this.open) body.append(h('div', { class: 'picker' }, h('p', { class: 'sub', text: full ? `Trại chỉ cho đi ${limit} người một chuyến.` : 'Chọn ai đi trinh sát:' }),
+      others.length ? dlg.list(...others.map((v) => this.scoutTile(v, '＋', () => { this.picked.add(v.id); this.again(); }, full))) : dlg.empty('Không còn trinh sát nào rảnh: tuyển thêm, hoặc đợi họ về.')));
+
+    // the report: how the trip would go, as a gauge, strengths and times
+    const chance = plan.count + (trip?.ids.length ?? 0) < 2 ? 0 : plan.chance, tone = chance >= 0.7 ? 'good' : chance >= 0.35 ? 'warn' : 'bad';
+    body.append(h('div', { class: 'dtile report' }, dlg.ring(chance, `${Math.round(chance * 100)}%`),
+      h('div', { class: 'dmain' }, h('div', { class: 'dname' }, h('b', { text: 'Tỉ lệ vẽ đủ chi tiết' })),
+        dlg.bar(Math.round(chance * 100), 100, plan.count < 2 ? 'cần ít nhất 2 người' : `${Math.round(chance * 100)}%`),
+        dlg.more(`Đi ${plan.count}/${limit} người · mức cần khoảng ${plan.need} người trung bình`))));
+    body.append(h('div', { class: 'dpills' },
+      dlg.pill(resIcon('role_scout'), `${plan.count}/${plan.need} người`, plan.count >= plan.need ? 'good' : plan.count >= 2 ? 'warn' : 'bad', 'Số người đã chọn so với mức cần'),
+      dlg.pill(resIcon('role_scout'), `Bản đồ cấp ${Math.max(1, plan.level)}`, undefined, 'Cấp bản đồ sẽ vẽ'),
+      dlg.pill(statIcon('move'), `đi ${minutes(plan.walk)}`, undefined, 'Đường đi từ trại tới làng'),
+      dlg.pill(statIcon('int'), `thám thính ${minutes(plan.survey)}`, undefined, 'Thời gian vẽ; đông người thì nhanh hơn'),
+      dlg.pill(resIcon('clock'), `cả chuyến ${minutes(plan.total)}`, undefined, 'Đi, thám thính và về'),
+      dlg.pill('🎯', `${Math.round(chance * 100)}%`, tone, 'Tỉ lệ vẽ đủ chi tiết')));
+    if (plan.error) body.append(dlg.why(plan.error));
+    body.append(dlg.button(trip ? 'Cử thêm người' : 'Lên đường', () => {
+      const e = sim.startScout(ids, id);
+      if (e) this.c.toast(e); else { this.open = false; this.picked.clear(); }
+      this.again();
+    }, { disabled: !!plan.error, title: plan.error ?? 'Cử những người đã chọn' }));
+    return body;
+  }
+
+  /** A scout in a list: the same tile every house uses for its people, with the ⚙ for their details and a plus or minus to send or keep them. */
+  private scoutTile(v: Villager, sign: '＋' | '−', act: () => void, disabled: boolean): HTMLElement {
+    const sk = (this.c.sim.scoutSkill(v) * 10).toFixed(1);
+    return personTile(this.c, v, { note: `điểm trinh sát ${sk}${v.weapon ? ' · vũ khí' : ''}${v.armor ? ' · giáp' : ''}${v.torch ? ' · đuốc' : ''}`, stats: ['move', 'sta'], actions: [
+      detailButton(this.c, v),
+      dlg.button(sign, act, { icon: true, tone: sign === '−' ? 'bad' : undefined, disabled, title: sign === '−' ? 'Không cử người này' : 'Cử người này đi' }),
+    ] });
   }
 }

@@ -17,12 +17,16 @@ import { MapView } from './ui/minimap';
 import { BuildingBar, Confirm } from './ui/buildbar';
 import { WarBar } from './ui/warbar';
 import { BuildingPanel, Ctx, TargetCard, UnitCard } from './ui/panels';
+import { newSeed } from './sim/rng';
 import { IndexedDbStore } from './save/indexeddb';
 import { Session, AUTO_SAVE } from './save/session';
 import { loadSettings, saveSettings } from './save/settings';
 import { MemoryStore } from './save/store';
 
-const seed = Number(new URLSearchParams(location.search).get('seed')) || 1337;
+// a new game is a new world: a random seed (it decides the land, the herds and where the village starts), kept in the address so that reloading the page gives the same world
+const seedParam = Number(new URLSearchParams(location.search).get('seed')) || 0;
+const seed = seedParam || newSeed();
+if (!seedParam) { try { history.replaceState(null, '', `?seed=${seed}`); } catch { /* an address that cannot be changed: the world is just not remembered */ } }
 
 const sim = new Sim(seed);
 const settings = loadSettings();
@@ -97,6 +101,7 @@ const multiBtn = $<HTMLButtonElement>('btnMulti');
 multiBtn.addEventListener('click', () => ctl.setMulti(!ctl.multi));
 $('btnAll').addEventListener('click', () => ctl.selectAll());
 $('btnNone').addEventListener('click', () => ctl.clearSelection());
+$('btnHome').addEventListener('click', () => { const f = sim.campfire(), s = sim.world.start; ctl.centerOn(((f ? f.x + 1 : s.x) ) * TILE, ((f ? f.y + 1 : s.y)) * TILE); });
 const foldBtn = $<HTMLButtonElement>('btnFold');
 foldBtn.addEventListener('click', () => { const on = !$('sheet').classList.contains('folded'); $('sheet').classList.toggle('folded', on); foldBtn.setAttribute('aria-pressed', String(on)); foldBtn.textContent = on ? 'Hiện bảng' : 'Ẩn bảng'; });
 $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
@@ -123,6 +128,7 @@ window.addEventListener('keydown', (e) => {
 
 // ---------------------------------------------------------------- the top bar and the log
 const clock = $('clock');
+const REGION_NAME = { plains: 'Đồng bằng', sparse: 'Rừng thưa', dense: 'Rừng rậm', mountain: 'Núi', water: 'Vùng nước' } as const;
 // the coloured squares of the top bar give way to drawn pictures
 for (const [id, key] of [['rFood', 'food'], ['rWood', 'wood'], ['rStone', 'stone'], ['rHide', 'hide'], ['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk'], ['rTorch', 'torch'], ['rCoin', 'coin'], ['rPop', 'pop']]) $(id).querySelector('i')?.replaceWith(resIcon(key));
 // the quest and notice buttons stand at the left edge; each opens its window over the map, and a red mark says something new is waiting
@@ -142,7 +148,7 @@ function updateHud(now: number) {
   lastHud = now;
   const cap = sim.capacity();
   const need = sim.foodNeed(), pen = sim.foodPenalty;
-  setRes('rFood', sim.stock.food + sim.foodPot, cap);
+  setRes('rFood', sim.stock.food, cap); // the pot of the campfire is filled first: only what is over is in the store
   $('rFood').classList.toggle('warn', pen > 0);
   $('rFood').title = `Thức ăn: kho ${Math.floor(sim.stock.food)} + phần ăn của lửa trại ${Math.floor(sim.foodPot)}/${need}. Cuối mỗi ngày làng ăn ${need}; thiếu thì cả làng yếu đi.${pen > 0 ? ` Đang yếu ${Math.round(pen * 1000) / 10}% vì bữa trước thiếu ăn.` : ''}`;
   setRes('rWood', sim.stock.wood, cap); setRes('rStone', sim.stock.stone, cap); setRes('rHide', sim.stock.hide, cap); setRes('rCoin', sim.stock.coin, cap); $('rCoin').title = `${RES_NAME.coin}: tiền của làng, nhặt khi hái lượm, đổi hàng ở Kho, nhận từ bộ tộc. Dùng để trả cho nghiên cứu.`;
@@ -154,7 +160,11 @@ function updateHud(now: number) {
   $('rPop').querySelector('b')!.textContent = String(sim.villagers.length); $('rPop').querySelector('small')!.textContent = `/${sim.popCap()}`;
   for (const r of RES_LIST) void RES_NAME[r];
   const se = SEASON_DEF[sim.season], we = WEATHER[sim.weather], year = yearOf(sim.day);
-  clock.textContent = `${year > 1 ? `Năm ${year} · ` : ''}Ngày ${sim.day} · ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} · ${DAY_PART_NAME[sim.part]} · ${we.name}`;
+  // the region under the middle of the screen, once somebody has been there (what lies in the dark is not told)
+  const mid = renderer.screenToWorld(renderer.w / 2, renderer.h / 2), mx = Math.floor(mid.x / TILE), my = Math.floor(mid.y / TILE);
+  const region = sim.world.inBounds(mx, my) ? (sim.fog.state[my * sim.world.size + mx] > 0 ? REGION_NAME[sim.world.regionAt(mx, my)] : 'Vùng chưa khám phá') : 'Ngoài bản đồ';
+  { const f = sim.campfire(), s = sim.world.start; $('btnHome').hidden = Math.hypot(mid.x / TILE - (f ? f.x + 1 : s.x), mid.y / TILE - (f ? f.y + 1 : s.y)) < 30; } // the camera is far from the village: a way back
+  clock.textContent = `${year > 1 ? `Năm ${year} · ` : ''}Ngày ${sim.day} · ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} · ${DAY_PART_NAME[sim.part]} · ${we.name} · ${region}`;
   const outdoor = we.work * se.work;
   const eff = [we.vision ? `tầm nhìn −${we.vision} ô` : '', we.speed < 1 ? `đi chậm ${Math.round((1 - we.speed) * 100)}%` : '', outdoor < 1 ? `làm việc ngoài trời chậm ${Math.round((1 - outdoor) * 100)}%` : ''].filter(Boolean).join(', ');
   $('clockLine').title = `${we.name}${eff ? `: ${eff}` : ''}. Hái lượm mùa ${se.name.toLowerCase()} ×${se.gather.toLocaleString('vi')}. ${Math.round(fps)} fps`;

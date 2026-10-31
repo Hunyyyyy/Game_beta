@@ -4,13 +4,14 @@ import { CREW_BUILDING, isStaffJob, JOBS, STAFF_BUILDING, WorkJob } from './jobs
 import { Step } from './path';
 import type { Sim } from './sim';
 import { Villager } from './model';
+import { isFree } from './idle';
 
 // ---------------------------------------------------------------- working inside a house
 /** The villager best suited to work in a house who is not already doing it: free hands first, soldiers never, then the best stat for the job. */
 export function bestFor(sim: Sim, job: 'craft' | 'research' | 'tame'): Villager | null {
   const stat = JOBS[job].stat;
   const pool = sim.villagers.filter((v) => v.down <= 0 && v.inside === null && v.job !== job && v.job !== 'fight' && v.job !== 'hunt' && v.job !== 'scout');
-  pool.sort((a, b) => (a.job === 'idle' ? 0 : 1) - (b.job === 'idle' ? 0 : 1) || b.stats[stat] - a.stats[stat]);
+  pool.sort((a, b) => (isFree(a) ? 0 : 1) - (isFree(b) ? 0 : 1) || b.stats[stat] - a.stats[stat]);
   return pool[0] ?? null;
 }
 

@@ -9,6 +9,17 @@ import type { Sim } from './sim';
 import { RES_NAME } from './resources';
 import type { IntelMark, ScoutMap, ScoutMission, ScoutPlan, Seen, TribeIntel, Villager } from './model';
 
+/** The steps of drawing a map, from the top down, with the level of map each belongs to (a map of level 2 has the steps of level 1 as well). */
+const STEPS: Array<{ level: number; label: string }> = [
+  { level: 1, label: 'Xác định vị trí ngôi làng' }, { level: 1, label: 'Đếm số dân' }, { level: 1, label: 'Tìm hướng vào làng' },
+  { level: 2, label: 'Vẽ hàng rào và cổng' }, { level: 2, label: 'Vẽ chòi canh' }, { level: 2, label: 'Ghi lại người đi lại trong làng' },
+  { level: 3, label: 'Phân loại lính: bộ binh, cung thủ, kỵ binh' }, { level: 3, label: 'Tìm kho lương' }, { level: 3, label: 'Nhận ra thủ lĩnh' },
+];
+/** One condition of the map, done (green) or not yet (red). */
+export interface ScoutStep { label: string; done: boolean }
+/** Where the drawing of a village's map stands: the level, how much is done (0..1), and every step in order. */
+export interface ScoutFlow { level: number; progress: number; steps: ScoutStep[]; active: boolean }
+
 /** How good a map still is: it loses a tenth a day as the enemy changes his ways. */
 export const mapAccuracy = (sim: Sim, m: ScoutMap): number => Math.max(0, 1 - (COMMAND.mapDecayPerDay * (sim.time - m.at)) / DAY_LENGTH);
 
@@ -87,26 +98,30 @@ export const canScout = (sim: Sim, v: Villager): boolean => v.job === 'scout' &&
 /** The scouts of the village, as a role like the soldiers: recruited and let go at the Trại trinh sát. */
 export const scoutRoster = (sim: Sim): Villager[] => sim.villagers.filter((v) => v.job === 'scout');
 
-/** Take villagers into the scouts, as many as the Trại trinh sát has room for. Returns an error or null. */
+/** Who can become a scout: the cavalry soldiers of the Trại kỵ thú (they keep their arm, their gear and their beast). */
+export const canBeScout = (v: Villager): boolean => v.job === 'fight' && v.arm === 'cavalry';
+
+/** Take cavalry soldiers into the scouts, as many as the Trại trinh sát has room for. Returns an error or null. */
 export function enlistScouts(sim: Sim, ids: readonly number[]): string | null {
   const lock = sim.warLock(); if (lock) return lock;
   const limit = scoutLimit(sim);
   if (!limit) return 'Cần dựng Trại trinh sát';
-  const pick = sim.mine(ids).filter((v) => v.job !== 'fight' && v.job !== 'scout'), room = limit - scoutRoster(sim).length;
-  if (!pick.length) return 'Chọn dân thường để tuyển làm trinh sát';
+  const pick = sim.mine(ids).filter(canBeScout), room = limit - scoutRoster(sim).length;
+  if (!pick.length) return 'Trinh sát được tuyển từ lính kỵ: hãy chọn lính kỵ thú của Trại kỵ thú';
   if (room <= 0) return `Trại trinh sát đã đủ ${limit} trinh sát: nâng cấp lều để chứa thêm`;
-  for (const v of pick.slice(0, room)) { sim.resetTask(v); sim.clearCombat(v); v.job = 'scout'; v.prefer = -1; v.post = -1; }
+  for (const v of pick.slice(0, room)) { sim.resetTask(v); sim.clearCombat(v); v.job = 'scout'; v.prefer = -1; v.post = -1; } // the arm stays cavalry: let go, a scout goes back to the camp
   return pick.length > room ? `Lều chỉ còn chỗ cho ${room} trinh sát` : null;
 }
 
-/** Let scouts go back to being plain villagers with no job. Those away on a trip must come home first. Returns an error or null. */
+/** Let scouts go back to the cavalry camp (a plain villager if it has no room). Those away on a trip must come home first. Returns an error or null. */
 export function dismissScouts(sim: Sim, ids: readonly number[]): string | null {
   const lock = sim.warLock(); if (lock) return lock;
   let n = 0, away = 0;
-  for (const v of sim.mine(ids)) {
+  for (const v of ids.map((id) => sim.byId.get(id)).filter((o): o is Villager => !!o && o.team === 'player' && o.down <= 0)) {
     if (v.job !== 'scout') continue;
     if (onTrip(sim, v)) { away++; continue; }
-    sim.resetTask(v); sim.clearCombat(v); v.job = 'idle'; v.post = -1; n++;
+    sim.resetTask(v); sim.clearCombat(v); v.post = -1; n++;
+    if (v.arm === 'cavalry' && sim.roleCount('cavalry') < sim.roleCapacity('cavalry')) v.job = 'fight'; else v.job = 'idle';
   }
   return n ? null : away ? 'Đang đi trinh sát: đợi họ về' : 'Chọn trinh sát để cho nghỉ';
 }
@@ -150,10 +165,38 @@ export function planScout(sim: Sim, ids: readonly number[], tribe: string): Scou
   if (!sim.dev.freeBuild && !isFound(sim, tribe)) error = 'Chưa ai tìm thấy làng này';
   else if (!tribeOf(sim, tribe as never)) error = 'Không có làng này';
   else if (!limit) error = 'Cần dựng Trại trinh sát';
-  else if (sim.scouts.some((m) => m.tribe === tribe)) error = 'Đã có trinh sát đang đi làng này';
+  else if (sim.scouts.some((m) => m.tribe === tribe && m.phase === 'back')) error = 'Trinh sát đang trên đường về: đợi họ về rồi cử tiếp';
   else if (!scouts.length) error = 'Chọn trinh sát để cử đi (tuyển ở Trại trinh sát)';
-  else if (scouts.length > limit) error = `Trại trinh sát chỉ cho đi ${limit} người một chuyến`;
+  else if (scouts.length > limit - (sim.scouts.find((m) => m.tribe === tribe)?.ids.length ?? 0)) error = `Trại trinh sát chỉ cho đi ${limit} người một chuyến (đang có ${sim.scouts.find((m) => m.tribe === tribe)?.ids.length ?? 0} người ở đó)`;
   return { level, need, count: scouts.length, limit, chance: drawChance(scouts.map(scoutSkill), need), walk, survey, total: 2 * walk + survey, error };
+}
+
+/** Walk a scout to a tile. A scout on a trip answers to no order of the player, so Sim.orderMove would skip him: the trip moves him itself. */
+function walkScout(sim: Sim, v: Villager, x: number, y: number): void {
+  const goal = sim.nearestFree(x, y, new Set()) ?? [x, y];
+  sim.resetTask(v); sim.clearCombat(v);
+  v.path = sim.pathTo(v, goal[0], goal[1], 30000);
+  v.phase = v.path.length ? 'move' : 'idle';
+}
+
+/** Where scout number i of a trip stands to watch a village: on the side facing ours, 15 tiles from its fire. */
+function watchSpot(sim: Sim, t: NonNullable<ReturnType<typeof tribeOf>>, i: number): [number, number] {
+  const fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y;
+  const dx = fx - t.camp.x, dy = fy - t.camp.y, len = Math.max(1, Math.hypot(dx, dy)), reach = Math.min(len, 15);
+  const spotX = t.camp.x + (dx / len) * reach, spotY = t.camp.y + (dy / len) * reach;
+  return sim.nearestFree(Math.floor(spotX + Math.cos(i * 2.4) * 2), Math.floor(spotY + Math.sin(i * 2.4) * 2), new Set()) ?? [Math.floor(spotX), Math.floor(spotY)];
+}
+
+/** A scout who stopped on the way (a beast scared him off, his walk was cut short) is sent on again; a trip that never gets there is called off. */
+function keepGoing(sim: Sim, m: ScoutMission, t: NonNullable<ReturnType<typeof tribeOf>>, alive: Villager[]): void {
+  const fire = sim.campfire();
+  alive.forEach((v, i) => {
+    if (v.path.length || v.slide || v.phase === 'move' || v.phase === 'sleep' || v.phase === 'goHome' || v.phase === 'flee' || v.inside !== null) return;
+    if (m.phase === 'back') { if (fire && Math.hypot(v.x - fire.x, v.y - fire.y) >= 7) walkScout(sim, v, Math.floor(fire.x + 1), Math.floor(fire.y + 3)); return; }
+    if (Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22) return; // there already
+    const spot = watchSpot(sim, t, i);
+    walkScout(sim, v, spot[0], spot[1]);
+  });
 }
 
 /** Send villagers to scout a village for the best map our research can draw. Returns an error or null. */
@@ -162,14 +205,20 @@ export function startScout(sim: Sim, ids: readonly number[], tribe: string): str
   if (plan.error || !t) return plan.error ?? 'Không có làng này';
   const scouts = sim.mine(ids).filter((v) => canScout(sim, v));
   const fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y;
-  const dx = fx - t.camp.x, dy = fy - t.camp.y, len = Math.max(1, Math.hypot(dx, dy)), reach = Math.min(len, 15);
-  const spotX = t.camp.x + (dx / len) * reach, spotY = t.camp.y + (dy / len) * reach;
+  void fx; void fy;
   scouts.forEach((v, i) => {
     sim.resetTask(v); sim.clearCombat(v);
-    const spot = sim.nearestFree(Math.floor(spotX + Math.cos(i * 2.4) * 2), Math.floor(spotY + Math.sin(i * 2.4) * 2), new Set()) ?? [Math.floor(spotX), Math.floor(spotY)];
+    const spot = watchSpot(sim, t, i);
     sim.orderMove([v.id], spot[0], spot[1]);
   });
-  sim.scouts.push({ id: sim.nextMission++, tribe, level: Math.max(1, plan.level), ids: scouts.map((v) => v.id), phase: 'go', t: 0, need: plan.need, survivors: scouts.length, sent: scouts.length });
+  const going = sim.scouts.find((m) => m.tribe === tribe);
+  if (going) { // others sent after the first ones fell (or to help them): they join the same drawing
+    going.ids.push(...scouts.map((v) => v.id)); going.sent = (going.sent ?? 0) + scouts.length;
+    sim.say(`${scouts.length} trinh sát nữa lên đường tới ${t.def.name} để vẽ tiếp bản đồ (đã vẽ ${Math.round((going.progress ?? 0) * 100)}%).`);
+    return null;
+  }
+  const level = Math.max(1, plan.level), start = sim.drafts[`${tribe}:${level}`] ?? 0;
+  sim.scouts.push({ id: sim.nextMission++, tribe, level, ids: scouts.map((v) => v.id), phase: 'go', t: 0, need: plan.need, survivors: scouts.length, sent: scouts.length, progress: start, rolled: [] });
   sim.say(`${scouts.length} trinh sát lên đường tới ${t.def.name} để vẽ bản đồ cấp ${Math.max(1, plan.level)}: khoảng ${Math.round(plan.chance * 100)}% vẽ đủ chi tiết, cả chuyến mất chừng ${Math.max(1, Math.round(plan.total / 60))} phút.`);
   return null;
 }
@@ -182,39 +231,80 @@ function deathChance(sim: Sim, m: ScoutMission, v: Villager): number {
   return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 0.005) - gearOf(v, SIEGE.scout.gearHide)));
 }
 
+/** Whether a villager is a scout out on a trip: he works day and night, is never tired out and does not sleep until he is home. */
+export const awayScout = (sim: Sim, v: Villager): boolean => v.job === 'scout' && sim.scouts.some((m) => m.ids.includes(v.id));
+
+/** Call the scouts of a village home before the map is finished: what they have drawn comes with them, and other scouts can go on from there. */
+export function recallScouts(sim: Sim, tribe: string): string | null {
+  const m = sim.scouts.find((x) => x.tribe === tribe);
+  if (!m || m.phase === 'back') return 'Không có trinh sát nào đang ở đó để gọi về';
+  m.recall = true;
+  if (m.phase === 'go') sendHome(sim, m);
+  return null;
+}
+
+function sendHome(sim: Sim, m: ScoutMission): void {
+  m.phase = 'back'; m.t = 0;
+  const fire = sim.campfire();
+  for (const id of m.ids) { const v = sim.byId.get(id); if (v && fire) walkScout(sim, v, Math.floor(fire.x + 1), Math.floor(fire.y + 3)); }
+}
+
+/** The progress of the map of a village and every condition of it, top to bottom: green when done, red when not. */
+export function scoutFlow(sim: Sim, tribe: string): ScoutFlow {
+  const m = sim.scouts.find((x) => x.tribe === tribe), level = Math.max(1, m?.level ?? scoutLevel(sim));
+  const finished = sim.maps.some((x) => x.tribe === tribe && x.level >= level && !m), progress = m ? m.progress ?? 0 : finished ? 1 : sim.drafts[`${tribe}:${level}`] ?? 0;
+  const survey = STEPS.filter((st) => st.level <= level), n = survey.length;
+  const arrived = !!m && m.phase !== 'go' || progress > 0;
+  const steps: ScoutStep[] = [{ label: 'Trinh sát lên đường tới ngôi làng', done: !!m || progress > 0 || finished }, { label: 'Tới gần ngôi làng', done: arrived || finished },
+    ...survey.map((st, i) => ({ label: st.label, done: finished || progress >= (i + 1) / n - 1e-6 })), { label: 'Trở về làng, báo bản đồ', done: finished }];
+  return { level, progress, steps, active: !!m };
+}
+
 export function tickScouts(sim: Sim, dt: number): void {
   tickSightings(sim, dt);
   for (let i = sim.scouts.length - 1; i >= 0; i--) {
     const m = sim.scouts[i], t = tribeOf(sim, m.tribe as never);
     const alive = m.ids.map((id) => sim.byId.get(id)).filter((v) => !!v && v.team === 'player' && v.health > 0) as NonNullable<ReturnType<Sim['get']>>[];
     m.ids = alive.map((v) => v.id);
-    if (!alive.length || !t) { sim.say(alive.length ? 'Trinh sát bị hủy.' : 'Mất hết trinh sát: không có bản đồ nào về.'); sim.scouts.splice(i, 1); continue; }
-    m.t += dt;
-    if (m.phase === 'go') {
-      const near = alive.every((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
-      if (near || m.t > 300) {
+    if (!alive.length || !t) { sim.say(alive.length ? 'Trinh sát bị hủy.' : 'Mất hết trinh sát: bản đồ chưa về, cử người khác đi vẽ tiếp.'); sim.scouts.splice(i, 1); continue; }
+    m.t += dt; m.progress ??= 0; m.rolled ??= [];
+    m.nudge = (m.nudge ?? 0) - dt;
+    if (m.nudge <= 0) { m.nudge = 5; keepGoing(sim, m, t, alive); }
+    if (m.phase === 'go' && m.t > 900 && !m.recall) { m.recall = true; sim.say(`Trinh sát không tới được ${t.def.name} (đường bị chặn?): gọi về.`); sendHome(sim, m); }
+    const fire = sim.campfire();
+    if (m.phase !== 'back') {
+      // the ones who have reached the village risk being caught, once each; the ones who are there draw the map
+      const arrived = alive.filter((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
+      for (const v of arrived) if (!m.rolled.includes(v.id)) { m.rolled.push(v.id); if (sim.frnd() < deathChance(sim, m, v)) sim.killUnit(v, 'vì bị phát hiện khi trinh sát'); }
+      const here = arrived.filter((v) => v.health > 0 && sim.byId.has(v.id));
+      m.survivors = alive.filter((v) => v.health > 0 && sim.byId.has(v.id)).length;
+      if (m.phase === 'go' && here.length) {
         m.phase = 'watch'; m.t = 0;
-        for (const v of alive) if (sim.frnd() < deathChance(sim, m, v)) sim.killUnit(v, 'vì bị phát hiện khi trinh sát');
-        m.survivors = alive.filter((v) => v.health > 0 && sim.byId.has(v.id)).length;
-        if (m.survivors && m.level >= 2) m.seen = seenNow(sim, tribeOf(sim, m.tribe as never)!); // the day the scouts came is the day the map shows
-        sim.say(m.survivors ? `Trinh sát đang quan sát ${t.def.name}.` : 'Trinh sát bị bắt gặp, không ai thoát.');
+        if (m.level >= 2 && !m.seen) m.seen = seenNow(sim, t); // the day the scouts came is the day the map shows
+        sim.say(`Trinh sát đang quan sát ${t.def.name}.`);
       }
-    } else if (m.phase === 'watch') {
-      if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.agi, 0) / Math.max(1, alive.length))) {
-        m.phase = 'back'; m.t = 0;
-        const fire = sim.campfire();
-        for (const id of m.ids) if (sim.byId.has(id) && fire) sim.orderMove([id], Math.floor(fire.x + 1), Math.floor(fire.y + 3));
+      if (m.phase === 'watch') {
+        if (here.length) m.progress = Math.min(1, m.progress + dt / surveyTime(m.level, here.length, here.reduce((a, v) => a + v.stats.agi, 0) / here.length));
+        if (m.progress >= 1 || m.recall) { sim.say(m.progress >= 1 ? `Đã vẽ xong bản đồ ${t.def.name}: trinh sát quay về.` : `Trinh sát được gọi về khi mới vẽ ${Math.round(m.progress * 100)}%.`); sendHome(sim, m); }
       }
     } else {
-      const fire = sim.campfire(), home = !fire || alive.every((v) => Math.hypot(v.x - fire.x, v.y - fire.y) < 7);
+      const home = !fire || alive.every((v) => Math.hypot(v.x - fire.x, v.y - fire.y) < 7);
       if (home || m.t > 600) {
-        // only those who come home count: the map is as full as they are many and good
-        const skills = alive.map(scoutSkill), chance = drawChance(skills, m.need), full = sim.frnd() < chance;
-        const gaps = full ? 0 : Math.max(1, Math.ceil(m.need - skills.reduce((a, b) => a + b, 0)));
-        const old = sim.maps.findIndex((x) => x.tribe === m.tribe && x.level === m.level);
-        const map: ScoutMap = { tribe: m.tribe, level: m.level, at: sim.time, gaps, seen: m.seen };
-        if (old >= 0) sim.maps[old] = map; else sim.maps.push(map);
-        sim.say(`Trinh sát về (${alive.length}/${m.sent ?? alive.length} người): bản đồ cấp ${m.level} của ${t.def.name}${full ? ' đầy đủ chi tiết' : `, nhưng còn hở (thiếu ${gaps} mảnh, tỉ lệ vẽ đủ chỉ ${Math.round(chance * 100)}%)`}.`);
+        const key = `${m.tribe}:${m.level}`;
+        if ((m.progress ?? 0) >= 1) {
+          // only those who come home count: the map is as full as they are many and good
+          const skills = alive.map(scoutSkill), chance = drawChance(skills, m.need), full = sim.frnd() < chance;
+          const gaps = full ? 0 : Math.max(1, Math.ceil(m.need - skills.reduce((a, b) => a + b, 0)));
+          const old = sim.maps.findIndex((x) => x.tribe === m.tribe && x.level === m.level);
+          const map: ScoutMap = { tribe: m.tribe, level: m.level, at: sim.time, gaps, seen: m.seen };
+          if (old >= 0) sim.maps[old] = map; else sim.maps.push(map);
+          delete sim.drafts[key];
+          sim.say(`Trinh sát về (${alive.length}/${m.sent ?? alive.length} người): bản đồ cấp ${m.level} của ${t.def.name}${full ? ' đầy đủ chi tiết' : `, nhưng còn hở (thiếu ${gaps} mảnh, tỉ lệ vẽ đủ chỉ ${Math.round(chance * 100)}%)`}.`);
+        } else {
+          // called home half way: the part drawn is kept, and the next scouts go on from it
+          sim.drafts[key] = Math.max(sim.drafts[key] ?? 0, m.progress ?? 0);
+          sim.say(`Trinh sát về (${alive.length}/${m.sent ?? alive.length} người): mới vẽ ${Math.round((m.progress ?? 0) * 100)}% bản đồ ${t.def.name}; cử người đi vẽ tiếp.`);
+        }
         sim.scouts.splice(i, 1);
       }
     }

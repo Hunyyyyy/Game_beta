@@ -116,7 +116,12 @@ export function assignGear(sim: Sim, ids: readonly number[], kind: string | null
 }
 
 /** Let the workshop hand out and swap gear by itself again. */
-export function autoGear(sim: Sim, ids: readonly number[]): void { for (const v of sim.mine(ids)) v.manualGear = false; }
+/** Let the stores hand out gear on their own. Only once fetching is researched; until then the player picks every weapon and armour. Returns an error or null. */
+export function autoGear(sim: Sim, ids: readonly number[]): string | null {
+  if (!autoOn(sim.researched, 'fetch')) return 'Chưa nghiên cứu "Tự lấy đồ trong kho": hãy tự chọn đồ cho dân';
+  for (const v of sim.mine(ids)) v.manualGear = false;
+  return null;
+}
 
 /** Cấp công cụ ngay cho dân đã chọn, không cần Xưởng hay nguyên liệu. tier 0 = thu lại (tay không). */
 export function giveTool(sim: Sim, ids: readonly number[], kind: ToolKind, tier: number): void {

@@ -7,7 +7,7 @@ var animals_default = {
   fowl: { name: "G\xE0 r\u1EEBng", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2, flee: 5, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 3], count: 20, prey: true, nocturnal: false, drops: { feather: 2 } },
   deer: { name: "H\u01B0\u01A1u", hp: 60, damage: 4, type: "crush", cycle: 1.6, range: 1, speed: 2.6, flee: 7, aggro: 0, meat: 20, hide: 3, zones: [1, 3], herd: [3, 5], count: 18, prey: true, nocturnal: false, cornered: true, drops: { bone: 2, fat: 2 } },
   boar: { name: "L\u1EE3n r\u1EEBng", hp: 90, damage: 10, type: "pierce", cycle: 1.5, range: 1, speed: 2.1, flee: 0, aggro: 0, meat: 25, hide: 3, zones: [1, 3], herd: [1, 2], count: 8, prey: true, nocturnal: false, defends: true, drops: { bone: 2, fat: 4 } },
-  wolf: { name: "S\xF3i", hp: 55, damage: 7, type: "slash", cycle: 1.2, range: 1, speed: 2.9, flee: 0, aggro: 9, meat: 8, hide: 2, zones: [2, 3], herd: [4, 6], count: 12, prey: false, nocturnal: true, fearsFire: 5, drops: { bone: 2 } },
+  wolf: { name: "S\xF3i", hp: 55, damage: 7, type: "slash", cycle: 1.2, range: 1, speed: 2.9, flee: 0, aggro: 9, meat: 8, hide: 2, zones: [2, 3], herd: [4, 6], count: 12, prey: false, nocturnal: true, drops: { bone: 2 } },
   fish: { name: "C\xE1", hp: 1, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.4, flee: 3, aggro: 0, meat: 3, hide: 0, zones: [1, 3], herd: [3, 6], count: 36, prey: true, nocturnal: false, habitat: "water" },
   aurochs: { name: "B\xF2 r\u1EEBng", hp: 130, damage: 12, type: "crush", cycle: 1.8, range: 1, speed: 2, flee: 0, aggro: 0, meat: 45, hide: 6, drops: { bone: 3, fat: 4 }, zones: [1, 3], herd: [2, 4], count: 6, prey: true, nocturnal: false, defends: true },
   duck: { name: "V\u1ECBt tr\u1EDDi", hp: 8, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.9, flee: 5, aggro: 0, meat: 3, hide: 0, drops: { feather: 2 }, zones: [1, 2], herd: [2, 4], count: 14, prey: true, nocturnal: false },
@@ -33,12 +33,12 @@ var animals_default = {
 
 // src/data/tribes.json
 var tribes_default = {
-  _note: "distance = tiles from the player's campfire (map is 192 wide, so zone ring = 24 tiles). Strength multiplier = 0.8 + 0.06 * (ring - 1), ring = ceil(distance / 4.8). reward is shown to the player; techs come in M5.",
+  _note: "distance = tiles from the player's campfire (far camps: the land between is made when the game starts). Strength multiplier = 0.8 + 0.06 * (ring - 1), ring = ceil(distance / 4.8). reward is shown to the player; techs come in M5.",
   spring: {
     name: "Su\u1ED1i Ngu\u1ED3n",
     personality: "peaceful",
     angle: 200,
-    distance: 30,
+    distance: 80,
     civilians: 8,
     warriors: 4,
     weapons: ["club", "spear"],
@@ -52,7 +52,7 @@ var tribes_default = {
     name: "R\xECu \u0110\xE1",
     personality: "aggressive",
     angle: 320,
-    distance: 45,
+    distance: 110,
     civilians: 15,
     warriors: 10,
     weapons: ["hatchet", "mace"],
@@ -66,7 +66,7 @@ var tribes_default = {
     name: "\u0110\u1EA7m L\u1EA7y",
     personality: "ambusher",
     angle: 80,
-    distance: 55,
+    distance: 140,
     civilians: 12,
     warriors: 8,
     weapons: ["sling", "club"],
@@ -86,23 +86,7 @@ var tribes_default = {
     tributeAt: 60,
     joinAt: 90
   },
-  surrender: { leaderDown: true, holdCampSeconds: 30, moraleBelow: 10 },
-  morale: {
-    start: 70,
-    flee: 25,
-    fleeRecover: 45,
-    surrender: 10,
-    allyDeath: -15,
-    outnumbered: -0.8,
-    outnumbering: 0.5,
-    nearHome: 0.5,
-    night: -0.3,
-    leaderNear: 0.3,
-    leaderFar: -0.2,
-    winBonus: 20,
-    backstab: -5,
-    calm: 0.1
-  }
+  surrender: { leaderDown: true, holdCampSeconds: 30 }
 };
 
 // src/data/siege.json
@@ -303,7 +287,6 @@ var TRIBES = Object.fromEntries(TRIBE_IDS.map((t) => [t, tribes_default[t]]));
 var RELATION = tribes_default.relation;
 var HOSTILE_BELOW = RELATION.labels[1][0];
 var SURRENDER = tribes_default.surrender;
-var MORALE = tribes_default.morale;
 function relationLabel(score) {
   let name = RELATION.labels[0][1];
   for (const [from, label2] of RELATION.labels) if (score >= from) name = label2;
@@ -494,7 +477,7 @@ var quests_default = {
     { id: "c1_select", chapter: 1, title: "L\xE0m quen v\u1EDBi l\xE0ng", hint: "B\u1EA1n c\xF3 hai ng\u01B0\u1EDDi: m\u1ED9t h\xE1i l\u01B0\u1EE3m (nu\xF4i c\u1EA3 l\xE0ng) v\xE0 m\u1ED9t \u0111\u1ED1n g\u1ED7. M\u1ED7i ngh\u1EC1 do m\u1ED9t nh\xE0 qu\u1EA3n l\xFD. B\u1EA5m v\xE0o X\u01B0\u1EDFng g\u1ED7 (nh\xE0 g\u1ED7 nh\u1ECF c\u1EA1nh \u0111\u1ED1ng l\u1EEDa) \u0111\u1EC3 ch\u1ECDn n\xF3.", after: [], done: { type: "selectBuilding", kind: "lumberyard" } },
     { id: "c1_open", chapter: 1, title: "M\u1EDF b\u1EA3ng X\u01B0\u1EDFng g\u1ED7", hint: "M\u1ED9t thanh n\xFAt n\u1ED5i l\xEAn d\u01B0\u1EDBi nh\xE0: \u2630 m\u1EDF b\u1EA3ng, \u2B06 n\xE2ng c\u1EA5p, \u2725 di d\u1EDDi, \u2716 ph\xE1 b\u1ECF. B\u1EA5m \u2630 \u0111\u1EC3 xem ai \u0111ang \u0111\u1ED1n g\u1ED7 v\xE0 nh\xE0 c\xF2n m\u1EA5y ch\u1ED7. \u0110\xF3ng b\u1EA3ng b\u1EB1ng \u2715 khi xem xong.", after: ["c1_select"], done: { type: "openBuilding", kind: "lumberyard" } },
     { id: "c1_node", chapter: 1, title: "Xem m\u1ED9t c\xE1i c\xE2y", hint: 'B\u1EA5m v\xE0o m\u1ED9t c\xE1i c\xE2y g\u1EA7n \u0111\xF3: th\u1EBB hi\u1EC7n t\xEAn, thanh m\xE1u (l\u01B0\u1EE3ng g\u1ED7 c\xF2n l\u1EA1i) v\xE0 n\xFAt "Khai th\xE1c". N\xFAt n\xE0y t\u1EF1 g\u1ECDi m\u1ED9t ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7 \u1EDF g\u1EA7n t\u1EDBi ch\u1EB7t \u0111\xFAng c\xE2y \u0111\xF3, kh\xF4ng c\u1EA7n ch\u1ECDn d\xE2n.', after: ["c1_open"], done: { type: "inspectNode" } },
-    { id: "c1_unit", chapter: 1, title: "Xem m\u1ED9t ng\u01B0\u1EDDi d\xE2n", hint: 'B\u1EA5m v\xE0o m\u1ED9t ng\u01B0\u1EDDi d\xE2n tr\xEAn b\u1EA3n \u0111\u1ED3: th\u1EBB hi\u1EC7n t\xEAn, vi\u1EC7c \u0111ang l\xE0m v\xE0 c\xE1c thanh No (\u0111\xF3i), S\u1EE9c (m\u1EC7t), M\xE1u, Tinh th\u1EA7n, Gi\xE1p. N\xFAt "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" m\u1EDF b\u1EA3ng \u2699 v\u1EDBi c\xF4ng c\u1EE5, ca l\xE0m (ban ng\xE0y, ban \u0111\xEAm, c\u1EA3 hai) v\xE0 ch\u1EC9 s\u1ED1. B\u1EA5m "B\u1ECF ch\u1ECDn" \u0111\u1EC3 \u0111\xF3ng th\u1EBB.', after: ["c1_node"], done: { type: "inspectUnit" } },
+    { id: "c1_unit", chapter: 1, title: "Xem m\u1ED9t ng\u01B0\u1EDDi d\xE2n", hint: 'B\u1EA5m v\xE0o m\u1ED9t ng\u01B0\u1EDDi d\xE2n tr\xEAn b\u1EA3n \u0111\u1ED3: th\u1EBB hi\u1EC7n t\xEAn, vi\u1EC7c \u0111ang l\xE0m v\xE0 c\xE1c thanh No (\u0111\xF3i), S\u1EE9c (m\u1EC7t), M\xE1u, Gi\xE1p. N\xFAt "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" m\u1EDF b\u1EA3ng \u2699 v\u1EDBi c\xF4ng c\u1EE5, ca l\xE0m (ban ng\xE0y, ban \u0111\xEAm, c\u1EA3 hai) v\xE0 ch\u1EC9 s\u1ED1. B\u1EA5m "B\u1ECF ch\u1ECDn" \u0111\u1EC3 \u0111\xF3ng th\u1EBB.', after: ["c1_node"], done: { type: "inspectUnit" } },
     { id: "c1_animal", chapter: 1, title: "Xem m\u1ED9t con th\xFA", hint: "Th\xFA r\u1EEBng \u0111i lang thang quanh l\xE0ng. B\u1EA5m v\xE0o m\u1ED9t con th\xFA \u0111\u1EC3 xem m\xE1u v\xE0 t\xEDnh t\xECnh (th\xFA hi\u1EC1n b\u1ECF ch\u1EA1y, th\xFA d\u1EEF x\xF4ng v\xE0o c\u1EAFn). Vi\u1EC7c s\u0103n \u0111\u1EC3 th\u1EE3 s\u0103n lo; \u0111\u1EEBng \u0111\u1EC3 d\xE2n y\u1EBFu \u0111i m\u1ED9t m\xECnh v\xE0o n\u01A1i c\xF3 th\xFA d\u1EEF.", after: ["c1_unit"], done: { type: "inspectAnimal" } },
     { id: "c1_wood", chapter: 1, title: "C\xF3 10 g\u1ED7 trong kho", hint: 'B\u1EA5m "Khai th\xE1c" \u1EDF c\xE2y \u0111\u1EC3 ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7 l\xE0m vi\u1EC7c. G\u1ED7 \u0111\u01B0\u1EE3c mang v\u1EC1 Nh\xE0 chung (\u0111\u1ED1ng l\u1EEDa). Thanh tr\xEAn c\xF9ng cho bi\u1EBFt \u0111ang c\xF3 bao nhi\xEAu g\u1ED7. C\u1EA7n 10 g\u1ED7 \u0111\u1EC3 d\u1EF1ng nh\xE0 \u0111\u1EA7u ti\xEAn.', after: ["c1_node"], done: { type: "stock", res: "wood", count: 10 } },
     { id: "c1_speed", chapter: 1, title: "Tua nhanh qua \u0111\xEAm", hint: "M\u1ED9t ng\xE0y game c\xF3 12 ph\xFAt ban ng\xE0y v\xE0 8 ph\xFAt ban \u0111\xEAm; ban \u0111\xEAm d\xE2n \u0111i ng\u1EE7 v\xE0 kh\xF4ng l\xE0m vi\u1EC7c. B\u1EA5m 16\xD7 \u1EDF thanh t\u1ED1c \u0111\u1ED9 ph\xEDa tr\xEAn \u0111\u1EC3 tua qua \u0111\xEAm. Nh\u1EDB tr\u1EDF l\u1EA1i 1\xD7 khi c\u1EA7n ra l\u1EC7nh k\u1EF9.", after: ["c1_wood"], done: { type: "speed", atLeast: 16 } },
@@ -506,7 +489,7 @@ var quests_default = {
     { id: "c1_storage", chapter: 1, title: "D\u1EF1ng Kho", hint: 'Tab "Thi\u1EBFt y\u1EBFu" c\xF3 Kho. Kho ch\u1EE9a g\u1ED7, \u0111\xE1, th\u1EE9c \u0103n... m\u1ED7i lo\u1EA1i c\xF3 gi\u1EDBi h\u1EA1n; kho \u0111\u1EA7y th\xEC d\xE2n \u0111\u1EE9ng ch\u1EDD. N\xE2ng c\u1EA5p Kho \u0111\u1EC3 ch\u1EE9a nhi\u1EC1u h\u01A1n. M\u1ED7i lo\u1EA1i nh\xE0 ch\u1EC9 x\xE2y \u0111\u01B0\u1EE3c m\u1ED9t c\xE1i.', after: ["c1_crew"], done: { type: "buildBuilding", kind: "storage", count: 1 } },
     { id: "c1_farmhouse", chapter: 1, title: "M\u1EDF N\xF4ng tr\u1EA1i", hint: "N\xF4ng tr\u1EA1i (nh\xE0 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa) qu\u1EA3n l\xFD ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m. Ch\u1ECDn n\xF3 r\u1ED3i b\u1EA5m \u2630 \u0111\u1EC3 xem ai \u0111ang h\xE1i qu\u1EA3 v\xE0 nh\xE0 c\xF2n m\u1EA5y ch\u1ED7.", after: ["c1_storage"], done: { type: "openBuilding", kind: "farmhouse" } },
     { id: "c1_stone", chapter: 1, title: "Giao th\u1EE3 \u0111\xE1", hint: "M\u1EDF X\u01B0\u1EDFng \u0111\xE1 (nh\xE0 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa) b\u1EB1ng \u2630 r\u1ED3i b\u1EA5m \uFF0B \u1EDF m\u1ED9t ng\u01B0\u1EDDi r\u1EA3nh. \u0110\xE1 c\u1EA7n \u0111\u1EC3 n\xE2ng c\u1EA5p nh\xE0 l\xEAn c\u1EA5p 2 v\xE0 n\xE2ng Nh\xE0 chung.", after: ["c1_storage"], done: { type: "hasRole", role: "stone", count: 1 } },
-    { id: "c1_food", chapter: 1, title: "D\u1EF1 tr\u1EEF 30 th\u1EE9c \u0103n", hint: "M\u1ED7i ng\u01B0\u1EDDi \u0103n kho\u1EA3ng 2,5 th\u1EE9c \u0103n m\u1ED9t ng\xE0y. N\xF4ng tr\u1EA1i qu\u1EA3n l\xFD ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m: th\xEAm ng\u01B0\u1EDDi h\xE1i \u1EDF \u0111\xF3. Qu\u1EA3 h\u1ECFng sau 3 ng\xE0y n\u1EBFu kh\xF4ng \u0103n, v\xE0 b\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n m\u1ED7i m\xF9a.", after: ["c1_farmhouse"], done: { type: "stock", res: "food", count: 30 } },
+    { id: "c1_food", chapter: 1, title: "D\u1EF1 tr\u1EEF 30 th\u1EE9c \u0103n", hint: "Cu\u1ED1i m\u1ED7i ng\xE0y m\u1ED7i d\xE2n \u0103n 2 th\u1EE9c \u0103n, m\u1ED7i l\xEDnh 3 (t\u0103ng theo c\u1EA5p l\u1EEDa tr\u1EA1i); th\u1EE9c \u0103n thu v\u1EC1 \u0111\u1ED5 v\xE0o ph\u1EA7n \u0103n c\u1EE7a l\u1EEDa tr\u1EA1i tr\u01B0\u1EDBc, d\u01B0 m\u1EDBi v\xE0o kho. N\xF4ng tr\u1EA1i qu\u1EA3n l\xFD ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m: th\xEAm ng\u01B0\u1EDDi h\xE1i \u1EDF \u0111\xF3. B\u1EE5i qu\u1EA3 ch\u1EC9 h\xE1i m\u1ED9t l\u1EA7n m\u1ED7i m\xF9a.", after: ["c1_farmhouse"], done: { type: "stock", res: "food", count: 30 } },
     { id: "c1_workshop", chapter: 1, title: "D\u1EF1ng Nh\xE0 ch\u1EBF t\u1EA1o", hint: 'Tab "S\u1EA3n xu\u1EA5t": Nh\xE0 ch\u1EBF t\u1EA1o. D\xE2n l\xE0m vi\u1EC7c b\xEAn trong nh\xE0 \u0111\u1EC3 l\xE0m c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p.', after: ["c1_storage"], done: { type: "buildBuilding", kind: "workshop", count: 1 } },
     { id: "c1_workshop_staff", chapter: 1, title: "\u0110\u01B0a ng\u01B0\u1EDDi v\xE0o Nh\xE0 ch\u1EBF t\u1EA1o", hint: 'M\u1EDF Nh\xE0 ch\u1EBF t\u1EA1o (\u2630), tab "\u0110ang l\xE0m", b\u1EA5m \uFF0B \u0111\u1EC3 cho m\u1ED9t ng\u01B0\u1EDDi r\u1EA3nh v\xE0o l\xE0m. Ng\u01B0\u1EDDi c\xE0ng kh\xE9o l\xE0m c\xE0ng nhanh. Kh\xF4ng c\xF3 ng\u01B0\u1EDDi th\xEC nh\xE0 hi\u1EC7n "zzzz".', after: ["c1_workshop"], done: { type: "staffIn", kind: "workshop", count: 1 } },
     { id: "c1_torch", chapter: 1, title: "Ch\u1EBF m\u1ED9t c\xE2y \u0111u\u1ED1c", hint: 'Tab "C\xF4ng c\u1EE5" c\u1EE7a Nh\xE0 ch\u1EBF t\u1EA1o c\xF3 \u0110u\u1ED1c (b\u1EA3n v\u1EBD bi\u1EBFt s\u1EB5n): b\u1EA5m + \u0111\u1EC3 \u0111\u1EB7t \u0111\u01A1n, c\u1EA7n g\u1ED7. \u0110u\u1ED1c cho ph\xE9p l\xE0m vi\u1EC7c ban \u0111\xEAm v\u1EDBi 70% hi\u1EC7u su\u1EA5t, nh\u01B0ng l\xE0m \u0111\xEAm li\xEAn t\u1EE5c khi\u1EBFn d\xE2n m\u1EC7t.', after: ["c1_workshop_staff"], done: { type: "torches", count: 1 } },
@@ -645,9 +628,9 @@ var buildings_default = {
     { name: "\u0110\xE1", cost: { wood: 30, stone: 20 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
   ],
   huntlodge: [
-    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15, hide: 3 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
-    { name: "G\u1ED7", cost: { wood: 25, hide: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
-    { name: "\u0110\xE1", cost: { wood: 30, stone: 15, hide: 8 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 5, hp: 0 }
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15, hide: 3 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 1, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 25, hide: 5 }, buildTime: 90, cap: 0, craftSpeed: 1, slots: 2, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 30, stone: 15, hide: 8 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 4, hp: 0 }
   ],
   lumberyard: [
     { name: "\u0110\u01A1n s\u01A1", cost: { wood: 15 }, buildTime: 50, cap: 0, craftSpeed: 1, slots: 3, hp: 0 },
@@ -660,9 +643,9 @@ var buildings_default = {
     { name: "\u0110\xE1", cost: { wood: 30, stone: 20 }, buildTime: 140, cap: 0, craftSpeed: 1, slots: 8, hp: 0 }
   ],
   house: [
-    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 4, hp: 0 },
-    { name: "G\u1ED7", cost: { wood: 30, stone: 10 }, buildTime: 100, cap: 0, craftSpeed: 1, slots: 8, hp: 0 },
-    { name: "\u0110\xE1", cost: { wood: 40, stone: 30 }, buildTime: 150, cap: 0, craftSpeed: 1, slots: 12, hp: 0 }
+    { name: "\u0110\u01A1n s\u01A1", cost: { wood: 20 }, buildTime: 60, cap: 0, craftSpeed: 1, slots: 5, hp: 0 },
+    { name: "G\u1ED7", cost: { wood: 30, stone: 10 }, buildTime: 100, cap: 0, craftSpeed: 1, slots: 10, hp: 0 },
+    { name: "\u0110\xE1", cost: { wood: 40, stone: 30 }, buildTime: 150, cap: 0, craftSpeed: 1, slots: 15, hp: 0 }
   ],
   fence: [
     { name: "C\u1ECDc nh\u1ECDn", cost: { wood: 2 }, buildTime: 14, cap: 0, craftSpeed: 1, slots: 0, hp: 40 },
@@ -709,7 +692,7 @@ var buildings_default = {
 
 // src/sim/buildings.ts
 var ERAS = ["stone", "ancient"];
-var CLEARANCE = 2;
+var CLEARANCE = 1;
 var WALL_KINDS = /* @__PURE__ */ new Set(["fence", "gate", "trap"]);
 var STONE_LEVELS = buildings_default;
 var BUILDINGS = {
@@ -953,6 +936,14 @@ var BUILDINGS = {
     levels: { stone: STONE_LEVELS.field }
   }
 };
+var HOUSE_SIGHT = [5, 6, 7];
+var TOWER_SIGHT = [10, 13, 16];
+var BLIND = /* @__PURE__ */ new Set(["campfire", "fence", "gate", "trap", "field"]);
+function buildingSight(b) {
+  if (!b.done || BLIND.has(b.kind)) return 0;
+  const list = b.kind === "tower" ? TOWER_SIGHT : HOUSE_SIGHT;
+  return list[Math.min(list.length, Math.max(1, b.level)) - 1];
+}
 var buildingName = (kind, era) => BUILDINGS[kind].names?.[era] ?? BUILDINGS[kind].name;
 function levelsOf(kind, era) {
   const defs = BUILDINGS[kind].levels;
@@ -973,7 +964,7 @@ var levelCapByFire = (fireLevel2) => fireBuildingMax(fireLevel2);
 
 // src/sim/constants.ts
 var TILE = 32;
-var MAP_SIZE = 192;
+var MAP_SIZE = 960;
 var VISION = 7;
 var NIGHT_VISION = 3;
 var FIRE_VISION = 8;
@@ -1005,11 +996,18 @@ function mulberry32(seed) {
   };
   return next;
 }
+function mix32(n) {
+  let h3 = n | 0;
+  h3 ^= h3 >>> 16;
+  h3 = Math.imul(h3, 2246822507);
+  h3 ^= h3 >>> 13;
+  h3 = Math.imul(h3, 3266489909);
+  h3 ^= h3 >>> 16;
+  return h3 >>> 0;
+}
 function hash2(x, y, seed) {
-  let h2 = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(seed | 0, 1274126177);
-  h2 = Math.imul(h2 ^ h2 >>> 13, 1274126177);
-  h2 ^= h2 >>> 16;
-  return (h2 >>> 0) / 4294967296;
+  const h3 = mix32(Math.imul(x | 0, 668265261) ^ mix32(Math.imul(y | 0, 374761393) + mix32(seed | 0)));
+  return h3 / 4294967296;
 }
 var smooth = (t) => t * t * (3 - 2 * t);
 function valueNoise(x, y, seed) {
@@ -1031,14 +1029,33 @@ function fbm(x, y, seed, octaves = 3) {
 }
 
 // src/sim/world.ts
-var Tile = { Grass: 0, Water: 1, Tree: 2, Rock: 3, Mud: 4, Bush: 5 };
+var START_MARGIN = 110;
+var Tile = { Grass: 0, Water: 1, Tree: 2, Rock: 3, Mud: 4, Bush: 5, Mountain: 6 };
 var NODE_INFO = {
   tree: { res: "wood", max: 10 },
   rock: { res: "stone", max: 14 },
   bush: { res: "food", max: 6 }
 };
 var TILE_OF = { tree: Tile.Tree, rock: Tile.Rock, bush: Tile.Bush };
-var World = class {
+var CHUNK = 32;
+var CHUNKS = MAP_SIZE / CHUNK;
+var FIRST_REACH = 100;
+var WATER_BELOW = 0.3;
+var SPARSE_ABOVE = 0.6;
+var DENSE_ABOVE = 0.7;
+var TREE_PLAINS = 3e-3;
+var TREE_SPARSE = 0.1;
+var TREE_DENSE = 0.42;
+var MOUNTAIN_ABOVE = 0.72;
+var FOOT_ABOVE = 0.64;
+var ROCK_PLAINS = 3e-3;
+var ROCK_FOOT = 0.03;
+var BUSH_PLAINS = 5e-3;
+var BUSH_SPARSE = 0.012;
+var FOREST_FROM = 14;
+var MOUNTAIN_FROM = 34;
+var World = class _World {
+  // how many used-up nodes have been replaced, so each pick of a new place differs
   constructor(seed) {
     this.seed = seed;
     this.size = MAP_SIZE;
@@ -1048,43 +1065,115 @@ var World = class {
     this.decor = new Uint8Array(MAP_SIZE * MAP_SIZE);
     // 1 = gốc cây
     this.nodes = /* @__PURE__ */ new Map();
-    this.start = { x: MAP_SIZE >> 1, y: MAP_SIZE >> 1 };
+    /** 1 for each chunk that has been made. What lies in a chunk that has not been made is not known yet: nobody can walk there or build there. */
+    this.ready = new Uint8Array(CHUNKS * CHUNKS);
     this.season = "spring";
-    const N = this.size;
-    for (let y = 0; y < N; y++) {
-      for (let x = 0; x < N; x++) {
-        const d = Math.hypot(x - this.start.x, y - this.start.y);
-        const elev = fbm(x / 26, y / 26, seed);
-        const forest = fbm(x / 10, y / 10, seed + 7);
-        let t = Tile.Grass;
-        if (elev < 0.34 && d > 14) t = Tile.Water;
-        else if (d > 6 && forest > 0.58 && hash2(x, y, seed + 3) < 0.5) t = Tile.Tree;
-        else if (d > 5 && hash2(x, y, seed + 9) < 0.012) t = Tile.Rock;
-        else if (d > 4 && hash2(x, y, seed + 13) < 0.012) t = Tile.Bush;
-        else if (d > 8 && hash2(x, y, seed + 5) < 0.01) t = Tile.Tree;
-        this.tiles[y * N + x] = t;
-      }
-    }
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-      if (this.tiles[y * N + x] !== Tile.Grass) continue;
-      let near2 = false;
-      for (let dy = -1; dy <= 1 && !near2; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const nx = x + dx, ny = y + dy;
-        if (nx >= 0 && ny >= 0 && nx < N && ny < N && this.tiles[ny * N + nx] === Tile.Water) {
-          near2 = true;
-          break;
-        }
-      }
-      if (near2 && hash2(x, y, seed + 17) < 0.8) this.tiles[y * N + x] = Tile.Mud;
+    this.respawns = 0;
+    this.grown = 0;
+    this.start = _World.pickStart(seed);
+    const lo = (v) => Math.max(0, Math.floor((v - FIRST_REACH) / CHUNK)), hi = (v) => Math.min(CHUNKS - 1, Math.floor((v + FIRST_REACH) / CHUNK));
+    const first = [];
+    for (let cy = lo(this.start.y); cy <= hi(this.start.y); cy++) for (let cx = lo(this.start.x); cx <= hi(this.start.x); cx++) {
+      this.makeTiles(cx, cy);
+      first.push([cx, cy]);
     }
     this.ensureNearStart("tree", 12, 6, 17, seed + 101);
     this.ensureNearStart("rock", 5, 6, 15, seed + 102);
     this.ensureNearStart("bush", 8, 5, 14, seed + 103);
-    for (let i = 0; i < this.tiles.length; i++) {
-      const t = this.tiles[i];
+    for (const [cx, cy] of first) this.makeNodes(cx, cy);
+  }
+  /** The chunks made so far. */
+  readyChunks() {
+    const out = [];
+    for (let i = 0; i < this.ready.length; i++) if (this.ready[i]) out.push([i % CHUNKS, i / CHUNKS | 0]);
+    return out;
+  }
+  /** Has the land at this tile been made? */
+  isReady(x, y) {
+    return this.inBounds(x, y) && this.ready[(y >> 5) * CHUNKS + (x >> 5)] === 1;
+  }
+  /**
+   * Make the land within `reach` tiles of a point if it does not exist yet. This is the whole of "the world grows as the village explores": the
+   * game calls it round every villager, a chunk is made once, and the same world comes out whatever order the chunks are made in.
+   */
+  ensure(x, y, reach) {
+    const x0 = Math.max(0, Math.floor((x - reach) / CHUNK)), x1 = Math.min(CHUNKS - 1, Math.floor((x + reach) / CHUNK));
+    const y0 = Math.max(0, Math.floor((y - reach) / CHUNK)), y1 = Math.min(CHUNKS - 1, Math.floor((y + reach) / CHUNK));
+    for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) {
+      if (this.ready[cy * CHUNKS + cx]) continue;
+      this.makeTiles(cx, cy);
+      this.makeNodes(cx, cy);
+      this.onChunk?.(cx, cy);
+    }
+  }
+  /** Is it water, going by the noise alone? Pure, so that the shore of one chunk can look into the next, which may not exist yet. */
+  waterAt(x, y) {
+    if (!this.inBounds(x, y)) return false;
+    return Math.hypot(x - this.start.x, y - this.start.y) > 14 && fbm(x / 26, y / 26, this.seed) < WATER_BELOW;
+  }
+  /** The region of the land a tile lies in, by the same noise that shaped it (the name shown at the top of the screen when the camera moves over it). */
+  regionAt(x, y) {
+    const d = Math.hypot(x - this.start.x, y - this.start.y);
+    if (this.waterAt(x, y)) return "water";
+    if (d > MOUNTAIN_FROM && fbm(x / 40, y / 40, this.seed + 301) > MOUNTAIN_ABOVE) return "mountain";
+    const wood = d > 8 ? fbm(x / 22, y / 22, this.seed + 7) : 0;
+    if (d > FOREST_FROM && wood > DENSE_ABOVE) return "dense";
+    return d > FOREST_FROM && wood > SPARSE_ABOVE ? "sparse" : "plains";
+  }
+  /** The ground of one chunk: water, forest, stones, bushes, mud on the shores. */
+  makeTiles(cx, cy) {
+    const N = this.size, seed = this.seed, x0 = cx * CHUNK, y0 = cy * CHUNK;
+    for (let y = y0; y < y0 + CHUNK; y++) {
+      for (let x = x0; x < x0 + CHUNK; x++) {
+        const d = Math.hypot(x - this.start.x, y - this.start.y);
+        let t = Tile.Grass;
+        const relief = d > MOUNTAIN_FROM - 12 ? fbm(x / 40, y / 40, seed + 301) : 0;
+        const wood = d > 8 ? fbm(x / 22, y / 22, seed + 7) : 0;
+        if (this.waterAt(x, y)) t = Tile.Water;
+        else if (d > MOUNTAIN_FROM && relief > MOUNTAIN_ABOVE) t = Tile.Mountain;
+        else if (d > FOREST_FROM && wood > DENSE_ABOVE && hash2(x, y, seed + 3) < TREE_DENSE) t = Tile.Tree;
+        else if (d > FOREST_FROM && wood > SPARSE_ABOVE && hash2(x, y, seed + 3) < TREE_SPARSE) t = Tile.Tree;
+        else if (d > 5 && hash2(x, y, seed + 9) < (relief > FOOT_ABOVE ? ROCK_FOOT : ROCK_PLAINS)) t = Tile.Rock;
+        else if (d > 4 && hash2(x, y, seed + 13) < (wood > SPARSE_ABOVE ? BUSH_SPARSE : BUSH_PLAINS)) t = Tile.Bush;
+        else if (d > 8 && hash2(x, y, seed + 5) < TREE_PLAINS) t = Tile.Tree;
+        this.tiles[y * N + x] = t;
+      }
+    }
+    for (let y = y0; y < y0 + CHUNK; y++) for (let x = x0; x < x0 + CHUNK; x++) {
+      if (this.tiles[y * N + x] !== Tile.Grass) continue;
+      let near2 = false;
+      for (let dy = -1; dy <= 1 && !near2; dy++) for (let dx = -1; dx <= 1; dx++) if (this.waterAt(x + dx, y + dy)) {
+        near2 = true;
+        break;
+      }
+      if (near2 && hash2(x, y, seed + 17) < 0.8) this.tiles[y * N + x] = Tile.Mud;
+    }
+    this.ready[cy * CHUNKS + cx] = 1;
+  }
+  /** The trees, rocks and bushes standing on the ground of one chunk. */
+  makeNodes(cx, cy) {
+    const N = this.size, x0 = cx * CHUNK, y0 = cy * CHUNK;
+    for (let y = y0; y < y0 + CHUNK; y++) for (let x = x0; x < x0 + CHUNK; x++) {
+      const i = y * N + x, t = this.tiles[i];
       const kind = t === Tile.Tree ? "tree" : t === Tile.Rock ? "rock" : t === Tile.Bush ? "bush" : null;
       if (kind) this.nodes.set(i, { kind, res: NODE_INFO[kind].res, amount: NODE_INFO[kind].max, max: NODE_INFO[kind].max, workers: 0, sides: 0, regrow: 0 });
     }
+  }
+  /** A random dry spot (open ground for 20 tiles round it) at least START_MARGIN from every edge, so the tribes and the herds have room on all sides. */
+  static pickStart(seed) {
+    const N = MAP_SIZE, rnd = mulberry32(mix32(seed ^ 1374496523)), span = N - 2 * START_MARGIN;
+    let best = { x: N >> 1, y: N >> 1 }, bestScore = -1;
+    for (let t = 0; t < 400; t++) {
+      const x = START_MARGIN + Math.floor(rnd() * span), y = START_MARGIN + Math.floor(rnd() * span);
+      let score = 0;
+      for (let k = 0; k < 8; k++) score += fbm((x + Math.cos(k * 0.785) * 20) / 26, (y + Math.sin(k * 0.785) * 20) / 26, seed) > WATER_BELOW + 0.08 ? 1 : 0;
+      if (score === 8 && fbm(x / 26, y / 26, seed) > WATER_BELOW + 0.08) return { x, y };
+      if (score > bestScore) {
+        bestScore = score;
+        best = { x, y };
+      }
+    }
+    return best;
   }
   /** Bảo đảm có tối thiểu `count` nguồn loại `kind` quanh điểm khởi đầu. */
   ensureNearStart(kind, count, rMin, rMax, seed) {
@@ -1112,22 +1201,30 @@ var World = class {
   isBlocked(x, y) {
     if (!this.inBounds(x, y)) return true;
     const i = y * this.size + x, t = this.tiles[i];
-    return t !== Tile.Grass && t !== Tile.Mud || this.occ[i] !== 0;
+    return this.ready[(y >> 5) * CHUNKS + (x >> 5)] === 0 || t !== Tile.Grass && t !== Tile.Mud || this.occ[i] !== 0;
   }
   nodeAt(x, y) {
     return this.inBounds(x, y) ? this.nodes.get(y * this.size + x) : void 0;
   }
-  /** Cây và đá cạn thì ô trở lại thành cỏ (cây không để lại gốc); bụi quả giữ nguyên và mọc lại. */
-  depleted(idx) {
+  /**
+   * A tree, rock or bush that is used up is gone and its tile turns back to grass; one of the same kind appears on another free grass tile
+   * a few steps away (never in the starting ring, never under somebody's feet, and where `free` allows), so the land is neither emptied nor reset in place.
+   */
+  depleted(idx, free) {
     const n = this.nodes.get(idx);
     if (!n) return;
-    if (n.kind === "bush") {
-      n.amount = 0;
-      n.regrow = 240;
-      return;
-    }
     this.nodes.delete(idx);
     this.tiles[idx] = Tile.Grass;
+    const N = this.size, fx = idx % N, fy = idx / N | 0, salt = this.respawns++;
+    for (let t = 0; t < 40; t++) {
+      const ang = hash2(idx, salt * 40 + t, this.seed + 41) * Math.PI * 2, r = 4 + hash2(idx, salt * 40 + t, this.seed + 43) * 7;
+      const x = Math.round(fx + Math.cos(ang) * r), y = Math.round(fy + Math.sin(ang) * r), j = y * N + x;
+      if (!this.isReady(x, y) || this.tiles[j] !== Tile.Grass || this.occ[j] !== 0 || this.nodes.has(j)) continue;
+      if (Math.hypot(x - this.start.x, y - this.start.y) < 7 || free && !free(x, y)) continue;
+      this.tiles[j] = TILE_OF[n.kind];
+      this.nodes.set(j, { kind: n.kind, res: n.res, amount: this.season === "winter" && n.kind === "bush" ? 0 : n.max, max: n.max, workers: 0, sides: 0, regrow: 0 });
+      return;
+    }
   }
   /** Winter: bushes go bare and stop regrowing. Spring: they flower and fruit again after 1–3 min (staggered per tile). */
   setSeason(season) {
@@ -1145,7 +1242,12 @@ var World = class {
       }
     }
   }
+  /** Bushes fruit again; the map holds well over a hundred thousand things, so this runs once a second rather than every tick. */
   tick(dt) {
+    this.grown += dt;
+    if (this.grown < 1) return;
+    dt = this.grown;
+    this.grown = 0;
     if (this.season === "winter") return;
     for (const n of this.nodes.values()) {
       if (n.kind === "bush" && n.amount === 0 && n.regrow > 0) {
@@ -1161,9 +1263,11 @@ var World = class {
 
 // src/data/pace.json
 var pace_default = {
-  _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
-  gather: { wood: 11, stone: 17, food: 6, farm: 70 },
+  _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. huntPerDay: food-equivalent a hunter of factor 1 brings home in a day (an estimate for the card of the Ch\xF2i th\u1EE3 s\u0103n); gatherDuty: share of working time a gatherer spends gathering rather than walking and carrying (estimate for the cards of the houses). Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
+  gather: { wood: 11, stone: 17, food: 40, farm: 70 },
   bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
+  huntPerDay: 30,
+  gatherDuty: 0.6,
   outdoor: ["wood", "stone", "food", "build"]
 };
 
@@ -1540,7 +1644,7 @@ var BH = H;
 var OX = 0;
 var OY = 0;
 var rad = (d) => d * Math.PI / 180;
-var hexRgb = (h2) => [parseInt(h2.slice(1, 3), 16), parseInt(h2.slice(3, 5), 16), parseInt(h2.slice(5, 7), 16)];
+var hexRgb = (h3) => [parseInt(h3.slice(1, 3), 16), parseInt(h3.slice(3, 5), 16), parseInt(h3.slice(5, 7), 16)];
 var mul = (c, f) => c.map((v) => Math.max(0, Math.min(255, Math.round(v * f))));
 function palette(look, kind) {
   const skin = hexRgb(look.skin), hair = hexRgb(look.hair), hide = hexRgb(look.hide), pants = hexRgb(look.pants || "#3f63a8");
@@ -1583,8 +1687,8 @@ function put(b, x, y, c, a) {
   b[i + 2] = c[2];
   b[i + 3] = a === void 0 ? 255 : a;
 }
-function rect(b, x, y, w, h2, c) {
-  for (let j = 0; j < h2; j++) for (let i = 0; i < w; i++) put(b, x + i, y + j, c);
+function rect(b, x, y, w, h3, c) {
+  for (let j = 0; j < h3; j++) for (let i = 0; i < w; i++) put(b, x + i, y + j, c);
 }
 function line(b, x0, y0, x1, y1, w, c) {
   const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2));
@@ -1595,10 +1699,10 @@ function line(b, x0, y0, x1, y1, w, c) {
 }
 function rotShapes(b, shapes, col, ox, oy, th) {
   const c = Math.cos(th), s = Math.sin(th);
-  for (const [x, y, w, h2, k] of shapes) {
+  for (const [x, y, w, h3, k] of shapes) {
     const C = col[k] || hexRgb(k);
-    if (w === 1 || h2 === 1) {
-      const horiz = w >= h2, ax = x + 0.5, ay = y + 0.5, bx = horiz ? x + w - 0.5 : ax, by = horiz ? ay : y + h2 - 0.5;
+    if (w === 1 || h3 === 1) {
+      const horiz = w >= h3, ax = x + 0.5, ay = y + 0.5, bx = horiz ? x + w - 0.5 : ax, by = horiz ? ay : y + h3 - 0.5;
       const X0 = Math.floor(ox + ax * c - ay * s), Y0 = Math.floor(oy + ax * s + ay * c);
       const X12 = Math.floor(ox + bx * c - by * s), Y12 = Math.floor(oy + bx * s + by * c);
       const n = Math.max(Math.abs(X12 - X0), Math.abs(Y12 - Y0));
@@ -1606,7 +1710,7 @@ function rotShapes(b, shapes, col, ox, oy, th) {
       continue;
     }
     const xs = [], ys = [];
-    for (const [px, py] of [[x, y], [x + w, y], [x, y + h2], [x + w, y + h2]]) {
+    for (const [px, py] of [[x, y], [x + w, y], [x, y + h3], [x + w, y + h3]]) {
       xs.push(ox + px * c - py * s);
       ys.push(oy + px * s + py * c);
     }
@@ -1614,7 +1718,7 @@ function rotShapes(b, shapes, col, ox, oy, th) {
     for (let Y = Math.floor(Math.min(...ys)); Y < Y1; Y++) for (let X = Math.floor(Math.min(...xs)); X < X1; X++) {
       const dx = X + 0.5 - ox, dy = Y + 0.5 - oy;
       const lx = dx * c + dy * s, ly = -dx * s + dy * c;
-      if (lx >= x && lx < x + w && ly >= y && ly < y + h2) put(b, X, Y, C);
+      if (lx >= x && lx < x + w && ly >= y && ly < y + h3) put(b, X, Y, C);
     }
   }
 }
@@ -1745,11 +1849,11 @@ function drawTool(b, side, hx, hy, tool, ov, P) {
   const gx = Math.round(hx), gy = Math.round(hy);
   const pose = tool.pose && def.poses && def.poses[tool.pose];
   if (pose) {
-    for (const [x, y, w, h2, c] of rects(pose)) rect(b, gx + x, gy + y, w, h2, col[c] || hexRgb(c));
+    for (const [x, y, w, h3, c] of rects(pose)) rect(b, gx + x, gy + y, w, h3, col[c] || hexRgb(c));
     return;
   }
   const own = (tool.side || tool.shapes) && rects(tool.side || tool.shapes);
-  if (own) for (const [x, y, w, h2, c] of own) rect(b, gx + x, gy + y, w, h2, col[c] || hexRgb(c));
+  if (own) for (const [x, y, w, h3, c] of own) rect(b, gx + x, gy + y, w, h3, col[c] || hexRgb(c));
   else rotShapes(b, gripShapes(def), col, gx, gy, rad(180 - (tool.a || 0)));
 }
 function armorColors(def, P) {
@@ -1760,12 +1864,12 @@ function armorColors(def, P) {
 function drawArmorLayer(b, def, C, view2, layer, ox, oy) {
   const shapes = def[view2] && def[view2][layer];
   if (!shapes) return;
-  for (const [x, y, w, h2, k] of rects(shapes)) rect(b, ox + x, oy + y, w, h2, C[k] || hexRgb(k));
+  for (const [x, y, w, h3, k] of rects(shapes)) rect(b, ox + x, oy + y, w, h3, C[k] || hexRgb(k));
 }
 function drawWrap(b, wr, C, x, y) {
   if (!wr) return;
-  const w = wr.w || 3, h2 = wr.h || 2, x0 = Math.round(x - w / 2), y0 = Math.round(y);
-  rect(b, x0, y0, w, h2, C[wr.color] || hexRgb(wr.color));
+  const w = wr.w || 3, h3 = wr.h || 2, x0 = Math.round(x - w / 2), y0 = Math.round(y);
+  rect(b, x0, y0, w, h3, C[wr.color] || hexRgb(wr.color));
   if (wr.edge) rect(b, x0, y0, w, 1, C[wr.edge] || hexRgb(wr.edge));
 }
 function drawTorch(b, hx, hy, flick) {
@@ -1941,11 +2045,11 @@ function renderFrame(anims2, name, idx, view2, look, kind, toolOv, armorId, extr
 
 // src/character/animal-rig.js
 var rad2 = (d) => d * Math.PI / 180;
-var hex = (h2) => [parseInt(h2.slice(1, 3), 16), parseInt(h2.slice(3, 5), 16), parseInt(h2.slice(5, 7), 16), 255];
+var hex = (h3) => [parseInt(h3.slice(1, 3), 16), parseInt(h3.slice(3, 5), 16), parseInt(h3.slice(5, 7), 16), 255];
 var shade = (c, k) => [Math.round(c[0] * k), Math.round(c[1] * k), Math.round(c[2] * k), 255];
 var num = (o, k, d) => o && typeof o[k] === "number" ? o[k] : d;
-function buf(w, h2) {
-  return { w, h: h2, d: new Uint8ClampedArray(w * h2 * 4) };
+function buf(w, h3) {
+  return { w, h: h3, d: new Uint8ClampedArray(w * h3 * 4) };
 }
 function put2(b, x, y, c) {
   x = Math.round(x);
@@ -1957,8 +2061,8 @@ function put2(b, x, y, c) {
   b.d[i + 2] = c[2];
   b.d[i + 3] = c[3];
 }
-function rect2(b, x, y, w, h2, c) {
-  for (let j = 0; j < h2; j++) for (let i = 0; i < w; i++) put2(b, x + i, y + j, c);
+function rect2(b, x, y, w, h3, c) {
+  for (let j = 0; j < h3; j++) for (let i = 0; i < w; i++) put2(b, x + i, y + j, c);
 }
 function ell(b, cx, cy, rx, ry, c) {
   rx = Math.max(0.5, rx);
@@ -2082,9 +2186,9 @@ function quadruped(b, def, f) {
     line2(b, hx - 2, t - 5, hx - 5, t - 8, 1, C.acc);
   }
   if (has("horns")) {
-    const t = hy - S2.headR, h2 = S2.horn || 5, back = !!S2.hornBack;
+    const t = hy - S2.headR, h3 = S2.horn || 5, back = !!S2.hornBack;
     for (const dx of [-1, 1]) {
-      const bx = hx + dx, tipx = back ? bx - h2 * 0.8 : bx + (dx > 0 ? 3 : -1), tipy = t - h2 * (back ? 0.9 : 0.8);
+      const bx = hx + dx, tipx = back ? bx - h3 * 0.8 : bx + (dx > 0 ? 3 : -1), tipy = t - h3 * (back ? 0.9 : 0.8);
       line2(b, bx, t, tipx, tipy, 1, C.acc);
       put2(b, tipx, tipy - 1, C.acc);
     }
@@ -2546,18 +2650,18 @@ var quadruped_default = {
     };
   }
   function hash22(x, y, s) {
-    var h2 = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(s | 0, 1274126177);
-    h2 = Math.imul(h2 ^ h2 >>> 13, 1274126177);
-    h2 ^= h2 >>> 16;
-    return (h2 >>> 0) / 4294967296;
+    var h3 = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(s | 0, 1274126177);
+    h3 = Math.imul(h3 ^ h3 >>> 13, 1274126177);
+    h3 ^= h3 >>> 16;
+    return (h3 >>> 0) / 4294967296;
   }
   function hstr(str) {
-    var h2 = 2166136261;
+    var h3 = 2166136261;
     for (var i = 0; i < str.length; i++) {
-      h2 ^= str.charCodeAt(i);
-      h2 = Math.imul(h2, 16777619);
+      h3 ^= str.charCodeAt(i);
+      h3 = Math.imul(h3, 16777619);
     }
-    return h2 >>> 0;
+    return h3 >>> 0;
   }
   var mod = function(a, n) {
     return (a % n + n) % n;
@@ -2568,14 +2672,14 @@ var quadruped_default = {
     if (pal && Object.prototype.hasOwnProperty.call(pal, c) && depth < 6) return parseColor(pal[c], pal, depth + 1);
     var m;
     if (m = /^#([0-9a-f]{3,8})$/i.exec(c)) {
-      var h2 = m[1];
-      if (h2.length === 3 || h2.length === 4) h2 = h2.split("").map(function(x) {
+      var h3 = m[1];
+      if (h3.length === 3 || h3.length === 4) h3 = h3.split("").map(function(x) {
         return x + x;
       }).join("");
-      if (h2.length === 6) h2 += "ff";
-      if (h2.length !== 8) return null;
+      if (h3.length === 6) h3 += "ff";
+      if (h3.length !== 8) return null;
       return [0, 2, 4, 6].map(function(i) {
-        return parseInt(h2.substr(i, 2), 16);
+        return parseInt(h3.substr(i, 2), 16);
       });
     }
     if (m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?\s*\)$/i.exec(c)) {
@@ -2584,7 +2688,7 @@ var quadruped_default = {
     if (c === "none" || c === "transparent") return [0, 0, 0, 0];
     return null;
   }
-  function num2(v, d, ctx2, rng) {
+  function num3(v, d, ctx2, rng) {
     if (v === void 0 || v === null) return d;
     if (typeof v === "number") return isFinite(v) ? v : d;
     if (Array.isArray(v) && v.length === 2 && typeof v[0] === "number" && typeof v[1] === "number") {
@@ -2649,12 +2753,12 @@ var quadruped_default = {
   }
   function put3(ctx2, s, lx, ly, c) {
     if (++ctx2.ops > OPS_LIMIT) throw new Error("B\u1EA3n v\u1EBD qu\xE1 n\u1EB7ng (qu\xE1 nhi\u1EC1u \u0111i\u1EC3m \u1EA3nh ph\u1EA3i v\u1EBD)");
-    var x = lx + ctx2.ox, y = ly + ctx2.oy, w = ctx2.w, h2 = ctx2.h;
+    var x = lx + ctx2.ox, y = ly + ctx2.oy, w = ctx2.w, h3 = ctx2.h;
     if (ctx2.flip) x = w - 1 - x;
     if (ctx2.wrap) {
       x = mod(x, w);
-      y = mod(y, h2);
-    } else if (x < 0 || y < 0 || x >= w || y >= h2) return;
+      y = mod(y, h3);
+    } else if (x < 0 || y < 0 || x >= w || y >= h3) return;
     var i = (y * w + x) * 4, buf2 = ctx2.buf, dA = buf2[i + 3];
     if (s.clip === "inside" && dA === 0) return;
     if (s.clip === "outside" && dA > 0) return;
@@ -2718,7 +2822,7 @@ var quadruped_default = {
   function area(s, ctx2, rng) {
     var a = Array.isArray(s.area) && s.area.length === 4 ? s.area : [0, 0, ctx2.w, ctx2.h];
     return a.map(function(v, i) {
-      return Math.round(num2(v, i < 2 ? 0 : i === 2 ? ctx2.w : ctx2.h, ctx2, rng));
+      return Math.round(num3(v, i < 2 ? 0 : i === 2 ? ctx2.w : ctx2.h, ctx2, rng));
     });
   }
   var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -2732,13 +2836,13 @@ var quadruped_default = {
   }
   var SHAPES = {
     rect: function(s, ctx2, rng) {
-      var x = Math.round(num2(s.x, 0, ctx2, rng)), y = Math.round(num2(s.y, 0, ctx2, rng));
-      var w = Math.round(num2(s.w, 1, ctx2, rng)), h2 = Math.round(num2(s.h, 1, ctx2, rng)), p = painter(s, ctx2, rng);
-      for (var j = 0; j < h2; j++) for (var i = 0; i < w; i++) p(x + i, y + j);
+      var x = Math.round(num3(s.x, 0, ctx2, rng)), y = Math.round(num3(s.y, 0, ctx2, rng));
+      var w = Math.round(num3(s.w, 1, ctx2, rng)), h3 = Math.round(num3(s.h, 1, ctx2, rng)), p = painter(s, ctx2, rng);
+      for (var j = 0; j < h3; j++) for (var i = 0; i < w; i++) p(x + i, y + j);
     },
     ellipse: function(s, ctx2, rng) {
-      var cx = num2(s.cx, 0, ctx2, rng), cy = num2(s.cy, 0, ctx2, rng);
-      var rx = Math.max(0.5, num2(s.rx, num2(s.r, 4, ctx2, rng), ctx2, rng)), ry = Math.max(0.5, num2(s.ry, num2(s.r, rx, ctx2, rng), ctx2, rng)), p = painter(s, ctx2, rng);
+      var cx = num3(s.cx, 0, ctx2, rng), cy = num3(s.cy, 0, ctx2, rng);
+      var rx = Math.max(0.5, num3(s.rx, num3(s.r, 4, ctx2, rng), ctx2, rng)), ry = Math.max(0.5, num3(s.ry, num3(s.r, rx, ctx2, rng), ctx2, rng)), p = painter(s, ctx2, rng);
       for (var y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (var x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
         var dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
         if (dx * dx + dy * dy <= 1) p(x, y);
@@ -2749,9 +2853,9 @@ var quadruped_default = {
         ctx2.warn('poly c\u1EA7n "points" v\u1EDBi \xEDt nh\u1EA5t 3 \u0111\u1EC9nh');
         return;
       }
-      var j = num2(s.jitter, 0, ctx2, rng);
+      var j = num3(s.jitter, 0, ctx2, rng);
       var pts = s.points.map(function(p) {
-        var x2 = num2(p[0], 0, ctx2, rng), y2 = num2(p[1], 0, ctx2, rng);
+        var x2 = num3(p[0], 0, ctx2, rng), y2 = num3(p[1], 0, ctx2, rng);
         if (j) {
           x2 += Math.round((rng() * 2 - 1) * j);
           y2 += Math.round((rng() * 2 - 1) * j);
@@ -2770,8 +2874,8 @@ var quadruped_default = {
     },
     line: function(s, ctx2, rng) {
       var f = s.from || [0, 0], t = s.to || [0, 0];
-      var x0 = num2(f[0], 0, ctx2, rng), y0 = num2(f[1], 0, ctx2, rng), x1 = num2(t[0], 0, ctx2, rng), y1 = num2(t[1], 0, ctx2, rng);
-      var w = Math.max(1, Math.round(num2(s.w, 1, ctx2, rng))), n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2)), p = painter(s, ctx2, rng), o = Math.floor(w / 2);
+      var x0 = num3(f[0], 0, ctx2, rng), y0 = num3(f[1], 0, ctx2, rng), x1 = num3(t[0], 0, ctx2, rng), y1 = num3(t[1], 0, ctx2, rng);
+      var w = Math.max(1, Math.round(num3(s.w, 1, ctx2, rng))), n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2)), p = painter(s, ctx2, rng), o = Math.floor(w / 2);
       var seen = {};
       for (var k = 0; k <= n; k++) {
         var cx = Math.round(x0 + (x1 - x0) * k / n), cy = Math.round(y0 + (y1 - y0) * k / n);
@@ -2791,21 +2895,21 @@ var quadruped_default = {
       }
       var p = painter(s, ctx2, rng);
       s.at.forEach(function(q) {
-        p(Math.round(num2(q[0], 0, ctx2, rng)), Math.round(num2(q[1], 0, ctx2, rng)));
+        p(Math.round(num3(q[0], 0, ctx2, rng)), Math.round(num3(q[1], 0, ctx2, rng)));
       });
     },
     scatter: function(s, ctx2, rng) {
-      var a = area(s, ctx2, rng), n = clamp3(Math.round(num2(s.count, 10, ctx2, rng)), 0, 5e3), p = painter(s, ctx2, rng);
+      var a = area(s, ctx2, rng), n = clamp3(Math.round(num3(s.count, 10, ctx2, rng)), 0, 5e3), p = painter(s, ctx2, rng);
       var sz = Array.isArray(s.size) ? s.size : [s.size === void 0 ? 1 : s.size, s.size === void 0 ? 1 : s.size];
-      var cw = Math.max(1, Math.round(num2(sz[0], 1, ctx2, rng))), ch = Math.max(1, Math.round(num2(sz[1], cw, ctx2, rng)));
+      var cw = Math.max(1, Math.round(num3(sz[0], 1, ctx2, rng))), ch = Math.max(1, Math.round(num3(sz[1], cw, ctx2, rng)));
       for (var i = 0; i < n; i++) {
         var x = a[0] + Math.floor(rng() * a[2]), y = a[1] + Math.floor(rng() * a[3]);
         for (var j = 0; j < ch; j++) for (var k = 0; k < cw; k++) p(x + k, y + j);
       }
     },
     noise: function(s, ctx2, rng, id) {
-      var a = area(s, ctx2, rng), scale = Math.max(1, num2(s.scale, 4, ctx2, rng)), oct = clamp3(Math.round(num2(s.octaves, 1, ctx2, rng)), 1, 4);
-      var contrast = num2(s.contrast, 1.8, ctx2, rng);
+      var a = area(s, ctx2, rng), scale = Math.max(1, num3(s.scale, 4, ctx2, rng)), oct = clamp3(Math.round(num3(s.octaves, 1, ctx2, rng)), 1, 4);
+      var contrast = num3(s.contrast, 1.8, ctx2, rng);
       var bands = Array.isArray(s.bands) ? s.bands.slice().sort(function(p, q2) {
         return p[0] - q2[0];
       }) : null;
@@ -2856,9 +2960,9 @@ var quadruped_default = {
       }
     },
     bevel: function(s, ctx2, rng) {
-      var snap = new Uint8ClampedArray(ctx2.buf), w = ctx2.w, h2 = ctx2.h;
+      var snap = new Uint8ClampedArray(ctx2.buf), w = ctx2.w, h3 = ctx2.h;
       var li = parseColor(s.light === void 0 ? "#ffffff" : s.light, ctx2.palette), da = parseColor(s.dark === void 0 ? "#000000" : s.dark, ctx2.palette);
-      var la = num2(s.lightAlpha, 0.3, ctx2, rng), dk = num2(s.darkAlpha, 0.3, ctx2, rng);
+      var la = num3(s.lightAlpha, 0.3, ctx2, rng), dk = num3(s.darkAlpha, 0.3, ctx2, rng);
       if (!li || !da) {
         ctx2.warn("bevel: m\xE0u kh\xF4ng h\u1EE3p l\u1EC7");
         return;
@@ -2866,11 +2970,11 @@ var quadruped_default = {
       var empty = function(x2, y2) {
         if (ctx2.wrap) {
           x2 = mod(x2, w);
-          y2 = mod(y2, h2);
-        } else if (x2 < 0 || y2 < 0 || x2 >= w || y2 >= h2) return true;
+          y2 = mod(y2, h3);
+        } else if (x2 < 0 || y2 < 0 || x2 >= w || y2 >= h3) return true;
         return snap[(y2 * w + x2) * 4 + 3] === 0;
       };
-      for (var y = 0; y < h2; y++) for (var x = 0; x < w; x++) {
+      for (var y = 0; y < h3; y++) for (var x = 0; x < w; x++) {
         var i = (y * w + x) * 4;
         if (snap[i + 3] === 0) continue;
         if (empty(x, y - 1) || empty(x - 1, y)) blend(ctx2.buf, i, li, la * (li[3] / 255), "normal");
@@ -2878,22 +2982,22 @@ var quadruped_default = {
       }
     },
     outline: function(s, ctx2, rng) {
-      var snap = new Uint8ClampedArray(ctx2.buf), w = ctx2.w, h2 = ctx2.h;
+      var snap = new Uint8ClampedArray(ctx2.buf), w = ctx2.w, h3 = ctx2.h;
       var c = parseColor(s.color === void 0 ? "#1e1410" : s.color, ctx2.palette);
       if (!c) {
         ctx2.warn("outline: m\xE0u kh\xF4ng h\u1EE3p l\u1EC7");
         return;
       }
       var diag = !!s.corners, N = diag ? [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1]];
-      for (var y = 0; y < h2; y++) for (var x = 0; x < w; x++) {
+      for (var y = 0; y < h3; y++) for (var x = 0; x < w; x++) {
         var i = (y * w + x) * 4;
         if (snap[i + 3] !== 0) continue;
         var hit = N.some(function(d) {
           var xx = x + d[0], yy = y + d[1];
           if (ctx2.wrap) {
             xx = mod(xx, w);
-            yy = mod(yy, h2);
-          } else if (xx < 0 || yy < 0 || xx >= w || yy >= h2) return false;
+            yy = mod(yy, h3);
+          } else if (xx < 0 || yy < 0 || xx >= w || yy >= h3) return false;
           return snap[(yy * w + xx) * 4 + 3] > 0;
         });
         if (hit) blend(ctx2.buf, i, c, c[3] / 255 * (s.alpha === void 0 ? 1 : s.alpha), "normal");
@@ -2985,7 +3089,7 @@ var quadruped_default = {
     if (!def || typeof def !== "object" || Array.isArray(def)) throw new Error("JSON ph\u1EA3i l\xE0 m\u1ED9t object { ... }");
     if (!Array.isArray(def.layers)) throw new Error('Thi\u1EBFu m\u1EA3ng "layers": [ ... ]');
     var size = Array.isArray(def.size) ? def.size : [32, 32];
-    var w = clamp3(Math.round(+size[0] || 32), 1, 512), h2 = clamp3(Math.round(+size[1] || 32), 1, 512);
+    var w = clamp3(Math.round(+size[0] || 32), 1, 512), h3 = clamp3(Math.round(+size[1] || 32), 1, 512);
     var seed = (opts.seed !== void 0 ? opts.seed : def.seed !== void 0 ? def.seed : 1) | 0;
     var nf = def.animate && def.animate.frames > 1 ? clamp3(Math.round(def.animate.frames), 2, 16) : 1;
     var params = Object.assign({}, def.params || {}, opts.params || {});
@@ -2996,9 +3100,9 @@ var quadruped_default = {
     });
     var frames = [];
     var P = opts.fit && !wrap && def.type !== "tile" ? 16 : 0;
-    for (var f = 0; f < nf; f++) frames.push(renderFrame2(def, { w: w + 2 * P, h: h2 + 2 * P, pad: P, seed, frame: f, params, palette: palette2, warn, wrap }));
+    for (var f = 0; f < nf; f++) frames.push(renderFrame2(def, { w: w + 2 * P, h: h3 + 2 * P, pad: P, seed, frame: f, params, palette: palette2, warn, wrap }));
     if (P) {
-      var W2 = w + 2 * P, H2 = h2 + 2 * P, x0 = P, y0 = P, x1 = P + w, y1 = P + h2;
+      var W2 = w + 2 * P, H2 = h3 + 2 * P, x0 = P, y0 = P, x1 = P + w, y1 = P + h3;
       frames.forEach(function(b) {
         for (var y = 0; y < H2; y++) for (var x = 0; x < W2; x++) if (b[(y * W2 + x) * 4 + 3]) {
           if (x < x0) x0 = x;
@@ -3016,7 +3120,7 @@ var quadruped_default = {
       var an = def.anchor, fp = def.footprint;
       return { w: cw, h: ch, frames, fps: def.animate && def.animate.fps || 4, warnings: warns, anchor: an ? [an[0] + P - x0, an[1] + P - y0] : void 0, footprint: fp ? [fp[0] + P - x0, fp[1] + P - y0, fp[2], fp[3]] : void 0, type: def.type || "prop" };
     }
-    return { w, h: h2, frames, fps: def.animate && def.animate.fps || 4, warnings: warns, anchor: def.anchor, footprint: def.footprint, type: def.type || "prop" };
+    return { w, h: h3, frames, fps: def.animate && def.animate.fps || 4, warnings: warns, anchor: def.anchor, footprint: def.footprint, type: def.type || "prop" };
   }
   root.Blueprint = { render, parseColor, mulberry32: mulberry322 };
 })(typeof window !== "undefined" ? window : globalThis);
@@ -3324,6 +3428,20 @@ var anims_default = {
     { bob: 1, lean: 3, legR: { a: 24, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 95, b: 10 }, armL: { a: 88, b: 10 }, tool: { on: true, a: 80, kind: "hatchet" } },
     { bob: 1, lean: 4, legR: { a: 26, lift: 0 }, legL: { a: -20, lift: 0 }, armR: { a: 60, b: 15 }, armL: { a: 55, b: 15 }, tool: { on: true, a: 40, kind: "hatchet" } },
     { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 85, b: 25 }, armL: { a: 78, b: 25 }, tool: { on: true, a: 110, kind: "hatchet" } }
+  ] },
+  ride: { fps: 3, loop: true, frames: [
+    { bob: 3, lean: 0, legR: { a: 38, lift: 0 }, legL: { a: 28, lift: 0 }, armR: { a: 55, b: 35 }, armL: { a: 48, b: 38 } },
+    { bob: 3, lean: 0, legR: { a: 38, lift: 0 }, legL: { a: 28, lift: 0 }, armR: { a: 57, b: 35 }, armL: { a: 50, b: 38 } },
+    { bob: 4, lean: 0, legR: { a: 38, lift: 0 }, legL: { a: 28, lift: 0 }, armR: { a: 59, b: 33 }, armL: { a: 52, b: 36 } },
+    { bob: 3, lean: 0, legR: { a: 38, lift: 0 }, legL: { a: 28, lift: 0 }, armR: { a: 57, b: 35 }, armL: { a: 50, b: 38 } }
+  ] },
+  ride_walk: { fps: 8, loop: true, frames: [
+    { bob: 3, lean: 1, legR: { a: 40, lift: 0 }, legL: { a: 30, lift: 0 }, armR: { a: 62, b: 30 }, armL: { a: 56, b: 34 } },
+    { bob: 2, lean: 1, legR: { a: 44, lift: 0 }, legL: { a: 26, lift: 0 }, armR: { a: 62, b: 30 }, armL: { a: 56, b: 34 } },
+    { bob: 3, lean: 1, legR: { a: 38, lift: 0 }, legL: { a: 30, lift: 0 }, armR: { a: 62, b: 30 }, armL: { a: 56, b: 34 } },
+    { bob: 4, lean: 1, legR: { a: 36, lift: 0 }, legL: { a: 32, lift: 0 }, armR: { a: 62, b: 30 }, armL: { a: 56, b: 34 } },
+    { bob: 3, lean: 1, legR: { a: 38, lift: 0 }, legL: { a: 30, lift: 0 }, armR: { a: 62, b: 30 }, armL: { a: 56, b: 34 } },
+    { bob: 2, lean: 1, legR: { a: 44, lift: 0 }, legL: { a: 26, lift: 0 }, armR: { a: 62, b: 30 }, armL: { a: 56, b: 34 } }
   ] }
 };
 
@@ -4552,348 +4670,4581 @@ var L3_default5 = {
 var L1_default7 = {
   name: "Ru\u1ED9ng (c\u1EA5p 1, \u0111\u1EA5t v\u1EE1)",
   name_en: "Field (Tier 1, Broken Soil)",
-  type: "prop",
-  size: [100, 64],
-  anchor: [50, 58],
-  footprint: [2, 30, 96, 28],
+  size: [
+    100,
+    64
+  ],
+  anchor: [
+    50,
+    58
+  ],
+  footprint: [
+    2,
+    30,
+    96,
+    28
+  ],
   seed: 21,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", soil: "#6a4a2c", soilL: "#86613a", soilD: "#4d341e", furrow: "#3c2815", dirt: "#7a6244", wood: "#8a6238", rope: "#d8c690", leaf: "#6fa83c", leafL: "#9ccc4e" },
   layers: [
-    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
-    { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "dirt", alpha: 0.5, ifNot: "st1" },
-    { shape: "rect", x: 6, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 92, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 6, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 92, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "line", from: [7, 29], to: [93, 29], w: 1, color: "rope", ifNot: "st1" },
-    { shape: "group", if: "st1", layers: [
-      { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "soil" },
-      { shape: "scatter", count: 40, area: [10, 28, 80, 24], size: [1, 2], colors: ["soilL", "soilD", "furrow"], onlyOver: ["soil"] }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "line", from: [15.2, 30], to: [84.8, 30], w: 2, color: "furrow" },
-      { shape: "line", from: [13.6, 35], to: [86.4, 35], w: 2, color: "furrow" },
-      { shape: "line", from: [12, 40], to: [88, 40], w: 2, color: "furrow" },
-      { shape: "line", from: [10.4, 45], to: [89.6, 45], w: 2, color: "furrow" },
-      { shape: "line", from: [8.8, 50], to: [91.2, 50], w: 2, color: "furrow" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "line", from: [15.2, 30], to: [84.8, 30], w: 1, color: "soilL", alpha: 0.6 },
-      { shape: "line", from: [13.6, 35], to: [86.4, 35], w: 1, color: "soilL", alpha: 0.6 },
-      { shape: "line", from: [12, 40], to: [88, 40], w: 1, color: "soilL", alpha: 0.6 },
-      { shape: "line", from: [10.4, 45], to: [89.6, 45], w: 1, color: "soilL", alpha: 0.6 },
-      { shape: "line", from: [8.8, 50], to: [91.2, 50], w: 1, color: "soilL", alpha: 0.6 }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "pixels", at: [[14, 29], [14, 28]], color: "leaf" },
-      { shape: "pixels", at: [[13, 27], [15, 27]], color: "leafL" },
-      { shape: "pixels", at: [[42, 29], [42, 28]], color: "leaf" },
-      { shape: "pixels", at: [[41, 27], [43, 27]], color: "leafL" },
-      { shape: "pixels", at: [[70, 29], [70, 28]], color: "leaf" },
-      { shape: "pixels", at: [[69, 27], [71, 27]], color: "leafL" },
-      { shape: "pixels", at: [[28, 34], [28, 33]], color: "leaf" },
-      { shape: "pixels", at: [[27, 32], [29, 32]], color: "leafL" },
-      { shape: "pixels", at: [[56, 34], [56, 33]], color: "leaf" },
-      { shape: "pixels", at: [[55, 32], [57, 32]], color: "leafL" },
-      { shape: "pixels", at: [[82, 34], [82, 33]], color: "leaf" },
-      { shape: "pixels", at: [[81, 32], [83, 32]], color: "leafL" },
-      { shape: "pixels", at: [[14, 39], [14, 38]], color: "leaf" },
-      { shape: "pixels", at: [[13, 37], [15, 37]], color: "leafL" },
-      { shape: "pixels", at: [[42, 39], [42, 38]], color: "leaf" },
-      { shape: "pixels", at: [[41, 37], [43, 37]], color: "leafL" },
-      { shape: "pixels", at: [[70, 39], [70, 38]], color: "leaf" },
-      { shape: "pixels", at: [[69, 37], [71, 37]], color: "leafL" },
-      { shape: "pixels", at: [[28, 44], [28, 43]], color: "leaf" },
-      { shape: "pixels", at: [[27, 42], [29, 42]], color: "leafL" },
-      { shape: "pixels", at: [[56, 44], [56, 43]], color: "leaf" },
-      { shape: "pixels", at: [[55, 42], [57, 42]], color: "leafL" },
-      { shape: "pixels", at: [[82, 44], [82, 43]], color: "leaf" },
-      { shape: "pixels", at: [[81, 42], [83, 42]], color: "leafL" },
-      { shape: "pixels", at: [[14, 49], [14, 48]], color: "leaf" },
-      { shape: "pixels", at: [[13, 47], [15, 47]], color: "leafL" },
-      { shape: "pixels", at: [[42, 49], [42, 48]], color: "leaf" },
-      { shape: "pixels", at: [[41, 47], [43, 47]], color: "leafL" },
-      { shape: "pixels", at: [[70, 49], [70, 48]], color: "leaf" },
-      { shape: "pixels", at: [[69, 47], [71, 47]], color: "leafL" }
-    ] },
-    { shape: "outline", color: "line" }
-  ]
+    {
+      shape: "ellipse",
+      cx: 50,
+      cy: 56,
+      rx: 46,
+      ry: 5,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          14,
+          26
+        ],
+        [
+          86,
+          26
+        ],
+        [
+          94,
+          54
+        ],
+        [
+          6,
+          54
+        ]
+      ],
+      color: "dirt",
+      alpha: 0.5,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 6,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 92,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 4,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 94,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        8,
+        29
+      ],
+      to: [
+        91,
+        29
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              24
+            ],
+            [
+              86,
+              24
+            ],
+            [
+              96,
+              54
+            ],
+            [
+              4,
+              54
+            ]
+          ],
+          color: "soilD",
+          alpha: 1
+        },
+        {
+          shape: "scatter",
+          count: 60,
+          area: [
+            8,
+            28,
+            84,
+            26
+          ],
+          size: [
+            2,
+            1
+          ],
+          colors: [
+            "soil",
+            "soilL",
+            "furrow"
+          ],
+          onlyOver: [
+            "soilD"
+          ]
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            10,
+            32
+          ],
+          to: [
+            90,
+            32
+          ],
+          w: 1,
+          color: "furrow",
+          alpha: 0.8
+        },
+        {
+          shape: "line",
+          from: [
+            10,
+            37
+          ],
+          to: [
+            90,
+            37
+          ],
+          w: 1,
+          color: "furrow",
+          alpha: 0.8
+        },
+        {
+          shape: "line",
+          from: [
+            10,
+            42
+          ],
+          to: [
+            90,
+            42
+          ],
+          w: 1,
+          color: "furrow",
+          alpha: 0.8
+        },
+        {
+          shape: "line",
+          from: [
+            10,
+            47
+          ],
+          to: [
+            90,
+            47
+          ],
+          w: 1,
+          color: "furrow",
+          alpha: 0.8
+        },
+        {
+          shape: "line",
+          from: [
+            10,
+            52
+          ],
+          to: [
+            90,
+            52
+          ],
+          w: 1,
+          color: "furrow",
+          alpha: 0.8
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "scatter",
+          count: 40,
+          area: [
+            10,
+            28,
+            80,
+            24
+          ],
+          size: [
+            2,
+            2
+          ],
+          colors: [
+            "soilL",
+            "soil"
+          ],
+          onlyOver: [
+            "soilD"
+          ]
+        },
+        {
+          shape: "ellipse",
+          cx: 24,
+          cy: 34,
+          rx: 3,
+          ry: 1.2,
+          color: "soilL"
+        },
+        {
+          shape: "ellipse",
+          cx: 52,
+          cy: 40,
+          rx: 3,
+          ry: 1.2,
+          color: "soilL"
+        },
+        {
+          shape: "ellipse",
+          cx: 70,
+          cy: 46,
+          rx: 3,
+          ry: 1.2,
+          color: "soilL"
+        },
+        {
+          shape: "ellipse",
+          cx: 38,
+          cy: 50,
+          rx: 3,
+          ry: 1.2,
+          color: "soilL"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            18,
+            36
+          ],
+          to: [
+            18,
+            32
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              18,
+              32
+            ],
+            [
+              15.5,
+              34
+            ],
+            [
+              18,
+              33
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              18,
+              33
+            ],
+            [
+              20.5,
+              35
+            ],
+            [
+              18,
+              35
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            28.666666666666664,
+            36
+          ],
+          to: [
+            28.666666666666664,
+            32
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              28.666666666666664,
+              32
+            ],
+            [
+              26.166666666666664,
+              34
+            ],
+            [
+              28.666666666666664,
+              33
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              28.666666666666664,
+              33
+            ],
+            [
+              31.166666666666664,
+              35
+            ],
+            [
+              28.666666666666664,
+              35
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            39.33333333333333,
+            36
+          ],
+          to: [
+            39.33333333333333,
+            32
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              39.33333333333333,
+              32
+            ],
+            [
+              36.83333333333333,
+              34
+            ],
+            [
+              39.33333333333333,
+              33
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              39.33333333333333,
+              33
+            ],
+            [
+              41.83333333333333,
+              35
+            ],
+            [
+              39.33333333333333,
+              35
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            50,
+            36
+          ],
+          to: [
+            50,
+            32
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              50,
+              32
+            ],
+            [
+              47.5,
+              34
+            ],
+            [
+              50,
+              33
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              50,
+              33
+            ],
+            [
+              52.5,
+              35
+            ],
+            [
+              50,
+              35
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            60.666666666666664,
+            36
+          ],
+          to: [
+            60.666666666666664,
+            32
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              60.666666666666664,
+              32
+            ],
+            [
+              58.166666666666664,
+              34
+            ],
+            [
+              60.666666666666664,
+              33
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              60.666666666666664,
+              33
+            ],
+            [
+              63.166666666666664,
+              35
+            ],
+            [
+              60.666666666666664,
+              35
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            71.33333333333334,
+            36
+          ],
+          to: [
+            71.33333333333334,
+            32
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              71.33333333333334,
+              32
+            ],
+            [
+              68.83333333333334,
+              34
+            ],
+            [
+              71.33333333333334,
+              33
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              71.33333333333334,
+              33
+            ],
+            [
+              73.83333333333334,
+              35
+            ],
+            [
+              71.33333333333334,
+              35
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            82,
+            36
+          ],
+          to: [
+            82,
+            32
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              82,
+              32
+            ],
+            [
+              79.5,
+              34
+            ],
+            [
+              82,
+              33
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              82,
+              33
+            ],
+            [
+              84.5,
+              35
+            ],
+            [
+              82,
+              35
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            46
+          ],
+          to: [
+            14,
+            42
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              42
+            ],
+            [
+              11.5,
+              44
+            ],
+            [
+              14,
+              43
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              43
+            ],
+            [
+              16.5,
+              45
+            ],
+            [
+              14,
+              45
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            24.285714285714285,
+            46
+          ],
+          to: [
+            24.285714285714285,
+            42
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              24.285714285714285,
+              42
+            ],
+            [
+              21.785714285714285,
+              44
+            ],
+            [
+              24.285714285714285,
+              43
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              24.285714285714285,
+              43
+            ],
+            [
+              26.785714285714285,
+              45
+            ],
+            [
+              24.285714285714285,
+              45
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            34.57142857142857,
+            46
+          ],
+          to: [
+            34.57142857142857,
+            42
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              34.57142857142857,
+              42
+            ],
+            [
+              32.07142857142857,
+              44
+            ],
+            [
+              34.57142857142857,
+              43
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              34.57142857142857,
+              43
+            ],
+            [
+              37.07142857142857,
+              45
+            ],
+            [
+              34.57142857142857,
+              45
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            44.85714285714286,
+            46
+          ],
+          to: [
+            44.85714285714286,
+            42
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              44.85714285714286,
+              42
+            ],
+            [
+              42.35714285714286,
+              44
+            ],
+            [
+              44.85714285714286,
+              43
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              44.85714285714286,
+              43
+            ],
+            [
+              47.35714285714286,
+              45
+            ],
+            [
+              44.85714285714286,
+              45
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            55.142857142857146,
+            46
+          ],
+          to: [
+            55.142857142857146,
+            42
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              55.142857142857146,
+              42
+            ],
+            [
+              52.642857142857146,
+              44
+            ],
+            [
+              55.142857142857146,
+              43
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              55.142857142857146,
+              43
+            ],
+            [
+              57.642857142857146,
+              45
+            ],
+            [
+              55.142857142857146,
+              45
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            65.42857142857143,
+            46
+          ],
+          to: [
+            65.42857142857143,
+            42
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              65.42857142857143,
+              42
+            ],
+            [
+              62.92857142857143,
+              44
+            ],
+            [
+              65.42857142857143,
+              43
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              65.42857142857143,
+              43
+            ],
+            [
+              67.92857142857143,
+              45
+            ],
+            [
+              65.42857142857143,
+              45
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            75.71428571428572,
+            46
+          ],
+          to: [
+            75.71428571428572,
+            42
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              75.71428571428572,
+              42
+            ],
+            [
+              73.21428571428572,
+              44
+            ],
+            [
+              75.71428571428572,
+              43
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              75.71428571428572,
+              43
+            ],
+            [
+              78.21428571428572,
+              45
+            ],
+            [
+              75.71428571428572,
+              45
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            86,
+            46
+          ],
+          to: [
+            86,
+            42
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              86,
+              42
+            ],
+            [
+              83.5,
+              44
+            ],
+            [
+              86,
+              43
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              86,
+              43
+            ],
+            [
+              88.5,
+              45
+            ],
+            [
+              86,
+              45
+            ]
+          ],
+          color: "leafL"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/field/L2.json
 var L2_default6 = {
   name: "Ru\u1ED9ng (c\u1EA5p 2, lu\u1ED1ng \u0111\u1EAFp)",
   name_en: "Field (Tier 2, Raised Beds)",
-  type: "prop",
-  size: [100, 64],
-  anchor: [50, 58],
-  footprint: [2, 30, 96, 28],
+  size: [
+    100,
+    64
+  ],
+  anchor: [
+    50,
+    58
+  ],
+  footprint: [
+    2,
+    30,
+    96,
+    28
+  ],
   seed: 21,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", soil: "#6a4a2c", soilL: "#86613a", soilD: "#4d341e", furrow: "#3c2815", dirt: "#7a6244", wood: "#8a6238", woodD: "#5e4026", rope: "#d8c690", leaf: "#6fa83c", leafL: "#9ccc4e", leafD: "#4a7a28" },
   layers: [
-    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
-    { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "dirt", alpha: 0.5, ifNot: "st1" },
-    { shape: "rect", x: 6, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 92, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 6, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 92, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "line", from: [7, 29], to: [93, 29], w: 1, color: "rope", ifNot: "st1" },
-    { shape: "group", if: "st1", layers: [
-      { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "soil" },
-      { shape: "scatter", count: 30, area: [10, 28, 80, 24], size: [1, 2], colors: ["soilL", "soilD"], onlyOver: ["soil"] }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "line", from: [15, 31], to: [85, 31], w: 5, color: "soilL" },
-      { shape: "line", from: [13, 37], to: [87, 37], w: 5, color: "soilL" },
-      { shape: "line", from: [11, 43], to: [89, 43], w: 5, color: "soilL" },
-      { shape: "line", from: [9, 49], to: [91, 49], w: 5, color: "soilL" },
-      { shape: "line", from: [15, 31], to: [85, 31], w: 1, color: "furrow" },
-      { shape: "line", from: [13, 37], to: [87, 37], w: 1, color: "furrow" },
-      { shape: "line", from: [11, 43], to: [89, 43], w: 1, color: "furrow" },
-      { shape: "line", from: [9, 49], to: [91, 49], w: 1, color: "furrow" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "line", from: [14, 26], to: [86, 26], w: 2, color: "woodD" },
-      { shape: "line", from: [6, 54], to: [94, 54], w: 2, color: "wood" },
-      { shape: "line", from: [14, 26], to: [6, 54], w: 2, color: "wood" },
-      { shape: "line", from: [86, 26], to: [94, 54], w: 2, color: "woodD" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "pixels", at: [[18, 31], [18, 30], [18, 29], [17, 28], [19, 28], [18, 27]], color: "leaf" },
-      { shape: "pixels", at: [[17, 27], [19, 27]], color: "leafL" },
-      { shape: "pixels", at: [[27, 31], [27, 30], [27, 29], [26, 28], [28, 28], [27, 27]], color: "leaf" },
-      { shape: "pixels", at: [[26, 27], [28, 27]], color: "leafL" },
-      { shape: "pixels", at: [[36, 31], [36, 30], [36, 29], [35, 28], [37, 28], [36, 27]], color: "leaf" },
-      { shape: "pixels", at: [[35, 27], [37, 27]], color: "leafL" },
-      { shape: "pixels", at: [[45, 31], [45, 30], [45, 29], [44, 28], [46, 28], [45, 27]], color: "leaf" },
-      { shape: "pixels", at: [[44, 27], [46, 27]], color: "leafL" },
-      { shape: "pixels", at: [[55, 31], [55, 30], [55, 29], [54, 28], [56, 28], [55, 27]], color: "leaf" },
-      { shape: "pixels", at: [[54, 27], [56, 27]], color: "leafL" },
-      { shape: "pixels", at: [[64, 31], [64, 30], [64, 29], [63, 28], [65, 28], [64, 27]], color: "leaf" },
-      { shape: "pixels", at: [[63, 27], [65, 27]], color: "leafL" },
-      { shape: "pixels", at: [[73, 31], [73, 30], [73, 29], [72, 28], [74, 28], [73, 27]], color: "leaf" },
-      { shape: "pixels", at: [[72, 27], [74, 27]], color: "leafL" },
-      { shape: "pixels", at: [[82, 31], [82, 30], [82, 29], [81, 28], [83, 28], [82, 27]], color: "leaf" },
-      { shape: "pixels", at: [[81, 27], [83, 27]], color: "leafL" },
-      { shape: "pixels", at: [[18, 37], [18, 36], [18, 35], [17, 34], [19, 34], [18, 33]], color: "leaf" },
-      { shape: "pixels", at: [[17, 33], [19, 33]], color: "leafL" },
-      { shape: "pixels", at: [[27, 37], [27, 36], [27, 35], [26, 34], [28, 34], [27, 33]], color: "leaf" },
-      { shape: "pixels", at: [[26, 33], [28, 33]], color: "leafL" },
-      { shape: "pixels", at: [[36, 37], [36, 36], [36, 35], [35, 34], [37, 34], [36, 33]], color: "leaf" },
-      { shape: "pixels", at: [[35, 33], [37, 33]], color: "leafL" },
-      { shape: "pixels", at: [[45, 37], [45, 36], [45, 35], [44, 34], [46, 34], [45, 33]], color: "leaf" },
-      { shape: "pixels", at: [[44, 33], [46, 33]], color: "leafL" },
-      { shape: "pixels", at: [[55, 37], [55, 36], [55, 35], [54, 34], [56, 34], [55, 33]], color: "leaf" },
-      { shape: "pixels", at: [[54, 33], [56, 33]], color: "leafL" },
-      { shape: "pixels", at: [[64, 37], [64, 36], [64, 35], [63, 34], [65, 34], [64, 33]], color: "leaf" },
-      { shape: "pixels", at: [[63, 33], [65, 33]], color: "leafL" },
-      { shape: "pixels", at: [[73, 37], [73, 36], [73, 35], [72, 34], [74, 34], [73, 33]], color: "leaf" },
-      { shape: "pixels", at: [[72, 33], [74, 33]], color: "leafL" },
-      { shape: "pixels", at: [[82, 37], [82, 36], [82, 35], [81, 34], [83, 34], [82, 33]], color: "leaf" },
-      { shape: "pixels", at: [[81, 33], [83, 33]], color: "leafL" },
-      { shape: "pixels", at: [[18, 43], [18, 42], [18, 41], [17, 40], [19, 40], [18, 39]], color: "leaf" },
-      { shape: "pixels", at: [[17, 39], [19, 39]], color: "leafL" },
-      { shape: "pixels", at: [[27, 43], [27, 42], [27, 41], [26, 40], [28, 40], [27, 39]], color: "leaf" },
-      { shape: "pixels", at: [[26, 39], [28, 39]], color: "leafL" },
-      { shape: "pixels", at: [[36, 43], [36, 42], [36, 41], [35, 40], [37, 40], [36, 39]], color: "leaf" },
-      { shape: "pixels", at: [[35, 39], [37, 39]], color: "leafL" },
-      { shape: "pixels", at: [[45, 43], [45, 42], [45, 41], [44, 40], [46, 40], [45, 39]], color: "leaf" },
-      { shape: "pixels", at: [[44, 39], [46, 39]], color: "leafL" },
-      { shape: "pixels", at: [[55, 43], [55, 42], [55, 41], [54, 40], [56, 40], [55, 39]], color: "leaf" },
-      { shape: "pixels", at: [[54, 39], [56, 39]], color: "leafL" },
-      { shape: "pixels", at: [[64, 43], [64, 42], [64, 41], [63, 40], [65, 40], [64, 39]], color: "leaf" },
-      { shape: "pixels", at: [[63, 39], [65, 39]], color: "leafL" },
-      { shape: "pixels", at: [[73, 43], [73, 42], [73, 41], [72, 40], [74, 40], [73, 39]], color: "leaf" },
-      { shape: "pixels", at: [[72, 39], [74, 39]], color: "leafL" },
-      { shape: "pixels", at: [[82, 43], [82, 42], [82, 41], [81, 40], [83, 40], [82, 39]], color: "leaf" },
-      { shape: "pixels", at: [[81, 39], [83, 39]], color: "leafL" },
-      { shape: "pixels", at: [[18, 49], [18, 48], [18, 47], [17, 46], [19, 46], [18, 45]], color: "leaf" },
-      { shape: "pixels", at: [[17, 45], [19, 45]], color: "leafL" },
-      { shape: "pixels", at: [[27, 49], [27, 48], [27, 47], [26, 46], [28, 46], [27, 45]], color: "leaf" },
-      { shape: "pixels", at: [[26, 45], [28, 45]], color: "leafL" },
-      { shape: "pixels", at: [[36, 49], [36, 48], [36, 47], [35, 46], [37, 46], [36, 45]], color: "leaf" },
-      { shape: "pixels", at: [[35, 45], [37, 45]], color: "leafL" },
-      { shape: "pixels", at: [[45, 49], [45, 48], [45, 47], [44, 46], [46, 46], [45, 45]], color: "leaf" },
-      { shape: "pixels", at: [[44, 45], [46, 45]], color: "leafL" },
-      { shape: "pixels", at: [[55, 49], [55, 48], [55, 47], [54, 46], [56, 46], [55, 45]], color: "leaf" },
-      { shape: "pixels", at: [[54, 45], [56, 45]], color: "leafL" },
-      { shape: "pixels", at: [[64, 49], [64, 48], [64, 47], [63, 46], [65, 46], [64, 45]], color: "leaf" },
-      { shape: "pixels", at: [[63, 45], [65, 45]], color: "leafL" },
-      { shape: "pixels", at: [[73, 49], [73, 48], [73, 47], [72, 46], [74, 46], [73, 45]], color: "leaf" },
-      { shape: "pixels", at: [[72, 45], [74, 45]], color: "leafL" },
-      { shape: "pixels", at: [[82, 49], [82, 48], [82, 47], [81, 46], [83, 46], [82, 45]], color: "leaf" },
-      { shape: "pixels", at: [[81, 45], [83, 45]], color: "leafL" }
-    ] },
-    { shape: "outline", color: "line" }
-  ]
+    {
+      shape: "ellipse",
+      cx: 50,
+      cy: 56,
+      rx: 46,
+      ry: 5,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          14,
+          26
+        ],
+        [
+          86,
+          26
+        ],
+        [
+          94,
+          54
+        ],
+        [
+          6,
+          54
+        ]
+      ],
+      color: "dirt",
+      alpha: 0.5,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 6,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 92,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 4,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 94,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        8,
+        29
+      ],
+      to: [
+        91,
+        29
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              24
+            ],
+            [
+              86,
+              24
+            ],
+            [
+              96,
+              54
+            ],
+            [
+              4,
+              54
+            ]
+          ],
+          color: "soilD",
+          alpha: 1
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              14.8,
+              28
+            ],
+            [
+              85.2,
+              28
+            ],
+            [
+              83.6,
+              32
+            ],
+            [
+              16.4,
+              32
+            ]
+          ],
+          color: "wood"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              18.8,
+              38
+            ],
+            [
+              81.2,
+              38
+            ],
+            [
+              79.6,
+              42
+            ],
+            [
+              20.4,
+              42
+            ]
+          ],
+          color: "wood"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              22.8,
+              48
+            ],
+            [
+              77.2,
+              48
+            ],
+            [
+              75.6,
+              52
+            ],
+            [
+              24.4,
+              52
+            ]
+          ],
+          color: "wood"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              16.8,
+              32
+            ],
+            [
+              83.2,
+              32
+            ],
+            [
+              80,
+              36
+            ],
+            [
+              20,
+              36
+            ]
+          ],
+          color: "soil"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              20.8,
+              42
+            ],
+            [
+              79.2,
+              42
+            ],
+            [
+              76,
+              46
+            ],
+            [
+              24,
+              46
+            ]
+          ],
+          color: "soil"
+        },
+        {
+          shape: "line",
+          from: [
+            18.4,
+            34
+          ],
+          to: [
+            81.6,
+            34
+          ],
+          w: 1,
+          color: "soilL",
+          alpha: 0.8
+        },
+        {
+          shape: "line",
+          from: [
+            22.4,
+            44
+          ],
+          to: [
+            77.6,
+            44
+          ],
+          w: 1,
+          color: "soilL",
+          alpha: 0.8
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            20,
+            36
+          ],
+          to: [
+            20,
+            31
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              20,
+              31
+            ],
+            [
+              17.5,
+              33
+            ],
+            [
+              20,
+              32
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              20,
+              32
+            ],
+            [
+              22.5,
+              34
+            ],
+            [
+              20,
+              34
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            27.5,
+            36
+          ],
+          to: [
+            27.5,
+            31
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              27.5,
+              31
+            ],
+            [
+              25,
+              33
+            ],
+            [
+              27.5,
+              32
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              27.5,
+              32
+            ],
+            [
+              30,
+              34
+            ],
+            [
+              27.5,
+              34
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            36
+          ],
+          to: [
+            35,
+            31
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              35,
+              31
+            ],
+            [
+              32.5,
+              33
+            ],
+            [
+              35,
+              32
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              35,
+              32
+            ],
+            [
+              37.5,
+              34
+            ],
+            [
+              35,
+              34
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            42.5,
+            36
+          ],
+          to: [
+            42.5,
+            31
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              42.5,
+              31
+            ],
+            [
+              40,
+              33
+            ],
+            [
+              42.5,
+              32
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              42.5,
+              32
+            ],
+            [
+              45,
+              34
+            ],
+            [
+              42.5,
+              34
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            50,
+            36
+          ],
+          to: [
+            50,
+            31
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              50,
+              31
+            ],
+            [
+              47.5,
+              33
+            ],
+            [
+              50,
+              32
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              50,
+              32
+            ],
+            [
+              52.5,
+              34
+            ],
+            [
+              50,
+              34
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            57.5,
+            36
+          ],
+          to: [
+            57.5,
+            31
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              57.5,
+              31
+            ],
+            [
+              55,
+              33
+            ],
+            [
+              57.5,
+              32
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              57.5,
+              32
+            ],
+            [
+              60,
+              34
+            ],
+            [
+              57.5,
+              34
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            65,
+            36
+          ],
+          to: [
+            65,
+            31
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              65,
+              31
+            ],
+            [
+              62.5,
+              33
+            ],
+            [
+              65,
+              32
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              65,
+              32
+            ],
+            [
+              67.5,
+              34
+            ],
+            [
+              65,
+              34
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            72.5,
+            36
+          ],
+          to: [
+            72.5,
+            31
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              72.5,
+              31
+            ],
+            [
+              70,
+              33
+            ],
+            [
+              72.5,
+              32
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              72.5,
+              32
+            ],
+            [
+              75,
+              34
+            ],
+            [
+              72.5,
+              34
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            80,
+            36
+          ],
+          to: [
+            80,
+            31
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              80,
+              31
+            ],
+            [
+              77.5,
+              33
+            ],
+            [
+              80,
+              32
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              80,
+              32
+            ],
+            [
+              82.5,
+              34
+            ],
+            [
+              80,
+              34
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            16,
+            46
+          ],
+          to: [
+            16,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              16,
+              41
+            ],
+            [
+              13.5,
+              43
+            ],
+            [
+              16,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              16,
+              42
+            ],
+            [
+              18.5,
+              44
+            ],
+            [
+              16,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            23.555555555555557,
+            46
+          ],
+          to: [
+            23.555555555555557,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              23.555555555555557,
+              41
+            ],
+            [
+              21.055555555555557,
+              43
+            ],
+            [
+              23.555555555555557,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              23.555555555555557,
+              42
+            ],
+            [
+              26.055555555555557,
+              44
+            ],
+            [
+              23.555555555555557,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            31.11111111111111,
+            46
+          ],
+          to: [
+            31.11111111111111,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              31.11111111111111,
+              41
+            ],
+            [
+              28.61111111111111,
+              43
+            ],
+            [
+              31.11111111111111,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              31.11111111111111,
+              42
+            ],
+            [
+              33.611111111111114,
+              44
+            ],
+            [
+              31.11111111111111,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            38.66666666666667,
+            46
+          ],
+          to: [
+            38.66666666666667,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              38.66666666666667,
+              41
+            ],
+            [
+              36.16666666666667,
+              43
+            ],
+            [
+              38.66666666666667,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              38.66666666666667,
+              42
+            ],
+            [
+              41.16666666666667,
+              44
+            ],
+            [
+              38.66666666666667,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            46.22222222222222,
+            46
+          ],
+          to: [
+            46.22222222222222,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              46.22222222222222,
+              41
+            ],
+            [
+              43.72222222222222,
+              43
+            ],
+            [
+              46.22222222222222,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              46.22222222222222,
+              42
+            ],
+            [
+              48.72222222222222,
+              44
+            ],
+            [
+              46.22222222222222,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            53.77777777777778,
+            46
+          ],
+          to: [
+            53.77777777777778,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              53.77777777777778,
+              41
+            ],
+            [
+              51.27777777777778,
+              43
+            ],
+            [
+              53.77777777777778,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              53.77777777777778,
+              42
+            ],
+            [
+              56.27777777777778,
+              44
+            ],
+            [
+              53.77777777777778,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            61.333333333333336,
+            46
+          ],
+          to: [
+            61.333333333333336,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              61.333333333333336,
+              41
+            ],
+            [
+              58.833333333333336,
+              43
+            ],
+            [
+              61.333333333333336,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              61.333333333333336,
+              42
+            ],
+            [
+              63.833333333333336,
+              44
+            ],
+            [
+              61.333333333333336,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            68.88888888888889,
+            46
+          ],
+          to: [
+            68.88888888888889,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              68.88888888888889,
+              41
+            ],
+            [
+              66.38888888888889,
+              43
+            ],
+            [
+              68.88888888888889,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              68.88888888888889,
+              42
+            ],
+            [
+              71.38888888888889,
+              44
+            ],
+            [
+              68.88888888888889,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            76.44444444444444,
+            46
+          ],
+          to: [
+            76.44444444444444,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              76.44444444444444,
+              41
+            ],
+            [
+              73.94444444444444,
+              43
+            ],
+            [
+              76.44444444444444,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              76.44444444444444,
+              42
+            ],
+            [
+              78.94444444444444,
+              44
+            ],
+            [
+              76.44444444444444,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            84,
+            46
+          ],
+          to: [
+            84,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              84,
+              41
+            ],
+            [
+              81.5,
+              43
+            ],
+            [
+              84,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              84,
+              42
+            ],
+            [
+              86.5,
+              44
+            ],
+            [
+              84,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            12,
+            54
+          ],
+          to: [
+            12,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              12,
+              49
+            ],
+            [
+              9.5,
+              51
+            ],
+            [
+              12,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              12,
+              50
+            ],
+            [
+              14.5,
+              52
+            ],
+            [
+              12,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            19.6,
+            54
+          ],
+          to: [
+            19.6,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              19.6,
+              49
+            ],
+            [
+              17.1,
+              51
+            ],
+            [
+              19.6,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              19.6,
+              50
+            ],
+            [
+              22.1,
+              52
+            ],
+            [
+              19.6,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            27.2,
+            54
+          ],
+          to: [
+            27.2,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              27.2,
+              49
+            ],
+            [
+              24.7,
+              51
+            ],
+            [
+              27.2,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              27.2,
+              50
+            ],
+            [
+              29.7,
+              52
+            ],
+            [
+              27.2,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            34.8,
+            54
+          ],
+          to: [
+            34.8,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              34.8,
+              49
+            ],
+            [
+              32.3,
+              51
+            ],
+            [
+              34.8,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              34.8,
+              50
+            ],
+            [
+              37.3,
+              52
+            ],
+            [
+              34.8,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            42.4,
+            54
+          ],
+          to: [
+            42.4,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              42.4,
+              49
+            ],
+            [
+              39.9,
+              51
+            ],
+            [
+              42.4,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              42.4,
+              50
+            ],
+            [
+              44.9,
+              52
+            ],
+            [
+              42.4,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            50,
+            54
+          ],
+          to: [
+            50,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              50,
+              49
+            ],
+            [
+              47.5,
+              51
+            ],
+            [
+              50,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              50,
+              50
+            ],
+            [
+              52.5,
+              52
+            ],
+            [
+              50,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            57.6,
+            54
+          ],
+          to: [
+            57.6,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              57.6,
+              49
+            ],
+            [
+              55.1,
+              51
+            ],
+            [
+              57.6,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              57.6,
+              50
+            ],
+            [
+              60.1,
+              52
+            ],
+            [
+              57.6,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            65.2,
+            54
+          ],
+          to: [
+            65.2,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              65.2,
+              49
+            ],
+            [
+              62.7,
+              51
+            ],
+            [
+              65.2,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              65.2,
+              50
+            ],
+            [
+              67.7,
+              52
+            ],
+            [
+              65.2,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            72.8,
+            54
+          ],
+          to: [
+            72.8,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              72.8,
+              49
+            ],
+            [
+              70.3,
+              51
+            ],
+            [
+              72.8,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              72.8,
+              50
+            ],
+            [
+              75.3,
+              52
+            ],
+            [
+              72.8,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            80.4,
+            54
+          ],
+          to: [
+            80.4,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              80.4,
+              49
+            ],
+            [
+              77.9,
+              51
+            ],
+            [
+              80.4,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              80.4,
+              50
+            ],
+            [
+              82.9,
+              52
+            ],
+            [
+              80.4,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            88,
+            54
+          ],
+          to: [
+            88,
+            49
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              88,
+              49
+            ],
+            [
+              85.5,
+              51
+            ],
+            [
+              88,
+              50
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              88,
+              50
+            ],
+            [
+              90.5,
+              52
+            ],
+            [
+              88,
+              52
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 48,
+          w: 3,
+          h: 8,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 93,
+          y: 48,
+          w: 3,
+          h: 8,
+          color: "wood"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/field/L3.json
 var L3_default6 = {
-  name: "Ru\u1ED9ng (c\u1EA5p 3, b\u1EDD \u0111\xE1)",
-  name_en: "Field (Tier 3, Stone Border)",
-  type: "prop",
-  size: [100, 64],
-  anchor: [50, 58],
-  footprint: [2, 30, 96, 28],
+  name: "Ru\u1ED9ng (c\u1EA5p 3, b\u1EDD \u0111\xE1, m\u01B0\u01A1ng n\u01B0\u1EDBc)",
+  name_en: "Field (Tier 3, Stone Border, Water Channel)",
+  size: [
+    100,
+    64
+  ],
+  anchor: [
+    50,
+    58
+  ],
+  footprint: [
+    2,
+    30,
+    96,
+    28
+  ],
   seed: 21,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", soil: "#6a4a2c", soilL: "#86613a", soilD: "#4d341e", furrow: "#3c2815", dirt: "#7a6244", wood: "#8a6238", rope: "#d8c690", leaf: "#6fa83c", leafD: "#4a7a28", grain: "#d8b84a", grainL: "#ecd478", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b" },
   layers: [
-    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
-    { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "dirt", alpha: 0.5, ifNot: "st1" },
-    { shape: "rect", x: 6, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 92, y: 28, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 6, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 92, y: 48, w: 2, h: 6, color: "wood", ifNot: "st1" },
-    { shape: "line", from: [7, 29], to: [93, 29], w: 1, color: "rope", ifNot: "st1" },
-    { shape: "group", if: "st1", layers: [
-      { shape: "poly", points: [[14, 26], [86, 26], [94, 54], [6, 54]], color: "soil" },
-      { shape: "scatter", count: 30, area: [10, 28, 80, 24], size: [1, 2], colors: ["soilL", "soilD"], onlyOver: ["soil"] }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "line", from: [15, 31], to: [85, 31], w: 5, color: "soilL" },
-      { shape: "line", from: [13, 37], to: [87, 37], w: 5, color: "soilL" },
-      { shape: "line", from: [11, 43], to: [89, 43], w: 5, color: "soilL" },
-      { shape: "line", from: [9, 49], to: [91, 49], w: 5, color: "soilL" },
-      { shape: "line", from: [15, 31], to: [85, 31], w: 1, color: "furrow" },
-      { shape: "line", from: [13, 37], to: [87, 37], w: 1, color: "furrow" },
-      { shape: "line", from: [11, 43], to: [89, 43], w: 1, color: "furrow" },
-      { shape: "line", from: [9, 49], to: [91, 49], w: 1, color: "furrow" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "line", from: [14, 26], to: [86, 26], w: 3, color: "stoneD" },
-      { shape: "line", from: [6, 54], to: [94, 54], w: 3, color: "stone" },
-      { shape: "line", from: [14, 26], to: [6, 54], w: 3, color: "stoneD" },
-      { shape: "line", from: [86, 26], to: [94, 54], w: 3, color: "stone" },
-      { shape: "line", from: [8, 53], to: [92, 53], w: 1, color: "stoneL" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "pixels", at: [[18, 32], [18, 31], [18, 30], [18, 29], [18, 28], [18, 27], [18, 26]], color: "leaf" },
-      { shape: "pixels", at: [[17, 24], [18, 24], [19, 24], [18, 23], [18, 22]], color: "grain" },
-      { shape: "pixels", at: [[19, 23]], color: "grainL" },
-      { shape: "pixels", at: [[25, 32], [25, 31], [25, 30], [25, 29], [25, 28], [25, 27], [25, 26]], color: "leaf" },
-      { shape: "pixels", at: [[24, 24], [25, 24], [26, 24], [25, 23], [25, 22]], color: "grain" },
-      { shape: "pixels", at: [[26, 23]], color: "grainL" },
-      { shape: "pixels", at: [[32, 32], [32, 31], [32, 30], [32, 29], [32, 28], [32, 27], [32, 26]], color: "leaf" },
-      { shape: "pixels", at: [[31, 24], [32, 24], [33, 24], [32, 23], [32, 22]], color: "grain" },
-      { shape: "pixels", at: [[33, 23]], color: "grainL" },
-      { shape: "pixels", at: [[39, 32], [39, 31], [39, 30], [39, 29], [39, 28], [39, 27], [39, 26]], color: "leaf" },
-      { shape: "pixels", at: [[38, 24], [39, 24], [40, 24], [39, 23], [39, 22]], color: "grain" },
-      { shape: "pixels", at: [[40, 23]], color: "grainL" },
-      { shape: "pixels", at: [[46, 32], [46, 31], [46, 30], [46, 29], [46, 28], [46, 27], [46, 26]], color: "leaf" },
-      { shape: "pixels", at: [[45, 24], [46, 24], [47, 24], [46, 23], [46, 22]], color: "grain" },
-      { shape: "pixels", at: [[47, 23]], color: "grainL" },
-      { shape: "pixels", at: [[54, 32], [54, 31], [54, 30], [54, 29], [54, 28], [54, 27], [54, 26]], color: "leaf" },
-      { shape: "pixels", at: [[53, 24], [54, 24], [55, 24], [54, 23], [54, 22]], color: "grain" },
-      { shape: "pixels", at: [[55, 23]], color: "grainL" },
-      { shape: "pixels", at: [[61, 32], [61, 31], [61, 30], [61, 29], [61, 28], [61, 27], [61, 26]], color: "leaf" },
-      { shape: "pixels", at: [[60, 24], [61, 24], [62, 24], [61, 23], [61, 22]], color: "grain" },
-      { shape: "pixels", at: [[62, 23]], color: "grainL" },
-      { shape: "pixels", at: [[68, 32], [68, 31], [68, 30], [68, 29], [68, 28], [68, 27], [68, 26]], color: "leaf" },
-      { shape: "pixels", at: [[67, 24], [68, 24], [69, 24], [68, 23], [68, 22]], color: "grain" },
-      { shape: "pixels", at: [[69, 23]], color: "grainL" },
-      { shape: "pixels", at: [[75, 32], [75, 31], [75, 30], [75, 29], [75, 28], [75, 27], [75, 26]], color: "leaf" },
-      { shape: "pixels", at: [[74, 24], [75, 24], [76, 24], [75, 23], [75, 22]], color: "grain" },
-      { shape: "pixels", at: [[76, 23]], color: "grainL" },
-      { shape: "pixels", at: [[82, 32], [82, 31], [82, 30], [82, 29], [82, 28], [82, 27], [82, 26]], color: "leaf" },
-      { shape: "pixels", at: [[81, 24], [82, 24], [83, 24], [82, 23], [82, 22]], color: "grain" },
-      { shape: "pixels", at: [[83, 23]], color: "grainL" },
-      { shape: "pixels", at: [[18, 37], [18, 36], [18, 35], [18, 34], [18, 33], [18, 32], [18, 31]], color: "leaf" },
-      { shape: "pixels", at: [[17, 29], [18, 29], [19, 29], [18, 28], [18, 27]], color: "grain" },
-      { shape: "pixels", at: [[19, 28]], color: "grainL" },
-      { shape: "pixels", at: [[25, 37], [25, 36], [25, 35], [25, 34], [25, 33], [25, 32], [25, 31]], color: "leaf" },
-      { shape: "pixels", at: [[24, 29], [25, 29], [26, 29], [25, 28], [25, 27]], color: "grain" },
-      { shape: "pixels", at: [[26, 28]], color: "grainL" },
-      { shape: "pixels", at: [[32, 37], [32, 36], [32, 35], [32, 34], [32, 33], [32, 32], [32, 31]], color: "leaf" },
-      { shape: "pixels", at: [[31, 29], [32, 29], [33, 29], [32, 28], [32, 27]], color: "grain" },
-      { shape: "pixels", at: [[33, 28]], color: "grainL" },
-      { shape: "pixels", at: [[39, 37], [39, 36], [39, 35], [39, 34], [39, 33], [39, 32], [39, 31]], color: "leaf" },
-      { shape: "pixels", at: [[38, 29], [39, 29], [40, 29], [39, 28], [39, 27]], color: "grain" },
-      { shape: "pixels", at: [[40, 28]], color: "grainL" },
-      { shape: "pixels", at: [[46, 37], [46, 36], [46, 35], [46, 34], [46, 33], [46, 32], [46, 31]], color: "leaf" },
-      { shape: "pixels", at: [[45, 29], [46, 29], [47, 29], [46, 28], [46, 27]], color: "grain" },
-      { shape: "pixels", at: [[47, 28]], color: "grainL" },
-      { shape: "pixels", at: [[54, 37], [54, 36], [54, 35], [54, 34], [54, 33], [54, 32], [54, 31]], color: "leaf" },
-      { shape: "pixels", at: [[53, 29], [54, 29], [55, 29], [54, 28], [54, 27]], color: "grain" },
-      { shape: "pixels", at: [[55, 28]], color: "grainL" },
-      { shape: "pixels", at: [[61, 37], [61, 36], [61, 35], [61, 34], [61, 33], [61, 32], [61, 31]], color: "leaf" },
-      { shape: "pixels", at: [[60, 29], [61, 29], [62, 29], [61, 28], [61, 27]], color: "grain" },
-      { shape: "pixels", at: [[62, 28]], color: "grainL" },
-      { shape: "pixels", at: [[68, 37], [68, 36], [68, 35], [68, 34], [68, 33], [68, 32], [68, 31]], color: "leaf" },
-      { shape: "pixels", at: [[67, 29], [68, 29], [69, 29], [68, 28], [68, 27]], color: "grain" },
-      { shape: "pixels", at: [[69, 28]], color: "grainL" },
-      { shape: "pixels", at: [[75, 37], [75, 36], [75, 35], [75, 34], [75, 33], [75, 32], [75, 31]], color: "leaf" },
-      { shape: "pixels", at: [[74, 29], [75, 29], [76, 29], [75, 28], [75, 27]], color: "grain" },
-      { shape: "pixels", at: [[76, 28]], color: "grainL" },
-      { shape: "pixels", at: [[82, 37], [82, 36], [82, 35], [82, 34], [82, 33], [82, 32], [82, 31]], color: "leaf" },
-      { shape: "pixels", at: [[81, 29], [82, 29], [83, 29], [82, 28], [82, 27]], color: "grain" },
-      { shape: "pixels", at: [[83, 28]], color: "grainL" },
-      { shape: "pixels", at: [[18, 43], [18, 42], [18, 41], [18, 40], [18, 39], [18, 38], [18, 37]], color: "leaf" },
-      { shape: "pixels", at: [[17, 35], [18, 35], [19, 35], [18, 34], [18, 33]], color: "grain" },
-      { shape: "pixels", at: [[19, 34]], color: "grainL" },
-      { shape: "pixels", at: [[25, 43], [25, 42], [25, 41], [25, 40], [25, 39], [25, 38], [25, 37]], color: "leaf" },
-      { shape: "pixels", at: [[24, 35], [25, 35], [26, 35], [25, 34], [25, 33]], color: "grain" },
-      { shape: "pixels", at: [[26, 34]], color: "grainL" },
-      { shape: "pixels", at: [[32, 43], [32, 42], [32, 41], [32, 40], [32, 39], [32, 38], [32, 37]], color: "leaf" },
-      { shape: "pixels", at: [[31, 35], [32, 35], [33, 35], [32, 34], [32, 33]], color: "grain" },
-      { shape: "pixels", at: [[33, 34]], color: "grainL" },
-      { shape: "pixels", at: [[39, 43], [39, 42], [39, 41], [39, 40], [39, 39], [39, 38], [39, 37]], color: "leaf" },
-      { shape: "pixels", at: [[38, 35], [39, 35], [40, 35], [39, 34], [39, 33]], color: "grain" },
-      { shape: "pixels", at: [[40, 34]], color: "grainL" },
-      { shape: "pixels", at: [[46, 43], [46, 42], [46, 41], [46, 40], [46, 39], [46, 38], [46, 37]], color: "leaf" },
-      { shape: "pixels", at: [[45, 35], [46, 35], [47, 35], [46, 34], [46, 33]], color: "grain" },
-      { shape: "pixels", at: [[47, 34]], color: "grainL" },
-      { shape: "pixels", at: [[54, 43], [54, 42], [54, 41], [54, 40], [54, 39], [54, 38], [54, 37]], color: "leaf" },
-      { shape: "pixels", at: [[53, 35], [54, 35], [55, 35], [54, 34], [54, 33]], color: "grain" },
-      { shape: "pixels", at: [[55, 34]], color: "grainL" },
-      { shape: "pixels", at: [[61, 43], [61, 42], [61, 41], [61, 40], [61, 39], [61, 38], [61, 37]], color: "leaf" },
-      { shape: "pixels", at: [[60, 35], [61, 35], [62, 35], [61, 34], [61, 33]], color: "grain" },
-      { shape: "pixels", at: [[62, 34]], color: "grainL" },
-      { shape: "pixels", at: [[68, 43], [68, 42], [68, 41], [68, 40], [68, 39], [68, 38], [68, 37]], color: "leaf" },
-      { shape: "pixels", at: [[67, 35], [68, 35], [69, 35], [68, 34], [68, 33]], color: "grain" },
-      { shape: "pixels", at: [[69, 34]], color: "grainL" },
-      { shape: "pixels", at: [[75, 43], [75, 42], [75, 41], [75, 40], [75, 39], [75, 38], [75, 37]], color: "leaf" },
-      { shape: "pixels", at: [[74, 35], [75, 35], [76, 35], [75, 34], [75, 33]], color: "grain" },
-      { shape: "pixels", at: [[76, 34]], color: "grainL" },
-      { shape: "pixels", at: [[82, 43], [82, 42], [82, 41], [82, 40], [82, 39], [82, 38], [82, 37]], color: "leaf" },
-      { shape: "pixels", at: [[81, 35], [82, 35], [83, 35], [82, 34], [82, 33]], color: "grain" },
-      { shape: "pixels", at: [[83, 34]], color: "grainL" },
-      { shape: "pixels", at: [[18, 48], [18, 47], [18, 46], [18, 45], [18, 44], [18, 43], [18, 42]], color: "leaf" },
-      { shape: "pixels", at: [[17, 40], [18, 40], [19, 40], [18, 39], [18, 38]], color: "grain" },
-      { shape: "pixels", at: [[19, 39]], color: "grainL" },
-      { shape: "pixels", at: [[25, 48], [25, 47], [25, 46], [25, 45], [25, 44], [25, 43], [25, 42]], color: "leaf" },
-      { shape: "pixels", at: [[24, 40], [25, 40], [26, 40], [25, 39], [25, 38]], color: "grain" },
-      { shape: "pixels", at: [[26, 39]], color: "grainL" },
-      { shape: "pixels", at: [[32, 48], [32, 47], [32, 46], [32, 45], [32, 44], [32, 43], [32, 42]], color: "leaf" },
-      { shape: "pixels", at: [[31, 40], [32, 40], [33, 40], [32, 39], [32, 38]], color: "grain" },
-      { shape: "pixels", at: [[33, 39]], color: "grainL" },
-      { shape: "pixels", at: [[39, 48], [39, 47], [39, 46], [39, 45], [39, 44], [39, 43], [39, 42]], color: "leaf" },
-      { shape: "pixels", at: [[38, 40], [39, 40], [40, 40], [39, 39], [39, 38]], color: "grain" },
-      { shape: "pixels", at: [[40, 39]], color: "grainL" },
-      { shape: "pixels", at: [[46, 48], [46, 47], [46, 46], [46, 45], [46, 44], [46, 43], [46, 42]], color: "leaf" },
-      { shape: "pixels", at: [[45, 40], [46, 40], [47, 40], [46, 39], [46, 38]], color: "grain" },
-      { shape: "pixels", at: [[47, 39]], color: "grainL" },
-      { shape: "pixels", at: [[54, 48], [54, 47], [54, 46], [54, 45], [54, 44], [54, 43], [54, 42]], color: "leaf" },
-      { shape: "pixels", at: [[53, 40], [54, 40], [55, 40], [54, 39], [54, 38]], color: "grain" },
-      { shape: "pixels", at: [[55, 39]], color: "grainL" },
-      { shape: "pixels", at: [[61, 48], [61, 47], [61, 46], [61, 45], [61, 44], [61, 43], [61, 42]], color: "leaf" },
-      { shape: "pixels", at: [[60, 40], [61, 40], [62, 40], [61, 39], [61, 38]], color: "grain" },
-      { shape: "pixels", at: [[62, 39]], color: "grainL" },
-      { shape: "pixels", at: [[68, 48], [68, 47], [68, 46], [68, 45], [68, 44], [68, 43], [68, 42]], color: "leaf" },
-      { shape: "pixels", at: [[67, 40], [68, 40], [69, 40], [68, 39], [68, 38]], color: "grain" },
-      { shape: "pixels", at: [[69, 39]], color: "grainL" },
-      { shape: "pixels", at: [[75, 48], [75, 47], [75, 46], [75, 45], [75, 44], [75, 43], [75, 42]], color: "leaf" },
-      { shape: "pixels", at: [[74, 40], [75, 40], [76, 40], [75, 39], [75, 38]], color: "grain" },
-      { shape: "pixels", at: [[76, 39]], color: "grainL" },
-      { shape: "pixels", at: [[82, 48], [82, 47], [82, 46], [82, 45], [82, 44], [82, 43], [82, 42]], color: "leaf" },
-      { shape: "pixels", at: [[81, 40], [82, 40], [83, 40], [82, 39], [82, 38]], color: "grain" },
-      { shape: "pixels", at: [[83, 39]], color: "grainL" }
-    ] },
-    { shape: "outline", color: "line" }
-  ]
+    {
+      shape: "ellipse",
+      cx: 50,
+      cy: 56,
+      rx: 46,
+      ry: 5,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          14,
+          26
+        ],
+        [
+          86,
+          26
+        ],
+        [
+          94,
+          54
+        ],
+        [
+          6,
+          54
+        ]
+      ],
+      color: "dirt",
+      alpha: 0.5,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 6,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 92,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 4,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 94,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        8,
+        29
+      ],
+      to: [
+        91,
+        29
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              24
+            ],
+            [
+              86,
+              24
+            ],
+            [
+              96,
+              54
+            ],
+            [
+              4,
+              54
+            ]
+          ],
+          color: "soilD",
+          alpha: 1
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              24
+            ],
+            [
+              86,
+              24
+            ],
+            [
+              88,
+              27
+            ],
+            [
+              12,
+              27
+            ]
+          ],
+          color: "stone"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              4,
+              54
+            ],
+            [
+              96,
+              54
+            ],
+            [
+              94,
+              51
+            ],
+            [
+              6,
+              51
+            ]
+          ],
+          color: "stone"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              24
+            ],
+            [
+              14,
+              27
+            ],
+            [
+              6,
+              51
+            ],
+            [
+              4,
+              54
+            ]
+          ],
+          color: "stoneD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              86,
+              24
+            ],
+            [
+              94,
+              54
+            ],
+            [
+              96,
+              54
+            ],
+            [
+              88,
+              27
+            ]
+          ],
+          color: "stoneD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              18,
+              39
+            ],
+            [
+              82,
+              39
+            ],
+            [
+              84,
+              42
+            ],
+            [
+              16,
+              42
+            ]
+          ],
+          color: "water"
+        },
+        {
+          shape: "line",
+          from: [
+            18,
+            40
+          ],
+          to: [
+            82,
+            40
+          ],
+          w: 1,
+          color: "waterL",
+          alpha: 0.8
+        },
+        {
+          shape: "rect",
+          x: 24,
+          y: 36,
+          w: 2,
+          h: 8,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 50,
+          y: 36,
+          w: 2,
+          h: 8,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 76,
+          y: 36,
+          w: 2,
+          h: 8,
+          color: "stoneD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              18,
+              29
+            ],
+            [
+              82,
+              29
+            ],
+            [
+              83,
+              36
+            ],
+            [
+              17,
+              36
+            ]
+          ],
+          color: "soil"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              16,
+              45
+            ],
+            [
+              84,
+              45
+            ],
+            [
+              88,
+              51
+            ],
+            [
+              12,
+              51
+            ]
+          ],
+          color: "soil"
+        },
+        {
+          shape: "line",
+          from: [
+            17.8,
+            31
+          ],
+          to: [
+            82.2,
+            31
+          ],
+          w: 1,
+          color: "furrow",
+          alpha: 0.8
+        },
+        {
+          shape: "line",
+          from: [
+            17.2,
+            34
+          ],
+          to: [
+            82.8,
+            34
+          ],
+          w: 1,
+          color: "furrow",
+          alpha: 0.8
+        },
+        {
+          shape: "line",
+          from: [
+            14.6,
+            47
+          ],
+          to: [
+            85.4,
+            47
+          ],
+          w: 1,
+          color: "furrow",
+          alpha: 0.8
+        },
+        {
+          shape: "line",
+          from: [
+            14.2,
+            49
+          ],
+          to: [
+            85.8,
+            49
+          ],
+          w: 1,
+          color: "furrow",
+          alpha: 0.8
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            20,
+            34
+          ],
+          to: [
+            20,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              20,
+              26
+            ],
+            [
+              17.5,
+              28
+            ],
+            [
+              20,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              20,
+              27
+            ],
+            [
+              22.5,
+              29
+            ],
+            [
+              20,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            26,
+            34
+          ],
+          to: [
+            26,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              26,
+              26
+            ],
+            [
+              23.5,
+              28
+            ],
+            [
+              26,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              26,
+              27
+            ],
+            [
+              28.5,
+              29
+            ],
+            [
+              26,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            32,
+            34
+          ],
+          to: [
+            32,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              32,
+              26
+            ],
+            [
+              29.5,
+              28
+            ],
+            [
+              32,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              32,
+              27
+            ],
+            [
+              34.5,
+              29
+            ],
+            [
+              32,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            38,
+            34
+          ],
+          to: [
+            38,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              38,
+              26
+            ],
+            [
+              35.5,
+              28
+            ],
+            [
+              38,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              38,
+              27
+            ],
+            [
+              40.5,
+              29
+            ],
+            [
+              38,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            44,
+            34
+          ],
+          to: [
+            44,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              44,
+              26
+            ],
+            [
+              41.5,
+              28
+            ],
+            [
+              44,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              44,
+              27
+            ],
+            [
+              46.5,
+              29
+            ],
+            [
+              44,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            50,
+            34
+          ],
+          to: [
+            50,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              50,
+              26
+            ],
+            [
+              47.5,
+              28
+            ],
+            [
+              50,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              50,
+              27
+            ],
+            [
+              52.5,
+              29
+            ],
+            [
+              50,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            56,
+            34
+          ],
+          to: [
+            56,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              56,
+              26
+            ],
+            [
+              53.5,
+              28
+            ],
+            [
+              56,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              56,
+              27
+            ],
+            [
+              58.5,
+              29
+            ],
+            [
+              56,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            62,
+            34
+          ],
+          to: [
+            62,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              62,
+              26
+            ],
+            [
+              59.5,
+              28
+            ],
+            [
+              62,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              62,
+              27
+            ],
+            [
+              64.5,
+              29
+            ],
+            [
+              62,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            68,
+            34
+          ],
+          to: [
+            68,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              68,
+              26
+            ],
+            [
+              65.5,
+              28
+            ],
+            [
+              68,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              68,
+              27
+            ],
+            [
+              70.5,
+              29
+            ],
+            [
+              68,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            74,
+            34
+          ],
+          to: [
+            74,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              74,
+              26
+            ],
+            [
+              71.5,
+              28
+            ],
+            [
+              74,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              74,
+              27
+            ],
+            [
+              76.5,
+              29
+            ],
+            [
+              74,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            80,
+            34
+          ],
+          to: [
+            80,
+            26
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              80,
+              26
+            ],
+            [
+              77.5,
+              28
+            ],
+            [
+              80,
+              27
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              80,
+              27
+            ],
+            [
+              82.5,
+              29
+            ],
+            [
+              80,
+              29
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            16,
+            49
+          ],
+          to: [
+            16,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              16,
+              41
+            ],
+            [
+              13.5,
+              43
+            ],
+            [
+              16,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              16,
+              42
+            ],
+            [
+              18.5,
+              44
+            ],
+            [
+              16,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            22.18181818181818,
+            49
+          ],
+          to: [
+            22.18181818181818,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              22.18181818181818,
+              41
+            ],
+            [
+              19.68181818181818,
+              43
+            ],
+            [
+              22.18181818181818,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              22.18181818181818,
+              42
+            ],
+            [
+              24.68181818181818,
+              44
+            ],
+            [
+              22.18181818181818,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            28.363636363636363,
+            49
+          ],
+          to: [
+            28.363636363636363,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              28.363636363636363,
+              41
+            ],
+            [
+              25.863636363636363,
+              43
+            ],
+            [
+              28.363636363636363,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              28.363636363636363,
+              42
+            ],
+            [
+              30.863636363636363,
+              44
+            ],
+            [
+              28.363636363636363,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            34.54545454545455,
+            49
+          ],
+          to: [
+            34.54545454545455,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              34.54545454545455,
+              41
+            ],
+            [
+              32.04545454545455,
+              43
+            ],
+            [
+              34.54545454545455,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              34.54545454545455,
+              42
+            ],
+            [
+              37.04545454545455,
+              44
+            ],
+            [
+              34.54545454545455,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            40.72727272727273,
+            49
+          ],
+          to: [
+            40.72727272727273,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              40.72727272727273,
+              41
+            ],
+            [
+              38.22727272727273,
+              43
+            ],
+            [
+              40.72727272727273,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              40.72727272727273,
+              42
+            ],
+            [
+              43.22727272727273,
+              44
+            ],
+            [
+              40.72727272727273,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            46.90909090909091,
+            49
+          ],
+          to: [
+            46.90909090909091,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              46.90909090909091,
+              41
+            ],
+            [
+              44.40909090909091,
+              43
+            ],
+            [
+              46.90909090909091,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              46.90909090909091,
+              42
+            ],
+            [
+              49.40909090909091,
+              44
+            ],
+            [
+              46.90909090909091,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            53.09090909090909,
+            49
+          ],
+          to: [
+            53.09090909090909,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              53.09090909090909,
+              41
+            ],
+            [
+              50.59090909090909,
+              43
+            ],
+            [
+              53.09090909090909,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              53.09090909090909,
+              42
+            ],
+            [
+              55.59090909090909,
+              44
+            ],
+            [
+              53.09090909090909,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            59.27272727272727,
+            49
+          ],
+          to: [
+            59.27272727272727,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              59.27272727272727,
+              41
+            ],
+            [
+              56.77272727272727,
+              43
+            ],
+            [
+              59.27272727272727,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              59.27272727272727,
+              42
+            ],
+            [
+              61.77272727272727,
+              44
+            ],
+            [
+              59.27272727272727,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            65.45454545454545,
+            49
+          ],
+          to: [
+            65.45454545454545,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              65.45454545454545,
+              41
+            ],
+            [
+              62.95454545454545,
+              43
+            ],
+            [
+              65.45454545454545,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              65.45454545454545,
+              42
+            ],
+            [
+              67.95454545454545,
+              44
+            ],
+            [
+              65.45454545454545,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            71.63636363636363,
+            49
+          ],
+          to: [
+            71.63636363636363,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              71.63636363636363,
+              41
+            ],
+            [
+              69.13636363636363,
+              43
+            ],
+            [
+              71.63636363636363,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              71.63636363636363,
+              42
+            ],
+            [
+              74.13636363636363,
+              44
+            ],
+            [
+              71.63636363636363,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            77.81818181818181,
+            49
+          ],
+          to: [
+            77.81818181818181,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              77.81818181818181,
+              41
+            ],
+            [
+              75.31818181818181,
+              43
+            ],
+            [
+              77.81818181818181,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              77.81818181818181,
+              42
+            ],
+            [
+              80.31818181818181,
+              44
+            ],
+            [
+              77.81818181818181,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "line",
+          from: [
+            84,
+            49
+          ],
+          to: [
+            84,
+            41
+          ],
+          w: 1,
+          color: "leafD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              84,
+              41
+            ],
+            [
+              81.5,
+              43
+            ],
+            [
+              84,
+              42
+            ]
+          ],
+          color: "leaf"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              84,
+              42
+            ],
+            [
+              86.5,
+              44
+            ],
+            [
+              84,
+              44
+            ]
+          ],
+          color: "leafL"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 14,
+          w: 2,
+          h: 14,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            42,
+            18
+          ],
+          to: [
+            56,
+            18
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "ellipse",
+          cx: 49,
+          cy: 15,
+          rx: 3,
+          ry: 3,
+          color: "straw"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              43,
+              18
+            ],
+            [
+              55,
+              18
+            ],
+            [
+              52,
+              24
+            ],
+            [
+              46,
+              24
+            ]
+          ],
+          color: "hide"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/fence/L1.json
@@ -5096,82 +9447,1180 @@ var L2open_default = {
 
 // src/data/blueprints/stone_age/buildings/tower/L1.json
 var L1_default10 = {
-  name: "Ch\xF2i canh (c\u1EA5p 1, ch\xF2i g\u1ED7)",
-  name_en: "Watchtower (Tier 1, Timber)",
   type: "prop",
-  size: [72, 64],
-  anchor: [36, 58],
-  footprint: [4, 32, 64, 28],
+  size: [
+    72,
+    100
+  ],
+  anchor: [
+    36,
+    94
+  ],
+  footprint: [
+    4,
+    68,
+    64,
+    28
+  ],
   seed: 33,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", rope: "#d8c690", thatch: "#c9a84e", thatchL: "#e0c670", thatchD: "#9a7c32" },
+  animate: {
+    frames: 4,
+    fps: 6
+  },
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  name: "Ch\xF2i canh (c\u1EA5p 1, th\xE1p g\u1ED7)",
+  name_en: "Watchtower (Tier 1, Timber)",
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#4a3220",
+    rope: "#d8c690",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    flag: "#b8322a",
+    flagD: "#8a2420",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    slit: "#1c1c20",
+    flame2: "#e8641e",
+    flame1: "#f7a728",
+    flame0: "#fff1a8"
+  },
   layers: [
-    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
-    { shape: "group", if: "st1", layers: [
-      { shape: "rect", x: 10, y: 50, w: 52, h: 5, color: "dirt" }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "line", from: [14, 54], to: [20, 36], w: 3, color: "woodD" },
-      { shape: "line", from: [58, 54], to: [52, 36], w: 3, color: "woodD" },
-      { shape: "line", from: [22, 54], to: [24, 36], w: 2, color: "wood" },
-      { shape: "line", from: [50, 54], to: [48, 36], w: 2, color: "wood" },
-      { shape: "line", from: [18, 40], to: [54, 40], w: 2, color: "rope" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "rect", x: 14, y: 22, w: 44, h: 5, color: "wood" },
-      { shape: "rect", x: 14, y: 22, w: 44, h: 2, color: "woodL" },
-      { shape: "rect", x: 14, y: 12, w: 3, h: 12, color: "woodD" },
-      { shape: "rect", x: 55, y: 12, w: 3, h: 12, color: "woodD" },
-      { shape: "line", from: [14, 14], to: [58, 14], w: 2, color: "woodD" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "poly", points: [[10, 14], [36, 2], [62, 14]], color: "thatch" },
-      { shape: "poly", points: [[10, 14], [36, 2], [36, 14]], color: "thatchL" },
-      { shape: "poly", points: [[36, 2], [62, 14], [36, 14]], color: "thatchD" }
-    ] },
-    { shape: "outline", color: "line" }
+    {
+      shape: "ellipse",
+      cx: 36,
+      cy: 92,
+      rx: 30,
+      ry: 6,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "rect",
+          x: 10,
+          y: 86,
+          w: 52,
+          h: 6,
+          color: "dirt"
+        },
+        {
+          shape: "rect",
+          x: 14,
+          y: 88,
+          w: 8,
+          h: 4,
+          color: "earth"
+        },
+        {
+          shape: "rect",
+          x: 50,
+          y: 88,
+          w: 8,
+          h: 4,
+          color: "earth"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            15,
+            90
+          ],
+          to: [
+            21,
+            44
+          ],
+          w: 3,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            57,
+            90
+          ],
+          to: [
+            51,
+            44
+          ],
+          w: 3,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            24,
+            90
+          ],
+          to: [
+            27,
+            44
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            48,
+            90
+          ],
+          to: [
+            45,
+            44
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            18,
+            78
+          ],
+          to: [
+            48,
+            62
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            54,
+            78
+          ],
+          to: [
+            24,
+            62
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            17,
+            70
+          ],
+          to: [
+            55,
+            70
+          ],
+          w: 2,
+          color: "rope"
+        },
+        {
+          shape: "line",
+          from: [
+            19,
+            56
+          ],
+          to: [
+            53,
+            56
+          ],
+          w: 2,
+          color: "rope"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            90
+          ],
+          to: [
+            35,
+            46
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            39,
+            90
+          ],
+          to: [
+            39,
+            46
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            84
+          ],
+          to: [
+            39,
+            84
+          ],
+          w: 1,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            78
+          ],
+          to: [
+            39,
+            78
+          ],
+          w: 1,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            72
+          ],
+          to: [
+            39,
+            72
+          ],
+          w: 1,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            66
+          ],
+          to: [
+            39,
+            66
+          ],
+          w: 1,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            60
+          ],
+          to: [
+            39,
+            60
+          ],
+          w: 1,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            54
+          ],
+          to: [
+            39,
+            54
+          ],
+          w: 1,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            48
+          ],
+          to: [
+            39,
+            48
+          ],
+          w: 1,
+          color: "wood"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "rect",
+          x: 12,
+          y: 40,
+          w: 48,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 40,
+          w: 48,
+          h: 2,
+          color: "woodL"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 16,
+          w: 3,
+          h: 26,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 57,
+          y: 16,
+          w: 3,
+          h: 26,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            12,
+            26
+          ],
+          to: [
+            60,
+            26
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            13,
+            33
+          ],
+          to: [
+            59,
+            33
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "line",
+          from: [
+            51,
+            40
+          ],
+          to: [
+            51,
+            35
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              46,
+              34
+            ],
+            [
+              57,
+              34
+            ],
+            [
+              54,
+              38
+            ],
+            [
+              49,
+              38
+            ]
+          ],
+          color: "log"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              47,
+              34
+            ],
+            [
+              51,
+              {
+                cycle: [
+                  26,
+                  24,
+                  27,
+                  25
+                ]
+              }
+            ],
+            [
+              55,
+              34
+            ]
+          ],
+          color: "flame2"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              49,
+              34
+            ],
+            [
+              52,
+              {
+                cycle: [
+                  29,
+                  27,
+                  30,
+                  28
+                ]
+              }
+            ],
+            [
+              54,
+              34
+            ]
+          ],
+          color: "flame1"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              50,
+              34
+            ],
+            [
+              52,
+              {
+                cycle: [
+                  31,
+                  30,
+                  32,
+                  31
+                ]
+              }
+            ],
+            [
+              53,
+              34
+            ]
+          ],
+          color: "flame0"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              8,
+              22
+            ],
+            [
+              36,
+              10
+            ],
+            [
+              64,
+              22
+            ]
+          ],
+          color: "thatch"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              8,
+              22
+            ],
+            [
+              36,
+              10
+            ],
+            [
+              36,
+              22
+            ]
+          ],
+          color: "thatchL"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              10
+            ],
+            [
+              64,
+              22
+            ],
+            [
+              36,
+              22
+            ]
+          ],
+          color: "thatchD"
+        },
+        {
+          shape: "line",
+          from: [
+            36,
+            10
+          ],
+          to: [
+            36,
+            1
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              1
+            ],
+            [
+              47,
+              4
+            ],
+            [
+              36,
+              7
+            ]
+          ],
+          color: "flag"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
   ]
 };
 
 // src/data/blueprints/stone_age/buildings/tower/L2.json
 var L2_default9 = {
-  name: "Ch\xF2i canh (c\u1EA5p 2, ch\xF2i cao)",
-  name_en: "Watchtower (Tier 2, Tall)",
   type: "prop",
-  size: [72, 64],
-  anchor: [36, 58],
-  footprint: [4, 32, 64, 28],
+  size: [
+    72,
+    100
+  ],
+  anchor: [
+    36,
+    94
+  ],
+  footprint: [
+    4,
+    68,
+    64,
+    28
+  ],
   seed: 33,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", rope: "#d8c690", thatch: "#c9a84e", thatchL: "#e0c670", thatchD: "#9a7c32" },
+  animate: {
+    frames: 4,
+    fps: 6
+  },
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  name: "Ch\xF2i canh (c\u1EA5p 2, th\xE1p \u0111\xE1)",
+  name_en: "Watchtower (Tier 2, Stone)",
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#4a3220",
+    rope: "#d8c690",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    flag: "#b8322a",
+    flagD: "#8a2420",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    slit: "#1c1c20",
+    flame2: "#e8641e",
+    flame1: "#f7a728",
+    flame0: "#fff1a8"
+  },
   layers: [
-    { shape: "ellipse", cx: 36, cy: 55, rx: 30, ry: 6, color: "shadow", alpha: 0.25 },
-    { shape: "group", if: "st1", layers: [
-      { shape: "rect", x: 8, y: 48, w: 56, h: 7, color: "stoneD" },
-      { shape: "rect", x: 8, y: 48, w: 56, h: 2, color: "stoneL" }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "line", from: [14, 50], to: [20, 28], w: 3, color: "woodD" },
-      { shape: "line", from: [58, 50], to: [52, 28], w: 3, color: "woodD" },
-      { shape: "line", from: [22, 50], to: [24, 28], w: 2, color: "wood" },
-      { shape: "line", from: [50, 50], to: [48, 28], w: 2, color: "wood" },
-      { shape: "line", from: [18, 36], to: [54, 36], w: 2, color: "rope" },
-      { shape: "line", from: [20, 26], to: [52, 26], w: 2, color: "rope" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "rect", x: 12, y: 14, w: 48, h: 5, color: "woodL" },
-      { shape: "rect", x: 12, y: 14, w: 48, h: 2, color: "wood" },
-      { shape: "rect", x: 12, y: 4, w: 3, h: 12, color: "woodD" },
-      { shape: "rect", x: 57, y: 4, w: 3, h: 12, color: "woodD" },
-      { shape: "line", from: [12, 6], to: [60, 6], w: 2, color: "woodD" },
-      { shape: "line", from: [13, 10], to: [59, 10], w: 1, color: "rope" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "poly", points: [[8, 6], [36, 0], [64, 6]], color: "thatch" },
-      { shape: "poly", points: [[8, 6], [36, 0], [36, 6]], color: "thatchL" },
-      { shape: "poly", points: [[36, 0], [64, 6], [36, 6]], color: "thatchD" }
-    ] },
-    { shape: "outline", color: "line" }
+    {
+      shape: "ellipse",
+      cx: 36,
+      cy: 92,
+      rx: 30,
+      ry: 6,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "rect",
+          x: 8,
+          y: 84,
+          w: 56,
+          h: 8,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 84,
+          w: 56,
+          h: 2,
+          color: "stoneL"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "rect",
+          x: 18,
+          y: 46,
+          w: 36,
+          h: 40,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 18,
+          y: 46,
+          w: 6,
+          h: 40,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 46,
+          w: 6,
+          h: 40,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            18,
+            58
+          ],
+          to: [
+            54,
+            58
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            18,
+            70
+          ],
+          to: [
+            54,
+            70
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            30,
+            46
+          ],
+          to: [
+            30,
+            58
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            42,
+            46
+          ],
+          to: [
+            42,
+            58
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            24,
+            58
+          ],
+          to: [
+            24,
+            70
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            36,
+            58
+          ],
+          to: [
+            36,
+            70
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            48,
+            58
+          ],
+          to: [
+            48,
+            70
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            30,
+            70
+          ],
+          to: [
+            30,
+            86
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            42,
+            70
+          ],
+          to: [
+            42,
+            86
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 60,
+          w: 4,
+          h: 10,
+          color: "slit"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              31,
+              86
+            ],
+            [
+              31,
+              76
+            ],
+            [
+              36,
+              72
+            ],
+            [
+              41,
+              76
+            ],
+            [
+              41,
+              86
+            ]
+          ],
+          color: "woodD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "rect",
+          x: 10,
+          y: 40,
+          w: 52,
+          h: 6,
+          color: "woodL"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 40,
+          w: 52,
+          h: 2,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 32,
+          w: 52,
+          h: 8,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 32,
+          w: 52,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 27,
+          w: 6,
+          h: 6,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 22,
+          y: 27,
+          w: 6,
+          h: 6,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 27,
+          w: 6,
+          h: 6,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 46,
+          y: 27,
+          w: 6,
+          h: 6,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 27,
+          w: 6,
+          h: 6,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 27,
+          w: 6,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 22,
+          y: 27,
+          w: 6,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 27,
+          w: 6,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 46,
+          y: 27,
+          w: 6,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 27,
+          w: 6,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "line",
+          from: [
+            36,
+            32
+          ],
+          to: [
+            36,
+            26
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              29,
+              26
+            ],
+            [
+              43,
+              26
+            ],
+            [
+              40,
+              31
+            ],
+            [
+              32,
+              31
+            ]
+          ],
+          color: "log"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              32,
+              26
+            ],
+            [
+              36,
+              {
+                cycle: [
+                  18,
+                  16,
+                  19,
+                  17
+                ]
+              }
+            ],
+            [
+              40,
+              26
+            ]
+          ],
+          color: "flame2"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              34,
+              26
+            ],
+            [
+              37,
+              {
+                cycle: [
+                  21,
+                  19,
+                  22,
+                  20
+                ]
+              }
+            ],
+            [
+              39,
+              26
+            ]
+          ],
+          color: "flame1"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              35,
+              26
+            ],
+            [
+              37,
+              {
+                cycle: [
+                  23,
+                  22,
+                  24,
+                  23
+                ]
+              }
+            ],
+            [
+              38,
+              26
+            ]
+          ],
+          color: "flame0"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            14,
+            27
+          ],
+          to: [
+            14,
+            8
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              8
+            ],
+            [
+              28,
+              12
+            ],
+            [
+              14,
+              17
+            ]
+          ],
+          color: "flag"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              8
+            ],
+            [
+              28,
+              12
+            ],
+            [
+              14,
+              12
+            ]
+          ],
+          color: "flagD"
+        },
+        {
+          shape: "line",
+          from: [
+            58,
+            27
+          ],
+          to: [
+            58,
+            16
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              55,
+              16
+            ],
+            [
+              61,
+              16
+            ],
+            [
+              58,
+              12
+            ]
+          ],
+          color: "thatchD"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
   ]
 };
 
@@ -14808,7 +20257,6 @@ var L3_default10 = {
 var L1_default15 = {
   name: "N\xF4ng tr\u1EA1i (c\u1EA5p 1, nh\xE0 \u0111an ph\xEAn, \u0111\u1ED1ng r\u01A1m)",
   name_en: "Farmstead (Tier 1)",
-  type: "prop",
   size: [
     72,
     64
@@ -14824,58 +20272,6 @@ var L1_default15 = {
     28
   ],
   seed: 11,
-  params: {
-    st1: 1,
-    st2: 1,
-    st3: 1,
-    st4: 1
-  },
-  palette: {
-    line: "#2b1d10",
-    shadow: "#000000",
-    dirt: "#6a5238",
-    earth: "#86704e",
-    earthL: "#9a8460",
-    wood: "#8a6238",
-    woodL: "#aa7c48",
-    woodD: "#5e4026",
-    log: "#6b4a28",
-    logE: "#c49a60",
-    rope: "#d8c690",
-    stone: "#8e9498",
-    stoneL: "#b9bfc2",
-    stoneD: "#60676b",
-    chip: "#d8d2c0",
-    hide: "#a0552f",
-    hideL: "#c06f43",
-    hideD: "#7a3d20",
-    stitch: "#e8d6a8",
-    bone: "#e4dcc4",
-    flintL: "#7c8794",
-    door: "#2a1a0e",
-    flag: "#b03a2e",
-    flagD: "#7d2a20",
-    thatch: "#c9a84e",
-    thatchL: "#e0c670",
-    thatchD: "#9a7c32",
-    wattle: "#b89a58",
-    wattleD: "#8a7038",
-    clay: "#b08a62",
-    clayD: "#8c6a48",
-    green: "#6f9a3e",
-    greenD: "#4f7a2c",
-    greenL: "#8fba54",
-    hay: "#d6b85a",
-    hayD: "#a88a38",
-    fur: "#7a5230",
-    furD: "#553820",
-    furL: "#9a7048",
-    sand: "#c4ad7c",
-    target: "#e4dcc4",
-    flame: "#f89628",
-    flameL: "#ffd060",
-    water: "#5a7f9a"
-  },
   layers: [
     {
       shape: "ellipse",
@@ -14980,15 +20376,6 @@ var L1_default15 = {
           onlyOver: [
             "earth"
           ]
-        },
-        {
-          shape: "rect",
-          x: 8,
-          y: 46,
-          w: 56,
-          h: 8,
-          color: "green",
-          alpha: 0
         }
       ]
     },
@@ -14999,26 +20386,57 @@ var L1_default15 = {
         {
           shape: "rect",
           x: 14,
-          y: 28,
+          y: 30,
           w: 3,
-          h: 24,
-          color: "woodD"
-        },
-        {
-          shape: "rect",
-          x: 36,
-          y: 28,
-          w: 3,
-          h: 24,
-          color: "woodD"
-        },
-        {
-          shape: "rect",
-          x: 14,
-          y: 28,
-          w: 25,
-          h: 3,
+          h: 23,
           color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 30,
+          w: 3,
+          h: 23,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            8,
+            36
+          ],
+          to: [
+            35,
+            8
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            64,
+            36
+          ],
+          to: [
+            35,
+            8
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            15,
+            34
+          ],
+          to: [
+            57,
+            34
+          ],
+          w: 1,
+          color: "rope"
         }
       ]
     },
@@ -15028,60 +20446,180 @@ var L1_default15 = {
       layers: [
         {
           shape: "rect",
-          x: 15,
+          x: 14,
           y: 30,
-          w: 24,
-          h: 22,
-          color: "wattle"
+          w: 44,
+          h: 23,
+          color: "wicker"
         },
         {
-          shape: "rect",
-          x: 15,
-          y: 30,
-          w: 24,
-          h: 2,
-          color: "wattleD"
+          shape: "line",
+          from: [
+            14,
+            34
+          ],
+          to: [
+            58,
+            34
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.7
         },
         {
-          shape: "rect",
-          x: 16,
-          y: 40,
-          w: 22,
-          h: 1,
-          color: "wattleD",
-          alpha: 0.6
+          shape: "line",
+          from: [
+            14,
+            38
+          ],
+          to: [
+            58,
+            38
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.7
         },
         {
-          shape: "rect",
-          x: 23,
-          y: 38,
-          w: 8,
-          h: 14,
-          color: "door"
+          shape: "line",
+          from: [
+            14,
+            42
+          ],
+          to: [
+            58,
+            42
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.7
         },
         {
-          shape: "rect",
-          x: 24,
-          y: 39,
-          w: 6,
-          h: 13,
-          color: "woodD",
-          alpha: 0
+          shape: "line",
+          from: [
+            14,
+            46
+          ],
+          to: [
+            58,
+            46
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.7
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            50
+          ],
+          to: [
+            58,
+            50
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.7
+        },
+        {
+          shape: "line",
+          from: [
+            20,
+            30
+          ],
+          to: [
+            20,
+            53
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.35
+        },
+        {
+          shape: "line",
+          from: [
+            26,
+            30
+          ],
+          to: [
+            26,
+            53
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.35
+        },
+        {
+          shape: "line",
+          from: [
+            32,
+            30
+          ],
+          to: [
+            32,
+            53
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.35
+        },
+        {
+          shape: "line",
+          from: [
+            38,
+            30
+          ],
+          to: [
+            38,
+            53
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.35
+        },
+        {
+          shape: "line",
+          from: [
+            44,
+            30
+          ],
+          to: [
+            44,
+            53
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.35
+        },
+        {
+          shape: "line",
+          from: [
+            50,
+            30
+          ],
+          to: [
+            50,
+            53
+          ],
+          w: 1,
+          color: "wickerD",
+          alpha: 0.35
         },
         {
           shape: "poly",
           points: [
             [
-              8,
-              32
+              6,
+              36
             ],
             [
-              26,
-              12
+              36,
+              8
             ],
             [
-              46,
-              32
+              66,
+              36
             ]
           ],
           color: "thatch"
@@ -15090,16 +20628,20 @@ var L1_default15 = {
           shape: "poly",
           points: [
             [
-              8,
-              32
+              36,
+              8
             ],
             [
-              26,
-              12
+              6,
+              36
             ],
             [
-              26,
-              32
+              20,
+              36
+            ],
+            [
+              36,
+              22
             ]
           ],
           color: "thatchL"
@@ -15108,33 +20650,77 @@ var L1_default15 = {
           shape: "poly",
           points: [
             [
-              26,
-              12
+              36,
+              8
             ],
             [
-              46,
-              32
+              66,
+              36
+            ],
+            [
+              52,
+              36
             ],
             [
               36,
-              32
+              28
             ]
           ],
           color: "thatchD"
         },
         {
-          shape: "line",
-          from: [
-            26,
-            12
+          shape: "scatter",
+          count: 46,
+          area: [
+            14,
+            12,
+            44,
+            20
           ],
-          to: [
-            26,
-            32
+          size: [
+            1,
+            3
           ],
-          w: 1,
-          color: "thatchD",
-          alpha: 0.7
+          colors: [
+            "thatchL",
+            "thatchD",
+            "thatchL"
+          ],
+          onlyOver: [
+            "thatch"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 6,
+          y: 35,
+          w: 60,
+          h: 3,
+          color: "thatchD"
+        },
+        {
+          shape: "rect",
+          x: 6,
+          y: 35,
+          w: 60,
+          h: 1,
+          color: "thatchL"
+        },
+        {
+          shape: "rect",
+          x: 13,
+          y: 40,
+          w: 3,
+          h: 13,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 57,
+          y: 40,
+          w: 3,
+          h: 13,
+          color: "woodD"
         }
       ]
     },
@@ -15143,234 +20729,161 @@ var L1_default15 = {
       if: "st4",
       layers: [
         {
-          shape: "ellipse",
-          cx: 54,
-          cy: 44,
-          rx: 7,
-          ry: 6,
-          color: "hayD"
+          shape: "rect",
+          x: 28,
+          y: 40,
+          w: 14,
+          h: 13,
+          color: "door"
         },
         {
-          shape: "ellipse",
-          cx: 54,
-          cy: 43,
-          rx: 6,
-          ry: 6,
-          color: "hay"
-        },
-        {
-          shape: "poly",
-          points: [
-            [
-              48,
-              43
-            ],
-            [
-              54,
-              33
-            ],
-            [
-              60,
-              43
-            ]
-          ],
-          color: "hay"
+          shape: "rect",
+          x: 27,
+          y: 39,
+          w: 16,
+          h: 2,
+          color: "woodD"
         },
         {
           shape: "line",
           from: [
-            54,
-            33
+            35,
+            41
           ],
           to: [
-            54,
-            43
-          ],
-          w: 1,
-          color: "hayD",
-          alpha: 0.7
-        },
-        {
-          shape: "line",
-          from: [
-            44,
-            47
-          ],
-          to: [
-            64,
-            47
-          ],
-          w: 2,
-          color: "dirt"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              46,
-              46
-            ],
-            [
-              50,
-              46
-            ],
-            [
-              54,
-              46
-            ],
-            [
-              58,
-              46
-            ],
-            [
-              62,
-              46
-            ]
-          ],
-          color: "greenL"
-        },
-        {
-          shape: "line",
-          from: [
-            44,
-            50
-          ],
-          to: [
-            64,
-            50
-          ],
-          w: 2,
-          color: "dirt"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              46,
-              49
-            ],
-            [
-              50,
-              49
-            ],
-            [
-              54,
-              49
-            ],
-            [
-              58,
-              49
-            ],
-            [
-              62,
-              49
-            ]
-          ],
-          color: "green"
-        },
-        {
-          shape: "line",
-          from: [
-            44,
-            53
-          ],
-          to: [
-            64,
-            53
-          ],
-          w: 2,
-          color: "dirt"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              46,
-              52
-            ],
-            [
-              50,
-              52
-            ],
-            [
-              54,
-              52
-            ],
-            [
-              58,
-              52
-            ],
-            [
-              62,
-              52
-            ]
-          ],
-          color: "greenL"
-        },
-        {
-          shape: "ellipse",
-          cx: 9,
-          cy: 52,
-          rx: 3,
-          ry: 2,
-          color: "wattleD"
-        },
-        {
-          shape: "ellipse",
-          cx: 9,
-          cy: 51,
-          rx: 3,
-          ry: 2,
-          color: "wattle"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              8,
-              49
-            ],
-            [
-              10,
-              49
-            ],
-            [
-              9,
-              48
-            ]
-          ],
-          color: "greenL"
-        },
-        {
-          shape: "line",
-          from: [
-            44,
+            35,
             52
-          ],
-          to: [
-            48,
-            36
           ],
           w: 1,
           color: "woodD"
         },
         {
+          shape: "ellipse",
+          cx: 10,
+          cy: 52,
+          rx: 8,
+          ry: 3,
+          color: "strawD"
+        },
+        {
           shape: "poly",
           points: [
             [
-              46,
-              35
+              2,
+              52
             ],
             [
-              50,
-              35
+              4,
+              42
             ],
             [
-              49,
+              10,
               38
+            ],
+            [
+              16,
+              42
+            ],
+            [
+              18,
+              52
             ]
           ],
-          color: "flintL"
+          color: "straw"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              10,
+              38
+            ],
+            [
+              4,
+              42
+            ],
+            [
+              7,
+              52
+            ],
+            [
+              10,
+              46
+            ]
+          ],
+          color: "strawL"
+        },
+        {
+          shape: "scatter",
+          count: 18,
+          area: [
+            3,
+            40,
+            14,
+            12
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "strawD",
+            "strawL"
+          ],
+          onlyOver: [
+            "straw"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 50,
+          y: 46,
+          w: 10,
+          h: 7,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 50,
+          y: 46,
+          w: 10,
+          h: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            55,
+            46
+          ],
+          to: [
+            55,
+            52
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 64,
+          cy: 51,
+          rx: 4,
+          ry: 3,
+          color: "wicker"
+        },
+        {
+          shape: "pixels",
+          at: [
+            [
+              63,
+              48
+            ],
+            [
+              65,
+              49
+            ]
+          ],
+          color: "berry"
         }
       ]
     },
@@ -15378,14 +20891,73 @@ var L1_default15 = {
       shape: "outline",
       color: "line"
     }
-  ]
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/farmhouse/L2.json
 var L2_default14 = {
   name: "N\xF4ng tr\u1EA1i (c\u1EA5p 2, nh\xE0 tr\xE1t \u0111\u1EA5t, \u1ED1ng kh\xF3i)",
   name_en: "Farmstead (Tier 2)",
-  type: "prop",
   size: [
     72,
     64
@@ -15401,58 +20973,6 @@ var L2_default14 = {
     28
   ],
   seed: 12,
-  params: {
-    st1: 1,
-    st2: 1,
-    st3: 1,
-    st4: 1
-  },
-  palette: {
-    line: "#2b1d10",
-    shadow: "#000000",
-    dirt: "#6a5238",
-    earth: "#86704e",
-    earthL: "#9a8460",
-    wood: "#8a6238",
-    woodL: "#aa7c48",
-    woodD: "#5e4026",
-    log: "#6b4a28",
-    logE: "#c49a60",
-    rope: "#d8c690",
-    stone: "#8e9498",
-    stoneL: "#b9bfc2",
-    stoneD: "#60676b",
-    chip: "#d8d2c0",
-    hide: "#a0552f",
-    hideL: "#c06f43",
-    hideD: "#7a3d20",
-    stitch: "#e8d6a8",
-    bone: "#e4dcc4",
-    flintL: "#7c8794",
-    door: "#2a1a0e",
-    flag: "#b03a2e",
-    flagD: "#7d2a20",
-    thatch: "#c9a84e",
-    thatchL: "#e0c670",
-    thatchD: "#9a7c32",
-    wattle: "#b89a58",
-    wattleD: "#8a7038",
-    clay: "#b08a62",
-    clayD: "#8c6a48",
-    green: "#6f9a3e",
-    greenD: "#4f7a2c",
-    greenL: "#8fba54",
-    hay: "#d6b85a",
-    hayD: "#a88a38",
-    fur: "#7a5230",
-    furD: "#553820",
-    furL: "#9a7048",
-    sand: "#c4ad7c",
-    target: "#e4dcc4",
-    flame: "#f89628",
-    flameL: "#ffd060",
-    water: "#5a7f9a"
-  },
   layers: [
     {
       shape: "ellipse",
@@ -15557,15 +21077,6 @@ var L2_default14 = {
           onlyOver: [
             "earth"
           ]
-        },
-        {
-          shape: "rect",
-          x: 8,
-          y: 46,
-          w: 56,
-          h: 8,
-          color: "green",
-          alpha: 0
         }
       ]
     },
@@ -15575,27 +21086,45 @@ var L2_default14 = {
       layers: [
         {
           shape: "rect",
-          x: 14,
+          x: 13,
           y: 28,
           w: 3,
-          h: 24,
-          color: "woodD"
-        },
-        {
-          shape: "rect",
-          x: 36,
-          y: 28,
-          w: 3,
-          h: 24,
-          color: "woodD"
-        },
-        {
-          shape: "rect",
-          x: 14,
-          y: 28,
-          w: 25,
-          h: 3,
+          h: 25,
           color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 57,
+          y: 28,
+          w: 3,
+          h: 25,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            6,
+            36
+          ],
+          to: [
+            35,
+            6
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            66,
+            36
+          ],
+          to: [
+            35,
+            6
+          ],
+          w: 2,
+          color: "woodD"
         }
       ]
     },
@@ -15605,60 +21134,61 @@ var L2_default14 = {
       layers: [
         {
           shape: "rect",
-          x: 15,
-          y: 30,
-          w: 24,
-          h: 22,
+          x: 12,
+          y: 28,
+          w: 48,
+          h: 25,
           color: "clay"
         },
         {
           shape: "rect",
-          x: 15,
-          y: 30,
-          w: 24,
+          x: 12,
+          y: 28,
+          w: 48,
           h: 2,
           color: "clayD"
         },
         {
           shape: "rect",
-          x: 16,
-          y: 40,
-          w: 22,
+          x: 12,
+          y: 36,
+          w: 48,
           h: 1,
           color: "clayD",
-          alpha: 0.6
+          alpha: 0.5
         },
         {
           shape: "rect",
-          x: 23,
-          y: 38,
-          w: 8,
-          h: 14,
-          color: "door"
+          x: 12,
+          y: 44,
+          w: 48,
+          h: 1,
+          color: "clayD",
+          alpha: 0.5
         },
         {
           shape: "rect",
-          x: 24,
-          y: 39,
-          w: 6,
-          h: 13,
-          color: "woodD",
-          alpha: 0
+          x: 12,
+          y: 28,
+          w: 3,
+          h: 25,
+          color: "clayD",
+          alpha: 0.35
         },
         {
           shape: "poly",
           points: [
             [
-              8,
-              32
+              4,
+              36
             ],
             [
-              26,
-              12
+              36,
+              5
             ],
             [
-              46,
-              32
+              68,
+              36
             ]
           ],
           color: "thatch"
@@ -15667,16 +21197,20 @@ var L2_default14 = {
           shape: "poly",
           points: [
             [
-              8,
-              32
+              36,
+              5
             ],
             [
-              26,
-              12
+              4,
+              36
             ],
             [
-              26,
-              32
+              18,
+              36
+            ],
+            [
+              36,
+              19
             ]
           ],
           color: "thatchL"
@@ -15685,68 +21219,93 @@ var L2_default14 = {
           shape: "poly",
           points: [
             [
-              26,
-              12
+              36,
+              5
             ],
             [
-              46,
-              32
+              68,
+              36
+            ],
+            [
+              54,
+              36
             ],
             [
               36,
-              32
+              25
             ]
           ],
           color: "thatchD"
         },
         {
-          shape: "line",
-          from: [
-            26,
-            12
+          shape: "scatter",
+          count: 46,
+          area: [
+            12,
+            9,
+            48,
+            23
           ],
-          to: [
-            26,
-            32
+          size: [
+            1,
+            3
           ],
-          w: 1,
-          color: "thatchD",
-          alpha: 0.7
+          colors: [
+            "thatchL",
+            "thatchD",
+            "thatchL"
+          ],
+          onlyOver: [
+            "thatch"
+          ]
         },
         {
           shape: "rect",
-          x: 36,
-          y: 8,
-          w: 5,
-          h: 12,
+          x: 4,
+          y: 35,
+          w: 64,
+          h: 3,
+          color: "thatchD"
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 35,
+          w: 64,
+          h: 1,
+          color: "thatchL"
+        },
+        {
+          shape: "rect",
+          x: 46,
+          y: 10,
+          w: 7,
+          h: 14,
           color: "stone"
         },
         {
           shape: "rect",
-          x: 36,
-          y: 8,
-          w: 5,
-          h: 1,
+          x: 46,
+          y: 10,
+          w: 7,
+          h: 2,
           color: "stoneL"
         },
         {
-          shape: "pixels",
-          at: [
-            [
-              38,
-              5
-            ],
-            [
-              39,
-              3
-            ],
-            [
-              37,
-              2
-            ]
-          ],
-          color: "chip",
-          alpha: 0.6
+          shape: "rect",
+          x: 11,
+          y: 38,
+          w: 3,
+          h: 15,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 58,
+          y: 38,
+          w: 3,
+          h: 15,
+          color: "woodD"
         }
       ]
     },
@@ -15755,234 +21314,154 @@ var L2_default14 = {
       if: "st4",
       layers: [
         {
-          shape: "ellipse",
-          cx: 54,
-          cy: 44,
-          rx: 7,
-          ry: 6,
-          color: "hayD"
+          shape: "rect",
+          x: 28,
+          y: 38,
+          w: 14,
+          h: 15,
+          color: "woodD"
         },
         {
-          shape: "ellipse",
-          cx: 54,
-          cy: 43,
-          rx: 6,
-          ry: 6,
-          color: "hay"
-        },
-        {
-          shape: "poly",
-          points: [
-            [
-              48,
-              43
-            ],
-            [
-              54,
-              33
-            ],
-            [
-              60,
-              43
-            ]
-          ],
-          color: "hay"
+          shape: "rect",
+          x: 29,
+          y: 39,
+          w: 12,
+          h: 14,
+          color: "wood"
         },
         {
           shape: "line",
           from: [
-            54,
-            33
+            35,
+            39
           ],
           to: [
-            54,
-            43
-          ],
-          w: 1,
-          color: "hayD",
-          alpha: 0.7
-        },
-        {
-          shape: "line",
-          from: [
-            44,
-            47
-          ],
-          to: [
-            64,
-            47
-          ],
-          w: 2,
-          color: "dirt"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              46,
-              46
-            ],
-            [
-              50,
-              46
-            ],
-            [
-              54,
-              46
-            ],
-            [
-              58,
-              46
-            ],
-            [
-              62,
-              46
-            ]
-          ],
-          color: "green"
-        },
-        {
-          shape: "line",
-          from: [
-            44,
-            50
-          ],
-          to: [
-            64,
-            50
-          ],
-          w: 2,
-          color: "dirt"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              46,
-              49
-            ],
-            [
-              50,
-              49
-            ],
-            [
-              54,
-              49
-            ],
-            [
-              58,
-              49
-            ],
-            [
-              62,
-              49
-            ]
-          ],
-          color: "greenL"
-        },
-        {
-          shape: "line",
-          from: [
-            44,
-            53
-          ],
-          to: [
-            64,
-            53
-          ],
-          w: 2,
-          color: "dirt"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              46,
-              52
-            ],
-            [
-              50,
-              52
-            ],
-            [
-              54,
-              52
-            ],
-            [
-              58,
-              52
-            ],
-            [
-              62,
-              52
-            ]
-          ],
-          color: "green"
-        },
-        {
-          shape: "ellipse",
-          cx: 9,
-          cy: 52,
-          rx: 3,
-          ry: 2,
-          color: "wattleD"
-        },
-        {
-          shape: "ellipse",
-          cx: 9,
-          cy: 51,
-          rx: 3,
-          ry: 2,
-          color: "wattle"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              8,
-              49
-            ],
-            [
-              10,
-              49
-            ],
-            [
-              9,
-              48
-            ]
-          ],
-          color: "greenL"
-        },
-        {
-          shape: "line",
-          from: [
-            44,
+            35,
             52
-          ],
-          to: [
-            48,
-            36
           ],
           w: 1,
           color: "woodD"
         },
         {
-          shape: "poly",
-          points: [
-            [
-              46,
-              35
-            ],
-            [
-              50,
-              35
-            ],
-            [
-              49,
-              38
-            ]
+          shape: "rect",
+          x: 36,
+          y: 46,
+          w: 2,
+          h: 2,
+          color: "logE"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 40,
+          w: 7,
+          h: 6,
+          color: "door"
+        },
+        {
+          shape: "line",
+          from: [
+            19,
+            40
           ],
-          color: "flintL"
+          to: [
+            19,
+            45
+          ],
+          w: 1,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            16,
+            43
+          ],
+          to: [
+            22,
+            43
+          ],
+          w: 1,
+          color: "wood"
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 7,
+          rx: 3,
+          ry: 2,
+          color: "smoke",
+          alpha: 0.7
+        },
+        {
+          shape: "ellipse",
+          cx: 53,
+          cy: 3,
+          rx: 2,
+          ry: 2,
+          color: "smoke",
+          alpha: 0.5
+        },
+        {
+          shape: "ellipse",
+          cx: 6,
+          cy: 54,
+          rx: 4,
+          ry: 2,
+          color: "clayD"
+        },
+        {
+          shape: "ellipse",
+          cx: 6,
+          cy: 51,
+          rx: 4,
+          ry: 5,
+          color: "clay"
+        },
+        {
+          shape: "rect",
+          x: 3,
+          y: 46,
+          w: 6,
+          h: 2,
+          color: "clayD"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 46,
+          w: 12,
+          h: 7,
+          color: "straw"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 46,
+          w: 12,
+          h: 1,
+          color: "strawL"
+        },
+        {
+          shape: "line",
+          from: [
+            48,
+            49
+          ],
+          to: [
+            59,
+            49
+          ],
+          w: 1,
+          color: "strawD"
+        },
+        {
+          shape: "ellipse",
+          cx: 64,
+          cy: 51,
+          rx: 4,
+          ry: 3,
+          color: "wicker"
         }
       ]
     },
@@ -15990,14 +21469,73 @@ var L2_default14 = {
       shape: "outline",
       color: "line"
     }
-  ]
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/farmhouse/L3.json
 var L3_default11 = {
   name: "N\xF4ng tr\u1EA1i (c\u1EA5p 3, nh\xE0 n\u1EC1n \u0111\xE1, \u1ED1ng kh\xF3i)",
   name_en: "Farmstead (Tier 3)",
-  type: "prop",
   size: [
     72,
     64
@@ -16013,58 +21551,6 @@ var L3_default11 = {
     28
   ],
   seed: 13,
-  params: {
-    st1: 1,
-    st2: 1,
-    st3: 1,
-    st4: 1
-  },
-  palette: {
-    line: "#2b1d10",
-    shadow: "#000000",
-    dirt: "#6a5238",
-    earth: "#86704e",
-    earthL: "#9a8460",
-    wood: "#8a6238",
-    woodL: "#aa7c48",
-    woodD: "#5e4026",
-    log: "#6b4a28",
-    logE: "#c49a60",
-    rope: "#d8c690",
-    stone: "#8e9498",
-    stoneL: "#b9bfc2",
-    stoneD: "#60676b",
-    chip: "#d8d2c0",
-    hide: "#a0552f",
-    hideL: "#c06f43",
-    hideD: "#7a3d20",
-    stitch: "#e8d6a8",
-    bone: "#e4dcc4",
-    flintL: "#7c8794",
-    door: "#2a1a0e",
-    flag: "#b03a2e",
-    flagD: "#7d2a20",
-    thatch: "#c9a84e",
-    thatchL: "#e0c670",
-    thatchD: "#9a7c32",
-    wattle: "#b89a58",
-    wattleD: "#8a7038",
-    clay: "#b08a62",
-    clayD: "#8c6a48",
-    green: "#6f9a3e",
-    greenD: "#4f7a2c",
-    greenL: "#8fba54",
-    hay: "#d6b85a",
-    hayD: "#a88a38",
-    fur: "#7a5230",
-    furD: "#553820",
-    furL: "#9a7048",
-    sand: "#c4ad7c",
-    target: "#e4dcc4",
-    flame: "#f89628",
-    flameL: "#ffd060",
-    water: "#5a7f9a"
-  },
   layers: [
     {
       shape: "ellipse",
@@ -16172,12 +21658,12 @@ var L3_default11 = {
         },
         {
           shape: "rect",
-          x: 8,
-          y: 46,
-          w: 56,
-          h: 8,
-          color: "green",
-          alpha: 0
+          x: 10,
+          y: 49,
+          w: 52,
+          h: 4,
+          color: "stoneD",
+          alpha: 0.55
         }
       ]
     },
@@ -16187,90 +21673,45 @@ var L3_default11 = {
       layers: [
         {
           shape: "rect",
-          x: 14,
-          y: 28,
-          w: 3,
-          h: 24,
-          color: "woodD"
-        },
-        {
-          shape: "rect",
-          x: 36,
-          y: 28,
-          w: 3,
-          h: 24,
-          color: "woodD"
-        },
-        {
-          shape: "rect",
-          x: 14,
-          y: 28,
-          w: 25,
-          h: 3,
+          x: 12,
+          y: 26,
+          w: 4,
+          h: 27,
           color: "wood"
         },
         {
           shape: "rect",
-          x: 12,
-          y: 46,
-          w: 30,
-          h: 8,
-          color: "stone"
-        },
-        {
-          shape: "rect",
-          x: 12,
-          y: 46,
-          w: 30,
-          h: 1,
-          color: "stoneL"
-        },
-        {
-          shape: "rect",
-          x: 12,
-          y: 53,
-          w: 30,
-          h: 1,
-          color: "stoneD"
+          x: 56,
+          y: 26,
+          w: 4,
+          h: 27,
+          color: "woodD"
         },
         {
           shape: "line",
           from: [
-            18,
-            46
+            5,
+            36
           ],
           to: [
-            18,
-            53
+            35,
+            5
           ],
-          w: 1,
-          color: "stoneD"
+          w: 3,
+          color: "wood"
         },
         {
           shape: "line",
           from: [
-            26,
-            46
+            67,
+            36
           ],
           to: [
-            26,
-            53
+            35,
+            5
           ],
-          w: 1,
-          color: "stoneD"
-        },
-        {
-          shape: "line",
-          from: [
-            34,
-            46
-          ],
-          to: [
-            34,
-            53
-          ],
-          w: 1,
-          color: "stoneD"
+          w: 3,
+          color: "woodD"
         }
       ]
     },
@@ -16280,60 +21721,95 @@ var L3_default11 = {
       layers: [
         {
           shape: "rect",
-          x: 15,
-          y: 30,
-          w: 24,
-          h: 22,
+          x: 12,
+          y: 26,
+          w: 48,
+          h: 27,
           color: "clay"
         },
         {
           shape: "rect",
-          x: 15,
-          y: 30,
-          w: 24,
-          h: 2,
-          color: "clayD"
+          x: 12,
+          y: 42,
+          w: 48,
+          h: 11,
+          color: "stone"
         },
         {
           shape: "rect",
-          x: 16,
-          y: 40,
-          w: 22,
-          h: 1,
-          color: "clayD",
+          x: 12,
+          y: 42,
+          w: 48,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 20,
+          y: 44,
+          w: 1,
+          h: 9,
+          color: "stoneD",
           alpha: 0.6
         },
         {
           shape: "rect",
-          x: 23,
-          y: 38,
-          w: 8,
-          h: 14,
-          color: "door"
+          x: 28,
+          y: 44,
+          w: 1,
+          h: 9,
+          color: "stoneD",
+          alpha: 0.6
         },
         {
           shape: "rect",
-          x: 24,
-          y: 39,
-          w: 6,
-          h: 13,
-          color: "woodD",
-          alpha: 0
+          x: 36,
+          y: 44,
+          w: 1,
+          h: 9,
+          color: "stoneD",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 44,
+          y: 44,
+          w: 1,
+          h: 9,
+          color: "stoneD",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 52,
+          y: 44,
+          w: 1,
+          h: 9,
+          color: "stoneD",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 26,
+          w: 48,
+          h: 2,
+          color: "clayD"
         },
         {
           shape: "poly",
           points: [
             [
-              8,
-              32
+              3,
+              34
             ],
             [
-              26,
-              12
+              36,
+              4
             ],
             [
-              46,
-              32
+              69,
+              34
             ]
           ],
           color: "thatch"
@@ -16342,16 +21818,20 @@ var L3_default11 = {
           shape: "poly",
           points: [
             [
-              8,
-              32
+              36,
+              4
             ],
             [
-              26,
-              12
+              3,
+              34
             ],
             [
-              26,
-              32
+              17,
+              34
+            ],
+            [
+              36,
+              18
             ]
           ],
           color: "thatchL"
@@ -16360,68 +21840,93 @@ var L3_default11 = {
           shape: "poly",
           points: [
             [
-              26,
-              12
+              36,
+              4
             ],
             [
-              46,
-              32
+              69,
+              34
+            ],
+            [
+              55,
+              34
             ],
             [
               36,
-              32
+              24
             ]
           ],
           color: "thatchD"
         },
         {
-          shape: "line",
-          from: [
-            26,
-            12
+          shape: "scatter",
+          count: 46,
+          area: [
+            11,
+            8,
+            50,
+            22
           ],
-          to: [
-            26,
-            32
+          size: [
+            1,
+            3
           ],
-          w: 1,
-          color: "thatchD",
-          alpha: 0.7
+          colors: [
+            "thatchL",
+            "thatchD",
+            "thatchL"
+          ],
+          onlyOver: [
+            "thatch"
+          ]
         },
         {
           shape: "rect",
-          x: 36,
+          x: 3,
+          y: 33,
+          w: 66,
+          h: 3,
+          color: "thatchD"
+        },
+        {
+          shape: "rect",
+          x: 3,
+          y: 33,
+          w: 66,
+          h: 1,
+          color: "thatchL"
+        },
+        {
+          shape: "rect",
+          x: 48,
           y: 8,
-          w: 5,
-          h: 12,
+          w: 8,
+          h: 14,
           color: "stone"
         },
         {
           shape: "rect",
-          x: 36,
+          x: 47,
           y: 8,
-          w: 5,
-          h: 1,
+          w: 10,
+          h: 2,
           color: "stoneL"
         },
         {
-          shape: "pixels",
-          at: [
-            [
-              38,
-              5
-            ],
-            [
-              39,
-              3
-            ],
-            [
-              37,
-              2
-            ]
-          ],
-          color: "chip",
-          alpha: 0.6
+          shape: "rect",
+          x: 11,
+          y: 36,
+          w: 4,
+          h: 17,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 57,
+          y: 36,
+          w: 4,
+          h: 17,
+          color: "woodD"
         }
       ]
     },
@@ -16430,242 +21935,218 @@ var L3_default11 = {
       if: "st4",
       layers: [
         {
-          shape: "ellipse",
-          cx: 54,
-          cy: 44,
-          rx: 7,
-          ry: 6,
-          color: "hayD"
-        },
-        {
-          shape: "ellipse",
-          cx: 54,
-          cy: 43,
-          rx: 6,
-          ry: 6,
-          color: "hay"
-        },
-        {
           shape: "poly",
           points: [
             [
-              48,
-              43
+              27,
+              53
             ],
             [
-              54,
-              33
+              27,
+              41
             ],
             [
-              60,
-              43
+              30,
+              38
+            ],
+            [
+              42,
+              38
+            ],
+            [
+              45,
+              41
+            ],
+            [
+              45,
+              53
             ]
           ],
-          color: "hay"
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 29,
+          y: 41,
+          w: 7,
+          h: 12,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 36,
+          y: 41,
+          w: 7,
+          h: 12,
+          color: "woodL"
         },
         {
           shape: "line",
           from: [
-            54,
-            33
+            36,
+            41
           ],
           to: [
-            54,
-            43
-          ],
-          w: 1,
-          color: "hayD",
-          alpha: 0.7
-        },
-        {
-          shape: "line",
-          from: [
-            44,
-            47
-          ],
-          to: [
-            64,
-            47
-          ],
-          w: 2,
-          color: "dirt"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              46,
-              46
-            ],
-            [
-              50,
-              46
-            ],
-            [
-              54,
-              46
-            ],
-            [
-              58,
-              46
-            ],
-            [
-              62,
-              46
-            ]
-          ],
-          color: "greenL"
-        },
-        {
-          shape: "line",
-          from: [
-            44,
-            50
-          ],
-          to: [
-            64,
-            50
-          ],
-          w: 2,
-          color: "dirt"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              46,
-              49
-            ],
-            [
-              50,
-              49
-            ],
-            [
-              54,
-              49
-            ],
-            [
-              58,
-              49
-            ],
-            [
-              62,
-              49
-            ]
-          ],
-          color: "green"
-        },
-        {
-          shape: "line",
-          from: [
-            44,
-            53
-          ],
-          to: [
-            64,
-            53
-          ],
-          w: 2,
-          color: "dirt"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              46,
-              52
-            ],
-            [
-              50,
-              52
-            ],
-            [
-              54,
-              52
-            ],
-            [
-              58,
-              52
-            ],
-            [
-              62,
-              52
-            ]
-          ],
-          color: "greenL"
-        },
-        {
-          shape: "ellipse",
-          cx: 9,
-          cy: 52,
-          rx: 3,
-          ry: 2,
-          color: "wattleD"
-        },
-        {
-          shape: "ellipse",
-          cx: 9,
-          cy: 51,
-          rx: 3,
-          ry: 2,
-          color: "wattle"
-        },
-        {
-          shape: "pixels",
-          at: [
-            [
-              8,
-              49
-            ],
-            [
-              10,
-              49
-            ],
-            [
-              9,
-              48
-            ]
-          ],
-          color: "greenL"
-        },
-        {
-          shape: "line",
-          from: [
-            44,
+            36,
             52
-          ],
-          to: [
-            48,
-            36
           ],
           w: 1,
           color: "woodD"
         },
         {
-          shape: "poly",
-          points: [
-            [
-              46,
-              35
-            ],
-            [
-              50,
-              35
-            ],
-            [
-              49,
-              38
-            ]
+          shape: "rect",
+          x: 15,
+          y: 36,
+          w: 7,
+          h: 6,
+          color: "door"
+        },
+        {
+          shape: "line",
+          from: [
+            18,
+            36
           ],
-          color: "flintL"
+          to: [
+            18,
+            41
+          ],
+          w: 1,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            15,
+            39
+          ],
+          to: [
+            21,
+            39
+          ],
+          w: 1,
+          color: "wood"
         },
         {
           shape: "ellipse",
-          cx: 20,
-          cy: 54,
+          cx: 52,
+          cy: 5,
+          rx: 3,
+          ry: 2,
+          color: "smoke",
+          alpha: 0.7
+        },
+        {
+          shape: "ellipse",
+          cx: 55,
+          cy: 1,
+          rx: 2,
+          ry: 2,
+          color: "smoke",
+          alpha: 0.5
+        },
+        {
+          shape: "ellipse",
+          cx: 8,
+          cy: 52,
+          rx: 6,
+          ry: 3,
+          color: "strawD"
+        },
+        {
+          shape: "rect",
+          x: 3,
+          y: 44,
+          w: 12,
+          h: 8,
+          color: "straw"
+        },
+        {
+          shape: "rect",
+          x: 3,
+          y: 44,
+          w: 12,
+          h: 1,
+          color: "strawL"
+        },
+        {
+          shape: "rect",
+          x: 5,
+          y: 40,
+          w: 8,
+          h: 4,
+          color: "straw"
+        },
+        {
+          shape: "line",
+          from: [
+            3,
+            48
+          ],
+          to: [
+            14,
+            48
+          ],
+          w: 1,
+          color: "strawD"
+        },
+        {
+          shape: "rect",
+          x: 52,
+          y: 46,
+          w: 6,
+          h: 7,
+          color: "wood"
+        },
+        {
+          shape: "ellipse",
+          cx: 55,
+          cy: 46,
           rx: 3,
           ry: 1,
-          color: "stoneD"
+          color: "woodL"
+        },
+        {
+          shape: "rect",
+          x: 60,
+          y: 47,
+          w: 6,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "ellipse",
+          cx: 63,
+          cy: 47,
+          rx: 3,
+          ry: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            52,
+            49
+          ],
+          to: [
+            57,
+            49
+          ],
+          w: 1,
+          color: "iron"
+        },
+        {
+          shape: "line",
+          from: [
+            60,
+            50
+          ],
+          to: [
+            65,
+            50
+          ],
+          w: 1,
+          color: "iron"
         }
       ]
     },
@@ -16673,7 +22154,67 @@ var L3_default11 = {
       shape: "outline",
       color: "line"
     }
-  ]
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/huntlodge/L1.json
@@ -20477,7 +26018,6 @@ var L3_default13 = {
 var L1_default18 = {
   name: "X\u01B0\u1EDFng \u0111\xE1 (c\u1EA5p 1, v\xE1ch \u0111\xE1, t\u1EA3ng c\u1EAFt)",
   name_en: "Quarry (Tier 1)",
-  type: "prop",
   size: [
     72,
     64
@@ -20493,58 +26033,6 @@ var L1_default18 = {
     28
   ],
   seed: 11,
-  params: {
-    st1: 1,
-    st2: 1,
-    st3: 1,
-    st4: 1
-  },
-  palette: {
-    line: "#2b1d10",
-    shadow: "#000000",
-    dirt: "#6a5238",
-    earth: "#86704e",
-    earthL: "#9a8460",
-    wood: "#8a6238",
-    woodL: "#aa7c48",
-    woodD: "#5e4026",
-    log: "#6b4a28",
-    logE: "#c49a60",
-    rope: "#d8c690",
-    stone: "#8e9498",
-    stoneL: "#b9bfc2",
-    stoneD: "#60676b",
-    chip: "#d8d2c0",
-    hide: "#a0552f",
-    hideL: "#c06f43",
-    hideD: "#7a3d20",
-    stitch: "#e8d6a8",
-    bone: "#e4dcc4",
-    flintL: "#7c8794",
-    door: "#2a1a0e",
-    flag: "#b03a2e",
-    flagD: "#7d2a20",
-    thatch: "#c9a84e",
-    thatchL: "#e0c670",
-    thatchD: "#9a7c32",
-    wattle: "#b89a58",
-    wattleD: "#8a7038",
-    clay: "#b08a62",
-    clayD: "#8c6a48",
-    green: "#6f9a3e",
-    greenD: "#4f7a2c",
-    greenL: "#8fba54",
-    hay: "#d6b85a",
-    hayD: "#a88a38",
-    fur: "#7a5230",
-    furD: "#553820",
-    furL: "#9a7048",
-    sand: "#c4ad7c",
-    target: "#e4dcc4",
-    flame: "#f89628",
-    flameL: "#ffd060",
-    water: "#5a7f9a"
-  },
   layers: [
     {
       shape: "ellipse",
@@ -20661,27 +26149,31 @@ var L1_default18 = {
           points: [
             [
               6,
-              54
+              38
             ],
             [
-              12,
+              10,
               28
             ],
             [
-              24,
-              14
+              22,
+              24
             ],
             [
-              40,
-              18
+              36,
+              20
             ],
             [
-              46,
-              34
+              52,
+              24
             ],
             [
-              44,
-              54
+              64,
+              30
+            ],
+            [
+              68,
+              38
             ]
           ],
           color: "stoneD"
@@ -20690,95 +26182,101 @@ var L1_default18 = {
           shape: "poly",
           points: [
             [
-              12,
+              10,
               28
             ],
             [
-              24,
-              14
+              22,
+              24
+            ],
+            [
+              36,
+              20
             ],
             [
               30,
-              30
-            ],
-            [
-              18,
-              54
-            ],
-            [
-              6,
-              54
+              38
             ]
           ],
           color: "stone"
         },
         {
-          shape: "poly",
-          points: [
-            [
-              24,
-              14
-            ],
-            [
-              40,
-              18
-            ],
-            [
-              46,
-              34
-            ],
-            [
-              34,
-              36
-            ],
-            [
-              30,
-              30
-            ]
+          shape: "scatter",
+          count: 30,
+          area: [
+            10,
+            20,
+            56,
+            16
           ],
-          color: "stoneL"
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "stoneL",
+            "stoneD",
+            "stone"
+          ],
+          onlyOver: [
+            "stone",
+            "stoneD"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 28,
+          w: 3,
+          h: 24,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 58,
+          y: 28,
+          w: 3,
+          h: 24,
+          color: "woodD"
         },
         {
           shape: "line",
           from: [
-            30,
+            8,
             30
           ],
           to: [
-            34,
-            36
+            62,
+            30
           ],
-          w: 1,
-          color: "line",
-          alpha: 0.5
+          w: 2,
+          color: "woodD"
         },
         {
           shape: "line",
           from: [
-            18,
-            54
+            9,
+            26
           ],
           to: [
-            24,
-            40
+            36,
+            20
           ],
-          w: 1,
-          color: "stoneD",
-          alpha: 0.7
+          w: 2,
+          color: "wood"
         },
         {
           shape: "line",
           from: [
-            34,
-            36
+            63,
+            26
           ],
           to: [
-            40,
-            52
+            36,
+            20
           ],
-          w: 1,
-          color: "stoneD",
-          alpha: 0.7
+          w: 2,
+          color: "woodD"
         }
       ]
     },
@@ -20787,60 +26285,95 @@ var L1_default18 = {
       if: "st3",
       layers: [
         {
-          shape: "rect",
-          x: 48,
-          y: 44,
-          w: 10,
-          h: 8,
-          color: "stone"
+          shape: "poly",
+          points: [
+            [
+              6,
+              34
+            ],
+            [
+              36,
+              14
+            ],
+            [
+              66,
+              34
+            ]
+          ],
+          color: "thatch"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              14
+            ],
+            [
+              6,
+              34
+            ],
+            [
+              20,
+              34
+            ],
+            [
+              36,
+              26
+            ]
+          ],
+          color: "thatchL"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              14
+            ],
+            [
+              66,
+              34
+            ],
+            [
+              52,
+              34
+            ],
+            [
+              36,
+              30
+            ]
+          ],
+          color: "thatchD"
+        },
+        {
+          shape: "scatter",
+          count: 36,
+          area: [
+            14,
+            18,
+            44,
+            14
+          ],
+          size: [
+            1,
+            3
+          ],
+          colors: [
+            "thatchL",
+            "thatchD"
+          ],
+          onlyOver: [
+            "thatch"
+          ]
         },
         {
           shape: "rect",
-          x: 48,
-          y: 44,
-          w: 10,
+          x: 6,
+          y: 33,
+          w: 60,
           h: 2,
-          color: "stoneL"
-        },
-        {
-          shape: "rect",
-          x: 48,
-          y: 51,
-          w: 10,
-          h: 1,
-          color: "stoneD"
-        },
-        {
-          shape: "rect",
-          x: 58,
-          y: 46,
-          w: 8,
-          h: 6,
-          color: "stoneL"
-        },
-        {
-          shape: "rect",
-          x: 58,
-          y: 51,
-          w: 8,
-          h: 1,
-          color: "stoneD"
-        },
-        {
-          shape: "rect",
-          x: 52,
-          y: 37,
-          w: 10,
-          h: 7,
-          color: "stoneD"
-        },
-        {
-          shape: "rect",
-          x: 52,
-          y: 37,
-          w: 10,
-          h: 2,
-          color: "stone"
+          color: "thatchD"
         }
       ]
     },
@@ -20849,102 +26382,226 @@ var L1_default18 = {
       if: "st4",
       layers: [
         {
+          shape: "rect",
+          x: 22,
+          y: 44,
+          w: 28,
+          h: 4,
+          color: "woodL"
+        },
+        {
+          shape: "rect",
+          x: 22,
+          y: 44,
+          w: 28,
+          h: 1,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 24,
+          y: 48,
+          w: 3,
+          h: 5,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 45,
+          y: 48,
+          w: 3,
+          h: 5,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 28,
+          y: 38,
+          w: 14,
+          h: 7,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 28,
+          y: 38,
+          w: 14,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 40,
+          y: 40,
+          w: 2,
+          h: 5,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 28,
+          y: 44,
+          w: 14,
+          h: 1,
+          color: "stoneD"
+        },
+        {
           shape: "line",
           from: [
-            46,
-            56
+            36,
+            38
           ],
           to: [
-            50,
-            48
+            36,
+            44
           ],
           w: 1,
-          color: "woodD"
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            50,
+            40
+          ],
+          to: [
+            56,
+            46
+          ],
+          w: 2,
+          color: "wood"
         },
         {
           shape: "poly",
           points: [
             [
-              48,
-              46
+              54,
+              40
             ],
             [
-              53,
-              47
+              60,
+              42
             ],
             [
-              51,
-              50
+              58,
+              44
             ]
           ],
-          color: "flintL"
+          color: "stoneL"
         },
         {
-          shape: "line",
-          from: [
-            44,
-            54
-          ],
-          to: [
-            47,
-            54
-          ],
+          shape: "rect",
+          x: 8,
+          y: 46,
+          w: 10,
+          h: 6,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 46,
+          w: 10,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 48,
           w: 2,
-          color: "woodD"
+          h: 4,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 51,
+          w: 10,
+          h: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 41,
+          w: 8,
+          h: 5,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 41,
+          w: 8,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 43,
+          w: 2,
+          h: 3,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 45,
+          w: 8,
+          h: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 47,
+          w: 10,
+          h: 6,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 47,
+          w: 10,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 64,
+          y: 49,
+          w: 2,
+          h: 4,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 56,
+          y: 52,
+          w: 10,
+          h: 1,
+          color: "stoneD"
         },
         {
           shape: "pixels",
           at: [
             [
-              3,
+              20,
+              51
+            ],
+            [
+              24,
               52
             ],
             [
-              46,
-              56
-            ],
-            [
-              54,
-              56
-            ],
-            [
-              14,
-              56
+              47,
+              52
             ]
           ],
           color: "chip"
-        },
-        {
-          shape: "ellipse",
-          cx: 4,
-          cy: 54,
-          rx: 3,
-          ry: 2,
-          color: "stoneD"
-        },
-        {
-          shape: "ellipse",
-          cx: 4,
-          cy: 53,
-          rx: 3,
-          ry: 2,
-          color: "stone"
-        },
-        {
-          shape: "ellipse",
-          cx: 66,
-          cy: 54,
-          rx: 3,
-          ry: 2,
-          color: "stoneD"
-        },
-        {
-          shape: "ellipse",
-          cx: 66,
-          cy: 53,
-          rx: 3,
-          ry: 2,
-          color: "stoneL"
         }
       ]
     },
@@ -20952,14 +26609,73 @@ var L1_default18 = {
       shape: "outline",
       color: "line"
     }
-  ]
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/quarry/L2.json
 var L2_default17 = {
   name: "X\u01B0\u1EDFng \u0111\xE1 (c\u1EA5p 2, t\u1EA3ng c\u1EAFt, xe tr\u01B0\u1EE3t)",
   name_en: "Quarry (Tier 2)",
-  type: "prop",
   size: [
     72,
     64
@@ -20975,58 +26691,6 @@ var L2_default17 = {
     28
   ],
   seed: 12,
-  params: {
-    st1: 1,
-    st2: 1,
-    st3: 1,
-    st4: 1
-  },
-  palette: {
-    line: "#2b1d10",
-    shadow: "#000000",
-    dirt: "#6a5238",
-    earth: "#86704e",
-    earthL: "#9a8460",
-    wood: "#8a6238",
-    woodL: "#aa7c48",
-    woodD: "#5e4026",
-    log: "#6b4a28",
-    logE: "#c49a60",
-    rope: "#d8c690",
-    stone: "#8e9498",
-    stoneL: "#b9bfc2",
-    stoneD: "#60676b",
-    chip: "#d8d2c0",
-    hide: "#a0552f",
-    hideL: "#c06f43",
-    hideD: "#7a3d20",
-    stitch: "#e8d6a8",
-    bone: "#e4dcc4",
-    flintL: "#7c8794",
-    door: "#2a1a0e",
-    flag: "#b03a2e",
-    flagD: "#7d2a20",
-    thatch: "#c9a84e",
-    thatchL: "#e0c670",
-    thatchD: "#9a7c32",
-    wattle: "#b89a58",
-    wattleD: "#8a7038",
-    clay: "#b08a62",
-    clayD: "#8c6a48",
-    green: "#6f9a3e",
-    greenD: "#4f7a2c",
-    greenL: "#8fba54",
-    hay: "#d6b85a",
-    hayD: "#a88a38",
-    fur: "#7a5230",
-    furD: "#553820",
-    furL: "#9a7048",
-    sand: "#c4ad7c",
-    target: "#e4dcc4",
-    flame: "#f89628",
-    flameL: "#ffd060",
-    water: "#5a7f9a"
-  },
   layers: [
     {
       shape: "ellipse",
@@ -21143,27 +26807,31 @@ var L2_default17 = {
           points: [
             [
               6,
-              54
+              38
             ],
             [
-              12,
-              28
+              10,
+              26
             ],
             [
-              24,
-              14
+              22,
+              22
             ],
             [
-              40,
+              36,
               18
             ],
             [
-              46,
-              34
+              52,
+              22
             ],
             [
-              44,
-              54
+              64,
+              28
+            ],
+            [
+              68,
+              38
             ]
           ],
           color: "stoneD"
@@ -21172,95 +26840,96 @@ var L2_default17 = {
           shape: "poly",
           points: [
             [
-              12,
-              28
+              10,
+              26
             ],
             [
-              24,
-              14
+              22,
+              22
+            ],
+            [
+              36,
+              18
             ],
             [
               30,
-              30
-            ],
-            [
-              18,
-              54
-            ],
-            [
-              6,
-              54
+              38
             ]
           ],
           color: "stone"
         },
         {
-          shape: "poly",
-          points: [
-            [
-              24,
-              14
-            ],
-            [
-              40,
-              18
-            ],
-            [
-              46,
-              34
-            ],
-            [
-              34,
-              36
-            ],
-            [
-              30,
-              30
-            ]
+          shape: "scatter",
+          count: 30,
+          area: [
+            10,
+            18,
+            56,
+            18
           ],
-          color: "stoneL"
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "stoneL",
+            "stoneD",
+            "stone"
+          ],
+          onlyOver: [
+            "stone",
+            "stoneD"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 26,
+          w: 3,
+          h: 27,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 59,
+          y: 26,
+          w: 3,
+          h: 27,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 24,
+          w: 3,
+          h: 29,
+          color: "wood"
         },
         {
           shape: "line",
           from: [
-            30,
+            6,
             30
           ],
           to: [
-            34,
-            36
+            36,
+            10
           ],
-          w: 1,
-          color: "line",
-          alpha: 0.5
+          w: 2,
+          color: "wood"
         },
         {
           shape: "line",
           from: [
-            18,
-            54
+            66,
+            30
           ],
           to: [
-            24,
-            40
+            36,
+            10
           ],
-          w: 1,
-          color: "stoneD",
-          alpha: 0.7
-        },
-        {
-          shape: "line",
-          from: [
-            34,
-            36
-          ],
-          to: [
-            40,
-            52
-          ],
-          w: 1,
-          color: "stoneD",
-          alpha: 0.7
+          w: 2,
+          color: "woodD"
         }
       ]
     },
@@ -21270,109 +26939,128 @@ var L2_default17 = {
       layers: [
         {
           shape: "rect",
-          x: 48,
-          y: 44,
-          w: 10,
-          h: 8,
-          color: "stone"
+          x: 11,
+          y: 28,
+          w: 50,
+          h: 12,
+          color: "woodD",
+          alpha: 0.7
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              4,
+              34
+            ],
+            [
+              36,
+              9
+            ],
+            [
+              68,
+              34
+            ]
+          ],
+          color: "thatch"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              9
+            ],
+            [
+              4,
+              34
+            ],
+            [
+              18,
+              34
+            ],
+            [
+              36,
+              23
+            ]
+          ],
+          color: "thatchL"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              9
+            ],
+            [
+              68,
+              34
+            ],
+            [
+              54,
+              34
+            ],
+            [
+              36,
+              29
+            ]
+          ],
+          color: "thatchD"
+        },
+        {
+          shape: "scatter",
+          count: 46,
+          area: [
+            12,
+            13,
+            48,
+            17
+          ],
+          size: [
+            1,
+            3
+          ],
+          colors: [
+            "thatchL",
+            "thatchD",
+            "thatchL"
+          ],
+          onlyOver: [
+            "thatch"
+          ]
         },
         {
           shape: "rect",
-          x: 48,
-          y: 44,
-          w: 10,
-          h: 2,
-          color: "stoneL"
+          x: 4,
+          y: 33,
+          w: 64,
+          h: 3,
+          color: "thatchD"
         },
         {
           shape: "rect",
-          x: 48,
-          y: 51,
-          w: 10,
+          x: 4,
+          y: 33,
+          w: 64,
           h: 1,
-          color: "stoneD"
+          color: "thatchL"
+        },
+        {
+          shape: "rect",
+          x: 11,
+          y: 38,
+          w: 3,
+          h: 15,
+          color: "wood"
         },
         {
           shape: "rect",
           x: 58,
-          y: 46,
-          w: 8,
-          h: 6,
-          color: "stoneL"
-        },
-        {
-          shape: "rect",
-          x: 58,
-          y: 51,
-          w: 8,
-          h: 1,
-          color: "stoneD"
-        },
-        {
-          shape: "rect",
-          x: 52,
-          y: 37,
-          w: 10,
-          h: 7,
-          color: "stoneD"
-        },
-        {
-          shape: "rect",
-          x: 52,
-          y: 37,
-          w: 10,
-          h: 2,
-          color: "stone"
-        },
-        {
-          shape: "rect",
-          x: 60,
           y: 38,
-          w: 8,
-          h: 6,
-          color: "stone"
-        },
-        {
-          shape: "rect",
-          x: 60,
-          y: 38,
-          w: 8,
-          h: 2,
-          color: "stoneL"
-        },
-        {
-          shape: "rect",
-          x: 40,
-          y: 54,
-          w: 24,
-          h: 2,
+          w: 3,
+          h: 15,
           color: "woodD"
-        },
-        {
-          shape: "line",
-          from: [
-            40,
-            56
-          ],
-          to: [
-            36,
-            54
-          ],
-          w: 2,
-          color: "woodD"
-        },
-        {
-          shape: "line",
-          from: [
-            26,
-            52
-          ],
-          to: [
-            40,
-            54
-          ],
-          w: 1,
-          color: "rope"
         }
       ]
     },
@@ -21381,101 +27069,256 @@ var L2_default17 = {
       if: "st4",
       layers: [
         {
+          shape: "rect",
+          x: 20,
+          y: 43,
+          w: 32,
+          h: 4,
+          color: "woodL"
+        },
+        {
+          shape: "rect",
+          x: 20,
+          y: 43,
+          w: 32,
+          h: 1,
+          color: "wood"
+        },
+        {
           shape: "line",
           from: [
-            46,
-            56
+            14,
+            52
           ],
           to: [
-            50,
-            48
+            58,
+            52
           ],
-          w: 1,
+          w: 2,
           color: "woodD"
         },
         {
-          shape: "poly",
-          points: [
-            [
-              48,
-              46
-            ],
-            [
-              53,
-              47
-            ],
-            [
-              51,
-              50
-            ]
-          ],
-          color: "flintL"
-        },
-        {
           shape: "line",
           from: [
-            44,
+            14,
             54
           ],
           to: [
-            47,
+            58,
             54
           ],
           w: 2,
           color: "woodD"
         },
         {
+          shape: "rect",
+          x: 16,
+          y: 48,
+          w: 40,
+          h: 3,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 22,
+          y: 38,
+          w: 24,
+          h: 10,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 22,
+          y: 38,
+          w: 24,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 44,
+          y: 40,
+          w: 2,
+          h: 8,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 22,
+          y: 47,
+          w: 24,
+          h: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            34,
+            38
+          ],
+          to: [
+            34,
+            48
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            46,
+            36
+          ],
+          to: [
+            56,
+            28
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 45,
+          w: 10,
+          h: 7,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 45,
+          w: 10,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 47,
+          w: 2,
+          h: 5,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 51,
+          w: 10,
+          h: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 9,
+          y: 40,
+          w: 8,
+          h: 5,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 9,
+          y: 40,
+          w: 8,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 15,
+          y: 42,
+          w: 2,
+          h: 3,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 9,
+          y: 44,
+          w: 8,
+          h: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 55,
+          y: 44,
+          w: 10,
+          h: 8,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 55,
+          y: 44,
+          w: 10,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 63,
+          y: 46,
+          w: 2,
+          h: 6,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 55,
+          y: 51,
+          w: 10,
+          h: 1,
+          color: "stoneD"
+        },
+        {
           shape: "pixels",
           at: [
             [
-              3,
+              52,
+              50
+            ],
+            [
+              58,
               52
             ],
             [
-              46,
-              56
-            ],
-            [
-              54,
-              56
-            ],
-            [
-              14,
-              56
+              12,
+              53
             ]
           ],
           color: "chip"
         },
         {
-          shape: "ellipse",
-          cx: 4,
-          cy: 54,
-          rx: 3,
-          ry: 2,
-          color: "stoneD"
+          shape: "line",
+          from: [
+            6,
+            44
+          ],
+          to: [
+            12,
+            52
+          ],
+          w: 2,
+          color: "wood"
         },
         {
-          shape: "ellipse",
-          cx: 4,
-          cy: 53,
-          rx: 3,
-          ry: 2,
-          color: "stone"
-        },
-        {
-          shape: "ellipse",
-          cx: 66,
-          cy: 54,
-          rx: 3,
-          ry: 2,
-          color: "stoneD"
-        },
-        {
-          shape: "ellipse",
-          cx: 66,
-          cy: 53,
-          rx: 3,
-          ry: 2,
+          shape: "poly",
+          points: [
+            [
+              2,
+              44
+            ],
+            [
+              9,
+              42
+            ],
+            [
+              8,
+              45
+            ]
+          ],
           color: "stoneL"
         }
       ]
@@ -21484,14 +27327,73 @@ var L2_default17 = {
       shape: "outline",
       color: "line"
     }
-  ]
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/quarry/L3.json
 var L3_default14 = {
-  name: "X\u01B0\u1EDFng \u0111\xE1 (c\u1EA5p 3, gi\xE0n t\u1EDDi, t\u1EA3ng l\u1EDBn)",
+  name: "X\u01B0\u1EDFng \u0111\xE1 (c\u1EA5p 3, gi\xE0n tr\u1EDDi, t\u1EA3ng l\u1EDBn)",
   name_en: "Quarry (Tier 3)",
-  type: "prop",
   size: [
     72,
     64
@@ -21507,58 +27409,6 @@ var L3_default14 = {
     28
   ],
   seed: 13,
-  params: {
-    st1: 1,
-    st2: 1,
-    st3: 1,
-    st4: 1
-  },
-  palette: {
-    line: "#2b1d10",
-    shadow: "#000000",
-    dirt: "#6a5238",
-    earth: "#86704e",
-    earthL: "#9a8460",
-    wood: "#8a6238",
-    woodL: "#aa7c48",
-    woodD: "#5e4026",
-    log: "#6b4a28",
-    logE: "#c49a60",
-    rope: "#d8c690",
-    stone: "#8e9498",
-    stoneL: "#b9bfc2",
-    stoneD: "#60676b",
-    chip: "#d8d2c0",
-    hide: "#a0552f",
-    hideL: "#c06f43",
-    hideD: "#7a3d20",
-    stitch: "#e8d6a8",
-    bone: "#e4dcc4",
-    flintL: "#7c8794",
-    door: "#2a1a0e",
-    flag: "#b03a2e",
-    flagD: "#7d2a20",
-    thatch: "#c9a84e",
-    thatchL: "#e0c670",
-    thatchD: "#9a7c32",
-    wattle: "#b89a58",
-    wattleD: "#8a7038",
-    clay: "#b08a62",
-    clayD: "#8c6a48",
-    green: "#6f9a3e",
-    greenD: "#4f7a2c",
-    greenL: "#8fba54",
-    hay: "#d6b85a",
-    hayD: "#a88a38",
-    fur: "#7a5230",
-    furD: "#553820",
-    furL: "#9a7048",
-    sand: "#c4ad7c",
-    target: "#e4dcc4",
-    flame: "#f89628",
-    flameL: "#ffd060",
-    water: "#5a7f9a"
-  },
   layers: [
     {
       shape: "ellipse",
@@ -21663,6 +27513,15 @@ var L3_default14 = {
           onlyOver: [
             "earth"
           ]
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 49,
+          w: 52,
+          h: 4,
+          color: "stoneD",
+          alpha: 0.55
         }
       ]
     },
@@ -21675,27 +27534,31 @@ var L3_default14 = {
           points: [
             [
               6,
-              54
+              38
             ],
             [
-              12,
-              28
+              10,
+              24
             ],
             [
-              24,
-              14
+              22,
+              20
             ],
             [
-              40,
-              18
+              36,
+              16
             ],
             [
-              46,
-              34
+              52,
+              20
             ],
             [
-              44,
-              54
+              64,
+              26
+            ],
+            [
+              68,
+              38
             ]
           ],
           color: "stoneD"
@@ -21704,95 +27567,101 @@ var L3_default14 = {
           shape: "poly",
           points: [
             [
-              12,
-              28
+              10,
+              24
             ],
             [
-              24,
-              14
+              22,
+              20
+            ],
+            [
+              36,
+              16
             ],
             [
               30,
-              30
-            ],
-            [
-              18,
-              54
-            ],
-            [
-              6,
-              54
+              38
             ]
           ],
           color: "stone"
         },
         {
-          shape: "poly",
-          points: [
-            [
-              24,
-              14
-            ],
-            [
-              40,
-              18
-            ],
-            [
-              46,
-              34
-            ],
-            [
-              34,
-              36
-            ],
-            [
-              30,
-              30
-            ]
+          shape: "scatter",
+          count: 30,
+          area: [
+            10,
+            16,
+            56,
+            20
           ],
-          color: "stoneL"
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "stoneL",
+            "stoneD",
+            "stone"
+          ],
+          onlyOver: [
+            "stone",
+            "stoneD"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 8,
+          y: 24,
+          w: 4,
+          h: 29,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 60,
+          y: 24,
+          w: 4,
+          h: 29,
+          color: "stoneD"
         },
         {
           shape: "line",
           from: [
-            30,
-            30
+            5,
+            28
           ],
           to: [
-            34,
-            36
+            36,
+            8
           ],
-          w: 1,
-          color: "line",
-          alpha: 0.5
+          w: 3,
+          color: "wood"
         },
         {
           shape: "line",
           from: [
-            18,
-            54
+            67,
+            28
           ],
           to: [
-            24,
-            40
+            36,
+            8
           ],
-          w: 1,
-          color: "stoneD",
-          alpha: 0.7
+          w: 3,
+          color: "woodD"
         },
         {
           shape: "line",
           from: [
-            34,
-            36
+            36,
+            34
           ],
           to: [
-            40,
-            52
+            36,
+            6
           ],
-          w: 1,
-          color: "stoneD",
-          alpha: 0.7
+          w: 2,
+          color: "wood"
         }
       ]
     },
@@ -21802,109 +27671,162 @@ var L3_default14 = {
       layers: [
         {
           shape: "rect",
-          x: 48,
-          y: 44,
-          w: 10,
-          h: 8,
+          x: 10,
+          y: 26,
+          w: 52,
+          h: 14,
           color: "stone"
         },
         {
           shape: "rect",
-          x: 48,
-          y: 44,
-          w: 10,
+          x: 10,
+          y: 26,
+          w: 52,
           h: 2,
           color: "stoneL"
         },
         {
           shape: "rect",
-          x: 48,
-          y: 51,
-          w: 10,
-          h: 1,
-          color: "stoneD"
-        },
-        {
-          shape: "rect",
-          x: 58,
-          y: 46,
-          w: 8,
-          h: 6,
-          color: "stoneL"
-        },
-        {
-          shape: "rect",
-          x: 58,
-          y: 51,
-          w: 8,
-          h: 1,
-          color: "stoneD"
-        },
-        {
-          shape: "rect",
-          x: 52,
-          y: 37,
-          w: 10,
-          h: 7,
-          color: "stoneD"
-        },
-        {
-          shape: "rect",
-          x: 52,
-          y: 37,
-          w: 10,
-          h: 2,
-          color: "stone"
-        },
-        {
-          shape: "rect",
-          x: 60,
-          y: 38,
-          w: 8,
-          h: 6,
-          color: "stone"
-        },
-        {
-          shape: "rect",
-          x: 60,
-          y: 38,
-          w: 8,
-          h: 2,
-          color: "stoneL"
-        },
-        {
-          shape: "rect",
-          x: 40,
-          y: 54,
-          w: 24,
-          h: 2,
-          color: "woodD"
-        },
-        {
-          shape: "line",
-          from: [
-            40,
-            56
-          ],
-          to: [
-            36,
-            54
-          ],
-          w: 2,
-          color: "woodD"
-        },
-        {
-          shape: "line",
-          from: [
-            26,
-            52
-          ],
-          to: [
-            40,
-            54
-          ],
+          x: 22,
+          y: 28,
           w: 1,
-          color: "rope"
+          h: 12,
+          color: "stoneD",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 28,
+          w: 1,
+          h: 12,
+          color: "stoneD",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 46,
+          y: 28,
+          w: 1,
+          h: 12,
+          color: "stoneD",
+          alpha: 0.6
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              4,
+              32
+            ],
+            [
+              36,
+              8
+            ],
+            [
+              68,
+              32
+            ]
+          ],
+          color: "slate"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              8
+            ],
+            [
+              4,
+              32
+            ],
+            [
+              18,
+              32
+            ],
+            [
+              36,
+              22
+            ]
+          ],
+          color: "slateL"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              8
+            ],
+            [
+              68,
+              32
+            ],
+            [
+              54,
+              32
+            ],
+            [
+              36,
+              28
+            ]
+          ],
+          color: "stoneD"
+        },
+        {
+          shape: "scatter",
+          count: 46,
+          area: [
+            12,
+            12,
+            48,
+            16
+          ],
+          size: [
+            1,
+            3
+          ],
+          colors: [
+            "slateL",
+            "stoneD",
+            "slateL"
+          ],
+          onlyOver: [
+            "slate"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 31,
+          w: 64,
+          h: 3,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 31,
+          w: 64,
+          h: 1,
+          color: "slateL"
+        },
+        {
+          shape: "rect",
+          x: 10,
+          y: 38,
+          w: 4,
+          h: 15,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 58,
+          y: 38,
+          w: 4,
+          h: 15,
+          color: "stoneD"
         }
       ]
     },
@@ -21913,27 +27835,72 @@ var L3_default14 = {
       if: "st4",
       layers: [
         {
-          shape: "line",
-          from: [
-            20,
-            54
-          ],
-          to: [
-            32,
-            12
-          ],
+          shape: "rect",
+          x: 22,
+          y: 40,
+          w: 28,
+          h: 12,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 22,
+          y: 40,
+          w: 28,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 48,
+          y: 42,
           w: 2,
-          color: "woodD"
+          h: 10,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 22,
+          y: 51,
+          w: 28,
+          h: 1,
+          color: "stoneD"
         },
         {
           shape: "line",
           from: [
-            44,
-            54
+            30,
+            40
           ],
           to: [
-            32,
-            12
+            30,
+            52
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            42,
+            40
+          ],
+          to: [
+            42,
+            52
+          ],
+          w: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "line",
+          from: [
+            60,
+            18
+          ],
+          to: [
+            60,
+            50
           ],
           w: 2,
           color: "wood"
@@ -21941,142 +27908,183 @@ var L3_default14 = {
         {
           shape: "line",
           from: [
-            26,
-            36
+            60,
+            18
           ],
           to: [
-            38,
-            36
+            46,
+            22
           ],
-          w: 1,
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            60,
+            18
+          ],
+          to: [
+            66,
+            26
+          ],
+          w: 2,
           color: "woodD"
         },
         {
           shape: "line",
           from: [
-            32,
-            12
+            47,
+            22
           ],
           to: [
-            32,
-            40
+            47,
+            36
           ],
           w: 1,
           color: "rope"
         },
         {
           shape: "rect",
-          x: 30,
-          y: 40,
-          w: 4,
-          h: 3,
+          x: 43,
+          y: 36,
+          w: 8,
+          h: 5,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 43,
+          y: 36,
+          w: 8,
+          h: 2,
           color: "stoneL"
         },
         {
           shape: "rect",
-          x: 30,
+          x: 49,
+          y: 38,
+          w: 2,
+          h: 3,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 43,
           y: 40,
-          w: 4,
+          w: 8,
           h: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 44,
+          w: 12,
+          h: 8,
           color: "stone"
         },
         {
-          shape: "line",
-          from: [
-            46,
-            56
-          ],
-          to: [
-            50,
-            48
-          ],
-          w: 1,
-          color: "woodD"
+          shape: "rect",
+          x: 4,
+          y: 44,
+          w: 12,
+          h: 2,
+          color: "stoneL"
         },
         {
-          shape: "poly",
-          points: [
-            [
-              48,
-              46
-            ],
-            [
-              53,
-              47
-            ],
-            [
-              51,
-              50
-            ]
-          ],
-          color: "flintL"
-        },
-        {
-          shape: "line",
-          from: [
-            44,
-            54
-          ],
-          to: [
-            47,
-            54
-          ],
+          shape: "rect",
+          x: 14,
+          y: 46,
           w: 2,
-          color: "woodD"
+          h: 6,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 51,
+          w: 12,
+          h: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 6,
+          y: 38,
+          w: 9,
+          h: 6,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 6,
+          y: 38,
+          w: 9,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 13,
+          y: 40,
+          w: 2,
+          h: 4,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 6,
+          y: 43,
+          w: 9,
+          h: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 54,
+          y: 46,
+          w: 12,
+          h: 7,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 54,
+          y: 46,
+          w: 12,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 64,
+          y: 48,
+          w: 2,
+          h: 5,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 54,
+          y: 52,
+          w: 12,
+          h: 1,
+          color: "stoneD"
         },
         {
           shape: "pixels",
           at: [
             [
-              3,
+              18,
               52
             ],
             [
-              46,
-              56
-            ],
-            [
-              54,
-              56
-            ],
-            [
-              14,
-              56
+              52,
+              53
             ]
           ],
           color: "chip"
-        },
-        {
-          shape: "ellipse",
-          cx: 4,
-          cy: 54,
-          rx: 3,
-          ry: 2,
-          color: "stoneD"
-        },
-        {
-          shape: "ellipse",
-          cx: 4,
-          cy: 53,
-          rx: 3,
-          ry: 2,
-          color: "stone"
-        },
-        {
-          shape: "ellipse",
-          cx: 66,
-          cy: 54,
-          rx: 3,
-          ry: 2,
-          color: "stoneD"
-        },
-        {
-          shape: "ellipse",
-          cx: 66,
-          cy: 53,
-          rx: 3,
-          ry: 2,
-          color: "stoneL"
         }
       ]
     },
@@ -22084,7 +28092,67 @@ var L3_default14 = {
       shape: "outline",
       color: "line"
     }
-  ]
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/scouttent/L1.json
@@ -24153,148 +30221,2401 @@ var L3_default16 = {
 var L1_default21 = {
   name: "B\xE3i t\u1EADp (c\u1EA5p 1, b\xE3i c\u1ECDc)",
   name_en: "Drill Ground (Tier 1)",
-  type: "prop",
-  size: [100, 64],
-  anchor: [50, 58],
-  footprint: [2, 30, 96, 28],
+  size: [
+    100,
+    64
+  ],
+  anchor: [
+    50,
+    58
+  ],
+  footprint: [
+    2,
+    30,
+    96,
+    28
+  ],
   seed: 42,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodD: "#5e4026", straw: "#c9a84e", strawD: "#9a7c32", stone: "#8e9498", stoneD: "#60676b", flag: "#b03a2e", flagD: "#7d2a20" },
   layers: [
-    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
-    { shape: "group", if: "st1", layers: [
-      { shape: "rect", x: 4, y: 28, w: 92, h: 26, color: "earth" },
-      { shape: "scatter", count: 30, area: [4, 28, 92, 26], size: [1, 2], colors: ["dirt", "earthL", "stone"], onlyOver: ["earth"] }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "rect", x: 4, y: 28, w: 92, h: 2, color: "woodD" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "line", from: [20, 52], to: [20, 30], w: 2, color: "wood" },
-      { shape: "line", from: [14, 38], to: [26, 38], w: 2, color: "wood" },
-      { shape: "ellipse", cx: 20, cy: 30, rx: 4, ry: 4, color: "straw" },
-      { shape: "pixels", at: [[19, 29], [21, 29]], color: "strawD" },
-      { shape: "line", from: [50, 52], to: [50, 30], w: 2, color: "wood" },
-      { shape: "line", from: [44, 38], to: [56, 38], w: 2, color: "wood" },
-      { shape: "ellipse", cx: 50, cy: 30, rx: 4, ry: 4, color: "straw" },
-      { shape: "pixels", at: [[49, 29], [51, 29]], color: "strawD" },
-      { shape: "line", from: [80, 52], to: [80, 30], w: 2, color: "wood" },
-      { shape: "line", from: [74, 38], to: [86, 38], w: 2, color: "wood" },
-      { shape: "ellipse", cx: 80, cy: 30, rx: 4, ry: 4, color: "straw" },
-      { shape: "pixels", at: [[79, 29], [81, 29]], color: "strawD" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "rect", x: 40, y: 44, w: 20, h: 3, color: "wood" },
-      { shape: "line", from: [42, 44], to: [44, 36], w: 1, color: "woodD" },
-      { shape: "line", from: [48, 44], to: [50, 35], w: 1, color: "woodD" },
-      { shape: "line", from: [54, 44], to: [56, 36], w: 1, color: "woodD" },
-      { shape: "line", from: [10, 24], to: [10, 13], w: 1, color: "woodD" },
-      { shape: "poly", points: [[11, 14], [21, 17], [11, 21]], color: "flag" }
-    ] },
-    { shape: "outline", color: "line" }
-  ]
+    {
+      shape: "ellipse",
+      cx: 50,
+      cy: 56,
+      rx: 46,
+      ry: 5,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          14,
+          26
+        ],
+        [
+          86,
+          26
+        ],
+        [
+          94,
+          54
+        ],
+        [
+          6,
+          54
+        ]
+      ],
+      color: "dirt",
+      alpha: 0.5,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 6,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 92,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 4,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 94,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        8,
+        29
+      ],
+      to: [
+        91,
+        29
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              24
+            ],
+            [
+              86,
+              24
+            ],
+            [
+              96,
+              54
+            ],
+            [
+              4,
+              54
+            ]
+          ],
+          color: "earth",
+          alpha: 1
+        },
+        {
+          shape: "scatter",
+          count: 50,
+          area: [
+            8,
+            28,
+            84,
+            26
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "dirt",
+            "earthL",
+            "chip"
+          ],
+          onlyOver: [
+            "earth"
+          ]
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 44,
+          rx: 30,
+          ry: 9,
+          color: "sandD",
+          alpha: 0.6
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            12,
+            32
+          ],
+          to: [
+            12,
+            24
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            30,
+            30
+          ],
+          to: [
+            30,
+            22
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            70,
+            30
+          ],
+          to: [
+            70,
+            22
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            88,
+            32
+          ],
+          to: [
+            88,
+            24
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            52
+          ],
+          to: [
+            14,
+            44
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            86,
+            52
+          ],
+          to: [
+            86,
+            44
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            12,
+            25
+          ],
+          to: [
+            30,
+            22
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "line",
+          from: [
+            70,
+            22
+          ],
+          to: [
+            88,
+            25
+          ],
+          w: 1,
+          color: "rope"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            34,
+            46
+          ],
+          to: [
+            34,
+            30
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            28,
+            35
+          ],
+          to: [
+            40,
+            35
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 34,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "straw"
+        },
+        {
+          shape: "ellipse",
+          cx: 34,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "strawD",
+          alpha: 0.35
+        },
+        {
+          shape: "ellipse",
+          cx: 34,
+          cy: 28,
+          rx: 3,
+          ry: 3,
+          color: "straw"
+        },
+        {
+          shape: "line",
+          from: [
+            31,
+            40
+          ],
+          to: [
+            37,
+            40
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "ellipse",
+          cx: 34,
+          cy: 47,
+          rx: 5,
+          ry: 2,
+          color: "dirt"
+        },
+        {
+          shape: "line",
+          from: [
+            66,
+            46
+          ],
+          to: [
+            66,
+            30
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            60,
+            35
+          ],
+          to: [
+            72,
+            35
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 66,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "straw"
+        },
+        {
+          shape: "ellipse",
+          cx: 66,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "strawD",
+          alpha: 0.35
+        },
+        {
+          shape: "ellipse",
+          cx: 66,
+          cy: 28,
+          rx: 3,
+          ry: 3,
+          color: "straw"
+        },
+        {
+          shape: "line",
+          from: [
+            63,
+            40
+          ],
+          to: [
+            69,
+            40
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "ellipse",
+          cx: 66,
+          cy: 47,
+          rx: 5,
+          ry: 2,
+          color: "dirt"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            8,
+            42
+          ],
+          to: [
+            8,
+            30
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            22,
+            42
+          ],
+          to: [
+            22,
+            30
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            7,
+            34
+          ],
+          to: [
+            23,
+            34
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            11,
+            34
+          ],
+          to: [
+            10,
+            27
+          ],
+          w: 1,
+          color: "stoneL"
+        },
+        {
+          shape: "line",
+          from: [
+            15,
+            34
+          ],
+          to: [
+            15,
+            26
+          ],
+          w: 2,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            19,
+            34
+          ],
+          to: [
+            20,
+            27
+          ],
+          w: 1,
+          color: "stoneL"
+        },
+        {
+          shape: "line",
+          from: [
+            83,
+            42
+          ],
+          to: [
+            85,
+            28
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            93,
+            42
+          ],
+          to: [
+            91,
+            28
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 88,
+          cy: 28,
+          rx: 8,
+          ry: 8,
+          color: "hideD"
+        },
+        {
+          shape: "ellipse",
+          cx: 88,
+          cy: 28,
+          rx: 6,
+          ry: 6,
+          color: "sack"
+        },
+        {
+          shape: "ellipse",
+          cx: 88,
+          cy: 28,
+          rx: 4,
+          ry: 4,
+          color: "berry"
+        },
+        {
+          shape: "ellipse",
+          cx: 88,
+          cy: 28,
+          rx: 2,
+          ry: 2,
+          color: "stitch"
+        },
+        {
+          shape: "rect",
+          x: 46,
+          y: 50,
+          w: 3,
+          h: 3,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 50,
+          y: 50,
+          w: 3,
+          h: 3,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 54,
+          y: 50,
+          w: 3,
+          h: 3,
+          color: "wood"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/drill/L2.json
 var L2_default20 = {
   name: "B\xE3i t\u1EADp (c\u1EA5p 2, b\xE3i r\xE0o)",
   name_en: "Drill Ground (Tier 2)",
-  type: "prop",
-  size: [100, 64],
-  anchor: [50, 58],
-  footprint: [2, 30, 96, 28],
+  size: [
+    100,
+    64
+  ],
+  anchor: [
+    50,
+    58
+  ],
+  footprint: [
+    2,
+    30,
+    96,
+    28
+  ],
   seed: 42,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodD: "#5e4026", straw: "#c9a84e", strawD: "#9a7c32", stone: "#8e9498", stoneD: "#60676b", flag: "#b03a2e", flagD: "#7d2a20" },
   layers: [
-    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
-    { shape: "group", if: "st1", layers: [
-      { shape: "rect", x: 4, y: 28, w: 92, h: 26, color: "earth" },
-      { shape: "scatter", count: 30, area: [4, 28, 92, 26], size: [1, 2], colors: ["dirt", "earthL", "stone"], onlyOver: ["earth"] }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "rect", x: 4, y: 28, w: 92, h: 2, color: "woodD" },
-      { shape: "rect", x: 4, y: 52, w: 92, h: 2, color: "woodD" },
-      { shape: "rect", x: 4, y: 28, w: 2, h: 26, color: "woodD" },
-      { shape: "rect", x: 94, y: 28, w: 2, h: 26, color: "woodD" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "line", from: [20, 52], to: [20, 30], w: 2, color: "wood" },
-      { shape: "line", from: [14, 38], to: [26, 38], w: 2, color: "wood" },
-      { shape: "ellipse", cx: 20, cy: 30, rx: 4, ry: 4, color: "straw" },
-      { shape: "pixels", at: [[19, 29], [21, 29]], color: "strawD" },
-      { shape: "line", from: [50, 52], to: [50, 30], w: 2, color: "wood" },
-      { shape: "line", from: [44, 38], to: [56, 38], w: 2, color: "wood" },
-      { shape: "ellipse", cx: 50, cy: 30, rx: 4, ry: 4, color: "straw" },
-      { shape: "pixels", at: [[49, 29], [51, 29]], color: "strawD" },
-      { shape: "line", from: [80, 52], to: [80, 30], w: 2, color: "wood" },
-      { shape: "line", from: [74, 38], to: [86, 38], w: 2, color: "wood" },
-      { shape: "ellipse", cx: 80, cy: 30, rx: 4, ry: 4, color: "straw" },
-      { shape: "pixels", at: [[79, 29], [81, 29]], color: "strawD" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "rect", x: 40, y: 44, w: 20, h: 3, color: "wood" },
-      { shape: "line", from: [42, 44], to: [44, 36], w: 1, color: "woodD" },
-      { shape: "line", from: [48, 44], to: [50, 35], w: 1, color: "woodD" },
-      { shape: "line", from: [54, 44], to: [56, 36], w: 1, color: "woodD" },
-      { shape: "line", from: [10, 24], to: [10, 13], w: 1, color: "woodD" },
-      { shape: "poly", points: [[11, 14], [21, 17], [11, 21]], color: "flag" },
-      { shape: "line", from: [90, 24], to: [90, 13], w: 1, color: "woodD" },
-      { shape: "poly", points: [[91, 14], [101, 17], [91, 21]], color: "flagD" }
-    ] },
-    { shape: "outline", color: "line" }
-  ]
+    {
+      shape: "ellipse",
+      cx: 50,
+      cy: 56,
+      rx: 46,
+      ry: 5,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          14,
+          26
+        ],
+        [
+          86,
+          26
+        ],
+        [
+          94,
+          54
+        ],
+        [
+          6,
+          54
+        ]
+      ],
+      color: "dirt",
+      alpha: 0.5,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 6,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 92,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 4,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 94,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        8,
+        29
+      ],
+      to: [
+        91,
+        29
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              24
+            ],
+            [
+              86,
+              24
+            ],
+            [
+              96,
+              54
+            ],
+            [
+              4,
+              54
+            ]
+          ],
+          color: "earth",
+          alpha: 1
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 44,
+          rx: 34,
+          ry: 10,
+          color: "sand"
+        },
+        {
+          shape: "scatter",
+          count: 50,
+          area: [
+            8,
+            28,
+            84,
+            26
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "sandD",
+            "earthL",
+            "chip"
+          ],
+          onlyOver: [
+            "sand",
+            "earth"
+          ]
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            12,
+            30
+          ],
+          to: [
+            12,
+            22
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            28,
+            30
+          ],
+          to: [
+            28,
+            22
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            44,
+            30
+          ],
+          to: [
+            44,
+            22
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            60,
+            30
+          ],
+          to: [
+            60,
+            22
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            76,
+            30
+          ],
+          to: [
+            76,
+            22
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            90,
+            30
+          ],
+          to: [
+            90,
+            22
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            12,
+            25
+          ],
+          to: [
+            90,
+            25
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            12,
+            28
+          ],
+          to: [
+            90,
+            28
+          ],
+          w: 1,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            8,
+            54
+          ],
+          to: [
+            8,
+            48
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            30,
+            54
+          ],
+          to: [
+            30,
+            48
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            50,
+            54
+          ],
+          to: [
+            50,
+            48
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            70,
+            54
+          ],
+          to: [
+            70,
+            48
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            94,
+            54
+          ],
+          to: [
+            94,
+            48
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            8,
+            51
+          ],
+          to: [
+            94,
+            51
+          ],
+          w: 2,
+          color: "woodD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            30,
+            46
+          ],
+          to: [
+            30,
+            30
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            24,
+            35
+          ],
+          to: [
+            36,
+            35
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 30,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "straw"
+        },
+        {
+          shape: "ellipse",
+          cx: 30,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "strawD",
+          alpha: 0.35
+        },
+        {
+          shape: "ellipse",
+          cx: 30,
+          cy: 28,
+          rx: 3,
+          ry: 3,
+          color: "straw"
+        },
+        {
+          shape: "line",
+          from: [
+            27,
+            40
+          ],
+          to: [
+            33,
+            40
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "ellipse",
+          cx: 30,
+          cy: 47,
+          rx: 5,
+          ry: 2,
+          color: "dirt"
+        },
+        {
+          shape: "line",
+          from: [
+            50,
+            44
+          ],
+          to: [
+            50,
+            24.8
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            42.8,
+            30.8
+          ],
+          to: [
+            57.2,
+            30.8
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 34.4,
+          rx: 4.8,
+          ry: 7.199999999999999,
+          color: "straw"
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 34.4,
+          rx: 4.8,
+          ry: 7.199999999999999,
+          color: "strawD",
+          alpha: 0.35
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 22.400000000000002,
+          rx: 3.5999999999999996,
+          ry: 3.5999999999999996,
+          color: "straw"
+        },
+        {
+          shape: "line",
+          from: [
+            47,
+            36.8
+          ],
+          to: [
+            53,
+            36.8
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 45,
+          rx: 5,
+          ry: 2,
+          color: "dirt"
+        },
+        {
+          shape: "line",
+          from: [
+            70,
+            46
+          ],
+          to: [
+            70,
+            30
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            64,
+            35
+          ],
+          to: [
+            76,
+            35
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 70,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "straw"
+        },
+        {
+          shape: "ellipse",
+          cx: 70,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "strawD",
+          alpha: 0.35
+        },
+        {
+          shape: "ellipse",
+          cx: 70,
+          cy: 28,
+          rx: 3,
+          ry: 3,
+          color: "straw"
+        },
+        {
+          shape: "line",
+          from: [
+            67,
+            40
+          ],
+          to: [
+            73,
+            40
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "ellipse",
+          cx: 70,
+          cy: 47,
+          rx: 5,
+          ry: 2,
+          color: "dirt"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            6,
+            42
+          ],
+          to: [
+            6,
+            30
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            20,
+            42
+          ],
+          to: [
+            20,
+            30
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            5,
+            34
+          ],
+          to: [
+            21,
+            34
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            9,
+            34
+          ],
+          to: [
+            8,
+            27
+          ],
+          w: 1,
+          color: "stoneL"
+        },
+        {
+          shape: "line",
+          from: [
+            13,
+            34
+          ],
+          to: [
+            13,
+            26
+          ],
+          w: 2,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            17,
+            34
+          ],
+          to: [
+            18,
+            27
+          ],
+          w: 1,
+          color: "stoneL"
+        },
+        {
+          shape: "line",
+          from: [
+            85,
+            44
+          ],
+          to: [
+            87,
+            30
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            95,
+            44
+          ],
+          to: [
+            93,
+            30
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 90,
+          cy: 30,
+          rx: 8,
+          ry: 8,
+          color: "hideD"
+        },
+        {
+          shape: "ellipse",
+          cx: 90,
+          cy: 30,
+          rx: 6,
+          ry: 6,
+          color: "sack"
+        },
+        {
+          shape: "ellipse",
+          cx: 90,
+          cy: 30,
+          rx: 4,
+          ry: 4,
+          color: "berry"
+        },
+        {
+          shape: "ellipse",
+          cx: 90,
+          cy: 30,
+          rx: 2,
+          ry: 2,
+          color: "stitch"
+        },
+        {
+          shape: "line",
+          from: [
+            77,
+            40
+          ],
+          to: [
+            79,
+            26
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            87,
+            40
+          ],
+          to: [
+            85,
+            26
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 82,
+          cy: 26,
+          rx: 8,
+          ry: 8,
+          color: "hideD"
+        },
+        {
+          shape: "ellipse",
+          cx: 82,
+          cy: 26,
+          rx: 6,
+          ry: 6,
+          color: "sack"
+        },
+        {
+          shape: "ellipse",
+          cx: 82,
+          cy: 26,
+          rx: 4,
+          ry: 4,
+          color: "berry"
+        },
+        {
+          shape: "ellipse",
+          cx: 82,
+          cy: 26,
+          rx: 2,
+          ry: 2,
+          color: "stitch"
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 52,
+          rx: 6,
+          ry: 2,
+          color: "hideD"
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 52,
+          rx: 4,
+          ry: 1,
+          color: "sack"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/drill/L3.json
 var L3_default17 = {
   name: "B\xE3i t\u1EADp (c\u1EA5p 3, b\xE3i \u0111\xE1)",
   name_en: "Drill Ground (Tier 3)",
-  type: "prop",
-  size: [100, 64],
-  anchor: [50, 58],
-  footprint: [2, 30, 96, 28],
+  size: [
+    100,
+    64
+  ],
+  anchor: [
+    50,
+    58
+  ],
+  footprint: [
+    2,
+    30,
+    96,
+    28
+  ],
   seed: 42,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodD: "#5e4026", straw: "#c9a84e", strawD: "#9a7c32", stone: "#8e9498", stoneD: "#60676b", flag: "#b03a2e", flagD: "#7d2a20" },
   layers: [
-    { shape: "ellipse", cx: 50, cy: 56, rx: 46, ry: 5, color: "shadow", alpha: 0.25 },
-    { shape: "group", if: "st1", layers: [
-      { shape: "rect", x: 4, y: 28, w: 92, h: 26, color: "stoneD" },
-      { shape: "scatter", count: 30, area: [4, 28, 92, 26], size: [1, 2], colors: ["dirt", "earthL", "stone"], onlyOver: ["stoneD"] }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "rect", x: 4, y: 28, w: 92, h: 2, color: "woodD" },
-      { shape: "rect", x: 4, y: 52, w: 92, h: 2, color: "woodD" },
-      { shape: "rect", x: 4, y: 28, w: 2, h: 26, color: "woodD" },
-      { shape: "rect", x: 94, y: 28, w: 2, h: 26, color: "woodD" }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "line", from: [20, 52], to: [20, 30], w: 2, color: "wood" },
-      { shape: "line", from: [14, 38], to: [26, 38], w: 2, color: "wood" },
-      { shape: "ellipse", cx: 20, cy: 30, rx: 4, ry: 4, color: "straw" },
-      { shape: "pixels", at: [[19, 29], [21, 29]], color: "strawD" },
-      { shape: "line", from: [50, 52], to: [50, 30], w: 2, color: "wood" },
-      { shape: "line", from: [44, 38], to: [56, 38], w: 2, color: "wood" },
-      { shape: "ellipse", cx: 50, cy: 30, rx: 4, ry: 4, color: "straw" },
-      { shape: "pixels", at: [[49, 29], [51, 29]], color: "strawD" },
-      { shape: "line", from: [80, 52], to: [80, 30], w: 2, color: "wood" },
-      { shape: "line", from: [74, 38], to: [86, 38], w: 2, color: "wood" },
-      { shape: "ellipse", cx: 80, cy: 30, rx: 4, ry: 4, color: "straw" },
-      { shape: "pixels", at: [[79, 29], [81, 29]], color: "strawD" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "rect", x: 40, y: 44, w: 20, h: 3, color: "wood" },
-      { shape: "line", from: [42, 44], to: [44, 36], w: 1, color: "woodD" },
-      { shape: "line", from: [48, 44], to: [50, 35], w: 1, color: "woodD" },
-      { shape: "line", from: [54, 44], to: [56, 36], w: 1, color: "woodD" },
-      { shape: "line", from: [10, 24], to: [10, 13], w: 1, color: "woodD" },
-      { shape: "poly", points: [[11, 14], [21, 17], [11, 21]], color: "flag" },
-      { shape: "line", from: [90, 24], to: [90, 13], w: 1, color: "woodD" },
-      { shape: "poly", points: [[91, 14], [101, 17], [91, 21]], color: "flagD" }
-    ] },
-    { shape: "outline", color: "line" }
-  ]
+    {
+      shape: "ellipse",
+      cx: 50,
+      cy: 56,
+      rx: 46,
+      ry: 5,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          14,
+          26
+        ],
+        [
+          86,
+          26
+        ],
+        [
+          94,
+          54
+        ],
+        [
+          6,
+          54
+        ]
+      ],
+      color: "dirt",
+      alpha: 0.5,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 6,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 92,
+      y: 28,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 4,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 94,
+      y: 50,
+      w: 2,
+      h: 6,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        8,
+        29
+      ],
+      to: [
+        91,
+        29
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              24
+            ],
+            [
+              86,
+              24
+            ],
+            [
+              96,
+              54
+            ],
+            [
+              4,
+              54
+            ]
+          ],
+          color: "stoneD",
+          alpha: 1
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              18,
+              28
+            ],
+            [
+              82,
+              28
+            ],
+            [
+              90,
+              52
+            ],
+            [
+              10,
+              52
+            ]
+          ],
+          color: "sand"
+        },
+        {
+          shape: "scatter",
+          count: 60,
+          area: [
+            10,
+            30,
+            80,
+            22
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "sandD",
+            "sand",
+            "chip"
+          ],
+          onlyOver: [
+            "sand"
+          ]
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              24
+            ],
+            [
+              86,
+              24
+            ],
+            [
+              86,
+              27
+            ],
+            [
+              14,
+              27
+            ]
+          ],
+          color: "stone"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              6,
+              51
+            ],
+            [
+              94,
+              51
+            ],
+            [
+              94,
+              54
+            ],
+            [
+              6,
+              54
+            ]
+          ],
+          color: "stone"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "rect",
+          x: 12,
+          y: 20,
+          w: 4,
+          h: 12,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 84,
+          y: 20,
+          w: 4,
+          h: 12,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 20,
+          w: 4,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 84,
+          y: 20,
+          w: 4,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 6,
+          y: 46,
+          w: 4,
+          h: 8,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 90,
+          y: 46,
+          w: 4,
+          h: 8,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 6,
+          y: 46,
+          w: 4,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 90,
+          y: 46,
+          w: 4,
+          h: 2,
+          color: "stoneL"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            28,
+            46
+          ],
+          to: [
+            28,
+            30
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            22,
+            35
+          ],
+          to: [
+            34,
+            35
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 28,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "straw"
+        },
+        {
+          shape: "ellipse",
+          cx: 28,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "strawD",
+          alpha: 0.35
+        },
+        {
+          shape: "ellipse",
+          cx: 28,
+          cy: 28,
+          rx: 3,
+          ry: 3,
+          color: "straw"
+        },
+        {
+          shape: "line",
+          from: [
+            25,
+            40
+          ],
+          to: [
+            31,
+            40
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "ellipse",
+          cx: 28,
+          cy: 47,
+          rx: 5,
+          ry: 2,
+          color: "dirt"
+        },
+        {
+          shape: "line",
+          from: [
+            50,
+            44
+          ],
+          to: [
+            50,
+            24.8
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            42.8,
+            30.8
+          ],
+          to: [
+            57.2,
+            30.8
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 34.4,
+          rx: 4.8,
+          ry: 7.199999999999999,
+          color: "straw"
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 34.4,
+          rx: 4.8,
+          ry: 7.199999999999999,
+          color: "strawD",
+          alpha: 0.35
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 22.400000000000002,
+          rx: 3.5999999999999996,
+          ry: 3.5999999999999996,
+          color: "straw"
+        },
+        {
+          shape: "line",
+          from: [
+            47,
+            36.8
+          ],
+          to: [
+            53,
+            36.8
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "ellipse",
+          cx: 50,
+          cy: 45,
+          rx: 5,
+          ry: 2,
+          color: "dirt"
+        },
+        {
+          shape: "line",
+          from: [
+            72,
+            46
+          ],
+          to: [
+            72,
+            30
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            66,
+            35
+          ],
+          to: [
+            78,
+            35
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 72,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "straw"
+        },
+        {
+          shape: "ellipse",
+          cx: 72,
+          cy: 38,
+          rx: 4,
+          ry: 6,
+          color: "strawD",
+          alpha: 0.35
+        },
+        {
+          shape: "ellipse",
+          cx: 72,
+          cy: 28,
+          rx: 3,
+          ry: 3,
+          color: "straw"
+        },
+        {
+          shape: "line",
+          from: [
+            69,
+            40
+          ],
+          to: [
+            75,
+            40
+          ],
+          w: 1,
+          color: "rope"
+        },
+        {
+          shape: "ellipse",
+          cx: 72,
+          cy: 47,
+          rx: 5,
+          ry: 2,
+          color: "dirt"
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            20
+          ],
+          to: [
+            14,
+            6
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              14,
+              6
+            ],
+            [
+              26,
+              10
+            ],
+            [
+              14,
+              14
+            ]
+          ],
+          color: "flag"
+        },
+        {
+          shape: "line",
+          from: [
+            86,
+            20
+          ],
+          to: [
+            86,
+            6
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              86,
+              6
+            ],
+            [
+              74,
+              10
+            ],
+            [
+              86,
+              14
+            ]
+          ],
+          color: "teal"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "line",
+          from: [
+            4,
+            44
+          ],
+          to: [
+            4,
+            32
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            18,
+            44
+          ],
+          to: [
+            18,
+            32
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            3,
+            36
+          ],
+          to: [
+            19,
+            36
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            7,
+            36
+          ],
+          to: [
+            6,
+            29
+          ],
+          w: 1,
+          color: "stoneL"
+        },
+        {
+          shape: "line",
+          from: [
+            11,
+            36
+          ],
+          to: [
+            11,
+            28
+          ],
+          w: 2,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            15,
+            36
+          ],
+          to: [
+            16,
+            29
+          ],
+          w: 1,
+          color: "stoneL"
+        },
+        {
+          shape: "line",
+          from: [
+            87,
+            42
+          ],
+          to: [
+            89,
+            28
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            97,
+            42
+          ],
+          to: [
+            95,
+            28
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 92,
+          cy: 28,
+          rx: 8,
+          ry: 8,
+          color: "hideD"
+        },
+        {
+          shape: "ellipse",
+          cx: 92,
+          cy: 28,
+          rx: 6,
+          ry: 6,
+          color: "sack"
+        },
+        {
+          shape: "ellipse",
+          cx: 92,
+          cy: 28,
+          rx: 4,
+          ry: 4,
+          color: "berry"
+        },
+        {
+          shape: "ellipse",
+          cx: 92,
+          cy: 28,
+          rx: 2,
+          ry: 2,
+          color: "stitch"
+        },
+        {
+          shape: "line",
+          from: [
+            79,
+            38
+          ],
+          to: [
+            81,
+            24
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            89,
+            38
+          ],
+          to: [
+            87,
+            24
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 84,
+          cy: 24,
+          rx: 8,
+          ry: 8,
+          color: "hideD"
+        },
+        {
+          shape: "ellipse",
+          cx: 84,
+          cy: 24,
+          rx: 6,
+          ry: 6,
+          color: "sack"
+        },
+        {
+          shape: "ellipse",
+          cx: 84,
+          cy: 24,
+          rx: 4,
+          ry: 4,
+          color: "berry"
+        },
+        {
+          shape: "ellipse",
+          cx: 84,
+          cy: 24,
+          rx: 2,
+          ry: 2,
+          color: "stitch"
+        },
+        {
+          shape: "rect",
+          x: 44,
+          y: 52,
+          w: 12,
+          h: 3,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 44,
+          y: 52,
+          w: 12,
+          h: 1,
+          color: "stoneL"
+        },
+        {
+          shape: "ellipse",
+          cx: 20,
+          cy: 53,
+          rx: 2,
+          ry: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "ellipse",
+          cx: 36,
+          cy: 53,
+          rx: 2,
+          ry: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "ellipse",
+          cx: 64,
+          cy: 53,
+          rx: 2,
+          ry: 1,
+          color: "stoneD"
+        },
+        {
+          shape: "ellipse",
+          cx: 78,
+          cy: 53,
+          rx: 2,
+          ry: 1,
+          color: "stoneD"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
+  ],
+  type: "prop",
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    clay: "#b08a62",
+    clayD: "#8c6a48",
+    straw: "#d8bf62",
+    strawL: "#ecd88a",
+    strawD: "#a8893a",
+    smoke: "#c8ccd0",
+    iron: "#454a52",
+    slate: "#58606a",
+    slateL: "#7a8490",
+    water: "#4f7fa8",
+    waterL: "#8fbfdf",
+    soil: "#6a4a2c",
+    soilL: "#86613a",
+    soilD: "#4d341e",
+    furrow: "#3c2815",
+    leaf: "#6fa83c",
+    leafL: "#9ccc4e",
+    leafD: "#4a7a28",
+    sand: "#cdb98a",
+    sandD: "#b09c6e",
+    flag: "#b8322a",
+    teal: "#4f8a86"
+  }
 };
 
 // src/data/blueprints/stone_age/buildings/trap/L1.json
@@ -24664,249 +32985,2520 @@ var L4_default = {
 
 // src/data/blueprints/stone_age/buildings/storage/L1.json
 var L1_default23 = {
-  name: "Kho (c\u1EA5p 1, b\xE3i ch\u1EA5t \u0111\u1ED3)",
+  name: "Kho (c\u1EA5p 1, kho g\u1ED7 m\xE1i tranh)",
+  name_en: "Storehouse (Tier 1, Log Hut, Thatch Roof)",
   type: "prop",
-  size: [72, 64],
-  anchor: [36, 58],
-  footprint: [4, 32, 64, 28],
+  size: [
+    72,
+    64
+  ],
+  anchor: [
+    36,
+    58
+  ],
+  footprint: [
+    4,
+    32,
+    64,
+    28
+  ],
   seed: 4,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", berry: "#c23a3a", berryL: "#f08a7a", herb: "#6f7d3a", herbD: "#4e5a28", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428" },
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    tile: "#9a5a3c",
+    tileL: "#b87452",
+    tileD: "#74402a",
+    iron: "#454a52"
+  },
   layers: [
-    { shape: "ellipse", cx: 36, cy: 55, rx: 32, ry: 6, color: "shadow", alpha: 0.25 },
-    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
-    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
-    { shape: "group", if: "st1", layers: [
-      { shape: "ellipse", cx: 36, cy: 47, rx: 31, ry: 8, color: "earth" },
-      { shape: "scatter", count: 30, area: [6, 40, 60, 14], size: [1, 2], colors: ["dirt", "chip", "earthL"], onlyOver: ["earth"] },
-      { shape: "ellipse", cx: 36, cy: 47, rx: 22, ry: 5, color: "mat" },
-      { shape: "scatter", count: 16, area: [15, 43, 42, 8], size: [2, 1], colors: ["matL", "matD"], onlyOver: ["mat"] },
-      { shape: "ellipse", cx: 65, cy: 46.7, rx: 2, ry: 1.5, color: "stone" },
-      { shape: "pixels", at: [[64, 46]], color: "stoneL" },
-      { shape: "ellipse", cx: 63, cy: 49.7, rx: 2.5, ry: 2, color: "stone" },
-      { shape: "pixels", at: [[62, 49]], color: "stoneL" },
-      { shape: "ellipse", cx: 56.1, cy: 52.4, rx: 1.5, ry: 1.5, color: "stone" },
-      { shape: "pixels", at: [[55, 51]], color: "stoneL" },
-      { shape: "ellipse", cx: 46.7, cy: 54, rx: 2.5, ry: 2, color: "stone" },
-      { shape: "pixels", at: [[46, 53]], color: "stoneL" },
-      { shape: "ellipse", cx: 37.1, cy: 54.5, rx: 2, ry: 1.5, color: "stone" },
-      { shape: "pixels", at: [[36, 53]], color: "stoneL" },
-      { shape: "ellipse", cx: 26.2, cy: 54.1, rx: 2.5, ry: 2, color: "stone" },
-      { shape: "pixels", at: [[25, 53]], color: "stoneL" },
-      { shape: "ellipse", cx: 15.4, cy: 52.3, rx: 2.5, ry: 2, color: "stone" },
-      { shape: "pixels", at: [[14, 51]], color: "stoneL" },
-      { shape: "ellipse", cx: 9.4, cy: 50, rx: 2, ry: 1.5, color: "stone" },
-      { shape: "pixels", at: [[8, 49]], color: "stoneL" },
-      { shape: "ellipse", cx: 7, cy: 47.3, rx: 2, ry: 1.5, color: "stone" },
-      { shape: "pixels", at: [[6, 46]], color: "stoneL" },
-      { shape: "ellipse", cx: 9.9, cy: 43.7, rx: 2.5, ry: 2, color: "stone" },
-      { shape: "pixels", at: [[9, 43]], color: "stoneL" },
-      { shape: "ellipse", cx: 16.3, cy: 41.5, rx: 1.5, ry: 1.5, color: "stone" },
-      { shape: "pixels", at: [[15, 40]], color: "stoneL" },
-      { shape: "ellipse", cx: 23.5, cy: 40.2, rx: 1.5, ry: 1.5, color: "stone" },
-      { shape: "pixels", at: [[22, 39]], color: "stoneL" },
-      { shape: "ellipse", cx: 35.1, cy: 39.5, rx: 1.5, ry: 1.5, color: "stone" },
-      { shape: "pixels", at: [[34, 39]], color: "stoneL" },
-      { shape: "ellipse", cx: 48.4, cy: 40.2, rx: 2, ry: 1.5, color: "stone" },
-      { shape: "pixels", at: [[47, 39]], color: "stoneL" },
-      { shape: "ellipse", cx: 56.4, cy: 41.7, rx: 2.5, ry: 2, color: "stone" },
-      { shape: "pixels", at: [[55, 41]], color: "stoneL" },
-      { shape: "ellipse", cx: 63.2, cy: 44.4, rx: 2.5, ry: 2, color: "stone" },
-      { shape: "pixels", at: [[62, 43]], color: "stoneL" }
-    ] },
-    { shape: "rect", x: 9, y: 22, w: 3, h: 29, color: "woodD", if: "st2", mirror: true },
-    { shape: "rect", x: 9, y: 22, w: 1, h: 29, color: "woodL", if: "st2", mirror: true },
-    { shape: "line", from: [10, 22], to: [7, 18], w: 1, color: "wood", if: "st2", mirror: true },
-    { shape: "line", from: [11, 22], to: [14, 18], w: 1, color: "wood", if: "st2", mirror: true },
-    { shape: "ellipse", cx: 10.5, cy: 51, rx: 3.5, ry: 2, color: "stoneD", if: "st2", mirror: true },
-    { shape: "line", from: [11, 22], to: [36, 26], w: 1, color: "rope", if: "st3", mirror: true },
-    { shape: "group", if: "st4", layers: [
-      { shape: "rect", x: 17, y: 23, w: 2, h: 4, color: "herb" },
-      { shape: "pixels", at: [[17, 26]], color: "herbD" },
-      { shape: "rect", x: 24, y: 24, w: 2, h: 5, color: "hide" },
-      { shape: "pixels", at: [[24, 28]], color: "hideD" },
-      { shape: "rect", x: 31, y: 25, w: 2, h: 6, color: "herb" },
-      { shape: "pixels", at: [[31, 30]], color: "herbD" },
-      { shape: "rect", x: 41, y: 25, w: 2, h: 4, color: "hide" },
-      { shape: "pixels", at: [[41, 28]], color: "hideD" },
-      { shape: "rect", x: 48, y: 24, w: 2, h: 5, color: "herb" },
-      { shape: "pixels", at: [[48, 28]], color: "herbD" },
-      { shape: "rect", x: 55, y: 23, w: 2, h: 6, color: "hide" },
-      { shape: "pixels", at: [[55, 28]], color: "hideD" },
-      { shape: "rect", x: 8, y: 47, w: 9, h: 4, color: "log" },
-      { shape: "ellipse", cx: 17, cy: 49, rx: 2, ry: 2, color: "logE" },
-      { shape: "rect", x: 8, y: 47, w: 9, h: 1, color: "woodL" },
-      { shape: "rect", x: 14, y: 47, w: 9, h: 4, color: "log" },
-      { shape: "ellipse", cx: 23, cy: 49, rx: 2, ry: 2, color: "logE" },
-      { shape: "rect", x: 14, y: 47, w: 9, h: 1, color: "woodL" },
-      { shape: "rect", x: 11, y: 43, w: 9, h: 4, color: "log" },
-      { shape: "ellipse", cx: 20, cy: 45, rx: 2, ry: 2, color: "logE" },
-      { shape: "rect", x: 11, y: 43, w: 9, h: 1, color: "woodL" },
-      { shape: "ellipse", cx: 33, cy: 45, rx: 5, ry: 4, color: "sack" },
-      { shape: "rect", x: 31, y: 40, w: 4, h: 2, color: "sackD" },
-      { shape: "ellipse", cx: 41, cy: 47, rx: 4, ry: 3, color: "sack" },
-      { shape: "rect", x: 39, y: 43, w: 4, h: 2, color: "sackD" },
-      { shape: "ellipse", cx: 53, cy: 45, rx: 5, ry: 5, color: "wicker" },
-      { shape: "rect", x: 48, y: 44, w: 10, h: 1, color: "wickerD" },
-      { shape: "rect", x: 48, y: 47, w: 10, h: 1, color: "wickerD" },
-      { shape: "scatter", count: 8, area: [49, 40, 8, 2], size: 1, colors: ["berry", "berry", "berryL"] },
-      { shape: "poly", points: [[24, 38], [34, 36], [36, 41], [22, 42]], color: "hide" },
-      { shape: "line", from: [24, 38], to: [34, 36], w: 1, color: "hideL" },
-      { shape: "poly", points: [[24, 41], [22, 42], [36, 41]], color: "hideD" }
-    ] },
-    { shape: "outline", color: "line" }
+    {
+      shape: "ellipse",
+      cx: 36,
+      cy: 55,
+      rx: 30,
+      ry: 6,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "rect",
+      x: 8,
+      y: 36,
+      w: 56,
+      h: 18,
+      color: "dirt",
+      alpha: 0.55,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        9,
+        37
+      ],
+      to: [
+        62,
+        37
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "ellipse",
+          cx: 36,
+          cy: 47,
+          rx: 30,
+          ry: 8,
+          color: "earth"
+        },
+        {
+          shape: "scatter",
+          count: 34,
+          area: [
+            6,
+            40,
+            60,
+            14
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "dirt",
+            "chip",
+            "earthL",
+            "stoneD"
+          ],
+          onlyOver: [
+            "earth"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 49,
+          w: 48,
+          h: 5,
+          color: "woodD",
+          alpha: 0.55
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "rect",
+          x: 13,
+          y: 30,
+          w: 3,
+          h: 23,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 57,
+          y: 30,
+          w: 3,
+          h: 23,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 28,
+          w: 3,
+          h: 25,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            6,
+            38
+          ],
+          to: [
+            35,
+            10
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            66,
+            38
+          ],
+          to: [
+            35,
+            10
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            36
+          ],
+          to: [
+            35,
+            8
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            31
+          ],
+          to: [
+            59,
+            31
+          ],
+          w: 1,
+          color: "rope"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "rect",
+          x: 12,
+          y: 30,
+          w: 48,
+          h: 23,
+          color: "log"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 32,
+          w: 48,
+          h: 1,
+          color: "woodL",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 35,
+          w: 48,
+          h: 1,
+          color: "woodD",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 36,
+          w: 48,
+          h: 1,
+          color: "woodL",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 39,
+          w: 48,
+          h: 1,
+          color: "woodD",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 40,
+          w: 48,
+          h: 1,
+          color: "woodL",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 43,
+          w: 48,
+          h: 1,
+          color: "woodD",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 44,
+          w: 48,
+          h: 1,
+          color: "woodL",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 47,
+          w: 48,
+          h: 1,
+          color: "woodD",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 48,
+          w: 48,
+          h: 1,
+          color: "woodL",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 51,
+          w: 48,
+          h: 1,
+          color: "woodD",
+          alpha: 0.6
+        },
+        {
+          shape: "ellipse",
+          cx: 12,
+          cy: 34,
+          rx: 2,
+          ry: 2,
+          color: "logE"
+        },
+        {
+          shape: "ellipse",
+          cx: 60,
+          cy: 34,
+          rx: 2,
+          ry: 2,
+          color: "logE"
+        },
+        {
+          shape: "ellipse",
+          cx: 12,
+          cy: 38,
+          rx: 2,
+          ry: 2,
+          color: "logE"
+        },
+        {
+          shape: "ellipse",
+          cx: 60,
+          cy: 38,
+          rx: 2,
+          ry: 2,
+          color: "logE"
+        },
+        {
+          shape: "ellipse",
+          cx: 12,
+          cy: 42,
+          rx: 2,
+          ry: 2,
+          color: "logE"
+        },
+        {
+          shape: "ellipse",
+          cx: 60,
+          cy: 42,
+          rx: 2,
+          ry: 2,
+          color: "logE"
+        },
+        {
+          shape: "ellipse",
+          cx: 12,
+          cy: 46,
+          rx: 2,
+          ry: 2,
+          color: "logE"
+        },
+        {
+          shape: "ellipse",
+          cx: 60,
+          cy: 46,
+          rx: 2,
+          ry: 2,
+          color: "logE"
+        },
+        {
+          shape: "ellipse",
+          cx: 12,
+          cy: 50,
+          rx: 2,
+          ry: 2,
+          color: "logE"
+        },
+        {
+          shape: "ellipse",
+          cx: 60,
+          cy: 50,
+          rx: 2,
+          ry: 2,
+          color: "logE"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              4,
+              38
+            ],
+            [
+              36,
+              9
+            ],
+            [
+              68,
+              38
+            ]
+          ],
+          color: "thatch"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              9
+            ],
+            [
+              4,
+              38
+            ],
+            [
+              18,
+              38
+            ],
+            [
+              36,
+              23
+            ]
+          ],
+          color: "thatchL"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              9
+            ],
+            [
+              68,
+              38
+            ],
+            [
+              50,
+              38
+            ],
+            [
+              36,
+              29
+            ]
+          ],
+          color: "thatchD"
+        },
+        {
+          shape: "scatter",
+          count: 46,
+          area: [
+            12,
+            12,
+            48,
+            26
+          ],
+          size: [
+            1,
+            3
+          ],
+          colors: [
+            "thatchL",
+            "thatchD",
+            "thatchL"
+          ],
+          onlyOver: [
+            "thatch"
+          ]
+        },
+        {
+          shape: "scatter",
+          count: 14,
+          area: [
+            12,
+            12,
+            48,
+            26
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "thatchD"
+          ],
+          onlyOver: [
+            "thatch"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 37,
+          w: 64,
+          h: 3,
+          color: "thatchD"
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 37,
+          w: 64,
+          h: 1,
+          color: "thatchL"
+        },
+        {
+          shape: "rect",
+          x: 11,
+          y: 41,
+          w: 3,
+          h: 12,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 58,
+          y: 41,
+          w: 3,
+          h: 12,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            33,
+            9
+          ],
+          to: [
+            32,
+            3
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            39,
+            9
+          ],
+          to: [
+            40,
+            3
+          ],
+          w: 2,
+          color: "woodD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "rect",
+          x: 25,
+          y: 41,
+          w: 22,
+          h: 12,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 26,
+          y: 42,
+          w: 20,
+          h: 11,
+          color: "door"
+        },
+        {
+          shape: "ellipse",
+          cx: 31,
+          cy: 51,
+          rx: 4,
+          ry: 2,
+          color: "sackD"
+        },
+        {
+          shape: "ellipse",
+          cx: 31,
+          cy: 49,
+          rx: 4,
+          ry: 4,
+          color: "sack"
+        },
+        {
+          shape: "ellipse",
+          cx: 40,
+          cy: 51,
+          rx: 4,
+          ry: 2,
+          color: "sackD"
+        },
+        {
+          shape: "ellipse",
+          cx: 40,
+          cy: 49,
+          rx: 4,
+          ry: 4,
+          color: "sack"
+        },
+        {
+          shape: "rect",
+          x: 30,
+          y: 45,
+          w: 12,
+          h: 1,
+          color: "wood"
+        },
+        {
+          shape: "ellipse",
+          cx: 15,
+          cy: 52,
+          rx: 5,
+          ry: 3,
+          color: "sackD"
+        },
+        {
+          shape: "ellipse",
+          cx: 15,
+          cy: 49,
+          rx: 5,
+          ry: 5,
+          color: "sack"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 44,
+          w: 6,
+          h: 2,
+          color: "sackD"
+        },
+        {
+          shape: "ellipse",
+          cx: 54,
+          cy: 52,
+          rx: 5,
+          ry: 3,
+          color: "wickerD"
+        },
+        {
+          shape: "ellipse",
+          cx: 54,
+          cy: 49,
+          rx: 5,
+          ry: 5,
+          color: "wicker"
+        },
+        {
+          shape: "rect",
+          x: 50,
+          y: 45,
+          w: 8,
+          h: 2,
+          color: "wickerD"
+        },
+        {
+          shape: "pixels",
+          at: [
+            [
+              52,
+              47
+            ],
+            [
+              56,
+              48
+            ]
+          ],
+          color: "berry"
+        },
+        {
+          shape: "rect",
+          x: 60,
+          y: 47,
+          w: 7,
+          h: 5,
+          color: "hide"
+        },
+        {
+          shape: "rect",
+          x: 60,
+          y: 47,
+          w: 7,
+          h: 1,
+          color: "hideL"
+        },
+        {
+          shape: "rect",
+          x: 61,
+          y: 44,
+          w: 5,
+          h: 3,
+          color: "hideD"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
   ]
 };
 
 // src/data/blueprints/stone_age/buildings/storage/L2.json
 var L2_default23 = {
-  name: "Kho (c\u1EA5p 2, gi\xE0n g\u1ED7)",
+  name: "Kho (c\u1EA5p 2, kho v\xE1n)",
+  name_en: "Storehouse (Tier 2, Plank Barn)",
   type: "prop",
-  size: [72, 64],
-  anchor: [36, 58],
-  footprint: [4, 32, 64, 28],
-  seed: 4,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", berry: "#c23a3a", berryL: "#f08a7a", herb: "#6f7d3a", herbD: "#4e5a28", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428" },
+  size: [
+    72,
+    64
+  ],
+  anchor: [
+    36,
+    58
+  ],
+  footprint: [
+    4,
+    32,
+    64,
+    28
+  ],
+  seed: 41,
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    tile: "#9a5a3c",
+    tileL: "#b87452",
+    tileD: "#74402a",
+    iron: "#454a52"
+  },
   layers: [
-    { shape: "ellipse", cx: 36, cy: 55, rx: 32, ry: 6, color: "shadow", alpha: 0.25 },
-    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
-    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
-    { shape: "group", if: "st1", layers: [
-      { shape: "ellipse", cx: 36, cy: 49, rx: 30, ry: 7, color: "earth" },
-      { shape: "scatter", count: 26, area: [6, 43, 60, 12], size: [1, 2], colors: ["dirt", "chip", "earthL"], onlyOver: ["earth"] }
-    ] },
-    { shape: "rect", x: 10, y: 30, w: 4, h: 23, color: "wood", if: "st2", mirror: true },
-    { shape: "rect", x: 10, y: 30, w: 1, h: 23, color: "woodL", if: "st2", mirror: true },
-    { shape: "rect", x: 13, y: 30, w: 1, h: 23, color: "woodD", if: "st2", mirror: true },
-    { shape: "ellipse", cx: 12, cy: 53, rx: 4, ry: 2, color: "stoneD", if: "st2", mirror: true },
-    { shape: "rect", x: 24, y: 44, w: 24, h: 9, color: "shadow", alpha: 0.28, if: "st3" },
-    { shape: "group", if: "st3", layers: [
-      { shape: "rect", x: 8, y: 34, w: 56, h: 3, color: "woodL" },
-      { shape: "rect", x: 8, y: 37, w: 56, h: 5, color: "log" },
-      { shape: "rect", x: 8, y: 37, w: 1, h: 5, color: "woodD" },
-      { shape: "ellipse", cx: 12, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
-      { shape: "rect", x: 16, y: 37, w: 1, h: 5, color: "woodD" },
-      { shape: "ellipse", cx: 20, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
-      { shape: "rect", x: 24, y: 37, w: 1, h: 5, color: "woodD" },
-      { shape: "ellipse", cx: 28, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
-      { shape: "rect", x: 32, y: 37, w: 1, h: 5, color: "woodD" },
-      { shape: "ellipse", cx: 36, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
-      { shape: "rect", x: 40, y: 37, w: 1, h: 5, color: "woodD" },
-      { shape: "ellipse", cx: 44, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
-      { shape: "rect", x: 48, y: 37, w: 1, h: 5, color: "woodD" },
-      { shape: "ellipse", cx: 52, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
-      { shape: "rect", x: 56, y: 37, w: 1, h: 5, color: "woodD" },
-      { shape: "ellipse", cx: 60, cy: 39.5, rx: 1.5, ry: 1.5, color: "logE", alpha: 0.7 },
-      { shape: "rect", x: 8, y: 42, w: 56, h: 2, color: "woodD" },
-      { shape: "pixels", at: [[12, 35], [22, 35], [36, 35], [50, 35], [60, 35]], color: "rope" }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "ellipse", cx: 16, cy: 31, rx: 5, ry: 4, color: "sack" },
-      { shape: "rect", x: 14, y: 26, w: 4, h: 2, color: "sackD" },
-      { shape: "ellipse", cx: 24, cy: 32, rx: 4, ry: 3, color: "sack" },
-      { shape: "rect", x: 22, y: 28, w: 4, h: 2, color: "sackD" },
-      { shape: "ellipse", cx: 33, cy: 30, rx: 5, ry: 5, color: "wicker" },
-      { shape: "rect", x: 28, y: 29, w: 10, h: 1, color: "wickerD" },
-      { shape: "rect", x: 28, y: 32, w: 10, h: 1, color: "wickerD" },
-      { shape: "scatter", count: 8, area: [29, 25, 8, 2], size: 1, colors: ["berry", "berry", "berryL"] },
-      { shape: "ellipse", cx: 43, cy: 31, rx: 4, ry: 4, color: "wicker" },
-      { shape: "rect", x: 39, y: 30, w: 8, h: 1, color: "wickerD" },
-      { shape: "rect", x: 39, y: 33, w: 8, h: 1, color: "wickerD" },
-      { shape: "poly", points: [[46, 24], [62, 27], [63, 35], [45, 35]], color: "hide" },
-      { shape: "poly", points: [[54, 25], [62, 27], [63, 35], [54, 35]], color: "hideD", alpha: 0.4, clip: "inside" },
-      { shape: "line", from: [46, 24], to: [62, 27], w: 1, color: "hideL" },
-      { shape: "pixels", at: [[48, 27], [52, 28], [57, 29], [61, 31], [47, 32], [56, 33]], color: "stitch" },
-      { shape: "line", from: [47, 35], to: [47, 41], w: 1, color: "rope" },
-      { shape: "line", from: [61, 35], to: [61, 41], w: 1, color: "rope" },
-      { shape: "line", from: [30, 56], to: [33, 44], w: 1, color: "woodL" },
-      { shape: "line", from: [39, 56], to: [41, 44], w: 1, color: "woodL" },
-      { shape: "rect", x: 32, y: 52, w: 8, h: 1, color: "wood" },
-      { shape: "rect", x: 32, y: 48, w: 8, h: 1, color: "wood" },
-      { shape: "rect", x: 9, y: 50, w: 9, h: 4, color: "log" },
-      { shape: "ellipse", cx: 18, cy: 52, rx: 2, ry: 2, color: "logE" },
-      { shape: "rect", x: 9, y: 50, w: 9, h: 1, color: "woodL" },
-      { shape: "rect", x: 15, y: 50, w: 9, h: 4, color: "log" },
-      { shape: "ellipse", cx: 24, cy: 52, rx: 2, ry: 2, color: "logE" },
-      { shape: "rect", x: 15, y: 50, w: 9, h: 1, color: "woodL" },
-      { shape: "rect", x: 12, y: 46, w: 9, h: 4, color: "log" },
-      { shape: "ellipse", cx: 21, cy: 48, rx: 2, ry: 2, color: "logE" },
-      { shape: "rect", x: 12, y: 46, w: 9, h: 1, color: "woodL" }
-    ] },
-    { shape: "outline", color: "line" }
+    {
+      shape: "ellipse",
+      cx: 36,
+      cy: 55,
+      rx: 30,
+      ry: 6,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "rect",
+      x: 8,
+      y: 36,
+      w: 56,
+      h: 18,
+      color: "dirt",
+      alpha: 0.55,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        9,
+        37
+      ],
+      to: [
+        62,
+        37
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "ellipse",
+          cx: 36,
+          cy: 47,
+          rx: 30,
+          ry: 8,
+          color: "earth"
+        },
+        {
+          shape: "scatter",
+          count: 34,
+          area: [
+            6,
+            40,
+            60,
+            14
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "dirt",
+            "chip",
+            "earthL",
+            "stoneD"
+          ],
+          onlyOver: [
+            "earth"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 49,
+          w: 48,
+          h: 5,
+          color: "woodD",
+          alpha: 0.55
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "rect",
+          x: 13,
+          y: 30,
+          w: 3,
+          h: 23,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 57,
+          y: 30,
+          w: 3,
+          h: 23,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 28,
+          w: 3,
+          h: 25,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            6,
+            38
+          ],
+          to: [
+            35,
+            9
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            66,
+            38
+          ],
+          to: [
+            35,
+            9
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            36
+          ],
+          to: [
+            35,
+            7
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            31
+          ],
+          to: [
+            59,
+            31
+          ],
+          w: 1,
+          color: "rope"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "rect",
+          x: 12,
+          y: 30,
+          w: 48,
+          h: 23,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 15,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 19,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 23,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 27,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 31,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 35,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 39,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 43,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 47,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 51,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 55,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 59,
+          y: 30,
+          w: 1,
+          h: 23,
+          color: "woodD",
+          alpha: 0.55
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 30,
+          w: 48,
+          h: 2,
+          color: "woodL"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 42,
+          w: 48,
+          h: 2,
+          color: "woodD",
+          alpha: 0.6
+        },
+        {
+          shape: "line",
+          from: [
+            12,
+            30
+          ],
+          to: [
+            60,
+            52
+          ],
+          w: 1,
+          color: "woodD",
+          alpha: 0.35
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              4,
+              38
+            ],
+            [
+              36,
+              8
+            ],
+            [
+              68,
+              38
+            ]
+          ],
+          color: "thatch"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              8
+            ],
+            [
+              4,
+              38
+            ],
+            [
+              18,
+              38
+            ],
+            [
+              36,
+              22
+            ]
+          ],
+          color: "thatchL"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              8
+            ],
+            [
+              68,
+              38
+            ],
+            [
+              50,
+              38
+            ],
+            [
+              36,
+              28
+            ]
+          ],
+          color: "thatchD"
+        },
+        {
+          shape: "scatter",
+          count: 50,
+          area: [
+            12,
+            12,
+            48,
+            26
+          ],
+          size: [
+            1,
+            3
+          ],
+          colors: [
+            "thatchL",
+            "thatchD",
+            "thatchL"
+          ],
+          onlyOver: [
+            "thatch"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 37,
+          w: 64,
+          h: 3,
+          color: "thatchD"
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 37,
+          w: 64,
+          h: 1,
+          color: "thatchL"
+        },
+        {
+          shape: "line",
+          from: [
+            34,
+            9
+          ],
+          to: [
+            38,
+            9
+          ],
+          w: 3,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            6,
+            36
+          ],
+          to: [
+            36,
+            8
+          ],
+          w: 1,
+          color: "woodL",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 11,
+          y: 41,
+          w: 3,
+          h: 12,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 58,
+          y: 41,
+          w: 3,
+          h: 12,
+          color: "woodD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "rect",
+          x: 24,
+          y: 40,
+          w: 24,
+          h: 13,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 25,
+          y: 41,
+          w: 11,
+          h: 12,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 36,
+          y: 41,
+          w: 11,
+          h: 12,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            30,
+            41
+          ],
+          to: [
+            30,
+            52
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            41,
+            41
+          ],
+          to: [
+            41,
+            52
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            25,
+            46
+          ],
+          to: [
+            46,
+            46
+          ],
+          w: 1,
+          color: "iron"
+        },
+        {
+          shape: "pixels",
+          at: [
+            [
+              35,
+              47
+            ],
+            [
+              37,
+              47
+            ]
+          ],
+          color: "logE"
+        },
+        {
+          shape: "rect",
+          x: 14,
+          y: 44,
+          w: 11,
+          h: 9,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 14,
+          y: 44,
+          w: 11,
+          h: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            48
+          ],
+          to: [
+            24,
+            48
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            19,
+            44
+          ],
+          to: [
+            19,
+            52
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 38,
+          w: 9,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 16,
+          y: 38,
+          w: 9,
+          h: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            20,
+            38
+          ],
+          to: [
+            20,
+            43
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "ellipse",
+          cx: 54,
+          cy: 51,
+          rx: 5,
+          ry: 3,
+          color: "sackD"
+        },
+        {
+          shape: "ellipse",
+          cx: 54,
+          cy: 48,
+          rx: 5,
+          ry: 5,
+          color: "sack"
+        },
+        {
+          shape: "rect",
+          x: 51,
+          y: 43,
+          w: 6,
+          h: 2,
+          color: "sackD"
+        },
+        {
+          shape: "ellipse",
+          cx: 62,
+          cy: 52,
+          rx: 4,
+          ry: 2,
+          color: "wickerD"
+        },
+        {
+          shape: "ellipse",
+          cx: 62,
+          cy: 49,
+          rx: 4,
+          ry: 4,
+          color: "wicker"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
   ]
 };
 
 // src/data/blueprints/stone_age/buildings/storage/L3.json
 var L3_default19 = {
-  name: "Kho (c\u1EA5p 3, h\u1ED1 ch\u1EE9a l\xF3t \u0111\xE1)",
+  name: "Kho (c\u1EA5p 3, kho \u0111\xE1 m\xE1i ng\xF3i)",
+  name_en: "Storehouse (Tier 3, Stone Warehouse, Tiled Roof)",
   type: "prop",
-  size: [72, 64],
-  anchor: [36, 58],
-  footprint: [4, 32, 64, 28],
-  seed: 4,
-  params: { st1: 1, st2: 1, st3: 1, st4: 1 },
-  palette: { line: "#2b1d10", shadow: "#000000", dirt: "#6a5238", earth: "#86704e", earthL: "#9a8460", wood: "#8a6238", woodL: "#aa7c48", woodD: "#5e4026", log: "#6b4a28", logE: "#c49a60", rope: "#d8c690", stone: "#8e9498", stoneL: "#b9bfc2", stoneD: "#60676b", chip: "#d8d2c0", hide: "#a0552f", hideL: "#c06f43", hideD: "#7a3d20", stitch: "#e8d6a8", sack: "#c9b27a", sackD: "#9d8756", wicker: "#b89a58", wickerD: "#8a7038", berry: "#c23a3a", berryL: "#f08a7a", herb: "#6f7d3a", herbD: "#4e5a28", mat: "#7a5a38", matL: "#8e6c46", matD: "#5e4428", clay: "#b0693c", clayL: "#d08a58", clayD: "#8a4e2a", pit: "#3a2a1c", pitL: "#54402c" },
+  size: [
+    72,
+    64
+  ],
+  anchor: [
+    36,
+    58
+  ],
+  footprint: [
+    4,
+    32,
+    64,
+    28
+  ],
+  seed: 42,
+  params: {
+    st1: 1,
+    st2: 1,
+    st3: 1,
+    st4: 1
+  },
+  palette: {
+    line: "#2b1d10",
+    shadow: "#000000",
+    dirt: "#6a5238",
+    earth: "#86704e",
+    earthL: "#9a8460",
+    wood: "#8a6238",
+    woodL: "#aa7c48",
+    woodD: "#5e4026",
+    log: "#6b4a28",
+    logE: "#c49a60",
+    rope: "#d8c690",
+    stone: "#8e9498",
+    stoneL: "#b9bfc2",
+    stoneD: "#60676b",
+    chip: "#d8d2c0",
+    hide: "#a0552f",
+    hideL: "#c06f43",
+    hideD: "#7a3d20",
+    stitch: "#e8d6a8",
+    door: "#2a1a0e",
+    thatch: "#c9a84e",
+    thatchL: "#e0c670",
+    thatchD: "#9a7c32",
+    sack: "#c9b27a",
+    sackD: "#9d8756",
+    wicker: "#b89a58",
+    wickerD: "#8a7038",
+    berry: "#c23a3a",
+    herb: "#6f7d3a",
+    tile: "#9a5a3c",
+    tileL: "#b87452",
+    tileD: "#74402a",
+    iron: "#454a52"
+  },
   layers: [
-    { shape: "ellipse", cx: 36, cy: 55, rx: 33, ry: 6, color: "shadow", alpha: 0.25 },
-    { shape: "rect", x: 8, y: 36, w: 56, h: 18, color: "dirt", alpha: 0.55, ifNot: "st1" },
-    { shape: "rect", x: 7, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 36, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 7, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "rect", x: 63, y: 50, w: 2, h: 5, color: "wood", ifNot: "st1" },
-    { shape: "line", from: [9, 37], to: [62, 37], w: 1, color: "rope", ifNot: "st1" },
-    { shape: "group", if: "st1", layers: [
-      { shape: "ellipse", cx: 36, cy: 49, rx: 32, ry: 8, color: "earth" },
-      { shape: "scatter", count: 26, area: [5, 43, 62, 12], size: [1, 2], colors: ["dirt", "chip", "earthL"], onlyOver: ["earth"] }
-    ] },
-    { shape: "group", if: "st2", layers: [
-      { shape: "ellipse", cx: 36, cy: 50, rx: 29, ry: 10, color: "stoneD" },
-      { shape: "ellipse", cx: 36, cy: 47, rx: 29, ry: 10, color: "stone" },
-      { shape: "scatter", count: 70, area: [7, 37, 58, 20], size: [2, 1], colors: ["stoneL", "stoneD"], onlyOver: ["stone"] },
-      { shape: "ellipse", cx: 36, cy: 46, rx: 23, ry: 7, color: "pit" },
-      { shape: "ellipse", cx: 36, cy: 47, rx: 23, ry: 7, color: "pitL", alpha: 0.35, clip: "inside" },
-      { shape: "rect", x: 8, y: 52, w: 56, h: 1, color: "stoneD", onlyOver: ["stone"] }
-    ] },
-    { shape: "group", if: "st3", layers: [
-      { shape: "ellipse", cx: 26, cy: 46, rx: 5, ry: 3, color: "sack" },
-      { shape: "rect", x: 24, y: 42, w: 4, h: 2, color: "sackD" },
-      { shape: "ellipse", cx: 36, cy: 45, rx: 5, ry: 3, color: "sack" },
-      { shape: "rect", x: 34, y: 41, w: 4, h: 2, color: "sackD" },
-      { shape: "ellipse", cx: 46, cy: 47, rx: 4, ry: 3, color: "sack" },
-      { shape: "rect", x: 44, y: 43, w: 4, h: 2, color: "sackD" },
-      { shape: "scatter", count: 10, area: [22, 43, 28, 4], size: 1, colors: ["berry", "sack", "berryL"] }
-    ] },
-    { shape: "group", if: "st4", layers: [
-      { shape: "ellipse", cx: 12, cy: 45, rx: 6, ry: 6, color: "clay" },
-      { shape: "rect", x: 9, y: 36, w: 6, h: 4, color: "clay" },
-      { shape: "rect", x: 8, y: 35, w: 8, h: 2, color: "clayL" },
-      { shape: "rect", x: 7, y: 47, w: 10, h: 1, color: "clayD", onlyOver: ["clay"] },
-      { shape: "scatter", count: 8, area: [7, 41, 10, 8], size: [2, 1], colors: ["clayL", "clayD"], onlyOver: ["clay"] },
-      { shape: "ellipse", cx: 60, cy: 44, rx: 6, ry: 6, color: "clay" },
-      { shape: "rect", x: 57, y: 35, w: 6, h: 4, color: "clay" },
-      { shape: "rect", x: 56, y: 34, w: 8, h: 2, color: "clayL" },
-      { shape: "rect", x: 55, y: 46, w: 10, h: 1, color: "clayD", onlyOver: ["clay"] },
-      { shape: "scatter", count: 8, area: [55, 40, 10, 8], size: [2, 1], colors: ["clayL", "clayD"], onlyOver: ["clay"] },
-      { shape: "ellipse", cx: 16, cy: 53, rx: 4, ry: 4, color: "wicker" },
-      { shape: "rect", x: 12, y: 52, w: 8, h: 1, color: "wickerD" },
-      { shape: "rect", x: 12, y: 55, w: 8, h: 1, color: "wickerD" },
-      { shape: "poly", points: [[34, 38], [56, 40], [58, 50], [34, 52]], color: "hide" },
-      { shape: "poly", points: [[46, 39], [56, 40], [58, 50], [46, 51]], color: "hideD", alpha: 0.4, clip: "inside" },
-      { shape: "line", from: [34, 38], to: [56, 40], w: 1, color: "hideL" },
-      { shape: "ellipse", cx: 40, cy: 42, rx: 2.5, ry: 1.5, color: "stone" },
-      { shape: "ellipse", cx: 52, cy: 44, rx: 2.5, ry: 1.5, color: "stone" },
-      { shape: "ellipse", cx: 44, cy: 49, rx: 2.5, ry: 1.5, color: "stone" },
-      { shape: "pixels", at: [[39, 41], [51, 43], [43, 48]], color: "stoneL" }
-    ] },
-    { shape: "outline", color: "line" }
+    {
+      shape: "ellipse",
+      cx: 36,
+      cy: 55,
+      rx: 30,
+      ry: 6,
+      color: "shadow",
+      alpha: 0.25
+    },
+    {
+      shape: "rect",
+      x: 8,
+      y: 36,
+      w: 56,
+      h: 18,
+      color: "dirt",
+      alpha: 0.55,
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 36,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 7,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "rect",
+      x: 63,
+      y: 50,
+      w: 2,
+      h: 5,
+      color: "wood",
+      ifNot: "st1"
+    },
+    {
+      shape: "line",
+      from: [
+        9,
+        37
+      ],
+      to: [
+        62,
+        37
+      ],
+      w: 1,
+      color: "rope",
+      ifNot: "st1"
+    },
+    {
+      shape: "group",
+      if: "st1",
+      layers: [
+        {
+          shape: "ellipse",
+          cx: 36,
+          cy: 47,
+          rx: 30,
+          ry: 8,
+          color: "earth"
+        },
+        {
+          shape: "scatter",
+          count: 34,
+          area: [
+            6,
+            40,
+            60,
+            14
+          ],
+          size: [
+            1,
+            2
+          ],
+          colors: [
+            "dirt",
+            "chip",
+            "earthL",
+            "stoneD"
+          ],
+          onlyOver: [
+            "earth"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 49,
+          w: 48,
+          h: 5,
+          color: "stoneD",
+          alpha: 0.55
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st2",
+      layers: [
+        {
+          shape: "rect",
+          x: 13,
+          y: 30,
+          w: 3,
+          h: 23,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 57,
+          y: 30,
+          w: 3,
+          h: 23,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 28,
+          w: 3,
+          h: 25,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            6,
+            38
+          ],
+          to: [
+            35,
+            9
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            66,
+            38
+          ],
+          to: [
+            35,
+            9
+          ],
+          w: 2,
+          color: "woodD"
+        },
+        {
+          shape: "line",
+          from: [
+            35,
+            36
+          ],
+          to: [
+            35,
+            7
+          ],
+          w: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            31
+          ],
+          to: [
+            59,
+            31
+          ],
+          w: 1,
+          color: "rope"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st3",
+      layers: [
+        {
+          shape: "rect",
+          x: 12,
+          y: 30,
+          w: 48,
+          h: 23,
+          color: "stone"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 30,
+          w: 48,
+          h: 10,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 30,
+          w: 48,
+          h: 2,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            16,
+            31
+          ],
+          to: [
+            16,
+            39
+          ],
+          w: 1,
+          color: "wood",
+          alpha: 0.6
+        },
+        {
+          shape: "line",
+          from: [
+            23,
+            31
+          ],
+          to: [
+            23,
+            39
+          ],
+          w: 1,
+          color: "wood",
+          alpha: 0.6
+        },
+        {
+          shape: "line",
+          from: [
+            30,
+            31
+          ],
+          to: [
+            30,
+            39
+          ],
+          w: 1,
+          color: "wood",
+          alpha: 0.6
+        },
+        {
+          shape: "line",
+          from: [
+            37,
+            31
+          ],
+          to: [
+            37,
+            39
+          ],
+          w: 1,
+          color: "wood",
+          alpha: 0.6
+        },
+        {
+          shape: "line",
+          from: [
+            44,
+            31
+          ],
+          to: [
+            44,
+            39
+          ],
+          w: 1,
+          color: "wood",
+          alpha: 0.6
+        },
+        {
+          shape: "line",
+          from: [
+            51,
+            31
+          ],
+          to: [
+            51,
+            39
+          ],
+          w: 1,
+          color: "wood",
+          alpha: 0.6
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 42,
+          w: 48,
+          h: 1,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 46,
+          w: 48,
+          h: 1,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 50,
+          w: 48,
+          h: 1,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 14,
+          y: 41,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 22,
+          y: 41,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 30,
+          y: 41,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 38,
+          y: 41,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 46,
+          y: 41,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 54,
+          y: 41,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 18,
+          y: 45,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 26,
+          y: 45,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 34,
+          y: 45,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 42,
+          y: 45,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 50,
+          y: 45,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 14,
+          y: 49,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 22,
+          y: 49,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 30,
+          y: 49,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 38,
+          y: 49,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 46,
+          y: 49,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 54,
+          y: 49,
+          w: 1,
+          h: 3,
+          color: "stoneD",
+          alpha: 0.7
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 40,
+          w: 48,
+          h: 2,
+          color: "stoneL"
+        },
+        {
+          shape: "rect",
+          x: 12,
+          y: 30,
+          w: 3,
+          h: 23,
+          color: "stoneD",
+          alpha: 0.4
+        },
+        {
+          shape: "rect",
+          x: 57,
+          y: 30,
+          w: 3,
+          h: 23,
+          color: "stoneD",
+          alpha: 0.3
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              4,
+              38
+            ],
+            [
+              36,
+              8
+            ],
+            [
+              68,
+              38
+            ]
+          ],
+          color: "tile"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              8
+            ],
+            [
+              4,
+              38
+            ],
+            [
+              18,
+              38
+            ],
+            [
+              36,
+              22
+            ]
+          ],
+          color: "tileL"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              36,
+              8
+            ],
+            [
+              68,
+              38
+            ],
+            [
+              50,
+              38
+            ],
+            [
+              36,
+              28
+            ]
+          ],
+          color: "tileD"
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            16
+          ],
+          to: [
+            60,
+            16
+          ],
+          w: 1,
+          color: "tileD",
+          alpha: 0.7
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            20
+          ],
+          to: [
+            60,
+            20
+          ],
+          w: 1,
+          color: "tileD",
+          alpha: 0.7
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            24
+          ],
+          to: [
+            60,
+            24
+          ],
+          w: 1,
+          color: "tileD",
+          alpha: 0.7
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            28
+          ],
+          to: [
+            60,
+            28
+          ],
+          w: 1,
+          color: "tileD",
+          alpha: 0.7
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            32
+          ],
+          to: [
+            60,
+            32
+          ],
+          w: 1,
+          color: "tileD",
+          alpha: 0.7
+        },
+        {
+          shape: "line",
+          from: [
+            14,
+            36
+          ],
+          to: [
+            60,
+            36
+          ],
+          w: 1,
+          color: "tileD",
+          alpha: 0.7
+        },
+        {
+          shape: "scatter",
+          count: 40,
+          area: [
+            12,
+            12,
+            48,
+            26
+          ],
+          size: [
+            2,
+            1
+          ],
+          colors: [
+            "tileL",
+            "tileD"
+          ],
+          onlyOver: [
+            "tile"
+          ]
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 37,
+          w: 64,
+          h: 3,
+          color: "tileD"
+        },
+        {
+          shape: "rect",
+          x: 4,
+          y: 37,
+          w: 64,
+          h: 1,
+          color: "tileL"
+        },
+        {
+          shape: "rect",
+          x: 11,
+          y: 41,
+          w: 3,
+          h: 12,
+          color: "stoneD"
+        },
+        {
+          shape: "rect",
+          x: 58,
+          y: 41,
+          w: 3,
+          h: 12,
+          color: "stoneD"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              32,
+              8
+            ],
+            [
+              36,
+              3
+            ],
+            [
+              40,
+              8
+            ]
+          ],
+          color: "tileD"
+        }
+      ]
+    },
+    {
+      shape: "group",
+      if: "st4",
+      layers: [
+        {
+          shape: "rect",
+          x: 25,
+          y: 40,
+          w: 22,
+          h: 13,
+          color: "stoneL"
+        },
+        {
+          shape: "poly",
+          points: [
+            [
+              26,
+              53
+            ],
+            [
+              26,
+              44
+            ],
+            [
+              30,
+              40
+            ],
+            [
+              42,
+              40
+            ],
+            [
+              46,
+              44
+            ],
+            [
+              46,
+              53
+            ]
+          ],
+          color: "door"
+        },
+        {
+          shape: "rect",
+          x: 27,
+          y: 44,
+          w: 9,
+          h: 9,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 36,
+          y: 44,
+          w: 9,
+          h: 9,
+          color: "wood"
+        },
+        {
+          shape: "line",
+          from: [
+            36,
+            44
+          ],
+          to: [
+            36,
+            52
+          ],
+          w: 1,
+          color: "iron"
+        },
+        {
+          shape: "line",
+          from: [
+            27,
+            47
+          ],
+          to: [
+            45,
+            47
+          ],
+          w: 1,
+          color: "iron"
+        },
+        {
+          shape: "line",
+          from: [
+            27,
+            50
+          ],
+          to: [
+            45,
+            50
+          ],
+          w: 1,
+          color: "iron"
+        },
+        {
+          shape: "ellipse",
+          cx: 14,
+          cy: 50,
+          rx: 5,
+          ry: 3,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 9,
+          y: 41,
+          w: 10,
+          h: 9,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 9,
+          y: 43,
+          w: 10,
+          h: 1,
+          color: "iron"
+        },
+        {
+          shape: "rect",
+          x: 9,
+          y: 47,
+          w: 10,
+          h: 1,
+          color: "iron"
+        },
+        {
+          shape: "ellipse",
+          cx: 14,
+          cy: 41,
+          rx: 5,
+          ry: 2,
+          color: "woodL"
+        },
+        {
+          shape: "rect",
+          x: 52,
+          y: 45,
+          w: 9,
+          h: 8,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 52,
+          y: 45,
+          w: 9,
+          h: 1,
+          color: "woodL"
+        },
+        {
+          shape: "line",
+          from: [
+            56,
+            45
+          ],
+          to: [
+            56,
+            52
+          ],
+          w: 1,
+          color: "woodD"
+        },
+        {
+          shape: "rect",
+          x: 54,
+          y: 39,
+          w: 8,
+          h: 6,
+          color: "wood"
+        },
+        {
+          shape: "rect",
+          x: 54,
+          y: 39,
+          w: 8,
+          h: 1,
+          color: "woodL"
+        },
+        {
+          shape: "ellipse",
+          cx: 64,
+          cy: 52,
+          rx: 4,
+          ry: 2,
+          color: "sackD"
+        },
+        {
+          shape: "ellipse",
+          cx: 64,
+          cy: 49,
+          rx: 4,
+          ry: 4,
+          color: "sack"
+        }
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    }
   ]
 };
 
@@ -25181,6 +35773,1172 @@ var rock_default = {
   ]
 };
 
+// src/data/blueprints/nature/terrain/mountain_low.json
+var mountain_low_default = {
+  name: "Ch\xE2n n\xFAi",
+  type: "prop",
+  size: [
+    56,
+    44
+  ],
+  anchor: [
+    28,
+    40
+  ],
+  footprint: [
+    5,
+    29,
+    47,
+    11
+  ],
+  seed: 11,
+  palette: {
+    rock: "#80766c",
+    rockL: "#a89d90",
+    rockD: "#574f48",
+    crack: "#3a342f",
+    moss: "#5f7a3e",
+    line: "#25211d",
+    shadow: "#000000",
+    snow: "#f1f5f8",
+    snowD: "#c6d3de"
+  },
+  params: {
+    autumn: 0,
+    winter: 0,
+    burnt: 0
+  },
+  palettes: {
+    autumn: {
+      moss: "#8a7a3a"
+    },
+    winter: {
+      moss: "#dfe6ee",
+      rock: "#8c8a88"
+    },
+    burnt: {
+      moss: "#2e2a26",
+      rockL: "#7a7470",
+      snow: "#bdb7b0",
+      snowD: "#8f8a84"
+    }
+  },
+  layers: [
+    {
+      shape: "poly",
+      points: [
+        [
+          1.2,
+          40.2
+        ],
+        [
+          8.2,
+          26.8
+        ],
+        [
+          15.2,
+          19.1
+        ],
+        [
+          21,
+          8.6
+        ],
+        [
+          28,
+          1.9
+        ],
+        [
+          35,
+          9.6
+        ],
+        [
+          40.8,
+          18.2
+        ],
+        [
+          49,
+          26.8
+        ],
+        [
+          54.8,
+          40.2
+        ],
+        [
+          28,
+          42.1
+        ]
+      ],
+      color: "rock",
+      jitter: 1.4
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          1.2,
+          40.2
+        ],
+        [
+          8.2,
+          26.8
+        ],
+        [
+          15.2,
+          19.1
+        ],
+        [
+          21,
+          8.6
+        ],
+        [
+          28,
+          1.9
+        ],
+        [
+          30.3,
+          17.2
+        ],
+        [
+          25.7,
+          30.6
+        ],
+        [
+          21,
+          41.1
+        ]
+      ],
+      color: "rockL",
+      clip: "inside"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          28,
+          1.9
+        ],
+        [
+          35,
+          9.6
+        ],
+        [
+          40.8,
+          18.2
+        ],
+        [
+          49,
+          26.8
+        ],
+        [
+          54.8,
+          40.2
+        ],
+        [
+          28,
+          42.1
+        ],
+        [
+          32.7,
+          28.7
+        ],
+        [
+          30.3,
+          17.2
+        ]
+      ],
+      color: "rockD",
+      clip: "inside"
+    },
+    {
+      shape: "line",
+      from: [
+        28,
+        1.9
+      ],
+      to: [
+        30.3,
+        17.2
+      ],
+      color: "crack"
+    },
+    {
+      shape: "line",
+      from: [
+        30.3,
+        17.2
+      ],
+      to: [
+        32.7,
+        28.7
+      ],
+      color: "crack"
+    },
+    {
+      shape: "line",
+      from: [
+        18.7,
+        24.9
+      ],
+      to: [
+        23.3,
+        34.4
+      ],
+      color: "crack"
+    },
+    {
+      shape: "line",
+      from: [
+        40.8,
+        26.8
+      ],
+      to: [
+        43.2,
+        36.3
+      ],
+      color: "crack"
+    },
+    {
+      shape: "scatter",
+      count: 49,
+      area: [
+        5,
+        8,
+        50,
+        38
+      ],
+      size: 1,
+      colors: [
+        "rockL",
+        "rockD",
+        "crack"
+      ],
+      onlyOver: [
+        "rock",
+        "rockL",
+        "rockD"
+      ]
+    },
+    {
+      shape: "ellipse",
+      cx: 10.5,
+      cy: 36.3,
+      rx: 7,
+      ry: 1.9,
+      color: "moss",
+      alpha: 0.8,
+      clip: "inside"
+    },
+    {
+      shape: "ellipse",
+      cx: 46.7,
+      cy: 37.3,
+      rx: 5.8,
+      ry: 1.7,
+      color: "moss",
+      alpha: 0.8,
+      clip: "inside"
+    },
+    {
+      shape: "bevel",
+      light: "#ffffff",
+      lightAlpha: 0.2,
+      dark: "#000000",
+      darkAlpha: 0.3
+    },
+    {
+      shape: "scatter",
+      if: "winter",
+      count: 78,
+      area: [
+        7,
+        13,
+        49,
+        29
+      ],
+      size: [
+        3,
+        1
+      ],
+      color: "snow",
+      onlyOver: [
+        "rock",
+        "rockL",
+        "rockD",
+        "moss"
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    },
+    {
+      shape: "ellipse",
+      cx: 28,
+      cy: 41.1,
+      rx: 26.8,
+      ry: 3,
+      color: "shadow",
+      alpha: 0.3,
+      mode: "under"
+    }
+  ]
+};
+
+// src/data/blueprints/nature/terrain/mountain_mid.json
+var mountain_mid_default = {
+  name: "N\xFAi",
+  type: "prop",
+  size: [
+    72,
+    58
+  ],
+  anchor: [
+    36,
+    53
+  ],
+  footprint: [
+    6,
+    38,
+    60,
+    15
+  ],
+  seed: 12,
+  palette: {
+    rock: "#80766c",
+    rockL: "#a89d90",
+    rockD: "#574f48",
+    crack: "#3a342f",
+    moss: "#5f7a3e",
+    line: "#25211d",
+    shadow: "#000000",
+    snow: "#f1f5f8",
+    snowD: "#c6d3de"
+  },
+  params: {
+    autumn: 0,
+    winter: 0,
+    burnt: 0
+  },
+  palettes: {
+    autumn: {
+      moss: "#8a7a3a"
+    },
+    winter: {
+      moss: "#dfe6ee",
+      rock: "#8c8a88"
+    },
+    burnt: {
+      moss: "#2e2a26",
+      rockL: "#7a7470",
+      snow: "#bdb7b0",
+      snowD: "#8f8a84"
+    }
+  },
+  layers: [
+    {
+      shape: "poly",
+      points: [
+        [
+          1.5,
+          53
+        ],
+        [
+          10.5,
+          35.3
+        ],
+        [
+          19.5,
+          25.2
+        ],
+        [
+          27,
+          11.3
+        ],
+        [
+          36,
+          2.5
+        ],
+        [
+          45,
+          12.6
+        ],
+        [
+          52.5,
+          24
+        ],
+        [
+          63,
+          35.3
+        ],
+        [
+          70.5,
+          53
+        ],
+        [
+          36,
+          55.5
+        ]
+      ],
+      color: "rock",
+      jitter: 1.4
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          1.5,
+          53
+        ],
+        [
+          10.5,
+          35.3
+        ],
+        [
+          19.5,
+          25.2
+        ],
+        [
+          27,
+          11.3
+        ],
+        [
+          36,
+          2.5
+        ],
+        [
+          39,
+          22.7
+        ],
+        [
+          33,
+          40.3
+        ],
+        [
+          27,
+          54.2
+        ]
+      ],
+      color: "rockL",
+      clip: "inside"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          36,
+          2.5
+        ],
+        [
+          45,
+          12.6
+        ],
+        [
+          52.5,
+          24
+        ],
+        [
+          63,
+          35.3
+        ],
+        [
+          70.5,
+          53
+        ],
+        [
+          36,
+          55.5
+        ],
+        [
+          42,
+          37.8
+        ],
+        [
+          39,
+          22.7
+        ]
+      ],
+      color: "rockD",
+      clip: "inside"
+    },
+    {
+      shape: "line",
+      from: [
+        36,
+        2.5
+      ],
+      to: [
+        39,
+        22.7
+      ],
+      color: "crack"
+    },
+    {
+      shape: "line",
+      from: [
+        39,
+        22.7
+      ],
+      to: [
+        42,
+        37.8
+      ],
+      color: "crack"
+    },
+    {
+      shape: "line",
+      from: [
+        24,
+        32.8
+      ],
+      to: [
+        30,
+        45.4
+      ],
+      color: "crack"
+    },
+    {
+      shape: "line",
+      from: [
+        52.5,
+        35.3
+      ],
+      to: [
+        55.5,
+        47.9
+      ],
+      color: "crack"
+    },
+    {
+      shape: "scatter",
+      count: 83,
+      area: [
+        6,
+        10,
+        64,
+        50
+      ],
+      size: 1,
+      colors: [
+        "rockL",
+        "rockD",
+        "crack"
+      ],
+      onlyOver: [
+        "rock",
+        "rockL",
+        "rockD"
+      ]
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          36,
+          2.5
+        ],
+        [
+          27,
+          11.3
+        ],
+        [
+          24,
+          18.9
+        ],
+        [
+          31.5,
+          16.4
+        ],
+        [
+          36,
+          22.7
+        ],
+        [
+          42,
+          15.1
+        ],
+        [
+          48,
+          18.9
+        ],
+        [
+          45,
+          12.6
+        ]
+      ],
+      color: "snow",
+      clip: "inside"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          36,
+          2.5
+        ],
+        [
+          45,
+          12.6
+        ],
+        [
+          48,
+          18.9
+        ],
+        [
+          42,
+          15.1
+        ],
+        [
+          39,
+          8.8
+        ]
+      ],
+      color: "snowD",
+      clip: "inside"
+    },
+    {
+      shape: "ellipse",
+      cx: 13.5,
+      cy: 47.9,
+      rx: 9,
+      ry: 2.5,
+      color: "moss",
+      alpha: 0.8,
+      clip: "inside"
+    },
+    {
+      shape: "ellipse",
+      cx: 60,
+      cy: 49.2,
+      rx: 7.5,
+      ry: 2.3,
+      color: "moss",
+      alpha: 0.8,
+      clip: "inside"
+    },
+    {
+      shape: "bevel",
+      light: "#ffffff",
+      lightAlpha: 0.2,
+      dark: "#000000",
+      darkAlpha: 0.3
+    },
+    {
+      shape: "scatter",
+      if: "winter",
+      count: 132,
+      area: [
+        9,
+        18,
+        63,
+        38
+      ],
+      size: [
+        3,
+        1
+      ],
+      color: "snow",
+      onlyOver: [
+        "rock",
+        "rockL",
+        "rockD",
+        "moss"
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    },
+    {
+      shape: "ellipse",
+      cx: 36,
+      cy: 54.2,
+      rx: 34.5,
+      ry: 3,
+      color: "shadow",
+      alpha: 0.3,
+      mode: "under"
+    }
+  ]
+};
+
+// src/data/blueprints/nature/terrain/mountain_high.json
+var mountain_high_default = {
+  name: "\u0110\u1EC9nh n\xFAi",
+  type: "prop",
+  size: [
+    96,
+    84
+  ],
+  anchor: [
+    48,
+    77
+  ],
+  footprint: [
+    8,
+    55,
+    80,
+    22
+  ],
+  seed: 13,
+  palette: {
+    rock: "#80766c",
+    rockL: "#a89d90",
+    rockD: "#574f48",
+    crack: "#3a342f",
+    moss: "#5f7a3e",
+    line: "#25211d",
+    shadow: "#000000",
+    snow: "#f1f5f8",
+    snowD: "#c6d3de"
+  },
+  params: {
+    autumn: 0,
+    winter: 0,
+    burnt: 0
+  },
+  palettes: {
+    autumn: {
+      moss: "#8a7a3a"
+    },
+    winter: {
+      moss: "#dfe6ee",
+      rock: "#8c8a88"
+    },
+    burnt: {
+      moss: "#2e2a26",
+      rockL: "#7a7470",
+      snow: "#bdb7b0",
+      snowD: "#8f8a84"
+    }
+  },
+  layers: [
+    {
+      shape: "poly",
+      points: [
+        [
+          2,
+          76.7
+        ],
+        [
+          14,
+          51.1
+        ],
+        [
+          26,
+          36.5
+        ],
+        [
+          36,
+          16.4
+        ],
+        [
+          48,
+          3.7
+        ],
+        [
+          60,
+          18.3
+        ],
+        [
+          70,
+          34.7
+        ],
+        [
+          84,
+          51.1
+        ],
+        [
+          94,
+          76.7
+        ],
+        [
+          48,
+          80.3
+        ]
+      ],
+      color: "rock",
+      jitter: 1.4
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          2,
+          76.7
+        ],
+        [
+          14,
+          51.1
+        ],
+        [
+          26,
+          36.5
+        ],
+        [
+          36,
+          16.4
+        ],
+        [
+          48,
+          3.7
+        ],
+        [
+          52,
+          32.9
+        ],
+        [
+          44,
+          58.4
+        ],
+        [
+          36,
+          78.5
+        ]
+      ],
+      color: "rockL",
+      clip: "inside"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          48,
+          3.7
+        ],
+        [
+          60,
+          18.3
+        ],
+        [
+          70,
+          34.7
+        ],
+        [
+          84,
+          51.1
+        ],
+        [
+          94,
+          76.7
+        ],
+        [
+          48,
+          80.3
+        ],
+        [
+          56,
+          54.8
+        ],
+        [
+          52,
+          32.9
+        ]
+      ],
+      color: "rockD",
+      clip: "inside"
+    },
+    {
+      shape: "line",
+      from: [
+        48,
+        3.7
+      ],
+      to: [
+        52,
+        32.9
+      ],
+      color: "crack"
+    },
+    {
+      shape: "line",
+      from: [
+        52,
+        32.9
+      ],
+      to: [
+        56,
+        54.8
+      ],
+      color: "crack"
+    },
+    {
+      shape: "line",
+      from: [
+        32,
+        47.5
+      ],
+      to: [
+        40,
+        65.7
+      ],
+      color: "crack"
+    },
+    {
+      shape: "line",
+      from: [
+        70,
+        51.1
+      ],
+      to: [
+        74,
+        69.4
+      ],
+      color: "crack"
+    },
+    {
+      shape: "scatter",
+      count: 160,
+      area: [
+        8,
+        15,
+        86,
+        73
+      ],
+      size: 1,
+      colors: [
+        "rockL",
+        "rockD",
+        "crack"
+      ],
+      onlyOver: [
+        "rock",
+        "rockL",
+        "rockD"
+      ]
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          48,
+          3.7
+        ],
+        [
+          36,
+          16.4
+        ],
+        [
+          32,
+          27.4
+        ],
+        [
+          42,
+          23.7
+        ],
+        [
+          48,
+          32.9
+        ],
+        [
+          56,
+          21.9
+        ],
+        [
+          64,
+          27.4
+        ],
+        [
+          60,
+          18.3
+        ]
+      ],
+      color: "snow",
+      clip: "inside"
+    },
+    {
+      shape: "poly",
+      points: [
+        [
+          48,
+          3.7
+        ],
+        [
+          60,
+          18.3
+        ],
+        [
+          64,
+          27.4
+        ],
+        [
+          56,
+          21.9
+        ],
+        [
+          52,
+          12.8
+        ]
+      ],
+      color: "snowD",
+      clip: "inside"
+    },
+    {
+      shape: "ellipse",
+      cx: 18,
+      cy: 69.4,
+      rx: 12,
+      ry: 3.7,
+      color: "moss",
+      alpha: 0.8,
+      clip: "inside"
+    },
+    {
+      shape: "ellipse",
+      cx: 80,
+      cy: 71.2,
+      rx: 10,
+      ry: 3.3,
+      color: "moss",
+      alpha: 0.8,
+      clip: "inside"
+    },
+    {
+      shape: "bevel",
+      light: "#ffffff",
+      lightAlpha: 0.2,
+      dark: "#000000",
+      darkAlpha: 0.3
+    },
+    {
+      shape: "scatter",
+      if: "winter",
+      count: 255,
+      area: [
+        12,
+        26,
+        84,
+        55
+      ],
+      size: [
+        3,
+        1
+      ],
+      color: "snow",
+      onlyOver: [
+        "rock",
+        "rockL",
+        "rockD",
+        "moss"
+      ]
+    },
+    {
+      shape: "outline",
+      color: "line"
+    },
+    {
+      shape: "ellipse",
+      cx: 48,
+      cy: 78.5,
+      rx: 46,
+      ry: 3,
+      color: "shadow",
+      alpha: 0.3,
+      mode: "under"
+    }
+  ]
+};
+
+// src/data/blueprints/nature/terrain/mountain_floor.json
+var mountain_floor_default = {
+  name: "N\u1EC1n n\xFAi \u0111\xE1",
+  type: "tile",
+  size: [
+    32,
+    32
+  ],
+  seed: 7,
+  palette: {
+    r0: "#6f675f",
+    r1: "#7b726a",
+    r2: "#8a8076",
+    crack: "#4a443e",
+    pebble: "#9c9185",
+    pebbleD: "#58524b",
+    moss: "#5f7a3e"
+  },
+  params: {
+    autumn: 0,
+    winter: 0,
+    burnt: 0
+  },
+  palettes: {
+    autumn: {
+      moss: "#8a7a3a"
+    },
+    winter: {
+      r0: "#aeb4ba",
+      r1: "#bcc2c8",
+      r2: "#cdd2d6",
+      pebble: "#e6eaee",
+      moss: "#dfe6ee"
+    },
+    burnt: {
+      r0: "#2e2a27",
+      r1: "#37322e",
+      r2: "#413b36",
+      pebble: "#58504a",
+      moss: "#2e2a26"
+    }
+  },
+  bg: "r1",
+  layers: [
+    {
+      shape: "noise",
+      scale: 5,
+      octaves: 2,
+      contrast: 2.4,
+      bands: [
+        [
+          0,
+          "r0"
+        ],
+        [
+          0.4,
+          "r1"
+        ],
+        [
+          0.75,
+          "r2"
+        ]
+      ]
+    },
+    {
+      shape: "scatter",
+      count: 18,
+      size: [
+        1,
+        2
+      ],
+      colors: [
+        "pebble",
+        "pebbleD",
+        "crack"
+      ]
+    },
+    {
+      shape: "scatter",
+      count: 6,
+      size: [
+        2,
+        1
+      ],
+      colors: [
+        "crack",
+        "pebbleD"
+      ]
+    },
+    {
+      shape: "scatter",
+      count: [
+        0,
+        2
+      ],
+      size: 2,
+      color: "moss"
+    }
+  ]
+};
+
 // src/data/blueprints/nature/terrain/grass.json
 var grass_default = {
   name: "\xD4 c\u1ECF",
@@ -25244,33 +37002,6 @@ var water_default = {
     { shape: "noise", scale: 8, octaves: 2, contrast: 2, bands: [[0, "w0"], [0.42, "w1"], [0.8, "w2"]] },
     { shape: "rect", x: [0, 27], y: [0, 31], w: 4, h: 1, color: "glint", repeat: { n: 12, phase: 4 } },
     { shape: "rect", x: [0, 29], y: [0, 31], w: 2, h: 1, color: "glint2", repeat: { n: 8, phase: 4 } }
-  ]
-};
-
-// src/data/blueprints/nature/trees/stump.json
-var stump_default = {
-  name: "G\u1ED1c c\xE2y",
-  type: "prop",
-  size: [22, 16],
-  anchor: [11, 13],
-  seed: 2,
-  palette: { wood: "#6b4a28", woodL: "#8a6238", woodD: "#4e3519", ring: "#a47a48", ringD: "#8a6238", line: "#2b1d10", shadow: "#000000" },
-  params: { winter: 0, burnt: 0 },
-  palettes: {
-    winter: { ring: "#e8eef4", ringD: "#c8d4dc" },
-    burnt: { wood: "#2e2420", woodL: "#463830", woodD: "#1a1412", ring: "#3a2e26", ringD: "#2a201a" }
-  },
-  layers: [
-    { shape: "rect", x: 4, y: 6, w: 14, h: 7, color: "wood" },
-    { shape: "rect", x: 4, y: 6, w: 3, h: 7, color: "woodL" },
-    { shape: "rect", x: 15, y: 7, w: 3, h: 6, color: "woodD" },
-    { shape: "ellipse", cx: 11, cy: 6, rx: 7, ry: 3.5, color: "ring" },
-    { shape: "ellipse", cx: 11, cy: 6, rx: 4.5, ry: 2, color: "ringD" },
-    { shape: "ellipse", cx: 11, cy: 6, rx: 2, ry: 1, color: "ring" },
-    { shape: "poly", points: [[4, 12], [1, 14], [5, 14]], color: "wood" },
-    { shape: "poly", points: [[18, 12], [21, 14], [17, 14]], color: "wood" },
-    { shape: "outline", color: "line" },
-    { shape: "ellipse", cx: 11, cy: 14, rx: 9, ry: 2, color: "shadow", alpha: 0.25, mode: "under" }
   ]
 };
 
@@ -25955,10 +37686,10 @@ function make(def, seed, params) {
   if (res.warnings.length) console.warn("[blueprint]", def.name, res.warnings);
   return { frames: toCanvases(res), ax: res.anchor?.[0] ?? res.w >> 1, ay: res.anchor?.[1] ?? res.h - 1, fps: res.fps };
 }
-function canvas(w, h2) {
+function canvas(w, h3) {
   const c = document.createElement("canvas");
   c.width = w;
-  c.height = h2;
+  c.height = h3;
   return [c, c.getContext("2d")];
 }
 var seeds = (n) => Array.from({ length: n }, (_, i) => i * 7 + 3);
@@ -26074,9 +37805,10 @@ var Sprites = class {
         water: seeds(3).map((s) => make(water_default, s, p)),
         trees: [...seeds(4).map((s) => make(tree_round_default, s, p)), ...seeds(4).map((s) => make(tree_pine_default, s + 1, p))],
         rocks: seeds(3).map((s) => make(rock_default, s, p)),
+        mountainFloor: seeds(4).map((s) => make(mountain_floor_default, s, p).frames[0]),
+        peaks: { low: seeds(3).map((s) => make(mountain_low_default, s, p)), mid: seeds(3).map((s) => make(mountain_mid_default, s, p)), high: seeds(3).map((s) => make(mountain_high_default, s, p)) },
         bush: seeds(3).map((s) => make(bush_default, s, p)),
-        bushEmpty: seeds(3).map((s) => make(bush_default, s, { ...p, empty: 1 })),
-        stump: seeds(3).map((s) => make(stump_default, s, p))
+        bushEmpty: seeds(3).map((s) => make(bush_default, s, { ...p, empty: 1 }))
       };
       this.natureCache.set(season, n);
     }
@@ -26105,8 +37837,8 @@ var Sprites = class {
   }
   /** Sprite size of a species and where its feet are (the sprite is drawn with this point on the animal's position). */
   animalBox(species) {
-    const d = BODIES[species], [w, h2] = d.size;
-    return d.body === "fish" ? { w, h: h2, ax: w / 2, ay: h2 / 2 } : { w, h: h2, ax: w / 2, ay: h2 - 2 };
+    const d = BODIES[species], [w, h3] = d.size;
+    return d.body === "fish" ? { w, h: h3, ax: w / 2, ay: h3 / 2 } : { w, h: h3, ax: w / 2, ay: h3 - 2 };
   }
   /** The clip an animal plays right now, from its state. */
   animalClip(a) {
@@ -26167,7 +37899,7 @@ var Sprites = class {
     return c;
   }
   /** The villager as drawn; `pose` makes him stand in one animation (a rider sits still on his beast). */
-  villager(v, pose) {
+  villager(v, pose, face2) {
     const name = pose ?? (v.anim in anims ? v.anim : "idle");
     const def = anims[name];
     const rate = def.gait ? Math.min(1.6, v.speed / 1.5) : 1;
@@ -26175,11 +37907,12 @@ var Sprites = class {
     const frame = def.loop === false ? Math.min(step3, def.frames.length - 1) : step3 % def.frames.length;
     const kind = v.carry?.res ?? "wood";
     const flick = v.lit ? Math.floor(v.animClock * 6) % 3 : void 0;
-    const key = `${name}|${frame}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : "-"}|${v.armor ?? "-"}|${flick ?? "-"}`;
+    const facing = face2 ?? v.facing;
+    const key = `${name}|${frame}|${facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : "-"}|${v.armor ?? "-"}|${flick ?? "-"}`;
     let c = this.vcache.get(key);
     if (!c) {
       const [cv, g2] = canvas(FW, FH);
-      g2.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === void 0 ? void 0 : { torch: flick })), FW, FH), 0, 0);
+      g2.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === void 0 ? void 0 : { torch: flick })), FW, FH), 0, 0);
       this.vcache.set(key, cv);
       c = cv;
     }
@@ -26208,6 +37941,8 @@ var Renderer = class {
     this.h = 0;
     this.dpr = 1;
     this.fogVer = -1;
+    /** The side (left or right) each villager last faced, for riders. */
+    this.sideOf = /* @__PURE__ */ new WeakMap();
     /** Draw the soldiers as one figure for about three of them in a big battle (set from the war HUD). */
     /** The cluster flags drawn last frame, for taps. */
     this.flags = [];
@@ -26253,6 +37988,62 @@ var Renderer = class {
     ctx2.globalAlpha = prev;
   }
   /** Điểm neo của công trình: giữa mép dưới ô chiếm, hơi nhích lên. */
+  /**
+   * A house that has been hurt shows it: a bar of what is left, smoke once it has lost 30%, flames once it has lost 70% (at nothing it falls).
+   * Every house does it, the tower no more than the others.
+   */
+  drawDamage(b, ax, ay, time) {
+    if (!b.done) return;
+    const { ctx: ctx2, cam: { zoom: z } } = this, ratio = Math.max(0, Math.min(1, b.hp / Math.max(1, maxHp(b))));
+    if (ratio >= 1) return;
+    const top = b.kind === "tower" ? 86 : b.kind === "fence" || b.kind === "gate" ? 30 : 62;
+    this.bar(ax, ay - top, ratio, ratio > 0.7 ? "#6bbf59" : ratio > 0.3 ? "#e0b43c" : "#d9503c");
+    if (b.kind === "fence" || b.kind === "gate") return;
+    const wide = BUILDINGS[b.kind].w * TILE * 0.35, roof = b.kind === "tower" ? 70 : 44;
+    if (ratio <= 0.7) {
+      for (let k = 0; k < 4; k++) {
+        const t = (time * 0.45 + k * 0.25 + b.id * 0.13) % 1, p = this.worldToScreen(ax - wide * 0.5 + k * wide * 0.33 + Math.sin(time * 1.3 + k) * 3 * t, ay - roof - t * 34);
+        ctx2.fillStyle = `rgba(${ratio <= 0.3 ? "55,52,52" : "120,120,126"},${(0.5 * (1 - t)).toFixed(3)})`;
+        ctx2.beginPath();
+        ctx2.arc(p.x, p.y, (3 + t * 7) * z, 0, Math.PI * 2);
+        ctx2.fill();
+      }
+    }
+    if (ratio <= 0.3) {
+      for (let k = 0; k < 4; k++) {
+        const flick = 0.7 + 0.3 * Math.sin(time * 11 + k * 2.1 + b.id), h3 = (9 + k % 2 * 4) * flick * z, p = this.worldToScreen(ax - wide * 0.7 + k * wide * 0.47, ay - roof + 8 - k % 2 * 6);
+        ctx2.fillStyle = "#e8641e";
+        ctx2.beginPath();
+        ctx2.moveTo(p.x - 4 * z, p.y);
+        ctx2.lineTo(p.x, p.y - h3);
+        ctx2.lineTo(p.x + 4 * z, p.y);
+        ctx2.closePath();
+        ctx2.fill();
+        ctx2.fillStyle = "#f7c24a";
+        ctx2.beginPath();
+        ctx2.moveTo(p.x - 2 * z, p.y);
+        ctx2.lineTo(p.x, p.y - h3 * 0.65);
+        ctx2.lineTo(p.x + 2 * z, p.y);
+        ctx2.closePath();
+        ctx2.fill();
+      }
+    }
+  }
+  /** The circle a tower sees, and shoots, as far as: drawn round the tower when it is chosen, and round the one being placed or carried. */
+  drawSight(cxTile, cyTile, tiles) {
+    const { ctx: ctx2 } = this, z = this.cam.zoom, p = this.worldToScreen(cxTile * TILE, cyTile * TILE), r = tiles * TILE * z;
+    ctx2.fillStyle = "rgba(255,226,140,.08)";
+    ctx2.beginPath();
+    ctx2.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx2.fill();
+    ctx2.strokeStyle = "rgba(255,226,140,.7)";
+    ctx2.lineWidth = 2;
+    ctx2.setLineDash([8, 6]);
+    ctx2.beginPath();
+    ctx2.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx2.stroke();
+    ctx2.setLineDash([]);
+  }
   buildingAnchor(kind, x, y) {
     const d = BUILDINGS[kind];
     return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
@@ -26269,12 +38060,12 @@ var Renderer = class {
     for (const [dx, dy] of [[0, 1], [-1, 0], [1, 0]]) {
       if (!at(dx, dy)) continue;
       const q = this.worldToScreen(ax + dx * TILE, ay + dy * TILE);
-      for (const h2 of two ? [20, 12, 5] : [14, 7]) {
+      for (const h3 of two ? [20, 12, 5] : [14, 7]) {
         ctx2.strokeStyle = two ? "#8a6238" : "#d8c690";
         ctx2.lineWidth = Math.max(1, (two ? 2 : 1) * z);
         ctx2.beginPath();
-        ctx2.moveTo(p.x, p.y - h2 * z);
-        ctx2.lineTo(q.x, q.y - h2 * z);
+        ctx2.moveTo(p.x, p.y - h3 * z);
+        ctx2.lineTo(q.x, q.y - h3 * z);
         ctx2.stroke();
       }
     }
@@ -26299,7 +38090,7 @@ var Renderer = class {
     const col = (at(0, -1) || at(0, 1)) && !(at(-1, 0) || at(1, 0)), two = b.level >= 2, open = b.open;
     const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 8);
     const sign = open ? "#4fbf5a" : "#d9473f", signDark = open ? "#2a7a33" : "#8f2620";
-    const X = (u, v = 0) => col ? p.x + v * z : p.x + u * z, Y = (u, h2, v = 0) => (col ? p.y + u * z : p.y + v * z) - h2 * z;
+    const X = (u, v = 0) => col ? p.x + v * z : p.x + u * z, Y = (u, h3, v = 0) => (col ? p.y + u * z : p.y + v * z) - h3 * z;
     const line3 = (x0, y0, x1, y1, th, c) => {
       ctx2.strokeStyle = "#2b1d10";
       ctx2.lineWidth = th * z + 2;
@@ -26311,7 +38102,7 @@ var Renderer = class {
       ctx2.lineWidth = th * z;
       ctx2.stroke();
     };
-    const bar2 = (u0, u1, h2, th, c) => line3(X(u0), Y(u0, h2), X(u1), Y(u1, h2), th, c);
+    const bar2 = (u0, u1, h3, th, c) => line3(X(u0), Y(u0, h3), X(u1), Y(u1, h3), th, c);
     const top = two ? 64 : 58, leaf = two ? "#9a9a96" : "#8a6238", U = 30;
     ctx2.fillStyle = open ? "rgba(90,200,90,.32)" : "rgba(217,71,63,.30)";
     if (col) ctx2.fillRect(Math.round(p.x - 8 * z), Math.round(p.y - U * z), Math.round(16 * z), Math.round(2 * U * z));
@@ -26335,9 +38126,9 @@ var Renderer = class {
     };
     post(-U);
     if (open) {
-      for (const s of [-1, 1]) for (const h2 of [8, 22, 36]) line3(X(s * U, 0), Y(s * U, h2), X(s * (U - 4), 14), Y(s * (U - 4), h2, 14), 4, leaf);
+      for (const s of [-1, 1]) for (const h3 of [8, 22, 36]) line3(X(s * U, 0), Y(s * U, h3), X(s * (U - 4), 14), Y(s * (U - 4), h3, 14), 4, leaf);
     } else {
-      for (const h2 of [6, 17, 28, 39]) bar2(-U + 4, U - 4, h2, 5, leaf);
+      for (const h3 of [6, 17, 28, 39]) bar2(-U + 4, U - 4, h3, 5, leaf);
       line3(X(-U + 4), Y(-U + 4, 6), X(U - 4), Y(U - 4, 39), 3, "#d8c690");
     }
     post(U);
@@ -26377,8 +38168,8 @@ var Renderer = class {
       if (!o) continue;
       if (wallAt.has(b.y * N + b.x + dx) || wallAt.has((b.y - 1) * N + b.x)) continue;
       const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), [bx, by] = this.buildingAnchor(o.kind, o.x, o.y);
-      const rope = (h2) => {
-        const p = this.worldToScreen(ax, ay - h2), q = this.worldToScreen(bx, by - h2);
+      const rope = (h3) => {
+        const p = this.worldToScreen(ax, ay - h3), q = this.worldToScreen(bx, by - h3);
         ctx2.beginPath();
         ctx2.moveTo(p.x, p.y);
         ctx2.lineTo(q.x, q.y);
@@ -26402,12 +38193,12 @@ var Renderer = class {
   }
   /** Rain, snow, mist, lightning in screen space; particle positions derive from time, so no state is kept. */
   drawWeather(time) {
-    const { ctx: ctx2, w, h: h2 } = this, kind = this.sim.weather, fx = WEATHER_FX[kind];
+    const { ctx: ctx2, w, h: h3 } = this, kind = this.sim.weather, fx = WEATHER_FX[kind];
     if (kind === "mist") {
       ctx2.fillStyle = "rgba(214,220,228,.24)";
-      ctx2.fillRect(0, 0, w, h2);
+      ctx2.fillRect(0, 0, w, h3);
       for (let b = 0; b < 3; b++) {
-        const y = (hash2(b, 1, 77) * h2 + time * (6 + b * 3)) % (h2 + 200) - 100, g2 = ctx2.createLinearGradient(0, y - 80, 0, y + 80);
+        const y = (hash2(b, 1, 77) * h3 + time * (6 + b * 3)) % (h3 + 200) - 100, g2 = ctx2.createLinearGradient(0, y - 80, 0, y + 80);
         g2.addColorStop(0, "rgba(225,230,236,0)");
         g2.addColorStop(0.5, "rgba(225,230,236,.22)");
         g2.addColorStop(1, "rgba(225,230,236,0)");
@@ -26418,9 +38209,9 @@ var Renderer = class {
     }
     if (fx.dim > 0) {
       ctx2.fillStyle = `rgba(16,22,38,${fx.dim})`;
-      ctx2.fillRect(0, 0, w, h2);
+      ctx2.fillRect(0, 0, w, h3);
     }
-    const area = w * h2 / 7e5;
+    const area = w * h3 / 7e5;
     if (fx.rain) {
       const n = Math.round(fx.rain * area), len = kind === "drizzle" ? 8 : 15, sx = fx.wind * len, sy = len;
       ctx2.strokeStyle = kind === "drizzle" ? "rgba(200,215,235,.35)" : "rgba(200,215,235,.5)";
@@ -26428,7 +38219,7 @@ var Renderer = class {
       ctx2.beginPath();
       for (let i = 0; i < n; i++) {
         const sp = 650 + hash2(i, 3, 41) * 300;
-        const y = (hash2(i, 1, 41) * (h2 + 40) + time * sp) % (h2 + 40) - 20;
+        const y = (hash2(i, 1, 41) * (h3 + 40) + time * sp) % (h3 + 40) - 20;
         const x = ((hash2(i, 2, 41) * (w + 80) + time * sp * fx.wind) % (w + 80) + (w + 80)) % (w + 80) - 40;
         ctx2.moveTo(x, y);
         ctx2.lineTo(x - sx, y - sy);
@@ -26440,7 +38231,7 @@ var Renderer = class {
       ctx2.fillStyle = "rgba(250,252,255,.85)";
       for (let i = 0; i < n; i++) {
         const sp = 30 + hash2(i, 3, 43) * 40, r = 1 + hash2(i, 4, 43) * 1.6;
-        const y = (hash2(i, 1, 43) * (h2 + 20) + time * sp) % (h2 + 20) - 10;
+        const y = (hash2(i, 1, 43) * (h3 + 20) + time * sp) % (h3 + 20) - 10;
         const x = ((hash2(i, 2, 43) * w + Math.sin(time * 0.8 + i) * 12 + time * 20 * fx.wind) % w + w) % w;
         ctx2.fillRect(x, y, r, r);
       }
@@ -26449,7 +38240,7 @@ var Renderer = class {
       const slot = Math.floor(time / 3), f = time / 3 - slot;
       if (hash2(slot, 7, 91) < fx.flash && f < 0.13) {
         ctx2.fillStyle = `rgba(235,240,255,${(0.55 * (1 - f / 0.13)).toFixed(3)})`;
-        ctx2.fillRect(0, 0, w, h2);
+        ctx2.fillRect(0, 0, w, h3);
       }
     }
   }
@@ -26477,23 +38268,40 @@ var Renderer = class {
     ctx2.textAlign = "center";
     for (const c of sim2.clusters()) {
       if (c.side !== "player" && sim2.fog.state[Math.floor(c.y) * N + Math.floor(c.x)] !== 2) continue;
-      const p = this.worldToScreen(c.x * TILE, c.y * TILE - 38), w = 30 * z * 0.7, h2 = 11 * z * 0.7, x = Math.round(p.x - w / 2), y = Math.round(p.y - h2);
+      const p = this.worldToScreen(c.x * TILE, c.y * TILE - 38), w = 30 * z * 0.7, h3 = 11 * z * 0.7, x = Math.round(p.x - w / 2), y = Math.round(p.y - h3);
       const chosen = c.ids.some((id) => selected.has(id));
       ctx2.fillStyle = c.color;
       ctx2.globalAlpha = 0.92;
-      ctx2.fillRect(x, y, w, h2);
+      ctx2.fillRect(x, y, w, h3);
       ctx2.globalAlpha = 1;
       ctx2.strokeStyle = chosen ? "#ffffff" : ARM[c.arm];
       ctx2.lineWidth = chosen ? 2 : 1.5;
-      ctx2.strokeRect(x + 0.5, y + 0.5, w, h2);
+      ctx2.strokeRect(x + 0.5, y + 0.5, w, h3);
       ctx2.fillStyle = "#ffffff";
-      ctx2.fillText(`${ARM_LETTER[c.arm]} ${c.n}`, p.x, y + h2 * 0.78);
+      ctx2.fillText(`${ARM_LETTER[c.arm]} ${c.n}`, p.x, y + h3 * 0.78);
       ctx2.fillStyle = "rgba(0,0,0,.55)";
-      ctx2.fillRect(x, y + h2 + 1, w, 3);
+      ctx2.fillRect(x, y + h3 + 1, w, 3);
       ctx2.fillStyle = c.hp > 0.5 ? "#6ac24a" : c.hp > 0.25 ? "#e0b43c" : "#d9503c";
-      ctx2.fillRect(x, y + h2 + 1, w * Math.max(0, Math.min(1, c.hp)), 3);
-      this.flags.push({ ids: c.ids, x, y, w, h: h2 + 4 });
+      ctx2.fillRect(x, y + h3 + 1, w * Math.max(0, Math.min(1, c.hp)), 3);
+      this.flags.push({ ids: c.ids, x, y, w, h: h3 + 4 });
     }
+  }
+  /**
+   * A mountain is one mass, not a peak on every tile: the whole of it is rocky ground, and peaks stand on it only now and then, small at the foot,
+   * larger up the slope, tallest and snow-capped at the heart. Whether a tile carries a peak, and how big, comes from how deep in the mountain it is.
+   */
+  peakAt(world, i, j) {
+    const inside = (x, y) => world.at(x, y) === Tile.Mountain && world.inBounds(x, y);
+    const reach = (dx, dy) => {
+      let n = 0;
+      while (n < 4 && inside(i + dx * (n + 1), j + dy * (n + 1))) n++;
+      return n;
+    };
+    const depth = Math.min(reach(1, 0), reach(-1, 0), reach(0, 1), reach(0, -1));
+    const step3 = depth >= 3 ? 3 : 2;
+    const ci = Math.floor(i / step3), cj = Math.floor(j / step3);
+    if (i !== ci * step3 + Math.floor(hash2(ci, cj, 41) * step3) || j !== cj * step3 + Math.floor(hash2(ci, cj, 42) * step3)) return null;
+    return depth >= 3 ? "high" : depth === 2 ? "mid" : "low";
   }
   draw(time, selected, box, markers, ghost = null, selBuilding = null, inspect = null) {
     const { ctx: ctx2, cam: cam2, sim: sim2 } = this, z = cam2.zoom, world = sim2.world, N = world.size, sp = this.sprites;
@@ -26513,13 +38321,10 @@ var Renderer = class {
           const w = nat.water[Math.floor(r * nat.water.length)];
           img = w.frames[Math.floor(time * w.fps + hash2(i >> 2, j >> 2, 5) * 4) % w.frames.length];
         } else if (t === Tile.Mud) img = nat.mud[Math.floor(r * nat.mud.length)];
+        else if (t === Tile.Mountain) img = nat.mountainFloor[Math.floor(r * nat.mountainFloor.length)];
         else img = nat.grass[Math.floor(r * nat.grass.length)];
         ctx2.drawImage(img, px(i), py(j), ts, ts);
       }
-    }
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-      if (!world.decor[j * N + i]) continue;
-      this.prop(nat.stump[Math.floor(hash2(i, j, 31) * nat.stump.length)], i * TILE + 16, j * TILE + 26, time);
     }
     const trees = nat.trees;
     const list = [];
@@ -26528,7 +38333,10 @@ var Renderer = class {
         const t = world.at(i, j);
         if (t === Tile.Tree) list.push({ y: j * TILE + 28, kind: "tree", i, j });
         else if (t === Tile.Rock) list.push({ y: j * TILE + 28, kind: "rock", i, j });
-        else if (t === Tile.Bush) list.push({ y: j * TILE + 28, kind: "bush", i, j });
+        else if (t === Tile.Mountain) {
+          const p = this.peakAt(world, i, j);
+          if (p) list.push({ y: j * TILE + 30, kind: "mountain", i, j, peak: p });
+        } else if (t === Tile.Bush) list.push({ y: j * TILE + 28, kind: "bush", i, j });
       }
     }
     const vx0 = cx - 128, vx1 = cx + this.w / z + 128, vy0 = cy - 128, vy1 = cy + this.h / z + 128;
@@ -26549,6 +38357,9 @@ var Renderer = class {
       if (d.kind === "tree") {
         const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
         this.prop(p, d.i * TILE + 16, d.y, time);
+      } else if (d.kind === "mountain") {
+        const set = nat.peaks[d.peak ?? "low"];
+        this.prop(set[Math.floor(hash2(d.i, d.j, 24) * set.length)], d.i * TILE + 16, d.y, time);
       } else if (d.kind === "rock") {
         this.prop(nat.rocks[Math.floor(hash2(d.i, d.j, 22) * nat.rocks.length)], d.i * TILE + 16, d.y, time);
       } else if (d.kind === "bush") {
@@ -26557,8 +38368,9 @@ var Renderer = class {
       } else if (d.kind === "building" && d.b) {
         const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
         if (b.kind === "gate" && b.done) this.drawGate(b, wallAt);
-        else if (!(b.kind === "fence" && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time);
+        else if (!(b.kind === "fence" && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id ? 0.5 : 1);
         if (b.kind === "fence" || b.kind === "gate") this.drawDiagonalRails(b, wallAt);
+        this.drawDamage(b, ax, ay, time);
         const emblem = b.done ? sp.emblems[b.kind] : void 0;
         if (emblem) {
           const p = this.worldToScreen(ax, ay - 52);
@@ -26632,16 +38444,18 @@ var Renderer = class {
         }
       } else if (d.v) {
         const rode = d.v.phase !== "sleep" && d.v.phase !== "down" ? sim2.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === "down";
-        const s = sp.villager(d.v, rode && !fighting ? "idle" : void 0), fx = d.v.x * TILE, fy = d.v.y * TILE;
+        if (d.v.facing === "left" || d.v.facing === "right") this.sideOf.set(d.v, d.v.facing);
+        const side = this.sideOf.get(d.v) ?? "right", moving0 = d.v.path.length > 0 || !!d.v.slide;
+        const s = rode && !fighting ? sp.villager(d.v, moving0 ? "ride_walk" : "ride", side) : sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
         let lift = 0;
         if (rode) {
-          const m = MOUNTS[rode], moving = d.v.path.length > 0 || !!d.v.slide, beast = sp.mount(m.species, moving, d.v.animClock, d.v.facing === "left" ? -1 : 1), box2 = sp.animalBox(m.species);
+          const m = MOUNTS[rode], moving = moving0, beast = sp.mount(m.species, moving, d.v.animClock, side === "left" ? -1 : 1), box2 = sp.animalBox(m.species);
           ctx2.fillStyle = "rgba(0,0,0,.22)";
           ctx2.beginPath();
           ctx2.ellipse(Math.round((fx - cx) * z), Math.round((fy - cy) * z), box2.w * 0.3 * z, box2.h * 0.1 * z, 0, 0, Math.PI * 2);
           ctx2.fill();
           ctx2.drawImage(beast, Math.round((fx - box2.ax - cx) * z), Math.round((fy - box2.ay - cy) * z), beast.width * z, beast.height * z);
-          lift = m.ride + (moving ? Math.abs(Math.sin(d.v.animClock * 8)) : 0);
+          lift = m.ride + 1;
         }
         if (d.v.phase === "sleep" || d.v.phase === "down") {
           ctx2.save();
@@ -26722,9 +38536,9 @@ var Renderer = class {
     if (ghost) {
       const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
       if (!WALL_KINDS.has(ghost.kind)) {
-        const zone = (x, y, w, h2, c) => {
+        const zone = (x, y, w, h3, c) => {
           ctx2.fillStyle = c;
-          ctx2.fillRect(px(x - CLEARANCE), py(y - CLEARANCE), (w + 2 * CLEARANCE) * ts, (h2 + 2 * CLEARANCE) * ts);
+          ctx2.fillRect(px(x - CLEARANCE), py(y - CLEARANCE), (w + 2 * CLEARANCE) * ts, (h3 + 2 * CLEARANCE) * ts);
         };
         for (const o of sim2.buildings) if (!WALL_KINDS.has(o.kind) && o.id !== ghost.moving) zone(o.x, o.y, BUILDINGS[o.kind].w, BUILDINGS[o.kind].h, "rgba(240,170,60,.16)");
         ctx2.strokeStyle = "rgba(255,220,120,.9)";
@@ -26734,6 +38548,7 @@ var Renderer = class {
         ctx2.setLineDash([]);
       }
       this.prop(sp.building(ghost.kind, ghost.era ?? sim2.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
+      if (ghost.kind === "tower") this.drawSight(ghost.x + d.w / 2, ghost.y + d.h / 2, buildingSight({ kind: "tower", level: ghost.level ?? 1, done: true }));
       ctx2.fillStyle = ghost.ok ? "rgba(90,200,90,.38)" : "rgba(220,70,60,.42)";
       ctx2.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
       ctx2.strokeStyle = ghost.ok ? "#bff0b0" : "#ffb4a8";
@@ -26783,6 +38598,7 @@ var Renderer = class {
       ctx2.setLineDash([6, 4]);
       ctx2.strokeRect(px(sb.x) + 1, py(sb.y) + 1, d.w * ts - 2, d.h * ts - 2);
       ctx2.setLineDash([]);
+      if (sb.kind === "tower" && sb.done) this.drawSight(sb.x + d.w / 2, sb.y + d.h / 2, buildingSight(sb));
     }
     for (const m of markers) {
       const p = this.worldToScreen(m.x, m.y), k = 1 - m.age / 0.9;
@@ -26807,12 +38623,12 @@ var Renderer = class {
     }
     this.drawClusters(selected);
     if (box) {
-      const x = Math.min(box.x0, box.x1), y = Math.min(box.y0, box.y1), w = Math.abs(box.x1 - box.x0), h2 = Math.abs(box.y1 - box.y0);
+      const x = Math.min(box.x0, box.x1), y = Math.min(box.y0, box.y1), w = Math.abs(box.x1 - box.x0), h3 = Math.abs(box.y1 - box.y0);
       ctx2.fillStyle = "rgba(245,231,196,.14)";
-      ctx2.fillRect(x, y, w, h2);
+      ctx2.fillRect(x, y, w, h3);
       ctx2.strokeStyle = "#f5e7c4";
       ctx2.lineWidth = 1;
-      ctx2.strokeRect(x + 0.5, y + 0.5, w, h2);
+      ctx2.strokeRect(x + 0.5, y + 0.5, w, h3);
     }
   }
 };
@@ -26853,6 +38669,7 @@ var WEATHER = weather_default.types;
 var CHANCE = weather_default.chance;
 var TWILIGHT = 0.05;
 var seasonOf = (day) => SEASONS[Math.floor((day - 1) / SEASON_DAYS) % SEASONS.length];
+var dayInSeason = (day) => (day - 1) % SEASON_DAYS + 1;
 function sunTimes(season) {
   const d = SEASON_DEF[season].daylight;
   return { rise: 0.5 - d / 2, set: 0.5 + d / 2 };
@@ -26890,27 +38707,52 @@ var Fog = class {
   constructor(world) {
     this.world = world;
     this.version = 0;
+    /** The tiles in sight right now, so that an update lowers only those instead of walking the whole map (a map of nearly a million tiles). */
+    this.lit = [];
     this.state = new Uint8Array(world.size * world.size);
   }
   /** Each source has its own sight radius `r` (tiles). */
   update(sources) {
     const N = this.world.size, s = this.state;
-    for (let i = 0; i < s.length; i++) if (s[i] === 2) s[i] = 1;
+    for (const i of this.lit) if (s[i] === 2) s[i] = 1;
+    const lit = [];
     for (const p of sources) {
       const cx = Math.floor(p.x), cy = Math.floor(p.y), radius = p.r, r2 = radius * radius + 0.5;
       for (let y = Math.max(0, cy - radius); y <= Math.min(N - 1, cy + radius); y++) {
         for (let x = Math.max(0, cx - radius); x <= Math.min(N - 1, cx + radius); x++) {
-          if ((x - cx) ** 2 + (y - cy) ** 2 <= r2) s[y * N + x] = 2;
+          if ((x - cx) ** 2 + (y - cy) ** 2 <= r2) {
+            const i = y * N + x;
+            if (s[i] !== 2) {
+              s[i] = 2;
+              lit.push(i);
+            }
+          }
         }
       }
     }
+    this.lit = lit;
     this.version++;
+  }
+  /** After the state was put back from a save: find again which tiles are in sight. */
+  relight() {
+    this.lit = [];
+    for (let i = 0; i < this.state.length; i++) if (this.state[i] === 2) this.lit.push(i);
   }
   countExplored() {
     let n = 0;
     for (let i = 0; i < this.state.length; i++) if (this.state[i] > 0) n++;
     return n;
   }
+};
+
+// src/data/food.json
+var food_default = {
+  _note: "Th\u1EE9c \u0103n c\u1EE7a l\xE0ng. M\u1ED7i cu\u1ED1i ng\xE0y game (h\u1EBFt m\u1ED9t ng\xE0y) l\xE0ng \u0103n m\u1ED9t l\u1EA7n: m\u1ED7i d\xE2n v\xE0 m\u1ED7i l\xEDnh \u0103n m\u1ED9t kh\u1EA9u ph\u1EA7n, t\u0103ng theo c\u1EA5p l\u1EEDa tr\u1EA1i (ph\u1EA7n t\u1EED th\u1EE9 n l\xE0 c\u1EA5p l\u1EEDa n). Th\u1EE9c \u0103n thu v\u1EC1 \u0111\u1ED5 v\xE0o ph\u1EA7n \u0103n c\u1EE7a l\u1EEDa tr\u1EA1i tr\u01B0\u1EDBc, d\u01B0 m\u1EDBi v\xE0o kho; cu\u1ED1i ng\xE0y l\u1EA5y t\u1EEB ph\u1EA7n \u0103n r\u1ED3i t\u1EDBi kho. Thi\u1EBFu th\xEC c\u1EA3 l\xE0ng y\u1EBFu \u0111i trong ng\xE0y k\u1EBF: m\u1EE9c gi\u1EA3m = maxPenalty \xD7 (ph\u1EA7n thi\u1EBFu / ph\u1EA7n c\u1EA7n), \xE1p cho m\u1ECDi ch\u1EC9 s\u1ED1 tr\u1EEB m\xE1u t\u1ED1i \u0111a (m\xE1u ch\u1EC9 h\u1ED3i ch\u1EADm h\u01A1n).",
+  ration: {
+    villager: [2, 3, 4, 5],
+    soldier: [3, 4, 5, 6]
+  },
+  maxPenalty: 0.2
 };
 
 // src/sim/resources.ts
@@ -26920,8 +38762,11 @@ var RES_NAME = { wood: "G\u1ED7", stone: "\u0110\xE1", food: "Th\u1EE9c \u0103n"
 var BARTER = { food: 10, wood: 5, stone: 5, hide: 2, bone: 4, fat: 4, feather: 10, tusk: 1 };
 var emptyStock = () => ({ wood: 0, stone: 0, food: 0, hide: 0, bone: 0, fat: 0, feather: 0, tusk: 0, coin: 0 });
 var CARRY_CAP = { wood: 4, stone: 4, food: 10, hide: 10, bone: 6, fat: 6, feather: 10, tusk: 2, coin: 0 };
-var FOOD_NUTRITION = 20;
-var FOOD_SPOIL_DAYS = 3;
+var FOOD = food_default;
+var rationAt = (fireLevel2, soldier) => {
+  const list = soldier ? FOOD.ration.soldier : FOOD.ration.villager;
+  return list[Math.max(0, Math.min(list.length, fireLevel2) - 1)];
+};
 
 // src/data/units.json
 var units_default = {
@@ -27094,6 +38939,118 @@ function clusterize(units, size = COMMAND.clusterSize) {
 }
 var iconCount = (n) => Math.max(1, Math.ceil(n / COMMAND.iconEvery));
 
+// src/sim/path.ts
+var SQ2 = Math.SQRT2;
+var MinHeap = class {
+  constructor(key) {
+    this.key = key;
+    this.items = [];
+  }
+  get size() {
+    return this.items.length;
+  }
+  push(n) {
+    const a = this.items;
+    a.push(n);
+    let i = a.length - 1;
+    while (i > 0) {
+      const p = i - 1 >> 1;
+      if (this.key[a[p]] <= this.key[a[i]]) break;
+      [a[p], a[i]] = [a[i], a[p]];
+      i = p;
+    }
+  }
+  pop() {
+    const a = this.items, top = a[0], last = a.pop();
+    if (a.length) {
+      a[0] = last;
+      let i = 0;
+      for (; ; ) {
+        const l = i * 2 + 1, r = l + 1;
+        let m = i;
+        if (l < a.length && this.key[a[l]] < this.key[a[m]]) m = l;
+        if (r < a.length && this.key[a[r]] < this.key[a[m]]) m = r;
+        if (m === i) break;
+        [a[m], a[i]] = [a[i], a[m]];
+        i = m;
+      }
+    }
+    return top;
+  }
+};
+var mem = { total: 0, g: new Float32Array(0), f: new Float32Array(0), parent: new Int32Array(0), seen: new Uint32Array(0), closed: new Uint32Array(0), gen: 0 };
+function memory(total) {
+  if (mem.total !== total) {
+    mem.total = total;
+    mem.g = new Float32Array(total);
+    mem.f = new Float32Array(total);
+    mem.parent = new Int32Array(total);
+    mem.seen = new Uint32Array(total);
+    mem.closed = new Uint32Array(total);
+    mem.gen = 0;
+  }
+  if (++mem.gen >= 4294967280) {
+    mem.seen.fill(0);
+    mem.closed.fill(0);
+    mem.gen = 1;
+  }
+  return mem;
+}
+function findPath(world, sx, sy, gx, gy, maxNodes = 3e4) {
+  const N = world.size;
+  if (!world.inBounds(sx, sy) || !world.inBounds(gx, gy)) return [];
+  const { g: g2, f, parent, seen, closed, gen } = memory(N * N);
+  const heap = new MinHeap(f);
+  const h3 = (x, y) => {
+    const dx = Math.abs(x - gx), dy = Math.abs(y - gy);
+    return dx + dy + (SQ2 - 2) * Math.min(dx, dy);
+  };
+  const start = sy * N + sx, goal = gy * N + gx;
+  g2[start] = 0;
+  f[start] = h3(sx, sy);
+  seen[start] = gen;
+  parent[start] = -1;
+  heap.push(start);
+  let best = start, bestH = f[start], expanded = 0;
+  while (heap.size && expanded < maxNodes) {
+    const cur = heap.pop();
+    if (closed[cur] === gen) continue;
+    closed[cur] = gen;
+    expanded++;
+    if (cur === goal) {
+      best = cur;
+      break;
+    }
+    const cx = cur % N, cy = cur / N | 0;
+    const hh = h3(cx, cy);
+    if (hh < bestH) {
+      bestH = hh;
+      best = cur;
+    }
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = cx + dx, ny = cy + dy;
+        if (world.isBlocked(nx, ny)) continue;
+        if (dx && dy && (world.isBlocked(cx + dx, cy) || world.isBlocked(cx, cy + dy))) continue;
+        const ni = ny * N + nx;
+        if (closed[ni] === gen) continue;
+        const ng = g2[cur] + (dx && dy ? SQ2 : 1);
+        if (seen[ni] !== gen || ng < g2[ni]) {
+          seen[ni] = gen;
+          g2[ni] = ng;
+          f[ni] = ng + h3(nx, ny);
+          parent[ni] = cur;
+          heap.push(ni);
+        }
+      }
+    }
+  }
+  const out = [];
+  for (let n = best; n !== start && n !== -1; n = parent[n]) out.push([n % N, n / N | 0]);
+  return out.reverse();
+}
+
 // src/sim/fauna.ts
 var animalDef = (a) => ANIMALS[a.species];
 var isGround = (sim2, x, y) => {
@@ -27103,24 +39060,30 @@ var isGround = (sim2, x, y) => {
 };
 var isWater = (sim2, x, y) => sim2.world.inBounds(x, y) && sim2.world.at(x, y) === Tile.Water;
 var habitable = (sim2, def, x, y) => def.habitat === "water" ? isWater(sim2, x, y) : isGround(sim2, x, y);
-function populate(sim2) {
-  const N = sim2.world.size, s = sim2.world.start, rnd = sim2.frnd;
-  let herd = 1;
+var SPARSE = 0.4;
+var FIRST_AREA = 192 * 192;
+var share = () => CHUNK * CHUNK * SPARSE / FIRST_AREA;
+function populateChunk(sim2, cx, cy) {
+  const w = sim2.world, s = w.start, x0 = cx * CHUNK, y0 = cy * CHUNK;
+  const rnd = mulberry32(mix32(sim2.seed ^ Math.imul(cx + 1, 2654435761) ^ Math.imul(cy + 1, 2246822507)));
+  let herd = 1e5 + (cy * CHUNKS + cx) * 64;
   for (const sp of SPECIES) {
-    const def = ANIMALS[sp];
-    let made = 0, guard = 0;
-    while (made < def.count && guard++ < def.count * 60) {
-      const x = Math.floor(rnd() * N), y = Math.floor(rnd() * N), d = Math.hypot(x - s.x, y - s.y);
-      const z = zoneOf(d);
-      if (d < 16 && def.habitat !== "water" || z < def.zones[0] || z > def.zones[1] || !habitable(sim2, def, x, y)) continue;
-      const size = Math.min(def.count - made, def.herd[0] + Math.floor(rnd() * (def.herd[1] - def.herd[0] + 1)));
-      for (let i = 0; i < size; i++) {
-        const ax = x + (rnd() - 0.5) * 4, ay = y + (rnd() - 0.5) * 4;
-        if (!habitable(sim2, def, Math.floor(ax), Math.floor(ay))) continue;
-        spawnAnimal(sim2, sp, ax, ay, herd);
-        made++;
+    const def = ANIMALS[sp], expected = def.count / ((def.herd[0] + def.herd[1]) / 2) * share();
+    const herds = Math.floor(expected) + (rnd() < expected - Math.floor(expected) ? 1 : 0);
+    for (let n = 0; n < herds; n++) {
+      for (let tries = 0; tries < 8; tries++) {
+        const x = x0 + Math.floor(rnd() * CHUNK), y = y0 + Math.floor(rnd() * CHUNK), d = Math.hypot(x - s.x, y - s.y);
+        const z = zoneOf(d), far = z === 4 && def.zones[1] === 3 ? 3 : z;
+        if (d < 16 && def.habitat !== "water" || far < def.zones[0] || far > def.zones[1] || !habitable(sim2, def, x, y)) continue;
+        const size = def.herd[0] + Math.floor(rnd() * (def.herd[1] - def.herd[0] + 1));
+        for (let i = 0; i < size; i++) {
+          const ax = x + (rnd() - 0.5) * 4, ay = y + (rnd() - 0.5) * 4;
+          if (!w.isReady(Math.floor(ax), Math.floor(ay)) || !habitable(sim2, def, Math.floor(ax), Math.floor(ay))) continue;
+          spawnAnimal(sim2, sp, ax, ay, herd);
+        }
+        herd++;
+        break;
       }
-      herd++;
     }
   }
 }
@@ -27157,25 +39120,84 @@ function spawnAnimal(sim2, species, x, y, herd, raid = false) {
   sim2.animalById.set(a.id, a);
   return a;
 }
+var turned = /* @__PURE__ */ new WeakMap();
+var TURNS = [0, 0.6, 1.2, 1.9, 2.6];
+function unstick(sim2, a) {
+  const def = animalDef(a), x = Math.floor(a.x), y = Math.floor(a.y);
+  if (habitable(sim2, def, x, y)) return;
+  for (let r = 1; r <= 10; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+    if (Math.max(Math.abs(i), Math.abs(j)) !== r || !habitable(sim2, def, x + i, y + j)) continue;
+    a.x = x + i + 0.5;
+    a.y = y + j + 0.5;
+    return;
+  }
+}
+var watch = /* @__PURE__ */ new WeakMap();
+var route = /* @__PURE__ */ new WeakMap();
+var routeTick = -1;
+var routeLeft = 0;
 function step(sim2, a, tx, ty, speed, dt) {
+  const water = ANIMALS[a.species].habitat === "water", key = `${Math.floor(tx / 2)},${Math.floor(ty / 2)}`;
+  let gx = tx, gy = ty;
+  const r = route.get(a);
+  if (r && r.goal === key) {
+    while (r.path.length && Math.hypot(r.path[0][0] + 0.5 - a.x, r.path[0][1] + 0.5 - a.y) < 0.45) r.path.shift();
+    if (r.path.length) {
+      gx = r.path[0][0] + 0.5;
+      gy = r.path[0][1] + 0.5;
+    } else route.delete(a);
+  } else if (r) route.delete(a);
+  const ok = steer(sim2, a, gx, gy, speed, dt);
+  if (water) return ok;
+  let w = watch.get(a);
+  if (!w || sim2.time - w.at > 0.6) {
+    w = { x: a.x, y: a.y, t: 0, at: sim2.time };
+    watch.set(a, w);
+  }
+  w.t += dt;
+  w.at = sim2.time;
+  if (w.t < 1) return ok;
+  const gained = Math.hypot(a.x - w.x, a.y - w.y);
+  w.x = a.x;
+  w.y = a.y;
+  w.t = 0;
+  if (gained >= speed * 0.3 || route.has(a)) return ok;
+  if (routeTick !== sim2.time) {
+    routeTick = sim2.time;
+    routeLeft = 6;
+  }
+  if (routeLeft <= 0) return ok;
+  routeLeft--;
+  const path = findPath(sim2.world, Math.floor(a.x), Math.floor(a.y), Math.floor(tx), Math.floor(ty), 1500);
+  if (!path.length) return false;
+  route.set(a, { goal: key, path });
+  return true;
+}
+function steer(sim2, a, tx, ty, speed, dt) {
+  unstick(sim2, a);
   const dx = tx - a.x, dy = ty - a.y, d = Math.hypot(dx, dy);
   if (d < 0.05) return true;
-  const k = Math.min(d, speed * dt) / d, sx = dx * k, sy = dy * k, w = sim2.world, water = ANIMALS[a.species].habitat === "water";
+  const len = Math.min(d, speed * dt), w = sim2.world, water = ANIMALS[a.species].habitat === "water";
+  const sx = dx / d * len, sy = dy / d * len;
   const fear = ANIMALS[a.species].fearsFire;
   if (fear) {
     const nf = fireDistance(sim2, a.x + sx, a.y + sy);
     if (nf < fear && nf < fireDistance(sim2, a.x, a.y)) return false;
   }
   const free = (x, y) => water ? isWater(sim2, Math.floor(x), Math.floor(y)) : w.inBounds(Math.floor(x), Math.floor(y)) && !w.isBlocked(Math.floor(x), Math.floor(y));
-  let moved = true;
-  if (free(a.x + sx, a.y + sy)) {
-    a.x += sx;
-    a.y += sy;
-  } else if (free(a.x + sx, a.y)) a.x += sx;
-  else if (free(a.x, a.y + sy)) a.y += sy;
-  else moved = false;
+  const base = Math.atan2(dy, dx), side = turned.get(a) ?? (a.id % 2 ? 1 : -1);
+  for (const t of TURNS) for (const sgn of t === 0 ? [1] : [side, -side]) {
+    const ang = base + t * sgn, mx = Math.cos(ang) * len, my = Math.sin(ang) * len;
+    if (!free(a.x + mx, a.y + my)) continue;
+    a.x += mx;
+    a.y += my;
+    if (t > 0) turned.set(a, sgn);
+    else if (turned.has(a)) turned.delete(a);
+    if (Math.abs(mx) > 1e-3) a.dir = mx > 0 ? 1 : -1;
+    return true;
+  }
   if (Math.abs(sx) > 1e-3) a.dir = sx > 0 ? 1 : -1;
-  return moved;
+  return false;
 }
 var near = (sim2, x, y) => {
   let best = null;
@@ -27950,22 +39972,22 @@ var TIER_MULT = stats_default.tierMult;
 var L = stats_default.legacy;
 function rollFactors(r) {
   const w = stats_default.stars.weights, total = w.reduce((a, b) => a + b, 0);
-  let x = r() * total, stars2 = 1;
+  let x = r() * total, stars = 1;
   for (let i = 0; i < w.length; i++) {
     x -= w[i];
     if (x <= 0) {
-      stars2 = i + 1;
+      stars = i + 1;
       break;
     }
-    stars2 = i + 1;
+    stars = i + 1;
   }
-  const budget = IDS.length * (stats_default.stars.budgetBase + stats_default.stars.budgetPerStar * stars2), { min, max } = stats_default.stars;
+  const budget = IDS.length * (stats_default.stars.budgetBase + stats_default.stars.budgetPerStar * stars), { min, max } = stats_default.stars;
   let f = IDS.map(() => 1 - stats_default.stars.spread / 2 + r() * stats_default.stars.spread);
   for (let k = 0; k < 8; k++) {
     const s = f.reduce((a, b) => a + b, 0);
     f = f.map((v) => Math.max(min, Math.min(max, v * budget / s)));
   }
-  return { stars: stars2, fac: Object.fromEntries(IDS.map((id, i) => [id, f[i]])) };
+  return { stars, fac: Object.fromEntries(IDS.map((id, i) => [id, f[i]])) };
 }
 function treeRole(v) {
   const r = roleOf(v);
@@ -27991,7 +40013,8 @@ function statValue(sim2, v, stat) {
   const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
   const squad = v.team === "player" && v.squad >= 0 ? sim2.squads.find((q) => q.id === v.squad) : void 0;
   const bonus = (role ? statBonus(sim2.researched, role, stat) : 0) + (squad ? statBonus(sim2.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ""), stat) : 0);
-  return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + bonus / 100);
+  const hunger = v.team === "player" && stat !== "hp" ? 1 - sim2.foodPenalty : 1;
+  return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + bonus / 100) * hunger;
 }
 var rawValue = (fac, stat) => BASE[stat] * fac[stat];
 function legacyStats(value) {
@@ -28038,7 +40061,11 @@ function toolBonus(sim2, v, job, stat) {
   return v.team === "player" && kind && tool && tool.dur > 0 ? statBonus(sim2.researched, kind, stat) : 0;
 }
 var weaponBonus = (sim2, v, w, stat) => v.team === "player" ? statBonus(sim2.researched, w.id, stat) : 0;
-var swingCycle = (sim2, v, w) => cycleOf(w.cycle, v.stats.agi) / (1 + weaponBonus(sim2, v, w, "aspd") / 100);
+var swingCycle = (sim2, v, w) => {
+  const p = v.team === "player" ? sim2.foodPenalty : 0;
+  const agi = p > 0 ? ((L.speedBase + L.speedPerAgi * v.stats.agi) / (1 - p) - L.speedBase) / L.speedPerAgi : v.stats.agi;
+  return cycleOf(w.cycle, agi) / (1 + weaponBonus(sim2, v, w, "aspd") / 100) / (1 - p);
+};
 var critChance = (sim2, v, w) => Math.min((w.crit ?? 0) + weaponBonus(sim2, v, w, "crit") / 100, RULES.critMax);
 var critMult = (sim2, v, w) => (w.critDamage ?? RULES.critDamage) + weaponBonus(sim2, v, w, "critd") / 100;
 
@@ -28114,6 +40141,12 @@ function threatsOf(sim2, v, radius) {
   }
   return out.sort((p, q) => p.d - q.d);
 }
+var HUNT_RANGE = [24, 36, 52];
+function huntRange(sim2) {
+  return HUNT_RANGE[Math.min(HUNT_RANGE.length, sim2.building("huntlodge")?.level ?? 1) - 1];
+}
+var HUNT_FLEE = 0.3;
+var HUNT_BACK = 0.5;
 function hurt(sim2, target, dmg, type, from, src) {
   if (target.kind === "animal") {
     const a = sim2.animalById.get(target.id);
@@ -28135,10 +40168,22 @@ function hurt(sim2, target, dmg, type, from, src) {
   v.calm = 0;
   v.flinch = 0.3;
   if (armor) sim2.wearGear(v, "armor");
-  const behind = v.facing === "right" && from.x < v.x || v.facing === "left" && from.x > v.x;
-  if (behind) v.morale = Math.max(0, v.morale + MORALE.backstab);
   if (src.unit && src.unit.team === "player" && v.team !== "player") sim2.tribeAttacked(v.team, v);
+  if (v.health > 0 && v.team !== "player" && v.ai && v.ai.role !== "civ" && src.unit && src.unit.team === "player" && src.unit.inside !== null) {
+    const tw = sim2.getBuilding(src.unit.inside);
+    if (tw && tw.kind === "tower") {
+      v.ai.siege = tw.id;
+      v.fight.target = null;
+    }
+  }
   if (v.health > 0) {
+    if (v.team === "player" && v.job === "hunt" && v.phase !== "flee" && v.health < v.maxHealth * HUNT_FLEE) {
+      const tribe = src.unit ? sim2.tribes.find((t) => t.id === src.unit.team) : void 0;
+      const by = src.animal ? `m\u1ED9t con ${animalDef(src.animal).name.toLowerCase()}` : tribe ? tribe.def.name : src.unit ? "m\u1ED9t k\u1EBB \u0111\u1ECBch" : "k\u1EBB l\u1EA1";
+      sim2.say(`${v.name} (th\u1EE3 s\u0103n) b\u1ECF ch\u1EA1y v\u1EC1 l\xE0ng v\xEC m\xE1u c\xF2n ${Math.round(v.health / v.maxHealth * 100)}%, b\u1ECB ${by} t\u1EA5n c\xF4ng.`);
+      startFlee(sim2, v, 8, from);
+      return;
+    }
     if (!v.fight.target && src.unit && v.team !== "player") v.fight.target = { kind: "unit", id: src.unit.id };
     else if (!v.fight.target && src.animal && v.team !== "player") v.fight.target = { kind: "animal", id: src.animal.id };
     return;
@@ -28150,13 +40195,8 @@ function fallUnit(sim2, v) {
   sim2.resetTask(v);
   v.queue.length = 0;
   v.swing = null;
-  moraleShock(sim2, v, MORALE.allyDeath);
   sim2.noteBattle("ours");
   sim2.killUnit(v, "t\u1EED tr\u1EADn");
-}
-function moraleShock(sim2, who, amount) {
-  const pool = who.team === "player" ? sim2.villagers : sim2.foes.filter((f) => f.team === who.team);
-  for (const o of pool) if (o !== who && o.health > 0 && Math.hypot(o.x - who.x, o.y - who.y) < 8) o.morale = Math.max(0, Math.min(100, o.morale + amount));
 }
 function startSwing(sim2, v, target) {
   const w = weaponOf(v), { hitAt, end } = swingTimes(w.anim);
@@ -28225,23 +40265,6 @@ function tickCommon(sim2, v, dt) {
     if (s.t >= s.end) v.swing = null;
   }
 }
-function tickMorale(sim2, v) {
-  const near2 = threatsOf(sim2, v, 9);
-  const allies = (v.team === "player" ? sim2.villagers : sim2.foes.filter((f) => f.team === v.team)).filter((o) => o !== v && o.health > 0 && o.down <= 0 && Math.hypot(o.x - v.x, o.y - v.y) < 8).length;
-  let m = v.morale;
-  if (near2.length) {
-    m += near2.length > allies + 1 ? MORALE.outnumbered : near2.length < allies ? MORALE.outnumbering : 0;
-  } else m += (MORALE.start - m) * 0.04 + MORALE.calm;
-  if (sim2.nearHome(v)) m += MORALE.nearHome * (near2.length ? 1 : 0.2);
-  if (v.team === "player" && sim2.restTime && !sim2.nearHome(v)) m += MORALE.night;
-  if (v.leader) m += 0.2;
-  else {
-    const lead = (v.team === "player" ? sim2.villagers : sim2.foes.filter((f) => f.team === v.team)).find((o) => o.leader && o.health > 0 && Math.hypot(o.x - v.x, o.y - v.y) < 8);
-    if (lead) m += MORALE.leaderNear;
-    else if (allies >= 4) m += MORALE.leaderFar;
-  }
-  v.morale = Math.max(0, Math.min(100, m));
-}
 function tickDown(sim2, v, dt) {
   v.down -= dt;
   v.hold = null;
@@ -28254,7 +40277,6 @@ function tickDown(sim2, v, dt) {
     v.rescue = 0;
     v.health = v.maxHealth * RULES.rescueHp;
     v.phase = "idle";
-    v.morale = Math.max(v.morale, 40);
     sim2.say(`${v.name} \u0111\xE3 \u0111\u01B0\u1EE3c \u0111\u1EE1 d\u1EADy.`);
     return;
   }
@@ -28265,10 +40287,11 @@ var DEFENSIVE = 4.5;
 function brainPlayer(sim2, v, dt) {
   if (v.phase === "goStore" || v.phase === "goEquip") return false;
   const rest = v.phase === "sleep" || v.phase === "goHome";
+  if (rest && sim2.hides(v)) return false;
   v.fight.scan -= dt;
   const scanNow = v.fight.scan <= 0;
   if (scanNow) v.fight.scan = 0.35;
-  const looking = scanNow || v.phase === "flee" || v.phase === "fight" && (!v.fight.target || v.morale < MORALE.flee);
+  const looking = scanNow || v.phase === "flee" || v.phase === "fight" && !v.fight.target;
   const sight = v.team === "player" ? sim2.sightOf(v) : SIGHT;
   const threats = looking ? threatsOf(sim2, v, sight + 1) : [];
   if (rest) {
@@ -28277,19 +40300,35 @@ function brainPlayer(sim2, v, dt) {
       sim2.resetTask(v);
     } else return false;
   }
-  if (v.phase === "flee" || v.fleeT > 0 || v.morale < MORALE.flee && threats.length) return fleeBrain(sim2, v, dt, threats);
+  if (v.phase === "flee" || v.fleeT > 0) return fleeBrain(sim2, v, dt, threats);
   if (v.breaks && sim2.breakBrain(v, dt)) return true;
   const fighter = isFighter(v);
   if (!fighter) {
     if (threats.length && threats[0].d < 6 && v.phase !== "fight") {
-      startFlee(sim2, v, 8);
+      startFlee(sim2, v, 8, threats[0]);
       return true;
     }
     return assistBrain(sim2, v);
   }
   return fightBrain(sim2, v, dt, threats);
 }
-function startFlee(sim2, v, secs) {
+function fleeSpot(sim2, v, from) {
+  const fire = sim2.campfire(), cx = fire ? fire.x + 1 : v.x, cy = fire ? fire.y + 1 : v.y;
+  let best = null, bs = -Infinity;
+  for (let k = 0; k < 12; k++) {
+    const ang = sim2.frnd() * Math.PI * 2, r = 4 + sim2.frnd() * 9, x = Math.floor(cx + Math.cos(ang) * r), y = Math.floor(cy + Math.sin(ang) * r);
+    if (sim2.world.isBlocked(x, y)) continue;
+    const away = from ? Math.hypot(x + 0.5 - from.x, y + 0.5 - from.y) : Math.hypot(x + 0.5 - v.x, y + 0.5 - v.y) * 0.5;
+    if (away < 3) continue;
+    const score = away - Math.abs(r - 8) * 0.3;
+    if (score > bs) {
+      bs = score;
+      best = [x, y];
+    }
+  }
+  return best ? sim2.pathTo(v, best[0], best[1], 4e3) : fire ? sim2.pathTo(v, Math.floor(fire.x + 1), Math.floor(fire.y + 2), 4e3) : [];
+}
+function startFlee(sim2, v, secs, from) {
   const keep = v.job, nightOwl = v.nightOwl;
   sim2.resetTask(v);
   v.job = keep;
@@ -28298,21 +40337,17 @@ function startFlee(sim2, v, secs) {
   if (v.fight.mode === "attack") v.fight.mode = "none";
   v.phase = "flee";
   v.fleeT = secs;
-  const fire = sim2.campfire();
-  if (fire) v.path = sim2.pathTo(v, Math.floor(fire.x + 1), Math.floor(fire.y + 2), 4e3);
+  v.path = fleeSpot(sim2, v, from);
 }
 function fleeBrain(sim2, v, dt, threats) {
   if (v.phase !== "flee") {
-    startFlee(sim2, v, 8);
+    startFlee(sim2, v, 8, threats[0]);
     return true;
   }
   v.fleeT -= dt;
   if (threats.length && threats[0].d < 6) v.fleeT = Math.max(v.fleeT, 3);
-  if (!v.path.length && sim2.campfire() && Math.hypot(v.x - sim2.campfire().x - 1, v.y - sim2.campfire().y - 1) > 3) {
-    const f = sim2.campfire();
-    v.path = sim2.pathTo(v, Math.floor(f.x + 1), Math.floor(f.y + 2), 4e3);
-  }
-  if (v.fleeT <= 0 && v.morale >= MORALE.fleeRecover - 10) {
+  if (!v.path.length && threats.length && threats[0].d < 9) v.path = fleeSpot(sim2, v, threats[0]);
+  if (v.fleeT <= 0) {
     v.phase = "idle";
     v.fleeT = 0;
     v.path = [];
@@ -28372,6 +40407,14 @@ function engage(sim2, v, e, dt) {
 function fightBrain(sim2, v, dt, threats) {
   const f = v.fight;
   if (v.phase === "skin" || v.phase === "goCarcass") return huntBrain(sim2, v, dt, threats);
+  if (v.job === "hunt" && v.health < v.maxHealth * HUNT_BACK && f.mode !== "attack") {
+    f.target = null;
+    if (threats.length && threats[0].d < 7 && v.phase !== "flee") {
+      startFlee(sim2, v, 8, threats[0]);
+      return true;
+    }
+    return huntBrain(sim2, v, dt, threats);
+  }
   if (f.mode === "hold" && !f.anchor) f.anchor = { x: v.x, y: v.y };
   if (!threats.length && !f.target && v.phase !== "fight" && (sim2.planEquipGear(v) || sim2.planGearErrand(v))) return true;
   if (v.stance === "retreat" && f.mode !== "attack" && f.target) f.target = null;
@@ -28403,7 +40446,7 @@ function fightBrain(sim2, v, dt, threats) {
   }
   if (v.stance === "retreat") {
     if (threats.length && threats[0].d < 8) {
-      startFlee(sim2, v, 6);
+      startFlee(sim2, v, 6, threats[0]);
       return true;
     }
   } else if (threats.length && f.scan >= 0) {
@@ -28463,6 +40506,29 @@ function fightBrain(sim2, v, dt, threats) {
   return false;
 }
 function huntBrain(sim2, v, dt, threats) {
+  if (v.health < v.maxHealth * HUNT_BACK && v.phase !== "skin") {
+    if (v.phase === "move" && v.path.length) return true;
+    if (v.phase === "fight" || v.phase === "goCarcass") {
+      v.phase = "idle";
+      v.path = [];
+      v.loot = -1;
+    }
+    if (v.carry && v.carry.amount > 0) {
+      sim2.planDeliver(v);
+      return true;
+    }
+    const fire = sim2.campfire();
+    if (fire && Math.hypot(v.x - fire.x - 1, v.y - fire.y - 1) > 4 && sim2.pathLeft > 0) {
+      sim2.pathLeft--;
+      v.path = sim2.pathTo(v, Math.floor(fire.x + 1), Math.floor(fire.y + 2), 4e3);
+      if (v.path.length) {
+        v.phase = "move";
+        return true;
+      }
+    }
+    sim2.wait(v, 2);
+    return true;
+  }
   if (v.phase === "skin") {
     v.timer -= dt;
     v.anim = "build";
@@ -28521,6 +40587,7 @@ function huntBrain(sim2, v, dt, threats) {
     return true;
   }
   const N = sim2.world.size;
+  const lodge = sim2.building("huntlodge") ?? sim2.campfire(), range = huntRange(sim2);
   let best = null, bd = 45;
   if (v.loot >= 0) {
     const a = sim2.animalById.get(v.loot);
@@ -28543,10 +40610,11 @@ function huntBrain(sim2, v, dt, threats) {
   }
   if (!threats.length) {
     let prey = null;
-    bd = 70;
+    bd = Infinity;
     for (const a of sim2.animals) {
       const def = animalDef(a);
       if (a.state === "dead" || !def.prey || sim2.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
+      if (lodge && Math.hypot(a.x - lodge.x, a.y - lodge.y) > range) continue;
       if (def.defends && !sim2.packNear(v, a)) continue;
       const d = Math.hypot(a.x - v.x, a.y - v.y);
       if (d < bd) {
@@ -28568,11 +40636,17 @@ function huntBrain(sim2, v, dt, threats) {
     v.phase = "idle";
     v.path = [];
   }
-  const lodge = sim2.building("huntlodge") ?? sim2.campfire(), step3 = Math.floor(sim2.time / 8);
   if (lodge) {
-    const ang = hash2(v.id, step3, 71) * Math.PI * 2, rad3 = 10 + hash2(v.id, step3, 72) * 26;
-    const gx = Math.floor(lodge.x + Math.cos(ang) * rad3), gy = Math.floor(lodge.y + Math.sin(ang) * rad3);
-    if (sim2.world.inBounds(gx, gy) && sim2.fog.state[gy * N + gx] > 0) {
+    const step3 = Math.floor(sim2.time / 8), spots = [];
+    for (let t = 0; t < 10; t++) {
+      const ang = hash2(v.id, step3 * 16 + t, 71) * Math.PI * 2, rad3 = 6 + hash2(v.id, step3 * 16 + t, 72) * (range - 6);
+      const gx = Math.floor(lodge.x + Math.cos(ang) * rad3), gy = Math.floor(lodge.y + Math.sin(ang) * rad3);
+      if (sim2.world.inBounds(gx, gy) && !sim2.world.isBlocked(gx, gy)) spots.push([gx, gy, sim2.fog.state[gy * N + gx] === 0]);
+    }
+    spots.sort((p, q) => Number(q[2]) - Number(p[2]));
+    for (const [gx, gy] of spots) {
+      if (sim2.pathLeft <= 0) break;
+      sim2.pathLeft--;
       const path = sim2.pathTo(v, gx, gy, 2500);
       if (path.length) {
         v.path = path;
@@ -28581,7 +40655,7 @@ function huntBrain(sim2, v, dt, threats) {
       }
     }
   }
-  sim2.wait(v, 2);
+  sim2.wait(v, 1);
   return true;
 }
 function bestWeapon(sim2, v) {
@@ -28625,7 +40699,7 @@ function campFits(sim2, cx, cy) {
   const w = sim2.world, r = 7;
   for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) {
     if (!w.inBounds(x, y)) return false;
-    if (Math.hypot(x - cx, y - cy) <= r && w.at(x, y) === Tile.Water) return false;
+    if (Math.hypot(x - cx, y - cy) <= r && (w.at(x, y) === Tile.Water || w.at(x, y) === Tile.Mountain)) return false;
   }
   return true;
 }
@@ -28635,13 +40709,17 @@ function spawnTribe(sim2, id) {
   search: for (let dd = 0; dd <= 24; dd += 3) for (const sign of dd ? [1, -1] : [1]) for (let da = 0; da <= 90; da += 15) for (const as of da ? [1, -1] : [1]) {
     const ang = (def.angle + da * as) * Math.PI / 180, d = def.distance + dd * sign;
     const x = Math.round(s.x + Math.cos(ang) * d), y = Math.round(s.y + Math.sin(ang) * d);
-    if (x > 9 && y > 9 && x < N - 9 && y < N - 9 && campFits(sim2, x, y)) {
+    if (!(x > 9 && y > 9 && x < N - 9 && y < N - 9)) continue;
+    w.ensure(x, y, 10);
+    if (campFits(sim2, x, y)) {
       cx = x;
       cy = y;
       break search;
     }
   }
   if (cx < 0) return;
+  const gap = Math.hypot(cx - s.x, cy - s.y);
+  for (let k = 0; k <= gap; k += 16) w.ensure(s.x + (cx - s.x) * k / gap, s.y + (cy - s.y) * k / gap, 24);
   for (let y = cy - 7; y <= cy + 7; y++) for (let x = cx - 7; x <= cx + 7; x++) {
     if (Math.hypot(x - cx, y - cy) > 6.5) continue;
     const i = y * N + x;
@@ -28722,7 +40800,6 @@ function killFoe(sim2, v, killer) {
   if (!t) return;
   t.unitIds = t.unitIds.filter((u) => u !== v.id);
   if (v.ai?.role === "raider") sim2.noteBattle("foes");
-  moraleShock(sim2, v, MORALE.allyDeath);
   if (killer?.team === "player") {
     t.relation = Math.max(-100, t.relation + (v.ai?.role === "civ" ? RELATION.killCivilian : RELATION.killWarrior));
     t.angryUntil = sim2.time + 120;
@@ -28802,7 +40879,6 @@ function tickTribes(sim2, dt) {
       const f = sim2.get(u);
       return !!f && f.health > 0;
     });
-    for (const u of t.unitIds) tickMorale(sim2, sim2.get(u));
     if (t.state === "free" && t.unitIds.length === 0) {
       t.state = "destroyed";
       t.raid = null;
@@ -28825,10 +40901,9 @@ function checkSurrender(sim2, t) {
   const units = t.unitIds.map((u) => sim2.get(u)).filter(Boolean), warriors = units.filter((u) => u.ai?.role !== "civ");
   if (SURRENDER.leaderDown && t.leaderId >= 0 && !t.unitIds.includes(t.leaderId) && units.length) return surrender(sim2, t, "Th\u1EE7 l\u0129nh \u0111\xE3 g\u1EE5c");
   const intruders = sim2.villagers.filter((v) => v.health > 0 && v.down <= 0 && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 5).length;
-  const defenders = warriors.filter((w) => Math.hypot(w.x - t.camp.x, w.y - t.camp.y) < 9 && w.morale >= MORALE.flee).length;
+  const defenders = warriors.filter((w) => Math.hypot(w.x - t.camp.x, w.y - t.camp.y) < 9).length;
   t.holdT = intruders > 0 && defenders === 0 && tribeHostile(sim2, t.id) ? t.holdT + 1 : 0;
   if (t.holdT >= SURRENDER.holdCampSeconds) return surrender(sim2, t, "\u0110\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD \u0111\xE3 b\u1ECB chi\u1EBFm");
-  if (warriors.length && warriors.reduce((a, w) => a + w.morale, 0) / warriors.length < SURRENDER.moraleBelow) surrender(sim2, t, "Tinh th\u1EA7n s\u1EE5p \u0111\u1ED5");
 }
 function surrender(sim2, t, why) {
   t.state = "surrendered";
@@ -28853,9 +40928,8 @@ function manageRaid(sim2, t) {
   if (!r) return;
   r.t += 1;
   const raiders = t.unitIds.map((u) => sim2.get(u)).filter((u) => u?.ai?.raid === r.id);
-  const heart = raiders.length ? raiders.reduce((a, u) => a + u.morale, 0) / raiders.length : 0;
   const playerAlive = sim2.villagers.some((v) => v.health > 0);
-  if (r.phase === "march" && (raiders.length === 0 || r.t > r.max || heart < MORALE.flee || !playerAlive)) {
+  if (r.phase === "march" && (raiders.length === 0 || r.t > r.max || !playerAlive)) {
     r.phase = "retreat";
     if (raiders.length) sim2.say(`Qu\xE2n ${t.def.name} r\xFAt lui.`);
   }
@@ -29039,8 +41113,8 @@ function foeBrain(sim2, f, t, ai, dt) {
   const radius = ai.role === "raider" ? 12 : ai.role === "civ" ? 9 : AGGRO[t.def.personality];
   const scanNow = f.fight.scan <= 0;
   if (scanNow) f.fight.scan = 0.4;
-  const looking = scanNow || f.phase === "flee" || f.phase === "fight" && (!f.fight.target || f.morale < MORALE.flee);
-  const threats = free && looking ? threatsOf(sim2, f, radius) : [];
+  const looking = scanNow || f.phase === "flee" || f.phase === "fight" && !f.fight.target;
+  const threats = free && looking ? threatsOf(sim2, f, radius).filter((x) => !(ai.skip && sim2.time < ai.skip.until && x.t.kind === "unit" && x.t.id === ai.skip.id)) : [];
   if (!free) {
     f.fight.target = null;
     if (f.phase === "fight") {
@@ -29048,7 +41122,7 @@ function foeBrain(sim2, f, t, ai, dt) {
       f.path = [];
     }
   }
-  if (free && (f.fleeT > 0 || f.morale < MORALE.flee && threats.length || ai.role === "civ" && threats.length && threats[0].d < 8)) {
+  if (free && (f.fleeT > 0 || ai.role === "civ" && threats.length && threats[0].d < 8)) {
     if (f.fleeT <= 0) {
       f.fleeT = 6;
       f.fight.target = null;
@@ -29057,13 +41131,17 @@ function foeBrain(sim2, f, t, ai, dt) {
     f.fleeT -= dt;
     f.phase = "flee";
     if (threats.length && threats[0].d < 6) f.fleeT = Math.max(f.fleeT, 2);
-    if (f.fleeT <= 0 && f.morale < MORALE.fleeRecover) f.fleeT = 1;
     if (!f.path.length && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 3) f.path = sim2.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3e3);
     return;
   }
   if (f.phase === "flee") {
     f.phase = "idle";
     f.path = [];
+  }
+  if (free && ai.siege && ai.role !== "civ") {
+    const sb = sim2.getBuilding(ai.siege);
+    if (!sb || Math.hypot(sb.x - f.x, sb.y - f.y) > 45) ai.siege = 0;
+    else if (siegeBrain(sim2, f, ai, dt, threats)) return;
   }
   if (free && ai.role === "raider" && t.raid) {
     if (t.raid.phase === "retreat") {
@@ -29130,10 +41208,93 @@ function foeBrain(sim2, f, t, ai, dt) {
   void DAY_LENGTH;
 }
 
+// src/sim/quests.ts
+var QUESTS = quests_default.quests;
+var CHAPTERS = quests_default.chapters;
+function measure(sim2, d, ui) {
+  const yes = (b) => [b ? 1 : 0, 1];
+  switch (d.type) {
+    case "buildBuilding":
+      return [sim2.buildings.filter((b) => b.kind === d.kind && b.done).length, d.count];
+    case "upgradeBuilding":
+      return yes(sim2.buildings.some((b) => b.kind === d.kind && b.done && b.level >= d.level));
+    case "upgradeFire":
+      return yes(sim2.fireLevel() >= d.level);
+    case "fireReady":
+      return yes(sim2.fireUpgradeBlock(d.level) === null);
+    case "researchTech":
+      return yes(sim2.researched.has(d.id));
+    case "population":
+      return [sim2.villagers.length, d.count];
+    case "stock":
+      return [Math.floor(sim2.stock[d.res] + (d.res === "food" ? sim2.foodPot : 0)), d.count];
+    case "hasRole":
+      return [sim2.villagers.filter((v) => roleOf(v) === d.role).length, d.count];
+    case "jobCount":
+      return [sim2.villagers.filter((v) => v.job === d.job).length, d.count];
+    case "staffIn":
+      return [sim2.buildings.filter((b) => b.kind === d.kind).reduce((n, b) => n + b.staff.length, 0), d.count];
+    case "haveTool":
+      return [sim2.toolCount(d.kind, d.tier), d.count];
+    case "torches":
+      return [sim2.torchCount(), d.count];
+    case "createSquad":
+      return [sim2.squads.length, d.count];
+    case "daytime":
+      return yes(sim2.day >= d.day && sim2.part === "day");
+    case "speed":
+      return yes(sim2.speed >= d.atLeast);
+    case "selectBuilding":
+      return yes(ui.selected === d.kind || ui.panel === d.kind);
+    case "openBuilding":
+      return yes(ui.panel === d.kind);
+    case "inspectNode":
+      return yes(ui.inspecting === "node");
+    case "inspectUnit":
+      return yes(ui.inspecting === "unit");
+    case "inspectAnimal":
+      return yes(ui.inspecting === "animal");
+    case "squadSize":
+      return [Math.max(0, ...sim2.squads.map((q) => q.ids.length)), d.count];
+    case "squadFormation":
+      return yes(sim2.squads.some((q) => q.formation === d.id));
+    case "equipped":
+      return [sim2.villagers.filter((v) => v.team === "player" && v.job === "fight" && (d.slot === "weapon" ? v.gear.w : v.gear.a) !== null).length, d.count];
+    case "scoutSent":
+      return yes(sim2.scouts.length > 0 || sim2.maps.length > 0);
+    case "hasMap":
+      return yes(sim2.maps.some((m) => m.level >= d.level));
+    case "planDefense":
+      return yes(sim2.plans.some((pl) => pl.kind === "defense"));
+    case "planArrow":
+      return yes(sim2.plans.some((pl) => pl.kind === "attack" && pl.missions.some((m) => m.path.length > 0)));
+    case "planRunning":
+      return yes(sim2.plans.some((pl) => pl.kind === "attack" && (pl.status === "running" || pl.status === "done")));
+    case "planDone":
+      return yes(sim2.plans.some((pl) => pl.status === "done" && (!d.result || pl.result === d.result)));
+  }
+}
+function questViews(sim2, ui) {
+  for (const q of QUESTS) if (!sim2.questSeen.has(q.id) && q.after.every((a) => sim2.questSeen.has(a))) {
+    const [have, need] = measure(sim2, q.done, ui);
+    if (have >= need) sim2.questSeen.add(q.id);
+  }
+  return QUESTS.map((quest) => {
+    const done = sim2.questSeen.has(quest.id), open = !done && quest.after.every((a) => sim2.questSeen.has(a));
+    let progress2 = "";
+    if (open) {
+      const d = quest.done, [have, need] = measure(sim2, d, ui);
+      if (d.type === "fireReady" || d.type === "upgradeFire") progress2 = sim2.fireUpgradeBlock(d.level - 1) ?? "";
+      else if (need > 1) progress2 = `${Math.min(have, need)}/${need}`;
+    }
+    return { quest, done, open, progress: progress2 };
+  });
+}
+
 // src/sim/construction.ts
-function addBuilding(sim2, kind, x, y, done) {
+function addBuilding(sim2, kind, x, y, done, level = 1) {
   const d = BUILDINGS[kind];
-  const b = { id: sim2.nextBid++, kind, era: sim2.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
+  const b = { id: sim2.nextBid++, kind, era: sim2.era, x, y, level, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
   b.hp = maxHp(b);
   sim2.buildings.push(b);
   setOcc(sim2, b, 1);
@@ -29167,7 +41328,7 @@ function footprintError(sim2, kind, x, y, ignore) {
   if (!WALL_KINDS.has(kind)) for (const o of sim2.buildings) {
     if (o === ignore || WALL_KINDS.has(o.kind)) continue;
     const od = BUILDINGS[o.kind], gx = Math.max(x - (o.x + od.w), o.x - (x + d.w)), gy = Math.max(y - (o.y + od.h), o.y - (y + d.h));
-    if (Math.max(gx, gy) < CLEARANCE) return "C\u1EA7n ch\u1EEBa \xEDt nh\u1EA5t 2 \xF4 tr\u1ED1ng gi\u1EEFa c\xE1c c\xF4ng tr\xECnh \u0111\u1EC3 d\xE2n \u0111i l\u1EA1i";
+    if (Math.max(gx, gy) < CLEARANCE) return `C\u1EA7n ch\u1EEBa \xEDt nh\u1EA5t ${CLEARANCE} \xF4 tr\u1ED1ng gi\u1EEFa c\xE1c c\xF4ng tr\xECnh \u0111\u1EC3 d\xE2n \u0111i l\u1EA1i`;
   }
   return null;
 }
@@ -29200,8 +41361,19 @@ function buildingLock(sim2, kind) {
   if (!sim2.dev.freeBuild && !buildingOpen(sim2.researched, kind)) return `C\u1EA7n nghi\xEAn c\u1EE9u: ${techForBuilding(kind)?.name ?? "?"}`;
   return null;
 }
+function startLevel(sim2, kind) {
+  return Math.min(sim2.ruins[kind] ?? 1, maxLevel(kind, sim2.era));
+}
+function startCost(sim2, kind) {
+  const out = {};
+  for (let l = 1; l <= startLevel(sim2, kind); l++) {
+    const c = levelsOf(kind, sim2.era)[l - 1].cost;
+    for (const r of Object.keys(c)) out[r] = (out[r] ?? 0) + (c[r] ?? 0);
+  }
+  return out;
+}
 function canPlace(sim2, kind, x, y) {
-  return footprintError(sim2, kind, x, y) ?? buildingLock(sim2, kind) ?? (sim2.dev.freeBuild ? null : sim2.missing(levelsOf(kind, sim2.era)[0].cost));
+  return footprintError(sim2, kind, x, y) ?? buildingLock(sim2, kind) ?? (sim2.dev.freeBuild ? null : sim2.missing(startCost(sim2, kind)));
 }
 function canUpgrade(sim2, b) {
   if (!b.done) return "C\xF4ng tr\xECnh ch\u01B0a d\u1EF1ng xong";
@@ -29239,9 +41411,10 @@ function placeBuilding(sim2, kind, x, y) {
   if (!d.buildable) return { ok: false, reason: "Kh\xF4ng x\xE2y \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y" };
   const why = canPlace(sim2, kind, x, y);
   if (why) return { ok: false, reason: why };
-  const cost = levelsOf(kind, sim2.era)[0].cost;
+  const cost = startCost(sim2, kind), lvl = startLevel(sim2, kind);
   if (!sim2.dev.freeBuild) for (const r of Object.keys(cost)) sim2.stock[r] -= cost[r] ?? 0;
-  const b = addBuilding(sim2, kind, x, y, false);
+  const b = addBuilding(sim2, kind, x, y, false, lvl);
+  delete sim2.ruins[kind];
   if (sim2.dev.instantBuild) {
     b.progress = 1;
     b.done = true;
@@ -29249,7 +41422,7 @@ function placeBuilding(sim2, kind, x, y) {
     sim2.say(`${d.name} \u0111\xE3 d\u1EF1ng xong ngay (dev).`);
     return { ok: true, building: b };
   }
-  sim2.say(`\u0110\xE3 \u0111\u1EB7t n\u1EC1n ${d.name}. Giao vi\u1EC7c "Th\u1EE3 x\xE2y" \u0111\u1EC3 d\u1EF1ng.`);
+  sim2.say(`\u0110\xE3 \u0111\u1EB7t n\u1EC1n ${d.name}${lvl > 1 ? ` (d\u1EF1ng l\u1EA1i \u1EDF c\u1EA5p ${lvl}, kh\xF4ng ph\u1EA3i n\xE2ng t\u1EEB c\u1EA5p 1)` : ""}. Giao vi\u1EC7c "Th\u1EE3 x\xE2y" \u0111\u1EC3 d\u1EF1ng.`);
   return { ok: true, building: b };
 }
 function invested(sim2, b) {
@@ -29315,11 +41488,20 @@ function setOcc(sim2, b, val) {
   for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim2.world.occ[(b.y + j) * sim2.world.size + b.x + i] = val;
 }
 function canDemolish(sim2, b) {
-  if (!BUILDINGS[b.kind].buildable) return "Kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
-  return BUILDINGS[b.kind].perFire ? null : "C\xF4ng tr\xECnh ch\u1EC9 c\xF3 m\u1ED9t c\xE1i n\xEAn kh\xF4ng ph\xE1 b\u1ECF \u0111\u01B0\u1EE3c";
+  return BUILDINGS[b.kind].buildable ? null : "Kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
 }
 function destroyBuilding(sim2, b) {
+  if (BUILDINGS[b.kind].buildable && b.done && !WALL_KINDS.has(b.kind)) sim2.ruins[b.kind] = Math.max(sim2.ruins[b.kind] ?? 1, b.level);
+  const archers = b.kind === "tower" ? sim2.garrison(b) : [];
   evict(sim2, b);
+  for (const v of archers) {
+    v.fight.mode = "guard";
+    v.fight.anchor = { x: b.x + 1, y: b.y + 2 };
+    v.stance = "aggressive";
+    v.nightOwl = true;
+    v.phase = "idle";
+  }
+  if (archers.length) sim2.say(`Ch\xF2i canh \u0111\u1ED5: ${archers.length} cung th\u1EE7 ra \u0111\xE1nh.`);
   setOcc(sim2, b, 0);
   sim2.buildings.splice(sim2.buildings.indexOf(b), 1);
   sim2.fogDirty = true;
@@ -29343,6 +41525,7 @@ function demolishBuilding(sim2, id) {
 }
 function canMove(sim2, b, x, y) {
   if (!BUILDINGS[b.kind].buildable) return "Kh\xF4ng d\u1EDDi \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
+  if (sim2.attackReason()) return "Kh\xF4ng d\u1EDDi \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh khi l\xE0ng \u0111ang b\u1ECB t\u1EA5n c\xF4ng";
   if (x === b.x && y === b.y) return "V\u1EABn \u1EDF ch\u1ED7 c\u0169";
   return footprintError(sim2, b.kind, x, y, b) ?? sim2.missing(moveFee(sim2, b));
 }
@@ -29373,94 +41556,968 @@ function capacity(sim2, _res) {
 }
 function popCap(sim2) {
   const f = sim2.campfire();
-  return POP_BY_FIRE[Math.min(POP_BY_FIRE.length, f?.level ?? 1) - 1];
+  return POP_BY_FIRE[Math.min(POP_BY_FIRE.length, f?.level ?? 1) - 1] + sim2.bedsIn("house");
 }
 function crewSpeed(sim2) {
-  const h2 = sim2.building("builder");
-  return h2 ? levelDef(h2).craftSpeed : 1;
+  const h3 = sim2.building("builder");
+  return h3 ? levelDef(h3).craftSpeed : 1;
 }
 
-// src/sim/quests.ts
-var QUESTS = quests_default.quests;
-var CHAPTERS = quests_default.chapters;
-function measure(sim2, d, ui) {
-  const yes = (b) => [b ? 1 : 0, 1];
-  switch (d.type) {
-    case "buildBuilding":
-      return [sim2.buildings.filter((b) => b.kind === d.kind && b.done).length, d.count];
-    case "upgradeBuilding":
-      return yes(sim2.buildings.some((b) => b.kind === d.kind && b.done && b.level >= d.level));
-    case "upgradeFire":
-      return yes(fireLevel(sim2) >= d.level);
-    case "fireReady":
-      return yes(fireUpgradeBlock(sim2, d.level) === null);
-    case "researchTech":
-      return yes(sim2.researched.has(d.id));
-    case "population":
-      return [sim2.villagers.length, d.count];
-    case "stock":
-      return [Math.floor(sim2.stock[d.res]), d.count];
-    case "hasRole":
-      return [sim2.villagers.filter((v) => roleOf(v) === d.role).length, d.count];
-    case "jobCount":
-      return [sim2.villagers.filter((v) => v.job === d.job).length, d.count];
-    case "staffIn":
-      return [sim2.buildings.filter((b) => b.kind === d.kind).reduce((n, b) => n + b.staff.length, 0), d.count];
-    case "haveTool":
-      return [sim2.toolCount(d.kind, d.tier), d.count];
-    case "torches":
-      return [sim2.torchCount(), d.count];
-    case "createSquad":
-      return [sim2.squads.length, d.count];
-    case "daytime":
-      return yes(sim2.day >= d.day && sim2.part === "day");
-    case "speed":
-      return yes(sim2.speed >= d.atLeast);
-    case "selectBuilding":
-      return yes(ui.selected === d.kind || ui.panel === d.kind);
-    case "openBuilding":
-      return yes(ui.panel === d.kind);
-    case "inspectNode":
-      return yes(ui.inspecting === "node");
-    case "inspectUnit":
-      return yes(ui.inspecting === "unit");
-    case "inspectAnimal":
-      return yes(ui.inspecting === "animal");
-    case "squadSize":
-      return [Math.max(0, ...sim2.squads.map((q) => q.ids.length)), d.count];
-    case "squadFormation":
-      return yes(sim2.squads.some((q) => q.formation === d.id));
-    case "equipped":
-      return [sim2.villagers.filter((v) => v.team === "player" && v.job === "fight" && (d.slot === "weapon" ? v.gear.w : v.gear.a) !== null).length, d.count];
-    case "scoutSent":
-      return yes(sim2.scouts.length > 0 || sim2.maps.length > 0);
-    case "hasMap":
-      return yes(sim2.maps.some((m) => m.level >= d.level));
-    case "planDefense":
-      return yes(sim2.plans.some((pl) => pl.kind === "defense"));
-    case "planArrow":
-      return yes(sim2.plans.some((pl) => pl.kind === "attack" && pl.missions.some((m) => m.path.length > 0)));
-    case "planRunning":
-      return yes(sim2.plans.some((pl) => pl.kind === "attack" && (pl.status === "running" || pl.status === "done")));
-    case "planDone":
-      return yes(sim2.plans.some((pl) => pl.status === "done" && (!d.result || pl.result === d.result)));
+// src/sim/model.ts
+var NAMES_M = ["Bo", "R\xF4", "Gia", "Mun", "L\xF4", "T\xF9", "\u0110a"];
+var NAMES_F = ["Tia", "Noa", "Ma", "Pa", "K\xEA", "Ly", "Sa"];
+var HAIR = ["#4a2e1a", "#2b1b10", "#6b3f1d", "#c98a3a", "#7a5a3a"];
+var SKIN = ["#d9a371", "#e8c4a0", "#c58a5c", "#b87850"];
+var NODE_JOB = { tree: "wood", rock: "stone", bush: "food" };
+var XP_MULT = [0, 1, 1.5, 2];
+var REACH = { tree: 0.55, rock: 0.62, bush: 0.5 };
+var LEFT = 1;
+var RIGHT = 2;
+
+// src/sim/labor.ts
+function workRate(sim2, v, job) {
+  return workFactor(sim2, v, job);
+}
+function outdoorFactor(sim2, job) {
+  return OUTDOOR_JOBS.includes(job) ? WEATHER[sim2.weather].work * SEASON_DEF[sim2.season].work : 1;
+}
+function workFactor(sim2, v, job, field = false) {
+  const season = job === "food" ? SEASON_DEF[sim2.season][field ? "farm" : "gather"] : 1;
+  const tier = TOOL_OF_JOB[job] ? sim2.toolTier(v, job) : -1;
+  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier] * (1 + toolBonus(sim2, v, job, "tspd") / 100);
+  return workSpeed(sim2, v) * (1 + 0.2 * v.skill[job].level) * tool * season * outdoorFactor(sim2, job) * sim2.restFactor(v);
+}
+function gainXp(sim2, v, job, dt) {
+  const s = v.skill[job];
+  if (s.level >= MAX_LEVEL) return;
+  s.xp += dt * PACE.work * XP_MULT[v.potential[job]];
+  if (s.xp >= XP_LEVELS[s.level]) {
+    s.level++;
+    sim2.say(`${v.name} l\xEAn c\u1EA5p ${s.level} ngh\u1EC1 ${JOB_NAME[job].toLowerCase()}.`);
   }
 }
-function questViews(sim2, ui) {
-  for (const q of QUESTS) if (!sim2.questSeen.has(q.id) && q.after.every((a) => sim2.questSeen.has(a))) {
-    const [have, need] = measure(sim2, q.done, ui);
-    if (have >= need) sim2.questSeen.add(q.id);
+function wear(sim2, v, job, dt) {
+  const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
+  if (!k || !t || t.dur <= 0) return;
+  t.dur -= dt * PACE.work / (1 + toolBonus(sim2, v, job, "tdur") / 100);
+  if (t.dur <= 0) {
+    v.tools[k] = null;
+    sim2.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng, v\u1EE9t b\u1ECF.`);
   }
-  return QUESTS.map((quest) => {
-    const done = sim2.questSeen.has(quest.id), open = !done && quest.after.every((a) => sim2.questSeen.has(a));
-    let progress = "";
-    if (open) {
-      const d = quest.done, [have, need] = measure(sim2, d, ui);
-      if (d.type === "fireReady" || d.type === "upgradeFire") progress = fireUpgradeBlock(sim2, d.level - 1) ?? "";
-      else if (need > 1) progress = `${Math.min(have, need)}/${need}`;
+}
+function leaveNode(sim2, v) {
+  if ((v.phase === "goNode" || v.phase === "work") && v.target >= 0) {
+    const n = sim2.world.nodes.get(v.target);
+    if (n) {
+      if (n.workers > 0) n.workers--;
+      n.sides &= ~v.slot;
     }
-    return { quest, done, open, progress };
+  }
+  v.slot = 0;
+}
+function face(sim2, v, tx, ty) {
+  const dx = tx + 0.5 - v.x, dy = ty + 0.5 - v.y;
+  v.facing = Math.abs(dx) > Math.abs(dy) * 1.1 ? dx > 0 ? "right" : "left" : dy > 0 ? "front" : "back";
+}
+function wait(sim2, v, secs) {
+  v.phase = "wait";
+  v.timer = secs;
+}
+function faceX(sim2, v, cx) {
+  v.facing = cx >= v.x ? "right" : "left";
+}
+function nodeSlide(sim2, v, nx, ny, kind) {
+  const left = v.slot === LEFT;
+  return { x: nx + 0.5 + (left ? -REACH[kind] : REACH[kind]), y: ny + 0.875, face: left ? "right" : "left" };
+}
+function edgeSlide(sim2, v, b) {
+  const d = BUILDINGS[b.kind], left = v.x < b.x + d.w / 2;
+  return { x: left ? b.x - 0.3 : b.x + d.w + 0.3, y: b.y + d.h - 0.3 - v.id % 2 * 0.5, face: left ? "right" : "left" };
+}
+function faceBuilding(sim2, v, b) {
+  faceX(sim2, v, b.x + BUILDINGS[b.kind].w / 2);
+}
+function think(sim2, v, dt) {
+  const N = sim2.world.size;
+  switch (v.phase) {
+    case "move":
+      v.phase = "idle";
+      sim2.nextOrder(v);
+      return;
+    case "idle":
+      if (v.queue.length && sim2.nextOrder(v)) return;
+      if (v.job !== "idle") plan(sim2, v);
+      return;
+    case "wait":
+      v.timer -= dt;
+      if (v.timer <= 0) v.phase = "idle";
+      return;
+    case "goNode": {
+      const n = sim2.world.nodes.get(v.target);
+      if (!n || n.amount <= 0) {
+        leaveNode(sim2, v);
+        v.phase = "idle";
+        return;
+      }
+      const nx = v.target % N, ny = v.target / N | 0;
+      v.phase = "work";
+      v.progress = 0;
+      const sl = nodeSlide(sim2, v, nx, ny, n.kind);
+      if (Math.hypot(sl.x - v.x, sl.y - v.y) < 0.04) v.facing = sl.face;
+      else v.slide = sl;
+      return;
+    }
+    case "work":
+      doWork(sim2, v, dt);
+      return;
+    case "goStore":
+      unload(sim2, v);
+      return;
+    case "goEquip":
+      sim2.equip(v);
+      return;
+    case "goSite": {
+      const b = sim2.getBuilding(v.target);
+      if (!b || !needsWork(b)) {
+        v.phase = "idle";
+        return;
+      }
+      v.phase = "build";
+      v.slide = edgeSlide(sim2, v, b);
+      return;
+    }
+    case "build": {
+      const b = sim2.getBuilding(v.target);
+      if (!b || !needsWork(b)) {
+        v.phase = "idle";
+        return;
+      }
+      const target = b.upgrading ? b.level + 1 : b.level;
+      b.progress += dt * PACE.work / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1)) * workFactor(sim2, v, "build") * sim2.crewSpeed();
+      gainXp(sim2, v, "build", dt);
+      wear(sim2, v, "build", dt);
+      if (b.progress >= 1) {
+        b.progress = 1;
+        if (b.upgrading) {
+          b.level++;
+          b.upgrading = false;
+          b.hp = maxHp(b);
+          sim2.say(`${BUILDINGS[b.kind].name} \u0111\xE3 l\xEAn c\u1EA5p ${b.level} (${levelDef(b).name.toLowerCase()}).`);
+        } else {
+          b.done = true;
+          b.rebuild = false;
+          sim2.fogDirty = true;
+          if (b.kind === "builder") sim2.trimCrew();
+          sim2.say(`${BUILDINGS[b.kind].name} \u0111\xE3 d\u1EF1ng xong.`);
+          if (RESEARCH.enabled && b.kind === "lab" && sim2.researched.size === 0) sim2.say("M\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, \u0111\u01B0a m\u1ED9t d\xE2n v\xE0o l\xE0m vi\u1EC7c, r\u1ED3i nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD \u0111\u1EA7u ti\xEAn.");
+        }
+        v.phase = "idle";
+      }
+      return;
+    }
+    case "goStaff":
+      sim2.enterBuilding(v);
+      return;
+    case "goOrder":
+      sim2.errand(v);
+      return;
+    case "inside":
+      return;
+    case "goHome": {
+      stash(sim2, v);
+      const bed = v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
+      if (bed && bed.done) sim2.sleepIn(v, bed);
+      else {
+        v.phase = "sleep";
+        v.facing = "front";
+      }
+      return;
+    }
+    case "sleep":
+      return;
+  }
+}
+function doWork(sim2, v, dt) {
+  const job = v.job, def = JOBS[job], n = sim2.world.nodes.get(v.target);
+  if (!def.res || !n || n.amount <= 0) {
+    leaveNode(sim2, v);
+    v.phase = "idle";
+    return;
+  }
+  v.progress += dt * workFactor(sim2, v, job) / def.baseTime;
+  gainXp(sim2, v, job, dt);
+  const tierNow = sim2.toolTier(v, job);
+  wear(sim2, v, job, dt);
+  if (v.progress < 1) return;
+  v.progress -= 1;
+  const res = def.res, acc = v.frac + TIER_YIELD[tierNow] * (1 + toolBonus(sim2, v, job, "tyield") / 100), whole = Math.floor(acc);
+  const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
+  const take = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have));
+  v.frac = acc - whole;
+  n.amount -= take;
+  v.carry = { res, amount: have + take };
+  if (res === "food" && take > 0) {
+    sim2.coinFrac += 0.06 * take;
+    if (sim2.coinFrac >= 1) {
+      sim2.coinFrac -= 1;
+      if (sim2.stock.coin < sim2.capacity()) {
+        sim2.stock.coin++;
+        if (!sim2.sawCoin) {
+          sim2.sawCoin = true;
+          sim2.say(`${v.name} nh\u1EB7t \u0111\u01B0\u1EE3c m\u1ED9t ${RES_NAME.coin.toLowerCase()}: d\xE2n l\xE0ng d\xF9ng n\xF3 \u0111\u1EC3 trao \u0111\u1ED5i.`);
+        }
+      }
+    }
+  }
+  if (n.amount <= 0) {
+    const idx = v.target, N = sim2.world.size;
+    leaveNode(sim2, v);
+    sim2.world.depleted(idx, (x, y) => sim2.fog.state[y * N + x] > 0 && ![...sim2.villagers, ...sim2.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim2.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y));
+    v.phase = "idle";
+    if (n.kind === "tree") sim2.say("M\u1ED9t c\xE2y \u0111\xE3 \u0111\u01B0\u1EE3c \u0111\u1ED1n xong.");
+  } else if (v.carry.amount >= CARRY_CAP[res] || sim2.needTool(v, job)) {
+    leaveNode(sim2, v);
+    v.phase = "idle";
+  }
+}
+function tickFarms(sim2, dt) {
+  for (const b of sim2.buildings) {
+    if (b.kind !== "field" || !b.done) continue;
+    for (const id of b.staff) {
+      const v = sim2.byId.get(id);
+      if (!v || v.phase !== "inside" || v.job !== "food" || !sim2.hasRoom("food")) continue;
+      v.progress += dt * workFactor(sim2, v, "food", true) * levelDef(b).craftSpeed / FARM_TIME;
+      gainXp(sim2, v, "food", dt);
+      wear(sim2, v, "food", dt);
+      if (v.progress < 1) continue;
+      v.progress -= 1;
+      const acc = v.frac + TIER_YIELD[sim2.toolTier(v, "food")] * (1 + toolBonus(sim2, v, "food", "tyield") / 100), whole = Math.floor(acc);
+      v.frac = acc - whole;
+      sim2.noteYield("farm", sim2.deposit("food", whole));
+    }
+  }
+}
+function plan(sim2, v) {
+  if (v.job === "hunt" || v.job === "fight" || v.job === "scout") {
+    wait(sim2, v, 1);
+    return;
+  }
+  if (v.job === "build") {
+    if (!sim2.planTool(v, "build")) planBuild(sim2, v);
+    return;
+  }
+  if (isStaffJob(v.job) || v.job === "food" && v.post >= 0) {
+    sim2.planStaff(v);
+    return;
+  }
+  const def = JOBS[v.job], res = def.res;
+  if (v.carry && (v.carry.res !== res || v.carry.amount >= CARRY_CAP[v.carry.res])) {
+    planDeliver(sim2, v);
+    return;
+  }
+  if (!sim2.hasRoom(res)) {
+    if (v.carry) {
+      planDeliver(sim2, v);
+      return;
+    }
+    if (sim2.time - sim2.lastFullWarn > 30) {
+      sim2.lastFullWarn = sim2.time;
+      sim2.say(`Kho \u0111\xE3 \u0111\u1EA7y ${RES_NAME[res].toLowerCase()}, h\xE3y n\xE2ng c\u1EA5p Kho.`);
+    }
+    wait(sim2, v, 3);
+    return;
+  }
+  if (sim2.planTool(v, v.job)) return;
+  if (findNode(sim2, v, def.node)) return;
+  if (v.carry) {
+    planDeliver(sim2, v);
+    return;
+  }
+  wait(sim2, v, 2);
+}
+function findNode(sim2, v, kind) {
+  const N = sim2.world.size, vx = Math.floor(v.x), vy = Math.floor(v.y);
+  const ok = (idx) => {
+    const n = sim2.world.nodes.get(idx);
+    return !!n && n.kind === kind && n.amount > 0 && n.workers < 2 && n.sides !== 3 && sim2.fog.state[idx] > 0 && (v.bad.get(idx) ?? 0) <= sim2.time;
+  };
+  const cands = [];
+  if (v.prefer >= 0 && ok(v.prefer)) cands.push([-1, v.prefer]);
+  for (const [idx, n] of sim2.world.nodes) {
+    if (n.kind !== kind || n.amount <= 0 || n.workers >= 2 || n.sides === 3 || idx === v.prefer || !ok(idx)) continue;
+    const d = (idx % N - vx) ** 2 + ((idx / N | 0) - vy) ** 2;
+    if (d <= 70 * 70) cands.push([d, idx]);
+  }
+  cands.sort((a, b) => a[0] - b[0]);
+  for (let c = 0; c < Math.min(4, cands.length); c++) {
+    const idx = cands[c][1], nx = idx % N, ny = idx / N | 0, node = sim2.world.nodes.get(idx);
+    const opts = [];
+    for (const side of [LEFT, RIGHT]) {
+      if (node.sides & side) continue;
+      const sx = side === LEFT ? -1 : 1;
+      const near2 = [[sx, 0, 0], [sx, 1, 0.6], [sx, -1, 1.6], [0, 1, 1.2], [0, -1, 2.4]];
+      for (const [dx, dy, pen] of near2) if (!sim2.world.isBlocked(nx + dx, ny + dy)) opts.push({ t: [nx + dx, ny + dy], side, pen });
+    }
+    const cost = (o) => Math.hypot(o.t[0] + 0.5 - v.x, o.t[1] + 0.5 - v.y) + o.pen;
+    opts.sort((a, b) => cost(a) - cost(b));
+    const k = sim2.routeTo(v, opts.map((o) => o.t), 4);
+    if (k >= 0) {
+      node.workers++;
+      node.sides |= opts[k].side;
+      v.slot = opts[k].side;
+      v.target = idx;
+      v.phase = "goNode";
+      v.prefer = -1;
+      return true;
+    }
+    v.bad.set(idx, sim2.time + 30);
+  }
+  if (v.prefer >= 0) {
+    if (sim2.world.nodes.has(v.prefer) && (v.bad.get(v.prefer) ?? 0) > sim2.time) sim2.say(`${v.name} kh\xF4ng t\xECm \u0111\u01B0\u1EE3c \u0111\u01B0\u1EDDng t\u1EDBi ngu\u1ED3n \u0111\xE3 ch\u1ECDn.`);
+    v.prefer = -1;
+  }
+  return false;
+}
+function planDeliver(sim2, v) {
+  const done = sim2.buildings.filter((b) => b.done && holdsGoods(b));
+  done.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
+  for (const b of done.slice(0, 2)) {
+    const d = BUILDINGS[b.kind];
+    if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
+      v.target = b.id;
+      v.phase = "goStore";
+      return;
+    }
+  }
+  wait(sim2, v, 2);
+}
+function stash(sim2, v) {
+  const c = v.carry;
+  if (!c) return;
+  const moved = sim2.deposit(c.res, c.amount);
+  c.amount -= moved;
+  sim2.noteYield(v.job, moved);
+  if (c.amount <= 0) v.carry = null;
+}
+function unload(sim2, v) {
+  const c = v.carry, st = sim2.getBuilding(v.target);
+  if (st) faceBuilding(sim2, v, st);
+  if (!c) {
+    v.phase = "idle";
+    return;
+  }
+  const moved = sim2.deposit(c.res, c.amount);
+  c.amount -= moved;
+  sim2.noteYield(v.job, moved);
+  if (c.amount <= 0) {
+    v.carry = null;
+    v.phase = "idle";
+    return;
+  }
+  if (sim2.time - sim2.lastFullWarn > 30) {
+    sim2.lastFullWarn = sim2.time;
+    sim2.say(`Kho \u0111\xE3 \u0111\u1EA7y ${RES_NAME[c.res].toLowerCase()}, h\xE3y x\xE2y th\xEAm Kho.`);
+  }
+  wait(sim2, v, 3);
+}
+function planBuild(sim2, v) {
+  const onSite = (b) => sim2.villagers.filter((o) => o !== v && o.target === b.id && (o.phase === "goSite" || o.phase === "build")).length;
+  const house = !!sim2.building("builder");
+  let sites = sim2.buildings.filter((b) => needsWork(b) && (house || b.kind === "builder") && onSite(b) < 3);
+  sites.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) || Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
+  sites = sites.slice(0, 2);
+  for (const b of sites) {
+    const d = BUILDINGS[b.kind];
+    if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
+      v.target = b.id;
+      v.phase = "goSite";
+      v.prefer = -1;
+      return;
+    }
+  }
+  wait(sim2, v, 2);
+}
+
+// src/data/rest.json
+var rest_default = {
+  _note: "Energy (s\u1EE9c) of a villager, 0-100. Costs are percentage points. A day's heavy work costs dayCost over the waking hours, a night shift nightCost over the night; jobWeight scales it per job. Sleep gives back sleepNight points over one night of sleep (half that by day) in a Nh\xE0 d\xE2n; sleepAt scales it by where they lie down: by the campfire (no bed free) it is slower, in the Nh\xE0 d\xE2n or the L\u1EC1u chi\u1EBFn binh (soldiers) it is full, and a higher level of the house multiplies it again (its craftSpeed). Below tired a villager must sleep and cannot be woken until wakeAfterTired (wakeAfterCollapse if they fell asleep below collapse). Strain builds up from night work and from collapsing, and wears off with sleep; it lowers the energy ceiling and slows recovery, so nobody can be worked night after night. Night work needs a torch and goes at nightEfficiency.",
+  tired: 20,
+  collapse: 10,
+  wakeAfterTired: 50,
+  wakeAfterCollapse: 60,
+  dayCost: 42,
+  nightCost: 30,
+  sleepNight: 60,
+  sleepDay: 30,
+  sleepAt: { campfire: 0.6, house: 1, infantry: 1.6, cavalry: 1.6, archery: 1.6 },
+  nightEfficiency: 0.7,
+  tiredEfficiency: 0.7,
+  tiredBelow: 40,
+  jobWeight: { wood: 1, stone: 1, build: 0.95, fight: 0.8, hunt: 0.9, food: 0.7, craft: 0.6, research: 0.5, idle: 0.15 },
+  strain: { nightWork: 0.1, collapse: 15, nightSleep: 0.12, daySleep: 0.03, capLoss: 0.4, recoveryLoss: 67e-4 }
+};
+
+// src/sim/idle.ts
+var isFree = (v) => v.job === "idle" && !roleOf(v);
+var freeFolk = (sim2) => sim2.villagers.filter((v) => isFree(v) && v.down <= 0 && (v.inside === null || sim2.hides(v) || v.phase === "sleep" && !sim2.sleepLocked(v)));
+function farFolk(sim2, reach = 20) {
+  const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
+  return sim2.villagers.filter((v) => isFree(v) && v.down <= 0 && v.inside === null && v.phase !== "sleep" && v.phase !== "goHome" && Math.hypot(v.x - fx, v.y - fy) > reach);
+}
+function homeKind(v) {
+  if (v.job === "build") return "builder";
+  const role = roleOf(v);
+  return role ? ROLES[role].building : "house";
+}
+
+// src/sim/scouting.ts
+var STEPS = [
+  { level: 1, label: "X\xE1c \u0111\u1ECBnh v\u1ECB tr\xED ng\xF4i l\xE0ng" },
+  { level: 1, label: "\u0110\u1EBFm s\u1ED1 d\xE2n" },
+  { level: 1, label: "T\xECm h\u01B0\u1EDBng v\xE0o l\xE0ng" },
+  { level: 2, label: "V\u1EBD h\xE0ng r\xE0o v\xE0 c\u1ED5ng" },
+  { level: 2, label: "V\u1EBD ch\xF2i canh" },
+  { level: 2, label: "Ghi l\u1EA1i ng\u01B0\u1EDDi \u0111i l\u1EA1i trong l\xE0ng" },
+  { level: 3, label: "Ph\xE2n lo\u1EA1i l\xEDnh: b\u1ED9 binh, cung th\u1EE7, k\u1EF5 binh" },
+  { level: 3, label: "T\xECm kho l\u01B0\u01A1ng" },
+  { level: 3, label: "Nh\u1EADn ra th\u1EE7 l\u0129nh" }
+];
+var mapAccuracy = (sim2, m) => Math.max(0, 1 - COMMAND.mapDecayPerDay * (sim2.time - m.at) / DAY_LENGTH);
+function mapLevel(sim2, tribe) {
+  let best = 0;
+  for (const m of sim2.maps) if (m.tribe === tribe && mapAccuracy(sim2, m) >= 0.4) best = Math.max(best, m.gaps > 0 ? Math.max(1, m.level - 1) : m.level);
+  return best;
+}
+var warriorsOf = (sim2, tribe) => {
+  const t = tribeOf(sim2, tribe);
+  return t ? t.unitIds.filter((u) => sim2.get(u)?.ai?.role !== "civ").length : 0;
+};
+var SIGHT2 = 14;
+var HOME = 7;
+var COMPASS = ["\u0110\xF4ng", "\u0110\xF4ng Nam", "Nam", "T\xE2y Nam", "T\xE2y", "T\xE2y B\u1EAFc", "B\u1EAFc", "\u0110\xF4ng B\u1EAFc"];
+var isFound = (sim2, tribe) => sim2.dev.freeBuild || sim2.sightings.some((s) => s.tribe === tribe && s.reported);
+function whereIs(sim2, tribe) {
+  const t = tribeOf(sim2, tribe);
+  if (!t) return null;
+  const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
+  const dx = t.camp.x - fx, dy = t.camp.y - fy;
+  return { dist: Math.round(Math.hypot(dx, dy)), dir: COMPASS[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8] };
+}
+function tickSightings(sim2, dt) {
+  if (Math.floor(sim2.time) === Math.floor(sim2.time - dt)) return;
+  const fire = sim2.campfire();
+  for (let i = sim2.sightings.length - 1; i >= 0; i--) {
+    const s = sim2.sightings[i];
+    if (s.reported) continue;
+    const v = sim2.byId.get(s.by);
+    if (!v || v.team !== "player" || v.health <= 0) {
+      sim2.sightings.splice(i, 1);
+      continue;
+    }
+    if (v.inside !== null || !fire || Math.hypot(v.x - fire.x, v.y - fire.y) < HOME) {
+      s.reported = true;
+      const w = whereIs(sim2, s.tribe);
+      if (w) sim2.say(`${v.name} v\u1EC1 b\xE1o \u0111\xE3 th\u1EA5y m\u1ED9t ng\xF4i l\xE0ng, c\xE1ch \u0111\xE2y kho\u1EA3ng ${w.dist} \xF4 v\u1EC1 ph\xEDa ${w.dir}.`);
+    }
+  }
+  for (const t of sim2.tribes) {
+    if (t.state === "destroyed" || sim2.sightings.some((s) => s.tribe === t.id)) continue;
+    const finder = sim2.villagers.find((v) => v.health > 0 && v.inside === null && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < SIGHT2);
+    if (finder) sim2.sightings.push({ tribe: t.id, by: finder.id, at: sim2.time, reported: false });
+  }
+}
+function scoutLevel(sim2) {
+  if (sim2.dev.freeBuild) return 3;
+  return sim2.buildings.reduce((n, b) => b.kind === "scouttent" && b.done ? Math.max(n, Math.min(3, b.level)) : n, 0);
+}
+function scoutLimit(sim2) {
+  return sim2.dev.freeBuild ? 8 : sim2.buildings.reduce((n, b) => n + (b.kind === "scouttent" && b.done ? levelDef(b).slots : 0), 0);
+}
+var onTrip = (sim2, v) => sim2.scouts.some((m) => m.ids.includes(v.id));
+var canScout = (sim2, v) => v.job === "scout" && v.health > 0 && v.inside === null && !onTrip(sim2, v);
+var scoutRoster = (sim2) => sim2.villagers.filter((v) => v.job === "scout");
+var canBeScout = (v) => v.job === "fight" && v.arm === "cavalry";
+function enlistScouts(sim2, ids) {
+  const lock = sim2.warLock();
+  if (lock) return lock;
+  const limit = scoutLimit(sim2);
+  if (!limit) return "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
+  const pick = sim2.mine(ids).filter(canBeScout), room = limit - scoutRoster(sim2).length;
+  if (!pick.length) return "Trinh s\xE1t \u0111\u01B0\u1EE3c tuy\u1EC3n t\u1EEB l\xEDnh k\u1EF5: h\xE3y ch\u1ECDn l\xEDnh k\u1EF5 th\xFA c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA";
+  if (room <= 0) return `Tr\u1EA1i trinh s\xE1t \u0111\xE3 \u0111\u1EE7 ${limit} trinh s\xE1t: n\xE2ng c\u1EA5p l\u1EC1u \u0111\u1EC3 ch\u1EE9a th\xEAm`;
+  for (const v of pick.slice(0, room)) {
+    sim2.resetTask(v);
+    sim2.clearCombat(v);
+    v.job = "scout";
+    v.prefer = -1;
+    v.post = -1;
+  }
+  return pick.length > room ? `L\u1EC1u ch\u1EC9 c\xF2n ch\u1ED7 cho ${room} trinh s\xE1t` : null;
+}
+function dismissScouts(sim2, ids) {
+  const lock = sim2.warLock();
+  if (lock) return lock;
+  let n = 0, away = 0;
+  for (const v of ids.map((id) => sim2.byId.get(id)).filter((o) => !!o && o.team === "player" && o.down <= 0)) {
+    if (v.job !== "scout") continue;
+    if (onTrip(sim2, v)) {
+      away++;
+      continue;
+    }
+    sim2.resetTask(v);
+    sim2.clearCombat(v);
+    v.post = -1;
+    n++;
+    if (v.arm === "cavalry" && sim2.roleCount("cavalry") < sim2.roleCapacity("cavalry")) v.job = "fight";
+    else v.job = "idle";
+  }
+  return n ? null : away ? "\u0110ang \u0111i trinh s\xE1t: \u0111\u1EE3i h\u1ECD v\u1EC1" : "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 cho ngh\u1EC9";
+}
+var scoutSkill = (v) => {
+  const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta) / 6;
+  return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
+};
+function gearOf(v, table) {
+  return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.mount || v.arm === "cavalry" ? table.mount : 0);
+}
+var stealthOf = (v) => 0.6 * v.stats.agi + 0.4 * v.stats.sta;
+var scoutsNeeded = (sim2, tribe, level) => Math.min(8, level + 1 + Math.floor(warriorsOf(sim2, tribe) / 8));
+function drawChance(skills, need) {
+  if (skills.length < 2) return 0;
+  return Math.min(0.95, skills.reduce((a, b) => a + b, 0) / need);
+}
+var surveyTime = (level, scouts, int = 6) => 0.2 * level * DAY_LENGTH / ((1 + 0.35 * (Math.max(1, scouts) - 1)) * Math.max(0.5, 1 + SIEGE.scout.surveyPerInt * (int - 6)));
+function planScout(sim2, ids, tribe) {
+  const level = scoutLevel(sim2), limit = scoutLimit(sim2), scouts = sim2.mine(ids).filter((v) => canScout(sim2, v));
+  const need = scoutsNeeded(sim2, tribe, Math.max(1, level)), w = whereIs(sim2, tribe);
+  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * sim2.mountSpeed(v) * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
+  const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.agi, 0) / scouts.length : 6);
+  let error = null;
+  if (!sim2.dev.freeBuild && !isFound(sim2, tribe)) error = "Ch\u01B0a ai t\xECm th\u1EA5y l\xE0ng n\xE0y";
+  else if (!tribeOf(sim2, tribe)) error = "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
+  else if (!limit) error = "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
+  else if (sim2.scouts.some((m) => m.tribe === tribe && m.phase === "back")) error = "Trinh s\xE1t \u0111ang tr\xEAn \u0111\u01B0\u1EDDng v\u1EC1: \u0111\u1EE3i h\u1ECD v\u1EC1 r\u1ED3i c\u1EED ti\u1EBFp";
+  else if (!scouts.length) error = "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 c\u1EED \u0111i (tuy\u1EC3n \u1EDF Tr\u1EA1i trinh s\xE1t)";
+  else if (scouts.length > limit - (sim2.scouts.find((m) => m.tribe === tribe)?.ids.length ?? 0)) error = `Tr\u1EA1i trinh s\xE1t ch\u1EC9 cho \u0111i ${limit} ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn (\u0111ang c\xF3 ${sim2.scouts.find((m) => m.tribe === tribe)?.ids.length ?? 0} ng\u01B0\u1EDDi \u1EDF \u0111\xF3)`;
+  return { level, need, count: scouts.length, limit, chance: drawChance(scouts.map(scoutSkill), need), walk, survey, total: 2 * walk + survey, error };
+}
+function startScout(sim2, ids, tribe) {
+  const plan2 = planScout(sim2, ids, tribe), t = tribeOf(sim2, tribe);
+  if (plan2.error || !t) return plan2.error ?? "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
+  const scouts = sim2.mine(ids).filter((v) => canScout(sim2, v));
+  const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
+  const dx = fx - t.camp.x, dy = fy - t.camp.y, len = Math.max(1, Math.hypot(dx, dy)), reach = Math.min(len, 15);
+  const spotX = t.camp.x + dx / len * reach, spotY = t.camp.y + dy / len * reach;
+  scouts.forEach((v, i) => {
+    sim2.resetTask(v);
+    sim2.clearCombat(v);
+    const spot = sim2.nearestFree(Math.floor(spotX + Math.cos(i * 2.4) * 2), Math.floor(spotY + Math.sin(i * 2.4) * 2), /* @__PURE__ */ new Set()) ?? [Math.floor(spotX), Math.floor(spotY)];
+    sim2.orderMove([v.id], spot[0], spot[1]);
   });
+  const going = sim2.scouts.find((m) => m.tribe === tribe);
+  if (going) {
+    going.ids.push(...scouts.map((v) => v.id));
+    going.sent = (going.sent ?? 0) + scouts.length;
+    sim2.say(`${scouts.length} trinh s\xE1t n\u1EEFa l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ${t.def.name} \u0111\u1EC3 v\u1EBD ti\u1EBFp b\u1EA3n \u0111\u1ED3 (\u0111\xE3 v\u1EBD ${Math.round((going.progress ?? 0) * 100)}%).`);
+    return null;
+  }
+  const level = Math.max(1, plan2.level), start = sim2.drafts[`${tribe}:${level}`] ?? 0;
+  sim2.scouts.push({ id: sim2.nextMission++, tribe, level, ids: scouts.map((v) => v.id), phase: "go", t: 0, need: plan2.need, survivors: scouts.length, sent: scouts.length, progress: start, rolled: [] });
+  sim2.say(`${scouts.length} trinh s\xE1t l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ${t.def.name} \u0111\u1EC3 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p ${Math.max(1, plan2.level)}: kho\u1EA3ng ${Math.round(plan2.chance * 100)}% v\u1EBD \u0111\u1EE7 chi ti\u1EBFt, c\u1EA3 chuy\u1EBFn m\u1EA5t ch\u1EEBng ${Math.max(1, Math.round(plan2.total / 60))} ph\xFAt.`);
+  return null;
+}
+function deathChance(sim2, m, v) {
+  const t = tribeOf(sim2, m.tribe), fire = sim2.campfire();
+  const power = warriorsOf(sim2, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
+  const day = sim2.weather === "clear" && !sim2.resting;
+  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim2.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 5e-3) - gearOf(v, SIEGE.scout.gearHide)));
+}
+var awayScout = (sim2, v) => v.job === "scout" && sim2.scouts.some((m) => m.ids.includes(v.id));
+function recallScouts(sim2, tribe) {
+  const m = sim2.scouts.find((x) => x.tribe === tribe);
+  if (!m || m.phase === "back") return "Kh\xF4ng c\xF3 trinh s\xE1t n\xE0o \u0111ang \u1EDF \u0111\xF3 \u0111\u1EC3 g\u1ECDi v\u1EC1";
+  m.recall = true;
+  if (m.phase === "go") sendHome(sim2, m);
+  return null;
+}
+function sendHome(sim2, m) {
+  m.phase = "back";
+  m.t = 0;
+  const fire = sim2.campfire();
+  for (const id of m.ids) if (sim2.byId.has(id) && fire) sim2.orderMove([id], Math.floor(fire.x + 1), Math.floor(fire.y + 3));
+}
+function scoutFlow(sim2, tribe) {
+  const m = sim2.scouts.find((x) => x.tribe === tribe), level = Math.max(1, m?.level ?? scoutLevel(sim2));
+  const finished = sim2.maps.some((x) => x.tribe === tribe && x.level >= level && !m), progress2 = m ? m.progress ?? 0 : finished ? 1 : sim2.drafts[`${tribe}:${level}`] ?? 0;
+  const survey = STEPS.filter((st) => st.level <= level), n = survey.length;
+  const arrived = !!m && m.phase !== "go" || progress2 > 0;
+  const steps = [
+    { label: "Trinh s\xE1t l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ng\xF4i l\xE0ng", done: !!m || progress2 > 0 || finished },
+    { label: "T\u1EDBi g\u1EA7n ng\xF4i l\xE0ng", done: arrived || finished },
+    ...survey.map((st, i) => ({ label: st.label, done: finished || progress2 >= (i + 1) / n - 1e-6 })),
+    { label: "Tr\u1EDF v\u1EC1 l\xE0ng, b\xE1o b\u1EA3n \u0111\u1ED3", done: finished }
+  ];
+  return { level, progress: progress2, steps, active: !!m };
+}
+function tickScouts(sim2, dt) {
+  tickSightings(sim2, dt);
+  for (let i = sim2.scouts.length - 1; i >= 0; i--) {
+    const m = sim2.scouts[i], t = tribeOf(sim2, m.tribe);
+    const alive = m.ids.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.team === "player" && v.health > 0);
+    m.ids = alive.map((v) => v.id);
+    if (!alive.length || !t) {
+      sim2.say(alive.length ? "Trinh s\xE1t b\u1ECB h\u1EE7y." : "M\u1EA5t h\u1EBFt trinh s\xE1t: b\u1EA3n \u0111\u1ED3 ch\u01B0a v\u1EC1, c\u1EED ng\u01B0\u1EDDi kh\xE1c \u0111i v\u1EBD ti\u1EBFp.");
+      sim2.scouts.splice(i, 1);
+      continue;
+    }
+    m.t += dt;
+    m.progress ??= 0;
+    m.rolled ??= [];
+    const fire = sim2.campfire();
+    if (m.phase !== "back") {
+      const arrived = alive.filter((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
+      for (const v of arrived) if (!m.rolled.includes(v.id)) {
+        m.rolled.push(v.id);
+        if (sim2.frnd() < deathChance(sim2, m, v)) sim2.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
+      }
+      const here = arrived.filter((v) => v.health > 0 && sim2.byId.has(v.id));
+      m.survivors = alive.filter((v) => v.health > 0 && sim2.byId.has(v.id)).length;
+      if (m.phase === "go" && here.length) {
+        m.phase = "watch";
+        m.t = 0;
+        if (m.level >= 2 && !m.seen) m.seen = seenNow(sim2, t);
+        sim2.say(`Trinh s\xE1t \u0111ang quan s\xE1t ${t.def.name}.`);
+      }
+      if (m.phase === "watch") {
+        if (here.length) m.progress = Math.min(1, m.progress + dt / surveyTime(m.level, here.length, here.reduce((a, v) => a + v.stats.agi, 0) / here.length));
+        if (m.progress >= 1 || m.recall) {
+          sim2.say(m.progress >= 1 ? `\u0110\xE3 v\u1EBD xong b\u1EA3n \u0111\u1ED3 ${t.def.name}: trinh s\xE1t quay v\u1EC1.` : `Trinh s\xE1t \u0111\u01B0\u1EE3c g\u1ECDi v\u1EC1 khi m\u1EDBi v\u1EBD ${Math.round(m.progress * 100)}%.`);
+          sendHome(sim2, m);
+        }
+      }
+    } else {
+      const home = !fire || alive.every((v) => Math.hypot(v.x - fire.x, v.y - fire.y) < 7);
+      if (home || m.t > 600) {
+        const key = `${m.tribe}:${m.level}`;
+        if ((m.progress ?? 0) >= 1) {
+          const skills = alive.map(scoutSkill), chance = drawChance(skills, m.need), full = sim2.frnd() < chance;
+          const gaps = full ? 0 : Math.max(1, Math.ceil(m.need - skills.reduce((a, b) => a + b, 0)));
+          const old = sim2.maps.findIndex((x) => x.tribe === m.tribe && x.level === m.level);
+          const map = { tribe: m.tribe, level: m.level, at: sim2.time, gaps, seen: m.seen };
+          if (old >= 0) sim2.maps[old] = map;
+          else sim2.maps.push(map);
+          delete sim2.drafts[key];
+          sim2.say(`Trinh s\xE1t v\u1EC1 (${alive.length}/${m.sent ?? alive.length} ng\u01B0\u1EDDi): b\u1EA3n \u0111\u1ED3 c\u1EA5p ${m.level} c\u1EE7a ${t.def.name}${full ? " \u0111\u1EA7y \u0111\u1EE7 chi ti\u1EBFt" : `, nh\u01B0ng c\xF2n h\u1EDF (thi\u1EBFu ${gaps} m\u1EA3nh, t\u1EC9 l\u1EC7 v\u1EBD \u0111\u1EE7 ch\u1EC9 ${Math.round(chance * 100)}%)`}.`);
+        } else {
+          sim2.drafts[key] = Math.max(sim2.drafts[key] ?? 0, m.progress ?? 0);
+          sim2.say(`Trinh s\xE1t v\u1EC1 (${alive.length}/${m.sent ?? alive.length} ng\u01B0\u1EDDi): m\u1EDBi v\u1EBD ${Math.round((m.progress ?? 0) * 100)}% b\u1EA3n \u0111\u1ED3 ${t.def.name}; c\u1EED ng\u01B0\u1EDDi \u0111i v\u1EBD ti\u1EBFp.`);
+        }
+        sim2.scouts.splice(i, 1);
+      }
+    }
+  }
+}
+var MARGIN = 24;
+var YARD = 7;
+var WORKS = {
+  fire: { level: 1, label: "\u0110\u1ED1ng l\u1EEDa" },
+  tower: { level: 2, label: "Ch\xF2i canh" },
+  fence: { level: 2, label: "H\xE0ng r\xE0o" },
+  gate: { level: 2, label: "C\u1ED5ng" },
+  pile: { level: 3, label: "Kho l\u01B0\u01A1ng" }
+};
+var spread = (id, salt) => {
+  const x = Math.sin(id * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+};
+function seenNow(sim2, t) {
+  const out = [];
+  for (const id of t.unitIds) {
+    const u = sim2.get(id);
+    if (!u || u.health <= 0) continue;
+    out.push({ x: Math.round(u.x * 10) / 10, y: Math.round(u.y * 10) / 10, arm: armOfWeapon(u.weapon), weapon: u.weapon ?? null, civ: u.ai?.role === "civ", leader: u.id === t.leaderId });
+  }
+  return out;
+}
+var WORK_INFO = {
+  fire: "\u0110\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD: t\xE2m l\xE0ng, quanh \u0111\xE2y d\xE2n v\xE0 l\xEDnh t\u1EE5 l\u1EA1i.",
+  tower: "Ch\xF2i canh: cung th\u1EE7 \u0111\u1EE9ng cao b\u1EAFn xa h\u01A1n, ph\u1EA3i ph\xE1 ch\xF2i m\u1EDBi h\u1EA1 \u0111\u01B0\u1EE3c h\u1ECD.",
+  fence: "H\xE0ng r\xE0o: ch\u1EB7n \u0111\u01B0\u1EDDng, ph\u1EA3i ph\xE1 ho\u1EB7c \u0111i v\xF2ng.",
+  gate: "C\u1ED5ng: l\u1ED1i v\xE0o l\xE0ng, \u0111\xF3ng th\xEC ch\u1EB7n \u0111\u01B0\u1EDDng.",
+  pile: "Kho l\u01B0\u01A1ng: ch\u1ED7 h\u1ECD c\u1EA5t th\u1EE9c \u0103n v\xE0 \u0111\u1ED3 c\u1ED1ng n\u1EA1p."
+};
+function freeNear(sim2, x, y) {
+  for (let r = 0; r <= 8; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (Math.max(Math.abs(i), Math.abs(j)) === r && !sim2.world.isBlocked(Math.floor(x) + i, Math.floor(y) + j)) return [Math.floor(x) + i, Math.floor(y) + j];
+  return null;
+}
+function entryRoute(sim2, camp, box, toUs) {
+  const fire = sim2.campfire(), from = freeNear(sim2, (fire?.x ?? sim2.world.start.x) + 1, (fire?.y ?? sim2.world.start.y) + 3);
+  const to = freeNear(sim2, camp.x + (toUs?.x ?? 0) * (YARD + 1), camp.y + (toUs?.y ?? 0) * (YARD + 1));
+  if (!from || !to) return [];
+  const path = findPath(sim2.world, from[0], from[1], to[0], to[1], 7e4);
+  const last = path[path.length - 1];
+  if (!last || last[0] !== to[0] || last[1] !== to[1]) return [];
+  const inside = path.filter(([x, y]) => x >= box.x0 && x < box.x1 && y >= box.y0 && y < box.y1);
+  return inside.filter((_, i) => i % 3 === 0 || i === inside.length - 1).map(([x, y]) => ({ x: x + 0.5, y: y + 0.5 }));
+}
+function tribeIntel(sim2, tribe) {
+  const t = tribeOf(sim2, tribe);
+  if (!t) return null;
+  const level = sim2.dev.freeBuild ? 3 : mapLevel(sim2, tribe);
+  if (!level) return null;
+  const held = sim2.maps.filter((m) => m.tribe === tribe && (m.gaps > 0 ? m.level - 1 : m.level) >= level).sort((a, b) => b.at - a.at)[0];
+  const accuracy = sim2.dev.freeBuild || !held ? 1 : mapAccuracy(sim2, held), gaps = sim2.dev.freeBuild ? 0 : held?.gaps ?? 0;
+  const N = sim2.world.size, ry = YARD + MARGIN, rx = Math.round(ry * 1.9);
+  const x0 = Math.max(0, Math.min(N - 2 * rx, Math.floor(t.camp.x) - rx)), y0 = Math.max(0, Math.min(N - 2 * ry, Math.floor(t.camp.y) - ry));
+  const box = { x0, y0, x1: x0 + 2 * rx, y1: y0 + 2 * ry };
+  const fire = sim2.campfire(), dx = (fire?.x ?? sim2.world.start.x) - t.camp.x, dy = (fire?.y ?? sim2.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
+  const seen = sim2.dev.freeBuild || !held?.seen ? seenNow(sim2, t) : held.seen;
+  const soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
+  const people = [];
+  if (level >= 2) seen.forEach((u, i) => {
+    if (spread(i + 1, 1) < Math.min(0.6, gaps * 0.2)) return;
+    const mark = level < 3 ? "unknown" : u.civ ? "civ" : u.arm;
+    if (soldiers && !u.civ) soldiers[u.arm]++;
+    people.push({ x: u.x, y: u.y, mark, leader: level >= 3 && u.leader, weapon: level >= 3 ? u.weapon : null });
+  });
+  const route2 = entryRoute(sim2, t.camp, box, len > 0 ? { x: dx / len, y: dy / len } : null);
+  const others = sim2.tribes.filter((o) => o !== t && o.state !== "adopted" && o.state !== "destroyed" && isFound(sim2, o.id)).map((o) => ({ name: o.def.name, x: o.camp.x, y: o.camp.y, r: YARD, ours: false }));
+  others.push({ name: "L\xE0ng c\u1EE7a ta", x: (fire?.x ?? sim2.world.start.x) + 1, y: (fire?.y ?? sim2.world.start.y) + 1, r: 12, ours: true });
+  const reach = (o) => o.x > box.x0 - o.r && o.x < box.x1 + o.r && o.y > box.y0 - o.r && o.y < box.y1 + o.r;
+  const loot = Object.entries(t.loot).filter(([, v]) => (v ?? 0) > 0).map(([k, v]) => `${Math.round(v)} ${RES_NAME[k].toLowerCase()}`).join(", ");
+  return {
+    tribe,
+    name: t.def.name,
+    level,
+    accuracy,
+    gaps,
+    box,
+    camp: { ...t.camp },
+    yard: YARD,
+    toUs: len > 0 ? { x: dx / len, y: dy / len } : null,
+    route: route2,
+    others: others.filter(reach),
+    population: Math.max(2, Math.round(seen.length / 2) * 2),
+    structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === "pile" && loot ? `${WORK_INFO.pile} C\xF3 kho\u1EA3ng ${loot}.` : WORK_INFO[p.kind] ?? "", x: p.x, y: p.y, w: p.w, h: p.h })),
+    people,
+    soldiers
+  };
+}
+
+// src/sim/rest.ts
+var REST = rest_default;
+var NIGHT_AVG = DAY_LENGTH * SEASONS.reduce((n, s) => {
+  const { rise, set } = sunTimes(s);
+  return n + (rise - TWILIGHT / 2) + (1 - set - TWILIGHT / 2);
+}, 0) / SEASONS.length;
+var TORCH_LIFE = 2 * NIGHT_AVG;
+var DAY_HOURS = DAY_LENGTH * 0.65;
+var NIGHT_HOURS = DAY_LENGTH * 0.35;
+var clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+var fit = (v) => clamp((v.stats.vit + v.stats.sta) / 20, 0, 1);
+var hpFrac = (v) => clamp(v.health / v.maxHealth, 0, 1);
+function maxEnergy(_sim, v) {
+  return 100 - v.strain * REST.strain.capLoss;
+}
+function drainRate(sim2, v) {
+  if (v.phase === "sleep" || v.phase === "down") return 0;
+  const w = REST.jobWeight[v.job] ?? REST.jobWeight.idle;
+  let k;
+  switch (v.phase) {
+    case "work":
+    case "build":
+    case "craft":
+    case "inside":
+    case "skin":
+      k = w;
+      break;
+    case "fight":
+      k = w * 1.8;
+      break;
+    case "flee":
+      k = 1.2;
+      break;
+    case "idle":
+    case "wait":
+      k = REST.jobWeight.idle;
+      break;
+    case "goHome":
+      k = 0.3;
+      break;
+    default:
+      k = w * 0.8;
+  }
+  const cond = (1.25 - 0.25 * fit(v)) * (1.3 - 0.3 * hpFrac(v));
+  return REST.dayCost / DAY_HOURS * k * cond * drainScale(sim2, v);
+}
+var BED_KINDS = ["infantry", "cavalry", "archery", "house"];
+function bedsTaken(sim2, b, except) {
+  return sim2.villagers.filter((o) => o !== except && (o.phase === "sleep" && o.inside === b.id || o.phase === "goHome" && o.target === b.id)).length;
+}
+function freeBed(sim2, v) {
+  const kind = homeKind(v);
+  let best, bd = Infinity;
+  for (const b of sim2.buildings) {
+    if (b.kind !== kind || !b.done || bedsTaken(sim2, b, v) >= levelDef(b).slots) continue;
+    const d = Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y);
+    if (d < bd) {
+      bd = d;
+      best = b;
+    }
+  }
+  return best;
+}
+function bedFactor(sim2, v) {
+  const b = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
+  if (b && BED_KINDS.includes(b.kind)) return REST.sleepAt[b.kind] * levelDef(b).craftSpeed;
+  return b ? REST.sleepAt.house : REST.sleepAt.campfire;
+}
+function sleepRate(sim2, v) {
+  if (civilian(v) && attackReason(sim2) !== null) return 0;
+  const base = (sim2.resting ? REST.sleepNight : REST.sleepDay) / NIGHT_HOURS;
+  const q = (0.8 + 0.4 * fit(v)) * (0.7 + 0.3 * hpFrac(v)) * Math.max(0.3, 1 - v.strain * REST.strain.recoveryLoss);
+  return base * q * bedFactor(sim2, v);
+}
+var attackCache = /* @__PURE__ */ new WeakMap();
+function attackReason(sim2) {
+  const c = attackCache.get(sim2);
+  if (c && c.t === sim2.time) return c.why;
+  let why = null;
+  const raid = sim2.tribes.find((t) => t.raid && t.raid.phase === "march");
+  if (raid) why = `${raid.def.name} \u0111ang ti\u1EBFn v\xE0o l\xE0ng`;
+  else {
+    const fire = sim2.campfire(), cx = fire ? fire.x + 1 : sim2.world.start.x, cy = fire ? fire.y + 1 : sim2.world.start.y;
+    const beast = sim2.animals.find((a) => a.state === "attack" && a.target?.kind === "unit" && Math.hypot(a.x - cx, a.y - cy) < 30);
+    if (beast) why = "Th\xFA d\u1EEF \u0111ang t\u1EA5n c\xF4ng ng\u01B0\u1EDDi g\u1EA7n l\xE0ng";
+  }
+  attackCache.set(sim2, { t: sim2.time, why });
+  return why;
+}
+var civilian = (v) => v.job !== "fight" && v.job !== "hunt" && v.job !== "scout";
+function hides(sim2, v) {
+  return v.inside !== null && v.phase === "sleep" && civilian(v) && attackReason(sim2) !== null;
+}
+function sleepLocked(sim2, v) {
+  if (hides(sim2, v)) return false;
+  return v.lockUntil > 0 && v.energy < v.lockUntil && (v.phase === "sleep" || v.phase === "goHome");
+}
+function restFactor(sim2, v) {
+  const night = sim2.resting ? REST.nightEfficiency : 1;
+  const tired = v.energy >= REST.tiredBelow ? 1 : REST.tiredEfficiency + (1 - REST.tiredEfficiency) * (v.energy / REST.tiredBelow);
+  return night * tired;
+}
+function torchCount(sim2) {
+  return (sim2.toolStock.torch1 ?? 0) + sim2.wornTools.filter((w) => w.id === "torch1" && w.dur > 0).length;
+}
+function ensureTorch(sim2, v) {
+  if (v.torch) return true;
+  if ((sim2.toolStock.torch1 ?? 0) > 0) {
+    sim2.toolStock.torch1--;
+    v.torch = { dur: TORCH_LIFE };
+    return true;
+  }
+  let best = -1;
+  sim2.wornTools.forEach((w, i) => {
+    if (w.id === "torch1" && w.dur > 0 && (best < 0 || w.dur > sim2.wornTools[best].dur)) best = i;
+  });
+  if (best >= 0) {
+    v.torch = { dur: sim2.wornTools.splice(best, 1)[0].dur };
+    return true;
+  }
+  return false;
+}
+function returnTorch(sim2, v) {
+  const t = v.torch;
+  if (!t) return;
+  v.torch = null;
+  if (t.dur <= 5) return;
+  if (t.dur >= TORCH_LIFE - 1) sim2.toolStock.torch1 = (sim2.toolStock.torch1 ?? 0) + 1;
+  else sim2.wornTools.push({ id: "torch1", dur: t.dur });
+}
+function giveTorch(sim2, ids) {
+  let short = false, given = 0;
+  for (const v of sim2.mine(ids)) {
+    if (v.torch) continue;
+    if (ensureTorch(sim2, v)) {
+      given++;
+      sim2.say(`${v.name} c\u1EA7m \u0111u\u1ED1c.`);
+    } else short = true;
+  }
+  return short && !given ? "Kho h\u1EBFt \u0111u\u1ED1c, h\xE3y ch\u1EBF th\xEAm \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o" : null;
+}
+function onShift(sim2, v) {
+  if (v.nightOwl) return true;
+  if (v.job === "fight" && sim2.warLock()) return true;
+  const night = sim2.resting;
+  if (v.job === "idle") return v.shift === "both" || !night;
+  if (v.job === "fight") return !night;
+  if (v.shift === "both") return true;
+  return v.shift === "night" ? night : !night;
+}
+var indoors = (v) => isStaffJob(v.job) || v.job === "food" && v.post >= 0;
+function onDuty(sim2, v) {
+  if (!onShift(sim2, v)) return false;
+  if (sim2.resting && v.job !== "fight" && v.job !== "idle" && !indoors(v)) return ensureTorch(sim2, v);
+  return true;
+}
+function callUp(sim2, v) {
+  if (sleepLocked(sim2, v) || v.energy < REST.tired) return false;
+  if (onShift(sim2, v)) return true;
+  if (v.job === "fight") {
+    v.nightOwl = true;
+    return true;
+  }
+  if (v.job === "idle") return false;
+  if (sim2.resting && !ensureTorch(sim2, v)) return false;
+  v.nightOwl = true;
+  return true;
+}
+function tickEnergy(sim2, v, dt) {
+  const top = maxEnergy(sim2, v);
+  if (v.phase === "sleep") {
+    v.energy = Math.min(top, v.energy + sleepRate(sim2, v) * dt);
+    v.strain = Math.max(0, v.strain - (sim2.resting ? REST.strain.nightSleep : REST.strain.daySleep) * dt);
+  } else if (!sim2.dev.noTire && !(v.job === "fight" && sim2.warLock()) && !awayScout(sim2, v)) {
+    const working = v.job !== "idle" && (v.phase === "work" || v.phase === "build" || v.phase === "craft" || v.phase === "inside" || v.phase === "fight");
+    v.energy = Math.max(0, v.energy - drainRate(sim2, v) * dt);
+    if (sim2.resting && working) {
+      v.strain = Math.min(100, v.strain + REST.strain.nightWork * dt);
+    }
+  }
+  if (v.energy > top) v.energy = top;
+  if (v.torch && sim2.resting && v.phase !== "sleep") {
+    v.torch.dur -= dt;
+    if (v.torch.dur <= 0) {
+      v.torch = null;
+      sim2.say(`\u0110u\u1ED1c c\u1EE7a ${v.name} \u0111\xE3 ch\xE1y h\u1EBFt.`);
+    }
+  }
+}
+function shouldSleep(sim2, v, fighting) {
+  if (fighting) return false;
+  if (awayScout(sim2, v)) {
+    v.lockUntil = 0;
+    return false;
+  }
+  if (v.job === "fight" && sim2.warLock()) {
+    v.lockUntil = 0;
+    return false;
+  }
+  if (v.lockUntil > 0) {
+    if (v.energy >= v.lockUntil) v.lockUntil = 0;
+    else return true;
+  }
+  if (v.energy < REST.tired) {
+    const collapse = v.energy < REST.collapse;
+    v.lockUntil = collapse ? REST.wakeAfterCollapse : REST.wakeAfterTired;
+    if (collapse) v.strain = Math.min(100, v.strain + REST.strain.collapse);
+    sim2.say(`${v.name} ${collapse ? "ki\u1EC7t s\u1EE9c, ng\xE3 xu\u1ED1ng ng\u1EE7 say" : "m\u1EC7t, \u0111i ng\u1EE7"}.`);
+    return true;
+  }
+  return !onDuty(sim2, v);
+}
+function bedsIn(sim2, kind) {
+  return sim2.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0);
 }
 
 // src/sim/economy.ts
@@ -29482,34 +42539,283 @@ function barter(sim2, res) {
   sim2.stock.coin += 1;
   return null;
 }
-function syncFood(sim2) {
-  const lots = sim2.foodLots, cur = sim2.stock.food;
-  let sum = 0;
-  for (const l of lots) sum += l.amount;
-  if (cur > sum) {
-    const exp = sim2.time + FOOD_SPOIL_DAYS * DAY_LENGTH, last = lots[lots.length - 1];
-    if (last && exp - last.exp < 30) last.amount += cur - sum;
-    else lots.push({ amount: cur - sum, exp });
-  } else if (cur < sum) {
-    let take = sum - cur;
-    while (take > 0 && lots.length) {
-      const l = lots[0], k = Math.min(l.amount, take);
-      l.amount -= k;
-      take -= k;
-      if (l.amount <= 0) lots.shift();
+function foodNeed(sim2) {
+  const level = sim2.campfire()?.level ?? 1;
+  let n = 0;
+  for (const v of sim2.villagers) n += rationAt(level, v.job === "fight");
+  return n;
+}
+function deposit(sim2, res, amount) {
+  let left = amount, taken = 0;
+  if (res === "food") {
+    const toPot = Math.max(0, Math.min(left, foodNeed(sim2) - sim2.foodPot));
+    sim2.foodPot += toPot;
+    left -= toPot;
+    taken += toPot;
+  }
+  const toStore = Math.max(0, Math.min(left, sim2.capacity(res) - sim2.stock[res]));
+  sim2.stock[res] += toStore;
+  return taken + toStore;
+}
+function hasRoom(sim2, res) {
+  return sim2.stock[res] < sim2.capacity(res) || res === "food" && sim2.foodPot < foodNeed(sim2);
+}
+function feedPot(sim2) {
+  const room = foodNeed(sim2) - sim2.foodPot;
+  if (room <= 0 || sim2.stock.food <= 0) return;
+  const k = Math.min(room, sim2.stock.food);
+  sim2.foodPot += k;
+  sim2.stock.food -= k;
+}
+function eatDay(sim2) {
+  rollYield(sim2);
+  trackFood(sim2);
+  sim2.foodDays.push(sim2.foodIncome);
+  if (sim2.foodDays.length > 3) sim2.foodDays.shift();
+  sim2.foodIncome = 0;
+  const need = foodNeed(sim2);
+  const fromPot = Math.min(sim2.foodPot, need), fromStore = Math.min(sim2.stock.food, need - fromPot), short = need - fromPot - fromStore;
+  sim2.foodPot -= fromPot;
+  sim2.stock.food -= fromStore;
+  const was = sim2.foodPenalty;
+  sim2.foodPenalty = need > 0 ? FOOD.maxPenalty * short / need : 0;
+  if (short > 0) sim2.say(`Thi\u1EBFu ${Math.ceil(short)}/${need} th\u1EE9c \u0103n: c\u1EA3 l\xE0ng y\u1EBFu \u0111i ${Math.round(sim2.foodPenalty * 1e3) / 10}% trong ng\xE0y t\u1EDBi.`);
+  else if (was > 0) sim2.say("\u0110\u1EE7 \u0103n r\u1ED3i: l\xE0ng kh\u1ECFe l\u1EA1i.");
+  sim2.foodSeen = sim2.stock.food + sim2.foodPot;
+}
+function trackFood(sim2) {
+  const total = sim2.stock.food + sim2.foodPot;
+  if (sim2.foodSeen >= 0 && total > sim2.foodSeen) sim2.foodIncome += total - sim2.foodSeen;
+  sim2.foodSeen = total;
+}
+function noteYield(sim2, key, n) {
+  if (n > 0) sim2.yieldNow[key] = (sim2.yieldNow[key] ?? 0) + n;
+}
+function rollYield(sim2) {
+  for (const k of Object.keys(sim2.yieldPrev)) delete sim2.yieldPrev[k];
+  Object.assign(sim2.yieldPrev, sim2.yieldNow);
+  for (const k of Object.keys(sim2.yieldNow)) delete sim2.yieldNow[k];
+}
+function workSeconds(v) {
+  const day = DAY_LENGTH * 0.65, night = DAY_LENGTH * 0.35 * REST.nightEfficiency;
+  return v.shift === "night" ? night : v.shift === "both" ? day + night : day;
+}
+function dailyYield(sim2, b) {
+  let workers, job;
+  switch (b.kind) {
+    case "lumberyard":
+      job = "wood";
+      workers = sim2.villagers.filter((v) => roleOf(v) === "wood");
+      break;
+    case "quarry":
+      job = "stone";
+      workers = sim2.villagers.filter((v) => roleOf(v) === "stone");
+      break;
+    case "farmhouse":
+      job = "food";
+      workers = sim2.villagers.filter((v) => roleOf(v) === "food");
+      break;
+    case "huntlodge":
+      job = "hunt";
+      workers = sim2.villagers.filter((v) => roleOf(v) === "hunt");
+      break;
+    case "field":
+      job = "food";
+      workers = sim2.villagers.filter((v) => v.job === "food" && v.post === b.id);
+      break;
+    default:
+      return null;
+  }
+  let amount = 0;
+  for (const v of workers) {
+    const speed = workFactor(sim2, v, job, b.kind === "field") / Math.max(0.01, sim2.restFactor(v)), secs = workSeconds(v);
+    if (job === "hunt") {
+      amount += pace_default.huntPerDay * speed * (secs / (DAY_LENGTH * 0.65));
+      continue;
+    }
+    const per = TIER_YIELD[sim2.toolTier(v, job)] * (1 + toolBonus(sim2, v, job, "tyield") / 100);
+    amount += b.kind === "field" ? speed * levelDef(b).craftSpeed * per * secs / FARM_TIME : speed * per * secs * pace_default.gatherDuty / JOBS[job].baseTime;
+  }
+  return { amount, people: workers.length };
+}
+
+// src/sim/notices.ts
+var ORDER = { urgent: 0, warn: 1, info: 2 };
+var pct = (x) => `${Math.round(x * 1e3) / 10}%`;
+var days = (n) => n <= 0 ? "h\xF4m nay" : `c\xF2n ${n} ng\xE0y`;
+var FARM = { building: "farmhouse", label: "N\xF4ng tr\u1EA1i" };
+var CAMP = { building: "infantry", label: BUILDINGS.infantry.name };
+function noticesOf(sim2) {
+  const out = [];
+  const why = sim2.attackReason();
+  if (why) {
+    const hiding = sim2.villagers.filter((v) => sim2.hides(v)).length;
+    out.push({
+      id: "under-attack",
+      level: "urgent",
+      icon: "stat_atk",
+      title: "L\xE0ng \u0111ang b\u1ECB t\u1EA5n c\xF4ng",
+      when: "ngay b\xE2y gi\u1EDD",
+      body: `${why}${hiding ? ` \xB7 ${hiding} d\xE2n \u0111ang tr\u1ED1n trong nh\xE0` : ""}`,
+      tip: "Khi l\xE0ng b\u1ECB t\u1EA5n c\xF4ng, d\xE2n th\u01B0\u1EDDng kh\xF4ng ng\u1EE7 v\xE0 kh\xF4ng h\u1ED3i s\u1EE9c \u0111\u01B0\u1EE3c, v\xE0 ai \u0111ang \u1EDF trong nh\xE0 s\u1EBD kh\xF4ng ra ngo\xE0i k\u1EC3 c\u1EA3 khi tr\u1EDDi s\xE1ng. Ch\u1EC9 l\xEDnh v\xE0 th\u1EE3 s\u0103n ra ngo\xE0i: giao ngh\u1EC1 l\xEDnh \u1EDF tr\u1EA1i chi\u1EBFn binh, ho\u1EB7c th\u1EE3 s\u0103n \u1EDF Ch\xF2i th\u1EE3 s\u0103n, \u0111\u1EC3 h\u1ECD ra chi\u1EBFn \u0111\u1EA5u.",
+      action: CAMP
+    });
+  }
+  const fireAt = sim2.campfire(), fx = fireAt ? fireAt.x + 1 : sim2.world.start.x, fy = fireAt ? fireAt.y + 1 : sim2.world.start.y;
+  const far = sim2.villagers.filter((v) => v.job === "idle" && v.shift === "both" && v.inside === null && v.energy < 40 && v.phase !== "sleep" && v.phase !== "goHome" && Math.hypot(v.x - fx, v.y - fy) > 20);
+  if (far.length) {
+    const low = Math.min(...far.map((v) => v.energy));
+    out.push({
+      id: "explorers-tired",
+      level: low < 25 ? "urgent" : "warn",
+      icon: "stat_sta",
+      title: "D\xE2n \u0111i xa \u0111\xE3 c\u1EA1n s\u1EE9c",
+      when: "c\u1EA7n quay v\u1EC1",
+      body: `${far.slice(0, 3).map((v) => `${v.name} (${Math.round(v.energy)}%)`).join(", ")}${far.length > 3 ? ` v\xE0 ${far.length - 3} ng\u01B0\u1EDDi n\u1EEFa` : ""} \xB7 c\xE1ch l\xE0ng h\u01A1n 20 \xF4`,
+      tip: "D\xE2n \u0111\u01B0\u1EE3c b\u1EA1n sai \u0111i kh\xE1m ph\xE1 l\xE0m c\u1EA3 ng\xE0y l\u1EABn \u0111\xEAm. Khi s\u1EE9c xu\u1ED1ng d\u01B0\u1EDBi 20% h\u1ECD t\u1EF1 quay v\u1EC1 l\xE0ng ngh\u1EC9, nh\u01B0ng \u0111\u01B0\u1EDDng xa th\xEC r\u1EA5t l\xE2u: h\xE3y ra l\u1EC7nh cho h\u1ECD v\u1EC1 s\u1EDBm.",
+      action: { building: "campfire", label: "V\u1EC1 l\xE0ng" }
+    });
+  }
+  const full = RES_LIST.filter((r) => r !== "coin" && sim2.capacity(r) > 0 && sim2.stock[r] >= sim2.capacity(r));
+  if (full.length) {
+    out.push({
+      id: "storage-full",
+      level: "warn",
+      icon: full[0],
+      title: "Kho \u0111\xE3 \u0111\u1EA7y",
+      when: "ngay b\xE2y gi\u1EDD",
+      body: `${full.map((r) => RES_NAME[r].toLowerCase()).join(", ")}: d\xE2n kh\xF4ng thu th\xEAm \u0111\u01B0\u1EE3c n\u1EEFa`,
+      tip: "N\xE2ng c\u1EA5p Kho (ho\u1EB7c n\xE2ng Nh\xE0 chung) \u0111\u1EC3 ch\u1EE9a th\xEAm, ho\u1EB7c d\xF9ng b\u1EDBt v\u1EADt li\u1EC7u v\xE0o vi\u1EC7c x\xE2y d\u1EF1ng v\xE0 ch\u1EBF t\u1EA1o.",
+      action: { building: "storage", label: "Kho" }
+    });
+  }
+  const need = sim2.foodNeed();
+  if (need <= 0) return out;
+  const have = sim2.stock.food + sim2.foodPot, avg = sim2.foodDays.length ? sim2.foodDays.reduce((a, b) => a + b, 0) / sim2.foodDays.length : null, earn = avg ?? 0;
+  const winter = sim2.season === "winter";
+  if (sim2.foodPenalty > 0) {
+    out.push({
+      id: "weak",
+      level: "warn",
+      icon: "food",
+      title: `L\xE0ng y\u1EBFu ${pct(sim2.foodPenalty)}`,
+      when: "t\u1EDBi cu\u1ED1i ng\xE0y",
+      body: "M\u1ECDi ch\u1EC9 s\u1ED1 gi\u1EA3m v\xEC b\u1EEFa tr\u01B0\u1EDBc thi\u1EBFu \u0103n.",
+      tip: "M\xE1u t\u1ED1i \u0111a kh\xF4ng \u0111\u1ED5i nh\u01B0ng h\u1ED3i ch\u1EADm h\u01A1n, \u0111\xE1nh ch\u1EADm h\u01A1n. Ki\u1EBFm \u0111\u1EE7 th\u1EE9c \u0103n tr\u01B0\u1EDBc cu\u1ED1i ng\xE0y \u0111\u1EC3 l\xE0ng kh\u1ECFe l\u1EA1i.",
+      action: FARM
+    });
+  }
+  const left = 1 - sim2.tod, projected = have + earn * left;
+  if (projected < need) {
+    const short = need - projected;
+    out.push({
+      id: "meal",
+      level: have < need ? "urgent" : "warn",
+      icon: "food",
+      title: "B\u1EEFa t\u1ED1i thi\u1EBFu \u0103n",
+      when: "cu\u1ED1i ng\xE0y",
+      body: `C\u1EA7n ${need}, c\xF3 ${Math.floor(have)} \xB7 l\xE0ng s\u1EBD y\u1EBFu ${pct(FOOD.maxPenalty * short / need)}`,
+      tip: "Giao th\xEAm ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m \u1EDF N\xF4ng tr\u1EA1i, l\xE0m ru\u1ED9ng ho\u1EB7c \u0111i s\u0103n tr\u01B0\u1EDBc khi h\u1EBFt ng\xE0y.",
+      action: FARM
+    });
+  } else if (avg !== null && avg < need && have < need * 3) {
+    out.push({
+      id: "income",
+      level: "warn",
+      icon: "food",
+      title: "Ki\u1EBFm \xEDt h\u01A1n \u0103n",
+      when: "m\u1ED7i ng\xE0y",
+      body: `Ki\u1EBFm ~${Math.floor(avg)}/ng\xE0y, \u0103n ${need}/ng\xE0y \xB7 kho \u0111\u1EE7 ${Math.floor(have / need)} ng\xE0y`,
+      tip: "Th\xEAm ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m ho\u1EB7c l\xE0m ru\u1ED9ng tr\u01B0\u1EDBc khi kho c\u1EA1n.",
+      action: FARM
+    });
+  }
+  const cap = sim2.capacity("food") + need;
+  if (winter) {
+    const rest = SEASON_DAYS - dayInSeason(sim2.day) + 1, want = need * rest;
+    if (have < want) {
+      out.push({
+        id: "winter",
+        level: "urgent",
+        icon: "\u2744",
+        title: "\u0110\xF4ng thi\u1EBFu \u0103n",
+        when: `c\xF2n ${rest} ng\xE0y \u0111\xF4ng`,
+        body: `C\u1EA7n ${want}, c\xF3 ${Math.floor(have)}`,
+        tip: "B\u1EE5i qu\u1EA3 tr\u1EE5i h\u1EBFt, ru\u1ED9ng ch\u1EC9 c\xF2n m\u1ED9t ph\u1EA7n t\u01B0. S\u0103n b\u1EAFn, l\xE0m ru\u1ED9ng ho\u1EB7c \u0111\u1ED5i ch\xE1c \u0111\u1EC3 c\xF3 th\u1EE9c \u0103n.",
+        action: FARM
+      });
+    }
+  } else {
+    let to = 0;
+    while (seasonOf(sim2.day + to) !== "winter") to++;
+    if (to <= SEASON_DAYS) {
+      const want = need * SEASON_DAYS, atStart = Math.min(have + (earn - need) * to, cap);
+      if (atStart < want) {
+        const roomy = cap >= want;
+        out.push({
+          id: "winter",
+          level: to <= 2 ? "urgent" : "warn",
+          icon: "\u2744",
+          title: "S\u1EAFp v\xE0o \u0111\xF4ng",
+          when: days(to),
+          body: roomy ? `C\u1EA7n ${want}, d\u1EF1 ki\u1EBFn c\xF3 ${Math.max(0, Math.floor(atStart))}` : `C\u1EA7n ${want} nh\u01B0ng kho ch\u1EC9 ch\u1EE9a ${cap}`,
+          tip: `M\xF9a \u0111\xF4ng ${SEASON_DAYS} ng\xE0y, b\u1EE5i qu\u1EA3 tr\u1EE5i h\u1EBFt v\xE0 ru\u1ED9ng ch\u1EC9 c\xF2n m\u1ED9t ph\u1EA7n t\u01B0. ${roomy ? "Th\xEAm ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m, l\xE0m ru\u1ED9ng ho\u1EB7c s\u0103n b\u1EAFn \u0111\u1EC3 t\xEDch th\xEAm." : "X\xE2y ho\u1EB7c n\xE2ng c\u1EA5p Kho \u0111\u1EC3 ch\u1EE9a \u0111\u1EE7, r\u1ED3i t\xEDch th\xEAm th\u1EE9c \u0103n."}`,
+          action: roomy ? FARM : { building: "storage", label: "Kho" }
+        });
+      }
     }
   }
-  let spoiled = 0;
-  while (lots.length && lots[0].exp <= sim2.time) spoiled += lots.shift().amount;
-  if (spoiled > 0) {
-    sim2.stock.food = Math.max(0, sim2.stock.food - spoiled);
-    sim2.say(`${Math.round(spoiled)} th\u1EE9c \u0103n \u0111\u1EC3 qu\xE1 ${FOOD_SPOIL_DAYS} ng\xE0y \u0111\xE3 h\u1ECFng.`);
-  }
+  out.push(...eventNotices(sim2));
+  return out.sort((a, b) => ORDER[a.level] - ORDER[b.level]);
 }
-function foodSpoilingWithin(sim2, secs) {
-  let n = 0;
-  for (const l of sim2.foodLots) if (l.exp <= sim2.time + secs) n += l.amount;
-  return Math.min(n, sim2.stock.food);
+function eventNotices(sim2) {
+  const out = [];
+  const soldiers = sim2.villagers.filter((v) => v.job === "fight"), armed = soldiers.filter((v) => !!v.weapon).length;
+  const have = `${soldiers.length} l\xEDnh, ${armed} c\xF3 v\u0169 kh\xED`;
+  for (const e of sim2.events) {
+    if (e.fired || !e.warned) continue;
+    const wolves = e.kind === "wolves", need = Math.max(3, Math.ceil(e.size * (wolves ? 0.6 : 0.7)));
+    const tribe = e.tribe ? sim2.tribes.find((t) => t.id === e.tribe) : void 0;
+    const left = e.fireDay - sim2.day, ready = soldiers.length >= need && armed >= Math.ceil(need / 2);
+    out.push({
+      id: `ev:${e.id}`,
+      level: ready ? "info" : left <= 1 ? "urgent" : "warn",
+      icon: "stat_atk",
+      title: wolves ? "S\xF3i s\u1EAFp t\u1EA5n c\xF4ng" : `${tribe?.def.name ?? "M\u1ED9t b\u1ED9 t\u1ED9c"} s\u1EAFp \u0111\xE1nh`,
+      when: left <= 0 ? e.night ? "\u0111\xEAm nay" : "h\xF4m nay" : `c\xF2n ${left} ng\xE0y`,
+      body: ready ? `Kho\u1EA3ng ${e.size} ${wolves ? "con" : "ng\u01B0\u1EDDi"} \xB7 \u0111\xE3 \u0111\u1EE7 l\xEDnh (${have})` : `Kho\u1EA3ng ${e.size} ${wolves ? "con" : "ng\u01B0\u1EDDi"} \xB7 c\u1EA7n \u2265${need} l\xEDnh, \u0111ang c\xF3 ${have}`,
+      tip: `${e.warn || "M\u1ED9t cu\u1ED9c t\u1EA5n c\xF4ng \u0111ang t\u1EDBi."} Tuy\u1EC3n th\xEAm l\xEDnh \u1EDF tr\u1EA1i chi\u1EBFn binh, ch\u1EBF v\u0169 kh\xED v\xE0 gi\xE1p cho h\u1ECD, v\xE0 d\u1EF1ng h\xE0ng r\xE0o, ch\xF2i canh tr\u01B0\u1EDBc khi ch\xFAng t\u1EDBi.`,
+      action: CAMP
+    });
+  }
+  const fire = sim2.campfire(), cx = fire ? fire.x + 1 : sim2.world.start.x, cy = fire ? fire.y + 1 : sim2.world.start.y;
+  const pack = sim2.animals.filter((a) => a.species === "wolf" && a.state !== "dead" && Math.hypot(a.x - cx, a.y - cy) < 30).length;
+  if (pack) {
+    out.push({
+      id: "wolves-here",
+      level: soldiers.length < 3 ? "urgent" : "warn",
+      icon: "stat_atk",
+      title: "S\xF3i \u0111ang \u1EDF g\u1EA7n l\xE0ng",
+      when: "ngay b\xE2y gi\u1EDD",
+      body: `${pack} con \xB7 ${have}${soldiers.length < 3 ? " \xB7 c\u1EA7n th\xEAm l\xEDnh" : ""}`,
+      tip: "S\xF3i kh\xF4ng s\u1EE3 l\u1EEDa v\xE0 t\u1EA5n c\xF4ng d\xE2n. C\u1EA7n c\xF3 l\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\u1EC3 \u0111\xE1nh \u0111u\u1ED5i; d\xE2n th\u01B0\u1EDDng s\u1EBD ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i.",
+      action: CAMP
+    });
+  }
+  for (const t of sim2.tribes) {
+    if (!t.raid || t.raid.phase !== "march") continue;
+    out.push({
+      id: `raid-here:${t.id}`,
+      level: "urgent",
+      icon: "stat_atk",
+      title: `${t.def.name} \u0111ang ti\u1EBFn v\xE0o l\xE0ng`,
+      when: "ngay b\xE2y gi\u1EDD",
+      body: `Kho\u1EA3ng ${t.raid.size} ng\u01B0\u1EDDi \xB7 ${have}`,
+      tip: "G\u1ECDi l\xEDnh ra \u0111\xF3n \u0111\xE1nh, \u0111\xF3ng c\u1ED5ng n\u1EBFu c\xF3 h\xE0ng r\xE0o, v\xE0 \u0111\u01B0a d\xE2n th\u01B0\u1EDDng v\u1EC1 l\u1EEDa tr\u1EA1i.",
+      action: CAMP
+    });
+  }
+  return out;
 }
 
 // src/sim/works.ts
@@ -29542,11 +42848,11 @@ function techState(sim2, t) {
   if (sim2.researched.has(t.id)) return { state: "done" };
   if (sim2.building("lab")?.active?.id === t.id) return { state: "active" };
   if (sim2.researchQueue.includes(t.id)) return { state: "queued" };
-  const need = t.requires.find((r) => !sim2.researched.has(r));
-  if (need) return { state: "locked", why: `C\u1EA7n nghi\xEAn c\u1EE9u: ${TECH_BY_ID[need].name}` };
+  const lacks = t.requires.filter((r) => !sim2.researched.has(r)).map((r) => `C\u1EA7n nghi\xEAn c\u1EE9u: ${TECH_BY_ID[r].name}`);
   const lab = sim2.building("lab");
-  if (!lab) return { state: "locked", why: "C\u1EA7n d\u1EF1ng Nh\xE0 nghi\xEAn c\u1EE9u" };
-  if (lab.level < t.needLevel) return { state: "locked", why: `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${t.needLevel}` };
+  if (!lab) lacks.push("C\u1EA7n d\u1EF1ng Nh\xE0 nghi\xEAn c\u1EE9u");
+  else if (lab.level < t.needLevel) lacks.push(`C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${t.needLevel}`);
+  if (lacks.length) return { state: "locked", why: lacks.join(" \xB7 "), lacks };
   return { state: "ready" };
 }
 function researchBlock(sim2, t) {
@@ -29668,7 +42974,7 @@ function tickWorks(sim2, dt) {
 function bestFor(sim2, job) {
   const stat = JOBS[job].stat;
   const pool = sim2.villagers.filter((v) => v.down <= 0 && v.inside === null && v.job !== job && v.job !== "fight" && v.job !== "hunt" && v.job !== "scout");
-  pool.sort((a, b) => (a.job === "idle" ? 0 : 1) - (b.job === "idle" ? 0 : 1) || b.stats[stat] - a.stats[stat]);
+  pool.sort((a, b) => (isFree(a) ? 0 : 1) - (isFree(b) ? 0 : 1) || b.stats[stat] - a.stats[stat]);
   return pool[0] ?? null;
 }
 function houseRate(sim2, b) {
@@ -29892,9 +43198,9 @@ function heldTool(sim2, v) {
   return null;
 }
 function returnTool(sim2, v) {
-  const h2 = heldTool(sim2, v);
-  if (!h2) return;
-  const { k, t } = h2, id = toolId(sim2, k, t.tier), name = `${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}`;
+  const h3 = heldTool(sim2, v);
+  if (!h3) return;
+  const { k, t } = h3, id = toolId(sim2, k, t.tier), name = `${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t.tier].toLowerCase()}`;
   v.tools[k] = null;
   if (t.dur <= 0) {
     sim2.say(`${v.name} b\u1ECF ${name} \u0111\xE3 h\u1ECFng.`);
@@ -30020,7 +43326,9 @@ function assignGear(sim2, ids, kind, slot) {
   return short && given === 0 ? `Kho h\u1EBFt ${kind ? nameOf(kind) : "\u0111\u1ED3"}, h\xE3y ch\u1EBF th\xEAm` : null;
 }
 function autoGear(sim2, ids) {
+  if (!autoOn(sim2.researched, "fetch")) return 'Ch\u01B0a nghi\xEAn c\u1EE9u "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho": h\xE3y t\u1EF1 ch\u1ECDn \u0111\u1ED3 cho d\xE2n';
   for (const v of sim2.mine(ids)) v.manualGear = false;
+  return null;
 }
 function giveTool(sim2, ids, kind, tier) {
   for (const id of ids) {
@@ -30150,18 +43458,6 @@ function planGearErrand(sim2, v) {
   return goTo(sim2, v, house, "goOrder");
 }
 
-// src/sim/model.ts
-var SLEEP_HUNGER = 0.4;
-var NAMES_M = ["Bo", "R\xF4", "Gia", "Mun", "L\xF4", "T\xF9", "\u0110a"];
-var NAMES_F = ["Tia", "Noa", "Ma", "Pa", "K\xEA", "Ly", "Sa"];
-var HAIR = ["#4a2e1a", "#2b1b10", "#6b3f1d", "#c98a3a", "#7a5a3a"];
-var SKIN = ["#d9a371", "#e8c4a0", "#c58a5c", "#b87850"];
-var NODE_JOB = { tree: "wood", rock: "stone", bush: "food" };
-var XP_MULT = [0, 1, 1.5, 2];
-var REACH = { tree: 0.55, rock: 0.62, bush: 0.5 };
-var LEFT = 1;
-var RIGHT = 2;
-
 // src/sim/commands.ts
 function resetTask(sim2, v) {
   sim2.leaveNode(v);
@@ -30179,6 +43475,14 @@ function resetTask(sim2, v) {
 function keepWatch(sim2, v) {
   if (v.job !== "idle") sim2.callUp(v);
 }
+function recallFar(sim2) {
+  const fire = sim2.campfire(), far = farFolk(sim2);
+  if (!far.length) return 0;
+  const sx = fire ? fire.x + 1 : sim2.world.start.x, sy = fire ? fire.y + 3 : sim2.world.start.y + 3;
+  orderMove(sim2, far.map((v) => v.id), Math.floor(sx), Math.floor(sy));
+  for (const v of far) if (v.job === "idle") v.shift = "day";
+  return far.length;
+}
 function clearCombat(sim2, v) {
   v.fight.target = null;
   v.fight.mode = "none";
@@ -30190,7 +43494,7 @@ function clearCombat(sim2, v) {
   v.fleeT = 0;
 }
 function mine(sim2, ids) {
-  return ids.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.team === "player" && v.down <= 0 && !sim2.sleepLocked(v));
+  return ids.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.team === "player" && v.down <= 0 && !sim2.sleepLocked(v) && !sim2.scouts.some((m) => m.ids.includes(v.id)));
 }
 function busy(sim2, v) {
   return v.phase !== "idle" || v.path.length > 0 || v.fight.mode !== "none";
@@ -30213,6 +43517,7 @@ function orderMove(sim2, ids, tx, ty, queue = false) {
     v.prefer = -1;
     keepSoldierJob(sim2, v);
     keepWatch(sim2, v);
+    if (v.job === "idle") v.shift = "both";
     if (!goal) continue;
     taken.add(goal[1] * sim2.world.size + goal[0]);
     if (v.job === "fight") {
@@ -30254,6 +43559,11 @@ function orderWork(sim2, ids, tx, ty) {
   }
   if (!job) return null;
   const first = !!site && site.kind === "builder" && !sim2.building("builder");
+  let err = null;
+  if (node && (job === "wood" || job === "stone" || job === "food")) {
+    const idle2 = mine(sim2, ids).filter(isFree).map((v) => v.id);
+    if (idle2.length) err = sim2.assignRole(idle2, job);
+  }
   const workers = mine(sim2, ids).filter((v) => v.job === job || first && v.job !== "fight");
   for (const v of workers) {
     resetTask(sim2, v);
@@ -30261,7 +43571,13 @@ function orderWork(sim2, ids, tx, ty) {
     v.job = job;
     v.prefer = prefer;
   }
-  return { job, sent: workers.length };
+  return { job, sent: workers.length, err };
+}
+function autoHunter(sim2, ids, target) {
+  const e = resolve(sim2, target);
+  if (e?.kind !== "animal" || e.a.state !== "dead" && !animalDef(e.a).prey) return null;
+  const idle2 = mine(sim2, ids).filter(isFree).map((v) => v.id);
+  return idle2.length ? sim2.assignRole(idle2, "hunt") : null;
 }
 function setJob(sim2, ids, job) {
   const lock = sim2.warLock();
@@ -30441,464 +43757,6 @@ function nextOrder(sim2, v) {
   return true;
 }
 
-// src/sim/labor.ts
-function workRate(sim2, v, job) {
-  return workFactor(sim2, v, job);
-}
-function outdoorFactor(sim2, job) {
-  return OUTDOOR_JOBS.includes(job) ? WEATHER[sim2.weather].work * SEASON_DEF[sim2.season].work : 1;
-}
-function workFactor(sim2, v, job, field = false) {
-  const season = job === "food" ? SEASON_DEF[sim2.season][field ? "farm" : "gather"] : 1;
-  const tier = TOOL_OF_JOB[job] ? sim2.toolTier(v, job) : -1;
-  const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier] * (1 + toolBonus(sim2, v, job, "tspd") / 100);
-  return workSpeed(sim2, v) * (1 + 0.2 * v.skill[job].level) * (v.fullness < 25 ? 0.7 : 1) * tool * season * outdoorFactor(sim2, job) * sim2.restFactor(v);
-}
-function gainXp(sim2, v, job, dt) {
-  const s = v.skill[job];
-  if (s.level >= MAX_LEVEL) return;
-  s.xp += dt * PACE.work * XP_MULT[v.potential[job]];
-  if (s.xp >= XP_LEVELS[s.level]) {
-    s.level++;
-    sim2.say(`${v.name} l\xEAn c\u1EA5p ${s.level} ngh\u1EC1 ${JOB_NAME[job].toLowerCase()}.`);
-  }
-}
-function wear(sim2, v, job, dt) {
-  const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
-  if (!k || !t || t.dur <= 0) return;
-  t.dur -= dt * PACE.work / (1 + toolBonus(sim2, v, job, "tdur") / 100);
-  if (t.dur <= 0) {
-    v.tools[k] = null;
-    sim2.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng, v\u1EE9t b\u1ECF.`);
-  }
-}
-function leaveNode(sim2, v) {
-  if ((v.phase === "goNode" || v.phase === "work") && v.target >= 0) {
-    const n = sim2.world.nodes.get(v.target);
-    if (n) {
-      if (n.workers > 0) n.workers--;
-      n.sides &= ~v.slot;
-    }
-  }
-  v.slot = 0;
-}
-function face(sim2, v, tx, ty) {
-  const dx = tx + 0.5 - v.x, dy = ty + 0.5 - v.y;
-  v.facing = Math.abs(dx) > Math.abs(dy) * 1.1 ? dx > 0 ? "right" : "left" : dy > 0 ? "front" : "back";
-}
-function wait(sim2, v, secs) {
-  v.phase = "wait";
-  v.timer = secs;
-}
-function faceX(sim2, v, cx) {
-  v.facing = cx >= v.x ? "right" : "left";
-}
-function nodeSlide(sim2, v, nx, ny, kind) {
-  const left = v.slot === LEFT;
-  return { x: nx + 0.5 + (left ? -REACH[kind] : REACH[kind]), y: ny + 0.875, face: left ? "right" : "left" };
-}
-function edgeSlide(sim2, v, b) {
-  const d = BUILDINGS[b.kind], left = v.x < b.x + d.w / 2;
-  return { x: left ? b.x - 0.3 : b.x + d.w + 0.3, y: b.y + d.h - 0.3 - v.id % 2 * 0.5, face: left ? "right" : "left" };
-}
-function faceBuilding(sim2, v, b) {
-  faceX(sim2, v, b.x + BUILDINGS[b.kind].w / 2);
-}
-function think(sim2, v, dt) {
-  const N = sim2.world.size;
-  switch (v.phase) {
-    case "move":
-      v.phase = "idle";
-      sim2.nextOrder(v);
-      return;
-    case "idle":
-      if (v.queue.length && sim2.nextOrder(v)) return;
-      if (v.job !== "idle") plan(sim2, v);
-      return;
-    case "wait":
-      v.timer -= dt;
-      if (v.timer <= 0) v.phase = "idle";
-      return;
-    case "goNode": {
-      const n = sim2.world.nodes.get(v.target);
-      if (!n || n.amount <= 0) {
-        leaveNode(sim2, v);
-        v.phase = "idle";
-        return;
-      }
-      const nx = v.target % N, ny = v.target / N | 0;
-      v.phase = "work";
-      v.progress = 0;
-      const sl = nodeSlide(sim2, v, nx, ny, n.kind);
-      if (Math.hypot(sl.x - v.x, sl.y - v.y) < 0.04) v.facing = sl.face;
-      else v.slide = sl;
-      return;
-    }
-    case "work":
-      doWork(sim2, v, dt);
-      return;
-    case "goStore":
-      unload(sim2, v);
-      return;
-    case "goEquip":
-      sim2.equip(v);
-      return;
-    case "goSite": {
-      const b = sim2.getBuilding(v.target);
-      if (!b || !needsWork(b)) {
-        v.phase = "idle";
-        return;
-      }
-      v.phase = "build";
-      v.slide = edgeSlide(sim2, v, b);
-      return;
-    }
-    case "build": {
-      const b = sim2.getBuilding(v.target);
-      if (!b || !needsWork(b)) {
-        v.phase = "idle";
-        return;
-      }
-      const target = b.upgrading ? b.level + 1 : b.level;
-      b.progress += dt * PACE.work / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1)) * workFactor(sim2, v, "build") * sim2.crewSpeed();
-      gainXp(sim2, v, "build", dt);
-      wear(sim2, v, "build", dt);
-      if (b.progress >= 1) {
-        b.progress = 1;
-        if (b.upgrading) {
-          b.level++;
-          b.upgrading = false;
-          b.hp = maxHp(b);
-          sim2.say(`${BUILDINGS[b.kind].name} \u0111\xE3 l\xEAn c\u1EA5p ${b.level} (${levelDef(b).name.toLowerCase()}).`);
-        } else {
-          b.done = true;
-          b.rebuild = false;
-          sim2.fogDirty = true;
-          if (b.kind === "builder") sim2.trimCrew();
-          sim2.say(`${BUILDINGS[b.kind].name} \u0111\xE3 d\u1EF1ng xong.`);
-          if (RESEARCH.enabled && b.kind === "lab" && sim2.researched.size === 0) sim2.say("M\u1EDF Nh\xE0 nghi\xEAn c\u1EE9u, \u0111\u01B0a m\u1ED9t d\xE2n v\xE0o l\xE0m vi\u1EC7c, r\u1ED3i nghi\xEAn c\u1EE9u b\u1EA3n v\u1EBD \u0111\u1EA7u ti\xEAn.");
-        }
-        v.phase = "idle";
-      }
-      return;
-    }
-    case "goStaff":
-      sim2.enterBuilding(v);
-      return;
-    case "goOrder":
-      sim2.errand(v);
-      return;
-    case "inside":
-      return;
-    case "goHome": {
-      stash(sim2, v);
-      const bed = v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
-      if (bed && bed.done) sim2.sleepIn(v, bed);
-      else {
-        v.phase = "sleep";
-        v.facing = "front";
-      }
-      return;
-    }
-    case "sleep":
-      return;
-  }
-}
-function doWork(sim2, v, dt) {
-  const job = v.job, def = JOBS[job], n = sim2.world.nodes.get(v.target);
-  if (!def.res || !n || n.amount <= 0) {
-    leaveNode(sim2, v);
-    v.phase = "idle";
-    return;
-  }
-  v.progress += dt * workFactor(sim2, v, job) / def.baseTime;
-  gainXp(sim2, v, job, dt);
-  const tierNow = sim2.toolTier(v, job);
-  wear(sim2, v, job, dt);
-  if (v.progress < 1) return;
-  v.progress -= 1;
-  const res = def.res, acc = v.frac + TIER_YIELD[tierNow] * (1 + toolBonus(sim2, v, job, "tyield") / 100), whole = Math.floor(acc);
-  const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
-  const take = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have));
-  v.frac = acc - whole;
-  n.amount -= take;
-  v.carry = { res, amount: have + take };
-  if (res === "food" && take > 0) {
-    sim2.coinFrac += 0.06 * take;
-    if (sim2.coinFrac >= 1) {
-      sim2.coinFrac -= 1;
-      if (sim2.stock.coin < sim2.capacity()) {
-        sim2.stock.coin++;
-        if (!sim2.sawCoin) {
-          sim2.sawCoin = true;
-          sim2.say(`${v.name} nh\u1EB7t \u0111\u01B0\u1EE3c m\u1ED9t ${RES_NAME.coin.toLowerCase()}: d\xE2n l\xE0ng d\xF9ng n\xF3 \u0111\u1EC3 trao \u0111\u1ED5i.`);
-        }
-      }
-    }
-  }
-  if (n.amount <= 0) {
-    const idx = v.target;
-    leaveNode(sim2, v);
-    sim2.world.depleted(idx);
-    v.phase = "idle";
-    if (n.kind === "tree") sim2.say("M\u1ED9t c\xE2y \u0111\xE3 \u0111\u01B0\u1EE3c \u0111\u1ED1n xong.");
-  } else if (v.carry.amount >= CARRY_CAP[res] || sim2.needTool(v, job)) {
-    leaveNode(sim2, v);
-    v.phase = "idle";
-  }
-}
-function tickFarms(sim2, dt) {
-  for (const b of sim2.buildings) {
-    if (b.kind !== "field" || !b.done) continue;
-    for (const id of b.staff) {
-      const v = sim2.byId.get(id);
-      if (!v || v.phase !== "inside" || v.job !== "food" || sim2.stock.food >= sim2.capacity("food")) continue;
-      v.progress += dt * workFactor(sim2, v, "food", true) * levelDef(b).craftSpeed / FARM_TIME;
-      gainXp(sim2, v, "food", dt);
-      wear(sim2, v, "food", dt);
-      if (v.progress < 1) continue;
-      v.progress -= 1;
-      const acc = v.frac + TIER_YIELD[sim2.toolTier(v, "food")] * (1 + toolBonus(sim2, v, "food", "tyield") / 100), whole = Math.floor(acc);
-      v.frac = acc - whole;
-      sim2.stock.food = Math.min(sim2.capacity("food"), sim2.stock.food + whole);
-    }
-  }
-}
-function plan(sim2, v) {
-  if (v.job === "hunt" || v.job === "fight" || v.job === "scout") {
-    wait(sim2, v, 1);
-    return;
-  }
-  if (v.job === "build") {
-    if (!sim2.planTool(v, "build")) planBuild(sim2, v);
-    return;
-  }
-  if (isStaffJob(v.job) || v.job === "food" && v.post >= 0) {
-    sim2.planStaff(v);
-    return;
-  }
-  const def = JOBS[v.job], res = def.res;
-  if (v.carry && (v.carry.res !== res || v.carry.amount >= CARRY_CAP[v.carry.res])) {
-    planDeliver(sim2, v);
-    return;
-  }
-  if (sim2.stock[res] >= sim2.capacity(res)) {
-    if (v.carry) {
-      planDeliver(sim2, v);
-      return;
-    }
-    if (sim2.time - sim2.lastFullWarn > 30) {
-      sim2.lastFullWarn = sim2.time;
-      sim2.say(`Kho \u0111\xE3 \u0111\u1EA7y ${RES_NAME[res].toLowerCase()}, h\xE3y x\xE2y th\xEAm Kho.`);
-    }
-    wait(sim2, v, 3);
-    return;
-  }
-  if (sim2.planTool(v, v.job)) return;
-  if (findNode(sim2, v, def.node)) return;
-  if (v.carry) {
-    planDeliver(sim2, v);
-    return;
-  }
-  wait(sim2, v, 2);
-}
-function findNode(sim2, v, kind) {
-  const N = sim2.world.size, vx = Math.floor(v.x), vy = Math.floor(v.y);
-  const ok = (idx) => {
-    const n = sim2.world.nodes.get(idx);
-    return !!n && n.kind === kind && n.amount > 0 && n.workers < 2 && n.sides !== 3 && sim2.fog.state[idx] > 0 && (v.bad.get(idx) ?? 0) <= sim2.time;
-  };
-  const cands = [];
-  if (v.prefer >= 0 && ok(v.prefer)) cands.push([-1, v.prefer]);
-  for (const [idx, n] of sim2.world.nodes) {
-    if (n.kind !== kind || n.amount <= 0 || n.workers >= 2 || n.sides === 3 || idx === v.prefer || !ok(idx)) continue;
-    const d = (idx % N - vx) ** 2 + ((idx / N | 0) - vy) ** 2;
-    if (d <= 70 * 70) cands.push([d, idx]);
-  }
-  cands.sort((a, b) => a[0] - b[0]);
-  for (let c = 0; c < Math.min(4, cands.length); c++) {
-    const idx = cands[c][1], nx = idx % N, ny = idx / N | 0, node = sim2.world.nodes.get(idx);
-    const opts = [];
-    for (const side of [LEFT, RIGHT]) {
-      if (node.sides & side) continue;
-      const sx = side === LEFT ? -1 : 1;
-      const near2 = [[sx, 0, 0], [sx, 1, 0.6], [sx, -1, 1.6], [0, 1, 1.2], [0, -1, 2.4]];
-      for (const [dx, dy, pen] of near2) if (!sim2.world.isBlocked(nx + dx, ny + dy)) opts.push({ t: [nx + dx, ny + dy], side, pen });
-    }
-    const cost = (o) => Math.hypot(o.t[0] + 0.5 - v.x, o.t[1] + 0.5 - v.y) + o.pen;
-    opts.sort((a, b) => cost(a) - cost(b));
-    const k = sim2.routeTo(v, opts.map((o) => o.t), 4);
-    if (k >= 0) {
-      node.workers++;
-      node.sides |= opts[k].side;
-      v.slot = opts[k].side;
-      v.target = idx;
-      v.phase = "goNode";
-      v.prefer = -1;
-      return true;
-    }
-    v.bad.set(idx, sim2.time + 30);
-  }
-  if (v.prefer >= 0) {
-    if (sim2.world.nodes.has(v.prefer) && (v.bad.get(v.prefer) ?? 0) > sim2.time) sim2.say(`${v.name} kh\xF4ng t\xECm \u0111\u01B0\u1EE3c \u0111\u01B0\u1EDDng t\u1EDBi ngu\u1ED3n \u0111\xE3 ch\u1ECDn.`);
-    v.prefer = -1;
-  }
-  return false;
-}
-function planDeliver(sim2, v) {
-  const done = sim2.buildings.filter((b) => b.done && holdsGoods(b));
-  done.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
-  for (const b of done.slice(0, 2)) {
-    const d = BUILDINGS[b.kind];
-    if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
-      v.target = b.id;
-      v.phase = "goStore";
-      return;
-    }
-  }
-  wait(sim2, v, 2);
-}
-function stash(sim2, v) {
-  const c = v.carry;
-  if (!c) return;
-  const moved = Math.min(Math.max(0, sim2.capacity(c.res) - sim2.stock[c.res]), c.amount);
-  sim2.stock[c.res] += moved;
-  c.amount -= moved;
-  if (c.amount <= 0) v.carry = null;
-}
-function unload(sim2, v) {
-  const c = v.carry, st = sim2.getBuilding(v.target);
-  if (st) faceBuilding(sim2, v, st);
-  if (!c) {
-    v.phase = "idle";
-    return;
-  }
-  const space = Math.max(0, sim2.capacity(c.res) - sim2.stock[c.res]), moved = Math.min(space, c.amount);
-  sim2.stock[c.res] += moved;
-  c.amount -= moved;
-  if (c.amount <= 0) {
-    v.carry = null;
-    v.phase = "idle";
-    return;
-  }
-  if (sim2.time - sim2.lastFullWarn > 30) {
-    sim2.lastFullWarn = sim2.time;
-    sim2.say(`Kho \u0111\xE3 \u0111\u1EA7y ${RES_NAME[c.res].toLowerCase()}, h\xE3y x\xE2y th\xEAm Kho.`);
-  }
-  wait(sim2, v, 3);
-}
-function planBuild(sim2, v) {
-  const onSite = (b) => sim2.villagers.filter((o) => o !== v && o.target === b.id && (o.phase === "goSite" || o.phase === "build")).length;
-  const house = !!sim2.building("builder");
-  let sites = sim2.buildings.filter((b) => needsWork(b) && (house || b.kind === "builder") && onSite(b) < 3);
-  sites.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) || Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
-  sites = sites.slice(0, 2);
-  for (const b of sites) {
-    const d = BUILDINGS[b.kind];
-    if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
-      v.target = b.id;
-      v.phase = "goSite";
-      v.prefer = -1;
-      return;
-    }
-  }
-  wait(sim2, v, 2);
-}
-
-// src/sim/path.ts
-var SQ2 = Math.SQRT2;
-var MinHeap = class {
-  constructor(key) {
-    this.key = key;
-    this.items = [];
-  }
-  get size() {
-    return this.items.length;
-  }
-  push(n) {
-    const a = this.items;
-    a.push(n);
-    let i = a.length - 1;
-    while (i > 0) {
-      const p = i - 1 >> 1;
-      if (this.key[a[p]] <= this.key[a[i]]) break;
-      [a[p], a[i]] = [a[i], a[p]];
-      i = p;
-    }
-  }
-  pop() {
-    const a = this.items, top = a[0], last = a.pop();
-    if (a.length) {
-      a[0] = last;
-      let i = 0;
-      for (; ; ) {
-        const l = i * 2 + 1, r = l + 1;
-        let m = i;
-        if (l < a.length && this.key[a[l]] < this.key[a[m]]) m = l;
-        if (r < a.length && this.key[a[r]] < this.key[a[m]]) m = r;
-        if (m === i) break;
-        [a[m], a[i]] = [a[i], a[m]];
-        i = m;
-      }
-    }
-    return top;
-  }
-};
-function findPath(world, sx, sy, gx, gy, maxNodes = 3e4) {
-  const N = world.size, total = N * N;
-  if (!world.inBounds(sx, sy) || !world.inBounds(gx, gy)) return [];
-  const g2 = new Float32Array(total).fill(Infinity);
-  const f = new Float32Array(total);
-  const parent = new Int32Array(total).fill(-1);
-  const closed = new Uint8Array(total);
-  const heap = new MinHeap(f);
-  const h2 = (x, y) => {
-    const dx = Math.abs(x - gx), dy = Math.abs(y - gy);
-    return dx + dy + (SQ2 - 2) * Math.min(dx, dy);
-  };
-  const start = sy * N + sx, goal = gy * N + gx;
-  g2[start] = 0;
-  f[start] = h2(sx, sy);
-  heap.push(start);
-  let best = start, bestH = f[start], expanded = 0;
-  while (heap.size && expanded < maxNodes) {
-    const cur = heap.pop();
-    if (closed[cur]) continue;
-    closed[cur] = 1;
-    expanded++;
-    if (cur === goal) {
-      best = cur;
-      break;
-    }
-    const cx = cur % N, cy = cur / N | 0;
-    const hh = h2(cx, cy);
-    if (hh < bestH) {
-      bestH = hh;
-      best = cur;
-    }
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
-        if (!dx && !dy) continue;
-        const nx = cx + dx, ny = cy + dy;
-        if (world.isBlocked(nx, ny)) continue;
-        if (dx && dy && (world.isBlocked(cx + dx, cy) || world.isBlocked(cx, cy + dy))) continue;
-        const ni = ny * N + nx;
-        if (closed[ni]) continue;
-        const ng = g2[cur] + (dx && dy ? SQ2 : 1);
-        if (ng < g2[ni]) {
-          g2[ni] = ng;
-          f[ni] = ng + h2(nx, ny);
-          parent[ni] = cur;
-          heap.push(ni);
-        }
-      }
-    }
-  }
-  const out = [];
-  for (let n = best; n !== start && n !== -1; n = parent[n]) out.push([n % N, n / N | 0]);
-  return out.reverse();
-}
-
 // src/sim/movement.ts
 function nearestFree(sim2, tx, ty, taken) {
   const N = sim2.world.size;
@@ -30919,7 +43777,80 @@ function nearestFree(sim2, tx, ty, taken) {
   }
   return null;
 }
+function freeSpotNear(sim2, x, y, reach = 8) {
+  const fx = Math.floor(x), fy = Math.floor(y);
+  for (let r = 0; r <= reach; r++) {
+    let best = null, bd = Infinity;
+    for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+      if (Math.max(Math.abs(i), Math.abs(j)) !== r || sim2.world.isBlocked(fx + i, fy + j)) continue;
+      const d = (fx + i + 0.5 - x) ** 2 + (fy + j + 0.5 - y) ** 2;
+      if (d < bd) {
+        bd = d;
+        best = [fx + i, fy + j];
+      }
+    }
+    if (best) return [best[0] + 0.5, best[1] + 0.5];
+  }
+  return null;
+}
+var progress = /* @__PURE__ */ new WeakMap();
+function unstickWalker(sim2, v, dt) {
+  if (v.inside !== null) return;
+  const w = sim2.world;
+  if ((v.phase === "idle" || v.phase === "wait") && !v.slide && !v.path.length && w.isBlocked(Math.floor(v.x), Math.floor(v.y))) {
+    const spot = freeSpotNear(sim2, v.x, v.y);
+    if (spot) {
+      v.x = spot[0];
+      v.y = spot[1];
+      v.slide = null;
+    }
+  }
+  if (!v.path.length) {
+    progress.delete(v);
+    return;
+  }
+  const goal = v.path[v.path.length - 1];
+  const blocked = v.path.length > 1 && w.isBlocked(v.path[0][0], v.path[0][1]);
+  const p = progress.get(v);
+  if (!p) progress.set(v, { x: v.x, y: v.y, t: 0 });
+  else {
+    p.t += dt;
+    if (p.t >= 2.5) {
+      const stuckNow = Math.hypot(p.x - v.x, p.y - v.y) < 1.25;
+      p.x = v.x;
+      p.y = v.y;
+      p.t = 0;
+      if (stuckNow) p.t = 99;
+    }
+  }
+  const stuck = !!p && p.t === 99;
+  if (!blocked && !stuck) return;
+  progress.delete(v);
+  const [gx, gy] = goal, standing = w.isBlocked(Math.floor(v.x), Math.floor(v.y)) ? freeSpotNear(sim2, v.x, v.y) : null;
+  if (standing) {
+    v.x = standing[0];
+    v.y = standing[1];
+  }
+  let again = [];
+  if (v.team !== "player") again = sim2.pathTo(v, gx, gy, 6e3);
+  else if (sim2.pathLeft > 0) {
+    sim2.pathLeft--;
+    again = sim2.pathTo(v, gx, gy, 6e3);
+  }
+  v.path = again;
+  if (!again.length) {
+    v.slide = null;
+    if (v.phase === "move") v.phase = "idle";
+  }
+  if (stuck && v.team !== "player") {
+    if (v.ai && v.fight.target?.kind === "unit") v.ai.skip = { id: v.fight.target.id, until: sim2.time + 20 };
+    v.fight.target = null;
+    v.fight.repath = 3;
+    if (v.phase === "fight") v.phase = "idle";
+  }
+}
 function moveUnit(sim2, v, dt) {
+  unstickWalker(sim2, v, dt);
   const walk = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.team === "player" ? sim2.mountSpeed(v) : 1);
   if (v.swing) return;
   let left = walk * dt;
@@ -31004,10 +43935,10 @@ function animate(sim2, v, dt) {
   } else v.animClock += dt;
   v.hold = hold;
 }
-function ringTiles(sim2, v, x, y, w, h2) {
+function ringTiles(sim2, v, x, y, w, h3) {
   const out = [];
-  for (let j = y - 1; j <= y + h2; j++) for (let i = x - 1; i <= x + w; i++) {
-    if (i >= x && i < x + w && j >= y && j < y + h2) continue;
+  for (let j = y - 1; j <= y + h3; j++) for (let i = x - 1; i <= x + w; i++) {
+    if (i >= x && i < x + w && j >= y && j < y + h3) continue;
     if (!sim2.world.isBlocked(i, j)) out.push([i, j]);
   }
   const cost = (t) => Math.hypot(t[0] + 0.5 - v.x, t[1] + 0.5 - v.y) + (t[0] >= x && t[0] < x + w ? 1.5 : 0);
@@ -31034,11 +43965,11 @@ function pathTo(sim2, v, gx, gy, maxNodes = 14e3) {
   const p = gx === sx && gy === sy ? [] : findPath(sim2.world, sx, sy, gx, gy, maxNodes);
   return off ? [[sx, sy], ...p] : p;
 }
-function routeTo(sim2, v, tiles, tries = 3) {
+function routeTo(sim2, v, tiles, tries = 3, maxNodes = 14e3) {
   const [sx, sy] = standTile(sim2, v);
   for (let k = 0; k < Math.min(tries, tiles.length); k++) {
     const [gx, gy] = tiles[k];
-    const p = pathTo(sim2, v, gx, gy), last = p[p.length - 1];
+    const p = pathTo(sim2, v, gx, gy, maxNodes), last = p[p.length - 1];
     if (gx === sx && gy === sy || last && last[0] === gx && last[1] === gy) {
       v.path = p;
       return k;
@@ -31061,7 +43992,7 @@ function spawn(sim2, x, y, sex) {
 }
 function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
   const r = rnd, pick = (a) => a[Math.floor(r() * a.length)];
-  const { stars: stars2, fac } = rollFactors(r), stats = legacyStats((s) => rawValue(fac, s));
+  const { stars, fac } = rollFactors(r), stats = legacyStats((s) => rawValue(fac, s));
   const potential = {}, skill = {};
   for (const j of WORK_JOBS) {
     if (j === "hunt" || j === "fight" || j === "research" || j === "tame") {
@@ -31102,9 +44033,7 @@ function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
     timer: 0,
     order: null,
     carry: null,
-    fullness: 100,
     health: Math.round(rawValue(fac, "hp")),
-    starving: false,
     anim: "idle",
     hold: null,
     bad: /* @__PURE__ */ new Map(),
@@ -31121,7 +44050,7 @@ function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
     inside: null,
     orderCd: 0,
     squad: -1,
-    stars: stars2,
+    stars,
     fac,
     statClock: 0,
     born: { ...stats },
@@ -31133,7 +44062,6 @@ function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
     maxHealth: Math.round(rawValue(fac, "hp")),
     weapon: null,
     armor: null,
-    morale: MORALE.start,
     stance: "aggressive",
     fight: { mode: "none", target: null, dest: null, anchor: null, repath: 0, scan: 0 },
     queue: [],
@@ -31160,22 +44088,7 @@ function tickVillager(sim2, v, dt) {
     sim2.animate(v, dt);
     return;
   }
-  v.fullness -= sim2.dev.noHunger ? 0 : dt * 100 * (v.phase === "sleep" ? SLEEP_HUNGER : 1) / DAY_LENGTH;
-  if (v.fullness < 50 && sim2.stock.food >= 2) {
-    sim2.stock.food -= 2;
-    v.fullness = Math.min(100, v.fullness + 2 * FOOD_NUTRITION);
-  }
-  if (v.fullness <= 0) {
-    if (!v.starving) {
-      v.starving = true;
-      sim2.say(`${v.name} \u0111\xF3i l\u1EA3, kho h\u1EBFt th\u1EE9c \u0103n!`);
-    }
-    v.fullness = 0;
-    v.health -= dt * v.maxHealth / (1.5 * DAY_LENGTH);
-  } else {
-    v.starving = false;
-    if (v.fullness > 40 && v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 15e-4 * v.maxHealth);
-  }
+  if (v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 15e-4 * v.maxHealth * (1 - sim2.foodPenalty));
   if (v.health <= 0) {
     sim2.kill(v);
     return;
@@ -31205,7 +44118,7 @@ function tickVillager(sim2, v, dt) {
   const asleep = v.phase === "goHome" || v.phase === "sleep";
   if (sim2.shouldSleep(v, fighting)) {
     if (!asleep) goHome(sim2, v);
-  } else if (asleep) {
+  } else if (asleep && !sim2.hides(v)) {
     if (atWork(sim2, v) && v.phase === "sleep") v.phase = "inside";
     else {
       sim2.exitBuilding(v);
@@ -31226,14 +44139,15 @@ function atWork(sim2, v) {
 }
 function goHome(sim2, v) {
   const owl = v.nightOwl;
+  if (v.job === "idle") v.shift = "day";
   sim2.stash(v);
   sim2.resetTask(v);
   v.nightOwl = owl;
   v.phase = "sleep";
-  const bed = v.job === "build" ? sim2.building("builder") ?? sim2.freeBed(v) : sim2.freeBed(v);
+  const bed = sim2.freeBed(v);
   if (bed) {
     const bd = BUILDINGS[bed.kind];
-    if (sim2.routeTo(v, sim2.ringTiles(v, bed.x, bed.y, bd.w, bd.h)) >= 0) {
+    if (sim2.routeTo(v, sim2.ringTiles(v, bed.x, bed.y, bd.w, bd.h), 3, 8e4) >= 0) {
       v.target = bed.id;
       v.phase = "goHome";
       return;
@@ -31244,7 +44158,7 @@ function goHome(sim2, v) {
   const d = BUILDINGS[fire.kind];
   const taken = new Set(sim2.villagers.filter((o) => o !== v && o.bed >= 0).map((o) => o.bed));
   const spot = sim2.nearestFree(fire.x + (d.w >> 1), fire.y + d.h, taken);
-  if (!spot || sim2.routeTo(v, [spot], 1) < 0) return;
+  if (!spot || sim2.routeTo(v, [spot], 1, 8e4) < 0) return;
   v.bed = spot[1] * sim2.world.size + spot[0];
   v.phase = "goHome";
 }
@@ -31268,6 +44182,7 @@ function tickCalendar(sim2) {
       sim2.say(SEASON_DEF[season].enter);
     }
     if (sim2.weather !== "clear") sim2.say(`H\xF4m nay: ${WEATHER[sim2.weather].name.toLowerCase()}.`);
+    sim2.eatDay();
     if (day > 1 && !sim2.dev.noArrivals) newcomers(sim2);
   }
   if (!sim2.signalled && sim2.tod >= 0.5) {
@@ -31300,7 +44215,7 @@ function refreshFog(sim2) {
   const src = sim2.villagers.map((v) => ({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r }));
   for (const b of sim2.buildings) if (b.done) {
     const d = BUILDINGS[b.kind];
-    src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === "campfire" ? fire : r });
+    src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === "campfire" ? fire : Math.max(r, buildingSight(b) - (b.kind === "tower" ? 0 : WEATHER[sim2.weather].vision)) });
   }
   sim2.fog.update(src);
   for (const v of sim2.villagers) {
@@ -31313,7 +44228,15 @@ function visionRadius(sim2) {
 }
 function sightOf(sim2, v) {
   const r = visionRadius(sim2);
-  return (v.torch || v.lit ? Math.max(r, TORCH_VISION) : r) + (armOf(v) === "archer" ? ARCHER_SIGHT : 0);
+  return (v.torch || v.lit || inTowerLight(sim2, v.x, v.y) ? Math.max(r, TORCH_VISION) : r) + (armOf(v) === "archer" ? ARCHER_SIGHT : 0);
+}
+function inTowerLight(sim2, x, y) {
+  for (const b of sim2.buildings) {
+    if (b.kind !== "tower" || !b.done) continue;
+    const d = BUILDINGS.tower;
+    if (Math.hypot(b.x + d.w / 2 - x, b.y + d.h / 2 - y) <= buildingSight(b)) return true;
+  }
+  return false;
 }
 var ARCHER_SIGHT = 1;
 function fireRadius(sim2) {
@@ -31368,14 +44291,14 @@ function unpackRuns(runs, target) {
 }
 
 // src/sim/save.ts
-var SAVE_VERSION = 14;
+var SAVE_VERSION = 21;
 var SAVED = {
   /** Single values. */
-  scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "moraleClock", "tribeClock", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
+  scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "tribeClock", "foodPot", "foodPenalty", "foodIncome", "foodSeen", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
   /** Objects whose keys are filled in place. */
-  records: ["stock", "toolStock", "battle"],
+  records: ["stock", "toolStock", "battle", "yieldNow", "yieldPrev", "ruins", "drafts"],
   /** Lists of plain data. */
-  lists: ["wornTools", "craftQueue", "tameQueue", "researchQueue", "log", "foodLots", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
+  lists: ["wornTools", "craftQueue", "tameQueue", "researchQueue", "log", "foodDays", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
   /** Handled by hand below. */
   special: ["researched", "questSeen", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
 };
@@ -31397,6 +44320,7 @@ function toSave(sim2) {
       tiles: packRuns(w.tiles),
       occ: packRuns(w.occ),
       decor: packRuns(w.decor),
+      ready: packRuns(w.ready),
       nodes: [...w.nodes].map(([i, n]) => [i, n.kind, n.res, n.amount, n.max, n.workers, n.sides, n.regrow])
     },
     fog: { state: packRuns(sim2.fog.state), version: sim2.fog.version }
@@ -31404,6 +44328,14 @@ function toSave(sim2) {
 }
 var MIGRATIONS = {
   // eslint-disable-line @typescript-eslint/no-explicit-any
+  // 18 -> 19: the world is made a chunk at a time and cut down in trees, lakes and beasts: a world made all at once cannot be rebuilt
+  18: () => {
+    throw new Error("this save is of a world made the old way and can no longer be opened");
+  },
+  // 17 -> 18: the map grew from 192 to 960 tiles a side and every world starts somewhere else: a world of the old size cannot be rebuilt
+  17: () => {
+    throw new Error("this save is of the old, smaller map and can no longer be opened");
+  },
   // 1 -> 2: villagers gained energy, strain, a shift and a torch; the torch blueprint became a known technology
   1: (d) => {
     for (const list of [d.lists.villagers, d.lists.foes]) {
@@ -31524,6 +44456,30 @@ MIGRATIONS[13] = (d) => {
   }
   return { ...d, version: 14 };
 };
+MIGRATIONS[14] = (d) => {
+  d.scalars.foodPot ??= 0;
+  d.scalars.foodPenalty ??= 0;
+  return { ...d, version: 15 };
+};
+MIGRATIONS[15] = (d) => {
+  d.scalars.foodIncome ??= 0;
+  d.scalars.foodSeen ??= -1;
+  d.lists.foodDays ??= [];
+  return { ...d, version: 16 };
+};
+MIGRATIONS[20] = (d) => {
+  d.records.drafts ??= {};
+  return { ...d, version: 21 };
+};
+MIGRATIONS[19] = (d) => {
+  d.records.ruins ??= {};
+  return { ...d, version: 20 };
+};
+MIGRATIONS[16] = (d) => {
+  d.records.yieldNow ??= {};
+  d.records.yieldPrev ??= {};
+  return { ...d, version: 17 };
+};
 function migrate(raw) {
   let d = raw;
   if (!d || typeof d !== "object" || typeof d.version !== "number") throw new Error("this is not a saved game");
@@ -31541,6 +44497,7 @@ function applySave(sim2, data) {
   unpackRuns(data.world.tiles, w.tiles);
   unpackRuns(data.world.occ, w.occ);
   unpackRuns(data.world.decor, w.decor);
+  unpackRuns(data.world.ready, w.ready);
   w.decor.fill(0);
   w.nodes.clear();
   for (const [i, kind, res, amount, max, workers, sides, regrow] of data.world.nodes) {
@@ -31548,6 +44505,7 @@ function applySave(sim2, data) {
   }
   w.season = data.world.season;
   unpackRuns(data.fog.state, sim2.fog.state);
+  sim2.fog.relight();
   sim2.fog.version = data.fog.version;
   for (const k of SAVED.scalars) target[k] = decode(data.scalars[k]);
   for (const k of SAVED.records) {
@@ -31580,229 +44538,25 @@ function applySave(sim2, data) {
   RES_NAME.coin = CURRENCY[sim2.era];
 }
 
-// src/data/rest.json
-var rest_default = {
-  _note: "Energy (s\u1EE9c) of a villager, 0-100. Costs are percentage points. A day's heavy work costs dayCost over the waking hours, a night shift nightCost over the night; jobWeight scales it per job. Sleep gives back sleepNight points over one night of sleep (half that by day) in a Nh\xE0 d\xE2n; sleepAt scales it by where they lie down: by the campfire (no bed free) it is slower, in the Nh\xE0 d\xE2n or the L\u1EC1u chi\u1EBFn binh (soldiers) it is full, and a higher level of the house multiplies it again (its craftSpeed). Below tired a villager must sleep and cannot be woken until wakeAfterTired (wakeAfterCollapse if they fell asleep below collapse). Strain builds up from night work and from collapsing, and wears off with sleep; it lowers the energy ceiling and slows recovery, so nobody can be worked night after night. Night work needs a torch and goes at nightEfficiency.",
-  tired: 20,
-  collapse: 10,
-  wakeAfterTired: 50,
-  wakeAfterCollapse: 60,
-  dayCost: 42,
-  nightCost: 30,
-  sleepNight: 60,
-  sleepDay: 30,
-  sleepAt: { campfire: 0.6, house: 1, infantry: 1.6, cavalry: 1.6, archery: 1.6 },
-  nightEfficiency: 0.7,
-  tiredEfficiency: 0.7,
-  tiredBelow: 40,
-  torchBurn: 600,
-  jobWeight: { wood: 1, stone: 1, build: 0.95, fight: 0.8, hunt: 0.9, food: 0.7, craft: 0.6, research: 0.5, idle: 0.15 },
-  strain: { nightWork: 0.1, collapse: 15, nightSleep: 0.12, daySleep: 0.03, capLoss: 0.4, recoveryLoss: 67e-4, moraleLoss: 4e-3 }
-};
-
-// src/sim/rest.ts
-var REST = rest_default;
-var DAY_HOURS = DAY_LENGTH * 0.65;
-var NIGHT_HOURS = DAY_LENGTH * 0.35;
-var clamp = (x, a, b) => Math.max(a, Math.min(b, x));
-var fit = (v) => clamp((v.stats.vit + v.stats.sta) / 20, 0, 1);
-var hpFrac = (v) => clamp(v.health / v.maxHealth, 0, 1);
-function maxEnergy(_sim, v) {
-  return 100 - v.strain * REST.strain.capLoss;
-}
-function drainRate(sim2, v) {
-  if (v.phase === "sleep" || v.phase === "down") return 0;
-  const w = REST.jobWeight[v.job] ?? REST.jobWeight.idle;
-  let k;
-  switch (v.phase) {
-    case "work":
-    case "build":
-    case "craft":
-    case "inside":
-    case "skin":
-      k = w;
-      break;
-    case "fight":
-      k = w * 1.8;
-      break;
-    case "flee":
-      k = 1.2;
-      break;
-    case "idle":
-    case "wait":
-      k = REST.jobWeight.idle;
-      break;
-    case "goHome":
-      k = 0.3;
-      break;
-    default:
-      k = w * 0.8;
-  }
-  const cond = (1.25 - 0.25 * fit(v)) * (1.2 - 0.2 * (v.morale / 100)) * (1.3 - 0.3 * hpFrac(v));
-  return REST.dayCost / DAY_HOURS * k * cond * drainScale(sim2, v);
-}
-var BED_KINDS = ["infantry", "cavalry", "archery", "house"];
-var bedKind = (v) => v.job !== "fight" ? "house" : v.arm === "archer" ? "archery" : v.arm === "cavalry" ? "cavalry" : "infantry";
-function bedsTaken(sim2, b, except) {
-  return sim2.villagers.filter((o) => o !== except && (o.phase === "sleep" && o.inside === b.id || o.phase === "goHome" && o.target === b.id)).length;
-}
-function freeBed(sim2, v) {
-  const kind = bedKind(v);
-  let best, bd = Infinity;
-  for (const b of sim2.buildings) {
-    if (b.kind !== kind || !b.done || bedsTaken(sim2, b, v) >= levelDef(b).slots) continue;
-    const d = Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y);
-    if (d < bd) {
-      bd = d;
-      best = b;
-    }
-  }
-  return best;
-}
-function bedFactor(sim2, v) {
-  const b = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
-  if (b && BED_KINDS.includes(b.kind)) return REST.sleepAt[b.kind] * levelDef(b).craftSpeed;
-  return b ? REST.sleepAt.house : REST.sleepAt.campfire;
-}
-function sleepRate(sim2, v) {
-  const base = (sim2.resting ? REST.sleepNight : REST.sleepDay) / NIGHT_HOURS;
-  const q = (0.8 + 0.4 * fit(v)) * (0.85 + 0.15 * (v.morale / 100)) * (0.7 + 0.3 * hpFrac(v)) * Math.max(0.3, 1 - v.strain * REST.strain.recoveryLoss);
-  return base * q * bedFactor(sim2, v);
-}
-function sleepLocked(_sim, v) {
-  return v.lockUntil > 0 && v.energy < v.lockUntil && (v.phase === "sleep" || v.phase === "goHome");
-}
-function restFactor(sim2, v) {
-  const night = sim2.resting ? REST.nightEfficiency : 1;
-  const tired = v.energy >= REST.tiredBelow ? 1 : REST.tiredEfficiency + (1 - REST.tiredEfficiency) * (v.energy / REST.tiredBelow);
-  return night * tired;
-}
-function torchCount(sim2) {
-  return (sim2.toolStock.torch1 ?? 0) + sim2.wornTools.filter((w) => w.id === "torch1" && w.dur > 0).length;
-}
-function ensureTorch(sim2, v) {
-  if (v.torch) return true;
-  if ((sim2.toolStock.torch1 ?? 0) > 0) {
-    sim2.toolStock.torch1--;
-    v.torch = { dur: REST.torchBurn };
-    return true;
-  }
-  let best = -1;
-  sim2.wornTools.forEach((w, i) => {
-    if (w.id === "torch1" && w.dur > 0 && (best < 0 || w.dur > sim2.wornTools[best].dur)) best = i;
-  });
-  if (best >= 0) {
-    v.torch = { dur: sim2.wornTools.splice(best, 1)[0].dur };
-    return true;
-  }
-  return false;
-}
-function returnTorch(sim2, v) {
-  const t = v.torch;
-  if (!t) return;
-  v.torch = null;
-  if (t.dur <= 5) return;
-  if (t.dur >= REST.torchBurn - 1) sim2.toolStock.torch1 = (sim2.toolStock.torch1 ?? 0) + 1;
-  else sim2.wornTools.push({ id: "torch1", dur: t.dur });
-}
-function giveTorch(sim2, ids) {
-  let short = false, given = 0;
-  for (const v of sim2.mine(ids)) {
-    if (v.torch) continue;
-    if (ensureTorch(sim2, v)) {
-      given++;
-      sim2.say(`${v.name} c\u1EA7m \u0111u\u1ED1c.`);
-    } else short = true;
-  }
-  return short && !given ? "Kho h\u1EBFt \u0111u\u1ED1c, h\xE3y ch\u1EBF th\xEAm \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o" : null;
-}
-function onShift(sim2, v) {
-  if (v.nightOwl) return true;
-  if (v.job === "fight" && sim2.warLock()) return true;
-  const night = sim2.resting;
-  if (v.job === "fight" || v.job === "idle") return !night;
-  if (v.shift === "both") return true;
-  return v.shift === "night" ? night : !night;
-}
-var indoors = (v) => isStaffJob(v.job) || v.job === "food" && v.post >= 0;
-function onDuty(sim2, v) {
-  if (!onShift(sim2, v)) return false;
-  if (sim2.resting && v.job !== "fight" && v.job !== "idle" && !indoors(v)) return ensureTorch(sim2, v);
-  return true;
-}
-function callUp(sim2, v) {
-  if (sleepLocked(sim2, v) || v.energy < REST.tired) return false;
-  if (onShift(sim2, v)) return true;
-  if (v.job === "fight") {
-    v.nightOwl = true;
-    return true;
-  }
-  if (v.job === "idle") return false;
-  if (sim2.resting && !ensureTorch(sim2, v)) return false;
-  v.nightOwl = true;
-  return true;
-}
-function tickEnergy(sim2, v, dt) {
-  const top = maxEnergy(sim2, v);
-  if (v.phase === "sleep") {
-    v.energy = Math.min(top, v.energy + sleepRate(sim2, v) * dt);
-    v.strain = Math.max(0, v.strain - (sim2.resting ? REST.strain.nightSleep : REST.strain.daySleep) * dt);
-  } else if (!sim2.dev.noTire && !(v.job === "fight" && sim2.warLock())) {
-    const working = v.job !== "idle" && (v.phase === "work" || v.phase === "build" || v.phase === "craft" || v.phase === "inside" || v.phase === "fight");
-    v.energy = Math.max(0, v.energy - drainRate(sim2, v) * dt);
-    if (sim2.resting && working) {
-      v.strain = Math.min(100, v.strain + REST.strain.nightWork * dt);
-      if (v.job !== "fight") v.morale = Math.max(0, v.morale - REST.strain.moraleLoss * dt);
-    }
-  }
-  if (v.energy > top) v.energy = top;
-  if (v.torch && sim2.resting && v.phase !== "sleep") {
-    v.torch.dur -= dt;
-    if (v.torch.dur <= 0) {
-      v.torch = null;
-      sim2.say(`\u0110u\u1ED1c c\u1EE7a ${v.name} \u0111\xE3 ch\xE1y h\u1EBFt.`);
-    }
-  }
-}
-function shouldSleep(sim2, v, fighting) {
-  if (fighting) return false;
-  if (v.job === "fight" && sim2.warLock()) {
-    v.lockUntil = 0;
-    return false;
-  }
-  if (v.lockUntil > 0) {
-    if (v.energy >= v.lockUntil) v.lockUntil = 0;
-    else return true;
-  }
-  if (v.energy < REST.tired) {
-    const collapse = v.energy < REST.collapse;
-    v.lockUntil = collapse ? REST.wakeAfterCollapse : REST.wakeAfterTired;
-    if (collapse) v.strain = Math.min(100, v.strain + REST.strain.collapse);
-    sim2.say(`${v.name} ${collapse ? "ki\u1EC7t s\u1EE9c, ng\xE3 xu\u1ED1ng ng\u1EE7 say" : "m\u1EC7t, \u0111i ng\u1EE7"}.`);
-    return true;
-  }
-  return !onDuty(sim2, v);
-}
-function bedsIn(sim2, kind) {
-  return sim2.buildings.reduce((n, b) => n + (b.kind === kind && b.done ? levelDef(b).slots : 0), 0);
-}
-
 // src/sim/roles.ts
 var warLock = (sim2) => sim2.plans.some((p) => p.kind === "attack" && p.status === "running") ? "\u0110ang trong ch\u1EBF \u0111\u1ED9 chi\u1EBFn \u0111\u1EA5u: kh\xF4ng \u0111\u1ED5i vai tr\xF2 hay b\u1ECF l\xEDnh \u0111\u01B0\u1EE3c cho t\u1EDBi khi tr\u1EADn k\u1EBFt th\xFAc" : null;
 var roleHouses = (sim2, role) => sim2.buildings.filter((b) => b.kind === ROLES[role].building && b.done);
-var roleCapacity = (sim2, role) => sim2.dev.freeBuild ? 99 : roleHouses(sim2, role).reduce((n, b) => n + levelDef(b).slots, 0);
+var roleCapacity = (sim2, role) => {
+  const houses = roleHouses(sim2, role);
+  return houses.length ? houses.reduce((n, b) => n + levelDef(b).slots, 0) : sim2.dev.freeBuild ? 99 : 0;
+};
 var roleCount = (sim2, role) => sim2.villagers.filter((v) => roleOf(v) === role).length;
 function assignRole(sim2, ids, role) {
   const lock = warLock(sim2);
   if (lock) return lock;
   const def = ROLES[role], name = buildingName(def.building, sim2.era);
   if (!sim2.dev.freeBuild && !roleHouses(sim2, role).length) return `C\u1EA7n d\u1EF1ng ${name}`;
+  if (role === "scout") return sim2.enlistScouts(ids);
   const pick = sim2.mine(ids).filter((v) => v.job !== "fight" && v.job !== "scout" && roleOf(v) !== role);
   if (!pick.length) return `Ch\u1ECDn d\xE2n th\u01B0\u1EDDng \u0111\u1EC3 giao vi\u1EC7c ${roleName(role, sim2.era).toLowerCase()}`;
   const room = roleCapacity(sim2, role) - roleCount(sim2, role);
   if (room <= 0) return `${name} \u0111\xE3 \u0111\u1EE7 ${roleCapacity(sim2, role)} ng\u01B0\u1EDDi: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm`;
   const take = pick.slice(0, room).map((v) => v.id);
-  if (role === "scout") return sim2.enlistScouts(take);
   const err = sim2.setJob(take, def.job === "fight" ? "fight" : def.job);
   if (def.arm) {
     for (const v of sim2.mine(take)) if (v.job === "fight") v.arm = def.arm;
@@ -31872,7 +44626,7 @@ function damageWork(sim2, b, dmg) {
 function towerBonus(sim2, v) {
   const b = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
   if (!b || b.kind !== "tower" || armOfWeapon(effWeapon(v)) !== "archer") return { damage: 1, range: 0 };
-  return { damage: UNIT_RULES.archerOnTower.damage, range: UNIT_RULES.archerOnTower.range };
+  return { damage: UNIT_RULES.archerOnTower.damage, range: 0 };
 }
 function garrison(sim2, b) {
   return sim2.villagers.filter((v) => v.post === b.id && v.job === "fight");
@@ -31930,13 +44684,13 @@ function tickTraps(sim2, _dt) {
 function tickTowers(sim2, _dt) {
   for (const b of sim2.buildings) {
     if (b.kind !== "tower" || !b.done) continue;
-    const d = BUILDINGS.tower, from = { x: b.x + d.w / 2, y: b.y + 0.4 };
+    const d = BUILDINGS.tower, from = { x: b.x + d.w / 2, y: b.y + 0.4 }, reach = buildingSight(b);
     for (const v of sim2.villagers) {
       if (v.inside !== b.id || v.phase !== "inside" || v.atkCd > 0 || v.health <= 0) continue;
       const w = weaponOf(v);
       if (!w.ranged) continue;
-      const bonus = towerBonus(sim2, v), threat = threatsOf(sim2, v, w.range + bonus.range + 1)[0], e = threat && resolve(sim2, threat.t);
-      if (e && fireProjectile(sim2, v, e, from, bonus.damage, bonus.range)) v.atkCd = swingCycle(sim2, v, w);
+      const bonus = towerBonus(sim2, v), threat = threatsOf(sim2, v, reach)[0], e = threat && resolve(sim2, threat.t);
+      if (e && fireProjectile(sim2, v, e, from, bonus.damage, Math.max(0, reach - w.range - 1))) v.atkCd = swingCycle(sim2, v, w);
     }
   }
 }
@@ -32166,278 +44920,6 @@ function tickBattle(sim2, dt) {
   for (const l of lines) sim2.say(l);
 }
 
-// src/sim/scouting.ts
-var mapAccuracy = (sim2, m) => Math.max(0, 1 - COMMAND.mapDecayPerDay * (sim2.time - m.at) / DAY_LENGTH);
-function mapLevel(sim2, tribe) {
-  let best = 0;
-  for (const m of sim2.maps) if (m.tribe === tribe && mapAccuracy(sim2, m) >= 0.4) best = Math.max(best, m.gaps > 0 ? Math.max(1, m.level - 1) : m.level);
-  return best;
-}
-var warriorsOf = (sim2, tribe) => {
-  const t = tribeOf(sim2, tribe);
-  return t ? t.unitIds.filter((u) => sim2.get(u)?.ai?.role !== "civ").length : 0;
-};
-var SIGHT2 = 14;
-var HOME = 7;
-var COMPASS = ["\u0110\xF4ng", "\u0110\xF4ng Nam", "Nam", "T\xE2y Nam", "T\xE2y", "T\xE2y B\u1EAFc", "B\u1EAFc", "\u0110\xF4ng B\u1EAFc"];
-var isFound = (sim2, tribe) => sim2.dev.freeBuild || sim2.sightings.some((s) => s.tribe === tribe && s.reported);
-function whereIs(sim2, tribe) {
-  const t = tribeOf(sim2, tribe);
-  if (!t) return null;
-  const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
-  const dx = t.camp.x - fx, dy = t.camp.y - fy;
-  return { dist: Math.round(Math.hypot(dx, dy)), dir: COMPASS[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8] };
-}
-function tickSightings(sim2, dt) {
-  if (Math.floor(sim2.time) === Math.floor(sim2.time - dt)) return;
-  const fire = sim2.campfire();
-  for (let i = sim2.sightings.length - 1; i >= 0; i--) {
-    const s = sim2.sightings[i];
-    if (s.reported) continue;
-    const v = sim2.byId.get(s.by);
-    if (!v || v.team !== "player" || v.health <= 0) {
-      sim2.sightings.splice(i, 1);
-      continue;
-    }
-    if (v.inside !== null || !fire || Math.hypot(v.x - fire.x, v.y - fire.y) < HOME) {
-      s.reported = true;
-      const w = whereIs(sim2, s.tribe);
-      if (w) sim2.say(`${v.name} v\u1EC1 b\xE1o \u0111\xE3 th\u1EA5y m\u1ED9t ng\xF4i l\xE0ng, c\xE1ch \u0111\xE2y kho\u1EA3ng ${w.dist} \xF4 v\u1EC1 ph\xEDa ${w.dir}.`);
-    }
-  }
-  for (const t of sim2.tribes) {
-    if (t.state === "destroyed" || sim2.sightings.some((s) => s.tribe === t.id)) continue;
-    const finder = sim2.villagers.find((v) => v.health > 0 && v.inside === null && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < SIGHT2);
-    if (finder) sim2.sightings.push({ tribe: t.id, by: finder.id, at: sim2.time, reported: false });
-  }
-}
-function scoutLevel(sim2) {
-  if (sim2.dev.freeBuild) return 3;
-  return sim2.buildings.reduce((n, b) => b.kind === "scouttent" && b.done ? Math.max(n, Math.min(3, b.level)) : n, 0);
-}
-function scoutLimit(sim2) {
-  return sim2.dev.freeBuild ? 8 : sim2.buildings.reduce((n, b) => n + (b.kind === "scouttent" && b.done ? levelDef(b).slots : 0), 0);
-}
-var onTrip = (sim2, v) => sim2.scouts.some((m) => m.ids.includes(v.id));
-var canScout = (sim2, v) => v.job === "scout" && v.health > 0 && v.inside === null && !onTrip(sim2, v);
-var scoutRoster = (sim2) => sim2.villagers.filter((v) => v.job === "scout");
-function enlistScouts(sim2, ids) {
-  const lock = sim2.warLock();
-  if (lock) return lock;
-  const limit = scoutLimit(sim2);
-  if (!limit) return "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
-  const pick = sim2.mine(ids).filter((v) => v.job !== "fight" && v.job !== "scout"), room = limit - scoutRoster(sim2).length;
-  if (!pick.length) return "Ch\u1ECDn d\xE2n th\u01B0\u1EDDng \u0111\u1EC3 tuy\u1EC3n l\xE0m trinh s\xE1t";
-  if (room <= 0) return `Tr\u1EA1i trinh s\xE1t \u0111\xE3 \u0111\u1EE7 ${limit} trinh s\xE1t: n\xE2ng c\u1EA5p l\u1EC1u \u0111\u1EC3 ch\u1EE9a th\xEAm`;
-  for (const v of pick.slice(0, room)) {
-    sim2.resetTask(v);
-    sim2.clearCombat(v);
-    v.job = "scout";
-    v.prefer = -1;
-    v.post = -1;
-  }
-  return pick.length > room ? `L\u1EC1u ch\u1EC9 c\xF2n ch\u1ED7 cho ${room} trinh s\xE1t` : null;
-}
-function dismissScouts(sim2, ids) {
-  const lock = sim2.warLock();
-  if (lock) return lock;
-  let n = 0, away = 0;
-  for (const v of sim2.mine(ids)) {
-    if (v.job !== "scout") continue;
-    if (onTrip(sim2, v)) {
-      away++;
-      continue;
-    }
-    sim2.resetTask(v);
-    sim2.clearCombat(v);
-    v.job = "idle";
-    v.post = -1;
-    n++;
-  }
-  return n ? null : away ? "\u0110ang \u0111i trinh s\xE1t: \u0111\u1EE3i h\u1ECD v\u1EC1" : "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 cho ngh\u1EC9";
-}
-var scoutSkill = (v) => {
-  const w = SIEGE.scout.weights, sk = (w.agi * v.stats.agi + w.sta * v.stats.sta) / 6;
-  return sk * (1 + gearOf(v, SIEGE.scout.gearSkill));
-};
-function gearOf(v, table) {
-  return (v.weapon ? table.weapon : 0) + (v.armor ? table.armor : 0) + (v.torch ? table.torch : 0) + (v.mount || v.arm === "cavalry" ? table.mount : 0);
-}
-var stealthOf = (v) => 0.6 * v.stats.agi + 0.4 * v.stats.sta;
-var scoutsNeeded = (sim2, tribe, level) => Math.min(8, level + 1 + Math.floor(warriorsOf(sim2, tribe) / 8));
-function drawChance(skills, need) {
-  if (skills.length < 2) return 0;
-  return Math.min(0.95, skills.reduce((a, b) => a + b, 0) / need);
-}
-var surveyTime = (level, scouts, int = 6) => 0.2 * level * DAY_LENGTH / ((1 + 0.35 * (Math.max(1, scouts) - 1)) * Math.max(0.5, 1 + SIEGE.scout.surveyPerInt * (int - 6)));
-function planScout(sim2, ids, tribe) {
-  const level = scoutLevel(sim2), limit = scoutLimit(sim2), scouts = sim2.mine(ids).filter((v) => canScout(sim2, v));
-  const need = scoutsNeeded(sim2, tribe, Math.max(1, level)), w = whereIs(sim2, tribe);
-  const speed = scouts.length ? scouts.reduce((a, v) => a + v.speed * sim2.mountSpeed(v) * (1 + SIEGE.scout.walkPerSta * (v.stats.sta - 6)), 0) / scouts.length : 2, walk = w ? Math.max(0, w.dist - 15) / speed : 0;
-  const survey = surveyTime(Math.max(1, level), scouts.length, scouts.length ? scouts.reduce((a, v) => a + v.stats.agi, 0) / scouts.length : 6);
-  let error = null;
-  if (!sim2.dev.freeBuild && !isFound(sim2, tribe)) error = "Ch\u01B0a ai t\xECm th\u1EA5y l\xE0ng n\xE0y";
-  else if (!tribeOf(sim2, tribe)) error = "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
-  else if (!limit) error = "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
-  else if (sim2.scouts.some((m) => m.tribe === tribe)) error = "\u0110\xE3 c\xF3 trinh s\xE1t \u0111ang \u0111i l\xE0ng n\xE0y";
-  else if (!scouts.length) error = "Ch\u1ECDn trinh s\xE1t \u0111\u1EC3 c\u1EED \u0111i (tuy\u1EC3n \u1EDF Tr\u1EA1i trinh s\xE1t)";
-  else if (scouts.length > limit) error = `Tr\u1EA1i trinh s\xE1t ch\u1EC9 cho \u0111i ${limit} ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn`;
-  return { level, need, count: scouts.length, limit, chance: drawChance(scouts.map(scoutSkill), need), walk, survey, total: 2 * walk + survey, error };
-}
-function startScout(sim2, ids, tribe) {
-  const plan2 = planScout(sim2, ids, tribe), t = tribeOf(sim2, tribe);
-  if (plan2.error || !t) return plan2.error ?? "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
-  const scouts = sim2.mine(ids).filter((v) => canScout(sim2, v));
-  const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
-  const dx = fx - t.camp.x, dy = fy - t.camp.y, len = Math.max(1, Math.hypot(dx, dy)), reach = Math.min(len, 15);
-  const spotX = t.camp.x + dx / len * reach, spotY = t.camp.y + dy / len * reach;
-  scouts.forEach((v, i) => {
-    sim2.resetTask(v);
-    sim2.clearCombat(v);
-    const spot = sim2.nearestFree(Math.floor(spotX + Math.cos(i * 2.4) * 2), Math.floor(spotY + Math.sin(i * 2.4) * 2), /* @__PURE__ */ new Set()) ?? [Math.floor(spotX), Math.floor(spotY)];
-    sim2.orderMove([v.id], spot[0], spot[1]);
-  });
-  sim2.scouts.push({ id: sim2.nextMission++, tribe, level: Math.max(1, plan2.level), ids: scouts.map((v) => v.id), phase: "go", t: 0, need: plan2.need, survivors: scouts.length, sent: scouts.length });
-  sim2.say(`${scouts.length} trinh s\xE1t l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ${t.def.name} \u0111\u1EC3 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p ${Math.max(1, plan2.level)}: kho\u1EA3ng ${Math.round(plan2.chance * 100)}% v\u1EBD \u0111\u1EE7 chi ti\u1EBFt, c\u1EA3 chuy\u1EBFn m\u1EA5t ch\u1EEBng ${Math.max(1, Math.round(plan2.total / 60))} ph\xFAt.`);
-  return null;
-}
-function deathChance(sim2, m, v) {
-  const t = tribeOf(sim2, m.tribe), fire = sim2.campfire();
-  const power = warriorsOf(sim2, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
-  const day = sim2.weather === "clear" && !sim2.resting;
-  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim2.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 5e-3) - gearOf(v, SIEGE.scout.gearHide)));
-}
-function tickScouts(sim2, dt) {
-  tickSightings(sim2, dt);
-  for (let i = sim2.scouts.length - 1; i >= 0; i--) {
-    const m = sim2.scouts[i], t = tribeOf(sim2, m.tribe);
-    const alive = m.ids.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.team === "player" && v.health > 0);
-    m.ids = alive.map((v) => v.id);
-    if (!alive.length || !t) {
-      sim2.say(alive.length ? "Trinh s\xE1t b\u1ECB h\u1EE7y." : "M\u1EA5t h\u1EBFt trinh s\xE1t: kh\xF4ng c\xF3 b\u1EA3n \u0111\u1ED3 n\xE0o v\u1EC1.");
-      sim2.scouts.splice(i, 1);
-      continue;
-    }
-    m.t += dt;
-    if (m.phase === "go") {
-      const near2 = alive.every((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
-      if (near2 || m.t > 300) {
-        m.phase = "watch";
-        m.t = 0;
-        for (const v of alive) if (sim2.frnd() < deathChance(sim2, m, v)) sim2.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
-        m.survivors = alive.filter((v) => v.health > 0 && sim2.byId.has(v.id)).length;
-        if (m.survivors && m.level >= 2) m.seen = seenNow(sim2, tribeOf(sim2, m.tribe));
-        sim2.say(m.survivors ? `Trinh s\xE1t \u0111ang quan s\xE1t ${t.def.name}.` : "Trinh s\xE1t b\u1ECB b\u1EAFt g\u1EB7p, kh\xF4ng ai tho\xE1t.");
-      }
-    } else if (m.phase === "watch") {
-      if (m.t >= surveyTime(m.level, m.survivors, alive.reduce((a, v) => a + v.stats.agi, 0) / Math.max(1, alive.length))) {
-        m.phase = "back";
-        m.t = 0;
-        const fire = sim2.campfire();
-        for (const id of m.ids) if (sim2.byId.has(id) && fire) sim2.orderMove([id], Math.floor(fire.x + 1), Math.floor(fire.y + 3));
-      }
-    } else {
-      const fire = sim2.campfire(), home = !fire || alive.every((v) => Math.hypot(v.x - fire.x, v.y - fire.y) < 7);
-      if (home || m.t > 600) {
-        const skills = alive.map(scoutSkill), chance = drawChance(skills, m.need), full = sim2.frnd() < chance;
-        const gaps = full ? 0 : Math.max(1, Math.ceil(m.need - skills.reduce((a, b) => a + b, 0)));
-        const old = sim2.maps.findIndex((x) => x.tribe === m.tribe && x.level === m.level);
-        const map = { tribe: m.tribe, level: m.level, at: sim2.time, gaps, seen: m.seen };
-        if (old >= 0) sim2.maps[old] = map;
-        else sim2.maps.push(map);
-        sim2.say(`Trinh s\xE1t v\u1EC1 (${alive.length}/${m.sent ?? alive.length} ng\u01B0\u1EDDi): b\u1EA3n \u0111\u1ED3 c\u1EA5p ${m.level} c\u1EE7a ${t.def.name}${full ? " \u0111\u1EA7y \u0111\u1EE7 chi ti\u1EBFt" : `, nh\u01B0ng c\xF2n h\u1EDF (thi\u1EBFu ${gaps} m\u1EA3nh, t\u1EC9 l\u1EC7 v\u1EBD \u0111\u1EE7 ch\u1EC9 ${Math.round(chance * 100)}%)`}.`);
-        sim2.scouts.splice(i, 1);
-      }
-    }
-  }
-}
-var MARGIN = 24;
-var YARD = 7;
-var WORKS = {
-  fire: { level: 1, label: "\u0110\u1ED1ng l\u1EEDa" },
-  tower: { level: 2, label: "Ch\xF2i canh" },
-  fence: { level: 2, label: "H\xE0ng r\xE0o" },
-  gate: { level: 2, label: "C\u1ED5ng" },
-  pile: { level: 3, label: "Kho l\u01B0\u01A1ng" }
-};
-var spread = (id, salt) => {
-  const x = Math.sin(id * 12.9898 + salt * 78.233) * 43758.5453;
-  return x - Math.floor(x);
-};
-function seenNow(sim2, t) {
-  const out = [];
-  for (const id of t.unitIds) {
-    const u = sim2.get(id);
-    if (!u || u.health <= 0) continue;
-    out.push({ x: Math.round(u.x * 10) / 10, y: Math.round(u.y * 10) / 10, arm: armOfWeapon(u.weapon), weapon: u.weapon ?? null, civ: u.ai?.role === "civ", leader: u.id === t.leaderId });
-  }
-  return out;
-}
-var WORK_INFO = {
-  fire: "\u0110\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD: t\xE2m l\xE0ng, quanh \u0111\xE2y d\xE2n v\xE0 l\xEDnh t\u1EE5 l\u1EA1i.",
-  tower: "Ch\xF2i canh: cung th\u1EE7 \u0111\u1EE9ng cao b\u1EAFn xa h\u01A1n, ph\u1EA3i ph\xE1 ch\xF2i m\u1EDBi h\u1EA1 \u0111\u01B0\u1EE3c h\u1ECD.",
-  fence: "H\xE0ng r\xE0o: ch\u1EB7n \u0111\u01B0\u1EDDng, ph\u1EA3i ph\xE1 ho\u1EB7c \u0111i v\xF2ng.",
-  gate: "C\u1ED5ng: l\u1ED1i v\xE0o l\xE0ng, \u0111\xF3ng th\xEC ch\u1EB7n \u0111\u01B0\u1EDDng.",
-  pile: "Kho l\u01B0\u01A1ng: ch\u1ED7 h\u1ECD c\u1EA5t th\u1EE9c \u0103n v\xE0 \u0111\u1ED3 c\u1ED1ng n\u1EA1p."
-};
-function freeNear(sim2, x, y) {
-  for (let r = 0; r <= 8; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (Math.max(Math.abs(i), Math.abs(j)) === r && !sim2.world.isBlocked(Math.floor(x) + i, Math.floor(y) + j)) return [Math.floor(x) + i, Math.floor(y) + j];
-  return null;
-}
-function entryRoute(sim2, camp, box, toUs) {
-  const fire = sim2.campfire(), from = freeNear(sim2, (fire?.x ?? sim2.world.start.x) + 1, (fire?.y ?? sim2.world.start.y) + 3);
-  const to = freeNear(sim2, camp.x + (toUs?.x ?? 0) * (YARD + 1), camp.y + (toUs?.y ?? 0) * (YARD + 1));
-  if (!from || !to) return [];
-  const path = findPath(sim2.world, from[0], from[1], to[0], to[1], 7e4);
-  const last = path[path.length - 1];
-  if (!last || last[0] !== to[0] || last[1] !== to[1]) return [];
-  const inside = path.filter(([x, y]) => x >= box.x0 && x < box.x1 && y >= box.y0 && y < box.y1);
-  return inside.filter((_, i) => i % 3 === 0 || i === inside.length - 1).map(([x, y]) => ({ x: x + 0.5, y: y + 0.5 }));
-}
-function tribeIntel(sim2, tribe) {
-  const t = tribeOf(sim2, tribe);
-  if (!t) return null;
-  const level = sim2.dev.freeBuild ? 3 : mapLevel(sim2, tribe);
-  if (!level) return null;
-  const held = sim2.maps.filter((m) => m.tribe === tribe && (m.gaps > 0 ? m.level - 1 : m.level) >= level).sort((a, b) => b.at - a.at)[0];
-  const accuracy = sim2.dev.freeBuild || !held ? 1 : mapAccuracy(sim2, held), gaps = sim2.dev.freeBuild ? 0 : held?.gaps ?? 0;
-  const N = sim2.world.size, ry = YARD + MARGIN, rx = Math.round(ry * 1.9);
-  const x0 = Math.max(0, Math.min(N - 2 * rx, Math.floor(t.camp.x) - rx)), y0 = Math.max(0, Math.min(N - 2 * ry, Math.floor(t.camp.y) - ry));
-  const box = { x0, y0, x1: x0 + 2 * rx, y1: y0 + 2 * ry };
-  const fire = sim2.campfire(), dx = (fire?.x ?? sim2.world.start.x) - t.camp.x, dy = (fire?.y ?? sim2.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
-  const seen = sim2.dev.freeBuild || !held?.seen ? seenNow(sim2, t) : held.seen;
-  const soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
-  const people = [];
-  if (level >= 2) seen.forEach((u, i) => {
-    if (spread(i + 1, 1) < Math.min(0.6, gaps * 0.2)) return;
-    const mark = level < 3 ? "unknown" : u.civ ? "civ" : u.arm;
-    if (soldiers && !u.civ) soldiers[u.arm]++;
-    people.push({ x: u.x, y: u.y, mark, leader: level >= 3 && u.leader, weapon: level >= 3 ? u.weapon : null });
-  });
-  const route = entryRoute(sim2, t.camp, box, len > 0 ? { x: dx / len, y: dy / len } : null);
-  const others = sim2.tribes.filter((o) => o !== t && o.state !== "adopted" && o.state !== "destroyed" && isFound(sim2, o.id)).map((o) => ({ name: o.def.name, x: o.camp.x, y: o.camp.y, r: YARD, ours: false }));
-  others.push({ name: "L\xE0ng c\u1EE7a ta", x: (fire?.x ?? sim2.world.start.x) + 1, y: (fire?.y ?? sim2.world.start.y) + 1, r: 12, ours: true });
-  const reach = (o) => o.x > box.x0 - o.r && o.x < box.x1 + o.r && o.y > box.y0 - o.r && o.y < box.y1 + o.r;
-  const loot = Object.entries(t.loot).filter(([, v]) => (v ?? 0) > 0).map(([k, v]) => `${Math.round(v)} ${RES_NAME[k].toLowerCase()}`).join(", ");
-  return {
-    tribe,
-    name: t.def.name,
-    level,
-    accuracy,
-    gaps,
-    box,
-    camp: { ...t.camp },
-    yard: YARD,
-    toUs: len > 0 ? { x: dx / len, y: dy / len } : null,
-    route,
-    others: others.filter(reach),
-    population: Math.max(2, Math.round(seen.length / 2) * 2),
-    structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === "pile" && loot ? `${WORK_INFO.pile} C\xF3 kho\u1EA3ng ${loot}.` : WORK_INFO[p.kind] ?? "", x: p.x, y: p.y, w: p.w, h: p.h })),
-    people,
-    soldiers
-  };
-}
-
 // src/sim/warplan.ts
 var NEED_LEVEL = { camp: 1, gate: 2, ambush: 2, stores: 3, leader: 3 };
 function canTarget(sim2, objective, tribe) {
@@ -32522,9 +45004,9 @@ function routeTime(sim2, s, from, pts, target) {
     const d = Math.hypot(p.x - at.x, p.y - at.y), steps = Math.max(1, Math.ceil(d * 2));
     let bad = 0;
     for (let i = 0; i <= steps; i++) if (sim2.world.isBlocked(Math.floor(at.x + (p.x - at.x) * i / steps), Math.floor(at.y + (p.y - at.y) * i / steps))) bad++;
-    const share = bad / (steps + 1);
-    legs.push(d * (1 + 1.5 * share) / pace);
-    blocked.push(share > 0.1);
+    const share2 = bad / (steps + 1);
+    legs.push(d * (1 + 1.5 * share2) / pace);
+    blocked.push(share2 > 0.1);
     length += d;
     at = p;
   }
@@ -32566,8 +45048,8 @@ function reviewPlan(sim2, plan2) {
       if (!level && !sim2.dev.freeBuild) out.push("\u2717 Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 n\xE0o c\u1EE7a l\xE0ng n\xE0y: h\xE3y c\u1EED trinh s\xE1t.");
       else {
         const newest = Math.max(...maps.map((m) => m.at));
-        const days = Math.floor((sim2.time - newest) / 1200);
-        out.push(days >= 3 ? "B\u1EA3n \u0111\u1ED3 \u0111\xE3 c\u0169, \u0111\u1ECBch c\xF3 th\u1EC3 \u0111\xE3 \u0111\u1ED5i b\u1ED1 tr\xED." : days >= 1 ? `B\xE1o c\xE1o trinh s\xE1t t\u1EEB ${days} h\xF4m tr\u01B0\u1EDBc.` : "B\xE1o c\xE1o trinh s\xE1t m\u1EDBi trong ng\xE0y.");
+        const days2 = Math.floor((sim2.time - newest) / 1200);
+        out.push(days2 >= 3 ? "B\u1EA3n \u0111\u1ED3 \u0111\xE3 c\u0169, \u0111\u1ECBch c\xF3 th\u1EC3 \u0111\xE3 \u0111\u1ED5i b\u1ED1 tr\xED." : days2 >= 1 ? `B\xE1o c\xE1o trinh s\xE1t t\u1EEB ${days2} h\xF4m tr\u01B0\u1EDBc.` : "B\xE1o c\xE1o trinh s\xE1t m\u1EDBi trong ng\xE0y.");
         if (maps.some((m) => m.gaps > 0)) out.push("B\u1EA3n \u0111\u1ED3 c\xF2n h\u1EDF v\xEC \xEDt trinh s\xE1t v\u1EC1: v\xE0i ch\u1ED7 ch\u01B0a ch\u1EAFc ch\u1EAFn.");
       }
     }
@@ -32941,8 +45423,8 @@ function tickPlans(sim2, dt) {
             if (pos.target) sim2.orderAttack(sim2.squadUnits(s).map((v) => v.id), { kind: "unit", id: pos.target });
           } else if (m.state === "march" && m.route === "forest" && d > 12 && Math.hypot((s.anchor?.x ?? 0) - c.x, (s.anchor?.y ?? 0) - c.y) < 4) dispatch(sim2, plan2, { ...m, route: "main" }, s);
         }
-        const lost = m.initial ? 1 - alive / m.initial : 0, morale = sim2.squadUnits(s).reduce((a, v) => a + v.morale, 0) / alive;
-        if (m.withdrawAt > 0 && (lost >= m.withdrawAt || morale < 25)) {
+        const lost = m.initial ? 1 - alive / m.initial : 0;
+        if (m.withdrawAt > 0 && lost >= m.withdrawAt) {
           m.state = "withdraw";
           m.leg = 0;
           m.block = null;
@@ -33059,7 +45541,7 @@ function dps(weapon, str, agi, armor) {
 }
 var armOf2 = (sim2, v) => sim2.armOf(v);
 var STANCE_WEIGHT = { fight: 1, shoot: 0.8, hold: 0.5, evade: 0 };
-var pct = (x) => `${Math.round(x * 100)}%`;
+var pct2 = (x) => `${Math.round(x * 100)}%`;
 function forecastPlan(sim2, plan2) {
   const t = plan2.tribe ? sim2.tribes.find((x) => x.id === plan2.tribe) : void 0;
   const notes = sim2.reviewPlan(plan2), blocked = notes.filter((l) => l.startsWith("\u2717")).map((l) => l.slice(2));
@@ -33071,7 +45553,7 @@ function forecastPlan(sim2, plan2) {
   }
   const enemyArmor = t.def.armor ? ARMORS.hide : null;
   const enemyWeapons = t.def.weapons, enemyType = (WEAPONS[enemyWeapons[0]] ?? WEAPONS.fist).type;
-  let strength = 0, count = 0, hurt2 = 0, bare = 0, unarmored = 0, morale = 0;
+  let strength = 0, count = 0, hurt2 = 0, bare = 0, unarmored = 0;
   const arms = { foot: 0, archer: 0, cavalry: 0 };
   const perSquad = [];
   for (const m of plan2.missions) {
@@ -33081,7 +45563,7 @@ function forecastPlan(sim2, plan2) {
     let worth = 0;
     for (const v of us) {
       const armor = v.armor ? ARMORS[v.armor] ?? null : null, hp = v.health / (1 - (armor ? armor[enemyType] : 0));
-      const unit = Math.sqrt(dps(v.weapon, v.stats.str, v.stats.agi, enemyArmor) * hp) * Math.min(1.1, Math.max(0.7, v.morale / 70));
+      const unit = Math.sqrt(dps(v.weapon, v.stats.str, v.stats.agi, enemyArmor) * hp);
       worth += unit * w2;
       count++;
       sa[armOf2(sim2, v)]++;
@@ -33089,7 +45571,6 @@ function forecastPlan(sim2, plan2) {
       if (v.health < 0.6 * v.maxHealth) hurt2++;
       if (!v.weapon) bare++;
       if (!v.armor) unarmored++;
-      morale += v.morale;
     }
     strength += worth;
     perSquad.push({ name: s.name, n: us.length, worth, arms: sa });
@@ -33132,14 +45613,13 @@ function forecastPlan(sim2, plan2) {
   if (bare) w.push(`${bare} l\xEDnh ch\u01B0a c\xF3 v\u0169 kh\xED, \u0111\xE1nh b\u1EB1ng tay kh\xF4ng.`);
   if (unarmored && count > 1) w.push(`${unarmored} l\xEDnh ch\u01B0a c\xF3 gi\xE1p.`);
   if (hurt2) w.push(`${hurt2} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng n\u1EB7ng.`);
-  if (count && morale / count < 50) w.push("Tinh th\u1EA7n qu\xE2n th\u1EA5p, d\u1EC5 b\u1ECF ch\u1EA1y gi\u1EEFa tr\u1EADn.");
   const home = sim2.villagers.filter((v) => v.job === "fight" && v.health > 0 && !plan2.missions.some((m) => sim2.squadById(m.squad)?.ids.includes(v.id))).length;
   if (home < 3) w.push(`Ch\u1EC9 c\xF2n ${home} l\xEDnh gi\u1EEF l\xE0ng: n\u1EBFu \u0111\u1ECBch \u0111\xE1nh v\xE0o l\xFAc n\xE0y th\xEC kh\xF3 ch\u1ED1ng.`);
   if (sim2.resting) w.push("\u0110ang ban \u0111\xEAm: qu\xE2n \u0111i ch\u1EADm v\xE0 nh\xECn k\xE9m.");
   if (sim2.weather !== "clear") w.push("Th\u1EDDi ti\u1EBFt x\u1EA5u: qu\xE2n \u0111i ch\u1EADm h\u01A1n.");
   if (level < 3) w.push(`B\u1EA3n \u0111\u1ED3 c\u1EA5p ${level}: ${level === 1 ? "ch\u01B0a bi\u1EBFt \u0111\u1ECBch c\xF3 l\xEDnh hay c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 n\xE0o" : "ch\u01B0a bi\u1EBFt \u0111\u1ECBch c\xF3 bao nhi\xEAu l\xEDnh v\xE0 thu\u1ED9c binh ch\u1EE7ng n\xE0o"}, n\xEAn d\u1EF1 b\xE1o c\xF2n thi\u1EBFu ch\u1EAFc ch\u1EAFn.`);
-  out.win = [`Th\u1EAFng khi ${t.def.name} h\u1EBFt l\xEDnh, l\u1EEDa c\u1EE7a h\u1ECD t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh s\u1EADp; khi \u0111\xF3 d\xE2n c\u1EE7a h\u1ECD xin h\xE0ng.`, "Ta l\u1EA5y \u0111\u01B0\u1EE3c nh\u1EEFng g\xEC c\xF2n trong kho l\u01B0\u01A1ng c\u1EE7a h\u1ECD.", `D\u1EF1 ki\u1EBFn ta m\u1EA5t kho\u1EA3ng ${pct(lossIfWin)} s\u1ED1 l\xEDnh \u0111\xE3 d\xE0n tr\u1EADn.`];
-  out.lose = ["Thua khi qu\xE2n ta h\u1EBFt l\xEDnh ho\u1EB7c r\xFAt lui.", `Ph\u1EA7n l\u1EDBn l\xEDnh ra tr\u1EADn c\xF3 th\u1EC3 g\u1EE5c; l\xEDnh ch\u1EBFt l\xE0 m\u1EA5t h\u1EB3n, c\xF9ng v\u0169 kh\xED v\xE0 gi\xE1p mang theo.`, "Tinh th\u1EA7n d\xE2n gi\u1EA3m; k\u1EBB \u0111\u1ECBch b\u1ECB ch\u1ECDc gi\u1EADn n\xEAn c\xF3 th\u1EC3 k\xE9o \u0111\u1EBFn tr\u1EA3 \u0111\u0169a.", "R\xFAt k\u1ECBp th\xEC c\u1EE9u \u0111\u01B0\u1EE3c nh\u1EEFng ng\u01B0\u1EDDi c\xF2n l\u1EA1i, nh\u01B0ng chi\u1EBFn l\u1EE3i ph\u1EA9m th\xEC kh\xF4ng c\xF3."];
+  out.win = [`Th\u1EAFng khi ${t.def.name} h\u1EBFt l\xEDnh, l\u1EEDa c\u1EE7a h\u1ECD t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh s\u1EADp; khi \u0111\xF3 d\xE2n c\u1EE7a h\u1ECD xin h\xE0ng.`, "Ta l\u1EA5y \u0111\u01B0\u1EE3c nh\u1EEFng g\xEC c\xF2n trong kho l\u01B0\u01A1ng c\u1EE7a h\u1ECD.", `D\u1EF1 ki\u1EBFn ta m\u1EA5t kho\u1EA3ng ${pct2(lossIfWin)} s\u1ED1 l\xEDnh \u0111\xE3 d\xE0n tr\u1EADn.`];
+  out.lose = ["Thua khi qu\xE2n ta h\u1EBFt l\xEDnh ho\u1EB7c r\xFAt lui.", `Ph\u1EA7n l\u1EDBn l\xEDnh ra tr\u1EADn c\xF3 th\u1EC3 g\u1EE5c; l\xEDnh ch\u1EBFt l\xE0 m\u1EA5t h\u1EB3n, c\xF9ng v\u0169 kh\xED v\xE0 gi\xE1p mang theo.`, "K\u1EBB \u0111\u1ECBch b\u1ECB ch\u1ECDc gi\u1EADn n\xEAn c\xF3 th\u1EC3 k\xE9o \u0111\u1EBFn tr\u1EA3 \u0111\u0169a.", "R\xFAt k\u1ECBp th\xEC c\u1EE9u \u0111\u01B0\u1EE3c nh\u1EEFng ng\u01B0\u1EDDi c\xF2n l\u1EA1i, nh\u01B0ng chi\u1EBFn l\u1EE3i ph\u1EA9m th\xEC kh\xF4ng c\xF3."];
   out.verdict = out.chance >= 0.8 ? "R\u1EA5t c\xF3 l\u1EE3i" : out.chance >= 0.6 ? "C\xF3 l\u1EE3i" : out.chance >= 0.4 ? "C\xE2n b\u1EB1ng" : out.chance >= 0.2 ? "B\u1EA5t l\u1EE3i" : "R\u1EA5t b\u1EA5t l\u1EE3i";
   const L2 = out.lines;
   L2.push(`Qu\xE2n ta: ${count} l\xEDnh trong ${perSquad.length} \u0111\u1ED9i${arms.archer || arms.cavalry ? ` (${arms.foot} b\u1ED9 binh, ${arms.archer} b\u1EAFn xa, ${arms.cavalry} k\u1EF5)` : ""}.`);
@@ -33148,13 +45628,13 @@ function forecastPlan(sim2, plan2) {
     L2.push("Ch\u01B0a r\xF5 v\u0169 kh\xED, c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 hay th\u1EE7 l\u0129nh: c\u1EA7n b\u1EA3n \u0111\u1ED3 c\u1EA5p 2 v\xE0 3 \u0111\u1EC3 bi\u1EBFt th\xEAm.");
   } else {
     L2.push(`L\xE0ng ${t.def.name}: kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi${level >= 3 ? `, trong \u0111\xF3 ${men} l\xEDnh` : `, \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED`}.`);
-    L2.push(works > 1 ? `Ph\xF2ng th\u1EE7: ${towers} ch\xF2i canh, ${fences} \u0111o\u1EA1n r\xE0o, ${gates} c\u1ED5ng (t\u0103ng kho\u1EA3ng ${pct(works - 1)} s\u1EE9c \u0111\u1ECBch).` : "Ch\u01B0a th\u1EA5y c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 n\xE0o.");
+    L2.push(works > 1 ? `Ph\xF2ng th\u1EE7: ${towers} ch\xF2i canh, ${fences} \u0111o\u1EA1n r\xE0o, ${gates} c\u1ED5ng (t\u0103ng kho\u1EA3ng ${pct2(works - 1)} s\u1EE9c \u0111\u1ECBch).` : "Ch\u01B0a th\u1EA5y c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 n\xE0o.");
   }
   if (level >= 3 && soldiers) {
     L2.push(`L\xEDnh \u0111\u1ECBch: ${soldiers.foot} b\u1ED9 binh, ${soldiers.archer} cung th\u1EE7, ${soldiers.cavalry} k\u1EF5 th\xFA${chief > 1 ? "; c\xF3 th\u1EE7 l\u0129nh \u0111i c\xF9ng" : ""}.`);
     L2.push(match > 1.05 ? "Binh ch\u1EE7ng c\u1EE7a ta kh\u1EAFc binh ch\u1EE7ng \u0111\u1ECBch." : match < 0.95 ? "Binh ch\u1EE7ng \u0111\u1ECBch kh\u1EAFc qu\xE2n ta: n\xEAn \u0111\u1ED5i \u0111\u1ED9i h\xECnh." : "Binh ch\u1EE7ng hai b\xEAn ngang nhau.");
     L2.push(`S\u1EE9c m\u1EA1nh quy \u0111\u1ED5i: ta ${Math.round(ours)} so v\u1EDBi \u0111\u1ECBch ${Math.round(theirs)}.`);
-    for (const q of perSquad) L2.push(`${q.name}: ${q.n} l\xEDnh, \u0111\xF3ng g\xF3p ${ours > 0 ? pct(q.worth * match / ours) : "0%"} s\u1EE9c m\u1EA1nh c\u1EE7a ta.`);
+    for (const q of perSquad) L2.push(`${q.name}: ${q.n} l\xEDnh, \u0111\xF3ng g\xF3p ${ours > 0 ? pct2(q.worth * match / ours) : "0%"} s\u1EE9c m\u1EA1nh c\u1EE7a ta.`);
   }
   if (level >= 2) for (const m of plan2.missions) {
     const s = sim2.squadById(m.squad), start = s ? sim2.missionStart(m) : null;
@@ -33637,7 +46117,7 @@ function campBeast(sim2) {
 }
 function mountOf(sim2, v) {
   if (v.team !== "player") return null;
-  return v.mount ?? (v.job === "fight" && v.arm === "cavalry" ? campBeast(sim2) : null);
+  return v.mount ?? ((v.job === "fight" || v.job === "scout") && v.arm === "cavalry" ? campBeast(sim2) : null);
 }
 var mountSpeed = (sim2, v) => {
   const k = mountOf(sim2, v);
@@ -33773,6 +46253,14 @@ var WAR = {
   /** → warplan.objectivePos */
   missionTarget(plan2, m) {
     return objectivePos(this, plan2, m);
+  },
+  /** → scouting.recallScouts */
+  recallScouts(tribe) {
+    return recallScouts(this, tribe);
+  },
+  /** → scouting.scoutFlow */
+  scoutFlow(tribe) {
+    return scoutFlow(this, tribe);
   },
   /** → scouting.startScout */
   startScout(ids, tribe) {
@@ -34035,6 +46523,7 @@ var WAR = {
 };
 
 // src/sim/sim.ts
+var STREAM_REACH = 40;
 var Sim = class _Sim {
   constructor(seed = 1337) {
     this.seed = seed;
@@ -34095,14 +46584,14 @@ var Sim = class _Sim {
     this.battleReports = [];
     this.nextAid = 1;
     /** Test switches driven by the dev menu; all off in a normal game. */
-    this.dev = { freeBuild: false, instantBuild: false, god: false, noHunger: false, fastWorks: false, noTire: false, noArrivals: false };
+    this.dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, noTire: false, noArrivals: false };
     /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
     this.pendingTribe = null;
     this.acc = 0;
     this.fogDirty = true;
     this.nextVid = 1;
     this.nextBid = 1;
-    this.moraleClock = 0;
+    this.leaderClock = 0;
     /** Seconds since the tribes were last looked after (they are tended once a second). */
     this.tribeClock = 0;
     this.lastFullWarn = -999;
@@ -34114,13 +46603,27 @@ var Sim = class _Sim {
     this.signalled = false;
     this.resting = false;
     this.lastVision = -1;
-    /** Stored food split into lots, oldest eaten first; each lot has an expiry time. */
-    this.foodLots = [];
+    /** Food in the pot of the campfire: the meal of the coming end of day, filled before the store (see economy.feedPot). */
+    this.foodPot = 0;
+    /** How much the whole village is weakened today for going short at the last meal (0..FOOD.maxPenalty). */
+    this.foodPenalty = 0;
+    /** Food that came in today, and the total (pot + store) seen last tick (-1: not yet); the incomes of the last three days. Only to tell the player what the village earns. */
+    this.foodIncome = 0;
+    this.foodSeen = -1;
+    this.foodDays = [];
+    /** What the gatherers of each trade ('wood', 'stone', 'food', 'hunt', 'farm') brought in today and yesterday, for the card of their house. */
+    /** The highest level a house of each kind had when it fell in battle: a new one of that kind is raised at that level (paying for the levels), not from level 1. */
+    this.ruins = {};
+    /** How much of the map of a village ("tribe:level") scouts brought home unfinished, 0..1: the next scouts go on from there. */
+    this.drafts = {};
+    this.yieldNow = {};
+    this.yieldPrev = {};
+    this.streamClock = 0;
     this.world = new World(seed);
     this.fog = new Fog(this.world);
-    this.rnd = mulberry32(seed ^ 2654435769);
-    this.frnd = mulberry32(seed ^ 2135587861);
-    this.wrnd = mulberry32(seed ^ 1540483477);
+    this.rnd = mulberry32(mix32(seed ^ 2654435769));
+    this.frnd = mulberry32(mix32(seed ^ 2135587861));
+    this.wrnd = mulberry32(mix32(seed ^ 1540483477));
     RES_NAME.coin = CURRENCY[this.era];
     this.researched.add("torch1");
     this.world.setSeason(this.season);
@@ -34134,7 +46637,8 @@ var Sim = class _Sim {
     this.say("Hai ng\u01B0\u1EDDi \u0111\u1EA7u ti\xEAn \u0111\xE3 \u0111\u1EBFn b\xEAn \u0111\u1ED1ng l\u1EEDa: m\u1ED9t ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m, m\u1ED9t ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7. Vi\u1EC7c c\u1EE7a m\u1ED7i ng\u01B0\u1EDDi do c\xF4ng tr\xECnh c\u1EE7a ngh\u1EC1 \u0111\xF3 qu\u1EA3n l\xFD: m\u1EDF N\xF4ng tr\u1EA1i, X\u01B0\u1EDFng g\u1ED7 hay X\u01B0\u1EDFng \u0111\xE1 c\u1EA1nh \u0111\u1ED1ng l\u1EEDa \u0111\u1EC3 giao vi\u1EC7c. D\u1EF1ng Nh\xE0 th\u1EE3 x\xE2y tr\u01B0\u1EDBc, r\u1ED3i c\xE1c c\xF4ng tr\xECnh kh\xE1c.");
     this.refreshFog();
     placeStarters(this);
-    populate(this);
+    for (const [cx, cy] of this.world.readyChunks()) populateChunk(this, cx, cy);
+    this.world.onChunk = (cx, cy) => populateChunk(this, cx, cy);
     spawnTribes(this);
   }
   // ---------------------------------------------------------------- tiện ích
@@ -34224,6 +46728,14 @@ var Sim = class _Sim {
   bedsIn(kind) {
     return bedsIn(this, kind);
   }
+  /** → rest.attackReason */
+  attackReason() {
+    return attackReason(this);
+  }
+  /** → rest.hides */
+  hides(v) {
+    return hides(this, v);
+  }
   /** → rest.freeBed */
   freeBed(v) {
     return freeBed(this, v);
@@ -34265,16 +46777,28 @@ var Sim = class _Sim {
   fireRadius() {
     return fireRadius(this);
   }
-  /** → economy.foodSpoilingWithin */
-  foodSpoilingWithin(secs) {
-    return foodSpoilingWithin(this, secs);
-  }
   get(id) {
     return this.byId.get(id);
   }
   say(text) {
     this.log.push({ t: this.time, text });
     if (this.log.length > 40) this.log.shift();
+  }
+  /** → construction.startLevel */
+  startLevel(kind) {
+    return startLevel(this, kind);
+  }
+  /** → construction.startCost */
+  startCost(kind) {
+    return startCost(this, kind);
+  }
+  /** → construction.fireLevel */
+  fireLevel() {
+    return fireLevel(this);
+  }
+  /** → construction.fireUpgradeBlock */
+  fireUpgradeBlock(level) {
+    return fireUpgradeBlock(this, level);
   }
   /** → construction.capacity */
   capacity(_res) {
@@ -34564,6 +47088,34 @@ var Sim = class _Sim {
   discardTool(ids, k) {
     return discardTool(this, ids, k);
   }
+  /** → economy.foodNeed */
+  foodNeed() {
+    return foodNeed(this);
+  }
+  /** → notices.noticesOf */
+  notices() {
+    return noticesOf(this);
+  }
+  /** → economy.noteYield */
+  noteYield(key, n) {
+    return noteYield(this, key, n);
+  }
+  /** → economy.eatDay */
+  eatDay() {
+    return eatDay(this);
+  }
+  /** → economy.deposit */
+  deposit(res, amount) {
+    return deposit(this, res, amount);
+  }
+  /** → economy.hasRoom */
+  hasRoom(res) {
+    return hasRoom(this, res);
+  }
+  /** → economy.dailyYield */
+  dailyYield(b) {
+    return dailyYield(this, b);
+  }
   /** → economy.barter */
   barter(res) {
     return barter(this, res);
@@ -34591,6 +47143,14 @@ var Sim = class _Sim {
   /** → commands.orderWork */
   orderWork(ids, tx, ty) {
     return orderWork(this, ids, tx, ty);
+  }
+  /** → commands.recallFar */
+  recallFar() {
+    return recallFar(this);
+  }
+  /** → commands.autoHunter */
+  autoHunter(ids, target) {
+    return autoHunter(this, ids, target);
   }
   /** → commands.setJob */
   setJob(ids, job) {
@@ -34675,7 +47235,9 @@ var Sim = class _Sim {
     this.pathLeft = PATH_BUDGET;
     this.tickCalendar();
     this.world.tick(dt);
-    this.syncFood();
+    this.streamWorld(dt);
+    feedPot(this);
+    trackFood(this);
     tickAnimals(this, dt);
     tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
@@ -34690,10 +47252,9 @@ var Sim = class _Sim {
     tickPlans(this, dt);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
-    this.moraleClock += dt;
-    if (this.moraleClock >= 1) {
-      this.moraleClock = 0;
-      for (const v of this.villagers) if (v.down <= 0) tickMorale(this, v);
+    this.leaderClock += dt;
+    if (this.leaderClock >= 1) {
+      this.leaderClock = 0;
       this.pickLeaders();
     }
     if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
@@ -34702,13 +47263,16 @@ var Sim = class _Sim {
       this.refreshFog();
     }
   }
+  /** Make the land round the people as they walk out: twice a second, every villager out on the map has the land within STREAM_REACH made (see World.ensure). */
+  streamWorld(dt) {
+    this.streamClock -= dt;
+    if (this.streamClock > 0) return;
+    this.streamClock = 0.5;
+    for (const v of this.villagers) if (v.inside === null) this.world.ensure(v.x, v.y, STREAM_REACH);
+  }
   /** → environment.tickCalendar */
   tickCalendar() {
     return tickCalendar(this);
-  }
-  /** → economy.syncFood */
-  syncFood() {
-    return syncFood(this);
   }
   /** → villagers.tickVillager */
   tickVillager(v, dt) {
@@ -34758,12 +47322,10 @@ var Sim = class _Sim {
     v.job = "idle";
     v.phase = "idle";
     v.path = [];
-    v.morale = 50;
     v.leader = false;
     v.fleeT = 0;
     this.clearCombat(v);
     v.health = Math.max(v.health, v.maxHealth * 0.6);
-    v.fullness = 70;
     this.villagers.push(v);
     this.fogDirty = true;
   }
@@ -34791,12 +47353,6 @@ var Sim = class _Sim {
   }
   campfire() {
     return this.buildings.find((b) => b.kind === "campfire" && b.done);
-  }
-  /** Close to the unit's own camp: the village fire, or the tribal camp for tribal people. */
-  nearHome(v) {
-    if (v.ai) return Math.hypot(v.x - v.ai.camp.x, v.y - v.ai.camp.y) < 10;
-    const f = this.campfire();
-    return !!f && Math.hypot(v.x - f.x - 1, v.y - f.y - 1) < 10;
   }
   /** Another fighter within 7 tiles of the animal: a boar is only worth attacking in a group. */
   packNear(v, a) {
@@ -34871,16 +47427,16 @@ var Sim = class _Sim {
     return planGearErrand(this, v);
   }
   /** → movement.ringTiles */
-  ringTiles(v, x, y, w, h2) {
-    return ringTiles(this, v, x, y, w, h2);
+  ringTiles(v, x, y, w, h3) {
+    return ringTiles(this, v, x, y, w, h3);
   }
   /** → movement.pathTo */
   pathTo(v, gx, gy, maxNodes = 14e3) {
     return pathTo(this, v, gx, gy, maxNodes);
   }
   /** → movement.routeTo */
-  routeTo(v, tiles, tries = 3) {
-    return routeTo(this, v, tiles, tries);
+  routeTo(v, tiles, tries = 3, maxNodes = 14e3) {
+    return routeTo(this, v, tiles, tries, maxNodes);
   }
   /** → labor.planDeliver */
   planDeliver(v) {
@@ -34932,7 +47488,6 @@ function heal(sim2, ids) {
   eachSelected(sim2, ids, (v) => {
     v.health = v.maxHealth;
     v.down = 0;
-    v.fullness = 100;
     v.energy = 100;
     v.strain = 0;
     v.lockUntil = 0;
@@ -35078,9 +47633,9 @@ function defenseLine(sim2, half = 8) {
   const cx = Math.floor(fire.x + 1), cy = Math.floor(fire.y + 3);
   let n = 0;
   revealMap(sim2);
-  const clear = (x, y, w, h2) => {
+  const clear = (x, y, w, h3) => {
     const N = sim2.world.size;
-    for (let j = 0; j < h2; j++) for (let i = 0; i < w; i++) {
+    for (let j = 0; j < h3; j++) for (let i = 0; i < w; i++) {
       const k = (y + j) * N + x + i;
       if (sim2.world.nodes.delete(k)) {
         sim2.world.tiles[k] = Tile.Grass;
@@ -35217,6 +47772,8 @@ var Controller = class {
     this.inspect = null;
     /** The campfire's people menu asked for the full page of the chosen villager. */
     this.openDetail = false;
+    /** The house whose dialog the villager's detail was opened from: closing the detail brings it back. */
+    this.detailFrom = null;
     /** F pressed: the next click sends the selection to attack-move there. */
     this.attackMoveArmed = false;
     /** Saved selections, keys 1-9 (Ctrl + number saves, number recalls). */
@@ -35526,8 +48083,10 @@ var Controller = class {
     this.selectedBuilding = id;
     this.buildingOpen = open;
     this.inspect = null;
+    this.selected.clear();
     this.onChange();
   }
+  // a house and a villager are never shown together
   /** Close the panel but keep the building selected. */
   closePanel() {
     this.buildingOpen = false;
@@ -35631,6 +48190,10 @@ var Controller = class {
   command(p, queue = false) {
     if (!this.selected.size) return;
     const w = this.r.screenToWorld(p.x, p.y), ids = [...this.selected];
+    if (ids.every((id) => this.sim.scouts.some((m) => m.ids.includes(id)))) {
+      this.onToast(ids.length > 1 ? "C\xE1c trinh s\xE1t \u0111ang l\xE0m nhi\u1EC7m v\u1EE5: \u0111\u1EE3i h\u1ECD v\u1EC1" : "Trinh s\xE1t \u0111ang l\xE0m nhi\u1EC7m v\u1EE5: \u0111\u1EE3i h\u1ECD v\u1EC1");
+      return;
+    }
     const worn = ids.filter((id) => {
       const o = this.sim.get(id);
       return !!o && this.sim.sleepLocked(o);
@@ -35641,12 +48204,13 @@ var Controller = class {
     }
     const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
     if (seen) {
+      const noHunter = "Ch\u1EC9 Th\u1EE3 s\u0103n ho\u1EB7c chi\u1EBFn binh m\u1EDBi s\u0103n th\xFA: d\xE2n \u0111\xE3 c\xF3 ngh\u1EC1 kh\xE1c ch\u1EC9 \u0111\u1ED5i ngh\u1EC1 \u1EDF c\xF4ng tr\xECnh c\u1EE7a ngh\u1EC1 \u0111\xF3";
       if (seen.kind === "carcass") {
-        const n = this.sim.orderLoot(ids, seen.target.id);
-        this.onToast(n ? "L\u1ED9t da, l\u1EA5y th\u1ECBt" : "Ch\u1EC9 Th\u1EE3 s\u0103n l\u1ED9t da: giao ngh\u1EC1 Th\u1EE3 s\u0103n b\u1EB1ng n\xFAt ngh\u1EC1 tr\u01B0\u1EDBc");
+        const why = this.sim.autoHunter(ids, seen.target), n = this.sim.orderLoot(ids, seen.target.id);
+        this.onToast(n ? "L\u1ED9t da, l\u1EA5y th\u1ECBt" : why ?? noHunter);
       } else {
-        const n = this.sim.orderAttack(ids, seen.target, queue);
-        this.onToast(n ? seen.kind === "foe" ? "T\u1EA5n c\xF4ng" : "S\u0103n" : seen.kind === "foe" ? "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi \u0111\xE1nh: tuy\u1EC3n l\xEDnh \u1EDF tr\u1EA1i l\xEDnh" : "Ch\u1EC9 Th\u1EE3 s\u0103n ho\u1EB7c chi\u1EBFn binh m\u1EDBi s\u0103n th\xFA: giao ngh\u1EC1 Th\u1EE3 s\u0103n b\u1EB1ng n\xFAt ngh\u1EC1 tr\u01B0\u1EDBc");
+        const why = seen.kind === "foe" ? null : this.sim.autoHunter(ids, seen.target), n = this.sim.orderAttack(ids, seen.target, queue);
+        this.onToast(n ? seen.kind === "foe" ? "T\u1EA5n c\xF4ng" : "S\u0103n" : seen.kind === "foe" ? "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi \u0111\xE1nh: tuy\u1EC3n l\xEDnh \u1EDF tr\u1EA1i l\xEDnh" : why ?? noHunter);
       }
       this.markers.push({ x: w.x, y: w.y, age: 0 });
       this.onChange();
@@ -35655,7 +48219,7 @@ var Controller = class {
     const { x: tx, y: ty } = this.pickTile(w.x, w.y);
     if (!this.sim.world.inBounds(tx, ty)) return;
     const work = this.sim.orderWork(ids, tx, ty);
-    if (work) this.onToast(work.sent ? JOB_NAME[work.job] : work.job === "build" ? "Ch\u1EC9 th\u1EE3 x\xE2y c\u1EE7a Nh\xE0 th\u1EE3 x\xE2y m\u1EDBi x\xE2y: ch\u1ECDn th\u1EE3 \u1EDF nh\xE0 \u0111\xF3" : `Ch\u01B0a l\xE0 ${JOB_NAME[work.job].toLowerCase()}: giao ngh\u1EC1 b\u1EB1ng n\xFAt ngh\u1EC1 tr\u01B0\u1EDBc`);
+    if (work) this.onToast(work.sent ? work.err ? `${JOB_NAME[work.job]} (${work.err})` : JOB_NAME[work.job] : work.job === "build" ? "Ch\u1EC9 th\u1EE3 x\xE2y c\u1EE7a Nh\xE0 th\u1EE3 x\xE2y m\u1EDBi x\xE2y: ch\u1ECDn th\u1EE3 \u1EDF nh\xE0 \u0111\xF3" : work.err ?? `D\xE2n \u0111\xE3 c\xF3 ngh\u1EC1 kh\xE1c: ch\u1EC9 \u0111\u1ED5i ngh\u1EC1 \u1EDF c\xF4ng tr\xECnh c\u1EE7a ngh\u1EC1 ${JOB_NAME[work.job].toLowerCase()}`);
     else this.sim.orderMove(ids, tx, ty, queue);
     this.markers.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, age: 0 });
     if (work?.sent) this.releaseCivilians(queue);
@@ -35819,7 +48383,7 @@ function h(tag, props = {}, ...kids) {
     else if (k === "hidden") el2.hidden = !!v;
     else if (k === "disabled") el2.disabled = !!v;
     else if (k === "pressed") el2.setAttribute("aria-pressed", String(!!v));
-    else if (k === "onclick") el2.addEventListener("click", v);
+    else if (k.startsWith("on") && typeof v === "function") el2.addEventListener(k.slice(2), v);
     else el2.setAttribute(k, String(v));
   }
   for (const kid of kids) if (kid !== null && kid !== false && kid !== void 0) el2.append(kid instanceof Node ? kid : String(kid));
@@ -36132,7 +48696,6 @@ var Menu = class {
       toggle("X\xE2y mi\u1EC5n ph\xED", "freeBuild", "Kh\xF4ng t\u1ED1n v\u1EADt li\u1EC7u khi x\xE2y v\xE0 n\xE2ng c\u1EA5p"),
       toggle("X\xE2y t\u1EE9c th\xEC", "instantBuild", "C\xF4ng tr\xECnh xong ngay"),
       toggle("B\u1EA5t t\u1EED", "god", "D\xE2n kh\xF4ng nh\u1EADn s\xE1t th\u01B0\u01A1ng"),
-      toggle("Kh\xF4ng \u0111\xF3i", "noHunger", "D\xE2n kh\xF4ng b\u1ECB \u0111\xF3i"),
       toggle("Kh\xF4ng m\u1EC7t", "noTire", "S\u1EE9c c\u1EE7a d\xE2n kh\xF4ng t\u1EE5t khi l\xE0m vi\u1EC7c"),
       toggle("L\xE0m vi\u1EC7c nhanh \xD725", "fastWorks", "Nghi\xEAn c\u1EE9u, ch\u1EBF t\u1EA1o nhanh g\u1EA5p 25 l\u1EA7n")
     ), h("div", { class: "devrow" }, btn("Kh\xE1m ph\xE1 to\xE0n b\u1EA3n \u0111\u1ED3", () => revealMap(sim2))));
@@ -36167,21 +48730,9 @@ var Menu = class {
       statVals.set(k, v);
       page.append(row(STAT_NAME[k], btn("\u2212", () => bumpStat(sim2, sel(), k, -1)), v, btn("+", () => bumpStat(sim2, sel(), k, 1))));
     }
-    page.append(h(
-      "div",
-      { class: "devrow" },
-      btn("H\u1ED3i \u0111\u1EA7y m\xE1u, no", () => heal(sim2, sel())),
-      btn("Tinh th\u1EA7n 100", () => eachSelected(sim2, sel(), (v) => {
-        v.morale = 100;
-      })),
-      btn("Tinh th\u1EA7n 5", () => eachSelected(sim2, sel(), (v) => {
-        v.morale = 5;
-      })),
-      btn("Ng\xE3 xu\u1ED1ng", () => {
-        for (const id of sel()) sim2.hurt({ kind: "unit", id }, 9999, "crush", { x: 0, y: 0 }, {});
-      }),
-      btn("X\xF3a d\xE2n", () => eachSelected(sim2, sel(), (v) => sim2.killUnit(v, "(dev)")))
-    ));
+    page.append(h("div", { class: "devrow" }, btn("H\u1ED3i \u0111\u1EA7y m\xE1u", () => heal(sim2, sel())), btn("Ng\xE3 xu\u1ED1ng", () => {
+      for (const id of sel()) sim2.hurt({ kind: "unit", id }, 9999, "crush", { x: 0, y: 0 }, {});
+    }), btn("X\xF3a d\xE2n", () => eachSelected(sim2, sel(), (v) => sim2.killUnit(v, "(dev)")))));
     page.append(h("div", { class: "devrow" }, btn("+1 d\xE2n", () => addVillagers(sim2, 1)), btn("+5 d\xE2n", () => addVillagers(sim2, 5))));
     this.updaters.push(() => {
       const v = sel().map((id) => sim2.get(id)).find((u) => u && u.team === "player");
@@ -36229,7 +48780,7 @@ var Menu = class {
       h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
       h("li", {}, h("b", { text: "C\xF4ng tr\xECnh" }), `: b\u1EA5m \u{1F528} X\xE2y (g\xF3c tr\xEAn) \u0111\u1EC3 ch\u1ECDn c\xF4ng tr\xECnh r\u1ED3i ch\u1EA1m b\u1EA3n \u0111\u1ED3 \u0111\u1EB7t. M\u1EDF Menu \u2192 C\xF4ng tr\xECnh, ho\u1EB7c b\u1EA5m v\xE0o c\xF4ng tr\xECnh tr\xEAn b\u1EA3n \u0111\u1ED3: l\u1EEDa tr\u1EA1i cho xem d\xE2n, Kho cho xem t\xE0i nguy\xEAn, Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EC3 v\u1EBD b\u1EA3n v\u1EBD, Nh\xE0 ch\u1EBF t\u1EA1o \u0111\u1EC3 l\xE0m \u0111\u1ED3. M\u1ED7i lo\u1EA1i c\xF4ng tr\xECnh ch\u1EC9 x\xE2y m\u1ED9t c\xE1i r\u1ED3i n\xE2ng c\u1EA5p (\u0111\u01A1n s\u01A1 \u2192 g\u1ED7 \u2192 \u0111\xE1, m\u1ED7i b\u01B0\u1EDBc ph\u1EA3i nghi\xEAn c\u1EE9u). D\xE2n v\xE0o l\xE0m b\xEAn trong nh\xE0 (hi\u1EC7n th\xE0nh danh s\xE1ch t\xEAn, kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3): nh\xE0 c\u1EA5p cao ch\u1EE9a th\xEAm ng\u01B0\u1EDDi, c\xE0ng \u0111\xF4ng c\xE0ng nghi\xEAn c\u1EE9u nhanh. L\xFAc \u0111\u1EA7u b\u1EA1n t\u1EF1 ph\xE1t c\xF4ng c\u1EE5; nghi\xEAn c\u1EE9u Kho c\xF4ng c\u1EE5, Kho v\u0169 kh\xED, t\u1EF1 l\u1EA5y \u0111\u1ED3 v\xE0 t\u1EF1 \u0111\u1EB7t h\xE0ng th\xEC d\xE2n t\u1EF1 lo. Ti\u1EC1n (v\u1ECF s\xF2) tr\u1EA3 cho nghi\xEAn c\u1EE9u, nh\u1EB7t khi h\xE1i l\u01B0\u1EE3m ho\u1EB7c \u0111\u1ED5i h\xE0ng \u1EDF Kho. Trong b\u1EA3ng c\xF4ng tr\xECnh c\xF2n c\xF3 n\xFAt D\u1EDDi (t\u1ED1n 1/5 v\u1EADt li\u1EC7u, ph\u1EA3i d\u1EF1ng l\u1EA1i) v\xE0 Ph\xE1 b\u1ECF (thu l\u1EA1i m\u1ED9t n\u1EEDa).`),
       h("li", {}, h("b", { text: "Chi\u1EBFn \u0111\u1EA5u" }), `: d\xE2n th\u01B0\u1EDDng kh\xF4ng \u0111\xE1nh nhau, th\u1EA5y \u0111\u1ECBch l\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i. Mu\u1ED1n c\xF3 l\xEDnh th\xEC giao ngh\u1EC1 Chi\u1EBFn binh (huy hi\u1EC7u \u0111\u1ECF tr\xEAn \u0111\u1EA7u) ho\u1EB7c Th\u1EE3 s\u0103n (huy hi\u1EC7u v\xE0ng), ph\xE1t v\u0169 kh\xED \u1EDF th\u1EBB d\xE2n \u2192 Chi\u1EBFn \u0111\u1EA5u, r\u1ED3i ch\u1EA1m v\xE0o th\xFA ho\u1EB7c \u0111\u1ECBch. Th\u1EBF \u0111\u1EE9ng: Ch\u1EE7 \u0111\u1ED9ng, Ph\xF2ng th\u1EE7, R\xFAt lui. F: t\u1EA5n c\xF4ng\u2013\u0111i, H: gi\u1EEF ch\u1ED7, G: d\u1EEBng. Ng\u01B0\u1EDDi b\u1ECB th\u01B0\u01A1ng n\u1EB7ng ng\xE3 xu\u1ED1ng ${gameDays(30)}; m\u1ED9t ng\u01B0\u1EDDi kh\xE1c \u0111\u1EE9ng c\u1EA1nh ${gameDays(3)} s\u1EBD k\xE9o h\u1ECD d\u1EADy.`),
-      h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), `: t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh, chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD ${gameDays(30)} ho\u1EB7c l\xE0m s\u1EE5p tinh th\u1EA7n \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p.`),
+      h("li", {}, h("b", { text: "B\u1ED9 t\u1ED9c" }), `: t\u1EB7ng th\u1EE9c \u0103n \u0111\u1EC3 t\u0103ng quan h\u1EC7. H\u1EA1 th\u1EE7 l\u0129nh ho\u1EB7c chi\u1EBFm \u0111\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD ${gameDays(30)} \u0111\u1EC3 h\u1ECD xin h\xE0ng, r\u1ED3i ch\u1ECDn thu n\u1EA1p ho\u1EB7c c\u1ED1ng n\u1EA1p.`),
       h("li", {}, h("b", { text: "Ph\xEDm" }), ": P t\u1EA1m d\u1EEBng, Q E R T: t\u1ED1c \u0111\u1ED9 1\xD7 2\xD7 4\xD7 16\xD7, B x\xE2y Kho, X x\xE2y X\u01B0\u1EDFng, 1\u20139 g\u1ECDi nh\xF3m (Ctrl + s\u1ED1 \u0111\u1EC3 l\u01B0u), Space nh\u1EA3y t\u1EDBi d\xE2n \u0111ang ch\u1ECDn, Esc b\u1ECF ch\u1ECDn.")
     );
   }
@@ -36241,9 +48792,11 @@ var TERRAIN = {
   [Tile.Water]: [63, 111, 154],
   [Tile.Tree]: [47, 82, 34],
   [Tile.Rock]: [120, 125, 128],
+  [Tile.Mountain]: [104, 98, 92],
   [Tile.Mud]: [122, 100, 66],
   [Tile.Bush]: [150, 70, 60]
 };
+var BUILT = [200, 150, 80];
 var MapView = class {
   constructor(sim2, cam2, r, ctl2, mini, big, overlay) {
     this.sim = sim2;
@@ -36256,6 +48809,7 @@ var MapView = class {
     this.base = document.createElement("canvas");
     this.ver = -1;
     this.builds = -1;
+    this.drawn = 0;
     this.frame = 0;
     this.N = sim2.world.size;
     this.base.width = this.base.height = mini.width = mini.height = big.width = big.height = this.N;
@@ -36282,15 +48836,18 @@ var MapView = class {
   redrawBase() {
     const { sim: sim2, N } = this;
     if (sim2.fog.version === this.ver && sim2.buildings.length === this.builds) return;
+    const now = performance.now();
+    if (this.ver >= 0 && now - this.drawn < 500) return;
+    this.drawn = now;
     this.ver = sim2.fog.version;
     this.builds = sim2.buildings.length;
-    const img = this.bctx.createImageData(N, N), s = sim2.fog.state;
+    const img = this.bctx.createImageData(N, N), d = img.data, s = sim2.fog.state, occ = sim2.world.occ, tiles = sim2.world.tiles;
     for (let i = 0; i < N * N; i++) {
-      const c = sim2.world.occ[i] ? [200, 150, 80] : TERRAIN[sim2.world.tiles[i]], k = s[i] === 2 ? 1 : s[i] === 1 ? 0.55 : 0;
-      img.data[i * 4] = c[0] * k + 8 * (1 - k);
-      img.data[i * 4 + 1] = c[1] * k + 10 * (1 - k);
-      img.data[i * 4 + 2] = c[2] * k + 20 * (1 - k);
-      img.data[i * 4 + 3] = 255;
+      const c = occ[i] ? BUILT : TERRAIN[tiles[i]], k = s[i] === 2 ? 1 : s[i] === 1 ? 0.55 : 0, j = i * 4;
+      d[j] = c[0] * k + 8 * (1 - k);
+      d[j + 1] = c[1] * k + 10 * (1 - k);
+      d[j + 2] = c[2] * k + 20 * (1 - k);
+      d[j + 3] = 255;
     }
     this.bctx.putImageData(img, 0, 0);
   }
@@ -36310,10 +48867,10 @@ var MapView = class {
       ctx2.fillStyle = a.species === "wolf" ? "#ff5a4a" : "#e8d4a8";
       ctx2.fillRect(a.x - dot / 3, a.y - dot / 3, dot * 0.7, dot * 0.7);
     }
-    const z = this.cam.zoom, x = this.cam.x / TILE, y = this.cam.y / TILE, w = this.r.w / z / TILE, h2 = this.r.h / z / TILE;
+    const z = this.cam.zoom, x = this.cam.x / TILE, y = this.cam.y / TILE, w = this.r.w / z / TILE, h3 = this.r.h / z / TILE;
     ctx2.strokeStyle = "#ffffff";
     ctx2.lineWidth = Math.max(1, dot / 2);
-    ctx2.strokeRect(x, y, w, h2);
+    ctx2.strokeRect(x, y, w, h3);
   }
   draw() {
     this.frame++;
@@ -36327,6 +48884,221 @@ var MapView = class {
     this.paint(this.mini.getContext("2d"), 3);
   }
 };
+
+// src/ui/gamedialog.ts
+var GameDialog = class {
+  constructor(root, opts = {}) {
+    this.root = root;
+    this.opts = opts;
+    root.classList.add("gdlg-back", opts.inside ? "inside" : "fixed");
+    root.hidden = true;
+    if (!opts.modal) {
+      root.addEventListener("click", (e) => {
+        if (e.target === root && (opts.canClose?.() ?? true)) this.dismiss();
+      });
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && this.isOpen && (opts.canClose?.() ?? true)) {
+          e.stopImmediatePropagation();
+          this.dismiss();
+        }
+      }, true);
+    }
+  }
+  get isOpen() {
+    return !this.root.hidden;
+  }
+  /** Put a scroll in the dialog and show it. */
+  show(...kids) {
+    this.root.replaceChildren(...kids);
+    this.root.hidden = false;
+  }
+  hide() {
+    this.root.hidden = true;
+    if (!this.opts.keep) this.root.replaceChildren();
+  }
+  dismiss() {
+    this.hide();
+    this.opts.onClose?.();
+  }
+};
+var dlg = {
+  /** The scroll. `wide` for lists. */
+  card(o, ...kids) {
+    return h("div", { class: `gdlg${o.wide ? " wide" : ""}${o.cls ? ` ${o.cls}` : ""}`, role: "dialog", "aria-modal": "true", "aria-label": o.label }, ...kids);
+  },
+  /** The top: a picture, the title with what is under it, and the close button. */
+  head(o) {
+    const pic = o.pic === void 0 ? null : h("div", { class: `dpic${typeof o.pic === "string" ? " glyph" : ""}` }, o.pic);
+    const bar2 = o.bar ? h("i", { class: "dbar" }, h("b", { style: `width:${Math.round(100 * o.bar.value / Math.max(1, o.bar.max))}%` }), h("span", { text: o.bar.label ?? "" })) : null;
+    const close = o.onClose ? h("button", { class: "dclose", text: "\u2715", title: "\u0110\xF3ng", "aria-label": "\u0110\xF3ng", onclick: o.onClose }) : null;
+    return h("div", { class: "dhead" }, pic, h("div", { class: "dwho" }, h("b", { class: "dtitle", text: o.title }), o.sub ? h("small", { class: "dsub", text: o.sub }) : null, bar2), close);
+  },
+  /** A block of words on the parchment. */
+  text(text) {
+    return h("p", { class: "dtext", text });
+  },
+  /** A small line, for a reason or a need. `bad` is red. */
+  note(text, bad = true) {
+    return h("small", { class: bad ? "lock" : "dneed", text });
+  },
+  /** A red line that says why something cannot be done. */
+  why(text) {
+    return h("p", { class: "dwhy", text });
+  },
+  /** Two sides of a line: what it is now, what it becomes. */
+  line(a, b) {
+    return h("div", { class: "dline" }, h("span", { text: a }), h("span", { text: b }));
+  },
+  /** A row of costs; put `dlg.cost(...)` in it. */
+  costs(...kids) {
+    return h("div", { class: "dcosts" }, ...kids);
+  },
+  /** One cost: a picture, what is needed and what the village has. `short` turns it red. */
+  cost(pic, need, have, short, title) {
+    return h("span", { class: `dcost${short ? " short" : ""}`, title }, pic, h("b", { text: need }), have === null ? null : h("small", { text: `/${have}` }));
+  },
+  /** A small round-cornered label with a picture and a number: how a person is, in place of a bar. `tone` colours it. */
+  pill(pic, text, tone, title) {
+    return h("span", { class: `dpill${tone ? ` ${tone}` : ""}`, title }, h("span", { class: "dpp" }, pic), h("b", { text }));
+  },
+  /** The places of a house as dots: `used` filled, the rest empty. More than 24 (no limit) is written as a number. */
+  slots(used, total) {
+    if (total > 24) return h("span", { class: "dslots", text: `${used}/\u221E` });
+    return h("span", { class: "dslots", title: `${used}/${total}` }, ...Array.from({ length: total }, (_, i) => h("i", { class: i < used ? "on" : "" })));
+  },
+  /** A round gauge with the percentage in the middle, for something that fills up (an order, a meal). */
+  ring(value, label2) {
+    const p = Math.max(0, Math.min(1, value));
+    return h("span", { class: "dring", style: `--p:${Math.round(p * 100)}` }, h("span", { text: label2 ?? `${Math.floor(p * 100)}%` }));
+  },
+  /** The big button. `tone` 'alt' is the quiet one (cancel), 'bad' the dangerous one. */
+  button(text, onclick, o = {}) {
+    return h("button", { class: `dgo${o.tone ? ` ${o.tone}` : ""}${o.small || o.icon ? " sm" : ""}${o.icon ? " ic" : ""}`, text, title: o.title, disabled: !!o.disabled, type: "button", onclick });
+  },
+  /** Buttons side by side at the foot. */
+  buttons(...kids) {
+    return h("div", { class: "dbtns" }, ...kids);
+  },
+  /** A list of tiles. */
+  list(...kids) {
+    return h("div", { class: "dlist" }, ...kids);
+  },
+  empty(text) {
+    return h("p", { class: "dempty", text });
+  },
+  /** A tile: a picture, a name with a chip, lines under it, and maybe a button. `state` colours it. */
+  tile(o, lines, action) {
+    const pic = h("div", { class: `dpic${typeof o.pic === "string" ? " glyph" : ""}` }, o.pic);
+    return h("div", { class: `dtile ${o.state ?? ""}`, title: o.title }, pic, h("div", { class: "dmain" }, h("div", { class: "dname" }, h("b", { text: o.name }), o.chip ?? null), ...lines), action ?? null);
+  },
+  chip(text) {
+    return h("span", { class: "dchip", text });
+  },
+  /** A line of a tile: `more` is the short grey one. */
+  more(text) {
+    return h("div", { class: "dmore", text });
+  },
+  /** A bar on its own (progress of a chapter, of a quest). */
+  bar(value, max, label2 = "") {
+    return h("i", { class: "dbar" }, h("b", { style: `width:${Math.round(100 * value / Math.max(1, max))}%` }), h("span", { text: label2 }));
+  }
+};
+
+// src/ui/infocard.ts
+var InfoCard = class {
+  constructor(root) {
+    this.root = root;
+    this.pic = h("div", { class: "ipic" });
+    this.title = h("b");
+    this.sub = h("small");
+    this.line = h("div", { class: "iline", hidden: true });
+    this.close = h("button", { class: "iclose", text: "\u2715", title: "\u0110\xF3ng", "aria-label": "\u0110\xF3ng", type: "button" });
+    this.acts = h("div", { class: "iacts" });
+    this.buttons = /* @__PURE__ */ new Map();
+    this.sig = "";
+    this.picKey = "";
+    this.actions = [];
+    root.classList.add("infocard");
+    this.close.addEventListener("click", () => this.onClose?.());
+    root.append(h("div", { class: "ihead" }, this.pic, h("div", { class: "iwho" }, this.title, this.sub), this.close), this.line, this.acts);
+  }
+  set(d) {
+    if (d.picKey !== this.picKey) {
+      this.picKey = d.picKey;
+      const p = d.pic();
+      this.pic.className = `ipic${typeof p === "string" ? " glyph" : ""}`;
+      this.pic.replaceChildren(p);
+    }
+    this.title.textContent = d.title;
+    this.sub.textContent = d.sub;
+    this.line.textContent = d.line ?? "";
+    this.line.hidden = !d.line;
+    this.onClose = d.onClose;
+    this.close.hidden = !d.onClose;
+    this.actions = d.actions;
+    const sig = d.actions.map((a) => a.id).join();
+    if (sig !== this.sig) {
+      this.sig = sig;
+      this.buttons = /* @__PURE__ */ new Map();
+      this.acts.replaceChildren(...d.actions.map((a) => {
+        const b = h("button", { type: "button", onclick: () => this.actions.find((x) => x.id === a.id)?.onClick() });
+        this.buttons.set(a.id, b);
+        return b;
+      }));
+    }
+    for (const a of d.actions) {
+      const b = this.buttons.get(a.id);
+      b.textContent = a.label;
+      b.title = a.title ?? "";
+      b.hidden = !!a.hidden;
+      b.disabled = !!a.disabled;
+      b.className = a.tone ?? "";
+    }
+  }
+};
+
+// src/ui/resicons.ts
+var O = "#2b1d10";
+var S = `stroke="${O}" stroke-width=".9" stroke-linejoin="round"`;
+var ART = {
+  food: `<path d="M8 5.5V2.5" stroke="#5e4026" stroke-width="1.2"/><path d="M8 3.6q3.2-2.4 5.2.2q-2.4 2.2-5.2-.2z" fill="#4f9a3a" ${S}/><circle cx="5.2" cy="10.2" r="3.6" fill="#d2483a" ${S}/><circle cx="11" cy="10.8" r="3.3" fill="#e0603f" ${S}/><circle cx="4.1" cy="9" r="1" fill="#ffd6c8"/><circle cx="10" cy="9.8" r=".9" fill="#ffd6c8"/>`,
+  wood: `<rect x="1.8" y="8.6" width="12" height="5" rx="1.4" fill="#8a5a2c" ${S}/><rect x="3" y="3" width="12" height="5.6" rx="1.4" fill="#9a6a35" ${S}/><ellipse cx="3.6" cy="5.8" rx="1.9" ry="2.8" fill="#dcae6e" ${S}/><ellipse cx="3.6" cy="5.8" rx=".8" ry="1.4" fill="none" stroke="#9a6a35" stroke-width=".7"/><path d="M7 4.6h5M8 7h5M5 10.8h7" stroke="#6a4420" stroke-width=".7"/>`,
+  stone: `<polygon points="1.8,12.6 2.8,7 6.4,3.6 11.6,4.4 14.2,9.4 12.4,13.2 5.2,13.4" fill="#9aa0a4" ${S}/><polygon points="2.8,7 6.4,3.6 8.6,6 5.6,9" fill="#c4c9cc"/><polygon points="14.2,9.4 12.4,13.2 8,13.3 10,9.8" fill="#6f777b"/>`,
+  hide: `<path d="M3 2.8L6 4h4l3-1.2 1.4 4.2-2.2 2 1 4.4-3-1.2L8 14.2l-2.2-2-3 1.2 1-4.4-2.2-2z" fill="#a0552f" ${S}/><path d="M6.4 6.4q1.6 1 3.2 0M7 9.4q1 .8 2 0" stroke="#7a3a1c" stroke-width=".8" fill="none"/><circle cx="5.2" cy="5.4" r=".8" fill="#c9784a"/><circle cx="11" cy="9.6" r=".8" fill="#c9784a"/>`,
+  bone: `<g transform="rotate(-38 8 8)"><rect x="3.4" y="6.6" width="9.2" height="2.8" fill="#e4dcc4" ${S}/><circle cx="3.2" cy="6.2" r="1.9" fill="#e4dcc4" ${S}/><circle cx="3.2" cy="9.8" r="1.9" fill="#e4dcc4" ${S}/><circle cx="12.8" cy="6.2" r="1.9" fill="#e4dcc4" ${S}/><circle cx="12.8" cy="9.8" r="1.9" fill="#e4dcc4" ${S}/><rect x="4.4" y="7.2" width="7.2" height="1.6" fill="#e4dcc4"/></g>`,
+  fat: `<path d="M2.4 10.4C2.4 5.4 5 3.6 8 3.6s5.6 1.8 5.6 6.8c0 2.6-2.6 3.6-5.6 3.6s-5.6-1-5.6-3.6z" fill="#f0e2b0" ${S}/><ellipse cx="6" cy="7" rx="1.8" ry="1.1" fill="#fff8dc"/><path d="M5 11.6q3 1 6 0" stroke="#d2bf80" stroke-width=".8" fill="none"/>`,
+  feather: `<path d="M13.6 2.2C6.4 2 2.8 6.6 3 13.2 9.4 13.4 13.8 9.6 13.6 2.2z" fill="#7aa0c8" ${S}/><path d="M3 13.2L11.4 4.6" stroke="${O}" stroke-width=".9"/><path d="M6 10.4l-2.4.4M8.4 8l-3 .2M10.6 6l-2.6.2" stroke="#4d6f96" stroke-width=".7"/>`,
+  tusk: `<path d="M3.6 2.8C11.6 2.4 14.4 8.8 11.2 14 11.4 8.8 8.4 6.2 3.6 6z" fill="#fff6e0" ${S}/><path d="M5 4q5 .4 7 4" stroke="#d8c8a0" stroke-width=".8" fill="none"/>`,
+  coin: `<path d="M1.8 12.4C1.4 6 4.6 2.6 8 2.6s6.6 3.4 6.2 9.8z" fill="#f0d8c4" ${S}/><path d="M8 12.2V3.2M5.2 12.2L4.4 4.6M10.8 12.2l.8-7.6M3 12.2l-.6-4M13 12.2l.6-4" stroke="#c89a82" stroke-width=".8"/><rect x="5.8" y="12.4" width="4.4" height="2" rx=".8" fill="#d8b8a0" ${S}/>`,
+  torch: `<rect x="7" y="7.4" width="2.2" height="7.6" rx=".6" fill="#8a6238" ${S}/><path d="M8.1 .8C12.6 5 11.6 8.6 8.1 8.6S3.6 5 8.1.8z" fill="#f89628" ${S}/><path d="M8.1 4C10.2 6 9.8 7.8 8.1 7.8S6 6 8.1 4z" fill="#ffe27a"/>`,
+  stat_hp: `<path d="M8 14C2 9.6 1.4 5.4 4 3.8 5.8 2.7 7.4 3.6 8 5.2 8.6 3.6 10.2 2.7 12 3.8 14.6 5.4 14 9.6 8 14z" fill="#e0483c" ${S}/><path d="M4.6 5.2q.8-.8 1.8-.2" stroke="#ffd0c8" stroke-width=".9" fill="none"/>`,
+  stat_atk: `<path d="M13.4 2.6L6 10" stroke="${O}" stroke-width="3.6" stroke-linecap="round"/><path d="M13.4 2.6L6 10" stroke="#d4dade" stroke-width="2" stroke-linecap="round"/><path d="M4.2 8.4l3.4 3.4" stroke="${O}" stroke-width="3" stroke-linecap="round"/><path d="M4.2 8.4l3.4 3.4" stroke="#b5532f" stroke-width="1.5" stroke-linecap="round"/><path d="M5.6 10.4L3 13" stroke="#8a6238" stroke-width="2" stroke-linecap="round"/>`,
+  stat_defm: `<path d="M8 1.6l5.4 2v4.2c0 3.2-2.4 5.2-5.4 6.6-3-1.4-5.4-3.4-5.4-6.6V3.6z" fill="#7f9cc8" ${S}/><path d="M8 3.4v9M4.4 7.2h7.2" stroke="#dfe8f6" stroke-width="1.2"/>`,
+  stat_defr: `<path d="M8 1.6l5.4 2v4.2c0 3.2-2.4 5.2-5.4 6.6-3-1.4-5.4-3.4-5.4-6.6V3.6z" fill="#c9a064" ${S}/><circle cx="8" cy="8" r="2.6" fill="none" stroke="#fff0cc" stroke-width="1"/><circle cx="8" cy="8" r=".9" fill="#fff0cc"/>`,
+  stat_move: `<path d="M2.6 3.6L7 8l-4.4 4.4M7.6 3.6L12 8l-4.4 4.4" stroke="${O}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M2.6 3.6L7 8l-4.4 4.4M7.6 3.6L12 8l-4.4 4.4" stroke="#5cc866" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  stat_work: `<path d="M9.4 6.6L3.4 12.6" stroke="${O}" stroke-width="3.2" stroke-linecap="round"/><path d="M9.4 6.6L3.4 12.6" stroke="#9a6a35" stroke-width="1.6" stroke-linecap="round"/><rect x="7" y="2.6" width="7" height="4" rx="1" fill="#9aa0a4" transform="rotate(30 10.5 4.6)" ${S}/>`,
+  stat_int: `<path d="M8 1.8a4.6 4.6 0 0 1 2.6 8.4c-.5.4-.6.8-.6 1.4H6c0-.6-.1-1-.6-1.4A4.6 4.6 0 0 1 8 1.8z" fill="#f3d65e" ${S}/><rect x="6" y="12" width="4" height="1.8" rx=".8" fill="#9aa0a4" ${S}/><path d="M6.6 5.4q1.4-1.2 2.8 0" stroke="#fff6c8" stroke-width=".9" fill="none"/>`,
+  stat_aspd: `<circle cx="8" cy="9.2" r="5" fill="#e8ecef" ${S}/><path d="M8 9.2V5.8M8 9.2l2.3 1.5" stroke="${O}" stroke-width="1.3" stroke-linecap="round" fill="none"/><rect x="6.4" y="1.4" width="3.2" height="1.8" rx=".6" fill="#9aa0a4" ${S}/>`,
+  stat_crit: `<path d="M8 1.4l1.6 4.2 4.4.4-3.4 2.8 1.1 4.3L8 10.9 4.3 13.1l1.1-4.3L2 6l4.4-.4z" fill="#f26a3c" ${S}/><circle cx="8" cy="8" r="1.6" fill="#fff0cc"/>`,
+  stat_critd: `<path d="M8 1.2l1.4 3.6 3.8-.6-2.2 3.2 2.6 2.8-3.8-.2L8 14.8 6.2 10l-3.8.2L5 7.4 2.8 4.2l3.8.6z" fill="#c8322c" ${S}/><path d="M10.8 2.8L5.4 11.6" stroke="#fff0cc" stroke-width="1.2" stroke-linecap="round"/>`,
+  stat_sta: `<path d="M9.4 1.4L3.6 9h3.8l-.9 5.6 5.9-8H8.6z" fill="#f2b232" ${S}/>`,
+  role_foot: `<path d="M8 1.8l5 1.8v4c0 3-2.2 5-5 6.2-2.8-1.2-5-3.2-5-6.2v-4z" fill="#7f9cc8" ${S}/><path d="M12.6 1.6L7 8.4" stroke="${O}" stroke-width="3.2" stroke-linecap="round"/><path d="M12.6 1.6L7 8.4" stroke="#d4dade" stroke-width="1.7" stroke-linecap="round"/>`,
+  role_cavalry: `<path d="M2.4 12.6c.4-3 1.6-5 4-5.8l1.4-2.8 1.6 1 2.4-.2.6 1.6-1.4 1.2c1.6.6 2.4 2.2 2.4 5H10l-.6-2.4-2.6.4-.4 2H2.4z" fill="#b5835a" ${S}/><circle cx="10.6" cy="4.8" r=".6" fill="${O}"/>`,
+  role_archer: `<path d="M3.4 2.6c6 1.4 8.2 6.4 6.8 11" stroke="${O}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M3.4 2.6c6 1.4 8.2 6.4 6.8 11" stroke="#9a6a35" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M3 13.4L13.4 3" stroke="#d4dade" stroke-width="1.2"/><path d="M13.4 3l-3.4.4 1.8 1.8z" fill="#d4dade"/>`,
+  role_scout: `<path d="M1.6 8s2.4-4.6 6.4-4.6S14.4 8 14.4 8 12 12.6 8 12.6 1.6 8 1.6 8z" fill="#f1ead6" ${S}/><circle cx="8" cy="8" r="2.6" fill="#4a7a9c" ${S}/><circle cx="8" cy="8" r="1" fill="${O}"/>`,
+  role_tame: `<ellipse cx="8" cy="10.4" rx="3.6" ry="3" fill="#b5835a" ${S}/><circle cx="3.6" cy="6.4" r="1.6" fill="#b5835a" ${S}/><circle cx="6.4" cy="3.8" r="1.6" fill="#b5835a" ${S}/><circle cx="9.8" cy="3.8" r="1.6" fill="#b5835a" ${S}/><circle cx="12.6" cy="6.4" r="1.6" fill="#b5835a" ${S}/>`,
+  formation: `<circle cx="8" cy="3.4" r="1.7" fill="#c9a064" ${S}/><circle cx="4" cy="8" r="1.7" fill="#c9a064" ${S}/><circle cx="12" cy="8" r="1.7" fill="#c9a064" ${S}/><circle cx="2.4" cy="12.6" r="1.7" fill="#c9a064" ${S}/><circle cx="8" cy="12.6" r="1.7" fill="#c9a064" ${S}/><circle cx="13.6" cy="12.6" r="1.7" fill="#c9a064" ${S}/>`,
+  clock: `<circle cx="8" cy="8.4" r="5.6" fill="#f1ead6" ${S}/><path d="M8 4.8v3.8l2.6 1.6" stroke="#2b1d10" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M6 1.6h4" stroke="#2b1d10" stroke-width="1.4" stroke-linecap="round"/>`,
+  pop: `<circle cx="8" cy="4.8" r="3" fill="#e8c4a0" ${S}/><path d="M2.4 14.6C2.4 9 13.6 9 13.6 14.6z" fill="#b5532f" ${S}/>`
+};
+function resIcon(key) {
+  const el2 = document.createElement("span");
+  el2.className = "ico";
+  el2.setAttribute("aria-hidden", "true");
+  el2.innerHTML = `<svg viewBox="0 0 16 16" width="100%" height="100%">${ART[key] ?? ""}</svg>`;
+  return el2;
+}
+var statIcon = (stat) => resIcon(`stat_${stat}`);
 
 // src/ui/buildbar.ts
 var OPEN_LABEL = {
@@ -36355,45 +49127,34 @@ var OPEN_LABEL = {
   trap: "H\u1ED1 ch\xF4ng",
   stable: "Thu\u1EA7n th\xFA"
 };
+var YIELD_OF = { lumberyard: "wood", quarry: "stone", farmhouse: "food", field: "farm", huntlodge: "hunt" };
 var Confirm = class {
   constructor(root, c) {
-    this.root = root;
     this.c = c;
-    window.addEventListener("keydown", (e) => {
-      if (!root.hidden && e.key === "Escape") {
-        e.stopImmediatePropagation();
-        this.close();
-      }
-    }, true);
-    root.addEventListener("click", (e) => {
-      if (e.target === root) this.close();
-    });
+    this.win = new GameDialog(root);
   }
   close() {
-    this.root.hidden = true;
-    this.root.replaceChildren();
+    this.win.hide();
   }
   ask(a) {
     const { sim: sim2 } = this.c;
     const rows = a.cost ? Object.keys(a.cost).filter((r) => (a.cost[r] ?? 0) > 0) : [];
-    const ok = h("button", { class: `primary${a.danger ? " danger" : ""}`, text: a.ok, disabled: !!a.why, onclick: () => {
+    const ok = dlg.button(a.ok, () => {
       this.close();
       a.onOk();
-    } });
-    const card = h(
-      "div",
-      { class: "card", role: "dialog", "aria-modal": "true", "aria-label": a.title },
-      h("h3", { text: a.title }),
-      ...(a.lines ?? []).map((t) => h("p", { class: "sub", text: t })),
-      rows.length ? h("div", { class: "costs" }, h("b", { text: a.costTitle ?? "C\u1EA7n" }), ...rows.map((r) => {
-        const need = a.cost[r] ?? 0, have = Math.floor(sim2.stock[r]), short = have < need;
-        return h("div", { class: short ? "short" : "" }, h("span", { text: RES_NAME[r] }), h("span", { text: `${need} (c\xF3 ${have})` }));
+    }, { disabled: !!a.why, tone: a.danger ? "bad" : void 0 });
+    this.win.show(dlg.card(
+      { label: a.title },
+      dlg.head({ title: a.title, onClose: () => this.close() }),
+      ...(a.lines ?? []).map((t) => dlg.text(t)),
+      rows.length ? dlg.note(a.costTitle ?? "C\u1EA7n", false) : null,
+      rows.length ? dlg.costs(...rows.map((r) => {
+        const need = a.cost[r] ?? 0, have = Math.floor(sim2.stock[r]);
+        return dlg.cost(resIcon(r), String(need), String(have), have < need, RES_NAME[r]);
       })) : null,
-      a.why ? h("p", { class: "why", text: a.why }) : null,
-      h("div", { class: "btns" }, h("button", { text: "H\u1EE7y", onclick: () => this.close() }), ok)
-    );
-    this.root.replaceChildren(card);
-    this.root.hidden = false;
+      a.why ? dlg.why(a.why) : null,
+      dlg.buttons(dlg.button("H\u1EE7y", () => this.close(), { tone: "alt" }), ok)
+    ));
     ok.focus();
   }
 };
@@ -36403,40 +49164,10 @@ var BuildingBar = class {
     this.c = c;
     this.r = r;
     this.confirm = confirm2;
-    this.who = h("div", { class: "who" });
-    this.open = h("button", { class: "sm ic primary", text: "\u2630" });
-    this.gate = h("button", { class: "sm primary" });
-    this.upgrade = h("button", { class: "sm ic up", text: "\u2B06", title: "N\xE2ng c\u1EA5p", "aria-label": "N\xE2ng c\u1EA5p" });
-    this.move = h("button", { class: "sm ic", text: "\u2725", title: "Di d\u1EDDi (mi\u1EC5n ph\xED)", "aria-label": "Di d\u1EDDi" });
-    this.demolish = h("button", { class: "sm ic danger", text: "\u2716", title: "Ph\xE1 b\u1ECF", "aria-label": "Ph\xE1 b\u1ECF" });
     this.id = null;
     this.width = 0;
     this.height = 0;
-    const { ctl: ctl2 } = c;
-    root.append(this.who, h("div", { class: "btns" }, this.open, this.gate, this.upgrade, this.move, this.demolish));
-    this.open.addEventListener("click", () => {
-      if (this.id !== null) ctl2.selectBuilding(this.id, true);
-    });
-    this.gate.addEventListener("click", () => {
-      const b = this.cur();
-      if (b) {
-        const e = c.sim.toggleGate(b.id);
-        if (e) c.toast(e);
-        ctl2.onChange();
-      }
-    });
-    this.upgrade.addEventListener("click", () => {
-      const b = this.cur();
-      if (b) this.askUpgrade(b);
-    });
-    this.move.addEventListener("click", () => {
-      const b = this.cur();
-      if (b) ctl2.startMoving(b.id);
-    });
-    this.demolish.addEventListener("click", () => {
-      const b = this.cur();
-      if (b) this.askDemolish(b);
-    });
+    this.card = new InfoCard(root);
   }
   cur() {
     return this.id === null ? void 0 : this.c.sim.getBuilding(this.id);
@@ -36473,9 +49204,18 @@ var BuildingBar = class {
       }
     });
   }
-  /** Refresh what the buttons say and which ones show. */
+  /** What the house makes in a day from the people who work for it, for the houses of the gatherers. */
+  yieldLine(b) {
+    const key = YIELD_OF[b.kind];
+    if (!key || !b.done) return void 0;
+    const y = this.c.sim.dailyYield(b);
+    if (!y) return void 0;
+    const unit = key === "hunt" ? "s\u1EA3n v\u1EADt" : key === "wood" ? "g\u1ED7" : key === "stone" ? "\u0111\xE1" : "th\u1EE9c \u0103n";
+    return y.people ? `S\u1EA3n xu\u1EA5t ~${Math.round(y.amount)} ${unit}/ng\xE0y \xB7 ${y.people} ng\u01B0\u1EDDi \u0111ang l\xE0m` : `Ch\u01B0a c\xF3 ai l\xE0m vi\u1EC7c: ch\u01B0a s\u1EA3n xu\u1EA5t ${unit}`;
+  }
+  /** Refresh what the card says and which buttons show; called as often as the screen is drawn. */
   update() {
-    const { sim: sim2, ctl: ctl2 } = this.c, b = ctl2.selectedBuilding === null ? void 0 : sim2.getBuilding(ctl2.selectedBuilding);
+    const { sim: sim2, ctl: ctl2, toast } = this.c, b = ctl2.selectedBuilding === null ? void 0 : sim2.getBuilding(ctl2.selectedBuilding);
     const show = !!b && !ctl2.buildingOpen && !ctl2.placing;
     this.root.hidden = !show;
     if (!b || !show) {
@@ -36485,15 +49225,33 @@ var BuildingBar = class {
     this.id = b.id;
     const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
     const state = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%` : canGrow(b.kind) ? `c\u1EA5p ${b.level}/${top} \xB7 ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
-    this.who.replaceChildren(h("b", { text: def.name }), ` \xB7 ${state}${b.done && lv.hp ? ` \xB7 b\u1EC1n ${Math.max(0, Math.round(b.hp))}/${lv.hp}` : ""}`);
-    this.open.title = OPEN_LABEL[b.kind];
-    this.open.setAttribute("aria-label", OPEN_LABEL[b.kind]);
-    this.open.hidden = !b.done || b.kind === "fence" || b.kind === "gate";
-    this.gate.hidden = !(b.kind === "gate" && b.done);
-    this.gate.textContent = b.open ? "\u0110\xF3ng c\u1ED5ng" : "M\u1EDF c\u1ED5ng";
-    this.upgrade.hidden = !(canGrow(b.kind) && b.done && !b.upgrading && b.level < top);
-    this.move.hidden = !def.buildable;
-    this.demolish.hidden = !def.buildable || !def.perFire;
+    const hp = b.done ? ` \xB7 b\u1EC1n ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? " \xB7 \u0111ang ch\xE1y" : b.hp <= maxHp(b) * 0.7 ? " \xB7 b\u1ED1c kh\xF3i" : ""}` : "";
+    const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < top;
+    this.card.set({
+      picKey: `${b.kind}${b.level}${b.done}`,
+      pic: () => {
+        try {
+          return iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0]);
+        } catch {
+          return "\u{1F3E0}";
+        }
+      },
+      title: def.name,
+      sub: state + hp,
+      line: this.yieldLine(b),
+      onClose: () => ctl2.closeBuilding(),
+      actions: [
+        { id: "open", label: OPEN_LABEL[b.kind], tone: "primary", hidden: !b.done || b.kind === "fence" || b.kind === "gate", onClick: () => ctl2.selectBuilding(b.id, true) },
+        { id: "gate", label: b.open ? "\u0110\xF3ng c\u1ED5ng" : "M\u1EDF c\u1ED5ng", tone: "primary", hidden: !(b.kind === "gate" && b.done), onClick: () => {
+          const e = sim2.toggleGate(b.id);
+          if (e) toast(e);
+          ctl2.onChange();
+        } },
+        { id: "up", label: "N\xE2ng c\u1EA5p", hidden: !upgradable, onClick: () => this.askUpgrade(b) },
+        { id: "move", label: "Di d\u1EDDi", title: "Di d\u1EDDi (mi\u1EC5n ph\xED)", hidden: !def.buildable, onClick: () => ctl2.startMoving(b.id) },
+        { id: "del", label: "Ph\xE1 b\u1ECF", tone: "danger", hidden: !def.buildable, onClick: () => this.askDemolish(b) }
+      ]
+    });
     this.width = this.root.offsetWidth;
     this.height = this.root.offsetHeight;
   }
@@ -36511,11 +49269,8 @@ var BuildingBar = class {
 };
 
 // src/ui/describe.ts
-var armorLevel = (a) => (a.pierce + a.slash + a.crush) / 3;
-var ARMOR_FULL = 0.5;
-var pct2 = (x) => `${Math.round(x * 100)}%`;
-var armorText = (a, named = true) => `${named ? `${a.name}: ` : ""}gi\u1EA3m s\xE1t th\u01B0\u01A1ng \u0111\xE2m ${pct2(a.pierce)} \xB7 ch\xE9m ${pct2(a.slash)} \xB7 \u0111\u1EADp ${pct2(a.crush)}`;
-var stars = (n) => "\u2605".repeat(n) + "\u2606".repeat(3 - n);
+var pct3 = (x) => `${Math.round(x * 100)}%`;
+var armorText = (a, named = true) => `${named ? `${a.name}: ` : ""}gi\u1EA3m s\xE1t th\u01B0\u01A1ng \u0111\xE2m ${pct3(a.pierce)} \xB7 ch\xE9m ${pct3(a.slash)} \xB7 \u0111\u1EADp ${pct3(a.crush)}`;
 function waitReason(v, sim2) {
   const j = v.job;
   if (j === "build") return sim2.buildings.some(needsWork) ? null : "ch\u1EDD: ch\u01B0a c\xF3 c\xF4ng tr\u01B0\u1EDDng n\xE0o c\u1EA7n x\xE2y";
@@ -36611,95 +49366,157 @@ function energyText(sim2, v) {
   return parts.join(" \xB7 ");
 }
 
-// src/ui/unitcard.ts
+// src/ui/statview.ts
+var STAT_ORDER = ["hp", "atk", "defm", "defr", "move", "work", "int", "sta", "aspd", "crit", "critd"];
+var STAT_LABEL = { hp: "M\xE1u", atk: "S\u1EE9c m\u1EA1nh", defm: "Ph\xF2ng th\u1EE7 c\u1EADn chi\u1EBFn", defr: "Ph\xF2ng th\u1EE7 t\u1EA7m xa", move: "T\u1ED1c \u0111\u1ED9 di chuy\u1EC3n", work: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c", int: "Tr\xED tu\u1EC7", sta: "S\u1EE9c", aspd: "T\u1ED1c \u0111\xE1nh", crit: "Ch\xED m\u1EA1ng", critd: "S\xE1t th\u01B0\u01A1ng ch\xED m\u1EA1ng" };
+var num2 = (n, digits = 1) => n.toLocaleString("vi", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+function statReading(sim2, v, id) {
+  const wid = v.gear.wb && v.gear.w === v.weapon ? "fist" : v.weapon ?? "fist", w = WEAPONS[wid] ?? WEAPONS.fist;
+  const pen = sim2.foodPenalty > 0 ? ` \xB7 c\u1EA3 l\xE0ng y\u1EBFu ${num2(sim2.foodPenalty * 100)}% v\xEC thi\u1EBFu \u0103n` : "";
+  if (id === "aspd") {
+    const cycle = swingCycle(sim2, v, w);
+    return { text: num2(1 / cycle), tone: sim2.foodPenalty > 0 ? "down" : "", tip: `${num2(cycle, 2)} gi\xE2y m\u1ED7i \u0111\xF2n v\u1EDBi ${w.name.toLowerCase()} (\u0111\xF2n m\u1ED7i gi\xE2y)${pen}` };
+  }
+  if (id === "crit") return { text: `${num2(critChance(sim2, v, w) * 100)}%`, tone: "", tip: `X\xE1c su\u1EA5t \u0111\xF2n \u0111\xE1nh c\u1EE7a ${w.name.toLowerCase()} th\xE0nh ch\xED m\u1EA1ng` };
+  if (id === "critd") return { text: `${num2(critMult(sim2, v, w) * 100)}%`, tone: "", tip: "S\xE1t th\u01B0\u01A1ng c\u1EE7a m\u1ED9t \u0111\xF2n ch\xED m\u1EA1ng so v\u1EDBi \u0111\xF2n th\u01B0\u1EDDng" };
+  const val = statValue(sim2, v, id), own = v.fac ? rawValue(v.fac, id) : val, tone = val > own + 0.05 ? "up" : val < own - 0.05 ? "down" : "";
+  const reduce = id === "defm" || id === "defr" ? ` \xB7 gi\u1EA3m ${num2(guardCut(sim2, v, id === "defr") * 100)}% s\xE1t th\u01B0\u01A1ng ${id === "defr" ? "t\u1EA7m xa" : "c\u1EADn chi\u1EBFn"}` : "";
+  return { text: num2(val), tone, tip: `${STAT_LABEL[id]}: g\u1ED1c ${num2(own)}${reduce}${val < own - 0.05 ? pen : ""}` };
+}
+function statPill(sim2, v, id) {
+  const r = statReading(sim2, v, id);
+  return dlg.pill(statIcon(id), r.text, r.tone === "up" ? "good" : r.tone === "down" ? "bad" : void 0, `${STAT_LABEL[id]}: ${r.tip}`);
+}
+
+// src/ui/people.ts
+var faces = /* @__PURE__ */ new Map();
+function avatar(c, v) {
+  const key = `${v.look.sex}|${v.look.skin}|${v.look.hair}|${v.armor ?? "-"}`;
+  let face2 = faces.get(key);
+  if (!face2) {
+    const still = { ...v, facing: "front", anim: "idle", animClock: 0, hold: null, carry: null, lit: false };
+    const src = c.sprites.villager(still, "idle"), px = src.getContext("2d").getImageData(0, 0, src.width, src.height).data;
+    let x0 = src.width, x1 = -1, y0 = src.height, y1 = -1;
+    for (let y = 0; y < src.height; y++) for (let x = 0; x < src.width; x++) if (px[(y * src.width + x) * 4 + 3] > 0) {
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+    face2 = document.createElement("canvas");
+    if (x1 < 0) {
+      face2.width = face2.height = 1;
+    } else {
+      const w = x1 - x0 + 1, hh = Math.ceil((y1 - y0 + 1) * 0.45);
+      face2.width = w;
+      face2.height = hh;
+      face2.getContext("2d").drawImage(src, x0, y0, w, hh, 0, 0, w, hh);
+    }
+    faces.set(key, face2);
+  }
+  return iconCanvas(face2);
+}
+function personTile(c, v, o = {}) {
+  const { sim: sim2 } = c, role = roleOf(v);
+  const hp = v.health / v.maxHealth;
+  const pills = o.stats ? h("div", { class: "dpills" }, ...o.stats.map((id) => statPill(sim2, v, id))) : o.vitals === false ? null : h(
+    "div",
+    { class: "dpills" },
+    dlg.pill(statIcon("hp"), `${Math.ceil(v.health)}`, hp < 0.35 ? "bad" : hp < 0.7 ? "warn" : void 0, "M\xE1u hi\u1EC7n c\xF3"),
+    dlg.pill(statIcon("sta"), `${Math.round(v.energy)}%`, v.energy < 20 ? "bad" : v.energy < 50 ? "warn" : void 0, "S\u1EE9c c\xF2n l\u1EA1i")
+  );
+  const trade = o.trade && role ? dlg.chip(roleName(role, sim2.era)) : null;
+  return dlg.tile({ pic: avatar(c, v), name: v.name, chip: trade, state: o.state }, [o.note === "" ? null : dlg.more(o.note ?? describe(v, sim2)), pills], o.actions?.some(Boolean) ? h("div", { class: "dacts" }, ...o.actions) : null);
+}
+function detailButton(c, v, title = "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt") {
+  const { ctl: ctl2 } = c;
+  return dlg.button("\u2699", () => {
+    ctl2.detailFrom = ctl2.selectedBuilding;
+    ctl2.selected.clear();
+    ctl2.selected.add(v.id);
+    ctl2.openDetail = true;
+    ctl2.closeBuilding();
+  }, { icon: true, title });
+}
+function roleStats(role) {
+  const chain = Object.values(CHAINS).find((ch) => ch.roles.includes(role));
+  const ids = chain?.order ?? [];
+  return role === "foot" || role === "cavalry" || role === "archer" ? [...ids, "aspd", "crit", "critd"] : ids;
+}
+
+// src/ui/unitdetail.ts
 var STANCES = [["aggressive", "Ch\u1EE7 \u0111\u1ED9ng", "\u0110u\u1ED5i \u0111\u1ECBch trong t\u1EA7m nh\xECn"], ["defensive", "Ph\xF2ng th\u1EE7", "Ch\u1EC9 \u0111\xE1nh \u0111\u1ECBch l\u1EA1i g\u1EA7n, kh\xF4ng r\u1EDDi ch\u1ED7"], ["retreat", "R\xFAt lui", "Kh\xF4ng \u0111\xE1nh, ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i"]];
-var UnitCard = class {
-  /** `root` is the small card over the map; `modal` is the full-screen page with everything about the chosen villagers. */
-  constructor(root, c, modal) {
-    this.root = root;
+var UnitDetail = class {
+  /**
+   * `ids` are the villagers the orders go to; `leave` is called when an order needs the player back on the map.
+   * `after` runs once a gear or tool order is done (by default the selection is dropped).
+   */
+  constructor(c, o) {
     this.c = c;
-    this.modal = modal;
-    this.name = h("b");
-    this.state = h("span");
-    this.dname = h("b");
-    this.dstate = h("span");
-    this.bars = [];
+    this.statCells = [];
     this.shiftBtns = [];
     this.rest = h("div", { class: "kv" });
     this.torchBtn = h("button", { class: "sm", text: "Ph\xE1t \u0111u\u1ED1c" });
     this.gear = h("div", { class: "kv" });
-    this.stats = h("div", { class: "kv" });
-    this.skills = h("div", { class: "kv" });
     this.toolRows = [];
-    this.mountBtns = [];
-    this.gearBtns = [];
-    this.statsKey = "";
-    this.open = false;
-    const { sim: sim2, ctl: ctl2 } = c, ids = () => [...ctl2.selected];
-    const makeBars = () => {
-      const full = h("b"), health = h("b"), morale = h("b", { class: "mor" }), armor = h("b", { class: "arm" });
-      const armorLabel = h("label", {}, "Gi\xE1p", h("i", {}, armor));
-      const energy = h("b", { class: "en" }), energyLabel = h("label", {}, "S\u1EE9c", h("i", {}, energy));
-      this.bars.push({ full, health, morale, armor, armorLabel, energy, energyLabel });
-      return h("div", { class: "bars" }, h("label", {}, "No", h("i", {}, full)), energyLabel, h("label", {}, "M\xE1u", h("i", {}, health)), h("label", {}, "Tinh th\u1EA7n", h("i", {}, morale)), armorLabel);
-    };
-    this.jobBtns = [];
+    this.combatSec = null;
+    this.gearSec = null;
+    this.gearSel = [];
+    const { sim: sim2, ctl: ctl2 } = c, ids = o.ids, after = o.after ?? (() => ctl2.clearSelection());
     this.stanceBtns = STANCES.map(([s, label2, tip]) => h("button", { class: "sm", "data-stance": s, pressed: false, text: label2, title: tip, onclick: () => {
       sim2.setStance(ids(), s);
       ctl2.onChange();
     } }));
     const gearRow = h("div", { class: "btns", role: "group", "aria-label": "Ph\xE1t \u0111\u1ED3" });
-    const addGear = (label2, kind, slot, title) => {
-      const btn = h("button", { class: "sm", title, onclick: () => {
-        const e = sim2.assignGear(ids(), kind, slot);
+    const addGear = (slot, label2, kinds) => {
+      const pick = h("select", { class: "sm", "aria-label": label2, title: `${label2}: l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng, ho\u1EB7c tr\u1EA3 v\u1EC1 kho`, onchange: () => {
+        if (pick.value === "") return;
+        if (pick.value === "auto") {
+          const e2 = sim2.autoGear(ids());
+          if (e2) c.toast(e2);
+          else after();
+          ctl2.onChange();
+          return;
+        }
+        const e = sim2.assignGear(ids(), pick.value === "none" ? null : pick.value, slot);
         if (e) c.toast(e);
-        else ctl2.clearSelection();
+        else after();
         ctl2.onChange();
       } });
-      this.gearBtns.push({ btn, kind, slot, label: label2 });
-      gearRow.append(btn);
+      pick.append(h("option", { value: "", text: "\u2014 ch\u1ECDn \u2014", hidden: true }), h("option", { value: "auto" }), h("option", { value: "none" }), ...kinds.map((k) => h("option", { value: k })));
+      this.gearSel.push({ pick, slot, label: label2, kinds });
+      gearRow.append(pick);
     };
-    for (const id of CRAFTED_WEAPONS) addGear(WEAPONS[id].name, id, "weapon", `Ph\xE1t ${WEAPONS[id].name.toLowerCase()} t\u1EEB kho X\u01B0\u1EDFng cho d\xE2n \u0111ang ch\u1ECDn`);
-    addGear("\xC1o da", "hide", "armor", "Ph\xE1t \xE1o da t\u1EEB kho X\u01B0\u1EDFng");
-    addGear("Tr\u1EA3 v\u0169 kh\xED", null, "weapon", "Tr\u1EA3 v\u0169 kh\xED v\u1EC1 kho X\u01B0\u1EDFng");
-    addGear("Tr\u1EA3 gi\xE1p", null, "armor", "Tr\u1EA3 gi\xE1p v\u1EC1 kho X\u01B0\u1EDFng");
-    gearRow.append(h("button", { class: "sm", text: "T\u1EF1 nh\u1EADn \u0111\u1ED3", title: "\u0110\u1EC3 X\u01B0\u1EDFng t\u1EF1 ph\xE1t v\xE0 \u0111\u1ED5i \u0111\u1ED3 cho ng\u01B0\u1EDDi n\xE0y (khi l\xE0m Chi\u1EBFn binh ho\u1EB7c Th\u1EE3 s\u0103n)", onclick: () => {
-      sim2.autoGear(ids());
-      ctl2.clearSelection();
+    addGear("weapon", "V\u0169 kh\xED", CRAFTED_WEAPONS);
+    addGear("armor", "Gi\xE1p", ["hide"]);
+    this.mountPick = h("select", { class: "sm", "aria-label": "Th\xFA c\u01B0\u1EE1i", title: "Th\xFA \u0111\xE3 thu\u1EA7n trong chu\u1ED3ng; \u0111\u1ED5i th\xFA th\xEC th\xFA c\u0169 v\u1EC1 chu\u1ED3ng", onchange: () => {
+      if (this.mountPick.value === "") return;
+      const e = sim2.assignMount(ids(), this.mountPick.value === "none" ? null : this.mountPick.value);
+      if (e) c.toast(e);
+      else after();
       ctl2.onChange();
-    } }));
-    const mountRow = h("div", { class: "btns", role: "group", "aria-label": "Giao th\xFA c\u01B0\u1EE1i" });
-    for (const kind of [null, ...MOUNT_KINDS]) {
-      const btn = h("button", { class: "sm", title: kind ? `Giao m\u1ED9t con ${MOUNTS[kind].name.toLowerCase()} t\u1EEB Chu\u1ED3ng th\xFA c\u01B0\u1EE1i` : "Tr\u1EA3 th\xFA v\u1EC1 chu\u1ED3ng", onclick: () => {
-        const e = sim2.assignMount(ids(), kind);
-        if (e) c.toast(e);
-        ctl2.onChange();
-      } });
-      this.mountBtns.push({ btn, kind });
-      mountRow.append(btn);
-    }
-    const gearHint = hint(h("p", { class: "sub", text: "Ph\xE1t \u0111\u1ED3 (l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng):" }), "");
+    } });
+    this.mountPick.append(h("option", { value: "", text: "\u2014 ch\u1ECDn \u2014", hidden: true }), h("option", { value: "none" }), ...MOUNT_KINDS.map((k) => h("option", { value: k })));
+    this.mountSec = h("section", {}, hint("Th\xFA c\u01B0\u1EE1i", "Th\xFA thu\u1EA7n \u1EDF Chu\u1ED3ng th\xFA c\u01B0\u1EE1i, giao nh\u01B0 c\xF4ng c\u1EE5: ng\u01B0\u1EDDi c\u01B0\u1EE1i \u0111i nhanh h\u01A1n v\xE0 \u0111\u1EE1 m\u1ED9t ph\u1EA7n \u0111\xF2n. D\xE0nh cho l\xEDnh, th\u1EE3 s\u0103n v\xE0 trinh s\xE1t (k\u1EF5 th\xFA c\u1EE7a tr\u1EA1i k\u1EF5 th\xFA \u0111\xE3 c\xF3 th\xFA c\u1EE7a tr\u1EA1i)."), h("div", { class: "btns" }, this.mountPick));
+    const gearHint = hint(h("p", { class: "sub", text: "Ch\u1ECDn \u0111\u1ED3 cho h\u1ECD (l\u1EA5y t\u1EEB kho):" }), "");
     this.gearTip = gearHint.tip;
     const toolsSec = h("section", {}, hint("C\xF4ng c\u1EE5", 'M\u1ED7i ngh\u1EC1 d\xF9ng m\u1ED9t c\xF4ng c\u1EE5 (\u0111\u1ED1n g\u1ED7: r\xECu, th\u1EE3 \u0111\xE1: cu\u1ED1c chim, h\xE1i l\u01B0\u1EE3m: cu\u1ED1c, th\u1EE3 x\xE2y: b\xFAa) v\xE0 m\u1ED7i d\xE2n ch\u1EC9 c\u1EA7m m\u1ED9t c\xF4ng c\u1EE5. \u0110\u1ED5i ngh\u1EC1 th\xEC c\xF4ng c\u1EE5 tr\u1EA3 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n. "\u0110i s\u1EEDa": c\xF4ng c\u1EE5 h\u1ECFng th\xEC b\u1ECB v\u1EE9t, d\xE2n t\u1EF1 l\u1EA5y ho\u1EB7c \u0111\u1EB7t c\xE1i m\u1EDBi. Sau khi nghi\xEAn c\u1EE9u "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 c\xF3 Kho c\xF4ng c\u1EE5, d\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng \u0111\u1ED3 s\u1EBD t\u1EF1 \u0111i l\u1EA5y.'));
     for (const k of TOOL_KINDS) {
-      const state = h("small"), give = [1, 2].map((tier) => ({ tier, btn: h("button", { class: "sm", onclick: () => {
-        const e = sim2.assignTool(ids(), k, tier);
+      const state = h("small"), pick = h("select", { class: "sm", "aria-label": TOOL_NAME[k], title: '\u0110\u1ED5i c\xF4ng c\u1EE5; "Tay kh\xF4ng" tr\u1EA3 c\xF4ng c\u1EE5 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n', onchange: () => {
+        if (pick.value === "") return;
+        const e = sim2.assignTool(ids(), k, Number(pick.value));
         if (e) c.toast(e);
-        else ctl2.clearSelection();
-        ctl2.onChange();
-      } }) }));
-      const back = h("button", { class: "sm", text: "Tr\u1EA3 kho", title: "Tr\u1EA3 c\xF4ng c\u1EE5 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n", onclick: () => {
-        sim2.assignTool(ids(), k, 0);
-        ctl2.clearSelection();
+        else after();
         ctl2.onChange();
       } });
+      pick.append(h("option", { value: "", text: "\u2014 ch\u1ECDn \u2014", hidden: true }), ...[0, 1, 2].map((t) => h("option", { value: String(t) })));
       const drop = h("button", { class: "sm", text: "B\u1ECF", title: "V\u1EE9t c\xF4ng c\u1EE5, k\u1EC3 c\u1EA3 khi ch\u01B0a h\u1ECFng", onclick: () => {
         sim2.discardTool(ids(), k);
-        ctl2.clearSelection();
+        after();
         ctl2.onChange();
       } });
-      const row = h("div", { class: "row" }, h("div", { class: "nm" }, TOOL_NAME[k], state), h("div", { class: "btns" }, ...give.map((g2) => g2.btn), back, drop));
-      this.toolRows.push({ k, row, state, give, back, drop });
+      const row = h("div", { class: "row" }, h("div", { class: "nm" }, TOOL_NAME[k], state), h("div", { class: "btns" }, pick, drop));
+      this.toolRows.push({ k, row, state, pick, drop });
       toolsSec.append(row);
     }
     this.torchBtn.addEventListener("click", () => {
@@ -36707,73 +49524,178 @@ var UnitCard = class {
       if (e) c.toast(e);
       ctl2.onChange();
     });
-    root.append(
-      h("div", { class: "cardhead" }, this.name, this.state, h("button", { class: "sm x", text: "\u2715", title: "B\u1ECF ch\u1ECDn", onclick: () => ctl2.clearSelection() })),
-      makeBars(),
-      h("div", { class: "btns" }, h("button", { class: "sm primary", text: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt", onclick: () => {
-        this.open = true;
-        this.update(this.chosen());
-      } }))
+    const shiftSec = h(
+      "section",
+      {},
+      hint("Ca l\xE0m v\xE0 s\u1EE9c", "D\u01B0\u1EDBi 20% s\u1EE9c d\xE2n ph\u1EA3i \u0111i ng\u1EE7 v\xE0 kh\xF4ng g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c t\u1EDBi khi h\u1ED3i \u0111\u1EE7 (50%, ho\u1EB7c 60% n\u1EBFu ki\u1EC7t s\u1EE9c d\u01B0\u1EDBi 10%). Ng\u1EE7 \u0111\xEAm h\u1ED3i s\u1EE9c nhanh h\u01A1n ng\u1EE7 ng\xE0y. Ng\u1EE7 trong Nh\xE0 d\xE2n (chi\u1EBFn binh: L\u1EC1u chi\u1EBFn binh) h\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7; ch\u01B0a c\xF3 nh\xE0 ho\u1EB7c h\u1EBFt gi\u01B0\u1EDDng th\xEC n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa, h\u1ED3i ch\u1EADm h\u01A1n. L\xE0m vi\u1EC7c ban \u0111\xEAm c\u1EA7n \u0111u\u1ED1c v\xE0 \u0111\u1EA1t 70% hi\u1EC7u su\u1EA5t. L\xE0m ca \u0111\xEAm li\xEAn t\u1EE5c l\xE0m d\xE2n m\u1EC7t m\u1ECFi t\xEDch l\u0169y: s\u1EE9c t\u1ED1i \u0111a gi\u1EA3m v\xE0 h\u1ED3i s\u1EE9c ch\u1EADm."),
+      this.rest,
+      h("div", { class: "btns", role: "group", "aria-label": "Ca l\xE0m" }, ...["day", "night", "both"].map((sh) => {
+        const btn = h("button", { class: "sm", text: SHIFT_LABEL[sh], title: SHIFT_TIP[sh], "data-shift": sh, pressed: false, onclick: () => {
+          sim2.setShift(ids(), sh);
+          ctl2.onChange();
+        } });
+        this.shiftBtns.push(btn);
+        return btn;
+      }), this.torchBtn)
     );
-    modal.append(
-      h("div", { class: "cardhead" }, this.dname, this.dstate, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => this.closeDetail() })),
-      h(
-        "div",
-        { class: "mbody cols" },
-        h("section", {}, h("h3", { text: "T\xECnh tr\u1EA1ng" }), makeBars(), this.gear),
+    this.toolsSec = toolsSec;
+    this.body = h(
+      "div",
+      { class: "dbody" },
+      h("section", { class: "dsec" }, h("h3", { text: "Ch\u1EC9 s\u1ED1" }), this.statsGrid()),
+      shiftSec,
+      this.combatSec = h(
+        "section",
+        {},
+        h("h3", { text: "Chi\u1EBFn \u0111\u1EA5u" }),
+        h("div", { class: "btns", role: "group", "aria-label": "Th\u1EBF \u0111\u1EE9ng" }, ...this.stanceBtns),
         h(
-          "section",
-          {},
-          hint("Ca l\xE0m v\xE0 s\u1EE9c", "D\u01B0\u1EDBi 20% s\u1EE9c d\xE2n ph\u1EA3i \u0111i ng\u1EE7 v\xE0 kh\xF4ng g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c t\u1EDBi khi h\u1ED3i \u0111\u1EE7 (50%, ho\u1EB7c 60% n\u1EBFu ki\u1EC7t s\u1EE9c d\u01B0\u1EDBi 10%). Ng\u1EE7 \u0111\xEAm h\u1ED3i s\u1EE9c nhanh h\u01A1n ng\u1EE7 ng\xE0y. Ng\u1EE7 trong Nh\xE0 d\xE2n (chi\u1EBFn binh: L\u1EC1u chi\u1EBFn binh) h\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7; ch\u01B0a c\xF3 nh\xE0 ho\u1EB7c h\u1EBFt gi\u01B0\u1EDDng th\xEC n\u1EB1m c\u1EA1nh \u0111\u1ED1ng l\u1EEDa, h\u1ED3i ch\u1EADm h\u01A1n. L\xE0m vi\u1EC7c ban \u0111\xEAm c\u1EA7n \u0111u\u1ED1c v\xE0 \u0111\u1EA1t 70% hi\u1EC7u su\u1EA5t. L\xE0m ca \u0111\xEAm li\xEAn t\u1EE5c l\xE0m d\xE2n m\u1EC7t m\u1ECFi t\xEDch l\u0169y: s\u1EE9c t\u1ED1i \u0111a gi\u1EA3m v\xE0 h\u1ED3i s\u1EE9c ch\u1EADm."),
-          this.rest,
-          h("div", { class: "btns", role: "group", "aria-label": "Ca l\xE0m" }, ...["day", "night", "both"].map((sh) => {
-            const btn = h("button", { class: "sm", text: SHIFT_LABEL[sh], title: SHIFT_TIP[sh], "data-shift": sh, pressed: false, onclick: () => {
-              sim2.setShift(ids(), sh);
-              ctl2.onChange();
-            } });
-            this.shiftBtns.push(btn);
-            return btn;
-          }), this.torchBtn)
-        ),
-        this.jobSec = h("section", {}, hint("Ngh\u1EC1", "Ngh\u1EC1 do c\xF4ng tr\xECnh c\u1EE7a n\xF3 qu\u1EA3n l\xFD: m\u1EDF N\xF4ng tr\u1EA1i, X\u01B0\u1EDFng g\u1ED7, X\u01B0\u1EDFng \u0111\xE1, Ch\xF2i th\u1EE3 s\u0103n, c\xE1c tr\u1EA1i l\xEDnh hay Tr\u1EA1i trinh s\xE1t \u0111\u1EC3 giao vi\u1EC7c ho\u1EB7c cho ngh\u1EC9. Chu\u1ED9t ph\u1EA3i l\xEAn c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3 hay th\xFA ch\u1EC9 l\xE0m ng\u01B0\u1EDDi \u0111\xE3 c\xF3 ngh\u1EC1 \u0111\xF3 \u0111i t\u1EDBi \u0111\xF3.")),
-        this.combatSec = h(
-          "section",
-          {},
-          h("h3", { text: "Chi\u1EBFn \u0111\u1EA5u" }),
-          h("div", { class: "btns", role: "group", "aria-label": "Th\u1EBF \u0111\u1EE9ng" }, ...this.stanceBtns),
-          h(
-            "div",
-            { class: "btns" },
-            h("button", { class: "sm", text: "Gi\u1EEF ch\u1ED7 (H)", title: "\u0110\u1EE9ng y\xEAn, ch\u1EC9 \u0111\xE1nh k\u1EBB \u1EDF s\xE1t", onclick: () => {
-              sim2.orderHold(ids());
-              ctl2.onChange();
-            } }),
-            h("button", { class: "sm", text: "D\u1EEBng (G)", title: "H\u1EE7y m\u1ECDi l\u1EC7nh", onclick: () => {
-              sim2.orderStop(ids());
-              ctl2.onChange();
-            } }),
-            h("button", { class: "sm", text: "T\u1EA5n c\xF4ng\u2013\u0111i (F)", title: "Ch\u1ECDn m\u1ED9t \u0111i\u1EC3m: \u0111i t\u1EDBi \u0111\xF3 v\xE0 \u0111\xE1nh m\u1ECDi \u0111\u1ECBch g\u1EB7p tr\xEAn \u0111\u01B0\u1EDDng", onclick: () => {
-              ctl2.attackMoveArmed = true;
-              this.closeDetail();
-              c.toast("Ch\u1EA1m v\xE0o \u0111i\u1EC3m \u0111\u1EBFn");
-              ctl2.onChange();
-            } })
-          )
-        ),
-        this.gearSec = h("section", {}, h("h3", { text: "Trang b\u1ECB" }), gearHint, gearRow),
-        this.mountSec = h("section", {}, hint("Th\xFA c\u01B0\u1EE1i", "Th\xFA do Chu\u1ED3ng th\xFA c\u01B0\u1EE1i thu\u1EA7n h\xF3a, giao cho t\u1EEBng ng\u01B0\u1EDDi nh\u01B0 c\xF4ng c\u1EE5: ng\u01B0\u1EDDi c\u01B0\u1EE1i \u0111i nhanh h\u01A1n v\xE0 \u0111\u1EE1 \u0111\xF2n h\u01A1n, l\xEDnh c\xF3 th\xFA t\xEDnh l\xE0 k\u1EF5 binh. K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA kh\xF4ng c\u1EA7n th\xFA giao ri\xEAng: h\u1ECD c\u01B0\u1EE1i con c\u1EE7a tr\u1EA1i."), mountRow),
-        this.toolsSec = toolsSec,
-        h("section", {}, h("h3", { text: "Ch\u1EC9 s\u1ED1 v\xE0 k\u1EF9 n\u0103ng" }), this.stats, this.skills)
-      )
+          "div",
+          { class: "btns" },
+          h("button", { class: "sm", text: "Gi\u1EEF ch\u1ED7 (H)", title: "\u0110\u1EE9ng y\xEAn, ch\u1EC9 \u0111\xE1nh k\u1EBB \u1EDF s\xE1t", onclick: () => {
+            sim2.orderHold(ids());
+            ctl2.onChange();
+          } }),
+          h("button", { class: "sm", text: "D\u1EEBng (G)", title: "H\u1EE7y m\u1ECDi l\u1EC7nh", onclick: () => {
+            sim2.orderStop(ids());
+            ctl2.onChange();
+          } }),
+          h("button", { class: "sm", text: "T\u1EA5n c\xF4ng\u2013\u0111i (F)", title: "Ch\u1ECDn m\u1ED9t \u0111i\u1EC3m: \u0111i t\u1EDBi \u0111\xF3 v\xE0 \u0111\xE1nh m\u1ECDi \u0111\u1ECBch g\u1EB7p tr\xEAn \u0111\u01B0\u1EDDng", onclick: () => {
+            ctl2.attackMoveArmed = true;
+            o.leave();
+            c.toast("Ch\u1EA1m v\xE0o \u0111i\u1EC3m \u0111\u1EBFn");
+            ctl2.onChange();
+          } })
+        )
+      ),
+      this.gearSec = h("section", {}, h("h3", { text: "Trang b\u1ECB" }), this.gear, gearHint, gearRow),
+      this.mountSec,
+      toolsSec
+    );
+  }
+  /** Draw the state of the first of `chosen`; the buttons answer for all of them. */
+  update(chosen) {
+    if (!chosen.length) return;
+    const sim0 = this.c.sim, v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : "tay kh\xF4ng";
+    for (const g2 of this.gearSel) {
+      const unlocked = autoOn(sim0.researched, "fetch"), auto = unlocked && chosen.every((o) => !o.manualGear), cur = new Set(chosen.map((o) => (g2.slot === "weapon" ? o.weapon : o.armor) ?? "none")), want = auto ? "auto" : cur.size === 1 ? [...cur][0] : "";
+      g2.pick.querySelectorAll("option").forEach((op) => {
+        if (op.value === "") return;
+        op.disabled = op.value === "auto" && !unlocked;
+        const text = op.value === "auto" ? unlocked ? `${g2.label}: t\u1EF1 \u0111\u1ED9ng (l\u1EA5y \u1EDF kho)` : `${g2.label}: t\u1EF1 \u0111\u1ED9ng (c\u1EA7n nghi\xEAn c\u1EE9u T\u1EF1 l\u1EA5y \u0111\u1ED3)` : op.value === "none" ? `${g2.label}: kh\xF4ng c\xF3 (tr\u1EA3 kho)` : `${g2.slot === "armor" ? ARMORS[op.value].name : WEAPONS[op.value].name} (kho: ${sim0.toolCount(op.value, op.value === "hide" ? 1 : WEAPONS[op.value].tier ?? 1)})`;
+        if (op.textContent !== text) op.textContent = text;
+      });
+      if (g2.pick.value !== want && document.activeElement !== g2.pick) g2.pick.value = want;
+    }
+    this.gearTip.textContent = !autoOn(sim0.researched, "fetch") ? 'D\xE2n ch\u01B0a t\u1EF1 l\u1EA5y \u0111\u01B0\u1EE3c \u0111\u1ED3: khi h\u1ECD ch\u01B0a c\xF3 ho\u1EB7c h\u1ECFng v\u0169 kh\xED, gi\xE1p th\xEC b\u1EA1n ph\u1EA3i t\u1EF1 ch\u1ECDn cho h\u1ECD. Nghi\xEAn c\u1EE9u "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho" \u0111\u1EC3 m\u1EDF ch\u1EBF \u0111\u1ED9 t\u1EF1 \u0111\u1ED9ng.' : chosen.every((o) => o.manualGear) ? '\u0110\u1ED3 do b\u1EA1n ch\u1ECDn: h\u1ECD kh\xF4ng t\u1EF1 \u0111\u1ED5i. Ch\u1ECDn "t\u1EF1 \u0111\u1ED9ng" \u0111\u1EC3 h\u1ECD t\u1EF1 l\u1EA5y \u1EDF Kho v\u0169 kh\xED.' : "T\u1EF1 \u0111\u1ED9ng: khi tr\u1ED1ng ho\u1EB7c h\u1ECFng, h\u1ECD t\u1EF1 t\u1EDBi Kho v\u0169 kh\xED l\u1EA5y \u0111\u1ED3 t\u1ED1t nh\u1EA5t.";
+    this.gear.innerHTML = `V\u0169 kh\xED <b>${w}</b> \xB7 Gi\xE1p <b>${v.armor ? ARMORS[v.armor].name : "\u2014"}</b>${v.armor ? ` (${armorText(ARMORS[v.armor], false)})` : ""}${v.leader ? " \xB7 <b>Th\u1EE7 l\u0129nh</b>" : ""}`;
+    const canRide = chosen.every((o) => o.job === "fight" && o.arm !== "cavalry" || o.job === "hunt" || o.job === "scout");
+    this.mountSec.hidden = !canRide;
+    if (canRide) {
+      const kinds2 = new Set(chosen.map((o) => o.mount ?? "none")), want = kinds2.size === 1 ? [...kinds2][0] : "";
+      this.mountPick.querySelectorAll("option").forEach((op) => {
+        if (op.value === "") return;
+        const text = op.value === "none" ? "\u0110i b\u1ED9 (tr\u1EA3 th\xFA v\u1EC1 chu\u1ED3ng)" : `${MOUNTS[op.value].name} (trong chu\u1ED3ng: ${sim0.tamedCount(op.value)})`;
+        if (op.textContent !== text) op.textContent = text;
+      });
+      if (this.mountPick.value !== want && document.activeElement !== this.mountPick) this.mountPick.value = want;
+    }
+    const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
+    this.toolsSec.hidden = only === null;
+    if (this.combatSec && this.gearSec) {
+      this.fillStats(v);
+      this.combatSec.hidden = !chosen.every((o) => o.job === "fight");
+      this.gearSec.hidden = !chosen.every((o) => o.job === "fight" || o.job === "hunt" || o.job === "scout");
+    }
+    for (const r of this.toolRows) {
+      r.row.hidden = r.k !== only;
+      const t = v.tools[r.k];
+      r.state.textContent = t ? t.dur <= 0 ? `${TIER_NAME[t.tier].toLowerCase()} \xB7 \u0111\xE3 h\u1ECFng` : `${TIER_NAME[t.tier].toLowerCase()} \xB7 c\xF2n ${Math.round(t.dur / TIER_DURABILITY[t.tier] * 100)}%` : "tay kh\xF4ng";
+      const tiers = new Set(chosen.map((o) => o.tools[r.k]?.tier ?? 0)), cur = tiers.size === 1 ? String([...tiers][0]) : "";
+      r.pick.querySelectorAll("option").forEach((op) => {
+        if (op.value === "") return;
+        const t2 = Number(op.value), text = t2 === 0 ? "Tay kh\xF4ng (tr\u1EA3 kho)" : `${TIER_NAME[t2]} (kho: ${sim0.toolCount(r.k, t2)})`;
+        if (op.textContent !== text) op.textContent = text;
+      });
+      if (r.pick.value !== cur && document.activeElement !== r.pick) r.pick.value = cur;
+      r.drop.disabled = chosen.every((o) => !o.tools[r.k]);
+    }
+    this.shiftBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.shift === b.dataset.shift))));
+    this.rest.innerHTML = energyText(sim0, v);
+    this.torchBtn.disabled = sim0.torchCount() <= 0 || chosen.every((o) => !!o.torch);
+    this.stanceBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.stance === b.dataset.stance))));
+  }
+  /** The grid of the eleven stats of a person: a picture, the name and the number. */
+  statsGrid() {
+    const grid = h("div", { class: "dstats" });
+    for (const id of STAT_ORDER) {
+      const value = h("b"), cell = h("div", { class: "dstat" }, h("span", { class: "dsico" }, statIcon(id)), h("span", { class: "dsname", text: STAT_LABEL[id] }), value);
+      this.statCells.push({ id, value, cell });
+      grid.append(cell);
+    }
+    return grid;
+  }
+  /** The numbers of the first villager, one decimal each; green where research has raised a stat above what the person was born with, red where hunger has lowered it. */
+  fillStats(v) {
+    for (const { id, value, cell } of this.statCells) {
+      const r = statReading(this.c.sim, v, id);
+      value.textContent = r.text;
+      cell.title = r.tip;
+      cell.className = `dstat${r.tone ? ` ${r.tone}` : ""}`;
+    }
+  }
+};
+
+// src/ui/unitcard.ts
+var UnitCard = class {
+  /** `root` is the small card over the map; `modal` is the full-screen page with everything about the chosen villagers. */
+  constructor(root, c, modal) {
+    this.root = root;
+    this.c = c;
+    this.picKey = "";
+    this.open = false;
+    const { sim: sim2, ctl: ctl2 } = c, ids = () => [...ctl2.selected];
+    this.win = new GameDialog(modal, { onClose: () => {
+      this.open = false;
+      this.back();
+    } });
+    this.detail = new UnitDetail(c, { ids, leave: () => this.closeDetail() });
+    this.info = new InfoCard(root);
+    const head = dlg.head({ pic: h("span"), title: "\u2014", sub: "\u2014", onClose: () => {
+      this.closeDetail();
+      this.back();
+    } });
+    this.picBox = head.querySelector(".dpic");
+    this.dname = head.querySelector(".dtitle");
+    this.dstate = head.querySelector(".dsub");
+    this.where = h("button", { class: "sm primary", text: "\u0110i t\u1EDBi", onclick: () => {
+      const v = this.chosen()[0];
+      if (!v) return;
+      ctl2.detailFrom = null;
+      this.closeDetail();
+      if (v.inside !== null) ctl2.selectBuilding(v.inside, true);
+      else ctl2.focusSelection();
+    } });
+    this.card = dlg.card(
+      { wide: true, label: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" },
+      head,
+      this.detail.body,
+      h("div", { class: "btns" }, this.where)
     );
   }
   chosen() {
     const { sim: sim2, ctl: ctl2 } = this.c;
     return sim2.villagers.filter((v) => ctl2.selected.has(v.id));
   }
+  /** The player closed the detail: go back to the house it was opened from, if any. */
+  back() {
+    const { ctl: ctl2 } = this.c, id = ctl2.detailFrom;
+    ctl2.detailFrom = null;
+    if (id !== null && this.c.sim.getBuilding(id)) ctl2.selectBuilding(id, true);
+  }
   closeDetail() {
     this.open = false;
-    this.modal.hidden = true;
+    this.win.hide();
   }
   update(chosen) {
     const sim0 = this.c.sim;
@@ -36781,69 +49703,41 @@ var UnitCard = class {
       this.c.ctl.openDetail = false;
       if (chosen.length) this.open = true;
     }
+    if (!this.open) this.c.ctl.detailFrom = null;
     this.root.hidden = chosen.length === 0;
     if (!chosen.length) {
-      this.statsKey = "";
       this.closeDetail();
       return;
     }
-    this.modal.hidden = !this.open;
-    const v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : "tay kh\xF4ng";
+    if (this.open && !this.win.isOpen) this.win.show(this.card);
+    if (!this.open && this.win.isOpen) this.win.hide();
+    const v = chosen[0];
     const title = chosen.length > 1 ? `${v.name} v\xE0 ${chosen.length - 1} ng\u01B0\u1EDDi n\u1EEFa` : v.name;
-    this.name.textContent = this.dname.textContent = title;
-    this.state.textContent = this.dstate.textContent = describe(v, sim0);
-    for (const b of this.bars) {
-      b.full.style.width = `${v.fullness}%`;
-      b.health.style.width = `${v.health / v.maxHealth * 100}%`;
-      b.morale.style.width = `${v.morale}%`;
-      b.health.className = v.health / v.maxHealth < 0.35 ? "bad" : "";
-      const ad = v.armor ? ARMORS[v.armor] : null;
-      b.armor.style.width = `${ad ? Math.min(100, armorLevel(ad) / ARMOR_FULL * 100) : 0}%`;
-      b.armorLabel.title = ad ? armorText(ad) : "Kh\xF4ng m\u1EB7c gi\xE1p";
-      b.energy.style.width = `${v.energy}%`;
-      b.energy.className = v.energy < 20 ? "en low" : "en";
-      b.energyLabel.title = `S\u1EE9c ${Math.round(v.energy)}%. D\u01B0\u1EDBi 20% d\xE2n ph\u1EA3i \u0111i ng\u1EE7; d\u01B0\u1EDBi 10% h\u1ECD ng\u1EE7 say v\xE0 kh\xF4ng ai g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c.`;
-    }
+    const role = roleOf(v), job = role ? roleName(role, sim0.era) : JOB_NAME[v.job];
+    const doing = describe(v, sim0);
+    this.dname.textContent = title;
+    this.dstate.textContent = job;
+    this.info.set({
+      picKey: `${v.id}|${v.armor}|${v.look.sex}`,
+      pic: () => avatar(this.c, v),
+      title,
+      sub: `Ngh\u1EC1: ${job}`,
+      line: `\u0110ang ${doing.replace(/^đang /, "")}`,
+      onClose: () => this.c.ctl.clearSelection(),
+      actions: [{ id: "job", label: "Giao vi\u1EC7c", tone: "primary", onClick: () => {
+        this.open = true;
+        this.update(this.chosen());
+      } }]
+    });
     if (!this.open) return;
-    for (const g2 of this.gearBtns) {
-      const n = g2.kind ? sim0.toolCount(g2.kind, g2.kind === "hide" ? 1 : WEAPONS[g2.kind].tier ?? 1) : -1;
-      g2.btn.textContent = n >= 0 ? `${g2.label} (${n})` : g2.label;
-      g2.btn.disabled = g2.kind !== null && n <= 0 && !chosen.every((o) => (g2.slot === "weapon" ? o.weapon : o.armor) === g2.kind);
+    const pk = `${v.id}|${v.armor}|${v.look.sex}`;
+    if (pk !== this.picKey) {
+      this.picKey = pk;
+      this.picBox.replaceChildren(avatar(this.c, v));
     }
-    this.gearTip.textContent = chosen.every((o) => o.job === "scout") ? "V\u0169 kh\xED, gi\xE1p v\xE0 \u0111u\u1ED1c gi\xFAp trinh s\xE1t v\u1EBD \u0111\u1EE7 b\u1EA3n \u0111\u1ED3 h\u01A1n v\xE0 \xEDt b\u1ECB b\u1EAFt h\u01A1n." : chosen.every((o) => o.job === "fight" || o.job === "hunt") ? chosen[0].manualGear ? "\u0110\u1ED3 do b\u1EA1n ph\xE1t: X\u01B0\u1EDFng kh\xF4ng t\u1EF1 \u0111\u1ED5i." : "X\u01B0\u1EDFng t\u1EF1 ph\xE1t \u0111\u1ED3 t\u1ED1t nh\u1EA5t c\xF2n trong kho." : "Ch\u1EC9 Chi\u1EBFn binh v\xE0 Th\u1EE3 s\u0103n c\u1EA7m v\u0169 kh\xED \u0111i theo; d\xE2n th\u01B0\u1EDDng kh\xF4ng chi\u1EBFn \u0111\u1EA5u m\xE0 ch\u1EA1y v\u1EC1 l\u1EEDa tr\u1EA1i khi c\xF3 \u0111\u1ECBch.";
-    this.gear.innerHTML = `M\xE1u <b>${Math.ceil(v.health)}/${v.maxHealth}</b> \xB7 V\u0169 kh\xED <b>${w}</b> \xB7 Gi\xE1p <b>${v.armor ? ARMORS[v.armor].name : "\u2014"}</b>${v.armor ? ` (${armorText(ARMORS[v.armor], false)})` : ""}${v.leader ? " \xB7 <b>Th\u1EE7 l\u0129nh</b>" : ""}`;
-    const sk = `${v.id}|${WORK_JOBS.map((j) => v.skill[j].level).join("")}|${Object.values(v.stats).join()}`;
-    if (sk !== this.statsKey) {
-      this.statsKey = sk;
-      this.stats.innerHTML = `<span class="stars">${stars(v.stars ?? 1)}</span> ` + [["hp", 0], ["atk", 0], ["defm", 0], ["defr", 0], ["move", 1], ["work", 1], ["sta", 0]].map(([k, d]) => `${STAT_DEF[k].short} <b>${Math.round(statValue(sim0, v, k) * 10 ** d) / 10 ** d}</b>`).join(" \xB7 ");
-      this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>c\u1EA5p ${v.skill[j].level}</b>`).join(" \xB7 ");
-    }
-    const kinds = new Set(chosen.map((o) => TOOL_OF_JOB[o.job] ?? null)), only = kinds.size === 1 ? [...kinds][0] : null;
-    this.toolsSec.hidden = only === null;
-    this.combatSec.hidden = !chosen.every((o) => o.job === "fight");
-    this.mountSec.hidden = chosen.every((o) => o.job === "fight" && o.arm === "cavalry");
-    for (const m of this.mountBtns) {
-      const n = m.kind ? sim0.tamedCount(m.kind) : -1;
-      m.btn.textContent = m.kind ? `${MOUNTS[m.kind].name} (${n})${chosen.every((o) => o.mount === m.kind) ? " \u2713" : ""}` : "\u0110i b\u1ED9";
-      m.btn.disabled = m.kind !== null && n <= 0 && !chosen.every((o) => o.mount === m.kind);
-    }
-    this.gearSec.hidden = !chosen.every((o) => o.job === "fight" || o.job === "hunt" || o.job === "scout");
-    for (const r of this.toolRows) {
-      r.row.hidden = r.k !== only;
-      const t = v.tools[r.k];
-      r.state.textContent = t ? t.dur <= 0 ? `${TIER_NAME[t.tier].toLowerCase()} \xB7 \u0111\xE3 h\u1ECFng` : `${TIER_NAME[t.tier].toLowerCase()} \xB7 c\xF2n ${Math.round(t.dur / TIER_DURABILITY[t.tier] * 100)}%` : "tay kh\xF4ng";
-      for (const g2 of r.give) {
-        const n = sim0.toolCount(r.k, g2.tier);
-        g2.btn.textContent = `${TIER_NAME[g2.tier]} (${n})`;
-        g2.btn.disabled = n <= 0;
-      }
-      r.back.disabled = r.drop.disabled = !t;
-    }
-    this.jobBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.job === b.dataset.job))));
-    this.shiftBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.shift === b.dataset.shift))));
-    this.rest.innerHTML = energyText(sim0, v) + ` \xB7 ${sim0.torchCount()} \u0111u\u1ED1c trong kho`;
-    this.torchBtn.disabled = sim0.torchCount() <= 0 || chosen.every((o) => !!o.torch);
-    this.stanceBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.stance === b.dataset.stance))));
+    this.detail.update(chosen);
+    this.where.hidden = chosen.length !== 1;
+    this.where.textContent = v.inside !== null ? v.phase === "sleep" ? "M\u1EDF nh\xE0 \u0111ang ng\u1EE7" : "M\u1EDF nh\xE0 \u0111ang l\xE0m" : "\u0110i t\u1EDBi";
   }
 };
 
@@ -36852,169 +49746,132 @@ var TargetCard = class {
   constructor(root, c) {
     this.root = root;
     this.c = c;
-    this.name = h("b");
-    this.info = h("span");
-    this.hp = h("b", { class: "bad" });
-    this.line = h("div", { class: "kv" });
-    this.harvest = h("button", { class: "sm primary", text: "Khai th\xE1c" });
-    this.attack = h("button", { class: "sm primary", text: "T\u1EA5n c\xF4ng" });
-    this.loot = h("button", { class: "sm", text: "L\u1ED9t da, l\u1EA5y th\u1ECBt" });
-    root.append(
-      h("div", { class: "cardhead" }, this.name, this.info, h("button", { class: "sm x", text: "\u2715", onclick: () => {
-        c.ctl.inspect = null;
-        c.ctl.onChange();
-      } })),
-      h("div", { class: "bars" }, h("label", {}, "M\xE1u", h("i", {}, this.hp))),
-      this.line,
-      h("div", { class: "btns" }, this.harvest, this.attack, this.loot)
-    );
-    this.harvest.addEventListener("click", () => {
-      const t = c.ctl.inspect;
-      if (!t || t.kind !== "node") return;
-      const N = c.sim.world.size, r = c.sim.callWorker(t.id % N, Math.floor(t.id / N));
-      c.toast("name" in r ? `${r.name} \u0111i khai th\xE1c` : r.reason);
-      c.ctl.onChange();
-    });
-    this.attack.addEventListener("click", () => {
-      const t = c.ctl.inspect;
-      if (!t || t.kind === "node" || !c.ctl.selected.size) {
-        c.toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
-        return;
-      }
-      if (!c.sim.orderAttack([...c.ctl.selected], { kind: t.kind, id: t.id })) c.toast(t.kind === "unit" ? "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi \u0111\xE1nh: tuy\u1EC3n l\xEDnh \u1EDF tr\u1EA1i l\xEDnh" : "Ch\u1EC9 Th\u1EE3 s\u0103n ho\u1EB7c chi\u1EBFn binh m\u1EDBi s\u0103n th\xFA");
-      c.ctl.onChange();
-    });
-    this.loot.addEventListener("click", () => {
-      const t = c.ctl.inspect;
-      if (!t || !c.ctl.selected.size) {
-        c.toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
-        return;
-      }
-      if (!c.sim.orderLoot([...c.ctl.selected], t.id)) c.toast("Ch\u1EC9 Th\u1EE3 s\u0103n l\u1ED9t da: giao ngh\u1EC1 Th\u1EE3 s\u0103n b\u1EB1ng n\xFAt ngh\u1EC1 tr\u01B0\u1EDBc");
-      c.ctl.onChange();
-    });
+    this.card = new InfoCard(root);
+  }
+  /** A villager of the matching trade, one of the nearest, is called without the player choosing. */
+  harvest() {
+    const { ctl: ctl2, sim: sim2, toast } = this.c, t = ctl2.inspect;
+    if (!t || t.kind !== "node") return;
+    const N = sim2.world.size, r = sim2.callWorker(t.id % N, Math.floor(t.id / N));
+    toast("name" in r ? `${r.name} \u0111i khai th\xE1c` : r.reason);
+    ctl2.onChange();
+  }
+  attack() {
+    const { ctl: ctl2, sim: sim2, toast } = this.c, t = ctl2.inspect;
+    if (!t || t.kind === "node" || !ctl2.selected.size) {
+      toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
+      return;
+    }
+    if (!sim2.orderAttack([...ctl2.selected], { kind: t.kind, id: t.id })) toast(t.kind === "unit" ? "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi \u0111\xE1nh: tuy\u1EC3n l\xEDnh \u1EDF tr\u1EA1i l\xEDnh" : "Ch\u1EC9 Th\u1EE3 s\u0103n ho\u1EB7c chi\u1EBFn binh m\u1EDBi s\u0103n th\xFA");
+    ctl2.onChange();
+  }
+  loot() {
+    const { ctl: ctl2, sim: sim2, toast } = this.c, t = ctl2.inspect;
+    if (!t || !ctl2.selected.size) {
+      toast("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
+      return;
+    }
+    if (!sim2.orderLoot([...ctl2.selected], t.id)) toast("Ch\u1EC9 Th\u1EE3 s\u0103n l\u1ED9t da: giao ngh\u1EC1 Th\u1EE3 s\u0103n b\u1EB1ng n\xFAt ngh\u1EC1 tr\u01B0\u1EDBc");
+    ctl2.onChange();
   }
   update() {
-    const t = this.c.ctl.inspect, { sim: sim2 } = this.c;
+    const t = this.c.ctl.inspect, { sim: sim2, ctl: ctl2, sprites: sprites2 } = this.c;
+    const gone = () => {
+      ctl2.inspect = null;
+      this.root.hidden = true;
+    };
     if (!t) {
       this.root.hidden = true;
       return;
     }
-    this.harvest.hidden = t.kind !== "node";
+    const close = () => {
+      ctl2.inspect = null;
+      ctl2.onChange();
+    };
+    const acts = (harvest, attack, loot, attackLabel = "T\u1EA5n c\xF4ng", harvestOff = false) => [
+      { id: "harvest", label: "Khai th\xE1c", tone: "primary", hidden: !harvest, disabled: harvestOff, onClick: () => this.harvest() },
+      { id: "attack", label: attackLabel, tone: "primary", hidden: !attack, onClick: () => this.attack() },
+      { id: "loot", label: "L\u1ED9t da, l\u1EA5y th\u1ECBt", hidden: !loot, onClick: () => this.loot() }
+    ];
     if (t.kind === "node") {
       const N = sim2.world.size, n = sim2.world.nodeAt(t.id % N, Math.floor(t.id / N));
       if (!n) {
-        this.c.ctl.inspect = null;
-        this.root.hidden = true;
+        gone();
         return;
       }
       this.root.hidden = false;
-      this.name.textContent = { tree: "C\xE2y", rock: "T\u1EA3ng \u0111\xE1", bush: "B\u1EE5i qu\u1EA3" }[n.kind];
-      this.info.textContent = `cho ${RES_NAME[n.res].toLowerCase()}${n.workers ? ` \xB7 ${n.workers} ng\u01B0\u1EDDi \u0111ang l\xE0m` : ""}`;
-      this.hp.style.width = `${Math.max(0, n.amount) / Math.max(1, n.max) * 100}%`;
-      this.line.innerHTML = n.kind === "bush" && n.amount <= 0 ? "H\u1EBFt qu\u1EA3, \u0111ang ch\u1EDD m\u1ECDc l\u1EA1i" : `M\xE1u <b>${Math.ceil(n.amount)}/${n.max}</b>`;
-      this.harvest.disabled = n.kind === "bush" && n.amount <= 0;
-      this.attack.hidden = true;
-      this.loot.hidden = true;
+      const empty = n.kind === "bush" && n.amount <= 0;
+      this.card.set({
+        picKey: `node|${n.kind}`,
+        pic: () => resIcon(n.res),
+        title: { tree: "C\xE2y", rock: "T\u1EA3ng \u0111\xE1", bush: "B\u1EE5i qu\u1EA3" }[n.kind],
+        sub: `cho ${RES_NAME[n.res].toLowerCase()}${n.workers ? ` \xB7 ${n.workers} ng\u01B0\u1EDDi \u0111ang l\xE0m` : ""}`,
+        line: empty ? "H\u1EBFt qu\u1EA3, \u0111ang ch\u1EDD m\u1ECDc l\u1EA1i" : `C\xF2n ${Math.ceil(n.amount)}/${n.max}`,
+        onClose: close,
+        actions: acts(true, false, false, "T\u1EA5n c\xF4ng", empty)
+      });
       return;
     }
     if (t.kind === "unit") {
       const f = sim2.get(t.id);
       if (!f || f.health <= 0) {
-        this.c.ctl.inspect = null;
-        this.root.hidden = true;
+        gone();
         return;
       }
       const tribe = sim2.tribes.find((x) => x.id === f.team);
       this.root.hidden = false;
-      this.name.textContent = f.name;
-      this.info.textContent = `${tribe?.def.name ?? ""} \xB7 ${f.ai?.role === "civ" ? "d\xE2n th\u01B0\u1EDDng" : f.ai?.role === "raider" ? "k\u1EBB t\u1EADp k\xEDch" : "chi\u1EBFn binh"}`;
-      this.hp.style.width = `${f.health / f.maxHealth * 100}%`;
-      this.line.innerHTML = `M\xE1u <b>${Math.ceil(f.health)}/${f.maxHealth}</b> \xB7 V\u0169 kh\xED <b>${f.weapon ? WEAPONS[f.weapon].name : "tay kh\xF4ng"}</b> \xB7 Tinh th\u1EA7n <b>${Math.round(f.morale)}</b> \xB7 ${tribe ? `quan h\u1EC7 <b>${relationLabel(tribe.relation)}</b>` : ""}`;
-      this.attack.hidden = false;
-      this.loot.hidden = true;
+      this.card.set({
+        picKey: `unit|${f.id}|${f.armor}`,
+        pic: () => avatar(this.c, f),
+        title: f.name,
+        sub: `${tribe?.def.name ?? ""} \xB7 ${f.ai?.role === "civ" ? "d\xE2n th\u01B0\u1EDDng" : f.ai?.role === "raider" ? "k\u1EBB t\u1EADp k\xEDch" : "chi\u1EBFn binh"}`,
+        line: `M\xE1u ${Math.ceil(f.health)}/${f.maxHealth} \xB7 V\u0169 kh\xED ${f.weapon ? WEAPONS[f.weapon].name : "tay kh\xF4ng"}${tribe ? ` \xB7 quan h\u1EC7 ${relationLabel(tribe.relation)}` : ""}`,
+        onClose: close,
+        actions: acts(false, true, false)
+      });
       return;
     }
     const a = sim2.animalById.get(t.id);
     if (!a) {
-      this.c.ctl.inspect = null;
-      this.root.hidden = true;
+      gone();
       return;
     }
     const d = animalDef(a), dead = a.state === "dead";
     this.root.hidden = false;
-    this.name.textContent = d.name;
-    this.info.textContent = dead ? "x\xE1c" : { graze: "\u0111ang g\u1EB7m c\u1ECF", wander: "\u0111ang \u0111i", flee: "\u0111ang ch\u1EA1y tr\u1ED1n", attack: "\u0111ang t\u1EA5n c\xF4ng", sleep: "\u0111ang ng\u1EE7", dead: "x\xE1c" }[a.state];
-    this.hp.style.width = `${Math.max(0, a.hp) / a.maxHp * 100}%`;
-    this.line.innerHTML = dead ? `C\xF2n <b>${a.meat}</b> th\u1ECBt \xB7 <b>${a.hide}</b> ${RES_NAME.hide.toLowerCase()}${Object.entries(a.drops ?? {}).filter(([, n]) => (n ?? 0) > 0).map(([r, n]) => ` \xB7 <b>${n}</b> ${RES_NAME[r].toLowerCase()}`).join("")}` : `M\xE1u <b>${Math.ceil(a.hp)}/${a.maxHp}</b> \xB7 s\xE1t th\u01B0\u01A1ng <b>${d.damage}</b> \xB7 ${d.prey ? "con m\u1ED3i" : "th\xFA d\u1EEF"}`;
-    this.attack.hidden = dead;
-    this.attack.textContent = d.prey ? "S\u0103n" : "T\u1EA5n c\xF4ng";
-    this.loot.hidden = !dead;
+    const drops = Object.entries(a.drops ?? {}).filter(([, n]) => (n ?? 0) > 0).map(([r, n]) => ` \xB7 ${n} ${RES_NAME[r].toLowerCase()}`).join("");
+    this.card.set({
+      picKey: `animal|${a.species}`,
+      pic: () => {
+        try {
+          return iconCanvas(sprites2.mount(a.species, false, 0, 1));
+        } catch {
+          return "\u{1F43E}";
+        }
+      },
+      title: d.name,
+      sub: dead ? "x\xE1c" : { graze: "\u0111ang g\u1EB7m c\u1ECF", wander: "\u0111ang \u0111i", flee: "\u0111ang ch\u1EA1y tr\u1ED1n", attack: "\u0111ang t\u1EA5n c\xF4ng", sleep: "\u0111ang ng\u1EE7", dead: "x\xE1c" }[a.state],
+      line: dead ? `C\xF2n ${a.meat} th\u1ECBt \xB7 ${a.hide} ${RES_NAME.hide.toLowerCase()}${drops}` : `M\xE1u ${Math.ceil(a.hp)}/${a.maxHp}`,
+      onClose: close,
+      actions: acts(false, !dead, dead, d.prey ? "S\u0103n" : "T\u1EA5n c\xF4ng")
+    });
   }
 };
-
-// src/ui/resicons.ts
-var O = "#2b1d10";
-var S = `stroke="${O}" stroke-width=".9" stroke-linejoin="round"`;
-var ART = {
-  food: `<path d="M8 5.5V2.5" stroke="#5e4026" stroke-width="1.2"/><path d="M8 3.6q3.2-2.4 5.2.2q-2.4 2.2-5.2-.2z" fill="#4f9a3a" ${S}/><circle cx="5.2" cy="10.2" r="3.6" fill="#d2483a" ${S}/><circle cx="11" cy="10.8" r="3.3" fill="#e0603f" ${S}/><circle cx="4.1" cy="9" r="1" fill="#ffd6c8"/><circle cx="10" cy="9.8" r=".9" fill="#ffd6c8"/>`,
-  wood: `<rect x="1.8" y="8.6" width="12" height="5" rx="1.4" fill="#8a5a2c" ${S}/><rect x="3" y="3" width="12" height="5.6" rx="1.4" fill="#9a6a35" ${S}/><ellipse cx="3.6" cy="5.8" rx="1.9" ry="2.8" fill="#dcae6e" ${S}/><ellipse cx="3.6" cy="5.8" rx=".8" ry="1.4" fill="none" stroke="#9a6a35" stroke-width=".7"/><path d="M7 4.6h5M8 7h5M5 10.8h7" stroke="#6a4420" stroke-width=".7"/>`,
-  stone: `<polygon points="1.8,12.6 2.8,7 6.4,3.6 11.6,4.4 14.2,9.4 12.4,13.2 5.2,13.4" fill="#9aa0a4" ${S}/><polygon points="2.8,7 6.4,3.6 8.6,6 5.6,9" fill="#c4c9cc"/><polygon points="14.2,9.4 12.4,13.2 8,13.3 10,9.8" fill="#6f777b"/>`,
-  hide: `<path d="M3 2.8L6 4h4l3-1.2 1.4 4.2-2.2 2 1 4.4-3-1.2L8 14.2l-2.2-2-3 1.2 1-4.4-2.2-2z" fill="#a0552f" ${S}/><path d="M6.4 6.4q1.6 1 3.2 0M7 9.4q1 .8 2 0" stroke="#7a3a1c" stroke-width=".8" fill="none"/><circle cx="5.2" cy="5.4" r=".8" fill="#c9784a"/><circle cx="11" cy="9.6" r=".8" fill="#c9784a"/>`,
-  bone: `<g transform="rotate(-38 8 8)"><rect x="3.4" y="6.6" width="9.2" height="2.8" fill="#e4dcc4" ${S}/><circle cx="3.2" cy="6.2" r="1.9" fill="#e4dcc4" ${S}/><circle cx="3.2" cy="9.8" r="1.9" fill="#e4dcc4" ${S}/><circle cx="12.8" cy="6.2" r="1.9" fill="#e4dcc4" ${S}/><circle cx="12.8" cy="9.8" r="1.9" fill="#e4dcc4" ${S}/><rect x="4.4" y="7.2" width="7.2" height="1.6" fill="#e4dcc4"/></g>`,
-  fat: `<path d="M2.4 10.4C2.4 5.4 5 3.6 8 3.6s5.6 1.8 5.6 6.8c0 2.6-2.6 3.6-5.6 3.6s-5.6-1-5.6-3.6z" fill="#f0e2b0" ${S}/><ellipse cx="6" cy="7" rx="1.8" ry="1.1" fill="#fff8dc"/><path d="M5 11.6q3 1 6 0" stroke="#d2bf80" stroke-width=".8" fill="none"/>`,
-  feather: `<path d="M13.6 2.2C6.4 2 2.8 6.6 3 13.2 9.4 13.4 13.8 9.6 13.6 2.2z" fill="#7aa0c8" ${S}/><path d="M3 13.2L11.4 4.6" stroke="${O}" stroke-width=".9"/><path d="M6 10.4l-2.4.4M8.4 8l-3 .2M10.6 6l-2.6.2" stroke="#4d6f96" stroke-width=".7"/>`,
-  tusk: `<path d="M3.6 2.8C11.6 2.4 14.4 8.8 11.2 14 11.4 8.8 8.4 6.2 3.6 6z" fill="#fff6e0" ${S}/><path d="M5 4q5 .4 7 4" stroke="#d8c8a0" stroke-width=".8" fill="none"/>`,
-  coin: `<path d="M1.8 12.4C1.4 6 4.6 2.6 8 2.6s6.6 3.4 6.2 9.8z" fill="#f0d8c4" ${S}/><path d="M8 12.2V3.2M5.2 12.2L4.4 4.6M10.8 12.2l.8-7.6M3 12.2l-.6-4M13 12.2l.6-4" stroke="#c89a82" stroke-width=".8"/><rect x="5.8" y="12.4" width="4.4" height="2" rx=".8" fill="#d8b8a0" ${S}/>`,
-  torch: `<rect x="7" y="7.4" width="2.2" height="7.6" rx=".6" fill="#8a6238" ${S}/><path d="M8.1 .8C12.6 5 11.6 8.6 8.1 8.6S3.6 5 8.1.8z" fill="#f89628" ${S}/><path d="M8.1 4C10.2 6 9.8 7.8 8.1 7.8S6 6 8.1 4z" fill="#ffe27a"/>`,
-  stat_hp: `<path d="M8 14C2 9.6 1.4 5.4 4 3.8 5.8 2.7 7.4 3.6 8 5.2 8.6 3.6 10.2 2.7 12 3.8 14.6 5.4 14 9.6 8 14z" fill="#e0483c" ${S}/><path d="M4.6 5.2q.8-.8 1.8-.2" stroke="#ffd0c8" stroke-width=".9" fill="none"/>`,
-  stat_atk: `<path d="M13.4 2.6L6 10" stroke="${O}" stroke-width="3.6" stroke-linecap="round"/><path d="M13.4 2.6L6 10" stroke="#d4dade" stroke-width="2" stroke-linecap="round"/><path d="M4.2 8.4l3.4 3.4" stroke="${O}" stroke-width="3" stroke-linecap="round"/><path d="M4.2 8.4l3.4 3.4" stroke="#b5532f" stroke-width="1.5" stroke-linecap="round"/><path d="M5.6 10.4L3 13" stroke="#8a6238" stroke-width="2" stroke-linecap="round"/>`,
-  stat_defm: `<path d="M8 1.6l5.4 2v4.2c0 3.2-2.4 5.2-5.4 6.6-3-1.4-5.4-3.4-5.4-6.6V3.6z" fill="#7f9cc8" ${S}/><path d="M8 3.4v9M4.4 7.2h7.2" stroke="#dfe8f6" stroke-width="1.2"/>`,
-  stat_defr: `<path d="M8 1.6l5.4 2v4.2c0 3.2-2.4 5.2-5.4 6.6-3-1.4-5.4-3.4-5.4-6.6V3.6z" fill="#c9a064" ${S}/><circle cx="8" cy="8" r="2.6" fill="none" stroke="#fff0cc" stroke-width="1"/><circle cx="8" cy="8" r=".9" fill="#fff0cc"/>`,
-  stat_move: `<path d="M2.6 3.6L7 8l-4.4 4.4M7.6 3.6L12 8l-4.4 4.4" stroke="${O}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M2.6 3.6L7 8l-4.4 4.4M7.6 3.6L12 8l-4.4 4.4" stroke="#5cc866" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
-  stat_work: `<path d="M9.4 6.6L3.4 12.6" stroke="${O}" stroke-width="3.2" stroke-linecap="round"/><path d="M9.4 6.6L3.4 12.6" stroke="#9a6a35" stroke-width="1.6" stroke-linecap="round"/><rect x="7" y="2.6" width="7" height="4" rx="1" fill="#9aa0a4" transform="rotate(30 10.5 4.6)" ${S}/>`,
-  stat_int: `<path d="M8 1.8a4.6 4.6 0 0 1 2.6 8.4c-.5.4-.6.8-.6 1.4H6c0-.6-.1-1-.6-1.4A4.6 4.6 0 0 1 8 1.8z" fill="#f3d65e" ${S}/><rect x="6" y="12" width="4" height="1.8" rx=".8" fill="#9aa0a4" ${S}/><path d="M6.6 5.4q1.4-1.2 2.8 0" stroke="#fff6c8" stroke-width=".9" fill="none"/>`,
-  stat_aspd: `<circle cx="8" cy="9.2" r="5" fill="#e8ecef" ${S}/><path d="M8 9.2V5.8M8 9.2l2.3 1.5" stroke="${O}" stroke-width="1.3" stroke-linecap="round" fill="none"/><rect x="6.4" y="1.4" width="3.2" height="1.8" rx=".6" fill="#9aa0a4" ${S}/>`,
-  stat_crit: `<path d="M8 1.4l1.6 4.2 4.4.4-3.4 2.8 1.1 4.3L8 10.9 4.3 13.1l1.1-4.3L2 6l4.4-.4z" fill="#f26a3c" ${S}/><circle cx="8" cy="8" r="1.6" fill="#fff0cc"/>`,
-  stat_critd: `<path d="M8 1.2l1.4 3.6 3.8-.6-2.2 3.2 2.6 2.8-3.8-.2L8 14.8 6.2 10l-3.8.2L5 7.4 2.8 4.2l3.8.6z" fill="#c8322c" ${S}/><path d="M10.8 2.8L5.4 11.6" stroke="#fff0cc" stroke-width="1.2" stroke-linecap="round"/>`,
-  stat_sta: `<path d="M9.4 1.4L3.6 9h3.8l-.9 5.6 5.9-8H8.6z" fill="#f2b232" ${S}/>`,
-  role_foot: `<path d="M8 1.8l5 1.8v4c0 3-2.2 5-5 6.2-2.8-1.2-5-3.2-5-6.2v-4z" fill="#7f9cc8" ${S}/><path d="M12.6 1.6L7 8.4" stroke="${O}" stroke-width="3.2" stroke-linecap="round"/><path d="M12.6 1.6L7 8.4" stroke="#d4dade" stroke-width="1.7" stroke-linecap="round"/>`,
-  role_cavalry: `<path d="M2.4 12.6c.4-3 1.6-5 4-5.8l1.4-2.8 1.6 1 2.4-.2.6 1.6-1.4 1.2c1.6.6 2.4 2.2 2.4 5H10l-.6-2.4-2.6.4-.4 2H2.4z" fill="#b5835a" ${S}/><circle cx="10.6" cy="4.8" r=".6" fill="${O}"/>`,
-  role_archer: `<path d="M3.4 2.6c6 1.4 8.2 6.4 6.8 11" stroke="${O}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M3.4 2.6c6 1.4 8.2 6.4 6.8 11" stroke="#9a6a35" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M3 13.4L13.4 3" stroke="#d4dade" stroke-width="1.2"/><path d="M13.4 3l-3.4.4 1.8 1.8z" fill="#d4dade"/>`,
-  role_scout: `<path d="M1.6 8s2.4-4.6 6.4-4.6S14.4 8 14.4 8 12 12.6 8 12.6 1.6 8 1.6 8z" fill="#f1ead6" ${S}/><circle cx="8" cy="8" r="2.6" fill="#4a7a9c" ${S}/><circle cx="8" cy="8" r="1" fill="${O}"/>`,
-  role_tame: `<ellipse cx="8" cy="10.4" rx="3.6" ry="3" fill="#b5835a" ${S}/><circle cx="3.6" cy="6.4" r="1.6" fill="#b5835a" ${S}/><circle cx="6.4" cy="3.8" r="1.6" fill="#b5835a" ${S}/><circle cx="9.8" cy="3.8" r="1.6" fill="#b5835a" ${S}/><circle cx="12.6" cy="6.4" r="1.6" fill="#b5835a" ${S}/>`,
-  formation: `<circle cx="8" cy="3.4" r="1.7" fill="#c9a064" ${S}/><circle cx="4" cy="8" r="1.7" fill="#c9a064" ${S}/><circle cx="12" cy="8" r="1.7" fill="#c9a064" ${S}/><circle cx="2.4" cy="12.6" r="1.7" fill="#c9a064" ${S}/><circle cx="8" cy="12.6" r="1.7" fill="#c9a064" ${S}/><circle cx="13.6" cy="12.6" r="1.7" fill="#c9a064" ${S}/>`,
-  clock: `<circle cx="8" cy="8.4" r="5.6" fill="#f1ead6" ${S}/><path d="M8 4.8v3.8l2.6 1.6" stroke="#2b1d10" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M6 1.6h4" stroke="#2b1d10" stroke-width="1.4" stroke-linecap="round"/>`,
-  pop: `<circle cx="8" cy="4.8" r="3" fill="#e8c4a0" ${S}/><path d="M2.4 14.6C2.4 9 13.6 9 13.6 14.6z" fill="#b5532f" ${S}/>`
-};
-function resIcon(key) {
-  const el2 = document.createElement("span");
-  el2.className = "ico";
-  el2.setAttribute("aria-hidden", "true");
-  el2.innerHTML = `<svg viewBox="0 0 16 16" width="100%" height="100%">${ART[key] ?? ""}</svg>`;
-  return el2;
-}
-var statIcon = (stat) => resIcon(`stat_${stat}`);
 
 // src/ui/techtree.ts
 var TechTree = class {
   constructor(c) {
     this.c = c;
     this.root = h("div", { class: "ttree" });
-    this.detail = h("div", { class: "tdetail" });
-    this.dialog = h("div", { class: "tdialog", hidden: true }, this.detail);
+    this.dialog = new GameDialog(h("div", {}), { inside: true, onClose: () => {
+      this.picked = null;
+      this.showDetail();
+      this.update(true);
+    } });
     this.body = h("div", { class: "tbody" });
     this.nodes = [];
     this.picked = null;
     this.key = "";
-    this.root.append(this.body, this.dialog);
-    this.dialog.addEventListener("click", (e) => {
-      if (e.target === this.dialog) {
-        this.picked = null;
-        this.showDetail();
-        this.update(true);
-      }
-    });
+    this.root.append(this.body, this.dialog.root);
   }
   /** The picture of a research that stands alone: what it opens, drawn the way the build menu draws houses. */
   pic(kind, level = 1) {
@@ -37168,30 +50025,28 @@ var TechTree = class {
   /** The tapped square as a dialog over the tree, like a scroll: its picture and level bar, what it gives now and next, the cost as pictures, and the button. Tapping outside, or ✕, puts it away. */
   showDetail() {
     const n = this.picked, { sim: sim2, toast, ctl: ctl2 } = this.c;
-    this.dialog.hidden = !n;
-    if (!n) return;
+    if (!n) {
+      this.dialog.hide();
+      return;
+    }
     const t = n.techOf(), lvl = n.level(), line3 = !!n.role;
     const title = line3 ? `${STAT_DEF[n.stat].name} \xB7 ${TREE_ROLES[n.role].name}` : t?.name ?? n.el.querySelector(".tname")?.textContent ?? "";
     const src = n.el.querySelector("canvas"), icon = src ? iconCanvas(src) : n.el.querySelector(".tpic")?.cloneNode(true);
-    const bar2 = h("i", { class: "dbar" }, h("b", { style: `width:${lvl / n.max * 100}%` }), h("span", { text: n.max > 1 ? `${lvl}/${n.max}` : lvl ? "\u2713" : "" }));
     const now = line3 ? statBonus(sim2.researched, n.role, n.stat) : 0, next = line3 && t ? t.unlocks.bonus.pct : 0;
-    const close = h("button", { class: "dclose", text: "\u2715", title: "\u0110\xF3ng", onclick: () => {
+    const head = dlg.head({ pic: icon ?? void 0, title, bar: { value: lvl, max: n.max, label: n.max > 1 ? `${lvl}/${n.max}` : lvl ? "\u2713" : "" }, onClose: () => {
       this.picked = null;
       this.showDetail();
       this.update(true);
     } });
-    const head = h("div", { class: "dhead" }, h("div", { class: "dpic" }, ...icon ? [icon] : []), h("div", { class: "dwho" }, h("b", { class: "dtitle", text: title }), bar2), close);
     if (!t) {
-      this.detail.replaceChildren(head, h("p", { class: "dtext", text: line3 ? `\u0110\xE3 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a ${n.max}: ${STAT_DEF[n.stat].name.toLowerCase()} c\u1EE7a ${TREE_ROLES[n.role].name.toLowerCase()} +${now}%.` : "Nghi\xEAn c\u1EE9u n\xE0y \u0111\xE3 xong." }));
+      this.dialog.show(dlg.card({ label: title }, head, dlg.text(line3 ? `\u0110\xE3 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a ${n.max}: ${STAT_DEF[n.stat].name.toLowerCase()} c\u1EE7a ${TREE_ROLES[n.role].name.toLowerCase()} +${now}%.` : "Nghi\xEAn c\u1EE9u n\xE0y \u0111\xE3 xong.")));
       return;
     }
     const st = sim2.techState(t), busy2 = st.state === "ready" && sim2.currentResearch() !== null, short = st.state === "ready" && !busy2 ? sim2.researchShort(t) : null, block = st.state === "queued" ? sim2.researchBlock(t) : null;
     const note = busy2 ? "\u0110\u1EE3i nghi\xEAn c\u1EE9u hi\u1EC7n t\u1EA1i xong" : short ?? (st.state === "locked" ? st.why ?? "" : st.state === "active" ? "\u0110ang nghi\xEAn c\u1EE9u\u2026" : st.state === "queued" ? block ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u, ch\u1EDD b\u1EAFt \u0111\u1EA7u" : "");
-    const btn = h("button", {
-      class: "dgo",
-      text: { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state],
-      disabled: st.state === "done" || st.state === "active" || st.state === "locked" || busy2 || !!short,
-      onclick: () => {
+    const btn = dlg.button(
+      { done: "\u2713 Xong", active: "\u0110ang l\xE0m", queued: "H\u1EE7y \u0111\u01A1n", ready: "Nghi\xEAn c\u1EE9u", locked: "Kh\xF3a" }[st.state],
+      () => {
         if (st.state === "queued") sim2.unqueueResearch(t.id);
         else {
           const e = sim2.queueResearch(t.id);
@@ -37201,21 +50056,22 @@ var TechTree = class {
         ctl2.onChange();
         this.showDetail();
         this.update(true);
-      }
-    });
+      },
+      { disabled: st.state === "done" || st.state === "active" || st.state === "locked" || busy2 || !!short }
+    );
     const costs = Object.keys(t.cost).filter((r) => (t.cost[r] ?? 0) > 0).map((r) => {
       const need = t.cost[r] ?? 0, have = Math.floor(sim2.stock[r]);
-      return h("span", { class: `dcost${have < need ? " short" : ""}`, title: RES_NAME[r] }, resIcon(r), h("b", { text: String(need) }), h("small", { text: `/${have}` }));
+      return dlg.cost(resIcon(r), String(need), String(have), have < need, RES_NAME[r]);
     });
-    this.detail.replaceChildren(
+    this.dialog.show(dlg.card(
+      { label: title },
       head,
-      ...line3 ? [h("div", { class: "dline" }, h("span", { text: `Hi\u1EC7n t\u1EA1i: +${now}%` }), h("span", { text: `C\u1EA5p ti\u1EBFp theo: +${next}%` }))] : [],
-      h("p", { class: "dtext", text: line3 ? STAT_DEF[n.stat].about : t.desc }),
-      h("div", { class: "dcosts" }, ...costs, h("span", { class: "dcost", title: "Th\u1EDDi gian" }, resIcon("clock"), h("b", { text: workDays(t.time) }))),
-      ...t.needLevel > 1 ? [h("small", { class: "dneed", text: `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${t.needLevel}` })] : [],
-      ...note ? [h("small", { class: "lock", text: note })] : [],
+      line3 ? dlg.line(`Hi\u1EC7n t\u1EA1i: +${now}%`, `C\u1EA5p ti\u1EBFp theo: +${next}%`) : null,
+      dlg.text(line3 ? STAT_DEF[n.stat].about : t.desc),
+      dlg.costs(...costs, dlg.cost(resIcon("clock"), workDays(t.time), null, false, "Th\u1EDDi gian")),
+      ...st.state === "locked" && st.lacks ? st.lacks.map((l) => dlg.note(l)) : [t.needLevel > 1 ? dlg.note(`C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${t.needLevel}`, false) : null, note ? dlg.note(note) : null],
       btn
-    );
+    ));
   }
   /** Refresh the squares (their bars and locks) every frame the panel shows; the detail only when something changed. */
   update(force = false) {
@@ -37239,38 +50095,74 @@ var TechTree = class {
 };
 
 // src/ui/peoplepane.ts
-var PeoplePane = class {
+var PAGE = 6;
+var SORTS = ["hp", "sta", "atk", "defm", "defr", "move", "work", "int"];
+var PeoplePane = class _PeoplePane {
   constructor(c) {
     this.c = c;
     this.root = h("div", { class: "split" });
-    this.count = h("div", { class: "kv" });
-    this.list = h("div", { class: "plist" });
-    this.pane = h("div", { class: "ppane", hidden: true });
+    this.list = h("div", { class: "dlist" });
+    this.pane = h("div", { class: "ppane" });
+    // the right side: the details of the one picked (or a line asking to pick one)
+    this.noOne = h("p", { class: "dempty", text: "Ch\u1ECDn m\u1ED9t ng\u01B0\u1EDDi trong danh s\xE1ch \u0111\u1EC3 xem chi ti\u1EBFt v\xE0 ra l\u1EC7nh." });
+    this.personView = h("div", { class: "pside", hidden: true });
     this.rows = /* @__PURE__ */ new Map();
     this.key = "";
     this.picked = null;
-    // the menu of the picked villager
-    this.name = h("b");
-    this.state = h("span");
-    this.facts = h("div", { class: "kv" });
-    this.skills = h("div", { class: "kv" });
-    this.bar = { full: h("b"), health: h("b"), morale: h("b", { class: "mor" }), armor: h("b", { class: "arm" }) };
-    this.armorLabel = h("label", {}, "Gi\xE1p");
-    this.energy = h("b", { class: "en" });
-    this.restLine = h("div", { class: "kv" });
-    this.shiftBtns = [];
+    this.page = 0;
+    this.group = "";
+    this.sort = "order";
+    this.desc = true;
+    // the controls over the list
+    this.groupSel = h("select", { class: "sm", "aria-label": "L\u1ECDc theo ngh\u1EC1", title: "L\u1ECDc theo nh\xF3m: d\xE2n th\u01B0\u1EDDng, l\xEDnh, ho\u1EB7c t\u1EEBng ngh\u1EC1 (k\u1EC3 c\u1EA3 r\u1EA3nh)" });
+    this.groupKey = "";
+    this.sortSel = h("select", { class: "sm", "aria-label": "S\u1EAFp x\u1EBFp", title: "S\u1EAFp x\u1EBFp theo ch\u1EC9 s\u1ED1" });
+    this.dirBtn = h("button", { class: "sm", title: "\u0110\u1ED5i chi\u1EC1u s\u1EAFp x\u1EBFp" });
+    this.recall = h("button", { class: "sm", title: "G\u1ECDi nh\u1EEFng d\xE2n r\u1EA3nh \u0111ang \u1EDF xa l\xE0ng quay v\u1EC1 l\u1EEDa tr\u1EA1i" });
+    this.prev = h("button", { class: "sm", text: "\u2039 Tr\u01B0\u1EDBc" });
+    this.next = h("button", { class: "sm", text: "Sau \u203A" });
+    this.pageInfo = h("small", { class: "dsub" });
+    this.pager = h("div", { class: "btns pager" }, this.prev, this.pageInfo, this.next);
+    // the details of the picked villager
+    this.face = h("div", { class: "dpic" });
+    this.faceKey = "";
+    this.name = h("b", { class: "dtitle" });
+    this.state = h("small", { class: "dsub" });
     this.where = h("button", { class: "sm primary", text: "\u0110i t\u1EDBi" });
-    const { sim: sim2, ctl: ctl2, toast } = c;
-    this.armorLabel.append(h("i", {}, this.bar.armor));
-    const energyLabel = h("label", {}, "S\u1EE9c", h("i", {}, this.energy));
-    for (const sh of ["day", "night", "both"]) this.shiftBtns.push(h("button", { class: "sm", text: SHIFT_LABEL[sh], title: SHIFT_TIP[sh], "data-shift": sh, pressed: false, onclick: () => {
-      const v = this.villager();
-      if (!v) return;
-      sim2.setShift([v.id], sh);
+    const { ctl: ctl2 } = c, again = () => {
+      this.key = "";
       ctl2.onChange();
-    } }));
-    this.jobBtns = [];
-    this.jobBox = h("div", {}, h("h3", { text: "Vi\u1EC7c \u0111ang l\xE0m" }), h("p", { class: "sub", text: "Vi\u1EC7c c\u1EE7a m\u1ED7i ng\u01B0\u1EDDi do c\xF4ng tr\xECnh c\u1EE7a n\xF3 qu\u1EA3n l\xFD (N\xF4ng tr\u1EA1i, X\u01B0\u1EDFng g\u1ED7, X\u01B0\u1EDFng \u0111\xE1, Ch\xF2i th\u1EE3 s\u0103n, c\xE1c tr\u1EA1i l\xEDnh, Tr\u1EA1i trinh s\xE1t, Nh\xE0 th\u1EE3 x\xE2y\u2026). M\u1EDF c\xF4ng tr\xECnh \u0111\xF3 \u0111\u1EC3 giao vi\u1EC7c ho\u1EB7c cho ngh\u1EC9; \u0111\u1ED1ng l\u1EEDa ch\u1EC9 cho xem." }));
+    };
+    this.detail = new UnitDetail(c, { ids: () => this.picked === null ? [] : [this.picked], leave: () => ctl2.closeBuilding(), after: () => void 0 });
+    this.recall.addEventListener("click", () => {
+      const n = this.c.sim.recallFar();
+      this.c.toast(n ? `\u0110\xE3 g\u1ECDi ${n} ng\u01B0\u1EDDi v\u1EC1 l\xE0ng` : "Kh\xF4ng c\xF3 ai \u1EDF xa");
+      ctl2.onChange();
+    });
+    this.sortSel.append(h("option", { value: "order", text: "S\u1EAFp x\u1EBFp: m\u1EB7c \u0111\u1ECBnh" }), h("option", { value: "name", text: "T\xEAn" }), ...SORTS.map((id) => h("option", { value: id, text: STAT_LABEL[id] })));
+    this.groupSel.addEventListener("change", () => {
+      this.group = this.groupSel.value;
+      this.page = 0;
+      this.picked = null;
+      again();
+    });
+    this.sortSel.addEventListener("change", () => {
+      this.sort = this.sortSel.value;
+      this.page = 0;
+      again();
+    });
+    this.dirBtn.addEventListener("click", () => {
+      this.desc = !this.desc;
+      again();
+    });
+    this.prev.addEventListener("click", () => {
+      this.page--;
+      again();
+    });
+    this.next.addEventListener("click", () => {
+      this.page++;
+      again();
+    });
     this.where.addEventListener("click", () => {
       const v = this.villager();
       if (!v) return;
@@ -37283,78 +50175,130 @@ var PeoplePane = class {
       ctl2.focusSelection();
       ctl2.closeBuilding();
     });
-    const more = h("button", { class: "sm", text: "C\xF4ng c\u1EE5, trang b\u1ECB, ch\u1EC9 s\u1ED1", onclick: () => {
-      const v = this.villager();
-      if (!v || v.inside !== null) {
-        toast("D\xE2n \u0111ang \u1EDF trong nh\xE0: m\u1EDF nh\xE0 \u0111\u1EC3 cho h\u1ECD ra");
-        return;
-      }
-      ctl2.selected.clear();
-      ctl2.selected.add(v.id);
-      ctl2.openDetail = true;
-      ctl2.closeBuilding();
-    } });
-    const labels = (...names2) => names2.map((n, i) => h("label", {}, n, h("i", {}, [this.bar.full, this.bar.health, this.bar.morale][i])));
-    this.pane.append(
-      h("div", { class: "cardhead" }, this.name, this.state),
-      h("div", { class: "bars" }, ...labels("No", "M\xE1u", "Tinh th\u1EA7n"), energyLabel, this.armorLabel),
-      this.restLine,
-      h("div", { class: "btns", role: "group", "aria-label": "Ca l\xE0m" }, ...this.shiftBtns),
-      this.facts,
-      this.skills,
-      this.jobBox,
-      h("div", { class: "btns" }, this.where, more)
+    const applyAll = h("button", { class: "sm primary", text: "\xC1p d\u1EE5ng cho c\u1EA3 nh\xF3m", title: "Cho m\u1ECDi ng\u01B0\u1EDDi c\xF9ng ngh\u1EC1 d\xF9ng ca l\xE0m, \u0111u\u1ED1c v\xE0 c\xF4ng c\u1EE5 gi\u1ED1ng ng\u01B0\u1EDDi n\xE0y", onclick: () => this.applyToGroup() });
+    this.personView.append(
+      h("div", { class: "dhead" }, this.face, h("div", { class: "dwho" }, this.name, this.state), this.where),
+      this.detail.body,
+      h("div", { class: "btns" }, applyAll)
     );
-    this.root.append(h("div", {}, this.count, this.list), this.pane);
+    this.pane.append(this.noOne, this.personView);
+    this.root.append(h("div", { class: "pleft" }, h("div", { class: "btns filters" }, this.groupSel, this.sortSel, this.dirBtn), this.recall, this.list, this.pager), this.pane);
+  }
+  /** Give everybody of the picked villager's trade the same shift, the same tool and (if they hold one) a torch. */
+  applyToGroup() {
+    const { sim: sim2, ctl: ctl2, toast } = this.c, v = this.villager();
+    if (!v) return;
+    const g2 = _PeoplePane.groupOf(v), ids = sim2.villagers.filter((o) => _PeoplePane.groupOf(o) === g2 && o.id !== v.id).map((o) => o.id);
+    if (!ids.length) {
+      toast("Kh\xF4ng c\xF2n ai c\xF9ng ngh\u1EC1");
+      return;
+    }
+    sim2.setShift(ids, v.shift);
+    const k = TOOL_OF_JOB[v.job], errs = [];
+    if (k) {
+      const e = sim2.assignTool(ids, k, v.tools[k]?.tier ?? 0);
+      if (e) errs.push(e);
+    }
+    if (v.torch) {
+      const e = sim2.giveTorch(ids);
+      if (e) errs.push(e);
+    }
+    toast(errs.length ? errs.join(" \xB7 ") : `\u0110\xE3 \xE1p d\u1EE5ng cho ${ids.length} ng\u01B0\u1EDDi c\xF9ng ngh\u1EC1`);
+    ctl2.onChange();
   }
   villager() {
     return this.picked === null ? void 0 : this.c.sim.get(this.picked);
   }
+  /** The trade a filter or a tile goes by: soldiers by arm, the rest by job (the idle are their own group). */
+  static groupOf(v) {
+    return roleOf(v) ?? v.job;
+  }
+  /** Does a villager belong to the group picked in the filter: '*civ' is the plain villagers (no soldier, hunter or scout), '*army' the soldiers, any other value one trade. */
+  static matches(v, group) {
+    if (group === "*civ") return v.job !== "fight" && v.job !== "hunt" && v.job !== "scout";
+    if (group === "*army") return v.job === "fight";
+    return _PeoplePane.groupOf(v) === group;
+  }
+  /** What a villager holds and when they work, in one line: the tool of their job, the torch and the shift. */
+  brief(v) {
+    const k = TOOL_OF_JOB[v.job], t = k ? v.tools[k] : null;
+    const parts = [];
+    if (k) parts.push(`${TOOL_NAME[k]}: ${t ? `${TIER_NAME[t.tier].toLowerCase()}${t.dur <= 0 ? " (h\u1ECFng)" : ""}` : "tay kh\xF4ng"}`);
+    parts.push(`\u0110u\u1ED1c: ${v.torch ? "c\xF3" : "kh\xF4ng"}`, `Ca l\xE0m: ${SHIFT_LABEL[v.shift].toLowerCase()}`);
+    return parts.join(" \xB7 ");
+  }
+  sorted(vs) {
+    const { sim: sim2 } = this.c, s = this.sort, dir = this.desc ? -1 : 1;
+    if (s === "order") return vs;
+    const val = (v) => s === "hp" ? v.health : s === "sta" ? v.energy : statValue(sim2, v, s);
+    return [...vs].sort(s === "name" ? (a, b) => a.name.localeCompare(b.name, "vi") * -dir : (a, b) => (val(a) - val(b)) * dir || a.id - b.id);
+  }
   update() {
-    const { sim: sim2 } = this.c, vs = sim2.villagers;
-    this.count.innerHTML = `D\xE2n <b>${vs.length}/${sim2.popCap()}</b> \xB7 \u0111ang l\xE0m vi\u1EC7c <b>${vs.filter((v2) => v2.job !== "idle").length}</b> \xB7 l\xEDnh <b>${vs.filter((v2) => v2.job === "fight").length}</b> \xB7 trinh s\xE1t <b>${vs.filter((v2) => v2.job === "scout").length}</b> \xB7 th\u1EE3 s\u0103n <b>${vs.filter((v2) => v2.job === "hunt").length}</b> \xB7 th\u1EE9c \u0103n <b>${Math.floor(sim2.stock.food)}</b> (s\u1ED1ng \u0111\u01B0\u1EE3c ~${(sim2.stock.food / Math.max(1, vs.length * 5)).toFixed(1)} ng\xE0y)`;
-    const key = vs.map((v2) => v2.id).join();
+    const { sim: sim2 } = this.c, all = sim2.villagers;
+    const groups = [...new Set(all.map(_PeoplePane.groupOf))];
+    const civ = all.filter((o) => _PeoplePane.matches(o, "*civ")).length, army = all.filter((o) => _PeoplePane.matches(o, "*army")).length;
+    const gk = `${groups.join()}|${all.map(_PeoplePane.groupOf).join()}`;
+    if (gk !== this.groupKey) {
+      this.groupKey = gk;
+      const label2 = (g2) => {
+        const v2 = all.find((o) => _PeoplePane.groupOf(o) === g2);
+        const r = roleOf(v2);
+        return `${r ? roleName(r, sim2.era) : JOB_NAME[v2.job]} (${all.filter((o) => _PeoplePane.groupOf(o) === g2).length})`;
+      };
+      this.groupSel.replaceChildren(h("option", { value: "", text: `M\u1ECDi ngh\u1EC1 (${all.length})` }), h("option", { value: "*civ", text: `D\xE2n th\u01B0\u1EDDng (${civ})` }), h("option", { value: "*army", text: `L\xEDnh (${army})` }), ...groups.map((g2) => h("option", { value: g2, text: label2(g2) })));
+      if (this.group && !this.group.startsWith("*") && !groups.includes(this.group)) this.group = "";
+      this.groupSel.value = this.group;
+    }
+    const far = farFolk(sim2).length;
+    this.recall.hidden = far === 0;
+    this.recall.textContent = `G\u1ECDi ${far} d\xE2n \u1EDF xa v\u1EC1 l\xE0ng`;
+    this.dirBtn.textContent = this.desc ? "\u2193 Cao tr\u01B0\u1EDBc" : "\u2191 Th\u1EA5p tr\u01B0\u1EDBc";
+    this.dirBtn.hidden = this.sort === "order";
+    const filtered = this.sorted(this.group ? all.filter((v2) => _PeoplePane.matches(v2, this.group)) : all);
+    const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
+    this.page = Math.min(Math.max(0, this.page), pages - 1);
+    const slice = filtered.slice(this.page * PAGE, (this.page + 1) * PAGE);
+    this.pager.hidden = pages <= 1;
+    this.pageInfo.textContent = `Trang ${this.page + 1}/${pages} \xB7 ${filtered.length} ng\u01B0\u1EDDi`;
+    this.prev.disabled = this.page <= 0;
+    this.next.disabled = this.page >= pages - 1;
+    const key = slice.map((v2) => v2.id).join();
     if (key !== this.key) {
       this.key = key;
       this.rows.clear();
-      this.list.replaceChildren(...vs.map((v2) => {
-        const st = h("small"), hp = h("small");
-        const row = h("button", { class: "vrow", type: "button", onclick: () => {
-          this.picked = v2.id;
+      this.list.replaceChildren(...slice.length ? slice.map((v2) => {
+        const row = personTile(this.c, v2, { vitals: false, note: this.brief(v2), trade: true });
+        row.classList.add("pick");
+        row.addEventListener("click", () => {
+          this.picked = this.picked === v2.id ? null : v2.id;
           this.update();
-        } }, h("span", {}, h("b", { text: v2.name }), " ", st), hp);
-        this.rows.set(v2.id, { row, st, hp });
+        });
+        this.rows.set(v2.id, { row, note: row.querySelector(".dmore") });
         return row;
-      }));
+      }) : [h("p", { class: "dempty", text: "Kh\xF4ng c\xF3 ai." })]);
       if (this.picked !== null && !sim2.get(this.picked)) this.picked = null;
     }
-    for (const v2 of vs) {
+    for (const v2 of slice) {
       const r = this.rows.get(v2.id);
       if (r) {
-        r.st.textContent = `\xB7 ${describe(v2, sim2)}`;
-        r.hp.textContent = `${Math.ceil(v2.health)}/${v2.maxHealth}`;
-        r.row.classList.toggle("on", v2.id === this.picked);
+        const t = this.brief(v2);
+        if (r.note.textContent !== t) r.note.textContent = t;
+        r.row.classList.toggle("now", v2.id === this.picked);
       }
     }
     const v = this.villager();
-    this.pane.hidden = !v;
+    this.noOne.hidden = !!v;
+    this.personView.hidden = !v;
     if (!v) return;
+    const fk = `${v.id}|${v.armor}`;
+    if (fk !== this.faceKey) {
+      this.faceKey = fk;
+      this.face.replaceChildren(avatar(this.c, v));
+    }
+    const role = roleOf(v);
     this.name.textContent = v.name;
-    this.state.textContent = describe(v, sim2);
-    this.bar.full.style.width = `${v.fullness}%`;
-    this.bar.health.style.width = `${v.health / v.maxHealth * 100}%`;
-    this.bar.morale.style.width = `${v.morale}%`;
-    this.bar.health.className = v.health / v.maxHealth < 0.35 ? "bad" : "";
-    const ad = v.armor ? ARMORS[v.armor] : null;
-    this.bar.armor.style.width = `${ad ? Math.min(100, armorLevel(ad) / ARMOR_FULL * 100) : 0}%`;
-    this.armorLabel.title = ad ? armorText(ad) : "Kh\xF4ng m\u1EB7c gi\xE1p";
-    this.facts.innerHTML = Object.keys(STAT_NAME).map((k) => `${STAT_NAME[k]} <b>${v.stats[k]}</b>`).join(" \xB7 ");
-    this.skills.innerHTML = WORK_JOBS.map((j) => `${JOBS[j].name} <span class="stars">${stars(v.potential[j])}</span> <b>c\u1EA5p ${v.skill[j].level}</b>`).join(" \xB7 ");
-    this.jobBtns.forEach((b) => b.setAttribute("aria-pressed", String(v.job === b.dataset.job)));
-    this.energy.style.width = `${v.energy}%`;
-    this.energy.className = v.energy < 20 ? "en low" : "en";
-    this.restLine.innerHTML = energyText(sim2, v);
-    this.shiftBtns.forEach((b) => b.setAttribute("aria-pressed", String(v.shift === b.dataset.shift)));
+    this.state.textContent = role ? roleName(role, sim2.era) : JOB_NAME[v.job];
+    this.detail.update([v]);
     this.where.textContent = v.inside !== null ? v.phase === "sleep" ? "M\u1EDF nh\xE0 \u0111ang ng\u1EE7" : "M\u1EDF nh\xE0 \u0111ang l\xE0m" : "\u0110i t\u1EDBi";
   }
 };
@@ -37365,7 +50309,7 @@ var StaffBox = class {
     this.c = c;
     this.job = job;
     this.root = h("section", {});
-    this.head = h("h3");
+    this.head = h("div");
     this.list = h("div");
     this.picker = h("div", { class: "picker" });
     this.key = "";
@@ -37382,27 +50326,20 @@ var StaffBox = class {
     const { sim: sim2 } = this.c, slots = levelDef(b).slots, jobKey = this.job === "farm" ? "food" : this.job, stat = JOBS[jobKey].stat, label2 = this.job === "farm" ? "N\xF4ng d\xE2n" : JOB_NAME[this.job];
     const crew2 = this.job === "build", staff = crew2 ? sim2.crew() : b.staff.map((id) => sim2.get(id)).filter((v) => !!v);
     const count = crew2 ? staff.length : sim2.staffCount(b), full = count >= slots;
-    this.head.textContent = `${crew2 ? "Th\u1EE3 x\xE2y" : this.job === "farm" ? "N\xF4ng d\xE2n" : "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c"} (${count}/${slots}) \xB7 n\xE2ng c\u1EA5p nh\xE0 \u0111\u1EC3 ch\u1EE9a th\xEAm`;
+    this.head.replaceChildren(h("div", { class: "dhouse" }, h("b", { text: crew2 ? "Th\u1EE3 x\xE2y" : this.job === "farm" ? "N\xF4ng d\xE2n" : "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c" }), dlg.slots(count, slots), h("small", { class: "dsub", text: "n\xE2ng c\u1EA5p nh\xE0 \u0111\u1EC3 ch\u1EE9a th\xEAm" })));
     this.add.disabled = full && !this.open;
     this.add.textContent = this.open ? "Xong" : `Th\xEAm ng\u01B0\u1EDDi ${label2.toLowerCase()}`;
     const key = `${b.id}|${staff.map((v) => `${v.id}.${v.stats[stat]}`).join()}`;
     if (key !== this.key) {
       this.key = key;
-      this.list.replaceChildren(...staff.length ? staff.map((v) => h(
-        "div",
-        { class: "row" },
-        h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${fmtStat(v.stats[stat])} \xB7 ${JOBS[jobKey].name} c\u1EA5p ${v.skill[jobKey].level}` })),
-        h("div", { class: "btns" }, h("button", { class: "sm", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: c\xF4ng c\u1EE5", onclick: () => {
-          this.c.ctl.selected.clear();
-          this.c.ctl.selected.add(v.id);
-          this.c.ctl.openDetail = true;
-          this.c.ctl.closeBuilding();
-        } }), h("button", { class: "sm", text: "\u2212", title: crew2 ? "Cho ngh\u1EC9" : "Cho ra", onclick: () => {
+      this.list.replaceChildren(...staff.length ? [dlg.list(...staff.map((v) => personTile(this.c, v, { note: "", stats: roleStats(this.job), actions: [
+        detailButton(this.c, v),
+        dlg.button("\u2212", () => {
           if (crew2) sim2.releaseCrew([v.id]);
           else sim2.releaseStaff([v.id]);
           this.c.ctl.onChange();
-        } }))
-      )) : [h("p", { class: "sub", text: crew2 ? "Ch\u01B0a c\xF3 th\u1EE3 x\xE2y n\xE0o: ch\u01B0a d\u1EF1ng \u0111\u01B0\u1EE3c g\xEC." : "Ch\u01B0a c\xF3 ai l\xE0m vi\u1EC7c \u1EDF \u0111\xE2y." })]);
+        }, { icon: true, tone: "bad", title: crew2 ? "Cho ngh\u1EC9" : "Cho ra" })
+      ] })))] : [dlg.empty(crew2 ? "Ch\u01B0a c\xF3 th\u1EE3 x\xE2y n\xE0o: ch\u01B0a d\u1EF1ng \u0111\u01B0\u1EE3c g\xEC." : "Ch\u01B0a c\xF3 ai l\xE0m vi\u1EC7c \u1EDF \u0111\xE2y.")]);
     }
     this.picker.hidden = !this.open;
     if (!this.open) return;
@@ -37412,16 +50349,13 @@ var StaffBox = class {
     this.pickKey = pk;
     this.picker.replaceChildren(
       h("p", { class: "sub", text: full ? "Nh\xE0 \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: cho m\u1ED9t ng\u01B0\u1EDDi ra ho\u1EB7c n\xE2ng c\u1EA5p nh\xE0." : `Ch\u1ECDn ai l\xE0m ${label2.toLowerCase()}:` }),
-      ...pool.map((v) => h(
-        "div",
-        { class: "row" },
-        h("div", { class: "nm" }, v.name, h("small", { text: `${STAT_NAME[stat]} ${fmtStat(v.stats[stat])} \xB7 \u0111ang ${JOB_NAME[v.job].toLowerCase()}` })),
-        h("button", { class: "sm", text: "\uFF0B", title: "V\xE0o l\xE0m", disabled: full, onclick: () => {
+      dlg.list(...pool.map((v) => personTile(this.c, v, { note: `\u0111ang ${JOB_NAME[v.job].toLowerCase()}`, stats: roleStats(this.job), actions: [
+        dlg.button("\uFF0B", () => {
           const e = crew2 ? sim2.assignCrew([v.id]) : this.job === "farm" ? sim2.assignField([v.id], b.id) : sim2.assignStaff([v.id], this.job);
           this.c.toast(e ?? `${v.name}: ${label2}`);
           this.c.ctl.onChange();
-        } })
-      ))
+        }, { icon: true, disabled: full, title: "V\xE0o l\xE0m" })
+      ] })))
     );
   }
 };
@@ -37431,21 +50365,21 @@ var ActiveBox = class {
     this.nameOf = nameOf;
     this.timeOf = timeOf;
     this.root = h("div", { class: "kv" });
-    this.bar = h("b");
-    this.text = h("span");
-    this.root.append(h("div", { class: "bars", style: "width:100%;grid-template-columns:1fr" }, h("label", {}, this.text, h("i", {}, this.bar))));
+    this.slot = h("div", { class: "dtile" });
+    this.key = "";
+    this.root.append(this.slot);
   }
   update(b) {
     const a = b.active;
     this.root.hidden = false;
-    if (!a) {
-      this.text.textContent = "\u0110ang r\u1EA3nh";
-      this.bar.style.width = "0%";
-      return;
-    }
-    const rate = this.c.sim.houseRate(b), left = rate > 0 ? (1 - a.progress) * this.timeOf(a.id) / rate : 0;
-    this.text.textContent = `\u0110ang l\xE0m: ${this.nameOf(a.id)} \xB7 ${Math.floor(a.progress * 100)}%${rate > 0 ? ` \xB7 c\xF2n ~${workDays(left)}` : " \xB7 t\u1EA1m d\u1EEBng (kh\xF4ng c\xF3 ng\u01B0\u1EDDi)"}`;
-    this.bar.style.width = `${a.progress * 100}%`;
+    const rate = a ? this.c.sim.houseRate(b) : 0, left = a && rate > 0 ? (1 - a.progress) * this.timeOf(a.id) / rate : 0;
+    const key = a ? `${a.id}|${Math.floor(a.progress * 100)}|${rate > 0}|${workDays(left)}` : "idle";
+    if (key === this.key) return;
+    this.key = key;
+    this.slot.replaceChildren(
+      a ? dlg.ring(a.progress) : h("span", { class: "dpic glyph", text: "\u{1F4A4}" }),
+      h("div", { class: "dmain" }, h("div", { class: "dname" }, h("b", { text: a ? this.nameOf(a.id) : "\u0110ang r\u1EA3nh" })), dlg.more(a ? rate > 0 ? `c\xF2n ~${workDays(left)}` : "t\u1EA1m d\u1EEBng (kh\xF4ng c\xF3 ng\u01B0\u1EDDi)" : "Ch\u01B0a c\xF3 \u0111\u01A1n n\xE0o \u0111ang l\xE0m"))
+    );
   }
 };
 
@@ -37468,7 +50402,7 @@ var HELP = {
   foot: "Chi\u1EBFn binh c\u1EADn chi\u1EBFn do tr\u1EA1i n\xE0y tuy\u1EC3n v\xE0 cho ngh\u1EC9, kh\xF4ng ph\u1EA3i \u1EDF \u0111\u1ED1ng l\u1EEDa. H\u1ECD canh g\xE1c, \u0111\xE1nh \u0111\u1ECBch v\xE0 th\xFA d\u1EEF, ng\u1EE7 trong tr\u1EA1i. Nh\u1EDB ch\u1EBF v\u0169 kh\xED v\xE0 gi\xE1p cho h\u1ECD. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm.",
   cavalry: "Ng\u01B0\u1EDDi c\u01B0\u1EE1i th\xFA do tr\u1EA1i n\xE0y tuy\u1EC3n v\xE0 cho ngh\u1EC9. H\u1ECD xung phong nhanh, kh\u1EAFc ng\u01B0\u1EDDi n\xE9m nh\u01B0ng s\u1EE3 gi\xE1o. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm.",
   archer: "Ng\u01B0\u1EDDi n\xE9m \u0111\xE1, b\u1EAFn n\xE1 do tr\u1EA1i n\xE0y tuy\u1EC3n v\xE0 cho ngh\u1EC9. H\u1ECD \u0111\xE1nh t\u1EEB xa v\xE0 c\xF3 th\u1EC3 l\xEAn ch\xF2i canh. Ch\u1EC9 d\xF9ng v\u0169 kh\xED b\u1EAFn. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm.",
-  scout: "Trinh s\xE1t do Tr\u1EA1i trinh s\xE1t tuy\u1EC3n v\xE0 cho ngh\u1EC9. Trinh s\xE1t t\u1ED1t c\u1EA7n Nhanh nh\u1EB9n v\xE0 Th\u1EC3 l\u1EF1c. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm."
+  scout: "Trinh s\xE1t do Tr\u1EA1i trinh s\xE1t tuy\u1EC3n t\u1EEB l\xEDnh k\u1EF5 c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA (h\u1ECD gi\u1EEF th\xFA v\xE0 \u0111\u1ED3 c\u1EE7a m\xECnh) v\xE0 cho ngh\u1EC9 v\u1EC1 l\u1EA1i tr\u1EA1i k\u1EF5. Trinh s\xE1t t\u1ED1t c\u1EA7n Nhanh nh\u1EB9n v\xE0 Th\u1EC3 l\u1EF1c. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm."
 };
 var RolePane = class {
   /** `changed` asks whoever shows this pane to draw it again. */
@@ -37490,7 +50424,7 @@ var RolePane = class {
     return [
       this.role,
       sim2.roleCapacity(this.role),
-      sim2.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? "" : "i"}${Math.round(v.energy / 5)}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
+      sim2.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? "" : "i"}${v.phase === "sleep" ? "z" : ""}${Math.round(v.energy / 5)}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
       sim2.scouts.map((m) => m.ids.join(".")).join("|"),
       sim2.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join()
     ].join("|");
@@ -37499,30 +50433,18 @@ var RolePane = class {
     this.key = "";
     this.changed();
   }
-  statLine(v) {
-    const { sim: sim2 } = this.c, s = STAT_OF[this.role];
-    if (s === "scout") return `Nhanh ${fmtStat(v.stats.agi)} \xB7 Th\u1EC3 l\u1EF1c ${fmtStat(v.stats.sta)} \xB7 \u0111i\u1EC3m ${(sim2.scoutSkill(v) * 10).toFixed(1)}`;
-    return `${STAT_NAME[s]} ${fmtStat(v.stats[s])}`;
-  }
   render() {
     const { sim: sim2, ctl: ctl2, toast } = this.c, role = this.role, def = ROLES[role], era = sim2.era;
     const lock = sim2.warLock(), house = buildingName(def.building, era), cap = sim2.roleCapacity(role), have = sim2.villagers.filter((v) => roleOf(v) === role).sort((a, b) => b.stats.str + b.stats.agi - a.stats.str - a.stats.agi);
-    const out = [hint(h("h3", { text: `${roleName(role, era)} (${have.length}/${cap >= 99 ? "\u221E" : cap})` }), HELP[role])];
-    if (!cap) out.push(h("p", { class: "sub", text: `Ch\u01B0a c\xF3 ${house.toLowerCase()} xong: h\xE3y d\u1EF1ng, r\u1ED3i giao vi\u1EC7c \u1EDF \u0111\xE2y.` }));
-    if (!have.length) out.push(h("p", { class: "sub", text: "Ch\u01B0a c\xF3 ai gi\u1EEF vi\u1EC7c n\xE0y." }));
+    const out = [hint(h("div", { class: "dhouse" }, h("b", { text: roleName(role, era) }), dlg.slots(have.length, cap >= 99 ? 99 : cap)), HELP[role])];
+    if (!cap) out.push(dlg.empty(`Ch\u01B0a c\xF3 ${house.toLowerCase()} xong: h\xE3y d\u1EF1ng, r\u1ED3i giao vi\u1EC7c \u1EDF \u0111\xE2y.`));
+    else if (!have.length) out.push(dlg.empty("Ch\u01B0a c\xF3 ai gi\u1EEF vi\u1EC7c n\xE0y."));
+    const rows = [];
     for (const v of have) {
       const away = sim2.scouts.some((m) => m.ids.includes(v.id));
-      out.push(h(
-        "div",
-        { class: "rrow", style: `grid-template-columns:1fr ${def.job === "fight" ? "auto auto auto" : "auto auto"}` },
-        h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: `${describe(v, sim2)} \xB7 ${this.statLine(v)}` })),
-        h("button", { class: "chip", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: c\xF4ng c\u1EE5, trang b\u1ECB", onclick: () => {
-          ctl2.selected.clear();
-          ctl2.selected.add(v.id);
-          ctl2.openDetail = true;
-          ctl2.closeBuilding();
-        } }),
-        def.job === "fight" ? h("button", { class: "chip", text: "\u25CE", title: "Ch\u1ECDn tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ra l\u1EC7nh", onclick: () => {
+      rows.push(personTile(this.c, v, { note: v.phase === "sleep" ? describe(v, sim2) : "", stats: roleStats(role), actions: [
+        detailButton(this.c, v),
+        def.job === "fight" ? dlg.button("\u25CE", () => {
           if (v.inside !== null) {
             toast(`${v.name} \u0111ang ng\u1EE7 trong tr\u1EA1i`);
             return;
@@ -37531,48 +50453,32 @@ var RolePane = class {
           ctl2.selected.add(v.id);
           ctl2.focusSelection();
           ctl2.closeBuilding();
-        } }) : null,
-        h("button", { class: "chip danger", text: "\u2212", title: lock ?? (away ? "\u0110ang \u0111i trinh s\xE1t" : "Cho ngh\u1EC9, v\u1EC1 l\xE0m d\xE2n th\u01B0\u1EDDng"), disabled: away || !!lock, onclick: () => {
+        }, { icon: true, title: "Ch\u1ECDn tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ra l\u1EC7nh" }) : null,
+        dlg.button("\u2212", () => {
           const e = sim2.releaseRole([v.id]);
           if (e) toast(e);
           ctl2.onChange();
           this.again();
-        } })
-      ));
+        }, { icon: true, tone: "bad", disabled: away || !!lock, title: lock ?? (away ? "\u0110ang \u0111i trinh s\xE1t" : "Cho ngh\u1EC9, v\u1EC1 l\xE0m d\xE2n th\u01B0\u1EDDng") })
+      ] }));
     }
+    if (rows.length) out.push(dlg.list(...rows));
     const room = Math.max(0, cap - have.length);
-    const free = sim2.villagers.filter((v) => v.job === "idle" && !roleOf(v) && v.down <= 0 && v.inside === null);
+    const free = role === "scout" ? sim2.villagers.filter((v) => v.job === "fight" && v.arm === "cavalry" && v.down <= 0) : freeFolk(sim2);
     const key = (v) => STAT_OF[role] === "scout" ? sim2.scoutSkill(v) : v.stats[STAT_OF[role]];
     free.sort((a, b) => key(b) - key(a));
-    out.push(h("div", { class: "phead" }, h("b", { text: "D\xE2n r\u1EA3nh" }), h("small", { text: !cap ? `c\u1EA7n d\u1EF1ng ${house.toLowerCase()}` : room ? `c\xF2n ch\u1ED7 cho ${room} ng\u01B0\u1EDDi` : `${house.toLowerCase()} \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` })));
-    if (!free.length) out.push(h("p", { class: "sub", text: "Kh\xF4ng c\xF2n d\xE2n r\u1EA3nh." }));
-    for (const v of free) {
-      const now = roleOf(v);
-      out.push(h(
-        "div",
-        { class: "rrow rfree", style: "grid-template-columns:1fr auto auto" },
-        h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: `${now ? roleName(now, era) : "r\u1EA3nh"} \xB7 ${this.statLine(v)}` })),
-        h("button", { class: "chip", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: c\xF4ng c\u1EE5, trang b\u1ECB", onclick: () => {
-          ctl2.selected.clear();
-          ctl2.selected.add(v.id);
-          ctl2.openDetail = true;
-          ctl2.closeBuilding();
-        } }),
-        h("button", {
-          class: "chip",
-          text: "\uFF0B",
-          title: lock ?? (!cap ? `C\u1EA7n d\u1EF1ng ${house}` : !room ? `${house} \u0111\xE3 \u0111\u1EE7 ch\u1ED7: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` : "Giao vi\u1EC7c n\xE0y"),
-          disabled: !!lock || !room,
-          onclick: () => {
-            const e = sim2.assignRole([v.id], role);
-            if (e) toast(e);
-            ctl2.onChange();
-            this.again();
-          }
-        })
-      ));
-    }
-    return [h("div", { class: "proster", style: "display:grid;gap:6px" }, ...out)];
+    out.push(h("div", { class: "dhouse" }, h("b", { text: role === "scout" ? "L\xEDnh k\u1EF5" : "D\xE2n r\u1EA3nh" }), h("small", { class: "dsub", text: !cap ? `c\u1EA7n d\u1EF1ng ${house.toLowerCase()}` : room ? `c\xF2n ch\u1ED7 cho ${room} ng\u01B0\u1EDDi` : `${house.toLowerCase()} \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` })));
+    if (!free.length) out.push(dlg.empty(role === "scout" ? "Kh\xF4ng c\xF2n l\xEDnh k\u1EF5 n\xE0o \u0111\u1EC3 tuy\u1EC3n." : "Kh\xF4ng c\xF2n d\xE2n r\u1EA3nh."));
+    out.push(dlg.list(...free.map((v) => personTile(this.c, v, { note: "", stats: roleStats(role), actions: [
+      detailButton(this.c, v),
+      dlg.button("\uFF0B", () => {
+        const e = sim2.assignRole([v.id], role);
+        if (e) toast(e);
+        ctl2.onChange();
+        this.again();
+      }, { icon: true, disabled: !!lock || !room, title: lock ?? (!cap ? `C\u1EA7n d\u1EF1ng ${house}` : !room ? `${house} \u0111\xE3 \u0111\u1EE7 ch\u1ED7: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` : "Giao vi\u1EC7c n\xE0y") })
+    ] }))));
+    return [h("div", { class: "proster", style: "display:grid;gap:10px" }, ...out)];
   }
 };
 
@@ -37585,9 +50491,13 @@ var ScoutPane = class {
   constructor(c, changed = () => this.update()) {
     this.c = c;
     this.changed = changed;
-    this.root = h("div", { class: "page" });
-    /** The village whose scout picker is open ('' when none) and the people ticked in it. */
-    this.open = "";
+    /** The page of the scouts. */
+    this.roster = h("div", { class: "page" });
+    /** The page of the villages: the list on the left, the chosen village on the right. */
+    this.villages = h("div", { class: "split" });
+    /** The village chosen in the list ('' for none), whether the picker of scouts is open, and the people picked to go. */
+    this.sel = "";
+    this.open = false;
     this.picked = /* @__PURE__ */ new Set();
     this.key = "";
     this.people = new RolePane(c, "scout", () => {
@@ -37600,21 +50510,24 @@ var ScoutPane = class {
     const k = this.stateKey();
     if (k === this.key) return;
     this.key = k;
-    this.root.replaceChildren(...this.render());
+    this.roster.replaceChildren(...this.renderRoster());
+    this.villages.replaceChildren(...this.renderVillages());
   }
-  /** Everything the page shows, as one string: a panel that embeds this one adds it to its own. */
+  /** Everything the pages show, as one string. */
   stateKey() {
     const { sim: sim2 } = this.c;
     return [
+      this.sel,
       this.open,
       [...this.picked].join("."),
       this.people.stateKey(),
       JSON.stringify(sim2.sightings.map((s) => [s.tribe, s.reported])),
       JSON.stringify(sim2.maps.map((m) => [m.tribe, m.level, m.gaps, Math.floor(m.at)])),
-      JSON.stringify(sim2.scouts.map((m) => [m.id, m.phase, m.ids.length])),
+      JSON.stringify(sim2.scouts.map((m) => [m.id, m.phase, m.ids.length, Math.floor((m.progress ?? 0) * 50)])),
+      JSON.stringify(sim2.drafts),
       sim2.scoutLevel(),
       sim2.scoutLimit(),
-      this.candidates().map((v) => v.id).join("."),
+      this.candidates().map((v) => `${v.id}${Math.round(v.energy / 10)}`).join("."),
       Math.floor(sim2.time / DAY_LENGTH),
       sim2.dev.freeBuild
     ].join("|");
@@ -37624,113 +50537,160 @@ var ScoutPane = class {
     const { sim: sim2 } = this.c;
     return sim2.villagers.filter((v) => sim2.canScout(v)).sort((a, b) => sim2.scoutSkill(b) - sim2.scoutSkill(a));
   }
-  statsOf(v) {
-    return `Nhanh ${fmtStat(v.stats.agi)} \xB7 Th\u1EC3 l\u1EF1c ${fmtStat(v.stats.sta)} \xB7 \u0111i\u1EC3m ${(this.c.sim.scoutSkill(v) * 10).toFixed(1)}${v.weapon ? " \xB7 v\u0169 kh\xED" : ""}${v.armor ? " \xB7 gi\xE1p" : ""}${v.torch ? " \xB7 \u0111u\u1ED1c" : ""}`;
-  }
   again() {
     this.key = "";
     this.changed();
   }
   ageWords(at) {
-    const days = Math.floor((this.c.sim.time - at) / DAY_LENGTH);
-    return days <= 0 ? "b\xE1o c\xE1o trong ng\xE0y" : days === 1 ? "b\xE1o c\xE1o t\u1EEB h\xF4m qua" : days < 4 ? `b\xE1o c\xE1o t\u1EEB ${days} h\xF4m tr\u01B0\u1EDBc` : "\u0111\xE3 c\u0169";
+    const days2 = Math.floor((this.c.sim.time - at) / DAY_LENGTH);
+    return days2 <= 0 ? "b\xE1o c\xE1o trong ng\xE0y" : days2 === 1 ? "b\xE1o c\xE1o t\u1EEB h\xF4m qua" : days2 < 4 ? `b\xE1o c\xE1o t\u1EEB ${days2} h\xF4m tr\u01B0\u1EDBc` : "\u0111\xE3 c\u0169";
   }
-  render() {
-    const { sim: sim2 } = this.c, out = [];
-    const level = sim2.scoutLevel(), limit = sim2.scoutLimit();
-    out.push(hint("Trinh s\xE1t v\xE0 b\u1EA3n \u0111\u1ED3", "D\xE2n, l\xEDnh hay trinh s\xE1t \u0111i quanh b\u1EA3n \u0111\u1ED3 m\xE0 g\u1EB7p m\u1ED9t ng\xF4i l\xE0ng, khi tr\u1EDF v\u1EC1 s\u1EBD b\xE1o l\u1EA1i: \u1EDF \u0111\xE2y ch\u1EC9 ghi l\xE0ng \u0111\xF3 c\xE1ch bao xa. Mu\u1ED1n bi\u1EBFt th\xEAm ph\u1EA3i c\u1EED trinh s\xE1t. B\u1EA3n \u0111\u1ED3 v\u1EBD ra \u1EDF c\u1EA5p b\u1EB1ng c\u1EA5p Tr\u1EA1i trinh s\xE1t: l\u1EC1u c\u1EA5p 1 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p 1, l\u1EC1u c\u1EA5p 2 c\u1EA5p 2, l\u1EC1u c\u1EA5p 3 c\u1EA5p 3. Trinh s\xE1t l\xE0 m\u1ED9t vai tr\xF2 nh\u01B0 l\xEDnh: tuy\u1EC3n \u1EDF tr\xEAn, s\u1ED1 l\u01B0\u1EE3ng t\u1ED1i \u0111a theo c\u1EA5p tr\u1EA1i. M\u1ED7i chuy\u1EBFn c\u1EA7n nhi\u1EC1u ng\u01B0\u1EDDi, m\xE0 ng\u01B0\u1EDDi gi\u1ECFi (Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c) \u0111\xE1ng gi\xE1 h\u01A1n: m\u1ED9t m\xECnh th\xEC kh\xF4ng bao gi\u1EDD v\u1EBD \u0111\u1EE7. C\xE0ng \u0111\xF4ng th\xEC \u0111i c\xE0ng nhanh. Trinh s\xE1t c\xF3 th\u1EC3 ch\u1EBFt, b\u1EA3n \u0111\u1ED3 m\u1EA5t 10% \u0111\u1ED9 ch\xEDnh x\xE1c m\u1ED7i ng\xE0y."));
-    out.push(h("p", { class: "sub", text: `B\u1EA3n \u0111\u1ED3 v\u1EBD \u0111\u01B0\u1EE3c: ${LEVEL_NAME[level]}. ${limit ? `Tr\u1EA1i trinh s\xE1t cho c\u1EED t\u1ED1i \u0111a ${limit} ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn.` : "Ch\u01B0a c\xF3 Tr\u1EA1i trinh s\xE1t."}` }));
-    if (!sim2.dev.freeBuild && !limit) out.push(h("p", { class: "sub", text: "H\xE3y d\u1EF1ng Tr\u1EA1i trinh s\xE1t." }));
+  // ---------------------------------------------------------------- the scouts
+  renderRoster() {
+    const { sim: sim2 } = this.c, level = sim2.scoutLevel(), limit = sim2.scoutLimit();
+    const out = [hint("Trinh s\xE1t", "Trinh s\xE1t l\xE0 m\u1ED9t vai tr\xF2, tuy\u1EC3n t\u1EEB l\xEDnh k\u1EF5 c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA v\xE0 cho ngh\u1EC9 \u1EDF \u0111\xE2y: s\u1ED1 l\u01B0\u1EE3ng t\u1ED1i \u0111a theo c\u1EA5p tr\u1EA1i. M\u1ED7i chuy\u1EBFn c\u1EA7n nhi\u1EC1u ng\u01B0\u1EDDi, m\xE0 ng\u01B0\u1EDDi gi\u1ECFi (Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c) \u0111\xE1ng gi\xE1 h\u01A1n: m\u1ED9t m\xECnh th\xEC kh\xF4ng bao gi\u1EDD v\u1EBD \u0111\u1EE7. C\xE0ng \u0111\xF4ng th\xEC \u0111i c\xE0ng nhanh. Trinh s\xE1t c\xF3 th\u1EC3 ch\u1EBFt.")];
+    out.push(dlg.line("B\u1EA3n \u0111\u1ED3 v\u1EBD \u0111\u01B0\u1EE3c", LEVEL_NAME[level]));
+    if (!sim2.dev.freeBuild && !limit) out.push(dlg.why("H\xE3y d\u1EF1ng Tr\u1EA1i trinh s\xE1t."));
     out.push(...this.people.render());
-    out.push(h("h3", { text: "L\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n" }));
-    const found = sim2.tribes.filter((t) => t.state !== "destroyed" && sim2.isFound(t.id));
-    if (!found.length) out.push(h("p", { class: "sub", text: "Ch\u01B0a ai ph\xE1t hi\u1EC7n ng\xF4i l\xE0ng n\xE0o. Cho d\xE2n ho\u1EB7c l\xEDnh \u0111i quanh b\u1EA3n \u0111\u1ED3: g\u1EB7p l\xE0ng n\xE0o r\u1ED3i tr\u1EDF v\u1EC1 th\xEC s\u1EBD b\xE1o \u1EDF \u0111\xE2y." }));
-    for (const t of found) {
-      const maps = sim2.maps.filter((m) => m.tribe === t.id).sort((a, b) => b.level - a.level), best = maps[0], where = sim2.whereIs(t.id);
-      const trip = sim2.scouts.find((m) => m.tribe === t.id), plan2 = sim2.planScout([], t.id);
-      const far = where ? `c\xE1ch \u0111\xE2y kho\u1EA3ng ${where.dist} \xF4 v\u1EC1 ph\xEDa ${where.dir}` : "";
-      const known = best ? `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${sim2.mapLevel(t.id) || best.level}${best.gaps ? " (c\xF2n h\u1EDF)" : ""}, ${this.ageWords(best.at)}` : "Ch\u01B0a v\u1EBD b\u1EA3n \u0111\u1ED3";
-      const blocked = plan2.error === "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
-      out.push(h(
-        "div",
-        { class: "row", style: "flex-direction:column;align-items:stretch" },
-        h("div", { class: "nm" }, h("b", { text: best ? t.def.name : "M\u1ED9t ng\xF4i l\xE0ng" }), h("small", { text: best ? `${far} \xB7 ${known}` : `Ph\xE1t hi\u1EC7n ${far}. ${known}.` })),
-        trip ? h("small", { class: "sub", text: `${trip.ids.length} trinh s\xE1t ${PHASE[trip.phase]} (b\u1EA3n \u0111\u1ED3 c\u1EA5p ${trip.level})` }) : h("div", { class: "btns" }, h("button", {
-          class: "sm primary",
-          text: this.open === t.id ? "\u0110\xF3ng" : "C\u1EED trinh s\xE1t",
-          disabled: blocked,
-          title: blocked ? plan2.error ?? "" : "Ch\u1ECDn nh\u1EEFng ng\u01B0\u1EDDi \u0111i trinh s\xE1t",
-          onclick: () => {
-            this.open = this.open === t.id ? "" : t.id;
-            this.picked.clear();
-            this.again();
-          }
-        })),
-        this.open === t.id && !trip ? this.picker(t.id) : null
-      ));
-    }
     return out;
   }
-  /** The list of people to pick from, with what the trip would be like for the ones ticked so far. */
-  picker(tribe) {
-    const { sim: sim2 } = this.c, people = this.candidates(), limit = sim2.scoutLimit();
-    for (const id of [...this.picked]) if (!people.some((v) => v.id === id)) this.picked.delete(id);
-    const ids = [...this.picked], plan2 = sim2.planScout(ids, tribe);
-    const list = h("div", { class: "rdrop" });
-    if (!people.length) list.append(h("p", { class: "sub", text: "Kh\xF4ng c\xF3 trinh s\xE1t n\xE0o r\u1EA3nh \u0111\u1EC3 \u0111i: tuy\u1EC3n th\xEAm, ho\u1EB7c \u0111\u1EE3i h\u1ECD v\u1EC1." }));
-    for (const v of [...people.filter((o) => this.picked.has(o.id)), ...people.filter((o) => !this.picked.has(o.id))]) {
-      const on = this.picked.has(v.id);
-      list.append(h(
-        "div",
-        { class: `rrow${on ? "" : " rfree"}`, style: "grid-template-columns:1fr auto auto" },
-        h("div", { class: "rwho" }, h("b", { text: v.name }), h("small", { text: this.statsOf(v) })),
-        h("button", { class: "chip", text: "\u2699", title: "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt: v\u0169 kh\xED, gi\xE1p, \u0111u\u1ED1c cho trinh s\xE1t", onclick: () => {
-          const { ctl: ctl2 } = this.c;
-          ctl2.selected.clear();
-          ctl2.selected.add(v.id);
-          ctl2.openDetail = true;
-          ctl2.closeBuilding();
-        } }),
-        on ? h("button", { class: "chip danger", text: "\u2212", title: "Kh\xF4ng c\u1EED ng\u01B0\u1EDDi n\xE0y", onclick: () => {
-          this.picked.delete(v.id);
-          this.again();
-        } }) : h("button", { class: "chip", text: "\uFF0B", title: this.picked.size >= limit ? `Tr\u1EA1i ch\u1EC9 cho \u0111i ${limit} ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn` : "C\u1EED ng\u01B0\u1EDDi n\xE0y \u0111i", disabled: this.picked.size >= limit, onclick: () => {
-          this.picked.add(v.id);
-          this.again();
-        } })
-      ));
-    }
-    const odds = plan2.count < 2 ? "C\u1EA7n \xEDt nh\u1EA5t 2 ng\u01B0\u1EDDi m\u1EDBi c\xF3 c\u01A1 h\u1ED9i v\u1EBD \u0111\u1EE7 chi ti\u1EBFt" : `T\u1EC9 l\u1EC7 v\u1EBD \u0111\u1EE7 chi ti\u1EBFt: ${Math.round(plan2.chance * 100)}%`;
-    return h(
+  // ---------------------------------------------------------------- the villages
+  renderVillages() {
+    const { sim: sim2 } = this.c, found = sim2.tribes.filter((t) => t.state !== "destroyed" && sim2.isFound(t.id));
+    if (this.sel && !found.some((t) => t.id === this.sel)) this.sel = "";
+    const list = h(
       "div",
-      { class: "proster", style: "display:grid;gap:4px" },
-      list,
-      h("small", { class: "sub", text: `\u0110\xE3 ch\u1ECDn ${plan2.count}/${limit} \xB7 b\u1EA3n \u0111\u1ED3 c\u1EA5p ${Math.max(1, plan2.level)}` }),
-      h("small", { class: "sub", text: `${odds} (m\u1EE9c c\u1EA7n kho\u1EA3ng ${plan2.need} ng\u01B0\u1EDDi trung b\xECnh, ch\u1EC9 t\xEDnh ng\u01B0\u1EDDi tr\u1EDF v\u1EC1)` }),
-      plan2.count ? h("small", { class: "sub", text: `C\u1EA3 chuy\u1EBFn \u0111i v\u1EC1 m\u1EA5t ch\u1EEBng ${minutes(plan2.total)} (\u0111i ${minutes(plan2.walk)}, th\xE1m th\xEDnh ${minutes(plan2.survey)}; \u0111\xF4ng ng\u01B0\u1EDDi th\xEC th\xE1m th\xEDnh nhanh h\u01A1n)` }) : null,
-      h("button", {
-        class: "sm primary",
-        text: "L\xEAn \u0111\u01B0\u1EDDng",
-        disabled: !!plan2.error,
-        title: plan2.error ?? "C\u1EED nh\u1EEFng ng\u01B0\u1EDDi \u0111\xE3 ch\u1ECDn",
-        onclick: () => {
-          const e = sim2.startScout(ids, tribe);
-          if (e) this.c.toast(e);
-          else {
-            this.open = "";
-            this.picked.clear();
-          }
-          this.again();
-        }
-      })
+      {},
+      hint("L\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n", "D\xE2n, l\xEDnh hay trinh s\xE1t \u0111i quanh b\u1EA3n \u0111\u1ED3 m\xE0 g\u1EB7p m\u1ED9t ng\xF4i l\xE0ng, khi tr\u1EDF v\u1EC1 s\u1EBD b\xE1o l\u1EA1i: ch\u1EC9 ghi l\xE0ng \u0111\xF3 c\xE1ch bao xa. Mu\u1ED1n bi\u1EBFt th\xEAm ph\u1EA3i c\u1EED trinh s\xE1t. B\u1EA3n \u0111\u1ED3 v\u1EBD ra \u1EDF c\u1EA5p b\u1EB1ng c\u1EA5p Tr\u1EA1i trinh s\xE1t (l\u1EC1u c\u1EA5p 1 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p 1, v\xE0 c\u1EE9 th\u1EBF). B\u1EA3n \u0111\u1ED3 m\u1EA5t 10% \u0111\u1ED9 ch\xEDnh x\xE1c m\u1ED7i ng\xE0y."),
+      found.length ? dlg.list(...found.map((t) => this.villageTile(t.id))) : dlg.empty("Ch\u01B0a ai ph\xE1t hi\u1EC7n ng\xF4i l\xE0ng n\xE0o. Cho d\xE2n ho\u1EB7c l\xEDnh \u0111i quanh b\u1EA3n \u0111\u1ED3: g\u1EB7p l\xE0ng n\xE0o r\u1ED3i tr\u1EDF v\u1EC1 th\xEC s\u1EBD b\xE1o \u1EDF \u0111\xE2y.")
     );
+    const pane = h("div", { class: "ppane" }, this.sel ? this.detail(this.sel) : dlg.empty("Ch\u1ECDn m\u1ED9t ng\xF4i l\xE0ng \u1EDF b\xEAn tr\xE1i \u0111\u1EC3 xem b\u1EA3n \u0111\u1ED3 v\xE0 c\u1EED trinh s\xE1t."));
+    return [list, pane];
+  }
+  /** One village in the list: its name, how far, what the map shows and whether scouts are out there. */
+  villageTile(id) {
+    const { sim: sim2 } = this.c, t = sim2.tribes.find((x) => x.id === id), best = sim2.maps.filter((m) => m.tribe === id).sort((a, b) => b.level - a.level)[0], where = sim2.whereIs(id), trip = sim2.scouts.find((m) => m.tribe === id);
+    const known = best ? t.def.name : "M\u1ED9t ng\xF4i l\xE0ng";
+    const tile = dlg.tile(
+      { pic: "\u{1F3D5}", name: known, chip: trip ? dlg.chip(`${trip.ids.length} trinh s\xE1t ${PHASE[trip.phase]}`) : best ? dlg.chip(`B\u1EA3n \u0111\u1ED3 c\u1EA5p ${sim2.mapLevel(id) || best.level}`) : dlg.chip("Ch\u01B0a v\u1EBD"), state: id === this.sel ? "now" : void 0 },
+      [dlg.more(where ? `C\xE1ch kho\u1EA3ng ${where.dist} \xF4, h\u01B0\u1EDBng ${where.dir}` : ""), best ? dlg.more(`${best.gaps ? "C\xF2n h\u1EDF \xB7 " : ""}${this.ageWords(best.at)}`) : null]
+    );
+    tile.classList.add("pick");
+    tile.addEventListener("click", () => {
+      this.sel = id === this.sel ? "" : id;
+      this.open = false;
+      this.picked.clear();
+      this.again();
+    });
+    return tile;
+  }
+  /** The chosen village: the map it has, the scouts going, and how the trip would turn out. */
+  detail(id) {
+    const { sim: sim2 } = this.c, t = sim2.tribes.find((x) => x.id === id), maps = sim2.maps.filter((m) => m.tribe === id).sort((a, b) => b.level - a.level), best = maps[0], where = sim2.whereIs(id), trip = sim2.scouts.find((m) => m.tribe === id);
+    const body = h("div", { class: "pside" });
+    body.append(h("div", { class: "dhead" }, h("div", { class: "dpic glyph", text: "\u{1F3D5}" }), h("div", { class: "dwho" }, h("b", { class: "dtitle", text: best ? t.def.name : "M\u1ED9t ng\xF4i l\xE0ng" }), h("small", { class: "dsub", text: where ? `C\xE1ch kho\u1EA3ng ${where.dist} \xF4, h\u01B0\u1EDBng ${where.dir}` : "" }))));
+    if (best) {
+      const days2 = Math.floor((sim2.time - best.at) / DAY_LENGTH), accuracy = Math.max(0, 1 - 0.1 * days2);
+      body.append(
+        h(
+          "div",
+          { class: "dpills" },
+          dlg.pill(resIcon("role_scout"), `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${sim2.mapLevel(id) || best.level}`, void 0, "C\u1EA5p b\u1EA3n \u0111\u1ED3 \u0111\xE3 v\u1EBD"),
+          dlg.pill(resIcon("clock"), this.ageWords(best.at), days2 >= 3 ? "warn" : void 0, "B\xE1o c\xE1o c\u0169 hay m\u1EDBi"),
+          best.gaps ? dlg.pill("\u2754", "c\xF2n h\u1EDF", "warn", "B\u1EA3n \u0111\u1ED3 c\xF2n ch\u1ED7 ch\u01B0a v\u1EBD") : null
+        ),
+        dlg.bar(Math.round(accuracy * 100), 100, `\u0111\u1ED9 ch\xEDnh x\xE1c ${Math.round(accuracy * 100)}%`)
+      );
+    } else body.append(dlg.note("Ch\u01B0a v\u1EBD b\u1EA3n \u0111\u1ED3: c\u1EED trinh s\xE1t \u0111\u1EC3 bi\u1EBFt th\xEAm.", false));
+    const plan0 = sim2.planScout([], id);
+    if (!trip && plan0.error === "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t") {
+      body.append(dlg.why(plan0.error));
+      return body;
+    }
+    const flow = sim2.scoutFlow(id), pct4 = Math.round(flow.progress * 100);
+    body.append(dlg.bar(pct4, 100, `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${flow.level} v\u1EBD \u0111\u01B0\u1EE3c ${pct4}%`));
+    if (trip) body.append(dlg.line("\u0110ang \u0111i trinh s\xE1t", `${trip.ids.length} ng\u01B0\u1EDDi ${PHASE[trip.phase]}`));
+    else if (!flow.steps.every((st) => st.done) && flow.progress > 0) body.append(dlg.note(`\u0110\xE3 v\u1EBD d\u1EDF ${pct4}%: c\u1EED trinh s\xE1t \u0111i v\u1EBD ti\u1EBFp t\u1EEB ch\u1ED7 \u0111\xF3.`, false));
+    body.append(h("div", { class: "flow" }, ...flow.steps.flatMap((st, i) => [i ? h("span", { class: `link ${flow.steps[i - 1].done ? "done" : "todo"}` }) : null, h("div", { class: `step ${st.done ? "done" : "todo"}` }, h("b", { text: st.done ? "\u2713" : "\u2717" }), h("span", { text: st.label }))])));
+    if (trip) body.append(trip.phase === "back" ? dlg.note("Trinh s\xE1t \u0111ang tr\xEAn \u0111\u01B0\u1EDDng v\u1EC1.", false) : dlg.button("G\u1ECDi trinh s\xE1t v\u1EC1", () => {
+      const e = sim2.recallScouts(id);
+      this.c.toast(e ?? "\u0110\xE3 g\u1ECDi trinh s\xE1t v\u1EC1: h\u1ECD mang v\u1EC1 ph\u1EA7n \u0111\xE3 v\u1EBD");
+      this.again();
+    }, { tone: "alt", title: "G\u1ECDi v\u1EC1 khi ch\u01B0a v\u1EBD xong: ph\u1EA7n \u0111\xE3 v\u1EBD \u0111\u01B0\u1EE3c gi\u1EEF, ng\u01B0\u1EDDi kh\xE1c v\u1EBD ti\u1EBFp" }));
+    if (trip?.phase === "back") return body;
+    const people = this.candidates(), limit = sim2.scoutLimit();
+    for (const pid of [...this.picked]) if (!people.some((v) => v.id === pid)) this.picked.delete(pid);
+    const goers = people.filter((v) => this.picked.has(v.id)), others = people.filter((v) => !this.picked.has(v.id)), ids = goers.map((v) => v.id), plan2 = sim2.planScout(ids, id);
+    const full = goers.length >= limit - (trip?.ids.length ?? 0);
+    const add = h("button", { class: "sm primary", text: this.open ? "Xong" : trip ? "C\u1EED th\xEAm trinh s\xE1t t\u1EDBi" : "Th\xEAm ng\u01B0\u1EDDi \u0111i trinh s\xE1t", disabled: full && !this.open, onclick: () => {
+      this.open = !this.open;
+      this.again();
+    } });
+    body.append(hint(
+      h("div", { class: "dhouse" }, h("b", { text: "Ng\u01B0\u1EDDi \u0111i trinh s\xE1t" }), dlg.slots(goers.length + (trip?.ids.length ?? 0), limit), h("small", { class: "dsub", text: "n\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 c\u1EED th\xEAm" })),
+      "Trinh s\xE1t l\xE0m c\u1EA3 ng\xE0y l\u1EABn \u0111\xEAm v\xE0 ch\u1EC9 v\u1EC1 khi v\u1EBD xong b\u1EA3n \u0111\u1ED3. C\xE0ng \u0111\xF4ng v\xE0 c\xE0ng gi\u1ECFi (Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c) th\xEC v\u1EBD c\xE0ng nhanh. N\u1EBFu trinh s\xE1t ch\u1EBFt, c\u1EED ng\u01B0\u1EDDi kh\xE1c t\u1EDBi v\u1EBD ti\u1EBFp: ph\u1EA7n \u0111\xE3 v\u1EBD v\u1EABn c\xF2n. B\u1EA3n \u0111\u1ED3 ch\u1EC9 c\xF3 khi trinh s\xE1t tr\u1EDF v\u1EC1."
+    ));
+    body.append(goers.length ? dlg.list(...goers.map((v) => this.scoutTile(v, "\u2212", () => {
+      this.picked.delete(v.id);
+      this.again();
+    }, false))) : dlg.empty("Ch\u01B0a ch\u1ECDn ai \u0111i."), add);
+    if (this.open) body.append(h(
+      "div",
+      { class: "picker" },
+      h("p", { class: "sub", text: full ? `Tr\u1EA1i ch\u1EC9 cho \u0111i ${limit} ng\u01B0\u1EDDi m\u1ED9t chuy\u1EBFn.` : "Ch\u1ECDn ai \u0111i trinh s\xE1t:" }),
+      others.length ? dlg.list(...others.map((v) => this.scoutTile(v, "\uFF0B", () => {
+        this.picked.add(v.id);
+        this.again();
+      }, full))) : dlg.empty("Kh\xF4ng c\xF2n trinh s\xE1t n\xE0o r\u1EA3nh: tuy\u1EC3n th\xEAm, ho\u1EB7c \u0111\u1EE3i h\u1ECD v\u1EC1.")
+    ));
+    const chance = plan2.count + (trip?.ids.length ?? 0) < 2 ? 0 : plan2.chance, tone = chance >= 0.7 ? "good" : chance >= 0.35 ? "warn" : "bad";
+    body.append(h(
+      "div",
+      { class: "dtile report" },
+      dlg.ring(chance, `${Math.round(chance * 100)}%`),
+      h(
+        "div",
+        { class: "dmain" },
+        h("div", { class: "dname" }, h("b", { text: "T\u1EC9 l\u1EC7 v\u1EBD \u0111\u1EE7 chi ti\u1EBFt" })),
+        dlg.bar(Math.round(chance * 100), 100, plan2.count < 2 ? "c\u1EA7n \xEDt nh\u1EA5t 2 ng\u01B0\u1EDDi" : `${Math.round(chance * 100)}%`),
+        dlg.more(`\u0110i ${plan2.count}/${limit} ng\u01B0\u1EDDi \xB7 m\u1EE9c c\u1EA7n kho\u1EA3ng ${plan2.need} ng\u01B0\u1EDDi trung b\xECnh`)
+      )
+    ));
+    body.append(h(
+      "div",
+      { class: "dpills" },
+      dlg.pill(resIcon("role_scout"), `${plan2.count}/${plan2.need} ng\u01B0\u1EDDi`, plan2.count >= plan2.need ? "good" : plan2.count >= 2 ? "warn" : "bad", "S\u1ED1 ng\u01B0\u1EDDi \u0111\xE3 ch\u1ECDn so v\u1EDBi m\u1EE9c c\u1EA7n"),
+      dlg.pill(resIcon("role_scout"), `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${Math.max(1, plan2.level)}`, void 0, "C\u1EA5p b\u1EA3n \u0111\u1ED3 s\u1EBD v\u1EBD"),
+      dlg.pill(statIcon("move"), `\u0111i ${minutes(plan2.walk)}`, void 0, "\u0110\u01B0\u1EDDng \u0111i t\u1EEB tr\u1EA1i t\u1EDBi l\xE0ng"),
+      dlg.pill(statIcon("int"), `th\xE1m th\xEDnh ${minutes(plan2.survey)}`, void 0, "Th\u1EDDi gian v\u1EBD; \u0111\xF4ng ng\u01B0\u1EDDi th\xEC nhanh h\u01A1n"),
+      dlg.pill(resIcon("clock"), `c\u1EA3 chuy\u1EBFn ${minutes(plan2.total)}`, void 0, "\u0110i, th\xE1m th\xEDnh v\xE0 v\u1EC1"),
+      dlg.pill("\u{1F3AF}", `${Math.round(chance * 100)}%`, tone, "T\u1EC9 l\u1EC7 v\u1EBD \u0111\u1EE7 chi ti\u1EBFt")
+    ));
+    if (plan2.error) body.append(dlg.why(plan2.error));
+    body.append(dlg.button(trip ? "C\u1EED th\xEAm ng\u01B0\u1EDDi" : "L\xEAn \u0111\u01B0\u1EDDng", () => {
+      const e = sim2.startScout(ids, id);
+      if (e) this.c.toast(e);
+      else {
+        this.open = false;
+        this.picked.clear();
+      }
+      this.again();
+    }, { disabled: !!plan2.error, title: plan2.error ?? "C\u1EED nh\u1EEFng ng\u01B0\u1EDDi \u0111\xE3 ch\u1ECDn" }));
+    return body;
+  }
+  /** A scout in a list: the same tile every house uses for its people, with the ⚙ for their details and a plus or minus to send or keep them. */
+  scoutTile(v, sign, act, disabled) {
+    const sk = (this.c.sim.scoutSkill(v) * 10).toFixed(1);
+    return personTile(this.c, v, { note: `\u0111i\u1EC3m trinh s\xE1t ${sk}${v.weapon ? " \xB7 v\u0169 kh\xED" : ""}${v.armor ? " \xB7 gi\xE1p" : ""}${v.torch ? " \xB7 \u0111u\u1ED1c" : ""}`, stats: ["move", "sta"], actions: [
+      detailButton(this.c, v),
+      dlg.button(sign, act, { icon: true, tone: sign === "\u2212" ? "bad" : void 0, disabled, title: sign === "\u2212" ? "Kh\xF4ng c\u1EED ng\u01B0\u1EDDi n\xE0y" : "C\u1EED ng\u01B0\u1EDDi n\xE0y \u0111i" })
+    ] });
   }
 };
 
 // src/ui/soldierpane.ts
-var energyBar = (v) => h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, h("b", { class: v.energy < 20 ? "en low" : "en", style: `width:${v.energy}%` })));
-function sleeperRows(sim2, list) {
-  return list.map((v) => h("div", { class: "row" }, h("div", { class: "nm" }, v.name, h("small", { text: describe(v, sim2) })), energyBar(v)));
+function sleeperRows(c, list) {
+  return list.map((v) => personTile(c, v));
 }
 
 // src/ui/planmap.ts
@@ -37803,7 +50763,7 @@ function paintGround(g2, sim2, i) {
   for (let y = box.y0; y < box.y1; y++) for (let x = box.x0; x < box.x1; x++) {
     const px = (x - box.x0) * T, py = (y - box.y0) * T, t = w.tiles[y * N + x], shade2 = (hash(x, y) - 0.5) * 14;
     const col = (r, gg, b) => `rgb(${Math.round(r + shade2)},${Math.round(gg + shade2)},${Math.round(b + shade2)})`;
-    const base = t === Tile.Water ? col(63, 111, 154) : t === Tile.Mud ? col(122, 100, 66) : t === Tile.Rock ? col(124, 130, 120) : col(134, 163, 85);
+    const base = t === Tile.Water ? col(63, 111, 154) : t === Tile.Mud ? col(122, 100, 66) : t === Tile.Rock ? col(124, 130, 120) : t === Tile.Mountain ? col(108, 102, 96) : col(134, 163, 85);
     g2.fillStyle = base;
     g2.fillRect(px, py, T, T);
     if (w.occ[y * N + x]) {
@@ -37840,6 +50800,21 @@ function paintGround(g2, sim2, i) {
       g2.fillStyle = col(62, 110, 44);
       g2.beginPath();
       g2.arc(px + T / 2 - 2, py + T * 0.34, T * 0.22, 0, Math.PI * 2);
+      g2.fill();
+    } else if (t === Tile.Mountain) {
+      g2.fillStyle = col(84, 78, 72);
+      g2.beginPath();
+      g2.moveTo(px, py + T - 1);
+      g2.lineTo(px + T / 2, py + 2);
+      g2.lineTo(px + T, py + T - 1);
+      g2.closePath();
+      g2.fill();
+      g2.fillStyle = col(236, 240, 244);
+      g2.beginPath();
+      g2.moveTo(px + T / 2, py + 2);
+      g2.lineTo(px + T * 0.36, py + T * 0.34);
+      g2.lineTo(px + T * 0.64, py + T * 0.34);
+      g2.closePath();
       g2.fill();
     } else if (t === Tile.Rock) {
       g2.fillStyle = col(96, 102, 104);
@@ -39214,8 +52189,8 @@ var WarPanel = class {
   }
   // ---------------------------------------------------------------- the maps we hold
   ageWords(at) {
-    const days = Math.floor((this.sim.time - at) / DAY_LENGTH);
-    return days <= 0 ? "b\xE1o c\xE1o trong ng\xE0y" : days === 1 ? "b\xE1o c\xE1o t\u1EEB h\xF4m qua" : days < 4 ? `b\xE1o c\xE1o t\u1EEB ${days} h\xF4m tr\u01B0\u1EDBc` : "\u0111\xE3 c\u0169";
+    const days2 = Math.floor((this.sim.time - at) / DAY_LENGTH);
+    return days2 <= 0 ? "b\xE1o c\xE1o trong ng\xE0y" : days2 === 1 ? "b\xE1o c\xE1o t\u1EEB h\xF4m qua" : days2 < 4 ? `b\xE1o c\xE1o t\u1EEB ${days2} h\xF4m tr\u01B0\u1EDBc` : "\u0111\xE3 c\u0169";
   }
   // ---------------------------------------------------------------- the attack plan
   /** A squad's post in the defence plan. */
@@ -39658,11 +52633,12 @@ var BuildingPanel = class {
   constructor(root, c) {
     this.root = root;
     this.c = c;
-    this.title = h("b");
-    this.state = h("span");
+    this.picKey = "";
     /** Every building shows its parts as pages behind a row of tab buttons at the top. */
     this.tabs = {};
     this.tabBar = h("div", { class: "btns tabs", role: "tablist" });
+    /** The line about the building and its tabs, side by side when the tabs are plain buttons. */
+    this.topbar = h("div", { class: "topbar" });
     this.tabAt = {};
     this.pages = [];
     this.tabKey = "";
@@ -39671,9 +52647,19 @@ var BuildingPanel = class {
     this.recRows = [];
     this.trees = [];
     this.goodRows = [];
+    /** What the filters of the tool and weapon lists say, by list: the kind to show ('' for all) and whether to show only what can be had now. */
+    this.filters = { "craft-tool": { kind: "", only: false }, "craft-weapon": { kind: "", only: false }, "store-tool": { kind: "", only: false }, "store-gear": { kind: "", only: false } };
+    this.goodsBar = h("div", { class: "btns filters" });
+    this.goodsBarCat = "";
+    /** The campfire's meal under the title: a food icon, the number and a ? that tells how the village eats. */
+    this.foodNum = h("b");
+    this.foodHint = hint(h("span", { class: "foodline" }, resIcon("food"), this.foodNum), "");
     /** The people of each role house, kept in the house that gives the role. */
     this.rolePanes = {};
     this.labHead = h("div", { class: "labhead" });
+    /** What the house is working on (the order under way and the queue), always at the very top of its panel, above the tabs. */
+    this.progress = h("div", { class: "progress" });
+    this.progSec = {};
     /** The research house: the tab that is open, as a panel laid over the whole one (null while the grid of tabs shows). */
     this.labSub = null;
     this.mbody = h("div", { class: "mbody" });
@@ -39688,14 +52674,15 @@ var BuildingPanel = class {
     this.resume = 0;
     this.inTent = false;
     /** The people lying in the Nhà dân and the camps of the soldiers. */
-    this.bedHead = { house: h("h3"), infantry: h("h3"), cavalry: h("h3"), archery: h("h3") };
-    this.bedList = { house: h("div"), infantry: h("div"), cavalry: h("div"), archery: h("div") };
-    this.bedKey = { house: "", infantry: "", cavalry: "", archery: "" };
+    this.bedHead = {};
+    this.bedList = {};
+    this.bedKey = {};
     /** The archers posted on a tower. */
     this.towerHead = h("h3");
     this.towerList = h("div");
     this.towerKey = "";
-    this.info = h("div", { class: "kv" });
+    /** What the building is, behind the ? next to its title. */
+    this.info = h("p", { class: "sub hintbody", hidden: true });
     this.mountRows = [];
     this.mountNote = h("div", { class: "kv" });
     this.queueNote = { craft: h("div", { class: "kv" }), research: h("div", { class: "kv" }) };
@@ -39707,7 +52694,7 @@ var BuildingPanel = class {
     this.staffBoxes = { build: new StaffBox(c, "build"), craft: new StaffBox(c, "craft"), research: new StaffBox(c, "research"), tame: new StaffBox(c, "tame"), farm: new StaffBox(c, "farm") };
     this.activeBoxes = {
       craft: new ActiveBox(c, recipeNm, (id) => sim2.orderDef("craft", id)?.time ?? 1),
-      research: new ActiveBox(c, (id) => TECHS.find((t) => t.id === id)?.name ?? id, (id) => sim2.orderDef("research", id)?.time ?? 1),
+      research: new ActiveBox(c, (id) => TECH_BY_ID[id]?.name ?? id, (id) => sim2.orderDef("research", id)?.time ?? 1),
       tame: new ActiveBox(c, (id) => `thu\u1EA7n ${MOUNTS[id]?.name.toLowerCase() ?? id}`, (id) => MOUNTS[id]?.time ?? 1)
     };
     const page = (...kids) => {
@@ -39732,11 +52719,17 @@ var BuildingPanel = class {
       return box;
     };
     this.people = new PeoplePane(c);
-    const roleHouse = (role, label2, beds = false) => {
+    const bedPage = (kind, who2) => {
+      this.bedHead[kind] = h("h3");
+      this.bedList[kind] = h("div");
+      this.bedKey[kind] = "";
+      return page(hint(this.bedHead[kind], `${who2} v\xE0o \u0111\xE2y ng\u1EE7 khi tr\u1EDDi t\u1ED1i ho\u1EB7c ki\u1EC7t s\u1EE9c: h\u1ECD bi\u1EBFn m\u1EA5t kh\u1ECFi b\u1EA3n \u0111\u1ED3, hi\u1EC7n \u1EDF danh s\xE1ch n\xE0y, kh\xF4ng c\xF3 h\xECnh ng\u1EE7. H\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7${kind === "house" || kind === "infantry" || kind === "cavalry" || kind === "archery" ? ", c\u1EA5p cao h\u01A1n h\u1ED3i nhanh h\u01A1n" : ""}. H\u1EBFt gi\u01B0\u1EDDng th\xEC ng\u1EE7 b\xEAn \u0111\u1ED1ng l\u1EEDa, h\u1ED3i ch\u1EADm h\u01A1n.`), this.bedList[kind]);
+    };
+    const roleHouse = (role, label2, soldiers = false) => {
       const kind = ROLES[role].building, pane = new RolePane(c, role);
       this.rolePanes[kind] = pane;
       this.tabs[kind] = [{ label: label2, page: page(pane.root) }];
-      if (beds) this.tabs[kind].push({ label: "Ng\u01B0\u1EDDi trong tr\u1EA1i", page: page(hint(this.bedHead[kind], "L\xEDnh v\xE0o tr\u1EA1i ng\u1EE7 khi tr\u1EDDi t\u1ED1i ho\u1EB7c ki\u1EC7t s\u1EE9c: h\u1ECD bi\u1EBFn m\u1EA5t kh\u1ECFi b\u1EA3n \u0111\u1ED3, hi\u1EC7n \u1EDF danh s\xE1ch n\xE0y, kh\xF4ng c\xF3 h\xECnh ng\u1EE7. H\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7, c\u1EA5p cao h\u01A1n h\u1ED3i nhanh h\u01A1n. H\u1EBFt gi\u01B0\u1EDDng th\xEC l\xEDnh ng\u1EE7 b\xEAn \u0111\u1ED1ng l\u1EEDa, h\u1ED3i ch\u1EADm h\u01A1n."), this.bedList[kind]) });
+      if (soldiers) this.tabs[kind].push({ label: "Ng\u01B0\u1EDDi trong tr\u1EA1i", page: bedPage(kind, "L\xEDnh") });
     };
     roleHouse("foot", "L\xEDnh", true);
     roleHouse("cavalry", "L\xEDnh", true);
@@ -39745,60 +52738,56 @@ var BuildingPanel = class {
     roleHouse("stone", "Nh\xE2n c\xF4ng");
     roleHouse("food", "Nh\xE2n c\xF4ng");
     roleHouse("hunt", "Nh\xE2n c\xF4ng");
-    this.tabs.house = [{ label: "Ng\u01B0\u1EDDi trong nh\xE0", page: page(hint(this.bedHead.house, "D\xE2n th\u01B0\u1EDDng v\xE0o nh\xE0 ng\u1EE7 khi tr\u1EDDi t\u1ED1i ho\u1EB7c ki\u1EC7t s\u1EE9c: h\u1ECD bi\u1EBFn m\u1EA5t kh\u1ECFi b\u1EA3n \u0111\u1ED3, hi\u1EC7n \u1EDF danh s\xE1ch n\xE0y, kh\xF4ng c\xF3 h\xECnh ng\u1EE7. H\u1ED3i s\u1EE9c \u0111\u1EA7y \u0111\u1EE7, c\u1EA5p cao h\u01A1n h\u1ED3i nhanh h\u01A1n. H\u1EBFt gi\u01B0\u1EDDng th\xEC d\xE2n ng\u1EE7 b\xEAn \u0111\u1ED1ng l\u1EEDa, h\u1ED3i ch\u1EADm h\u01A1n."), this.bedList.house) }];
+    this.tabs.house = [{ label: "Ng\u01B0\u1EDDi trong nh\xE0", page: bedPage("house", "D\xE2n r\u1EA3nh") }];
     this.tabs.field = [{ label: "Ng\u01B0\u1EDDi l\xE0m ru\u1ED9ng", page: page(this.staffBoxes.farm.root) }];
     this.war = new WarPanel(c);
     this.tabs.wartent = [{ label: "H\u1ECDp chi\u1EBFn", page: page(this.war.root) }];
     this.scoutPane = new ScoutPane(c);
-    this.tabs.scouttent = [{ label: "Trinh s\xE1t", page: page(this.scoutPane.root) }];
+    this.tabs.scouttent = [{ label: "Trinh s\xE1t", page: page(this.scoutPane.roster) }, { label: "L\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n", page: page(this.scoutPane.villages) }];
     this.tabs.tower = [{ label: "Cung th\u1EE7 canh", page: page(hint(this.towerHead, "Cung th\u1EE7 \u0111\u1EE9ng tr\xEAn ch\xF2i b\u1EAFn xa h\u01A1n 2 \xF4 v\xE0 m\u1EA1nh h\u01A1n m\u1ED9t ph\u1EA7n t\u01B0, v\xE0 k\u1EBB \u0111\u1ECBch ph\u1EA3i ph\xE1 ch\xF2i m\u1EDBi h\u1EA1 \u0111\u01B0\u1EE3c h\u1ECD. Ch\u1EC9 chi\u1EBFn binh c\u1EA7m cung ho\u1EB7c d\xE2y qu\u0103ng \u0111\xE1 m\u1EDBi l\xEAn \u0111\u01B0\u1EE3c. Ch\u1EBF cung v\xE0 d\xE2y qu\u0103ng \u1EDF Nh\xE0 ch\u1EBF t\u1EA1o."), this.towerList) }];
     this.tabs.fence = [];
     this.tabs.gate = [];
     this.tabs.builder = [{ label: "Th\u1EE3 x\xE2y", page: page(this.staffBoxes.build.root) }];
     this.tabs.campfire = [
-      { label: "D\xE2n", page: page(this.people.root, h("div", { class: "btns" }, h("button", { class: "sm", text: "Ch\u1ECDn t\u1EA5t c\u1EA3 d\xE2n", onclick: () => {
-        ctl2.selected.clear();
-        ctl2.selectAll();
-        ctl2.closeBuilding();
-      } }))) },
+      { label: "D\xE2n", page: page(this.people.root) },
       { label: "\u0110\u1ED5i ch\xE1c", page: page(barter2()) }
     ];
     const stockRows = [];
     for (const res of RES_LIST) {
-      const num2 = h("b"), bar2 = h("b");
-      this.resRows.push({ res, num: num2, bar: bar2 });
-      stockRows.push(h("div", { class: "row" }, h("div", { class: "nm" }, resIcon(res), RES_NAME[res], h("small", {}, num2)), h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, bar2))));
+      const num3 = h("b"), bar2 = h("b");
+      this.resRows.push({ res, num: num3, bar: bar2 });
+      stockRows.push(h("div", { class: "row" }, h("div", { class: "nm" }, resIcon(res), RES_NAME[res], h("small", {}, num3)), h("div", { class: "bars", style: "width:90px;display:block" }, h("i", {}, bar2))));
     }
     this.tabs.storage = [{ label: "T\xE0i nguy\xEAn", page: page(...stockRows) }, { label: "\u0110\u1ED5i ch\xE1c", page: page(barter2()) }];
-    const section = (el2, list) => {
+    const orderRow = (o) => {
+      const have = h("span", { class: "have" }), lock = h("small", { class: "lock" });
+      const minus = h("button", { class: "sm", text: "\u2212", title: "B\u1EDBt m\u1ED9t \u0111\u01A1n", onclick: () => {
+        o.cancel();
+        ctl2.onChange();
+      } });
+      const plus = h("button", { class: "sm", text: "+", title: "Th\xEAm m\u1ED9t \u0111\u01A1n v\xE0o h\xE0ng \u0111\u1EE3i", onclick: () => {
+        const e = o.add();
+        if (e) c.toast(e);
+        ctl2.onChange();
+      } });
+      const row = h("div", { class: "rec" }, o.icon, h("div", { class: "nm" }, o.name, h("small", {}, o.detail), lock), h("div", { class: "qty" }, have, minus, plus));
+      return { row, have, lock, btns: [minus, plus] };
+    };
+    const section = (el2, list, key) => {
+      if (key) el2.append(this.filterBar(key, [...new Set(list.map((r) => r.kind))]));
       for (const r of list) {
-        const have = h("span", { class: "have" }), lock = h("small", { class: "lock" });
-        const minus = h("button", { class: "sm", text: "\u2212", title: "B\u1EDBt m\u1ED9t \u0111\u01A1n", onclick: () => {
-          sim2.unqueueCraft(r.id);
-          ctl2.onChange();
-        } });
-        const plus = h("button", { class: "sm", text: "+", title: "Th\xEAm m\u1ED9t \u0111\u01A1n v\xE0o h\xE0ng \u0111\u1EE3i", onclick: () => {
-          const e = sim2.queueCraft(r.id);
-          if (e) c.toast(e);
-          ctl2.onChange();
-        } });
-        const row = h(
-          "div",
-          { class: "rec" },
-          iconCanvas(sprites2.icons[r.id]),
-          h("div", { class: "nm" }, recipeName(r), h("small", {}, `${costText(r.cost, RES_NAME)} \xB7 ${workDays(r.time)} \xB7 ${recipeUse(r)}`), lock),
-          h("div", { class: "qty" }, have, minus, plus)
-        );
-        this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, have, row, lock, btns: [minus, plus] });
-        el2.append(row);
+        const o = orderRow({ icon: iconCanvas(sprites2.icons[r.id]), name: recipeName(r), detail: `${costText(r.cost, RES_NAME)} \xB7 ${workDays(r.time)} \xB7 ${recipeUse(r)}`, add: () => sim2.queueCraft(r.id), cancel: () => sim2.unqueueCraft(r.id) });
+        this.recRows.push({ id: r.id, kind: r.kind, tier: r.tier, list: key ?? "", ...o });
+        el2.append(o.row);
       }
       return el2;
     };
-    const shop = (list) => section(page(hint("Ch\u1EBF t\u1EA1o theo b\u1EA3n v\u1EBD", "Ch\u1EC9 ch\u1EBF \u0111\u01B0\u1EE3c m\xF3n \u0111\xE3 c\xF3 b\u1EA3n v\u1EBD \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u v\xE0 \u0111\u1EE7 c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. S\u1EA3n ph\u1EA9m v\xE0o Kho c\xF4ng c\u1EE5 ho\u1EB7c Kho v\u0169 kh\xED.")), list);
+    const shop = (list, key) => section(page(hint("Ch\u1EBF t\u1EA1o theo b\u1EA3n v\u1EBD", "Ch\u1EC9 ch\u1EBF \u0111\u01B0\u1EE3c m\xF3n \u0111\xE3 c\xF3 b\u1EA3n v\u1EBD \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u v\xE0 \u0111\u1EE7 c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. S\u1EA3n ph\u1EA9m v\xE0o Kho c\xF4ng c\u1EE5 ho\u1EB7c Kho v\u0169 kh\xED.")), list);
+    this.progSec.workshop = h("div", {}, h("h3", { text: "\u0110ang ch\u1EBF t\u1EA1o" }), this.activeBoxes.craft.root, this.queueNote.craft);
     this.tabs.workshop = [
-      { label: "\u0110ang l\xE0m", page: page(this.staffBoxes.craft.root, h("h3", { text: "\u0110ang ch\u1EBF t\u1EA1o" }), this.activeBoxes.craft.root, this.queueNote.craft) },
-      { label: "C\xF4ng c\u1EE5", page: shop(RECIPES.filter((r) => ["axe", "pick", "hoe", "hammer", "torch"].includes(r.kind))) },
-      { label: "V\u0169 kh\xED", page: shop(RECIPES.filter((r) => r.kind in WEAPONS)) },
+      { label: "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c", page: page(this.staffBoxes.craft.root) },
+      { label: "C\xF4ng c\u1EE5", page: shop(RECIPES.filter((r) => ["axe", "pick", "hoe", "hammer", "torch"].includes(r.kind)), "craft-tool") },
+      { label: "V\u0169 kh\xED", page: shop(RECIPES.filter((r) => r.kind in WEAPONS), "craft-weapon") },
       { label: "\xC1o gi\xE1p", page: shop(RECIPES.filter((r) => r.kind === "hide")) }
     ];
     const tree = (fill) => {
@@ -39810,7 +52799,7 @@ var BuildingPanel = class {
     const only = (test) => TECHS.filter((x) => test(x.id));
     const labLevel = () => sim2.building("lab")?.level ?? 0;
     const militaryLock = () => sim2.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${TREE_TABS.military.needLab} \u0111\u1EC3 m\u1EDF Qu\xE2n s\u1EF1`;
-    this.labHead.append(this.staffBoxes.research.root, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian: c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research);
+    this.progSec.lab = h("div", {}, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian: c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research);
     this.tabs.lab = [
       { label: "Qu\xE2n s\u1EF1 b\u1EADc 1", icon: "infantry", lock: militaryLock, page: tree((t) => {
         t.addChains("Ch\u1EC9 s\u1ED1 qu\xE2n", ["foot", "cavalry", "archer", "scout"], "military");
@@ -39831,41 +52820,37 @@ var BuildingPanel = class {
       }) },
       { label: "V\u0169 kh\xED b\u1EADc 1", icon: "armory", under: 0, lock: () => militaryLock() && "C\u1EA7n m\u1EDF Qu\xE2n s\u1EF1 tr\u01B0\u1EDBc", page: tree((t) => {
         t.addChains("Ch\u1EC9 s\u1ED1 t\u1EEBng v\u0169 kh\xED", ["club", "spear", "mace", "sling", "bow"], "weapon");
-      }) }
+      }) },
+      { label: "Ng\u01B0\u1EDDi nghi\xEAn c\u1EE9u", icon: "lab", page: page(this.staffBoxes.research.root) }
     ];
-    const goods = page(this.goodsHint);
+    const goods = page(this.goodsHint, this.goodsBar);
     const goodsRows = (cat) => RECIPES.filter((r) => cat === "gear" === isGearKind(r.kind));
     for (const r of [...goodsRows("tool"), ...goodsRows("gear")]) {
-      const num2 = h("b"), row = h("div", { class: "rec" }, iconCanvas(sprites2.icons[r.id]), h("div", { class: "nm" }, recipeName(r), h("small", { text: recipeUse(r) })), h("div", { class: "qty" }, num2));
-      this.goodRows.push({ id: r.id, num: num2, row });
+      const num3 = h("b"), row = h("div", { class: "rec" }, iconCanvas(sprites2.icons[r.id]), h("div", { class: "nm" }, recipeName(r), h("small", { text: recipeUse(r) })), h("div", { class: "qty" }, num3));
+      this.goodRows.push({ id: r.id, num: num3, row });
       goods.append(row);
     }
     this.tabs.toolstore = this.tabs.armory = [{ label: "Kho", page: goods }];
-    const beasts = page(hint("Thu\u1EA7n th\xFA", 'D\xE2n l\xE0m vi\u1EC7c trong chu\u1ED3ng thu\u1EA7n h\xF3a t\u1EEBng con th\xFA theo \u0111\u01A1n: t\u1ED1n l\u01B0\u01A1ng th\u1EF1c, da v\xE0 ti\u1EC1n, m\u1EA5t nhi\u1EC1u th\u1EDDi gian (c\xE0ng \u0111\xF4ng v\xE0 c\xE0ng nhanh nh\u1EB9n c\xE0ng nhanh). Con xong v\xE0o chu\u1ED3ng; giao cho t\u1EEBng ng\u01B0\u1EDDi \u1EDF trang "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" c\u1EE7a h\u1ECD, nh\u01B0 giao c\xF4ng c\u1EE5. M\u1ED7i lo\xE0i c\u1EA7n chu\u1ED3ng \u0111\u1EE7 c\u1EA5p, kh\xF4ng c\u1EA7n nghi\xEAn c\u1EE9u: s\xF3i (c\u1EA5p 1), l\u1EE3n r\u1EEBng (c\u1EA5p 2), voi (c\u1EA5p 3). K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA kh\xF4ng c\u1EA7n th\xFA c\u1EE7a chu\u1ED3ng: h\u1ECD c\u01B0\u1EE1i con c\u1EE7a tr\u1EA1i.'));
+    const beasts = page(hint("Th\xFA c\xF3 th\u1EC3 thu\u1EA7n", 'D\xE2n l\xE0m vi\u1EC7c trong chu\u1ED3ng thu\u1EA7n h\xF3a t\u1EEBng con th\xFA theo \u0111\u01A1n: t\u1ED1n l\u01B0\u01A1ng th\u1EF1c, da v\xE0 ti\u1EC1n, m\u1EA5t nhi\u1EC1u th\u1EDDi gian (c\xE0ng \u0111\xF4ng v\xE0 c\xE0ng nhanh nh\u1EB9n c\xE0ng nhanh). Con xong v\xE0o chu\u1ED3ng; giao cho t\u1EEBng ng\u01B0\u1EDDi \u1EDF th\u1EBB "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt" c\u1EE7a h\u1ECD (l\xEDnh, th\u1EE3 s\u0103n, trinh s\xE1t), m\u1EE5c Th\xFA c\u01B0\u1EE1i. M\u1ED7i lo\xE0i c\u1EA7n chu\u1ED3ng \u0111\u1EE7 c\u1EA5p, kh\xF4n ngoan h\u01A1n v\xE0 nghi\xEAn c\u1EE9u ri\xEAng.'));
+    this.progSec.stable = h("div", {}, h("h3", { text: "\u0110ang thu\u1EA7n" }), this.activeBoxes.tame.root, this.mountNote);
     for (const k of MOUNT_KINDS) {
-      const d = MOUNTS[k], have = h("span", { class: "have" }), lock = h("small", { class: "lock" });
-      const minus = h("button", { class: "sm", text: "\u2212", title: "B\u1EDBt m\u1ED9t \u0111\u01A1n", onclick: () => {
-        sim2.unqueueTame(k);
-        ctl2.onChange();
-      } });
-      const plus = h("button", { class: "sm", text: "+", title: "Th\xEAm m\u1ED9t \u0111\u01A1n v\xE0o h\xE0ng \u0111\u1EE3i", onclick: () => {
-        const e = sim2.queueTame(k);
-        if (e) c.toast(e);
-        ctl2.onChange();
-      } });
-      const row = h("div", { class: "rec" }, h("div", { class: "nm" }, d.name, h("small", {}, `${costText(d.cost, RES_NAME)} \xB7 ${workDays(d.time)} \xB7 \u0111i nhanh \xD7${d.speed}, \u0111\u1EE1 ${Math.round((1 - d.guard) * 100)}% \u0111\xF2n`), lock), h("div", { class: "qty" }, have, minus, plus));
-      this.mountRows.push({ k, have, row, lock, btns: [minus, plus] });
-      beasts.append(row);
+      const d = MOUNTS[k];
+      const o = orderRow({ icon: iconCanvas(sprites2.mount(d.species, false, 0, 1)), name: d.name, detail: `${costText(d.cost, RES_NAME)} \xB7 ${workDays(d.time)} \xB7 \u0111i nhanh \xD7${d.speed}, \u0111\u1EE1 ${Math.round((1 - d.guard) * 100)}% \u0111\xF2n`, add: () => sim2.queueTame(k), cancel: () => sim2.unqueueTame(k) });
+      this.mountRows.push({ k, ...o });
+      beasts.append(o.row);
     }
-    this.tabs.stable = [
-      { label: "\u0110ang l\xE0m", page: page(this.staffBoxes.tame.root, h("h3", { text: "\u0110ang thu\u1EA7n" }), this.activeBoxes.tame.root, this.mountNote) },
-      { label: "Thu\u1EA7n th\xFA", page: beasts }
-    ];
-    this.mbody.append(this.info, this.labHead, this.tabBar, ...this.pages, this.sub);
-    root.append(
-      h("div", { class: "cardhead" }, this.title, this.state, h("button", { class: "x", text: "\u2715 \u0110\xF3ng", onclick: () => ctl2.closePanel() })),
-      this.mbody
-    );
+    this.tabs.stable = [{ label: "Thu\u1EA7n th\xFA", page: beasts }, { label: "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c", page: page(this.staffBoxes.tame.root) }];
+    this.progress.append(...Object.values(this.progSec));
+    this.topbar.append(this.labHead, this.tabBar);
+    this.mbody.append(this.progress, this.topbar, ...this.pages, this.sub);
+    const head = dlg.head({ pic: "\u{1F3E0}", title: "\u2014", sub: "\u2014", onClose: () => ctl2.closePanel() });
+    this.title = head.querySelector(".dtitle");
+    this.state = head.querySelector(".dsub");
+    this.picBox = head.querySelector(".dpic");
+    const who = head.querySelector(".dwho");
+    who.replaceChildren(h("div", { class: "hint" }, h("div", { class: "hinthead" }, this.title, helpButton()), this.info), this.state, this.foodHint);
+    this.win = new GameDialog(root, { keep: true, onClose: () => ctl2.closePanel(), canClose: () => !this.war.mapOpen });
+    root.append(dlg.card({ wide: true, cls: "gbuild", label: "C\xF4ng tr\xECnh" }, head, this.mbody));
   }
   /** Show the tab buttons of the building and the page of the chosen one. */
   showTabs(kind, ready) {
@@ -39873,9 +52858,12 @@ var BuildingPanel = class {
     const locks = tabs.map((t) => t.lock?.() ?? null);
     const key = `${kind}:${tabs.length}:${locks.map((l) => l ? 1 : 0).join("")}`;
     this.labHead.hidden = !(kind === "lab" && ready);
+    for (const [k, el2] of Object.entries(this.progSec)) el2.hidden = !(ready && k === kind);
+    this.progress.hidden = !ready || !this.progSec[kind];
     if (key !== this.tabKey) {
       this.tabKey = key;
       const pictures = tabs.some((t) => t.icon);
+      this.topbar.classList.toggle("inline", !pictures);
       this.tabBar.classList.toggle("icontabs", pictures);
       this.tabBar.classList.toggle("treetabs", pictures && kind === "lab");
       this.tabBar.replaceChildren(...tabs.map((t, i) => {
@@ -39917,6 +52905,7 @@ var BuildingPanel = class {
     let at = Math.min(this.tabAt[kind] ?? 0, Math.max(0, tabs.length - 1));
     if (locks[at]) at = Math.max(0, locks.findIndex((l) => !l));
     this.tabBar.hidden = tabs.length < 2;
+    this.mbody.classList.toggle("fit", kind === "campfire" && at === 0);
     [...this.tabBar.children].forEach((el2, i) => el2.setAttribute("aria-pressed", String(i === at)));
     for (const p of this.pages) p.hidden = tabs[at]?.page !== p;
   }
@@ -39924,7 +52913,12 @@ var BuildingPanel = class {
     const id = this.c.ctl.selectedBuilding;
     return id === null ? void 0 : this.c.sim.getBuilding(id);
   }
+  /** What the house says about itself, and which stat of its people makes it work best. */
   infoText(b) {
+    const stat = PRIORITY_STAT[b.kind];
+    return this.infoBase(b) + (stat ? ` \xB7 \u01AFu ti\xEAn ch\u1EC9 s\u1ED1: ${stat}` : "");
+  }
+  infoBase(b) {
     const lv = levelDef(b);
     switch (b.kind) {
       case "infantry":
@@ -39932,7 +52926,7 @@ var BuildingPanel = class {
       case "archery":
         return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv.slots} ng\u01B0\u1EDDi, m\u1ED7i ng\u01B0\u1EDDi m\u1ED9t gi\u01B0\u1EDDng \xB7 h\u1ED3i s\u1EE9c \xD7${lv.craftSpeed.toLocaleString("vi")} (c\u1EA1nh \u0111\u1ED1ng l\u1EEDa ch\u1EC9 \xD7${rest_default.sleepAt.campfire.toLocaleString("vi")})`;
       case "house":
-        return `C\u1EA5p ${b.level}: ${lv.slots} gi\u01B0\u1EDDng cho d\xE2n \xB7 h\u1ED3i s\u1EE9c \xD7${lv.craftSpeed.toLocaleString("vi")} (c\u1EA1nh \u0111\u1ED1ng l\u1EEDa ch\u1EC9 \xD7${rest_default.sleepAt.campfire.toLocaleString("vi")})`;
+        return `C\u1EA5p ${b.level}: ${lv.slots} gi\u01B0\u1EDDng cho d\xE2n r\u1EA3nh, l\xE0ng ch\u1EE9a th\xEAm ${lv.slots} d\xE2n \xB7 h\u1ED3i s\u1EE9c \xD7${lv.craftSpeed.toLocaleString("vi")} (c\u1EA1nh \u0111\u1ED1ng l\u1EEDa ch\u1EC9 \xD7${rest_default.sleepAt.campfire.toLocaleString("vi")})`;
       case "field":
         return `C\u1EA5p ${b.level}: ${lv.slots} n\xF4ng d\xE2n l\xE0m m\u1ED9t l\xFAc \xB7 n\u0103ng su\u1EA5t \xD7${lv.craftSpeed.toLocaleString("vi")} (cu\u1ED1c \u0111\xE1 l\xE0m nhanh h\u01A1n)`;
       case "builder":
@@ -39945,20 +52939,21 @@ var BuildingPanel = class {
         return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv.slots} ng\u01B0\u1EDDi thu\u1EA7n th\xFA \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv.craftSpeed.toLocaleString("vi")} \xB7 thu\u1EA7n \u0111\u01B0\u1EE3c ${MOUNT_KINDS.filter((k) => MOUNTS[k].tier <= b.level).map((k) => MOUNTS[k].name.toLowerCase()).join(", ")}`;
       case "wartent":
         return `C\u1EA5p ${b.level}: t\u1ED1i \u0111a ${this.c.sim.squadLimit()} \u0111\u1ED9i, ${this.c.sim.cardLimit()} th\u1EBB l\u1EC7nh cho m\u1ED9t k\u1EBF ho\u1EA1ch \xB7 v\xE0o l\u1EC1u l\xE0 game t\u1EA1m d\u1EEBng`;
-      case "farmhouse":
       case "huntlodge":
+        return `C\u1EA5p ${b.level}: giao vi\u1EC7c cho t\u1ED1i \u0111a ${lv.slots} th\u1EE3 s\u0103n, s\u0103n trong ${huntRange(this.c.sim)} \xF4 quanh ch\xF2i \xB7 n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm v\xE0 s\u0103n xa h\u01A1n`;
+      case "farmhouse":
       case "lumberyard":
       case "quarry":
         return `C\u1EA5p ${b.level}: giao vi\u1EC7c cho t\u1ED1i \u0111a ${lv.slots} ng\u01B0\u1EDDi \xB7 n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm`;
       case "scouttent":
-        return `C\u1EA5p ${b.level}: c\u1EED t\u1ED1i \u0111a ${lv.slots} trinh s\xE1t m\u1ED9t chuy\u1EBFn \xB7 tab Trinh s\xE1t \u0111\u1EC3 ch\u1ECDn ng\u01B0\u1EDDi v\xE0 l\xE0ng c\u1EA7n d\xF2`;
+        return `C\u1EA5p ${b.level}: c\u1EED t\u1ED1i \u0111a ${lv.slots} trinh s\xE1t m\u1ED9t chuy\u1EBFn \xB7 tab L\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n \u0111\u1EC3 ch\u1ECDn l\xE0ng v\xE0 ng\u01B0\u1EDDi \u0111i`;
       case "storage":
         return `S\u1EE9c ch\u1EE9a ${lv.cap} m\u1ED7i lo\u1EA1i`;
       case "toolstore":
       case "armory":
         return `Ch\u1EE9a t\u1ED1i \u0111a ${lv.cap} m\xF3n`;
       default:
-        return `N\u01A1i d\xE2n ng\u1EE7 quanh l\u1EEDa \xB7 ch\u1EE9a ${lv.cap} m\u1ED7i lo\u1EA1i \xB7 t\u1ED1i \u0111a ${this.c.sim.popCap()} d\xE2n \xB7 c\xE1c nh\xE0 kh\xE1c l\xEAn \u0111\u01B0\u1EE3c c\u1EA5p ${levelCapByFire(b.level)}`;
+        return `N\u01A1i d\xE2n r\u1EA3nh ng\u1EE7 quanh l\u1EEDa \xB7 ch\u1EE9a ${lv.cap} m\u1ED7i lo\u1EA1i \xB7 l\xE0ng t\u1ED1i \u0111a ${this.c.sim.popCap()} d\xE2n (l\u1EEDa tr\u1EA1i ${POP_BY_FIRE[Math.min(POP_BY_FIRE.length, b.level) - 1]} + Nh\xE0 d\xE2n ${this.c.sim.bedsIn("house")}) \xB7 c\xE1c nh\xE0 kh\xE1c l\xEAn \u0111\u01B0\u1EE3c c\u1EA5p ${levelCapByFire(b.level)}`;
     }
   }
   update() {
@@ -39982,7 +52977,20 @@ var BuildingPanel = class {
     if (b.kind !== "lab") this.labSub = null;
     const def = BUILDINGS[b.kind], lv = levelDef(b), top = maxLevel(b.kind, b.era), ready = b.done;
     this.title.textContent = `${buildingName(b.kind, b.era)}${def.buildable ? ` \xB7 c\u1EA5p ${b.level}/${top} (${lv.name.toLowerCase()})` : ""}`;
+    const pk = `${b.kind}${b.level}${b.done}`;
+    if (pk !== this.picKey) {
+      this.picKey = pk;
+      try {
+        this.picBox.replaceChildren(iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0]));
+      } catch {
+        this.picBox.textContent = "\u{1F3E0}";
+        this.picBox.className = "dpic glyph";
+      }
+    }
+    const meal = b.kind === "campfire" && b.done && !b.upgrading;
     this.state.textContent = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%` : "\u0111ang d\xF9ng";
+    this.state.hidden = meal;
+    this.foodHint.hidden = !meal;
     this.showTabs(b.kind, ready);
     this.info.textContent = !b.done ? "Giao d\xE2n l\xE0m Th\u1EE3 x\xE2y \u0111\u1EC3 d\u1EF1ng c\xF4ng tr\xECnh n\xE0y." : this.infoText(b);
     if (b.kind === "campfire" && ready) this.updateCampfire();
@@ -39994,7 +53002,7 @@ var BuildingPanel = class {
       t.btn.textContent = `\u0110\u1ED5i ${BARTER[t.res]} ${RES_NAME[t.res].toLowerCase()} \u2192 1 ${RES_NAME.coin.toLowerCase()}`;
       t.btn.disabled = sim2.stock[t.res] < BARTER[t.res];
     }
-    if ((b.kind === "infantry" || b.kind === "cavalry" || b.kind === "archery" || b.kind === "house") && ready) this.updateBeds(b);
+    if (this.bedList[b.kind] && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind].update();
     if (b.kind === "field" && ready) this.staffBoxes.farm.update(b);
     if (b.kind === "builder" && ready) this.staffBoxes.build.update(b);
@@ -40014,7 +53022,8 @@ var BuildingPanel = class {
     this.activeBoxes.craft.update(b);
     this.queueNote.craft.textContent = `H\xE0ng \u0111\u1EE3i ${sim2.craftQueue.length}: ${sim2.craftQueue.map((id) => recipeName(RECIPE_BY_ID[id]).toLowerCase()).join(", ") || "tr\u1ED1ng"} \xB7 Kho c\xF4ng c\u1EE5 ${sim2.storeUsed("tool")}/${sim2.storeCap("tool")} \xB7 Kho v\u0169 kh\xED ${sim2.storeUsed("gear")}/${sim2.storeCap("gear")}`;
     for (const r of this.recRows) {
-      const lock = sim2.recipeLock(r.id);
+      const lock = sim2.recipeLock(r.id), f = this.filters[r.list];
+      if (f) r.row.hidden = !!f.kind && r.kind !== f.kind || f.only && !!lock;
       r.have.textContent = lock ? "" : `kho ${sim2.toolCount(r.kind, r.tier)} \xB7 \u0111\u1EE3i ${sim2.craftQueue.filter((id) => id === r.id).length}`;
       r.row.classList.toggle("locked", !!lock);
       r.lock.textContent = lock ?? "";
@@ -40042,13 +53051,37 @@ var BuildingPanel = class {
       for (const btn of r.btns) btn.disabled = !!lock;
     }
   }
+  /** The filter over a list of tools or weapons: by kind, and "only what can be had now" (made, or makeable). */
+  filterBar(key, kinds, into = h("div", { class: "btns filters" })) {
+    const { ctl: ctl2 } = this.c, f = this.filters[key], pick = h("select", { class: "sm", "aria-label": "L\u1ECDc theo lo\u1EA1i", title: "L\u1ECDc theo lo\u1EA1i" });
+    pick.append(h("option", { value: "", text: "M\u1ECDi lo\u1EA1i" }), ...kinds.map((k) => h("option", { value: k, text: kindLabel(k) })));
+    pick.value = f.kind;
+    pick.addEventListener("change", () => {
+      f.kind = pick.value;
+      ctl2.onChange();
+    });
+    const only = h("button", { class: "sm", text: "Ch\u1EC9 m\xF3n c\xF3 th\u1EC3 d\xF9ng", title: "\u1EA8n nh\u1EEFng m\xF3n ch\u01B0a c\xF3 b\u1EA3n v\u1EBD, ch\u01B0a \u0111\u1EE7 c\u1EA5p nh\xE0 ho\u1EB7c ch\u01B0a c\xF3 trong kho", pressed: f.only, onclick: () => {
+      f.only = !f.only;
+      only.setAttribute("aria-pressed", String(f.only));
+      ctl2.onChange();
+    } });
+    into.append(pick, only);
+    return into;
+  }
   updateGoods(b) {
     const { sim: sim2 } = this.c, cat = b.kind === "toolstore" ? "tool" : "gear";
     this.goodsNote.textContent = `\u0110ang ch\u1EE9a ${sim2.storeUsed(cat)}/${sim2.storeCap(cat)} m\xF3n`;
     this.goodsHint.tip.textContent = autoOn(sim2.researched, "fetch") ? "D\xE2n thi\u1EBFu \u0111\u1ED3 ho\u1EB7c \u0111\u1ED3 h\u1ECFng s\u1EBD t\u1EF1 t\u1EDBi l\u1EA5y." : 'Ch\u01B0a nghi\xEAn c\u1EE9u "T\u1EF1 l\u1EA5y \u0111\u1ED3 trong kho": h\xE3y ph\xE1t \u0111\u1ED3 b\u1EB1ng tay \u1EDF th\u1EBB d\xE2n.';
+    const fkey = `store-${cat}`, f = this.filters[fkey];
+    if (this.goodsBarCat !== cat) {
+      this.goodsBarCat = cat;
+      const kinds = [...new Set(RECIPES.filter((r) => cat === "gear" === isGearKind(r.kind)).map((r) => r.kind))];
+      this.goodsBar.replaceChildren();
+      this.filterBar(fkey, kinds, this.goodsBar);
+    }
     for (const r of this.goodRows) {
       const rc = RECIPE_BY_ID[r.id], mine2 = cat === "gear" === isGearKind(rc.kind), n = sim2.toolCount(rc.kind, rc.tier);
-      r.row.hidden = !mine2 || n === 0 && !!sim2.recipeLock(r.id);
+      r.row.hidden = !mine2 || n === 0 && !!sim2.recipeLock(r.id) || !!f.kind && rc.kind !== f.kind || f.only && n === 0;
       r.num.textContent = `\xD7 ${n}`;
     }
   }
@@ -40056,37 +53089,57 @@ var BuildingPanel = class {
   updateTower(b) {
     const { sim: sim2, ctl: ctl2, toast } = this.c, crew2 = sim2.garrison(b), slots = levelDef(b).slots;
     const archers = sim2.villagers.filter((v) => v.job === "fight" && v.post !== b.id && WEAPONS[v.weapon ?? "fist"].ranged);
-    this.towerHead.textContent = `Cung th\u1EE7 tr\xEAn ch\xF2i (${crew2.length}/${slots})`;
+    this.towerHead.replaceChildren(h("div", { class: "dhouse" }, h("b", { text: "Cung th\u1EE7 tr\xEAn ch\xF2i" }), dlg.slots(crew2.length, slots)));
     const key = `${b.id}|${crew2.map((v) => v.id).join()}|${archers.map((v) => `${v.id}.${v.post}`).join()}|${crew2.length >= slots}`;
     if (key === this.towerKey) return;
     this.towerKey = key;
-    const row = (v, label2, fn) => h("div", { class: "row" }, h("div", { class: "nm" }, v.name, h("small", { text: WEAPONS[v.weapon ?? "fist"].name })), h("button", { class: "sm", text: label2, disabled: label2 === "L\xEAn ch\xF2i" && crew2.length >= slots, onclick: () => {
+    const row = (v, label2, fn) => personTile(this.c, v, { note: WEAPONS[v.weapon ?? "fist"].name, actions: [dlg.button(label2, () => {
       fn();
       ctl2.onChange();
-    } }));
+    }, { small: true, disabled: label2 === "L\xEAn ch\xF2i" && crew2.length >= slots })] });
     this.towerList.replaceChildren(
-      ...crew2.length ? crew2.map((v) => row(v, "Xu\u1ED1ng", () => sim2.leaveTower([v.id]))) : [h("p", { class: "sub", text: "Ch\u01B0a c\xF3 cung th\u1EE7 n\xE0o tr\xEAn ch\xF2i." })],
-      h("p", { class: "sub", text: archers.length ? "Cung th\u1EE7 c\xF3 th\u1EC3 l\xEAn:" : "Ch\u01B0a c\xF3 chi\u1EBFn binh n\xE0o c\u1EA7m cung ho\u1EB7c d\xE2y qu\u0103ng." }),
-      ...archers.map((v) => row(v, "L\xEAn ch\xF2i", () => {
+      crew2.length ? dlg.list(...crew2.map((v) => row(v, "Xu\u1ED1ng", () => sim2.leaveTower([v.id])))) : dlg.empty("Ch\u01B0a c\xF3 cung th\u1EE7 n\xE0o tr\xEAn ch\xF2i."),
+      h("div", { class: "dhouse" }, h("small", { class: "dsub", text: archers.length ? "Cung th\u1EE7 c\xF3 th\u1EC3 l\xEAn:" : "Ch\u01B0a c\xF3 chi\u1EBFn binh n\xE0o c\u1EA7m cung ho\u1EB7c d\xE2y qu\u0103ng." })),
+      dlg.list(...archers.map((v) => row(v, "L\xEAn ch\xF2i", () => {
         const e = sim2.assignTower([v.id], b.id);
         if (e) toast(e);
-      }))
+      })))
     );
   }
   updateCampfire() {
+    const { sim: sim2 } = this.c, need = sim2.foodNeed(), pen = sim2.foodPenalty, level = sim2.campfire()?.level ?? 1;
     this.people.update();
+    this.foodNum.textContent = `${Math.floor(sim2.foodPot)}/${need}`;
+    this.foodHint.tip.textContent = `Ph\u1EA7n \u0103n h\xF4m nay. Th\u1EE9c \u0103n thu v\u1EC1 \u0111\u1ED5 v\xE0o ph\u1EA7n \u0103n c\u1EE7a l\u1EEDa tr\u1EA1i tr\u01B0\u1EDBc, d\u01B0 m\u1EDBi v\xE0o kho. Cu\u1ED1i ng\xE0y l\xE0ng \u0103n ph\u1EA7n n\xE0y r\u1ED3i t\u1EDBi kho; thi\u1EBFu th\xEC c\u1EA3 l\xE0ng y\u1EBFu \u0111i trong ng\xE0y k\u1EBF (t\u1ED1i \u0111a 20% m\u1ECDi ch\u1EC9 s\u1ED1, m\xE1u ch\u1EC9 h\u1ED3i ch\u1EADm h\u01A1n). M\u1ED7i d\xE2n \u0103n ${rationAt(level, false)}, m\u1ED7i l\xEDnh ${rationAt(level, true)} th\u1EE9c \u0103n m\u1ED7i ng\xE0y (c\u1EA5p l\u1EEDa ${level}) \xB7 kho c\xF2n ${Math.floor(sim2.stock.food)}${pen > 0 ? ` \xB7 c\u1EA3 l\xE0ng \u0111ang y\u1EBFu ${Math.round(pen * 1e3) / 10}% v\xEC b\u1EEFa tr\u01B0\u1EDBc thi\u1EBFu \u0103n` : ""}`;
   }
-  /** Who lies in the beds of a Nhà dân or a soldiers' camp, with their strength. Rebuilt only when the sleepers change. */
+  /** Who lies in the beds of a house (the Nhà dân, a camp, the house of a trade), with their strength. Rebuilt only when the sleepers change. */
   updateBeds(b) {
     const kind = b.kind, sleepers2 = this.c.sim.sleepers(b), inside = sleepers2.filter((v) => v.inside === b.id);
     this.bedHead[kind].textContent = `\u0110ang ng\u1EE7 (${inside.length}/${levelDef(b).slots} gi\u01B0\u1EDDng)${sleepers2.length > inside.length ? ` \xB7 ${sleepers2.length - inside.length} \u0111ang t\u1EDBi` : ""}`;
     const key = `${sleepers2.map((v) => `${v.id}${v.inside === b.id}${Math.round(v.energy)}`).join()}|${kind}|${b.id}`;
     if (key === this.bedKey[kind]) return;
     this.bedKey[kind] = key;
-    this.bedList[kind].replaceChildren(...sleepers2.length ? sleeperRows(this.c.sim, sleepers2) : [h("p", { class: "sub", text: kind !== "house" ? "Ch\u01B0a c\xF3 ai trong tr\u1EA1i. L\xEDnh v\xE0o tr\u1EA1i khi tr\u1EDDi t\u1ED1i ho\u1EB7c khi ki\u1EC7t s\u1EE9c." : "Ch\u01B0a c\xF3 ai trong nh\xE0. D\xE2n v\xE0o nh\xE0 khi tr\u1EDDi t\u1ED1i ho\u1EB7c khi ki\u1EC7t s\u1EE9c." })]);
+    this.bedList[kind].replaceChildren(...sleepers2.length ? sleeperRows(this.c, sleepers2) : [h("p", { class: "sub", text: kind === "house" ? "Ch\u01B0a c\xF3 ai trong nh\xE0. D\xE2n r\u1EA3nh v\xE0o nh\xE0 khi tr\u1EDDi t\u1ED1i ho\u1EB7c khi ki\u1EC7t s\u1EE9c." : "Ch\u01B0a c\xF3 ai \u1EDF \u0111\xE2y. H\u1ECD v\xE0o khi tr\u1EDDi t\u1ED1i ho\u1EB7c khi ki\u1EC7t s\u1EE9c." })]);
   }
 };
+var PRIORITY_STAT = {
+  lumberyard: STAT_NAME[JOBS.wood.stat],
+  quarry: STAT_NAME[JOBS.stone.stat],
+  farmhouse: STAT_NAME[JOBS.food.stat],
+  field: STAT_NAME[JOBS.food.stat],
+  huntlodge: STAT_NAME[JOBS.hunt.stat],
+  builder: STAT_NAME[JOBS.build.stat],
+  workshop: STAT_NAME[JOBS.craft.stat],
+  lab: STAT_NAME[JOBS.research.stat],
+  stable: STAT_NAME[JOBS.tame.stat],
+  infantry: STAT_NAME.str,
+  cavalry: STAT_NAME.str,
+  archery: STAT_NAME.agi,
+  scouttent: `${STAT_NAME.agi}, ${STAT_NAME.sta}`,
+  house: `${STAT_NAME.vit}, ${STAT_NAME.sta} (h\u1ED3i s\u1EE9c nhanh)`
+};
 var isGearKind = (k) => k in WEAPONS || k === "hide";
+var kindLabel = (k) => k === "hide" ? "\xC1o da" : k === "torch" ? "\u0110u\u1ED1c" : k in WEAPONS ? WEAPONS[k].name : TOOL_NAME[k] ?? k;
 
 // src/ui/warbar.ts
 var WarBar = class {
@@ -40286,7 +53339,7 @@ var fakeEl = () => {
     }
   });
 };
-var fakeCtx = new Proxy({}, { get: (_t, p) => p === "getImageData" || p === "createImageData" ? (w, h2) => ({ data: new Uint8ClampedArray(Math.max(1, w * h2 * 4)), width: w, height: h2 }) : p === "measureText" ? () => ({ width: 10 }) : p === "createLinearGradient" || p === "createRadialGradient" ? () => ({ addColorStop() {
+var fakeCtx = new Proxy({}, { get: (_t, p) => p === "getImageData" || p === "createImageData" ? (w, h3) => ({ data: new Uint8ClampedArray(Math.max(1, w * h3 * 4)), width: w, height: h3 }) : p === "measureText" ? () => ({ width: 10 }) : p === "createLinearGradient" || p === "createRadialGradient" ? () => ({ addColorStop() {
 } }) : () => void 0, set: () => true });
 var g = globalThis;
 g.document = { createElement: fakeEl, getElementById: fakeEl, createTextNode: (t) => ({ textContent: t }), querySelector: fakeEl, querySelectorAll: () => [], addEventListener() {

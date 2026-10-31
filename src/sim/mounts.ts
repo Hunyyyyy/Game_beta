@@ -69,7 +69,7 @@ function campBeast(sim: Sim): MountKind {
 /** The beast a villager is riding now: the one he was given, or, for a rider of the Trại kỵ thú, the beast of the camp. */
 export function mountOf(sim: Sim, v: Villager): MountKind | null {
   if (v.team !== 'player') return null;
-  return v.mount ?? (v.job === 'fight' && v.arm === 'cavalry' ? campBeast(sim) : null);
+  return v.mount ?? ((v.job === 'fight' || v.job === 'scout') && v.arm === 'cavalry' ? campBeast(sim) : null); // a scout who came from the cavalry keeps the beast of the camp
 }
 /** How much faster a rider walks (1 on foot). */
 export const mountSpeed = (sim: Sim, v: Villager): number => { const k = mountOf(sim, v); return k ? MOUNTS[k].speed : 1; };

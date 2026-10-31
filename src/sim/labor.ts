@@ -149,7 +149,8 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
     if (sim.coinFrac >= 1) { sim.coinFrac -= 1; if (sim.stock.coin < sim.capacity()) { sim.stock.coin++; if (!sim.sawCoin) { sim.sawCoin = true; sim.say(`${v.name} nhặt được một ${RES_NAME.coin.toLowerCase()}: dân làng dùng nó để trao đổi.`); } } }
   }
   if (n.amount <= 0) {
-    const idx = v.target; leaveNode(sim, v); sim.world.depleted(idx); v.phase = 'idle';
+    const idx = v.target, N = sim.world.size; leaveNode(sim, v);
+    sim.world.depleted(idx, (x, y) => sim.fog.state[y * N + x] > 0 && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y)); v.phase = 'idle';
     if (n.kind === 'tree') sim.say('Một cây đã được đốn xong.');
   } else if (v.carry.amount >= CARRY_CAP[res] || sim.needTool(v, job)) { leaveNode(sim, v); v.phase = 'idle'; }
 }
@@ -160,15 +161,14 @@ export function tickFarms(sim: Sim, dt: number): void {
     if (b.kind !== 'field' || !b.done) continue;
     for (const id of b.staff) {
       const v = sim.byId.get(id);
-      if (!v || v.phase !== 'inside' || v.job !== 'food' || sim.stock.food >= sim.capacity('food')) continue;
+      if (!v || v.phase !== 'inside' || v.job !== 'food' || !sim.hasRoom('food')) continue;
       v.progress += (dt * workFactor(sim, v, 'food', true) * levelDef(b).craftSpeed) / FARM_TIME;
       gainXp(sim, v, 'food', dt); wear(sim, v, 'food', dt);
       if (v.progress < 1) continue;
       v.progress -= 1;
       const acc = v.frac + TIER_YIELD[sim.toolTier(v, 'food')] * (1 + toolBonus(sim, v, 'food', 'tyield') / 100), whole = Math.floor(acc);
-      const was = sim.stock.food;
-      v.frac = acc - whole; sim.stock.food = Math.min(sim.capacity('food'), sim.stock.food + whole);
-      sim.noteYield('farm', sim.stock.food - was);
+      v.frac = acc - whole;
+      sim.noteYield('farm', sim.deposit('food', whole));
     }
   }
 }
@@ -179,9 +179,9 @@ export function plan(sim: Sim, v: Villager): void {
   if (isStaffJob(v.job) || (v.job === 'food' && v.post >= 0)) { sim.planStaff(v); return; }
   const def = JOBS[v.job as WorkJob], res = def.res!;
   if (v.carry && (v.carry.res !== res || v.carry.amount >= CARRY_CAP[v.carry.res])) { planDeliver(sim, v); return; }
-  if (sim.stock[res] >= sim.capacity(res)) {
+  if (!sim.hasRoom(res)) {
     if (v.carry) { planDeliver(sim, v); return; }
-    if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say(`Kho đã đầy ${RES_NAME[res].toLowerCase()}, hãy xây thêm Kho.`); }
+    if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say(`Kho đã đầy ${RES_NAME[res].toLowerCase()}, hãy nâng cấp Kho.`); }
     wait(sim, v, 3); return;
   }
   if (sim.planTool(v, v.job as WorkJob)) return;
@@ -245,8 +245,8 @@ export function planDeliver(sim: Sim, v: Villager): void {
 /** Put what a villager carries into the store on the spot (they pass the fire on their way to bed). */
 export function stash(sim: Sim, v: Villager): void {
   const c = v.carry; if (!c) return;
-  const moved = Math.min(Math.max(0, sim.capacity(c.res) - sim.stock[c.res]), c.amount);
-  sim.stock[c.res] += moved; c.amount -= moved; sim.noteYield(v.job, moved);
+  const moved = sim.deposit(c.res, c.amount);
+  c.amount -= moved; sim.noteYield(v.job, moved);
   if (c.amount <= 0) v.carry = null;
 }
 
@@ -254,8 +254,8 @@ export function unload(sim: Sim, v: Villager): void {
   const c = v.carry, st = sim.getBuilding(v.target);
   if (st) faceBuilding(sim, v, st);
   if (!c) { v.phase = 'idle'; return; }
-  const space = Math.max(0, sim.capacity(c.res) - sim.stock[c.res]), moved = Math.min(space, c.amount);
-  sim.stock[c.res] += moved; c.amount -= moved; sim.noteYield(v.job, moved);
+  const moved = sim.deposit(c.res, c.amount);
+  c.amount -= moved; sim.noteYield(v.job, moved);
   if (c.amount <= 0) { v.carry = null; v.phase = 'idle'; return; }
   if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say(`Kho đã đầy ${RES_NAME[c.res].toLowerCase()}, hãy xây thêm Kho.`); }
   wait(sim, v, 3);

@@ -190,6 +190,18 @@ export interface Building {
   workers: number;
 }
 
+/**
+ * How far a finished house sees, in tiles: it clears the fog round itself, more with its level (small: every house does it). The chòi canh is made to
+ * watch from and sees much further, further with its level. Walls, pits, gates and fields see nothing; the campfire has its own (environment.fireRadius).
+ */
+const HOUSE_SIGHT = [5, 6, 7], TOWER_SIGHT = [10, 13, 16];
+const BLIND: ReadonlySet<BuildingKind> = new Set<BuildingKind>(['campfire', 'fence', 'gate', 'trap', 'field']);
+export function buildingSight(b: Pick<Building, 'kind' | 'level' | 'done'>): number {
+  if (!b.done || BLIND.has(b.kind)) return 0;
+  const list = b.kind === 'tower' ? TOWER_SIGHT : HOUSE_SIGHT;
+  return list[Math.min(list.length, Math.max(1, b.level)) - 1];
+}
+
 /** What a kind of house is called in an era. */
 export const buildingName = (kind: BuildingKind, era: Era): string => BUILDINGS[kind].names?.[era] ?? BUILDINGS[kind].name;
 

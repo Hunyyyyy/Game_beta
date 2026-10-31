@@ -6,15 +6,17 @@ import type { Controller } from './controller';
 
 export const TERRAIN: Record<number, [number, number, number]> = {
   [Tile.Grass]: [134, 163, 85], [Tile.Water]: [63, 111, 154], [Tile.Tree]: [47, 82, 34],
-  [Tile.Rock]: [120, 125, 128], [Tile.Mud]: [122, 100, 66], [Tile.Bush]: [150, 70, 60],
+  [Tile.Rock]: [120, 125, 128], [Tile.Mountain]: [104, 98, 92], [Tile.Mud]: [122, 100, 66], [Tile.Bush]: [150, 70, 60],
 };
+
+const BUILT: [number, number, number] = [200, 150, 80];
 
 /** The small corner map, and the big map it opens when pressed. */
 export class MapView {
   private readonly base = document.createElement('canvas');
   private readonly bctx: CanvasRenderingContext2D;
   private readonly N: number;
-  private ver = -1; private builds = -1;
+  private ver = -1; private builds = -1; private drawn = 0;
   private frame = 0;
 
   constructor(private readonly sim: Sim, private readonly cam: Camera, private readonly r: Renderer, private readonly ctl: Controller,
@@ -38,11 +40,13 @@ export class MapView {
   private redrawBase(): void {
     const { sim, N } = this;
     if (sim.fog.version === this.ver && sim.buildings.length === this.builds) return;
-    this.ver = sim.fog.version; this.builds = sim.buildings.length;
-    const img = this.bctx.createImageData(N, N), s = sim.fog.state;
+    const now = performance.now();
+    if (this.ver >= 0 && now - this.drawn < 500) return; // a map of nearly a million tiles is not redrawn for every step somebody takes
+    this.drawn = now; this.ver = sim.fog.version; this.builds = sim.buildings.length;
+    const img = this.bctx.createImageData(N, N), d = img.data, s = sim.fog.state, occ = sim.world.occ, tiles = sim.world.tiles;
     for (let i = 0; i < N * N; i++) {
-      const c = sim.world.occ[i] ? [200, 150, 80] : TERRAIN[sim.world.tiles[i]], k = s[i] === 2 ? 1 : s[i] === 1 ? 0.55 : 0;
-      img.data[i * 4] = c[0] * k + 8 * (1 - k); img.data[i * 4 + 1] = c[1] * k + 10 * (1 - k); img.data[i * 4 + 2] = c[2] * k + 20 * (1 - k); img.data[i * 4 + 3] = 255;
+      const c = occ[i] ? BUILT : TERRAIN[tiles[i]], k = s[i] === 2 ? 1 : s[i] === 1 ? 0.55 : 0, j = i * 4;
+      d[j] = c[0] * k + 8 * (1 - k); d[j + 1] = c[1] * k + 10 * (1 - k); d[j + 2] = c[2] * k + 20 * (1 - k); d[j + 3] = 255;
     }
     this.bctx.putImageData(img, 0, 0);
   }

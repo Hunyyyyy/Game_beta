@@ -11,8 +11,8 @@ export const warLock = (sim: Sim): string | null => (sim.plans.some((p) => p.kin
 /** The finished houses of a role. There is one of each; raising its level makes room for more people. */
 export const roleHouses = (sim: Sim, role: RoleId) => sim.buildings.filter((b) => b.kind === ROLES[role].building && b.done);
 
-/** How many people the role may have: the places of its house at its level (anyone, in the dev menu). */
-export const roleCapacity = (sim: Sim, role: RoleId): number => (sim.dev.freeBuild ? 99 : roleHouses(sim, role).reduce((n, b) => n + levelDef(b).slots, 0));
+/** How many people the role may have: the places of its house at its level (with no house at all, anyone in the dev menu). */
+export const roleCapacity = (sim: Sim, role: RoleId): number => { const houses = roleHouses(sim, role); return houses.length ? houses.reduce((n, b) => n + levelDef(b).slots, 0) : sim.dev.freeBuild ? 99 : 0; };
 
 export const roleCount = (sim: Sim, role: RoleId): number => sim.villagers.filter((v) => roleOf(v) === role).length;
 
@@ -21,12 +21,12 @@ export function assignRole(sim: Sim, ids: readonly number[], role: RoleId): stri
   const lock = warLock(sim); if (lock) return lock;
   const def = ROLES[role], name = buildingName(def.building, sim.era);
   if (!sim.dev.freeBuild && !roleHouses(sim, role).length) return `Cần dựng ${name}`;
+  if (role === 'scout') return sim.enlistScouts(ids); // scouts come from the cavalry, not from the villagers
   const pick = sim.mine(ids).filter((v) => v.job !== 'fight' && v.job !== 'scout' && roleOf(v) !== role);
   if (!pick.length) return `Chọn dân thường để giao việc ${roleName(role, sim.era).toLowerCase()}`;
   const room = roleCapacity(sim, role) - roleCount(sim, role);
   if (room <= 0) return `${name} đã đủ ${roleCapacity(sim, role)} người: nâng cấp để chứa thêm`;
   const take = pick.slice(0, room).map((v) => v.id);
-  if (role === 'scout') return sim.enlistScouts(take);
   const err = sim.setJob(take, def.job === 'fight' ? 'fight' : def.job);
   if (def.arm) for (const v of sim.mine(take)) if (v.job === 'fight') v.arm = def.arm;
   return err ?? (pick.length > room ? `${name} chỉ còn chỗ cho ${room} người` : null);

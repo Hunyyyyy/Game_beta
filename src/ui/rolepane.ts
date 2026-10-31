@@ -1,11 +1,13 @@
 import { buildingName } from '../sim/buildings';
 import { JOBS, ROLES, STAT_NAME, roleName, roleOf } from '../sim/jobs';
 import type { RoleId } from '../sim/jobs';
+import { freeFolk } from '../sim/idle';
 import type { Villager } from '../sim/model';
 import { h, hint } from './dom';
 import { dlg } from './gamedialog';
 import { detailButton, personTile, roleStats } from './people';
 import type { Ctx } from './ctx';
+import { describe } from './describe';
 
 /** What a role leans on: the stat that says who is good at it (scouts are rated by their own score). */
 const STAT_OF: Record<RoleId, keyof typeof STAT_NAME | 'scout'> = {
@@ -19,7 +21,7 @@ const HELP: Record<RoleId, string> = {
   foot: 'Chiến binh cận chiến do trại này tuyển và cho nghỉ, không phải ở đống lửa. Họ canh gác, đánh địch và thú dữ, ngủ trong trại. Nhớ chế vũ khí và giáp cho họ. Nâng cấp trại để chứa thêm.',
   cavalry: 'Người cưỡi thú do trại này tuyển và cho nghỉ. Họ xung phong nhanh, khắc người ném nhưng sợ giáo. Nâng cấp trại để chứa thêm.',
   archer: 'Người ném đá, bắn ná do trại này tuyển và cho nghỉ. Họ đánh từ xa và có thể lên chòi canh. Chỉ dùng vũ khí bắn. Nâng cấp trại để chứa thêm.',
-  scout: 'Trinh sát do Trại trinh sát tuyển và cho nghỉ. Trinh sát tốt cần Nhanh nhẹn và Thể lực. Nâng cấp trại để chứa thêm.',
+  scout: 'Trinh sát do Trại trinh sát tuyển từ lính kỵ của Trại kỵ thú (họ giữ thú và đồ của mình) và cho nghỉ về lại trại kỵ. Trinh sát tốt cần Nhanh nhẹn và Thể lực. Nâng cấp trại để chứa thêm.',
 };
 
 /**
@@ -42,7 +44,7 @@ export class RolePane {
 
   stateKey(): string {
     const { sim } = this.c;
-    return [this.role, sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${Math.round(v.energy / 5)}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
+    return [this.role, sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${v.phase === 'sleep' ? 'z' : ''}${Math.round(v.energy / 5)}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
       sim.scouts.map((m) => m.ids.join('.')).join('|'), sim.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join()].join('|');
   }
 
@@ -57,7 +59,7 @@ export class RolePane {
     const rows: HTMLElement[] = [];
     for (const v of have) {
       const away = sim.scouts.some((m) => m.ids.includes(v.id));
-      rows.push(personTile(this.c, v, { note: '', stats: roleStats(role), actions: [
+      rows.push(personTile(this.c, v, { note: v.phase === 'sleep' ? describe(v, sim) : '', stats: roleStats(role), actions: [
         detailButton(this.c, v),
         def.job === 'fight' ? dlg.button('◎', () => { if (v.inside !== null) { toast(`${v.name} đang ngủ trong trại`); return; } ctl.selected.clear(); ctl.selected.add(v.id); ctl.focusSelection(); ctl.closeBuilding(); }, { icon: true, title: 'Chọn trên bản đồ để ra lệnh' }) : null,
         dlg.button('−', () => { const e = sim.releaseRole([v.id]); if (e) toast(e); ctl.onChange(); this.again(); }, { icon: true, tone: 'bad', disabled: away || !!lock, title: lock ?? (away ? 'Đang đi trinh sát' : 'Cho nghỉ, về làm dân thường') }),
@@ -66,11 +68,12 @@ export class RolePane {
     if (rows.length) out.push(dlg.list(...rows));
     const room = Math.max(0, cap - have.length);
     // only villagers with no trade at all are offered: whoever already holds a role, a house to work in or the crew is let go from there first
-    const free = sim.villagers.filter((v) => v.job === 'idle' && !roleOf(v) && v.down <= 0 && v.inside === null);
+    // scouts are taken from the cavalry soldiers; every other role from the villagers with no trade
+    const free = role === 'scout' ? sim.villagers.filter((v) => v.job === 'fight' && v.arm === 'cavalry' && v.down <= 0) : freeFolk(sim);
     const key = (v: Villager) => (STAT_OF[role] === 'scout' ? sim.scoutSkill(v) : v.stats[STAT_OF[role] as 'str']);
     free.sort((a, b) => key(b) - key(a));
-    out.push(h('div', { class: 'dhouse' }, h('b', { text: 'Dân rảnh' }), h('small', { class: 'dsub', text: !cap ? `cần dựng ${house.toLowerCase()}` : room ? `còn chỗ cho ${room} người` : `${house.toLowerCase()} đã đủ người: nâng cấp để chứa thêm` })));
-    if (!free.length) out.push(dlg.empty('Không còn dân rảnh.'));
+    out.push(h('div', { class: 'dhouse' }, h('b', { text: role === 'scout' ? 'Lính kỵ' : 'Dân rảnh' }), h('small', { class: 'dsub', text: !cap ? `cần dựng ${house.toLowerCase()}` : room ? `còn chỗ cho ${room} người` : `${house.toLowerCase()} đã đủ người: nâng cấp để chứa thêm` })));
+    if (!free.length) out.push(dlg.empty(role === 'scout' ? 'Không còn lính kỵ nào để tuyển.' : 'Không còn dân rảnh.'));
     // one press on the plus gives the role to that villager
     out.push(dlg.list(...free.map((v) => personTile(this.c, v, { note: '', stats: roleStats(role), actions: [
       detailButton(this.c, v),

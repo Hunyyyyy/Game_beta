@@ -96,7 +96,7 @@ function paintGround(g: CanvasRenderingContext2D, sim: Sim, i: TribeIntel): void
   for (let y = box.y0; y < box.y1; y++) for (let x = box.x0; x < box.x1; x++) {
     const px = (x - box.x0) * T, py = (y - box.y0) * T, t = w.tiles[y * N + x], shade = (hash(x, y) - 0.5) * 14;
     const col = (r: number, gg: number, b: number) => `rgb(${Math.round(r + shade)},${Math.round(gg + shade)},${Math.round(b + shade)})`;
-    const base = t === Tile.Water ? col(63, 111, 154) : t === Tile.Mud ? col(122, 100, 66) : t === Tile.Rock ? col(124, 130, 120) : col(134, 163, 85);
+    const base = t === Tile.Water ? col(63, 111, 154) : t === Tile.Mud ? col(122, 100, 66) : t === Tile.Rock ? col(124, 130, 120) : t === Tile.Mountain ? col(108, 102, 96) : col(134, 163, 85);
     g.fillStyle = base; g.fillRect(px, py, T, T);
     if (w.occ[y * N + x]) { g.fillStyle = col(150, 130, 90); g.fillRect(px, py, T, T); g.fillStyle = 'rgba(70,50,25,0.35)'; for (let k = 0; k < 3; k++) g.fillRect(px + hash(x, y, k + 3) * (T - 2), py + hash(x, y, k + 7) * (T - 2), 2, 2); continue; }
     if (t === Tile.Grass || t === Tile.Bush || t === Tile.Tree) {
@@ -109,6 +109,9 @@ function paintGround(g: CanvasRenderingContext2D, sim: Sim, i: TribeIntel): void
       g.fillStyle = '#5a3d22'; g.fillRect(px + T / 2 - 1.5, py + T * 0.55, 3, T * 0.35);
       g.fillStyle = col(36, 76, 30); g.beginPath(); g.arc(px + T / 2, py + T * 0.4, T * 0.4, 0, Math.PI * 2); g.fill();
       g.fillStyle = col(62, 110, 44); g.beginPath(); g.arc(px + T / 2 - 2, py + T * 0.34, T * 0.22, 0, Math.PI * 2); g.fill();
+    } else if (t === Tile.Mountain) {
+      g.fillStyle = col(84, 78, 72); g.beginPath(); g.moveTo(px, py + T - 1); g.lineTo(px + T / 2, py + 2); g.lineTo(px + T, py + T - 1); g.closePath(); g.fill();
+      g.fillStyle = col(236, 240, 244); g.beginPath(); g.moveTo(px + T / 2, py + 2); g.lineTo(px + T * 0.36, py + T * 0.34); g.lineTo(px + T * 0.64, py + T * 0.34); g.closePath(); g.fill();
     } else if (t === Tile.Rock) {
       g.fillStyle = col(96, 102, 104); g.beginPath(); g.moveTo(px + 2, py + T - 3); g.lineTo(px + 4, py + 5); g.lineTo(px + T * 0.55, py + 2); g.lineTo(px + T - 2, py + 7); g.lineTo(px + T - 3, py + T - 3); g.closePath(); g.fill();
       g.fillStyle = col(150, 156, 156); g.beginPath(); g.moveTo(px + 5, py + 6); g.lineTo(px + T * 0.55, py + 3); g.lineTo(px + T * 0.6, py + 8); g.lineTo(px + 6, py + 9); g.closePath(); g.fill();

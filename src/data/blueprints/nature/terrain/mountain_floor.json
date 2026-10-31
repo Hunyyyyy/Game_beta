@@ -1,0 +1,99 @@
+{
+ "name": "Nền núi đá",
+ "type": "tile",
+ "size": [
+  32,
+  32
+ ],
+ "seed": 7,
+ "palette": {
+  "r0": "#6f675f",
+  "r1": "#7b726a",
+  "r2": "#8a8076",
+  "crack": "#4a443e",
+  "pebble": "#9c9185",
+  "pebbleD": "#58524b",
+  "moss": "#5f7a3e"
+ },
+ "params": {
+  "autumn": 0,
+  "winter": 0,
+  "burnt": 0
+ },
+ "palettes": {
+  "autumn": {
+   "moss": "#8a7a3a"
+  },
+  "winter": {
+   "r0": "#aeb4ba",
+   "r1": "#bcc2c8",
+   "r2": "#cdd2d6",
+   "pebble": "#e6eaee",
+   "moss": "#dfe6ee"
+  },
+  "burnt": {
+   "r0": "#2e2a27",
+   "r1": "#37322e",
+   "r2": "#413b36",
+   "pebble": "#58504a",
+   "moss": "#2e2a26"
+  }
+ },
+ "bg": "r1",
+ "layers": [
+  {
+   "shape": "noise",
+   "scale": 5,
+   "octaves": 2,
+   "contrast": 2.4,
+   "bands": [
+    [
+     0,
+     "r0"
+    ],
+    [
+     0.4,
+     "r1"
+    ],
+    [
+     0.75,
+     "r2"
+    ]
+   ]
+  },
+  {
+   "shape": "scatter",
+   "count": 18,
+   "size": [
+    1,
+    2
+   ],
+   "colors": [
+    "pebble",
+    "pebbleD",
+    "crack"
+   ]
+  },
+  {
+   "shape": "scatter",
+   "count": 6,
+   "size": [
+    2,
+    1
+   ],
+   "colors": [
+    "crack",
+    "pebbleD"
+   ]
+  },
+  {
+   "shape": "scatter",
+   "count": [
+    0,
+    2
+   ],
+   "size": 2,
+   "color": "moss"
+  }
+ ]
+}

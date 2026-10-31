@@ -80,10 +80,13 @@ import workshopL2 from '../data/blueprints/stone_age/buildings/workshop/L2.json'
 import workshopL3 from '../data/blueprints/stone_age/buildings/workshop/L3.json';
 import bushJson from '../data/blueprints/nature/resources/bush.json';
 import rockJson from '../data/blueprints/nature/resources/rock.json';
+import mountainLowJson from '../data/blueprints/nature/terrain/mountain_low.json';
+import mountainMidJson from '../data/blueprints/nature/terrain/mountain_mid.json';
+import mountainHighJson from '../data/blueprints/nature/terrain/mountain_high.json';
+import mountainFloorJson from '../data/blueprints/nature/terrain/mountain_floor.json';
 import grassJson from '../data/blueprints/nature/terrain/grass.json';
 import mudJson from '../data/blueprints/nature/terrain/mud.json';
 import waterJson from '../data/blueprints/nature/terrain/water.json';
-import stumpJson from '../data/blueprints/nature/trees/stump.json';
 import treePineJson from '../data/blueprints/nature/trees/tree_pine.json';
 import treeRoundJson from '../data/blueprints/nature/trees/tree_round.json';
 import toolAxeJson from '../data/blueprints/stone_age/tools/axe.json';
@@ -126,7 +129,9 @@ const seeds = (n: number) => Array.from({ length: n }, (_, i) => i * 7 + 3);
 /** Nature props for one state (season now; burnt, fallen... later). Each blueprint reads the params it knows. */
 export interface NatureSet {
   grass: HTMLCanvasElement[]; mud: HTMLCanvasElement[]; water: Prop[];
-  trees: Prop[]; rocks: Prop[]; bush: Prop[]; bushEmpty: Prop[]; stump: Prop[];
+  /** The rocky ground of a mountain, and the peaks standing on it from the edge to the heart (foot, slope, summit). */
+  mountainFloor: HTMLCanvasElement[]; peaks: { low: Prop[]; mid: Prop[]; high: Prop[] };
+  trees: Prop[]; rocks: Prop[]; bush: Prop[]; bushEmpty: Prop[];
 }
 
 /** Construction stages 0..4 (4 = finished) as blueprint params. */
@@ -220,9 +225,10 @@ export class Sprites {
         water: seeds(3).map((s) => make(waterJson, s, p)),
         trees: [...seeds(4).map((s) => make(treeRoundJson, s, p)), ...seeds(4).map((s) => make(treePineJson, s + 1, p))],
         rocks: seeds(3).map((s) => make(rockJson, s, p)),
+        mountainFloor: seeds(4).map((s) => make(mountainFloorJson, s, p).frames[0]),
+        peaks: { low: seeds(3).map((s) => make(mountainLowJson, s, p)), mid: seeds(3).map((s) => make(mountainMidJson, s, p)), high: seeds(3).map((s) => make(mountainHighJson, s, p)) },
         bush: seeds(3).map((s) => make(bushJson, s, p)),
         bushEmpty: seeds(3).map((s) => make(bushJson, s, { ...p, empty: 1 })),
-        stump: seeds(3).map((s) => make(stumpJson, s, p)),
       };
       this.natureCache.set(season, n);
     }
@@ -304,7 +310,7 @@ export class Sprites {
     return c;
   }
   /** The villager as drawn; `pose` makes him stand in one animation (a rider sits still on his beast). */
-  villager(v: Villager, pose?: string): HTMLCanvasElement {
+  villager(v: Villager, pose?: string, face?: 'left' | 'right'): HTMLCanvasElement {
     const name = pose ?? (v.anim in anims ? v.anim : 'idle');
     const def = anims[name];
     const rate = def.gait ? Math.min(1.6, v.speed / 1.5) : 1; // walking animations step faster when the villager is quick
@@ -313,11 +319,12 @@ export class Sprites {
     const frame = def.loop === false ? Math.min(step, def.frames.length - 1) : step % def.frames.length;
     const kind = v.carry?.res ?? 'wood';
     const flick = v.lit ? Math.floor(v.animClock * 6) % 3 : undefined; // a lit torch flickers through three drawings
-    const key = `${name}|${frame}|${v.facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : '-'}|${v.armor ?? '-'}|${flick ?? '-'}`;
+    const facing = face ?? v.facing; // a rider is always drawn from the side, the way his beast faces
+    const key = `${name}|${frame}|${facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : '-'}|${v.armor ?? '-'}|${flick ?? '-'}`;
     let c = this.vcache.get(key);
     if (!c) {
       const [cv, g] = canvas(FW, FH);
-      g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, v.facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === undefined ? undefined : { torch: flick })), FW, FH), 0, 0);
+      g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === undefined ? undefined : { torch: flick })), FW, FH), 0, 0);
       this.vcache.set(key, cv); c = cv;
     }
     return c;

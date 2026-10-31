@@ -1,5 +1,5 @@
 /** Defence works: fences and gates that stop people, and towers where archers keep watch. */
-import { Building, BUILDINGS, levelDef } from './buildings';
+import { Building, BUILDINGS, buildingSight, levelDef } from './buildings';
 import { swingCycle } from './statsys';
 import { effWeapon, fireProjectile, hurt, resolve, threatsOf, weaponOf } from './battle';
 import { armOfWeapon, UNIT_RULES } from './formations';
@@ -48,7 +48,7 @@ export function damageWork(sim: Sim, b: Building, dmg: number): void {
 export function towerBonus(sim: Sim, v: Villager): { damage: number; range: number } {
   const b = v.inside === null ? undefined : sim.getBuilding(v.inside);
   if (!b || b.kind !== 'tower' || armOfWeapon(effWeapon(v)) !== 'archer') return { damage: 1, range: 0 };
-  return { damage: UNIT_RULES.archerOnTower.damage, range: UNIT_RULES.archerOnTower.range };
+  return { damage: UNIT_RULES.archerOnTower.damage, range: 0 }; // the reach is the tower's own sight (tickTowers)
 }
 
 /** The soldiers posted to a tower, inside it or on their way. */
@@ -91,17 +91,21 @@ export function tickTraps(sim: Sim, _dt: number): void {
   }
 }
 
-/** Archers inside a tower shoot out of it at what their side can see: harder, and further than on the ground. */
+/**
+ * A tower shoots what its side can see within its own sight (10, 13 or 16 tiles by level): one arrow for each archer inside, every time that archer's
+ * weapon is ready, and the damage, the hit and the rate of each arrow are those of the archer who looses it. The strength of the tower itself does
+ * not depend on them.
+ */
 export function tickTowers(sim: Sim, _dt: number): void {
   for (const b of sim.buildings) {
     if (b.kind !== 'tower' || !b.done) continue;
-    const d = BUILDINGS.tower, from = { x: b.x + d.w / 2, y: b.y + 0.4 };
+    const d = BUILDINGS.tower, from = { x: b.x + d.w / 2, y: b.y + 0.4 }, reach = buildingSight(b);
     for (const v of sim.villagers) {
       if (v.inside !== b.id || v.phase !== 'inside' || v.atkCd > 0 || v.health <= 0) continue;
       const w = weaponOf(v);
       if (!w.ranged) continue;
-      const bonus = towerBonus(sim, v), threat = threatsOf(sim, v, w.range + bonus.range + 1)[0], e = threat && resolve(sim, threat.t);
-      if (e && fireProjectile(sim, v, e, from, bonus.damage, bonus.range)) v.atkCd = swingCycle(sim, v, w);
+      const bonus = towerBonus(sim, v), threat = threatsOf(sim, v, reach)[0], e = threat && resolve(sim, threat.t);
+      if (e && fireProjectile(sim, v, e, from, bonus.damage, Math.max(0, reach - w.range - 1))) v.atkCd = swingCycle(sim, v, w);
     }
   }
 }

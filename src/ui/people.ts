@@ -61,7 +61,7 @@ export function personTile(c: Ctx, v: Villager, o: PersonOptions = {}): HTMLElem
 /** The button that opens the detail dialog of a villager. */
 export function detailButton(c: Ctx, v: Villager, title = 'Giao việc và chi tiết'): HTMLButtonElement {
   const { ctl } = c;
-  return dlg.button('⚙', () => { ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding(); }, { icon: true, title });
+  return dlg.button('⚙', () => { ctl.detailFrom = ctl.selectedBuilding; ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding(); }, { icon: true, title });
 }
 
 /** The stats that matter for a role: the line of the research tree it belongs to (the soldiers also have the stats of the weapon in their hand). */

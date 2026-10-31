@@ -15,12 +15,26 @@ export function mulberry32(seed: number): Rng {
   return next;
 }
 
-/** Hash 2D -> [0,1), ổn định theo (x, y, seed). */
-export function hash2(x: number, y: number, seed: number): number {
-  let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(seed | 0, 1274126177);
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
+/** Full-avalanche mix of a 32-bit number (murmur3's finaliser): every bit of the input changes about half the bits of the output. */
+export function mix32(n: number): number {
+  let h = n | 0;
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35);
   h ^= h >>> 16;
-  return (h >>> 0) / 4294967296;
+  return h >>> 0;
+}
+
+/** Hash 2D -> [0,1), stable for (x, y, seed). The seed is mixed first, so seeds that lie side by side (1337, 1338) give maps that have nothing in common. */
+export function hash2(x: number, y: number, seed: number): number {
+  const h = mix32(Math.imul(x | 0, 0x27d4eb2d) ^ mix32(Math.imul(y | 0, 0x165667b1) + mix32(seed | 0)));
+  return h / 4294967296;
+}
+
+/** A fresh seed for a new world, from the clock and the browser's (or Node's) random numbers. */
+export function newSeed(): number {
+  const c = (globalThis as { crypto?: { getRandomValues?: (a: Uint32Array) => Uint32Array } }).crypto;
+  const r = c?.getRandomValues ? c.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 4294967296);
+  return (mix32(r ^ Date.now()) % 2147483646) + 1;
 }
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
