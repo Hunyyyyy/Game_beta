@@ -188,6 +188,10 @@ export const WAR = {
   tamedCount(this: Sim, k: MountKind): number { return mounts.tamedCount(this, k); },
   /** → mounts.tickTame */
   tickTame(this: Sim, dt: number): void { return mounts.tickTame(this, dt); },
+  /** → mounts.fitScoutMount */
+  fitScoutMount(this: Sim, v: Villager): void { return mounts.fitScoutMount(this, v); },
+  /** → mounts.returnScoutMount */
+  returnScoutMount(this: Sim, v: Villager): void { return mounts.returnScoutMount(this, v); },
   /** → mounts.mountOf */
   mountOf(this: Sim, v: Villager): MountKind | null { return mounts.mountOf(this, v); },
   /** → mounts.mountSpeed */

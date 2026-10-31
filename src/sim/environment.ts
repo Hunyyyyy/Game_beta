@@ -63,7 +63,7 @@ export function visionRadius(sim: Sim): number {
 /** How far a soldier of ours sees an enemy to go for him: as far as he sees (weather and night cut it, a torch brings it back), an archer a little further. */
 export function sightOf(sim: Sim, v: Villager): number {
   const r = visionRadius(sim);
-  return (v.torch || v.lit || inTowerLight(sim, v.x, v.y) ? Math.max(r, TORCH_VISION) : r) + (armOf(v) === 'archer' ? ARCHER_SIGHT : 0);
+  return (v.torch || v.lit || inTowerLight(sim, v.x, v.y) ? Math.max(r, TORCH_VISION) : r) + (armOf(v) === 'archer' ? ARCHER_SIGHT : 0) + (v.team === 'player' && v.job === 'fight' ? (v.guard ? GUARD_SIGHT : SOLDIER_SIGHT) : 0);
 }
 /** Is the point within the watch of a chòi canh (its sight grows with its level)? Our soldiers there see an enemy as far as with a torch, whatever the dark. */
 export function inTowerLight(sim: Sim, x: number, y: number): boolean {
@@ -76,4 +76,7 @@ export function inTowerLight(sim: Sim, x: number, y: number): boolean {
 }
 /** How many tiles further an archer looks than a man on foot. */
 export const ARCHER_SIGHT = 1;
+/** Soldiers of the camps see a little further than a villager; the guards of the Trại lính gác five tiles further. */
+export const SOLDIER_SIGHT = 2;
+export const GUARD_SIGHT = 5;
 export function fireRadius(sim: Sim): number { return Math.max(1, FIRE_VISION - WEATHER[sim.weather].vision); }

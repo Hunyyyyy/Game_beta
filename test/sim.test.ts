@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { renderFrame } from '../src/character/rig.js';
 import { renderAnimal } from '../src/character/animal-rig.js';
 import { Sim } from '../src/sim/sim';
+import { roleOf } from '../src/sim/jobs';
 import { DAY_LENGTH, PACE } from '../src/sim/constants';
 import { Tile } from '../src/sim/world';
 import { lightAt, rollWeather, SEASON_DEF, seasonOf, SEASONS, WEATHER } from '../src/sim/calendar';
@@ -32,6 +33,7 @@ const run = (sim: Sim, secs: number) => { for (let i = 0; i < secs * 20; i++) (s
 const provokeFor = (sm: Sim, v: Villager, a: ReturnType<typeof spawnAnimal>) => { provoke(sm, a, v.id); a.state = 'attack'; a.target = { kind: 'unit', id: v.id }; a.timer = 99; };
 const t_ = (sm: Sim, id: string) => sm.tribes.find((x) => x.id === id)!;
 /** Every house standing at once: the whole map seen and the campfire at its top level, so nothing is locked. */
+const refused = (raw: unknown): boolean => { try { Sim.fromSave(raw as never); return false; } catch { return true; } };
 const buildEverything = (sm: Sim) => { sm.fog.state.fill(2); sm.buildings[0].level = 4; dev.buildAll(sm); };
 const mk = (seed = 1337): Sim => { const sm = new Sim(seed); sm.dev.noArrivals = true; sm.villagers.forEach((o) => { o.job = 'idle'; }); dev.addVillagers(sm, 1); return sm; };
 /** Put a finished house of this kind on the map (the real game needs builders and the right order; most tests only need the house). */
@@ -328,12 +330,8 @@ const sideOnly = (f: string) => f === 'left' || f === 'right';
   const cs = c.toSave(); ok(cs.fog.version === snap.fog.version + 1 && same({ ...cs, fog: { ...cs.fog, version: snap.fog.version } }, snap), 'loadSave puts a save into an existing game (and tells the screen to redraw the fog)');
   // a save from before villagers had energy still loads: they start rested, and the torch is a known technology
   {
-    const old = JSON.parse(json) as { version: number; lists: { villagers: Array<Record<string, unknown>>; foes: Array<Record<string, unknown>> }; researched: string[] };
-    old.version = 1; for (const v of [...old.lists.villagers, ...old.lists.foes]) { delete v.energy; delete v.strain; delete v.shift; delete v.torch; delete v.lockUntil; delete v.lit; }
-    old.researched = old.researched.filter((r) => r !== 'torch1');
-    const up = Sim.fromSave(old);
-    ok(up.villagers.every((v) => v.energy === 100 && v.shift === 'day' && v.torch === null && v.lockUntil === 0) && up.researched.has('torch1'), 'a version 1 save is brought forward when it is loaded');
-    run(up, 5);
+    const old = JSON.parse(json); old.version = 1;
+    ok(refused(old), 'a save of the old, smaller map (version 17 or before) is refused');
   }
   // the format is a contract
   ok(snap.version === SAVE_VERSION && JSON.stringify(JSON.parse(json)) === json, 'the save is plain JSON with a version');
@@ -1632,9 +1630,8 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   const full = sm.joinSquad(many, big.id);
   ok(big.ids.length === 15 && !!full, 'a squad holds at most 15 soldiers');
   const old = JSON.parse(JSON.stringify(sm.toSave()));
-  old.version = 5; for (const p of old.lists.plans) for (const q of p.missions) { delete q.deploy; delete q.path; delete q.retreat; delete q.leg; }
-  const back = Sim.fromSave(old);
-  ok(back.plans[0].missions[0].path.length === 0 && back.plans[0].missions[0].deploy === null, 'a save from before the plan was drawn on the map is brought forward');
+  old.version = 5;
+  ok(refused(old), 'a save from before the plan was drawn on the map is refused (old, smaller map)');
   const back2 = Sim.fromSave(JSON.parse(JSON.stringify(sm.toSave())));
   ok(JSON.stringify(back2.plans[0].missions[0].path) === JSON.stringify(m.path) && back2.maps.some((x) => x.seen?.length === 2), 'the row, the arrow and what was seen are kept by a save');
 }
@@ -1816,13 +1813,7 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   {
     // a save from before all this is brought forward
     const sm = mk(1337); sm.dev.god = true; const h = putBuilding(sm, 'house');
-    const old = JSON.parse(JSON.stringify(sm.toSave())); old.version = 11;
-    for (const b of old.lists.buildings) if (b.kind === 'house') b.hp = 0;
-    for (const v of [...old.lists.villagers, ...old.lists.foes]) delete v.breaks;
-    for (const t of old.tribes) for (const p of t.props) delete p.hp;
-    const back = Sim.fromSave(old);
-    ok(back.buildings.find((b) => b.kind === 'house')!.hp === maxHp(h) && back.villagers.every((v) => v.breaks === null) && back.tribes.every((t) => t.props.every((p) => p.hp > 0)), 'houses and works get their strength, soldiers are not breaking anything');
-    ok(SAVE_VERSION === 14, 'the save format is version 14');
+    ok(SAVE_VERSION === 22, 'the save format is version 22');
   }
 }
 {
@@ -1864,8 +1855,8 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   // saved
   const back = Sim.fromSave(JSON.parse(JSON.stringify(sm.toSave())));
   ok(back.get(foot.id)!.mount === 'wolf' && back.tameQueue.length === sm.tameQueue.length, 'the beast and the queue are kept by a save');
-  const old = JSON.parse(JSON.stringify(sm.toSave())); old.version = 13; delete old.lists.tameQueue; for (const v of old.lists.villagers) { delete v.mount; delete v.skill.tame; delete v.potential.tame; }
-  const fwd = Sim.fromSave(old); ok(fwd.villagers.every((v) => v.mount === null && v.skill.tame.level === 0 && v.potential.tame >= 1), 'a save from before mounts is brought forward');
+  const old = JSON.parse(JSON.stringify(sm.toSave())); old.version = 13;
+  ok(refused(old), 'a save from before mounts is refused (old, smaller map)');
 }
 
 {
@@ -1982,3 +1973,29 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
 }
 console.log(fails ? `${fails} lỗi` : 'tất cả đạt');
 process.exit(fails ? 1 : 0);
+
+{
+  // ======== the Trại lính gác: guards come from the soldiers, keep a post, see further, and a scout never rides an elephant ========
+  const sm = mk(1337); sm.dev.freeBuild = false; sm.villagers.forEach((v) => { v.job = 'idle'; });
+  buildEverything(sm); sm.dev.freeBuild = false; sm.stock.food = 500;
+  const post = sm.building('guardpost')!;
+  ok(sm.roleCapacity('guard') === 6 && post.level === 1, 'the Trại lính gác holds 6 guards at level 1');
+  ok(sm.roleCapacity('foot') === 5 && sm.roleCapacity('cavalry') === 5 && sm.roleCapacity('archer') === 5, 'the other camps hold 5 at level 1');
+  post.level = 3; ok(sm.roleCapacity('guard') === 18, 'and 18 at level 3'); post.level = 1;
+  for (const k of ['infantry', 'cavalry', 'archery'] as const) { const c = sm.building(k)!; c.level = 3; }
+  ok(sm.roleCapacity('foot') === 15, 'a camp at level 3 holds 15');
+  const men = dev.raiseArmy(sm, 'spear', 3), a = men[0], b = men[1];
+  ok(sm.guardCandidates().length >= 3 && sm.assignRole([a.id], 'guard') === null && a.guard && roleOf(a) === 'guard' && !!a.guardAt && a.squad === -1, 'a soldier of a camp is sent to stand guard, at a post of his own');
+  ok(sm.roleCount('guard') === 1 && sm.assignRole([sm.villagers.find((v) => v.job === 'idle')!.id], 'guard') !== null, 'only soldiers can be made guards, not plain villagers');
+  const was = a.guardAt!; sm.orderMove([a.id], Math.floor(was.x) + 6, Math.floor(was.y)); ok(Math.abs(a.guardAt!.x - was.x) > 3, 'an order moves the guard to a new post');
+  ok(sm.sightOf(a) === sm.sightOf(b) + 3, `a guard sees 5 tiles beyond the standard sight, a camp soldier 2 (${sm.sightOf(a)} against ${sm.sightOf(b)})`);
+  ok(sm.joinSquad([a.id], sm.createSquad().squad?.id ?? 1) !== null || a.squad === -1, 'a guard does not join a squad');
+  // a scout does not ride an elephant
+  const cav = sm.villagers.find((v) => v.job === 'idle')!; sm.assignRole([cav.id], 'cavalry');
+  ok(sm.mountOf(cav) === 'elephant', 'a rider of a level 3 camp rides the elephant');
+  sm.toolStock.mount_wolf = 1;
+  ok(sm.enlistScouts([cav.id]) === null && cav.job === 'scout' && sm.mountOf(cav) === 'wolf' && !sm.toolStock.mount_wolf, 'made a scout he gets a wolf from the stable instead of the elephant');
+  sm.dismissScouts([cav.id]); ok(cav.mount === null && sm.toolStock.mount_wolf === 1, 'let go, he gives the wolf back');
+  sm.assignRole([cav.id], 'cavalry');
+  ok(sm.enlistScouts([cav.id]) === null && sm.mountOf(cav) === null, 'with no wolf to give he goes on foot');
+}

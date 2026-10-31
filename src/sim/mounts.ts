@@ -69,12 +69,28 @@ function campBeast(sim: Sim): MountKind {
 /** The beast a villager is riding now: the one he was given, or, for a rider of the Trại kỵ thú, the beast of the camp. */
 export function mountOf(sim: Sim, v: Villager): MountKind | null {
   if (v.team !== 'player') return null;
-  return v.mount ?? ((v.job === 'fight' || v.job === 'scout') && v.arm === 'cavalry' ? campBeast(sim) : null); // a scout who came from the cavalry keeps the beast of the camp
+  const own = v.mount ?? ((v.job === 'fight' || v.job === 'scout') && v.arm === 'cavalry' ? campBeast(sim) : null);
+  return v.job === 'scout' && own === 'elephant' ? null : own; // a scout does not ride an elephant: too big to creep up on a village
 }
 /** How much faster a rider walks (1 on foot). */
 export const mountSpeed = (sim: Sim, v: Villager): number => { const k = mountOf(sim, v); return k ? MOUNTS[k].speed : 1; };
 /** What share of a blow a rider takes (1 on foot). */
 export const mountGuard = (sim: Sim, v: Villager): number => { const k = mountOf(sim, v); return k ? MOUNTS[k].guard : 1; };
+
+/** A cavalryman made a scout who would ride an elephant gets a wolf from the stable if there is one, else he goes on foot. */
+export function fitScoutMount(sim: Sim, v: Villager): void {
+  const was = v.mount ?? (v.arm === 'cavalry' ? campBeast(sim) : null);
+  if (was !== 'elephant') return;
+  if (v.mount) sim.toolStock[stockKey(v.mount)] = tamedCount(sim, v.mount) + 1; // the elephant goes back to the stable
+  v.mount = null;
+  if (tamedCount(sim, 'wolf') > 0) { sim.toolStock[stockKey('wolf')] = tamedCount(sim, 'wolf') - 1; v.mount = 'wolf'; sim.say(`${v.name} đi trinh sát bằng sói, không cưỡi voi.`); }
+}
+
+/** A scout let go gives back the beast the trip gave him. */
+export function returnScoutMount(sim: Sim, v: Villager): void {
+  if (v.arm !== 'cavalry' || !v.mount) return; // the riders of the camp own no beast of their own
+  sim.toolStock[stockKey(v.mount)] = tamedCount(sim, v.mount) + 1; v.mount = null;
+}
 
 /** Give a beast from the stable to villagers, or take it back (`null`). Returns an error or null. */
 export function assignMount(sim: Sim, ids: readonly number[], kind: MountKind | null): string | null {

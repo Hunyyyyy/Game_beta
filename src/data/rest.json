@@ -8,7 +8,7 @@
   "nightCost": 30,
   "sleepNight": 60,
   "sleepDay": 30,
-  "sleepAt": { "campfire": 0.6, "house": 1, "infantry": 1.6, "cavalry": 1.6, "archery": 1.6 },
+  "sleepAt": { "campfire": 0.6, "house": 1, "infantry": 1.6, "cavalry": 1.6, "archery": 1.6, "guardpost": 1.6 },
   "nightEfficiency": 0.7,
   "tiredEfficiency": 0.7,
   "tiredBelow": 40,

@@ -28,6 +28,7 @@ import * as environment from './environment';
 import * as save from './save';
 import * as rest from './rest';
 import * as roles from './roles';
+import * as idle from './idle';
 import * as defense from './defense';
 import * as army from './army';
 import * as scouting from './scouting';
@@ -207,6 +208,8 @@ export class Sim {
   roleCapacity(role: RoleId): number { return roles.roleCapacity(this, role); }
   /** → roles.roleCount */
   roleCount(role: RoleId): number { return roles.roleCount(this, role); }
+  /** → roles.guardCandidates */
+  guardCandidates(): Villager[] { return roles.guardCandidates(this); }
   /** → roles.trimRoles */
   trimRoles(): void { return roles.trimRoles(this); }
   /** → rest.bedsIn */
@@ -247,6 +250,8 @@ export class Sim {
   startLevel(kind: BuildingKind): number { return construction.startLevel(this, kind); }
   /** → construction.startCost */
   startCost(kind: BuildingKind): Partial<Stock> { return construction.startCost(this, kind); }
+  /** → idle.homeKind */
+  homeKind(v: Villager): BuildingKind { return idle.homeKind(v); }
   /** → construction.fireLevel */
   fireLevel(): number { return construction.fireLevel(this); }
   /** → construction.fireUpgradeBlock */

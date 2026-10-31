@@ -66,6 +66,7 @@ export function detailButton(c: Ctx, v: Villager, title = 'Giao việc và chi t
 
 /** The stats that matter for a role: the line of the research tree it belongs to (the soldiers also have the stats of the weapon in their hand). */
 export function roleStats(role: string): StatId[] {
+  if (role === 'guard') role = 'foot';
   const chain = Object.values(CHAINS).find((ch) => ch.roles.includes(role));
   const ids = (chain?.order ?? []) as StatId[];
   return role === 'foot' || role === 'cavalry' || role === 'archer' ? [...ids, 'aspd', 'crit', 'critd'] : ids;

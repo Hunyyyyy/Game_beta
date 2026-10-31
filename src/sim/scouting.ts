@@ -99,7 +99,7 @@ export const canScout = (sim: Sim, v: Villager): boolean => v.job === 'scout' &&
 export const scoutRoster = (sim: Sim): Villager[] => sim.villagers.filter((v) => v.job === 'scout');
 
 /** Who can become a scout: the cavalry soldiers of the Trại kỵ thú (they keep their arm, their gear and their beast). */
-export const canBeScout = (v: Villager): boolean => v.job === 'fight' && v.arm === 'cavalry';
+export const canBeScout = (v: Villager): boolean => v.job === 'fight' && v.arm === 'cavalry'; // guards too: sent to scout, a guard leaves his post (see enlistScouts)
 
 /** Take cavalry soldiers into the scouts, as many as the Trại trinh sát has room for. Returns an error or null. */
 export function enlistScouts(sim: Sim, ids: readonly number[]): string | null {
@@ -109,7 +109,7 @@ export function enlistScouts(sim: Sim, ids: readonly number[]): string | null {
   const pick = sim.mine(ids).filter(canBeScout), room = limit - scoutRoster(sim).length;
   if (!pick.length) return 'Trinh sát được tuyển từ lính kỵ: hãy chọn lính kỵ thú của Trại kỵ thú';
   if (room <= 0) return `Trại trinh sát đã đủ ${limit} trinh sát: nâng cấp lều để chứa thêm`;
-  for (const v of pick.slice(0, room)) { sim.resetTask(v); sim.clearCombat(v); v.job = 'scout'; v.prefer = -1; v.post = -1; } // the arm stays cavalry: let go, a scout goes back to the camp
+  for (const v of pick.slice(0, room)) { sim.resetTask(v); sim.clearCombat(v); v.job = 'scout'; v.prefer = -1; v.post = -1; v.guard = false; v.guardAt = null; sim.fitScoutMount(v); } // the arm stays cavalry: let go, a scout goes back to the camp
   return pick.length > room ? `Lều chỉ còn chỗ cho ${room} trinh sát` : null;
 }
 
@@ -120,7 +120,7 @@ export function dismissScouts(sim: Sim, ids: readonly number[]): string | null {
   for (const v of ids.map((id) => sim.byId.get(id)).filter((o): o is Villager => !!o && o.team === 'player' && o.down <= 0)) {
     if (v.job !== 'scout') continue;
     if (onTrip(sim, v)) { away++; continue; }
-    sim.resetTask(v); sim.clearCombat(v); v.post = -1; n++;
+    sim.resetTask(v); sim.clearCombat(v); v.post = -1; n++; sim.returnScoutMount(v);
     if (v.arm === 'cavalry' && sim.roleCount('cavalry') < sim.roleCapacity('cavalry')) v.job = 'fight'; else v.job = 'idle';
   }
   return n ? null : away ? 'Đang đi trinh sát: đợi họ về' : 'Chọn trinh sát để cho nghỉ';

@@ -210,7 +210,7 @@ export class WarPanel {
   update(): void {
     const { sim } = this, plan = (k: 'attack' | 'defense') => sim.plans.find((p) => p.kind === k);
     for (const [t, b] of this.tabBtns) b.setAttribute('aria-pressed', String(t === this.tab));
-    const soldiers = sim.villagers.filter((v) => v.job === 'fight');
+    const soldiers = sim.villagers.filter((v) => v.job === 'fight' && !v.guard);
     const key = [this.tab, sim.squads.map((s) => `${s.id}.${s.name}.${s.formation}.${s.ids.join('/')}.${s.leader}.${Math.round(s.mastery[s.formation] / 5)}.${s.training}`).join(), soldiers.map((v) => `${v.id}.${v.squad}.${v.weapon}`).join(),
       JSON.stringify(sim.maps), JSON.stringify(sim.scouts.map((m) => [m.id, m.phase])), JSON.stringify(plan('attack')), JSON.stringify(plan('defense')), sim.battleReports.length, sim.battle.on, this.openTribe, this.orderOpen, this.formRow, this.panel, this.addOpen, [...this.picked].join('.'), this.sel, this.mode, this.modeSquad,
       sim.tribes.map((t) => t.state).join(), sim.squadLimit(), sim.cardLimit()].join('|');
@@ -371,7 +371,7 @@ export class WarPanel {
     if (this.roster.hidden || !sq || !m?.deploy) return;
     if (this.rosterSquad !== sq.id) this.rosterSquad = sq.id;
     const lock = sim.warLock(), units = sim.squadUnits(sq), cells = m.deploy.cells.length, room = Math.max(0, cells - units.length);
-    const free = sim.villagers.filter((v) => v.job === 'fight' && v.squad < 0); // a soldier already in a squad, this one or another, is not offered
+    const free = sim.villagers.filter((v) => v.job === 'fight' && !v.guard && v.squad < 0); // a soldier already in a squad, this one or another, is not offered
     const who = (v: Villager) => `${ARM_NAME[sim.armOf(v)]} · ${WEAPONS[v.weapon ?? 'fist'].name}`;
     const out: Node[] = [h('div', { class: 'phead' }, h('i', { style: `background:${sq.color}` }), h('b', { text: sq.name }), h('small', { text: `${units.length}/${cells} lính` }))];
     if (!units.length) out.push(h('p', { class: 'sub', text: 'Chưa có lính trong đội.' }));
