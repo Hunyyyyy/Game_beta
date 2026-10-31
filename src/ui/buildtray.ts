@@ -9,7 +9,8 @@ builder: 'Dân làm thợ xây ở đây (do bạn chọn). Phải có nhà này
 workshop: 'Chế tạo công cụ, vũ khí, giáp theo bản vẽ. Dân làm việc bên trong.',
 infantry: 'Trại của chiến binh cận chiến: tuyển và cho nghỉ ở đây, họ cũng ngủ ở đây và hồi sức nhanh hơn nằm cạnh đống lửa. Chỉ xây một cái; nâng cấp để chứa thêm người.',
 cavalry: 'Trại của người cưỡi thú: xung phong nhanh, khắc người ném nhưng sợ giáo. Chỉ xây một cái; nâng cấp để chứa thêm người.',
-archery: 'Trại của người ném đá, bắn ná: đánh từ xa, lên được chòi canh. Chỉ xây một cái; nâng cấp để chứa thêm người.',
+guardpost: 'Trại lính gác: chọn lính của các trại cử đi gác. Mỗi lính gác có một chỗ gác riêng, nhìn xa hơn lính thường 5 ô, ra tay khi làng bị phá hoặc dân bị tấn công rồi quay về chỗ gác. Cấp 1, 2, 3 chứa 6, 12, 18 người.',
+  archery: 'Trại của người ném đá, bắn ná: đánh từ xa, lên được chòi canh. Chỉ xây một cái; nâng cấp để chứa thêm người.',
 farmhouse: 'Giao việc hái lượm ở đây: người được giao ra bụi quả và mang thức ăn về. Chỉ xây một cái; nâng cấp để thêm người.',
 huntlodge: 'Giao việc săn bắn ở đây: người được giao đi săn thú. Chỉ xây một cái; nâng cấp để thêm người.',
 lumberyard: 'Giao việc đốn gỗ ở đây. Chỉ xây một cái; nâng cấp để thêm người.',
@@ -32,7 +33,7 @@ const GROUPS: Array<[string, BuildingKind[]]> = [
   ['Thiết yếu', ['builder', 'storage', 'house', 'field']],
   ['Sản xuất', ['workshop', 'lab', 'toolstore', 'armory']],
   ['Tài nguyên', ['farmhouse', 'huntlodge', 'lumberyard', 'quarry', 'stable']],
-  ['Quân sự', ['infantry', 'cavalry', 'archery', 'wartent', 'scouttent', 'drill']],
+  ['Quân sự', ['infantry', 'cavalry', 'archery', 'guardpost', 'wartent', 'scouttent', 'drill']],
   ['Phòng thủ', ['fence', 'gate', 'tower', 'trap']],
 ];
 

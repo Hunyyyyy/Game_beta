@@ -16,7 +16,7 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 21;
+export const SAVE_VERSION = 22;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
@@ -191,6 +191,12 @@ MIGRATIONS[15] = (d) => {
   // 15 -> 16: the village keeps what it earns in food a day, to warn the player (none known yet)
   d.scalars.foodIncome ??= 0; d.scalars.foodSeen ??= -1; d.lists.foodDays ??= [];
   return { ...d, version: 16 };
+};
+
+MIGRATIONS[21] = (d) => {
+  // 21 -> 22: soldiers of the Trại lính gác have a post (nobody is a guard yet)
+  for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) { v.guard ??= false; v.guardAt ??= null; }
+  return { ...d, version: 22 };
 };
 
 MIGRATIONS[20] = (d) => {

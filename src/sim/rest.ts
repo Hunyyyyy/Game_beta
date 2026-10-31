@@ -50,10 +50,10 @@ export function drainRate(sim: Sim, v: Villager): number {
 
 // ---------------------------------------------------------------- beds
 /** Houses whose level also says how well people rest in them: the camp of each arm for its soldiers and the Nhà dân (any other house with beds is as good as a plain Nhà dân). */
-export type BedKind = 'infantry' | 'cavalry' | 'archery' | 'house';
-export const BED_KINDS: readonly BedKind[] = ['infantry', 'cavalry', 'archery', 'house'];
+export type BedKind = 'infantry' | 'cavalry' | 'archery' | 'guardpost' | 'house';
+export const BED_KINDS: readonly BedKind[] = ['infantry', 'cavalry', 'archery', 'guardpost', 'house'];
 /** Every house a villager can sleep in: the house of each trade, the camps, the builders' house and the Nhà dân. Where one sleeps: `homeKind` in idle.ts. */
-export const SLEEP_HOUSES: readonly BuildingKind[] = ['house', 'builder', 'lumberyard', 'quarry', 'farmhouse', 'huntlodge', 'scouttent', 'infantry', 'cavalry', 'archery'];
+export const SLEEP_HOUSES: readonly BuildingKind[] = ['house', 'builder', 'lumberyard', 'quarry', 'farmhouse', 'huntlodge', 'scouttent', 'infantry', 'cavalry', 'archery', 'guardpost'];
 
 /** Beds of a house in use: those asleep inside and those on their way. */
 export function bedsTaken(sim: Sim, b: Building, except?: Villager): number {

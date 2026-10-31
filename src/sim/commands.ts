@@ -65,7 +65,7 @@ export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: numb
     if (!goal) continue;
     taken.add(goal[1] * sim.world.size + goal[0]);
     // a soldier who is sent somewhere stands guard there afterwards
-    if (v.job === 'fight') { v.fight.mode = 'guard'; v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 }; }
+    if (v.job === 'fight') { v.fight.mode = 'guard'; v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 }; if (v.guard) v.guardAt = { x: goal[0] + 0.5, y: goal[1] + 0.5 }; } // a guard's new post
     // finding a way is the dear part of an order given to hundreds: past the budget of this tick a soldier is left to walk to his post when his turn comes
     if (v.job === 'fight' && sim.pathLeft <= 0) { v.phase = 'idle'; continue; }
     if (v.job === 'fight') sim.pathLeft--;
@@ -167,7 +167,7 @@ export function discharge(sim: Sim, ids: readonly number[]): number {
   let n = 0;
   for (const v of mine(sim, ids)) {
     if (v.job !== 'fight') continue;
-    resetTask(sim, v); clearCombat(sim, v); v.job = 'idle'; v.nightOwl = false; v.post = -1;
+    resetTask(sim, v); clearCombat(sim, v); v.job = 'idle'; v.nightOwl = false; v.post = -1; v.guard = false; v.guardAt = null;
     sim.assignGear([v.id], null, 'weapon'); sim.assignGear([v.id], null, 'armor'); v.manualGear = false;
     n++;
   }

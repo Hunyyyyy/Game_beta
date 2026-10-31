@@ -334,6 +334,21 @@ export function engage(sim: Sim, v: Villager, e: Ent, dt: number): void {
   if ((v.fight.repath <= 0 || !v.path.length) && sim.pathLeft > 0) { sim.pathLeft--; v.fight.repath = 0.5; v.path = sim.pathTo(v, Math.floor(x), Math.floor(y), 3500); if (!v.path.length) v.fight.repath = 1.5; }
 }
 
+/** Where a soldier stands when he has nothing to do: a guard at his post, the rest at the door of their own camp (the fire when there is no camp). */
+function homeSpot(sim: Sim, v: Villager): { x: number; y: number } | null {
+  if (v.guard && v.guardAt) return v.guardAt;
+  const camp = sim.buildings.find((b) => b.kind === sim.homeKind(v) && b.done);
+  if (camp) return { x: camp.x + 1 + (v.id % 3) - 1, y: camp.y + 3 };
+  const fire = sim.campfire();
+  return fire ? { x: fire.x + 1 + (v.id % 3) - 1, y: fire.y + 3 } : null;
+}
+
+/** Whether a soldier of the camps may go for what he sees: only when the alarm drum sounds, a fight is on, or he has been told to attack. Guards watch for themselves, hunters hunt. */
+function mayEngage(sim: Sim, v: Villager): boolean {
+  if (v.job !== 'fight' || v.guard || v.team !== 'player') return true;
+  return sim.alarmUntil > sim.time || sim.battle.on || v.fight.mode === 'attack' || v.fight.mode === 'attackMove' || (v.squad >= 0 && sim.plans.some((p) => p.status === 'running'));
+}
+
 function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {
   const f = v.fight;
   if (v.phase === 'skin' || v.phase === 'goCarcass') return huntBrain(sim, v, dt, threats);
@@ -358,7 +373,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
     } else {
       const dead = f.target.kind === 'animal' ? sim.animalById.get(f.target.id) : undefined;
       f.target = null;
-      if (f.mode === 'attack') { if (v.job === 'fight') { f.mode = 'guard'; f.anchor = { x: v.x, y: v.y }; } else f.mode = 'none'; }
+      if (f.mode === 'attack') { if (v.job === 'fight') { f.mode = 'guard'; f.anchor = v.guard || (v.team === 'player' && v.squad < 0) ? homeSpot(sim, v) ?? { x: v.x, y: v.y } : { x: v.x, y: v.y }; } else f.mode = 'none'; } // done: back to the post, or the camp
       if (dead && dead.state === 'dead' && v.job === 'hunt') v.loot = dead.id; // only a hunter goes to skin it; a soldier keeps his post
       if (v.phase === 'fight') { v.phase = 'idle'; v.path = []; }
       if (sim.nextOrder(v)) return true;
@@ -368,8 +383,10 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   if (v.stance === 'retreat') {
     if (threats.length && threats[0].d < 8) { startFlee(sim, v, 6, threats[0]); return true; }
   } else if (threats.length && f.scan >= 0) {
-    const range = f.mode === 'hold' ? weaponOf(v).range + 1.5 : v.stance === 'defensive' ? Math.min(DEFENSIVE, sim.sightOf(v)) : sim.sightOf(v);
-    const pick = threats.find((t) => t.d <= range && (!f.anchor || v.stance !== 'defensive' || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
+    // a soldier of a camp, with no alarm and no order, only defends himself against what comes close
+    const range = !mayEngage(sim, v) ? Math.min(DEFENSIVE, sim.sightOf(v)) : f.mode === 'hold' ? weaponOf(v).range + 1.5 : v.stance === 'defensive' ? Math.min(DEFENSIVE, sim.sightOf(v)) : sim.sightOf(v);
+    // a guard goes for what harms the village: a stranger with a weapon, or a beast that is really attacking
+    const pick = threats.find((t) => (!v.guard || t.t.kind === 'unit' || sim.animalById.get(t.t.id)?.state === 'attack') && t.d <= range && (!f.anchor || v.stance !== 'defensive' || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
     if (pick) { f.target = pick.t; const e = resolve(sim, pick.t); if (e) { engage(sim, v, e, dt); return true; } }
   }
   // 3. attack-move: keep walking to the destination
@@ -384,7 +401,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   if (v.phase === 'fight') { v.phase = 'idle'; v.path = []; }
   if (v.job === 'fight') {
     // the post: where the unit was told to stand, else beside the village fire
-    const fire = sim.campfire(), post = f.mode === 'guard' && f.anchor ? { x: f.anchor.x, y: f.anchor.y, slack: 2 } : fire ? { x: fire.x + 1 + (v.id % 3) - 1, y: fire.y + 3, slack: 5 } : null;
+    const home = homeSpot(sim, v), post = v.guard && v.guardAt ? { x: v.guardAt.x, y: v.guardAt.y, slack: 2 } : f.mode === 'guard' && f.anchor ? { x: f.anchor.x, y: f.anchor.y, slack: 2 } : home ? { x: home.x, y: home.y, slack: 5 } : null;
     if (post && v.phase === 'idle' && !v.path.length && Math.hypot(v.x - post.x, v.y - post.y) > post.slack) { if (sim.pathLeft <= 0) return true; sim.pathLeft--; v.path = sim.pathTo(v, Math.floor(post.x), Math.floor(post.y), 30000); v.phase = v.path.length ? 'move' : 'idle'; return true; }
     return v.phase === 'move' || v.phase === 'idle';
   }

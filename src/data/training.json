@@ -17,6 +17,7 @@
   ],
   "profiles": {
     "infantry":   { "main": "str", "partner": "vit", "cost": "agi" },
+    "guardpost":  { "main": "str", "partner": "vit", "cost": "agi" },
     "archery":    { "main": "agi", "partner": "sta", "cost": "str" },
     "cavalry":    { "main": "agi", "partner": "sta", "cost": "vit" },
     "lumberyard": { "main": "str", "partner": "vit", "cost": "agi" },

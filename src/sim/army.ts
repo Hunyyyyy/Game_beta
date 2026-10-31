@@ -57,6 +57,7 @@ export function joinSquad(sim: Sim, ids: readonly number[], squadId: number): st
   let err: string | null = null;
   for (const v of sim.mine(ids)) {
     if (v.job !== 'fight') { err = 'Chỉ chiến binh mới vào đội: tuyển ở trại lính'; continue; }
+    if (v.guard) { err = 'Lính gác giữ chỗ gác của mình, không vào đội tác chiến'; continue; }
     if (v.squad === s.id) continue;
     if (s.ids.length >= cellLimit(sim)) { err = `Một đội chỉ có tối đa ${cellLimit(sim)} người: nghiên cứu mở rộng ô trận pháp`; continue; }
     leaveSquad(sim, [v.id]);
