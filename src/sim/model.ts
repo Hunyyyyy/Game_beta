@@ -138,6 +138,9 @@ export interface Villager {
   squad: number;
   /** The beast he rides, given from the stable (null for none). The riders of the Trại kỵ thú ride the beast of their camp without one: see `sim.mountOf`. */
   mount: MountKind | null;
+  /** A soldier of the Trại lính gác: he keeps a post of his own (`guardAt`) and comes back to it after each fight. */
+  guard: boolean;
+  guardAt: { x: number; y: number } | null;
   /** Stars (1 to 5) and the personal factor of each of the eight stats (data/stats.json); absent in a save from before, which counts as all 1. */
   stars: number;
   fac: Record<StatId, number>;
@@ -210,6 +213,8 @@ export interface ScoutMission {
   rolled?: number[];
   /** Called back by the player before the map was finished. */
   recall?: boolean;
+  /** Seconds until the scouts are looked over for one who has stopped on the way. */
+  nudge?: number;
 }
 /**
  * A village somebody of ours came across while out on the map. It is `carried` in his head until he gets home alive;

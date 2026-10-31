@@ -104,7 +104,7 @@ export class BuildingPanel {
     // everyone sleeps inside a house: the trade in the house of the trade, the free in a Nhà dân; the list of those lying in a house is a tab of the house
     const bedPage = (kind: BuildingKind, who: string) => {
       this.bedHead[kind] = h('h3'); this.bedList[kind] = h('div'); this.bedKey[kind] = '';
-      return page(hint(this.bedHead[kind], `${who} vào đây ngủ khi trời tối hoặc kiệt sức: họ biến mất khỏi bản đồ, hiện ở danh sách này, không có hình ngủ. Hồi sức đầy đủ${kind === 'house' || kind === 'infantry' || kind === 'cavalry' || kind === 'archery' ? ', cấp cao hơn hồi nhanh hơn' : ''}. Hết giường thì ngủ bên đống lửa, hồi chậm hơn.`), this.bedList[kind]);
+      return page(hint(this.bedHead[kind], `${who} vào đây ngủ khi trời tối hoặc kiệt sức: họ biến mất khỏi bản đồ, hiện ở danh sách này, không có hình ngủ. Hồi sức đầy đủ${kind === 'house' || kind === 'infantry' || kind === 'cavalry' || kind === 'archery' || kind === 'guardpost' ? ', cấp cao hơn hồi nhanh hơn' : ''}. Hết giường thì ngủ bên đống lửa, hồi chậm hơn.`), this.bedList[kind]);
     };
     const roleHouse = (role: RoleId, label: string, soldiers = false) => {
       const kind = ROLES[role].building, pane = new RolePane(c, role);
@@ -112,7 +112,7 @@ export class BuildingPanel {
       this.tabs[kind] = [{ label, page: page(pane.root) }];
       if (soldiers) this.tabs[kind].push({ label: 'Người trong trại', page: bedPage(kind, 'Lính') }); // the others show "đang ngủ" on their own tile
     };
-    roleHouse('foot', 'Lính', true); roleHouse('cavalry', 'Lính', true); roleHouse('archer', 'Lính', true);
+    roleHouse('foot', 'Lính', true); roleHouse('cavalry', 'Lính', true); roleHouse('archer', 'Lính', true); roleHouse('guard', 'Lính gác', true);
     roleHouse('wood', 'Nhân công'); roleHouse('stone', 'Nhân công'); roleHouse('food', 'Nhân công'); roleHouse('hunt', 'Nhân công');
     this.tabs.house = [{ label: 'Người trong nhà', page: bedPage('house', 'Dân rảnh') }];
     this.tabs.field = [{ label: 'Người làm ruộng', page: page(this.staffBoxes.farm.root) }];
@@ -171,7 +171,7 @@ export class BuildingPanel {
     const only = (test: (id: string) => boolean) => TECHS.filter((x) => test(x.id));
     const labLevel = () => sim.building('lab')?.level ?? 0;
     const militaryLock = () => (sim.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `Cần Nhà nghiên cứu cấp ${TREE_TABS.military.needLab} để mở Quân sự`);
-    this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research);
+    this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research, this.staffBoxes.research.root);
     this.tabs.lab = [
       { label: 'Quân sự bậc 1', icon: 'infantry', lock: militaryLock, page: tree((t) => { t.addChains('Chỉ số quân', ['foot', 'cavalry', 'archer', 'scout'], 'military'); }) },
       { label: 'Phát triển bậc 1', icon: 'builder', page: tree((t) => t.addChains('Chỉ số nhà làm việc', ['build', 'craft', 'research'], 'development')) },
@@ -181,7 +181,6 @@ export class BuildingPanel {
       { label: 'Tự động hóa bậc 1', icon: 'toolstore', under: 2, page: tree((t) => t.addSingles('Dân tự làm', only((id) => id.startsWith('auto_')))) },
       { label: 'Chiến đấu bậc 1', icon: 'drill', under: 0, lock: () => militaryLock() && 'Cần mở Quân sự trước', page: tree((t) => { t.addSingles('Tín hiệu', only((id) => id === 'signal')); t.addFormations('Trận pháp', 'formation'); }) },
       { label: 'Vũ khí bậc 1', icon: 'armory', under: 0, lock: () => militaryLock() && 'Cần mở Quân sự trước', page: tree((t) => { t.addChains('Chỉ số từng vũ khí', ['club', 'spear', 'mace', 'sling', 'bow'], 'weapon'); }) },
-      { label: 'Người nghiên cứu', icon: 'lab', page: page(this.staffBoxes.research.root) },
     ];
 
     // tool store and armoury: what is kept
@@ -269,7 +268,7 @@ export class BuildingPanel {
   private infoBase(b: Building): string {
     const lv = levelDef(b);
     switch (b.kind) {
-      case 'infantry': case 'cavalry': case 'archery': return `Cấp ${b.level}: chứa ${lv.slots} người, mỗi người một giường · hồi sức ×${lv.craftSpeed.toLocaleString('vi')} (cạnh đống lửa chỉ ×${REST.sleepAt.campfire.toLocaleString('vi')})`;
+      case 'infantry': case 'cavalry': case 'archery': case 'guardpost': return `Cấp ${b.level}: chứa ${lv.slots} người, mỗi người một giường · hồi sức ×${lv.craftSpeed.toLocaleString('vi')} (cạnh đống lửa chỉ ×${REST.sleepAt.campfire.toLocaleString('vi')})`;
       case 'house': return `Cấp ${b.level}: ${lv.slots} giường cho dân rảnh, làng chứa thêm ${lv.slots} dân · hồi sức ×${lv.craftSpeed.toLocaleString('vi')} (cạnh đống lửa chỉ ×${REST.sleepAt.campfire.toLocaleString('vi')})`;
       case 'field': return `Cấp ${b.level}: ${lv.slots} nông dân làm một lúc · năng suất ×${lv.craftSpeed.toLocaleString('vi')} (cuốc đá làm nhanh hơn)`;
       case 'builder': return `Cấp ${b.level}: chứa ${lv.slots} thợ xây · xây nhanh ×${lv.craftSpeed.toLocaleString('vi')}`;
@@ -420,7 +419,7 @@ export class BuildingPanel {
 const PRIORITY_STAT: Partial<Record<BuildingKind, string>> = {
   lumberyard: STAT_NAME[JOBS.wood.stat], quarry: STAT_NAME[JOBS.stone.stat], farmhouse: STAT_NAME[JOBS.food.stat], field: STAT_NAME[JOBS.food.stat], huntlodge: STAT_NAME[JOBS.hunt.stat],
   builder: STAT_NAME[JOBS.build.stat], workshop: STAT_NAME[JOBS.craft.stat], lab: STAT_NAME[JOBS.research.stat], stable: STAT_NAME[JOBS.tame.stat],
-  infantry: STAT_NAME.str, cavalry: STAT_NAME.str, archery: STAT_NAME.agi, scouttent: `${STAT_NAME.agi}, ${STAT_NAME.sta}`, house: `${STAT_NAME.vit}, ${STAT_NAME.sta} (hồi sức nhanh)`,
+  infantry: STAT_NAME.str, guardpost: STAT_NAME.str, cavalry: STAT_NAME.str, archery: STAT_NAME.agi, scouttent: `${STAT_NAME.agi}, ${STAT_NAME.sta}`, house: `${STAT_NAME.vit}, ${STAT_NAME.sta} (hồi sức nhanh)`,
 };
 
 const isGearKind = (k: string) => k in WEAPONS || k === 'hide';

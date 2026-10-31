@@ -34,6 +34,9 @@ import gateL1o from '../data/blueprints/stone_age/buildings/gate/L1open.json';
 import gateL2o from '../data/blueprints/stone_age/buildings/gate/L2open.json';
 import towerL1 from '../data/blueprints/stone_age/buildings/tower/L1.json';
 import towerL2 from '../data/blueprints/stone_age/buildings/tower/L2.json';
+import guardpostL1 from '../data/blueprints/stone_age/buildings/guardpost/L1.json';
+import guardpostL2 from '../data/blueprints/stone_age/buildings/guardpost/L2.json';
+import guardpostL3 from '../data/blueprints/stone_age/buildings/guardpost/L3.json';
 import infantryL1 from '../data/blueprints/stone_age/buildings/infantry/L1.json';
 import infantryL2 from '../data/blueprints/stone_age/buildings/infantry/L2.json';
 import infantryL3 from '../data/blueprints/stone_age/buildings/infantry/L3.json';
@@ -147,6 +150,7 @@ const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>
     toolstore: [toolstoreL1, toolstoreL2, toolstoreL3],
     armory: [armoryL1, armoryL2, armoryL3],
     infantry: [infantryL1, infantryL2, infantryL3],
+    guardpost: [guardpostL1, guardpostL2, guardpostL3],
     cavalry: [cavalryL1, cavalryL2, cavalryL3],
     stable: [stableL1, stableL2, stableL3],
     archery: [archeryL1, archeryL2, archeryL3],
@@ -190,7 +194,7 @@ export class Sprites {
     this.icons.torch1 = this.torchIcon();
     this.nature('spring');
     this.emblems.lab = this.scrollEmblem();
-    this.emblems.builder = this.icons.hammer1; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.infantry = this.icons.spear1; this.emblems.cavalry = this.icons.spear1; this.emblems.archery = this.icons.sling1 ?? this.icons.spear1; this.emblems.lumberyard = this.icons.axe1; this.emblems.quarry = this.icons.pick1; this.emblems.farmhouse = this.icons.hoe1; this.emblems.huntlodge = this.icons.spear1; this.emblems.stable = this.icons.hoe1;
+    this.emblems.builder = this.icons.hammer1; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.infantry = this.icons.spear1; this.emblems.guardpost = this.icons.club1; this.emblems.cavalry = this.icons.spear1; this.emblems.archery = this.icons.sling1 ?? this.icons.spear1; this.emblems.lumberyard = this.icons.axe1; this.emblems.quarry = this.icons.pick1; this.emblems.farmhouse = this.icons.hoe1; this.emblems.huntlodge = this.icons.spear1; this.emblems.stable = this.icons.hoe1;
   }
 
   /** A torch 16x16, for the craft list. */

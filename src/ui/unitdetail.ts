@@ -35,10 +35,10 @@ export class UnitDetail {
 
   /**
    * `ids` are the villagers the orders go to; `leave` is called when an order needs the player back on the map.
-   * `after` runs once a gear or tool order is done (by default the selection is dropped).
+   * `after` runs once a gear or tool order is done (by default nothing: the dialog stays as it is).
    */
   constructor(private readonly c: Ctx, o: { ids: () => number[]; leave: () => void; after?: () => void }) {
-    const { sim, ctl } = c, ids = o.ids, after = o.after ?? (() => ctl.clearSelection());
+    const { sim, ctl } = c, ids = o.ids, after = o.after ?? (() => undefined); // the dialog stays open: choosing a tool or a weapon must not close it (nor the house dialog it came from)
     this.stanceBtns = STANCES.map(([s, label, tip]) => h('button', { class: 'sm', 'data-stance': s, pressed: false, text: label, title: tip, onclick: () => { sim.setStance(ids(), s); ctl.onChange(); } }));
     // Handing out gear from the workshop's stock: soldiers carry what they are given
     // two drop-downs, one for the weapon and one for the armour: "Tự động" lets the workshop hand out the best it has, "Không có" gives the piece back

@@ -3,7 +3,7 @@ import type { Stock } from './resources';
 import { fireBuildingMax } from './progression';
 import levelData from '../data/buildings.json';
 
-export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'toolstore' | 'armory' | 'infantry' | 'cavalry' | 'archery' | 'farmhouse' | 'huntlodge' | 'lumberyard' | 'quarry' | 'house' | 'field' | 'fence' | 'gate' | 'tower' | 'wartent' | 'scouttent' | 'drill' | 'trap' | 'stable';
+export type BuildingKind = 'campfire' | 'builder' | 'storage' | 'workshop' | 'lab' | 'toolstore' | 'armory' | 'infantry' | 'cavalry' | 'archery' | 'farmhouse' | 'huntlodge' | 'lumberyard' | 'quarry' | 'house' | 'field' | 'fence' | 'gate' | 'tower' | 'wartent' | 'scouttent' | 'drill' | 'trap' | 'stable' | 'guardpost';
 
 /** Eras of the game. Each era has its own building art and its own level list (L1..L3). */
 export type Era = 'stone' | 'ancient';
@@ -86,6 +86,10 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   },
   // The role houses. One of each: raising its level makes room for more people (slots). The people of a role are chosen in its house, never
   // at the campfire. A soldier's camp is also where he sleeps, out of sight, as a list (craftSpeed = how well they rest).
+  guardpost: {
+    kind: 'guardpost', name: 'Trại lính gác', w: 2, h: 2, buildable: true, requires: ['builder'],
+    levels: { stone: STONE_LEVELS.guardpost },
+  },
   infantry: {
     kind: 'infantry', name: 'Trại chiến binh', names: { ancient: 'Trại bộ binh' }, w: 2, h: 2, buildable: true, requires: ['builder'],
     levels: { stone: STONE_LEVELS.infantry },

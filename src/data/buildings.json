@@ -37,19 +37,24 @@
     {"name":"Đá","cost":{"wood":30,"stone":40},"buildTime":150,"cap":60,"craftSpeed":1,"slots":0,"hp":0}
   ],
   "infantry": [
-    {"name":"Đơn sơ","cost":{"wood":20},"buildTime":60,"cap":0,"craftSpeed":1,"slots":4,"hp":0},
-    {"name":"Gỗ","cost":{"wood":25,"hide":6},"buildTime":100,"cap":0,"craftSpeed":1,"slots":8,"hp":0},
-    {"name":"Đá","cost":{"wood":30,"stone":25,"hide":10},"buildTime":150,"cap":0,"craftSpeed":1,"slots":14,"hp":0}
+    {"name":"Đơn sơ","cost":{"wood":20},"buildTime":60,"cap":0,"craftSpeed":1,"slots":5,"hp":0},
+    {"name":"Gỗ","cost":{"wood":25,"hide":6},"buildTime":100,"cap":0,"craftSpeed":1,"slots":10,"hp":0},
+    {"name":"Đá","cost":{"wood":30,"stone":25,"hide":10},"buildTime":150,"cap":0,"craftSpeed":1,"slots":15,"hp":0}
+  ],
+  "guardpost": [
+    {"name":"Chòi gác","cost":{"wood":25,"hide":4},"buildTime":70,"cap":0,"craftSpeed":1,"slots":6,"hp":0},
+    {"name":"Trạm gác","cost":{"wood":30,"stone":10,"hide":8},"buildTime":110,"cap":0,"craftSpeed":1.25,"slots":12,"hp":0},
+    {"name":"Đồn gác","cost":{"wood":35,"stone":30,"hide":12},"buildTime":170,"cap":0,"craftSpeed":1.5,"slots":18,"hp":0}
   ],
   "cavalry": [
-    {"name":"Đơn sơ","cost":{"wood":25,"hide":8},"buildTime":70,"cap":0,"craftSpeed":1,"slots":2,"hp":0},
-    {"name":"Gỗ","cost":{"wood":30,"hide":10},"buildTime":110,"cap":0,"craftSpeed":1,"slots":4,"hp":0},
-    {"name":"Đá","cost":{"wood":35,"stone":25,"hide":14},"buildTime":160,"cap":0,"craftSpeed":1,"slots":6,"hp":0}
+    {"name":"Đơn sơ","cost":{"wood":25,"hide":8},"buildTime":70,"cap":0,"craftSpeed":1,"slots":5,"hp":0},
+    {"name":"Gỗ","cost":{"wood":30,"hide":10},"buildTime":110,"cap":0,"craftSpeed":1,"slots":10,"hp":0},
+    {"name":"Đá","cost":{"wood":35,"stone":25,"hide":14},"buildTime":160,"cap":0,"craftSpeed":1,"slots":15,"hp":0}
   ],
   "archery": [
-    {"name":"Đơn sơ","cost":{"wood":20},"buildTime":60,"cap":0,"craftSpeed":1,"slots":3,"hp":0},
-    {"name":"Gỗ","cost":{"wood":25,"hide":6},"buildTime":100,"cap":0,"craftSpeed":1,"slots":6,"hp":0},
-    {"name":"Đá","cost":{"wood":30,"stone":25,"hide":10},"buildTime":150,"cap":0,"craftSpeed":1,"slots":10,"hp":0}
+    {"name":"Đơn sơ","cost":{"wood":20},"buildTime":60,"cap":0,"craftSpeed":1,"slots":5,"hp":0},
+    {"name":"Gỗ","cost":{"wood":25,"hide":6},"buildTime":100,"cap":0,"craftSpeed":1,"slots":10,"hp":0},
+    {"name":"Đá","cost":{"wood":30,"stone":25,"hide":10},"buildTime":150,"cap":0,"craftSpeed":1,"slots":15,"hp":0}
   ],
   "farmhouse": [
     {"name":"Đơn sơ","cost":{"wood":15},"buildTime":50,"cap":0,"craftSpeed":1,"slots":3,"hp":0},
@@ -57,7 +62,7 @@
     {"name":"Đá","cost":{"wood":30,"stone":20},"buildTime":140,"cap":0,"craftSpeed":1,"slots":8,"hp":0}
   ],
   "huntlodge": [
-    {"name":"Đơn sơ","cost":{"wood":15,"hide":3},"buildTime":50,"cap":0,"craftSpeed":1,"slots":1,"hp":0},
+    {"name":"Đơn sơ","cost":{"wood":15},"buildTime":50,"cap":0,"craftSpeed":1,"slots":1,"hp":0},
     {"name":"Gỗ","cost":{"wood":25,"hide":5},"buildTime":90,"cap":0,"craftSpeed":1,"slots":2,"hp":0},
     {"name":"Đá","cost":{"wood":30,"stone":15,"hide":8},"buildTime":140,"cap":0,"craftSpeed":1,"slots":4,"hp":0}
   ],

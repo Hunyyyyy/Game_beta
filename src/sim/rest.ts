@@ -50,10 +50,10 @@ export function drainRate(sim: Sim, v: Villager): number {
 
 // ---------------------------------------------------------------- beds
 /** Houses whose level also says how well people rest in them: the camp of each arm for its soldiers and the Nhà dân (any other house with beds is as good as a plain Nhà dân). */
-export type BedKind = 'infantry' | 'cavalry' | 'archery' | 'house';
-export const BED_KINDS: readonly BedKind[] = ['infantry', 'cavalry', 'archery', 'house'];
+export type BedKind = 'infantry' | 'cavalry' | 'archery' | 'guardpost' | 'house';
+export const BED_KINDS: readonly BedKind[] = ['infantry', 'cavalry', 'archery', 'guardpost', 'house'];
 /** Every house a villager can sleep in: the house of each trade, the camps, the builders' house and the Nhà dân. Where one sleeps: `homeKind` in idle.ts. */
-export const SLEEP_HOUSES: readonly BuildingKind[] = ['house', 'builder', 'lumberyard', 'quarry', 'farmhouse', 'huntlodge', 'scouttent', 'infantry', 'cavalry', 'archery'];
+export const SLEEP_HOUSES: readonly BuildingKind[] = ['house', 'builder', 'lumberyard', 'quarry', 'farmhouse', 'huntlodge', 'scouttent', 'infantry', 'cavalry', 'archery', 'guardpost'];
 
 /** Beds of a house in use: those asleep inside and those on their way. */
 export function bedsTaken(sim: Sim, b: Building, except?: Villager): number {
@@ -116,7 +116,7 @@ const civilian = (v: Pick<Villager, 'job'>): boolean => v.job !== 'fight' && v.j
  * to run. Only a fighter leaves: a villager the player makes a soldier or a hunter goes out at once.
  */
 export function hides(sim: Sim, v: Villager): boolean {
-  return v.inside !== null && v.phase === 'sleep' && civilian(v) && attackReason(sim) !== null;
+  return v.inside !== null && v.phase === 'sleep' && ((civilian(v) && attackReason(sim) !== null) || quartered(sim, v)); // a soldier in his camp stays there whatever comes
 }
 
 /** Asleep and not to be woken: they fell asleep worn out and have not rested enough yet. */
@@ -216,6 +216,17 @@ export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
 }
 
 /**
+ * The soldiers of the camps (not the guards) stay inside their own camp, out of sight and listed there, so that they are easy to look after. They come
+ * out only when the player calls the army or a war is on, whatever else happens; when that is over they go back in.
+ */
+export function quartered(sim: Sim, v: Villager): boolean {
+  if (v.team !== 'player' || v.job !== 'fight' || v.guard || v.post >= 0) return false;
+  if (sim.alarmUntil > sim.time || sim.warLock()) return false;
+  const camp = v.inside === null ? undefined : sim.getBuilding(v.inside);
+  return (!!camp && camp.kind === homeKind(v)) || !!freeBed(sim, v); // only when there is a bed for him in his camp
+}
+
+/**
  * Should the villager be asleep now? Worn out, they sleep and cannot be woken until rested; off shift they sleep (and may be called up);
  * a soldier in a fight fights on whatever his energy.
  */
@@ -223,6 +234,8 @@ export function shouldSleep(sim: Sim, v: Villager, fighting: boolean): boolean {
   if (fighting) return false;
   if (awayScout(sim, v)) { v.lockUntil = 0; return false; } // a scout on a trip works day and night until the map is drawn and he is home
   if (v.job === 'fight' && sim.warLock()) { v.lockUntil = 0; return false; } // soldiers do not sleep while a war is on
+  if (quartered(sim, v)) return true; // the soldiers of the camps wait inside their camp until the army is called out
+  if (sim.warLock() && v.team === 'player' && v.job !== 'fight' && !awayScout(sim, v)) return true; // in a war the villagers go indoors and stop working
   if (v.lockUntil > 0) {
     if (v.energy >= v.lockUntil) v.lockUntil = 0; else return true;
   }

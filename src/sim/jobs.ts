@@ -53,24 +53,25 @@ export type SoldierArm = 'foot' | 'archer' | 'cavalry';
  * A role is a job a villager is given by the house that belongs to it, never at the campfire. Each role has one house; its level decides
  * how many people the role may have. Names change with the era but not the meaning (a stone-age tribe has no archers, only throwers).
  */
-export type RoleId = 'wood' | 'stone' | 'food' | 'hunt' | 'foot' | 'cavalry' | 'archer' | 'scout';
+export type RoleId = 'wood' | 'stone' | 'food' | 'hunt' | 'foot' | 'cavalry' | 'archer' | 'guard' | 'scout';
 export interface RoleDef { job: Job; arm?: SoldierArm; building: BuildingKind; names: Record<Era, string> }
 export const ROLES: Record<RoleId, RoleDef> = {
   wood: { job: 'wood', building: 'lumberyard', names: { stone: 'Đốn gỗ', ancient: 'Tiều phu' } },
   stone: { job: 'stone', building: 'quarry', names: { stone: 'Thợ đá', ancient: 'Thợ mỏ' } },
   food: { job: 'food', building: 'farmhouse', names: { stone: 'Hái lượm', ancient: 'Nông dân' } },
   hunt: { job: 'hunt', building: 'huntlodge', names: { stone: 'Thợ săn', ancient: 'Thợ săn' } },
-  foot: { job: 'fight', arm: 'foot', building: 'infantry', names: { stone: 'Chiến binh', ancient: 'Bộ binh' } },
+  foot: { job: 'fight', arm: 'foot', building: 'infantry', names: { stone: 'Lính bộ', ancient: 'Bộ binh' } },
   cavalry: { job: 'fight', arm: 'cavalry', building: 'cavalry', names: { stone: 'Kỵ thú', ancient: 'Kỵ binh' } },
   archer: { job: 'fight', arm: 'archer', building: 'archery', names: { stone: 'Thợ ném', ancient: 'Cung thủ' } },
+  guard: { job: 'fight', arm: 'foot', building: 'guardpost', names: { stone: 'Lính gác', ancient: 'Lính gác' } },
   scout: { job: 'scout', building: 'scouttent', names: { stone: 'Trinh sát', ancient: 'Trinh sát' } },
 };
 export const ROLE_IDS = Object.keys(ROLES) as RoleId[];
 export const roleName = (role: RoleId, era: Era): string => ROLES[role].names[era];
 /** The role a villager has, or null for one with no role (idle, or working inside a house). Farmers of a field belong to the field, not to the Nông trại. */
-export function roleOf(v: { job: Job; arm: SoldierArm; post: number }): RoleId | null {
+export function roleOf(v: { job: Job; arm: SoldierArm; post: number; guard?: boolean }): RoleId | null {
   switch (v.job) {
-    case 'fight': return v.arm === 'archer' ? 'archer' : v.arm === 'cavalry' ? 'cavalry' : 'foot';
+    case 'fight': return v.guard ? 'guard' : v.arm === 'archer' ? 'archer' : v.arm === 'cavalry' ? 'cavalry' : 'foot';
     case 'food': return v.post < 0 ? 'food' : null;
     case 'wood': case 'stone': case 'hunt': case 'scout': return v.job;
     default: return null;
