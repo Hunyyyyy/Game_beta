@@ -55796,7 +55796,7 @@ body.war .sheet, body.war .bbar {
   var UnitDetail = class {
     /**
      * `ids` are the villagers the orders go to; `leave` is called when an order needs the player back on the map.
-     * `after` runs once a gear or tool order is done (by default the selection is dropped).
+     * `after` runs once a gear or tool order is done (by default nothing: the dialog stays as it is).
      */
     constructor(c, o) {
       this.c = c;
@@ -55809,7 +55809,7 @@ body.war .sheet, body.war .bbar {
       this.combatSec = null;
       this.gearSec = null;
       this.gearSel = [];
-      const { sim: sim2, ctl: ctl2 } = c, ids = o.ids, after = o.after ?? (() => ctl2.clearSelection());
+      const { sim: sim2, ctl: ctl2 } = c, ids = o.ids, after = o.after ?? (() => void 0);
       this.stanceBtns = STANCES.map(([s, label2, tip]) => h("button", { class: "sm", "data-stance": s, pressed: false, text: label2, title: tip, onclick: () => {
         sim2.setStance(ids(), s);
         ctl2.onChange();
@@ -56691,7 +56691,7 @@ body.war .sheet, body.war .bbar {
       }
       this.picker.hidden = !this.open;
       if (!this.open) return;
-      const pool = sim2.villagers.filter((v) => v.inside === null && v.down <= 0 && v.job !== "fight" && v.job !== "scout" && !(v.phase === "goStaff" && v.target === b.id) && !isStaffJob(v.job) && v.job !== "build" && !(v.job === "food" && v.post >= 0)).sort((x, y) => y.stats[stat] - x.stats[stat]);
+      const pool = sim2.villagers.filter((v) => (v.inside === null || v.phase === "sleep" && !sim2.sleepLocked(v)) && v.down <= 0 && v.job !== "fight" && v.job !== "scout" && !(v.phase === "goStaff" && v.target === b.id) && !isStaffJob(v.job) && v.job !== "build" && !(v.job === "food" && v.post >= 0)).sort((x, y) => y.stats[stat] - x.stats[stat]);
       const pk = `${b.id}|${full}|${pool.map((v) => `${v.id}.${v.job}.${v.stats[stat]}`).join()}`;
       if (pk === this.pickKey) return;
       this.pickKey = pk;
