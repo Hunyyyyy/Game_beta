@@ -59005,15 +59005,6 @@ body.war .sheet, body.war .bbar {
       this.foodNum = h("b");
       this.foodHint = hint(h("span", { class: "foodline" }, resIcon("food"), this.foodNum), "");
       /** The people of each role house, kept in the house that gives the role. */
-      /** In the research house the people are one tile of the tree; this row, always in view, says how many work and opens that tile. */
-      this.labStaffText = h("small", { class: "dsub" });
-      this.labStaffRow = h("div", { class: "btns" }, this.labStaffText, h("button", { class: "sm primary", text: "\uFF0B Th\xEAm ng\u01B0\u1EDDi nghi\xEAn c\u1EE9u", onclick: () => {
-        const i = this.tabs.lab.findIndex((t) => t.label === "Ng\u01B0\u1EDDi nghi\xEAn c\u1EE9u");
-        this.tabAt.lab = i;
-        this.labSub = i;
-        this.showTabs("lab", true);
-        this.c.ctl.onChange();
-      } }));
       this.rolePanes = {};
       this.labHead = h("div", { class: "labhead" });
       /** What the house is working on (the order under way and the queue), always at the very top of its panel, above the tabs. */
@@ -59159,7 +59150,7 @@ body.war .sheet, body.war .bbar {
       const only = (test) => TECHS.filter((x) => test(x.id));
       const labLevel = () => sim2.building("lab")?.level ?? 0;
       const militaryLock = () => sim2.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${TREE_TABS.military.needLab} \u0111\u1EC3 m\u1EDF Qu\xE2n s\u1EF1`;
-      this.progSec.lab = h("div", {}, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian: c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research, this.labStaffRow);
+      this.progSec.lab = h("div", {}, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian: c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research, this.staffBoxes.research.root);
       this.tabs.lab = [
         { label: "Qu\xE2n s\u1EF1 b\u1EADc 1", icon: "infantry", lock: militaryLock, page: tree((t) => {
           t.addChains("Ch\u1EC9 s\u1ED1 qu\xE2n", ["foot", "cavalry", "archer", "scout"], "military");
@@ -59180,8 +59171,7 @@ body.war .sheet, body.war .bbar {
         }) },
         { label: "V\u0169 kh\xED b\u1EADc 1", icon: "armory", under: 0, lock: () => militaryLock() && "C\u1EA7n m\u1EDF Qu\xE2n s\u1EF1 tr\u01B0\u1EDBc", page: tree((t) => {
           t.addChains("Ch\u1EC9 s\u1ED1 t\u1EEBng v\u0169 kh\xED", ["club", "spear", "mace", "sling", "bow"], "weapon");
-        }) },
-        { label: "Ng\u01B0\u1EDDi nghi\xEAn c\u1EE9u", icon: "lab", page: page(this.staffBoxes.research.root) }
+        }) }
       ];
       const goods = page(this.goodsHint, this.goodsBar);
       const goodsRows = (cat) => RECIPES.filter((r) => cat === "gear" === isGearKind(r.kind));
@@ -59395,7 +59385,6 @@ body.war .sheet, body.war .bbar {
       const { sim: sim2 } = this.c;
       this.staffBoxes.research.update(b);
       this.activeBoxes.research.update(b);
-      this.labStaffText.textContent = `Ng\u01B0\u1EDDi nghi\xEAn c\u1EE9u: ${sim2.staffCount(b)}/${levelDef(b).slots}`;
       const waiting = sim2.researchQueue[0];
       this.queueNote.research.textContent = `${waiting ? `Ch\u1EDD b\u1EAFt \u0111\u1EA7u: ${TECH_BY_ID[waiting]?.name ?? waiting}` : "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9"}`;
       for (const t of this.trees) t.update();
