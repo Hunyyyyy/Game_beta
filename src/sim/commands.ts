@@ -3,6 +3,7 @@ import { needsWork } from './buildings';
 import { Job, JOB_NAME, WorkJob } from './jobs';
 import { resolve } from './battle';
 import { animalDef } from './fauna';
+import { farFolk, isFree } from './idle';
 import type { Sim } from './sim';
 import { hash2 } from './rng';
 import { NODE_JOB, Target, Villager } from './model';
@@ -22,13 +23,24 @@ export function keepWatch(sim: Sim, v: Villager): void {
   if (v.job !== 'idle') sim.callUp(v);
 }
 
+/** The campfire's call: free villagers who are far from the village walk home (and keep the day's hours again). Returns how many were called. */
+export function recallFar(sim: Sim): number {
+  const fire = sim.campfire(), far = farFolk(sim);
+  if (!far.length) return 0;
+  const sx = fire ? fire.x + 1 : sim.world.start.x, sy = fire ? fire.y + 3 : sim.world.start.y + 3;
+  orderMove(sim, far.map((v) => v.id), Math.floor(sx), Math.floor(sy));
+  for (const v of far) if (v.job === 'idle') v.shift = 'day';
+  return far.length;
+}
+
 /** Drop every combat order of a unit (a new plain order replaces them). */
 export function clearCombat(sim: Sim, v: Villager): void {
   v.fight.target = null; v.fight.mode = 'none'; v.fight.dest = null; v.fight.anchor = null; v.fight.strict = false; v.queue.length = 0; v.loot = -1; v.fleeT = 0;
 }
 
 export function mine(sim: Sim, ids: readonly number[]): Villager[] {
-  return ids.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v && v.team === 'player' && v.down <= 0 && !sim.sleepLocked(v)); // someone worn out asleep cannot be woken
+  // someone worn out asleep cannot be woken, and a scout out on a trip answers to no order until he is home
+  return ids.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v && v.team === 'player' && v.down <= 0 && !sim.sleepLocked(v) && !sim.scouts.some((m) => m.ids.includes(v.id)));
 }
 
 /** A unit that is already doing something takes a Shift-queued order after it. */
@@ -49,6 +61,7 @@ export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: numb
     const goal = sim.nearestFree(tx, ty, taken);
     resetTask(sim, v); clearCombat(sim, v); v.prefer = -1;
     keepSoldierJob(sim, v); keepWatch(sim, v);
+    if (v.job === 'idle') v.shift = 'both'; // sent out by hand: they go on by night too, and turn back by themselves when their strength runs low (see rest.onShift, the notices)
     if (!goal) continue;
     taken.add(goal[1] * sim.world.size + goal[0]);
     // a soldier who is sent somewhere stands guard there afterwards
@@ -79,10 +92,11 @@ export function callWorker(sim: Sim, tx: number, ty: number): { name: string } |
 }
 
 /**
- * Right click on a tree, rock, bush or building site: those who already have the matching job go to this very one. Nobody is given a
- * job by a click (jobs come only from the job buttons), so the others are left alone. Null when the spot is not a place of work.
+ * Click on a tree, rock, bush or building site: those who already have the matching job go to this very one. A villager with no job at all
+ * takes that job first, if its house is built and has a place left (`err` says why not); a villager who has another job is left alone (jobs
+ * change only in the house of the job). Null when the spot is not a place of work.
  */
-export function orderWork(sim: Sim, ids: readonly number[], tx: number, ty: number): { job: WorkJob; sent: number } | null {
+export function orderWork(sim: Sim, ids: readonly number[], tx: number, ty: number): { job: WorkJob; sent: number; err: string | null } | null {
   if (!sim.world.inBounds(tx, ty)) return null;
   const idx = ty * sim.world.size + tx;
   const node = sim.world.nodeAt(tx, ty), site = sim.buildingAt(tx, ty);
@@ -92,11 +106,24 @@ export function orderWork(sim: Sim, ids: readonly number[], tx: number, ty: numb
   if (!job) return null;
   // the one exception: before any Nhà thợ xây stands nobody can be a builder, so whoever is sent raises the very first one
   const first = !!site && site.kind === 'builder' && !sim.building('builder');
+  let err: string | null = null;
+  if (node && (job === 'wood' || job === 'stone' || job === 'food')) {
+    const idle = mine(sim, ids).filter(isFree).map((v) => v.id);
+    if (idle.length) err = sim.assignRole(idle, job);
+  }
   const workers = mine(sim, ids).filter((v) => v.job === job || (first && v.job !== 'fight'));
   for (const v of workers) {
     resetTask(sim, v); clearCombat(sim, v); v.job = job; v.prefer = prefer;
   }
-  return { job, sent: workers.length };
+  return { job, sent: workers.length, err };
+}
+
+/** Click on prey or a carcass: a villager with no job becomes a hunter first, if the Chòi thợ săn has a place left. Returns why not, or null. */
+export function autoHunter(sim: Sim, ids: readonly number[], target: Target): string | null {
+  const e = resolve(sim, target);
+  if (e?.kind !== 'animal' || (e.a.state !== 'dead' && !animalDef(e.a).prey)) return null;
+  const idle = mine(sim, ids).filter(isFree).map((v) => v.id);
+  return idle.length ? sim.assignRole(idle, 'hunt') : null;
 }
 
 /**

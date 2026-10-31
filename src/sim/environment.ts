@@ -1,7 +1,7 @@
 /** The clock and the light: days, seasons, weather, and what the villagers can see. */
 import { isRestTime, rollWeather, seasonOf, SEASON_DEF, WEATHER } from './calendar';
 import { FIRE_VISION, NIGHT_VISION, VISION } from './constants';
-import { BUILDINGS } from './buildings';
+import { BUILDINGS, buildingSight } from './buildings';
 import { armOf } from './battle';
 import type { Sim } from './sim';
 import { Villager } from './model';
@@ -50,7 +50,7 @@ export function refreshFog(sim: Sim): void {
   const r = visionRadius(sim), fire = fireRadius(sim);
   sim.lastVision = r;
   const src = sim.villagers.map((v) => ({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r })); // a lit torch sees as far as by day
-  for (const b of sim.buildings) if (b.done) { const d = BUILDINGS[b.kind]; src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === 'campfire' ? fire : r }); }
+  for (const b of sim.buildings) if (b.done) { const d = BUILDINGS[b.kind]; src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === 'campfire' ? fire : Math.max(r, buildingSight(b) - (b.kind === 'tower' ? 0 : WEATHER[sim.weather].vision)) }); } // every house keeps watch round itself, a tower far round
   sim.fog.update(src);
   for (const v of sim.villagers) { v.tx = Math.floor(v.x); v.ty = Math.floor(v.y); }
 }
@@ -63,7 +63,16 @@ export function visionRadius(sim: Sim): number {
 /** How far a soldier of ours sees an enemy to go for him: as far as he sees (weather and night cut it, a torch brings it back), an archer a little further. */
 export function sightOf(sim: Sim, v: Villager): number {
   const r = visionRadius(sim);
-  return (v.torch || v.lit ? Math.max(r, TORCH_VISION) : r) + (armOf(v) === 'archer' ? ARCHER_SIGHT : 0);
+  return (v.torch || v.lit || inTowerLight(sim, v.x, v.y) ? Math.max(r, TORCH_VISION) : r) + (armOf(v) === 'archer' ? ARCHER_SIGHT : 0);
+}
+/** Is the point within the watch of a chòi canh (its sight grows with its level)? Our soldiers there see an enemy as far as with a torch, whatever the dark. */
+export function inTowerLight(sim: Sim, x: number, y: number): boolean {
+  for (const b of sim.buildings) {
+    if (b.kind !== 'tower' || !b.done) continue;
+    const d = BUILDINGS.tower;
+    if (Math.hypot(b.x + d.w / 2 - x, b.y + d.h / 2 - y) <= buildingSight(b)) return true;
+  }
+  return false;
 }
 /** How many tiles further an archer looks than a man on foot. */
 export const ARCHER_SIGHT = 1;

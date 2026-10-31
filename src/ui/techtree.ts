@@ -157,8 +157,7 @@ export class TechTree {
       line ? dlg.line(`Hiện tại: +${now}%`, `Cấp tiếp theo: +${next}%`) : null,
       dlg.text(line ? STAT_DEF[n.stat!].about : t.desc),
       dlg.costs(...costs, dlg.cost(resIcon('clock'), workDays(t.time), null, false, 'Thời gian')),
-      t.needLevel > 1 ? dlg.note(`Cần Nhà nghiên cứu cấp ${t.needLevel}`, false) : null,
-      note ? dlg.note(note) : null, btn));
+      ...(st.state === 'locked' && st.lacks ? st.lacks.map((l) => dlg.note(l)) : [t.needLevel > 1 ? dlg.note(`Cần Nhà nghiên cứu cấp ${t.needLevel}`, false) : null, note ? dlg.note(note) : null]), btn));
   }
 
   /** Refresh the squares (their bars and locks) every frame the panel shows; the detail only when something changed. */

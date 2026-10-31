@@ -13,6 +13,7 @@ import type { Ent } from './battle';
 import type { Building } from './buildings';
 import type { MountKind, StatKey } from './jobs';
 import type { Arm, FormationId } from './formations';
+import type { ScoutFlow } from './scouting';
 import type { CardKind, RouteTime, Forecast, FormationName, Mission, MissionTarget, Objective, Obstacle, Plan, Pt, ScoutMap, ScoutPlan, Squad, TribeIntel, Villager } from './model';
 import type { Sim } from './sim';
 
@@ -67,6 +68,10 @@ export const WAR = {
   tribeIntel(this: Sim, tribe: string): TribeIntel | null { return scouting.tribeIntel(this, tribe); },
   /** → warplan.objectivePos */
   missionTarget(this: Sim, plan: Plan, m: Mission): { x: number; y: number } | null { return warplan.objectivePos(this, plan, m); },
+  /** → scouting.recallScouts */
+  recallScouts(this: Sim, tribe: string): string | null { return scouting.recallScouts(this, tribe); },
+  /** → scouting.scoutFlow */
+  scoutFlow(this: Sim, tribe: string): ScoutFlow { return scouting.scoutFlow(this, tribe); },
   /** → scouting.startScout */
   startScout(this: Sim, ids: readonly number[], tribe: string): string | null { return scouting.startScout(this, ids, tribe); },
   /** → scouting.planScout */

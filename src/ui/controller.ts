@@ -31,6 +31,8 @@ export class Controller {
   inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null;
   /** The campfire's people menu asked for the full page of the chosen villager. */
   openDetail = false;
+  /** The house whose dialog the villager's detail was opened from: closing the detail brings it back. */
+  detailFrom: number | null = null;
   /** F pressed: the next click sends the selection to attack-move there. */
   attackMoveArmed = false;
   /** Saved selections, keys 1-9 (Ctrl + number saves, number recalls). */
@@ -330,26 +332,28 @@ export class Controller {
   command(p: { x: number; y: number }, queue = false): void {
     if (!this.selected.size) return;
     const w = this.r.screenToWorld(p.x, p.y), ids = [...this.selected];
+    if (ids.every((id) => this.sim.scouts.some((m) => m.ids.includes(id)))) { this.onToast(ids.length > 1 ? 'Các trinh sát đang làm nhiệm vụ: đợi họ về' : 'Trinh sát đang làm nhiệm vụ: đợi họ về'); return; }
     const worn = ids.filter((id) => { const o = this.sim.get(id); return !!o && this.sim.sleepLocked(o); });
     if (worn.length === ids.length) { this.onToast(ids.length > 1 ? 'Họ đang ngủ say, chưa gọi dậy được' : `${this.sim.get(ids[0])?.name} đang ngủ say, chưa gọi dậy được`); return; }
     // an enemy, an animal or a carcass under the cursor beats ground orders
     const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
     if (seen) {
-      // a click never gives anyone a job: only soldiers fight and only hunters hunt, the rest are told how to get the job
+      // only soldiers fight and only hunters hunt; a villager with no job becomes a hunter by being sent at game, one who has a job keeps it
+      const noHunter = 'Chỉ Thợ săn hoặc chiến binh mới săn thú: dân đã có nghề khác chỉ đổi nghề ở công trình của nghề đó';
       if (seen.kind === 'carcass') {
-        const n = this.sim.orderLoot(ids, seen.target.id);
-        this.onToast(n ? 'Lột da, lấy thịt' : 'Chỉ Thợ săn lột da: giao nghề Thợ săn bằng nút nghề trước');
+        const why = this.sim.autoHunter(ids, seen.target), n = this.sim.orderLoot(ids, seen.target.id);
+        this.onToast(n ? 'Lột da, lấy thịt' : why ?? noHunter);
       } else {
-        const n = this.sim.orderAttack(ids, seen.target, queue);
-        this.onToast(n ? (seen.kind === 'foe' ? 'Tấn công' : 'Săn') : seen.kind === 'foe' ? 'Chỉ chiến binh mới đánh: tuyển lính ở trại lính' : 'Chỉ Thợ săn hoặc chiến binh mới săn thú: giao nghề Thợ săn bằng nút nghề trước');
+        const why = seen.kind === 'foe' ? null : this.sim.autoHunter(ids, seen.target), n = this.sim.orderAttack(ids, seen.target, queue);
+        this.onToast(n ? (seen.kind === 'foe' ? 'Tấn công' : 'Săn') : seen.kind === 'foe' ? 'Chỉ chiến binh mới đánh: tuyển lính ở trại lính' : why ?? noHunter);
       }
       this.markers.push({ x: w.x, y: w.y, age: 0 }); this.onChange(); return;
     }
     const { x: tx, y: ty } = this.pickTile(w.x, w.y);
     if (!this.sim.world.inBounds(tx, ty)) return;
-    // a tree, rock, bush or building site: those who already have that job go to it; a click gives no one a job
+    // a tree, rock, bush or building site: those who have that job go to it, and a villager with no job takes it if its house has room
     const work = this.sim.orderWork(ids, tx, ty);
-    if (work) this.onToast(work.sent ? JOB_NAME[work.job] : work.job === 'build' ? 'Chỉ thợ xây của Nhà thợ xây mới xây: chọn thợ ở nhà đó' : `Chưa là ${JOB_NAME[work.job].toLowerCase()}: giao nghề bằng nút nghề trước`);
+    if (work) this.onToast(work.sent ? (work.err ? `${JOB_NAME[work.job]} (${work.err})` : JOB_NAME[work.job]) : work.job === 'build' ? 'Chỉ thợ xây của Nhà thợ xây mới xây: chọn thợ ở nhà đó' : work.err ?? `Dân đã có nghề khác: chỉ đổi nghề ở công trình của nghề ${JOB_NAME[work.job].toLowerCase()}`);
     else this.sim.orderMove(ids, tx, ty, queue);
     this.markers.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, age: 0 });
     if (work?.sent) this.releaseCivilians(queue); // a job lets the villager go; plain moves keep them chosen so they can be sent on again

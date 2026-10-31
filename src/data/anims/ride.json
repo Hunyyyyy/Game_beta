@@ -1,0 +1,8 @@
+{
+  "ride": { "fps": 3, "loop": true, "frames": [
+    {"bob":3,"lean":0,"legR":{"a":38,"lift":0},"legL":{"a":28,"lift":0},"armR":{"a":55,"b":35},"armL":{"a":48,"b":38}},
+    {"bob":3,"lean":0,"legR":{"a":38,"lift":0},"legL":{"a":28,"lift":0},"armR":{"a":57,"b":35},"armL":{"a":50,"b":38}},
+    {"bob":4,"lean":0,"legR":{"a":38,"lift":0},"legL":{"a":28,"lift":0},"armR":{"a":59,"b":33},"armL":{"a":52,"b":36}},
+    {"bob":3,"lean":0,"legR":{"a":38,"lift":0},"legL":{"a":28,"lift":0},"armR":{"a":57,"b":35},"armL":{"a":50,"b":38}}
+  ] }
+}

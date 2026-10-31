@@ -1,4 +1,4 @@
-import { BUILDINGS, Building, BuildingKind, canGrow, levelCapByFire, levelDef, maxLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, BuildingKind, canGrow, levelCapByFire, levelDef, maxHp, maxLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
 import { RES_NAME, Res, Stock } from '../sim/resources';
 import type { Renderer } from '../render/renderer';
@@ -77,11 +77,12 @@ export class BuildingBar {
     });
   }
 
-  /** What the house brought in today and yesterday, for the houses of the gatherers. */
+  /** What the house makes in a day from the people who work for it, for the houses of the gatherers. */
   private yieldLine(b: Building): string | undefined {
     const key = YIELD_OF[b.kind]; if (!key || !b.done) return undefined;
-    const { sim } = this.c, unit = key === 'hunt' ? 'sản vật' : key === 'wood' ? 'gỗ' : key === 'stone' ? 'đá' : 'thức ăn';
-    return `Thu hôm nay: ${Math.floor(sim.yieldNow[key] ?? 0)} ${unit} · hôm qua: ${Math.floor(sim.yieldPrev[key] ?? 0)}`;
+    const y = this.c.sim.dailyYield(b); if (!y) return undefined;
+    const unit = key === 'hunt' ? 'sản vật' : key === 'wood' ? 'gỗ' : key === 'stone' ? 'đá' : 'thức ăn';
+    return y.people ? `Sản xuất ~${Math.round(y.amount)} ${unit}/ngày · ${y.people} người đang làm` : `Chưa có ai làm việc: chưa sản xuất ${unit}`;
   }
 
   /** Refresh what the card says and which buttons show; called as often as the screen is drawn. */
@@ -93,7 +94,7 @@ export class BuildingBar {
     this.id = b.id;
     const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
     const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
-    const hp = b.done && lv.hp ? ` · bền ${Math.max(0, Math.round(b.hp))}/${lv.hp}` : '';
+    const hp = b.done ? ` · bền ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? ' · đang cháy' : b.hp <= maxHp(b) * 0.7 ? ' · bốc khói' : ''}` : '';
     const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < top;
     this.card.set({
       picKey: `${b.kind}${b.level}${b.done}`,

@@ -34,15 +34,16 @@ export function recipeLock(sim: Sim, id: string): string | null {
 export function recipeOpen(sim: Sim, id: string): boolean { return recipeLock(sim, id) === null; }
 
 /** Where a research stands: done, being worked on, queued, ready to start or locked (with the reason). */
-export function techState(sim: Sim, t: Tech): { state: 'done' | 'active' | 'queued' | 'ready' | 'locked'; why?: string } {
+export function techState(sim: Sim, t: Tech): { state: 'done' | 'active' | 'queued' | 'ready' | 'locked'; why?: string; lacks?: string[] } {
   if (sim.researched.has(t.id)) return { state: 'done' };
   if (sim.building('lab')?.active?.id === t.id) return { state: 'active' };
   if (sim.researchQueue.includes(t.id)) return { state: 'queued' };
-  const need = t.requires.find((r) => !sim.researched.has(r));
-  if (need) return { state: 'locked', why: `Cần nghiên cứu: ${TECH_BY_ID[need].name}` };
+  // every condition that is not met yet, not only the first
+  const lacks = t.requires.filter((r) => !sim.researched.has(r)).map((r) => `Cần nghiên cứu: ${TECH_BY_ID[r].name}`);
   const lab = sim.building('lab');
-  if (!lab) return { state: 'locked', why: 'Cần dựng Nhà nghiên cứu' };
-  if (lab.level < t.needLevel) return { state: 'locked', why: `Cần Nhà nghiên cứu cấp ${t.needLevel}` };
+  if (!lab) lacks.push('Cần dựng Nhà nghiên cứu');
+  else if (lab.level < t.needLevel) lacks.push(`Cần Nhà nghiên cứu cấp ${t.needLevel}`);
+  if (lacks.length) return { state: 'locked', why: lacks.join(' · '), lacks };
   return { state: 'ready' };
 }
 

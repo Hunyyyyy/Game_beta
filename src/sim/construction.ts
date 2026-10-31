@@ -8,9 +8,9 @@ import type { Sim } from './sim';
 import { PlaceResult } from './model';
 
 // ---------------------------------------------------------------- công trình
-export function addBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, done: boolean): Building {
+export function addBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, done: boolean, level = 1): Building {
   const d = BUILDINGS[kind];
-  const b: Building = { id: sim.nextBid++, kind, era: sim.era, x, y, level: 1, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
+  const b: Building = { id: sim.nextBid++, kind, era: sim.era, x, y, level, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
   b.hp = maxHp(b);
   sim.buildings.push(b);
   setOcc(sim, b, 1);
@@ -88,9 +88,18 @@ export function buildingLock(sim: Sim, kind: BuildingKind): string | null {
   return null;
 }
 
+/** The level a new house of this kind is raised at: the level of the last one that fell in battle, else 1. */
+export function startLevel(sim: Sim, kind: BuildingKind): number { return Math.min(sim.ruins[kind] ?? 1, maxLevel(kind, sim.era)); }
+/** What raising it costs: every level up to the one it starts at (a rebuilt house is paid for again, but not raised level by level). */
+export function startCost(sim: Sim, kind: BuildingKind): Partial<Stock> {
+  const out: Partial<Stock> = {};
+  for (let l = 1; l <= startLevel(sim, kind); l++) { const c = levelsOf(kind, sim.era)[l - 1].cost; for (const r of Object.keys(c) as Res[]) out[r] = (out[r] ?? 0) + (c[r] ?? 0); }
+  return out;
+}
+
 /** Trả về lý do không đặt được, hoặc null nếu đặt được. */
 export function canPlace(sim: Sim, kind: BuildingKind, x: number, y: number): string | null {
-  return footprintError(sim, kind, x, y) ?? buildingLock(sim, kind) ?? (sim.dev.freeBuild ? null : sim.missing(levelsOf(kind, sim.era)[0].cost));
+  return footprintError(sim, kind, x, y) ?? buildingLock(sim, kind) ?? (sim.dev.freeBuild ? null : sim.missing(startCost(sim, kind)));
 }
 
 /** Reason the building cannot be upgraded now, or null. */
@@ -124,11 +133,12 @@ export function placeBuilding(sim: Sim, kind: BuildingKind, x: number, y: number
   if (!d.buildable) return { ok: false, reason: 'Không xây được công trình này' };
   const why = canPlace(sim, kind, x, y);
   if (why) return { ok: false, reason: why };
-  const cost = levelsOf(kind, sim.era)[0].cost;
+  const cost = startCost(sim, kind), lvl = startLevel(sim, kind);
   if (!sim.dev.freeBuild) for (const r of Object.keys(cost) as Res[]) sim.stock[r] -= cost[r] ?? 0;
-  const b = addBuilding(sim, kind, x, y, false);
+  const b = addBuilding(sim, kind, x, y, false, lvl);
+  delete sim.ruins[kind]; // the ruin is built over
   if (sim.dev.instantBuild) { b.progress = 1; b.done = true; sim.fogDirty = true; sim.say(`${d.name} đã dựng xong ngay (dev).`); return { ok: true, building: b }; }
-  sim.say(`Đã đặt nền ${d.name}. Giao việc "Thợ xây" để dựng.`);
+  sim.say(`Đã đặt nền ${d.name}${lvl > 1 ? ` (dựng lại ở cấp ${lvl}, không phải nâng từ cấp 1)` : ''}. Giao việc "Thợ xây" để dựng.`);
   return { ok: true, building: b };
 }
 
@@ -181,7 +191,12 @@ export function canDemolish(sim: Sim, b: Building): string | null {
 
 /** A work falls in battle: it leaves the village with no salvage and no refund. */
 export function destroyBuilding(sim: Sim, b: Building): void {
+  if (BUILDINGS[b.kind].buildable && b.done && !WALL_KINDS.has(b.kind)) sim.ruins[b.kind] = Math.max(sim.ruins[b.kind] ?? 1, b.level); // it can be raised again at the level it had
+  // the archers of a tower that falls come out and fight on the ground
+  const archers = b.kind === 'tower' ? sim.garrison(b) : [];
   evict(sim, b);
+  for (const v of archers) { v.fight.mode = 'guard'; v.fight.anchor = { x: b.x + 1, y: b.y + 2 }; v.stance = 'aggressive'; v.nightOwl = true; v.phase = 'idle'; }
+  if (archers.length) sim.say(`Chòi canh đổ: ${archers.length} cung thủ ra đánh.`);
   setOcc(sim, b, 0);
   sim.buildings.splice(sim.buildings.indexOf(b), 1);
   sim.fogDirty = true;
@@ -208,6 +223,7 @@ export function demolishBuilding(sim: Sim, id: number): string | null {
 /** Why the building cannot go to (x, y), or null. */
 export function canMove(sim: Sim, b: Building, x: number, y: number): string | null {
   if (!BUILDINGS[b.kind].buildable) return 'Không dời được công trình này';
+  if (sim.attackReason()) return 'Không dời được công trình khi làng đang bị tấn công';
   if (x === b.x && y === b.y) return 'Vẫn ở chỗ cũ';
   return footprintError(sim, b.kind, x, y, b) ?? sim.missing(moveFee(sim, b));
 }
@@ -235,8 +251,8 @@ export function capacity(sim: Sim, _res?: Res): number {
   return c;
 }
 
-/** Villagers the village can hold: it grows with the campfire. */
-export function popCap(sim: Sim): number { const f = sim.campfire(); return POP_BY_FIRE[Math.min(POP_BY_FIRE.length, f?.level ?? 1) - 1]; }
+/** Villagers the village can hold: what the campfire holds at its level, plus the beds of every finished Nhà dân. */
+export function popCap(sim: Sim): number { const f = sim.campfire(); return POP_BY_FIRE[Math.min(POP_BY_FIRE.length, f?.level ?? 1) - 1] + sim.bedsIn('house'); }
 
 /** How fast builders work: the level of their house. */
 export function crewSpeed(sim: Sim): number { const h = sim.building('builder'); return h ? levelDef(h).craftSpeed : 1; }

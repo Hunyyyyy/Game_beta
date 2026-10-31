@@ -66,7 +66,7 @@ button.primary.danger { background: var(--bad); color: #fff; border-color: var(-
 .rec {
   display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center;
   padding: 3px 0; border-top: 1px solid var(--line);
-  canvas { width: 32px; height: 32px; image-rendering: pixelated; }
+  canvas { width: 32px; height: 32px; image-rendering: pixelated; object-fit: contain; }
   .qty { display: inline-flex; gap: 4px; align-items: center; font-variant-numeric: tabular-nums; }
   .have { min-width: 9ch; text-align: right; color: var(--muted); font-size: 12px; }
 }
@@ -179,3 +179,13 @@ button.primary.danger { background: var(--bad); color: #fff; border-color: var(-
 }
 .tabs.icontabs .tabcard { min-height: 98px; justify-content: flex-start; .tpic { width: 56px; height: 56px; canvas { width: 100%; height: 100%; object-fit: contain; } } }
 .mbody.subopen { overflow: hidden; }
+.filters { align-items: center; }
+// the page buttons keep their own size whatever the list holds; the pager stays at the foot of the column
+.pager { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: auto; button { flex: none; width: 76px; } }
+.pleft { display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 400px; .dlist { align-content: start; } }
+.pside { display: grid; gap: 6px; align-content: start; }
+// the line of tabs sits at the left under the title (the tabs of pictures keep their own grid)
+.topbar {
+  display: grid; gap: 6px;
+  &.inline { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 4px 10px; .tabs { flex: none; position: static; padding: 0; background: none; } }
+}

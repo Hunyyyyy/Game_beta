@@ -48,6 +48,8 @@ export interface FoeAI {
   raid: number;            // id of the raid party (0 = none)
   /** Seconds a raider has been unable to get at what he is after (a fence in the way). */
   stuck?: number;
+  /** A target he could not get to (he only paced before it): left alone until this time. */
+  skip?: { id: number; until: number };
   /** The fence or gate he has decided to break down (building id), 0 for none. */
   siege?: number;
 }
@@ -200,7 +202,15 @@ export interface TribeIntel {
   soldiers: { foot: number; archer: number; cavalry: number } | null;
 }
 /** `sent` is how many set out (older saves lack it). */
-export interface ScoutMission { id: number; tribe: string; level: number; ids: number[]; phase: 'go' | 'watch' | 'back'; t: number; need: number; survivors: number; sent?: number; seen?: Seen[] }
+export interface ScoutMission {
+  id: number; tribe: string; level: number; ids: number[]; phase: 'go' | 'watch' | 'back'; t: number; need: number; survivors: number; sent?: number; seen?: Seen[];
+  /** How much of the map is drawn (0..1): it grows while scouts are at the village, and is theirs to carry home. */
+  progress?: number;
+  /** The scouts who have been through the risk of being caught on arriving. */
+  rolled?: number[];
+  /** Called back by the player before the map was finished. */
+  recall?: boolean;
+}
 /**
  * A village somebody of ours came across while out on the map. It is `carried` in his head until he gets home alive;
  * then it is `reported` and shows in the scouting list, with only how far it lies, until scouts are sent to draw it.

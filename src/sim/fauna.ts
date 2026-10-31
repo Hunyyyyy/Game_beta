@@ -1,6 +1,8 @@
 import { ANIMALS, BEHAVIOUR, Species, SPECIES, zoneOf, type AnimalDef } from './combat';
 import type { Res } from './resources';
-import { hash2 } from './rng';
+import { findPath, type Step } from './path';
+import { CHUNK, CHUNKS } from './world';
+import { hash2, mix32, mulberry32 } from './rng';
 import type { Sim, Target } from './sim';
 import { Tile } from './world';
 
@@ -48,25 +50,38 @@ const isWater = (sim: Sim, x: number, y: number) => sim.world.inBounds(x, y) && 
 /** Can this species stand on the tile: land animals on ground, fish in water. */
 const habitable = (sim: Sim, def: AnimalDef, x: number, y: number) => (def.habitat === 'water' ? isWater(sim, x, y) : isGround(sim, x, y));
 
-/** Fill the map with herds. Counts and zones come from animals.json; the start area stays calm. */
-export function populate(sim: Sim): void {
-  const N = sim.world.size, s = sim.world.start, rnd = sim.frnd;
-  let herd = 1;
+/**
+ * animals.json counts are for the first map, 192 tiles a side. Herds are laid down a chunk at a time as the land is made, in the same share of
+ * the land (times SPARSE: fewer than before, so the land is not crowded and the loop over all the animals stays light).
+ */
+const SPARSE = 0.4;
+const FIRST_AREA = 192 * 192;
+const share = (): number => (CHUNK * CHUNK * SPARSE) / FIRST_AREA;
+/** How many of a species the land made so far should hold: what breeding in spring builds the herds back up to. */
+const countOf = (sim: Sim, def: AnimalDef): number => Math.round(def.count * share() * sim.world.ready.reduce((n, r) => n + r, 0));
+
+/** Put the herds on one chunk of new land. The dice are the chunk's own, so a chunk holds the same herds whenever it is made. Counts and zones come from animals.json; the start area stays calm. */
+export function populateChunk(sim: Sim, cx: number, cy: number): void {
+  const w = sim.world, s = w.start, x0 = cx * CHUNK, y0 = cy * CHUNK;
+  const rnd = mulberry32(mix32(sim.seed ^ Math.imul(cx + 1, 0x9e3779b1) ^ Math.imul(cy + 1, 0x85ebca6b)));
+  let herd = 100000 + (cy * CHUNKS + cx) * 64;
   for (const sp of SPECIES) {
-    const def = ANIMALS[sp];
-    let made = 0, guard = 0;
-    while (made < def.count && guard++ < def.count * 60) {
-      const x = Math.floor(rnd() * N), y = Math.floor(rnd() * N), d = Math.hypot(x - s.x, y - s.y);
-      const z = zoneOf(d);
-      if ((d < 16 && def.habitat !== 'water') || z < def.zones[0] || z > def.zones[1] || !habitable(sim, def, x, y)) continue;
-      const size = Math.min(def.count - made, def.herd[0] + Math.floor(rnd() * (def.herd[1] - def.herd[0] + 1)));
-      for (let i = 0; i < size; i++) {
-        const ax = x + (rnd() - 0.5) * 4, ay = y + (rnd() - 0.5) * 4;
-        if (!habitable(sim, def, Math.floor(ax), Math.floor(ay))) continue;
-        spawnAnimal(sim, sp, ax, ay, herd);
-        made++;
+    const def = ANIMALS[sp], expected = (def.count / ((def.herd[0] + def.herd[1]) / 2)) * share();
+    const herds = Math.floor(expected) + (rnd() < expected - Math.floor(expected) ? 1 : 0);
+    for (let n = 0; n < herds; n++) {
+      for (let tries = 0; tries < 8; tries++) {
+        const x = x0 + Math.floor(rnd() * CHUNK), y = y0 + Math.floor(rnd() * CHUNK), d = Math.hypot(x - s.x, y - s.y);
+        const z = zoneOf(d), far = z === 4 && def.zones[1] === 3 ? 3 : z; // the far lands beyond the last zone hold the ordinary wildlife too
+        if ((d < 16 && def.habitat !== 'water') || far < def.zones[0] || far > def.zones[1] || !habitable(sim, def, x, y)) continue;
+        const size = def.herd[0] + Math.floor(rnd() * (def.herd[1] - def.herd[0] + 1));
+        for (let i = 0; i < size; i++) {
+          const ax = x + (rnd() - 0.5) * 4, ay = y + (rnd() - 0.5) * 4;
+          if (!w.isReady(Math.floor(ax), Math.floor(ay)) || !habitable(sim, def, Math.floor(ax), Math.floor(ay))) continue;
+          spawnAnimal(sim, sp, ax, ay, herd);
+        }
+        herd++;
+        break;
       }
-      herd++;
     }
   }
 }
@@ -82,22 +97,80 @@ export function spawnAnimal(sim: Sim, species: Species, x: number, y: number, he
   return a;
 }
 
-/** Walk toward a point, sliding along obstacles. Returns false when completely stuck. */
+/** Which way an animal turned last when something was in its way, so it keeps going round the same side instead of dithering in front of a wall. */
+const turned = new WeakMap<Animal, number>();
+/** Headings to try, as turns from straight on: ahead first, then ever wider to the side it turned last time. */
+const TURNS = [0, 0.6, 1.2, 1.9, 2.6];
+
+/** An animal that finds itself inside something (a tree grew, a house was raised, it was driven into water) is put on the nearest tile it may stand on. */
+function unstick(sim: Sim, a: Animal): void {
+  const def = animalDef(a), x = Math.floor(a.x), y = Math.floor(a.y);
+  if (habitable(sim, def, x, y)) return;
+  for (let r = 1; r <= 10; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+    if (Math.max(Math.abs(i), Math.abs(j)) !== r || !habitable(sim, def, x + i, y + j)) continue;
+    a.x = x + i + 0.5; a.y = y + j + 0.5; return;
+  }
+}
+
+/** How an animal is getting on: where it was a moment ago and since when (a window of a second), to tell one that walks from one that only paces before a wall. */
+const watch = new WeakMap<Animal, { x: number; y: number; t: number; at: number }>();
+/** A way round an obstacle, found by the search when the steering alone does not get an animal anywhere; kept while its goal stays the same. */
+const route = new WeakMap<Animal, { goal: string; path: Step[] }>();
+let routeTick = -1, routeLeft = 0; // searches allowed in one tick, so that a crowd of stuck animals cannot stall the game
+
+/**
+ * Walk toward a point. Steering handles the small obstacles (it turns wider and wider to the side it chose last); an animal that makes no headway
+ * for a second (a house, a field, a row of fences in front of it, which steering paces before for ever) gets a real path round it.
+ * Returns false when it cannot get there at all: the caller then picks another place.
+ */
 function step(sim: Sim, a: Animal, tx: number, ty: number, speed: number, dt: number): boolean {
+  const water = ANIMALS[a.species].habitat === 'water', key = `${Math.floor(tx / 2)},${Math.floor(ty / 2)}`;
+  let gx = tx, gy = ty;
+  const r = route.get(a);
+  if (r && r.goal === key) {
+    while (r.path.length && Math.hypot(r.path[0][0] + 0.5 - a.x, r.path[0][1] + 0.5 - a.y) < 0.45) r.path.shift();
+    if (r.path.length) { gx = r.path[0][0] + 0.5; gy = r.path[0][1] + 0.5; } else route.delete(a);
+  } else if (r) route.delete(a);
+  const ok = steer(sim, a, gx, gy, speed, dt);
+  if (water) return ok;
+  let w = watch.get(a);
+  if (!w || sim.time - w.at > 0.6) { w = { x: a.x, y: a.y, t: 0, at: sim.time }; watch.set(a, w); }
+  w.t += dt; w.at = sim.time;
+  if (w.t < 1) return ok;
+  const gained = Math.hypot(a.x - w.x, a.y - w.y);
+  w.x = a.x; w.y = a.y; w.t = 0;
+  if (gained >= speed * 0.3 || route.has(a)) return ok;
+  if (routeTick !== sim.time) { routeTick = sim.time; routeLeft = 6; }
+  if (routeLeft <= 0) return ok;
+  routeLeft--;
+  const path = findPath(sim.world, Math.floor(a.x), Math.floor(a.y), Math.floor(tx), Math.floor(ty), 1500);
+  if (!path.length) return false; // nowhere to go from here: let it choose another place
+  route.set(a, { goal: key, path });
+  return true;
+}
+
+/** One small step toward a point, turning aside from what is in the way. Returns false when completely stuck. */
+function steer(sim: Sim, a: Animal, tx: number, ty: number, speed: number, dt: number): boolean {
+  unstick(sim, a);
   const dx = tx - a.x, dy = ty - a.y, d = Math.hypot(dx, dy);
   if (d < 0.05) return true;
-  const k = Math.min(d, speed * dt) / d, sx = dx * k, sy = dy * k, w = sim.world, water = ANIMALS[a.species].habitat === 'water';
+  const len = Math.min(d, speed * dt), w = sim.world, water = ANIMALS[a.species].habitat === 'water';
+  const sx = (dx / d) * len, sy = (dy / d) * len;
   // animals that fear fire (the fox and the lion; not the wolf) never step into firelight, whatever they are doing
   const fear = ANIMALS[a.species].fearsFire;
   if (fear) { const nf = fireDistance(sim, a.x + sx, a.y + sy); if (nf < fear && nf < fireDistance(sim, a.x, a.y)) return false; }
   const free = (x: number, y: number) => water ? isWater(sim, Math.floor(x), Math.floor(y)) : w.inBounds(Math.floor(x), Math.floor(y)) && !w.isBlocked(Math.floor(x), Math.floor(y));
-  let moved = true;
-  if (free(a.x + sx, a.y + sy)) { a.x += sx; a.y += sy; }
-  else if (free(a.x + sx, a.y)) a.x += sx;
-  else if (free(a.x, a.y + sy)) a.y += sy;
-  else moved = false;
+  const base = Math.atan2(dy, dx), side = turned.get(a) ?? (a.id % 2 ? 1 : -1);
+  for (const t of TURNS) for (const sgn of t === 0 ? [1] : [side, -side]) {
+    const ang = base + t * sgn, mx = Math.cos(ang) * len, my = Math.sin(ang) * len;
+    if (!free(a.x + mx, a.y + my)) continue;
+    a.x += mx; a.y += my;
+    if (t > 0) turned.set(a, sgn); else if (turned.has(a)) turned.delete(a);
+    if (Math.abs(mx) > 0.001) a.dir = mx > 0 ? 1 : -1;
+    return true;
+  }
   if (Math.abs(sx) > 0.001) a.dir = sx > 0 ? 1 : -1;
-  return moved;
+  return false;
 }
 
 const near = (sim: Sim, x: number, y: number) => {
@@ -225,7 +298,7 @@ export function breed(sim: Sim): void {
     const def = ANIMALS[sp];
     const alive = sim.animals.filter((a) => a.species === sp && a.state !== 'dead' && !a.raid);
     if (alive.filter((a) => a.female).length < BEHAVIOUR.breedMinFemales) continue;
-    const missing = def.count - alive.length;
+    const missing = countOf(sim, def) - alive.length;
     for (let i = 0; i < Math.max(0, missing); i++) {
       if (sim.frnd() > BEHAVIOUR.breedChance) continue;
       const mother = alive[Math.floor(sim.frnd() * alive.length)];

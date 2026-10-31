@@ -26,8 +26,56 @@ export function nearestFree(sim: Sim, tx: number, ty: number, taken: Set<number>
   return null;
 }
 
+/** The nearest tile centre where somebody may stand, looking outward from (x, y); null when there is none within `reach`. */
+export function freeSpotNear(sim: Sim, x: number, y: number, reach = 8): [number, number] | null {
+  const fx = Math.floor(x), fy = Math.floor(y);
+  for (let r = 0; r <= reach; r++) {
+    let best: [number, number] | null = null, bd = Infinity;
+    for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+      if (Math.max(Math.abs(i), Math.abs(j)) !== r || sim.world.isBlocked(fx + i, fy + j)) continue;
+      const d = (fx + i + 0.5 - x) ** 2 + (fy + j + 0.5 - y) ** 2;
+      if (d < bd) { bd = d; best = [fx + i, fy + j]; }
+    }
+    if (best) return [best[0] + 0.5, best[1] + 0.5];
+  }
+  return null;
+}
+
+/** How far a walker has got and since when, to tell one who is stuck (it has a path but is not moving) from one who is walking. */
+const progress = new WeakMap<Villager, { x: number; y: number; t: number }>();
+
+/**
+ * Keep a walker out of trouble before it moves: one standing inside something (a house was raised on the spot, a tree grew) is lifted to the
+ * nearest free tile; one whose next step has become blocked looks for a new way to the same place; one that has not moved for a while with a path
+ * to follow drops it and looks again (or gives up and lets the brain choose anew).
+ */
+function unstickWalker(sim: Sim, v: Villager, dt: number): void {
+  if (v.inside !== null) return;
+  const w = sim.world;
+  if ((v.phase === 'idle' || v.phase === 'wait') && !v.slide && !v.path.length && w.isBlocked(Math.floor(v.x), Math.floor(v.y))) { const spot = freeSpotNear(sim, v.x, v.y); if (spot) { v.x = spot[0]; v.y = spot[1]; v.slide = null; } }
+  if (!v.path.length) { progress.delete(v); return; }
+  const goal = v.path[v.path.length - 1];
+  const blocked = v.path.length > 1 && w.isBlocked(v.path[0][0], v.path[0][1]); // the last step may be a work spot that overlaps what is worked on
+  // a window of 2.5 seconds: a walker with a path who has got less than a tile and a quarter from where the window began is pacing, not walking
+  const p = progress.get(v);
+  if (!p) progress.set(v, { x: v.x, y: v.y, t: 0 });
+  else { p.t += dt; if (p.t >= 2.5) { const stuckNow = Math.hypot(p.x - v.x, p.y - v.y) < 1.25; p.x = v.x; p.y = v.y; p.t = 0; if (stuckNow) p.t = 99; } }
+  const stuck = !!p && p.t === 99;
+  if (!blocked && !stuck) return;
+  progress.delete(v);
+  // the way is shut or the walker is jammed: find the way again once, and if there is none stop and let the brain decide what next
+  const [gx, gy] = goal, standing = w.isBlocked(Math.floor(v.x), Math.floor(v.y)) ? freeSpotNear(sim, v.x, v.y) : null;
+  if (standing) { v.x = standing[0]; v.y = standing[1]; }
+  let again: Step[] = [];
+  if (v.team !== 'player') again = sim.pathTo(v, gx, gy, 6000);
+  else if (sim.pathLeft > 0) { sim.pathLeft--; again = sim.pathTo(v, gx, gy, 6000); }
+  v.path = again; if (!again.length) { v.slide = null; if (v.phase === 'move') v.phase = 'idle'; }
+  if (stuck && v.team !== 'player') { if (v.ai && v.fight.target?.kind === 'unit') v.ai.skip = { id: v.fight.target.id, until: sim.time + 20 }; v.fight.target = null; v.fight.repath = 3; if (v.phase === 'fight') v.phase = 'idle'; } // a raider or a tribesman who only paces gives up that target for a while
+}
+
 /** Follow the path and the final slide step; shared by villagers and tribal people. */
 export function moveUnit(sim: Sim, v: Villager, dt: number): void {
+  unstickWalker(sim, v, dt);
   const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === 'flee' ? 1.3 : 1) * (v.team === 'player' ? sim.mountSpeed(v) : 1); // a rider on his beast walks faster
   if (v.swing) return; // a blow in progress plants the feet
   let left = walk * dt;
@@ -115,11 +163,11 @@ export function pathTo(sim: Sim, v: Villager, gx: number, gy: number, maxNodes =
 }
 
 /** Thử đi tới một trong các ô; trả về chỉ số ô đã có đường tới (hoặc -1). */
-export function routeTo(sim: Sim, v: Villager, tiles: Array<[number, number]>, tries = 3): number {
+export function routeTo(sim: Sim, v: Villager, tiles: Array<[number, number]>, tries = 3, maxNodes = 14000): number {
   const [sx, sy] = standTile(sim, v);
   for (let k = 0; k < Math.min(tries, tiles.length); k++) {
     const [gx, gy] = tiles[k];
-    const p = pathTo(sim, v, gx, gy), last = p[p.length - 1];
+    const p = pathTo(sim, v, gx, gy, maxNodes), last = p[p.length - 1];
     if ((gx === sx && gy === sy) || (last && last[0] === gx && last[1] === gy)) { v.path = p; return k; }
   }
   return -1;

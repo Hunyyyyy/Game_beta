@@ -1,5 +1,5 @@
 export const TILE = 32;        // px mỗi ô
-export const MAP_SIZE = 192;   // ô mỗi cạnh
+export const MAP_SIZE = 960;   // ô mỗi cạnh
 export const VISION = 7;       // villager sight radius by day (tiles)
 export const NIGHT_VISION = 3; // at night, without fire
 export const FIRE_VISION = 8;  // campfire, day and night

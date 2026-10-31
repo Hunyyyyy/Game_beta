@@ -7,6 +7,7 @@ import { Animal, animalDef, die as animalDie, provoke, carcassEmpty } from './fa
 import { CARRY_CAP, Res, RES_NAME } from './resources';
 import type { Sim, Target, Villager } from './sim';
 import { hash2 } from './rng';
+import type { Step } from './path';
 import { critChance, critMult, guardCut, swingCycle, weaponDamage } from './statsys';
 import { BEHAVIOUR } from './combat';
 
@@ -95,6 +96,13 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   return out.sort((p, q) => p.d - q.d);
 }
 
+// ---------------------------------------------------------------- hunters
+/** How far from the Chòi thợ săn its hunters range (tiles), by the level of the lodge. */
+export const HUNT_RANGE = [24, 36, 52];
+export function huntRange(sim: Sim): number { return HUNT_RANGE[Math.min(HUNT_RANGE.length, sim.building('huntlodge')?.level ?? 1) - 1]; }
+/** A hunter who is hit below this share of health runs home; he hunts again only when healed back above HUNT_BACK. */
+const HUNT_FLEE = 0.3, HUNT_BACK = 0.5;
+
 // ---------------------------------------------------------------- damage
 export interface HurtSource { unit?: Villager; animal?: Animal }
 
@@ -116,7 +124,18 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   v.health -= final; v.calm = 0; v.flinch = 0.3;
   if (armor) sim.wearGear(v, 'armor');
   if (src.unit && src.unit.team === 'player' && v.team !== 'player') sim.tribeAttacked(v.team as Exclude<Team, 'player' | 'wild'>, v);
+  if (v.health > 0 && v.team !== 'player' && v.ai && v.ai.role !== 'civ' && src.unit && src.unit.team === 'player' && src.unit.inside !== null) {
+    const tw = sim.getBuilding(src.unit.inside);
+    if (tw && tw.kind === 'tower') { v.ai.siege = tw.id; v.fight.target = null; } // shot from a tower: it is the tower he goes for
+  }
   if (v.health > 0) {
+    if (v.team === 'player' && v.job === 'hunt' && v.phase !== 'flee' && v.health < v.maxHealth * HUNT_FLEE) {
+      const tribe = src.unit ? sim.tribes.find((t) => t.id === src.unit!.team) : undefined;
+      const by = src.animal ? `một con ${animalDef(src.animal).name.toLowerCase()}` : tribe ? tribe.def.name : src.unit ? 'một kẻ địch' : 'kẻ lạ';
+      sim.say(`${v.name} (thợ săn) bỏ chạy về làng vì máu còn ${Math.round((v.health / v.maxHealth) * 100)}%, bị ${by} tấn công.`);
+      startFlee(sim, v, 8, from);
+      return;
+    }
     // a unit that is hit and cannot fight back looks for cover; fighters answer the blow
     if (!v.fight.target && src.unit && v.team !== 'player') v.fight.target = { kind: 'unit', id: src.unit.id };
     else if (!v.fight.target && src.animal && v.team !== 'player') v.fight.target = { kind: 'animal', id: src.animal.id };
@@ -225,6 +244,7 @@ const SIGHT = 8, DEFENSIVE = 4.5;
 export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   if (v.phase === 'goStore' || v.phase === 'goEquip') return false;
   const rest = v.phase === 'sleep' || v.phase === 'goHome';
+  if (rest && sim.hides(v)) return false; // lying low in a house while the village is attacked: nothing wakes them to run out
   v.fight.scan -= dt;
   const scanNow = v.fight.scan <= 0;
   if (scanNow) v.fight.scan = 0.35;
@@ -242,26 +262,43 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   const fighter = isFighter(v);
   if (!fighter) {
     // Civilians do not fight: anything hostile within sight sends them running to the campfire
-    if (threats.length && threats[0].d < 6 && v.phase !== 'fight') { startFlee(sim, v, 8); return true; }
+    if (threats.length && threats[0].d < 6 && v.phase !== 'fight') { startFlee(sim, v, 8, threats[0]); return true; }
     return assistBrain(sim, v);
   }
   return fightBrain(sim, v, dt, threats);
 }
 
-function startFlee(sim: Sim, v: Villager, secs: number): void {
+/**
+ * Where a frightened villager runs: a free spot on the ground round the village, on the side away from what chases him. Never the fire itself:
+ * they run about the village, and pick a new spot whenever they reach one while the danger lasts.
+ */
+function fleeSpot(sim: Sim, v: Villager, from?: { x: number; y: number }): Step[] {
+  const fire = sim.campfire(), cx = fire ? fire.x + 1 : v.x, cy = fire ? fire.y + 1 : v.y;
+  let best: [number, number] | null = null, bs = -Infinity;
+  for (let k = 0; k < 12; k++) {
+    const ang = sim.frnd() * Math.PI * 2, r = 4 + sim.frnd() * 9, x = Math.floor(cx + Math.cos(ang) * r), y = Math.floor(cy + Math.sin(ang) * r);
+    if (sim.world.isBlocked(x, y)) continue;
+    const away = from ? Math.hypot(x + 0.5 - from.x, y + 0.5 - from.y) : Math.hypot(x + 0.5 - v.x, y + 0.5 - v.y) * 0.5;
+    if (away < 3) continue; // not toward the danger, nor on the spot
+    const score = away - Math.abs(r - 8) * 0.3;
+    if (score > bs) { bs = score; best = [x, y]; }
+  }
+  return best ? sim.pathTo(v, best[0], best[1], 4000) : fire ? sim.pathTo(v, Math.floor(fire.x + 1), Math.floor(fire.y + 2), 4000) : [];
+}
+
+function startFlee(sim: Sim, v: Villager, secs: number, from?: { x: number; y: number }): void {
   const keep = v.job, nightOwl = v.nightOwl;
   sim.resetTask(v); v.job = keep; v.nightOwl = nightOwl;
   v.fight.target = null; if (v.fight.mode === 'attack') v.fight.mode = 'none';
   v.phase = 'flee'; v.fleeT = secs;
-  const fire = sim.campfire();
-  if (fire) v.path = sim.pathTo(v, Math.floor(fire.x + 1), Math.floor(fire.y + 2), 4000);
+  v.path = fleeSpot(sim, v, from);
 }
 
 function fleeBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {
-  if (v.phase !== 'flee') { startFlee(sim, v, 8); return true; }
+  if (v.phase !== 'flee') { startFlee(sim, v, 8, threats[0]); return true; }
   v.fleeT -= dt;
   if (threats.length && threats[0].d < 6) v.fleeT = Math.max(v.fleeT, 3); // keep running while they are close
-  if (!v.path.length && sim.campfire() && Math.hypot(v.x - sim.campfire()!.x - 1, v.y - sim.campfire()!.y - 1) > 3) { const f = sim.campfire()!; v.path = sim.pathTo(v, Math.floor(f.x + 1), Math.floor(f.y + 2), 4000); }
+  if (!v.path.length && threats.length && threats[0].d < 9) v.path = fleeSpot(sim, v, threats[0]); // reached a spot with the danger still near: run to another, round the village
   if (v.fleeT <= 0) { v.phase = 'idle'; v.fleeT = 0; v.path = []; return false; }
   return true;
 }
@@ -300,6 +337,12 @@ export function engage(sim: Sim, v: Villager, e: Ent, dt: number): void {
 function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {
   const f = v.fight;
   if (v.phase === 'skin' || v.phase === 'goCarcass') return huntBrain(sim, v, dt, threats);
+  // a hurt hunter hunts no more until he has healed: he keeps away from what is near and rests by the fire
+  if (v.job === 'hunt' && v.health < v.maxHealth * HUNT_BACK && f.mode !== 'attack') {
+    f.target = null;
+    if (threats.length && threats[0].d < 7 && v.phase !== 'flee') { startFlee(sim, v, 8, threats[0]); return true; }
+    return huntBrain(sim, v, dt, threats);
+  }
   if (f.mode === 'hold' && !f.anchor) f.anchor = { x: v.x, y: v.y };
   // equipment first, but never in the middle of a fight
   if (!threats.length && !f.target && v.phase !== 'fight' && (sim.planEquipGear(v) || sim.planGearErrand(v))) return true;
@@ -323,7 +366,7 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
   }
   // 2. auto-engage by stance
   if (v.stance === 'retreat') {
-    if (threats.length && threats[0].d < 8) { startFlee(sim, v, 6); return true; }
+    if (threats.length && threats[0].d < 8) { startFlee(sim, v, 6, threats[0]); return true; }
   } else if (threats.length && f.scan >= 0) {
     const range = f.mode === 'hold' ? weaponOf(v).range + 1.5 : v.stance === 'defensive' ? Math.min(DEFENSIVE, sim.sightOf(v)) : sim.sightOf(v);
     const pick = threats.find((t) => t.d <= range && (!f.anchor || v.stance !== 'defensive' || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
@@ -350,6 +393,14 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
 
 // ---------------------------------------------------------------- hunting
 function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {
+  if (v.health < v.maxHealth * HUNT_BACK && v.phase !== 'skin') { // hurt: take what he carries home, then rest by the fire until healed
+    if (v.phase === 'move' && v.path.length) return true;
+    if (v.phase === 'fight' || v.phase === 'goCarcass') { v.phase = 'idle'; v.path = []; v.loot = -1; }
+    if (v.carry && v.carry.amount > 0) { sim.planDeliver(v); return true; }
+    const fire = sim.campfire();
+    if (fire && Math.hypot(v.x - fire.x - 1, v.y - fire.y - 1) > 4 && sim.pathLeft > 0) { sim.pathLeft--; v.path = sim.pathTo(v, Math.floor(fire.x + 1), Math.floor(fire.y + 2), 4000); if (v.path.length) { v.phase = 'move'; return true; } }
+    sim.wait(v, 2); return true;
+  }
   if (v.phase === 'skin') {
     v.timer -= dt; v.anim = 'build'; // crouched over the carcass
     if (v.timer > 0) return true;
@@ -380,6 +431,7 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
   if (v.carry && v.carry.amount >= CARRY_CAP[v.carry.res]) { sim.planDeliver(v); return true; }
   // a carcass waiting to be skinned
   const N = sim.world.size;
+  const lodge = sim.building('huntlodge') ?? sim.campfire(), range = huntRange(sim);
   let best: Animal | null = null, bd = 45;
   if (v.loot >= 0) { const a = sim.animalById.get(v.loot); if (a && a.state === 'dead') best = a; else v.loot = -1; }
   if (!best) for (const a of sim.animals) {
@@ -390,10 +442,11 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
   if (best) { v.loot = best.id; v.phase = 'goCarcass'; v.path = sim.pathTo(v, Math.floor(best.x), Math.floor(best.y), 3000); return true; }
   // living prey
   if (!threats.length) {
-    let prey: Animal | null = null; bd = 70; // a hunter looks over everything the village has explored, not only what is near him
+    let prey: Animal | null = null; bd = Infinity; // a hunter looks over all the explored ground within the range of his lodge
     for (const a of sim.animals) {
       const def = animalDef(a);
       if (a.state === 'dead' || !def.prey || sim.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
+      if (lodge && Math.hypot(a.x - lodge.x, a.y - lodge.y) > range) continue;
       if (def.defends && !sim.packNear(v, a)) continue; // a boar is only taken on by a group
       const d = Math.hypot(a.x - v.x, a.y - v.y);
       if (d < bd) { bd = d; prey = a; }
@@ -402,17 +455,23 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
   }
   if (v.carry && v.carry.amount > 0) { sim.planDeliver(v); return true; }
   if (v.phase === 'fight') { v.phase = 'idle'; v.path = []; }
-  // no game in sight: go out and look for some, in a new direction each time, over ground the village already knows
-  const lodge = sim.building('huntlodge') ?? sim.campfire(), step = Math.floor(sim.time / 8);
+  // no game in sight: go out and look for some, in a new direction each time, anywhere within the range of the lodge (unexplored ground too: walking there opens the map)
   if (lodge) {
-    const ang = hash2(v.id, step, 71) * Math.PI * 2, rad = 10 + hash2(v.id, step, 72) * 26;
-    const gx = Math.floor(lodge.x + Math.cos(ang) * rad), gy = Math.floor(lodge.y + Math.sin(ang) * rad);
-    if (sim.world.inBounds(gx, gy) && sim.fog.state[gy * N + gx] > 0) {
+    const step = Math.floor(sim.time / 8), spots: Array<[number, number, boolean]> = [];
+    for (let t = 0; t < 10; t++) {
+      const ang = hash2(v.id, step * 16 + t, 71) * Math.PI * 2, rad = 6 + hash2(v.id, step * 16 + t, 72) * (range - 6);
+      const gx = Math.floor(lodge.x + Math.cos(ang) * rad), gy = Math.floor(lodge.y + Math.sin(ang) * rad);
+      if (sim.world.inBounds(gx, gy) && !sim.world.isBlocked(gx, gy)) spots.push([gx, gy, sim.fog.state[gy * N + gx] === 0]);
+    }
+    spots.sort((p, q) => Number(q[2]) - Number(p[2])); // the unexplored first
+    for (const [gx, gy] of spots) {
+      if (sim.pathLeft <= 0) break;
+      sim.pathLeft--;
       const path = sim.pathTo(v, gx, gy, 2500);
       if (path.length) { v.path = path; v.phase = 'move'; return true; }
     }
   }
-  sim.wait(v, 2);
+  sim.wait(v, 1);
   return true;
 }
 

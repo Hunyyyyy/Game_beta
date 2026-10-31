@@ -1,4 +1,4 @@
-import { Building, BuildingKind, BUILDINGS, CLEARANCE as CLEAR, Era, needsWork, WALL_KINDS } from '../sim/buildings';
+import { Building, BuildingKind, BUILDINGS, CLEARANCE as CLEAR, Era, buildingSight, maxHp, needsWork, WALL_KINDS } from '../sim/buildings';
 import type { WeatherKind } from '../sim/calendar';
 import { gameDays, TILE } from '../sim/constants';
 import type { Sim, Villager } from '../sim/sim';
@@ -15,7 +15,7 @@ export interface Marker { x: number; y: number; age: number }
 
 export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number }
 
-interface Drawable { y: number; kind: 'tree' | 'rock' | 'bush' | 'villager' | 'building' | 'animal' | 'camp'; i: number; j: number; v?: Villager; b?: Building; a?: Animal; t?: Tribe }
+interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp'; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe }
 
 const FOG_RGB = [8, 10, 20];
 /** Weather particles: drop/flake count (per 1000×700 px), extra dimming, wind slant, lightning chance. */
@@ -80,6 +80,44 @@ export class Renderer {
   }
 
   /** Điểm neo của công trình: giữa mép dưới ô chiếm, hơi nhích lên. */
+  /**
+   * A house that has been hurt shows it: a bar of what is left, smoke once it has lost 30%, flames once it has lost 70% (at nothing it falls).
+   * Every house does it, the tower no more than the others.
+   */
+  private drawDamage(b: Building, ax: number, ay: number, time: number): void {
+    if (!b.done) return;
+    const { ctx, cam: { zoom: z } } = this, ratio = Math.max(0, Math.min(1, b.hp / Math.max(1, maxHp(b))));
+    if (ratio >= 1) return;
+    const top = b.kind === 'tower' ? 86 : b.kind === 'fence' || b.kind === 'gate' ? 30 : 62;
+    this.bar(ax, ay - top, ratio, ratio > 0.7 ? '#6bbf59' : ratio > 0.3 ? '#e0b43c' : '#d9503c');
+    if (b.kind === 'fence' || b.kind === 'gate') return;
+    const wide = BUILDINGS[b.kind].w * TILE * 0.35, roof = b.kind === 'tower' ? 70 : 44;
+    if (ratio <= 0.7) { // smoke rising from the roof
+      for (let k = 0; k < 4; k++) {
+        const t = (time * 0.45 + k * 0.25 + b.id * 0.13) % 1, p = this.worldToScreen(ax - wide * 0.5 + k * wide * 0.33 + Math.sin(time * 1.3 + k) * 3 * t, ay - roof - t * 34);
+        ctx.fillStyle = `rgba(${ratio <= 0.3 ? '55,52,52' : '120,120,126'},${(0.5 * (1 - t)).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, (3 + t * 7) * z, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    if (ratio <= 0.3) { // flames over it
+      for (let k = 0; k < 4; k++) {
+        const flick = 0.7 + 0.3 * Math.sin(time * 11 + k * 2.1 + b.id), h = (9 + k % 2 * 4) * flick * z, p = this.worldToScreen(ax - wide * 0.7 + k * wide * 0.47, ay - roof + 8 - (k % 2) * 6);
+        ctx.fillStyle = '#e8641e'; ctx.beginPath(); ctx.moveTo(p.x - 4 * z, p.y); ctx.lineTo(p.x, p.y - h); ctx.lineTo(p.x + 4 * z, p.y); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#f7c24a'; ctx.beginPath(); ctx.moveTo(p.x - 2 * z, p.y); ctx.lineTo(p.x, p.y - h * 0.65); ctx.lineTo(p.x + 2 * z, p.y); ctx.closePath(); ctx.fill();
+      }
+    }
+  }
+
+  /** The circle a tower sees, and shoots, as far as: drawn round the tower when it is chosen, and round the one being placed or carried. */
+  private drawSight(cxTile: number, cyTile: number, tiles: number): void {
+    const { ctx } = this, z = this.cam.zoom, p = this.worldToScreen(cxTile * TILE, cyTile * TILE), r = tiles * TILE * z;
+    ctx.fillStyle = 'rgba(255,226,140,.08)'; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,226,140,.7)'; ctx.lineWidth = 2; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  /** The side (left or right) each villager last faced, for riders. */
+  private readonly sideOf = new WeakMap<Villager, 'left' | 'right'>();
+
   private buildingAnchor(kind: BuildingKind, x: number, y: number): [number, number] {
     const d = BUILDINGS[kind];
     return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
@@ -259,6 +297,20 @@ export class Renderer {
     }
   }
 
+  /**
+   * A mountain is one mass, not a peak on every tile: the whole of it is rocky ground, and peaks stand on it only now and then, small at the foot,
+   * larger up the slope, tallest and snow-capped at the heart. Whether a tile carries a peak, and how big, comes from how deep in the mountain it is.
+   */
+  private peakAt(world: Sim['world'], i: number, j: number): 'low' | 'mid' | 'high' | null {
+    const inside = (x: number, y: number) => world.at(x, y) === Tile.Mountain && world.inBounds(x, y);
+    const reach = (dx: number, dy: number) => { let n = 0; while (n < 4 && inside(i + dx * (n + 1), j + dy * (n + 1))) n++; return n; };
+    const depth = Math.min(reach(1, 0), reach(-1, 0), reach(0, 1), reach(0, -1)); // 0 on the rim, up to 4 at the heart
+    const step = depth >= 3 ? 3 : 2;
+    const ci = Math.floor(i / step), cj = Math.floor(j / step);
+    if (i !== ci * step + Math.floor(hash2(ci, cj, 41) * step) || j !== cj * step + Math.floor(hash2(ci, cj, 42) * step)) return null;
+    return depth >= 3 ? 'high' : depth === 2 ? 'mid' : 'low';
+  }
+
   draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null): void {
     const { ctx, cam, sim } = this, z = cam.zoom, world = sim.world, N = world.size, sp = this.sprites;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -279,14 +331,10 @@ export class Renderer {
           const w = nat.water[Math.floor(r * nat.water.length)];
           img = w.frames[Math.floor(time * w.fps + hash2(i >> 2, j >> 2, 5) * 4) % w.frames.length];
         } else if (t === Tile.Mud) img = nat.mud[Math.floor(r * nat.mud.length)];
+        else if (t === Tile.Mountain) img = nat.mountainFloor[Math.floor(r * nat.mountainFloor.length)];
         else img = nat.grass[Math.floor(r * nat.grass.length)];
         ctx.drawImage(img, px(i), py(j), ts, ts);
       }
-    }
-    // gốc cây là vật trang trí nằm sát đất
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-      if (!world.decor[j * N + i]) continue;
-      this.prop(nat.stump[Math.floor(hash2(i, j, 31) * nat.stump.length)], i * TILE + 16, j * TILE + 26, time);
     }
     const trees = nat.trees;
 
@@ -297,6 +345,7 @@ export class Renderer {
         const t = world.at(i, j);
         if (t === Tile.Tree) list.push({ y: j * TILE + 28, kind: 'tree', i, j });
         else if (t === Tile.Rock) list.push({ y: j * TILE + 28, kind: 'rock', i, j });
+        else if (t === Tile.Mountain) { const p = this.peakAt(world, i, j); if (p) list.push({ y: j * TILE + 30, kind: 'mountain', i, j, peak: p }); }
         else if (t === Tile.Bush) list.push({ y: j * TILE + 28, kind: 'bush', i, j });
       }
     }
@@ -319,6 +368,9 @@ export class Renderer {
       if (d.kind === 'tree') {
         const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
         this.prop(p, d.i * TILE + 16, d.y, time);
+      } else if (d.kind === 'mountain') {
+        const set = nat.peaks[d.peak ?? 'low'];
+        this.prop(set[Math.floor(hash2(d.i, d.j, 24) * set.length)], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'rock') {
         this.prop(nat.rocks[Math.floor(hash2(d.i, d.j, 22) * nat.rocks.length)], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'bush') {
@@ -329,6 +381,7 @@ export class Renderer {
         if (b.kind === 'gate' && b.done) this.drawGate(b, wallAt);
         else if (!(b.kind === 'fence' && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id ? 0.5 : 1); // the house being carried stays dim where it stands
         if (b.kind === 'fence' || b.kind === 'gate') this.drawDiagonalRails(b, wallAt);
+        this.drawDamage(b, ax, ay, time);
         const emblem = b.done ? sp.emblems[b.kind] : undefined;
         if (emblem) { const p = this.worldToScreen(ax, ay - 52); ctx.drawImage(emblem, Math.round(p.x - 8 * z), Math.round(p.y), 16 * z, 16 * z); }
         // a house that works to orders shows how far the order has got, or sleeps when it has none
@@ -375,13 +428,16 @@ export class Renderer {
         }
       } else if (d.v) {
         const rode = d.v.phase !== 'sleep' && d.v.phase !== 'down' ? sim.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === 'down';
-        const s = sp.villager(d.v, rode && !fighting ? 'idle' : undefined), fx = d.v.x * TILE, fy = d.v.y * TILE;
+        // a rider is seen from the side, the way his beast faces: up and down the screen he keeps the side he last had
+        if (d.v.facing === 'left' || d.v.facing === 'right') this.sideOf.set(d.v, d.v.facing);
+        const side = this.sideOf.get(d.v) ?? 'right', moving0 = d.v.path.length > 0 || !!d.v.slide;
+        const s = rode && !fighting ? sp.villager(d.v, moving0 ? 'ride_walk' : 'ride', side) : sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
         let lift = 0;
-        if (rode) { // a beast under him: it walks when he walks, and he sits on its back
-          const m = MOUNTS[rode], moving = d.v.path.length > 0 || !!d.v.slide, beast = sp.mount(m.species, moving, d.v.animClock, d.v.facing === 'left' ? -1 : 1), box = sp.animalBox(m.species);
+        if (rode) { // a beast under him: it walks when he walks, and he sits on its back in the seated animations (ride, ride_walk in anims.json: the same two for every beast)
+          const m = MOUNTS[rode], moving = moving0, beast = sp.mount(m.species, moving, d.v.animClock, side === 'left' ? -1 : 1), box = sp.animalBox(m.species);
           ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(Math.round((fx - cx) * z), Math.round((fy - cy) * z), box.w * 0.3 * z, box.h * 0.1 * z, 0, 0, Math.PI * 2); ctx.fill();
           ctx.drawImage(beast, Math.round((fx - box.ax - cx) * z), Math.round((fy - box.ay - cy) * z), beast.width * z, beast.height * z);
-          lift = m.ride + (moving ? Math.abs(Math.sin(d.v.animClock * 8)) : 0);
+          lift = m.ride + 1; // the seated animations bob by themselves
         }
         if (d.v.phase === 'sleep' || d.v.phase === 'down') {
           // lying asleep: sprite rotated 90°, head to the left
@@ -455,6 +511,7 @@ export class Renderer {
         ctx.strokeRect(px(ghost.x - CLEAR), py(ghost.y - CLEAR), (d.w + 2 * CLEAR) * ts, (d.h + 2 * CLEAR) * ts); ctx.setLineDash([]);
       }
       this.prop(sp.building(ghost.kind, ghost.era ?? sim.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
+      if (ghost.kind === 'tower') this.drawSight(ghost.x + d.w / 2, ghost.y + d.h / 2, buildingSight({ kind: 'tower', level: ghost.level ?? 1, done: true }));
       ctx.fillStyle = ghost.ok ? 'rgba(90,200,90,.38)' : 'rgba(220,70,60,.42)';
       ctx.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
       ctx.strokeStyle = ghost.ok ? '#bff0b0' : '#ffb4a8'; ctx.lineWidth = 2;
@@ -484,6 +541,7 @@ export class Renderer {
       const d = BUILDINGS[sb.kind];
       ctx.strokeStyle = '#f5e7c4'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
       ctx.strokeRect(px(sb.x) + 1, py(sb.y) + 1, d.w * ts - 2, d.h * ts - 2); ctx.setLineDash([]);
+      if (sb.kind === 'tower' && sb.done) this.drawSight(sb.x + d.w / 2, sb.y + d.h / 2, buildingSight(sb));
     }
 
     // ---- đánh dấu lệnh, vòng chọn ----

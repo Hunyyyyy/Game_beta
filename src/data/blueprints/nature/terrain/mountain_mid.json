@@ -1,0 +1,375 @@
+{
+ "name": "Núi",
+ "type": "prop",
+ "size": [
+  72,
+  58
+ ],
+ "anchor": [
+  36,
+  53
+ ],
+ "footprint": [
+  6,
+  38,
+  60,
+  15
+ ],
+ "seed": 12,
+ "palette": {
+  "rock": "#80766c",
+  "rockL": "#a89d90",
+  "rockD": "#574f48",
+  "crack": "#3a342f",
+  "moss": "#5f7a3e",
+  "line": "#25211d",
+  "shadow": "#000000",
+  "snow": "#f1f5f8",
+  "snowD": "#c6d3de"
+ },
+ "params": {
+  "autumn": 0,
+  "winter": 0,
+  "burnt": 0
+ },
+ "palettes": {
+  "autumn": {
+   "moss": "#8a7a3a"
+  },
+  "winter": {
+   "moss": "#dfe6ee",
+   "rock": "#8c8a88"
+  },
+  "burnt": {
+   "moss": "#2e2a26",
+   "rockL": "#7a7470",
+   "snow": "#bdb7b0",
+   "snowD": "#8f8a84"
+  }
+ },
+ "layers": [
+  {
+   "shape": "poly",
+   "points": [
+    [
+     1.5,
+     53.0
+    ],
+    [
+     10.5,
+     35.3
+    ],
+    [
+     19.5,
+     25.2
+    ],
+    [
+     27.0,
+     11.3
+    ],
+    [
+     36.0,
+     2.5
+    ],
+    [
+     45.0,
+     12.6
+    ],
+    [
+     52.5,
+     24.0
+    ],
+    [
+     63.0,
+     35.3
+    ],
+    [
+     70.5,
+     53.0
+    ],
+    [
+     36.0,
+     55.5
+    ]
+   ],
+   "color": "rock",
+   "jitter": 1.4
+  },
+  {
+   "shape": "poly",
+   "points": [
+    [
+     1.5,
+     53.0
+    ],
+    [
+     10.5,
+     35.3
+    ],
+    [
+     19.5,
+     25.2
+    ],
+    [
+     27.0,
+     11.3
+    ],
+    [
+     36.0,
+     2.5
+    ],
+    [
+     39.0,
+     22.7
+    ],
+    [
+     33.0,
+     40.3
+    ],
+    [
+     27.0,
+     54.2
+    ]
+   ],
+   "color": "rockL",
+   "clip": "inside"
+  },
+  {
+   "shape": "poly",
+   "points": [
+    [
+     36.0,
+     2.5
+    ],
+    [
+     45.0,
+     12.6
+    ],
+    [
+     52.5,
+     24.0
+    ],
+    [
+     63.0,
+     35.3
+    ],
+    [
+     70.5,
+     53.0
+    ],
+    [
+     36.0,
+     55.5
+    ],
+    [
+     42.0,
+     37.8
+    ],
+    [
+     39.0,
+     22.7
+    ]
+   ],
+   "color": "rockD",
+   "clip": "inside"
+  },
+  {
+   "shape": "line",
+   "from": [
+    36.0,
+    2.5
+   ],
+   "to": [
+    39.0,
+    22.7
+   ],
+   "color": "crack"
+  },
+  {
+   "shape": "line",
+   "from": [
+    39.0,
+    22.7
+   ],
+   "to": [
+    42.0,
+    37.8
+   ],
+   "color": "crack"
+  },
+  {
+   "shape": "line",
+   "from": [
+    24.0,
+    32.8
+   ],
+   "to": [
+    30.0,
+    45.4
+   ],
+   "color": "crack"
+  },
+  {
+   "shape": "line",
+   "from": [
+    52.5,
+    35.3
+   ],
+   "to": [
+    55.5,
+    47.9
+   ],
+   "color": "crack"
+  },
+  {
+   "shape": "scatter",
+   "count": 83,
+   "area": [
+    6,
+    10,
+    64,
+    50
+   ],
+   "size": 1,
+   "colors": [
+    "rockL",
+    "rockD",
+    "crack"
+   ],
+   "onlyOver": [
+    "rock",
+    "rockL",
+    "rockD"
+   ]
+  },
+  {
+   "shape": "poly",
+   "points": [
+    [
+     36.0,
+     2.5
+    ],
+    [
+     27.0,
+     11.3
+    ],
+    [
+     24.0,
+     18.9
+    ],
+    [
+     31.5,
+     16.4
+    ],
+    [
+     36.0,
+     22.7
+    ],
+    [
+     42.0,
+     15.1
+    ],
+    [
+     48.0,
+     18.9
+    ],
+    [
+     45.0,
+     12.6
+    ]
+   ],
+   "color": "snow",
+   "clip": "inside"
+  },
+  {
+   "shape": "poly",
+   "points": [
+    [
+     36.0,
+     2.5
+    ],
+    [
+     45.0,
+     12.6
+    ],
+    [
+     48.0,
+     18.9
+    ],
+    [
+     42.0,
+     15.1
+    ],
+    [
+     39.0,
+     8.8
+    ]
+   ],
+   "color": "snowD",
+   "clip": "inside"
+  },
+  {
+   "shape": "ellipse",
+   "cx": 13.5,
+   "cy": 47.9,
+   "rx": 9.0,
+   "ry": 2.5,
+   "color": "moss",
+   "alpha": 0.8,
+   "clip": "inside"
+  },
+  {
+   "shape": "ellipse",
+   "cx": 60.0,
+   "cy": 49.2,
+   "rx": 7.5,
+   "ry": 2.3,
+   "color": "moss",
+   "alpha": 0.8,
+   "clip": "inside"
+  },
+  {
+   "shape": "bevel",
+   "light": "#ffffff",
+   "lightAlpha": 0.2,
+   "dark": "#000000",
+   "darkAlpha": 0.3
+  },
+  {
+   "shape": "scatter",
+   "if": "winter",
+   "count": 132,
+   "area": [
+    9,
+    18,
+    63,
+    38
+   ],
+   "size": [
+    3,
+    1
+   ],
+   "color": "snow",
+   "onlyOver": [
+    "rock",
+    "rockL",
+    "rockD",
+    "moss"
+   ]
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  },
+  {
+   "shape": "ellipse",
+   "cx": 36.0,
+   "cy": 54.2,
+   "rx": 34.5,
+   "ry": 3,
+   "color": "shadow",
+   "alpha": 0.3,
+   "mode": "under"
+  }
+ ]
+}

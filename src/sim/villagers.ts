@@ -68,7 +68,7 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   const fighting = brained && (v.phase === 'fight' || v.phase === 'flee' || v.phase === 'rescue');
   const asleep = v.phase === 'goHome' || v.phase === 'sleep';
   if (sim.shouldSleep(v, fighting)) { if (!asleep) goHome(sim, v); }
-  else if (asleep) { if (atWork(sim, v) && v.phase === 'sleep') v.phase = 'inside'; else { sim.exitBuilding(v); v.path = []; v.slide = null; v.phase = 'idle'; v.bed = -1; } } // staff wake up at their bench
+  else if (asleep && !sim.hides(v)) { if (atWork(sim, v) && v.phase === 'sleep') v.phase = 'inside'; else { sim.exitBuilding(v); v.path = []; v.slide = null; v.phase = 'idle'; v.bed = -1; } } // staff wake up at their bench
 
   sim.moveUnit(v, dt);
   if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim.fogDirty = true;
@@ -88,20 +88,21 @@ function atWork(sim: Sim, v: Villager): boolean {
  */
 export function goHome(sim: Sim, v: Villager): void {
   const owl = v.nightOwl;
+  if (v.job === 'idle') v.shift = 'day'; // coming home: a free villager who was sent out for the night goes back to the day's hours
   sim.stash(v);
   sim.resetTask(v); v.nightOwl = owl;
   v.phase = 'sleep';
-  const bed = v.job === 'build' ? sim.building('builder') ?? sim.freeBed(v) : sim.freeBed(v); // builders bunk in the Nhà thợ xây
+  const bed = sim.freeBed(v); // the house of their trade, the Nhà dân for the free (see idle.ts), else the campfire
   if (bed) {
     const bd = BUILDINGS[bed.kind];
-    if (sim.routeTo(v, sim.ringTiles(v, bed.x, bed.y, bd.w, bd.h)) >= 0) { v.target = bed.id; v.phase = 'goHome'; return; }
+    if (sim.routeTo(v, sim.ringTiles(v, bed.x, bed.y, bd.w, bd.h), 3, 80000) >= 0) { v.target = bed.id; v.phase = 'goHome'; return; }
   }
   const fire = sim.buildings.find((b) => b.kind === 'campfire');
   if (!fire) return;
   const d = BUILDINGS[fire.kind];
   const taken = new Set(sim.villagers.filter((o) => o !== v && o.bed >= 0).map((o) => o.bed));
   const spot = sim.nearestFree(fire.x + (d.w >> 1), fire.y + d.h, taken);
-  if (!spot || sim.routeTo(v, [spot], 1) < 0) return; // unreachable: sleep where standing
+  if (!spot || sim.routeTo(v, [spot], 1, 80000) < 0) return; // unreachable: sleep where standing
   v.bed = spot[1] * sim.world.size + spot[0]; v.phase = 'goHome';
 }
 

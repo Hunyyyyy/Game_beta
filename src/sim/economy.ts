@@ -1,6 +1,16 @@
 /** The village stock: paying costs, trading goods for shells, and the meal the village eats at the end of each day. */
 import { BARTER, FOOD, rationAt, Res, RES_NAME, Stock } from './resources';
 import type { Sim } from './sim';
+import paceJson from '../data/pace.json';
+import { Building, levelDef } from './buildings';
+import { DAY_LENGTH } from './constants';
+import { FARM_TIME, JOBS, roleOf } from './jobs';
+import type { WorkJob } from './jobs';
+import { workFactor } from './labor';
+import { REST } from './rest';
+import { toolBonus } from './statsys';
+import { TIER_YIELD } from './tools';
+import type { Villager } from './model';
 
 /** Reason the stock cannot pay `cost`, or null. */
 export function missing(sim: Sim, cost: Partial<Stock>): string | null {
@@ -29,6 +39,18 @@ export function foodNeed(sim: Sim): number {
   for (const v of sim.villagers) n += rationAt(level, v.job === 'fight');
   return n;
 }
+
+/** Put what was gathered into the village: food fills the pot of the campfire first, and only what is over goes to the store (up to its capacity). Returns how much was taken. */
+export function deposit(sim: Sim, res: Res, amount: number): number {
+  let left = amount, taken = 0;
+  if (res === 'food') { const toPot = Math.max(0, Math.min(left, foodNeed(sim) - sim.foodPot)); sim.foodPot += toPot; left -= toPot; taken += toPot; }
+  const toStore = Math.max(0, Math.min(left, sim.capacity(res) - sim.stock[res]));
+  sim.stock[res] += toStore;
+  return taken + toStore;
+}
+
+/** Whether a gatherer of this good can still put something down: the store has room, or (food) the pot of the campfire does. */
+export function hasRoom(sim: Sim, res: Res): boolean { return sim.stock[res] < sim.capacity(res) || (res === 'food' && sim.foodPot < foodNeed(sim)); }
 
 /** Food that comes in goes to the pot of the campfire first, until it holds the day's meal; only what is over stays in the store. */
 export function feedPot(sim: Sim): void {
@@ -73,4 +95,36 @@ export function rollYield(sim: Sim): void {
   for (const k of Object.keys(sim.yieldPrev)) delete sim.yieldPrev[k];
   Object.assign(sim.yieldPrev, sim.yieldNow);
   for (const k of Object.keys(sim.yieldNow)) delete sim.yieldNow[k];
+}
+
+// ---------------------------------------------------------------- what a house brings in per day, worked out from who works there
+/** Seconds of work a villager puts in over one day, by their shift (the night counts at the night efficiency). */
+function workSeconds(v: Villager): number {
+  const day = DAY_LENGTH * 0.65, night = DAY_LENGTH * 0.35 * REST.nightEfficiency;
+  return v.shift === 'night' ? night : v.shift === 'both' ? day + night : day;
+}
+
+/**
+ * What a house of the gatherers makes in a day, in the unit of what it gathers: for each person who works for it, their speed (stats, tool, skill,
+ * season) over the time of their shift, times what a tool gets out of each go. Tiredness and the night are left out; walking and carrying cost a
+ * share of the time (pace.json "gatherDuty"). Null for a house that does not gather.
+ */
+export function dailyYield(sim: Sim, b: Building): { amount: number; people: number } | null {
+  let workers: Villager[], job: WorkJob;
+  switch (b.kind) {
+    case 'lumberyard': job = 'wood'; workers = sim.villagers.filter((v) => roleOf(v) === 'wood'); break;
+    case 'quarry': job = 'stone'; workers = sim.villagers.filter((v) => roleOf(v) === 'stone'); break;
+    case 'farmhouse': job = 'food'; workers = sim.villagers.filter((v) => roleOf(v) === 'food'); break;
+    case 'huntlodge': job = 'hunt'; workers = sim.villagers.filter((v) => roleOf(v) === 'hunt'); break;
+    case 'field': job = 'food'; workers = sim.villagers.filter((v) => v.job === 'food' && v.post === b.id); break;
+    default: return null;
+  }
+  let amount = 0;
+  for (const v of workers) {
+    const speed = workFactor(sim, v, job, b.kind === 'field') / Math.max(0.01, sim.restFactor(v)), secs = workSeconds(v);
+    if (job === 'hunt') { amount += paceJson.huntPerDay * speed * (secs / (DAY_LENGTH * 0.65)); continue; }
+    const per = TIER_YIELD[sim.toolTier(v, job)] * (1 + toolBonus(sim, v, job, 'tyield') / 100);
+    amount += b.kind === 'field' ? (speed * levelDef(b).craftSpeed * per * secs) / FARM_TIME : (speed * per * secs * paceJson.gatherDuty) / JOBS[job].baseTime;
+  }
+  return { amount, people: workers.length };
 }

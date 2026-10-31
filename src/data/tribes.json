@@ -1,21 +1,21 @@
 {
-  "_note": "distance = tiles from the player's campfire (map is 192 wide, so zone ring = 24 tiles). Strength multiplier = 0.8 + 0.06 * (ring - 1), ring = ceil(distance / 4.8). reward is shown to the player; techs come in M5.",
+  "_note": "distance = tiles from the player's campfire (far camps: the land between is made when the game starts). Strength multiplier = 0.8 + 0.06 * (ring - 1), ring = ceil(distance / 4.8). reward is shown to the player; techs come in M5.",
   "spring": {
-    "name": "Suối Nguồn", "personality": "peaceful", "angle": 200, "distance": 30,
+    "name": "Suối Nguồn", "personality": "peaceful", "angle": 200, "distance": 80,
     "civilians": 8, "warriors": 4, "weapons": ["club", "spear"], "armor": false,
     "look": { "hide": "#7a8a4a", "pants": "#4a6a8a" },
     "relation": 0, "reward": "Dễ giao thương và thu nạp; học T4 Bện sợi",
     "tribute": { "food": 12, "wood": 6, "coin": 3 }
   },
   "axe": {
-    "name": "Rìu Đá", "personality": "aggressive", "angle": 320, "distance": 45,
+    "name": "Rìu Đá", "personality": "aggressive", "angle": 320, "distance": 110,
     "civilians": 15, "warriors": 10, "weapons": ["hatchet", "mace"], "armor": true,
     "look": { "hide": "#8a3a24", "pants": "#6a2a1a" },
     "relation": -20, "reward": "Lính chùy, bí quyết chế chùy đá",
     "tribute": { "stone": 10, "food": 10, "coin": 4 }
   },
   "swamp": {
-    "name": "Đầm Lầy", "personality": "ambusher", "angle": 80, "distance": 55,
+    "name": "Đầm Lầy", "personality": "ambusher", "angle": 80, "distance": 140,
     "civilians": 12, "warriors": 8, "weapons": ["sling", "club"], "armor": false,
     "look": { "hide": "#5a6a50", "pants": "#3a4a3a" },
     "relation": -10, "reward": "Đất sét, sợi; học T5 Dây quăng đá",

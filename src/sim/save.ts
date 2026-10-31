@@ -16,14 +16,14 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 17;
+export const SAVE_VERSION = 21;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
   scalars: ['era', 'time', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
-  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev'],
+  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts'],
   /** Lists of plain data. */
   lists: ['wornTools', 'craftQueue', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
   /** Handled by hand below. */
@@ -52,7 +52,7 @@ export interface GameSave {
   quests?: string[];
   tribes: unknown[];
   rng: { rnd: number; frnd: number; wrnd: number };
-  world: { season: Season; tiles: number[]; occ: number[]; decor: number[]; nodes: Row[] };
+  world: { season: Season; tiles: number[]; occ: number[]; decor: number[]; ready: number[]; nodes: Row[] };
   fog: { state: number[]; version: number };
 }
 
@@ -71,7 +71,7 @@ export function toSave(sim: Sim): GameSave {
     rng: { rnd: sim.rnd.getState(), frnd: sim.frnd.getState(), wrnd: sim.wrnd.getState() },
     world: {
       season: w.season,
-      tiles: packRuns(w.tiles), occ: packRuns(w.occ), decor: packRuns(w.decor),
+      tiles: packRuns(w.tiles), occ: packRuns(w.occ), decor: packRuns(w.decor), ready: packRuns(w.ready),
       nodes: [...w.nodes].map(([i, n]) => [i, n.kind, n.res, n.amount, n.max, n.workers, n.sides, n.regrow]),
     },
     fog: { state: packRuns(sim.fog.state), version: sim.fog.version },
@@ -80,6 +80,10 @@ export function toSave(sim: Sim): GameSave {
 
 /** Old saves are brought forward one version at a time. To change the format: bump SAVE_VERSION and add `MIGRATIONS[oldVersion]`. */
 export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disable-line @typescript-eslint/no-explicit-any
+  // 18 -> 19: the world is made a chunk at a time and cut down in trees, lakes and beasts: a world made all at once cannot be rebuilt
+  18: () => { throw new Error('this save is of a world made the old way and can no longer be opened'); },
+  // 17 -> 18: the map grew from 192 to 960 tiles a side and every world starts somewhere else: a world of the old size cannot be rebuilt
+  17: () => { throw new Error('this save is of the old, smaller map and can no longer be opened'); },
   // 1 -> 2: villagers gained energy, strain, a shift and a torch; the torch blueprint became a known technology
   1: (d) => {
     for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) {
@@ -189,6 +193,18 @@ MIGRATIONS[15] = (d) => {
   return { ...d, version: 16 };
 };
 
+MIGRATIONS[20] = (d) => {
+  // 20 -> 21: a map drawn only in part is kept, so that other scouts go on from there (none yet)
+  d.records.drafts ??= {};
+  return { ...d, version: 21 };
+};
+
+MIGRATIONS[19] = (d) => {
+  // 19 -> 20: the village remembers the level of the houses that fell, to rebuild them at that level (none fell yet)
+  d.records.ruins ??= {};
+  return { ...d, version: 20 };
+};
+
 MIGRATIONS[16] = (d) => {
   // 16 -> 17: the houses of the gatherers show what was brought in today and yesterday (none counted yet)
   d.records.yieldNow ??= {}; d.records.yieldPrev ??= {};
@@ -211,13 +227,13 @@ export function migrate(raw: unknown): GameSave {
 export function applySave(sim: Sim, data: GameSave): void {
   if (data.seed !== sim.seed) throw new Error(`the save is of world ${data.seed}, this game is world ${sim.seed}`);
   const w = sim.world, target = sim as unknown as Record<string, unknown>;
-  unpackRuns(data.world.tiles, w.tiles); unpackRuns(data.world.occ, w.occ); unpackRuns(data.world.decor, w.decor); w.decor.fill(0); // stumps of earlier saves are gone too
+  unpackRuns(data.world.tiles, w.tiles); unpackRuns(data.world.occ, w.occ); unpackRuns(data.world.decor, w.decor); unpackRuns(data.world.ready, w.ready); w.decor.fill(0); // stumps of earlier saves are gone too
   w.nodes.clear();
   for (const [i, kind, res, amount, max, workers, sides, regrow] of data.world.nodes as Array<[number, ResourceNode['kind'], ResourceNode['res'], number, number, number, number, number]>) {
     w.nodes.set(i, { kind, res, amount, max, workers, sides, regrow });
   }
   w.season = data.world.season; // not setSeason(): the bushes are already as they were
-  unpackRuns(data.fog.state, sim.fog.state); sim.fog.version = data.fog.version;
+  unpackRuns(data.fog.state, sim.fog.state); sim.fog.relight(); sim.fog.version = data.fog.version;
 
   for (const k of SAVED.scalars) target[k] = decode(data.scalars[k]);
   for (const k of SAVED.records) { const rec = target[k] as Record<string, unknown>; for (const key of Object.keys(rec)) delete rec[key]; Object.assign(rec, k === 'stock' ? emptyStock() : {}, decode(data.records[k])); } // a save from before a material existed has no entry for it: zero

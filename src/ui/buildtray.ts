@@ -59,9 +59,9 @@ export class BuildTray {
       this.key = key; this.refresh.length = 0; this.cards.scrollLeft = 0;
       const kinds = GROUPS[this.group][1].filter((k) => BUILDINGS[k].buildable);
       this.cards.replaceChildren(...kinds.map((kind) => {
-        const lv = levelsOf(kind, sim.era)[0], d = BUILDINGS[kind];
+        const lv = { cost: sim.startCost(kind) }, d = BUILDINGS[kind]; // a fallen house is raised again at the level it had, and costs that
         let pic: HTMLElement;
-        try { pic = iconCanvas(sprites.building(kind, sim.era, 1, 4).frames[0]); } catch { pic = h('span', { text: d.name[0] }); }
+        try { pic = iconCanvas(sprites.building(kind, sim.era, sim.startLevel(kind), 4).frames[0]); } catch { pic = h('span', { text: d.name[0] }); }
         const state = h('small', { class: 'state' }), card = h('button', { class: 'card2', onclick: () => { ctl.startPlacing(kind); this.close(); } },
           h('span', { class: 'pic' }, pic), h('b', { text: d.name }), h('small', { text: costText(lv.cost, RES_NAME) }), state) as HTMLButtonElement;
         const role = ROLE[kind];

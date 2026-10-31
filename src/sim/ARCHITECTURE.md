@@ -1,3 +1,4 @@
+Không cần test,viết test nữa
 # Kiến trúc mô phỏng (`src/sim`)
 
 Mô phỏng là TypeScript thuần: không đụng DOM, không biết giao diện, chạy theo bước cố định (`TICK`) và theo seed.
@@ -32,7 +33,8 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 | Tệp | Trách nhiệm | Ví dụ hàm |
 |---|---|---|
 | `construction` | Đặt, nâng cấp, dời, phá công trình; công trình cho làng thứ gì (chỗ chứa, dân tối đa, tốc độ xây) | `placeBuilding` `upgradeBuilding` `buildingLock` `buildingLimit` `popCap` |
-| `economy` | Kho chung: trả chi phí, đổi chác, bữa ăn cuối ngày | `pay` `barter` `feedPot` `eatDay` |
+| `economy` | Kho chung: trả chi phí, đổi chác, bữa ăn cuối ngày, sản lượng một ngày của nhà thu hoạch (tính từ số người và chỉ số của họ) | `pay` `barter` `feedPot` `eatDay` `dailyYield` |
+| `idle` | **Dân rảnh**: một chỗ duy nhất nói ai là dân rảnh, ai nhận được chỗ trong nhà, và mỗi người ngủ ở loại nhà nào (nhà của nghề, Nhà dân cho dân rảnh, hết giường thì ngủ cạnh lửa trại). Mọi nhà hỏi ở đây, không tự viết lại điều kiện | `isFree` `freeFolk` `canTakeOn` `homeKind` |
 | `works` | Hàng đợi và tiến độ của nhà nghiên cứu, chế tạo, sửa chữa | `queueResearch` `queueCraft` `tickWorks` |
 | `houses` | Ai làm việc hoặc ngủ ở nhà nào: đội thợ xây, người trong nhà, người nằm giường | `assignCrew` `assignStaff` `releaseStaff` `sleepIn` `sleepers` |
 | `inventory` | Công cụ, vũ khí, giáp: phát, hao mòn, trả kho, lấy, đặt chế | `assignTool` `repairTool` `assignGear` `planTool` |
@@ -188,7 +190,7 @@ Giây công trôi với tỷ lệ `PACE.work` (`WORK_DAY / DAY_LENGTH`), nên m�
 
 Mốc hiện tại (dân tay không, trời nắng, 12 phút ban ngày): khoảng 32 gỗ, 28 đá, hơn 80 thức ăn; 15 gỗ đầu tiên mất khoảng 3 đến 4 phút. Test `how long gathering takes` giữ các mốc này.
 
-**Nghề chỉ đổi ở công trình của nó.** Chuột phải lên cây, đá, bụi quả, công trường hay thú không bao giờ đổi nghề của ai: người đã có đúng nghề thì đi tới chỗ đó, người khác bị bỏ qua (`orderWork`, `orderAttack`, `orderLoot` trả về số người nhận lệnh). Duy nhất một ngoại lệ: trước khi có Nhà thợ xây thì ai được chuột phải lên nền của nó sẽ dựng nó. Mọi vai trò (chiến binh, trinh sát, hái lượm, thợ săn, đốn gỗ, thợ đá) giao và thu hồi ở công trình của vai trò đó, xem mục *Vai trò và công trình*. Nhà dân và các trại, như mọi công trình mới, phải nghiên cứu rồi mới xây được.
+**Nghề chỉ đổi ở công trình của nó.** Chọn dân rồi bấm lên cây, đá, bụi quả hay thú: người đã có đúng nghề thì đi tới chỗ đó; người chưa có nghề (rảnh) nhận nghề tương ứng nếu nhà của nghề đó đã xây và còn chỗ (`assignRole`, lỗi trả về trong `err`); người đã có nghề khác thì bị bỏ qua, không đổi nghề được bằng cách này (`orderWork`, `autoHunter`, `orderAttack`, `orderLoot`). Cây, đá, bụi quả cạn thì mất và mọc một cái mới ở ô cỏ trống gần đó (`World.depleted`). Duy nhất một ngoại lệ: trước khi có Nhà thợ xây thì ai được chuột phải lên nền của nó sẽ dựng nó. Mọi vai trò (chiến binh, trinh sát, hái lượm, thợ săn, đốn gỗ, thợ đá) giao và thu hồi ở công trình của vai trò đó, xem mục *Vai trò và công trình*. Nhà dân và các trại, như mọi công trình mới, phải nghiên cứu rồi mới xây được.
 
 **Ban đêm:** mọi người ngủ và lệnh lúc đó chờ đến sáng, trừ chiến binh. Dân bạn chọn làm chiến binh hoặc ra lệnh cho chiến binh vào ban đêm thì dậy trực tới sáng (`keepWatch` trong `commands.ts`).
 
@@ -240,3 +242,5 @@ Công cụ Dev cho thử chiến đấu: `dev.combatReady` (mở hết), `raiseA
 - Chòi canh: cung thủ vào trong (như nhà làm việc) và bắn ra; hố chông là công trình đặt từng cái.
 - Vũ khí và giáp mòn theo số đòn (`wearGear`): hết bền thì mất hẳn một nửa số lần, nửa kia hỏng và chủ nhân tự mang tới Nhà sửa chữa. Dân hết máu thì chết hẳn, không còn trạng thái ngã.
 - Chưa làm: mô phỏng theo cụm thay cho mô phỏng từng người, kỵ thú, hỏa công, dụ thú, cắt đường lương, tù binh, gián điệp, NPC tự xây rào và đặt bẫy.
+
+**Thế giới dựng theo mảnh (chunk).** Bản đồ 960×960 nhưng chỉ dựng từng mảnh 32×32 (`World.ensure`): lúc mở đầu dựng vùng 200×200 quanh làng, sau đó `Sim.streamWorld` dựng thêm các mảnh trong 40 ô quanh mỗi dân đang ở ngoài. Mỗi mảnh chỉ dựng một lần và ra cùng một kết quả bất kể thứ tự dựng (địa hình từ nhiễu theo tọa độ, thú từ xúc xắc riêng của mảnh: `fauna.populateChunk`). Ô thuộc mảnh chưa dựng là ô bị chặn (`isBlocked`), nên không ai đi tới hay xây lên được; `World.ready` ghi mảnh nào đã dựng và được lưu trong bản lưu. Địa hình chia vùng: đồng bằng, rừng thưa, rừng rậm, núi (`Tile.Mountain`, chặn đường, vẽ bằng `blueprints/nature/terrain/mountain.json`), hồ ở chỗ thấp; tỉ lệ từng vùng là các hằng số ở đầu `world.ts`, cố ý để thấp cho khỏi vây kín dân.
