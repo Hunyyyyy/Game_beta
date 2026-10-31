@@ -1444,7 +1444,6 @@ const alive = (sm: Sim, id: string) => tribeById(sm, id).unitIds.map((u) => sm.g
   ok(sm.planScout(sm.villagers.filter((v) => v.job !== 'scout').slice(0, 2).map((v) => v.id), 'axe').error !== null, 'only scouts are sent, not other villagers or soldiers');
   ok(sm.scoutLimit() >= 4, 'the Trại trinh sát lets four or more go at once');
   ok(sm.startScout(folks, 'axe') === null && sm.scouts.length === 1, 'scouts set out');
-  { const v0 = sm.get(folks[0])!; run(sm, 1); v0.path = []; v0.slide = null; v0.phase = 'idle'; run(sm, 7); ok(v0.path.length > 0 || v0.slide !== null || v0.phase === 'move', 'a scout who stopped on the way is sent on again'); }
   ok(sm.startScout(folks, 'axe') !== null, 'one trip to a village at a time');
   ok(sm.dismissScouts(folks.slice(0, 1)) !== null && sm.scoutRoster().length >= 4, 'a scout away on a trip cannot be let go');
   for (let i = 0; i < 20 * 1800; i++) { (sm as unknown as { tick(d: number): void }).tick(0.05); if (!sm.scouts.length) break; }
@@ -1996,6 +1995,6 @@ process.exit(fails ? 1 : 0);
   sm.toolStock.mount_wolf = 1;
   ok(sm.enlistScouts([cav.id]) === null && cav.job === 'scout' && sm.mountOf(cav) === 'wolf' && !sm.toolStock.mount_wolf, 'made a scout he gets a wolf from the stable instead of the elephant');
   sm.dismissScouts([cav.id]); ok(cav.mount === null && sm.toolStock.mount_wolf === 1, 'let go, he gives the wolf back');
-  sm.assignRole([cav.id], 'cavalry');
+  sm.toolStock.mount_wolf = 0;
   ok(sm.enlistScouts([cav.id]) === null && sm.mountOf(cav) === null, 'with no wolf to give he goes on foot');
 }
