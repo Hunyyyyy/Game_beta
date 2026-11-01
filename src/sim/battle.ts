@@ -4,7 +4,10 @@ import { WEATHER } from './calendar';
 import { gameDays } from './constants';
 import { Arm, armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formations';
 import { Animal, animalDef, die as animalDie, provoke, carcassEmpty } from './fauna';
-import { CARRY_CAP, Res, RES_NAME } from './resources';
+import chaseJson from '../data/chase.json';
+import { isActive } from './tribework';
+import { BUILDINGS, BuildingKind } from './buildings';
+import { CARRY_CAP, Res, RES_NAME, resourceOpen, resourceUnlock } from './resources';
 import type { Sim, Target, Villager } from './sim';
 import { hash2 } from './rng';
 import type { Step } from './path';
@@ -13,6 +16,7 @@ import { BEHAVIOUR } from './combat';
 
 const ANIM = animsJson as unknown as Record<string, { fps: number; frames: unknown[]; hit?: number }>;
 /** When, inside an attack animation, the blow lands and when it ends (seconds). */
+const CHASE = chaseJson;
 export function swingTimes(anim: string): { hitAt: number; end: number } {
   const a = ANIM[anim];
   return { hitAt: (a?.hit ?? 2) / (a?.fps ?? 10), end: (a?.frames.length ?? 6) / (a?.fps ?? 10) };
@@ -45,9 +49,9 @@ export const isFighter = (v: Villager) => v.job === 'fight' || v.job === 'hunt' 
 
 export function teamsHostile(sim: Sim, a: Team, b: Team): boolean {
   if (a === b || a === 'wild' || b === 'wild') return false;
-  if (a === 'player') return sim.tribeHostile(b);
-  if (b === 'player') return sim.tribeHostile(a);
-  return false; // tribes do not fight each other
+  if (a === 'player') return sim.tribeWilling(b);
+  if (b === 'player') return sim.tribeWilling(a);
+  return sim.tribesFeud(a, b); // two villages fight only when they are at feud
 }
 
 export interface Threat { t: Target; x: number; y: number; d: number; name: string }
@@ -75,19 +79,25 @@ function sideGrid(sim: Sim, side: 'foes' | 'mine'): Map<number, Villager[]> {
 function nearbyOthers(sim: Sim, v: Villager, radius: number): Villager[] {
   const g = sideGrid(sim, v.team === 'player' ? 'foes' : 'mine'), r = Math.ceil((radius + 1) / CELL), cx = Math.floor(v.x / CELL), cy = Math.floor(v.y / CELL), out: Villager[] = [];
   for (let j = cy - r; j <= cy + r; j++) for (let i = cx - r; i <= cx + r; i++) { const cell = g.get(j * 1024 + i); if (cell) for (const o of cell) out.push(o); }
+  // the villages meet each other too, but only where we are looking (the chunks round our people)
+  if (v.team !== 'player' && v.team !== 'wild' && isActive(sim, v.x, v.y)) {
+    const f = sideGrid(sim, 'foes');
+    for (let j = cy - r; j <= cy + r; j++) for (let i = cx - r; i <= cx + r; i++) { const cell = f.get(j * 1024 + i); if (cell) for (const o of cell) if (o.team !== v.team && isActive(sim, o.x, o.y)) out.push(o); }
+  }
   return out;
 }
 
 export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   const out: Threat[] = [], N = sim.world.size, player = v.team === 'player';
+  const sk = v.fight.skip && sim.time < v.fight.skip.until ? v.fight.skip : null; // a target given up for a while
   const seen = (x: number, y: number) => !player || sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
   for (const o of nearbyOthers(sim, v, radius)) {
-    if (o.health <= 0 || o.down > 0 || o.inside !== null || !teamsHostile(sim, v.team, o.team)) continue;
+    if (o.health <= 0 || o.down > 0 || o.inside !== null || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
     const d = Math.hypot(o.x - v.x, o.y - v.y);
     if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name });
   }
   if (player) for (const a of sim.animals) {
-    if (a.state === 'dead') continue;
+    if (a.state === 'dead' || (sk && sk.kind === 'animal' && sk.id === a.id)) continue;
     const def = animalDef(a);
     if (!(a.state === 'attack' || def.aggro > 0)) continue;
     const d = Math.hypot(a.x - v.x, a.y - v.y);
@@ -104,6 +114,13 @@ export function huntRange(sim: Sim): number { return HUNT_RANGE[Math.min(HUNT_RA
 const HUNT_FLEE = 0.3, HUNT_BACK = 0.5;
 
 // ---------------------------------------------------------------- damage
+/** Two villages are fighting: if it is on ground we can see, it goes on the notices. */
+function noteClash(sim: Sim, a: string, b: string, x: number, y: number): void {
+  if (sim.fog.state[Math.floor(y) * sim.world.size + Math.floor(x)] !== 2) return;
+  const c = sim.clashes.find((o) => (o.a === a && o.b === b) || (o.a === b && o.b === a));
+  if (c) { c.at = sim.time; c.x = x; c.y = y; } else sim.clashes.push({ a, b, at: sim.time, x, y });
+}
+
 export interface HurtSource { unit?: Villager; animal?: Animal }
 
 /** Apply one hit. `dmg` is before armour; armour reduces it by damage type. */
@@ -122,6 +139,7 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   const missile = !!src.unit && weaponOf(src.unit).ranged === true;
   const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (1 - guardCut(sim, v, missile)) * (v.team === 'player' ? sim.takenFactor(v, missile) * sim.mountGuard(v) : 1);
   v.health -= final; v.calm = 0; v.flinch = 0.3;
+  if (src.unit && src.unit.team !== v.team && src.unit.team !== 'player' && v.team !== 'player' && src.unit.team !== 'wild' && v.team !== 'wild') noteClash(sim, src.unit.team, v.team, v.x, v.y);
   if (armor) sim.wearGear(v, 'armor');
   if (src.unit && src.unit.team === 'player' && v.team !== 'player') sim.tribeAttacked(v.team as Exclude<Team, 'player' | 'wild'>, v);
   if (v.health > 0 && v.team !== 'player' && v.ai && v.ai.role !== 'civ' && src.unit && src.unit.team === 'player' && src.unit.inside !== null) {
@@ -318,15 +336,47 @@ function assistBrain(sim: Sim, v: Villager): boolean {
   return false;
 }
 
+/**
+ * Keeps the chase honest (src/data/chase.json): whoever cannot see the target for a while, or has been after it for a while without throwing a blow, lets it go.
+ * He drops the target, will not pick it again for a time, and goes back to what he was doing (the post, the hunt, the wandering). Returns whether he gave up.
+ */
+function chaseGivenUp(sim: Sim, v: Villager, e: Ent, d: number, dt: number): boolean {
+  const f = v.fight, key = e.kind === 'unit' ? `u${e.v.id}` : `a${e.a.id}`;
+  if (f.chaseKey !== key) { f.chaseKey = key; f.chaseT = 0; f.unseenT = 0; }
+  // seeing: within sight of him (the foe looks as far as his own look-out, 14), and for our own people on lit ground of the map
+  const sees = d <= (v.team === 'player' ? sim.sightOf(v) + 1 : 14) && canSee(sim, v, entX(e), entY(e));
+  if (f.mode === 'attack' || f.mode === 'attackMove') {
+    // told to go for him: he follows out of sight too, and only gives up when the way is shut (no path, still out of reach)
+    const weapon = weaponOf(v), blocked = !v.path.length && d > weapon.range + 1;
+    f.chaseT = blocked ? (f.chaseT ?? 0) + dt : 0; f.unseenT = 0;
+  } else {
+    f.chaseT = (f.chaseT ?? 0) + dt;
+    f.unseenT = sees ? 0 : (f.unseenT ?? 0) + dt;
+  }
+  if (f.unseenT <= CHASE.loseSightSeconds && f.chaseT <= CHASE.noHitSeconds) return false;
+  f.skip = { kind: e.kind === 'unit' ? 'unit' : 'animal', id: e.kind === 'unit' ? e.v.id : e.a.id, until: sim.time + CHASE.skipSeconds };
+  if (v.ai && e.kind === 'unit') v.ai.skip = { id: e.v.id, until: sim.time + CHASE.skipSeconds };
+  f.target = null; f.chaseKey = undefined; f.chaseT = 0; f.unseenT = 0; v.path = []; v.slide = null;
+  if (v.phase === 'fight') v.phase = 'idle';
+  if (f.mode === 'attack') { // an order that cannot be carried out is over: back to the post or the camp
+    if (v.job !== 'fight') f.mode = 'none';
+    else if (v.guard) { f.mode = 'guard'; f.anchor = homeSpot(sim, v) ?? { x: v.x, y: v.y }; }
+    else if (v.team === 'player' && v.squad < 0) { f.mode = 'none'; f.anchor = null; }
+    else { f.mode = 'guard'; f.anchor = { x: v.x, y: v.y }; }
+  }
+  return true;
+}
+
 /** Walk toward a target, strike when in reach. */
 export function engage(sim: Sim, v: Villager, e: Ent, dt: number): void {
   const w = weaponOf(v), x = entX(e), y = entY(e), d = Math.hypot(x - v.x, y - v.y);
+  if (dt > 0 && chaseGivenUp(sim, v, e, d, dt)) return;
   const reach = w.ranged ? w.range : w.range + (e.kind === 'animal' ? 0.45 : 0.5);
   v.phase = 'fight';
   if (d <= reach && (!w.ranged || canSee(sim, v, x, y))) {
     v.path = []; v.slide = null;
     v.facing = x >= v.x ? 'right' : 'left';
-    if (!v.swing && v.atkCd <= 0) startSwing(sim, v, e.kind === 'unit' ? { kind: 'unit', id: e.v.id } : { kind: 'animal', id: e.a.id });
+    if (!v.swing && v.atkCd <= 0) { startSwing(sim, v, e.kind === 'unit' ? { kind: 'unit', id: e.v.id } : { kind: 'animal', id: e.a.id }); v.fight.chaseT = 0; }
     return;
   }
   if (v.swing) return; // finish the blow before moving
@@ -432,14 +482,17 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
     const have = v.carry && v.carry.res === 'food' ? v.carry.amount : 0, take = Math.min(a.meat, CARRY_CAP.food - have);
     if (take > 0) { a.meat -= take; v.carry = { res: 'food', amount: have + take }; }
     // the skin and everything else on the body goes straight to the store
-    const got: string[] = [];
-    if (a.hide > 0) { sim.stock.hide = Math.min(sim.capacity(), sim.stock.hide + a.hide); got.push(`${a.hide} ${RES_NAME.hide.toLowerCase()}`); a.hide = 0; }
-    for (const [res, n] of Object.entries(a.drops ?? {}) as Array<[Res, number]>) {
+    // a good the village cannot take yet (resources.json "unlock": the level of the Chòi thợ săn) is left on the body
+    const got: string[] = [], left: string[] = [], bag: Partial<Record<Res, number>> = { ...a.drops };
+    if (a.hide > 0) bag.hide = (bag.hide ?? 0) + a.hide;
+    for (const [res, n] of Object.entries(bag) as Array<[Res, number]>) {
       if (!(n > 0)) continue;
-      sim.stock[res] = Math.min(sim.capacity(), sim.stock[res] + n); got.push(`${n} ${RES_NAME[res].toLowerCase()}`);
+      if (!resourceOpen(res, sim.buildings)) { const u = resourceUnlock(res)!; left.push(`${RES_NAME[res].toLowerCase()} (cần ${BUILDINGS[u.building as BuildingKind].name} cấp ${u.level})`); continue; }
+      sim.stock[res] = Math.min(sim.capacity(res), sim.stock[res] + n); got.push(`${n} ${RES_NAME[res].toLowerCase()}`);
     }
-    a.drops = {};
+    a.hide = 0; a.drops = {};
     if (got.length) sim.say(`${v.name} xẻ ${animalDef(a).name.toLowerCase()}: ${got.join(', ')}.`);
+    if (left.length) sim.say(`${v.name} bỏ lại ${left.join(', ')}: chưa lấy được.`);
     return true;
   }
   if (v.phase === 'goCarcass') {
@@ -468,6 +521,7 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
     for (const a of sim.animals) {
       const def = animalDef(a);
       if (a.state === 'dead' || !def.prey || sim.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
+      if (v.fight.skip && v.fight.skip.kind === 'animal' && v.fight.skip.id === a.id && sim.time < v.fight.skip.until) continue; // given up on: a fish in the water, a beast walled in
       if (lodge && Math.hypot(a.x - lodge.x, a.y - lodge.y) > range) continue;
       if (def.defends && !sim.packNear(v, a)) continue; // a boar is only taken on by a group
       const d = Math.hypot(a.x - v.x, a.y - v.y);

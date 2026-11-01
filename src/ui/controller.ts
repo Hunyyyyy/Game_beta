@@ -7,7 +7,7 @@ import type { Box, Camera, Ghost, Marker, Renderer } from '../render/renderer';
 /**
  * Input. Mouse: left click selects, right click gives an order, holding the right button and dragging moves the map.
  * Touch: tap selects a villager; with villagers selected a tap on the ground, a resource or an enemy gives the order;
- * two fingers move and zoom the map. "Chọn nhiều" turns taps into toggles and drags into a selection box.
+ * one finger dragging the ground moves the map, two fingers move and zoom it. "Chọn nhiều" turns taps into toggles and drags into a selection box.
  */
 export class Controller {
   readonly selected = new Set<number>();
@@ -20,6 +20,10 @@ export class Controller {
   /** Building being placed, and where the ghost currently sits (top-left tile). */
   placing: BuildingKind | null = null;
   placeAt: { x: number; y: number } | null = null;
+  /** Choosing several pieces of fence (and gates) to carry together: their ids (the first is the one the group turns about), and how many quarter-turns it has been turned. */
+  groupMode = false;
+  groupIds: number[] = [];
+  groupRot = 0;
   /** Id of the building being carried to a new spot (null when placing a new one). */
   moving: number | null = null;
   /** Building tapped on the map: its buttons show beneath it. */
@@ -33,6 +37,9 @@ export class Controller {
   openDetail = false;
   /** The house whose dialog the villager's detail was opened from: closing the detail brings it back. */
   detailFrom: number | null = null;
+  /** Choosing where the selection goes (a button, for a phone): a tap puts a mark down, a drag moves the map, and only "Đi tới đây" sends them. */
+  destArmed = false;
+  destAt: { x: number; y: number } | null = null;
   /** F pressed: the next click sends the selection to attack-move there. */
   attackMoveArmed = false;
   /** Saved selections, keys 1-9 (Ctrl + number saves, number recalls). */
@@ -98,7 +105,11 @@ export class Controller {
       if (Math.hypot(t.x - t.sx, t.y - t.sy) > 10) {
         if (this.multi) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
         else if (this.placing) this.placeAt = this.originAt(p);
+        else { // one finger dragging the ground moves the map (a tap still gives the order); two fingers still pinch to zoom
+          this.cam.x -= (t.x - t.px) / this.cam.zoom; this.cam.y -= (t.y - t.py) / this.cam.zoom; this.clamp(); this.tapDead = true;
+        }
       }
+      t.px = t.x; t.py = t.y;
       return;
     }
     if (this.placing) this.placeAt = this.originAt(p);
@@ -167,7 +178,7 @@ export class Controller {
   // ---------------------------------------------------------------- what a click or tap does
   /** Villager under the point; fingers get a wider target. */
   private hit(p: { x: number; y: number }, touch = false): number | null {
-    let best: number | null = null, bd = ((touch ? 22 : 14) * Math.max(1, this.cam.zoom)) ** 2;
+    let best: number | null = null, bd = ((touch ? 28 : 14) * Math.max(1, this.cam.zoom)) ** 2; // a finger is wide: a bigger target
     for (const v of this.sim.villagers) {
       if (v.inside !== null) continue; // working inside a house: not on the map
       const s = this.bodyScreen(v), d = (s.x - p.x) ** 2 + (s.y - p.y) ** 2;
@@ -189,6 +200,9 @@ export class Controller {
   /** Left click or tap. */
   private activate(p: { x: number; y: number }, touch: boolean, additive: boolean): void {
     if (this.attackMoveArmed) { this.attackMove(p, additive); return; }
+    if (this.destArmed) { const w = this.r.screenToWorld(p.x, p.y); this.destAt = { x: Math.floor(w.x / TILE), y: Math.floor(w.y / TILE) }; this.onChange(); return; }
+    // choosing pieces of fence: a tap takes one in or puts it back
+    if (this.groupMode && !this.placing) { const b = this.buildingUnder(p); if (b !== null && this.isWall(b)) this.toggleGroup(b); return; }
     if (this.placing) { if (touch) { this.placeAt = this.originAt(p); this.onChange(); } else this.confirmPlace(additive); return; }
     const flag = this.r.flagAt(p.x, p.y); // a tap on the flag of a cluster picks all its soldiers
     if (flag) { if (!additive) this.selected.clear(); for (const fid of flag) if (this.sim.get(fid)?.team === 'player') this.selected.add(fid); this.selectedBuilding = null; this.inspect = null; this.onChange(); return; }
@@ -275,8 +289,45 @@ export class Controller {
     return { x: Math.round(w.x / TILE - d.w / 2), y: Math.round(w.y / TILE - d.h / 2) };
   }
 
+  /** Fences and gates may be picked up together. */
+  isWall(id: number): boolean { const b = this.sim.getBuilding(id); return !!b && b.done && (b.kind === 'fence' || b.kind === 'gate'); }
+  /** The group is being carried now. */
+  get groupMoving(): boolean { return this.groupMode && this.moving !== null; }
+
+  /** Start choosing pieces: this one is the first. */
+  startGroup(id: number): void { this.groupMode = true; this.groupIds = [id]; this.groupRot = 0; this.selectedBuilding = id; this.buildingOpen = false; this.selected.clear(); this.inspect = null; this.onChange(); }
+  endGroup(): void { this.groupMode = false; this.groupIds = []; this.groupRot = 0; this.moving = null; this.placing = null; this.placeAt = null; this.onChange(); }
+  toggleGroup(id: number): void {
+    if (!this.isWall(id)) return;
+    this.groupIds = this.groupIds.includes(id) ? this.groupIds.filter((x) => x !== id) : [...this.groupIds, id];
+    if (!this.groupIds.length) { this.endGroup(); this.selectedBuilding = null; return; }
+    this.selectedBuilding = this.groupIds[0]; this.onChange();
+  }
+  /** Take in every piece joined to the chosen ones, side by side. */
+  selectRun(): void {
+    const at = new Map<number, number>(), N = this.sim.world.size;
+    for (const b of this.sim.buildings) if (this.isWall(b.id)) at.set(b.y * N + b.x, b.id);
+    const seen = new Set<number>(this.groupIds), todo = [...this.groupIds];
+    while (todo.length) {
+      const b = this.sim.getBuilding(todo.pop()!); if (!b) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const id = at.get((b.y + dy) * N + b.x + dx); if (id !== undefined && !seen.has(id)) { seen.add(id); todo.push(id); } }
+    }
+    this.groupIds = [...seen]; this.onToast(`Đã chọn ${this.groupIds.length} mảnh`); this.onChange();
+  }
+  /** Pick the chosen pieces up to put them down somewhere else; `turns` quarter-turns clockwise to begin with. */
+  startGroupMove(turns = 0): void {
+    const a = this.sim.getBuilding(this.groupIds[0]); if (!a) return;
+    this.groupRot = turns; this.moving = a.id; this.selectedBuilding = null; this.startPlacing(a.kind); this.placeAt = { x: a.x, y: a.y }; this.onChange();
+  }
+  /** Turn the group a quarter-turn clockwise (while carrying it, or to start carrying it turned). */
+  rotateGroup(): void { if (this.groupMoving) { this.groupRot = (this.groupRot + 1) % 4; this.onChange(); } else if (this.groupMode) this.startGroupMove(1); }
+
   ghost(): Ghost | null {
     if (!this.placing || !this.placeAt) return null;
+    if (this.groupMoving) {
+      const plan = this.sim.groupPlan(this.groupIds, this.placeAt, this.groupRot);
+      return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, group: plan, movingIds: [...this.groupIds] };
+    }
     const b = this.moving !== null ? this.sim.getBuilding(this.moving) : undefined;
     return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era, moving: this.moving ?? undefined };
   }
@@ -284,6 +335,7 @@ export class Controller {
   /** Why the ghost cannot be put down where it is, or null. */
   placeProblem(): string | null {
     if (!this.placing || !this.placeAt) return 'Chạm lên bản đồ để chọn chỗ';
+    if (this.groupMoving) return this.sim.canMoveGroup(this.groupIds, this.placeAt, this.groupRot);
     if (this.moving === null) return this.sim.canPlace(this.placing, this.placeAt.x, this.placeAt.y);
     const b = this.sim.getBuilding(this.moving);
     return b ? this.sim.canMove(b, this.placeAt.x, this.placeAt.y) : 'Công trình không còn';
@@ -301,10 +353,15 @@ export class Controller {
     this.moving = id; this.selectedBuilding = null; this.startPlacing(b.kind);
     this.placeAt = { x: b.x, y: b.y }; this.onChange();
   }
-  cancelPlacing(): void { this.placing = null; this.placeAt = null; this.moving = null; this.onChange(); }
+  cancelPlacing(): void { this.placing = null; this.placeAt = null; this.moving = null; if (this.groupMode) { this.groupRot = 0; this.selectedBuilding = this.groupIds[0] ?? null; } this.onChange(); }
 
   confirmPlace(keep = false): void {
     if (!this.placing || !this.placeAt) return;
+    if (this.groupMoving) {
+      const err = this.sim.moveGroup(this.groupIds, this.placeAt, this.groupRot);
+      if (err) { this.onToast(err); return; }
+      this.onToast(`Đã dời ${this.groupIds.length} mảnh`); this.endGroup(); return;
+    }
     if (this.moving !== null) {
       const id = this.moving, err = this.sim.moveBuilding(id, this.placeAt.x, this.placeAt.y);
       if (err) { this.onToast(err); return; }
@@ -321,6 +378,21 @@ export class Controller {
     if (ids.length && res.building && needsWork(res.building)) this.sim.orderWork(ids, o.x, o.y);
     if (!keep && !d.repeat) { this.placing = null; this.placeAt = null; }
     this.onChange();
+  }
+
+  // ---------------------------------------------------------------- choosing where to go
+  /** Begin choosing: the mark starts in the middle of the screen. */
+  startDest(): void {
+    if (!this.selected.size) { this.onToast('Chọn dân trước'); return; }
+    this.destArmed = true; this.attackMoveArmed = false; this.placing = null; this.placeAt = null;
+    const w = this.r.screenToWorld(this.r.w / 2, this.r.h / 2); this.destAt = { x: Math.floor(w.x / TILE), y: Math.floor(w.y / TILE) }; this.onChange();
+  }
+  cancelDest(): void { this.destArmed = false; this.destAt = null; this.onChange(); }
+  /** Send the selection to the mark (an enemy or a resource there is attacked or worked, as for a tap). */
+  confirmDest(): void {
+    if (!this.destAt) return;
+    const s = this.r.worldToScreen((this.destAt.x + 0.5) * TILE, (this.destAt.y + 0.5) * TILE);
+    this.destArmed = false; this.destAt = null; this.command(s, false); this.onChange();
   }
 
   // ---------------------------------------------------------------- orders
@@ -418,7 +490,8 @@ export class Controller {
     const k = e.key.toLowerCase();
     if (e.target instanceof HTMLElement && /input|textarea|select/i.test(e.target.tagName)) return;
     if ((e.ctrlKey || e.metaKey) && k === 'a') { e.preventDefault(); this.selectAll(); return; }
-    if (k === 'escape') { if (this.attackMoveArmed) { this.attackMoveArmed = false; this.onChange(); } else if (this.placing) this.cancelPlacing(); else this.clearSelection(); return; }
+    if (k === 'escape') { if (this.destArmed) this.cancelDest(); else if (this.attackMoveArmed) { this.attackMoveArmed = false; this.onChange(); } else if (this.placing) this.cancelPlacing(); else if (this.groupMode) this.endGroup(); else this.clearSelection(); return; }
+    if (k === 'r' && this.groupMode) { this.rotateGroup(); return; }
     if (/^[1-9]$/.test(k) && !e.shiftKey) { this.group(Number(k), e.ctrlKey || e.metaKey); e.preventDefault(); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (k === 'f' && this.fighters().length) { this.attackMoveArmed = true; this.onToast('Chọn điểm đến (chuột trái); Esc để hủy'); this.onChange(); return; }

@@ -8,7 +8,7 @@ import REST from '../data/rest.json';
 import { BARTER, RES_LIST, RES_NAME, rationAt } from '../sim/resources';
 import type { Villager } from '../sim/sim';
 import type { BuildingKind } from '../sim/buildings';
-import { autoOn, TECH_BY_ID, TECHS, TREE_TABS } from '../sim/research';
+import { TECH_BY_ID, TECHS, TREE_TABS } from '../sim/research';
 import { TechTree } from './techtree';
 import { resIcon } from './resicons';
 import { RECIPE_BY_ID, RECIPES, TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, ToolKind, recipeName, recipeUse } from '../sim/tools';
@@ -38,7 +38,7 @@ export class BuildingPanel {
   private readonly barterBtns: Array<{ res: Exclude<typeof RES_LIST[number], 'coin'>; btn: HTMLButtonElement }> = [];
   private readonly recRows: Array<{ id: string; kind: string; tier: number; list: string; have: HTMLElement; row: HTMLElement; lock: HTMLElement; btns: HTMLButtonElement[] }> = [];
   private readonly trees: TechTree[] = [];
-  private readonly goodRows: Array<{ id: string; num: HTMLElement; row: HTMLElement }> = [];
+  private readonly goodRows: Array<{ id: string; num: HTMLElement; row: HTMLElement; drop: HTMLButtonElement; dropAll: HTMLButtonElement }> = [];
   /** What the filters of the tool and weapon lists say, by list: the kind to show ('' for all) and whether to show only what can be had now. */
   private readonly filters: Record<string, { kind: string; only: boolean }> = { 'craft-tool': { kind: '', only: false }, 'craft-weapon': { kind: '', only: false }, 'store-tool': { kind: '', only: false }, 'store-gear': { kind: '', only: false } };
   private readonly goodsBar = h('div', { class: 'btns filters' }); private goodsBarCat = '';
@@ -53,6 +53,8 @@ export class BuildingPanel {
   private readonly progSec = {} as Record<string, HTMLElement>;
   /** The research house: the tab that is open, as a panel laid over the whole one (null while the grid of tabs shows). */
   private labSub: number | null = null;
+  /** The line on the front page of the research house that says who works there and opens the list to add more. */
+  private readonly labPeople = h('button', { class: 'dgo alt labpeople', type: 'button' }) as HTMLButtonElement;
   private readonly mbody = h('div', { class: 'mbody' });
   private readonly subTitle = h('b'); private readonly subBody = h('div', { class: 'subbody' });
   private readonly sub = h('div', { class: 'subpanel', hidden: true }, h('div', { class: 'subhead' }, h('button', { class: 'sm', text: '‹ Quay lại', onclick: () => { this.labSub = null; this.tabKey = ''; this.update(); } }), this.subTitle), this.subBody);
@@ -171,24 +173,31 @@ export class BuildingPanel {
     const only = (test: (id: string) => boolean) => TECHS.filter((x) => test(x.id));
     const labLevel = () => sim.building('lab')?.level ?? 0;
     const militaryLock = () => (sim.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `Cần Nhà nghiên cứu cấp ${TREE_TABS.military.needLab} để mở Quân sự`);
-    this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research, this.staffBoxes.research.root);
+    this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research, this.labPeople);
     this.tabs.lab = [
       { label: 'Quân sự bậc 1', icon: 'infantry', lock: militaryLock, page: tree((t) => { t.addChains('Chỉ số quân', ['foot', 'cavalry', 'archer', 'scout'], 'military'); }) },
       { label: 'Phát triển bậc 1', icon: 'builder', page: tree((t) => t.addChains('Chỉ số nhà làm việc', ['build', 'craft', 'research'], 'development')) },
       { label: 'Kinh tế bậc 1', icon: 'storage', page: tree((t) => { t.addChains('Chỉ số nghề', ['wood', 'stone', 'food', 'hunt', 'farm', 'tame'], 'economy'); }) },
-      { label: 'Nâng cấp công trình bậc 1', icon: 'storage', under: 1, page: tree((t) => t.addLadder('Dựng bằng gỗ, rồi xây bằng đá', only((id) => id === 'timber' || id === 'masonry'))) },
       { label: 'Công cụ bậc 1', icon: 'workshop', under: 2, page: tree((t) => { t.addChains('Chỉ số công cụ', ['axe', 'pick', 'hoe'], 'tool'); t.addChains('Búa', ['hammer'], 'hammer'); }) },
-      { label: 'Tự động hóa bậc 1', icon: 'toolstore', under: 2, page: tree((t) => t.addSingles('Dân tự làm', only((id) => id.startsWith('auto_')))) },
       { label: 'Chiến đấu bậc 1', icon: 'drill', under: 0, lock: () => militaryLock() && 'Cần mở Quân sự trước', page: tree((t) => { t.addSingles('Tín hiệu', only((id) => id === 'signal')); t.addFormations('Trận pháp', 'formation'); }) },
       { label: 'Vũ khí bậc 1', icon: 'armory', under: 0, lock: () => militaryLock() && 'Cần mở Quân sự trước', page: tree((t) => { t.addChains('Chỉ số từng vũ khí', ['club', 'spear', 'mace', 'sling', 'bow'], 'weapon'); }) },
+      { label: 'Người làm việc', icon: 'lab', under: 1, page: page(this.staffBoxes.research.root) },
     ];
 
     // tool store and armoury: what is kept
     const goods = page(this.goodsHint, this.goodsBar);
     const goodsRows = (cat: 'tool' | 'gear') => RECIPES.filter((r) => (cat === 'gear') === isGearKind(r.kind));
     for (const r of [...goodsRows('tool'), ...goodsRows('gear')]) {
-      const num = h('b'), row = h('div', { class: 'rec' }, iconCanvas(sprites.icons[r.id]), h('div', { class: 'nm' }, recipeName(r), h('small', { text: recipeUse(r) })), h('div', { class: 'qty' }, num));
-      this.goodRows.push({ id: r.id, num, row }); goods.append(row);
+      // throw some out to make room: one at a time, or all of that kind (the second press confirms)
+      const num = h('b'), drop = h('button', { class: 'sm', text: '−', title: 'Bỏ một món (món đã mòn bỏ trước)', onclick: () => { const e = sim.discardGoods(r.id, false); if (e) c.toast(e); ctl.onChange(); } }) as HTMLButtonElement;
+      let armed = 0;
+      const dropAll = h('button', { class: 'sm danger', text: 'Bỏ hết', title: 'Bỏ tất cả món này khỏi kho', onclick: () => {
+        if (!armed) { armed = window.setTimeout(() => { armed = 0; dropAll.textContent = 'Bỏ hết'; dropAll.classList.remove('armed'); }, 3000); dropAll.textContent = 'Chắc chứ?'; dropAll.classList.add('armed'); return; }
+        window.clearTimeout(armed); armed = 0; dropAll.textContent = 'Bỏ hết'; dropAll.classList.remove('armed');
+        const e = sim.discardGoods(r.id, true); if (e) c.toast(e); ctl.onChange();
+      } }) as HTMLButtonElement;
+      const row = h('div', { class: 'rec' }, iconCanvas(sprites.icons[r.id]), h('div', { class: 'nm' }, recipeName(r), h('small', { text: recipeUse(r) })), h('div', { class: 'qty' }, num, drop, dropAll));
+      this.goodRows.push({ id: r.id, num, row, drop, dropAll }); goods.append(row);
     }
     this.tabs.toolstore = this.tabs.armory = [{ label: 'Kho', page: goods }];
 
@@ -268,8 +277,8 @@ export class BuildingPanel {
   private infoBase(b: Building): string {
     const lv = levelDef(b);
     switch (b.kind) {
-      case 'infantry': case 'cavalry': case 'archery': case 'guardpost': return `Cấp ${b.level}: chứa ${lv.slots} người, mỗi người một giường · hồi sức ×${lv.craftSpeed.toLocaleString('vi')} (cạnh đống lửa chỉ ×${REST.sleepAt.campfire.toLocaleString('vi')})`;
-      case 'house': return `Cấp ${b.level}: ${lv.slots} giường cho dân rảnh, làng chứa thêm ${lv.slots} dân · hồi sức ×${lv.craftSpeed.toLocaleString('vi')} (cạnh đống lửa chỉ ×${REST.sleepAt.campfire.toLocaleString('vi')})`;
+      case 'infantry': case 'cavalry': case 'archery': case 'guardpost': return `Cấp ${b.level}: chứa ${lv.slots} người, mỗi người một giường · lính hồi sức nhanh hơn dân ${Math.round((REST.soldierRest - 1) * 100)}%, hồi máu nhanh hơn ${Math.round((REST.soldierHealInCamp - 1) * 100)}% khi ở trong trại`;
+      case 'house': return `Cấp ${b.level}: ${lv.slots} giường cho dân rảnh, làng chứa thêm ${lv.slots} dân · hồi sức như nhau ở mọi nơi ngủ`;
       case 'field': return `Cấp ${b.level}: ${lv.slots} nông dân làm một lúc · năng suất ×${lv.craftSpeed.toLocaleString('vi')} (cuốc đá làm nhanh hơn)`;
       case 'builder': return `Cấp ${b.level}: chứa ${lv.slots} thợ xây · xây nhanh ×${lv.craftSpeed.toLocaleString('vi')}`;
       case 'workshop': return `Cấp ${b.level}: chứa ${lv.slots} người chế tạo · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
@@ -277,8 +286,8 @@ export class BuildingPanel {
 
       case 'stable': return `Cấp ${b.level}: chứa ${lv.slots} người thuần thú · tốc độ ×${lv.craftSpeed.toLocaleString('vi')} · thuần được ${MOUNT_KINDS.filter((k) => MOUNTS[k].tier <= b.level).map((k) => MOUNTS[k].name.toLowerCase()).join(', ')}`;
       case 'wartent': return `Cấp ${b.level}: tối đa ${this.c.sim.squadLimit()} đội, ${this.c.sim.cardLimit()} thẻ lệnh cho một kế hoạch · vào lều là game tạm dừng`;
-      case 'huntlodge': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} thợ săn, săn trong ${huntRange(this.c.sim)} ô quanh chòi · nâng cấp để chứa thêm và săn xa hơn`;
-      case 'farmhouse': case 'lumberyard': case 'quarry': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} người · nâng cấp để chứa thêm`;
+      case 'huntlodge': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} thợ săn, săn trong ${huntRange(this.c.sim)} ô quanh chòi · có kho riêng ${lv.cap} thức ăn · nâng cấp để chứa thêm và săn xa hơn`;
+      case 'farmhouse': case 'lumberyard': case 'quarry': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} người · có kho riêng ${lv.cap} ${RES_NAME[BUILDINGS[b.kind].produces![0]].toLowerCase()}, cộng vào sức chứa của làng · nâng cấp để chứa thêm`;
       case 'scouttent': return `Cấp ${b.level}: cử tối đa ${lv.slots} trinh sát một chuyến · tab Làng đã phát hiện để chọn làng và người đi`;
       case 'storage': return `Sức chứa ${lv.cap} mỗi loại`;
       case 'toolstore': case 'armory': return `Chứa tối đa ${lv.cap} món`;
@@ -302,12 +311,12 @@ export class BuildingPanel {
     const pk = `${b.kind}${b.level}${b.done}`;
     if (pk !== this.picKey) { this.picKey = pk; try { this.picBox.replaceChildren(iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0])); } catch { this.picBox.textContent = '🏠'; this.picBox.className = 'dpic glyph'; } }
     const meal = b.kind === 'campfire' && b.done && !b.upgrading;
-    this.state.textContent = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : 'đang dùng';
+    this.state.textContent = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%${sim.buildWhy(b) ? ` · ${sim.buildWhy(b)}` : ''}` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%${sim.buildWhy(b) ? ` · ${sim.buildWhy(b)}` : ''}` : 'đang dùng';
     this.state.hidden = meal; this.foodHint.hidden = !meal;
     this.showTabs(b.kind, ready);
     this.info.textContent = !b.done ? 'Giao dân làm Thợ xây để dựng công trình này.' : this.infoText(b);
     if (b.kind === 'campfire' && ready) this.updateCampfire();
-    if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity()}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity())) * 100)}%`; }
+    if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity(r.res)}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity(r.res))) * 100)}%`; }
     if ((b.kind === 'storage' || b.kind === 'campfire') && ready) for (const t of this.barterBtns) { t.btn.textContent = `Đổi ${BARTER[t.res]} ${RES_NAME[t.res].toLowerCase()} → 1 ${RES_NAME.coin.toLowerCase()}`; t.btn.disabled = sim.stock[t.res] < BARTER[t.res]; }
     if (this.bedList[b.kind] && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
@@ -330,14 +339,18 @@ export class BuildingPanel {
       const lock = sim.recipeLock(r.id), f = this.filters[r.list];
       if (f) r.row.hidden = (!!f.kind && r.kind !== f.kind) || (f.only && !!lock);
       r.have.textContent = lock ? '' : `kho ${sim.toolCount(r.kind, r.tier)} · đợi ${sim.craftQueue.filter((id) => id === r.id).length}`;
-      r.row.classList.toggle('locked', !!lock); r.lock.textContent = lock ?? '';
-      for (const btn of r.btns) btn.disabled = !!lock;
+      const full = lock ? null : sim.craftStoreBlock(r.id); // a full store takes no more orders
+      r.row.classList.toggle('locked', !!lock); r.lock.textContent = lock ?? full ?? '';
+      r.btns[0].disabled = !!lock; r.btns[1].disabled = !!lock || !!full;
     }
   }
 
   private updateLab(b: Building): void {
     const { sim } = this.c;
     this.staffBoxes.research.update(b); this.activeBoxes.research.update(b);
+    const at = this.tabs.lab.findIndex((t) => t.label === 'Người làm việc');
+    this.labPeople.textContent = `Người nghiên cứu ${sim.staffCount(b)}/${levelDef(b).slots} · Thêm người ›`;
+    this.labPeople.onclick = () => { this.tabAt.lab = at; this.labSub = at; this.showTabs('lab', true); };
     const waiting = sim.researchQueue[0];
     this.queueNote.research.textContent = `${waiting ? `Chờ bắt đầu: ${TECH_BY_ID[waiting]?.name ?? waiting}` : 'Mỗi lần chỉ nghiên cứu một thứ'}`;
     for (const t of this.trees) t.update();
@@ -369,7 +382,7 @@ export class BuildingPanel {
   private updateGoods(b: Building): void {
     const { sim } = this.c, cat = b.kind === 'toolstore' ? 'tool' : 'gear';
     this.goodsNote.textContent = `Đang chứa ${sim.storeUsed(cat)}/${sim.storeCap(cat)} món`;
-    this.goodsHint.tip.textContent = autoOn(sim.researched, 'fetch') ? 'Dân thiếu đồ hoặc đồ hỏng sẽ tự tới lấy.' : 'Chưa nghiên cứu "Tự lấy đồ trong kho": hãy phát đồ bằng tay ở thẻ dân.';
+    this.goodsHint.tip.textContent = 'Dân thiếu đồ hoặc đồ hỏng sẽ tự tới lấy.';
     const fkey = `store-${cat}`, f = this.filters[fkey];
     if (this.goodsBarCat !== cat) { // the bar of the store follows what the store keeps
       this.goodsBarCat = cat;
@@ -378,7 +391,7 @@ export class BuildingPanel {
     }
     for (const r of this.goodRows) {
       const rc = RECIPE_BY_ID[r.id], mine = (cat === 'gear') === isGearKind(rc.kind), n = sim.toolCount(rc.kind, rc.tier);
-      r.row.hidden = !mine || (n === 0 && !!sim.recipeLock(r.id)) || (!!f.kind && rc.kind !== f.kind) || (f.only && n === 0); r.num.textContent = `× ${n}`;
+      r.row.hidden = !mine || (n === 0 && !!sim.recipeLock(r.id)) || (!!f.kind && rc.kind !== f.kind) || (f.only && n === 0); r.num.textContent = `× ${n}`; r.drop.disabled = r.dropAll.disabled = n === 0;
     }
   }
 

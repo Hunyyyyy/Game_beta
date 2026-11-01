@@ -13,7 +13,7 @@ export interface Camera { x: number; y: number; zoom: number }
 export interface Box { x0: number; y0: number; x1: number; y1: number }
 export interface Marker { x: number; y: number; age: number }
 
-export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number }
+export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number; /** A group of fence pieces carried together: where each goes, and the ids they leave. */ group?: Array<{ id: number; kind: BuildingKind; x: number; y: number; level: number }>; movingIds?: number[] }
 
 interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp'; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe }
 
@@ -108,7 +108,20 @@ export class Renderer {
     }
   }
 
-  /** The circle a tower sees, and shoots, as far as: drawn round the tower when it is chosen, and round the one being placed or carried. */
+  /** The land of the village while a house is being placed or carried: the circles of every finished house together, faint. */
+  private drawTerritory(buildings: readonly Building[]): void {
+    const { ctx } = this, z = this.cam.zoom;
+    ctx.fillStyle = 'rgba(255,226,140,.07)'; ctx.beginPath();
+    for (const b of buildings) {
+      const r = buildingSight(b);
+      if (r <= 0) continue;
+      const d = BUILDINGS[b.kind], p = this.worldToScreen((b.x + d.w / 2) * TILE, (b.y + d.h / 2) * TILE), rr = r * TILE * z;
+      ctx.moveTo(p.x + rr, p.y); ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  }
+
+  /** The circle a house sees, and holds as land of the village (a tower shoots as far as it too): drawn round the tower when it is chosen, and round the one being placed or carried. */
   private drawSight(cxTile: number, cyTile: number, tiles: number): void {
     const { ctx } = this, z = this.cam.zoom, p = this.worldToScreen(cxTile * TILE, cyTile * TILE), r = tiles * TILE * z;
     ctx.fillStyle = 'rgba(255,226,140,.08)'; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
@@ -311,7 +324,7 @@ export class Renderer {
     return depth >= 3 ? 'high' : depth === 2 ? 'mid' : 'low';
   }
 
-  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null): void {
+  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null, group: readonly number[] = [], dest: { x: number; y: number } | null = null): void {
     const { ctx, cam, sim } = this, z = cam.zoom, world = sim.world, N = world.size, sp = this.sprites;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
@@ -379,7 +392,7 @@ export class Renderer {
       } else if (d.kind === 'building' && d.b) {
         const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
         if (b.kind === 'gate' && b.done) this.drawGate(b, wallAt);
-        else if (!(b.kind === 'fence' && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id ? 0.5 : 1); // the house being carried stays dim where it stands
+        else if (!(b.kind === 'fence' && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id || ghost?.movingIds?.includes(b.id) ? 0.5 : 1); // the house being carried stays dim where it stands
         if (b.kind === 'fence' || b.kind === 'gate') this.drawDiagonalRails(b, wallAt);
         this.drawDamage(b, ax, ay, time);
         const emblem = b.done ? sp.emblems[b.kind] : undefined;
@@ -501,7 +514,16 @@ export class Renderer {
     }
 
     // ---- bóng ma khi đặt công trình ----
-    if (ghost) {
+    if (ghost?.group) {
+      // pieces of fence carried together: each shows where it will stand, green when all fit, red when they do not
+      this.drawTerritory(sim.buildings.filter((o) => !ghost.movingIds?.includes(o.id)));
+      for (const q of ghost.group) {
+        const [qx, qy] = this.buildingAnchor(q.kind, q.x, q.y);
+        this.prop(sp.building(q.kind, sim.era, q.level, 4), qx, qy, time, 0.6);
+        ctx.fillStyle = ghost.ok ? 'rgba(90,200,90,.38)' : 'rgba(220,70,60,.42)'; ctx.fillRect(px(q.x), py(q.y), ts, ts);
+        ctx.strokeStyle = ghost.ok ? '#bff0b0' : '#ffb4a8'; ctx.lineWidth = 2; ctx.strokeRect(px(q.x) + 1, py(q.y) + 1, ts - 2, ts - 2);
+      }
+    } else if (ghost) {
       const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
       // the free tile that houses keep from each other: round every standing house and round the ghost (walls keep none)
       if (!WALL_KINDS.has(ghost.kind)) {
@@ -511,7 +533,9 @@ export class Renderer {
         ctx.strokeRect(px(ghost.x - CLEAR), py(ghost.y - CLEAR), (d.w + 2 * CLEAR) * ts, (d.h + 2 * CLEAR) * ts); ctx.setLineDash([]);
       }
       this.prop(sp.building(ghost.kind, ghost.era ?? sim.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
-      if (ghost.kind === 'tower') this.drawSight(ghost.x + d.w / 2, ghost.y + d.h / 2, buildingSight({ kind: 'tower', level: ghost.level ?? 1, done: true }));
+      this.drawTerritory(sim.buildings.filter((o) => o.id !== ghost.moving));
+      const gs = buildingSight({ kind: ghost.kind, level: ghost.level ?? 1, done: true, era: ghost.era ?? sim.era });
+      if (gs > 0) this.drawSight(ghost.x + d.w / 2, ghost.y + d.h / 2, gs); // what it will see, and hold as land of the village
       ctx.fillStyle = ghost.ok ? 'rgba(90,200,90,.38)' : 'rgba(220,70,60,.42)';
       ctx.fillRect(px(ghost.x), py(ghost.y), d.w * ts, d.h * ts);
       ctx.strokeStyle = ghost.ok ? '#bff0b0' : '#ffb4a8'; ctx.lineWidth = 2;
@@ -535,13 +559,28 @@ export class Renderer {
       if (e) { const p = this.worldToScreen(e.x * TILE, e.y * TILE); ctx.strokeStyle = '#ff8a7a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(p.x, p.y + z, 11 * z, 5 * z, 0, 0, Math.PI * 2); ctx.stroke(); }
     }
 
+    // ---- the mark of where the selection will go (chosen with the "Chọn nơi đến" button) ----
+    if (dest) {
+      const cx = px(dest.x) + ts / 2, cy = py(dest.y) + ts / 2, pulse = 0.5 + 0.5 * Math.sin(time * 5);
+      ctx.fillStyle = 'rgba(90,200,255,.25)'; ctx.fillRect(px(dest.x), py(dest.y), ts, ts);
+      ctx.strokeStyle = '#7ad4ff'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(cx, cy, (0.55 + 0.15 * pulse) * ts, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - ts * 0.9, cy); ctx.lineTo(cx + ts * 0.9, cy); ctx.moveTo(cx, cy - ts * 0.9); ctx.lineTo(cx, cy + ts * 0.9); ctx.stroke();
+    }
+
+    // ---- the pieces of fence chosen to be carried together ----
+    for (const id of group) {
+      const q = sim.getBuilding(id); if (!q) continue;
+      ctx.fillStyle = 'rgba(255,214,90,.35)'; ctx.fillRect(px(q.x), py(q.y), ts, ts);
+      ctx.strokeStyle = '#ffd65a'; ctx.lineWidth = 2; ctx.strokeRect(px(q.x) + 1, py(q.y) + 1, ts - 2, ts - 2);
+    }
+
     // ---- selected building ----
     const sb = selBuilding === null ? undefined : sim.getBuilding(selBuilding);
     if (sb) {
       const d = BUILDINGS[sb.kind];
       ctx.strokeStyle = '#f5e7c4'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
       ctx.strokeRect(px(sb.x) + 1, py(sb.y) + 1, d.w * ts - 2, d.h * ts - 2); ctx.setLineDash([]);
-      if (sb.kind === 'tower' && sb.done) this.drawSight(sb.x + d.w / 2, sb.y + d.h / 2, buildingSight(sb));
+      if (sb.done && buildingSight(sb) > 0) this.drawSight(sb.x + d.w / 2, sb.y + d.h / 2, buildingSight(sb)); // the land it holds
     }
 
     // ---- đánh dấu lệnh, vòng chọn ----

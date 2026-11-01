@@ -1,5 +1,5 @@
 {
-  "_note": "Energy (sức) of a villager, 0-100. Costs are percentage points. A day's heavy work costs dayCost over the waking hours, a night shift nightCost over the night; jobWeight scales it per job. Sleep gives back sleepNight points over one night of sleep (half that by day) in a Nhà dân; sleepAt scales it by where they lie down: by the campfire (no bed free) it is slower, in the Nhà dân or the Lều chiến binh (soldiers) it is full, and a higher level of the house multiplies it again (its craftSpeed). Below tired a villager must sleep and cannot be woken until wakeAfterTired (wakeAfterCollapse if they fell asleep below collapse). Strain builds up from night work and from collapsing, and wears off with sleep; it lowers the energy ceiling and slows recovery, so nobody can be worked night after night. Night work needs a torch and goes at nightEfficiency.",
+  "_note": "Energy (sức) of a villager, 0-100. Costs are percentage points. A day's heavy work costs dayCost over the waking hours, a night shift nightCost over the night; jobWeight scales it per job. Sleep gives back sleepNight points over one night of sleep (half that by day) in a Nhà dân; sleepAt scales it by where they lie down: by the campfire (no bed free) it is slower, in the Nhà dân or the Lều chiến binh (soldiers) it is full, and a higher level of the house multiplies it again (its craftSpeed). Below tired a villager must sleep and cannot be woken until wakeAfterTired (wakeAfterCollapse if they fell asleep below collapse). Strain builds up from night work and from collapsing, and wears off with sleep; it lowers the energy ceiling and slows recovery, so nobody can be worked night after night. Night work needs a torch and goes at nightEfficiency. Nơi ngủ KHÔNG còn ảnh hưởng tới tốc độ hồi sức (sleepAt đều bằng 1, cấp nhà cũng không nhân). soldierRest: lính (nghề chiến đấu) hồi sức nhanh hơn dân bấy nhiêu lần (1.4 = nhanh hơn 40%). soldierHealInCamp: lính hồi máu nhanh bấy nhiêu lần khi đang ở trong trại của mình (không làm nhiệm vụ, không ở ngoài). Nghiên cứu Hồi sức (restregen) và Hồi máu (hpregen) nhân thêm.",
   "tired": 20,
   "collapse": 10,
   "wakeAfterTired": 50,
@@ -8,10 +8,36 @@
   "nightCost": 30,
   "sleepNight": 60,
   "sleepDay": 30,
-  "sleepAt": { "campfire": 0.6, "house": 1, "infantry": 1.6, "cavalry": 1.6, "archery": 1.6, "guardpost": 1.6 },
+  "sleepAt": {
+    "campfire": 1,
+    "house": 1,
+    "infantry": 1,
+    "cavalry": 1,
+    "archery": 1,
+    "guardpost": 1
+  },
   "nightEfficiency": 0.7,
   "tiredEfficiency": 0.7,
   "tiredBelow": 40,
-  "jobWeight": { "wood": 1, "stone": 1, "build": 0.95, "fight": 0.8, "hunt": 0.9, "food": 0.7, "craft": 0.6, "research": 0.5, "idle": 0.15 },
-  "strain": { "nightWork": 0.1, "collapse": 15, "nightSleep": 0.12, "daySleep": 0.03, "capLoss": 0.4, "recoveryLoss": 0.0067 }
+  "jobWeight": {
+    "wood": 1,
+    "stone": 1,
+    "build": 0.95,
+    "fight": 0.8,
+    "hunt": 0.9,
+    "food": 0.7,
+    "craft": 0.6,
+    "research": 0.5,
+    "idle": 0.15
+  },
+  "strain": {
+    "nightWork": 0.1,
+    "collapse": 15,
+    "nightSleep": 0.12,
+    "daySleep": 0.03,
+    "capLoss": 0.4,
+    "recoveryLoss": 0.0067
+  },
+  "soldierRest": 1.4,
+  "soldierHealInCamp": 1.5
 }

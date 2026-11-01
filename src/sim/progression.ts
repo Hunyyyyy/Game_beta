@@ -2,7 +2,7 @@ import data from '../data/progression.json';
 import quests from '../data/quests.json';
 
 /** The plan the village grows by (src/data/progression.json): what each campfire level opens, what each research-house level teaches, and the quests that lead to it. */
-interface FireLevel { level: number; buildingMaxLevel: number; upgradeNeeds: { allUnlockedAtLeastLevel: number } | null }
+interface FireLevel { level: number; buildingMaxLevel: number; upgradeNeeds: { allUnlockedAtLeastLevel: number; groupAtLeastLevel?: Record<string, number> } | null }
 interface LabLevel { level: number; techs: string[] }
 
 const FIRE = data.campfire.levels as FireLevel[];
@@ -15,6 +15,9 @@ export const SQUADS_DEFAULT: number = data.formationDefaults.squads;
 export const fireBuildingMax = (fireLevel: number): number => (FIRE[Math.min(FIRE.length, Math.max(1, fireLevel)) - 1]).buildingMaxLevel;
 /** Level every opened house must have reached before the campfire may leave this level, or null when it is the last. */
 export const fireUpgradeNeeds = (fireLevel: number): number | null => FIRE[Math.min(FIRE.length, Math.max(1, fireLevel)) - 1].upgradeNeeds?.allUnlockedAtLeastLevel ?? null;
+
+/** Groups of houses (e.g. "production") that must have reached a level before the campfire may leave this level, in addition to every opened house. */
+export const fireUpgradeGroups = (fireLevel: number): Record<string, number> => FIRE[Math.min(FIRE.length, Math.max(1, fireLevel)) - 1].upgradeNeeds?.groupAtLeastLevel ?? {};
 
 /** The research-house level a step is taught at (the level that lists it, or the last, which lists "@rest"). */
 export function labLevelOf(techId: string): number {

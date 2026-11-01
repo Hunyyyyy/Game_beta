@@ -1,6 +1,6 @@
 /** Scouting: villages found on the map, trips to draw them (three levels of map, ageing) and the scouts who do not come home. */
 import { levelDef } from './buildings';
-import { ringOf, ringPower, SIEGE } from './combat';
+import { SIEGE } from './combat';
 import { DAY_LENGTH } from './constants';
 import { armOfWeapon, COMMAND } from './formations';
 import { findPath } from './path';
@@ -225,8 +225,8 @@ export function startScout(sim: Sim, ids: readonly number[], tribe: string): str
 
 /** The chance one scout is caught and killed: his own village's strength, daylight and his speed. */
 function deathChance(sim: Sim, m: ScoutMission, v: Villager): number {
-  const t = tribeOf(sim, m.tribe as never)!, fire = sim.campfire();
-  const power = warriorsOf(sim, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
+  const t = tribeOf(sim, m.tribe as never)!;
+  const power = warriorsOf(sim, m.tribe) * (1 + (t.mil ?? 0));
   const day = sim.weather === 'clear' && !sim.resting;
   return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 0.005) - gearOf(v, SIEGE.scout.gearHide)));
 }

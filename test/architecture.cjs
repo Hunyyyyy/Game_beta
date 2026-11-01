@@ -8,9 +8,9 @@ let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
 
 // the layers, see src/sim/ARCHITECTURE.md
-const DATA = ['codec', 'constants', 'resources', 'rng', 'calendar', 'buildings', 'jobs', 'tools', 'combat', 'research', 'world', 'fog', 'path', 'model', 'formations', 'statsys', 'progression'];
-const VILLAGE = ['quests', 'warplan', 'siege', 'training', 'mounts', 'construction', 'economy', 'works', 'houses', 'inventory', 'commands', 'labor', 'movement', 'villagers', 'environment', 'rest', 'defense', 'roles', 'forecast', 'notices'];
-const CREATURES = ['battle', 'fauna', 'tribes', 'army', 'scouting'];
+const DATA = ['codec', 'constants', 'resources', 'rng', 'calendar', 'buildings', 'jobs', 'tools', 'combat', 'research', 'world', 'fog', 'path', 'model', 'formations', 'statsys', 'progression', 'difficulty'];
+const VILLAGE = ['quests', 'warplan', 'siege', 'training', 'mounts', 'construction', 'economy', 'works', 'houses', 'inventory', 'commands', 'labor', 'movement', 'villagers', 'environment', 'rest', 'defense', 'roles', 'forecast', 'notices', 'power'];
+const CREATURES = ['battle', 'fauna', 'tribes', 'tribework', 'army', 'scouting'];
 const CORE = ['sim', 'simwar'];
 const PERSISTENCE = ['save'];
 const TOOLING = ['dev'];

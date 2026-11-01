@@ -3,7 +3,8 @@
  * slower; soldiers fight on whatever their energy and sleep long afterwards; nobody can be worked night after night (strain).
  * All the numbers are in src/data/rest.json.
  */
-import { drainScale } from './statsys';
+import { drainScale, treeRole } from './statsys';
+import { statBonus } from './research';
 import restJson from '../data/rest.json';
 import { Building, levelDef } from './buildings';
 import { DAY_LENGTH } from './constants';
@@ -72,11 +73,10 @@ export function freeBed(sim: Sim, v: Villager): Building | undefined {
   return best;
 }
 
-/** How well the place they sleep in lets them rest: the house they are inside (and its level), else the campfire's slower rest. */
+/** How well they rest: no matter where they lie down. A soldier rests faster than a villager (rest.json "soldierRest"), and the research Hồi sức adds to it. */
 function bedFactor(sim: Sim, v: Villager): number {
-  const b = v.inside === null ? undefined : sim.getBuilding(v.inside);
-  if (b && (BED_KINDS as readonly string[]).includes(b.kind)) return REST.sleepAt[b.kind as BedKind] * levelDef(b).craftSpeed;
-  return b ? REST.sleepAt.house : REST.sleepAt.campfire; // a bunk in the workplace is as good as a plain house
+  const role = treeRole(v);
+  return (v.job === 'fight' ? REST.soldierRest : 1) * (1 + (role ? statBonus(sim.researched, role, 'restregen') : 0) / 100);
 }
 
 /** Percentage points gained per second while asleep. Night sleep is twice as good as sleep by day. */

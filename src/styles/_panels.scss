@@ -189,3 +189,15 @@ button.primary.danger { background: var(--bad); color: #fff; border-color: var(-
   display: grid; gap: 6px;
   &.inline { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 4px 10px; .tabs { flex: none; position: static; padding: 0; background: none; } }
 }
+
+// ---- the page "Chỉ số" of the menu: what research gave to each trade and each kind of soldier ----
+.sover {
+  display: grid; gap: 10px;
+  .srole { display: grid; gap: 4px; padding: 6px 0; border-top: 1px solid var(--line); }
+  .sname { display: flex; align-items: center; gap: 8px; b { font-size: 13.5px; } }
+  .spills { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+  .spill { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; .ico-wrap { display: inline-flex; width: 16px; height: 16px; .ico { width: 16px; height: 16px; } } small { color: var(--muted); } &.zero { opacity: .5; } }
+}
+
+// in the dialog (parchment) the page takes the colours of the parchment
+.gdlg .sover { .srole { border-top-color: #b89a5e; } .spill small { color: #6a5a3a; } .chip { padding: 1px 7px; border-radius: 999px; background: rgba(120, 90, 40, .2); color: #5a3a14; font-size: 11px; font-weight: 700; } }

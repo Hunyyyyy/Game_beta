@@ -10,7 +10,7 @@ import { Tool, ToolKind } from './tools';
 import { Team, TribeId } from './combat';
 import { hurt, tickProjectiles } from './battle';
 import { Animal, populateChunk, tickAnimals } from './fauna';
-import { adoptTribe, EventState, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tributeTribe } from './tribes';
+import { adoptTribe, EventState, foeBonus, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tribesFeud, tribeWilling, tributeTribe } from './tribes';
 import { recipeOpen, Tech } from './research';
 import { questViews, QuestUi, QuestView } from './quests';
 import { World } from './world';
@@ -33,6 +33,7 @@ import * as idle from './idle';
 import * as defense from './defense';
 import * as army from './army';
 import * as scouting from './scouting';
+import * as power from './power';
 import * as warplan from './warplan';
 import { WAR, WarApi } from './simwar';
 import { BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
@@ -82,6 +83,12 @@ export class Sim {
   /** Scheduled wolf packs and tribal raids. */
   readonly events: EventState[] = [];
   nextRaid = 0;
+  /** The chunks where the other villages live their daily life: those round our people. Redone every second, never saved. */
+  readonly active = new Set<number>();
+  /** People the village may hold beyond its campfire and beds: the campfires of the villages we took. */
+  popBonus = 0;
+  /** Fights between two villages that we saw (time, place): they become a notice for a while. Never saved. */
+  readonly clashes: Array<{ a: string; b: string; at: number; x: number; y: number }> = [];
   readonly animals: Animal[] = [];
   readonly animalById = new Map<number, Animal>();
   readonly projectiles: Projectile[] = [];
@@ -207,8 +214,12 @@ export class Sim {
   roleCapacity(role: RoleId): number { return roles.roleCapacity(this, role); }
   /** → roles.roleCount */
   roleCount(role: RoleId): number { return roles.roleCount(this, role); }
-  /** → roles.guardCandidates */
-  guardCandidates(): Villager[] { return roles.guardCandidates(this); }
+  /** → tribes.foeBonus: what the strength of a tribe adds to a stat of its people */
+  foeBonus(team: string, stat: import('./research').StatId): number { return foeBonus(this, team, stat); }
+  /** → power.powerOf for our village */
+  power(): power.Power { return power.powerOf(this, this.villagers); }
+  /** → power.powerOf for the people of a tribe */
+  tribePower(t: Tribe): power.Power { return power.powerOf(this, t.unitIds.map((u) => this.get(u)).filter((u): u is Villager => !!u)); }
   /** → roles.trimRoles */
   trimRoles(): void { return roles.trimRoles(this); }
   /** → rest.bedsIn */
@@ -314,6 +325,12 @@ export class Sim {
 
   /** → construction.canMove */
   canMove(b: Building, x: number, y: number): string | null { return construction.canMove(this, b, x, y); }
+  /** → construction.groupPlan */
+  groupPlan(ids: readonly number[], to: { x: number; y: number }, rot: number): ReturnType<typeof construction.groupPlan> { return construction.groupPlan(this, ids, to, rot); }
+  /** → construction.canMoveGroup */
+  canMoveGroup(ids: readonly number[], to: { x: number; y: number }, rot: number): string | null { return construction.canMoveGroup(this, ids, to, rot); }
+  /** → construction.moveGroup */
+  moveGroup(ids: readonly number[], to: { x: number; y: number }, rot: number): string | null { return construction.moveGroup(this, ids, to, rot); }
   /** → construction.moveBuilding */
   moveBuilding(id: number, x: number, y: number): string | null { return construction.moveBuilding(this, id, x, y); }
 
@@ -336,6 +353,12 @@ export class Sim {
   queueResearch(id: string): string | null { return works.queueResearch(this, id); }
   /** → works.researchShort */
   researchShort(t: Tech): string | null { return works.researchShort(this, t); }
+  /** → construction.buildWhy */
+  buildWhy(b: Building): string | null { return construction.buildWhy(this, b); }
+  /** → works.discardGoods */
+  discardGoods(id: string, all: boolean): string | null { return works.discardGoods(this, id, all); }
+  /** → works.craftStoreBlock */
+  craftStoreBlock(id: string): string | null { return works.craftStoreBlock(this, id); }
   /** → works.queueCraft */
   queueCraft(id: string): string | null { return works.queueCraft(this, id); }
   /** → works.unqueueCraft */
@@ -599,6 +622,10 @@ export class Sim {
     hurt(this, target, dmg, type, from, src);
   }
   tribeHostile(id: Team): boolean { return tribeHostile(this, id); }
+  /** → tribes.tribeWilling */
+  tribeWilling(id: Team): boolean { return tribeWilling(this, id); }
+  /** → tribes.tribesFeud */
+  tribesFeud(a: Team, b: Team): boolean { return tribesFeud(this, a, b); }
   tribeAttacked(id: Exclude<Team, 'player' | 'wild'>, victim: Villager): void { tribeAttacked(this, id, victim); }
   killFoe(v: Villager, killer?: Villager): void { killFoe(this, v, killer); }
   /** The player's own campfire (the village centre). */

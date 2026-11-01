@@ -41,8 +41,6 @@ export class TechTree {
   private techPic(t: Tech): HTMLElement {
     const { sprites } = this.c, r = t.unlocks.recipes?.[0];
     if (r && sprites.icons[r]) return h('span', { class: 'tpic' }, iconCanvas(sprites.icons[r]));
-    const lv = t.unlocks.levels; if (lv) return this.pic('storage', Math.max(...Object.values(lv) as number[]));
-    if (t.unlocks.auto) return this.pic('toolstore', 2);
     if (t.unlocks.mounts) return this.pic('stable', 1);
     if (t.id.startsWith('form_') || t.id === 'signal') return this.pic('drill', 1);
     if (t.id.startsWith('scout')) return this.pic('scouttent', 1);

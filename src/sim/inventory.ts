@@ -4,7 +4,7 @@ import { Job, JOB_NAME, WorkJob } from './jobs';
 import { RECIPE_BY_ID, recipeName, TIER_DURABILITY, TIER_NAME, Tool, ToolKind, TOOL_KINDS, TOOL_NAME, TOOL_OF_JOB } from './tools';
 import { ARMORS, CRAFTED_WEAPONS, WEAPONS } from './combat';
 import { bestWeapon } from './battle';
-import { autoOn, recipeOpen } from './research';
+import { recipeOpen } from './research';
 import type { Sim } from './sim';
 import { Villager } from './model';
 
@@ -116,9 +116,8 @@ export function assignGear(sim: Sim, ids: readonly number[], kind: string | null
 }
 
 /** Let the workshop hand out and swap gear by itself again. */
-/** Let the stores hand out gear on their own. Only once fetching is researched; until then the player picks every weapon and armour. Returns an error or null. */
+/** Let the stores hand out gear on their own again, for gear the player had chosen by hand. Returns an error or null. */
 export function autoGear(sim: Sim, ids: readonly number[]): string | null {
-  if (!autoOn(sim.researched, 'fetch')) return 'Chưa nghiên cứu "Tự lấy đồ trong kho": hãy tự chọn đồ cho dân';
   for (const v of sim.mine(ids)) v.manualGear = false;
   return null;
 }
@@ -144,10 +143,10 @@ export function toolLacking(sim: Sim, v: Villager, job: WorkJob): boolean {
 /** Best tier of this tool the stock holds (0 when none). */
 export function stockedTier(sim: Sim, k: ToolKind): number { for (let t = 2; t >= 1; t--) if (toolCount(sim, k, t) > 0) return t; return 0; }
 
-/** A villager who lacks a tool, with the Kho công cụ built and fetching researched, and a tool in stock. */
+/** A villager who lacks a tool, with the Kho công cụ built and a tool in stock: he fetches it himself. */
 export function needTool(sim: Sim, v: Villager, job: WorkJob): boolean {
   const k = TOOL_OF_JOB[job];
-  return !!k && autoOn(sim.researched, 'fetch') && !!sim.building('toolstore') && toolLacking(sim, v, job) && stockedTier(sim, k) > 0;
+  return !!k && !!sim.building('toolstore') && toolLacking(sim, v, job) && stockedTier(sim, k) > 0;
 }
 
 /** Walk to a building's edge for an errand; false when it cannot be reached. */
@@ -163,7 +162,7 @@ export function planTool(sim: Sim, v: Villager, job: WorkJob): boolean {
   if (!k || !toolLacking(sim, v, job)) return false;
   const store = sim.building('toolstore');
   if (store && needTool(sim, v, job)) return goTo(sim, v, store, 'goEquip');
-  if (!autoOn(sim.researched, 'order') || v.orderCd > 0) return false;
+  if (v.orderCd > 0) return false;
   v.orderCd = 45;
   const craftHouse = sim.building('workshop');
   if (!craftHouse) return false;
@@ -208,7 +207,7 @@ export function equip(sim: Sim, v: Villager): void {
 export function planEquipGear(sim: Sim, v: Villager): boolean {
   if ((v.job !== 'hunt' && v.job !== 'fight') || v.phase === 'fight' || v.manualGear) return false;
   const armory = sim.building('armory');
-  if (!armory || !autoOn(sim.researched, 'fetch')) return false;
+  if (!armory) return false;
   const wantsWeapon = !v.weapon && !!bestWeapon(sim, v), wantsArmor = v.job === 'fight' && !v.armor && toolCount(sim, 'hide', 1) > 0;
   if (!wantsWeapon && !wantsArmor) return false;
   return goTo(sim, v, armory, 'goEquip');
@@ -229,7 +228,7 @@ export function equipGear(sim: Sim, v: Villager): void {
 export function planGearErrand(sim: Sim, v: Villager): boolean {
   if ((v.job !== 'hunt' && v.job !== 'fight') || v.phase === 'fight' || v.manualGear || v.orderCd > 0) return false;
   const house = sim.building('workshop');
-  if (!house || !autoOn(sim.researched, 'order')) return false;
+  if (!house) return false;
   const have = (re: RegExp) => Object.entries(sim.toolStock).some(([id, n]) => n > 0 && re.test(id)) || sim.craftQueue.some((id) => re.test(id)) || !!house.active && re.test(house.active.id);
   let id = '';
   if (!v.weapon && !have(/^(club|spear|mace)/)) {

@@ -8,7 +8,7 @@ import { TOOL_OF_JOB } from './tools';
 import { LineStat, soldierTier, statBonus, StatId, TREE_ROLES } from './research';
 
 /** What the stat rules read of the game: the research done and the squads. A narrow type of its own so that this file, shared by the systems, never has to know the Sim. */
-export interface StatSim { readonly researched: ReadonlySet<string>; readonly squads: ReadonlyArray<{ readonly id: number; readonly formation: FormationId }>; readonly foodPenalty: number }
+export interface StatSim { readonly researched: ReadonlySet<string>; readonly squads: ReadonlyArray<{ readonly id: number; readonly formation: FormationId }>; readonly foodPenalty: number; /** Percent a tribe's research-like bonus adds to a stat of its people (src/content/difficulty.json). */ readonly foeBonus?: (team: string, stat: StatId) => number }
 type Sim = StatSim;
 import type { Villager } from './model';
 
@@ -51,7 +51,7 @@ export function statValue(sim: Sim, v: Villager, stat: StatId): number {
   const tier = role && TREE_ROLES[role] ? soldierTier(sim.researched, role) : 1;
   const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
   const squad = v.team === 'player' && v.squad >= 0 ? sim.squads.find((q) => q.id === v.squad) : undefined;
-  const bonus = (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ''), stat) : 0);
+  const bonus = (v.team !== 'player' ? sim.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ''), stat) : 0);
   const hunger = v.team === 'player' && stat !== 'hp' ? 1 - sim.foodPenalty : 1;
   return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + bonus / 100) * hunger;
 }
@@ -71,12 +71,12 @@ export function legacyStats(value: (s: StatId) => number): { vit: number; str: n
 
 /** Bring the body in line with the research and tier of the role: health, speed and the older stats. Called about once a second for everyone of ours. */
 export function applyStats(sim: Sim, v: Villager): void {
-  if (v.team !== 'player') return;
+  if (v.team === 'wild') return;
   const val = (s: StatId) => statValue(sim, v, s), l = legacyStats(val);
   v.stats.vit = l.vit; v.stats.str = l.str; v.stats.agi = l.agi; v.stats.sta = l.sta;
   const hp = Math.round(val('hp'));
   if (hp !== v.maxHealth) { const ratio = v.maxHealth > 0 ? v.health / v.maxHealth : 1; v.maxHealth = hp; v.health = Math.min(hp, hp * ratio); }
-  if (v.squad < 0 && !v.mount) v.speed = val('move');
+  if (v.team === 'player' && v.squad < 0 && !v.mount) v.speed = val('move');
 }
 
 /** Share of damage a person turns aside: from melee (Phòng thủ cận chiến) or from missiles (Phòng thủ tầm xa). */

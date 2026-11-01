@@ -23,11 +23,13 @@
     <span class="spacer"></span>
     <button id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
     <button id="btnBuild" class="primary" title="Xây dựng (B)">🔨 Xây</button>
+    <button id="btnStats" title="Chỉ số đã nghiên cứu cho từng loại dân, nghề và lính">📊 Chỉ số</button>
     <button id="btnMenu" title="Menu (Tab)">☰ Menu</button>
   </div>
 
   <button class="qbtn" id="btnQuest" title="Nhiệm vụ" aria-pressed="false">📜<i class="dot" hidden>!</i></button>
   <div id="qpanel" hidden></div>
+  <div id="spanel" hidden></div>
   <button class="qbtn nbtn" id="btnNotice" title="Thông báo: việc sắp tới hoặc đang diễn ra trong làng" aria-pressed="false">🔔<i class="dot" hidden>!</i></button>
   <div id="npanel" hidden></div>
   <canvas id="mini" aria-label="Bản đồ nhỏ, bấm để mở bản đồ lớn" title="Bấm để mở bản đồ lớn"></canvas>
@@ -48,12 +50,13 @@
         <div class="cardhead"><b id="placeName"></b><span id="placeInfo"></span><button class="q" type="button" aria-label="Hướng dẫn" aria-expanded="false">?</button></div>
         <p class="sub hintbody" hidden>Kéo hoặc chạm để chọn chỗ (ô xanh là đặt được).</p>
       </div>
-      <div class="btns"><button id="btnPlaceOk" class="primary">✓ Đặt ở đây</button><button id="btnPlaceNo">✕ Hủy</button></div>
+      <div class="btns"><button id="btnPlaceOk" class="primary">✓ Đặt ở đây</button><button id="btnPlaceRot" hidden>↻ Xoay</button><button id="btnPlaceNo">✕ Hủy</button></div>
     </div>
     <div id="tcard" hidden></div>
     <div id="ucard" hidden></div>
     <div class="selbar">
       <button id="btnMulti" aria-pressed="false" title="Bật để chạm từng dân hoặc kéo khung chọn nhiều dân">Chọn nhiều</button>
+      <button id="btnGo" hidden title="Chọn nơi đến: chạm để đặt dấu, kéo để xem chỗ khác, rồi bấm Đi tới đây">Chọn nơi đến</button>
       <button id="btnArmy" aria-pressed="false" title="Gọi quân đội ra khỏi trại (bấm lại để cho về)">Gọi quân</button>
       <button id="btnAll" title="Chọn tất cả dân (Ctrl+A)">Chọn hết</button>
       <button id="btnNone" title="Bỏ chọn (Esc)">Bỏ chọn</button>

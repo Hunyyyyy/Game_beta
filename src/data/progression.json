@@ -1,77 +1,77 @@
 {
   "_note": "Kế hoạch phát triển theo cấp Nhà chung (lửa trại) và cấp Nhà nghiên cứu. Công trình nào mở ở cấp lửa nào nằm trong chính nó: src/content/buildings/<kind>/building.json (unlockFire). Ở đây chỉ còn cấp nhà tối đa và điều kiện nâng lửa theo từng cấp lửa, và các nghiên cứu mở ở từng cấp Nhà nghiên cứu (id trong data/research.json).",
   "campfire": {
-    "_note": "buildingMaxLevel: cấp tối đa của các nhà dưới lửa cấp này. upgradeNeeds: muốn nâng lửa từ cấp này lên cấp kế thì mọi công trình đã mở khóa cho cấp này phải được xây xong và nâng tới cấp này (không phụ thuộc nghiên cứu).",
+    "_note": "buildingMaxLevel: cấp tối đa của các nhà dưới lửa cấp này (bằng cấp lửa). upgradeNeeds: muốn nâng lửa từ cấp này lên cấp kế thì phải thỏa CẢ HAI: mọi công trình đã mở khóa cho cấp này (unlockFire trong building.json) xây xong và nâng tới cấp này; và mọi công trình thuộc nhóm trong groupAtLeastLevel (vd production) có mặt và đạt cấp đó. Không phụ thuộc nghiên cứu.",
     "levels": [
       {
         "level": 1,
         "buildingMaxLevel": 1,
         "upgradeNeeds": {
-          "allUnlockedAtLeastLevel": 1
+          "allUnlockedAtLeastLevel": 1,
+          "groupAtLeastLevel": {
+            "production": 1
+          }
         }
       },
       {
         "level": 2,
         "buildingMaxLevel": 2,
         "upgradeNeeds": {
-          "allUnlockedAtLeastLevel": 2
+          "allUnlockedAtLeastLevel": 2,
+          "groupAtLeastLevel": {
+            "production": 2
+          }
         }
       },
       {
         "level": 3,
         "buildingMaxLevel": 3,
         "upgradeNeeds": {
-          "allUnlockedAtLeastLevel": 3
+          "allUnlockedAtLeastLevel": 3,
+          "groupAtLeastLevel": {
+            "production": 3
+          }
         }
       },
       {
         "level": 4,
-        "buildingMaxLevel": 3,
+        "buildingMaxLevel": 4,
         "upgradeNeeds": null
       }
     ]
   },
   "research": {
-    "_note": "Mỗi cấp Nhà nghiên cứu mở những bản vẽ/nghiên cứu nào. 'tabs' = tab nào của giao diện được mở. 'techs' là id trong research.json (cấp 3 dùng '@rest' = tất cả còn lại). 'newTechs' là nghiên cứu MỚI cần thêm vào research.json (xem định nghĩa bên dưới). Các nghiên cứu chỉ để mở công trình đã bỏ khỏi research.json; 'timber' và 'masonry' vẫn quyết định cấp tối đa của nhà (cấp 2, cấp 3) song song với cấp Nhà chung.",
+    "_note": "Mỗi cấp Nhà nghiên cứu mở những nghiên cứu nào: 'tabs' = tab nào của giao diện được mở, 'techs' là id trong research.json (cấp 3 dùng '@rest' = tất cả còn lại). Nghiên cứu chỉ cộng chỉ số và mở trận pháp, không khóa công trình hay cấp nhà (cấp nhà theo cấp Nhà chung). Dân tự lấy công cụ, vũ khí, đuốc ở kho và tự đặt chế tạo mà không cần nghiên cứu.",
     "levels": [
       {
         "level": 1,
         "tabs": [
           "blueprints"
         ],
-        "techs": [
-          "timber"
-        ],
+        "techs": [],
         "closedTabs": [
-          "military",
-          "automation"
+          "military"
         ]
       },
       {
         "level": 2,
         "tabs": [
           "blueprints",
-          "military",
-          "automation"
+          "military"
         ],
         "techs": [
-          "masonry",
           "signal",
           "form_basic",
           "form_wedge",
           "form_cells_10",
-          "form_squads_5",
-          "auto_fetch",
-          "auto_order"
-        ],
-        "autoAll": true
+          "form_squads_5"
+        ]
       },
       {
         "level": 3,
         "tabs": [
           "blueprints",
-          "military",
-          "automation"
+          "military"
         ],
         "techs": [
           "@rest"

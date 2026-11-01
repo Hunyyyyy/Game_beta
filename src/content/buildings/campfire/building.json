@@ -24,7 +24,8 @@
     "cap": 30,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 0
+    "hp": 180,
+    "sight": 10
    },
    {
     "name": "Lửa trại",
@@ -35,7 +36,8 @@
     "cap": 45,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 0
+    "hp": 270,
+    "sight": 14
    },
    {
     "name": "Bếp lửa lớn",
@@ -50,7 +52,8 @@
     "cap": 60,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 0
+    "hp": 360,
+    "sight": 18
    },
    {
     "name": "Nhà chung",
@@ -65,7 +68,8 @@
     "cap": 90,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 0
+    "hp": 450,
+    "sight": 22
    }
   ]
  }

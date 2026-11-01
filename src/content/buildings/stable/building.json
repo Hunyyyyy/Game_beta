@@ -23,7 +23,8 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 2,
-    "hp": 0
+    "hp": 180,
+    "sight": 0
    },
    {
     "name": "Chuồng gỗ",
@@ -36,7 +37,8 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 3,
-    "hp": 0
+    "hp": 270,
+    "sight": 0
    },
    {
     "name": "Chuồng đá",
@@ -49,7 +51,22 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 4,
-    "hp": 0
+    "hp": 360,
+    "sight": 0
+   },
+   {
+    "name": "Chuồng đá gia cố",
+    "cost": {
+     "wood": 52,
+     "stone": 70,
+     "hide": 18
+    },
+    "buildTime": 286,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 5,
+    "hp": 450,
+    "sight": 0
    }
   ]
  }

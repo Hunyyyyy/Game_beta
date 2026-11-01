@@ -28,7 +28,8 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 30
+    "hp": 30,
+    "sight": 0
    },
    {
     "name": "Cổng đôi",
@@ -40,7 +41,34 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 90
+    "hp": 90,
+    "sight": 0
+   },
+   {
+    "name": "Cổng đôi gia cố",
+    "cost": {
+     "wood": 9,
+     "stone": 3
+    },
+    "buildTime": 51,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 180,
+    "sight": 0
+   },
+   {
+    "name": "Cổng đôi kiên cố",
+    "cost": {
+     "wood": 14,
+     "stone": 4
+    },
+    "buildTime": 81,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 360,
+    "sight": 0
    }
   ]
  }

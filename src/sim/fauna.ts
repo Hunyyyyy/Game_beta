@@ -1,3 +1,4 @@
+import chaseJson from '../data/chase.json';
 import { ANIMALS, BEHAVIOUR, Species, SPECIES, zoneOf, type AnimalDef } from './combat';
 import type { Res } from './resources';
 import { findPath, type Step } from './path';
@@ -10,6 +11,10 @@ export type AnimalState = 'graze' | 'wander' | 'flee' | 'attack' | 'sleep' | 'de
 
 export interface Animal {
   id: number;
+  /** Seconds since it last bit what it chases. */
+  chaseT?: number;
+  /** A pack of an event comes for one part of the day only: true for the night, false for the day. It leaves when that part is over. */
+  raidNight?: boolean;
   species: Species;
   x: number; // tile units, like villagers
   y: number;
@@ -86,12 +91,15 @@ export function populateChunk(sim: Sim, cx: number, cy: number): void {
   }
 }
 
-export function spawnAnimal(sim: Sim, species: Species, x: number, y: number, herd: number, raid = false): Animal {
+/** A raiding pack whose part of the day is over: it goes home, so the village can heal. (Without a part of the day, a pack stays through the night only.) */
+export const raidOver = (a: Animal, night: boolean): boolean => a.raid && (a.raidNight === undefined ? !night : a.raidNight !== night);
+
+export function spawnAnimal(sim: Sim, species: Species, x: number, y: number, herd: number, raid = false, raidNight?: boolean): Animal {
   const def = ANIMALS[species];
   const a: Animal = {
     id: sim.nextAid++, species, x, y, hp: def.hp, maxHp: def.hp, state: 'graze', dir: sim.frnd() < 0.5 ? 1 : -1, dest: null,
     timer: 2 + sim.frnd() * 6, cd: 0, scan: sim.frnd() * 0.5, target: null, herd, home: { x, y }, burst: 0, tired: 0,
-    female: sim.frnd() < 0.5, raid, bite: 0, clock: sim.frnd() * 10, meat: 0, hide: 0, drops: {}, carcass: 0,
+    female: sim.frnd() < 0.5, raid, raidNight, bite: 0, clock: sim.frnd() * 10, meat: 0, hide: 0, drops: {}, carcass: 0,
   };
   sim.animals.push(a); sim.animalById.set(a.id, a);
   return a;
@@ -234,9 +242,9 @@ export function tickAnimals(sim: Sim, dt: number): void {
       a.scan = 0.3 + sim.frnd() * 0.2;
       const p = near(sim, a.x, a.y);
       if (def.prey && def.flee > 0 && a.state !== 'flee' && p && p.d < def.flee && !(def.defends)) { a.state = 'flee'; a.target = { kind: 'unit', id: p.id }; a.timer = 6; a.burst = 0; }
-      if (def.aggro > 0 && a.state !== 'attack' && p && (a.raid || (night && def.nocturnal)) && p.d < (a.raid ? 40 : def.aggro)) {
+      if (def.aggro > 0 && a.state !== 'attack' && p && ((a.raid && !raidOver(a, night)) || (night && def.nocturnal)) && p.d < (a.raid ? 40 : def.aggro)) {
         const v = sim.get(p.id)!;
-        if (fireDistance(sim, v.x, v.y) > (def.fearsFire ?? 0)) { a.state = 'attack'; a.target = { kind: 'unit', id: p.id }; a.timer = 20; }
+        if (fireDistance(sim, v.x, v.y) > (def.fearsFire ?? 0)) { a.state = 'attack'; a.target = { kind: 'unit', id: p.id }; a.timer = 20; a.chaseT = 0; }
       }
     }
 
@@ -256,14 +264,15 @@ export function tickAnimals(sim: Sim, dt: number): void {
       }
       case 'attack': {
         const t = a.target && sim.get(a.target.id);
-        const lost = !t || t.down > 0 || a.timer <= 0 || (!a.raid && Math.hypot(t.x - a.x, t.y - a.y) > 16);
-        if (lost) { a.state = 'graze'; a.target = null; a.timer = 3; if (a.raid && t === undefined) a.timer = 1; break; }
+        a.chaseT = (a.chaseT ?? 0) + dt; // seconds since the last bite: too long and it gives up (src/data/chase.json)
+        const lost = !t || t.down > 0 || a.timer <= 0 || a.chaseT > chaseJson.noHitSeconds || raidOver(a, night) || (!a.raid && Math.hypot(t.x - a.x, t.y - a.y) > 16);
+        if (lost) { a.state = 'graze'; a.target = null; a.chaseT = 0; a.timer = 3; if (a.raid && t === undefined) a.timer = 1; break; }
         const d = Math.hypot(t.x - a.x, t.y - a.y);
         // a wolf will not walk into firelight: it circles the edge instead
         if (def.fearsFire && fireDistance(sim, t.x, t.y) <= def.fearsFire && fireDistance(sim, a.x, a.y) < def.fearsFire + 1.5) { step(sim, a, a.home.x, a.home.y, def.speed, dt); break; }
         if (d > def.range + 0.4) step(sim, a, t.x, t.y, def.speed * slow, dt);
         else if (a.cd <= 0) {
-          a.cd = def.cycle; a.bite = 0.25;
+          a.cd = def.cycle; a.bite = 0.25; a.chaseT = 0;
           const behind = (t.facing === 'right' && a.x < t.x) || (t.facing === 'left' && a.x > t.x);
           sim.hurt({ kind: 'unit', id: t.id }, def.damage * (behind ? 1.25 : 1), def.type, { x: a.x, y: a.y }, { animal: a });
         }
@@ -277,7 +286,7 @@ export function tickAnimals(sim: Sim, dt: number): void {
         break;
       }
       default: { // graze
-        if (a.raid && !night) { // raiders leave at dawn
+        if (raidOver(a, night)) { // the raiders leave when their part of the day is over
           step(sim, a, a.home.x, a.home.y, def.speed, dt);
           if (Math.hypot(a.home.x - a.x, a.home.y - a.y) < 2) { sim.animals.splice(i, 1); sim.animalById.delete(a.id); }
           break;

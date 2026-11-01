@@ -3,7 +3,9 @@ import { BUILDINGS } from './buildings';
 import { Stats, WorkJob, WORK_JOBS } from './jobs';
 import { emptyToolSet, TOOL_OF_JOB } from './tools';
 import { Team } from './combat';
-import { applyStats, legacyStats, rawValue, rollFactors } from './statsys';
+import { applyStats, legacyStats, rawValue, rollFactors, treeRole } from './statsys';
+import { statBonus } from './research';
+import restJson from '../data/rest.json';
 import { brainPlayer, tickCommon, tickDown } from './battle';
 import type { Sim } from './sim';
 import { HAIR, NAMES_F, NAMES_M, SKIN, STAT_KEYS, Sex, Skill, Villager } from './model';
@@ -42,12 +44,19 @@ export function makeVillager(sim: Sim, x: number, y: number, sex: Sex, team: Tea
   };
 }
 
+/** How much faster than the plain rate a villager heals: the research Hồi máu, and a soldier who is inside his own camp (no errand, nowhere outside) heals half as fast again (rest.json "soldierHealInCamp"). */
+function healFactor(sim: Sim, v: Villager): number {
+  const role = treeRole(v), bonus = role ? statBonus(sim.researched, role, 'hpregen') : 0;
+  const camp = v.job === 'fight' && v.inside !== null ? sim.getBuilding(v.inside) : undefined;
+  return (1 + bonus / 100) * (camp && (camp.kind === 'infantry' || camp.kind === 'cavalry' || camp.kind === 'archery' || camp.kind === 'guardpost') ? restJson.soldierHealInCamp : 1);
+}
+
 export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   tickCommon(sim, v, dt);
   if (((v.statClock = (v.statClock ?? 0) - dt)) <= 0) { v.statClock = 1 + (v.id % 10) / 10; applyStats(sim, v); } // research and tier reach the body
   if (v.down > 0) { tickDown(sim, v, dt); sim.animate(v, dt); return; }
   // ---- máu: hồi chậm khi không có địch gần; làng thiếu ăn thì hồi chậm hơn (src/data/food.json) ----
-  if (v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 0.0015 * v.maxHealth * (1 - sim.foodPenalty));
+  if (v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 0.0015 * v.maxHealth * (1 - sim.foodPenalty) * healFactor(sim, v));
   if (v.health <= 0) { sim.kill(v); return; }
   v.orderCd = Math.max(0, v.orderCd - dt);
   sim.tickEnergy(v, dt);

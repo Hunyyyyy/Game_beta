@@ -28,7 +28,8 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 1,
-    "hp": 0
+    "hp": 405,
+    "sight": 0
    },
    {
     "name": "Luống đắp",
@@ -40,7 +41,8 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 1,
-    "hp": 0
+    "hp": 608,
+    "sight": 0
    },
    {
     "name": "Bờ đá",
@@ -52,7 +54,21 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 1,
-    "hp": 0
+    "hp": 810,
+    "sight": 0
+   },
+   {
+    "name": "Bờ đá gia cố",
+    "cost": {
+     "wood": 27,
+     "stone": 30
+    },
+    "buildTime": 233,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 2,
+    "hp": 1012,
+    "sight": 0
    }
   ]
  }

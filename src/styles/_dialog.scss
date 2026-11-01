@@ -120,9 +120,25 @@
     .dstats { gap: 3px 6px; } }
   .dlist { gap: 5px; }
 }
-// the people tab of the campfire fits the dialog on a wide screen: nothing scrolls
-@media (min-width: 641px) {
+// the head of a list that folds away: an arrow, the title, how many
+.gdlg .dfold {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; text-align: left; cursor: pointer; background: rgba(120, 90, 40, .14); border: 1px solid #b89a5e; border-radius: 8px; color: #5a3a14; font: inherit;
+  .arrow { flex: none; width: 14px; text-align: center; }
+  b { font-size: 13.5px; }
+  small { margin-left: auto; }
+}
+.gdlg .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+// the people tab of the campfire fits the dialog only on a wide and tall screen (a computer): nothing scrolls there.
+// On a phone, held flat or upright, the whole page scrolls, and the two columns become one when the width is short.
+@media (min-width: 641px) and (min-height: 760px) {
   .gdlg.gbuild > .mbody.fit { overflow: hidden; gap: 6px; }
+}
+@media (max-width: 640px) {
+  .gdlg .split { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-height: 759px) {
+  .pleft { min-height: 0; }
+  .gdlg.gbuild > .mbody { overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 }
 
 // the steps of drawing a map, from the top down: green done, red not yet

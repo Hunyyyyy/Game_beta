@@ -1,4 +1,5 @@
 import { BUILDINGS, levelDef } from '../sim/buildings';
+import { DIFF, playerCap } from '../sim/difficulty';
 import { relationLabel, WEAPONS, RELATION, TribeId } from '../sim/combat';
 import { SEASONS, Season, WEATHER, WeatherKind } from '../sim/calendar';
 import { gameDays, TILE, workDays } from '../sim/constants';
@@ -190,6 +191,15 @@ export class Menu {
     page.append(h('div', { class: 'devrow' }, ...SEASONS.map((s) => btn(SEASON_NAME[s], () => dev.setSeason(sim, s)))));
     page.append(h('div', { class: 'devrow' }, ...(Object.keys(WEATHER) as WeatherKind[]).map((k) => btn(WEATHER[k].name, () => dev.setWeather(sim, k)))));
 
+    page.append(h('h3', { text: 'Sức mạnh (kinh tế + quân sự)' }));
+    const powerNote = h('p', { class: 'sub' }); page.append(powerNote);
+    const f1 = (n: number) => n.toFixed(1);
+    this.updaters.push(() => {
+      const me = sim.power(), cap = playerCap(sim.campfire()?.level ?? 1);
+      powerNote.textContent = [`Trần của ta ở cấp lửa này: ${f1(cap.total)} (kinh tế ${f1(cap.economy)} · quân sự ${f1(cap.military)}) · mục tiêu cả các làng: ${f1(cap.total / DIFF.playerEdge)}`, `Làng ta: ${f1(me.total)} (kinh tế ${f1(me.economy)} từ ${me.workers} người · quân sự ${f1(me.military)} từ ${me.soldiers} lính)`, ...sim.tribes.map((t) => { const p = sim.tribePower(t); return `${t.def.name} (trại cấp ${t.campLevel}, k ${(t.k ?? 0).toFixed(2)}, +${Math.round((t.mil ?? 0) * 100)}% chiến · +${Math.round((t.eco ?? 0) * 100)}% làm): ${f1(p.total)} (kinh tế ${f1(p.economy)} · ${p.workers} người · quân sự ${f1(p.military)} · ${p.soldiers} lính)`; })].join('\n');
+      powerNote.style.whiteSpace = 'pre-line';
+    });
+
     page.append(h('h3', { text: 'Sự kiện, thú, bộ tộc' }));
     page.append(h('div', { class: 'devrow' }, btn('Sói ×4 tới', () => dev.wolvesNow(sim, 4)), btn('Sói ×8 tới', () => dev.wolvesNow(sim, 8)), btn('Xóa hết thú', () => dev.clearAnimals(sim))));
     page.append(h('div', { class: 'devrow' }, ...dev.DEV_SPECIES.map((s) => btn(`+3 ${s}`, () => { const c = this.center(); dev.spawnAt(sim, s, c.x, c.y, 3); }, 'Sinh thú ở giữa màn hình'))));
@@ -208,7 +218,7 @@ export class Menu {
       h('li', {}, h('b', { text: 'Ra lệnh' }), ': máy tính: chuột phải. Điện thoại: khi đã chọn dân, chạm lên đất, cây, đá, bụi quả, công trường hay kẻ địch. Giữ Shift (máy tính) để xếp lệnh nối nhau.'),
       h('li', {}, h('b', { text: 'Kéo bản đồ' }), ': máy tính: giữ chuột phải rồi kéo (hoặc W A S D). Điện thoại: một ngón đặt giữ yên, một ngón kéo (bản đồ đi theo ngón kéo); hoặc hai ngón cùng kéo; chụm hoặc mở hai ngón để thu phóng.'),
       h('li', {}, h('b', { text: 'Bản đồ nhỏ' }), ': bấm vào để mở bản đồ lớn, chạm một chỗ để nhảy tới đó.'),
-      h('li', {}, h('b', { text: 'Công trình' }), `: bấm 🔨 Xây (góc trên) để chọn công trình rồi chạm bản đồ đặt. Mở Menu → Công trình, hoặc bấm vào công trình trên bản đồ: lửa trại cho xem dân, Kho cho xem tài nguyên, Nhà nghiên cứu để vẽ bản vẽ, Nhà chế tạo để làm đồ. Mỗi loại công trình chỉ xây một cái rồi nâng cấp (đơn sơ → gỗ → đá, mỗi bước phải nghiên cứu). Dân vào làm bên trong nhà (hiện thành danh sách tên, không hiện trên bản đồ): nhà cấp cao chứa thêm người, càng đông càng nghiên cứu nhanh. Lúc đầu bạn tự phát công cụ; nghiên cứu Kho công cụ, Kho vũ khí, tự lấy đồ và tự đặt hàng thì dân tự lo. Tiền (vỏ sò) trả cho nghiên cứu, nhặt khi hái lượm hoặc đổi hàng ở Kho. Trong bảng công trình còn có nút Dời (tốn 1/5 vật liệu, phải dựng lại) và Phá bỏ (thu lại một nửa).`),
+      h('li', {}, h('b', { text: 'Công trình' }), `: bấm 🔨 Xây (góc trên) để chọn công trình rồi chạm bản đồ đặt. Mở Menu → Công trình, hoặc bấm vào công trình trên bản đồ: lửa trại cho xem dân, Kho cho xem tài nguyên, Nhà nghiên cứu để vẽ bản vẽ, Nhà chế tạo để làm đồ. Mỗi loại công trình chỉ xây một cái rồi nâng cấp (đơn sơ → gỗ → đá → gia cố, nâng theo cấp Nhà chung). Dân vào làm bên trong nhà (hiện thành danh sách tên, không hiện trên bản đồ): nhà cấp cao chứa thêm người, càng đông càng nghiên cứu nhanh. Lúc đầu bạn tự phát công cụ; nghiên cứu Kho công cụ, Kho vũ khí, tự lấy đồ và tự đặt hàng thì dân tự lo. Tiền (vỏ sò) trả cho nghiên cứu, nhặt khi hái lượm hoặc đổi hàng ở Kho. Trong bảng công trình còn có nút Dời (tốn 1/5 vật liệu, phải dựng lại) và Phá bỏ (thu lại một nửa).`),
       h('li', {}, h('b', { text: 'Chiến đấu' }), `: dân thường không đánh nhau, thấy địch là chạy về lửa trại. Muốn có lính thì giao nghề Chiến binh (huy hiệu đỏ trên đầu) hoặc Thợ săn (huy hiệu vàng), phát vũ khí ở thẻ dân → Chiến đấu, rồi chạm vào thú hoặc địch. Thế đứng: Chủ động, Phòng thủ, Rút lui. F: tấn công–đi, H: giữ chỗ, G: dừng. Người bị thương nặng ngã xuống ${gameDays(30)}; một người khác đứng cạnh ${gameDays(3)} sẽ kéo họ dậy.`),
       h('li', {}, h('b', { text: 'Bộ tộc' }), `: tặng thức ăn để tăng quan hệ. Hạ thủ lĩnh hoặc chiếm đống lửa của họ ${gameDays(30)} để họ xin hàng, rồi chọn thu nạp hoặc cống nạp.`),
       h('li', {}, h('b', { text: 'Phím' }), ': P tạm dừng, Q E R T: tốc độ 1× 2× 4× 16×, B xây Kho, X xây Xưởng, 1–9 gọi nhóm (Ctrl + số để lưu), Space nhảy tới dân đang chọn, Esc bỏ chọn.'),

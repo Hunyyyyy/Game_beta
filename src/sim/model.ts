@@ -33,6 +33,10 @@ export interface FightState {
   /** Following an arrow in a war: the way to the destination is a straight line, never found round things. */
   strict?: boolean;
   scan: number;   // seconds until the next look for enemies
+  /** The chase now (src/data/chase.json): which target, seconds since a blow was last thrown at it, seconds it has been out of sight. */
+  chaseKey?: string; chaseT?: number; unseenT?: number;
+  /** A target given up: not picked again until the time is up. */
+  skip?: { kind: 'unit' | 'animal'; id: number; until: number };
 }
 /** A missile in flight: arrows, sling stones. */
 export interface Projectile {
@@ -46,6 +50,8 @@ export interface FoeAI {
   wander: number;          // seconds until the next stroll
   goal: { x: number; y: number } | null;
   raid: number;            // id of the raid party (0 = none)
+  /** What he is busy with besides strolling (src/sim/tribework.ts): gathering at a node, hunting, patrolling or scouting. */
+  life?: { kind: 'gather' | 'hunt' | 'patrol' | 'scout'; idx?: number; job?: string; state?: 'go' | 'work'; units?: number; id?: number; stops?: Array<[number, number]>; i?: number; t?: number };
   /** Seconds a raider has been unable to get at what he is after (a fence in the way). */
   stuck?: number;
   /** A target he could not get to (he only paced before it): left alone until this time. */

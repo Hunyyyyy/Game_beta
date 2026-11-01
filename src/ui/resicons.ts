@@ -44,4 +44,4 @@ export function resIcon(key: string): HTMLElement {
 }
 
 /** The picture of a stat ('hp', 'atk', 'defm', 'defr', 'move', 'work', 'int', 'sta'). */
-export const statIcon = (stat: string): HTMLElement => resIcon(`stat_${stat}`);
+export const statIcon = (stat: string): HTMLElement => resIcon(`stat_${({ hpregen: 'hp', restregen: 'sta' } as Record<string, string>)[stat] ?? stat}`); // the two regeneration lines share the picture of health and of energy

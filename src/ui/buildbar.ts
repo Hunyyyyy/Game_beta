@@ -93,7 +93,7 @@ export class BuildingBar {
     if (!b || !show) { this.id = null; return; }
     this.id = b.id;
     const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
-    const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
+    const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
     const hp = b.done ? ` · bền ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? ' · đang cháy' : b.hp <= maxHp(b) * 0.7 ? ' · bốc khói' : ''}` : '';
     const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < top;
     this.card.set({
@@ -102,11 +102,17 @@ export class BuildingBar {
       title: def.name, sub: state + hp, line: this.yieldLine(b),
       onClose: () => ctl.closeBuilding(),
       actions: [
-        { id: 'open', label: OPEN_LABEL[b.kind], tone: 'primary', hidden: !b.done || b.kind === 'fence' || b.kind === 'gate', onClick: () => ctl.selectBuilding(b.id, true) },
-        { id: 'gate', label: b.open ? 'Đóng cổng' : 'Mở cổng', tone: 'primary', hidden: !(b.kind === 'gate' && b.done), onClick: () => { const e = sim.toggleGate(b.id); if (e) toast(e); ctl.onChange(); } },
-        { id: 'up', label: 'Nâng cấp', hidden: !upgradable, onClick: () => this.askUpgrade(b) },
-        { id: 'move', label: 'Di dời', title: 'Di dời (miễn phí)', hidden: !def.buildable, onClick: () => ctl.startMoving(b.id) },
-        { id: 'del', label: 'Phá bỏ', tone: 'danger', hidden: !def.buildable, onClick: () => this.askDemolish(b) },
+        // choosing several pieces of fence to carry together: the card turns into the card of the group
+        { id: 'run', label: 'Chọn cả dãy', title: 'Chọn mọi mảnh nối liền với các mảnh đang chọn', hidden: !ctl.groupMode, onClick: () => ctl.selectRun() },
+        { id: 'gmove', label: `Di dời ${ctl.groupIds.length}`, title: 'Nhấc cả nhóm lên để đặt chỗ khác (miễn phí)', hidden: !ctl.groupMode, tone: 'primary', onClick: () => ctl.startGroupMove(0) },
+        { id: 'grot', label: '↻ Xoay', title: 'Xoay cả nhóm một phần tư vòng rồi đặt', hidden: !ctl.groupMode, onClick: () => ctl.startGroupMove(1) },
+        { id: 'gdone', label: 'Xong', hidden: !ctl.groupMode, onClick: () => ctl.endGroup() },
+        { id: 'multi', label: 'Chọn nhiều', title: 'Chọn nhiều mảnh hàng rào để dời hoặc xoay cùng lúc', hidden: ctl.groupMode || !b.done || !(b.kind === 'fence' || b.kind === 'gate'), onClick: () => ctl.startGroup(b.id) },
+        { id: 'open', label: OPEN_LABEL[b.kind], tone: 'primary', hidden: ctl.groupMode || !b.done || b.kind === 'fence' || b.kind === 'gate', onClick: () => ctl.selectBuilding(b.id, true) },
+        { id: 'gate', label: b.open ? 'Đóng cổng' : 'Mở cổng', tone: 'primary', hidden: ctl.groupMode || !(b.kind === 'gate' && b.done), onClick: () => { const e = sim.toggleGate(b.id); if (e) toast(e); ctl.onChange(); } },
+        { id: 'up', label: 'Nâng cấp', hidden: ctl.groupMode || !upgradable, onClick: () => this.askUpgrade(b) },
+        { id: 'move', label: 'Di dời', title: 'Di dời (miễn phí)', hidden: ctl.groupMode || !def.buildable, onClick: () => ctl.startMoving(b.id) },
+        { id: 'del', label: 'Phá bỏ', tone: 'danger', hidden: ctl.groupMode || !def.buildable, onClick: () => this.askDemolish(b) },
       ],
     });
     this.width = this.root.offsetWidth; this.height = this.root.offsetHeight;

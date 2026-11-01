@@ -28,7 +28,8 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 2,
-    "hp": 150
+    "hp": 150,
+    "sight": 10
    },
    {
     "name": "Chòi cao",
@@ -40,7 +41,34 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 4,
-    "hp": 300
+    "hp": 300,
+    "sight": 13
+   },
+   {
+    "name": "Chòi cao gia cố",
+    "cost": {
+     "wood": 45,
+     "stone": 11
+    },
+    "buildTime": 211,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 6,
+    "hp": 600,
+    "sight": 16
+   },
+   {
+    "name": "Chòi cao kiên cố",
+    "cost": {
+     "wood": 68,
+     "stone": 15
+    },
+    "buildTime": 342,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 8,
+    "hp": 1200,
+    "sight": 19
    }
   ]
  }

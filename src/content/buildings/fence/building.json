@@ -29,7 +29,8 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 40
+    "hp": 40,
+    "sight": 0
    },
    {
     "name": "Hàng rào đôi",
@@ -41,7 +42,34 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 120
+    "hp": 120,
+    "sight": 0
+   },
+   {
+    "name": "Hàng rào đôi gia cố",
+    "cost": {
+     "wood": 8,
+     "stone": 2
+    },
+    "buildTime": 41,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 240,
+    "sight": 0
+   },
+   {
+    "name": "Hàng rào đôi kiên cố",
+    "cost": {
+     "wood": 16,
+     "stone": 4
+    },
+    "buildTime": 70,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 480,
+    "sight": 0
    }
   ]
  }

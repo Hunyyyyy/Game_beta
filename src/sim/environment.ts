@@ -81,4 +81,4 @@ export const ARCHER_SIGHT = 1;
 /** Soldiers of the camps see a little further than a villager; the guards of the Trại lính gác five tiles further. */
 export const SOLDIER_SIGHT = 2;
 export const GUARD_SIGHT = 5;
-export function fireRadius(sim: Sim): number { return Math.max(1, FIRE_VISION - WEATHER[sim.weather].vision); }
+export function fireRadius(sim: Sim): number { const fire = sim.campfire(); return Math.max(1, (fire ? buildingSight(fire) : FIRE_VISION) - WEATHER[sim.weather].vision); }

@@ -22,7 +22,8 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 0
+    "hp": 405,
+    "sight": 0
    },
    {
     "name": "Bãi rào",
@@ -34,7 +35,8 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 0
+    "hp": 608,
+    "sight": 0
    },
    {
     "name": "Bãi đá",
@@ -46,7 +48,21 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 0
+    "hp": 810,
+    "sight": 0
+   },
+   {
+    "name": "Bãi đá gia cố",
+    "cost": {
+     "wood": 41,
+     "stone": 60
+    },
+    "buildTime": 241,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 1012,
+    "sight": 0
    }
   ]
  }

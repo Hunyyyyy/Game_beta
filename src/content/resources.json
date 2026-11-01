@@ -1,0 +1,83 @@
+{
+ "_note": "Mọi tài nguyên của game nằm ở đây; thêm tài nguyên mới = thêm một mục (thứ tự mục = thứ tự trên màn hình). name: tên hiển thị. carry: một dân mang tối đa bao nhiêu. barter: đổi bao nhiêu thì được 1 tiền (null: không đổi). hud: 'always' luôn hiện trên thanh trên, 'whenOwned' chỉ hiện khi làng đã có. unlock: null là mở từ đầu; hoặc {building, level}: chỉ lấy được khi đã có công trình đó (xong) đạt cấp đó. Ví dụ {\"building\":\"huntlodge\",\"level\":2} mở xương ở Chòi thợ săn cấp 2; sau này đồng, sắt... mở bằng công trình riêng (thêm thư mục công trình đó ở src/content/buildings). Tài nguyên chưa mở thì thú vẫn có thể rơi ra nhưng làng không nhận được.",
+ "resources": {
+  "food": {
+   "name": "Thức ăn",
+   "carry": 10,
+   "barter": 10,
+   "hud": "always",
+   "unlock": null
+  },
+  "wood": {
+   "name": "Gỗ",
+   "carry": 4,
+   "barter": 5,
+   "hud": "always",
+   "unlock": null
+  },
+  "stone": {
+   "name": "Đá",
+   "carry": 4,
+   "barter": 5,
+   "hud": "always",
+   "unlock": null
+  },
+  "hide": {
+   "name": "Da",
+   "carry": 10,
+   "barter": 2,
+   "hud": "always",
+   "unlock": {
+    "building": "huntlodge",
+    "level": 1
+   }
+  },
+  "bone": {
+   "name": "Xương",
+   "carry": 6,
+   "barter": 4,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "huntlodge",
+    "level": 2
+   }
+  },
+  "fat": {
+   "name": "Mỡ",
+   "carry": 6,
+   "barter": 4,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "huntlodge",
+    "level": 3
+   }
+  },
+  "feather": {
+   "name": "Lông vũ",
+   "carry": 10,
+   "barter": 10,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "huntlodge",
+    "level": 3
+   }
+  },
+  "tusk": {
+   "name": "Ngà",
+   "carry": 2,
+   "barter": 1,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "huntlodge",
+    "level": 4
+   }
+  },
+  "coin": {
+   "name": "Vỏ sò",
+   "carry": 0,
+   "barter": null,
+   "hud": "always",
+   "unlock": null
+  }
+ }
+}

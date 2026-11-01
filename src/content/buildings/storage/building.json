@@ -22,7 +22,8 @@
     "cap": 100,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 0
+    "hp": 180,
+    "sight": 0
    },
    {
     "name": "Gỗ",
@@ -33,7 +34,8 @@
     "cap": 250,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 0
+    "hp": 270,
+    "sight": 0
    },
    {
     "name": "Đá",
@@ -45,7 +47,21 @@
     "cap": 500,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 0
+    "hp": 360,
+    "sight": 0
+   },
+   {
+    "name": "Đá gia cố",
+    "cost": {
+     "wood": 46,
+     "stone": 28
+    },
+    "buildTime": 218,
+    "cap": 1000,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 450,
+    "sight": 0
    }
   ]
  }

@@ -111,6 +111,16 @@ export function noticesOf(sim: Sim): Notice[] {
     }
   }
 
+  // two villages at war, seen by our people (the scouts or anyone who watched)
+  for (const c of sim.clashes) {
+    const left = sim.time - c.at;
+    if (left > 240) continue;
+    const na = sim.tribes.find((t) => t.id === c.a)?.def.name ?? 'Một làng', nb = sim.tribes.find((t) => t.id === c.b)?.def.name ?? 'một làng';
+    out.push({
+      id: `clash:${[c.a, c.b].sort().join('-')}`, level: 'info', icon: 'stat_atk', title: `${na} đang đánh ${nb}`, when: left < 20 ? 'ngay bây giờ' : 'vừa xảy ra',
+      body: 'Người của ta thấy hai làng giao chiến', tip: 'Hai làng thù nhau đánh nhau khi gặp. Bên nào yếu đi thì làng kia dễ đánh hơn; đây là lúc cân nhắc đánh bên đã mệt.', action: CAMP,
+    });
+  }
   out.push(...eventNotices(sim));
   return out.sort((a, b) => ORDER[a.level] - ORDER[b.level]);
 }

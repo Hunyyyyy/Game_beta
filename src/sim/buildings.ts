@@ -1,5 +1,5 @@
 import { SIEGE } from './combat';
-import type { Stock } from './resources';
+import type { Res, Stock } from './resources';
 import { fireBuildingMax } from './progression';
 import { BUILDING_FILES, BUILDING_KINDS } from '../content/buildings/defs.gen';
 
@@ -29,11 +29,15 @@ export interface LevelDef {
   slots: number;
   /** Strength of a defence work: what the raiders must wear down to get through (0 for the rest). */
   hp: number;
+  /** How far it sees, in tiles; the same circle is the land of the village: houses may be raised only inside the sight of a finished house or the campfire. 0 for walls, pits, gates and fields. */
+  sight: number;
 }
 
 export interface BuildingDef {
   kind: BuildingKind;
   group: BuildingGroup;
+  /** The goods its people bring in. A house that produces keeps `cap` of each of them in a small store of its own: it takes the place of part of the Kho. */
+  produces?: Res[];
   /** The campfire level at which it may first be built. */
   unlockFire: number;
   /** Name in the first era; `names` gives the other eras the same house under another name (a stone-age tribe has no archers). */
@@ -57,14 +61,14 @@ export interface BuildingDef {
 /** Everything a kind of house is: src/content/buildings/<kind>/building.json (gathered into defs.gen.ts by tools/gen-content.mjs). */
 interface BuildingFile {
   kind: BuildingKind; name: string; names?: Partial<Record<Era, string>>;
-  group: BuildingGroup; size: [number, number]; buildable: boolean; upgradable?: boolean;
+  group: BuildingGroup; produces?: Res[]; size: [number, number]; buildable: boolean; upgradable?: boolean;
   unlockFire: number; requires?: BuildingKind[]; limit?: number[]; repeat?: boolean; popByFire?: number[];
   levels: Partial<Record<Era, LevelDef[]>>;
 }
 
 export const BUILDINGS = Object.fromEntries(BUILDING_KINDS.map((k) => {
   const f = BUILDING_FILES[k] as BuildingFile;
-  const d: BuildingDef = { kind: k, name: f.name, names: f.names, group: f.group, w: f.size[0], h: f.size[1], buildable: f.buildable, upgradable: f.upgradable, unlockFire: f.unlockFire, requires: f.requires, perFire: f.limit, repeat: f.repeat, levels: f.levels };
+  const d: BuildingDef = { kind: k, name: f.name, names: f.names, group: f.group, produces: f.produces, w: f.size[0], h: f.size[1], buildable: f.buildable, upgradable: f.upgradable, unlockFire: f.unlockFire, requires: f.requires, perFire: f.limit, repeat: f.repeat, levels: f.levels };
   return [k, d];
 })) as Record<BuildingKind, BuildingDef>;
 
@@ -95,16 +99,11 @@ export interface Building {
   workers: number;
 }
 
-/**
- * How far a finished house sees, in tiles: it clears the fog round itself, more with its level (small: every house does it). The chòi canh is made to
- * watch from and sees much further, further with its level. Walls, pits, gates and fields see nothing; the campfire has its own (environment.fireRadius).
- */
-const HOUSE_SIGHT = [5, 6, 7], TOWER_SIGHT = [10, 13, 16];
-const BLIND: ReadonlySet<BuildingKind> = new Set<BuildingKind>(['campfire', 'fence', 'gate', 'trap', 'field']);
-export function buildingSight(b: Pick<Building, 'kind' | 'level' | 'done'>): number {
-  if (!b.done || BLIND.has(b.kind)) return 0;
-  const list = b.kind === 'tower' ? TOWER_SIGHT : HOUSE_SIGHT;
-  return list[Math.min(list.length, Math.max(1, b.level)) - 1];
+/** How far a finished house sees, in tiles (the `sight` of its level in building.json): it clears the fog round itself and the circle is the land of the village. */
+export function buildingSight(b: Pick<Building, 'kind' | 'level' | 'done'> & { era?: Era }): number {
+  if (!b.done) return 0;
+  const lv = levelsOf(b.kind, b.era ?? 'stone');
+  return lv[Math.min(lv.length, Math.max(1, b.level)) - 1].sight;
 }
 
 /** What a kind of house is called in an era. */

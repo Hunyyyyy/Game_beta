@@ -102,6 +102,9 @@ export interface TribeDef {
   personality: Personality;
   angle: number;
   distance: number;
+  /** Share of the strength of all the villages of the land that this one takes, and how much of it is army (src/content/difficulty.json). */
+  share: number;
+  military: number;
   civilians: number;
   warriors: number;
   weapons: string[];
@@ -115,6 +118,8 @@ export type TribeId = 'spring' | 'axe' | 'swamp';
 export const TRIBE_IDS: TribeId[] = ['spring', 'axe', 'swamp'];
 export const TRIBES = Object.fromEntries(TRIBE_IDS.map((t) => [t, (tribesJson as unknown as Record<string, TribeDef>)[t]])) as Record<TribeId, TribeDef>;
 export const RELATION = tribesJson.relation;
+/** Who fights whom on sight (src/data/tribes.json "meet"). */
+export const MEET = tribesJson.meet as { friendlyFrom: number; feuds: string[][] };
 /** Below this relation a tribe is hostile (the start of the 'Trung lập' band). */
 export const HOSTILE_BELOW = RELATION.labels[1][0] as number;
 export const SURRENDER = tribesJson.surrender;

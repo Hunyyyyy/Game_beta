@@ -1,18 +1,30 @@
 import foodJson from '../data/food.json';
-export type Res = 'wood' | 'stone' | 'food' | 'hide' | 'bone' | 'fat' | 'feather' | 'tusk' | 'coin';
-export const RES_LIST: Res[] = ['food', 'wood', 'stone', 'hide', 'bone', 'fat', 'feather', 'tusk', 'coin'];
-/** Materials that only animals give; the top bar shows them once the village has some. */
-export const ANIMAL_MATERIALS: Res[] = ['bone', 'fat', 'feather', 'tusk'];
+import resourcesJson from '../content/resources.json';
+/** Every good of the game is an entry of src/content/resources.json: its name, how much one villager carries, what it barters for, and what unlocks it. */
+interface ResourceDef { name: string; carry: number; barter: number | null; hud: 'always' | 'whenOwned'; unlock: { building: string; level: number } | null }
+const DEFS = resourcesJson.resources as Record<keyof typeof resourcesJson.resources, ResourceDef>;
+export type Res = keyof typeof resourcesJson.resources;
+export const RES_LIST = Object.keys(DEFS) as Res[];
+/** Materials the top bar shows only once the village has some. */
+export const ANIMAL_MATERIALS: Res[] = RES_LIST.filter((r) => DEFS[r].hud === 'whenOwned');
 /** Money changes with the era; the stone age has no metal, so it trades in shells. RES_NAME.coin follows the current era. */
 export const CURRENCY: Record<string, string> = { stone: 'Vỏ sò', ancient: 'Đồng xu' };
-export const RES_NAME: Record<Res, string> = { wood: 'Gỗ', stone: 'Đá', food: 'Thức ăn', hide: 'Da', bone: 'Xương', fat: 'Mỡ', feather: 'Lông vũ', tusk: 'Ngà', coin: CURRENCY.stone };
+export const RES_NAME = Object.fromEntries(RES_LIST.map((r) => [r, DEFS[r].name])) as Record<Res, string>;
 /** What a bartering villager gives for one coin: units of the good. */
-export const BARTER: Record<Exclude<Res, 'coin'>, number> = { food: 10, wood: 5, stone: 5, hide: 2, bone: 4, fat: 4, feather: 10, tusk: 1 };
+export const BARTER = Object.fromEntries(RES_LIST.filter((r) => DEFS[r].barter !== null).map((r) => [r, DEFS[r].barter])) as Record<Exclude<Res, 'coin'>, number>;
 export type Stock = Record<Res, number>;
-export const emptyStock = (): Stock => ({ wood: 0, stone: 0, food: 0, hide: 0, bone: 0, fat: 0, feather: 0, tusk: 0, coin: 0 });
+export const emptyStock = (): Stock => Object.fromEntries(RES_LIST.map((r) => [r, 0])) as Stock;
 
-/** Mỗi dân mang tối đa 4 đơn vị nặng (gỗ, đá) hoặc 10 đơn vị nhẹ (thức ăn). */
-export const CARRY_CAP: Record<Res, number> = { wood: 4, stone: 4, food: 10, hide: 10, bone: 6, fat: 6, feather: 10, tusk: 2, coin: 0 };
+/** How much one villager carries of each good. */
+export const CARRY_CAP = Object.fromEntries(RES_LIST.map((r) => [r, DEFS[r].carry])) as Record<Res, number>;
+
+/** What a good needs before the village can take it in: a finished house of a kind at a level (null: it is open from the start). */
+export const resourceUnlock = (res: Res): { building: string; level: number } | null => DEFS[res].unlock;
+/** Whether the village can take a good in, given its houses. */
+export const resourceOpen = (res: Res, buildings: ReadonlyArray<{ kind: string; level: number; done: boolean }>): boolean => {
+  const u = DEFS[res].unlock;
+  return !u || buildings.some((b) => b.done && b.kind === u.building && b.level >= u.level);
+};
 
 /** The food rules (src/data/food.json): what a villager and a soldier eat at the end of each day, by level of the campfire, and the most the village weakens when it goes short. */
 export const FOOD = foodJson as { ration: { villager: number[]; soldier: number[] }; maxPenalty: number };

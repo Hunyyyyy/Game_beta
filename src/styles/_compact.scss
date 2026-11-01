@@ -25,3 +25,13 @@
   }
   .toast { top: calc(40px + var(--sat)); }
 }
+
+// the dialogs of a building on a phone held sideways: the whole height is theirs, the head is slimmer and everything inside scrolls
+@media (max-height: 480px) {
+  .gdlg.gbuild {
+    height: 100%;
+    > .dhead { padding: 6px 36px 6px 10px; .dpic { width: 40px; height: 40px; .ico { width: 30px; height: 30px; } } }
+    > .mbody { padding: 6px 10px 10px; }
+  }
+  .gdlg-back { padding: 6px; }
+}

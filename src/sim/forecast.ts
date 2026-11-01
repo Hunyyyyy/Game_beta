@@ -3,7 +3,7 @@
  * of his village describes him (the real village may have grown, weakened or changed since, and the report does not care).
  * The better the map, the more the report says and the surer it is.
  */
-import { ARMORS, cycleOf, maxHpOf, ringOf, ringPower, RULES, WEAPONS } from './combat';
+import { ARMORS, cycleOf, maxHpOf, RULES, WEAPONS } from './combat';
 import type { DmgType } from './combat';
 import { Arm, BEATS } from './formations';
 import type { Sim } from './sim';
@@ -58,7 +58,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
   // ---- the enemy as the map shows him
   const ratio = t.def.warriors / Math.max(1, t.def.warriors + t.def.civilians);
   const soldiers = intel.soldiers, men = soldiers ? soldiers.foot + soldiers.archer + soldiers.cavalry : Math.max(1, Math.round((level >= 2 ? intel.people.length : intel.population) * ratio));
-  const fire = sim.campfire(), ring = ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))), power = ringPower(ring);
+  const power = 1 + (t.mil ?? 0); // what the strength of the village adds to the stats of its soldiers
   const wAvg = enemyWeapons.map((id) => dps(id, AVERAGE_STAT, AVERAGE_STAT, null)).reduce((a, b) => a + b, 0) / enemyWeapons.length;
   const hpAvg = maxHpOf(AVERAGE_STAT) * power;
   const ourArmor = (() => { const worn = plan.missions.flatMap((m) => { const s = sim.squadById(m.squad); return s ? sim.squadUnits(s) : []; }).filter((v) => v.armor); return worn.length / Math.max(1, count); })();

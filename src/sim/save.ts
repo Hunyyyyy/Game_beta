@@ -21,7 +21,7 @@ export const SAVE_VERSION = 22;
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
-  scalars: ['era', 'time', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
+  scalars: ['era', 'time', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
   records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts'],
   /** Lists of plain data. */
@@ -183,7 +183,7 @@ MIGRATIONS[13] = (d) => {
 
 MIGRATIONS[14] = (d) => {
   // 14 -> 15: no hunger in a villager; the village eats at the end of each day (the pot of the campfire, and the weakness of a short meal)
-  d.scalars.foodPot ??= 0; d.scalars.foodPenalty ??= 0;
+  d.scalars.popBonus ??= 0; d.scalars.foodPot ??= 0; d.scalars.foodPenalty ??= 0;
   return { ...d, version: 15 };
 };
 

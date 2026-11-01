@@ -78,12 +78,45 @@ export function queueResearch(sim: Sim, id: string): string | null {
 /** Why the materials and coins for a research are not there, or null. They are paid when the research is queued. */
 export function researchShort(sim: Sim, t: Tech): string | null { return sim.missing(t.cost); }
 
+/** Throw goods out of a store to make room: one (the most worn first), or every one of that kind. Returns an error or null. */
+export function discardGoods(sim: Sim, id: string, all: boolean): string | null {
+  const n = sim.toolStock[id] ?? 0, worn = sim.wornTools.filter((w) => w.id === id);
+  if (n <= 0 && !worn.length) return 'Kho không có món này';
+  if (all) {
+    sim.toolStock[id] = 0;
+    for (let i = sim.wornTools.length - 1; i >= 0; i--) if (sim.wornTools[i].id === id) sim.wornTools.splice(i, 1);
+  } else if (worn.length) {
+    worn.sort((a, b) => a.dur - b.dur);
+    sim.wornTools.splice(sim.wornTools.indexOf(worn[0]), 1);
+  } else sim.toolStock[id] = n - 1;
+  return null;
+}
+
+/** Which store a recipe's product goes to. */
+const catOf = (id: string): 'tool' | 'gear' => (isGear(RECIPE_BY_ID[id].kind) ? 'gear' : 'tool');
+
+/** Room left in a store after what is already waiting to be made for it (the queue and the order under way). */
+export function storeRoom(sim: Sim, cat: 'tool' | 'gear'): number {
+  const bench = sim.building('workshop')?.active, coming = sim.craftQueue.filter((id) => RECIPE_BY_ID[id] && catOf(id) === cat).length + (bench && RECIPE_BY_ID[bench.id] && catOf(bench.id) === cat ? 1 : 0);
+  return storeCap(sim, cat) - storeUsed(sim, cat) - coming;
+}
+
+/** Why a recipe cannot be ordered because its store is full, or null. */
+export function craftStoreBlock(sim: Sim, id: string): string | null {
+  const r = RECIPE_BY_ID[id];
+  if (!r) return null;
+  const cat = catOf(id);
+  return storeRoom(sim, cat) > 0 ? null : cat === 'tool' ? 'Kho công cụ đã đầy: nâng cấp kho hoặc dùng bớt đồ' : 'Kho vũ khí đã đầy: nâng cấp kho hoặc dùng bớt đồ';
+}
+
 /** Queue a tool, weapon or armour for the Nhà chế tạo. */
 export function queueCraft(sim: Sim, id: string): string | null {
   if (!RECIPE_BY_ID[id]) return 'Công thức không tồn tại';
   if (!sim.hasWorkshop()) return 'Cần dựng Nhà chế tạo trước';
   const lock = recipeLock(sim, id);
   if (lock) return lock;
+  const full = craftStoreBlock(sim, id);
+  if (full) return full;
   if (sim.craftQueue.length >= 12) return 'Hàng đợi đã đầy';
   sim.craftQueue.push(id);
   return null;
