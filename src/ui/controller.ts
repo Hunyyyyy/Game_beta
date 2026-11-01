@@ -7,7 +7,7 @@ import type { Box, Camera, Ghost, Marker, Renderer } from '../render/renderer';
 /**
  * Input. Mouse: left click selects, right click gives an order, holding the right button and dragging moves the map.
  * Touch: tap selects a villager; with villagers selected a tap on the ground, a resource or an enemy gives the order;
- * one finger dragging the ground moves the map, two fingers move and zoom it. "Chọn nhiều" turns taps into toggles and drags into a selection box.
+ * one finger dragging the ground moves the map; with one finger held down, the other taps to give the order or swipes to move the map; two fingers moving together zoom it. "Chọn nhiều" turns taps into toggles and drags into a selection box.
  */
 export class Controller {
   readonly selected = new Set<number>();
@@ -37,9 +37,6 @@ export class Controller {
   openDetail = false;
   /** The house whose dialog the villager's detail was opened from: closing the detail brings it back. */
   detailFrom: number | null = null;
-  /** Choosing where the selection goes (a button, for a phone): a tap puts a mark down, a drag moves the map, and only "Đi tới đây" sends them. */
-  destArmed = false;
-  destAt: { x: number; y: number } | null = null;
   /** F pressed: the next click sends the selection to attack-move there. */
   attackMoveArmed = false;
   /** Saved selections, keys 1-9 (Ctrl + number saves, number recalls). */
@@ -129,6 +126,11 @@ export class Controller {
       const t = this.touches.get(e.pointerId); this.touches.delete(e.pointerId);
       if (this.touches.size < 2) this.gesture = null;
       if (!t) return;
+      // one finger held on the screen and the other taps: that is the order, the spot tapped; the other swiping moves the map (see moveGesture)
+      if (this.touches.size === 1) {
+        const [held] = [...this.touches.values()];
+        if (Math.hypot(held.x - held.sx, held.y - held.sy) < 14 && t.t - held.t > 250 && Math.hypot(p.x - t.sx, p.y - t.sy) < 12 && performance.now() - t.t < 600) { this.activate(p, true, false); return; }
+      }
       if (this.touches.size === 0) {
         if (this.box) { this.boxSelect(this.box, true); this.box = null; }
         else if (!this.tapDead && Math.hypot(p.x - t.sx, p.y - t.sy) < 12 && performance.now() - t.t < 600) this.activate(p, true, false);
@@ -200,7 +202,6 @@ export class Controller {
   /** Left click or tap. */
   private activate(p: { x: number; y: number }, touch: boolean, additive: boolean): void {
     if (this.attackMoveArmed) { this.attackMove(p, additive); return; }
-    if (this.destArmed) { const w = this.r.screenToWorld(p.x, p.y); this.destAt = { x: Math.floor(w.x / TILE), y: Math.floor(w.y / TILE) }; this.onChange(); return; }
     // choosing pieces of fence: a tap takes one in or puts it back
     if (this.groupMode && !this.placing) { const b = this.buildingUnder(p); if (b !== null && this.isWall(b)) this.toggleGroup(b); return; }
     if (this.placing) { if (touch) { this.placeAt = this.originAt(p); this.onChange(); } else this.confirmPlace(additive); return; }
@@ -380,21 +381,6 @@ export class Controller {
     this.onChange();
   }
 
-  // ---------------------------------------------------------------- choosing where to go
-  /** Begin choosing: the mark starts in the middle of the screen. */
-  startDest(): void {
-    if (!this.selected.size) { this.onToast('Chọn dân trước'); return; }
-    this.destArmed = true; this.attackMoveArmed = false; this.placing = null; this.placeAt = null;
-    const w = this.r.screenToWorld(this.r.w / 2, this.r.h / 2); this.destAt = { x: Math.floor(w.x / TILE), y: Math.floor(w.y / TILE) }; this.onChange();
-  }
-  cancelDest(): void { this.destArmed = false; this.destAt = null; this.onChange(); }
-  /** Send the selection to the mark (an enemy or a resource there is attacked or worked, as for a tap). */
-  confirmDest(): void {
-    if (!this.destAt) return;
-    const s = this.r.worldToScreen((this.destAt.x + 0.5) * TILE, (this.destAt.y + 0.5) * TILE);
-    this.destArmed = false; this.destAt = null; this.command(s, false); this.onChange();
-  }
-
   // ---------------------------------------------------------------- orders
   /** Chọn đúng vật thể người chơi nhìn thấy (tán cây vẽ cao hơn ô của nó): trả về ô gốc. */
   private pickTile(wx: number, wy: number): { x: number; y: number } {
@@ -490,7 +476,7 @@ export class Controller {
     const k = e.key.toLowerCase();
     if (e.target instanceof HTMLElement && /input|textarea|select/i.test(e.target.tagName)) return;
     if ((e.ctrlKey || e.metaKey) && k === 'a') { e.preventDefault(); this.selectAll(); return; }
-    if (k === 'escape') { if (this.destArmed) this.cancelDest(); else if (this.attackMoveArmed) { this.attackMoveArmed = false; this.onChange(); } else if (this.placing) this.cancelPlacing(); else if (this.groupMode) this.endGroup(); else this.clearSelection(); return; }
+    if (k === 'escape') { if (this.attackMoveArmed) { this.attackMoveArmed = false; this.onChange(); } else if (this.placing) this.cancelPlacing(); else if (this.groupMode) this.endGroup(); else this.clearSelection(); return; }
     if (k === 'r' && this.groupMode) { this.rotateGroup(); return; }
     if (/^[1-9]$/.test(k) && !e.shiftKey) { this.group(Number(k), e.ctrlKey || e.metaKey); e.preventDefault(); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) return;

@@ -98,7 +98,6 @@ fullBtn.hidden = !matchMedia('(pointer: coarse)').matches && !document.fullscree
 const SPEEDS = [1, 2, 4, 16];
 const speedBtn = $<HTMLButtonElement>('btnSpeed');
 speedBtn.addEventListener('click', () => setSpeed(SPEEDS[(SPEEDS.indexOf(sim.speed) + 1) % SPEEDS.length]));
-$('btnGo').addEventListener('click', () => ctl.startDest());
 const multiBtn = $<HTMLButtonElement>('btnMulti');
 multiBtn.addEventListener('click', () => ctl.setMulti(!ctl.multi));
 $('btnAll').addEventListener('click', () => ctl.selectAll());
@@ -107,8 +106,8 @@ $('btnHome').addEventListener('click', () => { const f = sim.campfire(), s = sim
 const foldBtn = $<HTMLButtonElement>('btnFold');
 foldBtn.addEventListener('click', () => { const on = !$('sheet').classList.contains('folded'); $('sheet').classList.toggle('folded', on); foldBtn.setAttribute('aria-pressed', String(on)); foldBtn.textContent = on ? 'Hiện bảng' : 'Ẩn bảng'; });
 $('btnArmy').addEventListener('click', () => { if (sim.alarmUntil > sim.time) sim.standDown(); else { const e = sim.callArmy(); if (e) toast(e); } syncButtons(); });
-$('btnPlaceOk').addEventListener('click', () => { if (ctl.destArmed) ctl.confirmDest(); else ctl.confirmPlace(); });
-$('btnPlaceNo').addEventListener('click', () => { if (ctl.destArmed) ctl.cancelDest(); else ctl.cancelPlacing(); });
+$('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
+$('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
 $('btnPlaceRot').addEventListener('click', () => ctl.rotateGroup());
 function setSpeed(s: number) { sim.speed = s; if (s > 0) { settings.speed = s; saveSettings(settings); } syncButtons(); }
 function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); tray.close(); } }
@@ -117,7 +116,6 @@ function syncButtons() {
   speedBtn.textContent = sim.speed === 0 ? '❚❚' : `${sim.speed}×`; speedBtn.setAttribute('aria-pressed', String(sim.speed === 0));
   multiBtn.setAttribute('aria-pressed', String(ctl.multi));
   { const on = sim.alarmUntil > sim.time, army = $('btnArmy'); army.setAttribute('aria-pressed', String(on)); army.textContent = on ? 'Cho quân về' : 'Gọi quân'; army.hidden = !sim.villagers.some((v) => v.job === 'fight' && !v.guard); }
-  $('btnGo').hidden = ctl.selected.size === 0;
   $('btnNone').hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
 }
 window.addEventListener('keydown', (e) => {
@@ -197,18 +195,13 @@ function updateHud(now: number) {
 
   // which panels show
   const chosen = sim.villagers.filter((v) => ctl.selected.has(v.id));
-  const placing = !!ctl.placing || ctl.destArmed, showB = ctl.selectedBuilding !== null && ctl.buildingOpen && !placing;
+  const placing = !!ctl.placing, showB = ctl.selectedBuilding !== null && ctl.buildingOpen && !placing;
   buildingPanel.update(); buildingBar.update(); unitCard.update(chosen); targetCard.update();
   warBar.update(); document.body.classList.toggle('war', warBar.active); // war mode: the selection and building buttons give way to the battle buttons
   if (placing || !showB) $('bpanel').hidden = true;
   if (placing || showB) { $('ucard').hidden = true; unitCard.closeDetail(); }
   if (placing || showB) $('tcard').hidden = true;
   const bar = $('placeBar'); bar.hidden = !placing;
-  if (ctl.destArmed) {
-    $('btnPlaceRot').hidden = true;
-    $('placeName').textContent = `Chọn nơi đến cho ${ctl.selected.size} người`; $('placeInfo').textContent = ctl.destAt ? 'Chạm để đổi chỗ · kéo để xem chỗ khác' : 'Chạm lên bản đồ để đặt dấu';
-    $<HTMLButtonElement>('btnPlaceOk').disabled = ctl.destAt === null; $('btnPlaceOk').textContent = '✓ Đi tới đây';
-  }
   if (placing && ctl.placing) {
     const why = ctl.placeProblem(), moving = ctl.moving !== null ? sim.getBuilding(ctl.moving) : undefined;
     $('btnPlaceRot').hidden = !ctl.groupMoving;
@@ -229,7 +222,7 @@ function frame(t: number) {
   ctl.update(dt);
   if (started) session.tick();
   sim.advance(dt);
-  renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : [], ctl.destArmed ? ctl.destAt : null);
+  renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);
   buildingBar.place(); map.draw(); updateHud(t);
   requestAnimationFrame(frame);
 }

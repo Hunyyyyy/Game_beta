@@ -324,7 +324,7 @@ export class Renderer {
     return depth >= 3 ? 'high' : depth === 2 ? 'mid' : 'low';
   }
 
-  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null, group: readonly number[] = [], dest: { x: number; y: number } | null = null): void {
+  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null, group: readonly number[] = []): void {
     const { ctx, cam, sim } = this, z = cam.zoom, world = sim.world, N = world.size, sp = this.sprites;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
@@ -557,14 +557,6 @@ export class Renderer {
       }
       const e = inspect.kind === 'unit' ? sim.get(inspect.id) : inspect.kind === 'animal' ? sim.animalById.get(inspect.id) : undefined;
       if (e) { const p = this.worldToScreen(e.x * TILE, e.y * TILE); ctx.strokeStyle = '#ff8a7a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(p.x, p.y + z, 11 * z, 5 * z, 0, 0, Math.PI * 2); ctx.stroke(); }
-    }
-
-    // ---- the mark of where the selection will go (chosen with the "Chọn nơi đến" button) ----
-    if (dest) {
-      const cx = px(dest.x) + ts / 2, cy = py(dest.y) + ts / 2, pulse = 0.5 + 0.5 * Math.sin(time * 5);
-      ctx.fillStyle = 'rgba(90,200,255,.25)'; ctx.fillRect(px(dest.x), py(dest.y), ts, ts);
-      ctx.strokeStyle = '#7ad4ff'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(cx, cy, (0.55 + 0.15 * pulse) * ts, 0, Math.PI * 2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx - ts * 0.9, cy); ctx.lineTo(cx + ts * 0.9, cy); ctx.moveTo(cx, cy - ts * 0.9); ctx.lineTo(cx, cy + ts * 0.9); ctx.stroke();
     }
 
     // ---- the pieces of fence chosen to be carried together ----
