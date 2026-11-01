@@ -1,0 +1,56 @@
+{
+ "kind": "wartent",
+ "name": "Lều họp chiến",
+ "group": "war",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 2,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Lều da",
+    "cost": {
+     "wood": 30,
+     "hide": 8
+    },
+    "buildTime": 90,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 0
+   },
+   {
+    "name": "Lều lớn",
+    "cost": {
+     "wood": 40,
+     "hide": 10,
+     "stone": 15
+    },
+    "buildTime": 140,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 0
+   },
+   {
+    "name": "Lều thủ lĩnh",
+    "cost": {
+     "wood": 50,
+     "stone": 40,
+     "hide": 14
+    },
+    "buildTime": 200,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 0
+   }
+  ]
+ }
+}

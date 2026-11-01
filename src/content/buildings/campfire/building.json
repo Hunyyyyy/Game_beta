@@ -1,0 +1,72 @@
+{
+ "kind": "campfire",
+ "name": "Nhà chung (đống lửa trại)",
+ "group": "development",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": false,
+ "upgradable": true,
+ "unlockFire": 1,
+ "popByFire": [
+  8,
+  16,
+  25,
+  40
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Củi lửa",
+    "cost": {},
+    "buildTime": 0,
+    "cap": 30,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 0
+   },
+   {
+    "name": "Lửa trại",
+    "cost": {
+     "wood": 100
+    },
+    "buildTime": 120,
+    "cap": 45,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 0
+   },
+   {
+    "name": "Bếp lửa lớn",
+    "cost": {
+     "food": 100,
+     "wood": 250,
+     "stone": 200,
+     "hide": 50,
+     "coin": 30
+    },
+    "buildTime": 240,
+    "cap": 60,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 0
+   },
+   {
+    "name": "Nhà chung",
+    "cost": {
+     "food": 800,
+     "wood": 500,
+     "stone": 400,
+     "hide": 200,
+     "coin": 100
+    },
+    "buildTime": 480,
+    "cap": 90,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 0
+   }
+  ]
+ }
+}

@@ -1,0 +1,53 @@
+{
+ "kind": "workshop",
+ "name": "Nhà chế tạo",
+ "group": "development",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 1,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Đơn sơ",
+    "cost": {
+     "wood": 15
+    },
+    "buildTime": 70,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 1,
+    "hp": 0
+   },
+   {
+    "name": "Gỗ",
+    "cost": {
+     "wood": 15,
+     "stone": 30
+    },
+    "buildTime": 120,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 2,
+    "hp": 0
+   },
+   {
+    "name": "Đá",
+    "cost": {
+     "wood": 30,
+     "stone": 50
+    },
+    "buildTime": 180,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 3,
+    "hp": 0
+   }
+  ]
+ }
+}

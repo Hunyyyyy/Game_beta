@@ -1,0 +1,58 @@
+{
+ "kind": "cavalry",
+ "name": "Trại kỵ thú",
+ "names": {
+  "ancient": "Trại kỵ binh"
+ },
+ "group": "war",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 2,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Đơn sơ",
+    "cost": {
+     "wood": 25,
+     "hide": 8
+    },
+    "buildTime": 70,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 5,
+    "hp": 0
+   },
+   {
+    "name": "Gỗ",
+    "cost": {
+     "wood": 30,
+     "hide": 10
+    },
+    "buildTime": 110,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 10,
+    "hp": 0
+   },
+   {
+    "name": "Đá",
+    "cost": {
+     "wood": 35,
+     "stone": 25,
+     "hide": 14
+    },
+    "buildTime": 160,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 15,
+    "hp": 0
+   }
+  ]
+ }
+}

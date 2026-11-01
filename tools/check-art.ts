@@ -3,10 +3,10 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { Blueprint, BlueprintDef } from '../src/blueprint/blueprint';
 
-const roots = [join('src', 'data', 'blueprints', 'stone_age', 'buildings'), join('src', 'data', 'blueprints', 'stone_age', 'tools')];
+const roots = [join('src', 'content', 'buildings'), join('src', 'data', 'blueprints', 'stone_age', 'tools')];
 const walk = (dir: string): string[] => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]));
 let bad = 0;
-for (const file of roots.flatMap(walk).filter((f) => f.endsWith('.json'))) {
+for (const file of roots.flatMap(walk).filter((f) => f.endsWith('.json') && !f.endsWith('building.json'))) {
   let def: BlueprintDef;
   try { def = JSON.parse(readFileSync(file, 'utf8')); } catch (e) { console.log('BAD JSON', file, String(e)); bad++; continue; }
   for (let st = 0; st <= 4; st++) {

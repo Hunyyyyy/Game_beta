@@ -1,0 +1,47 @@
+{
+ "kind": "gate",
+ "name": "Cổng",
+ "group": "defence",
+ "size": [
+  1,
+  1
+ ],
+ "buildable": true,
+ "unlockFire": 3,
+ "requires": [
+  "fence"
+ ],
+ "limit": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Cổng gỗ",
+    "cost": {
+     "wood": 4
+    },
+    "buildTime": 20,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 30
+   },
+   {
+    "name": "Cổng đôi",
+    "cost": {
+     "wood": 6,
+     "stone": 2
+    },
+    "buildTime": 32,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 90
+   }
+  ]
+ }
+}

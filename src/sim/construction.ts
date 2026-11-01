@@ -1,9 +1,9 @@
 /** Placing, upgrading, moving and demolishing buildings, and what the buildings give the village (room, population, build speed). */
-import { Building, BuildingKind, BUILDINGS, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, levelCapByFire, POP_BY_FIRE } from './buildings';
+import { Building, BuildingKind, BUILDINGS, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, levelCapByFire, POP_BY_FIRE, fireUnlockLevel } from './buildings';
 import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
 import { buildingOpen, levelCap, techForBuilding, techForLevel } from './research';
-import { fireUnlockLevel, fireUpgradeNeeds } from './progression';
+import { fireUpgradeNeeds } from './progression';
 import startJson from '../data/start.json';
 import type { Sim } from './sim';
 import { PlaceResult } from './model';

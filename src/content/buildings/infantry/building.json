@@ -1,0 +1,57 @@
+{
+ "kind": "infantry",
+ "name": "Trại chiến binh",
+ "names": {
+  "ancient": "Trại bộ binh"
+ },
+ "group": "war",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 2,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Đơn sơ",
+    "cost": {
+     "wood": 20
+    },
+    "buildTime": 60,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 5,
+    "hp": 0
+   },
+   {
+    "name": "Gỗ",
+    "cost": {
+     "wood": 25,
+     "hide": 6
+    },
+    "buildTime": 100,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 10,
+    "hp": 0
+   },
+   {
+    "name": "Đá",
+    "cost": {
+     "wood": 30,
+     "stone": 25,
+     "hide": 10
+    },
+    "buildTime": 150,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 15,
+    "hp": 0
+   }
+  ]
+ }
+}

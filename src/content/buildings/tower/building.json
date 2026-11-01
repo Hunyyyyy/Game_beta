@@ -1,0 +1,47 @@
+{
+ "kind": "tower",
+ "name": "Chòi canh",
+ "group": "defence",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 3,
+ "requires": [
+  "fence"
+ ],
+ "limit": [
+  0,
+  1,
+  2,
+  3
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Chòi gỗ",
+    "cost": {
+     "wood": 20
+    },
+    "buildTime": 80,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 2,
+    "hp": 150
+   },
+   {
+    "name": "Chòi cao",
+    "cost": {
+     "wood": 30,
+     "stone": 8
+    },
+    "buildTime": 130,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 4,
+    "hp": 300
+   }
+  ]
+ }
+}

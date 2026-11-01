@@ -1,0 +1,52 @@
+{
+ "kind": "storage",
+ "name": "Kho",
+ "group": "storage",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 1,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Đơn sơ",
+    "cost": {
+     "wood": 10
+    },
+    "buildTime": 50,
+    "cap": 100,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 0
+   },
+   {
+    "name": "Gỗ",
+    "cost": {
+     "wood": 35
+    },
+    "buildTime": 90,
+    "cap": 250,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 0
+   },
+   {
+    "name": "Đá",
+    "cost": {
+     "wood": 40,
+     "stone": 20
+    },
+    "buildTime": 140,
+    "cap": 500,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 0
+   }
+  ]
+ }
+}
