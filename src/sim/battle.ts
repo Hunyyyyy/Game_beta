@@ -6,7 +6,8 @@ import { Arm, armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formatio
 import { Animal, animalDef, die as animalDie, provoke, carcassEmpty } from './fauna';
 import chaseJson from '../data/chase.json';
 import { isActive } from './tribework';
-import { BUILDINGS, BuildingKind } from './buildings';
+import { Building, BUILDINGS, BuildingKind, WALL_KINDS, levelDef } from './buildings';
+import { homeKind, isFree } from './idle';
 import { CARRY_CAP, Res, RES_NAME, resourceOpen, resourceUnlock } from './resources';
 import type { Sim, Target, Villager } from './sim';
 import { hash2 } from './rng';
@@ -109,6 +110,15 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
 // ---------------------------------------------------------------- hunters
 /** How far from the Chòi thợ săn its hunters range (tiles), by the level of the lodge. */
 export const HUNT_RANGE = [24, 36, 52];
+/** What a beast is worth to a hunter: its meat, its hide and what else the body gives, each at the weight of animals.json "huntValue"; goods the village cannot take yet count for nothing. */
+export function preyValue(sim: Sim, species: Animal['species']): number {
+  const def = ANIMALS[species], w = BEHAVIOUR.huntValue as Record<string, number>;
+  let value = def.meat * (w.meat ?? 0);
+  for (const [res, n] of Object.entries({ hide: def.hide, ...(def.drops ?? {}) })) if (n && resourceOpen(res as Res, sim.buildings)) value += n * (w[res] ?? 0);
+  return value;
+}
+/** The biggest beast (by health) the lodge of this level sends hunters after: a lodge of level 1 stays with deer and small game, a higher one takes on the big ones. */
+export const huntHpCap = (level: number): number => BEHAVIOUR.huntHpCap[Math.min(BEHAVIOUR.huntHpCap.length, Math.max(1, level)) - 1];
 export function huntRange(sim: Sim): number { return HUNT_RANGE[Math.min(HUNT_RANGE.length, sim.building('huntlodge')?.level ?? 1) - 1]; }
 /** A hunter who is hit below this share of health runs home; he hunts again only when healed back above HUNT_BACK. */
 const HUNT_FLEE = 0.3, HUNT_BACK = 0.5;
@@ -147,7 +157,7 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
     if (tw && tw.kind === 'tower') { v.ai.siege = tw.id; v.fight.target = null; } // shot from a tower: it is the tower he goes for
   }
   if (v.health > 0) {
-    if (v.team === 'player' && v.job === 'hunt' && v.phase !== 'flee' && v.health < v.maxHealth * HUNT_FLEE) {
+    if (v.team === 'player' && v.job === 'hunt' && v.phase !== 'flee' && v.health < v.maxHealth * HUNT_FLEE && !sim.underOrders(v)) {
       const tribe = src.unit ? sim.tribes.find((t) => t.id === src.unit!.team) : undefined;
       const by = src.animal ? `một con ${animalDef(src.animal).name.toLowerCase()}` : tribe ? tribe.def.name : src.unit ? 'một kẻ địch' : 'kẻ lạ';
       sim.say(`${v.name} (thợ săn) bỏ chạy về làng vì máu còn ${Math.round((v.health / v.maxHealth) * 100)}%, bị ${by} tấn công.`);
@@ -261,6 +271,13 @@ const SIGHT = 8, DEFENSIVE = 4.5;
 /** Returns true when combat logic decided what this unit does this tick (so ordinary work is skipped). */
 export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   if (v.phase === 'goStore' || v.phase === 'goEquip') return false;
+  // the player's word is the highest: a selected unit walking where he was sent does not stop to fight or run from what it meets (they let him go when he is deselected or arrives)
+  if (sim.underOrders(v)) { v.fleeT = 0; return false; }
+  // ordered home ("Cho quân về"): he drops the fight and goes to his camp; once inside, or if there is no bed for him, the order is over
+  if (v.recall) {
+    if (v.inside !== null || !sim.quartered(v)) v.recall = false;
+    else { v.fight.target = null; v.fight.mode = 'none'; v.fight.anchor = null; v.queue.length = 0; if (v.phase === 'fight') { v.phase = 'idle'; v.path = []; } return false; }
+  }
   const rest = v.phase === 'sleep' || v.phase === 'goHome';
   if (rest && sim.hides(v)) return false; // lying low in a house while the village is attacked: nothing wakes them to run out
   v.fight.scan -= dt;
@@ -280,28 +297,75 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   const fighter = isFighter(v);
   if (!fighter) {
     // Civilians do not fight: anything hostile within sight sends them running to the campfire
-    if (threats.length && threats[0].d < 6 && v.phase !== 'fight') { startFlee(sim, v, 8, threats[0]); return true; }
+    if (threats.length && threats[0].d < FEAR && v.phase !== 'fight') { startFlee(sim, v, 8, threats[0]); return true; }
+    // far from the danger, a villager with no trade still goes to a Nhà dân with a bed free while the village is under attack (none free: he stays where he is)
+    if (scanNow && isFree(v) && v.inside === null && v.phase !== 'sleep' && v.phase !== 'goHome' && sim.attackReason() !== null && refugeOf(sim, v)) { startFlee(sim, v, 8); return true; }
     return assistBrain(sim, v);
   }
   return fightBrain(sim, v, dt, threats);
 }
 
 /**
- * Where a frightened villager runs: a free spot on the ground round the village, on the side away from what chases him. Never the fire itself:
- * they run about the village, and pick a new spot whenever they reach one while the danger lasts.
+ * Where a frightened villager runs: to the nearest soldier of ours who is on his feet (he stands behind him, away from the danger), or else to the
+ * campfire (the far side of it from the danger). He does not wander: he gets there and stays until the danger is gone.
  */
 function fleeSpot(sim: Sim, v: Villager, from?: { x: number; y: number }): Step[] {
-  const fire = sim.campfire(), cx = fire ? fire.x + 1 : v.x, cy = fire ? fire.y + 1 : v.y;
-  let best: [number, number] | null = null, bs = -Infinity;
-  for (let k = 0; k < 12; k++) {
-    const ang = sim.frnd() * Math.PI * 2, r = 4 + sim.frnd() * 9, x = Math.floor(cx + Math.cos(ang) * r), y = Math.floor(cy + Math.sin(ang) * r);
-    if (sim.world.isBlocked(x, y)) continue;
-    const away = from ? Math.hypot(x + 0.5 - from.x, y + 0.5 - from.y) : Math.hypot(x + 0.5 - v.x, y + 0.5 - v.y) * 0.5;
-    if (away < 3) continue; // not toward the danger, nor on the spot
-    const score = away - Math.abs(r - 8) * 0.3;
-    if (score > bs) { bs = score; best = [x, y]; }
+  const fire = sim.campfire();
+  let guard: Villager | undefined, gd = 40;
+  for (const o of sim.villagers) {
+    if (o === v || o.job !== 'fight' || o.health <= 0 || o.down > 0 || o.inside !== null || o.phase === 'flee' || o.phase === 'sleep' || o.phase === 'goHome') continue;
+    const d = Math.hypot(o.x - v.x, o.y - v.y);
+    if (d < gd) { gd = d; guard = o; }
   }
-  return best ? sim.pathTo(v, best[0], best[1], 4000) : fire ? sim.pathTo(v, Math.floor(fire.x + 1), Math.floor(fire.y + 2), 4000) : [];
+  const tx = guard ? guard.x : fire ? fire.x + 1 : v.x, ty = guard ? guard.y : fire ? fire.y + 2 : v.y;
+  let gx = tx, gy = ty;
+  if (from) { const dx = tx - from.x, dy = ty - from.y, len = Math.hypot(dx, dy) || 1; gx += (dx / len) * 1.5; gy += (dy / len) * 1.5; } // behind him, not in front
+  const spot = sim.nearestFree(Math.floor(gx), Math.floor(gy), new Set());
+  return spot ? sim.pathTo(v, spot[0], spot[1], 4000) : [];
+}
+
+/** How near a danger must be for a civilian to run from it, in tiles. */
+const FEAR = 10;
+
+/** Who is in a house, or on his way to hide in it: the beds it has are all it takes, in the danger as at night. */
+function crowd(sim: Sim, b: Building, except: Villager): number {
+  let n = 0;
+  for (const o of sim.villagers) if (o !== except && ((o.inside === b.id && o.phase === 'sleep') || ((o.phase === 'goHome' || o.phase === 'flee') && o.target === b.id))) n++;
+  return n;
+}
+
+/**
+ * The house a frightened civilian runs into, as long as it has a bed free: the house of his trade, and failing that the Nhà dân (the free go
+ * straight to the Nhà dân). None with room: he runs on.
+ */
+function refugeOf(sim: Sim, v: Villager): Building | undefined {
+  for (const kind of new Set<BuildingKind>([homeKind(v), 'house'])) {
+    let best: Building | undefined, bd = Infinity;
+    for (const x of sim.buildings) {
+      if (x.kind !== kind || !x.done || crowd(sim, x, v) >= levelDef(x).slots) continue;
+      const d = Math.hypot(x.x + 1 - v.x, x.y + 1 - v.y);
+      if (d < bd) { bd = d; best = x; }
+    }
+    if (best) return best;
+  }
+  return undefined;
+}
+
+/** Set off for the refuge; false when there is none with room or no way to it. */
+function runToRefuge(sim: Sim, v: Villager): boolean {
+  const b = refugeOf(sim, v);
+  if (!b) return false;
+  const d = BUILDINGS[b.kind];
+  if (sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h), 3, 12000) < 0) return false;
+  v.target = b.id;
+  return true;
+}
+
+/** No room anywhere: he runs on, away from the danger. */
+function runAway(sim: Sim, v: Villager, from?: { x: number; y: number }): Step[] {
+  const ax = from ? v.x - from.x : 0, ay = from ? v.y - from.y : 1, len = Math.hypot(ax, ay) || 1;
+  const spot = sim.nearestFree(Math.floor(v.x + (ax / len) * 12), Math.floor(v.y + (ay / len) * 12), new Set());
+  return spot ? sim.pathTo(v, spot[0], spot[1], 4000) : [];
 }
 
 function startFlee(sim: Sim, v: Villager, secs: number, from?: { x: number; y: number }): void {
@@ -309,14 +373,35 @@ function startFlee(sim: Sim, v: Villager, secs: number, from?: { x: number; y: n
   sim.resetTask(v); v.job = keep; v.nightOwl = nightOwl;
   v.fight.target = null; if (v.fight.mode === 'attack') v.fight.mode = 'none';
   v.phase = 'flee'; v.fleeT = secs;
+  // a civilian runs into the house of his trade (the Nhà dân if he has none) and hides there until it is safe again; with no bed free he runs on.
+  // Soldiers and hunters who retreat run to the fire or to a comrade
+  if (!isFighter(v)) { sim.dangerAt = sim.time; if (runToRefuge(sim, v)) return; v.path = runAway(sim, v, from); return; }
   v.path = fleeSpot(sim, v, from);
 }
 
 function fleeBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {
   if (v.phase !== 'flee') { startFlee(sim, v, 8, threats[0]); return true; }
+  const civilian = !isFighter(v), refuge = civilian && v.target >= 0 ? sim.getBuilding(v.target) : undefined;
+  if (civilian) sim.dangerAt = sim.time;
+  if (refuge && refuge.done) {
+    const d = BUILDINGS[refuge.kind];
+    if (Math.hypot(v.x - (refuge.x + d.w / 2), v.y - (refuge.y + d.h / 2)) <= Math.max(d.w, d.h) / 2 + 1.8) {
+      if (crowd(sim, refuge, v) < levelDef(refuge).slots) { sim.sleepIn(v, refuge); v.fleeT = 0; return true; } // at the door: if a bed is free he goes in and hides
+      v.target = -1; v.timer = 0; // taken meanwhile: he looks for another
+    } else {
+      v.timer -= dt;
+      if (!v.path.length && v.timer <= 0) { v.timer = 1.5; if (!runToRefuge(sim, v)) v.target = -1; }
+      return true;
+    }
+  }
   v.fleeT -= dt;
-  if (threats.length && threats[0].d < 6) v.fleeT = Math.max(v.fleeT, 3); // keep running while they are close
-  if (!v.path.length && threats.length && threats[0].d < 9) v.path = fleeSpot(sim, v, threats[0]); // reached a spot with the danger still near: run to another, round the village
+  if (threats.length && threats[0].d < FEAR) v.fleeT = Math.max(v.fleeT, 3); // keep running while they are close
+  v.timer -= dt;
+  if (v.timer <= 0) {
+    v.timer = 1.5;
+    if (civilian) { if (runToRefuge(sim, v)) return true; if (!v.path.length) v.path = runAway(sim, v, threats[0]); } // a bed may have come free; if not, on he runs
+    else { const way = fleeSpot(sim, v, threats[0]); if (way.length > 2) v.path = way; } // his refuge moves (a soldier): follow it; once there he stays
+  }
   if (v.fleeT <= 0) { v.phase = 'idle'; v.fleeT = 0; v.path = []; return false; }
   return true;
 }
@@ -394,9 +479,19 @@ function homeSpot(sim: Sim, v: Villager): { x: number; y: number } | null {
 }
 
 /** Whether a soldier of the camps may go for what he sees: only when the alarm drum sounds, a fight is on, or he has been told to attack. Guards watch for themselves, hunters hunt. */
+/** A pack that came for the village (an event's wolves, a raid) is still about, or beasts are biting people near the fire: for the soldiers the fight is on until it is over. Looked up once a tick. */
+const aboutCache = new WeakMap<Sim, { t: number; on: boolean }>();
+function beastsAbout(sim: Sim): boolean {
+  const c = aboutCache.get(sim);
+  if (c && c.t === sim.time) return c.on;
+  const on = sim.attackReason() !== null || sim.animals.some((a) => a.raid && a.state !== 'dead');
+  aboutCache.set(sim, { t: sim.time, on });
+  return on;
+}
+
 function mayEngage(sim: Sim, v: Villager): boolean {
   if (v.job !== 'fight' || v.guard || v.team !== 'player') return true;
-  return sim.alarmUntil > sim.time || sim.battle.on || v.fight.mode === 'attack' || v.fight.mode === 'attackMove' || (v.squad >= 0 && sim.plans.some((p) => p.status === 'running'));
+  return sim.alarmUntil > sim.time || beastsAbout(sim) || sim.battle.on || v.fight.mode === 'attack' || v.fight.mode === 'attackMove' || (v.squad >= 0 && sim.plans.some((p) => p.status === 'running'));
 }
 
 function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {
@@ -480,7 +575,7 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
     v.phase = 'idle'; v.loot = -1;
     if (!a) return true;
     const have = v.carry && v.carry.res === 'food' ? v.carry.amount : 0, take = Math.min(a.meat, CARRY_CAP.food - have);
-    if (take > 0) { a.meat -= take; v.carry = { res: 'food', amount: have + take }; }
+    if (take > 0) { a.meat -= take; v.carry = { res: 'food', amount: have + take }; sim.noteYield('hunt.food', take); }
     // the skin and everything else on the body goes straight to the store
     // a good the village cannot take yet (resources.json "unlock": the level of the Chòi thợ săn) is left on the body
     const got: string[] = [], left: string[] = [], bag: Partial<Record<Res, number>> = { ...a.drops };
@@ -488,7 +583,7 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
     for (const [res, n] of Object.entries(bag) as Array<[Res, number]>) {
       if (!(n > 0)) continue;
       if (!resourceOpen(res, sim.buildings)) { const u = resourceUnlock(res)!; left.push(`${RES_NAME[res].toLowerCase()} (cần ${BUILDINGS[u.building as BuildingKind].name} cấp ${u.level})`); continue; }
-      sim.stock[res] = Math.min(sim.capacity(res), sim.stock[res] + n); got.push(`${n} ${RES_NAME[res].toLowerCase()}`);
+      sim.stock[res] = Math.min(sim.capacity(res), sim.stock[res] + n); sim.noteYield(`hunt.${res}`, n); got.push(`${n} ${RES_NAME[res].toLowerCase()}`);
     }
     a.hide = 0; a.drops = {};
     if (got.length) sim.say(`${v.name} xẻ ${animalDef(a).name.toLowerCase()}: ${got.join(', ')}.`);
@@ -517,15 +612,17 @@ function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
   if (best) { v.loot = best.id; v.phase = 'goCarcass'; v.path = sim.pathTo(v, Math.floor(best.x), Math.floor(best.y), 3000); return true; }
   // living prey
   if (!threats.length) {
-    let prey: Animal | null = null; bd = Infinity; // a hunter looks over all the explored ground within the range of his lodge
+    let prey: Animal | null = null, bestScore = 0; // a hunter looks over all the explored ground within the range of his lodge and goes for the beast worth the most, not the nearest
+    const cap = huntHpCap(sim.building('huntlodge')?.level ?? 1);
     for (const a of sim.animals) {
       const def = animalDef(a);
       if (a.state === 'dead' || !def.prey || sim.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
       if (v.fight.skip && v.fight.skip.kind === 'animal' && v.fight.skip.id === a.id && sim.time < v.fight.skip.until) continue; // given up on: a fish in the water, a beast walled in
       if (lodge && Math.hypot(a.x - lodge.x, a.y - lodge.y) > range) continue;
+      if (def.hp > cap) continue; // too big for what the lodge can send
       if (def.defends && !sim.packNear(v, a)) continue; // a boar is only taken on by a group
-      const d = Math.hypot(a.x - v.x, a.y - v.y);
-      if (d < bd) { bd = d; prey = a; }
+      const d = Math.hypot(a.x - v.x, a.y - v.y), score = preyValue(sim, a.species) / (1 + d / 12); // the worth of the beast, less the longer the way
+      if (score > bestScore) { bestScore = score; prey = a; }
     }
     if (prey) { v.fight.target = { kind: 'animal', id: prey.id }; engage(sim, v, { kind: 'animal', a: prey }, 0); return true; }
   }
@@ -559,7 +656,8 @@ export function bestWeapon(sim: Sim, v: Villager): string | null {
   for (const id of CRAFTED_WEAPONS) {
     if (sim.toolCount(id, WEAPONS[id].tier ?? 1) <= 0) continue;
     if (id === 'mace' && v.job !== 'fight') continue; // the heavy mace is a soldier's weapon, not a hunter's
-    if (v.job === 'fight' && (v.arm === 'archer') !== !!WEAPONS[id].ranged) continue; // the throwers' camp arms throwers, the others carry blows
+    if (v.job === 'fight' && v.guard && v.post >= 0 && !WEAPONS[id].ranged) continue; // a man of a tower shoots
+    if (v.job === 'fight' && !v.guard && v.arm !== 'cavalry' && (v.arm === 'archer') !== !!WEAPONS[id].ranged) continue; // the throwers' camp arms throwers, the foot carry blows; a rider, a guard and a hunter take whatever is best
     if (score(id) > bs) { bs = score(id); best = id; }
   }
   return best;

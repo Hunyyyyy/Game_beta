@@ -78,7 +78,7 @@ export function think(sim: Sim, v: Villager, dt: number): void {
   const N = sim.world.size;
   switch (v.phase) {
     case 'move': v.phase = 'idle'; sim.nextOrder(v); return;
-    case 'idle': if (v.queue.length && sim.nextOrder(v)) return; if (v.job !== 'idle') plan(sim, v); return;
+    case 'idle': if (v.queue.length && sim.nextOrder(v)) return; if (v.job !== 'idle') plan(sim, v); else idleHome(sim, v); return;
     case 'wait': v.timer -= dt; if (v.timer <= 0) v.phase = 'idle'; return;
     case 'goNode': {
       const n = sim.world.nodes.get(v.target);
@@ -125,6 +125,20 @@ export function think(sim: Sim, v: Villager, dt: number): void {
     }
     case 'sleep': return;
   }
+}
+
+/**
+ * A villager with no job walks back to the campfire and stands there, instead of staying where his last work left him. One the player sent out by
+ * hand (shift 'both', see orderMove) stays where he was sent until he is called home or turns back by himself.
+ */
+function idleHome(sim: Sim, v: Villager): void {
+  if (v.shift === 'both' || v.post >= 0 || v.inside !== null || sim.pathLeft <= 0) return;
+  const fire = sim.campfire(); if (!fire) return;
+  const spot = sim.nearestFree(Math.floor(fire.x + 1 + ((v.id * 7) % 7) - 3), Math.floor(fire.y + 3 + (v.id % 2)), new Set<number>());
+  if (!spot || Math.hypot(spot[0] + 0.5 - v.x, spot[1] + 0.5 - v.y) <= 2) return; // already there
+  sim.pathLeft--;
+  v.path = sim.pathTo(v, spot[0], spot[1], 4000);
+  v.phase = v.path.length ? 'move' : 'idle';
 }
 
 export function doWork(sim: Sim, v: Villager, dt: number): void {
@@ -185,8 +199,9 @@ export function plan(sim: Sim, v: Villager): void {
     wait(sim, v, 3); return;
   }
   if (sim.planTool(v, v.job as WorkJob)) return;
-  if (findNode(sim, v, def.node!)) return;
+  if (findNode(sim, v, def.node!)) { trapped.delete(v); return; }
   if (v.carry) { planDeliver(sim, v); return; }
+  freeTrapped(sim, v, sim.buildings.filter((b) => b.done && holdsGoods(b)).sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y)));
   wait(sim, v, 2);
 }
 
@@ -232,13 +247,35 @@ export function findNode(sim: Sim, v: Villager, kind: NodeKind): boolean {
   return false;
 }
 
+/** How many times in a row a gatherer found no way anywhere (shut in by trees that grew, a fence, a house): see `freeTrapped`. */
+const trapped = new WeakMap<Villager, number>();
+
+/**
+ * A villager with no way to a store or to a source for a few tries in a row is shut in. He is lifted to the free tile beside the nearest store,
+ * so he can work again instead of standing there for ever (the path search cannot start from a pocket with no way out).
+ */
+function freeTrapped(sim: Sim, v: Villager, stores: Building[]): void {
+  const n = (trapped.get(v) ?? 0) + 1;
+  trapped.set(v, n);
+  if (n < 3 || !stores.length) return;
+  const b = stores[0], d = BUILDINGS[b.kind], spot = sim.ringTiles(v, b.x, b.y, d.w, d.h)[0];
+  trapped.delete(v);
+  if (!spot) return;
+  const way = sim.pathTo(v, spot[0], spot[1], 6000), last = way[way.length - 1]; // a store he can walk to: not shut in, only nothing to gather
+  if ((last && last[0] === spot[0] && last[1] === spot[1]) || (Math.floor(v.x) === spot[0] && Math.floor(v.y) === spot[1])) return;
+  v.x = spot[0] + 0.5; v.y = spot[1] + 0.5; v.path = []; v.slide = null; v.bad.clear();
+  sim.say(`${v.name} bị kẹt giữa cây cối, đã được đưa về ${BUILDINGS[b.kind].name.toLowerCase()}.`);
+}
+
 export function planDeliver(sim: Sim, v: Villager): void {
-  const done = sim.buildings.filter((b) => b.done && holdsGoods(b));
+  // goods go to the campfire only while there is no Kho; once one stands they are all carried there (the campfire still counts in what the village holds)
+  const held = sim.buildings.filter((b) => b.done && holdsGoods(b)), done = held.some((b) => b.kind === 'storage') ? held.filter((b) => b.kind === 'storage') : held;
   done.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
   for (const b of done.slice(0, 2)) {
     const d = BUILDINGS[b.kind];
-    if (sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { v.target = b.id; v.phase = 'goStore'; return; }
+    if (sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { trapped.delete(v); v.target = b.id; v.phase = 'goStore'; return; }
   }
+  freeTrapped(sim, v, done);
   wait(sim, v, 2);
 }
 

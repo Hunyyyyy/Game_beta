@@ -7,11 +7,12 @@ import { dlg } from './gamedialog';
 import { roleStats } from './people';
 import { Roster } from './roster';
 import type { Ctx } from './ctx';
-import { describe } from './describe';
+import { describe, SHIFT_LABEL } from './describe';
+import type { Shift } from '../sim/model';
 
 /** What a role leans on: the stat that says who is good at it (scouts are rated by their own score). */
 const STAT_OF: Record<RoleId, keyof typeof STAT_NAME | 'scout'> = {
-  wood: JOBS.wood.stat, stone: JOBS.stone.stat, food: JOBS.food.stat, hunt: JOBS.hunt.stat, foot: 'str', cavalry: 'str', archer: 'agi', guard: 'str', scout: 'scout',
+  wood: JOBS.wood.stat, stone: JOBS.stone.stat, food: JOBS.food.stat, hunt: JOBS.hunt.stat, foot: 'str', cavalry: 'str', archer: 'agi', guard: 'str', tower: 'agi', scout: 'scout',
 };
 const HELP: Record<RoleId, string> = {
   wood: 'Người đốn gỗ do Xưởng gỗ quản lý: giao việc ở đây, họ ra cây gần nhất và mang gỗ về kho. Nâng cấp xưởng để thêm người.',
@@ -22,6 +23,7 @@ const HELP: Record<RoleId, string> = {
   cavalry: 'Người cưỡi thú do trại này tuyển và cho nghỉ. Họ xung phong nhanh, khắc người ném nhưng sợ giáo. Nâng cấp trại để chứa thêm.',
   archer: 'Người ném đá, bắn ná do trại này tuyển và cho nghỉ. Họ đánh từ xa và có thể lên chòi canh. Chỉ dùng vũ khí bắn. Nâng cấp trại để chứa thêm.',
   guard: 'Lính gác do Trại lính gác quản lý: chọn thẳng trong số dân rảnh, không cần qua trại lính khác. Mỗi người có một chỗ gác riêng, đứng đó canh làng, ra tay khi thấy công trình bị phá, dân bị tấn công hoặc kẻ lạ tiến vào, rồi quay về chỗ gác. Muốn đổi chỗ gác: chọn lính rồi chạm lên bản đồ. Họ nhìn xa hơn lính thường 5 ô và không vào đội tác chiến. Nâng cấp trại để chứa 6, 12, 18 người.',
+  tower: 'Lính chòi canh được giao ở từng Chòi canh, lấy thẳng từ dân rảnh (không cần Trại cung thủ).',
   scout: 'Trinh sát do Trại trinh sát tuyển từ lính kỵ của Trại kỵ thú (họ giữ thú và đồ của mình) và cho nghỉ về lại trại kỵ. Trinh sát tốt cần Nhanh nhẹn và Thể lực. Nâng cấp trại để chứa thêm.',
 };
 
@@ -33,6 +35,8 @@ export class RolePane {
   readonly root = h('div', { class: 'page' });
   private key = '';
   private readonly roster: Roster;
+  /** The guards shown: all, or only those on one watch (the Trại lính gác). */
+  private filter: '' | Shift = '';
 
   /** `changed` asks whoever shows this pane to draw it again. */
   constructor(private readonly c: Ctx, readonly role: RoleId, private readonly changed: () => void = () => this.update()) { this.roster = new Roster(c); }
@@ -46,7 +50,7 @@ export class RolePane {
 
   stateKey(): string {
     const { sim } = this.c;
-    return [this.role, sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${v.phase === 'sleep' ? 'z' : ''}${Math.round(v.energy / 5)}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
+    return [this.role, this.filter, sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${v.shift}${v.out ? 'o' : ''}${v.housed ? 'H' : ''}${v.phase === 'sleep' ? 'z' : ''}${Math.round(v.energy / 5)}${Math.round(v.health / 5)}${v.armor ? Math.round(v.gear.ad / 5) : ''}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
       sim.scouts.map((m) => m.ids.join('.')).join('|'), sim.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join()].join('|');
   }
 
@@ -60,15 +64,31 @@ export class RolePane {
     const pool = role === 'scout' ? sim.villagers.filter((v) => v.job === 'fight' && !v.guard && v.arm === 'cavalry' && v.down <= 0) : sim.villagers.filter((v) => v.health > 0 && v.down <= 0 && roleOf(v) !== role);
     const key = (v: Villager) => (STAT_OF[role] === 'scout' ? sim.scoutSkill(v) : v.stats[STAT_OF[role] as 'str']);
     const out: Node[] = [hint(h('div', { class: 'dhouse' }, h('b', { text: roleName(role, era) }), dlg.slots(have.length, cap >= 99 ? 99 : cap)), HELP[role])];
+    // the soldiers of a camp live inside it: one button calls the whole camp out (or sends it back), and each soldier has his own
+    const camp = (role === 'foot' || role === 'cavalry' || role === 'archer' || role === 'guard') && have.length > 0;
+    if (camp) {
+      const allOut = have.every((v) => sim.isOut(v)), ids = have.map((v) => v.id);
+      out.push(h('div', { class: 'btns' }, h('button', { class: 'sm', type: 'button', disabled: !!lock, text: allOut ? 'Cho cả trại về' : `Gọi cả trại ra (${have.filter((v) => !sim.isOut(v)).length})`,
+        title: allOut ? 'Cho mọi lính của trại này về trại nghỉ' : 'Gọi mọi lính của trại này ra ngoài, sẵn sàng; bấm lại để cho về',
+        onclick: () => { if (allOut) sim.sendBack(ids); else sim.callOut(ids); this.again(); } })));
+    }
+    // the guards keep a watch by day, by night, or both: a filter over them, and buttons that set the watch of everyone shown at once
+    const guards = role === 'guard', shown = guards && this.filter ? have.filter((v) => v.shift === this.filter) : have;
+    if (guards && have.length) {
+      const WATCH: Array<['' | Shift, string]> = [['', 'Tất cả'], ['day', 'Gác ngày'], ['night', 'Gác đêm'], ['both', 'Cả ngày lẫn đêm']];
+      out.push(h('div', { class: 'btns filters' }, ...WATCH.map(([k, label]) => h('button', { class: 'sm chip', type: 'button', pressed: this.filter === k, text: `${label} (${k ? have.filter((v) => v.shift === k).length : have.length})`, onclick: () => { this.filter = k; this.again(); } }))));
+      const setAll = (shift: Shift) => h('button', { class: 'sm', type: 'button', text: SHIFT_LABEL[shift], disabled: !!lock || !shown.length, title: `Cho ${shown.length} người đang hiện gác: ${SHIFT_LABEL[shift].toLowerCase()}`, onclick: () => { sim.setShift(shown.map((v) => v.id), shift); this.again(); } });
+      out.push(h('div', { class: 'btns' }, h('small', { text: `Đổi ca cả nhóm đang hiện (${shown.length}):` }), setAll('day'), setAll('night'), setAll('both')));
+    }
     if (!cap) out.push(dlg.empty(`Chưa có ${house.toLowerCase()} xong: hãy dựng, rồi giao việc ở đây.`));
     out.push(...this.roster.render({
-      assigned: have, cap, statIds: roleStats(role), stat: key, pool,
+      assigned: shown, cap, statIds: roleStats(role), stat: key, pool,
       addBlock: lock ?? (!cap ? `Cần dựng ${house}` : !room ? `${house} đã đủ chỗ: nâng cấp để chứa thêm` : null),
       add: (v) => sim.assignRole([v.id], role),
       remove: (v) => sim.releaseRole([v.id]),
       removeBlock: (v) => lock ?? (sim.scouts.some((m) => m.ids.includes(v.id)) ? 'Đang đi trinh sát' : null),
-      noteIn: (v) => (v.phase === 'sleep' ? describe(v, sim) : ''),
-      extra: (v) => [def.job === 'fight' ? dlg.button('◎', () => { if (v.inside !== null) { toast(`${v.name} đang ngủ trong trại`); return; } ctl.selected.clear(); ctl.selected.add(v.id); ctl.focusSelection(); ctl.closeBuilding(); }, { icon: true, title: 'Chọn trên bản đồ để ra lệnh' }) : null],
+      noteIn: (v) => `${guards ? `${SHIFT_LABEL[v.shift]}${v.phase === 'sleep' ? ' · ' : ''}` : ''}${v.phase === 'sleep' ? describe(v, sim) : ''}`,
+      extra: (v) => [camp ? h('button', { class: 'sm', type: 'button', disabled: !!lock, text: sim.isOut(v) ? 'Về trại' : 'Gọi ra', title: sim.isOut(v) ? 'Cho lính này về trại nghỉ' : 'Gọi lính này ra ngoài, sẵn sàng; bấm lại để cho về', onclick: () => { if (sim.isOut(v)) sim.sendBack([v.id]); else sim.callOut([v.id]); this.again(); } }) : null, guards ? h('button', { class: 'sm', type: 'button', text: v.shift === 'day' ? '☀' : v.shift === 'night' ? '☾' : '☀☾', title: `${SHIFT_LABEL[v.shift]}: bấm để đổi ca gác`, disabled: !!lock, onclick: () => { sim.setShift([v.id], v.shift === 'day' ? 'night' : v.shift === 'night' ? 'both' : 'day'); this.again(); } }) : null, def.job === 'fight' ? dlg.button('◎', () => { if (v.inside !== null) { toast(`${v.name} đang ngủ trong trại`); return; } ctl.selected.clear(); ctl.selected.add(v.id); ctl.focusSelection(); ctl.closeBuilding(); }, { icon: true, title: 'Chọn trên bản đồ để ra lệnh' }) : null],
       emptyIn: 'Chưa có ai giữ việc này.',
       emptyPool: role === 'scout' ? 'Không còn lính kỵ nào để tuyển.' : 'Không có ai để thêm.',
       again: () => this.again(),

@@ -53,7 +53,7 @@ export type SoldierArm = 'foot' | 'archer' | 'cavalry';
  * A role is a job a villager is given by the house that belongs to it, never at the campfire. Each role has one house; its level decides
  * how many people the role may have. Names change with the era but not the meaning (a stone-age tribe has no archers, only throwers).
  */
-export type RoleId = 'wood' | 'stone' | 'food' | 'hunt' | 'foot' | 'cavalry' | 'archer' | 'guard' | 'scout';
+export type RoleId = 'wood' | 'stone' | 'food' | 'hunt' | 'foot' | 'cavalry' | 'archer' | 'guard' | 'tower' | 'scout';
 export interface RoleDef { job: Job; arm?: SoldierArm; building: BuildingKind; names: Record<Era, string> }
 export const ROLES: Record<RoleId, RoleDef> = {
   wood: { job: 'wood', building: 'lumberyard', names: { stone: 'Đốn gỗ', ancient: 'Tiều phu' } },
@@ -64,6 +64,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   cavalry: { job: 'fight', arm: 'cavalry', building: 'cavalry', names: { stone: 'Kỵ thú', ancient: 'Kỵ binh' } },
   archer: { job: 'fight', arm: 'archer', building: 'archery', names: { stone: 'Thợ ném', ancient: 'Cung thủ' } },
   guard: { job: 'fight', arm: 'foot', building: 'guardpost', names: { stone: 'Lính gác', ancient: 'Lính gác' } },
+  tower: { job: 'fight', arm: 'archer', building: 'tower', names: { stone: 'Lính chòi canh', ancient: 'Lính chòi canh' } },
   scout: { job: 'scout', building: 'scouttent', names: { stone: 'Trinh sát', ancient: 'Trinh sát' } },
 };
 export const ROLE_IDS = Object.keys(ROLES) as RoleId[];
@@ -71,7 +72,7 @@ export const roleName = (role: RoleId, era: Era): string => ROLES[role].names[er
 /** The role a villager has, or null for one with no role (idle, or working inside a house). Farmers of a field belong to the field, not to the Nông trại. */
 export function roleOf(v: { job: Job; arm: SoldierArm; post: number; guard?: boolean }): RoleId | null {
   switch (v.job) {
-    case 'fight': return v.guard ? 'guard' : v.arm === 'archer' ? 'archer' : v.arm === 'cavalry' ? 'cavalry' : 'foot';
+    case 'fight': return v.guard ? (v.post >= 0 ? 'tower' : 'guard') : v.arm === 'archer' ? 'archer' : v.arm === 'cavalry' ? 'cavalry' : 'foot';
     case 'food': return v.post < 0 ? 'food' : null;
     case 'wood': case 'stone': case 'hunt': case 'scout': return v.job;
     default: return null;

@@ -1,5 +1,6 @@
 import { BUILDINGS, Building, BuildingKind, canGrow, levelCapByFire, levelDef, maxHp, maxLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
+import { ROLES, roleOf } from '../sim/jobs';
 import { RES_NAME, Res, Stock } from '../sim/resources';
 import type { Renderer } from '../render/renderer';
 import { costText, h, iconCanvas } from './dom';
@@ -61,7 +62,8 @@ export class BuildingBar {
     const gain = b.kind === 'campfire' ? `kho chứa ${nx.cap} mỗi loại, ${POP_BY_FIRE[b.level]} dân, các nhà khác lên được cấp ${levelCapByFire(b.level + 1)}` : b.kind === 'storage' ? `chứa ${nx.cap} mỗi loại` : b.kind === 'toolstore' || b.kind === 'armory' ? `chứa ${nx.cap} món` : b.kind === 'house' || b.kind === 'infantry' || b.kind === 'cavalry' || b.kind === 'archery' ? `${nx.slots} giường, hồi sức ×${nx.craftSpeed.toLocaleString('vi')}` : b.kind === 'field' ? `năng suất ×${nx.craftSpeed.toLocaleString('vi')}` : `chứa ${nx.slots} người, tốc độ ×${nx.craftSpeed.toLocaleString('vi')}`;
     this.confirm.ask({
       title: `Nâng ${def.name} lên cấp ${b.level + 1}?`,
-      lines: [`${nx.name}: ${gain}. Vật liệu trả ngay, rồi giao Thợ xây để làm (~${workDays(nx.buildTime)}).${sim.dev.freeBuild ? ' Đang bật xây miễn phí.' : ''}`],
+      lines: [`${nx.name}: ${gain}. Vật liệu trả ngay, rồi giao Thợ xây để làm (~${workDays(nx.buildTime)}).${sim.dev.freeBuild ? ' Đang bật xây miễn phí.' : ''}`,
+        ...(b.kind === 'campfire' ? sim.upgradeAdvice(b.level).map((a) => `${a.bad ? '⚠' : '✓'} ${a.text}`) : [])],
       cost: sim.dev.freeBuild ? {} : nx.cost, costTitle: 'Vật liệu cần', why: sim.canUpgrade(b), ok: 'Nâng cấp',
       onOk: () => { const e = sim.upgradeBuilding(b.id); toast(e ?? 'Đã trả vật liệu. Giao Thợ xây để nâng cấp'); ctl.onChange(); },
     });
@@ -81,8 +83,12 @@ export class BuildingBar {
   private yieldLine(b: Building): string | undefined {
     const key = YIELD_OF[b.kind]; if (!key || !b.done) return undefined;
     const y = this.c.sim.dailyYield(b); if (!y) return undefined;
-    const unit = key === 'hunt' ? 'sản vật' : key === 'wood' ? 'gỗ' : key === 'stone' ? 'đá' : 'thức ăn';
-    return y.people ? `Sản xuất ~${Math.round(y.amount)} ${unit}/ngày · ${y.people} người đang làm` : `Chưa có ai làm việc: chưa sản xuất ${unit}`;
+    const unit = key === 'hunt' ? 'thịt' : key === 'wood' ? 'gỗ' : key === 'stone' ? 'đá' : 'thức ăn';
+    const base = y.people ? `Sản xuất ~${Math.round(y.amount)} ${unit}/ngày · ${y.people} người đang làm` : `Chưa có ai làm việc: chưa sản xuất ${unit}`;
+    if (key !== 'hunt') return base;
+    const { yieldNow, yieldPrev } = this.c.sim, spoils = (r: Record<string, number>) => [['hunt.food', 'thịt'], ['hunt.hide', RES_NAME.hide.toLowerCase()], ['hunt.feather', RES_NAME.feather.toLowerCase()]]
+      .filter(([k]) => (r[k] ?? 0) > 0).map(([k, name]) => `${Math.round(r[k])} ${name}`).join(', ') || 'chưa có';
+    return `${base} · Hôm nay: ${spoils(yieldNow)} · Hôm qua: ${spoils(yieldPrev)}`;
   }
 
   /** Refresh what the card says and which buttons show; called as often as the screen is drawn. */
@@ -96,6 +102,9 @@ export class BuildingBar {
     const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
     const hp = b.done ? ` · bền ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? ' · đang cháy' : b.hp <= maxHp(b) * 0.7 ? ' · bốc khói' : ''}` : '';
     const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < top;
+    // a camp of soldiers: one button calls all of its soldiers out of the camp, or sends them back when they are all out
+    const campRole = (['foot', 'cavalry', 'archer', 'guard'] as const).find((r) => ROLES[r].building === b.kind), camp = campRole ? this.c.sim.villagers.filter((v) => roleOf(v) === campRole) : [];
+    const campOut = { ids: camp.map((v) => v.id), all: camp.length > 0 && camp.every((v) => this.c.sim.isOut(v)) };
     this.card.set({
       picKey: `${b.kind}${b.level}${b.done}`,
       pic: () => { try { return iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0]); } catch { return '🏠'; } },
@@ -111,6 +120,7 @@ export class BuildingBar {
         { id: 'open', label: OPEN_LABEL[b.kind], tone: 'primary', hidden: ctl.groupMode || !b.done || b.kind === 'fence' || b.kind === 'gate', onClick: () => ctl.selectBuilding(b.id, true) },
         { id: 'gate', label: b.open ? 'Đóng cổng' : 'Mở cổng', tone: 'primary', hidden: ctl.groupMode || !(b.kind === 'gate' && b.done), onClick: () => { const e = sim.toggleGate(b.id); if (e) toast(e); ctl.onChange(); } },
         { id: 'up', label: 'Nâng cấp', hidden: ctl.groupMode || !upgradable, onClick: () => this.askUpgrade(b) },
+        { id: 'callall', label: campOut.all ? 'Cho về hết' : 'Gọi tất cả', title: campOut.all ? 'Cho mọi lính của trại này về trại nghỉ' : 'Gọi mọi lính của trại này ra ngoài, sẵn sàng; bấm lại để cho về', hidden: ctl.groupMode || !b.done || !campOut.ids.length, onClick: () => { if (campOut.all) sim.sendBack(campOut.ids); else sim.callOut(campOut.ids); ctl.onChange(); } },
         { id: 'move', label: 'Di dời', title: 'Di dời (miễn phí)', hidden: ctl.groupMode || !def.buildable, onClick: () => ctl.startMoving(b.id) },
         { id: 'del', label: 'Phá bỏ', tone: 'danger', hidden: ctl.groupMode || !def.buildable, onClick: () => this.askDemolish(b) },
       ],

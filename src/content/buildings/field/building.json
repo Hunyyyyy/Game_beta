@@ -6,7 +6,7 @@
   3,
   3
  ],
- "buildable": true,
+ "buildable": false,
  "unlockFire": 1,
  "requires": [
   "builder"

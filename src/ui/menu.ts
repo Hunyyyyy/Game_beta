@@ -129,85 +129,27 @@ export class Menu {
   }
 
   // ---------------------------------------------------------------- dev tools
+  /** Only what is needed to try the game fast: a camp of each level, quick and free works, goods, an event for the level, immortality, time and weather. */
   private devPage(): HTMLElement {
-    const { sim, ctl, toast } = { ...this.c, toast: this.c.toast }, page = h('div', { class: 'page' });
-    const sel = () => [...ctl.selected];
+    const { sim, ctl, toast } = this.c, page = h('div', { class: 'page' });
     const btn = (text: string, fn: () => void, title = '') => h('button', { class: 'sm', text, title, onclick: () => { fn(); ctl.onChange(); this.update(); } });
-    const row = (label: string, ...kids: Array<Node | string>) => h('div', { class: 'devrow' }, h('span', { text: label }), ...kids);
-    const toggle = (label: string, key: keyof typeof sim.dev, tip: string) => { const b = h('button', { class: 'sm', text: label, title: tip, pressed: sim.dev[key], onclick: () => { sim.dev[key] = !sim.dev[key]; b.setAttribute('aria-pressed', String(sim.dev[key])); } }); return b; };
-    // ---- battle testing
-    page.append(hint('Thử chiến đấu', 'Bấm "Mở hết để đánh" trước: nhà cấp cao nhất, mọi nghiên cứu, kho đầy, đồ trong kho. Rồi lập quân, dựng phòng tuyến, đưa cung thủ lên chòi và gọi địch tới. Bật "Bất tử" nếu chỉ muốn xem địch phá hàng rào.'));
-    page.append(h('div', { class: 'devrow' }, btn('Mở hết để đánh', () => { dev.combatReady(sim); toast('Đã mở hết: nhà, nghiên cứu, kho, đồ'); }, 'Nhà cấp cao nhất, mọi nghiên cứu, kho đầy, vũ khí trong kho, Nhà chung cấp 4'),
-      btn('Dựng phòng tuyến', () => { const n = dev.defenseLine(sim); toast(n ? `Đã dựng ${n} đoạn rào, cổng và chòi quanh làng` : 'Không dựng được (chưa mở hết?)'); }, 'Vòng rào có cổng phía nam và hai chòi canh'),
-      btn('Cung thủ lên chòi', () => toast(`${dev.garrisonTowers(sim)} cung thủ lên chòi`)),
-      btn('Mở mọi cổng', () => sim.setGates(true)), btn('Đóng mọi cổng', () => sim.setGates(false))));
-    page.append(h('p', { class: 'sub', text: 'Chiến lược (Lều họp chiến, tab Chiến):' }));
-    page.append(h('div', { class: 'devrow' }, btn('Bản đồ cấp 3 mọi làng', () => dev.giveMaps(sim, 3)), btn('Lập 3 đội mẫu', () => { dev.formSquads(sim); toast('Ba đội đã lập: giáo binh, cung thủ, xung kích'); }),
-      btn('Kế hoạch tấn công mẫu', () => { const p = dev.sampleAttack(sim); toast(p ? 'Đã soạn kế hoạch mẫu: mở tab Chiến → Kế hoạch tấn công' : 'Lập đội mẫu trước'); }), btn('Kế hoạch phòng thủ mẫu', () => { const p = dev.sampleDefense(sim); toast(p ? 'Đã soạn mẫu phòng thủ' : 'Lập đội mẫu trước'); }),
-      btn('Bắt đầu kế hoạch tấn công', () => { const p = sim.plans.find((x) => x.kind === 'attack'); toast(p ? sim.startPlan(p) ?? 'Kế hoạch bắt đầu' : 'Chưa có kế hoạch'); }), btn('Đánh trống báo động', () => { const e = sim.soundAlarm(); if (e) toast(e); })));
-    page.append(h('p', { class: 'sub', text: 'Lập quân (tuyển và phát đồ ngay):' }));
-    for (const n of [4, 12]) page.append(h('div', { class: 'devrow' }, ...(Object.keys(dev.DEV_KITS) as dev.DevKit[]).map((k) => btn(`+${n} ${dev.DEV_KITS[k].name}`, () => { dev.raiseArmy(sim, k, n); }))));
-    page.append(h('p', { class: 'sub', text: 'Địch tới (Rìu Đá):' }));
-    const wave = (label: string, weapons: string[]) => btn(label, () => { const e = dev.enemyWave(sim, 'axe', weapons); if (e) toast(e); });
-    page.append(h('div', { class: 'devrow' }, wave('6 bộ binh', dev.times(6, 'club')), wave('6 giáo', dev.times(6, 'spear')), wave('6 cung thủ', [...dev.times(3, 'bow'), ...dev.times(3, 'sling')]),
-      wave('12 hỗn hợp', [...dev.times(4, 'club'), ...dev.times(4, 'spear'), ...dev.times(4, 'bow')]), wave('24 hỗn hợp', [...dev.times(8, 'club'), ...dev.times(8, 'spear'), ...dev.times(8, 'bow')])));
-    page.append(h('div', { class: 'devrow' }, btn('Hồi đầy lính', () => dev.heal(sim, sim.villagers.filter((v) => v.job === 'fight').map((v) => v.id))), btn('Xóa hết địch', () => { for (const f of [...sim.foes].filter((u) => u.ai?.role === 'raider')) sim.killFoe(f); })));
-
-    page.append(hint('Tài nguyên', 'Công cụ dev để thử game nhanh, không dùng khi chơi thật.'));
-    for (const res of RES_LIST) page.append(row(RES_NAME[res], btn('−10', () => dev.addStock(sim, res, -10)), btn('+10', () => dev.addStock(sim, res, 10)), btn('+50', () => dev.addStock(sim, res, 50)), btn('+200', () => dev.addStock(sim, res, 200))));
-    page.append(row('Kho', btn('Đầy kho', () => dev.fillStock(sim))), h('div', { class: 'devrow' }, toggle('Xây miễn phí', 'freeBuild', 'Không tốn vật liệu khi xây và nâng cấp'), toggle('Xây tức thì', 'instantBuild', 'Công trình xong ngay'),
-      toggle('Bất tử', 'god', 'Dân không nhận sát thương'), toggle('Không mệt', 'noTire', 'Sức của dân không tụt khi làm việc'), toggle('Làm việc nhanh ×25', 'fastWorks', 'Nghiên cứu, chế tạo nhanh gấp 25 lần')), h('div', { class: 'devrow' }, btn('Khám phá toàn bản đồ', () => dev.revealMap(sim))));
-
-    const rsec = h('div', {}, h('h3', { text: 'Nghiên cứu' }), h('div', { class: 'devrow' }, btn('Mở hết nghiên cứu', () => dev.unlockResearch(sim), 'Mọi công thức và cấp công trình'), btn('Khóa lại hết', () => dev.resetResearch(sim))));
-    page.append(rsec); this.updaters.push(() => { rsec.hidden = !RESEARCH.enabled; });
-    page.append(hint('Nhà và luồng chế tạo', 'Thử luồng: mở hết nghiên cứu hoặc dựng sẵn nhà → bật "tự lấy đồ" và "tự đặt hàng" → làm hỏng công cụ dân đang chọn → xem họ tới Kho, Nhà chế tạo.'));
-    page.append(h('div', { class: 'devrow' }, btn('Dựng sẵn mọi nhà', () => dev.buildAll(sim), 'Xây xong ngay các nhà còn thiếu, bỏ qua nghiên cứu'), btn('Nâng mọi nhà tối đa', () => dev.maxBuildings(sim)), btn('Xếp người vào các nhà', () => dev.staffAll(sim), 'Mỗi nhà đầy người làm việc phù hợp nhất')));
-    page.append(h('div', { class: 'devrow' }, btn('Làm hỏng công cụ của dân chọn', () => dev.wearTools(sim, sel(), 0)), btn('Mòn còn 50%', () => dev.wearTools(sim, sel(), 0.5)), btn('Thu hết công cụ', () => { for (const k of TOOL_KINDS) sim.giveTool(sel(), k, 0); })));
-    page.append(h('h3', { text: 'Công cụ, vũ khí, giáp' }));
-    page.append(row('Kho đồ', btn('+3 mỗi loại vào kho', () => dev.stockWorkshop(sim, 3), 'Công cụ, vũ khí và giáp có sẵn trong kho')));
-    const tools = h('div', { class: 'devrow' });
-    for (const k of TOOL_KINDS) for (const tier of [1, 2]) tools.append(btn(`${TOOL_NAME[k]} ${TIER_NAME[tier].toLowerCase()}`, () => sim.giveTool(sel(), k, tier), 'Cấp cho dân đang chọn'));
-    tools.append(btn('Thu công cụ', () => { for (const k of TOOL_KINDS) sim.giveTool(sel(), k, 0); }));
-    page.append(h('p', { class: 'sub', text: 'Cho dân đang chọn:' }), tools);
-    const gear = h('div', { class: 'devrow' });
-    for (const id of Object.keys(WEAPONS)) if (id !== 'fist') gear.append(btn(WEAPONS[id].name, () => sim.giveGear(sel(), id, 'weapon')));
-    gear.append(btn('Tay không', () => sim.giveGear(sel(), null, 'weapon')), btn('Áo da', () => sim.giveGear(sel(), 'hide', 'armor')), btn('Bỏ giáp', () => sim.giveGear(sel(), null, 'armor')));
-    page.append(gear);
-
-    page.append(h('h3', { text: 'Dân đang chọn' }));
-    const who = h('p', { class: 'sub' }); page.append(who);
-    const statVals = new Map<StatKey, HTMLElement>();
-    for (const k of Object.keys(STAT_NAME) as StatKey[]) { const v = h('b', { text: '–' }); statVals.set(k, v); page.append(row(STAT_NAME[k], btn('−', () => dev.bumpStat(sim, sel(), k, -1)), v, btn('+', () => dev.bumpStat(sim, sel(), k, 1)))); }
-    page.append(h('div', { class: 'devrow' }, btn('Hồi đầy máu', () => dev.heal(sim, sel())), btn('Ngã xuống', () => { for (const id of sel()) sim.hurt({ kind: 'unit', id }, 9999, 'crush', { x: 0, y: 0 }, {}); }), btn('Xóa dân', () => dev.eachSelected(sim, sel(), (v) => sim.killUnit(v, '(dev)')))));
-    page.append(h('div', { class: 'devrow' }, btn('+1 dân', () => dev.addVillagers(sim, 1)), btn('+5 dân', () => dev.addVillagers(sim, 5))));
-    this.updaters.push(() => {
-      const v = sel().map((id) => sim.get(id)).find((u) => u && u.team === 'player');
-      who.textContent = v ? `${v.name}${ctl.selected.size > 1 ? ` (và ${ctl.selected.size - 1} người khác, chỉ số hiện của người đầu tiên)` : ''}` : 'Chưa chọn dân nào.';
-      for (const [k, el] of statVals) el.textContent = v ? String(v.stats[k]) : '–';
-    });
+    const toggle = (label: string, tip: string, get: () => boolean, set: (on: boolean) => void) => {
+      const b = h('button', { class: 'sm', text: label, title: tip, pressed: get(), onclick: () => { set(!get()); b.setAttribute('aria-pressed', String(get())); ctl.onChange(); } });
+      return b;
+    };
+    page.append(hint('Mô phỏng trại', 'Dựng sẵn trại của cấp lửa đã chọn: mọi nhà mở ở cấp đó (số lượng và cấp tối đa theo cấp lửa), hàng rào, cổng và chòi canh khi đã mở, dân đầy giường, lính và các nghề đã có người, lính được phát vũ khí và giáp. Không tốn gì.'));
+    page.append(h('div', { class: 'devrow' }, ...[1, 2, 3, 4].map((n) => btn(`Trại cấp ${n}`, () => toast(dev.simulateCamp(sim, n)), `Dựng trại cấp ${n} đầy đủ`))));
+    page.append(h('div', { class: 'devrow' },
+      toggle('Nghiên cứu, chế tạo, thuần thú nhanh + miễn phí', 'Làm ×25 nhanh và không tốn vật liệu cho nghiên cứu, chế tạo và thuần thú', () => sim.dev.freeWorks, (on) => { sim.dev.freeWorks = on; sim.dev.fastWorks = on; }),
+      toggle('Bất tử', 'Dân không nhận sát thương', () => sim.dev.god, (on) => { sim.dev.god = on; })));
+    page.append(h('div', { class: 'devrow' },
+      btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),
+      btn('Gọi sự kiện (theo cấp lửa)', () => toast(dev.callEvent(sim)), 'Gọi ngay sự kiện đã hẹn mạnh nhất mà trại cấp lửa hiện tại đủ sức đón')));
 
     page.append(h('h3', { text: 'Thời gian và thời tiết' }));
     page.append(h('div', { class: 'devrow' }, btn('Sáng', () => dev.setTimeOfDay(sim, 0.3)), btn('Trưa', () => dev.setTimeOfDay(sim, 0.5)), btn('Chiều', () => dev.setTimeOfDay(sim, 0.78)), btn('Đêm', () => dev.setTimeOfDay(sim, 0.95)), btn('+1 ngày', () => dev.skipDays(sim, 1)), btn('+5 ngày', () => dev.skipDays(sim, 5))));
     page.append(h('div', { class: 'devrow' }, ...SEASONS.map((s) => btn(SEASON_NAME[s], () => dev.setSeason(sim, s)))));
     page.append(h('div', { class: 'devrow' }, ...(Object.keys(WEATHER) as WeatherKind[]).map((k) => btn(WEATHER[k].name, () => dev.setWeather(sim, k)))));
-
-    page.append(h('h3', { text: 'Sức mạnh (kinh tế + quân sự)' }));
-    const powerNote = h('p', { class: 'sub' }); page.append(powerNote);
-    const f1 = (n: number) => n.toFixed(1);
-    this.updaters.push(() => {
-      const me = sim.power(), cap = playerCap(sim.campfire()?.level ?? 1);
-      powerNote.textContent = [`Trần của ta ở cấp lửa này: ${f1(cap.total)} (kinh tế ${f1(cap.economy)} · quân sự ${f1(cap.military)}) · mục tiêu cả các làng: ${f1(cap.total / DIFF.playerEdge)}`, `Làng ta: ${f1(me.total)} (kinh tế ${f1(me.economy)} từ ${me.workers} người · quân sự ${f1(me.military)} từ ${me.soldiers} lính)`, ...sim.tribes.map((t) => { const p = sim.tribePower(t); return `${t.def.name} (trại cấp ${t.campLevel}, k ${(t.k ?? 0).toFixed(2)}, +${Math.round((t.mil ?? 0) * 100)}% chiến · +${Math.round((t.eco ?? 0) * 100)}% làm): ${f1(p.total)} (kinh tế ${f1(p.economy)} · ${p.workers} người · quân sự ${f1(p.military)} · ${p.soldiers} lính)`; })].join('\n');
-      powerNote.style.whiteSpace = 'pre-line';
-    });
-
-    page.append(h('h3', { text: 'Sự kiện, thú, bộ tộc' }));
-    page.append(h('div', { class: 'devrow' }, btn('Sói ×4 tới', () => dev.wolvesNow(sim, 4)), btn('Sói ×8 tới', () => dev.wolvesNow(sim, 8)), btn('Xóa hết thú', () => dev.clearAnimals(sim))));
-    page.append(h('div', { class: 'devrow' }, ...dev.DEV_SPECIES.map((s) => btn(`+3 ${s}`, () => { const c = this.center(); dev.spawnAt(sim, s, c.x, c.y, 3); }, 'Sinh thú ở giữa màn hình'))));
-    for (const id of dev.DEV_TRIBES) {
-      const t = sim.tribes.find((x) => x.id === id); if (!t) continue;
-      page.append(row(t.def.name.slice(0, 9), btn('Tập kích', () => { const e = dev.raidNow(sim, id as TribeId, 10); if (e) toast(e); }), btn('Đầu hàng', () => dev.surrenderNow(sim, id as TribeId)),
-        btn('Quan hệ −20', () => dev.bumpRelation(sim, id as TribeId, -20)), btn('+20', () => dev.bumpRelation(sim, id as TribeId, 20)), btn('Tới trại', () => { ctl.centerOn(t.camp.x * TILE, t.camp.y * TILE); this.close(); })));
-    }
     return page;
   }
 

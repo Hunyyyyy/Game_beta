@@ -146,6 +146,12 @@ export interface Villager {
   mount: MountKind | null;
   /** A soldier of the Trại lính gác: he keeps a post of his own (`guardAt`) and comes back to it after each fight. */
   guard: boolean;
+  /** A soldier of a camp the player called out by hand: he stays out of his camp (night too) until he is sent back. */
+  out?: boolean;
+  /** A guard the player has called into the Trại lính gác (he sleeps there instead of standing at his post) until he is called out again. */
+  housed?: boolean;
+  /** Ordered home by the player ("Cho quân về"): he drops the fight he is in and goes to his camp, and takes up nothing else on the way. */
+  recall?: boolean;
   guardAt: { x: number; y: number } | null;
   /** Stars (1 to 5) and the personal factor of each of the eight stats (data/stats.json); absent in a save from before, which counts as all 1. */
   stars: number;
@@ -332,4 +338,6 @@ export interface Notice {
   tip: string;
   /** A building to go to for it (the screen opens it), with the word for the button. */
   action?: { building: string; label: string };
+  /** The people the notice is about: the screen can open their details so the player can change what they do. */
+  people?: number[];
 }

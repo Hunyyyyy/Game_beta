@@ -70,7 +70,15 @@ export function discardTool(sim: Sim, ids: readonly number[], k: ToolKind): void
 
 // ---------------------------------------------------------------- weapons and armour wear out
 const gearName = (slot: 'weapon' | 'armor', id: string) => (slot === 'armor' ? ARMORS[id]?.name : WEAPONS[id]?.name)?.toLowerCase() ?? id;
-const gearId = (slot: 'weapon' | 'armor', id: string) => (slot === 'armor' ? 'hide1' : `${id}${WEAPONS[id]?.tier ?? 1}`);
+const gearId = (slot: 'weapon' | 'armor', id: string) => (slot === 'armor' ? `${id}${ARMORS[id]?.tier ?? 1}` : `${id}${WEAPONS[id]?.tier ?? 1}`);
+/** The key of a suit of armour in the stores (hide1, bone2). */
+const armorKey = (k: string): string => `${k}${ARMORS[k]?.tier ?? 1}`;
+/** The best suit the stores hold (the highest tier), or null. */
+export function bestArmor(sim: Sim): string | null {
+  let best: string | null = null, top = 0;
+  for (const k of Object.keys(ARMORS)) { const t = ARMORS[k].tier ?? 1; if (t > top && toolCount(sim, k, t) > 0) { best = k; top = t; } }
+  return best;
+}
 
 /**
  * One blow struck (weapon) or taken (armour). Worn to nothing, the piece is lost for good. Only our own people's gear wears.
@@ -92,21 +100,21 @@ export function wearGear(sim: Sim, v: Villager, slot: 'weapon' | 'armor'): void 
 export function giveGear(sim: Sim, ids: readonly number[], kind: string | null, slot: 'weapon' | 'armor'): void {
   for (const v of sim.mine(ids)) {
     if (slot === 'weapon') v.weapon = kind; else v.armor = kind;
-    if (kind) sim.say(`${v.name} được cấp ${kind === 'hide' ? ARMORS.hide.name.toLowerCase() : WEAPONS[kind].name.toLowerCase()}.`);
+    if (kind) sim.say(`${v.name} được cấp ${(kind in ARMORS ? ARMORS[kind].name : WEAPONS[kind].name).toLowerCase()}.`);
   }
 }
 
 /** Give a villager a weapon or armour from the workshop's stock (the old piece goes back); null hands it back. Returns an error or null. */
 export function assignGear(sim: Sim, ids: readonly number[], kind: string | null, slot: 'weapon' | 'armor'): string | null {
-  const key = (k: string) => (k === 'hide' ? 'hide1' : `${k}${WEAPONS[k].tier ?? 1}`);
-  const nameOf = (k: string) => (k === 'hide' ? ARMORS.hide.name : WEAPONS[k].name).toLowerCase();
+  const key = (k: string) => (k in ARMORS ? armorKey(k) : `${k}${WEAPONS[k].tier ?? 1}`);
+  const nameOf = (k: string) => (k in ARMORS ? ARMORS[k].name : WEAPONS[k].name).toLowerCase();
   const people = sim.mine(ids);
   if (kind && !sim.hasWorkshop() && !sim.building('armory')) return 'Cần có Nhà chế tạo hoặc Kho vũ khí để lấy đồ';
   let given = 0, short = false;
   for (const v of people) {
     const cur = slot === 'weapon' ? v.weapon : v.armor;
     if (cur === kind) { v.manualGear = true; continue; }
-    if (kind) { if (toolCount(sim, kind === 'hide' ? 'hide' : kind, kind === 'hide' ? 1 : WEAPONS[kind].tier ?? 1) <= 0) { short = true; continue; } sim.toolStock[key(kind)]--; }
+    if (kind) { if (toolCount(sim, kind, kind in ARMORS ? ARMORS[kind].tier ?? 1 : WEAPONS[kind].tier ?? 1) <= 0) { short = true; continue; } sim.toolStock[key(kind)]--; }
     if (cur) sim.toolStock[key(cur)] = (sim.toolStock[key(cur)] ?? 0) + 1;
     if (slot === 'weapon') v.weapon = kind; else v.armor = kind;
     v.manualGear = true; given++;
@@ -156,13 +164,16 @@ export function goTo(sim: Sim, v: Villager, b: Building, phase: 'goEquip' | 'goO
   v.target = b.id; v.phase = phase; return true;
 }
 
-/** Without a usable tool: fetch one from the Kho công cụ, else (once researched) go and order one. */
+/** Villagers ordering tools, weapons and armour from the Nhà chế tạo by themselves: switched off for now (the player orders them). Turn on to bring it back. */
+const AUTO_ORDER = false;
+
+/** Without a usable tool: fetch one from the Kho công cụ (and, when AUTO_ORDER is on, once researched go and order one). */
 export function planTool(sim: Sim, v: Villager, job: WorkJob): boolean {
   const k = TOOL_OF_JOB[job];
   if (!k || !toolLacking(sim, v, job)) return false;
   const store = sim.building('toolstore');
   if (store && needTool(sim, v, job)) return goTo(sim, v, store, 'goEquip');
-  if (v.orderCd > 0) return false;
+  if (!AUTO_ORDER || v.orderCd > 0) return false;
   v.orderCd = 45;
   const craftHouse = sim.building('workshop');
   if (!craftHouse) return false;
@@ -203,12 +214,12 @@ export function equip(sim: Sim, v: Villager): void {
   sim.say(`${v.name} nhận ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t].toLowerCase()}.`);
 }
 
-/** A soldier or hunter with empty hands goes to the Kho vũ khí (once fetching is researched) for a weapon, a soldier also for armour. */
+/** A soldier or hunter with empty hands goes to the Kho vũ khí (once fetching is researched) for a weapon, and for the hide armour when he has none. */
 export function planEquipGear(sim: Sim, v: Villager): boolean {
   if ((v.job !== 'hunt' && v.job !== 'fight') || v.phase === 'fight' || v.manualGear) return false;
   const armory = sim.building('armory');
   if (!armory) return false;
-  const wantsWeapon = !v.weapon && !!bestWeapon(sim, v), wantsArmor = v.job === 'fight' && !v.armor && toolCount(sim, 'hide', 1) > 0;
+  const wantsWeapon = !v.weapon && !!bestWeapon(sim, v), wantsArmor = !v.armor && !!bestArmor(sim); // soldiers and hunters both wear armour
   if (!wantsWeapon && !wantsArmor) return false;
   return goTo(sim, v, armory, 'goEquip');
 }
@@ -219,27 +230,28 @@ export function equipGear(sim: Sim, v: Villager): void {
     sim.toolStock[`${best}${WEAPONS[best].tier ?? 1}`]--;
     v.weapon = best; sim.say(`${v.name} nhận ${WEAPONS[best].name.toLowerCase()}.`);
   }
-  if (v.job === 'fight' && !v.armor && toolCount(sim, 'hide', 1) > 0) {
-    sim.toolStock.hide1--; v.armor = 'hide'; sim.say(`${v.name} mặc ${ARMORS.hide.name.toLowerCase()}.`);
-  }
+  const suit = !v.armor ? bestArmor(sim) : null; // the best suit the store has
+  if (suit) { sim.toolStock[armorKey(suit)]--; v.armor = suit; sim.say(`${v.name} mặc ${ARMORS[suit].name.toLowerCase()}.`); }
 }
 
 /** With ordering researched, a soldier or hunter who has nothing to fight with asks the Nhà chế tạo for a weapon (a soldier also for armour). */
 export function planGearErrand(sim: Sim, v: Villager): boolean {
-  if ((v.job !== 'hunt' && v.job !== 'fight') || v.phase === 'fight' || v.manualGear || v.orderCd > 0) return false;
+  if (!AUTO_ORDER || (v.job !== 'hunt' && v.job !== 'fight') || v.phase === 'fight' || v.manualGear || v.orderCd > 0) return false;
   const house = sim.building('workshop');
   if (!house) return false;
   const have = (re: RegExp) => Object.entries(sim.toolStock).some(([id, n]) => n > 0 && re.test(id)) || sim.craftQueue.some((id) => re.test(id)) || !!house.active && re.test(house.active.id);
   let id = '';
-  if (!v.weapon && !have(/^(club|spear|mace)/)) {
+  // the kind he may carry: throwers the ranged ones, foot the blows, a rider, a guard or a hunter whatever is best (the same rule as bestWeapon)
+  const mayCarry = (w: string) => !(w === 'mace' && v.job !== 'fight') && (v.job !== 'fight' || v.guard || v.arm === 'cavalry' || (v.arm === 'archer') === !!WEAPONS[w].ranged);
+  if (!v.weapon && !CRAFTED_WEAPONS.some((w) => mayCarry(w) && have(new RegExp(`^${w}\\d`)))) {
     let bestScore = -1;
     for (const w of CRAFTED_WEAPONS) {
       const rid = `${w}${WEAPONS[w].tier ?? 1}`;
-      if (!sim.recipeOpen(rid) || (w === 'mace' && v.job !== 'fight')) continue;
+      if (!sim.recipeOpen(rid) || !mayCarry(w)) continue;
       const sc = WEAPONS[w].damage / WEAPONS[w].cycle;
       if (sc > bestScore) { bestScore = sc; id = rid; }
     }
-  } else if (v.job === 'fight' && !v.armor && !have(/^hide/) && sim.recipeOpen('hide1')) id = 'hide1';
+  } else if (v.job === 'fight' && !v.armor && !have(/^(hide|bone)/) && sim.recipeOpen('hide1')) id = 'hide1';
   v.orderCd = 60;
   if (!id) return false;
   v.order = `craft:${id}`;

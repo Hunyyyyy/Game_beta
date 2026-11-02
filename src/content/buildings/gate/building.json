@@ -28,7 +28,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 30,
+    "hp": 300,
     "sight": 0
    },
    {
@@ -41,7 +41,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 90,
+    "hp": 900,
     "sight": 0
    },
    {
@@ -54,7 +54,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 180,
+    "hp": 1800,
     "sight": 0
    },
    {
@@ -67,7 +67,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 360,
+    "hp": 3600,
     "sight": 0
    }
   ]

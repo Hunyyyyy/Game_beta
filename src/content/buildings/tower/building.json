@@ -7,7 +7,7 @@
   2
  ],
  "buildable": true,
- "unlockFire": 3,
+ "unlockFire": 2,
  "requires": [
   "fence"
  ],
@@ -15,7 +15,7 @@
   0,
   1,
   2,
-  3
+  4
  ],
  "levels": {
   "stone": [
@@ -28,7 +28,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 2,
-    "hp": 150,
+    "hp": 400,
     "sight": 10
    },
    {
@@ -40,8 +40,8 @@
     "buildTime": 130,
     "cap": 0,
     "craftSpeed": 1,
-    "slots": 4,
-    "hp": 300,
+    "slots": 3,
+    "hp": 700,
     "sight": 13
    },
    {
@@ -53,8 +53,8 @@
     "buildTime": 211,
     "cap": 0,
     "craftSpeed": 1,
-    "slots": 6,
-    "hp": 600,
+    "slots": 4,
+    "hp": 1200,
     "sight": 16
    },
    {
@@ -66,8 +66,8 @@
     "buildTime": 342,
     "cap": 0,
     "craftSpeed": 1,
-    "slots": 8,
-    "hp": 1200,
+    "slots": 4,
+    "hp": 1800,
     "sight": 19
    }
   ]

@@ -51,6 +51,8 @@ export class Controller {
   private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; px: number; py: number }>();
   private gesture: { dist: number; mid: { x: number; y: number }; acc: number } | null = null;
   private tapDead = false;
+  /** The finger that went down while placing started on the building being placed: it drags the building, not the map. */
+  private dragGhost = false;
 
   constructor(private readonly el: HTMLCanvasElement, private readonly sim: Sim, private readonly cam: Camera, private readonly r: Renderer) {
     el.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -83,7 +85,7 @@ export class Controller {
     this.el.focus();
     if (e.pointerType === 'touch') {
       this.touches.set(e.pointerId, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: performance.now(), px: p.x, py: p.y });
-      if (this.touches.size === 1) this.tapDead = false;
+      if (this.touches.size === 1) { this.tapDead = false; this.dragGhost = this.onGhost(p); }
       if (this.touches.size === 2) this.startGesture();
       return;
     }
@@ -101,15 +103,15 @@ export class Controller {
       if (this.touches.size >= 2) { this.moveGesture(); return; }
       if (Math.hypot(t.x - t.sx, t.y - t.sy) > 10) {
         if (this.multi) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
-        else if (this.placing) this.placeAt = this.originAt(p);
-        else { // one finger dragging the ground moves the map (a tap still gives the order); two fingers still pinch to zoom
+        else if (this.placing && this.dragGhost) this.placeAt = this.originAt(p); // a finger that started on the building being placed or moved drags it
+        else { // one finger dragging the ground (also while placing, away from the building) moves the map (a tap still gives the order); two fingers still pinch to zoom
           this.cam.x -= (t.x - t.px) / this.cam.zoom; this.cam.y -= (t.y - t.py) / this.cam.zoom; this.clamp(); this.tapDead = true;
         }
       }
       t.px = t.x; t.py = t.y;
       return;
     }
-    if (this.placing) this.placeAt = this.originAt(p);
+    if (this.placing && !this.left?.moved) this.placeAt = this.originAt(p);
     if (this.right) {
       if (!this.right.moved && Math.hypot(p.x - this.right.x, p.y - this.right.y) > 5) { this.right.moved = true; this.el.style.cursor = 'grabbing'; }
       if (this.right.moved) { this.cam.x -= (p.x - this.right.x) / this.cam.zoom; this.cam.y -= (p.y - this.right.y) / this.cam.zoom; this.right.x = p.x; this.right.y = p.y; this.clamp(); }
@@ -117,7 +119,17 @@ export class Controller {
     if (this.left) {
       if (!this.left.moved && Math.hypot(p.x - this.left.x, p.y - this.left.y) > 5) this.left.moved = true;
       if (this.left.moved && this.multi) this.box = { x0: this.left.x, y0: this.left.y, x1: p.x, y1: p.y };
+      else if (this.left.moved && this.placing) { // dragging with the left button while placing or moving a building pans the map; the building stays where it was
+        this.cam.x -= (p.x - this.left.x) / this.cam.zoom; this.cam.y -= (p.y - this.left.y) / this.cam.zoom; this.left.x = p.x; this.left.y = p.y; this.clamp(); this.el.style.cursor = 'grabbing';
+      }
     }
+  }
+
+  /** Is the screen point on (or close to) the building being placed or moved: a finger there drags the building, anywhere else it drags the map. */
+  private onGhost(p: { x: number; y: number }): boolean {
+    if (!this.placing || !this.placeAt) return false;
+    const w = this.r.screenToWorld(p.x, p.y), tx = w.x / TILE, ty = w.y / TILE, d = BUILDINGS[this.placing], slack = this.groupMoving ? 4 : 1;
+    return tx >= this.placeAt.x - slack && tx <= this.placeAt.x + d.w + slack && ty >= this.placeAt.y - slack - 1 && ty <= this.placeAt.y + d.h + slack;
   }
 
   private pointerUp(e: PointerEvent): void {
@@ -141,7 +153,7 @@ export class Controller {
       const r = this.right; this.right = null; this.el.style.cursor = '';
       if (r && !r.moved) this.rightClick(p, e.shiftKey);
     } else if (e.button === 0) {
-      const l = this.left; this.left = null;
+      const l = this.left; this.left = null; if (this.placing) this.el.style.cursor = '';
       if (this.box) { this.boxSelect(this.box, true); this.box = null; }
       else if (l && !l.moved) this.activate(p, false, e.shiftKey || e.ctrlKey);
     }
@@ -308,10 +320,14 @@ export class Controller {
   selectRun(): void {
     const at = new Map<number, number>(), N = this.sim.world.size;
     for (const b of this.sim.buildings) if (this.isWall(b.id)) at.set(b.y * N + b.x, b.id);
-    const seen = new Set<number>(this.groupIds), todo = [...this.groupIds];
-    while (todo.length) {
-      const b = this.sim.getBuilding(todo.pop()!); if (!b) continue;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const id = at.get((b.y + dy) * N + b.x + dx); if (id !== undefined && !seen.has(id)) { seen.add(id); todo.push(id); } }
+    const chosen = this.groupIds.map((id) => this.sim.getBuilding(id)).filter((b): b is NonNullable<typeof b> => !!b);
+    // a run goes straight: along the row when the chosen pieces share one, along the column when they share one, else the longer way from a single piece (never round a corner)
+    const along = (b: { x: number; y: number }, dx: number, dy: number): number[] => { const out: number[] = []; for (let x = b.x + dx, y = b.y + dy, id = at.get(y * N + x); id !== undefined; x += dx, y += dy, id = at.get(y * N + x)) out.push(id); return out; };
+    const sameRow = chosen.length > 1 && chosen.every((b) => b.y === chosen[0].y), sameCol = chosen.length > 1 && chosen.every((b) => b.x === chosen[0].x);
+    const seen = new Set<number>(this.groupIds);
+    for (const b of chosen) {
+      const row = [...along(b, 1, 0), ...along(b, -1, 0)], col = [...along(b, 0, 1), ...along(b, 0, -1)];
+      for (const id of sameRow ? row : sameCol ? col : row.length >= col.length ? row : col) seen.add(id);
     }
     this.groupIds = [...seen]; this.onToast(`Đã chọn ${this.groupIds.length} mảnh`); this.onChange();
   }

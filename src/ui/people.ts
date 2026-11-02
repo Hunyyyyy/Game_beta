@@ -3,7 +3,7 @@ import { roleName, roleOf } from '../sim/jobs';
 import { CHAINS } from '../sim/research';
 import type { Villager } from '../sim/model';
 import type { Ctx } from './ctx';
-import { describe } from './describe';
+import { describe, vitalsLine } from './describe';
 import { dlg } from './gamedialog';
 import { h, iconCanvas } from './dom';
 import { statIcon } from './resicons';
@@ -55,7 +55,7 @@ export function personTile(c: Ctx, v: Villager, o: PersonOptions = {}): HTMLElem
     dlg.pill(statIcon('hp'), `${Math.ceil(v.health)}`, hp < 0.35 ? 'bad' : hp < 0.7 ? 'warn' : undefined, 'Máu hiện có'),
     dlg.pill(statIcon('sta'), `${Math.round(v.energy)}%`, v.energy < 20 ? 'bad' : v.energy < 50 ? 'warn' : undefined, 'Sức còn lại'));
   const trade = o.trade && role ? dlg.chip(roleName(role, sim.era)) : null;
-  return dlg.tile({ pic: avatar(c, v), name: v.name, chip: trade, state: o.state }, [o.note === '' ? null : dlg.more(o.note ?? describe(v, sim)), pills], o.actions?.some(Boolean) ? h('div', { class: 'dacts' }, ...o.actions) : null);
+  return dlg.tile({ pic: avatar(c, v), name: v.name, chip: trade, state: o.state }, [o.note === '' ? null : dlg.more(o.note ?? describe(v, sim)), o.stats ? dlg.more(vitalsLine(sim, v)) : null, pills], o.actions?.some(Boolean) ? h('div', { class: 'dacts' }, ...o.actions) : null);
 }
 
 /** The button that opens the detail dialog of a villager. */

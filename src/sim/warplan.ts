@@ -524,7 +524,11 @@ export function callArmy(sim: Sim): string | null {
   return null;
 }
 /** Send the army back to its camps. */
-export function standDown(sim: Sim): void { if (sim.alarmUntil > sim.time) { sim.alarmUntil = 0; sim.say('Quân đội về trại.'); } }
+export function standDown(sim: Sim): void {
+  if (sim.alarmUntil <= sim.time) return;
+  sim.alarmUntil = 0; sim.say('Quân đội về trại.');
+  for (const v of sim.villagers) if (v.team === 'player' && v.job === 'fight' && !v.guard && v.post < 0 && !v.out) v.recall = true; // the call home beats a fight: they drop it and go
+}
 
 export function soundAlarm(sim: Sim): string | null {
   if (RESEARCH.enabled && !sim.dev.freeBuild && !sim.researched.has('signal')) return 'Cần nghiên cứu: Tín hiệu (trống, khói)';

@@ -6,6 +6,7 @@ import type { Sim } from '../sim/sim';
 import questData from '../data/quests.json';
 import type { Ctx } from './ctx';
 import { dlg, GameDialog } from './gamedialog';
+import { h } from './dom';
 import { resIcon } from './resicons';
 
 type Which = 'quests' | 'notices';
@@ -88,11 +89,19 @@ export class Journal {
       const when = dlg.chip(''), body = dlg.more('');
       this.noticeLines.set(n.id, { when, body });
       const go = n.action ? dlg.button(`Đến ${n.action.label}`, () => this.go(n.action!), { small: true }) : null;
-      return dlg.tile({ state: n.level, pic: n.icon.length > 1 ? resIcon(n.icon) : n.icon, name: n.title, chip: when, title: n.tip }, [body], go);
+      // the people a notice is about: the button opens their details (shift, tools, ...) so they can be changed
+      const people = n.people?.length ? dlg.button('Chi tiết', () => this.details(n.people!), { small: true }) : null;
+      return dlg.tile({ state: n.level, pic: n.icon.length > 1 ? resIcon(n.icon) : n.icon, name: n.title, chip: when, title: n.tip }, [body], go && people ? h('div', { class: 'dacts' }, go, people) : go ?? people);
     });
     this.win.notices.show(dlg.card({ wide: true, label: 'Thông báo' },
       dlg.head({ pic: '🔔', title: 'Thông báo', onClose: () => this.close() }),
       dlg.list(...(tiles.length ? tiles : [dlg.empty('Không có thông báo nào.')]))));
+  }
+
+  /** Select the people a notice is about and open their details. */
+  private details(ids: number[]): void {
+    const { ctl } = this.c;
+    this.close(); ctl.selectedBuilding = null; ctl.selected.clear(); ids.forEach((id) => ctl.selected.add(id)); ctl.openDetail = true; ctl.focusSelection(); ctl.onChange();
   }
 
   /** Open the building a notice points to, if the village has one. */

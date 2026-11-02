@@ -52,7 +52,7 @@ export class UnitDetail {
       pick.append(h('option', { value: '', text: '— chọn —', hidden: true }), h('option', { value: 'auto' }), h('option', { value: 'none' }), ...kinds.map((k) => h('option', { value: k })));
       this.gearSel.push({ pick, slot, label, kinds }); gearRow.append(pick);
     };
-    addGear('weapon', 'Vũ khí', CRAFTED_WEAPONS as unknown as string[]); addGear('armor', 'Giáp', ['hide']);
+    addGear('weapon', 'Vũ khí', CRAFTED_WEAPONS as unknown as string[]); addGear('armor', 'Giáp', Object.keys(ARMORS));
 
     this.mountPick = h('select', { class: 'sm', 'aria-label': 'Thú cưỡi', title: 'Thú đã thuần trong chuồng; đổi thú thì thú cũ về chuồng', onchange: () => {
       if (this.mountPick.value === '') return;
@@ -105,7 +105,7 @@ export class UnitDetail {
       const auto = chosen.every((o) => !o.manualGear), cur = new Set(chosen.map((o) => (g.slot === 'weapon' ? o.weapon : o.armor) ?? 'none')), want = auto ? 'auto' : cur.size === 1 ? [...cur][0] : '';
       g.pick.querySelectorAll('option').forEach((op) => {
         if (op.value === '') return;
-        const text = op.value === 'auto' ? `${g.label}: tự động (lấy ở kho)` : op.value === 'none' ? `${g.label}: không có (trả kho)` : `${g.slot === 'armor' ? ARMORS[op.value].name : WEAPONS[op.value].name} (kho: ${sim0.toolCount(op.value, op.value === 'hide' ? 1 : WEAPONS[op.value].tier ?? 1)})`;
+        const text = op.value === 'auto' ? `${g.label}: tự động (lấy ở kho)` : op.value === 'none' ? `${g.label}: không có (trả kho)` : `${g.slot === 'armor' ? ARMORS[op.value].name : WEAPONS[op.value].name} (kho: ${sim0.toolCount(op.value, g.slot === 'armor' ? ARMORS[op.value].tier ?? 1 : WEAPONS[op.value].tier ?? 1)})`;
         if (op.textContent !== text) op.textContent = text;
       });
       if (g.pick.value !== want && document.activeElement !== g.pick) g.pick.value = want;

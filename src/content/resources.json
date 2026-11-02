@@ -39,7 +39,7 @@
    "hud": "whenOwned",
    "unlock": {
     "building": "huntlodge",
-    "level": 2
+    "level": 1
    }
   },
   "fat": {
@@ -59,7 +59,7 @@
    "hud": "whenOwned",
    "unlock": {
     "building": "huntlodge",
-    "level": 3
+    "level": 1
    }
   },
   "tusk": {

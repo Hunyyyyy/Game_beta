@@ -39,13 +39,13 @@ export function unqueueTame(sim: Sim, k: MountKind): void { const i = sim.tameQu
 export function tickTame(sim: Sim, dt: number): void {
   for (const b of sim.buildings) {
     if (b.kind !== 'stable' || !b.done) continue;
-    const staff = b.staff.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v);
+    const staff = b.staff.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v && v.phase === 'inside'); // only those at their bench: whoever is asleep in the house (off shift, night, worn out) does not work
     if (!staff.length) continue;
     if (!b.active) {
-      const i = sim.tameQueue.findIndex((k) => !tameLock(sim, k as MountKind) && sim.affordable(MOUNTS[k as MountKind].cost));
+      const i = sim.tameQueue.findIndex((k) => !tameLock(sim, k as MountKind) && (sim.dev.freeWorks || sim.affordable(MOUNTS[k as MountKind].cost)));
       if (i < 0) { if (sim.tameQueue.length && sim.time - sim.lastMatWarn > 30) { sim.lastMatWarn = sim.time; sim.say('Đơn thuần thú đang chờ: thiếu nguyên liệu.'); } continue; }
       const k = sim.tameQueue.splice(i, 1)[0] as MountKind;
-      sim.pay(MOUNTS[k].cost);
+      if (!sim.dev.freeWorks) sim.pay(MOUNTS[k].cost);
       b.active = { id: k, progress: 0 };
     }
     const k = b.active.id as MountKind, d = MOUNTS[k];

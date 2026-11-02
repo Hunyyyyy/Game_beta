@@ -18,6 +18,7 @@ import startJson from '../data/start.json';
 import * as construction from './construction';
 import * as economy from './economy';
 import * as notices from './notices';
+import * as readiness from './readiness';
 import * as works from './works';
 import * as houses from './houses';
 import * as inventory from './inventory';
@@ -55,6 +56,8 @@ export class Sim {
   readonly wornTools: Array<{ id: string; dur: number }> = [];
   /** Hàng đợi chế tác (mã công thức). */
   readonly craftQueue: string[] = [];
+  /** For each order in craftQueue, what it was paid at (a multiple of its base cost), so that cancelling it gives back the same. */
+  readonly craftPaid: number[] = [];
   readonly tameQueue: string[] = [];
   /** Research (tech ids) waiting for a free researcher in the Nhà nghiên cứu. */
   readonly researchQueue: string[] = [];
@@ -83,6 +86,8 @@ export class Sim {
   /** Scheduled wolf packs and tribal raids. */
   readonly events: EventState[] = [];
   nextRaid = 0;
+  /** When there was last danger the civilians ran from (an attack on the village, or something that chased one of them): they stay in their houses for 30 seconds after it. */
+  dangerAt = -1e9;
   /** The chunks where the other villages live their daily life: those round our people. Redone every second, never saved. */
   readonly active = new Set<number>();
   /** People the village may hold beyond its campfire and beds: the campfires of the villages we took. */
@@ -109,7 +114,7 @@ export class Sim {
   readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, noTire: false, noArrivals: false };
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
   /** Called when something dies (UI refresh hook). */
@@ -147,6 +152,10 @@ export class Sim {
   readonly ruins: Partial<Record<BuildingKind, number>> = {};
   /** How much of the map of a village ("tribe:level") scouts brought home unfinished, 0..1: the next scouts go on from there. */
   readonly drafts: Record<string, number> = {};
+  /** The villagers the player has selected right now (the controller shares its own set): while one of them walks to a spot the player picked, nothing else decides for him. */
+  controlled: ReadonlySet<number> = new Set<number>();
+  /** True for a selected villager who is on his way to a spot the player ordered: the fighting and fleeing of the brain wait until he gets there or is let go. */
+  underOrders(v: Villager): boolean { return v.team === 'player' && this.controlled.has(v.id) && v.phase === 'move' && v.path.length > 0; }
   readonly yieldNow: Record<string, number> = {};
   readonly yieldPrev: Record<string, number> = {};
 
@@ -226,6 +235,10 @@ export class Sim {
   bedsIn(kind: BuildingKind): number { return rest.bedsIn(this, kind); }
   /** → rest.attackReason */
   attackReason(): string | null { return rest.attackReason(this); }
+  /** → rest.skipNightBlock */
+  skipNightBlock(): string | null { return rest.skipNightBlock(this); }
+  /** → rest.quartered */
+  quartered(v: Villager): boolean { return rest.quartered(this, v); }
   /** → rest.hides */
   hides(v: Villager): boolean { return rest.hides(this, v); }
   /** → rest.freeBed */
@@ -298,6 +311,8 @@ export class Sim {
   buildingLimit(kind: BuildingKind): number { return construction.buildingLimit(this, kind); }
   /** → construction.buildingLock */
   buildingLock(kind: BuildingKind): string | null { return construction.buildingLock(this, kind); }
+  /** → construction.buildingNeeds */
+  buildingNeeds(kind: BuildingKind): Array<{ text: string; ok: boolean }> { return construction.buildingNeeds(this, kind); }
 
   /** → construction.canPlace */
   canPlace(kind: BuildingKind, x: number, y: number): string | null { return construction.canPlace(this, kind, x, y); }
@@ -361,6 +376,8 @@ export class Sim {
   craftStoreBlock(id: string): string | null { return works.craftStoreBlock(this, id); }
   /** → works.queueCraft */
   queueCraft(id: string): string | null { return works.queueCraft(this, id); }
+  /** → works.craftCost */
+  craftCost(id: string): Partial<Stock> { return works.craftCost(this, id); }
   /** → works.unqueueCraft */
   unqueueCraft(id: string): void { return works.unqueueCraft(this, id); }
   /** → works.unqueueResearch */
@@ -452,6 +469,8 @@ export class Sim {
   discardTool(ids: readonly number[], k: ToolKind): void { return inventory.discardTool(this, ids, k); }
   /** → economy.foodNeed */
   foodNeed(): number { return economy.foodNeed(this); }
+  /** → readiness.upgradeAdvice */
+  upgradeAdvice(level: number): Array<{ text: string; bad: boolean }> { return readiness.upgradeAdvice(this, level, (e) => notices.eventName(this, e)); }
   /** → notices.noticesOf */
   notices(): Notice[] { return notices.noticesOf(this); }
   /** → economy.noteYield */
@@ -496,6 +515,12 @@ export class Sim {
 
   /** → commands.discharge */
   discharge(ids: readonly number[]): number { return commands.discharge(this, ids); }
+  /** → commands.isOut */
+  isOut(v: Villager): boolean { return commands.isOut(v); }
+  /** → commands.callOut */
+  callOut(ids: readonly number[]): number { return commands.callOut(this, ids); }
+  /** → commands.sendBack */
+  sendBack(ids: readonly number[]): number { return commands.sendBack(this, ids); }
 
   /** → commands.targetAt */
   targetAt(x: number, y: number): { target: Target; kind: 'foe' | 'animal' | 'carcass' } | null { return commands.targetAt(this, x, y); }
@@ -559,7 +584,7 @@ export class Sim {
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     this.leaderClock += dt;
-    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); }
+    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); defense.tickResearch(this); }
     if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
     if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
   }

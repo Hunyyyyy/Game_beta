@@ -3,6 +3,7 @@ import { Building, BuildingKind, BUILDINGS, buildingSight, needsWork, CLEARANCE,
 import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
 import { buildingOpen, techForBuilding } from './research';
+import { scaleCost } from './works';
 import { fireUpgradeGroups, fireUpgradeNeeds } from './progression';
 import startJson from '../data/start.json';
 import type { Sim } from './sim';
@@ -11,7 +12,7 @@ import { PlaceResult } from './model';
 // ---------------------------------------------------------------- công trình
 export function addBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, done: boolean, level = 1): Building {
   const d = BUILDINGS[kind];
-  const b: Building = { id: sim.nextBid++, kind, era: sim.era, x, y, level, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
+  const b: Building = { id: sim.nextBid++, kind, era: sim.era, x, y, level, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: kind !== 'gate', staff: [], active: null, workers: 0 };
   b.hp = maxHp(b);
   sim.buildings.push(b);
   setOcc(sim, b, 1);
@@ -122,6 +123,19 @@ export function buildingLock(sim: Sim, kind: BuildingKind): string | null {
   return null;
 }
 
+/** Every condition for building a kind, met or not, for the dialog of a locked card: the level of the campfire, the houses it needs, research, and how many may stand. */
+export function buildingNeeds(sim: Sim, kind: BuildingKind): Array<{ text: string; ok: boolean }> {
+  const d = BUILDINGS[kind], free = sim.dev.freeBuild, out: Array<{ text: string; ok: boolean }> = [];
+  const fireNeed = fireUnlockLevel(kind);
+  if (fireNeed > 1) out.push({ text: `${BUILDINGS.campfire.name} cấp ${fireNeed}`, ok: free || fireLevel(sim) >= fireNeed });
+  for (const r of d.requires ?? []) out.push({ text: `Đã dựng ${BUILDINGS[r].name}`, ok: free || !!sim.building(r) });
+  const tech = techForBuilding(kind);
+  if (tech) out.push({ text: `Nghiên cứu: ${tech.name}`, ok: free || buildingOpen(sim.researched, kind) });
+  const have = sim.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim, kind);
+  out.push({ text: `Còn chỗ xây (${have}/${limit}${limit <= have ? ': nâng cấp Nhà chung để xây thêm' : ''})`, ok: have < limit });
+  return out;
+}
+
 /** The level a new house of this kind is raised at: the level of the last one that fell in battle, else 1. */
 export function startLevel(sim: Sim, kind: BuildingKind): number { return Math.min(sim.ruins[kind] ?? 1, maxLevel(kind, sim.era)); }
 /** What raising it costs: every level up to the one it starts at (a rebuilt house is paid for again, but not raised level by level). */
@@ -200,7 +214,7 @@ export function evict(sim: Sim, b: Building): void {
   for (const id of [...b.staff]) { const v = sim.byId.get(id); if (v) { sim.exitBuilding(v); if (v.job !== 'fight') v.job = 'idle'; v.post = -1; } }
   b.staff = [];
   if (b.kind === 'builder') for (const v of sim.crew()) { sim.resetTask(v); v.job = 'idle'; }
-  if (b.active && (b.kind === 'lab' || b.kind === 'workshop')) { const d = sim.orderDef(b.kind === 'lab' ? 'research' : 'craft', b.active.id); if (d) sim.pay(d.cost, 1); }
+  if (b.active && (b.kind === 'lab' || b.kind === 'workshop')) { const d = sim.orderDef(b.kind === 'lab' ? 'research' : 'craft', b.active.id); if (d && !sim.dev.freeWorks) sim.pay(b.kind === 'workshop' ? scaleCost(d.cost, b.active.paid ?? 1) : d.cost, 1); }
   b.active = null;
   // sleepers are put out of their beds; being tired still, they look for another bed at once
   for (const v of sim.sleepers(b)) { sim.exitBuilding(v); v.phase = 'idle'; v.target = -1; v.path = []; }
@@ -214,7 +228,11 @@ export function evict(sim: Sim, b: Building): void {
 export function setOcc(sim: Sim, b: Building, val: number): void {
   const d = BUILDINGS[b.kind];
   if ((b.kind === 'gate' && b.open) || b.kind === 'trap') val = 0; // an open gate is a gap in the fence, and a pit does not block the way
-  for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.occ[(b.y + j) * sim.world.size + b.x + i] = val;
+  for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) {
+    const k = (b.y + j) * sim.world.size + b.x + i;
+    sim.world.occ[k] = val;
+    if (b.kind === 'gate') { if (val) sim.world.gates.add(k); else sim.world.gates.delete(k); } // a shut gate is let through by our own people
+  }
 }
 
 /** A house that may stand only once cannot be torn down (it can still be raised and moved). */

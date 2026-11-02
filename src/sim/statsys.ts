@@ -34,7 +34,7 @@ export function rollFactors(r: () => number): { stars: number; fac: Record<StatI
 /** The role of the research tree a person counts as (null for anyone without one: a stranger, an idle villager). */
 export function treeRole(v: Pick<Villager, 'job' | 'arm' | 'post'>): string | null {
   const r = roleOf(v);
-  if (r) return r === 'guard' ? 'foot' : r; // the guards of the Trại lính gác are foot soldiers: they share the research of the Chiến binh
+  if (r) return r === 'tower' ? 'towerman' : r; // the guards and the men of the towers are the defence: they have their own research, apart from the soldiers of the camps
   switch (v.job) {
     case 'build': return 'build';
     case 'craft': return 'craft';

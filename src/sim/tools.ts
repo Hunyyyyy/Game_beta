@@ -16,15 +16,17 @@ export const TIER_YIELD = [1, 1.25, 1.6];    // đơn vị thu được mỗi l�
 export const TIER_DURABILITY = [0, 240, 600]; // giây làm việc trước khi gãy
 
 /** Gear a fighter wears: crafted weapons and armour share the recipe, stock and equip flow of tools. */
-export type GearKind = 'club' | 'spear' | 'mace' | 'sling' | 'bow' | 'hide';
-export const GEAR_KINDS: GearKind[] = ['club', 'spear', 'mace', 'sling', 'bow', 'hide'];
+export type GearKind = 'club' | 'spear' | 'mace' | 'sling' | 'bow' | 'hide' | 'bone';
+export const GEAR_KINDS: GearKind[] = ['club', 'spear', 'mace', 'sling', 'bow', 'hide', 'bone'];
+/** A suit of armour (the hide one, the hide and bone one) rather than a weapon. */
+export const isArmorKind = (k: string): boolean => k in ARMORS;
 export const isGear = (k: string): k is GearKind => (GEAR_KINDS as string[]).includes(k);
 export const isWeaponKind = (k: string) => k in WEAPONS;
 
 export interface Recipe { id: string; kind: ToolKind | GearKind | 'torch'; tier: 1 | 2; cost: Partial<Stock>; time: number }
 const R = (kind: ToolKind | GearKind | 'torch', tier: 1 | 2, cost: Partial<Stock>, time: number): Recipe => ({ id: `${kind}${tier}`, kind, tier, cost, time });
 const gearRecipe = (kind: GearKind): Recipe => {
-  const d = kind === 'hide' ? ARMORS.hide : WEAPONS[kind];
+  const d = isArmorKind(kind) ? ARMORS[kind] : WEAPONS[kind];
   return R(kind, (d.tier ?? 1) as 1 | 2, d.cost ?? {}, d.time ?? 60);
 };
 export const RECIPES: Recipe[] = [
@@ -37,14 +39,14 @@ export const RECIPES: Recipe[] = [
 ];
 export const RECIPE_BY_ID: Record<string, Recipe> = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
 export const recipeName = (r: Recipe) => {
-  if (r.kind === 'hide') return ARMORS.hide.name;
+  if (isArmorKind(r.kind)) return ARMORS[r.kind].name;
   if (r.kind === 'torch') return 'Đuốc';
   if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
   return `${TOOL_NAME[r.kind as ToolKind]} ${TIER_NAME[r.tier].toLowerCase()}`;
 };
 /** One-line use shown in the crafting panel. */
 export const recipeUse = (r: Recipe) => {
-  if (r.kind === 'hide') return 'giáp, giảm sát thương';
+  if (isArmorKind(r.kind)) { const a = ARMORS[r.kind], p = (x: number) => `${Math.round(x * 100)}%`; return `giáp: giảm đâm ${p(a.pierce)} · chém ${p(a.slash)} · đập ${p(a.crush)} · bền ${a.durability ?? '?'}`; }
   if (r.kind === 'torch') return 'làm việc ban đêm (hiệu suất 70%), nhìn xa hơn trong tối';
   if (isWeaponKind(r.kind)) { const w = WEAPONS[r.kind]; return `${{ pierce: 'đâm', slash: 'chém', crush: 'đập' }[w.type]} ${w.damage} · ${(1 / w.cycle).toFixed(2)} đòn/giây · chí mạng đòn ${Math.round((w.critDamage ?? RULES.critDamage) * 100)}% · tầm ${w.range}`; }
   return TOOL_USE[r.kind as ToolKind];

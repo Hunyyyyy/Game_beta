@@ -22,7 +22,7 @@
     "buildTime": 90,
     "cap": 0,
     "craftSpeed": 1,
-    "slots": 2,
+    "slots": 1,
     "hp": 180,
     "sight": 0
    },
@@ -36,7 +36,7 @@
     "buildTime": 140,
     "cap": 0,
     "craftSpeed": 1,
-    "slots": 3,
+    "slots": 2,
     "hp": 270,
     "sight": 0
    },
@@ -50,7 +50,7 @@
     "buildTime": 200,
     "cap": 0,
     "craftSpeed": 1,
-    "slots": 4,
+    "slots": 3,
     "hp": 360,
     "sight": 0
    },
@@ -64,7 +64,7 @@
     "buildTime": 286,
     "cap": 0,
     "craftSpeed": 1,
-    "slots": 5,
+    "slots": 3,
     "hp": 450,
     "sight": 0
    }

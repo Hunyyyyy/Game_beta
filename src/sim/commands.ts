@@ -162,12 +162,29 @@ export function enlist(sim: Sim, ids: readonly number[]): number {
   return n;
 }
 
+/** Call these soldiers out of their camp: they stand outside, ready, until they are sent back (the camp's own button, like the army's "Gọi quân"). Returns how many. */
+export const isOut = (v: Villager): boolean => (v.guard ? !v.housed : !!v.out);
+export function callOut(sim: Sim, ids: readonly number[]): number {
+  let n = 0;
+  for (const v of mine(sim, ids)) { if (v.job !== 'fight' || v.post >= 0 || isOut(v)) continue; v.recall = false; if (v.guard) v.housed = false; else v.out = true; sim.exitBuilding(v); if (v.phase === 'sleep' || v.phase === 'goHome') { v.phase = 'idle'; v.path = []; v.bed = -1; } n++; }
+  if (n) sim.say(n === 1 ? 'Một lính được gọi ra khỏi trại.' : `${n} lính được gọi ra khỏi trại.`);
+  return n;
+}
+
+/** Send called-out soldiers back to their camp. Returns how many. */
+export function sendBack(sim: Sim, ids: readonly number[]): number {
+  let n = 0;
+  for (const v of mine(sim, ids)) { if (v.job !== 'fight' || v.post >= 0 || !isOut(v)) continue; if (v.guard) v.housed = true; else v.out = false; v.recall = true; n++; } // he drops any fight he is in and goes in
+  if (n) sim.say(n === 1 ? 'Một lính về trại.' : `${n} lính về trại.`);
+  return n;
+}
+
 /** Soldiers go back to being plain villagers with no job; their weapon and armour go back to the store. Returns how many. */
 export function discharge(sim: Sim, ids: readonly number[]): number {
   let n = 0;
   for (const v of mine(sim, ids)) {
     if (v.job !== 'fight') continue;
-    resetTask(sim, v); clearCombat(sim, v); v.job = 'idle'; v.nightOwl = false; v.post = -1; v.guard = false; v.guardAt = null;
+    resetTask(sim, v); clearCombat(sim, v); v.job = 'idle'; v.nightOwl = false; v.post = -1; v.guard = false; v.guardAt = null; v.out = false; v.housed = false; v.recall = false;
     sim.assignGear([v.id], null, 'weapon'); sim.assignGear([v.id], null, 'armor'); v.manualGear = false;
     n++;
   }

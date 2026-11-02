@@ -6,6 +6,7 @@ import { CHUNK, CHUNKS } from './world';
 import { hash2, mix32, mulberry32 } from './rng';
 import type { Sim, Target } from './sim';
 import { Tile } from './world';
+import { BUILDINGS } from './buildings';
 
 export type AnimalState = 'graze' | 'wander' | 'flee' | 'attack' | 'sleep' | 'dead';
 
@@ -32,6 +33,8 @@ export interface Animal {
   burst: number;         // seconds spent running
   tired: number;         // seconds left of exhaustion after a long run
   female: boolean;
+  /** The house it is breaking down (nobody is outside to chase), or none. */
+  siege?: number;
   /** Raiders (wolf packs from an event) hunt until dawn, then leave. */
   raid: boolean;
   bite: number;          // seconds left of the bite flash
@@ -70,8 +73,10 @@ export function populateChunk(sim: Sim, cx: number, cy: number): void {
   const w = sim.world, s = w.start, x0 = cx * CHUNK, y0 = cy * CHUNK;
   const rnd = mulberry32(mix32(sim.seed ^ Math.imul(cx + 1, 0x9e3779b1) ^ Math.imul(cy + 1, 0x85ebca6b)));
   let herd = 100000 + (cy * CHUNKS + cx) * 64;
+  const nearStart = Math.hypot(x0 + CHUNK / 2 - s.x, y0 + CHUNK / 2 - s.y) <= BEHAVIOUR.nearRadius;
   for (const sp of SPECIES) {
-    const def = ANIMALS[sp], expected = (def.count / ((def.herd[0] + def.herd[1]) / 2)) * share();
+    const def = ANIMALS[sp], boost = nearStart && def.prey && !def.defends && def.habitat !== 'water' && def.zones[0] <= 1 ? BEHAVIOUR.nearBoost : 1;
+    const expected = (def.count / ((def.herd[0] + def.herd[1]) / 2)) * share() * boost;
     const herds = Math.floor(expected) + (rnd() < expected - Math.floor(expected) ? 1 : 0);
     for (let n = 0; n < herds; n++) {
       for (let tries = 0; tries < 8; tries++) {
@@ -244,7 +249,11 @@ export function tickAnimals(sim: Sim, dt: number): void {
       if (def.prey && def.flee > 0 && a.state !== 'flee' && p && p.d < def.flee && !(def.defends)) { a.state = 'flee'; a.target = { kind: 'unit', id: p.id }; a.timer = 6; a.burst = 0; }
       if (def.aggro > 0 && a.state !== 'attack' && p && ((a.raid && !raidOver(a, night)) || (night && def.nocturnal)) && p.d < (a.raid ? 40 : def.aggro)) {
         const v = sim.get(p.id)!;
-        if (fireDistance(sim, v.x, v.y) > (def.fearsFire ?? 0)) { a.state = 'attack'; a.target = { kind: 'unit', id: p.id }; a.timer = 20; a.chaseT = 0; }
+        if (fireDistance(sim, v.x, v.y) > (def.fearsFire ?? 0)) { a.state = 'attack'; a.target = { kind: 'unit', id: p.id }; a.timer = 20; a.chaseT = 0; a.siege = undefined; }
+      } else if (def.aggro > 0 && a.state !== 'attack' && !p && ((a.raid && !raidOver(a, night)) || (night && def.nocturnal))) {
+        // nobody (villager or soldier) is outside: it turns on the nearest house instead
+        const house = sim.nearestWork(a.x, a.y, a.raid ? 70 : def.aggro * 2, true);
+        if (house) { a.state = 'attack'; a.target = null; a.siege = house.id; a.timer = 20; a.chaseT = 0; }
       }
     }
 
@@ -263,6 +272,15 @@ export function tickAnimals(sim: Sim, dt: number): void {
         break;
       }
       case 'attack': {
+        if (a.siege) {
+          const house = sim.getBuilding(a.siege), out = near(sim, a.x, a.y);
+          if (out && out.d < (a.raid ? 40 : def.aggro)) { a.siege = undefined; a.state = 'attack'; a.target = { kind: 'unit', id: out.id }; a.timer = 20; a.chaseT = 0; break; } // someone came out: it goes for him
+          if (!house || !house.done || a.timer <= 0 || raidOver(a, night)) { a.siege = undefined; a.state = 'graze'; a.timer = 3; break; }
+          const hd = BUILDINGS[house.kind], hx = house.x + hd.w / 2, hy = house.y + hd.h / 2;
+          if (Math.hypot(hx - a.x, hy - a.y) - Math.max(hd.w, hd.h) / 2 > def.range + 0.4) step(sim, a, hx, hy, def.speed * slow, dt);
+          else if (a.cd <= 0) { a.cd = def.cycle; a.bite = 0.25; a.timer = 20; sim.damageWork(house, def.damage); }
+          break;
+        }
         const t = a.target && sim.get(a.target.id);
         a.chaseT = (a.chaseT ?? 0) + dt; // seconds since the last bite: too long and it gives up (src/data/chase.json)
         const lost = !t || t.down > 0 || a.timer <= 0 || a.chaseT > chaseJson.noHitSeconds || raidOver(a, night) || (!a.raid && Math.hypot(t.x - a.x, t.y - a.y) > 16);

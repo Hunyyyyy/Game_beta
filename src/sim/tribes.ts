@@ -412,6 +412,18 @@ function tickEvents(sim: Sim): void {
   }
 }
 
+/** Dev: fire one scheduled event now, for the part of the day it is (a pack stays for one part of the day only). Returns why it could not, or null. */
+export function fireEventNow(sim: Sim, e: Sim['events'][number]): string | null {
+  const night = sim.restTime;
+  if (e.kind === 'beasts') { e.fired = true; launchBeasts(sim, e.size, e.species ?? 'wolf', night); return null; }
+  const t = e.tribe ? tribeOf(sim, e.tribe) : undefined;
+  if (!t || t.state !== 'free') return `${t?.def.name ?? 'Bộ tộc'} không còn là kẻ địch`;
+  if (t.raid) return 'Họ đang tập kích rồi';
+  e.fired = true;
+  if (e.army) launchCustomRaid(sim, t, armyWeapons(e.army), e.armor ?? true, false, night); else launchRaid(sim, t, e.size, night);
+  return null;
+}
+
 // ---------------------------------------------------------------- the brain of a tribal person
 const AGGRO = { peaceful: 6, aggressive: 14, ambusher: 9 } as const;
 const LEASH = 24;
@@ -426,9 +438,23 @@ function wander(sim: Sim, f: Villager, radius: number): void {
   ai.wander = 4 + sim.frnd() * 8;
 }
 
+const emptyCache = new WeakMap<Sim, { t: number; on: boolean }>();
+/** Nobody of ours (villager or soldier) is out of doors: the raiders have nobody to fight and turn on the houses. */
+function nobodyOutside(sim: Sim): boolean {
+  const c = emptyCache.get(sim);
+  if (c && c.t === sim.time) return c.on;
+  const on = !sim.villagers.some((v) => v.team === 'player' && v.health > 0 && v.down <= 0 && v.inside === null);
+  emptyCache.set(sim, { t: sim.time, on });
+  return on;
+}
+
 export function tickFoe(sim: Sim, f: Villager, dt: number): void {
   tickCommon(sim, f, dt);
   const t = tribeOf(sim, f.team), ai = f.ai;
+  if (ai && ai.role === 'raider' && !ai.siege && !f.fight.target && f.phase !== 'fight' && Math.floor(sim.time) !== Math.floor(sim.time - dt) && (Math.floor(sim.time) + f.id) % 2 === 0 && nobodyOutside(sim)) {
+    const house = sim.nearestWork(f.x, f.y, 70, true);
+    if (house) ai.siege = house.id;
+  }
   if (ai?.life && ai.life.kind !== 'hunt' && (f.phase === 'flee' || f.fleeT > 0 || f.fight.target)) endLife(sim, f); // danger ends the work
   if (t && ai) foeBrain(sim, f, t, ai, dt);
   sim.moveUnit(f, dt);

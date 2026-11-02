@@ -1,6 +1,6 @@
 import type { Shift } from '../sim/model';
 import { BUILDINGS, needsWork } from '../sim/buildings';
-import { ArmorDef } from '../sim/combat';
+import { ArmorDef, ARMORS } from '../sim/combat';
 import { gameDays } from '../sim/constants';
 import { Job, JOB_NAME, JOBS } from '../sim/jobs';
 import { RES_NAME } from '../sim/resources';
@@ -71,9 +71,18 @@ export const SHIFT_TIP: Record<Shift, string> = {
 };
 
 /** One line about a villager's strength: energy, the ceiling strain leaves them, the torch. */
+/** Health, energy and the wear of the armour as plain "now/most" text, for the lines of a list of people. */
+export function vitalsLine(sim: Sim, v: Villager): string {
+  const parts = [`Máu ${Math.max(0, Math.ceil(v.health))}/${Math.round(v.maxHealth)}`, `Sức ${Math.round(v.energy)}/${Math.round(sim.maxEnergy(v))}`];
+  if (v.armor && ARMORS[v.armor]?.durability) { const max = ARMORS[v.armor].durability!; parts.push(`Giáp ${Math.max(0, Math.ceil(v.gear.a === v.armor ? v.gear.ad : max))}/${max}`); }
+  return parts.join(' · ');
+}
+
 export function energyText(sim: Sim, v: Villager): string {
   const top = Math.round(sim.maxEnergy(v));
-  const parts = [`Sức <b>${Math.round(v.energy)}%</b>${top < 100 ? ` / tối đa ${top}%` : ''}`];
+  // health, energy and the wear of the armour as now / most: they climb while the person sleeps and heals, and the armour goes down with every blow taken
+  const parts = [`Máu <b>${Math.max(0, Math.ceil(v.health))}/${Math.round(v.maxHealth)}</b>`, `Sức <b>${Math.round(v.energy)}/${top}</b>`];
+  if (v.armor && ARMORS[v.armor]?.durability) { const max = ARMORS[v.armor].durability!; parts.push(`Giáp <b>${Math.max(0, Math.ceil(v.gear.a === v.armor ? v.gear.ad : max))}/${max}</b>`); }
   if (v.strain >= 5) parts.push(`mệt mỏi tích lũy <b>${Math.round(v.strain)}</b>`);
   if (v.torch) parts.push(`đuốc còn ${Math.max(1, Math.round(v.torch.dur / 60))} phút`);
   if (sim.sleepLocked(v)) parts.push(`<b>ngủ say</b>, dậy khi đạt ${v.lockUntil}%`);

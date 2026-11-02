@@ -4,6 +4,8 @@ import { BUILDINGS } from './buildings';
 import { ANIMALS } from './combat';
 import { FOOD, RES_LIST, RES_NAME } from './resources';
 import type { Notice } from './model';
+import { armyRoom, eventNeed } from './readiness';
+import { fireLevel } from './construction';
 import type { Sim } from './sim';
 
 const ORDER = { urgent: 0, warn: 1, info: 2 } as const;
@@ -36,6 +38,17 @@ export function noticesOf(sim: Sim): Notice[] {
       body: `${far.slice(0, 3).map((v) => `${v.name} (${Math.round(v.energy)}%)`).join(', ')}${far.length > 3 ? ` và ${far.length - 3} người nữa` : ''} · cách làng hơn 20 ô`,
       tip: 'Dân được bạn sai đi khám phá làm cả ngày lẫn đêm. Khi sức xuống dưới 20% họ tự quay về làng nghỉ, nhưng đường xa thì rất lâu: hãy ra lệnh cho họ về sớm.',
       action: { building: 'campfire', label: 'Về làng' },
+    });
+  }
+  // people who work day and night, or carry a lot of tiredness: they lose strength for good if it goes on
+  const overworked = sim.villagers.filter((v) => v.team === 'player' && v.down <= 0 && v.job !== 'idle' && v.job !== 'fight' && v.job !== 'scout' && (v.shift === 'both' || v.strain >= 10));
+  if (overworked.length) {
+    const worst = Math.max(...overworked.map((v) => v.strain));
+    out.push({
+      id: 'overworked', level: worst >= 30 ? 'urgent' : 'warn', icon: 'stat_sta', title: 'Có người làm việc quá sức', when: 'cả ngày lẫn đêm',
+      body: `${overworked.slice(0, 3).map((v) => `${v.name} (sức ${Math.round(v.energy)}/${Math.round(sim.maxEnergy(v))})`).join(', ')}${overworked.length > 3 ? ` và ${overworked.length - 3} người nữa` : ''}`,
+      tip: 'Làm cả ngày lẫn đêm khiến mệt mỏi tích lũy: sức tối đa giảm và hồi chậm. Mở chi tiết để đổi ca làm (ngày hoặc đêm) hoặc cho họ nghỉ.',
+      people: overworked.map((v) => v.id),
     });
   }
   // a full store stops the gatherers: say so and say what to do
@@ -125,6 +138,12 @@ export function noticesOf(sim: Sim): Notice[] {
   return out.sort((a, b) => ORDER[a.level] - ORDER[b.level]);
 }
 
+/** How an event is called to the player: the beast it brings, or the tribe that comes. */
+export function eventName(sim: Sim, e: Sim['events'][number]): string {
+  if (e.kind === 'beasts') return `${e.species ? ANIMALS[e.species].name : 'Sói'} (${e.size} con)`;
+  return `${(e.tribe ? sim.tribes.find((t) => t.id === e.tribe)?.def.name : undefined) ?? 'Một bộ tộc'} (${e.size} người)`;
+}
+
 /** The attacks that are coming (the events of events.json whose warning has been given) and the ones that are here: what the village needs to meet them. */
 function eventNotices(sim: Sim): Notice[] {
   const out: Notice[] = [];
@@ -132,15 +151,16 @@ function eventNotices(sim: Sim): Notice[] {
   const have = `${soldiers.length} lính, ${armed} có vũ khí`;
   for (const e of sim.events) {
     if (e.fired || !e.warned) continue;
-    const wolves = e.kind === 'beasts', beast = e.species ? ANIMALS[e.species].name : 'Sói', need = Math.max(3, Math.ceil(e.size * (wolves ? 0.6 : 0.7)));
+    const wolves = e.kind === 'beasts', beast = e.species ? ANIMALS[e.species].name : 'Sói', need = eventNeed(e);
     const tribe = e.tribe ? sim.tribes.find((t) => t.id === e.tribe) : undefined;
     const left = e.fireDay - sim.day, ready = soldiers.length >= need && armed >= Math.ceil(need / 2);
+    const room = armyRoom(sim, fireLevel(sim)), cramped = need > room; // the level of the campfire has no room for so many soldiers: it must go up (and the people be raised)
     out.push({
-      id: `ev:${e.id}`, level: ready ? 'info' : left <= 1 ? 'urgent' : 'warn', icon: 'stat_atk',
+      id: `ev:${e.id}`, level: ready && !cramped ? 'info' : left <= 1 ? 'urgent' : 'warn', icon: 'stat_atk',
       title: wolves ? `${beast} sắp tấn công` : `${tribe?.def.name ?? 'Một bộ tộc'} sắp đánh`, when: left <= 0 ? (e.night ? 'đêm nay' : 'hôm nay') : `còn ${left} ngày`,
-      body: ready ? `Khoảng ${e.size} ${wolves ? 'con' : 'người'} · đã đủ lính (${have})` : `Khoảng ${e.size} ${wolves ? 'con' : 'người'} · cần ≥${need} lính, đang có ${have}`,
-      tip: `${e.warn || 'Một cuộc tấn công đang tới.'} Tuyển thêm lính ở trại chiến binh, chế vũ khí và giáp cho họ, và dựng hàng rào, chòi canh trước khi chúng tới.`,
-      action: CAMP,
+      body: (ready ? `Khoảng ${e.size} ${wolves ? 'con' : 'người'} · đã đủ lính (${have})` : `Khoảng ${e.size} ${wolves ? 'con' : 'người'} · cần ≥${need} lính, đang có ${have}`) + (cramped ? ` · Nhà chung chỉ chứa ~${room} lính` : ''),
+      tip: `${e.warn || 'Một cuộc tấn công đang tới.'} ${cramped ? `Cấp Nhà chung hiện tại chỉ có chỗ cho ~${room} lính, ít hơn ${need}: cần nâng Nhà chung (và dựng thêm nhà dân, nghiên cứu chỉ số quân sự) để đủ sức. ` : ''}Tuyển thêm lính ở trại chiến binh, chế vũ khí và giáp cho họ, và dựng hàng rào, chòi canh trước khi chúng tới.`,
+      action: cramped ? { building: 'campfire', label: 'Nhà chung' } : CAMP,
     });
   }
   // the attacks that are here now

@@ -89,7 +89,7 @@
       "damage": 8,
       "cycle": 2.0,
       "ranged": true,
-      "cost": { "wood": 30, "hide": 10 },
+      "cost": { "wood": 30, "hide": 10,"feather": 3 },
       "durability": 110,
       "time": 100,
       "style": "shoot", "projectile": "arrow",
@@ -108,6 +108,19 @@
       "durability": 200,
       "time": 100,
       "tier": 1
+    },
+    "bone": {
+      "name": "Giáp da xương",
+      "pierce": 0.22,
+      "slash": 0.34,
+      "crush": 0.22,
+      "cost": {
+        "hide": 30,
+        "bone": 20
+      },
+      "durability": 350,
+      "time": 160,
+      "tier": 2
     }
   },
   "rules": {

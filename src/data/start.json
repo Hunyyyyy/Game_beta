@@ -3,10 +3,10 @@
   "campfire": { "dx": -1, "dy": -2 },
   "stock": { "food": 30,"wood": 10 },
   "villagers": [
-    { "dx": -1, "dy": 1, "sex": "m", "job": "food" },
-    { "dx": 0, "dy": 1, "sex": "m", "job": "stone" },
-    { "dx": 1, "dy": 1, "sex": "f", "job": "wood" }
+    { "dx": -1, "dy": 1, "sex": "m", "job": "idle" },
+    { "dx": 0, "dy": 1, "sex": "m", "job": "idle" },
+    { "dx": 1, "dy": 1, "sex": "f", "job": "idle" }
   ],
-  "buildings": ["lumberyard", "farmhouse", "quarry"],
+  "buildings": ["builder"],
   "arrivals": { "firstDay": 2, "min": 1, "max": 3, "femaleChance": 0.5 }
 }

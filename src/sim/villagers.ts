@@ -79,6 +79,7 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   if (sim.shouldSleep(v, fighting)) { if (!asleep) goHome(sim, v); }
   else if (asleep && !sim.hides(v)) { if (atWork(sim, v) && v.phase === 'sleep') v.phase = 'inside'; else { sim.exitBuilding(v); v.path = []; v.slide = null; v.phase = 'idle'; v.bed = -1; } } // staff wake up at their bench
 
+  seekBed(sim, v, dt);
   sim.moveUnit(v, dt);
   if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim.fogDirty = true;
   if (!v.path.length && !v.slide && !brained && !training) sim.think(v, dt);
@@ -113,6 +114,22 @@ export function goHome(sim: Sim, v: Villager): void {
   const spot = sim.nearestFree(fire.x + (d.w >> 1), fire.y + d.h, taken);
   if (!spot || sim.routeTo(v, [spot], 1, 80000) < 0) return; // unreachable: sleep where standing
   v.bed = spot[1] * sim.world.size + spot[0]; v.phase = 'goHome';
+}
+
+/**
+ * Someone lying on the ground by the campfire (no bed was free when he lay down) goes to a bed as soon as there is one for him: he was given a trade
+ * and the house of that trade stands, the house was built or raised in the meantime, or a bed was freed. Looked at every few seconds, and only
+ * when there is a way to the bed, so that nobody walks back and forth.
+ */
+function seekBed(sim: Sim, v: Villager, dt: number): void {
+  if (v.phase !== 'sleep' || v.inside !== null || v.bed < 0) return;
+  const second = Math.floor(sim.time);
+  if (second === Math.floor(sim.time - dt) || (second + v.id) % 3 !== 0) return;
+  const bed = sim.freeBed(v);
+  if (!bed) return;
+  const bd = BUILDINGS[bed.kind];
+  if (sim.routeTo(v, sim.ringTiles(v, bed.x, bed.y, bd.w, bd.h), 3, 80000) < 0) return;
+  v.bed = -1; v.target = bed.id; v.phase = 'goHome';
 }
 
 /** Every second: groups of five or more fighters get a leader, the best of them. */

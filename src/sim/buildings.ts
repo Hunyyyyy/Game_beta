@@ -92,10 +92,12 @@ export interface Building {
   hp: number;
   /** A gate lets everyone through while it is open, and stops everyone while it is shut. */
   open: boolean;
+  /** Percent of extra strength the research of defence gives this work (fence, gate, trap, tower); worked out again every second. */
+  hpBonus?: number;
   /** Villagers working inside (research and crafting houses). */
   staff: number[];
   /** The order being worked on right now (research or crafting): its id and progress 0..1. */
-  active: { id: string; progress: number } | null;
+  active: { id: string; progress: number; /** What the order cost, as a multiple of its base cost (a craft: the price of the Nhà chế tạo when it was ordered). */ paid?: number } | null;
   workers: number;
 }
 
@@ -117,7 +119,7 @@ export function levelsOf(kind: BuildingKind, era: Era): LevelDef[] {
 }
 export const levelDef = (b: Pick<Building, 'kind' | 'level' | 'era'>, level = b.level): LevelDef => levelsOf(b.kind, b.era)[level - 1];
 /** Strength of a building at its level: a defence work has its own; any other house has so much for every tile it covers, and more at each level. */
-export const maxHp = (b: Pick<Building, 'kind' | 'level' | 'era'>): number => levelDef(b).hp || Math.round(SIEGE.buildingHpPerTile * BUILDINGS[b.kind].w * BUILDINGS[b.kind].h * (1 + 0.5 * (b.level - 1)));
+export const maxHp = (b: Pick<Building, 'kind' | 'level' | 'era'> & { hpBonus?: number }): number => Math.round((b.hpBonus ? 1 + b.hpBonus / 100 : 1) * (levelDef(b).hp || Math.round(SIEGE.buildingHpPerTile * BUILDINGS[b.kind].w * BUILDINGS[b.kind].h * (1 + 0.5 * (b.level - 1)))));
 export const maxLevel = (kind: BuildingKind, era: Era) => levelsOf(kind, era).length;
 /** Buildings that keep the village's goods (the Kho and the campfire) as opposed to those that hold tools or staff. */
 export const holdsGoods = (b: Pick<Building, 'kind'>) => b.kind === 'storage' || b.kind === 'campfire';

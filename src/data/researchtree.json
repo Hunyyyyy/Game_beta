@@ -453,9 +453,29 @@
       "name": "Búa",
       "tool": "hammer"
     },
-    "farm": {
-      "name": "Nông dân",
-      "building": "field"
+    "guard": {
+      "name": "Lính gác",
+      "building": "guardpost"
+    },
+    "towerman": {
+      "name": "Lính chòi canh",
+      "building": "tower"
+    },
+    "fence": {
+      "name": "Hàng rào",
+      "building": "fence"
+    },
+    "gate": {
+      "name": "Cổng",
+      "building": "gate"
+    },
+    "trap": {
+      "name": "Chông",
+      "building": "trap"
+    },
+    "tower": {
+      "name": "Chòi canh",
+      "building": "tower"
     }
   },
   "tabs": {
@@ -609,7 +629,6 @@
         "stone",
         "food",
         "hunt",
-        "farm",
         "tame"
       ],
       "order": [
@@ -626,7 +645,6 @@
           "stone",
           "food",
           "hunt",
-          "farm",
           "tame"
         ],
         "needLab": 3,
@@ -666,6 +684,35 @@
         },
         "time": 1000
       }
+    },
+    "defense": {
+      "roles": [
+        "guard",
+        "towerman"
+      ],
+      "order": [
+        "hp",
+        "atk"
+      ]
+    },
+    "works1": {
+      "roles": [
+        "fence",
+        "gate"
+      ],
+      "order": [
+        "hp"
+      ]
+    },
+    "works2": {
+      "roles": [
+        "trap",
+        "tower"
+      ],
+      "order": [
+        "hp",
+        "atk"
+      ]
     }
   }
 }

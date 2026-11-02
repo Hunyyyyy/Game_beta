@@ -20,6 +20,8 @@ export interface Tech {
 export const RESEARCH = { enabled: (data as unknown as { enabled: boolean }).enabled };
 /** Workshop level each recipe needs. */
 const RECIPE_LEVEL = (data as unknown as { recipeLevel: Record<string, number> }).recipeLevel;
+/** How much more the materials of a craft cost for each level of the Nhà chế tạo above the first (0.5 = half as much again), from research.json. */
+export const CRAFT_COST_PER_LEVEL = (data as unknown as { craftCostPerLevel?: number }).craftCostPerLevel ?? 0.5;
 export const recipeNeedLevel = (id: string): number => RECIPE_LEVEL[id] ?? 1;
 export const TECHS = (data as unknown as { techs: Tech[] }).techs;
 // which research-house level teaches a step is the plan's call (data/progression.json), not the step's
@@ -94,7 +96,7 @@ export const statBonus = (done: ReadonlySet<string>, role: string, stat: LineSta
 
 /** A recipe can be made once its blueprint step is researched. */
 /** Tools, weapons, armour and torches need no blueprint: only the level of the Nhà chế tạo (recipeLevel) limits them. */
-const NO_BLUEPRINT = /^(club|spear|mace|sling|bow|hide|axe|pick|hoe|hammer|torch)\d$/;
+const NO_BLUEPRINT = /^(club|spear|mace|sling|bow|hide|bone|axe|pick|hoe|hammer|torch)\d$/;
 export const recipeOpen = (done: ReadonlySet<string>, recipeId: string): boolean => !RESEARCH.enabled || NO_BLUEPRINT.test(recipeId) || done.has(recipeId);
 /** The blueprint step that opens a recipe. */
 export const techForRecipe = (recipeId: string): Tech | undefined => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));

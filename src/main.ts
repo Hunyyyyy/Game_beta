@@ -2,7 +2,7 @@ import { Camera, Renderer } from './render/renderer';
 import { Sprites } from './render/sprites';
 import { BUILDINGS, BuildingKind } from './sim/buildings';
 import { DAY_PART_NAME, dayInSeason, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
-import { TILE } from './sim/constants';
+import { TICK, TILE } from './sim/constants';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { RESEARCH } from './sim/research';
@@ -41,6 +41,7 @@ const sprites = new Sprites();
 const renderer = new Renderer(view, sim, cam, sprites);
 const ctl = new Controller(view, sim, cam, renderer);
 ctl.centerOn(sim.world.start.x * TILE + TILE / 2, sim.world.start.y * TILE - 10);
+sim.controlled = ctl.selected; // the units the player holds: the sim lets their orders win over its own fighting and fleeing
 
 // ---------------------------------------------------------------- short messages and the event log
 const toastEl = $('toast');
@@ -109,6 +110,31 @@ $('btnArmy').addEventListener('click', () => { if (sim.alarmUntil > sim.time) si
 $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
 $('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
 $('btnPlaceRot').addEventListener('click', () => ctl.rotateGroup());
+// skip the night: the game is run on at once, as fast as the machine allows (a slice of every frame), until the morning; only while the village is
+// asleep and safe, and it stops the moment there is any trouble
+const skipBtn = $<HTMLButtonElement>('btnSkip');
+let skipping = false;
+function stopSkip(why?: string) { if (!skipping) return; skipping = false; syncButtons(); if (why) toast(why); }
+skipBtn.addEventListener('click', () => {
+  if (skipping) { stopSkip('Đã dừng tua'); return; }
+  const why = sim.skipNightBlock();
+  if (why) { toast(why); return; }
+  skipping = true; syncButtons();
+});
+/** Runs the skip for this frame: ticks of the game for up to ~30 ms, looking at the safety every game second. */
+function runSkip() {
+  const t0 = performance.now();
+  while (skipping && performance.now() - t0 < 30) {
+    for (let i = 0; i < 20; i++) sim.tick(TICK);
+    const why = sim.skipNightBlock();
+    if (why) stopSkip(why.startsWith('Chỉ tua') || sim.tod < 0.03 ? 'Trời đã sáng' : `Dừng tua: ${why}`); // at the break of day people get up while the clock still says night
+  }
+}
+function syncSkip() {
+  skipBtn.hidden = !sim.restTime && !skipping;
+  skipBtn.textContent = skipping ? '⏹ Dừng tua' : '⏭ Qua đêm';
+  skipBtn.classList.toggle('dim', !skipping && !!sim.skipNightBlock());
+}
 function setSpeed(s: number) { sim.speed = s; if (s > 0) { settings.speed = s; saveSettings(settings); } syncButtons(); }
 function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); tray.close(); } }
 function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'workshop' && x.done); if (b) { ctl.selectBuilding(b.id, true); ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE); } else toast('Chưa có Xưởng'); }
@@ -209,7 +235,7 @@ function updateHud(now: number) {
     $<HTMLButtonElement>('btnPlaceOk').disabled = why !== null;
     $('btnPlaceOk').textContent = moving || ctl.groupMoving ? '✓ Dời tới đây' : '✓ Đặt ở đây';
   }
-  menu.update(); tray.update(); if (statsDlg.isOpen) statsOverview.update();
+  menu.update(); tray.update(); tray.badge($('btnBuild')); if (statsDlg.isOpen) statsOverview.update();
   syncButtons();
 }
 ctl.onChange = () => { lastHud = 0; syncButtons(); };
@@ -221,7 +247,8 @@ function frame(t: number) {
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
   ctl.update(dt);
   if (started) session.tick();
-  sim.advance(dt);
+  if (skipping) runSkip(); else sim.advance(dt);
+  syncSkip();
   renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);
   buildingBar.place(); map.draw(); updateHud(t);
   requestAnimationFrame(frame);

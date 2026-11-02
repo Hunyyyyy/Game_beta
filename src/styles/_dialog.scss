@@ -6,6 +6,7 @@
 .gdlg-back {
   display: grid; place-items: center; padding: 12px; background: rgba(0, 0, 0, .6);
   &.fixed { position: fixed; inset: 0; z-index: 48; }
+  &.ontop { z-index: 60; }
   &.inside { position: absolute; inset: 0; z-index: 20; }
 }
 // the scroll itself
@@ -139,6 +140,7 @@
 @media (max-height: 759px) {
   .pleft { min-height: 0; }
   .gdlg.gbuild > .mbody { overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  .gdlg.gbuild > .mbody.subopen { overflow: hidden; } // a sub panel laid over the page has its own bar: not two
 }
 
 // the steps of drawing a map, from the top down: green done, red not yet

@@ -12,10 +12,10 @@
   "builder"
  ],
  "limit": [
-  14,
-  30,
-  50,
-  70
+ 40,
+  80,
+  120,
+  150
  ],
  "repeat": true,
  "levels": {
@@ -29,7 +29,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 40,
+    "hp": 300,
     "sight": 0
    },
    {
@@ -42,7 +42,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 120,
+    "hp": 600,
     "sight": 0
    },
    {
@@ -55,7 +55,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 240,
+    "hp": 1200,
     "sight": 0
    },
    {
@@ -68,7 +68,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 480,
+    "hp": 2000,
     "sight": 0
    }
   ]

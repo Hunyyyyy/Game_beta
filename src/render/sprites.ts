@@ -90,6 +90,7 @@ export class Sprites {
     this.icons.sling1 = make(toolSlingJson, 1).frames[0];
     this.icons.bow1 = make(toolBowJson, 1).frames[0];
     this.icons.hide1 = make(toolHideArmorJson, 1).frames[0];
+    this.icons.bone2 = this.icons.hide1; // the bone armour has no picture of its own yet: it shows as the hide one
     this.icons.torch1 = this.torchIcon();
     this.nature('spring');
     this.emblems.lab = this.scrollEmblem();

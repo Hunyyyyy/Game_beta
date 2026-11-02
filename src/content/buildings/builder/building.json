@@ -44,7 +44,7 @@
     "buildTime": 160,
     "cap": 0,
     "craftSpeed": 1,
-    "slots": 4,
+    "slots": 3,
     "hp": 360,
     "sight": 0
    },
@@ -57,7 +57,7 @@
     "buildTime": 233,
     "cap": 0,
     "craftSpeed": 1,
-    "slots": 5,
+    "slots": 4,
     "hp": 450,
     "sight": 0
    }

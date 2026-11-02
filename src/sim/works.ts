@@ -4,7 +4,7 @@ import { Building, BuildingKind, levelDef } from './buildings';
 import { WorkJob } from './jobs';
 import { Res, Stock } from './resources';
 import { isGear, RECIPE_BY_ID, recipeName, TIER_DURABILITY, ToolKind, TOOL_OF_JOB } from './tools';
-import { recipeNeedLevel, recipeOpen as blueprintDone, RESEARCH, Tech, TECH_BY_ID, techForRecipe } from './research';
+import { CRAFT_COST_PER_LEVEL, recipeNeedLevel, recipeOpen as blueprintDone, RESEARCH, Tech, TECH_BY_ID, techForRecipe } from './research';
 import type { Sim } from './sim';
 import { Villager } from './model';
 
@@ -21,6 +21,13 @@ export function orderDef(sim: Sim, kind: 'research' | 'craft', id: string): { co
 export function levelOfKind(sim: Sim, kind: BuildingKind): number { return sim.building(kind)?.level ?? 0; }
 
 export function workshopLevel(sim: Sim): number { return levelOfKind(sim, 'workshop'); }
+
+/** What the materials of a craft cost now, as a multiple of the base cost: half as much again for each level of the Nhà chế tạo above the first. */
+export const craftMult = (sim: Sim): number => 1 + CRAFT_COST_PER_LEVEL * Math.max(0, workshopLevel(sim) - 1);
+/** A cost made m times as big (every good at least 1, rounded up). */
+export const scaleCost = (cost: Partial<Stock>, m: number): Partial<Stock> => Object.fromEntries(Object.entries(cost).map(([r, n]) => [r, Math.max(1, Math.ceil((n as number) * m - 1e-9))])) as Partial<Stock>;
+/** What ordering one of this recipe costs at the Nhà chế tạo as it stands. */
+export const craftCost = (sim: Sim, id: string): Partial<Stock> => scaleCost(RECIPE_BY_ID[id].cost, craftMult(sim));
 
 /** Why a recipe cannot be made yet (blueprint or crafting-house level), or null. */
 export function recipeLock(sim: Sim, id: string): string | null {
@@ -70,13 +77,13 @@ export function queueResearch(sim: Sim, id: string): string | null {
   if (st.state === 'locked') return st.why ?? 'Chưa nghiên cứu được';
   const short = researchShort(sim, t);
   if (short) return short;
-  sim.pay(t.cost);
+  if (!sim.dev.freeWorks) sim.pay(t.cost);
   sim.researchQueue.push(id);
   return null;
 }
 
 /** Why the materials and coins for a research are not there, or null. They are paid when the research is queued. */
-export function researchShort(sim: Sim, t: Tech): string | null { return sim.missing(t.cost); }
+export function researchShort(sim: Sim, t: Tech): string | null { return sim.dev.freeWorks ? null : sim.missing(t.cost); }
 
 /** Throw goods out of a store to make room: one (the most worn first), or every one of that kind. Returns an error or null. */
 export function discardGoods(sim: Sim, id: string, all: boolean): string | null {
@@ -109,27 +116,40 @@ export function craftStoreBlock(sim: Sim, id: string): string | null {
   return storeRoom(sim, cat) > 0 ? null : cat === 'tool' ? 'Kho công cụ đã đầy: nâng cấp kho hoặc dùng bớt đồ' : 'Kho vũ khí đã đầy: nâng cấp kho hoặc dùng bớt đồ';
 }
 
-/** Queue a tool, weapon or armour for the Nhà chế tạo. */
+/** Queue a tool, weapon or armour for the Nhà chế tạo. The materials are paid now, as the order is put in the queue; cancelling it gives them back. */
 export function queueCraft(sim: Sim, id: string): string | null {
-  if (!RECIPE_BY_ID[id]) return 'Công thức không tồn tại';
+  const r = RECIPE_BY_ID[id];
+  if (!r) return 'Công thức không tồn tại';
   if (!sim.hasWorkshop()) return 'Cần dựng Nhà chế tạo trước';
   const lock = recipeLock(sim, id);
   if (lock) return lock;
   const full = craftStoreBlock(sim, id);
   if (full) return full;
   if (sim.craftQueue.length >= 12) return 'Hàng đợi đã đầy';
-  sim.craftQueue.push(id);
+  const mult = craftMult(sim);
+  if (!sim.dev.freeWorks) {
+    const cost = scaleCost(r.cost, mult), short = sim.missing(cost);
+    if (short) return short;
+    sim.pay(cost);
+  }
+  sim.craftQueue.push(id); sim.craftPaid.push(mult);
   return null;
 }
 
 export function unqueue(sim: Sim, queue: string[], id: string): void { const i = queue.lastIndexOf(id); if (i >= 0) queue.splice(i, 1); }
 
-export function unqueueCraft(sim: Sim, id: string): void { unqueue(sim, sim.craftQueue, id); }
+/** Cancel a queued order; what was paid for it comes back. */
+export function unqueueCraft(sim: Sim, id: string): void {
+  const r = RECIPE_BY_ID[id], i = sim.craftQueue.lastIndexOf(id);
+  if (!r || i < 0) return;
+  if (!sim.dev.freeWorks) sim.pay(scaleCost(r.cost, sim.craftPaid[i] ?? 1), 1);
+  sim.craftQueue.splice(i, 1); sim.craftPaid.splice(i, 1);
+}
 
 /** Cancel a queued research; what was paid comes back. */
 export function unqueueResearch(sim: Sim, id: string): void {
   const t = TECH_BY_ID[id];
-  if (t && sim.researchQueue.includes(id)) sim.pay(t.cost, 1);
+  if (t && sim.researchQueue.includes(id) && !sim.dev.freeWorks) sim.pay(t.cost, 1);
   unqueue(sim, sim.researchQueue, id);
 }
 
@@ -145,22 +165,22 @@ export function tickWorks(sim: Sim, dt: number): void {
     if (!b.done || (b.kind !== 'lab' && b.kind !== 'workshop')) continue;
     const kind = b.kind === 'lab' ? 'research' : 'craft';
     const queue = kind === 'research' ? sim.researchQueue : sim.craftQueue;
-    const staff = b.staff.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v);
+    const staff = b.staff.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v && v.phase === 'inside'); // only those at their bench: whoever is asleep in the house (off shift, night, worn out) does not work
     if (!staff.length) continue;
     if (!b.active) {
       const i = queue.findIndex((id) => {
         const d = orderDef(sim, kind, id);
-        if (!d || (kind !== 'research' && !sim.affordable(d.cost))) return false; // research was paid when it was queued
+        if (!d) return false; // research and crafting were both paid when they were queued
         if (kind === 'craft') return recipeOpen(sim, id);
         return true;
       });
       if (i < 0) {
-        if (queue.length && sim.time - sim.lastMatWarn > 30) { sim.lastMatWarn = sim.time; sim.say(kind === 'research' ? 'Nghiên cứu đang chờ.' : 'Đơn đang chờ: thiếu nguyên liệu.'); }
+        if (queue.length && sim.time - sim.lastMatWarn > 30) { sim.lastMatWarn = sim.time; sim.say(kind === 'research' ? 'Nghiên cứu đang chờ.' : 'Đơn đang chờ: chưa chế được (thiếu bản vẽ hoặc Nhà chế tạo chưa đủ cấp).'); }
         continue;
       }
-      const id = queue[i], d = orderDef(sim, kind, id)!;
-      queue.splice(i, 1); if (kind !== 'research') sim.pay(d.cost);
-      b.active = { id, progress: 0 };
+      const id = queue[i];
+      queue.splice(i, 1);
+      b.active = { id, progress: 0, paid: kind === 'craft' ? sim.craftPaid.splice(i, 1)[0] ?? 1 : undefined };
     }
     const d = orderDef(sim, kind, b.active.id);
     if (!d) { b.active = null; continue; }
