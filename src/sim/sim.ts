@@ -42,7 +42,7 @@ import * as warsupply from './warsupply';
 import * as warharass from './warharass';
 import * as warlog from './warlog';
 import { WAR, WarApi } from './simwar';
-import { BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, WarRecord, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
+import { BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutLoss, WarRecord, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
 import type { Ent } from './battle';
 export * from './model';
 
@@ -113,6 +113,8 @@ export class Sim {
   readonly plans: Plan[] = [];
   /** The wars fought, newest last (warlog.ts). */
   readonly warLog: WarRecord[] = [];
+  /** The scouts who died on their trips, with the reason (scouting.ts). */
+  readonly scoutLosses: ScoutLoss[] = [];
   nextPlan = 1;
   /** Game seconds until which the alarm drum is sounding (0 = quiet). */
   alarmUntil = 0;
@@ -654,6 +656,7 @@ export class Sim {
 
   kill(v: Villager, cause = 'vì đói'): void {
     warlog.noteDeath(this, v.id, v.job === 'supply', armOf(v));
+    if (v.job === 'scout') this.noteScoutLoss(v, cause);
     this.leaveNode(v); this.exitBuilding(v);
     this.villagers.splice(this.villagers.indexOf(v), 1); this.byId.delete(v.id);
     this.fogDirty = true;

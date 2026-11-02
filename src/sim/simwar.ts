@@ -158,6 +158,8 @@ export const WAR = {
   sleepsInTent(this: Sim, v: Villager): boolean { return wartent.sleepsInTent(this, v); },
   /** → warsupply.supplyAvailable: how many supply soldiers wait in their camp */
   supplyReady(this: Sim): number { return warsupply.supplyAvailable(this).length; },
+  /** → scouting.noteScoutLoss */
+  noteScoutLoss(this: Sim, v: Villager, cause: string): void { scouting.noteScoutLoss(this, v, cause); },
   /** → warlog.noteLoot */
   noteLoot(this: Sim, tribe: string, res: Res, n: number): void { warlog.noteLoot(this, tribe, res, n); },
   /** → warplan.regather: soldiers off their cell go back to it; returns how many */

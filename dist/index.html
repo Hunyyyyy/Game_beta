@@ -54931,11 +54931,27 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     sim2.say(`${scouts.length} trinh s\xE1t l\xEAn \u0111\u01B0\u1EDDng t\u1EDBi ${t.def.name} \u0111\u1EC3 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p ${Math.max(1, plan2.level)}: kho\u1EA3ng ${Math.round(plan2.chance * 100)}% v\u1EBD \u0111\u1EE7 chi ti\u1EBFt, c\u1EA3 chuy\u1EBFn m\u1EA5t ch\u1EEBng ${Math.max(1, Math.round(plan2.total / 60))} ph\xFAt.`);
     return null;
   }
-  function deathChance(sim2, m, v) {
-    const t = tribeOf(sim2, m.tribe);
-    const power = warriorsOf(sim2, m.tribe) * (1 + (t.mil ?? 0));
+  function deathParts(sim2, m, v) {
+    const t = tribeOf(sim2, m.tribe), pc = (x) => `${x >= 0 ? "+" : "\u2212"}${Math.round(Math.abs(x) * 1e3) / 10}%`;
+    const warriors = warriorsOf(sim2, m.tribe), power = warriors * (1 + (t.mil ?? 0));
     const day = sim2.weather === "clear" && !sim2.resting;
-    return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim2.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 5e-3) - gearOf(v, SIEGE.scout.gearHide)));
+    const strong = power / 5 / 100, light = (day ? 0.1 : 0) - (sim2.resting ? 0.1 : 0);
+    const stealth = Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 5e-3), gear = gearOf(v, SIEGE.scout.gearHide);
+    const raw = 0.1 + strong + light - stealth - gear, chance = Math.max(0.02, Math.min(0.9, raw));
+    const lines = [
+      `C\u01A1 b\u1EA3n: ${pc(0.1)}`,
+      `L\xE0ng c\xF3 ${warriors} l\xEDnh canh: ${pc(strong)}`,
+      day ? `Ban ng\xE0y tr\u1EDDi quang, d\u1EC5 b\u1ECB th\u1EA5y: ${pc(0.1)}` : sim2.resting ? `Ban \u0111\xEAm, kh\xF3 b\u1ECB th\u1EA5y: ${pc(-0.1)}` : "Tr\u1EDDi \xE2m u: 0%",
+      `S\u1EF1 kh\xE9o l\xE9o c\u1EE7a ${v.name} (Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c): ${pc(-stealth)}`,
+      gear > 0 ? `Trang b\u1ECB che gi\u1EA5u (gi\xE1p, \u0111u\u1ED1c, v\u0169 kh\xED): ${pc(-gear)}` : "Kh\xF4ng c\xF3 trang b\u1ECB che gi\u1EA5u: 0%"
+    ];
+    if (raw !== chance) lines.push(raw < chance ? `T\u1ED1i thi\u1EC3u 2%: n\xE2ng l\xEAn ${Math.round(chance * 100)}%` : `T\u1ED1i \u0111a 90%: gi\u1EA3m xu\u1ED1ng ${Math.round(chance * 100)}%`);
+    return { chance, lines };
+  }
+  function noteScoutLoss(sim2, v, cause, detail = "") {
+    const m = sim2.scouts.find((x) => x.ids.includes(v.id)), t = m ? tribeOf(sim2, m.tribe) : void 0;
+    if (!m || sim2.scoutLosses.some((l) => l.vid === v.id && l.at === sim2.time)) return;
+    sim2.scoutLosses.push({ at: sim2.time, day: sim2.day, vid: v.id, name: v.name, tribe: m.tribe, dist: t ? Math.round(Math.hypot(v.x - t.camp.x, v.y - t.camp.y)) : -1, cause, detail });
   }
   var awayScout = (sim2, v) => v.job === "scout" && sim2.scouts.some((m) => m.ids.includes(v.id));
   function recallScouts(sim2, tribe) {
@@ -54996,7 +55012,12 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
         const arrived = alive2.filter((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
         for (const v of arrived) if (!m.rolled.includes(v.id)) {
           m.rolled.push(v.id);
-          if (sim2.frnd() < deathChance(sim2, m, v)) sim2.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
+          const risk = deathParts(sim2, m, v);
+          if (sim2.frnd() < risk.chance) {
+            noteScoutLoss(sim2, v, "b\u1ECB ph\xE1t hi\u1EC7n khi th\xE1m th\xEDnh l\xE0ng", `X\xE1c su\u1EA5t b\u1ECB ph\xE1t hi\u1EC7n ${Math.round(risk.chance * 100)}%:
+${risk.lines.join("\n")}`);
+            sim2.killUnit(v, "v\xEC b\u1ECB ph\xE1t hi\u1EC7n khi trinh s\xE1t");
+          }
         }
         const here = arrived.filter((v) => v.health > 0 && sim2.byId.has(v.id));
         m.survivors = alive2.filter((v) => v.health > 0 && sim2.byId.has(v.id)).length;
@@ -57160,14 +57181,14 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
   }
 
   // src/sim/save.ts
-  var SAVE_VERSION = 25;
+  var SAVE_VERSION = 26;
   var SAVED = {
     /** Single values. */
     scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "tribeClock", "foodPot", "foodPenalty", "popBonus", "foodIncome", "foodSeen", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
     /** Objects whose keys are filled in place. */
     records: ["stock", "toolStock", "battle", "yieldNow", "yieldPrev", "ruins", "drafts"],
     /** Lists of plain data. */
-    lists: ["warLog", "wornTools", "craftQueue", "craftPaid", "tameQueue", "researchQueue", "log", "foodDays", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
+    lists: ["warLog", "scoutLosses", "wornTools", "craftQueue", "craftPaid", "tameQueue", "researchQueue", "log", "foodDays", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
     /** Handled by hand below. */
     special: ["researched", "questSeen", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
   };
@@ -57453,6 +57474,11 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
       p.stats ?? (p.stats = null);
     }
     return { ...d, version: 25 };
+  };
+  MIGRATIONS[25] = (d) => {
+    var _a;
+    (_a = d.lists).scoutLosses ?? (_a.scoutLosses = []);
+    return { ...d, version: 26 };
   };
 
   // src/sim/roles.ts
@@ -59701,6 +59727,10 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     supplyReady() {
       return supplyAvailable(this).length;
     },
+    /** → scouting.noteScoutLoss */
+    noteScoutLoss(v, cause) {
+      noteScoutLoss(this, v, cause);
+    },
     /** → warlog.noteLoot */
     noteLoot(tribe, res, n) {
       noteLoot(this, tribe, res, n);
@@ -59947,6 +59977,8 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
       this.plans = [];
       /** The wars fought, newest last (warlog.ts). */
       this.warLog = [];
+      /** The scouts who died on their trips, with the reason (scouting.ts). */
+      this.scoutLosses = [];
       this.nextPlan = 1;
       /** Game seconds until which the alarm drum is sounding (0 = quiet). */
       this.alarmUntil = 0;
@@ -60797,6 +60829,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     }
     kill(v, cause = "v\xEC \u0111\xF3i") {
       noteDeath(this, v.id, v.job === "supply", armOf(v));
+      if (v.job === "scout") this.noteScoutLoss(v, cause);
       this.leaveNode(v);
       this.exitBuilding(v);
       this.villagers.splice(this.villagers.indexOf(v), 1);
@@ -64636,6 +64669,8 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
       /** The village chosen in the list ('' for none), whether the picker of scouts is open, and the people picked to go. */
       this.sel = "";
       this.open = false;
+      /** The village whose list of dead scouts is open ('' for none). */
+      this.lossOpen = "";
       this.picked = /* @__PURE__ */ new Set();
       this.key = "";
       this.people = new RolePane(c, "scout", () => {
@@ -64657,6 +64692,8 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
       return [
         this.sel,
         this.open,
+        this.lossOpen,
+        this.c.sim.scoutLosses.length,
         [...this.picked].join("."),
         this.people.stateKey(),
         JSON.stringify(sim2.sightings.map((s) => [s.tribe, s.reported])),
@@ -64755,6 +64792,18 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
         this.c.toast(e ?? "\u0110\xE3 g\u1ECDi trinh s\xE1t v\u1EC1: h\u1ECD mang v\u1EC1 ph\u1EA7n \u0111\xE3 v\u1EBD");
         this.again();
       }, { tone: "alt", title: "G\u1ECDi v\u1EC1 khi ch\u01B0a v\u1EBD xong: ph\u1EA7n \u0111\xE3 v\u1EBD \u0111\u01B0\u1EE3c gi\u1EEF, ng\u01B0\u1EDDi kh\xE1c v\u1EBD ti\u1EBFp" }));
+      const losses = sim2.scoutLosses.filter((l) => l.tribe === id);
+      if (losses.length) {
+        const shown = this.lossOpen === id;
+        body.append(dlg.button(`${shown ? "\u1EA8n" : "Xem"} l\xFD do trinh s\xE1t ch\u1EBFt (${losses.length})`, () => {
+          this.lossOpen = shown ? "" : id;
+          this.again();
+        }, { small: true }));
+        if (shown) body.append(dlg.list(...[...losses].reverse().map((l) => dlg.tile(
+          { pic: "\u2620", name: l.name, chip: dlg.chip(`ng\xE0y ${l.day}`) },
+          [dlg.more(`Ch\u1EBFt: ${l.cause}${l.dist >= 0 ? ` \xB7 c\xE1ch l\xE0ng ${l.dist} \xF4` : ""}`), ...l.detail ? l.detail.split("\n").map((x) => dlg.more(x)) : [dlg.more("Kh\xF4ng c\xF3 th\xEAm chi ti\u1EBFt.")]]
+        ))));
+      }
       if (trip?.phase === "back") return body;
       const people = this.candidates(), limit = sim2.scoutLimit();
       for (const pid of [...this.picked]) if (!people.some((v) => v.id === pid)) this.picked.delete(pid);

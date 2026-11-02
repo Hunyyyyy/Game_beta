@@ -224,12 +224,25 @@ export function startScout(sim: Sim, ids: readonly number[], tribe: string): str
   return null;
 }
 
-/** The chance one scout is caught and killed: his own village's strength, daylight and his speed. */
-function deathChance(sim: Sim, m: ScoutMission, v: Villager): number {
-  const t = tribeOf(sim, m.tribe as never)!;
-  const power = warriorsOf(sim, m.tribe) * (1 + (t.mil ?? 0));
+/** The chance one scout is caught and killed on arriving at the village, with each part of it in words (shown to the player when scouts die). */
+function deathParts(sim: Sim, m: ScoutMission, v: Villager): { chance: number; lines: string[] } {
+  const t = tribeOf(sim, m.tribe as never)!, pc = (x: number) => `${x >= 0 ? '+' : '−'}${Math.round(Math.abs(x) * 1000) / 10}%`;
+  const warriors = warriorsOf(sim, m.tribe), power = warriors * (1 + (t.mil ?? 0));
   const day = sim.weather === 'clear' && !sim.resting;
-  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 0.005) - gearOf(v, SIEGE.scout.gearHide)));
+  const strong = power / 5 / 100, light = (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0);
+  const stealth = Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 0.005), gear = gearOf(v, SIEGE.scout.gearHide);
+  const raw = 0.1 + strong + light - stealth - gear, chance = Math.max(0.02, Math.min(0.9, raw));
+  const lines = [`Cơ bản: ${pc(0.1)}`, `Làng có ${warriors} lính canh: ${pc(strong)}`, day ? `Ban ngày trời quang, dễ bị thấy: ${pc(0.1)}` : sim.resting ? `Ban đêm, khó bị thấy: ${pc(-0.1)}` : 'Trời âm u: 0%',
+    `Sự khéo léo của ${v.name} (Nhanh nhẹn, Thể lực): ${pc(-stealth)}`, gear > 0 ? `Trang bị che giấu (giáp, đuốc, vũ khí): ${pc(-gear)}` : 'Không có trang bị che giấu: 0%'];
+  if (raw !== chance) lines.push(raw < chance ? `Tối thiểu 2%: nâng lên ${Math.round(chance * 100)}%` : `Tối đa 90%: giảm xuống ${Math.round(chance * 100)}%`);
+  return { chance, lines };
+}
+
+/** A scout died on a trip: remember who, where and why. Called for any death (Sim.kill); one already noted by the trip itself is not noted twice. */
+export function noteScoutLoss(sim: Sim, v: Villager, cause: string, detail = ''): void {
+  const m = sim.scouts.find((x) => x.ids.includes(v.id)), t = m ? tribeOf(sim, m.tribe as never) : undefined;
+  if (!m || sim.scoutLosses.some((l) => l.vid === v.id && l.at === sim.time)) return;
+  sim.scoutLosses.push({ at: sim.time, day: sim.day, vid: v.id, name: v.name, tribe: m.tribe, dist: t ? Math.round(Math.hypot(v.x - t.camp.x, v.y - t.camp.y)) : -1, cause, detail });
 }
 
 /** Whether a villager is a scout out on a trip: he works day and night, is never tired out and does not sleep until he is home. */
@@ -276,7 +289,7 @@ export function tickScouts(sim: Sim, dt: number): void {
     if (m.phase !== 'back') {
       // the ones who have reached the village risk being caught, once each; the ones who are there draw the map
       const arrived = alive.filter((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
-      for (const v of arrived) if (!m.rolled.includes(v.id)) { m.rolled.push(v.id); if (sim.frnd() < deathChance(sim, m, v)) sim.killUnit(v, 'vì bị phát hiện khi trinh sát'); }
+      for (const v of arrived) if (!m.rolled.includes(v.id)) { m.rolled.push(v.id); const risk = deathParts(sim, m, v); if (sim.frnd() < risk.chance) { noteScoutLoss(sim, v, 'bị phát hiện khi thám thính làng', `Xác suất bị phát hiện ${Math.round(risk.chance * 100)}%:\n${risk.lines.join('\n')}`); sim.killUnit(v, 'vì bị phát hiện khi trinh sát'); } }
       const here = arrived.filter((v) => v.health > 0 && sim.byId.has(v.id));
       m.survivors = alive.filter((v) => v.health > 0 && sim.byId.has(v.id)).length;
       if (m.phase === 'go' && here.length) {

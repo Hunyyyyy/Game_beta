@@ -221,6 +221,8 @@ export interface TribeIntel {
   soldiers: { foot: number; archer: number; cavalry: number } | null;
 }
 /** `sent` is how many set out (older saves lack it). */
+/** A scout who died on a trip: who, where, why, and (when he was caught) the odds that were against him. */
+export interface ScoutLoss { at: number; day: number; vid: number; name: string; tribe: string; dist: number; cause: string; detail: string }
 export interface ScoutMission {
   id: number; tribe: string; level: number; ids: number[]; phase: 'go' | 'watch' | 'back'; t: number; need: number; survivors: number; sent?: number; seen?: Seen[];
   /** How much of the map is drawn (0..1): it grows while scouts are at the village, and is theirs to carry home. */
