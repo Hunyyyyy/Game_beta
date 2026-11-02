@@ -146,6 +146,8 @@ export class Sim {
   foodPenalty = 0;
   /** When the war that is on began (seconds of game time); -1 in peace. The meals of those days are paid when it ends (economy.eatWar). */
   warSince = -1;
+  /** What the camera sees plus a margin (tiles), set by the screen each frame; null: everything counts as seen. Only drawing and animation look at it, never the rules. */
+  view: { x0: number; y0: number; x1: number; y1: number } | null = null;
   /** Food that came in today, and the total (pot + store) seen last tick (-1: not yet); the incomes of the last three days. Only to tell the player what the village earns. */
   foodIncome = 0;
   foodSeen = -1;
@@ -216,6 +218,8 @@ export class Sim {
   shouldSleep(v: Villager, fighting: boolean): boolean { return rest.shouldSleep(this, v, fighting); }
   /** → rest.tickEnergy */
   tickEnergy(v: Villager, dt: number): void { rest.tickEnergy(this, v, dt); }
+  /** Is the point (tiles) where the camera looks (with its margin)? */
+  inView(x: number, y: number): boolean { const w = this.view; return !w || (x >= w.x0 && x <= w.x1 && y >= w.y0 && y <= w.y1); }
   /** → warmode.warPlan: a war is on */
   atWar(): boolean { return !!warmode.warPlan(this); }
   /** → villagers.goHome */

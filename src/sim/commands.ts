@@ -163,19 +163,21 @@ export function enlist(sim: Sim, ids: readonly number[]): number {
 }
 
 /** Call these soldiers out of their camp: they stand outside, ready, until they are sent back (the camp's own button, like the army's "Gọi quân"). Returns how many. */
+/** Who lives in a camp and can be called out of it: soldiers, and scouts in their tent (not while they are away on a trip). */
+const campFolk = (sim: Sim, v: Villager): boolean => v.job === 'fight' || (v.job === 'scout' && !sim.scouts.some((m) => m.ids.includes(v.id)));
 export const isOut = (v: Villager): boolean => (v.guard ? !v.housed : !!v.out);
 export function callOut(sim: Sim, ids: readonly number[]): number {
   let n = 0;
-  for (const v of mine(sim, ids)) { if (v.job !== 'fight' || v.post >= 0 || isOut(v)) continue; v.recall = false; if (v.guard) v.housed = false; else v.out = true; sim.exitBuilding(v); if (v.phase === 'sleep' || v.phase === 'goHome') { v.phase = 'idle'; v.path = []; v.bed = -1; } n++; }
-  if (n) sim.say(n === 1 ? 'Một lính được gọi ra khỏi trại.' : `${n} lính được gọi ra khỏi trại.`);
+  for (const v of mine(sim, ids)) { if (!campFolk(sim, v) || v.post >= 0 || isOut(v)) continue; v.recall = false; if (v.guard) v.housed = false; else v.out = true; sim.exitBuilding(v); if (v.phase === 'sleep' || v.phase === 'goHome') { v.phase = 'idle'; v.path = []; v.bed = -1; } n++; }
+  if (n) sim.say(n === 1 ? 'Một người được gọi ra khỏi trại.' : `${n} người được gọi ra khỏi trại.`);
   return n;
 }
 
 /** Send called-out soldiers back to their camp. Returns how many. */
 export function sendBack(sim: Sim, ids: readonly number[]): number {
   let n = 0;
-  for (const v of mine(sim, ids)) { if (v.job !== 'fight' || v.post >= 0 || !isOut(v)) continue; if (v.guard) v.housed = true; else v.out = false; v.recall = true; n++; } // he drops any fight he is in and goes in
-  if (n) sim.say(n === 1 ? 'Một lính về trại.' : `${n} lính về trại.`);
+  for (const v of mine(sim, ids)) { if (!campFolk(sim, v) || v.post >= 0 || !isOut(v)) continue; if (v.guard) v.housed = true; else v.out = false; v.recall = true; n++; } // he drops any fight he is in and goes in
+  if (n) sim.say(n === 1 ? 'Một người về trại.' : `${n} người về trại.`);
   return n;
 }
 

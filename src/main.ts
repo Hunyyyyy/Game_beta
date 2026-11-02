@@ -247,6 +247,7 @@ function frame(t: number) {
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
   ctl.update(dt);
   if (started) session.tick();
+  { const m = 10, z = cam.zoom; sim.view = { x0: cam.x / TILE - m, y0: cam.y / TILE - m, x1: (cam.x + renderer.w / z) / TILE + m, y1: (cam.y + renderer.h / z) / TILE + m }; } // seen: the screen and 10 tiles round it
   if (skipping) runSkip(); else sim.advance(dt);
   syncSkip();
   renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);

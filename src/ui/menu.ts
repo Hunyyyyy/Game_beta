@@ -147,6 +147,9 @@ export class Menu {
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),
       btn('Gọi sự kiện (theo cấp lửa)', () => toast(dev.callEvent(sim)), 'Gọi ngay sự kiện đã hẹn mạnh nhất mà trại cấp lửa hiện tại đủ sức đón')));
 
+    page.append(h('h3', { text: 'Trinh sát' }));
+    page.append(h('div', { class: 'devrow' }, ...[1, 2, 3].map((n) => btn(`Trinh sát tự tìm làng: bản đồ cấp ${n}`, () => toast(dev.autoScout(sim, n)), 'Làng gần nhất chưa có bản đồ cấp này được tìm và vẽ xong ngay (không cần trinh sát thật), để có dữ liệu cho phần vẽ bản đồ'))));
+
     page.append(h('h3', { text: 'Thời gian và thời tiết' }));
     page.append(h('div', { class: 'devrow' }, btn('Sáng', () => dev.setTimeOfDay(sim, 0.3)), btn('Trưa', () => dev.setTimeOfDay(sim, 0.5)), btn('Chiều', () => dev.setTimeOfDay(sim, 0.78)), btn('Đêm', () => dev.setTimeOfDay(sim, 0.95)), btn('+1 ngày', () => dev.skipDays(sim, 1)), btn('+5 ngày', () => dev.skipDays(sim, 5))));
     page.append(h('div', { class: 'devrow' }, ...SEASONS.map((s) => btn(SEASON_NAME[s], () => dev.setSeason(sim, s)))));

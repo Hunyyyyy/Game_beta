@@ -7,7 +7,8 @@ import { RES_LIST, Res } from './resources';
 import type { RoleId } from './jobs';
 import type { Sim } from './sim';
 import { RECIPES } from './tools';
-import { fireEventNow } from './tribes';
+import { seenNow } from './scouting';
+import { fireEventNow, tribeOf } from './tribes';
 import { Tile } from './world';
 
 /**
@@ -179,4 +180,23 @@ function addVillager(sim: Sim): void {
   const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim.nearestFree(gx, gy, new Set()) ?? [gx, gy];
   const v = sim.makeVillager(spot[0], spot[1], sim.frnd() < 0.5 ? 'm' : 'f', 'player', sim.frnd);
   sim.villagers.push(v); sim.registerUnit(v);
+}
+
+/**
+ * A scouting trip done at once, for the map-drawing data: the nearest village that has no map of this level yet is found and mapped in full (no gaps), as if
+ * scouts had gone there and come back. Returns a line about it.
+ */
+export function autoScout(sim: Sim, level: number): string {
+  const f = sim.campfire(), from = f ? { x: f.x, y: f.y } : sim.world.start;
+  const ts = sim.tribes.filter((t) => t.state !== 'destroyed' && !sim.maps.some((m) => m.tribe === t.id && m.level >= level))
+    .sort((a, b) => Math.hypot(a.camp.x - from.x, a.camp.y - from.y) - Math.hypot(b.camp.x - from.x, b.camp.y - from.y));
+  const t = ts[0];
+  if (!t) return `Mọi làng đều đã có bản đồ cấp ${level}`;
+  sim.world.ensure(t.camp.x, t.camp.y, 30);
+  if (!sim.sightings.some((s) => s.tribe === t.id)) sim.sightings.push({ tribe: t.id, by: -1, at: sim.time, reported: true });
+  else for (const s of sim.sightings) if (s.tribe === t.id) s.reported = true;
+  const old = sim.maps.findIndex((m) => m.tribe === t.id && m.level === level);
+  const map = { tribe: t.id, level, at: sim.time, gaps: 0, seen: level >= 2 ? seenNow(sim, tribeOf(sim, t.id)!) : undefined };
+  if (old >= 0) sim.maps[old] = map; else sim.maps.push(map);
+  return `Trinh sát đã vẽ xong bản đồ cấp ${level} của ${t.def.name}`;
 }

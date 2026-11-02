@@ -93,7 +93,7 @@ export function scoutLimit(sim: Sim): number {
 export const onTrip = (sim: Sim, v: Villager): boolean => sim.scouts.some((m) => m.ids.includes(v.id));
 
 /** Who may be sent: a scout, healthy, out in the open and not already away. */
-export const canScout = (sim: Sim, v: Villager): boolean => v.job === 'scout' && v.health > 0 && v.inside === null && !onTrip(sim, v);
+export const canScout = (sim: Sim, v: Villager): boolean => v.job === 'scout' && v.health > 0 && !onTrip(sim, v); // a scout in his tent is sent too: he comes out (startScout)
 
 /** The scouts of the village, as a role like the soldiers: recruited and let go at the Trại trinh sát. */
 export const scoutRoster = (sim: Sim): Villager[] => sim.villagers.filter((v) => v.job === 'scout');
@@ -207,6 +207,7 @@ export function startScout(sim: Sim, ids: readonly number[], tribe: string): str
   const fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y;
   void fx; void fy;
   scouts.forEach((v, i) => {
+    sim.exitBuilding(v); v.out = false; v.recall = false;
     sim.resetTask(v); sim.clearCombat(v);
     const spot = watchSpot(sim, t, i);
     sim.orderMove([v.id], spot[0], spot[1]);
@@ -323,7 +324,7 @@ const WORKS: Record<string, { level: number; label: string }> = {
 const spread = (id: number, salt: number): number => { const x = Math.sin(id * 12.9898 + salt * 78.233) * 43758.5453; return x - Math.floor(x); };
 
 /** Everyone alive in the village, where he stands now and what he carries. */
-function seenNow(sim: Sim, t: NonNullable<ReturnType<typeof tribeOf>>): Seen[] {
+export function seenNow(sim: Sim, t: NonNullable<ReturnType<typeof tribeOf>>): Seen[] {
   const out: Seen[] = [];
   for (const id of t.unitIds) {
     const u = sim.get(id); if (!u || u.health <= 0) continue;

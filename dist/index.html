@@ -46413,16 +46413,17 @@ body.war .sheet, body.war .bbar {
         }
       }
       const vx0 = cx - 128, vx1 = cx + this.w / z + 128, vy0 = cy - 128, vy1 = cy + this.h / z + 128;
+      const onScr = (x, y) => x * TILE >= vx0 && x * TILE <= vx1 && y * TILE >= vy0 && y * TILE <= vy1;
       for (const b of sim2.buildings) {
         const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
         if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
         list.push({ y: ay, kind: "building", i: 0, j: 0, b });
       }
-      for (const v of sim2.villagers) if (v.inside === null) list.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
+      for (const v of sim2.villagers) if (v.inside === null && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
       const seen = (x, y) => sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
-      for (const f of sim2.foes) if (seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
-      for (const a of sim2.animals) if (seen(a.x, a.y)) list.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
-      for (const t of sim2.tribes) if (t.state !== "adopted" && sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: "camp", i: 0, j: 0, t });
+      for (const f of sim2.foes) if (onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
+      for (const a of sim2.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
+      for (const t of sim2.tribes) if (t.state !== "adopted" && onScr(t.camp.x, t.camp.y) && sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: "camp", i: 0, j: 0, t });
       list.sort((a, b) => a.y - b.y);
       const wallAt = /* @__PURE__ */ new Map();
       for (const b of sim2.buildings) if (b.kind === "fence" || b.kind === "gate") wallAt.set(b.y * N + b.x, b);
@@ -46582,7 +46583,7 @@ body.war .sheet, body.war .bbar {
           ctx2.fillRect(p.x - rad3, p.y - rad3, rad3 * 2, rad3 * 2);
         }
         for (const v of sim2.villagers) {
-          if (!v.lit) continue;
+          if (!v.lit || !onScr(v.x, v.y)) continue;
           const p = this.worldToScreen(v.x * TILE - 8, v.y * TILE - 22), rad3 = 52 * z, flick = 0.92 + 0.08 * Math.sin(time * 9 + v.id);
           const g = ctx2.createRadialGradient(p.x, p.y, 2 * z, p.x, p.y, rad3);
           g.addColorStop(0, `rgba(255,176,80,${(0.42 * dark * flick).toFixed(3)})`);
@@ -46601,7 +46602,7 @@ body.war .sheet, body.war .bbar {
       ctx2.font = `700 ${Math.max(10, 5 * z)}px system-ui, sans-serif`;
       ctx2.textAlign = "center";
       for (const v of sim2.villagers) {
-        if (v.phase !== "sleep") continue;
+        if (v.phase !== "sleep" || !onScr(v.x, v.y)) continue;
         const p = this.worldToScreen(v.x * TILE - 10, v.y * TILE - 14), k = (time * 0.6 + v.id * 0.37) % 1;
         ctx2.fillStyle = `rgba(235,240,255,${(0.9 * (1 - k)).toFixed(2)})`;
         ctx2.fillText("z", p.x + k * 6 * z, p.y - k * 10 * z);
@@ -51630,7 +51631,7 @@ body.war .sheet, body.war .bbar {
     return sim2.dev.freeBuild ? 8 : sim2.buildings.reduce((n, b) => n + (b.kind === "scouttent" && b.done ? levelDef(b).slots : 0), 0);
   }
   var onTrip = (sim2, v) => sim2.scouts.some((m) => m.ids.includes(v.id));
-  var canScout = (sim2, v) => v.job === "scout" && v.health > 0 && v.inside === null && !onTrip(sim2, v);
+  var canScout = (sim2, v) => v.job === "scout" && v.health > 0 && !onTrip(sim2, v);
   var scoutRoster = (sim2) => sim2.villagers.filter((v) => v.job === "scout");
   var canBeScout = (v) => v.job === "fight" && v.arm === "cavalry";
   function enlistScouts(sim2, ids) {
@@ -51735,6 +51736,9 @@ body.war .sheet, body.war .bbar {
     void fx;
     void fy;
     scouts.forEach((v, i) => {
+      sim2.exitBuilding(v);
+      v.out = false;
+      v.recall = false;
       sim2.resetTask(v);
       sim2.clearCombat(v);
       const spot = watchSpot(sim2, t, i);
@@ -52097,7 +52101,7 @@ body.war .sheet, body.war .bbar {
   }
   function onShift(sim2, v) {
     if (v.nightOwl) return true;
-    if (v.out && v.job === "fight") return true;
+    if (v.out && (v.job === "fight" || v.job === "scout")) return true;
     if (v.job === "fight" && sim2.warLock()) return true;
     const night = sim2.resting;
     if (v.job === "idle") return v.shift === "both" || !night;
@@ -52147,7 +52151,8 @@ body.war .sheet, body.war .bbar {
     }
   }
   function quartered(sim2, v) {
-    if (v.team !== "player" || v.job !== "fight" || v.post >= 0 || v.guard && !v.housed) return false;
+    const soldier = v.job === "fight" && v.post < 0 && !(v.guard && !v.housed), scout = v.job === "scout" && !awayScout(sim2, v);
+    if (v.team !== "player" || !(soldier || scout)) return false;
     if (sim2.alarmUntil > sim2.time || sim2.warLock() || v.out) return false;
     const camp = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
     return !!camp && camp.kind === homeKind(v) || !!freeBed(sim2, v);
@@ -53204,11 +53209,12 @@ body.war .sheet, body.war .bbar {
     }
     return n;
   }
+  var campFolk = (sim2, v) => v.job === "fight" || v.job === "scout" && !sim2.scouts.some((m) => m.ids.includes(v.id));
   var isOut = (v) => v.guard ? !v.housed : !!v.out;
   function callOut(sim2, ids) {
     let n = 0;
     for (const v of mine(sim2, ids)) {
-      if (v.job !== "fight" || v.post >= 0 || isOut(v)) continue;
+      if (!campFolk(sim2, v) || v.post >= 0 || isOut(v)) continue;
       v.recall = false;
       if (v.guard) v.housed = false;
       else v.out = true;
@@ -53220,19 +53226,19 @@ body.war .sheet, body.war .bbar {
       }
       n++;
     }
-    if (n) sim2.say(n === 1 ? "M\u1ED9t l\xEDnh \u0111\u01B0\u1EE3c g\u1ECDi ra kh\u1ECFi tr\u1EA1i." : `${n} l\xEDnh \u0111\u01B0\u1EE3c g\u1ECDi ra kh\u1ECFi tr\u1EA1i.`);
+    if (n) sim2.say(n === 1 ? "M\u1ED9t ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c g\u1ECDi ra kh\u1ECFi tr\u1EA1i." : `${n} ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c g\u1ECDi ra kh\u1ECFi tr\u1EA1i.`);
     return n;
   }
   function sendBack(sim2, ids) {
     let n = 0;
     for (const v of mine(sim2, ids)) {
-      if (v.job !== "fight" || v.post >= 0 || !isOut(v)) continue;
+      if (!campFolk(sim2, v) || v.post >= 0 || !isOut(v)) continue;
       if (v.guard) v.housed = true;
       else v.out = false;
       v.recall = true;
       n++;
     }
-    if (n) sim2.say(n === 1 ? "M\u1ED9t l\xEDnh v\u1EC1 tr\u1EA1i." : `${n} l\xEDnh v\u1EC1 tr\u1EA1i.`);
+    if (n) sim2.say(n === 1 ? "M\u1ED9t ng\u01B0\u1EDDi v\u1EC1 tr\u1EA1i." : `${n} ng\u01B0\u1EDDi v\u1EC1 tr\u1EA1i.`);
     return n;
   }
   function discharge(sim2, ids) {
@@ -53507,6 +53513,12 @@ body.war .sheet, body.war .bbar {
     }
   }
   function animate(sim2, v, dt) {
+    const lit = !!v.torch && sim2.resting && v.phase !== "sleep" && v.phase !== "goHome";
+    if (lit !== v.lit) {
+      v.lit = lit;
+      sim2.fogDirty = true;
+    }
+    if (!sim2.inView(v.x, v.y)) return;
     let anim = "idle", hold = null;
     const walking = v.path.length > 0 || !!v.slide;
     const armed = () => {
@@ -53547,11 +53559,6 @@ body.war .sheet, body.war .bbar {
         hold = { kind: "hammer", tier: t };
       } else anim = "gather";
     } else if (v.phase === "skin") anim = "gather";
-    const lit = !!v.torch && sim2.resting && v.phase !== "sleep" && v.phase !== "goHome";
-    if (lit !== v.lit) {
-      v.lit = lit;
-      sim2.fogDirty = true;
-    }
     if (anim !== v.anim) {
       v.anim = anim;
       v.animClock = 0;
@@ -56434,6 +56441,8 @@ body.war .sheet, body.war .bbar {
       this.foodPenalty = 0;
       /** When the war that is on began (seconds of game time); -1 in peace. The meals of those days are paid when it ends (economy.eatWar). */
       this.warSince = -1;
+      /** What the camera sees plus a margin (tiles), set by the screen each frame; null: everything counts as seen. Only drawing and animation look at it, never the rules. */
+      this.view = null;
       /** Food that came in today, and the total (pot + store) seen last tick (-1: not yet); the incomes of the last three days. Only to tell the player what the village earns. */
       this.foodIncome = 0;
       this.foodSeen = -1;
@@ -56531,6 +56540,11 @@ body.war .sheet, body.war .bbar {
     /** → rest.tickEnergy */
     tickEnergy(v, dt) {
       tickEnergy(this, v, dt);
+    }
+    /** Is the point (tiles) where the camera looks (with its margin)? */
+    inView(x, y) {
+      const w = this.view;
+      return !w || x >= w.x0 && x <= w.x1 && y >= w.y0 && y <= w.y1;
     }
     /** → warmode.warPlan: a war is on */
     atWar() {
@@ -58762,6 +58776,20 @@ body.war .sheet, body.war .bbar {
     sim2.villagers.push(v);
     sim2.registerUnit(v);
   }
+  function autoScout(sim2, level) {
+    const f = sim2.campfire(), from = f ? { x: f.x, y: f.y } : sim2.world.start;
+    const ts = sim2.tribes.filter((t2) => t2.state !== "destroyed" && !sim2.maps.some((m) => m.tribe === t2.id && m.level >= level)).sort((a, b) => Math.hypot(a.camp.x - from.x, a.camp.y - from.y) - Math.hypot(b.camp.x - from.x, b.camp.y - from.y));
+    const t = ts[0];
+    if (!t) return `M\u1ECDi l\xE0ng \u0111\u1EC1u \u0111\xE3 c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p ${level}`;
+    sim2.world.ensure(t.camp.x, t.camp.y, 30);
+    if (!sim2.sightings.some((s) => s.tribe === t.id)) sim2.sightings.push({ tribe: t.id, by: -1, at: sim2.time, reported: true });
+    else for (const s of sim2.sightings) if (s.tribe === t.id) s.reported = true;
+    const old = sim2.maps.findIndex((m) => m.tribe === t.id && m.level === level);
+    const map2 = { tribe: t.id, level, at: sim2.time, gaps: 0, seen: level >= 2 ? seenNow(sim2, tribeOf(sim2, t.id)) : void 0 };
+    if (old >= 0) sim2.maps[old] = map2;
+    else sim2.maps.push(map2);
+    return `Trinh s\xE1t \u0111\xE3 v\u1EBD xong b\u1EA3n \u0111\u1ED3 c\u1EA5p ${level} c\u1EE7a ${t.def.name}`;
+  }
 
   // src/ui/menu.ts
   var TABS = [["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
@@ -59005,6 +59033,8 @@ body.war .sheet, body.war .bbar {
         btn("+100 m\u1ED7i t\xE0i nguy\xEAn", () => addAllStock(sim2, 100), "C\u1ED9ng 100 m\u1ED7i lo\u1EA1i (kh\xF4ng qu\xE1 s\u1EE9c ch\u1EE9a)"),
         btn("G\u1ECDi s\u1EF1 ki\u1EC7n (theo c\u1EA5p l\u1EEDa)", () => toast2(callEvent(sim2)), "G\u1ECDi ngay s\u1EF1 ki\u1EC7n \u0111\xE3 h\u1EB9n m\u1EA1nh nh\u1EA5t m\xE0 tr\u1EA1i c\u1EA5p l\u1EEDa hi\u1EC7n t\u1EA1i \u0111\u1EE7 s\u1EE9c \u0111\xF3n")
       ));
+      page.append(h("h3", { text: "Trinh s\xE1t" }));
+      page.append(h("div", { class: "devrow" }, ...[1, 2, 3].map((n) => btn(`Trinh s\xE1t t\u1EF1 t\xECm l\xE0ng: b\u1EA3n \u0111\u1ED3 c\u1EA5p ${n}`, () => toast2(autoScout(sim2, n)), "L\xE0ng g\u1EA7n nh\u1EA5t ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p n\xE0y \u0111\u01B0\u1EE3c t\xECm v\xE0 v\u1EBD xong ngay (kh\xF4ng c\u1EA7n trinh s\xE1t th\u1EADt), \u0111\u1EC3 c\xF3 d\u1EEF li\u1EC7u cho ph\u1EA7n v\u1EBD b\u1EA3n \u0111\u1ED3"))));
       page.append(h("h3", { text: "Th\u1EDDi gian v\xE0 th\u1EDDi ti\u1EBFt" }));
       page.append(h("div", { class: "devrow" }, btn("S\xE1ng", () => setTimeOfDay(sim2, 0.3)), btn("Tr\u01B0a", () => setTimeOfDay(sim2, 0.5)), btn("Chi\u1EC1u", () => setTimeOfDay(sim2, 0.78)), btn("\u0110\xEAm", () => setTimeOfDay(sim2, 0.95)), btn("+1 ng\xE0y", () => skipDays(sim2, 1)), btn("+5 ng\xE0y", () => skipDays(sim2, 5))));
       page.append(h("div", { class: "devrow" }, ...SEASONS.map((s) => btn(SEASON_NAME[s], () => setSeason(sim2, s)))));
@@ -59494,7 +59524,7 @@ body.war .sheet, body.war .bbar {
       const state = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` \xB7 ${this.c.sim.buildWhy(b)}` : ""}` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` \xB7 ${this.c.sim.buildWhy(b)}` : ""}` : canGrow(b.kind) ? `c\u1EA5p ${b.level}/${top} \xB7 ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
       const hp = b.done ? ` \xB7 b\u1EC1n ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? " \xB7 \u0111ang ch\xE1y" : b.hp <= maxHp(b) * 0.7 ? " \xB7 b\u1ED1c kh\xF3i" : ""}` : "";
       const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < top;
-      const campRole = ["foot", "cavalry", "archer", "guard"].find((r) => ROLES[r].building === b.kind), camp = campRole ? this.c.sim.villagers.filter((v) => roleOf(v) === campRole) : [];
+      const campRole = ["foot", "cavalry", "archer", "guard", "scout"].find((r) => ROLES[r].building === b.kind), camp = campRole ? this.c.sim.villagers.filter((v) => roleOf(v) === campRole) : [];
       const campOut = { ids: camp.map((v) => v.id), all: camp.length > 0 && camp.every((v) => this.c.sim.isOut(v)) };
       this.card.set({
         picKey: `${b.kind}${b.level}${b.done}`,
@@ -60912,7 +60942,7 @@ body.war .sheet, body.war .bbar {
       const pool = role === "scout" ? sim2.villagers.filter((v) => v.job === "fight" && !v.guard && v.arm === "cavalry" && v.down <= 0) : sim2.villagers.filter((v) => v.health > 0 && v.down <= 0 && roleOf(v) !== role);
       const key = (v) => STAT_OF[role] === "scout" ? sim2.scoutSkill(v) : v.stats[STAT_OF[role]];
       const out = [hint(h("div", { class: "dhouse" }, h("b", { text: roleName(role, era) }), dlg.slots(have.length, cap >= 99 ? 99 : cap)), HELP[role])];
-      const camp = (role === "foot" || role === "cavalry" || role === "archer" || role === "guard") && have.length > 0;
+      const camp = (role === "foot" || role === "cavalry" || role === "archer" || role === "guard" || role === "scout") && have.length > 0;
       if (camp) {
         const allOut = have.every((v) => sim2.isOut(v)), ids = have.map((v) => v.id);
         out.push(h("div", { class: "btns" }, h("button", {
@@ -64292,6 +64322,10 @@ body.war .sheet, body.war .bbar {
     if (dt > 0) fps = fps * 0.9 + 1 / dt * 0.1;
     ctl.update(dt);
     if (started) session.tick();
+    {
+      const m = 10, z = cam.zoom;
+      sim.view = { x0: cam.x / TILE - m, y0: cam.y / TILE - m, x1: (cam.x + renderer.w / z) / TILE + m, y1: (cam.y + renderer.h / z) / TILE + m };
+    }
     if (skipping) runSkip();
     else sim.advance(dt);
     syncSkip();

@@ -37,6 +37,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'dev',         // test switches
   'byId', 'animalById', // rebuilt after loading
   'threatCache', 'pathLeft', // rebuilt every tick
+  'view', // where the camera is: the screen's, not the game's
   'warSince', // the game cannot be saved while a war is on
   'leaderClock', // a timer: leaders are picked again within a second of loading
   'controlled', // what the player has selected: the screen's, not the game's

@@ -184,7 +184,7 @@ export function giveTorch(sim: Sim, ids: readonly number[]): string | null {
 /** Whether the villager's shift has them up right now (before torches and tiredness are looked at). */
 export function onShift(sim: Sim, v: Villager): boolean {
   if (v.nightOwl) return true; // called up by the player or the alarm until the shift changes
-  if (v.out && v.job === 'fight') return true; // called out of his camp by hand: on his feet until he is sent back
+  if (v.out && (v.job === 'fight' || v.job === 'scout')) return true; // called out of his camp by hand: on his feet until he is sent back
   if (v.job === 'fight' && sim.warLock()) return true; // in a war the army is on its feet, night or day
   const night = sim.resting;
   if (v.job === 'idle') return v.shift === 'both' || !night; // a free villager is on his feet by day only, unless he was sent out by hand
@@ -243,7 +243,8 @@ export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
  * out only when the player calls the army or a war is on, whatever else happens; when that is over they go back in.
  */
 export function quartered(sim: Sim, v: Villager): boolean {
-  if (v.team !== 'player' || v.job !== 'fight' || v.post >= 0 || (v.guard && !v.housed)) return false;
+  const soldier = v.job === 'fight' && v.post < 0 && !(v.guard && !v.housed), scout = v.job === 'scout' && !awayScout(sim, v); // the scouts wait in their tent too, except on a trip
+  if (v.team !== 'player' || !(soldier || scout)) return false;
   if (sim.alarmUntil > sim.time || sim.warLock() || v.out) return false;
   const camp = v.inside === null ? undefined : sim.getBuilding(v.inside);
   return (!!camp && camp.kind === homeKind(v)) || !!freeBed(sim, v); // only when there is a bed for him in his camp

@@ -96,6 +96,9 @@ export function moveUnit(sim: Sim, v: Villager, dt: number): void {
 
 /** Pick the animation and the item in hand from what the unit is doing. */
 export function animate(sim: Sim, v: Villager, dt: number): void {
+  const lit = !!v.torch && sim.resting && v.phase !== 'sleep' && v.phase !== 'goHome';
+  if (lit !== v.lit) { v.lit = lit; sim.fogDirty = true; }
+  if (!sim.inView(v.x, v.y)) return; // out of sight nobody needs a pose: it is worked out when the camera comes
   let anim = 'idle', hold: Hold | null = null;
   const walking = v.path.length > 0 || !!v.slide;
   // Fighting has its own poses, apart from the work animations. Which ones depend on the weapon's style (weapons.json): see poseOf.
@@ -119,8 +122,6 @@ export function animate(sim: Sim, v: Villager, dt: number): void {
     if (t > 0) { anim = 'build'; hold = { kind: 'hammer', tier: t }; } else anim = 'gather';
   }
   else if (v.phase === 'skin') anim = 'gather';
-  const lit = !!v.torch && sim.resting && v.phase !== 'sleep' && v.phase !== 'goHome';
-  if (lit !== v.lit) { v.lit = lit; sim.fogDirty = true; }
   if (anim !== v.anim) { v.anim = anim; v.animClock = 0; } else v.animClock += dt;
   v.hold = hold;
 }

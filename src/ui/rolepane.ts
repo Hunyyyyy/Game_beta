@@ -65,7 +65,7 @@ export class RolePane {
     const key = (v: Villager) => (STAT_OF[role] === 'scout' ? sim.scoutSkill(v) : v.stats[STAT_OF[role] as 'str']);
     const out: Node[] = [hint(h('div', { class: 'dhouse' }, h('b', { text: roleName(role, era) }), dlg.slots(have.length, cap >= 99 ? 99 : cap)), HELP[role])];
     // the soldiers of a camp live inside it: one button calls the whole camp out (or sends it back), and each soldier has his own
-    const camp = (role === 'foot' || role === 'cavalry' || role === 'archer' || role === 'guard') && have.length > 0;
+    const camp = (role === 'foot' || role === 'cavalry' || role === 'archer' || role === 'guard' || role === 'scout') && have.length > 0;
     if (camp) {
       const allOut = have.every((v) => sim.isOut(v)), ids = have.map((v) => v.id);
       out.push(h('div', { class: 'btns' }, h('button', { class: 'sm', type: 'button', disabled: !!lock, text: allOut ? 'Cho cả trại về' : `Gọi cả trại ra (${have.filter((v) => !sim.isOut(v)).length})`,

@@ -376,16 +376,17 @@ export class Renderer {
       }
     }
     const vx0 = cx - 128, vx1 = cx + this.w / z + 128, vy0 = cy - 128, vy1 = cy + this.h / z + 128;
+    const onScr = (x: number, y: number) => x * TILE >= vx0 && x * TILE <= vx1 && y * TILE >= vy0 && y * TILE <= vy1; // tiles; whoever is off the screen is not drawn at all
     for (const b of sim.buildings) {
       const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
       if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
       list.push({ y: ay, kind: 'building', i: 0, j: 0, b });
     }
-    for (const v of sim.villagers) if (v.inside === null) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
+    for (const v of sim.villagers) if (v.inside === null && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
     const seen = (x: number, y: number) => sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
-    for (const f of sim.foes) if (seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
-    for (const a of sim.animals) if (seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
-    for (const t of sim.tribes) if (t.state !== 'adopted' && sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: 'camp', i: 0, j: 0, t });
+    for (const f of sim.foes) if (onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
+    for (const a of sim.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
+    for (const t of sim.tribes) if (t.state !== 'adopted' && onScr(t.camp.x, t.camp.y) && sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: 'camp', i: 0, j: 0, t });
     list.sort((a, b) => a.y - b.y);
     // fences laid corner to corner: their ropes do not meet in the tile sprites, so a rope and a stake are drawn across the diagonal
     const wallAt = new Map<number, Building>();
@@ -499,7 +500,7 @@ export class Renderer {
         ctx.fillStyle = g; ctx.fillRect(p.x - rad, p.y - rad, rad * 2, rad * 2);
       }
       for (const v of sim.villagers) {
-        if (!v.lit) continue;
+        if (!v.lit || !onScr(v.x, v.y)) continue;
         const p = this.worldToScreen(v.x * TILE - 8, v.y * TILE - 22), rad = 52 * z, flick = 0.92 + 0.08 * Math.sin(time * 9 + v.id);
         const g = ctx.createRadialGradient(p.x, p.y, 2 * z, p.x, p.y, rad);
         g.addColorStop(0, `rgba(255,176,80,${(0.42 * dark * flick).toFixed(3)})`); g.addColorStop(1, 'rgba(255,176,80,0)');
@@ -520,7 +521,7 @@ export class Renderer {
     // ---- sleeping villagers ----
     ctx.font = `700 ${Math.max(10, 5 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center';
     for (const v of sim.villagers) {
-      if (v.phase !== 'sleep') continue;
+      if (v.phase !== 'sleep' || !onScr(v.x, v.y)) continue;
       const p = this.worldToScreen(v.x * TILE - 10, v.y * TILE - 14), k = (time * 0.6 + v.id * 0.37) % 1;
       ctx.fillStyle = `rgba(235,240,255,${(0.9 * (1 - k)).toFixed(2)})`;
       ctx.fillText('z', p.x + k * 6 * z, p.y - k * 10 * z);
