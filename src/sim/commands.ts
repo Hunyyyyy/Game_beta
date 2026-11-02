@@ -49,7 +49,7 @@ export function busy(sim: Sim, v: Villager): boolean {
 }
 
 /** A plain order ends a civilian's job, but soldiers, scouts and hunters stay what they are. */
-export function keepSoldierJob(sim: Sim, v: Villager): void { if (v.job !== 'fight' && v.job !== 'hunt' && v.job !== 'scout') v.job = 'idle'; }
+export function keepSoldierJob(sim: Sim, v: Villager): void { if (v.job !== 'fight' && v.job !== 'hunt' && v.job !== 'scout' && v.job !== 'supply') v.job = 'idle'; }
 
 /** Lệnh đi: mỗi dân nhận một ô đích riêng quanh điểm chọn; dân thôi làm nghề. With `queue`, the move waits its turn. */
 export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: number, queue = false): void {
@@ -155,7 +155,7 @@ function jobFor(sim: Sim, ids: readonly number[], job: Job): string | null {
 export function enlist(sim: Sim, ids: readonly number[]): number {
   let n = 0;
   for (const v of mine(sim, ids)) {
-    if (v.job === 'fight' || v.job === 'scout') continue;
+    if (v.job === 'fight' || v.job === 'scout' || v.job === 'supply') continue;
     resetTask(sim, v); clearCombat(sim, v); v.job = 'fight'; v.prefer = -1; v.post = -1; v.fight.anchor = null;
     keepWatch(sim, v); n++;
   }
@@ -164,7 +164,7 @@ export function enlist(sim: Sim, ids: readonly number[]): number {
 
 /** Call these soldiers out of their camp: they stand outside, ready, until they are sent back (the camp's own button, like the army's "Gọi quân"). Returns how many. */
 /** Who lives in a camp and can be called out of it: soldiers, and scouts in their tent (not while they are away on a trip). */
-const campFolk = (sim: Sim, v: Villager): boolean => v.job === 'fight' || (v.job === 'scout' && !sim.scouts.some((m) => m.ids.includes(v.id)));
+const campFolk = (sim: Sim, v: Villager): boolean => v.job === 'fight' || v.job === 'supply' || (v.job === 'scout' && !sim.scouts.some((m) => m.ids.includes(v.id)));
 export const isOut = (v: Villager): boolean => (v.guard ? !v.housed : !!v.out);
 export function callOut(sim: Sim, ids: readonly number[]): number {
   let n = 0;

@@ -15,7 +15,7 @@ export const economyValue = (sim: Sim, v: Villager): number => workSpeed(sim, v)
 /** A person who fights counts as army, one who works counts as economy, one with nothing to do counts for neither. */
 export type Kind = 'army' | 'work' | null;
 export const kindOf = (v: Villager): Kind => {
-  if (v.team === 'player') return v.job === 'fight' || v.job === 'scout' ? 'army' : v.job === 'idle' ? null : 'work';
+  if (v.team === 'player') return v.job === 'fight' || v.job === 'scout' || v.job === 'supply' ? 'army' : v.job === 'idle' ? null : 'work';
   const role = v.ai?.role;
   return role === 'guard' || role === 'raider' ? 'army' : role === 'civ' ? 'work' : null;
 };

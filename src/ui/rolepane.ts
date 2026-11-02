@@ -12,7 +12,7 @@ import type { Shift } from '../sim/model';
 
 /** What a role leans on: the stat that says who is good at it (scouts are rated by their own score). */
 const STAT_OF: Record<RoleId, keyof typeof STAT_NAME | 'scout'> = {
-  wood: JOBS.wood.stat, stone: JOBS.stone.stat, food: JOBS.food.stat, hunt: JOBS.hunt.stat, foot: 'str', cavalry: 'str', archer: 'agi', guard: 'str', tower: 'agi', scout: 'scout',
+  wood: JOBS.wood.stat, stone: JOBS.stone.stat, food: JOBS.food.stat, hunt: JOBS.hunt.stat, foot: 'str', cavalry: 'str', archer: 'agi', guard: 'str', tower: 'agi', scout: 'scout', supply: 'str',
 };
 const HELP: Record<RoleId, string> = {
   wood: 'Người đốn gỗ do Xưởng gỗ quản lý: giao việc ở đây, họ ra cây gần nhất và mang gỗ về kho. Nâng cấp xưởng để thêm người.',
@@ -25,6 +25,7 @@ const HELP: Record<RoleId, string> = {
   guard: 'Lính gác do Trại lính gác quản lý: chọn thẳng trong số dân rảnh, không cần qua trại lính khác. Mỗi người có một chỗ gác riêng, đứng đó canh làng, ra tay khi thấy công trình bị phá, dân bị tấn công hoặc kẻ lạ tiến vào, rồi quay về chỗ gác. Muốn đổi chỗ gác: chọn lính rồi chạm lên bản đồ. Họ nhìn xa hơn lính thường 5 ô và không vào đội tác chiến. Nâng cấp trại để chứa 6, 12, 18 người.',
   tower: 'Lính chòi canh được giao ở từng Chòi canh, lấy thẳng từ dân rảnh (không cần Trại cung thủ).',
   scout: 'Trinh sát do Trại trinh sát tuyển từ lính kỵ của Trại kỵ thú (họ giữ thú và đồ của mình) và cho nghỉ về lại trại kỵ. Trinh sát tốt cần Nhanh nhẹn và Thể lực. Nâng cấp trại để chứa thêm.',
+  supply: 'Lính hậu cần do Trại hậu cần tuyển từ dân thường. Họ ở trong trại và chỉ làm việc khi có chiến tranh: mang lương theo quân, đi theo sau đội hình và tự vệ khi bị đánh, không tham gia tấn công. Nâng cấp trại để thêm người.',
 };
 
 /**
@@ -65,7 +66,7 @@ export class RolePane {
     const key = (v: Villager) => (STAT_OF[role] === 'scout' ? sim.scoutSkill(v) : v.stats[STAT_OF[role] as 'str']);
     const out: Node[] = [hint(h('div', { class: 'dhouse' }, h('b', { text: roleName(role, era) }), dlg.slots(have.length, cap >= 99 ? 99 : cap)), HELP[role])];
     // the soldiers of a camp live inside it: one button calls the whole camp out (or sends it back), and each soldier has his own
-    const camp = (role === 'foot' || role === 'cavalry' || role === 'archer' || role === 'guard' || role === 'scout') && have.length > 0;
+    const camp = (role === 'foot' || role === 'cavalry' || role === 'archer' || role === 'guard' || role === 'scout' || role === 'supply') && have.length > 0;
     if (camp) {
       const allOut = have.every((v) => sim.isOut(v)), ids = have.map((v) => v.id);
       out.push(h('div', { class: 'btns' }, h('button', { class: 'sm', type: 'button', disabled: !!lock, text: allOut ? 'Cho cả trại về' : `Gọi cả trại ra (${have.filter((v) => !sim.isOut(v)).length})`,

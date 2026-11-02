@@ -473,6 +473,9 @@ export class Controller {
     this.cam.x = wx - this.r.w / this.cam.zoom / 2; this.cam.y = wy - this.r.h / this.cam.zoom / 2; this.clamp();
   }
 
+  /** The tile the middle of the screen looks at. */
+  viewTile(): { x: number; y: number } { const w = this.r.screenToWorld(this.r.w / 2, this.r.h / 2); return { x: w.x / TILE, y: w.y / TILE }; }
+
   focusSelection(): void {
     const vs = this.sim.villagers.filter((v) => v.inside === null && (!this.selected.size || this.selected.has(v.id)));
     if (!vs.length) return;

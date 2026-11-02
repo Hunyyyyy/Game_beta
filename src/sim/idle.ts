@@ -26,7 +26,7 @@ export function farFolk(sim: Sim, reach = 20): Villager[] {
 }
 
 /** A villager a house may take on: free hands first and, for the houses that move people around, anyone but soldiers and scouts. */
-export const canTakeOn = (v: Villager): boolean => v.down <= 0 && v.inside === null && v.job !== 'fight' && v.job !== 'scout';
+export const canTakeOn = (v: Villager): boolean => v.down <= 0 && v.inside === null && v.job !== 'fight' && v.job !== 'scout' && v.job !== 'supply';
 
 /**
  * The kind of house where a villager sleeps when it has a bed: the camp of a soldier's arm, the house of a trade (Xưởng gỗ, Chòi thợ săn…),

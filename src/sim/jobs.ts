@@ -4,9 +4,9 @@ import paceJson from '../data/pace.json';
 import mountsJson from '../data/mounts.json';
 import trainingJson from '../data/training.json';
 
-export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'tame' | 'hunt' | 'fight' | 'scout';
+export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'tame' | 'hunt' | 'fight' | 'scout' | 'supply';
 /** Jobs with a work skill, a potential and a tool. Soldiers have them for the sake of the tables; scouts are a role like soldiers and have none. */
-export type WorkJob = Exclude<Job, 'idle' | 'scout'>;
+export type WorkJob = Exclude<Job, 'idle' | 'scout' | 'supply'>;
 export type StatKey = 'vit' | 'str' | 'agi' | 'sta';
 export type Stats = Record<StatKey, number>;
 export type NodeKind = 'tree' | 'rock' | 'bush';
@@ -44,7 +44,7 @@ export const JOBS: Record<WorkJob, JobDef> = {
   hunt: { name: 'Thợ săn', stat: 'agi', baseTime: 1, anim: 'thrust_attack' },
   fight: { name: 'Chiến binh', stat: 'str', baseTime: 1, anim: 'swing_attack' },
 };
-export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', tame: 'Thuần thú', hunt: 'Thợ săn', fight: 'Chiến binh', scout: 'Trinh sát' };
+export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', tame: 'Thuần thú', hunt: 'Thợ săn', fight: 'Chiến binh', scout: 'Trinh sát', supply: 'Hậu cần' };
 export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 'research', 'tame', 'hunt', 'fight'];
 /** The arm a soldier belongs to, decided by the camp that took him on. Riders count as cavalry whatever they carry. */
 export type SoldierArm = 'foot' | 'archer' | 'cavalry';
@@ -53,7 +53,7 @@ export type SoldierArm = 'foot' | 'archer' | 'cavalry';
  * A role is a job a villager is given by the house that belongs to it, never at the campfire. Each role has one house; its level decides
  * how many people the role may have. Names change with the era but not the meaning (a stone-age tribe has no archers, only throwers).
  */
-export type RoleId = 'wood' | 'stone' | 'food' | 'hunt' | 'foot' | 'cavalry' | 'archer' | 'guard' | 'tower' | 'scout';
+export type RoleId = 'wood' | 'stone' | 'food' | 'hunt' | 'foot' | 'cavalry' | 'archer' | 'guard' | 'tower' | 'scout' | 'supply';
 export interface RoleDef { job: Job; arm?: SoldierArm; building: BuildingKind; names: Record<Era, string> }
 export const ROLES: Record<RoleId, RoleDef> = {
   wood: { job: 'wood', building: 'lumberyard', names: { stone: 'Đốn gỗ', ancient: 'Tiều phu' } },
@@ -66,6 +66,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   guard: { job: 'fight', arm: 'foot', building: 'guardpost', names: { stone: 'Lính gác', ancient: 'Lính gác' } },
   tower: { job: 'fight', arm: 'archer', building: 'tower', names: { stone: 'Lính chòi canh', ancient: 'Lính chòi canh' } },
   scout: { job: 'scout', building: 'scouttent', names: { stone: 'Trinh sát', ancient: 'Trinh sát' } },
+  supply: { job: 'supply', building: 'supplycamp', names: { stone: 'Lính hậu cần', ancient: 'Lính hậu cần' } },
 };
 export const ROLE_IDS = Object.keys(ROLES) as RoleId[];
 export const roleName = (role: RoleId, era: Era): string => ROLES[role].names[era];
@@ -74,7 +75,7 @@ export function roleOf(v: { job: Job; arm: SoldierArm; post: number; guard?: boo
   switch (v.job) {
     case 'fight': return v.guard ? (v.post >= 0 ? 'tower' : 'guard') : v.arm === 'archer' ? 'archer' : v.arm === 'cavalry' ? 'cavalry' : 'foot';
     case 'food': return v.post < 0 ? 'food' : null;
-    case 'wood': case 'stone': case 'hunt': case 'scout': return v.job;
+    case 'wood': case 'stone': case 'hunt': case 'scout': case 'supply': return v.job;
     default: return null;
   }
 }

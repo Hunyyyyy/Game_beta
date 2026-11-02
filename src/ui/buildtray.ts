@@ -20,6 +20,7 @@ quarry: 'Giao việc đục đá ở đây. Chỉ xây một cái; nâng cấp �
 house: 'Dân thường ngủ ở đây (vào nhà, hiện thành danh sách). Hồi sức như nhau ở mọi nơi ngủ; không có nhà hoặc hết giường thì dân ngủ cạnh đống lửa.',
 field: 'Dân bạn chọn vào ruộng làm việc bên trong (không hiện trên bản đồ), thức ăn về thẳng kho, đều quanh năm hơn bụi quả (bụi quả không mọc lại). Mỗi ruộng một người, nâng cấp để làm nhanh hơn.',
 wartent: 'Nơi lập đội, chọn trận pháp, lập kế hoạch và thẻ lệnh cho trận đánh. Cấp càng cao càng nhiều đội và thẻ lệnh.',
+supplycamp: 'Nơi ở của lính hậu cần: họ mang lương theo quân khi có chiến tranh và chỉ làm việc khi đó. Cấp càng cao càng có nhiều lính hậu cần.',
 scouttent: 'Nơi cử trinh sát đi vẽ bản đồ làng khác. Cấp càng cao càng cử được nhiều người một chuyến.',
 stable: 'Dân làm trong chuồng thuần hóa thú (sói, lợn rừng, voi) để giao cho người cưỡi, như giao công cụ: đi nhanh hơn, đỡ đòn hơn. Chỉ xây một cái; nâng cấp để thuần được thú lớn hơn.',
 drill: 'Bãi tập: các đội luyện trận pháp ở đây, độ thuần thục tăng dần.',
@@ -35,7 +36,7 @@ const GROUPS: Array<[string, BuildingKind[]]> = [
   ['Thiết yếu', ['builder', 'storage', 'house', 'field']],
   ['Sản xuất', ['workshop', 'lab', 'toolstore', 'armory']],
   ['Tài nguyên', ['farmhouse', 'huntlodge', 'lumberyard', 'quarry', 'stable']],
-  ['Quân sự', ['infantry', 'cavalry', 'archery', 'guardpost', 'wartent', 'scouttent', 'drill']],
+  ['Quân sự', ['infantry', 'cavalry', 'archery', 'guardpost', 'wartent', 'scouttent', 'supplycamp', 'drill']],
   ['Phòng thủ', ['fence', 'gate', 'tower', 'trap']],
 ];
 

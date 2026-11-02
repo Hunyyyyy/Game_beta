@@ -8,7 +8,7 @@ import { CURRENCY, emptyStock, Res, RES_NAME, Stock } from './resources';
 import { mix32, mulberry32, Rng } from './rng';
 import { Tool, ToolKind } from './tools';
 import { Team, TribeId } from './combat';
-import { hurt, tickProjectiles } from './battle';
+import { armOf, hurt, tickProjectiles } from './battle';
 import { Animal, populateChunk, tickAnimals } from './fauna';
 import { adoptTribe, EventState, foeBonus, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tribesFeud, tribeWilling, tributeTribe } from './tribes';
 import { recipeOpen, Tech } from './research';
@@ -37,8 +37,12 @@ import * as scouting from './scouting';
 import * as power from './power';
 import * as warplan from './warplan';
 import * as warmode from './warmode';
+import * as warmarch from './warmarch';
+import * as warsupply from './warsupply';
+import * as warharass from './warharass';
+import * as warlog from './warlog';
 import { WAR, WarApi } from './simwar';
-import { BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
+import { BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, WarRecord, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
 import type { Ent } from './battle';
 export * from './model';
 
@@ -107,6 +111,8 @@ export class Sim {
   readonly sightings: Sighting[] = [];
   nextMission = 1;
   readonly plans: Plan[] = [];
+  /** The wars fought, newest last (warlog.ts). */
+  readonly warLog: WarRecord[] = [];
   nextPlan = 1;
   /** Game seconds until which the alarm drum is sounding (0 = quiet). */
   alarmUntil = 0;
@@ -146,6 +152,15 @@ export class Sim {
   foodPenalty = 0;
   /** When the war that is on began (seconds of game time); -1 in peace. The meals of those days are paid when it ends (economy.eatWar). */
   warSince = -1;
+  /** While a war is on: the soldiers of the plan, how their march goes (speed, food and energy factors) and the meals they and the village have eaten (paid when it ends). All reset in peace. */
+  warIds = new Set<number>();
+  march: warmarch.March = warmarch.PEACE;
+  warMeals = 0;
+  /** 0..1: the share of the army's meals the packs could not give, smoothed (warsupply.eatPacks). */
+  warHunger = 0;
+  /** The middle of the army while a war is on, and when the next band is sent to harass it (-1: none planned). */
+  warFocus: { x: number; y: number } | null = null;
+  warHarassAt = -1;
   /** What the camera sees plus a margin (tiles), set by the screen each frame; null: everything counts as seen. Only drawing and animation look at it, never the rules. */
   view: { x0: number; y0: number; x1: number; y1: number } | null = null;
   /** Food that came in today, and the total (pot + store) seen last tick (-1: not yet); the incomes of the last three days. Only to tell the player what the village earns. */
@@ -220,6 +235,8 @@ export class Sim {
   tickEnergy(v: Villager, dt: number): void { rest.tickEnergy(this, v, dt); }
   /** Is the point (tiles) where the camera looks (with its margin)? */
   inView(x: number, y: number): boolean { const w = this.view; return !w || (x >= w.x0 && x <= w.x1 && y >= w.y0 && y <= w.y1); }
+  /** How much an exhausted soldier of the army is weakened (0..): energy below `tired.below` takes up to `tired.maxPenalty` off his stats. */
+  tiredPenalty(v: Villager): number { if (!this.warIds.has(v.id)) return 0; const k = warmarch.WAR_DATA.tired; return v.energy < k.below ? k.maxPenalty * (1 - v.energy / k.below) : 0; }
   /** → warmode.warPlan: a war is on */
   atWar(): boolean { return !!warmode.warPlan(this); }
   /** → villagers.goHome */
@@ -486,6 +503,10 @@ export class Sim {
   notices(): Notice[] { return notices.noticesOf(this); }
   /** → economy.noteYield */
   noteYield(key: string, n: number): void { return economy.noteYield(this, key, n); }
+  /** → economy.warNeed */
+  warNeed(): number { return economy.warNeed(this); }
+  /** → economy.armyNeed */
+  armyNeed(): number { return economy.armyNeed(this); }
   /** → economy.eatDay */
   eatDay(): void { return economy.eatDay(this); }
   /** → economy.deposit */
@@ -597,7 +618,7 @@ export class Sim {
       if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
       return;
     }
-    if (this.warSince >= 0) { economy.eatWar(this, (this.time - this.warSince) / DAY_LENGTH); this.warSince = -1; }
+    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / DAY_LENGTH); this.warSince = -1; this.warIds = new Set(); this.march = warmarch.PEACE; this.warMeals = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
@@ -632,6 +653,7 @@ export class Sim {
 
 
   kill(v: Villager, cause = 'vì đói'): void {
+    warlog.noteDeath(this, v.id, v.job === 'supply', armOf(v));
     this.leaveNode(v); this.exitBuilding(v);
     this.villagers.splice(this.villagers.indexOf(v), 1); this.byId.delete(v.id);
     this.fogDirty = true;

@@ -17,6 +17,7 @@ import type { Ctx } from './ctx';
 import { PeoplePane } from './peoplepane';
 import { ActiveBox, StaffBox } from './housebox';
 import { ScoutPane } from './scoutpane';
+import { WarLogPane } from './warlogpane';
 import { RolePane } from './rolepane';
 import { dlg, GameDialog } from './gamedialog';
 import { personTile } from './people';
@@ -64,6 +65,7 @@ export class BuildingPanel {
   private readonly war: WarPanel;
   /** Where scouts are picked and sent, in the Trại trinh sát. */
   private readonly scoutPane: ScoutPane;
+  private readonly warLog: WarLogPane;
   /** The speed to go back to when the tent is left (it opens the game paused, as a war council does). */
   private resume = 0; private inTent = false;
   /** The people lying in the Nhà dân and the camps of the soldiers. */
@@ -115,12 +117,13 @@ export class BuildingPanel {
       this.tabs[kind] = [{ label, page: page(pane.root) }];
       if (soldiers) this.tabs[kind].push({ label: 'Người trong trại', page: bedPage(kind, 'Lính') }); // the others show "đang ngủ" on their own tile
     };
-    roleHouse('foot', 'Lính', true); roleHouse('cavalry', 'Lính', true); roleHouse('archer', 'Lính', true); roleHouse('guard', 'Lính gác', true);
+    roleHouse('foot', 'Lính', true); roleHouse('cavalry', 'Lính', true); roleHouse('archer', 'Lính', true); roleHouse('guard', 'Lính gác', true); roleHouse('supply', 'Lính hậu cần', true);
     roleHouse('wood', 'Nhân công'); roleHouse('stone', 'Nhân công'); roleHouse('food', 'Nhân công'); roleHouse('hunt', 'Nhân công');
     this.tabs.house = [{ label: 'Người trong nhà', page: bedPage('house', 'Dân rảnh') }];
     this.tabs.field = [{ label: 'Người làm ruộng', page: page(this.staffBoxes.farm.root) }];
     this.war = new WarPanel(c);
-    this.tabs.wartent = [{ label: 'Họp chiến', page: page(this.war.root) }];
+    this.warLog = new WarLogPane(c);
+    this.tabs.wartent = [{ label: 'Họp chiến', page: page(this.war.root) }, { label: 'Nhật ký trận', page: page(this.warLog.root) }];
     this.scoutPane = new ScoutPane(c);
     this.tabs.scouttent = [{ label: 'Trinh sát', page: page(this.scoutPane.roster) }, { label: 'Làng đã phát hiện', page: page(this.scoutPane.villages) }];
     this.tabs.tower = [{ label: 'Lính chòi canh', page: page(hint(this.towerHead, 'Lính chòi canh lấy thẳng từ dân rảnh, không cần trại cung thủ: họ lên chòi, ở đó ngày và đêm (đổi ca ở chi tiết của họ) và bắn bằng cung hoặc dây quăng lấy ở Kho vũ khí. Họ bắn xa hơn và mạnh hơn khi đứng trên chòi, và kẻ địch phải phá chòi mới hạ được họ. Máu và sát thương của họ, và của chòi, tăng theo nghiên cứu Phòng thủ.'), this.towerList) }];
@@ -317,7 +320,7 @@ export class BuildingPanel {
     if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
     if (b.kind === 'builder' && ready) this.staffBoxes.build.update(b);
     if (b.kind === 'tower' && ready) this.updateTower(b);
-    if (b.kind === 'wartent' && ready) this.war.update();
+    if (b.kind === 'wartent' && ready) { this.war.update(); this.warLog.update(); }
     if (b.kind === 'scouttent' && ready) this.scoutPane.update();
     if (b.kind === 'workshop' && ready) this.updateWorkshop(b);
     if (b.kind === 'lab' && ready) this.updateLab(b);

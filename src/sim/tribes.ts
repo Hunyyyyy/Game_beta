@@ -16,6 +16,7 @@ import type { Stock } from './resources';
 import type { Sim, Villager } from './sim';
 import { Tile } from './world';
 import { warTribe } from './warmode';
+import { harassBrain } from './warharass';
 
 export type TribeState = 'free' | 'surrendered' | 'tribute' | 'adopted' | 'destroyed';
 
@@ -223,7 +224,7 @@ function claimVillage(sim: Sim, t: Tribe, keepsLiving: boolean): void {
     const take = Math.floor((n ?? 0) * DIFF.capture.spoilShare);
     if (take <= 0) continue;
     const res = k as keyof Stock;
-    sim.stock[res] = Math.min(sim.capacity(res), sim.stock[res] + take); t.stock[res] = (n ?? 0) - take; got.push(`${take} ${RES_NAME[res].toLowerCase()}`);
+    sim.stock[res] = Math.min(sim.capacity(res), sim.stock[res] + take); t.stock[res] = (n ?? 0) - take; sim.noteLoot(t.id, res, take); got.push(`${take} ${RES_NAME[res].toLowerCase()}`);
   }
   let people = 0;
   if (!keepsLiving) { people = POP_BY_FIRE[Math.max(0, Math.min(POP_BY_FIRE.length, t.campLevel ?? 1) - 1)]; sim.popBonus = (sim.popBonus ?? 0) + people; }
@@ -524,6 +525,7 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
     return;
   }
   if (f.phase === 'flee') { f.phase = 'idle'; f.path = []; }
+  if (free && ai.harass !== undefined && harassBrain(sim, f, dt, threats)) return; // a band sent at an army on the march
   // one who was shot from a tower (or stuck at a wall) goes for that work before anything else
   if (free && ai.siege && ai.role !== 'civ') {
     const sb = sim.getBuilding(ai.siege);

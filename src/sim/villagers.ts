@@ -97,6 +97,7 @@ function atWork(sim: Sim, v: Villager): boolean {
  * free bed; they go in and are listed there. Otherwise sleep on the ground by the campfire, one spot per villager, and rest slower.
  */
 export function goHome(sim: Sim, v: Villager): void {
+  if (sim.warIds.has(v.id)) { sim.resetTask(v); sim.clearCombat(v); v.path = []; v.slide = null; v.phase = 'sleep'; v.facing = 'front'; return; } // in a war the army lies down where its tent stands
   const owl = v.nightOwl;
   if (v.job === 'idle') v.shift = 'day'; // coming home: a free villager who was sent out for the night goes back to the day's hours
   sim.stash(v);

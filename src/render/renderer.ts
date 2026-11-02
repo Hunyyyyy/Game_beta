@@ -15,7 +15,7 @@ export interface Marker { x: number; y: number; age: number }
 
 export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number; /** A group of fence pieces carried together: where each goes, and the ids they leave. */ group?: Array<{ id: number; kind: BuildingKind; x: number; y: number; level: number }>; movingIds?: number[] }
 
-interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp'; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe }
+interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp' | 'ftent'; ft?: { x: number; y: number; built: boolean }; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe }
 
 const FOG_RGB = [8, 10, 20];
 /** Weather particles: drop/flake count (per 1000×700 px), extra dimming, wind slant, lightning chance. */
@@ -387,6 +387,7 @@ export class Renderer {
     for (const f of sim.foes) if (onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
     for (const a of sim.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
     for (const t of sim.tribes) if (t.state !== 'adopted' && onScr(t.camp.x, t.camp.y) && sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: 'camp', i: 0, j: 0, t });
+    for (const pl of sim.plans) if (pl.status === 'running') for (const t of pl.tents) if (onScr(t.x, t.y)) list.push({ y: (t.y + 1) * TILE, kind: 'ftent', i: 0, j: 0, ft: t }); // the tents of a war
     list.sort((a, b) => a.y - b.y);
     // fences laid corner to corner: their ropes do not meet in the tile sprites, so a rope and a stake are drawn across the diagonal
     const wallAt = new Map<number, Building>();
@@ -447,6 +448,9 @@ export class Renderer {
         ctx.drawImage(s, Math.round((fx - box.ax - cx) * z), Math.round((fy - box.ay - cy) * z), s.width * z, s.height * z);
         ctx.globalAlpha = prev;
         if (a.state !== 'dead' && a.hp < a.maxHp) this.bar(fx, fy - box.ay - 2, a.hp / a.maxHp, '#d9534f');
+      } else if (d.kind === 'ftent' && d.ft) {
+        const [ax, ay] = this.buildingAnchor('fieldtent', Math.floor(d.ft.x) - 1, Math.floor(d.ft.y) - 1);
+        this.prop(sp.building('fieldtent', 'stone', 1, 4), ax, ay, time, d.ft.built ? 1 : 0.5); // half-seen while it is being pitched
       } else if (d.kind === 'camp' && d.t) {
         const t = d.t, sp0 = this.sprites;
         for (const p of t.props) {

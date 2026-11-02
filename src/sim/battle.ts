@@ -46,7 +46,7 @@ const armorOf = (v: Villager): ArmorDef | null => (v.armor && !(v.team === 'play
 export function canSee(sim: Sim, v: Villager, x: number, y: number): boolean {
   return v.team !== 'player' || sim.fog.state[Math.floor(y) * sim.world.size + Math.floor(x)] === 2;
 }
-export const isFighter = (v: Villager) => v.job === 'fight' || v.job === 'hunt' || v.fight.mode !== 'none';
+export const isFighter = (v: Villager) => v.job === 'fight' || v.job === 'hunt' || v.job === 'supply' || v.fight.mode !== 'none';
 
 export function teamsHostile(sim: Sim, a: Team, b: Team): boolean {
   if (a === b || a === 'wild' || b === 'wild') return false;

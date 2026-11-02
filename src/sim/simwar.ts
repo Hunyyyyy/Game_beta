@@ -8,6 +8,13 @@ import * as training from './training';
 import * as mounts from './mounts';
 import { surrender, tickFoe, tickTribes, tribeOf } from './tribes';
 import * as warmode from './warmode';
+import * as warmarch from './warmarch';
+import * as warsupply from './warsupply';
+import * as wartent from './wartent';
+import * as warharass from './warharass';
+import * as warlog from './warlog';
+import type { Res } from './resources';
+import { DAY_LENGTH } from './constants';
 import * as warplan from './warplan';
 import { armOf, tickProjectiles } from './battle';
 import type { Ent } from './battle';
@@ -22,7 +29,13 @@ export const WAR = {
   /** One tick while a war is on (warmode.ts): only the army, the scouts out, the arrows in the air and the village under attack are worked; everyone else goes home and stands still. */
   tickWar(this: Sim, dt: number): void {
     tickProjectiles(this, dt);
-    const ranks = warmode.ranks(this);
+    const soldiers = warmode.army(this), ranks = warmode.ranks(this, soldiers), plan = warmode.warPlan(this)!;
+    this.warIds = soldiers; this.march = warmarch.marchOfPlan(this, plan);
+    if (Math.floor(this.time) !== Math.floor(this.time - dt)) { // each second: the village that stayed home eats from the store (paid at the end), the army from the packs
+      this.warMeals += this.warNeed() / DAY_LENGTH; warsupply.eatPacks(this, plan, this.armyNeed() / DAY_LENGTH);
+      if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) warsupply.follow(this, plan);
+      wartent.tickTents(this, plan); warharass.tickHarass(this, plan);
+    }
     for (const v of [...this.villagers]) { if (ranks.has(v.id)) this.tickVillager(v, dt); else warmode.standDown(this, v, dt); }
     army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
     const enemy = warmode.warTribe(this);
@@ -135,6 +148,20 @@ export const WAR = {
   playCard(this: Sim, plan: Plan, cardId: number): string | null { return warplan.playCard(this, plan, cardId); },
   /** → warplan.engagePlan */
   engagePlan(this: Sim, plan: Plan): string | null { return warplan.engagePlan(this, plan); },
+  /** Set how many supply soldiers the plan takes and how many days of food they carry. Returns an error or null. */
+  setSupply(this: Sim, plan: Plan, n: number, days: number): string | null {
+    if (plan.status !== 'draft') return 'Chỉ sửa được khi kế hoạch còn là bản nháp';
+    plan.supply = Math.max(0, Math.round(n)); plan.carryDays = Math.max(1, Math.min(warmarch.WAR_DATA.supply.maxDays, Math.round(days)));
+    return null;
+  },
+  /** → wartent.sleepsInTent: night, and the tent of his squad stands beside him */
+  sleepsInTent(this: Sim, v: Villager): boolean { return wartent.sleepsInTent(this, v); },
+  /** → warsupply.supplyAvailable: how many supply soldiers wait in their camp */
+  supplyReady(this: Sim): number { return warsupply.supplyAvailable(this).length; },
+  /** → warlog.noteLoot */
+  noteLoot(this: Sim, tribe: string, res: Res, n: number): void { warlog.noteLoot(this, tribe, res, n); },
+  /** → warplan.regather: soldiers off their cell go back to it; returns how many */
+  regroupPlan(this: Sim, plan: Plan): number { return warplan.regather(this, plan); },
   /** → warplan.withdrawPlan */
   withdrawPlan(this: Sim, plan: Plan): string | null { return warplan.withdrawPlan(this, plan); },
   /** → forecast.forecastPlan */
@@ -173,8 +200,8 @@ export const WAR = {
   corridorBlocks(this: Sim, start: Pt, pts: readonly Pt[], target?: Pt): Obstacle[] { return siege.corridorBlocks(this, start, pts, target); },
   /** → warplan.cancelPlan */
   cancelPlan(this: Sim, plan: Plan): string | null { return warplan.cancelPlan(this, plan); },
-  /** → warplan.isLogistics */
-  isLogistics(this: Sim, plan: Plan, m: Mission): boolean { return warplan.isLogistics(plan, m); },
+  /** → warplan.isHolding */
+  isHolding(this: Sim, plan: Plan, m: Mission): boolean { return warplan.isHolding(plan, m); },
   /** → training.startTraining */
   startTraining(this: Sim, ids: readonly number[], houseId: number, care: number): string | null { return training.startTraining(this, ids, houseId, care); },
   /** → training.cancelTraining */

@@ -26,6 +26,7 @@ import fence_L2 from './fence/L2.json';
 import field_L1 from './field/L1.json';
 import field_L2 from './field/L2.json';
 import field_L3 from './field/L3.json';
+import fieldtent_L1 from './fieldtent/L1.json';
 import gate_L1 from './gate/L1.json';
 import gate_L2 from './gate/L2.json';
 import gate_L1open from './gate/L1open.json';
@@ -60,6 +61,9 @@ import stable_L3 from './stable/L3.json';
 import storage_L1 from './storage/L1.json';
 import storage_L2 from './storage/L2.json';
 import storage_L3 from './storage/L3.json';
+import supplycamp_L1 from './supplycamp/L1.json';
+import supplycamp_L2 from './supplycamp/L2.json';
+import supplycamp_L3 from './supplycamp/L3.json';
 import toolstore_L1 from './toolstore/L1.json';
 import toolstore_L2 from './toolstore/L2.json';
 import toolstore_L3 from './toolstore/L3.json';
@@ -84,6 +88,7 @@ export const STONE_ART: Record<string, unknown[]> = {
   farmhouse: [farmhouse_L1, farmhouse_L2, farmhouse_L3],
   fence: [fence_L1, fence_L2],
   field: [field_L1, field_L2, field_L3],
+  fieldtent: [fieldtent_L1],
   gate: [gate_L1, gate_L2, gate_L1open, gate_L2open],
   guardpost: [guardpost_L1, guardpost_L2, guardpost_L3],
   house: [house_L1, house_L2, house_L3],
@@ -95,6 +100,7 @@ export const STONE_ART: Record<string, unknown[]> = {
   scouttent: [scouttent_L1, scouttent_L2, scouttent_L3],
   stable: [stable_L1, stable_L2, stable_L3],
   storage: [storage_L1, storage_L2, storage_L3],
+  supplycamp: [supplycamp_L1, supplycamp_L2, supplycamp_L3],
   toolstore: [toolstore_L1, toolstore_L2, toolstore_L3],
   tower: [tower_L1, tower_L2],
   trap: [trap_L1, trap_L2],

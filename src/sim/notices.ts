@@ -1,6 +1,7 @@
 /** Heads-up for the player: what is coming or going on in the village, worked out afresh from the state of the game (nothing here is saved). */
 import { dayInSeason, SEASON_DAYS, seasonOf } from './calendar';
 import { BUILDINGS } from './buildings';
+import { DAY_LENGTH } from './constants';
 import { ANIMALS } from './combat';
 import { FOOD, RES_LIST, RES_NAME } from './resources';
 import type { Notice } from './model';
@@ -17,6 +18,17 @@ const CAMP = { building: 'infantry', label: BUILDINGS.infantry.name };
 /** The notices of the moment, the most pressing first. */
 export function noticesOf(sim: Sim): Notice[] {
   const out: Notice[] = [];
+  // a war decided: the result stays until the army is pulled out (won) or for a day (lost)
+  const done = sim.plans.find((p) => p.kind === 'attack' && p.result && (p.stage === 'over' || sim.time - p.endedAt < DAY_LENGTH));
+  if (done) {
+    const name = sim.tribes.find((t) => t.id === done.tribe)?.def.name ?? 'địch', over = done.stage === 'over' && done.status === 'running';
+    out.push({
+      id: 'war-result', level: done.result === 'won' ? 'info' : 'urgent', icon: done.result === 'won' ? '🏆' : '☠', title: done.result === 'won' ? `Thắng trận: ${name}` : `Thua trận: ${name}`,
+      when: over ? 'chờ lệnh rút quân' : 'vừa xong', body: over ? 'Quân ta đang đứng tại chỗ. Làng vẫn đóng băng cho tới khi quân về.' : 'Trận đánh đã kết thúc.',
+      tip: over ? 'Bấm Rút quân để cả đội về làng; chiến tranh chỉ kết thúc khi quân về tới nơi.' : 'Có thể sửa kế hoạch và đánh lại.',
+      command: over ? { kind: 'withdraw', label: 'Rút quân' } : undefined,
+    });
+  }
   // the village is under attack: who hides, who may go out
   const why = sim.attackReason();
   if (why) {
@@ -41,7 +53,7 @@ export function noticesOf(sim: Sim): Notice[] {
     });
   }
   // people who work day and night, or carry a lot of tiredness: they lose strength for good if it goes on
-  const overworked = sim.villagers.filter((v) => v.team === 'player' && v.down <= 0 && v.job !== 'idle' && v.job !== 'fight' && v.job !== 'scout' && (v.shift === 'both' || v.strain >= 10));
+  const overworked = sim.villagers.filter((v) => v.team === 'player' && v.down <= 0 && v.job !== 'idle' && v.job !== 'fight' && v.job !== 'scout' && v.job !== 'supply' && (v.shift === 'both' || v.strain >= 10));
   if (overworked.length) {
     const worst = Math.max(...overworked.map((v) => v.strain));
     out.push({

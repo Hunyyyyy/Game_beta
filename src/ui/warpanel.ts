@@ -1,5 +1,5 @@
 import { DAY_LENGTH } from '../sim/constants';
-import { armOfWeapon, ARM_NAME, FORMATION_IDS, FORMATIONS, FormationId, SQUAD_MAX, SQUAD_MIN } from '../sim/formations';
+import { Arm, armOfWeapon, ARM_NAME, FORMATION_IDS, FORMATIONS, FormationId, SQUAD_MAX, SQUAD_MIN } from '../sim/formations';
 import type { CardKind, Mission, MissionTarget, Plan, PlanStance, Pt, Squad, Villager } from '../sim/model';
 import { WEAPONS } from '../sim/combat';
 import { h, hint } from './dom';
@@ -55,6 +55,8 @@ export class WarPanel {
   private readonly ordered = new Set<number>();
   /** The soldiers of the chosen squad are on show (instead of its orders), the list of soldiers to add is open, and the ones ticked in it. */
   private addOpen = false; private rosterSquad = -1;
+  /** Which arm the list of soldiers with no squad shows. */
+  private armFilter: 'all' | Arm = 'all';
   private readonly picked = new Set<number>();
   private readonly roster = h('div', { class: 'pcard proster', hidden: true });
   /** The war council's report on the plan, shown before it is sent out, and whether it is open. */
@@ -358,6 +360,15 @@ export class WarPanel {
         h('small', { class: 'sub', text: 'Chỉ tính theo kế hoạch và bản đồ đang có; thực tế địch có thể mạnh hay yếu hơn.' })),
       ...(f.blocked ? [h('div', { class: 'psec' }, h('b', { text: '✗ Chưa thể triển khai:' }), ...f.blocked.split('\n').map((x) => h('p', { class: 'why', text: x })))] : []),
       ...list('⚠ Cảnh báo', f.warnings),
+      // the supply: how many supply soldiers go and how many days of food they carry
+      h('div', { class: 'psec' }, h('b', { text: 'Hậu cần' }),
+        h('div', { class: 'chips' }, h('small', { text: `Lính hậu cần ${plan.supply}/${sim.supplyReady()}` }),
+          this.chip('−', false, () => { sim.setSupply(plan, plan.supply - 1, plan.carryDays); this.refresh(); }, { disabled: plan.supply <= 0 }),
+          this.chip('＋', false, () => { sim.setSupply(plan, plan.supply + 1, plan.carryDays); this.refresh(); }, { disabled: plan.supply >= sim.supplyReady() }),
+          this.chip('Tất cả', false, () => { sim.setSupply(plan, sim.supplyReady(), plan.carryDays); this.refresh(); }, { disabled: !sim.supplyReady() })),
+        h('div', { class: 'chips' }, h('small', { text: `Mang lương ${plan.carryDays} ngày` }),
+          this.chip('−', false, () => { sim.setSupply(plan, plan.supply, plan.carryDays - 1); this.refresh(); }, { disabled: plan.carryDays <= 1 }),
+          this.chip('＋', false, () => { sim.setSupply(plan, plan.supply, plan.carryDays + 1); this.refresh(); }))),
       h('details', { open: true }, h('summary', { text: 'Báo cáo chi tiết' }), ...f.lines.map((x) => h('p', { class: 'sub', text: x }))),
       h('div', { class: 'chips' },
         this.chip('✓ Xác nhận triển khai', true, () => { const e = sim.startPlan(plan); this.toast(e); if (e) { this.refresh(); return; } this.reportOpen = false; this.closeMap(); this.c.ctl.closeBuilding(); /* back to the game, in war mode */ }, { disabled: !!f.blocked, title: 'Đóng bảng kế hoạch, quân đi ngay tới vị trí đã bố trí rồi chờ lệnh đánh hay rút trên màn hình game' }),
@@ -371,7 +382,8 @@ export class WarPanel {
     if (this.roster.hidden || !sq || !m?.deploy) return;
     if (this.rosterSquad !== sq.id) this.rosterSquad = sq.id;
     const lock = sim.warLock(), units = sim.squadUnits(sq), cells = m.deploy.cells.length, room = Math.max(0, cells - units.length);
-    const free = sim.villagers.filter((v) => v.job === 'fight' && !v.guard && v.squad < 0); // a soldier already in a squad, this one or another, is not offered
+    const all = sim.villagers.filter((v) => v.job === 'fight' && !v.guard && v.squad < 0); // a soldier already in a squad, this one or another, is not offered
+    const free = this.armFilter === 'all' ? all : all.filter((v) => sim.armOf(v) === this.armFilter);
     const who = (v: Villager) => `${ARM_NAME[sim.armOf(v)]} · ${WEAPONS[v.weapon ?? 'fist'].name}`;
     const out: Node[] = [h('div', { class: 'phead' }, h('i', { style: `background:${sq.color}` }), h('b', { text: sq.name }), h('small', { text: `${units.length}/${cells} lính` }))];
     if (!units.length) out.push(h('p', { class: 'sub', text: 'Chưa có lính trong đội.' }));
@@ -380,6 +392,10 @@ export class WarPanel {
       h('button', { class: 'chip danger', text: '−', title: lock ?? 'Bỏ khỏi đội', disabled: !!lock, onclick: () => { sim.leaveSquad([v.id]); this.refresh(); } })));
     // the soldiers with no squad: one press on the plus puts him in
     out.push(h('div', { class: 'phead' }, h('b', { text: 'Chưa có đội' }), h('small', { text: room ? `còn chỗ cho ${room} lính` : 'đội hình đã đủ ô: bấm Sửa trên vòng nút của đội để thêm ô' })));
+    // pick the arm to show, and fill the squad up to its cells in one press (from the arm picked, or from all)
+    const arms: Array<['all' | Arm, string]> = [['all', 'Tất cả'], ['foot', 'Bộ'], ['archer', 'Cung'], ['cavalry', 'Kỵ']];
+    out.push(h('div', { class: 'chips' }, ...arms.map(([k, label]) => h('button', { class: `chip${this.armFilter === k ? ' on' : ''}`, text: `${label} (${k === 'all' ? all.length : all.filter((v) => sim.armOf(v) === k).length})`, onclick: () => { this.armFilter = k; this.refresh(); } })),
+      h('button', { class: 'chip', text: `⚡ Thêm nhanh (${Math.min(room, free.length)})`, title: lock ?? 'Tự thêm lính chưa có đội cho đủ ô của đội này (theo bộ lọc đang chọn)', disabled: !!lock || !room || !free.length, onclick: () => { const ids = free.slice(0, room).map((v) => v.id); this.toast(sim.joinSquad(ids, sq.id)); this.refresh(); } })));
     if (!free.length) out.push(h('p', { class: 'sub', text: 'Không còn lính nào chưa có đội: tuyển thêm ở trại lính.' }));
     for (const v of free) out.push(h('div', { class: 'rrow rfree' }, h('div', { class: 'rwho' }, h('b', { text: v.name }), h('small', { text: who(v) })),
       h('button', { class: 'chip', text: '＋', title: lock ?? (room ? 'Thêm vào đội' : 'Đội hình đã đủ ô'), disabled: !!lock || !room, onclick: () => { this.toast(sim.joinSquad([v.id], sq.id)); this.refresh(); } })));

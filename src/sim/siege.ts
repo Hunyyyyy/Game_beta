@@ -224,7 +224,11 @@ export function haltSquad(sim: Sim, m: Mission, s: Squad, ob: Obstacle): void {
   const us = sim.squadUnits(s);
   sim.orderHold(us.map((v) => v.id));
   if (ob.kind === 'enemy') for (const v of us) startBreaking(sim, v, ob);
-  sim.say(ob.clear ? `${s.name} không thể đi tiếp: vướng ${ob.label}.` : `${s.name} không thể đi tiếp: vướng ${ob.label}, không phá được.`);
+  else if (ob.clear) { // a tree, rock or bush: the nearest quarter of the squad breaks it down at once, the rest hold; the squad goes on when it is gone (tickPlans)
+    const crew = us.filter((v) => !v.breaks).sort((a, b) => Math.hypot(a.x - ob.x, a.y - ob.y) - Math.hypot(b.x - ob.x, b.y - ob.y)).slice(0, Math.max(1, Math.ceil(us.length / 4)));
+    for (const v of crew) startBreaking(sim, v, ob);
+  }
+  sim.say(ob.clear ? (ob.kind === 'enemy' ? `${s.name} bị chặn bởi ${ob.label}.` : `${s.name} dừng lại phá ${ob.label} chắn đường.`) : `${s.name} không thể đi tiếp: vướng ${ob.label}, không phá được.`);
   sim.noteBattle('note', `${s.name} bị chặn bởi ${ob.label}.`);
 }
 

@@ -158,7 +158,7 @@
   select { font: inherit; font-size: 13px; }
 }
 // war mode: the selection and building buttons give way to the battle buttons
-body.war .sheet, body.war .bbar { display: none !important; }
+body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHome) { display: none !important; } // the way back to the village stays
 .proster {
   gap: 4px;
   > .chip { justify-self: start; }

@@ -35,7 +35,7 @@ export function assignRole(sim: Sim, ids: readonly number[], role: RoleId): stri
   const room = roleCapacity(sim, role) - roleCount(sim, role);
   if (room <= 0) return roleHouses(sim, role).length ? `${name} đã đủ ${roleCapacity(sim, role)} người: nâng cấp để chứa thêm` : `Chưa có ${name.toLowerCase()}: chỉ ${NO_HOUSE_CAP} người làm nghề này, hãy dựng nhà để thêm người`;
   const chosen = pick.slice(0, room);
-  for (const v of chosen) if (v.job === 'fight' || v.job === 'scout') { const e = releaseRole(sim, [v.id]); if (e) return e; } // from another camp or the scouts: let go first, his gear goes back to the store
+  for (const v of chosen) if (v.job === 'fight' || v.job === 'scout' || v.job === 'supply') { const e = releaseRole(sim, [v.id]); if (e) return e; } // from another camp or the scouts: let go first, his gear goes back to the store
   const take = chosen.map((v) => v.id);
   const err = sim.setJob(take, def.job === 'fight' ? 'fight' : def.job);
   if (def.arm) for (const v of sim.mine(take)) if (v.job === 'fight') v.arm = def.arm;

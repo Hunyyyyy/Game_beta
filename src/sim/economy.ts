@@ -70,11 +70,27 @@ export function eatDay(sim: Sim): void {
   eat(sim, foodNeed(sim));
 }
 
-/** The war is over: the village pays for the days it lasted (a day is one full meal, so a part of a day is a part of a meal), and what is short weakens it as after any day. */
+/** What the village that stayed home eats in a day of war (from the store, paid when the war ends). The army eats from its packs (armyNeed). */
+export function warNeed(sim: Sim): number {
+  const level = sim.campfire()?.level ?? 1;
+  let n = 0;
+  for (const v of sim.villagers) if (!sim.warIds.has(v.id)) n += rationAt(level, v.job === 'fight');
+  return n;
+}
+
+/** What the army eats in a day of war: a ration for each soldier, dearer by the march (warmarch.ts). */
+export function armyNeed(sim: Sim): number {
+  const level = sim.campfire()?.level ?? 1;
+  let n = 0;
+  for (const v of sim.villagers) if (sim.warIds.has(v.id)) n += rationAt(level, true) * sim.march.food;
+  return n;
+}
+
+/** The war is over: the village pays for the meals of the war (counted second by second in tickWar), and what is short weakens it as after any day. */
 export function eatWar(sim: Sim, days: number): void {
-  const need = Math.round(foodNeed(sim) * days);
+  const need = Math.round(sim.warMeals);
   if (need > 0) eat(sim, need);
-  sim.say(`Chiến tranh kết thúc sau ${Math.max(0.1, Math.round(days * 10) / 10)} ngày: kho lương đã trừ phần ăn của làng.`);
+  sim.say(`Chiến tranh kết thúc sau ${Math.max(0.1, Math.round(days * 10) / 10)} ngày: kho lương đã trừ ${need} phần ăn của cả làng và quân.`);
 }
 
 function eat(sim: Sim, need: number): void {

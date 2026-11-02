@@ -4,6 +4,8 @@
  * The better the map, the more the report says and the surer it is.
  */
 import { ARMORS, cycleOf, maxHpOf, RULES, WEAPONS } from './combat';
+import { marchLines } from './warmarch';
+import { supplyLines } from './warsupply';
 import type { DmgType } from './combat';
 import { Arm, BEATS } from './formations';
 import type { Sim } from './sim';
@@ -105,6 +107,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
   // ---- the report, more of it with each level of the map
   const L = out.lines;
   L.push(`Quân ta: ${count} lính trong ${perSquad.length} đội${arms.archer || arms.cavalry ? ` (${arms.foot} bộ binh, ${arms.archer} bắn xa, ${arms.cavalry} kỵ)` : ''}.`);
+  L.push(...marchLines(sim, plan), ...supplyLines(sim, plan));
   if (level === 1) {
     L.push(`Làng ${t.def.name} có khoảng ${intel.population} người; ước chừng ${men} có thể cầm vũ khí.`);
     L.push('Chưa rõ vũ khí, công trình phòng thủ hay thủ lĩnh: cần bản đồ cấp 2 và 3 để biết thêm.');

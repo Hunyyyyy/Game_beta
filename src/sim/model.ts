@@ -58,6 +58,8 @@ export interface FoeAI {
   skip?: { id: number; until: number };
   /** The fence or gate he has decided to break down (building id), 0 for none. */
   siege?: number;
+  /** A band sent to harass an army on the march (warharass.ts): the game time it was sent. */
+  harass?: number;
 }
 /** Điểm đứng cuối cùng và hướng nhìn (luôn ngang) khi làm việc. */
 export interface Slide { x: number; y: number; face: 'left' | 'right' }
@@ -95,6 +97,8 @@ export interface Villager {
   timer: number;
   order: string | null; // đơn chế tác đang làm
   carry: { res: Res; amount: number } | null;
+  /** A supply soldier on a war: the goods of the army he carries (food, and later the wood and hide for tents). Lost with him if he falls. */
+  pack?: { food: number; wood: number; hide: number };
   health: number;
   anim: string;
   hold: Hold | null;
@@ -271,6 +275,23 @@ export interface Mission {
 export type CardKind = 'go' | 'advance' | 'hold' | 'formation' | 'attack' | 'shoot' | 'retreat' | 'signal';
 /** A command card: only the cards in the plan show as buttons once the fight is on. */
 export interface Card { id: number; kind: CardKind; squad: number; arg: string }
+/** Soldiers counted by arm. */
+export interface ArmCount { foot: number; archer: number; cavalry: number }
+/** What a war has cost and brought so far (warlog.ts), kept in its plan until the war is over. */
+export interface WarStats {
+  startDay: number; fought: boolean;
+  sent: ArmCount; dead: ArmCount; supplySent: number; supplyDead: number;
+  /** The goods the supply soldiers set out with and brought back (food, wood and hide for the tents). */
+  loaded: { food: number; wood: number; hide: number }; returned: { food: number; wood: number; hide: number };
+  loot: Partial<Record<Res, number>>;
+}
+/** One war in the log of the war council: the map fought, who went and how many fell, what was taken and what was spent. */
+export interface WarRecord {
+  id: number; tribe: string; name: string; mapLevel: number; startDay: number; endDay: number; days: number;
+  result: 'won' | 'lost' | 'off'; squads: number;
+  sent: ArmCount; dead: ArmCount; supplySent: number; supplyDead: number;
+  spent: { food: number; wood: number; hide: number }; loot: Partial<Record<Res, number>>;
+}
 export interface Plan {
   id: number; kind: 'attack' | 'defense'; tribe: string | null;
   missions: Mission[]; cards: Card[];
@@ -280,13 +301,23 @@ export interface Plan {
    * decide to fight or fall back; `fight`: the missions are carried out; `retreat`: a fight is being broken off, each squad falling back by the way drawn for it;
    * `recall`: the army was called home before any blow, straight back to the village, and the plan goes back to a draft when they are there.
    */
-  stage: 'assemble' | 'ready' | 'fight' | 'retreat' | 'recall';
+  stage: 'assemble' | 'ready' | 'fight' | 'retreat' | 'recall' | 'over';
   startedAt: number; signal: boolean; nextCard: number;
   rally: { x: number; y: number };
   /** Attack only. Things in the way of the arrows that a squad other than the one that walks there is sent to break down while the army forms up. */
   clears: Array<{ squad: number; x: number; y: number }>;
   /** How the attack ended, once it has: the village is laid waste, or the army was beaten or pulled back. */
   result: '' | 'won' | 'lost';
+  /** When the war was decided (game seconds), 0 until it is. A won war stays `over` (the army where it stands) until the player gives the word to pull out. */
+  endedAt: number;
+  /** Attack only. Supply soldiers (lính hậu cần) to take from the Trại hậu cần, and how many days of food they carry for the army. */
+  supply: number; carryDays: number;
+  /** The supply soldiers on the march (set when the plan is deployed, emptied when the war ends). */
+  supplyIds: number[];
+  /** Counted while the war is on; null before it. */
+  stats: WarStats | null;
+  /** The tents of the war, one for each squad that has pitched one (wartent.ts); x, y in tiles. */
+  tents: Array<{ squad: number; x: number; y: number; progress: number; built: boolean }>;
 }
 /**
  * What the war council tells the player before a fight, worked out from the plan alone: our squads in it against the enemy as the map describes him.
@@ -338,6 +369,8 @@ export interface Notice {
   tip: string;
   /** A building to go to for it (the screen opens it), with the word for the button. */
   action?: { building: string; label: string };
+  /** A command the notice carries as a button: the screen runs it. */
+  command?: { kind: 'withdraw'; label: string };
   /** The people the notice is about: the screen can open their details so the player can change what they do. */
   people?: number[];
 }

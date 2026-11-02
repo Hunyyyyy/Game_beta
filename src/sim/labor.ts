@@ -188,7 +188,7 @@ export function tickFarms(sim: Sim, dt: number): void {
 }
 
 export function plan(sim: Sim, v: Villager): void {
-  if (v.job === 'hunt' || v.job === 'fight' || v.job === 'scout') { wait(sim, v, 1); return; } // combat code (and the scouting trip) drives these jobs
+  if (v.job === 'hunt' || v.job === 'fight' || v.job === 'scout' || v.job === 'supply') { wait(sim, v, 1); return; } // combat code (and the scouting trip) drives these jobs
   if (v.job === 'build') { if (!sim.planTool(v, 'build')) planBuild(sim, v); return; }
   if (isStaffJob(v.job) || (v.job === 'food' && v.post >= 0)) { sim.planStaff(v); return; }
   const def = JOBS[v.job as WorkJob], res = def.res!;
