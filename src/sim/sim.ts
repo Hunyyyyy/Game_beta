@@ -261,7 +261,7 @@ export class Sim {
   /** The whole game as plain JSON data (see save.ts). Settings are not in it. */
   toSave(): save.GameSave { return save.toSave(this); }
   /** Replace this game by a saved one; it must be a save of the same world (seed). */
-  loadSave(raw: unknown): void { save.applySave(this, save.migrate(raw)); this.fog.version++; } // the drawing of the fog must be redone
+  loadSave(raw: unknown): void { save.applySave(this, save.migrate(raw)); this.fog.invalidate(); } // the drawing of the fog must be redone
   /** A new Sim continuing a saved game. */
   static fromSave(raw: unknown): Sim {
     const data = save.migrate(raw), sim = new Sim(data.seed);

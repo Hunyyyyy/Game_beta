@@ -115,7 +115,7 @@ export function simulateCamp(sim: Sim, level: number): string {
   const was = { f: sim.dev.freeBuild, i: sim.dev.instantBuild };
   sim.dev.freeBuild = sim.dev.instantBuild = true;
   try {
-    sim.fog.state.fill(2); sim.fog.version++; sim.fogDirty = true;
+    sim.fog.state.fill(2); sim.fog.invalidate(); sim.fogDirty = true;
     wipe(sim);
     fire.level = Math.max(1, Math.min(maxLevel('campfire', fire.era), level)); fire.upgrading = false; fire.hp = maxHp(fire);
     const cx = Math.floor(fire.x + 1), cy = Math.floor(fire.y + 1);

@@ -62,12 +62,25 @@ export class Renderer {
     const fog = this.sim.fog;
     if (fog.version === this.fogVer) return;
     this.fogVer = fog.version;
-    const N = this.sim.world.size, img = this.fogCtx.createImageData(N, N), s = fog.state;
-    for (let i = 0; i < s.length; i++) {
-      img.data[i * 4] = FOG_RGB[0]; img.data[i * 4 + 1] = FOG_RGB[1]; img.data[i * 4 + 2] = FOG_RGB[2];
-      img.data[i * 4 + 3] = s[i] === 0 ? 255 : s[i] === 1 ? 150 : 0;
+    const N = this.sim.world.size, s = fog.state, ch = fog.takeChanged(), g = this.fogCtx;
+    if (ch === null) { // all of it: a game was loaded, or the whole map was shown
+      const img = g.createImageData(N, N);
+      for (let i = 0; i < s.length; i++) {
+        img.data[i * 4] = FOG_RGB[0]; img.data[i * 4 + 1] = FOG_RGB[1]; img.data[i * 4 + 2] = FOG_RGB[2];
+        img.data[i * 4 + 3] = s[i] === 0 ? 255 : s[i] === 1 ? 150 : 0;
+      }
+      g.putImageData(img, 0, 0);
+      return;
     }
-    this.fogCtx.putImageData(img, 0, 0);
+    // only the tiles that changed (a villager walking changes a ring of them): clear them, then lay the fog of the ones that are not in sight
+    if (!ch.length) return;
+    for (const i of ch) g.clearRect(i % N, (i / N) | 0, 1, 1);
+    for (const lvl of [1, 0]) {
+      g.fillStyle = `rgba(${FOG_RGB[0]},${FOG_RGB[1]},${FOG_RGB[2]},${lvl === 0 ? 1 : 150 / 255})`;
+      g.beginPath();
+      for (const i of ch) if (s[i] === lvl) g.rect(i % N, (i / N) | 0, 1, 1);
+      g.fill();
+    }
   }
 
   /** Vẽ một vật thể: neo (ax, ay) đặt tại điểm thế giới (wx, wy). */

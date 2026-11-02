@@ -41,7 +41,7 @@ export class MapView {
     const { sim, N } = this;
     if (sim.fog.version === this.ver && sim.buildings.length === this.builds) return;
     const now = performance.now();
-    if (this.ver >= 0 && now - this.drawn < 500) return; // a map of nearly a million tiles is not redrawn for every step somebody takes
+    if (this.ver >= 0 && now - this.drawn < (this.isOpen ? 500 : 2000)) return; // a map of nearly a million tiles is not redrawn for every step somebody takes (slowly while only the small map shows: a phone feels each redraw)
     this.drawn = now; this.ver = sim.fog.version; this.builds = sim.buildings.length;
     const img = this.bctx.createImageData(N, N), d = img.data, s = sim.fog.state, occ = sim.world.occ, tiles = sim.world.tiles;
     for (let i = 0; i < N * N; i++) {

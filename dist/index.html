@@ -46016,14 +46016,26 @@ body.war .sheet, body.war .bbar {
       const fog = this.sim.fog;
       if (fog.version === this.fogVer) return;
       this.fogVer = fog.version;
-      const N = this.sim.world.size, img = this.fogCtx.createImageData(N, N), s = fog.state;
-      for (let i = 0; i < s.length; i++) {
-        img.data[i * 4] = FOG_RGB[0];
-        img.data[i * 4 + 1] = FOG_RGB[1];
-        img.data[i * 4 + 2] = FOG_RGB[2];
-        img.data[i * 4 + 3] = s[i] === 0 ? 255 : s[i] === 1 ? 150 : 0;
+      const N = this.sim.world.size, s = fog.state, ch = fog.takeChanged(), g = this.fogCtx;
+      if (ch === null) {
+        const img = g.createImageData(N, N);
+        for (let i = 0; i < s.length; i++) {
+          img.data[i * 4] = FOG_RGB[0];
+          img.data[i * 4 + 1] = FOG_RGB[1];
+          img.data[i * 4 + 2] = FOG_RGB[2];
+          img.data[i * 4 + 3] = s[i] === 0 ? 255 : s[i] === 1 ? 150 : 0;
+        }
+        g.putImageData(img, 0, 0);
+        return;
       }
-      this.fogCtx.putImageData(img, 0, 0);
+      if (!ch.length) return;
+      for (const i of ch) g.clearRect(i % N, i / N | 0, 1, 1);
+      for (const lvl of [1, 0]) {
+        g.fillStyle = `rgba(${FOG_RGB[0]},${FOG_RGB[1]},${FOG_RGB[2]},${lvl === 0 ? 1 : 150 / 255})`;
+        g.beginPath();
+        for (const i of ch) if (s[i] === lvl) g.rect(i % N, i / N | 0, 1, 1);
+        g.fill();
+      }
     }
     /** Vẽ một vật thể: neo (ax, ay) đặt tại điểm thế giới (wx, wy). */
     prop(p, wx, wy, time, alpha = 1) {
@@ -46909,34 +46921,65 @@ body.war .sheet, body.war .bbar {
       this.version = 0;
       /** The tiles in sight right now, so that an update lowers only those instead of walking the whole map (a map of nearly a million tiles). */
       this.lit = [];
+      /** The tiles whose state changed since the screen last took them (see takeChanged), so that drawing the fog touches only those and not the whole map. */
+      this.changed = [];
+      /** The whole map has to be drawn again (a game was loaded, the map was revealed). */
+      this.all = true;
       this.state = new Uint8Array(world.size * world.size);
+    }
+    /** The map's fog changed in a way `changed` does not tell: draw it all again. */
+    invalidate() {
+      this.all = true;
+      this.changed = [];
+      this.version++;
+    }
+    /** For the drawing: null = redraw everything, else the tiles that changed since the last call. */
+    takeChanged() {
+      const c = this.changed;
+      this.changed = [];
+      if (this.all) {
+        this.all = false;
+        return null;
+      }
+      return c;
     }
     /** Each source has its own sight radius `r` (tiles). */
     update(sources) {
-      const N = this.world.size, s = this.state;
-      for (const i of this.lit) if (s[i] === 2) s[i] = 1;
+      const N = this.world.size, s = this.state, ch = this.changed, old = this.lit;
+      for (const i of old) if (s[i] === 2) s[i] = 3;
       const lit = [];
       for (const p of sources) {
         const cx = Math.floor(p.x), cy = Math.floor(p.y), radius = p.r, r2 = radius * radius + 0.5;
         for (let y = Math.max(0, cy - radius); y <= Math.min(N - 1, cy + radius); y++) {
           for (let x = Math.max(0, cx - radius); x <= Math.min(N - 1, cx + radius); x++) {
             if ((x - cx) ** 2 + (y - cy) ** 2 <= r2) {
-              const i = y * N + x;
-              if (s[i] !== 2) {
+              const i = y * N + x, was = s[i];
+              if (was !== 2) {
                 s[i] = 2;
                 lit.push(i);
+                if (was !== 3) ch.push(i);
               }
             }
           }
         }
       }
+      for (const i of old) if (s[i] === 3) {
+        s[i] = 1;
+        ch.push(i);
+      }
       this.lit = lit;
+      if (ch.length > 3e4) {
+        this.all = true;
+        this.changed = [];
+      }
       this.version++;
     }
     /** After the state was put back from a save: find again which tiles are in sight. */
     relight() {
       this.lit = [];
       for (let i = 0; i < this.state.length; i++) if (this.state[i] === 2) this.lit.push(i);
+      this.all = true;
+      this.changed = [];
     }
     countExplored() {
       let n = 0;
@@ -56577,7 +56620,7 @@ body.war .sheet, body.war .bbar {
     /** Replace this game by a saved one; it must be a save of the same world (seed). */
     loadSave(raw) {
       applySave(this, migrate(raw));
-      this.fog.version++;
+      this.fog.invalidate();
     }
     // the drawing of the fog must be redone
     /** A new Sim continuing a saved game. */
@@ -58623,7 +58666,7 @@ body.war .sheet, body.war .bbar {
     sim2.dev.freeBuild = sim2.dev.instantBuild = true;
     try {
       sim2.fog.state.fill(2);
-      sim2.fog.version++;
+      sim2.fog.invalidate();
       sim2.fogDirty = true;
       wipe(sim2);
       fire.level = Math.max(1, Math.min(maxLevel("campfire", fire.era), level));
@@ -59216,7 +59259,7 @@ body.war .sheet, body.war .bbar {
       const { sim: sim2, N } = this;
       if (sim2.fog.version === this.ver && sim2.buildings.length === this.builds) return;
       const now = performance.now();
-      if (this.ver >= 0 && now - this.drawn < 500) return;
+      if (this.ver >= 0 && now - this.drawn < (this.isOpen ? 500 : 2e3)) return;
       this.drawn = now;
       this.ver = sim2.fog.version;
       this.builds = sim2.buildings.length;
