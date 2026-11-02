@@ -3493,19 +3493,19 @@ body.war .sheet, body.war .bbar {
   var animals_default = {
     _note: "huntValue: how much a hunter wants each thing a beast gives (a hunter takes the prey that is worth the most for the way he has to go; what the village cannot take yet counts for nothing). huntHpCap: the health of the biggest beast a lodge of level 1, 2, 3 will send hunters after. zone = map ring 1..4 (each 24 tiles from the campfire). speed in tiles/s. flee: distance that makes it run. aggro: distance at which a predator starts hunting. herd: [min,max] group size. habitat water = lives in water tiles. Art lives in animals/bodies.json. drops: other materials the body gives when skinned (only feather is used now), on top of meat (becomes food) and hide. nearRadius/nearBoost: chunks whose centre is within nearRadius tiles of the campfire get nearBoost times the herds of prey that does not fight back (rabbit, fowl, deer, duck), so a new village has game to hunt. A species is just a key here plus an entry in bodies.json; the list below is in spawn order.",
     rabbit: { name: "Th\u1ECF", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2.2, flee: 6, aggro: 0, meat: 3, hide: 1, zones: [1, 2], herd: [1, 2], count: 36, prey: true, nocturnal: false },
-    fowl: { name: "G\xE0 r\u1EEBng", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2, flee: 4, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 3], count: 20, prey: true, nocturnal: false, drops: { feather: 4 } },
+    fowl: { name: "G\xE0 r\u1EEBng", hp: 10, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 2, flee: 4, aggro: 0, meat: 3, hide: 0, zones: [1, 2], herd: [1, 3], count: 20, prey: true, nocturnal: false, drops: { feather: 10 } },
     deer: { name: "H\u01B0\u01A1u", hp: 60, damage: 4, type: "crush", cycle: 1.6, range: 1, speed: 2.6, flee: 5, aggro: 0, meat: 20, hide: 10, zones: [1, 3], herd: [3, 5], count: 18, prey: true, nocturnal: false, cornered: true, drops: { bone: 2 } },
     boar: { name: "L\u1EE3n r\u1EEBng", hp: 90, damage: 10, type: "pierce", cycle: 1.5, range: 1, speed: 2.1, flee: 0, aggro: 0, meat: 25, hide: 10, zones: [1, 3], herd: [1, 2], count: 8, prey: true, nocturnal: false, defends: true, drops: { bone: 2 } },
     wolf: { name: "S\xF3i", hp: 55, damage: 7, type: "slash", cycle: 1.2, range: 1, speed: 2.9, flee: 0, aggro: 9, meat: 8, hide: 2, zones: [2, 3], herd: [4, 6], count: 12, prey: false, nocturnal: true, drops: { bone: 2 } },
     fish: { name: "C\xE1", hp: 1, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.1, flee: 3, aggro: 0, meat: 3, hide: 0, zones: [1, 3], herd: [3, 6], count: 36, prey: true, nocturnal: false, habitat: "water" },
     aurochs: { name: "B\xF2 r\u1EEBng", hp: 130, damage: 12, type: "crush", cycle: 1.8, range: 1, speed: 2, flee: 0, aggro: 0, meat: 45, hide: 20, zones: [1, 3], herd: [2, 4], count: 6, prey: true, nocturnal: false, defends: true, drops: { bone: 3 } },
-    duck: { name: "V\u1ECBt tr\u1EDDi", hp: 8, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.9, flee: 5, aggro: 0, meat: 3, hide: 0, drops: { feather: 4 }, zones: [1, 2], herd: [2, 4], count: 14, prey: true, nocturnal: false },
+    duck: { name: "V\u1ECBt tr\u1EDDi", hp: 8, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.9, flee: 5, aggro: 0, meat: 3, hide: 0, drops: { feather: 10 }, zones: [1, 2], herd: [2, 4], count: 14, prey: true, nocturnal: false },
     fox: { name: "C\xE1o", hp: 25, damage: 4, type: "pierce", cycle: 1, range: 1, speed: 2.8, flee: 0, aggro: 4, meat: 4, hide: 1, zones: [2, 3], herd: [1, 1], count: 8, prey: false, nocturnal: true, fearsFire: 4 },
     ibex: { name: "D\xEA n\xFAi", hp: 50, damage: 5, type: "crush", cycle: 1.5, range: 1, speed: 3, flee: 9, aggro: 0, meat: 14, hide: 2, zones: [2, 4], herd: [3, 5], count: 10, prey: true, nocturnal: false, cornered: true, drops: { bone: 2 } },
     elk: { name: "Nai s\u1EEBng t\u1EA5m", hp: 160, damage: 10, type: "crush", cycle: 1.8, range: 1, speed: 2.4, flee: 0, aggro: 0, meat: 55, hide: 22, zones: [2, 3], herd: [1, 3], count: 6, prey: true, nocturnal: false, defends: true, drops: { bone: 4 } },
-    bear: { name: "G\u1EA5u n\xE2u", hp: 240, damage: 20, type: "slash", cycle: 1.9, range: 1, speed: 2.2, flee: 0, aggro: 6, meat: 45, hide: 30, zones: [3, 4], herd: [1, 1], count: 4, prey: false, nocturnal: false, drops: { bone: 5 } },
+    bear: { name: "G\u1EA5u n\xE2u", hp: 240, damage: 20, type: "slash", cycle: 1.9, range: 1, speed: 2.2, flee: 0, aggro: 6, meat: 45, hide: 30, zones: [3, 4], herd: [1, 1], count: 4, prey: false, nocturnal: false, drops: { bone: 10 } },
     lion: { name: "S\u01B0 t\u1EED hang", hp: 130, damage: 16, type: "slash", cycle: 1.3, range: 1, speed: 3.3, flee: 0, aggro: 11, meat: 28, hide: 6, zones: [3, 4], herd: [1, 3], count: 5, prey: false, nocturnal: true, fearsFire: 6, drops: { bone: 3 } },
-    mammoth: { name: "Voi ma m\xFAt", hp: 450, damage: 28, type: "crush", cycle: 2.6, range: 1, speed: 1.5, flee: 0, aggro: 0, meat: 120, hide: 16, zones: [3, 4], herd: [2, 3], count: 6, prey: true, nocturnal: false, defends: true, drops: { bone: 14 } },
+    mammoth: { name: "Voi ma m\xFAt", hp: 450, damage: 28, type: "crush", cycle: 2.6, range: 1, speed: 1.5, flee: 0, aggro: 0, meat: 120, hide: 16, zones: [3, 4], herd: [2, 3], count: 6, prey: true, nocturnal: false, defends: true, drops: { bone: 15 } },
     pike: { name: "C\xE1 ch\xF3", hp: 2, damage: 0, type: "pierce", cycle: 1, range: 1, speed: 1.2, flee: 4, aggro: 0, meat: 6, hide: 0, zones: [1, 3], herd: [1, 2], count: 16, prey: true, nocturnal: false, habitat: "water", drops: { bone: 1 } },
     behaviour: {
       fleeBurst: 5,
@@ -4958,7 +4958,7 @@ body.war .sheet, body.war .bbar {
           buildTime: 50,
           cap: 10,
           craftSpeed: 1,
-          slots: 1,
+          slots: 2,
           hp: 180,
           sight: 0
         },
@@ -4971,7 +4971,7 @@ body.war .sheet, body.war .bbar {
           buildTime: 90,
           cap: 25,
           craftSpeed: 1,
-          slots: 2,
+          slots: 3,
           hp: 270,
           sight: 0
         },
@@ -4985,7 +4985,7 @@ body.war .sheet, body.war .bbar {
           buildTime: 140,
           cap: 50,
           craftSpeed: 1,
-          slots: 3,
+          slots: 4,
           hp: 360,
           sight: 0
         },
@@ -4999,7 +4999,7 @@ body.war .sheet, body.war .bbar {
           buildTime: 218,
           cap: 100,
           craftSpeed: 1,
-          slots: 3,
+          slots: 5,
           hp: 450,
           sight: 0
         }
@@ -49756,6 +49756,31 @@ body.war .sheet, body.war .bbar {
   }
   var baseWork = BASE.work;
 
+  // src/sim/warmode.ts
+  var warPlan = (sim2) => sim2.plans.find((p) => p.kind === "attack" && p.status === "running");
+  var warTribe = (sim2) => warPlan(sim2)?.tribe ?? null;
+  function ranks(sim2) {
+    const ids = /* @__PURE__ */ new Set();
+    for (const p of sim2.plans) {
+      if (p.kind !== "attack" || p.status !== "running") continue;
+      for (const m of p.missions) {
+        const s = sim2.squadById(m.squad);
+        if (s) for (const v of sim2.squadUnits(s)) ids.add(v.id);
+      }
+    }
+    for (const m of sim2.scouts) for (const id of m.ids) ids.add(id);
+    return ids;
+  }
+  function standDown(sim2, v, dt) {
+    if (v.inside !== null || v.phase === "sleep" || v.down > 0 || v.health <= 0) return;
+    if (v.phase !== "goHome") {
+      sim2.clearCombat(v);
+      sim2.goHome(v);
+    }
+    sim2.moveUnit(v, dt);
+    sim2.animate(v, dt);
+  }
+
   // src/sim/tribes.ts
   var tribeOf = (sim2, id) => sim2.tribes.find((t) => t.id === id);
   function spawnTribes(sim2) {
@@ -49977,12 +50002,14 @@ body.war .sheet, body.war .bbar {
     }
   }
   function tickTribes(sim2, dt) {
-    tickEvents(sim2);
+    const war = warTribe(sim2);
+    if (!war) tickEvents(sim2);
     sim2.tribeClock += dt;
     if (sim2.tribeClock < 1) return;
     sim2.tribeClock = 0;
     refreshActive(sim2);
     for (const t of sim2.tribes) {
+      if (war && t.id !== war) continue;
       t.unitIds = t.unitIds.filter((u) => {
         const f = sim2.get(u);
         return !!f && f.health > 0;
@@ -52159,12 +52186,20 @@ body.war .sheet, body.war .bbar {
     sim2.stock.food -= k;
   }
   function eatDay(sim2) {
+    if (sim2.atWar()) return;
     rollYield(sim2);
     trackFood(sim2);
     sim2.foodDays.push(sim2.foodIncome);
     if (sim2.foodDays.length > 3) sim2.foodDays.shift();
     sim2.foodIncome = 0;
-    const need = foodNeed(sim2);
+    eat(sim2, foodNeed(sim2));
+  }
+  function eatWar(sim2, days2) {
+    const need = Math.round(foodNeed(sim2) * days2);
+    if (need > 0) eat(sim2, need);
+    sim2.say(`Chi\u1EBFn tranh k\u1EBFt th\xFAc sau ${Math.max(0.1, Math.round(days2 * 10) / 10)} ng\xE0y: kho l\u01B0\u01A1ng \u0111\xE3 tr\u1EEB ph\u1EA7n \u0103n c\u1EE7a l\xE0ng.`);
+  }
+  function eat(sim2, need) {
     const fromPot = Math.min(sim2.foodPot, need), fromStore = Math.min(sim2.stock.food, need - fromPot), short = need - fromPot - fromStore;
     sim2.foodPot -= fromPot;
     sim2.stock.food -= fromStore;
@@ -55177,7 +55212,7 @@ body.war .sheet, body.war .bbar {
     sim2.say("G\u1ECDi qu\xE2n \u0111\u1ED9i: l\xEDnh ra kh\u1ECFi tr\u1EA1i, s\u1EB5n s\xE0ng chi\u1EBFn \u0111\u1EA5u.");
     return null;
   }
-  function standDown(sim2) {
+  function standDown2(sim2) {
     if (sim2.alarmUntil <= sim2.time) return;
     sim2.alarmUntil = 0;
     sim2.say("Qu\xE2n \u0111\u1ED9i v\u1EC1 tr\u1EA1i.");
@@ -55860,6 +55895,21 @@ body.war .sheet, body.war .bbar {
 
   // src/sim/simwar.ts
   var WAR = {
+    /** One tick while a war is on (warmode.ts): only the army, the scouts out, the arrows in the air and the village under attack are worked; everyone else goes home and stands still. */
+    tickWar(dt) {
+      tickProjectiles(this, dt);
+      const ranks2 = ranks(this);
+      for (const v of [...this.villagers]) {
+        if (ranks2.has(v.id)) this.tickVillager(v, dt);
+        else standDown(this, v, dt);
+      }
+      tickBattle(this, dt);
+      tickScouts(this, dt);
+      tickPlans(this, dt);
+      const enemy = warTribe(this);
+      for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
+      tickTribes(this, dt);
+    },
     /** → army.squadLimit */
     squadLimit() {
       return squadLimit(this);
@@ -56208,7 +56258,7 @@ body.war .sheet, body.war .bbar {
     },
     /** → warplan.standDown */
     standDown() {
-      return standDown(this);
+      return standDown2(this);
     },
     /** → mounts.fitScoutMount */
     fitScoutMount(v) {
@@ -56339,6 +56389,8 @@ body.war .sheet, body.war .bbar {
       this.foodPot = 0;
       /** How much the whole village is weakened today for going short at the last meal (0..FOOD.maxPenalty). */
       this.foodPenalty = 0;
+      /** When the war that is on began (seconds of game time); -1 in peace. The meals of those days are paid when it ends (economy.eatWar). */
+      this.warSince = -1;
       /** Food that came in today, and the total (pot + store) seen last tick (-1: not yet); the incomes of the last three days. Only to tell the player what the village earns. */
       this.foodIncome = 0;
       this.foodSeen = -1;
@@ -56436,6 +56488,14 @@ body.war .sheet, body.war .bbar {
     /** → rest.tickEnergy */
     tickEnergy(v, dt) {
       tickEnergy(this, v, dt);
+    }
+    /** → warmode.warPlan: a war is on */
+    atWar() {
+      return !!warPlan(this);
+    }
+    /** → villagers.goHome */
+    goHome(v) {
+      return goHome(this, v);
     }
     /** → roles.warLock */
     warLock() {
@@ -57047,6 +57107,20 @@ body.war .sheet, body.war .bbar {
       this.streamWorld(dt);
       feedPot(this);
       trackFood(this);
+      if (warPlan(this)) {
+        if (this.warSince < 0) this.warSince = this.time;
+        this.tickWar(dt);
+        if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
+        if (this.fogDirty) {
+          this.fogDirty = false;
+          this.refreshFog();
+        }
+        return;
+      }
+      if (this.warSince >= 0) {
+        eatWar(this, (this.time - this.warSince) / DAY_LENGTH);
+        this.warSince = -1;
+      }
       tickAnimals(this, dt);
       tickProjectiles(this, dt);
       for (const v of [...this.villagers]) this.tickVillager(v, dt);
@@ -58812,28 +58886,37 @@ body.war .sheet, body.war .bbar {
           fresh.textContent = "V\xE1n m\u1EDBi";
         }, 4e3);
       });
+      const saveBtn = h("button", { class: "sm primary", text: "L\u01B0u ngay", onclick: () => {
+        void session2.save().then((ok) => {
+          if (ok) toast2("\u0110\xE3 l\u01B0u");
+          void refresh();
+        });
+      } });
+      const loadBtn = h("button", { class: "sm", text: "T\u1EA3i b\u1EA3n l\u01B0u", onclick: () => {
+        void session2.resume("auto").then((ok) => {
+          toast2(ok ? "\u0110\xE3 t\u1EA3i l\u1EA1i v\xE1n ch\u01A1i" : "Ch\u01B0a c\xF3 b\u1EA3n l\u01B0u");
+          this.close();
+        });
+      } });
       page.append(
         hint("L\u01B0u v\xE0 t\u1EA3i", "Game t\u1EF1 l\u01B0u v\xE0o \u0111\u1EA7u m\u1ED7i ng\xE0y v\xE0 khi b\u1EA1n r\u1EDDi trang. B\u1EA3n l\u01B0u n\u1EB1m trong tr\xECnh duy\u1EC7t c\u1EE7a m\xE1y n\xE0y. T\u1ED1c \u0111\u1ED9 game v\xE0 l\u1EDDi nh\u1EAFc xoay ngang l\xE0 c\xE0i \u0111\u1EB7t c\u1EE7a b\u1EA1n, kh\xF4ng n\u1EB1m trong b\u1EA3n l\u01B0u."),
         info,
         h(
           "div",
           { class: "btns" },
-          h("button", { class: "sm primary", text: "L\u01B0u ngay", onclick: () => {
-            void session2.save().then((ok) => {
-              if (ok) toast2("\u0110\xE3 l\u01B0u");
-              void refresh();
-            });
-          } }),
-          h("button", { class: "sm", text: "T\u1EA3i b\u1EA3n l\u01B0u", onclick: () => {
-            void session2.resume("auto").then((ok) => {
-              toast2(ok ? "\u0110\xE3 t\u1EA3i l\u1EA1i v\xE1n ch\u01A1i" : "Ch\u01B0a c\xF3 b\u1EA3n l\u01B0u");
-              this.close();
-            });
-          } }),
+          saveBtn,
+          loadBtn,
           fresh
         )
       );
       let last2 = -1e9;
+      this.updaters.push(() => {
+        const war = this.c.sim.atWar();
+        for (const b of [saveBtn, loadBtn]) {
+          b.disabled = war;
+          b.title = war ? "\u0110ang chi\u1EBFn tranh: kh\xF4ng l\u01B0u hay t\u1EA3i \u0111\u01B0\u1EE3c cho t\u1EDBi khi tr\u1EADn k\u1EBFt th\xFAc" : "";
+        }
+      });
       this.updaters.push(() => {
         const now = performance.now();
         if (!page.hidden && now - last2 > 2e3) {
@@ -63730,7 +63813,7 @@ body.war .sheet, body.war .bbar {
     }
     /** Save now. Two saves never overlap: one asked for while another is running is skipped. */
     async save(id = AUTO_SAVE) {
-      if (this.busy) return false;
+      if (this.busy || this.sim.atWar()) return false;
       this.busy = true;
       try {
         const sim2 = this.sim;
@@ -63753,6 +63836,7 @@ body.war .sheet, body.war .bbar {
     }
     /** Put a save into this game. Returns false when there is none; the save must be of this world. */
     async resume(id) {
+      if (this.sim.atWar()) return false;
       const data = await this.store.load(id);
       if (!data) return false;
       this.sim.loadSave(data);

@@ -15,6 +15,7 @@ import { spawnAnimal } from './fauna';
 import type { Stock } from './resources';
 import type { Sim, Villager } from './sim';
 import { Tile } from './world';
+import { warTribe } from './warmode';
 
 export type TribeState = 'free' | 'surrendered' | 'tribute' | 'adopted' | 'destroyed';
 
@@ -266,12 +267,14 @@ function releaseRaiders(sim: Sim, t: Tribe): void {
 
 // ---------------------------------------------------------------- tribe upkeep (once per tick, cheap)
 export function tickTribes(sim: Sim, dt: number): void {
-  tickEvents(sim);
+  const war = warTribe(sim); // at war only the tribe under attack lives on: no events, no other tribe
+  if (!war) tickEvents(sim);
   sim.tribeClock += dt;
   if (sim.tribeClock < 1) return;
   sim.tribeClock = 0;
   refreshActive(sim);
   for (const t of sim.tribes) {
+    if (war && t.id !== war) continue;
     t.unitIds = t.unitIds.filter((u) => { const f = sim.get(u); return !!f && f.health > 0; });
     if (t.state === 'free' && t.unitIds.length === 0) { t.state = 'destroyed'; t.raid = null; sim.say(`${t.def.name} đã bị xóa sổ.`); if (t.harmed) claimVillage(sim, t, false); continue; }
     if (t.state === 'tribute' && sim.day >= t.nextTribute) {

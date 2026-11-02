@@ -118,12 +118,13 @@ export class Menu {
       if (performance.now() < armed) { void session.forget().then(() => location.assign(location.pathname + location.search.replace(/[?&]continue=1/, ''))); return; }
       armed = performance.now() + 4000; fresh.textContent = 'Bấm lại để xóa bản lưu và chơi lại'; setTimeout(() => { fresh.textContent = 'Ván mới'; }, 4000);
     });
+    const saveBtn = h('button', { class: 'sm primary', text: 'Lưu ngay', onclick: () => { void session.save().then((ok) => { if (ok) toast('Đã lưu'); void refresh(); }); } }) as HTMLButtonElement;
+    const loadBtn = h('button', { class: 'sm', text: 'Tải bản lưu', onclick: () => { void session.resume('auto').then((ok) => { toast(ok ? 'Đã tải lại ván chơi' : 'Chưa có bản lưu'); this.close(); }); } }) as HTMLButtonElement;
     page.append(hint('Lưu và tải', 'Game tự lưu vào đầu mỗi ngày và khi bạn rời trang. Bản lưu nằm trong trình duyệt của máy này. Tốc độ game và lời nhắc xoay ngang là cài đặt của bạn, không nằm trong bản lưu.'), info,
       h('div', { class: 'btns' },
-        h('button', { class: 'sm primary', text: 'Lưu ngay', onclick: () => { void session.save().then((ok) => { if (ok) toast('Đã lưu'); void refresh(); }); } }),
-        h('button', { class: 'sm', text: 'Tải bản lưu', onclick: () => { void session.resume('auto').then((ok) => { toast(ok ? 'Đã tải lại ván chơi' : 'Chưa có bản lưu'); this.close(); }); } }),
-        fresh));
+        saveBtn, loadBtn, fresh));
     let last = -1e9;
+    this.updaters.push(() => { const war = this.c.sim.atWar(); for (const b of [saveBtn, loadBtn]) { b.disabled = war; b.title = war ? 'Đang chiến tranh: không lưu hay tải được cho tới khi trận kết thúc' : ''; } });
     this.updaters.push(() => { const now = performance.now(); if (!page.hidden && now - last > 2000) { last = now; void refresh(); } });
     return page;
   }

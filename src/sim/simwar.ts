@@ -6,9 +6,10 @@ import * as siege from './siege';
 import { sightOf } from './environment';
 import * as training from './training';
 import * as mounts from './mounts';
-import { surrender, tribeOf } from './tribes';
+import { surrender, tickFoe, tickTribes, tribeOf } from './tribes';
+import * as warmode from './warmode';
 import * as warplan from './warplan';
-import { armOf } from './battle';
+import { armOf, tickProjectiles } from './battle';
 import type { Ent } from './battle';
 import type { Building } from './buildings';
 import type { MountKind, StatKey } from './jobs';
@@ -18,6 +19,16 @@ import type { CardKind, RouteTime, Forecast, FormationName, Mission, MissionTarg
 import type { Sim } from './sim';
 
 export const WAR = {
+  /** One tick while a war is on (warmode.ts): only the army, the scouts out, the arrows in the air and the village under attack are worked; everyone else goes home and stands still. */
+  tickWar(this: Sim, dt: number): void {
+    tickProjectiles(this, dt);
+    const ranks = warmode.ranks(this);
+    for (const v of [...this.villagers]) { if (ranks.has(v.id)) this.tickVillager(v, dt); else warmode.standDown(this, v, dt); }
+    army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
+    const enemy = warmode.warTribe(this);
+    for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
+    tickTribes(this, dt);
+  },
   /** → army.squadLimit */
   squadLimit(this: Sim): number { return army.squadLimit(this); },
   /** → army.cellLimit */

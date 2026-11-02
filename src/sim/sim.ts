@@ -36,6 +36,7 @@ import * as army from './army';
 import * as scouting from './scouting';
 import * as power from './power';
 import * as warplan from './warplan';
+import * as warmode from './warmode';
 import { WAR, WarApi } from './simwar';
 import { BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
 import type { Ent } from './battle';
@@ -143,6 +144,8 @@ export class Sim {
   foodPot = 0;
   /** How much the whole village is weakened today for going short at the last meal (0..FOOD.maxPenalty). */
   foodPenalty = 0;
+  /** When the war that is on began (seconds of game time); -1 in peace. The meals of those days are paid when it ends (economy.eatWar). */
+  warSince = -1;
   /** Food that came in today, and the total (pot + store) seen last tick (-1: not yet); the incomes of the last three days. Only to tell the player what the village earns. */
   foodIncome = 0;
   foodSeen = -1;
@@ -213,6 +216,10 @@ export class Sim {
   shouldSleep(v: Villager, fighting: boolean): boolean { return rest.shouldSleep(this, v, fighting); }
   /** → rest.tickEnergy */
   tickEnergy(v: Villager, dt: number): void { rest.tickEnergy(this, v, dt); }
+  /** → warmode.warPlan: a war is on */
+  atWar(): boolean { return !!warmode.warPlan(this); }
+  /** → villagers.goHome */
+  goHome(v: Villager): void { return villagers.goHome(this, v); }
   /** → roles.warLock */
   warLock(): string | null { return roles.warLock(this); }
   /** → roles.assignRole */
@@ -578,6 +585,15 @@ export class Sim {
     this.world.tick(dt);
     this.streamWorld(dt);
     economy.feedPot(this); economy.trackFood(this);
+    // war mode (warmode.ts): clock, weather and food go on; everything else stands still but the war
+    if (warmode.warPlan(this)) {
+      if (this.warSince < 0) this.warSince = this.time;
+      this.tickWar(dt);
+      if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
+      if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
+      return;
+    }
+    if (this.warSince >= 0) { economy.eatWar(this, (this.time - this.warSince) / DAY_LENGTH); this.warSince = -1; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);

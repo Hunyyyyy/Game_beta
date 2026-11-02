@@ -60,13 +60,24 @@ export function feedPot(sim: Sim): void {
   sim.foodPot += k; sim.stock.food -= k;
 }
 
-/** The end of a day: the village eats from the pot, then from the store. What is short weakens everyone the day after, up to FOOD.maxPenalty when nothing is left. */
+/** The end of a day: the village eats from the pot, then from the store. What is short weakens everyone the day after, up to FOOD.maxPenalty when nothing is left. In a war nobody eats at the day's end: the war's meals are paid when it is over (eatWar). */
 export function eatDay(sim: Sim): void {
+  if (sim.atWar()) return;
   rollYield(sim);
   trackFood(sim);
   sim.foodDays.push(sim.foodIncome); if (sim.foodDays.length > 3) sim.foodDays.shift();
   sim.foodIncome = 0;
-  const need = foodNeed(sim);
+  eat(sim, foodNeed(sim));
+}
+
+/** The war is over: the village pays for the days it lasted (a day is one full meal, so a part of a day is a part of a meal), and what is short weakens it as after any day. */
+export function eatWar(sim: Sim, days: number): void {
+  const need = Math.round(foodNeed(sim) * days);
+  if (need > 0) eat(sim, need);
+  sim.say(`Chiến tranh kết thúc sau ${Math.max(0.1, Math.round(days * 10) / 10)} ngày: kho lương đã trừ phần ăn của làng.`);
+}
+
+function eat(sim: Sim, need: number): void {
   const fromPot = Math.min(sim.foodPot, need), fromStore = Math.min(sim.stock.food, need - fromPot), short = need - fromPot - fromStore;
   sim.foodPot -= fromPot; sim.stock.food -= fromStore;
   const was = sim.foodPenalty;
