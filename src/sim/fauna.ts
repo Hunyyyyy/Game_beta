@@ -319,19 +319,55 @@ export function tickAnimals(sim: Sim, dt: number): void {
   }
 }
 
-/** Spring: herds that fell below their usual size breed back, as long as two females remain. */
-export function breed(sim: Sim): void {
+/**
+ * Once a day the land makes up what hunting and the wolves took: a species that has fallen short of its usual number gets a new herd (or what is missing of one), by chance,
+ * on ground out of our sight in the zones it lives in. It needs no animal of its kind to be left, so a hunted-out species comes back all the same.
+ */
+export function restock(sim: Sim): void {
+  if (sim.warSince >= 0) return; // the animals are away while a war is on (tickWarAnimals), and come back after it
+  const chunks = sim.world.readyChunks();
+  if (!chunks.length) return;
+  const s = sim.world.start, N = sim.world.size;
   for (const sp of SPECIES) {
-    const def = ANIMALS[sp];
-    const alive = sim.animals.filter((a) => a.species === sp && a.state !== 'dead' && !a.raid);
-    if (alive.filter((a) => a.female).length < BEHAVIOUR.breedMinFemales) continue;
-    const missing = countOf(sim, def) - alive.length;
-    for (let i = 0; i < Math.max(0, missing); i++) {
-      if (sim.frnd() > BEHAVIOUR.breedChance) continue;
-      const mother = alive[Math.floor(sim.frnd() * alive.length)];
-      spawnAnimal(sim, sp, mother.x + (sim.frnd() - 0.5) * 2, mother.y + (sim.frnd() - 0.5) * 2, mother.herd);
+    const def = ANIMALS[sp], alive = sim.animals.filter((a) => a.species === sp && a.state !== 'dead' && !a.raid).length, missing = countOf(sim, def) - alive;
+    if (missing < def.herd[0] || sim.frnd() > BEHAVIOUR.restockChance) continue;
+    const size = Math.min(missing, def.herd[0] + Math.floor(sim.frnd() * (def.herd[1] - def.herd[0] + 1)));
+    for (let tries = 0; tries < 24; tries++) {
+      const [cx, cy] = chunks[Math.floor(sim.frnd() * chunks.length)], x = cx * CHUNK + Math.floor(sim.frnd() * CHUNK), y = cy * CHUNK + Math.floor(sim.frnd() * CHUNK), d = Math.hypot(x - s.x, y - s.y);
+      const z = zoneOf(d), far = z === 4 && def.zones[1] === 3 ? 3 : z;
+      if ((d < 16 && def.habitat !== 'water') || far < def.zones[0] || far > def.zones[1] || !habitable(sim, def, x, y)) continue;
+      if (sim.fog.state[y * N + x] === 2 || sim.inView(x, y)) continue; // not where we can see it appear
+      const herd = 200000 + sim.nextAid;
+      for (let i = 0; i < size; i++) {
+        const ax = x + (sim.frnd() - 0.5) * 4, ay = y + (sim.frnd() - 0.5) * 4;
+        if (sim.world.isReady(Math.floor(ax), Math.floor(ay)) && habitable(sim, def, Math.floor(ax), Math.floor(ay))) spawnAnimal(sim, sp, ax, ay, herd);
+      }
+      break;
     }
   }
+}
+
+/**
+ * War: the animals leave the field. Those out of the camera's sight are gone at once; those in it run away from the middle of the screen and are gone when they are out of sight.
+ * They are only put by (`sim.hiddenAnimals`) and come back where they were when the war is over (restoreWarAnimals). The carcasses stay.
+ */
+export function tickWarAnimals(sim: Sim, dt: number): void {
+  const w = sim.view;
+  for (let i = sim.animals.length - 1; i >= 0; i--) {
+    const a = sim.animals[i];
+    if (a.state === 'dead') continue;
+    if (!w || !sim.inView(a.x, a.y)) { sim.animals.splice(i, 1); sim.animalById.delete(a.id); a.target = null; a.dest = null; a.state = 'graze'; a.timer = 2; sim.hiddenAnimals.push(a); continue; }
+    const def = animalDef(a), mx = (w.x0 + w.x1) / 2, my = (w.y0 + w.y1) / 2, dx = a.x - mx, dy = a.y - my, len = Math.hypot(dx, dy) || 1;
+    a.state = 'flee'; a.target = null; a.timer = 2; a.clock += dt;
+    step(sim, a, a.x + (dx / len) * 12, a.y + (dy / len) * 12, def.speed * 1.2, dt);
+    a.dir = dx >= 0 ? 1 : -1;
+  }
+}
+
+/** The war is over: the animals that were put by come back where they went out of sight. */
+export function restoreWarAnimals(sim: Sim): void {
+  for (const a of sim.hiddenAnimals) { sim.animals.push(a); sim.animalById.set(a.id, a); }
+  sim.hiddenAnimals.length = 0;
 }
 
 /** Nothing left on the body worth skinning. */

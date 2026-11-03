@@ -1,5 +1,6 @@
 /** Roles: the jobs that belong to a house. A role is given and taken back in its house (the Trại chiến binh, the Xưởng gỗ…), never at the campfire. */
 import { buildingName, levelDef } from './buildings';
+import { DIFF } from './difficulty';
 import { ROLES, roleName, roleOf } from './jobs';
 import type { RoleId } from './jobs';
 import type { Sim } from './sim';
@@ -17,9 +18,12 @@ const NO_HOUSE_TRADES: readonly RoleId[] = ['wood', 'stone', 'food', 'hunt'];
 export const NO_HOUSE_CAP = 1;
 
 /** How many people the role may have: the places of its house at its level; with no house one villager for a gathering trade (anyone in the dev menu). */
+/** The camps of soldiers: their places grow with the villages we take. */
+const CAMP_ROLES: readonly RoleId[] = ['foot', 'archer', 'cavalry'];
 export const roleCapacity = (sim: Sim, role: RoleId): number => {
   const houses = roleHouses(sim, role);
-  return houses.length ? houses.reduce((n, b) => n + levelDef(b).slots, 0) : sim.dev.freeBuild ? 99 : NO_HOUSE_TRADES.includes(role) ? NO_HOUSE_CAP : 0;
+  const camp = CAMP_ROLES.includes(role) ? sim.conquered * DIFF.capture.campSlots : 0; // a village we took adds places to every camp of soldiers
+  return houses.length ? houses.reduce((n, b) => n + levelDef(b).slots + camp, 0) : sim.dev.freeBuild ? 99 : NO_HOUSE_TRADES.includes(role) ? NO_HOUSE_CAP : 0;
 };
 
 export const roleCount = (sim: Sim, role: RoleId): number => sim.villagers.filter((v) => roleOf(v) === role).length;

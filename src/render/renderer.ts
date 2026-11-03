@@ -324,37 +324,6 @@ export class Renderer {
     ctx.fillStyle = color; ctx.fillRect(p.x - w / 2, p.y, w * Math.max(0, Math.min(1, frac)), 2 * z);
   }
 
-  /** Draw the soldiers as one figure for about three of them in a big battle (set from the war HUD). */
-  /** The cluster flags drawn last frame, for taps. */
-  private flags: Array<{ ids: number[]; x: number; y: number; w: number; h: number }> = [];
-
-  /** The cluster whose flag is under the screen point, if any. */
-  flagAt(px: number, py: number): number[] | null {
-    for (const f of this.flags) if (px >= f.x && px <= f.x + f.w && py >= f.y && py <= f.y + f.h) return f.ids;
-    return null;
-  }
-
-  /** A small flag over each cluster of soldiers: how many are left, how well they are, and which arm and squad they are. */
-  private drawClusters(selected: ReadonlySet<number>): void {
-    const { ctx, cam, sim } = this, z = cam.zoom, N = sim.world.size;
-    this.flags = [];
-    if (!sim.squads.length && !sim.battle.on) return;
-    const ARM = { foot: '#d9a441', archer: '#5aa0d9', cavalry: '#c05ad9' };
-    const ARM_LETTER = { foot: 'B', archer: 'C', cavalry: 'K' };
-    ctx.font = `700 ${Math.max(10, 5 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center';
-    for (const c of sim.clusters()) {
-      if (c.side !== 'player' && sim.fog.state[Math.floor(c.y) * N + Math.floor(c.x)] !== 2) continue;
-      const p = this.worldToScreen(c.x * TILE, c.y * TILE - 38), w = 30 * z * 0.7, h = 11 * z * 0.7, x = Math.round(p.x - w / 2), y = Math.round(p.y - h);
-      const chosen = c.ids.some((id) => selected.has(id));
-      ctx.fillStyle = c.color; ctx.globalAlpha = 0.92; ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1;
-      ctx.strokeStyle = chosen ? '#ffffff' : ARM[c.arm]; ctx.lineWidth = chosen ? 2 : 1.5; ctx.strokeRect(x + 0.5, y + 0.5, w, h);
-      ctx.fillStyle = '#ffffff'; ctx.fillText(`${ARM_LETTER[c.arm]} ${c.n}`, p.x, y + h * 0.78);
-      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x, y + h + 1, w, 3);
-      ctx.fillStyle = c.hp > 0.5 ? '#6ac24a' : c.hp > 0.25 ? '#e0b43c' : '#d9503c'; ctx.fillRect(x, y + h + 1, w * Math.max(0, Math.min(1, c.hp)), 3);
-      this.flags.push({ ids: c.ids, x, y, w, h: h + 4 });
-    }
-  }
-
   /**
    * A mountain is one mass, not a peak on every tile: the whole of it is rocky ground, and peaks stand on it only now and then, small at the foot,
    * larger up the slope, tallest and snow-capped at the heart. Whether a tile carries a peak, and how big, comes from how deep in the mountain it is.
@@ -657,7 +626,6 @@ export class Renderer {
       ctx.fillStyle = '#f5e7c4'; ctx.font = `600 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center';
       ctx.fillText(v.name, p.x, p.y - 44 * z);
     }
-    this.drawClusters(selected);
     if (box) {
       const x = Math.min(box.x0, box.x1), y = Math.min(box.y0, box.y1), w = Math.abs(box.x1 - box.x0), h = Math.abs(box.y1 - box.y0);
       ctx.fillStyle = 'rgba(245,231,196,.14)'; ctx.fillRect(x, y, w, h);

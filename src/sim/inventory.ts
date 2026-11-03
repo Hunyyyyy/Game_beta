@@ -2,8 +2,7 @@
 import { Building, BUILDINGS } from './buildings';
 import { Job, JOB_NAME, WorkJob } from './jobs';
 import { RECIPE_BY_ID, recipeName, TIER_DURABILITY, TIER_NAME, Tool, ToolKind, TOOL_KINDS, TOOL_NAME, TOOL_OF_JOB } from './tools';
-import { ARMORS, CRAFTED_WEAPONS, WEAPONS } from './combat';
-import { bestWeapon } from './battle';
+import { ARMORS, CRAFTED_WEAPONS, cycleOf, RULES, WEAPONS } from './combat';
 import { recipeOpen } from './research';
 import type { Sim } from './sim';
 import { Villager } from './model';
@@ -269,4 +268,19 @@ export function planGearErrand(sim: Sim, v: Villager): boolean {
   if (!id) return false;
   v.order = `craft:${id}`;
   return goTo(sim, v, house, 'goOrder');
+}
+
+/** Best weapon the workshop holds that beats what `v` carries, by damage per second. */
+export function bestWeapon(sim: Sim, v: Villager): string | null {
+  const score = (id: string) => { const w = WEAPONS[id]; return (w.damage + RULES.strengthDamage * v.stats.str) / cycleOf(w.cycle, v.stats.agi) + (w.range > 1 ? 1 : 0); };
+  const cur = v.weapon ? score(v.weapon) : score('fist');
+  let best: string | null = null, bs = cur;
+  for (const id of CRAFTED_WEAPONS) {
+    if (sim.toolCount(id, WEAPONS[id].tier ?? 1) <= 0) continue;
+    if (id === 'mace' && v.job !== 'fight') continue; // the heavy mace is a soldier's weapon, not a hunter's
+    if (v.job === 'fight' && v.guard && v.post >= 0 && !WEAPONS[id].ranged) continue; // a man of a tower shoots
+    if (v.job === 'fight' && !v.guard && v.arm !== 'cavalry' && (v.arm === 'archer') !== !!WEAPONS[id].ranged) continue; // the throwers' camp arms throwers, the foot carry blows; a rider, a guard and a hunter take whatever is best
+    if (score(id) > bs) { bs = score(id); best = id; }
+  }
+  return best;
 }

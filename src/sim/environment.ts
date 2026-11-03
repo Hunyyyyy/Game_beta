@@ -18,6 +18,7 @@ export function tickCalendar(sim: Sim): void {
     const season = seasonOf(day);
     if (season !== sim.world.season) { sim.world.setSeason(season); sim.say(SEASON_DEF[season].enter); }
     if (sim.weather !== 'clear') sim.say(`Hôm nay: ${WEATHER[sim.weather].name.toLowerCase()}.`);
+    sim.restockAnimals(); // what hunting took comes back, a herd at a time
     sim.eatDay(); // the day that has just ended is paid for before anyone new walks in
     if (day >= startJson.arrivals.firstDay && !sim.dev.noArrivals) newcomers(sim);
   }

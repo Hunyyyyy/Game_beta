@@ -2,12 +2,14 @@
 import * as army from './army';
 import * as forecast from './forecast';
 import * as scouting from './scouting';
+import { tickWarAnimals } from './fauna';
 import * as siege from './siege';
 import { sightOf } from './environment';
 import * as training from './training';
 import * as mounts from './mounts';
 import * as research from './research';
-import { surrender, tickFoe, tickTribes, tribeOf } from './tribes';
+import { tickFoe } from './brainfoe';
+import { surrender, tickTribes, tribeOf } from './tribes';
 import * as warmode from './warmode';
 import * as warmarch from './warmarch';
 import * as warsupply from './warsupply';
@@ -15,7 +17,7 @@ import * as wartent from './wartent';
 import * as warharass from './warharass';
 import * as warlog from './warlog';
 import type { Res } from './resources';
-import { DAY_LENGTH } from './constants';
+import { DAY_LENGTH, FOE_PATH_SHARE } from './constants';
 import * as warplan from './warplan';
 import * as warquick from './warquick';
 import { armOf, tickProjectiles } from './battle';
@@ -30,7 +32,7 @@ import type { Sim } from './sim';
 export const WAR = {
   /** One tick while a war is on (warmode.ts): only the army, the scouts out, the arrows in the air and the village under attack are worked; everyone else goes home and stands still. */
   tickWar(this: Sim, dt: number): void {
-    tickProjectiles(this, dt);
+    tickProjectiles(this, dt); tickWarAnimals(this, dt);
     const soldiers = warmode.army(this), ranks = warmode.ranks(this, soldiers), plan = warmode.warPlan(this)!;
     this.warIds = soldiers; this.march = warmarch.marchOfPlan(this, plan);
     if (Math.floor(this.time) !== Math.floor(this.time - dt)) { // each second: the village that stayed home eats from the store (paid at the end), the army from the packs
@@ -44,6 +46,7 @@ export const WAR = {
     for (const v of [...this.villagers]) { if (ranks.has(v.id)) this.tickVillager(v, dt); else warmode.standDown(this, v, dt); }
     army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
     const enemy = warmode.warTribe(this);
+    this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
     for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
     tickTribes(this, dt);
   },

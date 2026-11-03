@@ -66,9 +66,9 @@ function campBeast(sim: Sim): MountKind {
   return MOUNT_KINDS[Math.max(0, Math.min(MOUNT_KINDS.length, camp?.level ?? 1) - 1)];
 }
 
-/** The beast a villager is riding now: the one he was given, or, for a rider of the Trại kỵ thú, the beast of the camp. */
+/** The beast a villager is riding now (also the riders of a village): the one he was given, or, for a rider of the Trại kỵ thú, the beast of the camp. */
 export function mountOf(sim: Sim, v: Villager): MountKind | null {
-  if (v.team !== 'player') return null;
+  if (v.team !== 'player') return v.mount ?? null; // the riders of a village were given their beast when they came out (tribelod.spawnOut)
   const own = v.mount ?? ((v.job === 'fight' || v.job === 'scout') && v.arm === 'cavalry' ? campBeast(sim) : null);
   return v.job === 'scout' && own === 'elephant' ? null : own; // a scout does not ride an elephant: too big to creep up on a village
 }

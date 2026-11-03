@@ -51,10 +51,11 @@ Hard rules when editing `src/sim`:
 3. Data layers (`constants`, `buildings`, `jobs`, `combat`, `model`, ...) never depend on `Sim` or session state.
 4. No DOM or browser globals inside `src/sim`.
 5. `ui`, `render` and `main` interact only through `Sim`.
-6. No hard line limit per file. Keep files from getting overly long or messy; split by concern when they do.
-7. No file-scope mutable `let` in modules. All game state lives on the `Sim` instance. Use `sim.rnd` / `sim.frnd` / `sim.wrnd` for randomness, never your own RNG.
-8. New `Sim` fields must be registered in `SAVED` or `NOT_SAVED` in `src/sim/save.ts`. Changing the save format means bumping `SAVE_VERSION` and adding a `MIGRATIONS[oldVersion]` step.
-9. To expose a system function to UI, add a forwarding wrapper in `sim.ts` (`/** -> houses.assignCrew */`). If a new system file is needed, add a row for it in the architecture doc.
+6. Refactoring and splitting old code is allowed and welcome, as long as these rules hold. `npm run typecheck` plus `npm run build` is the verification.
+7. No hard line limit per file. Keep files from getting overly long or messy; split by concern when they do.
+8. No file-scope mutable `let` in modules. All game state lives on the `Sim` instance. Use `sim.rnd` / `sim.frnd` / `sim.wrnd` for randomness, never your own RNG.
+9. New `Sim` fields must be registered in `SAVED` or `NOT_SAVED` in `src/sim/save.ts`. Changing the save format means bumping `SAVE_VERSION` and adding a `MIGRATIONS[oldVersion]` step.
+10. To expose a system function to UI, add a forwarding wrapper in `sim.ts` (`/** -> houses.assignCrew */`). If a new system file is needed, add a row for it in the architecture doc.
 
 ## Conventions
 

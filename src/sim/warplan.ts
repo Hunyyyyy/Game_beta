@@ -419,6 +419,8 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
   const bad = reviewPlan(sim, plan).find((l) => l.startsWith('✗'));
   if (bad) return bad.slice(2);
   if (plan.kind === 'defense') return 'Kế hoạch phòng thủ chạy khi bạn đánh trống báo động';
+  const attacked = sim.attackReason();
+  if (attacked) return `Làng đang bị tấn công (${attacked.toLowerCase()}): không thể đi đánh`;
   for (const m of plan.missions) {
     const s = sim.squadById(m.squad)!; m.state = 'wait'; m.initial = sim.squadUnits(s).length; m.leg = 0;
     m.block = null;
@@ -432,15 +434,16 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
 }
 
 /**
- * How a war ends. It is won when the fire of the village is put out, whatever else still stands (then the people ask for mercy).
+ * How a war ends. It is won when every soldier of the village is dead, its fire is out and every tower is down (the fence, the gate, the traps and the houses may stand); then the people ask for mercy.
  * It is lost when there is no soldier of ours left, or the army was pulled back.
  */
 function endCheck(sim: Sim, plan: Plan, t: Sim['tribes'][number] | undefined): void {
   if (!t) { plan.status = 'done'; plan.result = 'lost'; plan.endedAt = sim.time; return; }
-  if (t.state !== 'free' || !t.props.some((p) => p.kind === 'fire')) {
+  const armed = headcount(sim, t).guards > 0; // soldiers in the world, and any still indoors (when we attack they all come out: tribelod.deployArmy)
+  if (t.state !== 'free' || (!armed && !t.props.some((p) => p.kind === 'fire' || p.kind === 'tower'))) {
     plan.stage = 'over'; plan.result = 'won'; plan.endedAt = sim.time; // the war goes on (the army stands where it is) until the player gives the word to pull out
-    sim.say(`Chiến thắng! Lửa trại của ${t.def.name} đã bị phá. Bấm Rút quân khi muốn về làng.`);
-    sim.noteBattle('note', `Lửa trại của ${t.def.name} bị phá.`);
+    sim.say(`Chiến thắng! ${t.def.name} không còn lính, lửa trại và tháp canh đã sập. Bấm Rút quân khi muốn về làng.`);
+    sim.noteBattle('note', `${t.def.name} đã bị đánh bại.`);
     if (t.state === 'free') sim.conquer(t.id, 'Làng bị san bằng');
     return;
   }

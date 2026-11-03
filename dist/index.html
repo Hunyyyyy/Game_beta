@@ -3723,6 +3723,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       breedMonth: "spring",
       breedMinFemales: 2,
       breedChance: 0.35,
+      restockChance: 0.6,
       regionRadius: 28,
       nearRadius: 48,
       nearBoost: 4,
@@ -6456,6 +6457,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var FIRE_VISION = 8;
   var TICK = 1 / 20;
   var PATH_BUDGET = 6;
+  var FOE_PATH_SHARE = 3;
   var DAY_LENGTH = 1200;
   var START_TIME = DAY_LENGTH * 0.25;
   var gameDays = (secs) => {
@@ -6541,7 +6543,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
 
   // src/content/difficulty.json
   var difficulty_default = {
-    _note: "\u0110\u1ED9 kh\xF3 v\xE0 s\u1EE9c m\u1EA1nh c\u1EE7a c\xE1c l\xE0ng. power: s\u1EE9c m\u1EA1nh m\u1ED9t l\xE0ng = economy \xD7 (kinh t\u1EBF) + military \xD7 (qu\xE2n s\u1EF1). Kinh t\u1EBF = t\u1ED5ng h\u1EC7 s\u1ED1 t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c c\u1EE7a m\u1ECDi ng\u01B0\u1EDDi \u0111ang c\xF3 vi\u1EC7c s\u1EA3n xu\u1EA5t (1 l\xE0 ng\u01B0\u1EDDi g\u1ED1c ch\u01B0a nghi\xEAn c\u1EE9u). Qu\xE2n s\u1EF1 = t\u1ED5ng h\u1EC7 s\u1ED1 ch\u1EC9 s\u1ED1 chi\u1EBFn \u0111\u1EA5u (m\xE1u \xD7 s\u1EE9c m\u1EA1nh \xD7 ph\xF2ng th\u1EE7, so v\u1EDBi ng\u01B0\u1EDDi g\u1ED1c) c\u1EE7a m\u1ECDi l\xEDnh v\xE0 trinh s\xE1t. T\xEDnh theo CH\u1EC8 S\u1ED0 (k\u1EC3 c\u1EA3 ph\u1EA7n tr\u0103m nghi\xEAn c\u1EE9u), kh\xF4ng t\xEDnh theo v\u0169 kh\xED. L\xE0ng NPC: t\u1ED5ng s\u1EE9c m\u1EA1nh c\u1EE7a m\u1ECDi l\xE0ng NPC = tr\u1EA7n c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u1EDF c\u1EA5p l\u1EEDa hi\u1EC7n t\u1EA1i / playerEdge (ng\u01B0\u1EDDi ch\u01A1i ph\xE1t tri\u1EC3n t\u1ED1i \u0111a ch\u1EC9 h\u01A1n t\u1ED5ng NPC 30%). Tr\u1EA7n ng\u01B0\u1EDDi ch\u01A1i = d\xE2n t\u1ED1i \u0111a c\u1EE7a c\u1EA5p l\u1EEDa (k\u1EC3 c\u1EA3 gi\u01B0\u1EDDng nh\xE0 d\xE2n) \xD7 ch\u1EC9 s\u1ED1 t\u1ED1i \u0111a nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c \u1EDF c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u = c\u1EA5p l\u1EEDa; militaryShare l\xE0 ph\u1EA7n d\xE2n l\xE0m l\xEDnh. M\u1ED7i l\xE0ng nh\u1EADn ph\u1EA7n 'share' v\xE0 'military' (t\u1EC9 l\u1EC7 qu\xE2n s\u1EF1) trong tribes.json, r\u1ED3i nh\xE2n h\u1EC7 s\u1ED1 k c\u1EE7a ri\xEAng n\xF3 (random-walk m\u1ED7i ng\xE0y). Code t\u1EF1 t\xEDnh ph\u1EA7n tr\u0103m ch\u1EC9 s\u1ED1 (m\xE1u, s\u1EE9c m\u1EA1nh, ph\xF2ng th\u1EE7, l\xE0m vi\u1EC7c) cho ng\u01B0\u1EDDi c\u1EE7a l\xE0ng \u0111\u1EC3 \u0111\u1EA1t m\u1EE5c ti\xEAu, kh\xF4ng ghi tay. startFactor: kho\u1EA3ng k l\xFAc \u0111\u1EA7u. daily: m\u1ED7i ng\xE0y k nh\xE2n th\xEAm (1 + random trong min..max), k\u1EB9p trong band. campLevel: c\u1EA5p tr\u1EA1i l\u1EEDa random c\u1EE7a m\u1ED7i l\xE0ng; lu\xF4n c\xF3 \xEDt nh\u1EA5t m\u1ED9t l\xE0ng \u1EDF c\u1EA5p kh\xF4ng qu\xE1 guaranteeWeak \u0111\u1EC3 ng\u01B0\u1EDDi ch\u01A1i c\xF3 ch\u1ED7 \u0111\xE1nh. yieldPerEco: t\xE0i nguy\xEAn m\u1ED9t \u0111i\u1EC3m kinh t\u1EBF l\xE0m ra m\u1ED7i ng\xE0y (c\u1ED9ng v\xE0o kho c\u1EE7a l\xE0ng). stockCap: s\u1EE9c ch\u1EE9a kho c\u1EE7a l\xE0ng theo c\u1EA5p tr\u1EA1i. bonusClamp: gi\u1EDBi h\u1EA1n ph\u1EA7n tr\u0103m ch\u1EC9 s\u1ED1 c\u1ED9ng th\xEAm. S\u1ED1 ng\u01B0\u1EDDi c\u1EE7a m\u1ED9t l\xE0ng = s\u1ED1 d\xE2n tr\u1EA1i l\u1EEDa c\u1EE7a n\xF3 ch\u1EE9a \u1EDF c\u1EA5p tr\u1EA1i (POP_BY_FIRE), chia l\xEDnh v\xE0 d\xE2n theo t\u1EC9 l\u1EC7 trong tribes.json. raid: \u0111\u1EE3t t\u1EA5n c\xF4ng c\u1EE7a b\u1ED9 t\u1ED9c c\xF3 tr\u01B0\u1EDDng power trong events.json (1 = m\u1EA1nh b\u1EB1ng qu\xE2n s\u1EF1 hi\u1EC7n t\u1EA1i c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i, 1.1 = h\u01A1n 10%, 0.8 = y\u1EBFu h\u01A1n 20%). K\u1EBFt qu\u1EA3 b\u1ECB k\u1EB9p gi\u1EEFa floor v\xE0 ceiling nh\xE2n qu\xE2n s\u1EF1 t\u1ED1i \u0111a c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u1EDF c\u1EA5p l\u1EEDa \u0111\xF3: ng\u01B0\u1EDDi ch\u01A1i kh\xF4ng c\xF3 qu\xE2n v\u1EABn g\u1EB7p m\u1ED9t \u0111\u1EE3t t\u1ED1i thi\u1EC3u, v\xE0 ng\u01B0\u1EDDi ch\u01A1i qu\xE1 m\u1EA1nh kh\xF4ng l\xE0m \u0111\u1EE3t t\u1EA5n c\xF4ng v\xF4 ngh\u0129a. capture: khi m\u1ED9t l\xE0ng b\u1ECB thu n\u1EA1p, b\u1ECB ti\xEAu di\u1EC7t (do ng\u01B0\u1EDDi c\u1EE7a ta \u0111\xE1nh) ho\u1EB7c ch\u1ECBu c\u1ED1ng n\u1EA1p, ta nh\u1EADn spoilShare (0.5) m\u1ECDi t\xE0i nguy\xEAn trong kho c\u1EE7a l\xE0ng \u0111\xF3; thu n\u1EA1p ho\u1EB7c ti\xEAu di\u1EC7t c\xF2n c\u1ED9ng v\xE0o d\xE2n t\u1ED1i \u0111a c\u1EE7a ta \u0111\xFAng b\u1EB1ng s\u1ED1 d\xE2n tr\u1EA1i l\u1EEDa c\u1EE7a l\xE0ng \u0111\xF3 ch\u1EE9a \u1EDF c\u1EA5p c\u1EE7a n\xF3 (kh\xF4ng gi\u1EDBi h\u1EA1n s\u1ED1 l\u1EA7n chi\u1EBFm); c\u1ED1ng n\u1EA1p th\xEC l\xE0ng v\u1EABn s\u1ED1ng n\xEAn kh\xF4ng c\u1ED9ng d\xE2n.",
+    _note: "\u0110\u1ED9 kh\xF3 v\xE0 s\u1EE9c m\u1EA1nh c\u1EE7a c\xE1c l\xE0ng. power: s\u1EE9c m\u1EA1nh m\u1ED9t l\xE0ng = economy \xD7 (kinh t\u1EBF) + military \xD7 (qu\xE2n s\u1EF1). Kinh t\u1EBF = t\u1ED5ng h\u1EC7 s\u1ED1 t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c c\u1EE7a m\u1ECDi ng\u01B0\u1EDDi \u0111ang c\xF3 vi\u1EC7c s\u1EA3n xu\u1EA5t (1 l\xE0 ng\u01B0\u1EDDi g\u1ED1c ch\u01B0a nghi\xEAn c\u1EE9u). Qu\xE2n s\u1EF1 = t\u1ED5ng h\u1EC7 s\u1ED1 ch\u1EC9 s\u1ED1 chi\u1EBFn \u0111\u1EA5u (m\xE1u \xD7 s\u1EE9c m\u1EA1nh \xD7 ph\xF2ng th\u1EE7, so v\u1EDBi ng\u01B0\u1EDDi g\u1ED1c) c\u1EE7a m\u1ECDi l\xEDnh v\xE0 trinh s\xE1t. T\xEDnh theo CH\u1EC8 S\u1ED0 (k\u1EC3 c\u1EA3 ph\u1EA7n tr\u0103m nghi\xEAn c\u1EE9u), kh\xF4ng t\xEDnh theo v\u0169 kh\xED. L\xE0ng NPC: t\u1ED5ng s\u1EE9c m\u1EA1nh c\u1EE7a m\u1ECDi l\xE0ng NPC = tr\u1EA7n c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u1EDF c\u1EA5p l\u1EEDa hi\u1EC7n t\u1EA1i / playerEdge (ng\u01B0\u1EDDi ch\u01A1i ph\xE1t tri\u1EC3n t\u1ED1i \u0111a ch\u1EC9 h\u01A1n t\u1ED5ng NPC 30%). Tr\u1EA7n ng\u01B0\u1EDDi ch\u01A1i = d\xE2n t\u1ED1i \u0111a c\u1EE7a c\u1EA5p l\u1EEDa (k\u1EC3 c\u1EA3 gi\u01B0\u1EDDng nh\xE0 d\xE2n) \xD7 ch\u1EC9 s\u1ED1 t\u1ED1i \u0111a nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c \u1EDF c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u = c\u1EA5p l\u1EEDa; militaryShare l\xE0 ph\u1EA7n d\xE2n l\xE0m l\xEDnh. M\u1ED7i l\xE0ng nh\u1EADn ph\u1EA7n 'share' v\xE0 'military' (t\u1EC9 l\u1EC7 qu\xE2n s\u1EF1) trong tribes.json, r\u1ED3i nh\xE2n h\u1EC7 s\u1ED1 k c\u1EE7a ri\xEAng n\xF3 (random-walk m\u1ED7i ng\xE0y). Code t\u1EF1 t\xEDnh ph\u1EA7n tr\u0103m ch\u1EC9 s\u1ED1 (m\xE1u, s\u1EE9c m\u1EA1nh, ph\xF2ng th\u1EE7, l\xE0m vi\u1EC7c) cho ng\u01B0\u1EDDi c\u1EE7a l\xE0ng \u0111\u1EC3 \u0111\u1EA1t m\u1EE5c ti\xEAu, kh\xF4ng ghi tay. startFactor: kho\u1EA3ng k l\xFAc \u0111\u1EA7u. daily: m\u1ED7i ng\xE0y k nh\xE2n th\xEAm (1 + random trong min..max), k\u1EB9p trong band. campLevel: c\u1EA5p tr\u1EA1i l\u1EEDa random c\u1EE7a m\u1ED7i l\xE0ng; lu\xF4n c\xF3 \xEDt nh\u1EA5t m\u1ED9t l\xE0ng \u1EDF c\u1EA5p kh\xF4ng qu\xE1 guaranteeWeak \u0111\u1EC3 ng\u01B0\u1EDDi ch\u01A1i c\xF3 ch\u1ED7 \u0111\xE1nh. yieldPerEco: t\xE0i nguy\xEAn m\u1ED9t \u0111i\u1EC3m kinh t\u1EBF l\xE0m ra m\u1ED7i ng\xE0y (c\u1ED9ng v\xE0o kho c\u1EE7a l\xE0ng). stockCap: s\u1EE9c ch\u1EE9a kho c\u1EE7a l\xE0ng theo c\u1EA5p tr\u1EA1i. bonusClamp: gi\u1EDBi h\u1EA1n ph\u1EA7n tr\u0103m ch\u1EC9 s\u1ED1 c\u1ED9ng th\xEAm. S\u1ED1 ng\u01B0\u1EDDi c\u1EE7a m\u1ED9t l\xE0ng = s\u1ED1 d\xE2n tr\u1EA1i l\u1EEDa c\u1EE7a n\xF3 ch\u1EE9a \u1EDF c\u1EA5p tr\u1EA1i (POP_BY_FIRE), chia l\xEDnh v\xE0 d\xE2n theo t\u1EC9 l\u1EC7 trong tribes.json. raid: \u0111\u1EE3t t\u1EA5n c\xF4ng c\u1EE7a b\u1ED9 t\u1ED9c c\xF3 tr\u01B0\u1EDDng power trong events.json (1 = m\u1EA1nh b\u1EB1ng qu\xE2n s\u1EF1 hi\u1EC7n t\u1EA1i c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i, 1.1 = h\u01A1n 10%, 0.8 = y\u1EBFu h\u01A1n 20%). K\u1EBFt qu\u1EA3 b\u1ECB k\u1EB9p gi\u1EEFa floor v\xE0 ceiling nh\xE2n qu\xE2n s\u1EF1 t\u1ED1i \u0111a c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u1EDF c\u1EA5p l\u1EEDa \u0111\xF3: ng\u01B0\u1EDDi ch\u01A1i kh\xF4ng c\xF3 qu\xE2n v\u1EABn g\u1EB7p m\u1ED9t \u0111\u1EE3t t\u1ED1i thi\u1EC3u, v\xE0 ng\u01B0\u1EDDi ch\u01A1i qu\xE1 m\u1EA1nh kh\xF4ng l\xE0m \u0111\u1EE3t t\u1EA5n c\xF4ng v\xF4 ngh\u0129a. capture: khi m\u1ED9t l\xE0ng b\u1ECB thu n\u1EA1p, b\u1ECB ti\xEAu di\u1EC7t (do ng\u01B0\u1EDDi c\u1EE7a ta \u0111\xE1nh) ho\u1EB7c ch\u1ECBu c\u1ED1ng n\u1EA1p, ta nh\u1EADn spoilShare (0.5) m\u1ECDi t\xE0i nguy\xEAn trong kho c\u1EE7a l\xE0ng \u0111\xF3; thu n\u1EA1p ho\u1EB7c ti\xEAu di\u1EC7t c\xF2n c\u1ED9ng v\xE0o d\xE2n t\u1ED1i \u0111a c\u1EE7a ta \u0111\xFAng b\u1EB1ng s\u1ED1 d\xE2n tr\u1EA1i l\u1EEDa c\u1EE7a l\xE0ng \u0111\xF3 ch\u1EE9a \u1EDF c\u1EA5p c\u1EE7a n\xF3 (kh\xF4ng gi\u1EDBi h\u1EA1n s\u1ED1 l\u1EA7n chi\u1EBFm); c\u1ED1ng n\u1EA1p th\xEC l\xE0ng v\u1EABn s\u1ED1ng n\xEAn kh\xF4ng c\u1ED9ng d\xE2n. campSlots: m\u1ED7i l\xE0ng b\u1ECB thu n\u1EA1p ho\u1EB7c ti\xEAu di\u1EC7t c\xF2n th\xEAm ng\u1EA7n n\xE0y ch\u1ED7 cho M\u1ED6I tr\u1EA1i l\xEDnh (b\u1ED9 binh, cung, k\u1EF5), v\xEC s\u1ED1 l\xEDnh b\u1ECB gi\u1EDBi h\u1EA1n b\u1EDFi ch\u1ED7 c\u1EE7a tr\u1EA1i ch\u1EE9 kh\xF4ng ph\u1EA3i b\u1EDFi s\u1ED1 d\xE2n.",
     power: {
       economy: 1,
       military: 1
@@ -6585,15 +6587,16 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       ceiling: 1
     },
     capture: {
-      spoilShare: 0.5
+      spoilShare: 0.5,
+      campSlots: 5
     },
     boss: {
-      _note: "L\xE0ng \u0111\u1EA7u m\u1EE5c (boss): m\u1ED7i v\xE1n c\xF3 count[0]..count[1] l\xE0ng, lu\xF4n h\u01A1n ng\u01B0\u1EDDi ch\u01A1i m\u1ED9t b\u1EADc (c\u1EA5p tr\u1EA1i +1, t\u1ED1i \u0111a maxCamp; c\xF3 ch\xF2i canh v\xE0 \u0111\u1ED3 \u0111\u1ED3ng d\xF9 ng\u01B0\u1EDDi ch\u01A1i c\xF2n \u1EDF \u0111\u1ED3 \u0111\xE1). power: s\u1EE9c m\u1EA1nh qu\xE2n c\u1EE7a boss so v\u1EDBi qu\xE2n t\u1ED1i \u0111a ng\u01B0\u1EDDi ch\u01A1i c\xF3 th\u1EC3 c\xF3 \u1EDF c\u1EA5p tr\u1EA1i \u0111\xF3 (0.9 = h\u1EA1 \u0111\u01B0\u1EE3c boss th\xEC m\u1EA5t kho\u1EA3ng 80% l\xEDnh); economy: kinh t\u1EBF so v\u1EDBi kinh t\u1EBF t\u1ED1i \u0111a; popMult: s\u1ED1 d\xE2n so v\u1EDBi c\u1EA5p tr\u1EA1i; bronzeShare: ph\u1EA7n l\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\u1ED3ng v\xE0 m\u1EB7c gi\xE1p \u0111\u1ED3ng; wallHp: \u0111\u1ED9 b\u1EC1n r\xE0o, c\u1ED5ng, ch\xF2i v\xE0 nh\xE0 so v\u1EDBi l\xE0ng th\u01B0\u1EDDng.",
+      _note: "L\xE0ng \u0111\u1EA7u m\u1EE5c (boss): m\u1ED7i v\xE1n c\xF3 count[0]..count[1] l\xE0ng, lu\xF4n h\u01A1n ng\u01B0\u1EDDi ch\u01A1i m\u1ED9t b\u1EADc (c\u1EA5p tr\u1EA1i +1, t\u1ED1i \u0111a maxCamp; c\xF3 ch\xF2i canh v\xE0 \u0111\u1ED3 \u0111\u1ED3ng d\xF9 ng\u01B0\u1EDDi ch\u01A1i c\xF2n \u1EDF \u0111\u1ED3 \u0111\xE1). power: s\u1EE9c m\u1EA1nh qu\xE2n c\u1EE7a boss so v\u1EDBi qu\xE2n t\u1ED1i \u0111a ng\u01B0\u1EDDi ch\u01A1i c\xF3 th\u1EC3 c\xF3 \u1EDF c\u1EA5p tr\u1EA1i \u0111\xF3 (ch\u1EC9 s\u1ED1 m\u1ED7i l\xEDnh ch\u1EC9 t\u0103ng theo c\u0103n b\u1EADc ba c\u1EE7a s\u1ED1 n\xE0y, n\xEAn c\u1EA7n s\u1ED1 l\u1EDBn: 16 \u0111\u01B0\u1EE3c ch\u1EC9nh b\u1EB1ng ch\u1EA1y th\u1EED tr\u1EADn, 60 l\xEDnh \u0111\u1EE7 gi\xE1p v\xE0 nghi\xEAn c\u1EE9u h\u1EBFt m\u1EE9c c\u1EE7a c\u1EA5p tr\u1EA1i 4 th\u01B0\u1EDDng thua, c\u1EA7n chi\u1EBFm kho\u1EA3ng 2 l\xE0ng th\u01B0\u1EDDng (m\u1ED7i l\xE0ng th\xEAm 5 ch\u1ED7 cho m\u1ED7i tr\u1EA1i l\xEDnh, capture.campSlots) m\u1EDBi th\u1EAFng); economy: kinh t\u1EBF so v\u1EDBi kinh t\u1EBF t\u1ED1i \u0111a; popMult: s\u1ED1 d\xE2n so v\u1EDBi c\u1EA5p tr\u1EA1i; bronzeShare: ph\u1EA7n l\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\u1ED3ng v\xE0 m\u1EB7c gi\xE1p \u0111\u1ED3ng; wallHp: \u0111\u1ED9 b\u1EC1n r\xE0o, c\u1ED5ng, ch\xF2i v\xE0 nh\xE0 so v\u1EDBi l\xE0ng th\u01B0\u1EDDng.",
       count: [1, 2],
-      power: 0.9,
+      power: 16,
       economy: 0.6,
-      popMult: 1.3,
-      bronzeShare: 0.4,
+      popMult: 1.6,
+      bronzeShare: 0.6,
       wallHp: 1.5,
       weapons: ["bronze_sword", "bronze_axe", "bronze_spear"]
     }
@@ -51739,9 +51742,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       /** The fence and gate of a village drawn as ours are: each work stands for a house of the same kind, so that the ropes, the posts and the gate join up. */
       this.wallStubs = /* @__PURE__ */ new WeakMap();
       this.wallMaps = /* @__PURE__ */ new WeakMap();
-      /** Draw the soldiers as one figure for about three of them in a big battle (set from the war HUD). */
-      /** The cluster flags drawn last frame, for taps. */
-      this.flags = [];
       this.ctx = canvas2.getContext("2d");
       this.fogCanvas = document.createElement("canvas");
       this.fogCanvas.width = this.fogCanvas.height = sim2.world.size;
@@ -52098,40 +52098,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       ctx2.fillRect(p.x - w / 2 - z * 0.5, p.y - 0.5 * z, w + z, 3 * z);
       ctx2.fillStyle = color;
       ctx2.fillRect(p.x - w / 2, p.y, w * Math.max(0, Math.min(1, frac)), 2 * z);
-    }
-    /** The cluster whose flag is under the screen point, if any. */
-    flagAt(px, py) {
-      for (const f of this.flags) if (px >= f.x && px <= f.x + f.w && py >= f.y && py <= f.y + f.h) return f.ids;
-      return null;
-    }
-    /** A small flag over each cluster of soldiers: how many are left, how well they are, and which arm and squad they are. */
-    drawClusters(selected) {
-      const { ctx: ctx2, cam: cam2, sim: sim2 } = this, z = cam2.zoom, N = sim2.world.size;
-      this.flags = [];
-      if (!sim2.squads.length && !sim2.battle.on) return;
-      const ARM2 = { foot: "#d9a441", archer: "#5aa0d9", cavalry: "#c05ad9" };
-      const ARM_LETTER = { foot: "B", archer: "C", cavalry: "K" };
-      ctx2.font = `700 ${Math.max(10, 5 * z)}px system-ui, sans-serif`;
-      ctx2.textAlign = "center";
-      for (const c of sim2.clusters()) {
-        if (c.side !== "player" && sim2.fog.state[Math.floor(c.y) * N + Math.floor(c.x)] !== 2) continue;
-        const p = this.worldToScreen(c.x * TILE, c.y * TILE - 38), w = 30 * z * 0.7, h3 = 11 * z * 0.7, x = Math.round(p.x - w / 2), y = Math.round(p.y - h3);
-        const chosen = c.ids.some((id) => selected.has(id));
-        ctx2.fillStyle = c.color;
-        ctx2.globalAlpha = 0.92;
-        ctx2.fillRect(x, y, w, h3);
-        ctx2.globalAlpha = 1;
-        ctx2.strokeStyle = chosen ? "#ffffff" : ARM2[c.arm];
-        ctx2.lineWidth = chosen ? 2 : 1.5;
-        ctx2.strokeRect(x + 0.5, y + 0.5, w, h3);
-        ctx2.fillStyle = "#ffffff";
-        ctx2.fillText(`${ARM_LETTER[c.arm]} ${c.n}`, p.x, y + h3 * 0.78);
-        ctx2.fillStyle = "rgba(0,0,0,.55)";
-        ctx2.fillRect(x, y + h3 + 1, w, 3);
-        ctx2.fillStyle = c.hp > 0.5 ? "#6ac24a" : c.hp > 0.25 ? "#e0b43c" : "#d9503c";
-        ctx2.fillRect(x, y + h3 + 1, w * Math.max(0, Math.min(1, c.hp)), 3);
-        this.flags.push({ ids: c.ids, x, y, w, h: h3 + 4 });
-      }
     }
     /**
      * A mountain is one mass, not a peak on every tile: the whole of it is rocky ground, and peaks stand on it only now and then, small at the foot,
@@ -52506,7 +52472,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         ctx2.textAlign = "center";
         ctx2.fillText(v.name, p.x, p.y - 44 * z);
       }
-      this.drawClusters(selected);
       if (box) {
         const x = Math.min(box.x0, box.x1), y = Math.min(box.y0, box.y1), w = Math.abs(box.x1 - box.x0), h3 = Math.abs(box.y1 - box.y0);
         ctx2.fillStyle = "rgba(245,231,196,.14)";
@@ -52911,6 +52876,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var SPARSE = 0.4;
   var FIRST_AREA = 192 * 192;
   var share = () => CHUNK * CHUNK * SPARSE / FIRST_AREA;
+  var countOf = (sim2, def) => Math.round(def.count * share() * sim2.world.ready.reduce((n, r) => n + r, 0));
   function populateChunk(sim2, cx, cy) {
     const w = sim2.world, s = w.start, x0 = cx * CHUNK, y0 = cy * CHUNK;
     const rnd = mulberry32(mix32(sim2.seed ^ Math.imul(cx + 1, 2654435761) ^ Math.imul(cy + 1, 2246822507)));
@@ -53269,6 +53235,60 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
     }
   }
+  function restock(sim2) {
+    if (sim2.warSince >= 0) return;
+    const chunks = sim2.world.readyChunks();
+    if (!chunks.length) return;
+    const s = sim2.world.start, N = sim2.world.size;
+    for (const sp of SPECIES) {
+      const def = ANIMALS[sp], alive2 = sim2.animals.filter((a) => a.species === sp && a.state !== "dead" && !a.raid).length, missing2 = countOf(sim2, def) - alive2;
+      if (missing2 < def.herd[0] || sim2.frnd() > BEHAVIOUR.restockChance) continue;
+      const size = Math.min(missing2, def.herd[0] + Math.floor(sim2.frnd() * (def.herd[1] - def.herd[0] + 1)));
+      for (let tries = 0; tries < 24; tries++) {
+        const [cx, cy] = chunks[Math.floor(sim2.frnd() * chunks.length)], x = cx * CHUNK + Math.floor(sim2.frnd() * CHUNK), y = cy * CHUNK + Math.floor(sim2.frnd() * CHUNK), d = Math.hypot(x - s.x, y - s.y);
+        const z = zoneOf(d), far = z === 4 && def.zones[1] === 3 ? 3 : z;
+        if (d < 16 && def.habitat !== "water" || far < def.zones[0] || far > def.zones[1] || !habitable(sim2, def, x, y)) continue;
+        if (sim2.fog.state[y * N + x] === 2 || sim2.inView(x, y)) continue;
+        const herd = 2e5 + sim2.nextAid;
+        for (let i = 0; i < size; i++) {
+          const ax = x + (sim2.frnd() - 0.5) * 4, ay = y + (sim2.frnd() - 0.5) * 4;
+          if (sim2.world.isReady(Math.floor(ax), Math.floor(ay)) && habitable(sim2, def, Math.floor(ax), Math.floor(ay))) spawnAnimal(sim2, sp, ax, ay, herd);
+        }
+        break;
+      }
+    }
+  }
+  function tickWarAnimals(sim2, dt) {
+    const w = sim2.view;
+    for (let i = sim2.animals.length - 1; i >= 0; i--) {
+      const a = sim2.animals[i];
+      if (a.state === "dead") continue;
+      if (!w || !sim2.inView(a.x, a.y)) {
+        sim2.animals.splice(i, 1);
+        sim2.animalById.delete(a.id);
+        a.target = null;
+        a.dest = null;
+        a.state = "graze";
+        a.timer = 2;
+        sim2.hiddenAnimals.push(a);
+        continue;
+      }
+      const def = animalDef(a), mx = (w.x0 + w.x1) / 2, my = (w.y0 + w.y1) / 2, dx = a.x - mx, dy = a.y - my, len = Math.hypot(dx, dy) || 1;
+      a.state = "flee";
+      a.target = null;
+      a.timer = 2;
+      a.clock += dt;
+      step(sim2, a, a.x + dx / len * 12, a.y + dy / len * 12, def.speed * 1.2, dt);
+      a.dir = dx >= 0 ? 1 : -1;
+    }
+  }
+  function restoreWarAnimals(sim2) {
+    for (const a of sim2.hiddenAnimals) {
+      sim2.animals.push(a);
+      sim2.animalById.set(a.id, a);
+    }
+    sim2.hiddenAnimals.length = 0;
+  }
   var carcassEmpty = (a) => a.meat <= 0 && a.hide <= 0 && !Object.values(a.drops ?? {}).some((n) => (n ?? 0) > 0);
   function die(sim2, a) {
     const def = animalDef(a);
@@ -53281,16 +53301,97 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     a.carcass = BEHAVIOUR.carcassSeconds;
   }
 
+  // src/data/fightpolicy.json
+  var fightpolicy_default = {
+    _note: "Nh\u1EEFng con s\u1ED1 kh\xE1c nhau gi\u1EEFa hai phe trong c\xF9ng m\u1ED9t c\u01A1 ch\u1EBF \u0111\xE1nh nhau (src/sim/battle.ts). player: l\xEDnh v\xE0 d\xE2n c\u1EE7a ta. foe: ng\u01B0\u1EDDi c\u1EE7a c\xE1c l\xE0ng. Mu\u1ED1n hai phe \u0111\xE1nh kh\xE1c nhau ch\xFAt n\xE0o th\xEC ch\u1EC9nh \u1EDF \u0111\xE2y tr\u01B0\u1EDBc, r\u1ED3i m\u1EDBi vi\u1EBFt lu\u1EADt ri\xEAng trong brainplayer.ts / brainfoe.ts.",
+    player: {
+      _defensive: "L\xEDnh tr\u1EA1i kh\xF4ng c\xF3 b\xE1o \u0111\u1ED9ng, ho\u1EB7c \u0111\u1EE9ng th\u1EBF ph\xF2ng th\u1EE7, ch\u1EC9 \u0111\xE1nh nh\u1EEFng g\xEC v\xE0o trong ng\u1EA7n n\xE0y \xF4.",
+      defensive: 4.5,
+      _fear: "D\xE2n th\u01B0\u1EDDng ch\u1EA1y kh\u1ECFi nguy hi\u1EC3m trong ng\u1EA7n n\xE0y \xF4.",
+      fear: 10,
+      _sight: "T\u1EA7m nh\xECn d\xF9ng cho ng\u01B0\u1EDDi ta khi kh\xF4ng ph\u1EA3i l\xEDnh c\u1EE7a ta (\xEDt d\xF9ng).",
+      sight: 8,
+      _chaseExtra: "\u0110u\u1ED5i theo: l\xEDnh ta th\u1EA5y m\u1EE5c ti\xEAu khi n\xF3 trong t\u1EA7m nh\xECn (sightOf) c\u1ED9ng ng\u1EA7n n\xE0y \xF4.",
+      chaseExtra: 1
+    },
+    foe: {
+      aggro: {
+        peaceful: 6,
+        aggressive: 14,
+        ambusher: 9
+      },
+      _leash: "L\xEDnh l\xE0ng kh\xF4ng \u0111u\u1ED5i qu\xE1 ng\u1EA7n n\xE0y \xF4 kh\u1ECFi l\u1EEDa tr\u1EA1i (ho\u1EB7c t\u1EA7m c\u1EE7a l\xE0ng + 2, l\u1EA5y s\u1ED1 l\u1EDBn h\u01A1n).",
+      leash: 24,
+      willingReach: 24,
+      raiderSight: 12,
+      civSight: 9,
+      chaseSight: 14,
+      civFlee: 8,
+      civKeepRunning: 6,
+      hideWatch: 14,
+      wanderRadius: {
+        civ: 5,
+        aggressive: 12,
+        other: 8
+      },
+      cavalry: {
+        _note: "Qu\xE2n c\u1EE7a l\xE0ng \u1EDF trong tr\u1EA1i nh\u01B0 qu\xE2n ta; khi c\xF3 chi\u1EBFn tranh ho\u1EB7c b\u1ECB t\u1EA5n c\xF4ng h\u1ECD ra \u0111\u1EE9ng \u1EDF c\xE1c v\u1ECB tr\xED ph\xF2ng th\u1EE7, v\xE0 m\u1ED9t ph\u1EA7n trong s\u1ED1 h\u1ECD (c\u1EA7m v\u0169 kh\xED \u0111\xE1nh g\u1EA7n) c\u01B0\u1EE1i th\xFA: k\u1EF5 binh kh\xF4ng \u0111\u1EE9ng g\xE1c, ch\u1EC9 l\xEDnh g\xE1c m\u1EDBi g\xE1c. minCamp: c\u1EA5p l\u1EEDa th\u1EA5p nh\u1EA5t c\u1EE7a l\xE0ng c\xF3 k\u1EF5 binh; share: t\u1EC9 l\u1EC7 l\xEDnh c\u01B0\u1EE1i; bossShare: t\u1EC9 l\u1EC7 \u1EDF l\xE0ng boss; beasts: th\xFA theo t\u1EEBng c\u1EA5p l\u1EEDa k\u1EC3 t\u1EEB minCamp (c\u1EA5p cu\u1ED1i d\xF9ng cho c\xE1c c\u1EA5p cao h\u01A1n); boss: th\xFA c\u1EE7a l\xE0ng boss.",
+        minCamp: 3,
+        share: 0.25,
+        bossShare: 0.5,
+        beasts: [
+          "wolf",
+          "boar"
+        ],
+        boss: "elephant"
+      }
+    }
+  };
+
+  // src/sim/fightpolicy.ts
+  var PLAYER = fightpolicy_default.player;
+  var FOE = fightpolicy_default.foe;
+  var chaseSight = (sim2, v) => v.team === "player" ? sim2.sightOf(v) + PLAYER.chaseExtra : FOE.chaseSight;
+
   // src/data/npclife.json
   var npclife_default = {
     _note: "\u0110\u1EDDi s\u1ED1ng c\u1EE7a d\xE2n c\xE1c l\xE0ng NPC khi ng\u01B0\u1EDDi ch\u01A1i \u1EDF g\u1EA7n: ch\u1EC9 l\xE0m vi\u1EC7c \u1EDF c\xE1c chunk (32 \xF4) quanh n\u01A1i d\xE2n c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u0111ang \u0111\u1EE9ng ho\u1EB7c \u0111ang \u0111i t\u1EDBi (chunkReach chunk m\u1ED7i h\u01B0\u1EDBng); xa h\u01A1n th\xEC d\xE2n ch\u1EC9 \u0111i d\u1EA1o quanh tr\u1EA1i nh\u01B0 c\u0169 \u0111\u1EC3 nh\u1EB9 m\xE1y. M\u1ED7i l\u1EA7n r\u1EA3nh (kho\u1EA3ng 4-12 gi\xE2y) m\u1ED9t ng\u01B0\u1EDDi r\xFAt m\u1ED9t vi\u1EC7c v\u1EDBi x\xE1c su\u1EA5t. Ph\u1EA1m vi l\xE0m vi\u1EC7c l\xE0 \u0111\u1EA5t c\u1EE7a l\xE0ng (t\u1EA7m nh\xECn c\u1EE7a tr\u1EA1i l\u1EEDa theo c\u1EA5p tr\u1EA1i, trong building.json). chances: x\xE1c su\u1EA5t r\xFAt t\u1EEBng vi\u1EC7c (d\xE2n th\u01B0\u1EDDng: ch\u1EB7t g\u1ED7/\u0111\xE0o \u0111\xE1/h\xE1i, theo mix; l\xEDnh: tu\u1EA7n tra, s\u0103n, trinh s\xE1t). toolTierByCamp: b\u1EADc c\xF4ng c\u1EE5 (1 g\u1ED7, 2 \u0111\xE1) m\xE0 d\xE2n l\xE0m vi\u1EC7c b\u1EB1ng theo c\u1EA5p tr\u1EA1i l\u1EEDa 1..4: l\u1EA5y c\xF4ng c\u1EE5 cao nh\u1EA5t l\xE0ng \u0111\xF3 ch\u1EBF \u0111\u01B0\u1EE3c \u1EDF c\u1EA5p tr\u1EA1i c\u1EE7a h\u1ECD; c\xF4ng c\u1EE5 t\u1ED1t th\xEC m\u1ED7i l\u1EA7n thu \u0111\u01B0\u1EE3c nhi\u1EC1u h\u01A1n nh\u01B0 d\xE2n c\u1EE7a ta (TIER_YIELD), v\xE0 h\xECnh tr\xEAn tay \u0111\u1ED5i theo. unitsPerTrip: s\u1ED1 \u0111\u01A1n v\u1ECB l\u1EA5y \u0111\u01B0\u1EE3c m\u1ED7i chuy\u1EBFn. scoutReach: trinh s\xE1t \u0111i xa g\u1EA5p m\u1EA5y l\u1EA7n \u0111\u1EA5t l\xE0ng. tripSeconds: m\u1ED9t vi\u1EC7c qu\xE1 th\u1EDDi gian n\xE0y (d\xE2n th\u01B0\u1EDDng; l\xEDnh g\u1EA5p 3) th\xEC b\u1ECF.",
     chunkReach: 1,
     gatherReach: 1.6,
-    lod: { minGuards: 2, minCivs: 2, sleepAfter: 30, gateRadius: 18, maxGuardShare: 0.6, postEvery: 4 },
-    seed: { tree: 14, rock: 10, bush: 8, minR: 15, maxR: 28 },
-    mix: { wood: 40, stone: 30, food: 30 },
-    chances: { work: 0.35, patrol: 0.25, hunt: 0.15, scout: 0.06 },
-    toolTierByCamp: [1, 2, 2, 2],
+    lod: {
+      minGuards: 2,
+      minCivs: 2,
+      sleepAfter: 30,
+      gateRadius: 18,
+      maxGuardShare: 0.6,
+      postEvery: 4,
+      armyStandDown: 20,
+      guardShare: 0.4
+    },
+    seed: {
+      tree: 14,
+      rock: 10,
+      bush: 8,
+      minR: 15,
+      maxR: 28
+    },
+    mix: {
+      wood: 40,
+      stone: 30,
+      food: 30
+    },
+    chances: {
+      work: 0.35,
+      patrol: 0.25,
+      hunt: 0.15,
+      scout: 0.06
+    },
+    toolTierByCamp: [
+      1,
+      2,
+      2,
+      2
+    ],
     unitsPerTrip: 3,
     scoutReach: 2,
     tripSeconds: 90
@@ -53509,18 +53610,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   }
 
-  // src/sim/idle.ts
-  var isFree = (v) => v.job === "idle" && !roleOf(v);
-  function farFolk(sim2, reach = 20) {
-    const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
-    return sim2.villagers.filter((v) => isFree(v) && v.down <= 0 && v.inside === null && v.phase !== "sleep" && v.phase !== "goHome" && Math.hypot(v.x - fx, v.y - fy) > reach);
-  }
-  function homeKind(v) {
-    if (v.job === "build") return "builder";
-    const role = roleOf(v);
-    return role ? ROLES[role].building : "house";
-  }
-
   // src/sim/battle.ts
   var ANIM = anims_default;
   var CHASE = chase_default;
@@ -53540,7 +53629,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return a && a.state !== "dead" ? { kind: "animal", a } : null;
   }
   var effWeapon = (v) => v.team === "player" && v.gear.wb && v.gear.w === v.weapon ? null : v.weapon;
-  var armOf = (v) => v.team === "player" && v.job === "fight" && (v.arm === "cavalry" || v.mount) ? "cavalry" : armOfWeapon(effWeapon(v));
+  var armOf = (v) => v.team === "player" && v.job === "fight" && (v.arm === "cavalry" || v.mount) || v.team !== "player" && v.mount ? "cavalry" : armOfWeapon(effWeapon(v));
   var weaponOf = (v) => WEAPONS[effWeapon(v) ?? "fist"] ?? WEAPONS.fist;
   var armorOf = (v) => v.armor && !(v.team === "player" && v.gear.ab && v.gear.a === v.armor) ? ARMORS[v.armor] ?? null : null;
   function canSee(sim2, v, x, y) {
@@ -53604,17 +53693,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     return out.sort((p, q) => p.d - q.d);
   }
-  var HUNT_RANGE = [24, 36, 52];
-  function preyValue(sim2, species) {
-    const def = ANIMALS[species], w = BEHAVIOUR.huntValue;
-    let value = def.meat * (w.meat ?? 0);
-    for (const [res, n] of Object.entries({ hide: def.hide, ...def.drops ?? {} })) if (n && resourceOpen(res, sim2.buildings)) value += n * (w[res] ?? 0);
-    return value;
-  }
-  var huntHpCap = (level) => BEHAVIOUR.huntHpCap[Math.min(BEHAVIOUR.huntHpCap.length, Math.max(1, level)) - 1];
-  function huntRange(sim2) {
-    return HUNT_RANGE[Math.min(HUNT_RANGE.length, sim2.building("huntlodge")?.level ?? 1) - 1];
-  }
   var HUNT_FLEE = 0.3;
   var HUNT_BACK = 0.5;
   function noteClash(sim2, a, b, x, y) {
@@ -53642,7 +53720,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (!v || v.health <= 0) return;
     if (sim2.dev.god && v.team === "player") return;
     const missile = !!src.unit && weaponOf(src.unit).ranged === true;
-    const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (1 - guardCut(sim2, v, missile)) * (v.team === "player" ? sim2.takenFactor(v, missile) * sim2.mountGuard(v) : 1);
+    const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (1 - guardCut(sim2, v, missile)) * (v.team === "player" ? sim2.takenFactor(v, missile) : 1) * sim2.mountGuard(v);
     v.health -= final;
     v.calm = 0;
     v.flinch = 0.3;
@@ -53661,7 +53739,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         const tribe = src.unit ? sim2.tribes.find((t) => t.id === src.unit.team) : void 0;
         const by = src.animal ? `m\u1ED9t con ${animalDef(src.animal).name.toLowerCase()}` : tribe ? tribe.def.name : src.unit ? "m\u1ED9t k\u1EBB \u0111\u1ECBch" : "k\u1EBB l\u1EA1";
         sim2.say(`${v.name} (th\u1EE3 s\u0103n) b\u1ECF ch\u1EA1y v\u1EC1 l\xE0ng v\xEC m\xE1u c\xF2n ${Math.round(v.health / v.maxHealth * 100)}%, b\u1ECB ${by} t\u1EA5n c\xF4ng.`);
-        startFlee(sim2, v, 8, from);
+        sim2.startFlee(v, 8, from);
         return;
       }
       if (!v.fight.target && src.unit && v.team !== "player") v.fight.target = { kind: "unit", id: src.unit.id };
@@ -53762,213 +53840,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     if (v.down <= 0) sim2.killUnit(v, "v\xEC v\u1EBFt th\u01B0\u01A1ng");
   }
-  var SIGHT = 8;
-  var DEFENSIVE = 4.5;
-  function brainPlayer(sim2, v, dt) {
-    if (v.phase === "goStore" || v.phase === "goEquip") return false;
-    if (v.fight.obey && (v.phase !== "move" || !v.path.length)) v.fight.obey = false;
-    if (sim2.underOrders(v)) {
-      v.fleeT = 0;
-      return false;
-    }
-    if (v.recall) {
-      if (v.inside !== null || !sim2.quartered(v)) v.recall = false;
-      else {
-        v.fight.target = null;
-        v.fight.mode = "none";
-        v.fight.anchor = null;
-        v.queue.length = 0;
-        if (v.phase === "fight") {
-          v.phase = "idle";
-          v.path = [];
-        }
-        return false;
-      }
-    }
-    const rest = v.phase === "sleep" || v.phase === "goHome";
-    if (rest && sim2.hides(v)) return false;
-    v.fight.scan -= dt;
-    const scanNow = v.fight.scan <= 0;
-    if (scanNow) v.fight.scan = 0.35;
-    const looking = scanNow || v.phase === "flee" || v.phase === "fight" && !v.fight.target;
-    const sight = v.team === "player" ? sim2.sightOf(v) : SIGHT;
-    const threats = looking ? threatsOf(sim2, v, sight + 1) : [];
-    if (rest) {
-      if (v.job === "supply" && v.inTent) return false;
-      const watch2 = isFighter(v) && (v.guard || v.post >= 0 || sim2.warIds.has(v.id));
-      if (scanNow && threats.length && threats[0].d < (watch2 ? sight : 7)) {
-        if (isFighter(v)) v.nightOwl = true;
-        if (v.post >= 0 && v.inside !== null && v.phase === "sleep") {
-          v.phase = "inside";
-          return false;
-        }
-        sim2.resetTask(v);
-      } else return false;
-    }
-    if (v.phase === "flee" || v.fleeT > 0) return fleeBrain(sim2, v, dt, threats);
-    if (v.breaks && sim2.breakBrain(v, dt)) return true;
-    const fighter = isFighter(v);
-    if (!fighter) {
-      if (threats.length && threats[0].d < FEAR && v.phase !== "fight") {
-        startFlee(sim2, v, 8, threats[0]);
-        return true;
-      }
-      if (scanNow && isFree(v) && v.inside === null && v.phase !== "sleep" && v.phase !== "goHome" && sim2.attackReason() !== null && refugeOf(sim2, v)) {
-        startFlee(sim2, v, 8);
-        return true;
-      }
-      return assistBrain(sim2, v);
-    }
-    return fightBrain(sim2, v, dt, threats);
-  }
-  function fleeSpot(sim2, v, from) {
-    const fire = sim2.campfire();
-    let guard, gd = 40;
-    for (const o of sim2.villagers) {
-      if (o === v || o.job !== "fight" || o.health <= 0 || o.down > 0 || o.inside !== null || o.phase === "flee" || o.phase === "sleep" || o.phase === "goHome") continue;
-      const d = Math.hypot(o.x - v.x, o.y - v.y);
-      if (d < gd) {
-        gd = d;
-        guard = o;
-      }
-    }
-    const tx = guard ? guard.x : fire ? fire.x + 1 : v.x, ty = guard ? guard.y : fire ? fire.y + 2 : v.y;
-    let gx = tx, gy = ty;
-    if (from) {
-      const dx = tx - from.x, dy = ty - from.y, len = Math.hypot(dx, dy) || 1;
-      gx += dx / len * 1.5;
-      gy += dy / len * 1.5;
-    }
-    const spot = sim2.nearestFree(Math.floor(gx), Math.floor(gy), /* @__PURE__ */ new Set());
-    return spot ? sim2.pathTo(v, spot[0], spot[1], 4e3) : [];
-  }
-  var FEAR = 10;
-  function crowd(sim2, b, except) {
-    let n = 0;
-    for (const o of sim2.villagers) if (o !== except && (o.inside === b.id && o.phase === "sleep" || (o.phase === "goHome" || o.phase === "flee") && o.target === b.id)) n++;
-    return n;
-  }
-  function refugeOf(sim2, v) {
-    for (const kind of /* @__PURE__ */ new Set([homeKind(v), "house"])) {
-      let best, bd = Infinity;
-      for (const x of sim2.buildings) {
-        if (x.kind !== kind || !x.done || crowd(sim2, x, v) >= levelDef(x).slots) continue;
-        const d = Math.hypot(x.x + 1 - v.x, x.y + 1 - v.y);
-        if (d < bd) {
-          bd = d;
-          best = x;
-        }
-      }
-      if (best) return best;
-    }
-    return void 0;
-  }
-  function runToRefuge(sim2, v) {
-    const b = refugeOf(sim2, v);
-    if (!b) return false;
-    const d = BUILDINGS[b.kind];
-    if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h), 3, 12e3) < 0) return false;
-    v.target = b.id;
-    return true;
-  }
-  function runAway(sim2, v, from) {
-    const ax = from ? v.x - from.x : 0, ay = from ? v.y - from.y : 1, len = Math.hypot(ax, ay) || 1;
-    const spot = sim2.nearestFree(Math.floor(v.x + ax / len * 12), Math.floor(v.y + ay / len * 12), /* @__PURE__ */ new Set());
-    return spot ? sim2.pathTo(v, spot[0], spot[1], 4e3) : [];
-  }
-  function startFlee(sim2, v, secs, from) {
-    const keep = v.job, nightOwl = v.nightOwl;
-    sim2.resetTask(v);
-    v.job = keep;
-    v.nightOwl = nightOwl;
-    v.fight.target = null;
-    if (v.fight.mode === "attack") v.fight.mode = "none";
-    v.phase = "flee";
-    v.fleeT = secs;
-    if (!isFighter(v)) {
-      sim2.dangerAt = sim2.time;
-      if (runToRefuge(sim2, v)) return;
-      v.path = runAway(sim2, v, from);
-      return;
-    }
-    v.path = fleeSpot(sim2, v, from);
-  }
-  function fleeBrain(sim2, v, dt, threats) {
-    if (v.phase !== "flee") {
-      startFlee(sim2, v, 8, threats[0]);
-      return true;
-    }
-    const civilian2 = !isFighter(v), refuge = civilian2 && v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
-    if (civilian2) sim2.dangerAt = sim2.time;
-    if (refuge && refuge.done) {
-      const d = BUILDINGS[refuge.kind];
-      if (Math.hypot(v.x - (refuge.x + d.w / 2), v.y - (refuge.y + d.h / 2)) <= Math.max(d.w, d.h) / 2 + 1.8) {
-        if (crowd(sim2, refuge, v) < levelDef(refuge).slots) {
-          sim2.sleepIn(v, refuge);
-          v.fleeT = 0;
-          return true;
-        }
-        v.target = -1;
-        v.timer = 0;
-      } else {
-        v.timer -= dt;
-        if (!v.path.length && v.timer <= 0) {
-          v.timer = 1.5;
-          if (!runToRefuge(sim2, v)) v.target = -1;
-        }
-        return true;
-      }
-    }
-    v.fleeT -= dt;
-    if (threats.length && threats[0].d < FEAR) v.fleeT = Math.max(v.fleeT, 3);
-    v.timer -= dt;
-    if (v.timer <= 0) {
-      v.timer = 1.5;
-      if (civilian2) {
-        if (runToRefuge(sim2, v)) return true;
-        if (!v.path.length) v.path = runAway(sim2, v, threats[0]);
-      } else {
-        const way = fleeSpot(sim2, v, threats[0]);
-        if (way.length > 2) v.path = way;
-      }
-    }
-    if (v.fleeT <= 0) {
-      v.phase = "idle";
-      v.fleeT = 0;
-      v.path = [];
-      return false;
-    }
-    return true;
-  }
-  function assistBrain(sim2, v) {
-    if (v.phase === "rescue") {
-      const t = sim2.get(v.target);
-      if (!t || t.down <= 0) {
-        v.phase = "idle";
-        v.target = -1;
-        return false;
-      }
-      if (Math.hypot(t.x - v.x, t.y - v.y) < 1.4) {
-        v.path = [];
-        return true;
-      }
-      if (!v.path.length) v.path = sim2.pathTo(v, Math.floor(t.x), Math.floor(t.y), 3e3);
-      return true;
-    }
-    if (v.phase === "sleep" || v.phase === "goHome") return false;
-    const down = sim2.villagers.find((o) => o !== v && o.down > 0 && Math.hypot(o.x - v.x, o.y - v.y) < 14);
-    if (down && v.health > 0) {
-      const keep = v.job, owl = v.nightOwl;
-      sim2.resetTask(v);
-      v.job = keep;
-      v.nightOwl = owl;
-      v.phase = "rescue";
-      v.target = down.id;
-      v.path = sim2.pathTo(v, Math.floor(down.x), Math.floor(down.y), 3e3);
-      return true;
-    }
-    return false;
-  }
   function chaseGivenUp(sim2, v, e, d, dt) {
     const f = v.fight, key = e.kind === "unit" ? `u${e.v.id}` : `a${e.a.id}`;
     if (f.chaseKey !== key) {
@@ -53976,7 +53847,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       f.chaseT = 0;
       f.unseenT = 0;
     }
-    const sees = d <= (v.team === "player" ? sim2.sightOf(v) + 1 : 14) && canSee(sim2, v, entX(e), entY(e));
+    const sees = d <= chaseSight(sim2, v) && canSee(sim2, v, entX(e), entY(e));
     if (f.mode === "attack" || f.mode === "attackMove") {
       const weapon = weaponOf(v), blocked = !v.path.length && d > weapon.range + 1;
       f.chaseT = blocked ? (f.chaseT ?? 0) + dt : 0;
@@ -53995,19 +53866,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     v.path = [];
     v.slide = null;
     if (v.phase === "fight") v.phase = "idle";
-    if (f.mode === "attack") {
-      if (v.job !== "fight") f.mode = "none";
-      else if (v.guard) {
-        f.mode = "guard";
-        f.anchor = homeSpot(sim2, v) ?? { x: v.x, y: v.y };
-      } else if (v.team === "player" && v.squad < 0) {
-        f.mode = "none";
-        f.anchor = null;
-      } else {
-        f.mode = "guard";
-        f.anchor = { x: v.x, y: v.y };
-      }
-    }
+    if (f.mode === "attack") sim2.endOrder(v);
     return true;
   }
   function engage(sim2, v, e, dt) {
@@ -54038,312 +53897,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         if (v.team === "player" && e.kind === "unit" && sim2.breachFor(v, x, y)) return;
       }
     }
-  }
-  function homeSpot(sim2, v) {
-    if (v.guard && v.guardAt) return v.guardAt;
-    const camp = sim2.buildings.find((b) => b.kind === sim2.homeKind(v) && b.done);
-    if (camp) return { x: camp.x + 1 + v.id % 3 - 1, y: camp.y + 3 };
-    const fire = sim2.campfire();
-    return fire ? { x: fire.x + 1 + v.id % 3 - 1, y: fire.y + 3 } : null;
-  }
-  var aboutCache = /* @__PURE__ */ new WeakMap();
-  function beastsAbout(sim2) {
-    const c = aboutCache.get(sim2);
-    if (c && c.t === sim2.time) return c.on;
-    const on = sim2.attackReason() !== null || sim2.animals.some((a) => a.raid && a.state !== "dead");
-    aboutCache.set(sim2, { t: sim2.time, on });
-    return on;
-  }
-  function mayEngage(sim2, v) {
-    if (v.job !== "fight" || v.guard || v.team !== "player") return true;
-    return sim2.alarmUntil > sim2.time || beastsAbout(sim2) || sim2.battle.on || v.fight.mode === "attack" || v.fight.mode === "attackMove" || v.squad >= 0 && sim2.plans.some((p) => p.status === "running");
-  }
-  function fightBrain(sim2, v, dt, threats) {
-    const f = v.fight;
-    if (v.phase === "skin" || v.phase === "goCarcass") return huntBrain(sim2, v, dt, threats);
-    if (v.job === "hunt" && v.health < v.maxHealth * HUNT_BACK && f.mode !== "attack") {
-      f.target = null;
-      if (threats.length && threats[0].d < 7 && v.phase !== "flee") {
-        startFlee(sim2, v, 8, threats[0]);
-        return true;
-      }
-      return huntBrain(sim2, v, dt, threats);
-    }
-    if (f.mode === "hold" && !f.anchor) f.anchor = { x: v.x, y: v.y };
-    if (!threats.length && !f.target && v.phase !== "fight" && (sim2.planEquipGear(v) || sim2.planGearErrand(v))) return true;
-    if (v.stance === "retreat" && f.mode !== "attack" && f.target) f.target = null;
-    if (f.target) {
-      const e = resolve(sim2, f.target);
-      if (e) {
-        if (f.mode === "hold" && f.anchor && Math.hypot(entX(e) - f.anchor.x, entY(e) - f.anchor.y) > weaponOf(v).range + 2) {
-          f.target = null;
-        } else {
-          engage(sim2, v, e, dt);
-          return true;
-        }
-      } else {
-        const dead = f.target.kind === "animal" ? sim2.animalById.get(f.target.id) : void 0;
-        f.target = null;
-        if (f.mode === "attack") {
-          if (v.job !== "fight") f.mode = "none";
-          else if (v.guard) {
-            f.mode = "guard";
-            f.anchor = homeSpot(sim2, v) ?? { x: v.x, y: v.y };
-          } else if (v.team === "player" && v.squad < 0) {
-            f.mode = "none";
-            f.anchor = null;
-          } else {
-            f.mode = "guard";
-            f.anchor = { x: v.x, y: v.y };
-          }
-        }
-        if (dead && dead.state === "dead" && v.job === "hunt") v.loot = dead.id;
-        if (v.phase === "fight") {
-          v.phase = "idle";
-          v.path = [];
-        }
-        if (sim2.nextOrder(v)) return true;
-      }
-    }
-    if (v.stance === "retreat") {
-      if (threats.length && threats[0].d < 8) {
-        startFlee(sim2, v, 6, threats[0]);
-        return true;
-      }
-    } else if (threats.length && f.scan >= 0) {
-      const range = !mayEngage(sim2, v) ? Math.min(DEFENSIVE, sim2.sightOf(v)) : f.mode === "hold" ? weaponOf(v).range + 1.5 : v.stance === "defensive" ? Math.min(DEFENSIVE, sim2.sightOf(v)) : sim2.sightOf(v);
-      const pick2 = threats.find((t) => (!v.guard || t.t.kind === "unit" || sim2.animalById.get(t.t.id)?.state === "attack") && t.d <= range && (!f.anchor || v.stance !== "defensive" || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
-      if (pick2) {
-        f.target = pick2.t;
-        const e = resolve(sim2, pick2.t);
-        if (e) {
-          engage(sim2, v, e, dt);
-          return true;
-        }
-      }
-    }
-    if (f.mode === "attackMove" && f.dest) {
-      if (Math.hypot(f.dest.x - v.x, f.dest.y - v.y) < 1.5) {
-        f.mode = "guard";
-        f.anchor = { x: f.dest.x, y: f.dest.y };
-        f.dest = null;
-        v.path = [];
-        v.phase = "idle";
-        if (sim2.nextOrder(v)) return true;
-      } else {
-        if (!v.path.length && sim2.pathLeft > 0) {
-          sim2.pathLeft--;
-          v.path = f.strict ? sim2.lineSteps(v, f.dest.x, f.dest.y) : sim2.pathTo(v, Math.floor(f.dest.x), Math.floor(f.dest.y), 2e4);
-        }
-        v.phase = "move";
-        return true;
-      }
-    }
-    if (v.post >= 0 && v.phase === "idle" && !threats.length && !f.target) {
-      sim2.planStaff(v);
-      if (v.phase === "goStaff") return true;
-    }
-    if (f.mode === "hold") {
-      v.phase = "idle";
-      v.path = [];
-      return true;
-    }
-    if (v.job === "hunt") return huntBrain(sim2, v, dt, threats);
-    if (v.phase === "fight") {
-      v.phase = "idle";
-      v.path = [];
-    }
-    if (v.job === "fight") {
-      const home = homeSpot(sim2, v), post = v.guard && v.guardAt ? { x: v.guardAt.x, y: v.guardAt.y, slack: 2 } : f.mode === "guard" && f.anchor ? { x: f.anchor.x, y: f.anchor.y, slack: 2 } : home ? { x: home.x, y: home.y, slack: 5 } : null;
-      if (post && v.phase === "idle" && !v.path.length && Math.hypot(v.x - post.x, v.y - post.y) > post.slack) {
-        if (sim2.pathLeft <= 0) return true;
-        sim2.pathLeft--;
-        v.path = sim2.pathTo(v, Math.floor(post.x), Math.floor(post.y), 3e4);
-        v.phase = v.path.length ? "move" : "idle";
-        return true;
-      }
-      return v.phase === "move" || v.phase === "idle";
-    }
-    return false;
-  }
-  function huntBrain(sim2, v, dt, threats) {
-    if (v.health < v.maxHealth * HUNT_BACK && v.phase !== "skin") {
-      if (v.phase === "move" && v.path.length) return true;
-      if (v.phase === "fight" || v.phase === "goCarcass") {
-        v.phase = "idle";
-        v.path = [];
-        v.loot = -1;
-      }
-      if (v.carry && v.carry.amount > 0) {
-        sim2.planDeliver(v);
-        return true;
-      }
-      const fire = sim2.campfire();
-      if (fire && Math.hypot(v.x - fire.x - 1, v.y - fire.y - 1) > 4 && sim2.pathLeft > 0) {
-        sim2.pathLeft--;
-        v.path = sim2.pathTo(v, Math.floor(fire.x + 1), Math.floor(fire.y + 2), 4e3);
-        if (v.path.length) {
-          v.phase = "move";
-          return true;
-        }
-      }
-      sim2.wait(v, 2);
-      return true;
-    }
-    if (v.phase === "skin") {
-      v.timer -= dt;
-      v.anim = "build";
-      if (v.timer > 0) return true;
-      const a = sim2.animalById.get(v.loot);
-      v.phase = "idle";
-      v.loot = -1;
-      if (!a) return true;
-      const have2 = v.carry && v.carry.res === "food" ? v.carry.amount : 0, take2 = Math.min(a.meat, CARRY_CAP.food - have2);
-      if (take2 > 0) {
-        a.meat -= take2;
-        v.carry = { res: "food", amount: have2 + take2 };
-        sim2.noteYield("hunt.food", take2);
-      }
-      const got = [], left = [], bag = { ...a.drops };
-      if (a.hide > 0) bag.hide = (bag.hide ?? 0) + a.hide;
-      for (const [res, n] of Object.entries(bag)) {
-        if (!(n > 0)) continue;
-        if (!resourceOpen(res, sim2.buildings)) {
-          const u = resourceUnlock(res);
-          left.push(`${RES_NAME[res].toLowerCase()} (c\u1EA7n ${BUILDINGS[u.building].name} c\u1EA5p ${u.level})`);
-          continue;
-        }
-        sim2.stock[res] = Math.min(sim2.capacity(res), sim2.stock[res] + n);
-        sim2.noteYield(`hunt.${res}`, n);
-        got.push(`${n} ${RES_NAME[res].toLowerCase()}`);
-      }
-      a.hide = 0;
-      a.drops = {};
-      if (got.length) sim2.say(`${v.name} x\u1EBB ${animalDef(a).name.toLowerCase()}: ${got.join(", ")}.`);
-      if (left.length) sim2.say(`${v.name} b\u1ECF l\u1EA1i ${left.join(", ")}: ch\u01B0a l\u1EA5y \u0111\u01B0\u1EE3c.`);
-      return true;
-    }
-    if (v.phase === "goCarcass") {
-      const a = sim2.animalById.get(v.loot);
-      if (!a || a.state !== "dead" || carcassEmpty(a)) {
-        v.phase = "idle";
-        v.loot = -1;
-        v.path = [];
-        return true;
-      }
-      if (Math.hypot(a.x - v.x, a.y - v.y) < 1.5) {
-        v.path = [];
-        v.phase = "skin";
-        v.timer = BEHAVIOUR.skinSeconds;
-        v.facing = a.x >= v.x ? "right" : "left";
-        return true;
-      }
-      if (!v.path.length) {
-        v.path = sim2.pathTo(v, Math.floor(a.x), Math.floor(a.y), 3e3);
-        if (!v.path.length) {
-          v.phase = "idle";
-          v.loot = -1;
-        }
-      }
-      return true;
-    }
-    if (v.phase === "move" && v.path.length) return true;
-    if (v.carry && v.carry.amount >= CARRY_CAP[v.carry.res]) {
-      sim2.planDeliver(v);
-      return true;
-    }
-    const N = sim2.world.size;
-    const lodge = sim2.building("huntlodge") ?? sim2.campfire(), range = huntRange(sim2);
-    let best = null, bd = 45;
-    if (v.loot >= 0) {
-      const a = sim2.animalById.get(v.loot);
-      if (a && a.state === "dead") best = a;
-      else v.loot = -1;
-    }
-    if (!best) for (const a of sim2.animals) {
-      if (a.state !== "dead" || carcassEmpty(a) || sim2.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
-      const d = Math.hypot(a.x - v.x, a.y - v.y);
-      if (d < bd) {
-        bd = d;
-        best = a;
-      }
-    }
-    if (best) {
-      v.loot = best.id;
-      v.phase = "goCarcass";
-      v.path = sim2.pathTo(v, Math.floor(best.x), Math.floor(best.y), 3e3);
-      return true;
-    }
-    if (!threats.length) {
-      let prey = null, bestScore = 0;
-      const cap = huntHpCap(sim2.building("huntlodge")?.level ?? 1);
-      for (const a of sim2.animals) {
-        const def = animalDef(a);
-        if (a.state === "dead" || !def.prey || sim2.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
-        if (v.fight.skip && v.fight.skip.kind === "animal" && v.fight.skip.id === a.id && sim2.time < v.fight.skip.until) continue;
-        if (lodge && Math.hypot(a.x - lodge.x, a.y - lodge.y) > range) continue;
-        if (def.hp > cap) continue;
-        if (def.defends && !sim2.packNear(v, a)) continue;
-        const d = Math.hypot(a.x - v.x, a.y - v.y), score = preyValue(sim2, a.species) / (1 + d / 12);
-        if (score > bestScore) {
-          bestScore = score;
-          prey = a;
-        }
-      }
-      if (prey) {
-        v.fight.target = { kind: "animal", id: prey.id };
-        engage(sim2, v, { kind: "animal", a: prey }, 0);
-        return true;
-      }
-    }
-    if (v.carry && v.carry.amount > 0) {
-      sim2.planDeliver(v);
-      return true;
-    }
-    if (v.phase === "fight") {
-      v.phase = "idle";
-      v.path = [];
-    }
-    if (lodge) {
-      const step2 = Math.floor(sim2.time / 8), spots = [];
-      for (let t = 0; t < 10; t++) {
-        const ang = hash2(v.id, step2 * 16 + t, 71) * Math.PI * 2, rad3 = 6 + hash2(v.id, step2 * 16 + t, 72) * (range - 6);
-        const gx = Math.floor(lodge.x + Math.cos(ang) * rad3), gy = Math.floor(lodge.y + Math.sin(ang) * rad3);
-        if (sim2.world.inBounds(gx, gy) && !sim2.world.isBlocked(gx, gy)) spots.push([gx, gy, sim2.fog.state[gy * N + gx] === 0]);
-      }
-      spots.sort((p, q) => Number(q[2]) - Number(p[2]));
-      for (const [gx, gy] of spots) {
-        if (sim2.pathLeft <= 0) break;
-        sim2.pathLeft--;
-        const path = sim2.pathTo(v, gx, gy, 2500);
-        if (path.length) {
-          v.path = path;
-          v.phase = "move";
-          return true;
-        }
-      }
-    }
-    sim2.wait(v, 1);
-    return true;
-  }
-  function bestWeapon(sim2, v) {
-    const score = (id) => {
-      const w = WEAPONS[id];
-      return (w.damage + RULES.strengthDamage * v.stats.str) / cycleOf(w.cycle, v.stats.agi) + (w.range > 1 ? 1 : 0);
-    };
-    const cur = v.weapon ? score(v.weapon) : score("fist");
-    let best = null, bs = cur;
-    for (const id of CRAFTED_WEAPONS) {
-      if (sim2.toolCount(id, WEAPONS[id].tier ?? 1) <= 0) continue;
-      if (id === "mace" && v.job !== "fight") continue;
-      if (v.job === "fight" && v.guard && v.post >= 0 && !WEAPONS[id].ranged) continue;
-      if (v.job === "fight" && !v.guard && v.arm !== "cavalry" && v.arm === "archer" !== !!WEAPONS[id].ranged) continue;
-      if (score(id) > bs) {
-        bs = score(id);
-        best = id;
-      }
-    }
-    return best;
   }
 
   // src/sim/power.ts
@@ -54529,7 +54082,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (t.boss && index * 0.618034 % 1 < DIFF.boss.bronzeShare) return { weapon: DIFF.boss.weapons[index % DIFF.boss.weapons.length], armor: "bronze" };
     return { weapon: weapons[index % weapons.length], armor: t.boss ? "bone" : common };
   }
-  function spawnOut(sim2, t, role, n, near2, rmin, rspan, posts = []) {
+  function mountFor(t, index, weapon) {
+    const c = FOE.cavalry, share2 = t.boss ? c.bossShare : c.share;
+    if (t.campLevel < c.minCamp || share2 <= 0 || WEAPONS[weapon]?.ranged || index * 0.618034 % 1 >= share2) return null;
+    return t.boss ? c.boss : c.beasts[Math.min(c.beasts.length, t.campLevel - c.minCamp + 1) - 1];
+  }
+  function spawnOut(sim2, t, role, n, near2, rmin, rspan, posts = [], army3 = false) {
     const crowd2 = crowdOf(t), out = [], key = role === "civ" ? "civs" : "guards";
     let armed = t.unitIds.filter((u) => {
       const f = sim2.get(u);
@@ -54544,9 +54102,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         const g = gearFor(sim2, t, armed);
         f.weapon = g.weapon;
         f.armor = g.armor;
+        if (army3) f.mount = mountFor(t, armed, g.weapon);
         armed++;
       }
-      f.ai = { role, camp: t.camp, wander: sim2.frnd() * 5, goal: null, raid: 0, post };
+      f.ai = { role, camp: t.camp, wander: sim2.frnd() * 5, goal: null, raid: 0, post, ...army3 ? { army: true } : {} };
       if (post) f.facing = post.face;
       sim2.addFoe(f);
       t.unitIds.push(f.id);
@@ -54565,7 +54124,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     t.awake = true;
     t.idleT = 0;
     const cap = visibleCap(sim2, t), crowd2 = crowdOf(t);
-    let out = Math.min(crowd2.guards, cap.guards);
+    let out = Math.min(crowd2.guards, cap.guards, Math.max(LOD.minGuards, Math.ceil(crowd2.guards * LOD.guardShare)));
     for (const tw of t.props.filter((p) => p.kind === "tower")) out -= spawnTowerMen(sim2, t, tw, Math.min(out, towerSlots(sim2, tw)));
     spawnOut(sim2, t, "guard", out, t.camp, 2.5, 3.5, postsOf(sim2, t, out));
     spawnOut(sim2, t, "civ", Math.min(crowd2.civs, cap.civs), t.camp, 2.5, 3.5);
@@ -54594,11 +54153,34 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     t.unitIds = t.unitIds.filter((u) => !!sim2.get(u));
     t.awake = false;
     t.idleT = 0;
+    t.armyOut = false;
     if (!sim2.get(t.leaderId)) t.leaderId = -1;
   }
   function releaseCrowd(sim2, t, n, near2 = t.camp) {
-    const crowd2 = crowdOf(t), g = spawnOut(sim2, t, "guard", Math.min(n, crowd2.guards), near2, 1.5, 2.5).length;
+    const crowd2 = crowdOf(t), g = spawnOut(sim2, t, "guard", Math.min(n, crowd2.guards), near2, 1.5, 2.5, [], true).length;
     return g + spawnOut(sim2, t, "civ", Math.min(n - g, crowd2.civs), near2, 1.5, 2.5).length;
+  }
+  function deployArmy(sim2, t) {
+    const n = crowdOf(t).guards;
+    t.armyOut = true;
+    t.armyIdle = 0;
+    if (n <= 0) return 0;
+    const held = t.unitIds.map((u) => sim2.get(u)?.ai?.post).filter((p) => !!p);
+    const posts = postsOf(sim2, t, n + held.length).filter((p) => !held.some((h3) => Math.hypot(h3.x - p.x, h3.y - p.y) < 1.5));
+    return spawnOut(sim2, t, "guard", n, t.camp, 2.5, 3.5, posts, true).length;
+  }
+  function recallArmy(sim2, t) {
+    const crowd2 = crowdOf(t);
+    for (const u of [...t.unitIds]) {
+      const f = sim2.get(u);
+      if (!f || f.health <= 0 || !f.ai?.army) continue;
+      crowd2.guards++;
+      sim2.removeFoe(f);
+    }
+    t.unitIds = t.unitIds.filter((u) => !!sim2.get(u));
+    t.armyOut = false;
+    t.armyIdle = 0;
+    if (!sim2.get(t.leaderId)) t.leaderId = -1;
   }
   var standing = (t) => t.props.filter((p) => p.kind === "house" || p.kind === "fire").length;
   function followFire(sim2, t) {
@@ -54635,7 +54217,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     if (t.hitAt !== void 0 && sim2.time - t.hitAt > SIEGE.struct.repairAfter) repairProps(t, SIEGE.struct.repairPerSecond);
     const r = LOD.gateRadius, atDoor = sim2.villagers.some((v) => v.health > 0 && Math.abs(v.x - t.camp.x) < r && Math.abs(v.y - t.camp.y) < r);
-    setGates(sim2, t, hostile && atDoor || busy2);
+    const alarm = hostile && atDoor || busy2;
+    setGates(sim2, t, alarm);
+    if (alarm) {
+      t.armyIdle = 0;
+      if (!t.armyOut) deployArmy(sim2, t);
+    } else if (t.armyOut && !fighting && (t.armyIdle = (t.armyIdle ?? 0) + 1) >= LOD.armyStandDown) recallArmy(sim2, t);
     const crowd2 = crowdOf(t), hidden = crowd2.guards + crowd2.civs;
     if (hidden > 0 && (t.hid0 ?? 0) > 0) {
       const keep = Math.ceil((t.hid0 ?? 0) * Math.min(1, standing(t) / Math.max(1, t.pool0 ?? 1)));
@@ -54646,61 +54233,167 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   }
 
-  // src/data/events.json
-  var events_default = {
-    _note: "kind beasts: species = id in animals.json (wolf, bear, lion...). kind raid: tribe = who attacks; power = how strong against the army of the player on the day (1 = as strong, 1.1 = a tenth stronger, 0.8 = a fifth weaker; kept between floor and ceiling of content/difficulty.json), OR size = how many guards the tribe sends, OR army = own make-up { weapon: count } (weapons of weapons.json: club, spear, mace, hatchet = foot; sling, bow = archers), with armor (default true). Enemy cavalry is not supported yet. day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
-    events: [
-      { id: "wolves_summer_1", kind: "beasts", species: "wolf", day: 4, spread: 1, size: 2, night: false, warnDays: 2, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm..." },
-      { id: "wolves_summer_2", kind: "beasts", species: "wolf", day: 9, spread: 1, size: 4, night: false, warnDays: 3, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm b\u1EA7y s\xF3i tr\u1EA3 th\xF9..." },
-      { id: "wolves_summer_3", kind: "beasts", species: "wolf", day: 15, spread: 1, size: 6, night: true, warnDays: 3, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm b\u1EA7y s\xF3i t\u1ED5ng t\u1EA5n c\xF4ng..." },
-      { id: "axe_scout", kind: "raid", tribe: "axe", day: 12, spread: 2, size: 4, night: false, warnDays: 2, warn: "Kh\xF3i b\u1ED1c l\xEAn t\u1EEB ph\xEDa t\u1ED9c R\xECu \u0110\xE1, c\xF3 l\u1EBD h\u1ECD \u0111ang c\u1EED ng\u01B0\u1EDDi d\xF2 x\xE9t." },
-      { id: "wolves_winter", kind: "beasts", species: "wolf", day: 23, spread: 4, size: 6, night: true, warn: "D\u1EA5u ch\xE2n s\xF3i \u0111\u1EA7y quanh l\xE0ng." },
-      { id: "bear_autumn", kind: "beasts", species: "bear", day: 19, spread: 1, size: 1, night: true, warn: "Nh\u1EEFng v\u1EBFt c\xE0o s\xE2u tr\xEAn th\xE2n c\xE2y quanh l\xE0ng: c\xF3 g\u1EA5u." },
-      { id: "swamp_raid", kind: "raid", tribe: "swamp", day: 27, spread: 4, size: 6, night: true, warnDays: 0, warn: "" },
-      { id: "axe_war", kind: "raid", tribe: "axe", day: 33, spread: 4, size: 14, night: false, warnDays: 1, warn: "Ti\u1EBFng tr\u1ED1ng chi\u1EBFn vang l\xEAn: t\u1ED9c R\xECu \u0110\xE1 s\u1EAFp \u0111\xE1nh l\u1EDBn." }
-    ]
-  };
-
-  // src/sim/warmode.ts
-  var warPlan = (sim2) => sim2.plans.find((p) => p.kind === "attack" && p.status === "running");
-  var warTribe = (sim2) => warPlan(sim2)?.tribe ?? null;
-  function army(sim2) {
-    const ids = /* @__PURE__ */ new Set();
-    for (const p of sim2.plans) {
-      if (p.kind !== "attack" || p.status !== "running") continue;
-      for (const m of p.missions) {
-        const s = sim2.squadById(m.squad);
-        if (s) for (const v of sim2.squadUnits(s)) ids.add(v.id);
+  // src/sim/foecivil.ts
+  function houseNear(t, f, within = Infinity) {
+    let best = null, bd = Infinity;
+    for (const p of t.props) {
+      if (p.kind !== "house" || p.hp <= 0) continue;
+      const d = Math.hypot(p.x + p.w / 2 - f.x, p.y + p.h / 2 - f.y);
+      if (d < bd && d - Math.max(p.w, p.h) / 2 <= within) {
+        best = p;
+        bd = d;
       }
-      for (const id of p.supplyIds) ids.add(id);
     }
-    return ids;
+    return best;
   }
-  function ranks(sim2, soldiers = army(sim2)) {
-    const ids = new Set(soldiers);
-    for (const m of sim2.scouts) for (const id of m.ids) ids.add(id);
-    return ids;
+  function civilianBrain(sim2, f, t, ai, dt, free, scanNow, threats) {
+    if (f.inTent) {
+      f.phase = "idle";
+      f.path = [];
+      f.slide = null;
+      if (free && houseNear(t, f, 4) && !(scanNow && !threatsOf(sim2, f, FOE.hideWatch).length)) return true;
+      f.inTent = false;
+    }
+    if (free && (f.fleeT > 0 || ai.role === "civ" && threats.length && threats[0].d < FOE.civFlee)) {
+      const home = houseNear(t, f), gx = home ? Math.floor(home.x + home.w / 2) : Math.floor(ai.camp.x), gy = home ? home.y + home.h : Math.floor(ai.camp.y);
+      if (f.fleeT <= 0) {
+        f.fleeT = 6;
+        f.fight.target = null;
+        f.path = sim2.pathTo(f, gx, gy, 3e3);
+      }
+      f.fleeT -= dt;
+      f.phase = "flee";
+      if (home && Math.hypot(home.x + home.w / 2 - f.x, home.y + home.h / 2 - f.y) <= Math.max(home.w, home.h) / 2 + 1.6) {
+        f.inTent = true;
+        f.path = [];
+        f.slide = null;
+        f.phase = "idle";
+        f.fleeT = 0;
+        return true;
+      }
+      if (threats.length && threats[0].d < FOE.civKeepRunning) f.fleeT = Math.max(f.fleeT, 2);
+      if (!f.path.length && Math.hypot(f.x - gx, f.y - gy) > 3) f.path = sim2.pathTo(f, gx, gy, 3e3);
+      return true;
+    }
+    return false;
   }
-  function standDown(sim2, v, _dt) {
-    if (v.down > 0 || v.health <= 0) return;
-    if (v.inside !== null) return;
-    if (v.phase === "sleep") {
-      v.inTent = true;
+
+  // src/sim/foewar.ts
+  function noteStuck(sim2, f, ai, dt, blocked) {
+    if (!blocked) {
+      ai.stuck = 0;
       return;
     }
-    sim2.clearCombat(v);
-    sim2.goHome(v);
-    const bed = v.phase === "goHome" && v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
-    if (bed && bed.done) {
-      sim2.sleepIn(v, bed);
+    ai.stuck = (ai.stuck ?? 0) + dt;
+    if (ai.stuck < 3) return;
+    const wall = sim2.nearestWork(f.x, f.y, 16) ?? sim2.nearestWork(f.x, f.y, 4, true);
+    ai.stuck = 0;
+    if (wall) ai.siege = wall.id;
+  }
+  function siegeBrain(sim2, f, ai, dt, threats) {
+    if (!ai.siege) return false;
+    if (threats.length && threats[0].d <= weaponOf(f).range + 1.5) return false;
+    const b = sim2.getBuilding(ai.siege);
+    if (!b) {
+      ai.siege = 0;
+      f.path = [];
+      return false;
+    }
+    const w = weaponOf(f), d = BUILDINGS[b.kind], cx = b.x + d.w / 2, cy = b.y + d.h / 2;
+    const dist2 = Math.hypot(cx - f.x, cy - f.y) - Math.max(d.w, d.h) / 2;
+    if (dist2 <= (w.ranged ? 1.2 : w.range) + 0.6) {
+      f.path = [];
+      f.slide = null;
+      f.phase = "fight";
+      f.facing = cx >= f.x ? "right" : "left";
+      if (f.atkCd <= 0 && !f.swing) {
+        const { hitAt, end } = swingTimes(w.anim);
+        f.swing = { t: 0, hitAt, end, target: { kind: "unit", id: -1 } };
+        f.atkCd = cycleOf(w.cycle, f.stats.agi);
+        sim2.damageWork(b, (w.damage + (w.ranged ? 0 : RULES.strengthDamage * f.stats.str)) * (w.type === "slash" ? 1.5 : 1));
+      }
+      return true;
+    }
+    f.fight.repath -= dt;
+    if (!f.path.length && f.fight.repath <= 0) {
+      const ring2 = sim2.ringTiles(f, b.x, b.y, d.w, d.h);
+      f.path = ring2.length ? sim2.pathTo(f, ring2[0][0], ring2[0][1], 4e3) : [];
+      f.fight.repath = 1;
+      if (!f.path.length) {
+        ai.siege = 0;
+        return false;
+      }
+    }
+    f.phase = "move";
+    return true;
+  }
+  function keepPost(sim2, f, ai) {
+    const post = ai.post, px = post.x + 0.5, py = post.y + 0.5;
+    if (Math.hypot(f.x - px, f.y - py) > 0.8) {
+      if (!f.path.length && sim2.pathLeft > 0) {
+        sim2.pathLeft--;
+        f.path = sim2.pathTo(f, post.x, post.y, 3e3);
+        if (!f.path.length) ai.post = void 0;
+      }
+      f.phase = f.path.length ? "move" : "idle";
+    } else {
+      f.phase = "idle";
+      f.path = [];
+      f.facing = post.face;
+    }
+  }
+  function towerOf(sim2, t, ai) {
+    const p = ai.tower ? t.props.find((q) => q.kind === "tower" && q.x === ai.tower.x && q.y === ai.tower.y) : void 0;
+    return p ? { p, reach: levelsOf("tower", sim2.era)[(p.lv ?? 1) - 1]?.sight ?? 10 } : null;
+  }
+  function towerBrain(sim2, f, ai, tower, willing, threats) {
+    keepPost(sim2, f, ai);
+    if (willing && threats.length && f.atkCd <= 0) {
+      const w = weaponOf(f), e = resolve(sim2, threats[0].t), from = { x: tower.p.x + tower.p.w / 2, y: tower.p.y + 0.4 };
+      if (e && fireProjectile(sim2, f, e, from, UNIT_RULES.archerOnTower.damage, Math.max(0, tower.reach - w.range - 1))) f.atkCd = swingCycle(sim2, f, w);
+    }
+  }
+  function raiderBrain(sim2, f, t, ai, dt, threats) {
+    if (!t.raid) return;
+    if (t.raid.phase === "retreat") {
+      if (!f.path.length && sim2.pathLeft > 0 && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 4) {
+        sim2.pathLeft--;
+        f.path = sim2.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 2e4);
+      }
+      f.phase = "move";
       return;
     }
-    v.path = [];
-    v.slide = null;
-    v.phase = "sleep";
-    v.inTent = true;
-    v.anim = "idle";
-    v.hold = null;
+    if (siegeBrain(sim2, f, ai, dt, threats)) return;
+    if (f.fight.target) {
+      const e = resolve(sim2, f.fight.target);
+      if (e) {
+        engage(sim2, f, e, dt);
+        const ex = e.kind === "unit" ? e.v.x : e.a.x, ey = e.kind === "unit" ? e.v.y : e.a.y;
+        noteStuck(sim2, f, ai, dt, !f.path.length && !f.swing && Math.hypot(ex - f.x, ey - f.y) > weaponOf(f).range + 2);
+        return;
+      }
+      f.fight.target = null;
+      f.phase = "idle";
+    }
+    if (threats.length) {
+      f.fight.target = threats[0].t;
+      return;
+    }
+    const fire = sim2.campfire(), gx = fire ? fire.x + 1 : sim2.world.start.x, gy = fire ? fire.y + 1 : sim2.world.start.y;
+    if (Math.hypot(gx - f.x, gy - f.y) > 6) {
+      f.fight.repath -= dt;
+      if (!f.path.length && f.fight.repath <= 0 && sim2.pathLeft > 0) {
+        sim2.pathLeft--;
+        f.path = sim2.pathTo(f, Math.floor(gx), Math.floor(gy), 4e4);
+        f.fight.repath = f.path.length ? 0.5 : 1.5;
+      }
+      f.phase = "move";
+      noteStuck(sim2, f, ai, dt, !f.path.length);
+    } else {
+      const v = sim2.villagers.find((o) => o.health > 0 && o.down <= 0 && o.inside === null);
+      if (v) f.fight.target = { kind: "unit", id: v.id };
+    }
+    return;
   }
 
   // src/sim/warmarch.ts
@@ -54827,6 +54520,63 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     for (const f of sim2.foes.filter((x) => x.ai?.harass !== void 0)) remove(sim2, f, sim2.tribes.find((x) => x.id === f.team));
     sim2.warFocus = null;
     sim2.warHarassAt = -1;
+  }
+
+  // src/data/events.json
+  var events_default = {
+    _note: "kind beasts: species = id in animals.json (wolf, bear, lion...). kind raid: tribe = who attacks; power = how strong against the army of the player on the day (1 = as strong, 1.1 = a tenth stronger, 0.8 = a fifth weaker; kept between floor and ceiling of content/difficulty.json), OR size = how many guards the tribe sends, OR army = own make-up { weapon: count } (weapons of weapons.json: club, spear, mace, hatchet = foot; sling, bow = archers), with armor (default true). Enemy cavalry is not supported yet. day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
+    events: [
+      { id: "wolves_summer_1", kind: "beasts", species: "wolf", day: 4, spread: 1, size: 2, night: false, warnDays: 2, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm..." },
+      { id: "wolves_summer_2", kind: "beasts", species: "wolf", day: 9, spread: 1, size: 4, night: false, warnDays: 3, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm b\u1EA7y s\xF3i tr\u1EA3 th\xF9..." },
+      { id: "wolves_summer_3", kind: "beasts", species: "wolf", day: 15, spread: 1, size: 6, night: true, warnDays: 3, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm b\u1EA7y s\xF3i t\u1ED5ng t\u1EA5n c\xF4ng..." },
+      { id: "axe_scout", kind: "raid", tribe: "axe", day: 12, spread: 2, size: 4, night: false, warnDays: 2, warn: "Kh\xF3i b\u1ED1c l\xEAn t\u1EEB ph\xEDa t\u1ED9c R\xECu \u0110\xE1, c\xF3 l\u1EBD h\u1ECD \u0111ang c\u1EED ng\u01B0\u1EDDi d\xF2 x\xE9t." },
+      { id: "wolves_winter", kind: "beasts", species: "wolf", day: 23, spread: 4, size: 6, night: true, warn: "D\u1EA5u ch\xE2n s\xF3i \u0111\u1EA7y quanh l\xE0ng." },
+      { id: "bear_autumn", kind: "beasts", species: "bear", day: 19, spread: 1, size: 1, night: true, warn: "Nh\u1EEFng v\u1EBFt c\xE0o s\xE2u tr\xEAn th\xE2n c\xE2y quanh l\xE0ng: c\xF3 g\u1EA5u." },
+      { id: "swamp_raid", kind: "raid", tribe: "swamp", day: 27, spread: 4, size: 6, night: true, warnDays: 0, warn: "" },
+      { id: "axe_war", kind: "raid", tribe: "axe", day: 33, spread: 4, size: 14, night: false, warnDays: 1, warn: "Ti\u1EBFng tr\u1ED1ng chi\u1EBFn vang l\xEAn: t\u1ED9c R\xECu \u0110\xE1 s\u1EAFp \u0111\xE1nh l\u1EDBn." }
+    ]
+  };
+
+  // src/sim/warmode.ts
+  var warPlan = (sim2) => sim2.plans.find((p) => p.kind === "attack" && p.status === "running");
+  var warTribe = (sim2) => warPlan(sim2)?.tribe ?? null;
+  function army(sim2) {
+    const ids = /* @__PURE__ */ new Set();
+    for (const p of sim2.plans) {
+      if (p.kind !== "attack" || p.status !== "running") continue;
+      for (const m of p.missions) {
+        const s = sim2.squadById(m.squad);
+        if (s) for (const v of sim2.squadUnits(s)) ids.add(v.id);
+      }
+      for (const id of p.supplyIds) ids.add(id);
+    }
+    return ids;
+  }
+  function ranks(sim2, soldiers = army(sim2)) {
+    const ids = new Set(soldiers);
+    for (const m of sim2.scouts) for (const id of m.ids) ids.add(id);
+    return ids;
+  }
+  function standDown(sim2, v, _dt) {
+    if (v.down > 0 || v.health <= 0) return;
+    if (v.inside !== null) return;
+    if (v.phase === "sleep") {
+      v.inTent = true;
+      return;
+    }
+    sim2.clearCombat(v);
+    sim2.goHome(v);
+    const bed = v.phase === "goHome" && v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
+    if (bed && bed.done) {
+      sim2.sleepIn(v, bed);
+      return;
+    }
+    v.path = [];
+    v.slide = null;
+    v.phase = "sleep";
+    v.inTent = true;
+    v.anim = "idle";
+    v.hold = null;
   }
 
   // src/sim/tribes.ts
@@ -54986,6 +54736,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     let people = 0;
     if (!keepsLiving) {
+      sim2.conquered++;
       people = POP_BY_FIRE[Math.max(0, Math.min(POP_BY_FIRE.length, t.campLevel ?? 1) - 1)];
       sim2.popBonus = (sim2.popBonus ?? 0) + people;
     }
@@ -55020,6 +54771,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       sim2.adoptFoe(f);
       taken++;
     }
+    sim2.conquered++;
     claimVillage(sim2, t, true);
     t.unitIds = [];
     t.crowd = { guards: 0, civs: 0 };
@@ -55056,6 +54808,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       });
       if (t.boss && !t.bossDown && t.state !== "free") {
         t.bossDown = true;
+        t.bossDownAt = sim2.time;
         sim2.bronze = true;
         sim2.say(`Chuy\u1EC3n th\u1EDDi k\u1EF3! ${t.def.name} \u0111\xE3 s\u1EE5p \u0111\u1ED5: Th\u1EDDi \u0111\u1EA1i \u0110\u1ED3 \u0111\u1ED3ng b\u1EAFt \u0111\u1EA7u. B\xED quy\u1EBFt \u0111\u1ED3ng gi\u1EDD \u0111\xE3 n\u1EB1m trong tay l\xE0ng ta.`);
       }
@@ -55252,8 +55005,34 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     else launchRaid(sim2, t, e.size, night);
     return null;
   }
-  var AGGRO = { peaceful: 6, aggressive: 14, ambusher: 9 };
-  var LEASH = 24;
+  function advanceTribe(sim2, t) {
+    if (t.k === void 0) {
+      t.campLevel = 1;
+      t.k = DIFF.startFactor[1];
+      t.mil = 0;
+      t.eco = 0;
+      t.stock = {};
+      t.seenDay = 0;
+      t.seenFire = 0;
+    }
+    if (t.seenFire !== fireLevelOf(sim2) || t.popLevel !== t.campLevel) followFire(sim2, t);
+    if (t.seenDay !== sim2.day) {
+      t.seenDay = sim2.day;
+      const [lo, hi] = DIFF.daily.band;
+      t.k = Math.max(lo, Math.min(hi, t.k * (1 + DIFF.daily.min + sim2.frnd() * (DIFF.daily.max - DIFF.daily.min))));
+      const workers = headcount(sim2, t).civs, points = workers * (1 + t.eco), cap = DIFF.stockCap[Math.max(0, Math.min(DIFF.stockCap.length, t.campLevel) - 1)];
+      for (const [res, rate] of Object.entries(DIFF.yieldPerEco)) t.stock[res] = Math.min(cap, (t.stock[res] ?? 0) + points * rate);
+      rescaleTribe(sim2, t);
+    } else if (t.seenFire !== fireLevelOf(sim2)) rescaleTribe(sim2, t);
+  }
+  function foeBonus(sim2, team, stat) {
+    const t = tribeOf(sim2, team);
+    if (!t) return 0;
+    return stat === "hp" || stat === "atk" || stat === "defm" || stat === "defr" ? (t.mil ?? 0) * 100 : stat === "work" ? (t.eco ?? 0) * 100 : 0;
+  }
+
+  // src/sim/brainfoe.ts
+  var { aggro: AGGRO, leash: LEASH } = FOE;
   function wander(sim2, f, radius) {
     const ai = f.ai;
     for (let i = 0; i < 6; i++) {
@@ -55287,85 +55066,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     sim2.moveUnit(f, dt);
     sim2.animate(f, dt);
   }
-  function noteStuck(sim2, f, ai, dt, blocked) {
-    if (!blocked) {
-      ai.stuck = 0;
-      return;
-    }
-    ai.stuck = (ai.stuck ?? 0) + dt;
-    if (ai.stuck < 3) return;
-    const wall = sim2.nearestWork(f.x, f.y, 16) ?? sim2.nearestWork(f.x, f.y, 4, true);
-    ai.stuck = 0;
-    if (wall) ai.siege = wall.id;
-  }
-  function siegeBrain(sim2, f, ai, dt, threats) {
-    if (!ai.siege) return false;
-    if (threats.length && threats[0].d <= weaponOf(f).range + 1.5) return false;
-    const b = sim2.getBuilding(ai.siege);
-    if (!b) {
-      ai.siege = 0;
-      f.path = [];
-      return false;
-    }
-    const w = weaponOf(f), d = BUILDINGS[b.kind], cx = b.x + d.w / 2, cy = b.y + d.h / 2;
-    const dist2 = Math.hypot(cx - f.x, cy - f.y) - Math.max(d.w, d.h) / 2;
-    if (dist2 <= (w.ranged ? 1.2 : w.range) + 0.6) {
-      f.path = [];
-      f.slide = null;
-      f.phase = "fight";
-      f.facing = cx >= f.x ? "right" : "left";
-      if (f.atkCd <= 0 && !f.swing) {
-        const { hitAt, end } = swingTimes(w.anim);
-        f.swing = { t: 0, hitAt, end, target: { kind: "unit", id: -1 } };
-        f.atkCd = cycleOf(w.cycle, f.stats.agi);
-        sim2.damageWork(b, (w.damage + (w.ranged ? 0 : RULES.strengthDamage * f.stats.str)) * (w.type === "slash" ? 1.5 : 1));
-      }
-      return true;
-    }
-    f.fight.repath -= dt;
-    if (!f.path.length && f.fight.repath <= 0) {
-      const ring2 = sim2.ringTiles(f, b.x, b.y, d.w, d.h);
-      f.path = ring2.length ? sim2.pathTo(f, ring2[0][0], ring2[0][1], 4e3) : [];
-      f.fight.repath = 1;
-      if (!f.path.length) {
-        ai.siege = 0;
-        return false;
-      }
-    }
-    f.phase = "move";
-    return true;
-  }
-  function keepPost(sim2, f, ai) {
-    const post = ai.post, px = post.x + 0.5, py = post.y + 0.5;
-    if (Math.hypot(f.x - px, f.y - py) > 0.8) {
-      if (!f.path.length && sim2.pathLeft > 0) {
-        sim2.pathLeft--;
-        f.path = sim2.pathTo(f, post.x, post.y, 3e3);
-        if (!f.path.length) ai.post = void 0;
-      }
-      f.phase = f.path.length ? "move" : "idle";
-    } else {
-      f.phase = "idle";
-      f.path = [];
-      f.facing = post.face;
-    }
-  }
-  function towerOf(sim2, t, ai) {
-    const p = ai.tower ? t.props.find((q) => q.kind === "tower" && q.x === ai.tower.x && q.y === ai.tower.y) : void 0;
-    return p ? { p, reach: levelsOf("tower", sim2.era)[(p.lv ?? 1) - 1]?.sight ?? 10 } : null;
-  }
-  function houseNear(t, f, within = Infinity) {
-    let best = null, bd = Infinity;
-    for (const p of t.props) {
-      if (p.kind !== "house" || p.hp <= 0) continue;
-      const d = Math.hypot(p.x + p.w / 2 - f.x, p.y + p.h / 2 - f.y);
-      if (d < bd && d - Math.max(p.w, p.h) / 2 <= within) {
-        best = p;
-        bd = d;
-      }
-    }
-    return best;
-  }
   function foeBrain(sim2, f, t, ai, dt) {
     const free = t.state === "free";
     const tower = ai.tower ? towerOf(sim2, t, ai) : null;
@@ -55375,11 +55075,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     f.fight.scan -= dt;
     const reach = tribeReach(t), willing = tribeWilling(sim2, t.id);
-    const radius = tower ? tower.reach : ai.role === "raider" ? 12 : ai.role === "civ" ? 9 : Math.max(AGGRO[t.def.personality], willing ? Math.min(reach, 24) : 0);
+    const radius = tower ? tower.reach : ai.role === "raider" ? FOE.raiderSight : ai.role === "civ" ? FOE.civSight : Math.max(AGGRO[t.def.personality], willing ? Math.min(reach, FOE.willingReach) : 0);
     const scanNow = f.fight.scan <= 0;
     if (scanNow) f.fight.scan = 0.4;
     const looking = scanNow || f.phase === "flee" || f.phase === "fight" && !f.fight.target;
-    const threats = free && looking ? threatsOf(sim2, f, radius).filter((x) => !(ai.skip && sim2.time < ai.skip.until && x.t.kind === "unit" && x.t.id === ai.skip.id) && (ai.role !== "guard" || Math.hypot(x.x - ai.camp.x, x.y - ai.camp.y) <= reach + 3 || x.d < AGGRO[t.def.personality])) : [];
+    const cx = tower ? tower.p.x + tower.p.w / 2 : f.x, cy = tower ? tower.p.y + tower.p.h / 2 : f.y, off = Math.hypot(f.x - cx, f.y - cy);
+    const found = free && looking ? threatsOf(sim2, f, radius + off).filter((x) => !(ai.skip && sim2.time < ai.skip.until && x.t.kind === "unit" && x.t.id === ai.skip.id) && (tower || ai.role !== "guard" || Math.hypot(x.x - ai.camp.x, x.y - ai.camp.y) <= reach + 3 || x.d < AGGRO[t.def.personality])) : [];
+    const threats = tower ? found.map((x) => ({ ...x, d: Math.hypot(x.x - cx, x.y - cy) })).filter((x) => x.d <= radius).sort((a, b) => a.d - b.d) : found;
     if (!free) {
       f.fight.target = null;
       if (f.phase === "fight") {
@@ -55387,34 +55089,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         f.path = [];
       }
     }
-    if (f.inTent) {
-      f.phase = "idle";
-      f.path = [];
-      f.slide = null;
-      if (free && houseNear(t, f, 4) && !(scanNow && !threatsOf(sim2, f, 14).length)) return;
-      f.inTent = false;
-    }
-    if (free && (f.fleeT > 0 || ai.role === "civ" && threats.length && threats[0].d < 8)) {
-      const home = houseNear(t, f), gx = home ? Math.floor(home.x + home.w / 2) : Math.floor(ai.camp.x), gy = home ? home.y + home.h : Math.floor(ai.camp.y);
-      if (f.fleeT <= 0) {
-        f.fleeT = 6;
-        f.fight.target = null;
-        f.path = sim2.pathTo(f, gx, gy, 3e3);
-      }
-      f.fleeT -= dt;
-      f.phase = "flee";
-      if (home && Math.hypot(home.x + home.w / 2 - f.x, home.y + home.h / 2 - f.y) <= Math.max(home.w, home.h) / 2 + 1.6) {
-        f.inTent = true;
-        f.path = [];
-        f.slide = null;
-        f.phase = "idle";
-        f.fleeT = 0;
-        return;
-      }
-      if (threats.length && threats[0].d < 6) f.fleeT = Math.max(f.fleeT, 2);
-      if (!f.path.length && Math.hypot(f.x - gx, f.y - gy) > 3) f.path = sim2.pathTo(f, gx, gy, 3e3);
-      return;
-    }
+    if (civilianBrain(sim2, f, t, ai, dt, free, scanNow, threats)) return;
     if (f.phase === "flee") {
       f.phase = "idle";
       f.path = [];
@@ -55426,52 +55101,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       else if (siegeBrain(sim2, f, ai, dt, threats)) return;
     }
     if (free && tower && ai.post) {
-      keepPost(sim2, f, ai);
-      if (willing && threats.length && f.atkCd <= 0) {
-        const w = weaponOf(f), e = resolve(sim2, threats[0].t), from = { x: tower.p.x + tower.p.w / 2, y: tower.p.y + 0.4 };
-        if (e && fireProjectile(sim2, f, e, from, UNIT_RULES.archerOnTower.damage, Math.max(0, tower.reach - w.range - 1))) f.atkCd = swingCycle(sim2, f, w);
-      }
+      towerBrain(sim2, f, ai, tower, willing, threats);
       return;
     }
     if (free && ai.role === "raider" && t.raid) {
-      if (t.raid.phase === "retreat") {
-        if (!f.path.length && sim2.pathLeft > 0 && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 4) {
-          sim2.pathLeft--;
-          f.path = sim2.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 2e4);
-        }
-        f.phase = "move";
-        return;
-      }
-      if (siegeBrain(sim2, f, ai, dt, threats)) return;
-      if (f.fight.target) {
-        const e = resolve(sim2, f.fight.target);
-        if (e) {
-          engage(sim2, f, e, dt);
-          const ex = e.kind === "unit" ? e.v.x : e.a.x, ey = e.kind === "unit" ? e.v.y : e.a.y;
-          noteStuck(sim2, f, ai, dt, !f.path.length && !f.swing && Math.hypot(ex - f.x, ey - f.y) > weaponOf(f).range + 2);
-          return;
-        }
-        f.fight.target = null;
-        f.phase = "idle";
-      }
-      if (threats.length) {
-        f.fight.target = threats[0].t;
-        return;
-      }
-      const fire = sim2.campfire(), gx = fire ? fire.x + 1 : sim2.world.start.x, gy = fire ? fire.y + 1 : sim2.world.start.y;
-      if (Math.hypot(gx - f.x, gy - f.y) > 6) {
-        f.fight.repath -= dt;
-        if (!f.path.length && f.fight.repath <= 0 && sim2.pathLeft > 0) {
-          sim2.pathLeft--;
-          f.path = sim2.pathTo(f, Math.floor(gx), Math.floor(gy), 4e4);
-          f.fight.repath = f.path.length ? 0.5 : 1.5;
-        }
-        f.phase = "move";
-        noteStuck(sim2, f, ai, dt, !f.path.length);
-      } else {
-        const v = sim2.villagers.find((o) => o.health > 0 && o.down <= 0 && o.inside === null);
-        if (v) f.fight.target = { kind: "unit", id: v.id };
-      }
+      raiderBrain(sim2, f, t, ai, dt, threats);
       return;
     }
     if (free && f.fight.target) {
@@ -55498,34 +55132,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       f.path = [];
     }
     ai.wander -= dt;
-    if (ai.wander <= 0 && !f.path.length) wander(sim2, f, ai.role === "civ" ? 5 : t.def.personality === "aggressive" ? 12 : 8);
+    if (ai.wander <= 0 && !f.path.length) wander(sim2, f, ai.role === "civ" ? FOE.wanderRadius.civ : t.def.personality === "aggressive" ? FOE.wanderRadius.aggressive : FOE.wanderRadius.other);
     if (f.phase === "move" && !f.path.length) f.phase = "idle";
     void DAY_LENGTH;
-  }
-  function advanceTribe(sim2, t) {
-    if (t.k === void 0) {
-      t.campLevel = 1;
-      t.k = DIFF.startFactor[1];
-      t.mil = 0;
-      t.eco = 0;
-      t.stock = {};
-      t.seenDay = 0;
-      t.seenFire = 0;
-    }
-    if (t.seenFire !== fireLevelOf(sim2) || t.popLevel !== t.campLevel) followFire(sim2, t);
-    if (t.seenDay !== sim2.day) {
-      t.seenDay = sim2.day;
-      const [lo, hi] = DIFF.daily.band;
-      t.k = Math.max(lo, Math.min(hi, t.k * (1 + DIFF.daily.min + sim2.frnd() * (DIFF.daily.max - DIFF.daily.min))));
-      const workers = headcount(sim2, t).civs, points = workers * (1 + t.eco), cap = DIFF.stockCap[Math.max(0, Math.min(DIFF.stockCap.length, t.campLevel) - 1)];
-      for (const [res, rate] of Object.entries(DIFF.yieldPerEco)) t.stock[res] = Math.min(cap, (t.stock[res] ?? 0) + points * rate);
-      rescaleTribe(sim2, t);
-    } else if (t.seenFire !== fireLevelOf(sim2)) rescaleTribe(sim2, t);
-  }
-  function foeBonus(sim2, team, stat) {
-    const t = tribeOf(sim2, team);
-    if (!t) return 0;
-    return stat === "hp" || stat === "atk" || stat === "defm" || stat === "defr" ? (t.mil ?? 0) * 100 : stat === "work" ? (t.eco ?? 0) * 100 : 0;
   }
 
   // src/sim/quests.ts
@@ -56680,6 +56289,18 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     soldierHealInCamp: 1.5
   };
 
+  // src/sim/idle.ts
+  var isFree = (v) => v.job === "idle" && !roleOf(v);
+  function farFolk(sim2, reach = 20) {
+    const fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
+    return sim2.villagers.filter((v) => isFree(v) && v.down <= 0 && v.inside === null && v.phase !== "sleep" && v.phase !== "goHome" && Math.hypot(v.x - fx, v.y - fy) > reach);
+  }
+  function homeKind(v) {
+    if (v.job === "build") return "builder";
+    const role = roleOf(v);
+    return role ? ROLES[role].building : "house";
+  }
+
   // src/sim/scouting.ts
   var STEPS = [
     { level: 1, label: "X\xE1c \u0111\u1ECBnh v\u1ECB tr\xED ng\xF4i l\xE0ng" },
@@ -56702,7 +56323,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const t = tribeOf(sim2, tribe);
     return t ? headcount(sim2, t).guards : 0;
   };
-  var SIGHT2 = 14;
+  var SIGHT = 14;
   var HOME = 7;
   var COMPASS = ["\u0110\xF4ng", "\u0110\xF4ng Nam", "Nam", "T\xE2y Nam", "T\xE2y", "T\xE2y B\u1EAFc", "B\u1EAFc", "\u0110\xF4ng B\u1EAFc"];
   var isFound = (sim2, tribe) => sim2.dev.freeBuild || sim2.sightings.some((s) => s.tribe === tribe && s.reported);
@@ -56732,7 +56353,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     for (const t of sim2.tribes) {
       if (t.state === "destroyed" || sim2.sightings.some((s) => s.tribe === t.id)) continue;
-      const finder = sim2.villagers.find((v) => v.health > 0 && v.inside === null && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < SIGHT2);
+      const finder = sim2.villagers.find((v) => v.health > 0 && v.inside === null && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < SIGHT);
       if (finder) sim2.sightings.push({ tribe: t.id, by: finder.id, at: sim2.time, reported: false });
     }
   }
@@ -57521,6 +57142,18 @@ ${risk.lines.join("\n")}`);
         command: over ? { kind: "withdraw", label: "R\xFAt qu\xE2n" } : void 0
       });
     }
+    const fallen = sim2.tribes.find((t) => t.bossDown && t.bossDownAt !== void 0 && sim2.time - t.bossDownAt < 3 * DAY_LENGTH);
+    if (fallen) {
+      out.push({
+        id: "era-bronze",
+        level: "info",
+        icon: "\u{1F3FA}",
+        title: "Chuy\u1EC3n th\u1EDDi k\u1EF3: Th\u1EDDi \u0111\u1EA1i \u0110\u1ED3 \u0111\u1ED3ng",
+        when: "v\u1EEBa b\u1EAFt \u0111\u1EA7u",
+        body: `${fallen.def.name} \u0111\xE3 s\u1EE5p \u0111\u1ED5. B\xED quy\u1EBFt \u0111\u1ED3ng gi\u1EDD \u0111\xE3 n\u1EB1m trong tay l\xE0ng ta.`,
+        tip: "B\u1EA1n \u0111\xE3 h\u1EA1 \u0111\u01B0\u1EE3c m\u1ED9t l\xE0ng \u0111\u1EA7u l\u0129nh, \u0111\xE1nh d\u1EA5u b\u01B0\u1EDBc sang th\u1EDDi \u0111\u1EA1i m\u1EDBi. C\xE1c l\xE0ng c\xF2n l\u1EA1i c\u0169ng s\u1EBD m\u1EA1nh d\u1EA7n theo."
+      });
+    }
     const why = sim2.attackReason();
     if (why) {
       const hiding = sim2.villagers.filter((v) => sim2.hides(v)).length;
@@ -58160,7 +57793,7 @@ ${risk.lines.join("\n")}`);
       if (sim2.queueCraft(id) === null) sim2.say(`${v.name} nh\u1EDD ch\u1EBF ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`);
     }
   }
-  function restock(sim2) {
+  function restock2(sim2) {
     if (!sim2.building("armory")) return;
     for (const v of sim2.villagers) {
       if (v.team !== "player" || v.job !== "fight" && v.job !== "hunt" || v.manualGear || v.health <= 0 || v.phase === "fight") continue;
@@ -58228,6 +57861,25 @@ ${risk.lines.join("\n")}`);
     if (!id) return false;
     v.order = `craft:${id}`;
     return goTo(sim2, v, house, "goOrder");
+  }
+  function bestWeapon(sim2, v) {
+    const score = (id) => {
+      const w = WEAPONS[id];
+      return (w.damage + RULES.strengthDamage * v.stats.str) / cycleOf(w.cycle, v.stats.agi) + (w.range > 1 ? 1 : 0);
+    };
+    const cur = v.weapon ? score(v.weapon) : score("fist");
+    let best = null, bs = cur;
+    for (const id of CRAFTED_WEAPONS) {
+      if (sim2.toolCount(id, WEAPONS[id].tier ?? 1) <= 0) continue;
+      if (id === "mace" && v.job !== "fight") continue;
+      if (v.job === "fight" && v.guard && v.post >= 0 && !WEAPONS[id].ranged) continue;
+      if (v.job === "fight" && !v.guard && v.arm !== "cavalry" && v.arm === "archer" !== !!WEAPONS[id].ranged) continue;
+      if (score(id) > bs) {
+        bs = score(id);
+        best = id;
+      }
+    }
+    return best;
   }
 
   // src/sim/mounts.ts
@@ -58299,7 +57951,7 @@ ${risk.lines.join("\n")}`);
     return MOUNT_KINDS[Math.max(0, Math.min(MOUNT_KINDS.length, camp?.level ?? 1) - 1)];
   }
   function mountOf(sim2, v) {
-    if (v.team !== "player") return null;
+    if (v.team !== "player") return v.mount ?? null;
     const own = v.mount ?? ((v.job === "fight" || v.job === "scout") && v.arm === "cavalry" ? campBeast(sim2) : null);
     return v.job === "scout" && own === "elephant" ? null : own;
   }
@@ -58806,7 +58458,7 @@ ${risk.lines.join("\n")}`);
   }
   function moveUnit(sim2, v, dt) {
     unstickWalker(sim2, v, dt);
-    const walk = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.team === "player" ? sim2.mountSpeed(v) : 1) * (sim2.warIds.has(v.id) ? sim2.march.speed * (v.hurry ? 2.5 : v.job === "supply" ? 1.25 : 1) : 1);
+    const walk = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * sim2.mountSpeed(v) * (sim2.warIds.has(v.id) ? sim2.march.speed * (v.hurry ? 2.5 : v.job === "supply" ? 1.25 : 1) : 1);
     if (v.swing) return;
     let left = walk * dt;
     while (left > 0 && v.path.length) {
@@ -58932,6 +58584,516 @@ ${risk.lines.join("\n")}`);
       }
     }
     return -1;
+  }
+
+  // src/sim/hunting.ts
+  var HUNT_RANGE = [24, 36, 52];
+  function preyValue(sim2, species) {
+    const def = ANIMALS[species], w = BEHAVIOUR.huntValue;
+    let value = def.meat * (w.meat ?? 0);
+    for (const [res, n] of Object.entries({ hide: def.hide, ...def.drops ?? {} })) if (n && resourceOpen(res, sim2.buildings)) value += n * (w[res] ?? 0);
+    return value;
+  }
+  var huntHpCap = (level) => BEHAVIOUR.huntHpCap[Math.min(BEHAVIOUR.huntHpCap.length, Math.max(1, level)) - 1];
+  function huntRange(sim2) {
+    return HUNT_RANGE[Math.min(HUNT_RANGE.length, sim2.building("huntlodge")?.level ?? 1) - 1];
+  }
+  function huntBrain(sim2, v, dt, threats) {
+    if (v.health < v.maxHealth * HUNT_BACK && v.phase !== "skin") {
+      if (v.phase === "move" && v.path.length) return true;
+      if (v.phase === "fight" || v.phase === "goCarcass") {
+        v.phase = "idle";
+        v.path = [];
+        v.loot = -1;
+      }
+      if (v.carry && v.carry.amount > 0) {
+        sim2.planDeliver(v);
+        return true;
+      }
+      const fire = sim2.campfire();
+      if (fire && Math.hypot(v.x - fire.x - 1, v.y - fire.y - 1) > 4 && sim2.pathLeft > 0) {
+        sim2.pathLeft--;
+        v.path = sim2.pathTo(v, Math.floor(fire.x + 1), Math.floor(fire.y + 2), 4e3);
+        if (v.path.length) {
+          v.phase = "move";
+          return true;
+        }
+      }
+      sim2.wait(v, 2);
+      return true;
+    }
+    if (v.phase === "skin") {
+      v.timer -= dt;
+      v.anim = "build";
+      if (v.timer > 0) return true;
+      const a = sim2.animalById.get(v.loot);
+      v.phase = "idle";
+      v.loot = -1;
+      if (!a) return true;
+      const have2 = v.carry && v.carry.res === "food" ? v.carry.amount : 0, take2 = Math.min(a.meat, CARRY_CAP.food - have2);
+      if (take2 > 0) {
+        a.meat -= take2;
+        v.carry = { res: "food", amount: have2 + take2 };
+        sim2.noteYield("hunt.food", take2);
+      }
+      const got = [], left = [], bag = { ...a.drops };
+      if (a.hide > 0) bag.hide = (bag.hide ?? 0) + a.hide;
+      for (const [res, n] of Object.entries(bag)) {
+        if (!(n > 0)) continue;
+        if (!resourceOpen(res, sim2.buildings)) {
+          const u = resourceUnlock(res);
+          left.push(`${RES_NAME[res].toLowerCase()} (c\u1EA7n ${BUILDINGS[u.building].name} c\u1EA5p ${u.level})`);
+          continue;
+        }
+        sim2.stock[res] = Math.min(sim2.capacity(res), sim2.stock[res] + n);
+        sim2.noteYield(`hunt.${res}`, n);
+        got.push(`${n} ${RES_NAME[res].toLowerCase()}`);
+      }
+      a.hide = 0;
+      a.drops = {};
+      if (got.length) sim2.say(`${v.name} x\u1EBB ${animalDef(a).name.toLowerCase()}: ${got.join(", ")}.`);
+      if (left.length) sim2.say(`${v.name} b\u1ECF l\u1EA1i ${left.join(", ")}: ch\u01B0a l\u1EA5y \u0111\u01B0\u1EE3c.`);
+      return true;
+    }
+    if (v.phase === "goCarcass") {
+      const a = sim2.animalById.get(v.loot);
+      if (!a || a.state !== "dead" || carcassEmpty(a)) {
+        v.phase = "idle";
+        v.loot = -1;
+        v.path = [];
+        return true;
+      }
+      if (Math.hypot(a.x - v.x, a.y - v.y) < 1.5) {
+        v.path = [];
+        v.phase = "skin";
+        v.timer = BEHAVIOUR.skinSeconds;
+        v.facing = a.x >= v.x ? "right" : "left";
+        return true;
+      }
+      if (!v.path.length) {
+        v.path = sim2.pathTo(v, Math.floor(a.x), Math.floor(a.y), 3e3);
+        if (!v.path.length) {
+          v.phase = "idle";
+          v.loot = -1;
+        }
+      }
+      return true;
+    }
+    if (v.phase === "move" && v.path.length) return true;
+    if (v.carry && v.carry.amount >= CARRY_CAP[v.carry.res]) {
+      sim2.planDeliver(v);
+      return true;
+    }
+    const N = sim2.world.size;
+    const lodge = sim2.building("huntlodge") ?? sim2.campfire(), range = huntRange(sim2);
+    let best = null, bd = 45;
+    if (v.loot >= 0) {
+      const a = sim2.animalById.get(v.loot);
+      if (a && a.state === "dead") best = a;
+      else v.loot = -1;
+    }
+    if (!best) for (const a of sim2.animals) {
+      if (a.state !== "dead" || carcassEmpty(a) || sim2.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
+      const d = Math.hypot(a.x - v.x, a.y - v.y);
+      if (d < bd) {
+        bd = d;
+        best = a;
+      }
+    }
+    if (best) {
+      v.loot = best.id;
+      v.phase = "goCarcass";
+      v.path = sim2.pathTo(v, Math.floor(best.x), Math.floor(best.y), 3e3);
+      return true;
+    }
+    if (!threats.length) {
+      let prey = null, bestScore = 0;
+      const cap = huntHpCap(sim2.building("huntlodge")?.level ?? 1);
+      for (const a of sim2.animals) {
+        const def = animalDef(a);
+        if (a.state === "dead" || !def.prey || sim2.fog.state[Math.floor(a.y) * N + Math.floor(a.x)] === 0) continue;
+        if (v.fight.skip && v.fight.skip.kind === "animal" && v.fight.skip.id === a.id && sim2.time < v.fight.skip.until) continue;
+        if (lodge && Math.hypot(a.x - lodge.x, a.y - lodge.y) > range) continue;
+        if (def.hp > cap) continue;
+        if (def.defends && !sim2.packNear(v, a)) continue;
+        const d = Math.hypot(a.x - v.x, a.y - v.y), score = preyValue(sim2, a.species) / (1 + d / 12);
+        if (score > bestScore) {
+          bestScore = score;
+          prey = a;
+        }
+      }
+      if (prey) {
+        v.fight.target = { kind: "animal", id: prey.id };
+        engage(sim2, v, { kind: "animal", a: prey }, 0);
+        return true;
+      }
+    }
+    if (v.carry && v.carry.amount > 0) {
+      sim2.planDeliver(v);
+      return true;
+    }
+    if (v.phase === "fight") {
+      v.phase = "idle";
+      v.path = [];
+    }
+    if (lodge) {
+      const step2 = Math.floor(sim2.time / 8), spots = [];
+      for (let t = 0; t < 10; t++) {
+        const ang = hash2(v.id, step2 * 16 + t, 71) * Math.PI * 2, rad3 = 6 + hash2(v.id, step2 * 16 + t, 72) * (range - 6);
+        const gx = Math.floor(lodge.x + Math.cos(ang) * rad3), gy = Math.floor(lodge.y + Math.sin(ang) * rad3);
+        if (sim2.world.inBounds(gx, gy) && !sim2.world.isBlocked(gx, gy)) spots.push([gx, gy, sim2.fog.state[gy * N + gx] === 0]);
+      }
+      spots.sort((p, q) => Number(q[2]) - Number(p[2]));
+      for (const [gx, gy] of spots) {
+        if (sim2.pathLeft <= 0) break;
+        sim2.pathLeft--;
+        const path = sim2.pathTo(v, gx, gy, 2500);
+        if (path.length) {
+          v.path = path;
+          v.phase = "move";
+          return true;
+        }
+      }
+    }
+    sim2.wait(v, 1);
+    return true;
+  }
+
+  // src/sim/brainplayer.ts
+  var { sight: SIGHT2, defensive: DEFENSIVE } = PLAYER;
+  function brainPlayer(sim2, v, dt) {
+    if (v.phase === "goStore" || v.phase === "goEquip") return false;
+    if (v.fight.obey && (v.phase !== "move" || !v.path.length)) v.fight.obey = false;
+    if (sim2.underOrders(v)) {
+      v.fleeT = 0;
+      return false;
+    }
+    if (v.recall) {
+      if (v.inside !== null || !sim2.quartered(v)) v.recall = false;
+      else {
+        v.fight.target = null;
+        v.fight.mode = "none";
+        v.fight.anchor = null;
+        v.queue.length = 0;
+        if (v.phase === "fight") {
+          v.phase = "idle";
+          v.path = [];
+        }
+        return false;
+      }
+    }
+    const rest = v.phase === "sleep" || v.phase === "goHome";
+    if (rest && sim2.hides(v)) return false;
+    v.fight.scan -= dt;
+    const scanNow = v.fight.scan <= 0;
+    if (scanNow) v.fight.scan = 0.35;
+    const looking = scanNow || v.phase === "flee" || v.phase === "fight" && !v.fight.target;
+    const sight = v.team === "player" ? sim2.sightOf(v) : SIGHT2;
+    const threats = looking ? threatsOf(sim2, v, sight + 1) : [];
+    if (rest) {
+      if (v.job === "supply" && v.inTent) return false;
+      const watch2 = isFighter(v) && (v.guard || v.post >= 0 || sim2.warIds.has(v.id));
+      if (scanNow && threats.length && threats[0].d < (watch2 ? sight : 7)) {
+        if (isFighter(v)) v.nightOwl = true;
+        if (v.post >= 0 && v.inside !== null && v.phase === "sleep") {
+          v.phase = "inside";
+          return false;
+        }
+        sim2.resetTask(v);
+      } else return false;
+    }
+    if (v.phase === "flee" || v.fleeT > 0) return fleeBrain(sim2, v, dt, threats);
+    if (v.breaks && sim2.breakBrain(v, dt)) return true;
+    const fighter = isFighter(v);
+    if (!fighter) {
+      if (threats.length && threats[0].d < FEAR && v.phase !== "fight") {
+        startFlee(sim2, v, 8, threats[0]);
+        return true;
+      }
+      if (scanNow && isFree(v) && v.inside === null && v.phase !== "sleep" && v.phase !== "goHome" && sim2.attackReason() !== null && refugeOf(sim2, v)) {
+        startFlee(sim2, v, 8);
+        return true;
+      }
+      return assistBrain(sim2, v);
+    }
+    return fightBrain(sim2, v, dt, threats);
+  }
+  function fleeSpot(sim2, v, from) {
+    const fire = sim2.campfire();
+    let guard, gd = 40;
+    for (const o of sim2.villagers) {
+      if (o === v || o.job !== "fight" || o.health <= 0 || o.down > 0 || o.inside !== null || o.phase === "flee" || o.phase === "sleep" || o.phase === "goHome") continue;
+      const d = Math.hypot(o.x - v.x, o.y - v.y);
+      if (d < gd) {
+        gd = d;
+        guard = o;
+      }
+    }
+    const tx = guard ? guard.x : fire ? fire.x + 1 : v.x, ty = guard ? guard.y : fire ? fire.y + 2 : v.y;
+    let gx = tx, gy = ty;
+    if (from) {
+      const dx = tx - from.x, dy = ty - from.y, len = Math.hypot(dx, dy) || 1;
+      gx += dx / len * 1.5;
+      gy += dy / len * 1.5;
+    }
+    const spot = sim2.nearestFree(Math.floor(gx), Math.floor(gy), /* @__PURE__ */ new Set());
+    return spot ? sim2.pathTo(v, spot[0], spot[1], 4e3) : [];
+  }
+  var FEAR = PLAYER.fear;
+  function crowd(sim2, b, except) {
+    let n = 0;
+    for (const o of sim2.villagers) if (o !== except && (o.inside === b.id && o.phase === "sleep" || (o.phase === "goHome" || o.phase === "flee") && o.target === b.id)) n++;
+    return n;
+  }
+  function refugeOf(sim2, v) {
+    for (const kind of /* @__PURE__ */ new Set([homeKind(v), "house"])) {
+      let best, bd = Infinity;
+      for (const x of sim2.buildings) {
+        if (x.kind !== kind || !x.done || crowd(sim2, x, v) >= levelDef(x).slots) continue;
+        const d = Math.hypot(x.x + 1 - v.x, x.y + 1 - v.y);
+        if (d < bd) {
+          bd = d;
+          best = x;
+        }
+      }
+      if (best) return best;
+    }
+    return void 0;
+  }
+  function runToRefuge(sim2, v) {
+    const b = refugeOf(sim2, v);
+    if (!b) return false;
+    const d = BUILDINGS[b.kind];
+    if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h), 3, 12e3) < 0) return false;
+    v.target = b.id;
+    return true;
+  }
+  function runAway(sim2, v, from) {
+    const ax = from ? v.x - from.x : 0, ay = from ? v.y - from.y : 1, len = Math.hypot(ax, ay) || 1;
+    const spot = sim2.nearestFree(Math.floor(v.x + ax / len * 12), Math.floor(v.y + ay / len * 12), /* @__PURE__ */ new Set());
+    return spot ? sim2.pathTo(v, spot[0], spot[1], 4e3) : [];
+  }
+  function startFlee(sim2, v, secs, from) {
+    const keep = v.job, nightOwl = v.nightOwl;
+    sim2.resetTask(v);
+    v.job = keep;
+    v.nightOwl = nightOwl;
+    v.fight.target = null;
+    if (v.fight.mode === "attack") v.fight.mode = "none";
+    v.phase = "flee";
+    v.fleeT = secs;
+    if (!isFighter(v)) {
+      sim2.dangerAt = sim2.time;
+      if (runToRefuge(sim2, v)) return;
+      v.path = runAway(sim2, v, from);
+      return;
+    }
+    v.path = fleeSpot(sim2, v, from);
+  }
+  function fleeBrain(sim2, v, dt, threats) {
+    if (v.phase !== "flee") {
+      startFlee(sim2, v, 8, threats[0]);
+      return true;
+    }
+    const civilian2 = !isFighter(v), refuge = civilian2 && v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
+    if (civilian2) sim2.dangerAt = sim2.time;
+    if (refuge && refuge.done) {
+      const d = BUILDINGS[refuge.kind];
+      if (Math.hypot(v.x - (refuge.x + d.w / 2), v.y - (refuge.y + d.h / 2)) <= Math.max(d.w, d.h) / 2 + 1.8) {
+        if (crowd(sim2, refuge, v) < levelDef(refuge).slots) {
+          sim2.sleepIn(v, refuge);
+          v.fleeT = 0;
+          return true;
+        }
+        v.target = -1;
+        v.timer = 0;
+      } else {
+        v.timer -= dt;
+        if (!v.path.length && v.timer <= 0) {
+          v.timer = 1.5;
+          if (!runToRefuge(sim2, v)) v.target = -1;
+        }
+        return true;
+      }
+    }
+    v.fleeT -= dt;
+    if (threats.length && threats[0].d < FEAR) v.fleeT = Math.max(v.fleeT, 3);
+    v.timer -= dt;
+    if (v.timer <= 0) {
+      v.timer = 1.5;
+      if (civilian2) {
+        if (runToRefuge(sim2, v)) return true;
+        if (!v.path.length) v.path = runAway(sim2, v, threats[0]);
+      } else {
+        const way = fleeSpot(sim2, v, threats[0]);
+        if (way.length > 2) v.path = way;
+      }
+    }
+    if (v.fleeT <= 0) {
+      v.phase = "idle";
+      v.fleeT = 0;
+      v.path = [];
+      return false;
+    }
+    return true;
+  }
+  function assistBrain(sim2, v) {
+    if (v.phase === "rescue") {
+      const t = sim2.get(v.target);
+      if (!t || t.down <= 0) {
+        v.phase = "idle";
+        v.target = -1;
+        return false;
+      }
+      if (Math.hypot(t.x - v.x, t.y - v.y) < 1.4) {
+        v.path = [];
+        return true;
+      }
+      if (!v.path.length) v.path = sim2.pathTo(v, Math.floor(t.x), Math.floor(t.y), 3e3);
+      return true;
+    }
+    if (v.phase === "sleep" || v.phase === "goHome") return false;
+    const down = sim2.villagers.find((o) => o !== v && o.down > 0 && Math.hypot(o.x - v.x, o.y - v.y) < 14);
+    if (down && v.health > 0) {
+      const keep = v.job, owl = v.nightOwl;
+      sim2.resetTask(v);
+      v.job = keep;
+      v.nightOwl = owl;
+      v.phase = "rescue";
+      v.target = down.id;
+      v.path = sim2.pathTo(v, Math.floor(down.x), Math.floor(down.y), 3e3);
+      return true;
+    }
+    return false;
+  }
+  function endOrder(sim2, v) {
+    const f = v.fight;
+    if (v.job !== "fight") f.mode = "none";
+    else if (v.guard) {
+      f.mode = "guard";
+      f.anchor = homeSpot(sim2, v) ?? { x: v.x, y: v.y };
+    } else if (v.team === "player" && v.squad < 0) {
+      f.mode = "none";
+      f.anchor = null;
+    } else {
+      f.mode = "guard";
+      f.anchor = { x: v.x, y: v.y };
+    }
+  }
+  function homeSpot(sim2, v) {
+    if (v.guard && v.guardAt) return v.guardAt;
+    const camp = sim2.buildings.find((b) => b.kind === sim2.homeKind(v) && b.done);
+    if (camp) return { x: camp.x + 1 + v.id % 3 - 1, y: camp.y + 3 };
+    const fire = sim2.campfire();
+    return fire ? { x: fire.x + 1 + v.id % 3 - 1, y: fire.y + 3 } : null;
+  }
+  var aboutCache = /* @__PURE__ */ new WeakMap();
+  function beastsAbout(sim2) {
+    const c = aboutCache.get(sim2);
+    if (c && c.t === sim2.time) return c.on;
+    const on = sim2.attackReason() !== null || sim2.animals.some((a) => a.raid && a.state !== "dead");
+    aboutCache.set(sim2, { t: sim2.time, on });
+    return on;
+  }
+  function mayEngage(sim2, v) {
+    if (v.job !== "fight" || v.guard || v.team !== "player") return true;
+    return sim2.alarmUntil > sim2.time || beastsAbout(sim2) || sim2.battle.on || v.fight.mode === "attack" || v.fight.mode === "attackMove" || v.squad >= 0 && sim2.plans.some((p) => p.status === "running");
+  }
+  function fightBrain(sim2, v, dt, threats) {
+    const f = v.fight;
+    if (v.phase === "skin" || v.phase === "goCarcass") return huntBrain(sim2, v, dt, threats);
+    if (v.job === "hunt" && v.health < v.maxHealth * HUNT_BACK && f.mode !== "attack") {
+      f.target = null;
+      if (threats.length && threats[0].d < 7 && v.phase !== "flee") {
+        startFlee(sim2, v, 8, threats[0]);
+        return true;
+      }
+      return huntBrain(sim2, v, dt, threats);
+    }
+    if (f.mode === "hold" && !f.anchor) f.anchor = { x: v.x, y: v.y };
+    if (!threats.length && !f.target && v.phase !== "fight" && (sim2.planEquipGear(v) || sim2.planGearErrand(v))) return true;
+    if (v.stance === "retreat" && f.mode !== "attack" && f.target) f.target = null;
+    if (f.target) {
+      const e = resolve(sim2, f.target);
+      if (e) {
+        if (f.mode === "hold" && f.anchor && Math.hypot(entX(e) - f.anchor.x, entY(e) - f.anchor.y) > weaponOf(v).range + 2) {
+          f.target = null;
+        } else {
+          engage(sim2, v, e, dt);
+          return true;
+        }
+      } else {
+        const dead = f.target.kind === "animal" ? sim2.animalById.get(f.target.id) : void 0;
+        f.target = null;
+        if (f.mode === "attack") endOrder(sim2, v);
+        if (dead && dead.state === "dead" && v.job === "hunt") v.loot = dead.id;
+        if (v.phase === "fight") {
+          v.phase = "idle";
+          v.path = [];
+        }
+        if (sim2.nextOrder(v)) return true;
+      }
+    }
+    if (v.stance === "retreat") {
+      if (threats.length && threats[0].d < 8) {
+        startFlee(sim2, v, 6, threats[0]);
+        return true;
+      }
+    } else if (threats.length && f.scan >= 0) {
+      const range = !mayEngage(sim2, v) ? Math.min(DEFENSIVE, sim2.sightOf(v)) : f.mode === "hold" ? weaponOf(v).range + 1.5 : v.stance === "defensive" ? Math.min(DEFENSIVE, sim2.sightOf(v)) : sim2.sightOf(v);
+      const pick2 = threats.find((t) => (!v.guard || t.t.kind === "unit" || sim2.animalById.get(t.t.id)?.state === "attack") && t.d <= range && (!f.anchor || v.stance !== "defensive" || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
+      if (pick2) {
+        f.target = pick2.t;
+        const e = resolve(sim2, pick2.t);
+        if (e) {
+          engage(sim2, v, e, dt);
+          return true;
+        }
+      }
+    }
+    if (f.mode === "attackMove" && f.dest) {
+      if (Math.hypot(f.dest.x - v.x, f.dest.y - v.y) < 1.5) {
+        f.mode = "guard";
+        f.anchor = { x: f.dest.x, y: f.dest.y };
+        f.dest = null;
+        v.path = [];
+        v.phase = "idle";
+        if (sim2.nextOrder(v)) return true;
+      } else {
+        if (!v.path.length && sim2.pathLeft > 0) {
+          sim2.pathLeft--;
+          v.path = f.strict ? sim2.lineSteps(v, f.dest.x, f.dest.y) : sim2.pathTo(v, Math.floor(f.dest.x), Math.floor(f.dest.y), 2e4);
+        }
+        v.phase = "move";
+        return true;
+      }
+    }
+    if (v.post >= 0 && v.phase === "idle" && !threats.length && !f.target) {
+      sim2.planStaff(v);
+      if (v.phase === "goStaff") return true;
+    }
+    if (f.mode === "hold") {
+      v.phase = "idle";
+      v.path = [];
+      return true;
+    }
+    if (v.job === "hunt") return huntBrain(sim2, v, dt, threats);
+    if (v.phase === "fight") {
+      v.phase = "idle";
+      v.path = [];
+    }
+    if (v.job === "fight") {
+      const home = homeSpot(sim2, v), post = v.guard && v.guardAt ? { x: v.guardAt.x, y: v.guardAt.y, slack: 2 } : f.mode === "guard" && f.anchor ? { x: f.anchor.x, y: f.anchor.y, slack: 2 } : home ? { x: home.x, y: home.y, slack: 5 } : null;
+      if (post && v.phase === "idle" && !v.path.length && Math.hypot(v.x - post.x, v.y - post.y) > post.slack) {
+        if (sim2.pathLeft <= 0) return true;
+        sim2.pathLeft--;
+        v.path = sim2.pathTo(v, Math.floor(post.x), Math.floor(post.y), 3e4);
+        v.phase = v.path.length ? "move" : "idle";
+        return true;
+      }
+      return v.phase === "move" || v.phase === "idle";
+    }
+    return false;
   }
 
   // src/sim/villagers.ts
@@ -59169,6 +59331,7 @@ ${risk.lines.join("\n")}`);
         sim2.say(SEASON_DEF[season].enter);
       }
       if (sim2.weather !== "clear") sim2.say(`H\xF4m nay: ${WEATHER[sim2.weather].name.toLowerCase()}.`);
+      sim2.restockAnimals();
       sim2.eatDay();
       if (day >= start_default.arrivals.firstDay && !sim2.dev.noArrivals) newcomers(sim2);
     }
@@ -59282,10 +59445,10 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/sim/save.ts
-  var SAVE_VERSION = 27;
+  var SAVE_VERSION = 28;
   var SAVED = {
     /** Single values. */
-    scalars: ["era", "bronze", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "tribeClock", "foodPot", "foodPenalty", "popBonus", "foodIncome", "foodSeen", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
+    scalars: ["era", "bronze", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "tribeClock", "foodPot", "foodPenalty", "popBonus", "conquered", "foodIncome", "foodSeen", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
     /** Objects whose keys are filled in place. */
     records: ["stock", "toolStock", "battle", "yieldNow", "yieldPrev", "ruins", "drafts"],
     /** Lists of plain data. */
@@ -59585,6 +59748,11 @@ ${risk.lines.join("\n")}`);
     var _a;
     (_a = d.scalars).bronze ?? (_a.bronze = false);
     return { ...d, version: 27 };
+    MIGRATIONS[27] = (d2) => {
+      var _a2;
+      (_a2 = d2.scalars).conquered ?? (_a2.conquered = 0);
+      return { ...d2, version: 28 };
+    };
   };
 
   // src/sim/roles.ts
@@ -59592,9 +59760,11 @@ ${risk.lines.join("\n")}`);
   var roleHouses = (sim2, role) => sim2.buildings.filter((b) => b.kind === ROLES[role].building && b.done);
   var NO_HOUSE_TRADES = ["wood", "stone", "food", "hunt"];
   var NO_HOUSE_CAP = 1;
+  var CAMP_ROLES = ["foot", "archer", "cavalry"];
   var roleCapacity = (sim2, role) => {
     const houses = roleHouses(sim2, role);
-    return houses.length ? houses.reduce((n, b) => n + levelDef(b).slots, 0) : sim2.dev.freeBuild ? 99 : NO_HOUSE_TRADES.includes(role) ? NO_HOUSE_CAP : 0;
+    const camp = CAMP_ROLES.includes(role) ? sim2.conquered * DIFF.capture.campSlots : 0;
+    return houses.length ? houses.reduce((n, b) => n + levelDef(b).slots + camp, 0) : sim2.dev.freeBuild ? 99 : NO_HOUSE_TRADES.includes(role) ? NO_HOUSE_CAP : 0;
   };
   var roleCount = (sim2, role) => sim2.villagers.filter((v) => roleOf(v) === role).length;
   function assignRole(sim2, ids, role) {
@@ -60803,6 +60973,8 @@ ${risk.lines.join("\n")}`);
     const bad = reviewPlan(sim2, plan2).find((l) => l.startsWith("\u2717"));
     if (bad) return bad.slice(2);
     if (plan2.kind === "defense") return "K\u1EBF ho\u1EA1ch ph\xF2ng th\u1EE7 ch\u1EA1y khi b\u1EA1n \u0111\xE1nh tr\u1ED1ng b\xE1o \u0111\u1ED9ng";
+    const attacked = sim2.attackReason();
+    if (attacked) return `L\xE0ng \u0111ang b\u1ECB t\u1EA5n c\xF4ng (${attacked.toLowerCase()}): kh\xF4ng th\u1EC3 \u0111i \u0111\xE1nh`;
     for (const m of plan2.missions) {
       const s = sim2.squadById(m.squad);
       m.state = "wait";
@@ -60833,12 +61005,13 @@ ${risk.lines.join("\n")}`);
       plan2.endedAt = sim2.time;
       return;
     }
-    if (t.state !== "free" || !t.props.some((p) => p.kind === "fire")) {
+    const armed = headcount(sim2, t).guards > 0;
+    if (t.state !== "free" || !armed && !t.props.some((p) => p.kind === "fire" || p.kind === "tower")) {
       plan2.stage = "over";
       plan2.result = "won";
       plan2.endedAt = sim2.time;
-      sim2.say(`Chi\u1EBFn th\u1EAFng! L\u1EEDa tr\u1EA1i c\u1EE7a ${t.def.name} \u0111\xE3 b\u1ECB ph\xE1. B\u1EA5m R\xFAt qu\xE2n khi mu\u1ED1n v\u1EC1 l\xE0ng.`);
-      sim2.noteBattle("note", `L\u1EEDa tr\u1EA1i c\u1EE7a ${t.def.name} b\u1ECB ph\xE1.`);
+      sim2.say(`Chi\u1EBFn th\u1EAFng! ${t.def.name} kh\xF4ng c\xF2n l\xEDnh, l\u1EEDa tr\u1EA1i v\xE0 th\xE1p canh \u0111\xE3 s\u1EADp. B\u1EA5m R\xFAt qu\xE2n khi mu\u1ED1n v\u1EC1 l\xE0ng.`);
+      sim2.noteBattle("note", `${t.def.name} \u0111\xE3 b\u1ECB \u0111\xE1nh b\u1EA1i.`);
       if (t.state === "free") sim2.conquer(t.id, "L\xE0ng b\u1ECB san b\u1EB1ng");
       return;
     }
@@ -61065,6 +61238,8 @@ ${risk.lines.join("\n")}`);
   }
   function quickAttack(sim2, tribeId) {
     if (warPlan(sim2)) return "\u0110ang c\xF3 chi\u1EBFn tranh";
+    const attacked = sim2.attackReason();
+    if (attacked) return `L\xE0ng \u0111ang b\u1ECB t\u1EA5n c\xF4ng (${attacked.toLowerCase()}): kh\xF4ng th\u1EC3 \u0111i \u0111\xE1nh`;
     const t = tribeOf(sim2, tribeId);
     if (!t || t.state !== "free") return "L\xE0ng n\xE0y kh\xF4ng c\xF2n l\xE0 k\u1EBB \u0111\u1ECBch";
     if (!sim2.isFound(tribeId)) return "Ch\u01B0a ph\xE1t hi\u1EC7n l\xE0ng n\xE0y";
@@ -61084,7 +61259,7 @@ ${risk.lines.join("\n")}`);
         v.squad = s.id;
         s.ids.push(v.id);
       }
-      addMission(sim2, plan2, s.id);
+      addMission(sim2, plan2, s.id, 0);
       plan2.missions[plan2.missions.length - 1].ordered = true;
     }
     for (const m of plan2.missions) {
@@ -61574,7 +61749,8 @@ ${risk.lines.join("\n")}`);
         breakProp(v, house);
         continue;
       }
-      if (fire) breakProp(v, fire);
+      const far = fire ?? nearest(t.props.filter((q) => q.kind === "tower"), (q) => [q.x, q.y]);
+      if (far) breakProp(v, far);
       else {
         const left = nearest(foes, (u) => [u.x, u.y]);
         if (left) sim2.orderAttack([v.id], { kind: "unit", id: left.id });
@@ -61708,6 +61884,7 @@ ${risk.lines.join("\n")}`);
     /** One tick while a war is on (warmode.ts): only the army, the scouts out, the arrows in the air and the village under attack are worked; everyone else goes home and stands still. */
     tickWar(dt) {
       tickProjectiles(this, dt);
+      tickWarAnimals(this, dt);
       const soldiers = army(this), ranks2 = ranks(this, soldiers), plan2 = warPlan(this);
       this.warIds = soldiers;
       this.march = marchOfPlan(this, plan2);
@@ -61729,6 +61906,7 @@ ${risk.lines.join("\n")}`);
       tickScouts(this, dt);
       tickPlans(this, dt);
       const enemy = warTribe(this);
+      this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
       for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
       tickTribes(this, dt);
     },
@@ -62233,11 +62411,15 @@ ${risk.lines.join("\n")}`);
       this.active = /* @__PURE__ */ new Set();
       /** People the village may hold beyond its campfire and beds: the campfires of the villages we took. */
       this.popBonus = 0;
+      /** Villages we took (adopted or wiped out): each adds places to every camp of soldiers (difficulty.json capture.campSlots), because the army is limited by its camps, not by the people. */
+      this.conquered = 0;
       /** The age of bronze has begun: a boss village has fallen (tribes.ts). */
       this.bronze = false;
       /** Fights between two villages that we saw (time, place): they become a notice for a while. Never saved. */
       this.clashes = [];
       this.animals = [];
+      /** The animals put by while a war is on (fauna.tickWarAnimals); they come back when it is over. */
+      this.hiddenAnimals = [];
       this.animalById = /* @__PURE__ */ new Map();
       this.projectiles = [];
       /** War: squads, what the scouts have learnt, scouting trips, battle plans, the alarm and the fight that is on. */
@@ -62456,6 +62638,10 @@ ${risk.lines.join("\n")}`);
     /** → rest.bedsIn */
     bedsIn(kind) {
       return bedsIn(this, kind);
+    }
+    /** → fauna.restock: the land makes up what was taken, once a day */
+    restockAnimals() {
+      restock(this);
     }
     /** → rest.attackReason */
     attackReason() {
@@ -63009,6 +63195,14 @@ ${risk.lines.join("\n")}`);
     nextOrder(v) {
       return nextOrder(this, v);
     }
+    /** → brainplayer.startFlee */
+    startFlee(v, secs, from) {
+      startFlee(this, v, secs, from);
+    }
+    /** → brainplayer.endOrder */
+    endOrder(v) {
+      endOrder(this, v);
+    }
     /** → inventory.giveGear */
     giveGear(ids, kind, slot) {
       return giveGear(this, ids, kind, slot);
@@ -63067,6 +63261,7 @@ ${risk.lines.join("\n")}`);
         clearHarass(this);
         eatWar(this, (this.time - this.warSince) / DAY_LENGTH);
         this.warSince = -1;
+        restoreWarAnimals(this);
         this.sendBack([...this.warIds]);
         this.warIds = /* @__PURE__ */ new Set();
         cleanup(this);
@@ -63094,6 +63289,7 @@ ${risk.lines.join("\n")}`);
       tickBattle(this, dt);
       tickScouts(this, dt);
       tickPlans(this, dt);
+      this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
       for (const f of [...this.foes]) tickFoe(this, f, dt);
       tickTribes(this, dt);
       this.leaderClock += dt;
@@ -63101,7 +63297,7 @@ ${risk.lines.join("\n")}`);
         this.leaderClock = 0;
         this.pickLeaders();
         tickResearch(this);
-        restock(this);
+        restock2(this);
         fitScouts(this);
       }
       if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
@@ -63982,15 +64178,6 @@ ${risk.lines.join("\n")}`);
           this.placeAt = this.originAt(p);
           this.onChange();
         } else this.confirmPlace(additive);
-        return;
-      }
-      const flag = this.r.flagAt(p.x, p.y);
-      if (flag) {
-        if (!additive) this.selected.clear();
-        for (const fid of flag) if (this.sim.get(fid)?.team === "player") this.selected.add(fid);
-        this.selectedBuilding = null;
-        this.inspect = null;
-        this.onChange();
         return;
       }
       const id = this.hit(p, touch);

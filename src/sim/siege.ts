@@ -348,7 +348,7 @@ export const isWall = (p: Prop): boolean => p.kind === 'fence' || p.kind === 'ga
 
 /**
  * Soldiers with nothing to do pick what to hit by what they can see: a tower first, then a soldier of the village, then a house; with none of these in sight
- * they go for the fire (to put it out is to win). Fences and gates are broken only when they shut the way (breakBrain → breachFor). Once a second.
+ * they go for the fire, then any tower, then the last soldiers (the war is won when the soldiers, the fire and the towers are all gone). Fences and gates are broken only when they shut the way (breakBrain → breachFor). Once a second.
  */
 export function rampage(sim: Sim, plan: Plan, s: Squad): void {
   const t = sim.tribes.find((q) => q.id === plan.tribe);
@@ -367,7 +367,9 @@ export function rampage(sim: Sim, plan: Plan, s: Squad): void {
     if (foe) { sim.orderAttack([v.id], { kind: 'unit', id: foe.id }); continue; }
     const house = nearest(t.props.filter((q) => q.kind === 'house' && seen(q)), (q) => [q.x, q.y]);
     if (house) { breakProp(v, house); continue; }
-    if (fire) breakProp(v, fire); // nothing in sight: on to the fire
+    // nothing in sight: the war is won by the fire, the towers and the last soldier, so on to the fire, then any tower, then whoever of the village is left
+    const far = fire ?? nearest(t.props.filter((q) => q.kind === 'tower'), (q) => [q.x, q.y]);
+    if (far) breakProp(v, far);
     else { const left = nearest(foes, (u) => [u.x, u.y]); if (left) sim.orderAttack([v.id], { kind: 'unit', id: left.id }); }
   }
 }

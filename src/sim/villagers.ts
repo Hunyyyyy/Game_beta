@@ -6,7 +6,8 @@ import { Team } from './combat';
 import { applyStats, legacyStats, rawValue, rollFactors, treeRole } from './statsys';
 import { statBonus } from './research';
 import restJson from '../data/rest.json';
-import { brainPlayer, tickCommon, tickDown } from './battle';
+import { brainPlayer } from './brainplayer';
+import { tickCommon, tickDown } from './battle';
 import type { Sim } from './sim';
 import { HAIR, NAMES_F, NAMES_M, SKIN, STAT_KEYS, Sex, Skill, Villager } from './model';
 

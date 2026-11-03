@@ -29,6 +29,15 @@ export function noticesOf(sim: Sim): Notice[] {
       command: over ? { kind: 'withdraw', label: 'Rút quân' } : undefined,
     });
   }
+  // a boss village has fallen: the new age is announced for a few days (the same words as the log line, which fades)
+  const fallen = sim.tribes.find((t) => t.bossDown && t.bossDownAt !== undefined && sim.time - t.bossDownAt < 3 * DAY_LENGTH);
+  if (fallen) {
+    out.push({
+      id: 'era-bronze', level: 'info', icon: '🏺', title: 'Chuyển thời kỳ: Thời đại Đồ đồng', when: 'vừa bắt đầu',
+      body: `${fallen.def.name} đã sụp đổ. Bí quyết đồng giờ đã nằm trong tay làng ta.`,
+      tip: 'Bạn đã hạ được một làng đầu lĩnh, đánh dấu bước sang thời đại mới. Các làng còn lại cũng sẽ mạnh dần theo.',
+    });
+  }
   // the village is under attack: who hides, who may go out
   const why = sim.attackReason();
   if (why) {

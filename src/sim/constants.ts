@@ -6,6 +6,8 @@ export const FIRE_VISION = 8;  // campfire, day and night
 export const TICK = 1 / 20;    // bước mô phỏng cố định (giây game)
 /** How many searches for a way the soldiers may start in one tick (see Sim.pathLeft). */
 export const PATH_BUDGET = 6;
+/** What is kept for the people of the villages in a tick, whatever our own soldiers have used: they are worked after ours, and in a big fight they would stand still for want of a way. */
+export const FOE_PATH_SHARE = 3;
 export const DAY_LENGTH = 1200; // 1 ngày game = 20 phút thật: 12 phút ban ngày, 8 phút ban đêm (kể cả hoàng hôn, bình minh)
 export const START_TIME = DAY_LENGTH * 0.25; // vào game lúc sáng sớm
 

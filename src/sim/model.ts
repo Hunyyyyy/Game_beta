@@ -66,6 +66,8 @@ export interface FoeAI {
   harass?: number;
   /** Where a guard stands his watch (tribelod.ts) and which way he looks (away from the fire). */
   post?: { x: number; y: number; face: Facing };
+  /** One of the army of the village: it lives indoors like ours and comes out to the posts of the defence only in a war or when the village is attacked (tribelod.deployArmy). A guard (no `army`) keeps his watch always. */
+  army?: boolean;
   /** The tower (its corner in the village) whose archer he is: he stands up in it and looses arrows within its reach (tribes.foeBrain). */
   tower?: { x: number; y: number };
 }

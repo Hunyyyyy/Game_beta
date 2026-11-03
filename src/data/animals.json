@@ -24,6 +24,7 @@
     "breedMonth": "spring",
     "breedMinFemales": 2,
     "breedChance": 0.35,
+    "restockChance": 0.6,
     "regionRadius": 28,
     "nearRadius": 48,
     "nearBoost": 4,

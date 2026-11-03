@@ -1,5 +1,5 @@
 import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, WeatherKind } from './calendar';
-import { DAY_LENGTH, PATH_BUDGET, START_TIME, TICK } from './constants';
+import { DAY_LENGTH, FOE_PATH_SHARE, PATH_BUDGET, START_TIME, TICK } from './constants';
 import { ADVANCED_DEFAULT, Building, BuildingKind, BUILDINGS, Era } from './buildings';
 import { Fog } from './fog';
 import { Job, RoleId, WorkJob } from './jobs';
@@ -9,9 +9,10 @@ import { mix32, mulberry32, Rng } from './rng';
 import { Tool, ToolKind } from './tools';
 import { Team, TribeId } from './combat';
 import { armOf, hurt, tickProjectiles } from './battle';
-import { Animal, populateChunk, tickAnimals } from './fauna';
+import { Animal, populateChunk, restock, restoreWarAnimals, tickAnimals } from './fauna';
 import * as tribeLod from './tribelod';
-import { adoptTribe, EventState, foeBonus, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tribesFeud, tribeWilling, tributeTribe } from './tribes';
+import { tickFoe } from './brainfoe';
+import { adoptTribe, EventState, foeBonus, giftTribe, killFoe, spawnTribes, tickTribes, Tribe, tribeAttacked, tribeHostile, tribesFeud, tribeWilling, tributeTribe } from './tribes';
 import { recipeOpen, Tech } from './research';
 import { questViews, QuestUi, QuestView } from './quests';
 import { World } from './world';
@@ -44,6 +45,7 @@ import * as warsupply from './warsupply';
 import * as warharass from './warharass';
 import * as warlog from './warlog';
 import * as warquick from './warquick';
+import * as brainplayer from './brainplayer';
 import { WAR, WarApi } from './simwar';
 import { BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutLoss, WarRecord, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
 import type { Ent } from './battle';
@@ -100,11 +102,15 @@ export class Sim {
   readonly active = new Set<number>();
   /** People the village may hold beyond its campfire and beds: the campfires of the villages we took. */
   popBonus = 0;
+  /** Villages we took (adopted or wiped out): each adds places to every camp of soldiers (difficulty.json capture.campSlots), because the army is limited by its camps, not by the people. */
+  conquered = 0;
   /** The age of bronze has begun: a boss village has fallen (tribes.ts). */
   bronze = false;
   /** Fights between two villages that we saw (time, place): they become a notice for a while. Never saved. */
   readonly clashes: Array<{ a: string; b: string; at: number; x: number; y: number }> = [];
   readonly animals: Animal[] = [];
+  /** The animals put by while a war is on (fauna.tickWarAnimals); they come back when it is over. */
+  readonly hiddenAnimals: Animal[] = [];
   readonly animalById = new Map<number, Animal>();
   readonly projectiles: Projectile[] = [];
   /** War: squads, what the scouts have learnt, scouting trips, battle plans, the alarm and the fight that is on. */
@@ -271,6 +277,8 @@ export class Sim {
   trimRoles(): void { return roles.trimRoles(this); }
   /** → rest.bedsIn */
   bedsIn(kind: BuildingKind): number { return rest.bedsIn(this, kind); }
+  /** → fauna.restock: the land makes up what was taken, once a day */
+  restockAnimals(): void { restock(this); }
   /** → rest.attackReason */
   attackReason(): string | null { return rest.attackReason(this); }
   /** → rest.skipNightBlock */
@@ -596,6 +604,10 @@ export class Sim {
 
   /** → commands.nextOrder */
   nextOrder(v: Villager): boolean { return commands.nextOrder(this, v); }
+  /** → brainplayer.startFlee */
+  startFlee(v: Villager, secs: number, from?: { x: number; y: number }): void { brainplayer.startFlee(this, v, secs, from); }
+  /** → brainplayer.endOrder */
+  endOrder(v: Villager): void { brainplayer.endOrder(this, v); }
 
   /** → inventory.giveGear */
   giveGear(ids: readonly number[], kind: string | null, slot: 'weapon' | 'armor'): void { return inventory.giveGear(this, ids, kind, slot); }
@@ -638,10 +650,11 @@ export class Sim {
       return;
     }
     // the war is over: whoever lay out of sight (in a field tent, or with no bed) gets up and goes to bed in the right place
-    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / DAY_LENGTH); this.warSince = -1; this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; }
+    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / DAY_LENGTH); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
+    this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     this.leaderClock += dt;

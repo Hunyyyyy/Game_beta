@@ -23,6 +23,8 @@ export function army(sim: Sim): Villager[] {
 /** Send the army at a village that has been found. Returns an error or null. */
 export function quickAttack(sim: Sim, tribeId: string): string | null {
   if (warPlan(sim)) return 'Đang có chiến tranh';
+  const attacked = sim.attackReason();
+  if (attacked) return `Làng đang bị tấn công (${attacked.toLowerCase()}): không thể đi đánh`;
   const t = tribeOf(sim, tribeId as never);
   if (!t || t.state !== 'free') return 'Làng này không còn là kẻ địch';
   if (!sim.isFound(tribeId)) return 'Chưa phát hiện làng này';
@@ -37,7 +39,7 @@ export function quickAttack(sim: Sim, tribeId: string): string | null {
     if (!group.length) continue;
     const s = createSquad(sim, ARM_NAME[arm], true).squad!;
     for (const v of group) { v.squad = s.id; s.ids.push(v.id); }
-    addMission(sim, plan, s.id);
+    addMission(sim, plan, s.id, 0); // the stone age has no threshold: nobody falls back on his own, the player presses Rút lui
     plan.missions[plan.missions.length - 1].ordered = true; // no arrow: it goes for the village
   }
   for (const m of plan.missions) { const s = sim.squadById(m.squad)!; m.state = 'wait'; m.initial = sim.squadUnits(s).length; m.leg = 0; m.block = null; }

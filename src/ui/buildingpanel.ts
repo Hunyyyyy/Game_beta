@@ -1,5 +1,5 @@
 import { BUILDINGS, Building, buildingName, levelCapByFire, levelDef, maxLevel, POP_BY_FIRE } from '../sim/buildings';
-import { huntRange } from '../sim/battle';
+import { huntRange } from '../sim/hunting';
 import { ARMORS, WEAPONS } from '../sim/combat';
 import { JOBS, ROLES, STAT_NAME, roleOf } from '../sim/jobs';
 import type { RoleId } from '../sim/jobs';

@@ -218,8 +218,6 @@ export class Controller {
     // choosing pieces of fence: a tap takes one in or puts it back
     if (this.groupMode && !this.placing) { const b = this.buildingUnder(p); if (b !== null && this.isWall(b)) this.toggleGroup(b); return; }
     if (this.placing) { if (touch) { this.placeAt = this.originAt(p); this.onChange(); } else this.confirmPlace(additive); return; }
-    const flag = this.r.flagAt(p.x, p.y); // a tap on the flag of a cluster picks all its soldiers
-    if (flag) { if (!additive) this.selected.clear(); for (const fid of flag) if (this.sim.get(fid)?.team === 'player') this.selected.add(fid); this.selectedBuilding = null; this.inspect = null; this.onChange(); return; }
     const id = this.hit(p, touch);
     if (this.multi) { if (id !== null) { this.toggle(id); this.onChange(); } return; }
     const b = this.buildingUnder(p), w = this.r.screenToWorld(p.x, p.y);

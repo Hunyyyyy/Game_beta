@@ -11,6 +11,8 @@ import { BuildingKind, levelsOf, POP_BY_FIRE } from './buildings';
 import { WEAPONS } from './combat';
 import { soldierTier } from './research';
 import { DIFF, tribeBonuses } from './difficulty';
+import { FOE } from './fightpolicy';
+import type { MountKind } from './jobs';
 import { powerOf, Power } from './power';
 import { applyStats } from './statsys';
 import { slotsAt } from './campplan';
@@ -181,16 +183,26 @@ export function gearFor(sim: Sim, t: Tribe, index: number): { weapon: string; ar
   return { weapon: weapons[index % weapons.length], armor: t.boss ? 'bone' : common };
 }
 
+/**
+ * The beast a soldier of a village rides, or null: some of the soldiers (data/fightpolicy.json `foe.cavalry`), those with a weapon for close work, once the camp is high enough.
+ * Every few soldiers of the village is one rider, so the same village always has the same share.
+ */
+function mountFor(t: Tribe, index: number, weapon: string): MountKind | null {
+  const c = FOE.cavalry, share = t.boss ? c.bossShare : c.share;
+  if (t.campLevel < c.minCamp || share <= 0 || WEAPONS[weapon]?.ranged || (index * 0.618034) % 1 >= share) return null;
+  return t.boss ? (c.boss as MountKind) : (c.beasts[Math.min(c.beasts.length, t.campLevel - c.minCamp + 1) - 1] as MountKind);
+}
+
 /** Bring `n` of the crowd out into the world, soldiers or civilians, at `near`. Returns those who came. */
-function spawnOut(sim: Sim, t: Tribe, role: 'guard' | 'civ', n: number, near: { x: number; y: number }, rmin: number, rspan: number, posts: Array<NonNullable<FoeAI['post']>> = []): Villager[] {
+function spawnOut(sim: Sim, t: Tribe, role: 'guard' | 'civ', n: number, near: { x: number; y: number }, rmin: number, rspan: number, posts: Array<NonNullable<FoeAI['post']>> = [], army = false): Villager[] {
   const crowd = crowdOf(t), out: Villager[] = [], key = role === 'civ' ? 'civs' : 'guards';
   let armed = t.unitIds.filter((u) => { const f = sim.get(u); return !!f && f.ai?.role !== 'civ'; }).length;
   for (; n > 0 && crowd[key] > 0; n--) {
     crowd[key]--;
     const post = role === 'guard' ? posts.shift() : undefined, [x, y] = post ? [post.x, post.y] : freeSpot(sim, near, rmin, rspan), f = sim.makeVillager(x, y, sim.frnd() < 0.5 ? 'm' : 'f', t.id, sim.frnd);
     f.look.hide = t.def.look.hide; f.look.pants = t.def.look.pants;
-    if (role === 'guard') { const g = gearFor(sim, t, armed); f.weapon = g.weapon; f.armor = g.armor; armed++; }
-    f.ai = { role, camp: t.camp, wander: sim.frnd() * 5, goal: null, raid: 0, post };
+    if (role === 'guard') { const g = gearFor(sim, t, armed); f.weapon = g.weapon; f.armor = g.armor; if (army) f.mount = mountFor(t, armed, g.weapon); armed++; }
+    f.ai = { role, camp: t.camp, wander: sim.frnd() * 5, goal: null, raid: 0, post, ...(army ? { army: true } : {}) };
     if (post) f.facing = post.face;
     sim.addFoe(f); t.unitIds.push(f.id); out.push(f);
   }
@@ -205,7 +217,8 @@ export function wake(sim: Sim, t: Tribe): void {
   if (t.hitAt !== undefined && sim.time - t.hitAt > SIEGE.struct.fullAfter) repairProps(t, 1); // left alone long enough, it has mended everything
   t.awake = true; t.idleT = 0;
   const cap = visibleCap(sim, t), crowd = crowdOf(t);
-  let out = Math.min(crowd.guards, cap.guards);
+  // only the watch stands outside: the guards of the posts and the towers (a share of the soldiers, at least a few); the rest of them are the army, indoors until the alarm (deployArmy)
+  let out = Math.min(crowd.guards, cap.guards, Math.max(LOD.minGuards, Math.ceil(crowd.guards * LOD.guardShare)));
   for (const tw of t.props.filter((p) => p.kind === 'tower')) out -= spawnTowerMen(sim, t, tw, Math.min(out, towerSlots(sim, tw))); // the towers are manned first
   spawnOut(sim, t, 'guard', out, t.camp, 2.5, 3.5, postsOf(sim, t, out));
   spawnOut(sim, t, 'civ', Math.min(crowd.civs, cap.civs), t.camp, 2.5, 3.5);
@@ -229,14 +242,41 @@ export function sleep(sim: Sim, t: Tribe): void {
     sim.removeFoe(f);
   }
   t.unitIds = t.unitIds.filter((u) => !!sim.get(u));
-  t.awake = false; t.idleT = 0;
+  t.awake = false; t.idleT = 0; t.armyOut = false;
   if (!sim.get(t.leaderId)) t.leaderId = -1;
 }
 
 /** Soldiers (then civilians) come out of the houses at the spot `near`; returns how many came. */
 export function releaseCrowd(sim: Sim, t: Tribe, n: number, near: { x: number; y: number } = t.camp): number {
-  const crowd = crowdOf(t), g = spawnOut(sim, t, 'guard', Math.min(n, crowd.guards), near, 1.5, 2.5).length;
+  const crowd = crowdOf(t), g = spawnOut(sim, t, 'guard', Math.min(n, crowd.guards), near, 1.5, 2.5, [], true).length;
   return g + spawnOut(sim, t, 'civ', Math.min(n - g, crowd.civs), near, 1.5, 2.5).length;
+}
+
+/**
+ * The army of the village comes out of its houses (the soldiers of the crowd, beyond the guards who always keep their posts) and stands at the posts of the defence
+ * along the fence and the gate, as ours do when the alarm sounds. Some ride (mountFor). Returns how many came.
+ */
+export function deployArmy(sim: Sim, t: Tribe): number {
+  const n = crowdOf(t).guards;
+  t.armyOut = true; t.armyIdle = 0;
+  if (n <= 0) return 0;
+  // the posts the guards already hold are left to them: the army takes the others
+  const held = t.unitIds.map((u) => sim.get(u)?.ai?.post).filter((p): p is Post => !!p);
+  const posts = postsOf(sim, t, n + held.length).filter((p) => !held.some((h) => Math.hypot(h.x - p.x, h.y - p.y) < 1.5));
+  return spawnOut(sim, t, 'guard', n, t.camp, 2.5, 3.5, posts, true).length;
+}
+
+/** The danger is over: the soldiers who were not hurt in a fight go back into the houses as the crowd. */
+export function recallArmy(sim: Sim, t: Tribe): void {
+  const crowd = crowdOf(t);
+  for (const u of [...t.unitIds]) {
+    const f = sim.get(u);
+    if (!f || f.health <= 0 || !f.ai?.army) continue;
+    crowd.guards++; sim.removeFoe(f);
+  }
+  t.unitIds = t.unitIds.filter((u) => !!sim.get(u));
+  t.armyOut = false; t.armyIdle = 0;
+  if (!sim.get(t.leaderId)) t.leaderId = -1;
 }
 
 /** Houses and fire that stand: the shelter the crowd has. */
@@ -266,7 +306,11 @@ export function tickLod(sim: Sim, t: Tribe, busy: boolean, hostile: boolean): vo
   if (t.hitAt !== undefined && sim.time - t.hitAt > SIEGE.struct.repairAfter) repairProps(t, SIEGE.struct.repairPerSecond); // out of the fight, the works mend
   // the gates shut when we are at their door in anger, and open again when we are gone
   const r = LOD.gateRadius, atDoor = sim.villagers.some((v) => v.health > 0 && Math.abs(v.x - t.camp.x) < r && Math.abs(v.y - t.camp.y) < r);
-  setGates(sim, t, hostile && atDoor || busy);
+  const alarm = hostile && atDoor || busy;
+  setGates(sim, t, alarm);
+  // the army lives indoors; a war or an attack on the village calls it out to its posts, and quiet sends it home again
+  if (alarm) { t.armyIdle = 0; if (!t.armyOut) deployArmy(sim, t); }
+  else if (t.armyOut && !fighting && (t.armyIdle = (t.armyIdle ?? 0) + 1) >= LOD.armyStandDown) recallArmy(sim, t);
   // the crowd keeps only as much as its houses can shelter: as they fall, people come out to fight
   const crowd = crowdOf(t), hidden = crowd.guards + crowd.civs;
   if (hidden > 0 && (t.hid0 ?? 0) > 0) {
