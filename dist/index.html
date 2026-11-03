@@ -54316,7 +54316,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   // src/sim/tribelod.ts
   var LOD = npclife_default.lod;
   var CIVIL_HOUSES = ["lumberyard", "quarry", "farmhouse"];
-  var GUARD_HOUSES = ["guardpost", "huntlodge"];
+  var GUARD_HOUSES = ["guardpost", "huntlodge", "tower"];
   var fireLevelOf = (sim2) => sim2.campfire()?.level ?? 1;
   var crowdOf = (t) => t.crowd ?? (t.crowd = { guards: 0, civs: 0 });
   function headcount(sim2, t) {
@@ -54389,6 +54389,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   function visibleCap(sim2, t) {
     let guards = 0, civs = 0;
     for (const p of t.props) {
+      if (p.kind === "tower") guards += towerSlots(sim2, p);
       if (!p.b) continue;
       const slots = levelsOf(p.b, sim2.era)[(p.lv ?? 1) - 1]?.slots ?? 0;
       if (CIVIL_HOUSES.includes(p.b)) civs += slots;
@@ -54402,6 +54403,31 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       if (!sim2.world.isBlocked(px, py)) return [px, py];
     }
     return sim2.nearestFree(Math.floor(near2.x), Math.floor(near2.y), /* @__PURE__ */ new Set()) ?? [Math.floor(near2.x), Math.floor(near2.y)];
+  }
+  var towerSlots = (sim2, tw) => levelsOf("tower", sim2.era)[(tw.lv ?? 1) - 1]?.slots ?? 0;
+  function spawnTowerMen(sim2, t, tw, n) {
+    const crowd2 = crowdOf(t), taken = /* @__PURE__ */ new Set(), cx = tw.x + tw.w / 2, cy = tw.y + tw.h / 2, dx = t.camp.x - cx, dy = t.camp.y - cy, len = Math.max(1, Math.hypot(dx, dy));
+    const men = [];
+    for (let i = 0; i < n && crowd2.guards > 0; i++) {
+      const post = postAt(sim2, t, cx + dx / len * (2 + i * 0.8), cy + dy / len * (2 + i * 0.8), taken);
+      if (!post) break;
+      crowd2.guards--;
+      const f = sim2.makeVillager(post.x, post.y, sim2.frnd() < 0.5 ? "m" : "f", t.id, sim2.frnd);
+      f.look.hide = t.def.look.hide;
+      f.look.pants = t.def.look.pants;
+      f.weapon = "bow";
+      f.armor = gearFor(sim2, t, t.unitIds.length + i).armor;
+      f.facing = post.face;
+      f.ai = { role: "guard", camp: t.camp, wander: 0, goal: null, raid: 0, post, tower: { x: tw.x, y: tw.y } };
+      sim2.addFoe(f);
+      t.unitIds.push(f.id);
+      men.push(f);
+    }
+    if (men.length) {
+      rescaleTribe(sim2, t);
+      for (const f of men) f.health = f.maxHealth;
+    }
+    return men.length;
   }
   function postAt(sim2, t, x, y, taken) {
     const spot = sim2.nearestFree(Math.floor(x), Math.floor(y), taken);
@@ -54425,10 +54451,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const [x, y] = inward(g, 1.5);
       add(x - 2, y);
       add(x + 2, y);
-    }
-    for (const w of t.props.filter((p) => p.kind === "tower")) {
-      const [x, y] = inward(w, 3);
-      add(x, y);
     }
     add(t.camp.x - 2.5, t.camp.y + 0.5);
     add(t.camp.x + 2.5, t.camp.y + 0.5);
@@ -54485,7 +54507,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     t.awake = true;
     t.idleT = 0;
     const cap = visibleCap(sim2, t), crowd2 = crowdOf(t);
-    const out = Math.min(crowd2.guards, cap.guards);
+    let out = Math.min(crowd2.guards, cap.guards);
+    for (const tw of t.props.filter((p) => p.kind === "tower")) out -= spawnTowerMen(sim2, t, tw, Math.min(out, towerSlots(sim2, tw)));
     spawnOut(sim2, t, "guard", out, t.camp, 2.5, 3.5, postsOf(sim2, t, out));
     spawnOut(sim2, t, "civ", Math.min(crowd2.civs, cap.civs), t.camp, 2.5, 3.5);
     t.pool0 = standing(t);
@@ -55253,11 +55276,35 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     f.phase = "move";
     return true;
   }
+  function keepPost(sim2, f, ai) {
+    const post = ai.post, px = post.x + 0.5, py = post.y + 0.5;
+    if (Math.hypot(f.x - px, f.y - py) > 0.8) {
+      if (!f.path.length && sim2.pathLeft > 0) {
+        sim2.pathLeft--;
+        f.path = sim2.pathTo(f, post.x, post.y, 3e3);
+        if (!f.path.length) ai.post = void 0;
+      }
+      f.phase = f.path.length ? "move" : "idle";
+    } else {
+      f.phase = "idle";
+      f.path = [];
+      f.facing = post.face;
+    }
+  }
+  function towerOf(sim2, t, ai) {
+    const p = ai.tower ? t.props.find((q) => q.kind === "tower" && q.x === ai.tower.x && q.y === ai.tower.y) : void 0;
+    return p ? { p, reach: levelsOf("tower", sim2.era)[(p.lv ?? 1) - 1]?.sight ?? 10 } : null;
+  }
   function foeBrain(sim2, f, t, ai, dt) {
     const free = t.state === "free";
+    const tower = ai.tower ? towerOf(sim2, t, ai) : null;
+    if (ai.tower && !tower) {
+      ai.tower = void 0;
+      ai.post = void 0;
+    }
     f.fight.scan -= dt;
     const reach = tribeReach(t), willing = tribeWilling(sim2, t.id);
-    const radius = ai.role === "raider" ? 12 : ai.role === "civ" ? 9 : Math.max(AGGRO[t.def.personality], willing ? Math.min(reach, 24) : 0);
+    const radius = tower ? tower.reach : ai.role === "raider" ? 12 : ai.role === "civ" ? 9 : Math.max(AGGRO[t.def.personality], willing ? Math.min(reach, 24) : 0);
     const scanNow = f.fight.scan <= 0;
     if (scanNow) f.fight.scan = 0.4;
     const looking = scanNow || f.phase === "flee" || f.phase === "fight" && !f.fight.target;
@@ -55290,6 +55337,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const sb = sim2.getBuilding(ai.siege);
       if (!sb || Math.hypot(sb.x - f.x, sb.y - f.y) > 45) ai.siege = 0;
       else if (siegeBrain(sim2, f, ai, dt, threats)) return;
+    }
+    if (free && tower && ai.post) {
+      keepPost(sim2, f, ai);
+      if (willing && threats.length && f.atkCd <= 0) {
+        const w = weaponOf(f), e = resolve(sim2, threats[0].t), from = { x: tower.p.x + tower.p.w / 2, y: tower.p.y + 0.4 };
+        if (e && fireProjectile(sim2, f, e, from, UNIT_RULES.archerOnTower.damage, Math.max(0, tower.reach - w.range - 1))) f.atkCd = swingCycle(sim2, f, w);
+      }
+      return;
     }
     if (free && ai.role === "raider" && t.raid) {
       if (t.raid.phase === "retreat") {
@@ -55347,19 +55402,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       return;
     }
     if (free && ai.role === "guard" && ai.post && !f.fight.target) {
-      const px = ai.post.x + 0.5, py = ai.post.y + 0.5;
-      if (Math.hypot(f.x - px, f.y - py) > 0.8) {
-        if (!f.path.length && sim2.pathLeft > 0) {
-          sim2.pathLeft--;
-          f.path = sim2.pathTo(f, ai.post.x, ai.post.y, 3e3);
-          if (!f.path.length) ai.post = void 0;
-        }
-        f.phase = f.path.length ? "move" : "idle";
-      } else {
-        f.phase = "idle";
-        f.path = [];
-        f.facing = ai.post.face;
-      }
+      keepPost(sim2, f, ai);
       return;
     }
     if (free && ai.role !== "raider" && lifeBrain(sim2, f, t, ai, dt)) return;
@@ -58250,6 +58293,12 @@ ${risk.lines.join("\n")}`);
   function keepWatch(sim2, v) {
     if (v.job !== "idle") sim2.callUp(v);
   }
+  function takeOut(sim2, v) {
+    if (!campFolk(sim2, v) || v.post >= 0 || isOut(v)) return;
+    v.recall = false;
+    if (v.guard) v.housed = false;
+    else v.out = true;
+  }
   function recallFar(sim2) {
     const fire = sim2.campfire(), far = farFolk(sim2);
     if (!far.length) return 0;
@@ -58292,6 +58341,7 @@ ${risk.lines.join("\n")}`);
       clearCombat(sim2, v);
       v.prefer = -1;
       keepSoldierJob(sim2, v);
+      takeOut(sim2, v);
       keepWatch(sim2, v);
       if (v.job === "idle") v.shift = "both";
       if (!goal) continue;
@@ -58484,6 +58534,7 @@ ${risk.lines.join("\n")}`);
       v.prefer = -1;
       v.fight.mode = "attack";
       v.fight.target = target;
+      takeOut(sim2, v);
       keepWatch(sim2, v);
     }
     return n;
@@ -58501,6 +58552,7 @@ ${risk.lines.join("\n")}`);
       v.fight.mode = "attackMove";
       v.fight.dest = { x, y };
       v.phase = "move";
+      takeOut(sim2, v);
       keepWatch(sim2, v);
     }
   }
@@ -58523,6 +58575,7 @@ ${risk.lines.join("\n")}`);
       clearCombat(sim2, v);
       v.fight.mode = "hold";
       v.fight.anchor = { x: v.x, y: v.y };
+      takeOut(sim2, v);
       keepWatch(sim2, v);
     }
   }
@@ -58533,6 +58586,7 @@ ${risk.lines.join("\n")}`);
       if (v.job === "fight") {
         v.fight.mode = "hold";
         v.fight.anchor = { x: v.x, y: v.y };
+        takeOut(sim2, v);
         keepWatch(sim2, v);
       }
     }

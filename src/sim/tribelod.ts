@@ -20,7 +20,7 @@ import type { Sim, Villager } from './sim';
 import type { Tribe } from './tribes';
 
 const LOD = npc.lod;
-const CIVIL_HOUSES: BuildingKind[] = ['lumberyard', 'quarry', 'farmhouse'], GUARD_HOUSES: BuildingKind[] = ['guardpost', 'huntlodge'];
+const CIVIL_HOUSES: BuildingKind[] = ['lumberyard', 'quarry', 'farmhouse'], GUARD_HOUSES: BuildingKind[] = ['guardpost', 'huntlodge', 'tower'];
 
 export const fireLevelOf = (sim: Sim): number => sim.campfire()?.level ?? 1;
 const crowdOf = (t: Tribe): NonNullable<Tribe['crowd']> => (t.crowd ??= { guards: 0, civs: 0 });
@@ -95,6 +95,7 @@ function stockLand(sim: Sim, t: Tribe): void {
 function visibleCap(sim: Sim, t: Tribe): { guards: number; civs: number } {
   let guards = 0, civs = 0;
   for (const p of t.props) {
+    if (p.kind === 'tower') guards += towerSlots(sim, p);
     if (!p.b) continue;
     const slots = levelsOf(p.b, sim.era)[(p.lv ?? 1) - 1]?.slots ?? 0;
     if (CIVIL_HOUSES.includes(p.b)) civs += slots; else if (GUARD_HOUSES.includes(p.b)) guards += slots;
@@ -113,6 +114,26 @@ function freeSpot(sim: Sim, near: { x: number; y: number }, rmin: number, rspan:
 
 // ---------------------------------------------------------------- the watch
 type Post = NonNullable<FoeAI['post']>;
+/** How many archers a tower holds (the slots of its level in the building json). */
+const towerSlots = (sim: Sim, tw: { lv?: number }): number => levelsOf('tower', sim.era)[(tw.lv ?? 1) - 1]?.slots ?? 0;
+
+/** The archers of a tower: they stand in it (at its inner foot) with bows, and loose arrows from it (tribes.foeBrain). Returns how many came out. */
+function spawnTowerMen(sim: Sim, t: Tribe, tw: Tribe['props'][number], n: number): number {
+  const crowd = crowdOf(t), taken = new Set<number>(), cx = tw.x + tw.w / 2, cy = tw.y + tw.h / 2, dx = t.camp.x - cx, dy = t.camp.y - cy, len = Math.max(1, Math.hypot(dx, dy));
+  const men: Villager[] = [];
+  for (let i = 0; i < n && crowd.guards > 0; i++) {
+    const post = postAt(sim, t, cx + (dx / len) * (2 + i * 0.8), cy + (dy / len) * (2 + i * 0.8), taken);
+    if (!post) break;
+    crowd.guards--;
+    const f = sim.makeVillager(post.x, post.y, sim.frnd() < 0.5 ? 'm' : 'f', t.id, sim.frnd);
+    f.look.hide = t.def.look.hide; f.look.pants = t.def.look.pants;
+    f.weapon = 'bow'; f.armor = gearFor(sim, t, t.unitIds.length + i).armor; f.facing = post.face;
+    f.ai = { role: 'guard', camp: t.camp, wander: 0, goal: null, raid: 0, post, tower: { x: tw.x, y: tw.y } };
+    sim.addFoe(f); t.unitIds.push(f.id); men.push(f);
+  }
+  if (men.length) { rescaleTribe(sim, t); for (const f of men) f.health = f.maxHealth; }
+  return men.length;
+}
 /** A free tile at or near a point, looking away from the fire. */
 function postAt(sim: Sim, t: Tribe, x: number, y: number, taken: Set<number>): Post | null {
   const spot = sim.nearestFree(Math.floor(x), Math.floor(y), taken);
@@ -123,7 +144,7 @@ function postAt(sim: Sim, t: Tribe, x: number, y: number, taken: Set<number>): P
 }
 
 /**
- * Where `n` guards stand: a pair inside each gate, one at the foot of each tower, two by the fire, and the rest spread along the fence (npclife.json lod.postEvery at the nearest),
+ * Where `n` guards stand: a pair inside each gate, two by the fire, and the rest spread along the fence (npclife.json lod.postEvery at the nearest),
  * each a little inside the wall and looking out.
  */
 function postsOf(sim: Sim, t: Tribe, n: number): Post[] {
@@ -133,7 +154,6 @@ function postsOf(sim: Sim, t: Tribe, n: number): Post[] {
     return [cx + (dx / len) * k, cy + (dy / len) * k];
   };
   for (const g of t.props.filter((p) => p.kind === 'gate')) { const [x, y] = inward(g, 1.5); add(x - 2, y); add(x + 2, y); }
-  for (const w of t.props.filter((p) => p.kind === 'tower')) { const [x, y] = inward(w, 3); add(x, y); }
   add(t.camp.x - 2.5, t.camp.y + 0.5); add(t.camp.x + 2.5, t.camp.y + 0.5);
   const fence = t.props.filter((p) => p.kind === 'fence').sort((a, b) => Math.atan2(a.y - t.camp.y, a.x - t.camp.x) - Math.atan2(b.y - t.camp.y, b.x - t.camp.x));
   const stride = Math.max(LOD.postEvery, Math.floor(fence.length / Math.max(1, n - out.length)));
@@ -183,7 +203,8 @@ export function wake(sim: Sim, t: Tribe): void {
   ensureLayout(sim, t);
   t.awake = true; t.idleT = 0;
   const cap = visibleCap(sim, t), crowd = crowdOf(t);
-  const out = Math.min(crowd.guards, cap.guards);
+  let out = Math.min(crowd.guards, cap.guards);
+  for (const tw of t.props.filter((p) => p.kind === 'tower')) out -= spawnTowerMen(sim, t, tw, Math.min(out, towerSlots(sim, tw))); // the towers are manned first
   spawnOut(sim, t, 'guard', out, t.camp, 2.5, 3.5, postsOf(sim, t, out));
   spawnOut(sim, t, 'civ', Math.min(crowd.civs, cap.civs), t.camp, 2.5, 3.5);
   t.pool0 = standing(t); t.hid0 = crowd.guards + crowd.civs;

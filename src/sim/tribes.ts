@@ -1,10 +1,11 @@
 import eventsJson from '../data/events.json';
 import { DAY_LENGTH } from './constants';
 import { ANIMALS, MEET, cycleOf, Species, WEAPONS, HOSTILE_BELOW, RELATION, RULES, SIEGE, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
-import { engage, resolve, swingTimes, tickCommon, threatsOf, weaponOf } from './battle';
-import { BUILDINGS, BuildingKind } from './buildings';
+import { engage, fireProjectile, resolve, swingTimes, tickCommon, threatsOf, weaponOf } from './battle';
+import { swingCycle } from './statsys';
+import { BUILDINGS, BuildingKind, levelsOf } from './buildings';
 import { fireLevelOf, followFire, headcount, releaseCrowd, rescaleTribe, tickLod, topUp, wake } from './tribelod';
-import { armOfWeapon } from './formations';
+import { armOfWeapon, UNIT_RULES } from './formations';
 import { DIFF, raidPower } from './difficulty';
 import { POP_BY_FIRE } from './buildings';
 import { RES_NAME } from './resources';
@@ -532,12 +533,29 @@ function siegeBrain(sim: Sim, f: Villager, ai: NonNullable<Villager['ai']>, dt: 
   return true;
 }
 
+/** A guard goes back to his post and stands there, looking out. */
+function keepPost(sim: Sim, f: Villager, ai: NonNullable<Villager['ai']>): void {
+  const post = ai.post!, px = post.x + 0.5, py = post.y + 0.5;
+  if (Math.hypot(f.x - px, f.y - py) > 0.8) {
+    if (!f.path.length && sim.pathLeft > 0) { sim.pathLeft--; f.path = sim.pathTo(f, post.x, post.y, 3000); if (!f.path.length) ai.post = undefined; } // no way to it: he gives it up
+    f.phase = f.path.length ? 'move' : 'idle';
+  } else { f.phase = 'idle'; f.path = []; f.facing = post.face; }
+}
+
+/** The tower a guard mans (his `ai.tower`): its piece in the village and how far it sees (the sight of its level), or null when it has fallen. */
+function towerOf(sim: Sim, t: Tribe, ai: NonNullable<Villager['ai']>): { p: Tribe['props'][number]; reach: number } | null {
+  const p = ai.tower ? t.props.find((q) => q.kind === 'tower' && q.x === ai.tower!.x && q.y === ai.tower!.y) : undefined;
+  return p ? { p, reach: levelsOf('tower', sim.era)[(p.lv ?? 1) - 1]?.sight ?? 10 } : null;
+}
+
 function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai']>, dt: number): void {
   const free = t.state === 'free';
+  const tower = ai.tower ? towerOf(sim, t, ai) : null;
+  if (ai.tower && !tower) { ai.tower = undefined; ai.post = undefined; } // his tower fell: he is a guard of the village again
   f.fight.scan -= dt;
   const reach = tribeReach(t), willing = tribeWilling(sim, t.id);
   // the soldiers of a village that will fight go out to anyone who walks onto its land
-  const radius = ai.role === 'raider' ? 12 : ai.role === 'civ' ? 9 : Math.max(AGGRO[t.def.personality], willing ? Math.min(reach, 24) : 0);
+  const radius = tower ? tower.reach : ai.role === 'raider' ? 12 : ai.role === 'civ' ? 9 : Math.max(AGGRO[t.def.personality], willing ? Math.min(reach, 24) : 0);
   const scanNow = f.fight.scan <= 0;
   if (scanNow) f.fight.scan = 0.4;
   const looking = scanNow || f.phase === 'flee' || (f.phase === 'fight' && !f.fight.target); // see brainPlayer: a unit busy with a target needs no new look every tick
@@ -559,6 +577,16 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
     const sb = sim.getBuilding(ai.siege);
     if (!sb || Math.hypot(sb.x - f.x, sb.y - f.y) > 45) ai.siege = 0;
     else if (siegeBrain(sim, f, ai, dt, threats)) return;
+  }
+
+  // the men of a tower stay up in it and loose arrows at whoever comes within its reach, as the archers of ours do (defense.tickTowers)
+  if (free && tower && ai.post) {
+    keepPost(sim, f, ai);
+    if (willing && threats.length && f.atkCd <= 0) {
+      const w = weaponOf(f), e = resolve(sim, threats[0].t), from = { x: tower.p.x + tower.p.w / 2, y: tower.p.y + 0.4 };
+      if (e && fireProjectile(sim, f, e, from, UNIT_RULES.archerOnTower.damage, Math.max(0, tower.reach - w.range - 1))) f.atkCd = swingCycle(sim, f, w);
+    }
+    return;
   }
 
   // a raider marches on the village, fighting what stands in the way
@@ -596,14 +624,7 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
   if (free && ai.role === 'guard' && threats.length && willing) { f.fight.target = threats[0].t; return; }
 
   // a guard keeps his watch where he was set: he goes back to his post and stands there, looking out
-  if (free && ai.role === 'guard' && ai.post && !f.fight.target) {
-    const px = ai.post.x + 0.5, py = ai.post.y + 0.5;
-    if (Math.hypot(f.x - px, f.y - py) > 0.8) {
-      if (!f.path.length && sim.pathLeft > 0) { sim.pathLeft--; f.path = sim.pathTo(f, ai.post.x, ai.post.y, 3000); if (!f.path.length) ai.post = undefined; } // no way to it: he gives it up
-      f.phase = f.path.length ? 'move' : 'idle';
-    } else { f.phase = 'idle'; f.path = []; f.facing = ai.post.face; }
-    return;
-  }
+  if (free && ai.role === 'guard' && ai.post && !f.fight.target) { keepPost(sim, f, ai); return; }
   // otherwise: his daily work where we are looking, else stroll around the camp
   if (free && ai.role !== 'raider' && lifeBrain(sim, f, t, ai, dt)) return;
   if (f.phase === 'fight') { f.phase = 'idle'; f.path = []; }

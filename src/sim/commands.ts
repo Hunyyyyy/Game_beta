@@ -23,6 +23,16 @@ export function keepWatch(sim: Sim, v: Villager): void {
   if (v.job !== 'idle') sim.callUp(v);
 }
 
+/**
+ * A direct order to a soldier of a camp is the player's word over the camp's: it takes him out of it, as "Gọi quân" does, or the camp would send him back to bed
+ * at once (rest.quartered), by day or by night. "Cho quân về" puts him back. Worn-out men still sleep: nobody can be woken then (rest.callUp).
+ */
+function takeOut(sim: Sim, v: Villager): void {
+  if (!campFolk(sim, v) || v.post >= 0 || isOut(v)) return;
+  v.recall = false;
+  if (v.guard) v.housed = false; else v.out = true;
+}
+
 /** The campfire's call: free villagers who are far from the village walk home (and keep the day's hours again). Returns how many were called. */
 export function recallFar(sim: Sim): number {
   const fire = sim.campfire(), far = farFolk(sim);
@@ -60,7 +70,7 @@ export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: numb
     if (queue && busy(sim, v)) { v.queue.push({ k: 'move', x: tx, y: ty }); continue; }
     const goal = sim.nearestFree(tx, ty, taken);
     resetTask(sim, v); clearCombat(sim, v); v.prefer = -1;
-    keepSoldierJob(sim, v); keepWatch(sim, v);
+    keepSoldierJob(sim, v); takeOut(sim, v); keepWatch(sim, v);
     if (v.job === 'idle') v.shift = 'both'; // sent out by hand: they go on by night too, and turn back by themselves when their strength runs low (see rest.onShift, the notices)
     if (!goal) continue;
     taken.add(goal[1] * sim.world.size + goal[0]);
@@ -225,7 +235,7 @@ export function orderAttack(sim: Sim, ids: readonly number[], target: Target, qu
     if (queue && busy(sim, v)) { v.queue.push({ k: 'attack', t: target }); continue; }
     resetTask(sim, v); clearCombat(sim, v); v.prefer = -1;
     v.fight.mode = 'attack'; v.fight.target = target;
-    keepWatch(sim, v);
+    takeOut(sim, v); keepWatch(sim, v);
   }
   return n;
 }
@@ -237,7 +247,7 @@ export function orderAttackMove(sim: Sim, ids: readonly number[], x: number, y: 
     if (queue && busy(sim, v)) { v.queue.push({ k: 'attackMove', x, y }); continue; }
     resetTask(sim, v); clearCombat(sim, v); v.prefer = -1;
     v.fight.mode = 'attackMove'; v.fight.dest = { x, y }; v.phase = 'move';
-    keepWatch(sim, v);
+    takeOut(sim, v); keepWatch(sim, v);
   }
 }
 
@@ -257,13 +267,13 @@ export function orderHold(sim: Sim, ids: readonly number[]): void {
     if (v.job !== 'fight' && v.job !== 'hunt') continue;
     resetTask(sim, v); clearCombat(sim, v);
     v.fight.mode = 'hold'; v.fight.anchor = { x: v.x, y: v.y };
-    keepWatch(sim, v);
+    takeOut(sim, v); keepWatch(sim, v);
   }
 }
 
 /** G: stop everything, keep the job. */
 export function orderStop(sim: Sim, ids: readonly number[]): void {
-  for (const v of mine(sim, ids)) { resetTask(sim, v); clearCombat(sim, v); if (v.job === 'fight') { v.fight.mode = 'hold'; v.fight.anchor = { x: v.x, y: v.y }; keepWatch(sim, v); } }
+  for (const v of mine(sim, ids)) { resetTask(sim, v); clearCombat(sim, v); if (v.job === 'fight') { v.fight.mode = 'hold'; v.fight.anchor = { x: v.x, y: v.y }; takeOut(sim, v); keepWatch(sim, v); } }
 }
 
 export function setStance(sim: Sim, ids: readonly number[], stance: 'aggressive' | 'defensive' | 'retreat'): void {

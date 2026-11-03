@@ -64,6 +64,8 @@ export interface FoeAI {
   harass?: number;
   /** Where a guard stands his watch (tribelod.ts) and which way he looks (away from the fire). */
   post?: { x: number; y: number; face: Facing };
+  /** The tower (its corner in the village) whose archer he is: he stands up in it and looses arrows within its reach (tribes.foeBrain). */
+  tower?: { x: number; y: number };
 }
 /** Điểm đứng cuối cùng và hướng nhìn (luôn ngang) khi làm việc. */
 export interface Slide { x: number; y: number; face: 'left' | 'right' }
