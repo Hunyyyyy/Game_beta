@@ -50,6 +50,8 @@ export interface Tribe {
   boss?: boolean; bossDown?: boolean;
   /** The land round it has been stocked with trees, rocks and bushes (tribelod.stockLand). */
   seeded?: boolean;
+  /** The game time a work of the village was last struck (siege.damageProp): it mends itself when left alone (tribelod). */
+  hitAt?: number;
   /** The campfire level its camp plan stands at (undefined: not raised yet, an old save). */
   built?: number;
   /** How far its camp runs ahead of the player's fire: its level follows the player's, plus this (the level it began with, less 2). */

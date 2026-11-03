@@ -473,7 +473,7 @@ export function engage(sim: Sim, v: Villager, e: Ent, dt: number): void {
   }
   if (v.swing) return; // finish the blow before moving
   v.fight.repath -= dt;
-  if ((v.fight.repath <= 0 || !v.path.length) && sim.pathLeft > 0) { sim.pathLeft--; v.fight.repath = 0.5; v.path = sim.pathTo(v, Math.floor(x), Math.floor(y), 3500); if (!v.path.length) v.fight.repath = 1.5; }
+  if ((v.fight.repath <= 0 || !v.path.length) && sim.pathLeft > 0) { sim.pathLeft--; v.fight.repath = 0.5; v.path = sim.pathTo(v, Math.floor(x), Math.floor(y), 3500); if (v.path.length) v.fight.blockedT = 0; else { v.fight.repath = 1.5; v.fight.blockedT = (v.fight.blockedT ?? 0) + 1.5; if (v.team === 'player' && e.kind === 'unit' && sim.breachFor(v, x, y)) return; } }
 }
 
 /** Where a soldier stands when he has nothing to do: a guard at his post, the rest at the door of their own camp (the fire when there is no camp). */

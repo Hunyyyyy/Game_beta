@@ -12,10 +12,17 @@ type Prop = Tribe['props'][number];
 const planned = (p: Prop): boolean => p.lv !== undefined;
 const keyOf = (p: Prop): string => `${p.b ?? p.kind}@${p.x},${p.y}`;
 
-/** Strength of a piece: a work by its kind (siege.json propHp), a house by its size; both grow with the level. */
-function hpOf(kind: Prop['kind'], w: number, h: number, lv: number, boss = false): number {
-  const grow = (1 + 0.5 * (lv - 1)) * (boss ? DIFF.boss.wallHp : 1);
-  return Math.round(kind === 'house' ? SIEGE.buildingHpPerTile * w * h * grow : (SIEGE.propHp[kind] ?? 60) * grow);
+/** Strength of a piece: its kind's (siege.json propHp), growing with the level (and sturdier in a boss village). */
+function hpOf(kind: Prop['kind'], _w: number, _h: number, lv: number, boss = false): number {
+  return Math.round((SIEGE.propHp[kind] ?? 60) * (1 + 0.5 * (lv - 1)) * (boss ? DIFF.boss.wallHp : 1));
+}
+
+/** The most strength a piece of a village can have. */
+export const maxPropHp = (t: Tribe, p: Prop): number => hpOf(p.kind, p.w, p.h, p.lv ?? 1, !!t.boss);
+
+/** The pieces of a village mend: `share` of their strength each, or all of it. */
+export function repairProps(t: Tribe, share: number): void {
+  for (const p of t.props) if (p.lv !== undefined) p.hp = Math.min(maxPropHp(t, p), p.hp + (share >= 1 ? Infinity : maxPropHp(t, p) * share));
 }
 
 /** Clear the trees and rocks off a patch of ground (their tiles go back to grass), with a tile to spare all round so that nobody is walled in. */

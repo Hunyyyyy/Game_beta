@@ -6,6 +6,7 @@
  */
 import npc from '../data/npclife.json';
 import cfg from '../content/difficulty.json';
+import { SIEGE } from './combat';
 import { BuildingKind, levelsOf, POP_BY_FIRE } from './buildings';
 import { WEAPONS } from './combat';
 import { soldierTier } from './research';
@@ -13,7 +14,7 @@ import { DIFF, tribeBonuses } from './difficulty';
 import { powerOf, Power } from './power';
 import { applyStats } from './statsys';
 import { slotsAt } from './campplan';
-import { growCamp, setGates } from './tribebuild';
+import { growCamp, repairProps, setGates } from './tribebuild';
 import { isActive } from './tribework';
 import type { FoeAI } from './model';
 import type { Sim, Villager } from './sim';
@@ -201,6 +202,7 @@ function spawnOut(sim: Sim, t: Tribe, role: 'guard' | 'civ', n: number, near: { 
 export function wake(sim: Sim, t: Tribe): void {
   if (t.awake || t.state === 'destroyed' || t.state === 'adopted') return;
   ensureLayout(sim, t);
+  if (t.hitAt !== undefined && sim.time - t.hitAt > SIEGE.struct.fullAfter) repairProps(t, 1); // left alone long enough, it has mended everything
   t.awake = true; t.idleT = 0;
   const cap = visibleCap(sim, t), crowd = crowdOf(t);
   let out = Math.min(crowd.guards, cap.guards);
@@ -261,6 +263,7 @@ export function tickLod(sim: Sim, t: Tribe, busy: boolean, hostile: boolean): vo
   const fighting = t.unitIds.some((u) => { const f = sim.get(u); return !!f && (!!f.fight.target || f.phase === 'fight'); });
   if (near || busy || fighting || t.raid) t.idleT = 0;
   else if ((t.idleT = (t.idleT ?? 0) + 1) >= LOD.sleepAfter) { sleep(sim, t); return; }
+  if (t.hitAt !== undefined && sim.time - t.hitAt > SIEGE.struct.repairAfter) repairProps(t, SIEGE.struct.repairPerSecond); // out of the fight, the works mend
   // the gates shut when we are at their door in anger, and open again when we are gone
   const r = LOD.gateRadius, atDoor = sim.villagers.some((v) => v.health > 0 && Math.abs(v.x - t.camp.x) < r && Math.abs(v.y - t.camp.y) < r);
   setGates(sim, t, hostile && atDoor || busy);

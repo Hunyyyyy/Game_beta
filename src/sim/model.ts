@@ -37,6 +37,8 @@ export interface FightState {
   scan: number;   // seconds until the next look for enemies
   /** The chase now (src/data/chase.json): which target, seconds since a blow was last thrown at it, seconds it has been out of sight. */
   chaseKey?: string; chaseT?: number; unseenT?: number;
+  /** Seconds he has found no way to his target (a wall of the enemy village in between): a soldier at range breaks it down after a while (siege.breachFor). */
+  blockedT?: number;
   /** A target given up: not picked again until the time is up. */
   skip?: { kind: 'unit' | 'animal'; id: number; until: number };
 }

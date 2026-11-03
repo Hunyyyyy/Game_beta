@@ -189,6 +189,8 @@ export const WAR = {
   lineSteps(this: Sim, from: Pt, x: number, y: number): Array<[number, number]> { return siege.lineSteps(this, from, { x, y }); },
   /** → siege.startBreaking */
   startBreaking(this: Sim, v: Villager, ob: Obstacle, home?: Pt): boolean { return siege.startBreaking(this, v, ob, home); },
+  /** → siege.breachFor */
+  breachFor(this: Sim, v: Villager, x: number, y: number): boolean { return siege.breachFor(this, v, x, y); },
   /** → siege.breakBrain */
   breakBrain(this: Sim, v: Villager, dt: number): boolean { return siege.breakBrain(this, v, dt); },
   /** → siege.arrowMove */

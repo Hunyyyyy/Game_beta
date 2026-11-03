@@ -5,6 +5,7 @@
  */
 import { RULES, SIEGE } from './combat';
 import { swingCycle, weaponDamage } from './statsys';
+import type { WeaponDef } from './combat';
 import { armOf, swingTimes, threatsOf, weaponOf } from './battle';
 import { FORMATIONS, formationOffsets, placeOffset } from './formations';
 import { Tile } from './world';
@@ -131,7 +132,7 @@ export function damageProp(sim: Sim, tribeId: string, x: number, y: number, dmg:
   if (!t || i < 0) return;
   const p = t.props[i];
   p.hp = (p.hp ?? propHp(p.kind)) - dmg;
-  t.angryUntil = Math.max(t.angryUntil, sim.time + 120);
+  t.angryUntil = Math.max(t.angryUntil, sim.time + 120); t.hitAt = sim.time;
   if (p.hp > 0) return;
   t.props.splice(i, 1);
   const N = sim.world.size;
@@ -139,6 +140,51 @@ export function damageProp(sim: Sim, tribeId: string, x: number, y: number, dmg:
   sim.say(`${PROP_NAME[p.kind] ?? 'Công trình'} của ${t.def.name} đã bị phá.`);
   sim.noteBattle('note', `${PROP_NAME[p.kind] ?? 'Công trình'} của ${t.def.name} bị phá.`);
   sim.noteBattle('breach');
+}
+
+/** What a weapon does to a work, against the plain blow: by the kind of weapon (struck, thrust, cut) and of work; arrows and stones do little to wood and stone. */
+export function structMult(w: Pick<WeaponDef, 'type' | 'ranged'>, kind: string | undefined): number {
+  if (w.ranged) return SIEGE.struct.ranged;
+  const row = SIEGE.struct[w.type] as Record<string, number>;
+  return (kind && row[kind]) || 1;
+}
+
+const segDist = (px: number, py: number, ax: number, ay: number, bx: number, by: number): number => {
+  const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy, k = len2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2)) : 0;
+  return Math.hypot(px - (ax + k * dx), py - (ay + k * dy));
+};
+
+/**
+ * A soldier with an order to attack finds no way to his target: the works of that village stand between. He chooses the piece that costs the least time (the walk, plus its strength over
+ * what the soldiers at it do to it, plus a little for each tower that watches it) among those on the line to the target, and goes to break it, keeping his order for afterwards.
+ * Soldiers with bows and slings leave it to the others unless there are no others near, or they have been blocked for `struct.blockedSeconds`. Returns true when he sets about it.
+ */
+export function breachFor(sim: Sim, v: Villager, tx: number, ty: number): boolean {
+  const w = weaponOf(v);
+  if (v.job !== 'fight' || v.breaks) return false;
+  if (w.ranged && (v.fight.blockedT ?? 0) < SIEGE.struct.blockedSeconds && sim.villagers.some((o) => o !== v && o.health > 0 && o.job === 'fight' && !weaponOf(o).ranged && (o.fight.mode === 'attack' || o.fight.mode === 'attackMove') && Math.hypot(o.x - v.x, o.y - v.y) < 40)) return false;
+  const dmg = weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str, cycle = swingCycle(sim, v, w), N = sim.world.size;
+  let best: { t: Tribe; p: Prop } | null = null, bestTime = Infinity;
+  for (const t of sim.tribes) {
+    if (t.state === 'adopted' || t.state === 'destroyed') continue;
+    const towers = t.props.filter((q) => q.kind === 'tower');
+    for (const p of t.props) {
+      if (p.kind === 'fire' || p.kind === 'pile' || !sim.world.occ[p.y * N + p.x]) continue; // only what shuts the way: an open gate does not
+      const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+      if (segDist(cx, cy, v.x, v.y, tx, ty) > 3.5) continue;
+      const crew = sim.villagers.filter((o) => o.breaks?.kind === 'prop' && o.breaks.x === p.x && o.breaks.y === p.y).length;
+      if (crew >= SIEGE.struct.breakers) continue;
+      const rate = (dmg * structMult(w, p.kind)) / cycle * (crew + 1);
+      const time = Math.hypot(cx - v.x, cy - v.y) / 2.2 + (p.hp ?? propHp(p.kind)) / Math.max(0.1, rate) + 3 * towers.filter((q) => Math.hypot(q.x - p.x, q.y - p.y) < 14).length;
+      if (time < bestTime) { bestTime = time; best = { t, p }; }
+    }
+  }
+  if (!best) return false;
+  const keep = { mode: v.fight.mode, target: v.fight.target, dest: v.fight.dest, anchor: v.fight.anchor };
+  if (!startBreaking(sim, v, { kind: 'enemy', x: best.p.x, y: best.p.y, label: PROP_NAME[best.p.kind] ?? 'công trình', clear: true, tribe: best.t.id })) return false;
+  Object.assign(v.fight, keep); // the order stands: he goes on with it when the way is open
+  v.fight.blockedT = 0;
+  return true;
 }
 
 /**
@@ -150,16 +196,19 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
   if (!b) return false;
   const box = breakBox(sim, b);
   if (!box) { stopBreaking(v); return false; }
+  v.fight.chaseT = 0; // he is at his task: he has not given up the chase
+  const w = weaponOf(v);
   v.fight.scan -= dt;
-  if (v.fight.scan <= 0) { v.fight.scan = 0.4; if (threatsOf(sim, v, 3.5).length) { stopBreaking(v); return false; } }
-  const w = weaponOf(v), dx = Math.max(box.x - v.x, 0, v.x - (box.x + box.w)), dy = Math.max(box.y - v.y, 0, v.y - (box.y + box.h));
+  // an enemy near turns him from a tree or a rock; at a wall he turns only to fight back, when one who can strike him is hurting him (the archers of a tower shoot on, and he works on under their arrows)
+  if (v.fight.scan <= 0) { v.fight.scan = 0.4; if (b.kind === 'prop' ? v.flinch > 0 && threatsOf(sim, v, w.range + 1).length : threatsOf(sim, v, 3.5).length) { stopBreaking(v); return false; } }
+  const dx = Math.max(box.x - v.x, 0, v.x - (box.x + box.w)), dy = Math.max(box.y - v.y, 0, v.y - (box.y + box.h));
   if (Math.hypot(dx, dy) <= SIEGE.reach + (b.kind === 'prop' && !w.ranged ? w.range * 0.5 : 0)) {
     v.path = []; v.slide = null; v.phase = 'fight'; v.facing = box.x + box.w / 2 >= v.x ? 'right' : 'left';
     if (!v.swing && v.atkCd <= 0) {
       const { hitAt, end } = swingTimes(w.anim);
       v.swing = { t: 0, hitAt, end, target: { kind: 'unit', id: -1 } }; // the blow has no living target: the work takes it
       v.atkCd = swingCycle(sim, v, w);
-      if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * (w.type === 'slash' ? 1.5 : 1));
+      if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind));
     }
     if (b.kind === 'node') {
       const kind = sim.world.nodeAt(b.x, b.y)!.kind;

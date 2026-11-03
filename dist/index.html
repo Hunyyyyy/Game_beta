@@ -3899,11 +3899,25 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       bush: 1.5
     },
     propHp: {
+      _note: "M\xE1u c\u1EE7a c\xF4ng tr\xECnh l\xE0ng \u0111\u1ECBch \u1EDF c\u1EA5p 1 (nh\xE2n 1 + 0,5 cho m\u1ED7i c\u1EA5p, r\u1ED3i nh\xE2n boss.wallHp v\u1EDBi l\xE0ng boss). M\u1EE5c ti\xEAu v\u1EDBi 10 l\xEDnh th\u01B0\u1EDDng (kho\u1EA3ng 90 s\xE1t th\u01B0\u01A1ng m\u1ED7i gi\xE2y) \u1EDF c\u1EA5p 4: r\xE0o ~4 gi\xE2y, c\u1ED5ng ~13 gi\xE2y, nh\xE0 ~15 gi\xE2y, ch\xF2i ~45 gi\xE2y.",
       fire: 160,
       pile: 70,
-      tower: 150,
-      fence: 40,
-      gate: 40
+      tower: 1600,
+      fence: 140,
+      gate: 480,
+      house: 540
+    },
+    struct: {
+      _note: "V\u0169 kh\xED \u0111\u1EADp c\xF4ng tr\xECnh th\u1EBF n\xE0o: s\xE1t th\u01B0\u01A1ng nh\xE2n h\u1EC7 s\u1ED1 theo ki\u1EC3u v\u0169 kh\xED (ch\xE9m, \u0111\u1EADp, \u0111\xE2m) v\xE0 lo\u1EA1i c\xF4ng tr\xECnh; t\u1EA7m xa (cung, n\xE1) nh\xE2n ranged. breakers: s\u1ED1 l\xEDnh t\u1ED1i \u0111a \u0111\u1EADp m\u1ED9t m\u1EA3nh c\xF9ng l\xFAc. blockedSeconds: l\xEDnh t\u1EA7m xa ch\u1EDD b\u1EA5y l\xE2u m\xE0 v\u1EABn b\u1ECB ch\u1EB7n th\xEC m\u1EDBi t\u1EF1 ph\xE1 khi \u0111\u1ED9i c\xF3 c\u1EADn chi\u1EBFn. repairPerSecond: ph\u1EA7n m\xE1u t\u1ED1i \u0111a l\xE0ng t\u1EF1 s\u1EEDa m\u1ED7i gi\xE2y khi ngo\xE0i tr\u1EADn (repairAfter gi\xE2y sau nh\xE1t \u0111\xE1nh cu\u1ED1i); fullAfter: ng\u1EE7 qu\xE1 b\u1EA5y l\xE2u th\xEC th\u1EE9c d\u1EADy l\xE0nh h\u1EB3n.",
+      slash: { fence: 1.5, gate: 1, house: 0.8, tower: 0.6 },
+      crush: { fence: 0.8, gate: 1.5, house: 1.2, tower: 1.5 },
+      pierce: { fence: 0.5, gate: 0.5, house: 0.4, tower: 0.3 },
+      ranged: 0.4,
+      breakers: 3,
+      blockedSeconds: 20,
+      repairPerSecond: 0.01,
+      repairAfter: 30,
+      fullAfter: 120
     },
     buildingHpPerTile: 45,
     crew: 3,
@@ -53739,7 +53753,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       sim2.pathLeft--;
       v.fight.repath = 0.5;
       v.path = sim2.pathTo(v, Math.floor(x), Math.floor(y), 3500);
-      if (!v.path.length) v.fight.repath = 1.5;
+      if (v.path.length) v.fight.blockedT = 0;
+      else {
+        v.fight.repath = 1.5;
+        v.fight.blockedT = (v.fight.blockedT ?? 0) + 1.5;
+        if (v.team === "player" && e.kind === "unit" && sim2.breachFor(v, x, y)) return;
+      }
     }
   }
   function homeSpot(sim2, v) {
@@ -54250,9 +54269,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   // src/sim/tribebuild.ts
   var planned = (p) => p.lv !== void 0;
   var keyOf = (p) => `${p.b ?? p.kind}@${p.x},${p.y}`;
-  function hpOf(kind, w, h3, lv, boss = false) {
-    const grow = (1 + 0.5 * (lv - 1)) * (boss ? DIFF.boss.wallHp : 1);
-    return Math.round(kind === "house" ? SIEGE.buildingHpPerTile * w * h3 * grow : (SIEGE.propHp[kind] ?? 60) * grow);
+  function hpOf(kind, _w, _h, lv, boss = false) {
+    return Math.round((SIEGE.propHp[kind] ?? 60) * (1 + 0.5 * (lv - 1)) * (boss ? DIFF.boss.wallHp : 1));
+  }
+  var maxPropHp = (t, p) => hpOf(p.kind, p.w, p.h, p.lv ?? 1, !!t.boss);
+  function repairProps(t, share2) {
+    for (const p of t.props) if (p.lv !== void 0) p.hp = Math.min(maxPropHp(t, p), p.hp + (share2 >= 1 ? Infinity : maxPropHp(t, p) * share2));
   }
   function clearPatch(sim2, x, y, w, h3, margin) {
     const W2 = sim2.world, N = W2.size;
@@ -54504,6 +54526,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   function wake(sim2, t) {
     if (t.awake || t.state === "destroyed" || t.state === "adopted") return;
     ensureLayout(sim2, t);
+    if (t.hitAt !== void 0 && sim2.time - t.hitAt > SIEGE.struct.fullAfter) repairProps(t, 1);
     t.awake = true;
     t.idleT = 0;
     const cap = visibleCap(sim2, t), crowd2 = crowdOf(t);
@@ -54575,6 +54598,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       sleep(sim2, t);
       return;
     }
+    if (t.hitAt !== void 0 && sim2.time - t.hitAt > SIEGE.struct.repairAfter) repairProps(t, SIEGE.struct.repairPerSecond);
     const r = LOD.gateRadius, atDoor = sim2.villagers.some((v) => v.health > 0 && Math.abs(v.x - t.camp.x) < r && Math.abs(v.y - t.camp.y) < r);
     setGates(sim2, t, hostile && atDoor || busy2);
     const crowd2 = crowdOf(t), hidden = crowd2.guards + crowd2.civs;
@@ -61262,6 +61286,7 @@ ${risk.lines.join("\n")}`);
     const p = t.props[i];
     p.hp = (p.hp ?? propHp(p.kind)) - dmg;
     t.angryUntil = Math.max(t.angryUntil, sim2.time + 120);
+    t.hitAt = sim2.time;
     if (p.hp > 0) return;
     t.props.splice(i, 1);
     const N = sim2.world.size;
@@ -61269,6 +61294,45 @@ ${risk.lines.join("\n")}`);
     sim2.say(`${PROP_NAME[p.kind] ?? "C\xF4ng tr\xECnh"} c\u1EE7a ${t.def.name} \u0111\xE3 b\u1ECB ph\xE1.`);
     sim2.noteBattle("note", `${PROP_NAME[p.kind] ?? "C\xF4ng tr\xECnh"} c\u1EE7a ${t.def.name} b\u1ECB ph\xE1.`);
     sim2.noteBattle("breach");
+  }
+  function structMult(w, kind) {
+    if (w.ranged) return SIEGE.struct.ranged;
+    const row = SIEGE.struct[w.type];
+    return kind && row[kind] || 1;
+  }
+  var segDist = (px, py, ax, ay, bx, by) => {
+    const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy, k = len2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2)) : 0;
+    return Math.hypot(px - (ax + k * dx), py - (ay + k * dy));
+  };
+  function breachFor(sim2, v, tx, ty) {
+    const w = weaponOf(v);
+    if (v.job !== "fight" || v.breaks) return false;
+    if (w.ranged && (v.fight.blockedT ?? 0) < SIEGE.struct.blockedSeconds && sim2.villagers.some((o) => o !== v && o.health > 0 && o.job === "fight" && !weaponOf(o).ranged && (o.fight.mode === "attack" || o.fight.mode === "attackMove") && Math.hypot(o.x - v.x, o.y - v.y) < 40)) return false;
+    const dmg = weaponDamage(sim2, v, w) + RULES.strengthDamage * v.stats.str, cycle = swingCycle(sim2, v, w), N = sim2.world.size;
+    let best = null, bestTime = Infinity;
+    for (const t of sim2.tribes) {
+      if (t.state === "adopted" || t.state === "destroyed") continue;
+      const towers = t.props.filter((q) => q.kind === "tower");
+      for (const p of t.props) {
+        if (p.kind === "fire" || p.kind === "pile" || !sim2.world.occ[p.y * N + p.x]) continue;
+        const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+        if (segDist(cx, cy, v.x, v.y, tx, ty) > 3.5) continue;
+        const crew2 = sim2.villagers.filter((o) => o.breaks?.kind === "prop" && o.breaks.x === p.x && o.breaks.y === p.y).length;
+        if (crew2 >= SIEGE.struct.breakers) continue;
+        const rate = dmg * structMult(w, p.kind) / cycle * (crew2 + 1);
+        const time = Math.hypot(cx - v.x, cy - v.y) / 2.2 + (p.hp ?? propHp(p.kind)) / Math.max(0.1, rate) + 3 * towers.filter((q) => Math.hypot(q.x - p.x, q.y - p.y) < 14).length;
+        if (time < bestTime) {
+          bestTime = time;
+          best = { t, p };
+        }
+      }
+    }
+    if (!best) return false;
+    const keep = { mode: v.fight.mode, target: v.fight.target, dest: v.fight.dest, anchor: v.fight.anchor };
+    if (!startBreaking(sim2, v, { kind: "enemy", x: best.p.x, y: best.p.y, label: PROP_NAME[best.p.kind] ?? "c\xF4ng tr\xECnh", clear: true, tribe: best.t.id })) return false;
+    Object.assign(v.fight, keep);
+    v.fight.blockedT = 0;
+    return true;
   }
   function breakBrain(sim2, v, dt) {
     const b = v.breaks;
@@ -61278,15 +61342,17 @@ ${risk.lines.join("\n")}`);
       stopBreaking(v);
       return false;
     }
+    v.fight.chaseT = 0;
+    const w = weaponOf(v);
     v.fight.scan -= dt;
     if (v.fight.scan <= 0) {
       v.fight.scan = 0.4;
-      if (threatsOf(sim2, v, 3.5).length) {
+      if (b.kind === "prop" ? v.flinch > 0 && threatsOf(sim2, v, w.range + 1).length : threatsOf(sim2, v, 3.5).length) {
         stopBreaking(v);
         return false;
       }
     }
-    const w = weaponOf(v), dx = Math.max(box.x - v.x, 0, v.x - (box.x + box.w)), dy = Math.max(box.y - v.y, 0, v.y - (box.y + box.h));
+    const dx = Math.max(box.x - v.x, 0, v.x - (box.x + box.w)), dy = Math.max(box.y - v.y, 0, v.y - (box.y + box.h));
     if (Math.hypot(dx, dy) <= SIEGE.reach + (b.kind === "prop" && !w.ranged ? w.range * 0.5 : 0)) {
       v.path = [];
       v.slide = null;
@@ -61296,7 +61362,7 @@ ${risk.lines.join("\n")}`);
         const { hitAt, end } = swingTimes(w.anim);
         v.swing = { t: 0, hitAt, end, target: { kind: "unit", id: -1 } };
         v.atkCd = swingCycle(sim2, v, w);
-        if (b.kind === "prop") damageProp(sim2, b.tribe, b.x, b.y, (weaponDamage(sim2, v, w) + RULES.strengthDamage * v.stats.str) * (w.type === "slash" ? 1.5 : 1));
+        if (b.kind === "prop") damageProp(sim2, b.tribe, b.x, b.y, (weaponDamage(sim2, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim2.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind));
       }
       if (b.kind === "node") {
         const kind = sim2.world.nodeAt(b.x, b.y).kind;
@@ -61862,6 +61928,10 @@ ${risk.lines.join("\n")}`);
     /** → siege.startBreaking */
     startBreaking(v, ob, home) {
       return startBreaking(this, v, ob, home);
+    },
+    /** → siege.breachFor */
+    breachFor(v, x, y) {
+      return breachFor(this, v, x, y);
     },
     /** → siege.breakBrain */
     breakBrain(v, dt) {
