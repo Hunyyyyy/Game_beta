@@ -501,7 +501,8 @@ export function tickPlans(sim: Sim, dt: number): void {
       }
       if (m.state === 'march' || m.state === 'engaged' || m.state === 'blocked') {
         if (m.state === 'march' && m.path.length && half && sim.watchMarch(m, s)) continue; // the way ahead is shut: halted
-        if (second && m.state !== 'blocked') sim.tickTarget(plan, m, s);
+        // an arrow with nothing to aim at, or one that has run out, is not the end of the war: the soldiers with nothing to do go for the nearest soldier of the village, then its nearest work
+        if (second && m.state !== 'blocked' && !sim.tickTarget(plan, m, s) && m.state === 'engaged' && m.stance === 'fight') sim.rampage(plan, s);
         const pos = m.path.length ? null : objectivePos(sim, plan, m);
         if (m.path.length && m.state !== 'blocked') pathStep(sim, m, s, c);
         if (pos) {

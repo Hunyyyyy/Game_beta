@@ -205,6 +205,8 @@ export const WAR = {
   breakBlock(this: Sim, plan: Plan, squadId: number, n: number): string | null { return siege.breakBlock(this, plan, squadId, n); },
   /** → siege.targetNow */
   targetNow(this: Sim, plan: Plan, m: Mission): siege.TargetState | null { return siege.targetNow(this, plan, m); },
+  /** → siege.rampage */
+  rampage(this: Sim, plan: Plan, s: Squad): void { siege.rampage(this, plan, s); },
   /** → siege.tickTarget */
   tickTarget(this: Sim, plan: Plan, m: Mission, s: Squad): boolean { return siege.tickTarget(this, plan, m, s); },
   /** → warplan.setMissionTarget */

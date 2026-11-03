@@ -561,8 +561,13 @@ export class Renderer {
 
     // ---- sleeping villagers ----
     ctx.font = `700 ${Math.max(10, 5 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center';
+    // one z for each little cluster of sleepers (a camp asleep would otherwise be a cloud of them, one for every villager), and never more than a few on the screen
+    const zzz = new Set<number>();
     for (const v of sim.villagers) {
-      if (v.phase !== 'sleep' || !onScr(v.x, v.y)) continue;
+      if (v.phase !== 'sleep' || !onScr(v.x, v.y) || zzz.size >= 6) continue;
+      const cell = Math.floor(v.x / 4) * 4096 + Math.floor(v.y / 4);
+      if (zzz.has(cell)) continue;
+      zzz.add(cell);
       const p = this.worldToScreen(v.x * TILE - 10, v.y * TILE - 14), k = (time * 0.6 + v.id * 0.37) % 1;
       ctx.fillStyle = `rgba(235,240,255,${(0.9 * (1 - k)).toFixed(2)})`;
       ctx.fillText('z', p.x + k * 6 * z, p.y - k * 10 * z);

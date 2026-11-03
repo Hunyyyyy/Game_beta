@@ -340,7 +340,7 @@ export function targetNow(sim: Sim, plan: Plan, m: Mission): TargetState | null 
 const idle = (v: Villager): boolean => !v.breaks && !v.fight.target && v.phase !== 'fight' && v.phase !== 'flee' && v.down <= 0;
 
 /** Soldiers with nothing to do go for the nearest enemy of the village, or failing that its nearest work. Once a second. */
-function rampage(sim: Sim, plan: Plan, s: Squad): void {
+export function rampage(sim: Sim, plan: Plan, s: Squad): void {
   const t = sim.tribes.find((q) => q.id === plan.tribe);
   if (!t) return;
   const foes = t.unitIds.map((id) => sim.get(id)).filter((u): u is Villager => !!u && u.health > 0 && u.ai?.role !== 'civ');

@@ -638,7 +638,7 @@ export class Sim {
       return;
     }
     // the war is over: whoever lay out of sight (in a field tent, or with no bed) gets up and goes to bed in the right place
-    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / DAY_LENGTH); this.warSince = -1; this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; }
+    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / DAY_LENGTH); this.warSince = -1; this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
