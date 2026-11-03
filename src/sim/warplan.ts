@@ -432,16 +432,15 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
 }
 
 /**
- * How a war ends. It is won when the village has no soldier left, its fire is out and every one of its works is down (then the people ask for mercy).
+ * How a war ends. It is won when the fire of the village is put out, whatever else still stands (then the people ask for mercy).
  * It is lost when there is no soldier of ours left, or the army was pulled back.
  */
 function endCheck(sim: Sim, plan: Plan, t: Sim['tribes'][number] | undefined): void {
   if (!t) { plan.status = 'done'; plan.result = 'lost'; plan.endedAt = sim.time; return; }
-  const armed = headcount(sim, t).guards > 0; // the soldiers indoors count
-  if (t.state !== 'free' || (!armed && t.props.every((p) => p.kind === 'fence' || p.kind === 'gate'))) { // the walls may stand: they only kept the village shut
+  if (t.state !== 'free' || !t.props.some((p) => p.kind === 'fire')) {
     plan.stage = 'over'; plan.result = 'won'; plan.endedAt = sim.time; // the war goes on (the army stands where it is) until the player gives the word to pull out
-    sim.say(`Chiến thắng! ${t.def.name} không còn lính, lửa tắt và mọi nhà, tháp, kho đã sập. Bấm Rút quân khi muốn về làng.`);
-    sim.noteBattle('note', `${t.def.name} bị san bằng.`);
+    sim.say(`Chiến thắng! Lửa trại của ${t.def.name} đã bị phá. Bấm Rút quân khi muốn về làng.`);
+    sim.noteBattle('note', `Lửa trại của ${t.def.name} bị phá.`);
     if (t.state === 'free') sim.conquer(t.id, 'Làng bị san bằng');
     return;
   }

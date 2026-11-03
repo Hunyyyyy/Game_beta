@@ -60833,13 +60833,12 @@ ${risk.lines.join("\n")}`);
       plan2.endedAt = sim2.time;
       return;
     }
-    const armed = headcount(sim2, t).guards > 0;
-    if (t.state !== "free" || !armed && t.props.every((p) => p.kind === "fence" || p.kind === "gate")) {
+    if (t.state !== "free" || !t.props.some((p) => p.kind === "fire")) {
       plan2.stage = "over";
       plan2.result = "won";
       plan2.endedAt = sim2.time;
-      sim2.say(`Chi\u1EBFn th\u1EAFng! ${t.def.name} kh\xF4ng c\xF2n l\xEDnh, l\u1EEDa t\u1EAFt v\xE0 m\u1ECDi nh\xE0, th\xE1p, kho \u0111\xE3 s\u1EADp. B\u1EA5m R\xFAt qu\xE2n khi mu\u1ED1n v\u1EC1 l\xE0ng.`);
-      sim2.noteBattle("note", `${t.def.name} b\u1ECB san b\u1EB1ng.`);
+      sim2.say(`Chi\u1EBFn th\u1EAFng! L\u1EEDa tr\u1EA1i c\u1EE7a ${t.def.name} \u0111\xE3 b\u1ECB ph\xE1. B\u1EA5m R\xFAt qu\xE2n khi mu\u1ED1n v\u1EC1 l\xE0ng.`);
+      sim2.noteBattle("note", `L\u1EEDa tr\u1EA1i c\u1EE7a ${t.def.name} b\u1ECB ph\xE1.`);
       if (t.state === "free") sim2.conquer(t.id, "L\xE0ng b\u1ECB san b\u1EB1ng");
       return;
     }
@@ -61552,16 +61551,34 @@ ${risk.lines.join("\n")}`);
   function rampage(sim2, plan2, s) {
     const t = sim2.tribes.find((q) => q.id === plan2.tribe);
     if (!t) return;
-    const foes = t.unitIds.map((id) => sim2.get(id)).filter((u) => !!u && u.health > 0 && u.ai?.role !== "civ");
+    const foes = t.unitIds.map((id) => sim2.get(id)).filter((u) => !!u && u.health > 0 && u.inTent !== true && u.ai?.role !== "civ");
+    const fire = t.props.find((q) => q.kind === "fire");
+    const breakProp = (v, p) => startBreaking(sim2, v, { kind: "enemy", x: p.x, y: p.y, label: p.kind, clear: true, tribe: t.id });
     for (const v of sim2.squadUnits(s)) {
       if (!idle(v)) continue;
-      const near2 = foes.slice().sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
-      if (near2) {
-        sim2.orderAttack([v.id], { kind: "unit", id: near2.id });
+      const sight = sim2.sightOf(v), dist2 = (x, y) => Math.hypot(x - v.x, y - v.y);
+      const seen = (p) => dist2(p.x + p.w / 2, p.y + p.h / 2) <= sight;
+      const nearest = (list, at) => list.slice().sort((a, b) => dist2(...at(a)) - dist2(...at(b)))[0];
+      const tower = nearest(t.props.filter((q) => q.kind === "tower" && seen(q)), (q) => [q.x, q.y]);
+      if (tower) {
+        breakProp(v, tower);
         continue;
       }
-      const p = t.props.filter((q) => !isWall2(q)).sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
-      if (p) startBreaking(sim2, v, { kind: "enemy", x: p.x, y: p.y, label: p.kind, clear: true, tribe: t.id });
+      const foe = nearest(foes.filter((u) => dist2(u.x, u.y) <= sight), (u) => [u.x, u.y]);
+      if (foe) {
+        sim2.orderAttack([v.id], { kind: "unit", id: foe.id });
+        continue;
+      }
+      const house = nearest(t.props.filter((q) => q.kind === "house" && seen(q)), (q) => [q.x, q.y]);
+      if (house) {
+        breakProp(v, house);
+        continue;
+      }
+      if (fire) breakProp(v, fire);
+      else {
+        const left = nearest(foes, (u) => [u.x, u.y]);
+        if (left) sim2.orderAttack([v.id], { kind: "unit", id: left.id });
+      }
     }
   }
   function around(sim2, plan2, s) {

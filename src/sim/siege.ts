@@ -346,18 +346,29 @@ const idle = (v: Villager): boolean => !v.breaks && !v.fight.target && v.phase !
 /** A fence or a gate: part of what keeps a village shut, not of what has to fall for a war to be won. */
 export const isWall = (p: Prop): boolean => p.kind === 'fence' || p.kind === 'gate';
 
-/** Soldiers with nothing to do go for the nearest enemy of the village, or failing that its nearest work. Once a second. */
+/**
+ * Soldiers with nothing to do pick what to hit by what they can see: a tower first, then a soldier of the village, then a house; with none of these in sight
+ * they go for the fire (to put it out is to win). Fences and gates are broken only when they shut the way (breakBrain → breachFor). Once a second.
+ */
 export function rampage(sim: Sim, plan: Plan, s: Squad): void {
   const t = sim.tribes.find((q) => q.id === plan.tribe);
   if (!t) return;
-  const foes = t.unitIds.map((id) => sim.get(id)).filter((u): u is Villager => !!u && u.health > 0 && u.ai?.role !== 'civ');
+  const foes = t.unitIds.map((id) => sim.get(id)).filter((u): u is Villager => !!u && u.health > 0 && u.inTent !== true && u.ai?.role !== 'civ');
+  const fire = t.props.find((q) => q.kind === 'fire');
+  const breakProp = (v: Villager, p: Prop) => startBreaking(sim, v, { kind: 'enemy', x: p.x, y: p.y, label: p.kind, clear: true, tribe: t.id });
   for (const v of sim.squadUnits(s)) {
     if (!idle(v)) continue;
-    const near = foes.slice().sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
-    if (near) { sim.orderAttack([v.id], { kind: 'unit', id: near.id }); continue; }
-    // fences and gates are not worth breaking for their own sake: a soldier breaks one only when it shuts his way (breakBrain → breachFor)
-    const p = t.props.filter((q) => !isWall(q)).sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
-    if (p) startBreaking(sim, v, { kind: 'enemy', x: p.x, y: p.y, label: p.kind, clear: true, tribe: t.id });
+    const sight = sim.sightOf(v), dist = (x: number, y: number) => Math.hypot(x - v.x, y - v.y);
+    const seen = (p: Prop) => dist(p.x + p.w / 2, p.y + p.h / 2) <= sight;
+    const nearest = <T>(list: T[], at: (o: T) => [number, number]): T | undefined => list.slice().sort((a, b) => dist(...at(a)) - dist(...at(b)))[0];
+    const tower = nearest(t.props.filter((q) => q.kind === 'tower' && seen(q)), (q) => [q.x, q.y]);
+    if (tower) { breakProp(v, tower); continue; }
+    const foe = nearest(foes.filter((u) => dist(u.x, u.y) <= sight), (u) => [u.x, u.y]);
+    if (foe) { sim.orderAttack([v.id], { kind: 'unit', id: foe.id }); continue; }
+    const house = nearest(t.props.filter((q) => q.kind === 'house' && seen(q)), (q) => [q.x, q.y]);
+    if (house) { breakProp(v, house); continue; }
+    if (fire) breakProp(v, fire); // nothing in sight: on to the fire
+    else { const left = nearest(foes, (u) => [u.x, u.y]); if (left) sim.orderAttack([v.id], { kind: 'unit', id: left.id }); }
   }
 }
 
