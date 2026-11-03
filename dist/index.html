@@ -4006,6 +4006,58 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     outdoor: ["wood", "stone", "food", "build"]
   };
 
+  // src/data/war.json
+  var war_default = {
+    advanced: false,
+    advancedBuildings: ["tower", "supplycamp", "scouttent"],
+    _note: "advanced: the war-logistics layer of the medieval era (supply soldiers and their camp, field tents and rest, harassment raids on the march, the watchtower, the research of the march and of the war plan). Off: none of it exists in the game (nor in the screens); set true when the era opens it. The army then eats from the village store. The army on the march. The more squads and soldiers, the harder it is to move them: speed drops (slow, from slowMin for one soldier of one squad up to slowMax), and they eat and tire more. Research can cut the slow (research: tech id -> share cut off), but never below slowFloor, so an army can never march faster than (1 - slowFloor) of normal.",
+    march: {
+      slowMin: 0.5,
+      slowMax: 0.85,
+      perSquad: 0.04,
+      perSoldier: 4e-3,
+      slowFloor: 0.3,
+      paceScale: 1,
+      maxCut: 0.6,
+      foodBase: 1.5,
+      energyBase: 1.5
+    },
+    research: {},
+    supply: {
+      load: 60,
+      trail: 8,
+      defaultDays: 3,
+      maxDays: 10,
+      hungerSmooth: 10
+    },
+    tent: {
+      woodBase: 12,
+      hideBase: 8,
+      perLevel: 1,
+      buildSeconds: 150,
+      buildReach: 4,
+      refund: 0.5,
+      weight: 1.5,
+      near: 14
+    },
+    tired: {
+      below: 30,
+      maxPenalty: 0.35
+    },
+    harass: {
+      first: 90,
+      every: 150,
+      base: 3,
+      perWarriors: 10,
+      max: 8,
+      range: 120,
+      minFromVillage: 25,
+      spawnDist: 32,
+      life: 240,
+      maxAlive: 12
+    }
+  };
+
   // src/data/progression.json
   var progression_default = {
     _note: "K\u1EBF ho\u1EA1ch ph\xE1t tri\u1EC3n theo c\u1EA5p Nh\xE0 chung (l\u1EEDa tr\u1EA1i) v\xE0 c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u. C\xF4ng tr\xECnh n\xE0o m\u1EDF \u1EDF c\u1EA5p l\u1EEDa n\xE0o n\u1EB1m trong ch\xEDnh n\xF3: src/content/buildings/<kind>/building.json (unlockFire). \u1EDE \u0111\xE2y ch\u1EC9 c\xF2n c\u1EA5p nh\xE0 t\u1ED1i \u0111a v\xE0 \u0111i\u1EC1u ki\u1EC7n n\xE2ng l\u1EEDa theo t\u1EEBng c\u1EA5p l\u1EEDa, v\xE0 c\xE1c nghi\xEAn c\u1EE9u m\u1EDF \u1EDF t\u1EEBng c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u (id trong data/research.json).",
@@ -6226,6 +6278,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var holdsGoods = (b) => b.kind === "storage" || b.kind === "campfire";
   var GATHER_HOUSE = { wood: "lumberyard", stone: "quarry", food: "farmhouse" };
   var gatherMult = (b) => b ? pace_default.levelYield[Math.min(pace_default.levelYield.length, Math.max(1, b.level)) - 1] : 1;
+  var ADVANCED_WAR = war_default.advanced;
+  var eraLocked = (kind) => !ADVANCED_WAR && war_default.advancedBuildings.includes(kind);
   var needsWork = (b) => !b.done || b.upgrading || !!b.repairing;
   var canGrow = (kind) => BUILDINGS[kind].buildable || !!BUILDINGS[kind].upgradable;
   var POP_BY_FIRE = BUILDING_FILES.campfire.popByFire;
@@ -52107,7 +52161,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   }
   var PLAN_TREE = researchtree_default.plan;
   var PLAN_TECH = { detail: "plan_report", supply: "plan_supply", weather: "plan_weather", rest: "plan_rest" };
-  var planOpen = (done, f, free = false) => free || !RESEARCH.enabled || done.has(PLAN_TECH[f]);
+  var planOpen = (done, f, free = false) => ADVANCED_WAR && (free || !RESEARCH.enabled || done.has(PLAN_TECH[f]));
   var statBonus = (done, role, stat) => STAT_DEF[stat].steps.slice(0, lineLevel(done, role, stat)).reduce((a, b) => a + b, 0) * (ROLE_SCALE[role] ?? 1);
   var NO_BLUEPRINT = /^(club|spear|mace|sling|bow|hide|bone|axe|pick|hoe|hammer|torch)\d$/;
   var recipeOpen = (done, recipeId) => !RESEARCH.enabled || NO_BLUEPRINT.test(recipeId) || done.has(recipeId);
@@ -53189,56 +53243,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     v.hold = null;
   }
 
-  // src/data/war.json
-  var war_default = {
-    _note: "The army on the march. The more squads and soldiers, the harder it is to move them: speed drops (slow, from slowMin for one soldier of one squad up to slowMax), and they eat and tire more. Research can cut the slow (research: tech id -> share cut off), but never below slowFloor, so an army can never march faster than (1 - slowFloor) of normal.",
-    march: {
-      slowMin: 0.5,
-      slowMax: 0.85,
-      perSquad: 0.04,
-      perSoldier: 4e-3,
-      slowFloor: 0.3,
-      paceScale: 1,
-      maxCut: 0.6,
-      foodBase: 1.5,
-      energyBase: 1.5
-    },
-    research: {},
-    supply: {
-      load: 60,
-      trail: 8,
-      defaultDays: 3,
-      maxDays: 10,
-      hungerSmooth: 10
-    },
-    tent: {
-      woodBase: 12,
-      hideBase: 8,
-      perLevel: 1,
-      buildSeconds: 150,
-      buildReach: 4,
-      refund: 0.5,
-      weight: 1.5,
-      near: 14
-    },
-    tired: {
-      below: 30,
-      maxPenalty: 0.35
-    },
-    harass: {
-      first: 90,
-      every: 150,
-      base: 3,
-      perWarriors: 10,
-      max: 8,
-      range: 120,
-      minFromVillage: 25,
-      spawnDist: 32,
-      life: 240,
-      maxAlive: 12
-    }
-  };
-
   // src/sim/warmarch.ts
   var WAR_DATA = war_default;
   var supplyLoad = (sim2) => WAR_DATA.supply.load * (1 + statBonus(sim2.researched, "march_army", "mload") / 100);
@@ -53249,6 +53253,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return Math.min(WAR_DATA.march.maxCut, cut);
   }
   function marchOf(sim2, squads, soldiers) {
+    if (!ADVANCED_WAR) return { squads, soldiers, slow: 0, speed: 1, food: 1, energy: 1 };
     const k = WAR_DATA.march, load = Math.max(0, Math.min(1, k.perSquad * Math.max(0, squads - 1) + k.perSoldier * Math.max(0, soldiers - 1)));
     const raw = k.slowMin + (k.slowMax - k.slowMin) * load;
     const slow = Math.max(k.slowFloor, raw * (1 - slowCut(sim2)));
@@ -53725,7 +53730,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     sim2.nextRaid++;
     if (placed) sim2.say(`${species === "wolf" ? "B\u1EA7y s\xF3i \u0111\xF3i" : `${ANIMALS[species].name} (${placed} con)`} k\xE9o t\u1EDBi quanh l\xE0ng! \u0110\u1ED1t l\u1EEDa v\xE0 gi\u1EEF d\xE2n g\u1EA7n \u0111\u1ED1ng l\u1EEDa.`);
   }
-  var armyWeapons = (army2) => Object.entries(army2).flatMap(([w, n]) => Array.from({ length: n }, () => w));
+  var armyWeapons = (army3) => Object.entries(army3).flatMap(([w, n]) => Array.from({ length: n }, () => w));
   function initEvents(sim2) {
     for (const e of events_default.events) {
       const fireDay = e.day + Math.floor(sim2.frnd() * (e.spread + 1)), size = e.army ? armyWeapons(e.army).length : e.size ?? 1;
@@ -54072,9 +54077,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   }
   function questViews(sim2, ui) {
+    const WAR_ONLY = ["scoutSent", "hasMap", "planDefense", "planArrow", "createSquad", "squadSize", "squadFormation"];
+    const shut = (q) => "kind" in q.done && typeof q.done.kind === "string" && eraLocked(q.done.kind) || !ADVANCED_WAR && (WAR_ONLY.includes(q.done.type) || q.done.type === "researchTech" && /^(signal|form_)/.test(q.done.id));
     for (const q of QUESTS) if (!sim2.questSeen.has(q.id) && q.after.every((a) => sim2.questSeen.has(a))) {
       const [have2, need] = measure(sim2, q.done, ui);
-      if (have2 >= need) sim2.questSeen.add(q.id);
+      if (have2 >= need || shut(q)) sim2.questSeen.add(q.id);
     }
     return QUESTS.map((quest) => {
       const done = sim2.questSeen.has(quest.id), open = !done && quest.after.every((a) => sim2.questSeen.has(a));
@@ -54362,14 +54369,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (need === null) return null;
     for (const k of Object.keys(BUILDINGS)) {
       const d = BUILDINGS[k];
-      if (!d.buildable || fireUnlockLevel(k) > level) continue;
+      if (!d.buildable || fireUnlockLevel(k) > level || eraLocked(k)) continue;
       const mine2 = sim2.buildings.filter((b) => b.kind === k), want = Math.min(need, maxLevel(k, sim2.era));
       if (!mine2.length) return `C\u1EA7n d\u1EF1ng ${d.name} tr\u01B0\u1EDBc khi n\xE2ng Nh\xE0 chung`;
       if (mine2.some((b) => !b.done || b.upgrading || b.level < want)) return `C\u1EA7n n\xE2ng ${d.name} l\xEAn c\u1EA5p ${want} tr\u01B0\u1EDBc khi n\xE2ng Nh\xE0 chung`;
     }
     for (const [group, at] of Object.entries(fireUpgradeGroups(level))) for (const k of Object.keys(BUILDINGS)) {
       const d = BUILDINGS[k];
-      if (d.group !== group || !d.buildable) continue;
+      if (d.group !== group || !d.buildable || eraLocked(k)) continue;
       const mine2 = sim2.buildings.filter((b) => b.kind === k), want = Math.min(at, maxLevel(k, sim2.era));
       if (!mine2.length) return `C\u1EA7n d\u1EF1ng ${d.name} tr\u01B0\u1EDBc khi n\xE2ng Nh\xE0 chung`;
       if (mine2.some((b) => !b.done || b.upgrading || b.level < want)) return `C\u1EA7n n\xE2ng ${d.name} l\xEAn c\u1EA5p ${want} tr\u01B0\u1EDBc khi n\xE2ng Nh\xE0 chung`;
@@ -54382,6 +54389,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return sim2.buildings.reduce((n, f) => n + (f.kind === "campfire" ? per[Math.min(per.length, f.level) - 1] : 0), 0);
   }
   function buildingLock(sim2, kind) {
+    if (eraLocked(kind) && !sim2.dev.freeBuild) return "M\u1EDF kh\xF3a \u1EDF th\u1EDDi Trung c\u1ED5";
     const fireNeed = fireUnlockLevel(kind);
     if (!sim2.dev.freeBuild && fireNeed > fireLevel(sim2)) return `C\u1EA7n n\xE2ng ${BUILDINGS.campfire.name} l\xEAn c\u1EA5p ${fireNeed} \u0111\u1EC3 x\xE2y ${BUILDINGS[kind].name.toLowerCase()}`;
     const have2 = sim2.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim2, kind);
@@ -58272,8 +58280,8 @@ ${risk.lines.join("\n")}`);
     const us = squadUnits(sim2, s);
     return us.length ? { x: us.reduce((a, v) => a + v.x, 0) / us.length, y: us.reduce((a, v) => a + v.y, 0) / us.length } : null;
   }
-  function createSquad(sim2, name) {
-    if (sim2.squads.length >= squadLimit(sim2)) return { reason: squadLimit(sim2) ? `L\u1EC1u h\u1ECDp chi\u1EBFn ch\u1EC9 cho ${squadLimit(sim2)} \u0111\u1ED9i: n\xE2ng c\u1EA5p l\u1EC1u` : "C\u1EA7n d\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn \u0111\u1EC3 l\u1EADp \u0111\u1ED9i" };
+  function createSquad(sim2, name, force = false) {
+    if (!force && sim2.squads.length >= squadLimit(sim2)) return { reason: squadLimit(sim2) ? `L\u1EC1u h\u1ECDp chi\u1EBFn ch\u1EC9 cho ${squadLimit(sim2)} \u0111\u1ED9i: n\xE2ng c\u1EA5p l\u1EC1u` : "C\u1EA7n d\u1EF1ng L\u1EC1u h\u1ECDp chi\u1EBFn \u0111\u1EC3 l\u1EADp \u0111\u1ED9i" };
     const id = sim2.nextSquad++;
     const s = { id, name: name ?? `\u0110\u1ED9i ${String.fromCharCode(64 + id)}`, color: COLORS[(id - 1) % COLORS.length], ids: [], leader: -1, formation: "line", mastery: Object.fromEntries(FORMATION_IDS.map((f) => [f, COMMAND.mastery.start])), switchUntil: 0, anchor: null, heading: 0, training: false };
     sim2.squads.push(s);
@@ -58740,6 +58748,11 @@ ${risk.lines.join("\n")}`);
     return out;
   }
   function loadPacks(sim2, plan2) {
+    if (!ADVANCED_WAR) {
+      plan2.supplyIds = [];
+      sim2.warHunger = 0;
+      return;
+    }
     const p = packPlan(sim2, plan2), crew2 = supplyAvailable(sim2).sort((a, b) => b.energy - a.energy).slice(0, p.sup);
     plan2.supplyIds = crew2.map((v) => v.id);
     sim2.warHunger = 0;
@@ -59226,7 +59239,7 @@ ${risk.lines.join("\n")}`);
   }
   function setRest(sim2, plan2, squadId, on) {
     if (plan2.kind !== "attack" || plan2.status !== "running") return "Ch\u01B0a c\xF3 tr\u1EADn n\xE0o";
-    if (!sim2.planOpen("rest")) return "C\u1EA7n nghi\xEAn c\u1EE9u: Ngh\u1EC9 ng\u01A1i d\xE3 chi\u1EBFn";
+    if (!sim2.planOpen("rest")) return ADVANCED_WAR ? "C\u1EA7n nghi\xEAn c\u1EE9u: Ngh\u1EC9 ng\u01A1i d\xE3 chi\u1EBFn" : "Ch\u01B0a m\u1EDF kh\xF3a";
     const m = plan2.missions.find((x) => x.squad === squadId), s = sim2.squadById(squadId), c = s ? sim2.squadCenter(s) : null;
     if (!m || !s || !c) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
     if (!!m.resting === on) return null;
@@ -59531,6 +59544,73 @@ ${risk.lines.join("\n")}`);
     return null;
   }
 
+  // src/sim/warquick.ts
+  var ARM_NAME2 = { foot: "B\u1ED9 binh", archer: "Cung th\u1EE7", cavalry: "K\u1EF5 binh" };
+  function army2(sim2) {
+    return sim2.mine(sim2.villagers.filter((v) => v.job === "fight" && !v.guard && v.post < 0 && v.health > 0).map((v) => v.id)).filter((v) => v.job === "fight");
+  }
+  function quickAttack(sim2, tribeId) {
+    if (warPlan(sim2)) return "\u0110ang c\xF3 chi\u1EBFn tranh";
+    const t = tribeOf(sim2, tribeId);
+    if (!t || t.state !== "free") return "L\xE0ng n\xE0y kh\xF4ng c\xF2n l\xE0 k\u1EBB \u0111\u1ECBch";
+    if (!sim2.isFound(tribeId)) return "Ch\u01B0a ph\xE1t hi\u1EC7n l\xE0ng n\xE0y";
+    const men = army2(sim2);
+    if (!men.length) return "Ch\u01B0a c\xF3 l\xEDnh n\xE0o ra tr\u1EADn: tuy\u1EC3n l\xEDnh \u1EDF c\xE1c tr\u1EA1i";
+    for (const p of sim2.plans.filter((x) => x.quick && x.status !== "running")) sim2.plans.splice(sim2.plans.indexOf(p), 1);
+    for (const v of men) {
+      sim2.leaveSquad([v.id]);
+    }
+    const plan2 = newPlan(sim2, "attack", tribeId);
+    plan2.quick = true;
+    for (const arm of ["foot", "archer", "cavalry"]) {
+      const group = men.filter((v) => sim2.armOf(v) === arm);
+      if (!group.length) continue;
+      const s = createSquad(sim2, ARM_NAME2[arm], true).squad;
+      for (const v of group) {
+        v.squad = s.id;
+        s.ids.push(v.id);
+      }
+      addMission(sim2, plan2, s.id);
+      plan2.missions[plan2.missions.length - 1].ordered = true;
+    }
+    for (const m of plan2.missions) {
+      const s = sim2.squadById(m.squad);
+      m.state = "wait";
+      m.initial = sim2.squadUnits(s).length;
+      m.leg = 0;
+      m.block = null;
+    }
+    loadPacks(sim2, plan2);
+    begin(sim2, plan2);
+    plan2.status = "running";
+    plan2.stage = "ready";
+    plan2.startedAt = sim2.time;
+    plan2.signal = false;
+    plan2.result = "";
+    plan2.endedAt = 0;
+    engagePlan(sim2, plan2);
+    sim2.say(`To\xE0n qu\xE2n (${men.length} l\xEDnh) xu\u1EA5t ph\xE1t \u0111\xE1nh ${t.def.name}!`);
+    return null;
+  }
+  function cleanup(sim2) {
+    for (const p of sim2.plans) {
+      if (!p.quick || p.status === "running") continue;
+      for (const m of [...p.missions]) {
+        const s = sim2.squadById(m.squad);
+        if (!s) continue;
+        const ids = [...s.ids];
+        disbandSquad(sim2, s.id);
+        for (const id of ids) {
+          const v = sim2.byId.get(id);
+          if (v && v.job === "fight") {
+            sim2.clearCombat(v);
+            v.recall = true;
+          }
+        }
+      }
+    }
+  }
+
   // src/sim/forecast.ts
   var SPREAD = [0.4, 0.35, 0.2, 0.1];
   var AVERAGE_STAT = 6.5;
@@ -59613,8 +59693,10 @@ ${risk.lines.join("\n")}`);
     const home = sim2.villagers.filter((v) => v.job === "fight" && v.health > 0 && !plan2.missions.some((m) => sim2.squadById(m.squad)?.ids.includes(v.id))).length;
     if (home < 3) w.push(`Ch\u1EC9 ${home} l\xEDnh \u1EDF l\u1EA1i gi\u1EEF l\xE0ng`);
     const pk = packPlan(sim2, plan2);
-    if (!pk.sup) w.push("Kh\xF4ng c\xF3 l\xEDnh h\u1EADu c\u1EA7n: qu\xE2n s\u1EBD \u0111\xF3i");
-    else if (pk.days < plan2.carryDays - 0.05) w.push(`L\u01B0\u01A1ng ch\u1EC9 \u0111\u1EE7 ${pk.days.toFixed(1)} ng\xE0y`);
+    if (ADVANCED_WAR) {
+      if (!pk.sup) w.push("Kh\xF4ng c\xF3 l\xEDnh h\u1EADu c\u1EA7n: qu\xE2n s\u1EBD \u0111\xF3i");
+      else if (pk.days < plan2.carryDays - 0.05) w.push(`L\u01B0\u01A1ng ch\u1EC9 \u0111\u1EE7 ${pk.days.toFixed(1)} ng\xE0y`);
+    }
     out.win = [`\u0110\u1ECBch h\u1EBFt l\xEDnh, l\u1EEDa t\u1EAFt, c\xF4ng tr\xECnh s\u1EADp \u2192 d\xE2n xin h\xE0ng`, "L\u1EA5y kho l\u01B0\u01A1ng c\u1EE7a \u0111\u1ECBch", `M\u1EA5t kho\u1EA3ng ${pct2(lossIfWin)} qu\xE2n`];
     out.lose = ["H\u1EBFt qu\xE2n ho\u1EB7c r\xFAt lui", "L\xEDnh ch\u1EBFt l\xE0 m\u1EA5t c\u1EA3 v\u0169 kh\xED, gi\xE1p", "\u0110\u1ECBch c\xF3 th\u1EC3 k\xE9o \u0111\u1EBFn tr\u1EA3 \u0111\u0169a"];
     out.verdict = out.chance >= 0.8 ? "R\u1EA5t c\xF3 l\u1EE3i" : out.chance >= 0.6 ? "C\xF3 l\u1EE3i" : out.chance >= 0.4 ? "C\xE2n b\u1EB1ng" : out.chance >= 0.2 ? "B\u1EA5t l\u1EE3i" : "R\u1EA5t b\u1EA5t l\u1EE3i";
@@ -59634,8 +59716,8 @@ ${risk.lines.join("\n")}`);
       if (longest > 0) out.facts.push(["\u0110\u01B0\u1EDDng \u0111i", `~${Math.max(1, Math.round(longest / 60))} ph\xFAt`]);
     }
     if (mr.soldiers) out.facts.push(["\u0110i ch\u1EADm", pct2(mr.slow)]);
-    if (pk.sup) out.facts.push(["L\u01B0\u01A1ng", `${pk.days.toFixed(1)} ng\xE0y`]);
-    if (nTents) out.facts.push(["L\u1EC1u", `${nTents} \xD7 ${tc.wood} g\u1ED7, ${tc.hide} da`]);
+    if (ADVANCED_WAR && pk.sup) out.facts.push(["L\u01B0\u01A1ng", `${pk.days.toFixed(1)} ng\xE0y`]);
+    if (ADVANCED_WAR && nTents) out.facts.push(["L\u1EC1u", `${nTents} \xD7 ${tc.wood} g\u1ED7, ${tc.hide} da`]);
     return out;
   }
 
@@ -60054,11 +60136,14 @@ ${risk.lines.join("\n")}`);
       this.warIds = soldiers;
       this.march = marchOfPlan(this, plan2);
       if (Math.floor(this.time) !== Math.floor(this.time - dt)) {
-        this.warMeals += this.warNeed() / DAY_LENGTH;
-        eatPacks(this, plan2, this.armyNeed() / DAY_LENGTH);
-        if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) follow(this, plan2);
-        tickTents(this, plan2);
-        tickHarass(this, plan2);
+        if (!ADVANCED_WAR) this.warMeals += (this.warNeed() + this.armyNeed()) / DAY_LENGTH;
+        else {
+          this.warMeals += this.warNeed() / DAY_LENGTH;
+          eatPacks(this, plan2, this.armyNeed() / DAY_LENGTH);
+          if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) follow(this, plan2);
+          tickTents(this, plan2);
+          tickHarass(this, plan2);
+        }
       }
       for (const v of [...this.villagers]) {
         if (ranks2.has(v.id)) this.tickVillager(v, dt);
@@ -60406,6 +60491,14 @@ ${risk.lines.join("\n")}`);
     /** Supply soldiers of the deployed plan who are still alive (without them there is nobody to pitch a tent). */
     supplyReadyIn(plan2) {
       return supplyOf(this, plan2).length;
+    },
+    /** → warquick.quickAttack: the simple war of the stone age */
+    quickAttack(tribeId) {
+      return quickAttack(this, tribeId);
+    },
+    /** → warquick.army */
+    quickArmy() {
+      return army2(this);
     },
     /** → warplan.setRest */
     setRest(plan2, squadId, on) {
@@ -61386,6 +61479,7 @@ ${risk.lines.join("\n")}`);
         eatWar(this, (this.time - this.warSince) / DAY_LENGTH);
         this.warSince = -1;
         this.warIds = /* @__PURE__ */ new Set();
+        cleanup(this);
         for (const v of this.villagers) if (v.inTent) {
           v.inTent = false;
           if (v.inside === null) {
@@ -61989,6 +62083,7 @@ ${risk.lines.join("\n")}`);
       this.key = key;
       const kids = [h("p", { class: "dsub", text: "T\u1ED5ng ch\u1EC9 s\u1ED1 \u0111\xE3 nghi\xEAn c\u1EE9u cho t\u1EEBng lo\u1EA1i d\xE2n, ngh\u1EC1 v\xE0 l\xEDnh (c\u1ED9ng th\xEAm v\xE0o ch\u1EC9 s\u1ED1 g\u1ED1c c\u1EE7a m\u1ED7i ng\u01B0\u1EDDi). S\u1ED1 b\xEAn tr\xE1i m\u1ED7i ch\u1EC9 s\u1ED1 l\xE0 ph\u1EA7n tr\u0103m c\u1ED9ng th\xEAm, s\u1ED1 b\xEAn ph\u1EA3i l\xE0 c\u1EA5p \u0111\xE3 nghi\xEAn c\u1EE9u." })];
       for (const g of GROUPS) {
+        if (!ADVANCED_WAR && (g.chains.includes("march") || g.chains.includes("tactic"))) continue;
         const rows = [];
         for (const cn of g.chains) {
           const chain = CHAINS[cn];
@@ -62005,8 +62100,10 @@ ${risk.lines.join("\n")}`);
         }
         if (rows.length) kids.push(h("section", {}, h("h3", { text: g.title }), h("p", { class: "dsub", text: g.note }), ...rows));
       }
-      const open = Object.entries(PLAN_TECH).map(([f, id]) => h("span", { class: `spill${sim2.planOpen(f) ? "" : " zero"}`, title: TECH_BY_ID[id].desc }, h("b", { text: TECH_BY_ID[id].name }), h("small", { text: sim2.planOpen(f) ? "\u2713" : "\u{1F512}" })));
-      kids.push(h("section", {}, h("h3", { text: "K\u1EBF ho\u1EA1ch t\xE1c chi\u1EBFn" }), h("p", { class: "dsub", text: "C\xE1c ph\u1EA7n c\u1EE7a b\u1EA3ng k\u1EBF ho\u1EA1ch v\xE0 b\xE1o c\xE1o tr\u1EADn \u0111\xE3 m\u1EDF." }), h("div", { class: "spills" }, ...open)));
+      if (ADVANCED_WAR) {
+        const open = Object.entries(PLAN_TECH).map(([f, id]) => h("span", { class: `spill${sim2.planOpen(f) ? "" : " zero"}`, title: TECH_BY_ID[id].desc }, h("b", { text: TECH_BY_ID[id].name }), h("small", { text: sim2.planOpen(f) ? "\u2713" : "\u{1F512}" })));
+        kids.push(h("section", {}, h("h3", { text: "K\u1EBF ho\u1EA1ch t\xE1c chi\u1EBFn" }), h("p", { class: "dsub", text: "C\xE1c ph\u1EA7n c\u1EE7a b\u1EA3ng k\u1EBF ho\u1EA1ch v\xE0 b\xE1o c\xE1o tr\u1EADn \u0111\xE3 m\u1EDF." }), h("div", { class: "spills" }, ...open)));
+      }
       this.root.replaceChildren(...kids);
     }
   };
@@ -63414,7 +63511,7 @@ ${risk.lines.join("\n")}`);
         this.key = key;
         this.refresh.length = 0;
         this.cards.scrollLeft = 0;
-        const kinds = GROUPS2[this.group][1].filter((k) => BUILDINGS[k].buildable);
+        const kinds = GROUPS2[this.group][1].filter((k) => BUILDINGS[k].buildable && !eraLocked(k));
         this.cards.replaceChildren(...kinds.map((kind) => {
           const lv = { cost: sim2.startCost(kind) }, d = BUILDINGS[kind];
           let pic;
@@ -63466,7 +63563,7 @@ ${risk.lines.join("\n")}`);
     /** How many kinds of a category can be built now and are not at their limit yet: the new houses waiting to be raised. */
     openIn(group) {
       const { sim: sim2 } = this.c;
-      return GROUPS2[group][1].filter((k) => BUILDINGS[k].buildable && !sim2.buildingLock(k)).length;
+      return GROUPS2[group][1].filter((k) => BUILDINGS[k].buildable && !eraLocked(k) && !sim2.buildingLock(k)).length;
     }
     /** The same for the whole menu, shown on the Xây button. Called every frame, so the button shows it while the tray is shut. */
     badge(btn) {
@@ -65051,7 +65148,7 @@ ${risk.lines.join("\n")}`);
     update() {
       const { sim: sim2 } = this.c, all = sim2.villagers;
       const groups = [...new Set(all.map(_PeoplePane.groupOf))];
-      const civ = all.filter((o) => _PeoplePane.matches(o, "*civ")).length, army2 = all.filter((o) => _PeoplePane.matches(o, "*army")).length;
+      const civ = all.filter((o) => _PeoplePane.matches(o, "*civ")).length, army3 = all.filter((o) => _PeoplePane.matches(o, "*army")).length;
       const gk = `${groups.join()}|${all.map(_PeoplePane.groupOf).join()}`;
       if (gk !== this.groupKey) {
         this.groupKey = gk;
@@ -65060,7 +65157,7 @@ ${risk.lines.join("\n")}`);
           const r = roleOf(v2);
           return `${r ? roleName(r, sim2.era) : JOB_NAME[v2.job]} (${all.filter((o) => _PeoplePane.groupOf(o) === g).length})`;
         };
-        this.groupSel.replaceChildren(h("option", { value: "", text: `M\u1ECDi ngh\u1EC1 (${all.length})` }), h("option", { value: "*civ", text: `D\xE2n th\u01B0\u1EDDng (${civ})` }), h("option", { value: "*army", text: `L\xEDnh (${army2})` }), ...groups.map((g) => h("option", { value: g, text: label2(g) })));
+        this.groupSel.replaceChildren(h("option", { value: "", text: `M\u1ECDi ngh\u1EC1 (${all.length})` }), h("option", { value: "*civ", text: `D\xE2n th\u01B0\u1EDDng (${civ})` }), h("option", { value: "*army", text: `L\xEDnh (${army3})` }), ...groups.map((g) => h("option", { value: g, text: label2(g) })));
         if (this.group && !this.group.startsWith("*") && !groups.includes(this.group)) this.group = "";
         this.groupSel.value = this.group;
       }
@@ -65636,6 +65733,45 @@ ${risk.lines.join("\n")}`);
         detailButton(this.c, v),
         dlg.button(sign, act, { icon: true, tone: sign === "\u2212" ? "bad" : void 0, disabled, title: sign === "\u2212" ? "Kh\xF4ng c\u1EED ng\u01B0\u1EDDi n\xE0y" : "C\u1EED ng\u01B0\u1EDDi n\xE0y \u0111i" })
       ] });
+    }
+  };
+
+  // src/ui/simplewar.ts
+  var SimpleWar = class {
+    constructor(c) {
+      this.c = c;
+      this.root = h("div", { class: "page" });
+      this.key = "";
+    }
+    update() {
+      const { sim: sim2 } = this.c, found = sim2.tribes.filter((t) => t.state === "free" && sim2.isFound(t.id)), men = sim2.quickArmy(), atWar = sim2.atWar();
+      const key = [atWar, men.length, found.map((t) => `${t.id}${sim2.whereIs(t.id)?.dist}`).join()].join("|");
+      if (key === this.key) return;
+      this.key = key;
+      const arms3 = { foot: 0, archer: 0, cavalry: 0 };
+      for (const v of men) arms3[sim2.armOf(v)]++;
+      const out = [
+        hint("H\u1ECDp chi\u1EBFn", "Ch\u1ECDn m\u1ED9t l\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n r\u1ED3i b\u1EA5m \u0110\xE1nh: to\xE0n qu\xE2n (b\u1ED9 binh, th\u1EE3 n\xE9m, k\u1EF5 binh) ch\u1EA1y m\u1ED9t m\u1EA1ch t\u1EDBi l\xE0ng \u0111\xF3, \u0111\xE1nh xong th\xEC v\u1EC1. L\xEDnh g\xE1c gi\u1EEF l\xE0ng."),
+        h("div", { class: "rfacts" }, ...["foot", "archer", "cavalry"].map((a) => h("span", { class: "chipfact" }, h("small", { text: ARM_NAME[a] }), h("b", { text: String(arms3[a]) }))))
+      ];
+      if (!found.length) out.push(h("p", { class: "sub", text: "Ch\u01B0a ph\xE1t hi\u1EC7n l\xE0ng n\xE0o: d\xE2n \u0111i xa s\u1EBD th\u1EA5y l\xE0ng kh\xE1c." }));
+      for (const t of found) {
+        const w = sim2.whereIs(t.id), why = atWar ? "\u0110ang c\xF3 chi\u1EBFn tranh" : !men.length ? "Ch\u01B0a c\xF3 l\xEDnh ra tr\u1EADn" : null;
+        out.push(h(
+          "div",
+          { class: "rrow simplevillage" },
+          h("b", { text: t.def.name }),
+          h("small", { text: w ? `c\xE1ch ${w.dist} \xF4, h\u01B0\u1EDBng ${w.dir}` : "" }),
+          h("button", { class: "sm primary", type: "button", text: "\u2694 \u0110\xE1nh", disabled: !!why, title: why ?? "\u0110\u01B0a to\xE0n qu\xE2n \u0111i \u0111\xE1nh l\xE0ng n\xE0y", onclick: () => {
+            const e = sim2.quickAttack(t.id);
+            if (e) this.c.toast(e);
+            else this.c.ctl.closeBuilding();
+            this.key = "";
+            this.c.ctl.onChange();
+          } })
+        ));
+      }
+      this.root.replaceChildren(...out);
     }
   };
 
@@ -67329,6 +67465,7 @@ ${risk.lines.join("\n")}`);
     /** The weather the army would meet if it set out now: today and tomorrow, the two days the village can foretell (the Dự báo thời tiết research). */
     weatherRow(need) {
       const { sim: sim2 } = this;
+      if (!ADVANCED_WAR) return h("span");
       if (!sim2.planOpen("weather")) return need("plan_weather");
       const day = (label2, kind) => {
         const w = WEATHER[kind], slow = Math.round((1 - w.speed) * 100);
@@ -67373,7 +67510,7 @@ ${risk.lines.join("\n")}`);
         this.report.replaceChildren(head, h("div", { class: "psec rblock" }, h("b", { text: "\u2717 Ch\u01B0a th\u1EC3 tri\u1EC3n khai" }), ...f.blocked.split("\n").map((x) => h("p", { class: "why", text: x }))), h("div", { class: "chips" }, back));
         return;
       }
-      if (!f.level) this.reportPage = "sum";
+      if (!f.level || !ADVANCED_WAR) this.reportPage = "sum";
       const pages = [["sum", "T\u1ED5ng quan"], ["supply", `H\u1EADu c\u1EA7n ${plan2.supply}`], ["detail", "Chi ti\u1EBFt"]];
       const lockOf = (k) => k === "detail" && !sim2.planOpen("detail") ? "plan_report" : null;
       const need = (id) => h("p", { class: "rlock", text: `\u{1F512} C\u1EA7n nghi\xEAn c\u1EE9u: ${TECH_BY_ID[id].name} (K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u b\u1EADc 1)` });
@@ -67443,7 +67580,7 @@ ${risk.lines.join("\n")}`);
           f.warnings.length ? h("details", { class: "rwarn" }, h("summary", { text: `\u26A0 ${f.warnings.length} c\u1EA3nh b\xE1o` }), ...f.warnings.map((x) => h("p", { class: "sub", text: x }))) : null
         );
       }
-      this.report.replaceChildren(head, f.level ? tabs : h("span"), body, h(
+      this.report.replaceChildren(head, f.level && ADVANCED_WAR ? tabs : h("span"), body, h(
         "div",
         { class: "chips" },
         this.chip("\u2713 Tri\u1EC3n khai", true, () => {
@@ -67952,7 +68089,8 @@ ${risk.lines.join("\n")}`);
       this.tabs.field = [{ label: "Ng\u01B0\u1EDDi l\xE0m ru\u1ED9ng", page: page(this.staffBoxes.farm.root) }];
       this.war = new WarPanel(c);
       this.warLog = new WarLogPane(c);
-      this.tabs.wartent = [{ label: "H\u1ECDp chi\u1EBFn", page: page(this.war.root) }, { label: "Nh\u1EADt k\xFD tr\u1EADn", page: page(this.warLog.root) }];
+      this.simpleWar = new SimpleWar(c);
+      this.tabs.wartent = [{ label: "H\u1ECDp chi\u1EBFn", page: page(ADVANCED_WAR ? this.war.root : this.simpleWar.root) }, { label: "Nh\u1EADt k\xFD tr\u1EADn", page: page(this.warLog.root) }];
       this.scoutPane = new ScoutPane(c);
       this.tabs.scouttent = [{ label: "Trinh s\xE1t", page: page(this.scoutPane.roster) }, { label: "L\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n", page: page(this.scoutPane.villages) }];
       this.tabs.tower = [{ label: "L\xEDnh ch\xF2i canh", page: page(hint(this.towerHead, "L\xEDnh ch\xF2i canh l\u1EA5y th\u1EB3ng t\u1EEB d\xE2n r\u1EA3nh, kh\xF4ng c\u1EA7n tr\u1EA1i cung th\u1EE7: h\u1ECD l\xEAn ch\xF2i, \u1EDF \u0111\xF3 ng\xE0y v\xE0 \u0111\xEAm (\u0111\u1ED5i ca \u1EDF chi ti\u1EBFt c\u1EE7a h\u1ECD) v\xE0 b\u1EAFn b\u1EB1ng cung ho\u1EB7c d\xE2y qu\u0103ng l\u1EA5y \u1EDF Kho v\u0169 kh\xED. H\u1ECD b\u1EAFn xa h\u01A1n v\xE0 m\u1EA1nh h\u01A1n khi \u0111\u1EE9ng tr\xEAn ch\xF2i, v\xE0 k\u1EBB \u0111\u1ECBch ph\u1EA3i ph\xE1 ch\xF2i m\u1EDBi h\u1EA1 \u0111\u01B0\u1EE3c h\u1ECD. M\xE1u v\xE0 s\xE1t th\u01B0\u01A1ng c\u1EE7a h\u1ECD, v\xE0 c\u1EE7a ch\xF2i, t\u0103ng theo nghi\xEAn c\u1EE9u Ph\xF2ng th\u1EE7."), this.towerList) }];
@@ -68026,17 +68164,19 @@ ${risk.lines.join("\n")}`);
           t.addChains("H\xE0ng r\xE0o v\xE0 c\u1ED5ng", ["fence", "gate"], "works1");
           t.addChains("Ch\xF4ng v\xE0 ch\xF2i canh", ["trap", "tower"], "works2");
         }) },
-        { label: "Chi\u1EBFn \u0111\u1EA5u b\u1EADc 1", icon: "drill", under: 0, lock: needMilitary, page: tree((t) => {
-          t.addSingles("T\xEDn hi\u1EC7u", only((id) => id === "signal"));
-          t.addFormations("Tr\u1EADn ph\xE1p", "formation");
-        }) },
-        { label: "K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u b\u1EADc 1", icon: "wartent", under: 0, lock: needMilitary, page: tree((t) => {
-          t.addFormations("K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u (ch\u1EC9 c\u1ED9ng khi \u0111ang giao chi\u1EBFn trong chi\u1EBFn tranh)", "plan");
-        }) },
-        { label: "H\xE0nh qu\xE2n b\u1EADc 1", icon: "supplycamp", under: 0, lock: needMilitary, page: tree((t) => {
-          t.addChains("Ch\u1EC9 s\u1ED1 khi h\xE0nh qu\xE2n (ch\u1EC9 c\u1ED9ng khi h\xE0nh qu\xE2n ho\u1EB7c ngh\u1EC9 trong chi\u1EBFn tranh)", ["march_foot", "march_cavalry", "march_archer"], "march");
-          t.addChains("H\u1EADu c\u1EA7n v\xE0 t\u1ED1c \u0111\u1ED9", ["march_army"], "marchlog");
-        }) },
+        ...ADVANCED_WAR ? [
+          { label: "L\u1EADp k\u1EBF ho\u1EA1ch b\u1EADc 1", icon: "drill", under: 0, lock: needMilitary, page: tree((t) => {
+            t.addSingles("T\xEDn hi\u1EC7u", only((id) => id === "signal"));
+            t.addFormations("Tr\u1EADn ph\xE1p", "formation");
+          }) },
+          { label: "K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u b\u1EADc 1", icon: "wartent", under: 0, lock: needMilitary, page: tree((t) => {
+            t.addFormations("K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u (ch\u1EC9 c\u1ED9ng khi \u0111ang giao chi\u1EBFn trong chi\u1EBFn tranh)", "plan");
+          }) },
+          { label: "H\xE0nh qu\xE2n b\u1EADc 1", icon: "supplycamp", under: 0, lock: needMilitary, page: tree((t) => {
+            t.addChains("Ch\u1EC9 s\u1ED1 khi h\xE0nh qu\xE2n (ch\u1EC9 c\u1ED9ng khi h\xE0nh qu\xE2n ho\u1EB7c ngh\u1EC9 trong chi\u1EBFn tranh)", ["march_foot", "march_cavalry", "march_archer"], "march");
+            t.addChains("H\u1EADu c\u1EA7n v\xE0 t\u1ED1c \u0111\u1ED9", ["march_army"], "marchlog");
+          }) }
+        ] : [],
         { label: "V\u0169 kh\xED b\u1EADc 1", icon: "armory", under: 0, lock: needMilitary, page: tree((t) => {
           t.addChains("Ch\u1EC9 s\u1ED1 t\u1EEBng v\u0169 kh\xED", ["club", "spear", "mace", "sling", "bow"], "weapon");
         }) },
@@ -68202,6 +68342,7 @@ ${risk.lines.join("\n")}`);
         case "stable":
           return `C\u1EA5p ${b.level}: ch\u1EE9a ${lv.slots} ng\u01B0\u1EDDi thu\u1EA7n th\xFA \xB7 t\u1ED1c \u0111\u1ED9 \xD7${lv.craftSpeed.toLocaleString("vi")} \xB7 thu\u1EA7n \u0111\u01B0\u1EE3c ${MOUNT_KINDS.filter((k) => MOUNTS[k].tier <= b.level).map((k) => MOUNTS[k].name.toLowerCase()).join(", ")}`;
         case "wartent":
+          if (!ADVANCED_WAR) return "Ch\u1ECDn l\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n \u0111\u1EC3 \u0111\u01B0a to\xE0n qu\xE2n \u0111i \u0111\xE1nh";
           return `C\u1EA5p ${b.level}: t\u1ED1i \u0111a ${this.c.sim.squadLimit()} \u0111\u1ED9i, ${this.c.sim.cardLimit()} th\u1EBB l\u1EC7nh cho m\u1ED9t k\u1EBF ho\u1EA1ch \xB7 v\xE0o l\u1EC1u l\xE0 game t\u1EA1m d\u1EEBng`;
         case "huntlodge":
           return `C\u1EA5p ${b.level}: giao vi\u1EC7c cho t\u1ED1i \u0111a ${lv.slots} th\u1EE3 s\u0103n, s\u0103n trong ${huntRange(this.c.sim)} \xF4 quanh ch\xF2i \xB7 c\xF3 kho ri\xEAng ${lv.cap} th\u1EE9c \u0103n \xB7 n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm v\xE0 s\u0103n xa h\u01A1n`;
@@ -68227,7 +68368,7 @@ ${risk.lines.join("\n")}`);
         this.craftGrid.close();
         this.tameGrid.close();
       }
-      const inTent = !!b && ctl2.buildingOpen && b.kind === "wartent" && b.done;
+      const inTent = ADVANCED_WAR && !!b && ctl2.buildingOpen && b.kind === "wartent" && b.done;
       if (inTent && !this.inTent) {
         this.resume = sim2.speed;
         sim2.speed = 0;
@@ -68276,7 +68417,8 @@ ${risk.lines.join("\n")}`);
       if (b.kind === "builder" && ready) this.staffBoxes.build.update(b);
       if (b.kind === "tower" && ready) this.updateTower(b);
       if (b.kind === "wartent" && ready) {
-        this.war.update();
+        if (ADVANCED_WAR) this.war.update();
+        else this.simpleWar.update();
         this.warLog.update();
       }
       if (b.kind === "scouttent" && ready) this.scoutPane.update();
@@ -68761,10 +68903,10 @@ ${risk.lines.join("\n")}`);
     speedBtn.setAttribute("aria-pressed", String(sim.speed === 0));
     multiBtn.setAttribute("aria-pressed", String(ctl.multi));
     {
-      const on = sim.alarmUntil > sim.time, army2 = $("btnArmy");
-      army2.setAttribute("aria-pressed", String(on));
-      army2.textContent = on ? "Cho qu\xE2n v\u1EC1" : "G\u1ECDi qu\xE2n";
-      army2.hidden = !sim.villagers.some((v) => v.job === "fight" && !v.guard);
+      const on = sim.alarmUntil > sim.time, army3 = $("btnArmy");
+      army3.setAttribute("aria-pressed", String(on));
+      army3.textContent = on ? "Cho qu\xE2n v\u1EC1" : "G\u1ECDi qu\xE2n";
+      army3.hidden = !sim.villagers.some((v) => v.job === "fight" && !v.guard);
     }
     $("btnNone").hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
   }

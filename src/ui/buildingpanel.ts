@@ -1,4 +1,4 @@
-import { BUILDINGS, Building, buildingName, levelCapByFire, levelDef, maxLevel, POP_BY_FIRE } from '../sim/buildings';
+import { ADVANCED_WAR, BUILDINGS, Building, buildingName, levelCapByFire, levelDef, maxLevel, POP_BY_FIRE } from '../sim/buildings';
 import { huntRange } from '../sim/battle';
 import { ARMORS, WEAPONS } from '../sim/combat';
 import { JOBS, ROLES, STAT_NAME, roleOf } from '../sim/jobs';
@@ -17,6 +17,7 @@ import type { Ctx } from './ctx';
 import { PeoplePane } from './peoplepane';
 import { ActiveBox, StaffBox } from './housebox';
 import { ScoutPane } from './scoutpane';
+import { SimpleWar } from './simplewar';
 import { WarLogPane } from './warlogpane';
 import { RolePane } from './rolepane';
 import { dlg, GameDialog } from './gamedialog';
@@ -66,6 +67,7 @@ export class BuildingPanel {
   /** Where scouts are picked and sent, in the Trại trinh sát. */
   private readonly scoutPane: ScoutPane;
   private readonly warLog: WarLogPane;
+  private readonly simpleWar!: SimpleWar;
   /** The speed to go back to when the tent is left (it opens the game paused, as a war council does). */
   private resume = 0; private inTent = false;
   /** The people lying in the Nhà dân and the camps of the soldiers. */
@@ -123,7 +125,8 @@ export class BuildingPanel {
     this.tabs.field = [{ label: 'Người làm ruộng', page: page(this.staffBoxes.farm.root) }];
     this.war = new WarPanel(c);
     this.warLog = new WarLogPane(c);
-    this.tabs.wartent = [{ label: 'Họp chiến', page: page(this.war.root) }, { label: 'Nhật ký trận', page: page(this.warLog.root) }];
+    this.simpleWar = new SimpleWar(c);
+    this.tabs.wartent = [{ label: 'Họp chiến', page: page(ADVANCED_WAR ? this.war.root : this.simpleWar.root) }, { label: 'Nhật ký trận', page: page(this.warLog.root) }]; // the stone age: a list of the villages found and a button Đánh (no plan)
     this.scoutPane = new ScoutPane(c);
     this.tabs.scouttent = [{ label: 'Trinh sát', page: page(this.scoutPane.roster) }, { label: 'Làng đã phát hiện', page: page(this.scoutPane.villages) }];
     this.tabs.tower = [{ label: 'Lính chòi canh', page: page(hint(this.towerHead, 'Lính chòi canh lấy thẳng từ dân rảnh, không cần trại cung thủ: họ lên chòi, ở đó ngày và đêm (đổi ca ở chi tiết của họ) và bắn bằng cung hoặc dây quăng lấy ở Kho vũ khí. Họ bắn xa hơn và mạnh hơn khi đứng trên chòi, và kẻ địch phải phá chòi mới hạ được họ. Máu và sát thương của họ, và của chòi, tăng theo nghiên cứu Phòng thủ.'), this.towerList) }];
@@ -173,9 +176,11 @@ export class BuildingPanel {
       { label: 'Kinh tế bậc 1', icon: 'storage', page: tree((t) => { t.addChains('Chỉ số nghề', ['wood', 'stone', 'food', 'hunt', 'tame'], 'economy'); }) },
       { label: 'Phát triển bậc 1', icon: 'builder', page: tree((t) => t.addChains('Chỉ số nhà làm việc', ['build', 'craft', 'research'], 'development')) },
       { label: 'Phòng thủ bậc 1', icon: 'tower', page: tree((t) => { t.addChains('Lính phòng thủ', ['guard', 'towerman'], 'defense'); t.addChains('Hàng rào và cổng', ['fence', 'gate'], 'works1'); t.addChains('Chông và chòi canh', ['trap', 'tower'], 'works2'); }) },
-      { label: 'Chiến đấu bậc 1', icon: 'drill', under: 0, lock: needMilitary, page: tree((t) => { t.addSingles('Tín hiệu', only((id) => id === 'signal')); t.addFormations('Trận pháp', 'formation'); }) },
-      { label: 'Kế hoạch chiến đấu bậc 1', icon: 'wartent', under: 0, lock: needMilitary, page: tree((t) => { t.addFormations('Kế hoạch chiến đấu (chỉ cộng khi đang giao chiến trong chiến tranh)', 'plan'); }) },
-      { label: 'Hành quân bậc 1', icon: 'supplycamp', under: 0, lock: needMilitary, page: tree((t) => { t.addChains('Chỉ số khi hành quân (chỉ cộng khi hành quân hoặc nghỉ trong chiến tranh)', ['march_foot', 'march_cavalry', 'march_archer'], 'march'); t.addChains('Hậu cần và tốc độ', ['march_army'], 'marchlog'); }) },
+      ...(ADVANCED_WAR ? [
+      { label: 'Lập kế hoạch bậc 1', icon: 'drill' as const, under: 0, lock: needMilitary, page: tree((t) => { t.addSingles('Tín hiệu', only((id) => id === 'signal')); t.addFormations('Trận pháp', 'formation'); }) },
+      { label: 'Kế hoạch chiến đấu bậc 1', icon: 'wartent' as const, under: 0, lock: needMilitary, page: tree((t) => { t.addFormations('Kế hoạch chiến đấu (chỉ cộng khi đang giao chiến trong chiến tranh)', 'plan'); }) },
+      { label: 'Hành quân bậc 1', icon: 'supplycamp' as const, under: 0, lock: needMilitary, page: tree((t) => { t.addChains('Chỉ số khi hành quân (chỉ cộng khi hành quân hoặc nghỉ trong chiến tranh)', ['march_foot', 'march_cavalry', 'march_archer'], 'march'); t.addChains('Hậu cần và tốc độ', ['march_army'], 'marchlog'); }) },
+      ] : []),
       { label: 'Vũ khí bậc 1', icon: 'armory', under: 0, lock: needMilitary, page: tree((t) => { t.addChains('Chỉ số từng vũ khí', ['club', 'spear', 'mace', 'sling', 'bow'], 'weapon'); }) },
       { label: 'Công cụ bậc 1', icon: 'workshop', under: 1, page: tree((t) => { t.addChains('Chỉ số công cụ', ['axe', 'pick', 'hoe'], 'tool'); t.addChains('Búa', ['hammer'], 'hammer'); }) },
       // not in the tree: the button "Người nghiên cứu · Thêm người" at the top opens it
@@ -287,7 +292,7 @@ export class BuildingPanel {
       case 'lab': return `Cấp ${b.level}: chứa ${lv.slots} nhà nghiên cứu · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
 
       case 'stable': return `Cấp ${b.level}: chứa ${lv.slots} người thuần thú · tốc độ ×${lv.craftSpeed.toLocaleString('vi')} · thuần được ${MOUNT_KINDS.filter((k) => MOUNTS[k].tier <= b.level).map((k) => MOUNTS[k].name.toLowerCase()).join(', ')}`;
-      case 'wartent': return `Cấp ${b.level}: tối đa ${this.c.sim.squadLimit()} đội, ${this.c.sim.cardLimit()} thẻ lệnh cho một kế hoạch · vào lều là game tạm dừng`;
+      case 'wartent': if (!ADVANCED_WAR) return 'Chọn làng đã phát hiện để đưa toàn quân đi đánh'; return `Cấp ${b.level}: tối đa ${this.c.sim.squadLimit()} đội, ${this.c.sim.cardLimit()} thẻ lệnh cho một kế hoạch · vào lều là game tạm dừng`;
       case 'huntlodge': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} thợ săn, săn trong ${huntRange(this.c.sim)} ô quanh chòi · có kho riêng ${lv.cap} thức ăn · nâng cấp để chứa thêm và săn xa hơn`;
       case 'farmhouse': case 'lumberyard': case 'quarry': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} người · có kho riêng ${lv.cap} ${RES_NAME[BUILDINGS[b.kind].produces![0]].toLowerCase()}, cộng vào sức chứa của làng · nâng cấp để chứa thêm`;
       case 'scouttent': return `Cấp ${b.level}: cử tối đa ${lv.slots} trinh sát một chuyến · tab Làng đã phát hiện để chọn làng và người đi`;
@@ -301,7 +306,7 @@ export class BuildingPanel {
     const { sim, ctl } = this.c, b = this.current();
     this.root.hidden = !b || !ctl.buildingOpen;
     if (this.root.hidden) { this.craftGrid.close(); this.tameGrid.close(); }
-    const inTent = !!b && ctl.buildingOpen && b.kind === 'wartent' && b.done;
+    const inTent = ADVANCED_WAR && !!b && ctl.buildingOpen && b.kind === 'wartent' && b.done; // the plan of the medieval era opens the game paused, as a war council does
     if (inTent && !this.inTent) { this.resume = sim.speed; sim.speed = 0; }
     else if (!inTent && this.inTent) { if (this.resume > 0 && sim.speed === 0) sim.speed = this.resume; this.resume = 0; }
     this.inTent = inTent;
@@ -326,7 +331,7 @@ export class BuildingPanel {
     if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
     if (b.kind === 'builder' && ready) this.staffBoxes.build.update(b);
     if (b.kind === 'tower' && ready) this.updateTower(b);
-    if (b.kind === 'wartent' && ready) { this.war.update(); this.warLog.update(); }
+    if (b.kind === 'wartent' && ready) { if (ADVANCED_WAR) this.war.update(); else this.simpleWar.update(); this.warLog.update(); }
     if (b.kind === 'scouttent' && ready) this.scoutPane.update();
     if (b.kind === 'workshop' && ready) this.updateWorkshop(b);
     if (b.kind === 'lab' && ready) this.updateLab(b);

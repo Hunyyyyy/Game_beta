@@ -7,6 +7,7 @@ import { marchOf, supplyLoad, WAR_DATA, soldiersOf, supplyCount } from './warmar
 import { stands, SUPPLY_TENT, tentCost, tentCount, tentLines } from './wartent';
 import * as warlog from './warlog';
 import { DAY_LENGTH } from './constants';
+import { ADVANCED_WAR } from './buildings';
 import type { Plan, Villager } from './model';
 import type { Sim } from './sim';
 
@@ -74,6 +75,7 @@ export function supplyLines(sim: Sim, plan: Plan): string[] {
 
 /** Deploy: take the supply soldiers out of their camp and load their packs from the village. */
 export function loadPacks(sim: Sim, plan: Plan): void {
+  if (!ADVANCED_WAR) { plan.supplyIds = []; sim.warHunger = 0; return; }
   const p = packPlan(sim, plan), crew = supplyAvailable(sim).sort((a, b) => b.energy - a.energy).slice(0, p.sup);
   plan.supplyIds = crew.map((v) => v.id);
   sim.warHunger = 0;

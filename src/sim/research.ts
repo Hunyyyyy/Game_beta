@@ -1,4 +1,5 @@
 import data from '../data/research.json';
+import { ADVANCED_WAR } from './buildings';
 import type { BuildingKind } from './buildings';
 import type { Stock } from './resources';
 import { labLevelOf } from './progression';
@@ -95,7 +96,7 @@ export const PLAN_TREE = (tree as unknown as { plan: { roles: string[]; layout: 
 /** What each piece of research of that tree opens in the war plan: the details tab, the supply sums, the weather and the rest in the field. */
 export const PLAN_TECH = { detail: 'plan_report', supply: 'plan_supply', weather: 'plan_weather', rest: 'plan_rest' } as const;
 export type PlanFeature = keyof typeof PLAN_TECH;
-export const planOpen = (done: ReadonlySet<string>, f: PlanFeature, free = false): boolean => free || !RESEARCH.enabled || done.has(PLAN_TECH[f]);
+export const planOpen = (done: ReadonlySet<string>, f: PlanFeature, free = false): boolean => ADVANCED_WAR && (free || !RESEARCH.enabled || done.has(PLAN_TECH[f]));
 /** The percent the research adds to a stat of everyone with a role (their stat is base × (1 + this / 100)). Not yet used by the combat and work rules. */
 export const statBonus = (done: ReadonlySet<string>, role: string, stat: LineStat): number =>
   STAT_DEF[stat].steps.slice(0, lineLevel(done, role, stat)).reduce((a, b) => a + b, 0) * (ROLE_SCALE[role] ?? 1);

@@ -2,6 +2,7 @@
  * What research has added so far, for everyone of a kind: each trade, each kind of soldier, the houses of work and the weapons, with the percent each stat has gained
  * and the tier opened (not for one villager: the same for all who have that role). The page of the menu "Chỉ số".
  */
+import { ADVANCED_WAR } from '../sim/buildings';
 import { CHAINS, PLAN_TECH, TECH_BY_ID, lineLevel, soldierTier, statBonus, statLevels, STAT_DEF, TREE_ROLES } from '../sim/research';
 import type { LineStat } from '../sim/research';
 import { h } from './dom';
@@ -33,6 +34,7 @@ export class StatsOverview {
     this.key = key;
     const kids: Node[] = [h('p', { class: 'dsub', text: 'Tổng chỉ số đã nghiên cứu cho từng loại dân, nghề và lính (cộng thêm vào chỉ số gốc của mỗi người). Số bên trái mỗi chỉ số là phần trăm cộng thêm, số bên phải là cấp đã nghiên cứu.' })];
     for (const g of GROUPS) {
+      if (!ADVANCED_WAR && (g.chains.includes('march') || g.chains.includes('tactic'))) continue; // the war research is of the medieval layer
       const rows: HTMLElement[] = [];
       for (const cn of g.chains) {
         const chain = CHAINS[cn];
@@ -50,8 +52,10 @@ export class StatsOverview {
       if (rows.length) kids.push(h('section', {}, h('h3', { text: g.title }), h('p', { class: 'dsub', text: g.note }), ...rows));
     }
     // what the war plan has opened (the Kế hoạch chiến đấu research)
+    if (ADVANCED_WAR) {
     const open = (Object.entries(PLAN_TECH) as Array<[keyof typeof PLAN_TECH, string]>).map(([f, id]) => h('span', { class: `spill${sim.planOpen(f) ? '' : ' zero'}`, title: TECH_BY_ID[id].desc }, h('b', { text: TECH_BY_ID[id].name }), h('small', { text: sim.planOpen(f) ? '✓' : '🔒' })));
     kids.push(h('section', {}, h('h3', { text: 'Kế hoạch tác chiến' }), h('p', { class: 'dsub', text: 'Các phần của bảng kế hoạch và báo cáo trận đã mở.' }), h('div', { class: 'spills' }, ...open)));
+    }
     this.root.replaceChildren(...kids);
   }
 }

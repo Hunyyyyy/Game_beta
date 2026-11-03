@@ -310,6 +310,8 @@ export interface WarRecord {
 }
 export interface Plan {
   id: number; kind: 'attack' | 'defense'; tribe: string | null;
+  /** Made by the simple "Đánh" of the Lều họp chiến (the stone age): the whole army, one squad of each arm, straight at the village. */
+  quick?: boolean;
   missions: Mission[]; cards: Card[];
   status: 'draft' | 'running' | 'done';
   /**

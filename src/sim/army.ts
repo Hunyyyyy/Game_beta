@@ -41,8 +41,8 @@ export function squadCenter(sim: Sim, s: Squad): { x: number; y: number } | null
   return us.length ? { x: us.reduce((a, v) => a + v.x, 0) / us.length, y: us.reduce((a, v) => a + v.y, 0) / us.length } : null;
 }
 
-export function createSquad(sim: Sim, name?: string): { squad?: Squad; reason?: string } {
-  if (sim.squads.length >= squadLimit(sim)) return { reason: squadLimit(sim) ? `Lều họp chiến chỉ cho ${squadLimit(sim)} đội: nâng cấp lều` : 'Cần dựng Lều họp chiến để lập đội' };
+export function createSquad(sim: Sim, name?: string, force = false): { squad?: Squad; reason?: string } {
+  if (!force && sim.squads.length >= squadLimit(sim)) return { reason: squadLimit(sim) ? `Lều họp chiến chỉ cho ${squadLimit(sim)} đội: nâng cấp lều` : 'Cần dựng Lều họp chiến để lập đội' };
   const id = sim.nextSquad++;
   const s: Squad = { id, name: name ?? `Đội ${String.fromCharCode(64 + id)}`, color: COLORS[(id - 1) % COLORS.length], ids: [], leader: -1, formation: 'line', mastery: Object.fromEntries(FORMATION_IDS.map((f) => [f, COMMAND.mastery.start])), switchUntil: 0, anchor: null, heading: 0, training: false };
   sim.squads.push(s);

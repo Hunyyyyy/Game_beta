@@ -1,5 +1,6 @@
 import { SIEGE } from './combat';
 import paceJson from '../data/pace.json';
+import warJson from '../data/war.json';
 import type { Res, Stock } from './resources';
 import { fireBuildingMax } from './progression';
 import { BUILDING_FILES, BUILDING_KINDS } from '../content/buildings/defs.gen';
@@ -129,6 +130,10 @@ export const holdsGoods = (b: Pick<Building, 'kind'>) => b.kind === 'storage' ||
 /** The house of each gathering trade: at most 5 people work from it; a higher level makes each of them bring in more (pace.json `levelYield`), so the village needs fewer people on the map. */
 export const GATHER_HOUSE: Partial<Record<string, BuildingKind>> = { wood: 'lumberyard', stone: 'quarry', food: 'farmhouse' };
 export const gatherMult = (b: Pick<Building, 'level'> | undefined): number => (b ? paceJson.levelYield[Math.min(paceJson.levelYield.length, Math.max(1, b.level)) - 1] : 1);
+/** The war-logistics layer (supply, field tents and rest, harassment, the watchtower, the war research) is a medieval-era feature: off in the stone age (data/war.json `advanced`). */
+export const ADVANCED_WAR: boolean = warJson.advanced;
+/** A building of that layer, shut away while it is off: it is not built, not offered and not asked for. */
+export const eraLocked = (kind: BuildingKind): boolean => !ADVANCED_WAR && (warJson.advancedBuildings as string[]).includes(kind);
 /** Still needs builders: not finished yet, or an upgrade is underway. */
 export const needsWork = (b: Building) => !b.done || b.upgrading || !!b.repairing;
 

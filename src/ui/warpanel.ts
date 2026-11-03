@@ -2,6 +2,7 @@ import { DAY_LENGTH } from '../sim/constants';
 import { Arm, armOfWeapon, ARM_NAME, FORMATION_IDS, FORMATIONS, FormationId, SQUAD_MAX, SQUAD_MIN } from '../sim/formations';
 import type { CardKind, Mission, MissionTarget, Plan, PlanStance, Pt, Squad, Villager } from '../sim/model';
 import { WEAPONS } from '../sim/combat';
+import { ADVANCED_WAR } from '../sim/buildings';
 import { WEATHER } from '../sim/calendar';
 import { TECH_BY_ID } from '../sim/research';
 import { h, hint } from './dom';
@@ -350,6 +351,7 @@ export class WarPanel {
   /** The weather the army would meet if it set out now: today and tomorrow, the two days the village can foretell (the Dự báo thời tiết research). */
   private weatherRow(need: (id: string) => Node): Node {
     const { sim } = this;
+    if (!ADVANCED_WAR) return h('span'); // the weather of the war plan is of the medieval layer
     if (!sim.planOpen('weather')) return need('plan_weather');
     const day = (label: string, kind: keyof typeof WEATHER) => { const w = WEATHER[kind], slow = Math.round((1 - w.speed) * 100); return h('span', { class: 'chipfact' }, h('small', { text: label }), h('b', { text: w.name }), slow > 0 ? h('small', { class: 'bad', text: `đi chậm ${slow}%` }) : null); };
     return h('div', { class: 'rfacts' }, day('Hôm nay', sim.weather), day('Ngày mai', sim.nextWeather));
@@ -385,7 +387,7 @@ export class WarPanel {
       this.report.replaceChildren(head, h('div', { class: 'psec rblock' }, h('b', { text: '✗ Chưa thể triển khai' }), ...f.blocked.split('\n').map((x) => h('p', { class: 'why', text: x }))), h('div', { class: 'chips' }, back));
       return;
     }
-    if (!f.level) this.reportPage = 'sum';
+    if (!f.level || !ADVANCED_WAR) this.reportPage = 'sum';
     const pages: Array<['sum' | 'supply' | 'detail', string]> = [['sum', 'Tổng quan'], ['supply', `Hậu cần ${plan.supply}`], ['detail', 'Chi tiết']];
     const lockOf = (k: 'sum' | 'supply' | 'detail') => (k === 'detail' && !sim.planOpen('detail') ? 'plan_report' : null);
     const need = (id: string) => h('p', { class: 'rlock', text: `🔒 Cần nghiên cứu: ${TECH_BY_ID[id].name} (Kế hoạch chiến đấu bậc 1)` });
@@ -418,7 +420,7 @@ export class WarPanel {
         this.weatherRow(need),
         f.warnings.length ? h('details', { class: 'rwarn' }, h('summary', { text: `⚠ ${f.warnings.length} cảnh báo` }), ...f.warnings.map((x) => h('p', { class: 'sub', text: x }))) : null);
     }
-    this.report.replaceChildren(head, f.level ? tabs : h('span'), body, h('div', { class: 'chips' },
+    this.report.replaceChildren(head, f.level && ADVANCED_WAR ? tabs : h('span'), body, h('div', { class: 'chips' },
       this.chip('✓ Triển khai', true, () => { const e = sim.startPlan(plan); this.toast(e); if (e) { this.refresh(); return; } this.reportOpen = false; this.closeMap(); this.c.ctl.closeBuilding(); /* back to the game, in war mode */ }, { title: 'Quân đi tới vị trí đã bố trí rồi chờ lệnh đánh hay rút' }), back));
   }
 

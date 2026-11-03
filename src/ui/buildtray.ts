@@ -1,4 +1,4 @@
-import { BUILDINGS, BuildingKind, levelsOf } from '../sim/buildings';
+import { eraLocked, BUILDINGS, BuildingKind, levelsOf } from '../sim/buildings';
 import { RES_NAME } from '../sim/resources';
 import { costText, h, iconCanvas } from './dom';
 import { dlg, GameDialog } from './gamedialog';
@@ -68,7 +68,7 @@ export class BuildTray {
     const key = `${this.group}|${sim.era}`;
     if (key !== this.key) {
       this.key = key; this.refresh.length = 0; this.cards.scrollLeft = 0;
-      const kinds = GROUPS[this.group][1].filter((k) => BUILDINGS[k].buildable);
+      const kinds = GROUPS[this.group][1].filter((k) => BUILDINGS[k].buildable && !eraLocked(k));
       this.cards.replaceChildren(...kinds.map((kind) => {
         const lv = { cost: sim.startCost(kind) }, d = BUILDINGS[kind]; // a fallen house is raised again at the level it had, and costs that
         let pic: HTMLElement;
@@ -98,7 +98,7 @@ export class BuildTray {
   /** How many kinds of a category can be built now and are not at their limit yet: the new houses waiting to be raised. */
   private openIn(group: number): number {
     const { sim } = this.c;
-    return GROUPS[group][1].filter((k) => BUILDINGS[k].buildable && !sim.buildingLock(k)).length;
+    return GROUPS[group][1].filter((k) => BUILDINGS[k].buildable && !eraLocked(k) && !sim.buildingLock(k)).length;
   }
   /** The same for the whole menu, shown on the Xây button. Called every frame, so the button shows it while the tray is shut. */
   badge(btn: HTMLElement): void {

@@ -17,8 +17,10 @@ import * as warlog from './warlog';
 import type { Res } from './resources';
 import { DAY_LENGTH } from './constants';
 import * as warplan from './warplan';
+import * as warquick from './warquick';
 import { armOf, tickProjectiles } from './battle';
 import type { Ent } from './battle';
+import { ADVANCED_WAR } from './buildings';
 import type { Building } from './buildings';
 import type { MountKind, StatKey } from './jobs';
 import type { Arm, FormationId } from './formations';
@@ -33,9 +35,12 @@ export const WAR = {
     const soldiers = warmode.army(this), ranks = warmode.ranks(this, soldiers), plan = warmode.warPlan(this)!;
     this.warIds = soldiers; this.march = warmarch.marchOfPlan(this, plan);
     if (Math.floor(this.time) !== Math.floor(this.time - dt)) { // each second: the village that stayed home eats from the store (paid at the end), the army from the packs
-      this.warMeals += this.warNeed() / DAY_LENGTH; warsupply.eatPacks(this, plan, this.armyNeed() / DAY_LENGTH);
-      if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) warsupply.follow(this, plan);
-      wartent.tickTents(this, plan); warharass.tickHarass(this, plan);
+      if (!ADVANCED_WAR) this.warMeals += (this.warNeed() + this.armyNeed()) / DAY_LENGTH; // no supply soldiers: the army eats from the village store like the village
+      else {
+        this.warMeals += this.warNeed() / DAY_LENGTH; warsupply.eatPacks(this, plan, this.armyNeed() / DAY_LENGTH);
+        if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) warsupply.follow(this, plan);
+        wartent.tickTents(this, plan); warharass.tickHarass(this, plan);
+      }
     }
     for (const v of [...this.villagers]) { if (ranks.has(v.id)) this.tickVillager(v, dt); else warmode.standDown(this, v, dt); }
     army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
@@ -213,6 +218,10 @@ export const WAR = {
   warMode(this: Sim, v: Villager): 'fight' | 'march' | null { return v.team === 'player' && this.warIds.has(v.id) ? (v.phase === 'fight' || v.swing ? 'fight' : 'march') : null; },
   /** Supply soldiers of the deployed plan who are still alive (without them there is nobody to pitch a tent). */
   supplyReadyIn(this: Sim, plan: Plan): number { return warsupply.supplyOf(this, plan).length; },
+  /** → warquick.quickAttack: the simple war of the stone age */
+  quickAttack(this: Sim, tribeId: string): string | null { return warquick.quickAttack(this, tribeId); },
+  /** → warquick.army */
+  quickArmy(this: Sim): Villager[] { return warquick.army(this); },
   /** → warplan.setRest */
   setRest(this: Sim, plan: Plan, squadId: number, on: boolean): string | null { return warplan.setRest(this, plan, squadId, on); },
   /** → warplan.isHolding */
