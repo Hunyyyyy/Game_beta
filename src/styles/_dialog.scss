@@ -81,6 +81,10 @@
   &.down b { color: #b8322a; }
 }
 @media (max-width: 420px) { .gdlg .dstats { grid-template-columns: 1fr; } }
+// on a phone the buttons of a tile drop to their own row, so the name and the pills keep the width of the tile
+@media (max-width: 560px) {
+  .gdlg .dtile { flex-wrap: wrap; .dmain { flex: 1 1 0; } .dacts { flex: 1 0 100%; justify-content: flex-end; flex-wrap: wrap; } }
+}
 
 // ---- parts for people and houses ----
 .gdlg {
