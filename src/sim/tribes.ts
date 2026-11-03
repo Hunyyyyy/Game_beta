@@ -550,6 +550,17 @@ function towerOf(sim: Sim, t: Tribe, ai: NonNullable<Villager['ai']>): { p: Trib
   return p ? { p, reach: levelsOf('tower', sim.era)[(p.lv ?? 1) - 1]?.sight ?? 10 } : null;
 }
 
+/** The house of the village nearest to a man (within `within` tiles of its edge, when given): where a civilian runs when danger comes. */
+function houseNear(t: Tribe, f: Villager, within = Infinity): Tribe['props'][number] | null {
+  let best: Tribe['props'][number] | null = null, bd = Infinity;
+  for (const p of t.props) {
+    if (p.kind !== 'house' || p.hp <= 0) continue;
+    const d = Math.hypot(p.x + p.w / 2 - f.x, p.y + p.h / 2 - f.y);
+    if (d < bd && d - Math.max(p.w, p.h) / 2 <= within) { best = p; bd = d; }
+  }
+  return best;
+}
+
 function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai']>, dt: number): void {
   const free = t.state === 'free';
   const tower = ai.tower ? towerOf(sim, t, ai) : null;
@@ -564,12 +575,20 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
   const threats = free && looking ? threatsOf(sim, f, radius).filter((x) => !(ai.skip && sim.time < ai.skip.until && x.t.kind === 'unit' && x.t.id === ai.skip.id) && (ai.role !== 'guard' || Math.hypot(x.x - ai.camp.x, x.y - ai.camp.y) <= reach + 3 || x.d < AGGRO[t.def.personality])) : [];
   if (!free) { f.fight.target = null; if (f.phase === 'fight') { f.phase = 'idle'; f.path = []; } }
 
-  // fleeing: an unarmed civilian meets a threat
+  // a civilian who ran into a house stays in it (out of sight, nobody can hit him) until nobody hostile is about, or the house is gone
+  if (f.inTent) {
+    f.phase = 'idle'; f.path = []; f.slide = null;
+    if (free && houseNear(t, f, 4) && !(scanNow && !threatsOf(sim, f, 14).length)) return;
+    f.inTent = false;
+  }
+  // fleeing: an unarmed civilian meets a threat and runs for the nearest house of his village (the fire when there is none)
   if (free && (f.fleeT > 0 || (ai.role === 'civ' && threats.length && threats[0].d < 8))) {
-    if (f.fleeT <= 0) { f.fleeT = 6; f.fight.target = null; f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3000); }
+    const home = houseNear(t, f), gx = home ? Math.floor(home.x + home.w / 2) : Math.floor(ai.camp.x), gy = home ? home.y + home.h : Math.floor(ai.camp.y);
+    if (f.fleeT <= 0) { f.fleeT = 6; f.fight.target = null; f.path = sim.pathTo(f, gx, gy, 3000); }
     f.fleeT -= dt; f.phase = 'flee';
+    if (home && Math.hypot(home.x + home.w / 2 - f.x, home.y + home.h / 2 - f.y) <= Math.max(home.w, home.h) / 2 + 1.6) { f.inTent = true; f.path = []; f.slide = null; f.phase = 'idle'; f.fleeT = 0; return; }
     if (threats.length && threats[0].d < 6) f.fleeT = Math.max(f.fleeT, 2);
-    if (!f.path.length && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 3) f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3000);
+    if (!f.path.length && Math.hypot(f.x - gx, f.y - gy) > 3) f.path = sim.pathTo(f, gx, gy, 3000);
     return;
   }
   if (f.phase === 'flee') { f.phase = 'idle'; f.path = []; }

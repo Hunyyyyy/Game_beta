@@ -438,9 +438,9 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
 function endCheck(sim: Sim, plan: Plan, t: Sim['tribes'][number] | undefined): void {
   if (!t) { plan.status = 'done'; plan.result = 'lost'; plan.endedAt = sim.time; return; }
   const armed = headcount(sim, t).guards > 0; // the soldiers indoors count
-  if (t.state !== 'free' || (!armed && t.props.length === 0)) {
+  if (t.state !== 'free' || (!armed && t.props.every((p) => p.kind === 'fence' || p.kind === 'gate'))) { // the walls may stand: they only kept the village shut
     plan.stage = 'over'; plan.result = 'won'; plan.endedAt = sim.time; // the war goes on (the army stands where it is) until the player gives the word to pull out
-    sim.say(`Chiến thắng! ${t.def.name} không còn lính, lửa tắt và mọi công trình đã sập. Bấm Rút quân khi muốn về làng.`);
+    sim.say(`Chiến thắng! ${t.def.name} không còn lính, lửa tắt và mọi nhà, tháp, kho đã sập. Bấm Rút quân khi muốn về làng.`);
     sim.noteBattle('note', `${t.def.name} bị san bằng.`);
     if (t.state === 'free') sim.conquer(t.id, 'Làng bị san bằng');
     return;

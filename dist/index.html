@@ -6466,6 +6466,1624 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var PACE = { work: WORK_DAY / DAY_LENGTH };
   var workDays = (workSecs) => gameDays(workSecs / PACE.work);
 
+  // src/sim/campplan.ts
+  var CORE = ["storage", "builder", "workshop", "armory", "infantry", "archery", "cavalry", "guardpost", "lab", "wartent", "stable", "house", "toolstore", "scouttent", "supplycamp"];
+  var OUTSIDE = ["lumberyard", "quarry", "farmhouse", "huntlodge", "drill"];
+  function ring(fire, r) {
+    const out = [];
+    for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+      if (Math.max(Math.abs(i), Math.abs(j)) !== r || i === 0 && j > 0) continue;
+      out.push({ i, j, a: (Math.atan2(i, -j) + 2 * Math.PI) % (2 * Math.PI) });
+    }
+    return out.sort((p, q) => p.a - q.a).map((o) => [fire.x + 3 * o.i, fire.y + 3 * o.j]);
+  }
+  function limitAt(kind, fireLevel2) {
+    const per = BUILDINGS[kind].perFire;
+    return per ? per[Math.min(per.length, fireLevel2) - 1] ?? 0 : 1;
+  }
+  function slotsAt(kinds, fireLevel2, era, advanced) {
+    let n = 0;
+    for (const k of kinds) {
+      if (!BUILDINGS[k].buildable || fireUnlockLevel(k) > fireLevel2 || eraLocked(k, { advanced })) continue;
+      const lv = Math.max(1, Math.min(maxLevel(k, era), levelCapByFire(fireLevel2)));
+      n += limitAt(k, fireLevel2) * (levelsOf(k, era)[lv - 1]?.slots ?? 0);
+    }
+    return n;
+  }
+  function fenceHalf(fireLevel2) {
+    return fireUnlockLevel("fence") <= fireLevel2 ? Math.max(4, Math.min(10, Math.floor((limitAt("fence", fireLevel2) + 1) / 8))) : 0;
+  }
+  var hits = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  function planCamp(fx, fy, fireLevel2, era, advanced, taken, blocked) {
+    const fire = { x: fx, y: fy }, cx = fx + 1, cy = fy + 1, half = fenceHalf(fireLevel2), fenced = half > 0;
+    const out = [], used = [{ x: fx, y: fy, w: 2, h: 2 }, ...taken];
+    const open = (k) => BUILDINGS[k].buildable && fireUnlockLevel(k) <= fireLevel2 && !eraLocked(k, { advanced });
+    const cap = levelCapByFire(fireLevel2);
+    const put3 = (kind, x, y) => {
+      const d = BUILDINGS[kind], r = { x, y, w: d.w, h: d.h };
+      if (used.some((u) => hits(u, r)) || blocked(r)) return false;
+      used.push(r);
+      out.push({ kind, x, y, w: d.w, h: d.h, level: Math.max(1, Math.min(maxLevel(kind, era), cap)) });
+      return true;
+    };
+    const spot = (kind, spots) => {
+      for (let k = 0; k < spots.length; k++) if (put3(kind, spots[k][0], spots[k][1])) {
+        spots.splice(k, 1);
+        return true;
+      }
+      return false;
+    };
+    if (fenced) {
+      for (let d = -half; d <= half; d++) {
+        put3("fence", cx + d, cy - half);
+        put3(d === 0 ? "gate" : "fence", cx + d, cy + half);
+        if (Math.abs(d) < half) {
+          put3("fence", cx - half, cy + d);
+          put3("fence", cx + half, cy + d);
+        }
+      }
+      if (!eraLocked("tower", { advanced })) for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put3("tower", sx > 0 ? cx + half + 1 : cx - half - 2, sy > 0 ? cy + half + 1 : cy - half - 2);
+    } else if (open("tower")) {
+      for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]].slice(0, limitAt("tower", fireLevel2))) put3("tower", cx + sx * 8 - (sx < 0 ? 2 : 0), cy + sy * 8 - (sy < 0 ? 2 : 0));
+    }
+    const coreRings = fenced ? Math.floor((half - 2) / 3) : 2, firstOutside = fenced ? Math.ceil((half + 2) / 3) : 3;
+    const inside = [], outside = [];
+    for (let r = 1; r <= coreRings; r++) inside.push(...ring(fire, r));
+    for (let r = firstOutside; r <= firstOutside + 3; r++) outside.push(...ring(fire, r).sort((p, q) => Math.abs(p[1] - fy) - Math.abs(q[1] - fy)));
+    for (const kind of CORE.filter(open)) for (let n = limitAt(kind, fireLevel2); n > 0; n--) {
+      if (!(spot(kind, inside) || spot(kind, outside))) break;
+    }
+    for (const kind of OUTSIDE.filter(open)) for (let n = limitAt(kind, fireLevel2); n > 0; n--) {
+      if (!spot(kind, outside)) break;
+    }
+    return out;
+  }
+
+  // src/content/difficulty.json
+  var difficulty_default = {
+    _note: "\u0110\u1ED9 kh\xF3 v\xE0 s\u1EE9c m\u1EA1nh c\u1EE7a c\xE1c l\xE0ng. power: s\u1EE9c m\u1EA1nh m\u1ED9t l\xE0ng = economy \xD7 (kinh t\u1EBF) + military \xD7 (qu\xE2n s\u1EF1). Kinh t\u1EBF = t\u1ED5ng h\u1EC7 s\u1ED1 t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c c\u1EE7a m\u1ECDi ng\u01B0\u1EDDi \u0111ang c\xF3 vi\u1EC7c s\u1EA3n xu\u1EA5t (1 l\xE0 ng\u01B0\u1EDDi g\u1ED1c ch\u01B0a nghi\xEAn c\u1EE9u). Qu\xE2n s\u1EF1 = t\u1ED5ng h\u1EC7 s\u1ED1 ch\u1EC9 s\u1ED1 chi\u1EBFn \u0111\u1EA5u (m\xE1u \xD7 s\u1EE9c m\u1EA1nh \xD7 ph\xF2ng th\u1EE7, so v\u1EDBi ng\u01B0\u1EDDi g\u1ED1c) c\u1EE7a m\u1ECDi l\xEDnh v\xE0 trinh s\xE1t. T\xEDnh theo CH\u1EC8 S\u1ED0 (k\u1EC3 c\u1EA3 ph\u1EA7n tr\u0103m nghi\xEAn c\u1EE9u), kh\xF4ng t\xEDnh theo v\u0169 kh\xED. L\xE0ng NPC: t\u1ED5ng s\u1EE9c m\u1EA1nh c\u1EE7a m\u1ECDi l\xE0ng NPC = tr\u1EA7n c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u1EDF c\u1EA5p l\u1EEDa hi\u1EC7n t\u1EA1i / playerEdge (ng\u01B0\u1EDDi ch\u01A1i ph\xE1t tri\u1EC3n t\u1ED1i \u0111a ch\u1EC9 h\u01A1n t\u1ED5ng NPC 30%). Tr\u1EA7n ng\u01B0\u1EDDi ch\u01A1i = d\xE2n t\u1ED1i \u0111a c\u1EE7a c\u1EA5p l\u1EEDa (k\u1EC3 c\u1EA3 gi\u01B0\u1EDDng nh\xE0 d\xE2n) \xD7 ch\u1EC9 s\u1ED1 t\u1ED1i \u0111a nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c \u1EDF c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u = c\u1EA5p l\u1EEDa; militaryShare l\xE0 ph\u1EA7n d\xE2n l\xE0m l\xEDnh. M\u1ED7i l\xE0ng nh\u1EADn ph\u1EA7n 'share' v\xE0 'military' (t\u1EC9 l\u1EC7 qu\xE2n s\u1EF1) trong tribes.json, r\u1ED3i nh\xE2n h\u1EC7 s\u1ED1 k c\u1EE7a ri\xEAng n\xF3 (random-walk m\u1ED7i ng\xE0y). Code t\u1EF1 t\xEDnh ph\u1EA7n tr\u0103m ch\u1EC9 s\u1ED1 (m\xE1u, s\u1EE9c m\u1EA1nh, ph\xF2ng th\u1EE7, l\xE0m vi\u1EC7c) cho ng\u01B0\u1EDDi c\u1EE7a l\xE0ng \u0111\u1EC3 \u0111\u1EA1t m\u1EE5c ti\xEAu, kh\xF4ng ghi tay. startFactor: kho\u1EA3ng k l\xFAc \u0111\u1EA7u. daily: m\u1ED7i ng\xE0y k nh\xE2n th\xEAm (1 + random trong min..max), k\u1EB9p trong band. campLevel: c\u1EA5p tr\u1EA1i l\u1EEDa random c\u1EE7a m\u1ED7i l\xE0ng; lu\xF4n c\xF3 \xEDt nh\u1EA5t m\u1ED9t l\xE0ng \u1EDF c\u1EA5p kh\xF4ng qu\xE1 guaranteeWeak \u0111\u1EC3 ng\u01B0\u1EDDi ch\u01A1i c\xF3 ch\u1ED7 \u0111\xE1nh. yieldPerEco: t\xE0i nguy\xEAn m\u1ED9t \u0111i\u1EC3m kinh t\u1EBF l\xE0m ra m\u1ED7i ng\xE0y (c\u1ED9ng v\xE0o kho c\u1EE7a l\xE0ng). stockCap: s\u1EE9c ch\u1EE9a kho c\u1EE7a l\xE0ng theo c\u1EA5p tr\u1EA1i. bonusClamp: gi\u1EDBi h\u1EA1n ph\u1EA7n tr\u0103m ch\u1EC9 s\u1ED1 c\u1ED9ng th\xEAm. S\u1ED1 ng\u01B0\u1EDDi c\u1EE7a m\u1ED9t l\xE0ng = s\u1ED1 d\xE2n tr\u1EA1i l\u1EEDa c\u1EE7a n\xF3 ch\u1EE9a \u1EDF c\u1EA5p tr\u1EA1i (POP_BY_FIRE), chia l\xEDnh v\xE0 d\xE2n theo t\u1EC9 l\u1EC7 trong tribes.json. raid: \u0111\u1EE3t t\u1EA5n c\xF4ng c\u1EE7a b\u1ED9 t\u1ED9c c\xF3 tr\u01B0\u1EDDng power trong events.json (1 = m\u1EA1nh b\u1EB1ng qu\xE2n s\u1EF1 hi\u1EC7n t\u1EA1i c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i, 1.1 = h\u01A1n 10%, 0.8 = y\u1EBFu h\u01A1n 20%). K\u1EBFt qu\u1EA3 b\u1ECB k\u1EB9p gi\u1EEFa floor v\xE0 ceiling nh\xE2n qu\xE2n s\u1EF1 t\u1ED1i \u0111a c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u1EDF c\u1EA5p l\u1EEDa \u0111\xF3: ng\u01B0\u1EDDi ch\u01A1i kh\xF4ng c\xF3 qu\xE2n v\u1EABn g\u1EB7p m\u1ED9t \u0111\u1EE3t t\u1ED1i thi\u1EC3u, v\xE0 ng\u01B0\u1EDDi ch\u01A1i qu\xE1 m\u1EA1nh kh\xF4ng l\xE0m \u0111\u1EE3t t\u1EA5n c\xF4ng v\xF4 ngh\u0129a. capture: khi m\u1ED9t l\xE0ng b\u1ECB thu n\u1EA1p, b\u1ECB ti\xEAu di\u1EC7t (do ng\u01B0\u1EDDi c\u1EE7a ta \u0111\xE1nh) ho\u1EB7c ch\u1ECBu c\u1ED1ng n\u1EA1p, ta nh\u1EADn spoilShare (0.5) m\u1ECDi t\xE0i nguy\xEAn trong kho c\u1EE7a l\xE0ng \u0111\xF3; thu n\u1EA1p ho\u1EB7c ti\xEAu di\u1EC7t c\xF2n c\u1ED9ng v\xE0o d\xE2n t\u1ED1i \u0111a c\u1EE7a ta \u0111\xFAng b\u1EB1ng s\u1ED1 d\xE2n tr\u1EA1i l\u1EEDa c\u1EE7a l\xE0ng \u0111\xF3 ch\u1EE9a \u1EDF c\u1EA5p c\u1EE7a n\xF3 (kh\xF4ng gi\u1EDBi h\u1EA1n s\u1ED1 l\u1EA7n chi\u1EBFm); c\u1ED1ng n\u1EA1p th\xEC l\xE0ng v\u1EABn s\u1ED1ng n\xEAn kh\xF4ng c\u1ED9ng d\xE2n.",
+    power: {
+      economy: 1,
+      military: 1
+    },
+    playerEdge: 1.3,
+    militaryShare: 0.6,
+    startFactor: [
+      0.7,
+      1
+    ],
+    daily: {
+      min: 0,
+      max: 0.02,
+      band: [
+        0.7,
+        1.3
+      ]
+    },
+    campLevel: {
+      min: 1,
+      max: 4,
+      guaranteeWeak: 2
+    },
+    yieldPerEco: {
+      food: 6,
+      wood: 3,
+      stone: 2
+    },
+    stockCap: [
+      100,
+      250,
+      500,
+      1e3
+    ],
+    bonusClamp: [
+      -0.6,
+      5
+    ],
+    raid: {
+      floor: 0.25,
+      ceiling: 1
+    },
+    capture: {
+      spoilShare: 0.5
+    },
+    boss: {
+      _note: "L\xE0ng \u0111\u1EA7u m\u1EE5c (boss): m\u1ED7i v\xE1n c\xF3 count[0]..count[1] l\xE0ng, lu\xF4n h\u01A1n ng\u01B0\u1EDDi ch\u01A1i m\u1ED9t b\u1EADc (c\u1EA5p tr\u1EA1i +1, t\u1ED1i \u0111a maxCamp; c\xF3 ch\xF2i canh v\xE0 \u0111\u1ED3 \u0111\u1ED3ng d\xF9 ng\u01B0\u1EDDi ch\u01A1i c\xF2n \u1EDF \u0111\u1ED3 \u0111\xE1). power: s\u1EE9c m\u1EA1nh qu\xE2n c\u1EE7a boss so v\u1EDBi qu\xE2n t\u1ED1i \u0111a ng\u01B0\u1EDDi ch\u01A1i c\xF3 th\u1EC3 c\xF3 \u1EDF c\u1EA5p tr\u1EA1i \u0111\xF3 (0.9 = h\u1EA1 \u0111\u01B0\u1EE3c boss th\xEC m\u1EA5t kho\u1EA3ng 80% l\xEDnh); economy: kinh t\u1EBF so v\u1EDBi kinh t\u1EBF t\u1ED1i \u0111a; popMult: s\u1ED1 d\xE2n so v\u1EDBi c\u1EA5p tr\u1EA1i; bronzeShare: ph\u1EA7n l\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\u1ED3ng v\xE0 m\u1EB7c gi\xE1p \u0111\u1ED3ng; wallHp: \u0111\u1ED9 b\u1EC1n r\xE0o, c\u1ED5ng, ch\xF2i v\xE0 nh\xE0 so v\u1EDBi l\xE0ng th\u01B0\u1EDDng.",
+      count: [1, 2],
+      power: 0.9,
+      economy: 0.6,
+      popMult: 1.3,
+      bronzeShare: 0.4,
+      wallHp: 1.5,
+      weapons: ["bronze_sword", "bronze_axe", "bronze_spear"]
+    }
+  };
+
+  // src/data/stats.json
+  var stats_default = {
+    _note: "C\xF4ng th\u1EE9c ch\u1EC9 s\u1ED1 c\u1EE7a m\u1ECDi NPC l\xE0 ng\u01B0\u1EDDi. Gi\xE1 tr\u1ECB = g\u1ED1c \xD7 h\u1EC7 s\u1ED1 c\xE1 nh\xE2n \xD7 h\u1EC7 s\u1ED1 b\u1EADc \xD7 (1 + t\u1ED5ng % nghi\xEAn c\u1EE9u / 100). M\u1ED7i ch\u1EC9 s\u1ED1 t\xEDnh ri\xEAng, kh\xF4ng \u0111\u1ECDc ch\u1EC9 s\u1ED1 kh\xE1c (ngo\u1EA1i tr\u1EEB t\xE1c d\u1EE5ng c\u1EE7a Tr\xED tu\u1EC7, ghi \u1EDF intEffect). base = gi\xE1 tr\u1ECB g\u1ED1c c\u1EE7a ch\u1EC9 s\u1ED1. stars: tr\u1ECDng s\u1ED1 xu\u1EA5t hi\u1EC7n c\u1EE7a 1 \u0111\u1EBFn 5 sao; t\u1ED5ng 8 h\u1EC7 s\u1ED1 c\xE1 nh\xE2n c\u1EE7a m\u1ED9t ng\u01B0\u1EDDi b\u1EB1ng 8 \xD7 (budgetBase + budgetPerStar \xD7 sao), m\u1ED7i h\u1EC7 s\u1ED1 \u0111\u01B0\u1EE3c r\xFAt ng\u1EABu nhi\xEAn quanh 1 v\u1EDBi \u0111\u1ED9 l\u1EC7ch spread r\u1ED3i b\u1ECB gi\u1EDBi h\u1EA1n trong [min, max], n\xEAn kh\xF4ng ai qu\xE1 cao hay qu\xE1 th\u1EA5p. tierMult[b\u1EADc] = h\u1EC7 s\u1ED1 nh\xE2n l\xEAn g\u1ED1c c\u1EE7a c\u1EA3 vai tr\xF2 khi \u0111\xE3 nghi\xEAn c\u1EE9u b\u1EADc \u0111\xF3. defense.k: % gi\u1EA3m s\xE1t th\u01B0\u01A1ng = \u0111i\u1EC3m th\u1EE7 / (\u0111i\u1EC3m th\u1EE7 + k). intEffect: m\u1ED7i 100% Tr\xED tu\u1EC7 tr\xEAn g\u1ED1c th\xEC t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c t\u0103ng work v\xE0 s\u1EE9c ti\xEAu hao gi\u1EA3m drain (theo t\u1EF7 l\u1EC7). legacy: c\xE1c ch\u1ED7 c\u0169 c\u1EE7a game v\u1EABn \u0111\u1ECDc 4 ch\u1EC9 s\u1ED1 c\u0169 (S\u1EE9c kh\u1ECFe, S\u1EE9c m\u1EA1nh, Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c), n\xEAn ch\xFAng \u0111\u01B0\u1EE3c t\xEDnh ng\u01B0\u1EE3c t\u1EEB gi\xE1 tr\u1ECB m\u1EDBi theo c\xE1c h\u1EC7 s\u1ED1 n\xE0y.",
+    base: { hp: 100, atk: 10, defm: 20, defr: 20, move: 2, work: 1, int: 10, sta: 100 },
+    stars: { weights: [30, 30, 25, 10, 5], budgetBase: 0.92, budgetPerStar: 0.04, spread: 0.3, min: 0.8, max: 1.25 },
+    tierMult: {
+      "2": { hp: 1.5, atk: 1.4, defm: 1.4, defr: 1.4, move: 1.1, work: 1.2, int: 1.2, sta: 1.3 }
+    },
+    defense: { k: 100 },
+    intEffect: { work: 0.5, drain: 0.5 },
+    staDrainRef: 100,
+    legacy: { hpBase: 40, hpPerVit: 8, strengthDamage: 0.6, atkToDamage: 0.4, speedBase: 1.6, speedPerAgi: 0.1, staScale: 0.065, vitFromHp: true }
+  };
+
+  // src/data/research.json
+  var research_default = {
+    enabled: true,
+    craftCostPerLevel: 0.5,
+    _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Tools, weapons, armour and torches have no blueprint (recipe id: axe1 is the wood axe, axe2 the stone one): the level of the Nh\xE0 ch\u1EBF t\u1EA1o alone (recipeLevel) decides which can be made. cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, buildings (kinds that may be built), Set enabled to false to open everything.",
+    recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, bone2: 2, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1, sling1: 1, bow1: 2 },
+    techs: [
+      { id: "signal", name: "T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)", desc: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED; th\u1EBB l\u1EC7nh Ph\xE1t t\xEDn hi\u1EC7u cho c\xE1c \u0111\u1ED9i.", requires: [], needLevel: 2, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: {} },
+      { id: "form_basic", name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", desc: "H\xE0ng ngang v\xE0 v\xF2ng tr\xF2n.", requires: [], needLevel: 1, minInt: 6, cost: { wood: 12, coin: 4 }, time: 240, unlocks: {} },
+      { id: "form_wedge", name: "Tr\u1EADn m\u0169i nh\u1ECDn", desc: "Xung phong ph\xE1 h\xE0ng.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+      { id: "form_horns", name: "Tr\u1EADn s\u1EEBng b\xF2", desc: "Bao hai c\xE1nh, \u0111\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+      { id: "form_scatter", name: "Tr\u1EADn r\u1EA3i qu\xE2n", desc: "Gi\u1EA3m thi\u1EC7t h\u1EA1i t\u1EEB cung v\xE0 l\u1EEDa.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+      { id: "form_ambush", name: "Tr\u1EADn ph\u1EE5c k\xEDch", desc: "\u0110\xF2n \u0111\u1EA7u m\u1EA1nh g\u1EA5p \u0111\xF4i v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
+      { id: "form_cells_10", name: "M\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p (10)", desc: "M\u1ED7i tr\u1EADn ph\xE1p c\xF3 10 \xF4 thay v\xEC 5.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 280, unlocks: { formationCells: 10 } },
+      { id: "form_cells_15", name: "M\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p (15)", desc: "M\u1ED7i tr\u1EADn ph\xE1p c\xF3 15 \xF4.", requires: ["form_cells_10"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { formationCells: 15 } },
+      { id: "form_squads_5", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (5)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 5 \u0111\u1ED9i thay v\xEC 4.", requires: ["form_cells_10"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 280, unlocks: { squads: 5 } },
+      { id: "form_squads_6", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (6)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 6 \u0111\u1ED9i.", requires: ["form_squads_5"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { squads: 6 } },
+      { id: "plan_report", name: "B\xE1o c\xE1o chi ti\u1EBFt", desc: "M\u1EDF tab Chi ti\u1EBFt trong b\xE1o c\xE1o tri\u1EC3n khai: so s\xE1nh qu\xE2n ta v\xE0 \u0111\u1ECBch.", requires: ["plan_foot_hp_3", "plan_foot_defm_3", "plan_foot_defr_3", "plan_cavalry_hp_3", "plan_cavalry_defm_3", "plan_cavalry_defr_3", "plan_archer_hp_3", "plan_archer_defm_3", "plan_archer_defr_3"], needLevel: 2, minInt: 7, cost: { wood: 20, stone: 10, coin: 8 }, time: 360, unlocks: {} },
+      { id: "plan_supply", name: "T\xEDnh to\xE1n h\u1EADu c\u1EA7n", desc: "B\xE1o c\xE1o h\u1EADu c\u1EA7n chi ti\u1EBFt: s\u1ED1 ng\xE0y \u0111i, l\u01B0\u01A1ng v\xE0 v\u1EADt li\u1EC7u c\u1EA7n mang, s\u1ED1 l\xEDnh h\u1EADu c\u1EA7n c\u1EA7n thi\u1EBFt, c\xF3 n\xFAt \xE1p d\u1EE5ng \u0111\u1EC1 xu\u1EA5t.", requires: ["plan_foot_hp_5", "plan_foot_defm_5", "plan_foot_defr_5", "plan_cavalry_hp_5", "plan_cavalry_defm_5", "plan_cavalry_defr_5", "plan_archer_hp_5", "plan_archer_defm_5", "plan_archer_defr_5", "plan_report"], needLevel: 3, minInt: 8, cost: { wood: 30, stone: 20, coin: 12 }, time: 480, unlocks: {} },
+      { id: "plan_weather", name: "D\u1EF1 b\xE1o th\u1EDDi ti\u1EBFt", desc: "B\xE1o c\xE1o tri\u1EC3n khai cho bi\u1EBFt th\u1EDDi ti\u1EBFt h\xF4m nay v\xE0 ng\xE0y mai.", requires: ["plan_foot_move_3", "plan_foot_atk_3", "plan_foot_sta_3", "plan_cavalry_move_3", "plan_cavalry_atk_3", "plan_cavalry_sta_3", "plan_archer_move_3", "plan_archer_atk_3", "plan_archer_sta_3", "plan_report"], needLevel: 2, minInt: 7, cost: { wood: 20, stone: 10, coin: 8 }, time: 360, unlocks: {} },
+      { id: "plan_rest", name: "Ngh\u1EC9 ng\u01A1i d\xE3 chi\u1EBFn", desc: "Trong chi\u1EBFn tranh, cho t\u1EEBng \u0111\u1ED9i d\u1EF1ng l\u1EC1u v\xE0 ngh\u1EC9 ng\u01A1i b\u1EA5t c\u1EE9 l\xFAc n\xE0o, c\u1EA3 ban ng\xE0y; xem b\xE1o c\xE1o s\u1EE9c c\u1EE7a c\xE1c \u0111\u1ED9i.", requires: ["plan_foot_move_5", "plan_foot_atk_5", "plan_foot_sta_5", "plan_cavalry_move_5", "plan_cavalry_atk_5", "plan_cavalry_sta_5", "plan_archer_move_5", "plan_archer_atk_5", "plan_archer_sta_5", "plan_weather"], needLevel: 3, minInt: 8, cost: { wood: 30, stone: 20, coin: 12 }, time: 480, unlocks: {} }
+    ]
+  };
+
+  // src/data/researchtree.json
+  var researchtree_default = {
+    _note: "C\xE2y nghi\xEAn c\u1EE9u ch\u1EC9 s\u1ED1 trong Nh\xE0 nghi\xEAn c\u1EE9u. M\u1ED7i \xF4 l\xE0 m\u1ED9t d\xE2y: m\u1ED9t ch\u1EC9 s\u1ED1 c\u1EE7a m\u1ED9t vai tr\xF2. S\u1ED0 C\u1EA4P C\u1EE6A M\u1ED6I CH\u1EC8 S\u1ED0 b\u1EB1ng s\u1ED1 ph\u1EA7n t\u1EED c\u1EE7a m\u1EA3ng steps c\u1EE7a n\xF3 (th\xEAm hay b\u1EDBt s\u1ED1 trong steps l\xE0 th\xEAm hay b\u1EDBt c\u1EA5p, m\u1ED7i ch\u1EC9 s\u1ED1 t\u1EF1 \u0111\u1EB7t ri\xEAng); tiers ri\xEAng c\u1EE7a ch\u1EC9 s\u1ED1 (n\u1EBFu ghi) thay cho tiers chung b\xEAn d\u01B0\u1EDBi, s\u1ED1 cu\u1ED1i \u0111\u01B0\u1EE3c d\xF9ng ti\u1EBFp cho c\xE1c c\u1EA5p cao h\u01A1n. Ng\u01B0\u1EDDi ch\u01A1i t\u1EF1 ch\u1ECDn \xF4 n\xE0o c\u0169ng \u0111\u01B0\u1EE3c (ch\u1ECDn ch\u1EC9 s\u1ED1 v\xF4 d\u1EE5ng cho vai tr\xF2 th\xEC l\xE0 l\u1ED7 c\u1EE7a h\u1ECD). steps[stat] = % c\u1ED9ng th\xEAm \u1EDF t\u1EEBng c\u1EA5p, gi\u1EA3m d\u1EA7n nh\u01B0ng c\xF3 s\xE0n; t\u1ED5ng % c\u1ED9ng d\u1ED3n c\u1EE7a m\u1ED9t \xF4 l\xE0 ph\u1EA7n c\u1ED9ng th\xEAm c\u1EE7a ch\u1EC9 s\u1ED1 \u0111\xF3 cho c\u1EA3 vai tr\xF2 (g\u1ED1c \xD7 (1 + t\u1ED5ng% / 100)). cost = v\u1EADt li\u1EC7u c\u1EE7a c\u1EA5p 1 (c\u1ED9ng th\xEAm ti\u1EC1n t\u0103ng d\u1EA7n), nh\xE2n 'growth.cost' m\u1ED7i c\u1EA5p; time (gi\xE2y c\xF4ng) nh\xE2n 'growth.time' m\u1ED7i c\u1EA5p. tiers[n-1] = c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA7n cho c\u1EA5p n. Ch\u01B0a n\u1ED1i v\xE0o c\xF4ng th\u1EE9c chi\u1EBFn \u0111\u1EA5u v\xE0 l\xE0m vi\u1EC7c: xem statBonus trong sim/research.ts.",
+    tiers: [
+      1,
+      1,
+      1,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3
+    ],
+    growth: {
+      cost: 1.5,
+      time: 1.25
+    },
+    stats: {
+      hp: {
+        name: "M\xE1u",
+        short: "M\xE1u",
+        steps: [
+          12.5,
+          6,
+          3,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 120,
+        about: "M\xE1u t\u1ED1i \u0111a."
+      },
+      atk: {
+        name: "S\u1EE9c m\u1EA1nh",
+        short: "S\xE1t th\u01B0\u01A1ng",
+        steps: [
+          8,
+          4,
+          2.5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 120,
+        about: "S\xE1t th\u01B0\u01A1ng m\u1ED7i \u0111\xF2n \u0111\xE1nh."
+      },
+      aspd: {
+        name: "T\u1ED1c \u0111\u1ED9 \u0111\xE1nh",
+        short: "T\u1ED1c \u0111\xE1nh",
+        steps: [
+          5,
+          2.5,
+          2.5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 120,
+        about: "T\u1ED1c \u0111\u1ED9 \u0111\xE1nh c\u1EE7a v\u0169 kh\xED: ai c\u1EA7m n\xF3 \u0111\xE1nh v\xE0 b\u1EAFn nhanh h\u01A1n, th\u1EDDi gian gi\u1EEFa hai \u0111\xF2n ng\u1EAFn l\u1EA1i."
+      },
+      crit: {
+        name: "T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng",
+        short: "Ch\xED m\u1EA1ng",
+        steps: [
+          0.5,
+          1,
+          1,
+          1,
+          1
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 130,
+        about: "T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng c\u1EE7a v\u0169 kh\xED, t\xEDnh tr\xEAn 100%: m\u1ED7i c\u1EA5p c\u1ED9ng th\u1EB3ng v\xE0o x\xE1c su\u1EA5t (0,5% l\xE0 n\u1EEDa ph\u1EA7n tr\u0103m). T\u1ED1i \u0111a 10%."
+      },
+      critd: {
+        name: "S\xE1t th\u01B0\u01A1ng ch\xED m\u1EA1ng",
+        short: "ST ch\xED m\u1EA1ng",
+        steps: [
+          20,
+          10,
+          5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 130,
+        about: "S\xE1t th\u01B0\u01A1ng c\u1EE7a \u0111\xF2n ch\xED m\u1EA1ng t\xEDnh tr\xEAn 100% \u0111\xF2n th\u01B0\u1EDDng, g\u1ED1c 125%: m\u1ED7i c\u1EA5p c\u1ED9ng th\u1EB3ng v\xE0o (400% l\xE0 g\u1EA5p 4 l\u1EA7n \u0111\xF2n th\u01B0\u1EDDng)."
+      },
+      tspd: {
+        name: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\u1EDBi c\xF4ng c\u1EE5",
+        short: "T\u1ED1c \u0111\u1ED9",
+        steps: [
+          6,
+          5,
+          4,
+          3,
+          3
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 110,
+        about: "Ai c\u1EA7m c\xF4ng c\u1EE5 n\xE0y l\xE0m vi\u1EC7c nhanh h\u01A1n (c\u1ED9ng v\xE0o h\u1EC7 s\u1ED1 c\u1EE7a c\xF4ng c\u1EE5)."
+      },
+      tyield: {
+        name: "S\u1EA3n l\u01B0\u1EE3ng",
+        short: "S\u1EA3n l\u01B0\u1EE3ng",
+        steps: [
+          4,
+          4,
+          3,
+          3,
+          2
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 110,
+        about: "M\u1ED7i l\u1EA7n khai th\xE1c thu \u0111\u01B0\u1EE3c nhi\u1EC1u h\u01A1n khi c\u1EA7m c\xF4ng c\u1EE5 n\xE0y."
+      },
+      tdur: {
+        name: "\u0110\u1ED9 b\u1EC1n",
+        short: "\u0110\u1ED9 b\u1EC1n",
+        steps: [
+          10,
+          10,
+          10,
+          5,
+          5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 110,
+        about: "C\xF4ng c\u1EE5 l\xE2u h\u1ECFng h\u01A1n (th\u1EDDi gian l\xE0m vi\u1EC7c tr\u01B0\u1EDBc khi g\xE3y d\xE0i ra)."
+      },
+      defm: {
+        name: "Ph\xF2ng th\u1EE7 c\u1EADn chi\u1EBFn",
+        short: "Th\u1EE7 c\u1EADn",
+        steps: [
+          10,
+          5,
+          2.5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 140,
+        about: "Gi\u1EA3m s\xE1t th\u01B0\u01A1ng nh\u1EADn t\u1EEB l\xEDnh c\u1EADn chi\u1EBFn."
+      },
+      defr: {
+        name: "Ph\xF2ng th\u1EE7 t\u1EA7m xa",
+        short: "Th\u1EE7 xa",
+        steps: [
+          10,
+          5,
+          2.5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 140,
+        about: "Gi\u1EA3m s\xE1t th\u01B0\u01A1ng nh\u1EADn t\u1EEB l\xEDnh t\u1EA7m xa."
+      },
+      move: {
+        name: "T\u1ED1c \u0111\u1ED9 di chuy\u1EC3n",
+        short: "Ch\u1EA1y",
+        steps: [
+          2.5,
+          2.5,
+          2.5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 100,
+        about: "T\u1ED1c \u0111\u1ED9 \u0111i v\xE0 ch\u1EA1y."
+      },
+      work: {
+        name: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c",
+        short: "L\xE0m vi\u1EC7c",
+        steps: [
+          5,
+          2.5,
+          2.5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 2
+        },
+        time: 110,
+        about: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c: khai th\xE1c, x\xE2y, ch\u1EBF t\u1EA1o, nghi\xEAn c\u1EE9u."
+      },
+      int: {
+        name: "Tr\xED tu\u1EC7",
+        short: "Tr\xED tu\u1EC7",
+        steps: [
+          5,
+          2.5,
+          2.5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 4
+        },
+        time: 130,
+        about: "Tr\xED tu\u1EC7: t\u0103ng t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\xE0 gi\u1EA3m s\u1EE9c ti\xEAu hao khi l\xE0m vi\u1EC7c."
+      },
+      sta: {
+        name: "S\u1EE9c",
+        short: "S\u1EE9c",
+        steps: [
+          8,
+          4,
+          2.5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 5
+        },
+        time: 110,
+        about: "S\u1EE9c b\u1EC1n: l\xE0m vi\u1EC7c v\xE0 chi\u1EBFn \u0111\u1EA5u \u0111\u01B0\u1EE3c l\xE2u."
+      },
+      hpregen: {
+        name: "H\u1ED3i m\xE1u",
+        short: "H\u1ED3i m\xE1u",
+        steps: [
+          10,
+          5,
+          5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 5
+        },
+        time: 110,
+        about: "T\u1ED1c \u0111\u1ED9 h\u1ED3i m\xE1u khi b\u1ECB th\u01B0\u01A1ng: nhanh h\u01A1n th\xEAm b\u1EA5y nhi\xEAu ph\u1EA7n tr\u0103m."
+      },
+      restregen: {
+        name: "H\u1ED3i s\u1EE9c",
+        short: "H\u1ED3i s\u1EE9c",
+        steps: [
+          10,
+          5,
+          5,
+          2.5,
+          2.5
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 5
+        },
+        time: 110,
+        about: "T\u1ED1c \u0111\u1ED9 h\u1ED3i s\u1EE9c khi ng\u1EE7: nhanh h\u01A1n th\xEAm b\u1EA5y nhi\xEAu ph\u1EA7n tr\u0103m."
+      },
+      mspeed: {
+        name: "T\u1ED1c \u0111\u1ED9 h\xE0nh qu\xE2n",
+        short: "H\xE0nh qu\xE2n",
+        steps: [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 100,
+        about: "Qu\xE2n \u0111i nhanh h\u01A1n khi h\xE0nh qu\xE2n trong chi\u1EBFn tranh."
+      },
+      mload: {
+        name: "T\u1EA3i h\u1EADu c\u1EA7n",
+        short: "T\u1EA3i",
+        steps: [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 100,
+        about: "M\u1ED7i l\xEDnh h\u1EADu c\u1EA7n mang \u0111\u01B0\u1EE3c nhi\u1EC1u h\u01A1n."
+      },
+      mbuild: {
+        name: "T\u1ED1c \u0111\u1ED9 d\u1EF1ng l\u1EC1u",
+        short: "D\u1EF1ng l\u1EC1u",
+        steps: [
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 100,
+        about: "L\xEDnh h\u1EADu c\u1EA7n d\u1EF1ng l\u1EC1u d\xE3 chi\u1EBFn nhanh h\u01A1n."
+      }
+    },
+    roles: {
+      foot: {
+        name: "B\u1ED9 binh",
+        building: "infantry"
+      },
+      cavalry: {
+        name: "K\u1EF5 th\xFA",
+        building: "cavalry"
+      },
+      archer: {
+        name: "Th\u1EE3 n\xE9m",
+        building: "archery"
+      },
+      scout: {
+        name: "Trinh s\xE1t",
+        building: "scouttent"
+      },
+      wood: {
+        name: "\u0110\u1ED1n g\u1ED7",
+        building: "lumberyard"
+      },
+      stone: {
+        name: "Th\u1EE3 \u0111\xE1",
+        building: "quarry"
+      },
+      food: {
+        name: "H\xE1i l\u01B0\u1EE3m",
+        building: "farmhouse"
+      },
+      hunt: {
+        name: "Th\u1EE3 s\u0103n",
+        building: "huntlodge"
+      },
+      build: {
+        name: "Th\u1EE3 x\xE2y",
+        building: "builder"
+      },
+      craft: {
+        name: "Th\u1EE3 ch\u1EBF t\u1EA1o",
+        building: "workshop"
+      },
+      research: {
+        name: "Nh\xE0 nghi\xEAn c\u1EE9u",
+        building: "lab"
+      },
+      tame: {
+        name: "Thu\u1EA7n th\xFA",
+        building: "stable"
+      },
+      club: {
+        name: "G\u1EADy g\u1ED7",
+        weapon: "club"
+      },
+      spear: {
+        name: "Gi\xE1o g\u1ED7",
+        weapon: "spear"
+      },
+      mace: {
+        name: "Ch\xF9y \u0111\xE1",
+        weapon: "mace"
+      },
+      sling: {
+        name: "D\xE2y qu\u0103ng \u0111\xE1",
+        weapon: "sling"
+      },
+      bow: {
+        name: "Cung ng\u1EAFn",
+        weapon: "bow"
+      },
+      basic: {
+        name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n",
+        building: "drill",
+        formation: true,
+        needs: "form_basic"
+      },
+      wedge: {
+        name: "M\u0169i nh\u1ECDn",
+        building: "drill",
+        formation: true,
+        needs: "form_wedge"
+      },
+      horns: {
+        name: "S\u1EEBng b\xF2",
+        building: "drill",
+        formation: true,
+        needs: "form_horns"
+      },
+      scatter: {
+        name: "R\u1EA3i qu\xE2n",
+        building: "drill",
+        formation: true,
+        needs: "form_scatter"
+      },
+      ambush: {
+        name: "Ph\u1EE5c k\xEDch",
+        building: "drill",
+        formation: true,
+        needs: "form_ambush"
+      },
+      axe: {
+        name: "R\xECu",
+        tool: "axe"
+      },
+      pick: {
+        name: "Cu\u1ED1c chim",
+        tool: "pick"
+      },
+      hoe: {
+        name: "Cu\u1ED1c",
+        tool: "hoe"
+      },
+      hammer: {
+        name: "B\xFAa",
+        tool: "hammer"
+      },
+      guard: {
+        name: "L\xEDnh g\xE1c",
+        building: "guardpost"
+      },
+      towerman: {
+        name: "L\xEDnh ch\xF2i canh",
+        building: "tower"
+      },
+      fence: {
+        name: "H\xE0ng r\xE0o",
+        building: "fence"
+      },
+      gate: {
+        name: "C\u1ED5ng",
+        building: "gate"
+      },
+      trap: {
+        name: "Ch\xF4ng",
+        building: "trap"
+      },
+      tower: {
+        name: "Ch\xF2i canh",
+        building: "tower"
+      },
+      march_foot: {
+        name: "B\u1ED9 binh",
+        building: "infantry"
+      },
+      march_cavalry: {
+        name: "K\u1EF5 th\xFA",
+        building: "cavalry"
+      },
+      march_archer: {
+        name: "Th\u1EE3 n\xE9m",
+        building: "archery"
+      },
+      march_army: {
+        name: "To\xE0n qu\xE2n",
+        building: "supplycamp"
+      },
+      plan_foot: {
+        name: "B\u1ED9 binh",
+        building: "infantry"
+      },
+      plan_cavalry: {
+        name: "K\u1EF5 th\xFA",
+        building: "cavalry"
+      },
+      plan_archer: {
+        name: "Th\u1EE3 n\xE9m",
+        building: "archery"
+      }
+    },
+    tabs: {
+      _note: "Qu\xE2n s\u1EF1 m\u1EDF khi Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EA1t c\u1EA5p needLab; tab V\u0169 kh\xED ch\u1EC9 m\u1EDF khi Qu\xE2n s\u1EF1 \u0111\xE3 m\u1EDF. Hai tab X\xE2y d\u1EF1ng v\xE0 Kinh t\u1EBF m\u1EDF s\u1EB5n.",
+      military: {
+        needLab: 2
+      }
+    },
+    chains: {
+      _note: "M\u1ED7i nh\xF3m l\xE0 m\u1ED9t chu\u1ED7i ch\u1EC9 s\u1ED1 \u0111i t\u1EEB tr\xEAn xu\u1ED1ng d\u01B0\u1EDBi (order). C\u1EA5p n c\u1EE7a m\u1ED9t ch\u1EC9 s\u1ED1 c\u1EA7n ch\u1EC9 s\u1ED1 ngay ph\xEDa tr\xEAn \u0111\u1EA1t c\u1EA5p n; ch\u1EC9 s\u1ED1 \u0111\u1EA7u chu\u1ED7i c\u1EA5p n c\u1EA7n ch\u1EC9 s\u1ED1 cu\u1ED1i chu\u1ED7i \u0111\u1EA1t c\u1EA5p n-1. Qu\xE2n s\u1EF1: M\xE1u, Th\u1EE7 c\u1EADn, Th\u1EE7 xa, Ch\u1EA1y, S\xE1t th\u01B0\u01A1ng, S\u1EE9c. C\xF4ng c\u1EE5 (tab C\xF4ng c\u1EE5 b\u1EADc 1): m\u1ED7i C\xD4NG C\u1EE4 (r\xECu, cu\u1ED1c chim, cu\u1ED1c, b\xFAa) m\u1ED9t c\u1ED9t T\u1ED1c \u0111\u1ED9, S\u1EA3n l\u01B0\u1EE3ng (kh\xF4ng c\xF3 \u1EDF b\xFAa), \u0110\u1ED9 b\u1EC1n; ai c\u1EA7m c\xF4ng c\u1EE5 \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng, b\u1EADc c\u1EE7a c\xF4ng c\u1EE5 (g\u1ED7, \u0111\xE1) do c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. Tr\u1EADn ph\xE1p (tab Chi\u1EBFn \u0111\u1EA5u, nh\xE1nh Ch\u1EC9 s\u1ED1 tr\u1EADn ph\xE1p): m\u1ED7i tr\u1EADn (c\u01A1 b\u1EA3n g\u1ED3m H\xE0ng ngang v\xE0 V\xF2ng tr\xF2n) m\u1ED9t c\u1ED9t, c\xF9ng chu\u1ED7i ch\u1EC9 s\u1ED1 qu\xE2n, chia l\xE0m hai \u0111o\u1EA1n (layout) v\u1EDBi \xF4 tr\u1EADn ph\xE1p \u1EDF gi\u1EEFa v\xE0 m\u1EDF r\u1ED9ng \u0111\u1ED9i \u1EDF cu\u1ED1i; gates: ch\u1EC9 s\u1ED1 n\xE0y c\u1EA5p 1 c\u1EA7n nghi\xEAn c\u1EE9u \u0111\xF3; l\xEDnh \u0111\u1EE9ng trong \u0111\u1ED9i \u0111ang d\xF9ng tr\u1EADn \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng th\xEAm, v\xE0 m\u1ED7i b\u01B0\u1EDBc ch\u1EC9 \u0111\u01B0\u1EE3c scale (0,5) l\u1EA7n ph\u1EA7n c\u1EE7a Qu\xE2n s\u1EF1; m\u1ED7i tr\u1EADn ch\u1EC9 nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c khi \u0111\xE3 m\u1EDF tr\u1EADn (needs). V\u0169 kh\xED (tab V\u0169 kh\xED b\u1EADc 1): m\u1ED7i V\u0168 KH\xCD (kh\xF4ng ph\u1EA3i m\u1ED7i vai tr\xF2) m\u1ED9t c\u1ED9t T\u1ED1c \u0111\u1ED9 \u0111\xE1nh, T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng, S\xE1t th\u01B0\u01A1ng ch\xED m\u1EA1ng (hai ch\u1EC9 s\u1ED1 n\xE0y t\xEDnh b\u1EB1ng % th\u1EADt: 0,5% x\xE1c su\u1EA5t; 400% l\xE0 g\u1EA5p 4 l\u1EA7n \u0111\xF2n th\u01B0\u1EDDng); ai c\u1EA7m v\u0169 kh\xED \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng ch\u1EC9 s\u1ED1 c\u1EE7a n\xF3; khi c\u1EA3 ba ch\u1EC9 s\u1ED1 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a th\xEC m\u1EDF v\u0169 kh\xED b\u1EADc 2 c\u1EE7a v\u0169 kh\xED \u0111\xF3 (finalTier): s\xE1t th\u01B0\u01A1ng g\u1ED1c c\u1EE7a v\u0169 kh\xED nh\xE2n rules.tierMult trong weapons.json, cho m\u1ECDi ng\u01B0\u1EDDi c\u1EA7m v\u0169 kh\xED \u0111\xF3. Kinh t\u1EBF (ngh\u1EC1): Ch\u1EA1y, L\xE0m vi\u1EC7c, S\u1EE9c, Tr\xED tu\u1EC7. Ph\xE1t tri\u1EC3n (th\u1EE3 x\xE2y, th\u1EE3 ch\u1EBF t\u1EA1o, nh\xE0 nghi\xEAn c\u1EE9u): L\xE0m vi\u1EC7c, S\u1EE9c, Tr\xED tu\u1EC7 (Tr\xED tu\u1EC7 \u1EDF cu\u1ED1i v\xEC n\xF3 c\u0169ng t\u0103ng t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\xE0 gi\u1EA3m s\u1EE9c ti\xEAu hao khi l\xE0m vi\u1EC7c). finalTier: \xF4 cu\u1ED1i c\u1ED9t, m\u1EDF b\u1EADc 2 khi m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a vai tr\xF2 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a; c\xF3 \u1EDF Qu\xE2n s\u1EF1, Kinh t\u1EBF, Ph\xE1t tri\u1EC3n v\xE0 V\u0169 kh\xED. B\u1EADc 2 nh\xE2n m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a c\u1EA3 vai tr\xF2 theo tierMult trong stats.json.",
+      military: {
+        roles: [
+          "foot",
+          "cavalry",
+          "archer",
+          "scout"
+        ],
+        order: [
+          "hp",
+          "defm",
+          "defr",
+          "move",
+          "atk",
+          "sta",
+          "hpregen",
+          "restregen"
+        ],
+        finalTier: {
+          tier: 2,
+          roles: [
+            "foot",
+            "cavalry",
+            "archer",
+            "scout"
+          ],
+          needLab: 3,
+          cost: {
+            food: 200,
+            wood: 120,
+            hide: 20,
+            coin: 20
+          },
+          time: 1200
+        }
+      },
+      weapon: {
+        roles: [
+          "club",
+          "spear",
+          "mace",
+          "sling",
+          "bow"
+        ],
+        order: [
+          "aspd",
+          "crit",
+          "critd"
+        ],
+        finalTier: {
+          tier: 2,
+          roles: [
+            "club",
+            "spear",
+            "mace",
+            "sling",
+            "bow"
+          ],
+          needLab: 3,
+          cost: {
+            wood: 100,
+            stone: 60,
+            hide: 10,
+            coin: 15
+          },
+          time: 900
+        }
+      },
+      formation: {
+        roles: [
+          "basic",
+          "wedge",
+          "horns",
+          "scatter",
+          "ambush"
+        ],
+        order: [
+          "hp",
+          "defm",
+          "defr",
+          "move",
+          "atk",
+          "sta"
+        ],
+        scale: 0.5,
+        gates: {
+          move: "form_cells_10"
+        },
+        layout: [
+          {
+            stats: [
+              "hp",
+              "defm",
+              "defr"
+            ]
+          },
+          {
+            techs: [
+              "form_cells_10",
+              "form_squads_5"
+            ]
+          },
+          {
+            stats: [
+              "move",
+              "atk",
+              "sta"
+            ]
+          },
+          {
+            techs: [
+              "form_cells_15",
+              "form_squads_6"
+            ]
+          }
+        ]
+      },
+      tool: {
+        roles: [
+          "axe",
+          "pick",
+          "hoe"
+        ],
+        order: [
+          "tspd",
+          "tyield",
+          "tdur"
+        ]
+      },
+      hammer: {
+        roles: [
+          "hammer"
+        ],
+        order: [
+          "tspd",
+          "tdur"
+        ]
+      },
+      economy: {
+        roles: [
+          "wood",
+          "stone",
+          "food",
+          "hunt",
+          "tame"
+        ],
+        order: [
+          "move",
+          "work",
+          "sta",
+          "int",
+          "restregen"
+        ],
+        finalTier: {
+          tier: 2,
+          roles: [
+            "wood",
+            "stone",
+            "food",
+            "hunt",
+            "tame"
+          ],
+          needLab: 3,
+          cost: {
+            food: 150,
+            wood: 100,
+            stone: 40,
+            coin: 15
+          },
+          time: 1e3
+        }
+      },
+      development: {
+        roles: [
+          "build",
+          "craft",
+          "research"
+        ],
+        order: [
+          "work",
+          "sta",
+          "int"
+        ],
+        finalTier: {
+          tier: 2,
+          roles: [
+            "build",
+            "craft",
+            "research"
+          ],
+          needLab: 3,
+          cost: {
+            wood: 100,
+            stone: 60,
+            hide: 10,
+            coin: 20
+          },
+          time: 1e3
+        }
+      },
+      defense: {
+        roles: [
+          "guard",
+          "towerman"
+        ],
+        order: [
+          "hp",
+          "atk"
+        ]
+      },
+      works1: {
+        roles: [
+          "fence",
+          "gate"
+        ],
+        order: [
+          "hp"
+        ]
+      },
+      works2: {
+        roles: [
+          "trap",
+          "tower"
+        ],
+        order: [
+          "hp",
+          "atk"
+        ]
+      },
+      march: {
+        roles: [
+          "march_foot",
+          "march_cavalry",
+          "march_archer"
+        ],
+        order: [
+          "hp",
+          "defm",
+          "defr",
+          "move",
+          "atk",
+          "sta"
+        ],
+        scale: 0.5
+      },
+      marchlog: {
+        roles: [
+          "march_army"
+        ],
+        order: [
+          "mspeed",
+          "mload",
+          "mbuild"
+        ]
+      },
+      tactic: {
+        roles: [
+          "plan_foot",
+          "plan_cavalry",
+          "plan_archer"
+        ],
+        order: [
+          "hp",
+          "defm",
+          "defr",
+          "move",
+          "atk",
+          "sta"
+        ],
+        scale: 0.5
+      }
+    },
+    plan: {
+      _note: "C\xE2y K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u: ba c\u1ED9t B\u1ED9 binh, K\u1EF5, Cung, ch\u1EC9 s\u1ED1 ri\xEAng (chain tactic) ch\u1EC9 c\u1ED9ng khi \u0111ang chi\u1EBFn tranh v\xE0 \u0111ang giao chi\u1EBFn. Nh\xF3m ch\u1EC9 s\u1ED1 \u0111\u1EA7u \u0111\u1EE7 c\u1EA5p 3 m\u1EDF plan_report, c\u1EA5p 5 m\u1EDF plan_supply; nh\xF3m sau c\u1EA5p 3 m\u1EDF plan_weather, c\u1EA5p 5 m\u1EDF plan_rest (xem research.json). Chu\u1ED7i march (tab H\xE0nh qu\xE2n) ch\u1EC9 c\u1ED9ng khi chi\u1EBFn tranh v\xE0 \u0111ang h\xE0nh qu\xE2n ho\u1EB7c ngh\u1EC9.",
+      roles: [
+        "plan_foot",
+        "plan_cavalry",
+        "plan_archer"
+      ],
+      layout: [
+        {
+          stats: [
+            "hp",
+            "defm",
+            "defr"
+          ]
+        },
+        {
+          techs: [
+            "plan_report",
+            "plan_supply"
+          ]
+        },
+        {
+          stats: [
+            "move",
+            "atk",
+            "sta"
+          ]
+        },
+        {
+          techs: [
+            "plan_weather",
+            "plan_rest"
+          ]
+        }
+      ]
+    }
+  };
+
+  // src/sim/research.ts
+  var RESEARCH = { enabled: research_default.enabled };
+  var RECIPE_LEVEL = research_default.recipeLevel;
+  var CRAFT_COST_PER_LEVEL = research_default.craftCostPerLevel ?? 0.5;
+  var recipeNeedLevel = (id) => RECIPE_LEVEL[id] ?? 1;
+  var TECHS = research_default.techs;
+  for (const t of TECHS) t.needLevel = labLevelOf(t.id);
+  var TECH_BY_ID = Object.fromEntries(TECHS.map((t) => [t.id, t]));
+  var STAT_IDS = Object.keys(researchtree_default.stats);
+  var STAT_DEF = researchtree_default.stats;
+  var TREE_ROLES = researchtree_default.roles;
+  var statLevels = (stat) => STAT_DEF[stat].steps.length;
+  var labNeeded = (stat, n) => {
+    const t = STAT_DEF[stat].tiers ?? researchtree_default.tiers;
+    return t[Math.min(n, t.length) - 1];
+  };
+  var statBonusAtLab = (stat, lab) => STAT_DEF[stat].steps.reduce((a, s, i) => a + (labNeeded(stat, i + 1) <= lab ? s : 0), 0);
+  var TREE_TABS = researchtree_default.tabs;
+  var CHAINS = Object.fromEntries(Object.entries(researchtree_default.chains).filter(([, c]) => typeof c !== "string"));
+  var ROLE_SCALE = {};
+  for (const c of Object.values(CHAINS)) if (c.scale !== void 0) for (const r of c.roles) ROLE_SCALE[r] = c.scale;
+  var statTechId = (role, stat, n) => `${role}_${stat}_${n}`;
+  var STAT_TECHS = [];
+  for (const def of Object.values(CHAINS)) for (const role of def.roles) for (const stat of def.order) {
+    const s = STAT_DEF[stat], chain = def.order, at = chain.indexOf(stat);
+    for (let n = 1; n <= statLevels(stat); n++) {
+      const cost = {};
+      for (const [res, amount] of Object.entries(s.cost)) cost[res] = Math.max(1, Math.round(amount * researchtree_default.growth.cost ** (n - 1)));
+      cost.coin = (cost.coin ?? 0) + Math.floor(n / 2);
+      const t = {
+        id: statTechId(role, stat, n),
+        name: `${s.name} \xB7 ${TREE_ROLES[role].name} ${n}`,
+        desc: `${s.about} C\u1ED9ng ${s.steps[n - 1] * (ROLE_SCALE[role] ?? 1)}% cho ${TREE_ROLES[role].formation ? "l\xEDnh \u0111\u1EE9ng trong tr\u1EADn " : ""}${TREE_ROLES[role].name.toLowerCase()}.`,
+        requires: [...n > 1 ? [statTechId(role, stat, n - 1)] : at === 0 && TREE_ROLES[role].needs ? [TREE_ROLES[role].needs] : [], ...n === 1 && def.gates?.[stat] ? [def.gates[stat]] : [], ...chain && at > 0 ? [statTechId(role, chain[at - 1], Math.min(n, statLevels(chain[at - 1])))] : [], ...chain && at === 0 && n > 1 ? [statTechId(role, chain[chain.length - 1], Math.min(n - 1, statLevels(chain[chain.length - 1])))] : []],
+        needLevel: labNeeded(stat, n),
+        cost,
+        time: Math.round(s.time * researchtree_default.growth.time ** (n - 1)),
+        unlocks: { bonus: { role, stat, pct: s.steps[n - 1] * (ROLE_SCALE[role] ?? 1) } }
+      };
+      STAT_TECHS.push(t);
+      TECH_BY_ID[t.id] = t;
+    }
+  }
+  var tierTechId = (role, tier) => `${role}_tier${tier}`;
+  var TIER_TECH_OF = {};
+  for (const c of Object.values(CHAINS)) {
+    if (!c.finalTier) continue;
+    const ft = c.finalTier;
+    for (const role of ft.roles) {
+      const t = {
+        id: tierTechId(role, ft.tier),
+        name: `${TREE_ROLES[role].name} b\u1EADc ${ft.tier}`,
+        desc: TREE_ROLES[role].weapon ? `M\u1EDF ${TREE_ROLES[role].name.toLowerCase()} b\u1EADc ${ft.tier}: m\u1ECDi ng\u01B0\u1EDDi c\u1EA7m n\xF3 g\xE2y s\xE1t th\u01B0\u01A1ng nhi\u1EC1u h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EE7 m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a v\u0169 kh\xED n\xE0y.` : `M\u1EDF b\u1EADc ${ft.tier} c\u1EE7a ${TREE_ROLES[role].name.toLowerCase()}: m\u1ECDi ng\u01B0\u1EDDi l\xE0m vai tr\xF2 n\xE0y m\u1EA1nh h\u01A1n ngay. C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EE7 m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a h\u1ECD.`,
+        requires: c.order.map((stat) => statTechId(role, stat, statLevels(stat))),
+        needLevel: ft.needLab,
+        cost: ft.cost,
+        time: ft.time,
+        unlocks: { tier: { role, tier: ft.tier } }
+      };
+      STAT_TECHS.push(t);
+      TECH_BY_ID[t.id] = t;
+      TIER_TECH_OF[role] = t;
+    }
+  }
+  var soldierTier = (done, role) => {
+    let n = 1;
+    for (let k = 2; k <= 6; k++) if (done.has(tierTechId(role, k))) n = k;
+    return n;
+  };
+  function lineLevel(done, role, stat) {
+    let n = 0;
+    while (n < statLevels(stat) && done.has(statTechId(role, stat, n + 1))) n++;
+    return n;
+  }
+  var PLAN_TREE = researchtree_default.plan;
+  var PLAN_TECH = { detail: "plan_report", supply: "plan_supply", weather: "plan_weather", rest: "plan_rest" };
+  var planOpen = (done, f, advanced, free = false) => advanced && (free || !RESEARCH.enabled || done.has(PLAN_TECH[f]));
+  var statBonus = (done, role, stat) => STAT_DEF[stat].steps.slice(0, lineLevel(done, role, stat)).reduce((a, b) => a + b, 0) * (ROLE_SCALE[role] ?? 1);
+  var NO_BLUEPRINT = /^(club|spear|mace|sling|bow|hide|bone|axe|pick|hoe|hammer|torch)\d$/;
+  var recipeOpen = (done, recipeId) => !RESEARCH.enabled || NO_BLUEPRINT.test(recipeId) || done.has(recipeId);
+  var techForRecipe = (recipeId) => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
+  var unlockedMax = (done, key, base) => TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks[key] ?? 0) : m, base);
+  var techForBuilding = (kind) => TECHS.find((t) => t.unlocks.buildings?.includes(kind));
+  var buildingOpen = (done, kind) => {
+    const t = techForBuilding(kind);
+    return !RESEARCH.enabled || !t || done.has(t.id);
+  };
+
+  // src/data/units.json
+  var units_default = {
+    _note: "Arms of the army and what beats what. A weapon decides its arm: ranged weapons (sling, bow) make an archer, everything else a foot soldier; a rider (cavalry) is a soldier on a tamed beast, which the game does not have yet but the table is ready for. beats[attacker][defender] multiplies the damage an attacker does. Foot beats archers, archers beat riders, riders beat foot. The small bonuses are on top of that.",
+    arms: {
+      foot: "B\u1ED9 binh",
+      archer: "Cung th\u1EE7",
+      cavalry: "K\u1EF5 binh"
+    },
+    beats: {
+      foot: { foot: 1, archer: 1.5, cavalry: 0.67 },
+      archer: { foot: 0.67, archer: 1, cavalry: 1.5 },
+      cavalry: { foot: 1.5, archer: 0.67, cavalry: 1 }
+    },
+    spearVsCavalry: 1.15,
+    archerOnTower: { damage: 1.25, range: 2, within: 2.2 },
+    archerPressed: { within: 2, damage: 0.5 }
+  };
+
+  // src/data/formations.json
+  var formations_default = {
+    _note: "Battle formations (tr\u1EADn ph\xE1p) and the numbers of command. dmg = damage the squad does, taken = damage it takes, speed = pace of the march; charge applies while a wedge runs at the foe, flank when a blow lands from behind, firstBlow to a foe who has not yet noticed the squad, takenRanged to arrows and stones. mastery 0-100 is trained at the B\xE3i t\u1EADp and scales a formation from min to max. cap is the most all tactical factors (arms, formation, tower, surprise, information) may multiply to. info = the factor for the best map level held of the enemy (0..3), infoCounter when level 3 and the right arm is used. A war tent level gives squadLimit squads and cardBase + cardPerLevel * level command cards.",
+    formations: {
+      line: { name: "H\xE0ng ngang", tech: "form_basic", dmg: 1, taken: 0.85, speed: 0.9, note: "Gi\u1EEF ch\u1ED7 th\u1EAFt ch\u1EAFc, ch\u1ED1ng k\u1EF5 \xD71,3; ch\u1EADm quay." },
+      circle: { name: "V\xF2ng tr\xF2n", tech: "form_basic", dmg: 0.85, taken: 0.8, speed: 0.7, note: "Kh\xF4ng c\xF3 h\u01B0\u1EDBng y\u1EBFu; ch\u1EADm, kh\xF4ng xung phong." },
+      wedge: { name: "M\u0169i nh\u1ECDn", tech: "form_wedge", dmg: 0.9, charge: 1.4, taken: 1.1, speed: 1.05, note: "Xung phong \xD71,4 khi \u0111ang lao v\xE0o \u0111\u1ECBch; hai c\xE1nh y\u1EBFu." },
+      horns: { name: "S\u1EEBng b\xF2", tech: "form_horns", dmg: 1, flank: 1.25, taken: 1.1, speed: 1, note: "\u0110\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng th\xEAm \xD71,25; gi\u1EEFa m\u1ECFng." },
+      scatter: { name: "R\u1EA3i qu\xE2n", tech: "form_scatter", dmg: 0.85, taken: 1, takenRanged: 0.6, speed: 1, note: "Gi\u1EA3m 40% thi\u1EC7t h\u1EA1i t\u1EEB cung; \u0111\xE1nh y\u1EBFu h\u01A1n." },
+      ambush: { name: "Ph\u1EE5c k\xEDch", tech: "form_ambush", dmg: 0.7, firstBlow: 2, taken: 1.15, speed: 0.9, note: "\u0110\xF2n \u0111\u1EA7u \xD72 v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt; l\u1ED9 ra th\xEC y\u1EBFu nh\u1EA5t." }
+    },
+    mastery: { min: 0.8, max: 1.15, start: 20, perSecond: 0.4, decayPerDay: 2, switchSeconds: 8, switchTaken: 1.3 },
+    cap: 3.5,
+    info: [0.95, 1, 1.1, 1.2],
+    infoCounter: 1.1,
+    squadLimit: [3, 4, 6],
+    squadMin: 3,
+    squadMax: 15,
+    cell: 1.3,
+    cardBase: 4,
+    cardPerLevel: 2,
+    mapDecayPerDay: 0.1,
+    clusterSize: 10,
+    iconEvery: 3,
+    bigBattle: 24
+  };
+
+  // src/sim/formations.ts
+  var OBJECTIVE_NAME = { camp: "\u0110\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD", gate: "\u0110\u01B0\u1EDDng v\xE0o l\xE0ng", ambush: "Ch\u1ED7 ph\u1EE5c k\xEDch", stores: "Kho l\u01B0\u01A1ng", leader: "Th\u1EE7 l\u0129nh" };
+  var ARM_NAME = units_default.arms;
+  var BEATS = units_default.beats;
+  var UNIT_RULES = units_default;
+  var armOfWeapon = (weapon) => WEAPONS[weapon ?? "fist"]?.ranged ? "archer" : "foot";
+  function matchup(attacker, defender, weapon = null) {
+    return BEATS[attacker][defender] * (weapon === "spear" && defender === "cavalry" ? UNIT_RULES.spearVsCavalry : 1);
+  }
+  var FORMATION_IDS = Object.keys(formations_default.formations);
+  var FORMATIONS = formations_default.formations;
+  var COMMAND = formations_default;
+  var SQUAD_MIN = COMMAND.squadMin;
+  var SQUAD_MAX = COMMAND.squadMax;
+  var masteryFactor = (mastery) => COMMAND.mastery.min + (COMMAND.mastery.max - COMMAND.mastery.min) * Math.max(0, Math.min(100, mastery)) / 100;
+  var clampTactical = (x) => Math.max(1 / COMMAND.cap, Math.min(COMMAND.cap, x));
+  function formationOffsets(kind, n) {
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      switch (kind) {
+        case "line": {
+          const cols = Math.ceil(n / 2);
+          out.push([-(i % 2) * 1.2, (Math.floor(i / 2) - (cols - 1) / 2) * 1.3]);
+          break;
+        }
+        case "wedge": {
+          let r = 0, k = i;
+          while (k > r) {
+            k -= r + 1;
+            r++;
+          }
+          out.push([-r * 1.1, (k - r / 2) * 1.4]);
+          break;
+        }
+        case "circle": {
+          const R2 = Math.max(1.6, n * 1.3 / (2 * Math.PI));
+          out.push([Math.cos(i / n * 2 * Math.PI) * R2, Math.sin(i / n * 2 * Math.PI) * R2]);
+          break;
+        }
+        case "horns": {
+          const arm = i % 3, k = Math.floor(i / 3) + 1;
+          out.push(arm === 0 ? [-1, (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.7] : [k * 0.8, (arm === 1 ? -1 : 1) * (2 + k * 0.9)]);
+          break;
+        }
+        case "scatter": {
+          const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
+          out.push([-Math.floor(i / cols) * 2.6, (i % cols - (cols - 1) / 2) * 2.6]);
+          break;
+        }
+        default: {
+          const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
+          out.push([-Math.floor(i / cols) * 1.5 + i % 2 * 0.4, (i % cols - (cols - 1) / 2) * 1.6]);
+        }
+      }
+    }
+    return out;
+  }
+  var placeOffset = (o, heading, cx, cy) => [cx + o[0] * Math.cos(heading) - o[1] * Math.sin(heading), cy + o[0] * Math.sin(heading) + o[1] * Math.cos(heading)];
+  function drawFormation(kind, o, p, toward, max = SQUAD_MAX) {
+    const S2 = COMMAND.cell, dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy), ang = d > 0.01 ? Math.atan2(dy, dx) : 0, ux = Math.cos(ang), uy = Math.sin(ang);
+    const clampN = (n) => Math.max(1, Math.min(max, n));
+    const at = (along, side) => ({ x: o.x + ux * along - uy * side, y: o.y + uy * along + ux * side });
+    const sign = -uy * (toward.x - o.x) + ux * (toward.y - o.y) >= 0 ? 1 : -1, face2 = Math.atan2(ux * sign, -uy * sign);
+    const cells = [];
+    switch (kind) {
+      case "circle": {
+        const R2 = d, n = clampN(Math.round(2 * Math.PI * R2 / S2));
+        for (let i = 0; i < n; i++) cells.push({ x: o.x + Math.cos(ang + 2 * Math.PI * i / n) * R2, y: o.y + Math.sin(ang + 2 * Math.PI * i / n) * R2 });
+        return { cells, heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
+      }
+      case "wedge": {
+        const half = 0.6, step2 = S2 * Math.cos(half), n = clampN(1 + 2 * Math.floor(d / step2));
+        cells.push({ x: o.x, y: o.y });
+        for (let k = 1; cells.length < n; k++) {
+          cells.push(at(k * step2, -k * S2 * Math.sin(half)));
+          if (cells.length < n) cells.push(at(k * step2, k * S2 * Math.sin(half)));
+        }
+        return { cells, heading: ang + Math.PI };
+      }
+      case "horns": {
+        const n = clampN(Math.floor(d / S2) + 1), bend = Math.min(3, d * 0.25), forward = ang - Math.PI / 2;
+        for (let i = 0; i < n; i++) {
+          const t = n === 1 ? 0.5 : i / (n - 1), c = at(d * t, 0), off = bend * (2 * t - 1) ** 2;
+          cells.push({ x: c.x + Math.cos(forward) * off, y: c.y + Math.sin(forward) * off });
+        }
+        return { cells, heading: forward };
+      }
+      case "scatter": {
+        let g = 2.6, w = Math.abs(dx), hh = Math.abs(dy), cols = 1, rows = 1;
+        for (let guard = 0; guard < 40; guard++) {
+          cols = Math.floor(w / g) + 1;
+          rows = Math.floor(hh / g) + 1;
+          if (cols * rows <= max) break;
+          g *= 1.1;
+        }
+        const x0 = Math.min(o.x, p.x), y0 = Math.min(o.y, p.y), sx = cols > 1 ? w / (cols - 1) : g, sy = rows > 1 ? hh / (rows - 1) : g;
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ x: x0 + c * Math.min(sx, g * 1.4), y: y0 + r * Math.min(sy, g * 1.4) });
+        return { cells: cells.slice(0, max), heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
+      }
+      case "ambush": {
+        const n = clampN(Math.floor(d / (S2 * 0.7)) + 1);
+        for (let i = 0; i < n; i++) cells.push(at(S2 * 0.7 * i, i % 2 ? 0.6 : -0.6));
+        return { cells, heading: face2 };
+      }
+      default: {
+        const n = clampN(Math.floor(d / S2) + 1);
+        for (let i = 0; i < n; i++) cells.push(at(S2 * i, 0));
+        return { cells, heading: face2 };
+      }
+    }
+  }
+  function clusterize(units, size = COMMAND.clusterSize) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const u of units) {
+      const k = `${u.key}|${u.arm}`;
+      (groups.get(k) ?? groups.set(k, []).get(k)).push(u);
+    }
+    const out = [];
+    for (const g of [...groups.values()].sort((a, b) => a[0].key + a[0].arm < b[0].key + b[0].arm ? -1 : 1)) {
+      g.sort((a, b) => a.id - b.id);
+      for (let i = 0; i < g.length; i += size) out.push({ key: g[0].key, arm: g[0].arm, ids: g.slice(i, i + size).map((u) => u.id) });
+    }
+    return out;
+  }
+  var iconCount = (n) => Math.max(1, Math.ceil(n / COMMAND.iconEvery));
+
+  // src/data/mounts.json
+  var mounts_default = {
+    _note: "Mounts. A beast is tamed in the Chu\u1ED3ng th\xFA (the level of the stable decides which) and given to a villager like a tool; the riders of the Tr\u1EA1i k\u1EF5 th\xFA ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
+    kinds: {
+      wolf: { name: "S\xF3i", tier: 1, species: "wolf", speed: 1.7, guard: 0.95, ride: 9, cost: { food: 50, hide: 20, coin: 10 }, time: 240 },
+      boar: { name: "L\u1EE3n r\u1EEBng", tier: 2, species: "boar", speed: 1.4, guard: 0.85, ride: 8, cost: { food: 100, hide: 40, coin: 20 }, time: 360 },
+      elephant: { name: "Voi", tier: 3, species: "mammoth", speed: 1.15, guard: 0.65, ride: 19, cost: { food: 200, hide: 60, coin: 30 }, time: 600 }
+    }
+  };
+
+  // src/data/training.json
+  var training_default = {
+    _note: "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
+    dayBase: 0.6,
+    dayPerStat: 0.12,
+    foodBase: 4,
+    coinBase: 1,
+    coinPerStat: 0.3333,
+    gain: [0.01, 0.05],
+    partnerShare: 0.5,
+    floor: 0.6,
+    floorMin: 3,
+    caps: [8, 12, 16],
+    care: [
+      { name: "Kh\xF4ng", coin: 0, penalty: 0.8 },
+      { name: "C\u1EA9n th\u1EADn", coin: 2, penalty: 0.4 },
+      { name: "Chu \u0111\xE1o", coin: 5, penalty: 0.15 }
+    ],
+    profiles: {
+      infantry: { main: "str", partner: "vit", cost: "agi" },
+      guardpost: { main: "str", partner: "vit", cost: "agi" },
+      archery: { main: "agi", partner: "sta", cost: "str" },
+      cavalry: { main: "agi", partner: "sta", cost: "vit" },
+      lumberyard: { main: "str", partner: "vit", cost: "agi" },
+      quarry: { main: "str", partner: "vit", cost: "agi" },
+      farmhouse: { main: "agi", partner: "sta", cost: "str" },
+      huntlodge: { main: "agi", partner: "sta", cost: "str" },
+      builder: { main: "sta", partner: "str", cost: "vit" },
+      workshop: { main: "agi", cost: "sta" },
+      lab: { main: "sta", cost: "agi" },
+      stable: { main: "agi", partner: "sta", cost: "str" },
+      scouttent: { main: "agi", partner: "sta", cost: "str" }
+    }
+  };
+
+  // src/sim/jobs.ts
+  var TRAINING = training_default;
+  var MOUNT_KINDS = ["wolf", "boar", "elephant"];
+  var MOUNTS = mounts_default.kinds;
+  var fmtStat = (x) => String(Math.round(x * 10) / 10);
+  var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", sta: "Th\u1EC3 l\u1EF1c" };
+  var JOBS = {
+    wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
+    stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
+    food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: pace_default.gather.food, anim: "gather" },
+    build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
+    craft: { name: "Ch\u1EBF t\u1EA1o", stat: "agi", baseTime: 1, anim: "craft" },
+    research: { name: "Nghi\xEAn c\u1EE9u", stat: "sta", baseTime: 1, anim: "gather" },
+    tame: { name: "Thu\u1EA7n th\xFA", stat: "agi", baseTime: 1, anim: "craft" },
+    hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
+    fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
+  };
+  var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", tame: "Thu\u1EA7n th\xFA", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh", scout: "Trinh s\xE1t", supply: "H\u1EADu c\u1EA7n" };
+  var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "tame", "hunt", "fight"];
+  var ROLES = {
+    wood: { job: "wood", building: "lumberyard", names: { stone: "\u0110\u1ED1n g\u1ED7", ancient: "Ti\u1EC1u phu" } },
+    stone: { job: "stone", building: "quarry", names: { stone: "Th\u1EE3 \u0111\xE1", ancient: "Th\u1EE3 m\u1ECF" } },
+    food: { job: "food", building: "farmhouse", names: { stone: "H\xE1i l\u01B0\u1EE3m", ancient: "N\xF4ng d\xE2n" } },
+    hunt: { job: "hunt", building: "huntlodge", names: { stone: "Th\u1EE3 s\u0103n", ancient: "Th\u1EE3 s\u0103n" } },
+    foot: { job: "fight", arm: "foot", building: "infantry", names: { stone: "L\xEDnh b\u1ED9", ancient: "B\u1ED9 binh" } },
+    cavalry: { job: "fight", arm: "cavalry", building: "cavalry", names: { stone: "K\u1EF5 th\xFA", ancient: "K\u1EF5 binh" } },
+    archer: { job: "fight", arm: "archer", building: "archery", names: { stone: "Th\u1EE3 n\xE9m", ancient: "Cung th\u1EE7" } },
+    guard: { job: "fight", arm: "foot", building: "guardpost", names: { stone: "L\xEDnh g\xE1c", ancient: "L\xEDnh g\xE1c" } },
+    tower: { job: "fight", arm: "archer", building: "tower", names: { stone: "L\xEDnh ch\xF2i canh", ancient: "L\xEDnh ch\xF2i canh" } },
+    scout: { job: "scout", building: "scouttent", names: { stone: "Trinh s\xE1t", ancient: "Trinh s\xE1t" } },
+    supply: { job: "supply", building: "supplycamp", names: { stone: "L\xEDnh h\u1EADu c\u1EA7n", ancient: "L\xEDnh h\u1EADu c\u1EA7n" } }
+  };
+  var ROLE_IDS = Object.keys(ROLES);
+  var roleName = (role, era) => ROLES[role].names[era];
+  function roleOf(v) {
+    switch (v.job) {
+      case "fight":
+        return v.guard ? v.post >= 0 ? "tower" : "guard" : v.arm === "archer" ? "archer" : v.arm === "cavalry" ? "cavalry" : "foot";
+      case "food":
+        return v.post < 0 ? "food" : null;
+      case "wood":
+      case "stone":
+      case "hunt":
+      case "scout":
+      case "supply":
+        return v.job;
+      default:
+        return null;
+    }
+  }
+  var STAFF_BUILDING = { craft: "workshop", research: "lab", tame: "stable" };
+  var isStaffJob = (j) => j in STAFF_BUILDING;
+  var FARM_TIME = pace_default.gather.farm;
+  var XP_LEVELS = [60, 150, 300, 500, 800];
+  var MAX_LEVEL = 5;
+  var CREW_BUILDING = { build: "builder" };
+  var BARE_HANDS = pace_default.bare;
+  var OUTDOOR_JOBS = pace_default.outdoor;
+
+  // src/sim/tools.ts
+  var TOOL_KINDS = ["axe", "pick", "hoe", "hammer"];
+  var TOOL_NAME = { axe: "R\xECu", pick: "Cu\u1ED1c chim", hoe: "Cu\u1ED1c", hammer: "B\xFAa" };
+  var TOOL_USE = { axe: "\u0111\u1ED1n g\u1ED7", pick: "\u0111\u1EE5c \u0111\xE1", hoe: "h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7", hammer: "d\u1EF1ng c\xF4ng tr\xECnh" };
+  var TOOL_OF_JOB = { wood: "axe", stone: "pick", food: "hoe", build: "hammer" };
+  var TIER_NAME = ["Tay kh\xF4ng", "G\u1ED7", "\u0110\xE1"];
+  var TIER_SPEED = [0.6, 1, 1.4];
+  var TIER_YIELD = [1, 1.25, 1.6];
+  var TIER_DURABILITY = [0, 240, 600];
+  var GEAR_KINDS = ["club", "spear", "mace", "sling", "bow", "hide", "bone"];
+  var isArmorKind = (k) => k in ARMORS;
+  var isGear = (k) => GEAR_KINDS.includes(k);
+  var isWeaponKind = (k) => k in WEAPONS;
+  var R = (kind, tier, cost, time) => ({ id: `${kind}${tier}`, kind, tier, cost, time });
+  var gearRecipe = (kind) => {
+    const d = isArmorKind(kind) ? ARMORS[kind] : WEAPONS[kind];
+    return R(kind, d.tier ?? 1, d.cost ?? {}, d.time ?? 60);
+  };
+  var RECIPES = [
+    R("axe", 1, { wood: 3 }, 24),
+    R("axe", 2, { wood: 2, stone: 3 }, 40),
+    R("pick", 1, { wood: 4 }, 28),
+    R("pick", 2, { wood: 2, stone: 4 }, 44),
+    R("hoe", 1, { wood: 3 }, 24),
+    R("hoe", 2, { wood: 2, stone: 2 }, 36),
+    R("hammer", 1, { wood: 3 }, 24),
+    R("hammer", 2, { wood: 2, stone: 3 }, 36),
+    R("torch", 1, { wood: 2 }, 12),
+    ...GEAR_KINDS.map(gearRecipe)
+  ];
+  var RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
+  var recipeName = (r) => {
+    if (isArmorKind(r.kind)) return ARMORS[r.kind].name;
+    if (r.kind === "torch") return "\u0110u\u1ED1c";
+    if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
+    return `${TOOL_NAME[r.kind]} ${TIER_NAME[r.tier].toLowerCase()}`;
+  };
+  var recipeUse = (r) => {
+    if (isArmorKind(r.kind)) {
+      const a = ARMORS[r.kind], p = (x) => `${Math.round(x * 100)}%`;
+      return `gi\xE1p: gi\u1EA3m \u0111\xE2m ${p(a.pierce)} \xB7 ch\xE9m ${p(a.slash)} \xB7 \u0111\u1EADp ${p(a.crush)} \xB7 b\u1EC1n ${a.durability ?? "?"}`;
+    }
+    if (r.kind === "torch") return "l\xE0m vi\u1EC7c ban \u0111\xEAm (hi\u1EC7u su\u1EA5t 70%), nh\xECn xa h\u01A1n trong t\u1ED1i";
+    if (isWeaponKind(r.kind)) {
+      const w = WEAPONS[r.kind];
+      return `${{ pierce: "\u0111\xE2m", slash: "ch\xE9m", crush: "\u0111\u1EADp" }[w.type]} ${w.damage} \xB7 ${(1 / w.cycle).toFixed(2)} \u0111\xF2n/gi\xE2y \xB7 ch\xED m\u1EA1ng \u0111\xF2n ${Math.round((w.critDamage ?? RULES.critDamage) * 100)}% \xB7 t\u1EA7m ${w.range}`;
+    }
+    return TOOL_USE[r.kind];
+  };
+  var emptyToolSet = () => ({ axe: null, pick: null, hoe: null, hammer: null });
+
+  // src/sim/statsys.ts
+  var BASE = stats_default.base;
+  var IDS = Object.keys(stats_default.base);
+  var TIER_MULT = stats_default.tierMult;
+  var L = stats_default.legacy;
+  function rollFactors(r) {
+    const w = stats_default.stars.weights, total = w.reduce((a, b) => a + b, 0);
+    let x = r() * total, stars = 1;
+    for (let i = 0; i < w.length; i++) {
+      x -= w[i];
+      if (x <= 0) {
+        stars = i + 1;
+        break;
+      }
+      stars = i + 1;
+    }
+    const budget = IDS.length * (stats_default.stars.budgetBase + stats_default.stars.budgetPerStar * stars), { min, max } = stats_default.stars;
+    let f = IDS.map(() => 1 - stats_default.stars.spread / 2 + r() * stats_default.stars.spread);
+    for (let k = 0; k < 8; k++) {
+      const s = f.reduce((a, b) => a + b, 0);
+      f = f.map((v) => Math.max(min, Math.min(max, v * budget / s)));
+    }
+    return { stars, fac: Object.fromEntries(IDS.map((id, i) => [id, f[i]])) };
+  }
+  function treeRole(v) {
+    const r = roleOf(v);
+    if (r) return r === "tower" ? "towerman" : r;
+    switch (v.job) {
+      case "build":
+        return "build";
+      case "craft":
+        return "craft";
+      case "research":
+        return "research";
+      case "tame":
+        return "tame";
+      case "food":
+        return "farm";
+      default:
+        return null;
+    }
+  }
+  function statValue(sim2, v, stat) {
+    const role = v.team === "player" ? treeRole(v) : null;
+    const tier = role && TREE_ROLES[role] ? soldierTier(sim2.researched, role) : 1;
+    const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
+    const squad = v.team === "player" && v.squad >= 0 ? sim2.squads.find((q) => q.id === v.squad) : void 0;
+    const bonus = (v.team !== "player" ? sim2.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim2.researched, role, stat) : 0) + (squad ? statBonus(sim2.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ""), stat) : 0);
+    const mode = role === "foot" || role === "cavalry" || role === "archer" ? sim2.warMode?.(v) ?? null : null;
+    const warBonus = mode ? statBonus(sim2.researched, `${mode === "fight" ? "plan" : "march"}_${role}`, stat) : 0;
+    const hunger = v.team === "player" && stat !== "hp" ? (1 - sim2.foodPenalty) * (1 - sim2.tiredPenalty(v)) : 1;
+    return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + (bonus + warBonus) / 100) * hunger;
+  }
+  var rawValue = (fac, stat) => BASE[stat] * fac[stat];
+  function legacyStats(value) {
+    return {
+      vit: (value("hp") - L.hpBase) / L.hpPerVit,
+      str: value("atk") * L.atkToDamage / L.strengthDamage,
+      agi: (value("move") - L.speedBase) / L.speedPerAgi,
+      sta: value("sta") * L.staScale
+    };
+  }
+  function applyStats(sim2, v) {
+    if (v.team === "wild") return;
+    const val = (s) => statValue(sim2, v, s), l = legacyStats(val);
+    v.stats.vit = l.vit;
+    v.stats.str = l.str;
+    v.stats.agi = l.agi;
+    v.stats.sta = l.sta;
+    const hp = Math.round(val("hp"));
+    if (hp !== v.maxHealth) {
+      const ratio2 = v.maxHealth > 0 ? v.health / v.maxHealth : 1;
+      v.maxHealth = hp;
+      v.health = Math.min(hp, hp * ratio2);
+    }
+    if (v.team === "player" && v.squad < 0 && !v.mount) v.speed = val("move");
+  }
+  function guardCut(sim2, v, ranged) {
+    const d = statValue(sim2, v, ranged ? "defr" : "defm");
+    return d / (d + stats_default.defense.k);
+  }
+  function workSpeed(sim2, v) {
+    return statValue(sim2, v, "work") * (1 + stats_default.intEffect.work * (statValue(sim2, v, "int") / BASE.int - 1));
+  }
+  function drainScale(sim2, v) {
+    const reserve = Math.max(0.3, statValue(sim2, v, "sta") / stats_default.staDrainRef), spare = Math.max(0.4, 1 + stats_default.intEffect.drain * (statValue(sim2, v, "int") / BASE.int - 1));
+    return 1 / (reserve * spare);
+  }
+  function weaponDamage(sim2, v, w) {
+    if (v.team !== "player") return w.damage;
+    const tier = soldierTier(sim2.researched, w.id);
+    return tier > 1 ? w.damage * (RULES.tierMult[String(tier)]?.damage ?? 1) : w.damage;
+  }
+  function toolBonus(sim2, v, job, stat) {
+    const kind = TOOL_OF_JOB[job], tool = kind ? v.tools[kind] : null;
+    return v.team === "player" && kind && tool && tool.dur > 0 ? statBonus(sim2.researched, kind, stat) : 0;
+  }
+  var weaponBonus = (sim2, v, w, stat) => v.team === "player" ? statBonus(sim2.researched, w.id, stat) : 0;
+  var swingCycle = (sim2, v, w) => {
+    const p = v.team === "player" ? sim2.foodPenalty : 0;
+    const agi = p > 0 ? ((L.speedBase + L.speedPerAgi * v.stats.agi) / (1 - p) - L.speedBase) / L.speedPerAgi : v.stats.agi;
+    return cycleOf(w.cycle, agi) / (1 + weaponBonus(sim2, v, w, "aspd") / 100) / (1 - p);
+  };
+  var critChance = (sim2, v, w) => Math.min((w.crit ?? 0) + weaponBonus(sim2, v, w, "crit") / 100, RULES.critMax);
+  var critMult = (sim2, v, w) => (w.critDamage ?? RULES.critDamage) + weaponBonus(sim2, v, w, "critd") / 100;
+
+  // src/sim/difficulty.ts
+  var DIFF = difficulty_default;
+  var TIER_MULT2 = stats_default.tierMult;
+  var clampLevel = (level) => Math.max(1, Math.min(POP_BY_FIRE.length, Math.round(level)));
+  function popCapAt(level) {
+    const L2 = clampLevel(level), house = BUILDINGS.house, lv = house.levels.stone;
+    return POP_BY_FIRE[L2 - 1] + (house.perFire?.[L2 - 1] ?? 0) * lv[Math.min(L2, lv.length) - 1].slots;
+  }
+  var tierAt = (lab, chain) => {
+    const t = CHAINS[chain]?.finalTier;
+    return t && t.needLab <= lab ? t.tier : 1;
+  };
+  function statRatio(stat, lab, chain) {
+    const tier = tierAt(lab, chain);
+    return (1 + statBonusAtLab(stat, lab) / 100) * (tier > 1 ? TIER_MULT2[String(tier)]?.[stat] ?? 1 : 1);
+  }
+  function playerCap(level) {
+    const L2 = clampLevel(level), pop = popCapAt(L2), soldiers = pop * difficulty_default.militaryShare, workers = pop - soldiers;
+    const fighter = statRatio("hp", L2, "military") * statRatio("atk", L2, "military") * (statRatio("defm", L2, "military") + statRatio("defr", L2, "military")) / 2;
+    const worker = statRatio("work", L2, "economy") * (1 + stats_default.intEffect.work * (statRatio("int", L2, "economy") - 1));
+    const economy = workers * worker, military = soldiers * fighter;
+    return { economy, military, total: difficulty_default.power.economy * economy + difficulty_default.power.military * military };
+  }
+  function tribeTarget(level, tribe, k) {
+    const total = playerCap(level).total / difficulty_default.playerEdge * tribe.share * k;
+    return { military: total * tribe.military / difficulty_default.power.military, economy: total * (1 - tribe.military) / difficulty_default.power.economy };
+  }
+  function bossTarget(level) {
+    const cap = playerCap(clampLevel(level + 1));
+    return { military: cap.military * difficulty_default.boss.power, economy: cap.economy * difficulty_default.boss.economy };
+  }
+  function raidPower(playerMilitary, ratio2, level) {
+    const top = playerCap(level).military;
+    return Math.max(difficulty_default.raid.floor * top, Math.min(difficulty_default.raid.ceiling * top, playerMilitary * ratio2));
+  }
+  function tribeBonuses(level, tribe, k, soldiers, workers, boss = false) {
+    const t = boss ? bossTarget(level) : tribeTarget(level, tribe, k), [lo, hi] = difficulty_default.bonusClamp, clamp3 = (x) => Math.max(lo, Math.min(hi, x));
+    return { mil: soldiers > 0 ? clamp3(Math.cbrt(t.military / soldiers) - 1) : 0, eco: workers > 0 ? clamp3(t.economy / workers - 1) : 0 };
+  }
+  var baseWork = BASE.work;
+
   // src/sim/rng.ts
   function mulberry32(seed2) {
     let a = seed2 >>> 0;
@@ -6789,109 +8407,74 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   };
 
-  // src/data/mounts.json
-  var mounts_default = {
-    _note: "Mounts. A beast is tamed in the Chu\u1ED3ng th\xFA (the level of the stable decides which) and given to a villager like a tool; the riders of the Tr\u1EA1i k\u1EF5 th\xFA ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
-    kinds: {
-      wolf: { name: "S\xF3i", tier: 1, species: "wolf", speed: 1.7, guard: 0.95, ride: 9, cost: { food: 50, hide: 20, coin: 10 }, time: 240 },
-      boar: { name: "L\u1EE3n r\u1EEBng", tier: 2, species: "boar", speed: 1.4, guard: 0.85, ride: 8, cost: { food: 100, hide: 40, coin: 20 }, time: 360 },
-      elephant: { name: "Voi", tier: 3, species: "mammoth", speed: 1.15, guard: 0.65, ride: 19, cost: { food: 200, hide: 60, coin: 30 }, time: 600 }
-    }
-  };
-
-  // src/data/training.json
-  var training_default = {
-    _note: "Training in the house of a role: a day or two away from work, for a few per cent of one stat, paid in food and coin. See src/sim/training.ts.",
-    dayBase: 0.6,
-    dayPerStat: 0.12,
-    foodBase: 4,
-    coinBase: 1,
-    coinPerStat: 0.3333,
-    gain: [0.01, 0.05],
-    partnerShare: 0.5,
-    floor: 0.6,
-    floorMin: 3,
-    caps: [8, 12, 16],
-    care: [
-      { name: "Kh\xF4ng", coin: 0, penalty: 0.8 },
-      { name: "C\u1EA9n th\u1EADn", coin: 2, penalty: 0.4 },
-      { name: "Chu \u0111\xE1o", coin: 5, penalty: 0.15 }
-    ],
-    profiles: {
-      infantry: { main: "str", partner: "vit", cost: "agi" },
-      guardpost: { main: "str", partner: "vit", cost: "agi" },
-      archery: { main: "agi", partner: "sta", cost: "str" },
-      cavalry: { main: "agi", partner: "sta", cost: "vit" },
-      lumberyard: { main: "str", partner: "vit", cost: "agi" },
-      quarry: { main: "str", partner: "vit", cost: "agi" },
-      farmhouse: { main: "agi", partner: "sta", cost: "str" },
-      huntlodge: { main: "agi", partner: "sta", cost: "str" },
-      builder: { main: "sta", partner: "str", cost: "vit" },
-      workshop: { main: "agi", cost: "sta" },
-      lab: { main: "sta", cost: "agi" },
-      stable: { main: "agi", partner: "sta", cost: "str" },
-      scouttent: { main: "agi", partner: "sta", cost: "str" }
-    }
-  };
-
-  // src/sim/jobs.ts
-  var TRAINING = training_default;
-  var MOUNT_KINDS = ["wolf", "boar", "elephant"];
-  var MOUNTS = mounts_default.kinds;
-  var fmtStat = (x) => String(Math.round(x * 10) / 10);
-  var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", sta: "Th\u1EC3 l\u1EF1c" };
-  var JOBS = {
-    wood: { name: "\u0110\u1ED1n g\u1ED7", stat: "str", res: "wood", node: "tree", baseTime: pace_default.gather.wood, anim: "chop" },
-    stone: { name: "Th\u1EE3 \u0111\xE1", stat: "str", res: "stone", node: "rock", baseTime: pace_default.gather.stone, anim: "mine" },
-    food: { name: "H\xE1i l\u01B0\u1EE3m", stat: "agi", res: "food", node: "bush", baseTime: pace_default.gather.food, anim: "gather" },
-    build: { name: "Th\u1EE3 x\xE2y", stat: "sta", baseTime: 1, anim: "build" },
-    craft: { name: "Ch\u1EBF t\u1EA1o", stat: "agi", baseTime: 1, anim: "craft" },
-    research: { name: "Nghi\xEAn c\u1EE9u", stat: "sta", baseTime: 1, anim: "gather" },
-    tame: { name: "Thu\u1EA7n th\xFA", stat: "agi", baseTime: 1, anim: "craft" },
-    hunt: { name: "Th\u1EE3 s\u0103n", stat: "agi", baseTime: 1, anim: "thrust_attack" },
-    fight: { name: "Chi\u1EBFn binh", stat: "str", baseTime: 1, anim: "swing_attack" }
-  };
-  var JOB_NAME = { idle: "R\u1EA3nh", wood: "\u0110\u1ED1n g\u1ED7", stone: "Th\u1EE3 \u0111\xE1", food: "H\xE1i l\u01B0\u1EE3m", build: "Th\u1EE3 x\xE2y", craft: "Ch\u1EBF t\u1EA1o", research: "Nghi\xEAn c\u1EE9u", tame: "Thu\u1EA7n th\xFA", hunt: "Th\u1EE3 s\u0103n", fight: "Chi\u1EBFn binh", scout: "Trinh s\xE1t", supply: "H\u1EADu c\u1EA7n" };
-  var WORK_JOBS = ["wood", "stone", "food", "build", "craft", "research", "tame", "hunt", "fight"];
-  var ROLES = {
-    wood: { job: "wood", building: "lumberyard", names: { stone: "\u0110\u1ED1n g\u1ED7", ancient: "Ti\u1EC1u phu" } },
-    stone: { job: "stone", building: "quarry", names: { stone: "Th\u1EE3 \u0111\xE1", ancient: "Th\u1EE3 m\u1ECF" } },
-    food: { job: "food", building: "farmhouse", names: { stone: "H\xE1i l\u01B0\u1EE3m", ancient: "N\xF4ng d\xE2n" } },
-    hunt: { job: "hunt", building: "huntlodge", names: { stone: "Th\u1EE3 s\u0103n", ancient: "Th\u1EE3 s\u0103n" } },
-    foot: { job: "fight", arm: "foot", building: "infantry", names: { stone: "L\xEDnh b\u1ED9", ancient: "B\u1ED9 binh" } },
-    cavalry: { job: "fight", arm: "cavalry", building: "cavalry", names: { stone: "K\u1EF5 th\xFA", ancient: "K\u1EF5 binh" } },
-    archer: { job: "fight", arm: "archer", building: "archery", names: { stone: "Th\u1EE3 n\xE9m", ancient: "Cung th\u1EE7" } },
-    guard: { job: "fight", arm: "foot", building: "guardpost", names: { stone: "L\xEDnh g\xE1c", ancient: "L\xEDnh g\xE1c" } },
-    tower: { job: "fight", arm: "archer", building: "tower", names: { stone: "L\xEDnh ch\xF2i canh", ancient: "L\xEDnh ch\xF2i canh" } },
-    scout: { job: "scout", building: "scouttent", names: { stone: "Trinh s\xE1t", ancient: "Trinh s\xE1t" } },
-    supply: { job: "supply", building: "supplycamp", names: { stone: "L\xEDnh h\u1EADu c\u1EA7n", ancient: "L\xEDnh h\u1EADu c\u1EA7n" } }
-  };
-  var ROLE_IDS = Object.keys(ROLES);
-  var roleName = (role, era) => ROLES[role].names[era];
-  function roleOf(v) {
-    switch (v.job) {
-      case "fight":
-        return v.guard ? v.post >= 0 ? "tower" : "guard" : v.arm === "archer" ? "archer" : v.arm === "cavalry" ? "cavalry" : "foot";
-      case "food":
-        return v.post < 0 ? "food" : null;
-      case "wood":
-      case "stone":
-      case "hunt":
-      case "scout":
-      case "supply":
-        return v.job;
-      default:
-        return null;
+  // src/sim/tribebuild.ts
+  var planned = (p) => p.lv !== void 0;
+  var keyOf = (p) => `${p.b ?? p.kind}@${p.x},${p.y}`;
+  function hpOf(kind, _w, _h, lv, boss = false) {
+    return Math.round((SIEGE.propHp[kind] ?? 60) * (1 + 0.5 * (lv - 1)) * (boss ? DIFF.boss.wallHp : 1));
+  }
+  var maxPropHp = (t, p) => hpOf(p.kind, p.w, p.h, p.lv ?? 1, !!t.boss);
+  function repairProps(t, share2) {
+    for (const p of t.props) if (p.lv !== void 0) p.hp = Math.min(maxPropHp(t, p), p.hp + (share2 >= 1 ? Infinity : maxPropHp(t, p) * share2));
+  }
+  function clearPatch(sim2, x, y, w, h3, margin) {
+    const W2 = sim2.world, N = W2.size;
+    for (let j = -margin; j < h3 + margin; j++) for (let i = -margin; i < w + margin; i++) {
+      if (x + i < 0 || y + j < 0 || x + i >= N || y + j >= N) continue;
+      const k = (y + j) * N + x + i;
+      if (W2.nodes.delete(k)) {
+        W2.tiles[k] = Tile.Grass;
+        W2.decor[k] = 0;
+      }
     }
   }
-  var STAFF_BUILDING = { craft: "workshop", research: "lab", tame: "stable" };
-  var isStaffJob = (j) => j in STAFF_BUILDING;
-  var FARM_TIME = pace_default.gather.farm;
-  var XP_LEVELS = [60, 150, 300, 500, 800];
-  var MAX_LEVEL = 5;
-  var CREW_BUILDING = { build: "builder" };
-  var BARE_HANDS = pace_default.bare;
-  var OUTDOOR_JOBS = pace_default.outdoor;
+  function growCamp(sim2, t, level) {
+    if (t.state === "destroyed" || level <= (t.built ?? 0)) return 0;
+    const fire = t.props.find((p) => p.kind === "fire");
+    if (!fire) return 0;
+    const W2 = sim2.world, N = W2.size;
+    W2.ensure(fire.x, fire.y, 16);
+    const base = t.props.filter((p) => !planned(p)), old = new Map(t.props.filter(planned).map((p) => [keyOf(p), p]));
+    const blocked = (r) => {
+      for (let j = r.y; j < r.y + r.h; j++) for (let i = r.x; i < r.x + r.w; i++) {
+        if (i < 2 || j < 2 || i >= N - 2 || j >= N - 2) return true;
+        const tile = W2.at(i, j);
+        if (tile === Tile.Water || tile === Tile.Mountain) return true;
+      }
+      return false;
+    };
+    const next = [...base];
+    for (const piece of planPieces(sim2, t, fire, level, base, blocked)) {
+      const kind = piece.kind === "fence" || piece.kind === "gate" || piece.kind === "tower" ? piece.kind : "house", b = kind === "house" ? piece.kind : void 0;
+      const prop = { x: piece.x, y: piece.y, w: piece.w, h: piece.h, kind, b, lv: piece.level, hp: 0 };
+      const was = old.get(keyOf(prop));
+      if (was) {
+        old.delete(keyOf(prop));
+        const lost = hpOf(kind, prop.w, prop.h, was.lv, !!t.boss) - was.hp;
+        was.lv = Math.max(was.lv, piece.level);
+        was.hp = Math.max(1, hpOf(kind, prop.w, prop.h, was.lv, !!t.boss) - lost);
+        next.push(was);
+        continue;
+      }
+      prop.hp = hpOf(kind, prop.w, prop.h, prop.lv, !!t.boss);
+      clearPatch(sim2, prop.x, prop.y, prop.w, prop.h, kind === "fence" || kind === "gate" ? 0 : 1);
+      next.push(prop);
+    }
+    for (const p of old.values()) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) W2.occ[(p.y + j) * N + p.x + i] = 0;
+    for (const p of next) if (p.kind !== "gate" || p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) W2.occ[(p.y + j) * N + p.x + i] = 1;
+    t.props = next;
+    t.built = level;
+    return next.length - base.length;
+  }
+  function setGates(sim2, t, shut) {
+    const N = sim2.world.size;
+    for (const p of t.props) {
+      if (p.kind !== "gate" || p.open !== false !== shut) continue;
+      p.open = !shut;
+      for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) sim2.world.occ[(p.y + j) * N + p.x + i] = shut ? 1 : 0;
+    }
+  }
+  var planPieces = (sim2, t, fire, level, base, blocked) => planCamp(fire.x, fire.y, level, sim2.era, sim2.advanced || !!t.boss, base, blocked);
 
   // src/data/handtools/tiers.json
   var tiers_default = {
@@ -50218,16 +51801,20 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
      * Every house does it, the tower no more than the others.
      */
     drawDamage(b, ax, ay, time) {
-      if (!b.done) return;
-      const { ctx: ctx2, cam: { zoom: z } } = this, ratio2 = Math.max(0, Math.min(1, b.hp / Math.max(1, maxHp(b))));
+      if (b.done) this.drawWear(b.kind, b.hp / Math.max(1, maxHp(b)), b.id, ax, ay, time);
+    }
+    /** The same for any work, ours or a village's: `ratio` is what is left of it, `id` only sets where the smoke and flames are in their dance. */
+    drawWear(kind, ratio2, id, ax, ay, time) {
+      const { ctx: ctx2, cam: { zoom: z } } = this;
+      ratio2 = Math.max(0, Math.min(1, ratio2));
       if (ratio2 >= 1) return;
-      const top = b.kind === "tower" ? 86 : b.kind === "fence" || b.kind === "gate" ? 30 : 62;
+      const top = kind === "tower" ? 86 : kind === "fence" || kind === "gate" ? 30 : kind === "campfire" ? 34 : 62;
       this.bar(ax, ay - top, ratio2, ratio2 > 0.7 ? "#6bbf59" : ratio2 > 0.3 ? "#e0b43c" : "#d9503c");
-      if (b.kind === "fence" || b.kind === "gate") return;
-      const wide = BUILDINGS[b.kind].w * TILE * 0.35, roof = b.kind === "tower" ? 70 : 44;
+      if (kind === "fence" || kind === "gate") return;
+      const wide = BUILDINGS[kind].w * TILE * 0.35, roof = kind === "tower" ? 70 : 44;
       if (ratio2 <= 0.7) {
         for (let k = 0; k < 4; k++) {
-          const t = (time * 0.45 + k * 0.25 + b.id * 0.13) % 1, p = this.worldToScreen(ax - wide * 0.5 + k * wide * 0.33 + Math.sin(time * 1.3 + k) * 3 * t, ay - roof - t * 34);
+          const t = (time * 0.45 + k * 0.25 + id * 0.13) % 1, p = this.worldToScreen(ax - wide * 0.5 + k * wide * 0.33 + Math.sin(time * 1.3 + k) * 3 * t, ay - roof - t * 34);
           ctx2.fillStyle = `rgba(${ratio2 <= 0.3 ? "55,52,52" : "120,120,126"},${(0.5 * (1 - t)).toFixed(3)})`;
           ctx2.beginPath();
           ctx2.arc(p.x, p.y, (3 + t * 7) * z, 0, Math.PI * 2);
@@ -50236,7 +51823,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       if (ratio2 <= 0.3) {
         for (let k = 0; k < 4; k++) {
-          const flick = 0.7 + 0.3 * Math.sin(time * 11 + k * 2.1 + b.id), h3 = (9 + k % 2 * 4) * flick * z, p = this.worldToScreen(ax - wide * 0.7 + k * wide * 0.47, ay - roof + 8 - k % 2 * 6);
+          const flick = 0.7 + 0.3 * Math.sin(time * 11 + k * 2.1 + id), h3 = (9 + k % 2 * 4) * flick * z, p = this.worldToScreen(ax - wide * 0.7 + k * wide * 0.47, ay - roof + 8 - k % 2 * 6);
           ctx2.fillStyle = "#e8641e";
           ctx2.beginPath();
           ctx2.moveTo(p.x - 4 * z, p.y);
@@ -50608,7 +52195,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       for (const v of sim2.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
       const seen = (x, y) => sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
-      for (const f of sim2.foes) if (onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
+      for (const f of sim2.foes) if (!f.inTent && onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
       for (const a of sim2.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
       for (const t of sim2.tribes) {
         if (t.state === "adopted") continue;
@@ -50713,6 +52300,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
             else if (!this.drawColumnFence(b, walls)) this.prop(sp.building("fence", "stone", p.lv ?? 1, 4), ax, ay, time, alpha);
             this.drawDiagonalRails(b, walls);
           } else this.prop(sp.building(kind, "stone", p.kind === "fire" ? 1 : p.lv ?? 1, 4), ax, ay, time, alpha);
+          if (p.hp > 0) this.drawWear(kind, p.hp / Math.max(1, maxPropHp(t, p)), p.x * 31 + p.y, ax, ay, time);
         } else if (d.v) {
           const rode = d.v.phase !== "sleep" && d.v.phase !== "down" ? sim2.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === "down";
           if (d.v.facing === "left" || d.v.facing === "right") this.sideOf.set(d.v, d.v.facing);
@@ -51189,177 +52777,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       return n;
     }
   };
-
-  // src/data/units.json
-  var units_default = {
-    _note: "Arms of the army and what beats what. A weapon decides its arm: ranged weapons (sling, bow) make an archer, everything else a foot soldier; a rider (cavalry) is a soldier on a tamed beast, which the game does not have yet but the table is ready for. beats[attacker][defender] multiplies the damage an attacker does. Foot beats archers, archers beat riders, riders beat foot. The small bonuses are on top of that.",
-    arms: {
-      foot: "B\u1ED9 binh",
-      archer: "Cung th\u1EE7",
-      cavalry: "K\u1EF5 binh"
-    },
-    beats: {
-      foot: { foot: 1, archer: 1.5, cavalry: 0.67 },
-      archer: { foot: 0.67, archer: 1, cavalry: 1.5 },
-      cavalry: { foot: 1.5, archer: 0.67, cavalry: 1 }
-    },
-    spearVsCavalry: 1.15,
-    archerOnTower: { damage: 1.25, range: 2, within: 2.2 },
-    archerPressed: { within: 2, damage: 0.5 }
-  };
-
-  // src/data/formations.json
-  var formations_default = {
-    _note: "Battle formations (tr\u1EADn ph\xE1p) and the numbers of command. dmg = damage the squad does, taken = damage it takes, speed = pace of the march; charge applies while a wedge runs at the foe, flank when a blow lands from behind, firstBlow to a foe who has not yet noticed the squad, takenRanged to arrows and stones. mastery 0-100 is trained at the B\xE3i t\u1EADp and scales a formation from min to max. cap is the most all tactical factors (arms, formation, tower, surprise, information) may multiply to. info = the factor for the best map level held of the enemy (0..3), infoCounter when level 3 and the right arm is used. A war tent level gives squadLimit squads and cardBase + cardPerLevel * level command cards.",
-    formations: {
-      line: { name: "H\xE0ng ngang", tech: "form_basic", dmg: 1, taken: 0.85, speed: 0.9, note: "Gi\u1EEF ch\u1ED7 th\u1EAFt ch\u1EAFc, ch\u1ED1ng k\u1EF5 \xD71,3; ch\u1EADm quay." },
-      circle: { name: "V\xF2ng tr\xF2n", tech: "form_basic", dmg: 0.85, taken: 0.8, speed: 0.7, note: "Kh\xF4ng c\xF3 h\u01B0\u1EDBng y\u1EBFu; ch\u1EADm, kh\xF4ng xung phong." },
-      wedge: { name: "M\u0169i nh\u1ECDn", tech: "form_wedge", dmg: 0.9, charge: 1.4, taken: 1.1, speed: 1.05, note: "Xung phong \xD71,4 khi \u0111ang lao v\xE0o \u0111\u1ECBch; hai c\xE1nh y\u1EBFu." },
-      horns: { name: "S\u1EEBng b\xF2", tech: "form_horns", dmg: 1, flank: 1.25, taken: 1.1, speed: 1, note: "\u0110\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng th\xEAm \xD71,25; gi\u1EEFa m\u1ECFng." },
-      scatter: { name: "R\u1EA3i qu\xE2n", tech: "form_scatter", dmg: 0.85, taken: 1, takenRanged: 0.6, speed: 1, note: "Gi\u1EA3m 40% thi\u1EC7t h\u1EA1i t\u1EEB cung; \u0111\xE1nh y\u1EBFu h\u01A1n." },
-      ambush: { name: "Ph\u1EE5c k\xEDch", tech: "form_ambush", dmg: 0.7, firstBlow: 2, taken: 1.15, speed: 0.9, note: "\u0110\xF2n \u0111\u1EA7u \xD72 v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt; l\u1ED9 ra th\xEC y\u1EBFu nh\u1EA5t." }
-    },
-    mastery: { min: 0.8, max: 1.15, start: 20, perSecond: 0.4, decayPerDay: 2, switchSeconds: 8, switchTaken: 1.3 },
-    cap: 3.5,
-    info: [0.95, 1, 1.1, 1.2],
-    infoCounter: 1.1,
-    squadLimit: [3, 4, 6],
-    squadMin: 3,
-    squadMax: 15,
-    cell: 1.3,
-    cardBase: 4,
-    cardPerLevel: 2,
-    mapDecayPerDay: 0.1,
-    clusterSize: 10,
-    iconEvery: 3,
-    bigBattle: 24
-  };
-
-  // src/sim/formations.ts
-  var OBJECTIVE_NAME = { camp: "\u0110\u1ED1ng l\u1EEDa c\u1EE7a h\u1ECD", gate: "\u0110\u01B0\u1EDDng v\xE0o l\xE0ng", ambush: "Ch\u1ED7 ph\u1EE5c k\xEDch", stores: "Kho l\u01B0\u01A1ng", leader: "Th\u1EE7 l\u0129nh" };
-  var ARM_NAME = units_default.arms;
-  var BEATS = units_default.beats;
-  var UNIT_RULES = units_default;
-  var armOfWeapon = (weapon) => WEAPONS[weapon ?? "fist"]?.ranged ? "archer" : "foot";
-  function matchup(attacker, defender, weapon = null) {
-    return BEATS[attacker][defender] * (weapon === "spear" && defender === "cavalry" ? UNIT_RULES.spearVsCavalry : 1);
-  }
-  var FORMATION_IDS = Object.keys(formations_default.formations);
-  var FORMATIONS = formations_default.formations;
-  var COMMAND = formations_default;
-  var SQUAD_MIN = COMMAND.squadMin;
-  var SQUAD_MAX = COMMAND.squadMax;
-  var masteryFactor = (mastery) => COMMAND.mastery.min + (COMMAND.mastery.max - COMMAND.mastery.min) * Math.max(0, Math.min(100, mastery)) / 100;
-  var clampTactical = (x) => Math.max(1 / COMMAND.cap, Math.min(COMMAND.cap, x));
-  function formationOffsets(kind, n) {
-    const out = [];
-    for (let i = 0; i < n; i++) {
-      switch (kind) {
-        case "line": {
-          const cols = Math.ceil(n / 2);
-          out.push([-(i % 2) * 1.2, (Math.floor(i / 2) - (cols - 1) / 2) * 1.3]);
-          break;
-        }
-        case "wedge": {
-          let r = 0, k = i;
-          while (k > r) {
-            k -= r + 1;
-            r++;
-          }
-          out.push([-r * 1.1, (k - r / 2) * 1.4]);
-          break;
-        }
-        case "circle": {
-          const R2 = Math.max(1.6, n * 1.3 / (2 * Math.PI));
-          out.push([Math.cos(i / n * 2 * Math.PI) * R2, Math.sin(i / n * 2 * Math.PI) * R2]);
-          break;
-        }
-        case "horns": {
-          const arm = i % 3, k = Math.floor(i / 3) + 1;
-          out.push(arm === 0 ? [-1, (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.7] : [k * 0.8, (arm === 1 ? -1 : 1) * (2 + k * 0.9)]);
-          break;
-        }
-        case "scatter": {
-          const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
-          out.push([-Math.floor(i / cols) * 2.6, (i % cols - (cols - 1) / 2) * 2.6]);
-          break;
-        }
-        default: {
-          const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
-          out.push([-Math.floor(i / cols) * 1.5 + i % 2 * 0.4, (i % cols - (cols - 1) / 2) * 1.6]);
-        }
-      }
-    }
-    return out;
-  }
-  var placeOffset = (o, heading, cx, cy) => [cx + o[0] * Math.cos(heading) - o[1] * Math.sin(heading), cy + o[0] * Math.sin(heading) + o[1] * Math.cos(heading)];
-  function drawFormation(kind, o, p, toward, max = SQUAD_MAX) {
-    const S2 = COMMAND.cell, dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy), ang = d > 0.01 ? Math.atan2(dy, dx) : 0, ux = Math.cos(ang), uy = Math.sin(ang);
-    const clampN = (n) => Math.max(1, Math.min(max, n));
-    const at = (along, side) => ({ x: o.x + ux * along - uy * side, y: o.y + uy * along + ux * side });
-    const sign = -uy * (toward.x - o.x) + ux * (toward.y - o.y) >= 0 ? 1 : -1, face2 = Math.atan2(ux * sign, -uy * sign);
-    const cells = [];
-    switch (kind) {
-      case "circle": {
-        const R2 = d, n = clampN(Math.round(2 * Math.PI * R2 / S2));
-        for (let i = 0; i < n; i++) cells.push({ x: o.x + Math.cos(ang + 2 * Math.PI * i / n) * R2, y: o.y + Math.sin(ang + 2 * Math.PI * i / n) * R2 });
-        return { cells, heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
-      }
-      case "wedge": {
-        const half = 0.6, step2 = S2 * Math.cos(half), n = clampN(1 + 2 * Math.floor(d / step2));
-        cells.push({ x: o.x, y: o.y });
-        for (let k = 1; cells.length < n; k++) {
-          cells.push(at(k * step2, -k * S2 * Math.sin(half)));
-          if (cells.length < n) cells.push(at(k * step2, k * S2 * Math.sin(half)));
-        }
-        return { cells, heading: ang + Math.PI };
-      }
-      case "horns": {
-        const n = clampN(Math.floor(d / S2) + 1), bend = Math.min(3, d * 0.25), forward = ang - Math.PI / 2;
-        for (let i = 0; i < n; i++) {
-          const t = n === 1 ? 0.5 : i / (n - 1), c = at(d * t, 0), off = bend * (2 * t - 1) ** 2;
-          cells.push({ x: c.x + Math.cos(forward) * off, y: c.y + Math.sin(forward) * off });
-        }
-        return { cells, heading: forward };
-      }
-      case "scatter": {
-        let g = 2.6, w = Math.abs(dx), hh = Math.abs(dy), cols = 1, rows = 1;
-        for (let guard = 0; guard < 40; guard++) {
-          cols = Math.floor(w / g) + 1;
-          rows = Math.floor(hh / g) + 1;
-          if (cols * rows <= max) break;
-          g *= 1.1;
-        }
-        const x0 = Math.min(o.x, p.x), y0 = Math.min(o.y, p.y), sx = cols > 1 ? w / (cols - 1) : g, sy = rows > 1 ? hh / (rows - 1) : g;
-        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ x: x0 + c * Math.min(sx, g * 1.4), y: y0 + r * Math.min(sy, g * 1.4) });
-        return { cells: cells.slice(0, max), heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
-      }
-      case "ambush": {
-        const n = clampN(Math.floor(d / (S2 * 0.7)) + 1);
-        for (let i = 0; i < n; i++) cells.push(at(S2 * 0.7 * i, i % 2 ? 0.6 : -0.6));
-        return { cells, heading: face2 };
-      }
-      default: {
-        const n = clampN(Math.floor(d / S2) + 1);
-        for (let i = 0; i < n; i++) cells.push(at(S2 * i, 0));
-        return { cells, heading: face2 };
-      }
-    }
-  }
-  function clusterize(units, size = COMMAND.clusterSize) {
-    const groups = /* @__PURE__ */ new Map();
-    for (const u of units) {
-      const k = `${u.key}|${u.arm}`;
-      (groups.get(k) ?? groups.set(k, []).get(k)).push(u);
-    }
-    const out = [];
-    for (const g of [...groups.values()].sort((a, b) => a[0].key + a[0].arm < b[0].key + b[0].arm ? -1 : 1)) {
-      g.sort((a, b) => a.id - b.id);
-      for (let i = 0; i < g.length; i += size) out.push({ key: g[0].key, arm: g[0].arm, ids: g.slice(i, i + size).map((u) => u.id) });
-    }
-    return out;
-  }
-  var iconCount = (n) => Math.max(1, Math.ceil(n / COMMAND.iconEvery));
 
   // src/data/chase.json
   var chase_default = {
@@ -51879,57 +53296,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     tripSeconds: 90
   };
 
-  // src/sim/tools.ts
-  var TOOL_KINDS = ["axe", "pick", "hoe", "hammer"];
-  var TOOL_NAME = { axe: "R\xECu", pick: "Cu\u1ED1c chim", hoe: "Cu\u1ED1c", hammer: "B\xFAa" };
-  var TOOL_USE = { axe: "\u0111\u1ED1n g\u1ED7", pick: "\u0111\u1EE5c \u0111\xE1", hoe: "h\xE1i l\u01B0\u1EE3m, \u0111\xE0o c\u1EE7", hammer: "d\u1EF1ng c\xF4ng tr\xECnh" };
-  var TOOL_OF_JOB = { wood: "axe", stone: "pick", food: "hoe", build: "hammer" };
-  var TIER_NAME = ["Tay kh\xF4ng", "G\u1ED7", "\u0110\xE1"];
-  var TIER_SPEED = [0.6, 1, 1.4];
-  var TIER_YIELD = [1, 1.25, 1.6];
-  var TIER_DURABILITY = [0, 240, 600];
-  var GEAR_KINDS = ["club", "spear", "mace", "sling", "bow", "hide", "bone"];
-  var isArmorKind = (k) => k in ARMORS;
-  var isGear = (k) => GEAR_KINDS.includes(k);
-  var isWeaponKind = (k) => k in WEAPONS;
-  var R = (kind, tier, cost, time) => ({ id: `${kind}${tier}`, kind, tier, cost, time });
-  var gearRecipe = (kind) => {
-    const d = isArmorKind(kind) ? ARMORS[kind] : WEAPONS[kind];
-    return R(kind, d.tier ?? 1, d.cost ?? {}, d.time ?? 60);
-  };
-  var RECIPES = [
-    R("axe", 1, { wood: 3 }, 24),
-    R("axe", 2, { wood: 2, stone: 3 }, 40),
-    R("pick", 1, { wood: 4 }, 28),
-    R("pick", 2, { wood: 2, stone: 4 }, 44),
-    R("hoe", 1, { wood: 3 }, 24),
-    R("hoe", 2, { wood: 2, stone: 2 }, 36),
-    R("hammer", 1, { wood: 3 }, 24),
-    R("hammer", 2, { wood: 2, stone: 3 }, 36),
-    R("torch", 1, { wood: 2 }, 12),
-    ...GEAR_KINDS.map(gearRecipe)
-  ];
-  var RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
-  var recipeName = (r) => {
-    if (isArmorKind(r.kind)) return ARMORS[r.kind].name;
-    if (r.kind === "torch") return "\u0110u\u1ED1c";
-    if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
-    return `${TOOL_NAME[r.kind]} ${TIER_NAME[r.tier].toLowerCase()}`;
-  };
-  var recipeUse = (r) => {
-    if (isArmorKind(r.kind)) {
-      const a = ARMORS[r.kind], p = (x) => `${Math.round(x * 100)}%`;
-      return `gi\xE1p: gi\u1EA3m \u0111\xE2m ${p(a.pierce)} \xB7 ch\xE9m ${p(a.slash)} \xB7 \u0111\u1EADp ${p(a.crush)} \xB7 b\u1EC1n ${a.durability ?? "?"}`;
-    }
-    if (r.kind === "torch") return "l\xE0m vi\u1EC7c ban \u0111\xEAm (hi\u1EC7u su\u1EA5t 70%), nh\xECn xa h\u01A1n trong t\u1ED1i";
-    if (isWeaponKind(r.kind)) {
-      const w = WEAPONS[r.kind];
-      return `${{ pierce: "\u0111\xE2m", slash: "ch\xE9m", crush: "\u0111\u1EADp" }[w.type]} ${w.damage} \xB7 ${(1 / w.cycle).toFixed(2)} \u0111\xF2n/gi\xE2y \xB7 ch\xED m\u1EA1ng \u0111\xF2n ${Math.round((w.critDamage ?? RULES.critDamage) * 100)}% \xB7 t\u1EA7m ${w.range}`;
-    }
-    return TOOL_USE[r.kind];
-  };
-  var emptyToolSet = () => ({ axe: null, pick: null, hoe: null, hammer: null });
-
   // src/sim/tribework.ts
   var WORK_OF = { wood: "wood", stone: "stone", food: "food" };
   var GATHER = pace_default.gather;
@@ -52154,1124 +53520,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const role = roleOf(v);
     return role ? ROLES[role].building : "house";
   }
-
-  // src/data/stats.json
-  var stats_default = {
-    _note: "C\xF4ng th\u1EE9c ch\u1EC9 s\u1ED1 c\u1EE7a m\u1ECDi NPC l\xE0 ng\u01B0\u1EDDi. Gi\xE1 tr\u1ECB = g\u1ED1c \xD7 h\u1EC7 s\u1ED1 c\xE1 nh\xE2n \xD7 h\u1EC7 s\u1ED1 b\u1EADc \xD7 (1 + t\u1ED5ng % nghi\xEAn c\u1EE9u / 100). M\u1ED7i ch\u1EC9 s\u1ED1 t\xEDnh ri\xEAng, kh\xF4ng \u0111\u1ECDc ch\u1EC9 s\u1ED1 kh\xE1c (ngo\u1EA1i tr\u1EEB t\xE1c d\u1EE5ng c\u1EE7a Tr\xED tu\u1EC7, ghi \u1EDF intEffect). base = gi\xE1 tr\u1ECB g\u1ED1c c\u1EE7a ch\u1EC9 s\u1ED1. stars: tr\u1ECDng s\u1ED1 xu\u1EA5t hi\u1EC7n c\u1EE7a 1 \u0111\u1EBFn 5 sao; t\u1ED5ng 8 h\u1EC7 s\u1ED1 c\xE1 nh\xE2n c\u1EE7a m\u1ED9t ng\u01B0\u1EDDi b\u1EB1ng 8 \xD7 (budgetBase + budgetPerStar \xD7 sao), m\u1ED7i h\u1EC7 s\u1ED1 \u0111\u01B0\u1EE3c r\xFAt ng\u1EABu nhi\xEAn quanh 1 v\u1EDBi \u0111\u1ED9 l\u1EC7ch spread r\u1ED3i b\u1ECB gi\u1EDBi h\u1EA1n trong [min, max], n\xEAn kh\xF4ng ai qu\xE1 cao hay qu\xE1 th\u1EA5p. tierMult[b\u1EADc] = h\u1EC7 s\u1ED1 nh\xE2n l\xEAn g\u1ED1c c\u1EE7a c\u1EA3 vai tr\xF2 khi \u0111\xE3 nghi\xEAn c\u1EE9u b\u1EADc \u0111\xF3. defense.k: % gi\u1EA3m s\xE1t th\u01B0\u01A1ng = \u0111i\u1EC3m th\u1EE7 / (\u0111i\u1EC3m th\u1EE7 + k). intEffect: m\u1ED7i 100% Tr\xED tu\u1EC7 tr\xEAn g\u1ED1c th\xEC t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c t\u0103ng work v\xE0 s\u1EE9c ti\xEAu hao gi\u1EA3m drain (theo t\u1EF7 l\u1EC7). legacy: c\xE1c ch\u1ED7 c\u0169 c\u1EE7a game v\u1EABn \u0111\u1ECDc 4 ch\u1EC9 s\u1ED1 c\u0169 (S\u1EE9c kh\u1ECFe, S\u1EE9c m\u1EA1nh, Nhanh nh\u1EB9n, Th\u1EC3 l\u1EF1c), n\xEAn ch\xFAng \u0111\u01B0\u1EE3c t\xEDnh ng\u01B0\u1EE3c t\u1EEB gi\xE1 tr\u1ECB m\u1EDBi theo c\xE1c h\u1EC7 s\u1ED1 n\xE0y.",
-    base: { hp: 100, atk: 10, defm: 20, defr: 20, move: 2, work: 1, int: 10, sta: 100 },
-    stars: { weights: [30, 30, 25, 10, 5], budgetBase: 0.92, budgetPerStar: 0.04, spread: 0.3, min: 0.8, max: 1.25 },
-    tierMult: {
-      "2": { hp: 1.5, atk: 1.4, defm: 1.4, defr: 1.4, move: 1.1, work: 1.2, int: 1.2, sta: 1.3 }
-    },
-    defense: { k: 100 },
-    intEffect: { work: 0.5, drain: 0.5 },
-    staDrainRef: 100,
-    legacy: { hpBase: 40, hpPerVit: 8, strengthDamage: 0.6, atkToDamage: 0.4, speedBase: 1.6, speedPerAgi: 0.1, staScale: 0.065, vitFromHp: true }
-  };
-
-  // src/data/research.json
-  var research_default = {
-    enabled: true,
-    craftCostPerLevel: 0.5,
-    _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Tools, weapons, armour and torches have no blueprint (recipe id: axe1 is the wood axe, axe2 the stone one): the level of the Nh\xE0 ch\u1EBF t\u1EA1o alone (recipeLevel) decides which can be made. cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, buildings (kinds that may be built), Set enabled to false to open everything.",
-    recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, bone2: 2, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1, sling1: 1, bow1: 2 },
-    techs: [
-      { id: "signal", name: "T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)", desc: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED; th\u1EBB l\u1EC7nh Ph\xE1t t\xEDn hi\u1EC7u cho c\xE1c \u0111\u1ED9i.", requires: [], needLevel: 2, minInt: 6, cost: { wood: 15, coin: 4 }, time: 220, unlocks: {} },
-      { id: "form_basic", name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", desc: "H\xE0ng ngang v\xE0 v\xF2ng tr\xF2n.", requires: [], needLevel: 1, minInt: 6, cost: { wood: 12, coin: 4 }, time: 240, unlocks: {} },
-      { id: "form_wedge", name: "Tr\u1EADn m\u0169i nh\u1ECDn", desc: "Xung phong ph\xE1 h\xE0ng.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-      { id: "form_horns", name: "Tr\u1EADn s\u1EEBng b\xF2", desc: "Bao hai c\xE1nh, \u0111\xE1nh s\u01B0\u1EDDn v\xE0 l\u01B0ng.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-      { id: "form_scatter", name: "Tr\u1EADn r\u1EA3i qu\xE2n", desc: "Gi\u1EA3m thi\u1EC7t h\u1EA1i t\u1EEB cung v\xE0 l\u1EEDa.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-      { id: "form_ambush", name: "Tr\u1EADn ph\u1EE5c k\xEDch", desc: "\u0110\xF2n \u0111\u1EA7u m\u1EA1nh g\u1EA5p \u0111\xF4i v\xE0o \u0111\u1ECBch ch\u01B0a bi\u1EBFt.", requires: ["form_basic", "signal"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 260, unlocks: {} },
-      { id: "form_cells_10", name: "M\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p (10)", desc: "M\u1ED7i tr\u1EADn ph\xE1p c\xF3 10 \xF4 thay v\xEC 5.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 280, unlocks: { formationCells: 10 } },
-      { id: "form_cells_15", name: "M\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p (15)", desc: "M\u1ED7i tr\u1EADn ph\xE1p c\xF3 15 \xF4.", requires: ["form_cells_10"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { formationCells: 15 } },
-      { id: "form_squads_5", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (5)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 5 \u0111\u1ED9i thay v\xEC 4.", requires: ["form_cells_10"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 280, unlocks: { squads: 5 } },
-      { id: "form_squads_6", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (6)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 6 \u0111\u1ED9i.", requires: ["form_squads_5"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { squads: 6 } },
-      { id: "plan_report", name: "B\xE1o c\xE1o chi ti\u1EBFt", desc: "M\u1EDF tab Chi ti\u1EBFt trong b\xE1o c\xE1o tri\u1EC3n khai: so s\xE1nh qu\xE2n ta v\xE0 \u0111\u1ECBch.", requires: ["plan_foot_hp_3", "plan_foot_defm_3", "plan_foot_defr_3", "plan_cavalry_hp_3", "plan_cavalry_defm_3", "plan_cavalry_defr_3", "plan_archer_hp_3", "plan_archer_defm_3", "plan_archer_defr_3"], needLevel: 2, minInt: 7, cost: { wood: 20, stone: 10, coin: 8 }, time: 360, unlocks: {} },
-      { id: "plan_supply", name: "T\xEDnh to\xE1n h\u1EADu c\u1EA7n", desc: "B\xE1o c\xE1o h\u1EADu c\u1EA7n chi ti\u1EBFt: s\u1ED1 ng\xE0y \u0111i, l\u01B0\u01A1ng v\xE0 v\u1EADt li\u1EC7u c\u1EA7n mang, s\u1ED1 l\xEDnh h\u1EADu c\u1EA7n c\u1EA7n thi\u1EBFt, c\xF3 n\xFAt \xE1p d\u1EE5ng \u0111\u1EC1 xu\u1EA5t.", requires: ["plan_foot_hp_5", "plan_foot_defm_5", "plan_foot_defr_5", "plan_cavalry_hp_5", "plan_cavalry_defm_5", "plan_cavalry_defr_5", "plan_archer_hp_5", "plan_archer_defm_5", "plan_archer_defr_5", "plan_report"], needLevel: 3, minInt: 8, cost: { wood: 30, stone: 20, coin: 12 }, time: 480, unlocks: {} },
-      { id: "plan_weather", name: "D\u1EF1 b\xE1o th\u1EDDi ti\u1EBFt", desc: "B\xE1o c\xE1o tri\u1EC3n khai cho bi\u1EBFt th\u1EDDi ti\u1EBFt h\xF4m nay v\xE0 ng\xE0y mai.", requires: ["plan_foot_move_3", "plan_foot_atk_3", "plan_foot_sta_3", "plan_cavalry_move_3", "plan_cavalry_atk_3", "plan_cavalry_sta_3", "plan_archer_move_3", "plan_archer_atk_3", "plan_archer_sta_3", "plan_report"], needLevel: 2, minInt: 7, cost: { wood: 20, stone: 10, coin: 8 }, time: 360, unlocks: {} },
-      { id: "plan_rest", name: "Ngh\u1EC9 ng\u01A1i d\xE3 chi\u1EBFn", desc: "Trong chi\u1EBFn tranh, cho t\u1EEBng \u0111\u1ED9i d\u1EF1ng l\u1EC1u v\xE0 ngh\u1EC9 ng\u01A1i b\u1EA5t c\u1EE9 l\xFAc n\xE0o, c\u1EA3 ban ng\xE0y; xem b\xE1o c\xE1o s\u1EE9c c\u1EE7a c\xE1c \u0111\u1ED9i.", requires: ["plan_foot_move_5", "plan_foot_atk_5", "plan_foot_sta_5", "plan_cavalry_move_5", "plan_cavalry_atk_5", "plan_cavalry_sta_5", "plan_archer_move_5", "plan_archer_atk_5", "plan_archer_sta_5", "plan_weather"], needLevel: 3, minInt: 8, cost: { wood: 30, stone: 20, coin: 12 }, time: 480, unlocks: {} }
-    ]
-  };
-
-  // src/data/researchtree.json
-  var researchtree_default = {
-    _note: "C\xE2y nghi\xEAn c\u1EE9u ch\u1EC9 s\u1ED1 trong Nh\xE0 nghi\xEAn c\u1EE9u. M\u1ED7i \xF4 l\xE0 m\u1ED9t d\xE2y: m\u1ED9t ch\u1EC9 s\u1ED1 c\u1EE7a m\u1ED9t vai tr\xF2. S\u1ED0 C\u1EA4P C\u1EE6A M\u1ED6I CH\u1EC8 S\u1ED0 b\u1EB1ng s\u1ED1 ph\u1EA7n t\u1EED c\u1EE7a m\u1EA3ng steps c\u1EE7a n\xF3 (th\xEAm hay b\u1EDBt s\u1ED1 trong steps l\xE0 th\xEAm hay b\u1EDBt c\u1EA5p, m\u1ED7i ch\u1EC9 s\u1ED1 t\u1EF1 \u0111\u1EB7t ri\xEAng); tiers ri\xEAng c\u1EE7a ch\u1EC9 s\u1ED1 (n\u1EBFu ghi) thay cho tiers chung b\xEAn d\u01B0\u1EDBi, s\u1ED1 cu\u1ED1i \u0111\u01B0\u1EE3c d\xF9ng ti\u1EBFp cho c\xE1c c\u1EA5p cao h\u01A1n. Ng\u01B0\u1EDDi ch\u01A1i t\u1EF1 ch\u1ECDn \xF4 n\xE0o c\u0169ng \u0111\u01B0\u1EE3c (ch\u1ECDn ch\u1EC9 s\u1ED1 v\xF4 d\u1EE5ng cho vai tr\xF2 th\xEC l\xE0 l\u1ED7 c\u1EE7a h\u1ECD). steps[stat] = % c\u1ED9ng th\xEAm \u1EDF t\u1EEBng c\u1EA5p, gi\u1EA3m d\u1EA7n nh\u01B0ng c\xF3 s\xE0n; t\u1ED5ng % c\u1ED9ng d\u1ED3n c\u1EE7a m\u1ED9t \xF4 l\xE0 ph\u1EA7n c\u1ED9ng th\xEAm c\u1EE7a ch\u1EC9 s\u1ED1 \u0111\xF3 cho c\u1EA3 vai tr\xF2 (g\u1ED1c \xD7 (1 + t\u1ED5ng% / 100)). cost = v\u1EADt li\u1EC7u c\u1EE7a c\u1EA5p 1 (c\u1ED9ng th\xEAm ti\u1EC1n t\u0103ng d\u1EA7n), nh\xE2n 'growth.cost' m\u1ED7i c\u1EA5p; time (gi\xE2y c\xF4ng) nh\xE2n 'growth.time' m\u1ED7i c\u1EA5p. tiers[n-1] = c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA7n cho c\u1EA5p n. Ch\u01B0a n\u1ED1i v\xE0o c\xF4ng th\u1EE9c chi\u1EBFn \u0111\u1EA5u v\xE0 l\xE0m vi\u1EC7c: xem statBonus trong sim/research.ts.",
-    tiers: [
-      1,
-      1,
-      1,
-      2,
-      2,
-      2,
-      3,
-      3,
-      3,
-      3
-    ],
-    growth: {
-      cost: 1.5,
-      time: 1.25
-    },
-    stats: {
-      hp: {
-        name: "M\xE1u",
-        short: "M\xE1u",
-        steps: [
-          12.5,
-          6,
-          3,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 120,
-        about: "M\xE1u t\u1ED1i \u0111a."
-      },
-      atk: {
-        name: "S\u1EE9c m\u1EA1nh",
-        short: "S\xE1t th\u01B0\u01A1ng",
-        steps: [
-          8,
-          4,
-          2.5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 120,
-        about: "S\xE1t th\u01B0\u01A1ng m\u1ED7i \u0111\xF2n \u0111\xE1nh."
-      },
-      aspd: {
-        name: "T\u1ED1c \u0111\u1ED9 \u0111\xE1nh",
-        short: "T\u1ED1c \u0111\xE1nh",
-        steps: [
-          5,
-          2.5,
-          2.5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 120,
-        about: "T\u1ED1c \u0111\u1ED9 \u0111\xE1nh c\u1EE7a v\u0169 kh\xED: ai c\u1EA7m n\xF3 \u0111\xE1nh v\xE0 b\u1EAFn nhanh h\u01A1n, th\u1EDDi gian gi\u1EEFa hai \u0111\xF2n ng\u1EAFn l\u1EA1i."
-      },
-      crit: {
-        name: "T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng",
-        short: "Ch\xED m\u1EA1ng",
-        steps: [
-          0.5,
-          1,
-          1,
-          1,
-          1
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 130,
-        about: "T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng c\u1EE7a v\u0169 kh\xED, t\xEDnh tr\xEAn 100%: m\u1ED7i c\u1EA5p c\u1ED9ng th\u1EB3ng v\xE0o x\xE1c su\u1EA5t (0,5% l\xE0 n\u1EEDa ph\u1EA7n tr\u0103m). T\u1ED1i \u0111a 10%."
-      },
-      critd: {
-        name: "S\xE1t th\u01B0\u01A1ng ch\xED m\u1EA1ng",
-        short: "ST ch\xED m\u1EA1ng",
-        steps: [
-          20,
-          10,
-          5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 130,
-        about: "S\xE1t th\u01B0\u01A1ng c\u1EE7a \u0111\xF2n ch\xED m\u1EA1ng t\xEDnh tr\xEAn 100% \u0111\xF2n th\u01B0\u1EDDng, g\u1ED1c 125%: m\u1ED7i c\u1EA5p c\u1ED9ng th\u1EB3ng v\xE0o (400% l\xE0 g\u1EA5p 4 l\u1EA7n \u0111\xF2n th\u01B0\u1EDDng)."
-      },
-      tspd: {
-        name: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\u1EDBi c\xF4ng c\u1EE5",
-        short: "T\u1ED1c \u0111\u1ED9",
-        steps: [
-          6,
-          5,
-          4,
-          3,
-          3
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 110,
-        about: "Ai c\u1EA7m c\xF4ng c\u1EE5 n\xE0y l\xE0m vi\u1EC7c nhanh h\u01A1n (c\u1ED9ng v\xE0o h\u1EC7 s\u1ED1 c\u1EE7a c\xF4ng c\u1EE5)."
-      },
-      tyield: {
-        name: "S\u1EA3n l\u01B0\u1EE3ng",
-        short: "S\u1EA3n l\u01B0\u1EE3ng",
-        steps: [
-          4,
-          4,
-          3,
-          3,
-          2
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 110,
-        about: "M\u1ED7i l\u1EA7n khai th\xE1c thu \u0111\u01B0\u1EE3c nhi\u1EC1u h\u01A1n khi c\u1EA7m c\xF4ng c\u1EE5 n\xE0y."
-      },
-      tdur: {
-        name: "\u0110\u1ED9 b\u1EC1n",
-        short: "\u0110\u1ED9 b\u1EC1n",
-        steps: [
-          10,
-          10,
-          10,
-          5,
-          5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 110,
-        about: "C\xF4ng c\u1EE5 l\xE2u h\u1ECFng h\u01A1n (th\u1EDDi gian l\xE0m vi\u1EC7c tr\u01B0\u1EDBc khi g\xE3y d\xE0i ra)."
-      },
-      defm: {
-        name: "Ph\xF2ng th\u1EE7 c\u1EADn chi\u1EBFn",
-        short: "Th\u1EE7 c\u1EADn",
-        steps: [
-          10,
-          5,
-          2.5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 140,
-        about: "Gi\u1EA3m s\xE1t th\u01B0\u01A1ng nh\u1EADn t\u1EEB l\xEDnh c\u1EADn chi\u1EBFn."
-      },
-      defr: {
-        name: "Ph\xF2ng th\u1EE7 t\u1EA7m xa",
-        short: "Th\u1EE7 xa",
-        steps: [
-          10,
-          5,
-          2.5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 140,
-        about: "Gi\u1EA3m s\xE1t th\u01B0\u01A1ng nh\u1EADn t\u1EEB l\xEDnh t\u1EA7m xa."
-      },
-      move: {
-        name: "T\u1ED1c \u0111\u1ED9 di chuy\u1EC3n",
-        short: "Ch\u1EA1y",
-        steps: [
-          2.5,
-          2.5,
-          2.5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 100,
-        about: "T\u1ED1c \u0111\u1ED9 \u0111i v\xE0 ch\u1EA1y."
-      },
-      work: {
-        name: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c",
-        short: "L\xE0m vi\u1EC7c",
-        steps: [
-          5,
-          2.5,
-          2.5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 2
-        },
-        time: 110,
-        about: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c: khai th\xE1c, x\xE2y, ch\u1EBF t\u1EA1o, nghi\xEAn c\u1EE9u."
-      },
-      int: {
-        name: "Tr\xED tu\u1EC7",
-        short: "Tr\xED tu\u1EC7",
-        steps: [
-          5,
-          2.5,
-          2.5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 4
-        },
-        time: 130,
-        about: "Tr\xED tu\u1EC7: t\u0103ng t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\xE0 gi\u1EA3m s\u1EE9c ti\xEAu hao khi l\xE0m vi\u1EC7c."
-      },
-      sta: {
-        name: "S\u1EE9c",
-        short: "S\u1EE9c",
-        steps: [
-          8,
-          4,
-          2.5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 5
-        },
-        time: 110,
-        about: "S\u1EE9c b\u1EC1n: l\xE0m vi\u1EC7c v\xE0 chi\u1EBFn \u0111\u1EA5u \u0111\u01B0\u1EE3c l\xE2u."
-      },
-      hpregen: {
-        name: "H\u1ED3i m\xE1u",
-        short: "H\u1ED3i m\xE1u",
-        steps: [
-          10,
-          5,
-          5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 5
-        },
-        time: 110,
-        about: "T\u1ED1c \u0111\u1ED9 h\u1ED3i m\xE1u khi b\u1ECB th\u01B0\u01A1ng: nhanh h\u01A1n th\xEAm b\u1EA5y nhi\xEAu ph\u1EA7n tr\u0103m."
-      },
-      restregen: {
-        name: "H\u1ED3i s\u1EE9c",
-        short: "H\u1ED3i s\u1EE9c",
-        steps: [
-          10,
-          5,
-          5,
-          2.5,
-          2.5
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 5
-        },
-        time: 110,
-        about: "T\u1ED1c \u0111\u1ED9 h\u1ED3i s\u1EE9c khi ng\u1EE7: nhanh h\u01A1n th\xEAm b\u1EA5y nhi\xEAu ph\u1EA7n tr\u0103m."
-      },
-      mspeed: {
-        name: "T\u1ED1c \u0111\u1ED9 h\xE0nh qu\xE2n",
-        short: "H\xE0nh qu\xE2n",
-        steps: [
-          3,
-          3,
-          3,
-          3,
-          3
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 100,
-        about: "Qu\xE2n \u0111i nhanh h\u01A1n khi h\xE0nh qu\xE2n trong chi\u1EBFn tranh."
-      },
-      mload: {
-        name: "T\u1EA3i h\u1EADu c\u1EA7n",
-        short: "T\u1EA3i",
-        steps: [
-          2,
-          2,
-          2,
-          2,
-          2
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 100,
-        about: "M\u1ED7i l\xEDnh h\u1EADu c\u1EA7n mang \u0111\u01B0\u1EE3c nhi\u1EC1u h\u01A1n."
-      },
-      mbuild: {
-        name: "T\u1ED1c \u0111\u1ED9 d\u1EF1ng l\u1EC1u",
-        short: "D\u1EF1ng l\u1EC1u",
-        steps: [
-          10,
-          10,
-          10,
-          10,
-          10
-        ],
-        cost: {
-          food: 10,
-          wood: 10,
-          stone: 5,
-          hide: 1,
-          coin: 1
-        },
-        time: 100,
-        about: "L\xEDnh h\u1EADu c\u1EA7n d\u1EF1ng l\u1EC1u d\xE3 chi\u1EBFn nhanh h\u01A1n."
-      }
-    },
-    roles: {
-      foot: {
-        name: "B\u1ED9 binh",
-        building: "infantry"
-      },
-      cavalry: {
-        name: "K\u1EF5 th\xFA",
-        building: "cavalry"
-      },
-      archer: {
-        name: "Th\u1EE3 n\xE9m",
-        building: "archery"
-      },
-      scout: {
-        name: "Trinh s\xE1t",
-        building: "scouttent"
-      },
-      wood: {
-        name: "\u0110\u1ED1n g\u1ED7",
-        building: "lumberyard"
-      },
-      stone: {
-        name: "Th\u1EE3 \u0111\xE1",
-        building: "quarry"
-      },
-      food: {
-        name: "H\xE1i l\u01B0\u1EE3m",
-        building: "farmhouse"
-      },
-      hunt: {
-        name: "Th\u1EE3 s\u0103n",
-        building: "huntlodge"
-      },
-      build: {
-        name: "Th\u1EE3 x\xE2y",
-        building: "builder"
-      },
-      craft: {
-        name: "Th\u1EE3 ch\u1EBF t\u1EA1o",
-        building: "workshop"
-      },
-      research: {
-        name: "Nh\xE0 nghi\xEAn c\u1EE9u",
-        building: "lab"
-      },
-      tame: {
-        name: "Thu\u1EA7n th\xFA",
-        building: "stable"
-      },
-      club: {
-        name: "G\u1EADy g\u1ED7",
-        weapon: "club"
-      },
-      spear: {
-        name: "Gi\xE1o g\u1ED7",
-        weapon: "spear"
-      },
-      mace: {
-        name: "Ch\xF9y \u0111\xE1",
-        weapon: "mace"
-      },
-      sling: {
-        name: "D\xE2y qu\u0103ng \u0111\xE1",
-        weapon: "sling"
-      },
-      bow: {
-        name: "Cung ng\u1EAFn",
-        weapon: "bow"
-      },
-      basic: {
-        name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n",
-        building: "drill",
-        formation: true,
-        needs: "form_basic"
-      },
-      wedge: {
-        name: "M\u0169i nh\u1ECDn",
-        building: "drill",
-        formation: true,
-        needs: "form_wedge"
-      },
-      horns: {
-        name: "S\u1EEBng b\xF2",
-        building: "drill",
-        formation: true,
-        needs: "form_horns"
-      },
-      scatter: {
-        name: "R\u1EA3i qu\xE2n",
-        building: "drill",
-        formation: true,
-        needs: "form_scatter"
-      },
-      ambush: {
-        name: "Ph\u1EE5c k\xEDch",
-        building: "drill",
-        formation: true,
-        needs: "form_ambush"
-      },
-      axe: {
-        name: "R\xECu",
-        tool: "axe"
-      },
-      pick: {
-        name: "Cu\u1ED1c chim",
-        tool: "pick"
-      },
-      hoe: {
-        name: "Cu\u1ED1c",
-        tool: "hoe"
-      },
-      hammer: {
-        name: "B\xFAa",
-        tool: "hammer"
-      },
-      guard: {
-        name: "L\xEDnh g\xE1c",
-        building: "guardpost"
-      },
-      towerman: {
-        name: "L\xEDnh ch\xF2i canh",
-        building: "tower"
-      },
-      fence: {
-        name: "H\xE0ng r\xE0o",
-        building: "fence"
-      },
-      gate: {
-        name: "C\u1ED5ng",
-        building: "gate"
-      },
-      trap: {
-        name: "Ch\xF4ng",
-        building: "trap"
-      },
-      tower: {
-        name: "Ch\xF2i canh",
-        building: "tower"
-      },
-      march_foot: {
-        name: "B\u1ED9 binh",
-        building: "infantry"
-      },
-      march_cavalry: {
-        name: "K\u1EF5 th\xFA",
-        building: "cavalry"
-      },
-      march_archer: {
-        name: "Th\u1EE3 n\xE9m",
-        building: "archery"
-      },
-      march_army: {
-        name: "To\xE0n qu\xE2n",
-        building: "supplycamp"
-      },
-      plan_foot: {
-        name: "B\u1ED9 binh",
-        building: "infantry"
-      },
-      plan_cavalry: {
-        name: "K\u1EF5 th\xFA",
-        building: "cavalry"
-      },
-      plan_archer: {
-        name: "Th\u1EE3 n\xE9m",
-        building: "archery"
-      }
-    },
-    tabs: {
-      _note: "Qu\xE2n s\u1EF1 m\u1EDF khi Nh\xE0 nghi\xEAn c\u1EE9u \u0111\u1EA1t c\u1EA5p needLab; tab V\u0169 kh\xED ch\u1EC9 m\u1EDF khi Qu\xE2n s\u1EF1 \u0111\xE3 m\u1EDF. Hai tab X\xE2y d\u1EF1ng v\xE0 Kinh t\u1EBF m\u1EDF s\u1EB5n.",
-      military: {
-        needLab: 2
-      }
-    },
-    chains: {
-      _note: "M\u1ED7i nh\xF3m l\xE0 m\u1ED9t chu\u1ED7i ch\u1EC9 s\u1ED1 \u0111i t\u1EEB tr\xEAn xu\u1ED1ng d\u01B0\u1EDBi (order). C\u1EA5p n c\u1EE7a m\u1ED9t ch\u1EC9 s\u1ED1 c\u1EA7n ch\u1EC9 s\u1ED1 ngay ph\xEDa tr\xEAn \u0111\u1EA1t c\u1EA5p n; ch\u1EC9 s\u1ED1 \u0111\u1EA7u chu\u1ED7i c\u1EA5p n c\u1EA7n ch\u1EC9 s\u1ED1 cu\u1ED1i chu\u1ED7i \u0111\u1EA1t c\u1EA5p n-1. Qu\xE2n s\u1EF1: M\xE1u, Th\u1EE7 c\u1EADn, Th\u1EE7 xa, Ch\u1EA1y, S\xE1t th\u01B0\u01A1ng, S\u1EE9c. C\xF4ng c\u1EE5 (tab C\xF4ng c\u1EE5 b\u1EADc 1): m\u1ED7i C\xD4NG C\u1EE4 (r\xECu, cu\u1ED1c chim, cu\u1ED1c, b\xFAa) m\u1ED9t c\u1ED9t T\u1ED1c \u0111\u1ED9, S\u1EA3n l\u01B0\u1EE3ng (kh\xF4ng c\xF3 \u1EDF b\xFAa), \u0110\u1ED9 b\u1EC1n; ai c\u1EA7m c\xF4ng c\u1EE5 \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng, b\u1EADc c\u1EE7a c\xF4ng c\u1EE5 (g\u1ED7, \u0111\xE1) do c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. Tr\u1EADn ph\xE1p (tab Chi\u1EBFn \u0111\u1EA5u, nh\xE1nh Ch\u1EC9 s\u1ED1 tr\u1EADn ph\xE1p): m\u1ED7i tr\u1EADn (c\u01A1 b\u1EA3n g\u1ED3m H\xE0ng ngang v\xE0 V\xF2ng tr\xF2n) m\u1ED9t c\u1ED9t, c\xF9ng chu\u1ED7i ch\u1EC9 s\u1ED1 qu\xE2n, chia l\xE0m hai \u0111o\u1EA1n (layout) v\u1EDBi \xF4 tr\u1EADn ph\xE1p \u1EDF gi\u1EEFa v\xE0 m\u1EDF r\u1ED9ng \u0111\u1ED9i \u1EDF cu\u1ED1i; gates: ch\u1EC9 s\u1ED1 n\xE0y c\u1EA5p 1 c\u1EA7n nghi\xEAn c\u1EE9u \u0111\xF3; l\xEDnh \u0111\u1EE9ng trong \u0111\u1ED9i \u0111ang d\xF9ng tr\u1EADn \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng th\xEAm, v\xE0 m\u1ED7i b\u01B0\u1EDBc ch\u1EC9 \u0111\u01B0\u1EE3c scale (0,5) l\u1EA7n ph\u1EA7n c\u1EE7a Qu\xE2n s\u1EF1; m\u1ED7i tr\u1EADn ch\u1EC9 nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c khi \u0111\xE3 m\u1EDF tr\u1EADn (needs). V\u0169 kh\xED (tab V\u0169 kh\xED b\u1EADc 1): m\u1ED7i V\u0168 KH\xCD (kh\xF4ng ph\u1EA3i m\u1ED7i vai tr\xF2) m\u1ED9t c\u1ED9t T\u1ED1c \u0111\u1ED9 \u0111\xE1nh, T\u1EC9 l\u1EC7 ch\xED m\u1EA1ng, S\xE1t th\u01B0\u01A1ng ch\xED m\u1EA1ng (hai ch\u1EC9 s\u1ED1 n\xE0y t\xEDnh b\u1EB1ng % th\u1EADt: 0,5% x\xE1c su\u1EA5t; 400% l\xE0 g\u1EA5p 4 l\u1EA7n \u0111\xF2n th\u01B0\u1EDDng); ai c\u1EA7m v\u0169 kh\xED \u0111\xF3 \u0111\u01B0\u1EE3c c\u1ED9ng ch\u1EC9 s\u1ED1 c\u1EE7a n\xF3; khi c\u1EA3 ba ch\u1EC9 s\u1ED1 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a th\xEC m\u1EDF v\u0169 kh\xED b\u1EADc 2 c\u1EE7a v\u0169 kh\xED \u0111\xF3 (finalTier): s\xE1t th\u01B0\u01A1ng g\u1ED1c c\u1EE7a v\u0169 kh\xED nh\xE2n rules.tierMult trong weapons.json, cho m\u1ECDi ng\u01B0\u1EDDi c\u1EA7m v\u0169 kh\xED \u0111\xF3. Kinh t\u1EBF (ngh\u1EC1): Ch\u1EA1y, L\xE0m vi\u1EC7c, S\u1EE9c, Tr\xED tu\u1EC7. Ph\xE1t tri\u1EC3n (th\u1EE3 x\xE2y, th\u1EE3 ch\u1EBF t\u1EA1o, nh\xE0 nghi\xEAn c\u1EE9u): L\xE0m vi\u1EC7c, S\u1EE9c, Tr\xED tu\u1EC7 (Tr\xED tu\u1EC7 \u1EDF cu\u1ED1i v\xEC n\xF3 c\u0169ng t\u0103ng t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c v\xE0 gi\u1EA3m s\u1EE9c ti\xEAu hao khi l\xE0m vi\u1EC7c). finalTier: \xF4 cu\u1ED1i c\u1ED9t, m\u1EDF b\u1EADc 2 khi m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a vai tr\xF2 \u0111\u1EA1t c\u1EA5p t\u1ED1i \u0111a; c\xF3 \u1EDF Qu\xE2n s\u1EF1, Kinh t\u1EBF, Ph\xE1t tri\u1EC3n v\xE0 V\u0169 kh\xED. B\u1EADc 2 nh\xE2n m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a c\u1EA3 vai tr\xF2 theo tierMult trong stats.json.",
-      military: {
-        roles: [
-          "foot",
-          "cavalry",
-          "archer",
-          "scout"
-        ],
-        order: [
-          "hp",
-          "defm",
-          "defr",
-          "move",
-          "atk",
-          "sta",
-          "hpregen",
-          "restregen"
-        ],
-        finalTier: {
-          tier: 2,
-          roles: [
-            "foot",
-            "cavalry",
-            "archer",
-            "scout"
-          ],
-          needLab: 3,
-          cost: {
-            food: 200,
-            wood: 120,
-            hide: 20,
-            coin: 20
-          },
-          time: 1200
-        }
-      },
-      weapon: {
-        roles: [
-          "club",
-          "spear",
-          "mace",
-          "sling",
-          "bow"
-        ],
-        order: [
-          "aspd",
-          "crit",
-          "critd"
-        ],
-        finalTier: {
-          tier: 2,
-          roles: [
-            "club",
-            "spear",
-            "mace",
-            "sling",
-            "bow"
-          ],
-          needLab: 3,
-          cost: {
-            wood: 100,
-            stone: 60,
-            hide: 10,
-            coin: 15
-          },
-          time: 900
-        }
-      },
-      formation: {
-        roles: [
-          "basic",
-          "wedge",
-          "horns",
-          "scatter",
-          "ambush"
-        ],
-        order: [
-          "hp",
-          "defm",
-          "defr",
-          "move",
-          "atk",
-          "sta"
-        ],
-        scale: 0.5,
-        gates: {
-          move: "form_cells_10"
-        },
-        layout: [
-          {
-            stats: [
-              "hp",
-              "defm",
-              "defr"
-            ]
-          },
-          {
-            techs: [
-              "form_cells_10",
-              "form_squads_5"
-            ]
-          },
-          {
-            stats: [
-              "move",
-              "atk",
-              "sta"
-            ]
-          },
-          {
-            techs: [
-              "form_cells_15",
-              "form_squads_6"
-            ]
-          }
-        ]
-      },
-      tool: {
-        roles: [
-          "axe",
-          "pick",
-          "hoe"
-        ],
-        order: [
-          "tspd",
-          "tyield",
-          "tdur"
-        ]
-      },
-      hammer: {
-        roles: [
-          "hammer"
-        ],
-        order: [
-          "tspd",
-          "tdur"
-        ]
-      },
-      economy: {
-        roles: [
-          "wood",
-          "stone",
-          "food",
-          "hunt",
-          "tame"
-        ],
-        order: [
-          "move",
-          "work",
-          "sta",
-          "int",
-          "restregen"
-        ],
-        finalTier: {
-          tier: 2,
-          roles: [
-            "wood",
-            "stone",
-            "food",
-            "hunt",
-            "tame"
-          ],
-          needLab: 3,
-          cost: {
-            food: 150,
-            wood: 100,
-            stone: 40,
-            coin: 15
-          },
-          time: 1e3
-        }
-      },
-      development: {
-        roles: [
-          "build",
-          "craft",
-          "research"
-        ],
-        order: [
-          "work",
-          "sta",
-          "int"
-        ],
-        finalTier: {
-          tier: 2,
-          roles: [
-            "build",
-            "craft",
-            "research"
-          ],
-          needLab: 3,
-          cost: {
-            wood: 100,
-            stone: 60,
-            hide: 10,
-            coin: 20
-          },
-          time: 1e3
-        }
-      },
-      defense: {
-        roles: [
-          "guard",
-          "towerman"
-        ],
-        order: [
-          "hp",
-          "atk"
-        ]
-      },
-      works1: {
-        roles: [
-          "fence",
-          "gate"
-        ],
-        order: [
-          "hp"
-        ]
-      },
-      works2: {
-        roles: [
-          "trap",
-          "tower"
-        ],
-        order: [
-          "hp",
-          "atk"
-        ]
-      },
-      march: {
-        roles: [
-          "march_foot",
-          "march_cavalry",
-          "march_archer"
-        ],
-        order: [
-          "hp",
-          "defm",
-          "defr",
-          "move",
-          "atk",
-          "sta"
-        ],
-        scale: 0.5
-      },
-      marchlog: {
-        roles: [
-          "march_army"
-        ],
-        order: [
-          "mspeed",
-          "mload",
-          "mbuild"
-        ]
-      },
-      tactic: {
-        roles: [
-          "plan_foot",
-          "plan_cavalry",
-          "plan_archer"
-        ],
-        order: [
-          "hp",
-          "defm",
-          "defr",
-          "move",
-          "atk",
-          "sta"
-        ],
-        scale: 0.5
-      }
-    },
-    plan: {
-      _note: "C\xE2y K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u: ba c\u1ED9t B\u1ED9 binh, K\u1EF5, Cung, ch\u1EC9 s\u1ED1 ri\xEAng (chain tactic) ch\u1EC9 c\u1ED9ng khi \u0111ang chi\u1EBFn tranh v\xE0 \u0111ang giao chi\u1EBFn. Nh\xF3m ch\u1EC9 s\u1ED1 \u0111\u1EA7u \u0111\u1EE7 c\u1EA5p 3 m\u1EDF plan_report, c\u1EA5p 5 m\u1EDF plan_supply; nh\xF3m sau c\u1EA5p 3 m\u1EDF plan_weather, c\u1EA5p 5 m\u1EDF plan_rest (xem research.json). Chu\u1ED7i march (tab H\xE0nh qu\xE2n) ch\u1EC9 c\u1ED9ng khi chi\u1EBFn tranh v\xE0 \u0111ang h\xE0nh qu\xE2n ho\u1EB7c ngh\u1EC9.",
-      roles: [
-        "plan_foot",
-        "plan_cavalry",
-        "plan_archer"
-      ],
-      layout: [
-        {
-          stats: [
-            "hp",
-            "defm",
-            "defr"
-          ]
-        },
-        {
-          techs: [
-            "plan_report",
-            "plan_supply"
-          ]
-        },
-        {
-          stats: [
-            "move",
-            "atk",
-            "sta"
-          ]
-        },
-        {
-          techs: [
-            "plan_weather",
-            "plan_rest"
-          ]
-        }
-      ]
-    }
-  };
-
-  // src/sim/research.ts
-  var RESEARCH = { enabled: research_default.enabled };
-  var RECIPE_LEVEL = research_default.recipeLevel;
-  var CRAFT_COST_PER_LEVEL = research_default.craftCostPerLevel ?? 0.5;
-  var recipeNeedLevel = (id) => RECIPE_LEVEL[id] ?? 1;
-  var TECHS = research_default.techs;
-  for (const t of TECHS) t.needLevel = labLevelOf(t.id);
-  var TECH_BY_ID = Object.fromEntries(TECHS.map((t) => [t.id, t]));
-  var STAT_IDS = Object.keys(researchtree_default.stats);
-  var STAT_DEF = researchtree_default.stats;
-  var TREE_ROLES = researchtree_default.roles;
-  var statLevels = (stat) => STAT_DEF[stat].steps.length;
-  var labNeeded = (stat, n) => {
-    const t = STAT_DEF[stat].tiers ?? researchtree_default.tiers;
-    return t[Math.min(n, t.length) - 1];
-  };
-  var statBonusAtLab = (stat, lab) => STAT_DEF[stat].steps.reduce((a, s, i) => a + (labNeeded(stat, i + 1) <= lab ? s : 0), 0);
-  var TREE_TABS = researchtree_default.tabs;
-  var CHAINS = Object.fromEntries(Object.entries(researchtree_default.chains).filter(([, c]) => typeof c !== "string"));
-  var ROLE_SCALE = {};
-  for (const c of Object.values(CHAINS)) if (c.scale !== void 0) for (const r of c.roles) ROLE_SCALE[r] = c.scale;
-  var statTechId = (role, stat, n) => `${role}_${stat}_${n}`;
-  var STAT_TECHS = [];
-  for (const def of Object.values(CHAINS)) for (const role of def.roles) for (const stat of def.order) {
-    const s = STAT_DEF[stat], chain = def.order, at = chain.indexOf(stat);
-    for (let n = 1; n <= statLevels(stat); n++) {
-      const cost = {};
-      for (const [res, amount] of Object.entries(s.cost)) cost[res] = Math.max(1, Math.round(amount * researchtree_default.growth.cost ** (n - 1)));
-      cost.coin = (cost.coin ?? 0) + Math.floor(n / 2);
-      const t = {
-        id: statTechId(role, stat, n),
-        name: `${s.name} \xB7 ${TREE_ROLES[role].name} ${n}`,
-        desc: `${s.about} C\u1ED9ng ${s.steps[n - 1] * (ROLE_SCALE[role] ?? 1)}% cho ${TREE_ROLES[role].formation ? "l\xEDnh \u0111\u1EE9ng trong tr\u1EADn " : ""}${TREE_ROLES[role].name.toLowerCase()}.`,
-        requires: [...n > 1 ? [statTechId(role, stat, n - 1)] : at === 0 && TREE_ROLES[role].needs ? [TREE_ROLES[role].needs] : [], ...n === 1 && def.gates?.[stat] ? [def.gates[stat]] : [], ...chain && at > 0 ? [statTechId(role, chain[at - 1], Math.min(n, statLevels(chain[at - 1])))] : [], ...chain && at === 0 && n > 1 ? [statTechId(role, chain[chain.length - 1], Math.min(n - 1, statLevels(chain[chain.length - 1])))] : []],
-        needLevel: labNeeded(stat, n),
-        cost,
-        time: Math.round(s.time * researchtree_default.growth.time ** (n - 1)),
-        unlocks: { bonus: { role, stat, pct: s.steps[n - 1] * (ROLE_SCALE[role] ?? 1) } }
-      };
-      STAT_TECHS.push(t);
-      TECH_BY_ID[t.id] = t;
-    }
-  }
-  var tierTechId = (role, tier) => `${role}_tier${tier}`;
-  var TIER_TECH_OF = {};
-  for (const c of Object.values(CHAINS)) {
-    if (!c.finalTier) continue;
-    const ft = c.finalTier;
-    for (const role of ft.roles) {
-      const t = {
-        id: tierTechId(role, ft.tier),
-        name: `${TREE_ROLES[role].name} b\u1EADc ${ft.tier}`,
-        desc: TREE_ROLES[role].weapon ? `M\u1EDF ${TREE_ROLES[role].name.toLowerCase()} b\u1EADc ${ft.tier}: m\u1ECDi ng\u01B0\u1EDDi c\u1EA7m n\xF3 g\xE2y s\xE1t th\u01B0\u01A1ng nhi\u1EC1u h\u01A1n. C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EE7 m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a v\u0169 kh\xED n\xE0y.` : `M\u1EDF b\u1EADc ${ft.tier} c\u1EE7a ${TREE_ROLES[role].name.toLowerCase()}: m\u1ECDi ng\u01B0\u1EDDi l\xE0m vai tr\xF2 n\xE0y m\u1EA1nh h\u01A1n ngay. C\u1EA7n nghi\xEAn c\u1EE9u \u0111\u1EE7 m\u1ECDi ch\u1EC9 s\u1ED1 c\u1EE7a h\u1ECD.`,
-        requires: c.order.map((stat) => statTechId(role, stat, statLevels(stat))),
-        needLevel: ft.needLab,
-        cost: ft.cost,
-        time: ft.time,
-        unlocks: { tier: { role, tier: ft.tier } }
-      };
-      STAT_TECHS.push(t);
-      TECH_BY_ID[t.id] = t;
-      TIER_TECH_OF[role] = t;
-    }
-  }
-  var soldierTier = (done, role) => {
-    let n = 1;
-    for (let k = 2; k <= 6; k++) if (done.has(tierTechId(role, k))) n = k;
-    return n;
-  };
-  function lineLevel(done, role, stat) {
-    let n = 0;
-    while (n < statLevels(stat) && done.has(statTechId(role, stat, n + 1))) n++;
-    return n;
-  }
-  var PLAN_TREE = researchtree_default.plan;
-  var PLAN_TECH = { detail: "plan_report", supply: "plan_supply", weather: "plan_weather", rest: "plan_rest" };
-  var planOpen = (done, f, advanced, free = false) => advanced && (free || !RESEARCH.enabled || done.has(PLAN_TECH[f]));
-  var statBonus = (done, role, stat) => STAT_DEF[stat].steps.slice(0, lineLevel(done, role, stat)).reduce((a, b) => a + b, 0) * (ROLE_SCALE[role] ?? 1);
-  var NO_BLUEPRINT = /^(club|spear|mace|sling|bow|hide|bone|axe|pick|hoe|hammer|torch)\d$/;
-  var recipeOpen = (done, recipeId) => !RESEARCH.enabled || NO_BLUEPRINT.test(recipeId) || done.has(recipeId);
-  var techForRecipe = (recipeId) => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
-  var unlockedMax = (done, key, base) => TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks[key] ?? 0) : m, base);
-  var techForBuilding = (kind) => TECHS.find((t) => t.unlocks.buildings?.includes(kind));
-  var buildingOpen = (done, kind) => {
-    const t = techForBuilding(kind);
-    return !RESEARCH.enabled || !t || done.has(t.id);
-  };
-
-  // src/sim/statsys.ts
-  var BASE = stats_default.base;
-  var IDS = Object.keys(stats_default.base);
-  var TIER_MULT = stats_default.tierMult;
-  var L = stats_default.legacy;
-  function rollFactors(r) {
-    const w = stats_default.stars.weights, total = w.reduce((a, b) => a + b, 0);
-    let x = r() * total, stars = 1;
-    for (let i = 0; i < w.length; i++) {
-      x -= w[i];
-      if (x <= 0) {
-        stars = i + 1;
-        break;
-      }
-      stars = i + 1;
-    }
-    const budget = IDS.length * (stats_default.stars.budgetBase + stats_default.stars.budgetPerStar * stars), { min, max } = stats_default.stars;
-    let f = IDS.map(() => 1 - stats_default.stars.spread / 2 + r() * stats_default.stars.spread);
-    for (let k = 0; k < 8; k++) {
-      const s = f.reduce((a, b) => a + b, 0);
-      f = f.map((v) => Math.max(min, Math.min(max, v * budget / s)));
-    }
-    return { stars, fac: Object.fromEntries(IDS.map((id, i) => [id, f[i]])) };
-  }
-  function treeRole(v) {
-    const r = roleOf(v);
-    if (r) return r === "tower" ? "towerman" : r;
-    switch (v.job) {
-      case "build":
-        return "build";
-      case "craft":
-        return "craft";
-      case "research":
-        return "research";
-      case "tame":
-        return "tame";
-      case "food":
-        return "farm";
-      default:
-        return null;
-    }
-  }
-  function statValue(sim2, v, stat) {
-    const role = v.team === "player" ? treeRole(v) : null;
-    const tier = role && TREE_ROLES[role] ? soldierTier(sim2.researched, role) : 1;
-    const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
-    const squad = v.team === "player" && v.squad >= 0 ? sim2.squads.find((q) => q.id === v.squad) : void 0;
-    const bonus = (v.team !== "player" ? sim2.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim2.researched, role, stat) : 0) + (squad ? statBonus(sim2.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ""), stat) : 0);
-    const mode = role === "foot" || role === "cavalry" || role === "archer" ? sim2.warMode?.(v) ?? null : null;
-    const warBonus = mode ? statBonus(sim2.researched, `${mode === "fight" ? "plan" : "march"}_${role}`, stat) : 0;
-    const hunger = v.team === "player" && stat !== "hp" ? (1 - sim2.foodPenalty) * (1 - sim2.tiredPenalty(v)) : 1;
-    return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + (bonus + warBonus) / 100) * hunger;
-  }
-  var rawValue = (fac, stat) => BASE[stat] * fac[stat];
-  function legacyStats(value) {
-    return {
-      vit: (value("hp") - L.hpBase) / L.hpPerVit,
-      str: value("atk") * L.atkToDamage / L.strengthDamage,
-      agi: (value("move") - L.speedBase) / L.speedPerAgi,
-      sta: value("sta") * L.staScale
-    };
-  }
-  function applyStats(sim2, v) {
-    if (v.team === "wild") return;
-    const val = (s) => statValue(sim2, v, s), l = legacyStats(val);
-    v.stats.vit = l.vit;
-    v.stats.str = l.str;
-    v.stats.agi = l.agi;
-    v.stats.sta = l.sta;
-    const hp = Math.round(val("hp"));
-    if (hp !== v.maxHealth) {
-      const ratio2 = v.maxHealth > 0 ? v.health / v.maxHealth : 1;
-      v.maxHealth = hp;
-      v.health = Math.min(hp, hp * ratio2);
-    }
-    if (v.team === "player" && v.squad < 0 && !v.mount) v.speed = val("move");
-  }
-  function guardCut(sim2, v, ranged) {
-    const d = statValue(sim2, v, ranged ? "defr" : "defm");
-    return d / (d + stats_default.defense.k);
-  }
-  function workSpeed(sim2, v) {
-    return statValue(sim2, v, "work") * (1 + stats_default.intEffect.work * (statValue(sim2, v, "int") / BASE.int - 1));
-  }
-  function drainScale(sim2, v) {
-    const reserve = Math.max(0.3, statValue(sim2, v, "sta") / stats_default.staDrainRef), spare = Math.max(0.4, 1 + stats_default.intEffect.drain * (statValue(sim2, v, "int") / BASE.int - 1));
-    return 1 / (reserve * spare);
-  }
-  function weaponDamage(sim2, v, w) {
-    if (v.team !== "player") return w.damage;
-    const tier = soldierTier(sim2.researched, w.id);
-    return tier > 1 ? w.damage * (RULES.tierMult[String(tier)]?.damage ?? 1) : w.damage;
-  }
-  function toolBonus(sim2, v, job, stat) {
-    const kind = TOOL_OF_JOB[job], tool = kind ? v.tools[kind] : null;
-    return v.team === "player" && kind && tool && tool.dur > 0 ? statBonus(sim2.researched, kind, stat) : 0;
-  }
-  var weaponBonus = (sim2, v, w, stat) => v.team === "player" ? statBonus(sim2.researched, w.id, stat) : 0;
-  var swingCycle = (sim2, v, w) => {
-    const p = v.team === "player" ? sim2.foodPenalty : 0;
-    const agi = p > 0 ? ((L.speedBase + L.speedPerAgi * v.stats.agi) / (1 - p) - L.speedBase) / L.speedPerAgi : v.stats.agi;
-    return cycleOf(w.cycle, agi) / (1 + weaponBonus(sim2, v, w, "aspd") / 100) / (1 - p);
-  };
-  var critChance = (sim2, v, w) => Math.min((w.crit ?? 0) + weaponBonus(sim2, v, w, "crit") / 100, RULES.critMax);
-  var critMult = (sim2, v, w) => (w.critDamage ?? RULES.critDamage) + weaponBonus(sim2, v, w, "critd") / 100;
 
   // src/sim/battle.ts
   var ANIM = anims_default;
@@ -54098,107 +54346,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return best;
   }
 
-  // src/content/difficulty.json
-  var difficulty_default = {
-    _note: "\u0110\u1ED9 kh\xF3 v\xE0 s\u1EE9c m\u1EA1nh c\u1EE7a c\xE1c l\xE0ng. power: s\u1EE9c m\u1EA1nh m\u1ED9t l\xE0ng = economy \xD7 (kinh t\u1EBF) + military \xD7 (qu\xE2n s\u1EF1). Kinh t\u1EBF = t\u1ED5ng h\u1EC7 s\u1ED1 t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c c\u1EE7a m\u1ECDi ng\u01B0\u1EDDi \u0111ang c\xF3 vi\u1EC7c s\u1EA3n xu\u1EA5t (1 l\xE0 ng\u01B0\u1EDDi g\u1ED1c ch\u01B0a nghi\xEAn c\u1EE9u). Qu\xE2n s\u1EF1 = t\u1ED5ng h\u1EC7 s\u1ED1 ch\u1EC9 s\u1ED1 chi\u1EBFn \u0111\u1EA5u (m\xE1u \xD7 s\u1EE9c m\u1EA1nh \xD7 ph\xF2ng th\u1EE7, so v\u1EDBi ng\u01B0\u1EDDi g\u1ED1c) c\u1EE7a m\u1ECDi l\xEDnh v\xE0 trinh s\xE1t. T\xEDnh theo CH\u1EC8 S\u1ED0 (k\u1EC3 c\u1EA3 ph\u1EA7n tr\u0103m nghi\xEAn c\u1EE9u), kh\xF4ng t\xEDnh theo v\u0169 kh\xED. L\xE0ng NPC: t\u1ED5ng s\u1EE9c m\u1EA1nh c\u1EE7a m\u1ECDi l\xE0ng NPC = tr\u1EA7n c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u1EDF c\u1EA5p l\u1EEDa hi\u1EC7n t\u1EA1i / playerEdge (ng\u01B0\u1EDDi ch\u01A1i ph\xE1t tri\u1EC3n t\u1ED1i \u0111a ch\u1EC9 h\u01A1n t\u1ED5ng NPC 30%). Tr\u1EA7n ng\u01B0\u1EDDi ch\u01A1i = d\xE2n t\u1ED1i \u0111a c\u1EE7a c\u1EA5p l\u1EEDa (k\u1EC3 c\u1EA3 gi\u01B0\u1EDDng nh\xE0 d\xE2n) \xD7 ch\u1EC9 s\u1ED1 t\u1ED1i \u0111a nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c \u1EDF c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u = c\u1EA5p l\u1EEDa; militaryShare l\xE0 ph\u1EA7n d\xE2n l\xE0m l\xEDnh. M\u1ED7i l\xE0ng nh\u1EADn ph\u1EA7n 'share' v\xE0 'military' (t\u1EC9 l\u1EC7 qu\xE2n s\u1EF1) trong tribes.json, r\u1ED3i nh\xE2n h\u1EC7 s\u1ED1 k c\u1EE7a ri\xEAng n\xF3 (random-walk m\u1ED7i ng\xE0y). Code t\u1EF1 t\xEDnh ph\u1EA7n tr\u0103m ch\u1EC9 s\u1ED1 (m\xE1u, s\u1EE9c m\u1EA1nh, ph\xF2ng th\u1EE7, l\xE0m vi\u1EC7c) cho ng\u01B0\u1EDDi c\u1EE7a l\xE0ng \u0111\u1EC3 \u0111\u1EA1t m\u1EE5c ti\xEAu, kh\xF4ng ghi tay. startFactor: kho\u1EA3ng k l\xFAc \u0111\u1EA7u. daily: m\u1ED7i ng\xE0y k nh\xE2n th\xEAm (1 + random trong min..max), k\u1EB9p trong band. campLevel: c\u1EA5p tr\u1EA1i l\u1EEDa random c\u1EE7a m\u1ED7i l\xE0ng; lu\xF4n c\xF3 \xEDt nh\u1EA5t m\u1ED9t l\xE0ng \u1EDF c\u1EA5p kh\xF4ng qu\xE1 guaranteeWeak \u0111\u1EC3 ng\u01B0\u1EDDi ch\u01A1i c\xF3 ch\u1ED7 \u0111\xE1nh. yieldPerEco: t\xE0i nguy\xEAn m\u1ED9t \u0111i\u1EC3m kinh t\u1EBF l\xE0m ra m\u1ED7i ng\xE0y (c\u1ED9ng v\xE0o kho c\u1EE7a l\xE0ng). stockCap: s\u1EE9c ch\u1EE9a kho c\u1EE7a l\xE0ng theo c\u1EA5p tr\u1EA1i. bonusClamp: gi\u1EDBi h\u1EA1n ph\u1EA7n tr\u0103m ch\u1EC9 s\u1ED1 c\u1ED9ng th\xEAm. S\u1ED1 ng\u01B0\u1EDDi c\u1EE7a m\u1ED9t l\xE0ng = s\u1ED1 d\xE2n tr\u1EA1i l\u1EEDa c\u1EE7a n\xF3 ch\u1EE9a \u1EDF c\u1EA5p tr\u1EA1i (POP_BY_FIRE), chia l\xEDnh v\xE0 d\xE2n theo t\u1EC9 l\u1EC7 trong tribes.json. raid: \u0111\u1EE3t t\u1EA5n c\xF4ng c\u1EE7a b\u1ED9 t\u1ED9c c\xF3 tr\u01B0\u1EDDng power trong events.json (1 = m\u1EA1nh b\u1EB1ng qu\xE2n s\u1EF1 hi\u1EC7n t\u1EA1i c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i, 1.1 = h\u01A1n 10%, 0.8 = y\u1EBFu h\u01A1n 20%). K\u1EBFt qu\u1EA3 b\u1ECB k\u1EB9p gi\u1EEFa floor v\xE0 ceiling nh\xE2n qu\xE2n s\u1EF1 t\u1ED1i \u0111a c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u1EDF c\u1EA5p l\u1EEDa \u0111\xF3: ng\u01B0\u1EDDi ch\u01A1i kh\xF4ng c\xF3 qu\xE2n v\u1EABn g\u1EB7p m\u1ED9t \u0111\u1EE3t t\u1ED1i thi\u1EC3u, v\xE0 ng\u01B0\u1EDDi ch\u01A1i qu\xE1 m\u1EA1nh kh\xF4ng l\xE0m \u0111\u1EE3t t\u1EA5n c\xF4ng v\xF4 ngh\u0129a. capture: khi m\u1ED9t l\xE0ng b\u1ECB thu n\u1EA1p, b\u1ECB ti\xEAu di\u1EC7t (do ng\u01B0\u1EDDi c\u1EE7a ta \u0111\xE1nh) ho\u1EB7c ch\u1ECBu c\u1ED1ng n\u1EA1p, ta nh\u1EADn spoilShare (0.5) m\u1ECDi t\xE0i nguy\xEAn trong kho c\u1EE7a l\xE0ng \u0111\xF3; thu n\u1EA1p ho\u1EB7c ti\xEAu di\u1EC7t c\xF2n c\u1ED9ng v\xE0o d\xE2n t\u1ED1i \u0111a c\u1EE7a ta \u0111\xFAng b\u1EB1ng s\u1ED1 d\xE2n tr\u1EA1i l\u1EEDa c\u1EE7a l\xE0ng \u0111\xF3 ch\u1EE9a \u1EDF c\u1EA5p c\u1EE7a n\xF3 (kh\xF4ng gi\u1EDBi h\u1EA1n s\u1ED1 l\u1EA7n chi\u1EBFm); c\u1ED1ng n\u1EA1p th\xEC l\xE0ng v\u1EABn s\u1ED1ng n\xEAn kh\xF4ng c\u1ED9ng d\xE2n.",
-    power: {
-      economy: 1,
-      military: 1
-    },
-    playerEdge: 1.3,
-    militaryShare: 0.6,
-    startFactor: [
-      0.7,
-      1
-    ],
-    daily: {
-      min: 0,
-      max: 0.02,
-      band: [
-        0.7,
-        1.3
-      ]
-    },
-    campLevel: {
-      min: 1,
-      max: 4,
-      guaranteeWeak: 2
-    },
-    yieldPerEco: {
-      food: 6,
-      wood: 3,
-      stone: 2
-    },
-    stockCap: [
-      100,
-      250,
-      500,
-      1e3
-    ],
-    bonusClamp: [
-      -0.6,
-      5
-    ],
-    raid: {
-      floor: 0.25,
-      ceiling: 1
-    },
-    capture: {
-      spoilShare: 0.5
-    },
-    boss: {
-      _note: "L\xE0ng \u0111\u1EA7u m\u1EE5c (boss): m\u1ED7i v\xE1n c\xF3 count[0]..count[1] l\xE0ng, lu\xF4n h\u01A1n ng\u01B0\u1EDDi ch\u01A1i m\u1ED9t b\u1EADc (c\u1EA5p tr\u1EA1i +1, t\u1ED1i \u0111a maxCamp; c\xF3 ch\xF2i canh v\xE0 \u0111\u1ED3 \u0111\u1ED3ng d\xF9 ng\u01B0\u1EDDi ch\u01A1i c\xF2n \u1EDF \u0111\u1ED3 \u0111\xE1). power: s\u1EE9c m\u1EA1nh qu\xE2n c\u1EE7a boss so v\u1EDBi qu\xE2n t\u1ED1i \u0111a ng\u01B0\u1EDDi ch\u01A1i c\xF3 th\u1EC3 c\xF3 \u1EDF c\u1EA5p tr\u1EA1i \u0111\xF3 (0.9 = h\u1EA1 \u0111\u01B0\u1EE3c boss th\xEC m\u1EA5t kho\u1EA3ng 80% l\xEDnh); economy: kinh t\u1EBF so v\u1EDBi kinh t\u1EBF t\u1ED1i \u0111a; popMult: s\u1ED1 d\xE2n so v\u1EDBi c\u1EA5p tr\u1EA1i; bronzeShare: ph\u1EA7n l\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\u1ED3ng v\xE0 m\u1EB7c gi\xE1p \u0111\u1ED3ng; wallHp: \u0111\u1ED9 b\u1EC1n r\xE0o, c\u1ED5ng, ch\xF2i v\xE0 nh\xE0 so v\u1EDBi l\xE0ng th\u01B0\u1EDDng.",
-      count: [1, 2],
-      power: 0.9,
-      economy: 0.6,
-      popMult: 1.3,
-      bronzeShare: 0.4,
-      wallHp: 1.5,
-      weapons: ["bronze_sword", "bronze_axe", "bronze_spear"]
-    }
-  };
-
-  // src/sim/difficulty.ts
-  var DIFF = difficulty_default;
-  var TIER_MULT2 = stats_default.tierMult;
-  var clampLevel = (level) => Math.max(1, Math.min(POP_BY_FIRE.length, Math.round(level)));
-  function popCapAt(level) {
-    const L2 = clampLevel(level), house = BUILDINGS.house, lv = house.levels.stone;
-    return POP_BY_FIRE[L2 - 1] + (house.perFire?.[L2 - 1] ?? 0) * lv[Math.min(L2, lv.length) - 1].slots;
-  }
-  var tierAt = (lab, chain) => {
-    const t = CHAINS[chain]?.finalTier;
-    return t && t.needLab <= lab ? t.tier : 1;
-  };
-  function statRatio(stat, lab, chain) {
-    const tier = tierAt(lab, chain);
-    return (1 + statBonusAtLab(stat, lab) / 100) * (tier > 1 ? TIER_MULT2[String(tier)]?.[stat] ?? 1 : 1);
-  }
-  function playerCap(level) {
-    const L2 = clampLevel(level), pop = popCapAt(L2), soldiers = pop * difficulty_default.militaryShare, workers = pop - soldiers;
-    const fighter = statRatio("hp", L2, "military") * statRatio("atk", L2, "military") * (statRatio("defm", L2, "military") + statRatio("defr", L2, "military")) / 2;
-    const worker = statRatio("work", L2, "economy") * (1 + stats_default.intEffect.work * (statRatio("int", L2, "economy") - 1));
-    const economy = workers * worker, military = soldiers * fighter;
-    return { economy, military, total: difficulty_default.power.economy * economy + difficulty_default.power.military * military };
-  }
-  function tribeTarget(level, tribe, k) {
-    const total = playerCap(level).total / difficulty_default.playerEdge * tribe.share * k;
-    return { military: total * tribe.military / difficulty_default.power.military, economy: total * (1 - tribe.military) / difficulty_default.power.economy };
-  }
-  function bossTarget(level) {
-    const cap = playerCap(clampLevel(level + 1));
-    return { military: cap.military * difficulty_default.boss.power, economy: cap.economy * difficulty_default.boss.economy };
-  }
-  function raidPower(playerMilitary, ratio2, level) {
-    const top = playerCap(level).military;
-    return Math.max(difficulty_default.raid.floor * top, Math.min(difficulty_default.raid.ceiling * top, playerMilitary * ratio2));
-  }
-  function tribeBonuses(level, tribe, k, soldiers, workers, boss = false) {
-    const t = boss ? bossTarget(level) : tribeTarget(level, tribe, k), [lo, hi] = difficulty_default.bonusClamp, clamp3 = (x) => Math.max(lo, Math.min(hi, x));
-    return { mil: soldiers > 0 ? clamp3(Math.cbrt(t.military / soldiers) - 1) : 0, eco: workers > 0 ? clamp3(t.economy / workers - 1) : 0 };
-  }
-  var baseWork = BASE.work;
-
   // src/sim/power.ts
   var ratio = (sim2, v, stat) => statValue(sim2, v, stat) / BASE[stat];
   var militaryValue = (sim2, v) => ratio(sim2, v, "hp") * ratio(sim2, v, "atk") * (ratio(sim2, v, "defm") + ratio(sim2, v, "defr")) / 2;
@@ -54222,148 +54369,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     return { economy, military, total: difficulty_default.power.economy * economy + difficulty_default.power.military * military, workers, soldiers };
   }
-
-  // src/sim/campplan.ts
-  var CORE = ["storage", "builder", "workshop", "armory", "infantry", "archery", "cavalry", "guardpost", "lab", "wartent", "stable", "house", "toolstore", "scouttent", "supplycamp"];
-  var OUTSIDE = ["lumberyard", "quarry", "farmhouse", "huntlodge", "drill"];
-  function ring(fire, r) {
-    const out = [];
-    for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
-      if (Math.max(Math.abs(i), Math.abs(j)) !== r || i === 0 && j > 0) continue;
-      out.push({ i, j, a: (Math.atan2(i, -j) + 2 * Math.PI) % (2 * Math.PI) });
-    }
-    return out.sort((p, q) => p.a - q.a).map((o) => [fire.x + 3 * o.i, fire.y + 3 * o.j]);
-  }
-  function limitAt(kind, fireLevel2) {
-    const per = BUILDINGS[kind].perFire;
-    return per ? per[Math.min(per.length, fireLevel2) - 1] ?? 0 : 1;
-  }
-  function slotsAt(kinds, fireLevel2, era, advanced) {
-    let n = 0;
-    for (const k of kinds) {
-      if (!BUILDINGS[k].buildable || fireUnlockLevel(k) > fireLevel2 || eraLocked(k, { advanced })) continue;
-      const lv = Math.max(1, Math.min(maxLevel(k, era), levelCapByFire(fireLevel2)));
-      n += limitAt(k, fireLevel2) * (levelsOf(k, era)[lv - 1]?.slots ?? 0);
-    }
-    return n;
-  }
-  function fenceHalf(fireLevel2) {
-    return fireUnlockLevel("fence") <= fireLevel2 ? Math.max(4, Math.min(10, Math.floor((limitAt("fence", fireLevel2) + 1) / 8))) : 0;
-  }
-  var hits = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
-  function planCamp(fx, fy, fireLevel2, era, advanced, taken, blocked) {
-    const fire = { x: fx, y: fy }, cx = fx + 1, cy = fy + 1, half = fenceHalf(fireLevel2), fenced = half > 0;
-    const out = [], used = [{ x: fx, y: fy, w: 2, h: 2 }, ...taken];
-    const open = (k) => BUILDINGS[k].buildable && fireUnlockLevel(k) <= fireLevel2 && !eraLocked(k, { advanced });
-    const cap = levelCapByFire(fireLevel2);
-    const put3 = (kind, x, y) => {
-      const d = BUILDINGS[kind], r = { x, y, w: d.w, h: d.h };
-      if (used.some((u) => hits(u, r)) || blocked(r)) return false;
-      used.push(r);
-      out.push({ kind, x, y, w: d.w, h: d.h, level: Math.max(1, Math.min(maxLevel(kind, era), cap)) });
-      return true;
-    };
-    const spot = (kind, spots) => {
-      for (let k = 0; k < spots.length; k++) if (put3(kind, spots[k][0], spots[k][1])) {
-        spots.splice(k, 1);
-        return true;
-      }
-      return false;
-    };
-    if (fenced) {
-      for (let d = -half; d <= half; d++) {
-        put3("fence", cx + d, cy - half);
-        put3(d === 0 ? "gate" : "fence", cx + d, cy + half);
-        if (Math.abs(d) < half) {
-          put3("fence", cx - half, cy + d);
-          put3("fence", cx + half, cy + d);
-        }
-      }
-      if (!eraLocked("tower", { advanced })) for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put3("tower", sx > 0 ? cx + half + 1 : cx - half - 2, sy > 0 ? cy + half + 1 : cy - half - 2);
-    } else if (open("tower")) {
-      for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]].slice(0, limitAt("tower", fireLevel2))) put3("tower", cx + sx * 8 - (sx < 0 ? 2 : 0), cy + sy * 8 - (sy < 0 ? 2 : 0));
-    }
-    const coreRings = fenced ? Math.floor((half - 2) / 3) : 2, firstOutside = fenced ? Math.ceil((half + 2) / 3) : 3;
-    const inside = [], outside = [];
-    for (let r = 1; r <= coreRings; r++) inside.push(...ring(fire, r));
-    for (let r = firstOutside; r <= firstOutside + 3; r++) outside.push(...ring(fire, r).sort((p, q) => Math.abs(p[1] - fy) - Math.abs(q[1] - fy)));
-    for (const kind of CORE.filter(open)) for (let n = limitAt(kind, fireLevel2); n > 0; n--) {
-      if (!(spot(kind, inside) || spot(kind, outside))) break;
-    }
-    for (const kind of OUTSIDE.filter(open)) for (let n = limitAt(kind, fireLevel2); n > 0; n--) {
-      if (!spot(kind, outside)) break;
-    }
-    return out;
-  }
-
-  // src/sim/tribebuild.ts
-  var planned = (p) => p.lv !== void 0;
-  var keyOf = (p) => `${p.b ?? p.kind}@${p.x},${p.y}`;
-  function hpOf(kind, _w, _h, lv, boss = false) {
-    return Math.round((SIEGE.propHp[kind] ?? 60) * (1 + 0.5 * (lv - 1)) * (boss ? DIFF.boss.wallHp : 1));
-  }
-  var maxPropHp = (t, p) => hpOf(p.kind, p.w, p.h, p.lv ?? 1, !!t.boss);
-  function repairProps(t, share2) {
-    for (const p of t.props) if (p.lv !== void 0) p.hp = Math.min(maxPropHp(t, p), p.hp + (share2 >= 1 ? Infinity : maxPropHp(t, p) * share2));
-  }
-  function clearPatch(sim2, x, y, w, h3, margin) {
-    const W2 = sim2.world, N = W2.size;
-    for (let j = -margin; j < h3 + margin; j++) for (let i = -margin; i < w + margin; i++) {
-      if (x + i < 0 || y + j < 0 || x + i >= N || y + j >= N) continue;
-      const k = (y + j) * N + x + i;
-      if (W2.nodes.delete(k)) {
-        W2.tiles[k] = Tile.Grass;
-        W2.decor[k] = 0;
-      }
-    }
-  }
-  function growCamp(sim2, t, level) {
-    if (t.state === "destroyed" || level <= (t.built ?? 0)) return 0;
-    const fire = t.props.find((p) => p.kind === "fire");
-    if (!fire) return 0;
-    const W2 = sim2.world, N = W2.size;
-    W2.ensure(fire.x, fire.y, 16);
-    const base = t.props.filter((p) => !planned(p)), old = new Map(t.props.filter(planned).map((p) => [keyOf(p), p]));
-    const blocked = (r) => {
-      for (let j = r.y; j < r.y + r.h; j++) for (let i = r.x; i < r.x + r.w; i++) {
-        if (i < 2 || j < 2 || i >= N - 2 || j >= N - 2) return true;
-        const tile = W2.at(i, j);
-        if (tile === Tile.Water || tile === Tile.Mountain) return true;
-      }
-      return false;
-    };
-    const next = [...base];
-    for (const piece of planPieces(sim2, t, fire, level, base, blocked)) {
-      const kind = piece.kind === "fence" || piece.kind === "gate" || piece.kind === "tower" ? piece.kind : "house", b = kind === "house" ? piece.kind : void 0;
-      const prop = { x: piece.x, y: piece.y, w: piece.w, h: piece.h, kind, b, lv: piece.level, hp: 0 };
-      const was = old.get(keyOf(prop));
-      if (was) {
-        old.delete(keyOf(prop));
-        const lost = hpOf(kind, prop.w, prop.h, was.lv, !!t.boss) - was.hp;
-        was.lv = Math.max(was.lv, piece.level);
-        was.hp = Math.max(1, hpOf(kind, prop.w, prop.h, was.lv, !!t.boss) - lost);
-        next.push(was);
-        continue;
-      }
-      prop.hp = hpOf(kind, prop.w, prop.h, prop.lv, !!t.boss);
-      clearPatch(sim2, prop.x, prop.y, prop.w, prop.h, kind === "fence" || kind === "gate" ? 0 : 1);
-      next.push(prop);
-    }
-    for (const p of old.values()) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) W2.occ[(p.y + j) * N + p.x + i] = 0;
-    for (const p of next) if (p.kind !== "gate" || p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) W2.occ[(p.y + j) * N + p.x + i] = 1;
-    t.props = next;
-    t.built = level;
-    return next.length - base.length;
-  }
-  function setGates(sim2, t, shut) {
-    const N = sim2.world.size;
-    for (const p of t.props) {
-      if (p.kind !== "gate" || p.open !== false !== shut) continue;
-      p.open = !shut;
-      for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) sim2.world.occ[(p.y + j) * N + p.x + i] = shut ? 1 : 0;
-    }
-  }
-  var planPieces = (sim2, t, fire, level, base, blocked) => planCamp(fire.x, fire.y, level, sim2.era, sim2.advanced || !!t.boss, base, blocked);
 
   // src/sim/tribelod.ts
   var LOD = npclife_default.lod;
@@ -55349,6 +55354,18 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const p = ai.tower ? t.props.find((q) => q.kind === "tower" && q.x === ai.tower.x && q.y === ai.tower.y) : void 0;
     return p ? { p, reach: levelsOf("tower", sim2.era)[(p.lv ?? 1) - 1]?.sight ?? 10 } : null;
   }
+  function houseNear(t, f, within = Infinity) {
+    let best = null, bd = Infinity;
+    for (const p of t.props) {
+      if (p.kind !== "house" || p.hp <= 0) continue;
+      const d = Math.hypot(p.x + p.w / 2 - f.x, p.y + p.h / 2 - f.y);
+      if (d < bd && d - Math.max(p.w, p.h) / 2 <= within) {
+        best = p;
+        bd = d;
+      }
+    }
+    return best;
+  }
   function foeBrain(sim2, f, t, ai, dt) {
     const free = t.state === "free";
     const tower = ai.tower ? towerOf(sim2, t, ai) : null;
@@ -55370,16 +55387,32 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         f.path = [];
       }
     }
+    if (f.inTent) {
+      f.phase = "idle";
+      f.path = [];
+      f.slide = null;
+      if (free && houseNear(t, f, 4) && !(scanNow && !threatsOf(sim2, f, 14).length)) return;
+      f.inTent = false;
+    }
     if (free && (f.fleeT > 0 || ai.role === "civ" && threats.length && threats[0].d < 8)) {
+      const home = houseNear(t, f), gx = home ? Math.floor(home.x + home.w / 2) : Math.floor(ai.camp.x), gy = home ? home.y + home.h : Math.floor(ai.camp.y);
       if (f.fleeT <= 0) {
         f.fleeT = 6;
         f.fight.target = null;
-        f.path = sim2.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3e3);
+        f.path = sim2.pathTo(f, gx, gy, 3e3);
       }
       f.fleeT -= dt;
       f.phase = "flee";
+      if (home && Math.hypot(home.x + home.w / 2 - f.x, home.y + home.h / 2 - f.y) <= Math.max(home.w, home.h) / 2 + 1.6) {
+        f.inTent = true;
+        f.path = [];
+        f.slide = null;
+        f.phase = "idle";
+        f.fleeT = 0;
+        return;
+      }
       if (threats.length && threats[0].d < 6) f.fleeT = Math.max(f.fleeT, 2);
-      if (!f.path.length && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 3) f.path = sim2.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3e3);
+      if (!f.path.length && Math.hypot(f.x - gx, f.y - gy) > 3) f.path = sim2.pathTo(f, gx, gy, 3e3);
       return;
     }
     if (f.phase === "flee") {
@@ -60801,11 +60834,11 @@ ${risk.lines.join("\n")}`);
       return;
     }
     const armed = headcount(sim2, t).guards > 0;
-    if (t.state !== "free" || !armed && t.props.length === 0) {
+    if (t.state !== "free" || !armed && t.props.every((p) => p.kind === "fence" || p.kind === "gate")) {
       plan2.stage = "over";
       plan2.result = "won";
       plan2.endedAt = sim2.time;
-      sim2.say(`Chi\u1EBFn th\u1EAFng! ${t.def.name} kh\xF4ng c\xF2n l\xEDnh, l\u1EEDa t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh \u0111\xE3 s\u1EADp. B\u1EA5m R\xFAt qu\xE2n khi mu\u1ED1n v\u1EC1 l\xE0ng.`);
+      sim2.say(`Chi\u1EBFn th\u1EAFng! ${t.def.name} kh\xF4ng c\xF2n l\xEDnh, l\u1EEDa t\u1EAFt v\xE0 m\u1ECDi nh\xE0, th\xE1p, kho \u0111\xE3 s\u1EADp. B\u1EA5m R\xFAt qu\xE2n khi mu\u1ED1n v\u1EC1 l\xE0ng.`);
       sim2.noteBattle("note", `${t.def.name} b\u1ECB san b\u1EB1ng.`);
       if (t.state === "free") sim2.conquer(t.id, "L\xE0ng b\u1ECB san b\u1EB1ng");
       return;
@@ -61409,6 +61442,7 @@ ${risk.lines.join("\n")}`);
       v.fight.repath = 1;
       if (sim2.routeTo(v, sim2.ringTiles(v, box.x, box.y, box.w, box.h), 3) < 0) {
         stopBreaking(v);
+        if (b.kind === "prop") breachFor(sim2, v, box.x + box.w / 2, box.y + box.h / 2);
         return false;
       }
     }
@@ -61514,6 +61548,7 @@ ${risk.lines.join("\n")}`);
     return Math.hypot(best.x - tg.x, best.y - tg.y) <= SIEGE.driftMax ? { state: "live", unit: best.id, x: best.x, y: best.y } : { state: "moved" };
   }
   var idle = (v) => !v.breaks && !v.fight.target && v.phase !== "fight" && v.phase !== "flee" && v.down <= 0;
+  var isWall2 = (p) => p.kind === "fence" || p.kind === "gate";
   function rampage(sim2, plan2, s) {
     const t = sim2.tribes.find((q) => q.id === plan2.tribe);
     if (!t) return;
@@ -61525,7 +61560,7 @@ ${risk.lines.join("\n")}`);
         sim2.orderAttack([v.id], { kind: "unit", id: near2.id });
         continue;
       }
-      const p = t.props.slice().sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
+      const p = t.props.filter((q) => !isWall2(q)).sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
       if (p) startBreaking(sim2, v, { kind: "enemy", x: p.x, y: p.y, label: p.kind, clear: true, tribe: t.id });
     }
   }
@@ -61534,7 +61569,7 @@ ${risk.lines.join("\n")}`);
     if (!t) return;
     for (const v of sim2.squadUnits(s)) {
       if (!idle(v)) continue;
-      const p = t.props.find((q) => Math.hypot(q.x + q.w / 2 - v.x, q.y + q.h / 2 - v.y) < 5);
+      const p = t.props.find((q) => !isWall2(q) && Math.hypot(q.x + q.w / 2 - v.x, q.y + q.h / 2 - v.y) < 5);
       if (p) startBreaking(sim2, v, { kind: "enemy", x: p.x, y: p.y, label: p.kind, clear: true, tribe: t.id }, v.fight.anchor ?? { x: v.x, y: v.y });
     }
   }

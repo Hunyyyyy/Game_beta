@@ -222,7 +222,11 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
   v.fight.repath -= dt;
   if (!v.path.length && v.fight.repath <= 0 && sim.pathLeft > 0) {
     sim.pathLeft--; v.fight.repath = 1;
-    if (sim.routeTo(v, sim.ringTiles(v, box.x, box.y, box.w, box.h), 3) < 0) { stopBreaking(v); return false; } // no way up to it
+    if (sim.routeTo(v, sim.ringTiles(v, box.x, box.y, box.w, box.h), 3) < 0) { // no way up to it: the fence or the gate in the way is the thing to break first
+      stopBreaking(v);
+      if (b.kind === 'prop') breachFor(sim, v, box.x + box.w / 2, box.y + box.h / 2);
+      return false;
+    }
   }
   v.phase = v.path.length ? 'move' : 'idle';
   return true;
@@ -339,6 +343,9 @@ export function targetNow(sim: Sim, plan: Plan, m: Mission): TargetState | null 
 
 const idle = (v: Villager): boolean => !v.breaks && !v.fight.target && v.phase !== 'fight' && v.phase !== 'flee' && v.down <= 0;
 
+/** A fence or a gate: part of what keeps a village shut, not of what has to fall for a war to be won. */
+export const isWall = (p: Prop): boolean => p.kind === 'fence' || p.kind === 'gate';
+
 /** Soldiers with nothing to do go for the nearest enemy of the village, or failing that its nearest work. Once a second. */
 export function rampage(sim: Sim, plan: Plan, s: Squad): void {
   const t = sim.tribes.find((q) => q.id === plan.tribe);
@@ -348,7 +355,8 @@ export function rampage(sim: Sim, plan: Plan, s: Squad): void {
     if (!idle(v)) continue;
     const near = foes.slice().sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
     if (near) { sim.orderAttack([v.id], { kind: 'unit', id: near.id }); continue; }
-    const p = t.props.slice().sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
+    // fences and gates are not worth breaking for their own sake: a soldier breaks one only when it shuts his way (breakBrain → breachFor)
+    const p = t.props.filter((q) => !isWall(q)).sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
     if (p) startBreaking(sim, v, { kind: 'enemy', x: p.x, y: p.y, label: p.kind, clear: true, tribe: t.id });
   }
 }
@@ -359,7 +367,7 @@ function around(sim: Sim, plan: Plan, s: Squad): void {
   if (!t) return;
   for (const v of sim.squadUnits(s)) {
     if (!idle(v)) continue;
-    const p = t.props.find((q) => Math.hypot(q.x + q.w / 2 - v.x, q.y + q.h / 2 - v.y) < 5);
+    const p = t.props.find((q) => !isWall(q) && Math.hypot(q.x + q.w / 2 - v.x, q.y + q.h / 2 - v.y) < 5);
     if (p) startBreaking(sim, v, { kind: 'enemy', x: p.x, y: p.y, label: p.kind, clear: true, tribe: t.id }, v.fight.anchor ?? { x: v.x, y: v.y });
   }
 }

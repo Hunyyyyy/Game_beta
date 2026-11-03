@@ -4,6 +4,7 @@ import { gameDays, TILE } from '../sim/constants';
 import type { Sim, Villager } from '../sim/sim';
 import type { Animal } from '../sim/fauna';
 import type { Tribe } from '../sim/tribes';
+import { maxPropHp } from '../sim/tribebuild';
 import { hash2 } from '../sim/rng';
 import { Tile } from '../sim/world';
 import { MOUNTS } from '../sim/jobs';
@@ -98,23 +99,28 @@ export class Renderer {
    * Every house does it, the tower no more than the others.
    */
   private drawDamage(b: Building, ax: number, ay: number, time: number): void {
-    if (!b.done) return;
-    const { ctx, cam: { zoom: z } } = this, ratio = Math.max(0, Math.min(1, b.hp / Math.max(1, maxHp(b))));
+    if (b.done) this.drawWear(b.kind, b.hp / Math.max(1, maxHp(b)), b.id, ax, ay, time);
+  }
+
+  /** The same for any work, ours or a village's: `ratio` is what is left of it, `id` only sets where the smoke and flames are in their dance. */
+  private drawWear(kind: BuildingKind, ratio: number, id: number, ax: number, ay: number, time: number): void {
+    const { ctx, cam: { zoom: z } } = this;
+    ratio = Math.max(0, Math.min(1, ratio));
     if (ratio >= 1) return;
-    const top = b.kind === 'tower' ? 86 : b.kind === 'fence' || b.kind === 'gate' ? 30 : 62;
+    const top = kind === 'tower' ? 86 : kind === 'fence' || kind === 'gate' ? 30 : kind === 'campfire' ? 34 : 62;
     this.bar(ax, ay - top, ratio, ratio > 0.7 ? '#6bbf59' : ratio > 0.3 ? '#e0b43c' : '#d9503c');
-    if (b.kind === 'fence' || b.kind === 'gate') return;
-    const wide = BUILDINGS[b.kind].w * TILE * 0.35, roof = b.kind === 'tower' ? 70 : 44;
+    if (kind === 'fence' || kind === 'gate') return;
+    const wide = BUILDINGS[kind].w * TILE * 0.35, roof = kind === 'tower' ? 70 : 44;
     if (ratio <= 0.7) { // smoke rising from the roof
       for (let k = 0; k < 4; k++) {
-        const t = (time * 0.45 + k * 0.25 + b.id * 0.13) % 1, p = this.worldToScreen(ax - wide * 0.5 + k * wide * 0.33 + Math.sin(time * 1.3 + k) * 3 * t, ay - roof - t * 34);
+        const t = (time * 0.45 + k * 0.25 + id * 0.13) % 1, p = this.worldToScreen(ax - wide * 0.5 + k * wide * 0.33 + Math.sin(time * 1.3 + k) * 3 * t, ay - roof - t * 34);
         ctx.fillStyle = `rgba(${ratio <= 0.3 ? '55,52,52' : '120,120,126'},${(0.5 * (1 - t)).toFixed(3)})`;
         ctx.beginPath(); ctx.arc(p.x, p.y, (3 + t * 7) * z, 0, Math.PI * 2); ctx.fill();
       }
     }
     if (ratio <= 0.3) { // flames over it
       for (let k = 0; k < 4; k++) {
-        const flick = 0.7 + 0.3 * Math.sin(time * 11 + k * 2.1 + b.id), h = (9 + k % 2 * 4) * flick * z, p = this.worldToScreen(ax - wide * 0.7 + k * wide * 0.47, ay - roof + 8 - (k % 2) * 6);
+        const flick = 0.7 + 0.3 * Math.sin(time * 11 + k * 2.1 + id), h = (9 + k % 2 * 4) * flick * z, p = this.worldToScreen(ax - wide * 0.7 + k * wide * 0.47, ay - roof + 8 - (k % 2) * 6);
         ctx.fillStyle = '#e8641e'; ctx.beginPath(); ctx.moveTo(p.x - 4 * z, p.y); ctx.lineTo(p.x, p.y - h); ctx.lineTo(p.x + 4 * z, p.y); ctx.closePath(); ctx.fill();
         ctx.fillStyle = '#f7c24a'; ctx.beginPath(); ctx.moveTo(p.x - 2 * z, p.y); ctx.lineTo(p.x, p.y - h * 0.65); ctx.lineTo(p.x + 2 * z, p.y); ctx.closePath(); ctx.fill();
       }
@@ -410,7 +416,7 @@ export class Renderer {
     }
     for (const v of sim.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
     const seen = (x: number, y: number) => sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
-    for (const f of sim.foes) if (onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
+    for (const f of sim.foes) if (!f.inTent && onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
     for (const a of sim.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
     // the works of a village are drawn one by one, each where its own feet stand: a village is a dozen tiles wide, and it must not vanish as its fire leaves the screen
     for (const t of sim.tribes) {
@@ -494,6 +500,8 @@ export class Renderer {
           else if (!this.drawColumnFence(b, walls)) this.prop(sp.building('fence', 'stone', p.lv ?? 1, 4), ax, ay, time, alpha);
           this.drawDiagonalRails(b, walls);
         } else this.prop(sp.building(kind, 'stone', p.kind === 'fire' ? 1 : p.lv ?? 1, 4), ax, ay, time, alpha);
+        // a work of a village that has been hurt shows it as ours do: a bar, smoke, flames
+        if (p.hp > 0) this.drawWear(kind, p.hp / Math.max(1, maxPropHp(t, p)), p.x * 31 + p.y, ax, ay, time);
       } else if (d.v) {
         const rode = d.v.phase !== 'sleep' && d.v.phase !== 'down' ? sim.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === 'down';
         // a rider is seen from the side, the way his beast faces: up and down the screen he keeps the side he last had
