@@ -1,7 +1,7 @@
 import type { BuildingKind } from '../sim/buildings';
 import { workDays } from '../sim/constants';
 import { RES_NAME } from '../sim/resources';
-import { CHAINS, TIER_TECH_OF, statLevels, lineLevel, statBonus, STAT_DEF, LineStat, STAT_IDS, statTechId, TECH_BY_ID, Tech, TREE_ROLES } from '../sim/research';
+import { CHAINS, PLAN_TREE, TIER_TECH_OF, statLevels, lineLevel, statBonus, STAT_DEF, LineStat, STAT_IDS, statTechId, TECH_BY_ID, Tech, TREE_ROLES } from '../sim/research';
 import { WEAPONS } from '../sim/combat';
 import { h, iconCanvas } from './dom';
 import { dlg, GameDialog } from './gamedialog';
@@ -43,6 +43,7 @@ export class TechTree {
     if (r && sprites.icons[r]) return h('span', { class: 'tpic' }, iconCanvas(sprites.icons[r]));
     if (t.unlocks.mounts) return this.pic('stable', 1);
     if (t.id.startsWith('form_') || t.id === 'signal') return this.pic('drill', 1);
+    if (t.id.startsWith('plan_')) return this.pic('wartent', 1);
     if (t.id.startsWith('scout')) return this.pic('scouttent', 1);
     return this.pic('lab', 1);
   }
@@ -108,7 +109,7 @@ export class TechTree {
 
   /** The tree of the formations: a column for each (its unlock on top, then the first stats), the research shared by all of them joined below (cells), the rest of the stats, and the research shared again (squads). The parts and their order come from the chain's layout. */
   addFormations(title: string, chain: string): void {
-    const def = CHAINS[chain], layout = def.layout ?? [{ stats: def.order }], { sim } = this.c;
+    const def = chain === 'plan' ? { roles: PLAN_TREE.roles, order: [] as LineStat[], layout: PLAN_TREE.layout } : CHAINS[chain], layout = def.layout ?? [{ stats: def.order }], { sim } = this.c; // 'plan': the Kế hoạch chiến đấu tree, on the stats of the military columns
     const link = () => h('span', { class: 'tlink' });
     const done = (t: Tech) => sim.researched.has(t.id);
     const techNode = (t: Tech) => this.make(this.techPic(t), t.name, 1, () => (done(t) ? null : t), () => (done(t) ? 1 : 0)).el;

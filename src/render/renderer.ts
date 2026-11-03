@@ -337,7 +337,7 @@ export class Renderer {
     return depth >= 3 ? 'high' : depth === 2 ? 'mid' : 'low';
   }
 
-  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null, group: readonly number[] = []): void {
+  draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal' | 'node' | 'tent'; id: number } | null = null, group: readonly number[] = []): void {
     const { ctx, cam, sim } = this, z = cam.zoom, world = sim.world, N = world.size, sp = this.sprites;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
@@ -382,7 +382,7 @@ export class Renderer {
       if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
       list.push({ y: ay, kind: 'building', i: 0, j: 0, b });
     }
-    for (const v of sim.villagers) if (v.inside === null && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
+    for (const v of sim.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
     const seen = (x: number, y: number) => sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
     for (const f of sim.foes) if (onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
     for (const a of sim.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });

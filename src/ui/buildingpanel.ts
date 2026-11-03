@@ -30,7 +30,7 @@ export class BuildingPanel {
   private title!: HTMLElement; private state!: HTMLElement; private picBox!: HTMLElement; private picKey = '';
   private readonly win: GameDialog;
   /** Every building shows its parts as pages behind a row of tab buttons at the top. */
-  private readonly tabs = {} as Record<BuildingKind, Array<{ label: string; page: HTMLElement; /** A house whose picture stands for the tab: the tabs then show as a grid of pictures. */ icon?: BuildingKind; /** Why the tab is shut, or null when it is open. */ lock?: () => string | null; /** Drawn under the tab of this index, in its column, and joined to it (and to the one above it) by a line. */ under?: number }>>;
+  private readonly tabs = {} as Record<BuildingKind, Array<{ label: string; page: HTMLElement; /** A house whose picture stands for the tab: the tabs then show as a grid of pictures. */ icon?: BuildingKind; /** Why the tab is shut, or null when it is open. */ lock?: () => string | null; /** Drawn under the tab of this index, in its column, and joined to it (and to the one above it) by a line. */ under?: number; /** Not drawn in the tree (a page that a button opens). Keep these last. */ hidden?: boolean }>>;
   private readonly tabBar = h('div', { class: 'btns tabs', role: 'tablist' });
   /** The line about the building and its tabs, side by side when the tabs are plain buttons. */
   private readonly topbar = h('div', { class: 'topbar' });
@@ -166,15 +166,20 @@ export class BuildingPanel {
     const labLevel = () => sim.building('lab')?.level ?? 0;
     const militaryLock = () => (sim.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `Cần Nhà nghiên cứu cấp ${TREE_TABS.military.needLab} để mở Quân sự`);
     this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research, this.labPeople);
+    // laid out as a tree in four columns: Quân sự (with Chiến đấu, Kế hoạch chiến đấu, Hành quân and Vũ khí under it), Kinh tế (with Công cụ), Phát triển, Phòng thủ
+    const needMilitary = () => militaryLock() && 'Cần mở Quân sự trước';
     this.tabs.lab = [
       { label: 'Quân sự bậc 1', icon: 'infantry', lock: militaryLock, page: tree((t) => { t.addChains('Chỉ số quân', ['foot', 'cavalry', 'archer', 'scout'], 'military'); }) },
-      { label: 'Phòng thủ bậc 1', icon: 'tower', page: tree((t) => { t.addChains('Lính phòng thủ', ['guard', 'towerman'], 'defense'); t.addChains('Hàng rào và cổng', ['fence', 'gate'], 'works1'); t.addChains('Chông và chòi canh', ['trap', 'tower'], 'works2'); }) },
-      { label: 'Phát triển bậc 1', icon: 'builder', page: tree((t) => t.addChains('Chỉ số nhà làm việc', ['build', 'craft', 'research'], 'development')) },
       { label: 'Kinh tế bậc 1', icon: 'storage', page: tree((t) => { t.addChains('Chỉ số nghề', ['wood', 'stone', 'food', 'hunt', 'tame'], 'economy'); }) },
-      { label: 'Công cụ bậc 1', icon: 'workshop', under: 2, page: tree((t) => { t.addChains('Chỉ số công cụ', ['axe', 'pick', 'hoe'], 'tool'); t.addChains('Búa', ['hammer'], 'hammer'); }) },
-      { label: 'Chiến đấu bậc 1', icon: 'drill', under: 0, lock: () => militaryLock() && 'Cần mở Quân sự trước', page: tree((t) => { t.addSingles('Tín hiệu', only((id) => id === 'signal')); t.addFormations('Trận pháp', 'formation'); }) },
-      { label: 'Vũ khí bậc 1', icon: 'armory', under: 0, lock: () => militaryLock() && 'Cần mở Quân sự trước', page: tree((t) => { t.addChains('Chỉ số từng vũ khí', ['club', 'spear', 'mace', 'sling', 'bow'], 'weapon'); }) },
-      { label: 'Người làm việc', icon: 'lab', under: 1, page: page(this.staffBoxes.research.root) },
+      { label: 'Phát triển bậc 1', icon: 'builder', page: tree((t) => t.addChains('Chỉ số nhà làm việc', ['build', 'craft', 'research'], 'development')) },
+      { label: 'Phòng thủ bậc 1', icon: 'tower', page: tree((t) => { t.addChains('Lính phòng thủ', ['guard', 'towerman'], 'defense'); t.addChains('Hàng rào và cổng', ['fence', 'gate'], 'works1'); t.addChains('Chông và chòi canh', ['trap', 'tower'], 'works2'); }) },
+      { label: 'Chiến đấu bậc 1', icon: 'drill', under: 0, lock: needMilitary, page: tree((t) => { t.addSingles('Tín hiệu', only((id) => id === 'signal')); t.addFormations('Trận pháp', 'formation'); }) },
+      { label: 'Kế hoạch chiến đấu bậc 1', icon: 'wartent', under: 0, lock: needMilitary, page: tree((t) => { t.addFormations('Kế hoạch chiến đấu (chỉ cộng khi đang giao chiến trong chiến tranh)', 'plan'); }) },
+      { label: 'Hành quân bậc 1', icon: 'supplycamp', under: 0, lock: needMilitary, page: tree((t) => { t.addChains('Chỉ số khi hành quân (chỉ cộng khi hành quân hoặc nghỉ trong chiến tranh)', ['march_foot', 'march_cavalry', 'march_archer'], 'march'); t.addChains('Hậu cần và tốc độ', ['march_army'], 'marchlog'); }) },
+      { label: 'Vũ khí bậc 1', icon: 'armory', under: 0, lock: needMilitary, page: tree((t) => { t.addChains('Chỉ số từng vũ khí', ['club', 'spear', 'mace', 'sling', 'bow'], 'weapon'); }) },
+      { label: 'Công cụ bậc 1', icon: 'workshop', under: 1, page: tree((t) => { t.addChains('Chỉ số công cụ', ['axe', 'pick', 'hoe'], 'tool'); t.addChains('Búa', ['hammer'], 'hammer'); }) },
+      // not in the tree: the button "Người nghiên cứu · Thêm người" at the top opens it
+      { label: 'Người làm việc', icon: 'lab', hidden: true, page: page(this.staffBoxes.research.root) },
     ];
 
     // tool store and armoury: what is kept
@@ -235,12 +240,13 @@ export class BuildingPanel {
       this.topbar.classList.toggle('inline', !pictures);
       this.tabBar.classList.toggle('icontabs', pictures); this.tabBar.classList.toggle('treetabs', pictures && kind === 'lab');
       this.tabBar.replaceChildren(...tabs.map((t, i) => {
+        if (t.hidden) return null;
         const go = () => { if (locks[i]) { this.c.toast(locks[i]!); return; } this.tabAt[kind] = i; if (kind === 'lab') this.labSub = i; this.showTabs(kind, true); };
         if (!pictures) return h('button', { class: 'sm', text: t.label, role: 'tab', onclick: go });
         let pic: HTMLElement;
         try { pic = h('span', { class: 'tpic' }, iconCanvas(this.c.sprites.building(t.icon ?? kind, this.c.sim.era, 1, 4).frames[0])); } catch { pic = h('span', { class: 'tpic', text: '?' }); }
         return h('button', { class: `tabcard${locks[i] ? ' locked' : ''}${t.under !== undefined ? ' under' : ''}`, style: t.under !== undefined ? `grid-column:${t.under + 1};grid-row:${2 + tabs.slice(0, i).filter((o) => o.under === t.under).length}` : undefined, role: 'tab', title: locks[i] ?? t.label, onclick: go }, pic, h('span', { text: t.label }), locks[i] ? h('span', { class: 'tlock', text: '🔒' }) : null);
-      }));
+      }).filter((el): el is HTMLButtonElement => !!el));
     }
     if (kind === 'lab' && ready) {
       // a tab of the research house opens a panel over this one, with a way back

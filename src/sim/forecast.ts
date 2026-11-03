@@ -4,8 +4,9 @@
  * The better the map, the more the report says and the surer it is.
  */
 import { ARMORS, cycleOf, maxHpOf, RULES, WEAPONS } from './combat';
-import { marchLines } from './warmarch';
-import { supplyLines } from './warsupply';
+import { marchOfPlan } from './warmarch';
+import { packPlan } from './warsupply';
+import { tentCost, tentCount } from './wartent';
 import type { DmgType } from './combat';
 import { Arm, BEATS } from './formations';
 import type { Sim } from './sim';
@@ -33,7 +34,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
   const t = plan.tribe ? sim.tribes.find((x) => x.id === plan.tribe) : undefined;
   const notes = sim.reviewPlan(plan), blocked = notes.filter((l) => l.startsWith('✗')).map((l) => l.slice(2));
   const intel = plan.tribe ? sim.tribeIntel(plan.tribe) : null, level = intel ? intel.level : 0;
-  const out: Forecast = { level, chance: 0, spread: SPREAD[level], verdict: '', blocked: blocked.length ? blocked.join('\n') : null, warnings: notes.filter((l) => !l.startsWith('✗')), win: [], lose: [], lines: [] };
+  const out: Forecast = { level, chance: 0, spread: SPREAD[level], verdict: '', blocked: blocked.length ? blocked.join('\n') : null, warnings: notes.filter((l) => !l.startsWith('✗')), win: [], lose: [], lines: [], compare: [], facts: [] };
   if (!t || !intel) { out.verdict = 'Chưa có bản đồ để lượng sức.'; return out; }
 
   // ---- our side: the squads in the plan, each worth what it is ordered to do
@@ -84,48 +85,39 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
   out.chance = count ? Math.max(0.01, Math.min(0.99, 1 / (1 + Math.exp(-3 * Math.log(Math.max(0.01, R)))))) : 0;
   const lossIfWin = R > 1 ? 1 - Math.sqrt(1 - 1 / (R * R)) : 1;
 
-  // ---- warnings: what to think twice about
+  // ---- warnings: what to think twice about (a few words each)
   const w = out.warnings;
-  if (!count) w.push('Không có lính nào trong kế hoạch.');
-  if (out.chance < 0.4 && count) w.push('Thế trận bất lợi: khả năng thua cao hơn thắng.');
-  else if (out.chance < 0.6 && count) w.push('Thế trận cân bằng: một chút may rủi cũng đủ đổi kết quả.');
-  if (bare) w.push(`${bare} lính chưa có vũ khí, đánh bằng tay không.`);
-  if (unarmored && count > 1) w.push(`${unarmored} lính chưa có giáp.`);
-  if (hurt) w.push(`${hurt} lính đang bị thương nặng.`);
+  if (!count) w.push('Không có lính nào trong kế hoạch');
+  if (bare) w.push(`${bare} lính chưa có vũ khí`);
+  if (unarmored && count > 1) w.push(`${unarmored} lính chưa có giáp`);
+  if (hurt) w.push(`${hurt} lính bị thương nặng`);
   const home = sim.villagers.filter((v) => v.job === 'fight' && v.health > 0 && !plan.missions.some((m) => sim.squadById(m.squad)?.ids.includes(v.id))).length;
-  if (home < 3) w.push(`Chỉ còn ${home} lính giữ làng: nếu địch đánh vào lúc này thì khó chống.`);
-  if (sim.resting) w.push('Đang ban đêm: quân đi chậm và nhìn kém.');
-  if (sim.weather !== 'clear') w.push('Thời tiết xấu: quân đi chậm hơn.');
-  if (level < 3) w.push(`Bản đồ cấp ${level}: ${level === 1 ? 'chưa biết địch có lính hay công trình phòng thủ nào' : 'chưa biết địch có bao nhiêu lính và thuộc binh chủng nào'}, nên dự báo còn thiếu chắc chắn.`);
+  if (home < 3) w.push(`Chỉ ${home} lính ở lại giữ làng`);
+  const pk = packPlan(sim, plan);
+  if (!pk.sup) w.push('Không có lính hậu cần: quân sẽ đói');
+  else if (pk.days < plan.carryDays - 0.05) w.push(`Lương chỉ đủ ${pk.days.toFixed(1)} ngày`);
 
   // ---- what is at stake
-  out.win = [`Thắng khi ${t.def.name} hết lính, lửa của họ tắt và mọi công trình sập; khi đó dân của họ xin hàng.`, 'Ta lấy được những gì còn trong kho lương của họ.', `Dự kiến ta mất khoảng ${pct(lossIfWin)} số lính đã dàn trận.`];
-  out.lose = ['Thua khi quân ta hết lính hoặc rút lui.', `Phần lớn lính ra trận có thể gục; lính chết là mất hẳn, cùng vũ khí và giáp mang theo.`, 'Kẻ địch bị chọc giận nên có thể kéo đến trả đũa.', 'Rút kịp thì cứu được những người còn lại, nhưng chiến lợi phẩm thì không có.'];
+  out.win = [`Địch hết lính, lửa tắt, công trình sập → dân xin hàng`, 'Lấy kho lương của địch', `Mất khoảng ${pct(lossIfWin)} quân`];
+  out.lose = ['Hết quân hoặc rút lui', 'Lính chết là mất cả vũ khí, giáp', 'Địch có thể kéo đến trả đũa'];
 
   out.verdict = out.chance >= 0.8 ? 'Rất có lợi' : out.chance >= 0.6 ? 'Có lợi' : out.chance >= 0.4 ? 'Cân bằng' : out.chance >= 0.2 ? 'Bất lợi' : 'Rất bất lợi';
 
-  // ---- the report, more of it with each level of the map
-  const L = out.lines;
-  L.push(`Quân ta: ${count} lính trong ${perSquad.length} đội${arms.archer || arms.cavalry ? ` (${arms.foot} bộ binh, ${arms.archer} bắn xa, ${arms.cavalry} kỵ)` : ''}.`);
-  L.push(...marchLines(sim, plan), ...supplyLines(sim, plan));
-  if (level === 1) {
-    L.push(`Làng ${t.def.name} có khoảng ${intel.population} người; ước chừng ${men} có thể cầm vũ khí.`);
-    L.push('Chưa rõ vũ khí, công trình phòng thủ hay thủ lĩnh: cần bản đồ cấp 2 và 3 để biết thêm.');
-  } else {
-    L.push(`Làng ${t.def.name}: khoảng ${intel.population} người${level >= 3 ? `, trong đó ${men} lính` : `, ước chừng ${men} có thể cầm vũ khí`}.`);
-    L.push(works > 1 ? `Phòng thủ: ${towers} chòi canh, ${fences} đoạn rào, ${gates} cổng (tăng khoảng ${pct(works - 1)} sức địch).` : 'Chưa thấy công trình phòng thủ nào.');
-  }
+  // ---- the details: our side against his, row by row, and the plain facts of the march
+  const mr = marchOfPlan(sim, plan), nTents = tentCount(sim, plan), tc = tentCost(sim);
+  out.compare.push({ label: 'Lính', ours: count, theirs: level >= 3 ? men : null });
   if (level >= 3 && soldiers) {
-    L.push(`Lính địch: ${soldiers.foot} bộ binh, ${soldiers.archer} cung thủ, ${soldiers.cavalry} kỵ thú${chief > 1 ? '; có thủ lĩnh đi cùng' : ''}.`);
-    L.push(match > 1.05 ? 'Binh chủng của ta khắc binh chủng địch.' : match < 0.95 ? 'Binh chủng địch khắc quân ta: nên đổi đội hình.' : 'Binh chủng hai bên ngang nhau.');
-    L.push(`Sức mạnh quy đổi: ta ${Math.round(ours)} so với địch ${Math.round(theirs)}.`);
-    for (const q of perSquad) L.push(`${q.name}: ${q.n} lính, đóng góp ${ours > 0 ? pct((q.worth * match) / ours) : '0%'} sức mạnh của ta.`);
+    out.compare.push({ label: 'Bộ binh', ours: arms.foot, theirs: soldiers.foot }, { label: 'Cung', ours: arms.archer, theirs: soldiers.archer }, { label: 'Kỵ', ours: arms.cavalry, theirs: soldiers.cavalry });
+    out.compare.push({ label: 'Sức mạnh', ours: Math.round(ours), theirs: Math.round(theirs) });
   }
-  if (level >= 2) for (const m of plan.missions) {
-    const s = sim.squadById(m.squad), start = s ? sim.missionStart(m) : null;
-    if (!s || !start || !m.path.length) continue;
-    const r = sim.routeTime(s, start, m.path);
-    L.push(`${s.name} đi ${Math.round(r.length)} ô, mất khoảng ${Math.max(1, Math.round(r.total / 60))} phút${r.hits.some((o) => o && o.kind !== 'enemy') ? ', có đoạn vướng vật cản cần phá hoặc uốn tránh' : ''}.`);
+  if (level >= 2) out.facts.push(['Phòng thủ địch', works > 1 ? `${towers} chòi, ${fences} rào, ${gates} cổng` : 'không có']);
+  if (level >= 2) {
+    let longest = 0;
+    for (const m of plan.missions) { const s = sim.squadById(m.squad), start = s ? sim.missionStart(m) : null; if (s && start && m.path.length) longest = Math.max(longest, sim.routeTime(s, start, m.path).total / mr.speed); }
+    if (longest > 0) out.facts.push(['Đường đi', `~${Math.max(1, Math.round(longest / 60))} phút`]);
   }
+  if (mr.soldiers) out.facts.push(['Đi chậm', pct(mr.slow)]);
+  if (pk.sup) out.facts.push(['Lương', `${pk.days.toFixed(1)} ngày`]);
+  if (nTents) out.facts.push(['Lều', `${nTents} × ${tc.wood} gỗ, ${tc.hide} da`]);
   return out;
 }

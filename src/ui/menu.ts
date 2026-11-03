@@ -141,14 +141,17 @@ export class Menu {
     page.append(hint('Mô phỏng trại', 'Dựng sẵn trại của cấp lửa đã chọn: mọi nhà mở ở cấp đó (số lượng và cấp tối đa theo cấp lửa), hàng rào, cổng và chòi canh khi đã mở, dân đầy giường, lính và các nghề đã có người, lính được phát vũ khí và giáp. Không tốn gì.'));
     page.append(h('div', { class: 'devrow' }, ...[1, 2, 3, 4].map((n) => btn(`Trại cấp ${n}`, () => toast(dev.simulateCamp(sim, n)), `Dựng trại cấp ${n} đầy đủ`))));
     page.append(h('div', { class: 'devrow' },
-      toggle('Nghiên cứu, chế tạo, thuần thú nhanh + miễn phí', 'Làm ×25 nhanh và không tốn vật liệu cho nghiên cứu, chế tạo và thuần thú', () => sim.dev.freeWorks, (on) => { sim.dev.freeWorks = on; sim.dev.fastWorks = on; }),
+      toggle('Mọi việc miễn phí + xong ngay', 'Nghiên cứu, chế tạo, thuần thú, xây, nâng cấp và sửa: không tốn vật liệu, không mất thời gian (nhà vẫn cần người làm bên trong)', () => sim.dev.freeWorks, (on) => { sim.dev.freeWorks = on; sim.dev.fastWorks = on; sim.dev.instantBuild = on; }),
       toggle('Bất tử', 'Dân không nhận sát thương', () => sim.dev.god, (on) => { sim.dev.god = on; })));
     page.append(h('div', { class: 'devrow' },
+      btn('+5 dân', () => toast(dev.addPeople(sim, 5)), 'Thêm 5 dân rảnh quanh lửa trại, kể cả khi vượt sức chứa'),
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),
       btn('Gọi sự kiện (theo cấp lửa)', () => toast(dev.callEvent(sim)), 'Gọi ngay sự kiện đã hẹn mạnh nhất mà trại cấp lửa hiện tại đủ sức đón')));
 
     page.append(h('h3', { text: 'Trinh sát' }));
     page.append(h('div', { class: 'devrow' }, ...[1, 2, 3].map((n) => btn(`Trinh sát tự tìm làng: bản đồ cấp ${n}`, () => toast(dev.autoScout(sim, n)), 'Làng gần nhất chưa có bản đồ cấp này được tìm và vẽ xong ngay (không cần trinh sát thật), để có dữ liệu cho phần vẽ bản đồ'))));
+
+    page.append(h('div', { class: 'devrow' }, btn('Có sẵn bản đồ địch (đầy đủ)', () => toast(dev.giveEnemyMap(sim)), 'Làng địch gần nhất được tìm thấy và có bản đồ cấp 3 đầy đủ, để thử phần lập kế hoạch chiến tranh')));
 
     page.append(h('h3', { text: 'Thời gian và thời tiết' }));
     page.append(h('div', { class: 'devrow' }, btn('Sáng', () => dev.setTimeOfDay(sim, 0.3)), btn('Trưa', () => dev.setTimeOfDay(sim, 0.5)), btn('Chiều', () => dev.setTimeOfDay(sim, 0.78)), btn('Đêm', () => dev.setTimeOfDay(sim, 0.95)), btn('+1 ngày', () => dev.skipDays(sim, 1)), btn('+5 ngày', () => dev.skipDays(sim, 5))));

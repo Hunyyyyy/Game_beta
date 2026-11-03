@@ -40,8 +40,13 @@ export const tradeOf = (c: Ctx, v: Villager): string => {
   return role ? roleName(role, c.sim.era) : isFree(v) ? 'Dân rảnh' : JOB_NAME[v.job];
 };
 
+/** People drawn at a time in the list of those who could go in. */
+const PAGE = 24;
+
 export class Roster {
   private showIn = true; private showPool = true; private filter = 'all';
+  /** How many of the people who could go in are drawn: a village of hundreds drawn whole made every click on + or − freeze the page. */
+  private shown = PAGE;
   constructor(private readonly c: Ctx) {}
 
   render(s: RosterSpec): Node[] {
@@ -62,21 +67,23 @@ export class Roster {
       })));
     }
     // ---- the ones who could go in: a filter by trade, the free hands first, then the best at the work
-    const trades = new Map<string, number>();
-    for (const v of s.pool) trades.set(tradeOf(this.c, v), (trades.get(tradeOf(this.c, v)) ?? 0) + 1);
+    const trades = new Map<string, number>(), trade = new Map<number, string>();
+    for (const v of s.pool) { const t = tradeOf(this.c, v); trade.set(v.id, t); trades.set(t, (trades.get(t) ?? 0) + 1); }
     if (this.filter !== 'all' && !trades.has(this.filter)) this.filter = 'all';
-    const picked = s.pool.filter((v) => this.filter === 'all' || tradeOf(this.c, v) === this.filter)
-      .sort((a, b) => Number(isFree(b)) - Number(isFree(a)) || s.stat(b) - s.stat(a));
+    const rank = new Map<number, number>(); // each one's stat worked out once, not at every comparison of the sort
+    const matching = s.pool.filter((v) => this.filter === 'all' || trade.get(v.id) === this.filter);
+    for (const v of matching) rank.set(v.id, s.stat(v));
+    const picked = matching.sort((a, b) => Number(isFree(b)) - Number(isFree(a)) || rank.get(b.id)! - rank.get(a.id)!);
     const free = s.pool.filter((v) => isFree(v)).length;
     out.push(head(this.showPool, 'Thêm người', `${free} dân rảnh · ${s.pool.length} người`, () => { this.showPool = !this.showPool; }));
     if (this.showPool) {
       const sel = h('select', { class: 'sm', 'aria-label': 'Lọc theo nghề', title: 'Lọc người có thể thêm theo nghề đang làm' }, h('option', { value: 'all', text: `Mọi nghề (${s.pool.length})` }),
         ...[...trades].sort((a, b) => a[0].localeCompare(b[0], 'vi')).map(([name, n]) => h('option', { value: name, text: `${name} (${n})` }))) as HTMLSelectElement;
       sel.value = this.filter;
-      sel.addEventListener('change', () => { this.filter = sel.value; s.again(); });
+      sel.addEventListener('change', () => { this.filter = sel.value; this.shown = PAGE; s.again(); });
       out.push(h('div', { class: 'btns filters' }, sel, h('small', { class: 'dsub', text: s.addBlock ?? 'Dân rảnh lên đầu; người đang có việc sẽ nghỉ việc cũ khi được giao' })));
       if (!picked.length) out.push(dlg.empty(s.emptyPool));
-      else out.push(dlg.list(...picked.map((v) => {
+      else out.push(dlg.list(...picked.slice(0, this.shown).map((v) => {
         const locked = sim.sleepLocked(v);
         const why = s.addBlock ?? (locked ? `${v.name} đang ngủ say vì kiệt sức, chưa gọi dậy được` : null);
         return personTile(this.c, v, { note: `đang ${tradeOf(this.c, v).toLowerCase()}`, stats: s.statIds, actions: [
@@ -84,6 +91,7 @@ export class Roster {
           dlg.button('＋', () => { const e = s.add(v); if (e) toast(e); ctl.onChange(); s.again(); }, { icon: true, disabled: !!why, title: why ?? 'Giao việc này' }),
         ] });
       })));
+      if (picked.length > this.shown) out.push(h('div', { class: 'btns' }, h('button', { class: 'sm', type: 'button', text: `Hiện thêm (${picked.length - this.shown})`, onclick: () => { this.shown += PAGE; s.again(); } })));
     }
     return out;
   }

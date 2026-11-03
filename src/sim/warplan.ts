@@ -4,6 +4,7 @@ import { WEATHER } from './calendar';
 import { RESEARCH } from './research';
 import type { Sim } from './sim';
 import { WAR_DATA } from './warmarch';
+import { DAY_LENGTH } from './constants';
 import * as warsupply from './warsupply';
 import * as warlog from './warlog';
 import { SIEGE } from './combat';
@@ -152,44 +153,44 @@ export function reviewPlan(sim: Sim, plan: Plan): string[] {
   const out: string[] = [];
   const t = plan.tribe ? sim.tribes.find((x) => x.id === plan.tribe) : undefined;
   if (plan.kind === 'attack') {
-    if (!t) out.push('✗ Chưa chọn làng để đánh.');
-    else if (t.state !== 'free') out.push(`✗ ${t.def.name} không còn là kẻ địch.`);
+    if (!t) out.push('✗ Chưa chọn làng');
+    else if (t.state !== 'free') out.push(`✗ ${t.def.name} không còn là địch`);
     else {
       const level = sim.mapLevel(t.id), maps = sim.maps.filter((m) => m.tribe === t.id);
-      if (!level && !sim.dev.freeBuild) out.push('✗ Chưa có bản đồ nào của làng này: hãy cử trinh sát.');
+      if (!level && !sim.dev.freeBuild) out.push('✗ Chưa có bản đồ làng này');
       else {
         const newest = Math.max(...maps.map((m) => m.at));
         const days = Math.floor((sim.time - newest) / 1200);
-        out.push(days >= 3 ? 'Bản đồ đã cũ, địch có thể đã đổi bố trí.' : days >= 1 ? `Báo cáo trinh sát từ ${days} hôm trước.` : 'Báo cáo trinh sát mới trong ngày.');
-        if (maps.some((m) => m.gaps > 0)) out.push('Bản đồ còn hở vì ít trinh sát về: vài chỗ chưa chắc chắn.');
+        out.push(days >= 3 ? 'Bản đồ đã cũ' : days >= 1 ? `Bản đồ từ ${days} ngày trước` : 'Bản đồ mới');
+        if (maps.some((m) => m.gaps > 0)) out.push('Bản đồ còn hở');
       }
     }
   }
-  if (!plan.missions.length) out.push('✗ Chưa giao nhiệm vụ cho đội nào.');
-  else if (plan.kind === 'attack' && !plan.missions.some((m) => m.path.length)) out.push('✗ Không đội nào có mũi tên: vẽ mũi tên cho ít nhất một đội để có đội tiến đánh.');
+  if (!plan.missions.length) out.push('✗ Chưa có đội nào');
+  else if (plan.kind === 'attack' && !plan.missions.some((m) => m.path.length || m.ordered)) out.push('✗ Chưa đội nào có mũi tên hay lệnh');
   for (const m of plan.missions) {
     const s = sim.squadById(m.squad), n = s ? sim.squadUnits(s).length : 0, name = s?.name ?? '?';
-    if (!n) out.push(`✗ ${name} chưa có lính.`);
-    else if (isHolding(plan, m)) out.push(`${name} không có mũi tên: đứng yên ở chỗ đã đặt khi chiến đấu và chỉ tự vệ.`);
-    if (n && m.trigger.kind === 'signal' && !plan.cards.some((c) => c.kind === 'signal')) out.push(`${name} chờ tín hiệu mà kế hoạch không có thẻ Phát tín hiệu: sẽ không bao giờ xuất phát.`);
-    if (n && m.trigger.kind === 'after' && !plan.missions.some((x) => x.squad === (m.trigger as { squad: number }).squad)) out.push(`✗ ${name} chờ một đội không có trong kế hoạch.`);
-    if (n && m.deploy && n < m.deploy.cells.length ) out.push(`✗ ${name} mới có ${n}/${m.deploy.cells.length} lính cho ${m.deploy.cells.length} ô đội hình: thêm lính vào đội hoặc bớt ô (✂ Bớt ô).`);
+    if (!n) out.push(`✗ ${name}: chưa có lính`);
+    else if (isHolding(plan, m)) out.push(`${name}: đứng yên tự vệ (chưa có mũi tên hay lệnh)`);
+    if (n && m.trigger.kind === 'signal' && !plan.cards.some((c) => c.kind === 'signal')) out.push(`${name}: chờ tín hiệu nhưng chưa có thẻ Phát tín hiệu`);
+    if (n && m.trigger.kind === 'after' && !plan.missions.some((x) => x.squad === (m.trigger as { squad: number }).squad)) out.push(`✗ ${name}: chờ một đội không có trong kế hoạch`);
+    if (n && m.deploy && n < m.deploy.cells.length ) out.push(`✗ ${name}: ${n}/${m.deploy.cells.length} lính cho đủ ô`);
     const unfit = s ? sim.squadUnits(s).filter((v) => v.down > 0 || v.train || sim.sleepLocked(v)).length : 0;
-    if (unfit) out.push(`✗ ${name}: ${unfit} lính đang bị thương, đang huấn luyện hoặc ngủ say hồi sức, chưa đi được: đợi họ khỏe hoặc đưa ra khỏi đội.`);
-    if (s && n && !sim.squadCenter(s)) out.push(`${name} chưa có chỗ đứng.`);
-    if (s && plan.kind === 'attack' && m.withdrawAt > 0 && !m.retreat.length && m.path.length) out.push(`${name} sẽ rút về chỗ hẹn vì chưa vẽ đường rút.`);
-    if (s && plan.kind === 'attack' && m.route === 'night') out.push(`${name} đi đường vòng ban đêm: sẽ chờ đến tối mới xuất phát.`);
+    if (unfit) out.push(`✗ ${name}: ${unfit} lính chưa đi được (thương, tập, ngủ say)`);
+    if (s && n && !sim.squadCenter(s)) out.push(`${name}: chưa có chỗ đứng`);
+    if (s && plan.kind === 'attack' && m.withdrawAt > 0 && !m.retreat.length && m.path.length) out.push(`${name}: chưa vẽ đường rút, sẽ về chỗ hẹn`);
+    if (s && plan.kind === 'attack' && m.route === 'night') out.push(`${name}: chờ tối mới đi`);
     if (s && plan.kind === 'attack') out.push(...obstacleLines(sim, plan, m, name));
   }
   if (plan.kind === 'attack') {
     const starts = plan.missions.filter((m) => m.trigger.kind === 'time' && m.trigger.at <= 0).length;
-    if (plan.missions.length && !starts && !plan.cards.some((c) => c.kind === 'go')) out.push('Không đội nào có giờ xuất phát: hãy thêm thẻ Xuất phát hoặc đặt giờ.');
+    if (plan.missions.length && !starts && !plan.cards.some((c) => c.kind === 'go')) out.push('Chưa đội nào có giờ xuất phát');
   }
   return out;
 }
 
-/** A squad with no arrow in an attack does not march: it stands where the plan put it and defends itself and the ground round it. */
-export function isHolding(plan: Plan, m: Mission): boolean { return plan.kind === 'attack' && !m.path.length; }
+/** A squad with no arrow and no orders in an attack does not march: it stands where the plan put it and defends itself and the ground round it. Given orders, it goes for its objective. */
+export function isHolding(plan: Plan, m: Mission): boolean { return plan.kind === 'attack' && !m.path.length && !m.ordered; }
 
 /** What stands in the way of a squad of the plan: on its arrow (red: soldiers keep to the arrow and halt there) and in the cells of its formation. Lines that start with ✗ stop the plan from starting. */
 function obstacleLines(sim: Sim, plan: Plan, m: Mission, name: string): string[] {
@@ -199,15 +200,15 @@ function obstacleLines(sim: Sim, plan: Plan, m: Mission, name: string): string[]
     for (const o of hits) {
       if (!o || o.kind === 'enemy' || seen.has(`${o.x},${o.y}`)) continue;
       seen.add(`${o.x},${o.y}`);
-      if (!o.clear) out.push(`✗ ${name}: mũi tên vướng ${o.label} ở (${o.x}, ${o.y}), không phá được: hãy uốn mũi tên đi vòng.`);
-      else out.push(`${name}: mũi tên vướng ${o.label} ở (${o.x}, ${o.y}): đội sẽ tự phá khi tới đó (mất thêm thời gian).`);
+      if (!o.clear) out.push(`✗ ${name}: mũi tên vướng ${o.label}, không phá được`);
+      else out.push(`${name}: vướng ${o.label}, sẽ tự phá`);
     }
   }
   if (m.deploy) {
     const under = m.deploy.cells.map((c) => sim.obstacleAt(Math.floor(c.x), Math.floor(c.y))).filter((o): o is Obstacle => !!o);
     const cut = under.filter((o) => o.clear && o.kind !== 'enemy').length, stuck = under.length - cut;
-    if (cut) out.push(`${name}: ${cut} ô đội hình nằm dưới cây hoặc đá, lính sẽ tự phá khi triển khai.`);
-    if (stuck) out.push(`${name}: ${stuck} ô đội hình nằm trên nước hoặc công trình, không phá được: lính đứng lệch ra, đội hình bị méo.`);
+    if (cut) out.push(`${name}: ${cut} ô dưới cây/đá, lính tự phá`);
+    if (stuck) out.push(`${name}: ${stuck} ô trên nước/công trình, đội hình méo`);
   }
   return out;
 }
@@ -311,7 +312,7 @@ function assemble(sim: Sim, s: Squad, d: NonNullable<Mission['deploy']>): void {
 
 /** Whether every soldier of the plan stands at the cell he was sent to. */
 function assembled(sim: Sim, plan: Plan): boolean {
-  return plan.missions.every((m) => { const s = sim.squadById(m.squad); return !s || sim.squadUnits(s).every((v) => !v.breaks && (!v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5)); });
+  return plan.missions.every((m) => { const s = sim.squadById(m.squad); return !s || (!m.resting && sim.squadUnits(s).every((v) => !v.breaks && (!v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5))); });
 }
 
 /** Soldiers of the plan who are not at their cell and not on their way (they could not set out at once, or the way was blocked) are sent again. Once a second. */
@@ -319,7 +320,7 @@ function assembled(sim: Sim, plan: Plan): boolean {
 export function regather(sim: Sim, plan: Plan): number {
   let n = 0;
   for (const m of plan.missions) {
-    const s = sim.squadById(m.squad); if (!s) continue;
+    const s = sim.squadById(m.squad); if (!s || m.resting) continue;
     for (const v of sim.squadUnits(s)) {
       const a = v.fight.anchor;
       if (!a || v.breaks || v.phase === 'fight' || v.path.length || v.down > 0 || Math.hypot(v.x - a.x, v.y - a.y) < 2.5) continue;
@@ -350,6 +351,7 @@ export function engagePlan(sim: Sim, plan: Plan): string | null {
 export function withdrawPlan(sim: Sim, plan: Plan): string | null {
   if (plan.kind !== 'attack' || plan.status !== 'running') return 'Kế hoạch chưa triển khai';
   if (plan.stage === 'retreat' || plan.stage === 'recall') return 'Quân đang rút rồi';
+  for (const m of plan.missions) m.resting = false; // an order to fall back ends any rest
   const recall = plan.stage === 'assemble' || plan.stage === 'ready' || plan.stage === 'over';
   plan.stage = recall ? 'recall' : 'retreat';
   if (recall) {
@@ -366,6 +368,48 @@ export function withdrawPlan(sim: Sim, plan: Plan): string | null {
     if (m.retreat.length) goLeg(sim, s, m, m.retreat); else sim.squadMove(s, plan.rally.x, plan.rally.y, 'move');
   }
   sim.say('Rút quân!'); sim.noteBattle('note', 'Lệnh rút toàn quân.');
+  return null;
+}
+
+/** Average energy at which a resting squad is rested. It then says so once, and stays in its tent until the player sends it on. */
+const REST_DONE = 95;
+function noteRested(sim: Sim, m: Mission, name: string, us: ReadonlyArray<{ energy: number }>): void {
+  if (!m.rested && us.reduce((a, v) => a + v.energy, 0) / us.length >= REST_DONE) { m.rested = true; sim.say(`${name} đã nghỉ đủ sức: bấm Đi tiếp khi muốn đi.`); }
+}
+
+/**
+ * The Nghỉ ngơi dã chiến research: stop a squad where it stands so that its tent is pitched and it sleeps there, day or night; or send it on again.
+ * Returns an error or null.
+ */
+export function setRest(sim: Sim, plan: Plan, squadId: number, on: boolean): string | null {
+  if (plan.kind !== 'attack' || plan.status !== 'running') return 'Chưa có trận nào';
+  if (!sim.planOpen('rest')) return 'Cần nghiên cứu: Nghỉ ngơi dã chiến';
+  const m = plan.missions.find((x) => x.squad === squadId), s = sim.squadById(squadId), c = s ? sim.squadCenter(s) : null;
+  if (!m || !s || !c) return 'Không có đội này';
+  if (!!m.resting === on) return null;
+  if (plan.stage === 'retreat' || plan.stage === 'recall') return 'Quân đang rút về làng';
+  if (on) {
+    if (!sim.supplyReadyIn(plan)) return 'Không có lính hậu cần để dựng lều: không nghỉ ngơi được';
+    if (sim.squadUnits(s).some((v) => v.phase === 'fight')) return `${s.name} đang giao chiến`;
+    m.resting = true; m.rested = false;
+    if (plan.stage === 'assemble' || plan.stage === 'ready') for (const v of sim.squadUnits(s)) { sim.resetTask(v); sim.clearCombat(v); v.fight.mode = 'hold'; v.fight.anchor = { x: v.x, y: v.y }; } // on the march to its cells: stop where they stand (with no post a soldier walks back to the village fire); the cells are kept in the plan
+    else sim.squadMove(s, c.x, c.y, 'hold');
+    for (const v of sim.squadUnits(s)) v.nightOwl = false; // the order woke them: now they may lie down
+    sim.say(`${s.name} dừng lại nghỉ ngơi.`);
+    return null;
+  }
+  m.resting = false;
+  for (const v of sim.squadUnits(s)) v.nightOwl = true; // awake and up for good: not put back to bed under the order
+  if (plan.stage === 'assemble' || plan.stage === 'ready') { // still on its way to (or waiting in) its cells: walk there again
+    if (m.deploy) assemble(sim, s, m.deploy); else for (const v of sim.squadUnits(s)) { v.fight.mode = 'guard'; v.fight.anchor = { x: v.x, y: v.y }; }
+    sim.say(`${s.name} tiếp tục.`);
+    return null;
+  }
+  // go on with what the squad was doing: along its arrow (or the leg it was on), at its objective when it has no arrow, or back along its way home
+  if (m.state === 'march') { if (m.path.length) goLeg(sim, s, m, m.path); else dispatch(sim, plan, m, s); }
+  else if (m.state === 'withdraw') { if (m.retreat.length) goLeg(sim, s, m, m.retreat); else sim.squadMove(s, plan.rally.x, plan.rally.y, 'move'); }
+  else sim.squadMove(s, c.x, c.y, 'hold');
+  sim.say(`${s.name} tiếp tục.`);
   return null;
 }
 
@@ -417,7 +461,7 @@ export function tickPlans(sim: Sim, dt: number): void {
     if (plan.stage === 'over') continue; // decided: nothing more is ordered until the player pulls the army out
     if (plan.stage === 'assemble') {
       if (Math.floor(sim.time) !== Math.floor(sim.time - dt)) regather(sim, plan);
-      const late = sim.time - plan.startedAt > 150;
+      const late = !plan.missions.some((m) => m.resting) && sim.time - plan.startedAt > Math.max(150, 0.75 * DAY_LENGTH); // the walk to the cells is the march: it takes as long as it takes
       if (assembled(sim, plan) || late) {
         plan.stage = 'ready';
         const missing = plan.missions.reduce((a, m) => { const s = sim.squadById(m.squad); return a + (s ? sim.squadUnits(s).filter((v) => v.fight.anchor && Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) >= 2.5).length : 0); }, 0);
@@ -435,11 +479,19 @@ export function tickPlans(sim: Sim, dt: number): void {
       }
       continue;
     }
-    if (plan.stage === 'assemble' || plan.stage === 'ready') continue; // the soldiers stand where the plan put them until the player gives the word
+    if (plan.stage === 'assemble' || plan.stage === 'ready') { // a resting squad is told when it is rested; it goes on only when the player says so
+      if (Math.floor(sim.time) !== Math.floor(sim.time - dt)) for (const m of plan.missions) { const s = sim.squadById(m.squad), us = s ? sim.squadUnits(s) : []; if (m.resting && s && us.length) noteRested(sim, m, s.name, us); }
+      continue;
+    } // the soldiers stand where the plan put them until the player gives the word
     const second = Math.floor(sim.time) !== Math.floor(sim.time - dt), half = Math.floor(sim.time * 2) !== Math.floor((sim.time - dt) * 2);
     for (const m of plan.missions) {
       const s = sim.squadById(m.squad);
       if (!s || !sim.squadUnits(s).length) { m.state = 'done'; continue; }
+      if (m.resting) { // stopped to rest: nothing is ordered until it is rested (or the player sends it on)
+        const us = sim.squadUnits(s);
+        if (second) noteRested(sim, m, s.name, us);
+        continue;
+      }
       if (isHolding(plan, m) && m.state !== 'withdraw' && m.state !== 'done') { m.state = 'hold'; continue; } // no arrow: it stays
       const alive = sim.squadUnits(s).length, c = sim.squadCenter(s)!;
       if (m.state === 'wait' && triggered(sim, plan, m)) dispatch(sim, plan, m, s);

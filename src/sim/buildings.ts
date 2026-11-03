@@ -1,4 +1,5 @@
 import { SIEGE } from './combat';
+import paceJson from '../data/pace.json';
 import type { Res, Stock } from './resources';
 import { fireBuildingMax } from './progression';
 import { BUILDING_FILES, BUILDING_KINDS } from '../content/buildings/defs.gen';
@@ -86,6 +87,8 @@ export interface Building {
   done: boolean;
   /** An upgrade to level + 1 is paid for and waiting on builders; the building keeps working meanwhile. */
   upgrading: boolean;
+  /** Paid for repair and waiting on builders: the strength comes back while they work on it (the building keeps working meanwhile). */
+  repairing?: boolean;
   /** Moved and standing again from salvaged parts: builds in half the time. */
   rebuild: boolean;
   /** Strength left of a defence work (fence, gate, tower); 0 for the other houses. */
@@ -123,8 +126,11 @@ export const maxHp = (b: Pick<Building, 'kind' | 'level' | 'era'> & { hpBonus?: 
 export const maxLevel = (kind: BuildingKind, era: Era) => levelsOf(kind, era).length;
 /** Buildings that keep the village's goods (the Kho and the campfire) as opposed to those that hold tools or staff. */
 export const holdsGoods = (b: Pick<Building, 'kind'>) => b.kind === 'storage' || b.kind === 'campfire';
+/** The house of each gathering trade: at most 5 people work from it; a higher level makes each of them bring in more (pace.json `levelYield`), so the village needs fewer people on the map. */
+export const GATHER_HOUSE: Partial<Record<string, BuildingKind>> = { wood: 'lumberyard', stone: 'quarry', food: 'farmhouse' };
+export const gatherMult = (b: Pick<Building, 'level'> | undefined): number => (b ? paceJson.levelYield[Math.min(paceJson.levelYield.length, Math.max(1, b.level)) - 1] : 1);
 /** Still needs builders: not finished yet, or an upgrade is underway. */
-export const needsWork = (b: Building) => !b.done || b.upgrading;
+export const needsWork = (b: Building) => !b.done || b.upgrading || !!b.repairing;
 
 /** A building that can be raised to a higher level. */
 export const canGrow = (kind: BuildingKind): boolean => BUILDINGS[kind].buildable || !!BUILDINGS[kind].upgradable;

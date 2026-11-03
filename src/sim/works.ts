@@ -31,7 +31,7 @@ export const craftCost = (sim: Sim, id: string): Partial<Stock> => scaleCost(REC
 
 /** Why a recipe cannot be made yet (blueprint or crafting-house level), or null. */
 export function recipeLock(sim: Sim, id: string): string | null {
-  if (!RESEARCH.enabled) return null;
+  if (!RESEARCH.enabled || sim.dev.freeWorks) return null; // dev: no blueprint or house level needed
   if (!blueprintDone(sim.researched, id)) return `Chưa có bản vẽ: ${techForRecipe(id)?.name.replace(/^Bản vẽ /, '') ?? '?'}`;
   const need = recipeNeedLevel(id);
   if (workshopLevel(sim) < need) return `Cần Nhà chế tạo cấp ${need}`;
@@ -46,10 +46,11 @@ export function techState(sim: Sim, t: Tech): { state: 'done' | 'active' | 'queu
   if (sim.building('lab')?.active?.id === t.id) return { state: 'active' };
   if (sim.researchQueue.includes(t.id)) return { state: 'queued' };
   // every condition that is not met yet, not only the first
-  const lacks = t.requires.filter((r) => !sim.researched.has(r)).map((r) => `Cần nghiên cứu: ${TECH_BY_ID[r].name}`);
+  const free = sim.dev.freeWorks; // dev: no steps before it and no level of the house needed
+  const lacks = free ? [] : t.requires.filter((r) => !sim.researched.has(r)).map((r) => `Cần nghiên cứu: ${TECH_BY_ID[r].name}`);
   const lab = sim.building('lab');
   if (!lab) lacks.push('Cần dựng Nhà nghiên cứu');
-  else if (lab.level < t.needLevel) lacks.push(`Cần Nhà nghiên cứu cấp ${t.needLevel}`);
+  else if (!free && lab.level < t.needLevel) lacks.push(`Cần Nhà nghiên cứu cấp ${t.needLevel}`);
   if (lacks.length) return { state: 'locked', why: lacks.join(' · '), lacks };
   return { state: 'ready' };
 }
@@ -57,7 +58,7 @@ export function techState(sim: Sim, t: Tech): { state: 'done' | 'active' | 'queu
 /** Whether a queued research could start now: someone works inside. Null when it can, else the reason. */
 export function researchBlock(sim: Sim, t: Tech): string | null {
   const lab = sim.building('lab');
-  if (!lab || !lab.staff.length) return 'Chưa có người làm việc trong Nhà nghiên cứu';
+  if (!lab || (!lab.staff.length && !sim.dev.freeWorks)) return 'Chưa có người làm việc trong Nhà nghiên cứu';
   return null;
 }
 
@@ -166,7 +167,7 @@ export function tickWorks(sim: Sim, dt: number): void {
     const kind = b.kind === 'lab' ? 'research' : 'craft';
     const queue = kind === 'research' ? sim.researchQueue : sim.craftQueue;
     const staff = b.staff.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v && v.phase === 'inside'); // only those at their bench: whoever is asleep in the house (off shift, night, worn out) does not work
-    if (!staff.length) continue;
+    if (!staff.length && !sim.dev.freeWorks) continue; // dev: the houses work with nobody inside
     if (!b.active) {
       const i = queue.findIndex((id) => {
         const d = orderDef(sim, kind, id);
@@ -187,7 +188,7 @@ export function tickWorks(sim: Sim, dt: number): void {
     const job = kind as WorkJob;
     let rate = 0;
     for (const v of staff) { rate += sim.workFactor(v, job); sim.gainXp(v, job, dt); }
-    b.active.progress = Math.min(1, b.active.progress + (dt * PACE.work * rate * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 25 : 1)) / d.time);
+    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * PACE.work * rate * levelDef(b).craftSpeed) / d.time); // dev: done at once
     if (b.active.progress < 1) continue;
     const id = b.active.id;
     if (kind === 'research') {

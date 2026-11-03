@@ -200,6 +200,19 @@ export function errand(sim: Sim, v: Villager): void {
 
 }
 
+/**
+ * Every second in peace: soldiers and hunters with empty hands who cannot go to the Kho vũ khí by themselves (lying in their camp or their tower, asleep)
+ * are handed the weapon and armour the store holds now, so what the workshop makes later still reaches them. Those on their feet fetch it on their own (planEquipGear).
+ */
+export function restock(sim: Sim): void {
+  if (!sim.building('armory')) return;
+  for (const v of sim.villagers) {
+    if (v.team !== 'player' || (v.job !== 'fight' && v.job !== 'hunt') || v.manualGear || v.health <= 0 || v.phase === 'fight') continue;
+    if (v.inside === null && v.phase !== 'sleep') continue;
+    if ((!v.weapon && bestWeapon(sim, v)) || (!v.armor && bestArmor(sim))) equipGear(sim, v);
+  }
+}
+
 /** Take a tool, or weapon and armour, from the store the villager stands at. */
 export function equip(sim: Sim, v: Villager): void {
   v.phase = 'idle';

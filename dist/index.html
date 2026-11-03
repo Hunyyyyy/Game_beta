@@ -1056,14 +1056,14 @@ button.primary.danger {
 
 .tabs.icontabs.treetabs {
   position: relative;
-  grid-template-columns: repeat(3, minmax(86px, 1fr));
+  grid-template-columns: repeat(4, minmax(70px, 1fr));
   row-gap: 22px;
 }
 .tabs.icontabs.treetabs::before {
   content: "";
   position: absolute;
-  left: 17%;
-  right: 17%;
+  left: 12.5%;
+  right: 12.5%;
   top: 46px;
   border-top: 3px solid #b8903c;
   opacity: 0.55;
@@ -1874,6 +1874,124 @@ button.primary.danger {
 }
 .preport details > summary {
   color: var(--fg);
+  cursor: pointer;
+}
+.preport .rtabs {
+  display: flex;
+  gap: 4px;
+}
+.preport .rtabs .chip {
+  flex: 1;
+  font-size: 12px;
+}
+.preport .rodds {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.preport .rodds b {
+  font-size: 26px;
+  line-height: 1;
+}
+.preport .rodds span {
+  font-weight: 600;
+}
+.preport .rwarn {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+.preport .rwarn p {
+  margin: 4px 0 0;
+}
+.preport .rblock b {
+  color: #d9534f;
+}
+.preport .rblock p {
+  margin: 0;
+}
+.preport .rlock {
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px dashed var(--line);
+  border-radius: 3px;
+  color: var(--muted, #aaa);
+  font-size: 12px;
+}
+.preport .bad {
+  color: #f0806e;
+}
+.preport .rstep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.preport .rstep small {
+  flex: 1;
+}
+.preport .rstep b {
+  min-width: 52px;
+  text-align: center;
+}
+.preport .rcmp {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2px 10px;
+  align-items: center;
+  text-align: center;
+  font-size: 13px;
+}
+.preport .rcmp .ro {
+  text-align: right;
+  color: #8fd36f;
+}
+.preport .rcmp .rt {
+  text-align: left;
+  color: #f0806e;
+}
+.preport .rcmp .rl {
+  color: var(--fg);
+}
+.preport .rcmp small.ro, .preport .rcmp small.rt {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.preport .rcmp b {
+  font-size: 16px;
+}
+.preport .rcmp .rbar {
+  grid-column: 1/-1;
+  display: flex;
+  height: 6px;
+  margin-bottom: 4px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--panel-2);
+}
+.preport .rcmp .rbar .win {
+  background: #6ac24a;
+}
+.preport .rcmp .rbar .lose {
+  background: #d9503c;
+}
+.preport .rfacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.preport .rfacts .chipfact {
+  display: grid;
+  padding: 4px 10px;
+  background: var(--panel-2);
+  border-radius: 3px;
+}
+.preport .rfacts .chipfact small {
+  color: var(--muted, #aaa);
+  font-size: 11px;
+}
+.preport .rfacts .chipfact b {
+  font-size: 14px;
 }
 
 .warbar {
@@ -1924,7 +2042,7 @@ button.primary.danger {
   font-size: 13px;
 }
 
-body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHome) {
+body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.war .selbar > :not(#btnHome) {
   display: none !important;
 }
 
@@ -2162,6 +2280,69 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
 .gstep p {
   margin: 4px 0 0;
   line-height: 1.45;
+}
+
+.restlist {
+  display: grid;
+  gap: 8px;
+}
+
+.restrow {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 8px 10px;
+  background: var(--panel-2);
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+.restrow.on {
+  border-color: #6ac24a;
+}
+.restrow > i {
+  grid-column: 1;
+  grid-row: 1;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.restrow > b {
+  grid-column: 2;
+  grid-row: 1;
+}
+.restrow > small {
+  grid-column: 2;
+  grid-row: 2;
+  color: var(--muted, #aaa);
+}
+.restrow > button {
+  grid-column: 3;
+  grid-row: 1/span 3;
+}
+.restrow .restbar {
+  grid-column: 1/3;
+  grid-row: 3;
+  position: relative;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.restrow .restbar i {
+  display: block;
+  height: 100%;
+  background: #6ac24a;
+}
+.restrow .restbar i.low {
+  background: #d9503c;
+}
+.restrow .restbar span {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  font-size: 11px;
+  line-height: 14px;
 }
 
 .gdlg-back {
@@ -3814,6 +3995,17 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     return base * (1 - (armor ? armor[w.type] : 0)) * (backstab ? RULES.backstab : 1);
   }
 
+  // src/data/pace.json
+  var pace_default = {
+    _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. huntPerDay: food-equivalent a hunter of factor 1 brings home in a day (an estimate for the card of the Ch\xF2i th\u1EE3 s\u0103n); gatherDuty: share of working time a gatherer spends gathering rather than walking and carrying (estimate for the cards of the houses). Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
+    gather: { wood: 11, stone: 17, food: 40, farm: 70 },
+    bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
+    huntPerDay: 30,
+    gatherDuty: 0.6,
+    levelYield: [1, 1, 1.6, 2.2],
+    outdoor: ["wood", "stone", "food", "build"]
+  };
+
   // src/data/progression.json
   var progression_default = {
     _note: "K\u1EBF ho\u1EA1ch ph\xE1t tri\u1EC3n theo c\u1EA5p Nh\xE0 chung (l\u1EEDa tr\u1EA1i) v\xE0 c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u. C\xF4ng tr\xECnh n\xE0o m\u1EDF \u1EDF c\u1EA5p l\u1EEDa n\xE0o n\u1EB1m trong ch\xEDnh n\xF3: src/content/buildings/<kind>/building.json (unlockFire). \u1EDE \u0111\xE2y ch\u1EC9 c\xF2n c\u1EA5p nh\xE0 t\u1ED1i \u0111a v\xE0 \u0111i\u1EC1u ki\u1EC7n n\xE2ng l\u1EEDa theo t\u1EEBng c\u1EA5p l\u1EEDa, v\xE0 c\xE1c nghi\xEAn c\u1EE9u m\u1EDF \u1EDF t\u1EEBng c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u (id trong data/research.json).",
@@ -3881,7 +4073,9 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
             "form_basic",
             "form_wedge",
             "form_cells_10",
-            "form_squads_5"
+            "form_squads_5",
+            "plan_report",
+            "plan_weather"
           ]
         },
         {
@@ -4526,7 +4720,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
           buildTime: 140,
           cap: 100,
           craftSpeed: 1,
-          slots: 8,
+          slots: 5,
           hp: 360,
           sight: 0
         },
@@ -4539,7 +4733,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
           buildTime: 218,
           cap: 200,
           craftSpeed: 1,
-          slots: 11,
+          slots: 5,
           hp: 450,
           sight: 0
         }
@@ -5236,7 +5430,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
           buildTime: 140,
           cap: 100,
           craftSpeed: 1,
-          slots: 8,
+          slots: 5,
           hp: 360,
           sight: 0
         },
@@ -5249,7 +5443,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
           buildTime: 218,
           cap: 200,
           craftSpeed: 1,
-          slots: 11,
+          slots: 5,
           hp: 450,
           sight: 0
         }
@@ -5310,7 +5504,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
           buildTime: 140,
           cap: 100,
           craftSpeed: 1,
-          slots: 8,
+          slots: 5,
           hp: 360,
           sight: 0
         },
@@ -5323,7 +5517,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
           buildTime: 218,
           cap: 200,
           craftSpeed: 1,
-          slots: 11,
+          slots: 5,
           hp: 450,
           sight: 0
         }
@@ -6030,7 +6224,9 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
   var maxHp = (b) => Math.round((b.hpBonus ? 1 + b.hpBonus / 100 : 1) * (levelDef(b).hp || Math.round(SIEGE.buildingHpPerTile * BUILDINGS[b.kind].w * BUILDINGS[b.kind].h * (1 + 0.5 * (b.level - 1)))));
   var maxLevel = (kind, era) => levelsOf(kind, era).length;
   var holdsGoods = (b) => b.kind === "storage" || b.kind === "campfire";
-  var needsWork = (b) => !b.done || b.upgrading;
+  var GATHER_HOUSE = { wood: "lumberyard", stone: "quarry", food: "farmhouse" };
+  var gatherMult = (b) => b ? pace_default.levelYield[Math.min(pace_default.levelYield.length, Math.max(1, b.level)) - 1] : 1;
+  var needsWork = (b) => !b.done || b.upgrading || !!b.repairing;
   var canGrow = (kind) => BUILDINGS[kind].buildable || !!BUILDINGS[kind].upgradable;
   var POP_BY_FIRE = BUILDING_FILES.campfire.popByFire;
   var levelCapByFire = (fireLevel2) => fireBuildingMax(fireLevel2);
@@ -6366,16 +6562,6 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
         }
       }
     }
-  };
-
-  // src/data/pace.json
-  var pace_default = {
-    _note: 'How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. huntPerDay: food-equivalent a hunter of factor 1 brings home in a day (an estimate for the card of the Ch\xF2i th\u1EE3 s\u0103n); gatherDuty: share of working time a gatherer spends gathering rather than walking and carrying (estimate for the cards of the houses). Weather and season slow outdoor work: see weather.json and seasons.json (key "work").',
-    gather: { wood: 11, stone: 17, food: 40, farm: 70 },
-    bare: { wood: 0.6, stone: 0.5, food: 0.9, build: 0.8 },
-    huntPerDay: 30,
-    gatherDuty: 0.6,
-    outdoor: ["wood", "stone", "food", "build"]
   };
 
   // src/data/mounts.json
@@ -49392,7 +49578,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
         if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
         list.push({ y: ay, kind: "building", i: 0, j: 0, b });
       }
-      for (const v of sim2.villagers) if (v.inside === null && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
+      for (const v of sim2.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
       const seen = (x, y) => sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
       for (const f of sim2.foes) if (onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
       for (const a of sim2.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
@@ -50951,7 +51137,11 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
       { id: "form_cells_10", name: "M\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p (10)", desc: "M\u1ED7i tr\u1EADn ph\xE1p c\xF3 10 \xF4 thay v\xEC 5.", requires: ["form_basic"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 280, unlocks: { formationCells: 10 } },
       { id: "form_cells_15", name: "M\u1EDF r\u1ED9ng \xF4 tr\u1EADn ph\xE1p (15)", desc: "M\u1ED7i tr\u1EADn ph\xE1p c\xF3 15 \xF4.", requires: ["form_cells_10"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { formationCells: 15 } },
       { id: "form_squads_5", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (5)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 5 \u0111\u1ED9i thay v\xEC 4.", requires: ["form_cells_10"], needLevel: 2, minInt: 7, cost: { wood: 12, coin: 5 }, time: 280, unlocks: { squads: 5 } },
-      { id: "form_squads_6", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (6)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 6 \u0111\u1ED9i.", requires: ["form_squads_5"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { squads: 6 } }
+      { id: "form_squads_6", name: "M\u1EDF r\u1ED9ng \u0111\u1ED9i (6)", desc: "L\u1EADp \u0111\u01B0\u1EE3c 6 \u0111\u1ED9i.", requires: ["form_squads_5"], needLevel: 3, minInt: 8, cost: { wood: 15, stone: 10, coin: 8 }, time: 360, unlocks: { squads: 6 } },
+      { id: "plan_report", name: "B\xE1o c\xE1o chi ti\u1EBFt", desc: "M\u1EDF tab Chi ti\u1EBFt trong b\xE1o c\xE1o tri\u1EC3n khai: so s\xE1nh qu\xE2n ta v\xE0 \u0111\u1ECBch.", requires: ["plan_foot_hp_3", "plan_foot_defm_3", "plan_foot_defr_3", "plan_cavalry_hp_3", "plan_cavalry_defm_3", "plan_cavalry_defr_3", "plan_archer_hp_3", "plan_archer_defm_3", "plan_archer_defr_3"], needLevel: 2, minInt: 7, cost: { wood: 20, stone: 10, coin: 8 }, time: 360, unlocks: {} },
+      { id: "plan_supply", name: "T\xEDnh to\xE1n h\u1EADu c\u1EA7n", desc: "B\xE1o c\xE1o h\u1EADu c\u1EA7n chi ti\u1EBFt: s\u1ED1 ng\xE0y \u0111i, l\u01B0\u01A1ng v\xE0 v\u1EADt li\u1EC7u c\u1EA7n mang, s\u1ED1 l\xEDnh h\u1EADu c\u1EA7n c\u1EA7n thi\u1EBFt, c\xF3 n\xFAt \xE1p d\u1EE5ng \u0111\u1EC1 xu\u1EA5t.", requires: ["plan_foot_hp_5", "plan_foot_defm_5", "plan_foot_defr_5", "plan_cavalry_hp_5", "plan_cavalry_defm_5", "plan_cavalry_defr_5", "plan_archer_hp_5", "plan_archer_defm_5", "plan_archer_defr_5", "plan_report"], needLevel: 3, minInt: 8, cost: { wood: 30, stone: 20, coin: 12 }, time: 480, unlocks: {} },
+      { id: "plan_weather", name: "D\u1EF1 b\xE1o th\u1EDDi ti\u1EBFt", desc: "B\xE1o c\xE1o tri\u1EC3n khai cho bi\u1EBFt th\u1EDDi ti\u1EBFt h\xF4m nay v\xE0 ng\xE0y mai.", requires: ["plan_foot_move_3", "plan_foot_atk_3", "plan_foot_sta_3", "plan_cavalry_move_3", "plan_cavalry_atk_3", "plan_cavalry_sta_3", "plan_archer_move_3", "plan_archer_atk_3", "plan_archer_sta_3", "plan_report"], needLevel: 2, minInt: 7, cost: { wood: 20, stone: 10, coin: 8 }, time: 360, unlocks: {} },
+      { id: "plan_rest", name: "Ngh\u1EC9 ng\u01A1i d\xE3 chi\u1EBFn", desc: "Trong chi\u1EBFn tranh, cho t\u1EEBng \u0111\u1ED9i d\u1EF1ng l\u1EC1u v\xE0 ngh\u1EC9 ng\u01A1i b\u1EA5t c\u1EE9 l\xFAc n\xE0o, c\u1EA3 ban ng\xE0y; xem b\xE1o c\xE1o s\u1EE9c c\u1EE7a c\xE1c \u0111\u1ED9i.", requires: ["plan_foot_move_5", "plan_foot_atk_5", "plan_foot_sta_5", "plan_cavalry_move_5", "plan_cavalry_atk_5", "plan_cavalry_sta_5", "plan_archer_move_5", "plan_archer_atk_5", "plan_archer_sta_5", "plan_weather"], needLevel: 3, minInt: 8, cost: { wood: 30, stone: 20, coin: 12 }, time: 480, unlocks: {} }
     ]
   };
 
@@ -51294,6 +51484,66 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
         },
         time: 110,
         about: "T\u1ED1c \u0111\u1ED9 h\u1ED3i s\u1EE9c khi ng\u1EE7: nhanh h\u01A1n th\xEAm b\u1EA5y nhi\xEAu ph\u1EA7n tr\u0103m."
+      },
+      mspeed: {
+        name: "T\u1ED1c \u0111\u1ED9 h\xE0nh qu\xE2n",
+        short: "H\xE0nh qu\xE2n",
+        steps: [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 100,
+        about: "Qu\xE2n \u0111i nhanh h\u01A1n khi h\xE0nh qu\xE2n trong chi\u1EBFn tranh."
+      },
+      mload: {
+        name: "T\u1EA3i h\u1EADu c\u1EA7n",
+        short: "T\u1EA3i",
+        steps: [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 100,
+        about: "M\u1ED7i l\xEDnh h\u1EADu c\u1EA7n mang \u0111\u01B0\u1EE3c nhi\u1EC1u h\u01A1n."
+      },
+      mbuild: {
+        name: "T\u1ED1c \u0111\u1ED9 d\u1EF1ng l\u1EC1u",
+        short: "D\u1EF1ng l\u1EC1u",
+        steps: [
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        cost: {
+          food: 10,
+          wood: 10,
+          stone: 5,
+          hide: 1,
+          coin: 1
+        },
+        time: 100,
+        about: "L\xEDnh h\u1EADu c\u1EA7n d\u1EF1ng l\u1EC1u d\xE3 chi\u1EBFn nhanh h\u01A1n."
       }
     },
     roles: {
@@ -51434,6 +51684,34 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
       tower: {
         name: "Ch\xF2i canh",
         building: "tower"
+      },
+      march_foot: {
+        name: "B\u1ED9 binh",
+        building: "infantry"
+      },
+      march_cavalry: {
+        name: "K\u1EF5 th\xFA",
+        building: "cavalry"
+      },
+      march_archer: {
+        name: "Th\u1EE3 n\xE9m",
+        building: "archery"
+      },
+      march_army: {
+        name: "To\xE0n qu\xE2n",
+        building: "supplycamp"
+      },
+      plan_foot: {
+        name: "B\u1ED9 binh",
+        building: "infantry"
+      },
+      plan_cavalry: {
+        name: "K\u1EF5 th\xFA",
+        building: "cavalry"
+      },
+      plan_archer: {
+        name: "Th\u1EE3 n\xE9m",
+        building: "archery"
       }
     },
     tabs: {
@@ -51671,7 +51949,85 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
           "hp",
           "atk"
         ]
+      },
+      march: {
+        roles: [
+          "march_foot",
+          "march_cavalry",
+          "march_archer"
+        ],
+        order: [
+          "hp",
+          "defm",
+          "defr",
+          "move",
+          "atk",
+          "sta"
+        ],
+        scale: 0.5
+      },
+      marchlog: {
+        roles: [
+          "march_army"
+        ],
+        order: [
+          "mspeed",
+          "mload",
+          "mbuild"
+        ]
+      },
+      tactic: {
+        roles: [
+          "plan_foot",
+          "plan_cavalry",
+          "plan_archer"
+        ],
+        order: [
+          "hp",
+          "defm",
+          "defr",
+          "move",
+          "atk",
+          "sta"
+        ],
+        scale: 0.5
       }
+    },
+    plan: {
+      _note: "C\xE2y K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u: ba c\u1ED9t B\u1ED9 binh, K\u1EF5, Cung, ch\u1EC9 s\u1ED1 ri\xEAng (chain tactic) ch\u1EC9 c\u1ED9ng khi \u0111ang chi\u1EBFn tranh v\xE0 \u0111ang giao chi\u1EBFn. Nh\xF3m ch\u1EC9 s\u1ED1 \u0111\u1EA7u \u0111\u1EE7 c\u1EA5p 3 m\u1EDF plan_report, c\u1EA5p 5 m\u1EDF plan_supply; nh\xF3m sau c\u1EA5p 3 m\u1EDF plan_weather, c\u1EA5p 5 m\u1EDF plan_rest (xem research.json). Chu\u1ED7i march (tab H\xE0nh qu\xE2n) ch\u1EC9 c\u1ED9ng khi chi\u1EBFn tranh v\xE0 \u0111ang h\xE0nh qu\xE2n ho\u1EB7c ngh\u1EC9.",
+      roles: [
+        "plan_foot",
+        "plan_cavalry",
+        "plan_archer"
+      ],
+      layout: [
+        {
+          stats: [
+            "hp",
+            "defm",
+            "defr"
+          ]
+        },
+        {
+          techs: [
+            "plan_report",
+            "plan_supply"
+          ]
+        },
+        {
+          stats: [
+            "move",
+            "atk",
+            "sta"
+          ]
+        },
+        {
+          techs: [
+            "plan_weather",
+            "plan_rest"
+          ]
+        }
+      ]
     }
   };
 
@@ -51749,6 +52105,9 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     while (n < statLevels(stat) && done.has(statTechId(role, stat, n + 1))) n++;
     return n;
   }
+  var PLAN_TREE = researchtree_default.plan;
+  var PLAN_TECH = { detail: "plan_report", supply: "plan_supply", weather: "plan_weather", rest: "plan_rest" };
+  var planOpen = (done, f, free = false) => free || !RESEARCH.enabled || done.has(PLAN_TECH[f]);
   var statBonus = (done, role, stat) => STAT_DEF[stat].steps.slice(0, lineLevel(done, role, stat)).reduce((a, b) => a + b, 0) * (ROLE_SCALE[role] ?? 1);
   var NO_BLUEPRINT = /^(club|spear|mace|sling|bow|hide|bone|axe|pick|hoe|hammer|torch)\d$/;
   var recipeOpen = (done, recipeId) => !RESEARCH.enabled || NO_BLUEPRINT.test(recipeId) || done.has(recipeId);
@@ -51808,8 +52167,10 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
     const squad = v.team === "player" && v.squad >= 0 ? sim2.squads.find((q) => q.id === v.squad) : void 0;
     const bonus = (v.team !== "player" ? sim2.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim2.researched, role, stat) : 0) + (squad ? statBonus(sim2.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ""), stat) : 0);
+    const mode = role === "foot" || role === "cavalry" || role === "archer" ? sim2.warMode?.(v) ?? null : null;
+    const warBonus = mode ? statBonus(sim2.researched, `${mode === "fight" ? "plan" : "march"}_${role}`, stat) : 0;
     const hunger = v.team === "player" && stat !== "hp" ? (1 - sim2.foodPenalty) * (1 - sim2.tiredPenalty(v)) : 1;
-    return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + bonus / 100) * hunger;
+    return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + (bonus + warBonus) / 100) * hunger;
   }
   var rawValue = (fac, stat) => BASE[stat] * fac[stat];
   function legacyStats(value) {
@@ -51934,7 +52295,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     const sk = v.fight.skip && sim2.time < v.fight.skip.until ? v.fight.skip : null;
     const seen = (x, y) => !player || sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
     for (const o of nearbyOthers(sim2, v, radius)) {
-      if (o.health <= 0 || o.down > 0 || o.inside !== null || !teamsHostile(sim2, v.team, o.team) || sk && sk.kind === "unit" && sk.id === o.id) continue;
+      if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || !teamsHostile(sim2, v.team, o.team) || sk && sk.kind === "unit" && sk.id === o.id) continue;
       const d = Math.hypot(o.x - v.x, o.y - v.y);
       if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: "unit", id: o.id }, x: o.x, y: o.y, d, name: o.name });
     }
@@ -52109,6 +52470,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
   var DEFENSIVE = 4.5;
   function brainPlayer(sim2, v, dt) {
     if (v.phase === "goStore" || v.phase === "goEquip") return false;
+    if (v.fight.obey && (v.phase !== "move" || !v.path.length)) v.fight.obey = false;
     if (sim2.underOrders(v)) {
       v.fleeT = 0;
       return false;
@@ -52136,8 +52498,14 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     const sight = v.team === "player" ? sim2.sightOf(v) : SIGHT;
     const threats = looking ? threatsOf(sim2, v, sight + 1) : [];
     if (rest) {
-      if (scanNow && threats.length && threats[0].d < 7) {
+      if (v.job === "supply" && v.inTent) return false;
+      const watch2 = isFighter(v) && (v.guard || v.post >= 0 || sim2.warIds.has(v.id));
+      if (scanNow && threats.length && threats[0].d < (watch2 ? sight : 7)) {
         if (isFighter(v)) v.nightOwl = true;
+        if (v.post >= 0 && v.inside !== null && v.phase === "sleep") {
+          v.phase = "inside";
+          return false;
+        }
         sim2.resetTask(v);
       } else return false;
     }
@@ -52799,14 +53167,26 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     for (const m of sim2.scouts) for (const id of m.ids) ids.add(id);
     return ids;
   }
-  function standDown(sim2, v, dt) {
-    if (v.inside !== null || v.phase === "sleep" || v.down > 0 || v.health <= 0) return;
-    if (v.phase !== "goHome") {
-      sim2.clearCombat(v);
-      sim2.goHome(v);
+  function standDown(sim2, v, _dt) {
+    if (v.down > 0 || v.health <= 0) return;
+    if (v.inside !== null) return;
+    if (v.phase === "sleep") {
+      v.inTent = true;
+      return;
     }
-    sim2.moveUnit(v, dt);
-    sim2.animate(v, dt);
+    sim2.clearCombat(v);
+    sim2.goHome(v);
+    const bed = v.phase === "goHome" && v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
+    if (bed && bed.done) {
+      sim2.sleepIn(v, bed);
+      return;
+    }
+    v.path = [];
+    v.slide = null;
+    v.phase = "sleep";
+    v.inTent = true;
+    v.anim = "idle";
+    v.hold = null;
   }
 
   // src/data/war.json
@@ -52818,6 +53198,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
       perSquad: 0.04,
       perSoldier: 4e-3,
       slowFloor: 0.3,
+      paceScale: 1,
       maxCut: 0.6,
       foodBase: 1.5,
       energyBase: 1.5
@@ -52834,7 +53215,8 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
       woodBase: 12,
       hideBase: 8,
       perLevel: 1,
-      buildSeconds: 40,
+      buildSeconds: 150,
+      buildReach: 4,
       refund: 0.5,
       weight: 1.5,
       near: 14
@@ -52859,6 +53241,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
 
   // src/sim/warmarch.ts
   var WAR_DATA = war_default;
+  var supplyLoad = (sim2) => WAR_DATA.supply.load * (1 + statBonus(sim2.researched, "march_army", "mload") / 100);
   var PEACE = { squads: 0, soldiers: 0, slow: 0, speed: 1, food: 1, energy: 1 };
   function slowCut(sim2) {
     let cut = 0;
@@ -52870,7 +53253,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     const raw = k.slowMin + (k.slowMax - k.slowMin) * load;
     const slow = Math.max(k.slowFloor, raw * (1 - slowCut(sim2)));
     const extra = Math.max(0, slow - k.slowMin);
-    return { squads, soldiers, slow, speed: 1 - slow, food: k.foodBase + extra, energy: k.energyBase + extra };
+    return { squads, soldiers, slow, speed: (1 - slow) * k.paceScale * (1 + statBonus(sim2.researched, "march_army", "mspeed") / 100), food: k.foodBase + extra, energy: k.energyBase + extra };
   }
   var soldiersOf = (sim2, plan2) => plan2.missions.reduce((n, m) => {
     const s = sim2.squadById(m.squad);
@@ -52879,30 +53262,11 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
   var supplyCount = (sim2, plan2) => plan2.status === "running" ? plan2.supplyIds.filter((id) => (sim2.get(id)?.health ?? 0) > 0).length : Math.min(plan2.supply, sim2.villagers.filter((v) => v.job === "supply" && v.health > 0 && v.down <= 0).length);
   function marchOfPlan(sim2, plan2) {
     const sup = supplyCount(sim2, plan2);
-    return marchOf(sim2, plan2.missions.filter((m) => {
-      const s = sim2.squadById(m.squad);
+    const m = marchOf(sim2, plan2.missions.filter((m2) => {
+      const s = sim2.squadById(m2.squad);
       return s && sim2.squadUnits(s).length;
     }).length + (sup ? 1 : 0), soldiersOf(sim2, plan2) + sup);
-  }
-  var pct = (x) => `${Math.round(x * 100)}%`;
-  var days1 = (sec) => `${Math.max(0.1, Math.round(sec / DAY_LENGTH * 10) / 10).toLocaleString("vi")} ng\xE0y`;
-  function marchLines(sim2, plan2) {
-    const m = marchOfPlan(sim2, plan2);
-    if (!m.soldiers) return [];
-    const level = sim2.campfire()?.level ?? 1, ration = rationAt(level, true), out = [];
-    out.push(`H\xE0nh qu\xE2n: ${m.squads} \u0111\u1ED9i, ${m.soldiers} l\xEDnh \u2192 \u0111i ch\u1EADm ${pct(m.slow)} (ch\u1EC9 c\xF2n ${pct(m.speed)} t\u1ED1c \u0111\u1ED9 th\u01B0\u1EDDng). C\xE0ng nhi\u1EC1u \u0111\u1ED9i v\xE0 l\xEDnh c\xE0ng ch\u1EADm${slowCut(sim2) > 0 ? `; nghi\xEAn c\u1EE9u \u0111\xE3 gi\u1EA3m ${pct(slowCut(sim2))} m\u1EE9c ch\u1EADm` : ""}.`);
-    out.push(`M\u1ED9t l\xEDnh \u0103n ${ration} \u2192 ${(ration * m.food).toFixed(1)} th\u1EE9c \u0103n m\u1ED7i ng\xE0y (\xD7${m.food.toFixed(2)}); s\u1EE9c ti\xEAu hao \xD7${m.energy.toFixed(2)}. L\xFAc v\u1EC1 t\xEDnh l\u1EA1i theo s\u1ED1 l\xEDnh c\xF2n s\u1ED1ng.`);
-    let longest = 0;
-    for (const mi of plan2.missions) {
-      const s = sim2.squadById(mi.squad), start = s ? sim2.missionStart(mi) : null;
-      if (!s || !start || !mi.path.length) continue;
-      longest = Math.max(longest, sim2.routeTime(s, start, mi.path).total / m.speed);
-    }
-    if (longest > 0) {
-      const trip = longest * 2;
-      out.push(`Th\u1EDDi gian: \u0111i kho\u1EA3ng ${days1(longest)}, v\u1EC1 t\u01B0\u01A1ng t\u1EF1 (c\u1EA3 chuy\u1EBFn ch\u01B0a k\u1EC3 \u0111\xE1nh nhau: ${days1(trip)}). Qu\xE2n \u0103n kho\u1EA3ng ${Math.round(m.soldiers * ration * m.food * trip / DAY_LENGTH)} th\u1EE9c \u0103n trong c\u1EA3 chuy\u1EBFn.`);
-    }
-    return out;
+    return plan2.status === "running" && (plan2.stage === "retreat" || plan2.stage === "recall") ? { ...m, speed: 1 - m.slow } : m;
   }
 
   // src/sim/warharass.ts
@@ -53102,6 +53466,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
   function tribeWilling(sim2, id) {
     const t = tribeOf(sim2, id);
     if (!t || t.state !== "free") return false;
+    if (sim2.plans.some((p) => p.kind === "attack" && p.status === "running" && p.tribe === id)) return true;
     return tribeHostile(sim2, id) || t.def.personality !== "peaceful" && t.relation < MEET.friendlyFrom;
   }
   function tribesFeud(sim2, a, b) {
@@ -53757,7 +54122,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
   var scaleCost = (cost, m) => Object.fromEntries(Object.entries(cost).map(([r, n]) => [r, Math.max(1, Math.ceil(n * m - 1e-9))]));
   var craftCost = (sim2, id) => scaleCost(RECIPE_BY_ID[id].cost, craftMult(sim2));
   function recipeLock(sim2, id) {
-    if (!RESEARCH.enabled) return null;
+    if (!RESEARCH.enabled || sim2.dev.freeWorks) return null;
     if (!recipeOpen(sim2.researched, id)) return `Ch\u01B0a c\xF3 b\u1EA3n v\u1EBD: ${techForRecipe(id)?.name.replace(/^Bản vẽ /, "") ?? "?"}`;
     const need = recipeNeedLevel(id);
     if (workshopLevel(sim2) < need) return `C\u1EA7n Nh\xE0 ch\u1EBF t\u1EA1o c\u1EA5p ${need}`;
@@ -53770,16 +54135,17 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     if (sim2.researched.has(t.id)) return { state: "done" };
     if (sim2.building("lab")?.active?.id === t.id) return { state: "active" };
     if (sim2.researchQueue.includes(t.id)) return { state: "queued" };
-    const lacks = t.requires.filter((r) => !sim2.researched.has(r)).map((r) => `C\u1EA7n nghi\xEAn c\u1EE9u: ${TECH_BY_ID[r].name}`);
+    const free = sim2.dev.freeWorks;
+    const lacks = free ? [] : t.requires.filter((r) => !sim2.researched.has(r)).map((r) => `C\u1EA7n nghi\xEAn c\u1EE9u: ${TECH_BY_ID[r].name}`);
     const lab = sim2.building("lab");
     if (!lab) lacks.push("C\u1EA7n d\u1EF1ng Nh\xE0 nghi\xEAn c\u1EE9u");
-    else if (lab.level < t.needLevel) lacks.push(`C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${t.needLevel}`);
+    else if (!free && lab.level < t.needLevel) lacks.push(`C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${t.needLevel}`);
     if (lacks.length) return { state: "locked", why: lacks.join(" \xB7 "), lacks };
     return { state: "ready" };
   }
   function researchBlock(sim2, t) {
     const lab = sim2.building("lab");
-    if (!lab || !lab.staff.length) return "Ch\u01B0a c\xF3 ng\u01B0\u1EDDi l\xE0m vi\u1EC7c trong Nh\xE0 nghi\xEAn c\u1EE9u";
+    if (!lab || !lab.staff.length && !sim2.dev.freeWorks) return "Ch\u01B0a c\xF3 ng\u01B0\u1EDDi l\xE0m vi\u1EC7c trong Nh\xE0 nghi\xEAn c\u1EE9u";
     return null;
   }
   function currentResearch(sim2) {
@@ -53875,7 +54241,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
       const kind = b.kind === "lab" ? "research" : "craft";
       const queue = kind === "research" ? sim2.researchQueue : sim2.craftQueue;
       const staff = b.staff.map((id2) => sim2.byId.get(id2)).filter((v) => !!v && v.phase === "inside");
-      if (!staff.length) continue;
+      if (!staff.length && !sim2.dev.freeWorks) continue;
       if (!b.active) {
         const i = queue.findIndex((id3) => {
           const d2 = orderDef(sim2, kind, id3);
@@ -53905,7 +54271,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
         rate += sim2.workFactor(v, job);
         sim2.gainXp(v, job, dt);
       }
-      b.active.progress = Math.min(1, b.active.progress + dt * PACE.work * rate * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 25 : 1) / d.time);
+      b.active.progress = sim2.dev.fastWorks ? 1 : Math.min(1, b.active.progress + dt * PACE.work * rate * levelDef(b).craftSpeed / d.time);
       if (b.active.progress < 1) continue;
       const id = b.active.id;
       if (kind === "research") {
@@ -54049,11 +54415,12 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     return out;
   }
   function canPlace(sim2, kind, x, y) {
-    return footprintError(sim2, kind, x, y) ?? buildingLock(sim2, kind) ?? (sim2.dev.freeBuild ? null : sim2.missing(startCost(sim2, kind)));
+    return footprintError(sim2, kind, x, y) ?? buildingLock(sim2, kind) ?? (sim2.freeCost() ? null : sim2.missing(startCost(sim2, kind)));
   }
   function canUpgrade(sim2, b) {
     if (!b.done) return "C\xF4ng tr\xECnh ch\u01B0a d\u1EF1ng xong";
     if (b.upgrading) return "\u0110ang n\xE2ng c\u1EA5p";
+    if (b.repairing) return "\u0110ang s\u1EEDa ch\u1EEFa";
     if (b.level >= maxLevel(b.kind, b.era)) return "\u0110\xE3 \u1EDF c\u1EA5p cao nh\u1EA5t";
     if (b.kind === "campfire" && !sim2.dev.freeBuild) {
       const why = fireUpgradeBlock(sim2, b.level);
@@ -54061,7 +54428,39 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     }
     const fire = sim2.campfire();
     if (b.kind !== "campfire" && fire && !sim2.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `C\u1EA7n n\xE2ng ${BUILDINGS.campfire.name} l\xEAn c\u1EA5p ${b.level + 1}`;
-    return sim2.dev.freeBuild ? null : sim2.missing(levelDef(b, b.level + 1).cost);
+    return sim2.freeCost() ? null : sim2.missing(levelDef(b, b.level + 1).cost);
+  }
+  function repairCost(sim2, b) {
+    const top = maxHp(b), lost = top > 0 ? Math.max(0, Math.min(1, 1 - b.hp / top)) : 0, out = {}, spent = invested(sim2, b);
+    for (const r of Object.keys(spent)) {
+      const n = Math.ceil((spent[r] ?? 0) * lost - 1e-9);
+      if (n > 0) out[r] = n;
+    }
+    return out;
+  }
+  function canRepair(sim2, b) {
+    if (!b.done) return "C\xF4ng tr\xECnh ch\u01B0a d\u1EF1ng xong";
+    if (b.repairing) return "\u0110ang s\u1EEDa ch\u1EEFa";
+    if (b.upgrading) return "\u0110ang n\xE2ng c\u1EA5p: ch\u1EDD xong r\u1ED3i s\u1EEDa";
+    if (b.hp >= maxHp(b)) return "C\xF4ng tr\xECnh c\xF2n nguy\xEAn v\u1EB9n";
+    return sim2.freeCost() ? null : sim2.missing(repairCost(sim2, b));
+  }
+  function repairBuilding(sim2, id) {
+    const b = sim2.getBuilding(id);
+    if (!b) return "Kh\xF4ng t\xECm th\u1EA5y c\xF4ng tr\xECnh";
+    const why = canRepair(sim2, b);
+    if (why) return why;
+    if (!sim2.freeCost()) {
+      const cost = repairCost(sim2, b);
+      for (const r of Object.keys(cost)) sim2.stock[r] -= cost[r] ?? 0;
+    }
+    if (sim2.dev.instantBuild) {
+      b.hp = maxHp(b);
+      return null;
+    }
+    b.repairing = true;
+    sim2.say(`B\u1EAFt \u0111\u1EA7u s\u1EEDa ${BUILDINGS[b.kind].name}. Giao vi\u1EC7c "Th\u1EE3 x\xE2y" \u0111\u1EC3 l\xE0m.`);
+    return null;
   }
   function upgradeBuilding(sim2, id) {
     const b = sim2.getBuilding(id);
@@ -54069,7 +54468,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     const why = canUpgrade(sim2, b);
     if (why) return why;
     const next = levelDef(b, b.level + 1);
-    if (!sim2.dev.freeBuild) for (const r of Object.keys(next.cost)) sim2.stock[r] -= next.cost[r] ?? 0;
+    if (!sim2.freeCost()) for (const r of Object.keys(next.cost)) sim2.stock[r] -= next.cost[r] ?? 0;
     if (sim2.dev.instantBuild) {
       b.level++;
       b.hp = maxHp(b);
@@ -54087,7 +54486,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     const why = canPlace(sim2, kind, x, y);
     if (why) return { ok: false, reason: why };
     const cost = startCost(sim2, kind), lvl = startLevel(sim2, kind);
-    if (!sim2.dev.freeBuild) for (const r of Object.keys(cost)) sim2.stock[r] -= cost[r] ?? 0;
+    if (!sim2.freeCost()) for (const r of Object.keys(cost)) sim2.stock[r] -= cost[r] ?? 0;
     const b = addBuilding(sim2, kind, x, y, false, lvl);
     delete sim2.ruins[kind];
     if (sim2.dev.instantBuild) {
@@ -54263,7 +54662,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     for (const r of Object.keys(fee)) sim2.stock[r] -= fee[r] ?? 0;
     evict(sim2, b);
     if (b.upgrading) {
-      for (const r of Object.keys(levelDef(b, b.level + 1).cost)) if (!sim2.dev.freeBuild) sim2.stock[r] += levelDef(b, b.level + 1).cost[r] ?? 0;
+      for (const r of Object.keys(levelDef(b, b.level + 1).cost)) if (!sim2.freeCost()) sim2.stock[r] += levelDef(b, b.level + 1).cost[r] ?? 0;
       b.upgrading = false;
     }
     setOcc(sim2, b, 0);
@@ -54418,6 +54817,19 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
           v.phase = "idle";
           return;
         }
+        if (b.repairing && b.done && !b.upgrading) {
+          const top = maxHp(b);
+          b.hp = Math.min(top, b.hp + top * (dt * PACE.work / levelDef(b).buildTime) * workFactor(sim2, v, "build") * sim2.crewSpeed());
+          gainXp(sim2, v, "build", dt);
+          wear(sim2, v, "build", dt);
+          if (b.hp >= top) {
+            b.hp = top;
+            b.repairing = false;
+            v.phase = "idle";
+            sim2.say(`${BUILDINGS[b.kind].name} \u0111\xE3 \u0111\u01B0\u1EE3c s\u1EEDa xong.`);
+          }
+          return;
+        }
         const target = b.upgrading ? b.level + 1 : b.level;
         b.progress += dt * PACE.work / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1)) * workFactor(sim2, v, "build") * sim2.crewSpeed();
         gainXp(sim2, v, "build", dt);
@@ -54486,7 +54898,7 @@ body.war .bbar, body.war .sheet > :not(.selbar), body.war .selbar > :not(#btnHom
     wear(sim2, v, job, dt);
     if (v.progress < 1) return;
     v.progress -= 1;
-    const res = def.res, acc = v.frac + TIER_YIELD[tierNow] * (1 + toolBonus(sim2, v, job, "tyield") / 100), whole = Math.floor(acc);
+    const kindOf2 = GATHER_HOUSE[job], res = def.res, acc = v.frac + gatherMult(kindOf2 ? sim2.building(kindOf2) : void 0) * TIER_YIELD[tierNow] * (1 + toolBonus(sim2, v, job, "tyield") / 100), whole = Math.floor(acc);
     const have2 = v.carry && v.carry.res === res ? v.carry.amount : 0;
     const take2 = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have2));
     v.frac = acc - whole;
@@ -55358,7 +55770,7 @@ ${risk.lines.join("\n")}`);
     if (fighting) return false;
     if (sim2.warIds.has(v.id)) {
       v.lockUntil = 0;
-      return sim2.sleepsInTent(v);
+      return !v.nightOwl && !v.path.length && sim2.sleepsInTent(v);
     }
     if (awayScout(sim2, v)) {
       v.lockUntil = 0;
@@ -55521,7 +55933,7 @@ ${risk.lines.join("\n")}`);
         continue;
       }
       const per = TIER_YIELD[sim2.toolTier(v, job)] * (1 + toolBonus(sim2, v, job, "tyield") / 100);
-      amount += b.kind === "field" ? speed * levelDef(b).craftSpeed * per * secs / FARM_TIME : speed * per * secs * pace_default.gatherDuty / JOBS[job].baseTime;
+      amount += b.kind === "field" ? speed * levelDef(b).craftSpeed * per * secs / FARM_TIME : speed * per * secs * pace_default.gatherDuty * gatherMult(b) / JOBS[job].baseTime;
     }
     return { amount, people: workers.length };
   }
@@ -55555,7 +55967,7 @@ ${risk.lines.join("\n")}`);
 
   // src/sim/notices.ts
   var ORDER = { urgent: 0, warn: 1, info: 2 };
-  var pct2 = (x) => `${Math.round(x * 1e3) / 10}%`;
+  var pct = (x) => `${Math.round(x * 1e3) / 10}%`;
   var days = (n) => n <= 0 ? "h\xF4m nay" : `c\xF2n ${n} ng\xE0y`;
   var FARM = { building: "farmhouse", label: "N\xF4ng tr\u1EA1i" };
   var CAMP = { building: "infantry", label: BUILDINGS.infantry.name };
@@ -55640,7 +56052,7 @@ ${risk.lines.join("\n")}`);
         id: "weak",
         level: "warn",
         icon: "food",
-        title: `L\xE0ng y\u1EBFu ${pct2(sim2.foodPenalty)}`,
+        title: `L\xE0ng y\u1EBFu ${pct(sim2.foodPenalty)}`,
         when: "t\u1EDBi cu\u1ED1i ng\xE0y",
         body: "M\u1ECDi ch\u1EC9 s\u1ED1 gi\u1EA3m v\xEC b\u1EEFa tr\u01B0\u1EDBc thi\u1EBFu \u0103n.",
         tip: "M\xE1u t\u1ED1i \u0111a kh\xF4ng \u0111\u1ED5i nh\u01B0ng h\u1ED3i ch\u1EADm h\u01A1n, \u0111\xE1nh ch\u1EADm h\u01A1n. Ki\u1EBFm \u0111\u1EE7 th\u1EE9c \u0103n tr\u01B0\u1EDBc cu\u1ED1i ng\xE0y \u0111\u1EC3 l\xE0ng kh\u1ECFe l\u1EA1i.",
@@ -55656,7 +56068,7 @@ ${risk.lines.join("\n")}`);
         icon: "food",
         title: "B\u1EEFa t\u1ED1i thi\u1EBFu \u0103n",
         when: "cu\u1ED1i ng\xE0y",
-        body: `C\u1EA7n ${need}, c\xF3 ${Math.floor(have2)} \xB7 l\xE0ng s\u1EBD y\u1EBFu ${pct2(FOOD.maxPenalty * short / need)}`,
+        body: `C\u1EA7n ${need}, c\xF3 ${Math.floor(have2)} \xB7 l\xE0ng s\u1EBD y\u1EBFu ${pct(FOOD.maxPenalty * short / need)}`,
         tip: "Giao th\xEAm ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m \u1EDF N\xF4ng tr\u1EA1i, l\xE0m ru\u1ED9ng ho\u1EB7c \u0111i s\u0103n tr\u01B0\u1EDBc khi h\u1EBFt ng\xE0y.",
         action: FARM
       });
@@ -55794,7 +56206,7 @@ ${risk.lines.join("\n")}`);
       const v = sim2.byId.get(id);
       if (v && v.phase === "inside") r += sim2.workFactor(v, job);
     }
-    return r * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 25 : 1);
+    return r * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 1e6 : 1);
   }
   function staffCount(sim2, b) {
     return b.staff.length + sim2.villagers.filter((v) => v.phase === "goStaff" && v.target === b.id).length;
@@ -56214,6 +56626,14 @@ ${risk.lines.join("\n")}`);
       if (sim2.queueCraft(id) === null) sim2.say(`${v.name} nh\u1EDD ch\u1EBF ${recipeName(RECIPE_BY_ID[id]).toLowerCase()}.`);
     }
   }
+  function restock(sim2) {
+    if (!sim2.building("armory")) return;
+    for (const v of sim2.villagers) {
+      if (v.team !== "player" || v.job !== "fight" && v.job !== "hunt" || v.manualGear || v.health <= 0 || v.phase === "fight") continue;
+      if (v.inside === null && v.phase !== "sleep") continue;
+      if (!v.weapon && bestWeapon(sim2, v) || !v.armor && bestArmor(sim2)) equipGear(sim2, v);
+    }
+  }
   function equip(sim2, v) {
     v.phase = "idle";
     const store = sim2.getBuilding(v.target);
@@ -56276,6 +56696,139 @@ ${risk.lines.join("\n")}`);
     return goTo(sim2, v, house, "goOrder");
   }
 
+  // src/sim/mounts.ts
+  var stockKey = (k) => `mount_${k}`;
+  var tamedCount = (sim2, k) => sim2.toolStock[stockKey(k)] ?? 0;
+  var STOCK_CAP = 12;
+  function tameLock(sim2, k) {
+    const d = MOUNTS[k], stable = sim2.building("stable");
+    if (!stable) return "C\u1EA7n d\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i";
+    if (stable.level < d.tier) return `C\u1EA7n Chu\u1ED3ng th\xFA c\u01B0\u1EE1i c\u1EA5p ${d.tier}`;
+    return null;
+  }
+  function queueTame(sim2, k) {
+    if (!MOUNTS[k]) return "Kh\xF4ng c\xF3 lo\xE0i n\xE0y";
+    const lock = tameLock(sim2, k);
+    if (lock) return lock;
+    if (sim2.tameQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
+    sim2.tameQueue.push(k);
+    return null;
+  }
+  function unqueueTame(sim2, k) {
+    const i = sim2.tameQueue.lastIndexOf(k);
+    if (i >= 0) sim2.tameQueue.splice(i, 1);
+  }
+  function tickTame(sim2, dt) {
+    for (const b of sim2.buildings) {
+      if (b.kind !== "stable" || !b.done) continue;
+      const staff = b.staff.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.phase === "inside");
+      if (!staff.length && !sim2.dev.freeWorks) continue;
+      if (!b.active) {
+        const i = sim2.tameQueue.findIndex((k3) => !tameLock(sim2, k3) && (sim2.dev.freeWorks || sim2.affordable(MOUNTS[k3].cost)));
+        if (i < 0) {
+          if (sim2.tameQueue.length && sim2.time - sim2.lastMatWarn > 30) {
+            sim2.lastMatWarn = sim2.time;
+            sim2.say("\u0110\u01A1n thu\u1EA7n th\xFA \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
+          }
+          continue;
+        }
+        const k2 = sim2.tameQueue.splice(i, 1)[0];
+        if (!sim2.dev.freeWorks) sim2.pay(MOUNTS[k2].cost);
+        b.active = { id: k2, progress: 0 };
+      }
+      const k = b.active.id, d = MOUNTS[k];
+      if (!d) {
+        b.active = null;
+        continue;
+      }
+      let rate = 0;
+      for (const v of staff) {
+        rate += sim2.workFactor(v, "tame");
+        sim2.gainXp(v, "tame", dt);
+      }
+      b.active.progress = sim2.dev.fastWorks ? 1 : Math.min(1, b.active.progress + dt * PACE.work * rate * levelDef(b).craftSpeed / d.time);
+      if (b.active.progress < 1) continue;
+      if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim2, m), 0) >= STOCK_CAP) {
+        if (sim2.time - sim2.lastFullWarn > 30) {
+          sim2.lastFullWarn = sim2.time;
+          sim2.say("Chu\u1ED3ng \u0111\xE3 \u0111\u1EA7y th\xFA ch\u01B0a c\xF3 ng\u01B0\u1EDDi c\u01B0\u1EE1i: s\u1EA3n ph\u1EA9m ch\u1EDD ch\u1ED7.");
+        }
+        continue;
+      }
+      sim2.toolStock[stockKey(k)] = tamedCount(sim2, k) + 1;
+      b.active = null;
+      sim2.say(`\u0110\xE3 thu\u1EA7n xong m\u1ED9t con ${d.name.toLowerCase()}.`);
+    }
+  }
+  function campBeast(sim2) {
+    const camp = sim2.building("cavalry");
+    return MOUNT_KINDS[Math.max(0, Math.min(MOUNT_KINDS.length, camp?.level ?? 1) - 1)];
+  }
+  function mountOf(sim2, v) {
+    if (v.team !== "player") return null;
+    const own = v.mount ?? ((v.job === "fight" || v.job === "scout") && v.arm === "cavalry" ? campBeast(sim2) : null);
+    return v.job === "scout" && own === "elephant" ? null : own;
+  }
+  var mountSpeed = (sim2, v) => {
+    const k = mountOf(sim2, v);
+    return k ? MOUNTS[k].speed : 1;
+  };
+  var mountGuard = (sim2, v) => {
+    const k = mountOf(sim2, v);
+    return k ? MOUNTS[k].guard : 1;
+  };
+  function fitScoutMount(sim2, v) {
+    const was = v.mount ?? (v.arm === "cavalry" ? campBeast(sim2) : null);
+    if (was !== "elephant") return;
+    if (v.mount) sim2.toolStock[stockKey(v.mount)] = tamedCount(sim2, v.mount) + 1;
+    v.mount = null;
+    if (tamedCount(sim2, "wolf") > 0) {
+      sim2.toolStock[stockKey("wolf")] = tamedCount(sim2, "wolf") - 1;
+      v.mount = "wolf";
+      sim2.say(`${v.name} \u0111i trinh s\xE1t b\u1EB1ng s\xF3i, kh\xF4ng c\u01B0\u1EE1i voi.`);
+    }
+  }
+  function fitScouts(sim2) {
+    if (tamedCount(sim2, "wolf") <= 0) return;
+    for (const v of sim2.villagers) {
+      if (v.team !== "player" || v.job !== "scout" || v.mount || mountOf(sim2, v) || sim2.scouts.some((m) => m.ids.includes(v.id))) continue;
+      sim2.toolStock[stockKey("wolf")] = tamedCount(sim2, "wolf") - 1;
+      v.mount = "wolf";
+      v.speed = 1.6 + 0.1 * v.stats.agi;
+      sim2.say(`${v.name} nh\u1EADn m\u1ED9t con s\xF3i t\u1EEB chu\u1ED3ng.`);
+      if (tamedCount(sim2, "wolf") <= 0) return;
+    }
+  }
+  function returnScoutMount(sim2, v) {
+    if (v.arm !== "cavalry" || !v.mount) return;
+    sim2.toolStock[stockKey(v.mount)] = tamedCount(sim2, v.mount) + 1;
+    v.mount = null;
+  }
+  function assignMount(sim2, ids, kind) {
+    let given = 0, short = false, riders = false;
+    for (const v of sim2.mine(ids)) {
+      if (v.mount === kind) continue;
+      if (kind && v.job === "fight" && v.arm === "cavalry") {
+        riders = true;
+        continue;
+      }
+      if (kind && tamedCount(sim2, kind) <= 0) {
+        short = true;
+        continue;
+      }
+      if (v.mount) sim2.toolStock[stockKey(v.mount)] = tamedCount(sim2, v.mount) + 1;
+      if (kind) sim2.toolStock[stockKey(kind)]--;
+      v.mount = kind;
+      given++;
+      if (kind) {
+        v.speed = 1.6 + 0.1 * v.stats.agi;
+        sim2.say(`${v.name} \u0111\u01B0\u1EE3c giao m\u1ED9t con ${MOUNTS[kind].name.toLowerCase()} \u0111\u1EC3 c\u01B0\u1EE1i.`);
+      } else sim2.say(`${v.name} tr\u1EA3 th\xFA v\u1EC1 chu\u1ED3ng.`);
+    }
+    if (given) return null;
+    return riders ? "K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA \u0111\xE3 c\xF3 th\xFA c\u1EE7a tr\u1EA1i" : short ? `Chu\u1ED3ng h\u1EBFt ${kind ? MOUNTS[kind].name.toLowerCase() : "th\xFA"} \u0111\xE3 thu\u1EA7n: h\xE3y thu\u1EA7n th\xEAm` : null;
+  }
+
   // src/sim/commands.ts
   function resetTask(sim2, v) {
     sim2.leaveNode(v);
@@ -56307,6 +56860,7 @@ ${risk.lines.join("\n")}`);
     v.fight.dest = null;
     v.fight.anchor = null;
     v.fight.strict = false;
+    v.fight.obey = false;
     v.queue.length = 0;
     v.loot = -1;
     v.fleeT = 0;
@@ -56707,7 +57261,7 @@ ${risk.lines.join("\n")}`);
   }
   function moveUnit(sim2, v, dt) {
     unstickWalker(sim2, v, dt);
-    const walk = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.team === "player" ? sim2.mountSpeed(v) : 1) * (sim2.warIds.has(v.id) ? sim2.march.speed : 1);
+    const walk = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * (v.team === "player" ? sim2.mountSpeed(v) : 1) * (sim2.warIds.has(v.id) ? sim2.march.speed * (v.hurry ? 2.5 : v.job === "supply" ? 1.25 : 1) : 1);
     if (v.swing) return;
     let left = walk * dt;
     while (left > 0 && v.path.length) {
@@ -56992,6 +57546,8 @@ ${risk.lines.join("\n")}`);
         v.bed = -1;
       }
     }
+    if (sim2.warIds.has(v.id)) sim2.shelter(v);
+    else if (v.inTent) v.inTent = false;
     seekBed(sim2, v, dt);
     sim2.moveUnit(v, dt);
     if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim2.fogDirty = true;
@@ -57625,7 +58181,7 @@ ${risk.lines.join("\n")}`);
       v.guardAt = null;
       v.arm = "archer";
       v.post = b.id;
-      v.shift = "both";
+      v.shift = "day";
       v.fight.mode = "none";
       v.fight.anchor = null;
       sim2.planStaff(v);
@@ -57803,11 +58359,15 @@ ${risk.lines.join("\n")}`);
     const offs = formationOffsets(s.formation, us.length), taken = /* @__PURE__ */ new Set();
     applySpeed(sim2, s);
     us.forEach((v, i) => {
+      if (sim2.warIds.has(v.id)) v.nightOwl = true;
       const [px, py] = placeOffset(offs[i], s.heading, x, y);
       const spot = sim2.nearestFree(Math.floor(px), Math.floor(py), taken) ?? [Math.floor(px), Math.floor(py)];
       taken.add(spot[1] * sim2.world.size + spot[0]);
-      if (mode === "move") sim2.orderMove([v.id], spot[0], spot[1]);
-      else if (mode === "attack") sim2.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
+      if (mode === "move") {
+        sim2.pathLeft++;
+        sim2.orderMove([v.id], spot[0], spot[1]);
+        v.fight.obey = v.path.length > 0;
+      } else if (mode === "attack") sim2.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
       else {
         sim2.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
         v.fight.anchor = { x: spot[0] + 0.5, y: spot[1] + 0.5 };
@@ -57948,6 +58508,9 @@ ${risk.lines.join("\n")}`);
     return { wood: Math.round(k.woodBase * f), hide: Math.round(k.hideBase * f) };
   }
   var tentSquads = (sim2, plan2) => plan2.missions.map((m) => sim2.squadById(m.squad)).filter((s) => !!s && sim2.squadUnits(s).length > 0);
+  var SUPPLY_TENT = -1;
+  var tentCount = (sim2, plan2) => tentSquads(sim2, plan2).length + (plan2.supply > 0 || plan2.supplyIds.length ? 1 : 0);
+  var supplyCrew = (sim2, plan2) => plan2.supplyIds.map((id) => sim2.get(id)).filter((v) => !!v && v.health > 0);
   var packs = (sim2, plan2) => plan2.supplyIds.map((id) => sim2.get(id)).filter((v) => !!v && v.health > 0 && !!v.pack);
   var have = (crew2, res) => crew2.reduce((n, v) => n + (v.pack?.[res] ?? 0), 0);
   function take(crew2, res, n) {
@@ -57960,8 +58523,8 @@ ${risk.lines.join("\n")}`);
       }
     }
   }
-  function give(crew2, res, n) {
-    const room = (v) => WAR_DATA.supply.load / WAR_DATA.tent.weight - (v.pack ? v.pack.wood + v.pack.hide : 0);
+  function give(crew2, res, n, load) {
+    const room = (v) => load / WAR_DATA.tent.weight - (v.pack ? v.pack.wood + v.pack.hide : 0);
     for (const v of crew2) {
       if (n <= 0) break;
       const k = Math.min(Math.max(0, room(v)), n);
@@ -57976,60 +58539,102 @@ ${risk.lines.join("\n")}`);
     return us.length > 0 && !us.some((v) => v.phase === "fight" || v.swing) && us.filter((v) => !v.path.length).length >= us.length * 0.8;
   }
   var tentOf = (plan2, squadId) => plan2.tents.find((t) => t.squad === squadId && t.built);
+  var restsNow = (sim2, plan2, squadId) => !!plan2.missions.find((m) => m.squad === squadId)?.resting;
   function sleepsInTent(sim2, v) {
-    if (!sim2.resting) return false;
     const plan2 = sim2.plans.find((p) => p.kind === "attack" && p.status === "running");
     if (!plan2) return false;
-    const near2 = WAR_DATA.tent.near;
-    if (v.job === "supply") return plan2.tents.some((t2) => t2.built && Math.hypot(t2.x - v.x, t2.y - v.y) < near2);
-    const t = tentOf(plan2, v.squad);
-    return !!t && Math.hypot(t.x - v.x, t.y - v.y) < near2;
+    const supply = v.job === "supply";
+    if (supply ? !plan2.missions.some((m) => m.resting) : !restsNow(sim2, plan2, v.squad)) return false;
+    const t = tentOf(plan2, supply ? SUPPLY_TENT : v.squad);
+    return !!t && Math.hypot(t.x - v.x, t.y - v.y) < WAR_DATA.tent.near;
+  }
+  function shelter(sim2, v) {
+    const plan2 = sim2.plans.find((p) => p.kind === "attack" && p.status === "running");
+    const tent = plan2?.tents.filter((t) => t.built && t.squad === (v.job === "supply" ? SUPPLY_TENT : v.squad)).sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
+    if (v.phase === "sleep" && tent && Math.hypot(tent.x - v.x, tent.y - v.y) < WAR_DATA.tent.near) {
+      v.inTent = true;
+      v.path = [];
+      v.slide = null;
+      v.x = tent.x;
+      v.y = tent.y;
+      return;
+    }
+    if (v.inTent) {
+      v.inTent = false;
+      if (tent) {
+        v.x = tent.x + 1;
+        v.y = tent.y + 1;
+      }
+    }
+  }
+  var CALM = 30;
+  function calm(sim2, plan2) {
+    for (const m of plan2.missions) {
+      const s = m.resting ? sim2.squadById(m.squad) : void 0;
+      if (!s) continue;
+      const us = sim2.squadUnits(s), c = sim2.squadCenter(s);
+      if (!c) continue;
+      if (sim2.foes.some((f) => f.health > 0 && f.team !== "wild" && Math.hypot(f.x - c.x, f.y - c.y) < 16)) {
+        m.alertAt = sim2.time;
+        continue;
+      }
+      if (m.alertAt !== void 0 && sim2.time - m.alertAt >= CALM) {
+        for (const v of us) if (v.nightOwl) {
+          const tent = tentOf(plan2, m.squad);
+          v.fight.target = null;
+          v.fight.mode = "hold";
+          v.fight.anchor = { x: v.x, y: v.y };
+          if (tent && Math.hypot(tent.x - v.x, tent.y - v.y) > 4) sim2.orderMove([v.id], Math.floor(tent.x), Math.floor(tent.y));
+          v.nightOwl = false;
+        }
+      }
+    }
   }
   function tickTents(sim2, plan2) {
     const crew2 = packs(sim2, plan2), cost = tentCost(sim2), k = WAR_DATA.tent;
-    for (const s of tentSquads(sim2, plan2)) {
-      const c = sim2.squadCenter(s);
+    const anyRest = plan2.missions.some((m) => m.resting);
+    const owners = tentSquads(sim2, plan2).map((s) => ({ id: s.id, name: s.name, at: sim2.squadCenter(s), still: stands(sim2, s), rest: restsNow(sim2, plan2, s.id) }));
+    const sup = supplyCrew(sim2, plan2);
+    if (sup.length) owners.push({ id: SUPPLY_TENT, name: "h\u1EADu c\u1EA7n", at: { x: sup.reduce((a, v) => a + v.x, 0) / sup.length, y: sup.reduce((a, v) => a + v.y, 0) / sup.length }, still: !sup.some((v) => v.phase === "fight" || v.swing) && (sup.filter((v) => !v.path.length).length >= sup.length * 0.8 || anyRest && owners.every((x) => x.still)), rest: anyRest });
+    const housed = owners.filter((x) => x.id !== SUPPLY_TENT && x.rest).every((x) => plan2.tents.some((t) => t.squad === x.id && t.built));
+    calm(sim2, plan2);
+    for (const o of owners) {
+      const c = o.at;
       if (!c) continue;
-      const tent = plan2.tents.find((t) => t.squad === s.id), still = stands(sim2, s);
+      const tent = plan2.tents.find((t) => t.squad === o.id), name = o.id === SUPPLY_TENT ? "\u0111\u1ED9i h\u1EADu c\u1EA7n" : o.name;
+      if (o.id === SUPPLY_TENT && !tent && !housed) continue;
+      if (o.id === SUPPLY_TENT && tent && !tent.built && !housed) continue;
       if (!tent) {
-        if (!sim2.resting || !still || !crew2.length || have(crew2, "wood") < cost.wood || have(crew2, "hide") < cost.hide) continue;
+        if (!o.rest || !o.still || !crew2.length || have(crew2, "wood") < cost.wood || have(crew2, "hide") < cost.hide) continue;
         take(crew2, "wood", cost.wood);
         take(crew2, "hide", cost.hide);
-        plan2.tents.push({ squad: s.id, x: c.x, y: c.y, progress: 0, built: false });
-        sim2.say(`H\u1EADu c\u1EA7n d\u1EF1ng l\u1EC1u cho ${s.name}.`);
+        plan2.tents.push({ squad: o.id, x: c.x, y: c.y, progress: 0, built: false });
+        sim2.say(`H\u1EADu c\u1EA7n d\u1EF1ng l\u1EC1u cho ${name}.`);
         continue;
       }
       if (!tent.built) {
-        if (!still) {
+        if (!o.rest) {
           plan2.tents.splice(plan2.tents.indexOf(tent), 1);
           continue;
         }
-        const builders = crew2.filter((v) => Math.hypot(v.x - tent.x, v.y - tent.y) < k.near).length;
-        tent.progress += builders / k.buildSeconds;
+        const builders = crew2.filter((v) => Math.hypot(v.x - tent.x, v.y - tent.y) < k.buildReach).length;
+        tent.progress += sim2.dev.freeWorks ? 1 : builders * (1 + statBonus(sim2.researched, "march_army", "mbuild") / 100) / k.buildSeconds;
         if (tent.progress >= 1) {
           tent.built = true;
-          sim2.say(`L\u1EC1u c\u1EE7a ${s.name} \u0111\xE3 d\u1EF1ng xong: l\xEDnh c\xF3 ch\u1ED7 ng\u1EE7.`);
+          sim2.say(`L\u1EC1u c\u1EE7a ${name} \u0111\xE3 d\u1EF1ng xong: c\xF3 ch\u1ED7 ng\u1EE7.`);
         }
         continue;
       }
-      if (!sim2.resting || !still) {
+      if (!o.rest) {
         plan2.tents.splice(plan2.tents.indexOf(tent), 1);
         if (Math.hypot(c.x - tent.x, c.y - tent.y) < k.near && crew2.length) {
-          give(crew2, "wood", cost.wood * k.refund);
-          give(crew2, "hide", cost.hide * k.refund);
-          sim2.say(`H\u1EADu c\u1EA7n th\xE1o l\u1EC1u c\u1EE7a ${s.name}, thu l\u1EA1i ${Math.floor(cost.wood * k.refund)} g\u1ED7, ${Math.floor(cost.hide * k.refund)} da.`);
-        } else sim2.say(`L\u1EC1u c\u1EE7a ${s.name} b\u1ECB b\u1ECF l\u1EA1i.`);
+          give(crew2, "wood", cost.wood * k.refund, supplyLoad(sim2));
+          give(crew2, "hide", cost.hide * k.refund, supplyLoad(sim2));
+          sim2.say(`H\u1EADu c\u1EA7n th\xE1o l\u1EC1u c\u1EE7a ${name}, thu l\u1EA1i ${Math.floor(cost.wood * k.refund)} g\u1ED7, ${Math.floor(cost.hide * k.refund)} da.`);
+        } else sim2.say(`L\u1EC1u c\u1EE7a ${name} b\u1ECB b\u1ECF l\u1EA1i.`);
       }
     }
-    plan2.tents = plan2.tents.filter((t) => sim2.squadById(t.squad));
-  }
-  function tentLines(sim2, plan2, carry) {
-    const n = tentSquads(sim2, plan2).length, cost = tentCost(sim2), out = [];
-    if (!n) return out;
-    out.push(`L\u1EC1u: m\u1ED7i \u0111\u1ED9i c\u1EA7n m\u1ED9t l\u1EC1u \u0111\u1EC3 ng\u1EE7, t\u1ED1n ${cost.wood} g\u1ED7 + ${cost.hide} da (nh\xE0 ch\xEDnh c\u1EA5p ${sim2.campfire()?.level ?? 1}). ${n} \u0111\u1ED9i c\u1EA7n ${n * cost.wood} g\u1ED7 + ${n * cost.hide} da; h\u1EADu c\u1EA7n d\u1EF1ng l\u1EC1u khi tr\u1EDDi t\u1ED1i v\xE0 th\xE1o khi \u0111i ti\u1EBFp, thu l\u1EA1i ${Math.round(WAR_DATA.tent.refund * 100)}%.`);
-    const enough = Math.min(Math.floor(carry.wood / Math.max(1, cost.wood)), Math.floor(carry.hide / Math.max(1, cost.hide)));
-    if (enough < n) out.push(`\u26A0 Ch\u1EC9 mang \u0111\u1EE7 v\u1EADt li\u1EC7u cho ${enough}/${n} l\u1EC1u: ${n - enough} \u0111\u1ED9i s\u1EBD kh\xF4ng ng\u1EE7 \u0111\u01B0\u1EE3c, s\u1EE9c t\u1EE5t d\u1EA7n v\xE0 y\u1EBFu \u0111i (t\u1EDBi ${Math.round(WAR_DATA.tired.maxPenalty * 100)}%).`);
-    return out;
+    plan2.tents = plan2.tents.filter((t) => t.squad === SUPPLY_TENT ? sup.length > 0 : sim2.squadById(t.squad));
   }
 
   // src/sim/warlog.ts
@@ -58109,23 +58714,29 @@ ${risk.lines.join("\n")}`);
   }
   var stocked = (sim2) => sim2.foodPot + sim2.stock.food;
   function packPlan(sim2, plan2) {
-    const sup = supplyCount(sim2, plan2), need = dailyNeed(sim2, plan2, sup), capacity2 = sup * WAR_DATA.supply.load, want = need * plan2.carryDays;
-    const cost = tentCost(sim2), n = tentSquads(sim2, plan2).length, wood = Math.min(n * cost.wood, Math.floor(sim2.stock.wood)), hide = Math.min(n * cost.hide, Math.floor(sim2.stock.hide));
+    const sup = supplyCount(sim2, plan2), need = dailyNeed(sim2, plan2, sup), capacity2 = sup * supplyLoad(sim2), want = need * plan2.carryDays;
+    const cost = tentCost(sim2), n = tentCount(sim2, plan2), wood = Math.min(n * cost.wood, Math.floor(sim2.stock.wood)), hide = Math.min(n * cost.hide, Math.floor(sim2.stock.hide));
     const room = Math.max(0, capacity2 - (wood + hide) * WAR_DATA.tent.weight);
     const give2 = Math.max(0, Math.min(want, room, stocked(sim2)));
     return { sup, capacity: capacity2, want, give: give2, days: need > 0 ? give2 / need : 0, need, wood: sup ? wood : 0, hide: sup ? hide : 0 };
   }
-  function supplyLines(sim2, plan2) {
-    const p = packPlan(sim2, plan2), have2 = supplyAvailable(sim2).length, out = [];
-    if (!p.sup) {
-      out.push(`\u26A0 Kh\xF4ng mang l\xEDnh h\u1EADu c\u1EA7n${have2 ? ` (tr\u1EA1i c\xF3 ${have2})` : ""}: qu\xE2n kh\xF4ng c\xF3 l\u01B0\u01A1ng mang theo n\xEAn s\u1EBD \u0111\xF3i v\xE0 y\u1EBFu \u0111i ngay t\u1EEB \u0111\u1EA7u.`);
-      return out;
+  function supplyAdvice(sim2, plan2) {
+    let longest = 0;
+    for (const m of plan2.missions) {
+      const s = sim2.squadById(m.squad), start = s ? sim2.missionStart(m) : null;
+      if (s && start && m.path.length) longest = Math.max(longest, sim2.routeTime(s, start, m.path).total);
     }
-    out.push(`H\u1EADu c\u1EA7n: ${p.sup} l\xEDnh, m\u1ED7i ng\u01B0\u1EDDi mang t\u1ED1i \u0111a ${WAR_DATA.supply.load} t\u1EA3i (t\u1ED5ng ${p.capacity}; l\u01B0\u01A1ng 1 t\u1EA3i m\u1ED7i ph\u1EA7n, g\u1ED7 v\xE0 da ${WAR_DATA.tent.weight} t\u1EA3i m\u1ED7i ph\u1EA7n). Qu\xE2n c\u1EA7n kho\u1EA3ng ${Math.round(p.need)} th\u1EE9c \u0103n m\u1ED7i ng\xE0y; mu\u1ED1n mang ${plan2.carryDays} ng\xE0y = ${Math.round(p.want)}.`);
-    out.push(...tentLines(sim2, plan2, { wood: p.wood, hide: p.hide }));
-    if (p.want > p.give && p.give < stocked(sim2)) out.push(`\u26A0 T\u1EA3i kh\xF4ng \u0111\u1EE7 (l\u1EC1u v\xE0 l\u01B0\u01A1ng chung m\u1ED9t t\u1EA3i): ch\u1EC9 mang \u0111\u01B0\u1EE3c ${Math.floor(p.give)} th\u1EE9c \u0103n, kho\u1EA3ng ${p.days.toFixed(1)} ng\xE0y. Th\xEAm l\xEDnh h\u1EADu c\u1EA7n ho\u1EB7c b\u1EDBt s\u1ED1 ng\xE0y.`);
-    if (p.want > stocked(sim2)) out.push(`\u26A0 Kho l\xE0ng ch\u1EC9 c\xF3 ${Math.floor(stocked(sim2))} th\u1EE9c \u0103n: ch\u1EC9 ch\u1EA5t \u0111\u01B0\u1EE3c ${Math.floor(p.give)} (kho\u1EA3ng ${p.days.toFixed(1)} ng\xE0y).`);
-    out.push(`S\u1EBD ch\u1EA5t ${Math.floor(p.give)} th\u1EE9c \u0103n, \u0111\u1EE7 kho\u1EA3ng ${p.days.toFixed(1)} ng\xE0y cho qu\xE2n. H\u1EBFt l\u01B0\u01A1ng th\xEC qu\xE2n \u0111\xF3i (y\u1EBFu t\u1EDBi ${Math.round(FOOD.maxPenalty * 100)}%); h\u1EADu c\u1EA7n ch\u1EBFt th\xEC ph\u1EA7n l\u01B0\u01A1ng h\u1ECD mang m\u1EA5t theo.`);
+    if (longest <= 0) return null;
+    let sup = Math.max(1, plan2.supply), out = { oneWay: 0, days: 0, food: 0, wood: 0, hide: 0, soldiers: 1, have: supplyAvailable(sim2).length };
+    const cost = tentCost(sim2), n = tentCount(sim2, plan2);
+    for (let i = 0; i < 4; i++) {
+      const m = marchOf(sim2, plan2.missions.length + 1, soldiersOf(sim2, plan2) + sup), oneWay = longest / m.speed / DAY_LENGTH, d = Math.min(WAR_DATA.supply.maxDays, Math.max(1, Math.ceil(oneWay * 2 + 1)));
+      const food = Math.ceil(dailyNeed(sim2, plan2, sup) * d), wood = n * cost.wood, hide = n * cost.hide;
+      const soldiers = Math.max(1, Math.ceil((food + (wood + hide) * WAR_DATA.tent.weight) / supplyLoad(sim2)));
+      out = { ...out, oneWay, days: d, food, wood, hide, soldiers };
+      if (soldiers === sup) break;
+      sup = soldiers;
+    }
     return out;
   }
   function loadPacks(sim2, plan2) {
@@ -58176,15 +58787,38 @@ ${risk.lines.join("\n")}`);
       return s ? sim2.squadUnits(s) : [];
     });
     if (!us.length) return;
+    const squads = plan2.missions.map((m) => sim2.squadById(m.squad)).filter((s) => !!s && sim2.squadUnits(s).length > 0);
+    if (squads.length && squads.every((s) => stands(sim2, s)) && plan2.missions.some((m) => m.resting)) {
+      const open = plan2.tents.filter((t2) => !t2.built);
+      for (const v of crew2) {
+        if (v.inTent || v.phase === "sleep" || v.phase === "fight") continue;
+        v.hurry = false;
+        const t2 = open.sort((a, b) => Math.hypot(a.x - v.x, a.y - v.y) - Math.hypot(b.x - v.x, b.y - v.y))[0];
+        const end = v.path[v.path.length - 1], toIt = !!end && !!t2 && Math.hypot(end[0] + 0.5 - t2.x, end[1] + 0.5 - t2.y) < 4;
+        if (t2 && Math.hypot(t2.x - v.x, t2.y - v.y) > 3 && !toIt && sim2.pathLeft > 0) {
+          sim2.pathLeft--;
+          v.path = sim2.pathTo(v, Math.floor(t2.x), Math.floor(t2.y), 3e3);
+          v.phase = v.path.length ? "move" : "idle";
+        } else if (!t2 && v.path.length) {
+          v.path = [];
+          v.slide = null;
+          v.phase = "idle";
+        }
+      }
+      return;
+    }
     const cx = us.reduce((a, v) => a + v.x, 0) / us.length, cy = us.reduce((a, v) => a + v.y, 0) / us.length;
     const dx = plan2.rally.x - cx, dy = plan2.rally.y - cy, len = Math.max(1, Math.hypot(dx, dy)), t = WAR_DATA.supply.trail;
     const bx = cx + dx / len * t, by = cy + dy / len * t, taken = /* @__PURE__ */ new Set();
     for (const v of crew2) {
-      if (v.phase === "fight" || v.down > 0 || v.path.length) continue;
+      if (v.phase === "fight" || v.phase === "sleep" || v.inTent || v.down > 0) continue;
       const spot = sim2.nearestFree(Math.floor(bx), Math.floor(by), taken);
       if (!spot) continue;
       taken.add(spot[1] * sim2.world.size + spot[0]);
-      if (Math.hypot(spot[0] + 0.5 - v.x, spot[1] + 0.5 - v.y) < 4 || sim2.pathLeft <= 0) continue;
+      const away = Math.hypot(spot[0] + 0.5 - v.x, spot[1] + 0.5 - v.y);
+      v.hurry = away > 6;
+      const end = v.path[v.path.length - 1];
+      if (away < 4 || end && Math.hypot(end[0] - spot[0], end[1] - spot[1]) < 3 || sim2.pathLeft <= 0) continue;
       sim2.pathLeft--;
       v.path = sim2.pathTo(v, spot[0], spot[1], 3e3);
       v.phase = v.path.length ? "move" : "idle";
@@ -58209,6 +58843,8 @@ ${risk.lines.join("\n")}`);
         const v = sim2.get(id);
         if (v) {
           v.pack = void 0;
+          v.hurry = false;
+          v.inTent = false;
           v.out = false;
           v.recall = true;
         }
@@ -58340,43 +58976,43 @@ ${risk.lines.join("\n")}`);
     const out = [];
     const t = plan2.tribe ? sim2.tribes.find((x) => x.id === plan2.tribe) : void 0;
     if (plan2.kind === "attack") {
-      if (!t) out.push("\u2717 Ch\u01B0a ch\u1ECDn l\xE0ng \u0111\u1EC3 \u0111\xE1nh.");
-      else if (t.state !== "free") out.push(`\u2717 ${t.def.name} kh\xF4ng c\xF2n l\xE0 k\u1EBB \u0111\u1ECBch.`);
+      if (!t) out.push("\u2717 Ch\u01B0a ch\u1ECDn l\xE0ng");
+      else if (t.state !== "free") out.push(`\u2717 ${t.def.name} kh\xF4ng c\xF2n l\xE0 \u0111\u1ECBch`);
       else {
         const level = sim2.mapLevel(t.id), maps = sim2.maps.filter((m) => m.tribe === t.id);
-        if (!level && !sim2.dev.freeBuild) out.push("\u2717 Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 n\xE0o c\u1EE7a l\xE0ng n\xE0y: h\xE3y c\u1EED trinh s\xE1t.");
+        if (!level && !sim2.dev.freeBuild) out.push("\u2717 Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 l\xE0ng n\xE0y");
         else {
           const newest = Math.max(...maps.map((m) => m.at));
           const days2 = Math.floor((sim2.time - newest) / 1200);
-          out.push(days2 >= 3 ? "B\u1EA3n \u0111\u1ED3 \u0111\xE3 c\u0169, \u0111\u1ECBch c\xF3 th\u1EC3 \u0111\xE3 \u0111\u1ED5i b\u1ED1 tr\xED." : days2 >= 1 ? `B\xE1o c\xE1o trinh s\xE1t t\u1EEB ${days2} h\xF4m tr\u01B0\u1EDBc.` : "B\xE1o c\xE1o trinh s\xE1t m\u1EDBi trong ng\xE0y.");
-          if (maps.some((m) => m.gaps > 0)) out.push("B\u1EA3n \u0111\u1ED3 c\xF2n h\u1EDF v\xEC \xEDt trinh s\xE1t v\u1EC1: v\xE0i ch\u1ED7 ch\u01B0a ch\u1EAFc ch\u1EAFn.");
+          out.push(days2 >= 3 ? "B\u1EA3n \u0111\u1ED3 \u0111\xE3 c\u0169" : days2 >= 1 ? `B\u1EA3n \u0111\u1ED3 t\u1EEB ${days2} ng\xE0y tr\u01B0\u1EDBc` : "B\u1EA3n \u0111\u1ED3 m\u1EDBi");
+          if (maps.some((m) => m.gaps > 0)) out.push("B\u1EA3n \u0111\u1ED3 c\xF2n h\u1EDF");
         }
       }
     }
-    if (!plan2.missions.length) out.push("\u2717 Ch\u01B0a giao nhi\u1EC7m v\u1EE5 cho \u0111\u1ED9i n\xE0o.");
-    else if (plan2.kind === "attack" && !plan2.missions.some((m) => m.path.length)) out.push("\u2717 Kh\xF4ng \u0111\u1ED9i n\xE0o c\xF3 m\u0169i t\xEAn: v\u1EBD m\u0169i t\xEAn cho \xEDt nh\u1EA5t m\u1ED9t \u0111\u1ED9i \u0111\u1EC3 c\xF3 \u0111\u1ED9i ti\u1EBFn \u0111\xE1nh.");
+    if (!plan2.missions.length) out.push("\u2717 Ch\u01B0a c\xF3 \u0111\u1ED9i n\xE0o");
+    else if (plan2.kind === "attack" && !plan2.missions.some((m) => m.path.length || m.ordered)) out.push("\u2717 Ch\u01B0a \u0111\u1ED9i n\xE0o c\xF3 m\u0169i t\xEAn hay l\u1EC7nh");
     for (const m of plan2.missions) {
       const s = sim2.squadById(m.squad), n = s ? sim2.squadUnits(s).length : 0, name = s?.name ?? "?";
-      if (!n) out.push(`\u2717 ${name} ch\u01B0a c\xF3 l\xEDnh.`);
-      else if (isHolding(plan2, m)) out.push(`${name} kh\xF4ng c\xF3 m\u0169i t\xEAn: \u0111\u1EE9ng y\xEAn \u1EDF ch\u1ED7 \u0111\xE3 \u0111\u1EB7t khi chi\u1EBFn \u0111\u1EA5u v\xE0 ch\u1EC9 t\u1EF1 v\u1EC7.`);
-      if (n && m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name} ch\u1EDD t\xEDn hi\u1EC7u m\xE0 k\u1EBF ho\u1EA1ch kh\xF4ng c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u: s\u1EBD kh\xF4ng bao gi\u1EDD xu\u1EA5t ph\xE1t.`);
-      if (n && m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name} ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch.`);
-      if (n && m.deploy && n < m.deploy.cells.length) out.push(`\u2717 ${name} m\u1EDBi c\xF3 ${n}/${m.deploy.cells.length} l\xEDnh cho ${m.deploy.cells.length} \xF4 \u0111\u1ED9i h\xECnh: th\xEAm l\xEDnh v\xE0o \u0111\u1ED9i ho\u1EB7c b\u1EDBt \xF4 (\u2702 B\u1EDBt \xF4).`);
+      if (!n) out.push(`\u2717 ${name}: ch\u01B0a c\xF3 l\xEDnh`);
+      else if (isHolding(plan2, m)) out.push(`${name}: \u0111\u1EE9ng y\xEAn t\u1EF1 v\u1EC7 (ch\u01B0a c\xF3 m\u0169i t\xEAn hay l\u1EC7nh)`);
+      if (n && m.trigger.kind === "signal" && !plan2.cards.some((c) => c.kind === "signal")) out.push(`${name}: ch\u1EDD t\xEDn hi\u1EC7u nh\u01B0ng ch\u01B0a c\xF3 th\u1EBB Ph\xE1t t\xEDn hi\u1EC7u`);
+      if (n && m.trigger.kind === "after" && !plan2.missions.some((x) => x.squad === m.trigger.squad)) out.push(`\u2717 ${name}: ch\u1EDD m\u1ED9t \u0111\u1ED9i kh\xF4ng c\xF3 trong k\u1EBF ho\u1EA1ch`);
+      if (n && m.deploy && n < m.deploy.cells.length) out.push(`\u2717 ${name}: ${n}/${m.deploy.cells.length} l\xEDnh cho \u0111\u1EE7 \xF4`);
       const unfit = s ? sim2.squadUnits(s).filter((v) => v.down > 0 || v.train || sim2.sleepLocked(v)).length : 0;
-      if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng, \u0111ang hu\u1EA5n luy\u1EC7n ho\u1EB7c ng\u1EE7 say h\u1ED3i s\u1EE9c, ch\u01B0a \u0111i \u0111\u01B0\u1EE3c: \u0111\u1EE3i h\u1ECD kh\u1ECFe ho\u1EB7c \u0111\u01B0a ra kh\u1ECFi \u0111\u1ED9i.`);
-      if (s && n && !sim2.squadCenter(s)) out.push(`${name} ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng.`);
-      if (s && plan2.kind === "attack" && m.withdrawAt > 0 && !m.retreat.length && m.path.length) out.push(`${name} s\u1EBD r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n v\xEC ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt.`);
-      if (s && plan2.kind === "attack" && m.route === "night") out.push(`${name} \u0111i \u0111\u01B0\u1EDDng v\xF2ng ban \u0111\xEAm: s\u1EBD ch\u1EDD \u0111\u1EBFn t\u1ED1i m\u1EDBi xu\u1EA5t ph\xE1t.`);
+      if (unfit) out.push(`\u2717 ${name}: ${unfit} l\xEDnh ch\u01B0a \u0111i \u0111\u01B0\u1EE3c (th\u01B0\u01A1ng, t\u1EADp, ng\u1EE7 say)`);
+      if (s && n && !sim2.squadCenter(s)) out.push(`${name}: ch\u01B0a c\xF3 ch\u1ED7 \u0111\u1EE9ng`);
+      if (s && plan2.kind === "attack" && m.withdrawAt > 0 && !m.retreat.length && m.path.length) out.push(`${name}: ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt, s\u1EBD v\u1EC1 ch\u1ED7 h\u1EB9n`);
+      if (s && plan2.kind === "attack" && m.route === "night") out.push(`${name}: ch\u1EDD t\u1ED1i m\u1EDBi \u0111i`);
       if (s && plan2.kind === "attack") out.push(...obstacleLines(sim2, plan2, m, name));
     }
     if (plan2.kind === "attack") {
       const starts = plan2.missions.filter((m) => m.trigger.kind === "time" && m.trigger.at <= 0).length;
-      if (plan2.missions.length && !starts && !plan2.cards.some((c) => c.kind === "go")) out.push("Kh\xF4ng \u0111\u1ED9i n\xE0o c\xF3 gi\u1EDD xu\u1EA5t ph\xE1t: h\xE3y th\xEAm th\u1EBB Xu\u1EA5t ph\xE1t ho\u1EB7c \u0111\u1EB7t gi\u1EDD.");
+      if (plan2.missions.length && !starts && !plan2.cards.some((c) => c.kind === "go")) out.push("Ch\u01B0a \u0111\u1ED9i n\xE0o c\xF3 gi\u1EDD xu\u1EA5t ph\xE1t");
     }
     return out;
   }
   function isHolding(plan2, m) {
-    return plan2.kind === "attack" && !m.path.length;
+    return plan2.kind === "attack" && !m.path.length && !m.ordered;
   }
   function obstacleLines(sim2, plan2, m, name) {
     const out = [], start = sim2.missionStart(m);
@@ -58385,15 +59021,15 @@ ${risk.lines.join("\n")}`);
       for (const o of hits) {
         if (!o || o.kind === "enemy" || seen.has(`${o.x},${o.y}`)) continue;
         seen.add(`${o.x},${o.y}`);
-        if (!o.clear) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label} \u1EDF (${o.x}, ${o.y}), kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c: h\xE3y u\u1ED1n m\u0169i t\xEAn \u0111i v\xF2ng.`);
-        else out.push(`${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label} \u1EDF (${o.x}, ${o.y}): \u0111\u1ED9i s\u1EBD t\u1EF1 ph\xE1 khi t\u1EDBi \u0111\xF3 (m\u1EA5t th\xEAm th\u1EDDi gian).`);
+        if (!o.clear) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label}, kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c`);
+        else out.push(`${name}: v\u01B0\u1EDBng ${o.label}, s\u1EBD t\u1EF1 ph\xE1`);
       }
     }
     if (m.deploy) {
       const under = m.deploy.cells.map((c) => sim2.obstacleAt(Math.floor(c.x), Math.floor(c.y))).filter((o) => !!o);
       const cut = under.filter((o) => o.clear && o.kind !== "enemy").length, stuck = under.length - cut;
-      if (cut) out.push(`${name}: ${cut} \xF4 \u0111\u1ED9i h\xECnh n\u1EB1m d\u01B0\u1EDBi c\xE2y ho\u1EB7c \u0111\xE1, l\xEDnh s\u1EBD t\u1EF1 ph\xE1 khi tri\u1EC3n khai.`);
-      if (stuck) out.push(`${name}: ${stuck} \xF4 \u0111\u1ED9i h\xECnh n\u1EB1m tr\xEAn n\u01B0\u1EDBc ho\u1EB7c c\xF4ng tr\xECnh, kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c: l\xEDnh \u0111\u1EE9ng l\u1EC7ch ra, \u0111\u1ED9i h\xECnh b\u1ECB m\xE9o.`);
+      if (cut) out.push(`${name}: ${cut} \xF4 d\u01B0\u1EDBi c\xE2y/\u0111\xE1, l\xEDnh t\u1EF1 ph\xE1`);
+      if (stuck) out.push(`${name}: ${stuck} \xF4 tr\xEAn n\u01B0\u1EDBc/c\xF4ng tr\xECnh, \u0111\u1ED9i h\xECnh m\xE9o`);
     }
     return out;
   }
@@ -58512,14 +59148,14 @@ ${risk.lines.join("\n")}`);
   function assembled(sim2, plan2) {
     return plan2.missions.every((m) => {
       const s = sim2.squadById(m.squad);
-      return !s || sim2.squadUnits(s).every((v) => !v.breaks && (!v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5));
+      return !s || !m.resting && sim2.squadUnits(s).every((v) => !v.breaks && (!v.fight.anchor || Math.hypot(v.x - v.fight.anchor.x, v.y - v.fight.anchor.y) < 2.5));
     });
   }
   function regather(sim2, plan2) {
     let n = 0;
     for (const m of plan2.missions) {
       const s = sim2.squadById(m.squad);
-      if (!s) continue;
+      if (!s || m.resting) continue;
       for (const v of sim2.squadUnits(s)) {
         const a = v.fight.anchor;
         if (!a || v.breaks || v.phase === "fight" || v.path.length || v.down > 0 || Math.hypot(v.x - a.x, v.y - a.y) < 2.5) continue;
@@ -58546,6 +59182,7 @@ ${risk.lines.join("\n")}`);
   function withdrawPlan(sim2, plan2) {
     if (plan2.kind !== "attack" || plan2.status !== "running") return "K\u1EBF ho\u1EA1ch ch\u01B0a tri\u1EC3n khai";
     if (plan2.stage === "retreat" || plan2.stage === "recall") return "Qu\xE2n \u0111ang r\xFAt r\u1ED3i";
+    for (const m of plan2.missions) m.resting = false;
     const recall = plan2.stage === "assemble" || plan2.stage === "ready" || plan2.stage === "over";
     plan2.stage = recall ? "recall" : "retreat";
     if (recall) {
@@ -58578,6 +59215,57 @@ ${risk.lines.join("\n")}`);
     }
     sim2.say("R\xFAt qu\xE2n!");
     sim2.noteBattle("note", "L\u1EC7nh r\xFAt to\xE0n qu\xE2n.");
+    return null;
+  }
+  var REST_DONE = 95;
+  function noteRested(sim2, m, name, us) {
+    if (!m.rested && us.reduce((a, v) => a + v.energy, 0) / us.length >= REST_DONE) {
+      m.rested = true;
+      sim2.say(`${name} \u0111\xE3 ngh\u1EC9 \u0111\u1EE7 s\u1EE9c: b\u1EA5m \u0110i ti\u1EBFp khi mu\u1ED1n \u0111i.`);
+    }
+  }
+  function setRest(sim2, plan2, squadId, on) {
+    if (plan2.kind !== "attack" || plan2.status !== "running") return "Ch\u01B0a c\xF3 tr\u1EADn n\xE0o";
+    if (!sim2.planOpen("rest")) return "C\u1EA7n nghi\xEAn c\u1EE9u: Ngh\u1EC9 ng\u01A1i d\xE3 chi\u1EBFn";
+    const m = plan2.missions.find((x) => x.squad === squadId), s = sim2.squadById(squadId), c = s ? sim2.squadCenter(s) : null;
+    if (!m || !s || !c) return "Kh\xF4ng c\xF3 \u0111\u1ED9i n\xE0y";
+    if (!!m.resting === on) return null;
+    if (plan2.stage === "retreat" || plan2.stage === "recall") return "Qu\xE2n \u0111ang r\xFAt v\u1EC1 l\xE0ng";
+    if (on) {
+      if (!sim2.supplyReadyIn(plan2)) return "Kh\xF4ng c\xF3 l\xEDnh h\u1EADu c\u1EA7n \u0111\u1EC3 d\u1EF1ng l\u1EC1u: kh\xF4ng ngh\u1EC9 ng\u01A1i \u0111\u01B0\u1EE3c";
+      if (sim2.squadUnits(s).some((v) => v.phase === "fight")) return `${s.name} \u0111ang giao chi\u1EBFn`;
+      m.resting = true;
+      m.rested = false;
+      if (plan2.stage === "assemble" || plan2.stage === "ready") for (const v of sim2.squadUnits(s)) {
+        sim2.resetTask(v);
+        sim2.clearCombat(v);
+        v.fight.mode = "hold";
+        v.fight.anchor = { x: v.x, y: v.y };
+      }
+      else sim2.squadMove(s, c.x, c.y, "hold");
+      for (const v of sim2.squadUnits(s)) v.nightOwl = false;
+      sim2.say(`${s.name} d\u1EEBng l\u1EA1i ngh\u1EC9 ng\u01A1i.`);
+      return null;
+    }
+    m.resting = false;
+    for (const v of sim2.squadUnits(s)) v.nightOwl = true;
+    if (plan2.stage === "assemble" || plan2.stage === "ready") {
+      if (m.deploy) assemble(sim2, s, m.deploy);
+      else for (const v of sim2.squadUnits(s)) {
+        v.fight.mode = "guard";
+        v.fight.anchor = { x: v.x, y: v.y };
+      }
+      sim2.say(`${s.name} ti\u1EBFp t\u1EE5c.`);
+      return null;
+    }
+    if (m.state === "march") {
+      if (m.path.length) goLeg(sim2, s, m, m.path);
+      else dispatch(sim2, plan2, m, s);
+    } else if (m.state === "withdraw") {
+      if (m.retreat.length) goLeg(sim2, s, m, m.retreat);
+      else sim2.squadMove(s, plan2.rally.x, plan2.rally.y, "move");
+    } else sim2.squadMove(s, c.x, c.y, "hold");
+    sim2.say(`${s.name} ti\u1EBFp t\u1EE5c.`);
     return null;
   }
   function startPlan(sim2, plan2) {
@@ -58645,7 +59333,7 @@ ${risk.lines.join("\n")}`);
       if (plan2.stage === "over") continue;
       if (plan2.stage === "assemble") {
         if (Math.floor(sim2.time) !== Math.floor(sim2.time - dt)) regather(sim2, plan2);
-        const late = sim2.time - plan2.startedAt > 150;
+        const late = !plan2.missions.some((m) => m.resting) && sim2.time - plan2.startedAt > Math.max(150, 0.75 * DAY_LENGTH);
         if (assembled(sim2, plan2) || late) {
           plan2.stage = "ready";
           const missing2 = plan2.missions.reduce((a, m) => {
@@ -58676,12 +59364,23 @@ ${risk.lines.join("\n")}`);
         }
         continue;
       }
-      if (plan2.stage === "assemble" || plan2.stage === "ready") continue;
+      if (plan2.stage === "assemble" || plan2.stage === "ready") {
+        if (Math.floor(sim2.time) !== Math.floor(sim2.time - dt)) for (const m of plan2.missions) {
+          const s = sim2.squadById(m.squad), us = s ? sim2.squadUnits(s) : [];
+          if (m.resting && s && us.length) noteRested(sim2, m, s.name, us);
+        }
+        continue;
+      }
       const second = Math.floor(sim2.time) !== Math.floor(sim2.time - dt), half = Math.floor(sim2.time * 2) !== Math.floor((sim2.time - dt) * 2);
       for (const m of plan2.missions) {
         const s = sim2.squadById(m.squad);
         if (!s || !sim2.squadUnits(s).length) {
           m.state = "done";
+          continue;
+        }
+        if (m.resting) {
+          const us = sim2.squadUnits(s);
+          if (second) noteRested(sim2, m, s.name, us);
           continue;
         }
         if (isHolding(plan2, m) && m.state !== "withdraw" && m.state !== "done") {
@@ -58841,12 +59540,12 @@ ${risk.lines.join("\n")}`);
   }
   var armOf2 = (sim2, v) => sim2.armOf(v);
   var STANCE_WEIGHT = { fight: 1, shoot: 0.8, hold: 0.5, evade: 0 };
-  var pct3 = (x) => `${Math.round(x * 100)}%`;
+  var pct2 = (x) => `${Math.round(x * 100)}%`;
   function forecastPlan(sim2, plan2) {
     const t = plan2.tribe ? sim2.tribes.find((x) => x.id === plan2.tribe) : void 0;
     const notes = sim2.reviewPlan(plan2), blocked = notes.filter((l) => l.startsWith("\u2717")).map((l) => l.slice(2));
     const intel = plan2.tribe ? sim2.tribeIntel(plan2.tribe) : null, level = intel ? intel.level : 0;
-    const out = { level, chance: 0, spread: SPREAD[level], verdict: "", blocked: blocked.length ? blocked.join("\n") : null, warnings: notes.filter((l) => !l.startsWith("\u2717")), win: [], lose: [], lines: [] };
+    const out = { level, chance: 0, spread: SPREAD[level], verdict: "", blocked: blocked.length ? blocked.join("\n") : null, warnings: notes.filter((l) => !l.startsWith("\u2717")), win: [], lose: [], lines: [], compare: [], facts: [] };
     if (!t || !intel) {
       out.verdict = "Ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 l\u01B0\u1EE3ng s\u1EE9c.";
       return out;
@@ -58907,42 +59606,36 @@ ${risk.lines.join("\n")}`);
     out.chance = count ? Math.max(0.01, Math.min(0.99, 1 / (1 + Math.exp(-3 * Math.log(Math.max(0.01, R2)))))) : 0;
     const lossIfWin = R2 > 1 ? 1 - Math.sqrt(1 - 1 / (R2 * R2)) : 1;
     const w = out.warnings;
-    if (!count) w.push("Kh\xF4ng c\xF3 l\xEDnh n\xE0o trong k\u1EBF ho\u1EA1ch.");
-    if (out.chance < 0.4 && count) w.push("Th\u1EBF tr\u1EADn b\u1EA5t l\u1EE3i: kh\u1EA3 n\u0103ng thua cao h\u01A1n th\u1EAFng.");
-    else if (out.chance < 0.6 && count) w.push("Th\u1EBF tr\u1EADn c\xE2n b\u1EB1ng: m\u1ED9t ch\xFAt may r\u1EE7i c\u0169ng \u0111\u1EE7 \u0111\u1ED5i k\u1EBFt qu\u1EA3.");
-    if (bare) w.push(`${bare} l\xEDnh ch\u01B0a c\xF3 v\u0169 kh\xED, \u0111\xE1nh b\u1EB1ng tay kh\xF4ng.`);
-    if (unarmored && count > 1) w.push(`${unarmored} l\xEDnh ch\u01B0a c\xF3 gi\xE1p.`);
-    if (hurt2) w.push(`${hurt2} l\xEDnh \u0111ang b\u1ECB th\u01B0\u01A1ng n\u1EB7ng.`);
+    if (!count) w.push("Kh\xF4ng c\xF3 l\xEDnh n\xE0o trong k\u1EBF ho\u1EA1ch");
+    if (bare) w.push(`${bare} l\xEDnh ch\u01B0a c\xF3 v\u0169 kh\xED`);
+    if (unarmored && count > 1) w.push(`${unarmored} l\xEDnh ch\u01B0a c\xF3 gi\xE1p`);
+    if (hurt2) w.push(`${hurt2} l\xEDnh b\u1ECB th\u01B0\u01A1ng n\u1EB7ng`);
     const home = sim2.villagers.filter((v) => v.job === "fight" && v.health > 0 && !plan2.missions.some((m) => sim2.squadById(m.squad)?.ids.includes(v.id))).length;
-    if (home < 3) w.push(`Ch\u1EC9 c\xF2n ${home} l\xEDnh gi\u1EEF l\xE0ng: n\u1EBFu \u0111\u1ECBch \u0111\xE1nh v\xE0o l\xFAc n\xE0y th\xEC kh\xF3 ch\u1ED1ng.`);
-    if (sim2.resting) w.push("\u0110ang ban \u0111\xEAm: qu\xE2n \u0111i ch\u1EADm v\xE0 nh\xECn k\xE9m.");
-    if (sim2.weather !== "clear") w.push("Th\u1EDDi ti\u1EBFt x\u1EA5u: qu\xE2n \u0111i ch\u1EADm h\u01A1n.");
-    if (level < 3) w.push(`B\u1EA3n \u0111\u1ED3 c\u1EA5p ${level}: ${level === 1 ? "ch\u01B0a bi\u1EBFt \u0111\u1ECBch c\xF3 l\xEDnh hay c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 n\xE0o" : "ch\u01B0a bi\u1EBFt \u0111\u1ECBch c\xF3 bao nhi\xEAu l\xEDnh v\xE0 thu\u1ED9c binh ch\u1EE7ng n\xE0o"}, n\xEAn d\u1EF1 b\xE1o c\xF2n thi\u1EBFu ch\u1EAFc ch\u1EAFn.`);
-    out.win = [`Th\u1EAFng khi ${t.def.name} h\u1EBFt l\xEDnh, l\u1EEDa c\u1EE7a h\u1ECD t\u1EAFt v\xE0 m\u1ECDi c\xF4ng tr\xECnh s\u1EADp; khi \u0111\xF3 d\xE2n c\u1EE7a h\u1ECD xin h\xE0ng.`, "Ta l\u1EA5y \u0111\u01B0\u1EE3c nh\u1EEFng g\xEC c\xF2n trong kho l\u01B0\u01A1ng c\u1EE7a h\u1ECD.", `D\u1EF1 ki\u1EBFn ta m\u1EA5t kho\u1EA3ng ${pct3(lossIfWin)} s\u1ED1 l\xEDnh \u0111\xE3 d\xE0n tr\u1EADn.`];
-    out.lose = ["Thua khi qu\xE2n ta h\u1EBFt l\xEDnh ho\u1EB7c r\xFAt lui.", `Ph\u1EA7n l\u1EDBn l\xEDnh ra tr\u1EADn c\xF3 th\u1EC3 g\u1EE5c; l\xEDnh ch\u1EBFt l\xE0 m\u1EA5t h\u1EB3n, c\xF9ng v\u0169 kh\xED v\xE0 gi\xE1p mang theo.`, "K\u1EBB \u0111\u1ECBch b\u1ECB ch\u1ECDc gi\u1EADn n\xEAn c\xF3 th\u1EC3 k\xE9o \u0111\u1EBFn tr\u1EA3 \u0111\u0169a.", "R\xFAt k\u1ECBp th\xEC c\u1EE9u \u0111\u01B0\u1EE3c nh\u1EEFng ng\u01B0\u1EDDi c\xF2n l\u1EA1i, nh\u01B0ng chi\u1EBFn l\u1EE3i ph\u1EA9m th\xEC kh\xF4ng c\xF3."];
+    if (home < 3) w.push(`Ch\u1EC9 ${home} l\xEDnh \u1EDF l\u1EA1i gi\u1EEF l\xE0ng`);
+    const pk = packPlan(sim2, plan2);
+    if (!pk.sup) w.push("Kh\xF4ng c\xF3 l\xEDnh h\u1EADu c\u1EA7n: qu\xE2n s\u1EBD \u0111\xF3i");
+    else if (pk.days < plan2.carryDays - 0.05) w.push(`L\u01B0\u01A1ng ch\u1EC9 \u0111\u1EE7 ${pk.days.toFixed(1)} ng\xE0y`);
+    out.win = [`\u0110\u1ECBch h\u1EBFt l\xEDnh, l\u1EEDa t\u1EAFt, c\xF4ng tr\xECnh s\u1EADp \u2192 d\xE2n xin h\xE0ng`, "L\u1EA5y kho l\u01B0\u01A1ng c\u1EE7a \u0111\u1ECBch", `M\u1EA5t kho\u1EA3ng ${pct2(lossIfWin)} qu\xE2n`];
+    out.lose = ["H\u1EBFt qu\xE2n ho\u1EB7c r\xFAt lui", "L\xEDnh ch\u1EBFt l\xE0 m\u1EA5t c\u1EA3 v\u0169 kh\xED, gi\xE1p", "\u0110\u1ECBch c\xF3 th\u1EC3 k\xE9o \u0111\u1EBFn tr\u1EA3 \u0111\u0169a"];
     out.verdict = out.chance >= 0.8 ? "R\u1EA5t c\xF3 l\u1EE3i" : out.chance >= 0.6 ? "C\xF3 l\u1EE3i" : out.chance >= 0.4 ? "C\xE2n b\u1EB1ng" : out.chance >= 0.2 ? "B\u1EA5t l\u1EE3i" : "R\u1EA5t b\u1EA5t l\u1EE3i";
-    const L2 = out.lines;
-    L2.push(`Qu\xE2n ta: ${count} l\xEDnh trong ${perSquad.length} \u0111\u1ED9i${arms3.archer || arms3.cavalry ? ` (${arms3.foot} b\u1ED9 binh, ${arms3.archer} b\u1EAFn xa, ${arms3.cavalry} k\u1EF5)` : ""}.`);
-    L2.push(...marchLines(sim2, plan2), ...supplyLines(sim2, plan2));
-    if (level === 1) {
-      L2.push(`L\xE0ng ${t.def.name} c\xF3 kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi; \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED.`);
-      L2.push("Ch\u01B0a r\xF5 v\u0169 kh\xED, c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 hay th\u1EE7 l\u0129nh: c\u1EA7n b\u1EA3n \u0111\u1ED3 c\u1EA5p 2 v\xE0 3 \u0111\u1EC3 bi\u1EBFt th\xEAm.");
-    } else {
-      L2.push(`L\xE0ng ${t.def.name}: kho\u1EA3ng ${intel.population} ng\u01B0\u1EDDi${level >= 3 ? `, trong \u0111\xF3 ${men} l\xEDnh` : `, \u01B0\u1EDBc ch\u1EEBng ${men} c\xF3 th\u1EC3 c\u1EA7m v\u0169 kh\xED`}.`);
-      L2.push(works > 1 ? `Ph\xF2ng th\u1EE7: ${towers} ch\xF2i canh, ${fences} \u0111o\u1EA1n r\xE0o, ${gates} c\u1ED5ng (t\u0103ng kho\u1EA3ng ${pct3(works - 1)} s\u1EE9c \u0111\u1ECBch).` : "Ch\u01B0a th\u1EA5y c\xF4ng tr\xECnh ph\xF2ng th\u1EE7 n\xE0o.");
-    }
+    const mr = marchOfPlan(sim2, plan2), nTents = tentCount(sim2, plan2), tc = tentCost(sim2);
+    out.compare.push({ label: "L\xEDnh", ours: count, theirs: level >= 3 ? men : null });
     if (level >= 3 && soldiers) {
-      L2.push(`L\xEDnh \u0111\u1ECBch: ${soldiers.foot} b\u1ED9 binh, ${soldiers.archer} cung th\u1EE7, ${soldiers.cavalry} k\u1EF5 th\xFA${chief > 1 ? "; c\xF3 th\u1EE7 l\u0129nh \u0111i c\xF9ng" : ""}.`);
-      L2.push(match > 1.05 ? "Binh ch\u1EE7ng c\u1EE7a ta kh\u1EAFc binh ch\u1EE7ng \u0111\u1ECBch." : match < 0.95 ? "Binh ch\u1EE7ng \u0111\u1ECBch kh\u1EAFc qu\xE2n ta: n\xEAn \u0111\u1ED5i \u0111\u1ED9i h\xECnh." : "Binh ch\u1EE7ng hai b\xEAn ngang nhau.");
-      L2.push(`S\u1EE9c m\u1EA1nh quy \u0111\u1ED5i: ta ${Math.round(ours)} so v\u1EDBi \u0111\u1ECBch ${Math.round(theirs)}.`);
-      for (const q of perSquad) L2.push(`${q.name}: ${q.n} l\xEDnh, \u0111\xF3ng g\xF3p ${ours > 0 ? pct3(q.worth * match / ours) : "0%"} s\u1EE9c m\u1EA1nh c\u1EE7a ta.`);
+      out.compare.push({ label: "B\u1ED9 binh", ours: arms3.foot, theirs: soldiers.foot }, { label: "Cung", ours: arms3.archer, theirs: soldiers.archer }, { label: "K\u1EF5", ours: arms3.cavalry, theirs: soldiers.cavalry });
+      out.compare.push({ label: "S\u1EE9c m\u1EA1nh", ours: Math.round(ours), theirs: Math.round(theirs) });
     }
-    if (level >= 2) for (const m of plan2.missions) {
-      const s = sim2.squadById(m.squad), start = s ? sim2.missionStart(m) : null;
-      if (!s || !start || !m.path.length) continue;
-      const r = sim2.routeTime(s, start, m.path);
-      L2.push(`${s.name} \u0111i ${Math.round(r.length)} \xF4, m\u1EA5t kho\u1EA3ng ${Math.max(1, Math.round(r.total / 60))} ph\xFAt${r.hits.some((o) => o && o.kind !== "enemy") ? ", c\xF3 \u0111o\u1EA1n v\u01B0\u1EDBng v\u1EADt c\u1EA3n c\u1EA7n ph\xE1 ho\u1EB7c u\u1ED1n tr\xE1nh" : ""}.`);
+    if (level >= 2) out.facts.push(["Ph\xF2ng th\u1EE7 \u0111\u1ECBch", works > 1 ? `${towers} ch\xF2i, ${fences} r\xE0o, ${gates} c\u1ED5ng` : "kh\xF4ng c\xF3"]);
+    if (level >= 2) {
+      let longest = 0;
+      for (const m of plan2.missions) {
+        const s = sim2.squadById(m.squad), start = s ? sim2.missionStart(m) : null;
+        if (s && start && m.path.length) longest = Math.max(longest, sim2.routeTime(s, start, m.path).total / mr.speed);
+      }
+      if (longest > 0) out.facts.push(["\u0110\u01B0\u1EDDng \u0111i", `~${Math.max(1, Math.round(longest / 60))} ph\xFAt`]);
     }
+    if (mr.soldiers) out.facts.push(["\u0110i ch\u1EADm", pct2(mr.slow)]);
+    if (pk.sup) out.facts.push(["L\u01B0\u01A1ng", `${pk.days.toFixed(1)} ng\xE0y`]);
+    if (nTents) out.facts.push(["L\u1EC1u", `${nTents} \xD7 ${tc.wood} g\u1ED7, ${tc.hide} da`]);
     return out;
   }
 
@@ -59352,128 +60045,6 @@ ${risk.lines.join("\n")}`);
     return true;
   }
 
-  // src/sim/mounts.ts
-  var stockKey = (k) => `mount_${k}`;
-  var tamedCount = (sim2, k) => sim2.toolStock[stockKey(k)] ?? 0;
-  var STOCK_CAP = 12;
-  function tameLock(sim2, k) {
-    const d = MOUNTS[k], stable = sim2.building("stable");
-    if (!stable) return "C\u1EA7n d\u1EF1ng Chu\u1ED3ng th\xFA c\u01B0\u1EE1i";
-    if (stable.level < d.tier) return `C\u1EA7n Chu\u1ED3ng th\xFA c\u01B0\u1EE1i c\u1EA5p ${d.tier}`;
-    return null;
-  }
-  function queueTame(sim2, k) {
-    if (!MOUNTS[k]) return "Kh\xF4ng c\xF3 lo\xE0i n\xE0y";
-    const lock = tameLock(sim2, k);
-    if (lock) return lock;
-    if (sim2.tameQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
-    sim2.tameQueue.push(k);
-    return null;
-  }
-  function unqueueTame(sim2, k) {
-    const i = sim2.tameQueue.lastIndexOf(k);
-    if (i >= 0) sim2.tameQueue.splice(i, 1);
-  }
-  function tickTame(sim2, dt) {
-    for (const b of sim2.buildings) {
-      if (b.kind !== "stable" || !b.done) continue;
-      const staff = b.staff.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.phase === "inside");
-      if (!staff.length) continue;
-      if (!b.active) {
-        const i = sim2.tameQueue.findIndex((k3) => !tameLock(sim2, k3) && (sim2.dev.freeWorks || sim2.affordable(MOUNTS[k3].cost)));
-        if (i < 0) {
-          if (sim2.tameQueue.length && sim2.time - sim2.lastMatWarn > 30) {
-            sim2.lastMatWarn = sim2.time;
-            sim2.say("\u0110\u01A1n thu\u1EA7n th\xFA \u0111ang ch\u1EDD: thi\u1EBFu nguy\xEAn li\u1EC7u.");
-          }
-          continue;
-        }
-        const k2 = sim2.tameQueue.splice(i, 1)[0];
-        if (!sim2.dev.freeWorks) sim2.pay(MOUNTS[k2].cost);
-        b.active = { id: k2, progress: 0 };
-      }
-      const k = b.active.id, d = MOUNTS[k];
-      if (!d) {
-        b.active = null;
-        continue;
-      }
-      let rate = 0;
-      for (const v of staff) {
-        rate += sim2.workFactor(v, "tame");
-        sim2.gainXp(v, "tame", dt);
-      }
-      b.active.progress = Math.min(1, b.active.progress + dt * PACE.work * rate * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 25 : 1) / d.time);
-      if (b.active.progress < 1) continue;
-      if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim2, m), 0) >= STOCK_CAP) {
-        if (sim2.time - sim2.lastFullWarn > 30) {
-          sim2.lastFullWarn = sim2.time;
-          sim2.say("Chu\u1ED3ng \u0111\xE3 \u0111\u1EA7y th\xFA ch\u01B0a c\xF3 ng\u01B0\u1EDDi c\u01B0\u1EE1i: s\u1EA3n ph\u1EA9m ch\u1EDD ch\u1ED7.");
-        }
-        continue;
-      }
-      sim2.toolStock[stockKey(k)] = tamedCount(sim2, k) + 1;
-      b.active = null;
-      sim2.say(`\u0110\xE3 thu\u1EA7n xong m\u1ED9t con ${d.name.toLowerCase()}.`);
-    }
-  }
-  function campBeast(sim2) {
-    const camp = sim2.building("cavalry");
-    return MOUNT_KINDS[Math.max(0, Math.min(MOUNT_KINDS.length, camp?.level ?? 1) - 1)];
-  }
-  function mountOf(sim2, v) {
-    if (v.team !== "player") return null;
-    const own = v.mount ?? ((v.job === "fight" || v.job === "scout") && v.arm === "cavalry" ? campBeast(sim2) : null);
-    return v.job === "scout" && own === "elephant" ? null : own;
-  }
-  var mountSpeed = (sim2, v) => {
-    const k = mountOf(sim2, v);
-    return k ? MOUNTS[k].speed : 1;
-  };
-  var mountGuard = (sim2, v) => {
-    const k = mountOf(sim2, v);
-    return k ? MOUNTS[k].guard : 1;
-  };
-  function fitScoutMount(sim2, v) {
-    const was = v.mount ?? (v.arm === "cavalry" ? campBeast(sim2) : null);
-    if (was !== "elephant") return;
-    if (v.mount) sim2.toolStock[stockKey(v.mount)] = tamedCount(sim2, v.mount) + 1;
-    v.mount = null;
-    if (tamedCount(sim2, "wolf") > 0) {
-      sim2.toolStock[stockKey("wolf")] = tamedCount(sim2, "wolf") - 1;
-      v.mount = "wolf";
-      sim2.say(`${v.name} \u0111i trinh s\xE1t b\u1EB1ng s\xF3i, kh\xF4ng c\u01B0\u1EE1i voi.`);
-    }
-  }
-  function returnScoutMount(sim2, v) {
-    if (v.arm !== "cavalry" || !v.mount) return;
-    sim2.toolStock[stockKey(v.mount)] = tamedCount(sim2, v.mount) + 1;
-    v.mount = null;
-  }
-  function assignMount(sim2, ids, kind) {
-    let given = 0, short = false, riders = false;
-    for (const v of sim2.mine(ids)) {
-      if (v.mount === kind) continue;
-      if (kind && v.job === "fight" && v.arm === "cavalry") {
-        riders = true;
-        continue;
-      }
-      if (kind && tamedCount(sim2, kind) <= 0) {
-        short = true;
-        continue;
-      }
-      if (v.mount) sim2.toolStock[stockKey(v.mount)] = tamedCount(sim2, v.mount) + 1;
-      if (kind) sim2.toolStock[stockKey(kind)]--;
-      v.mount = kind;
-      given++;
-      if (kind) {
-        v.speed = 1.6 + 0.1 * v.stats.agi;
-        sim2.say(`${v.name} \u0111\u01B0\u1EE3c giao m\u1ED9t con ${MOUNTS[kind].name.toLowerCase()} \u0111\u1EC3 c\u01B0\u1EE1i.`);
-      } else sim2.say(`${v.name} tr\u1EA3 th\xFA v\u1EC1 chu\u1ED3ng.`);
-    }
-    if (given) return null;
-    return riders ? "K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA \u0111\xE3 c\xF3 th\xFA c\u1EE7a tr\u1EA1i" : short ? `Chu\u1ED3ng h\u1EBFt ${kind ? MOUNTS[kind].name.toLowerCase() : "th\xFA"} \u0111\xE3 thu\u1EA7n: h\xE3y thu\u1EA7n th\xEAm` : null;
-  }
-
   // src/sim/simwar.ts
   var WAR = {
     /** One tick while a war is on (warmode.ts): only the army, the scouts out, the arrows in the air and the village under attack are worked; everyone else goes home and stands still. */
@@ -59499,6 +60070,14 @@ ${risk.lines.join("\n")}`);
       const enemy = warTribe(this);
       for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
       tickTribes(this, dt);
+    },
+    /** → warsupply.supplyAdvice */
+    supplyAdvice(plan2) {
+      return supplyAdvice(this, plan2);
+    },
+    /** Whether a feature of the war plan is researched (the details tab, the supply sums, the weather, the rest in the field). */
+    planOpen(f) {
+      return planOpen(this.researched, f, this.dev.freeBuild);
     },
     /** → army.squadLimit */
     squadLimit() {
@@ -59719,6 +60298,10 @@ ${risk.lines.join("\n")}`);
       plan2.carryDays = Math.max(1, Math.min(WAR_DATA.supply.maxDays, Math.round(days2)));
       return null;
     },
+    /** → wartent.shelter */
+    shelter(v) {
+      return shelter(this, v);
+    },
     /** → wartent.sleepsInTent: night, and the tent of his squad stands beside him */
     sleepsInTent(v) {
       return sleepsInTent(this, v);
@@ -59815,6 +60398,18 @@ ${risk.lines.join("\n")}`);
     /** → warplan.cancelPlan */
     cancelPlan(plan2) {
       return cancelPlan(this, plan2);
+    },
+    /** In a war: whether a soldier of the army is fighting or marching (resting counts as marching); null for everyone else. */
+    warMode(v) {
+      return v.team === "player" && this.warIds.has(v.id) ? v.phase === "fight" || v.swing ? "fight" : "march" : null;
+    },
+    /** Supply soldiers of the deployed plan who are still alive (without them there is nobody to pitch a tent). */
+    supplyReadyIn(plan2) {
+      return supplyOf(this, plan2).length;
+    },
+    /** → warplan.setRest */
+    setRest(plan2, squadId, on) {
+      return setRest(this, plan2, squadId, on);
     },
     /** → warplan.isHolding */
     isHolding(plan2, m) {
@@ -60060,7 +60655,7 @@ ${risk.lines.join("\n")}`);
     }
     /** True for a selected villager who is on his way to a spot the player ordered: the fighting and fleeing of the brain wait until he gets there or is let go. */
     underOrders(v) {
-      return v.team === "player" && this.controlled.has(v.id) && v.phase === "move" && v.path.length > 0;
+      return v.team === "player" && (this.controlled.has(v.id) || !!v.fight.obey) && v.phase === "move" && v.path.length > 0;
     }
     // ---------------------------------------------------------------- tiện ích
     get day() {
@@ -60327,6 +60922,22 @@ ${risk.lines.join("\n")}`);
     /** → construction.canUpgrade */
     canUpgrade(b) {
       return canUpgrade(this, b);
+    }
+    /** Dev: building, upgrading and repairing cost nothing (the free-builds switch, or the free-works one). */
+    freeCost() {
+      return this.dev.freeBuild || this.dev.freeWorks;
+    }
+    /** → construction.canRepair */
+    canRepair(b) {
+      return canRepair(this, b);
+    }
+    /** → construction.repairCost */
+    repairCost(b) {
+      return repairCost(this, b);
+    }
+    /** → construction.repairBuilding */
+    repairBuilding(id) {
+      return repairBuilding(this, id);
     }
     /** → construction.upgradeBuilding */
     upgradeBuilding(id) {
@@ -60775,6 +61386,15 @@ ${risk.lines.join("\n")}`);
         eatWar(this, (this.time - this.warSince) / DAY_LENGTH);
         this.warSince = -1;
         this.warIds = /* @__PURE__ */ new Set();
+        for (const v of this.villagers) if (v.inTent) {
+          v.inTent = false;
+          if (v.inside === null) {
+            v.phase = "idle";
+            v.path = [];
+            v.slide = null;
+            v.bed = -1;
+          }
+        }
         this.march = PEACE;
         this.warMeals = 0;
       }
@@ -60797,6 +61417,8 @@ ${risk.lines.join("\n")}`);
         this.leaderClock = 0;
         this.pickLeaders();
         tickResearch(this);
+        restock(this);
+        fitScouts(this);
       }
       if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
       if (this.fogDirty) {
@@ -61199,7 +61821,7 @@ ${risk.lines.join("\n")}`);
     el.innerHTML = `<svg viewBox="0 0 16 16" width="100%" height="100%">${ART[key] ?? ""}</svg>`;
     return el;
   }
-  var statIcon = (stat) => resIcon(`stat_${{ hpregen: "hp", restregen: "sta" }[stat] ?? stat}`);
+  var statIcon = (stat) => resIcon(`stat_${{ hpregen: "hp", restregen: "sta", mspeed: "move", mload: "sta", mbuild: "work" }[stat] ?? stat}`);
 
   // src/ui/journal.ts
   var CHAPTERS2 = quests_default.chapters;
@@ -61345,12 +61967,15 @@ ${risk.lines.join("\n")}`);
   // src/ui/statsoverview.ts
   var GROUPS = [
     { title: "L\xEDnh", chains: ["military"], note: "C\u1ED9ng cho m\u1ECDi l\xEDnh c\xF9ng lo\u1EA1i: b\u1ED9, k\u1EF5, n\xE9m, trinh s\xE1t (l\xEDnh g\xE1c t\xEDnh nh\u01B0 l\xEDnh b\u1ED9)." },
+    { title: "Khi h\xE0nh qu\xE2n", chains: ["march", "marchlog"], note: "Ch\u1EC9 c\u1ED9ng trong chi\u1EBFn tranh, khi qu\xE2n \u0111ang h\xE0nh qu\xE2n ho\u1EB7c ngh\u1EC9 ng\u01A1i (kh\xF4ng c\u1ED9ng l\xFAc \u0111ang \u0111\xE1nh). T\u1ED1c \u0111\u1ED9 h\xE0nh qu\xE2n v\xE0 t\u1EA3i h\u1EADu c\u1EA7n c\u1ED9ng cho c\u1EA3 qu\xE2n." },
+    { title: "Khi giao chi\u1EBFn", chains: ["tactic"], note: "Ch\u1EC9 c\u1ED9ng trong chi\u1EBFn tranh, khi qu\xE2n \u0111ang giao chi\u1EBFn." },
     { title: "D\xE2n theo ngh\u1EC1", chains: ["economy"], note: "C\u1ED9ng cho m\u1ECDi ng\u01B0\u1EDDi l\xE0m c\xF9ng ngh\u1EC1: \u0111\u1ED1n g\u1ED7, th\u1EE3 \u0111\xE1, h\xE1i l\u01B0\u1EE3m, th\u1EE3 s\u0103n, l\xE0m ru\u1ED9ng, thu\u1EA7n th\xFA." },
     { title: "Ng\u01B0\u1EDDi l\xE0m trong nh\xE0", chains: ["development"], note: "Th\u1EE3 x\xE2y, ng\u01B0\u1EDDi ch\u1EBF t\u1EA1o v\xE0 nh\xE0 nghi\xEAn c\u1EE9u." },
     { title: "V\u0169 kh\xED", chains: ["weapon"], note: "C\u1ED9ng cho v\u0169 kh\xED: ai c\u1EA7m n\xF3 \u0111\u1EC1u \u0111\u01B0\u1EE3c." },
-    { title: "C\xF4ng c\u1EE5", chains: ["tool", "hammer"], note: "C\u1ED9ng cho c\xF4ng c\u1EE5: ai d\xF9ng n\xF3 \u0111\u1EC1u \u0111\u01B0\u1EE3c." }
+    { title: "C\xF4ng c\u1EE5", chains: ["tool", "hammer"], note: "C\u1ED9ng cho c\xF4ng c\u1EE5: ai d\xF9ng n\xF3 \u0111\u1EC1u \u0111\u01B0\u1EE3c." },
+    { title: "Ph\xF2ng th\u1EE7", chains: ["defense", "works1", "works2"], note: "L\xEDnh g\xE1c, l\xEDnh ch\xF2i, h\xE0ng r\xE0o, c\u1ED5ng, ch\xF4ng v\xE0 ch\xF2i canh." }
   ];
-  var pct4 = (n) => `${n >= 0 ? "+" : ""}${(Math.round(n * 10) / 10).toLocaleString("vi")}%`;
+  var pct3 = (n) => `${n >= 0 ? "+" : ""}${(Math.round(n * 10) / 10).toLocaleString("vi")}%`;
   var StatsOverview = class {
     constructor(c) {
       this.c = c;
@@ -61373,13 +61998,15 @@ ${risk.lines.join("\n")}`);
             const tier = soldierTier(sim2.researched, role);
             const pills = chain.order.map((stat) => {
               const bonus = statBonus(sim2.researched, role, stat), lv = lineLevel(sim2.researched, role, stat), top = statLevels(stat);
-              return h("span", { class: `spill${bonus > 0 ? "" : " zero"}`, title: `${STAT_DEF[stat].name}: ${pct4(bonus)} (c\u1EA5p ${lv}/${top})` }, h("span", { class: "ico-wrap" }, statIcon(stat)), h("b", { text: pct4(bonus) }), h("small", { text: `${lv}/${top}` }));
+              return h("span", { class: `spill${bonus > 0 ? "" : " zero"}`, title: `${STAT_DEF[stat].name}: ${pct3(bonus)} (c\u1EA5p ${lv}/${top})` }, h("span", { class: "ico-wrap" }, statIcon(stat)), h("b", { text: pct3(bonus) }), h("small", { text: `${lv}/${top}` }));
             });
             rows.push(h("div", { class: "srole" }, h("div", { class: "sname" }, h("b", { text: TREE_ROLES[role].name }), tier > 1 ? h("span", { class: "chip", text: `B\u1EADc ${tier}` }) : null), h("div", { class: "spills" }, ...pills)));
           }
         }
         if (rows.length) kids.push(h("section", {}, h("h3", { text: g.title }), h("p", { class: "dsub", text: g.note }), ...rows));
       }
+      const open = Object.entries(PLAN_TECH).map(([f, id]) => h("span", { class: `spill${sim2.planOpen(f) ? "" : " zero"}`, title: TECH_BY_ID[id].desc }, h("b", { text: TECH_BY_ID[id].name }), h("small", { text: sim2.planOpen(f) ? "\u2713" : "\u{1F512}" })));
+      kids.push(h("section", {}, h("h3", { text: "K\u1EBF ho\u1EA1ch t\xE1c chi\u1EBFn" }), h("p", { class: "dsub", text: "C\xE1c ph\u1EA7n c\u1EE7a b\u1EA3ng k\u1EBF ho\u1EA1ch v\xE0 b\xE1o c\xE1o tr\u1EADn \u0111\xE3 m\u1EDF." }), h("div", { class: "spills" }, ...open)));
       this.root.replaceChildren(...kids);
     }
   };
@@ -61416,6 +62043,7 @@ ${risk.lines.join("\n")}`);
       this.buildingOpen = false;
       /** Foe or animal shown in the target card. */
       /** What was tapped: a unit, an animal, or a tree, rock or bush (id = its tile index). */
+      /** What is shown on the card of the map: a unit, an animal, a tree/rock/bush (tile index), or the field tent of a squad in a war (squad id). */
       this.inspect = null;
       /** The campfire's people menu asked for the full page of the chosen villager. */
       this.openDetail = false;
@@ -61633,7 +62261,7 @@ ${risk.lines.join("\n")}`);
     hit(p, touch = false) {
       let best = null, bd = ((touch ? 28 : 14) * Math.max(1, this.cam.zoom)) ** 2;
       for (const v of this.sim.villagers) {
-        if (v.inside !== null) continue;
+        if (v.inside !== null || v.inTent) continue;
         const s = this.bodyScreen(v), d = (s.x - p.x) ** 2 + (s.y - p.y) ** 2;
         if (d < bd) {
           bd = d;
@@ -61718,6 +62346,13 @@ ${risk.lines.join("\n")}`);
         this.command(p, false);
         return;
       }
+      const tent = this.sim.plans.find((p2) => p2.kind === "attack" && p2.status === "running")?.tents.find((t) => Math.hypot(t.x - w.x / TILE, t.y - 0.5 - w.y / TILE) < 1.6);
+      if (tent) {
+        this.inspect = { kind: "tent", id: tent.squad };
+        this.selectedBuilding = null;
+        this.onChange();
+        return;
+      }
       if (seen) {
         this.inspect = { kind: seen.target.kind, id: seen.target.id };
         this.selectedBuilding = null;
@@ -61769,7 +62404,7 @@ ${risk.lines.join("\n")}`);
       if (!ref) return;
       this.selected.clear();
       for (const v of this.sim.villagers) {
-        if (v.inside !== null) continue;
+        if (v.inside !== null || v.inTent) continue;
         const s = this.bodyScreen(v);
         if (v.job === ref.job && s.x >= 0 && s.y >= 0 && s.x <= this.r.w && s.y <= this.r.h) this.selected.add(v.id);
       }
@@ -61779,7 +62414,7 @@ ${risk.lines.join("\n")}`);
       const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
       if (!add) this.selected.clear();
       for (const v of this.sim.villagers) {
-        if (v.inside !== null) continue;
+        if (v.inside !== null || v.inTent) continue;
         const s = this.bodyScreen(v);
         if (s.x >= x0 && s.x <= x1 && s.y >= y0 && s.y <= y1) this.selected.add(v.id);
       }
@@ -62386,6 +63021,24 @@ ${risk.lines.join("\n")}`);
     for (const r of RES_LIST) sim2.stock[r] = Math.max(sim2.stock[r], Math.min(sim2.capacity(r), 200));
     return { total: sim2.villagers.length, soldiers: sim2.villagers.filter((v) => v.job === "fight").length };
   }
+  function addPeople(sim2, n) {
+    for (let i = 0; i < n; i++) addVillager(sim2);
+    return `Th\xEAm ${n} d\xE2n: l\xE0ng c\xF3 ${sim2.villagers.filter((v) => v.team === "player").length} d\xE2n`;
+  }
+  function giveEnemyMap(sim2) {
+    const f = sim2.campfire(), from = f ? { x: f.x, y: f.y } : sim2.world.start;
+    const t = sim2.tribes.filter((x) => x.state !== "destroyed").sort((a, b) => Math.hypot(a.camp.x - from.x, a.camp.y - from.y) - Math.hypot(b.camp.x - from.x, b.camp.y - from.y))[0];
+    if (!t) return "Kh\xF4ng c\xF2n l\xE0ng n\xE0o";
+    sim2.world.ensure(t.camp.x, t.camp.y, 30);
+    if (!sim2.sightings.some((x) => x.tribe === t.id)) sim2.sightings.push({ tribe: t.id, by: -1, at: sim2.time, reported: true });
+    else for (const x of sim2.sightings) if (x.tribe === t.id) x.reported = true;
+    for (let level = 1; level <= 3; level++) {
+      const map2 = { tribe: t.id, level, at: sim2.time, gaps: 0, seen: level >= 2 ? seenNow(sim2, t) : void 0 }, old = sim2.maps.findIndex((m) => m.tribe === t.id && m.level === level);
+      if (old >= 0) sim2.maps[old] = map2;
+      else sim2.maps.push(map2);
+    }
+    return `\u0110\xE3 c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p 3 \u0111\u1EA7y \u0111\u1EE7 c\u1EE7a ${t.def.name}: m\u1EDF L\u1EC1u h\u1ECDp chi\u1EBFn \u0111\u1EC3 l\u1EADp k\u1EBF ho\u1EA1ch`;
+  }
   function addVillager(sim2) {
     const fire = sim2.campfire(), s = sim2.world.start;
     const a = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * 3;
@@ -62637,9 +63290,10 @@ ${risk.lines.join("\n")}`);
       page.append(h(
         "div",
         { class: "devrow" },
-        toggle("Nghi\xEAn c\u1EE9u, ch\u1EBF t\u1EA1o, thu\u1EA7n th\xFA nhanh + mi\u1EC5n ph\xED", "L\xE0m \xD725 nhanh v\xE0 kh\xF4ng t\u1ED1n v\u1EADt li\u1EC7u cho nghi\xEAn c\u1EE9u, ch\u1EBF t\u1EA1o v\xE0 thu\u1EA7n th\xFA", () => sim2.dev.freeWorks, (on) => {
+        toggle("M\u1ECDi vi\u1EC7c mi\u1EC5n ph\xED + xong ngay", "Nghi\xEAn c\u1EE9u, ch\u1EBF t\u1EA1o, thu\u1EA7n th\xFA, x\xE2y, n\xE2ng c\u1EA5p v\xE0 s\u1EEDa: kh\xF4ng t\u1ED1n v\u1EADt li\u1EC7u, kh\xF4ng m\u1EA5t th\u1EDDi gian (nh\xE0 v\u1EABn c\u1EA7n ng\u01B0\u1EDDi l\xE0m b\xEAn trong)", () => sim2.dev.freeWorks, (on) => {
           sim2.dev.freeWorks = on;
           sim2.dev.fastWorks = on;
+          sim2.dev.instantBuild = on;
         }),
         toggle("B\u1EA5t t\u1EED", "D\xE2n kh\xF4ng nh\u1EADn s\xE1t th\u01B0\u01A1ng", () => sim2.dev.god, (on) => {
           sim2.dev.god = on;
@@ -62648,11 +63302,13 @@ ${risk.lines.join("\n")}`);
       page.append(h(
         "div",
         { class: "devrow" },
+        btn("+5 d\xE2n", () => toast2(addPeople(sim2, 5)), "Th\xEAm 5 d\xE2n r\u1EA3nh quanh l\u1EEDa tr\u1EA1i, k\u1EC3 c\u1EA3 khi v\u01B0\u1EE3t s\u1EE9c ch\u1EE9a"),
         btn("+100 m\u1ED7i t\xE0i nguy\xEAn", () => addAllStock(sim2, 100), "C\u1ED9ng 100 m\u1ED7i lo\u1EA1i (kh\xF4ng qu\xE1 s\u1EE9c ch\u1EE9a)"),
         btn("G\u1ECDi s\u1EF1 ki\u1EC7n (theo c\u1EA5p l\u1EEDa)", () => toast2(callEvent(sim2)), "G\u1ECDi ngay s\u1EF1 ki\u1EC7n \u0111\xE3 h\u1EB9n m\u1EA1nh nh\u1EA5t m\xE0 tr\u1EA1i c\u1EA5p l\u1EEDa hi\u1EC7n t\u1EA1i \u0111\u1EE7 s\u1EE9c \u0111\xF3n")
       ));
       page.append(h("h3", { text: "Trinh s\xE1t" }));
       page.append(h("div", { class: "devrow" }, ...[1, 2, 3].map((n) => btn(`Trinh s\xE1t t\u1EF1 t\xECm l\xE0ng: b\u1EA3n \u0111\u1ED3 c\u1EA5p ${n}`, () => toast2(autoScout(sim2, n)), "L\xE0ng g\u1EA7n nh\u1EA5t ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p n\xE0y \u0111\u01B0\u1EE3c t\xECm v\xE0 v\u1EBD xong ngay (kh\xF4ng c\u1EA7n trinh s\xE1t th\u1EADt), \u0111\u1EC3 c\xF3 d\u1EEF li\u1EC7u cho ph\u1EA7n v\u1EBD b\u1EA3n \u0111\u1ED3"))));
+      page.append(h("div", { class: "devrow" }, btn("C\xF3 s\u1EB5n b\u1EA3n \u0111\u1ED3 \u0111\u1ECBch (\u0111\u1EA7y \u0111\u1EE7)", () => toast2(giveEnemyMap(sim2)), "L\xE0ng \u0111\u1ECBch g\u1EA7n nh\u1EA5t \u0111\u01B0\u1EE3c t\xECm th\u1EA5y v\xE0 c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p 3 \u0111\u1EA7y \u0111\u1EE7, \u0111\u1EC3 th\u1EED ph\u1EA7n l\u1EADp k\u1EBF ho\u1EA1ch chi\u1EBFn tranh")));
       page.append(h("h3", { text: "Th\u1EDDi gian v\xE0 th\u1EDDi ti\u1EBFt" }));
       page.append(h("div", { class: "devrow" }, btn("S\xE1ng", () => setTimeOfDay(sim2, 0.3)), btn("Tr\u01B0a", () => setTimeOfDay(sim2, 0.5)), btn("Chi\u1EC1u", () => setTimeOfDay(sim2, 0.78)), btn("\u0110\xEAm", () => setTimeOfDay(sim2, 0.95)), btn("+1 ng\xE0y", () => skipDays(sim2, 1)), btn("+5 ng\xE0y", () => skipDays(sim2, 5))));
       page.append(h("div", { class: "devrow" }, ...SEASONS.map((s) => btn(SEASON_NAME[s], () => setSeason(sim2, s)))));
@@ -62789,7 +63445,7 @@ ${risk.lines.join("\n")}`);
           } });
           if (role) card.append(info);
           this.refresh.push(() => {
-            const lock = sim2.buildingLock(kind), poor = !sim2.dev.freeBuild && !Object.keys(lv.cost).every((k) => sim2.stock[k] >= (lv.cost[k] ?? 0));
+            const lock = sim2.buildingLock(kind), poor = !sim2.freeCost() && !Object.keys(lv.cost).every((k) => sim2.stock[k] >= (lv.cost[k] ?? 0));
             const have2 = sim2.buildings.filter((b) => b.kind === kind).length, limit = sim2.buildingLimit(kind);
             card.classList.toggle("locked", !!lock);
             lockIcon.hidden = !lock;
@@ -62931,7 +63587,7 @@ ${risk.lines.join("\n")}`);
         ctx2.fillRect(t.camp.x - dot, t.camp.y - dot, dot * 2, dot * 2);
       }
       ctx2.fillStyle = "#ffffff";
-      for (const v of sim2.villagers) if (v.inside === null) ctx2.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
+      for (const v of sim2.villagers) if (v.inside === null && !v.inTent) ctx2.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
       ctx2.fillStyle = "#ff5a4a";
       for (const f of sim2.foes) if (seen(f.x, f.y)) ctx2.fillRect(f.x - dot / 2, f.y - dot / 2, dot, dot);
       for (const a of sim2.animals) if (a.state !== "dead" && seen(a.x, a.y)) {
@@ -63090,16 +63746,32 @@ ${risk.lines.join("\n")}`);
       this.confirm.ask({
         title: `N\xE2ng ${def.name} l\xEAn c\u1EA5p ${b.level + 1}?`,
         lines: [
-          `${nx.name}: ${gain}. V\u1EADt li\u1EC7u tr\u1EA3 ngay, r\u1ED3i giao Th\u1EE3 x\xE2y \u0111\u1EC3 l\xE0m (~${workDays(nx.buildTime)}).${sim2.dev.freeBuild ? " \u0110ang b\u1EADt x\xE2y mi\u1EC5n ph\xED." : ""}`,
+          `${nx.name}: ${gain}. V\u1EADt li\u1EC7u tr\u1EA3 ngay, r\u1ED3i giao Th\u1EE3 x\xE2y \u0111\u1EC3 l\xE0m (~${workDays(nx.buildTime)}).${sim2.freeCost() ? " \u0110ang b\u1EADt x\xE2y mi\u1EC5n ph\xED." : ""}`,
           ...b.kind === "campfire" ? sim2.upgradeAdvice(b.level).map((a) => `${a.bad ? "\u26A0" : "\u2713"} ${a.text}`) : []
         ],
-        cost: sim2.dev.freeBuild ? {} : nx.cost,
+        cost: sim2.freeCost() ? {} : nx.cost,
         costTitle: "V\u1EADt li\u1EC7u c\u1EA7n",
         why: sim2.canUpgrade(b),
         ok: "N\xE2ng c\u1EA5p",
         onOk: () => {
           const e = sim2.upgradeBuilding(b.id);
           toast2(e ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u. Giao Th\u1EE3 x\xE2y \u0111\u1EC3 n\xE2ng c\u1EA5p");
+          ctl2.onChange();
+        }
+      });
+    }
+    askRepair(b) {
+      const { sim: sim2, ctl: ctl2, toast: toast2 } = this.c, def = BUILDINGS[b.kind], lost = Math.round((1 - b.hp / maxHp(b)) * 100);
+      this.confirm.ask({
+        title: `S\u1EEDa ${def.name}?`,
+        lines: [`M\u1EA5t ${lost}% \u0111\u1ED9 b\u1EC1n: t\u1ED1n ${lost}% v\u1EADt li\u1EC7u \u0111\xE3 x\xE2y. V\u1EADt li\u1EC7u tr\u1EA3 ngay, r\u1ED3i giao Th\u1EE3 x\xE2y \u0111\u1EC3 s\u1EEDa.${sim2.freeCost() ? " \u0110ang b\u1EADt x\xE2y mi\u1EC5n ph\xED." : ""}`],
+        cost: sim2.freeCost() ? {} : sim2.repairCost(b),
+        costTitle: "V\u1EADt li\u1EC7u c\u1EA7n",
+        why: sim2.canRepair(b),
+        ok: "S\u1EEDa ch\u1EEFa",
+        onOk: () => {
+          const e = sim2.repairBuilding(b.id);
+          toast2(e ?? "\u0110\xE3 tr\u1EA3 v\u1EADt li\u1EC7u. Giao Th\u1EE3 x\xE2y \u0111\u1EC3 s\u1EEDa");
           ctl2.onChange();
         }
       });
@@ -63142,7 +63814,7 @@ ${risk.lines.join("\n")}`);
       }
       this.id = b.id;
       const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
-      const state = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` \xB7 ${this.c.sim.buildWhy(b)}` : ""}` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` \xB7 ${this.c.sim.buildWhy(b)}` : ""}` : canGrow(b.kind) ? `c\u1EA5p ${b.level}/${top} \xB7 ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
+      const state = !b.done ? `\u0111ang x\xE2y ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` \xB7 ${this.c.sim.buildWhy(b)}` : ""}` : b.repairing ? `\u0111ang s\u1EEDa ch\u1EEFa ${Math.round(b.hp / maxHp(b) * 100)}%${this.c.sim.buildWhy(b) ? ` \xB7 ${this.c.sim.buildWhy(b)}` : ""}` : b.upgrading ? `\u0111ang n\xE2ng c\u1EA5p ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` \xB7 ${this.c.sim.buildWhy(b)}` : ""}` : canGrow(b.kind) ? `c\u1EA5p ${b.level}/${top} \xB7 ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
       const hp = b.done ? ` \xB7 b\u1EC1n ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? " \xB7 \u0111ang ch\xE1y" : b.hp <= maxHp(b) * 0.7 ? " \xB7 b\u1ED1c kh\xF3i" : ""}` : "";
       const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < top;
       const campRole = ["foot", "cavalry", "archer", "guard", "scout", "supply"].find((r) => ROLES[r].building === b.kind), camp = campRole ? this.c.sim.villagers.filter((v) => roleOf(v) === campRole) : [];
@@ -63173,6 +63845,7 @@ ${risk.lines.join("\n")}`);
             if (e) toast2(e);
             ctl2.onChange();
           } },
+          { id: "repair", label: "S\u1EEDa ch\u1EEFa", title: "S\u1EEDa l\u1EA1i \u0111\u1ED9 b\u1EC1n \u0111\xE3 m\u1EA5t: t\u1ED1n v\u1EADt li\u1EC7u theo ph\u1EA7n \u0111\u1ED9 b\u1EC1n m\u1EA5t, th\u1EE3 x\xE2y l\xE0m", hidden: ctl2.groupMode || !b.done || b.repairing || b.upgrading || b.hp >= maxHp(b), onClick: () => this.askRepair(b) },
           { id: "up", label: "N\xE2ng c\u1EA5p", hidden: ctl2.groupMode || !upgradable, onClick: () => this.askUpgrade(b) },
           { id: "callall", label: campOut.all ? "Cho v\u1EC1 h\u1EBFt" : "G\u1ECDi t\u1EA5t c\u1EA3", title: campOut.all ? "Cho m\u1ECDi l\xEDnh c\u1EE7a tr\u1EA1i n\xE0y v\u1EC1 tr\u1EA1i ngh\u1EC9" : "G\u1ECDi m\u1ECDi l\xEDnh c\u1EE7a tr\u1EA1i n\xE0y ra ngo\xE0i, s\u1EB5n s\xE0ng; b\u1EA5m l\u1EA1i \u0111\u1EC3 cho v\u1EC1", hidden: ctl2.groupMode || !b.done || !campOut.ids.length, onClick: () => {
             if (campOut.all) sim2.sendBack(campOut.ids);
@@ -63209,8 +63882,56 @@ ${risk.lines.join("\n")}`);
       this.folded = false;
       /** How many soldiers the player picked to break down what halted each squad. */
       this.crew = /* @__PURE__ */ new Map();
+      /** The report of the squads for the rest in the field (the Nghỉ ngơi dã chiến research), over the whole screen. */
+      this.restRoot = h("div", { id: "restdlg" });
+      this.restDlg = new GameDialog(this.restRoot, {});
+      this.restKey = "";
       /** Whether the camera is far from the army (the key of the bar notices the change). */
       this.armyAway = false;
+      document.body.append(this.restRoot);
+    }
+    /** The dialog: one row for each squad with its strength, its tent and a button to rest or go on; kept fresh while it is open. */
+    fillRest(plan2) {
+      const { sim: sim2, toast: toast2 } = this.c, squads = plan2.missions.map((m) => ({ m, s: sim2.squadById(m.squad) })).filter((x) => x.s && sim2.squadUnits(x.s).length);
+      const rows = squads.map(({ m, s }) => {
+        const us = sim2.squadUnits(s), energy = Math.round(us.reduce((a, v) => a + v.energy, 0) / us.length), tent = plan2.tents.find((t) => t.squad === s.id);
+        return { m, s, n: us.length, energy, tent: !tent ? "ch\u01B0a c\xF3 l\u1EC1u" : tent.built ? "l\u1EC1u \u0111\xE3 d\u1EF1ng" : `\u0111ang d\u1EF1ng ${Math.floor(tent.progress * 100)}%` };
+      });
+      const key = rows.map((r) => `${r.s.id}.${r.n}.${r.energy}.${r.tent}.${!!r.m.resting}`).join("|") + `|${Math.round(sim2.warHunger * 20)}|${sim2.supplyReadyIn(plan2)}`;
+      if (key === this.restKey) return;
+      this.restKey = key;
+      const go = (f) => {
+        const e = f();
+        if (e) toast2(e);
+        this.restKey = "";
+        this.c.ctl.onChange();
+      };
+      const hungry = sim2.warHunger > 0.05, noSupply = !sim2.supplyReadyIn(plan2);
+      this.restDlg.show(dlg.card(
+        { wide: true, label: "Ngh\u1EC9 ng\u01A1i d\xE3 chi\u1EBFn" },
+        dlg.head({ pic: "\u26FA", title: "Ngh\u1EC9 ng\u01A1i d\xE3 chi\u1EBFn", sub: noSupply ? "Kh\xF4ng c\xF3 l\xEDnh h\u1EADu c\u1EA7n: kh\xF4ng d\u1EF1ng \u0111\u01B0\u1EE3c l\u1EC1u \u0111\u1EC3 ngh\u1EC9" : hungry ? "Qu\xE2n \u0111ang \u0111\xF3i: l\u01B0\u01A1ng mang theo kh\xF4ng \u0111\u1EE7" : "L\u01B0\u01A1ng mang theo c\xF2n \u0111\u1EE7", onClose: () => this.restDlg.hide() }),
+        h("div", { class: "restlist" }, ...rows.map((r) => h(
+          "div",
+          { class: `restrow${r.m.resting ? " on" : ""}` },
+          h("i", { style: `background:${r.s.color}` }),
+          h("b", { text: r.s.name }),
+          h("small", { text: `${r.n} l\xEDnh \xB7 ${r.tent}` }),
+          h("div", { class: "restbar", title: `S\u1EE9c ${r.energy}%` }, h("i", { class: r.energy < 30 ? "low" : "", style: `width:${r.energy}%` }), h("span", { text: `${r.energy}%` })),
+          h("button", { class: `sm${r.m.resting ? "" : " primary"}`, type: "button", disabled: noSupply && !r.m.resting, text: r.m.resting ? "\u0110i ti\u1EBFp" : "Ngh\u1EC9", onclick: () => go(() => sim2.setRest(plan2, r.s.id, !r.m.resting)) })
+        ))),
+        dlg.buttons(
+          dlg.button("C\u1EA3 qu\xE2n ngh\u1EC9", noSupply ? () => toast2("Kh\xF4ng c\xF3 l\xEDnh h\u1EADu c\u1EA7n") : () => go(() => {
+            let e = null;
+            for (const r of rows) if (!r.m.resting) e = sim2.setRest(plan2, r.s.id, true) ?? e;
+            return e;
+          })),
+          dlg.button("C\u1EA3 qu\xE2n \u0111i ti\u1EBFp", () => go(() => {
+            let e = null;
+            for (const r of rows) if (r.m.resting) e = sim2.setRest(plan2, r.s.id, false) ?? e;
+            return e;
+          }), { tone: "alt" })
+        )
+      ));
     }
     /** The attack that is deployed, if any. */
     plan() {
@@ -63256,8 +63977,11 @@ ${risk.lines.join("\n")}`);
       if (!plan2) {
         this.key = "";
         this.folded = false;
+        this.restDlg.hide();
+        this.restKey = "";
         return;
       }
+      if (this.restDlg.isOpen) this.fillRest(plan2);
       const units = plan2.missions.flatMap((m) => {
         const s = sim2.squadById(m.squad);
         return s ? sim2.squadUnits(s) : [];
@@ -63268,7 +63992,7 @@ ${risk.lines.join("\n")}`);
       const cam2 = this.c.ctl.viewTile(), mid = this.armyCenter(plan2);
       this.armyAway = !!mid && Math.hypot(cam2.x - mid.x, cam2.y - mid.y) > 40;
       const blocked = plan2.missions.filter((m) => m.state === "blocked" && m.block);
-      const key = [plan2.id, plan2.stage, this.armyAway, inPlace, ours, Math.floor(theirs / 3), sim2.battle.on, this.folded, blocked.map((m) => `${m.squad}:${m.block.x},${m.block.y}:${sim2.squadUnits(sim2.squadById(m.squad)).length}:${this.crew.get(m.squad) ?? 0}`).join()].join("|");
+      const key = [sim2.planOpen("rest"), plan2.id, plan2.stage, this.armyAway, inPlace, ours, Math.floor(theirs / 3), sim2.battle.on, this.folded, blocked.map((m) => `${m.squad}:${m.block.x},${m.block.y}:${sim2.squadUnits(sim2.squadById(m.squad)).length}:${this.crew.get(m.squad) ?? 0}`).join()].join("|");
       if (key === this.key) return;
       this.key = key;
       const act = (e) => {
@@ -63298,6 +64022,10 @@ ${risk.lines.join("\n")}`);
         const c = this.armyCenter(plan2);
         if (c) this.c.ctl.centerOn(c.x * TILE, c.y * TILE);
       } }));
+      if (sim2.planOpen("rest") && plan2.stage !== "retreat" && plan2.stage !== "recall" && plan2.stage !== "over") buttons.push(h("button", { class: "sm", text: "\u26FA Ngh\u1EC9 ng\u01A1i", title: "Cho t\u1EEBng \u0111\u1ED9i d\u1EF1ng l\u1EC1u v\xE0 ngh\u1EC9, c\u1EA3 ban ng\xE0y", onclick: () => {
+        this.restKey = "";
+        this.fillRest(plan2);
+      } }));
       const fold = (on) => () => {
         this.folded = on;
         this.key = "";
@@ -63319,8 +64047,8 @@ ${risk.lines.join("\n")}`);
   };
 
   // src/ui/describe.ts
-  var pct5 = (x) => `${Math.round(x * 100)}%`;
-  var armorText = (a, named = true) => `${named ? `${a.name}: ` : ""}gi\u1EA3m s\xE1t th\u01B0\u01A1ng \u0111\xE2m ${pct5(a.pierce)} \xB7 ch\xE9m ${pct5(a.slash)} \xB7 \u0111\u1EADp ${pct5(a.crush)}`;
+  var pct4 = (x) => `${Math.round(x * 100)}%`;
+  var armorText = (a, named = true) => `${named ? `${a.name}: ` : ""}gi\u1EA3m s\xE1t th\u01B0\u01A1ng \u0111\xE2m ${pct4(a.pierce)} \xB7 ch\xE9m ${pct4(a.slash)} \xB7 \u0111\u1EADp ${pct4(a.crush)}`;
   function waitReason(v, sim2) {
     const j = v.job;
     if (j === "build") return sim2.buildings.some(needsWork) ? null : "ch\u1EDD: ch\u01B0a c\xF3 c\xF4ng tr\u01B0\u1EDDng n\xE0o c\u1EA7n x\xE2y";
@@ -63826,7 +64554,7 @@ ${risk.lines.join("\n")}`);
     }
     attack() {
       const { ctl: ctl2, sim: sim2, toast: toast2 } = this.c, t = ctl2.inspect;
-      if (!t || t.kind === "node" || !ctl2.selected.size) {
+      if (!t || t.kind === "node" || t.kind === "tent" || !ctl2.selected.size) {
         toast2("H\xE3y ch\u1ECDn d\xE2n tr\u01B0\u1EDBc");
         return;
       }
@@ -63861,6 +64589,26 @@ ${risk.lines.join("\n")}`);
         { id: "attack", label: attackLabel, tone: "primary", hidden: !attack, onClick: () => this.attack() },
         { id: "loot", label: "L\u1ED9t da, l\u1EA5y th\u1ECBt", hidden: !loot, onClick: () => this.loot() }
       ];
+      if (t.kind === "tent") {
+        const plan2 = sim2.plans.find((p) => p.kind === "attack" && p.status === "running"), tent = plan2?.tents.find((x) => x.squad === t.id), supply = t.id < 0, sq = supply ? void 0 : sim2.squadById(t.id);
+        if (!plan2 || !tent || !sq && !supply) {
+          gone();
+          return;
+        }
+        const folk = supply ? plan2.supplyIds.map((id) => sim2.get(id)).filter((v) => !!v) : sim2.squadUnits(sq);
+        const crew2 = sim2.villagers.filter((v) => v.inTent && Math.hypot(v.x - tent.x, v.y - tent.y) < 1.5).length, near2 = folk.filter((v) => Math.hypot(v.x - tent.x, v.y - tent.y) < 6).length;
+        this.root.hidden = false;
+        this.card.set({
+          picKey: `tent|${tent.built}`,
+          pic: () => "\u26FA",
+          title: "L\u1EC1u d\xE3 chi\u1EBFn",
+          sub: `${sq?.name ?? "H\u1EADu c\u1EA7n"} \xB7 ${tent.built ? "\u0111\xE3 d\u1EF1ng xong" : `\u0111ang d\u1EF1ng ${Math.floor(tent.progress * 100)}%`}`,
+          line: tent.built ? `${near2}/${folk.length} l\xEDnh ${supply ? "h\u1EADu c\u1EA7n" : "c\u1EE7a \u0111\u1ED9i"} ngh\u1EC9 g\u1EA7n l\u1EC1u \xB7 ${crew2} \u0111ang ng\u1EE7 trong l\u1EC1u` : "H\u1EADu c\u1EA7n \u0111ang d\u1EF1ng; d\u1EF1ng xong l\xEDnh m\u1EDBi ng\u1EE7 \u0111\u01B0\u1EE3c",
+          onClose: close,
+          actions: []
+        });
+        return;
+      }
       if (t.kind === "node") {
         const N = sim2.world.size, n = sim2.world.nodeAt(t.id % N, Math.floor(t.id / N));
         if (!n) {
@@ -63968,6 +64716,7 @@ ${risk.lines.join("\n")}`);
       if (r && sprites2.icons[r]) return h("span", { class: "tpic" }, iconCanvas(sprites2.icons[r]));
       if (t.unlocks.mounts) return this.pic("stable", 1);
       if (t.id.startsWith("form_") || t.id === "signal") return this.pic("drill", 1);
+      if (t.id.startsWith("plan_")) return this.pic("wartent", 1);
       if (t.id.startsWith("scout")) return this.pic("scouttent", 1);
       return this.pic("lab", 1);
     }
@@ -64055,7 +64804,7 @@ ${risk.lines.join("\n")}`);
     }
     /** The tree of the formations: a column for each (its unlock on top, then the first stats), the research shared by all of them joined below (cells), the rest of the stats, and the research shared again (squads). The parts and their order come from the chain's layout. */
     addFormations(title, chain) {
-      const def = CHAINS[chain], layout = def.layout ?? [{ stats: def.order }], { sim: sim2 } = this.c;
+      const def = chain === "plan" ? { roles: PLAN_TREE.roles, order: [], layout: PLAN_TREE.layout } : CHAINS[chain], layout = def.layout ?? [{ stats: def.order }], { sim: sim2 } = this.c;
       const link = () => h("span", { class: "tlink" });
       const done = (t) => sim2.researched.has(t.id);
       const techNode = (t) => this.make(this.techPic(t), t.name, 1, () => done(t) ? null : t, () => done(t) ? 1 : 0).el;
@@ -64374,12 +65123,15 @@ ${risk.lines.join("\n")}`);
     const role = roleOf(v);
     return role ? roleName(role, c.sim.era) : isFree(v) ? "D\xE2n r\u1EA3nh" : JOB_NAME[v.job];
   };
+  var PAGE2 = 24;
   var Roster = class {
     constructor(c) {
       this.c = c;
       this.showIn = true;
       this.showPool = true;
       this.filter = "all";
+      /** How many of the people who could go in are drawn: a village of hundreds drawn whole made every click on + or − freeze the page. */
+      this.shown = PAGE2;
     }
     render(s) {
       const { sim: sim2, toast: toast2, ctl: ctl2 } = this.c;
@@ -64412,10 +65164,17 @@ ${risk.lines.join("\n")}`);
           ] });
         })));
       }
-      const trades = /* @__PURE__ */ new Map();
-      for (const v of s.pool) trades.set(tradeOf(this.c, v), (trades.get(tradeOf(this.c, v)) ?? 0) + 1);
+      const trades = /* @__PURE__ */ new Map(), trade = /* @__PURE__ */ new Map();
+      for (const v of s.pool) {
+        const t = tradeOf(this.c, v);
+        trade.set(v.id, t);
+        trades.set(t, (trades.get(t) ?? 0) + 1);
+      }
       if (this.filter !== "all" && !trades.has(this.filter)) this.filter = "all";
-      const picked = s.pool.filter((v) => this.filter === "all" || tradeOf(this.c, v) === this.filter).sort((a, b) => Number(isFree(b)) - Number(isFree(a)) || s.stat(b) - s.stat(a));
+      const rank = /* @__PURE__ */ new Map();
+      const matching = s.pool.filter((v) => this.filter === "all" || trade.get(v.id) === this.filter);
+      for (const v of matching) rank.set(v.id, s.stat(v));
+      const picked = matching.sort((a, b) => Number(isFree(b)) - Number(isFree(a)) || rank.get(b.id) - rank.get(a.id));
       const free = s.pool.filter((v) => isFree(v)).length;
       out.push(head(this.showPool, "Th\xEAm ng\u01B0\u1EDDi", `${free} d\xE2n r\u1EA3nh \xB7 ${s.pool.length} ng\u01B0\u1EDDi`, () => {
         this.showPool = !this.showPool;
@@ -64430,11 +65189,12 @@ ${risk.lines.join("\n")}`);
         sel.value = this.filter;
         sel.addEventListener("change", () => {
           this.filter = sel.value;
+          this.shown = PAGE2;
           s.again();
         });
         out.push(h("div", { class: "btns filters" }, sel, h("small", { class: "dsub", text: s.addBlock ?? "D\xE2n r\u1EA3nh l\xEAn \u0111\u1EA7u; ng\u01B0\u1EDDi \u0111ang c\xF3 vi\u1EC7c s\u1EBD ngh\u1EC9 vi\u1EC7c c\u0169 khi \u0111\u01B0\u1EE3c giao" })));
         if (!picked.length) out.push(dlg.empty(s.emptyPool));
-        else out.push(dlg.list(...picked.map((v) => {
+        else out.push(dlg.list(...picked.slice(0, this.shown).map((v) => {
           const locked = sim2.sleepLocked(v);
           const why = s.addBlock ?? (locked ? `${v.name} \u0111ang ng\u1EE7 say v\xEC ki\u1EC7t s\u1EE9c, ch\u01B0a g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c` : null);
           return personTile(this.c, v, { note: `\u0111ang ${tradeOf(this.c, v).toLowerCase()}`, stats: s.statIds, actions: [
@@ -64447,6 +65207,10 @@ ${risk.lines.join("\n")}`);
             }, { icon: true, disabled: !!why, title: why ?? "Giao vi\u1EC7c n\xE0y" })
           ] });
         })));
+        if (picked.length > this.shown) out.push(h("div", { class: "btns" }, h("button", { class: "sm", type: "button", text: `Hi\u1EC7n th\xEAm (${picked.length - this.shown})`, onclick: () => {
+          this.shown += PAGE2;
+          s.again();
+        } })));
       }
       return out;
     }
@@ -64571,7 +65335,7 @@ ${risk.lines.join("\n")}`);
         this.role,
         this.filter,
         sim2.roleCapacity(this.role),
-        sim2.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? "" : "i"}${v.shift}${v.out ? "o" : ""}${v.housed ? "H" : ""}${v.phase === "sleep" ? "z" : ""}${Math.round(v.energy / 5)}${Math.round(v.health / 5)}${v.armor ? Math.round(v.gear.ad / 5) : ""}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
+        sim2.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? "" : "i"}${v.shift}${v.out ? "o" : ""}${v.housed ? "H" : ""}${v.phase === "sleep" ? "z" : ""}${Math.round(v.energy / 20)}${Math.round(v.health / 20)}${v.armor ? Math.round(v.gear.ad / 25) : ""}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
         sim2.scouts.map((m) => m.ids.join(".")).join("|"),
         sim2.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join()
       ].join("|");
@@ -64782,10 +65546,10 @@ ${risk.lines.join("\n")}`);
         body.append(dlg.why(plan0.error));
         return body;
       }
-      const flow = sim2.scoutFlow(id), pct6 = Math.round(flow.progress * 100);
-      body.append(dlg.bar(pct6, 100, `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${flow.level} v\u1EBD \u0111\u01B0\u1EE3c ${pct6}%`));
+      const flow = sim2.scoutFlow(id), pct5 = Math.round(flow.progress * 100);
+      body.append(dlg.bar(pct5, 100, `B\u1EA3n \u0111\u1ED3 c\u1EA5p ${flow.level} v\u1EBD \u0111\u01B0\u1EE3c ${pct5}%`));
       if (trip) body.append(dlg.line("\u0110ang \u0111i trinh s\xE1t", `${trip.ids.length} ng\u01B0\u1EDDi ${PHASE[trip.phase]}`));
-      else if (!flow.steps.every((st) => st.done) && flow.progress > 0) body.append(dlg.note(`\u0110\xE3 v\u1EBD d\u1EDF ${pct6}%: c\u1EED trinh s\xE1t \u0111i v\u1EBD ti\u1EBFp t\u1EEB ch\u1ED7 \u0111\xF3.`, false));
+      else if (!flow.steps.every((st) => st.done) && flow.progress > 0) body.append(dlg.note(`\u0110\xE3 v\u1EBD d\u1EDF ${pct5}%: c\u1EED trinh s\xE1t \u0111i v\u1EBD ti\u1EBFp t\u1EEB ch\u1ED7 \u0111\xF3.`, false));
       body.append(h("div", { class: "flow" }, ...flow.steps.flatMap((st, i) => [i ? h("span", { class: `link ${flow.steps[i - 1].done ? "done" : "todo"}` }) : null, h("div", { class: `step ${st.done ? "done" : "todo"}` }, h("b", { text: st.done ? "\u2713" : "\u2717" }), h("span", { text: st.label }))])));
       if (trip) body.append(trip.phase === "back" ? dlg.note("Trinh s\xE1t \u0111ang tr\xEAn \u0111\u01B0\u1EDDng v\u1EC1.", false) : dlg.button("G\u1ECDi trinh s\xE1t v\u1EC1", () => {
         const e = sim2.recallScouts(id);
@@ -66089,6 +66853,8 @@ ${risk.lines.join("\n")}`);
       this.mode = "pan";
       this.modeSquad = -1;
       this.bar = h("div", { class: "pact", hidden: true });
+      /** Which page of the report is shown. */
+      this.reportPage = "sum";
       const bar = h("div", { class: "btns tabs" });
       for (const [t, label2] of TABS2) {
         const b = h("button", { class: "sm", text: label2, pressed: t === this.tab, onclick: () => {
@@ -66318,8 +67084,8 @@ ${risk.lines.join("\n")}`);
         return;
       }
       if (a === "order") {
-        if (!m?.path.length) {
-          this.toast("\u0110\u1ED9i kh\xF4ng c\xF3 m\u0169i t\xEAn l\xE0 \u0111\u1ED9i h\u1EADu c\u1EA7n: kh\xF4ng c\xF3 l\u1EC7nh \u0111\u1EC3 ra, n\xF3 \u0111i tr\u01B0\u1EDBc ph\xE1 v\u1EADt c\u1EA3n r\u1ED3i v\u1EC1 ch\u1ED7 c\u0169");
+        if (!m) {
+          this.toast("\u0110\u1ED9i ch\u01B0a c\xF3 trong k\u1EBF ho\u1EA1ch");
           this.refresh();
           return;
         }
@@ -66560,85 +67326,139 @@ ${risk.lines.join("\n")}`);
       }
       this.bar.replaceChildren(...kids);
     }
-    /** The report of the war council: the odds, the warnings, what a win and a loss may bring, and the details the map allows. Confirming sends the army out. */
+    /** The weather the army would meet if it set out now: today and tomorrow, the two days the village can foretell (the Dự báo thời tiết research). */
+    weatherRow(need) {
+      const { sim: sim2 } = this;
+      if (!sim2.planOpen("weather")) return need("plan_weather");
+      const day = (label2, kind) => {
+        const w = WEATHER[kind], slow = Math.round((1 - w.speed) * 100);
+        return h("span", { class: "chipfact" }, h("small", { text: label2 }), h("b", { text: w.name }), slow > 0 ? h("small", { class: "bad", text: `\u0111i ch\u1EADm ${slow}%` }) : null);
+      };
+      return h("div", { class: "rfacts" }, day("H\xF4m nay", sim2.weather), day("Ng\xE0y mai", sim2.nextWeather));
+    }
+    /** The supply sums (the Tính toán hậu cần research): the days there, what to carry, and how many supply soldiers it takes, with a button that sets them. */
+    supplyAdvice(plan2, need) {
+      const { sim: sim2 } = this;
+      if (!sim2.planOpen("supply")) return [need("plan_supply")];
+      const a = sim2.supplyAdvice(plan2);
+      if (!a) return [h("p", { class: "sub", text: "Ch\u01B0a c\xF3 m\u0169i t\xEAn \u0111\u1EC3 t\xEDnh \u0111\u01B0\u1EDDng \u0111i" })];
+      const fact = (k, v, bad = false) => h("span", { class: "chipfact" }, h("small", { text: k }), h("b", { class: bad ? "bad" : "", text: v }));
+      const take2 = Math.min(a.soldiers, sim2.supplyReady());
+      return [
+        h("div", { class: "rfacts" }, fact("\u0110i t\u1EDBi n\u01A1i", `${a.oneWay.toFixed(1)} ng\xE0y`), fact("L\u01B0\u01A1ng", `${a.food} (${a.days} ng\xE0y)`), fact("L\u1EC1u", `${a.wood} g\u1ED7, ${a.hide} da`), fact("C\u1EA7n h\u1EADu c\u1EA7n", `${a.soldiers}`, a.soldiers > a.have), fact("\u0110ang c\xF3", `${a.have}`)),
+        this.chip(`\xC1p d\u1EE5ng \u0111\u1EC1 xu\u1EA5t (${take2} l\xEDnh, ${a.days} ng\xE0y)`, false, () => {
+          sim2.setSupply(plan2, take2, a.days);
+          this.refresh();
+        }, { disabled: !take2, title: "\u0110\u1EB7t s\u1ED1 l\xEDnh h\u1EADu c\u1EA7n v\xE0 s\u1ED1 ng\xE0y l\u01B0\u01A1ng theo t\xEDnh to\xE1n" })
+      ];
+    }
+    /**
+     * The report of the war council, one page at a time. A plan that cannot go out shows only why (and the way back); otherwise the odds come first,
+     * and the supply and the details are a tap away. Confirming sends the army out.
+     */
     fillReport(plan2) {
       const { sim: sim2 } = this;
       this.report.hidden = !(this.reportOpen && plan2 && plan2.status === "draft");
       if (this.report.hidden || !plan2) return;
-      const f = sim2.forecastPlan(plan2), lo = Math.max(0, f.chance - f.spread), hi = Math.min(1, f.chance + f.spread), pc = (x) => `${Math.round(x * 100)}%`;
-      const odds = f.level >= 3 ? `kho\u1EA3ng ${pc(f.chance)} (c\xF3 th\u1EC3 t\u1EEB ${pc(lo)} \u0111\u1EBFn ${pc(hi)})` : `t\u1EEB ${pc(lo)} \u0111\u1EBFn ${pc(hi)} (b\u1EA3n \u0111\u1ED3 c\u1EA5p ${f.level} c\xF2n th\xF4)`;
-      const list = (title, items, cls = "sub") => items.length ? [h("div", { class: "psec" }, h("b", { text: title }), ...items.map((x) => h("p", { class: cls, text: x })))] : [];
-      this.report.replaceChildren(
-        h("div", { class: "phead" }, h("b", { text: "B\xE1o c\xE1o c\u1EE7a h\u1ED9i \u0111\u1ED3ng chi\u1EBFn" }), h("button", { class: "chip", text: "\u2715", title: "\u0110\xF3ng", onclick: () => {
-          this.reportOpen = false;
-          this.refresh();
-        } })),
-        h(
+      const f = sim2.forecastPlan(plan2), pc = (x) => `${Math.round(x * 100)}%`;
+      const head = h("div", { class: "phead" }, h("b", { text: "B\xE1o c\xE1o chi\u1EBFn" }), h("button", { class: "chip", text: "\u2715", title: "\u0110\xF3ng", onclick: () => {
+        this.reportOpen = false;
+        this.refresh();
+      } }));
+      const back = this.chip("S\u1EEDa k\u1EBF ho\u1EA1ch", false, () => {
+        this.reportOpen = false;
+        this.refresh();
+      });
+      if (f.blocked) {
+        this.report.replaceChildren(head, h("div", { class: "psec rblock" }, h("b", { text: "\u2717 Ch\u01B0a th\u1EC3 tri\u1EC3n khai" }), ...f.blocked.split("\n").map((x) => h("p", { class: "why", text: x }))), h("div", { class: "chips" }, back));
+        return;
+      }
+      if (!f.level) this.reportPage = "sum";
+      const pages = [["sum", "T\u1ED5ng quan"], ["supply", `H\u1EADu c\u1EA7n ${plan2.supply}`], ["detail", "Chi ti\u1EBFt"]];
+      const lockOf = (k) => k === "detail" && !sim2.planOpen("detail") ? "plan_report" : null;
+      const need = (id) => h("p", { class: "rlock", text: `\u{1F512} C\u1EA7n nghi\xEAn c\u1EE9u: ${TECH_BY_ID[id].name} (K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u b\u1EADc 1)` });
+      const tabs = h("div", { class: "rtabs" }, ...pages.map(([k, label2]) => h("button", { class: "chip", type: "button", "aria-pressed": String(this.reportPage === k), text: lockOf(k) ? `\u{1F512} ${label2}` : label2, onclick: () => {
+        this.reportPage = k;
+        this.refresh();
+      } })));
+      let body;
+      if (lockOf(this.reportPage)) {
+        body = h("div", { class: "psec" }, need(lockOf(this.reportPage)));
+      } else if (this.reportPage === "supply") {
+        const stepper = (label2, value, minus, plus, noMinus, noPlus, extra = []) => h("div", { class: "rstep" }, h("small", { text: label2 }), this.chip("\u2212", false, minus, { disabled: noMinus }), h("b", { text: value }), this.chip("\uFF0B", false, plus, { disabled: noPlus }), ...extra);
+        body = h(
           "div",
           { class: "psec" },
-          h("b", { text: `${f.verdict}: t\u1EC9 l\u1EC7 th\u1EAFng ${odds}` }),
-          h("div", { class: "oddsbar" }, h("i", { class: "win", style: `width:${f.chance * 100}%` }), h("i", { class: "lose", style: `width:${(1 - f.chance) * 100}%` })),
-          h("small", { class: "sub", text: "Ch\u1EC9 t\xEDnh theo k\u1EBF ho\u1EA1ch v\xE0 b\u1EA3n \u0111\u1ED3 \u0111ang c\xF3; th\u1EF1c t\u1EBF \u0111\u1ECBch c\xF3 th\u1EC3 m\u1EA1nh hay y\u1EBFu h\u01A1n." })
-        ),
-        ...f.blocked ? [h("div", { class: "psec" }, h("b", { text: "\u2717 Ch\u01B0a th\u1EC3 tri\u1EC3n khai:" }), ...f.blocked.split("\n").map((x) => h("p", { class: "why", text: x })))] : [],
-        ...list("\u26A0 C\u1EA3nh b\xE1o", f.warnings),
-        // the supply: how many supply soldiers go and how many days of food they carry
-        h(
-          "div",
-          { class: "psec" },
-          h("b", { text: "H\u1EADu c\u1EA7n" }),
-          h(
-            "div",
-            { class: "chips" },
-            h("small", { text: `L\xEDnh h\u1EADu c\u1EA7n ${plan2.supply}/${sim2.supplyReady()}` }),
-            this.chip("\u2212", false, () => {
+          stepper(
+            "L\xEDnh h\u1EADu c\u1EA7n",
+            `${plan2.supply}/${sim2.supplyReady()}`,
+            () => {
               sim2.setSupply(plan2, plan2.supply - 1, plan2.carryDays);
               this.refresh();
-            }, { disabled: plan2.supply <= 0 }),
-            this.chip("\uFF0B", false, () => {
+            },
+            () => {
               sim2.setSupply(plan2, plan2.supply + 1, plan2.carryDays);
               this.refresh();
-            }, { disabled: plan2.supply >= sim2.supplyReady() }),
-            this.chip("T\u1EA5t c\u1EA3", false, () => {
+            },
+            plan2.supply <= 0,
+            plan2.supply >= sim2.supplyReady(),
+            [this.chip("T\u1EA5t c\u1EA3", false, () => {
               sim2.setSupply(plan2, sim2.supplyReady(), plan2.carryDays);
               this.refresh();
-            }, { disabled: !sim2.supplyReady() })
+            }, { disabled: !sim2.supplyReady() })]
           ),
-          h(
-            "div",
-            { class: "chips" },
-            h("small", { text: `Mang l\u01B0\u01A1ng ${plan2.carryDays} ng\xE0y` }),
-            this.chip("\u2212", false, () => {
-              sim2.setSupply(plan2, plan2.supply, plan2.carryDays - 1);
-              this.refresh();
-            }, { disabled: plan2.carryDays <= 1 }),
-            this.chip("\uFF0B", false, () => {
-              sim2.setSupply(plan2, plan2.supply, plan2.carryDays + 1);
-              this.refresh();
-            })
-          )
-        ),
-        h("details", { open: true }, h("summary", { text: "B\xE1o c\xE1o chi ti\u1EBFt" }), ...f.lines.map((x) => h("p", { class: "sub", text: x }))),
-        h(
-          "div",
-          { class: "chips" },
-          this.chip("\u2713 X\xE1c nh\u1EADn tri\u1EC3n khai", true, () => {
-            const e = sim2.startPlan(plan2);
-            this.toast(e);
-            if (e) {
-              this.refresh();
-              return;
-            }
-            this.reportOpen = false;
-            this.closeMap();
-            this.c.ctl.closeBuilding();
-          }, { disabled: !!f.blocked, title: "\u0110\xF3ng b\u1EA3ng k\u1EBF ho\u1EA1ch, qu\xE2n \u0111i ngay t\u1EDBi v\u1ECB tr\xED \u0111\xE3 b\u1ED1 tr\xED r\u1ED3i ch\u1EDD l\u1EC7nh \u0111\xE1nh hay r\xFAt tr\xEAn m\xE0n h\xECnh game" }),
-          this.chip("Quay l\u1EA1i s\u1EEDa k\u1EBF ho\u1EA1ch", false, () => {
-            this.reportOpen = false;
+          stepper("L\u01B0\u01A1ng mang theo", `${plan2.carryDays} ng\xE0y`, () => {
+            sim2.setSupply(plan2, plan2.supply, plan2.carryDays - 1);
             this.refresh();
-          })
-        )
-      );
+          }, () => {
+            sim2.setSupply(plan2, plan2.supply, plan2.carryDays + 1);
+            this.refresh();
+          }, plan2.carryDays <= 1, false),
+          ...this.supplyAdvice(plan2, need)
+        );
+      } else if (this.reportPage === "detail") {
+        const row = (r) => {
+          const tot = Math.max(1, r.ours + (r.theirs ?? 0)), side = r.theirs === null ? 50 : r.ours / tot * 100;
+          return [
+            h("b", { class: "ro", text: String(r.ours) }),
+            h("span", { class: "rl", text: r.label }),
+            h("b", { class: "rt", text: r.theirs === null ? "?" : String(r.theirs) }),
+            h("div", { class: "rbar" }, h("i", { class: "win", style: `width:${side}%` }), h("i", { class: "lose", style: `width:${100 - side}%` }))
+          ];
+        };
+        body = h(
+          "div",
+          { class: "psec" },
+          h("div", { class: "rcmp" }, h("small", { class: "ro", text: "TA" }), h("span"), h("small", { class: "rt", text: "\u0110\u1ECACH" }), ...f.compare.flatMap(row)),
+          f.facts.length ? h("div", { class: "rfacts" }, ...f.facts.map(([k, v]) => h("span", { class: "chipfact" }, h("small", { text: k }), h("b", { text: v })))) : null
+        );
+      } else {
+        const odds = f.level >= 3 ? `~${pc(f.chance)}` : `${pc(Math.max(0, f.chance - f.spread))}\u2013${pc(Math.min(1, f.chance + f.spread))}`;
+        body = h(
+          "div",
+          { class: "psec" },
+          h("div", { class: "rodds" }, h("b", { text: odds }), h("span", { text: f.verdict }), f.level && f.level < 3 ? h("small", { class: "sub", text: `b\u1EA3n \u0111\u1ED3 c\u1EA5p ${f.level}: c\xF2n th\xF4` }) : null),
+          h("div", { class: "oddsbar" }, h("i", { class: "win", style: `width:${f.chance * 100}%` }), h("i", { class: "lose", style: `width:${(1 - f.chance) * 100}%` })),
+          this.weatherRow(need),
+          f.warnings.length ? h("details", { class: "rwarn" }, h("summary", { text: `\u26A0 ${f.warnings.length} c\u1EA3nh b\xE1o` }), ...f.warnings.map((x) => h("p", { class: "sub", text: x }))) : null
+        );
+      }
+      this.report.replaceChildren(head, f.level ? tabs : h("span"), body, h(
+        "div",
+        { class: "chips" },
+        this.chip("\u2713 Tri\u1EC3n khai", true, () => {
+          const e = sim2.startPlan(plan2);
+          this.toast(e);
+          if (e) {
+            this.refresh();
+            return;
+          }
+          this.reportOpen = false;
+          this.closeMap();
+          this.c.ctl.closeBuilding();
+        }, { title: "Qu\xE2n \u0111i t\u1EDBi v\u1ECB tr\xED \u0111\xE3 b\u1ED1 tr\xED r\u1ED3i ch\u1EDD l\u1EC7nh \u0111\xE1nh hay r\xFAt" }),
+        back
+      ));
     }
     /** The soldiers of the chosen squad, kept short: name, role, weapon, who commands and a minus to take one out. Below it a drop-down of ticks to add soldiers who have no squad. */
     fillRoster(plan2) {
@@ -66694,9 +67514,14 @@ ${risk.lines.join("\n")}`);
     }
     /** One choice of a step: a big tile with a picture, a name and a line saying what it means. */
     tile(icon, title, note, on, f, opts = {}) {
+      const press = () => {
+        const plan2 = this.attackPlan(), m = plan2?.status === "draft" ? plan2.missions.find((x) => x.squad === this.sel) : void 0;
+        if (m) m.ordered = true;
+        f();
+      };
       return h(
         "button",
-        { class: `opt${on ? " on" : ""}`, disabled: opts.disabled, style: opts.color ? `border-left:6px solid ${opts.color}` : void 0, onclick: f },
+        { class: `opt${on ? " on" : ""}`, disabled: opts.disabled, style: opts.color ? `border-left:6px solid ${opts.color}` : void 0, onclick: press },
         h("span", { class: "oi", text: icon }),
         h("b", { text: title }),
         h("small", { text: note })
@@ -66737,7 +67562,7 @@ ${risk.lines.join("\n")}`);
     /** The orders of the chosen squad as a card on the map, one step at a time: a step, its choices as big tiles, and the way on. The last step is the overview. */
     fillCard(plan2) {
       const { sim: sim2 } = this, sq = sim2.squadById(this.sel), m = plan2?.missions.find((x) => x.squad === this.sel);
-      this.card.hidden = !(this.orderOpen && plan2 && sq && m && m.path.length > 0 && this.mode === "pan");
+      this.card.hidden = !(this.orderOpen && plan2 && sq && m && this.mode === "pan");
       if (this.card.hidden || !plan2 || !sq || !m) return;
       if (this.cardSquad !== sq.id) {
         this.cardSquad = sq.id;
@@ -67187,31 +68012,40 @@ ${risk.lines.join("\n")}`);
       const labLevel = () => sim2.building("lab")?.level ?? 0;
       const militaryLock = () => sim2.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${TREE_TABS.military.needLab} \u0111\u1EC3 m\u1EDF Qu\xE2n s\u1EF1`;
       this.progSec.lab = h("div", {}, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian: c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research, this.labPeople);
+      const needMilitary = () => militaryLock() && "C\u1EA7n m\u1EDF Qu\xE2n s\u1EF1 tr\u01B0\u1EDBc";
       this.tabs.lab = [
         { label: "Qu\xE2n s\u1EF1 b\u1EADc 1", icon: "infantry", lock: militaryLock, page: tree((t) => {
           t.addChains("Ch\u1EC9 s\u1ED1 qu\xE2n", ["foot", "cavalry", "archer", "scout"], "military");
         }) },
+        { label: "Kinh t\u1EBF b\u1EADc 1", icon: "storage", page: tree((t) => {
+          t.addChains("Ch\u1EC9 s\u1ED1 ngh\u1EC1", ["wood", "stone", "food", "hunt", "tame"], "economy");
+        }) },
+        { label: "Ph\xE1t tri\u1EC3n b\u1EADc 1", icon: "builder", page: tree((t) => t.addChains("Ch\u1EC9 s\u1ED1 nh\xE0 l\xE0m vi\u1EC7c", ["build", "craft", "research"], "development")) },
         { label: "Ph\xF2ng th\u1EE7 b\u1EADc 1", icon: "tower", page: tree((t) => {
           t.addChains("L\xEDnh ph\xF2ng th\u1EE7", ["guard", "towerman"], "defense");
           t.addChains("H\xE0ng r\xE0o v\xE0 c\u1ED5ng", ["fence", "gate"], "works1");
           t.addChains("Ch\xF4ng v\xE0 ch\xF2i canh", ["trap", "tower"], "works2");
         }) },
-        { label: "Ph\xE1t tri\u1EC3n b\u1EADc 1", icon: "builder", page: tree((t) => t.addChains("Ch\u1EC9 s\u1ED1 nh\xE0 l\xE0m vi\u1EC7c", ["build", "craft", "research"], "development")) },
-        { label: "Kinh t\u1EBF b\u1EADc 1", icon: "storage", page: tree((t) => {
-          t.addChains("Ch\u1EC9 s\u1ED1 ngh\u1EC1", ["wood", "stone", "food", "hunt", "tame"], "economy");
-        }) },
-        { label: "C\xF4ng c\u1EE5 b\u1EADc 1", icon: "workshop", under: 2, page: tree((t) => {
-          t.addChains("Ch\u1EC9 s\u1ED1 c\xF4ng c\u1EE5", ["axe", "pick", "hoe"], "tool");
-          t.addChains("B\xFAa", ["hammer"], "hammer");
-        }) },
-        { label: "Chi\u1EBFn \u0111\u1EA5u b\u1EADc 1", icon: "drill", under: 0, lock: () => militaryLock() && "C\u1EA7n m\u1EDF Qu\xE2n s\u1EF1 tr\u01B0\u1EDBc", page: tree((t) => {
+        { label: "Chi\u1EBFn \u0111\u1EA5u b\u1EADc 1", icon: "drill", under: 0, lock: needMilitary, page: tree((t) => {
           t.addSingles("T\xEDn hi\u1EC7u", only((id) => id === "signal"));
           t.addFormations("Tr\u1EADn ph\xE1p", "formation");
         }) },
-        { label: "V\u0169 kh\xED b\u1EADc 1", icon: "armory", under: 0, lock: () => militaryLock() && "C\u1EA7n m\u1EDF Qu\xE2n s\u1EF1 tr\u01B0\u1EDBc", page: tree((t) => {
+        { label: "K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u b\u1EADc 1", icon: "wartent", under: 0, lock: needMilitary, page: tree((t) => {
+          t.addFormations("K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u (ch\u1EC9 c\u1ED9ng khi \u0111ang giao chi\u1EBFn trong chi\u1EBFn tranh)", "plan");
+        }) },
+        { label: "H\xE0nh qu\xE2n b\u1EADc 1", icon: "supplycamp", under: 0, lock: needMilitary, page: tree((t) => {
+          t.addChains("Ch\u1EC9 s\u1ED1 khi h\xE0nh qu\xE2n (ch\u1EC9 c\u1ED9ng khi h\xE0nh qu\xE2n ho\u1EB7c ngh\u1EC9 trong chi\u1EBFn tranh)", ["march_foot", "march_cavalry", "march_archer"], "march");
+          t.addChains("H\u1EADu c\u1EA7n v\xE0 t\u1ED1c \u0111\u1ED9", ["march_army"], "marchlog");
+        }) },
+        { label: "V\u0169 kh\xED b\u1EADc 1", icon: "armory", under: 0, lock: needMilitary, page: tree((t) => {
           t.addChains("Ch\u1EC9 s\u1ED1 t\u1EEBng v\u0169 kh\xED", ["club", "spear", "mace", "sling", "bow"], "weapon");
         }) },
-        { label: "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c", icon: "lab", under: 1, page: page(this.staffBoxes.research.root) }
+        { label: "C\xF4ng c\u1EE5 b\u1EADc 1", icon: "workshop", under: 1, page: tree((t) => {
+          t.addChains("Ch\u1EC9 s\u1ED1 c\xF4ng c\u1EE5", ["axe", "pick", "hoe"], "tool");
+          t.addChains("B\xFAa", ["hammer"], "hammer");
+        }) },
+        // not in the tree: the button "Người nghiên cứu · Thêm người" at the top opens it
+        { label: "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c", icon: "lab", hidden: true, page: page(this.staffBoxes.research.root) }
       ];
       const goods2 = page(this.goodsHint, this.goodsBar);
       const goodsRows = (cat) => RECIPES.filter((r) => cat === "gear" === isGearKind(r.kind));
@@ -67295,6 +68129,7 @@ ${risk.lines.join("\n")}`);
         this.tabBar.classList.toggle("icontabs", pictures);
         this.tabBar.classList.toggle("treetabs", pictures && kind === "lab");
         this.tabBar.replaceChildren(...tabs.map((t, i) => {
+          if (t.hidden) return null;
           const go = () => {
             if (locks[i]) {
               this.c.toast(locks[i]);
@@ -67312,7 +68147,7 @@ ${risk.lines.join("\n")}`);
             pic = h("span", { class: "tpic", text: "?" });
           }
           return h("button", { class: `tabcard${locks[i] ? " locked" : ""}${t.under !== void 0 ? " under" : ""}`, style: t.under !== void 0 ? `grid-column:${t.under + 1};grid-row:${2 + tabs.slice(0, i).filter((o) => o.under === t.under).length}` : void 0, role: "tab", title: locks[i] ?? t.label, onclick: go }, pic, h("span", { text: t.label }), locks[i] ? h("span", { class: "tlock", text: "\u{1F512}" }) : null);
-        }));
+        }).filter((el) => !!el));
       }
       if (kind === "lab" && ready) {
         const open = this.labSub !== null && !locks[this.labSub] ? this.labSub : null;

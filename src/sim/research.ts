@@ -32,7 +32,7 @@ export const TECH_BY_ID: Record<string, Tech> = Object.fromEntries(TECHS.map((t)
 export type StatId = 'hp' | 'atk' | 'defm' | 'defr' | 'move' | 'work' | 'int' | 'sta';
 export interface StatDef { name: string; short: string; steps: number[]; tiers?: number[]; cost: Partial<Stock>; time: number; about: string }
 /** A stat with a line in the tree: the eight of a body, and three of the weapon in hand (attack speed, critical chance, critical damage). */
-export type LineStat = StatId | 'aspd' | 'crit' | 'critd' | 'tspd' | 'tyield' | 'tdur' | 'hpregen' | 'restregen';
+export type LineStat = StatId | 'aspd' | 'crit' | 'critd' | 'tspd' | 'tyield' | 'tdur' | 'hpregen' | 'restregen' | 'mspeed' | 'mload' | 'mbuild';
 export const STAT_IDS = Object.keys(tree.stats) as LineStat[];
 export const STAT_DEF = tree.stats as unknown as Record<LineStat, StatDef>;
 export const TREE_ROLES = tree.roles as unknown as Record<string, { name: string; building?: BuildingKind; weapon?: string; tool?: string; formation?: boolean; needs?: string }>;
@@ -90,6 +90,12 @@ export function lineLevel(done: ReadonlySet<string>, role: string, stat: string)
   while (n < statLevels(stat) && done.has(statTechId(role, stat, n + 1))) n++;
   return n;
 }
+/** The Kế hoạch chiến đấu tree (three columns of military stats, and the research each pair of levels opens): the squads of its columns, and its layout. */
+export const PLAN_TREE = (tree as unknown as { plan: { roles: string[]; layout: Array<{ stats?: LineStat[]; techs?: string[] }> } }).plan;
+/** What each piece of research of that tree opens in the war plan: the details tab, the supply sums, the weather and the rest in the field. */
+export const PLAN_TECH = { detail: 'plan_report', supply: 'plan_supply', weather: 'plan_weather', rest: 'plan_rest' } as const;
+export type PlanFeature = keyof typeof PLAN_TECH;
+export const planOpen = (done: ReadonlySet<string>, f: PlanFeature, free = false): boolean => free || !RESEARCH.enabled || done.has(PLAN_TECH[f]);
 /** The percent the research adds to a stat of everyone with a role (their stat is base × (1 + this / 100)). Not yet used by the combat and work rules. */
 export const statBonus = (done: ReadonlySet<string>, role: string, stat: LineStat): number =>
   STAT_DEF[stat].steps.slice(0, lineLevel(done, role, stat)).reduce((a, b) => a + b, 0) * (ROLE_SCALE[role] ?? 1);

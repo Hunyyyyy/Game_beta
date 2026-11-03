@@ -32,7 +32,8 @@ export class Controller {
   buildingOpen = false;
   /** Foe or animal shown in the target card. */
   /** What was tapped: a unit, an animal, or a tree, rock or bush (id = its tile index). */
-  inspect: { kind: 'unit' | 'animal' | 'node'; id: number } | null = null;
+  /** What is shown on the card of the map: a unit, an animal, a tree/rock/bush (tile index), or the field tent of a squad in a war (squad id). */
+  inspect: { kind: 'unit' | 'animal' | 'node' | 'tent'; id: number } | null = null;
   /** The campfire's people menu asked for the full page of the chosen villager. */
   openDetail = false;
   /** The house whose dialog the villager's detail was opened from: closing the detail brings it back. */
@@ -194,7 +195,7 @@ export class Controller {
   private hit(p: { x: number; y: number }, touch = false): number | null {
     let best: number | null = null, bd = ((touch ? 28 : 14) * Math.max(1, this.cam.zoom)) ** 2; // a finger is wide: a bigger target
     for (const v of this.sim.villagers) {
-      if (v.inside !== null) continue; // working inside a house: not on the map
+      if (v.inside !== null || v.inTent) continue; // working inside a house or asleep in a field tent: not on the map
       const s = this.bodyScreen(v), d = (s.x - p.x) ** 2 + (s.y - p.y) ** 2;
       if (d < bd) { bd = d; best = v.id; }
     }
@@ -236,6 +237,8 @@ export class Controller {
       if (finished) { this.selectBuilding(b!); return; }
       this.command(p, false); return;
     }
+    const tent = this.sim.plans.find((p) => p.kind === 'attack' && p.status === 'running')?.tents.find((t) => Math.hypot(t.x - w.x / TILE, t.y - 0.5 - w.y / TILE) < 1.6); // a field tent of the war
+    if (tent) { this.inspect = { kind: 'tent', id: tent.squad }; this.selectedBuilding = null; this.onChange(); return; }
     if (seen) { this.inspect = { kind: seen.target.kind, id: seen.target.id }; this.selectedBuilding = null; }
     else if ((() => { const t = this.pickTile(w.x, w.y), N = this.sim.world.size; if (!this.sim.world.nodeAt(t.x, t.y) || this.sim.fog.state[t.y * N + t.x] === 0) return false; this.inspect = { kind: 'node', id: t.y * N + t.x }; this.selectedBuilding = null; return true; })()) { /* a tree, rock or bush: its card opens */ }
     else if (b !== null) this.selectBuilding(b);
@@ -270,7 +273,7 @@ export class Controller {
     const ref = this.sim.get(id); if (!ref) return;
     this.selected.clear();
     for (const v of this.sim.villagers) {
-      if (v.inside !== null) continue; // working inside a house: not on the map
+      if (v.inside !== null || v.inTent) continue; // working inside a house or asleep in a field tent: not on the map
       const s = this.bodyScreen(v);
       if (v.job === ref.job && s.x >= 0 && s.y >= 0 && s.x <= this.r.w && s.y <= this.r.h) this.selected.add(v.id);
     }
@@ -281,7 +284,7 @@ export class Controller {
     const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
     if (!add) this.selected.clear();
     for (const v of this.sim.villagers) {
-      if (v.inside !== null) continue; // working inside a house: not on the map
+      if (v.inside !== null || v.inTent) continue; // working inside a house or asleep in a field tent: not on the map
       const s = this.bodyScreen(v);
       if (s.x >= x0 && s.x <= x1 && s.y >= y0 && s.y <= y1) this.selected.add(v.id);
     }

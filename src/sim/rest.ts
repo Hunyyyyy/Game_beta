@@ -257,7 +257,7 @@ export function quartered(sim: Sim, v: Villager): boolean {
  */
 export function shouldSleep(sim: Sim, v: Villager, fighting: boolean): boolean {
   if (fighting) return false;
-  if (sim.warIds.has(v.id)) { v.lockUntil = 0; return sim.sleepsInTent(v); } // the army of a war sleeps only at night in the tent of its squad (wartent.ts)
+  if (sim.warIds.has(v.id)) { v.lockUntil = 0; return !v.nightOwl && !v.path.length && sim.sleepsInTent(v); } // the army of a war sleeps only at night in the tent of its squad (wartent.ts)
   if (awayScout(sim, v)) { v.lockUntil = 0; return false; } // a scout on a trip works day and night until the map is drawn and he is home
   if (v.job === 'fight' && sim.warLock()) { v.lockUntil = 0; return false; } // soldiers do not sleep while a war is on
   if (quartered(sim, v)) return true; // the soldiers of the camps wait inside their camp until the army is called out

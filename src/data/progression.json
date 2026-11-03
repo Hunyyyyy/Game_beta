@@ -64,7 +64,9 @@
           "form_basic",
           "form_wedge",
           "form_cells_10",
-          "form_squads_5"
+          "form_squads_5",
+          "plan_report",
+          "plan_weather"
         ]
       },
       {

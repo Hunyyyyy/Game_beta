@@ -173,6 +173,27 @@ function peopleFor(sim: Sim): { total: number; soldiers: number } {
   return { total: sim.villagers.length, soldiers: sim.villagers.filter((v) => v.job === 'fight').length };
 }
 
+/** Five more free villagers by the fire, past the campfire's room if need be (to try crowds and the lists of the houses). Returns a line about it. */
+export function addPeople(sim: Sim, n: number): string {
+  for (let i = 0; i < n; i++) addVillager(sim);
+  return `Thêm ${n} dân: làng có ${sim.villagers.filter((v) => v.team === 'player').length} dân`;
+}
+
+/** The nearest village is found and mapped in full at every level (1 to 3), so a war plan can be tried at once. Returns a line about it. */
+export function giveEnemyMap(sim: Sim): string {
+  const f = sim.campfire(), from = f ? { x: f.x, y: f.y } : sim.world.start;
+  const t = sim.tribes.filter((x) => x.state !== 'destroyed').sort((a, b) => Math.hypot(a.camp.x - from.x, a.camp.y - from.y) - Math.hypot(b.camp.x - from.x, b.camp.y - from.y))[0];
+  if (!t) return 'Không còn làng nào';
+  sim.world.ensure(t.camp.x, t.camp.y, 30);
+  if (!sim.sightings.some((x) => x.tribe === t.id)) sim.sightings.push({ tribe: t.id, by: -1, at: sim.time, reported: true });
+  else for (const x of sim.sightings) if (x.tribe === t.id) x.reported = true;
+  for (let level = 1; level <= 3; level++) {
+    const map = { tribe: t.id, level, at: sim.time, gaps: 0, seen: level >= 2 ? seenNow(sim, t) : undefined }, old = sim.maps.findIndex((m) => m.tribe === t.id && m.level === level);
+    if (old >= 0) sim.maps[old] = map; else sim.maps.push(map);
+  }
+  return `Đã có bản đồ cấp 3 đầy đủ của ${t.def.name}: mở Lều họp chiến để lập kế hoạch`;
+}
+
 function addVillager(sim: Sim): void {
   const fire = sim.campfire(), s = sim.world.start;
   const a = sim.frnd() * Math.PI * 2, r = 2 + sim.frnd() * 3;

@@ -5,7 +5,7 @@
     "slowMax": 0.85,
     "perSquad": 0.04,
     "perSoldier": 0.004,
-    "slowFloor": 0.3,
+    "slowFloor": 0.3, "paceScale": 1,
     "maxCut": 0.6,
     "foodBase": 1.5,
     "energyBase": 1.5
@@ -22,7 +22,7 @@
     "woodBase": 12,
     "hideBase": 8,
     "perLevel": 1,
-    "buildSeconds": 40,
+    "buildSeconds": 150, "buildReach": 4,
     "refund": 0.5,
     "weight": 1.5,
     "near": 14

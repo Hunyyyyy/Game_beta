@@ -147,18 +147,48 @@ export function startCost(sim: Sim, kind: BuildingKind): Partial<Stock> {
 
 /** Trả về lý do không đặt được, hoặc null nếu đặt được. */
 export function canPlace(sim: Sim, kind: BuildingKind, x: number, y: number): string | null {
-  return footprintError(sim, kind, x, y) ?? buildingLock(sim, kind) ?? (sim.dev.freeBuild ? null : sim.missing(startCost(sim, kind)));
+  return footprintError(sim, kind, x, y) ?? buildingLock(sim, kind) ?? (sim.freeCost() ? null : sim.missing(startCost(sim, kind)));
 }
 
 /** Reason the building cannot be upgraded now, or null. */
 export function canUpgrade(sim: Sim, b: Building): string | null {
   if (!b.done) return 'Công trình chưa dựng xong';
   if (b.upgrading) return 'Đang nâng cấp';
+  if (b.repairing) return 'Đang sửa chữa';
   if (b.level >= maxLevel(b.kind, b.era)) return 'Đã ở cấp cao nhất';
   if (b.kind === 'campfire' && !sim.dev.freeBuild) { const why = fireUpgradeBlock(sim, b.level); if (why) return why; }
   const fire = sim.campfire();
   if (b.kind !== 'campfire' && fire && !sim.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `Cần nâng ${BUILDINGS.campfire.name} lên cấp ${b.level + 1}`;
-  return sim.dev.freeBuild ? null : sim.missing(levelDef(b, b.level + 1).cost);
+  return sim.freeCost() ? null : sim.missing(levelDef(b, b.level + 1).cost);
+}
+
+/** What repairing costs: the materials the building was raised with, in the share of its strength that is lost. */
+export function repairCost(sim: Sim, b: Building): Partial<Stock> {
+  const top = maxHp(b), lost = top > 0 ? Math.max(0, Math.min(1, 1 - b.hp / top)) : 0, out: Partial<Stock> = {}, spent = invested(sim, b);
+  for (const r of Object.keys(spent) as Res[]) { const n = Math.ceil((spent[r] ?? 0) * lost - 1e-9); if (n > 0) out[r] = n; }
+  return out;
+}
+
+/** Reason the building cannot be repaired now, or null. */
+export function canRepair(sim: Sim, b: Building): string | null {
+  if (!b.done) return 'Công trình chưa dựng xong';
+  if (b.repairing) return 'Đang sửa chữa';
+  if (b.upgrading) return 'Đang nâng cấp: chờ xong rồi sửa';
+  if (b.hp >= maxHp(b)) return 'Công trình còn nguyên vẹn';
+  return sim.freeCost() ? null : sim.missing(repairCost(sim, b));
+}
+
+/** Pay for the repair; builders then work on it and the strength comes back. Returns an error or null. */
+export function repairBuilding(sim: Sim, id: number): string | null {
+  const b = sim.getBuilding(id);
+  if (!b) return 'Không tìm thấy công trình';
+  const why = canRepair(sim, b);
+  if (why) return why;
+  if (!sim.freeCost()) { const cost = repairCost(sim, b); for (const r of Object.keys(cost) as Res[]) sim.stock[r] -= cost[r] ?? 0; }
+  if (sim.dev.instantBuild) { b.hp = maxHp(b); return null; }
+  b.repairing = true;
+  sim.say(`Bắt đầu sửa ${BUILDINGS[b.kind].name}. Giao việc "Thợ xây" để làm.`);
+  return null;
 }
 
 /** Pay for the next level; builders then work on it while the building keeps its current level. */
@@ -168,7 +198,7 @@ export function upgradeBuilding(sim: Sim, id: number): string | null {
   const why = canUpgrade(sim, b);
   if (why) return why;
   const next = levelDef(b, b.level + 1);
-  if (!sim.dev.freeBuild) for (const r of Object.keys(next.cost) as Res[]) sim.stock[r] -= next.cost[r] ?? 0;
+  if (!sim.freeCost()) for (const r of Object.keys(next.cost) as Res[]) sim.stock[r] -= next.cost[r] ?? 0;
   if (sim.dev.instantBuild) { b.level++; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); return null; }
   b.upgrading = true; b.progress = 0;
   sim.say(`Bắt đầu nâng ${BUILDINGS[b.kind].name} lên cấp ${b.level + 1} (${next.name.toLowerCase()}). Giao việc "Thợ xây" để làm.`);
@@ -181,7 +211,7 @@ export function placeBuilding(sim: Sim, kind: BuildingKind, x: number, y: number
   const why = canPlace(sim, kind, x, y);
   if (why) return { ok: false, reason: why };
   const cost = startCost(sim, kind), lvl = startLevel(sim, kind);
-  if (!sim.dev.freeBuild) for (const r of Object.keys(cost) as Res[]) sim.stock[r] -= cost[r] ?? 0;
+  if (!sim.freeCost()) for (const r of Object.keys(cost) as Res[]) sim.stock[r] -= cost[r] ?? 0;
   const b = addBuilding(sim, kind, x, y, false, lvl);
   delete sim.ruins[kind]; // the ruin is built over
   if (sim.dev.instantBuild) { b.progress = 1; b.done = true; sim.fogDirty = true; sim.say(`${d.name} đã dựng xong ngay (dev).`); return { ok: true, building: b }; }
@@ -335,7 +365,7 @@ export function moveBuilding(sim: Sim, id: number, x: number, y: number): string
   const fee = moveFee(sim, b);
   for (const r of Object.keys(fee) as Res[]) sim.stock[r] -= fee[r] ?? 0;
   evict(sim, b);
-  if (b.upgrading) { for (const r of Object.keys(levelDef(b, b.level + 1).cost) as Res[]) if (!sim.dev.freeBuild) sim.stock[r] += levelDef(b, b.level + 1).cost[r] ?? 0; b.upgrading = false; }
+  if (b.upgrading) { for (const r of Object.keys(levelDef(b, b.level + 1).cost) as Res[]) if (!sim.freeCost()) sim.stock[r] += levelDef(b, b.level + 1).cost[r] ?? 0; b.upgrading = false; }
   // a finished house is lifted and set down as it is: it keeps its level and needs no builders
   setOcc(sim, b, 0); b.x = x; b.y = y; setOcc(sim, b, 1);
   sim.fogDirty = true;

@@ -32,6 +32,8 @@ export interface FightState {
   repath: number; // seconds until the path to the target is recomputed
   /** Following an arrow in a war: the way to the destination is a straight line, never found round things. */
   strict?: boolean;
+  /** A walk the player ordered (the army falling back): nothing the unit meets stops it until it arrives. */
+  obey?: boolean;
   scan: number;   // seconds until the next look for enemies
   /** The chase now (src/data/chase.json): which target, seconds since a blow was last thrown at it, seconds it has been out of sight. */
   chaseKey?: string; chaseT?: number; unseenT?: number;
@@ -99,6 +101,10 @@ export interface Villager {
   carry: { res: Res; amount: number } | null;
   /** A supply soldier on a war: the goods of the army he carries (food, and later the wood and hide for tents). Lost with him if he falls. */
   pack?: { food: number; wood: number; hide: number };
+  /** Out of sight without a house: a supply soldier asleep in a field tent of the war, or a villager with no bed while a war is on. */
+  inTent?: boolean;
+  /** A supply soldier who has fallen behind the army: he hurries to catch up (set by `warsupply.follow`). */
+  hurry?: boolean;
   health: number;
   anim: string;
   hold: Hold | null;
@@ -263,6 +269,14 @@ export interface Mission {
   deploy: { cells: Pt[]; heading: number; o: Pt; p: Pt; kind?: FormationName } | null;
   /** The arrow the squad follows from where it stands, point by point; the last is where it fights. Empty: it goes for `objective`. */
   path: Pt[];
+  /** Set once the player gave this squad an order (action, start, withdrawal): a squad with orders but no arrow goes for `objective` instead of holding. */
+  ordered?: boolean;
+  /** War only: the squad has stopped to rest (the Nghỉ ngơi dã chiến research): it pitches its tent day or night and sleeps there until the player sends it on. */
+  resting?: boolean;
+  /** The resting squad has been told it is rested (said once). */
+  rested?: boolean;
+  /** When an enemy was last near the resting squad (a raid on its camp). */
+  alertAt?: number;
   /** Where it falls back to when `withdrawAt` is crossed; empty: the rally point. */
   retreat: Pt[];
   /** Which point of `path` (or of `retreat`, once withdrawing) it is walking to. */
@@ -337,6 +351,9 @@ export interface Forecast {
   win: string[]; lose: string[];
   /** The report itself, line by line. */
   lines: string[];
+  /** Our side against the enemy, row by row (`theirs` null: not known from the map), and a few plain facts of the march: label and value. */
+  compare: Array<{ label: string; ours: number; theirs: number | null }>;
+  facts: Array<[string, string]>;
 }
 /** What happened in the fight that is on (or was last): the base of the campaign log. */
 export interface BattleState { on: boolean; since: number; quiet: number; ourDead: number; foeDead: number; breaches: number; shots: number; notes: string[] }

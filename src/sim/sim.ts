@@ -22,6 +22,7 @@ import * as readiness from './readiness';
 import * as works from './works';
 import * as houses from './houses';
 import * as inventory from './inventory';
+import * as mounts from './mounts';
 import * as commands from './commands';
 import * as labor from './labor';
 import * as movement from './movement';
@@ -177,7 +178,7 @@ export class Sim {
   /** The villagers the player has selected right now (the controller shares its own set): while one of them walks to a spot the player picked, nothing else decides for him. */
   controlled: ReadonlySet<number> = new Set<number>();
   /** True for a selected villager who is on his way to a spot the player ordered: the fighting and fleeing of the brain wait until he gets there or is let go. */
-  underOrders(v: Villager): boolean { return v.team === 'player' && this.controlled.has(v.id) && v.phase === 'move' && v.path.length > 0; }
+  underOrders(v: Villager): boolean { return v.team === 'player' && (this.controlled.has(v.id) || !!v.fight.obey) && v.phase === 'move' && v.path.length > 0; }
   readonly yieldNow: Record<string, number> = {};
   readonly yieldPrev: Record<string, number> = {};
 
@@ -352,6 +353,15 @@ export class Sim {
 
   /** → construction.canUpgrade */
   canUpgrade(b: Building): string | null { return construction.canUpgrade(this, b); }
+
+  /** Dev: building, upgrading and repairing cost nothing (the free-builds switch, or the free-works one). */
+  freeCost(): boolean { return this.dev.freeBuild || this.dev.freeWorks; }
+  /** → construction.canRepair */
+  canRepair(b: Building): string | null { return construction.canRepair(this, b); }
+  /** → construction.repairCost */
+  repairCost(b: Building): Partial<Stock> { return construction.repairCost(this, b); }
+  /** → construction.repairBuilding */
+  repairBuilding(id: number): string | null { return construction.repairBuilding(this, id); }
 
   /** → construction.upgradeBuilding */
   upgradeBuilding(id: number): string | null { return construction.upgradeBuilding(this, id); }
@@ -620,14 +630,15 @@ export class Sim {
       if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
       return;
     }
-    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / DAY_LENGTH); this.warSince = -1; this.warIds = new Set(); this.march = warmarch.PEACE; this.warMeals = 0; }
+    // the war is over: whoever lay out of sight (in a field tent, or with no bed) gets up and goes to bed in the right place
+    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / DAY_LENGTH); this.warSince = -1; this.warIds = new Set(); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     this.leaderClock += dt;
-    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); defense.tickResearch(this); }
+    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); defense.tickResearch(this); inventory.restock(this); mounts.fitScouts(this); }
     if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
     if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
   }

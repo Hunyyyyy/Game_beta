@@ -7,11 +7,14 @@ import warJson from '../data/war.json';
 import { DAY_LENGTH } from './constants';
 import type { Plan } from './model';
 import { rationAt } from './resources';
+import { statBonus } from './research';
 import type { Sim } from './sim';
 
-export const WAR_DATA = warJson as { march: { slowMin: number; slowMax: number; perSquad: number; perSoldier: number; slowFloor: number; maxCut: number; foodBase: number; energyBase: number }; research: Record<string, number>; supply: { load: number; trail: number; defaultDays: number; maxDays: number; hungerSmooth: number }; tent: { woodBase: number; hideBase: number; perLevel: number; buildSeconds: number; refund: number; weight: number; near: number }; tired: { below: number; maxPenalty: number }; harass: { first: number; every: number; base: number; perWarriors: number; max: number; range: number; minFromVillage: number; spawnDist: number; life: number; maxAlive: number } };
+export const WAR_DATA = warJson as { march: { slowMin: number; slowMax: number; perSquad: number; perSoldier: number; slowFloor: number; paceScale: number; maxCut: number; foodBase: number; energyBase: number }; research: Record<string, number>; supply: { load: number; trail: number; defaultDays: number; maxDays: number; hungerSmooth: number }; tent: { woodBase: number; hideBase: number; perLevel: number; buildSeconds: number; buildReach: number; refund: number; weight: number; near: number }; tired: { below: number; maxPenalty: number }; harass: { first: number; every: number; base: number; perWarriors: number; max: number; range: number; minFromVillage: number; spawnDist: number; life: number; maxAlive: number } };
 
 export interface March { squads: number; soldiers: number; slow: number; speed: number; food: number; energy: number }
+/** How much one supply soldier carries: the base load and what the research Tải hậu cần adds. */
+export const supplyLoad = (sim: Pick<Sim, 'researched'>): number => WAR_DATA.supply.load * (1 + statBonus(sim.researched, 'march_army', 'mload') / 100);
 export const PEACE: March = { squads: 0, soldiers: 0, slow: 0, speed: 1, food: 1, energy: 1 };
 
 /** The share of the slow research has cut off, 0 to maxCut. */
@@ -27,7 +30,7 @@ export function marchOf(sim: Pick<Sim, 'researched'>, squads: number, soldiers: 
   const raw = k.slowMin + (k.slowMax - k.slowMin) * load;
   const slow = Math.max(k.slowFloor, raw * (1 - slowCut(sim))); // however much research cuts, the army never marches faster than this
   const extra = Math.max(0, slow - k.slowMin);
-  return { squads, soldiers, slow, speed: 1 - slow, food: k.foodBase + extra, energy: k.energyBase + extra };
+  return { squads, soldiers, slow, speed: (1 - slow) * k.paceScale * (1 + statBonus(sim.researched, 'march_army', 'mspeed') / 100), food: k.foodBase + extra, energy: k.energyBase + extra };
 }
 
 /** The soldiers a plan has (alive, in its squads). */
@@ -39,7 +42,9 @@ export const supplyCount = (sim: Sim, plan: Plan): number => plan.status === 'ru
 /** The march of a plan as it stands now: the supply soldiers go along as a squad of their own. */
 export function marchOfPlan(sim: Sim, plan: Plan): March {
   const sup = supplyCount(sim, plan);
-  return marchOf(sim, plan.missions.filter((m) => { const s = sim.squadById(m.squad); return s && sim.squadUnits(s).length; }).length + (sup ? 1 : 0), soldiersOf(sim, plan) + sup);
+  const m = marchOf(sim, plan.missions.filter((m) => { const s = sim.squadById(m.squad); return s && sim.squadUnits(s).length; }).length + (sup ? 1 : 0), soldiersOf(sim, plan) + sup);
+  // the march out (to the cells of the plan, then along the arrows) is the long walk (paceScale); falling back or going home goes at the pace of the slow alone
+  return plan.status === 'running' && (plan.stage === 'retreat' || plan.stage === 'recall') ? { ...m, speed: 1 - m.slow } : m;
 }
 
 const pct = (x: number): string => `${Math.round(x * 100)}%`;

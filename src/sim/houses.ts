@@ -20,7 +20,7 @@ export function houseRate(sim: Sim, b: Building): number {
   const job: WorkJob = b.kind === 'lab' ? 'research' : b.kind === 'workshop' ? 'craft' : 'tame';
   let r = 0;
   for (const id of b.staff) { const v = sim.byId.get(id); if (v && v.phase === 'inside') r += sim.workFactor(v, job); }
-  return r * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 25 : 1);
+  return r * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 1e6 : 1);
 }
 
 /** Villagers heading for a house or already in it. */

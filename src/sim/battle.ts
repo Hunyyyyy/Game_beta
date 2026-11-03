@@ -93,7 +93,7 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   const sk = v.fight.skip && sim.time < v.fight.skip.until ? v.fight.skip : null; // a target given up for a while
   const seen = (x: number, y: number) => !player || sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
   for (const o of nearbyOthers(sim, v, radius)) {
-    if (o.health <= 0 || o.down > 0 || o.inside !== null || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
+    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
     const d = Math.hypot(o.x - v.x, o.y - v.y);
     if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name });
   }
@@ -272,6 +272,7 @@ const SIGHT = 8, DEFENSIVE = 4.5;
 export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   if (v.phase === 'goStore' || v.phase === 'goEquip') return false;
   // the player's word is the highest: a selected unit walking where he was sent does not stop to fight or run from what it meets (they let him go when he is deselected or arrives)
+  if (v.fight.obey && (v.phase !== 'move' || !v.path.length)) v.fight.obey = false; // the fall-back is over: he fights again
   if (sim.underOrders(v)) { v.fleeT = 0; return false; }
   // ordered home ("Cho quân về"): he drops the fight and goes to his camp; once inside, or if there is no bed for him, the order is over
   if (v.recall) {
@@ -289,7 +290,13 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   const threats = looking ? threatsOf(sim, v, sight + 1) : [];
 
   if (rest) { // a threat wakes the sleeper; only a soldier then stays up for the night, everyone else runs and goes back to bed
-    if (scanNow && threats.length && threats[0].d < 7) { if (isFighter(v)) v.nightOwl = true; sim.resetTask(v); } else return false;
+    if (v.job === 'supply' && v.inTent) return false; // the supply soldiers sleep through it: they do not fight
+    const watch = isFighter(v) && (v.guard || v.post >= 0 || sim.warIds.has(v.id)); // guards, the men of a tower and the army in the field wake at anything that comes within their sight
+    if (scanNow && threats.length && threats[0].d < (watch ? sight : 7)) {
+      if (isFighter(v)) v.nightOwl = true;
+      if (v.post >= 0 && v.inside !== null && v.phase === 'sleep') { v.phase = 'inside'; return false; } // a tower man wakes where he lies and shoots from the tower (tickTowers)
+      sim.resetTask(v);
+    } else return false;
   }
   if (v.phase === 'flee' || v.fleeT > 0) return fleeBrain(sim, v, dt, threats);
 

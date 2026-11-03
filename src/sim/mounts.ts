@@ -40,7 +40,7 @@ export function tickTame(sim: Sim, dt: number): void {
   for (const b of sim.buildings) {
     if (b.kind !== 'stable' || !b.done) continue;
     const staff = b.staff.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v && v.phase === 'inside'); // only those at their bench: whoever is asleep in the house (off shift, night, worn out) does not work
-    if (!staff.length) continue;
+    if (!staff.length && !sim.dev.freeWorks) continue;
     if (!b.active) {
       const i = sim.tameQueue.findIndex((k) => !tameLock(sim, k as MountKind) && (sim.dev.freeWorks || sim.affordable(MOUNTS[k as MountKind].cost)));
       if (i < 0) { if (sim.tameQueue.length && sim.time - sim.lastMatWarn > 30) { sim.lastMatWarn = sim.time; sim.say('Đơn thuần thú đang chờ: thiếu nguyên liệu.'); } continue; }
@@ -52,7 +52,7 @@ export function tickTame(sim: Sim, dt: number): void {
     if (!d) { b.active = null; continue; }
     let rate = 0;
     for (const v of staff) { rate += sim.workFactor(v, 'tame'); sim.gainXp(v, 'tame', dt); }
-    b.active.progress = Math.min(1, b.active.progress + (dt * PACE.work * rate * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 25 : 1)) / d.time);
+    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * PACE.work * rate * levelDef(b).craftSpeed) / d.time); // dev: done at once
     if (b.active.progress < 1) continue;
     if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim, m), 0) >= STOCK_CAP) { if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say('Chuồng đã đầy thú chưa có người cưỡi: sản phẩm chờ chỗ.'); } continue; }
     sim.toolStock[stockKey(k)] = tamedCount(sim, k) + 1; b.active = null;
@@ -84,6 +84,17 @@ export function fitScoutMount(sim: Sim, v: Villager): void {
   if (v.mount) sim.toolStock[stockKey(v.mount)] = tamedCount(sim, v.mount) + 1; // the elephant goes back to the stable
   v.mount = null;
   if (tamedCount(sim, 'wolf') > 0) { sim.toolStock[stockKey('wolf')] = tamedCount(sim, 'wolf') - 1; v.mount = 'wolf'; sim.say(`${v.name} đi trinh sát bằng sói, không cưỡi voi.`); }
+}
+
+/** Every few seconds: a scout at home who rides nothing (the camp's beast is an elephant, and there was no wolf when he was made a scout) takes a wolf as soon as the stable has one. */
+export function fitScouts(sim: Sim): void {
+  if (tamedCount(sim, 'wolf') <= 0) return;
+  for (const v of sim.villagers) {
+    if (v.team !== 'player' || v.job !== 'scout' || v.mount || mountOf(sim, v) || sim.scouts.some((m) => m.ids.includes(v.id))) continue;
+    sim.toolStock[stockKey('wolf')] = tamedCount(sim, 'wolf') - 1; v.mount = 'wolf'; v.speed = 1.6 + 0.1 * v.stats.agi;
+    sim.say(`${v.name} nhận một con sói từ chuồng.`);
+    if (tamedCount(sim, 'wolf') <= 0) return;
+  }
 }
 
 /** A scout let go gives back the beast the trip gave him. */

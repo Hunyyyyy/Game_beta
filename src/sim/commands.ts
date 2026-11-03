@@ -35,7 +35,7 @@ export function recallFar(sim: Sim): number {
 
 /** Drop every combat order of a unit (a new plain order replaces them). */
 export function clearCombat(sim: Sim, v: Villager): void {
-  v.fight.target = null; v.fight.mode = 'none'; v.fight.dest = null; v.fight.anchor = null; v.fight.strict = false; v.queue.length = 0; v.loot = -1; v.fleeT = 0;
+  v.fight.target = null; v.fight.mode = 'none'; v.fight.dest = null; v.fight.anchor = null; v.fight.strict = false; v.fight.obey = false; v.queue.length = 0; v.loot = -1; v.fleeT = 0;
 }
 
 export function mine(sim: Sim, ids: readonly number[]): Villager[] {

@@ -2,7 +2,7 @@
 import { toolBonus, workSpeed } from './statsys';
 import { SEASON_DEF, WEATHER } from './calendar';
 import { PACE } from './constants';
-import { Building, BUILDINGS, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
+import { Building, BUILDINGS, GATHER_HOUSE, gatherMult, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
 import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
 import { CARRY_CAP, RES_NAME } from './resources';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
@@ -102,6 +102,13 @@ export function think(sim: Sim, v: Villager, dt: number): void {
     case 'build': {
       const b = sim.getBuilding(v.target);
       if (!b || !needsWork(b)) { v.phase = 'idle'; return; }
+      if (b.repairing && b.done && !b.upgrading) { // repair: the strength comes back at the pace the house went up
+        const top = maxHp(b);
+        b.hp = Math.min(top, b.hp + top * (dt * PACE.work / levelDef(b).buildTime) * workFactor(sim, v, 'build') * sim.crewSpeed());
+        gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
+        if (b.hp >= top) { b.hp = top; b.repairing = false; v.phase = 'idle'; sim.say(`${BUILDINGS[b.kind].name} đã được sửa xong.`); }
+        return;
+      }
       const target = b.upgrading ? b.level + 1 : b.level;
       b.progress += (dt * PACE.work / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1))) * workFactor(sim, v, 'build') * sim.crewSpeed();
       gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
@@ -151,7 +158,7 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
   if (v.progress < 1) return;
   v.progress -= 1;
   // sản lượng mỗi lần theo chất lượng công cụ, phần lẻ cộng dồn sang lần sau
-  const res = def.res, acc = v.frac + TIER_YIELD[tierNow] * (1 + toolBonus(sim, v, job as WorkJob, 'tyield') / 100), whole = Math.floor(acc);
+  const kindOf = GATHER_HOUSE[job], res = def.res, acc = v.frac + gatherMult(kindOf ? sim.building(kindOf) : undefined) * TIER_YIELD[tierNow] * (1 + toolBonus(sim, v, job as WorkJob, 'tyield') / 100), whole = Math.floor(acc);
   const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
   const take = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have));
   v.frac = acc - whole;

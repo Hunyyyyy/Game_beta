@@ -54,7 +54,7 @@ export { SCREEN_QUESTS } from './progression';
 export const CHAPTERS = data.chapters as Chapter[];
 
 /** What the player has on the screen right now (the quests that teach the buttons look at it). */
-export interface QuestUi { selected: BuildingKind | null; panel: BuildingKind | null; inspecting: 'unit' | 'animal' | 'node' | null }
+export interface QuestUi { selected: BuildingKind | null; panel: BuildingKind | null; inspecting: 'unit' | 'animal' | 'node' | 'tent' | null }
 
 export interface QuestView {
   quest: Quest; done: boolean; open: boolean;

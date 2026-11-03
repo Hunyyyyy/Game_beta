@@ -62,10 +62,20 @@ export class BuildingBar {
     const gain = b.kind === 'campfire' ? `kho chứa ${nx.cap} mỗi loại, ${POP_BY_FIRE[b.level]} dân, các nhà khác lên được cấp ${levelCapByFire(b.level + 1)}` : b.kind === 'storage' ? `chứa ${nx.cap} mỗi loại` : b.kind === 'toolstore' || b.kind === 'armory' ? `chứa ${nx.cap} món` : b.kind === 'house' || b.kind === 'infantry' || b.kind === 'cavalry' || b.kind === 'archery' ? `${nx.slots} giường, hồi sức ×${nx.craftSpeed.toLocaleString('vi')}` : b.kind === 'field' ? `năng suất ×${nx.craftSpeed.toLocaleString('vi')}` : `chứa ${nx.slots} người, tốc độ ×${nx.craftSpeed.toLocaleString('vi')}`;
     this.confirm.ask({
       title: `Nâng ${def.name} lên cấp ${b.level + 1}?`,
-      lines: [`${nx.name}: ${gain}. Vật liệu trả ngay, rồi giao Thợ xây để làm (~${workDays(nx.buildTime)}).${sim.dev.freeBuild ? ' Đang bật xây miễn phí.' : ''}`,
+      lines: [`${nx.name}: ${gain}. Vật liệu trả ngay, rồi giao Thợ xây để làm (~${workDays(nx.buildTime)}).${sim.freeCost() ? ' Đang bật xây miễn phí.' : ''}`,
         ...(b.kind === 'campfire' ? sim.upgradeAdvice(b.level).map((a) => `${a.bad ? '⚠' : '✓'} ${a.text}`) : [])],
-      cost: sim.dev.freeBuild ? {} : nx.cost, costTitle: 'Vật liệu cần', why: sim.canUpgrade(b), ok: 'Nâng cấp',
+      cost: sim.freeCost() ? {} : nx.cost, costTitle: 'Vật liệu cần', why: sim.canUpgrade(b), ok: 'Nâng cấp',
       onOk: () => { const e = sim.upgradeBuilding(b.id); toast(e ?? 'Đã trả vật liệu. Giao Thợ xây để nâng cấp'); ctl.onChange(); },
+    });
+  }
+
+  private askRepair(b: Building): void {
+    const { sim, ctl, toast } = this.c, def = BUILDINGS[b.kind], lost = Math.round((1 - b.hp / maxHp(b)) * 100);
+    this.confirm.ask({
+      title: `Sửa ${def.name}?`,
+      lines: [`Mất ${lost}% độ bền: tốn ${lost}% vật liệu đã xây. Vật liệu trả ngay, rồi giao Thợ xây để sửa.${sim.freeCost() ? ' Đang bật xây miễn phí.' : ''}`],
+      cost: sim.freeCost() ? {} : sim.repairCost(b), costTitle: 'Vật liệu cần', why: sim.canRepair(b), ok: 'Sửa chữa',
+      onOk: () => { const e = sim.repairBuilding(b.id); toast(e ?? 'Đã trả vật liệu. Giao Thợ xây để sửa'); ctl.onChange(); },
     });
   }
 
@@ -99,7 +109,7 @@ export class BuildingBar {
     if (!b || !show) { this.id = null; return; }
     this.id = b.id;
     const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
-    const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
+    const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.repairing ? `đang sửa chữa ${Math.round((b.hp / maxHp(b)) * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
     const hp = b.done ? ` · bền ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? ' · đang cháy' : b.hp <= maxHp(b) * 0.7 ? ' · bốc khói' : ''}` : '';
     const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < top;
     // a camp of soldiers: one button calls all of its soldiers out of the camp, or sends them back when they are all out
@@ -119,6 +129,7 @@ export class BuildingBar {
         { id: 'multi', label: 'Chọn nhiều', title: 'Chọn nhiều mảnh hàng rào để dời hoặc xoay cùng lúc', hidden: ctl.groupMode || !b.done || !(b.kind === 'fence' || b.kind === 'gate'), onClick: () => ctl.startGroup(b.id) },
         { id: 'open', label: OPEN_LABEL[b.kind], tone: 'primary', hidden: ctl.groupMode || !b.done || b.kind === 'fence' || b.kind === 'gate', onClick: () => ctl.selectBuilding(b.id, true) },
         { id: 'gate', label: b.open ? 'Đóng cổng' : 'Mở cổng', tone: 'primary', hidden: ctl.groupMode || !(b.kind === 'gate' && b.done), onClick: () => { const e = sim.toggleGate(b.id); if (e) toast(e); ctl.onChange(); } },
+        { id: 'repair', label: 'Sửa chữa', title: 'Sửa lại độ bền đã mất: tốn vật liệu theo phần độ bền mất, thợ xây làm', hidden: ctl.groupMode || !b.done || b.repairing || b.upgrading || b.hp >= maxHp(b), onClick: () => this.askRepair(b) },
         { id: 'up', label: 'Nâng cấp', hidden: ctl.groupMode || !upgradable, onClick: () => this.askUpgrade(b) },
         { id: 'callall', label: campOut.all ? 'Cho về hết' : 'Gọi tất cả', title: campOut.all ? 'Cho mọi lính của trại này về trại nghỉ' : 'Gọi mọi lính của trại này ra ngoài, sẵn sàng; bấm lại để cho về', hidden: ctl.groupMode || !b.done || !campOut.ids.length, onClick: () => { if (campOut.all) sim.sendBack(campOut.ids); else sim.callOut(campOut.ids); ctl.onChange(); } },
         { id: 'move', label: 'Di dời', title: 'Di dời (miễn phí)', hidden: ctl.groupMode || !def.buildable, onClick: () => ctl.startMoving(b.id) },

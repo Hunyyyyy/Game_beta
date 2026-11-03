@@ -130,8 +130,8 @@ button.primary.danger { background: var(--bad); color: #fff; border-color: var(-
 
 // the research house: Quân sự, Xây dựng, Kinh tế on one level joined by a line, Vũ khí under Quân sự
 .tabs.icontabs.treetabs {
-  position: relative; grid-template-columns: repeat(3, minmax(86px, 1fr)); row-gap: 22px;
-  &::before { content: ''; position: absolute; left: 17%; right: 17%; top: 46px; border-top: 3px solid #b8903c; opacity: .55; }
+  position: relative; grid-template-columns: repeat(4, minmax(70px, 1fr)); row-gap: 22px;
+  &::before { content: ''; position: absolute; left: 12.5%; right: 12.5%; top: 46px; border-top: 3px solid #b8903c; opacity: .55; }
   .tabcard { position: relative; z-index: 1; }
   .tabcard.under { &::before { content: ''; position: absolute; left: 50%; top: -22px; height: 22px; border-left: 3px solid #b8903c; opacity: .55; } }
   .tabcard.locked { filter: grayscale(.8); opacity: .7; }

@@ -2,7 +2,7 @@
 import { BARTER, FOOD, rationAt, Res, RES_NAME, Stock } from './resources';
 import type { Sim } from './sim';
 import paceJson from '../data/pace.json';
-import { Building, levelDef } from './buildings';
+import { Building, gatherMult, levelDef } from './buildings';
 import { DAY_LENGTH } from './constants';
 import { FARM_TIME, JOBS, roleOf } from './jobs';
 import type { WorkJob } from './jobs';
@@ -151,7 +151,7 @@ export function dailyYield(sim: Sim, b: Building): { amount: number; people: num
     const speed = workFactor(sim, v, job, b.kind === 'field') / Math.max(0.01, sim.restFactor(v)), secs = workSeconds(v);
     if (job === 'hunt') { amount += paceJson.huntPerDay * speed * (secs / (DAY_LENGTH * 0.65)); continue; }
     const per = TIER_YIELD[sim.toolTier(v, job)] * (1 + toolBonus(sim, v, job, 'tyield') / 100);
-    amount += b.kind === 'field' ? (speed * levelDef(b).craftSpeed * per * secs) / FARM_TIME : (speed * per * secs * paceJson.gatherDuty) / JOBS[job].baseTime;
+    amount += b.kind === 'field' ? (speed * levelDef(b).craftSpeed * per * secs) / FARM_TIME : (speed * per * secs * paceJson.gatherDuty * gatherMult(b)) / JOBS[job].baseTime;
   }
   return { amount, people: workers.length };
 }

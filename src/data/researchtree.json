@@ -336,6 +336,66 @@
       },
       "time": 110,
       "about": "Tốc độ hồi sức khi ngủ: nhanh hơn thêm bấy nhiêu phần trăm."
+    },
+    "mspeed": {
+      "name": "Tốc độ hành quân",
+      "short": "Hành quân",
+      "steps": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 100,
+      "about": "Quân đi nhanh hơn khi hành quân trong chiến tranh."
+    },
+    "mload": {
+      "name": "Tải hậu cần",
+      "short": "Tải",
+      "steps": [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 100,
+      "about": "Mỗi lính hậu cần mang được nhiều hơn."
+    },
+    "mbuild": {
+      "name": "Tốc độ dựng lều",
+      "short": "Dựng lều",
+      "steps": [
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 100,
+      "about": "Lính hậu cần dựng lều dã chiến nhanh hơn."
     }
   },
   "roles": {
@@ -476,6 +536,34 @@
     "tower": {
       "name": "Chòi canh",
       "building": "tower"
+    },
+    "march_foot": {
+      "name": "Bộ binh",
+      "building": "infantry"
+    },
+    "march_cavalry": {
+      "name": "Kỵ thú",
+      "building": "cavalry"
+    },
+    "march_archer": {
+      "name": "Thợ ném",
+      "building": "archery"
+    },
+    "march_army": {
+      "name": "Toàn quân",
+      "building": "supplycamp"
+    },
+    "plan_foot": {
+      "name": "Bộ binh",
+      "building": "infantry"
+    },
+    "plan_cavalry": {
+      "name": "Kỵ thú",
+      "building": "cavalry"
+    },
+    "plan_archer": {
+      "name": "Thợ ném",
+      "building": "archery"
     }
   },
   "tabs": {
@@ -713,6 +801,84 @@
         "hp",
         "atk"
       ]
+    },
+    "march": {
+      "roles": [
+        "march_foot",
+        "march_cavalry",
+        "march_archer"
+      ],
+      "order": [
+        "hp",
+        "defm",
+        "defr",
+        "move",
+        "atk",
+        "sta"
+      ],
+      "scale": 0.5
+    },
+    "marchlog": {
+      "roles": [
+        "march_army"
+      ],
+      "order": [
+        "mspeed",
+        "mload",
+        "mbuild"
+      ]
+    },
+    "tactic": {
+      "roles": [
+        "plan_foot",
+        "plan_cavalry",
+        "plan_archer"
+      ],
+      "order": [
+        "hp",
+        "defm",
+        "defr",
+        "move",
+        "atk",
+        "sta"
+      ],
+      "scale": 0.5
     }
+  },
+  "plan": {
+    "_note": "Cây Kế hoạch chiến đấu: ba cột Bộ binh, Kỵ, Cung, chỉ số riêng (chain tactic) chỉ cộng khi đang chiến tranh và đang giao chiến. Nhóm chỉ số đầu đủ cấp 3 mở plan_report, cấp 5 mở plan_supply; nhóm sau cấp 3 mở plan_weather, cấp 5 mở plan_rest (xem research.json). Chuỗi march (tab Hành quân) chỉ cộng khi chiến tranh và đang hành quân hoặc nghỉ.",
+    "roles": [
+      "plan_foot",
+      "plan_cavalry",
+      "plan_archer"
+    ],
+    "layout": [
+      {
+        "stats": [
+          "hp",
+          "defm",
+          "defr"
+        ]
+      },
+      {
+        "techs": [
+          "plan_report",
+          "plan_supply"
+        ]
+      },
+      {
+        "stats": [
+          "move",
+          "atk",
+          "sta"
+        ]
+      },
+      {
+        "techs": [
+          "plan_weather",
+          "plan_rest"
+        ]
+      }
+    ]
   }
 }

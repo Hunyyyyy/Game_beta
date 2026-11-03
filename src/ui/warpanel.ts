@@ -2,6 +2,8 @@ import { DAY_LENGTH } from '../sim/constants';
 import { Arm, armOfWeapon, ARM_NAME, FORMATION_IDS, FORMATIONS, FormationId, SQUAD_MAX, SQUAD_MIN } from '../sim/formations';
 import type { CardKind, Mission, MissionTarget, Plan, PlanStance, Pt, Squad, Villager } from '../sim/model';
 import { WEAPONS } from '../sim/combat';
+import { WEATHER } from '../sim/calendar';
+import { TECH_BY_ID } from '../sim/research';
 import { h, hint } from './dom';
 import { DrawMode, fmtTime, PlanMapView, SquadAction } from './planmap';
 import type { Ctx } from './ctx';
@@ -189,7 +191,7 @@ export class WarPanel {
     if (a === 'trim') { this.startDraw('trim', squad); return; }
     if (a === 'roster') { this.rosterOpen = true; this.addOpen = false; this.refresh(); return; }
     if (a === 'order') {
-      if (!m?.path.length) { this.toast('Đội không có mũi tên là đội hậu cần: không có lệnh để ra, nó đi trước phá vật cản rồi về chỗ cũ'); this.refresh(); return; }
+      if (!m) { this.toast('Đội chưa có trong kế hoạch'); this.refresh(); return; }
       this.orderOpen = true; this.cardSquad = -1; this.refresh(); return;
     }
     const name = this.sim.squadById(squad)?.name ?? 'đội này';
@@ -345,34 +347,79 @@ export class WarPanel {
     this.bar.replaceChildren(...kids);
   }
 
-  /** The report of the war council: the odds, the warnings, what a win and a loss may bring, and the details the map allows. Confirming sends the army out. */
+  /** The weather the army would meet if it set out now: today and tomorrow, the two days the village can foretell (the Dự báo thời tiết research). */
+  private weatherRow(need: (id: string) => Node): Node {
+    const { sim } = this;
+    if (!sim.planOpen('weather')) return need('plan_weather');
+    const day = (label: string, kind: keyof typeof WEATHER) => { const w = WEATHER[kind], slow = Math.round((1 - w.speed) * 100); return h('span', { class: 'chipfact' }, h('small', { text: label }), h('b', { text: w.name }), slow > 0 ? h('small', { class: 'bad', text: `đi chậm ${slow}%` }) : null); };
+    return h('div', { class: 'rfacts' }, day('Hôm nay', sim.weather), day('Ngày mai', sim.nextWeather));
+  }
+
+  /** The supply sums (the Tính toán hậu cần research): the days there, what to carry, and how many supply soldiers it takes, with a button that sets them. */
+  private supplyAdvice(plan: Plan, need: (id: string) => Node): Node[] {
+    const { sim } = this;
+    if (!sim.planOpen('supply')) return [need('plan_supply')];
+    const a = sim.supplyAdvice(plan);
+    if (!a) return [h('p', { class: 'sub', text: 'Chưa có mũi tên để tính đường đi' })];
+    const fact = (k: string, v: string, bad = false) => h('span', { class: 'chipfact' }, h('small', { text: k }), h('b', { class: bad ? 'bad' : '', text: v }));
+    const take = Math.min(a.soldiers, sim.supplyReady());
+    return [h('div', { class: 'rfacts' }, fact('Đi tới nơi', `${a.oneWay.toFixed(1)} ngày`), fact('Lương', `${a.food} (${a.days} ngày)`), fact('Lều', `${a.wood} gỗ, ${a.hide} da`), fact('Cần hậu cần', `${a.soldiers}`, a.soldiers > a.have), fact('Đang có', `${a.have}`)),
+      this.chip(`Áp dụng đề xuất (${take} lính, ${a.days} ngày)`, false, () => { sim.setSupply(plan, take, a.days); this.refresh(); }, { disabled: !take, title: 'Đặt số lính hậu cần và số ngày lương theo tính toán' })];
+  }
+
+  /** Which page of the report is shown. */
+  private reportPage: 'sum' | 'supply' | 'detail' = 'sum';
+
+  /**
+   * The report of the war council, one page at a time. A plan that cannot go out shows only why (and the way back); otherwise the odds come first,
+   * and the supply and the details are a tap away. Confirming sends the army out.
+   */
   private fillReport(plan: Plan | undefined): void {
     const { sim } = this;
     this.report.hidden = !(this.reportOpen && plan && plan.status === 'draft');
     if (this.report.hidden || !plan) return;
-    const f = sim.forecastPlan(plan), lo = Math.max(0, f.chance - f.spread), hi = Math.min(1, f.chance + f.spread), pc = (x: number) => `${Math.round(x * 100)}%`;
-    const odds = f.level >= 3 ? `khoảng ${pc(f.chance)} (có thể từ ${pc(lo)} đến ${pc(hi)})` : `từ ${pc(lo)} đến ${pc(hi)} (bản đồ cấp ${f.level} còn thô)`;
-    const list = (title: string, items: string[], cls = 'sub'): Node[] => items.length ? [h('div', { class: 'psec' }, h('b', { text: title }), ...items.map((x) => h('p', { class: cls, text: x })))] : [];
-    this.report.replaceChildren(
-      h('div', { class: 'phead' }, h('b', { text: 'Báo cáo của hội đồng chiến' }), h('button', { class: 'chip', text: '✕', title: 'Đóng', onclick: () => { this.reportOpen = false; this.refresh(); } })),
-      h('div', { class: 'psec' }, h('b', { text: `${f.verdict}: tỉ lệ thắng ${odds}` }),
+    const f = sim.forecastPlan(plan), pc = (x: number) => `${Math.round(x * 100)}%`;
+    const head = h('div', { class: 'phead' }, h('b', { text: 'Báo cáo chiến' }), h('button', { class: 'chip', text: '✕', title: 'Đóng', onclick: () => { this.reportOpen = false; this.refresh(); } }));
+    const back = this.chip('Sửa kế hoạch', false, () => { this.reportOpen = false; this.refresh(); });
+    if (f.blocked) { // cannot go out: only the reasons
+      this.report.replaceChildren(head, h('div', { class: 'psec rblock' }, h('b', { text: '✗ Chưa thể triển khai' }), ...f.blocked.split('\n').map((x) => h('p', { class: 'why', text: x }))), h('div', { class: 'chips' }, back));
+      return;
+    }
+    if (!f.level) this.reportPage = 'sum';
+    const pages: Array<['sum' | 'supply' | 'detail', string]> = [['sum', 'Tổng quan'], ['supply', `Hậu cần ${plan.supply}`], ['detail', 'Chi tiết']];
+    const lockOf = (k: 'sum' | 'supply' | 'detail') => (k === 'detail' && !sim.planOpen('detail') ? 'plan_report' : null);
+    const need = (id: string) => h('p', { class: 'rlock', text: `🔒 Cần nghiên cứu: ${TECH_BY_ID[id].name} (Kế hoạch chiến đấu bậc 1)` });
+    const tabs = h('div', { class: 'rtabs' }, ...pages.map(([k, label]) => h('button', { class: 'chip', type: 'button', 'aria-pressed': String(this.reportPage === k), text: lockOf(k) ? `🔒 ${label}` : label, onclick: () => { this.reportPage = k; this.refresh(); } })));
+    let body: Node;
+    if (lockOf(this.reportPage)) {
+      body = h('div', { class: 'psec' }, need(lockOf(this.reportPage)!));
+    } else if (this.reportPage === 'supply') {
+      const stepper = (label: string, value: string, minus: () => void, plus: () => void, noMinus: boolean, noPlus: boolean, extra: Node[] = []) =>
+        h('div', { class: 'rstep' }, h('small', { text: label }), this.chip('−', false, minus, { disabled: noMinus }), h('b', { text: value }), this.chip('＋', false, plus, { disabled: noPlus }), ...extra);
+      body = h('div', { class: 'psec' },
+        stepper('Lính hậu cần', `${plan.supply}/${sim.supplyReady()}`, () => { sim.setSupply(plan, plan.supply - 1, plan.carryDays); this.refresh(); }, () => { sim.setSupply(plan, plan.supply + 1, plan.carryDays); this.refresh(); }, plan.supply <= 0, plan.supply >= sim.supplyReady(),
+          [this.chip('Tất cả', false, () => { sim.setSupply(plan, sim.supplyReady(), plan.carryDays); this.refresh(); }, { disabled: !sim.supplyReady() })]),
+        stepper('Lương mang theo', `${plan.carryDays} ngày`, () => { sim.setSupply(plan, plan.supply, plan.carryDays - 1); this.refresh(); }, () => { sim.setSupply(plan, plan.supply, plan.carryDays + 1); this.refresh(); }, plan.carryDays <= 1, false),
+        ...this.supplyAdvice(plan, need));
+    } else if (this.reportPage === 'detail') {
+      const row = (r: { label: string; ours: number; theirs: number | null }) => {
+        const tot = Math.max(1, r.ours + (r.theirs ?? 0)), side = r.theirs === null ? 50 : (r.ours / tot) * 100;
+        return [h('b', { class: 'ro', text: String(r.ours) }), h('span', { class: 'rl', text: r.label }), h('b', { class: 'rt', text: r.theirs === null ? '?' : String(r.theirs) }),
+          h('div', { class: 'rbar' }, h('i', { class: 'win', style: `width:${side}%` }), h('i', { class: 'lose', style: `width:${100 - side}%` }))];
+      };
+      body = h('div', { class: 'psec' },
+        h('div', { class: 'rcmp' }, h('small', { class: 'ro', text: 'TA' }), h('span'), h('small', { class: 'rt', text: 'ĐỊCH' }), ...f.compare.flatMap(row)),
+        f.facts.length ? h('div', { class: 'rfacts' }, ...f.facts.map(([k, v]) => h('span', { class: 'chipfact' }, h('small', { text: k }), h('b', { text: v })))) : null);
+    } else {
+      const odds = f.level >= 3 ? `~${pc(f.chance)}` : `${pc(Math.max(0, f.chance - f.spread))}–${pc(Math.min(1, f.chance + f.spread))}`;
+      body = h('div', { class: 'psec' },
+        h('div', { class: 'rodds' }, h('b', { text: odds }), h('span', { text: f.verdict }), f.level && f.level < 3 ? h('small', { class: 'sub', text: `bản đồ cấp ${f.level}: còn thô` }) : null),
         h('div', { class: 'oddsbar' }, h('i', { class: 'win', style: `width:${f.chance * 100}%` }), h('i', { class: 'lose', style: `width:${(1 - f.chance) * 100}%` })),
-        h('small', { class: 'sub', text: 'Chỉ tính theo kế hoạch và bản đồ đang có; thực tế địch có thể mạnh hay yếu hơn.' })),
-      ...(f.blocked ? [h('div', { class: 'psec' }, h('b', { text: '✗ Chưa thể triển khai:' }), ...f.blocked.split('\n').map((x) => h('p', { class: 'why', text: x })))] : []),
-      ...list('⚠ Cảnh báo', f.warnings),
-      // the supply: how many supply soldiers go and how many days of food they carry
-      h('div', { class: 'psec' }, h('b', { text: 'Hậu cần' }),
-        h('div', { class: 'chips' }, h('small', { text: `Lính hậu cần ${plan.supply}/${sim.supplyReady()}` }),
-          this.chip('−', false, () => { sim.setSupply(plan, plan.supply - 1, plan.carryDays); this.refresh(); }, { disabled: plan.supply <= 0 }),
-          this.chip('＋', false, () => { sim.setSupply(plan, plan.supply + 1, plan.carryDays); this.refresh(); }, { disabled: plan.supply >= sim.supplyReady() }),
-          this.chip('Tất cả', false, () => { sim.setSupply(plan, sim.supplyReady(), plan.carryDays); this.refresh(); }, { disabled: !sim.supplyReady() })),
-        h('div', { class: 'chips' }, h('small', { text: `Mang lương ${plan.carryDays} ngày` }),
-          this.chip('−', false, () => { sim.setSupply(plan, plan.supply, plan.carryDays - 1); this.refresh(); }, { disabled: plan.carryDays <= 1 }),
-          this.chip('＋', false, () => { sim.setSupply(plan, plan.supply, plan.carryDays + 1); this.refresh(); }))),
-      h('details', { open: true }, h('summary', { text: 'Báo cáo chi tiết' }), ...f.lines.map((x) => h('p', { class: 'sub', text: x }))),
-      h('div', { class: 'chips' },
-        this.chip('✓ Xác nhận triển khai', true, () => { const e = sim.startPlan(plan); this.toast(e); if (e) { this.refresh(); return; } this.reportOpen = false; this.closeMap(); this.c.ctl.closeBuilding(); /* back to the game, in war mode */ }, { disabled: !!f.blocked, title: 'Đóng bảng kế hoạch, quân đi ngay tới vị trí đã bố trí rồi chờ lệnh đánh hay rút trên màn hình game' }),
-        this.chip('Quay lại sửa kế hoạch', false, () => { this.reportOpen = false; this.refresh(); })));
+        this.weatherRow(need),
+        f.warnings.length ? h('details', { class: 'rwarn' }, h('summary', { text: `⚠ ${f.warnings.length} cảnh báo` }), ...f.warnings.map((x) => h('p', { class: 'sub', text: x }))) : null);
+    }
+    this.report.replaceChildren(head, f.level ? tabs : h('span'), body, h('div', { class: 'chips' },
+      this.chip('✓ Triển khai', true, () => { const e = sim.startPlan(plan); this.toast(e); if (e) { this.refresh(); return; } this.reportOpen = false; this.closeMap(); this.c.ctl.closeBuilding(); /* back to the game, in war mode */ }, { title: 'Quân đi tới vị trí đã bố trí rồi chờ lệnh đánh hay rút' }), back));
   }
 
   /** The soldiers of the chosen squad, kept short: name, role, weapon, who commands and a minus to take one out. Below it a drop-down of ticks to add soldiers who have no squad. */
@@ -404,7 +451,8 @@ export class WarPanel {
 
   /** One choice of a step: a big tile with a picture, a name and a line saying what it means. */
   private tile(icon: string, title: string, note: string, on: boolean, f: () => void, opts: { disabled?: boolean; color?: string } = {}): HTMLButtonElement {
-    return h('button', { class: `opt${on ? ' on' : ''}`, disabled: opts.disabled, style: opts.color ? `border-left:6px solid ${opts.color}` : undefined, onclick: f },
+    const press = () => { const plan = this.attackPlan(), m = plan?.status === 'draft' ? plan.missions.find((x) => x.squad === this.sel) : undefined; if (m) m.ordered = true; f(); }; // any choice on the card is an order, arrow or not
+    return h('button', { class: `opt${on ? ' on' : ''}`, disabled: opts.disabled, style: opts.color ? `border-left:6px solid ${opts.color}` : undefined, onclick: press },
       h('span', { class: 'oi', text: icon }), h('b', { text: title }), h('small', { text: note }));
   }
 
@@ -444,7 +492,7 @@ export class WarPanel {
   /** The orders of the chosen squad as a card on the map, one step at a time: a step, its choices as big tiles, and the way on. The last step is the overview. */
   private fillCard(plan: Plan | undefined): void {
     const { sim } = this, sq = sim.squadById(this.sel), m = plan?.missions.find((x) => x.squad === this.sel);
-    this.card.hidden = !(this.orderOpen && plan && sq && m && m.path.length > 0 && this.mode === 'pan'); // orders are given to a squad that has somewhere to go
+    this.card.hidden = !(this.orderOpen && plan && sq && m && this.mode === 'pan'); // orders can be given with or without an arrow
     if (this.card.hidden || !plan || !sq || !m) return;
     if (this.cardSquad !== sq.id) { this.cardSquad = sq.id; this.step = 'action'; this.formRow = false; }
     const steps = this.stepsOf(m);

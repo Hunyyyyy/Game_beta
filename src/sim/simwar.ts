@@ -6,6 +6,7 @@ import * as siege from './siege';
 import { sightOf } from './environment';
 import * as training from './training';
 import * as mounts from './mounts';
+import * as research from './research';
 import { surrender, tickFoe, tickTribes, tribeOf } from './tribes';
 import * as warmode from './warmode';
 import * as warmarch from './warmarch';
@@ -42,6 +43,10 @@ export const WAR = {
     for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
     tickTribes(this, dt);
   },
+  /** → warsupply.supplyAdvice */
+  supplyAdvice(this: Sim, plan: Plan): warsupply.SupplyAdvice | null { return warsupply.supplyAdvice(this, plan); },
+  /** Whether a feature of the war plan is researched (the details tab, the supply sums, the weather, the rest in the field). */
+  planOpen(this: Sim, f: research.PlanFeature): boolean { return research.planOpen(this.researched, f, this.dev.freeBuild); },
   /** → army.squadLimit */
   squadLimit(this: Sim): number { return army.squadLimit(this); },
   /** → army.cellLimit */
@@ -154,6 +159,8 @@ export const WAR = {
     plan.supply = Math.max(0, Math.round(n)); plan.carryDays = Math.max(1, Math.min(warmarch.WAR_DATA.supply.maxDays, Math.round(days)));
     return null;
   },
+  /** → wartent.shelter */
+  shelter(this: Sim, v: Villager): void { return wartent.shelter(this, v); },
   /** → wartent.sleepsInTent: night, and the tent of his squad stands beside him */
   sleepsInTent(this: Sim, v: Villager): boolean { return wartent.sleepsInTent(this, v); },
   /** → warsupply.supplyAvailable: how many supply soldiers wait in their camp */
@@ -202,6 +209,12 @@ export const WAR = {
   corridorBlocks(this: Sim, start: Pt, pts: readonly Pt[], target?: Pt): Obstacle[] { return siege.corridorBlocks(this, start, pts, target); },
   /** → warplan.cancelPlan */
   cancelPlan(this: Sim, plan: Plan): string | null { return warplan.cancelPlan(this, plan); },
+  /** In a war: whether a soldier of the army is fighting or marching (resting counts as marching); null for everyone else. */
+  warMode(this: Sim, v: Villager): 'fight' | 'march' | null { return v.team === 'player' && this.warIds.has(v.id) ? (v.phase === 'fight' || v.swing ? 'fight' : 'march') : null; },
+  /** Supply soldiers of the deployed plan who are still alive (without them there is nobody to pitch a tent). */
+  supplyReadyIn(this: Sim, plan: Plan): number { return warsupply.supplyOf(this, plan).length; },
+  /** → warplan.setRest */
+  setRest(this: Sim, plan: Plan, squadId: number, on: boolean): string | null { return warplan.setRest(this, plan, squadId, on); },
   /** → warplan.isHolding */
   isHolding(this: Sim, plan: Plan, m: Mission): boolean { return warplan.isHolding(plan, m); },
   /** → training.startTraining */

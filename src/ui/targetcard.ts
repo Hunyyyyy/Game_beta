@@ -24,7 +24,7 @@ export class TargetCard {
   }
   private attack(): void {
     const { ctl, sim, toast } = this.c, t = ctl.inspect;
-    if (!t || t.kind === 'node' || !ctl.selected.size) { toast('Hãy chọn dân trước'); return; }
+    if (!t || t.kind === 'node' || t.kind === 'tent' || !ctl.selected.size) { toast('Hãy chọn dân trước'); return; }
     if (!sim.orderAttack([...ctl.selected], { kind: t.kind, id: t.id })) toast(t.kind === 'unit' ? 'Chỉ chiến binh mới đánh: tuyển lính ở trại lính' : 'Chỉ Thợ săn hoặc chiến binh mới săn thú');
     ctl.onChange();
   }
@@ -46,6 +46,20 @@ export class TargetCard {
       { id: 'loot', label: 'Lột da, lấy thịt', hidden: !loot, onClick: () => this.loot() },
     ];
 
+    if (t.kind === 'tent') {
+      const plan = sim.plans.find((p) => p.kind === 'attack' && p.status === 'running'), tent = plan?.tents.find((x) => x.squad === t.id), supply = t.id < 0, sq = supply ? undefined : sim.squadById(t.id);
+      if (!plan || !tent || (!sq && !supply)) { gone(); return; }
+      const folk = supply ? plan.supplyIds.map((id) => sim.get(id)).filter((v): v is NonNullable<typeof v> => !!v) : sim.squadUnits(sq!);
+      const crew = sim.villagers.filter((v) => v.inTent && Math.hypot(v.x - tent.x, v.y - tent.y) < 1.5).length, near = folk.filter((v) => Math.hypot(v.x - tent.x, v.y - tent.y) < 6).length;
+      this.root.hidden = false;
+      this.card.set({
+        picKey: `tent|${tent.built}`, pic: () => '⛺',
+        title: 'Lều dã chiến', sub: `${sq?.name ?? 'Hậu cần'} · ${tent.built ? 'đã dựng xong' : `đang dựng ${Math.floor(tent.progress * 100)}%`}`,
+        line: tent.built ? `${near}/${folk.length} lính ${supply ? 'hậu cần' : 'của đội'} nghỉ gần lều · ${crew} đang ngủ trong lều` : 'Hậu cần đang dựng; dựng xong lính mới ngủ được',
+        onClose: close, actions: [],
+      });
+      return;
+    }
     if (t.kind === 'node') {
       const N = sim.world.size, n = sim.world.nodeAt(t.id % N, Math.floor(t.id / N));
       if (!n) { gone(); return; }

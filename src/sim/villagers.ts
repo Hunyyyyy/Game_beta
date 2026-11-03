@@ -79,6 +79,7 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   if (sim.shouldSleep(v, fighting)) { if (!asleep) goHome(sim, v); }
   else if (asleep && !sim.hides(v)) { if (atWork(sim, v) && v.phase === 'sleep') v.phase = 'inside'; else { sim.exitBuilding(v); v.path = []; v.slide = null; v.phase = 'idle'; v.bed = -1; } } // staff wake up at their bench
 
+  if (sim.warIds.has(v.id)) sim.shelter(v); else if (v.inTent) v.inTent = false;
   seekBed(sim, v, dt);
   sim.moveUnit(v, dt);
   if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim.fogDirty = true;

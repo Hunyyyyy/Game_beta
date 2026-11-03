@@ -76,7 +76,7 @@ function unstickWalker(sim: Sim, v: Villager, dt: number): void {
 /** Follow the path and the final slide step; shared by villagers and tribal people. */
 export function moveUnit(sim: Sim, v: Villager, dt: number): void {
   unstickWalker(sim, v, dt);
-  const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === 'flee' ? 1.3 : 1) * (v.team === 'player' ? sim.mountSpeed(v) : 1) * (sim.warIds.has(v.id) ? sim.march.speed : 1); // a rider on his beast walks faster; an army on the march is slowed (warmarch.ts)
+  const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === 'flee' ? 1.3 : 1) * (v.team === 'player' ? sim.mountSpeed(v) : 1) * (sim.warIds.has(v.id) ? sim.march.speed * (v.hurry ? 2.5 : v.job === 'supply' ? 1.25 : 1) : 1); // the supply soldiers walk a little faster than the army, and much faster when left behind, so that they keep up // a rider on his beast walks faster; an army on the march is slowed (warmarch.ts)
   if (v.swing) return; // a blow in progress plants the feet
   let left = walk * dt;
   while (left > 0 && v.path.length) {

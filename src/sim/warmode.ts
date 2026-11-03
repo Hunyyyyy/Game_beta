@@ -30,12 +30,15 @@ export function ranks(sim: Sim, soldiers: Set<number> = army(sim)): Set<number> 
 }
 
 /**
- * One tick of someone who is not in the war: drop whatever they were doing and walk home to bed (goHome); once indoors, or asleep where they stood
- * (nowhere to go), they do nothing at all. When the war is over the ordinary tick wakes them and they take up their work again.
+ * Someone who is not in the war goes home at once: into the bed of their house (listed there, out of sight), or, with no bed, out of sight where they stand.
+ * Nobody walks about, and nobody is drawn or animated, while the war is on. When it is over the ordinary tick wakes them and they take up their work again.
  */
-export function standDown(sim: Sim, v: Villager, dt: number): void {
-  if (v.inside !== null || v.phase === 'sleep' || v.down > 0 || v.health <= 0) return;
-  if (v.phase !== 'goHome') { sim.clearCombat(v); sim.goHome(v); }
-  sim.moveUnit(v, dt);
-  sim.animate(v, dt);
+export function standDown(sim: Sim, v: Villager, _dt: number): void {
+  if (v.down > 0 || v.health <= 0) return;
+  if (v.inside !== null) return;
+  if (v.phase === 'sleep') { v.inTent = true; return; } // lying on the ground by the fire: out of sight too
+  sim.clearCombat(v); sim.goHome(v);
+  const bed = v.phase === 'goHome' && v.target >= 0 ? sim.getBuilding(v.target) : undefined;
+  if (bed && bed.done) { sim.sleepIn(v, bed); return; }
+  v.path = []; v.slide = null; v.phase = 'sleep'; v.inTent = true; v.anim = 'idle'; v.hold = null;
 }

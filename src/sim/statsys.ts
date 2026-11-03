@@ -8,7 +8,7 @@ import { TOOL_OF_JOB } from './tools';
 import { LineStat, soldierTier, statBonus, StatId, TREE_ROLES } from './research';
 
 /** What the stat rules read of the game: the research done and the squads. A narrow type of its own so that this file, shared by the systems, never has to know the Sim. */
-export interface StatSim { readonly researched: ReadonlySet<string>; readonly squads: ReadonlyArray<{ readonly id: number; readonly formation: FormationId }>; readonly foodPenalty: number; /** How exhausted a soldier of an army in the field is (0..1). */ tiredPenalty(v: Villager): number; /** Percent a tribe's research-like bonus adds to a stat of its people (src/content/difficulty.json). */ readonly foeBonus?: (team: string, stat: StatId) => number }
+export interface StatSim { readonly researched: ReadonlySet<string>; readonly squads: ReadonlyArray<{ readonly id: number; readonly formation: FormationId }>; readonly foodPenalty: number; /** While a war is on: whether a soldier of the army is fighting or on the march (or resting); null for anyone else. */ readonly warMode?: (v: Villager) => 'fight' | 'march' | null; /** How exhausted a soldier of an army in the field is (0..1). */ tiredPenalty(v: Villager): number; /** Percent a tribe's research-like bonus adds to a stat of its people (src/content/difficulty.json). */ readonly foeBonus?: (team: string, stat: StatId) => number }
 type Sim = StatSim;
 import type { Villager } from './model';
 
@@ -52,8 +52,11 @@ export function statValue(sim: Sim, v: Villager, stat: StatId): number {
   const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
   const squad = v.team === 'player' && v.squad >= 0 ? sim.squads.find((q) => q.id === v.squad) : undefined;
   const bonus = (v.team !== 'player' ? sim.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ''), stat) : 0);
+  // the research of the war: Hành quân adds on the march and at rest, Kế hoạch chiến đấu while fighting (the soldiers of the three arms only)
+  const mode = role === 'foot' || role === 'cavalry' || role === 'archer' ? sim.warMode?.(v) ?? null : null;
+  const warBonus = mode ? statBonus(sim.researched, `${mode === 'fight' ? 'plan' : 'march'}_${role}`, stat) : 0;
   const hunger = v.team === 'player' && stat !== 'hp' ? (1 - sim.foodPenalty) * (1 - sim.tiredPenalty(v)) : 1; // short of food, and (an army in the field) short of sleep
-  return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + bonus / 100) * hunger;
+  return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + (bonus + warBonus) / 100) * hunger;
 }
 
 /** What a stat is on a person's own (no research, no tier): used when a body is made. */

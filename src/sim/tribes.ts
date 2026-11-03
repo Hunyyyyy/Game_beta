@@ -160,6 +160,7 @@ export function tribeHostile(sim: Sim, id: Team): boolean {
 export function tribeWilling(sim: Sim, id: Team): boolean {
   const t = tribeOf(sim, id);
   if (!t || t.state !== 'free') return false;
+  if (sim.plans.some((p) => p.kind === 'attack' && p.status === 'running' && p.tribe === id)) return true; // the village our army is marching on fights whoever of ours it meets
   return tribeHostile(sim, id) || (t.def.personality !== 'peaceful' && t.relation < MEET.friendlyFrom);
 }
 

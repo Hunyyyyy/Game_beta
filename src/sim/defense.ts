@@ -70,7 +70,7 @@ export function assignTower(sim: Sim, ids: readonly number[], towerId: number): 
     if (v.job !== 'idle' || roleOf(v)) { err = 'Chỉ dân rảnh mới lên chòi: người có nghề hoặc là lính thì cho nghỉ trước'; continue; }
     if (garrison(sim, b).length >= levelDef(b).slots) { err = `${BUILDINGS.tower.name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} lính`; continue; }
     sim.resetTask(v); sim.clearCombat(v);
-    v.job = 'fight'; v.guard = true; v.guardAt = null; v.arm = 'archer'; v.post = b.id; v.shift = 'both'; // the watch of a tower is kept day and night (the details change it)
+    v.job = 'fight'; v.guard = true; v.guardAt = null; v.arm = 'archer'; v.post = b.id; v.shift = 'day'; // the men sleep in the tower by night and wake when an enemy comes in sight; the details can set a night or round-the-clock watch
     v.fight.mode = 'none'; v.fight.anchor = null;
     sim.planStaff(v);
   }

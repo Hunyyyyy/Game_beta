@@ -124,10 +124,11 @@ export function squadMove(sim: Sim, s: Squad, x: number, y: number, mode: 'attac
   const offs = formationOffsets(s.formation, us.length), taken = new Set<number>();
   applySpeed(sim, s);
   us.forEach((v, i) => {
+    if (sim.warIds.has(v.id)) v.nightOwl = true; // an order in a war wakes a sleeping soldier for good: he is not put back to bed under it
     const [px, py] = placeOffset(offs[i], s.heading, x, y);
     const spot = sim.nearestFree(Math.floor(px), Math.floor(py), taken) ?? [Math.floor(px), Math.floor(py)];
     taken.add(spot[1] * sim.world.size + spot[0]);
-    if (mode === 'move') sim.orderMove([v.id], spot[0], spot[1]); // orderMove takes whole tiles
+    if (mode === 'move') { sim.pathLeft++; sim.orderMove([v.id], spot[0], spot[1]); v.fight.obey = v.path.length > 0; } // orderMove takes whole tiles; a fall-back is obeyed whatever the unit meets, even in the middle of a fight
     else if (mode === 'attack') sim.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
     else { sim.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5); v.fight.anchor = { x: spot[0] + 0.5, y: spot[1] + 0.5 }; }
   });
