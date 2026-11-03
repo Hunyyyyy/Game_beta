@@ -8,6 +8,7 @@ import { RES_LIST, Res } from './resources';
 import type { RoleId } from './jobs';
 import type { Sim } from './sim';
 import { RECIPES } from './tools';
+import { CHAINS, STAT_TECHS, TECHS } from './research';
 import { seenNow } from './scouting';
 import { fireEventNow, tribeOf } from './tribes';
 import { Tile } from './world';
@@ -22,6 +23,31 @@ import { Tile } from './world';
 export function addStock(sim: Sim, res: Res, n: number): void { sim.stock[res] = Math.max(0, Math.min(sim.capacity(res) || Infinity, sim.stock[res] + n)); }
 /** Every good up by n (within what the stores hold). */
 export function addAllStock(sim: Sim, n: number): void { for (const r of RES_LIST) addStock(sim, r, n); }
+
+// ---- research
+/** The parts of the research house, one for each tab of its tree: the chains it draws (data/researchtree.json) and the single steps beside them (data/research.json). */
+export const RESEARCH_GROUPS: Array<{ key: string; label: string; chains: string[]; techs?: (id: string) => boolean }> = [
+  { key: 'military', label: 'Quân sự', chains: ['military'] },
+  { key: 'economy', label: 'Kinh tế', chains: ['economy'] },
+  { key: 'development', label: 'Phát triển', chains: ['development'] },
+  { key: 'defense', label: 'Phòng thủ', chains: ['defense', 'works1', 'works2'] },
+  { key: 'weapon', label: 'Vũ khí', chains: ['weapon'] },
+  { key: 'tool', label: 'Công cụ', chains: ['tool', 'hammer'] },
+  { key: 'formation', label: 'Lập kế hoạch', chains: ['formation'], techs: (id) => id === 'signal' || id.startsWith('form_') },
+  { key: 'plan', label: 'Kế hoạch chiến đấu', chains: ['tactic'], techs: (id) => id.startsWith('plan_') },
+  { key: 'march', label: 'Hành quân', chains: ['march', 'marchlog'] },
+];
+/** Research every step of one part of the tree at once ('all' for the whole tree, the blueprints included). Returns what was done. */
+export function researchGroup(sim: Sim, key: string): string {
+  const groups = key === 'all' ? RESEARCH_GROUPS : RESEARCH_GROUPS.filter((g) => g.key === key);
+  if (!groups.length) return 'Không có nhóm nghiên cứu này.';
+  const roles = new Set(groups.flatMap((g) => g.chains.flatMap((c) => CHAINS[c]?.roles ?? [])));
+  const single = (id: string) => groups.some((g) => g.techs?.(id));
+  const ids = [...STAT_TECHS.filter((t) => { const r = t.unlocks.bonus?.role ?? t.unlocks.tier?.role; return !!r && roles.has(r); }), ...TECHS.filter((t) => single(t.id) || key === 'all')].map((t) => t.id);
+  let n = 0;
+  for (const id of ids) if (!sim.researched.has(id)) { sim.researched.add(id); n++; }
+  return n ? `Đã nghiên cứu xong ${n} mục${key === 'all' ? '' : ` của ${groups[0].label}`}.` : 'Nhóm này đã nghiên cứu xong hết.';
+}
 
 // ---- time and weather
 export function setTimeOfDay(sim: Sim, tod: number): void { sim.time = Math.floor(sim.time / DAY_LENGTH) * DAY_LENGTH + tod * DAY_LENGTH; }

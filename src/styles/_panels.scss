@@ -130,14 +130,19 @@ button.primary.danger { background: var(--bad); color: #fff; border-color: var(-
 
 // the research house: Quân sự, Xây dựng, Kinh tế on one level joined by a line, Vũ khí under Quân sự
 .tabs.icontabs.treetabs {
-  position: relative; grid-template-columns: repeat(4, minmax(70px, 1fr)); row-gap: 22px;
-  &::before { content: ''; position: absolute; left: 12.5%; right: 12.5%; top: 46px; border-top: 3px solid #b8903c; opacity: .55; }
-  .tabcard { position: relative; z-index: 1; }
-  .tabcard.under { &::before { content: ''; position: absolute; left: 50%; top: -22px; height: 22px; border-left: 3px solid #b8903c; opacity: .55; } }
+  position: relative; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 10px;
+  // every line belongs to its own card, so it follows the card wherever the grid puts it: a card of the top level reaches for the next one on its right,
+  // a card under another reaches up to the one above it (so a column of any height stays joined)
+  .tabcard { position: relative; z-index: 1; span:not(.tpic):not(.tlock) { text-wrap: balance; overflow-wrap: anywhere; } }
+  .tabcard:not(.under):not(.tail)::after { content: ''; position: absolute; left: 100%; top: 50%; width: 10px; border-top: 3px solid #b8903c; opacity: .55; }
+  .tabcard.under::before { content: ''; position: absolute; left: 50%; top: -22px; height: 22px; border-left: 3px solid #b8903c; opacity: .55; }
   .tabcard.locked { filter: grayscale(.8); opacity: .7; }
   .tabcard .tlock { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 22px; text-shadow: 0 0 4px #000; }
 }
 .labhead { display: grid; gap: 6px; margin-bottom: 8px; }
+// what the house is working on and who works there take the whole width, whatever the tabs below hold
+.progress .kv > .dtile { flex: 1 1 100%; }
+.labpeople { display: block; width: 100%; }
 
 // a tab of the research house opens as a panel over the whole one
 .mbody { position: relative; }

@@ -146,6 +146,9 @@ export class Menu {
     page.append(h('div', { class: 'devrow' },
       toggle('Mọi việc miễn phí + xong ngay', 'Nghiên cứu, chế tạo, thuần thú, xây, nâng cấp và sửa: không tốn vật liệu, không mất thời gian (nhà vẫn cần người làm bên trong)', () => sim.dev.freeWorks, (on) => { sim.dev.freeWorks = on; sim.dev.fastWorks = on; sim.dev.instantBuild = on; }),
       toggle('Bất tử', 'Dân không nhận sát thương', () => sim.dev.god, (on) => { sim.dev.god = on; })));
+    page.append(h('div', { class: 'devrow' }, h('small', { text: 'Nghiên cứu xong:' }),
+      ...dev.RESEARCH_GROUPS.map((g) => btn(g.label, () => toast(dev.researchGroup(sim, g.key)), `Nghiên cứu xong mọi mục của nhóm ${g.label}, không tốn gì`)),
+      btn('Tất cả', () => toast(dev.researchGroup(sim, 'all')), 'Nghiên cứu xong cả cây, kể cả các bản vẽ')));
     page.append(h('div', { class: 'devrow' },
       btn('+5 dân', () => toast(dev.addPeople(sim, 5)), 'Thêm 5 dân rảnh quanh lửa trại, kể cả khi vượt sức chứa'),
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),

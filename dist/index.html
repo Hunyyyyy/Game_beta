@@ -1056,21 +1056,25 @@ button.primary.danger {
 
 .tabs.icontabs.treetabs {
   position: relative;
-  grid-template-columns: repeat(4, minmax(70px, 1fr));
-  row-gap: 22px;
-}
-.tabs.icontabs.treetabs::before {
-  content: "";
-  position: absolute;
-  left: 12.5%;
-  right: 12.5%;
-  top: 46px;
-  border-top: 3px solid #b8903c;
-  opacity: 0.55;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px 10px;
 }
 .tabs.icontabs.treetabs .tabcard {
   position: relative;
   z-index: 1;
+}
+.tabs.icontabs.treetabs .tabcard span:not(.tpic):not(.tlock) {
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.tabs.icontabs.treetabs .tabcard:not(.under):not(.tail)::after {
+  content: "";
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  width: 10px;
+  border-top: 3px solid #b8903c;
+  opacity: 0.55;
 }
 .tabs.icontabs.treetabs .tabcard.under::before {
   content: "";
@@ -1098,6 +1102,15 @@ button.primary.danger {
   display: grid;
   gap: 6px;
   margin-bottom: 8px;
+}
+
+.progress .kv > .dtile {
+  flex: 1 1 100%;
+}
+
+.labpeople {
+  display: block;
+  width: 100%;
 }
 
 .mbody {
@@ -64443,6 +64456,33 @@ ${risk.lines.join("\n")}`);
   function addAllStock(sim2, n) {
     for (const r of RES_LIST) addStock(sim2, r, n);
   }
+  var RESEARCH_GROUPS = [
+    { key: "military", label: "Qu\xE2n s\u1EF1", chains: ["military"] },
+    { key: "economy", label: "Kinh t\u1EBF", chains: ["economy"] },
+    { key: "development", label: "Ph\xE1t tri\u1EC3n", chains: ["development"] },
+    { key: "defense", label: "Ph\xF2ng th\u1EE7", chains: ["defense", "works1", "works2"] },
+    { key: "weapon", label: "V\u0169 kh\xED", chains: ["weapon"] },
+    { key: "tool", label: "C\xF4ng c\u1EE5", chains: ["tool", "hammer"] },
+    { key: "formation", label: "L\u1EADp k\u1EBF ho\u1EA1ch", chains: ["formation"], techs: (id) => id === "signal" || id.startsWith("form_") },
+    { key: "plan", label: "K\u1EBF ho\u1EA1ch chi\u1EBFn \u0111\u1EA5u", chains: ["tactic"], techs: (id) => id.startsWith("plan_") },
+    { key: "march", label: "H\xE0nh qu\xE2n", chains: ["march", "marchlog"] }
+  ];
+  function researchGroup(sim2, key) {
+    const groups = key === "all" ? RESEARCH_GROUPS : RESEARCH_GROUPS.filter((g) => g.key === key);
+    if (!groups.length) return "Kh\xF4ng c\xF3 nh\xF3m nghi\xEAn c\u1EE9u n\xE0y.";
+    const roles = new Set(groups.flatMap((g) => g.chains.flatMap((c) => CHAINS[c]?.roles ?? [])));
+    const single = (id) => groups.some((g) => g.techs?.(id));
+    const ids = [...STAT_TECHS.filter((t) => {
+      const r = t.unlocks.bonus?.role ?? t.unlocks.tier?.role;
+      return !!r && roles.has(r);
+    }), ...TECHS.filter((t) => single(t.id) || key === "all")].map((t) => t.id);
+    let n = 0;
+    for (const id of ids) if (!sim2.researched.has(id)) {
+      sim2.researched.add(id);
+      n++;
+    }
+    return n ? `\u0110\xE3 nghi\xEAn c\u1EE9u xong ${n} m\u1EE5c${key === "all" ? "" : ` c\u1EE7a ${groups[0].label}`}.` : "Nh\xF3m n\xE0y \u0111\xE3 nghi\xEAn c\u1EE9u xong h\u1EBFt.";
+  }
   function setTimeOfDay(sim2, tod) {
     sim2.time = Math.floor(sim2.time / DAY_LENGTH) * DAY_LENGTH + tod * DAY_LENGTH;
   }
@@ -64901,6 +64941,13 @@ ${risk.lines.join("\n")}`);
         toggle("B\u1EA5t t\u1EED", "D\xE2n kh\xF4ng nh\u1EADn s\xE1t th\u01B0\u01A1ng", () => sim2.dev.god, (on) => {
           sim2.dev.god = on;
         })
+      ));
+      page.append(h(
+        "div",
+        { class: "devrow" },
+        h("small", { text: "Nghi\xEAn c\u1EE9u xong:" }),
+        ...RESEARCH_GROUPS.map((g) => btn(g.label, () => toast2(researchGroup(sim2, g.key)), `Nghi\xEAn c\u1EE9u xong m\u1ECDi m\u1EE5c c\u1EE7a nh\xF3m ${g.label}, kh\xF4ng t\u1ED1n g\xEC`)),
+        btn("T\u1EA5t c\u1EA3", () => toast2(researchGroup(sim2, "all")), "Nghi\xEAn c\u1EE9u xong c\u1EA3 c\xE2y, k\u1EC3 c\u1EA3 c\xE1c b\u1EA3n v\u1EBD")
       ));
       page.append(h(
         "div",
@@ -69794,6 +69841,7 @@ ${risk.lines.join("\n")}`);
       if (key !== this.tabKey) {
         this.tabKey = key;
         const pictures = tabs.some((t) => t.icon);
+        const lastTop = tabs.reduce((at2, t, i) => shown[i] && t.under === void 0 ? i : at2, -1);
         this.topbar.classList.toggle("inline", !pictures);
         this.tabBar.classList.toggle("icontabs", pictures);
         this.tabBar.classList.toggle("treetabs", pictures && kind === "lab");
@@ -69815,7 +69863,8 @@ ${risk.lines.join("\n")}`);
           } catch {
             pic = h("span", { class: "tpic", text: "?" });
           }
-          return h("button", { class: `tabcard${locks[i] ? " locked" : ""}${t.under !== void 0 ? " under" : ""}`, style: t.under !== void 0 ? `grid-column:${t.under + 1};grid-row:${2 + tabs.slice(0, i).filter((o) => o.under === t.under).length}` : void 0, role: "tab", title: locks[i] ?? t.label, onclick: go }, pic, h("span", { text: t.label }), locks[i] ? h("span", { class: "tlock", text: "\u{1F512}" }) : null);
+          const rank = t.under !== void 0 ? tabs.slice(0, i).filter((o, j) => o.under === t.under && shown[j]).length : 0;
+          return h("button", { class: `tabcard${locks[i] ? " locked" : ""}${t.under !== void 0 ? " under" : ""}${i === lastTop ? " tail" : ""}`, style: t.under !== void 0 ? `grid-column:${t.under + 1};grid-row:${2 + rank}` : void 0, role: "tab", title: locks[i] ?? t.label, onclick: go }, pic, h("span", { text: t.label }), locks[i] ? h("span", { class: "tlock", text: "\u{1F512}" }) : null);
         }).filter((el) => !!el));
       }
       if (kind === "lab" && ready) {

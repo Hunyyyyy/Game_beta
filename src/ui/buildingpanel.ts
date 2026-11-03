@@ -243,6 +243,8 @@ export class BuildingPanel {
     if (key !== this.tabKey) {
       this.tabKey = key;
       const pictures = tabs.some((t) => t.icon);
+      /** The last tab of the top level that is shown: the line that joins the top level stops there. */
+      const lastTop = tabs.reduce((at, t, i) => (shown[i] && t.under === undefined ? i : at), -1);
       this.topbar.classList.toggle('inline', !pictures);
       this.tabBar.classList.toggle('icontabs', pictures); this.tabBar.classList.toggle('treetabs', pictures && kind === 'lab');
       this.tabBar.replaceChildren(...tabs.map((t, i) => {
@@ -251,7 +253,9 @@ export class BuildingPanel {
         if (!pictures) return h('button', { class: 'sm', text: t.label, role: 'tab', onclick: go });
         let pic: HTMLElement;
         try { pic = h('span', { class: 'tpic' }, iconCanvas(this.c.sprites.building(t.icon ?? kind, this.c.sim.era, 1, 4).frames[0])); } catch { pic = h('span', { class: 'tpic', text: '?' }); }
-        return h('button', { class: `tabcard${locks[i] ? ' locked' : ''}${t.under !== undefined ? ' under' : ''}`, style: t.under !== undefined ? `grid-column:${t.under + 1};grid-row:${2 + tabs.slice(0, i).filter((o) => o.under === t.under).length}` : undefined, role: 'tab', title: locks[i] ?? t.label, onclick: go }, pic, h('span', { text: t.label }), locks[i] ? h('span', { class: 'tlock', text: '🔒' }) : null);
+        // a tab "under" another sits in that column, one row lower for each tab already under it that is shown (hidden tabs take no row)
+        const rank = t.under !== undefined ? tabs.slice(0, i).filter((o, j) => o.under === t.under && shown[j]).length : 0;
+        return h('button', { class: `tabcard${locks[i] ? ' locked' : ''}${t.under !== undefined ? ' under' : ''}${i === lastTop ? ' tail' : ''}`, style: t.under !== undefined ? `grid-column:${t.under + 1};grid-row:${2 + rank}` : undefined, role: 'tab', title: locks[i] ?? t.label, onclick: go }, pic, h('span', { text: t.label }), locks[i] ? h('span', { class: 'tlock', text: '🔒' }) : null);
       }).filter((el): el is HTMLButtonElement => !!el));
     }
     if (kind === 'lab' && ready) {
