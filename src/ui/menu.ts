@@ -139,7 +139,11 @@ export class Menu {
       return b;
     };
     page.append(hint('Mô phỏng trại', 'Dựng sẵn trại của cấp lửa đã chọn: mọi nhà mở ở cấp đó (số lượng và cấp tối đa theo cấp lửa), hàng rào, cổng và chòi canh khi đã mở, dân đầy giường, lính và các nghề đã có người, lính được phát vũ khí và giáp. Không tốn gì.'));
-    page.append(h('div', { class: 'devrow' }, ...[1, 2, 3, 4].map((n) => btn(`Trại cấp ${n}`, () => toast(dev.simulateCamp(sim, n)), `Dựng trại cấp ${n} đầy đủ`))));
+    // a camp of each era and level: the stone age (the quick war, no supply, scouts, watchtower or plan) or the medieval layer (all of them)
+    for (const [label, medieval] of [['Đồ Đá', false], ['Trung cổ', true]] as const) {
+      page.append(h('div', { class: 'devrow' }, h('small', { text: `${label}:` }), ...[1, 2, 3, 4].map((n) => btn(`Trại cấp ${n}`, () => toast(dev.simulateCamp(sim, n, medieval)), `Dựng trại cấp ${n} của thời ${label} (${medieval ? 'có hậu cần, trinh sát, chòi canh, lập kế hoạch tác chiến' : 'đánh nhanh, không hậu cần, trinh sát, chòi canh'})`))));
+    }
+    page.append(h('div', { class: 'devrow' }, toggle('Thời Trung cổ (mở lớp chiến tranh nâng cao)', 'Bật hoặc tắt riêng lớp thời Trung cổ mà không dựng lại trại', () => sim.advanced, (on) => { sim.advanced = on; })));
     page.append(h('div', { class: 'devrow' },
       toggle('Mọi việc miễn phí + xong ngay', 'Nghiên cứu, chế tạo, thuần thú, xây, nâng cấp và sửa: không tốn vật liệu, không mất thời gian (nhà vẫn cần người làm bên trong)', () => sim.dev.freeWorks, (on) => { sim.dev.freeWorks = on; sim.dev.fastWorks = on; sim.dev.instantBuild = on; }),
       toggle('Bất tử', 'Dân không nhận sát thương', () => sim.dev.god, (on) => { sim.dev.god = on; })));

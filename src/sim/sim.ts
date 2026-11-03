@@ -1,6 +1,6 @@
 import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, WeatherKind } from './calendar';
 import { DAY_LENGTH, PATH_BUDGET, START_TIME, TICK } from './constants';
-import { Building, BuildingKind, BUILDINGS, Era } from './buildings';
+import { ADVANCED_DEFAULT, Building, BuildingKind, BUILDINGS, Era } from './buildings';
 import { Fog } from './fog';
 import { Job, RoleId, WorkJob } from './jobs';
 import { Step } from './path';
@@ -125,6 +125,8 @@ export class Sim {
   readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
+  /** The medieval layer of the war (supply, field tents and rest, the watchtower, scouts, the war plan) is open: off in the stone age (data/war.json `advanced`); the dev menu changes it. */
+  advanced = ADVANCED_DEFAULT;
   readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;

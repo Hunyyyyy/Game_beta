@@ -131,9 +131,9 @@ export const holdsGoods = (b: Pick<Building, 'kind'>) => b.kind === 'storage' ||
 export const GATHER_HOUSE: Partial<Record<string, BuildingKind>> = { wood: 'lumberyard', stone: 'quarry', food: 'farmhouse' };
 export const gatherMult = (b: Pick<Building, 'level'> | undefined): number => (b ? paceJson.levelYield[Math.min(paceJson.levelYield.length, Math.max(1, b.level)) - 1] : 1);
 /** The war-logistics layer (supply, field tents and rest, harassment, the watchtower, the war research) is a medieval-era feature: off in the stone age (data/war.json `advanced`). */
-export const ADVANCED_WAR: boolean = warJson.advanced;
-/** A building of that layer, shut away while it is off: it is not built, not offered and not asked for. */
-export const eraLocked = (kind: BuildingKind): boolean => !ADVANCED_WAR && (warJson.advancedBuildings as string[]).includes(kind);
+export const ADVANCED_DEFAULT: boolean = warJson.advanced;
+/** A building of that layer, shut away while it is off (`sim.advanced`): it is not built, not offered and not asked for. */
+export const eraLocked = (kind: BuildingKind, era: { readonly advanced: boolean }): boolean => !era.advanced && (warJson.advancedBuildings as string[]).includes(kind);
 /** Still needs builders: not finished yet, or an upgrade is underway. */
 export const needsWork = (b: Building) => !b.done || b.upgrading || !!b.repairing;
 

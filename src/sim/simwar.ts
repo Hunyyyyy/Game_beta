@@ -20,7 +20,6 @@ import * as warplan from './warplan';
 import * as warquick from './warquick';
 import { armOf, tickProjectiles } from './battle';
 import type { Ent } from './battle';
-import { ADVANCED_WAR } from './buildings';
 import type { Building } from './buildings';
 import type { MountKind, StatKey } from './jobs';
 import type { Arm, FormationId } from './formations';
@@ -35,7 +34,7 @@ export const WAR = {
     const soldiers = warmode.army(this), ranks = warmode.ranks(this, soldiers), plan = warmode.warPlan(this)!;
     this.warIds = soldiers; this.march = warmarch.marchOfPlan(this, plan);
     if (Math.floor(this.time) !== Math.floor(this.time - dt)) { // each second: the village that stayed home eats from the store (paid at the end), the army from the packs
-      if (!ADVANCED_WAR) this.warMeals += (this.warNeed() + this.armyNeed()) / DAY_LENGTH; // no supply soldiers: the army eats from the village store like the village
+      if (!this.advanced) this.warMeals += (this.warNeed() + this.armyNeed()) / DAY_LENGTH; // no supply soldiers: the army eats from the village store like the village
       else {
         this.warMeals += this.warNeed() / DAY_LENGTH; warsupply.eatPacks(this, plan, this.armyNeed() / DAY_LENGTH);
         if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) warsupply.follow(this, plan);
@@ -51,7 +50,7 @@ export const WAR = {
   /** → warsupply.supplyAdvice */
   supplyAdvice(this: Sim, plan: Plan): warsupply.SupplyAdvice | null { return warsupply.supplyAdvice(this, plan); },
   /** Whether a feature of the war plan is researched (the details tab, the supply sums, the weather, the rest in the field). */
-  planOpen(this: Sim, f: research.PlanFeature): boolean { return research.planOpen(this.researched, f, this.dev.freeBuild); },
+  planOpen(this: Sim, f: research.PlanFeature): boolean { return research.planOpen(this.researched, f, this.advanced, this.dev.freeBuild); },
   /** → army.squadLimit */
   squadLimit(this: Sim): number { return army.squadLimit(this); },
   /** → army.cellLimit */

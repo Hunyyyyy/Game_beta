@@ -1,7 +1,6 @@
 /** Plans of war: squads given missions, command cards for the fight, the defence template and the alarm drum. */
 import { OBJECTIVE_NAME, FORMATIONS, FormationId, SQUAD_MAX, SQUAD_MIN, armOfWeapon } from './formations';
 import { WEATHER } from './calendar';
-import { ADVANCED_WAR } from './buildings';
 import { RESEARCH } from './research';
 import type { Sim } from './sim';
 import { WAR_DATA } from './warmarch';
@@ -384,7 +383,7 @@ function noteRested(sim: Sim, m: Mission, name: string, us: ReadonlyArray<{ ener
  */
 export function setRest(sim: Sim, plan: Plan, squadId: number, on: boolean): string | null {
   if (plan.kind !== 'attack' || plan.status !== 'running') return 'Chưa có trận nào';
-  if (!sim.planOpen('rest')) return ADVANCED_WAR ? 'Cần nghiên cứu: Nghỉ ngơi dã chiến' : 'Chưa mở khóa';
+  if (!sim.planOpen('rest')) return sim.advanced ? 'Cần nghiên cứu: Nghỉ ngơi dã chiến' : 'Chưa mở khóa';
   const m = plan.missions.find((x) => x.squad === squadId), s = sim.squadById(squadId), c = s ? sim.squadCenter(s) : null;
   if (!m || !s || !c) return 'Không có đội này';
   if (!!m.resting === on) return null;

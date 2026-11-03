@@ -7,7 +7,6 @@ import { ARMORS, cycleOf, maxHpOf, RULES, WEAPONS } from './combat';
 import { marchOfPlan } from './warmarch';
 import { packPlan } from './warsupply';
 import { tentCost, tentCount } from './wartent';
-import { ADVANCED_WAR } from './buildings';
 import type { DmgType } from './combat';
 import { Arm, BEATS } from './formations';
 import type { Sim } from './sim';
@@ -95,7 +94,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
   const home = sim.villagers.filter((v) => v.job === 'fight' && v.health > 0 && !plan.missions.some((m) => sim.squadById(m.squad)?.ids.includes(v.id))).length;
   if (home < 3) w.push(`Chỉ ${home} lính ở lại giữ làng`);
   const pk = packPlan(sim, plan);
-  if (ADVANCED_WAR) { if (!pk.sup) w.push('Không có lính hậu cần: quân sẽ đói'); else if (pk.days < plan.carryDays - 0.05) w.push(`Lương chỉ đủ ${pk.days.toFixed(1)} ngày`); }
+  if (sim.advanced) { if (!pk.sup) w.push('Không có lính hậu cần: quân sẽ đói'); else if (pk.days < plan.carryDays - 0.05) w.push(`Lương chỉ đủ ${pk.days.toFixed(1)} ngày`); }
 
   // ---- what is at stake
   out.win = [`Địch hết lính, lửa tắt, công trình sập → dân xin hàng`, 'Lấy kho lương của địch', `Mất khoảng ${pct(lossIfWin)} quân`];
@@ -117,7 +116,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
     if (longest > 0) out.facts.push(['Đường đi', `~${Math.max(1, Math.round(longest / 60))} phút`]);
   }
   if (mr.soldiers) out.facts.push(['Đi chậm', pct(mr.slow)]);
-  if (ADVANCED_WAR && pk.sup) out.facts.push(['Lương', `${pk.days.toFixed(1)} ngày`]);
-  if (ADVANCED_WAR && nTents) out.facts.push(['Lều', `${nTents} × ${tc.wood} gỗ, ${tc.hide} da`]);
+  if (sim.advanced && pk.sup) out.facts.push(['Lương', `${pk.days.toFixed(1)} ngày`]);
+  if (sim.advanced && nTents) out.facts.push(['Lều', `${nTents} × ${tc.wood} gỗ, ${tc.hide} da`]);
   return out;
 }

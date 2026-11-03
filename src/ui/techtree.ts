@@ -21,6 +21,8 @@ export class TechTree {
   private readonly body = h('div', { class: 'tbody' });
   private readonly nodes: Node[] = [];
   private picked: Node | null = null;
+  /** The columns of the medieval layer, shown only while `sim.advanced`. */
+  private readonly eraCols: HTMLElement[] = [];
   private key = '';
 
   constructor(private readonly c: Ctx) {
@@ -102,7 +104,9 @@ export class TechTree {
       // the last square of a column: the next tier of soldiers, open once every stat above is at the top
       const tier = CHAINS[chain].finalTier ? TIER_TECH_OF[role] : undefined;
       const last = tier ? [h('span', { class: 'tlink' }), this.make(def.weapon || !['foot', 'cavalry', 'archer', 'scout', 'tame'].includes(role) ? this.headPic(def) : h('span', { class: 'tpic stat' }, resIcon(`role_${role}`)), `Bậc ${tier.unlocks.tier!.tier}`, 1, () => (this.c.sim.researched.has(tier.id) ? null : tier), () => (this.c.sim.researched.has(tier.id) ? 1 : 0)).el] : [];
-      return h('div', { class: 'tcol' }, h('div', { class: 'thead' }, this.headPic(def), h('b', { text: def.name })), ...nodes.flatMap((el, i) => (i ? [h('span', { class: 'tlink' }), el] : [el])), ...last);
+      const col = h('div', { class: 'tcol' }, h('div', { class: 'thead' }, this.headPic(def), h('b', { text: def.name })), ...nodes.flatMap((el, i) => (i ? [h('span', { class: 'tlink' }), el] : [el])), ...last);
+      if (role === 'scout') this.eraCols.push(col); // the scouts are of the medieval layer: the column shows only while it is open
+      return col;
     });
     this.body.append(h('section', { class: 'tsec' }, h('h3', { text: title }), h('div', { class: 'tcols' }, ...cols)));
   }
@@ -162,7 +166,8 @@ export class TechTree {
   /** Refresh the squares (their bars and locks) every frame the panel shows; the detail only when something changed. */
   update(force = false): void {
     const { sim } = this.c, act = sim.building('lab')?.active;
-    const key = `${sim.researchQueue.join()}|${act?.id}|${Math.floor((act?.progress ?? 0) * 20)}|${sim.researched.size}|${sim.building('lab')?.level}|${this.picked ? 1 : 0}|${Math.floor(Object.values(sim.stock).reduce((a, b) => a + b, 0))}`;
+    for (const col of this.eraCols) col.hidden = !sim.advanced;
+    const key = `${sim.advanced}|${sim.researchQueue.join()}|${act?.id}|${Math.floor((act?.progress ?? 0) * 20)}|${sim.researched.size}|${sim.building('lab')?.level}|${this.picked ? 1 : 0}|${Math.floor(Object.values(sim.stock).reduce((a, b) => a + b, 0))}`;
     if (!force && key === this.key) return;
     this.key = key;
     for (const n of this.nodes) {

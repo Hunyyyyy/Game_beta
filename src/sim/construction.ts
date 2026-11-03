@@ -87,7 +87,7 @@ export function fireUpgradeBlock(sim: Sim, level: number): string | null {
   if (need === null) return null;
   for (const k of Object.keys(BUILDINGS) as BuildingKind[]) {
     const d = BUILDINGS[k];
-    if (!d.buildable || fireUnlockLevel(k) > level || eraLocked(k)) continue;
+    if (!d.buildable || fireUnlockLevel(k) > level || eraLocked(k, sim)) continue;
     const mine = sim.buildings.filter((b) => b.kind === k), want = Math.min(need, maxLevel(k, sim.era));
     if (!mine.length) return `Cần dựng ${d.name} trước khi nâng Nhà chung`;
     if (mine.some((b) => !b.done || b.upgrading || b.level < want)) return `Cần nâng ${d.name} lên cấp ${want} trước khi nâng Nhà chung`;
@@ -95,7 +95,7 @@ export function fireUpgradeBlock(sim: Sim, level: number): string | null {
   // the groups that must also stand at the level, whether or not they are "opened" yet (the houses of the producers: Nông trại, Xưởng gỗ, Xưởng đá...)
   for (const [group, at] of Object.entries(fireUpgradeGroups(level))) for (const k of Object.keys(BUILDINGS) as BuildingKind[]) {
     const d = BUILDINGS[k];
-    if (d.group !== group || !d.buildable || eraLocked(k)) continue;
+    if (d.group !== group || !d.buildable || eraLocked(k, sim)) continue;
     const mine = sim.buildings.filter((b) => b.kind === k), want = Math.min(at, maxLevel(k, sim.era));
     if (!mine.length) return `Cần dựng ${d.name} trước khi nâng Nhà chung`;
     if (mine.some((b) => !b.done || b.upgrading || b.level < want)) return `Cần nâng ${d.name} lên cấp ${want} trước khi nâng Nhà chung`;
@@ -112,7 +112,7 @@ export function buildingLimit(sim: Sim, kind: BuildingKind): number {
 
 /** Why a kind of building cannot be built at all right now: it is at its limit, or it needs research or another house first. */
 export function buildingLock(sim: Sim, kind: BuildingKind): string | null {
-  if (eraLocked(kind) && !sim.dev.freeBuild) return 'Mở khóa ở thời Trung cổ';
+  if (eraLocked(kind, sim) && !sim.dev.freeBuild) return 'Mở khóa ở thời Trung cổ';
   const fireNeed = fireUnlockLevel(kind);
   if (!sim.dev.freeBuild && fireNeed > fireLevel(sim)) return `Cần nâng ${BUILDINGS.campfire.name} lên cấp ${fireNeed} để xây ${BUILDINGS[kind].name.toLowerCase()}`;
   const have = sim.buildings.filter((b) => b.kind === kind).length, limit = buildingLimit(sim, kind);

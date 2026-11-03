@@ -6,7 +6,6 @@
 import warJson from '../data/war.json';
 import { DAY_LENGTH } from './constants';
 import type { Plan } from './model';
-import { ADVANCED_WAR } from './buildings';
 import { rationAt } from './resources';
 import { statBonus } from './research';
 import type { Sim } from './sim';
@@ -26,8 +25,8 @@ export function slowCut(sim: Pick<Sim, 'researched'>): number {
 }
 
 /** How a march of this many squads and soldiers goes. */
-export function marchOf(sim: Pick<Sim, 'researched'>, squads: number, soldiers: number): March {
-  if (!ADVANCED_WAR) return { squads, soldiers, slow: 0, speed: 1, food: 1, energy: 1 }; // the quick war of the stone age: the army is not slowed, and eats what a soldier eats
+export function marchOf(sim: Pick<Sim, 'researched' | 'advanced'>, squads: number, soldiers: number): March {
+  if (!sim.advanced) return { squads, soldiers, slow: 0, speed: 1, food: 1, energy: 1 }; // the quick war of the stone age: the army is not slowed, and eats what a soldier eats
   const k = WAR_DATA.march, load = Math.max(0, Math.min(1, k.perSquad * Math.max(0, squads - 1) + k.perSoldier * Math.max(0, soldiers - 1)));
   const raw = k.slowMin + (k.slowMax - k.slowMin) * load;
   const slow = Math.max(k.slowFloor, raw * (1 - slowCut(sim))); // however much research cuts, the army never marches faster than this

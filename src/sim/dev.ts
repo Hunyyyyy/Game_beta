@@ -1,7 +1,7 @@
 import { SEASONS, SEASON_DAYS, Season, WeatherKind } from './calendar';
 import { DAY_LENGTH } from './constants';
 import { ANIMALS, WEAPONS } from './combat';
-import { BUILDINGS, BuildingKind, fireUnlockLevel, levelCapByFire, maxHp, maxLevel, WALL_KINDS } from './buildings';
+import { BUILDINGS, BuildingKind, eraLocked, fireUnlockLevel, levelCapByFire, maxHp, maxLevel, WALL_KINDS } from './buildings';
 import { armyRoom, eventNeed } from './readiness';
 import { RES_LIST, Res } from './resources';
 import type { RoleId } from './jobs';
@@ -56,7 +56,7 @@ const clear = (sim: Sim, x: number, y: number, w: number, h: number, margin = 1)
 };
 
 /** What goes inside the fence first (the heart of the defence: the camps, the stores, the workshops), then what stays outside (the working houses, out by the land they work). */
-const CORE: BuildingKind[] = ['storage', 'builder', 'workshop', 'armory', 'infantry', 'archery', 'cavalry', 'guardpost', 'lab', 'wartent', 'stable', 'house', 'toolstore', 'scouttent'];
+const CORE: BuildingKind[] = ['storage', 'builder', 'workshop', 'armory', 'infantry', 'archery', 'cavalry', 'guardpost', 'lab', 'wartent', 'stable', 'house', 'toolstore', 'scouttent', 'supplycamp'];
 const OUTSIDE: BuildingKind[] = ['lumberyard', 'quarry', 'farmhouse', 'huntlodge', 'drill'];
 
 /** The spots of a camp: a grid three tiles apart round the campfire (a house is two wide and keeps a tile free all round), ring by ring, each ring clockwise from the north. The way from the gate to the fire is kept clear. */
@@ -89,7 +89,7 @@ function fenceRing(sim: Sim, cx: number, cy: number, half: number): number {
     put(d === 0 ? 'gate' : 'fence', cx + d, cy + half);
     if (Math.abs(d) < half) { put('fence', cx - half, cy + d); put('fence', cx + half, cy + d); }
   }
-  for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put('tower', sx > 0 ? cx + half + 1 : cx - half - 2, sy > 0 ? cy + half + 1 : cy - half - 2);
+  if (!eraLocked('tower', sim)) for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put('tower', sx > 0 ? cx + half + 1 : cx - half - 2, sy > 0 ? cy + half + 1 : cy - half - 2);
   return n;
 }
 
@@ -110,9 +110,10 @@ function wipe(sim: Sim): void {
  * when the level opens them, the houses of that level ringed round the fire (the camps and stores inside the fence, the working houses outside it),
  * then the people: every bed filled, the trades and camps staffed, the soldiers armed. Costs nothing. Returns a line about what stands now.
  */
-export function simulateCamp(sim: Sim, level: number): string {
+export function simulateCamp(sim: Sim, level: number, medieval = sim.advanced): string {
   const fire = sim.campfire();
   if (!fire) return 'Không có Nhà chung';
+  sim.advanced = medieval; // the era of the camp: the stone age has no supply camp, scouts, watchtower or war plan
   const was = { f: sim.dev.freeBuild, i: sim.dev.instantBuild };
   sim.dev.freeBuild = sim.dev.instantBuild = true;
   try {
@@ -126,7 +127,7 @@ export function simulateCamp(sim: Sim, level: number): string {
     const inside: Array<[number, number]> = [], outside: Array<[number, number]> = [];
     for (let r = 1; r <= coreRings; r++) inside.push(...ring(fire, r));
     for (let r = firstOutside; r <= firstOutside + 3; r++) outside.push(...ring(fire, r).sort((p, q) => Math.abs(p[1] - fire.y) - Math.abs(q[1] - fire.y))); // out by the sides, where the land is worked
-    const open = (k: BuildingKind) => BUILDINGS[k].buildable && fireUnlockLevel(k) <= fire.level;
+    const open = (k: BuildingKind) => BUILDINGS[k].buildable && fireUnlockLevel(k) <= fire.level && !eraLocked(k, sim);
     // the fence and the towers first, so that the houses are set round them
     const wall = fenced ? fenceRing(sim, cx, cy, half) : 0;
     // the towers of a camp with no fence stand round it at the corners
@@ -157,7 +158,7 @@ function peopleFor(sim: Sim): { total: number; soldiers: number } {
   const free = () => sim.villagers.filter((v) => v.team === 'player' && v.job === 'idle' && v.down <= 0);
   const give = (role: RoleId): boolean => { const v = free()[0]; return !!v && sim.assignRole([v.id], role) === null; };
   const soldiersWanted = Math.floor(sim.villagers.length * 0.4);
-  const camps: RoleId[] = ['foot', 'archer', 'cavalry', 'guard'];
+  const camps: RoleId[] = sim.advanced ? ['foot', 'archer', 'cavalry', 'guard', 'supply'] : ['foot', 'archer', 'cavalry', 'guard'];
   for (let n = 0, i = 0, stuck = 0; n < soldiersWanted && stuck < camps.length; i++) { if (give(camps[i % camps.length])) { n++; stuck = 0; } else stuck++; }
   const crew = free()[0]; if (crew) sim.assignCrew([crew.id]);
   const trades: RoleId[] = ['wood', 'stone', 'food', 'hunt'];

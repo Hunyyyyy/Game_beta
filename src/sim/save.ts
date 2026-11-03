@@ -40,6 +40,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'view', // where the camera is: the screen's, not the game's
   'warIds', 'march', 'warMeals', 'warHunger', 'warFocus', 'warHarassAt', // the march of a war: the game cannot be saved while one is on
   'warSince', // the game cannot be saved while a war is on
+  'advanced', // the era of the war layer: the game's setting (data/war.json), changed only from the dev menu
   'leaderClock', // a timer: leaders are picked again within a second of loading
   'controlled', // what the player has selected: the screen's, not the game's
   'dangerAt', // a timer: after loading the villagers come out of hiding at once
