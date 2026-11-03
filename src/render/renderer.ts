@@ -15,7 +15,7 @@ export interface Marker { x: number; y: number; age: number }
 
 export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number; /** A group of fence pieces carried together: where each goes, and the ids they leave. */ group?: Array<{ id: number; kind: BuildingKind; x: number; y: number; level: number }>; movingIds?: number[] }
 
-interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp' | 'ftent'; ft?: { x: number; y: number; built: boolean }; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe }
+interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp' | 'ftent'; ft?: { x: number; y: number; built: boolean }; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe; p?: Tribe['props'][number] }
 
 const FOG_RGB = [8, 10, 20];
 /** Weather particles: drop/flake count (per 1000×700 px), extra dimming, wind slant, lightning chance. */
@@ -143,6 +143,11 @@ export class Renderer {
 
   /** The side (left or right) each villager last faced, for riders. */
   private readonly sideOf = new WeakMap<Villager, 'left' | 'right'>();
+
+  /** The kind of house a work of a village is drawn as. */
+  private propKind(p: Tribe['props'][number]): BuildingKind {
+    return p.kind === 'fire' ? 'campfire' : p.b ?? (p.kind === 'tower' || p.kind === 'fence' || p.kind === 'gate' ? p.kind : 'storage');
+  }
 
   private buildingAnchor(kind: BuildingKind, x: number, y: number): [number, number] {
     const d = BUILDINGS[kind];
@@ -386,7 +391,16 @@ export class Renderer {
     const seen = (x: number, y: number) => sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
     for (const f of sim.foes) if (onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
     for (const a of sim.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
-    for (const t of sim.tribes) if (t.state !== 'adopted' && onScr(t.camp.x, t.camp.y) && sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: 'camp', i: 0, j: 0, t });
+    // the works of a village are drawn one by one, each where its own feet stand: a village is a dozen tiles wide, and it must not vanish as its fire leaves the screen
+    for (const t of sim.tribes) {
+      if (t.state === 'adopted') continue;
+      for (const p of t.props) {
+        if (p.kind === 'fire' && t.state === 'destroyed') continue;
+        const [ax, ay] = this.buildingAnchor(this.propKind(p), p.x, p.y);
+        if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1 || sim.fog.state[Math.floor(p.y) * N + Math.floor(p.x)] === 0) continue;
+        list.push({ y: ay, kind: 'camp', i: 0, j: 0, t, p });
+      }
+    }
     for (const pl of sim.plans) if (pl.status === 'running') for (const t of pl.tents) if (onScr(t.x, t.y)) list.push({ y: (t.y + 1) * TILE, kind: 'ftent', i: 0, j: 0, ft: t }); // the tents of a war
     list.sort((a, b) => a.y - b.y);
     // fences laid corner to corner: their ropes do not meet in the tile sprites, so a rope and a stake are drawn across the diagonal
@@ -451,12 +465,9 @@ export class Renderer {
       } else if (d.kind === 'ftent' && d.ft) {
         const [ax, ay] = this.buildingAnchor('fieldtent', Math.floor(d.ft.x) - 1, Math.floor(d.ft.y) - 1);
         this.prop(sp.building('fieldtent', 'stone', 1, 4), ax, ay, time, d.ft.built ? 1 : 0.5); // half-seen while it is being pitched
-      } else if (d.kind === 'camp' && d.t) {
-        const t = d.t, sp0 = this.sprites;
-        for (const p of t.props) {
-          if (p.kind === 'fire') { if (t.state === 'destroyed') continue; const [ax, ay] = this.buildingAnchor('campfire', p.x, p.y); this.prop(sp0.building('campfire', 'stone', 1, 4), ax, ay, time); }
-          else { const kind = p.b ?? (p.kind === 'tower' || p.kind === 'fence' || p.kind === 'gate' ? p.kind : 'storage'), [ax, ay] = this.buildingAnchor(kind, p.x, p.y); this.prop(sp0.building(kind, 'stone', p.lv ?? 1, 4), ax, ay, time, t.state === 'destroyed' ? 0.5 : 1); }
-        }
+      } else if (d.kind === 'camp' && d.t && d.p) {
+        const t = d.t, p = d.p, kind = this.propKind(p), [ax, ay] = this.buildingAnchor(kind, p.x, p.y), lv = p.kind === 'fire' ? 1 : (p.lv ?? 1) + (p.kind === 'gate' && p.open !== false ? 2 : 0); // an open gate is drawn after the shut ones
+        this.prop(sp.building(kind, 'stone', lv, 4), ax, ay, time, t.state === 'destroyed' && p.kind !== 'fire' ? 0.5 : 1);
       } else if (d.v) {
         const rode = d.v.phase !== 'sleep' && d.v.phase !== 'down' ? sim.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === 'down';
         // a rider is seen from the side, the way his beast faces: up and down the screen he keeps the side he last had

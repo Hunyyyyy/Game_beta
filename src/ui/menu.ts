@@ -79,10 +79,9 @@ export class Menu {
       const gift = h('button', { class: 'sm', text: `Tặng ${RELATION.giftFood} thức ăn`, onclick: () => { const e = sim.diplomacy(t.id, 'gift'); if (e) this.c.toast(e); } });
       const tribute = h('button', { class: 'sm', text: 'Cống nạp', onclick: () => { const e = sim.diplomacy(t.id, 'tribute'); this.c.toast(e ?? `${t.def.name} chịu cống nạp`); } });
       const adopt = h('button', { class: 'sm primary', text: 'Thu nạp', onclick: () => { const e = sim.diplomacy(t.id, 'adopt'); this.c.toast(e ?? `${t.def.name} gia nhập làng`); } });
-      const go = h('button', { class: 'sm', text: 'Tới trại', onclick: () => { ctl.centerOn(t.camp.x * TILE, t.camp.y * TILE); this.close(); } });
       const bar = h('div', { class: 'tribe-bar' }, fill, h('u'));
       const card = h('div', { class: 'card', hidden: true }, h('div', { class: 'cardhead' }, h('b', { text: t.def.name }), h('span', { text: PERSONALITY[t.def.personality] }), status), bar, people,
-        h('p', { class: 'sub', text: `Phần thưởng: ${t.def.reward}` }), h('div', { class: 'btns' }, gift, tribute, adopt, go));
+        h('p', { class: 'sub', text: `Phần thưởng: ${t.def.reward}` }), h('div', { class: 'btns' }, gift, tribute, adopt));
       page.append(card);
       return { t, card, status, people, fill, gift, tribute, adopt };
     });
@@ -151,6 +150,25 @@ export class Menu {
       btn('+5 dân', () => toast(dev.addPeople(sim, 5)), 'Thêm 5 dân rảnh quanh lửa trại, kể cả khi vượt sức chứa'),
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),
       btn('Gọi sự kiện (theo cấp lửa)', () => toast(dev.callEvent(sim)), 'Gọi ngay sự kiện đã hẹn mạnh nhất mà trại cấp lửa hiện tại đủ sức đón')));
+
+    // the villages of the land: where they are and how they stand, to try the sleeping and waking of a village by sending people to it
+    page.append(h('h3', { text: 'Các làng NPC (tọa độ là số ô)' }));
+    const here = h('small'), rows = h('div'); let shown = 0;
+    page.append(here, rows);
+    const FOG = ['chưa biết', 'đã khám phá', 'đang thấy'];
+    this.updaters.push(() => {
+      const now = performance.now();
+      if (page.hidden || now - shown < 500) return;
+      shown = now;
+      const v = ctl.viewTile(), fire = sim.campfire(), N = sim.world.size;
+      here.textContent = `Camera đang nhìn: (${Math.round(v.x)}, ${Math.round(v.y)}) · lửa của ta: (${fire ? Math.round(fire.x + 1) : '?'}, ${fire ? Math.round(fire.y + 1) : '?'})`;
+      rows.replaceChildren(...sim.tribes.map((t) => {
+        const live = t.unitIds.map((u) => sim.get(u)).filter((u) => !!u && u.health > 0), guards = live.filter((u) => u!.ai?.role !== 'civ').length, crowd = t.crowd ? t.crowd.guards + t.crowd.civs : 0;
+        const d = fire ? Math.round(Math.hypot(t.camp.x - fire.x, t.camp.y - fire.y)) : 0;
+        const line = `${t.boss ? 'BOSS' : 'Thường'} · ${t.def.name} · (${Math.round(t.camp.x)}, ${Math.round(t.camp.y)}) · cách lửa ${d} ô · cấp ${t.campLevel}${t.state === 'free' ? '' : ` · ${t.state}`} · ${t.awake ? 'ĐANG THỨC' : 'đang ngủ'} · ngoài ${live.length} (lính ${guards}) · trong nhà ${crowd} · ${t.props.length} công trình · sương: ${FOG[sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)]]}`;
+        return h('div', { class: 'devrow' }, h('small', { text: line }), h('button', { class: 'sm', text: 'Camera tới', title: 'Chỉ để thử: đưa camera tới trại này (sương mù vẫn che nếu chưa khám phá)', onclick: () => { ctl.centerOn(t.camp.x * TILE, t.camp.y * TILE); this.close(); } }));
+      }));
+    });
 
     page.append(h('h3', { text: 'Trinh sát' }));
     page.append(h('div', { class: 'devrow' }, ...[1, 2, 3].map((n) => btn(`Trinh sát tự tìm làng: bản đồ cấp ${n}`, () => toast(dev.autoScout(sim, n)), 'Làng gần nhất chưa có bản đồ cấp này được tìm và vẽ xong ngay (không cần trinh sát thật), để có dữ liệu cho phần vẽ bản đồ'))));

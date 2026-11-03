@@ -105,7 +105,7 @@ export function simulateCamp(sim: Sim, level: number, medieval = sim.advanced): 
   const was = { f: sim.dev.freeBuild, i: sim.dev.instantBuild };
   sim.dev.freeBuild = sim.dev.instantBuild = true;
   try {
-    sim.fog.state.fill(2); sim.fog.invalidate(); sim.fogDirty = true;
+    sim.fogDirty = true; // the houses and the people light the land round them by themselves: the rest of the map stays unknown
     wipe(sim);
     fire.level = Math.max(1, Math.min(maxLevel('campfire', fire.era), level)); fire.upgrading = false; fire.hp = maxHp(fire);
     const cx = Math.floor(fire.x + 1), cy = Math.floor(fire.y + 1);

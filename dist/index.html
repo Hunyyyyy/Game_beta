@@ -50232,6 +50232,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       ctx2.stroke();
       ctx2.setLineDash([]);
     }
+    /** The kind of house a work of a village is drawn as. */
+    propKind(p) {
+      return p.kind === "fire" ? "campfire" : p.b ?? (p.kind === "tower" || p.kind === "fence" || p.kind === "gate" ? p.kind : "storage");
+    }
     buildingAnchor(kind, x, y) {
       const d = BUILDINGS[kind];
       return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
@@ -50538,7 +50542,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const seen = (x, y) => sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
       for (const f of sim2.foes) if (onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
       for (const a of sim2.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
-      for (const t of sim2.tribes) if (t.state !== "adopted" && onScr(t.camp.x, t.camp.y) && sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) list.push({ y: (t.camp.y + 1) * TILE, kind: "camp", i: 0, j: 0, t });
+      for (const t of sim2.tribes) {
+        if (t.state === "adopted") continue;
+        for (const p of t.props) {
+          if (p.kind === "fire" && t.state === "destroyed") continue;
+          const [ax, ay] = this.buildingAnchor(this.propKind(p), p.x, p.y);
+          if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1 || sim2.fog.state[Math.floor(p.y) * N + Math.floor(p.x)] === 0) continue;
+          list.push({ y: ay, kind: "camp", i: 0, j: 0, t, p });
+        }
+      }
       for (const pl of sim2.plans) if (pl.status === "running") {
         for (const t of pl.tents) if (onScr(t.x, t.y)) list.push({ y: (t.y + 1) * TILE, kind: "ftent", i: 0, j: 0, ft: t });
       }
@@ -50625,18 +50637,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         } else if (d.kind === "ftent" && d.ft) {
           const [ax, ay] = this.buildingAnchor("fieldtent", Math.floor(d.ft.x) - 1, Math.floor(d.ft.y) - 1);
           this.prop(sp.building("fieldtent", "stone", 1, 4), ax, ay, time, d.ft.built ? 1 : 0.5);
-        } else if (d.kind === "camp" && d.t) {
-          const t = d.t, sp0 = this.sprites;
-          for (const p of t.props) {
-            if (p.kind === "fire") {
-              if (t.state === "destroyed") continue;
-              const [ax, ay] = this.buildingAnchor("campfire", p.x, p.y);
-              this.prop(sp0.building("campfire", "stone", 1, 4), ax, ay, time);
-            } else {
-              const kind = p.b ?? (p.kind === "tower" || p.kind === "fence" || p.kind === "gate" ? p.kind : "storage"), [ax, ay] = this.buildingAnchor(kind, p.x, p.y);
-              this.prop(sp0.building(kind, "stone", p.lv ?? 1, 4), ax, ay, time, t.state === "destroyed" ? 0.5 : 1);
-            }
-          }
+        } else if (d.kind === "camp" && d.t && d.p) {
+          const t = d.t, p = d.p, kind = this.propKind(p), [ax, ay] = this.buildingAnchor(kind, p.x, p.y), lv = p.kind === "fire" ? 1 : (p.lv ?? 1) + (p.kind === "gate" && p.open !== false ? 2 : 0);
+          this.prop(sp.building(kind, "stone", lv, 4), ax, ay, time, t.state === "destroyed" && p.kind !== "fire" ? 0.5 : 1);
         } else if (d.v) {
           const rode = d.v.phase !== "sleep" && d.v.phase !== "down" ? sim2.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === "down";
           if (d.v.facing === "left" || d.v.facing === "right") this.sideOf.set(d.v, d.v.facing);
@@ -64268,8 +64271,6 @@ ${risk.lines.join("\n")}`);
     const was = { f: sim2.dev.freeBuild, i: sim2.dev.instantBuild };
     sim2.dev.freeBuild = sim2.dev.instantBuild = true;
     try {
-      sim2.fog.state.fill(2);
-      sim2.fog.invalidate();
       sim2.fogDirty = true;
       wipe(sim2);
       fire.level = Math.max(1, Math.min(maxLevel("campfire", fire.era), level));
@@ -64500,10 +64501,6 @@ ${risk.lines.join("\n")}`);
           const e = sim2.diplomacy(t.id, "adopt");
           this.c.toast(e ?? `${t.def.name} gia nh\u1EADp l\xE0ng`);
         } });
-        const go = h("button", { class: "sm", text: "T\u1EDBi tr\u1EA1i", onclick: () => {
-          ctl2.centerOn(t.camp.x * TILE, t.camp.y * TILE);
-          this.close();
-        } });
         const bar = h("div", { class: "tribe-bar" }, fill, h("u"));
         const card = h(
           "div",
@@ -64512,7 +64509,7 @@ ${risk.lines.join("\n")}`);
           bar,
           people,
           h("p", { class: "sub", text: `Ph\u1EA7n th\u01B0\u1EDFng: ${t.def.reward}` }),
-          h("div", { class: "btns" }, gift, tribute, adopt, go)
+          h("div", { class: "btns" }, gift, tribute, adopt)
         );
         page.append(card);
         return { t, card, status, people, fill, gift, tribute, adopt };
@@ -64647,6 +64644,27 @@ ${risk.lines.join("\n")}`);
         btn("+100 m\u1ED7i t\xE0i nguy\xEAn", () => addAllStock(sim2, 100), "C\u1ED9ng 100 m\u1ED7i lo\u1EA1i (kh\xF4ng qu\xE1 s\u1EE9c ch\u1EE9a)"),
         btn("G\u1ECDi s\u1EF1 ki\u1EC7n (theo c\u1EA5p l\u1EEDa)", () => toast2(callEvent(sim2)), "G\u1ECDi ngay s\u1EF1 ki\u1EC7n \u0111\xE3 h\u1EB9n m\u1EA1nh nh\u1EA5t m\xE0 tr\u1EA1i c\u1EA5p l\u1EEDa hi\u1EC7n t\u1EA1i \u0111\u1EE7 s\u1EE9c \u0111\xF3n")
       ));
+      page.append(h("h3", { text: "C\xE1c l\xE0ng NPC (t\u1ECDa \u0111\u1ED9 l\xE0 s\u1ED1 \xF4)" }));
+      const here = h("small"), rows = h("div");
+      let shown = 0;
+      page.append(here, rows);
+      const FOG = ["ch\u01B0a bi\u1EBFt", "\u0111\xE3 kh\xE1m ph\xE1", "\u0111ang th\u1EA5y"];
+      this.updaters.push(() => {
+        const now = performance.now();
+        if (page.hidden || now - shown < 500) return;
+        shown = now;
+        const v = ctl2.viewTile(), fire = sim2.campfire(), N = sim2.world.size;
+        here.textContent = `Camera \u0111ang nh\xECn: (${Math.round(v.x)}, ${Math.round(v.y)}) \xB7 l\u1EEDa c\u1EE7a ta: (${fire ? Math.round(fire.x + 1) : "?"}, ${fire ? Math.round(fire.y + 1) : "?"})`;
+        rows.replaceChildren(...sim2.tribes.map((t) => {
+          const live2 = t.unitIds.map((u) => sim2.get(u)).filter((u) => !!u && u.health > 0), guards = live2.filter((u) => u.ai?.role !== "civ").length, crowd2 = t.crowd ? t.crowd.guards + t.crowd.civs : 0;
+          const d = fire ? Math.round(Math.hypot(t.camp.x - fire.x, t.camp.y - fire.y)) : 0;
+          const line3 = `${t.boss ? "BOSS" : "Th\u01B0\u1EDDng"} \xB7 ${t.def.name} \xB7 (${Math.round(t.camp.x)}, ${Math.round(t.camp.y)}) \xB7 c\xE1ch l\u1EEDa ${d} \xF4 \xB7 c\u1EA5p ${t.campLevel}${t.state === "free" ? "" : ` \xB7 ${t.state}`} \xB7 ${t.awake ? "\u0110ANG TH\u1EE8C" : "\u0111ang ng\u1EE7"} \xB7 ngo\xE0i ${live2.length} (l\xEDnh ${guards}) \xB7 trong nh\xE0 ${crowd2} \xB7 ${t.props.length} c\xF4ng tr\xECnh \xB7 s\u01B0\u01A1ng: ${FOG[sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)]]}`;
+          return h("div", { class: "devrow" }, h("small", { text: line3 }), h("button", { class: "sm", text: "Camera t\u1EDBi", title: "Ch\u1EC9 \u0111\u1EC3 th\u1EED: \u0111\u01B0a camera t\u1EDBi tr\u1EA1i n\xE0y (s\u01B0\u01A1ng m\xF9 v\u1EABn che n\u1EBFu ch\u01B0a kh\xE1m ph\xE1)", onclick: () => {
+            ctl2.centerOn(t.camp.x * TILE, t.camp.y * TILE);
+            this.close();
+          } }));
+        }));
+      });
       page.append(h("h3", { text: "Trinh s\xE1t" }));
       page.append(h("div", { class: "devrow" }, ...[1, 2, 3].map((n) => btn(`Trinh s\xE1t t\u1EF1 t\xECm l\xE0ng: b\u1EA3n \u0111\u1ED3 c\u1EA5p ${n}`, () => toast2(autoScout(sim2, n)), "L\xE0ng g\u1EA7n nh\u1EA5t ch\u01B0a c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p n\xE0y \u0111\u01B0\u1EE3c t\xECm v\xE0 v\u1EBD xong ngay (kh\xF4ng c\u1EA7n trinh s\xE1t th\u1EADt), \u0111\u1EC3 c\xF3 d\u1EEF li\u1EC7u cho ph\u1EA7n v\u1EBD b\u1EA3n \u0111\u1ED3"))));
       page.append(h("div", { class: "devrow" }, btn("C\xF3 s\u1EB5n b\u1EA3n \u0111\u1ED3 \u0111\u1ECBch (\u0111\u1EA7y \u0111\u1EE7)", () => toast2(giveEnemyMap(sim2)), "L\xE0ng \u0111\u1ECBch g\u1EA7n nh\u1EA5t \u0111\u01B0\u1EE3c t\xECm th\u1EA5y v\xE0 c\xF3 b\u1EA3n \u0111\u1ED3 c\u1EA5p 3 \u0111\u1EA7y \u0111\u1EE7, \u0111\u1EC3 th\u1EED ph\u1EA7n l\u1EADp k\u1EBF ho\u1EA1ch chi\u1EBFn tranh")));
@@ -64883,11 +64901,7 @@ ${risk.lines.join("\n")}`);
       this.base.width = this.base.height = mini.width = mini.height = big.width = big.height = this.N;
       this.bctx = this.base.getContext("2d");
       mini.addEventListener("click", () => this.open());
-      big.addEventListener("click", (e) => {
-        const b = big.getBoundingClientRect();
-        ctl2.centerOn((e.clientX - b.left) / b.width * this.N * TILE, (e.clientY - b.top) / b.height * this.N * TILE);
-        this.close();
-      });
+      big.addEventListener("click", () => this.close());
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) this.close();
       });

@@ -25,11 +25,7 @@ export class MapView {
     this.base.width = this.base.height = mini.width = mini.height = big.width = big.height = this.N;
     this.bctx = this.base.getContext('2d')!;
     mini.addEventListener('click', () => this.open());
-    big.addEventListener('click', (e) => {
-      const b = big.getBoundingClientRect();
-      ctl.centerOn(((e.clientX - b.left) / b.width) * this.N * TILE, ((e.clientY - b.top) / b.height) * this.N * TILE);
-      this.close();
-    });
+    big.addEventListener('click', () => this.close()); // the map only shows what is known: it does not carry the camera anywhere
     overlay.addEventListener('click', (e) => { if (e.target === overlay) this.close(); });
   }
 
