@@ -105,7 +105,7 @@ export function animate(sim: Sim, v: Villager, dt: number): void {
   const armed = (): Hold | null => { if (!v.weapon) return null; const w = weaponOf(v); return { kind: v.weapon, tier: w.tier ?? 1 }; };
   const ready = v.phase === 'fight' || v.fight.mode !== 'none';
   // soldiers and hunters keep their weapon in hand between tasks, so they can be told apart from civilians
-  const carrying = !!v.weapon && (v.job === 'fight' || v.job === 'hunt');
+  const carrying = !!v.weapon && (v.job === 'fight' || v.job === 'hunt' || (!!v.ai && v.ai.role !== 'civ')); // the soldiers of the other villages always have theirs in hand
   if (v.down > 0) anim = 'down';
   else if (v.swing) { anim = poseOf(v.weapon, 'attack'); hold = armed(); }
   else if (v.flinch > 0) anim = 'hit';

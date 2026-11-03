@@ -155,6 +155,15 @@ export class World {
     }
   }
 
+  /** Put a tree, rock or bush on a bare, open spot; false when the spot will not do. */
+  plant(kind: NodeKind, x: number, y: number): boolean {
+    const N = this.size, j = y * N + x;
+    if (!this.inBounds(x, y) || !this.isReady(x, y) || this.tiles[j] !== Tile.Grass || this.occ[j] !== 0 || this.nodes.has(j) || this.wouldTrap(x, y)) return false;
+    this.tiles[j] = TILE_OF[kind];
+    this.nodes.set(j, { kind, res: NODE_INFO[kind].res, amount: NODE_INFO[kind].max, max: NODE_INFO[kind].max, workers: 0, sides: 0, regrow: 0 });
+    return true;
+  }
+
   /** A random dry spot (open ground for 20 tiles round it) at least START_MARGIN from every edge, so the tribes and the herds have room on all sides. */
   private static pickStart(seed: number): { x: number; y: number } {
     const N = MAP_SIZE, rnd = mulberry32(mix32(seed ^ 0x51ed270b)), span = N - 2 * START_MARGIN;

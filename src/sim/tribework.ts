@@ -76,6 +76,18 @@ function pick(sim: Sim, weights: Record<string, number>): string {
   return Object.keys(weights)[0];
 }
 
+/** A free node of a kind within `reach` of the camp, one of them at random (-1: none). */
+function findNode(sim: Sim, t: Tribe, kind: 'tree' | 'rock' | 'bush', reach: number): number {
+  const W = sim.world, N = W.size, cx = Math.floor(t.camp.x), cy = Math.floor(t.camp.y), R = Math.floor(reach);
+  let found = -1, seen = 0;
+  for (let y = cy - R; y <= cy + R; y++) for (let x = cx - R; x <= cx + R; x++) {
+    if (!W.inBounds(x, y) || Math.hypot(x - t.camp.x, y - t.camp.y) > reach) continue;
+    const n = W.nodeAt(x, y);
+    if (n && n.kind === kind && n.amount > 0 && n.workers < 1 && sim.frnd() * ++seen < 1) found = y * N + x;
+  }
+  return found;
+}
+
 /** The people of a free tribe that has something to do other than stroll. True while he is busy with it. */
 export function lifeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai']>, dt: number): boolean {
   if (!isActive(sim, f.x, f.y)) { if (ai.life) endLife(sim, f); return false; }
@@ -85,20 +97,20 @@ export function lifeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villa
   const r = sim.frnd(), reach = tribeReach(t), N = sim.world.size;
   if (ai.role === 'civ') {
     if (r >= npc.chances.work) return false;
-    const job = pick(sim, npc.mix), kind = KIND_OF[job];
-    for (let i = 0; i < 12; i++) {
-      const a = sim.frnd() * Math.PI * 2, d = Math.sqrt(sim.frnd()) * reach, x = Math.floor(t.camp.x + Math.cos(a) * d), y = Math.floor(t.camp.y + Math.sin(a) * d);
-      const n = sim.world.nodeAt(x, y);
-      if (!n || n.kind !== kind || n.amount <= 0 || n.workers >= 1) continue;
-      const stand = standBeside(sim, y * N + x);
+    // the kind he fancies first, then the others: he works with what is within reach of his village
+    const first = pick(sim, npc.mix), reachAt = reach * npc.gatherReach;
+    for (const job of [first, ...Object.keys(npc.mix).filter((k) => k !== first)]) {
+      if (sim.pathLeft <= 0) return false;
+      const idx = findNode(sim, t, KIND_OF[job], reachAt), stand = idx >= 0 ? standBeside(sim, idx) : null;
       if (!stand) continue;
       sim.pathLeft--;
       const path = sim.pathTo(f, stand[0], stand[1], 2500);
       if (!path.length) continue;
-      n.workers++; f.path = path; f.phase = 'move';
-      ai.life = { kind: 'gather', idx: y * N + x, job, state: 'go', t: 0, units: 0 };
+      sim.world.nodes.get(idx)!.workers++; f.path = path; f.phase = 'move';
+      ai.life = { kind: 'gather', idx, job, state: 'go', t: 0, units: 0 };
       return true;
     }
+    ai.wander = 4 + sim.frnd() * 6; // nothing to be had just now: he strolls a while before he looks again
     return false;
   }
   // soldiers: hunt what lives on the land, patrol it, or scout out beyond it

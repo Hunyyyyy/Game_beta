@@ -12,8 +12,10 @@ import { soldierTier } from './research';
 import { DIFF, tribeBonuses } from './difficulty';
 import { powerOf, Power } from './power';
 import { applyStats } from './statsys';
+import { slotsAt } from './campplan';
 import { growCamp, setGates } from './tribebuild';
 import { isActive } from './tribework';
+import type { FoeAI } from './model';
 import type { Sim, Villager } from './sim';
 import type { Tribe } from './tribes';
 
@@ -30,10 +32,14 @@ export function headcount(sim: Sim, t: Tribe): { guards: number; civs: number } 
   return { guards, civs };
 }
 
-/** The people its campfire holds at its level, and how many of them fight (the proportion of tribes.json). */
-const targetsOf = (t: Tribe): { total: number; fighters: number } => {
+/**
+ * The people its campfire holds at its level, and how many of them fight: the proportion of tribes.json, or as many as its guard houses hold (to stand a watch and show
+ * the strength of the village), whichever is more, but never more than `lod.maxGuardShare` of the people.
+ */
+const targetsOf = (sim: Sim, t: Tribe): { total: number; fighters: number } => {
   const total = Math.round(POP_BY_FIRE[Math.max(0, Math.min(POP_BY_FIRE.length, t.campLevel) - 1)] * (t.boss ? DIFF.boss.popMult : 1));
-  return { total, fighters: Math.max(2, Math.round((total * t.def.warriors) / (t.def.warriors + t.def.civilians))) };
+  const ratio = Math.round((total * t.def.warriors) / (t.def.warriors + t.def.civilians)), posts = slotsAt(GUARD_HOUSES, t.campLevel, sim.era, sim.advanced || !!t.boss);
+  return { total, fighters: Math.max(2, Math.min(Math.max(ratio, posts), Math.floor(total * LOD.maxGuardShare))) };
 };
 
 /** Work out the percent its people need (difficulty.tribeBonuses) and put it on the bodies of those in the world. */
@@ -55,14 +61,34 @@ export function tribePower(sim: Sim, t: Tribe): Power {
 
 /** The people the campfire holds at the level, short of those alive, are added to the crowd (a village grown, or new). */
 export function topUp(sim: Sim, t: Tribe): void {
-  const hc = headcount(sim, t), { total, fighters } = targetsOf(t), crowd = crowdOf(t);
+  const hc = headcount(sim, t), { total, fighters } = targetsOf(sim, t), crowd = crowdOf(t);
   crowd.guards += Math.max(0, fighters - hc.guards);
   crowd.civs += Math.max(0, total - fighters - hc.civs);
   t.popLevel = t.campLevel;
 }
 
-/** The houses of the camp are laid (data only: no people), if they are not yet. */
-export function ensureLayout(sim: Sim, t: Tribe): void { growCamp(sim, t, t.campLevel); }
+/** The houses of the camp are laid (data only: no people), if they are not yet; the land round it is stocked once. */
+export function ensureLayout(sim: Sim, t: Tribe): void {
+  growCamp(sim, t, t.campLevel);
+  if (!t.seeded) { t.seeded = true; stockLand(sim, t); }
+}
+
+/** A few trees, rocks and bushes are set on the open ground round a village (npclife.json "seed") so that its people have something to work at: up to the number given, counting those already there. */
+function stockLand(sim: Sim, t: Tribe): void {
+  const { minR, maxR } = npc.seed, W = sim.world, N = W.size, cx = Math.floor(t.camp.x), cy = Math.floor(t.camp.y);
+  W.ensure(cx, cy, maxR + 4);
+  const have: Record<string, number> = { tree: 0, rock: 0, bush: 0 };
+  for (let y = cy - maxR; y <= cy + maxR; y++) for (let x = cx - maxR; x <= cx + maxR; x++) {
+    const n = W.inBounds(x, y) ? W.nodes.get(y * N + x) : undefined;
+    if (n && Math.hypot(x - t.camp.x, y - t.camp.y) <= maxR) have[n.kind]++;
+  }
+  for (const kind of ['rock', 'tree', 'bush'] as const) {
+    for (let need = npc.seed[kind] - have[kind], tries = 0; need > 0 && tries < 200; tries++) {
+      const a = sim.frnd() * Math.PI * 2, r = minR + sim.frnd() * (maxR - minR);
+      if (W.plant(kind, Math.floor(t.camp.x + Math.cos(a) * r), Math.floor(t.camp.y + Math.sin(a) * r))) need--;
+    }
+  }
+}
 
 // ---------------------------------------------------------------- people in the world
 /** How many may work in the open: the slots of its working houses (building json), but a few always. */
@@ -85,6 +111,36 @@ function freeSpot(sim: Sim, near: { x: number; y: number }, rmin: number, rspan:
   return sim.nearestFree(Math.floor(near.x), Math.floor(near.y), new Set()) ?? [Math.floor(near.x), Math.floor(near.y)];
 }
 
+// ---------------------------------------------------------------- the watch
+type Post = NonNullable<FoeAI['post']>;
+/** A free tile at or near a point, looking away from the fire. */
+function postAt(sim: Sim, t: Tribe, x: number, y: number, taken: Set<number>): Post | null {
+  const spot = sim.nearestFree(Math.floor(x), Math.floor(y), taken);
+  if (!spot) return null;
+  taken.add(spot[1] * sim.world.size + spot[0]);
+  const dx = spot[0] + 0.5 - t.camp.x, dy = spot[1] + 0.5 - t.camp.y;
+  return { x: spot[0], y: spot[1], face: Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'front' : 'back' };
+}
+
+/**
+ * Where `n` guards stand: a pair inside each gate, one at the foot of each tower, two by the fire, and the rest spread along the fence (npclife.json lod.postEvery at the nearest),
+ * each a little inside the wall and looking out.
+ */
+function postsOf(sim: Sim, t: Tribe, n: number): Post[] {
+  const out: Post[] = [], taken = new Set<number>(), add = (x: number, y: number) => { if (out.length < n) { const p = postAt(sim, t, x, y, taken); if (p) out.push(p); } };
+  const inward = (p: { x: number; y: number; w: number; h: number }, k: number): [number, number] => {
+    const cx = p.x + p.w / 2, cy = p.y + p.h / 2, dx = t.camp.x - cx, dy = t.camp.y - cy, len = Math.max(1, Math.hypot(dx, dy));
+    return [cx + (dx / len) * k, cy + (dy / len) * k];
+  };
+  for (const g of t.props.filter((p) => p.kind === 'gate')) { const [x, y] = inward(g, 1.5); add(x - 2, y); add(x + 2, y); }
+  for (const w of t.props.filter((p) => p.kind === 'tower')) { const [x, y] = inward(w, 3); add(x, y); }
+  add(t.camp.x - 2.5, t.camp.y + 0.5); add(t.camp.x + 2.5, t.camp.y + 0.5);
+  const fence = t.props.filter((p) => p.kind === 'fence').sort((a, b) => Math.atan2(a.y - t.camp.y, a.x - t.camp.x) - Math.atan2(b.y - t.camp.y, b.x - t.camp.x));
+  const stride = Math.max(LOD.postEvery, Math.floor(fence.length / Math.max(1, n - out.length)));
+  for (let i = 0; i < fence.length && out.length < n; i += stride) { const [x, y] = inward(fence[i], 1.5); add(x, y); }
+  return out;
+}
+
 // ---------------------------------------------------------------- arms
 const ARMOR_LADDER = [null, 'hide', 'bone'] as const;
 /** The best tier of soldiers the player has researched: the arms of the villages keep pace with it. */
@@ -105,15 +161,16 @@ export function gearFor(sim: Sim, t: Tribe, index: number): { weapon: string; ar
 }
 
 /** Bring `n` of the crowd out into the world, soldiers or civilians, at `near`. Returns those who came. */
-function spawnOut(sim: Sim, t: Tribe, role: 'guard' | 'civ', n: number, near: { x: number; y: number }, rmin: number, rspan: number): Villager[] {
+function spawnOut(sim: Sim, t: Tribe, role: 'guard' | 'civ', n: number, near: { x: number; y: number }, rmin: number, rspan: number, posts: Array<NonNullable<FoeAI['post']>> = []): Villager[] {
   const crowd = crowdOf(t), out: Villager[] = [], key = role === 'civ' ? 'civs' : 'guards';
   let armed = t.unitIds.filter((u) => { const f = sim.get(u); return !!f && f.ai?.role !== 'civ'; }).length;
   for (; n > 0 && crowd[key] > 0; n--) {
     crowd[key]--;
-    const [x, y] = freeSpot(sim, near, rmin, rspan), f = sim.makeVillager(x, y, sim.frnd() < 0.5 ? 'm' : 'f', t.id, sim.frnd);
+    const post = role === 'guard' ? posts.shift() : undefined, [x, y] = post ? [post.x, post.y] : freeSpot(sim, near, rmin, rspan), f = sim.makeVillager(x, y, sim.frnd() < 0.5 ? 'm' : 'f', t.id, sim.frnd);
     f.look.hide = t.def.look.hide; f.look.pants = t.def.look.pants;
     if (role === 'guard') { const g = gearFor(sim, t, armed); f.weapon = g.weapon; f.armor = g.armor; armed++; }
-    f.ai = { role, camp: t.camp, wander: sim.frnd() * 5, goal: null, raid: 0 };
+    f.ai = { role, camp: t.camp, wander: sim.frnd() * 5, goal: null, raid: 0, post };
+    if (post) f.facing = post.face;
     sim.addFoe(f); t.unitIds.push(f.id); out.push(f);
   }
   if (out.length) { rescaleTribe(sim, t); for (const f of out) f.health = f.maxHealth; }
@@ -126,7 +183,8 @@ export function wake(sim: Sim, t: Tribe): void {
   ensureLayout(sim, t);
   t.awake = true; t.idleT = 0;
   const cap = visibleCap(sim, t), crowd = crowdOf(t);
-  spawnOut(sim, t, 'guard', Math.min(crowd.guards, cap.guards), t.camp, 2.5, 3.5);
+  const out = Math.min(crowd.guards, cap.guards);
+  spawnOut(sim, t, 'guard', out, t.camp, 2.5, 3.5, postsOf(sim, t, out));
   spawnOut(sim, t, 'civ', Math.min(crowd.civs, cap.civs), t.camp, 2.5, 3.5);
   t.pool0 = standing(t); t.hid0 = crowd.guards + crowd.civs;
   const live = t.unitIds.map((u) => sim.get(u)).filter((u): u is Villager => !!u && u.health > 0);

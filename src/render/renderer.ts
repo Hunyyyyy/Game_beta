@@ -149,6 +149,27 @@ export class Renderer {
     return p.kind === 'fire' ? 'campfire' : p.b ?? (p.kind === 'tower' || p.kind === 'fence' || p.kind === 'gate' ? p.kind : 'storage');
   }
 
+  /** The fence and gate of a village drawn as ours are: each work stands for a house of the same kind, so that the ropes, the posts and the gate join up. */
+  private readonly wallStubs = new WeakMap<Tribe['props'][number], Building>();
+  private readonly wallMaps = new WeakMap<Tribe, { props: Tribe['props']; n: number; map: Map<number, Building> }>();
+  private wallStub(p: Tribe['props'][number]): Building {
+    let b = this.wallStubs.get(p);
+    if (!b) {
+      b = { id: -1, kind: p.kind as BuildingKind, era: 'stone', x: p.x, y: p.y, level: p.lv ?? 1, progress: 1, done: true, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 } as Building;
+      Object.defineProperty(b, 'open', { get: () => p.open !== false }); // the gate shuts and opens by itself
+      this.wallStubs.set(p, b);
+    }
+    return b;
+  }
+  private wallsOf(t: Tribe): Map<number, Building> {
+    const have = this.wallMaps.get(t);
+    if (have && have.props === t.props && have.n === t.props.length) return have.map;
+    const N = this.sim.world.size, map = new Map<number, Building>();
+    for (const p of t.props) if (p.kind === 'fence' || p.kind === 'gate') map.set(p.y * N + p.x, this.wallStub(p));
+    this.wallMaps.set(t, { props: t.props, n: t.props.length, map });
+    return map;
+  }
+
   private buildingAnchor(kind: BuildingKind, x: number, y: number): [number, number] {
     const d = BUILDINGS[kind];
     return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
@@ -466,8 +487,13 @@ export class Renderer {
         const [ax, ay] = this.buildingAnchor('fieldtent', Math.floor(d.ft.x) - 1, Math.floor(d.ft.y) - 1);
         this.prop(sp.building('fieldtent', 'stone', 1, 4), ax, ay, time, d.ft.built ? 1 : 0.5); // half-seen while it is being pitched
       } else if (d.kind === 'camp' && d.t && d.p) {
-        const t = d.t, p = d.p, kind = this.propKind(p), [ax, ay] = this.buildingAnchor(kind, p.x, p.y), lv = p.kind === 'fire' ? 1 : (p.lv ?? 1) + (p.kind === 'gate' && p.open !== false ? 2 : 0); // an open gate is drawn after the shut ones
-        this.prop(sp.building(kind, 'stone', lv, 4), ax, ay, time, t.state === 'destroyed' && p.kind !== 'fire' ? 0.5 : 1);
+        const t = d.t, p = d.p, kind = this.propKind(p), [ax, ay] = this.buildingAnchor(kind, p.x, p.y), alpha = t.state === 'destroyed' && p.kind !== 'fire' ? 0.5 : 1;
+        if (p.kind === 'gate' || p.kind === 'fence') {
+          const b = this.wallStub(p), walls = this.wallsOf(t);
+          if (p.kind === 'gate') this.drawGate(b, walls);
+          else if (!this.drawColumnFence(b, walls)) this.prop(sp.building('fence', 'stone', p.lv ?? 1, 4), ax, ay, time, alpha);
+          this.drawDiagonalRails(b, walls);
+        } else this.prop(sp.building(kind, 'stone', p.kind === 'fire' ? 1 : p.lv ?? 1, 4), ax, ay, time, alpha);
       } else if (d.v) {
         const rode = d.v.phase !== 'sleep' && d.v.phase !== 'down' ? sim.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === 'down';
         // a rider is seen from the side, the way his beast faces: up and down the screen he keeps the side he last had

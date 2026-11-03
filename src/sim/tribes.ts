@@ -47,6 +47,8 @@ export interface Tribe {
   leaderDead?: boolean;
   /** A boss village (difficulty.json "boss"): one step above the player in camp, defences and gear. `bossDown`: it has fallen, the age of bronze was announced. */
   boss?: boolean; bossDown?: boolean;
+  /** The land round it has been stocked with trees, rocks and bushes (tribelod.stockLand). */
+  seeded?: boolean;
   /** The campfire level its camp plan stands at (undefined: not raised yet, an old save). */
   built?: number;
   /** How far its camp runs ahead of the player's fire: its level follows the player's, plus this (the level it began with, less 2). */
@@ -593,6 +595,15 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
   }
   if (free && ai.role === 'guard' && threats.length && willing) { f.fight.target = threats[0].t; return; }
 
+  // a guard keeps his watch where he was set: he goes back to his post and stands there, looking out
+  if (free && ai.role === 'guard' && ai.post && !f.fight.target) {
+    const px = ai.post.x + 0.5, py = ai.post.y + 0.5;
+    if (Math.hypot(f.x - px, f.y - py) > 0.8) {
+      if (!f.path.length && sim.pathLeft > 0) { sim.pathLeft--; f.path = sim.pathTo(f, ai.post.x, ai.post.y, 3000); if (!f.path.length) ai.post = undefined; } // no way to it: he gives it up
+      f.phase = f.path.length ? 'move' : 'idle';
+    } else { f.phase = 'idle'; f.path = []; f.facing = ai.post.face; }
+    return;
+  }
   // otherwise: his daily work where we are looking, else stroll around the camp
   if (free && ai.role !== 'raider' && lifeBrain(sim, f, t, ai, dt)) return;
   if (f.phase === 'fight') { f.phase = 'idle'; f.path = []; }

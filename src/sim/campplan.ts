@@ -1,4 +1,4 @@
-import { BUILDINGS, BuildingKind, Era, eraLocked, fireUnlockLevel, levelCapByFire, maxLevel } from './buildings';
+import { BUILDINGS, BuildingKind, Era, eraLocked, fireUnlockLevel, levelCapByFire, levelsOf, maxLevel } from './buildings';
 
 /**
  * The shape of a camp of a given campfire level, as a list of pieces (no world, no Sim): the dev menu builds it for the player's village and the tribes
@@ -26,6 +26,17 @@ export function ring(fire: { x: number; y: number }, r: number): Array<[number, 
 export function limitAt(kind: BuildingKind, fireLevel: number): number {
   const per = BUILDINGS[kind].perFire;
   return per ? per[Math.min(per.length, fireLevel) - 1] ?? 0 : 1;
+}
+
+/** How many people the houses of these kinds hold at work in a camp of this level: as many houses as it may have, each at the level the camp allows (the slots of the building json). */
+export function slotsAt(kinds: BuildingKind[], fireLevel: number, era: Era, advanced: boolean): number {
+  let n = 0;
+  for (const k of kinds) {
+    if (!BUILDINGS[k].buildable || fireUnlockLevel(k) > fireLevel || eraLocked(k, { advanced })) continue;
+    const lv = Math.max(1, Math.min(maxLevel(k, era), levelCapByFire(fireLevel)));
+    n += limitAt(k, fireLevel) * (levelsOf(k, era)[lv - 1]?.slots ?? 0);
+  }
+  return n;
 }
 
 /** Half-width of the fence square of a camp of this level; 0 when the level opens no fence (eight pieces to each tile of half-width). */

@@ -62,6 +62,8 @@ export interface FoeAI {
   siege?: number;
   /** A band sent to harass an army on the march (warharass.ts): the game time it was sent. */
   harass?: number;
+  /** Where a guard stands his watch (tribelod.ts) and which way he looks (away from the fire). */
+  post?: { x: number; y: number; face: Facing };
 }
 /** Điểm đứng cuối cùng và hướng nhìn (luôn ngang) khi làm việc. */
 export interface Slide { x: number; y: number; face: 'left' | 'right' }
