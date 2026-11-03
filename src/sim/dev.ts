@@ -2,6 +2,7 @@ import { SEASONS, SEASON_DAYS, Season, WeatherKind } from './calendar';
 import { DAY_LENGTH } from './constants';
 import { ANIMALS, WEAPONS } from './combat';
 import { BUILDINGS, BuildingKind, eraLocked, fireUnlockLevel, levelCapByFire, maxHp, maxLevel, WALL_KINDS } from './buildings';
+import { CORE, OUTSIDE, ring } from './campplan';
 import { armyRoom, eventNeed } from './readiness';
 import { RES_LIST, Res } from './resources';
 import type { RoleId } from './jobs';
@@ -55,20 +56,7 @@ const clear = (sim: Sim, x: number, y: number, w: number, h: number, margin = 1)
   }
 };
 
-/** What goes inside the fence first (the heart of the defence: the camps, the stores, the workshops), then what stays outside (the working houses, out by the land they work). */
-const CORE: BuildingKind[] = ['storage', 'builder', 'workshop', 'armory', 'infantry', 'archery', 'cavalry', 'guardpost', 'lab', 'wartent', 'stable', 'house', 'toolstore', 'scouttent', 'supplycamp'];
-const OUTSIDE: BuildingKind[] = ['lumberyard', 'quarry', 'farmhouse', 'huntlodge', 'drill'];
-
-/** The spots of a camp: a grid three tiles apart round the campfire (a house is two wide and keeps a tile free all round), ring by ring, each ring clockwise from the north. The way from the gate to the fire is kept clear. */
-function ring(fire: { x: number; y: number }, r: number): Array<[number, number]> {
-  const out: Array<{ i: number; j: number; a: number }> = [];
-  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
-    if (Math.max(Math.abs(i), Math.abs(j)) !== r || (i === 0 && j > 0)) continue;
-    out.push({ i, j, a: (Math.atan2(i, -j) + 2 * Math.PI) % (2 * Math.PI) });
-  }
-  return out.sort((p, q) => p.a - q.a).map((o) => [fire.x + 3 * o.i, fire.y + 3 * o.j] as [number, number]);
-}
-
+// the plan of a camp (CORE, OUTSIDE, ring) is shared with the tribes: campplan.ts
 /** Put a finished house on the first of the spots that takes it (the ground is cleared first); the spot is used up. */
 function placeAt(sim: Sim, kind: BuildingKind, spots: Array<[number, number]>): boolean {
   const d = BUILDINGS[kind];

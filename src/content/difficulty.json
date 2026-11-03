@@ -44,5 +44,15 @@
   },
   "capture": {
     "spoilShare": 0.5
+  },
+  "boss": {
+    "_note": "Làng đầu mục (boss): mỗi ván có count[0]..count[1] làng, luôn hơn người chơi một bậc (cấp trại +1, tối đa maxCamp; có chòi canh và đồ đồng dù người chơi còn ở đồ đá). power: sức mạnh quân của boss so với quân tối đa người chơi có thể có ở cấp trại đó (0.9 = hạ được boss thì mất khoảng 80% lính); economy: kinh tế so với kinh tế tối đa; popMult: số dân so với cấp trại; bronzeShare: phần lính cầm vũ khí đồng và mặc giáp đồng; wallHp: độ bền rào, cổng, chòi và nhà so với làng thường.",
+    "count": [1, 2],
+    "power": 0.9,
+    "economy": 0.6,
+    "popMult": 1.3,
+    "bronzeShare": 0.4,
+    "wallHp": 1.5,
+    "weapons": ["bronze_sword", "bronze_axe", "bronze_spear"]
   }
 }

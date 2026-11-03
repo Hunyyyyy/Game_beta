@@ -12,6 +12,7 @@ import campfire_L1 from './campfire/L1.json';
 import campfire_L2 from './campfire/L2.json';
 import campfire_L3 from './campfire/L3.json';
 import campfire_L4 from './campfire/L4.json';
+import campfire_L5 from './campfire/L5.json';
 import cavalry_L1 from './cavalry/L1.json';
 import cavalry_L2 from './cavalry/L2.json';
 import cavalry_L3 from './cavalry/L3.json';
@@ -82,7 +83,7 @@ export const STONE_ART: Record<string, unknown[]> = {
   archery: [archery_L1, archery_L2, archery_L3],
   armory: [armory_L1, armory_L2, armory_L3],
   builder: [builder_L1, builder_L2, builder_L3],
-  campfire: [campfire_L1, campfire_L2, campfire_L3, campfire_L4],
+  campfire: [campfire_L1, campfire_L2, campfire_L3, campfire_L4, campfire_L5],
   cavalry: [cavalry_L1, cavalry_L2, cavalry_L3],
   drill: [drill_L1, drill_L2, drill_L3],
   farmhouse: [farmhouse_L1, farmhouse_L2, farmhouse_L3],

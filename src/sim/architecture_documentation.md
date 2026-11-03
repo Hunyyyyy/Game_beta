@@ -50,6 +50,9 @@ The goal of this architectural split: **modifying one system does not break anot
 | `buildings` (data layer) | Each building lives in a directory `src/content/buildings/<kind>/`: `building.json` (category, size, required fire tier, tier-based `limit`, level stats: cost, time, storage, work slots, HP) and graphics `L1.json`... `tools/gen-content.mjs` compiles them into `defs.gen.ts` and `art.gen.ts` on build: adding a building is adding a directory | `BUILDINGS` `levelDef` `maxHp` `fireUnlockLevel` |
 | `warplan` | War plans: squad assignments, tactical cards, defense presets, alarm bell | `newPlan` `startPlan` `playCard` `soundAlarm` |
 | `difficulty` (data layer) | Pure tables: player caps per fire level, power share of NPC villages, and percentage stat boosts required to reach village targets (`content/difficulty.json`) | `playerCap` `tribeTarget` `tribeBonuses` |
+| `campplan` | Pure plan of a camp of a campfire level (fence, gate, towers, houses ringed round the fire as pieces); shared by the dev menu and the tribes | `planCamp` `ring` `limitAt` `fenceHalf` |
+| `tribebuild` | Raises a tribe's camp to a level as data: pieces of `campplan` become `tribe.props` (`kind` house/fence/gate/tower, `b`, `lv`, `hp`) marked on `world.occ`. Gates shut when we are at them in anger (`setGates`) | `growCamp` `setGates` |
+| `tribelod` | How much of a tribe is really there. Asleep a tribe is data: level and a head count (`tribe.crowd`). Our people near (`sim.active`), a raid or a war wake it: houses laid, as many people come out as its working houses hold (slots in the building json), the rest stay indoors and come out as the houses fall or for a raid. Nobody near for `npclife.lod.sleepAfter` seconds: back to sleep. Its level follows the player's fire (`followFire`, `tribe.edge`). Arms by `gearFor` (common villages keep pace with the player's research; a boss gives bronze to `boss.bronzeShare` of its soldiers). Boss villages (`tribe.boss`, difficulty.json `boss`): picked at spawn, one step above the player, with towers, sturdier works, more people and a power of `boss.power` of the player's best army; their fall sets `sim.bronze` and announces the age of bronze | `wake` `sleep` `tickLod` `headcount` `releaseCrowd` `followFire` `tribePower` |
 | `tribework` | Daily routines of NPC village citizens (logging, mining, gathering, patrolling, hunting, scouting), simulated only on active chunks near player villagers (`data/npclife.json`) | `lifeBrain` `refreshActive` `endLife` |
 | `power` | Village Power = Economy + Military, calculated from villager stats (including research %), excluding weapons; formula weights in `content/difficulty.json` | `powerOf` `militaryValue` `economyValue` |
 | `roles` | Roles attached to buildings: assignment, unassignment, capacity per building tier | `assignRole` `releaseRole` `roleCapacity` `trimRoles` |
@@ -65,7 +68,7 @@ The goal of this architectural split: **modifying one system does not break anot
 3. Data layers must remain decoupled from `Sim`. Any function requiring session state belongs outside this layer.
 4. Code inside `src/sim` must never reference DOM or browser globals (`document`, `window`, `localStorage`, etc.).
 5. `ui`, `render`, and `main` must interact strictly through `Sim`. No direct system imports allowed.
-6. File length limit in `src/sim` is **650 lines**. Split files exceeding this limit.
+6. No hard file length limit in `src/sim`. Keep files from getting overly long or messy; split by concern when they do.
 
 ## Adding a New Feature
 

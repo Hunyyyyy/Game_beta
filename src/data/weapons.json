@@ -82,6 +82,9 @@
       "style": "sling", "projectile": "stone",
       "tier": 1
     },
+    "bronze_spear": { "name": "Giáo đồng", "type": "pierce", "range": 1.7, "damage": 11, "cycle": 1.3, "style": "thrust", "tier": 3 },
+    "bronze_sword": { "name": "Kiếm đồng", "type": "slash", "range": 1.1, "damage": 13, "cycle": 1.1, "style": "swing", "anims": { "attack": "slash" }, "tier": 3 },
+    "bronze_axe": { "name": "Rìu đồng", "type": "slash", "range": 1, "damage": 16, "cycle": 1.4, "style": "swing", "anims": { "attack": "slash" }, "tier": 3 },
     "bow": {
       "name": "Cung ngắn",
       "type": "pierce",
@@ -121,7 +124,8 @@
       "durability": 350,
       "time": 160,
       "tier": 2
-    }
+    },
+    "bronze": { "name": "Giáp đồng", "pierce": 0.38, "slash": 0.5, "crush": 0.3, "tier": 3 }
   },
   "rules": {
     "backstab": 1.25,

@@ -455,7 +455,7 @@ export class Renderer {
         const t = d.t, sp0 = this.sprites;
         for (const p of t.props) {
           if (p.kind === 'fire') { if (t.state === 'destroyed') continue; const [ax, ay] = this.buildingAnchor('campfire', p.x, p.y); this.prop(sp0.building('campfire', 'stone', 1, 4), ax, ay, time); }
-          else { const [ax, ay] = this.buildingAnchor('storage', p.x, p.y); this.prop(sp0.building('storage', 'stone', 1, 4), ax, ay, time, t.state === 'destroyed' ? 0.5 : 1); }
+          else { const kind = p.b ?? (p.kind === 'tower' || p.kind === 'fence' || p.kind === 'gate' ? p.kind : 'storage'), [ax, ay] = this.buildingAnchor(kind, p.x, p.y); this.prop(sp0.building(kind, 'stone', p.lv ?? 1, 4), ax, ay, time, t.state === 'destroyed' ? 0.5 : 1); }
         }
       } else if (d.v) {
         const rode = d.v.phase !== 'sleep' && d.v.phase !== 'down' ? sim.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === 'down';

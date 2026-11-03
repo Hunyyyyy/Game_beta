@@ -3713,52 +3713,168 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       personality: "peaceful",
       angle: 200,
       distance: 80,
-      share: 0.2,
+      share: 0.15,
       military: 0.3,
       civilians: 8,
       warriors: 4,
-      weapons: ["club", "spear"],
+      weapons: [
+        "club",
+        "spear"
+      ],
       armor: false,
-      look: { hide: "#7a8a4a", pants: "#4a6a8a" },
+      look: {
+        hide: "#7a8a4a",
+        pants: "#4a6a8a"
+      },
       relation: 0,
       reward: "D\u1EC5 giao th\u01B0\u01A1ng v\xE0 thu n\u1EA1p; h\u1ECDc T4 B\u1EC7n s\u1EE3i",
-      tribute: { food: 12, wood: 6, coin: 3 }
+      tribute: {
+        food: 12,
+        wood: 6,
+        coin: 3
+      }
     },
     axe: {
       name: "R\xECu \u0110\xE1",
       personality: "aggressive",
       angle: 320,
       distance: 110,
-      share: 0.45,
+      share: 0.3,
       military: 0.65,
       civilians: 15,
       warriors: 10,
-      weapons: ["hatchet", "mace"],
+      weapons: [
+        "hatchet",
+        "mace"
+      ],
       armor: true,
-      look: { hide: "#8a3a24", pants: "#6a2a1a" },
+      look: {
+        hide: "#8a3a24",
+        pants: "#6a2a1a"
+      },
       relation: -20,
       reward: "L\xEDnh ch\xF9y, b\xED quy\u1EBFt ch\u1EBF ch\xF9y \u0111\xE1",
-      tribute: { stone: 10, food: 10, coin: 4 }
+      tribute: {
+        stone: 10,
+        food: 10,
+        coin: 4
+      }
     },
     swamp: {
       name: "\u0110\u1EA7m L\u1EA7y",
       personality: "ambusher",
       angle: 80,
       distance: 140,
-      share: 0.35,
+      share: 0.25,
       military: 0.55,
       civilians: 12,
       warriors: 8,
-      weapons: ["sling", "club"],
+      weapons: [
+        "sling",
+        "club"
+      ],
       armor: false,
-      look: { hide: "#5a6a50", pants: "#3a4a3a" },
+      look: {
+        hide: "#5a6a50",
+        pants: "#3a4a3a"
+      },
       relation: -10,
       reward: "\u0110\u1EA5t s\xE9t, s\u1EE3i; h\u1ECDc T5 D\xE2y qu\u0103ng \u0111\xE1",
-      tribute: { food: 10, wood: 10, coin: 3 }
+      tribute: {
+        food: 10,
+        wood: 10,
+        coin: 3
+      }
     },
-    meet: { _note: "G\u1EB7p nhau trong t\u1EA7m nh\xECn th\xEC \u0111\xE1nh, tr\u1EEB khi quan h\u1EC7 t\u1ED1t (t\u1EEB friendlyFrom tr\u1EDF l\xEAn). L\xE0ng hi\u1EC1n (peaceful) ch\u1EC9 \u0111\xE1nh khi b\u1ECB \u0111\xE1nh. feuds: c\xE1c c\u1EB7p l\xE0ng th\xF9 nhau, t\u1EF1 \u0111\xE1nh nhau khi g\u1EB7p (ch\u1EC9 \u1EDF c\xE1c chunk \u0111ang xem, xem data/npclife.json); l\xE0ng kh\xF4ng c\xF3 trong c\u1EB7p n\xE0o th\xEC kh\xF4ng t\u1EF1 \u0111\xE1nh l\xE0ng kh\xE1c.", friendlyFrom: 20, feuds: [["axe", "swamp"]] },
+    cave: {
+      name: "Hang G\u1EA5u",
+      personality: "aggressive",
+      angle: 260,
+      distance: 160,
+      share: 0.15,
+      military: 0.6,
+      civilians: 14,
+      warriors: 9,
+      weapons: [
+        "spear",
+        "mace"
+      ],
+      armor: true,
+      look: {
+        hide: "#6a5a48",
+        pants: "#3a3028"
+      },
+      relation: -25,
+      reward: "Da g\u1EA5u, gi\xE1p da; th\u1EE3 s\u0103n l\xE3o luy\u1EC7n",
+      tribute: {
+        stone: 12,
+        food: 8,
+        coin: 4
+      }
+    },
+    dune: {
+      name: "\u0110\u1ED3i C\xE1t",
+      personality: "ambusher",
+      angle: 20,
+      distance: 150,
+      share: 0.15,
+      military: 0.5,
+      civilians: 11,
+      warriors: 7,
+      weapons: [
+        "bow",
+        "spear"
+      ],
+      armor: false,
+      look: {
+        hide: "#b8a060",
+        pants: "#7a6a3a"
+      },
+      relation: -5,
+      reward: "L\xF4ng v\u0169, cung; h\u1ECDc b\u1EAFn cung",
+      tribute: {
+        food: 9,
+        wood: 8,
+        coin: 3
+      }
+    },
+    meet: {
+      _note: "G\u1EB7p nhau trong t\u1EA7m nh\xECn th\xEC \u0111\xE1nh, tr\u1EEB khi quan h\u1EC7 t\u1ED1t (t\u1EEB friendlyFrom tr\u1EDF l\xEAn). L\xE0ng hi\u1EC1n (peaceful) ch\u1EC9 \u0111\xE1nh khi b\u1ECB \u0111\xE1nh. feuds: c\xE1c c\u1EB7p l\xE0ng th\xF9 nhau, t\u1EF1 \u0111\xE1nh nhau khi g\u1EB7p (ch\u1EC9 \u1EDF c\xE1c chunk \u0111ang xem, xem data/npclife.json); l\xE0ng kh\xF4ng c\xF3 trong c\u1EB7p n\xE0o th\xEC kh\xF4ng t\u1EF1 \u0111\xE1nh l\xE0ng kh\xE1c.",
+      friendlyFrom: 20,
+      feuds: [
+        [
+          "axe",
+          "swamp"
+        ],
+        [
+          "cave",
+          "dune"
+        ]
+      ]
+    },
     relation: {
-      labels: [[-100, "Th\xF9 \u0111\u1ECBch"], [-40, "Trung l\u1EADp"], [20, "Th\xE2n thi\u1EC7n"], [60, "C\u1ED1ng n\u1EA1p"], [90, "Thu ph\u1EE5c"]],
+      labels: [
+        [
+          -100,
+          "Th\xF9 \u0111\u1ECBch"
+        ],
+        [
+          -40,
+          "Trung l\u1EADp"
+        ],
+        [
+          20,
+          "Th\xE2n thi\u1EC7n"
+        ],
+        [
+          60,
+          "C\u1ED1ng n\u1EA1p"
+        ],
+        [
+          90,
+          "Thu ph\u1EE5c"
+        ]
+      ],
       giftFood: 10,
       giftGain: 5,
       killWarrior: -10,
@@ -3767,7 +3883,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       tributeAt: 60,
       joinAt: 90
     },
-    surrender: { leaderDown: true, holdCampSeconds: 30 }
+    surrender: {
+      leaderDown: true,
+      holdCampSeconds: 30
+    }
   };
 
   // src/data/siege.json
@@ -3900,6 +4019,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         projectile: "stone",
         tier: 1
       },
+      bronze_spear: { name: "Gi\xE1o \u0111\u1ED3ng", type: "pierce", range: 1.7, damage: 11, cycle: 1.3, style: "thrust", tier: 3 },
+      bronze_sword: { name: "Ki\u1EBFm \u0111\u1ED3ng", type: "slash", range: 1.1, damage: 13, cycle: 1.1, style: "swing", anims: { attack: "slash" }, tier: 3 },
+      bronze_axe: { name: "R\xECu \u0111\u1ED3ng", type: "slash", range: 1, damage: 16, cycle: 1.4, style: "swing", anims: { attack: "slash" }, tier: 3 },
       bow: {
         name: "Cung ng\u1EAFn",
         type: "pierce",
@@ -3940,7 +4062,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         durability: 350,
         time: 160,
         tier: 2
-      }
+      },
+      bronze: { name: "Gi\xE1p \u0111\u1ED3ng", pierce: 0.38, slash: 0.5, crush: 0.3, tier: 3 }
     },
     rules: {
       backstab: 1.25,
@@ -3976,7 +4099,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var SPECIES = Object.keys(animals_default).filter((k) => !k.startsWith("_") && k !== "behaviour");
   var ANIMALS = Object.fromEntries(SPECIES.map((s) => [s, animals_default[s]]));
   var BEHAVIOUR = animals_default.behaviour;
-  var TRIBE_IDS = ["spring", "axe", "swamp"];
+  var TRIBE_IDS = ["spring", "axe", "swamp", "cave", "dune"];
   var TRIBES = Object.fromEntries(TRIBE_IDS.map((t) => [t, tribes_default[t]]));
   var RELATION = tribes_default.relation;
   var MEET = tribes_default.meet;
@@ -6724,9 +6847,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
 
   // src/data/handtools/tiers.json
   var tiers_default = {
-    _note: "Tool head colors per tier. Keys are tier numbers (1 = wood, 2 = stone; 0 = bare hands, nothing drawn). To add a tier, add an entry here.",
+    _note: "Tool head colors per tier. Keys are tier numbers (1 = wood, 2 = stone, 3 = bronze; 0 = bare hands, nothing drawn). To add a tier, add an entry here.",
     "1": { name: "wood", head: "#b88c54", light: "#deb87e", dark: "#805c34" },
-    "2": { name: "stone", head: "#8e9496", light: "#c0c6c6", dark: "#62686c" }
+    "2": { name: "stone", head: "#8e9496", light: "#c0c6c6", dark: "#62686c" },
+    "3": { name: "bronze", head: "#c98a3d", light: "#f2c673", dark: "#8a5a22" }
   };
 
   // src/data/handtools/axe.json
@@ -6888,6 +7012,51 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       { x: -1, y: 5, w: 1, h: 3, color: "wood" },
       { x: -2, y: 8, w: 1, h: 3, color: "wood" },
       { x: -3, y: -6, w: 1, h: 17, color: "light" }
+    ]
+  };
+
+  // src/data/handtools/bronze_spear.json
+  var bronze_spear_default = {
+    name: "Bronze spear",
+    handle: { length: 16, width: 1, color: "wood" },
+    head: [
+      { x: 0, y: -8, w: 1, h: 2, color: "head" },
+      { x: -1, y: -6, w: 3, h: 5, color: "head" },
+      { x: 0, y: -9, w: 1, h: 1, color: "light" },
+      { x: 0, y: -8, w: 1, h: 2, color: "light" },
+      { x: -1, y: -6, w: 1, h: 4, color: "light" },
+      { x: 1, y: -5, w: 1, h: 4, color: "dark" },
+      { x: -2, y: -1, w: 5, h: 1, color: "dark" },
+      { x: -1, y: 0, w: 3, h: 1, color: "head" }
+    ]
+  };
+
+  // src/data/handtools/bronze_sword.json
+  var bronze_sword_default = {
+    name: "Bronze sword",
+    handle: { length: 5, width: 1, color: "wood" },
+    head: [
+      { x: -2, y: -1, w: 5, h: 1, color: "dark" },
+      { x: 0, y: -12, w: 2, h: 11, color: "head" },
+      { x: 0, y: -13, w: 1, h: 1, color: "light" },
+      { x: 0, y: -12, w: 1, h: 11, color: "light" },
+      { x: 1, y: -10, w: 1, h: 9, color: "dark" },
+      { x: -1, y: 0, w: 3, h: 1, color: "head" }
+    ]
+  };
+
+  // src/data/handtools/bronze_axe.json
+  var bronze_axe_default = {
+    name: "Bronze axe",
+    handle: { length: 12, width: 1, color: "wood" },
+    head: [
+      { x: -1, y: -1, w: 2, h: 4, color: "dark" },
+      { x: 1, y: -4, w: 4, h: 8, color: "head" },
+      { x: 5, y: -5, w: 1, h: 10, color: "light" },
+      { x: 1, y: -4, w: 4, h: 1, color: "light" },
+      { x: 4, y: 2, w: 1, h: 2, color: "dark" },
+      { x: 1, y: 3, w: 3, h: 1, color: "dark" },
+      { x: -2, y: -3, w: 1, h: 2, color: "head" }
     ]
   };
 
@@ -7446,9 +7615,650 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   };
 
+  // src/data/armors/bronze.json
+  var bronze_default = {
+    _note: "Worn armour is drawn over the body. Shapes are [x, y, w, h, color]. 'torso' is measured from the top-left of the torso (front/back: 10 wide, side: 7 wide), 'head' from the top-left of the head (front/back: 12 wide, side: 13 wide). 'wraps' are the bands on shins and forearms. Colour names: the palette below plus skin, skinD from the villager.",
+    name: "Gi\xE1p \u0111\u1ED3ng",
+    palette: {
+      h: "#c4863a",
+      hd: "#8a5a22",
+      hl: "#f2c673",
+      st: "#4a2f14",
+      bone: "#f6e8b8"
+    },
+    front: {
+      torso: [
+        [
+          0,
+          0,
+          10,
+          6,
+          "h"
+        ],
+        [
+          0,
+          1,
+          1,
+          5,
+          "hd"
+        ],
+        [
+          9,
+          1,
+          1,
+          5,
+          "hd"
+        ],
+        [
+          1,
+          1,
+          3,
+          1,
+          "hl"
+        ],
+        [
+          6,
+          1,
+          3,
+          1,
+          "hl"
+        ],
+        [
+          3,
+          0,
+          4,
+          2,
+          "skin"
+        ],
+        [
+          4,
+          0,
+          2,
+          1,
+          "skinD"
+        ],
+        [
+          4,
+          2,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          5,
+          3,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          4,
+          4,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          5,
+          5,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          -1,
+          -1,
+          3,
+          3,
+          "hd"
+        ],
+        [
+          -1,
+          -1,
+          3,
+          1,
+          "hl"
+        ],
+        [
+          8,
+          -1,
+          3,
+          3,
+          "hd"
+        ],
+        [
+          8,
+          -1,
+          3,
+          1,
+          "hl"
+        ],
+        [
+          0,
+          6,
+          10,
+          1,
+          "st"
+        ],
+        [
+          4,
+          6,
+          2,
+          1,
+          "bone"
+        ],
+        [
+          0,
+          7,
+          2,
+          2,
+          "hd"
+        ],
+        [
+          3,
+          7,
+          2,
+          2,
+          "h"
+        ],
+        [
+          5,
+          7,
+          2,
+          2,
+          "hd"
+        ],
+        [
+          8,
+          7,
+          2,
+          2,
+          "h"
+        ],
+        [
+          1,
+          2,
+          8,
+          1,
+          "hl"
+        ],
+        [
+          1,
+          4,
+          8,
+          1,
+          "hd"
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          7,
+          1,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          2,
+          5,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          7,
+          5,
+          1,
+          1,
+          "bone"
+        ]
+      ],
+      head: [
+        [
+          1,
+          0,
+          10,
+          3,
+          "h"
+        ],
+        [
+          2,
+          0,
+          4,
+          1,
+          "hl"
+        ],
+        [
+          1,
+          2,
+          10,
+          1,
+          "hd"
+        ],
+        [
+          0,
+          3,
+          12,
+          1,
+          "st"
+        ],
+        [
+          5,
+          3,
+          2,
+          1,
+          "bone"
+        ],
+        [
+          4,
+          -2,
+          4,
+          2,
+          "hd"
+        ],
+        [
+          5,
+          -2,
+          2,
+          1,
+          "hl"
+        ],
+        [
+          5,
+          -3,
+          2,
+          1,
+          "hl"
+        ]
+      ]
+    },
+    back: {
+      torso: [
+        [
+          0,
+          0,
+          10,
+          6,
+          "h"
+        ],
+        [
+          0,
+          1,
+          1,
+          5,
+          "hd"
+        ],
+        [
+          9,
+          1,
+          1,
+          5,
+          "hd"
+        ],
+        [
+          4,
+          0,
+          2,
+          6,
+          "hd"
+        ],
+        [
+          1,
+          1,
+          2,
+          1,
+          "hl"
+        ],
+        [
+          7,
+          1,
+          2,
+          1,
+          "hl"
+        ],
+        [
+          -1,
+          -1,
+          3,
+          3,
+          "hd"
+        ],
+        [
+          -1,
+          -1,
+          3,
+          1,
+          "hl"
+        ],
+        [
+          8,
+          -1,
+          3,
+          3,
+          "hd"
+        ],
+        [
+          8,
+          -1,
+          3,
+          1,
+          "hl"
+        ],
+        [
+          0,
+          6,
+          10,
+          1,
+          "st"
+        ],
+        [
+          0,
+          7,
+          2,
+          2,
+          "hd"
+        ],
+        [
+          3,
+          7,
+          2,
+          2,
+          "h"
+        ],
+        [
+          5,
+          7,
+          2,
+          2,
+          "hd"
+        ],
+        [
+          8,
+          7,
+          2,
+          2,
+          "h"
+        ],
+        [
+          1,
+          2,
+          8,
+          1,
+          "hl"
+        ],
+        [
+          1,
+          4,
+          8,
+          1,
+          "hd"
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          7,
+          1,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          2,
+          5,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          7,
+          5,
+          1,
+          1,
+          "bone"
+        ]
+      ],
+      head: [
+        [
+          1,
+          0,
+          10,
+          4,
+          "h"
+        ],
+        [
+          2,
+          0,
+          4,
+          1,
+          "hl"
+        ],
+        [
+          1,
+          3,
+          10,
+          1,
+          "hd"
+        ],
+        [
+          0,
+          4,
+          12,
+          1,
+          "st"
+        ],
+        [
+          4,
+          -2,
+          4,
+          2,
+          "hd"
+        ],
+        [
+          5,
+          -2,
+          2,
+          1,
+          "hl"
+        ],
+        [
+          5,
+          -3,
+          2,
+          1,
+          "hl"
+        ]
+      ]
+    },
+    side: {
+      torso: [
+        [
+          0,
+          0,
+          7,
+          6,
+          "h"
+        ],
+        [
+          6,
+          0,
+          1,
+          6,
+          "hd"
+        ],
+        [
+          1,
+          1,
+          3,
+          1,
+          "hl"
+        ],
+        [
+          1,
+          -1,
+          5,
+          3,
+          "hd"
+        ],
+        [
+          1,
+          -1,
+          5,
+          1,
+          "hl"
+        ],
+        [
+          0,
+          6,
+          7,
+          1,
+          "st"
+        ],
+        [
+          2,
+          6,
+          2,
+          1,
+          "bone"
+        ],
+        [
+          0,
+          7,
+          2,
+          2,
+          "hd"
+        ],
+        [
+          3,
+          7,
+          2,
+          2,
+          "h"
+        ],
+        [
+          5,
+          7,
+          2,
+          1,
+          "hd"
+        ],
+        [
+          1,
+          2,
+          5,
+          1,
+          "hl"
+        ],
+        [
+          1,
+          4,
+          5,
+          1,
+          "hd"
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          "bone"
+        ],
+        [
+          2,
+          5,
+          1,
+          1,
+          "bone"
+        ]
+      ],
+      head: [
+        [
+          0,
+          0,
+          11,
+          3,
+          "h"
+        ],
+        [
+          1,
+          0,
+          5,
+          1,
+          "hl"
+        ],
+        [
+          0,
+          2,
+          11,
+          1,
+          "hd"
+        ],
+        [
+          0,
+          3,
+          12,
+          1,
+          "st"
+        ],
+        [
+          8,
+          3,
+          2,
+          1,
+          "bone"
+        ],
+        [
+          3,
+          -2,
+          5,
+          2,
+          "hd"
+        ],
+        [
+          4,
+          -2,
+          3,
+          1,
+          "hl"
+        ],
+        [
+          5,
+          -3,
+          2,
+          1,
+          "hl"
+        ]
+      ]
+    },
+    wraps: {
+      leg: {
+        dy: 4,
+        w: 3,
+        h: 2,
+        color: "hd",
+        edge: "st"
+      },
+      arm: {
+        w: 3,
+        h: 2,
+        color: "hd",
+        edge: "st"
+      }
+    }
+  };
+
   // src/character/rig.js
-  var handTools = { axe: axe_default, pick: pick_default, hammer: hammer_default, hoe: hoe_default, club: club_default, spear: spear_default, mace: mace_default, hatchet: hatchet_default, sling: sling_default, bow: bow_default };
-  var armors = { hide: hide_default, bone: bone_default };
+  var handTools = { axe: axe_default, pick: pick_default, hammer: hammer_default, hoe: hoe_default, club: club_default, spear: spear_default, mace: mace_default, hatchet: hatchet_default, sling: sling_default, bow: bow_default, bronze_spear: bronze_spear_default, bronze_sword: bronze_sword_default, bronze_axe: bronze_axe_default };
+  var armors = { hide: hide_default, bone: bone_default, bronze: bronze_default };
   var W = 40;
   var H = 48;
   var CX = 20;
@@ -11582,6 +12392,98 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       { shape: "ellipse", cx: 12, cy: 51, rx: 3, ry: 1, color: "clay" },
       { shape: "ellipse", cx: 60, cy: 52, rx: 3, ry: 2, color: "clayD" },
       { shape: "ellipse", cx: 60, cy: 51, rx: 3, ry: 1, color: "clay" }
+    ]
+  };
+
+  // src/content/buildings/campfire/L5.json
+  var L5_default = {
+    name: "Nh\xE0 chung (c\u1EA5p 5, nh\xE0 \u0111\u1EA5t s\xE9t m\xE1i ng\xF3i, l\xF2 s\u01B0\u1EDFi, \u1ED1ng kh\xF3i)",
+    name_en: "Common House (Tier 5, Clay House, Tiled Roof, Hearth, Chimney)",
+    type: "prop",
+    size: [72, 60],
+    anchor: [36, 54],
+    footprint: [4, 30, 64, 28],
+    seed: 5,
+    animate: { frames: 4, fps: 6 },
+    palette: {
+      line: "#2b1d10",
+      shadow: "#000000",
+      dirt: "#5a4430",
+      dirtL: "#6e553b",
+      dirtD: "#47362a",
+      rock: "#7a8084",
+      rockL: "#b0b7bb",
+      rockD: "#60676b",
+      clay: "#c79a68",
+      clayL: "#dcb784",
+      clayD: "#9a7249",
+      wood: "#8a6238",
+      woodL: "#aa7c48",
+      woodD: "#5e4026",
+      roof: "#a8452c",
+      roofL: "#c8603f",
+      roofD: "#7a2f1d",
+      bronze: "#c98a3d",
+      bronzeL: "#f2c673",
+      dark: "#1c120a",
+      glow: "#ffb040",
+      flame2: "#e8641e",
+      flame1: "#f7a728",
+      flame0: "#fff1a8",
+      smoke: "#c9c4bb"
+    },
+    layers: [
+      { shape: "ellipse", cx: 36, cy: 52, rx: 34, ry: 7, color: "shadow", alpha: 0.28 },
+      { shape: "ellipse", cx: 36, cy: 47, rx: 33, ry: 10, color: "dirt" },
+      { shape: "scatter", count: 40, area: [8, 40, 56, 14], size: 1, colors: ["dirtL", "dirtD"], onlyOver: ["dirt"] },
+      { shape: "ellipse", cx: 36, cy: 49, rx: 12, ry: 3, color: "glow", alpha: 0.2 },
+      { shape: "rect", x: 8, y: 41, w: 56, h: 6, color: "rock" },
+      { shape: "rect", x: 8, y: 41, w: 56, h: 1, color: "rockL" },
+      { shape: "rect", x: 8, y: 46, w: 56, h: 1, color: "rockD" },
+      { shape: "pixels", at: [[14, 43], [22, 44], [30, 43], [43, 44], [51, 43], [58, 44]], color: "rockD" },
+      { shape: "rect", x: 10, y: 24, w: 52, h: 17, color: "clay" },
+      { shape: "rect", x: 10, y: 24, w: 52, h: 2, color: "clayL" },
+      { shape: "rect", x: 54, y: 26, w: 8, h: 15, color: "clayD" },
+      { shape: "rect", x: 10, y: 32, w: 52, h: 1, color: "woodD" },
+      { shape: "rect", x: 10, y: 24, w: 2, h: 17, color: "woodD" },
+      { shape: "rect", x: 22, y: 24, w: 2, h: 17, color: "woodD" },
+      { shape: "rect", x: 48, y: 24, w: 2, h: 17, color: "woodD" },
+      { shape: "rect", x: 60, y: 24, w: 2, h: 17, color: "woodD" },
+      { shape: "line", from: [12, 26], to: [22, 32], w: 1, color: "woodD" },
+      { shape: "line", from: [50, 26], to: [60, 32], w: 1, color: "woodD" },
+      { shape: "rect", x: 30, y: 28, w: 12, h: 15, color: "woodD" },
+      { shape: "rect", x: 32, y: 30, w: 8, h: 13, color: "dark" },
+      { shape: "rect", x: 31, y: 28, w: 10, h: 2, color: "wood" },
+      { shape: "rect", x: 33, y: 41, w: 6, h: 2, color: "glow", alpha: 0.5 },
+      { shape: "poly", points: [[34, 43], [36, { cycle: [37, 35, 38, 36] }], [38, 43]], color: "flame2" },
+      { shape: "poly", points: [[35, 43], [36, { cycle: [39, 38, 40, 37] }], [37, 43]], color: "flame1" },
+      { shape: "poly", points: [[35, 43], [37, { cycle: [41, 40, 41, 39] }], [38, 43]], color: "flame0" },
+      { shape: "rect", x: 15, y: 29, w: 8, h: 7, color: "woodD" },
+      { shape: "rect", x: 16, y: 30, w: 6, h: 5, color: "dark" },
+      { shape: "rect", x: 16, y: 30, w: 6, h: 5, color: "glow", alpha: 0.35 },
+      { shape: "rect", x: 19, y: 30, w: 1, h: 5, color: "woodD" },
+      { shape: "rect", x: 49, y: 29, w: 8, h: 7, color: "woodD" },
+      { shape: "rect", x: 50, y: 30, w: 6, h: 5, color: "dark" },
+      { shape: "rect", x: 50, y: 30, w: 6, h: 5, color: "glow", alpha: 0.35 },
+      { shape: "rect", x: 53, y: 30, w: 1, h: 5, color: "woodD" },
+      { shape: "rect", x: 50, y: 2, w: 7, h: 12, color: "rock" },
+      { shape: "rect", x: 50, y: 2, w: 7, h: 1, color: "rockL" },
+      { shape: "rect", x: 55, y: 3, w: 2, h: 11, color: "rockD" },
+      { shape: "rect", x: 49, y: 1, w: 9, h: 2, color: "rockD" },
+      { shape: "ellipse", cx: { cycle: [53, 54, 55, 54] }, cy: { cycle: [-1, -3, -5, -7] }, rx: 2, ry: 1, color: "smoke", alpha: 0.7 },
+      { shape: "poly", points: [[1, 28], [71, 28], [62, 8], [10, 8]], color: "roof" },
+      { shape: "poly", points: [[1, 28], [71, 28], [70, 25], [2, 25]], color: "roofD" },
+      { shape: "line", from: [4, 22], to: [68, 22], w: 1, color: "roofD" },
+      { shape: "line", from: [6, 18], to: [66, 18], w: 1, color: "roofD" },
+      { shape: "line", from: [8, 14], to: [64, 14], w: 1, color: "roofD" },
+      { shape: "line", from: [9, 11], to: [63, 11], w: 1, color: "roofD" },
+      { shape: "pixels", at: [[14, 20], [26, 20], [38, 20], [50, 20], [62, 20], [20, 16], [32, 16], [44, 16], [56, 16], [26, 12], [38, 12], [50, 12]], color: "roofL" },
+      { shape: "rect", x: 10, y: 6, w: 52, h: 3, color: "roofD" },
+      { shape: "rect", x: 10, y: 6, w: 52, h: 1, color: "roofL" },
+      { shape: "rect", x: 34, y: 3, w: 4, h: 3, color: "bronze" },
+      { shape: "rect", x: 34, y: 3, w: 4, h: 1, color: "bronzeL" },
+      { shape: "rect", x: 35, y: 0, w: 2, h: 3, color: "bronze" },
+      { shape: "rect", x: 10, y: 28, w: 52, h: 2, color: "clayD" }
     ]
   };
 
@@ -46667,7 +47569,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     archery: [L1_default, L2_default, L3_default],
     armory: [L1_default2, L2_default2, L3_default2],
     builder: [L1_default3, L2_default3, L3_default3],
-    campfire: [L1_default4, L2_default4, L3_default4, L4_default],
+    campfire: [L1_default4, L2_default4, L3_default4, L4_default, L5_default],
     cavalry: [L1_default5, L2_default5, L3_default5],
     drill: [L1_default6, L2_default6, L3_default6],
     farmhouse: [L1_default7, L2_default7, L3_default7],
@@ -49731,8 +50633,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               const [ax, ay] = this.buildingAnchor("campfire", p.x, p.y);
               this.prop(sp0.building("campfire", "stone", 1, 4), ax, ay, time);
             } else {
-              const [ax, ay] = this.buildingAnchor("storage", p.x, p.y);
-              this.prop(sp0.building("storage", "stone", 1, 4), ax, ay, time, t.state === "destroyed" ? 0.5 : 1);
+              const kind = p.b ?? (p.kind === "tower" || p.kind === "fence" || p.kind === "gate" ? p.kind : "storage"), [ax, ay] = this.buildingAnchor(kind, p.x, p.y);
+              this.prop(sp0.building(kind, "stone", p.lv ?? 1, 4), ax, ay, time, t.state === "destroyed" ? 0.5 : 1);
             }
           }
         } else if (d.v) {
@@ -50886,6 +51788,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var npclife_default = {
     _note: "\u0110\u1EDDi s\u1ED1ng c\u1EE7a d\xE2n c\xE1c l\xE0ng NPC khi ng\u01B0\u1EDDi ch\u01A1i \u1EDF g\u1EA7n: ch\u1EC9 l\xE0m vi\u1EC7c \u1EDF c\xE1c chunk (32 \xF4) quanh n\u01A1i d\xE2n c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u0111ang \u0111\u1EE9ng ho\u1EB7c \u0111ang \u0111i t\u1EDBi (chunkReach chunk m\u1ED7i h\u01B0\u1EDBng); xa h\u01A1n th\xEC d\xE2n ch\u1EC9 \u0111i d\u1EA1o quanh tr\u1EA1i nh\u01B0 c\u0169 \u0111\u1EC3 nh\u1EB9 m\xE1y. M\u1ED7i l\u1EA7n r\u1EA3nh (kho\u1EA3ng 4-12 gi\xE2y) m\u1ED9t ng\u01B0\u1EDDi r\xFAt m\u1ED9t vi\u1EC7c v\u1EDBi x\xE1c su\u1EA5t. Ph\u1EA1m vi l\xE0m vi\u1EC7c l\xE0 \u0111\u1EA5t c\u1EE7a l\xE0ng (t\u1EA7m nh\xECn c\u1EE7a tr\u1EA1i l\u1EEDa theo c\u1EA5p tr\u1EA1i, trong building.json). chances: x\xE1c su\u1EA5t r\xFAt t\u1EEBng vi\u1EC7c (d\xE2n th\u01B0\u1EDDng: ch\u1EB7t g\u1ED7/\u0111\xE0o \u0111\xE1/h\xE1i, theo mix; l\xEDnh: tu\u1EA7n tra, s\u0103n, trinh s\xE1t). toolTierByCamp: b\u1EADc c\xF4ng c\u1EE5 (1 g\u1ED7, 2 \u0111\xE1) m\xE0 d\xE2n l\xE0m vi\u1EC7c b\u1EB1ng theo c\u1EA5p tr\u1EA1i l\u1EEDa 1..4: l\u1EA5y c\xF4ng c\u1EE5 cao nh\u1EA5t l\xE0ng \u0111\xF3 ch\u1EBF \u0111\u01B0\u1EE3c \u1EDF c\u1EA5p tr\u1EA1i c\u1EE7a h\u1ECD; c\xF4ng c\u1EE5 t\u1ED1t th\xEC m\u1ED7i l\u1EA7n thu \u0111\u01B0\u1EE3c nhi\u1EC1u h\u01A1n nh\u01B0 d\xE2n c\u1EE7a ta (TIER_YIELD), v\xE0 h\xECnh tr\xEAn tay \u0111\u1ED5i theo. unitsPerTrip: s\u1ED1 \u0111\u01A1n v\u1ECB l\u1EA5y \u0111\u01B0\u1EE3c m\u1ED7i chuy\u1EBFn. scoutReach: trinh s\xE1t \u0111i xa g\u1EA5p m\u1EA5y l\u1EA7n \u0111\u1EA5t l\xE0ng. tripSeconds: m\u1ED9t vi\u1EC7c qu\xE1 th\u1EDDi gian n\xE0y (d\xE2n th\u01B0\u1EDDng; l\xEDnh g\u1EA5p 3) th\xEC b\u1ECF.",
     chunkReach: 1,
+    lod: { minGuards: 2, minCivs: 2, sleepAfter: 30, gateRadius: 18 },
     mix: { wood: 40, stone: 30, food: 30 },
     chances: { work: 0.35, patrol: 0.25, hunt: 0.15, scout: 0.06 },
     toolTierByCamp: [1, 2, 2, 2],
@@ -53099,21 +54002,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return best;
   }
 
-  // src/data/events.json
-  var events_default = {
-    _note: "kind beasts: species = id in animals.json (wolf, bear, lion...). kind raid: tribe = who attacks; power = how strong against the army of the player on the day (1 = as strong, 1.1 = a tenth stronger, 0.8 = a fifth weaker; kept between floor and ceiling of content/difficulty.json), OR size = how many guards the tribe sends, OR army = own make-up { weapon: count } (weapons of weapons.json: club, spear, mace, hatchet = foot; sling, bow = archers), with armor (default true). Enemy cavalry is not supported yet. day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
-    events: [
-      { id: "wolves_summer_1", kind: "beasts", species: "wolf", day: 4, spread: 1, size: 2, night: false, warnDays: 2, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm..." },
-      { id: "wolves_summer_2", kind: "beasts", species: "wolf", day: 9, spread: 1, size: 4, night: false, warnDays: 3, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm b\u1EA7y s\xF3i tr\u1EA3 th\xF9..." },
-      { id: "wolves_summer_3", kind: "beasts", species: "wolf", day: 15, spread: 1, size: 6, night: true, warnDays: 3, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm b\u1EA7y s\xF3i t\u1ED5ng t\u1EA5n c\xF4ng..." },
-      { id: "axe_scout", kind: "raid", tribe: "axe", day: 12, spread: 2, size: 4, night: false, warnDays: 2, warn: "Kh\xF3i b\u1ED1c l\xEAn t\u1EEB ph\xEDa t\u1ED9c R\xECu \u0110\xE1, c\xF3 l\u1EBD h\u1ECD \u0111ang c\u1EED ng\u01B0\u1EDDi d\xF2 x\xE9t." },
-      { id: "wolves_winter", kind: "beasts", species: "wolf", day: 23, spread: 4, size: 6, night: true, warn: "D\u1EA5u ch\xE2n s\xF3i \u0111\u1EA7y quanh l\xE0ng." },
-      { id: "bear_autumn", kind: "beasts", species: "bear", day: 19, spread: 1, size: 1, night: true, warn: "Nh\u1EEFng v\u1EBFt c\xE0o s\xE2u tr\xEAn th\xE2n c\xE2y quanh l\xE0ng: c\xF3 g\u1EA5u." },
-      { id: "swamp_raid", kind: "raid", tribe: "swamp", day: 27, spread: 4, size: 6, night: true, warnDays: 0, warn: "" },
-      { id: "axe_war", kind: "raid", tribe: "axe", day: 33, spread: 4, size: 14, night: false, warnDays: 1, warn: "Ti\u1EBFng tr\u1ED1ng chi\u1EBFn vang l\xEAn: t\u1ED9c R\xECu \u0110\xE1 s\u1EAFp \u0111\xE1nh l\u1EDBn." }
-    ]
-  };
-
   // src/content/difficulty.json
   var difficulty_default = {
     _note: "\u0110\u1ED9 kh\xF3 v\xE0 s\u1EE9c m\u1EA1nh c\u1EE7a c\xE1c l\xE0ng. power: s\u1EE9c m\u1EA1nh m\u1ED9t l\xE0ng = economy \xD7 (kinh t\u1EBF) + military \xD7 (qu\xE2n s\u1EF1). Kinh t\u1EBF = t\u1ED5ng h\u1EC7 s\u1ED1 t\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c c\u1EE7a m\u1ECDi ng\u01B0\u1EDDi \u0111ang c\xF3 vi\u1EC7c s\u1EA3n xu\u1EA5t (1 l\xE0 ng\u01B0\u1EDDi g\u1ED1c ch\u01B0a nghi\xEAn c\u1EE9u). Qu\xE2n s\u1EF1 = t\u1ED5ng h\u1EC7 s\u1ED1 ch\u1EC9 s\u1ED1 chi\u1EBFn \u0111\u1EA5u (m\xE1u \xD7 s\u1EE9c m\u1EA1nh \xD7 ph\xF2ng th\u1EE7, so v\u1EDBi ng\u01B0\u1EDDi g\u1ED1c) c\u1EE7a m\u1ECDi l\xEDnh v\xE0 trinh s\xE1t. T\xEDnh theo CH\u1EC8 S\u1ED0 (k\u1EC3 c\u1EA3 ph\u1EA7n tr\u0103m nghi\xEAn c\u1EE9u), kh\xF4ng t\xEDnh theo v\u0169 kh\xED. L\xE0ng NPC: t\u1ED5ng s\u1EE9c m\u1EA1nh c\u1EE7a m\u1ECDi l\xE0ng NPC = tr\u1EA7n c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u1EDF c\u1EA5p l\u1EEDa hi\u1EC7n t\u1EA1i / playerEdge (ng\u01B0\u1EDDi ch\u01A1i ph\xE1t tri\u1EC3n t\u1ED1i \u0111a ch\u1EC9 h\u01A1n t\u1ED5ng NPC 30%). Tr\u1EA7n ng\u01B0\u1EDDi ch\u01A1i = d\xE2n t\u1ED1i \u0111a c\u1EE7a c\u1EA5p l\u1EEDa (k\u1EC3 c\u1EA3 gi\u01B0\u1EDDng nh\xE0 d\xE2n) \xD7 ch\u1EC9 s\u1ED1 t\u1ED1i \u0111a nghi\xEAn c\u1EE9u \u0111\u01B0\u1EE3c \u1EDF c\u1EA5p Nh\xE0 nghi\xEAn c\u1EE9u = c\u1EA5p l\u1EEDa; militaryShare l\xE0 ph\u1EA7n d\xE2n l\xE0m l\xEDnh. M\u1ED7i l\xE0ng nh\u1EADn ph\u1EA7n 'share' v\xE0 'military' (t\u1EC9 l\u1EC7 qu\xE2n s\u1EF1) trong tribes.json, r\u1ED3i nh\xE2n h\u1EC7 s\u1ED1 k c\u1EE7a ri\xEAng n\xF3 (random-walk m\u1ED7i ng\xE0y). Code t\u1EF1 t\xEDnh ph\u1EA7n tr\u0103m ch\u1EC9 s\u1ED1 (m\xE1u, s\u1EE9c m\u1EA1nh, ph\xF2ng th\u1EE7, l\xE0m vi\u1EC7c) cho ng\u01B0\u1EDDi c\u1EE7a l\xE0ng \u0111\u1EC3 \u0111\u1EA1t m\u1EE5c ti\xEAu, kh\xF4ng ghi tay. startFactor: kho\u1EA3ng k l\xFAc \u0111\u1EA7u. daily: m\u1ED7i ng\xE0y k nh\xE2n th\xEAm (1 + random trong min..max), k\u1EB9p trong band. campLevel: c\u1EA5p tr\u1EA1i l\u1EEDa random c\u1EE7a m\u1ED7i l\xE0ng; lu\xF4n c\xF3 \xEDt nh\u1EA5t m\u1ED9t l\xE0ng \u1EDF c\u1EA5p kh\xF4ng qu\xE1 guaranteeWeak \u0111\u1EC3 ng\u01B0\u1EDDi ch\u01A1i c\xF3 ch\u1ED7 \u0111\xE1nh. yieldPerEco: t\xE0i nguy\xEAn m\u1ED9t \u0111i\u1EC3m kinh t\u1EBF l\xE0m ra m\u1ED7i ng\xE0y (c\u1ED9ng v\xE0o kho c\u1EE7a l\xE0ng). stockCap: s\u1EE9c ch\u1EE9a kho c\u1EE7a l\xE0ng theo c\u1EA5p tr\u1EA1i. bonusClamp: gi\u1EDBi h\u1EA1n ph\u1EA7n tr\u0103m ch\u1EC9 s\u1ED1 c\u1ED9ng th\xEAm. S\u1ED1 ng\u01B0\u1EDDi c\u1EE7a m\u1ED9t l\xE0ng = s\u1ED1 d\xE2n tr\u1EA1i l\u1EEDa c\u1EE7a n\xF3 ch\u1EE9a \u1EDF c\u1EA5p tr\u1EA1i (POP_BY_FIRE), chia l\xEDnh v\xE0 d\xE2n theo t\u1EC9 l\u1EC7 trong tribes.json. raid: \u0111\u1EE3t t\u1EA5n c\xF4ng c\u1EE7a b\u1ED9 t\u1ED9c c\xF3 tr\u01B0\u1EDDng power trong events.json (1 = m\u1EA1nh b\u1EB1ng qu\xE2n s\u1EF1 hi\u1EC7n t\u1EA1i c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i, 1.1 = h\u01A1n 10%, 0.8 = y\u1EBFu h\u01A1n 20%). K\u1EBFt qu\u1EA3 b\u1ECB k\u1EB9p gi\u1EEFa floor v\xE0 ceiling nh\xE2n qu\xE2n s\u1EF1 t\u1ED1i \u0111a c\u1EE7a ng\u01B0\u1EDDi ch\u01A1i \u1EDF c\u1EA5p l\u1EEDa \u0111\xF3: ng\u01B0\u1EDDi ch\u01A1i kh\xF4ng c\xF3 qu\xE2n v\u1EABn g\u1EB7p m\u1ED9t \u0111\u1EE3t t\u1ED1i thi\u1EC3u, v\xE0 ng\u01B0\u1EDDi ch\u01A1i qu\xE1 m\u1EA1nh kh\xF4ng l\xE0m \u0111\u1EE3t t\u1EA5n c\xF4ng v\xF4 ngh\u0129a. capture: khi m\u1ED9t l\xE0ng b\u1ECB thu n\u1EA1p, b\u1ECB ti\xEAu di\u1EC7t (do ng\u01B0\u1EDDi c\u1EE7a ta \u0111\xE1nh) ho\u1EB7c ch\u1ECBu c\u1ED1ng n\u1EA1p, ta nh\u1EADn spoilShare (0.5) m\u1ECDi t\xE0i nguy\xEAn trong kho c\u1EE7a l\xE0ng \u0111\xF3; thu n\u1EA1p ho\u1EB7c ti\xEAu di\u1EC7t c\xF2n c\u1ED9ng v\xE0o d\xE2n t\u1ED1i \u0111a c\u1EE7a ta \u0111\xFAng b\u1EB1ng s\u1ED1 d\xE2n tr\u1EA1i l\u1EEDa c\u1EE7a l\xE0ng \u0111\xF3 ch\u1EE9a \u1EDF c\u1EA5p c\u1EE7a n\xF3 (kh\xF4ng gi\u1EDBi h\u1EA1n s\u1ED1 l\u1EA7n chi\u1EBFm); c\u1ED1ng n\u1EA1p th\xEC l\xE0ng v\u1EABn s\u1ED1ng n\xEAn kh\xF4ng c\u1ED9ng d\xE2n.",
@@ -53161,6 +54049,16 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     },
     capture: {
       spoilShare: 0.5
+    },
+    boss: {
+      _note: "L\xE0ng \u0111\u1EA7u m\u1EE5c (boss): m\u1ED7i v\xE1n c\xF3 count[0]..count[1] l\xE0ng, lu\xF4n h\u01A1n ng\u01B0\u1EDDi ch\u01A1i m\u1ED9t b\u1EADc (c\u1EA5p tr\u1EA1i +1, t\u1ED1i \u0111a maxCamp; c\xF3 ch\xF2i canh v\xE0 \u0111\u1ED3 \u0111\u1ED3ng d\xF9 ng\u01B0\u1EDDi ch\u01A1i c\xF2n \u1EDF \u0111\u1ED3 \u0111\xE1). power: s\u1EE9c m\u1EA1nh qu\xE2n c\u1EE7a boss so v\u1EDBi qu\xE2n t\u1ED1i \u0111a ng\u01B0\u1EDDi ch\u01A1i c\xF3 th\u1EC3 c\xF3 \u1EDF c\u1EA5p tr\u1EA1i \u0111\xF3 (0.9 = h\u1EA1 \u0111\u01B0\u1EE3c boss th\xEC m\u1EA5t kho\u1EA3ng 80% l\xEDnh); economy: kinh t\u1EBF so v\u1EDBi kinh t\u1EBF t\u1ED1i \u0111a; popMult: s\u1ED1 d\xE2n so v\u1EDBi c\u1EA5p tr\u1EA1i; bronzeShare: ph\u1EA7n l\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\u1ED3ng v\xE0 m\u1EB7c gi\xE1p \u0111\u1ED3ng; wallHp: \u0111\u1ED9 b\u1EC1n r\xE0o, c\u1ED5ng, ch\xF2i v\xE0 nh\xE0 so v\u1EDBi l\xE0ng th\u01B0\u1EDDng.",
+      count: [1, 2],
+      power: 0.9,
+      economy: 0.6,
+      popMult: 1.3,
+      bronzeShare: 0.4,
+      wallHp: 1.5,
+      weapons: ["bronze_sword", "bronze_axe", "bronze_spear"]
     }
   };
 
@@ -53191,15 +54089,380 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const total = playerCap(level).total / difficulty_default.playerEdge * tribe.share * k;
     return { military: total * tribe.military / difficulty_default.power.military, economy: total * (1 - tribe.military) / difficulty_default.power.economy };
   }
+  function bossTarget(level) {
+    const cap = playerCap(clampLevel(level + 1));
+    return { military: cap.military * difficulty_default.boss.power, economy: cap.economy * difficulty_default.boss.economy };
+  }
   function raidPower(playerMilitary, ratio2, level) {
     const top = playerCap(level).military;
     return Math.max(difficulty_default.raid.floor * top, Math.min(difficulty_default.raid.ceiling * top, playerMilitary * ratio2));
   }
-  function tribeBonuses(level, tribe, k, soldiers, workers) {
-    const t = tribeTarget(level, tribe, k), [lo, hi] = difficulty_default.bonusClamp, clamp3 = (x) => Math.max(lo, Math.min(hi, x));
+  function tribeBonuses(level, tribe, k, soldiers, workers, boss = false) {
+    const t = boss ? bossTarget(level) : tribeTarget(level, tribe, k), [lo, hi] = difficulty_default.bonusClamp, clamp3 = (x) => Math.max(lo, Math.min(hi, x));
     return { mil: soldiers > 0 ? clamp3(Math.cbrt(t.military / soldiers) - 1) : 0, eco: workers > 0 ? clamp3(t.economy / workers - 1) : 0 };
   }
   var baseWork = BASE.work;
+
+  // src/sim/power.ts
+  var ratio = (sim2, v, stat) => statValue(sim2, v, stat) / BASE[stat];
+  var militaryValue = (sim2, v) => ratio(sim2, v, "hp") * ratio(sim2, v, "atk") * (ratio(sim2, v, "defm") + ratio(sim2, v, "defr")) / 2;
+  var economyValue = (sim2, v) => workSpeed(sim2, v) / BASE.work;
+  var kindOf = (v) => {
+    if (v.team === "player") return v.job === "fight" || v.job === "scout" || v.job === "supply" ? "army" : v.job === "idle" ? null : "work";
+    const role = v.ai?.role;
+    return role === "guard" || role === "raider" ? "army" : role === "civ" ? "work" : null;
+  };
+  function powerOf(sim2, people) {
+    let economy = 0, military = 0, workers = 0, soldiers = 0;
+    for (const v of people) {
+      const k = kindOf(v);
+      if (k === "army") {
+        military += militaryValue(sim2, v);
+        soldiers++;
+      } else if (k === "work") {
+        economy += economyValue(sim2, v);
+        workers++;
+      }
+    }
+    return { economy, military, total: difficulty_default.power.economy * economy + difficulty_default.power.military * military, workers, soldiers };
+  }
+
+  // src/sim/campplan.ts
+  var CORE = ["storage", "builder", "workshop", "armory", "infantry", "archery", "cavalry", "guardpost", "lab", "wartent", "stable", "house", "toolstore", "scouttent", "supplycamp"];
+  var OUTSIDE = ["lumberyard", "quarry", "farmhouse", "huntlodge", "drill"];
+  function ring(fire, r) {
+    const out = [];
+    for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+      if (Math.max(Math.abs(i), Math.abs(j)) !== r || i === 0 && j > 0) continue;
+      out.push({ i, j, a: (Math.atan2(i, -j) + 2 * Math.PI) % (2 * Math.PI) });
+    }
+    return out.sort((p, q) => p.a - q.a).map((o) => [fire.x + 3 * o.i, fire.y + 3 * o.j]);
+  }
+  function limitAt(kind, fireLevel2) {
+    const per = BUILDINGS[kind].perFire;
+    return per ? per[Math.min(per.length, fireLevel2) - 1] ?? 0 : 1;
+  }
+  function fenceHalf(fireLevel2) {
+    return fireUnlockLevel("fence") <= fireLevel2 ? Math.max(4, Math.min(10, Math.floor((limitAt("fence", fireLevel2) + 1) / 8))) : 0;
+  }
+  var hits = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  function planCamp(fx, fy, fireLevel2, era, advanced, taken, blocked) {
+    const fire = { x: fx, y: fy }, cx = fx + 1, cy = fy + 1, half = fenceHalf(fireLevel2), fenced = half > 0;
+    const out = [], used = [{ x: fx, y: fy, w: 2, h: 2 }, ...taken];
+    const open = (k) => BUILDINGS[k].buildable && fireUnlockLevel(k) <= fireLevel2 && !eraLocked(k, { advanced });
+    const cap = levelCapByFire(fireLevel2);
+    const put3 = (kind, x, y) => {
+      const d = BUILDINGS[kind], r = { x, y, w: d.w, h: d.h };
+      if (used.some((u) => hits(u, r)) || blocked(r)) return false;
+      used.push(r);
+      out.push({ kind, x, y, w: d.w, h: d.h, level: Math.max(1, Math.min(maxLevel(kind, era), cap)) });
+      return true;
+    };
+    const spot = (kind, spots) => {
+      for (let k = 0; k < spots.length; k++) if (put3(kind, spots[k][0], spots[k][1])) {
+        spots.splice(k, 1);
+        return true;
+      }
+      return false;
+    };
+    if (fenced) {
+      for (let d = -half; d <= half; d++) {
+        put3("fence", cx + d, cy - half);
+        put3(d === 0 ? "gate" : "fence", cx + d, cy + half);
+        if (Math.abs(d) < half) {
+          put3("fence", cx - half, cy + d);
+          put3("fence", cx + half, cy + d);
+        }
+      }
+      if (!eraLocked("tower", { advanced })) for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put3("tower", sx > 0 ? cx + half + 1 : cx - half - 2, sy > 0 ? cy + half + 1 : cy - half - 2);
+    } else if (open("tower")) {
+      for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]].slice(0, limitAt("tower", fireLevel2))) put3("tower", cx + sx * 8 - (sx < 0 ? 2 : 0), cy + sy * 8 - (sy < 0 ? 2 : 0));
+    }
+    const coreRings = fenced ? Math.floor((half - 2) / 3) : 2, firstOutside = fenced ? Math.ceil((half + 2) / 3) : 3;
+    const inside = [], outside = [];
+    for (let r = 1; r <= coreRings; r++) inside.push(...ring(fire, r));
+    for (let r = firstOutside; r <= firstOutside + 3; r++) outside.push(...ring(fire, r).sort((p, q) => Math.abs(p[1] - fy) - Math.abs(q[1] - fy)));
+    for (const kind of CORE.filter(open)) for (let n = limitAt(kind, fireLevel2); n > 0; n--) {
+      if (!(spot(kind, inside) || spot(kind, outside))) break;
+    }
+    for (const kind of OUTSIDE.filter(open)) for (let n = limitAt(kind, fireLevel2); n > 0; n--) {
+      if (!spot(kind, outside)) break;
+    }
+    return out;
+  }
+
+  // src/sim/tribebuild.ts
+  var planned = (p) => p.lv !== void 0;
+  var keyOf = (p) => `${p.b ?? p.kind}@${p.x},${p.y}`;
+  function hpOf(kind, w, h3, lv, boss = false) {
+    const grow = (1 + 0.5 * (lv - 1)) * (boss ? DIFF.boss.wallHp : 1);
+    return Math.round(kind === "house" ? SIEGE.buildingHpPerTile * w * h3 * grow : (SIEGE.propHp[kind] ?? 60) * grow);
+  }
+  function clearPatch(sim2, x, y, w, h3, margin) {
+    const W2 = sim2.world, N = W2.size;
+    for (let j = -margin; j < h3 + margin; j++) for (let i = -margin; i < w + margin; i++) {
+      if (x + i < 0 || y + j < 0 || x + i >= N || y + j >= N) continue;
+      const k = (y + j) * N + x + i;
+      if (W2.nodes.delete(k)) {
+        W2.tiles[k] = Tile.Grass;
+        W2.decor[k] = 0;
+      }
+    }
+  }
+  function growCamp(sim2, t, level) {
+    if (t.state === "destroyed" || level <= (t.built ?? 0)) return 0;
+    const fire = t.props.find((p) => p.kind === "fire");
+    if (!fire) return 0;
+    const W2 = sim2.world, N = W2.size;
+    W2.ensure(fire.x, fire.y, 16);
+    const base = t.props.filter((p) => !planned(p)), old = new Map(t.props.filter(planned).map((p) => [keyOf(p), p]));
+    const blocked = (r) => {
+      for (let j = r.y; j < r.y + r.h; j++) for (let i = r.x; i < r.x + r.w; i++) {
+        if (i < 2 || j < 2 || i >= N - 2 || j >= N - 2) return true;
+        const tile = W2.at(i, j);
+        if (tile === Tile.Water || tile === Tile.Mountain) return true;
+      }
+      return false;
+    };
+    const next = [...base];
+    for (const piece of planPieces(sim2, t, fire, level, base, blocked)) {
+      const kind = piece.kind === "fence" || piece.kind === "gate" || piece.kind === "tower" ? piece.kind : "house", b = kind === "house" ? piece.kind : void 0;
+      const prop = { x: piece.x, y: piece.y, w: piece.w, h: piece.h, kind, b, lv: piece.level, hp: 0 };
+      const was = old.get(keyOf(prop));
+      if (was) {
+        old.delete(keyOf(prop));
+        const lost = hpOf(kind, prop.w, prop.h, was.lv, !!t.boss) - was.hp;
+        was.lv = Math.max(was.lv, piece.level);
+        was.hp = Math.max(1, hpOf(kind, prop.w, prop.h, was.lv, !!t.boss) - lost);
+        next.push(was);
+        continue;
+      }
+      prop.hp = hpOf(kind, prop.w, prop.h, prop.lv, !!t.boss);
+      clearPatch(sim2, prop.x, prop.y, prop.w, prop.h, kind === "fence" || kind === "gate" ? 0 : 1);
+      next.push(prop);
+    }
+    for (const p of old.values()) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) W2.occ[(p.y + j) * N + p.x + i] = 0;
+    for (const p of next) if (p.kind !== "gate" || p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) W2.occ[(p.y + j) * N + p.x + i] = 1;
+    t.props = next;
+    t.built = level;
+    return next.length - base.length;
+  }
+  function setGates(sim2, t, shut) {
+    const N = sim2.world.size;
+    for (const p of t.props) {
+      if (p.kind !== "gate" || p.open !== false !== shut) continue;
+      p.open = !shut;
+      for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) sim2.world.occ[(p.y + j) * N + p.x + i] = shut ? 1 : 0;
+    }
+  }
+  var planPieces = (sim2, t, fire, level, base, blocked) => planCamp(fire.x, fire.y, level, sim2.era, sim2.advanced || !!t.boss, base, blocked);
+
+  // src/sim/tribelod.ts
+  var LOD = npclife_default.lod;
+  var CIVIL_HOUSES = ["lumberyard", "quarry", "farmhouse"];
+  var GUARD_HOUSES = ["guardpost", "huntlodge"];
+  var fireLevelOf = (sim2) => sim2.campfire()?.level ?? 1;
+  var crowdOf = (t) => t.crowd ?? (t.crowd = { guards: 0, civs: 0 });
+  function headcount(sim2, t) {
+    let guards = t.crowd?.guards ?? 0, civs = t.crowd?.civs ?? 0;
+    for (const u of t.unitIds) {
+      const f = sim2.get(u);
+      if (!f || f.health <= 0) continue;
+      if (f.ai?.role === "civ") civs++;
+      else guards++;
+    }
+    return { guards, civs };
+  }
+  var targetsOf = (t) => {
+    const total = Math.round(POP_BY_FIRE[Math.max(0, Math.min(POP_BY_FIRE.length, t.campLevel) - 1)] * (t.boss ? DIFF.boss.popMult : 1));
+    return { total, fighters: Math.max(2, Math.round(total * t.def.warriors / (t.def.warriors + t.def.civilians))) };
+  };
+  function rescaleTribe(sim2, t) {
+    const hc = headcount(sim2, t), b = tribeBonuses(fireLevelOf(sim2), t.def, t.k, hc.guards, hc.civs, !!t.boss);
+    t.mil = b.mil;
+    t.eco = b.eco;
+    t.seenFire = fireLevelOf(sim2);
+    for (const u of t.unitIds) {
+      const f = sim2.get(u);
+      if (f) applyStats(sim2, f);
+    }
+  }
+  function tribePower(sim2, t) {
+    const p = powerOf(sim2, t.unitIds.map((u) => sim2.get(u)).filter((u) => !!u));
+    const g = t.crowd?.guards ?? 0, c = t.crowd?.civs ?? 0;
+    if (g > 0 && p.soldiers > 0) {
+      p.military += p.military / p.soldiers * g;
+      p.soldiers += g;
+    }
+    if (c > 0 && p.workers > 0) {
+      p.economy += p.economy / p.workers * c;
+      p.workers += c;
+    }
+    p.total = difficulty_default.power.economy * p.economy + difficulty_default.power.military * p.military;
+    return p;
+  }
+  function topUp(sim2, t) {
+    const hc = headcount(sim2, t), { total, fighters } = targetsOf(t), crowd2 = crowdOf(t);
+    crowd2.guards += Math.max(0, fighters - hc.guards);
+    crowd2.civs += Math.max(0, total - fighters - hc.civs);
+    t.popLevel = t.campLevel;
+  }
+  function ensureLayout(sim2, t) {
+    growCamp(sim2, t, t.campLevel);
+  }
+  function visibleCap(sim2, t) {
+    let guards = 0, civs = 0;
+    for (const p of t.props) {
+      if (!p.b) continue;
+      const slots = levelsOf(p.b, sim2.era)[(p.lv ?? 1) - 1]?.slots ?? 0;
+      if (CIVIL_HOUSES.includes(p.b)) civs += slots;
+      else if (GUARD_HOUSES.includes(p.b)) guards += slots;
+    }
+    return { guards: Math.max(LOD.minGuards, guards), civs: Math.max(LOD.minCivs, civs) };
+  }
+  function freeSpot(sim2, near2, rmin, rspan) {
+    for (let tries = 0; tries < 24; tries++) {
+      const ang = sim2.frnd() * Math.PI * 2, r = rmin + sim2.frnd() * rspan, px = Math.floor(near2.x + Math.cos(ang) * r), py = Math.floor(near2.y + Math.sin(ang) * r);
+      if (!sim2.world.isBlocked(px, py)) return [px, py];
+    }
+    return sim2.nearestFree(Math.floor(near2.x), Math.floor(near2.y), /* @__PURE__ */ new Set()) ?? [Math.floor(near2.x), Math.floor(near2.y)];
+  }
+  var ARMOR_LADDER = [null, "hide", "bone"];
+  var playerTier = (sim2) => Math.max(...["foot", "archer", "cavalry"].map((r) => soldierTier(sim2.researched, r)));
+  function gearFor(sim2, t, index) {
+    const own = t.def.weapons, lowest = Math.min(...own.map((w) => WEAPONS[w]?.tier ?? 1));
+    const cap = Math.max(lowest, Math.min(2, playerTier(sim2) + (t.campLevel >= 3 ? 1 : 0)));
+    const pool = own.filter((w) => (WEAPONS[w]?.tier ?? 1) <= cap), weapons = pool.length ? pool : own;
+    const step2 = Math.min(ARMOR_LADDER.length - 1, (t.campLevel >= 4 ? 2 : t.campLevel >= 3 ? 1 : 0) + (t.def.armor ? 1 : 0)), common = ARMOR_LADDER[step2];
+    if (t.boss && index * 0.618034 % 1 < DIFF.boss.bronzeShare) return { weapon: DIFF.boss.weapons[index % DIFF.boss.weapons.length], armor: "bronze" };
+    return { weapon: weapons[index % weapons.length], armor: t.boss ? "bone" : common };
+  }
+  function spawnOut(sim2, t, role, n, near2, rmin, rspan) {
+    const crowd2 = crowdOf(t), out = [], key = role === "civ" ? "civs" : "guards";
+    let armed = t.unitIds.filter((u) => {
+      const f = sim2.get(u);
+      return !!f && f.ai?.role !== "civ";
+    }).length;
+    for (; n > 0 && crowd2[key] > 0; n--) {
+      crowd2[key]--;
+      const [x, y] = freeSpot(sim2, near2, rmin, rspan), f = sim2.makeVillager(x, y, sim2.frnd() < 0.5 ? "m" : "f", t.id, sim2.frnd);
+      f.look.hide = t.def.look.hide;
+      f.look.pants = t.def.look.pants;
+      if (role === "guard") {
+        const g = gearFor(sim2, t, armed);
+        f.weapon = g.weapon;
+        f.armor = g.armor;
+        armed++;
+      }
+      f.ai = { role, camp: t.camp, wander: sim2.frnd() * 5, goal: null, raid: 0 };
+      sim2.addFoe(f);
+      t.unitIds.push(f.id);
+      out.push(f);
+    }
+    if (out.length) {
+      rescaleTribe(sim2, t);
+      for (const f of out) f.health = f.maxHealth;
+    }
+    return out;
+  }
+  function wake(sim2, t) {
+    if (t.awake || t.state === "destroyed" || t.state === "adopted") return;
+    ensureLayout(sim2, t);
+    t.awake = true;
+    t.idleT = 0;
+    const cap = visibleCap(sim2, t), crowd2 = crowdOf(t);
+    spawnOut(sim2, t, "guard", Math.min(crowd2.guards, cap.guards), t.camp, 2.5, 3.5);
+    spawnOut(sim2, t, "civ", Math.min(crowd2.civs, cap.civs), t.camp, 2.5, 3.5);
+    t.pool0 = standing(t);
+    t.hid0 = crowd2.guards + crowd2.civs;
+    const live2 = t.unitIds.map((u) => sim2.get(u)).filter((u) => !!u && u.health > 0);
+    if (!t.leaderDead && !live2.some((u) => u.id === t.leaderId)) {
+      const lead = live2.filter((u) => u.ai?.role === "guard").sort((a, b) => b.stats.str + b.stats.vit - a.stats.str - a.stats.vit)[0];
+      if (lead) {
+        lead.leader = true;
+        t.leaderId = lead.id;
+      }
+    }
+  }
+  function sleep(sim2, t) {
+    const crowd2 = crowdOf(t);
+    for (const u of [...t.unitIds]) {
+      const f = sim2.get(u);
+      if (!f) continue;
+      if (f.health <= 0 || f.ai?.role === "raider") continue;
+      if (f.ai?.role === "civ") crowd2.civs++;
+      else crowd2.guards++;
+      if (f.ai?.life) f.ai.life = void 0;
+      sim2.removeFoe(f);
+    }
+    t.unitIds = t.unitIds.filter((u) => !!sim2.get(u));
+    t.awake = false;
+    t.idleT = 0;
+    if (!sim2.get(t.leaderId)) t.leaderId = -1;
+  }
+  function releaseCrowd(sim2, t, n, near2 = t.camp) {
+    const crowd2 = crowdOf(t), g = spawnOut(sim2, t, "guard", Math.min(n, crowd2.guards), near2, 1.5, 2.5).length;
+    return g + spawnOut(sim2, t, "civ", Math.min(n - g, crowd2.civs), near2, 1.5, 2.5).length;
+  }
+  var standing = (t) => t.props.filter((p) => p.kind === "house" || p.kind === "fire").length;
+  function followFire(sim2, t) {
+    t.campLevel = Math.max(t.campLevel, Math.min(DIFF.campLevel.max, fireLevelOf(sim2) + (t.edge ?? 0)));
+    if (t.popLevel === t.campLevel) return;
+    const was = !!t.awake;
+    if (was) sleep(sim2, t);
+    topUp(sim2, t);
+    if (was) wake(sim2, t);
+  }
+  function tickLod(sim2, t, busy2, hostile) {
+    if (t.crowd === void 0) {
+      t.crowd = { guards: 0, civs: 0 };
+      t.awake = true;
+      t.popLevel = t.campLevel;
+      t.idleT = 0;
+      t.hid0 = 0;
+      t.pool0 = 1;
+    }
+    const near2 = isActive(sim2, t.camp.x, t.camp.y);
+    if (!t.awake) {
+      if (near2 || busy2) wake(sim2, t);
+      return;
+    }
+    if ((t.built ?? 0) < t.campLevel) ensureLayout(sim2, t);
+    const fighting = t.unitIds.some((u) => {
+      const f = sim2.get(u);
+      return !!f && (!!f.fight.target || f.phase === "fight");
+    });
+    if (near2 || busy2 || fighting || t.raid) t.idleT = 0;
+    else if ((t.idleT = (t.idleT ?? 0) + 1) >= LOD.sleepAfter) {
+      sleep(sim2, t);
+      return;
+    }
+    const r = LOD.gateRadius, atDoor = sim2.villagers.some((v) => v.health > 0 && Math.abs(v.x - t.camp.x) < r && Math.abs(v.y - t.camp.y) < r);
+    setGates(sim2, t, hostile && atDoor || busy2);
+    const crowd2 = crowdOf(t), hidden = crowd2.guards + crowd2.civs;
+    if (hidden > 0 && (t.hid0 ?? 0) > 0) {
+      const keep = Math.ceil((t.hid0 ?? 0) * Math.min(1, standing(t) / Math.max(1, t.pool0 ?? 1)));
+      if (hidden > keep) {
+        const homes = t.props.filter((p) => p.kind === "house"), h3 = homes.length ? homes[Math.floor(sim2.frnd() * homes.length)] : null;
+        releaseCrowd(sim2, t, hidden - keep, h3 ? { x: h3.x + h3.w / 2, y: h3.y + h3.h + 1 } : t.camp);
+      }
+    }
+  }
+
+  // src/data/events.json
+  var events_default = {
+    _note: "kind beasts: species = id in animals.json (wolf, bear, lion...). kind raid: tribe = who attacks; power = how strong against the army of the player on the day (1 = as strong, 1.1 = a tenth stronger, 0.8 = a fifth weaker; kept between floor and ceiling of content/difficulty.json), OR size = how many guards the tribe sends, OR army = own make-up { weapon: count } (weapons of weapons.json: club, spear, mace, hatchet = foot; sling, bow = archers), with armor (default true). Enemy cavalry is not supported yet. day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
+    events: [
+      { id: "wolves_summer_1", kind: "beasts", species: "wolf", day: 4, spread: 1, size: 2, night: false, warnDays: 2, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm..." },
+      { id: "wolves_summer_2", kind: "beasts", species: "wolf", day: 9, spread: 1, size: 4, night: false, warnDays: 3, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm b\u1EA7y s\xF3i tr\u1EA3 th\xF9..." },
+      { id: "wolves_summer_3", kind: "beasts", species: "wolf", day: 15, spread: 1, size: 6, night: true, warnDays: 3, warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm b\u1EA7y s\xF3i t\u1ED5ng t\u1EA5n c\xF4ng..." },
+      { id: "axe_scout", kind: "raid", tribe: "axe", day: 12, spread: 2, size: 4, night: false, warnDays: 2, warn: "Kh\xF3i b\u1ED1c l\xEAn t\u1EEB ph\xEDa t\u1ED9c R\xECu \u0110\xE1, c\xF3 l\u1EBD h\u1ECD \u0111ang c\u1EED ng\u01B0\u1EDDi d\xF2 x\xE9t." },
+      { id: "wolves_winter", kind: "beasts", species: "wolf", day: 23, spread: 4, size: 6, night: true, warn: "D\u1EA5u ch\xE2n s\xF3i \u0111\u1EA7y quanh l\xE0ng." },
+      { id: "bear_autumn", kind: "beasts", species: "bear", day: 19, spread: 1, size: 1, night: true, warn: "Nh\u1EEFng v\u1EBFt c\xE0o s\xE2u tr\xEAn th\xE2n c\xE2y quanh l\xE0ng: c\xF3 g\u1EA5u." },
+      { id: "swamp_raid", kind: "raid", tribe: "swamp", day: 27, spread: 4, size: 6, night: true, warnDays: 0, warn: "" },
+      { id: "axe_war", kind: "raid", tribe: "axe", day: 33, spread: 4, size: 14, night: false, warnDays: 1, warn: "Ti\u1EBFng tr\u1ED1ng chi\u1EBFn vang l\xEAn: t\u1ED9c R\xECu \u0110\xE1 s\u1EAFp \u0111\xE1nh l\u1EDBn." }
+    ]
+  };
 
   // src/sim/warmode.ts
   var warPlan = (sim2) => sim2.plans.find((p) => p.kind === "attack" && p.status === "running");
@@ -53315,7 +54578,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const warriors = t.unitIds.filter((u) => {
       const f = sim2.get(u);
       return !!f && f.health > 0 && f.ai?.role !== "civ" && f.ai?.harass === void 0;
-    }).length;
+    }).length + (t.crowd?.guards ?? 0);
     const room = HARASS.maxAlive - alive(sim2).length;
     const n = Math.min(room, Math.max(HARASS.base, Math.min(HARASS.max, Math.round(HARASS.base + warriors / HARASS.perWarriors))));
     if (n <= 0) return;
@@ -53323,6 +54586,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const gx = c.x + dx / len * d, gy = c.y + dy / len * d;
     sim2.world.ensure(gx, gy, 12);
     const melee = t.def.weapons.filter((w) => !WEAPONS[w]?.ranged), taken = /* @__PURE__ */ new Set();
+    if (t.crowd) t.crowd.guards = Math.max(0, t.crowd.guards - n);
     for (let i = 0; i < n; i++) {
       const spot = sim2.nearestFree(Math.floor(gx) + i % 3 - 1, Math.floor(gy) + Math.floor(i / 3) - 1, taken);
       if (!spot) continue;
@@ -53358,6 +54622,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   }
   function remove(sim2, f, t) {
+    if (t?.crowd && f.health > 0) t.crowd.guards++;
     sim2.removeFoe(f);
     if (t) t.unitIds = t.unitIds.filter((u) => u !== f.id);
   }
@@ -53372,26 +54637,33 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   function spawnTribes(sim2) {
     const { min, max, guaranteeWeak } = DIFF.campLevel, levels = TRIBE_IDS.map(() => min + Math.floor(sim2.frnd() * (max - min + 1)));
     if (Math.min(...levels) > guaranteeWeak) levels[Math.floor(sim2.frnd() * levels.length)] = guaranteeWeak;
-    TRIBE_IDS.forEach((id, i) => spawnTribe(sim2, id, levels[i]));
+    const weakest = levels.indexOf(Math.min(...levels)), [bmin, bmax] = DIFF.boss.count;
+    const pool = TRIBE_IDS.map((_, i) => i).filter((i) => i !== weakest), bosses = /* @__PURE__ */ new Set();
+    for (let n = Math.min(pool.length, bmin + Math.floor(sim2.frnd() * (bmax - bmin + 1))); n > 0 && pool.length; n--) bosses.add(pool.splice(Math.floor(sim2.frnd() * pool.length), 1)[0]);
+    TRIBE_IDS.forEach((id, i) => spawnTribe(sim2, id, bosses.has(i) ? Math.max(levels[i], 3) : levels[i], bosses.has(i)));
     initEvents(sim2);
   }
-  function campFits(sim2, cx, cy) {
-    const w = sim2.world, r = 7;
+  function campFits(sim2, cx, cy, r, spare) {
+    const w = sim2.world;
+    let bad = 0, all = 0;
     for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) {
+      if (Math.hypot(x - cx, y - cy) > r) continue;
       if (!w.inBounds(x, y)) return false;
-      if (Math.hypot(x - cx, y - cy) <= r && (w.at(x, y) === Tile.Water || w.at(x, y) === Tile.Mountain)) return false;
+      all++;
+      if (w.at(x, y) === Tile.Water || w.at(x, y) === Tile.Mountain) bad++;
     }
-    return true;
+    return bad <= all * spare;
   }
-  function spawnTribe(sim2, id, campLevel) {
+  var SITES = [{ r: 14, spare: 0.04, yard: true }, { r: 7, spare: 0, yard: false }];
+  function spawnTribe(sim2, id, campLevel, boss = false) {
     const def = TRIBES[id], w = sim2.world, s = w.start, N = w.size;
     let cx = -1, cy = -1;
-    search: for (let dd = 0; dd <= 24; dd += 3) for (const sign of dd ? [1, -1] : [1]) for (let da = 0; da <= 90; da += 15) for (const as of da ? [1, -1] : [1]) {
+    search: for (const site of SITES) for (let dd = 0; dd <= 24; dd += 3) for (const sign of dd ? [1, -1] : [1]) for (let da = 0; da <= 90; da += 15) for (const as of da ? [1, -1] : [1]) {
       const ang = (def.angle + da * as) * Math.PI / 180, d = def.distance + dd * sign;
       const x = Math.round(s.x + Math.cos(ang) * d), y = Math.round(s.y + Math.sin(ang) * d);
-      if (!(x > 9 && y > 9 && x < N - 9 && y < N - 9)) continue;
-      w.ensure(x, y, 10);
-      if (campFits(sim2, x, y)) {
+      if (!(x > 16 && y > 16 && x < N - 16 && y < N - 16)) continue;
+      w.ensure(x, y, 18);
+      if (campFits(sim2, x, y, 7, 0) && (!site.yard || campFits(sim2, x, y, site.r, site.spare))) {
         cx = x;
         cy = y;
         break search;
@@ -53435,34 +54707,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       seenDay: 0,
       seenFire: 0,
       loot: Object.fromEntries(Object.entries(def.tribute).map(([k, v]) => [k, (v ?? 0) * 2])),
-      lastAngry: -999
+      lastAngry: -999,
+      edge: boss ? 1 : campLevel - 2,
+      boss
     };
     sim2.tribes.push(tribe);
-    const total = POP_BY_FIRE[Math.max(0, Math.min(POP_BY_FIRE.length, campLevel) - 1)], fighters = Math.max(2, Math.round(total * def.warriors / (def.warriors + def.civilians)));
-    for (let i = 0; i < total; i++) {
-      const warrior = i < fighters, ang = sim2.frnd() * Math.PI * 2, r = 2.5 + sim2.frnd() * 3.5;
-      const f = sim2.makeVillager(Math.floor(camp.x + Math.cos(ang) * r), Math.floor(camp.y + Math.sin(ang) * r), sim2.frnd() < 0.5 ? "m" : "f", id, sim2.frnd);
-      f.look.hide = def.look.hide;
-      f.look.pants = def.look.pants;
-      if (warrior) {
-        f.weapon = def.weapons[i % def.weapons.length];
-        f.armor = def.armor ? "hide" : null;
-      }
-      f.ai = { role: warrior ? "guard" : "civ", camp, wander: sim2.frnd() * 5, goal: null, raid: 0 };
-      sim2.addFoe(f);
-      tribe.unitIds.push(f.id);
-    }
-    const warriors = tribe.unitIds.map((u) => sim2.get(u)).filter((u) => u.ai.role === "guard");
+    topUp(sim2, tribe);
     rescaleTribe(sim2, tribe);
-    for (const u of tribe.unitIds) {
-      const f = sim2.get(u);
-      if (f) f.health = f.maxHealth;
-    }
-    if (warriors.length >= 1) {
-      const lead = warriors.sort((a, b) => b.stats.str + b.stats.vit - a.stats.str - a.stats.vit)[0];
-      lead.leader = true;
-      tribe.leaderId = lead.id;
-    }
   }
   function tribeHostile(sim2, id) {
     const t = tribeOf(sim2, id);
@@ -53504,7 +54755,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       t.relation = Math.max(-100, t.relation + (v.ai?.role === "civ" ? RELATION.killCivilian : RELATION.killWarrior));
       t.angryUntil = sim2.time + 120;
     }
-    if (v.id === t.leaderId) sim2.say(`Th\u1EE7 l\u0129nh ${t.def.name} \u0111\xE3 g\u1EE5c ng\xE3.`);
+    if (v.id === t.leaderId) {
+      t.leaderDead = true;
+      sim2.say(`Th\u1EE7 l\u0129nh ${t.def.name} \u0111\xE3 g\u1EE5c ng\xE3.`);
+    }
     sim2.onKill?.();
   }
   function giftTribe(sim2, id) {
@@ -53571,6 +54825,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     claimVillage(sim2, t, true);
     t.unitIds = [];
+    t.crowd = { guards: 0, civs: 0 };
     t.state = "adopted";
     t.relation = 100;
     t.raid = null;
@@ -53602,7 +54857,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         const f = sim2.get(u);
         return !!f && f.health > 0;
       });
-      if (t.state === "free" && t.unitIds.length === 0) {
+      if (t.boss && !t.bossDown && t.state !== "free") {
+        t.bossDown = true;
+        sim2.bronze = true;
+        sim2.say(`Chuy\u1EC3n th\u1EDDi k\u1EF3! ${t.def.name} \u0111\xE3 s\u1EE5p \u0111\u1ED5: Th\u1EDDi \u0111\u1EA1i \u0110\u1ED3 \u0111\u1ED3ng b\u1EAFt \u0111\u1EA7u. B\xED quy\u1EBFt \u0111\u1ED3ng gi\u1EDD \u0111\xE3 n\u1EB1m trong tay l\xE0ng ta.`);
+      }
+      const hc = headcount(sim2, t);
+      if (t.state !== "destroyed" && t.state !== "adopted") tickLod(sim2, t, !!t.raid || war === t.id || sim2.plans.some((p) => p.kind === "attack" && p.status === "running" && p.tribe === t.id), tribeHostile(sim2, t.id));
+      if (t.state === "free" && hc.guards + hc.civs === 0) {
         t.state = "destroyed";
         t.raid = null;
         sim2.say(`${t.def.name} \u0111\xE3 b\u1ECB x\xF3a s\u1ED5.`);
@@ -53624,7 +54886,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   function checkSurrender(sim2, t) {
     if (sim2.plans.some((p) => p.kind === "attack" && p.status === "running" && p.tribe === t.id)) return;
     const units = t.unitIds.map((u) => sim2.get(u)).filter(Boolean), warriors = units.filter((u) => u.ai?.role !== "civ");
-    if (SURRENDER.leaderDown && t.leaderId >= 0 && !t.unitIds.includes(t.leaderId) && units.length) return surrender(sim2, t, "Th\u1EE7 l\u0129nh \u0111\xE3 g\u1EE5c");
+    if (SURRENDER.leaderDown && t.leaderDead && units.length + (t.crowd ? t.crowd.guards + t.crowd.civs : 0) > 0) return surrender(sim2, t, "Th\u1EE7 l\u0129nh \u0111\xE3 g\u1EE5c");
     const intruders = sim2.villagers.filter((v) => v.health > 0 && v.down <= 0 && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 5).length;
     const defenders = warriors.filter((w) => Math.hypot(w.x - t.camp.x, w.y - t.camp.y) < 9).length;
     t.holdT = intruders > 0 && defenders === 0 && tribeHostile(sim2, t.id) ? t.holdT + 1 : 0;
@@ -53668,10 +54930,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   }
   function raidAdvised(sim2, t, size) {
-    const ours = sim2.villagers.filter((v) => v.job === "fight").length, theirs = Math.min(size, t.unitIds.filter((u) => sim2.get(u)?.ai?.role === "guard").length);
+    const ours = sim2.villagers.filter((v) => v.job === "fight").length, theirs = Math.min(size, headcount(sim2, t).guards);
     return ours < 6 || theirs >= ours * 0.35;
   }
   function launchRaid(sim2, t, size, night) {
+    wake(sim2, t);
+    const inWorld = t.unitIds.filter((u) => sim2.get(u)?.ai?.role === "guard").length;
+    if (size > inWorld) releaseCrowd(sim2, t, size - inWorld);
     const guards = t.unitIds.map((u) => sim2.get(u)).filter((u) => u?.ai?.role === "guard").sort((a, b) => b.maxHealth - a.maxHealth);
     const n = Math.min(size, guards.length);
     if (n < 3 || t.raid) return;
@@ -53685,7 +54950,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       g.fight.target = null;
       g.path = [];
       g.fleeT = 0;
-      g.weapon = i < wantArch ? i % 2 ? "sling" : "bow" : melee[i % Math.max(1, melee.length)] ?? g.weapon;
+      if (!g.weapon?.startsWith("bronze")) g.weapon = i < wantArch ? i % 2 ? "sling" : "bow" : melee[i % Math.max(1, melee.length)] ?? g.weapon;
     });
     t.angryUntil = sim2.time + 400;
     const arch = picks.filter((g) => armOfWeapon(g.weapon) === "archer").length;
@@ -53738,6 +55003,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   }
   function raidSizeFor(sim2, t, ratio2) {
+    wake(sim2, t);
     const me = sim2.power(), tp = sim2.tribePower(t), want = raidPower(me.military, ratio2, fireLevelOf(sim2)), each = tp.soldiers > 0 ? tp.military / tp.soldiers : 1;
     return Math.max(3, Math.ceil(want / Math.max(0.01, each)));
   }
@@ -53975,16 +55241,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (f.phase === "move" && !f.path.length) f.phase = "idle";
     void DAY_LENGTH;
   }
-  var fireLevelOf = (sim2) => sim2.campfire()?.level ?? 1;
-  function rescaleTribe(sim2, t) {
-    const people = t.unitIds.map((u) => sim2.get(u)).filter((u) => !!u);
-    const soldiers = people.filter((u) => u.ai?.role !== "civ").length, workers = people.length - soldiers;
-    const b = tribeBonuses(fireLevelOf(sim2), t.def, t.k, soldiers, workers);
-    t.mil = b.mil;
-    t.eco = b.eco;
-    t.seenFire = fireLevelOf(sim2);
-    for (const f of people) applyStats(sim2, f);
-  }
   function advanceTribe(sim2, t) {
     if (t.k === void 0) {
       t.campLevel = 1;
@@ -53995,11 +55251,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       t.seenDay = 0;
       t.seenFire = 0;
     }
+    if (t.seenFire !== fireLevelOf(sim2) || t.popLevel !== t.campLevel) followFire(sim2, t);
     if (t.seenDay !== sim2.day) {
       t.seenDay = sim2.day;
       const [lo, hi] = DIFF.daily.band;
       t.k = Math.max(lo, Math.min(hi, t.k * (1 + DIFF.daily.min + sim2.frnd() * (DIFF.daily.max - DIFF.daily.min))));
-      const workers = t.unitIds.filter((u) => sim2.get(u)?.ai?.role === "civ").length, points = workers * (1 + t.eco), cap = DIFF.stockCap[Math.max(0, Math.min(DIFF.stockCap.length, t.campLevel) - 1)];
+      const workers = headcount(sim2, t).civs, points = workers * (1 + t.eco), cap = DIFF.stockCap[Math.max(0, Math.min(DIFF.stockCap.length, t.campLevel) - 1)];
       for (const [res, rate] of Object.entries(DIFF.yieldPerEco)) t.stock[res] = Math.min(cap, (t.stock[res] ?? 0) + points * rate);
       rescaleTribe(sim2, t);
     } else if (t.seenFire !== fireLevelOf(sim2)) rescaleTribe(sim2, t);
@@ -55182,7 +56439,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   }
   var warriorsOf = (sim2, tribe) => {
     const t = tribeOf(sim2, tribe);
-    return t ? t.unitIds.filter((u) => sim2.get(u)?.ai?.role !== "civ").length : 0;
+    return t ? headcount(sim2, t).guards : 0;
   };
   var SIGHT2 = 14;
   var HOME = 7;
@@ -55483,7 +56740,8 @@ ${risk.lines.join("\n")}`);
     tower: { level: 2, label: "Ch\xF2i canh" },
     fence: { level: 2, label: "H\xE0ng r\xE0o" },
     gate: { level: 2, label: "C\u1ED5ng" },
-    pile: { level: 3, label: "Kho l\u01B0\u01A1ng" }
+    pile: { level: 3, label: "Kho l\u01B0\u01A1ng" },
+    house: { level: 2, label: "Nh\xE0" }
   };
   var spread = (id, salt) => {
     const x = Math.sin(id * 12.9898 + salt * 78.233) * 43758.5453;
@@ -55496,6 +56754,11 @@ ${risk.lines.join("\n")}`);
       if (!u || u.health <= 0) continue;
       out.push({ x: Math.round(u.x * 10) / 10, y: Math.round(u.y * 10) / 10, arm: armOfWeapon(u.weapon), weapon: u.weapon ?? null, civ: u.ai?.role === "civ", leader: u.id === t.leaderId });
     }
+    const crowd2 = t.crowd, inWorld = out.filter((o) => !o.civ).length;
+    if (crowd2) for (let i = 0; i < crowd2.guards + crowd2.civs; i++) {
+      const civ = i >= crowd2.guards, w = civ ? null : t.def.weapons[(inWorld + i) % t.def.weapons.length], a = spread(i + 7, 3) * Math.PI * 2, r = 1.5 + spread(i + 7, 5) * 4.5;
+      out.push({ x: Math.round((t.camp.x + Math.cos(a) * r) * 10) / 10, y: Math.round((t.camp.y + Math.sin(a) * r) * 10) / 10, arm: armOfWeapon(w), weapon: w, civ, leader: false });
+    }
     return out;
   }
   var WORK_INFO = {
@@ -55503,7 +56766,8 @@ ${risk.lines.join("\n")}`);
     tower: "Ch\xF2i canh: cung th\u1EE7 \u0111\u1EE9ng cao b\u1EAFn xa h\u01A1n, ph\u1EA3i ph\xE1 ch\xF2i m\u1EDBi h\u1EA1 \u0111\u01B0\u1EE3c h\u1ECD.",
     fence: "H\xE0ng r\xE0o: ch\u1EB7n \u0111\u01B0\u1EDDng, ph\u1EA3i ph\xE1 ho\u1EB7c \u0111i v\xF2ng.",
     gate: "C\u1ED5ng: l\u1ED1i v\xE0o l\xE0ng, \u0111\xF3ng th\xEC ch\u1EB7n \u0111\u01B0\u1EDDng.",
-    pile: "Kho l\u01B0\u01A1ng: ch\u1ED7 h\u1ECD c\u1EA5t th\u1EE9c \u0103n v\xE0 \u0111\u1ED3 c\u1ED1ng n\u1EA1p."
+    pile: "Kho l\u01B0\u01A1ng: ch\u1ED7 h\u1ECD c\u1EA5t th\u1EE9c \u0103n v\xE0 \u0111\u1ED3 c\u1ED1ng n\u1EA1p.",
+    house: "Nh\xE0 c\u1EE7a l\xE0ng: c\xE0ng nhi\u1EC1u nh\xE0 c\u1EA5p cao th\xEC l\xE0ng c\xE0ng \u0111\xF4ng v\xE0 m\u1EA1nh."
   };
   function freeNear(sim2, x, y) {
     for (let r = 0; r <= 8; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (Math.max(Math.abs(i), Math.abs(j)) === r && !sim2.world.isBlocked(Math.floor(x) + i, Math.floor(y) + j)) return [Math.floor(x) + i, Math.floor(y) + j];
@@ -55530,6 +56794,7 @@ ${risk.lines.join("\n")}`);
     const x0 = Math.max(0, Math.min(N - 2 * rx, Math.floor(t.camp.x) - rx)), y0 = Math.max(0, Math.min(N - 2 * ry, Math.floor(t.camp.y) - ry));
     const box = { x0, y0, x1: x0 + 2 * rx, y1: y0 + 2 * ry };
     const fire = sim2.campfire(), dx = (fire?.x ?? sim2.world.start.x) - t.camp.x, dy = (fire?.y ?? sim2.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
+    ensureLayout(sim2, t);
     const seen = sim2.dev.freeBuild || !held?.seen ? seenNow(sim2, t) : held.seen;
     const soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
     const people = [];
@@ -55557,7 +56822,7 @@ ${risk.lines.join("\n")}`);
       route: route2,
       others: others.filter(reach),
       population: Math.max(2, Math.round(seen.length / 2) * 2),
-      structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === "pile" && loot ? `${WORK_INFO.pile} C\xF3 kho\u1EA3ng ${loot}.` : WORK_INFO[p.kind] ?? "", x: p.x, y: p.y, w: p.w, h: p.h })),
+      structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: p.b ? BUILDINGS[p.b].name : WORKS[p.kind].label, detail: p.kind === "pile" && loot ? `${WORK_INFO.pile} C\xF3 kho\u1EA3ng ${loot}.` : WORK_INFO[p.kind] ?? "", x: p.x, y: p.y, w: p.w, h: p.h })),
       people,
       soldiers
     };
@@ -57244,10 +58509,10 @@ ${risk.lines.join("\n")}`);
     const stuck = !!p && p.t === 99;
     if (!blocked && !stuck) return;
     progress.delete(v);
-    const [gx, gy] = goal, standing = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) ? freeSpotNear(sim2, v.x, v.y) : null;
-    if (standing) {
-      v.x = standing[0];
-      v.y = standing[1];
+    const [gx, gy] = goal, standing2 = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) ? freeSpotNear(sim2, v.x, v.y) : null;
+    if (standing2) {
+      v.x = standing2[0];
+      v.y = standing2[1];
     }
     let again = [];
     if (v.team !== "player") again = sim2.pathTo(v, gx, gy, 6e3);
@@ -57745,10 +59010,10 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/sim/save.ts
-  var SAVE_VERSION = 26;
+  var SAVE_VERSION = 27;
   var SAVED = {
     /** Single values. */
-    scalars: ["era", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "tribeClock", "foodPot", "foodPenalty", "popBonus", "foodIncome", "foodSeen", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
+    scalars: ["era", "bronze", "time", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "tribeClock", "foodPot", "foodPenalty", "popBonus", "foodIncome", "foodSeen", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
     /** Objects whose keys are filled in place. */
     records: ["stock", "toolStock", "battle", "yieldNow", "yieldPrev", "ruins", "drafts"],
     /** Lists of plain data. */
@@ -58044,6 +59309,11 @@ ${risk.lines.join("\n")}`);
     (_a = d.lists).scoutLosses ?? (_a.scoutLosses = []);
     return { ...d, version: 26 };
   };
+  MIGRATIONS[26] = (d) => {
+    var _a;
+    (_a = d.scalars).bronze ?? (_a.bronze = false);
+    return { ...d, version: 27 };
+  };
 
   // src/sim/roles.ts
   var warLock = (sim2) => sim2.plans.some((p) => p.kind === "attack" && p.status === "running") ? "\u0110ang trong ch\u1EBF \u0111\u1ED9 chi\u1EBFn \u0111\u1EA5u: kh\xF4ng \u0111\u1ED5i vai tr\xF2 hay b\u1ECF l\xEDnh \u0111\u01B0\u1EE3c cho t\u1EDBi khi tr\u1EADn k\u1EBFt th\xFAc" : null;
@@ -58133,7 +59403,7 @@ ${risk.lines.join("\n")}`);
     sim2.say(b.open ? "C\u1ED5ng \u0111\xE3 m\u1EDF." : "C\u1ED5ng \u0111\xE3 \u0111\xF3ng.");
     return null;
   }
-  function setGates(sim2, open) {
+  function setGates2(sim2, open) {
     for (const b of sim2.buildings) if (b.kind === "gate" && b.done && b.open !== open) {
       b.open = open;
       sim2.setOcc(b, 1);
@@ -58484,30 +59754,6 @@ ${risk.lines.join("\n")}`);
     sim2.battleReports.push({ at: sim2.time, lines });
     if (sim2.battleReports.length > 8) sim2.battleReports.shift();
     for (const l of lines) sim2.say(l);
-  }
-
-  // src/sim/power.ts
-  var ratio = (sim2, v, stat) => statValue(sim2, v, stat) / BASE[stat];
-  var militaryValue = (sim2, v) => ratio(sim2, v, "hp") * ratio(sim2, v, "atk") * (ratio(sim2, v, "defm") + ratio(sim2, v, "defr")) / 2;
-  var economyValue = (sim2, v) => workSpeed(sim2, v) / BASE.work;
-  var kindOf = (v) => {
-    if (v.team === "player") return v.job === "fight" || v.job === "scout" || v.job === "supply" ? "army" : v.job === "idle" ? null : "work";
-    const role = v.ai?.role;
-    return role === "guard" || role === "raider" ? "army" : role === "civ" ? "work" : null;
-  };
-  function powerOf(sim2, people) {
-    let economy = 0, military = 0, workers = 0, soldiers = 0;
-    for (const v of people) {
-      const k = kindOf(v);
-      if (k === "army") {
-        military += militaryValue(sim2, v);
-        soldiers++;
-      } else if (k === "work") {
-        economy += economyValue(sim2, v);
-        workers++;
-      }
-    }
-    return { economy, military, total: difficulty_default.power.economy * economy + difficulty_default.power.military * military, workers, soldiers };
   }
 
   // src/sim/wartent.ts
@@ -59030,8 +60276,8 @@ ${risk.lines.join("\n")}`);
   function obstacleLines(sim2, plan2, m, name) {
     const out = [], start = sim2.missionStart(m);
     if (start && m.path.length) {
-      const hits = sim2.pathHits(start, m.path, m.target?.kind === "prop" ? m.target.at : void 0), seen = /* @__PURE__ */ new Set();
-      for (const o of hits) {
+      const hits2 = sim2.pathHits(start, m.path, m.target?.kind === "prop" ? m.target.at : void 0), seen = /* @__PURE__ */ new Set();
+      for (const o of hits2) {
         if (!o || o.kind === "enemy" || seen.has(`${o.x},${o.y}`)) continue;
         seen.add(`${o.x},${o.y}`);
         if (!o.clear) out.push(`\u2717 ${name}: m\u0169i t\xEAn v\u01B0\u1EDBng ${o.label}, kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c`);
@@ -59315,10 +60561,7 @@ ${risk.lines.join("\n")}`);
       plan2.endedAt = sim2.time;
       return;
     }
-    const armed = t.unitIds.some((id) => {
-      const u = sim2.get(id);
-      return !!u && u.health > 0 && u.ai?.role !== "civ";
-    });
+    const armed = headcount(sim2, t).guards > 0;
     if (t.state !== "free" || !armed && t.props.length === 0) {
       plan2.stage = "over";
       plan2.result = "won";
@@ -59331,9 +60574,9 @@ ${risk.lines.join("\n")}`);
     if (plan2.missions.filter((m) => !isHolding(plan2, m)).every((m) => m.state === "done" || m.state === "idle")) {
       plan2.result = "lost";
       plan2.endedAt = sim2.time;
-      const standing = plan2.missions.some((m) => isHolding(plan2, m) && m.state === "hold");
+      const standing2 = plan2.missions.some((m) => isHolding(plan2, m) && m.state === "hold");
       const left = plan2.missions.some((m) => m.initial > 0 && (sim2.squadById(m.squad) ? sim2.squadUnits(sim2.squadById(m.squad)).length : 0) > 0);
-      if (standing) plan2.stage = "over";
+      if (standing2) plan2.stage = "over";
       else plan2.status = "done";
       sim2.say(left ? "Thua tr\u1EADn: c\xE1c \u0111\u1ED9i ti\u1EBFn \u0111\xE1nh \u0111\xE3 r\xFAt ho\u1EB7c g\u1EE5c." : "Thua tr\u1EADn: qu\xE2n ta kh\xF4ng c\xF2n ai.");
     }
@@ -59723,7 +60966,7 @@ ${risk.lines.join("\n")}`);
 
   // src/sim/siege.ts
   var NODE_NAME = { tree: "c\xE2y", rock: "\u0111\xE1", bush: "b\u1EE5i qu\u1EA3" };
-  var PROP_NAME = { fire: "\u0110\u1ED1ng l\u1EEDa", pile: "Kho l\u01B0\u01A1ng", tower: "Ch\xF2i canh", fence: "H\xE0ng r\xE0o", gate: "C\u1ED5ng" };
+  var PROP_NAME = { fire: "\u0110\u1ED1ng l\u1EEDa", pile: "Kho l\u01B0\u01A1ng", tower: "Ch\xF2i canh", fence: "H\xE0ng r\xE0o", gate: "C\u1ED5ng", house: "Nh\xE0" };
   var propHp = (kind) => SIEGE.propHp[kind] ?? 60;
   function propOnTile(sim2, x, y) {
     for (const tribe of sim2.tribes) for (const prop of tribe.props) if (x >= prop.x && x < prop.x + prop.w && y >= prop.y && y < prop.y + prop.h) return { tribe, prop };
@@ -60649,6 +61892,8 @@ ${risk.lines.join("\n")}`);
       this.active = /* @__PURE__ */ new Set();
       /** People the village may hold beyond its campfire and beds: the campfires of the villages we took. */
       this.popBonus = 0;
+      /** The age of bronze has begun: a boss village has fallen (tribes.ts). */
+      this.bronze = false;
       /** Fights between two villages that we saw (time, place): they become a notice for a while. Never saved. */
       this.clashes = [];
       this.animals = [];
@@ -60859,8 +62104,9 @@ ${risk.lines.join("\n")}`);
       return powerOf(this, this.villagers);
     }
     /** → power.powerOf for the people of a tribe */
+    /** -> tribelod.tribePower (the people in the world and the crowd indoors) */
     tribePower(t) {
-      return powerOf(this, t.unitIds.map((u) => this.get(u)).filter((u) => !!u));
+      return tribePower(this, t);
     }
     /** → roles.trimRoles */
     trimRoles() {
@@ -61176,7 +62422,7 @@ ${risk.lines.join("\n")}`);
     }
     /** → defense.setGates */
     setGates(open) {
-      return setGates(this, open);
+      return setGates2(this, open);
     }
     /** → defense.nearestWork */
     nearestWork(x, y, radius, any = false) {
@@ -62963,16 +64209,6 @@ ${risk.lines.join("\n")}`);
       }
     }
   };
-  var CORE = ["storage", "builder", "workshop", "armory", "infantry", "archery", "cavalry", "guardpost", "lab", "wartent", "stable", "house", "toolstore", "scouttent", "supplycamp"];
-  var OUTSIDE = ["lumberyard", "quarry", "farmhouse", "huntlodge", "drill"];
-  function ring(fire, r) {
-    const out = [];
-    for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
-      if (Math.max(Math.abs(i), Math.abs(j)) !== r || i === 0 && j > 0) continue;
-      out.push({ i, j, a: (Math.atan2(i, -j) + 2 * Math.PI) % (2 * Math.PI) });
-    }
-    return out.sort((p, q) => p.a - q.a).map((o) => [fire.x + 3 * o.i, fire.y + 3 * o.j]);
-  }
   function placeAt(sim2, kind, spots) {
     const d = BUILDINGS[kind];
     for (let k = 0; k < spots.length; k++) {

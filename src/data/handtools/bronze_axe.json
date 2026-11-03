@@ -1,0 +1,13 @@
+{
+  "name": "Bronze axe",
+  "handle": { "length": 12, "width": 1, "color": "wood" },
+  "head": [
+    { "x": -1, "y": -1, "w": 2, "h": 4, "color": "dark" },
+    { "x": 1, "y": -4, "w": 4, "h": 8, "color": "head" },
+    { "x": 5, "y": -5, "w": 1, "h": 10, "color": "light" },
+    { "x": 1, "y": -4, "w": 4, "h": 1, "color": "light" },
+    { "x": 4, "y": 2, "w": 1, "h": 2, "color": "dark" },
+    { "x": 1, "y": 3, "w": 3, "h": 1, "color": "dark" },
+    { "x": -2, "y": -3, "w": 1, "h": 2, "color": "head" }
+  ]
+}

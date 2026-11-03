@@ -12,7 +12,7 @@ import type { Sim } from './sim';
 import type { Breaking, Mission, Obstacle, Plan, Pt, Squad, Villager } from './model';
 
 export const NODE_NAME = { tree: 'cây', rock: 'đá', bush: 'bụi quả' } as const;
-export const PROP_NAME: Record<string, string> = { fire: 'Đống lửa', pile: 'Kho lương', tower: 'Chòi canh', fence: 'Hàng rào', gate: 'Cổng' };
+export const PROP_NAME: Record<string, string> = { fire: 'Đống lửa', pile: 'Kho lương', tower: 'Chòi canh', fence: 'Hàng rào', gate: 'Cổng', house: 'Nhà' };
 
 type Tribe = Sim['tribes'][number];
 type Prop = Tribe['props'][number];

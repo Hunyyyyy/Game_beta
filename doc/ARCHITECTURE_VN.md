@@ -66,7 +66,7 @@ Mục tiêu của cách chia này: **sửa một hệ thống không làm hỏng
 3. Lớp dữ liệu không biết `Sim`. Hàm nào cần trạng thái ván chơi thì không thuộc lớp này.
 4. `src/sim` không đụng giao diện hay trình duyệt (`document`, `window`, `localStorage`…).
 5. `ui`, `render`, `main` chỉ dùng `Sim`. Không import trực tiếp một hệ thống.
-6. Không tệp nào trong `src/sim` quá 650 dòng. Quá thì tách tiếp.
+6. Không có giới hạn cứng số dòng mỗi tệp trong `src/sim`. Chỉ cần không quá dài hoặc lộn xộn; dài thì tách theo chức năng.
 
 ## Thêm một tính năng
 

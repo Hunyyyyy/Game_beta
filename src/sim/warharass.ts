@@ -40,7 +40,7 @@ export function harassBrain(sim: Sim, f: Villager, dt: number, threats: Array<{ 
 
 /** Send a band at the army: it appears on the way between the army and the village, `spawnDist` tiles from the army (or at the village if that is nearer). */
 function send(sim: Sim, t: Tribe, c: { x: number; y: number }): void {
-  const warriors = t.unitIds.filter((u) => { const f = sim.get(u); return !!f && f.health > 0 && f.ai?.role !== 'civ' && f.ai?.harass === undefined; }).length;
+  const warriors = t.unitIds.filter((u) => { const f = sim.get(u); return !!f && f.health > 0 && f.ai?.role !== 'civ' && f.ai?.harass === undefined; }).length + (t.crowd?.guards ?? 0); // the soldiers indoors count
   const room = HARASS.maxAlive - alive(sim).length;
   const n = Math.min(room, Math.max(HARASS.base, Math.min(HARASS.max, Math.round(HARASS.base + warriors / HARASS.perWarriors))));
   if (n <= 0) return;
@@ -48,6 +48,7 @@ function send(sim: Sim, t: Tribe, c: { x: number; y: number }): void {
   const gx = c.x + (dx / len) * d, gy = c.y + (dy / len) * d;
   sim.world.ensure(gx, gy, 12);
   const melee = t.def.weapons.filter((w) => !WEAPONS[w]?.ranged), taken = new Set<number>();
+  if (t.crowd) t.crowd.guards = Math.max(0, t.crowd.guards - n); // the band is made of the soldiers indoors first
   for (let i = 0; i < n; i++) {
     const spot = sim.nearestFree(Math.floor(gx) + (i % 3) - 1, Math.floor(gy) + Math.floor(i / 3) - 1, taken); if (!spot) continue;
     taken.add(spot[1] * sim.world.size + spot[0]);
@@ -75,6 +76,7 @@ export function tickHarass(sim: Sim, plan: Plan): void {
 }
 
 function remove(sim: Sim, f: Villager, t: Tribe | undefined): void {
+  if (t?.crowd && f.health > 0) t.crowd.guards++; // whoever lives goes home indoors
   sim.removeFoe(f);
   if (t) t.unitIds = t.unitIds.filter((u) => u !== f.id);
 }

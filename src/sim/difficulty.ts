@@ -39,6 +39,12 @@ export function tribeTarget(level: number, tribe: { share: number; military: num
   return { military: (total * tribe.military) / cfg.power.military, economy: (total * (1 - tribe.military)) / cfg.power.economy };
 }
 
+/** What a boss village is worth at a campfire level of the player: one step above him (the top level stays the top), at `boss.power` of the most army he can field there and `boss.economy` of his economy. */
+export function bossTarget(level: number): { economy: number; military: number } {
+  const cap = playerCap(clampLevel(level + 1));
+  return { military: cap.military * cfg.boss.power, economy: cap.economy * cfg.boss.economy };
+}
+
 /** The army power a raid of this ratio brings: the ratio of the player's army now, never under `raid.floor` nor over `raid.ceiling` of the most the player can field at this campfire level. */
 export function raidPower(playerMilitary: number, ratio: number, level: number): number {
   const top = playerCap(level).military;
@@ -49,8 +55,8 @@ export function raidPower(playerMilitary: number, ratio: number, level: number):
  * The percent of every combat stat (army) and of the speed of work (economy) the people of a tribe need on top of the plain person to be worth their target,
  * given how many soldiers and workers it has. An army's worth grows with the cube of the percent (health, strength and defence all rise), a worker's with the first power.
  */
-export function tribeBonuses(level: number, tribe: { share: number; military: number }, k: number, soldiers: number, workers: number): { mil: number; eco: number } {
-  const t = tribeTarget(level, tribe, k), [lo, hi] = cfg.bonusClamp, clamp = (x: number) => Math.max(lo, Math.min(hi, x));
+export function tribeBonuses(level: number, tribe: { share: number; military: number }, k: number, soldiers: number, workers: number, boss = false): { mil: number; eco: number } {
+  const t = boss ? bossTarget(level) : tribeTarget(level, tribe, k), [lo, hi] = cfg.bonusClamp, clamp = (x: number) => Math.max(lo, Math.min(hi, x));
   return { mil: soldiers > 0 ? clamp(Math.cbrt(t.military / soldiers) - 1) : 0, eco: workers > 0 ? clamp(t.economy / workers - 1) : 0 };
 }
 

@@ -114,8 +114,8 @@ export interface TribeDef {
   reward: string;
   tribute: Partial<Stock>;
 }
-export type TribeId = 'spring' | 'axe' | 'swamp';
-export const TRIBE_IDS: TribeId[] = ['spring', 'axe', 'swamp'];
+export type TribeId = 'spring' | 'axe' | 'swamp' | 'cave' | 'dune';
+export const TRIBE_IDS: TribeId[] = ['spring', 'axe', 'swamp', 'cave', 'dune'];
 export const TRIBES = Object.fromEntries(TRIBE_IDS.map((t) => [t, (tribesJson as unknown as Record<string, TribeDef>)[t]])) as Record<TribeId, TribeDef>;
 export const RELATION = tribesJson.relation;
 /** Who fights whom on sight (src/data/tribes.json "meet"). */

@@ -1,9 +1,10 @@
 /** Scouting: villages found on the map, trips to draw them (three levels of map, ageing) and the scouts who do not come home. */
-import { levelDef } from './buildings';
+import { BUILDINGS, levelDef } from './buildings';
 import { SIEGE } from './combat';
 import { DAY_LENGTH } from './constants';
 import { armOfWeapon, COMMAND } from './formations';
 import { findPath } from './path';
+import { ensureLayout, headcount } from './tribelod';
 import { tribeOf } from './tribes';
 import type { Sim } from './sim';
 import { RES_NAME } from './resources';
@@ -30,7 +31,7 @@ export function mapLevel(sim: Sim, tribe: string): number {
   return best;
 }
 
-const warriorsOf = (sim: Sim, tribe: string): number => { const t = tribeOf(sim, tribe as never); return t ? t.unitIds.filter((u) => sim.get(u)?.ai?.role !== 'civ').length : 0; };
+const warriorsOf = (sim: Sim, tribe: string): number => { const t = tribeOf(sim, tribe as never); return t ? headcount(sim, t).guards : 0; };
 
 // ---------------------------------------------------------------- finding villages
 /** How far a villager sees a camp, in tiles. */
@@ -330,7 +331,7 @@ export function tickScouts(sim: Sim, dt: number): void {
 const MARGIN = 24, YARD = 7;
 /** The lowest map level that shows each kind of work, and what to call it. */
 const WORKS: Record<string, { level: number; label: string }> = {
-  fire: { level: 1, label: 'Đống lửa' }, tower: { level: 2, label: 'Chòi canh' }, fence: { level: 2, label: 'Hàng rào' }, gate: { level: 2, label: 'Cổng' }, pile: { level: 3, label: 'Kho lương' },
+  fire: { level: 1, label: 'Đống lửa' }, tower: { level: 2, label: 'Chòi canh' }, fence: { level: 2, label: 'Hàng rào' }, gate: { level: 2, label: 'Cổng' }, pile: { level: 3, label: 'Kho lương' }, house: { level: 2, label: 'Nhà' },
 };
 
 /** A fixed 0..1 number from an id, so a stale map blurs the same way every time it is drawn (no random draw is spent). */
@@ -343,12 +344,19 @@ export function seenNow(sim: Sim, t: NonNullable<ReturnType<typeof tribeOf>>): S
     const u = sim.get(id); if (!u || u.health <= 0) continue;
     out.push({ x: Math.round(u.x * 10) / 10, y: Math.round(u.y * 10) / 10, arm: armOfWeapon(u.weapon), weapon: u.weapon ?? null, civ: u.ai?.role === 'civ', leader: u.id === t.leaderId });
   }
+  // those indoors are seen as shapes in the yard: where they stand is a fixed guess from their number, the soldiers armed in turn from the weapons of the tribe
+  const crowd = t.crowd, inWorld = out.filter((o) => !o.civ).length;
+  if (crowd) for (let i = 0; i < crowd.guards + crowd.civs; i++) {
+    const civ = i >= crowd.guards, w = civ ? null : t.def.weapons[(inWorld + i) % t.def.weapons.length], a = spread(i + 7, 3) * Math.PI * 2, r = 1.5 + spread(i + 7, 5) * 4.5;
+    out.push({ x: Math.round((t.camp.x + Math.cos(a) * r) * 10) / 10, y: Math.round((t.camp.y + Math.sin(a) * r) * 10) / 10, arm: armOfWeapon(w), weapon: w, civ, leader: false });
+  }
   return out;
 }
 
 const WORK_INFO: Record<string, string> = {
   fire: 'Đống lửa của họ: tâm làng, quanh đây dân và lính tụ lại.', tower: 'Chòi canh: cung thủ đứng cao bắn xa hơn, phải phá chòi mới hạ được họ.',
   fence: 'Hàng rào: chặn đường, phải phá hoặc đi vòng.', gate: 'Cổng: lối vào làng, đóng thì chặn đường.', pile: 'Kho lương: chỗ họ cất thức ăn và đồ cống nạp.',
+  house: 'Nhà của làng: càng nhiều nhà cấp cao thì làng càng đông và mạnh.',
 };
 
 /** A free tile at or near a point, or null. */
@@ -386,6 +394,7 @@ export function tribeIntel(sim: Sim, tribe: string): TribeIntel | null {
   const x0 = Math.max(0, Math.min(N - 2 * rx, Math.floor(t.camp.x) - rx)), y0 = Math.max(0, Math.min(N - 2 * ry, Math.floor(t.camp.y) - ry));
   const box = { x0, y0, x1: x0 + 2 * rx, y1: y0 + 2 * ry };
   const fire = sim.campfire(), dx = (fire?.x ?? sim.world.start.x) - t.camp.x, dy = (fire?.y ?? sim.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
+  ensureLayout(sim, t); // the houses of a village nobody has been near are laid when a map first needs them (data only)
   const seen = sim.dev.freeBuild || !held?.seen ? seenNow(sim, t) : held.seen; // a map from before scouts kept what they saw shows the village as it is
   const soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
   const people: TribeIntel['people'] = [];
@@ -404,7 +413,7 @@ export function tribeIntel(sim: Sim, tribe: string): TribeIntel | null {
     tribe, name: t.def.name, level, accuracy, gaps, box, camp: { ...t.camp }, yard: YARD,
     toUs: len > 0 ? { x: dx / len, y: dy / len } : null, route, others: others.filter(reach),
     population: Math.max(2, Math.round(seen.length / 2) * 2),
-    structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === 'pile' && loot ? `${WORK_INFO.pile} Có khoảng ${loot}.` : WORK_INFO[p.kind] ?? '', x: p.x, y: p.y, w: p.w, h: p.h })),
+    structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: p.b ? BUILDINGS[p.b].name : WORKS[p.kind].label, detail: p.kind === 'pile' && loot ? `${WORK_INFO.pile} Có khoảng ${loot}.` : WORK_INFO[p.kind] ?? '', x: p.x, y: p.y, w: p.w, h: p.h })),
     people, soldiers,
   };
 }

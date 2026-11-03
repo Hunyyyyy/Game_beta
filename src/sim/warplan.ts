@@ -8,6 +8,7 @@ import { DAY_LENGTH } from './constants';
 import * as warsupply from './warsupply';
 import * as warlog from './warlog';
 import { SIEGE } from './combat';
+import { headcount } from './tribelod';
 import type { CardKind, Mission, MissionTarget, Objective, Obstacle, Plan, Pt, RouteTime, Squad } from './model';
 
 // ---------------------------------------------------------------- what may be aimed at
@@ -436,7 +437,7 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
  */
 function endCheck(sim: Sim, plan: Plan, t: Sim['tribes'][number] | undefined): void {
   if (!t) { plan.status = 'done'; plan.result = 'lost'; plan.endedAt = sim.time; return; }
-  const armed = t.unitIds.some((id) => { const u = sim.get(id); return !!u && u.health > 0 && u.ai?.role !== 'civ'; });
+  const armed = headcount(sim, t).guards > 0; // the soldiers indoors count
   if (t.state !== 'free' || (!armed && t.props.length === 0)) {
     plan.stage = 'over'; plan.result = 'won'; plan.endedAt = sim.time; // the war goes on (the army stands where it is) until the player gives the word to pull out
     sim.say(`Chiến thắng! ${t.def.name} không còn lính, lửa tắt và mọi công trình đã sập. Bấm Rút quân khi muốn về làng.`);

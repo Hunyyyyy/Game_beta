@@ -1,6 +1,7 @@
 {
   "_note": "Đời sống của dân các làng NPC khi người chơi ở gần: chỉ làm việc ở các chunk (32 ô) quanh nơi dân của người chơi đang đứng hoặc đang đi tới (chunkReach chunk mỗi hướng); xa hơn thì dân chỉ đi dạo quanh trại như cũ để nhẹ máy. Mỗi lần rảnh (khoảng 4-12 giây) một người rút một việc với xác suất. Phạm vi làm việc là đất của làng (tầm nhìn của trại lửa theo cấp trại, trong building.json). chances: xác suất rút từng việc (dân thường: chặt gỗ/đào đá/hái, theo mix; lính: tuần tra, săn, trinh sát). toolTierByCamp: bậc công cụ (1 gỗ, 2 đá) mà dân làm việc bằng theo cấp trại lửa 1..4: lấy công cụ cao nhất làng đó chế được ở cấp trại của họ; công cụ tốt thì mỗi lần thu được nhiều hơn như dân của ta (TIER_YIELD), và hình trên tay đổi theo. unitsPerTrip: số đơn vị lấy được mỗi chuyến. scoutReach: trinh sát đi xa gấp mấy lần đất làng. tripSeconds: một việc quá thời gian này (dân thường; lính gấp 3) thì bỏ.",
   "chunkReach": 1,
+  "lod": { "minGuards": 2, "minCivs": 2, "sleepAfter": 30, "gateRadius": 18 },
   "mix": { "wood": 40, "stone": 30, "food": 30 },
   "chances": { "work": 0.35, "patrol": 0.25, "hunt": 0.15, "scout": 0.06 },
   "toolTierByCamp": [1, 2, 2, 2],

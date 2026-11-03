@@ -2,9 +2,10 @@ import eventsJson from '../data/events.json';
 import { DAY_LENGTH } from './constants';
 import { ANIMALS, MEET, cycleOf, Species, WEAPONS, HOSTILE_BELOW, RELATION, RULES, SIEGE, SURRENDER, TRIBE_IDS, TRIBES, TribeDef, TribeId, Team, maxHpOf } from './combat';
 import { engage, resolve, swingTimes, tickCommon, threatsOf, weaponOf } from './battle';
-import { BUILDINGS } from './buildings';
+import { BUILDINGS, BuildingKind } from './buildings';
+import { fireLevelOf, followFire, headcount, releaseCrowd, rescaleTribe, tickLod, topUp, wake } from './tribelod';
 import { armOfWeapon } from './formations';
-import { DIFF, raidPower, tribeBonuses } from './difficulty';
+import { DIFF, raidPower } from './difficulty';
 import { POP_BY_FIRE } from './buildings';
 import { RES_NAME } from './resources';
 import { applyStats } from './statsys';
@@ -34,7 +35,22 @@ export interface Tribe {
   id: TribeId;
   def: TribeDef;
   camp: { x: number; y: number };   // centre of the fire
-  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' | 'tower' | 'fence' | 'gate'; hp: number }>;
+  /** Its works: the fire and the piles, and (from tribebuild.growCamp) the pieces of its camp plan: `lv` is the level of such a piece, `b` the kind of house when `kind` is 'house'. */
+  props: Array<{ x: number; y: number; w: number; h: number; kind: 'fire' | 'pile' | 'tower' | 'fence' | 'gate' | 'house'; hp: number; b?: BuildingKind; lv?: number; open?: boolean }>;
+  /** People who are not in the world (indoors, or the village is asleep): see tribelod.ts. `unitIds` are those in the world. Undefined: an old save, everyone is in the world. */
+  crowd?: { guards: number; civs: number };
+  /** The village is awake (its houses laid and its workers out). `idleT`: seconds with nobody of ours near. */
+  awake?: boolean; idleT?: number;
+  /** The campfire level the head count was last made up for; when awake, the people indoors at waking and the houses and fire standing then (the crowd keeps what those can shelter). */
+  popLevel?: number; hid0?: number; pool0?: number;
+  /** The chief fell (he is a body in the world only while it is awake). */
+  leaderDead?: boolean;
+  /** A boss village (difficulty.json "boss"): one step above the player in camp, defences and gear. `bossDown`: it has fallen, the age of bronze was announced. */
+  boss?: boolean; bossDown?: boolean;
+  /** The campfire level its camp plan stands at (undefined: not raised yet, an old save). */
+  built?: number;
+  /** How far its camp runs ahead of the player's fire: its level follows the player's, plus this (the level it began with, less 2). */
+  edge?: number;
   relation: number;                  // -100..100
   state: TribeState;
   angryUntil: number;                // sim time: being attacked keeps them hostile for a while
@@ -91,28 +107,39 @@ export function spawnTribes(sim: Sim): void {
   // the camps are of random levels, but somebody must be weak enough to be taken on: if no camp is low enough, one is brought down
   const { min, max, guaranteeWeak } = DIFF.campLevel, levels = TRIBE_IDS.map(() => min + Math.floor(sim.frnd() * (max - min + 1)));
   if (Math.min(...levels) > guaranteeWeak) levels[Math.floor(sim.frnd() * levels.length)] = guaranteeWeak;
-  TRIBE_IDS.forEach((id, i) => spawnTribe(sim, id, levels[i]));
+  // the bosses: a few villages, never the weakest one, that stand a step above the player
+  const weakest = levels.indexOf(Math.min(...levels)), [bmin, bmax] = DIFF.boss.count;
+  const pool = TRIBE_IDS.map((_, i) => i).filter((i) => i !== weakest), bosses = new Set<number>();
+  for (let n = Math.min(pool.length, bmin + Math.floor(sim.frnd() * (bmax - bmin + 1))); n > 0 && pool.length; n--) bosses.add(pool.splice(Math.floor(sim.frnd() * pool.length), 1)[0]);
+  TRIBE_IDS.forEach((id, i) => spawnTribe(sim, id, bosses.has(i) ? Math.max(levels[i], 3) : levels[i], bosses.has(i)));
   initEvents(sim);
 }
 
-function campFits(sim: Sim, cx: number, cy: number): boolean {
-  const w = sim.world, r = 7;
+/** Is the ground round (cx, cy) fit for a camp? Nothing of water or mountain within `r` tiles, except `spare` (a share of the circle) of bad ground. */
+function campFits(sim: Sim, cx: number, cy: number, r: number, spare: number): boolean {
+  const w = sim.world;
+  let bad = 0, all = 0;
   for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) {
+    if (Math.hypot(x - cx, y - cy) > r) continue;
     if (!w.inBounds(x, y)) return false;
-    if (Math.hypot(x - cx, y - cy) <= r && (w.at(x, y) === Tile.Water || w.at(x, y) === Tile.Mountain)) return false;
+    all++;
+    if (w.at(x, y) === Tile.Water || w.at(x, y) === Tile.Mountain) bad++;
   }
-  return true;
+  return bad <= all * spare;
 }
 
-function spawnTribe(sim: Sim, id: TribeId, campLevel: number): void {
+/** The camp is looked for first where its whole plan fits (the fence, the towers and the working houses reach about 14 tiles from the fire: the yard of 7 must be clean and the rest almost so), then, failing that, where the yard alone is clean. */
+const SITES = [{ r: 14, spare: 0.04, yard: true }, { r: 7, spare: 0, yard: false }];
+
+function spawnTribe(sim: Sim, id: TribeId, campLevel: number, boss = false): void {
   const def = TRIBES[id], w = sim.world, s = w.start, N = w.size;
   let cx = -1, cy = -1;
-  search: for (let dd = 0; dd <= 24; dd += 3) for (const sign of dd ? [1, -1] : [1]) for (let da = 0; da <= 90; da += 15) for (const as of da ? [1, -1] : [1]) {
+  search: for (const site of SITES) for (let dd = 0; dd <= 24; dd += 3) for (const sign of dd ? [1, -1] : [1]) for (let da = 0; da <= 90; da += 15) for (const as of da ? [1, -1] : [1]) {
     const ang = ((def.angle + da * as) * Math.PI) / 180, d = def.distance + dd * sign;
     const x = Math.round(s.x + Math.cos(ang) * d), y = Math.round(s.y + Math.sin(ang) * d);
-    if (!(x > 9 && y > 9 && x < N - 9 && y < N - 9)) continue;
-    w.ensure(x, y, 10); // the land must exist before it can be judged
-    if (campFits(sim, x, y)) { cx = x; cy = y; break search; }
+    if (!(x > 16 && y > 16 && x < N - 16 && y < N - 16)) continue;
+    w.ensure(x, y, 18); // the land must exist before it can be judged
+    if (campFits(sim, x, y, 7, 0) && (!site.yard || campFits(sim, x, y, site.r, site.spare))) { cx = x; cy = y; break search; }
   }
   if (cx < 0) return;
   // the land between the village and the camp is made too, so that raiders and scouts can walk it (a chunk that does not exist yet is a wall)
@@ -131,23 +158,11 @@ function spawnTribe(sim: Sim, id: TribeId, campLevel: number): void {
   const tribe: Tribe = {
     id, def, camp, props, relation: def.relation, state: 'free', angryUntil: 0, unitIds: [], leaderId: -1, holdT: 0, nextTribute: 0, raid: null,
     campLevel, k: DIFF.startFactor[0] + sim.frnd() * (DIFF.startFactor[1] - DIFF.startFactor[0]), mil: 0, eco: 0, stock: {}, seenDay: 0, seenFire: 0,
-    loot: Object.fromEntries(Object.entries(def.tribute).map(([k, v]) => [k, (v ?? 0) * 2])) as Partial<Stock>, lastAngry: -999,
+    loot: Object.fromEntries(Object.entries(def.tribute).map(([k, v]) => [k, (v ?? 0) * 2])) as Partial<Stock>, lastAngry: -999, edge: boss ? 1 : campLevel - 2, boss,
   };
   sim.tribes.push(tribe);
-  // how many people live there: what its campfire holds at its level, in the proportion of soldiers to civilians of tribes.json
-  const total = POP_BY_FIRE[Math.max(0, Math.min(POP_BY_FIRE.length, campLevel) - 1)], fighters = Math.max(2, Math.round((total * def.warriors) / (def.warriors + def.civilians)));
-  for (let i = 0; i < total; i++) {
-    const warrior = i < fighters, ang = sim.frnd() * Math.PI * 2, r = 2.5 + sim.frnd() * 3.5;
-    const f = sim.makeVillager(Math.floor(camp.x + Math.cos(ang) * r), Math.floor(camp.y + Math.sin(ang) * r), sim.frnd() < 0.5 ? 'm' : 'f', id, sim.frnd);
-    f.look.hide = def.look.hide; f.look.pants = def.look.pants;
-    if (warrior) { f.weapon = def.weapons[i % def.weapons.length]; f.armor = def.armor ? 'hide' : null; }
-    f.ai = { role: warrior ? 'guard' : 'civ', camp, wander: sim.frnd() * 5, goal: null, raid: 0 };
-    sim.addFoe(f); tribe.unitIds.push(f.id);
-  }
-  const warriors = tribe.unitIds.map((u) => sim.get(u)!).filter((u) => u.ai!.role === 'guard');
+  topUp(sim, tribe); // its people are only a head count until we come near (tribelod.ts); the houses are laid then too
   rescaleTribe(sim, tribe);
-  for (const u of tribe.unitIds) { const f = sim.get(u); if (f) f.health = f.maxHealth; }
-  if (warriors.length >= 1) { const lead = warriors.sort((a, b) => b.stats.str + b.stats.vit - a.stats.str - a.stats.vit)[0]; lead.leader = true; tribe.leaderId = lead.id; }
 }
 
 // ---------------------------------------------------------------- relations and diplomacy
@@ -194,7 +209,7 @@ export function killFoe(sim: Sim, v: Villager, killer?: Villager): void {
     t.relation = Math.max(-100, t.relation + (v.ai?.role === 'civ' ? RELATION.killCivilian : RELATION.killWarrior));
     t.angryUntil = sim.time + 120;
   }
-  if (v.id === t.leaderId) sim.say(`Thủ lĩnh ${t.def.name} đã gục ngã.`);
+  if (v.id === t.leaderId) { t.leaderDead = true; sim.say(`Thủ lĩnh ${t.def.name} đã gục ngã.`); }
   sim.onKill?.();
 }
 
@@ -257,7 +272,7 @@ export function adoptTribe(sim: Sim, id: TribeId): string | null {
     sim.adoptFoe(f); taken++;
   }
   claimVillage(sim, t, true); // the room for its people was added above, so only the goods are claimed here
-  t.unitIds = []; t.state = 'adopted'; t.relation = 100; t.raid = null;
+  t.unitIds = []; t.crowd = { guards: 0, civs: 0 }; t.state = 'adopted'; t.relation = 100; t.raid = null;
   if (sim.pendingTribe === id) sim.pendingTribe = null;
   sim.say(`${taken} người của ${t.def.name} gia nhập làng.${units.length > taken ? ' Số còn lại không có chỗ nên tản đi.' : ''}`);
   return null;
@@ -278,7 +293,13 @@ export function tickTribes(sim: Sim, dt: number): void {
   for (const t of sim.tribes) {
     if (war && t.id !== war) continue;
     t.unitIds = t.unitIds.filter((u) => { const f = sim.get(u); return !!f && f.health > 0; });
-    if (t.state === 'free' && t.unitIds.length === 0) { t.state = 'destroyed'; t.raid = null; sim.say(`${t.def.name} đã bị xóa sổ.`); if (t.harmed) claimVillage(sim, t, false); continue; }
+    if (t.boss && !t.bossDown && t.state !== 'free') {
+      t.bossDown = true; sim.bronze = true;
+      sim.say(`Chuyển thời kỳ! ${t.def.name} đã sụp đổ: Thời đại Đồ đồng bắt đầu. Bí quyết đồng giờ đã nằm trong tay làng ta.`);
+    }
+    const hc = headcount(sim, t);
+    if (t.state !== 'destroyed' && t.state !== 'adopted') tickLod(sim, t, !!t.raid || war === t.id || sim.plans.some((p) => p.kind === 'attack' && p.status === 'running' && p.tribe === t.id), tribeHostile(sim, t.id));
+    if (t.state === 'free' && hc.guards + hc.civs === 0) { t.state = 'destroyed'; t.raid = null; sim.say(`${t.def.name} đã bị xóa sổ.`); if (t.harmed) claimVillage(sim, t, false); continue; }
     if (t.state === 'tribute' && sim.day >= t.nextTribute) {
       t.nextTribute = sim.day + SEASON_DAYS;
       for (const [k, n] of Object.entries(t.def.tribute)) sim.stock[k as keyof Stock] = Math.min(sim.capacity(), sim.stock[k as keyof Stock] + (n ?? 0));
@@ -292,7 +313,7 @@ function checkSurrender(sim: Sim, t: Tribe): void {
   if (sim.plans.some((p) => p.kind === 'attack' && p.status === 'running' && p.tribe === t.id)) return; // a village under attack fights on: it gives up only when the war is won
   const units = t.unitIds.map((u) => sim.get(u)!).filter(Boolean), warriors = units.filter((u) => u.ai?.role !== 'civ');
   // 1. the leader is down
-  if (SURRENDER.leaderDown && t.leaderId >= 0 && !t.unitIds.includes(t.leaderId) && units.length) return surrender(sim, t, 'Thủ lĩnh đã gục');
+  if (SURRENDER.leaderDown && t.leaderDead && units.length + (t.crowd ? t.crowd.guards + t.crowd.civs : 0) > 0) return surrender(sim, t, 'Thủ lĩnh đã gục');
   // 2. the player holds their fire for 30 seconds with no warrior left near it
   const intruders = sim.villagers.filter((v) => v.health > 0 && v.down <= 0 && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 5).length;
   const defenders = warriors.filter((w) => Math.hypot(w.x - t.camp.x, w.y - t.camp.y) < 9).length;
@@ -327,11 +348,14 @@ function manageRaid(sim: Sim, t: Tribe): void {
 
 /** The weak do not attack: a chief who sees many more soldiers than he can send waits another day. */
 export function raidAdvised(sim: Sim, t: Tribe, size: number): boolean {
-  const ours = sim.villagers.filter((v) => v.job === 'fight').length, theirs = Math.min(size, t.unitIds.filter((u) => sim.get(u)?.ai?.role === 'guard').length);
+  const ours = sim.villagers.filter((v) => v.job === 'fight').length, theirs = Math.min(size, headcount(sim, t).guards);
   return ours < 6 || theirs >= ours * 0.35;
 }
 
 export function launchRaid(sim: Sim, t: Tribe, size: number, night?: boolean): void {
+  wake(sim, t);
+  const inWorld = t.unitIds.filter((u) => sim.get(u)?.ai?.role === 'guard').length;
+  if (size > inWorld) releaseCrowd(sim, t, size - inWorld); // the soldiers who were indoors are called out for it
   const guards = t.unitIds.map((u) => sim.get(u)!).filter((u) => u?.ai?.role === 'guard').sort((a, b) => b.maxHealth - a.maxHealth);
   const n = Math.min(size, guards.length);
   if (n < 3 || t.raid) return;
@@ -340,7 +364,7 @@ export function launchRaid(sim: Sim, t: Tribe, size: number, night?: boolean): v
   // a clever chief answers what he sees: many archers in the village, he sends foot soldiers to close with them; mostly foot, he adds archers
   const ours = sim.villagers.filter((v) => v.job === 'fight'), oursArch = ours.filter((v) => armOfWeapon(v.weapon) === 'archer').length, wantArch = ours.length >= 4 && oursArch * 2 <= ours.length ? Math.floor(n / 3) : 0;
   const melee = t.def.weapons.filter((w) => !WEAPONS[w]?.ranged), picks = guards.slice(0, n);
-  picks.forEach((g, i) => { g.ai!.role = 'raider'; g.ai!.raid = id; g.fight.target = null; g.path = []; g.fleeT = 0; g.weapon = i < wantArch ? (i % 2 ? 'sling' : 'bow') : melee[i % Math.max(1, melee.length)] ?? g.weapon; });
+  picks.forEach((g, i) => { g.ai!.role = 'raider'; g.ai!.raid = id; g.fight.target = null; g.path = []; g.fleeT = 0; if (!g.weapon?.startsWith('bronze')) g.weapon = i < wantArch ? (i % 2 ? 'sling' : 'bow') : melee[i % Math.max(1, melee.length)] ?? g.weapon; });
   t.angryUntil = sim.time + 400;
   const arch = picks.filter((g) => armOfWeapon(g.weapon) === 'archer').length;
   sim.say(`Quân ${t.def.name} (${n} người${sim.mapLevel(t.id) >= 3 ? `: ${arch} cung thủ, ${n - arch} bộ binh` : ''}) đang tiến vào làng!`);
@@ -396,6 +420,7 @@ function initEvents(sim: Sim): void {
 
 /** How many of its soldiers a tribe sends to make a raid of `ratio` times the army of the player now. */
 function raidSizeFor(sim: Sim, t: Tribe, ratio: number): number {
+  wake(sim, t); // its soldiers are worked out from the men themselves
   const me = sim.power(), tp = sim.tribePower(t), want = raidPower(me.military, ratio, fireLevelOf(sim)), each = tp.soldiers > 0 ? tp.military / tp.soldiers : 1;
   return Math.max(3, Math.ceil(want / Math.max(0.01, each)));
 }
@@ -578,26 +603,16 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
 }
 
 // ---------------------------------------------------------------- how strong a village is
-const fireLevelOf = (sim: Sim): number => sim.campfire()?.level ?? 1;
-
-/** Work out the percent its people need (difficulty.tribeBonuses) and put it on their bodies. */
-export function rescaleTribe(sim: Sim, t: Tribe): void {
-  const people = t.unitIds.map((u) => sim.get(u)).filter((u): u is Villager => !!u);
-  const soldiers = people.filter((u) => u.ai?.role !== 'civ').length, workers = people.length - soldiers;
-  const b = tribeBonuses(fireLevelOf(sim), t.def, t.k, soldiers, workers);
-  t.mil = b.mil; t.eco = b.eco; t.seenFire = fireLevelOf(sim);
-  for (const f of people) applyStats(sim, f);
-}
-
 /** Each day a tribe grows a little (at random, within its band) and fills its store with what its people make; whenever the player's campfire is raised the target moves and the tribe is worked out again. */
 function advanceTribe(sim: Sim, t: Tribe): void {
   // an old save has none of this: start the tribe off now
   if (t.k === undefined) { t.campLevel = 1; t.k = DIFF.startFactor[1]; t.mil = 0; t.eco = 0; t.stock = {}; t.seenDay = 0; t.seenFire = 0; }
+  if (t.seenFire !== fireLevelOf(sim) || t.popLevel !== t.campLevel) followFire(sim, t);
   if (t.seenDay !== sim.day) {
     t.seenDay = sim.day;
     const [lo, hi] = DIFF.daily.band;
     t.k = Math.max(lo, Math.min(hi, t.k * (1 + DIFF.daily.min + sim.frnd() * (DIFF.daily.max - DIFF.daily.min))));
-    const workers = t.unitIds.filter((u) => sim.get(u)?.ai?.role === 'civ').length, points = workers * (1 + t.eco), cap = DIFF.stockCap[Math.max(0, Math.min(DIFF.stockCap.length, t.campLevel) - 1)];
+    const workers = headcount(sim, t).civs, points = workers * (1 + t.eco), cap = DIFF.stockCap[Math.max(0, Math.min(DIFF.stockCap.length, t.campLevel) - 1)];
     for (const [res, rate] of Object.entries(DIFF.yieldPerEco)) t.stock[res as keyof Stock] = Math.min(cap, (t.stock[res as keyof Stock] ?? 0) + points * rate);
     rescaleTribe(sim, t);
   } else if (t.seenFire !== fireLevelOf(sim)) rescaleTribe(sim, t);

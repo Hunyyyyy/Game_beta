@@ -10,6 +10,7 @@ import { Tool, ToolKind } from './tools';
 import { Team, TribeId } from './combat';
 import { armOf, hurt, tickProjectiles } from './battle';
 import { Animal, populateChunk, tickAnimals } from './fauna';
+import * as tribeLod from './tribelod';
 import { adoptTribe, EventState, foeBonus, giftTribe, killFoe, spawnTribes, tickFoe, tickTribes, Tribe, tribeAttacked, tribeHostile, tribesFeud, tribeWilling, tributeTribe } from './tribes';
 import { recipeOpen, Tech } from './research';
 import { questViews, QuestUi, QuestView } from './quests';
@@ -99,6 +100,8 @@ export class Sim {
   readonly active = new Set<number>();
   /** People the village may hold beyond its campfire and beds: the campfires of the villages we took. */
   popBonus = 0;
+  /** The age of bronze has begun: a boss village has fallen (tribes.ts). */
+  bronze = false;
   /** Fights between two villages that we saw (time, place): they become a notice for a while. Never saved. */
   readonly clashes: Array<{ a: string; b: string; at: number; x: number; y: number }> = [];
   readonly animals: Animal[] = [];
@@ -262,7 +265,8 @@ export class Sim {
   /** → power.powerOf for our village */
   power(): power.Power { return power.powerOf(this, this.villagers); }
   /** → power.powerOf for the people of a tribe */
-  tribePower(t: Tribe): power.Power { return power.powerOf(this, t.unitIds.map((u) => this.get(u)).filter((u): u is Villager => !!u)); }
+  /** -> tribelod.tribePower (the people in the world and the crowd indoors) */
+  tribePower(t: Tribe): power.Power { return tribeLod.tribePower(this, t); }
   /** → roles.trimRoles */
   trimRoles(): void { return roles.trimRoles(this); }
   /** → rest.bedsIn */
