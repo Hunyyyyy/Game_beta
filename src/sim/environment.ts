@@ -52,7 +52,11 @@ export const TORCH_VISION = 6;
 export function refreshFog(sim: Sim): void {
   const r = visionRadius(sim), fire = fireRadius(sim);
   sim.lastVision = r;
-  const src = sim.villagers.map((v) => ({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r })); // a lit torch sees as far as by day
+  const src: { x: number; y: number; r: number }[] = [], litCells = new Set<number>();
+  for (const v of sim.villagers) {
+    if (v.lit) { const k = Math.floor(v.x / 2) * 65536 + Math.floor(v.y / 2); if (litCells.has(k)) continue; litCells.add(k); } // bearers in the same 2x2 tiles light the fog once
+    src.push({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r }); // a lit torch sees as far as by day
+  }
   for (const b of sim.buildings) if (b.done) { const d = BUILDINGS[b.kind]; src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === 'campfire' ? fire : Math.max(r, buildingSight(b) - (b.kind === 'tower' ? 0 : WEATHER[sim.weather].vision)) }); } // every house keeps watch round itself, a tower far round
   sim.fog.update(src);
   for (const v of sim.villagers) { v.tx = Math.floor(v.x); v.ty = Math.floor(v.y); }

@@ -202,10 +202,12 @@ export class World {
   /** The tiles of the gates that are shut: they stop the enemy and the beasts, but our own people pass through them. */
   readonly gates = new Set<number>();
   /** Blocked for someone of ours (a villager, a soldier): the same as isBlocked, but a shut gate lets him by. */
-  isBlockedFor(x: number, y: number, ours: boolean): boolean {
+  /** The tiles of the shut gates of the villages: the people of a village (not ours, not the beasts) pass them, so its guards come and go as they like. */
+  readonly foeGates = new Set<number>();
+  isBlockedFor(x: number, y: number, ours: boolean | 'foe'): boolean {
     if (!ours || !this.inBounds(x, y)) return this.isBlocked(x, y);
     const i = y * this.size + x;
-    if (!this.gates.has(i)) return this.isBlocked(x, y);
+    if (!(ours === 'foe' ? this.foeGates : this.gates).has(i)) return this.isBlocked(x, y);
     const t = this.tiles[i];
     return this.ready[(y >> 5) * CHUNKS + (x >> 5)] === 0 || (t !== Tile.Grass && t !== Tile.Mud);
   }

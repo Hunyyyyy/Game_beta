@@ -11,6 +11,7 @@ import { RECIPES } from './tools';
 import { CHAINS, STAT_TECHS, TECHS } from './research';
 import { seenNow } from './scouting';
 import { fireEventNow, tribeOf } from './tribes';
+import { TORCH_LIFE } from './rest';
 import { Tile } from './world';
 
 /**
@@ -235,4 +236,43 @@ export function autoScout(sim: Sim, level: number): string {
   const map = { tribe: t.id, level, at: sim.time, gaps: 0, seen: level >= 2 ? seenNow(sim, tribeOf(sim, t.id)!) : undefined };
   if (old >= 0) sim.maps[old] = map; else sim.maps.push(map);
   return `Trinh sát đã vẽ xong bản đồ cấp ${level} của ${t.def.name}`;
+}
+
+/** Every soldier camp filled to its capacity (people are added past the village limit), each soldier with the best gear of the era and a lit-ready torch. Returns a line about it. */
+export function fullArmy(sim: Sim): string {
+  const camps: RoleId[] = ['foot', 'archer', 'cavalry', 'guard', 'tower'];
+  const free = () => sim.villagers.find((v) => v.team === 'player' && v.job === 'idle' && v.down <= 0 && v.inside === null);
+  let added = 0;
+  for (const role of camps) {
+    for (let guard = 0; sim.roleCount(role) < sim.roleCapacity(role) && guard < 200; guard++) {
+      let v = free();
+      if (!v) { addVillager(sim); v = free(); }
+      if (!v || sim.assignRole([v.id], role) !== null) break;
+      added++;
+    }
+  }
+  const top = sim.advanced ? { foot: 'bronze_sword', cav: 'bronze_spear', armor: 'bronze' } : { foot: 'mace', cav: 'spear', armor: 'bone' };
+  let n = 0;
+  for (const v of sim.villagers) {
+    if (v.team !== 'player' || v.job !== 'fight') continue;
+    const weapon = v.arm === 'archer' ? 'bow' : v.arm === 'cavalry' ? top.cav : top.foot;
+    sim.giveGear([v.id], weapon, 'weapon'); sim.giveGear([v.id], top.armor, 'armor');
+    v.manualGear = true; v.torch = { dur: TORCH_LIFE }; n++;
+  }
+  sim.fogDirty = true;
+  return `Quân đầy các trại: thêm ${added} lính, ${n} lính có đồ cao nhất + đuốc`;
+}
+
+/** A village is found and mapped in full (levels 1 to 3), so that it shows in the war tent. Returns a line about it. */
+export function discoverTribe(sim: Sim, id: string): string {
+  const t = sim.tribes.find((x) => x.id === id);
+  if (!t) return 'Không có làng này';
+  sim.world.ensure(t.camp.x, t.camp.y, 30);
+  const s = sim.sightings.find((x) => x.tribe === id);
+  if (s) s.reported = true; else sim.sightings.push({ tribe: id, by: -1, at: sim.time, reported: true });
+  for (let level = 1; level <= 3; level++) {
+    const map = { tribe: id, level, at: sim.time, gaps: 0, seen: level >= 2 ? seenNow(sim, t) : undefined }, old = sim.maps.findIndex((m) => m.tribe === id && m.level === level);
+    if (old >= 0) sim.maps[old] = map; else sim.maps.push(map);
+  }
+  return `Đã phát hiện ${t.def.name}: mở Lều họp chiến để đánh`;
 }

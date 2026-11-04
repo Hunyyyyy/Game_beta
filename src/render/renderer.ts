@@ -34,6 +34,7 @@ export class Renderer {
   readonly ctx: CanvasRenderingContext2D;
   w = 0; h = 0; dpr = 1;
   private readonly fogCanvas: HTMLCanvasElement;
+  private torchLight: HTMLCanvasElement | null = null;
   private readonly fogCtx: CanvasRenderingContext2D;
   private fogVer = -1;
 
@@ -517,13 +518,26 @@ export class Renderer {
         g.addColorStop(0, `rgba(255,170,70,${(0.5 * dark).toFixed(3)})`); g.addColorStop(1, 'rgba(255,170,70,0)');
         ctx.fillStyle = g; ctx.fillRect(p.x - rad, p.y - rad, rad * 2, rad * 2);
       }
+      // Torch light: a marching column would be a gradient per bearer, so bearers within the same 2x2 tiles share one pre-drawn light (a little brighter for each extra one, capped).
+      this.torchLight ??= (() => {
+        const c = document.createElement('canvas'); c.width = c.height = 128;
+        const g = c.getContext('2d')!, gr = g.createRadialGradient(64, 64, 4, 64, 64, 64);
+        gr.addColorStop(0, 'rgba(255,176,80,1)'); gr.addColorStop(1, 'rgba(255,176,80,0)');
+        g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return c;
+      })();
+      const cells = new Map<number, { x: number; y: number; n: number }>();
       for (const v of sim.villagers) {
         if (!v.lit || !onScr(v.x, v.y)) continue;
-        const p = this.worldToScreen(v.x * TILE - 8, v.y * TILE - 22), rad = 52 * z, flick = 0.92 + 0.08 * Math.sin(time * 9 + v.id);
-        const g = ctx.createRadialGradient(p.x, p.y, 2 * z, p.x, p.y, rad);
-        g.addColorStop(0, `rgba(255,176,80,${(0.42 * dark * flick).toFixed(3)})`); g.addColorStop(1, 'rgba(255,176,80,0)');
-        ctx.fillStyle = g; ctx.fillRect(p.x - rad, p.y - rad, rad * 2, rad * 2);
+        const k = Math.floor(v.x / 2) * 4096 + Math.floor(v.y / 2), c = cells.get(k);
+        if (c) { c.x += v.x; c.y += v.y; c.n++; } else cells.set(k, { x: v.x, y: v.y, n: 1 });
       }
+      const rad = 52 * z, flick = 0.92 + 0.08 * Math.sin(time * 9);
+      for (const c of cells.values()) {
+        const p = this.worldToScreen((c.x / c.n) * TILE - 8, (c.y / c.n) * TILE - 22);
+        ctx.globalAlpha = Math.min(0.75, 0.42 * dark * flick * (1 + 0.25 * (c.n - 1)));
+        ctx.drawImage(this.torchLight, p.x - rad, p.y - rad, rad * 2, rad * 2);
+      }
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
     }
 

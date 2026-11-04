@@ -1,7 +1,7 @@
 # Game_beta (lang-do-da)
 
 Village-building / tribal-warfare game. TypeScript + esbuild, runs in the browser (`dist/index.html`). The simulation is pure TS, with no DOM, and the UI only talks to it through `Sim`.
-
+--Note: before you fix or update some logic, you should ask me the changes will be conflict with old logic some where.
 ## Commands
 
 - `npm run build` runs `build.mjs` and refreshes `dist/index.html`. **Run it after finishing any code or UI change.**

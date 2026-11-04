@@ -8183,6 +8183,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.respawns = 0;
       /** The tiles of the gates that are shut: they stop the enemy and the beasts, but our own people pass through them. */
       this.gates = /* @__PURE__ */ new Set();
+      /** Blocked for someone of ours (a villager, a soldier): the same as isBlocked, but a shut gate lets him by. */
+      /** The tiles of the shut gates of the villages: the people of a village (not ours, not the beasts) pass them, so its guards come and go as they like. */
+      this.foeGates = /* @__PURE__ */ new Set();
       this.grown = 0;
       this.start = _World.pickStart(seed2);
       const lo = (v) => Math.max(0, Math.floor((v - FIRST_REACH) / CHUNK)), hi = (v) => Math.min(CHUNKS - 1, Math.floor((v + FIRST_REACH) / CHUNK));
@@ -8320,11 +8323,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     at(x, y) {
       return this.tiles[y * this.size + x];
     }
-    /** Blocked for someone of ours (a villager, a soldier): the same as isBlocked, but a shut gate lets him by. */
     isBlockedFor(x, y, ours) {
       if (!ours || !this.inBounds(x, y)) return this.isBlocked(x, y);
       const i = y * this.size + x;
-      if (!this.gates.has(i)) return this.isBlocked(x, y);
+      if (!(ours === "foe" ? this.foeGates : this.gates).has(i)) return this.isBlocked(x, y);
       const t = this.tiles[i];
       return this.ready[(y >> 5) * CHUNKS + (x >> 5)] === 0 || t !== Tile.Grass && t !== Tile.Mud;
     }
@@ -8464,7 +8466,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       next.push(prop);
     }
     for (const p of old.values()) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) W2.occ[(p.y + j) * N + p.x + i] = 0;
-    for (const p of next) if (p.kind !== "gate" || p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) W2.occ[(p.y + j) * N + p.x + i] = 1;
+    for (const p of next) if (p.kind !== "gate" || p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) {
+      const k = (p.y + j) * N + p.x + i;
+      W2.occ[k] = 1;
+      if (p.kind === "gate") W2.foeGates.add(k);
+    }
     t.props = next;
     t.built = level;
     return next.length - base.length;
@@ -8474,7 +8480,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     for (const p of t.props) {
       if (p.kind !== "gate" || p.open !== false !== shut) continue;
       p.open = !shut;
-      for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) sim2.world.occ[(p.y + j) * N + p.x + i] = shut ? 1 : 0;
+      for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) {
+        const k = (p.y + j) * N + p.x + i;
+        sim2.world.occ[k] = shut ? 1 : 0;
+        if (shut) sim2.world.foeGates.add(k);
+        else sim2.world.foeGates.delete(k);
+      }
     }
   }
   var planPieces = (sim2, t, fire, level, base, blocked) => planCamp(fire.x, fire.y, level, sim2.era, sim2.advanced || !!t.boss, base, blocked);
@@ -51736,6 +51747,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.w = 0;
       this.h = 0;
       this.dpr = 1;
+      this.torchLight = null;
       this.fogVer = -1;
       /** The side (left or right) each villager last faced, for riders. */
       this.sideOf = /* @__PURE__ */ new WeakMap();
@@ -52326,22 +52338,40 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         ctx2.globalCompositeOperation = "lighter";
         for (const b of sim2.buildings) {
           if (b.kind !== "campfire") continue;
-          const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 14), rad3 = 120 * z;
-          const g = ctx2.createRadialGradient(p.x, p.y, 4 * z, p.x, p.y, rad3);
+          const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 14), rad4 = 120 * z;
+          const g = ctx2.createRadialGradient(p.x, p.y, 4 * z, p.x, p.y, rad4);
           g.addColorStop(0, `rgba(255,170,70,${(0.5 * dark).toFixed(3)})`);
           g.addColorStop(1, "rgba(255,170,70,0)");
           ctx2.fillStyle = g;
-          ctx2.fillRect(p.x - rad3, p.y - rad3, rad3 * 2, rad3 * 2);
+          ctx2.fillRect(p.x - rad4, p.y - rad4, rad4 * 2, rad4 * 2);
         }
+        this.torchLight ?? (this.torchLight = (() => {
+          const c = document.createElement("canvas");
+          c.width = c.height = 128;
+          const g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 4, 64, 64, 64);
+          gr.addColorStop(0, "rgba(255,176,80,1)");
+          gr.addColorStop(1, "rgba(255,176,80,0)");
+          g.fillStyle = gr;
+          g.fillRect(0, 0, 128, 128);
+          return c;
+        })());
+        const cells = /* @__PURE__ */ new Map();
         for (const v of sim2.villagers) {
           if (!v.lit || !onScr(v.x, v.y)) continue;
-          const p = this.worldToScreen(v.x * TILE - 8, v.y * TILE - 22), rad3 = 52 * z, flick = 0.92 + 0.08 * Math.sin(time * 9 + v.id);
-          const g = ctx2.createRadialGradient(p.x, p.y, 2 * z, p.x, p.y, rad3);
-          g.addColorStop(0, `rgba(255,176,80,${(0.42 * dark * flick).toFixed(3)})`);
-          g.addColorStop(1, "rgba(255,176,80,0)");
-          ctx2.fillStyle = g;
-          ctx2.fillRect(p.x - rad3, p.y - rad3, rad3 * 2, rad3 * 2);
+          const k = Math.floor(v.x / 2) * 4096 + Math.floor(v.y / 2), c = cells.get(k);
+          if (c) {
+            c.x += v.x;
+            c.y += v.y;
+            c.n++;
+          } else cells.set(k, { x: v.x, y: v.y, n: 1 });
         }
+        const rad3 = 52 * z, flick = 0.92 + 0.08 * Math.sin(time * 9);
+        for (const c of cells.values()) {
+          const p = this.worldToScreen(c.x / c.n * TILE - 8, c.y / c.n * TILE - 22);
+          ctx2.globalAlpha = Math.min(0.75, 0.42 * dark * flick * (1 + 0.25 * (c.n - 1)));
+          ctx2.drawImage(this.torchLight, p.x - rad3, p.y - rad3, rad3 * 2, rad3 * 2);
+        }
+        ctx2.globalAlpha = 1;
         ctx2.globalCompositeOperation = "source-over";
       }
       this.updateFog();
@@ -52810,7 +52840,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   }
   function findPath(world, sx, sy, gx, gy, maxNodes = 3e4, ours = false) {
     const N = world.size;
-    const blocked = (x, y) => ours ? world.isBlockedFor(x, y, true) : world.isBlocked(x, y);
+    const blocked = (x, y) => ours ? world.isBlockedFor(x, y, ours) : world.isBlocked(x, y);
     if (!world.inBounds(sx, sy) || !world.inBounds(gx, gy)) return [];
     const { g, f, parent, seen, closed, gen } = memory(N * N);
     const heap = new MinHeap(f);
@@ -58403,7 +58433,7 @@ ${risk.lines.join("\n")}`);
   var progress = /* @__PURE__ */ new WeakMap();
   function unstickWalker(sim2, v, dt) {
     if (v.inside !== null) return;
-    const w = sim2.world, ours = v.team === "player";
+    const w = sim2.world, ours = passOf(v);
     if ((v.phase === "idle" || v.phase === "wait") && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours)) {
       const spot = freeSpotNear(sim2, v.x, v.y);
       if (spot) {
@@ -58555,11 +58585,11 @@ ${risk.lines.join("\n")}`);
   }
   function standTile(sim2, v) {
     const fx = Math.floor(v.x), fy = Math.floor(v.y);
-    if (!sim2.world.isBlockedFor(fx, fy, v.team === "player")) return [fx, fy];
+    if (!sim2.world.isBlockedFor(fx, fy, passOf(v))) return [fx, fy];
     let best = [fx, fy], bd = Infinity;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const x = fx + dx, y = fy + dy;
-      if (sim2.world.isBlockedFor(x, y, v.team === "player")) continue;
+      if (sim2.world.isBlockedFor(x, y, passOf(v))) continue;
       const d = Math.hypot(x + 0.5 - v.x, y + 0.5 - v.y);
       if (d < bd) {
         bd = d;
@@ -58570,7 +58600,7 @@ ${risk.lines.join("\n")}`);
   }
   function pathTo(sim2, v, gx, gy, maxNodes = 14e3) {
     const [sx, sy] = standTile(sim2, v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
-    const p = gx === sx && gy === sy ? [] : findPath(sim2.world, sx, sy, gx, gy, maxNodes, v.team === "player");
+    const p = gx === sx && gy === sy ? [] : findPath(sim2.world, sx, sy, gx, gy, maxNodes, passOf(v));
     return off ? [[sx, sy], ...p] : p;
   }
   function routeTo(sim2, v, tiles, tries = 3, maxNodes = 14e3) {
@@ -58585,6 +58615,7 @@ ${risk.lines.join("\n")}`);
     }
     return -1;
   }
+  var passOf = (v) => v.team === "player" ? true : v.team === "wild" ? false : "foe";
 
   // src/sim/hunting.ts
   var HUNT_RANGE = [24, 36, 52];
@@ -59363,7 +59394,15 @@ ${risk.lines.join("\n")}`);
   function refreshFog(sim2) {
     const r = visionRadius(sim2), fire = fireRadius(sim2);
     sim2.lastVision = r;
-    const src = sim2.villagers.map((v) => ({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r }));
+    const src = [], litCells = /* @__PURE__ */ new Set();
+    for (const v of sim2.villagers) {
+      if (v.lit) {
+        const k = Math.floor(v.x / 2) * 65536 + Math.floor(v.y / 2);
+        if (litCells.has(k)) continue;
+        litCells.add(k);
+      }
+      src.push({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r });
+    }
     for (const b of sim2.buildings) if (b.done) {
       const d = BUILDINGS[b.kind];
       src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === "campfire" ? fire : Math.max(r, buildingSight(b) - (b.kind === "tower" ? 0 : WEATHER[sim2.weather].vision)) });
@@ -59714,6 +59753,8 @@ ${risk.lines.join("\n")}`);
     sim2.rnd.setState(data.rng.rnd);
     sim2.frnd.setState(data.rng.frnd);
     sim2.wrnd.setState(data.rng.wrnd);
+    sim2.world.foeGates.clear();
+    for (const t of sim2.tribes) for (const p of t.props) if (p.kind === "gate" && p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) sim2.world.foeGates.add((p.y + j) * sim2.world.size + p.x + i);
     sim2.world.gates.clear();
     for (const b of sim2.buildings) if (b.kind === "gate" && !b.open) {
       const d = BUILDINGS.gate;
@@ -64951,6 +64992,49 @@ ${risk.lines.join("\n")}`);
     else sim2.maps.push(map2);
     return `Trinh s\xE1t \u0111\xE3 v\u1EBD xong b\u1EA3n \u0111\u1ED3 c\u1EA5p ${level} c\u1EE7a ${t.def.name}`;
   }
+  function fullArmy(sim2) {
+    const camps = ["foot", "archer", "cavalry", "guard", "tower"];
+    const free = () => sim2.villagers.find((v) => v.team === "player" && v.job === "idle" && v.down <= 0 && v.inside === null);
+    let added = 0;
+    for (const role of camps) {
+      for (let guard = 0; sim2.roleCount(role) < sim2.roleCapacity(role) && guard < 200; guard++) {
+        let v = free();
+        if (!v) {
+          addVillager(sim2);
+          v = free();
+        }
+        if (!v || sim2.assignRole([v.id], role) !== null) break;
+        added++;
+      }
+    }
+    const top = sim2.advanced ? { foot: "bronze_sword", cav: "bronze_spear", armor: "bronze" } : { foot: "mace", cav: "spear", armor: "bone" };
+    let n = 0;
+    for (const v of sim2.villagers) {
+      if (v.team !== "player" || v.job !== "fight") continue;
+      const weapon = v.arm === "archer" ? "bow" : v.arm === "cavalry" ? top.cav : top.foot;
+      sim2.giveGear([v.id], weapon, "weapon");
+      sim2.giveGear([v.id], top.armor, "armor");
+      v.manualGear = true;
+      v.torch = { dur: TORCH_LIFE };
+      n++;
+    }
+    sim2.fogDirty = true;
+    return `Qu\xE2n \u0111\u1EA7y c\xE1c tr\u1EA1i: th\xEAm ${added} l\xEDnh, ${n} l\xEDnh c\xF3 \u0111\u1ED3 cao nh\u1EA5t + \u0111u\u1ED1c`;
+  }
+  function discoverTribe(sim2, id) {
+    const t = sim2.tribes.find((x) => x.id === id);
+    if (!t) return "Kh\xF4ng c\xF3 l\xE0ng n\xE0y";
+    sim2.world.ensure(t.camp.x, t.camp.y, 30);
+    const s = sim2.sightings.find((x) => x.tribe === id);
+    if (s) s.reported = true;
+    else sim2.sightings.push({ tribe: id, by: -1, at: sim2.time, reported: true });
+    for (let level = 1; level <= 3; level++) {
+      const map2 = { tribe: id, level, at: sim2.time, gaps: 0, seen: level >= 2 ? seenNow(sim2, t) : void 0 }, old = sim2.maps.findIndex((m) => m.tribe === id && m.level === level);
+      if (old >= 0) sim2.maps[old] = map2;
+      else sim2.maps.push(map2);
+    }
+    return `\u0110\xE3 ph\xE1t hi\u1EC7n ${t.def.name}: m\u1EDF L\u1EC1u h\u1ECDp chi\u1EBFn \u0111\u1EC3 \u0111\xE1nh`;
+  }
 
   // src/ui/menu.ts
   var TABS = [["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
@@ -65202,6 +65286,7 @@ ${risk.lines.join("\n")}`);
         { class: "devrow" },
         btn("+5 d\xE2n", () => toast2(addPeople(sim2, 5)), "Th\xEAm 5 d\xE2n r\u1EA3nh quanh l\u1EEDa tr\u1EA1i, k\u1EC3 c\u1EA3 khi v\u01B0\u1EE3t s\u1EE9c ch\u1EE9a"),
         btn("+100 m\u1ED7i t\xE0i nguy\xEAn", () => addAllStock(sim2, 100), "C\u1ED9ng 100 m\u1ED7i lo\u1EA1i (kh\xF4ng qu\xE1 s\u1EE9c ch\u1EE9a)"),
+        btn("\u0110\u1EA7y qu\xE2n + \u0111\u1ED3 cao nh\u1EA5t + \u0111u\u1ED1c", () => toast2(fullArmy(sim2)), "M\u1ECDi tr\u1EA1i l\xEDnh \u0111\u1EA7y qu\xE2n, ai c\u0169ng c\xF3 v\u0169 kh\xED v\xE0 gi\xE1p t\u1ED1t nh\u1EA5t c\u1EE7a th\u1EDDi \u0111\u1EA1i v\xE0 m\u1ED9t c\xE2y \u0111u\u1ED1c"),
         btn("G\u1ECDi s\u1EF1 ki\u1EC7n (theo c\u1EA5p l\u1EEDa)", () => toast2(callEvent(sim2)), "G\u1ECDi ngay s\u1EF1 ki\u1EC7n \u0111\xE3 h\u1EB9n m\u1EA1nh nh\u1EA5t m\xE0 tr\u1EA1i c\u1EA5p l\u1EEDa hi\u1EC7n t\u1EA1i \u0111\u1EE7 s\u1EE9c \u0111\xF3n")
       ));
       page.append(h("h3", { text: "C\xE1c l\xE0ng NPC (t\u1ECDa \u0111\u1ED9 l\xE0 s\u1ED1 \xF4)" }));
@@ -65219,7 +65304,10 @@ ${risk.lines.join("\n")}`);
           const live2 = t.unitIds.map((u) => sim2.get(u)).filter((u) => !!u && u.health > 0), guards = live2.filter((u) => u.ai?.role !== "civ").length, crowd2 = t.crowd ? t.crowd.guards + t.crowd.civs : 0;
           const d = fire ? Math.round(Math.hypot(t.camp.x - fire.x, t.camp.y - fire.y)) : 0;
           const line3 = `${t.boss ? "BOSS" : "Th\u01B0\u1EDDng"} \xB7 ${t.def.name} \xB7 (${Math.round(t.camp.x)}, ${Math.round(t.camp.y)}) \xB7 c\xE1ch l\u1EEDa ${d} \xF4 \xB7 c\u1EA5p ${t.campLevel}${t.state === "free" ? "" : ` \xB7 ${t.state}`} \xB7 ${t.awake ? "\u0110ANG TH\u1EE8C" : "\u0111ang ng\u1EE7"} \xB7 ngo\xE0i ${live2.length} (l\xEDnh ${guards}) \xB7 trong nh\xE0 ${crowd2} \xB7 ${t.props.length} c\xF4ng tr\xECnh \xB7 s\u01B0\u01A1ng: ${FOG[sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)]]}`;
-          return h("div", { class: "devrow" }, h("small", { text: line3 }), h("button", { class: "sm", text: "Camera t\u1EDBi", title: "Ch\u1EC9 \u0111\u1EC3 th\u1EED: \u0111\u01B0a camera t\u1EDBi tr\u1EA1i n\xE0y (s\u01B0\u01A1ng m\xF9 v\u1EABn che n\u1EBFu ch\u01B0a kh\xE1m ph\xE1)", onclick: () => {
+          return h("div", { class: "devrow" }, h("small", { text: line3 }), h("button", { class: "sm", text: "Ph\xE1t hi\u1EC7n", title: "Ch\u1EC9 \u0111\u1EC3 th\u1EED: l\xE0ng n\xE0y hi\u1EC7n trong L\u1EC1u h\u1ECDp chi\u1EBFn nh\u01B0 \u0111\xE3 \u0111\u01B0\u1EE3c trinh s\xE1t \u0111\u1EE7", onclick: () => {
+            toast2(discoverTribe(sim2, t.id));
+            ctl2.onChange();
+          } }), h("button", { class: "sm", text: "Camera t\u1EDBi", title: "Ch\u1EC9 \u0111\u1EC3 th\u1EED: \u0111\u01B0a camera t\u1EDBi tr\u1EA1i n\xE0y (s\u01B0\u01A1ng m\xF9 v\u1EABn che n\u1EBFu ch\u01B0a kh\xE1m ph\xE1)", onclick: () => {
             ctl2.centerOn(t.camp.x * TILE, t.camp.y * TILE);
             this.close();
           } }));

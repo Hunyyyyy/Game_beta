@@ -48,9 +48,9 @@ function memory(total: number): typeof mem {
  * A* 8 hướng, không cắt góc. Nếu không tới được đích, trả về đường tới ô gần đích nhất.
  * Trả về các ô cần đi qua (không gồm ô xuất phát); mảng rỗng nếu không có đường.
  */
-export function findPath(world: World, sx: number, sy: number, gx: number, gy: number, maxNodes = 30000, ours = false): Step[] {
+export function findPath(world: World, sx: number, sy: number, gx: number, gy: number, maxNodes = 30000, ours: boolean | 'foe' = false): Step[] {
   const N = world.size;
-  const blocked = (x: number, y: number) => (ours ? world.isBlockedFor(x, y, true) : world.isBlocked(x, y)); // our people pass the shut gates
+  const blocked = (x: number, y: number) => (ours ? world.isBlockedFor(x, y, ours) : world.isBlocked(x, y)); // our people pass the shut gates
   if (!world.inBounds(sx, sy) || !world.inBounds(gx, gy)) return [];
   const { g, f, parent, seen, closed, gen } = memory(N * N);
   const heap = new MinHeap(f);

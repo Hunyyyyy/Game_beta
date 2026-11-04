@@ -152,6 +152,7 @@ export class Menu {
     page.append(h('div', { class: 'devrow' },
       btn('+5 dân', () => toast(dev.addPeople(sim, 5)), 'Thêm 5 dân rảnh quanh lửa trại, kể cả khi vượt sức chứa'),
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),
+      btn('Đầy quân + đồ cao nhất + đuốc', () => toast(dev.fullArmy(sim)), 'Mọi trại lính đầy quân, ai cũng có vũ khí và giáp tốt nhất của thời đại và một cây đuốc'),
       btn('Gọi sự kiện (theo cấp lửa)', () => toast(dev.callEvent(sim)), 'Gọi ngay sự kiện đã hẹn mạnh nhất mà trại cấp lửa hiện tại đủ sức đón')));
 
     // the villages of the land: where they are and how they stand, to try the sleeping and waking of a village by sending people to it
@@ -169,7 +170,7 @@ export class Menu {
         const live = t.unitIds.map((u) => sim.get(u)).filter((u) => !!u && u.health > 0), guards = live.filter((u) => u!.ai?.role !== 'civ').length, crowd = t.crowd ? t.crowd.guards + t.crowd.civs : 0;
         const d = fire ? Math.round(Math.hypot(t.camp.x - fire.x, t.camp.y - fire.y)) : 0;
         const line = `${t.boss ? 'BOSS' : 'Thường'} · ${t.def.name} · (${Math.round(t.camp.x)}, ${Math.round(t.camp.y)}) · cách lửa ${d} ô · cấp ${t.campLevel}${t.state === 'free' ? '' : ` · ${t.state}`} · ${t.awake ? 'ĐANG THỨC' : 'đang ngủ'} · ngoài ${live.length} (lính ${guards}) · trong nhà ${crowd} · ${t.props.length} công trình · sương: ${FOG[sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)]]}`;
-        return h('div', { class: 'devrow' }, h('small', { text: line }), h('button', { class: 'sm', text: 'Camera tới', title: 'Chỉ để thử: đưa camera tới trại này (sương mù vẫn che nếu chưa khám phá)', onclick: () => { ctl.centerOn(t.camp.x * TILE, t.camp.y * TILE); this.close(); } }));
+        return h('div', { class: 'devrow' }, h('small', { text: line }), h('button', { class: 'sm', text: 'Phát hiện', title: 'Chỉ để thử: làng này hiện trong Lều họp chiến như đã được trinh sát đủ', onclick: () => { toast(dev.discoverTribe(sim, t.id)); ctl.onChange(); } }), h('button', { class: 'sm', text: 'Camera tới', title: 'Chỉ để thử: đưa camera tới trại này (sương mù vẫn che nếu chưa khám phá)', onclick: () => { ctl.centerOn(t.camp.x * TILE, t.camp.y * TILE); this.close(); } }));
       }));
     });
 

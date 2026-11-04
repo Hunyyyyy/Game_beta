@@ -66,7 +66,7 @@ export function growCamp(sim: Sim, t: Tribe, level: number): number {
     next.push(prop);
   }
   for (const p of old.values()) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) W.occ[(p.y + j) * N + p.x + i] = 0;
-  for (const p of next) if (p.kind !== 'gate' || p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) W.occ[(p.y + j) * N + p.x + i] = 1; // a gate is a gap in the fence while it is open
+  for (const p of next) if (p.kind !== 'gate' || p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) { const k = (p.y + j) * N + p.x + i; W.occ[k] = 1; if (p.kind === 'gate') W.foeGates.add(k); } // a gate is a gap in the fence while it is open
   t.props = next; t.built = level;
   return next.length - base.length;
 }
@@ -77,7 +77,7 @@ export function setGates(sim: Sim, t: Tribe, shut: boolean): void {
   for (const p of t.props) {
     if (p.kind !== 'gate' || (p.open !== false) !== shut) continue;
     p.open = !shut;
-    for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) sim.world.occ[(p.y + j) * N + p.x + i] = shut ? 1 : 0;
+    for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) { const k = (p.y + j) * N + p.x + i; sim.world.occ[k] = shut ? 1 : 0; if (shut) sim.world.foeGates.add(k); else sim.world.foeGates.delete(k); } // the village's own people pass its shut gates
   }
 }
 

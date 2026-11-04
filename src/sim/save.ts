@@ -269,6 +269,7 @@ export function applySave(sim: Sim, data: GameSave): void {
   sim.rnd.setState(data.rng.rnd); sim.frnd.setState(data.rng.frnd); sim.wrnd.setState(data.rng.wrnd);
 
   // what is derived is rebuilt, not saved
+  sim.world.foeGates.clear(); for (const t of sim.tribes) for (const p of t.props) if (p.kind === 'gate' && p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) sim.world.foeGates.add((p.y + j) * sim.world.size + p.x + i);
   sim.world.gates.clear(); for (const b of sim.buildings) if (b.kind === 'gate' && !b.open) { const d = BUILDINGS.gate; for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.gates.add((b.y + j) * sim.world.size + b.x + i); }
   sim.byId.clear(); for (const v of sim.villagers) sim.byId.set(v.id, v); for (const f of sim.foes) sim.byId.set(f.id, f);
   sim.animalById.clear(); for (const a of sim.animals) sim.animalById.set(a.id, a);

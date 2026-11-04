@@ -51,7 +51,7 @@ const progress = new WeakMap<Villager, { x: number; y: number; t: number }>();
  */
 function unstickWalker(sim: Sim, v: Villager, dt: number): void {
   if (v.inside !== null) return;
-  const w = sim.world, ours = v.team === 'player';
+  const w = sim.world, ours = passOf(v);
   if ((v.phase === 'idle' || v.phase === 'wait') && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours)) { const spot = freeSpotNear(sim, v.x, v.y); if (spot) { v.x = spot[0]; v.y = spot[1]; v.slide = null; } }
   if (!v.path.length) { progress.delete(v); return; }
   const goal = v.path[v.path.length - 1];
@@ -145,11 +145,11 @@ export function ringTiles(sim: Sim, v: Villager, x: number, y: number, w: number
  */
 export function standTile(sim: Sim, v: Villager): [number, number] {
   const fx = Math.floor(v.x), fy = Math.floor(v.y);
-  if (!sim.world.isBlockedFor(fx, fy, v.team === 'player')) return [fx, fy];
+  if (!sim.world.isBlockedFor(fx, fy, passOf(v))) return [fx, fy];
   let best: [number, number] = [fx, fy], bd = Infinity;
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
     const x = fx + dx, y = fy + dy;
-    if (sim.world.isBlockedFor(x, y, v.team === 'player')) continue;
+    if (sim.world.isBlockedFor(x, y, passOf(v))) continue;
     const d = Math.hypot(x + 0.5 - v.x, y + 0.5 - v.y);
     if (d < bd) { bd = d; best = [x, y]; }
   }
@@ -159,7 +159,7 @@ export function standTile(sim: Sim, v: Villager): [number, number] {
 /** Path from where the villager stands to (gx, gy); may end at the closest tile if unreachable. */
 export function pathTo(sim: Sim, v: Villager, gx: number, gy: number, maxNodes = 14000): Step[] {
   const [sx, sy] = standTile(sim, v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
-  const p = gx === sx && gy === sy ? [] : findPath(sim.world, sx, sy, gx, gy, maxNodes, v.team === 'player');
+  const p = gx === sx && gy === sy ? [] : findPath(sim.world, sx, sy, gx, gy, maxNodes, passOf(v));
   return off ? [[sx, sy] as Step, ...p] : p;
 }
 
@@ -173,3 +173,6 @@ export function routeTo(sim: Sim, v: Villager, tiles: Array<[number, number]>, t
   }
   return -1;
 }
+
+/** Whose shut gates a walker passes: ours (the player's), the village's own ('foe'), or none (the beasts). */
+const passOf = (v: Villager): boolean | 'foe' => (v.team === 'player' ? true : v.team === 'wild' ? false : 'foe');
