@@ -1,182 +1,146 @@
 {
- "_note": "distance = tiles from the player's campfire (far camps: the land between is made when the game starts). Sức mạnh không còn theo khoảng cách: share = phần sức mạnh NPC của làng này, military = tỉ lệ quân sự trong phần đó (xem content/difficulty.json). reward is shown to the player; techs come in M5.",
- "spring": {
-  "name": "Suối Nguồn",
-  "personality": "peaceful",
-  "angle": 200,
-  "distance": 80,
-  "share": 0.15,
-  "military": 0.3,
-  "civilians": 8,
-  "warriors": 4,
-  "weapons": [
-   "club",
-   "spear"
-  ],
-  "armor": false,
-  "look": {
-   "hide": "#7a8a4a",
-   "pants": "#4a6a8a"
+  "_note": "distance = tiles from the player's campfire (far camps: the land between is made when the game starts). Sức mạnh không còn theo khoảng cách: share = phần sức mạnh NPC của làng này, military = tỉ lệ quân sự trong phần đó (xem content/difficulty.json). reward is shown to the player; techs come in M5.",
+  "spring": {
+    "name": "Suối Nguồn",
+    "personality": "peaceful",
+    "tier": "weak",
+    "angle": 200,
+    "distance": 80,
+    "civilians": 8,
+    "warriors": 4,
+    "weapons": [
+      "club",
+      "spear"
+    ],
+    "armor": false,
+    "look": {
+      "hide": "#7a8a4a",
+      "pants": "#4a6a8a"
+    },
+    "relation": 0,
+    "reward": "Dễ giao thương và thu nạp; học T4 Bện sợi"
   },
-  "relation": 0,
-  "reward": "Dễ giao thương và thu nạp; học T4 Bện sợi",
-  "tribute": {
-   "food": 12,
-   "wood": 6,
-   "coin": 3
-  }
- },
- "axe": {
-  "name": "Rìu Đá",
-  "personality": "aggressive",
-  "angle": 320,
-  "distance": 110,
-  "share": 0.3,
-  "military": 0.65,
-  "civilians": 15,
-  "warriors": 10,
-  "weapons": [
-   "hatchet",
-   "mace"
-  ],
-  "armor": true,
-  "look": {
-   "hide": "#8a3a24",
-   "pants": "#6a2a1a"
+  "axe": {
+    "name": "Rìu Đá",
+    "personality": "aggressive",
+    "tier": "normal",
+    "angle": 320,
+    "distance": 110,
+    "civilians": 15,
+    "warriors": 10,
+    "weapons": [
+      "hatchet",
+      "mace"
+    ],
+    "armor": true,
+    "look": {
+      "hide": "#8a3a24",
+      "pants": "#6a2a1a"
+    },
+    "relation": -20,
+    "reward": "Lính chùy, bí quyết chế chùy đá"
   },
-  "relation": -20,
-  "reward": "Lính chùy, bí quyết chế chùy đá",
-  "tribute": {
-   "stone": 10,
-   "food": 10,
-   "coin": 4
-  }
- },
- "swamp": {
-  "name": "Đầm Lầy",
-  "personality": "ambusher",
-  "angle": 80,
-  "distance": 140,
-  "share": 0.25,
-  "military": 0.55,
-  "civilians": 12,
-  "warriors": 8,
-  "weapons": [
-   "sling",
-   "club"
-  ],
-  "armor": false,
-  "look": {
-   "hide": "#5a6a50",
-   "pants": "#3a4a3a"
+  "swamp": {
+    "name": "Đầm Lầy",
+    "personality": "ambusher",
+    "tier": "normal",
+    "angle": 80,
+    "distance": 140,
+    "civilians": 12,
+    "warriors": 8,
+    "weapons": [
+      "sling",
+      "club"
+    ],
+    "armor": false,
+    "look": {
+      "hide": "#5a6a50",
+      "pants": "#3a4a3a"
+    },
+    "relation": -10,
+    "reward": "Đất sét, sợi; học T5 Dây quăng đá"
   },
-  "relation": -10,
-  "reward": "Đất sét, sợi; học T5 Dây quăng đá",
-  "tribute": {
-   "food": 10,
-   "wood": 10,
-   "coin": 3
-  }
- },
- "cave": {
-  "name": "Hang Gấu",
-  "personality": "aggressive",
-  "angle": 260,
-  "distance": 160,
-  "share": 0.15,
-  "military": 0.6,
-  "civilians": 14,
-  "warriors": 9,
-  "weapons": [
-   "spear",
-   "mace"
-  ],
-  "armor": true,
-  "look": {
-   "hide": "#6a5a48",
-   "pants": "#3a3028"
+  "cave": {
+    "name": "Hang Gấu",
+    "personality": "aggressive",
+    "tier": "medium",
+    "angle": 260,
+    "distance": 160,
+    "civilians": 14,
+    "warriors": 9,
+    "weapons": [
+      "spear",
+      "mace"
+    ],
+    "armor": true,
+    "look": {
+      "hide": "#6a5a48",
+      "pants": "#3a3028"
+    },
+    "relation": -25,
+    "reward": "Da gấu, giáp da; thợ săn lão luyện"
   },
-  "relation": -25,
-  "reward": "Da gấu, giáp da; thợ săn lão luyện",
-  "tribute": {
-   "stone": 12,
-   "food": 8,
-   "coin": 4
-  }
- },
- "dune": {
-  "name": "Đồi Cát",
-  "personality": "ambusher",
-  "angle": 20,
-  "distance": 150,
-  "share": 0.15,
-  "military": 0.5,
-  "civilians": 11,
-  "warriors": 7,
-  "weapons": [
-   "bow",
-   "spear"
-  ],
-  "armor": false,
-  "look": {
-   "hide": "#b8a060",
-   "pants": "#7a6a3a"
+  "dune": {
+    "name": "Đồi Cát",
+    "personality": "ambusher",
+    "tier": "boss",
+    "angle": 20,
+    "distance": 150,
+    "civilians": 11,
+    "warriors": 7,
+    "weapons": [
+      "bow",
+      "spear"
+    ],
+    "armor": false,
+    "look": {
+      "hide": "#b8a060",
+      "pants": "#7a6a3a"
+    },
+    "relation": -5,
+    "reward": "Lông vũ, cung; học bắn cung"
   },
-  "relation": -5,
-  "reward": "Lông vũ, cung; học bắn cung",
-  "tribute": {
-   "food": 9,
-   "wood": 8,
-   "coin": 3
+  "meet": {
+    "_note": "Gặp nhau trong tầm nhìn thì đánh, trừ khi quan hệ tốt (từ friendlyFrom trở lên). Làng hiền (peaceful) chỉ đánh khi bị đánh. feuds: các cặp làng thù nhau, tự đánh nhau khi gặp (chỉ ở các chunk đang xem, xem data/npclife.json); làng không có trong cặp nào thì không tự đánh làng khác.",
+    "friendlyFrom": 20,
+    "feuds": [
+      [
+        "axe",
+        "swamp"
+      ],
+      [
+        "cave",
+        "dune"
+      ]
+    ]
+  },
+  "relation": {
+    "labels": [
+      [
+        -100,
+        "Thù địch"
+      ],
+      [
+        -40,
+        "Trung lập"
+      ],
+      [
+        20,
+        "Thân thiện"
+      ],
+      [
+        60,
+        "Cống nạp"
+      ],
+      [
+        90,
+        "Thu phục"
+      ]
+    ],
+    "killWarrior": -10,
+    "killCivilian": -25,
+    "attackedPeaceful": -30,
+    "tributeAt": 60,
+    "joinAt": 90
   }
- },
- "meet": {
-  "_note": "Gặp nhau trong tầm nhìn thì đánh, trừ khi quan hệ tốt (từ friendlyFrom trở lên). Làng hiền (peaceful) chỉ đánh khi bị đánh. feuds: các cặp làng thù nhau, tự đánh nhau khi gặp (chỉ ở các chunk đang xem, xem data/npclife.json); làng không có trong cặp nào thì không tự đánh làng khác.",
-  "friendlyFrom": 20,
-  "feuds": [
-   [
-    "axe",
-    "swamp"
-   ],
-   [
-    "cave",
-    "dune"
-   ]
-  ]
- },
- "relation": {
-  "labels": [
-   [
-    -100,
-    "Thù địch"
-   ],
-   [
-    -40,
-    "Trung lập"
-   ],
-   [
-    20,
-    "Thân thiện"
-   ],
-   [
-    60,
-    "Cống nạp"
-   ],
-   [
-    90,
-    "Thu phục"
-   ]
-  ],
-  "giftFood": 10,
-  "giftGain": 5,
-  "killWarrior": -10,
-  "killCivilian": -25,
-  "attackedPeaceful": -30,
-  "tributeAt": 60,
-  "joinAt": 90
- },
- "surrender": {
-  "leaderDown": true,
-  "holdCampSeconds": 30
- }
 }

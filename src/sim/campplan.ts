@@ -32,7 +32,7 @@ export function limitAt(kind: BuildingKind, fireLevel: number): number {
 export function slotsAt(kinds: BuildingKind[], fireLevel: number, era: Era, advanced: boolean): number {
   let n = 0;
   for (const k of kinds) {
-    if (!BUILDINGS[k].buildable || fireUnlockLevel(k) > fireLevel || eraLocked(k, { advanced })) continue;
+    if (!BUILDINGS[k].buildable || fireUnlockLevel(k) > fireLevel || eraLocked(k, { era: advanced ? 'ancient' : 'stone' })) continue;
     const lv = Math.max(1, Math.min(maxLevel(k, era), levelCapByFire(fireLevel)));
     n += limitAt(k, fireLevel) * (levelsOf(k, era)[lv - 1]?.slots ?? 0);
   }
@@ -53,7 +53,7 @@ const hits = (a: Rect, b: Rect): boolean => a.x < b.x + b.w && b.x < a.x + a.w &
 export function planCamp(fx: number, fy: number, fireLevel: number, era: Era, advanced: boolean, taken: Rect[], blocked: (r: Rect) => boolean): Piece[] {
   const fire = { x: fx, y: fy }, cx = fx + 1, cy = fy + 1, half = fenceHalf(fireLevel), fenced = half > 0;
   const out: Piece[] = [], used: Rect[] = [{ x: fx, y: fy, w: 2, h: 2 }, ...taken];
-  const open = (k: BuildingKind) => BUILDINGS[k].buildable && fireUnlockLevel(k) <= fireLevel && !eraLocked(k, { advanced });
+  const open = (k: BuildingKind) => BUILDINGS[k].buildable && fireUnlockLevel(k) <= fireLevel && !eraLocked(k, { era: advanced ? 'ancient' : 'stone' });
   const cap = levelCapByFire(fireLevel);
   const put = (kind: BuildingKind, x: number, y: number): boolean => {
     const d = BUILDINGS[kind], r = { x, y, w: d.w, h: d.h };
@@ -71,7 +71,7 @@ export function planCamp(fx: number, fy: number, fireLevel: number, era: Era, ad
       put(d === 0 ? 'gate' : 'fence', cx + d, cy + half);
       if (Math.abs(d) < half) { put('fence', cx - half, cy + d); put('fence', cx + half, cy + d); }
     }
-    if (!eraLocked('tower', { advanced })) for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put('tower', sx > 0 ? cx + half + 1 : cx - half - 2, sy > 0 ? cy + half + 1 : cy - half - 2);
+    if (!eraLocked('tower', { era: advanced ? 'ancient' : 'stone' })) for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put('tower', sx > 0 ? cx + half + 1 : cx - half - 2, sy > 0 ? cy + half + 1 : cy - half - 2);
   } else if (open('tower')) {
     for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]].slice(0, limitAt('tower', fireLevel))) put('tower', cx + sx * 8 - (sx < 0 ? 2 : 0), cy + sy * 8 - (sy < 0 ? 2 : 0));
   }

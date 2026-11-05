@@ -1,6 +1,5 @@
 /** The army: squads (đội), their formations (trận pháp) and mastery, how formations change a blow, clusters (cụm) and the log of a fight. */
 import { COMMAND, SQUAD_MAX, clusterize, FORMATIONS, FormationId, FORMATION_IDS, formationOffsets, masteryFactor, placeOffset, armOfWeapon, iconCount } from './formations';
-import { DAY_LENGTH } from './constants';
 import { armOf, effWeapon, Ent } from './battle';
 import { RESEARCH, unlockedMax } from './research';
 import { CELLS_DEFAULT, SQUADS_DEFAULT } from './progression';
@@ -154,7 +153,7 @@ export function tickTraining(sim: Sim, dt: number): void {
     const near = field && us.length ? us.filter((v) => Math.hypot(v.x - (field.x + 1.5), v.y - (field.y + 1.5)) < 7).length >= Math.ceil(us.length / 2) : false;
     for (const f of FORMATION_IDS) {
       if (f === s.formation && s.training && near) s.mastery[f] = Math.min(100, s.mastery[f] + COMMAND.mastery.perSecond * dt);
-      else s.mastery[f] = Math.max(0, s.mastery[f] - (COMMAND.mastery.decayPerDay * dt) / DAY_LENGTH);
+      else s.mastery[f] = Math.max(0, s.mastery[f] - (COMMAND.mastery.decayPerDay * dt) / sim.dayLen);
     }
     if (s.training && !field) s.training = false;
   }

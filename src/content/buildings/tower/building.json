@@ -15,7 +15,8 @@
   0,
   1,
   2,
-  4
+  4,
+  6
  ],
  "levels": {
   "stone": [
@@ -41,7 +42,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 3,
-    "hp": 700,
+    "hp": 600,
     "sight": 13
    },
    {
@@ -54,7 +55,7 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 4,
-    "hp": 1200,
+    "hp": 700,
     "sight": 16
    },
    {
@@ -67,8 +68,23 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 4,
-    "hp": 1800,
+    "hp": 800,
     "sight": 19
+   }
+  ],
+  "ancient": [
+   {
+    "name": "Gạch ngói (trung cổ)",
+    "cost": {
+     "wood": 123,
+     "stone": 27
+    },
+    "buildTime": 513,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 5,
+    "hp": 1200,
+    "sight": 21
    }
   ]
  }

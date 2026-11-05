@@ -10,10 +10,11 @@
  "upgradable": true,
  "unlockFire": 1,
  "popByFire": [
-  8,
-  16,
-  25,
-  40
+  20,
+  30,
+  40,
+  60,
+  80
  ],
  "levels": {
   "stone": [
@@ -42,10 +43,9 @@
    {
     "name": "Bếp lửa lớn",
     "cost": {
-     "food": 100,
+     "food": 50,
      "wood": 250,
-     "stone": 200,
-     "hide": 50,
+     "stone": 100,
      "coin": 30
     },
     "buildTime": 240,
@@ -58,11 +58,10 @@
    {
     "name": "Nhà chung",
     "cost": {
-     "food": 800,
-     "wood": 500,
-     "stone": 400,
-     "hide": 200,
-     "coin": 100
+     "food": 200,
+     "wood": 300,
+     "stone": 150,
+     "coin": 50
     },
     "buildTime": 480,
     "cap": 90,
@@ -70,6 +69,24 @@
     "slots": 0,
     "hp": 450,
     "sight": 22
+   }
+  ],
+  "ancient": [
+   {
+    "name": "Nhà chính",
+    "cost": {
+     "food": 1200,
+     "wood": 800,
+     "stone": 700,
+     "hide": 300,
+     "coin": 200
+    },
+    "buildTime": 720,
+    "cap": 135,
+    "craftSpeed": 1.25,
+    "slots": 0,
+    "hp": 675,
+    "sight": 24
    }
   ]
  }

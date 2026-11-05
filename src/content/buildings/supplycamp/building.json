@@ -16,8 +16,7 @@
    {
     "name": "Lều hậu cần",
     "cost": {
-     "wood": 26,
-     "hide": 9
+     "wood": 26
     },
     "buildTime": 70,
     "cap": 0,
@@ -30,7 +29,6 @@
     "name": "Trại hậu cần",
     "cost": {
      "wood": 39,
-     "hide": 12,
      "stone": 10
     },
     "buildTime": 110,
@@ -44,7 +42,6 @@
     "name": "Kho quân nhu",
     "cost": {
      "wood": 52,
-     "hide": 18,
      "stone": 25
     },
     "buildTime": 160,
@@ -58,7 +55,6 @@
     "name": "Kho quân nhu gia cố",
     "cost": {
      "wood": 68,
-     "hide": 27,
      "stone": 50
     },
     "buildTime": 233,
@@ -66,6 +62,22 @@
     "craftSpeed": 1,
     "slots": 16,
     "hp": 450,
+    "sight": 0
+   }
+  ],
+  "ancient": [
+   {
+    "name": "Gạch ngói (trung cổ)",
+    "cost": {
+     "wood": 123,
+     "hide": 49,
+     "stone": 90
+    },
+    "buildTime": 350,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 19,
+    "hp": 675,
     "sight": 0
    }
   ]

@@ -32,17 +32,28 @@ export function tickCalendar(sim: Sim): void {
   sim.resting = rest;
 }
 
-/** Each new day a few strangers walk in and settle by the fire (how many: start.json "arrivals"). */
+/** The player opens or shuts the village to strangers (the campfire's panel): while shut nobody comes. Returns whether it is open now. */
+export function toggleNewcomers(sim: Sim): boolean { sim.newcomersOpen = !sim.newcomersOpen; return sim.newcomersOpen; }
+
+/** Each new day a few strangers walk in and settle by the fire (how many: start.json "arrivals"), unless the village is shut to them. One notice for all of them. */
 function newcomers(sim: Sim): void {
-  const { min, max, femaleChance } = startJson.arrivals;
-  const n = min + Math.floor(sim.frnd() * (max - min + 1)), fire = sim.campfire(), s = sim.world.start;
+  if (!sim.newcomersOpen) return;
+  const { min, max } = startJson.arrivals;
+  const names = settle(sim, min + Math.floor(sim.frnd() * (max - min + 1)));
+  if (names.length) sim.say(`${names.length} người đến làng xin ở lại: ${names.join(', ')}.`);
+}
+
+/** `n` people come to live by the fire (as many as the village has room for when `room` is asked); returns their names. */
+export function settle(sim: Sim, n: number, room = false): string[] {
+  const { femaleChance } = startJson.arrivals, fire = sim.campfire(), s = sim.world.start, names: string[] = [];
+  if (room) n = Math.min(n, Math.max(0, sim.popCap() - sim.villagers.length));
   for (let i = 0; i < n; i++) {
     const a = sim.frnd() * Math.PI * 2, r = 2 + sim.frnd() * 2;
     const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim.nearestFree(gx, gy, new Set()) ?? [gx, gy];
     const v = sim.makeVillager(spot[0], spot[1], sim.frnd() < femaleChance ? 'f' : 'm', 'player', sim.frnd);
-    sim.villagers.push(v); sim.registerUnit(v);
-    sim.say(`${v.name} đến làng xin ở lại.`);
+    sim.villagers.push(v); sim.registerUnit(v); names.push(v.name);
   }
+  return names;
 }
 
 // ---------------------------------------------------------------- vòng lặp

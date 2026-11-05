@@ -1,5 +1,6 @@
 import data from '../data/research.json';
 import type { BuildingKind } from './buildings';
+import { scaleBill } from './resources';
 import type { Stock } from './resources';
 import { labLevelOf } from './progression';
 import tree from '../data/researchtree.json';
@@ -25,14 +26,14 @@ export const CRAFT_COST_PER_LEVEL = (data as unknown as { craftCostPerLevel?: nu
 export const recipeNeedLevel = (id: string): number => RECIPE_LEVEL[id] ?? 1;
 export const TECHS = (data as unknown as { techs: Tech[] }).techs;
 // which research-house level teaches a step is the plan's call (data/progression.json), not the step's
-for (const t of TECHS) t.needLevel = labLevelOf(t.id);
+for (const t of TECHS) { t.needLevel = labLevelOf(t.id); t.cost = scaleBill(t.cost); }
 export const TECH_BY_ID: Record<string, Tech> = Object.fromEntries(TECHS.map((t) => [t.id, t]));
 
 // ---------------------------------------------------------------- stat lines (data/researchtree.json)
 export type StatId = 'hp' | 'atk' | 'defm' | 'defr' | 'move' | 'work' | 'int' | 'sta';
 export interface StatDef { name: string; short: string; steps: number[]; tiers?: number[]; cost: Partial<Stock>; time: number; about: string }
 /** A stat with a line in the tree: the eight of a body, and three of the weapon in hand (attack speed, critical chance, critical damage). */
-export type LineStat = StatId | 'aspd' | 'crit' | 'critd' | 'tspd' | 'tyield' | 'tdur' | 'hpregen' | 'restregen' | 'mspeed' | 'mload' | 'mbuild';
+export type LineStat = StatId | 'aspd' | 'crit' | 'critd' | 'tspd' | 'tyield' | 'gyield' | 'tdur' | 'hpregen' | 'restregen' | 'mspeed' | 'mload' | 'mbuild';
 export const STAT_IDS = Object.keys(tree.stats) as LineStat[];
 export const STAT_DEF = tree.stats as unknown as Record<LineStat, StatDef>;
 export const TREE_ROLES = tree.roles as unknown as Record<string, { name: string; building?: BuildingKind; weapon?: string; tool?: string; formation?: boolean; needs?: string }>;
@@ -59,6 +60,7 @@ for (const def of Object.values(CHAINS)) for (const role of def.roles) for (cons
     const cost: Partial<Stock> = {};
     for (const [res, amount] of Object.entries(s.cost)) cost[res as keyof Stock] = Math.max(1, Math.round((amount as number) * tree.growth.cost ** (n - 1)));
     cost.coin = (cost.coin ?? 0) + Math.floor(n / 2);
+    Object.assign(cost, scaleBill(cost));
     const t: Tech = {
       id: statTechId(role, stat, n), name: `${s.name} · ${TREE_ROLES[role].name} ${n}`, desc: `${s.about} Cộng ${s.steps[n - 1] * (ROLE_SCALE[role] ?? 1)}% cho ${TREE_ROLES[role].formation ? 'lính đứng trong trận ' : ''}${TREE_ROLES[role].name.toLowerCase()}.`,
       requires: [...(n > 1 ? [statTechId(role, stat, n - 1)] : at === 0 && TREE_ROLES[role].needs ? [TREE_ROLES[role].needs!] : []), ...(n === 1 && def.gates?.[stat] ? [def.gates[stat]!] : []), ...(chain && at > 0 ? [statTechId(role, chain[at - 1], Math.min(n, statLevels(chain[at - 1])))] : []), ...(chain && at === 0 && n > 1 ? [statTechId(role, chain[chain.length - 1], Math.min(n - 1, statLevels(chain[chain.length - 1])))] : [])], needLevel: labNeeded(stat, n), cost, time: Math.round(s.time * tree.growth.time ** (n - 1)),

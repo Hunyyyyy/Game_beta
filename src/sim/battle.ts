@@ -49,7 +49,7 @@ export function teamsHostile(sim: Sim, a: Team, b: Team): boolean {
   return sim.tribesFeud(a, b); // two villages fight only when they are at feud
 }
 
-export interface Threat { t: Target; x: number; y: number; d: number; name: string }
+export interface Threat { t: Target; x: number; y: number; d: number; name: string; /** A soldier of the other side (not a civilian, not a beast): the archers pick these first. */ fighter?: boolean }
 
 /** Enemies of `v` within `radius`, nearest first. Player units only notice what they can see. */
 /** Tiles on a side of a cell of the grid that finds who is near whom. */
@@ -89,7 +89,7 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   for (const o of nearbyOthers(sim, v, radius)) {
     if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
     const d = Math.hypot(o.x - v.x, o.y - v.y);
-    if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name });
+    if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name, fighter: isFighter(o) || (!!o.ai && o.ai.role !== 'civ') });
   }
   if (player) for (const a of sim.animals) {
     if (a.state === 'dead' || (sk && sk.kind === 'animal' && sk.id === a.id)) continue;
@@ -98,6 +98,8 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
     const d = Math.hypot(a.x - v.x, a.y - v.y);
     if (d <= radius && seen(a.x, a.y)) out.push({ t: { kind: 'animal', id: a.id }, x: a.x, y: a.y, d, name: def.name });
   }
+  // an archer (of either side) picks a soldier of the enemy before anyone else in sight; the rest, and every other arm, go by distance
+  if (armOf(v) === 'archer') return out.sort((p, q) => (q.fighter ? 1 : 0) - (p.fighter ? 1 : 0) || p.d - q.d);
   return out.sort((p, q) => p.d - q.d);
 }
 

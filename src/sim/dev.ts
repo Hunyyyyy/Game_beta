@@ -1,5 +1,4 @@
 import { SEASONS, SEASON_DAYS, Season, WeatherKind } from './calendar';
-import { DAY_LENGTH } from './constants';
 import { ANIMALS, WEAPONS } from './combat';
 import { BUILDINGS, BuildingKind, eraLocked, fireUnlockLevel, levelCapByFire, maxHp, maxLevel, WALL_KINDS } from './buildings';
 import { CORE, OUTSIDE, ring } from './campplan';
@@ -8,10 +7,10 @@ import { RES_LIST, Res } from './resources';
 import type { RoleId } from './jobs';
 import type { Sim } from './sim';
 import { RECIPES } from './tools';
-import { CHAINS, STAT_TECHS, TECHS } from './research';
+import { CHAINS, STAT_TECHS, TECHS, recipeNeedLevel } from './research';
 import { seenNow } from './scouting';
-import { fireEventNow, tribeOf } from './tribes';
-import { TORCH_LIFE } from './rest';
+import { fireEventNow, tribeOf, tributeTribe } from './tribes';
+import { torchLife } from './rest';
 import { Tile } from './world';
 
 /**
@@ -51,12 +50,12 @@ export function researchGroup(sim: Sim, key: string): string {
 }
 
 // ---- time and weather
-export function setTimeOfDay(sim: Sim, tod: number): void { sim.time = Math.floor(sim.time / DAY_LENGTH) * DAY_LENGTH + tod * DAY_LENGTH; }
-export function skipDays(sim: Sim, n: number): void { sim.time += n * DAY_LENGTH; }
+export function setTimeOfDay(sim: Sim, tod: number): void { sim.time = sim.timeBase + Math.floor((sim.time - sim.timeBase) / sim.dayLen) * sim.dayLen + tod * sim.dayLen; }
+export function skipDays(sim: Sim, n: number): void { sim.time += n * sim.dayLen; }
 export function setSeason(sim: Sim, season: Season): void {
   const year = Math.floor((sim.day - 1) / (SEASON_DAYS * SEASONS.length));
   const day = year * SEASON_DAYS * SEASONS.length + SEASONS.indexOf(season) * SEASON_DAYS + 1;
-  sim.time = (day - 1) * DAY_LENGTH + 0.3 * DAY_LENGTH;
+  sim.time = sim.timeBase + (day - 1 - sim.dayBase) * sim.dayLen + 0.3 * sim.dayLen;
 }
 export function setWeather(sim: Sim, kind: WeatherKind): void { sim.weather = kind; }
 
@@ -108,6 +107,13 @@ function fenceRing(sim: Sim, cx: number, cy: number, half: number): number {
   return n;
 }
 
+/** The land round the fire counts as explored (as far as the houses of the biggest camp reach), so that houses can be put outside the fence: a house cannot stand on unknown land. */
+function exploreAround(sim: Sim, fire: { x: number; y: number }, radius = 32): void {
+  const N = sim.world.size, s = sim.fog.state, cx = Math.floor(fire.x), cy = Math.floor(fire.y);
+  for (let y = Math.max(0, cy - radius); y <= Math.min(N - 1, cy + radius); y++) for (let x = Math.max(0, cx - radius); x <= Math.min(N - 1, cx + radius); x++) if (s[y * N + x] === 0) s[y * N + x] = 1;
+  sim.fog.invalidate();
+}
+
 /** Everything of the village is taken away but the campfire: the houses, the fence, the people's trades and arms. */
 function wipe(sim: Sim): void {
   for (const b of [...sim.buildings]) if (b.kind !== 'campfire') sim.demolishBuilding(b.id);
@@ -125,14 +131,15 @@ function wipe(sim: Sim): void {
  * when the level opens them, the houses of that level ringed round the fire (the camps and stores inside the fence, the working houses outside it),
  * then the people: every bed filled, the trades and camps staffed, the soldiers armed. Costs nothing. Returns a line about what stands now.
  */
-export function simulateCamp(sim: Sim, level: number, medieval = sim.advanced): string {
+export function simulateCamp(sim: Sim, level: number, medieval = sim.era === 'ancient'): string {
   const fire = sim.campfire();
   if (!fire) return 'Không có Nhà chung';
-  sim.advanced = medieval; // the era of the camp: the stone age has no supply camp, scouts, watchtower or war plan
+  sim.setEra(medieval ? 'ancient' : 'stone'); // the era of the camp: the stone age has no supply camp, scouts, watchtower or war plan
   const was = { f: sim.dev.freeBuild, i: sim.dev.instantBuild };
   sim.dev.freeBuild = sim.dev.instantBuild = true;
   try {
     sim.fogDirty = true; // the houses and the people light the land round them by themselves: the rest of the map stays unknown
+    exploreAround(sim, fire);
     wipe(sim);
     fire.level = Math.max(1, Math.min(maxLevel('campfire', fire.era), level)); fire.upgrading = false; fire.hp = maxHp(fire);
     const cx = Math.floor(fire.x + 1), cy = Math.floor(fire.y + 1);
@@ -169,16 +176,19 @@ function peopleFor(sim: Sim): { total: number; soldiers: number } {
   const cap = sim.popCap();
   for (let i = sim.villagers.length; i < cap; i++) addVillager(sim);
   for (const v of sim.villagers.filter((x) => x.team === 'player').slice(cap)) { sim.leaveNode(v); sim.exitBuilding(v); sim.villagers.splice(sim.villagers.indexOf(v), 1); sim.byId.delete(v.id); }
-  // 40% of the village is army (the camps first, then the guards), the rest works: the trades round and round, the builders, the craft and research houses
+  // the people are given out by what the houses hold (the places of each house at its level, from the building files), never past it, and what is left stays idle:
+  // the camps of soldiers first, then the builders, the research and craft houses, the trades, the guards last
   const free = () => sim.villagers.filter((v) => v.team === 'player' && v.job === 'idle' && v.down <= 0);
-  const give = (role: RoleId): boolean => { const v = free()[0]; return !!v && sim.assignRole([v.id], role) === null; };
-  const soldiersWanted = Math.floor(sim.villagers.length * 0.4);
-  const camps: RoleId[] = sim.advanced ? ['foot', 'archer', 'cavalry', 'guard', 'supply'] : ['foot', 'archer', 'cavalry', 'guard'];
-  for (let n = 0, i = 0, stuck = 0; n < soldiersWanted && stuck < camps.length; i++) { if (give(camps[i % camps.length])) { n++; stuck = 0; } else stuck++; }
-  const crew = free()[0]; if (crew) sim.assignCrew([crew.id]);
-  const trades: RoleId[] = ['wood', 'stone', 'food', 'hunt'];
-  for (let i = 0, stuck = 0; stuck < trades.length; i++) { if (give(trades[i % trades.length])) stuck = 0; else stuck++; }
-  for (const job of ['research', 'craft'] as const) { const v = free()[0]; if (v) sim.assignStaff([v.id], job); }
+  const give = (role: RoleId): boolean => { const v = free()[0]; return !!v && sim.roleCount(role) < sim.roleCapacity(role) && sim.assignRole([v.id], role) === null; };
+  const roundRobin = (roles: RoleId[]) => { for (let i = 0, stuck = 0; stuck < roles.length; i++) { if (give(roles[i % roles.length])) stuck = 0; else stuck++; } };
+  const was = sim.dev.freeBuild; sim.dev.freeBuild = false; // with it on a role with no house would hold 99: the real places are the ones that count
+  try {
+    roundRobin(sim.era === 'ancient' ? ['foot', 'archer', 'cavalry', 'supply'] : ['foot', 'archer', 'cavalry']);
+    for (let v = free()[0]; v && sim.assignCrew([v.id]) === null; v = free()[0]);
+    for (const job of ['research', 'craft'] as const) for (let v = free()[0]; v && sim.assignStaff([v.id], job) === null; v = free()[0]);
+    roundRobin(['wood', 'stone', 'food', 'hunt']);
+    roundRobin(['guard']);
+  } finally { sim.dev.freeBuild = was; }
   // arms for the soldiers; tools, weapons and torches in the stores
   for (const r of RECIPES) sim.toolStock[r.id] = Math.max(sim.toolStock[r.id] ?? 0, 3);
   for (const v of sim.villagers) if (v.team === 'player' && v.job === 'fight') {
@@ -251,16 +261,64 @@ export function fullArmy(sim: Sim): string {
       added++;
     }
   }
-  const top = sim.advanced ? { foot: 'bronze_sword', cav: 'bronze_spear', armor: 'bronze' } : { foot: 'mace', cav: 'spear', armor: 'bone' };
+  const top = sim.era === 'ancient' ? { foot: 'bronze_sword', cav: 'bronze_spear', armor: 'bronze' } : { foot: 'mace', cav: 'spear', armor: 'bone' };
   let n = 0;
   for (const v of sim.villagers) {
     if (v.team !== 'player' || v.job !== 'fight') continue;
     const weapon = v.arm === 'archer' ? 'bow' : v.arm === 'cavalry' ? top.cav : top.foot;
     sim.giveGear([v.id], weapon, 'weapon'); sim.giveGear([v.id], top.armor, 'armor');
-    v.manualGear = true; v.torch = { dur: TORCH_LIFE }; n++;
+    v.manualGear = true; v.torch = { dur: torchLife(sim) }; n++;
   }
   sim.fogDirty = true;
   return `Quân đầy các trại: thêm ${added} lính, ${n} lính có đồ cao nhất + đuốc`;
+}
+
+/** The nearest free village of a tier (weak, normal, medium) becomes a tributary at once, so it sends its soldiers when we go to war. Returns a line about it. */
+export function allyTier(sim: Sim, tier: 'weak' | 'normal' | 'medium'): string {
+  const f = sim.campfire(), from = f ? { x: f.x, y: f.y } : sim.world.start;
+  const t = sim.tribes.filter((x) => x.tier === tier && !x.boss && x.state === 'free')
+    .sort((a, b) => Math.hypot(a.camp.x - from.x, a.camp.y - from.y) - Math.hypot(b.camp.x - from.x, b.camp.y - from.y))[0];
+  if (!t) return `Không còn làng ${tier} nào tự do để làm đồng minh`;
+  t.state = 'surrendered'; // the one state a tribute can be taken from at any relation
+  const err = tributeTribe(sim, t.id);
+  if (err) return err;
+  t.relation = 100; // the soldiers it sends are its tier's number times relation / 100 (difficulty.json capture.allies): at 100 the full number
+  return `${t.def.name} (${tier}) đã làm đồng minh (chư hầu, quan hệ 100)`;
+}
+
+/**
+ * A camp of the stone age at a level (1 to 4) with exactly what that level opens: every research whose house level is at most `level`, a store of every tool, weapon
+ * and armour whose crafting-house level is at most `level`, and the soldiers armed with the best of those. Returns a line about it.
+ */
+export function campFullKit(sim: Sim, level: number): string {
+  const camp = simulateCamp(sim, level, false);
+  // what stands decides what opens: a camp with no research house (it opens at the second fire) has no research, one with no crafting house makes nothing
+  const lab = sim.building('lab')?.level ?? 0, shop = sim.building('workshop')?.level ?? 0;
+  let techs = 0;
+  for (const t of [...TECHS, ...STAT_TECHS]) if (lab > 0 && t.needLevel <= lab && !sim.researched.has(t.id)) { sim.researched.add(t.id); techs++; }
+  const open = RECIPES.filter((r) => shop > 0 && recipeNeedLevel(r.id) <= shop);
+  for (const r of open) sim.toolStock[r.id] = Math.max(sim.toolStock[r.id] ?? 0, 99);
+  const best = (kinds: string[]) => kinds.find((k) => open.some((r) => r.kind === k));
+  const foot = best(['mace', 'spear', 'club']), cav = best(['spear', 'club']), armor = best(['bone', 'hide']);
+  let n = 0;
+  for (const v of sim.villagers) {
+    if (v.team !== 'player' || v.job !== 'fight') continue;
+    const weapon = v.arm === 'archer' ? 'bow' : v.arm === 'cavalry' ? cav : foot;
+    if (weapon) sim.giveGear([v.id], weapon, 'weapon');
+    if (armor) sim.giveGear([v.id], armor, 'armor');
+    v.manualGear = true; v.torch = { dur: torchLife(sim) }; n++;
+  }
+  return `${camp}; nghiên cứu ${techs} mục mở ở cấp ${level}; kho đủ đồ cấp ${level}; ${n} lính trang bị đồ tốt nhất mở được + đuốc`;
+}
+
+/** The nearest boss still standing is found and mapped, and the army is sent at it (the quick war of the stone age). Returns a line about it. */
+export function attackBoss(sim: Sim): string {
+  const f = sim.campfire(), from = f ? { x: f.x, y: f.y } : sim.world.start;
+  const t = sim.tribes.filter((x) => x.boss && !x.bossDown && x.state === 'free')
+    .sort((a, b) => Math.hypot(a.camp.x - from.x, a.camp.y - from.y) - Math.hypot(b.camp.x - from.x, b.camp.y - from.y))[0];
+  if (!t) return 'Không còn boss nào để đánh';
+  discoverTribe(sim, t.id);
+  return sim.quickAttack(t.id) ?? `Đã đưa quân đi đánh ${t.def.name} (boss)`;
 }
 
 /** A village is found and mapped in full (levels 1 to 3), so that it shows in the war tent. Returns a line about it. */

@@ -241,17 +241,25 @@ function updateHud(now: number) {
 ctl.onChange = () => { lastHud = 0; syncButtons(); };
 
 // ---------------------------------------------------------------- main loop
-let last = 0;
+let last = 0, drawn = 0;
+/** Frames the game may skip drawing while it runs fast-forward: the simulation needs the time, and nobody follows each step at that speed. */
+const drawEvery = (): number => (sim.speed >= 16 ? 4 : sim.speed >= 8 ? 3 : sim.speed >= 4 ? 2 : 1);
 function frame(t: number) {
+  const t0 = performance.now();
   const dt = last ? (t - last) / 1000 : 0; last = t;
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
   ctl.update(dt);
   if (started) session.tick();
   { const m = 10, z = cam.zoom; sim.view = { x0: cam.x / TILE - m, y0: cam.y / TILE - m, x1: (cam.x + renderer.w / z) / TILE + m, y1: (cam.y + renderer.h / z) / TILE + m }; } // seen: the screen and 10 tiles round it
-  if (skipping) runSkip(); else sim.advance(dt);
+  if (skipping) runSkip(); else sim.advance(dt, () => performance.now() - t0 > 70);
   syncSkip();
-  renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);
-  buildingBar.place(); map.draw(); updateHud(t);
+  const busy = !!ctl.ghost() || !!ctl.box; // placing or dragging a box: draw every frame so the hand is not behind
+  if (busy || skipping || ++drawn >= drawEvery()) {
+    drawn = 0;
+    renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);
+    buildingBar.place(); map.draw();
+  }
+  updateHud(t);
   requestAnimationFrame(frame);
 }
 new ResizeObserver(() => { renderer.resize(); ctl.clamp(); }).observe(view);

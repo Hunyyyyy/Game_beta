@@ -1,5 +1,6 @@
 /** The stats of everyone who is a person (src/data/stats.json): base × personal factor × tier × (1 + research / 100). Each stat stands alone. */
 import cfg from '../data/stats.json';
+import cfgDiff from '../content/difficulty.json';
 import { cycleOf, RULES, WeaponDef } from './combat';
 import { FORMATIONS, FormationId } from './formations';
 import { roleOf } from './jobs';
@@ -8,7 +9,7 @@ import { TOOL_OF_JOB } from './tools';
 import { LineStat, soldierTier, statBonus, StatId, TREE_ROLES } from './research';
 
 /** What the stat rules read of the game: the research done and the squads. A narrow type of its own so that this file, shared by the systems, never has to know the Sim. */
-export interface StatSim { readonly researched: ReadonlySet<string>; readonly squads: ReadonlyArray<{ readonly id: number; readonly formation: FormationId }>; readonly foodPenalty: number; /** While a war is on: whether a soldier of the army is fighting or on the march (or resting); null for anyone else. */ readonly warMode?: (v: Villager) => 'fight' | 'march' | null; /** How exhausted a soldier of an army in the field is (0..1). */ tiredPenalty(v: Villager): number; /** Percent a tribe's research-like bonus adds to a stat of its people (src/content/difficulty.json). */ readonly foeBonus?: (team: string, stat: StatId) => number }
+export interface StatSim { readonly researched: ReadonlySet<string>; readonly conquered: number; readonly squads: ReadonlyArray<{ readonly id: number; readonly formation: FormationId }>; readonly foodPenalty: number; /** While a war is on: whether a soldier of the army is fighting or on the march (or resting); null for anyone else. */ readonly warMode?: (v: Villager) => 'fight' | 'march' | null; /** How exhausted a soldier of an army in the field is (0..1). */ tiredPenalty(v: Villager): number; /** Percent a tribe's research-like bonus adds to a stat of its people (src/content/difficulty.json). */ readonly foeBonus?: (team: string, stat: StatId) => number }
 type Sim = StatSim;
 import type { Villager } from './model';
 
@@ -107,6 +108,19 @@ export function weaponDamage(sim: Sim, v: Villager, w: Pick<WeaponDef, 'id' | 'd
 }
 
 /** What the research of the tool in hand adds to a stat of that tool (percent), for the tool a job uses: only ours, and only while the tool is not broken. */
+/**
+ * What one stroke of work brings in: the base (the level of the house and the quality of the tool) plus the percent of the tool's research ("tyield") and of
+ * the trade's research ("gyield"), added together. It stays a fraction while it is carried (1 wood × (1 + 21% + 30%) = 1.51, two strokes 3.02); the store takes it
+ * rounded UP (economy.deposit), so that the stores only ever hold whole goods.
+ */
+/** The percent a village taken adds to every stroke of work for each of its people (difficulty.json capture.yieldPerVillage). */
+export const villageBonus = (sim: Sim): number => sim.conquered * cfgDiff.capture.yieldPerVillage;
+
+export function strokeYield(sim: Sim, v: Villager, job: WorkJob, base: number): number {
+  const trade = v.team === 'player' ? statBonus(sim.researched, job, 'gyield') + villageBonus(sim) : 0;
+  return base * (1 + (toolBonus(sim, v, job, 'tyield') + trade) / 100);
+}
+
 export function toolBonus(sim: Sim, v: Villager, job: WorkJob, stat: LineStat): number {
   const kind = TOOL_OF_JOB[job], tool = kind ? v.tools[kind] : null;
   return v.team === 'player' && kind && tool && tool.dur > 0 ? statBonus(sim.researched, kind, stat) : 0;

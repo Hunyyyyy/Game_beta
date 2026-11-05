@@ -17,7 +17,7 @@ import * as wartent from './wartent';
 import * as warharass from './warharass';
 import * as warlog from './warlog';
 import type { Res } from './resources';
-import { DAY_LENGTH, FOE_PATH_SHARE } from './constants';
+import { FOE_PATH_SHARE } from './constants';
 import * as warplan from './warplan';
 import * as warquick from './warquick';
 import { armOf, tickProjectiles } from './battle';
@@ -36,9 +36,9 @@ export const WAR = {
     const soldiers = warmode.army(this), ranks = warmode.ranks(this, soldiers), plan = warmode.warPlan(this)!;
     this.warIds = soldiers; this.march = warmarch.marchOfPlan(this, plan);
     if (Math.floor(this.time) !== Math.floor(this.time - dt)) { // each second: the village that stayed home eats from the store (paid at the end), the army from the packs
-      if (!this.advanced) this.warMeals += (this.warNeed() + this.armyNeed()) / DAY_LENGTH; // no supply soldiers: the army eats from the village store like the village
+      if (this.era !== 'ancient') this.warMeals += (this.warNeed() + this.armyNeed()) / this.dayLen; // no supply soldiers: the army eats from the village store like the village
       else {
-        this.warMeals += this.warNeed() / DAY_LENGTH; warsupply.eatPacks(this, plan, this.armyNeed() / DAY_LENGTH);
+        this.warMeals += this.warNeed() / this.dayLen; warsupply.eatPacks(this, plan, this.armyNeed() / this.dayLen);
         if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) warsupply.follow(this, plan);
         wartent.tickTents(this, plan); warharass.tickHarass(this, plan);
       }
@@ -53,7 +53,7 @@ export const WAR = {
   /** → warsupply.supplyAdvice */
   supplyAdvice(this: Sim, plan: Plan): warsupply.SupplyAdvice | null { return warsupply.supplyAdvice(this, plan); },
   /** Whether a feature of the war plan is researched (the details tab, the supply sums, the weather, the rest in the field). */
-  planOpen(this: Sim, f: research.PlanFeature): boolean { return research.planOpen(this.researched, f, this.advanced, this.dev.freeBuild); },
+  planOpen(this: Sim, f: research.PlanFeature): boolean { return research.planOpen(this.researched, f, this.era === 'ancient', this.dev.freeBuild); },
   /** → army.squadLimit */
   squadLimit(this: Sim): number { return army.squadLimit(this); },
   /** → army.cellLimit */
@@ -243,7 +243,7 @@ export const WAR = {
   /** → training.trainCost */
   trainCost(this: Sim, stat: number, care: number): { food: number; coin: number } { return training.trainCost(stat, care); },
   /** → training.trainTime */
-  trainTime(this: Sim, stat: number): number { return training.trainTime(stat); },
+  trainTime(this: Sim, stat: number): number { return training.trainTime(this, stat); },
   /** → training.members */
   trainees(this: Sim, b: Building): Villager[] { return training.members(this, b); },
   /** → mounts.queueTame */

@@ -7,7 +7,6 @@ import { drainScale, treeRole } from './statsys';
 import { statBonus } from './research';
 import restJson from '../data/rest.json';
 import { Building, levelDef } from './buildings';
-import { DAY_LENGTH } from './constants';
 import { SEASONS, sunTimes, TWILIGHT } from './calendar';
 import { isStaffJob } from './jobs';
 import { homeKind } from './idle';
@@ -17,12 +16,12 @@ import type { Sim } from './sim';
 import type { Villager } from './model';
 
 export const REST = restJson;
-/** Seconds of rest time (mid-dusk to mid-dawn) in an average night over the seasons. */
-const NIGHT_AVG = DAY_LENGTH * SEASONS.reduce((n, s) => { const { rise, set } = sunTimes(s); return n + (rise - TWILIGHT / 2) + (1 - set - TWILIGHT / 2); }, 0) / SEASONS.length;
+/** Share of a day of rest time (mid-dusk to mid-dawn) in an average night over the seasons. */
+const NIGHT_SHARE = SEASONS.reduce((n, s) => { const { rise, set } = sunTimes(s); return n + (rise - TWILIGHT / 2) + (1 - set - TWILIGHT / 2); }, 0) / SEASONS.length;
 /** How long a new torch burns: two average nights (it only burns while its bearer is out in the dark). What burns is used up for good; a part-burnt torch goes back to the store and the next night's bearer takes it up. */
-export const TORCH_LIFE = 2 * NIGHT_AVG;
+export const torchLife = (sim: Sim): number => 2 * NIGHT_SHARE * sim.dayLen;
 /** Seconds of waking hours in a day and of night (the window the villagers sleep in). */
-const DAY_HOURS = DAY_LENGTH * 0.65, NIGHT_HOURS = DAY_LENGTH * 0.35;
+const dayHours = (sim: Sim): number => sim.dayLen * 0.65, nightHours = (sim: Sim): number => sim.dayLen * 0.35;
 const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
 
 /** 0..1: how sound the body is (Sức khỏe and Thể lực). */
@@ -46,7 +45,7 @@ export function drainRate(sim: Sim, v: Villager): number {
     default: k = w * 0.8; // on the way somewhere
   }
   const cond = (1.25 - 0.25 * fit(v)) * (1.3 - 0.3 * hpFrac(v));
-  return (REST.dayCost / DAY_HOURS) * k * cond * drainScale(sim, v);
+  return (REST.dayCost / dayHours(sim)) * k * cond * drainScale(sim, v);
 }
 
 // ---------------------------------------------------------------- beds
@@ -82,7 +81,7 @@ function bedFactor(sim: Sim, v: Villager): number {
 /** Percentage points gained per second while asleep. Night sleep is twice as good as sleep by day. */
 export function sleepRate(sim: Sim, v: Villager): number {
   if (civilian(v) && attackReason(sim) !== null) return 0; // no rest while the village is attacked
-  const base = (sim.resting ? REST.sleepNight : REST.sleepDay) / NIGHT_HOURS;
+  const base = (sim.resting ? REST.sleepNight : REST.sleepDay) / nightHours(sim);
   const q = (0.8 + 0.4 * fit(v)) * (0.7 + 0.3 * hpFrac(v)) * Math.max(0.3, 1 - v.strain * REST.strain.recoveryLoss);
   return base * q * bedFactor(sim, v);
 }
@@ -158,7 +157,7 @@ export function torchCount(sim: Sim): number { return (sim.toolStock.torch1 ?? 0
 /** Put a torch in the villager's hand from the store. Returns whether they have one. */
 export function ensureTorch(sim: Sim, v: Villager): boolean {
   if (v.torch) return true;
-  if ((sim.toolStock.torch1 ?? 0) > 0) { sim.toolStock.torch1--; v.torch = { dur: TORCH_LIFE }; return true; }
+  if ((sim.toolStock.torch1 ?? 0) > 0) { sim.toolStock.torch1--; v.torch = { dur: torchLife(sim) }; return true; }
   let best = -1;
   sim.wornTools.forEach((w, i) => { if (w.id === 'torch1' && w.dur > 0 && (best < 0 || w.dur > sim.wornTools[best].dur)) best = i; });
   if (best >= 0) { v.torch = { dur: sim.wornTools.splice(best, 1)[0].dur }; return true; }
@@ -170,7 +169,7 @@ export function returnTorch(sim: Sim, v: Villager): void {
   const t = v.torch; if (!t) return;
   v.torch = null;
   if (t.dur <= 5) return;
-  if (t.dur >= TORCH_LIFE - 1) sim.toolStock.torch1 = (sim.toolStock.torch1 ?? 0) + 1; else sim.wornTools.push({ id: 'torch1', dur: t.dur });
+  if (t.dur >= torchLife(sim) - 1) sim.toolStock.torch1 = (sim.toolStock.torch1 ?? 0) + 1; else sim.wornTools.push({ id: 'torch1', dur: t.dur });
 }
 
 /** The player hands torches out. Returns an error or null. */
@@ -219,6 +218,14 @@ export function callUp(sim: Sim, v: Villager): boolean {
 }
 
 // ---------------------------------------------------------------- one tick
+/** The drain of a villager is worked out from many stats: once a second is enough. */
+const drainCache = new WeakMap<Villager, { t: number; r: number }>();
+function drainNow(sim: Sim, v: Villager): number {
+  const c = drainCache.get(v);
+  if (c && sim.time - c.t < 1 && sim.time >= c.t) return c.r;
+  const r = drainRate(sim, v); drainCache.set(v, { t: sim.time, r }); return r;
+}
+
 /** Energy, strain and the torch for one villager. */
 export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
   const top = maxEnergy(sim, v);
@@ -227,7 +234,7 @@ export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
     v.strain = Math.max(0, v.strain - (sim.resting ? REST.strain.nightSleep : REST.strain.daySleep) * dt);
   } else if (!sim.dev.noTire && !(v.job === 'fight' && sim.warLock() && !sim.warIds.has(v.id)) && !awayScout(sim, v)) { // the army of a war tires too, more the bigger it is; the soldiers who stay home do not
     const working = v.job !== 'idle' && (v.phase === 'work' || v.phase === 'build' || v.phase === 'craft' || v.phase === 'inside' || v.phase === 'fight');
-    v.energy = Math.max(0, v.energy - drainRate(sim, v) * dt * (sim.warIds.has(v.id) ? sim.march.energy : 1));
+    v.energy = Math.max(0, v.energy - drainNow(sim, v) * dt * (sim.warIds.has(v.id) ? sim.march.energy : 1));
     if (sim.resting && working) { v.strain = Math.min(100, v.strain + REST.strain.nightWork * dt); }
   }
   if (v.energy > top) v.energy = top;

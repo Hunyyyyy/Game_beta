@@ -1,6 +1,6 @@
 import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, WeatherKind } from './calendar';
-import { DAY_LENGTH, FOE_PATH_SHARE, PATH_BUDGET, START_TIME, TICK } from './constants';
-import { ADVANCED_DEFAULT, Building, BuildingKind, BUILDINGS, Era } from './buildings';
+import { dayLength, FOE_PATH_SHARE, paceWork, PATH_BUDGET, START_TIME, TICK } from './constants';
+import { Building, BuildingKind, BUILDINGS, Era } from './buildings';
 import { Fog } from './fog';
 import { Job, RoleId, WorkJob } from './jobs';
 import { Step } from './path';
@@ -12,7 +12,7 @@ import { armOf, hurt, tickProjectiles } from './battle';
 import { Animal, populateChunk, restock, restoreWarAnimals, tickAnimals } from './fauna';
 import * as tribeLod from './tribelod';
 import { tickFoe } from './brainfoe';
-import { adoptTribe, EventState, foeBonus, giftTribe, killFoe, spawnTribes, tickTribes, Tribe, tribeAttacked, tribeHostile, tribesFeud, tribeWilling, tributeTribe } from './tribes';
+import { adoptTribe, EventState, foeBonus, dismissAllies, giftTribe, killFoe, resetTribes, setTribute, spawnTribes, summonAllies, tickTribes, Tribe, tribeAttacked, tribeHostile, tribesFeud, tribeWilling, tributeTribe } from './tribes';
 import { recipeOpen, Tech } from './research';
 import { questViews, QuestUi, QuestView } from './quests';
 import { World } from './world';
@@ -84,6 +84,9 @@ export class Sim {
   speed = 1;
   /** Giây game đã trôi qua. */
   time = START_TIME;
+  /** The day count and the time of the day are counted from here: the day `dayBase`+1 began at `timeBase` (moved when the era, and the length of a day, changes). */
+  dayBase = 0;
+  timeBase = 0;
   /** Player villagers and tribal people, by id. */
   readonly byId = new Map<number, Villager>();
   /** Tribal people (enemies, neutrals, tributaries); they share the Villager body but never work. */
@@ -102,10 +105,12 @@ export class Sim {
   readonly active = new Set<number>();
   /** People the village may hold beyond its campfire and beds: the campfires of the villages we took. */
   popBonus = 0;
-  /** Villages we took (adopted or wiped out): each adds places to every camp of soldiers (difficulty.json capture.campSlots), because the army is limited by its camps, not by the people. */
+  /** Places added to every camp of soldiers by the villages taken (difficulty.json capture.adopt): the army is limited by its camps, not by its people. */
+  campBonus = 0;
+  /** Whether strangers may come to settle (the campfire's panel shuts and opens the door; environment.toggleNewcomers). */
+  newcomersOpen = true;
+  /** How many villages we took (adopted or wiped out): each adds to the yield of every stroke of work (difficulty.json capture.yieldPerVillage). */
   conquered = 0;
-  /** The age of bronze has begun: a boss village has fallen (tribes.ts). */
-  bronze = false;
   /** Fights between two villages that we saw (time, place): they become a notice for a while. Never saved. */
   readonly clashes: Array<{ a: string; b: string; at: number; x: number; y: number }> = [];
   readonly animals: Animal[] = [];
@@ -134,8 +139,6 @@ export class Sim {
   readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  /** The medieval layer of the war (supply, field tents and rest, the watchtower, scouts, the war plan) is open: off in the stone age (data/war.json `advanced`); the dev menu changes it. */
-  advanced = ADVANCED_DEFAULT;
   readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
@@ -151,6 +154,8 @@ export class Sim {
   leaderClock = 0;
   /** Seconds since the tribes were last looked after (they are tended once a second). */
   tribeClock = 0;
+  /** The day the next event of the recurring kind is set (tribes.seasonEvent). */
+  nextEventDay = 0;
   lastFullWarn = -999;
   lastMatWarn = -999;
   /** Today's and tomorrow's weather (tomorrow is rolled ahead so it can be foretold). */
@@ -220,9 +225,19 @@ export class Sim {
   }
 
   // ---------------------------------------------------------------- tiện ích
-  get day(): number { return Math.floor(this.time / DAY_LENGTH) + 1; }
+  /** Seconds in a day of the era (data/time.json). */
+  get dayLen(): number { return dayLength(this.era); }
+  /** Work seconds that pass per game second (a day of labour is one game day, whatever the day lasts). */
+  get paceWork(): number { return paceWork(this.dayLen); }
+  get day(): number { return this.dayBase + Math.floor((this.time - this.timeBase) / this.dayLen) + 1; }
   /** 0..1 trong ngày: 0 = nửa đêm trước bình minh, 0.5 = giữa trưa. */
-  get tod(): number { return (this.time % DAY_LENGTH) / DAY_LENGTH; }
+  get tod(): number { const len = this.dayLen, t = (this.time - this.timeBase) % len; return (t < 0 ? t + len : t) / len; }
+  /** The era changes and with it the length of a day: the day count and the time of day go on from where they were. */
+  setDayLength(era: Era): void {
+    const day = this.day, tod = this.tod;
+    this.era = era;
+    this.dayBase = day - 1; this.timeBase = this.time - tod * this.dayLen;
+  }
   get season(): Season { return seasonOf(this.day); }
   /** Light 0..1 from time of day and the season's day length. */
   get light(): number { return lightAt(this.tod, this.season); }
@@ -337,6 +352,8 @@ export class Sim {
   /** The finished building of a kind (there is only ever one of each). */
   building(kind: BuildingKind): Building | undefined { return this.buildings.find((b) => b.kind === kind && b.done); }
   hasWorkshop(): boolean { return !!this.building('workshop'); }
+  /** → inventory.equipGear */
+  equipGear(v: Villager): void { return inventory.equipGear(this, v); }
   /** → inventory.toolCount */
   toolCount(kind: string, tier: number): number { return inventory.toolCount(this, kind, tier); }
   /** → inventory.toolTier */
@@ -378,6 +395,10 @@ export class Sim {
   /** → construction.repairBuilding */
   repairBuilding(id: number): string | null { return construction.repairBuilding(this, id); }
 
+  /** → construction.afterUpgrade */
+  afterUpgrade(b: Building): void { return construction.afterUpgrade(this, b); }
+  /** → construction.setEra */
+  setEra(era: Era): void { return construction.setEra(this, era); }
   /** → construction.upgradeBuilding */
   upgradeBuilding(id: number): string | null { return construction.upgradeBuilding(this, id); }
 
@@ -459,6 +480,20 @@ export class Sim {
   tickTraps(dt: number): void { return defense.tickTraps(this, dt); }
   /** → defense.tickTowers */
   tickTowers(dt: number): void { return defense.tickTowers(this, dt); }
+  /** → tribes.summonAllies */
+  summonAllies(target: Tribe): number { return summonAllies(this, target); }
+  /** → tribes.dismissAllies */
+  dismissAllies(): void { return dismissAllies(this); }
+  /** A person is gone from the village without a trace (an ally who has left): not a death. */
+  vanish(v: Villager): void {
+    this.leaveNode(v); this.exitBuilding(v); this.leaveSquad([v.id]);
+    const i = this.villagers.indexOf(v); if (i >= 0) this.villagers.splice(i, 1);
+    this.byId.delete(v.id); this.fogDirty = true;
+  }
+  /** → environment.settle */
+  settle(n: number, room = false): string[] { return environment.settle(this, n, room); }
+  /** → environment.toggleNewcomers */
+  toggleNewcomers(): boolean { return environment.toggleNewcomers(this); }
   /** → defense.toggleGate */
   toggleGate(id: number): string | null { return defense.toggleGate(this, id); }
   /** → defense.setGates */
@@ -627,16 +662,19 @@ export class Sim {
   refreshFog(): void { return environment.refreshFog(this); }
 
   /** Gọi mỗi khung hình với dt thực; chạy theo bước cố định, nhân với hệ số tốc độ. */
-  advance(dt: number): void {
+  advance(dt: number, outOfTime?: () => boolean): void {
     if (this.speed <= 0) return;
     this.acc += Math.min(dt, 0.25) * this.speed;
     let guard = 0;
-    while (this.acc >= TICK && guard++ < 400) { this.acc -= TICK; this.tick(TICK); }
+    while (this.acc >= TICK && guard++ < 400) {
+      this.acc -= TICK; this.tick(TICK);
+      if (outOfTime?.()) { this.acc = Math.min(this.acc, TICK); break; } // the machine cannot keep up: the game runs slower for a moment rather than freezing (the screen asks; no clock in the simulation)
+    }
   }
 
   tick(dt: number): void {
     this.time += dt;
-    this.pathLeft = PATH_BUDGET;
+    this.pathLeft = this.speed >= 8 ? Math.ceil(PATH_BUDGET / 2) : PATH_BUDGET; // fast-forward: fewer searches for a way each tick (a unit waits a tick longer; the ticks are many)
     this.tickCalendar();
     this.world.tick(dt);
     this.streamWorld(dt);
@@ -650,7 +688,7 @@ export class Sim {
       return;
     }
     // the war is over: whoever lay out of sight (in a field tent, or with no bed) gets up and goes to bed in the right place
-    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / DAY_LENGTH); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; }
+    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
@@ -658,7 +696,7 @@ export class Sim {
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     this.leaderClock += dt;
-    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); defense.tickResearch(this); inventory.restock(this); mounts.fitScouts(this); }
+    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); inventory.restock(this); mounts.fitScouts(this); }
     if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
     if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
   }
@@ -713,9 +751,11 @@ export class Sim {
     this.clearCombat(v); v.health = Math.max(v.health, v.maxHealth * 0.6);
     this.villagers.push(v); this.fogDirty = true;
   }
+  /** -> tribes.resetTribes */
+  resetTribes(): void { return resetTribes(this); }
   /** Diplomacy buttons: 'gift', 'tribute', 'adopt'. Returns an error text or null. */
-  diplomacy(id: TribeId, action: 'gift' | 'tribute' | 'adopt'): string | null {
-    return action === 'gift' ? giftTribe(this, id) : action === 'tribute' ? tributeTribe(this, id) : adoptTribe(this, id);
+  diplomacy(id: TribeId, action: 'gift' | 'tribute' | 'adopt' | 'tributeUp' | 'tributeDown'): string | null {
+    return action === 'gift' ? giftTribe(this, id) : action === 'tribute' ? tributeTribe(this, id) : action === 'tributeUp' ? setTribute(this, id, 1) : action === 'tributeDown' ? setTribute(this, id, -1) : adoptTribe(this, id);
   }
 
   // ---------------------------------------------------------------- combat helpers

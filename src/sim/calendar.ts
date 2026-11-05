@@ -1,6 +1,5 @@
 import seasonsJson from '../data/seasons.json';
 import weatherJson from '../data/weather.json';
-import { DAY_LENGTH } from './constants';
 
 export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
 export const SEASONS: Season[] = ['spring', 'summer', 'autumn', 'winter'];
@@ -17,6 +16,8 @@ export interface SeasonDef {
   farm: number;
   /** How fast outdoor work goes in this season (winter cold slows it). */
   work: number;
+  /** Share of its fruit a bush keeps in this season (data/seasons.json; 1 = as full as usual, 0 = bare). Missing = 1. */
+  bushLeft?: number;
   enter: string;
 }
 export const SEASON_DEF = seasonsJson as Record<Season, SeasonDef>;
@@ -44,7 +45,6 @@ export const DAY_PART_NAME: Record<DayPart, string> = { dawn: 'bình minh', day:
 export const TWILIGHT = 0.05;
 
 /** Day number (1, 2, …) at `time` (game seconds). */
-export const dayOf = (time: number) => Math.floor(time / DAY_LENGTH) + 1;
 export const seasonOf = (day: number): Season => SEASONS[Math.floor((day - 1) / SEASON_DAYS) % SEASONS.length];
 /** Day within the season (1–5). */
 export const dayInSeason = (day: number) => ((day - 1) % SEASON_DAYS) + 1;

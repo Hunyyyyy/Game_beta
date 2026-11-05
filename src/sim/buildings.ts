@@ -1,6 +1,7 @@
 import { SIEGE } from './combat';
 import paceJson from '../data/pace.json';
 import warJson from '../data/war.json';
+import { scaleBill } from './resources';
 import type { Res, Stock } from './resources';
 import { fireBuildingMax } from './progression';
 import { BUILDING_FILES, BUILDING_KINDS } from '../content/buildings/defs.gen';
@@ -56,7 +57,7 @@ export interface BuildingDef {
   perFire?: number[];
   /** Stays in placing mode after each piece, for works laid one tile at a time (the fence). */
   repeat?: boolean;
-  /** Levels per era; an era without an entry reuses the closest earlier era's levels. */
+  /** Levels per era: `stone` is levels 1..4, `ancient` the levels that follow (5...). */
   levels: Partial<Record<Era, LevelDef[]>>;
 }
 
@@ -70,7 +71,7 @@ interface BuildingFile {
 
 export const BUILDINGS = Object.fromEntries(BUILDING_KINDS.map((k) => {
   const f = BUILDING_FILES[k] as BuildingFile;
-  const d: BuildingDef = { kind: k, name: f.name, names: f.names, group: f.group, produces: f.produces, w: f.size[0], h: f.size[1], buildable: f.buildable, upgradable: f.upgradable, unlockFire: f.unlockFire, requires: f.requires, perFire: f.limit, repeat: f.repeat, levels: f.levels };
+  const d: BuildingDef = { kind: k, name: f.name, names: f.names, group: f.group, produces: f.produces, w: f.size[0], h: f.size[1], buildable: f.buildable, upgradable: f.upgradable, unlockFire: f.unlockFire, requires: f.requires, perFire: f.limit, repeat: f.repeat, levels: Object.fromEntries(Object.entries(f.levels).map(([era, ls]) => [era, ls!.map((l) => ({ ...l, cost: scaleBill(l.cost) }))])) as BuildingDef['levels'] };
   return [k, d];
 })) as Record<BuildingKind, BuildingDef>;
 
@@ -115,25 +116,27 @@ export function buildingSight(b: Pick<Building, 'kind' | 'level' | 'done'> & { e
 /** What a kind of house is called in an era. */
 export const buildingName = (kind: BuildingKind, era: Era): string => BUILDINGS[kind].names?.[era] ?? BUILDINGS[kind].name;
 
-/** Level list of a building kind in an era, falling back to the closest earlier era that defines one. */
+/** Level list of a building kind in an era: the stone levels, and in the medieval era the medieval ones after them (a kind with none stays at its stone levels). */
 export function levelsOf(kind: BuildingKind, era: Era): LevelDef[] {
-  const defs = BUILDINGS[kind].levels;
-  for (let i = ERAS.indexOf(era); i >= 0; i--) { const l = defs[ERAS[i]]; if (l) return l; }
-  return defs.stone!;
+  const defs = BUILDINGS[kind].levels, stone = defs.stone!;
+  return era === 'ancient' && defs.ancient ? levelCache(kind, stone, defs.ancient) : stone; // the medieval levels go on from the last stone level: level 5 is the first of them
 }
-export const levelDef = (b: Pick<Building, 'kind' | 'level' | 'era'>, level = b.level): LevelDef => levelsOf(b.kind, b.era)[level - 1];
+const levelLists = new Map<BuildingKind, LevelDef[]>();
+const levelCache = (kind: BuildingKind, stone: LevelDef[], ancient: LevelDef[]): LevelDef[] => { let l = levelLists.get(kind); if (!l) { l = [...stone, ...ancient]; levelLists.set(kind, l); } return l; };
+export const levelDef = (b: Pick<Building, 'kind' | 'level' | 'era'>, level = b.level): LevelDef => levelsOf(b.kind, b.kind === 'campfire' ? 'ancient' : b.era)[level - 1]; // the campfire's next level may be medieval before the era is
 /** Strength of a building at its level: a defence work has its own; any other house has so much for every tile it covers, and more at each level. */
 export const maxHp = (b: Pick<Building, 'kind' | 'level' | 'era'> & { hpBonus?: number }): number => Math.round((b.hpBonus ? 1 + b.hpBonus / 100 : 1) * (levelDef(b).hp || Math.round(SIEGE.buildingHpPerTile * BUILDINGS[b.kind].w * BUILDINGS[b.kind].h * (1 + 0.5 * (b.level - 1)))));
 export const maxLevel = (kind: BuildingKind, era: Era) => levelsOf(kind, era).length;
+/** The highest level a house can be raised to now: the campfire may always climb into the first medieval level (that step opens the era), the rest by their own era. */
+export const topLevel = (b: Pick<Building, 'kind' | 'era'>): number => maxLevel(b.kind, b.kind === 'campfire' ? 'ancient' : b.era);
 /** Buildings that keep the village's goods (the Kho and the campfire) as opposed to those that hold tools or staff. */
 export const holdsGoods = (b: Pick<Building, 'kind'>) => b.kind === 'storage' || b.kind === 'campfire';
 /** The house of each gathering trade: at most 5 people work from it; a higher level makes each of them bring in more (pace.json `levelYield`), so the village needs fewer people on the map. */
 export const GATHER_HOUSE: Partial<Record<string, BuildingKind>> = { wood: 'lumberyard', stone: 'quarry', food: 'farmhouse' };
 export const gatherMult = (b: Pick<Building, 'level'> | undefined): number => (b ? paceJson.levelYield[Math.min(paceJson.levelYield.length, Math.max(1, b.level)) - 1] : 1);
-/** The war-logistics layer (supply, field tents and rest, harassment, the watchtower, the war research) is a medieval-era feature: off in the stone age (data/war.json `advanced`). */
-export const ADVANCED_DEFAULT: boolean = warJson.advanced;
-/** A building of that layer, shut away while it is off (`sim.advanced`): it is not built, not offered and not asked for. */
-export const eraLocked = (kind: BuildingKind, era: { readonly advanced: boolean }): boolean => !era.advanced && (warJson.advancedBuildings as string[]).includes(kind);
+/** The war-logistics layer (supply, field tents and rest, harassment, the watchtower, the war research) is a medieval-era feature: off in the stone age (the medieval era, `sim.era === 'ancient'`). */
+/** A building of that layer, shut away while it is off (`sim.era`): it is not built, not offered and not asked for. */
+export const eraLocked = (kind: BuildingKind, game: { readonly era: Era }): boolean => game.era !== 'ancient' && (warJson.advancedBuildings as string[]).includes(kind);
 /** Still needs builders: not finished yet, or an upgrade is underway. */
 export const needsWork = (b: Building) => !b.done || b.upgrading || !!b.repairing;
 

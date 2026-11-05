@@ -1,10 +1,10 @@
 /** Placing, upgrading, moving and demolishing buildings, and what the buildings give the village (room, population, build speed). */
-import { Building, BuildingKind, BUILDINGS, eraLocked, buildingSight, needsWork, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, levelCapByFire, POP_BY_FIRE, fireUnlockLevel } from './buildings';
+import { Building, BuildingKind, BUILDINGS, Era, eraLocked, buildingSight, needsWork, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, topLevel, levelCapByFire, POP_BY_FIRE, fireUnlockLevel } from './buildings';
 import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
 import { buildingOpen, techForBuilding } from './research';
 import { scaleCost } from './works';
-import { fireUpgradeGroups, fireUpgradeNeeds } from './progression';
+import { fireUpgradeGroups } from './progression';
 import startJson from '../data/start.json';
 import type { Sim } from './sim';
 import { PlaceResult } from './model';
@@ -83,16 +83,7 @@ export const fireLevel = (sim: Sim): number => sim.buildings.reduce((m, b) => (b
 
 /** Why the campfire may not leave its level yet: every house opened up to it must stand, finished, at that level (research does not come into it). */
 export function fireUpgradeBlock(sim: Sim, level: number): string | null {
-  const need = fireUpgradeNeeds(level);
-  if (need === null) return null;
-  for (const k of Object.keys(BUILDINGS) as BuildingKind[]) {
-    const d = BUILDINGS[k];
-    if (!d.buildable || fireUnlockLevel(k) > level || eraLocked(k, sim)) continue;
-    const mine = sim.buildings.filter((b) => b.kind === k), want = Math.min(need, maxLevel(k, sim.era));
-    if (!mine.length) return `Cần dựng ${d.name} trước khi nâng Nhà chung`;
-    if (mine.some((b) => !b.done || b.upgrading || b.level < want)) return `Cần nâng ${d.name} lên cấp ${want} trước khi nâng Nhà chung`;
-  }
-  // the groups that must also stand at the level, whether or not they are "opened" yet (the houses of the producers: Nông trại, Xưởng gỗ, Xưởng đá...)
+  // the houses of the producers (Nông trại, Xưởng gỗ, Xưởng đá, Chòi săn) must stand at the level; nothing else is asked of the village
   for (const [group, at] of Object.entries(fireUpgradeGroups(level))) for (const k of Object.keys(BUILDINGS) as BuildingKind[]) {
     const d = BUILDINGS[k];
     if (d.group !== group || !d.buildable || eraLocked(k, sim)) continue;
@@ -156,12 +147,18 @@ export function canUpgrade(sim: Sim, b: Building): string | null {
   if (!b.done) return 'Công trình chưa dựng xong';
   if (b.upgrading) return 'Đang nâng cấp';
   if (b.repairing) return 'Đang sửa chữa';
-  if (b.level >= maxLevel(b.kind, b.era)) return 'Đã ở cấp cao nhất';
-  if (b.kind === 'campfire' && !sim.dev.freeBuild) { const why = fireUpgradeBlock(sim, b.level); if (why) return why; }
+  if (b.level >= topLevel(b)) return 'Đã ở cấp cao nhất';
+  if (b.kind === 'campfire' && !sim.dev.freeBuild) {
+    if (b.level >= BUILDINGS.campfire.levels.stone!.length && sim.tribes.some((t) => t.boss && !t.bossDown)) return 'Cần hạ hết các thủ lĩnh (làng đầu lĩnh, kể cả thủ lĩnh phản bội) trước khi nâng lên Nhà chính (thời Trung cổ)'; // the first medieval level waits for the fall of a boss village
+    const why = fireUpgradeBlock(sim, b.level); if (why) return why;
+  }
   const fire = sim.campfire();
   if (b.kind !== 'campfire' && fire && !sim.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `Cần nâng ${BUILDINGS.campfire.name} lên cấp ${b.level + 1}`;
-  return sim.freeCost() ? null : sim.missing(levelDef(b, b.level + 1).cost);
+  return sim.freeCost() ? null : sim.missing(levelDef({ ...b, era: upgradeEra(b) }, b.level + 1).cost);
 }
+
+/** The era whose levels a building climbs: the campfire climbs into the medieval ones from its last stone level (that step opens the era); the rest only in the medieval era (their own era is set by it). */
+const upgradeEra = (b: Pick<Building, 'kind' | 'era'>): Building['era'] => (b.kind === 'campfire' ? 'ancient' : b.era);
 
 /** What repairing costs: the materials the building was raised with, in the share of its strength that is lost. */
 export function repairCost(sim: Sim, b: Building): Partial<Stock> {
@@ -198,12 +195,29 @@ export function upgradeBuilding(sim: Sim, id: number): string | null {
   if (!b) return 'Không tìm thấy công trình';
   const why = canUpgrade(sim, b);
   if (why) return why;
+  b.era = upgradeEra(b);
   const next = levelDef(b, b.level + 1);
   if (!sim.freeCost()) for (const r of Object.keys(next.cost) as Res[]) sim.stock[r] -= next.cost[r] ?? 0;
-  if (sim.dev.instantBuild) { b.level++; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); return null; }
+  if (sim.dev.instantBuild) { b.level++; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); afterUpgrade(sim, b); return null; }
   b.upgrading = true; b.progress = 0;
   sim.say(`Bắt đầu nâng ${BUILDINGS[b.kind].name} lên cấp ${b.level + 1} (${next.name.toLowerCase()}). Giao việc "Thợ xây" để làm.`);
   return null;
+}
+
+/** A building has reached a new level. The campfire becoming the Nhà chính (level 5, the first medieval one) opens the medieval era. */
+export function afterUpgrade(sim: Sim, b: Building): void {
+  if (b.kind === 'campfire' && b.level >= BUILDINGS.campfire.levels.stone!.length + 1 && sim.era !== 'ancient') {
+    setEra(sim, 'ancient');
+    sim.resetTribes(); // the villages of the stone age vanish and new ones are drawn for the new era
+    sim.say('Nhà chung đã thành Nhà chính: thời Trung cổ bắt đầu! Các nhà cấp 4 có thể nâng lên cấp trung cổ, có thêm nghiên cứu mới, và không còn đánh nhanh.');
+  }
+}
+
+/** The era of the whole village: the houses take it (a house of the stone age may then climb into the medieval levels); going back caps every level at the stone ones. */
+export function setEra(sim: Sim, era: Era): void {
+  sim.setDayLength(era); // sets sim.era too, and keeps the day count and the time of day going on
+  for (const b of sim.buildings) { b.era = era; const top = maxLevel(b.kind, era); if (b.level > top) { b.level = top; b.upgrading = false; } }
+  sim.fogDirty = true;
 }
 
 export function placeBuilding(sim: Sim, kind: BuildingKind, x: number, y: number): PlaceResult {

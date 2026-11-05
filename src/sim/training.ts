@@ -5,7 +5,6 @@
  * Food and coin are paid when it starts. Nothing here is rolled but the size of the gain, from `sim.rnd`.
  */
 import { Building, BUILDINGS } from './buildings';
-import { DAY_LENGTH } from './constants';
 import { maxHpOf } from './combat';
 import { fmtStat, ROLE_IDS, ROLES, roleOf, STAT_NAME, TRAINING, TrainProfile } from './jobs';
 import type { Sim } from './sim';
@@ -29,7 +28,7 @@ export function trainCost(stat: number, care: number): { food: number; coin: num
   return { food: Math.round(TRAINING.foodBase + stat), coin: Math.round(TRAINING.coinBase + stat * TRAINING.coinPerStat) + TRAINING.care[care].coin };
 }
 /** How long it takes, in game seconds: the higher the stat, the longer. */
-export const trainTime = (stat: number): number => (TRAINING.dayBase + TRAINING.dayPerStat * stat) * DAY_LENGTH;
+export const trainTime = (sim: Sim, stat: number): number => (TRAINING.dayBase + TRAINING.dayPerStat * stat) * sim.dayLen;
 
 /** Send people of a house to train. Returns an error or null. */
 export function startTraining(sim: Sim, ids: readonly number[], houseId: number, care: number): string | null {
@@ -46,7 +45,7 @@ export function startTraining(sim: Sim, ids: readonly number[], houseId: number,
     if (short) { err = short; break; }
     sim.pay(cost);
     sim.exitBuilding(v); sim.resetTask(v);
-    v.train = { house: b.id, stat: p.main, left: trainTime(v.stats[p.main]), total: trainTime(v.stats[p.main]), care, cap };
+    v.train = { house: b.id, stat: p.main, left: trainTime(sim, v.stats[p.main]), total: trainTime(sim, v.stats[p.main]), care, cap };
     n++;
   }
   if (n) sim.say(`${n} người vào huấn luyện ${STAT_NAME[p.main].toLowerCase()} ở ${BUILDINGS[b.kind].name.toLowerCase()}.`);

@@ -102,9 +102,8 @@ export interface TribeDef {
   personality: Personality;
   angle: number;
   distance: number;
-  /** Share of the strength of all the villages of the land that this one takes, and how much of it is army (src/content/difficulty.json). */
-  share: number;
-  military: number;
+  /** How strong the village is against the player (src/content/difficulty.json "tiers"): weak, normal, medium or the boss. */
+  tier: 'weak' | 'normal' | 'medium' | 'boss';
   civilians: number;
   warriors: number;
   weapons: string[];
@@ -112,7 +111,6 @@ export interface TribeDef {
   look: { hide: string; pants: string };
   relation: number;
   reward: string;
-  tribute: Partial<Stock>;
 }
 export type TribeId = 'spring' | 'axe' | 'swamp' | 'cave' | 'dune';
 export const TRIBE_IDS: TribeId[] = ['spring', 'axe', 'swamp', 'cave', 'dune'];
@@ -122,7 +120,6 @@ export const RELATION = tribesJson.relation;
 export const MEET = tribesJson.meet as { friendlyFrom: number; feuds: string[][] };
 /** Below this relation a tribe is hostile (the start of the 'Trung lập' band). */
 export const HOSTILE_BELOW = RELATION.labels[1][0] as number;
-export const SURRENDER = tribesJson.surrender;
 
 /** Team of a unit: the player, a tribe, or wild animals. */
 export type Team = 'player' | TribeId | 'wild';

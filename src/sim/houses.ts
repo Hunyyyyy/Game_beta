@@ -34,6 +34,16 @@ function letGo(sim: Sim, v: Villager): string | null {
 /** The villagers whose job is building: the crew of the Nhà thợ xây. */
 export function crew(sim: Sim): Villager[] { return sim.villagers.filter((v) => v.job === 'build'); }
 
+/**
+ * The Nhà thợ xây is the only way to put people to building, so when none stands finished (it fell, and a new foundation was laid) and nobody builds,
+ * two free villagers take up the foundation by themselves; once it stands the crew is the player's to choose again. Called once a second.
+ */
+export function bootCrew(sim: Sim): void {
+  if (crew(sim).length > 0 || sim.building(CREW_BUILDING.build) || !sim.buildings.some((b) => b.kind === CREW_BUILDING.build)) return;
+  const free = sim.villagers.filter((v) => v.team === 'player' && v.job === 'idle' && !v.inside && v.health > 0 && v.phase !== 'sleep').slice(0, 2);
+  for (const v of free) { sim.resetTask(v); sim.clearCombat(v); v.job = 'build'; v.prefer = -1; v.post = -1; }
+}
+
 /** Builders in, up to what the Nhà thợ xây holds. Returns an error or null. */
 export function assignCrew(sim: Sim, ids: readonly number[]): string | null {
   const lock = sim.warLock(); if (lock) return lock;

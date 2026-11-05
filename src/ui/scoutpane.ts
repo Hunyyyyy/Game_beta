@@ -1,4 +1,3 @@
-import { DAY_LENGTH } from '../sim/constants';
 import type { Villager } from '../sim/model';
 import { h, hint } from './dom';
 import { dlg } from './gamedialog';
@@ -48,7 +47,7 @@ export class ScoutPane {
   stateKey(): string {
     const { sim } = this.c;
     return [this.sel, this.open, this.lossOpen, this.c.sim.scoutLosses.length, [...this.picked].join('.'), this.people.stateKey(), JSON.stringify(sim.sightings.map((s) => [s.tribe, s.reported])), JSON.stringify(sim.maps.map((m) => [m.tribe, m.level, m.gaps, Math.floor(m.at)])),
-      JSON.stringify(sim.scouts.map((m) => [m.id, m.phase, m.ids.length, Math.floor((m.progress ?? 0) * 50)])), JSON.stringify(sim.drafts), sim.scoutLevel(), sim.scoutLimit(), this.candidates().map((v) => `${v.id}${Math.round(v.energy / 10)}`).join('.'), Math.floor(sim.time / DAY_LENGTH), sim.dev.freeBuild].join('|');
+      JSON.stringify(sim.scouts.map((m) => [m.id, m.phase, m.ids.length, Math.floor((m.progress ?? 0) * 50)])), JSON.stringify(sim.drafts), sim.scoutLevel(), sim.scoutLimit(), this.candidates().map((v) => `${v.id}${Math.round(v.energy / 10)}`).join('.'), Math.floor(sim.day), sim.dev.freeBuild].join('|');
   }
 
   /** The scouts who can be sent now, the sharpest first. */
@@ -60,7 +59,7 @@ export class ScoutPane {
   private again(): void { this.key = ''; this.changed(); }
 
   private ageWords(at: number): string {
-    const days = Math.floor((this.c.sim.time - at) / DAY_LENGTH);
+    const days = Math.floor((this.c.sim.time - at) / this.c.sim.dayLen);
     return days <= 0 ? 'báo cáo trong ngày' : days === 1 ? 'báo cáo từ hôm qua' : days < 4 ? `báo cáo từ ${days} hôm trước` : 'đã cũ';
   }
 
@@ -102,7 +101,7 @@ export class ScoutPane {
     body.append(h('div', { class: 'dhead' }, h('div', { class: 'dpic glyph', text: '🏕' }), h('div', { class: 'dwho' }, h('b', { class: 'dtitle', text: best ? t.def.name : 'Một ngôi làng' }), h('small', { class: 'dsub', text: where ? `Cách khoảng ${where.dist} ô, hướng ${where.dir}` : '' }))));
     // what is known of it
     if (best) {
-      const days = Math.floor((sim.time - best.at) / DAY_LENGTH), accuracy = Math.max(0, 1 - 0.1 * days);
+      const days = Math.floor((sim.time - best.at) / sim.dayLen), accuracy = Math.max(0, 1 - 0.1 * days);
       body.append(h('div', { class: 'dpills' },
         dlg.pill(resIcon('role_scout'), `Bản đồ cấp ${sim.mapLevel(id) || best.level}`, undefined, 'Cấp bản đồ đã vẽ'),
         dlg.pill(resIcon('clock'), this.ageWords(best.at), days >= 3 ? 'warn' : undefined, 'Báo cáo cũ hay mới'),

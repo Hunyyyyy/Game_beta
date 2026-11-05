@@ -51,7 +51,7 @@ export class MapView {
     const { sim, N } = this, seen = (x: number, y: number) => sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
     ctx.drawImage(this.base, 0, 0);
     for (const t of sim.tribes) {
-      if (t.state === 'adopted' || sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] === 0) continue;
+      if (sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] === 0) continue;
       ctx.fillStyle = t.state === 'destroyed' ? '#555' : t.state === 'free' ? (sim.tribeHostile(t.id) ? '#e0452a' : '#e0a22a') : '#6fc06f';
       ctx.fillRect(t.camp.x - dot, t.camp.y - dot, dot * 2, dot * 2);
     }

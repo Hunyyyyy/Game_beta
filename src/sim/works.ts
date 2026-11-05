@@ -1,5 +1,4 @@
 /** What the houses are working on: the research and crafting queues and the progress they make. */
-import { PACE } from './constants';
 import { Building, BuildingKind, levelDef } from './buildings';
 import { WorkJob } from './jobs';
 import { Res, Stock } from './resources';
@@ -188,7 +187,7 @@ export function tickWorks(sim: Sim, dt: number): void {
     const job = kind as WorkJob;
     let rate = 0;
     for (const v of staff) { rate += sim.workFactor(v, job); sim.gainXp(v, job, dt); }
-    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * PACE.work * rate * levelDef(b).craftSpeed) / d.time); // dev: done at once
+    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * sim.paceWork * rate * levelDef(b).craftSpeed) / d.time); // dev: done at once
     if (b.active.progress < 1) continue;
     const id = b.active.id;
     if (kind === 'research') {

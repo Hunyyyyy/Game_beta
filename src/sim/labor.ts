@@ -1,10 +1,10 @@
 /** Everyday work: gathering, carrying, building, and the phase machine that decides what a villager does next. */
-import { toolBonus, workSpeed } from './statsys';
+import { strokeYield, toolBonus, workSpeed } from './statsys';
 import { SEASON_DEF, WEATHER } from './calendar';
-import { PACE } from './constants';
 import { Building, BUILDINGS, GATHER_HOUSE, gatherMult, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
 import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
 import { CARRY_CAP, RES_NAME } from './resources';
+import paceJson from '../data/pace.json';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
 import { RESEARCH } from './research';
 import type { Sim } from './sim';
@@ -29,7 +29,7 @@ export function workFactor(sim: Sim, v: Villager, job: WorkJob, field = false): 
 export function gainXp(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
   const s = v.skill[job];
   if (s.level >= MAX_LEVEL) return;
-  s.xp += dt * PACE.work * XP_MULT[v.potential[job]];
+  s.xp += dt * sim.paceWork * XP_MULT[v.potential[job]];
   if (s.xp >= XP_LEVELS[s.level]) { s.level++; sim.say(`${v.name} lên cấp ${s.level} nghề ${JOB_NAME[job].toLowerCase()}.`); }
 }
 
@@ -37,7 +37,7 @@ export function gainXp(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
 export function wear(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
   const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
   if (!k || !t || t.dur <= 0) return;
-  t.dur -= (dt * PACE.work) / (1 + toolBonus(sim, v, job, 'tdur') / 100);
+  t.dur -= (dt * sim.paceWork) / (1 + toolBonus(sim, v, job, 'tdur') / 100);
   if (t.dur <= 0) { v.tools[k] = null; sim.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} của ${v.name} đã hỏng, vứt bỏ.`); }
 }
 
@@ -104,17 +104,17 @@ export function think(sim: Sim, v: Villager, dt: number): void {
       if (!b || !needsWork(b)) { v.phase = 'idle'; return; }
       if (b.repairing && b.done && !b.upgrading) { // repair: the strength comes back at the pace the house went up
         const top = maxHp(b);
-        b.hp = Math.min(top, b.hp + top * (dt * PACE.work / levelDef(b).buildTime) * workFactor(sim, v, 'build') * sim.crewSpeed());
+        b.hp = Math.min(top, b.hp + top * (dt * sim.paceWork / levelDef(b).buildTime) * workFactor(sim, v, 'build') * sim.crewSpeed());
         gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
         if (b.hp >= top) { b.hp = top; b.repairing = false; v.phase = 'idle'; sim.say(`${BUILDINGS[b.kind].name} đã được sửa xong.`); }
         return;
       }
       const target = b.upgrading ? b.level + 1 : b.level;
-      b.progress += (dt * PACE.work / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1))) * workFactor(sim, v, 'build') * sim.crewSpeed();
+      b.progress += (dt * sim.paceWork / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1))) * workFactor(sim, v, 'build') * sim.crewSpeed();
       gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
       if (b.progress >= 1) {
         b.progress = 1;
-        if (b.upgrading) { b.level++; b.upgrading = false; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
+        if (b.upgrading) { b.level++; b.upgrading = false; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); sim.afterUpgrade(b); }
         else { b.done = true; b.rebuild = false; sim.fogDirty = true; if (b.kind === 'builder') sim.trimCrew(); sim.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (RESEARCH.enabled && b.kind === 'lab' && sim.researched.size === 0) sim.say('Mở Nhà nghiên cứu, đưa một dân vào làm việc, rồi nghiên cứu bản vẽ đầu tiên.'); }
         v.phase = 'idle';
       }
@@ -157,11 +157,10 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
   wear(sim, v, job, dt);
   if (v.progress < 1) return;
   v.progress -= 1;
-  // sản lượng mỗi lần theo chất lượng công cụ, phần lẻ cộng dồn sang lần sau
-  const kindOf = GATHER_HOUSE[job], res = def.res, acc = v.frac + gatherMult(kindOf ? sim.building(kindOf) : undefined) * TIER_YIELD[tierNow] * (1 + toolBonus(sim, v, job as WorkJob, 'tyield') / 100), whole = Math.floor(acc);
+  // sản lượng mỗi lần: cấp nhà × chất lượng công cụ, cộng % công cụ và % nghề (nghiên cứu); số lẻ được mang đi, kho làm tròn lên khi nhận (economy.deposit)
+  const kindOf = GATHER_HOUSE[job], res = def.res, gain = strokeYield(sim, v, job, gatherMult(kindOf ? sim.building(kindOf) : undefined) * TIER_YIELD[tierNow] * (paceJson.yield as Record<string, number>)[def.res!]); // pace.json "yield": what a stroke brings in, so that a stroke need not be quicker
   const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
-  const take = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have));
-  v.frac = acc - whole;
+  const take = Math.max(0, Math.min(gain, n.amount, CARRY_CAP[res] - have));
   n.amount -= take;
   v.carry = { res, amount: have + take };
   // gatherers now and then turn up a shell (the stone age's money) among the berries
@@ -187,9 +186,7 @@ export function tickFarms(sim: Sim, dt: number): void {
       gainXp(sim, v, 'food', dt); wear(sim, v, 'food', dt);
       if (v.progress < 1) continue;
       v.progress -= 1;
-      const acc = v.frac + TIER_YIELD[sim.toolTier(v, 'food')] * (1 + toolBonus(sim, v, 'food', 'tyield') / 100), whole = Math.floor(acc);
-      v.frac = acc - whole;
-      sim.noteYield('farm', sim.deposit('food', whole));
+      sim.noteYield('farm', sim.deposit('food', strokeYield(sim, v, 'food', TIER_YIELD[sim.toolTier(v, 'food')])));
     }
   }
 }

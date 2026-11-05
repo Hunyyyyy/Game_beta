@@ -1,7 +1,7 @@
 import type { Shift } from '../sim/model';
 import { BUILDINGS, needsWork } from '../sim/buildings';
 import { ArmorDef, ARMORS } from '../sim/combat';
-import { gameDays } from '../sim/constants';
+import { dayLength, gameDays } from '../sim/constants';
 import { Job, JOB_NAME, JOBS } from '../sim/jobs';
 import { RES_NAME } from '../sim/resources';
 import type { Sim, Villager } from '../sim/sim';
@@ -53,7 +53,7 @@ export function describe(v: Villager, sim?: Sim): string {
     }
     case 'fight': t = 'đang chiến đấu'; break;
     case 'flee': t = 'đang bỏ chạy'; break;
-    case 'down': t = `bị thương, còn ${gameDays(v.down)}`; break;
+    case 'down': t = `bị thương, còn ${gameDays(v.down, sim ? sim.dayLen : dayLength('stone'))}`; break;
     case 'goCarcass': t = 'đi lột da'; break;
     case 'skin': t = 'đang lột da'; break;
     case 'rescue': t = 'chạy đi cứu bạn'; break;

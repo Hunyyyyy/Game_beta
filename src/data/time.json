@@ -1,0 +1,4 @@
+{
+  "_note": "How long a day lasts in each era, in seconds of game (1 second of game = 1 real second at speed 1x). A day is 65% daylight and 35% night, dusk and dawn included. Everything that is 'per day' follows this length: eating and resting (rest.json dayCost, sleepDay...), hunting per day (pace.json huntPerDay), the pay of the day's work, the travel of a march in days, training in days, the days of the calendar (a season is 5 days, events.json) and the labour days of building, crafting and research (a day of labour is always one game day, so those take half the real time in a 10-minute day). What is counted in real seconds does not follow it: walking, fighting, and how long one bush or tree takes (pace.json gather), so balance those for the day length of the era. Stone age 600 (10 real minutes: 6 of day, 4 of night), medieval 1200 (20 real minutes: 12 of day, 8 of night).",
+  "dayLength": { "stone": 600, "ancient": 1200 }
+}
