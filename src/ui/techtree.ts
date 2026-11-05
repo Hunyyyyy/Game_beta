@@ -21,7 +21,7 @@ export class TechTree {
   private readonly body = h('div', { class: 'tbody' });
   private readonly nodes: Node[] = [];
   private picked: Node | null = null;
-  /** The columns of the medieval layer, shown only while `sim.advanced`. */
+  /** The columns of the medieval layer, shown only while `sim.era === 'ancient'`. */
   private readonly eraCols: HTMLElement[] = [];
   private key = '';
 
@@ -166,8 +166,8 @@ export class TechTree {
   /** Refresh the squares (their bars and locks) every frame the panel shows; the detail only when something changed. */
   update(force = false): void {
     const { sim } = this.c, act = sim.building('lab')?.active;
-    for (const col of this.eraCols) col.hidden = !sim.advanced;
-    const key = `${sim.advanced}|${sim.researchQueue.join()}|${act?.id}|${Math.floor((act?.progress ?? 0) * 20)}|${sim.researched.size}|${sim.building('lab')?.level}|${this.picked ? 1 : 0}|${Math.floor(Object.values(sim.stock).reduce((a, b) => a + b, 0))}`;
+    for (const col of this.eraCols) col.hidden = sim.era !== 'ancient';
+    const key = `${sim.era === 'ancient'}|${sim.researchQueue.join()}|${act?.id}|${Math.floor((act?.progress ?? 0) * 20)}|${sim.researched.size}|${sim.building('lab')?.level}|${this.picked ? 1 : 0}|${Math.floor(Object.values(sim.stock).reduce((a, b) => a + b, 0))}`;
     if (!force && key === this.key) return;
     this.key = key;
     for (const n of this.nodes) {

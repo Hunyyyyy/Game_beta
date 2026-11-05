@@ -1,7 +1,6 @@
 /** Heads-up for the player: what is coming or going on in the village, worked out afresh from the state of the game (nothing here is saved). */
 import { dayInSeason, SEASON_DAYS, seasonOf } from './calendar';
 import { BUILDINGS } from './buildings';
-import { DAY_LENGTH } from './constants';
 import { ANIMALS } from './combat';
 import { FOOD, RES_LIST, RES_NAME } from './resources';
 import type { Notice } from './model';
@@ -19,7 +18,7 @@ const CAMP = { building: 'infantry', label: BUILDINGS.infantry.name };
 export function noticesOf(sim: Sim): Notice[] {
   const out: Notice[] = [];
   // a war decided: the result stays until the army is pulled out (won) or for a day (lost)
-  const done = sim.plans.find((p) => p.kind === 'attack' && p.result && (p.stage === 'over' || sim.time - p.endedAt < DAY_LENGTH));
+  const done = sim.plans.find((p) => p.kind === 'attack' && p.result && (p.stage === 'over' || sim.time - p.endedAt < sim.dayLen));
   if (done) {
     const name = sim.tribes.find((t) => t.id === done.tribe)?.def.name ?? 'địch', over = done.stage === 'over' && done.status === 'running';
     out.push({
@@ -30,12 +29,12 @@ export function noticesOf(sim: Sim): Notice[] {
     });
   }
   // a boss village has fallen: the new age is announced for a few days (the same words as the log line, which fades)
-  const fallen = sim.tribes.find((t) => t.bossDown && t.bossDownAt !== undefined && sim.time - t.bossDownAt < 3 * DAY_LENGTH);
-  if (fallen) {
+  const fallen = sim.tribes.find((t) => t.bossDown && t.bossDownAt !== undefined && sim.time - t.bossDownAt < 3 * sim.dayLen);
+  if (fallen && !sim.tribes.some((t) => t.boss && !t.bossDown)) {
     out.push({
       id: 'era-bronze', level: 'info', icon: '🏺', title: 'Chuyển thời kỳ: Thời đại Đồ đồng', when: 'vừa bắt đầu',
       body: `${fallen.def.name} đã sụp đổ. Bí quyết đồng giờ đã nằm trong tay làng ta.`,
-      tip: 'Bạn đã hạ được một làng đầu lĩnh, đánh dấu bước sang thời đại mới. Các làng còn lại cũng sẽ mạnh dần theo.',
+      tip: 'Bạn đã hạ được một làng đầu lĩnh: đã có thể nâng Nhà chung lên Nhà chính để bước sang thời Trung cổ (khi mọi nhà đã đạt cấp 4). Các làng còn lại cũng sẽ mạnh dần theo.',
     });
   }
   // the village is under attack: who hides, who may go out

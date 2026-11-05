@@ -1,4 +1,6 @@
+import { SEASON_DEF } from './calendar';
 import type { Season } from './calendar';
+import paceJson from '../data/pace.json';
 import { MAP_SIZE } from './constants';
 import type { NodeKind } from './jobs';
 import type { Res } from './resources';
@@ -21,10 +23,11 @@ export interface ResourceNode {
   regrow: number; // giây còn lại đến khi mọc lại (chỉ bụi quả)
 }
 
+/** What a tree, a rock and a bush hold when whole (data/pace.json "node"): the more, the fewer trips to a new one. */
 const NODE_INFO: Record<NodeKind, { res: Res; max: number }> = {
-  tree: { res: 'wood', max: 10 },
-  rock: { res: 'stone', max: 14 },
-  bush: { res: 'food', max: 6 },
+  tree: { res: 'wood', max: paceJson.node.tree },
+  rock: { res: 'stone', max: paceJson.node.rock },
+  bush: { res: 'food', max: paceJson.node.bush },
 };
 const TILE_OF: Record<NodeKind, TileId> = { tree: Tile.Tree, rock: Tile.Rock, bush: Tile.Bush };
 
@@ -236,7 +239,7 @@ export class World {
       if (!this.isReady(x, y) || this.tiles[j] !== Tile.Grass || this.occ[j] !== 0 || this.nodes.has(j)) continue;
       if (Math.hypot(x - this.start.x, y - this.start.y) < 7 || (free && !free(x, y)) || this.wouldTrap(x, y)) continue;
       this.tiles[j] = TILE_OF[n.kind];
-      this.nodes.set(j, { kind: n.kind, res: n.res, amount: this.season === 'winter' && n.kind === 'bush' ? 0 : n.max, max: n.max, workers: 0, sides: 0, regrow: 0 });
+      this.nodes.set(j, { kind: n.kind, res: n.res, amount: n.kind === 'bush' ? Math.round(n.max * (SEASON_DEF[this.season].bushLeft ?? 1)) : n.max, max: n.max, workers: 0, sides: 0, regrow: 0 });
       return;
     }
   }
@@ -268,8 +271,8 @@ export class World {
     if (season === prev) return;
     for (const [idx, n] of this.nodes) {
       if (n.kind !== 'bush') continue;
-      if (season === 'winter') { n.amount = 0; n.regrow = 0; }
-      else if (prev === 'winter') { n.amount = 0; n.regrow = 60 + 120 * hash2(idx % this.size, (idx / this.size) | 0, this.seed + 29); }
+      if (season === 'winter') { const left = SEASON_DEF.winter.bushLeft ?? 1; if (left < 1) { n.amount = Math.min(n.amount, Math.round(n.max * left)); n.regrow = 0; } }
+      else if (prev === 'winter' && (SEASON_DEF.winter.bushLeft ?? 1) < 1) { n.amount = 0; n.regrow = 60 + 120 * hash2(idx % this.size, (idx / this.size) | 0, this.seed + 29); }
     }
   }
 
@@ -279,7 +282,7 @@ export class World {
     this.grown += dt;
     if (this.grown < 1) return;
     dt = this.grown; this.grown = 0;
-    if (this.season === 'winter') return;
+    if (this.season === 'winter' && (SEASON_DEF.winter.bushLeft ?? 1) < 1) return;
     for (const n of this.nodes.values()) {
       if (n.kind === 'bush' && n.amount === 0 && n.regrow > 0) {
         n.regrow -= dt;

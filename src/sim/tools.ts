@@ -1,5 +1,6 @@
 import type { WorkJob } from './jobs';
 import { ARMORS, RULES, WEAPONS } from './combat';
+import { scaleBill } from './resources';
 import type { Stock } from './resources';
 
 export type ToolKind = 'axe' | 'pick' | 'hoe' | 'hammer';
@@ -24,7 +25,7 @@ export const isGear = (k: string): k is GearKind => (GEAR_KINDS as string[]).inc
 export const isWeaponKind = (k: string) => k in WEAPONS;
 
 export interface Recipe { id: string; kind: ToolKind | GearKind | 'torch'; tier: 1 | 2; cost: Partial<Stock>; time: number }
-const R = (kind: ToolKind | GearKind | 'torch', tier: 1 | 2, cost: Partial<Stock>, time: number): Recipe => ({ id: `${kind}${tier}`, kind, tier, cost, time });
+const R = (kind: ToolKind | GearKind | 'torch', tier: 1 | 2, cost: Partial<Stock>, time: number): Recipe => ({ id: `${kind}${tier}`, kind, tier, cost: scaleBill(cost), time });
 const gearRecipe = (kind: GearKind): Recipe => {
   const d = isArmorKind(kind) ? ARMORS[kind] : WEAPONS[kind];
   return R(kind, (d.tier ?? 1) as 1 | 2, d.cost ?? {}, d.time ?? 60);

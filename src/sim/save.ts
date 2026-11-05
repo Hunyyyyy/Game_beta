@@ -21,7 +21,7 @@ export const SAVE_VERSION = 28;
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
-  scalars: ['era', 'bronze', 'time', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
+  scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
   records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts'],
   /** Lists of plain data. */
@@ -40,7 +40,6 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'view', // where the camera is: the screen's, not the game's
   'warIds', 'march', 'warMeals', 'warHunger', 'warFocus', 'warHarassAt', // the march of a war: the game cannot be saved while one is on
   'warSince', 'hiddenAnimals', // the game cannot be saved while a war is on
-  'advanced', // the era of the war layer: the game's setting (data/war.json), changed only from the dev menu
   'leaderClock', // a timer: leaders are picked again within a second of loading
   'controlled', // what the player has selected: the screen's, not the game's
   'dangerAt', // a timer: after loading the villagers come out of hiding at once
@@ -290,8 +289,6 @@ MIGRATIONS[25] = (d) => {
 };
 
 MIGRATIONS[26] = (d) => {
-  // 26 -> 27: the age of bronze (opened when a boss village falls) is not yet
-  d.scalars.bronze ??= false;
   return { ...d, version: 27 };
 
 MIGRATIONS[27] = (d) => {

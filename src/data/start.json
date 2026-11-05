@@ -8,5 +8,5 @@
     { "dx": 1, "dy": 1, "sex": "f", "job": "idle" }
   ],
   "buildings": ["builder"],
-  "arrivals": { "firstDay": 2, "min": 1, "max": 3, "femaleChance": 0.5 }
+  "arrivals": { "firstDay": 2, "min": 2, "max": 4, "femaleChance": 0.5 }
 }

@@ -10,7 +10,7 @@ import { SIEGE } from './combat';
 import { BuildingKind, levelsOf, POP_BY_FIRE } from './buildings';
 import { WEAPONS } from './combat';
 import { soldierTier } from './research';
-import { DIFF, tribeBonuses } from './difficulty';
+import { DIFF, tierLevel, tribeBonuses } from './difficulty';
 import { FOE } from './fightpolicy';
 import type { MountKind } from './jobs';
 import { powerOf, Power } from './power';
@@ -41,13 +41,13 @@ export function headcount(sim: Sim, t: Tribe): { guards: number; civs: number } 
  */
 const targetsOf = (sim: Sim, t: Tribe): { total: number; fighters: number } => {
   const total = Math.round(POP_BY_FIRE[Math.max(0, Math.min(POP_BY_FIRE.length, t.campLevel) - 1)] * (t.boss ? DIFF.boss.popMult : 1));
-  const ratio = Math.round((total * t.def.warriors) / (t.def.warriors + t.def.civilians)), posts = slotsAt(GUARD_HOUSES, t.campLevel, sim.era, sim.advanced || !!t.boss);
+  const ratio = Math.round((total * t.def.warriors) / (t.def.warriors + t.def.civilians)), posts = slotsAt(GUARD_HOUSES, t.campLevel, sim.era, sim.era === 'ancient' || !!t.boss);
   return { total, fighters: Math.max(2, Math.min(Math.max(ratio, posts), Math.floor(total * LOD.maxGuardShare))) };
 };
 
 /** Work out the percent its people need (difficulty.tribeBonuses) and put it on the bodies of those in the world. */
 export function rescaleTribe(sim: Sim, t: Tribe): void {
-  const hc = headcount(sim, t), b = tribeBonuses(fireLevelOf(sim), t.def, t.k, hc.guards, hc.civs, !!t.boss);
+  const hc = headcount(sim, t), b = tribeBonuses(fireLevelOf(sim), t.tier, hc.guards, hc.civs);
   t.mil = b.mil; t.eco = b.eco; t.seenFire = fireLevelOf(sim);
   for (const u of t.unitIds) { const f = sim.get(u); if (f) applyStats(sim, f); }
 }
@@ -68,6 +68,14 @@ export function topUp(sim: Sim, t: Tribe): void {
   crowd.guards += Math.max(0, fighters - hc.guards);
   crowd.civs += Math.max(0, total - fighters - hc.civs);
   t.popLevel = t.campLevel;
+}
+
+/** A day goes by for a village that was beaten: it gets back `share` of the soldiers and people it lacks of what its camp holds (difficulty.json capture.tribute.recoverPerDay). */
+export function recoverTribe(sim: Sim, t: Tribe, share: number): void {
+  const hc = headcount(sim, t), { total, fighters } = targetsOf(sim, t), crowd = crowdOf(t);
+  const lackG = Math.max(0, fighters - hc.guards), lackC = Math.max(0, total - fighters - hc.civs);
+  crowd.guards += Math.min(lackG, Math.ceil(fighters * share));
+  crowd.civs += Math.min(lackC, Math.ceil((total - fighters) * share));
 }
 
 /** The houses of the camp are laid (data only: no people), if they are not yet; the land round it is stocked once. */
@@ -120,7 +128,7 @@ type Post = NonNullable<FoeAI['post']>;
 /** How many archers a tower holds (the slots of its level in the building json). */
 const towerSlots = (sim: Sim, tw: { lv?: number }): number => levelsOf('tower', sim.era)[(tw.lv ?? 1) - 1]?.slots ?? 0;
 
-/** The archers of a tower: they stand in it (at its inner foot) with bows, and loose arrows from it (tribes.foeBrain). Returns how many came out. */
+/** The archers of a tower: they are up in it (out of sight, their post at its inner foot) with bows, and loose arrows from it (tribes.foeBrain). Returns how many came out. */
 function spawnTowerMen(sim: Sim, t: Tribe, tw: Tribe['props'][number], n: number): number {
   const crowd = crowdOf(t), taken = new Set<number>(), cx = tw.x + tw.w / 2, cy = tw.y + tw.h / 2, dx = t.camp.x - cx, dy = t.camp.y - cy, len = Math.max(1, Math.hypot(dx, dy));
   const men: Villager[] = [];
@@ -132,6 +140,7 @@ function spawnTowerMen(sim: Sim, t: Tribe, tw: Tribe['props'][number], n: number
     f.look.hide = t.def.look.hide; f.look.pants = t.def.look.pants;
     f.weapon = 'bow'; f.armor = gearFor(sim, t, t.unitIds.length + i).armor; f.facing = post.face;
     f.ai = { role: 'guard', camp: t.camp, wander: 0, goal: null, raid: 0, post, tower: { x: tw.x, y: tw.y } };
+    f.inTent = true; // he is up in the tower: not drawn or hit on the ground, only his arrows are seen (tribes.towerBrain)
     sim.addFoe(f); t.unitIds.push(f.id); men.push(f);
   }
   if (men.length) { rescaleTribe(sim, t); for (const f of men) f.health = f.maxHealth; }
@@ -212,7 +221,7 @@ function spawnOut(sim: Sim, t: Tribe, role: 'guard' | 'civ', n: number, near: { 
 
 /** The village stirs: its houses are laid, and as many come out as work in the open. */
 export function wake(sim: Sim, t: Tribe): void {
-  if (t.awake || t.state === 'destroyed' || t.state === 'adopted') return;
+  if (t.awake || t.state === 'destroyed') return;
   ensureLayout(sim, t);
   if (t.hitAt !== undefined && sim.time - t.hitAt > SIEGE.struct.fullAfter) repairProps(t, 1); // left alone long enough, it has mended everything
   t.awake = true; t.idleT = 0;
@@ -285,7 +294,7 @@ const standing = (t: Tribe): number => t.props.filter((p) => p.kind === 'house' 
 // ---------------------------------------------------------------- the camp follows the player's
 /** The camp grows with the player's: its level is the player's fire plus its `edge` (never lower than it was, never past the top). A village asleep is only told its new level; one awake is sent back indoors, laid again and let out. */
 export function followFire(sim: Sim, t: Tribe): void {
-  t.campLevel = Math.max(t.campLevel, Math.min(DIFF.campLevel.max, fireLevelOf(sim) + (t.edge ?? 0)));
+  t.campLevel = Math.max(t.campLevel, tierLevel(fireLevelOf(sim), t.tier));
   if (t.popLevel === t.campLevel) return;
   const was = !!t.awake;
   if (was) sleep(sim, t);

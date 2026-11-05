@@ -6,7 +6,7 @@ import fishClips from '../data/animals/anims/fish.json';
 import hopperClips from '../data/animals/anims/hopper.json';
 import quadrupedClips from '../data/animals/anims/quadruped.json';
 import { Blueprint, BlueprintDef, toCanvases } from '../blueprint/blueprint';
-import { STONE_ART } from '../content/buildings/art.gen';
+import { ANCIENT_ART, STONE_ART } from '../content/buildings/art.gen';
 import animsJson from '../data/anims.json';
 import bushJson from '../data/blueprints/nature/resources/bush.json';
 import rockJson from '../data/blueprints/nature/resources/rock.json';
@@ -29,7 +29,7 @@ import toolMaceJson from '../data/blueprints/stone_age/tools/mace.json';
 import toolHideArmorJson from '../data/blueprints/stone_age/tools/hide_armor.json';
 import toolSlingJson from '../data/blueprints/stone_age/tools/sling.json';
 import toolBowJson from '../data/blueprints/stone_age/tools/bow.json';
-import { BuildingKind, Era, ERAS } from '../sim/buildings';
+import { BuildingKind, BUILDINGS, Era, ERAS } from '../sim/buildings';
 import type { Season } from '../sim/calendar';
 import type { Animal } from '../sim/fauna';
 import type { Villager } from '../sim/sim';
@@ -67,7 +67,7 @@ export interface NatureSet {
 /** Construction stages 0..4 (4 = finished) as blueprint params. */
 const stage = (st: number) => ({ st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) });
 /** Building blueprints per era and kind, one entry per level. A later era only lists what it redraws. */
-const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>>> = { stone: STONE_ART };
+const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>>> = { stone: STONE_ART, ancient: ANCIENT_ART };
 const TINTS: Partial<Record<BuildingKind, Record<string, string>>> = {}; // no reused drawings left: every house has its own art
 
 export class Sprites {
@@ -157,9 +157,14 @@ export class Sprites {
   }
 
   /** Sprite of a building at its level and construction stage (0..4). */
-  building(kind: BuildingKind, era: Era, level: number, st: number): Prop {
-    const lv = this.buildingSet(kind, era);
-    return lv[Math.min(lv.length, Math.max(1, level)) - 1][st];
+  building(kind: BuildingKind, era: Era, level: number, st: number, open = false): Prop {
+    const stoneN = BUILDINGS[kind].levels.stone!.length;
+    if (era === 'ancient' && level > stoneN && ANCIENT_ART[kind]) { // the medieval levels have their own drawings, after the stone ones
+      const set = this.buildingSet(kind, 'ancient'), half = kind === 'gate' ? set.length / 2 : set.length;
+      return set[Math.min(half, level - stoneN) - 1 + (open ? half : 0)][st];
+    }
+    const lv = this.buildingSet(kind, 'stone'), at = open ? level + 2 : level; // a gate lists its open drawings after the shut ones
+    return lv[Math.min(lv.length, Math.max(1, at)) - 1][st];
   }
 
   /** Sprite size of a species and where its feet are (the sprite is drawn with this point on the animal's position). */

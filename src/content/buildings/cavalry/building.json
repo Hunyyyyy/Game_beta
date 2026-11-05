@@ -19,8 +19,7 @@
    {
     "name": "Đơn sơ",
     "cost": {
-     "wood": 25,
-     "hide": 8
+     "wood": 25
     },
     "buildTime": 70,
     "cap": 0,
@@ -32,8 +31,7 @@
    {
     "name": "Gỗ",
     "cost": {
-     "wood": 30,
-     "hide": 10
+     "wood": 30
     },
     "buildTime": 110,
     "cap": 0,
@@ -46,8 +44,7 @@
     "name": "Đá",
     "cost": {
      "wood": 35,
-     "stone": 25,
-     "hide": 14
+     "stone": 25
     },
     "buildTime": 160,
     "cap": 0,
@@ -60,14 +57,29 @@
     "name": "Đá gia cố",
     "cost": {
      "wood": 41,
-     "stone": 35,
-     "hide": 20
+     "stone": 35
     },
     "buildTime": 233,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 20,
     "hp": 450,
+    "sight": 0
+   }
+  ],
+  "ancient": [
+   {
+    "name": "Gạch ngói (trung cổ)",
+    "cost": {
+     "wood": 74,
+     "stone": 63,
+     "hide": 36
+    },
+    "buildTime": 350,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 24,
+    "hp": 675,
     "sight": 0
    }
   ]

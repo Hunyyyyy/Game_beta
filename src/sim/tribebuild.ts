@@ -81,4 +81,4 @@ export function setGates(sim: Sim, t: Tribe, shut: boolean): void {
   }
 }
 
-const planPieces = (sim: Sim, t: Tribe, fire: Prop, level: number, base: Prop[], blocked: (r: { x: number; y: number; w: number; h: number }) => boolean) => planCamp(fire.x, fire.y, level, sim.era, sim.advanced || !!t.boss, base, blocked);
+const planPieces = (sim: Sim, t: Tribe, fire: Prop, level: number, base: Prop[], blocked: (r: { x: number; y: number; w: number; h: number }) => boolean) => planCamp(fire.x, fire.y, level, sim.era, sim.era === 'ancient' || !!t.boss, base, blocked);

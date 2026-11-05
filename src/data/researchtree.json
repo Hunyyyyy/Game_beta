@@ -13,8 +13,8 @@
     3
   ],
   "growth": {
-    "cost": 1.5,
-    "time": 1.25
+    "cost": 1.35,
+    "time": 1.15
   },
   "stats": {
     "hp": {
@@ -31,10 +31,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 120,
+      "time": 72,
       "about": "Máu tối đa."
     },
     "atk": {
@@ -51,10 +50,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 120,
+      "time": 72,
       "about": "Sát thương mỗi đòn đánh."
     },
     "aspd": {
@@ -71,10 +69,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 120,
+      "time": 72,
       "about": "Tốc độ đánh của vũ khí: ai cầm nó đánh và bắn nhanh hơn, thời gian giữa hai đòn ngắn lại."
     },
     "crit": {
@@ -91,10 +88,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 130,
+      "time": 78,
       "about": "Tỉ lệ chí mạng của vũ khí, tính trên 100%: mỗi cấp cộng thẳng vào xác suất (0,5% là nửa phần trăm). Tối đa 10%."
     },
     "critd": {
@@ -111,10 +107,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 130,
+      "time": 78,
       "about": "Sát thương của đòn chí mạng tính trên 100% đòn thường, gốc 125%: mỗi cấp cộng thẳng vào (400% là gấp 4 lần đòn thường)."
     },
     "tspd": {
@@ -131,10 +126,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 110,
+      "time": 66,
       "about": "Ai cầm công cụ này làm việc nhanh hơn (cộng vào hệ số của công cụ)."
     },
     "tyield": {
@@ -151,10 +145,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 110,
+      "time": 66,
       "about": "Mỗi lần khai thác thu được nhiều hơn khi cầm công cụ này."
     },
     "tdur": {
@@ -171,10 +164,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 110,
+      "time": 66,
       "about": "Công cụ lâu hỏng hơn (thời gian làm việc trước khi gãy dài ra)."
     },
     "defm": {
@@ -191,10 +183,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 140,
+      "time": 84,
       "about": "Giảm sát thương nhận từ lính cận chiến."
     },
     "defr": {
@@ -211,10 +202,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 140,
+      "time": 84,
       "about": "Giảm sát thương nhận từ lính tầm xa."
     },
     "move": {
@@ -231,10 +221,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 100,
+      "time": 60,
       "about": "Tốc độ đi và chạy."
     },
     "work": {
@@ -251,10 +240,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 2
       },
-      "time": 110,
+      "time": 66,
       "about": "Tốc độ làm việc: khai thác, xây, chế tạo, nghiên cứu."
     },
     "int": {
@@ -271,10 +259,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 4
       },
-      "time": 130,
+      "time": 78,
       "about": "Trí tuệ: tăng tốc độ làm việc và giảm sức tiêu hao khi làm việc."
     },
     "sta": {
@@ -291,10 +278,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 5
       },
-      "time": 110,
+      "time": 66,
       "about": "Sức bền: làm việc và chiến đấu được lâu."
     },
     "hpregen": {
@@ -311,10 +297,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 5
       },
-      "time": 110,
+      "time": 66,
       "about": "Tốc độ hồi máu khi bị thương: nhanh hơn thêm bấy nhiêu phần trăm."
     },
     "restregen": {
@@ -331,10 +316,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 5
       },
-      "time": 110,
+      "time": 66,
       "about": "Tốc độ hồi sức khi ngủ: nhanh hơn thêm bấy nhiêu phần trăm."
     },
     "mspeed": {
@@ -351,10 +335,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 100,
+      "time": 60,
       "about": "Quân đi nhanh hơn khi hành quân trong chiến tranh."
     },
     "mload": {
@@ -371,10 +354,9 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 100,
+      "time": 60,
       "about": "Mỗi lính hậu cần mang được nhiều hơn."
     },
     "mbuild": {
@@ -391,11 +373,29 @@
         "food": 10,
         "wood": 10,
         "stone": 5,
-        "hide": 1,
         "coin": 1
       },
-      "time": 100,
+      "time": 60,
       "about": "Lính hậu cần dựng lều dã chiến nhanh hơn."
+    },
+    "gyield": {
+      "name": "Sản lượng nghề",
+      "short": "Sản lượng",
+      "steps": [
+        10,
+        8,
+        6,
+        4,
+        2
+      ],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "coin": 1
+      },
+      "time": 70,
+      "about": "Mỗi lần khai thác hoặc xẻ thú thu được nhiều hơn (cộng với % sản lượng của công cụ, rồi làm tròn lên số nguyên)."
     }
   },
   "roles": {
@@ -603,7 +603,6 @@
         "cost": {
           "food": 200,
           "wood": 120,
-          "hide": 20,
           "coin": 20
         },
         "time": 1200
@@ -635,7 +634,6 @@
         "cost": {
           "wood": 100,
           "stone": 60,
-          "hide": 10,
           "coin": 15
         },
         "time": 900
@@ -745,6 +743,17 @@
         "time": 1000
       }
     },
+    "gather": {
+      "roles": [
+        "wood",
+        "stone",
+        "food",
+        "hunt"
+      ],
+      "order": [
+        "gyield"
+      ]
+    },
     "development": {
       "roles": [
         "build",
@@ -767,7 +776,6 @@
         "cost": {
           "wood": 100,
           "stone": 60,
-          "hide": 10,
           "coin": 20
         },
         "time": 1000

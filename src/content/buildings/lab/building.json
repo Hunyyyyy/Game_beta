@@ -30,7 +30,6 @@
     "cost": {
      "wood": 200,
      "stone": 100,
-     "hide": 20,
      "coin": 10
     },
     "buildTime": 140,
@@ -64,6 +63,21 @@
     "craftSpeed": 1,
     "slots": 4,
     "hp": 450,
+    "sight": 0
+   }
+  ],
+  "ancient": [
+   {
+    "name": "Gạch ngói (trung cổ)",
+    "cost": {
+     "wood": 62,
+     "stone": 103
+    },
+    "buildTime": 429,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 5,
+    "hp": 675,
     "sight": 0
    }
   ]

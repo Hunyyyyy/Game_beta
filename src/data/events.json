@@ -1,13 +1,138 @@
 {
-  "_note": "kind beasts: species = id in animals.json (wolf, bear, lion...). kind raid: tribe = who attacks; power = how strong against the army of the player on the day (1 = as strong, 1.1 = a tenth stronger, 0.8 = a fifth weaker; kept between floor and ceiling of content/difficulty.json), OR size = how many guards the tribe sends, OR army = own make-up { weapon: count } (weapons of weapons.json: club, spear, mace, hatchet = foot; sling, bow = archers), with armor (default true). Enemy cavalry is not supported yet. day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has.",
+  "_note": "kind beasts: species = id in animals.json (wolf, bear, lion...). kind raid: tribe = who attacks; power = how strong against the army of the player on the day (1 = as strong, 1.1 = a tenth stronger, 0.8 = a fifth weaker; kept between floor and ceiling of content/difficulty.json), OR size = how many guards the tribe sends, OR army = own make-up { weapon: count } (weapons of weapons.json: club, spear, mace, hatchet = foot; sling, bow = archers), with armor (default true). Enemy cavalry is not supported yet. day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has. recurring: sự kiện không cạn: từ fromDay, cứ everyDays ngày bốc một sự kiện từ table theo weight (thú: số con = base + perSoldier × số lính của ta, tối đa max; tập kích: một làng thù địch, sức = power × quân của ta, kẹp theo trần của cấp lửa như raidPower), báo trước leadDays ngày. hostile: làng chưa chiếm không phải loại hiền (hoặc đã thù địch, hoặc là thủ lĩnh phản bội) mà quan hệ dưới raidBelow tự tập kích cứ raidEveryDays ngày với sức power theo bậc, từ fromDay; làng có quan hệ từ gift.friendAt trở lên thì không.",
   "events": [
-    { "id": "wolves_summer_1", "kind": "beasts", "species": "wolf", "day":4,  "spread":1, "size":2, "night": false,"warnDays":2,  "warn": "Tiếng hú vang lên từ xa trong đêm..." },
-    { "id": "wolves_summer_2", "kind": "beasts", "species": "wolf", "day":9,  "spread":1, "size":4, "night": false,"warnDays":3,  "warn": "Tiếng hú vang lên từ xa trong đêm bầy sói trả thù..." },
-    { "id": "wolves_summer_3", "kind": "beasts", "species": "wolf", "day":15,  "spread":1, "size":6, "night": true,"warnDays":3,  "warn": "Tiếng hú vang lên từ xa trong đêm bầy sói tổng tấn công..." },
-    { "id": "axe_scout",     "kind": "raid",   "tribe": "axe",   "day":12, "spread": 2, "size":4,  "night": false, "warnDays":2, "warn": "Khói bốc lên từ phía tộc Rìu Đá, có lẽ họ đang cử người dò xét." },
-    { "id": "wolves_winter", "kind": "beasts", "species": "wolf", "day":23, "spread": 4, "size":6, "night": true,  "warn": "Dấu chân sói đầy quanh làng." },
-    { "id": "bear_autumn",   "kind": "beasts", "species": "bear", "day":19, "spread": 1, "size":1, "night": true, "warn": "Những vết cào sâu trên thân cây quanh làng: có gấu." },
-    { "id": "swamp_raid",    "kind": "raid",   "tribe": "swamp", "day":27, "spread": 4, "size":6,  "night": true,  "warnDays": 0, "warn": "" },
-    { "id": "axe_war",       "kind": "raid",   "tribe": "axe",   "day":33, "spread": 4, "size":14, "night": false, "warnDays": 1, "warn": "Tiếng trống chiến vang lên: tộc Rìu Đá sắp đánh lớn." }
-  ]
+    {
+      "id": "wolves_summer_1",
+      "kind": "beasts",
+      "species": "wolf",
+      "day": 6,
+      "spread": 1,
+      "size": 2,
+      "night": false,
+      "warnDays": 2,
+      "warn": "Tiếng hú vang lên từ xa trong đêm..."
+    },
+    {
+      "id": "wolves_summer_2",
+      "kind": "beasts",
+      "species": "wolf",
+      "day": 9,
+      "spread": 1,
+      "size": 4,
+      "night": false,
+      "warnDays": 3,
+      "warn": "Tiếng hú vang lên từ xa trong đêm bầy sói trả thù..."
+    },
+    {
+      "id": "wolves_summer_3",
+      "kind": "beasts",
+      "species": "wolf",
+      "day": 15,
+      "spread": 1,
+      "size": 6,
+      "night": true,
+      "warnDays": 3,
+      "warn": "Tiếng hú vang lên từ xa trong đêm bầy sói tổng tấn công..."
+    },
+    {
+      "id": "axe_scout",
+      "kind": "raid",
+      "tribe": "axe",
+      "day": 12,
+      "spread": 2,
+      "size": 4,
+      "night": false,
+      "warnDays": 2,
+      "warn": "Khói bốc lên từ phía tộc Rìu Đá, có lẽ họ đang cử người dò xét."
+    },
+    {
+      "id": "wolves_winter",
+      "kind": "beasts",
+      "species": "wolf",
+      "day": 23,
+      "spread": 4,
+      "size": 6,
+      "night": true,
+      "warn": "Dấu chân sói đầy quanh làng."
+    },
+    {
+      "id": "bear_autumn",
+      "kind": "beasts",
+      "species": "bear",
+      "day": 19,
+      "spread": 1,
+      "size": 1,
+      "night": true,
+      "warn": "Những vết cào sâu trên thân cây quanh làng: có gấu."
+    },
+    {
+      "id": "swamp_raid",
+      "kind": "raid",
+      "tribe": "swamp",
+      "day": 27,
+      "spread": 4,
+      "size": 6,
+      "night": true,
+      "warnDays": 0,
+      "warn": ""
+    },
+    {
+      "id": "axe_war",
+      "kind": "raid",
+      "tribe": "axe",
+      "day": 33,
+      "spread": 4,
+      "size": 14,
+      "night": false,
+      "warnDays": 1,
+      "warn": "Tiếng trống chiến vang lên: tộc Rìu Đá sắp đánh lớn."
+    }
+  ],
+  "recurring": {
+    "fromDay": 18,
+    "everyDays": 5,
+    "nightChance": 0.3,
+    "leadDays": [
+      2,
+      4
+    ],
+    "table": [
+      {
+        "kind": "beasts",
+        "species": "wolf",
+        "weight": 3,
+        "base": 2,
+        "perSoldier": 0.15,
+        "max": 10,
+        "warn": "Tiếng hú vang lên từ xa trong đêm..."
+      },
+      {
+        "kind": "beasts",
+        "species": "bear",
+        "weight": 1,
+        "base": 1,
+        "perSoldier": 0.03,
+        "max": 3,
+        "warn": "Những vết cào sâu trên thân cây quanh làng: có gấu."
+      },
+      {
+        "kind": "raid",
+        "weight": 3,
+        "power": 0.6,
+        "warn": "Khói bốc lên từ phía làng thù địch, có lẽ họ đang chuẩn bị đánh ta."
+      }
+    ]
+  },
+  "hostile": {
+    "fromDay": 18,
+    "raidEveryDays": 12,
+    "raidBelow": 50,
+    "power": {
+      "weak": 0.2,
+      "normal": 0.25,
+      "medium": 0.35,
+      "boss": 0.4,
+      "rebel": 0.4
+    }
+  }
 }

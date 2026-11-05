@@ -22,7 +22,7 @@ export const NO_HOUSE_CAP = 1;
 const CAMP_ROLES: readonly RoleId[] = ['foot', 'archer', 'cavalry'];
 export const roleCapacity = (sim: Sim, role: RoleId): number => {
   const houses = roleHouses(sim, role);
-  const camp = CAMP_ROLES.includes(role) ? sim.conquered * DIFF.capture.campSlots : 0; // a village we took adds places to every camp of soldiers
+  const camp = CAMP_ROLES.includes(role) ? sim.campBonus : 0; // a village we took adds places to every camp of soldiers
   return houses.length ? houses.reduce((n, b) => n + levelDef(b).slots + camp, 0) : sim.dev.freeBuild ? 99 : NO_HOUSE_TRADES.includes(role) ? NO_HOUSE_CAP : 0;
 };
 

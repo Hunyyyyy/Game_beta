@@ -1,4 +1,4 @@
-import { BUILDINGS, Building, BuildingKind, canGrow, levelCapByFire, levelDef, maxHp, maxLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, BuildingKind, canGrow, levelCapByFire, levelDef, maxHp, maxLevel, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
 import { ROLES, roleOf } from '../sim/jobs';
 import { RES_NAME, Res, Stock } from '../sim/resources';
@@ -108,7 +108,7 @@ export class BuildingBar {
     this.root.hidden = !show;
     if (!b || !show) { this.id = null; return; }
     this.id = b.id;
-    const def = BUILDINGS[b.kind], top = maxLevel(b.kind, b.era), lv = levelDef(b);
+    const def = BUILDINGS[b.kind], top = topLevel(b), lv = levelDef(b);
     const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.repairing ? `đang sửa chữa ${Math.round((b.hp / maxHp(b)) * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
     const hp = b.done ? ` · bền ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? ' · đang cháy' : b.hp <= maxHp(b) * 0.7 ? ' · bốc khói' : ''}` : '';
     const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < top;

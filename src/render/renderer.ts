@@ -270,7 +270,7 @@ export class Renderer {
   /** Current level's sprite; while an upgrade runs the finished building stays drawn, with a progress bar. */
   private buildingProp(b: Building): Prop {
     const st = b.done ? 4 : Math.min(3, Math.floor(b.progress * 4));
-    return this.sprites.building(b.kind, b.era, b.kind === 'gate' && b.open ? b.level + 2 : b.level, st);
+    return this.sprites.building(b.kind, b.era, b.level, st, b.kind === 'gate' && b.open);
   }
 
   /** Rain, snow, mist, lightning in screen space; particle positions derive from time, so no state is kept. */
@@ -390,7 +390,6 @@ export class Renderer {
     for (const a of sim.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
     // the works of a village are drawn one by one, each where its own feet stand: a village is a dozen tiles wide, and it must not vanish as its fire leaves the screen
     for (const t of sim.tribes) {
-      if (t.state === 'adopted') continue;
       for (const p of t.props) {
         if (p.kind === 'fire' && t.state === 'destroyed') continue;
         const [ax, ay] = this.buildingAnchor(this.propKind(p), p.x, p.y);
@@ -498,7 +497,7 @@ export class Renderer {
           ctx.fillStyle = v.job === 'fight' ? '#d9534f' : '#e0a23c'; ctx.fillRect(p.x - 2 * u, p.y - 3 * u, 4 * u, 4 * u); ctx.fillRect(p.x - u, p.y + u, 2 * u, u);
         }
         if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - lift - 46, v.health / v.maxHealth, v.team === 'player' ? '#6bbf59' : '#d9534f');
-        if (v.down > 0) { ctx.fillStyle = '#ffd27a'; ctx.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 30); ctx.fillText(gameDays(v.down), p.x, p.y); }
+        if (v.down > 0) { ctx.fillStyle = '#ffd27a'; ctx.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 30); ctx.fillText(gameDays(v.down, this.sim.dayLen), p.x, p.y); }
         if (v.phase === 'flee') { ctx.fillStyle = '#fff6e8'; ctx.font = `700 ${Math.max(12, 7 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 50); ctx.fillText('!', p.x, p.y); }
       }
     }

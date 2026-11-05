@@ -3,7 +3,6 @@
  * and the beast goes to the stock, from where it is given to a villager like a tool. A rider walks faster and takes less of a blow; a soldier with a beast counts as
  * cavalry. The soldiers of the Trại kỵ thú need no beast from the stock: they ride the one that goes with the level of their camp.
  */
-import { PACE } from './constants';
 import { levelDef } from './buildings';
 import { MOUNT_KINDS, MOUNTS, MountKind } from './jobs';
 import type { Sim } from './sim';
@@ -52,7 +51,7 @@ export function tickTame(sim: Sim, dt: number): void {
     if (!d) { b.active = null; continue; }
     let rate = 0;
     for (const v of staff) { rate += sim.workFactor(v, 'tame'); sim.gainXp(v, 'tame', dt); }
-    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * PACE.work * rate * levelDef(b).craftSpeed) / d.time); // dev: done at once
+    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * sim.paceWork * rate * levelDef(b).craftSpeed) / d.time); // dev: done at once
     if (b.active.progress < 1) continue;
     if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim, m), 0) >= STOCK_CAP) { if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say('Chuồng đã đầy thú chưa có người cưỡi: sản phẩm chờ chỗ.'); } continue; }
     sim.toolStock[stockKey(k)] = tamedCount(sim, k) + 1; b.active = null;

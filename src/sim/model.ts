@@ -103,7 +103,6 @@ export interface Villager {
   post: number;     // id Ruộng mà người chơi giao cho làm (nghề Hái lượm); -1 nếu không
   prefer: number;   // mục tiêu người chơi chỉ định (-1 nếu không)
   progress: number;
-  frac: number;     // phần lẻ của sản lượng chưa nhận
   timer: number;
   order: string | null; // đơn chế tác đang làm
   carry: { res: Res; amount: number } | null;
@@ -127,6 +126,8 @@ export interface Villager {
   atkCd: number;          // seconds until the next blow
   down: number;           // seconds left lying wounded (0 = on feet)
   rescue: number;         // seconds an ally has been tending this wounded unit
+  /** A soldier lent by a village that stands by us for the length of one war (tribes.summonAllies): he goes when it is over (`leaving`), out of the camera's sight, and is no more. */
+  ally?: { tribe: string; leaving: boolean; since: number };
   fleeT: number;          // seconds left running away
   calm: number;           // seconds since the last threat was near
   loot: number;           // carcass id being skinned (-1 none)
@@ -322,6 +323,8 @@ export interface Plan {
   quick?: boolean;
   missions: Mission[]; cards: Card[];
   status: 'draft' | 'running' | 'done';
+  /** When the order to pull out was given (a retreat or a recall): from it the grace of data/war.json "retreat" counts. */
+  withdrawnAt?: number;
   /**
    * Where a running attack is. `assemble`: the squads walk to the cells drawn for them; `ready`: they stand there and wait for the player to
    * decide to fight or fall back; `fight`: the missions are carried out; `retreat`: a fight is being broken off, each squad falling back by the way drawn for it;

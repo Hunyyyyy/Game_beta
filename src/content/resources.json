@@ -3,21 +3,21 @@
  "resources": {
   "food": {
    "name": "Thức ăn",
-   "carry": 10,
+   "carry": 40,
    "barter": 10,
    "hud": "always",
    "unlock": null
   },
   "wood": {
    "name": "Gỗ",
-   "carry": 4,
+   "carry": 12,
    "barter": 5,
    "hud": "always",
    "unlock": null
   },
   "stone": {
    "name": "Đá",
-   "carry": 4,
+   "carry": 8,
    "barter": 5,
    "hud": "always",
    "unlock": null

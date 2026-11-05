@@ -1,14 +1,15 @@
 import { BUILDINGS, levelDef } from '../sim/buildings';
 import { DIFF, playerCap } from '../sim/difficulty';
-import { relationLabel, WEAPONS, RELATION, TribeId } from '../sim/combat';
+import { relationLabel, WEAPONS, TribeId } from '../sim/combat';
 import { SEASONS, Season, WEATHER, WeatherKind } from '../sim/calendar';
-import { gameDays, TILE, workDays } from '../sim/constants';
+import { dayLength, gameDays, TILE, workDays } from '../sim/constants';
 import * as dev from '../sim/dev';
 import { StatKey, STAT_NAME } from '../sim/jobs';
 import { RESEARCH } from '../sim/research';
 import { RES_LIST, RES_NAME } from '../sim/resources';
 import { TOOL_KINDS, TOOL_NAME, TIER_NAME } from '../sim/tools';
-import { canAdopt, canTribute } from '../sim/tribes';
+import { canAdopt, canTribute, giftOf, tributeSteps } from '../sim/tribes';
+import type { Tribe } from '../sim/tribes';
 import { costText, h, helpButton, hint } from './dom';
 import type { Ctx } from './panels';
 
@@ -74,34 +75,47 @@ export class Menu {
     const { sim, ctl } = this.c, page = h('div', { class: 'page' });
     const banner = h('div', { class: 'card', hidden: true }); const none = h('p', { class: 'sub', text: 'Chưa gặp bộ tộc nào. Hãy cử người đi khám phá.' });
     page.append(banner, none);
-    const cards = sim.tribes.map((t) => {
-      const status = h('span'), people = h('div', { class: 'kv' }), fill = h('b');
-      const gift = h('button', { class: 'sm', text: `Tặng ${RELATION.giftFood} thức ăn`, onclick: () => { const e = sim.diplomacy(t.id, 'gift'); if (e) this.c.toast(e); } });
-      const tribute = h('button', { class: 'sm', text: 'Cống nạp', onclick: () => { const e = sim.diplomacy(t.id, 'tribute'); this.c.toast(e ?? `${t.def.name} chịu cống nạp`); } });
-      const adopt = h('button', { class: 'sm primary', text: 'Thu nạp', onclick: () => { const e = sim.diplomacy(t.id, 'adopt'); this.c.toast(e ?? `${t.def.name} gia nhập làng`); } });
+    // a card for each village that stands: a village taken is gone, and a new era brings new ones, so the cards follow `sim.tribes`
+    type Card = { t: Tribe; card: HTMLElement; status: HTMLElement; people: HTMLElement; fill: HTMLElement; note: HTMLElement; gift: HTMLButtonElement; tribute: HTMLButtonElement; adopt: HTMLButtonElement; less: HTMLButtonElement; more: HTMLButtonElement };
+    const cards = new Map<string, Card>();
+    const make = (t: Tribe): Card => {
+      const status = h('span'), people = h('div', { class: 'kv' }), fill = h('b'), note = h('p', { class: 'sub' });
+      const act = (action: 'gift' | 'tribute' | 'adopt' | 'tributeUp' | 'tributeDown', done?: string) => () => { const e = sim.diplomacy(t.id, action); if (e) this.c.toast(e); else if (done) this.c.toast(done); };
+      const gift = h('button', { class: 'sm', text: 'Tặng quà', onclick: act('gift') }) as HTMLButtonElement;
+      const tribute = h('button', { class: 'sm', text: 'Cống nạp', onclick: act('tribute', `${t.def.name} chịu cống nạp`) }) as HTMLButtonElement;
+      const adopt = h('button', { class: 'sm primary', text: 'Thu nạp', onclick: act('adopt', `${t.def.name} gia nhập làng`) }) as HTMLButtonElement;
+      const less = h('button', { class: 'sm', text: '−10%', onclick: act('tributeDown') }) as HTMLButtonElement;
+      const more = h('button', { class: 'sm', text: '+10%', onclick: act('tributeUp') }) as HTMLButtonElement;
       const bar = h('div', { class: 'tribe-bar' }, fill, h('u'));
       const card = h('div', { class: 'card', hidden: true }, h('div', { class: 'cardhead' }, h('b', { text: t.def.name }), h('span', { text: PERSONALITY[t.def.personality] }), status), bar, people,
-        h('p', { class: 'sub', text: `Phần thưởng: ${t.def.reward}` }), h('div', { class: 'btns' }, gift, tribute, adopt));
+        h('p', { class: 'sub', text: `Phần thưởng: ${t.def.reward}` }), note, h('div', { class: 'btns' }, gift, tribute, adopt, less, more));
       page.append(card);
-      return { t, card, status, people, fill, gift, tribute, adopt };
-    });
+      return { t, card, status, people, fill, note, gift, tribute, adopt, less, more };
+    };
     this.updaters.push(() => {
       const N = sim.world.size; let any = false;
-      for (const c of cards) {
+      for (const [id, c] of cards) if (!sim.tribes.includes(c.t)) { c.card.remove(); cards.delete(id); }
+      for (const t of sim.tribes) if (!cards.has(t.id)) cards.set(t.id, make(t));
+      for (const c of cards.values()) {
         const { t } = c, seen = sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0;
         c.card.hidden = !seen; if (!seen) continue; any = true;
         const rel = t.state === 'tribute' ? Math.max(60, t.relation) : t.relation;
-        c.status.textContent = t.state === 'free' ? relationLabel(rel) + (sim.tribeHostile(t.id) ? ' · đang thù địch' : '') : { surrendered: 'Đã xin hàng', tribute: 'Đang cống nạp', adopted: 'Đã gia nhập làng', destroyed: 'Đã bị xóa sổ' }[t.state];
+        c.status.textContent = (t.rebel ? 'Thủ lĩnh phản bội · ' : '') + (t.state === 'free' ? relationLabel(rel) + (sim.tribeHostile(t.id) ? ' · đang thù địch' : '') : { surrendered: 'Đã xin hàng', tribute: 'Đang cống nạp', destroyed: 'Đã bị xóa sổ' }[t.state]);
         c.fill.style.left = rel >= 0 ? '50%' : `${50 + rel / 2}%`; c.fill.style.width = `${Math.abs(rel) / 2}%`;
         const alive = t.unitIds.map((u) => sim.get(u)).filter(Boolean);
-        c.people.innerHTML = t.state === 'adopted' || t.state === 'destroyed' ? '' : `Người <b>${alive.length}</b> · lính <b>${alive.filter((u) => u!.ai?.role !== 'civ').length}</b> · quan hệ <b>${Math.round(rel)}</b>${t.raid ? ' · <b>đang tập kích!</b>' : ''}`;
-        const over = t.state === 'adopted' || t.state === 'destroyed';
-        c.gift.disabled = over || sim.stock.food < RELATION.giftFood; c.tribute.disabled = over || !canTribute(t) || t.state === 'tribute'; c.adopt.disabled = over || !canAdopt(t) || sim.villagers.length >= sim.popCap();
+        c.people.innerHTML = t.state === 'destroyed' ? '' : `Người <b>${alive.length}</b> · lính <b>${alive.filter((u) => u!.ai?.role !== 'civ').length}</b> · quan hệ <b>${Math.round(rel)}</b>${t.raid ? ' · <b>đang tập kích!</b>' : ''}`;
+        const over = t.state === 'destroyed', tr = DIFF.capture.tribute, paying = t.state === 'tribute', share = t.tributeShare ?? tr.baseShare, steps = tributeSteps(t);
+        c.note.hidden = !paying;
+        if (paying && share <= 0) c.note.textContent = `Không lấy cống nạp: quan hệ +${tr.relationRegen} mỗi ${tr.everyDays} ngày.`;
+        else if (paying) c.note.textContent = `Cống nạp ${Math.round(share * 100)}% túi mỗi ${tr.everyDays} ngày${steps ? ` · đòi thêm ${steps} bước: quan hệ −${1 + steps} mỗi lần, ${Math.round(steps * tr.greedChancePerStep * 100)}% phản bội mỗi lần` : ' · quan hệ −1 mỗi lần'}.`;
+        c.gift.hidden = paying || t.state === 'surrendered'; c.tribute.hidden = paying; c.adopt.hidden = paying; c.less.hidden = c.more.hidden = !paying;
+        c.gift.disabled = over || t.state !== 'free' || t.boss === true; c.gift.title = t.boss ? 'Thủ lĩnh không nhận quà' : `Quà: ${Object.entries(giftOf(t, sim.era)).map(([k, n]) => `${n} ${RES_NAME[k as keyof typeof RES_NAME].toLowerCase()}`).join(', ')}`; c.tribute.disabled = over || !canTribute(t) || paying; c.adopt.disabled = over || !canAdopt(t) || sim.villagers.length >= sim.popCap();
+        c.less.disabled = share <= 0; c.less.textContent = share <= tr.baseShare + (t.tributeFree ?? 0) && share > 0 ? 'Không lấy' : '−10%'; c.more.disabled = share >= tr.maxShare;
       }
       none.hidden = any;
       const p = sim.pendingTribe && sim.tribes.find((x) => x.id === sim.pendingTribe);
       banner.hidden = !p;
-      if (p) banner.replaceChildren(hint(h('b', { text: `${p.def.name} xin hàng!` }), 'Thu nạp: dân và lính gia nhập làng. Cống nạp: họ giữ làng và nộp tài nguyên mỗi mùa, không đánh bạn nữa.'));
+      if (p) banner.replaceChildren(hint(h('b', { text: `${p.def.name} xin hàng!` }), 'Thu nạp: làng biến mất, ta nhận dân và chỗ ở trại lính vĩnh viễn. Cống nạp: họ giữ làng và nộp một phần tài nguyên mỗi 3 ngày, không đánh ta nữa và góp lính khi ta đi đánh; đòi càng nhiều họ càng oán và có thể phản bội.'));
     });
     return page;
   }
@@ -140,9 +154,9 @@ export class Menu {
     page.append(hint('Mô phỏng trại', 'Dựng sẵn trại của cấp lửa đã chọn: mọi nhà mở ở cấp đó (số lượng và cấp tối đa theo cấp lửa), hàng rào, cổng và chòi canh khi đã mở, dân đầy giường, lính và các nghề đã có người, lính được phát vũ khí và giáp. Không tốn gì.'));
     // a camp of each era and level: the stone age (the quick war, no supply, scouts, watchtower or plan) or the medieval layer (all of them)
     for (const [label, medieval] of [['Đồ Đá', false], ['Trung cổ', true]] as const) {
-      page.append(h('div', { class: 'devrow' }, h('small', { text: `${label}:` }), ...[1, 2, 3, 4].map((n) => btn(`Trại cấp ${n}`, () => toast(dev.simulateCamp(sim, n, medieval)), `Dựng trại cấp ${n} của thời ${label} (${medieval ? 'có hậu cần, trinh sát, chòi canh, lập kế hoạch tác chiến' : 'đánh nhanh, không hậu cần, trinh sát, chòi canh'})`))));
+      page.append(h('div', { class: 'devrow' }, h('small', { text: `${label}:` }), ...(medieval ? [5] : [1, 2, 3, 4]).map((n) => btn(`Trại cấp ${n}`, () => toast(dev.simulateCamp(sim, n, medieval)), `Dựng trại cấp ${n} của thời ${label} (${medieval ? 'có hậu cần, trinh sát, chòi canh, lập kế hoạch tác chiến' : 'đánh nhanh, không hậu cần, trinh sát, chòi canh'})`))));
     }
-    page.append(h('div', { class: 'devrow' }, toggle('Thời Trung cổ (mở lớp chiến tranh nâng cao)', 'Bật hoặc tắt riêng lớp thời Trung cổ mà không dựng lại trại', () => sim.advanced, (on) => { sim.advanced = on; })));
+    page.append(h('div', { class: 'devrow' }, toggle('Thời Trung cổ (mở lớp chiến tranh nâng cao)', 'Bật hoặc tắt riêng lớp thời Trung cổ mà không dựng lại trại', () => sim.era === 'ancient', (on) => { sim.setEra(on ? 'ancient' : 'stone'); })));
     page.append(h('div', { class: 'devrow' },
       toggle('Mọi việc miễn phí + xong ngay', 'Nghiên cứu, chế tạo, thuần thú, xây, nâng cấp và sửa: không tốn vật liệu, không mất thời gian (nhà vẫn cần người làm bên trong)', () => sim.dev.freeWorks, (on) => { sim.dev.freeWorks = on; sim.dev.fastWorks = on; sim.dev.instantBuild = on; }),
       toggle('Bất tử', 'Dân không nhận sát thương', () => sim.dev.god, (on) => { sim.dev.god = on; })));
@@ -154,6 +168,11 @@ export class Menu {
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),
       btn('Đầy quân + đồ cao nhất + đuốc', () => toast(dev.fullArmy(sim)), 'Mọi trại lính đầy quân, ai cũng có vũ khí và giáp tốt nhất của thời đại và một cây đuốc'),
       btn('Gọi sự kiện (theo cấp lửa)', () => toast(dev.callEvent(sim)), 'Gọi ngay sự kiện đã hẹn mạnh nhất mà trại cấp lửa hiện tại đủ sức đón')));
+
+    page.append(h('div', { class: 'devrow' },
+      ...[1, 2, 3, 4].map((n) => btn(`Trại cấp ${n} + nghiên cứu/đồ đủ cấp ${n}`, () => toast(dev.campFullKit(sim, n)), `Trại cấp ${n} thời Đá, nghiên cứu xong mọi mục mà Nhà nghiên cứu cấp ${n} mở, kho đủ đồ mà Nhà chế tạo cấp ${n} làm được, lính tự trang bị đồ tốt nhất mở được + đuốc`)),
+      ...([['weak', 'yếu'], ['normal', 'thường'], ['medium', 'trung bình']] as const).map(([tier, name]) => btn(`Làng ${name} làm đồng minh`, () => toast(dev.allyTier(sim, tier)), `Làng ${name} gần nhất còn tự do thành chư hầu ngay: gửi quân giúp khi ta đi đánh`)),
+      btn('Đánh boss', () => toast(dev.attackBoss(sim)), 'Phát hiện boss gần nhất (bản đồ đầy đủ) rồi đưa toàn quân đi đánh (đánh nhanh thời Đá)')));
 
     // the villages of the land: where they are and how they stand, to try the sleeping and waking of a village by sending people to it
     page.append(h('h3', { text: 'Các làng NPC (tọa độ là số ô)' }));
@@ -194,8 +213,8 @@ export class Menu {
       h('li', {}, h('b', { text: 'Kéo bản đồ' }), ': máy tính: giữ chuột phải rồi kéo (hoặc W A S D). Điện thoại: một ngón đặt giữ yên, một ngón kéo (bản đồ đi theo ngón kéo); hoặc hai ngón cùng kéo; chụm hoặc mở hai ngón để thu phóng.'),
       h('li', {}, h('b', { text: 'Bản đồ nhỏ' }), ': bấm vào để mở bản đồ lớn, chạm một chỗ để nhảy tới đó.'),
       h('li', {}, h('b', { text: 'Công trình' }), `: bấm 🔨 Xây (góc trên) để chọn công trình rồi chạm bản đồ đặt. Mở Menu → Công trình, hoặc bấm vào công trình trên bản đồ: lửa trại cho xem dân, Kho cho xem tài nguyên, Nhà nghiên cứu để vẽ bản vẽ, Nhà chế tạo để làm đồ. Mỗi loại công trình chỉ xây một cái rồi nâng cấp (đơn sơ → gỗ → đá → gia cố, nâng theo cấp Nhà chung). Dân vào làm bên trong nhà (hiện thành danh sách tên, không hiện trên bản đồ): nhà cấp cao chứa thêm người, càng đông càng nghiên cứu nhanh. Lúc đầu bạn tự phát công cụ; nghiên cứu Kho công cụ, Kho vũ khí, tự lấy đồ và tự đặt hàng thì dân tự lo. Tiền (vỏ sò) trả cho nghiên cứu, nhặt khi hái lượm hoặc đổi hàng ở Kho. Trong bảng công trình còn có nút Dời (tốn 1/5 vật liệu, phải dựng lại) và Phá bỏ (thu lại một nửa).`),
-      h('li', {}, h('b', { text: 'Chiến đấu' }), `: dân thường không đánh nhau, thấy địch là chạy về lửa trại. Muốn có lính thì giao nghề Chiến binh (huy hiệu đỏ trên đầu) hoặc Thợ săn (huy hiệu vàng), phát vũ khí ở thẻ dân → Chiến đấu, rồi chạm vào thú hoặc địch. Thế đứng: Chủ động, Phòng thủ, Rút lui. F: tấn công–đi, H: giữ chỗ, G: dừng. Người bị thương nặng ngã xuống ${gameDays(30)}; một người khác đứng cạnh ${gameDays(3)} sẽ kéo họ dậy.`),
-      h('li', {}, h('b', { text: 'Bộ tộc' }), `: tặng thức ăn để tăng quan hệ. Hạ thủ lĩnh hoặc chiếm đống lửa của họ ${gameDays(30)} để họ xin hàng, rồi chọn thu nạp hoặc cống nạp.`),
+      h('li', {}, h('b', { text: 'Chiến đấu' }), `: dân thường không đánh nhau, thấy địch là chạy về lửa trại. Muốn có lính thì giao nghề Chiến binh (huy hiệu đỏ trên đầu) hoặc Thợ săn (huy hiệu vàng), phát vũ khí ở thẻ dân → Chiến đấu, rồi chạm vào thú hoặc địch. Thế đứng: Chủ động, Phòng thủ, Rút lui. F: tấn công–đi, H: giữ chỗ, G: dừng. Hết máu là chết, không ai cứu được.`),
+      h('li', {}, h('b', { text: 'Bộ tộc' }), `: tặng thức ăn để tăng quan hệ. Hạ thủ lĩnh hoặc chiếm đống lửa của họ ${gameDays(30, dayLength('stone'))} để họ xin hàng, rồi chọn thu nạp hoặc cống nạp.`),
       h('li', {}, h('b', { text: 'Phím' }), ': P tạm dừng, Q E R T: tốc độ 1× 2× 4× 16×, B xây Kho, X xây Xưởng, 1–9 gọi nhóm (Ctrl + số để lưu), Space nhảy tới dân đang chọn, Esc bỏ chọn.'),
     );
   }

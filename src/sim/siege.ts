@@ -166,7 +166,7 @@ export function breachFor(sim: Sim, v: Villager, tx: number, ty: number): boolea
   const dmg = weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str, cycle = swingCycle(sim, v, w), N = sim.world.size;
   let best: { t: Tribe; p: Prop } | null = null, bestTime = Infinity;
   for (const t of sim.tribes) {
-    if (t.state === 'adopted' || t.state === 'destroyed') continue;
+    if (t.state === 'destroyed') continue;
     const towers = t.props.filter((q) => q.kind === 'tower');
     for (const p of t.props) {
       if (p.kind === 'fire' || p.kind === 'pile' || !sim.world.occ[p.y * N + p.x]) continue; // only what shuts the way: an open gate does not
@@ -361,9 +361,12 @@ export function rampage(sim: Sim, plan: Plan, s: Squad): void {
     const sight = sim.sightOf(v), dist = (x: number, y: number) => Math.hypot(x - v.x, y - v.y);
     const seen = (p: Prop) => dist(p.x + p.w / 2, p.y + p.h / 2) <= sight;
     const nearest = <T>(list: T[], at: (o: T) => [number, number]): T | undefined => list.slice().sort((a, b) => dist(...at(a)) - dist(...at(b)))[0];
-    const tower = nearest(t.props.filter((q) => q.kind === 'tower' && seen(q)), (q) => [q.x, q.y]);
-    if (tower) { breakProp(v, tower); continue; }
+    // by arm: the riders as ever (a tower in sight first); archers pick a soldier first; the foot seek a tower out, in sight or not
+    const arm = armOf(v), towers = t.props.filter((q) => q.kind === 'tower');
+    const tower = nearest(arm === 'foot' ? towers : towers.filter(seen), (q) => [q.x, q.y]);
     const foe = nearest(foes.filter((u) => dist(u.x, u.y) <= sight), (u) => [u.x, u.y]);
+    if (arm === 'archer' && foe) { sim.orderAttack([v.id], { kind: 'unit', id: foe.id }); continue; }
+    if (tower) { breakProp(v, tower); continue; }
     if (foe) { sim.orderAttack([v.id], { kind: 'unit', id: foe.id }); continue; }
     const house = nearest(t.props.filter((q) => q.kind === 'house' && seen(q)), (q) => [q.x, q.y]);
     if (house) { breakProp(v, house); continue; }

@@ -1,4 +1,4 @@
-import { BUILDINGS, Building, buildingName, levelCapByFire, levelDef, maxLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, buildingName, levelCapByFire, levelDef, maxLevel, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { huntRange } from '../sim/hunting';
 import { ARMORS, WEAPONS } from '../sim/combat';
 import { JOBS, ROLES, STAT_NAME, roleOf } from '../sim/jobs';
@@ -38,6 +38,7 @@ export class BuildingPanel {
   private readonly tabAt: Partial<Record<BuildingKind, number>> = {};
   private readonly pages: HTMLElement[] = []; private tabKey = '';
   private readonly resRows: Array<{ res: typeof RES_LIST[number]; num: HTMLElement; bar: HTMLElement }> = [];
+  private readonly doorBtn = h('button', { class: 'sm', onclick: () => { this.c.sim.toggleNewcomers(); this.updateCampfire(); } }) as HTMLButtonElement;
   private readonly barterBtns: Array<{ res: Exclude<typeof RES_LIST[number], 'coin'>; btn: HTMLButtonElement }> = [];
   /** What can be ordered from the Nhà chế tạo and the stable: cards that open a scroll (src/ui/ordergrid.ts). */
   private craftGrid!: OrderGrid; private tameGrid!: OrderGrid;
@@ -135,7 +136,7 @@ export class BuildingPanel {
     this.tabs.fence = []; this.tabs.gate = [];
     this.tabs.builder = [{ label: 'Thợ xây', page: page(this.staffBoxes.build.root) }];
     this.tabs.campfire = [
-      { label: 'Dân', page: page(this.people.root) },
+      { label: 'Dân', page: page(h('div', { class: 'btns' }, this.doorBtn), this.people.root) },
       { label: 'Đổi chác', page: page(barter()) },
     ];
 
@@ -172,11 +173,11 @@ export class BuildingPanel {
     const militaryLock = () => (sim.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `Cần Nhà nghiên cứu cấp ${TREE_TABS.military.needLab} để mở Quân sự`);
     this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research, this.labPeople);
     // laid out as a tree in four columns: Quân sự (with Chiến đấu, Kế hoạch chiến đấu, Hành quân and Vũ khí under it), Kinh tế (with Công cụ), Phát triển, Phòng thủ
-    const advanced = () => this.c.sim.advanced; // the tabs of the medieval layer show only while it is open (the dev menu can open it)
+    const advanced = () => this.c.sim.era === 'ancient'; // the tabs of the medieval layer show only while it is open (the dev menu can open it)
     const needMilitary = () => militaryLock() && 'Cần mở Quân sự trước';
     this.tabs.lab = [
       { label: 'Quân sự bậc 1', icon: 'infantry', lock: militaryLock, page: tree((t) => { t.addChains('Chỉ số quân', ['foot', 'cavalry', 'archer', 'scout'], 'military'); }) },
-      { label: 'Kinh tế bậc 1', icon: 'storage', page: tree((t) => { t.addChains('Chỉ số nghề', ['wood', 'stone', 'food', 'hunt', 'tame'], 'economy'); }) },
+      { label: 'Kinh tế bậc 1', icon: 'storage', page: tree((t) => { t.addChains('Chỉ số nghề', ['wood', 'stone', 'food', 'hunt', 'tame'], 'economy'); t.addChains('Sản lượng mỗi lần khai thác', ['wood', 'stone', 'food', 'hunt'], 'gather'); }) },
       { label: 'Phát triển bậc 1', icon: 'builder', page: tree((t) => t.addChains('Chỉ số nhà làm việc', ['build', 'craft', 'research'], 'development')) },
       { label: 'Phòng thủ bậc 1', icon: 'tower', page: tree((t) => { t.addChains('Lính phòng thủ', ['guard', 'towerman'], 'defense'); t.addChains('Hàng rào và cổng', ['fence', 'gate'], 'works1'); t.addChains('Chông và chòi canh', ['trap', 'tower'], 'works2'); }) },
       { label: 'Lập kế hoạch bậc 1', icon: 'drill' as const, show: advanced, under: 0, lock: needMilitary, page: tree((t) => { t.addSingles('Tín hiệu', only((id) => id === 'signal')); t.addFormations('Trận pháp', 'formation'); }) },
@@ -297,7 +298,7 @@ export class BuildingPanel {
       case 'lab': return `Cấp ${b.level}: chứa ${lv.slots} nhà nghiên cứu · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
 
       case 'stable': return `Cấp ${b.level}: chứa ${lv.slots} người thuần thú · tốc độ ×${lv.craftSpeed.toLocaleString('vi')} · thuần được ${MOUNT_KINDS.filter((k) => MOUNTS[k].tier <= b.level).map((k) => MOUNTS[k].name.toLowerCase()).join(', ')}`;
-      case 'wartent': if (!this.c.sim.advanced) return 'Chọn làng đã phát hiện để đưa toàn quân đi đánh'; return `Cấp ${b.level}: tối đa ${this.c.sim.squadLimit()} đội, ${this.c.sim.cardLimit()} thẻ lệnh cho một kế hoạch · vào lều là game tạm dừng`;
+      case 'wartent': if (this.c.sim.era !== 'ancient') return 'Chọn làng đã phát hiện để đưa toàn quân đi đánh'; return `Cấp ${b.level}: tối đa ${this.c.sim.squadLimit()} đội, ${this.c.sim.cardLimit()} thẻ lệnh cho một kế hoạch · vào lều là game tạm dừng`;
       case 'huntlodge': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} thợ săn, săn trong ${huntRange(this.c.sim)} ô quanh chòi · có kho riêng ${lv.cap} thức ăn · nâng cấp để chứa thêm và săn xa hơn`;
       case 'farmhouse': case 'lumberyard': case 'quarry': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} người · có kho riêng ${lv.cap} ${RES_NAME[BUILDINGS[b.kind].produces![0]].toLowerCase()}, cộng vào sức chứa của làng · nâng cấp để chứa thêm`;
       case 'scouttent': return `Cấp ${b.level}: cử tối đa ${lv.slots} trinh sát một chuyến · tab Làng đã phát hiện để chọn làng và người đi`;
@@ -311,7 +312,7 @@ export class BuildingPanel {
     const { sim, ctl } = this.c, b = this.current();
     this.root.hidden = !b || !ctl.buildingOpen;
     if (this.root.hidden) { this.craftGrid.close(); this.tameGrid.close(); }
-    const inTent = this.c.sim.advanced && !!b && ctl.buildingOpen && b.kind === 'wartent' && b.done; // the plan of the medieval era opens the game paused, as a war council does
+    const inTent = this.c.sim.era === 'ancient' && !!b && ctl.buildingOpen && b.kind === 'wartent' && b.done; // the plan of the medieval era opens the game paused, as a war council does
     if (inTent && !this.inTent) { this.resume = sim.speed; sim.speed = 0; }
     else if (!inTent && this.inTent) { if (this.resume > 0 && sim.speed === 0) sim.speed = this.resume; this.resume = 0; }
     this.inTent = inTent;
@@ -319,7 +320,7 @@ export class BuildingPanel {
     if (!b) { if (ctl.selectedBuilding !== null) ctl.selectedBuilding = null; return; }
     if (!ctl.buildingOpen) return;
     if (b.kind !== 'lab') this.labSub = null;
-    const def = BUILDINGS[b.kind], lv = levelDef(b), top = maxLevel(b.kind, b.era), ready = b.done;
+    const def = BUILDINGS[b.kind], lv = levelDef(b), top = topLevel(b), ready = b.done;
     this.title.textContent = `${buildingName(b.kind, b.era)}${def.buildable ? ` · cấp ${b.level}/${top} (${lv.name.toLowerCase()})` : ''}`;
     const pk = `${b.kind}${b.level}${b.done}`;
     if (pk !== this.picKey) { this.picKey = pk; try { this.picBox.replaceChildren(iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0])); } catch { this.picBox.textContent = '🏠'; this.picBox.className = 'dpic glyph'; } }
@@ -337,7 +338,7 @@ export class BuildingPanel {
     if (b.kind === 'builder' && ready) this.staffBoxes.build.update(b);
     if (b.kind === 'tower' && ready) this.updateTower(b);
     if (b.kind === 'wartent' && ready) {
-      const plan = this.c.sim.advanced, want = plan ? this.war.root : this.simpleWar.root;
+      const plan = this.c.sim.era === 'ancient', want = plan ? this.war.root : this.simpleWar.root;
       if (this.warHost.firstChild !== want) this.warHost.replaceChildren(want);
       if (plan) this.war.update(); else this.simpleWar.update();
       this.warLog.update();
@@ -419,6 +420,8 @@ export class BuildingPanel {
   private updateCampfire(): void {
     const { sim } = this.c, need = sim.foodNeed(), pen = sim.foodPenalty, level = sim.campfire()?.level ?? 1;
     this.people.update();
+    this.doorBtn.textContent = sim.newcomersOpen ? 'Đang nhận dân mới: bấm để đóng cửa' : 'Đang đóng cửa: bấm để nhận dân mới';
+    this.doorBtn.title = 'Mỗi ngày vài người lạ đến xin ở lại. Đóng cửa khi làng đã đủ việc làm và đủ ăn.';
     this.foodNum.textContent = `${Math.floor(sim.foodPot)}/${need}`;
     this.foodHint.tip.textContent = `Phần ăn hôm nay. Thức ăn thu về đổ vào phần ăn của lửa trại trước, dư mới vào kho. Cuối ngày làng ăn phần này rồi tới kho; thiếu thì cả làng yếu đi trong ngày kế (tối đa 20% mọi chỉ số, máu chỉ hồi chậm hơn). Mỗi dân ăn ${rationAt(level, false)}, mỗi lính ${rationAt(level, true)} thức ăn mỗi ngày (cấp lửa ${level}) · kho còn ${Math.floor(sim.stock.food)}${pen > 0 ? ` · cả làng đang yếu ${Math.round(pen * 1000) / 10}% vì bữa trước thiếu ăn` : ''}`;
   }

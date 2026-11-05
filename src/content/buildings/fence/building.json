@@ -12,10 +12,11 @@
   "builder"
  ],
  "limit": [
- 40,
+  40,
   80,
   120,
-  150
+  150,
+  180
  ],
  "repeat": true,
  "levels": {
@@ -69,6 +70,21 @@
     "craftSpeed": 1,
     "slots": 0,
     "hp": 2000,
+    "sight": 0
+   }
+  ],
+  "ancient": [
+   {
+    "name": "Gạch ngói (trung cổ)",
+    "cost": {
+     "wood": 29,
+     "stone": 8
+    },
+    "buildTime": 105,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 0,
+    "hp": 3000,
     "sight": 0
    }
   ]

@@ -2,88 +2,114 @@
 import archery_L1 from './archery/L1.json';
 import archery_L2 from './archery/L2.json';
 import archery_L3 from './archery/L3.json';
+import archery_A1 from './archery/A1.json';
 import armory_L1 from './armory/L1.json';
 import armory_L2 from './armory/L2.json';
 import armory_L3 from './armory/L3.json';
+import armory_A1 from './armory/A1.json';
 import builder_L1 from './builder/L1.json';
 import builder_L2 from './builder/L2.json';
 import builder_L3 from './builder/L3.json';
+import builder_A1 from './builder/A1.json';
 import campfire_L1 from './campfire/L1.json';
 import campfire_L2 from './campfire/L2.json';
 import campfire_L3 from './campfire/L3.json';
 import campfire_L4 from './campfire/L4.json';
-import campfire_L5 from './campfire/L5.json';
+import campfire_A1 from './campfire/A1.json';
 import cavalry_L1 from './cavalry/L1.json';
 import cavalry_L2 from './cavalry/L2.json';
 import cavalry_L3 from './cavalry/L3.json';
+import cavalry_A1 from './cavalry/A1.json';
 import drill_L1 from './drill/L1.json';
 import drill_L2 from './drill/L2.json';
 import drill_L3 from './drill/L3.json';
+import drill_A1 from './drill/A1.json';
 import farmhouse_L1 from './farmhouse/L1.json';
 import farmhouse_L2 from './farmhouse/L2.json';
 import farmhouse_L3 from './farmhouse/L3.json';
+import farmhouse_A1 from './farmhouse/A1.json';
 import fence_L1 from './fence/L1.json';
 import fence_L2 from './fence/L2.json';
+import fence_A1 from './fence/A1.json';
 import field_L1 from './field/L1.json';
 import field_L2 from './field/L2.json';
 import field_L3 from './field/L3.json';
+import field_A1 from './field/A1.json';
 import fieldtent_L1 from './fieldtent/L1.json';
 import gate_L1 from './gate/L1.json';
 import gate_L2 from './gate/L2.json';
 import gate_L1open from './gate/L1open.json';
 import gate_L2open from './gate/L2open.json';
+import gate_A1 from './gate/A1.json';
+import gate_A1open from './gate/A1open.json';
 import guardpost_L1 from './guardpost/L1.json';
 import guardpost_L2 from './guardpost/L2.json';
 import guardpost_L3 from './guardpost/L3.json';
+import guardpost_A1 from './guardpost/A1.json';
 import house_L1 from './house/L1.json';
 import house_L2 from './house/L2.json';
 import house_L3 from './house/L3.json';
+import house_A1 from './house/A1.json';
 import huntlodge_L1 from './huntlodge/L1.json';
 import huntlodge_L2 from './huntlodge/L2.json';
 import huntlodge_L3 from './huntlodge/L3.json';
+import huntlodge_A1 from './huntlodge/A1.json';
 import infantry_L1 from './infantry/L1.json';
 import infantry_L2 from './infantry/L2.json';
 import infantry_L3 from './infantry/L3.json';
+import infantry_A1 from './infantry/A1.json';
 import lab_L1 from './lab/L1.json';
 import lab_L2 from './lab/L2.json';
 import lab_L3 from './lab/L3.json';
+import lab_A1 from './lab/A1.json';
 import lumberyard_L1 from './lumberyard/L1.json';
 import lumberyard_L2 from './lumberyard/L2.json';
 import lumberyard_L3 from './lumberyard/L3.json';
+import lumberyard_A1 from './lumberyard/A1.json';
 import quarry_L1 from './quarry/L1.json';
 import quarry_L2 from './quarry/L2.json';
 import quarry_L3 from './quarry/L3.json';
+import quarry_A1 from './quarry/A1.json';
 import scouttent_L1 from './scouttent/L1.json';
 import scouttent_L2 from './scouttent/L2.json';
 import scouttent_L3 from './scouttent/L3.json';
+import scouttent_A1 from './scouttent/A1.json';
 import stable_L1 from './stable/L1.json';
 import stable_L2 from './stable/L2.json';
 import stable_L3 from './stable/L3.json';
+import stable_A1 from './stable/A1.json';
 import storage_L1 from './storage/L1.json';
 import storage_L2 from './storage/L2.json';
 import storage_L3 from './storage/L3.json';
+import storage_A1 from './storage/A1.json';
 import supplycamp_L1 from './supplycamp/L1.json';
 import supplycamp_L2 from './supplycamp/L2.json';
 import supplycamp_L3 from './supplycamp/L3.json';
+import supplycamp_A1 from './supplycamp/A1.json';
 import toolstore_L1 from './toolstore/L1.json';
 import toolstore_L2 from './toolstore/L2.json';
 import toolstore_L3 from './toolstore/L3.json';
+import toolstore_A1 from './toolstore/A1.json';
 import tower_L1 from './tower/L1.json';
 import tower_L2 from './tower/L2.json';
+import tower_A1 from './tower/A1.json';
 import trap_L1 from './trap/L1.json';
 import trap_L2 from './trap/L2.json';
+import trap_A1 from './trap/A1.json';
 import wartent_L1 from './wartent/L1.json';
 import wartent_L2 from './wartent/L2.json';
 import wartent_L3 from './wartent/L3.json';
+import wartent_A1 from './wartent/A1.json';
 import workshop_L1 from './workshop/L1.json';
 import workshop_L2 from './workshop/L2.json';
 import workshop_L3 from './workshop/L3.json';
+import workshop_A1 from './workshop/A1.json';
 /** Drawings of each kind in the stone age, one per level (a gate lists its open drawings after the shut ones). */
 export const STONE_ART: Record<string, unknown[]> = {
   archery: [archery_L1, archery_L2, archery_L3],
   armory: [armory_L1, armory_L2, armory_L3],
   builder: [builder_L1, builder_L2, builder_L3],
-  campfire: [campfire_L1, campfire_L2, campfire_L3, campfire_L4, campfire_L5],
+  campfire: [campfire_L1, campfire_L2, campfire_L3, campfire_L4],
   cavalry: [cavalry_L1, cavalry_L2, cavalry_L3],
   drill: [drill_L1, drill_L2, drill_L3],
   farmhouse: [farmhouse_L1, farmhouse_L2, farmhouse_L3],
@@ -107,4 +133,33 @@ export const STONE_ART: Record<string, unknown[]> = {
   trap: [trap_L1, trap_L2],
   wartent: [wartent_L1, wartent_L2, wartent_L3],
   workshop: [workshop_L1, workshop_L2, workshop_L3],
+};
+/** Drawings of the first medieval level (level 5): A1.json, and for a gate its open drawing after the shut one. */
+export const ANCIENT_ART: Record<string, unknown[]> = {
+  archery: [archery_A1],
+  armory: [armory_A1],
+  builder: [builder_A1],
+  campfire: [campfire_A1],
+  cavalry: [cavalry_A1],
+  drill: [drill_A1],
+  farmhouse: [farmhouse_A1],
+  fence: [fence_A1],
+  field: [field_A1],
+  gate: [gate_A1, gate_A1open],
+  guardpost: [guardpost_A1],
+  house: [house_A1],
+  huntlodge: [huntlodge_A1],
+  infantry: [infantry_A1],
+  lab: [lab_A1],
+  lumberyard: [lumberyard_A1],
+  quarry: [quarry_A1],
+  scouttent: [scouttent_A1],
+  stable: [stable_A1],
+  storage: [storage_A1],
+  supplycamp: [supplycamp_A1],
+  toolstore: [toolstore_A1],
+  tower: [tower_A1],
+  trap: [trap_A1],
+  wartent: [wartent_A1],
+  workshop: [workshop_A1],
 };

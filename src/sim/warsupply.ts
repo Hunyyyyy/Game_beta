@@ -6,7 +6,6 @@ import { FOOD, rationAt } from './resources';
 import { marchOf, supplyLoad, WAR_DATA, soldiersOf, supplyCount } from './warmarch';
 import { stands, SUPPLY_TENT, tentCost, tentCount, tentLines } from './wartent';
 import * as warlog from './warlog';
-import { DAY_LENGTH } from './constants';
 import type { Plan, Villager } from './model';
 import type { Sim } from './sim';
 
@@ -50,7 +49,7 @@ export function supplyAdvice(sim: Sim, plan: Plan): SupplyAdvice | null {
   let sup = Math.max(1, plan.supply), out = { oneWay: 0, days: 0, food: 0, wood: 0, hide: 0, soldiers: 1, have: supplyAvailable(sim).length };
   const cost = tentCost(sim), n = tentCount(sim, plan);
   for (let i = 0; i < 4; i++) {
-    const m = marchOf(sim, plan.missions.length + 1, soldiersOf(sim, plan) + sup), oneWay = longest / m.speed / DAY_LENGTH, d = Math.min(WAR_DATA.supply.maxDays, Math.max(1, Math.ceil(oneWay * 2 + 1)));
+    const m = marchOf(sim, plan.missions.length + 1, soldiersOf(sim, plan) + sup), oneWay = longest / m.speed / sim.dayLen, d = Math.min(WAR_DATA.supply.maxDays, Math.max(1, Math.ceil(oneWay * 2 + 1)));
     const food = Math.ceil(dailyNeed(sim, plan, sup) * d), wood = n * cost.wood, hide = n * cost.hide;
     const soldiers = Math.max(1, Math.ceil((food + (wood + hide) * WAR_DATA.tent.weight) / supplyLoad(sim)));
     out = { ...out, oneWay, days: d, food, wood, hide, soldiers };
@@ -74,7 +73,7 @@ export function supplyLines(sim: Sim, plan: Plan): string[] {
 
 /** Deploy: take the supply soldiers out of their camp and load their packs from the village. */
 export function loadPacks(sim: Sim, plan: Plan): void {
-  if (!sim.advanced) { plan.supplyIds = []; sim.warHunger = 0; return; }
+  if (sim.era !== 'ancient') { plan.supplyIds = []; sim.warHunger = 0; return; }
   const p = packPlan(sim, plan), crew = supplyAvailable(sim).sort((a, b) => b.energy - a.energy).slice(0, p.sup);
   plan.supplyIds = crew.map((v) => v.id);
   sim.warHunger = 0;

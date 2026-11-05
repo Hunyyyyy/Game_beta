@@ -10,24 +10,27 @@ class MinHeap {
   push(n: number) {
     const a = this.items; a.push(n);
     let i = a.length - 1;
+    const k = this.key[n];
     while (i > 0) {
       const p = (i - 1) >> 1;
-      if (this.key[a[p]] <= this.key[a[i]]) break;
-      [a[p], a[i]] = [a[i], a[p]]; i = p;
+      if (this.key[a[p]] <= k) break;
+      a[i] = a[p]; i = p;
     }
+    a[i] = n;
   }
   pop(): number {
     const a = this.items, top = a[0], last = a.pop()!;
     if (a.length) {
-      a[0] = last;
+      const k = this.key[last], len = a.length;
       let i = 0;
       for (;;) {
-        const l = i * 2 + 1, r = l + 1; let m = i;
-        if (l < a.length && this.key[a[l]] < this.key[a[m]]) m = l;
-        if (r < a.length && this.key[a[r]] < this.key[a[m]]) m = r;
-        if (m === i) break;
-        [a[m], a[i]] = [a[i], a[m]]; i = m;
+        const l = i * 2 + 1;
+        if (l >= len) break;
+        const r = l + 1, m = r < len && this.key[a[r]] < this.key[a[l]] ? r : l;
+        if (this.key[a[m]] >= k) break;
+        a[i] = a[m]; i = m;
       }
+      a[i] = last;
     }
     return top;
   }
@@ -50,10 +53,10 @@ function memory(total: number): typeof mem {
  */
 export function findPath(world: World, sx: number, sy: number, gx: number, gy: number, maxNodes = 30000, ours: boolean | 'foe' = false): Step[] {
   const N = world.size;
-  const blocked = (x: number, y: number) => (ours ? world.isBlockedFor(x, y, ours) : world.isBlocked(x, y)); // our people pass the shut gates
+  const blocked = (x: number, y: number) => (ours && (ours === 'foe' ? world.foeGates : world.gates).size > 0 ? world.isBlockedFor(x, y, ours) : world.isBlocked(x, y)); // our people pass the shut gates
   if (!world.inBounds(sx, sy) || !world.inBounds(gx, gy)) return [];
   const { g, f, parent, seen, closed, gen } = memory(N * N);
-  const heap = new MinHeap(f);
+  const heap = new MinHeap(f), nb = new Uint8Array(9);
   const h = (x: number, y: number) => {
     const dx = Math.abs(x - gx), dy = Math.abs(y - gy);
     return dx + dy + (SQ2 - 2) * Math.min(dx, dy);
@@ -70,17 +73,17 @@ export function findPath(world: World, sx: number, sy: number, gx: number, gy: n
     const cx = cur % N, cy = (cur / N) | 0;
     const hh = h(cx, cy);
     if (hh < bestH) { bestH = hh; best = cur; }
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
-        if (!dx && !dy) continue;
-        const nx = cx + dx, ny = cy + dy;
-        if (blocked(nx, ny)) continue;
-        if (dx && dy && (blocked(cx + dx, cy) || blocked(cx, cy + dy))) continue;
-        const ni = ny * N + nx;
-        if (closed[ni] === gen) continue;
-        const ng = g[cur] + (dx && dy ? SQ2 : 1);
-        if (seen[ni] !== gen || ng < g[ni]) { seen[ni] = gen; g[ni] = ng; f[ni] = ng + h(nx, ny); parent[ni] = cur; heap.push(ni); }
-      }
+    // who is blocked among the eight neighbours, asked once each (the corner rule below reuses the answers)
+    for (let k = 0; k < 9; k++) nb[k] = k === 4 ? 1 : blocked(cx + (k % 3) - 1, cy + ((k / 3) | 0) - 1) ? 1 : 0;
+    const gc = g[cur];
+    for (let k = 0; k < 9; k++) {
+      if (nb[k]) continue;
+      const dx = (k % 3) - 1, dy = ((k / 3) | 0) - 1;
+      if (dx && dy && (nb[4 + dx] || nb[4 + dy * 3])) continue;
+      const ni = (cy + dy) * N + cx + dx;
+      if (closed[ni] === gen) continue;
+      const ng = gc + (dx && dy ? SQ2 : 1);
+      if (seen[ni] !== gen || ng < g[ni]) { seen[ni] = gen; g[ni] = ng; f[ni] = ng + h(cx + dx, cy + dy); parent[ni] = cur; heap.push(ni); }
     }
   }
   const out: Step[] = [];

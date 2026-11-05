@@ -64,6 +64,21 @@
     "hp": 450,
     "sight": 0
    }
+  ],
+  "ancient": [
+   {
+    "name": "Gạch ngói (trung cổ)",
+    "cost": {
+     "wood": 108,
+     "stone": 150
+    },
+    "buildTime": 405,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 5,
+    "hp": 675,
+    "sight": 0
+   }
   ]
  }
 }

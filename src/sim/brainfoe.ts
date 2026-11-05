@@ -1,4 +1,3 @@
-import { DAY_LENGTH } from './constants';
 import { engage, resolve, tickCommon, threatsOf } from './battle';
 import { endLife, lifeBrain, tribeReach } from './tribework';
 import { civilianBrain } from './foecivil';
@@ -51,7 +50,7 @@ export function tickFoe(sim: Sim, f: Villager, dt: number): void {
 function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai']>, dt: number): void {
   const free = t.state === 'free';
   const tower = ai.tower ? towerOf(sim, t, ai) : null;
-  if (ai.tower && !tower) { ai.tower = undefined; ai.post = undefined; } // his tower fell: he is a guard of the village again
+  if (ai.tower && !tower) { ai.tower = undefined; ai.post = undefined; f.inTent = false; } // his tower fell: he is a guard of the village again
   f.fight.scan -= dt;
   const reach = tribeReach(t), willing = tribeWilling(sim, t.id);
   // the soldiers of a village that will fight go out to anyone who walks onto its land
@@ -96,5 +95,4 @@ function foeBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai'
   ai.wander -= dt;
   if (ai.wander <= 0 && !f.path.length) wander(sim, f, ai.role === 'civ' ? FOE.wanderRadius.civ : t.def.personality === 'aggressive' ? FOE.wanderRadius.aggressive : FOE.wanderRadius.other);
   if (f.phase === 'move' && !f.path.length) f.phase = 'idle';
-  void DAY_LENGTH;
 }
