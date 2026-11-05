@@ -2,7 +2,7 @@
 import { BARTER, FOOD, rationAt, Res, RES_NAME, Stock } from './resources';
 import type { Sim } from './sim';
 import paceJson from '../data/pace.json';
-import { Building, levelDef } from './buildings';
+import { Building, gatherMult, levelDef } from './buildings';
 import { DAY_LENGTH } from './constants';
 import { FARM_TIME, JOBS, roleOf } from './jobs';
 import type { WorkJob } from './jobs';
@@ -60,13 +60,40 @@ export function feedPot(sim: Sim): void {
   sim.foodPot += k; sim.stock.food -= k;
 }
 
-/** The end of a day: the village eats from the pot, then from the store. What is short weakens everyone the day after, up to FOOD.maxPenalty when nothing is left. */
+/** The end of a day: the village eats from the pot, then from the store. What is short weakens everyone the day after, up to FOOD.maxPenalty when nothing is left. In a war nobody eats at the day's end: the war's meals are paid when it is over (eatWar). */
 export function eatDay(sim: Sim): void {
+  if (sim.atWar()) return;
   rollYield(sim);
   trackFood(sim);
   sim.foodDays.push(sim.foodIncome); if (sim.foodDays.length > 3) sim.foodDays.shift();
   sim.foodIncome = 0;
-  const need = foodNeed(sim);
+  eat(sim, foodNeed(sim));
+}
+
+/** What the village that stayed home eats in a day of war (from the store, paid when the war ends). The army eats from its packs (armyNeed). */
+export function warNeed(sim: Sim): number {
+  const level = sim.campfire()?.level ?? 1;
+  let n = 0;
+  for (const v of sim.villagers) if (!sim.warIds.has(v.id)) n += rationAt(level, v.job === 'fight');
+  return n;
+}
+
+/** What the army eats in a day of war: a ration for each soldier, dearer by the march (warmarch.ts). */
+export function armyNeed(sim: Sim): number {
+  const level = sim.campfire()?.level ?? 1;
+  let n = 0;
+  for (const v of sim.villagers) if (sim.warIds.has(v.id)) n += rationAt(level, true) * sim.march.food;
+  return n;
+}
+
+/** The war is over: the village pays for the meals of the war (counted second by second in tickWar), and what is short weakens it as after any day. */
+export function eatWar(sim: Sim, days: number): void {
+  const need = Math.round(sim.warMeals);
+  if (need > 0) eat(sim, need);
+  sim.say(`Chiến tranh kết thúc sau ${Math.max(0.1, Math.round(days * 10) / 10)} ngày: kho lương đã trừ ${need} phần ăn của cả làng và quân.`);
+}
+
+function eat(sim: Sim, need: number): void {
   const fromPot = Math.min(sim.foodPot, need), fromStore = Math.min(sim.stock.food, need - fromPot), short = need - fromPot - fromStore;
   sim.foodPot -= fromPot; sim.stock.food -= fromStore;
   const was = sim.foodPenalty;
@@ -124,7 +151,7 @@ export function dailyYield(sim: Sim, b: Building): { amount: number; people: num
     const speed = workFactor(sim, v, job, b.kind === 'field') / Math.max(0.01, sim.restFactor(v)), secs = workSeconds(v);
     if (job === 'hunt') { amount += paceJson.huntPerDay * speed * (secs / (DAY_LENGTH * 0.65)); continue; }
     const per = TIER_YIELD[sim.toolTier(v, job)] * (1 + toolBonus(sim, v, job, 'tyield') / 100);
-    amount += b.kind === 'field' ? (speed * levelDef(b).craftSpeed * per * secs) / FARM_TIME : (speed * per * secs * paceJson.gatherDuty) / JOBS[job].baseTime;
+    amount += b.kind === 'field' ? (speed * levelDef(b).craftSpeed * per * secs) / FARM_TIME : (speed * per * secs * paceJson.gatherDuty * gatherMult(b)) / JOBS[job].baseTime;
   }
   return { amount, people: workers.length };
 }

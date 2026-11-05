@@ -9,23 +9,23 @@
  */
 import { CURRENCY, emptyStock, RES_NAME } from './resources';
 import { SIEGE, TRIBES } from './combat';
-import { maxHp } from './buildings';
+import { BUILDINGS, maxHp } from './buildings';
 import { SCREEN_QUESTS } from './progression';
 import { decode, encode, packRuns, unpackRuns } from './codec';
 import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 22;
+export const SAVE_VERSION = 28;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
-  scalars: ['era', 'time', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
+  scalars: ['era', 'bronze', 'time', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
   records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts'],
   /** Lists of plain data. */
-  lists: ['wornTools', 'craftQueue', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
+  lists: ['warLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
   /** Handled by hand below. */
   special: ['researched', 'questSeen', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
 } as const satisfies Record<string, readonly (keyof Sim)[]>;
@@ -37,7 +37,13 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'dev',         // test switches
   'byId', 'animalById', // rebuilt after loading
   'threatCache', 'pathLeft', // rebuilt every tick
+  'view', // where the camera is: the screen's, not the game's
+  'warIds', 'march', 'warMeals', 'warHunger', 'warFocus', 'warHarassAt', // the march of a war: the game cannot be saved while one is on
+  'warSince', 'hiddenAnimals', // the game cannot be saved while a war is on
+  'advanced', // the era of the war layer: the game's setting (data/war.json), changed only from the dev menu
   'leaderClock', // a timer: leaders are picked again within a second of loading
+  'controlled', // what the player has selected: the screen's, not the game's
+  'dangerAt', // a timer: after loading the villagers come out of hiding at once
 ];
 
 type Row = Array<number | string>;
@@ -154,8 +160,8 @@ export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disabl
   // an arrow may point at a target and a squad may be halted by something in its way; a soldier may be hacking something down
   11: (d) => {
     for (const b of d.lists.buildings as Array<{ kind: string; level: number; era: string; hp?: number }>) b.hp ||= maxHp(b as never);
-    for (const p of d.lists.plans as Array<{ clears?: unknown; result?: unknown; missions: Array<Record<string, unknown>> }>) {
-      p.clears ??= []; p.result ??= '';
+    for (const p of d.lists.plans as Array<{ clears?: unknown; result?: unknown; endedAt?: unknown; supply?: unknown; carryDays?: unknown; supplyIds?: unknown; tents?: unknown; stats?: unknown; missions: Array<Record<string, unknown>> }>) {
+      p.clears ??= []; p.result ??= ''; p.endedAt ??= 0; p.supply ??= 0; p.carryDays ??= 3; p.supplyIds ??= []; p.tents ??= []; p.stats ??= null;
       for (const m of p.missions) { m.target ??= null; m.block ??= null; }
     }
     for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) v.breaks ??= null;
@@ -183,7 +189,7 @@ MIGRATIONS[13] = (d) => {
 
 MIGRATIONS[14] = (d) => {
   // 14 -> 15: no hunger in a villager; the village eats at the end of each day (the pot of the campfire, and the weakness of a short meal)
-  d.scalars.foodPot ??= 0; d.scalars.foodPenalty ??= 0;
+  d.scalars.popBonus ??= 0; d.scalars.foodPot ??= 0; d.scalars.foodPenalty ??= 0;
   return { ...d, version: 15 };
 };
 
@@ -191,6 +197,18 @@ MIGRATIONS[15] = (d) => {
   // 15 -> 16: the village keeps what it earns in food a day, to warn the player (none known yet)
   d.scalars.foodIncome ??= 0; d.scalars.foodSeen ??= -1; d.lists.foodDays ??= [];
   return { ...d, version: 16 };
+};
+
+MIGRATIONS[23] = (d) => {
+  // 23 -> 24: what the Nhà chế tạo asks for grows with its level, and each order remembers what it was paid at (the orders of before were paid at the base cost)
+  d.lists.craftPaid = (d.lists.craftQueue as unknown[]).map(() => 1);
+  return { ...d, version: 24 };
+};
+
+MIGRATIONS[22] = (d) => {
+  // 22 -> 23: crafting orders are paid when they are queued; those queued in an older game were never paid for, so they are dropped
+  d.lists.craftQueue = [];
+  return { ...d, version: 23 };
 };
 
 MIGRATIONS[21] = (d) => {
@@ -251,7 +269,34 @@ export function applySave(sim: Sim, data: GameSave): void {
   sim.rnd.setState(data.rng.rnd); sim.frnd.setState(data.rng.frnd); sim.wrnd.setState(data.rng.wrnd);
 
   // what is derived is rebuilt, not saved
+  sim.world.foeGates.clear(); for (const t of sim.tribes) for (const p of t.props) if (p.kind === 'gate' && p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) sim.world.foeGates.add((p.y + j) * sim.world.size + p.x + i);
+  sim.world.gates.clear(); for (const b of sim.buildings) if (b.kind === 'gate' && !b.open) { const d = BUILDINGS.gate; for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.gates.add((b.y + j) * sim.world.size + b.x + i); }
   sim.byId.clear(); for (const v of sim.villagers) sim.byId.set(v.id, v); for (const f of sim.foes) sim.byId.set(f.id, f);
   sim.animalById.clear(); for (const a of sim.animals) sim.animalById.set(a.id, a);
   RES_NAME.coin = CURRENCY[sim.era];
 }
+
+MIGRATIONS[24] = (d) => {
+  // 24 -> 25: the war: a plan knows when it ended, the supply soldiers and the days of food it takes, its tents and its counts; the village keeps the log of its wars
+  d.lists.warLog ??= [];
+  for (const p of d.lists.plans as Array<Record<string, unknown>>) { p.endedAt ??= 0; p.supply ??= 0; p.carryDays ??= 3; p.supplyIds ??= []; p.tents ??= []; p.stats ??= null; }
+  return { ...d, version: 25 };
+};
+
+MIGRATIONS[25] = (d) => {
+  // 25 -> 26: the village remembers how its scouts died
+  d.lists.scoutLosses ??= [];
+  return { ...d, version: 26 };
+};
+
+MIGRATIONS[26] = (d) => {
+  // 26 -> 27: the age of bronze (opened when a boss village falls) is not yet
+  d.scalars.bronze ??= false;
+  return { ...d, version: 27 };
+
+MIGRATIONS[27] = (d) => {
+  // 27 -> 28: the villages we took add places to the camps of soldiers; saves of before count none
+  d.scalars.conquered ??= 0;
+  return { ...d, version: 28 };
+};
+};

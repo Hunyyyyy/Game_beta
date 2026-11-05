@@ -1,6 +1,7 @@
 import { build } from 'esbuild';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { scss } from './tools/scss.mjs';
+import './tools/gen-content.mjs';
 
 const out = await build({
   entryPoints: ['src/main.ts'],

@@ -7,11 +7,25 @@
     "bush": 1.5
   },
   "propHp": {
+    "_note": "Máu của công trình làng địch ở cấp 1 (nhân 1 + 0,5 cho mỗi cấp, rồi nhân boss.wallHp với làng boss). Mục tiêu với 10 lính thường (khoảng 90 sát thương mỗi giây) ở cấp 4: rào ~4 giây, cổng ~13 giây, nhà ~15 giây, chòi ~45 giây.",
     "fire": 160,
     "pile": 70,
-    "tower": 150,
-    "fence": 40,
-    "gate": 40
+    "tower": 1600,
+    "fence": 140,
+    "gate": 480,
+    "house": 540
+  },
+  "struct": {
+    "_note": "Vũ khí đập công trình thế nào: sát thương nhân hệ số theo kiểu vũ khí (chém, đập, đâm) và loại công trình; tầm xa (cung, ná) nhân ranged. breakers: số lính tối đa đập một mảnh cùng lúc. blockedSeconds: lính tầm xa chờ bấy lâu mà vẫn bị chặn thì mới tự phá khi đội có cận chiến. repairPerSecond: phần máu tối đa làng tự sửa mỗi giây khi ngoài trận (repairAfter giây sau nhát đánh cuối); fullAfter: ngủ quá bấy lâu thì thức dậy lành hẳn.",
+    "slash": { "fence": 1.5, "gate": 1.0, "house": 0.8, "tower": 0.6 },
+    "crush": { "fence": 0.8, "gate": 1.5, "house": 1.2, "tower": 1.5 },
+    "pierce": { "fence": 0.5, "gate": 0.5, "house": 0.4, "tower": 0.3 },
+    "ranged": 0.4,
+    "breakers": 3,
+    "blockedSeconds": 20,
+    "repairPerSecond": 0.01,
+    "repairAfter": 30,
+    "fullAfter": 120
   },
   "buildingHpPerTile": 45,
   "crew": 3,

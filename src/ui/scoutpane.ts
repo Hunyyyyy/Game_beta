@@ -26,6 +26,8 @@ export class ScoutPane {
   /** The village chosen in the list ('' for none), whether the picker of scouts is open, and the people picked to go. */
   private sel = '';
   private open = false;
+  /** The village whose list of dead scouts is open ('' for none). */
+  private lossOpen = '';
   private readonly picked = new Set<number>();
   private readonly people: RolePane;
   private key = '';
@@ -45,7 +47,7 @@ export class ScoutPane {
   /** Everything the pages show, as one string. */
   stateKey(): string {
     const { sim } = this.c;
-    return [this.sel, this.open, [...this.picked].join('.'), this.people.stateKey(), JSON.stringify(sim.sightings.map((s) => [s.tribe, s.reported])), JSON.stringify(sim.maps.map((m) => [m.tribe, m.level, m.gaps, Math.floor(m.at)])),
+    return [this.sel, this.open, this.lossOpen, this.c.sim.scoutLosses.length, [...this.picked].join('.'), this.people.stateKey(), JSON.stringify(sim.sightings.map((s) => [s.tribe, s.reported])), JSON.stringify(sim.maps.map((m) => [m.tribe, m.level, m.gaps, Math.floor(m.at)])),
       JSON.stringify(sim.scouts.map((m) => [m.id, m.phase, m.ids.length, Math.floor((m.progress ?? 0) * 50)])), JSON.stringify(sim.drafts), sim.scoutLevel(), sim.scoutLimit(), this.candidates().map((v) => `${v.id}${Math.round(v.energy / 10)}`).join('.'), Math.floor(sim.time / DAY_LENGTH), sim.dev.freeBuild].join('|');
   }
 
@@ -116,6 +118,14 @@ export class ScoutPane {
     else if (!flow.steps.every((st) => st.done) && flow.progress > 0) body.append(dlg.note(`Đã vẽ dở ${pct}%: cử trinh sát đi vẽ tiếp từ chỗ đó.`, false));
     body.append(h('div', { class: 'flow' }, ...flow.steps.flatMap((st, i) => [i ? h('span', { class: `link ${flow.steps[i - 1].done ? 'done' : 'todo'}` }) : null, h('div', { class: `step ${st.done ? 'done' : 'todo'}` }, h('b', { text: st.done ? '✓' : '✗' }), h('span', { text: st.label }))])));
     if (trip) body.append(trip.phase === 'back' ? dlg.note('Trinh sát đang trên đường về.', false) : dlg.button('Gọi trinh sát về', () => { const e = sim.recallScouts(id); this.c.toast(e ?? 'Đã gọi trinh sát về: họ mang về phần đã vẽ'); this.again(); }, { tone: 'alt', title: 'Gọi về khi chưa vẽ xong: phần đã vẽ được giữ, người khác vẽ tiếp' }));
+    // the scouts who died on the way to this village: the button shows why
+    const losses = sim.scoutLosses.filter((l) => l.tribe === id);
+    if (losses.length) {
+      const shown = this.lossOpen === id;
+      body.append(dlg.button(`${shown ? 'Ẩn' : 'Xem'} lý do trinh sát chết (${losses.length})`, () => { this.lossOpen = shown ? '' : id; this.again(); }, { small: true }));
+      if (shown) body.append(dlg.list(...[...losses].reverse().map((l) => dlg.tile({ pic: '☠', name: l.name, chip: dlg.chip(`ngày ${l.day}`) },
+        [dlg.more(`Chết: ${l.cause}${l.dist >= 0 ? ` · cách làng ${l.dist} ô` : ''}`), ...(l.detail ? l.detail.split('\n').map((x) => dlg.more(x)) : [dlg.more('Không có thêm chi tiết.')])]))));
+    }
     if (trip?.phase === 'back') return body;
 
     // who goes: the same list as the people of a house, with the button to add more

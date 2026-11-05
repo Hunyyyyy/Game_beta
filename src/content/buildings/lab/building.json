@@ -1,0 +1,71 @@
+{
+ "kind": "lab",
+ "name": "Nhà nghiên cứu",
+ "group": "development",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 2,
+ "requires": [
+  "workshop"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Đơn sơ",
+    "cost": {
+     "wood": 20
+    },
+    "buildTime": 80,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 1,
+    "hp": 180,
+    "sight": 0
+   },
+   {
+    "name": "Gỗ",
+    "cost": {
+     "wood": 200,
+     "stone": 100,
+     "hide": 20,
+     "coin": 10
+    },
+    "buildTime": 140,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 2,
+    "hp": 270,
+    "sight": 0
+   },
+   {
+    "name": "Đá",
+    "cost": {
+     "wood": 30,
+     "stone": 50
+    },
+    "buildTime": 200,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 3,
+    "hp": 360,
+    "sight": 0
+   },
+   {
+    "name": "Đá gia cố",
+    "cost": {
+     "wood": 34,
+     "stone": 57
+    },
+    "buildTime": 286,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 4,
+    "hp": 450,
+    "sight": 0
+   }
+  ]
+ }
+}

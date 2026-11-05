@@ -6,81 +6,8 @@ import fishClips from '../data/animals/anims/fish.json';
 import hopperClips from '../data/animals/anims/hopper.json';
 import quadrupedClips from '../data/animals/anims/quadruped.json';
 import { Blueprint, BlueprintDef, toCanvases } from '../blueprint/blueprint';
+import { STONE_ART } from '../content/buildings/art.gen';
 import animsJson from '../data/anims.json';
-import campfireL1 from '../data/blueprints/stone_age/buildings/campfire/L1.json';
-import builderL1 from '../data/blueprints/stone_age/buildings/builder/L1.json';
-import builderL2 from '../data/blueprints/stone_age/buildings/builder/L2.json';
-import builderL3 from '../data/blueprints/stone_age/buildings/builder/L3.json';
-import labL1 from '../data/blueprints/stone_age/buildings/lab/L1.json';
-import labL2 from '../data/blueprints/stone_age/buildings/lab/L2.json';
-import labL3 from '../data/blueprints/stone_age/buildings/lab/L3.json';
-import toolstoreL1 from '../data/blueprints/stone_age/buildings/toolstore/L1.json';
-import toolstoreL2 from '../data/blueprints/stone_age/buildings/toolstore/L2.json';
-import toolstoreL3 from '../data/blueprints/stone_age/buildings/toolstore/L3.json';
-import armoryL1 from '../data/blueprints/stone_age/buildings/armory/L1.json';
-import armoryL2 from '../data/blueprints/stone_age/buildings/armory/L2.json';
-import armoryL3 from '../data/blueprints/stone_age/buildings/armory/L3.json';
-import houseL1 from '../data/blueprints/stone_age/buildings/house/L1.json';
-import houseL2 from '../data/blueprints/stone_age/buildings/house/L2.json';
-import houseL3 from '../data/blueprints/stone_age/buildings/house/L3.json';
-import fieldL1 from '../data/blueprints/stone_age/buildings/field/L1.json';
-import fieldL2 from '../data/blueprints/stone_age/buildings/field/L2.json';
-import fieldL3 from '../data/blueprints/stone_age/buildings/field/L3.json';
-import fenceL1 from '../data/blueprints/stone_age/buildings/fence/L1.json';
-import fenceL2 from '../data/blueprints/stone_age/buildings/fence/L2.json';
-import gateL1 from '../data/blueprints/stone_age/buildings/gate/L1.json';
-import gateL2 from '../data/blueprints/stone_age/buildings/gate/L2.json';
-import gateL1o from '../data/blueprints/stone_age/buildings/gate/L1open.json';
-import gateL2o from '../data/blueprints/stone_age/buildings/gate/L2open.json';
-import towerL1 from '../data/blueprints/stone_age/buildings/tower/L1.json';
-import towerL2 from '../data/blueprints/stone_age/buildings/tower/L2.json';
-import guardpostL1 from '../data/blueprints/stone_age/buildings/guardpost/L1.json';
-import guardpostL2 from '../data/blueprints/stone_age/buildings/guardpost/L2.json';
-import guardpostL3 from '../data/blueprints/stone_age/buildings/guardpost/L3.json';
-import infantryL1 from '../data/blueprints/stone_age/buildings/infantry/L1.json';
-import infantryL2 from '../data/blueprints/stone_age/buildings/infantry/L2.json';
-import infantryL3 from '../data/blueprints/stone_age/buildings/infantry/L3.json';
-import cavalryL1 from '../data/blueprints/stone_age/buildings/cavalry/L1.json';
-import cavalryL2 from '../data/blueprints/stone_age/buildings/cavalry/L2.json';
-import cavalryL3 from '../data/blueprints/stone_age/buildings/cavalry/L3.json';
-import stableL1 from '../data/blueprints/stone_age/buildings/stable/L1.json';
-import stableL2 from '../data/blueprints/stone_age/buildings/stable/L2.json';
-import stableL3 from '../data/blueprints/stone_age/buildings/stable/L3.json';
-import archeryL1 from '../data/blueprints/stone_age/buildings/archery/L1.json';
-import archeryL2 from '../data/blueprints/stone_age/buildings/archery/L2.json';
-import archeryL3 from '../data/blueprints/stone_age/buildings/archery/L3.json';
-import farmhouseL1 from '../data/blueprints/stone_age/buildings/farmhouse/L1.json';
-import farmhouseL2 from '../data/blueprints/stone_age/buildings/farmhouse/L2.json';
-import farmhouseL3 from '../data/blueprints/stone_age/buildings/farmhouse/L3.json';
-import huntlodgeL1 from '../data/blueprints/stone_age/buildings/huntlodge/L1.json';
-import huntlodgeL2 from '../data/blueprints/stone_age/buildings/huntlodge/L2.json';
-import huntlodgeL3 from '../data/blueprints/stone_age/buildings/huntlodge/L3.json';
-import lumberyardL1 from '../data/blueprints/stone_age/buildings/lumberyard/L1.json';
-import lumberyardL2 from '../data/blueprints/stone_age/buildings/lumberyard/L2.json';
-import lumberyardL3 from '../data/blueprints/stone_age/buildings/lumberyard/L3.json';
-import quarryL1 from '../data/blueprints/stone_age/buildings/quarry/L1.json';
-import quarryL2 from '../data/blueprints/stone_age/buildings/quarry/L2.json';
-import quarryL3 from '../data/blueprints/stone_age/buildings/quarry/L3.json';
-import scouttentL1 from '../data/blueprints/stone_age/buildings/scouttent/L1.json';
-import scouttentL2 from '../data/blueprints/stone_age/buildings/scouttent/L2.json';
-import scouttentL3 from '../data/blueprints/stone_age/buildings/scouttent/L3.json';
-import wartentL1 from '../data/blueprints/stone_age/buildings/wartent/L1.json';
-import wartentL2 from '../data/blueprints/stone_age/buildings/wartent/L2.json';
-import wartentL3 from '../data/blueprints/stone_age/buildings/wartent/L3.json';
-import drillL1 from '../data/blueprints/stone_age/buildings/drill/L1.json';
-import drillL2 from '../data/blueprints/stone_age/buildings/drill/L2.json';
-import drillL3 from '../data/blueprints/stone_age/buildings/drill/L3.json';
-import trapL1 from '../data/blueprints/stone_age/buildings/trap/L1.json';
-import trapL2 from '../data/blueprints/stone_age/buildings/trap/L2.json';
-import campfireL2 from '../data/blueprints/stone_age/buildings/campfire/L2.json';
-import campfireL3 from '../data/blueprints/stone_age/buildings/campfire/L3.json';
-import campfireL4 from '../data/blueprints/stone_age/buildings/campfire/L4.json';
-import storageL1 from '../data/blueprints/stone_age/buildings/storage/L1.json';
-import storageL2 from '../data/blueprints/stone_age/buildings/storage/L2.json';
-import storageL3 from '../data/blueprints/stone_age/buildings/storage/L3.json';
-import workshopL1 from '../data/blueprints/stone_age/buildings/workshop/L1.json';
-import workshopL2 from '../data/blueprints/stone_age/buildings/workshop/L2.json';
-import workshopL3 from '../data/blueprints/stone_age/buildings/workshop/L3.json';
 import bushJson from '../data/blueprints/nature/resources/bush.json';
 import rockJson from '../data/blueprints/nature/resources/rock.json';
 import mountainLowJson from '../data/blueprints/nature/terrain/mountain_low.json';
@@ -140,35 +67,7 @@ export interface NatureSet {
 /** Construction stages 0..4 (4 = finished) as blueprint params. */
 const stage = (st: number) => ({ st1: +(st >= 1), st2: +(st >= 2), st3: +(st >= 3), st4: +(st >= 4) });
 /** Building blueprints per era and kind, one entry per level. A later era only lists what it redraws. */
-const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>>> = {
-  stone: {
-    campfire: [campfireL1, campfireL2, campfireL3, campfireL4],
-    builder: [builderL1, builderL2, builderL3],
-    storage: [storageL1, storageL2, storageL3],
-    workshop: [workshopL1, workshopL2, workshopL3],
-    lab: [labL1, labL2, labL3],
-    toolstore: [toolstoreL1, toolstoreL2, toolstoreL3],
-    armory: [armoryL1, armoryL2, armoryL3],
-    infantry: [infantryL1, infantryL2, infantryL3],
-    guardpost: [guardpostL1, guardpostL2, guardpostL3],
-    cavalry: [cavalryL1, cavalryL2, cavalryL3],
-    stable: [stableL1, stableL2, stableL3],
-    archery: [archeryL1, archeryL2, archeryL3],
-    farmhouse: [farmhouseL1, farmhouseL2, farmhouseL3],
-    huntlodge: [huntlodgeL1, huntlodgeL2, huntlodgeL3],
-    lumberyard: [lumberyardL1, lumberyardL2, lumberyardL3],
-    quarry: [quarryL1, quarryL2, quarryL3],
-    house: [houseL1, houseL2, houseL3],
-    field: [fieldL1, fieldL2, fieldL3],
-    fence: [fenceL1, fenceL2],
-    gate: [gateL1, gateL2, gateL1o, gateL2o], // the last two are the same gates standing open
-    tower: [towerL1, towerL2],
-    wartent: [wartentL1, wartentL2, wartentL3],
-    scouttent: [scouttentL1, scouttentL2, scouttentL3],
-    drill: [drillL1, drillL2, drillL3],
-    trap: [trapL1, trapL2],
-  },
-};
+const BUILDING_ART: Partial<Record<Era, Partial<Record<BuildingKind, unknown[]>>>> = { stone: STONE_ART };
 const TINTS: Partial<Record<BuildingKind, Record<string, string>>> = {}; // no reused drawings left: every house has its own art
 
 export class Sprites {
@@ -191,6 +90,7 @@ export class Sprites {
     this.icons.sling1 = make(toolSlingJson, 1).frames[0];
     this.icons.bow1 = make(toolBowJson, 1).frames[0];
     this.icons.hide1 = make(toolHideArmorJson, 1).frames[0];
+    this.icons.bone2 = this.icons.hide1; // the bone armour has no picture of its own yet: it shows as the hide one
     this.icons.torch1 = this.torchIcon();
     this.nature('spring');
     this.emblems.lab = this.scrollEmblem();

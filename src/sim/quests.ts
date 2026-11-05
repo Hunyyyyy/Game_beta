@@ -1,5 +1,6 @@
 /** Quests: the guided plan that leads the village to the fourth campfire level (src/data/quests.json). They are worked out from the state of the village and of the screen, so nothing is saved. */
 import data from '../data/quests.json';
+import { eraLocked } from './buildings';
 import type { BuildingKind } from './buildings';
 import { Job, RoleId, roleOf } from './jobs';
 import type { Res } from './resources';
@@ -54,7 +55,7 @@ export { SCREEN_QUESTS } from './progression';
 export const CHAPTERS = data.chapters as Chapter[];
 
 /** What the player has on the screen right now (the quests that teach the buttons look at it). */
-export interface QuestUi { selected: BuildingKind | null; panel: BuildingKind | null; inspecting: 'unit' | 'animal' | 'node' | null }
+export interface QuestUi { selected: BuildingKind | null; panel: BuildingKind | null; inspecting: 'unit' | 'animal' | 'node' | 'tent' | null }
 
 export interface QuestView {
   quest: Quest; done: boolean; open: boolean;
@@ -101,7 +102,10 @@ function measure(sim: Sim, d: QuestDone, ui: QuestUi): [number, number] {
 /** Every quest with whether it is done, whether it is open (all it comes after are done) and how far it has got. A quest done once stays done (it is saved with the game). */
 export function questViews(sim: Sim, ui: QuestUi): QuestView[] {
   // only a quest that is open can be done: one met early (a trade given before its turn) waits until the ones before it are
-  for (const q of QUESTS) if (!sim.questSeen.has(q.id) && q.after.every((a) => sim.questSeen.has(a))) { const [have, need] = measure(sim, q.done, ui); if (have >= need) sim.questSeen.add(q.id); }
+  // a quest about a building of the medieval layer (the watchtower) is skipped while it is shut away
+  const WAR_ONLY = ['scoutSent', 'hasMap', 'planDefense', 'planArrow', 'createSquad', 'squadSize', 'squadFormation'];
+  const shut = (q: Quest): boolean => ('kind' in q.done && typeof q.done.kind === 'string' && eraLocked(q.done.kind as BuildingKind, sim)) || (!sim.advanced && (WAR_ONLY.includes(q.done.type) || (q.done.type === 'researchTech' && /^(signal|form_)/.test(q.done.id)))); // the plan, the scouts and the formations are of the medieval layer
+  for (const q of QUESTS) if (!sim.questSeen.has(q.id) && q.after.every((a) => sim.questSeen.has(a))) { const [have, need] = measure(sim, q.done, ui); if (have >= need || shut(q)) sim.questSeen.add(q.id); }
   return QUESTS.map((quest) => {
     const done = sim.questSeen.has(quest.id), open = !done && quest.after.every((a) => sim.questSeen.has(a));
     let progress = '';

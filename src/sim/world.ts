@@ -155,6 +155,15 @@ export class World {
     }
   }
 
+  /** Put a tree, rock or bush on a bare, open spot; false when the spot will not do. */
+  plant(kind: NodeKind, x: number, y: number): boolean {
+    const N = this.size, j = y * N + x;
+    if (!this.inBounds(x, y) || !this.isReady(x, y) || this.tiles[j] !== Tile.Grass || this.occ[j] !== 0 || this.nodes.has(j) || this.wouldTrap(x, y)) return false;
+    this.tiles[j] = TILE_OF[kind];
+    this.nodes.set(j, { kind, res: NODE_INFO[kind].res, amount: NODE_INFO[kind].max, max: NODE_INFO[kind].max, workers: 0, sides: 0, regrow: 0 });
+    return true;
+  }
+
   /** A random dry spot (open ground for 20 tiles round it) at least START_MARGIN from every edge, so the tribes and the herds have room on all sides. */
   private static pickStart(seed: number): { x: number; y: number } {
     const N = MAP_SIZE, rnd = mulberry32(mix32(seed ^ 0x51ed270b)), span = N - 2 * START_MARGIN;
@@ -190,6 +199,18 @@ export class World {
   at(x: number, y: number): TileId {
     return this.tiles[y * this.size + x] as TileId;
   }
+  /** The tiles of the gates that are shut: they stop the enemy and the beasts, but our own people pass through them. */
+  readonly gates = new Set<number>();
+  /** Blocked for someone of ours (a villager, a soldier): the same as isBlocked, but a shut gate lets him by. */
+  /** The tiles of the shut gates of the villages: the people of a village (not ours, not the beasts) pass them, so its guards come and go as they like. */
+  readonly foeGates = new Set<number>();
+  isBlockedFor(x: number, y: number, ours: boolean | 'foe'): boolean {
+    if (!ours || !this.inBounds(x, y)) return this.isBlocked(x, y);
+    const i = y * this.size + x;
+    if (!(ours === 'foe' ? this.foeGates : this.gates).has(i)) return this.isBlocked(x, y);
+    const t = this.tiles[i];
+    return this.ready[(y >> 5) * CHUNKS + (x >> 5)] === 0 || (t !== Tile.Grass && t !== Tile.Mud);
+  }
   isBlocked(x: number, y: number): boolean {
     if (!this.inBounds(x, y)) return true;
     const i = y * this.size + x, t = this.tiles[i];
@@ -213,11 +234,31 @@ export class World {
       const ang = hash2(idx, salt * 40 + t, this.seed + 41) * Math.PI * 2, r = 4 + hash2(idx, salt * 40 + t, this.seed + 43) * 7;
       const x = Math.round(fx + Math.cos(ang) * r), y = Math.round(fy + Math.sin(ang) * r), j = y * N + x;
       if (!this.isReady(x, y) || this.tiles[j] !== Tile.Grass || this.occ[j] !== 0 || this.nodes.has(j)) continue;
-      if (Math.hypot(x - this.start.x, y - this.start.y) < 7 || (free && !free(x, y))) continue;
+      if (Math.hypot(x - this.start.x, y - this.start.y) < 7 || (free && !free(x, y)) || this.wouldTrap(x, y)) continue;
       this.tiles[j] = TILE_OF[n.kind];
       this.nodes.set(j, { kind: n.kind, res: n.res, amount: this.season === 'winter' && n.kind === 'bush' ? 0 : n.max, max: n.max, workers: 0, sides: 0, regrow: 0 });
       return;
     }
+  }
+
+  /**
+   * Would a tree, rock or bush on this tile shut somebody in? True when it would cut the open ground around it in two (a wall of trees closing
+   * on a gap), or leave an open neighbouring tile with fewer than two ways out (a pocket). A respawn then picks another tile.
+   */
+  private wouldTrap(x: number, y: number): boolean {
+    const ring: Array<[number, number]> = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
+    const open = ring.map(([dx, dy]) => !this.isBlocked(x + dx, y + dy));
+    let runs = 0;
+    for (let i = 0; i < 8; i++) if (open[i] && !open[(i + 7) % 8]) runs++;
+    if (runs > 1) return true;
+    for (let i = 0; i < 8; i++) {
+      if (!open[i]) continue;
+      const nx = x + ring[i][0], ny = y + ring[i][1];
+      let ways = 0;
+      for (const [dx, dy] of ring) if ((nx + dx !== x || ny + dy !== y) && !this.isBlocked(nx + dx, ny + dy)) ways++;
+      if (ways < 2) return true;
+    }
+    return false;
   }
 
   /** Winter: bushes go bare and stop regrowing. Spring: they flower and fruit again after 1–3 min (staggered per tile). */

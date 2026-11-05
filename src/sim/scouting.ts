@@ -1,9 +1,10 @@
 /** Scouting: villages found on the map, trips to draw them (three levels of map, ageing) and the scouts who do not come home. */
-import { levelDef } from './buildings';
-import { ringOf, ringPower, SIEGE } from './combat';
+import { BUILDINGS, levelDef } from './buildings';
+import { SIEGE } from './combat';
 import { DAY_LENGTH } from './constants';
 import { armOfWeapon, COMMAND } from './formations';
 import { findPath } from './path';
+import { ensureLayout, headcount } from './tribelod';
 import { tribeOf } from './tribes';
 import type { Sim } from './sim';
 import { RES_NAME } from './resources';
@@ -30,7 +31,7 @@ export function mapLevel(sim: Sim, tribe: string): number {
   return best;
 }
 
-const warriorsOf = (sim: Sim, tribe: string): number => { const t = tribeOf(sim, tribe as never); return t ? t.unitIds.filter((u) => sim.get(u)?.ai?.role !== 'civ').length : 0; };
+const warriorsOf = (sim: Sim, tribe: string): number => { const t = tribeOf(sim, tribe as never); return t ? headcount(sim, t).guards : 0; };
 
 // ---------------------------------------------------------------- finding villages
 /** How far a villager sees a camp, in tiles. */
@@ -93,7 +94,7 @@ export function scoutLimit(sim: Sim): number {
 export const onTrip = (sim: Sim, v: Villager): boolean => sim.scouts.some((m) => m.ids.includes(v.id));
 
 /** Who may be sent: a scout, healthy, out in the open and not already away. */
-export const canScout = (sim: Sim, v: Villager): boolean => v.job === 'scout' && v.health > 0 && v.inside === null && !onTrip(sim, v);
+export const canScout = (sim: Sim, v: Villager): boolean => v.job === 'scout' && v.health > 0 && !onTrip(sim, v); // a scout in his tent is sent too: he comes out (startScout)
 
 /** The scouts of the village, as a role like the soldiers: recruited and let go at the Trại trinh sát. */
 export const scoutRoster = (sim: Sim): Villager[] => sim.villagers.filter((v) => v.job === 'scout');
@@ -207,6 +208,7 @@ export function startScout(sim: Sim, ids: readonly number[], tribe: string): str
   const fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y;
   void fx; void fy;
   scouts.forEach((v, i) => {
+    sim.exitBuilding(v); v.out = false; v.recall = false;
     sim.resetTask(v); sim.clearCombat(v);
     const spot = watchSpot(sim, t, i);
     sim.orderMove([v.id], spot[0], spot[1]);
@@ -223,12 +225,25 @@ export function startScout(sim: Sim, ids: readonly number[], tribe: string): str
   return null;
 }
 
-/** The chance one scout is caught and killed: his own village's strength, daylight and his speed. */
-function deathChance(sim: Sim, m: ScoutMission, v: Villager): number {
-  const t = tribeOf(sim, m.tribe as never)!, fire = sim.campfire();
-  const power = warriorsOf(sim, m.tribe) * ringPower(ringOf(Math.hypot(t.camp.x - (fire?.x ?? 0), t.camp.y - (fire?.y ?? 0))));
+/** The chance one scout is caught and killed on arriving at the village, with each part of it in words (shown to the player when scouts die). */
+function deathParts(sim: Sim, m: ScoutMission, v: Villager): { chance: number; lines: string[] } {
+  const t = tribeOf(sim, m.tribe as never)!, pc = (x: number) => `${x >= 0 ? '+' : '−'}${Math.round(Math.abs(x) * 1000) / 10}%`;
+  const warriors = warriorsOf(sim, m.tribe), power = warriors * (1 + (t.mil ?? 0));
   const day = sim.weather === 'clear' && !sim.resting;
-  return Math.max(0.02, Math.min(0.9, 0.1 + power / 5 / 100 + (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0) - Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 0.005) - gearOf(v, SIEGE.scout.gearHide)));
+  const strong = power / 5 / 100, light = (day ? 0.1 : 0) - (sim.resting ? 0.1 : 0);
+  const stealth = Math.max(0, (stealthOf(v) - 6) * SIEGE.scout.stealthPerPoint + (v.stats.agi - 6) * 0.005), gear = gearOf(v, SIEGE.scout.gearHide);
+  const raw = 0.1 + strong + light - stealth - gear, chance = Math.max(0.02, Math.min(0.9, raw));
+  const lines = [`Cơ bản: ${pc(0.1)}`, `Làng có ${warriors} lính canh: ${pc(strong)}`, day ? `Ban ngày trời quang, dễ bị thấy: ${pc(0.1)}` : sim.resting ? `Ban đêm, khó bị thấy: ${pc(-0.1)}` : 'Trời âm u: 0%',
+    `Sự khéo léo của ${v.name} (Nhanh nhẹn, Thể lực): ${pc(-stealth)}`, gear > 0 ? `Trang bị che giấu (giáp, đuốc, vũ khí): ${pc(-gear)}` : 'Không có trang bị che giấu: 0%'];
+  if (raw !== chance) lines.push(raw < chance ? `Tối thiểu 2%: nâng lên ${Math.round(chance * 100)}%` : `Tối đa 90%: giảm xuống ${Math.round(chance * 100)}%`);
+  return { chance, lines };
+}
+
+/** A scout died on a trip: remember who, where and why. Called for any death (Sim.kill); one already noted by the trip itself is not noted twice. */
+export function noteScoutLoss(sim: Sim, v: Villager, cause: string, detail = ''): void {
+  const m = sim.scouts.find((x) => x.ids.includes(v.id)), t = m ? tribeOf(sim, m.tribe as never) : undefined;
+  if (!m || sim.scoutLosses.some((l) => l.vid === v.id && l.at === sim.time)) return;
+  sim.scoutLosses.push({ at: sim.time, day: sim.day, vid: v.id, name: v.name, tribe: m.tribe, dist: t ? Math.round(Math.hypot(v.x - t.camp.x, v.y - t.camp.y)) : -1, cause, detail });
 }
 
 /** Whether a villager is a scout out on a trip: he works day and night, is never tired out and does not sleep until he is home. */
@@ -275,7 +290,7 @@ export function tickScouts(sim: Sim, dt: number): void {
     if (m.phase !== 'back') {
       // the ones who have reached the village risk being caught, once each; the ones who are there draw the map
       const arrived = alive.filter((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
-      for (const v of arrived) if (!m.rolled.includes(v.id)) { m.rolled.push(v.id); if (sim.frnd() < deathChance(sim, m, v)) sim.killUnit(v, 'vì bị phát hiện khi trinh sát'); }
+      for (const v of arrived) if (!m.rolled.includes(v.id)) { m.rolled.push(v.id); const risk = deathParts(sim, m, v); if (sim.frnd() < risk.chance) { noteScoutLoss(sim, v, 'bị phát hiện khi thám thính làng', `Xác suất bị phát hiện ${Math.round(risk.chance * 100)}%:\n${risk.lines.join('\n')}`); sim.killUnit(v, 'vì bị phát hiện khi trinh sát'); } }
       const here = arrived.filter((v) => v.health > 0 && sim.byId.has(v.id));
       m.survivors = alive.filter((v) => v.health > 0 && sim.byId.has(v.id)).length;
       if (m.phase === 'go' && here.length) {
@@ -316,18 +331,24 @@ export function tickScouts(sim: Sim, dt: number): void {
 const MARGIN = 24, YARD = 7;
 /** The lowest map level that shows each kind of work, and what to call it. */
 const WORKS: Record<string, { level: number; label: string }> = {
-  fire: { level: 1, label: 'Đống lửa' }, tower: { level: 2, label: 'Chòi canh' }, fence: { level: 2, label: 'Hàng rào' }, gate: { level: 2, label: 'Cổng' }, pile: { level: 3, label: 'Kho lương' },
+  fire: { level: 1, label: 'Đống lửa' }, tower: { level: 2, label: 'Chòi canh' }, fence: { level: 2, label: 'Hàng rào' }, gate: { level: 2, label: 'Cổng' }, pile: { level: 3, label: 'Kho lương' }, house: { level: 2, label: 'Nhà' },
 };
 
 /** A fixed 0..1 number from an id, so a stale map blurs the same way every time it is drawn (no random draw is spent). */
 const spread = (id: number, salt: number): number => { const x = Math.sin(id * 12.9898 + salt * 78.233) * 43758.5453; return x - Math.floor(x); };
 
 /** Everyone alive in the village, where he stands now and what he carries. */
-function seenNow(sim: Sim, t: NonNullable<ReturnType<typeof tribeOf>>): Seen[] {
+export function seenNow(sim: Sim, t: NonNullable<ReturnType<typeof tribeOf>>): Seen[] {
   const out: Seen[] = [];
   for (const id of t.unitIds) {
     const u = sim.get(id); if (!u || u.health <= 0) continue;
     out.push({ x: Math.round(u.x * 10) / 10, y: Math.round(u.y * 10) / 10, arm: armOfWeapon(u.weapon), weapon: u.weapon ?? null, civ: u.ai?.role === 'civ', leader: u.id === t.leaderId });
+  }
+  // those indoors are seen as shapes in the yard: where they stand is a fixed guess from their number, the soldiers armed in turn from the weapons of the tribe
+  const crowd = t.crowd, inWorld = out.filter((o) => !o.civ).length;
+  if (crowd) for (let i = 0; i < crowd.guards + crowd.civs; i++) {
+    const civ = i >= crowd.guards, w = civ ? null : t.def.weapons[(inWorld + i) % t.def.weapons.length], a = spread(i + 7, 3) * Math.PI * 2, r = 1.5 + spread(i + 7, 5) * 4.5;
+    out.push({ x: Math.round((t.camp.x + Math.cos(a) * r) * 10) / 10, y: Math.round((t.camp.y + Math.sin(a) * r) * 10) / 10, arm: armOfWeapon(w), weapon: w, civ, leader: false });
   }
   return out;
 }
@@ -335,6 +356,7 @@ function seenNow(sim: Sim, t: NonNullable<ReturnType<typeof tribeOf>>): Seen[] {
 const WORK_INFO: Record<string, string> = {
   fire: 'Đống lửa của họ: tâm làng, quanh đây dân và lính tụ lại.', tower: 'Chòi canh: cung thủ đứng cao bắn xa hơn, phải phá chòi mới hạ được họ.',
   fence: 'Hàng rào: chặn đường, phải phá hoặc đi vòng.', gate: 'Cổng: lối vào làng, đóng thì chặn đường.', pile: 'Kho lương: chỗ họ cất thức ăn và đồ cống nạp.',
+  house: 'Nhà của làng: càng nhiều nhà cấp cao thì làng càng đông và mạnh.',
 };
 
 /** A free tile at or near a point, or null. */
@@ -372,6 +394,7 @@ export function tribeIntel(sim: Sim, tribe: string): TribeIntel | null {
   const x0 = Math.max(0, Math.min(N - 2 * rx, Math.floor(t.camp.x) - rx)), y0 = Math.max(0, Math.min(N - 2 * ry, Math.floor(t.camp.y) - ry));
   const box = { x0, y0, x1: x0 + 2 * rx, y1: y0 + 2 * ry };
   const fire = sim.campfire(), dx = (fire?.x ?? sim.world.start.x) - t.camp.x, dy = (fire?.y ?? sim.world.start.y) - t.camp.y, len = Math.hypot(dx, dy);
+  ensureLayout(sim, t); // the houses of a village nobody has been near are laid when a map first needs them (data only)
   const seen = sim.dev.freeBuild || !held?.seen ? seenNow(sim, t) : held.seen; // a map from before scouts kept what they saw shows the village as it is
   const soldiers = level >= 3 ? { foot: 0, archer: 0, cavalry: 0 } : null;
   const people: TribeIntel['people'] = [];
@@ -390,7 +413,7 @@ export function tribeIntel(sim: Sim, tribe: string): TribeIntel | null {
     tribe, name: t.def.name, level, accuracy, gaps, box, camp: { ...t.camp }, yard: YARD,
     toUs: len > 0 ? { x: dx / len, y: dy / len } : null, route, others: others.filter(reach),
     population: Math.max(2, Math.round(seen.length / 2) * 2),
-    structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: WORKS[p.kind].label, detail: p.kind === 'pile' && loot ? `${WORK_INFO.pile} Có khoảng ${loot}.` : WORK_INFO[p.kind] ?? '', x: p.x, y: p.y, w: p.w, h: p.h })),
+    structures: t.props.filter((p) => (WORKS[p.kind]?.level ?? 9) <= level).map((p) => ({ kind: p.kind, label: p.b ? BUILDINGS[p.b].name : WORKS[p.kind].label, detail: p.kind === 'pile' && loot ? `${WORK_INFO.pile} Có khoảng ${loot}.` : WORK_INFO[p.kind] ?? '', x: p.x, y: p.y, w: p.w, h: p.h })),
     people, soldiers,
   };
 }

@@ -1,3 +1,4 @@
+import chaseJson from '../data/chase.json';
 import { ANIMALS, BEHAVIOUR, Species, SPECIES, zoneOf, type AnimalDef } from './combat';
 import type { Res } from './resources';
 import { findPath, type Step } from './path';
@@ -5,11 +6,16 @@ import { CHUNK, CHUNKS } from './world';
 import { hash2, mix32, mulberry32 } from './rng';
 import type { Sim, Target } from './sim';
 import { Tile } from './world';
+import { BUILDINGS } from './buildings';
 
 export type AnimalState = 'graze' | 'wander' | 'flee' | 'attack' | 'sleep' | 'dead';
 
 export interface Animal {
   id: number;
+  /** Seconds since it last bit what it chases. */
+  chaseT?: number;
+  /** A pack of an event comes for one part of the day only: true for the night, false for the day. It leaves when that part is over. */
+  raidNight?: boolean;
   species: Species;
   x: number; // tile units, like villagers
   y: number;
@@ -27,6 +33,8 @@ export interface Animal {
   burst: number;         // seconds spent running
   tired: number;         // seconds left of exhaustion after a long run
   female: boolean;
+  /** The house it is breaking down (nobody is outside to chase), or none. */
+  siege?: number;
   /** Raiders (wolf packs from an event) hunt until dawn, then leave. */
   raid: boolean;
   bite: number;          // seconds left of the bite flash
@@ -65,8 +73,10 @@ export function populateChunk(sim: Sim, cx: number, cy: number): void {
   const w = sim.world, s = w.start, x0 = cx * CHUNK, y0 = cy * CHUNK;
   const rnd = mulberry32(mix32(sim.seed ^ Math.imul(cx + 1, 0x9e3779b1) ^ Math.imul(cy + 1, 0x85ebca6b)));
   let herd = 100000 + (cy * CHUNKS + cx) * 64;
+  const nearStart = Math.hypot(x0 + CHUNK / 2 - s.x, y0 + CHUNK / 2 - s.y) <= BEHAVIOUR.nearRadius;
   for (const sp of SPECIES) {
-    const def = ANIMALS[sp], expected = (def.count / ((def.herd[0] + def.herd[1]) / 2)) * share();
+    const def = ANIMALS[sp], boost = nearStart && def.prey && !def.defends && def.habitat !== 'water' && def.zones[0] <= 1 ? BEHAVIOUR.nearBoost : 1;
+    const expected = (def.count / ((def.herd[0] + def.herd[1]) / 2)) * share() * boost;
     const herds = Math.floor(expected) + (rnd() < expected - Math.floor(expected) ? 1 : 0);
     for (let n = 0; n < herds; n++) {
       for (let tries = 0; tries < 8; tries++) {
@@ -86,12 +96,15 @@ export function populateChunk(sim: Sim, cx: number, cy: number): void {
   }
 }
 
-export function spawnAnimal(sim: Sim, species: Species, x: number, y: number, herd: number, raid = false): Animal {
+/** A raiding pack whose part of the day is over: it goes home, so the village can heal. (Without a part of the day, a pack stays through the night only.) */
+export const raidOver = (a: Animal, night: boolean): boolean => a.raid && (a.raidNight === undefined ? !night : a.raidNight !== night);
+
+export function spawnAnimal(sim: Sim, species: Species, x: number, y: number, herd: number, raid = false, raidNight?: boolean): Animal {
   const def = ANIMALS[species];
   const a: Animal = {
     id: sim.nextAid++, species, x, y, hp: def.hp, maxHp: def.hp, state: 'graze', dir: sim.frnd() < 0.5 ? 1 : -1, dest: null,
     timer: 2 + sim.frnd() * 6, cd: 0, scan: sim.frnd() * 0.5, target: null, herd, home: { x, y }, burst: 0, tired: 0,
-    female: sim.frnd() < 0.5, raid, bite: 0, clock: sim.frnd() * 10, meat: 0, hide: 0, drops: {}, carcass: 0,
+    female: sim.frnd() < 0.5, raid, raidNight, bite: 0, clock: sim.frnd() * 10, meat: 0, hide: 0, drops: {}, carcass: 0,
   };
   sim.animals.push(a); sim.animalById.set(a.id, a);
   return a;
@@ -234,9 +247,13 @@ export function tickAnimals(sim: Sim, dt: number): void {
       a.scan = 0.3 + sim.frnd() * 0.2;
       const p = near(sim, a.x, a.y);
       if (def.prey && def.flee > 0 && a.state !== 'flee' && p && p.d < def.flee && !(def.defends)) { a.state = 'flee'; a.target = { kind: 'unit', id: p.id }; a.timer = 6; a.burst = 0; }
-      if (def.aggro > 0 && a.state !== 'attack' && p && (a.raid || (night && def.nocturnal)) && p.d < (a.raid ? 40 : def.aggro)) {
+      if (def.aggro > 0 && a.state !== 'attack' && p && ((a.raid && !raidOver(a, night)) || (night && def.nocturnal)) && p.d < (a.raid ? 40 : def.aggro)) {
         const v = sim.get(p.id)!;
-        if (fireDistance(sim, v.x, v.y) > (def.fearsFire ?? 0)) { a.state = 'attack'; a.target = { kind: 'unit', id: p.id }; a.timer = 20; }
+        if (fireDistance(sim, v.x, v.y) > (def.fearsFire ?? 0)) { a.state = 'attack'; a.target = { kind: 'unit', id: p.id }; a.timer = 20; a.chaseT = 0; a.siege = undefined; }
+      } else if (def.aggro > 0 && a.state !== 'attack' && !p && ((a.raid && !raidOver(a, night)) || (night && def.nocturnal))) {
+        // nobody (villager or soldier) is outside: it turns on the nearest house instead
+        const house = sim.nearestWork(a.x, a.y, a.raid ? 70 : def.aggro * 2, true);
+        if (house) { a.state = 'attack'; a.target = null; a.siege = house.id; a.timer = 20; a.chaseT = 0; }
       }
     }
 
@@ -255,15 +272,25 @@ export function tickAnimals(sim: Sim, dt: number): void {
         break;
       }
       case 'attack': {
+        if (a.siege) {
+          const house = sim.getBuilding(a.siege), out = near(sim, a.x, a.y);
+          if (out && out.d < (a.raid ? 40 : def.aggro)) { a.siege = undefined; a.state = 'attack'; a.target = { kind: 'unit', id: out.id }; a.timer = 20; a.chaseT = 0; break; } // someone came out: it goes for him
+          if (!house || !house.done || a.timer <= 0 || raidOver(a, night)) { a.siege = undefined; a.state = 'graze'; a.timer = 3; break; }
+          const hd = BUILDINGS[house.kind], hx = house.x + hd.w / 2, hy = house.y + hd.h / 2;
+          if (Math.hypot(hx - a.x, hy - a.y) - Math.max(hd.w, hd.h) / 2 > def.range + 0.4) step(sim, a, hx, hy, def.speed * slow, dt);
+          else if (a.cd <= 0) { a.cd = def.cycle; a.bite = 0.25; a.timer = 20; sim.damageWork(house, def.damage); }
+          break;
+        }
         const t = a.target && sim.get(a.target.id);
-        const lost = !t || t.down > 0 || a.timer <= 0 || (!a.raid && Math.hypot(t.x - a.x, t.y - a.y) > 16);
-        if (lost) { a.state = 'graze'; a.target = null; a.timer = 3; if (a.raid && t === undefined) a.timer = 1; break; }
+        a.chaseT = (a.chaseT ?? 0) + dt; // seconds since the last bite: too long and it gives up (src/data/chase.json)
+        const lost = !t || t.down > 0 || a.timer <= 0 || a.chaseT > chaseJson.noHitSeconds || raidOver(a, night) || (!a.raid && Math.hypot(t.x - a.x, t.y - a.y) > 16);
+        if (lost) { a.state = 'graze'; a.target = null; a.chaseT = 0; a.timer = 3; if (a.raid && t === undefined) a.timer = 1; break; }
         const d = Math.hypot(t.x - a.x, t.y - a.y);
         // a wolf will not walk into firelight: it circles the edge instead
         if (def.fearsFire && fireDistance(sim, t.x, t.y) <= def.fearsFire && fireDistance(sim, a.x, a.y) < def.fearsFire + 1.5) { step(sim, a, a.home.x, a.home.y, def.speed, dt); break; }
         if (d > def.range + 0.4) step(sim, a, t.x, t.y, def.speed * slow, dt);
         else if (a.cd <= 0) {
-          a.cd = def.cycle; a.bite = 0.25;
+          a.cd = def.cycle; a.bite = 0.25; a.chaseT = 0;
           const behind = (t.facing === 'right' && a.x < t.x) || (t.facing === 'left' && a.x > t.x);
           sim.hurt({ kind: 'unit', id: t.id }, def.damage * (behind ? 1.25 : 1), def.type, { x: a.x, y: a.y }, { animal: a });
         }
@@ -277,7 +304,7 @@ export function tickAnimals(sim: Sim, dt: number): void {
         break;
       }
       default: { // graze
-        if (a.raid && !night) { // raiders leave at dawn
+        if (raidOver(a, night)) { // the raiders leave when their part of the day is over
           step(sim, a, a.home.x, a.home.y, def.speed, dt);
           if (Math.hypot(a.home.x - a.x, a.home.y - a.y) < 2) { sim.animals.splice(i, 1); sim.animalById.delete(a.id); }
           break;
@@ -292,19 +319,55 @@ export function tickAnimals(sim: Sim, dt: number): void {
   }
 }
 
-/** Spring: herds that fell below their usual size breed back, as long as two females remain. */
-export function breed(sim: Sim): void {
+/**
+ * Once a day the land makes up what hunting and the wolves took: a species that has fallen short of its usual number gets a new herd (or what is missing of one), by chance,
+ * on ground out of our sight in the zones it lives in. It needs no animal of its kind to be left, so a hunted-out species comes back all the same.
+ */
+export function restock(sim: Sim): void {
+  if (sim.warSince >= 0) return; // the animals are away while a war is on (tickWarAnimals), and come back after it
+  const chunks = sim.world.readyChunks();
+  if (!chunks.length) return;
+  const s = sim.world.start, N = sim.world.size;
   for (const sp of SPECIES) {
-    const def = ANIMALS[sp];
-    const alive = sim.animals.filter((a) => a.species === sp && a.state !== 'dead' && !a.raid);
-    if (alive.filter((a) => a.female).length < BEHAVIOUR.breedMinFemales) continue;
-    const missing = countOf(sim, def) - alive.length;
-    for (let i = 0; i < Math.max(0, missing); i++) {
-      if (sim.frnd() > BEHAVIOUR.breedChance) continue;
-      const mother = alive[Math.floor(sim.frnd() * alive.length)];
-      spawnAnimal(sim, sp, mother.x + (sim.frnd() - 0.5) * 2, mother.y + (sim.frnd() - 0.5) * 2, mother.herd);
+    const def = ANIMALS[sp], alive = sim.animals.filter((a) => a.species === sp && a.state !== 'dead' && !a.raid).length, missing = countOf(sim, def) - alive;
+    if (missing < def.herd[0] || sim.frnd() > BEHAVIOUR.restockChance) continue;
+    const size = Math.min(missing, def.herd[0] + Math.floor(sim.frnd() * (def.herd[1] - def.herd[0] + 1)));
+    for (let tries = 0; tries < 24; tries++) {
+      const [cx, cy] = chunks[Math.floor(sim.frnd() * chunks.length)], x = cx * CHUNK + Math.floor(sim.frnd() * CHUNK), y = cy * CHUNK + Math.floor(sim.frnd() * CHUNK), d = Math.hypot(x - s.x, y - s.y);
+      const z = zoneOf(d), far = z === 4 && def.zones[1] === 3 ? 3 : z;
+      if ((d < 16 && def.habitat !== 'water') || far < def.zones[0] || far > def.zones[1] || !habitable(sim, def, x, y)) continue;
+      if (sim.fog.state[y * N + x] === 2 || sim.inView(x, y)) continue; // not where we can see it appear
+      const herd = 200000 + sim.nextAid;
+      for (let i = 0; i < size; i++) {
+        const ax = x + (sim.frnd() - 0.5) * 4, ay = y + (sim.frnd() - 0.5) * 4;
+        if (sim.world.isReady(Math.floor(ax), Math.floor(ay)) && habitable(sim, def, Math.floor(ax), Math.floor(ay))) spawnAnimal(sim, sp, ax, ay, herd);
+      }
+      break;
     }
   }
+}
+
+/**
+ * War: the animals leave the field. Those out of the camera's sight are gone at once; those in it run away from the middle of the screen and are gone when they are out of sight.
+ * They are only put by (`sim.hiddenAnimals`) and come back where they were when the war is over (restoreWarAnimals). The carcasses stay.
+ */
+export function tickWarAnimals(sim: Sim, dt: number): void {
+  const w = sim.view;
+  for (let i = sim.animals.length - 1; i >= 0; i--) {
+    const a = sim.animals[i];
+    if (a.state === 'dead') continue;
+    if (!w || !sim.inView(a.x, a.y)) { sim.animals.splice(i, 1); sim.animalById.delete(a.id); a.target = null; a.dest = null; a.state = 'graze'; a.timer = 2; sim.hiddenAnimals.push(a); continue; }
+    const def = animalDef(a), mx = (w.x0 + w.x1) / 2, my = (w.y0 + w.y1) / 2, dx = a.x - mx, dy = a.y - my, len = Math.hypot(dx, dy) || 1;
+    a.state = 'flee'; a.target = null; a.timer = 2; a.clock += dt;
+    step(sim, a, a.x + (dx / len) * 12, a.y + (dy / len) * 12, def.speed * 1.2, dt);
+    a.dir = dx >= 0 ? 1 : -1;
+  }
+}
+
+/** The war is over: the animals that were put by come back where they went out of sight. */
+export function restoreWarAnimals(sim: Sim): void {
+  for (const a of sim.hiddenAnimals) { sim.animals.push(a); sim.animalById.set(a.id, a); }
+  sim.hiddenAnimals.length = 0;
 }
 
 /** Nothing left on the body worth skinning. */

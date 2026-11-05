@@ -1,0 +1,74 @@
+{
+ "kind": "huntlodge",
+ "name": "Chòi thợ săn",
+ "group": "production",
+ "produces": [
+  "food"
+ ],
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 1,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Đơn sơ",
+    "cost": {
+     "wood": 15
+    },
+    "buildTime": 50,
+    "cap": 10,
+    "craftSpeed": 1,
+    "slots": 2,
+    "hp": 180,
+    "sight": 0
+   },
+   {
+    "name": "Gỗ",
+    "cost": {
+     "wood": 25,
+     "hide": 5
+    },
+    "buildTime": 90,
+    "cap": 25,
+    "craftSpeed": 1,
+    "slots": 3,
+    "hp": 270,
+    "sight": 0
+   },
+   {
+    "name": "Đá",
+    "cost": {
+     "wood": 30,
+     "stone": 15,
+     "hide": 8
+    },
+    "buildTime": 140,
+    "cap": 50,
+    "craftSpeed": 1,
+    "slots": 4,
+    "hp": 360,
+    "sight": 0
+   },
+   {
+    "name": "Đá gia cố",
+    "cost": {
+     "wood": 36,
+     "stone": 21,
+     "hide": 13
+    },
+    "buildTime": 218,
+    "cap": 100,
+    "craftSpeed": 1,
+    "slots": 5,
+    "hp": 450,
+    "sight": 0
+   }
+  ]
+ }
+}

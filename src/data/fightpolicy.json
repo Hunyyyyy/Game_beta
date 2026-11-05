@@ -1,0 +1,45 @@
+{
+  "_note": "Những con số khác nhau giữa hai phe trong cùng một cơ chế đánh nhau (src/sim/battle.ts). player: lính và dân của ta. foe: người của các làng. Muốn hai phe đánh khác nhau chút nào thì chỉnh ở đây trước, rồi mới viết luật riêng trong brainplayer.ts / brainfoe.ts.",
+  "player": {
+    "_defensive": "Lính trại không có báo động, hoặc đứng thế phòng thủ, chỉ đánh những gì vào trong ngần này ô.",
+    "defensive": 4.5,
+    "_fear": "Dân thường chạy khỏi nguy hiểm trong ngần này ô.",
+    "fear": 10,
+    "_sight": "Tầm nhìn dùng cho người ta khi không phải lính của ta (ít dùng).",
+    "sight": 8,
+    "_chaseExtra": "Đuổi theo: lính ta thấy mục tiêu khi nó trong tầm nhìn (sightOf) cộng ngần này ô.",
+    "chaseExtra": 1
+  },
+  "foe": {
+    "aggro": {
+      "peaceful": 6,
+      "aggressive": 14,
+      "ambusher": 9
+    },
+    "_leash": "Lính làng không đuổi quá ngần này ô khỏi lửa trại (hoặc tầm của làng + 2, lấy số lớn hơn).",
+    "leash": 24,
+    "willingReach": 24,
+    "raiderSight": 12,
+    "civSight": 9,
+    "chaseSight": 14,
+    "civFlee": 8,
+    "civKeepRunning": 6,
+    "hideWatch": 14,
+    "wanderRadius": {
+      "civ": 5,
+      "aggressive": 12,
+      "other": 8
+    },
+    "cavalry": {
+      "_note": "Quân của làng ở trong trại như quân ta; khi có chiến tranh hoặc bị tấn công họ ra đứng ở các vị trí phòng thủ, và một phần trong số họ (cầm vũ khí đánh gần) cưỡi thú: kỵ binh không đứng gác, chỉ lính gác mới gác. minCamp: cấp lửa thấp nhất của làng có kỵ binh; share: tỉ lệ lính cưỡi; bossShare: tỉ lệ ở làng boss; beasts: thú theo từng cấp lửa kể từ minCamp (cấp cuối dùng cho các cấp cao hơn); boss: thú của làng boss.",
+      "minCamp": 3,
+      "share": 0.25,
+      "bossShare": 0.5,
+      "beasts": [
+        "wolf",
+        "boar"
+      ],
+      "boss": "elephant"
+    }
+  }
+}

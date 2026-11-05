@@ -1,15 +1,17 @@
 /** How a stat of a person is read on the screen: the same in the detail dialog and in the lists of the houses. */
 import { WEAPONS } from '../sim/combat';
-import { critChance, critMult, guardCut, rawValue, statValue, swingCycle } from '../sim/statsys';
+import { critChance, critMult, guardCut, rawValue, statValue, swingCycle, treeRole } from '../sim/statsys';
+import { statBonus } from '../sim/research';
+import REST from '../data/rest.json';
 import type { Villager } from '../sim/sim';
 import type { Ctx } from './ctx';
 import { dlg } from './gamedialog';
 import { statIcon } from './resicons';
 
 /** The eleven stats shown on a person, in the order they are listed. */
-export const STAT_ORDER = ['hp', 'atk', 'defm', 'defr', 'move', 'work', 'int', 'sta', 'aspd', 'crit', 'critd'] as const;
+export const STAT_ORDER = ['hp', 'atk', 'defm', 'defr', 'move', 'work', 'int', 'sta', 'hpregen', 'restregen', 'aspd', 'crit', 'critd'] as const;
 export type StatCell = { id: (typeof STAT_ORDER)[number] };
-export const STAT_LABEL: Record<StatCell['id'], string> = { hp: 'Máu', atk: 'Sức mạnh', defm: 'Phòng thủ cận chiến', defr: 'Phòng thủ tầm xa', move: 'Tốc độ di chuyển', work: 'Tốc độ làm việc', int: 'Trí tuệ', sta: 'Sức', aspd: 'Tốc đánh', crit: 'Chí mạng', critd: 'Sát thương chí mạng' };
+export const STAT_LABEL: Record<StatCell['id'], string> = { hp: 'Máu', atk: 'Sức mạnh', defm: 'Phòng thủ cận chiến', defr: 'Phòng thủ tầm xa', move: 'Tốc độ di chuyển', work: 'Tốc độ làm việc', int: 'Trí tuệ', sta: 'Sức', aspd: 'Tốc đánh', crit: 'Chí mạng', critd: 'Sát thương chí mạng', hpregen: 'Hồi máu', restregen: 'Hồi sức' };
 /** A number with the digits after the point fixed (one by default), in Vietnamese form: 10,4. */
 export const num = (n: number, digits = 1): string => n.toLocaleString('vi', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 export type StatId = StatCell['id'];
@@ -24,6 +26,13 @@ export function statReading(sim: Ctx['sim'], v: Villager, id: StatId): { text: s
   }
   if (id === 'crit') return { text: `${num(critChance(sim, v, w) * 100)}%`, tone: '', tip: `Xác suất đòn đánh của ${w.name.toLowerCase()} thành chí mạng` };
   if (id === 'critd') return { text: `${num(critMult(sim, v, w) * 100)}%`, tone: '', tip: 'Sát thương của một đòn chí mạng so với đòn thường' };
+  if (id === 'hpregen' || id === 'restregen') {
+    // not a number of the body: how much faster than the plain person they heal or rest (the research Hồi máu and Hồi sức, a soldier's own advantage)
+    const role = treeRole(v), bonus = role && v.team === 'player' ? statBonus(sim.researched, role, id) : 0;
+    const soldier = v.job === 'fight', base = id === 'restregen' && soldier ? REST.soldierRest : 1, mult = base * (1 + bonus / 100);
+    const camp = id === 'hpregen' && soldier ? ` · khi ở trong trại của mình ×${num(REST.soldierHealInCamp * mult, 2)}` : '';
+    return { text: `×${num(mult, 2)}`, tone: mult > 1.001 ? 'up' : '', tip: `${STAT_LABEL[id]}: nhanh gấp ${num(mult, 2)} người thường${bonus ? ` (nghiên cứu +${num(bonus)}%)` : ''}${id === 'restregen' && soldier ? ' (lính hồi sức nhanh hơn dân)' : ''}${camp}` };
+  }
   const val = statValue(sim, v, id), own = v.fac ? rawValue(v.fac, id) : val, tone = val > own + 0.05 ? 'up' : val < own - 0.05 ? 'down' : '';
   const reduce = id === 'defm' || id === 'defr' ? ` · giảm ${num(guardCut(sim, v, id === 'defr') * 100)}% sát thương ${id === 'defr' ? 'tầm xa' : 'cận chiến'}` : '';
   return { text: num(val), tone, tip: `${STAT_LABEL[id]}: gốc ${num(own)}${reduce}${val < own - 0.05 ? pen : ''}` };

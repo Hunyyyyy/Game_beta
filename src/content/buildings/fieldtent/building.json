@@ -1,0 +1,25 @@
+{
+ "kind": "fieldtent",
+ "name": "Lều hành quân",
+ "group": "war",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": false,
+ "unlockFire": 99,
+ "levels": {
+  "stone": [
+   {
+    "name": "Lều hành quân",
+    "cost": {},
+    "buildTime": 1,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 180,
+    "sight": 0
+   }
+  ]
+ }
+}

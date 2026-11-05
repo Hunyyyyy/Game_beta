@@ -25,11 +25,7 @@ export class MapView {
     this.base.width = this.base.height = mini.width = mini.height = big.width = big.height = this.N;
     this.bctx = this.base.getContext('2d')!;
     mini.addEventListener('click', () => this.open());
-    big.addEventListener('click', (e) => {
-      const b = big.getBoundingClientRect();
-      ctl.centerOn(((e.clientX - b.left) / b.width) * this.N * TILE, ((e.clientY - b.top) / b.height) * this.N * TILE);
-      this.close();
-    });
+    big.addEventListener('click', () => this.close()); // the map only shows what is known: it does not carry the camera anywhere
     overlay.addEventListener('click', (e) => { if (e.target === overlay) this.close(); });
   }
 
@@ -41,7 +37,7 @@ export class MapView {
     const { sim, N } = this;
     if (sim.fog.version === this.ver && sim.buildings.length === this.builds) return;
     const now = performance.now();
-    if (this.ver >= 0 && now - this.drawn < 500) return; // a map of nearly a million tiles is not redrawn for every step somebody takes
+    if (this.ver >= 0 && now - this.drawn < (this.isOpen ? 500 : 2000)) return; // a map of nearly a million tiles is not redrawn for every step somebody takes (slowly while only the small map shows: a phone feels each redraw)
     this.drawn = now; this.ver = sim.fog.version; this.builds = sim.buildings.length;
     const img = this.bctx.createImageData(N, N), d = img.data, s = sim.fog.state, occ = sim.world.occ, tiles = sim.world.tiles;
     for (let i = 0; i < N * N; i++) {
@@ -60,7 +56,7 @@ export class MapView {
       ctx.fillRect(t.camp.x - dot, t.camp.y - dot, dot * 2, dot * 2);
     }
     ctx.fillStyle = '#ffffff';
-    for (const v of sim.villagers) if (v.inside === null) ctx.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
+    for (const v of sim.villagers) if (v.inside === null && !v.inTent) ctx.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
     ctx.fillStyle = '#ff5a4a';
     for (const f of sim.foes) if (seen(f.x, f.y)) ctx.fillRect(f.x - dot / 2, f.y - dot / 2, dot, dot);
     for (const a of sim.animals) if (a.state !== 'dead' && seen(a.x, a.y)) { ctx.fillStyle = a.species === 'wolf' ? '#ff5a4a' : '#e8d4a8'; ctx.fillRect(a.x - dot / 3, a.y - dot / 3, dot * 0.7, dot * 0.7); }

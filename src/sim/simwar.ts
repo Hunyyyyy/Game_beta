@@ -2,13 +2,25 @@
 import * as army from './army';
 import * as forecast from './forecast';
 import * as scouting from './scouting';
+import { tickWarAnimals } from './fauna';
 import * as siege from './siege';
 import { sightOf } from './environment';
 import * as training from './training';
 import * as mounts from './mounts';
-import { surrender, tribeOf } from './tribes';
+import * as research from './research';
+import { tickFoe } from './brainfoe';
+import { surrender, tickTribes, tribeOf } from './tribes';
+import * as warmode from './warmode';
+import * as warmarch from './warmarch';
+import * as warsupply from './warsupply';
+import * as wartent from './wartent';
+import * as warharass from './warharass';
+import * as warlog from './warlog';
+import type { Res } from './resources';
+import { DAY_LENGTH, FOE_PATH_SHARE } from './constants';
 import * as warplan from './warplan';
-import { armOf } from './battle';
+import * as warquick from './warquick';
+import { armOf, tickProjectiles } from './battle';
 import type { Ent } from './battle';
 import type { Building } from './buildings';
 import type { MountKind, StatKey } from './jobs';
@@ -18,6 +30,30 @@ import type { CardKind, RouteTime, Forecast, FormationName, Mission, MissionTarg
 import type { Sim } from './sim';
 
 export const WAR = {
+  /** One tick while a war is on (warmode.ts): only the army, the scouts out, the arrows in the air and the village under attack are worked; everyone else goes home and stands still. */
+  tickWar(this: Sim, dt: number): void {
+    tickProjectiles(this, dt); tickWarAnimals(this, dt);
+    const soldiers = warmode.army(this), ranks = warmode.ranks(this, soldiers), plan = warmode.warPlan(this)!;
+    this.warIds = soldiers; this.march = warmarch.marchOfPlan(this, plan);
+    if (Math.floor(this.time) !== Math.floor(this.time - dt)) { // each second: the village that stayed home eats from the store (paid at the end), the army from the packs
+      if (!this.advanced) this.warMeals += (this.warNeed() + this.armyNeed()) / DAY_LENGTH; // no supply soldiers: the army eats from the village store like the village
+      else {
+        this.warMeals += this.warNeed() / DAY_LENGTH; warsupply.eatPacks(this, plan, this.armyNeed() / DAY_LENGTH);
+        if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) warsupply.follow(this, plan);
+        wartent.tickTents(this, plan); warharass.tickHarass(this, plan);
+      }
+    }
+    for (const v of [...this.villagers]) { if (ranks.has(v.id)) this.tickVillager(v, dt); else warmode.standDown(this, v, dt); }
+    army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
+    const enemy = warmode.warTribe(this);
+    this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
+    for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
+    tickTribes(this, dt);
+  },
+  /** → warsupply.supplyAdvice */
+  supplyAdvice(this: Sim, plan: Plan): warsupply.SupplyAdvice | null { return warsupply.supplyAdvice(this, plan); },
+  /** Whether a feature of the war plan is researched (the details tab, the supply sums, the weather, the rest in the field). */
+  planOpen(this: Sim, f: research.PlanFeature): boolean { return research.planOpen(this.researched, f, this.advanced, this.dev.freeBuild); },
   /** → army.squadLimit */
   squadLimit(this: Sim): number { return army.squadLimit(this); },
   /** → army.cellLimit */
@@ -124,6 +160,24 @@ export const WAR = {
   playCard(this: Sim, plan: Plan, cardId: number): string | null { return warplan.playCard(this, plan, cardId); },
   /** → warplan.engagePlan */
   engagePlan(this: Sim, plan: Plan): string | null { return warplan.engagePlan(this, plan); },
+  /** Set how many supply soldiers the plan takes and how many days of food they carry. Returns an error or null. */
+  setSupply(this: Sim, plan: Plan, n: number, days: number): string | null {
+    if (plan.status !== 'draft') return 'Chỉ sửa được khi kế hoạch còn là bản nháp';
+    plan.supply = Math.max(0, Math.round(n)); plan.carryDays = Math.max(1, Math.min(warmarch.WAR_DATA.supply.maxDays, Math.round(days)));
+    return null;
+  },
+  /** → wartent.shelter */
+  shelter(this: Sim, v: Villager): void { return wartent.shelter(this, v); },
+  /** → wartent.sleepsInTent: night, and the tent of his squad stands beside him */
+  sleepsInTent(this: Sim, v: Villager): boolean { return wartent.sleepsInTent(this, v); },
+  /** → warsupply.supplyAvailable: how many supply soldiers wait in their camp */
+  supplyReady(this: Sim): number { return warsupply.supplyAvailable(this).length; },
+  /** → scouting.noteScoutLoss */
+  noteScoutLoss(this: Sim, v: Villager, cause: string): void { scouting.noteScoutLoss(this, v, cause); },
+  /** → warlog.noteLoot */
+  noteLoot(this: Sim, tribe: string, res: Res, n: number): void { warlog.noteLoot(this, tribe, res, n); },
+  /** → warplan.regather: soldiers off their cell go back to it; returns how many */
+  regroupPlan(this: Sim, plan: Plan): number { return warplan.regather(this, plan); },
   /** → warplan.withdrawPlan */
   withdrawPlan(this: Sim, plan: Plan): string | null { return warplan.withdrawPlan(this, plan); },
   /** → forecast.forecastPlan */
@@ -138,6 +192,8 @@ export const WAR = {
   lineSteps(this: Sim, from: Pt, x: number, y: number): Array<[number, number]> { return siege.lineSteps(this, from, { x, y }); },
   /** → siege.startBreaking */
   startBreaking(this: Sim, v: Villager, ob: Obstacle, home?: Pt): boolean { return siege.startBreaking(this, v, ob, home); },
+  /** → siege.breachFor */
+  breachFor(this: Sim, v: Villager, x: number, y: number): boolean { return siege.breachFor(this, v, x, y); },
   /** → siege.breakBrain */
   breakBrain(this: Sim, v: Villager, dt: number): boolean { return siege.breakBrain(this, v, dt); },
   /** → siege.arrowMove */
@@ -152,6 +208,8 @@ export const WAR = {
   breakBlock(this: Sim, plan: Plan, squadId: number, n: number): string | null { return siege.breakBlock(this, plan, squadId, n); },
   /** → siege.targetNow */
   targetNow(this: Sim, plan: Plan, m: Mission): siege.TargetState | null { return siege.targetNow(this, plan, m); },
+  /** → siege.rampage */
+  rampage(this: Sim, plan: Plan, s: Squad): void { siege.rampage(this, plan, s); },
   /** → siege.tickTarget */
   tickTarget(this: Sim, plan: Plan, m: Mission, s: Squad): boolean { return siege.tickTarget(this, plan, m, s); },
   /** → warplan.setMissionTarget */
@@ -162,8 +220,18 @@ export const WAR = {
   corridorBlocks(this: Sim, start: Pt, pts: readonly Pt[], target?: Pt): Obstacle[] { return siege.corridorBlocks(this, start, pts, target); },
   /** → warplan.cancelPlan */
   cancelPlan(this: Sim, plan: Plan): string | null { return warplan.cancelPlan(this, plan); },
-  /** → warplan.isLogistics */
-  isLogistics(this: Sim, plan: Plan, m: Mission): boolean { return warplan.isLogistics(plan, m); },
+  /** In a war: whether a soldier of the army is fighting or marching (resting counts as marching); null for everyone else. */
+  warMode(this: Sim, v: Villager): 'fight' | 'march' | null { return v.team === 'player' && this.warIds.has(v.id) ? (v.phase === 'fight' || v.swing ? 'fight' : 'march') : null; },
+  /** Supply soldiers of the deployed plan who are still alive (without them there is nobody to pitch a tent). */
+  supplyReadyIn(this: Sim, plan: Plan): number { return warsupply.supplyOf(this, plan).length; },
+  /** → warquick.quickAttack: the simple war of the stone age */
+  quickAttack(this: Sim, tribeId: string): string | null { return warquick.quickAttack(this, tribeId); },
+  /** → warquick.army */
+  quickArmy(this: Sim): Villager[] { return warquick.army(this); },
+  /** → warplan.setRest */
+  setRest(this: Sim, plan: Plan, squadId: number, on: boolean): string | null { return warplan.setRest(this, plan, squadId, on); },
+  /** → warplan.isHolding */
+  isHolding(this: Sim, plan: Plan, m: Mission): boolean { return warplan.isHolding(plan, m); },
   /** → training.startTraining */
   startTraining(this: Sim, ids: readonly number[], houseId: number, care: number): string | null { return training.startTraining(this, ids, houseId, care); },
   /** → training.cancelTraining */

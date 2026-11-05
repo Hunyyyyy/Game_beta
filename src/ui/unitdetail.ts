@@ -1,6 +1,6 @@
 import { CRAFTED_WEAPONS, WEAPONS } from '../sim/combat';
 import type { WorkJob } from '../sim/jobs';
-import { autoOn, STAT_DEF } from '../sim/research';
+import { STAT_DEF } from '../sim/research';
 import { MOUNT_KINDS, MOUNTS } from '../sim/jobs';
 import type { MountKind } from '../sim/jobs';
 import { critChance, critMult, guardCut, rawValue, statValue, swingCycle } from '../sim/statsys';
@@ -52,7 +52,7 @@ export class UnitDetail {
       pick.append(h('option', { value: '', text: '— chọn —', hidden: true }), h('option', { value: 'auto' }), h('option', { value: 'none' }), ...kinds.map((k) => h('option', { value: k })));
       this.gearSel.push({ pick, slot, label, kinds }); gearRow.append(pick);
     };
-    addGear('weapon', 'Vũ khí', CRAFTED_WEAPONS as unknown as string[]); addGear('armor', 'Giáp', ['hide']);
+    addGear('weapon', 'Vũ khí', CRAFTED_WEAPONS as unknown as string[]); addGear('armor', 'Giáp', Object.keys(ARMORS));
 
     this.mountPick = h('select', { class: 'sm', 'aria-label': 'Thú cưỡi', title: 'Thú đã thuần trong chuồng; đổi thú thì thú cũ về chuồng', onchange: () => {
       if (this.mountPick.value === '') return;
@@ -102,16 +102,15 @@ export class UnitDetail {
     if (!chosen.length) return;
     const sim0 = this.c.sim, v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : 'tay không';
     for (const g of this.gearSel) {
-      const unlocked = autoOn(sim0.researched, 'fetch'), auto = unlocked && chosen.every((o) => !o.manualGear), cur = new Set(chosen.map((o) => (g.slot === 'weapon' ? o.weapon : o.armor) ?? 'none')), want = auto ? 'auto' : cur.size === 1 ? [...cur][0] : '';
+      const auto = chosen.every((o) => !o.manualGear), cur = new Set(chosen.map((o) => (g.slot === 'weapon' ? o.weapon : o.armor) ?? 'none')), want = auto ? 'auto' : cur.size === 1 ? [...cur][0] : '';
       g.pick.querySelectorAll('option').forEach((op) => {
         if (op.value === '') return;
-        (op as HTMLOptionElement).disabled = op.value === 'auto' && !unlocked;
-        const text = op.value === 'auto' ? (unlocked ? `${g.label}: tự động (lấy ở kho)` : `${g.label}: tự động (cần nghiên cứu Tự lấy đồ)`) : op.value === 'none' ? `${g.label}: không có (trả kho)` : `${g.slot === 'armor' ? ARMORS[op.value].name : WEAPONS[op.value].name} (kho: ${sim0.toolCount(op.value, op.value === 'hide' ? 1 : WEAPONS[op.value].tier ?? 1)})`;
+        const text = op.value === 'auto' ? `${g.label}: tự động (lấy ở kho)` : op.value === 'none' ? `${g.label}: không có (trả kho)` : `${g.slot === 'armor' ? ARMORS[op.value].name : WEAPONS[op.value].name} (kho: ${sim0.toolCount(op.value, g.slot === 'armor' ? ARMORS[op.value].tier ?? 1 : WEAPONS[op.value].tier ?? 1)})`;
         if (op.textContent !== text) op.textContent = text;
       });
       if (g.pick.value !== want && document.activeElement !== g.pick) g.pick.value = want;
     }
-    this.gearTip.textContent = !autoOn(sim0.researched, 'fetch') ? 'Dân chưa tự lấy được đồ: khi họ chưa có hoặc hỏng vũ khí, giáp thì bạn phải tự chọn cho họ. Nghiên cứu "Tự lấy đồ trong kho" để mở chế độ tự động.' : chosen.every((o) => o.manualGear) ? 'Đồ do bạn chọn: họ không tự đổi. Chọn "tự động" để họ tự lấy ở Kho vũ khí.' : 'Tự động: khi trống hoặc hỏng, họ tự tới Kho vũ khí lấy đồ tốt nhất.';
+    this.gearTip.textContent = chosen.every((o) => o.manualGear) ? 'Đồ do bạn chọn: họ không tự đổi. Chọn "tự động" để họ tự lấy ở Kho vũ khí.' : 'Tự động: khi trống hoặc hỏng, họ tự tới Kho vũ khí lấy đồ tốt nhất.';
     this.gear.innerHTML = `Vũ khí <b>${w}</b> · Giáp <b>${v.armor ? ARMORS[v.armor].name : '—'}</b>${v.armor ? ` (${armorText(ARMORS[v.armor], false)})` : ''}${v.leader ? ' · <b>Thủ lĩnh</b>' : ''}`;
     // the beast: soldiers who are not riders of the camp, hunters and scouts
     const canRide = chosen.every((o) => (o.job === 'fight' && o.arm !== 'cavalry') || o.job === 'hunt' || o.job === 'scout');

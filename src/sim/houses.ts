@@ -10,7 +10,7 @@ import { isFree } from './idle';
 /** The villager best suited to work in a house who is not already doing it: free hands first, soldiers never, then the best stat for the job. */
 export function bestFor(sim: Sim, job: 'craft' | 'research' | 'tame'): Villager | null {
   const stat = JOBS[job].stat;
-  const pool = sim.villagers.filter((v) => v.down <= 0 && v.inside === null && v.job !== job && v.job !== 'fight' && v.job !== 'hunt' && v.job !== 'scout');
+  const pool = sim.villagers.filter((v) => v.down <= 0 && v.inside === null && v.job !== job && v.job !== 'fight' && v.job !== 'hunt' && v.job !== 'scout' && v.job !== 'supply');
   pool.sort((a, b) => (isFree(a) ? 0 : 1) - (isFree(b) ? 0 : 1) || b.stats[stat] - a.stats[stat]);
   return pool[0] ?? null;
 }
@@ -20,11 +20,16 @@ export function houseRate(sim: Sim, b: Building): number {
   const job: WorkJob = b.kind === 'lab' ? 'research' : b.kind === 'workshop' ? 'craft' : 'tame';
   let r = 0;
   for (const id of b.staff) { const v = sim.byId.get(id); if (v && v.phase === 'inside') r += sim.workFactor(v, job); }
-  return r * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 25 : 1);
+  return r * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 1e6 : 1);
 }
 
 /** Villagers heading for a house or already in it. */
 export function staffCount(sim: Sim, b: Building): number { return b.staff.length + sim.villagers.filter((v) => v.phase === 'goStaff' && v.target === b.id).length; }
+
+/** Anyone may be given a place in a house: a soldier or a scout is let go from his camp first (he hands his gear back). Returns an error or null. */
+function letGo(sim: Sim, v: Villager): string | null {
+  return v.job === 'fight' || v.job === 'scout' ? sim.releaseRole([v.id]) : null;
+}
 
 /** The villagers whose job is building: the crew of the Nhà thợ xây. */
 export function crew(sim: Sim): Villager[] { return sim.villagers.filter((v) => v.job === 'build'); }
@@ -37,8 +42,7 @@ export function assignCrew(sim: Sim, ids: readonly number[]): string | null {
   let err: string | null = null;
   for (const v of sim.mine(ids)) {
     if (v.job === 'build') continue;
-    if (v.job === 'fight') { err = 'Chiến binh do trại lính của họ quản lý: cho nghỉ trước'; continue; }
-    if (v.job === 'scout') { err = 'Trinh sát do Trại trinh sát quản lý: cho nghỉ trước'; continue; }
+    const gone = letGo(sim, v); if (gone) { err = gone; continue; }
     if (crew(sim).length >= levelDef(house).slots) { err = `${BUILDINGS.builder.name} cấp ${house.level} chỉ chứa ${levelDef(house).slots} thợ`; continue; }
     sim.resetTask(v); sim.clearCombat(v); v.job = 'build'; v.prefer = -1; v.post = -1;
   }
@@ -64,8 +68,7 @@ export function assignStaff(sim: Sim, ids: readonly number[], job: 'craft' | 're
   let err: string | null = null;
   for (const v of sim.mine(ids)) {
     if (v.inside === b.id) { v.job = job; continue; }
-    if (v.job === 'fight') { err = 'Chiến binh do trại lính của họ quản lý: cho nghỉ trước'; continue; }
-    if (v.job === 'scout') { err = 'Trinh sát do Trại trinh sát quản lý: cho nghỉ trước'; continue; }
+    const gone = letGo(sim, v); if (gone) { err = gone; continue; }
     if (staffCount(sim, b) >= levelDef(b).slots) { err = `${BUILDINGS[b.kind].name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} người`; continue; }
     sim.resetTask(v); sim.clearCombat(v); v.job = job; v.prefer = -1; v.post = -1;
     planStaff(sim, v);
@@ -81,8 +84,7 @@ export function assignField(sim: Sim, ids: readonly number[], fieldId: number): 
   let err: string | null = null;
   for (const v of sim.mine(ids)) {
     if (v.post === b.id && v.job === 'food') continue;
-    if (v.job === 'fight') { err = 'Chiến binh do trại lính của họ quản lý: cho nghỉ trước'; continue; }
-    if (v.job === 'scout') { err = 'Trinh sát do Trại trinh sát quản lý: cho nghỉ trước'; continue; }
+    const gone = letGo(sim, v); if (gone) { err = gone; continue; }
     if (staffCount(sim, b) >= levelDef(b).slots) { err = `${BUILDINGS.field.name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} người`; continue; }
     sim.resetTask(v); sim.clearCombat(v); v.job = 'food'; v.prefer = -1; v.post = b.id;
     planStaff(sim, v);

@@ -1,0 +1,76 @@
+{
+ "kind": "fence",
+ "name": "Hàng rào cọc",
+ "group": "defence",
+ "size": [
+  1,
+  1
+ ],
+ "buildable": true,
+ "unlockFire": 3,
+ "requires": [
+  "builder"
+ ],
+ "limit": [
+ 40,
+  80,
+  120,
+  150
+ ],
+ "repeat": true,
+ "levels": {
+  "stone": [
+   {
+    "name": "Cọc nhọn",
+    "cost": {
+     "wood": 2
+    },
+    "buildTime": 14,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 300,
+    "sight": 0
+   },
+   {
+    "name": "Hàng rào đôi",
+    "cost": {
+     "wood": 4,
+     "stone": 1
+    },
+    "buildTime": 24,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 600,
+    "sight": 0
+   },
+   {
+    "name": "Hàng rào đôi gia cố",
+    "cost": {
+     "wood": 8,
+     "stone": 2
+    },
+    "buildTime": 41,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 1200,
+    "sight": 0
+   },
+   {
+    "name": "Hàng rào đôi kiên cố",
+    "cost": {
+     "wood": 16,
+     "stone": 4
+    },
+    "buildTime": 70,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 2000,
+    "sight": 0
+   }
+  ]
+ }
+}

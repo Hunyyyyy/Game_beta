@@ -1,0 +1,73 @@
+{
+ "kind": "guardpost",
+ "name": "Trại lính gác",
+ "group": "defence",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 1,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Chòi gác",
+    "cost": {
+     "wood": 25,
+     "hide": 4
+    },
+    "buildTime": 70,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 6,
+    "hp": 180,
+    "sight": 0
+   },
+   {
+    "name": "Trạm gác",
+    "cost": {
+     "wood": 30,
+     "stone": 10,
+     "hide": 8
+    },
+    "buildTime": 110,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 12,
+    "hp": 270,
+    "sight": 0
+   },
+   {
+    "name": "Đồn gác",
+    "cost": {
+     "wood": 35,
+     "stone": 30,
+     "hide": 12
+    },
+    "buildTime": 170,
+    "cap": 0,
+    "craftSpeed": 1.5,
+    "slots": 18,
+    "hp": 360,
+    "sight": 0
+   },
+   {
+    "name": "Đồn gác gia cố",
+    "cost": {
+     "wood": 41,
+     "stone": 60,
+     "hide": 18
+    },
+    "buildTime": 263,
+    "cap": 0,
+    "craftSpeed": 1.5,
+    "slots": 24,
+    "hp": 450,
+    "sight": 0
+   }
+  ]
+ }
+}

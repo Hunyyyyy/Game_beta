@@ -8,7 +8,7 @@ import { TOOL_OF_JOB } from './tools';
 import { LineStat, soldierTier, statBonus, StatId, TREE_ROLES } from './research';
 
 /** What the stat rules read of the game: the research done and the squads. A narrow type of its own so that this file, shared by the systems, never has to know the Sim. */
-export interface StatSim { readonly researched: ReadonlySet<string>; readonly squads: ReadonlyArray<{ readonly id: number; readonly formation: FormationId }>; readonly foodPenalty: number }
+export interface StatSim { readonly researched: ReadonlySet<string>; readonly squads: ReadonlyArray<{ readonly id: number; readonly formation: FormationId }>; readonly foodPenalty: number; /** While a war is on: whether a soldier of the army is fighting or on the march (or resting); null for anyone else. */ readonly warMode?: (v: Villager) => 'fight' | 'march' | null; /** How exhausted a soldier of an army in the field is (0..1). */ tiredPenalty(v: Villager): number; /** Percent a tribe's research-like bonus adds to a stat of its people (src/content/difficulty.json). */ readonly foeBonus?: (team: string, stat: StatId) => number }
 type Sim = StatSim;
 import type { Villager } from './model';
 
@@ -34,7 +34,7 @@ export function rollFactors(r: () => number): { stars: number; fac: Record<StatI
 /** The role of the research tree a person counts as (null for anyone without one: a stranger, an idle villager). */
 export function treeRole(v: Pick<Villager, 'job' | 'arm' | 'post'>): string | null {
   const r = roleOf(v);
-  if (r) return r === 'guard' ? 'foot' : r; // the guards of the Trại lính gác are foot soldiers: they share the research of the Chiến binh
+  if (r) return r === 'tower' ? 'towerman' : r; // the guards and the men of the towers are the defence: they have their own research, apart from the soldiers of the camps
   switch (v.job) {
     case 'build': return 'build';
     case 'craft': return 'craft';
@@ -51,9 +51,12 @@ export function statValue(sim: Sim, v: Villager, stat: StatId): number {
   const tier = role && TREE_ROLES[role] ? soldierTier(sim.researched, role) : 1;
   const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
   const squad = v.team === 'player' && v.squad >= 0 ? sim.squads.find((q) => q.id === v.squad) : undefined;
-  const bonus = (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ''), stat) : 0);
-  const hunger = v.team === 'player' && stat !== 'hp' ? 1 - sim.foodPenalty : 1;
-  return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + bonus / 100) * hunger;
+  const bonus = (v.team !== 'player' ? sim.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ''), stat) : 0);
+  // the research of the war: Hành quân adds on the march and at rest, Kế hoạch chiến đấu while fighting (the soldiers of the three arms only)
+  const mode = role === 'foot' || role === 'cavalry' || role === 'archer' ? sim.warMode?.(v) ?? null : null;
+  const warBonus = mode ? statBonus(sim.researched, `${mode === 'fight' ? 'plan' : 'march'}_${role}`, stat) : 0;
+  const hunger = v.team === 'player' && stat !== 'hp' ? (1 - sim.foodPenalty) * (1 - sim.tiredPenalty(v)) : 1; // short of food, and (an army in the field) short of sleep
+  return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + (bonus + warBonus) / 100) * hunger;
 }
 
 /** What a stat is on a person's own (no research, no tier): used when a body is made. */
@@ -71,12 +74,12 @@ export function legacyStats(value: (s: StatId) => number): { vit: number; str: n
 
 /** Bring the body in line with the research and tier of the role: health, speed and the older stats. Called about once a second for everyone of ours. */
 export function applyStats(sim: Sim, v: Villager): void {
-  if (v.team !== 'player') return;
+  if (v.team === 'wild') return;
   const val = (s: StatId) => statValue(sim, v, s), l = legacyStats(val);
   v.stats.vit = l.vit; v.stats.str = l.str; v.stats.agi = l.agi; v.stats.sta = l.sta;
   const hp = Math.round(val('hp'));
   if (hp !== v.maxHealth) { const ratio = v.maxHealth > 0 ? v.health / v.maxHealth : 1; v.maxHealth = hp; v.health = Math.min(hp, hp * ratio); }
-  if (v.squad < 0 && !v.mount) v.speed = val('move');
+  if (v.team === 'player' && v.squad < 0 && !v.mount) v.speed = val('move');
 }
 
 /** Share of damage a person turns aside: from melee (Phòng thủ cận chiến) or from missiles (Phòng thủ tầm xa). */

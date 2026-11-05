@@ -1,0 +1,6 @@
+{
+  "_note": "Đuổi bắt: ai (người của ta, dân làng khác, thú) đang đuổi hay đánh một mục tiêu sẽ bỏ cuộc và về chỗ cũ khi: mất tầm nhìn mục tiêu quá loseSightSeconds giây, HOẶC quá noHitSeconds giây mà vẫn không ra được một đòn (mục tiêu ở chỗ không tới được: cá dưới nước, con vật bị vật cản vây quanh...). Mục tiêu đó bị bỏ qua skipSeconds giây rồi mới được chọn lại.",
+  "loseSightSeconds": 6,
+  "noHitSeconds": 10,
+  "skipSeconds": 30
+}

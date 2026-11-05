@@ -41,8 +41,8 @@ export function squadCenter(sim: Sim, s: Squad): { x: number; y: number } | null
   return us.length ? { x: us.reduce((a, v) => a + v.x, 0) / us.length, y: us.reduce((a, v) => a + v.y, 0) / us.length } : null;
 }
 
-export function createSquad(sim: Sim, name?: string): { squad?: Squad; reason?: string } {
-  if (sim.squads.length >= squadLimit(sim)) return { reason: squadLimit(sim) ? `Lều họp chiến chỉ cho ${squadLimit(sim)} đội: nâng cấp lều` : 'Cần dựng Lều họp chiến để lập đội' };
+export function createSquad(sim: Sim, name?: string, force = false): { squad?: Squad; reason?: string } {
+  if (!force && sim.squads.length >= squadLimit(sim)) return { reason: squadLimit(sim) ? `Lều họp chiến chỉ cho ${squadLimit(sim)} đội: nâng cấp lều` : 'Cần dựng Lều họp chiến để lập đội' };
   const id = sim.nextSquad++;
   const s: Squad = { id, name: name ?? `Đội ${String.fromCharCode(64 + id)}`, color: COLORS[(id - 1) % COLORS.length], ids: [], leader: -1, formation: 'line', mastery: Object.fromEntries(FORMATION_IDS.map((f) => [f, COMMAND.mastery.start])), switchUntil: 0, anchor: null, heading: 0, training: false };
   sim.squads.push(s);
@@ -124,10 +124,11 @@ export function squadMove(sim: Sim, s: Squad, x: number, y: number, mode: 'attac
   const offs = formationOffsets(s.formation, us.length), taken = new Set<number>();
   applySpeed(sim, s);
   us.forEach((v, i) => {
+    if (sim.warIds.has(v.id)) v.nightOwl = true; // an order in a war wakes a sleeping soldier for good: he is not put back to bed under it
     const [px, py] = placeOffset(offs[i], s.heading, x, y);
     const spot = sim.nearestFree(Math.floor(px), Math.floor(py), taken) ?? [Math.floor(px), Math.floor(py)];
     taken.add(spot[1] * sim.world.size + spot[0]);
-    if (mode === 'move') sim.orderMove([v.id], spot[0], spot[1]); // orderMove takes whole tiles
+    if (mode === 'move') { sim.pathLeft++; sim.orderMove([v.id], spot[0], spot[1]); v.fight.obey = v.path.length > 0; } // orderMove takes whole tiles; a fall-back is obeyed whatever the unit meets, even in the middle of a fight
     else if (mode === 'attack') sim.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
     else { sim.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5); v.fight.anchor = { x: spot[0] + 0.5, y: spot[1] + 0.5 }; }
   });

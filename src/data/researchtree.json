@@ -1,6 +1,17 @@
 {
   "_note": "Cây nghiên cứu chỉ số trong Nhà nghiên cứu. Mỗi ô là một dây: một chỉ số của một vai trò. SỐ CẤP CỦA MỖI CHỈ SỐ bằng số phần tử của mảng steps của nó (thêm hay bớt số trong steps là thêm hay bớt cấp, mỗi chỉ số tự đặt riêng); tiers riêng của chỉ số (nếu ghi) thay cho tiers chung bên dưới, số cuối được dùng tiếp cho các cấp cao hơn. Người chơi tự chọn ô nào cũng được (chọn chỉ số vô dụng cho vai trò thì là lỗ của họ). steps[stat] = % cộng thêm ở từng cấp, giảm dần nhưng có sàn; tổng % cộng dồn của một ô là phần cộng thêm của chỉ số đó cho cả vai trò (gốc × (1 + tổng% / 100)). cost = vật liệu của cấp 1 (cộng thêm tiền tăng dần), nhân 'growth.cost' mỗi cấp; time (giây công) nhân 'growth.time' mỗi cấp. tiers[n-1] = cấp Nhà nghiên cứu cần cho cấp n. Chưa nối vào công thức chiến đấu và làm việc: xem statBonus trong sim/research.ts.",
-  "tiers": [1, 1, 1, 2, 2, 2, 3, 3, 3, 3],
+  "tiers": [
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3
+  ],
   "growth": {
     "cost": 1.5,
     "time": 1.25
@@ -9,7 +20,13 @@
     "hp": {
       "name": "Máu",
       "short": "Máu",
-      "steps": [12.5, 6, 3, 2.5, 2.5],
+      "steps": [
+        12.5,
+        6,
+        3,
+        2.5,
+        2.5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -23,7 +40,13 @@
     "atk": {
       "name": "Sức mạnh",
       "short": "Sát thương",
-      "steps": [8, 4, 2.5, 2.5, 2.5],
+      "steps": [
+        8,
+        4,
+        2.5,
+        2.5,
+        2.5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -37,7 +60,13 @@
     "aspd": {
       "name": "Tốc độ đánh",
       "short": "Tốc đánh",
-      "steps": [ 5, 2.5, 2.5, 2.5, 2.5],
+      "steps": [
+        5,
+        2.5,
+        2.5,
+        2.5,
+        2.5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -51,7 +80,13 @@
     "crit": {
       "name": "Tỉ lệ chí mạng",
       "short": "Chí mạng",
-      "steps": [0.5, 1, 1, 1, 1],
+      "steps": [
+        0.5,
+        1,
+        1,
+        1,
+        1
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -65,7 +100,13 @@
     "critd": {
       "name": "Sát thương chí mạng",
       "short": "ST chí mạng",
-      "steps": [20, 10, 5, 2.5, 2.5],
+      "steps": [
+        20,
+        10,
+        5,
+        2.5,
+        2.5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -79,7 +120,13 @@
     "tspd": {
       "name": "Tốc độ làm việc với công cụ",
       "short": "Tốc độ",
-      "steps": [6, 5, 4, 3, 3],
+      "steps": [
+        6,
+        5,
+        4,
+        3,
+        3
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -93,7 +140,13 @@
     "tyield": {
       "name": "Sản lượng",
       "short": "Sản lượng",
-      "steps": [4, 4, 3, 3, 2],
+      "steps": [
+        4,
+        4,
+        3,
+        3,
+        2
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -107,7 +160,13 @@
     "tdur": {
       "name": "Độ bền",
       "short": "Độ bền",
-      "steps": [10, 10, 10, 5, 5],
+      "steps": [
+        10,
+        10,
+        10,
+        5,
+        5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -121,7 +180,13 @@
     "defm": {
       "name": "Phòng thủ cận chiến",
       "short": "Thủ cận",
-      "steps": [10, 5, 2.5, 2.5, 2.5],
+      "steps": [
+        10,
+        5,
+        2.5,
+        2.5,
+        2.5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -135,7 +200,13 @@
     "defr": {
       "name": "Phòng thủ tầm xa",
       "short": "Thủ xa",
-      "steps": [10, 5, 2.5, 2.5, 2.5],
+      "steps": [
+        10,
+        5,
+        2.5,
+        2.5,
+        2.5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -149,7 +220,13 @@
     "move": {
       "name": "Tốc độ di chuyển",
       "short": "Chạy",
-      "steps": [2.5, 2.5, 2.5, 2.5, 2.5],
+      "steps": [
+        2.5,
+        2.5,
+        2.5,
+        2.5,
+        2.5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -163,7 +240,13 @@
     "work": {
       "name": "Tốc độ làm việc",
       "short": "Làm việc",
-      "steps": [5, 2.5, 2.5, 2.5, 2.5],
+      "steps": [
+        5,
+        2.5,
+        2.5,
+        2.5,
+        2.5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -177,7 +260,13 @@
     "int": {
       "name": "Trí tuệ",
       "short": "Trí tuệ",
-      "steps": [5, 2.5, 2.5, 2.5, 2.5],
+      "steps": [
+        5,
+        2.5,
+        2.5,
+        2.5,
+        2.5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -191,7 +280,13 @@
     "sta": {
       "name": "Sức",
       "short": "Sức",
-      "steps": [8, 4, 2.5, 2.5, 2.5],
+      "steps": [
+        8,
+        4,
+        2.5,
+        2.5,
+        2.5
+      ],
       "cost": {
         "food": 10,
         "wood": 10,
@@ -201,6 +296,106 @@
       },
       "time": 110,
       "about": "Sức bền: làm việc và chiến đấu được lâu."
+    },
+    "hpregen": {
+      "name": "Hồi máu",
+      "short": "Hồi máu",
+      "steps": [
+        10,
+        5,
+        5,
+        2.5,
+        2.5
+      ],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 5
+      },
+      "time": 110,
+      "about": "Tốc độ hồi máu khi bị thương: nhanh hơn thêm bấy nhiêu phần trăm."
+    },
+    "restregen": {
+      "name": "Hồi sức",
+      "short": "Hồi sức",
+      "steps": [
+        10,
+        5,
+        5,
+        2.5,
+        2.5
+      ],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 5
+      },
+      "time": 110,
+      "about": "Tốc độ hồi sức khi ngủ: nhanh hơn thêm bấy nhiêu phần trăm."
+    },
+    "mspeed": {
+      "name": "Tốc độ hành quân",
+      "short": "Hành quân",
+      "steps": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 100,
+      "about": "Quân đi nhanh hơn khi hành quân trong chiến tranh."
+    },
+    "mload": {
+      "name": "Tải hậu cần",
+      "short": "Tải",
+      "steps": [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 100,
+      "about": "Mỗi lính hậu cần mang được nhiều hơn."
+    },
+    "mbuild": {
+      "name": "Tốc độ dựng lều",
+      "short": "Dựng lều",
+      "steps": [
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "cost": {
+        "food": 10,
+        "wood": 10,
+        "stone": 5,
+        "hide": 1,
+        "coin": 1
+      },
+      "time": 100,
+      "about": "Lính hậu cần dựng lều dã chiến nhanh hơn."
     }
   },
   "roles": {
@@ -318,9 +513,57 @@
       "name": "Búa",
       "tool": "hammer"
     },
-    "farm": {
-      "name": "Nông dân",
-      "building": "field"
+    "guard": {
+      "name": "Lính gác",
+      "building": "guardpost"
+    },
+    "towerman": {
+      "name": "Lính chòi canh",
+      "building": "tower"
+    },
+    "fence": {
+      "name": "Hàng rào",
+      "building": "fence"
+    },
+    "gate": {
+      "name": "Cổng",
+      "building": "gate"
+    },
+    "trap": {
+      "name": "Chông",
+      "building": "trap"
+    },
+    "tower": {
+      "name": "Chòi canh",
+      "building": "tower"
+    },
+    "march_foot": {
+      "name": "Bộ binh",
+      "building": "infantry"
+    },
+    "march_cavalry": {
+      "name": "Kỵ thú",
+      "building": "cavalry"
+    },
+    "march_archer": {
+      "name": "Thợ ném",
+      "building": "archery"
+    },
+    "march_army": {
+      "name": "Toàn quân",
+      "building": "supplycamp"
+    },
+    "plan_foot": {
+      "name": "Bộ binh",
+      "building": "infantry"
+    },
+    "plan_cavalry": {
+      "name": "Kỵ thú",
+      "building": "cavalry"
+    },
+    "plan_archer": {
+      "name": "Thợ ném",
+      "building": "archery"
     }
   },
   "tabs": {
@@ -332,11 +575,30 @@
   "chains": {
     "_note": "Mỗi nhóm là một chuỗi chỉ số đi từ trên xuống dưới (order). Cấp n của một chỉ số cần chỉ số ngay phía trên đạt cấp n; chỉ số đầu chuỗi cấp n cần chỉ số cuối chuỗi đạt cấp n-1. Quân sự: Máu, Thủ cận, Thủ xa, Chạy, Sát thương, Sức. Công cụ (tab Công cụ bậc 1): mỗi CÔNG CỤ (rìu, cuốc chim, cuốc, búa) một cột Tốc độ, Sản lượng (không có ở búa), Độ bền; ai cầm công cụ đó được cộng, bậc của công cụ (gỗ, đá) do cấp Nhà chế tạo. Trận pháp (tab Chiến đấu, nhánh Chỉ số trận pháp): mỗi trận (cơ bản gồm Hàng ngang và Vòng tròn) một cột, cùng chuỗi chỉ số quân, chia làm hai đoạn (layout) với ô trận pháp ở giữa và mở rộng đội ở cuối; gates: chỉ số này cấp 1 cần nghiên cứu đó; lính đứng trong đội đang dùng trận đó được cộng thêm, và mỗi bước chỉ được scale (0,5) lần phần của Quân sự; mỗi trận chỉ nghiên cứu được khi đã mở trận (needs). Vũ khí (tab Vũ khí bậc 1): mỗi VŨ KHÍ (không phải mỗi vai trò) một cột Tốc độ đánh, Tỉ lệ chí mạng, Sát thương chí mạng (hai chỉ số này tính bằng % thật: 0,5% xác suất; 400% là gấp 4 lần đòn thường); ai cầm vũ khí đó được cộng chỉ số của nó; khi cả ba chỉ số đạt cấp tối đa thì mở vũ khí bậc 2 của vũ khí đó (finalTier): sát thương gốc của vũ khí nhân rules.tierMult trong weapons.json, cho mọi người cầm vũ khí đó. Kinh tế (nghề): Chạy, Làm việc, Sức, Trí tuệ. Phát triển (thợ xây, thợ chế tạo, nhà nghiên cứu): Làm việc, Sức, Trí tuệ (Trí tuệ ở cuối vì nó cũng tăng tốc độ làm việc và giảm sức tiêu hao khi làm việc). finalTier: ô cuối cột, mở bậc 2 khi mọi chỉ số của vai trò đạt cấp tối đa; có ở Quân sự, Kinh tế, Phát triển và Vũ khí. Bậc 2 nhân mọi chỉ số của cả vai trò theo tierMult trong stats.json.",
     "military": {
-      "roles": ["foot", "cavalry", "archer", "scout"],
-      "order": ["hp", "defm", "defr", "move", "atk", "sta"],
+      "roles": [
+        "foot",
+        "cavalry",
+        "archer",
+        "scout"
+      ],
+      "order": [
+        "hp",
+        "defm",
+        "defr",
+        "move",
+        "atk",
+        "sta",
+        "hpregen",
+        "restregen"
+      ],
       "finalTier": {
         "tier": 2,
-        "roles": ["foot", "cavalry", "archer", "scout"],
+        "roles": [
+          "foot",
+          "cavalry",
+          "archer",
+          "scout"
+        ],
         "needLab": 3,
         "cost": {
           "food": 200,
@@ -348,57 +610,275 @@
       }
     },
     "weapon": {
-      "roles": ["club", "spear", "mace", "sling", "bow"],
-      "order": ["aspd", "crit", "critd"],
+      "roles": [
+        "club",
+        "spear",
+        "mace",
+        "sling",
+        "bow"
+      ],
+      "order": [
+        "aspd",
+        "crit",
+        "critd"
+      ],
       "finalTier": {
         "tier": 2,
-        "roles": ["club", "spear", "mace", "sling", "bow"],
+        "roles": [
+          "club",
+          "spear",
+          "mace",
+          "sling",
+          "bow"
+        ],
         "needLab": 3,
-        "cost": { "wood": 100, "stone": 60, "hide": 10, "coin": 15 },
+        "cost": {
+          "wood": 100,
+          "stone": 60,
+          "hide": 10,
+          "coin": 15
+        },
         "time": 900
       }
     },
     "formation": {
-      "roles": ["basic", "wedge", "horns", "scatter", "ambush"],
-      "order": ["hp", "defm", "defr", "move", "atk", "sta"],
+      "roles": [
+        "basic",
+        "wedge",
+        "horns",
+        "scatter",
+        "ambush"
+      ],
+      "order": [
+        "hp",
+        "defm",
+        "defr",
+        "move",
+        "atk",
+        "sta"
+      ],
       "scale": 0.5,
-      "gates": { "move": "form_cells_10" },
+      "gates": {
+        "move": "form_cells_10"
+      },
       "layout": [
-        { "stats": ["hp", "defm", "defr"] },
-        { "techs": ["form_cells_10", "form_squads_5"] },
-        { "stats": ["move", "atk", "sta"] },
-        { "techs": ["form_cells_15", "form_squads_6"] }
+        {
+          "stats": [
+            "hp",
+            "defm",
+            "defr"
+          ]
+        },
+        {
+          "techs": [
+            "form_cells_10",
+            "form_squads_5"
+          ]
+        },
+        {
+          "stats": [
+            "move",
+            "atk",
+            "sta"
+          ]
+        },
+        {
+          "techs": [
+            "form_cells_15",
+            "form_squads_6"
+          ]
+        }
       ]
     },
     "tool": {
-      "roles": ["axe", "pick", "hoe"],
-      "order": ["tspd", "tyield", "tdur"]
+      "roles": [
+        "axe",
+        "pick",
+        "hoe"
+      ],
+      "order": [
+        "tspd",
+        "tyield",
+        "tdur"
+      ]
     },
     "hammer": {
-      "roles": ["hammer"],
-      "order": ["tspd", "tdur"]
+      "roles": [
+        "hammer"
+      ],
+      "order": [
+        "tspd",
+        "tdur"
+      ]
     },
     "economy": {
-      "roles": ["wood", "stone", "food", "hunt", "farm", "tame"],
-      "order": ["move", "work", "sta", "int"],
+      "roles": [
+        "wood",
+        "stone",
+        "food",
+        "hunt",
+        "tame"
+      ],
+      "order": [
+        "move",
+        "work",
+        "sta",
+        "int",
+        "restregen"
+      ],
       "finalTier": {
         "tier": 2,
-        "roles": ["wood", "stone", "food", "hunt", "farm", "tame"],
+        "roles": [
+          "wood",
+          "stone",
+          "food",
+          "hunt",
+          "tame"
+        ],
         "needLab": 3,
-        "cost": { "food": 150, "wood": 100, "stone": 40, "coin": 15 },
+        "cost": {
+          "food": 150,
+          "wood": 100,
+          "stone": 40,
+          "coin": 15
+        },
         "time": 1000
       }
     },
     "development": {
-      "roles": ["build", "craft", "research"],
-      "order": ["work", "sta", "int"],
+      "roles": [
+        "build",
+        "craft",
+        "research"
+      ],
+      "order": [
+        "work",
+        "sta",
+        "int"
+      ],
       "finalTier": {
         "tier": 2,
-        "roles": ["build", "craft", "research"],
+        "roles": [
+          "build",
+          "craft",
+          "research"
+        ],
         "needLab": 3,
-        "cost": { "wood": 100, "stone": 60, "hide": 10, "coin": 20 },
+        "cost": {
+          "wood": 100,
+          "stone": 60,
+          "hide": 10,
+          "coin": 20
+        },
         "time": 1000
       }
+    },
+    "defense": {
+      "roles": [
+        "guard",
+        "towerman"
+      ],
+      "order": [
+        "hp",
+        "atk"
+      ]
+    },
+    "works1": {
+      "roles": [
+        "fence",
+        "gate"
+      ],
+      "order": [
+        "hp"
+      ]
+    },
+    "works2": {
+      "roles": [
+        "trap",
+        "tower"
+      ],
+      "order": [
+        "hp",
+        "atk"
+      ]
+    },
+    "march": {
+      "roles": [
+        "march_foot",
+        "march_cavalry",
+        "march_archer"
+      ],
+      "order": [
+        "hp",
+        "defm",
+        "defr",
+        "move",
+        "atk",
+        "sta"
+      ],
+      "scale": 0.5
+    },
+    "marchlog": {
+      "roles": [
+        "march_army"
+      ],
+      "order": [
+        "mspeed",
+        "mload",
+        "mbuild"
+      ]
+    },
+    "tactic": {
+      "roles": [
+        "plan_foot",
+        "plan_cavalry",
+        "plan_archer"
+      ],
+      "order": [
+        "hp",
+        "defm",
+        "defr",
+        "move",
+        "atk",
+        "sta"
+      ],
+      "scale": 0.5
     }
+  },
+  "plan": {
+    "_note": "Cây Kế hoạch chiến đấu: ba cột Bộ binh, Kỵ, Cung, chỉ số riêng (chain tactic) chỉ cộng khi đang chiến tranh và đang giao chiến. Nhóm chỉ số đầu đủ cấp 3 mở plan_report, cấp 5 mở plan_supply; nhóm sau cấp 3 mở plan_weather, cấp 5 mở plan_rest (xem research.json). Chuỗi march (tab Hành quân) chỉ cộng khi chiến tranh và đang hành quân hoặc nghỉ.",
+    "roles": [
+      "plan_foot",
+      "plan_cavalry",
+      "plan_archer"
+    ],
+    "layout": [
+      {
+        "stats": [
+          "hp",
+          "defm",
+          "defr"
+        ]
+      },
+      {
+        "techs": [
+          "plan_report",
+          "plan_supply"
+        ]
+      },
+      {
+        "stats": [
+          "move",
+          "atk",
+          "sta"
+        ]
+      },
+      {
+        "techs": [
+          "plan_weather",
+          "plan_rest"
+        ]
+      }
+    ]
   }
 }

@@ -1,0 +1,48 @@
+{
+  "advanced": false,
+  "advancedBuildings": ["tower", "supplycamp", "scouttent"],
+  "_note": "advanced: the war-logistics layer of the medieval era (supply soldiers and their camp, field tents and rest, harassment raids on the march, the watchtower, the research of the march and of the war plan). Off: none of it exists in the game (nor in the screens); set true when the era opens it. The army then eats from the village store. The army on the march. The more squads and soldiers, the harder it is to move them: speed drops (slow, from slowMin for one soldier of one squad up to slowMax), and they eat and tire more. Research can cut the slow (research: tech id -> share cut off), but never below slowFloor, so an army can never march faster than (1 - slowFloor) of normal.",
+  "march": {
+    "slowMin": 0.5,
+    "slowMax": 0.85,
+    "perSquad": 0.04,
+    "perSoldier": 0.004,
+    "slowFloor": 0.3, "paceScale": 1,
+    "maxCut": 0.6,
+    "foodBase": 1.5,
+    "energyBase": 1.5
+  },
+  "research": {},
+  "supply": {
+    "load": 60,
+    "trail": 8,
+    "defaultDays": 3,
+    "maxDays": 10,
+    "hungerSmooth": 10
+  },
+  "tent": {
+    "woodBase": 12,
+    "hideBase": 8,
+    "perLevel": 1,
+    "buildSeconds": 150, "buildReach": 4,
+    "refund": 0.5,
+    "weight": 1.5,
+    "near": 14
+  },
+  "tired": {
+    "below": 30,
+    "maxPenalty": 0.35
+  },
+  "harass": {
+    "first": 90,
+    "every": 150,
+    "base": 3,
+    "perWarriors": 10,
+    "max": 8,
+    "range": 120,
+    "minFromVillage": 25,
+    "spawnDist": 32,
+    "life": 240,
+    "maxAlive": 12
+  }
+}

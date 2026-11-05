@@ -148,12 +148,24 @@ details {
     small { color: var(--muted); font-size: 11px; line-height: 1.2; }
     .state { color: var(--accent); font-weight: 700; min-height: 1.2em; }
     .info { position: absolute; top: 4px; right: 6px; font-size: 14px; color: var(--muted); }
-    &:disabled { opacity: .55; }
-    &:not(:disabled):hover { border-color: var(--accent); }
+    .pic { position: relative; }
+    .clock { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; background: rgba(14, 10, 6, .45); text-shadow: 0 0 4px #000; }
+    small.short { color: var(--bad); }
+    &.locked .pic canvas { filter: grayscale(.6); }
+    &:hover { border-color: var(--accent); }
   }
+  .tabs button { position: relative; }
+}
+// the number of houses that can be raised now, on a tab of the tray and on the Xây button
+.nbadge {
+  display: inline-block; min-width: 16px; margin-left: 5px; padding: 0 4px; border-radius: 8px; background: #d4432f; color: #fff;
+  font-size: 11px; font-weight: 700; line-height: 16px; font-style: normal; text-align: center; vertical-align: middle;
+  &[hidden] { display: none; }
 }
 body.war .tray { display: none !important; }
 @media (max-height: 480px) {
   .tray { left: calc(4px + var(--sal)); right: calc(4px + var(--sar)); bottom: calc(4px + var(--sab)); padding: 4px; gap: 4px; }
   .tray .card2 { width: 92px; .pic { height: 38px; } .pic canvas { max-height: 34px; } small { font-size: 10px; } }
 }
+
+#btnSkip.dim { opacity: .6; }

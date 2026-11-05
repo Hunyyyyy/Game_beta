@@ -51,11 +51,11 @@ const progress = new WeakMap<Villager, { x: number; y: number; t: number }>();
  */
 function unstickWalker(sim: Sim, v: Villager, dt: number): void {
   if (v.inside !== null) return;
-  const w = sim.world;
-  if ((v.phase === 'idle' || v.phase === 'wait') && !v.slide && !v.path.length && w.isBlocked(Math.floor(v.x), Math.floor(v.y))) { const spot = freeSpotNear(sim, v.x, v.y); if (spot) { v.x = spot[0]; v.y = spot[1]; v.slide = null; } }
+  const w = sim.world, ours = passOf(v);
+  if ((v.phase === 'idle' || v.phase === 'wait') && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours)) { const spot = freeSpotNear(sim, v.x, v.y); if (spot) { v.x = spot[0]; v.y = spot[1]; v.slide = null; } }
   if (!v.path.length) { progress.delete(v); return; }
   const goal = v.path[v.path.length - 1];
-  const blocked = v.path.length > 1 && w.isBlocked(v.path[0][0], v.path[0][1]); // the last step may be a work spot that overlaps what is worked on
+  const blocked = v.path.length > 1 && w.isBlockedFor(v.path[0][0], v.path[0][1], ours); // the last step may be a work spot that overlaps what is worked on
   // a window of 2.5 seconds: a walker with a path who has got less than a tile and a quarter from where the window began is pacing, not walking
   const p = progress.get(v);
   if (!p) progress.set(v, { x: v.x, y: v.y, t: 0 });
@@ -64,7 +64,7 @@ function unstickWalker(sim: Sim, v: Villager, dt: number): void {
   if (!blocked && !stuck) return;
   progress.delete(v);
   // the way is shut or the walker is jammed: find the way again once, and if there is none stop and let the brain decide what next
-  const [gx, gy] = goal, standing = w.isBlocked(Math.floor(v.x), Math.floor(v.y)) ? freeSpotNear(sim, v.x, v.y) : null;
+  const [gx, gy] = goal, standing = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) ? freeSpotNear(sim, v.x, v.y) : null;
   if (standing) { v.x = standing[0]; v.y = standing[1]; }
   let again: Step[] = [];
   if (v.team !== 'player') again = sim.pathTo(v, gx, gy, 6000);
@@ -76,7 +76,7 @@ function unstickWalker(sim: Sim, v: Villager, dt: number): void {
 /** Follow the path and the final slide step; shared by villagers and tribal people. */
 export function moveUnit(sim: Sim, v: Villager, dt: number): void {
   unstickWalker(sim, v, dt);
-  const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === 'flee' ? 1.3 : 1) * (v.team === 'player' ? sim.mountSpeed(v) : 1); // a rider on his beast walks faster
+  const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === 'flee' ? 1.3 : 1) * sim.mountSpeed(v) * (sim.warIds.has(v.id) ? sim.march.speed * (v.hurry ? 2.5 : v.job === 'supply' ? 1.25 : 1) : 1); // the supply soldiers walk a little faster than the army, and much faster when left behind, so that they keep up // a rider on his beast walks faster; an army on the march is slowed (warmarch.ts)
   if (v.swing) return; // a blow in progress plants the feet
   let left = walk * dt;
   while (left > 0 && v.path.length) {
@@ -96,13 +96,16 @@ export function moveUnit(sim: Sim, v: Villager, dt: number): void {
 
 /** Pick the animation and the item in hand from what the unit is doing. */
 export function animate(sim: Sim, v: Villager, dt: number): void {
+  const lit = !!v.torch && sim.resting && v.phase !== 'sleep' && v.phase !== 'goHome';
+  if (lit !== v.lit) { v.lit = lit; sim.fogDirty = true; }
+  if (!sim.inView(v.x, v.y)) return; // out of sight nobody needs a pose: it is worked out when the camera comes
   let anim = 'idle', hold: Hold | null = null;
   const walking = v.path.length > 0 || !!v.slide;
   // Fighting has its own poses, apart from the work animations. Which ones depend on the weapon's style (weapons.json): see poseOf.
   const armed = (): Hold | null => { if (!v.weapon) return null; const w = weaponOf(v); return { kind: v.weapon, tier: w.tier ?? 1 }; };
   const ready = v.phase === 'fight' || v.fight.mode !== 'none';
   // soldiers and hunters keep their weapon in hand between tasks, so they can be told apart from civilians
-  const carrying = !!v.weapon && (v.job === 'fight' || v.job === 'hunt');
+  const carrying = !!v.weapon && (v.job === 'fight' || v.job === 'hunt' || (!!v.ai && v.ai.role !== 'civ')); // the soldiers of the other villages always have theirs in hand
   if (v.down > 0) anim = 'down';
   else if (v.swing) { anim = poseOf(v.weapon, 'attack'); hold = armed(); }
   else if (v.flinch > 0) anim = 'hit';
@@ -119,8 +122,6 @@ export function animate(sim: Sim, v: Villager, dt: number): void {
     if (t > 0) { anim = 'build'; hold = { kind: 'hammer', tier: t }; } else anim = 'gather';
   }
   else if (v.phase === 'skin') anim = 'gather';
-  const lit = !!v.torch && sim.resting && v.phase !== 'sleep' && v.phase !== 'goHome';
-  if (lit !== v.lit) { v.lit = lit; sim.fogDirty = true; }
   if (anim !== v.anim) { v.anim = anim; v.animClock = 0; } else v.animClock += dt;
   v.hold = hold;
 }
@@ -144,11 +145,11 @@ export function ringTiles(sim: Sim, v: Villager, x: number, y: number, w: number
  */
 export function standTile(sim: Sim, v: Villager): [number, number] {
   const fx = Math.floor(v.x), fy = Math.floor(v.y);
-  if (!sim.world.isBlocked(fx, fy)) return [fx, fy];
+  if (!sim.world.isBlockedFor(fx, fy, passOf(v))) return [fx, fy];
   let best: [number, number] = [fx, fy], bd = Infinity;
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
     const x = fx + dx, y = fy + dy;
-    if (sim.world.isBlocked(x, y)) continue;
+    if (sim.world.isBlockedFor(x, y, passOf(v))) continue;
     const d = Math.hypot(x + 0.5 - v.x, y + 0.5 - v.y);
     if (d < bd) { bd = d; best = [x, y]; }
   }
@@ -158,7 +159,7 @@ export function standTile(sim: Sim, v: Villager): [number, number] {
 /** Path from where the villager stands to (gx, gy); may end at the closest tile if unreachable. */
 export function pathTo(sim: Sim, v: Villager, gx: number, gy: number, maxNodes = 14000): Step[] {
   const [sx, sy] = standTile(sim, v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
-  const p = gx === sx && gy === sy ? [] : findPath(sim.world, sx, sy, gx, gy, maxNodes);
+  const p = gx === sx && gy === sy ? [] : findPath(sim.world, sx, sy, gx, gy, maxNodes, passOf(v));
   return off ? [[sx, sy] as Step, ...p] : p;
 }
 
@@ -172,3 +173,6 @@ export function routeTo(sim: Sim, v: Villager, tiles: Array<[number, number]>, t
   }
   return -1;
 }
+
+/** Whose shut gates a walker passes: ours (the player's), the village's own ('foe'), or none (the beasts). */
+const passOf = (v: Villager): boolean | 'foe' => (v.team === 'player' ? true : v.team === 'wild' ? false : 'foe');

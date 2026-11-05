@@ -1,0 +1,59 @@
+{
+  "_note": "Độ khó và sức mạnh của các làng. power: sức mạnh một làng = economy × (kinh tế) + military × (quân sự). Kinh tế = tổng hệ số tốc độ làm việc của mọi người đang có việc sản xuất (1 là người gốc chưa nghiên cứu). Quân sự = tổng hệ số chỉ số chiến đấu (máu × sức mạnh × phòng thủ, so với người gốc) của mọi lính và trinh sát. Tính theo CHỈ SỐ (kể cả phần trăm nghiên cứu), không tính theo vũ khí. Làng NPC: tổng sức mạnh của mọi làng NPC = trần của người chơi ở cấp lửa hiện tại / playerEdge (người chơi phát triển tối đa chỉ hơn tổng NPC 30%). Trần người chơi = dân tối đa của cấp lửa (kể cả giường nhà dân) × chỉ số tối đa nghiên cứu được ở cấp Nhà nghiên cứu = cấp lửa; militaryShare là phần dân làm lính. Mỗi làng nhận phần 'share' và 'military' (tỉ lệ quân sự) trong tribes.json, rồi nhân hệ số k của riêng nó (random-walk mỗi ngày). Code tự tính phần trăm chỉ số (máu, sức mạnh, phòng thủ, làm việc) cho người của làng để đạt mục tiêu, không ghi tay. startFactor: khoảng k lúc đầu. daily: mỗi ngày k nhân thêm (1 + random trong min..max), kẹp trong band. campLevel: cấp trại lửa random của mỗi làng; luôn có ít nhất một làng ở cấp không quá guaranteeWeak để người chơi có chỗ đánh. yieldPerEco: tài nguyên một điểm kinh tế làm ra mỗi ngày (cộng vào kho của làng). stockCap: sức chứa kho của làng theo cấp trại. bonusClamp: giới hạn phần trăm chỉ số cộng thêm. Số người của một làng = số dân trại lửa của nó chứa ở cấp trại (POP_BY_FIRE), chia lính và dân theo tỉ lệ trong tribes.json. raid: đợt tấn công của bộ tộc có trường power trong events.json (1 = mạnh bằng quân sự hiện tại của người chơi, 1.1 = hơn 10%, 0.8 = yếu hơn 20%). Kết quả bị kẹp giữa floor và ceiling nhân quân sự tối đa của người chơi ở cấp lửa đó: người chơi không có quân vẫn gặp một đợt tối thiểu, và người chơi quá mạnh không làm đợt tấn công vô nghĩa. capture: khi một làng bị thu nạp, bị tiêu diệt (do người của ta đánh) hoặc chịu cống nạp, ta nhận spoilShare (0.5) mọi tài nguyên trong kho của làng đó; thu nạp hoặc tiêu diệt còn cộng vào dân tối đa của ta đúng bằng số dân trại lửa của làng đó chứa ở cấp của nó (không giới hạn số lần chiếm); cống nạp thì làng vẫn sống nên không cộng dân. campSlots: mỗi làng bị thu nạp hoặc tiêu diệt còn thêm ngần này chỗ cho MỖI trại lính (bộ binh, cung, kỵ), vì số lính bị giới hạn bởi chỗ của trại chứ không phải bởi số dân.",
+  "power": {
+    "economy": 1,
+    "military": 1
+  },
+  "playerEdge": 1.3,
+  "militaryShare": 0.6,
+  "startFactor": [
+    0.7,
+    1.0
+  ],
+  "daily": {
+    "min": 0.0,
+    "max": 0.02,
+    "band": [
+      0.7,
+      1.3
+    ]
+  },
+  "campLevel": {
+    "min": 1,
+    "max": 4,
+    "guaranteeWeak": 2
+  },
+  "yieldPerEco": {
+    "food": 6,
+    "wood": 3,
+    "stone": 2
+  },
+  "stockCap": [
+    100,
+    250,
+    500,
+    1000
+  ],
+  "bonusClamp": [
+    -0.6,
+    5
+  ],
+  "raid": {
+    "floor": 0.25,
+    "ceiling": 1.0
+  },
+  "capture": {
+    "spoilShare": 0.5,
+    "campSlots": 5
+  },
+  "boss": {
+    "_note": "Làng đầu mục (boss): mỗi ván có count[0]..count[1] làng, luôn hơn người chơi một bậc (cấp trại +1, tối đa maxCamp; có chòi canh và đồ đồng dù người chơi còn ở đồ đá). power: sức mạnh quân của boss so với quân tối đa người chơi có thể có ở cấp trại đó (chỉ số mỗi lính chỉ tăng theo căn bậc ba của số này, nên cần số lớn: 16 được chỉnh bằng chạy thử trận, 60 lính đủ giáp và nghiên cứu hết mức của cấp trại 4 thường thua, cần chiếm khoảng 2 làng thường (mỗi làng thêm 5 chỗ cho mỗi trại lính, capture.campSlots) mới thắng); economy: kinh tế so với kinh tế tối đa; popMult: số dân so với cấp trại; bronzeShare: phần lính cầm vũ khí đồng và mặc giáp đồng; wallHp: độ bền rào, cổng, chòi và nhà so với làng thường.",
+    "count": [1, 2],
+    "power": 16,
+    "economy": 0.6,
+    "popMult": 1.6,
+    "bronzeShare": 0.6,
+    "wallHp": 1.5,
+    "weapons": ["bronze_sword", "bronze_axe", "bronze_spear"]
+  }
+}

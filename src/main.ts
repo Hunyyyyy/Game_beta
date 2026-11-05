@@ -2,12 +2,13 @@ import { Camera, Renderer } from './render/renderer';
 import { Sprites } from './render/sprites';
 import { BUILDINGS, BuildingKind } from './sim/buildings';
 import { DAY_PART_NAME, dayInSeason, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
-import { TILE } from './sim/constants';
+import { TICK, TILE } from './sim/constants';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { RESEARCH } from './sim/research';
 import { Journal } from './ui/journal';
 import { dlg, GameDialog } from './ui/gamedialog';
+import { StatsOverview } from './ui/statsoverview';
 import { resIcon } from './ui/resicons';
 import { Controller } from './ui/controller';
 import { $, costText } from './ui/dom';
@@ -40,6 +41,7 @@ const sprites = new Sprites();
 const renderer = new Renderer(view, sim, cam, sprites);
 const ctl = new Controller(view, sim, cam, renderer);
 ctl.centerOn(sim.world.start.x * TILE + TILE / 2, sim.world.start.y * TILE - 10);
+sim.controlled = ctl.selected; // the units the player holds: the sim lets their orders win over its own fighting and fleeing
 
 // ---------------------------------------------------------------- short messages and the event log
 const toastEl = $('toast');
@@ -107,6 +109,32 @@ foldBtn.addEventListener('click', () => { const on = !$('sheet').classList.conta
 $('btnArmy').addEventListener('click', () => { if (sim.alarmUntil > sim.time) sim.standDown(); else { const e = sim.callArmy(); if (e) toast(e); } syncButtons(); });
 $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
 $('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
+$('btnPlaceRot').addEventListener('click', () => ctl.rotateGroup());
+// skip the night: the game is run on at once, as fast as the machine allows (a slice of every frame), until the morning; only while the village is
+// asleep and safe, and it stops the moment there is any trouble
+const skipBtn = $<HTMLButtonElement>('btnSkip');
+let skipping = false;
+function stopSkip(why?: string) { if (!skipping) return; skipping = false; syncButtons(); if (why) toast(why); }
+skipBtn.addEventListener('click', () => {
+  if (skipping) { stopSkip('Đã dừng tua'); return; }
+  const why = sim.skipNightBlock();
+  if (why) { toast(why); return; }
+  skipping = true; syncButtons();
+});
+/** Runs the skip for this frame: ticks of the game for up to ~30 ms, looking at the safety every game second. */
+function runSkip() {
+  const t0 = performance.now();
+  while (skipping && performance.now() - t0 < 30) {
+    for (let i = 0; i < 20; i++) sim.tick(TICK);
+    const why = sim.skipNightBlock();
+    if (why) stopSkip(why.startsWith('Chỉ tua') || sim.tod < 0.03 ? 'Trời đã sáng' : `Dừng tua: ${why}`); // at the break of day people get up while the clock still says night
+  }
+}
+function syncSkip() {
+  skipBtn.hidden = !sim.restTime && !skipping;
+  skipBtn.textContent = skipping ? '⏹ Dừng tua' : '⏭ Qua đêm';
+  skipBtn.classList.toggle('dim', !skipping && !!sim.skipNightBlock());
+}
 function setSpeed(s: number) { sim.speed = s; if (s > 0) { settings.speed = s; saveSettings(settings); } syncButtons(); }
 function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); tray.close(); } }
 function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'workshop' && x.done); if (b) { ctl.selectBuilding(b.id, true); ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE); } else toast('Chưa có Xưởng'); }
@@ -134,6 +162,9 @@ const REGION_NAME = { plains: 'Đồng bằng', sparse: 'Rừng thưa', dense: '
 // the coloured squares of the top bar give way to drawn pictures
 for (const [id, key] of [['rFood', 'food'], ['rWood', 'wood'], ['rStone', 'stone'], ['rHide', 'hide'], ['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk'], ['rTorch', 'torch'], ['rCoin', 'coin'], ['rPop', 'pop']]) $(id).querySelector('i')?.replaceWith(resIcon(key));
 // the quest and notice buttons stand at the left edge; each opens its window over the map, and a red mark says something new is waiting
+const statsOverview = new StatsOverview(ctx), statsDlg = new GameDialog($('spanel'), {});
+const statsCard = dlg.card({ wide: true, label: 'Chỉ số đã nghiên cứu' }, dlg.head({ pic: '📊', title: 'Chỉ số đã nghiên cứu', sub: 'Chung cho mỗi loại dân, nghề và lính', onClose: () => statsDlg.hide() }), statsOverview.root);
+$('btnStats').addEventListener('click', () => { if (statsDlg.isOpen) { statsDlg.hide(); return; } statsOverview.update(); statsDlg.show(statsCard); });
 const journal = new Journal(ctx, { quests: $('qpanel'), notices: $('npanel') }, { quests: $('btnQuest'), notices: $('btnNotice') });
 let fps = 60, lastHud = 0, logKey = '', pending: string | null = null, lastTopH = -1;
 const topBar = document.querySelector('.top') as HTMLElement;
@@ -150,10 +181,10 @@ function updateHud(now: number) {
   lastHud = now;
   const cap = sim.capacity();
   const need = sim.foodNeed(), pen = sim.foodPenalty;
-  setRes('rFood', sim.stock.food, cap); // the pot of the campfire is filled first: only what is over is in the store
+  setRes('rFood', sim.stock.food, sim.capacity('food')); // the pot of the campfire is filled first: only what is over is in the store
   $('rFood').classList.toggle('warn', pen > 0);
   $('rFood').title = `Thức ăn: kho ${Math.floor(sim.stock.food)} + phần ăn của lửa trại ${Math.floor(sim.foodPot)}/${need}. Cuối mỗi ngày làng ăn ${need}; thiếu thì cả làng yếu đi.${pen > 0 ? ` Đang yếu ${Math.round(pen * 1000) / 10}% vì bữa trước thiếu ăn.` : ''}`;
-  setRes('rWood', sim.stock.wood, cap); setRes('rStone', sim.stock.stone, cap); setRes('rHide', sim.stock.hide, cap); setRes('rCoin', sim.stock.coin, cap); $('rCoin').title = `${RES_NAME.coin}: tiền của làng, nhặt khi hái lượm, đổi hàng ở Kho, nhận từ bộ tộc. Dùng để trả cho nghiên cứu.`;
+  setRes('rWood', sim.stock.wood, sim.capacity('wood')); setRes('rStone', sim.stock.stone, sim.capacity('stone')); setRes('rHide', sim.stock.hide, sim.capacity('hide')); setRes('rCoin', sim.stock.coin, sim.capacity('coin')); $('rCoin').title = `${RES_NAME.coin}: tiền của làng, nhặt khi hái lượm, đổi hàng ở Kho, nhận từ bộ tộc. Dùng để trả cho nghiên cứu.`;
   { const el = $('rTorch'), n = sim.torchCount(); el.hidden = n <= 0; if (n > 0) el.querySelector('b')!.textContent = String(n); }
   for (const [id, res] of [['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk']] as const) {
     const el = $(id), n = Math.floor(sim.stock[res]);
@@ -199,11 +230,12 @@ function updateHud(now: number) {
   const bar = $('placeBar'); bar.hidden = !placing;
   if (placing && ctl.placing) {
     const why = ctl.placeProblem(), moving = ctl.moving !== null ? sim.getBuilding(ctl.moving) : undefined;
-    $('placeName').textContent = `${moving ? 'Dời' : 'Đặt'} ${BUILDINGS[ctl.placing].name}`; $('placeInfo').textContent = why ?? (moving ? `Phí dời: ${costText(sim.moveFee(moving), RES_NAME)}` : 'Chỗ này đặt được');
+    $('btnPlaceRot').hidden = !ctl.groupMoving;
+    $('placeName').textContent = ctl.groupMoving ? `Dời ${ctl.groupIds.length} mảnh hàng rào` : `${moving ? 'Dời' : 'Đặt'} ${BUILDINGS[ctl.placing].name}`; $('placeInfo').textContent = why ?? (ctl.groupMoving ? 'Chỗ này đặt được · bấm Xoay để quay nhóm' : moving ? `Phí dời: ${costText(sim.moveFee(moving), RES_NAME)}` : 'Chỗ này đặt được');
     $<HTMLButtonElement>('btnPlaceOk').disabled = why !== null;
-    $('btnPlaceOk').textContent = moving ? '✓ Dời tới đây' : '✓ Đặt ở đây';
+    $('btnPlaceOk').textContent = moving || ctl.groupMoving ? '✓ Dời tới đây' : '✓ Đặt ở đây';
   }
-  menu.update(); tray.update();
+  menu.update(); tray.update(); tray.badge($('btnBuild')); if (statsDlg.isOpen) statsOverview.update();
   syncButtons();
 }
 ctl.onChange = () => { lastHud = 0; syncButtons(); };
@@ -215,8 +247,10 @@ function frame(t: number) {
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
   ctl.update(dt);
   if (started) session.tick();
-  sim.advance(dt);
-  renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect);
+  { const m = 10, z = cam.zoom; sim.view = { x0: cam.x / TILE - m, y0: cam.y / TILE - m, x1: (cam.x + renderer.w / z) / TILE + m, y1: (cam.y + renderer.h / z) / TILE + m }; } // seen: the screen and 10 tiles round it
+  if (skipping) runSkip(); else sim.advance(dt);
+  syncSkip();
+  renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);
   buildingBar.place(); map.draw(); updateHud(t);
   requestAnimationFrame(frame);
 }

@@ -1,7 +1,7 @@
 import type { BuildingKind } from '../sim/buildings';
 import { workDays } from '../sim/constants';
 import { RES_NAME } from '../sim/resources';
-import { CHAINS, TIER_TECH_OF, statLevels, lineLevel, statBonus, STAT_DEF, LineStat, STAT_IDS, statTechId, TECH_BY_ID, Tech, TREE_ROLES } from '../sim/research';
+import { CHAINS, PLAN_TREE, TIER_TECH_OF, statLevels, lineLevel, statBonus, STAT_DEF, LineStat, STAT_IDS, statTechId, TECH_BY_ID, Tech, TREE_ROLES } from '../sim/research';
 import { WEAPONS } from '../sim/combat';
 import { h, iconCanvas } from './dom';
 import { dlg, GameDialog } from './gamedialog';
@@ -21,6 +21,8 @@ export class TechTree {
   private readonly body = h('div', { class: 'tbody' });
   private readonly nodes: Node[] = [];
   private picked: Node | null = null;
+  /** The columns of the medieval layer, shown only while `sim.advanced`. */
+  private readonly eraCols: HTMLElement[] = [];
   private key = '';
 
   constructor(private readonly c: Ctx) {
@@ -41,10 +43,9 @@ export class TechTree {
   private techPic(t: Tech): HTMLElement {
     const { sprites } = this.c, r = t.unlocks.recipes?.[0];
     if (r && sprites.icons[r]) return h('span', { class: 'tpic' }, iconCanvas(sprites.icons[r]));
-    const lv = t.unlocks.levels; if (lv) return this.pic('storage', Math.max(...Object.values(lv) as number[]));
-    if (t.unlocks.auto) return this.pic('toolstore', 2);
     if (t.unlocks.mounts) return this.pic('stable', 1);
     if (t.id.startsWith('form_') || t.id === 'signal') return this.pic('drill', 1);
+    if (t.id.startsWith('plan_')) return this.pic('wartent', 1);
     if (t.id.startsWith('scout')) return this.pic('scouttent', 1);
     return this.pic('lab', 1);
   }
@@ -103,14 +104,16 @@ export class TechTree {
       // the last square of a column: the next tier of soldiers, open once every stat above is at the top
       const tier = CHAINS[chain].finalTier ? TIER_TECH_OF[role] : undefined;
       const last = tier ? [h('span', { class: 'tlink' }), this.make(def.weapon || !['foot', 'cavalry', 'archer', 'scout', 'tame'].includes(role) ? this.headPic(def) : h('span', { class: 'tpic stat' }, resIcon(`role_${role}`)), `Bậc ${tier.unlocks.tier!.tier}`, 1, () => (this.c.sim.researched.has(tier.id) ? null : tier), () => (this.c.sim.researched.has(tier.id) ? 1 : 0)).el] : [];
-      return h('div', { class: 'tcol' }, h('div', { class: 'thead' }, this.headPic(def), h('b', { text: def.name })), ...nodes.flatMap((el, i) => (i ? [h('span', { class: 'tlink' }), el] : [el])), ...last);
+      const col = h('div', { class: 'tcol' }, h('div', { class: 'thead' }, this.headPic(def), h('b', { text: def.name })), ...nodes.flatMap((el, i) => (i ? [h('span', { class: 'tlink' }), el] : [el])), ...last);
+      if (role === 'scout') this.eraCols.push(col); // the scouts are of the medieval layer: the column shows only while it is open
+      return col;
     });
     this.body.append(h('section', { class: 'tsec' }, h('h3', { text: title }), h('div', { class: 'tcols' }, ...cols)));
   }
 
   /** The tree of the formations: a column for each (its unlock on top, then the first stats), the research shared by all of them joined below (cells), the rest of the stats, and the research shared again (squads). The parts and their order come from the chain's layout. */
   addFormations(title: string, chain: string): void {
-    const def = CHAINS[chain], layout = def.layout ?? [{ stats: def.order }], { sim } = this.c;
+    const def = chain === 'plan' ? { roles: PLAN_TREE.roles, order: [] as LineStat[], layout: PLAN_TREE.layout } : CHAINS[chain], layout = def.layout ?? [{ stats: def.order }], { sim } = this.c; // 'plan': the Kế hoạch chiến đấu tree, on the stats of the military columns
     const link = () => h('span', { class: 'tlink' });
     const done = (t: Tech) => sim.researched.has(t.id);
     const techNode = (t: Tech) => this.make(this.techPic(t), t.name, 1, () => (done(t) ? null : t), () => (done(t) ? 1 : 0)).el;
@@ -163,7 +166,8 @@ export class TechTree {
   /** Refresh the squares (their bars and locks) every frame the panel shows; the detail only when something changed. */
   update(force = false): void {
     const { sim } = this.c, act = sim.building('lab')?.active;
-    const key = `${sim.researchQueue.join()}|${act?.id}|${Math.floor((act?.progress ?? 0) * 20)}|${sim.researched.size}|${sim.building('lab')?.level}|${this.picked ? 1 : 0}|${Math.floor(Object.values(sim.stock).reduce((a, b) => a + b, 0))}`;
+    for (const col of this.eraCols) col.hidden = !sim.advanced;
+    const key = `${sim.advanced}|${sim.researchQueue.join()}|${act?.id}|${Math.floor((act?.progress ?? 0) * 20)}|${sim.researched.size}|${sim.building('lab')?.level}|${this.picked ? 1 : 0}|${Math.floor(Object.values(sim.stock).reduce((a, b) => a + b, 0))}`;
     if (!force && key === this.key) return;
     this.key = key;
     for (const n of this.nodes) {

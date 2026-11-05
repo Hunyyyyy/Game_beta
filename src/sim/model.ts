@@ -32,7 +32,15 @@ export interface FightState {
   repath: number; // seconds until the path to the target is recomputed
   /** Following an arrow in a war: the way to the destination is a straight line, never found round things. */
   strict?: boolean;
+  /** A walk the player ordered (the army falling back): nothing the unit meets stops it until it arrives. */
+  obey?: boolean;
   scan: number;   // seconds until the next look for enemies
+  /** The chase now (src/data/chase.json): which target, seconds since a blow was last thrown at it, seconds it has been out of sight. */
+  chaseKey?: string; chaseT?: number; unseenT?: number;
+  /** Seconds he has found no way to his target (a wall of the enemy village in between): a soldier at range breaks it down after a while (siege.breachFor). */
+  blockedT?: number;
+  /** A target given up: not picked again until the time is up. */
+  skip?: { kind: 'unit' | 'animal'; id: number; until: number };
 }
 /** A missile in flight: arrows, sling stones. */
 export interface Projectile {
@@ -46,12 +54,22 @@ export interface FoeAI {
   wander: number;          // seconds until the next stroll
   goal: { x: number; y: number } | null;
   raid: number;            // id of the raid party (0 = none)
+  /** What he is busy with besides strolling (src/sim/tribework.ts): gathering at a node, hunting, patrolling or scouting. */
+  life?: { kind: 'gather' | 'hunt' | 'patrol' | 'scout'; idx?: number; job?: string; state?: 'go' | 'work'; units?: number; id?: number; stops?: Array<[number, number]>; i?: number; t?: number };
   /** Seconds a raider has been unable to get at what he is after (a fence in the way). */
   stuck?: number;
   /** A target he could not get to (he only paced before it): left alone until this time. */
   skip?: { id: number; until: number };
   /** The fence or gate he has decided to break down (building id), 0 for none. */
   siege?: number;
+  /** A band sent to harass an army on the march (warharass.ts): the game time it was sent. */
+  harass?: number;
+  /** Where a guard stands his watch (tribelod.ts) and which way he looks (away from the fire). */
+  post?: { x: number; y: number; face: Facing };
+  /** One of the army of the village: it lives indoors like ours and comes out to the posts of the defence only in a war or when the village is attacked (tribelod.deployArmy). A guard (no `army`) keeps his watch always. */
+  army?: boolean;
+  /** The tower (its corner in the village) whose archer he is: he stands up in it and looses arrows within its reach (tribes.foeBrain). */
+  tower?: { x: number; y: number };
 }
 /** Điểm đứng cuối cùng và hướng nhìn (luôn ngang) khi làm việc. */
 export interface Slide { x: number; y: number; face: 'left' | 'right' }
@@ -89,6 +107,12 @@ export interface Villager {
   timer: number;
   order: string | null; // đơn chế tác đang làm
   carry: { res: Res; amount: number } | null;
+  /** A supply soldier on a war: the goods of the army he carries (food, and later the wood and hide for tents). Lost with him if he falls. */
+  pack?: { food: number; wood: number; hide: number };
+  /** Out of sight without a house: a supply soldier asleep in a field tent of the war, or a villager with no bed while a war is on. */
+  inTent?: boolean;
+  /** A supply soldier who has fallen behind the army: he hurries to catch up (set by `warsupply.follow`). */
+  hurry?: boolean;
   health: number;
   anim: string;
   hold: Hold | null;
@@ -140,6 +164,12 @@ export interface Villager {
   mount: MountKind | null;
   /** A soldier of the Trại lính gác: he keeps a post of his own (`guardAt`) and comes back to it after each fight. */
   guard: boolean;
+  /** A soldier of a camp the player called out by hand: he stays out of his camp (night too) until he is sent back. */
+  out?: boolean;
+  /** A guard the player has called into the Trại lính gác (he sleeps there instead of standing at his post) until he is called out again. */
+  housed?: boolean;
+  /** Ordered home by the player ("Cho quân về"): he drops the fight he is in and goes to his camp, and takes up nothing else on the way. */
+  recall?: boolean;
   guardAt: { x: number; y: number } | null;
   /** Stars (1 to 5) and the personal factor of each of the eight stats (data/stats.json); absent in a save from before, which counts as all 1. */
   stars: number;
@@ -205,6 +235,8 @@ export interface TribeIntel {
   soldiers: { foot: number; archer: number; cavalry: number } | null;
 }
 /** `sent` is how many set out (older saves lack it). */
+/** A scout who died on a trip: who, where, why, and (when he was caught) the odds that were against him. */
+export interface ScoutLoss { at: number; day: number; vid: number; name: string; tribe: string; dist: number; cause: string; detail: string }
 export interface ScoutMission {
   id: number; tribe: string; level: number; ids: number[]; phase: 'go' | 'watch' | 'back'; t: number; need: number; survivors: number; sent?: number; seen?: Seen[];
   /** How much of the map is drawn (0..1): it grows while scouts are at the village, and is theirs to carry home. */
@@ -245,6 +277,14 @@ export interface Mission {
   deploy: { cells: Pt[]; heading: number; o: Pt; p: Pt; kind?: FormationName } | null;
   /** The arrow the squad follows from where it stands, point by point; the last is where it fights. Empty: it goes for `objective`. */
   path: Pt[];
+  /** Set once the player gave this squad an order (action, start, withdrawal): a squad with orders but no arrow goes for `objective` instead of holding. */
+  ordered?: boolean;
+  /** War only: the squad has stopped to rest (the Nghỉ ngơi dã chiến research): it pitches its tent day or night and sleeps there until the player sends it on. */
+  resting?: boolean;
+  /** The resting squad has been told it is rested (said once). */
+  rested?: boolean;
+  /** When an enemy was last near the resting squad (a raid on its camp). */
+  alertAt?: number;
   /** Where it falls back to when `withdrawAt` is crossed; empty: the rally point. */
   retreat: Pt[];
   /** Which point of `path` (or of `retreat`, once withdrawing) it is walking to. */
@@ -259,8 +299,27 @@ export interface Mission {
 export type CardKind = 'go' | 'advance' | 'hold' | 'formation' | 'attack' | 'shoot' | 'retreat' | 'signal';
 /** A command card: only the cards in the plan show as buttons once the fight is on. */
 export interface Card { id: number; kind: CardKind; squad: number; arg: string }
+/** Soldiers counted by arm. */
+export interface ArmCount { foot: number; archer: number; cavalry: number }
+/** What a war has cost and brought so far (warlog.ts), kept in its plan until the war is over. */
+export interface WarStats {
+  startDay: number; fought: boolean;
+  sent: ArmCount; dead: ArmCount; supplySent: number; supplyDead: number;
+  /** The goods the supply soldiers set out with and brought back (food, wood and hide for the tents). */
+  loaded: { food: number; wood: number; hide: number }; returned: { food: number; wood: number; hide: number };
+  loot: Partial<Record<Res, number>>;
+}
+/** One war in the log of the war council: the map fought, who went and how many fell, what was taken and what was spent. */
+export interface WarRecord {
+  id: number; tribe: string; name: string; mapLevel: number; startDay: number; endDay: number; days: number;
+  result: 'won' | 'lost' | 'off'; squads: number;
+  sent: ArmCount; dead: ArmCount; supplySent: number; supplyDead: number;
+  spent: { food: number; wood: number; hide: number }; loot: Partial<Record<Res, number>>;
+}
 export interface Plan {
   id: number; kind: 'attack' | 'defense'; tribe: string | null;
+  /** Made by the simple "Đánh" of the Lều họp chiến (the stone age): the whole army, one squad of each arm, straight at the village. */
+  quick?: boolean;
   missions: Mission[]; cards: Card[];
   status: 'draft' | 'running' | 'done';
   /**
@@ -268,13 +327,23 @@ export interface Plan {
    * decide to fight or fall back; `fight`: the missions are carried out; `retreat`: a fight is being broken off, each squad falling back by the way drawn for it;
    * `recall`: the army was called home before any blow, straight back to the village, and the plan goes back to a draft when they are there.
    */
-  stage: 'assemble' | 'ready' | 'fight' | 'retreat' | 'recall';
+  stage: 'assemble' | 'ready' | 'fight' | 'retreat' | 'recall' | 'over';
   startedAt: number; signal: boolean; nextCard: number;
   rally: { x: number; y: number };
   /** Attack only. Things in the way of the arrows that a squad other than the one that walks there is sent to break down while the army forms up. */
   clears: Array<{ squad: number; x: number; y: number }>;
   /** How the attack ended, once it has: the village is laid waste, or the army was beaten or pulled back. */
   result: '' | 'won' | 'lost';
+  /** When the war was decided (game seconds), 0 until it is. A won war stays `over` (the army where it stands) until the player gives the word to pull out. */
+  endedAt: number;
+  /** Attack only. Supply soldiers (lính hậu cần) to take from the Trại hậu cần, and how many days of food they carry for the army. */
+  supply: number; carryDays: number;
+  /** The supply soldiers on the march (set when the plan is deployed, emptied when the war ends). */
+  supplyIds: number[];
+  /** Counted while the war is on; null before it. */
+  stats: WarStats | null;
+  /** The tents of the war, one for each squad that has pitched one (wartent.ts); x, y in tiles. */
+  tents: Array<{ squad: number; x: number; y: number; progress: number; built: boolean }>;
 }
 /**
  * What the war council tells the player before a fight, worked out from the plan alone: our squads in it against the enemy as the map describes him.
@@ -292,6 +361,9 @@ export interface Forecast {
   win: string[]; lose: string[];
   /** The report itself, line by line. */
   lines: string[];
+  /** Our side against the enemy, row by row (`theirs` null: not known from the map), and a few plain facts of the march: label and value. */
+  compare: Array<{ label: string; ours: number; theirs: number | null }>;
+  facts: Array<[string, string]>;
 }
 /** What happened in the fight that is on (or was last): the base of the campaign log. */
 export interface BattleState { on: boolean; since: number; quiet: number; ourDead: number; foeDead: number; breaches: number; shots: number; notes: string[] }
@@ -326,4 +398,8 @@ export interface Notice {
   tip: string;
   /** A building to go to for it (the screen opens it), with the word for the button. */
   action?: { building: string; label: string };
+  /** A command the notice carries as a button: the screen runs it. */
+  command?: { kind: 'withdraw'; label: string };
+  /** The people the notice is about: the screen can open their details so the player can change what they do. */
+  people?: number[];
 }

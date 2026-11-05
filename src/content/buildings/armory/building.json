@@ -1,0 +1,69 @@
+{
+ "kind": "armory",
+ "name": "Kho vũ khí",
+ "group": "storage",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 1,
+ "requires": [
+  "workshop"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Đơn sơ",
+    "cost": {
+     "wood": 25
+    },
+    "buildTime": 60,
+    "cap": 12,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 180,
+    "sight": 0
+   },
+   {
+    "name": "Gỗ",
+    "cost": {
+     "wood": 30,
+     "stone": 15
+    },
+    "buildTime": 100,
+    "cap": 30,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 270,
+    "sight": 0
+   },
+   {
+    "name": "Đá",
+    "cost": {
+     "wood": 30,
+     "stone": 40
+    },
+    "buildTime": 150,
+    "cap": 60,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 360,
+    "sight": 0
+   },
+   {
+    "name": "Đá gia cố",
+    "cost": {
+     "wood": 34,
+     "stone": 80
+    },
+    "buildTime": 225,
+    "cap": 120,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 450,
+    "sight": 0
+   }
+  ]
+ }
+}

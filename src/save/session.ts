@@ -25,7 +25,7 @@ export class Session {
 
   /** Save now. Two saves never overlap: one asked for while another is running is skipped. */
   async save(id = AUTO_SAVE): Promise<boolean> {
-    if (this.busy) return false;
+    if (this.busy || this.sim.atWar()) return false; // no save in the middle of a war: the player saves before and after it
     this.busy = true;
     try {
       const sim = this.sim;
@@ -44,6 +44,7 @@ export class Session {
 
   /** Put a save into this game. Returns false when there is none; the save must be of this world. */
   async resume(id: string): Promise<boolean> {
+    if (this.sim.atWar()) return false;
     const data = await this.store.load(id);
     if (!data) return false;
     this.sim.loadSave(data);

@@ -3,8 +3,11 @@ import { BUILDINGS } from './buildings';
 import { Stats, WorkJob, WORK_JOBS } from './jobs';
 import { emptyToolSet, TOOL_OF_JOB } from './tools';
 import { Team } from './combat';
-import { applyStats, legacyStats, rawValue, rollFactors } from './statsys';
-import { brainPlayer, tickCommon, tickDown } from './battle';
+import { applyStats, legacyStats, rawValue, rollFactors, treeRole } from './statsys';
+import { statBonus } from './research';
+import restJson from '../data/rest.json';
+import { brainPlayer } from './brainplayer';
+import { tickCommon, tickDown } from './battle';
 import type { Sim } from './sim';
 import { HAIR, NAMES_F, NAMES_M, SKIN, STAT_KEYS, Sex, Skill, Villager } from './model';
 
@@ -42,12 +45,19 @@ export function makeVillager(sim: Sim, x: number, y: number, sex: Sex, team: Tea
   };
 }
 
+/** How much faster than the plain rate a villager heals: the research Hồi máu, and a soldier who is inside his own camp (no errand, nowhere outside) heals half as fast again (rest.json "soldierHealInCamp"). */
+function healFactor(sim: Sim, v: Villager): number {
+  const role = treeRole(v), bonus = role ? statBonus(sim.researched, role, 'hpregen') : 0;
+  const camp = v.job === 'fight' && v.inside !== null ? sim.getBuilding(v.inside) : undefined;
+  return (1 + bonus / 100) * (camp && (camp.kind === 'infantry' || camp.kind === 'cavalry' || camp.kind === 'archery' || camp.kind === 'guardpost') ? restJson.soldierHealInCamp : 1);
+}
+
 export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   tickCommon(sim, v, dt);
   if (((v.statClock = (v.statClock ?? 0) - dt)) <= 0) { v.statClock = 1 + (v.id % 10) / 10; applyStats(sim, v); } // research and tier reach the body
   if (v.down > 0) { tickDown(sim, v, dt); sim.animate(v, dt); return; }
   // ---- máu: hồi chậm khi không có địch gần; làng thiếu ăn thì hồi chậm hơn (src/data/food.json) ----
-  if (v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 0.0015 * v.maxHealth * (1 - sim.foodPenalty));
+  if (v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 0.0015 * v.maxHealth * (1 - sim.foodPenalty) * healFactor(sim, v));
   if (v.health <= 0) { sim.kill(v); return; }
   v.orderCd = Math.max(0, v.orderCd - dt);
   sim.tickEnergy(v, dt);
@@ -70,6 +80,8 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   if (sim.shouldSleep(v, fighting)) { if (!asleep) goHome(sim, v); }
   else if (asleep && !sim.hides(v)) { if (atWork(sim, v) && v.phase === 'sleep') v.phase = 'inside'; else { sim.exitBuilding(v); v.path = []; v.slide = null; v.phase = 'idle'; v.bed = -1; } } // staff wake up at their bench
 
+  if (sim.warIds.has(v.id)) sim.shelter(v); else if (v.inTent) v.inTent = false;
+  seekBed(sim, v, dt);
   sim.moveUnit(v, dt);
   if (Math.floor(v.x) !== v.tx || Math.floor(v.y) !== v.ty) sim.fogDirty = true;
   if (!v.path.length && !v.slide && !brained && !training) sim.think(v, dt);
@@ -87,6 +99,7 @@ function atWork(sim: Sim, v: Villager): boolean {
  * free bed; they go in and are listed there. Otherwise sleep on the ground by the campfire, one spot per villager, and rest slower.
  */
 export function goHome(sim: Sim, v: Villager): void {
+  if (sim.warIds.has(v.id)) { sim.resetTask(v); sim.clearCombat(v); v.path = []; v.slide = null; v.phase = 'sleep'; v.facing = 'front'; return; } // in a war the army lies down where its tent stands
   const owl = v.nightOwl;
   if (v.job === 'idle') v.shift = 'day'; // coming home: a free villager who was sent out for the night goes back to the day's hours
   sim.stash(v);
@@ -104,6 +117,22 @@ export function goHome(sim: Sim, v: Villager): void {
   const spot = sim.nearestFree(fire.x + (d.w >> 1), fire.y + d.h, taken);
   if (!spot || sim.routeTo(v, [spot], 1, 80000) < 0) return; // unreachable: sleep where standing
   v.bed = spot[1] * sim.world.size + spot[0]; v.phase = 'goHome';
+}
+
+/**
+ * Someone lying on the ground by the campfire (no bed was free when he lay down) goes to a bed as soon as there is one for him: he was given a trade
+ * and the house of that trade stands, the house was built or raised in the meantime, or a bed was freed. Looked at every few seconds, and only
+ * when there is a way to the bed, so that nobody walks back and forth.
+ */
+function seekBed(sim: Sim, v: Villager, dt: number): void {
+  if (v.phase !== 'sleep' || v.inside !== null || v.bed < 0) return;
+  const second = Math.floor(sim.time);
+  if (second === Math.floor(sim.time - dt) || (second + v.id) % 3 !== 0) return;
+  const bed = sim.freeBed(v);
+  if (!bed) return;
+  const bd = BUILDINGS[bed.kind];
+  if (sim.routeTo(v, sim.ringTiles(v, bed.x, bed.y, bd.w, bd.h), 3, 80000) < 0) return;
+  v.bed = -1; v.target = bed.id; v.phase = 'goHome';
 }
 
 /** Every second: groups of five or more fighters get a leader, the best of them. */

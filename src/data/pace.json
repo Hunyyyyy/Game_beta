@@ -4,5 +4,6 @@
   "bare": { "wood": 0.6, "stone": 0.5, "food": 0.9, "build": 0.8 },
   "huntPerDay": 30,
   "gatherDuty": 0.6,
+  "levelYield": [1, 1, 1.6, 2.2],
   "outdoor": ["wood", "stone", "food", "build"]
 }

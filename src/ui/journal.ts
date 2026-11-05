@@ -6,6 +6,7 @@ import type { Sim } from '../sim/sim';
 import questData from '../data/quests.json';
 import type { Ctx } from './ctx';
 import { dlg, GameDialog } from './gamedialog';
+import { h } from './dom';
 import { resIcon } from './resicons';
 
 type Which = 'quests' | 'notices';
@@ -87,12 +88,27 @@ export class Journal {
     const tiles = notes.map((n) => {
       const when = dlg.chip(''), body = dlg.more('');
       this.noticeLines.set(n.id, { when, body });
-      const go = n.action ? dlg.button(`Đến ${n.action.label}`, () => this.go(n.action!), { small: true }) : null;
-      return dlg.tile({ state: n.level, pic: n.icon.length > 1 ? resIcon(n.icon) : n.icon, name: n.title, chip: when, title: n.tip }, [body], go);
+      const cmd = n.command ? dlg.button(n.command.label, () => this.run(n.command!), { small: true }) : null;
+      const go = n.action ? dlg.button(`Đến ${n.action.label}`, () => this.go(n.action!), { small: true }) : cmd;
+      // the people a notice is about: the button opens their details (shift, tools, ...) so they can be changed
+      const people = n.people?.length ? dlg.button('Chi tiết', () => this.details(n.people!), { small: true }) : null;
+      return dlg.tile({ state: n.level, pic: n.icon.length > 1 ? resIcon(n.icon) : n.icon, name: n.title, chip: when, title: n.tip }, [body], go && people ? h('div', { class: 'dacts' }, go, people) : go ?? people);
     });
     this.win.notices.show(dlg.card({ wide: true, label: 'Thông báo' },
       dlg.head({ pic: '🔔', title: 'Thông báo', onClose: () => this.close() }),
       dlg.list(...(tiles.length ? tiles : [dlg.empty('Không có thông báo nào.')]))));
+  }
+
+  /** Run the command a notice carries. */
+  private run(cmd: NonNullable<Notice['command']>): void {
+    const { sim, toast } = this.c;
+    if (cmd.kind === 'withdraw') { const plan = sim.plans.find((p) => p.kind === 'attack' && p.status === 'running'); const e = plan ? sim.withdrawPlan(plan) : 'Không có trận nào'; if (e) toast(e); else this.close(); }
+  }
+
+  /** Select the people a notice is about and open their details. */
+  private details(ids: number[]): void {
+    const { ctl } = this.c;
+    this.close(); ctl.selectedBuilding = null; ctl.selected.clear(); ids.forEach((id) => ctl.selected.add(id)); ctl.openDetail = true; ctl.focusSelection(); ctl.onChange();
   }
 
   /** Open the building a notice points to, if the village has one. */

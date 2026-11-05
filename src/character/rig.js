@@ -10,12 +10,17 @@ import mace from '../data/handtools/mace.json';
 import hatchet from '../data/handtools/hatchet.json';
 import sling from '../data/handtools/sling.json';
 import bow from '../data/handtools/bow.json';
+import bronzeSpear from '../data/handtools/bronze_spear.json';
+import bronzeSword from '../data/handtools/bronze_sword.json';
+import bronzeAxe from '../data/handtools/bronze_axe.json';
 import hideArmor from '../data/armors/hide.json';
+import boneArmor from '../data/armors/bone.json';
+import bronzeArmor from '../data/armors/bronze.json';
 
 /* Hand-held tools are drawn from JSON (src/data/handtools). handTools may be replaced at runtime (the animation viewer uses this to try out designs). */
-const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow };
+const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow, bronze_spear: bronzeSpear, bronze_sword: bronzeSword, bronze_axe: bronzeAxe };
 /* Worn armour, drawn over the body from JSON (src/data/armors). */
-const armors = { hide: hideArmor };
+const armors = { hide: hideArmor, bone: boneArmor, bronze: bronzeArmor };
 
 /* ---- Lõi vẽ dân pixel: không phụ thuộc DOM ---- */
 const W = 40, H = 48, CX = 20;

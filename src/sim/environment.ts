@@ -3,6 +3,7 @@ import { isRestTime, rollWeather, seasonOf, SEASON_DEF, WEATHER } from './calend
 import { FIRE_VISION, NIGHT_VISION, VISION } from './constants';
 import { BUILDINGS, buildingSight } from './buildings';
 import { armOf } from './battle';
+import startJson from '../data/start.json';
 import type { Sim } from './sim';
 import { Villager } from './model';
 
@@ -17,8 +18,9 @@ export function tickCalendar(sim: Sim): void {
     const season = seasonOf(day);
     if (season !== sim.world.season) { sim.world.setSeason(season); sim.say(SEASON_DEF[season].enter); }
     if (sim.weather !== 'clear') sim.say(`Hôm nay: ${WEATHER[sim.weather].name.toLowerCase()}.`);
+    sim.restockAnimals(); // what hunting took comes back, a herd at a time
     sim.eatDay(); // the day that has just ended is paid for before anyone new walks in
-    if (day > 1 && !sim.dev.noArrivals) newcomers(sim);
+    if (day >= startJson.arrivals.firstDay && !sim.dev.noArrivals) newcomers(sim);
   }
   if (!sim.signalled && sim.tod >= 0.5) {
     sim.signalled = true;
@@ -30,13 +32,14 @@ export function tickCalendar(sim: Sim): void {
   sim.resting = rest;
 }
 
-/** Each new day 1 to 3 strangers walk in and settle by the fire. */
+/** Each new day a few strangers walk in and settle by the fire (how many: start.json "arrivals"). */
 function newcomers(sim: Sim): void {
-  const n = 1 + Math.floor(sim.frnd() * 3), fire = sim.campfire(), s = sim.world.start;
+  const { min, max, femaleChance } = startJson.arrivals;
+  const n = min + Math.floor(sim.frnd() * (max - min + 1)), fire = sim.campfire(), s = sim.world.start;
   for (let i = 0; i < n; i++) {
     const a = sim.frnd() * Math.PI * 2, r = 2 + sim.frnd() * 2;
     const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim.nearestFree(gx, gy, new Set()) ?? [gx, gy];
-    const v = sim.makeVillager(spot[0], spot[1], sim.frnd() < 0.5 ? 'm' : 'f', 'player', sim.frnd);
+    const v = sim.makeVillager(spot[0], spot[1], sim.frnd() < femaleChance ? 'f' : 'm', 'player', sim.frnd);
     sim.villagers.push(v); sim.registerUnit(v);
     sim.say(`${v.name} đến làng xin ở lại.`);
   }
@@ -49,7 +52,11 @@ export const TORCH_VISION = 6;
 export function refreshFog(sim: Sim): void {
   const r = visionRadius(sim), fire = fireRadius(sim);
   sim.lastVision = r;
-  const src = sim.villagers.map((v) => ({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r })); // a lit torch sees as far as by day
+  const src: { x: number; y: number; r: number }[] = [], litCells = new Set<number>();
+  for (const v of sim.villagers) {
+    if (v.lit) { const k = Math.floor(v.x / 2) * 65536 + Math.floor(v.y / 2); if (litCells.has(k)) continue; litCells.add(k); } // bearers in the same 2x2 tiles light the fog once
+    src.push({ x: v.x, y: v.y, r: v.lit ? Math.max(r, TORCH_VISION) : r }); // a lit torch sees as far as by day
+  }
   for (const b of sim.buildings) if (b.done) { const d = BUILDINGS[b.kind]; src.push({ x: b.x + d.w / 2, y: b.y + d.h / 2, r: b.kind === 'campfire' ? fire : Math.max(r, buildingSight(b) - (b.kind === 'tower' ? 0 : WEATHER[sim.weather].vision)) }); } // every house keeps watch round itself, a tower far round
   sim.fog.update(src);
   for (const v of sim.villagers) { v.tx = Math.floor(v.x); v.ty = Math.floor(v.y); }
@@ -79,4 +86,4 @@ export const ARCHER_SIGHT = 1;
 /** Soldiers of the camps see a little further than a villager; the guards of the Trại lính gác five tiles further. */
 export const SOLDIER_SIGHT = 2;
 export const GUARD_SIGHT = 5;
-export function fireRadius(sim: Sim): number { return Math.max(1, FIRE_VISION - WEATHER[sim.weather].vision); }
+export function fireRadius(sim: Sim): number { const fire = sim.campfire(); return Math.max(1, (fire ? buildingSight(fire) : FIRE_VISION) - WEATHER[sim.weather].vision); }

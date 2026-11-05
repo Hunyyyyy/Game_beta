@@ -2,7 +2,7 @@
 import { toolBonus, workSpeed } from './statsys';
 import { SEASON_DEF, WEATHER } from './calendar';
 import { PACE } from './constants';
-import { Building, BUILDINGS, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
+import { Building, BUILDINGS, GATHER_HOUSE, gatherMult, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
 import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
 import { CARRY_CAP, RES_NAME } from './resources';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
@@ -78,7 +78,7 @@ export function think(sim: Sim, v: Villager, dt: number): void {
   const N = sim.world.size;
   switch (v.phase) {
     case 'move': v.phase = 'idle'; sim.nextOrder(v); return;
-    case 'idle': if (v.queue.length && sim.nextOrder(v)) return; if (v.job !== 'idle') plan(sim, v); return;
+    case 'idle': if (v.queue.length && sim.nextOrder(v)) return; if (v.job !== 'idle') plan(sim, v); else idleHome(sim, v); return;
     case 'wait': v.timer -= dt; if (v.timer <= 0) v.phase = 'idle'; return;
     case 'goNode': {
       const n = sim.world.nodes.get(v.target);
@@ -102,6 +102,13 @@ export function think(sim: Sim, v: Villager, dt: number): void {
     case 'build': {
       const b = sim.getBuilding(v.target);
       if (!b || !needsWork(b)) { v.phase = 'idle'; return; }
+      if (b.repairing && b.done && !b.upgrading) { // repair: the strength comes back at the pace the house went up
+        const top = maxHp(b);
+        b.hp = Math.min(top, b.hp + top * (dt * PACE.work / levelDef(b).buildTime) * workFactor(sim, v, 'build') * sim.crewSpeed());
+        gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
+        if (b.hp >= top) { b.hp = top; b.repairing = false; v.phase = 'idle'; sim.say(`${BUILDINGS[b.kind].name} đã được sửa xong.`); }
+        return;
+      }
       const target = b.upgrading ? b.level + 1 : b.level;
       b.progress += (dt * PACE.work / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1))) * workFactor(sim, v, 'build') * sim.crewSpeed();
       gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
@@ -127,6 +134,20 @@ export function think(sim: Sim, v: Villager, dt: number): void {
   }
 }
 
+/**
+ * A villager with no job walks back to the campfire and stands there, instead of staying where his last work left him. One the player sent out by
+ * hand (shift 'both', see orderMove) stays where he was sent until he is called home or turns back by himself.
+ */
+function idleHome(sim: Sim, v: Villager): void {
+  if (v.shift === 'both' || v.post >= 0 || v.inside !== null || sim.pathLeft <= 0) return;
+  const fire = sim.campfire(); if (!fire) return;
+  const spot = sim.nearestFree(Math.floor(fire.x + 1 + ((v.id * 7) % 7) - 3), Math.floor(fire.y + 3 + (v.id % 2)), new Set<number>());
+  if (!spot || Math.hypot(spot[0] + 0.5 - v.x, spot[1] + 0.5 - v.y) <= 2) return; // already there
+  sim.pathLeft--;
+  v.path = sim.pathTo(v, spot[0], spot[1], 4000);
+  v.phase = v.path.length ? 'move' : 'idle';
+}
+
 export function doWork(sim: Sim, v: Villager, dt: number): void {
   const job = v.job as WorkJob, def = JOBS[job], n = sim.world.nodes.get(v.target);
   if (!def.res || !n || n.amount <= 0) { leaveNode(sim, v); v.phase = 'idle'; return; }
@@ -137,7 +158,7 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
   if (v.progress < 1) return;
   v.progress -= 1;
   // sản lượng mỗi lần theo chất lượng công cụ, phần lẻ cộng dồn sang lần sau
-  const res = def.res, acc = v.frac + TIER_YIELD[tierNow] * (1 + toolBonus(sim, v, job as WorkJob, 'tyield') / 100), whole = Math.floor(acc);
+  const kindOf = GATHER_HOUSE[job], res = def.res, acc = v.frac + gatherMult(kindOf ? sim.building(kindOf) : undefined) * TIER_YIELD[tierNow] * (1 + toolBonus(sim, v, job as WorkJob, 'tyield') / 100), whole = Math.floor(acc);
   const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
   const take = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have));
   v.frac = acc - whole;
@@ -174,7 +195,7 @@ export function tickFarms(sim: Sim, dt: number): void {
 }
 
 export function plan(sim: Sim, v: Villager): void {
-  if (v.job === 'hunt' || v.job === 'fight' || v.job === 'scout') { wait(sim, v, 1); return; } // combat code (and the scouting trip) drives these jobs
+  if (v.job === 'hunt' || v.job === 'fight' || v.job === 'scout' || v.job === 'supply') { wait(sim, v, 1); return; } // combat code (and the scouting trip) drives these jobs
   if (v.job === 'build') { if (!sim.planTool(v, 'build')) planBuild(sim, v); return; }
   if (isStaffJob(v.job) || (v.job === 'food' && v.post >= 0)) { sim.planStaff(v); return; }
   const def = JOBS[v.job as WorkJob], res = def.res!;
@@ -185,8 +206,9 @@ export function plan(sim: Sim, v: Villager): void {
     wait(sim, v, 3); return;
   }
   if (sim.planTool(v, v.job as WorkJob)) return;
-  if (findNode(sim, v, def.node!)) return;
+  if (findNode(sim, v, def.node!)) { trapped.delete(v); return; }
   if (v.carry) { planDeliver(sim, v); return; }
+  freeTrapped(sim, v, sim.buildings.filter((b) => b.done && holdsGoods(b)).sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y)));
   wait(sim, v, 2);
 }
 
@@ -232,13 +254,35 @@ export function findNode(sim: Sim, v: Villager, kind: NodeKind): boolean {
   return false;
 }
 
+/** How many times in a row a gatherer found no way anywhere (shut in by trees that grew, a fence, a house): see `freeTrapped`. */
+const trapped = new WeakMap<Villager, number>();
+
+/**
+ * A villager with no way to a store or to a source for a few tries in a row is shut in. He is lifted to the free tile beside the nearest store,
+ * so he can work again instead of standing there for ever (the path search cannot start from a pocket with no way out).
+ */
+function freeTrapped(sim: Sim, v: Villager, stores: Building[]): void {
+  const n = (trapped.get(v) ?? 0) + 1;
+  trapped.set(v, n);
+  if (n < 3 || !stores.length) return;
+  const b = stores[0], d = BUILDINGS[b.kind], spot = sim.ringTiles(v, b.x, b.y, d.w, d.h)[0];
+  trapped.delete(v);
+  if (!spot) return;
+  const way = sim.pathTo(v, spot[0], spot[1], 6000), last = way[way.length - 1]; // a store he can walk to: not shut in, only nothing to gather
+  if ((last && last[0] === spot[0] && last[1] === spot[1]) || (Math.floor(v.x) === spot[0] && Math.floor(v.y) === spot[1])) return;
+  v.x = spot[0] + 0.5; v.y = spot[1] + 0.5; v.path = []; v.slide = null; v.bad.clear();
+  sim.say(`${v.name} bị kẹt giữa cây cối, đã được đưa về ${BUILDINGS[b.kind].name.toLowerCase()}.`);
+}
+
 export function planDeliver(sim: Sim, v: Villager): void {
-  const done = sim.buildings.filter((b) => b.done && holdsGoods(b));
+  // goods go to the campfire only while there is no Kho; once one stands they are all carried there (the campfire still counts in what the village holds)
+  const held = sim.buildings.filter((b) => b.done && holdsGoods(b)), done = held.some((b) => b.kind === 'storage') ? held.filter((b) => b.kind === 'storage') : held;
   done.sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
   for (const b of done.slice(0, 2)) {
     const d = BUILDINGS[b.kind];
-    if (sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { v.target = b.id; v.phase = 'goStore'; return; }
+    if (sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { trapped.delete(v); v.target = b.id; v.phase = 'goStore'; return; }
   }
+  freeTrapped(sim, v, done);
   wait(sim, v, 2);
 }
 

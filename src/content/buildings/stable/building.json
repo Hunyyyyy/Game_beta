@@ -1,0 +1,73 @@
+{
+ "kind": "stable",
+ "name": "Chuồng thú cưỡi",
+ "group": "war",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 2,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Chuồng cọc",
+    "cost": {
+     "wood": 30,
+     "hide": 6
+    },
+    "buildTime": 90,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 1,
+    "hp": 180,
+    "sight": 0
+   },
+   {
+    "name": "Chuồng gỗ",
+    "cost": {
+     "wood": 40,
+     "hide": 8,
+     "stone": 10
+    },
+    "buildTime": 140,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 2,
+    "hp": 270,
+    "sight": 0
+   },
+   {
+    "name": "Chuồng đá",
+    "cost": {
+     "wood": 45,
+     "stone": 35,
+     "hide": 12
+    },
+    "buildTime": 200,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 3,
+    "hp": 360,
+    "sight": 0
+   },
+   {
+    "name": "Chuồng đá gia cố",
+    "cost": {
+     "wood": 52,
+     "stone": 70,
+     "hide": 18
+    },
+    "buildTime": 286,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 3,
+    "hp": 450,
+    "sight": 0
+   }
+  ]
+ }
+}

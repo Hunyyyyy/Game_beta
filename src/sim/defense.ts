@@ -1,8 +1,10 @@
 /** Defence works: fences and gates that stop people, and towers where archers keep watch. */
-import { Building, BUILDINGS, buildingSight, levelDef } from './buildings';
+import { Building, BUILDINGS, buildingSight, levelDef, maxHp } from './buildings';
 import { swingCycle } from './statsys';
 import { effWeapon, fireProjectile, hurt, resolve, threatsOf, weaponOf } from './battle';
 import { armOfWeapon, UNIT_RULES } from './formations';
+import { statBonus } from './research';
+import { roleOf } from './jobs';
 import type { Sim } from './sim';
 import type { Villager } from './model';
 
@@ -54,26 +56,46 @@ export function towerBonus(sim: Sim, v: Villager): { damage: number; range: numb
 /** The soldiers posted to a tower, inside it or on their way. */
 export function garrison(sim: Sim, b: Building): Villager[] { return sim.villagers.filter((v) => v.post === b.id && v.job === 'fight'); }
 
-/** Send archers up a tower, as many as it holds: they go in and are listed there. Returns an error or null. */
+/**
+ * Send free villagers up a tower, as many as it holds. They become its men, a kind of guard taken straight from the villagers (no camp is needed): they
+ * go in and are listed there, and take the best of what the Kho vũ khí has that shoots. Returns an error or null.
+ */
 export function assignTower(sim: Sim, ids: readonly number[], towerId: number): string | null {
   const b = sim.getBuilding(towerId);
   if (!b || b.kind !== 'tower' || !b.done) return 'Chòi canh chưa dựng xong';
+  const lock = sim.warLock(); if (lock) return lock;
   let err: string | null = null;
   for (const v of sim.mine(ids)) {
     if (v.post === b.id && v.job === 'fight') continue;
-    if (v.job !== 'fight') { err = 'Chỉ chiến binh mới lên chòi: tuyển ở trại lính'; continue; }
-    if (armOfWeapon(effWeapon(v)) !== 'archer') { err = 'Chỉ cung thủ (cầm cung hoặc dây quăng) mới lên chòi'; continue; }
-    if (garrison(sim, b).length >= levelDef(b).slots) { err = `${BUILDINGS.tower.name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} cung thủ`; continue; }
+    if (v.job !== 'idle' || roleOf(v)) { err = 'Chỉ dân rảnh mới lên chòi: người có nghề hoặc là lính thì cho nghỉ trước'; continue; }
+    if (garrison(sim, b).length >= levelDef(b).slots) { err = `${BUILDINGS.tower.name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} lính`; continue; }
     sim.resetTask(v); sim.clearCombat(v);
-    v.post = b.id; v.fight.mode = 'none'; v.fight.anchor = null;
+    v.job = 'fight'; v.guard = true; v.guardAt = null; v.arm = 'archer'; v.post = b.id; v.shift = 'day'; // the men sleep in the tower by night and wake when an enemy comes in sight; the details can set a night or round-the-clock watch
+    v.fight.mode = 'none'; v.fight.anchor = null;
     sim.planStaff(v);
   }
   return err;
 }
 
-/** Bring archers down from their tower; they go back to standing watch at the fire. */
+/** Take the men of a tower down: they are free villagers again and their arms go back to the store. */
 export function leaveTower(sim: Sim, ids: readonly number[]): void {
-  for (const v of sim.mine(ids)) if (v.post >= 0 && v.job === 'fight') { sim.exitBuilding(v); v.post = -1; v.phase = 'idle'; }
+  for (const v of sim.mine(ids)) {
+    if (v.post < 0 || v.job !== 'fight') continue;
+    sim.exitBuilding(v);
+    sim.assignGear([v.id], null, 'weapon'); sim.assignGear([v.id], null, 'armor');
+    v.post = -1; v.guard = false; v.guardAt = null; v.job = 'idle'; v.arm = 'foot'; v.manualGear = false; v.shift = 'day'; v.phase = 'idle'; v.path = [];
+  }
+}
+
+/** Once a second: the works of the defence (fence, gate, trap, tower) take on the strength their research gives (what is left of a damaged one keeps its share). */
+export function tickResearch(sim: Sim): void {
+  for (const b of sim.buildings) {
+    if (b.kind !== 'fence' && b.kind !== 'gate' && b.kind !== 'trap' && b.kind !== 'tower') continue;
+    const bonus = statBonus(sim.researched, b.kind, 'hp');
+    if ((b.hpBonus ?? 0) === bonus) continue;
+    const share = maxHp(b) > 0 ? b.hp / maxHp(b) : 1;
+    b.hpBonus = bonus; b.hp = share * maxHp(b);
+  }
 }
 
 /** A pit catches the first enemy to step on it: he is hurt, and the pit has one charge less. Our own people walk over it unharmed. */
@@ -84,7 +106,7 @@ export function tickTraps(sim: Sim, _dt: number): void {
       // b.staff remembers who has already fallen in: a man is wounded once by each pit, however long he stands in it
       if (f.health <= 0 || b.staff.includes(f.id) || Math.hypot(f.x - (b.x + 0.5), f.y - (b.y + 0.5)) > 0.8) continue;
       b.staff.push(f.id);
-      hurt(sim, { kind: 'unit', id: f.id }, 14 * b.level, 'pierce', { x: b.x, y: b.y }, {});
+      hurt(sim, { kind: 'unit', id: f.id }, 14 * b.level * (1 + statBonus(sim.researched, 'trap', 'atk') / 100), 'pierce', { x: b.x, y: b.y }, {});
       sim.noteBattle('note', 'Một hố chông đã làm địch bị thương.');
       if (--b.hp <= 0) { b.staff = []; sim.destroyBuilding(b); break; }
     }
@@ -99,13 +121,13 @@ export function tickTraps(sim: Sim, _dt: number): void {
 export function tickTowers(sim: Sim, _dt: number): void {
   for (const b of sim.buildings) {
     if (b.kind !== 'tower' || !b.done) continue;
-    const d = BUILDINGS.tower, from = { x: b.x + d.w / 2, y: b.y + 0.4 }, reach = buildingSight(b);
+    const d = BUILDINGS.tower, from = { x: b.x + d.w / 2, y: b.y + 0.4 }, reach = buildingSight(b), hit = 1 + statBonus(sim.researched, 'tower', 'atk') / 100; // the research of the tower makes every arrow loosed from it hit harder
     for (const v of sim.villagers) {
       if (v.inside !== b.id || v.phase !== 'inside' || v.atkCd > 0 || v.health <= 0) continue;
       const w = weaponOf(v);
       if (!w.ranged) continue;
       const bonus = towerBonus(sim, v), threat = threatsOf(sim, v, reach)[0], e = threat && resolve(sim, threat.t);
-      if (e && fireProjectile(sim, v, e, from, bonus.damage, Math.max(0, reach - w.range - 1))) v.atkCd = swingCycle(sim, v, w);
+      if (e && fireProjectile(sim, v, e, from, bonus.damage * hit, Math.max(0, reach - w.range - 1))) v.atkCd = swingCycle(sim, v, w);
     }
   }
 }

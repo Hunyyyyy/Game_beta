@@ -1,0 +1,69 @@
+{
+ "kind": "drill",
+ "name": "Bãi tập",
+ "group": "war",
+ "size": [
+  3,
+  3
+ ],
+ "buildable": true,
+ "unlockFire": 2,
+ "requires": [
+  "infantry"
+ ],
+ "levels": {
+  "stone": [
+   {
+    "name": "Bãi cọc",
+    "cost": {
+     "wood": 25
+    },
+    "buildTime": 80,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 405,
+    "sight": 0
+   },
+   {
+    "name": "Bãi rào",
+    "cost": {
+     "wood": 30,
+     "stone": 10
+    },
+    "buildTime": 120,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 608,
+    "sight": 0
+   },
+   {
+    "name": "Bãi đá",
+    "cost": {
+     "wood": 35,
+     "stone": 30
+    },
+    "buildTime": 170,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 810,
+    "sight": 0
+   },
+   {
+    "name": "Bãi đá gia cố",
+    "cost": {
+     "wood": 41,
+     "stone": 60
+    },
+    "buildTime": 241,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 1012,
+    "sight": 0
+   }
+  ]
+ }
+}
