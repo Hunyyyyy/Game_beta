@@ -132,6 +132,8 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   const missile = !!src.unit && weaponOf(src.unit).ranged === true;
   const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (1 - guardCut(sim, v, missile)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v);
   v.health -= final; v.calm = 0; v.flinch = 0.3;
+  if (src.unit && sim.mountOf(src.unit) === 'elephant') sim.addSfx('elephant', false, src.unit.x, src.unit.y); // the beast bellows when its rider strikes
+  if (src.unit) { const sw = weaponOf(src.unit); sim.addSfx(sw.id, missile, v.x, v.y); } // the sound belongs to the weapon in his hand, whoever holds it
   if (src.unit && src.unit.team !== v.team && src.unit.team !== 'player' && v.team !== 'player' && src.unit.team !== 'wild' && v.team !== 'wild') noteClash(sim, src.unit.team, v.team, v.x, v.y);
   if (armor) sim.wearGear(v, 'armor');
   if (src.unit && src.unit.team === 'player' && v.team !== 'player') sim.tribeAttacked(v.team as Exclude<Team, 'player' | 'wild'>, v);

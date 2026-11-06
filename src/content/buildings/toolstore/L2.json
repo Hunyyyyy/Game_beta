@@ -1,70 +1,845 @@
 {
-  "name": "Lán công cụ (cấp 2, mái da xanh lục, hai giá)",
-  "name_en": "Tool Shed (Tier 2, Teal Hide Roof, Two Racks)",
-  "type": "prop",
-  "size": [72, 64],
-  "anchor": [36, 58],
-  "footprint": [4, 32, 64, 28],
-  "seed": 5,
-  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
-  "palette": { "line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "earth": "#86704e", "earthL": "#9a8460", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "rope": "#d8c690", "stone": "#8e9498", "stoneD": "#60676b", "chip": "#d8d2c0", "stitch": "#e8d6a8", "sackD": "#9d8756", "wicker": "#b89a58", "wickerD": "#8a7038", "teal": "#4f8a86", "tealL": "#74b0aa", "tealD": "#336460" },
-  "layers": [
-    {"shape": "ellipse", "cx": 36, "cy": 55, "rx": 30, "ry": 6, "color": "shadow", "alpha": 0.25},
-    {"shape": "rect", "x": 8, "y": 36, "w": 56, "h": 18, "color": "dirt", "alpha": 0.55, "ifNot": "st1"},
-    {"shape": "rect", "x": 7, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
-    {"shape": "rect", "x": 63, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
-    {"shape": "rect", "x": 7, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
-    {"shape": "rect", "x": 63, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"},
-    {"shape": "line", "from": [9, 37], "to": [62, 37], "w": 1, "color": "rope", "ifNot": "st1"},
-    {"shape": "group", "if": "st1", "layers": [
-      {"shape": "ellipse", "cx": 36, "cy": 47, "rx": 30, "ry": 8, "color": "earth"},
-      {"shape": "scatter", "count": 34, "area": [6, 40, 60, 14], "size": [1, 2], "colors": ["dirt", "chip", "earthL", "stoneD"], "onlyOver": ["earth"]},
-      {"shape": "rect", "x": 14, "y": 45, "w": 44, "h": 9, "color": "woodD", "alpha": 0.35}
-    ] },
-    {"shape": "group", "if": "st2", "layers": [
-      {"shape": "rect", "x": 10, "y": 20, "w": 2, "h": 23, "color": "wood"},
-      {"shape": "rect", "x": 10, "y": 20, "w": 1, "h": 23, "color": "woodL"},
-      {"shape": "rect", "x": 60, "y": 20, "w": 2, "h": 23, "color": "wood"},
-      {"shape": "rect", "x": 60, "y": 20, "w": 1, "h": 23, "color": "woodL"},
-      {"shape": "rect", "x": 6, "y": 30, "w": 2, "h": 25, "color": "wood"},
-      {"shape": "rect", "x": 6, "y": 30, "w": 1, "h": 25, "color": "woodL"},
-      {"shape": "rect", "x": 64, "y": 30, "w": 2, "h": 25, "color": "wood"},
-      {"shape": "rect", "x": 64, "y": 30, "w": 1, "h": 25, "color": "woodL"},
-      {"shape": "rect", "x": 9, "y": 19, "w": 54, "h": 2, "color": "woodD"},
-      {"shape": "rect", "x": 5, "y": 30, "w": 62, "h": 2, "color": "woodD"}
-    ] },
-    {"shape": "group", "if": "st3", "layers": [
-      {"shape": "poly", "points": [[3, 31], [13, 16], [59, 16], [69, 31]], "color": "teal"},
-      {"shape": "poly", "points": [[3, 31], [69, 31], [67, 35], [5, 35]], "color": "tealD"},
-      {"shape": "line", "from": [13, 16], "to": [59, 16], "w": 1, "color": "tealL"},
-      {"shape": "line", "from": [8, 24], "to": [64, 24], "w": 1, "color": "tealL", "alpha": 0.35},
-      {"shape": "pixels", "at": [[10, 33], [18, 33], [26, 33], [34, 33], [42, 33], [50, 33], [58, 33], [64, 33]], "color": "stitch"},
-      {"shape": "scatter", "count": 24, "area": [10, 17, 52, 12], "size": 1, "colors": ["tealL", "tealD"], "onlyOver": ["teal"]}
-    ] },
-    {"shape": "group", "if": "st4", "layers": [
-      {"shape": "rect", "x": 15, "y": 36, "w": 42, "h": 2, "color": "woodD"},
-      {"shape": "rect", "x": 15, "y": 44, "w": 42, "h": 2, "color": "woodD"},
-      {"shape": "line", "from": [20, 38], "to": [20, 40], "w": 1, "color": "rope"},
-      {"shape": "line", "from": [30, 38], "to": [30, 40], "w": 1, "color": "rope"},
-      {"shape": "line", "from": [40, 38], "to": [40, 40], "w": 1, "color": "rope"},
-      {"shape": "line", "from": [50, 38], "to": [50, 40], "w": 1, "color": "rope"},
-      {"shape": "line", "from": [20, 40], "to": [20, 47], "w": 1, "color": "woodD"},
-      {"shape": "rect", "x": 18, "y": 46, "w": 5, "h": 2, "color": "stoneD"},
-      {"shape": "line", "from": [30, 40], "to": [30, 48], "w": 1, "color": "woodD"},
-      {"shape": "line", "from": [27, 47], "to": [33, 46], "w": 1, "color": "stoneD"},
-      {"shape": "line", "from": [40, 40], "to": [40, 47], "w": 1, "color": "woodD"},
-      {"shape": "rect", "x": 38, "y": 47, "w": 5, "h": 3, "color": "stone"},
-      {"shape": "line", "from": [50, 40], "to": [50, 49], "w": 1, "color": "woodD"},
-      {"shape": "line", "from": [50, 46], "to": [54, 47], "w": 1, "color": "woodD"},
-      {"shape": "ellipse", "cx": 14, "cy": 54, "rx": 4, "ry": 3, "color": "wickerD"},
-      {"shape": "ellipse", "cx": 14, "cy": 53, "rx": 4, "ry": 3, "color": "wicker"},
-      {"shape": "ellipse", "cx": 14, "cy": 52, "rx": 3, "ry": 2, "color": "wickerD"},
-      {"shape": "pixels", "at": [[12, 53], [14, 54], [16, 53]], "color": "sackD"},
-      {"shape": "ellipse", "cx": 58, "cy": 54, "rx": 4, "ry": 3, "color": "wickerD"},
-      {"shape": "ellipse", "cx": 58, "cy": 53, "rx": 4, "ry": 3, "color": "wicker"},
-      {"shape": "ellipse", "cx": 58, "cy": 52, "rx": 3, "ry": 2, "color": "wickerD"},
-      {"shape": "pixels", "at": [[56, 53], [58, 54], [60, 53]], "color": "sackD"}
-    ] },
-    {"shape": "outline", "color": "line"}
-  ]
+ "name": "Lán công cụ (cấp 2, mái da xanh lục, hai giá)",
+ "name_en": "Tool Shed (Tier 2, Green Hide Roof, Two Racks)",
+ "type": "prop",
+ "size": [
+  72,
+  64
+ ],
+ "anchor": [
+  36,
+  58
+ ],
+ "footprint": [
+  4,
+  32,
+  64,
+  28
+ ],
+ "seed": 9,
+ "params": {
+  "st1": 1,
+  "st2": 1,
+  "st3": 1,
+  "st4": 1
+ },
+ "palette": {
+  "line": "#2b1d10",
+  "shadow": "#000000",
+  "dirt": "#6a5238",
+  "dirtL": "#7e6244",
+  "dirtD": "#4e3c2a",
+  "wood": "#8a6238",
+  "woodL": "#aa7c48",
+  "woodD": "#5e4026",
+  "logE": "#c49a60",
+  "rope": "#d8c690",
+  "stone": "#8e9498",
+  "stoneL": "#b9bfc2",
+  "stoneD": "#60676b",
+  "chip": "#d8d2c0",
+  "sack": "#c9b27a",
+  "sackD": "#9d8756",
+  "bone": "#e4dcc4",
+  "boneD": "#b8ac90",
+  "sand": "#b9a47a",
+  "sandL": "#cdbb94",
+  "sandD": "#9a8760",
+  "blue": "#5f7fa8",
+  "blueD": "#3f5c84",
+  "ochre": "#b0762f",
+  "red": "#a8342a",
+  "dark": "#1d1812",
+  "moss": "#5f7f3a",
+  "mossL": "#7f9f50",
+  "hide": "#d9c796",
+  "wicker": "#b08a4c",
+  "wickerL": "#c9a460",
+  "wickerD": "#7e5f30",
+  "mud": "#b98a62",
+  "mudL": "#cfa07a",
+  "mudD": "#8e6745",
+  "plaster": "#dccfb2",
+  "plasterD": "#b8a98a",
+  "thatch": "#d4b45a",
+  "thatchL": "#ecd27a",
+  "thatchD": "#a98a38",
+  "hay": "#e0c060",
+  "hayD": "#b8963a",
+  "shingle": "#55361f",
+  "shingleL": "#7a5232",
+  "shingleD": "#35200f",
+  "tile": "#9b4a34",
+  "tileL": "#c06a4a",
+  "tileD": "#6e3224",
+  "slate": "#66707c",
+  "slateL": "#8893a0",
+  "slateD": "#444c56",
+  "terra": "#b5593b",
+  "terraL": "#d27a52",
+  "terraD": "#7e3a26",
+  "glass": "#9bc4d8",
+  "glassD": "#5f8aa0",
+  "gold": "#d9b13a",
+  "bannerR": "#b8322a",
+  "iron": "#5d6068",
+  "ironL": "#8a8e96",
+  "clay": "#a8683e",
+  "clayD": "#7a4a2a",
+  "cut": "#a7adb1",
+  "cutL": "#c9ced1",
+  "cutD": "#6f757a",
+  "plank": "#c8a468",
+  "plankD": "#9a7a44",
+  "ink": "#2c4466",
+  "green": "#5f8f3a",
+  "greenL": "#86b04c",
+  "greenD": "#3f6a28",
+  "hideG": "#6f8a4a",
+  "hideGL": "#8fae62",
+  "hideGD": "#4c6532",
+  "hideR": "#a8342a",
+  "hideRL": "#c8523f",
+  "hideRD": "#7a2220"
+ },
+ "layers": [
+  {
+   "shape": "poly",
+   "points": [
+    [
+     4,
+     57
+    ],
+    [
+     54,
+     57
+    ],
+    [
+     67,
+     51
+    ],
+    [
+     16,
+     51
+    ]
+   ],
+   "color": "shadow",
+   "alpha": 0.25
+  },
+  {
+   "shape": "group",
+   "if": "st1",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       6,
+       54
+      ],
+      [
+       52,
+       54
+      ],
+      [
+       62,
+       48
+      ],
+      [
+       16,
+       48
+      ]
+     ],
+     "color": "dirt"
+    },
+    {
+     "shape": "rect",
+     "x": 6,
+     "y": 54,
+     "w": 46,
+     "h": 2,
+     "color": "dirtD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       52,
+       54
+      ],
+      [
+       62,
+       48
+      ],
+      [
+       62,
+       50
+      ],
+      [
+       52,
+       56
+      ]
+     ],
+     "color": "dirtD"
+    },
+    {
+     "shape": "scatter",
+     "count": 26,
+     "area": [
+      8,
+      48,
+      52,
+      6
+     ],
+     "size": [
+      1,
+      2
+     ],
+     "colors": [
+      "dirtL",
+      "dirtD",
+      "plank"
+     ],
+     "onlyOver": [
+      "dirt"
+     ]
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st2",
+   "layers": [
+    {
+     "shape": "rect",
+     "x": 16,
+     "y": 28,
+     "w": 2,
+     "h": 19,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 16,
+     "y": 28,
+     "w": 1,
+     "h": 19,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 17,
+     "y": 28,
+     "w": 1,
+     "h": 19,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 60,
+     "y": 28,
+     "w": 2,
+     "h": 19,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 60,
+     "y": 28,
+     "w": 1,
+     "h": 19,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 61,
+     "y": 28,
+     "w": 1,
+     "h": 19,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 32,
+     "w": 3,
+     "h": 22,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 32,
+     "w": 1,
+     "h": 22,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 10,
+     "y": 32,
+     "w": 1,
+     "h": 22,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 49,
+     "y": 32,
+     "w": 3,
+     "h": 22,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 49,
+     "y": 32,
+     "w": 1,
+     "h": 22,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 51,
+     "y": 32,
+     "w": 1,
+     "h": 22,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 31,
+     "w": 44,
+     "h": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 31,
+     "w": 44,
+     "h": 1,
+     "color": "wood"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       51,
+       32
+      ],
+      [
+       61,
+       25
+      ],
+      [
+       61,
+       27
+      ],
+      [
+       51,
+       34
+      ]
+     ],
+     "color": "woodD"
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st3",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       5,
+       32
+      ],
+      [
+       56,
+       32
+      ],
+      [
+       66,
+       20
+      ],
+      [
+       15,
+       20
+      ]
+     ],
+     "color": "hideG"
+    },
+    {
+     "shape": "line",
+     "from": [
+      15,
+      20
+     ],
+     "to": [
+      66,
+      20
+     ],
+     "w": 1,
+     "color": "hideGL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      14,
+      21
+     ],
+     "to": [
+      65,
+      21
+     ],
+     "w": 1,
+     "color": "hideGD",
+     "alpha": 0.5
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       5,
+       32
+      ],
+      [
+       56,
+       32
+      ],
+      [
+       56,
+       35
+      ],
+      [
+       5,
+       35
+      ]
+     ],
+     "color": "hideGD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       56,
+       32
+      ],
+      [
+       66,
+       20
+      ],
+      [
+       66,
+       23
+      ],
+      [
+       56,
+       35
+      ]
+     ],
+     "color": "hideGD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      5,
+      32
+     ],
+     "to": [
+      56,
+      32
+     ],
+     "w": 1,
+     "color": "hideGL",
+     "alpha": 0.6
+    },
+    {
+     "shape": "line",
+     "from": [
+      7.5,
+      29.0
+     ],
+     "to": [
+      58.5,
+      29.0
+     ],
+     "w": 1,
+     "color": "hideGD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       13,
+       30
+      ],
+      [
+       20,
+       30
+      ],
+      [
+       27,
+       30
+      ],
+      [
+       34,
+       30
+      ],
+      [
+       41,
+       30
+      ],
+      [
+       48,
+       30
+      ]
+     ],
+     "color": "hideGL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      10.0,
+      26.0
+     ],
+     "to": [
+      61.0,
+      26.0
+     ],
+     "w": 1,
+     "color": "hideGD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       18,
+       27
+      ],
+      [
+       25,
+       27
+      ],
+      [
+       32,
+       27
+      ],
+      [
+       39,
+       27
+      ],
+      [
+       46,
+       27
+      ],
+      [
+       53,
+       27
+      ]
+     ],
+     "color": "hideGL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      12.5,
+      23.0
+     ],
+     "to": [
+      63.5,
+      23.0
+     ],
+     "w": 1,
+     "color": "hideGD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       22,
+       24
+      ],
+      [
+       29,
+       24
+      ],
+      [
+       36,
+       24
+      ],
+      [
+       43,
+       24
+      ],
+      [
+       50,
+       24
+      ],
+      [
+       57,
+       24
+      ]
+     ],
+     "color": "hideGL"
+    },
+    {
+     "shape": "scatter",
+     "count": 26,
+     "area": [
+      7,
+      21,
+      51,
+      10
+     ],
+     "size": 1,
+     "colors": [
+      "hideGL",
+      "hideGD"
+     ],
+     "onlyOver": [
+      "hideG"
+     ]
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st4",
+   "layers": [
+    {
+     "shape": "line",
+     "from": [
+      16,
+      39
+     ],
+     "to": [
+      16,
+      50
+     ],
+     "w": 1,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 14,
+     "y": 39,
+     "w": 4,
+     "h": 3,
+     "color": "iron"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       14,
+       39
+      ],
+      [
+       17,
+       39
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      23,
+      39
+     ],
+     "to": [
+      23,
+      50
+     ],
+     "w": 1,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      20,
+      40
+     ],
+     "to": [
+      26,
+      40
+     ],
+     "w": 1,
+     "color": "iron"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       19,
+       41
+      ],
+      [
+       27,
+       41
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      30,
+      39
+     ],
+     "to": [
+      30,
+      51
+     ],
+     "w": 1,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 30,
+     "y": 39,
+     "w": 4,
+     "h": 2,
+     "color": "iron"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       33,
+       41
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      37,
+      39
+     ],
+     "to": [
+      37,
+      50
+     ],
+     "w": 1,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 35,
+     "y": 39,
+     "w": 4,
+     "h": 3,
+     "color": "iron"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       35,
+       39
+      ],
+      [
+       38,
+       39
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      44,
+      39
+     ],
+     "to": [
+      44,
+      50
+     ],
+     "w": 1,
+     "color": "wood"
+    },
+    {
+     "shape": "line",
+     "from": [
+      41,
+      40
+     ],
+     "to": [
+      47,
+      40
+     ],
+     "w": 1,
+     "color": "iron"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       40,
+       41
+      ],
+      [
+       48,
+       41
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "rect",
+     "x": 12,
+     "y": 41,
+     "w": 34,
+     "h": 1,
+     "color": "woodD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "rect",
+     "x": 14,
+     "y": 50,
+     "w": 7,
+     "h": 4,
+     "color": "plankD"
+    },
+    {
+     "shape": "rect",
+     "x": 14,
+     "y": 49,
+     "w": 7,
+     "h": 2,
+     "color": "plank"
+    },
+    {
+     "shape": "rect",
+     "x": 42,
+     "y": 50,
+     "w": 8,
+     "h": 4,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 42,
+     "y": 49,
+     "w": 8,
+     "h": 2,
+     "color": "wood"
+    }
+   ]
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  }
+ ]
 }

@@ -1,0 +1,8 @@
+{
+  "chop": { "hitFrame": 5, "colors": ["#d9b377", "#b9884f", "#8a5a34", "#e8d2a0"], "count": 3, "perTier": 1, "speed": 38, "up": 34, "life": 0.55 },
+  "mine": { "hitFrame": 5, "colors": ["#cfd4d6", "#9aa0a4", "#6e7478", "#e9ecee"], "count": 3, "perTier": 1, "speed": 44, "up": 38, "life": 0.5 },
+  "reach": 14,
+  "height": 12,
+  "gravity": 160,
+  "maxChips": 160
+}

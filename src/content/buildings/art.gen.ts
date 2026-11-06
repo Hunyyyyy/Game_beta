@@ -61,6 +61,7 @@ import infantry_A1 from './infantry/A1.json';
 import lab_L1 from './lab/L1.json';
 import lab_L2 from './lab/L2.json';
 import lab_L3 from './lab/L3.json';
+import lab_L4 from './lab/L4.json';
 import lab_A1 from './lab/A1.json';
 import lumberyard_L1 from './lumberyard/L1.json';
 import lumberyard_L2 from './lumberyard/L2.json';
@@ -121,7 +122,7 @@ export const STONE_ART: Record<string, unknown[]> = {
   house: [house_L1, house_L2, house_L3],
   huntlodge: [huntlodge_L1, huntlodge_L2, huntlodge_L3],
   infantry: [infantry_L1, infantry_L2, infantry_L3],
-  lab: [lab_L1, lab_L2, lab_L3],
+  lab: [lab_L1, lab_L2, lab_L3, lab_L4],
   lumberyard: [lumberyard_L1, lumberyard_L2, lumberyard_L3],
   quarry: [quarry_L1, quarry_L2, quarry_L3],
   scouttent: [scouttent_L1, scouttent_L2, scouttent_L3],

@@ -1,4 +1,5 @@
 import { Camera, Renderer } from './render/renderer';
+import { GameAudio } from './audio/audio';
 import { Sprites } from './render/sprites';
 import { BUILDINGS, BuildingKind } from './sim/buildings';
 import { DAY_PART_NAME, dayInSeason, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
@@ -39,6 +40,23 @@ const view = $<HTMLCanvasElement>('view');
 const cam: Camera = { x: 0, y: 0, zoom: Math.min(view.clientWidth, view.clientHeight) < 700 ? 1 : 2 };
 const sprites = new Sprites();
 const renderer = new Renderer(view, sim, cam, sprites);
+const audio = new GameAudio();
+renderer.audio = audio;
+audio.sfxOn = settings.sfxOn; audio.ambientOn = settings.ambientOn; audio.musicOn = settings.musicOn;
+const sfxBtn = $<HTMLButtonElement>('btnSfx'), ambBtn = $<HTMLButtonElement>('btnAmb'), musBtn = $<HTMLButtonElement>('btnMus');
+function syncSound() {
+  sfxBtn.setAttribute('aria-pressed', String(audio.sfxOn)); sfxBtn.textContent = audio.sfxOn ? '🔊' : '🔇';
+  ambBtn.setAttribute('aria-pressed', String(audio.ambientOn)); ambBtn.textContent = audio.ambientOn ? '🌧' : '🚫';
+  musBtn.setAttribute('aria-pressed', String(audio.musicOn)); musBtn.textContent = audio.musicOn ? '🎵' : '🔕';
+}
+function toggleSound(kind: 'sfx' | 'amb' | 'mus') {
+  if (kind === 'sfx') settings.sfxOn = audio.sfxOn = !audio.sfxOn; else if (kind === 'amb') settings.ambientOn = audio.ambientOn = !audio.ambientOn; else settings.musicOn = audio.musicOn = !audio.musicOn;
+  saveSettings(settings); syncSound();
+  const on = kind === 'sfx' ? audio.sfxOn : kind === 'amb' ? audio.ambientOn : audio.musicOn;
+  toast(`${on ? 'Bật' : 'Tắt'} ${kind === 'sfx' ? 'âm thanh hiệu ứng' : kind === 'amb' ? 'âm thanh môi trường' : 'nhạc nền'}`);
+}
+sfxBtn.addEventListener('click', () => toggleSound('sfx')); ambBtn.addEventListener('click', () => toggleSound('amb')); musBtn.addEventListener('click', () => toggleSound('mus'));
+syncSound();
 const ctl = new Controller(view, sim, cam, renderer);
 ctl.centerOn(sim.world.start.x * TILE + TILE / 2, sim.world.start.y * TILE - 10);
 sim.controlled = ctl.selected; // the units the player holds: the sim lets their orders win over its own fighting and fleeing
@@ -149,6 +167,7 @@ window.addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLElement && /input|textarea|select/i.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
   if (k === 'p') setSpeed(sim.speed === 0 ? 1 : 0);
+  else if (k === 'o') toggleSound('sfx'); else if (k === 'i') toggleSound('amb'); else if (k === 'u') toggleSound('mus');
 
   else if (k === 'q') setSpeed(1); else if (k === 'e') setSpeed(2); else if (k === 'r') setSpeed(4); else if (k === 't') setSpeed(16);
   else if (k === 'b') togglePlace('storage'); else if (k === 'x') togglePlace('workshop'); else if (k === 'c') openWorkshop();
@@ -249,6 +268,9 @@ function frame(t: number) {
   const dt = last ? (t - last) / 1000 : 0; last = t;
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
   ctl.update(dt);
+  audio.update(started ? sim.weather : 'clear', dt);
+  audio.setPeace(started && !sim.atWar() && !sim.battle.on && !sim.tribes.some((t) => t.raid), dt);
+  audio.setNight(started && sim.part === 'night', sim.time, sim.dayLen);
   if (started) session.tick();
   { const m = 10, z = cam.zoom; sim.view = { x0: cam.x / TILE - m, y0: cam.y / TILE - m, x1: (cam.x + renderer.w / z) / TILE + m, y1: (cam.y + renderer.h / z) / TILE + m }; } // seen: the screen and 10 tiles round it
   if (skipping) runSkip(); else sim.advance(dt, () => performance.now() - t0 > 70);

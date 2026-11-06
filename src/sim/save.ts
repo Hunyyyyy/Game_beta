@@ -39,7 +39,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'threatCache', 'pathLeft', // rebuilt every tick
   'view', // where the camera is: the screen's, not the game's
   'warIds', 'march', 'warMeals', 'warHunger', 'warFocus', 'warHarassAt', // the march of a war: the game cannot be saved while one is on
-  'warSince', 'hiddenAnimals', // the game cannot be saved while a war is on
+  'warSince', 'sfx', 'warSeen', 'warSeenAt', 'warCheckAt', 'hiddenAnimals', // the game cannot be saved while a war is on
   'leaderClock', // a timer: leaders are picked again within a second of loading
   'controlled', // what the player has selected: the screen's, not the game's
   'dangerAt', // a timer: after loading the villagers come out of hiding at once

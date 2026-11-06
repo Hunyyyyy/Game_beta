@@ -1,0 +1,42 @@
+{
+  "dir": "sounds/",
+  "master": 0.7,
+  "range": 0.5,
+  "anims": {
+    "chop":         { "file": "wood_chop1.wav", "files": ["wood_chop1.wav", "wood_chop2.wav"], "hitFrame": 5, "volume": 0.5, "gap": 0.25, "work": true },
+    "mine":         { "file": "miner_stone.mp3",     "hitFrame": 5, "volume": 0.5, "gap": 0.25, "work": true },
+    "build":        { "file": "building.wav",        "hitFrame": 2, "volume": 0.35, "gap": 6, "work": true },
+    "shoot_attack": [
+      { "file": "battle/bow_draw.mp3",    "frame": 0, "volume": 0.3, "gap": 0.2 },
+      { "file": "battle/bow_release.mp3", "volume": 0.4, "gap": 0.2 }
+    ],
+    "run|swing_charge|thrust_charge|shoot_charge|fist_charge|sling_charge|throw_charge|swing_walk|thrust_walk|shoot_walk|sling_walk|throw_walk": [
+      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 0, "volume": 0.6, "gap": 0.25 },
+      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 3, "volume": 0.6, "gap": 0.25 }
+    ],
+    "sling_attack": { "file": "battle/sling_throw.mp3", "volume": 0.5, "gap": 0.2 },
+    "throw_attack": { "file": "battle/sling_throw.mp3", "volume": 0.5, "gap": 0.2 }
+  },
+  "weather": {
+    "drizzle": [{ "file": "rain.wav", "volume": 0.25 }],
+    "rain":    [{ "file": "rain.wav", "volume": 0.5 }],
+    "thunder": [{ "file": "rain_thunder.wav", "volume": 0.5 }],
+    "storm":   [{ "file": "storm.wav", "volume": 0.55 }, { "file": "rain.wav", "volume": 0.4 }, { "file": "rain_thunder.wav", "volume": 0.4 }]
+  },
+  "hits": {
+    "elephant": { "files": ["battle/elephant_1.mp3", "battle/elephant_2.mp3", "battle/elephant_3.mp3"], "volume": 0.8, "gap": 2.5 },
+    "gate_open": { "files": ["battle/gate_open.mp3"], "volume": 0.6, "gap": 0.4 },
+    "gate_shut": { "files": ["battle/gate_shut.mp3"], "volume": 0.6, "gap": 0.4 },
+    "bow": { "files": ["battle/arrow_hit_1.mp3"], "burst": ["battle/arrow_hit_2.mp3", "battle/arrow_hit_3.mp3"], "burstWindow": 0.3, "volume": 0.4, "gap": 0.7 },
+    "melee": { "files": ["battle/melee_1.mp3", "battle/melee_2.mp3", "battle/melee_3.mp3", "battle/melee_4.mp3", "battle/melee_5.mp3"], "volume": 0.55, "gap": 0.08 }
+  },
+  "war": {
+    "engageShare": 0.2,
+    "engageQuiet": 6,
+    "music":  { "file": "battle/war_music_1.mp3", "volume": 0.6 },
+    "start":  { "file": "battle_start.mp3", "volume": 0.7 }
+  },
+  "wolves": { "files": ["battle/wolf_1.mp3", "battle/wolf_2.mp3", "battle/wolf_3.mp3"], "volume": 0.5, "maxHowls": 3, "from": 0.03, "to": 0.3, "spacing": 0.07 },
+  "peace": { "file": "The_Valley_After_Rain.mp3", "volume": 0.5, "firstDelay": 3, "gapMin": 240, "gapMax": 600 },
+  "fade": 1.5
+}
