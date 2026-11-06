@@ -62,12 +62,13 @@ jobs:
         run: |
           mkdir _site
           cp main/dist/index.html _site/index.html
-          cp -r main/dist/sounds _site/sounds # the game loads its sounds from sounds/ next to index.html
+          # the game loads its sounds from sounds/ next to index.html (a branch that does not have sounds yet is published without)
+          if [ -d main/dist/sounds ]; then cp -r main/dist/sounds _site/sounds; fi
           touch _site/.nojekyll
           if [ "${{ steps.dev_build.outcome }}" = "success" ]; then
             mkdir _site/dev
             sed 's|<title>|<title>[DEV] |' dev/dist/index.html > _site/dev/index.html
-            cp -r dev/dist/sounds _site/dev/sounds
+            if [ -d dev/dist/sounds ]; then cp -r dev/dist/sounds _site/dev/sounds; fi
           else
             echo "dev was not published (missing branch or failed checks)"
           fi
