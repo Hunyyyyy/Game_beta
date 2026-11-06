@@ -15,6 +15,9 @@ export class Controller {
   box: Box | null = null;
   onChange: () => void = () => {};  /** Short message for the player. */
   onToast: (text: string) => void = () => {};
+  /** An order was given to a troop (several chosen, soldiers among them): the sound of it. */
+  onOrder: () => void = () => {};
+  private ordered(ids: number[]): void { if (ids.length > 1 && ids.some((id) => this.sim.get(id)?.job === 'fight')) this.onOrder(); }
   /** Selecting several villagers: taps toggle, drags draw a box. */
   multi = false;
   /** Building being placed, and where the ghost currently sits (top-left tile). */
@@ -434,7 +437,7 @@ export class Controller {
         const why = seen.kind === 'foe' ? null : this.sim.autoHunter(ids, seen.target), n = this.sim.orderAttack(ids, seen.target, queue);
         this.onToast(n ? (seen.kind === 'foe' ? 'Tấn công' : 'Săn') : seen.kind === 'foe' ? 'Chỉ chiến binh mới đánh: tuyển lính ở trại lính' : why ?? noHunter);
       }
-      this.markers.push({ x: w.x, y: w.y, age: 0 }); this.onChange(); return;
+      this.markers.push({ x: w.x, y: w.y, age: 0 }); this.ordered(ids); this.onChange(); return;
     }
     const { x: tx, y: ty } = this.pickTile(w.x, w.y);
     if (!this.sim.world.inBounds(tx, ty)) return;
@@ -443,6 +446,7 @@ export class Controller {
     if (work) this.onToast(work.sent ? (work.err ? `${JOB_NAME[work.job]} (${work.err})` : JOB_NAME[work.job]) : work.job === 'build' ? 'Chỉ thợ xây của Nhà thợ xây mới xây: chọn thợ ở nhà đó' : work.err ?? `Dân đã có nghề khác: chỉ đổi nghề ở công trình của nghề ${JOB_NAME[work.job].toLowerCase()}`);
     else this.sim.orderMove(ids, tx, ty, queue);
     this.markers.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, age: 0 });
+    this.ordered(ids);
     if (work?.sent) this.releaseCivilians(queue); // a job lets the villager go; plain moves keep them chosen so they can be sent on again
     this.onChange();
   }
@@ -453,6 +457,7 @@ export class Controller {
     if (!this.selected.size) { this.onChange(); return; }
     const w = this.r.screenToWorld(p.x, p.y);
     this.sim.orderAttackMove([...this.selected], w.x / TILE, w.y / TILE, queue);
+    this.ordered([...this.selected]);
     this.markers.push({ x: w.x, y: w.y, age: 0 });
     this.onToast('Tấn công – di chuyển'); this.onChange();
   }

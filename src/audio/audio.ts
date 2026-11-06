@@ -6,17 +6,28 @@ interface Active { el: HTMLAudioElement; anim: string; file: string; seen: numbe
 /** Sound of the blow of a weapon. `burst`: for 2 / 3 or more hits landing together (instead of `files`). */
 type HitCfg = { files: string[]; burst?: string[]; burstWindow?: number; volume: number; gap: number };
 type WeatherLayer = { file: string; volume: number };
+/** Weather: `loops` play all the while; each `bursts` entry plays one of its files now and then (every `gapMin` to `gapMax` seconds). */
+type WeatherCfg = { loops?: WeatherLayer[]; bursts?: Array<{ files: string[]; volume: number; gapMin: number; gapMax: number }> };
+/** Most one-shot sounds at once (each is an audio element: hundreds of them at a battle would choke the page). */
+const MAX_LIVE = 14;
+type Kind = 'sfx' | 'amb' | 'mus';
+const pick = <T>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 const HITS = cfg.hits as Record<string, HitCfg>;
 /** sounds.json `anims`: a key may name several animations joined by `|`, which then share the entry. */
 const ANIMS: Record<string, AnimCfg | AnimCfg[]> = {};
 for (const [k, v] of Object.entries(cfg.anims as unknown as Record<string, AnimCfg | AnimCfg[]>)) for (const a of k.split('|')) ANIMS[a] = v;
-const WEATHER = cfg.weather as Record<string, WeatherLayer[]>;
+const WEATHER = cfg.weather as Record<string, WeatherCfg>;
+const NEAR = cfg.near as Record<string, WeatherLayer>;
 
 /**
  * Game sound. Plain HTMLAudioElement (not Web Audio fetch), so the page also works opened from disk (file://).
  * Browsers only allow sound after a click/key, so nothing plays until the first user gesture.
  */
 export class GameAudio {
+  /** Volume of each kind, 0 to 1 (the player's slider). */
+  vol: Record<Kind, number> = { sfx: 1, amb: 1, mus: 1 };
+  /** The volume of a kind of sound now: 0 when it is switched off. */
+  private gain(k: Kind): number { return (k === 'sfx' ? this.sfxOn : k === 'amb' ? this.ambientOn : this.musicOn) ? this.vol[k] : 0; }
   /** Work and fight sounds. */
   sfxOn = true;
   /** Weather sounds. */
@@ -24,9 +35,17 @@ export class GameAudio {
   /** War music. */
   musicOn = true;
   private warScreen = false;
-  private warSeen = false;
-  private stingDone = false;
+  private stingsDone = 0;
   private warAge = 99;
+  /** The war track of this war (one of `war.music.files`, picked when it starts). */
+  private warTrack: string | null = null;
+  /** What stands near the middle of the screen this frame (`near` in sounds.json): the renderer says it, `update` plays it. */
+  private victory: { left: string[]; cur: HTMLAudioElement | null; started: HTMLAudioElement[] } | null = null;
+  private nearNow = new Set<string>();
+  /** Real time (ms) before which nothing plays: just after the player is back from another tab, what happened meanwhile is not heard. */
+  private quietUntil = 0;
+  private birdWait = 20;
+  private readonly burstAt = new Map<string, number>();
   private peaceEl: HTMLAudioElement | null = null;
   private peaceVol = 0;
   /** Seconds until the peace music may start (counted down while it is quiet). */
@@ -37,6 +56,8 @@ export class GameAudio {
   private unlocked = false;
   private readonly cache = new Map<string, HTMLAudioElement>();
   private readonly lastPlay = new Map<string, number>();
+  /** One-shot sounds playing now. */
+  private readonly live = new Set<HTMLAudioElement>();
   /** Hits of a weapon with `burst` sounds, gathered for a moment: (start time, how many) — see `hit` and `sweep`. */
   private readonly pending = new Map<string, { t0: number; n: number }>();
   private readonly steps = new WeakMap<object, number>();
@@ -53,10 +74,11 @@ export class GameAudio {
   private hidden = false;
   private onVisibility(): void {
     this.hidden = document.hidden || !document.hasFocus();
-    if (!this.hidden) return; // the beds start again in `update`
+    if (!this.hidden) { this.quietUntil = performance.now() + 800; this.warAge = 0; return; } // the beds start again in `update`
     for (const b of this.beds.values()) { b.el.pause(); b.vol = 0; }
     for (const k of [...this.active.keys()]) this.stop(k);
     this.pending.clear();
+    this.victory = null;
     this.stopPeace();
     this.warScreen = false;
   }
@@ -67,20 +89,24 @@ export class GameAudio {
     return a;
   }
 
-  private play(file: string, volume: number, gap: number, now: number, single: boolean, on = this.sfxOn, group = file): HTMLAudioElement | null {
-    if (!this.unlocked || !on || this.hidden) return null;
+  private play(file: string, volume: number, gap: number, now: number, single: boolean, kind: Kind = 'sfx', group = file): HTMLAudioElement | null {
+    if (!this.unlocked || !this.gain(kind) || this.hidden || performance.now() < this.quietUntil) return null;
     if (now - (this.lastPlay.get(group) ?? -1e9) < gap) return null;
     if (single) for (const a of this.active.values()) if (a.file === group && !a.el.ended) return null; // `file` of an entry is its group
+    if (this.live.size >= MAX_LIVE) return null; // a battle of hundreds asks for far more sounds than anyone hears: the extra ones are dropped
     this.lastPlay.set(group, now);
     const a = this.el(file).cloneNode() as HTMLAudioElement;
-    a.volume = Math.min(1, volume * cfg.master);
-    a.play().catch(() => { /* not allowed yet / file missing */ });
+    a.volume = Math.min(1, volume * cfg.master * this.gain(kind));
+    this.live.add(a);
+    const done = (): void => { this.live.delete(a); a.removeEventListener('ended', done); a.removeEventListener('error', done); };
+    a.addEventListener('ended', done); a.addEventListener('error', done);
+    a.play().catch(() => { this.live.delete(a); /* not allowed yet / file missing */ });
     return a;
   }
 
   private stop(key: object): void {
     const a = this.active.get(key);
-    if (a) { a.el.pause(); this.active.delete(key); }
+    if (a) { a.el.pause(); this.live.delete(a.el); this.active.delete(key); }
   }
 
   /** Call every frame for each unit near the middle of the screen: plays the sound on the animation's hit frame. */
@@ -95,7 +121,7 @@ export class GameAudio {
     for (const c of Array.isArray(def) ? def : [def]) {
       if (step % clip.n !== (c.frame ?? c.hitFrame ?? clip.hit)) continue;
       const file = c.files ? c.files[Math.floor(Math.random() * c.files.length)] : c.file;
-      const el = this.play(file, c.volume, c.gap, now, !!c.work, this.sfxOn, c.files ? c.files[0] : c.file);
+      const el = this.play(file, c.volume, c.gap, now, !!c.work, 'sfx', c.files ? c.files[0] : c.file);
       if (el && c.work) this.active.set(key, { el, anim, file: c.files ? c.files[0] : c.file, seen: now });
     }
   }
@@ -106,7 +132,7 @@ export class GameAudio {
    */
   hit(weapon: string, ranged: boolean, now: number): void {
     const key = HITS[weapon] ? weapon : ranged ? '' : 'melee', c = key ? HITS[key] : null;
-    if (!c) return;
+    if (!c || this.hidden || performance.now() < this.quietUntil) return;
     if (c.burst) { // arrows that land together are one sound: they are counted for `burstWindow` seconds, then played by `sweep`
       const p = this.pending.get(key);
       if (p) p.n++; else this.pending.set(key, { t0: now, n: 1 });
@@ -131,11 +157,69 @@ export class GameAudio {
    * The war music. `onScreen`: a war is on (the music does not depend on the camera).
    * `seen`: our soldiers have seen the enemy: the "battle breaks out" sting plays each time it turns on, wherever the camera is, over the music.
    */
-  setWar(onScreen: boolean, seen: boolean, now: number): void {
+  setWar(onScreen: boolean, stings: number, now: number): void {
     this.warAge = 0;
-    this.warScreen = onScreen; this.warSeen = seen;
-    if (seen && !this.stingDone) { this.stingDone = true; this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, this.musicOn); }
-    else if (!seen) this.stingDone = false; // the war is over: the next one gets its sting
+    this.warScreen = onScreen;
+    if (stings < this.stingsDone) this.stingsDone = 0; // a new war
+    for (let i = 0; i < Math.min(4, stings - this.stingsDone); i++) this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, 'mus', `sting${i}`); // they may sound over each other
+    this.stingsDone = stings;
+  }
+
+  /** The player gave an order to a troop (a button, or a click with several chosen): one of the order sounds. */
+  order(): void {
+    const o = cfg.order;
+    this.play(pick(o.files), o.volume, o.gap, performance.now() / 1000, false, 'sfx', 'order');
+  }
+
+  /**
+   * The war is decided. Lost: its own music, once. Won: the four victory sounds, in a random order, in two rounds of two: the second of a pair starts when the first is
+   * `next` (30%) played, so they sound over each other, and the next pair when both are over.
+   */
+  warEnded(result: 'won' | 'lost', now: number): void {
+    if (result === 'lost') { this.play(cfg.end.lost.file, cfg.end.lost.volume, 0, now, false, 'mus', 'lost'); return; }
+    const files = [...cfg.end.won.files];
+    for (let i = files.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [files[i], files[j]] = [files[j], files[i]]; }
+    this.victory = { left: files, cur: null, started: [] };
+  }
+
+  /** The player pulled the army out: the cheering stops (what plays now is cut, what is still to come does not start). */
+  stopVictory(): void {
+    const v = this.victory;
+    if (!v) return;
+    for (const e of v.started) { e.pause(); this.live.delete(e); }
+    this.victory = null;
+  }
+
+  private tickVictory(): void {
+    const v = this.victory;
+    if (!v) return;
+    const c = v.cur, begun = 4 - v.left.length;
+    if (begun % 2 === 1) { if (c && !c.ended && !(c.duration > 0 && c.currentTime / c.duration >= cfg.end.won.next)) return; } // the second of a pair: when the first is 30% played
+    else if (begun > 0 && v.started.some((e) => !e.ended)) return; // the next pair: when both of the one before are over
+    if (!v.left.length) { this.victory = null; return; }
+    const file = v.left.shift()!;
+    const el = this.play(file, cfg.end.won.volume, 0, performance.now() / 1000, false, 'mus', file);
+    if (!el) { this.victory = null; return; } // refused (muted, another tab): that is the end of it
+    v.cur = el; v.started.push(el);
+  }
+
+  /** A flash of lightning: the thunder follows a moment later (the farther, the later), a random one of the clips. */
+  thunder(): void {
+    const t = cfg.thunder;
+    setTimeout(() => this.play(pick(t.files), t.volume, 0, performance.now() / 1000, false, 'amb'), (t.delayMin + Math.random() * (t.delayMax - t.delayMin)) * 1000);
+  }
+
+  /** Something that sounds as long as it is near the middle of the screen (a key of `near`): call every frame it is there. */
+  near(name: string): void { this.nearNow.add(name); }
+
+  /** Birds now and then, by day, in fair weather and not in winter (`ok`): one of the clips, never a loop. Call every frame. */
+  setBirds(ok: boolean, dt: number, now: number): void {
+    if (!ok) { this.birdWait = Math.max(this.birdWait, 10); return; }
+    this.birdWait -= dt;
+    if (this.birdWait > 0) return;
+    const b = cfg.birds;
+    this.birdWait = b.gapMin + Math.random() * (b.gapMax - b.gapMin);
+    this.play(pick(b.files), b.volume, 0, now, false, 'amb');
   }
 
   /**
@@ -147,7 +231,7 @@ export class GameAudio {
     const el = this.peaceEl;
     if (el) {
       if (el.ended) { this.peaceEl = null; this.peaceWait = cfg.peace.gapMin + Math.random() * (cfg.peace.gapMax - cfg.peace.gapMin); return; }
-      this.peaceVol = Math.max(0, Math.min(cfg.peace.volume * cfg.master, this.peaceVol + (peaceful ? 1 : -1) * dt / cfg.fade * cfg.peace.volume));
+      this.peaceVol = Math.max(0, Math.min(cfg.peace.volume * cfg.master * this.vol.mus, this.peaceVol + (peaceful ? 1 : -1) * dt / cfg.fade * cfg.peace.volume));
       el.volume = this.peaceVol;
       if (!peaceful && this.peaceVol <= 0.001) this.stopPeace();
       return;
@@ -155,7 +239,7 @@ export class GameAudio {
     if (!peaceful) return;
     this.peaceWait -= dt;
     if (this.peaceWait > 0) return;
-    const a = new Audio(cfg.dir + cfg.peace.file); a.volume = 0; this.peaceVol = 0;
+    const a = new Audio(cfg.dir + pick(cfg.peace.files)); a.volume = 0; this.peaceVol = 0;
     this.peaceEl = a;
     a.play().catch(() => { if (this.peaceEl === a) this.peaceEl = null; this.peaceWait = 5; }); // not allowed yet: try again soon
   }
@@ -183,21 +267,31 @@ export class GameAudio {
     this.nightOn = night;
     while (this.howls.length && time >= this.howls[0]) {
       const late = time - this.howls.shift()! > 5; // the game was away (a tab, a skip): that howl is lost, not played all at once
-      if (!late) this.play(w.files[Math.floor(Math.random() * w.files.length)], w.volume, 0, time, false, this.ambientOn);
+      if (!late) this.play(w.files[Math.floor(Math.random() * w.files.length)], w.volume, 0, time, false, 'amb');
     }
   }
 
   /** Looping layers (weather, war music), each fading in and out. Call every frame. */
   update(kind: string, dt: number): void {
     this.warAge += dt;
+    this.tickVictory();
     if (this.hidden) return; // another tab: silent (see `onVisibility`)
-    if (this.warAge > 0.5) { this.warScreen = false; this.warSeen = false; } // the renderer stopped reporting: no soldiers in view (the sting is re-armed only by the sim saying the fight died down)
-    const want = new Map((this.ambientOn ? WEATHER[kind] ?? [] : [])
-      .map((l) => [l.file, l.volume * cfg.master] as const));
-    if (this.musicOn) {
-      // the war music plays all through the war; the sting (enemy seen) plays over it
-      const w = this.warScreen ? cfg.war.music : null;
-      if (w) want.set(w.file, w.volume * cfg.master);
+    if (this.warAge > 0.5) { this.warScreen = false; this.warTrack = null; this.stingsDone = 0; } // the renderer stopped reporting: no soldiers in view (the sting is re-armed only by the sim saying the fight died down)
+    const w = WEATHER[kind], want = new Map<string, number>();
+    if (this.ambientOn && w) {
+      for (const l of w.loops ?? []) want.set(l.file, l.volume * cfg.master * this.vol.amb);
+      (w.bursts ?? []).forEach((bu, i) => { // thunder, wind: now and then
+        const key = kind + i, at = this.burstAt.get(key);
+        if (at === undefined) this.burstAt.set(key, bu.gapMin + Math.random() * (bu.gapMax - bu.gapMin));
+        else if (at <= 0) { this.burstAt.set(key, bu.gapMin + Math.random() * (bu.gapMax - bu.gapMin)); this.play(pick(bu.files), bu.volume, 0, performance.now() / 1000, false, 'amb'); }
+        else this.burstAt.set(key, at - dt);
+      });
+    }
+    if (this.sfxOn) for (const n of this.nearNow) { const l = NEAR[n]; if (l && this.vol.sfx > 0) want.set(l.file, l.volume * cfg.master * this.vol.sfx); }
+    this.nearNow.clear();
+    if (this.musicOn && this.warScreen) { // the war music plays all through the war; the sting (enemy seen) plays over it
+      this.warTrack ??= pick(cfg.war.music.files);
+      want.set(this.warTrack, cfg.war.music.volume * cfg.master * this.vol.mus);
     }
     for (const file of want.keys()) if (!this.beds.has(file)) {
       const el = new Audio(cfg.dir + file); el.loop = true; el.volume = 0;

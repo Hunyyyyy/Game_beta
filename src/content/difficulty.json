@@ -149,7 +149,7 @@
   },
   "boss": {
     "_note": "Làng đầu mục (boss): mỗi ván có một làng boss (bậc 'boss' của tribes.json), luôn hơn người chơi một bậc (cấp trại +1, tối đa maxCamp; có chòi canh và đồ đồng dù người chơi còn ở đồ đá). power: sức mạnh quân của boss so với quân tối đa người chơi có thể có ở cấp trại đó (chỉ số mỗi lính chỉ tăng theo căn bậc ba của số này, nên cần số lớn: 6 được chỉnh bằng chạy thử trận: 60 lính trại đủ giáp và nghiên cứu hết mức của cấp trại 4 luôn thua, 93 lính (60 của ta cộng 33 lính đồng minh của các làng) thắng và mất khoảng 30 đến 40% quân); economy: kinh tế so với kinh tế tối đa; popMult: số dân so với cấp trại; bronzeShare: phần lính cầm vũ khí đồng và mặc giáp đồng; wallHp: độ bền rào, cổng, chòi và nhà so với làng thường.",
-    "power": 4,
+    "power": 3,
     "economy": 0.6,
     "popMult": 1.6,
     "bronzeShare": 0.6,

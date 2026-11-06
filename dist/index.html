@@ -7290,7 +7290,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     },
     boss: {
       _note: "L\xE0ng \u0111\u1EA7u m\u1EE5c (boss): m\u1ED7i v\xE1n c\xF3 m\u1ED9t l\xE0ng boss (b\u1EADc 'boss' c\u1EE7a tribes.json), lu\xF4n h\u01A1n ng\u01B0\u1EDDi ch\u01A1i m\u1ED9t b\u1EADc (c\u1EA5p tr\u1EA1i +1, t\u1ED1i \u0111a maxCamp; c\xF3 ch\xF2i canh v\xE0 \u0111\u1ED3 \u0111\u1ED3ng d\xF9 ng\u01B0\u1EDDi ch\u01A1i c\xF2n \u1EDF \u0111\u1ED3 \u0111\xE1). power: s\u1EE9c m\u1EA1nh qu\xE2n c\u1EE7a boss so v\u1EDBi qu\xE2n t\u1ED1i \u0111a ng\u01B0\u1EDDi ch\u01A1i c\xF3 th\u1EC3 c\xF3 \u1EDF c\u1EA5p tr\u1EA1i \u0111\xF3 (ch\u1EC9 s\u1ED1 m\u1ED7i l\xEDnh ch\u1EC9 t\u0103ng theo c\u0103n b\u1EADc ba c\u1EE7a s\u1ED1 n\xE0y, n\xEAn c\u1EA7n s\u1ED1 l\u1EDBn: 6 \u0111\u01B0\u1EE3c ch\u1EC9nh b\u1EB1ng ch\u1EA1y th\u1EED tr\u1EADn: 60 l\xEDnh tr\u1EA1i \u0111\u1EE7 gi\xE1p v\xE0 nghi\xEAn c\u1EE9u h\u1EBFt m\u1EE9c c\u1EE7a c\u1EA5p tr\u1EA1i 4 lu\xF4n thua, 93 l\xEDnh (60 c\u1EE7a ta c\u1ED9ng 33 l\xEDnh \u0111\u1ED3ng minh c\u1EE7a c\xE1c l\xE0ng) th\u1EAFng v\xE0 m\u1EA5t kho\u1EA3ng 30 \u0111\u1EBFn 40% qu\xE2n); economy: kinh t\u1EBF so v\u1EDBi kinh t\u1EBF t\u1ED1i \u0111a; popMult: s\u1ED1 d\xE2n so v\u1EDBi c\u1EA5p tr\u1EA1i; bronzeShare: ph\u1EA7n l\xEDnh c\u1EA7m v\u0169 kh\xED \u0111\u1ED3ng v\xE0 m\u1EB7c gi\xE1p \u0111\u1ED3ng; wallHp: \u0111\u1ED9 b\u1EC1n r\xE0o, c\u1ED5ng, ch\xF2i v\xE0 nh\xE0 so v\u1EDBi l\xE0ng th\u01B0\u1EDDng.",
-      power: 4,
+      power: 3,
       economy: 0.6,
       popMult: 1.6,
       bronzeShare: 0.6,
@@ -116417,9 +116417,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     master: 0.7,
     range: 0.5,
     anims: {
-      chop: { file: "wood_chop1.wav", files: ["wood_chop1.wav", "wood_chop2.wav"], hitFrame: 5, volume: 0.5, gap: 0.25, work: true },
-      mine: { file: "miner_stone.mp3", hitFrame: 5, volume: 0.5, gap: 0.25, work: true },
-      build: { file: "building.wav", hitFrame: 2, volume: 0.35, gap: 6, work: true },
+      chop: { file: "works/wood_chop1.wav", files: ["works/wood_chop1.wav", "works/wood_chop2.wav"], hitFrame: 5, volume: 0.5, gap: 0.25, work: true },
+      mine: { file: "works/miner_stone.mp3", hitFrame: 5, volume: 0.5, gap: 0.25, work: true },
+      build: { file: "works/building.wav", hitFrame: 2, volume: 0.35, gap: 6, work: true },
       shoot_attack: [
         { file: "battle/bow_draw.mp3", frame: 0, volume: 0.3, gap: 0.2 },
         { file: "battle/bow_release.mp3", volume: 0.4, gap: 0.2 }
@@ -116432,26 +116432,43 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       throw_attack: { file: "battle/sling_throw.mp3", volume: 0.5, gap: 0.2 }
     },
     weather: {
-      drizzle: [{ file: "rain.wav", volume: 0.25 }],
-      rain: [{ file: "rain.wav", volume: 0.5 }],
-      thunder: [{ file: "rain_thunder.wav", volume: 0.5 }],
-      storm: [{ file: "storm.wav", volume: 0.55 }, { file: "rain.wav", volume: 0.4 }, { file: "rain_thunder.wav", volume: 0.4 }]
+      drizzle: { loops: [{ file: "envairoment/rain.wav", volume: 0.45 }] },
+      rain: {
+        loops: [{ file: "envairoment/rain.wav", volume: 0.85 }],
+        bursts: [{ files: ["envairoment/thunder_1.mp3", "envairoment/thunder_2.mp3", "envairoment/thunder_3.mp3"], volume: 0.6, gapMin: 15, gapMax: 45 }]
+      },
+      thunder: { loops: [{ file: "envairoment/rain.wav", volume: 0.85 }] },
+      storm: {
+        loops: [{ file: "envairoment/storm.wav", volume: 0.7 }, { file: "envairoment/rain.wav", volume: 0.7 }],
+        bursts: [{ files: ["envairoment/wind_storm_1.mp3", "envairoment/wind_storm_2.mp3", "envairoment/wind_1.mp3", "envairoment/wind_2.mp3"], volume: 0.9, gapMin: 5, gapMax: 14 }]
+      }
     },
+    thunder: { files: ["envairoment/thunder_1.mp3", "envairoment/thunder_2.mp3", "envairoment/thunder_3.mp3"], volume: 0.8, delayMin: 0.3, delayMax: 1.6 },
+    order: { files: ["battle/order_1.mp3", "battle/order_2.mp3", "battle/order_3.mp3"], volume: 0.7, gap: 0.15 },
+    end: {
+      lost: { file: "battle/musics/The_Field_of_Lost_Kings.mp3", volume: 0.6 },
+      won: { files: ["battle/victory_1.mp3", "battle/victory_2.mp3", "battle/victory_3.mp3", "battle/victory_4.mp3"], volume: 0.7, next: 0.3 }
+    },
+    birds: { files: ["envairoment/birds_1.mp3", "envairoment/birds_2.mp3", "envairoment/birds_3.mp3"], volume: 0.4, gapMin: 30, gapMax: 90 },
     hits: {
-      elephant: { files: ["battle/elephant_1.mp3", "battle/elephant_2.mp3", "battle/elephant_3.mp3"], volume: 0.8, gap: 2.5 },
+      elephant: { files: ["battle/elephant_1.mp3", "battle/elephant_2.mp3", "battle/elephant_3.mp3"], volume: 0.45, gap: 12 },
       gate_open: { files: ["battle/gate_open.mp3"], volume: 0.6, gap: 0.4 },
       gate_shut: { files: ["battle/gate_shut.mp3"], volume: 0.6, gap: 0.4 },
+      place: { files: ["build_effects/place.mp3"], volume: 0.6, gap: 0.3 },
       bow: { files: ["battle/arrow_hit_1.mp3"], burst: ["battle/arrow_hit_2.mp3", "battle/arrow_hit_3.mp3"], burstWindow: 0.3, volume: 0.4, gap: 0.7 },
       melee: { files: ["battle/melee_1.mp3", "battle/melee_2.mp3", "battle/melee_3.mp3", "battle/melee_4.mp3", "battle/melee_5.mp3"], volume: 0.55, gap: 0.08 }
     },
+    near: {
+      burn: { file: "battle/burn.mp3", volume: 0.6 },
+      homefire: { file: "build_effects/homefire.mp3", volume: 0.35 }
+    },
     war: {
       engageShare: 0.2,
-      engageQuiet: 6,
-      music: { file: "battle/war_music_1.mp3", volume: 0.6 },
-      start: { file: "battle_start.mp3", volume: 0.7 }
+      music: { files: ["battle/musics/war_music_1.mp3", "battle/musics/Storming_the_Breach.mp3", "battle/musics/Steel_Against_the_Sky.mp3", "battle/musics/The_General_s_Heavy_Call.mp3"], volume: 0.6 },
+      start: { file: "battle/battle_start.mp3", volume: 0.7 }
     },
-    wolves: { files: ["battle/wolf_1.mp3", "battle/wolf_2.mp3", "battle/wolf_3.mp3"], volume: 0.5, maxHowls: 3, from: 0.03, to: 0.3, spacing: 0.07 },
-    peace: { file: "The_Valley_After_Rain.mp3", volume: 0.5, firstDelay: 3, gapMin: 240, gapMax: 600 },
+    wolves: { files: ["envairoment/wolf_1.mp3", "envairoment/wolf_2.mp3", "envairoment/wolf_3.mp3"], volume: 0.5, maxHowls: 3, from: 0.03, to: 0.3, spacing: 0.07 },
+    peace: { files: ["envairoment/musics/The_Valley_After_Rain.mp3", "envairoment/musics/Valley_of_Still_Water.mp3", "envairoment/musics/peace_3.mp3"], volume: 0.5, firstDelay: 3, gapMin: 120, gapMax: 300 },
     fade: 1.5
   };
 
@@ -116566,6 +116583,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return c ? { fps: c.fps, n: c.frames.length, hit: c.hit ?? 2 } : void 0;
   };
   var FOG_RGB = [8, 10, 20];
+  var RAIN_TILE = 512;
   var WEATHER_FX = {
     clear: { rain: 0, snow: 0, dim: 0, wind: 0, flash: 0 },
     mist: { rain: 0, snow: 0, dim: 0, wind: 0, flash: 0 },
@@ -116589,6 +116607,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.fxl = new FxLayer();
       /** Optional sound: plays work and fight sounds for the units on screen. */
       this.audio = null;
+      /** The lightning slot whose thunder has been sounded (presentation only). */
+      this.thunderSlot = -1;
       /** The mountains of a world, drawn as one heightfield (see mountains.ts). */
       this.mountains = /* @__PURE__ */ new WeakMap();
       this.fogVer = -1;
@@ -116597,6 +116617,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       /** The fence and gate of a village drawn as ours are: each work stands for a house of the same kind, so that the ropes, the posts and the gate join up. */
       this.wallStubs = /* @__PURE__ */ new WeakMap();
       this.wallMaps = /* @__PURE__ */ new WeakMap();
+      this.rainCache = null;
       this.ctx = canvas2.getContext("2d");
       this.fogCanvas = document.createElement("canvas");
       this.fogCanvas.width = this.fogCanvas.height = sim2.world.size;
@@ -116656,6 +116677,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
      * Every house does it, the tower no more than the others.
      */
     drawDamage(b, ax, ay, time) {
+      if (b.done && b.kind === "campfire" && this.audio?.sfxOn) {
+        const p = this.worldToScreen(ax, ay);
+        if (this.nearCenter(p.x, p.y)) this.audio.near("homefire");
+      }
       if (b.done) this.drawWear(b.kind, b.hp / Math.max(1, maxHp(b)), b.id, ax, ay, time, b.level, this.buildingProp(b).ay);
     }
     /**
@@ -116736,6 +116761,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         }
       }
       if (ratio2 <= 0.3) {
+        if (this.audio?.sfxOn) {
+          const p = this.worldToScreen(ax, ay);
+          if (this.nearCenter(p.x, p.y)) this.audio.near("burn");
+        }
         const fire = this.fxl.flame(lv, ratio2);
         for (let k = 0; k < 3; k++) {
           const t = time + k * 0.37 + id * 0.11, f = fire.frames[Math.floor(t * fire.fps) % fire.frames.length], at = this.worldToScreen(ax - wide * 0.6 + k * wide * 0.6, ay - (k === 1 ? 9 : 3));
@@ -117048,6 +117077,31 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const dx = (sx - this.w / 2) / (this.w / 2), dy = (sy - this.h / 2) / (this.h / 2);
       return dx * dx + dy * dy <= sounds_default.range * sounds_default.range;
     }
+    /** Two tiles of rain streaks (made once for a kind of weather); a streak slants with the wind. */
+    rainTiles(kind, density, wind) {
+      const key = `${kind}|${density}|${wind}`;
+      if (this.rainCache?.key === key) return this.rainCache.tiles;
+      const len = kind === "drizzle" ? 8 : 15, sx = wind * len, n = Math.max(1, Math.round(density * (RAIN_TILE * RAIN_TILE) / 7e5 / 2));
+      const tiles = [0, 1].map((layer) => {
+        const c = document.createElement("canvas");
+        c.width = c.height = RAIN_TILE;
+        const g = c.getContext("2d");
+        g.strokeStyle = kind === "drizzle" ? "rgba(200,215,235,.35)" : "rgba(200,215,235,.5)";
+        g.lineWidth = 1;
+        g.beginPath();
+        for (let i = 0; i < n; i++) {
+          const x = hash2(i, 2 + layer * 5, 41) * RAIN_TILE, y = hash2(i, 1 + layer * 5, 41) * RAIN_TILE;
+          for (const dx of x - sx < 0 ? [0, RAIN_TILE] : [0]) for (const dy of y - len < 0 ? [0, RAIN_TILE] : [0]) {
+            g.moveTo(x + dx, y + dy);
+            g.lineTo(x + dx - sx, y + dy - len);
+          }
+        }
+        g.stroke();
+        return c;
+      });
+      this.rainCache = { key, tiles };
+      return tiles;
+    }
     /** Rain, snow, mist, lightning in screen space; particle positions derive from time, so no state is kept. */
     drawWeather(time) {
       const { ctx: ctx2, w, h: h3 } = this, kind = this.sim.weather, fx = WEATHER_FX[kind];
@@ -117070,18 +117124,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       const area = w * h3 / 7e5;
       if (fx.rain) {
-        const n = Math.round(fx.rain * area), len = kind === "drizzle" ? 8 : 15, sx = fx.wind * len, sy = len;
-        ctx2.strokeStyle = kind === "drizzle" ? "rgba(200,215,235,.35)" : "rgba(200,215,235,.5)";
-        ctx2.lineWidth = 1;
-        ctx2.beginPath();
-        for (let i = 0; i < n; i++) {
-          const sp = 650 + hash2(i, 3, 41) * 300;
-          const y = (hash2(i, 1, 41) * (h3 + 40) + time * sp) % (h3 + 40) - 20;
-          const x = ((hash2(i, 2, 41) * (w + 80) + time * sp * fx.wind) % (w + 80) + (w + 80)) % (w + 80) - 40;
-          ctx2.moveTo(x, y);
-          ctx2.lineTo(x - sx, y - sy);
+        const tiles = this.rainTiles(kind, fx.rain, fx.wind);
+        for (const [i, sp] of [650, 900].entries()) {
+          const ox = time * sp * fx.wind % RAIN_TILE, oy = time * sp % RAIN_TILE;
+          for (let x = ox - RAIN_TILE; x < w; x += RAIN_TILE) for (let y = oy - RAIN_TILE; y < h3; y += RAIN_TILE) ctx2.drawImage(tiles[i], Math.round(x), Math.round(y));
         }
-        ctx2.stroke();
       }
       if (fx.snow) {
         const n = Math.round(fx.snow * area);
@@ -117096,6 +117143,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       if (fx.flash) {
         const slot = Math.floor(time / 3), f = time / 3 - slot;
         if (hash2(slot, 7, 91) < fx.flash && f < 0.13) {
+          if (slot !== this.thunderSlot) {
+            this.thunderSlot = slot;
+            this.audio?.thunder();
+          }
           ctx2.fillStyle = `rgba(235,240,255,${(0.55 * (1 - f / 0.13)).toFixed(3)})`;
           ctx2.fillRect(0, 0, w, h3);
         }
@@ -117305,7 +117356,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           } else ctx2.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - lift - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
           const v = d.v;
           if (v.phase === "work") this.fxl.watchWorker(v, fx, fy - lift, time);
-          if (this.audio && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time);
+          if (this.audio?.sfxOn && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time);
           if (v.team === "player" && (v.job === "fight" || v.job === "hunt") && v.phase !== "flee" && v.phase !== "sleep" && v.phase !== "down") {
             const p = this.worldToScreen(fx, fy - lift - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
             ctx2.fillStyle = "rgba(20,14,8,.85)";
@@ -117387,10 +117438,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       if (!this.audio) sim2.sfx.length = 0;
       if (this.audio) {
         this.audio.sweep(time);
-        for (const e of sim2.sfx) if (this.nearCenter((e.x * TILE - cx) * z, (e.y * TILE - cy) * z)) this.audio.hit(e.weapon, e.ranged, time);
+        if (this.audio.sfxOn) {
+          for (const e of sim2.sfx) if (this.nearCenter((e.x * TILE - cx) * z, (e.y * TILE - cy) * z)) this.audio.hit(e.weapon, e.ranged, time);
+        }
         const war = sim2.warScene();
         const onScreen = war.squads.length > 0;
-        this.audio.setWar(onScreen, war.seen, time);
+        this.audio.setWar(onScreen, war.stings, time);
         sim2.sfx.length = 0;
       }
       this.drawWeather(time);
@@ -117528,12 +117581,17 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   };
 
   // src/audio/audio.ts
+  var MAX_LIVE2 = 14;
+  var pick = (a) => a[Math.floor(Math.random() * a.length)];
   var HITS = sounds_default.hits;
   var ANIMS = {};
   for (const [k, v] of Object.entries(sounds_default.anims)) for (const a of k.split("|")) ANIMS[a] = v;
   var WEATHER2 = sounds_default.weather;
+  var NEAR = sounds_default.near;
   var GameAudio = class {
     constructor() {
+      /** Volume of each kind, 0 to 1 (the player's slider). */
+      this.vol = { sfx: 1, amb: 1, mus: 1 };
       /** Work and fight sounds. */
       this.sfxOn = true;
       /** Weather sounds. */
@@ -117541,9 +117599,17 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       /** War music. */
       this.musicOn = true;
       this.warScreen = false;
-      this.warSeen = false;
-      this.stingDone = false;
+      this.stingsDone = 0;
       this.warAge = 99;
+      /** The war track of this war (one of `war.music.files`, picked when it starts). */
+      this.warTrack = null;
+      /** What stands near the middle of the screen this frame (`near` in sounds.json): the renderer says it, `update` plays it. */
+      this.victory = null;
+      this.nearNow = /* @__PURE__ */ new Set();
+      /** Real time (ms) before which nothing plays: just after the player is back from another tab, what happened meanwhile is not heard. */
+      this.quietUntil = 0;
+      this.birdWait = 20;
+      this.burstAt = /* @__PURE__ */ new Map();
       this.peaceEl = null;
       this.peaceVol = 0;
       /** Seconds until the peace music may start (counted down while it is quiet). */
@@ -117554,6 +117620,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.unlocked = false;
       this.cache = /* @__PURE__ */ new Map();
       this.lastPlay = /* @__PURE__ */ new Map();
+      /** One-shot sounds playing now. */
+      this.live = /* @__PURE__ */ new Set();
       /** Hits of a weapon with `burst` sounds, gathered for a moment: (start time, how many) — see `hit` and `sweep`. */
       this.pending = /* @__PURE__ */ new Map();
       this.steps = /* @__PURE__ */ new WeakMap();
@@ -117570,15 +117638,24 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       addEventListener("keydown", unlock);
       for (const [t, ev] of [[document, "visibilitychange"], [window, "blur"], [window, "focus"], [window, "pagehide"]]) t.addEventListener(ev, () => this.onVisibility());
     }
+    /** The volume of a kind of sound now: 0 when it is switched off. */
+    gain(k) {
+      return (k === "sfx" ? this.sfxOn : k === "amb" ? this.ambientOn : this.musicOn) ? this.vol[k] : 0;
+    }
     onVisibility() {
       this.hidden = document.hidden || !document.hasFocus();
-      if (!this.hidden) return;
+      if (!this.hidden) {
+        this.quietUntil = performance.now() + 800;
+        this.warAge = 0;
+        return;
+      }
       for (const b of this.beds.values()) {
         b.el.pause();
         b.vol = 0;
       }
       for (const k of [...this.active.keys()]) this.stop(k);
       this.pending.clear();
+      this.victory = null;
       this.stopPeace();
       this.warScreen = false;
     }
@@ -117591,16 +117668,26 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       return a;
     }
-    play(file, volume, gap, now, single, on = this.sfxOn, group = file) {
-      if (!this.unlocked || !on || this.hidden) return null;
+    play(file, volume, gap, now, single, kind = "sfx", group = file) {
+      if (!this.unlocked || !this.gain(kind) || this.hidden || performance.now() < this.quietUntil) return null;
       if (now - (this.lastPlay.get(group) ?? -1e9) < gap) return null;
       if (single) {
         for (const a2 of this.active.values()) if (a2.file === group && !a2.el.ended) return null;
       }
+      if (this.live.size >= MAX_LIVE2) return null;
       this.lastPlay.set(group, now);
       const a = this.el(file).cloneNode();
-      a.volume = Math.min(1, volume * sounds_default.master);
+      a.volume = Math.min(1, volume * sounds_default.master * this.gain(kind));
+      this.live.add(a);
+      const done = () => {
+        this.live.delete(a);
+        a.removeEventListener("ended", done);
+        a.removeEventListener("error", done);
+      };
+      a.addEventListener("ended", done);
+      a.addEventListener("error", done);
       a.play().catch(() => {
+        this.live.delete(a);
       });
       return a;
     }
@@ -117608,6 +117695,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const a = this.active.get(key);
       if (a) {
         a.el.pause();
+        this.live.delete(a.el);
         this.active.delete(key);
       }
     }
@@ -117626,7 +117714,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       for (const c of Array.isArray(def) ? def : [def]) {
         if (step2 % clip.n !== (c.frame ?? c.hitFrame ?? clip.hit)) continue;
         const file = c.files ? c.files[Math.floor(Math.random() * c.files.length)] : c.file;
-        const el = this.play(file, c.volume, c.gap, now, !!c.work, this.sfxOn, c.files ? c.files[0] : c.file);
+        const el = this.play(file, c.volume, c.gap, now, !!c.work, "sfx", c.files ? c.files[0] : c.file);
         if (el && c.work) this.active.set(key, { el, anim, file: c.files ? c.files[0] : c.file, seen: now });
       }
     }
@@ -117636,7 +117724,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
      */
     hit(weapon, ranged, now) {
       const key = HITS[weapon] ? weapon : ranged ? "" : "melee", c = key ? HITS[key] : null;
-      if (!c) return;
+      if (!c || this.hidden || performance.now() < this.quietUntil) return;
       if (c.burst) {
         const p = this.pending.get(key);
         if (p) p.n++;
@@ -117662,14 +117750,84 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
      * The war music. `onScreen`: a war is on (the music does not depend on the camera).
      * `seen`: our soldiers have seen the enemy: the "battle breaks out" sting plays each time it turns on, wherever the camera is, over the music.
      */
-    setWar(onScreen, seen, now) {
+    setWar(onScreen, stings, now) {
       this.warAge = 0;
       this.warScreen = onScreen;
-      this.warSeen = seen;
-      if (seen && !this.stingDone) {
-        this.stingDone = true;
-        this.play(sounds_default.war.start.file, sounds_default.war.start.volume, 0, now, false, this.musicOn);
-      } else if (!seen) this.stingDone = false;
+      if (stings < this.stingsDone) this.stingsDone = 0;
+      for (let i = 0; i < Math.min(4, stings - this.stingsDone); i++) this.play(sounds_default.war.start.file, sounds_default.war.start.volume, 0, now, false, "mus", `sting${i}`);
+      this.stingsDone = stings;
+    }
+    /** The player gave an order to a troop (a button, or a click with several chosen): one of the order sounds. */
+    order() {
+      const o = sounds_default.order;
+      this.play(pick(o.files), o.volume, o.gap, performance.now() / 1e3, false, "sfx", "order");
+    }
+    /**
+     * The war is decided. Lost: its own music, once. Won: the four victory sounds, in a random order, in two rounds of two: the second of a pair starts when the first is
+     * `next` (30%) played, so they sound over each other, and the next pair when both are over.
+     */
+    warEnded(result, now) {
+      if (result === "lost") {
+        this.play(sounds_default.end.lost.file, sounds_default.end.lost.volume, 0, now, false, "mus", "lost");
+        return;
+      }
+      const files = [...sounds_default.end.won.files];
+      for (let i = files.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [files[i], files[j]] = [files[j], files[i]];
+      }
+      this.victory = { left: files, cur: null, started: [] };
+    }
+    /** The player pulled the army out: the cheering stops (what plays now is cut, what is still to come does not start). */
+    stopVictory() {
+      const v = this.victory;
+      if (!v) return;
+      for (const e of v.started) {
+        e.pause();
+        this.live.delete(e);
+      }
+      this.victory = null;
+    }
+    tickVictory() {
+      const v = this.victory;
+      if (!v) return;
+      const c = v.cur, begun = 4 - v.left.length;
+      if (begun % 2 === 1) {
+        if (c && !c.ended && !(c.duration > 0 && c.currentTime / c.duration >= sounds_default.end.won.next)) return;
+      } else if (begun > 0 && v.started.some((e) => !e.ended)) return;
+      if (!v.left.length) {
+        this.victory = null;
+        return;
+      }
+      const file = v.left.shift();
+      const el = this.play(file, sounds_default.end.won.volume, 0, performance.now() / 1e3, false, "mus", file);
+      if (!el) {
+        this.victory = null;
+        return;
+      }
+      v.cur = el;
+      v.started.push(el);
+    }
+    /** A flash of lightning: the thunder follows a moment later (the farther, the later), a random one of the clips. */
+    thunder() {
+      const t = sounds_default.thunder;
+      setTimeout(() => this.play(pick(t.files), t.volume, 0, performance.now() / 1e3, false, "amb"), (t.delayMin + Math.random() * (t.delayMax - t.delayMin)) * 1e3);
+    }
+    /** Something that sounds as long as it is near the middle of the screen (a key of `near`): call every frame it is there. */
+    near(name) {
+      this.nearNow.add(name);
+    }
+    /** Birds now and then, by day, in fair weather and not in winter (`ok`): one of the clips, never a loop. Call every frame. */
+    setBirds(ok, dt, now) {
+      if (!ok) {
+        this.birdWait = Math.max(this.birdWait, 10);
+        return;
+      }
+      this.birdWait -= dt;
+      if (this.birdWait > 0) return;
+      const b = sounds_default.birds;
+      this.birdWait = b.gapMin + Math.random() * (b.gapMax - b.gapMin);
+      this.play(pick(b.files), b.volume, 0, now, false, "amb");
     }
     /**
      * The quiet-times music: once at the start of the game, then now and then (a random wait of `gapMin` to `gapMax` seconds after it has ended),
@@ -117687,7 +117845,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           this.peaceWait = sounds_default.peace.gapMin + Math.random() * (sounds_default.peace.gapMax - sounds_default.peace.gapMin);
           return;
         }
-        this.peaceVol = Math.max(0, Math.min(sounds_default.peace.volume * sounds_default.master, this.peaceVol + (peaceful ? 1 : -1) * dt / sounds_default.fade * sounds_default.peace.volume));
+        this.peaceVol = Math.max(0, Math.min(sounds_default.peace.volume * sounds_default.master * this.vol.mus, this.peaceVol + (peaceful ? 1 : -1) * dt / sounds_default.fade * sounds_default.peace.volume));
         el.volume = this.peaceVol;
         if (!peaceful && this.peaceVol <= 1e-3) this.stopPeace();
         return;
@@ -117695,7 +117853,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       if (!peaceful) return;
       this.peaceWait -= dt;
       if (this.peaceWait > 0) return;
-      const a = new Audio(sounds_default.dir + sounds_default.peace.file);
+      const a = new Audio(sounds_default.dir + pick(sounds_default.peace.files));
       a.volume = 0;
       this.peaceVol = 0;
       this.peaceEl = a;
@@ -117727,21 +117885,39 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.nightOn = night;
       while (this.howls.length && time >= this.howls[0]) {
         const late = time - this.howls.shift() > 5;
-        if (!late) this.play(w.files[Math.floor(Math.random() * w.files.length)], w.volume, 0, time, false, this.ambientOn);
+        if (!late) this.play(w.files[Math.floor(Math.random() * w.files.length)], w.volume, 0, time, false, "amb");
       }
     }
     /** Looping layers (weather, war music), each fading in and out. Call every frame. */
     update(kind, dt) {
       this.warAge += dt;
+      this.tickVictory();
       if (this.hidden) return;
       if (this.warAge > 0.5) {
         this.warScreen = false;
-        this.warSeen = false;
+        this.warTrack = null;
+        this.stingsDone = 0;
       }
-      const want = new Map((this.ambientOn ? WEATHER2[kind] ?? [] : []).map((l) => [l.file, l.volume * sounds_default.master]));
-      if (this.musicOn) {
-        const w = this.warScreen ? sounds_default.war.music : null;
-        if (w) want.set(w.file, w.volume * sounds_default.master);
+      const w = WEATHER2[kind], want = /* @__PURE__ */ new Map();
+      if (this.ambientOn && w) {
+        for (const l of w.loops ?? []) want.set(l.file, l.volume * sounds_default.master * this.vol.amb);
+        (w.bursts ?? []).forEach((bu, i) => {
+          const key = kind + i, at = this.burstAt.get(key);
+          if (at === void 0) this.burstAt.set(key, bu.gapMin + Math.random() * (bu.gapMax - bu.gapMin));
+          else if (at <= 0) {
+            this.burstAt.set(key, bu.gapMin + Math.random() * (bu.gapMax - bu.gapMin));
+            this.play(pick(bu.files), bu.volume, 0, performance.now() / 1e3, false, "amb");
+          } else this.burstAt.set(key, at - dt);
+        });
+      }
+      if (this.sfxOn) for (const n of this.nearNow) {
+        const l = NEAR[n];
+        if (l && this.vol.sfx > 0) want.set(l.file, l.volume * sounds_default.master * this.vol.sfx);
+      }
+      this.nearNow.clear();
+      if (this.musicOn && this.warScreen) {
+        this.warTrack ?? (this.warTrack = pick(sounds_default.war.music.files));
+        want.set(this.warTrack, sounds_default.war.music.volume * sounds_default.master * this.vol.mus);
       }
       for (const file of want.keys()) if (!this.beds.has(file)) {
         const el = new Audio(sounds_default.dir + file);
@@ -118535,7 +118711,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) if (!sim2.world.isBlocked(nx + dx, ny + dy)) return [nx + dx, ny + dy];
     return null;
   }
-  function pick(sim2, weights) {
+  function pick2(sim2, weights) {
     const total = Object.values(weights).reduce((a, b) => a + b, 0);
     let x = sim2.frnd() * total;
     for (const [k, w] of Object.entries(weights)) {
@@ -118565,7 +118741,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const r = sim2.frnd(), reach = tribeReach(t), N = sim2.world.size;
     if (ai.role === "civ") {
       if (r >= npclife_default.chances.work) return false;
-      const first = pick(sim2, npclife_default.mix), reachAt = reach * npclife_default.gatherReach;
+      const first = pick2(sim2, npclife_default.mix), reachAt = reach * npclife_default.gatherReach;
       for (const job of [first, ...Object.keys(npclife_default.mix).filter((k) => k !== first)]) {
         if (sim2.pathLeft <= 0) return false;
         const idx = findNode(sim2, t, KIND_OF[job], reachAt), stand = idx >= 0 ? standBeside(sim2, idx) : null;
@@ -120345,10 +120521,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     for (let i = sim2.events.length - 1; i >= 0; i--) if (sim2.events[i].fired && sim2.events[i].fireDay < sim2.day - 20) sim2.events.splice(i, 1);
     const foes = sim2.tribes.filter(raidsUs);
     const table = c.table.filter((x) => x.kind !== "raid" || foes.length > 0), total = table.reduce((a, x) => a + x.weight, 0);
-    let pick2 = sim2.frnd() * total, row = table[0];
+    let pick3 = sim2.frnd() * total, row = table[0];
     for (const x of table) {
-      pick2 -= x.weight;
-      if (pick2 <= 0) {
+      pick3 -= x.weight;
+      if (pick3 <= 0) {
         row = x;
         break;
       }
@@ -121047,6 +121223,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (!sim2.freeCost()) for (const r of Object.keys(cost)) sim2.stock[r] -= cost[r] ?? 0;
     const b = addBuilding(sim2, kind, x, y, false, lvl);
     delete sim2.ruins[kind];
+    sim2.addSfx("place", false, x, y);
     if (sim2.dev.instantBuild) {
       b.progress = 1;
       b.done = true;
@@ -121794,10 +121971,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (lock) return lock;
     const limit = scoutLimit(sim2);
     if (!limit) return "C\u1EA7n d\u1EF1ng Tr\u1EA1i trinh s\xE1t";
-    const pick2 = sim2.mine(ids).filter(canBeScout), room = limit - scoutRoster(sim2).length;
-    if (!pick2.length) return "Trinh s\xE1t \u0111\u01B0\u1EE3c tuy\u1EC3n t\u1EEB l\xEDnh k\u1EF5: h\xE3y ch\u1ECDn l\xEDnh k\u1EF5 th\xFA c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA";
+    const pick3 = sim2.mine(ids).filter(canBeScout), room = limit - scoutRoster(sim2).length;
+    if (!pick3.length) return "Trinh s\xE1t \u0111\u01B0\u1EE3c tuy\u1EC3n t\u1EEB l\xEDnh k\u1EF5: h\xE3y ch\u1ECDn l\xEDnh k\u1EF5 th\xFA c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA";
     if (room <= 0) return `Tr\u1EA1i trinh s\xE1t \u0111\xE3 \u0111\u1EE7 ${limit} trinh s\xE1t: n\xE2ng c\u1EA5p l\u1EC1u \u0111\u1EC3 ch\u1EE9a th\xEAm`;
-    for (const v of pick2.slice(0, room)) {
+    for (const v of pick3.slice(0, room)) {
       sim2.resetTask(v);
       sim2.clearCombat(v);
       v.job = "scout";
@@ -121807,7 +121984,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       v.guardAt = null;
       sim2.fitScoutMount(v);
     }
-    return pick2.length > room ? `L\u1EC1u ch\u1EC9 c\xF2n ch\u1ED7 cho ${room} trinh s\xE1t` : null;
+    return pick3.length > room ? `L\u1EC1u ch\u1EC9 c\xF2n ch\u1ED7 cho ${room} trinh s\xE1t` : null;
   }
   function dismissScouts(sim2, ids) {
     const lock = sim2.warLock();
@@ -124485,10 +124662,10 @@ ${risk.lines.join("\n")}`);
       }
     } else if (threats.length && f.scan >= 0) {
       const range = !mayEngage(sim2, v) ? Math.min(DEFENSIVE, sim2.sightOf(v)) : f.mode === "hold" ? weaponOf(v).range + 1.5 : v.stance === "defensive" ? Math.min(DEFENSIVE, sim2.sightOf(v)) : sim2.sightOf(v);
-      const pick2 = threats.find((t) => (!v.guard || t.t.kind === "unit" || sim2.animalById.get(t.t.id)?.state === "attack") && t.d <= range && (!f.anchor || v.stance !== "defensive" || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
-      if (pick2) {
-        f.target = pick2.t;
-        const e = resolve(sim2, pick2.t);
+      const pick3 = threats.find((t) => (!v.guard || t.t.kind === "unit" || sim2.animalById.get(t.t.id)?.state === "attack") && t.d <= range && (!f.anchor || v.stance !== "defensive" || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
+      if (pick3) {
+        f.target = pick3.t;
+        const e = resolve(sim2, pick3.t);
         if (e) {
           engage(sim2, v, e, dt);
           return true;
@@ -124553,7 +124730,7 @@ ${risk.lines.join("\n")}`);
     return v;
   }
   function makeVillager(sim2, x, y, sex, team, rnd = sim2.rnd) {
-    const r = rnd, pick2 = (a) => a[Math.floor(r() * a.length)];
+    const r = rnd, pick3 = (a) => a[Math.floor(r() * a.length)];
     const { stars, fac } = rollFactors(r), stats = legacyStats((s) => rawValue(fac, s));
     const potential = {}, skill = {};
     for (const j of WORK_JOBS) {
@@ -124570,7 +124747,7 @@ ${risk.lines.join("\n")}`);
     return {
       id: sim2.nextVid++,
       name: freshName(sim2, sex, rnd),
-      look: { sex, skin: pick2(SKIN), hair: pick2(HAIR), hide: "#8b6a45", pants: "#3f63a8" },
+      look: { sex, skin: pick3(SKIN), hair: pick3(HAIR), hide: "#8b6a45", pants: "#3f63a8" },
       x: x + 0.5,
       y: y + 0.5,
       path: [],
@@ -124920,13 +125097,13 @@ ${risk.lines.join("\n")}`);
   };
   function toSave(sim2) {
     const w = sim2.world;
-    const pick2 = (keys) => Object.fromEntries(keys.map((k) => [k, encode(sim2[k])]));
+    const pick3 = (keys) => Object.fromEntries(keys.map((k) => [k, encode(sim2[k])]));
     return {
       version: SAVE_VERSION,
       seed: sim2.seed,
-      scalars: pick2(SAVED.scalars),
-      records: pick2(SAVED.records),
-      lists: pick2(SAVED.lists),
+      scalars: pick3(SAVED.scalars),
+      records: pick3(SAVED.records),
+      lists: pick3(SAVED.lists),
       researched: [...sim2.researched],
       quests: [...sim2.questSeen],
       tribes: sim2.tribes.map(({ def: _def, ...t }) => encode(t)),
@@ -125235,11 +125412,11 @@ ${risk.lines.join("\n")}`);
     const def = ROLES[role], name = buildingName(def.building, sim2.era);
     if (!sim2.dev.freeBuild && !roleHouses(sim2, role).length && !NO_HOUSE_TRADES.includes(role)) return `C\u1EA7n d\u1EF1ng ${name}`;
     if (role === "scout") return sim2.enlistScouts(ids);
-    const pick2 = sim2.mine(ids).filter((v) => roleOf(v) !== role);
-    if (!pick2.length) return `Ch\u1ECDn ng\u01B0\u1EDDi ch\u01B0a l\xE0m vi\u1EC7c ${roleName(role, sim2.era).toLowerCase()}`;
+    const pick3 = sim2.mine(ids).filter((v) => roleOf(v) !== role);
+    if (!pick3.length) return `Ch\u1ECDn ng\u01B0\u1EDDi ch\u01B0a l\xE0m vi\u1EC7c ${roleName(role, sim2.era).toLowerCase()}`;
     const room = roleCapacity(sim2, role) - roleCount(sim2, role);
     if (room <= 0) return roleHouses(sim2, role).length ? `${name} \u0111\xE3 \u0111\u1EE7 ${roleCapacity(sim2, role)} ng\u01B0\u1EDDi: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` : `Ch\u01B0a c\xF3 ${name.toLowerCase()}: ch\u1EC9 ${NO_HOUSE_CAP} ng\u01B0\u1EDDi l\xE0m ngh\u1EC1 n\xE0y, h\xE3y d\u1EF1ng nh\xE0 \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi`;
-    const chosen = pick2.slice(0, room);
+    const chosen = pick3.slice(0, room);
     for (const v of chosen) if (v.job === "fight" || v.job === "scout" || v.job === "supply") {
       const e = releaseRole(sim2, [v.id]);
       if (e) return e;
@@ -125252,7 +125429,7 @@ ${risk.lines.join("\n")}`);
     if (role === "guard") {
       for (const v of sim2.mine(take2)) if (v.job === "fight") postGuard(sim2, v);
     }
-    return err ?? (pick2.length > room ? `${name} ch\u1EC9 c\xF2n ch\u1ED7 cho ${room} ng\u01B0\u1EDDi` : null);
+    return err ?? (pick3.length > room ? `${name} ch\u1EC9 c\xF2n ch\u1ED7 cho ${room} ng\u01B0\u1EDDi` : null);
   }
   function postFor(sim2, house) {
     const taken = new Set(sim2.villagers.filter((o) => o.guardAt).map((o) => Math.floor(o.guardAt.y) * sim2.world.size + Math.floor(o.guardAt.x)));
@@ -126745,7 +126922,7 @@ ${risk.lines.join("\n")}`);
   // src/sim/warscene.ts
   function warScene(sim2) {
     const plan2 = sim2.plans.find((p) => p.kind === "attack" && p.status === "running");
-    if (!plan2) return { squads: [], seen: false };
+    if (!plan2 || plan2.result) return { squads: [], stings: 0 };
     const squads = [], army3 = [];
     for (const m of plan2.missions) {
       const s = sim2.squadById(m.squad), us = s ? sim2.squadUnits(s) : [];
@@ -126756,16 +126933,24 @@ ${risk.lines.join("\n")}`);
     if (army3.length && sim2.time - sim2.warCheckAt >= 0.5) {
       sim2.warCheckAt = sim2.time;
       const foes = sim2.foes.filter((f) => f.health > 0), k = sounds_default.war;
-      const engaged = foes.length === 0 ? 0 : army3.filter((id) => {
+      const works = sim2.tribes.filter((t) => !plan2.tribe || t.id === plan2.tribe).flatMap((t) => t.props.filter((q) => q.hp > 0));
+      for (const id of army3) {
+        if (sim2.warSeenIds.has(id)) continue;
         const v = sim2.get(id);
-        return !!v && v.phase === "fight" && foes.some((f) => Math.hypot(f.x - v.x, f.y - v.y) <= sightOf(sim2, v));
-      }).length;
-      if (engaged >= Math.max(1, Math.ceil(army3.length * k.engageShare))) {
-        sim2.warSeen = true;
-        sim2.warSeenAt = sim2.time;
-      } else if (sim2.warSeen && sim2.time - sim2.warSeenAt > k.engageQuiet) sim2.warSeen = false;
+        if (!v) continue;
+        const r = sightOf(sim2, v);
+        if (foes.some((f) => Math.hypot(f.x - v.x, f.y - v.y) <= r) || works.some((q) => Math.hypot(q.x + q.w / 2 - v.x, q.y + q.h / 2 - v.y) <= r)) {
+          sim2.warSeenIds.add(id);
+          sim2.warFresh++;
+        }
+      }
+      const per = Math.max(1, Math.ceil(army3.length * k.engageShare));
+      while (sim2.warFresh >= per) {
+        sim2.warFresh -= per;
+        sim2.warStings++;
+      }
     }
-    return { squads, seen: sim2.warSeen };
+    return { squads, stings: sim2.warStings };
   }
 
   // src/sim/warquick.ts
@@ -127139,6 +127324,7 @@ ${risk.lines.join("\n")}`);
         const { hitAt, end } = swingTimes(w.anim);
         v.swing = { t: 0, hitAt, end, target: { kind: "unit", id: -1 } };
         v.atkCd = swingCycle(sim2, v, w);
+        if (b.kind === "prop") sim2.addSfx(w.id, !!w.ranged, b.x, b.y);
         if (b.kind === "prop") damageProp(sim2, b.tribe, b.x, b.y, (weaponDamage(sim2, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim2.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind));
       }
       if (b.kind === "node") {
@@ -128023,8 +128209,10 @@ ${risk.lines.join("\n")}`);
       /** War sound: whether enough of our soldiers have seen the enemy and are attacking (the sting plays each time it turns on), when that was last true, and when it was last worked out. Reset when the war ends. */
       /** Sounds waiting for the UI (a blow landed, an arrow hit): the renderer plays and empties them. Never saved. */
       this.sfx = [];
-      this.warSeen = false;
-      this.warSeenAt = 0;
+      /** War sound: the soldiers that have seen the enemy so far, how many of them are not yet counted into a sting, and how many stings have been due. */
+      this.warSeenIds = /* @__PURE__ */ new Set();
+      this.warFresh = 0;
+      this.warStings = 0;
       this.warCheckAt = 0;
       /** While a war is on: the soldiers of the plan, how their march goes (speed, food and energy factors) and the meals they and the village have eaten (paid when it ends). All reset in peace. */
       this.warIds = /* @__PURE__ */ new Set();
@@ -128898,8 +129086,9 @@ ${risk.lines.join("\n")}`);
         }
         this.march = PEACE;
         this.warMeals = 0;
-        this.warSeen = false;
-        this.warSeenAt = 0;
+        this.warSeenIds.clear();
+        this.warFresh = 0;
+        this.warStings = 0;
         this.warCheckAt = 0;
       }
       tickAnimals(this, dt);
@@ -129539,6 +129728,9 @@ ${risk.lines.join("\n")}`);
       /** Short message for the player. */
       this.onToast = () => {
       };
+      /** An order was given to a troop (several chosen, soldiers among them): the sound of it. */
+      this.onOrder = () => {
+      };
       /** Selecting several villagers: taps toggle, drags draw a box. */
       this.multi = false;
       /** Building being placed, and where the ghost currently sits (top-left tile). */
@@ -129588,6 +129780,9 @@ ${risk.lines.join("\n")}`);
       }, { passive: false });
       window.addEventListener("keydown", (e) => this.keyDown(e));
       window.addEventListener("keyup", (e) => this.keys.delete(e.key.toLowerCase()));
+    }
+    ordered(ids) {
+      if (ids.length > 1 && ids.some((id) => this.sim.get(id)?.job === "fight")) this.onOrder();
     }
     pos(e) {
       const b = this.el.getBoundingClientRect();
@@ -130157,6 +130352,7 @@ ${risk.lines.join("\n")}`);
           this.onToast(n ? seen.kind === "foe" ? "T\u1EA5n c\xF4ng" : "S\u0103n" : seen.kind === "foe" ? "Ch\u1EC9 chi\u1EBFn binh m\u1EDBi \u0111\xE1nh: tuy\u1EC3n l\xEDnh \u1EDF tr\u1EA1i l\xEDnh" : why ?? noHunter);
         }
         this.markers.push({ x: w.x, y: w.y, age: 0 });
+        this.ordered(ids);
         this.onChange();
         return;
       }
@@ -130166,6 +130362,7 @@ ${risk.lines.join("\n")}`);
       if (work) this.onToast(work.sent ? work.err ? `${JOB_NAME[work.job]} (${work.err})` : JOB_NAME[work.job] : work.job === "build" ? "Ch\u1EC9 th\u1EE3 x\xE2y c\u1EE7a Nh\xE0 th\u1EE3 x\xE2y m\u1EDBi x\xE2y: ch\u1ECDn th\u1EE3 \u1EDF nh\xE0 \u0111\xF3" : work.err ?? `D\xE2n \u0111\xE3 c\xF3 ngh\u1EC1 kh\xE1c: ch\u1EC9 \u0111\u1ED5i ngh\u1EC1 \u1EDF c\xF4ng tr\xECnh c\u1EE7a ngh\u1EC1 ${JOB_NAME[work.job].toLowerCase()}`);
       else this.sim.orderMove(ids, tx, ty, queue);
       this.markers.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, age: 0 });
+      this.ordered(ids);
       if (work?.sent) this.releaseCivilians(queue);
       this.onChange();
     }
@@ -130178,6 +130375,7 @@ ${risk.lines.join("\n")}`);
       }
       const w = this.r.screenToWorld(p.x, p.y);
       this.sim.orderAttackMove([...this.selected], w.x / TILE, w.y / TILE, queue);
+      this.ordered([...this.selected]);
       this.markers.push({ x: w.x, y: w.y, age: 0 });
       this.onToast("T\u1EA5n c\xF4ng \u2013 di chuy\u1EC3n");
       this.onChange();
@@ -130379,9 +130577,9 @@ ${risk.lines.join("\n")}`);
     const level = sim2.campfire()?.level ?? 1, room = armyRoom(sim2, level);
     const left = sim2.events.filter((e) => !e.fired);
     if (!left.length) return "H\u1EBFt s\u1EF1 ki\u1EC7n \u0111\xE3 h\u1EB9n";
-    const pick2 = left.sort((a, b) => a.fireDay - b.fireDay).find((e) => eventNeed(e) <= room) ?? left.sort((a, b) => eventNeed(a) - eventNeed(b))[0];
-    const why = fireEventNow(sim2, pick2);
-    const name = pick2.kind === "beasts" ? `${pick2.species ? ANIMALS[pick2.species].name : "S\xF3i"} \xD7${pick2.size}` : `${pick2.tribe ?? "B\u1ED9 t\u1ED9c"} \xD7${pick2.size}`;
+    const pick3 = left.sort((a, b) => a.fireDay - b.fireDay).find((e) => eventNeed(e) <= room) ?? left.sort((a, b) => eventNeed(a) - eventNeed(b))[0];
+    const why = fireEventNow(sim2, pick3);
+    const name = pick3.kind === "beasts" ? `${pick3.species ? ANIMALS[pick3.species].name : "S\xF3i"} \xD7${pick3.size}` : `${pick3.tribe ?? "B\u1ED9 t\u1ED9c"} \xD7${pick3.size}`;
     return why ?? `\u0110\xE3 g\u1ECDi: ${name} (c\u1EA5p l\u1EEDa ${level}, ch\u1EE9a ~${room} l\xEDnh)`;
   }
   var clear = (sim2, x, y, w, h3, margin = 1) => {
@@ -130671,7 +130869,7 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/ui/menu.ts
-  var TABS = [["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
+  var TABS = [["places", "C\xF4ng tr\xECnh"], ["tribes", "B\u1ED9 t\u1ED9c"], ["game", "V\xE1n ch\u01A1i"], ["settings", "C\xE0i \u0111\u1EB7t"], ["dev", "Dev"], ["help", "?"]];
   var SEASON_NAME = { spring: "Xu\xE2n", summer: "H\u1EA1", autumn: "Thu", winter: "\u0110\xF4ng" };
   var PERSONALITY = { peaceful: "H\xF2a b\xECnh", aggressive: "Hi\u1EBFu chi\u1EBFn", ambusher: "Hay ph\u1EE5c k\xEDch" };
   var Menu = class {
@@ -130695,6 +130893,7 @@ ${risk.lines.join("\n")}`);
       this.pages.set("places", this.placesPage());
       this.pages.set("tribes", this.tribesPage());
       this.pages.set("game", this.gamePage());
+      this.pages.set("settings", this.settingsPage());
       this.pages.set("dev", this.devPage());
       this.pages.set("help", this.helpPage());
       for (const p of this.pages.values()) body.append(p);
@@ -130885,6 +131084,36 @@ ${risk.lines.join("\n")}`);
           last2 = now;
           void refresh();
         }
+      });
+      return page;
+    }
+    // ---------------------------------------------------------------- settings
+    /** Sound: a volume and an off switch for the effects, the weather and the music. Off means nothing is played and nothing is worked out for it (lighter on a slow machine). */
+    settingsPage() {
+      const { sound: sound2 } = this.c, page = h("div", { class: "page" });
+      page.append(hint("\xC2m thanh", "K\xE9o thanh \u0111\u1EC3 ch\u1EC9nh to nh\u1ECF. B\u1ECF ch\u1ECDn \xF4 b\xEAn c\u1EA1nh \u0111\u1EC3 t\u1EAFt h\u1EB3n lo\u1EA1i \xE2m thanh \u0111\xF3: khi t\u1EAFt, game kh\xF4ng x\u1EED l\xFD \xE2m thanh \u1EA5y n\u1EEFa n\xEAn m\xE1y y\u1EBFu s\u1EBD nh\u1EB9 h\u01A1n. Ph\xEDm t\u1EAFt: O hi\u1EC7u \u1EE9ng, I m\xF4i tr\u01B0\u1EDDng, U nh\u1EA1c."));
+      const rows = [];
+      for (const [kind, label2, tip] of [["sfx", "Hi\u1EC7u \u1EE9ng", "L\xE0m vi\u1EC7c, \u0111\xE1nh nhau, \u0111\u1EB7t c\xF4ng tr\xECnh, c\u1ED5ng, ra l\u1EC7nh cho qu\xE2n"], ["amb", "M\xF4i tr\u01B0\u1EDDng", "M\u01B0a, b\xE3o, s\u1EA5m, gi\xF3, chim, s\xF3i"], ["mus", "Nh\u1EA1c", "Nh\u1EA1c b\xECnh y\xEAn, nh\u1EA1c chi\u1EBFn tranh, th\u1EAFng v\xE0 thua"]]) {
+        const on = h("input", { type: "checkbox", title: "B\u1EADt ho\u1EB7c t\u1EAFt" });
+        const range = h("input", { type: "range", min: "0", max: "100", step: "5", title: tip });
+        const num3 = h("small", { text: "" });
+        const apply = () => {
+          sound2.set(kind, on.checked, +range.value / 100);
+          num3.textContent = `${range.value}%`;
+        };
+        on.addEventListener("change", apply);
+        range.addEventListener("input", apply);
+        const sync = () => {
+          const g = sound2.get(kind);
+          if (document.activeElement !== range) range.value = String(Math.round(g.vol * 100));
+          on.checked = g.on;
+          num3.textContent = `${range.value}%`;
+        };
+        rows.push(sync);
+        page.append(h("div", { class: "row" }, h("div", { class: "nm" }, label2, h("small", { text: tip })), on, range, num3));
+      }
+      this.updaters.push(() => {
+        if (!page.hidden) for (const r of rows) r();
       });
       return page;
     }
@@ -131603,16 +131832,16 @@ ${risk.lines.join("\n")}`);
     /** A squad that cannot go on along its arrow: what is in the way, and the soldiers to send to break it down (they work fast and gather nothing). */
     blockedRow(plan2, m, act) {
       const { sim: sim2 } = this.c, s = sim2.squadById(m.squad), b = m.block, alive2 = sim2.squadUnits(s).length, working = sim2.squadUnits(s).filter((v) => v.breaks).length;
-      const n = Math.min(alive2, this.crew.get(m.squad) ?? Math.min(3, alive2)), pick2 = document.createElement("select");
+      const n = Math.min(alive2, this.crew.get(m.squad) ?? Math.min(3, alive2)), pick3 = document.createElement("select");
       for (let i = 1; i <= alive2; i++) {
         const o = document.createElement("option");
         o.value = String(i);
         o.textContent = `${i} l\xEDnh`;
-        pick2.append(o);
+        pick3.append(o);
       }
-      pick2.value = String(Math.max(1, n));
-      pick2.addEventListener("change", () => {
-        this.crew.set(m.squad, Number(pick2.value));
+      pick3.value = String(Math.max(1, n));
+      pick3.addEventListener("change", () => {
+        this.crew.set(m.squad, Number(pick3.value));
       });
       const why = b.kind === "enemy" ? `\u0111ang ph\xE1 ${b.label.toLowerCase()} ch\u1EAFn \u0111\u01B0\u1EDDng` : b.clear ? `v\u01B0\u1EDBng ${b.label} \u1EDF (${b.x}, ${b.y})` : `v\u01B0\u1EDBng ${b.label} \u1EDF (${b.x}, ${b.y}), kh\xF4ng ph\xE1 \u0111\u01B0\u1EE3c`;
       return h(
@@ -131620,7 +131849,7 @@ ${risk.lines.join("\n")}`);
         { class: "wardlg" },
         h("b", { text: `\u26D4 ${s.name} kh\xF4ng th\u1EC3 di chuy\u1EC3n ti\u1EBFp` }),
         h("span", { text: working ? `${why} \xB7 ${working} l\xEDnh \u0111ang ph\xE1\u2026` : why }),
-        ...b.clear && b.kind !== "enemy" && !working ? [pick2, h("button", { class: "sm primary", text: "\u{1FA93} Ph\xE1 v\u1EADt th\u1EC3", title: "C\u1EED s\u1ED1 l\xEDnh n\xE0y trong \u0111\u1ED9i \u0111i ph\xE1 v\u1EADt c\u1EA3n: h\u1ECD ph\xE1 r\u1EA5t nhanh v\xE0 kh\xF4ng nh\u1EADn t\xE0i nguy\xEAn", onclick: () => act(sim2.breakBlock(plan2, m.squad, Number(pick2.value))) })] : !b.clear ? [h("small", { text: "H\xE3y r\xFAt lui ho\u1EB7c ch\u1EDD." })] : []
+        ...b.clear && b.kind !== "enemy" && !working ? [pick3, h("button", { class: "sm primary", text: "\u{1FA93} Ph\xE1 v\u1EADt th\u1EC3", title: "C\u1EED s\u1ED1 l\xEDnh n\xE0y trong \u0111\u1ED9i \u0111i ph\xE1 v\u1EADt c\u1EA3n: h\u1ECD ph\xE1 r\u1EA5t nhanh v\xE0 kh\xF4ng nh\u1EADn t\xE0i nguy\xEAn", onclick: () => act(sim2.breakBlock(plan2, m.squad, Number(pick3.value))) })] : !b.clear ? [h("small", { text: "H\xE3y r\xFAt lui ho\u1EB7c ch\u1EDD." })] : []
       );
     }
     /** The middle of the army, in tiles. */
@@ -131926,23 +132155,23 @@ ${risk.lines.join("\n")}`);
       } }));
       const gearRow = h("div", { class: "btns", role: "group", "aria-label": "Ph\xE1t \u0111\u1ED3" });
       const addGear = (slot, label2, kinds) => {
-        const pick2 = h("select", { class: "sm", "aria-label": label2, title: `${label2}: l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng, ho\u1EB7c tr\u1EA3 v\u1EC1 kho`, onchange: () => {
-          if (pick2.value === "") return;
-          if (pick2.value === "auto") {
+        const pick3 = h("select", { class: "sm", "aria-label": label2, title: `${label2}: l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng, ho\u1EB7c tr\u1EA3 v\u1EC1 kho`, onchange: () => {
+          if (pick3.value === "") return;
+          if (pick3.value === "auto") {
             const e2 = sim2.autoGear(ids());
             if (e2) c.toast(e2);
             else after();
             ctl2.onChange();
             return;
           }
-          const e = sim2.assignGear(ids(), pick2.value === "none" ? null : pick2.value, slot);
+          const e = sim2.assignGear(ids(), pick3.value === "none" ? null : pick3.value, slot);
           if (e) c.toast(e);
           else after();
           ctl2.onChange();
         } });
-        pick2.append(h("option", { value: "", text: "\u2014 ch\u1ECDn \u2014", hidden: true }), h("option", { value: "auto" }), h("option", { value: "none" }), ...kinds.map((k) => h("option", { value: k })));
-        this.gearSel.push({ pick: pick2, slot, label: label2, kinds });
-        gearRow.append(pick2);
+        pick3.append(h("option", { value: "", text: "\u2014 ch\u1ECDn \u2014", hidden: true }), h("option", { value: "auto" }), h("option", { value: "none" }), ...kinds.map((k) => h("option", { value: k })));
+        this.gearSel.push({ pick: pick3, slot, label: label2, kinds });
+        gearRow.append(pick3);
       };
       addGear("weapon", "V\u0169 kh\xED", CRAFTED_WEAPONS);
       addGear("armor", "Gi\xE1p", Object.keys(ARMORS));
@@ -131959,21 +132188,21 @@ ${risk.lines.join("\n")}`);
       this.gearTip = gearHint.tip;
       const toolsSec = h("section", {}, hint("C\xF4ng c\u1EE5", 'M\u1ED7i ngh\u1EC1 d\xF9ng m\u1ED9t c\xF4ng c\u1EE5 (\u0111\u1ED1n g\u1ED7: r\xECu, th\u1EE3 \u0111\xE1: cu\u1ED1c chim, h\xE1i l\u01B0\u1EE3m: cu\u1ED1c, th\u1EE3 x\xE2y: b\xFAa) v\xE0 m\u1ED7i d\xE2n ch\u1EC9 c\u1EA7m m\u1ED9t c\xF4ng c\u1EE5. \u0110\u1ED5i ngh\u1EC1 th\xEC c\xF4ng c\u1EE5 tr\u1EA3 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n. "\u0110i s\u1EEDa": c\xF4ng c\u1EE5 h\u1ECFng th\xEC b\u1ECB v\u1EE9t, d\xE2n t\u1EF1 l\u1EA5y ho\u1EB7c \u0111\u1EB7t c\xE1i m\u1EDBi. Sau khi nghi\xEAn c\u1EE9u "t\u1EF1 l\u1EA5y \u0111\u1ED3" v\xE0 c\xF3 Kho c\xF4ng c\u1EE5, d\xE2n thi\u1EBFu ho\u1EB7c h\u1ECFng \u0111\u1ED3 s\u1EBD t\u1EF1 \u0111i l\u1EA5y.'));
       for (const k of TOOL_KINDS) {
-        const state = h("small"), pick2 = h("select", { class: "sm", "aria-label": TOOL_NAME[k], title: '\u0110\u1ED5i c\xF4ng c\u1EE5; "Tay kh\xF4ng" tr\u1EA3 c\xF4ng c\u1EE5 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n', onchange: () => {
-          if (pick2.value === "") return;
-          const e = sim2.assignTool(ids(), k, Number(pick2.value));
+        const state = h("small"), pick3 = h("select", { class: "sm", "aria-label": TOOL_NAME[k], title: '\u0110\u1ED5i c\xF4ng c\u1EE5; "Tay kh\xF4ng" tr\u1EA3 c\xF4ng c\u1EE5 v\u1EC1 kho, gi\u1EEF nguy\xEAn \u0111\u1ED9 b\u1EC1n', onchange: () => {
+          if (pick3.value === "") return;
+          const e = sim2.assignTool(ids(), k, Number(pick3.value));
           if (e) c.toast(e);
           else after();
           ctl2.onChange();
         } });
-        pick2.append(h("option", { value: "", text: "\u2014 ch\u1ECDn \u2014", hidden: true }), ...[0, 1, 2].map((t) => h("option", { value: String(t) })));
+        pick3.append(h("option", { value: "", text: "\u2014 ch\u1ECDn \u2014", hidden: true }), ...[0, 1, 2].map((t) => h("option", { value: String(t) })));
         const drop = h("button", { class: "sm", text: "B\u1ECF", title: "V\u1EE9t c\xF4ng c\u1EE5, k\u1EC3 c\u1EA3 khi ch\u01B0a h\u1ECFng", onclick: () => {
           sim2.discardTool(ids(), k);
           after();
           ctl2.onChange();
         } });
-        const row = h("div", { class: "row" }, h("div", { class: "nm" }, TOOL_NAME[k], state), h("div", { class: "btns" }, pick2, drop));
-        this.toolRows.push({ k, row, state, pick: pick2, drop });
+        const row = h("div", { class: "row" }, h("div", { class: "nm" }, TOOL_NAME[k], state), h("div", { class: "btns" }, pick3, drop));
+        this.toolRows.push({ k, row, state, pick: pick3, drop });
         toolsSec.append(row);
       }
       this.torchBtn.addEventListener("click", () => {
@@ -136038,11 +136267,11 @@ ${risk.lines.join("\n")}`);
     }
     /** The filter over a list of tools or weapons: by kind, and "only what can be had now" (made, or makeable). */
     filterBar(key, kinds, into = h("div", { class: "btns filters" })) {
-      const { ctl: ctl2 } = this.c, f = this.filters[key], pick2 = h("select", { class: "sm", "aria-label": "L\u1ECDc theo lo\u1EA1i", title: "L\u1ECDc theo lo\u1EA1i" });
-      pick2.append(h("option", { value: "", text: "M\u1ECDi lo\u1EA1i" }), ...kinds.map((k) => h("option", { value: k, text: kindLabel(k) })));
-      pick2.value = f.kind;
-      pick2.addEventListener("change", () => {
-        f.kind = pick2.value;
+      const { ctl: ctl2 } = this.c, f = this.filters[key], pick3 = h("select", { class: "sm", "aria-label": "L\u1ECDc theo lo\u1EA1i", title: "L\u1ECDc theo lo\u1EA1i" });
+      pick3.append(h("option", { value: "", text: "M\u1ECDi lo\u1EA1i" }), ...kinds.map((k) => h("option", { value: k, text: kindLabel(k) })));
+      pick3.value = f.kind;
+      pick3.addEventListener("change", () => {
+        f.kind = pick3.value;
         ctl2.onChange();
       });
       const only = h("button", { class: "sm", text: "Ch\u1EC9 m\xF3n c\xF3 th\u1EC3 d\xF9ng", title: "\u1EA8n nh\u1EEFng m\xF3n ch\u01B0a c\xF3 b\u1EA3n v\u1EBD, ch\u01B0a \u0111\u1EE7 c\u1EA5p nh\xE0 ho\u1EB7c ch\u01B0a c\xF3 trong kho", pressed: f.only, onclick: () => {
@@ -136050,7 +136279,7 @@ ${risk.lines.join("\n")}`);
         only.setAttribute("aria-pressed", String(f.only));
         ctl2.onChange();
       } });
-      into.append(pick2, only);
+      into.append(pick3, only);
       return into;
     }
     updateGoods(b) {
@@ -136236,8 +136465,9 @@ ${risk.lines.join("\n")}`);
   };
 
   // src/save/settings.ts
-  var DEFAULT_SETTINGS = { speed: 1, skipRotatePrompt: false, sfxOn: true, ambientOn: true, musicOn: true };
+  var DEFAULT_SETTINGS = { speed: 1, skipRotatePrompt: false, sfxOn: true, ambientOn: true, musicOn: true, sfxVol: 1, ambientVol: 1, musicVol: 1 };
   var KEY = "lang-do-da.settings";
+  var vol = (n) => typeof n === "number" && n >= 0 && n <= 1 ? n : 1;
   function loadSettings(storage = browserStorage()) {
     try {
       const raw = storage?.getItem(KEY);
@@ -136248,7 +136478,10 @@ ${risk.lines.join("\n")}`);
         skipRotatePrompt: o.skipRotatePrompt === true,
         sfxOn: o.sfxOn !== false,
         ambientOn: o.ambientOn !== false,
-        musicOn: o.musicOn !== false
+        musicOn: o.musicOn !== false,
+        sfxVol: vol(o.sfxVol),
+        ambientVol: vol(o.ambientVol),
+        musicVol: vol(o.musicVol)
       };
     } catch {
       return { ...DEFAULT_SETTINGS };
@@ -136312,6 +136545,7 @@ ${risk.lines.join("\n")}`);
   audio.sfxOn = settings.sfxOn;
   audio.ambientOn = settings.ambientOn;
   audio.musicOn = settings.musicOn;
+  audio.vol = { sfx: settings.sfxVol, amb: settings.ambientVol, mus: settings.musicVol };
   var sfxBtn = $("btnSfx");
   var ambBtn = $("btnAmb");
   var musBtn = $("btnMus");
@@ -136332,6 +136566,23 @@ ${risk.lines.join("\n")}`);
     const on = kind === "sfx" ? audio.sfxOn : kind === "amb" ? audio.ambientOn : audio.musicOn;
     toast(`${on ? "B\u1EADt" : "T\u1EAFt"} ${kind === "sfx" ? "\xE2m thanh hi\u1EC7u \u1EE9ng" : kind === "amb" ? "\xE2m thanh m\xF4i tr\u01B0\u1EDDng" : "nh\u1EA1c n\u1EC1n"}`);
   }
+  var sound = {
+    get: (k) => k === "sfx" ? { on: audio.sfxOn, vol: audio.vol.sfx } : k === "amb" ? { on: audio.ambientOn, vol: audio.vol.amb } : { on: audio.musicOn, vol: audio.vol.mus },
+    set: (k, on, vol2) => {
+      if (k === "sfx") {
+        settings.sfxOn = audio.sfxOn = on;
+        settings.sfxVol = audio.vol.sfx = vol2;
+      } else if (k === "amb") {
+        settings.ambientOn = audio.ambientOn = on;
+        settings.ambientVol = audio.vol.amb = vol2;
+      } else {
+        settings.musicOn = audio.musicOn = on;
+        settings.musicVol = audio.vol.mus = vol2;
+      }
+      saveSettings(settings);
+      syncSound();
+    }
+  };
   sfxBtn.addEventListener("click", () => toggleSound("sfx"));
   ambBtn.addEventListener("click", () => toggleSound("amb"));
   musBtn.addEventListener("click", () => toggleSound("mus"));
@@ -136348,8 +136599,14 @@ ${risk.lines.join("\n")}`);
     toastTimer = window.setTimeout(() => toastEl.classList.remove("on"), 2200);
   };
   ctl.onToast = toast;
+  ctl.onOrder = () => audio.order();
+  var ORDER_BTN = /Triển khai|^\W*Đánh$|Rút|^Gọi (tất cả|cả trại|ra|quân)|^Cho (về hết|cả trại về|quân về)|^Về trại/;
+  document.addEventListener("click", (e) => {
+    const b = e.target?.closest("button");
+    if (b && !b.disabled && (b.id === "btnArmy" || ORDER_BTN.test((b.textContent ?? "").trim()))) audio.order();
+  }, true);
   session.onError = toast;
-  var ctx = { sim, ctl, sprites: sprites2, session, toast };
+  var ctx = { sim, ctl, sprites: sprites2, session, toast, sound };
   var unitCard = new UnitCard($("ucard"), ctx, $("udetail"));
   var targetCard = new TargetCard($("tcard"), ctx);
   var buildingPanel = new BuildingPanel($("bpanel"), ctx);
@@ -136666,6 +136923,8 @@ ${risk.lines.join("\n")}`);
   };
   var last = 0;
   var drawn = 0;
+  var lastWarEnd = 0;
+  var celebrating = null;
   var drawEvery = () => sim.speed >= 16 ? 4 : sim.speed >= 8 ? 3 : sim.speed >= 4 ? 2 : 1;
   function frame(t) {
     const t0 = performance.now();
@@ -136675,7 +136934,20 @@ ${risk.lines.join("\n")}`);
     ctl.update(dt);
     audio.update(started ? sim.weather : "clear", dt);
     audio.setPeace(started && !sim.atWar() && !sim.battle.on && !sim.tribes.some((t2) => t2.raid), dt);
+    {
+      const p = started ? sim.plans.find((q) => q.kind === "attack" && q.result && q.endedAt > lastWarEnd) : void 0;
+      if (p) {
+        lastWarEnd = p.endedAt;
+        celebrating = p.result === "won" ? p : null;
+        if (sim.time - p.endedAt < 5) audio.warEnded(p.result, performance.now() / 1e3);
+      }
+      if (celebrating && celebrating.stage === "recall") {
+        audio.stopVictory();
+        celebrating = null;
+      }
+    }
     audio.setNight(started && sim.part === "night", sim.time, sim.dayLen);
+    audio.setBirds(started && !sim.atWar() && sim.part !== "night" && sim.season !== "winter" && (sim.weather === "clear" || sim.weather === "mist"), dt, sim.time);
     if (started) session.tick();
     {
       const m = 10, z = cam.zoom;
