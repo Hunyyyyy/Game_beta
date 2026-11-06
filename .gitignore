@@ -19,3 +19,6 @@ Thumbs.db
 # local env
 .env
 .env.*
+
+# the Wyrmsun game (1.3 GB, GPL): only a source to pick sounds from, never committed
+src/sounds/Wyrmsun/
