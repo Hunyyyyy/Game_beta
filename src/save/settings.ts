@@ -7,9 +7,15 @@ export interface Settings {
   speed: number;
   /** The player chose to play upright on a phone and not be asked to turn it. */
   skipRotatePrompt: boolean;
+  /** Sound of work and fighting (effects) on or off. */
+  sfxOn: boolean;
+  /** Weather sound (rain, storm: the ambience) on or off. */
+  ambientOn: boolean;
+  /** War music on or off. */
+  musicOn: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { speed: 1, skipRotatePrompt: false };
+export const DEFAULT_SETTINGS: Settings = { speed: 1, skipRotatePrompt: false, sfxOn: true, ambientOn: true, musicOn: true };
 const KEY = 'lang-do-da.settings';
 
 export function loadSettings(storage: Pick<Storage, 'getItem'> | null = browserStorage()): Settings {
@@ -20,6 +26,9 @@ export function loadSettings(storage: Pick<Storage, 'getItem'> | null = browserS
     return {
       speed: [1, 2, 4].includes(o.speed as number) ? (o.speed as number) : DEFAULT_SETTINGS.speed,
       skipRotatePrompt: o.skipRotatePrompt === true,
+      sfxOn: o.sfxOn !== false,
+      ambientOn: o.ambientOn !== false,
+      musicOn: o.musicOn !== false,
     };
   } catch { return { ...DEFAULT_SETTINGS }; }
 }

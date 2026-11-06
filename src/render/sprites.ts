@@ -1,3 +1,4 @@
+import { bakeCampfire, withoutFlames } from './pixelfire';
 import { AnimTable, CX, FH, FW, PADT, PADX, renderFrame } from '../character/rig.js';
 import { renderAnimal, type AnimalClips, type AnimalDef } from '../character/animal-rig.js';
 import bodiesJson from '../data/animals/bodies.json';
@@ -74,6 +75,7 @@ export class Sprites {
   private readonly vcache = new Map<string, HTMLCanvasElement>();
   private readonly natureCache = new Map<string, NatureSet>();
   private readonly buildingCache = new Map<string, Prop[][]>();
+  private readonly campfireFx = new Map<string, Prop>();
   private readonly animalCache = new Map<string, HTMLCanvasElement>();
   /** Small badges drawn over the houses that share a drawing, so each can be told at a glance. */
   readonly emblems: Partial<Record<BuildingKind, HTMLCanvasElement>> = {};
@@ -148,7 +150,7 @@ export class Sprites {
       let set = this.buildingCache.get(key);
       if (!set) {
         const tint = TINTS[kind];
-        set = defs.map((def) => [0, 1, 2, 3, 4].map((st) => make(tint ? { ...(def as object), palettes: { tint } } : def, kind === 'workshop' || kind === 'lab' || kind === 'builder' ? 9 : 5, { ...stage(st), ...(tint ? { tint: 1 } : {}) })));
+        set = defs.map((raw) => { const def = kind === 'campfire' ? withoutFlames(raw as { layers?: Array<{ color?: unknown }> }) : raw; return [0, 1, 2, 3, 4].map((st) => make(tint ? { ...(def as object), palettes: { tint } } : def, kind === 'workshop' || kind === 'lab' || kind === 'builder' ? 9 : 5, { ...stage(st), ...(tint ? { tint: 1 } : {}) })); });
         this.buildingCache.set(key, set);
       }
       return set;
@@ -158,6 +160,21 @@ export class Sprites {
 
   /** Sprite of a building at its level and construction stage (0..4). */
   building(kind: BuildingKind, era: Era, level: number, st: number, open = false): Prop {
+    if (kind === 'campfire' && st >= 4) { // a finished fire: the art of its level without drawn flames, and a fire made by code over its hearth
+      const key = era === 'ancient' && level > BUILDINGS.campfire.levels.stone!.length ? 'ancient' : `stone${Math.min(level, 4)}`;
+      let p = this.campfireFx.get(key);
+      if (!p) this.campfireFx.set(key, p = bakeCampfire(this.campfireBase(era, level, st), key));
+      return p;
+    }
+    return this.buildingArt(kind, era, level, st, open);
+  }
+
+  /** The campfire's own art for a level, flames left out. */
+  private campfireBase(era: Era, level: number, st: number): Prop {
+    return this.buildingArt('campfire', era, level, st, false);
+  }
+
+  private buildingArt(kind: BuildingKind, era: Era, level: number, st: number, open: boolean): Prop {
     const stoneN = BUILDINGS[kind].levels.stone!.length;
     if (era === 'ancient' && level > stoneN && ANCIENT_ART[kind]) { // the medieval levels have their own drawings, after the stone ones
       const set = this.buildingSet(kind, 'ancient'), half = kind === 'gate' ? set.length / 2 : set.length;

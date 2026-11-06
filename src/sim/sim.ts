@@ -41,6 +41,7 @@ import * as power from './power';
 import * as warplan from './warplan';
 import * as warmode from './warmode';
 import * as warmarch from './warmarch';
+import * as warscene from './warscene';
 import * as warsupply from './warsupply';
 import * as warharass from './warharass';
 import * as warlog from './warlog';
@@ -172,6 +173,12 @@ export class Sim {
   foodPenalty = 0;
   /** When the war that is on began (seconds of game time); -1 in peace. The meals of those days are paid when it ends (economy.eatWar). */
   warSince = -1;
+  /** War sound: whether enough of our soldiers have seen the enemy and are attacking (the sting plays each time it turns on), when that was last true, and when it was last worked out. Reset when the war ends. */
+  /** Sounds waiting for the UI (a blow landed, an arrow hit): the renderer plays and empties them. Never saved. */
+  sfx: Array<{ weapon: string; ranged: boolean; x: number; y: number }> = [];
+  warSeen = false;
+  warSeenAt = 0;
+  warCheckAt = 0;
   /** While a war is on: the soldiers of the plan, how their march goes (speed, food and energy factors) and the meals they and the village have eaten (paid when it ends). All reset in peace. */
   warIds = new Set<number>();
   march: warmarch.March = warmarch.PEACE;
@@ -267,6 +274,10 @@ export class Sim {
   inView(x: number, y: number): boolean { const w = this.view; return !w || (x >= w.x0 && x <= w.x1 && y >= w.y0 && y <= w.y1); }
   /** How much an exhausted soldier of the army is weakened (0..): energy below `tired.below` takes up to `tired.maxPenalty` off his stats. */
   tiredPenalty(v: Villager): number { if (!this.warIds.has(v.id)) return 0; const k = warmarch.WAR_DATA.tired; return v.energy < k.below ? k.maxPenalty * (1 - v.energy / k.below) : 0; }
+  /** → warscene.warScene: the state of the war for the music */
+  warScene(): warscene.WarState { return warscene.warScene(this); }
+  /** A blow of `weapon` landed at (x, y): the UI plays the sound of that weapon. */
+  addSfx(weapon: string, ranged: boolean, x: number, y: number): void { if (this.sfx.length < 48) this.sfx.push({ weapon, ranged, x, y }); }
   /** → warmode.warPlan: a war is on */
   atWar(): boolean { return !!warmode.warPlan(this); }
   /** → villagers.goHome */
@@ -688,7 +699,7 @@ export class Sim {
       return;
     }
     // the war is over: whoever lay out of sight (in a field tent, or with no bed) gets up and goes to bed in the right place
-    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; }
+    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; this.warSeen = false; this.warSeenAt = 0; this.warCheckAt = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);

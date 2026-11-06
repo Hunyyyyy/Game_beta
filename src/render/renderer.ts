@@ -9,6 +9,11 @@ import { hash2 } from '../sim/rng';
 import { Tile } from '../sim/world';
 import { MOUNTS } from '../sim/jobs';
 import { Prop, Sprites, SPRITE_FEET } from './sprites';
+import { FxLayer } from './fxlayer';
+import type { GameAudio } from '../audio/audio';
+import animsJson from '../data/anims.json';
+import soundsJson from '../data/sounds.json';
+import { Mountains, stripOrigin } from './mountains';
 
 export interface Camera { x: number; y: number; zoom: number }
 export interface Box { x0: number; y0: number; x1: number; y1: number }
@@ -17,6 +22,9 @@ export interface Marker { x: number; y: number; age: number }
 export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number; /** A group of fence pieces carried together: where each goes, and the ids they leave. */ group?: Array<{ id: number; kind: BuildingKind; x: number; y: number; level: number }>; movingIds?: number[] }
 
 interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp' | 'ftent'; ft?: { x: number; y: number; built: boolean }; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe; p?: Tribe['props'][number] }
+
+/** Frame count and speed of an animation, for the sound hit frames. */
+const animClip = (a: string): { fps: number; n: number; hit: number } | undefined => { const c = (animsJson as unknown as Record<string, { fps: number; frames: unknown[]; hit?: number }>)[a]; return c ? { fps: c.fps, n: c.frames.length, hit: c.hit ?? 2 } : undefined; };
 
 const FOG_RGB = [8, 10, 20];
 /** Weather particles: drop/flake count (per 1000×700 px), extra dimming, wind slant, lightning chance. */
@@ -35,6 +43,12 @@ export class Renderer {
   w = 0; h = 0; dpr = 1;
   private readonly fogCanvas: HTMLCanvasElement;
   private torchLight: HTMLCanvasElement | null = null;
+  /** Sparks, dust and flames made by code (pixelfx); it only watches the Sim. */
+  private readonly fxl = new FxLayer();
+  /** Optional sound: plays work and fight sounds for the units on screen. */
+  audio: GameAudio | null = null;
+  /** The mountains of a world, drawn as one heightfield (see mountains.ts). */
+  private readonly mountains = new WeakMap<object, Mountains>();
   private readonly fogCtx: CanvasRenderingContext2D;
   private fogVer = -1;
 
@@ -100,18 +114,48 @@ export class Renderer {
    * Every house does it, the tower no more than the others.
    */
   private drawDamage(b: Building, ax: number, ay: number, time: number): void {
-    if (b.done) this.drawWear(b.kind, b.hp / Math.max(1, maxHp(b)), b.id, ax, ay, time);
+    if (b.done) this.drawWear(b.kind, b.hp / Math.max(1, maxHp(b)), b.id, ax, ay, time, b.level, this.buildingProp(b).ay);
+  }
+
+  /**
+   * The men of a tower seen up on it: a bust with a cap and a bow behind the rail or the battlements (up to three, one for each man), bobbing a little; in the
+   * wooden tower they stand on the deck, in the stone one their heads and shoulders show over the merlons, in the medieval one the walkway is open too, a small tiled turret behind them.
+   * (ax, ay) is the anchor of the tower's picture; `art` 1 is the timber tower, 2 the stone one, 3 the medieval one. A man who is shooting draws his bow.
+   */
+  private drawTowerMen(ax: number, ay: number, art: 1 | 2 | 3, n: number, time: number, shooting: boolean): void {
+    if (n <= 0) return;
+    const { ctx } = this, z = this.cam.zoom, count = Math.min(3, n);
+    const at = (sx: number, sy: number) => this.worldToScreen(ax + sx - 36, ay + sy - 94); // a point of the picture (36, 94 is its anchor)
+    const xs = art === 1 ? [20, 32, 44] : [22, 33, 44];
+    for (let i = 0; i < count; i++) {
+      const bob = Math.round(Math.sin(time * 2.2 + i * 1.7) * 0.6), cap = art === 3 ? '#8a8e96' : '#a8733f', capD = art === 3 ? '#5b5e66' : '#774c28';
+      const feet = art === 1 ? 33 : 29, x = xs[i], h = art === 1 ? 14 : 11; // the picture's pixels: a man this tall shows
+      const o = at(x, feet + bob), px = (dx: number, dy: number, w: number, hh: number, c: string) => { ctx.fillStyle = c; ctx.fillRect(Math.round(o.x + dx * z), Math.round(o.y - (dy + hh) * z), Math.max(1, Math.round(w * z)), Math.max(1, Math.round(hh * z))); };
+      ctx.fillStyle = '#2b1d10'; ctx.fillRect(Math.round(o.x - 5 * z), Math.round(o.y - (h + 1) * z), Math.round(10 * z), Math.round((h + 1) * z)); // an outline behind the whole man
+      px(-4, 0, 8, 6, art === 3 ? '#5b6573' : '#8a4a2a');   // the body: a tunic, or a mail shirt
+      px(-4, 0, 1, 6, art === 3 ? '#8893a0' : '#b06a3e');
+      px(-5, 2, 1, 3, '#d8a878'); px(4, 2, 1, 3, '#d8a878');   // hands
+      const hy = 6;
+      px(-2, hy, 5, 4, '#d8a878'); px(-1, hy + 2, 1, 1, '#2b1d10'); px(1, hy + 2, 1, 1, '#2b1d10'); // the face and its eyes
+      px(-3, hy + 3, 7, 2, cap); px(-3, hy + 3, 7, 1, art === 3 ? '#b6bcc6' : '#cf9a62'); px(-3, hy + 2, 1, 2, capD); px(3, hy + 2, 1, 2, capD); // a cap or a helmet
+      // the bow: held up on the side he faces, drawn when he is shooting
+      const bx = o.x + 6 * z, by = o.y - (hy + 1) * z;
+      ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = Math.max(2, 2.6 * z); ctx.beginPath(); ctx.arc(bx, by, 5 * z, -Math.PI * 0.45, Math.PI * 0.45); ctx.stroke();
+      ctx.strokeStyle = '#8a6238'; ctx.lineWidth = Math.max(1, 1.4 * z); ctx.beginPath(); ctx.arc(bx, by, 5 * z, -Math.PI * 0.45, Math.PI * 0.45); ctx.stroke();
+      ctx.strokeStyle = '#d8c690'; ctx.lineWidth = Math.max(1, 0.8 * z); ctx.beginPath(); ctx.moveTo(bx + 5 * z * Math.cos(-Math.PI * 0.45), by + 5 * z * Math.sin(-Math.PI * 0.45)); ctx.lineTo(shooting ? bx - 3 * z : bx + 5 * z * Math.cos(Math.PI * 0.45) - 0.5 * z, shooting ? by : by + 5 * z * Math.sin(Math.PI * 0.45)); ctx.lineTo(bx + 5 * z * Math.cos(Math.PI * 0.45), by + 5 * z * Math.sin(Math.PI * 0.45)); ctx.stroke();
+      if (shooting) { ctx.strokeStyle = '#e8d6a8'; ctx.lineWidth = Math.max(1, z); ctx.beginPath(); ctx.moveTo(bx - 3 * z, by); ctx.lineTo(bx + 6 * z, by); ctx.stroke(); }
+    }
   }
 
   /** The same for any work, ours or a village's: `ratio` is what is left of it, `id` only sets where the smoke and flames are in their dance. */
-  private drawWear(kind: BuildingKind, ratio: number, id: number, ax: number, ay: number, time: number): void {
+  private drawWear(kind: BuildingKind, ratio: number, id: number, ax: number, ay: number, time: number, lv = 1, height = 0): void {
     const { ctx, cam: { zoom: z } } = this;
     ratio = Math.max(0, Math.min(1, ratio));
     if (ratio >= 1) return;
     const top = kind === 'tower' ? 86 : kind === 'fence' || kind === 'gate' ? 30 : kind === 'campfire' ? 34 : 62;
     this.bar(ax, ay - top, ratio, ratio > 0.7 ? '#6bbf59' : ratio > 0.3 ? '#e0b43c' : '#d9503c');
     if (kind === 'fence' || kind === 'gate') return;
-    const wide = BUILDINGS[kind].w * TILE * 0.35, roof = kind === 'tower' ? 70 : 44;
+    const wide = BUILDINGS[kind].w * TILE * 0.35, roof = height > 0 ? height * 0.72 : kind === 'tower' ? 70 : 44; // the roof is where the drawing is: a low house burns low
     if (ratio <= 0.7) { // smoke rising from the roof
       for (let k = 0; k < 4; k++) {
         const t = (time * 0.45 + k * 0.25 + id * 0.13) % 1, p = this.worldToScreen(ax - wide * 0.5 + k * wide * 0.33 + Math.sin(time * 1.3 + k) * 3 * t, ay - roof - t * 34);
@@ -119,11 +163,11 @@ export class Renderer {
         ctx.beginPath(); ctx.arc(p.x, p.y, (3 + t * 7) * z, 0, Math.PI * 2); ctx.fill();
       }
     }
-    if (ratio <= 0.3) { // flames over it
-      for (let k = 0; k < 4; k++) {
-        const flick = 0.7 + 0.3 * Math.sin(time * 11 + k * 2.1 + id), h = (9 + k % 2 * 4) * flick * z, p = this.worldToScreen(ax - wide * 0.7 + k * wide * 0.47, ay - roof + 8 - (k % 2) * 6);
-        ctx.fillStyle = '#e8641e'; ctx.beginPath(); ctx.moveTo(p.x - 4 * z, p.y); ctx.lineTo(p.x, p.y - h); ctx.lineTo(p.x + 4 * z, p.y); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = '#f7c24a'; ctx.beginPath(); ctx.moveTo(p.x - 2 * z, p.y); ctx.lineTo(p.x, p.y - h * 0.65); ctx.lineTo(p.x + 2 * z, p.y); ctx.closePath(); ctx.fill();
+    if (ratio <= 0.3) { // flames at the foot of it (they burn from the ground up; only the smoke climbs to the roof), made by code: taller on a house of a higher level and as it burns down
+      const fire = this.fxl.flame(lv, ratio);
+      for (let k = 0; k < 3; k++) {
+        const t = time + k * 0.37 + id * 0.11, f = fire.frames[Math.floor(t * fire.fps) % fire.frames.length], at = this.worldToScreen(ax - wide * 0.6 + k * wide * 0.6, ay - (k === 1 ? 9 : 3));
+        ctx.drawImage(f, Math.round(at.x - fire.ax * z), Math.round(at.y - fire.ay * z), f.width * z, f.height * z);
       }
     }
   }
@@ -182,71 +226,124 @@ export class Renderer {
     return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
   }
 
-  /** A fence piece in a column (a neighbour above or below, none beside) is a stake with rails running down the screen to the next one: the tile picture shows a row seen from the front. Returns false when the piece is not part of a column. */
+  /** A box with a dark outline and a lit left edge, the way the tile pictures are drawn. */
+  private block(x: number, y: number, w: number, h: number, fill: string, lit?: string, dark?: string): void {
+    const { ctx } = this;
+    x = Math.round(x); y = Math.round(y); w = Math.max(1, Math.round(w)); h = Math.max(1, Math.round(h));
+    ctx.fillStyle = '#2b1d10'; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+    ctx.fillStyle = fill; ctx.fillRect(x, y, w, h);
+    if (lit) { ctx.fillStyle = lit; ctx.fillRect(x, y, Math.max(1, Math.round(w * 0.28)), h); }
+    if (dark) { ctx.fillStyle = dark; ctx.fillRect(x + w - Math.max(1, Math.round(w * 0.2)), y, Math.max(1, Math.round(w * 0.2)), h); }
+  }
+
+  /** A solid shape with a dark outline. */
+  private shape(pts: Array<[number, number]>, fill: string): void {
+    const { ctx } = this, z = this.cam.zoom;
+    ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = Math.max(1, z * 0.8); ctx.stroke();
+  }
+
+  /** A fence piece in a column (a neighbour above or below, none beside) shows as a line of pickets running down the screen, three to a tile, tied together by two rails: the tile picture shows a row seen from the front. Returns false when the piece is not part of a column. */
   private drawColumnFence(b: Building, wallAt: Map<number, Building>): boolean {
     const N = this.sim.world.size, at = (dx: number, dy: number) => wallAt.get((b.y + dy) * N + b.x + dx);
     // a fence piece at a corner or a T (a neighbour on both axes) is drawn here too
     if (!(at(0, -1) || at(0, 1))) return false;
     const { ctx } = this, z = this.cam.zoom, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay), two = b.level >= 2;
-    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 8 * z, 3 * z, 0, 0, Math.PI * 2); ctx.fill();
-    // rails to the pieces below and beside, drawn first so that this stake and the next one stand over their ends
-    for (const [dx, dy] of [[0, 1], [-1, 0], [1, 0]]) {
-      if (!at(dx, dy)) continue;
-      const q = this.worldToScreen(ax + dx * TILE, ay + dy * TILE);
-      for (const h of two ? [20, 12, 5] : [14, 7]) { ctx.strokeStyle = two ? '#8a6238' : '#d8c690'; ctx.lineWidth = Math.max(1, (two ? 2 : 1) * z); ctx.beginPath(); ctx.moveTo(p.x, p.y - h * z); ctx.lineTo(q.x, q.y - h * z); ctx.stroke(); }
+    const rails = two ? [19, 9] : [16, 8], step = 11 * z, th = (two ? 2.4 : 1.8) * z;
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 9 * z, 14 * z, 0, 0, Math.PI * 2); ctx.fill();
+    const rail = (x0: number, y0: number, x1: number, y1: number, h: number) => {
+      ctx.lineCap = 'butt';
+      ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = th + 2; ctx.beginPath(); ctx.moveTo(x0, y0 - h * z); ctx.lineTo(x1, y1 - h * z); ctx.stroke();
+      ctx.strokeStyle = two ? '#8a6238' : '#d8c690'; ctx.lineWidth = th; ctx.beginPath(); ctx.moveTo(x0, y0 - h * z); ctx.lineTo(x1, y1 - h * z); ctx.stroke();
+      ctx.strokeStyle = two ? '#aa7c48' : '#f0e2b0'; ctx.lineWidth = Math.max(1, th * 0.35); ctx.beginPath(); ctx.moveTo(x0, y0 - h * z - th * 0.25); ctx.lineTo(x1, y1 - h * z - th * 0.25); ctx.stroke();
+    };
+    // rails: through this piece's pickets, to the piece below, and to a piece beside it (a corner)
+    for (const h of rails) {
+      rail(p.x, p.y - step, p.x, p.y + step, h);
+      if (at(0, 1)) { const q = this.worldToScreen(ax, ay + TILE); rail(p.x, p.y + step, q.x, q.y - step, h); }
+      for (const dx of [-1, 1]) if (at(dx, 0)) { const q = this.worldToScreen(ax + dx * TILE, ay); rail(p.x, p.y, q.x, q.y, h); }
     }
-    const w = (two ? 6 : 5) * z, hgt = (two ? 30 : 25) * z;
-    ctx.fillStyle = '#5e4026'; ctx.fillRect(Math.round(p.x - w / 2), Math.round(p.y - hgt), Math.round(w), Math.round(hgt));
-    ctx.fillStyle = '#8a6238'; ctx.beginPath(); ctx.moveTo(p.x - w / 2, p.y - hgt); ctx.lineTo(p.x, p.y - hgt - 3 * z); ctx.lineTo(p.x + w / 2, p.y - hgt); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = Math.max(1, z * 0.7); ctx.strokeRect(Math.round(p.x - w / 2) + 0.5, Math.round(p.y - hgt) + 0.5, Math.round(w), Math.round(hgt));
+    // the pickets: pointed, outlined, lit on the left and shaded on the right, the middle one standing a little taller
+    const w = (two ? 8 : 7) * z;
+    for (const k of [-1, 0, 1]) {
+      const y = p.y + k * step, hgt = ((two ? 27 : 23) + (k === 0 ? 3 : 0)) * z, x = Math.round(p.x - w / 2), top = Math.round(y - hgt);
+      for (const h of rails) this.block(x + w - 1, y - h * z, 6 * z, th, two ? '#8a6238' : '#d8c690', two ? '#aa7c48' : '#f0e2b0'); // the end of each rail, seen from the side
+      this.block(x, top, w, hgt, '#8a6238', '#aa7c48', '#5e4026');
+      this.shape([[x - 0.5, top], [p.x, top - 4 * z], [x + w + 0.5, top]], '#aa7c48');
+    }
     return true;
   }
 
-  /** A gate stands taller and much wider than the fence on either side (posts 30 px out from its middle, a lintel across them), and shows plainly whether it is shut: shut, it has a red sign and cloth, planks fill the gap and the ground between the posts is barred; open, it has a green sign and cloth, the leaves stand swung out and a path is laid between the posts. It runs along the column when fence lies above or below it and none beside it. */
+  /** A gate stands taller and wider than the fence on either side (posts 26 px out from its middle, a beam across them), and shows plainly whether it is shut: shut, it has a red pennant and the leaves are closed and barred, the ground between the posts barred in red; open, a green pennant, the leaves stand swung out and a path is laid between the posts. It runs along the column when fence lies above or below it and none beside it. */
   private drawGate(b: Building, wallAt: Map<number, Building>): void {
     const { ctx } = this, z = this.cam.zoom, N = this.sim.world.size, at = (dx: number, dy: number) => wallAt.has((b.y + dy) * N + b.x + dx);
     const col = (at(0, -1) || at(0, 1)) && !(at(-1, 0) || at(1, 0)), two = b.level >= 2, open = b.open;
-    const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 8);
+    const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 6);
     const sign = open ? '#4fbf5a' : '#d9473f', signDark = open ? '#2a7a33' : '#8f2620';
     // u runs along the gate, v across it (towards the viewer), h up from the ground
     const X = (u: number, v = 0) => (col ? p.x + v * z : p.x + u * z), Y = (u: number, h: number, v = 0) => (col ? p.y + u * z : p.y + v * z) - h * z;
-    const line = (x0: number, y0: number, x1: number, y1: number, th: number, c: string) => {
-      ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = th * z + 2; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-      ctx.strokeStyle = c; ctx.lineWidth = th * z; ctx.stroke();
-    };
-    const bar = (u0: number, u1: number, h: number, th: number, c: string) => line(X(u0), Y(u0, h), X(u1), Y(u1, h), th, c);
-    const top = two ? 64 : 58, leaf = two ? '#9a9a96' : '#8a6238', U = 30;
+    const U = 26, top = two ? 52 : 46, pw = two ? 10 : 8;
+    const wood = '#8a6238', woodL = '#aa7c48', woodD = '#5e4026', stone = '#8e9498', stoneL = '#b9bfc2', stoneD = '#60676b', iron = '#454a52';
     // the ground between the posts: a green path when open, barred in red when shut
-    ctx.fillStyle = open ? 'rgba(90,200,90,.32)' : 'rgba(217,71,63,.30)';
-    if (col) ctx.fillRect(Math.round(p.x - 8 * z), Math.round(p.y - U * z), Math.round(16 * z), Math.round(2 * U * z));
-    else ctx.fillRect(Math.round(p.x - U * z), Math.round(p.y - 8 * z), Math.round(2 * U * z), Math.round(16 * z));
+    ctx.fillStyle = open ? 'rgba(90,200,90,.30)' : 'rgba(217,71,63,.26)';
+    if (col) ctx.fillRect(Math.round(p.x - 9 * z), Math.round(p.y - U * z), Math.round(18 * z), Math.round(2 * U * z));
+    else ctx.fillRect(Math.round(p.x - U * z), Math.round(p.y - 9 * z), Math.round(2 * U * z), Math.round(18 * z));
+    const shadow = (u: number) => { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(X(u), Y(u, 0), 9 * z, 3.5 * z, 0, 0, Math.PI * 2); ctx.fill(); };
     const post = (u: number) => {
-      const pw = (two ? 11 : 9) * z, ph = top * z, x = X(u), y = Y(u, 0);
-      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y, 10 * z, 3.5 * z, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#2b1d10'; ctx.fillRect(Math.round(x - pw / 2) - 1, Math.round(y - ph) - 1, Math.round(pw) + 2, Math.round(ph) + 2);
-      ctx.fillStyle = '#5e4026'; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph), Math.round(pw), Math.round(ph));
-      ctx.fillStyle = '#aa7c48'; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph), Math.round(pw * 0.35), Math.round(ph));
-      // cloth hung from the top of the post: red when shut, green when open
-      ctx.fillStyle = sign; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph + 6 * z), Math.round(pw), Math.round(14 * z));
-      ctx.fillStyle = signDark; ctx.fillRect(Math.round(x - pw / 2), Math.round(y - ph + 17 * z), Math.round(pw), Math.round(3 * z));
+      shadow(u);
+      const x = X(u) - pw * z / 2, y = Y(u, top);
+      if (two) { // stone posts, laid in courses, with a cap
+        this.block(x, y, pw * z, top * z, stone, stoneL, stoneD);
+        ctx.fillStyle = stoneD; for (const h of [8, 16, 24, 32, 40]) ctx.fillRect(Math.round(x), Math.round(Y(u, h)), Math.round(pw * z), Math.max(1, Math.round(z * 0.8)));
+        this.block(x - 2 * z, y - 4 * z, (pw + 4) * z, 4 * z, stoneL, '#d3d8da', stone);
+      } else {
+        this.block(x, y, pw * z, top * z, woodD, wood, '#3e2916');
+        ctx.fillStyle = woodL; ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(z * 1.5)), Math.round(top * z));
+        this.shape([[x - 0.5, y], [X(u), y - 5 * z], [x + pw * z + 0.5, y]], woodL);
+      }
+      // iron bands where the leaves hang
+      ctx.fillStyle = iron; for (const h of [10, top - 14]) ctx.fillRect(Math.round(x), Math.round(Y(u, h)), Math.round(pw * z), Math.max(2, Math.round(2 * z)));
+    };
+    const planks = (u0: number, u1: number, h0: number, h1: number, t = 0) => {
+      // a leaf: boards side by side, two iron bands across and a diagonal brace
+      const x0 = X(u0), x1 = X(u1), yA = Y(u0, h1), yB = Y(u1, h1), yC = Y(u1, h0), yD = Y(u0, h0);
+      this.shape([[x0 - t, yA], [x1 - t, yB], [x1 + t, yC], [x0 + t, yD]], wood);
+      ctx.strokeStyle = woodD; ctx.lineWidth = Math.max(1, z * 0.8);
+      const n = 5; for (let i = 1; i < n; i++) { const f = i / n; ctx.beginPath(); ctx.moveTo(x0 + (x1 - x0) * f - t, yA + (yB - yA) * f); ctx.lineTo(x0 + (x1 - x0) * f + t, yD + (yC - yD) * f); ctx.stroke(); }
+      ctx.strokeStyle = iron; ctx.lineWidth = Math.max(2, 2 * z);
+      for (const f of [0.2, 0.8]) { const ya = yA + (yD - yA) * f, yb = yB + (yC - yB) * f; ctx.beginPath(); ctx.moveTo(x0 - t, ya); ctx.lineTo(x1 + t, yb); ctx.stroke(); }
+      ctx.strokeStyle = woodD; ctx.lineWidth = Math.max(2, 2.4 * z); ctx.beginPath(); ctx.moveTo(x0, yD); ctx.lineTo(x1, yB); ctx.stroke();
     };
     post(-U);
     if (open) {
-      // leaves swung out to the front, one from each post
-      for (const s of [-1, 1]) for (const h of [8, 22, 36]) line(X(s * U, 0), Y(s * U, h), X(s * (U - 4), 14), Y(s * (U - 4), h, 14), 4, leaf);
+      // each leaf swung out to the front from its post
+      for (const s of [-1, 1]) {
+        const h0 = 4, h1 = top - 10, hinge = s * (U - 4), freeU = s * (U - 14), v = 14;
+        const x0 = X(hinge), x1 = X(freeU, v);
+        this.shape([[x0, Y(hinge, h1)], [x1, Y(freeU, h1, v)], [x1, Y(freeU, h0, v)], [x0, Y(hinge, h0)]], wood);
+        ctx.strokeStyle = iron; ctx.lineWidth = Math.max(2, 2 * z);
+        for (const f of [0.2, 0.8]) { const ya = Y(hinge, h1) + (Y(hinge, h0) - Y(hinge, h1)) * f, yb = Y(freeU, h1, v) + (Y(freeU, h0, v) - Y(freeU, h1, v)) * f; ctx.beginPath(); ctx.moveTo(x0, ya); ctx.lineTo(x1, yb); ctx.stroke(); }
+        ctx.strokeStyle = woodD; ctx.lineWidth = Math.max(1, z * 0.8); for (let i = 1; i < 4; i++) { const f = i / 4; ctx.beginPath(); ctx.moveTo(x0 + (x1 - x0) * f, Y(hinge, h1) + (Y(freeU, h1, v) - Y(hinge, h1)) * f); ctx.lineTo(x0 + (x1 - x0) * f, Y(hinge, h0) + (Y(freeU, h0, v) - Y(hinge, h0)) * f); ctx.stroke(); }
+      }
     } else {
-      for (const h of [6, 17, 28, 39]) bar(-U + 4, U - 4, h, 5, leaf);
-      line(X(-U + 4), Y(-U + 4, 6), X(U - 4), Y(U - 4, 39), 3, '#d8c690');
+      const t = col ? 3 * z : 0;
+      planks(-U + 4, -1, 4, top - 10, t); planks(1, U - 4, 4, top - 10, t);
+      ctx.fillStyle = iron; ctx.beginPath(); ctx.arc(X(-3), Y(-3, top / 2 - 3), 1.6 * z, 0, Math.PI * 2); ctx.arc(X(3), Y(3, top / 2 - 3), 1.6 * z, 0, Math.PI * 2); ctx.fill();
     }
     post(U);
-    bar(-U - 8, U + 8, top, 7, '#5e4026'); bar(-U - 8, U + 8, top + 2, 2, '#aa7c48');
-    // the sign on the lintel: a disc with a bar across (shut) or an arrow through (open)
-    const cx = X(0), cy = Y(0, top + 12), r = 9 * z;
-    ctx.fillStyle = '#2b1d10'; ctx.beginPath(); ctx.arc(cx, cy, r + 2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = sign; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#fff6e8'; ctx.lineWidth = Math.max(2, 2.4 * z); ctx.lineCap = 'round'; ctx.beginPath();
-    if (open) { ctx.moveTo(cx, cy + 5 * z); ctx.lineTo(cx, cy - 5 * z); ctx.moveTo(cx - 3.5 * z, cy - 1.5 * z); ctx.lineTo(cx, cy - 5.5 * z); ctx.lineTo(cx + 3.5 * z, cy - 1.5 * z); }
-    else { ctx.moveTo(cx - 5 * z, cy); ctx.lineTo(cx + 5 * z, cy); }
+    // the beam across the posts, carved at its ends, with a banner hung from the middle and a pennant on a pole above it
+    const bx0 = X(-U - 7), bx1 = X(U + 7), by0 = Y(-U - 7, top), by1 = Y(U + 7, top);
+    this.shape([[bx0, by0 - 4 * z], [bx1, by1 - 4 * z], [bx1, by1 + 3 * z], [bx0, by0 + 3 * z]], two ? stoneD : woodD);
+    ctx.strokeStyle = two ? stoneL : woodL; ctx.lineWidth = Math.max(1, 1.4 * z); ctx.beginPath(); ctx.moveTo(bx0, by0 - 3.2 * z); ctx.lineTo(bx1, by1 - 3.2 * z); ctx.stroke();
+    const cx = X(0), cy = Y(0, top);
+    ctx.fillStyle = '#2b1d10'; ctx.fillRect(Math.round(cx - 1 * z), Math.round(cy - 18 * z), Math.max(2, Math.round(2 * z)), Math.round(15 * z));
+    this.shape([[cx + 1 * z, cy - 18 * z], [cx + 10 * z, cy - 15 * z], [cx + 1 * z, cy - 11 * z]], sign);
+    // a hanging banner below the beam: the colour of the state, with a white mark
+    this.shape([[cx - 6 * z, cy + 3 * z], [cx + 6 * z, cy + 3 * z], [cx + 6 * z, cy + 14 * z], [cx, cy + 18 * z], [cx - 6 * z, cy + 14 * z]], sign);
+    ctx.fillStyle = signDark; ctx.fillRect(Math.round(cx - 6 * z), Math.round(cy + 12 * z), Math.round(12 * z), Math.round(2 * z));
+    ctx.strokeStyle = '#fff6e8'; ctx.lineWidth = Math.max(1.5, 1.8 * z); ctx.lineCap = 'round'; ctx.beginPath();
+    if (open) { ctx.moveTo(cx, cy + 12 * z); ctx.lineTo(cx, cy + 6 * z); ctx.moveTo(cx - 2.5 * z, cy + 8.5 * z); ctx.lineTo(cx, cy + 5.5 * z); ctx.lineTo(cx + 2.5 * z, cy + 8.5 * z); }
+    else { ctx.moveTo(cx - 3.5 * z, cy + 8.5 * z); ctx.lineTo(cx + 3.5 * z, cy + 8.5 * z); }
     ctx.stroke(); ctx.lineCap = 'butt';
   }
 
@@ -271,6 +368,12 @@ export class Renderer {
   private buildingProp(b: Building): Prop {
     const st = b.done ? 4 : Math.min(3, Math.floor(b.progress * 4));
     return this.sprites.building(b.kind, b.era, b.level, st, b.kind === 'gate' && b.open);
+  }
+
+  /** Sound only for what happens near the middle of the screen: inside an ellipse of `range` × half the screen (sounds.json). */
+  private nearCenter(sx: number, sy: number): boolean {
+    const dx = (sx - this.w / 2) / (this.w / 2), dy = (sy - this.h / 2) / (this.h / 2);
+    return dx * dx + dy * dy <= soundsJson.range * soundsJson.range;
   }
 
   /** Rain, snow, mist, lightning in screen space; particle positions derive from time, so no state is kept. */
@@ -325,19 +428,6 @@ export class Renderer {
     ctx.fillStyle = color; ctx.fillRect(p.x - w / 2, p.y, w * Math.max(0, Math.min(1, frac)), 2 * z);
   }
 
-  /**
-   * A mountain is one mass, not a peak on every tile: the whole of it is rocky ground, and peaks stand on it only now and then, small at the foot,
-   * larger up the slope, tallest and snow-capped at the heart. Whether a tile carries a peak, and how big, comes from how deep in the mountain it is.
-   */
-  private peakAt(world: Sim['world'], i: number, j: number): 'low' | 'mid' | 'high' | null {
-    const inside = (x: number, y: number) => world.at(x, y) === Tile.Mountain && world.inBounds(x, y);
-    const reach = (dx: number, dy: number) => { let n = 0; while (n < 4 && inside(i + dx * (n + 1), j + dy * (n + 1))) n++; return n; };
-    const depth = Math.min(reach(1, 0), reach(-1, 0), reach(0, 1), reach(0, -1)); // 0 on the rim, up to 4 at the heart
-    const step = depth >= 3 ? 3 : 2;
-    const ci = Math.floor(i / step), cj = Math.floor(j / step);
-    if (i !== ci * step + Math.floor(hash2(ci, cj, 41) * step) || j !== cj * step + Math.floor(hash2(ci, cj, 42) * step)) return null;
-    return depth >= 3 ? 'high' : depth === 2 ? 'mid' : 'low';
-  }
 
   draw(time: number, selected: ReadonlySet<number>, box: Box | null, markers: Marker[], ghost: Ghost | null = null, selBuilding: number | null = null, inspect: { kind: 'unit' | 'animal' | 'node' | 'tent'; id: number } | null = null, group: readonly number[] = []): void {
     const { ctx, cam, sim } = this, z = cam.zoom, world = sim.world, N = world.size, sp = this.sprites;
@@ -364,7 +454,7 @@ export class Renderer {
         ctx.drawImage(img, px(i), py(j), ts, ts);
       }
     }
-    const trees = nat.trees;
+    const trees = nat.trees, strips = new Set<number>();
 
     // ---- vật thể + công trình + dân, sắp theo y ----
     const list: Drawable[] = [];
@@ -373,7 +463,7 @@ export class Renderer {
         const t = world.at(i, j);
         if (t === Tile.Tree) list.push({ y: j * TILE + 28, kind: 'tree', i, j });
         else if (t === Tile.Rock) list.push({ y: j * TILE + 28, kind: 'rock', i, j });
-        else if (t === Tile.Mountain) { const p = this.peakAt(world, i, j); if (p) list.push({ y: j * TILE + 30, kind: 'mountain', i, j, peak: p }); }
+        else if (t === Tile.Mountain && !strips.has(j * 65536 + (i >> 3))) { strips.add(j * 65536 + (i >> 3)); list.push({ y: (j + 1) * TILE - 1, kind: 'mountain', i: i >> 3, j }); } // a strip of the range, 8 tiles wide, in front of what is behind it
         else if (t === Tile.Bush) list.push({ y: j * TILE + 28, kind: 'bush', i, j });
       }
     }
@@ -407,8 +497,9 @@ export class Renderer {
         const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
         this.prop(p, d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'mountain') {
-        const set = nat.peaks[d.peak ?? 'low'];
-        this.prop(set[Math.floor(hash2(d.i, d.j, 24) * set.length)], d.i * TILE + 16, d.y, time);
+        let m = this.mountains.get(world); if (!m) this.mountains.set(world, m = new Mountains(world));
+        const pic = m.strip(d.i, d.j, sim.season === 'winter' ? 40 : sim.season === 'summer' ? 58 : 52);
+        if (pic) { const [ox, oy] = stripOrigin(d.i, d.j); ctx.drawImage(pic, Math.round((ox - cam.x) * z), Math.round((oy - cam.y) * z), pic.width * z, pic.height * z); }
       } else if (d.kind === 'rock') {
         this.prop(nat.rocks[Math.floor(hash2(d.i, d.j, 22) * nat.rocks.length)], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'bush') {
@@ -420,6 +511,11 @@ export class Renderer {
         else if (!(b.kind === 'fence' && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id || ghost?.movingIds?.includes(b.id) ? 0.5 : 1); // the house being carried stays dim where it stands
         if (b.kind === 'fence' || b.kind === 'gate') this.drawDiagonalRails(b, wallAt);
         this.drawDamage(b, ax, ay, time);
+        if (b.kind === 'tower' && b.done) { // whoever has been sent up the tower is seen on it
+          let n = 0, shooting = false; for (const v of sim.villagers) if (v.post === b.id && v.job === 'fight') { n++; if (v.swing) shooting = true; }
+          this.drawTowerMen(ax, ay, b.era === 'ancient' && b.level > BUILDINGS.tower.levels.stone!.length ? 3 : b.level >= 2 ? 2 : 1, n, time, shooting);
+        }
+        this.fxl.watchBuilding(b, ax, ay, BUILDINGS[b.kind].w, BUILDINGS[b.kind].h, time);
         const emblem = b.done ? sp.emblems[b.kind] : undefined;
         if (emblem) { const p = this.worldToScreen(ax, ay - 52); ctx.drawImage(emblem, Math.round(p.x - 8 * z), Math.round(p.y), 16 * z, 16 * z); }
         // a house that works to orders shows how far the order has got, or sleeps when it has none
@@ -470,7 +566,11 @@ export class Renderer {
           this.drawDiagonalRails(b, walls);
         } else this.prop(sp.building(kind, 'stone', p.kind === 'fire' ? 1 : p.lv ?? 1, 4), ax, ay, time, alpha);
         // a work of a village that has been hurt shows it as ours do: a bar, smoke, flames
-        if (p.hp > 0) this.drawWear(kind, p.hp / Math.max(1, maxPropHp(t, p)), p.x * 31 + p.y, ax, ay, time);
+        if (p.hp > 0) this.drawWear(kind, p.hp / Math.max(1, maxPropHp(t, p)), p.x * 31 + p.y, ax, ay, time, p.lv ?? 1, sp.building(kind, 'stone', p.kind === 'fire' ? 1 : p.lv ?? 1, 4).ay);
+        if (kind === 'tower' && p.hp > 0) { // the guards of a village's tower stand up on it
+          let n = 0, shooting = false; for (const f of sim.foes) if (f.ai?.tower && f.ai.tower.x === p.x && f.ai.tower.y === p.y) { n++; if (f.swing) shooting = true; }
+          this.drawTowerMen(ax, ay, (p.lv ?? 1) >= 2 ? 2 : 1, n, time, shooting);
+        }
       } else if (d.v) {
         const rode = d.v.phase !== 'sleep' && d.v.phase !== 'down' ? sim.mountOf(d.v) : null, fighting = !!d.v.swing || d.v.flinch > 0 || d.v.anim === 'down';
         // a rider is seen from the side, the way his beast faces: up and down the screen he keeps the side he last had
@@ -490,6 +590,8 @@ export class Renderer {
           ctx.drawImage(s, -SPRITE_FEET.x * z, -SPRITE_FEET.y * z, s.width * z, s.height * z); ctx.restore();
         } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - lift - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
         const v = d.v;
+        if (v.phase === 'work') this.fxl.watchWorker(v, fx, fy - lift, time);
+        if (this.audio && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time);
         // a small badge tells soldiers (red) and hunters (amber) from civilians
         if (v.team === 'player' && (v.job === 'fight' || v.job === 'hunt') && v.phase !== 'flee' && v.phase !== 'sleep' && v.phase !== 'down') {
           const p = this.worldToScreen(fx, fy - lift - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
@@ -501,6 +603,8 @@ export class Renderer {
         if (v.phase === 'flee') { ctx.fillStyle = '#fff6e8'; ctx.font = `700 ${Math.max(12, 7 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 50); ctx.fillText('!', p.x, p.y); }
       }
     }
+
+    this.fxl.draw(ctx, cam, time); // sparks, dust and landings over the world, under the night
 
     // ---- dusk/dawn: orange glow; night: dark blue overlay, campfire light ----
     const dark = sim.darkness;
@@ -547,6 +651,15 @@ export class Renderer {
     ctx.drawImage(this.fogCanvas, fi0, fj0, fi1 - fi0, fj1 - fj0, px(fi0), py(fj0), (fi1 - fi0) * ts, (fj1 - fj0) * ts);
     ctx.imageSmoothingEnabled = false;
 
+    if (!this.audio) sim.sfx.length = 0;
+    if (this.audio) {
+      this.audio.sweep(time);
+      for (const e of sim.sfx) if (this.nearCenter((e.x * TILE - cx) * z, (e.y * TILE - cy) * z)) this.audio.hit(e.weapon, e.ranged, time);
+      const war = sim.warScene(); // the war music plays all through the war, wherever the camera is
+      const onScreen = war.squads.length > 0;
+      this.audio.setWar(onScreen, war.seen, time);
+      sim.sfx.length = 0;
+    }
     this.drawWeather(time);
 
     // ---- sleeping villagers ----

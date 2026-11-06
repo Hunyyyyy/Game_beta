@@ -77,6 +77,7 @@ export function setGates(sim: Sim, t: Tribe, shut: boolean): void {
   for (const p of t.props) {
     if (p.kind !== 'gate' || (p.open !== false) !== shut) continue;
     p.open = !shut;
+    sim.addSfx(shut ? 'gate_shut' : 'gate_open', false, p.x, p.y);
     for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) { const k = (p.y + j) * N + p.x + i; sim.world.occ[k] = shut ? 1 : 0; if (shut) sim.world.foeGates.add(k); else sim.world.foeGates.delete(k); } // the village's own people pass its shut gates
   }
 }

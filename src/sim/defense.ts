@@ -18,13 +18,14 @@ export function toggleGate(sim: Sim, id: number): string | null {
   if (!b.done) return 'Cổng chưa dựng xong';
   b.open = !b.open;
   sim.setOcc(b, 1); // shut -> blocked, open -> free (setOcc knows)
+  sim.addSfx(b.open ? 'gate_open' : 'gate_shut', false, b.x, b.y);
   sim.say(b.open ? 'Cổng đã mở.' : 'Cổng đã đóng.');
   return null;
 }
 
 /** Every gate to the same state; true = open. */
 export function setGates(sim: Sim, open: boolean): void {
-  for (const b of sim.buildings) if (b.kind === 'gate' && b.done && b.open !== open) { b.open = open; sim.setOcc(b, 1); }
+  for (const b of sim.buildings) if (b.kind === 'gate' && b.done && b.open !== open) { b.open = open; sim.setOcc(b, 1); sim.addSfx(open ? 'gate_open' : 'gate_shut', false, b.x, b.y); }
 }
 
 /** The nearest finished defence work to a point, within `radius` tiles (centre to centre). With `any`, any finished house but the fire counts: raiders with no wall in their way turn on what stands there. */

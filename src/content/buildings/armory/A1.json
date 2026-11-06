@@ -1,1 +1,1248 @@
-{"name": "Kho vũ khí (trung cổ cấp 1)", "name_en": "Armoury (Tier 3, Stone Walls, Red Hide Banner) (Medieval Tier 1)", "type": "prop", "size": [72, 64], "anchor": [36, 58], "footprint": [4, 32, 64, 28], "seed": 5, "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1}, "palette": {"line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "wood": "#71502d", "woodL": "#8b653b", "woodD": "#4d341f", "rope": "#d8c690", "stone": "#9fa5aa", "stoneL": "#cfd5d9", "stoneD": "#6b7377", "chip": "#d6c29a", "hide": "#a0552f", "flintL": "#7c8794", "bone": "#e4dcc4", "red": "#a8342a", "redL": "#cf5b46", "redD": "#7a2318", "banner": "#b3262d", "bannerD": "#7d1a20", "gold": "#e0b040"}, "layers": [{"shape": "ellipse", "cx": 36, "cy": 55, "rx": 30, "ry": 6, "color": "shadow", "alpha": 0.25}, {"shape": "rect", "x": 8, "y": 36, "w": 56, "h": 18, "color": "dirt", "alpha": 0.55, "ifNot": "st1"}, {"shape": "rect", "x": 7, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"}, {"shape": "rect", "x": 63, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"}, {"shape": "rect", "x": 7, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"}, {"shape": "rect", "x": 63, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1"}, {"shape": "line", "from": [9, 37], "to": [62, 37], "w": 1, "color": "rope", "ifNot": "st1"}, {"shape": "group", "if": "st1", "layers": [{"shape": "ellipse", "cx": 36, "cy": 48, "rx": 31, "ry": 8, "color": "stoneD"}, {"shape": "ellipse", "cx": 36, "cy": 47, "rx": 30, "ry": 7, "color": "stone"}, {"shape": "scatter", "count": 40, "area": [7, 41, 58, 12], "size": [3, 1], "colors": ["stoneL", "stoneD", "chip"], "onlyOver": ["stone"]}]}, {"shape": "group", "if": "st2", "layers": [{"shape": "rect", "x": 6, "y": 24, "w": 60, "h": 12, "color": "stoneD"}, {"shape": "rect", "x": 6, "y": 24, "w": 60, "h": 2, "color": "stone"}, {"shape": "rect", "x": 6, "y": 24, "w": 60, "h": 1, "color": "stoneL"}, {"shape": "rect", "x": 6, "y": 24, "w": 8, "h": 28, "color": "stoneD"}, {"shape": "rect", "x": 6, "y": 24, "w": 8, "h": 2, "color": "stone"}, {"shape": "rect", "x": 58, "y": 24, "w": 8, "h": 28, "color": "stoneD"}, {"shape": "rect", "x": 58, "y": 24, "w": 8, "h": 2, "color": "stone"}, {"shape": "scatter", "count": 44, "area": [7, 26, 56, 24], "size": 1, "colors": ["stone", "stoneL", "stoneD"], "onlyOver": ["stoneD"]}, {"shape": "rect", "x": 22, "y": 36, "w": 28, "h": 16, "color": "line", "alpha": 0.55}]}, {"shape": "group", "if": "st3", "layers": [{"shape": "poly", "points": [[3, 26], [12, 8], [60, 8], [69, 26]], "color": "wood"}, {"shape": "poly", "points": [[3, 26], [69, 26], [68, 30], [4, 30]], "color": "woodD"}, {"shape": "line", "from": [12, 8], "to": [60, 8], "w": 2, "color": "woodL"}, {"shape": "line", "from": [22, 8], "to": [14, 26], "w": 1, "color": "woodD"}, {"shape": "line", "from": [36, 8], "to": [36, 26], "w": 1, "color": "woodD"}, {"shape": "line", "from": [50, 8], "to": [58, 26], "w": 1, "color": "woodD"}, {"shape": "scatter", "count": 24, "area": [8, 10, 56, 14], "size": 1, "colors": ["woodL", "woodD"], "onlyOver": ["wood"]}, {"shape": "poly", "points": [[26, 31], [46, 31], [46, 40], [36, 44], [26, 40]], "color": "redD"}, {"shape": "poly", "points": [[26, 30], [46, 30], [46, 39], [36, 43], [26, 39]], "color": "red"}, {"shape": "line", "from": [26, 30], "to": [46, 30], "w": 1, "color": "redL"}, {"shape": "pixels", "at": [[36, 34], [35, 35], [37, 35], [36, 36]], "color": "bone"}]}, {"shape": "group", "if": "st4", "layers": [{"shape": "line", "from": [12, 52], "to": [12, 30], "w": 1, "color": "woodD"}, {"shape": "poly", "points": [[11, 31], [12, 27], [13, 31]], "color": "flintL"}, {"shape": "line", "from": [16, 52], "to": [16, 32], "w": 1, "color": "woodD"}, {"shape": "poly", "points": [[15, 33], [16, 29], [17, 33]], "color": "flintL"}, {"shape": "line", "from": [56, 52], "to": [56, 30], "w": 1, "color": "woodD"}, {"shape": "poly", "points": [[55, 31], [56, 27], [57, 31]], "color": "flintL"}, {"shape": "line", "from": [60, 52], "to": [60, 32], "w": 1, "color": "woodD"}, {"shape": "poly", "points": [[59, 33], [60, 29], [61, 33]], "color": "flintL"}, {"shape": "rect", "x": 23, "y": 46, "w": 4, "h": 6, "color": "woodD"}, {"shape": "rect", "x": 45, "y": 46, "w": 4, "h": 6, "color": "woodD"}, {"shape": "ellipse", "cx": 25, "cy": 47, "rx": 4, "ry": 5, "color": "line"}, {"shape": "ellipse", "cx": 25, "cy": 47, "rx": 3, "ry": 4, "color": "hide"}, {"shape": "ellipse", "cx": 25, "cy": 47, "rx": 1, "ry": 1, "color": "bone"}, {"shape": "line", "from": [25, 43], "to": [25, 51], "w": 1, "color": "woodD", "alpha": 0.6}, {"shape": "ellipse", "cx": 47, "cy": 47, "rx": 4, "ry": 5, "color": "line"}, {"shape": "ellipse", "cx": 47, "cy": 47, "rx": 3, "ry": 4, "color": "red"}, {"shape": "ellipse", "cx": 47, "cy": 47, "rx": 1, "ry": 1, "color": "bone"}, {"shape": "line", "from": [47, 43], "to": [47, 51], "w": 1, "color": "woodD", "alpha": 0.6}, {"shape": "line", "from": [31, 53], "to": [31, 44], "w": 2, "color": "wood"}, {"shape": "ellipse", "cx": 31, "cy": 43, "rx": 2, "ry": 2, "color": "woodD"}, {"shape": "pixels", "at": [[30, 42]], "color": "woodL"}, {"shape": "line", "from": [36, 53], "to": [36, 42], "w": 2, "color": "wood"}, {"shape": "ellipse", "cx": 36, "cy": 41, "rx": 2, "ry": 2, "color": "woodD"}, {"shape": "pixels", "at": [[35, 40]], "color": "woodL"}, {"shape": "line", "from": [41, 53], "to": [41, 44], "w": 2, "color": "wood"}, {"shape": "ellipse", "cx": 41, "cy": 43, "rx": 2, "ry": 2, "color": "woodD"}, {"shape": "pixels", "at": [[40, 42]], "color": "woodL"}]}, {"shape": "outline", "color": "line"}, {"shape": "rect", "x": 60, "y": 2, "w": 1, "h": 14, "color": "woodD", "if": "st4"}, {"shape": "rect", "x": 61, "y": 3, "w": 8, "h": 5, "color": "banner", "if": "st4"}, {"shape": "rect", "x": 61, "y": 7, "w": 8, "h": 1, "color": "bannerD", "if": "st4"}, {"shape": "rect", "x": 59, "y": 1, "w": 3, "h": 2, "color": "gold", "if": "st4"}]}
+{
+ "name": "Kho vũ khí (trung cổ cấp 1)",
+ "name_en": "Armoury (Medieval Tier 1)",
+ "type": "prop",
+ "size": [
+  72,
+  64
+ ],
+ "anchor": [
+  36,
+  58
+ ],
+ "footprint": [
+  4,
+  32,
+  64,
+  28
+ ],
+ "seed": 9,
+ "params": {
+  "st1": 1,
+  "st2": 1,
+  "st3": 1,
+  "st4": 1
+ },
+ "palette": {
+  "line": "#2b1d10",
+  "shadow": "#000000",
+  "dirt": "#6a5238",
+  "dirtL": "#7e6244",
+  "dirtD": "#4e3c2a",
+  "wood": "#8a6238",
+  "woodL": "#aa7c48",
+  "woodD": "#5e4026",
+  "logE": "#c49a60",
+  "rope": "#d8c690",
+  "stone": "#8e9498",
+  "stoneL": "#b9bfc2",
+  "stoneD": "#60676b",
+  "chip": "#d8d2c0",
+  "sack": "#c9b27a",
+  "sackD": "#9d8756",
+  "bone": "#e4dcc4",
+  "boneD": "#b8ac90",
+  "sand": "#b9a47a",
+  "sandL": "#cdbb94",
+  "sandD": "#9a8760",
+  "blue": "#5f7fa8",
+  "blueD": "#3f5c84",
+  "ochre": "#b0762f",
+  "red": "#a8342a",
+  "dark": "#1d1812",
+  "moss": "#5f7f3a",
+  "mossL": "#7f9f50",
+  "hide": "#d9c796",
+  "wicker": "#b08a4c",
+  "wickerL": "#c9a460",
+  "wickerD": "#7e5f30",
+  "mud": "#b98a62",
+  "mudL": "#cfa07a",
+  "mudD": "#8e6745",
+  "plaster": "#dccfb2",
+  "plasterD": "#b8a98a",
+  "thatch": "#d4b45a",
+  "thatchL": "#ecd27a",
+  "thatchD": "#a98a38",
+  "hay": "#e0c060",
+  "hayD": "#b8963a",
+  "shingle": "#55361f",
+  "shingleL": "#7a5232",
+  "shingleD": "#35200f",
+  "tile": "#9b4a34",
+  "tileL": "#c06a4a",
+  "tileD": "#6e3224",
+  "slate": "#66707c",
+  "slateL": "#8893a0",
+  "slateD": "#444c56",
+  "terra": "#b5593b",
+  "terraL": "#d27a52",
+  "terraD": "#7e3a26",
+  "glass": "#9bc4d8",
+  "glassD": "#5f8aa0",
+  "gold": "#d9b13a",
+  "bannerR": "#b8322a",
+  "iron": "#5d6068",
+  "ironL": "#8a8e96",
+  "clay": "#a8683e",
+  "clayD": "#7a4a2a",
+  "cut": "#a7adb1",
+  "cutL": "#c9ced1",
+  "cutD": "#6f757a",
+  "plank": "#c8a468",
+  "plankD": "#9a7a44",
+  "ink": "#2c4466",
+  "green": "#5f8f3a",
+  "greenL": "#86b04c",
+  "greenD": "#3f6a28",
+  "hideG": "#6f8a4a",
+  "hideGL": "#8fae62",
+  "hideGD": "#4c6532",
+  "hideR": "#a8342a",
+  "hideRL": "#c8523f",
+  "hideRD": "#7a2220"
+ },
+ "layers": [
+  {
+   "shape": "poly",
+   "points": [
+    [
+     4,
+     57
+    ],
+    [
+     54,
+     57
+    ],
+    [
+     67,
+     51
+    ],
+    [
+     16,
+     51
+    ]
+   ],
+   "color": "shadow",
+   "alpha": 0.25
+  },
+  {
+   "shape": "group",
+   "if": "st1",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       6,
+       54
+      ],
+      [
+       52,
+       54
+      ],
+      [
+       62,
+       48
+      ],
+      [
+       16,
+       48
+      ]
+     ],
+     "color": "stoneL"
+    },
+    {
+     "shape": "rect",
+     "x": 6,
+     "y": 54,
+     "w": 46,
+     "h": 2,
+     "color": "stoneD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       52,
+       54
+      ],
+      [
+       62,
+       48
+      ],
+      [
+       62,
+       50
+      ],
+      [
+       52,
+       56
+      ]
+     ],
+     "color": "stoneD"
+    },
+    {
+     "shape": "scatter",
+     "count": 26,
+     "area": [
+      8,
+      48,
+      52,
+      6
+     ],
+     "size": [
+      1,
+      2
+     ],
+     "colors": [
+      "chip",
+      "stone",
+      "stoneD"
+     ],
+     "onlyOver": [
+      "stoneL"
+     ]
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st2",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       52,
+       54
+      ],
+      [
+       62,
+       48
+      ],
+      [
+       62,
+       25
+      ],
+      [
+       52,
+       31
+      ]
+     ],
+     "color": "stoneD"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 31,
+     "w": 44,
+     "h": 23,
+     "color": "stone"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 31,
+     "w": 44,
+     "h": 1,
+     "color": "stoneL"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 31,
+     "w": 1,
+     "h": 23,
+     "color": "stoneL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      8,
+      36
+     ],
+     "to": [
+      52,
+      36
+     ],
+     "w": 1,
+     "color": "stoneD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      52,
+      36
+     ],
+     "to": [
+      62,
+      30
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.35
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       12,
+       33
+      ],
+      [
+       22,
+       33
+      ],
+      [
+       32,
+       33
+      ],
+      [
+       42,
+       33
+      ]
+     ],
+     "color": "stoneD"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       13,
+       34
+      ],
+      [
+       23,
+       34
+      ],
+      [
+       33,
+       34
+      ],
+      [
+       43,
+       34
+      ]
+     ],
+     "color": "stoneL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      8,
+      41
+     ],
+     "to": [
+      52,
+      41
+     ],
+     "w": 1,
+     "color": "stoneD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      52,
+      41
+     ],
+     "to": [
+      62,
+      35
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.35
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       17,
+       38
+      ],
+      [
+       27,
+       38
+      ],
+      [
+       37,
+       38
+      ],
+      [
+       47,
+       38
+      ]
+     ],
+     "color": "stoneD"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       18,
+       39
+      ],
+      [
+       28,
+       39
+      ],
+      [
+       38,
+       39
+      ],
+      [
+       48,
+       39
+      ]
+     ],
+     "color": "stoneL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      8,
+      46
+     ],
+     "to": [
+      52,
+      46
+     ],
+     "w": 1,
+     "color": "stoneD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      52,
+      46
+     ],
+     "to": [
+      62,
+      40
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.35
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       12,
+       43
+      ],
+      [
+       22,
+       43
+      ],
+      [
+       32,
+       43
+      ],
+      [
+       42,
+       43
+      ]
+     ],
+     "color": "stoneD"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       13,
+       44
+      ],
+      [
+       23,
+       44
+      ],
+      [
+       33,
+       44
+      ],
+      [
+       43,
+       44
+      ]
+     ],
+     "color": "stoneL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      8,
+      51
+     ],
+     "to": [
+      52,
+      51
+     ],
+     "w": 1,
+     "color": "stoneD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      52,
+      51
+     ],
+     "to": [
+      62,
+      45
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.35
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       17,
+       48
+      ],
+      [
+       27,
+       48
+      ],
+      [
+       37,
+       48
+      ],
+      [
+       47,
+       48
+      ]
+     ],
+     "color": "stoneD"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       18,
+       49
+      ],
+      [
+       28,
+       49
+      ],
+      [
+       38,
+       49
+      ],
+      [
+       48,
+       49
+      ]
+     ],
+     "color": "stoneL"
+    },
+    {
+     "shape": "rect",
+     "x": 20,
+     "y": 37,
+     "w": 18,
+     "h": 17,
+     "color": "stoneL"
+    },
+    {
+     "shape": "rect",
+     "x": 21,
+     "y": 38,
+     "w": 16,
+     "h": 16,
+     "color": "dark"
+    },
+    {
+     "shape": "rect",
+     "x": 21,
+     "y": 38,
+     "w": 16,
+     "h": 2,
+     "color": "line"
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st3",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       52,
+       31
+      ],
+      [
+       62,
+       25
+      ],
+      [
+       57,
+       18
+      ]
+     ],
+     "color": "stoneD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      52,
+      31
+     ],
+     "to": [
+      57,
+      18
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      57,
+      18
+     ],
+     "to": [
+      62,
+      25
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.7
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       6,
+       32
+      ],
+      [
+       54,
+       32
+      ],
+      [
+       59,
+       18
+      ],
+      [
+       12,
+       18
+      ]
+     ],
+     "color": "slate"
+    },
+    {
+     "shape": "line",
+     "from": [
+      7.2,
+      29.2
+     ],
+     "to": [
+      55.0,
+      29.2
+     ],
+     "w": 1,
+     "color": "slateD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       14,
+       30
+      ],
+      [
+       17,
+       30
+      ],
+      [
+       25,
+       30
+      ],
+      [
+       33,
+       30
+      ],
+      [
+       36,
+       30
+      ],
+      [
+       44,
+       30
+      ],
+      [
+       47,
+       30
+      ]
+     ],
+     "color": "slateL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      8.4,
+      26.4
+     ],
+     "to": [
+      56.0,
+      26.4
+     ],
+     "w": 1,
+     "color": "slateD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       13,
+       27
+      ],
+      [
+       21,
+       27
+      ],
+      [
+       24,
+       27
+      ],
+      [
+       32,
+       27
+      ],
+      [
+       40,
+       27
+      ],
+      [
+       43,
+       27
+      ],
+      [
+       51,
+       27
+      ]
+     ],
+     "color": "slateL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      9.6,
+      23.6
+     ],
+     "to": [
+      57.0,
+      23.6
+     ],
+     "w": 1,
+     "color": "slateD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       17,
+       24
+      ],
+      [
+       20,
+       24
+      ],
+      [
+       28,
+       24
+      ],
+      [
+       31,
+       24
+      ],
+      [
+       39,
+       24
+      ],
+      [
+       47,
+       24
+      ],
+      [
+       50,
+       24
+      ]
+     ],
+     "color": "slateL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      10.8,
+      20.799999999999997
+     ],
+     "to": [
+      58.0,
+      20.799999999999997
+     ],
+     "w": 1,
+     "color": "slateD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       16,
+       21
+      ],
+      [
+       24,
+       21
+      ],
+      [
+       27,
+       21
+      ],
+      [
+       35,
+       21
+      ],
+      [
+       38,
+       21
+      ],
+      [
+       46,
+       21
+      ],
+      [
+       54,
+       21
+      ]
+     ],
+     "color": "slateL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      12,
+      18
+     ],
+     "to": [
+      59,
+      18
+     ],
+     "w": 1,
+     "color": "slateL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      11,
+      19
+     ],
+     "to": [
+      60,
+      19
+     ],
+     "w": 1,
+     "color": "slateD",
+     "alpha": 0.5
+    },
+    {
+     "shape": "scatter",
+     "count": 30,
+     "area": [
+      8,
+      19,
+      46,
+      11
+     ],
+     "size": 1,
+     "colors": [
+      "slateL",
+      "slateD"
+     ],
+     "onlyOver": [
+      "slate"
+     ]
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       6,
+       32
+      ],
+      [
+       54,
+       32
+      ],
+      [
+       54,
+       35
+      ],
+      [
+       6,
+       35
+      ]
+     ],
+     "color": "slateD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      6,
+      32
+     ],
+     "to": [
+      54,
+      32
+     ],
+     "w": 1,
+     "color": "slateL",
+     "alpha": 0.6
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       8,
+       36
+      ],
+      [
+       16,
+       36
+      ],
+      [
+       21,
+       36
+      ],
+      [
+       26,
+       36
+      ],
+      [
+       34,
+       36
+      ],
+      [
+       39,
+       36
+      ],
+      [
+       44,
+       36
+      ],
+      [
+       52,
+       36
+      ]
+     ],
+     "color": "slateD"
+    },
+    {
+     "shape": "rect",
+     "x": 30,
+     "y": 10,
+     "w": 1,
+     "h": 9,
+     "color": "woodD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       31,
+       10
+      ],
+      [
+       37,
+       12
+      ],
+      [
+       31,
+       14
+      ]
+     ],
+     "color": "bannerR"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       30,
+       9
+      ]
+     ],
+     "color": "gold"
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st4",
+   "layers": [
+    {
+     "shape": "line",
+     "from": [
+      24,
+      40
+     ],
+     "to": [
+      24,
+      53
+     ],
+     "w": 1,
+     "color": "wood"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       23,
+       40
+      ],
+      [
+       25,
+       40
+      ],
+      [
+       24,
+       36
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       24,
+       38
+      ]
+     ],
+     "color": "line"
+    },
+    {
+     "shape": "line",
+     "from": [
+      28,
+      40
+     ],
+     "to": [
+      28,
+      53
+     ],
+     "w": 1,
+     "color": "wood"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       27,
+       40
+      ],
+      [
+       29,
+       40
+      ],
+      [
+       28,
+       36
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       28,
+       38
+      ]
+     ],
+     "color": "line"
+    },
+    {
+     "shape": "line",
+     "from": [
+      32,
+      40
+     ],
+     "to": [
+      32,
+      53
+     ],
+     "w": 1,
+     "color": "wood"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       31,
+       40
+      ],
+      [
+       33,
+       40
+      ],
+      [
+       32,
+       36
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       32,
+       38
+      ]
+     ],
+     "color": "line"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 44,
+     "cy": 41,
+     "rx": 5,
+     "ry": 5,
+     "color": "woodD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 44,
+     "cy": 41,
+     "rx": 4,
+     "ry": 4,
+     "color": "hideR"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       44,
+       41
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      40,
+      41
+     ],
+     "to": [
+      48,
+      41
+     ],
+     "w": 1,
+     "color": "woodD",
+     "alpha": 0.6
+    },
+    {
+     "shape": "ellipse",
+     "cx": 44,
+     "cy": 50,
+     "rx": 4,
+     "ry": 4,
+     "color": "woodD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 44,
+     "cy": 50,
+     "rx": 3,
+     "ry": 3,
+     "color": "hideG"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       44,
+       50
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      41,
+      50
+     ],
+     "to": [
+      47,
+      50
+     ],
+     "w": 1,
+     "color": "woodD",
+     "alpha": 0.6
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       24,
+       52
+      ],
+      [
+       34,
+       52
+      ]
+     ],
+     "color": "ironL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      11,
+      42
+     ],
+     "to": [
+      16,
+      48
+     ],
+     "w": 1,
+     "color": "iron"
+    },
+    {
+     "shape": "line",
+     "from": [
+      16,
+      42
+     ],
+     "to": [
+      11,
+      48
+     ],
+     "w": 1,
+     "color": "iron"
+    }
+   ]
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  }
+ ]
+}
