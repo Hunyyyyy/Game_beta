@@ -229,6 +229,7 @@ export function placeBuilding(sim: Sim, kind: BuildingKind, x: number, y: number
   if (!sim.freeCost()) for (const r of Object.keys(cost) as Res[]) sim.stock[r] -= cost[r] ?? 0;
   const b = addBuilding(sim, kind, x, y, false, lvl);
   delete sim.ruins[kind]; // the ruin is built over
+  sim.addSfx('place', false, x, y);
   if (sim.dev.instantBuild) { b.progress = 1; b.done = true; sim.fogDirty = true; sim.say(`${d.name} đã dựng xong ngay (dev).`); return { ok: true, building: b }; }
   sim.say(`Đã đặt nền ${d.name}${lvl > 1 ? ` (dựng lại ở cấp ${lvl}, không phải nâng từ cấp 1)` : ''}. Giao việc "Thợ xây" để dựng.`);
   return { ok: true, building: b };

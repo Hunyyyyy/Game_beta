@@ -208,6 +208,7 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
       const { hitAt, end } = swingTimes(w.anim);
       v.swing = { t: 0, hitAt, end, target: { kind: 'unit', id: -1 } }; // the blow has no living target: the work takes it
       v.atkCd = swingCycle(sim, v, w);
+      if (b.kind === 'prop') sim.addSfx(w.id, !!w.ranged, b.x, b.y); // the blow on a work sounds as the weapon of the one who strikes
       if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind));
     }
     if (b.kind === 'node') {

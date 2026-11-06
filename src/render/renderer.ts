@@ -27,6 +27,8 @@ interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'v
 const animClip = (a: string): { fps: number; n: number; hit: number } | undefined => { const c = (animsJson as unknown as Record<string, { fps: number; frames: unknown[]; hit?: number }>)[a]; return c ? { fps: c.fps, n: c.frames.length, hit: c.hit ?? 2 } : undefined; };
 
 const FOG_RGB = [8, 10, 20];
+/** Side of a tile of rain (px). */
+const RAIN_TILE = 512;
 /** Weather particles: drop/flake count (per 1000×700 px), extra dimming, wind slant, lightning chance. */
 const WEATHER_FX: Record<WeatherKind, { rain: number; snow: number; dim: number; wind: number; flash: number }> = {
   clear: { rain: 0, snow: 0, dim: 0, wind: 0, flash: 0 },
@@ -47,6 +49,8 @@ export class Renderer {
   private readonly fxl = new FxLayer();
   /** Optional sound: plays work and fight sounds for the units on screen. */
   audio: GameAudio | null = null;
+  /** The lightning slot whose thunder has been sounded (presentation only). */
+  private thunderSlot = -1;
   /** The mountains of a world, drawn as one heightfield (see mountains.ts). */
   private readonly mountains = new WeakMap<object, Mountains>();
   private readonly fogCtx: CanvasRenderingContext2D;
@@ -114,6 +118,7 @@ export class Renderer {
    * Every house does it, the tower no more than the others.
    */
   private drawDamage(b: Building, ax: number, ay: number, time: number): void {
+    if (b.done && b.kind === 'campfire' && this.audio?.sfxOn) { const p = this.worldToScreen(ax, ay); if (this.nearCenter(p.x, p.y)) this.audio.near('homefire'); } // the fire of the village crackles
     if (b.done) this.drawWear(b.kind, b.hp / Math.max(1, maxHp(b)), b.id, ax, ay, time, b.level, this.buildingProp(b).ay);
   }
 
@@ -164,6 +169,7 @@ export class Renderer {
       }
     }
     if (ratio <= 0.3) { // flames at the foot of it (they burn from the ground up; only the smoke climbs to the roof), made by code: taller on a house of a higher level and as it burns down
+      if (this.audio?.sfxOn) { const p = this.worldToScreen(ax, ay); if (this.nearCenter(p.x, p.y)) this.audio.near('burn'); } // a work on fire roars while it is near the middle of the screen
       const fire = this.fxl.flame(lv, ratio);
       for (let k = 0; k < 3; k++) {
         const t = time + k * 0.37 + id * 0.11, f = fire.frames[Math.floor(t * fire.fps) % fire.frames.length], at = this.worldToScreen(ax - wide * 0.6 + k * wide * 0.6, ay - (k === 1 ? 9 : 3));
@@ -376,6 +382,28 @@ export class Renderer {
     return dx * dx + dy * dy <= soundsJson.range * soundsJson.range;
   }
 
+  private rainCache: { key: string; tiles: HTMLCanvasElement[] } | null = null;
+  /** Two tiles of rain streaks (made once for a kind of weather); a streak slants with the wind. */
+  private rainTiles(kind: WeatherKind, density: number, wind: number): HTMLCanvasElement[] {
+    const key = `${kind}|${density}|${wind}`;
+    if (this.rainCache?.key === key) return this.rainCache.tiles;
+    const len = kind === 'drizzle' ? 8 : 15, sx = wind * len, n = Math.max(1, Math.round(density * (RAIN_TILE * RAIN_TILE) / 700000 / 2));
+    const tiles = [0, 1].map((layer) => {
+      const c = document.createElement('canvas'); c.width = c.height = RAIN_TILE;
+      const g = c.getContext('2d')!;
+      g.strokeStyle = kind === 'drizzle' ? 'rgba(200,215,235,.35)' : 'rgba(200,215,235,.5)'; g.lineWidth = 1;
+      g.beginPath();
+      for (let i = 0; i < n; i++) {
+        const x = hash2(i, 2 + layer * 5, 41) * RAIN_TILE, y = hash2(i, 1 + layer * 5, 41) * RAIN_TILE;
+        for (const dx of x - sx < 0 ? [0, RAIN_TILE] : [0]) for (const dy of y - len < 0 ? [0, RAIN_TILE] : [0]) { g.moveTo(x + dx, y + dy); g.lineTo(x + dx - sx, y + dy - len); } // a streak that leaves the tile comes in again on the other side
+      }
+      g.stroke();
+      return c;
+    });
+    this.rainCache = { key, tiles };
+    return tiles;
+  }
+
   /** Rain, snow, mist, lightning in screen space; particle positions derive from time, so no state is kept. */
   private drawWeather(time: number): void {
     const { ctx, w, h } = this, kind = this.sim.weather, fx = WEATHER_FX[kind];
@@ -391,16 +419,12 @@ export class Renderer {
     if (fx.dim > 0) { ctx.fillStyle = `rgba(16,22,38,${fx.dim})`; ctx.fillRect(0, 0, w, h); }
     const area = (w * h) / 700000;
     if (fx.rain) {
-      const n = Math.round(fx.rain * area), len = kind === 'drizzle' ? 8 : 15, sx = fx.wind * len, sy = len;
-      ctx.strokeStyle = kind === 'drizzle' ? 'rgba(200,215,235,.35)' : 'rgba(200,215,235,.5)'; ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let i = 0; i < n; i++) {
-        const sp = 650 + hash2(i, 3, 41) * 300;
-        const y = (hash2(i, 1, 41) * (h + 40) + time * sp) % (h + 40) - 20;
-        const x = (((hash2(i, 2, 41) * (w + 80) + time * sp * fx.wind) % (w + 80)) + (w + 80)) % (w + 80) - 40;
-        ctx.moveTo(x, y); ctx.lineTo(x - sx, y - sy);
+      // the rain is two tiles of streaks drawn once, then scrolled: a few drawImage calls a frame instead of hundreds of lines
+      const tiles = this.rainTiles(kind, fx.rain, fx.wind);
+      for (const [i, sp] of [650, 900].entries()) {
+        const ox = (time * sp * fx.wind) % RAIN_TILE, oy = (time * sp) % RAIN_TILE;
+        for (let x = ox - RAIN_TILE; x < w; x += RAIN_TILE) for (let y = oy - RAIN_TILE; y < h; y += RAIN_TILE) ctx.drawImage(tiles[i], Math.round(x), Math.round(y));
       }
-      ctx.stroke();
     }
     if (fx.snow) {
       const n = Math.round(fx.snow * area);
@@ -416,6 +440,7 @@ export class Renderer {
       // lightning: may strike once per 3 s slot, fading over ~0.4 s
       const slot = Math.floor(time / 3), f = time / 3 - slot;
       if (hash2(slot, 7, 91) < fx.flash && f < 0.13) {
+        if (slot !== this.thunderSlot) { this.thunderSlot = slot; this.audio?.thunder(); }
         ctx.fillStyle = `rgba(235,240,255,${(0.55 * (1 - f / 0.13)).toFixed(3)})`; ctx.fillRect(0, 0, w, h);
       }
     }
@@ -591,7 +616,7 @@ export class Renderer {
         } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - lift - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
         const v = d.v;
         if (v.phase === 'work') this.fxl.watchWorker(v, fx, fy - lift, time);
-        if (this.audio && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time);
+        if (this.audio?.sfxOn && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time);
         // a small badge tells soldiers (red) and hunters (amber) from civilians
         if (v.team === 'player' && (v.job === 'fight' || v.job === 'hunt') && v.phase !== 'flee' && v.phase !== 'sleep' && v.phase !== 'down') {
           const p = this.worldToScreen(fx, fy - lift - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
@@ -654,10 +679,10 @@ export class Renderer {
     if (!this.audio) sim.sfx.length = 0;
     if (this.audio) {
       this.audio.sweep(time);
-      for (const e of sim.sfx) if (this.nearCenter((e.x * TILE - cx) * z, (e.y * TILE - cy) * z)) this.audio.hit(e.weapon, e.ranged, time);
+      if (this.audio.sfxOn) for (const e of sim.sfx) if (this.nearCenter((e.x * TILE - cx) * z, (e.y * TILE - cy) * z)) this.audio.hit(e.weapon, e.ranged, time);
       const war = sim.warScene(); // the war music plays all through the war, wherever the camera is
       const onScreen = war.squads.length > 0;
-      this.audio.setWar(onScreen, war.seen, time);
+      this.audio.setWar(onScreen, war.stings, time);
       sim.sfx.length = 0;
     }
     this.drawWeather(time);

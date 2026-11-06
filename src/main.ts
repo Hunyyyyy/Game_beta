@@ -43,6 +43,7 @@ const renderer = new Renderer(view, sim, cam, sprites);
 const audio = new GameAudio();
 renderer.audio = audio;
 audio.sfxOn = settings.sfxOn; audio.ambientOn = settings.ambientOn; audio.musicOn = settings.musicOn;
+audio.vol = { sfx: settings.sfxVol, amb: settings.ambientVol, mus: settings.musicVol };
 const sfxBtn = $<HTMLButtonElement>('btnSfx'), ambBtn = $<HTMLButtonElement>('btnAmb'), musBtn = $<HTMLButtonElement>('btnMus');
 function syncSound() {
   sfxBtn.setAttribute('aria-pressed', String(audio.sfxOn)); sfxBtn.textContent = audio.sfxOn ? '🔊' : '🔇';
@@ -55,6 +56,15 @@ function toggleSound(kind: 'sfx' | 'amb' | 'mus') {
   const on = kind === 'sfx' ? audio.sfxOn : kind === 'amb' ? audio.ambientOn : audio.musicOn;
   toast(`${on ? 'Bật' : 'Tắt'} ${kind === 'sfx' ? 'âm thanh hiệu ứng' : kind === 'amb' ? 'âm thanh môi trường' : 'nhạc nền'}`);
 }
+const sound: Ctx['sound'] = {
+  get: (k) => (k === 'sfx' ? { on: audio.sfxOn, vol: audio.vol.sfx } : k === 'amb' ? { on: audio.ambientOn, vol: audio.vol.amb } : { on: audio.musicOn, vol: audio.vol.mus }),
+  set: (k, on, vol) => {
+    if (k === 'sfx') { settings.sfxOn = audio.sfxOn = on; settings.sfxVol = audio.vol.sfx = vol; }
+    else if (k === 'amb') { settings.ambientOn = audio.ambientOn = on; settings.ambientVol = audio.vol.amb = vol; }
+    else { settings.musicOn = audio.musicOn = on; settings.musicVol = audio.vol.mus = vol; }
+    saveSettings(settings); syncSound();
+  },
+};
 sfxBtn.addEventListener('click', () => toggleSound('sfx')); ambBtn.addEventListener('click', () => toggleSound('amb')); musBtn.addEventListener('click', () => toggleSound('mus'));
 syncSound();
 const ctl = new Controller(view, sim, cam, renderer);
@@ -69,8 +79,12 @@ const toast = (text: string) => {
   clearTimeout(toastTimer); toastTimer = window.setTimeout(() => toastEl.classList.remove('on'), 2200);
 };
 ctl.onToast = toast;
+ctl.onOrder = () => audio.order();
+// the buttons that command a troop (deploy, attack, withdraw, call out, send back) sound as an order
+const ORDER_BTN = /Triển khai|^\W*Đánh$|Rút|^Gọi (tất cả|cả trại|ra|quân)|^Cho (về hết|cả trại về|quân về)|^Về trại/;
+document.addEventListener('click', (e) => { const b = (e.target as Element | null)?.closest('button'); if (b && !b.disabled && (b.id === 'btnArmy' || ORDER_BTN.test((b.textContent ?? '').trim()))) audio.order(); }, true);
 session.onError = toast;
-const ctx: Ctx = { sim, ctl, sprites, session, toast };
+const ctx: Ctx = { sim, ctl, sprites, session, toast, sound };
 
 // ---------------------------------------------------------------- panels, menu, maps
 const unitCard = new UnitCard($('ucard'), ctx, $('udetail')), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
@@ -260,7 +274,8 @@ function updateHud(now: number) {
 ctl.onChange = () => { lastHud = 0; syncButtons(); };
 
 // ---------------------------------------------------------------- main loop
-let last = 0, drawn = 0;
+let last = 0, drawn = 0, lastWarEnd = 0;
+let celebrating: (typeof sim.plans)[number] | null = null;
 /** Frames the game may skip drawing while it runs fast-forward: the simulation needs the time, and nobody follows each step at that speed. */
 const drawEvery = (): number => (sim.speed >= 16 ? 4 : sim.speed >= 8 ? 3 : sim.speed >= 4 ? 2 : 1);
 function frame(t: number) {
@@ -270,7 +285,13 @@ function frame(t: number) {
   ctl.update(dt);
   audio.update(started ? sim.weather : 'clear', dt);
   audio.setPeace(started && !sim.atWar() && !sim.battle.on && !sim.tribes.some((t) => t.raid), dt);
+  { // a war that has just been decided: the sound of the win or the loss, once
+    const p = started ? sim.plans.find((q) => q.kind === 'attack' && q.result && q.endedAt > lastWarEnd) : undefined;
+    if (p) { lastWarEnd = p.endedAt; celebrating = p.result === 'won' ? p : null; if (sim.time - p.endedAt < 5) audio.warEnded(p.result as 'won' | 'lost', performance.now() / 1000); }
+    if (celebrating && celebrating.stage === 'recall') { audio.stopVictory(); celebrating = null; } // he gave the word to pull out: no more cheering
+  }
   audio.setNight(started && sim.part === 'night', sim.time, sim.dayLen);
+  audio.setBirds(started && !sim.atWar() && sim.part !== 'night' && sim.season !== 'winter' && (sim.weather === 'clear' || sim.weather === 'mist'), dt, sim.time);
   if (started) session.tick();
   { const m = 10, z = cam.zoom; sim.view = { x0: cam.x / TILE - m, y0: cam.y / TILE - m, x1: (cam.x + renderer.w / z) / TILE + m, y1: (cam.y + renderer.h / z) / TILE + m }; } // seen: the screen and 10 tiles round it
   if (skipping) runSkip(); else sim.advance(dt, () => performance.now() - t0 > 70);

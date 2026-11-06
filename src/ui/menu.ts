@@ -13,8 +13,8 @@ import type { Tribe } from '../sim/tribes';
 import { costText, h, helpButton, hint } from './dom';
 import type { Ctx } from './panels';
 
-type Tab = 'places' | 'tribes' | 'game' | 'dev' | 'help';
-const TABS: Array<[Tab, string]> = [['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['game', 'Ván chơi'], ['dev', 'Dev'], ['help', '?']];
+type Tab = 'places' | 'tribes' | 'game' | 'settings' | 'dev' | 'help';
+const TABS: Array<[Tab, string]> = [['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['game', 'Ván chơi'], ['settings', 'Cài đặt'], ['dev', 'Dev'], ['help', '?']];
 const SEASON_NAME: Record<Season, string> = { spring: 'Xuân', summer: 'Hạ', autumn: 'Thu', winter: 'Đông' };
 const PERSONALITY = { peaceful: 'Hòa bình', aggressive: 'Hiếu chiến', ambusher: 'Hay phục kích' } as const;
 
@@ -34,7 +34,7 @@ export class Menu {
     }
     tabs.append(h('span', { class: 'spacer' }), h('button', { class: 'sm', text: '✕', title: 'Đóng menu', onclick: () => this.close() }));
     this.pages.set('places', this.placesPage()); this.pages.set('tribes', this.tribesPage());
-    this.pages.set('game', this.gamePage()); this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
+    this.pages.set('game', this.gamePage()); this.pages.set('settings', this.settingsPage()); this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
     for (const p of this.pages.values()) body.append(p);
     this.show(this.tab);
   }
@@ -139,6 +139,26 @@ export class Menu {
     let last = -1e9;
     this.updaters.push(() => { const war = this.c.sim.atWar(); for (const b of [saveBtn, loadBtn]) { b.disabled = war; b.title = war ? 'Đang chiến tranh: không lưu hay tải được cho tới khi trận kết thúc' : ''; } });
     this.updaters.push(() => { const now = performance.now(); if (!page.hidden && now - last > 2000) { last = now; void refresh(); } });
+    return page;
+  }
+
+  // ---------------------------------------------------------------- settings
+  /** Sound: a volume and an off switch for the effects, the weather and the music. Off means nothing is played and nothing is worked out for it (lighter on a slow machine). */
+  private settingsPage(): HTMLElement {
+    const { sound } = this.c, page = h('div', { class: 'page' });
+    page.append(hint('Âm thanh', 'Kéo thanh để chỉnh to nhỏ. Bỏ chọn ô bên cạnh để tắt hẳn loại âm thanh đó: khi tắt, game không xử lý âm thanh ấy nữa nên máy yếu sẽ nhẹ hơn. Phím tắt: O hiệu ứng, I môi trường, U nhạc.'));
+    const rows: Array<() => void> = [];
+    for (const [kind, label, tip] of [['sfx', 'Hiệu ứng', 'Làm việc, đánh nhau, đặt công trình, cổng, ra lệnh cho quân'], ['amb', 'Môi trường', 'Mưa, bão, sấm, gió, chim, sói'], ['mus', 'Nhạc', 'Nhạc bình yên, nhạc chiến tranh, thắng và thua']] as const) {
+      const on = h('input', { type: 'checkbox', title: 'Bật hoặc tắt' }) as HTMLInputElement;
+      const range = h('input', { type: 'range', min: '0', max: '100', step: '5', title: tip }) as HTMLInputElement;
+      const num = h('small', { text: '' });
+      const apply = () => { sound.set(kind, on.checked, +range.value / 100); num.textContent = `${range.value}%`; };
+      on.addEventListener('change', apply); range.addEventListener('input', apply);
+      const sync = () => { const g = sound.get(kind); if (document.activeElement !== range) range.value = String(Math.round(g.vol * 100)); on.checked = g.on; num.textContent = `${range.value}%`; };
+      rows.push(sync);
+      page.append(h('div', { class: 'row' }, h('div', { class: 'nm' }, label, h('small', { text: tip })), on, range, num));
+    }
+    this.updaters.push(() => { if (!page.hidden) for (const r of rows) r(); });
     return page;
   }
 
