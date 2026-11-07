@@ -92,6 +92,7 @@ const map = new MapView(sim, cam, renderer, ctl, $('mini'), $('bigmapCanvas'), $
 const menu = new Menu($('drawer'), $('drawerTabs'), $('drawerBody'), ctx, () => { const w = renderer.screenToWorld(renderer.w / 2, renderer.h / 2); return { x: w.x / TILE, y: w.y / TILE }; });
 $('btnCloseMap').addEventListener('click', () => map.close());
 $('btnDev').addEventListener('click', () => { tray.close(); menu.open('dev'); });
+$('btnMap').addEventListener('click', () => (map.isOpen ? map.close() : map.open()));
 { const pic = iconCanvas(sprites.icons.hammer1); pic.className = 'buildpic'; $('btnBuild').prepend(pic); } // the hammer of the game's own tools, not an emoji
 $('btnBuild').addEventListener('click', () => { menu.close(); tray.toggle(); });
 // ---------------------------------------------------------------- landscape on phones
@@ -200,6 +201,7 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'q') setSpeed(1); else if (k === 'e') setSpeed(2); else if (k === 'r') setSpeed(4); else if (k === 't') setSpeed(16);
   else if (k === 'b') togglePlace('storage'); else if (k === 'x') togglePlace('workshop'); else if (k === 'c') openWorkshop();
   else if (k === 'tab') { e.preventDefault(); menu.toggle(); }
+  else if (k === 'm') { if (map.isOpen) map.close(); else map.open(); }
 });
 
 // ---------------------------------------------------------------- the top bar and the log
@@ -325,6 +327,7 @@ function frame(t: number) {
     renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);
     buildingBar.place();
   }
+  if (map.isOpen) map.draw(); // the big map is drawn only while it is open (the small corner map stays hidden)
   $('sheet').classList.toggle('hushed', ctl.hushCard);
   if (settingsOpen && statsDlg.isOpen) settingsPanel.update(); else settingsOpen = false;
   updateHud(t);

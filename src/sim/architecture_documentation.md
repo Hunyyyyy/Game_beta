@@ -32,11 +32,11 @@ The goal of this architectural split: **modifying one system does not break anot
 | File | Responsibility | Example Functions |
 |---|---|---|
 | `construction` | Place, upgrade, repair (cost = invested materials × share of HP lost, then builders restore it), move, demolish buildings; building bonuses provided to the village (storage capacity, population cap, build speed) | `placeBuilding` `upgradeBuilding` `buildingLock` `buildingLimit` `popCap` |
-| `economy` | Central warehouse: cost deduction, bartering, end-of-day meals, daily harvester yields (calculated from worker count and stats) | `pay` `barter` `feedPot` `eatDay` `dailyYield` |
+| `economy` | Central warehouse: cost deduction, bartering (`barter(res, coins, keep)`: price slips `barter.json` `slip` per coin sold and resets after 1-3 days, `barterHeat`; ×1/×10/×100/max/sell-surplus in the UI), end-of-day meals, daily harvester yields (calculated from worker count and stats) | `pay` `barter` `feedPot` `eatDay` `dailyYield` |
 | `idle` | **Idle villagers**: single source of truth for who is idle, who gets house slots, and sleeping location per villager type (profession house, Civil House for idle, or ground near campfire if no beds remain). All buildings query here instead of reimplementing logic | `isFree` `freeFolk` `canTakeOn` `homeKind` |
 | `works` | Queues and progress for researchers, crafters, and repairers | `queueResearch` `queueCraft` `tickWorks` |
 | `houses` | Worker/sleeper assignments per house: builder crews, residents, bed occupants | `assignCrew` `assignStaff` `releaseStaff` `sleepIn` `sleepers` |
-| `inventory` | Tools, weapons, armor: distribution, wear-and-tear, returning to stock, picking up, crafting orders; `restock` (each second) hands stock gear to soldiers/hunters resting in camp or tower | `assignTool` `repairTool` `assignGear` `planTool` `restock` |
+| `inventory` | Tools, weapons, armor: distribution, wear-and-tear, returning to stock, picking up, crafting orders; `equipGroup` (the "Trang bị" button of a role house: stock weapons/armour/beasts, best first, lesser swapped out), `canCarry` (foot and riders melee only, throwers and tower men ranged only; only riders of the Trại kỵ thú, hunters and scouts ride), `fitGear` (each second returns what a person may not carry/ride). Gear is never handed out by itself (`AUTO_GEAR` off) | `assignTool` `repairTool` `assignGear` `equipGroup` `canCarry` `planTool` `restock` |
 | `commands` | Player orders: move, work, attack, hold ground, change job, enlist and discharge soldiers | `orderMove` `orderWork` `setJob` `enlist` `discharge` |
 | `labor` | Daily chores: harvesting, farming, carrying, building; villager state machine | `think` `doWork` `doFarm` `planBuild` |
 | `movement` | Locomotion: pathfinding, footfalls, standing positions, render poses | `pathTo` `moveUnit` `animate` |
@@ -67,6 +67,7 @@ The goal of this architectural split: **modifying one system does not break anot
 
 The tests that once enforced these are abandoned. Today `npm run typecheck` and `npm run build` are the safety net: the type rules (2) are checked by `tsc`; the rest are conventions to keep by hand. Refactoring and splitting old code is welcome as long as the rules hold.
 
+0. **Player orders are absolute and have the highest priority**, over any AI, auto behaviour or later rule. The only things that may stop an order are physical limits shown to the player as a toast (e.g. forced sleep below 20% energy, a scout away on a trip). Chọn nhiều (multi-select): a new drag box *replaces* the group; with a group chosen a tap orders it: enemy unit/animal → `orderAttack`, enemy work or tree/rock/bush → `orderBreak` (soldiers hit it, nothing is yielded; `Breaking.ordered` keeps enemies near from turning them), own work/person/ground → move.
 1. A village system **must not import another village system**. Cross-system actions must call through `sim.methodName(...)`. This eliminates circular dependencies and clarifies the blast radius of changes.
 2. Systems may only `import type { Sim }`, never import `Sim` as a concrete value.
 3. Data layers must remain decoupled from `Sim`. Any function requiring session state belongs outside this layer.
@@ -276,3 +277,10 @@ Target priority by arm: the foot of a raid seek a tower of ours (`foewar.raiderB
 ## Eras (Đồ đá → Trung cổ)
 
 `sim.era` (`'stone'` | `'ancient'`, saved) is the one switch: there is no separate "advanced" flag. It turns `'ancient'` the moment the campfire is upgraded to level 5 (the Nhà chính, `construction.afterUpgrade` → `setEra`); `setEra` also gives every house the era. Levels continue across eras: `building.json` `levels.stone` are levels 1..4 and `levels.ancient` the ones after (`levelsOf(kind, 'ancient')` = stone ++ ancient, so level 5 is the first medieval level); tables keyed by campfire level (`popByFire`, `limit`/`perFire`, `progression.json` campfire and research levels) have a 5th entry. A house of the stone age is raised to level 5 by the ordinary upgrade (only while `sim.era === 'ancient'`; the campfire is the exception, it climbs into level 5 to open the era). Drawings: `L1..` are the stone levels, `A1.json` (gate: `A1open.json`) the medieval level 5 (gathered into `ANCIENT_ART` by `tools/gen-content.mjs`; `Sprites.building` picks by level). The medieval war layer (war plan, supply, scouts, tower, field tents, no quick war) is gated by `sim.era === 'ancient'`; its research (signal, formations, plan) needs research house level 5 (`progression.json`). The dev menu sets the era with `sim.setEra`.
+
+
+## Finite land, the big map and events (late game)
+
+- **Finite resources.** `world.depleted` refills only `nodes.json` `respawnShare` of what is used up, and never nearer than `respawnMinDist` to the start, so the near land runs dry. `labor.findNode` looks `searchRadius` tiles and goes to any node on explored (non-black) ground by itself; when none is left in the explored land `labor.warnExhausted` tells the player to send people exploring.
+- **Big map (🗺 in the top bar, key M).** `ui/minimap.ts` `MapView`: villages seen (`tribes.tribeSeen`: the camp *or any work* seen), smoke rings (`sim.smoke`, set in `scouting.tickSightings` when one of ours comes within 45 tiles of an unseen village), and `sim.gatherFocus` (set from the map: gatherers choose sources within 30 tiles of it first).
+- **Events.** `EventState.live/herd`: `tickEvents` says and sounds (`addAlert('clear')`) when a raid or pack is over; beasts of any species sound `addAlert('beast')`. Strength follows our army (`events.json`).

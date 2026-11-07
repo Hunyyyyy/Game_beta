@@ -47,10 +47,9 @@ export class UnitDetail {
     const addGear = (slot: 'weapon' | 'armor', label: string, kinds: string[]) => {
       const pick = h('select', { class: 'sm', 'aria-label': label, title: `${label}: lấy từ kho Xưởng, hoặc trả về kho`, onchange: () => {
         if (pick.value === '') return;
-        if (pick.value === 'auto') { const e = sim.autoGear(ids()); if (e) c.toast(e); else after(); ctl.onChange(); return; }
         const e = sim.assignGear(ids(), pick.value === 'none' ? null : pick.value, slot); if (e) c.toast(e); else after(); ctl.onChange();
       } }) as HTMLSelectElement;
-      pick.append(h('option', { value: '', text: '— chọn —', hidden: true }), h('option', { value: 'auto' }), h('option', { value: 'none' }), ...kinds.map((k) => h('option', { value: k })));
+      pick.append(h('option', { value: '', text: '— chọn —', hidden: true }), h('option', { value: 'none' }), ...kinds.map((k) => h('option', { value: k })));
       this.gearSel.push({ pick, slot, label, kinds }); gearRow.append(h('div', { class: 'row' }, h('div', { class: 'nm', text: label }), pick));
     };
     addGear('weapon', 'Vũ khí', CRAFTED_WEAPONS as unknown as string[]); addGear('armor', 'Giáp', Object.keys(ARMORS));
@@ -96,17 +95,18 @@ export class UnitDetail {
     if (!chosen.length) return;
     const sim0 = this.c.sim, v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : 'tay không';
     for (const g of this.gearSel) {
-      const auto = chosen.every((o) => !o.manualGear), cur = new Set(chosen.map((o) => (g.slot === 'weapon' ? o.weapon : o.armor) ?? 'none')), want = auto ? 'auto' : cur.size === 1 ? [...cur][0] : '';
+      const cur = new Set(chosen.map((o) => (g.slot === 'weapon' ? o.weapon : o.armor) ?? 'none')), want = cur.size === 1 ? [...cur][0] : '';
       g.pick.querySelectorAll('option').forEach((op) => {
         if (op.value === '') return;
-        const text = op.value === 'auto' ? 'Tự động' : op.value === 'none' ? 'Không có' : `${g.slot === 'armor' ? ARMORS[op.value].name : WEAPONS[op.value].name} (${sim0.toolCount(op.value, g.slot === 'armor' ? ARMORS[op.value].tier ?? 1 : WEAPONS[op.value].tier ?? 1)})`;
+        if (g.slot === 'weapon' && op.value !== 'none') op.hidden = chosen.some((o) => !sim0.canCarry(o, op.value)); // a foot soldier or a rider is not offered a bow, a thrower not a spear
+        const text = op.value === 'none' ? 'Không có' : `${g.slot === 'armor' ? ARMORS[op.value].name : WEAPONS[op.value].name} (${sim0.toolCount(op.value, g.slot === 'armor' ? ARMORS[op.value].tier ?? 1 : WEAPONS[op.value].tier ?? 1)})`;
         if (op.textContent !== text) op.textContent = text;
       });
       if (g.pick.value !== want && document.activeElement !== g.pick) g.pick.value = want;
     }
     this.gear.innerHTML = `Vũ khí <b>${w}</b> · Giáp <b>${v.armor ? ARMORS[v.armor].name : '—'}</b>${v.armor ? ` (${armorText(ARMORS[v.armor], false)})` : ''}${v.leader ? ' · <b>Thủ lĩnh</b>' : ''}`;
     // the beast: soldiers who are not riders of the camp, hunters and scouts
-    const canRide = chosen.every((o) => (o.job === 'fight' && o.arm !== 'cavalry') || o.job === 'hunt' || o.job === 'scout');
+    const canRide = chosen.every((o) => (o.job === 'fight' && o.arm === 'cavalry') || o.job === 'hunt' || o.job === 'scout');
     this.mountSec.hidden = !canRide;
     if (canRide) {
       const kinds = new Set(chosen.map((o) => o.mount ?? 'none')), want = kinds.size === 1 ? [...kinds][0] : '';

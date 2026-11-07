@@ -104,6 +104,10 @@ export interface EventState {
   warn: string;
   warned: boolean;
   fired: boolean;
+  /** It has begun and is not over yet: when it is, the player is told and a sound plays (tickEvents). */
+  live?: boolean;
+  /** beasts: the herd number of the pack, to know when the last of them is gone. */
+  herd?: number;
 }
 
 export const tribeOf = (sim: Sim, id: Team): Tribe | undefined => sim.tribes.find((t) => t.id === id);
@@ -183,6 +187,13 @@ function spawnTribe(sim: Sim, id: TribeId): void {
   sim.tribes.push(tribe);
   topUp(sim, tribe); // its people are only a head count until we come near (tribelod.ts); the houses are laid then too
   rescaleTribe(sim, tribe);
+}
+
+/** The village has been seen: its camp, or any one of its works (a fence seen from afar is enough), stands on ground that is no longer black. */
+export function tribeSeen(sim: Sim, t: Tribe): boolean {
+  const N = sim.world.size, st = sim.fog.state;
+  if (st[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) return true;
+  return t.props.some((p) => st[Math.floor(p.y) * N + Math.floor(p.x)] > 0);
 }
 
 // ---------------------------------------------------------------- relations and diplomacy
@@ -531,8 +542,8 @@ export function launchCustomRaid(sim: Sim, t: Tribe, weapons: string[], armor: b
 }
 
 /** A pack of `species` (an animal of animals.json) comes at the village from about 28 tiles away. */
-export function launchBeasts(sim: Sim, size: number, species: Species = 'wolf', night?: boolean): void {
-  const fire = sim.campfire(), s = sim.world.start, cx = fire ? fire.x + 1 : s.x, cy = fire ? fire.y + 1 : s.y;
+export function launchBeasts(sim: Sim, size: number, species: Species = 'wolf', night?: boolean): number | null {
+  const fire = sim.campfire(), s = sim.world.start, cx = fire ? fire.x + 1 : s.x, cy = fire ? fire.y + 1 : s.y, herd = 9000 + sim.nextRaid;
   let placed = 0;
   const ang0 = sim.frnd() * Math.PI * 2;
   for (let tries = 0; tries < 80 && placed < size; tries++) {
@@ -543,8 +554,9 @@ export function launchBeasts(sim: Sim, size: number, species: Species = 'wolf', 
     w.state = 'graze'; w.timer = 0; placed++;
   }
   sim.nextRaid++;
-  if (placed && species === 'wolf') sim.addAlert('wolf');
+  if (placed) sim.addAlert(species === 'wolf' ? 'wolf' : 'beast');
   if (placed) sim.say(`${species === 'wolf' ? 'Bầy sói đói' : `${ANIMALS[species].name} (${placed} con)`} kéo tới quanh làng! Đốt lửa và giữ dân gần đống lửa.`);
+  return placed ? herd : null;
 }
 
 /** events.json "army": { "spear": 3, "bow": 2 } -> ['spear', 'spear', 'spear', 'bow', 'bow'] */
@@ -607,6 +619,10 @@ function hostileRaid(sim: Sim, t: Tribe): void {
 
 function tickEvents(sim: Sim): void {
   for (const e of sim.events) {
+    if (e.live) { // an event that has begun: tell the player when the last of it is gone
+      const over = e.kind === 'beasts' ? !sim.animals.some((a) => a.herd === e.herd && a.raid && a.hp > 0 && a.state !== 'dead') : !(e.tribe && tribeOf(sim, e.tribe)?.raid);
+      if (over) { e.live = false; sim.say(e.kind === 'beasts' ? 'Bầy thú đã bị đẩy lùi: làng yên trở lại.' : 'Cuộc tập kích đã kết thúc.'); sim.addAlert('clear'); }
+    }
     if (e.fired) continue;
     if (e.kind === 'raid' && e.power !== undefined && e.tribe && e.sizeDay !== sim.day) { const t = tribeOf(sim, e.tribe); if (t && t.state === 'free') { e.size = raidSizeFor(sim, t, e.power); e.sizeDay = sim.day; } }
     if (!e.warned && sim.day >= e.warnDay && sim.tod >= 0.3) { e.warned = true; sim.say(e.warn); }
@@ -614,10 +630,10 @@ function tickEvents(sim: Sim): void {
     const ready = e.night ? sim.restTime : sim.tod >= 0.28 && !sim.restTime;
     if (!ready) continue;
     e.fired = true;
-    if (e.kind === 'beasts') launchBeasts(sim, e.size, e.species ?? 'wolf', e.night);
+    if (e.kind === 'beasts') { const herd = launchBeasts(sim, e.size, e.species ?? 'wolf', e.night); if (herd !== null) { e.live = true; e.herd = herd; } }
     else if (e.tribe) {
       const t = tribeOf(sim, e.tribe);
-      if (t && t.state === 'free' && t.relation < DIFF.capture.gift.friendAt) { if (raidAdvised(sim, t, e.size) || e.fireDay >= e.warnDay + 4) (e.army ? launchCustomRaid(sim, t, armyWeapons(e.army), e.armor ?? true, false, e.night) : launchRaid(sim, t, e.size, e.night)); else { e.fired = false; e.fireDay = sim.day + 1; e.warned = true; sim.say(`${t.def.name} thấy làng đông quân và hoãn tập kích.`); } }
+      if (t && t.state === 'free' && t.relation < DIFF.capture.gift.friendAt) { if (raidAdvised(sim, t, e.size) || e.fireDay >= e.warnDay + 4) { (e.army ? launchCustomRaid(sim, t, armyWeapons(e.army), e.armor ?? true, false, e.night) : launchRaid(sim, t, e.size, e.night)); e.live = !!t.raid; } else { e.fired = false; e.fireDay = sim.day + 1; e.warned = true; sim.say(`${t.def.name} thấy làng đông quân và hoãn tập kích.`); } }
     }
   }
 }

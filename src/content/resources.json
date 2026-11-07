@@ -4,7 +4,7 @@
   "food": {
    "name": "Thức ăn",
    "carry": 40,
-   "barter": 10,
+   "barter": 20,
    "hud": "always",
    "unlock": null
   },

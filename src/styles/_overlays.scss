@@ -99,3 +99,31 @@ $mini: clamp(64px, 15vw, 96px);
 // the notice window: its tabs and the time and weather page
 .jtabs { margin: 4px 0 8px; }
 .jweather .jclock { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+
+// ---- the big map: what a chosen point offers ----
+#bigmap .mapbar {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between;
+  padding: 6px 10px; border-radius: $radius-md; background: rgba(5, 6, 12, .82); color: $night-ink;
+  small { flex: 1 1 200px; }
+  .btns { display: flex; gap: 6px; }
+}
+
+// ---- trading: one row for each good, its price on the left and the keys on the right ----
+.barter {
+  display: grid; gap: 6px; margin-top: 8px;
+  .brow {
+    display: grid; grid-template-columns: minmax(110px, 160px) 1fr; gap: 6px 10px; align-items: center;
+    padding: 6px 8px; border-radius: $radius-md; background: rgba(0, 0, 0, .06); border: 1px solid rgba(0, 0, 0, .08);
+    &.dear .bname small { color: #b4492a; font-weight: 600; }
+  }
+  .bname { display: flex; flex-direction: column; line-height: 1.2; small { opacity: .8; } }
+  .bkeys { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; button { min-width: 44px; } }
+}
+@media (max-width: 520px) { .barter .brow { grid-template-columns: 1fr; } .barter .bkeys { justify-content: flex-start; } }
+
+// ---- the big map zooms and pans: the canvas moves inside its frame ----
+#bigmap {
+  .wrap { overflow: hidden; border-radius: $radius-md; }
+  #bigmapCanvas { cursor: grab; will-change: transform; }
+  .mapzoom { position: absolute; right: 8px; top: 52px; display: flex; flex-direction: column; gap: 4px; z-index: 2; }
+}

@@ -200,7 +200,7 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
   const w = weaponOf(v);
   v.fight.scan -= dt;
   // an enemy near turns him from a tree or a rock; at a wall he turns only to fight back, when one who can strike him is hurting him (the archers of a tower shoot on, and he works on under their arrows)
-  if (v.fight.scan <= 0) { v.fight.scan = 0.4; if (b.kind === 'prop' ? v.flinch > 0 && threatsOf(sim, v, w.range + 1).length : threatsOf(sim, v, 3.5).length) { stopBreaking(v); return false; } }
+  if (v.fight.scan <= 0) { v.fight.scan = 0.4; if (!b.ordered && (b.kind === 'prop' ? v.flinch > 0 && threatsOf(sim, v, w.range + 1).length : threatsOf(sim, v, 3.5).length)) { stopBreaking(v); return false; } }
   const dx = Math.max(box.x - v.x, 0, v.x - (box.x + box.w)), dy = Math.max(box.y - v.y, 0, v.y - (box.y + box.h));
   if (Math.hypot(dx, dy) <= SIEGE.reach + (b.kind === 'prop' && !w.ranged ? w.range * 0.5 : 0)) {
     v.path = []; v.slide = null; v.phase = 'fight'; v.facing = box.x + box.w / 2 >= v.x ? 'right' : 'left';

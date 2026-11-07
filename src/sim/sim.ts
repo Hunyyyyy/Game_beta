@@ -12,7 +12,7 @@ import { armOf, hurt, tickProjectiles } from './battle';
 import { Animal, populateChunk, restock, restoreWarAnimals, tickAnimals } from './fauna';
 import * as tribeLod from './tribelod';
 import { tickFoe } from './brainfoe';
-import { adoptTribe, EventState, foeBonus, dismissAllies, giftTribe, killFoe, resetTribes, setTribute, spawnTribes, summonAllies, tickTribes, Tribe, tribeAttacked, tribeHostile, tribesFeud, tribeWilling, tributeTribe } from './tribes';
+import { adoptTribe, EventState, foeBonus, dismissAllies, giftTribe, killFoe, resetTribes, setTribute, spawnTribes, summonAllies, tickTribes, Tribe, tribeAttacked, tribeHostile, tribeSeen, tribesFeud, tribeWilling, tributeTribe } from './tribes';
 import { recipeOpen, Tech } from './research';
 import { questViews, QuestUi, QuestView } from './quests';
 import { World } from './world';
@@ -159,6 +159,14 @@ export class Sim {
   tribeClock = 0;
   /** The day the next event of the recurring kind is set (tribes.seasonEvent). */
   nextEventDay = 0;
+  /** Villages nobody has seen yet whose smoke a villager smelled: roughly where it rises (tribe id → a point some tiles off the camp), drawn on the big map until the village is seen (scouting.tickSightings). */
+  smoke: Record<string, { x: number; y: number }> = {};
+  /** Where the player asked the gatherers to work (x, y: a point of the big map); empty for no preference (labor.findNode). */
+  gatherFocus: Record<string, number> = {};
+  /** Coins of each good sold lately and when the price falls back (economy.barterPrice). */
+  barterHeat: Record<string, { sold: number; until: number }> = {};
+  /** When each kind of source last ran out in the land the village has seen (labor.warnExhausted): a timer for the warning, not game state. */
+  noNodeWarn: Record<string, number> = {};
   lastFullWarn = -999;
   lastMatWarn = -999;
   /** Today's and tomorrow's weather (tomorrow is rolled ahead so it can be foretold). */
@@ -182,8 +190,8 @@ export class Sim {
   /** War sound: whether enough of our soldiers have seen the enemy and are attacking (the sting plays each time it turns on), when that was last true, and when it was last worked out. Reset when the war ends. */
   /** Sounds waiting for the UI (a blow landed, an arrow hit): the renderer plays and empties them. Never saved. */
   /** Warnings for the sound (a pack of wolves comes, a village raids us): the UI plays and empties them. Never saved. */
-  alerts: Array<'wolf' | 'raid'> = [];
-  addAlert(kind: 'wolf' | 'raid'): void { if (this.alerts.length < 8) this.alerts.push(kind); }
+  alerts: Array<'wolf' | 'raid' | 'beast' | 'clear'> = [];
+  addAlert(kind: 'wolf' | 'raid' | 'beast' | 'clear'): void { if (this.alerts.length < 8) this.alerts.push(kind); }
   sfx: Array<{ weapon: string; ranged: boolean; x: number; y: number }> = [];
   /** War sound: the soldiers that have seen the enemy so far, how many of them are not yet counted into a sting, and how many stings have been due. */
   warSeenIds = new Set<number>();
@@ -600,7 +608,16 @@ export class Sim {
   /** → economy.dailyYield */
   dailyYield(b: Building): { amount: number; people: number } | null { return economy.dailyYield(this, b); }
   /** → economy.barter */
-  barter(res: Exclude<Res, 'coin'>): string | null { return economy.barter(this, res); }
+  barter(res: Exclude<Res, 'coin'>, coins = 1, keep = 0): string | null { return economy.barter(this, res, coins, keep); }
+  /** Ask the gatherers to work around a point (tiles) of the map; `null` takes the wish back. */
+  setGatherFocus(at: { x: number; y: number } | null): void {
+    delete this.gatherFocus.x; delete this.gatherFocus.y;
+    if (at) { this.gatherFocus.x = Math.round(at.x); this.gatherFocus.y = Math.round(at.y); }
+  }
+  /** → economy.barterPrice */
+  barterPrice(res: Exclude<Res, 'coin'>): number { return economy.barterPrice(this, res); }
+  /** → economy.barterKeep */
+  barterKeep(res: Exclude<Res, 'coin'>): number { return economy.barterKeep(this, res); }
 
   /** → commands.resetTask */
   resetTask(v: Villager): void { return commands.resetTask(this, v); }
@@ -644,6 +661,8 @@ export class Sim {
   /** → commands.orderAttack */
   orderAttack(ids: readonly number[], target: Target, queue = false): number { return commands.orderAttack(this, ids, target, queue); }
 
+  /** → commands.orderBreak */
+  orderBreak(ids: readonly number[], x: number, y: number): number { return commands.orderBreak(this, ids, x, y); }
   /** → commands.orderAttackMove */
   orderAttackMove(ids: readonly number[], x: number, y: number, queue = false): void { return commands.orderAttackMove(this, ids, x, y, queue); }
 
@@ -671,6 +690,10 @@ export class Sim {
 
   /** → inventory.assignGear */
   assignGear(ids: readonly number[], kind: string | null, slot: 'weapon' | 'armor'): string | null { return inventory.assignGear(this, ids, kind, slot); }
+  /** → inventory.equipGroup */
+  equipGroup(ids: readonly number[]): string { return inventory.equipGroup(this, ids); }
+  /** → inventory.canCarry */
+  canCarry(v: Villager, weapon: string): boolean { return inventory.canCarry(v, weapon); }
   /** → inventory.autoGear */
   autoGear(ids: readonly number[]): string | null { return inventory.autoGear(this, ids); }
 
@@ -785,6 +808,8 @@ export class Sim {
     hurt(this, target, dmg, type, from, src);
   }
   tribeHostile(id: Team): boolean { return tribeHostile(this, id); }
+  /** → tribes.tribeSeen */
+  tribeSeen(t: Tribe): boolean { return tribeSeen(this, t); }
   /** → tribes.tribeWilling */
   tribeWilling(id: Team): boolean { return tribeWilling(this, id); }
   /** → tribes.tribesFeud */

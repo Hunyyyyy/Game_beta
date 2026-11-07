@@ -46,10 +46,10 @@
   },
   "war": {
     "engageShare": 0.2,
-    "music": { "files": ["battle/musics/war_music_1.mp3", "battle/musics/Storming_the_Breach.mp3", "battle/musics/Steel_Against_the_Sky.mp3", "battle/musics/The_General_s_Heavy_Call.mp3"], "volume": 0.6 },
+    "music": { "volume": 0.6 },
     "start": { "file": "battle/battle_start.mp3", "volume": 0.7 }
   },
   "wolves": { "files": ["envairoment/wolf_1.mp3", "envairoment/wolf_2.mp3", "envairoment/wolf_3.mp3"], "volume": 0.5, "maxHowls": 3, "from": 0.03, "to": 0.3, "spacing": 0.07 },
-  "peace": { "files": ["envairoment/musics/The_Valley_After_Rain.mp3", "envairoment/musics/Valley_of_Still_Water.mp3", "envairoment/musics/peace_3.mp3"], "volume": 0.5, "firstDelay": 3, "gapMin": 120, "gapMax": 300 },
+  "peace": { "volume": 0.5, "firstDelay": 3, "gapMin": 120, "gapMax": 300 },
   "fade": 1.5
 }

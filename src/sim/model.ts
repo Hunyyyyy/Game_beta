@@ -263,7 +263,7 @@ export type MissionState = 'idle' | 'wait' | 'march' | 'blocked' | 'engaged' | '
 /** Something in the way on the ground: a tree, rock or bush (soldiers can clear them), the sea, a work of ours (they cannot), a work of the enemy (they break it as a target). x,y is a tile, or the corner of a work. */
 export interface Obstacle { kind: 'tree' | 'rock' | 'bush' | 'water' | 'ours' | 'enemy' | 'wall'; x: number; y: number; label: string; clear: boolean; tribe?: string }
 /** The thing a soldier is breaking down: a tree, rock or bush (x,y the tile), or a work of an enemy village (x,y its corner). */
-export interface Breaking { kind: 'node' | 'prop'; x: number; y: number; tribe?: string }
+export interface Breaking { kind: 'node' | 'prop'; x: number; y: number; tribe?: string; /** the player gave this order: an enemy near does not turn him from it */ ordered?: boolean }
 /** What an arrow points at, chosen by pressing it on the enemy map: one of the village's works (x,y its corner), or a man (the chief when `leader`; x,y where the map showed him). `at` is where the head of the arrow is drawn. */
 export interface MissionTarget { kind: 'prop' | 'person'; x: number; y: number; at: Pt; label: string; leader: boolean }
 /** A squad that stopped because the way ahead along its arrow is shut. */

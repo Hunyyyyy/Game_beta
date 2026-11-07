@@ -173,8 +173,8 @@
     }
   ],
   "recurring": {
-    "fromDay": 36,
-    "everyDays": 3,
+    "fromDay": 20,
+    "everyDays": 2,
     "nightChance": 0.5,
     "leadDays": [
       2,
@@ -186,8 +186,8 @@
         "species": "wolf",
         "weight": 3,
         "base": 2,
-        "perSoldier": 0.15,
-        "max": 10,
+        "perSoldier": 0.3,
+        "max": 16,
         "warn": "Tiếng hú vang lên từ xa trong đêm..."
       },
       {
@@ -195,28 +195,28 @@
         "species": "bear",
         "weight": 1,
         "base": 1,
-        "perSoldier": 0.03,
-        "max": 3,
+        "perSoldier": 0.08,
+        "max": 5,
         "warn": "Những vết cào sâu trên thân cây quanh làng: có gấu."
       },
       {
         "kind": "raid",
         "weight": 3,
-        "power": 0.6,
+        "power": 0.9,
         "warn": "Khói bốc lên từ phía làng thù địch, có lẽ họ đang chuẩn bị đánh ta."
       }
     ]
   },
   "hostile": {
     "fromDay": 18,
-    "raidEveryDays": 12,
+    "raidEveryDays": 8,
     "raidBelow": 50,
     "power": {
-      "weak": 0.2,
-      "normal": 0.25,
-      "medium": 0.35,
-      "boss": 0.4,
-      "rebel": 0.4
+      "weak": 0.35,
+      "normal": 0.5,
+      "medium": 0.7,
+      "boss": 0.9,
+      "rebel": 0.9
     }
   }
 }

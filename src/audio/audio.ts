@@ -1,4 +1,5 @@
 import cfg from '../data/sounds.json';
+import MUSIC from '../data/musics.gen.json'; // the music lists come from the folders (tools/gen-music.mjs, run by the build)
 
 /** `work`: a long sound that belongs to the action: only one at a time, and cut as soon as that unit stops. */
 type AnimCfg = { file: string; /** Several files: one is picked at random (the gap counts for all of them together). */ files?: string[]; /** The frame it plays on; the frame the blow lands (`hit` in anims.json) when left out. */ frame?: number; hitFrame?: number; volume: number; gap: number; work?: boolean };
@@ -178,9 +179,10 @@ export class GameAudio {
   }
 
   /** A warning from the game: wolves come (a howl, always heard, wherever the camera is) or a village raids us (the battle sting, once). */
-  alert(kind: 'wolf' | 'raid'): void {
+  alert(kind: 'wolf' | 'raid' | 'beast' | 'clear'): void {
     const now = performance.now() / 1000;
-    if (kind === 'raid') this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, 'mus', 'raidalert');
+    if (kind === 'raid' || kind === 'beast') this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, 'mus', 'raidalert'); // an event begins (a raid, a pack of beasts): the battle sting
+    else if (kind === 'clear') this.play(cfg.end.won.files[0], cfg.end.won.volume, 0, now, false, 'mus', 'eventover'); // it is over: one victory sound
     else { const w = cfg.wolves; this.play(pick(w.files), w.volume, 0, now, false, 'amb', 'wolfalert'); }
   }
 
@@ -258,7 +260,7 @@ export class GameAudio {
     if (!peaceful) return;
     this.peaceWait -= dt;
     if (this.peaceWait > 0) return;
-    const a = new Audio(cfg.dir + bagPick('peace', cfg.peace.files)); a.volume = 0; this.peaceVol = 0;
+    const a = new Audio(cfg.dir + bagPick('peace', MUSIC.peace)); a.volume = 0; this.peaceVol = 0;
     this.peaceEl = a;
     a.play().catch(() => { if (this.peaceEl === a) this.peaceEl = null; this.peaceWait = 5; }); // not allowed yet: try again soon
   }
@@ -309,7 +311,7 @@ export class GameAudio {
     if (this.sfxOn) for (const n of this.nearNow) { const l = NEAR[n]; if (l && this.vol.sfx > 0) want.set(l.file, l.volume * cfg.master * this.vol.sfx); }
     this.nearNow.clear();
     if (this.musicOn && this.warScreen) { // the war music plays all through the war; the sting (enemy seen) plays over it
-      this.warTrack ??= bagPick('war', cfg.war.music.files);
+      this.warTrack ??= bagPick('war', MUSIC.war);
       want.set(this.warTrack, cfg.war.music.volume * cfg.master * this.vol.mus);
     }
     for (const file of want.keys()) if (!this.beds.has(file)) {

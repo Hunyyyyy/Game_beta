@@ -1,0 +1,17 @@
+{
+  "peace": [
+    "envairoment/musics/The_Valley_After_Rain.mp3",
+    "envairoment/musics/Valley_of_Still_Water.mp3",
+    "envairoment/musics/Where_the_River_Bends_2.mp3",
+    "envairoment/musics/peace_3.mp3"
+  ],
+  "war": [
+    "battle/musics/Iron_Against_Armor.mp3",
+    "battle/musics/March_of_the_Iron_Phalanx.mp3",
+    "battle/musics/Steel_Against_the_Sky.mp3",
+    "battle/musics/Storming_the_Breach.mp3",
+    "battle/musics/Tactical_Onslaught.mp3",
+    "battle/musics/The_General_s_Heavy_Call.mp3",
+    "battle/musics/war_music_1.mp3"
+  ]
+}

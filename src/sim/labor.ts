@@ -5,6 +5,7 @@ import { Building, BUILDINGS, GATHER_HOUSE, gatherMult, holdsGoods, levelDef, ma
 import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
 import { CARRY_CAP, RES_NAME } from './resources';
 import paceJson from '../data/pace.json';
+import NODES from '../data/nodes.json';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
 import { craftQuality, RESEARCH } from './research';
 import type { Sim } from './sim';
@@ -205,8 +206,19 @@ export function plan(sim: Sim, v: Villager): void {
   if (sim.planTool(v, v.job as WorkJob)) return;
   if (findNode(sim, v, def.node!)) { trapped.delete(v); return; }
   if (v.carry) { planDeliver(sim, v); return; }
+  warnExhausted(sim, def.node!);
   freeTrapped(sim, v, sim.buildings.filter((b) => b.done && holdsGoods(b)).sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y)));
   wait(sim, v, 2);
+}
+
+const NODE_WORD: Record<NodeKind, string> = { tree: 'cây', rock: 'đá', bush: 'bụi quả' };
+/** A gatherer finds nothing to work: if no source of the kind is left in the land the village has seen, tell the player to send scouts (and the gatherers go by themselves once ground with some is lit). */
+function warnExhausted(sim: Sim, kind: NodeKind): void {
+  if (sim.time - (sim.noNodeWarn[kind] ?? -999) < NODES.warnEvery) return;
+  const st = sim.fog.state;
+  for (const [idx, n] of sim.world.nodes) if (n.kind === kind && n.amount > 0 && st[idx] > 0) return; // something is left: they are only busy or cut off
+  sim.noNodeWarn[kind] = sim.time;
+  sim.say(`Xung quanh đây đã hết ${NODE_WORD[kind]}: hãy cử người đi khám phá. Khi vùng mới hết sương đen, dân sẽ tự tới đó khai thác.`);
 }
 
 export function findNode(sim: Sim, v: Villager, kind: NodeKind): boolean {
@@ -217,10 +229,13 @@ export function findNode(sim: Sim, v: Villager, kind: NodeKind): boolean {
   };
   const cands: Array<[number, number]> = [];
   if (v.prefer >= 0 && ok(v.prefer)) cands.push([-1, v.prefer]);
+  const fx = sim.gatherFocus.x, fy = sim.gatherFocus.y, focus = fx !== undefined && fy !== undefined; // the player pointed at a place on the big map: sources near it come first
   for (const [idx, n] of sim.world.nodes) {
     if (n.kind !== kind || n.amount <= 0 || n.workers >= 2 || n.sides === 3 || idx === v.prefer || !ok(idx)) continue;
-    const d = (idx % N - vx) ** 2 + (((idx / N) | 0) - vy) ** 2;
-    if (d <= 70 * 70) cands.push([d, idx]);
+    const x = idx % N, y = (idx / N) | 0, d = (x - vx) ** 2 + (y - vy) ** 2;
+    if (d > NODES.searchRadius ** 2) continue;
+    const df = focus ? (x - fx) ** 2 + (y - fy) ** 2 : Infinity;
+    cands.push([df <= 30 * 30 ? df - 1e7 : d, idx]); // sources within 30 tiles of the chosen place sort before all others, nearest to it first
   }
   cands.sort((a, b) => a[0] - b[0]);
   for (let c = 0; c < Math.min(4, cands.length); c++) {

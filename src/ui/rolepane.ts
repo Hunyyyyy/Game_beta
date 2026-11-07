@@ -73,6 +73,11 @@ export class RolePane {
         title: allOut ? 'Cho mọi lính của trại này về trại nghỉ' : 'Gọi mọi lính của trại này ra ngoài, sẵn sàng; bấm lại để cho về',
         onclick: () => { if (allOut) sim.sendBack(ids); else sim.callOut(ids); this.again(); } })));
     }
+    // one press hands out what the stores hold (weapons, armour, beasts), the best first; a lesser piece is swapped for a better one
+    if ((role === 'foot' || role === 'cavalry' || role === 'archer' || role === 'guard' || role === 'tower' || role === 'hunt') && have.length > 0) {
+      out.push(h('div', { class: 'btns' }, h('button', { class: 'sm primary', type: 'button', text: 'Trang bị', title: 'Phát vũ khí, giáp và thú cưỡi đang có trong kho cho mọi người ở đây: đồ cấp cao trước, ai đang cầm đồ thấp thì đổi lấy đồ cao hơn',
+        onclick: () => { toast(sim.equipGroup(have.map((v) => v.id))); this.again(); } })));
+    }
     // the guards keep a watch by day, by night, or both: a filter over them, and buttons that set the watch of everyone shown at once
     const guards = role === 'guard', shown = guards && this.filter ? have.filter((v) => v.shift === this.filter) : have;
     if (guards && have.length) {
