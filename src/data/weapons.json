@@ -172,7 +172,7 @@
       "cycle": 2.0,
       "ranged": true,
       "cost": {
-        "wood": 30,
+        "wood": 20,
         "feather": 3
       },
       "durability": 110,
@@ -185,11 +185,10 @@
   "armor": {
     "hide": {
       "name": "Áo da thú",
-      "pierce": 0.1,
-      "slash": 0.2,
-      "crush": 0.1,
+      "defm": 20,
+      "defr": 13,
       "cost": {
-        "hide": 30
+        "hide": 5
       },
       "durability": 200,
       "time": 100,
@@ -197,12 +196,11 @@
     },
     "bone": {
       "name": "Giáp da xương",
-      "pierce": 0.22,
-      "slash": 0.34,
-      "crush": 0.22,
+      "defm": 45,
+      "defr": 34,
       "cost": {
-        "hide": 30,
-        "bone": 20
+        "hide": 7,
+        "bone": 5
       },
       "durability": 350,
       "time": 160,
@@ -210,9 +208,8 @@
     },
     "bronze": {
       "name": "Giáp đồng",
-      "pierce": 0.38,
-      "slash": 0.5,
-      "crush": 0.3,
+      "defm": 80,
+      "defr": 74,
       "tier": 3
     }
   },

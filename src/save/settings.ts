@@ -13,11 +13,13 @@ export interface Settings {
   ambientOn: boolean;
   /** War music on or off. */
   musicOn: boolean;
+  /** The weather drawn on the map (rain, snow, lightning) on or off. */
+  weatherFx: boolean;
   /** Volume of each kind of sound, 0 to 1. */
   sfxVol: number; ambientVol: number; musicVol: number;
 }
 
-export const DEFAULT_SETTINGS: Settings = { speed: 1, skipRotatePrompt: false, sfxOn: true, ambientOn: true, musicOn: true, sfxVol: 1, ambientVol: 1, musicVol: 1 };
+export const DEFAULT_SETTINGS: Settings = { speed: 1, skipRotatePrompt: false, sfxOn: true, ambientOn: true, musicOn: true, weatherFx: true, sfxVol: 1, ambientVol: 1, musicVol: 1 };
 const KEY = 'lang-do-da.settings';
 
 const vol = (n: unknown): number => (typeof n === 'number' && n >= 0 && n <= 1 ? n : 1);
@@ -33,6 +35,7 @@ export function loadSettings(storage: Pick<Storage, 'getItem'> | null = browserS
       sfxOn: o.sfxOn !== false,
       ambientOn: o.ambientOn !== false,
       musicOn: o.musicOn !== false,
+      weatherFx: o.weatherFx !== false,
       sfxVol: vol(o.sfxVol), ambientVol: vol(o.ambientVol), musicVol: vol(o.musicVol),
     };
   } catch { return { ...DEFAULT_SETTINGS }; }

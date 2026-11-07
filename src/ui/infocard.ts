@@ -6,6 +6,8 @@ import { h } from './dom';
 
 export interface InfoAction {
   id: string; label: string; title?: string; tone?: 'primary' | 'danger';
+  /** A picture instead of the words (the words become its tip). */
+  icon?: string;
   hidden?: boolean; disabled?: boolean; onClick: () => void;
 }
 export interface InfoData {
@@ -59,8 +61,8 @@ export class InfoCard {
     }
     for (const a of d.actions) {
       const b = this.buttons.get(a.id)!;
-      b.textContent = a.label; b.title = a.title ?? ''; b.hidden = !!a.hidden; b.disabled = !!a.disabled;
-      b.className = a.tone ?? '';
+      b.textContent = a.icon ?? a.label; b.title = a.icon ? (a.title ? `${a.label}: ${a.title}` : a.label) : a.title ?? ''; b.setAttribute('aria-label', a.label); b.hidden = !!a.hidden; b.disabled = !!a.disabled;
+      b.className = `${a.tone ?? ''}${a.icon ? ` ic act-${a.id}` : ''}`.trim();
     }
   }
 }

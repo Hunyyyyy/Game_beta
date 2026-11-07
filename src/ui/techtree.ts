@@ -1,7 +1,7 @@
 import type { BuildingKind } from '../sim/buildings';
 import { workDays } from '../sim/constants';
 import { RES_NAME } from '../sim/resources';
-import { CHAINS, PLAN_TREE, TIER_TECH_OF, statLevels, lineLevel, statBonus, STAT_DEF, LineStat, STAT_IDS, statTechId, TECH_BY_ID, Tech, TREE_ROLES } from '../sim/research';
+import { CHAINS, PLAN_TREE, statsFor, TIER_TECH_OF, statLevels, lineLevel, statBonus, STAT_DEF, LineStat, STAT_IDS, statTechId, TECH_BY_ID, Tech, TREE_ROLES } from '../sim/research';
 import { WEAPONS } from '../sim/combat';
 import { h, iconCanvas } from './dom';
 import { dlg, GameDialog } from './gamedialog';
@@ -99,7 +99,7 @@ export class TechTree {
   addChains(title: string, roles: string[], chain: string): void {
     const cols = roles.map((role) => {
       const def = TREE_ROLES[role];
-      const nodes = CHAINS[chain].order.map((stat) => this.make(h('span', { class: 'tpic stat' }, statIcon(stat)), STAT_DEF[stat].short, statLevels(stat),
+      const nodes = statsFor(CHAINS[chain], role).map((stat) => this.make(h('span', { class: 'tpic stat' }, statIcon(stat)), STAT_DEF[stat].short, statLevels(stat),
         () => { const n = lineLevel(this.c.sim.researched, role, stat); return n >= statLevels(stat) ? null : TECH_BY_ID[statTechId(role, stat, n + 1)]; }, () => lineLevel(this.c.sim.researched, role, stat), { role, stat }).el);
       // the last square of a column: the next tier of soldiers, open once every stat above is at the top
       const tier = CHAINS[chain].finalTier ? TIER_TECH_OF[role] : undefined;

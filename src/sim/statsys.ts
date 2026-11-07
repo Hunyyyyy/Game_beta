@@ -1,15 +1,16 @@
 /** The stats of everyone who is a person (src/data/stats.json): base × personal factor × tier × (1 + research / 100). Each stat stands alone. */
 import cfg from '../data/stats.json';
 import cfgDiff from '../content/difficulty.json';
-import { cycleOf, RULES, WeaponDef } from './combat';
+import { CAMP_KINDS, campPercent, CampStat } from './upgradebonus';
+import { CRAFTED_WEAPONS, cycleOf, RULES, WeaponDef } from './combat';
 import { FORMATIONS, FormationId } from './formations';
 import { roleOf } from './jobs';
 import type { WorkJob } from './jobs';
 import { TOOL_OF_JOB } from './tools';
-import { LineStat, soldierTier, statBonus, StatId, TREE_ROLES } from './research';
+import { craftQuality, LineStat, soldierTier, statBonus, StatId, TREE_ROLES } from './research';
 
 /** What the stat rules read of the game: the research done and the squads. A narrow type of its own so that this file, shared by the systems, never has to know the Sim. */
-export interface StatSim { readonly researched: ReadonlySet<string>; readonly conquered: number; readonly squads: ReadonlyArray<{ readonly id: number; readonly formation: FormationId }>; readonly foodPenalty: number; /** While a war is on: whether a soldier of the army is fighting or on the march (or resting); null for anyone else. */ readonly warMode?: (v: Villager) => 'fight' | 'march' | null; /** How exhausted a soldier of an army in the field is (0..1). */ tiredPenalty(v: Villager): number; /** Percent a tribe's research-like bonus adds to a stat of its people (src/content/difficulty.json). */ readonly foeBonus?: (team: string, stat: StatId) => number }
+export interface StatSim { readonly researched: ReadonlySet<string>; readonly conquered: number; readonly squads: ReadonlyArray<{ readonly id: number; readonly formation: FormationId }>; readonly foodPenalty: number; /** While a war is on: whether a soldier of the army is fighting or on the march (or resting); null for anyone else. */ readonly warMode?: (v: Villager) => 'fight' | 'march' | null; /** How exhausted a soldier of an army in the field is (0..1). */ tiredPenalty(v: Villager): number; /** The Nhà chế tạo, whose level makes what it crafts better. */ building?(kind: string): { readonly id: number; readonly level: number } | undefined; /** Percent a tribe's research-like bonus adds to a stat of its people (src/content/difficulty.json). */ readonly foeBonus?: (team: string, stat: StatId) => number }
 type Sim = StatSim;
 import type { Villager } from './model';
 
@@ -46,13 +47,22 @@ export function treeRole(v: Pick<Villager, 'job' | 'arm' | 'post'>): string | nu
   }
 }
 
+/** What the house of a soldier's trade adds to his stat (percent), from the levels it has been raised to (upgradebonus.ts); only ours. */
+export function campBonus(sim: Sim, v: Villager, stat: CampStat): number {
+  if (v.team !== 'player') return 0;
+  const role = treeRole(v), kind = role ? TREE_ROLES[role]?.building : undefined;
+  if (!kind || !CAMP_KINDS.includes(kind)) return 0;
+  const b = sim.building?.(kind);
+  return b && b.level > 1 ? campPercent(b.id, b.level, stat) : 0;
+}
+
 /** One stat of a person now. A village that went short at the last meal is weaker in every stat but the most health (health only heals slower, see tickVillager). */
 export function statValue(sim: Sim, v: Villager, stat: StatId): number {
   const role = v.team === 'player' ? treeRole(v) : null;
   const tier = role && TREE_ROLES[role] ? soldierTier(sim.researched, role) : 1;
   const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
   const squad = v.team === 'player' && v.squad >= 0 ? sim.squads.find((q) => q.id === v.squad) : undefined;
-  const bonus = (v.team !== 'player' ? sim.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ''), stat) : 0);
+  const bonus = (stat === 'hp' || stat === 'atk' ? campBonus(sim, v, stat) : 0) + (v.team !== 'player' ? sim.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ''), stat) : 0);
   // the research of the war: Hành quân adds on the march and at rest, Kế hoạch chiến đấu while fighting (the soldiers of the three arms only)
   const mode = role === 'foot' || role === 'cavalry' || role === 'archer' ? sim.warMode?.(v) ?? null : null;
   const warBonus = mode ? statBonus(sim.researched, `${mode === 'fight' ? 'plan' : 'march'}_${role}`, stat) : 0;
@@ -83,9 +93,9 @@ export function applyStats(sim: Sim, v: Villager): void {
   if (v.team === 'player' && v.squad < 0 && !v.mount) v.speed = val('move');
 }
 
-/** Share of damage a person turns aside: from melee (Phòng thủ cận chiến) or from missiles (Phòng thủ tầm xa). */
-export function guardCut(sim: Sim, v: Villager, ranged: boolean): number {
-  const d = statValue(sim, v, ranged ? 'defr' : 'defm');
+/** Share of damage a person turns aside: from melee (Phòng thủ cận chiến) or from missiles (Phòng thủ tầm xa). `armor`: what the armour he wears adds to that stat. */
+export function guardCut(sim: Sim, v: Villager, ranged: boolean, armor = 0): number {
+  const d = statValue(sim, v, ranged ? 'defr' : 'defm') + armor;
   return d / (d + cfg.defense.k);
 }
 
@@ -104,7 +114,8 @@ export function drainScale(sim: Sim, v: Villager): number {
 export function weaponDamage(sim: Sim, v: Villager, w: Pick<WeaponDef, 'id' | 'damage'>): number {
   if (v.team !== 'player') return w.damage;
   const tier = soldierTier(sim.researched, w.id);
-  return tier > 1 ? w.damage * ((RULES.tierMult as Record<string, { damage: number }>)[String(tier)]?.damage ?? 1) : w.damage;
+  const made = (CRAFTED_WEAPONS as readonly string[]).includes(w.id) ? craftQuality(sim.building?.('workshop')?.level ?? 1) : 1; // what the Nhà chế tạo of a higher level makes hits harder
+  return (tier > 1 ? w.damage * ((RULES.tierMult as Record<string, { damage: number }>)[String(tier)]?.damage ?? 1) : w.damage) * made;
 }
 
 /** What the research of the tool in hand adds to a stat of that tool (percent), for the tool a job uses: only ours, and only while the tool is not broken. */
@@ -136,7 +147,7 @@ export const weaponBonus = (sim: Sim, v: Villager, w: Pick<WeaponDef, 'id'>, sta
 export const swingCycle = (sim: Sim, v: Villager, w: Pick<WeaponDef, 'id' | 'cycle'>): number => {
   const p = v.team === 'player' ? sim.foodPenalty : 0;
   const agi = p > 0 ? ((L.speedBase + L.speedPerAgi * v.stats.agi) / (1 - p) - L.speedBase) / L.speedPerAgi : v.stats.agi;
-  return cycleOf(w.cycle, agi) / (1 + weaponBonus(sim, v, w, 'aspd') / 100) / (1 - p);
+  return cycleOf(w.cycle, agi) / (1 + (weaponBonus(sim, v, w, 'aspd') + campBonus(sim, v, 'aspd')) / 100) / (1 - p);
 };
 
 /** Chance that a blow or shot of this weapon is critical: the weapon's own plus the points of research Tỉ lệ chí mạng of that weapon, never above RULES.critMax. */

@@ -47,7 +47,7 @@ export const recipeName = (r: Recipe) => {
 };
 /** One-line use shown in the crafting panel. */
 export const recipeUse = (r: Recipe) => {
-  if (isArmorKind(r.kind)) { const a = ARMORS[r.kind], p = (x: number) => `${Math.round(x * 100)}%`; return `giáp: giảm đâm ${p(a.pierce)} · chém ${p(a.slash)} · đập ${p(a.crush)} · bền ${a.durability ?? '?'}`; }
+  if (isArmorKind(r.kind)) { const a = ARMORS[r.kind]; return `giáp: thủ cận +${a.defm} · thủ xa +${a.defr} · bền ${a.durability ?? '?'}`; }
   if (r.kind === 'torch') return 'làm việc ban đêm (hiệu suất 70%), nhìn xa hơn trong tối';
   if (isWeaponKind(r.kind)) { const w = WEAPONS[r.kind]; return `${{ pierce: 'đâm', slash: 'chém', crush: 'đập' }[w.type]} ${w.damage} · ${(1 / w.cycle).toFixed(2)} đòn/giây · chí mạng đòn ${Math.round((w.critDamage ?? RULES.critDamage) * 100)}% · tầm ${w.range}`; }
   return TOOL_USE[r.kind as ToolKind];

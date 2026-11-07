@@ -7,4 +7,4 @@ import type { Controller } from './controller';
 /** The sound settings the player can change: `on` (off = no sound at all, nothing computed for it) and `vol` (0 to 1) of each kind. */
 export interface SoundPrefs { get(kind: 'sfx' | 'amb' | 'mus'): { on: boolean; vol: number }; set(kind: 'sfx' | 'amb' | 'mus', on: boolean, vol: number): void }
 
-export interface Ctx { sim: Sim; ctl: Controller; sprites: Sprites; session: Session; toast: (text: string) => void; sound: SoundPrefs }
+export interface Ctx { sim: Sim; ctl: Controller; sprites: Sprites; session: Session; toast: (text: string) => void; sound: SoundPrefs; weatherFx: { get(): boolean; set(on: boolean): void } }

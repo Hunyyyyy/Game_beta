@@ -7,16 +7,16 @@
   1
  ],
  "buildable": true,
- "unlockFire": 3,
+ "unlockFire": 2,
  "requires": [
   "builder"
  ],
  "limit": [
-  40,
-  80,
-  120,
-  150,
-  180
+  168,
+  168,
+  203,
+  238,
+  256
  ],
  "repeat": true,
  "levels": {

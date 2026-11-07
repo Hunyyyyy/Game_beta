@@ -5,6 +5,7 @@
   <canvas id="view" tabindex="0" aria-label="Bản đồ làng"></canvas>
 
   <div class="top">
+    <button class="sm cog" id="btnSettings" title="Cài đặt: âm thanh, hiệu ứng thời tiết, chỉ số">⚙</button>
     <div class="hud" id="resBar">
       <span class="res" id="rFood" title="Thức ăn"><i style="background:#c2573a"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rWood" title="Gỗ"><i style="background:#9a6a35"></i><b>0</b><small>/0</small></span>
@@ -19,16 +20,10 @@
       <span class="res" id="rPop" title="Số dân"><i style="background:#e8c4a0"></i><b>0</b><small>/40</small></span>
     </div>
     <button class="sm speedbtn" id="btnSpeed" title="Tốc độ game: bấm để đổi 1× → 2× → 4× → 16× rồi về 1× (Q E R T chọn nhanh, P tạm dừng)">1×</button>
-    <button class="sm" id="btnSfx" title="Âm thanh hiệu ứng: làm việc, đánh nhau (O)" aria-pressed="true">🔊</button>
-    <button class="sm" id="btnAmb" title="Âm thanh môi trường: mưa, bão (I)" aria-pressed="true">🌧</button>
-    <button class="sm" id="btnMus" title="Nhạc nền: lúc bình yên, lúc có chiến tranh (U)" aria-pressed="true">🎵</button>
     <button class="sm" id="btnSkip" title="Tua qua đêm: chạy nhanh tới sáng, chỉ khi cả làng đã ngủ và không ai tấn công; dừng ngay nếu có chuyện" hidden>⏭ Qua đêm</button>
-    <div class="hud" id="clockLine"><span class="clock" id="clock">Ngày 1</span></div>
+    <button class="sm" id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
     <span class="spacer"></span>
-    <button id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
-    <button id="btnBuild" class="primary" title="Xây dựng (B)">🔨 Xây</button>
-    <button id="btnStats" title="Chỉ số đã nghiên cứu cho từng loại dân, nghề và lính">📊 Chỉ số</button>
-    <button id="btnMenu" title="Menu (Tab)">☰ Menu</button>
+    <button class="sm" id="btnDev" title="Menu: công trình đã dựng, ván chơi (lưu/tải), công cụ dev (phím Tab)">🛠</button>
   </div>
 
   <button class="qbtn" id="btnQuest" title="Nhiệm vụ" aria-pressed="false">📜<i class="dot" hidden>!</i></button>
@@ -36,7 +31,8 @@
   <div id="spanel" hidden></div>
   <button class="qbtn nbtn" id="btnNotice" title="Thông báo: việc sắp tới hoặc đang diễn ra trong làng" aria-pressed="false">🔔<i class="dot" hidden>!</i></button>
   <div id="npanel" hidden></div>
-  <canvas id="mini" aria-label="Bản đồ nhỏ, bấm để mở bản đồ lớn" title="Bấm để mở bản đồ lớn"></canvas>
+  <canvas id="mini" hidden aria-label="Bản đồ nhỏ" title="Bản đồ nhỏ"></canvas>
+  <button class="buildfab" id="btnBuild" title="Xây dựng (B)" aria-label="Xây dựng"></button>
   <div class="toast" id="toast" role="status"></div>
 
   <div class="bbar" id="bbar" hidden></div>
@@ -47,6 +43,14 @@
   <div id="udetail" hidden></div>
 
   <div class="warbar" id="warbar" hidden></div>
+
+  <!-- hold the mouse (or a finger) on the map: this ring opens round it; let go over a button to press it -->
+  <div id="radial" hidden>
+    <span class="rdot"></span>
+    <button class="ico" id="btnMulti" aria-pressed="false" title="Chọn nhiều: kéo khung hoặc chạm từng dân, rồi bấm đâu là họ đi tới đó">▣</button>
+    <button class="ico" id="btnArmy" aria-pressed="false" title="Gọi quân đội ra khỏi trại (bấm lại để cho về)">⚔</button>
+    <button class="ico" id="btnNone" title="Bỏ chọn (Esc)">✕</button>
+  </div>
 
   <div class="sheet" id="sheet">
     <div class="card" id="placeBar" hidden>
@@ -59,12 +63,7 @@
     <div id="tcard" hidden></div>
     <div id="ucard" hidden></div>
     <div class="selbar">
-      <button id="btnMulti" aria-pressed="false" title="Bật để chạm từng dân hoặc kéo khung chọn nhiều dân">Chọn nhiều</button>
-      <button id="btnArmy" aria-pressed="false" title="Gọi quân đội ra khỏi trại (bấm lại để cho về)">Gọi quân</button>
-      <button id="btnAll" title="Chọn tất cả dân (Ctrl+A)">Chọn hết</button>
-      <button id="btnNone" title="Bỏ chọn (Esc)">Bỏ chọn</button>
       <button id="btnHome" hidden title="Đưa camera về lửa trại">⌂ Về làng</button>
-      <button id="btnFold" aria-pressed="false" title="Ẩn các bảng thông tin để thấy rõ bản đồ">Ẩn bảng</button>
     </div>
   </div>
 

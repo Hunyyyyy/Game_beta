@@ -1,400 +1,332 @@
 {
-  "_note": "Cây nghiên cứu chỉ số trong Nhà nghiên cứu. Mỗi ô là một dây: một chỉ số của một vai trò. SỐ CẤP CỦA MỖI CHỈ SỐ bằng số phần tử của mảng steps của nó (thêm hay bớt số trong steps là thêm hay bớt cấp, mỗi chỉ số tự đặt riêng); tiers riêng của chỉ số (nếu ghi) thay cho tiers chung bên dưới, số cuối được dùng tiếp cho các cấp cao hơn. Người chơi tự chọn ô nào cũng được (chọn chỉ số vô dụng cho vai trò thì là lỗ của họ). steps[stat] = % cộng thêm ở từng cấp, giảm dần nhưng có sàn; tổng % cộng dồn của một ô là phần cộng thêm của chỉ số đó cho cả vai trò (gốc × (1 + tổng% / 100)). cost = vật liệu của cấp 1 (cộng thêm tiền tăng dần), nhân 'growth.cost' mỗi cấp; time (giây công) nhân 'growth.time' mỗi cấp. tiers[n-1] = cấp Nhà nghiên cứu cần cho cấp n. Chưa nối vào công thức chiến đấu và làm việc: xem statBonus trong sim/research.ts.",
+  "_note": "Cây nghiên cứu chỉ số trong Nhà nghiên cứu. Mỗi ô là một dây: một chỉ số của một vai trò. SỐ CẤP CỦA MỖI CHỈ SỐ bằng số phần tử của mảng steps của nó (thêm hay bớt số trong steps là thêm hay bớt cấp, mỗi chỉ số tự đặt riêng); tiers riêng của chỉ số (nếu ghi) thay cho tiers chung bên dưới, số cuối được dùng tiếp cho các cấp cao hơn. Người chơi tự chọn ô nào cũng được (chọn chỉ số vô dụng cho vai trò thì là lỗ của họ). steps[stat] = % cộng thêm ở từng cấp, chia đều cho 2 cấp (mỗi chỉ số chỉ có 2 cấp, tổng bằng 5 cấp cũ); tổng % cộng dồn của một ô là phần cộng thêm của chỉ số đó cho cả vai trò (gốc × (1 + tổng% / 100)). cost = vật liệu của cấp 1 (cộng thêm tiền tăng dần), nhân 'growth.cost' mỗi cấp; time (giây công) nhân 'growth.time' mỗi cấp. tiers[n-1] = cấp Nhà nghiên cứu cần cho cấp n. Chưa nối vào công thức chiến đấu và làm việc: xem statBonus trong sim/research.ts.",
   "tiers": [
     1,
-    1,
-    1,
-    2,
-    2,
-    2,
-    3,
-    3,
-    3,
-    3
+    2
   ],
   "growth": {
-    "cost": 1.35,
-    "time": 1.15
+    "cost": 1,
+    "time": 1
   },
   "stats": {
     "hp": {
       "name": "Máu",
       "short": "Máu",
       "steps": [
-        12.5,
-        6,
-        3,
-        2.5,
-        2.5
+        13.25,
+        13.25
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 72,
+      "time": 243,
       "about": "Máu tối đa."
     },
     "atk": {
       "name": "Sức mạnh",
       "short": "Sát thương",
       "steps": [
-        8,
-        4,
-        2.5,
-        2.5,
-        2.5
+        9.75,
+        9.75
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 72,
+      "time": 243,
       "about": "Sát thương mỗi đòn đánh."
     },
     "aspd": {
       "name": "Tốc độ đánh",
       "short": "Tốc đánh",
       "steps": [
-        5,
-        2.5,
-        2.5,
-        2.5,
-        2.5
+        7.5,
+        7.5
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 72,
+      "time": 243,
       "about": "Tốc độ đánh của vũ khí: ai cầm nó đánh và bắn nhanh hơn, thời gian giữa hai đòn ngắn lại."
     },
     "crit": {
       "name": "Tỉ lệ chí mạng",
       "short": "Chí mạng",
       "steps": [
-        0.5,
-        1,
-        1,
-        1,
-        1
+        2.25,
+        2.25
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 78,
+      "time": 263,
       "about": "Tỉ lệ chí mạng của vũ khí, tính trên 100%: mỗi cấp cộng thẳng vào xác suất (0,5% là nửa phần trăm). Tối đa 10%."
     },
     "critd": {
       "name": "Sát thương chí mạng",
       "short": "ST chí mạng",
       "steps": [
-        20,
-        10,
-        5,
-        2.5,
-        2.5
+        20.0,
+        20.0
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 78,
+      "time": 263,
       "about": "Sát thương của đòn chí mạng tính trên 100% đòn thường, gốc 125%: mỗi cấp cộng thẳng vào (400% là gấp 4 lần đòn thường)."
     },
     "tspd": {
       "name": "Tốc độ làm việc với công cụ",
       "short": "Tốc độ",
       "steps": [
-        6,
-        5,
-        4,
-        3,
-        3
+        10.5,
+        10.5
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 66,
+      "time": 222,
       "about": "Ai cầm công cụ này làm việc nhanh hơn (cộng vào hệ số của công cụ)."
     },
     "tyield": {
       "name": "Sản lượng",
       "short": "Sản lượng",
       "steps": [
-        4,
-        4,
-        3,
-        3,
-        2
+        8.0,
+        8.0
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 66,
+      "time": 222,
       "about": "Mỗi lần khai thác thu được nhiều hơn khi cầm công cụ này."
     },
     "tdur": {
       "name": "Độ bền",
       "short": "Độ bền",
       "steps": [
-        10,
-        10,
-        10,
-        5,
-        5
+        20.0,
+        20.0
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 66,
+      "time": 222,
       "about": "Công cụ lâu hỏng hơn (thời gian làm việc trước khi gãy dài ra)."
     },
     "defm": {
       "name": "Phòng thủ cận chiến",
       "short": "Thủ cận",
       "steps": [
-        10,
-        5,
-        2.5,
-        2.5,
-        2.5
+        11.25,
+        11.25
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 84,
+      "time": 283,
       "about": "Giảm sát thương nhận từ lính cận chiến."
     },
     "defr": {
       "name": "Phòng thủ tầm xa",
       "short": "Thủ xa",
       "steps": [
-        10,
-        5,
-        2.5,
-        2.5,
-        2.5
+        11.25,
+        11.25
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 84,
+      "time": 283,
       "about": "Giảm sát thương nhận từ lính tầm xa."
     },
     "move": {
       "name": "Tốc độ di chuyển",
       "short": "Chạy",
       "steps": [
-        2.5,
-        2.5,
-        2.5,
-        2.5,
-        2.5
+        6.25,
+        6.25
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 60,
+      "time": 202,
       "about": "Tốc độ đi và chạy."
     },
     "work": {
       "name": "Tốc độ làm việc",
       "short": "Làm việc",
       "steps": [
-        5,
-        2.5,
-        2.5,
-        2.5,
-        2.5
+        7.5,
+        7.5
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 2
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 10
       },
-      "time": 66,
+      "time": 222,
       "about": "Tốc độ làm việc: khai thác, xây, chế tạo, nghiên cứu."
     },
     "int": {
       "name": "Trí tuệ",
       "short": "Trí tuệ",
       "steps": [
-        5,
-        2.5,
-        2.5,
-        2.5,
-        2.5
+        7.5,
+        7.5
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 4
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 20
       },
-      "time": 78,
+      "time": 263,
       "about": "Trí tuệ: tăng tốc độ làm việc và giảm sức tiêu hao khi làm việc."
     },
     "sta": {
       "name": "Sức",
       "short": "Sức",
       "steps": [
-        8,
-        4,
-        2.5,
-        2.5,
-        2.5
+        9.75,
+        9.75
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 5
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 25
       },
-      "time": 66,
+      "time": 222,
       "about": "Sức bền: làm việc và chiến đấu được lâu."
     },
     "hpregen": {
       "name": "Hồi máu",
       "short": "Hồi máu",
       "steps": [
-        10,
-        5,
-        5,
-        2.5,
-        2.5
+        12.5,
+        12.5
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 5
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 25
       },
-      "time": 66,
+      "time": 222,
       "about": "Tốc độ hồi máu khi bị thương: nhanh hơn thêm bấy nhiêu phần trăm."
     },
     "restregen": {
       "name": "Hồi sức",
       "short": "Hồi sức",
       "steps": [
-        10,
-        5,
-        5,
-        2.5,
-        2.5
+        12.5,
+        12.5
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 5
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 25
       },
-      "time": 66,
+      "time": 222,
       "about": "Tốc độ hồi sức khi ngủ: nhanh hơn thêm bấy nhiêu phần trăm."
     },
     "mspeed": {
       "name": "Tốc độ hành quân",
       "short": "Hành quân",
       "steps": [
-        3,
-        3,
-        3,
-        3,
-        3
+        7.5,
+        7.5
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 60,
+      "time": 202,
       "about": "Quân đi nhanh hơn khi hành quân trong chiến tranh."
     },
     "mload": {
       "name": "Tải hậu cần",
       "short": "Tải",
       "steps": [
-        2,
-        2,
-        2,
-        2,
-        2
+        5.0,
+        5.0
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 60,
+      "time": 202,
       "about": "Mỗi lính hậu cần mang được nhiều hơn."
     },
     "mbuild": {
       "name": "Tốc độ dựng lều",
       "short": "Dựng lều",
       "steps": [
-        10,
-        10,
-        10,
-        10,
-        10
+        25.0,
+        25.0
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 60,
+      "time": 202,
       "about": "Lính hậu cần dựng lều dã chiến nhanh hơn."
     },
     "gyield": {
       "name": "Sản lượng nghề",
       "short": "Sản lượng",
       "steps": [
-        10,
-        8,
-        6,
-        4,
-        2
+        15.0,
+        15.0
       ],
       "cost": {
-        "food": 10,
-        "wood": 10,
-        "stone": 5,
-        "coin": 1
+        "food": 50,
+        "wood": 50,
+        "stone": 25,
+        "coin": 5
       },
-      "time": 70,
+      "time": 236,
       "about": "Mỗi lần khai thác hoặc xẻ thú thu được nhiều hơn (cộng với % sản lượng của công cụ, rồi làm tròn lên số nguyên)."
     }
   },
@@ -722,7 +654,8 @@
         "work",
         "sta",
         "int",
-        "restregen"
+        "restregen",
+        "gyield"
       ],
       "finalTier": {
         "tier": 2,
@@ -741,18 +674,12 @@
           "coin": 15
         },
         "time": 1000
+      },
+      "except": {
+        "gyield": [
+          "tame"
+        ]
       }
-    },
-    "gather": {
-      "roles": [
-        "wood",
-        "stone",
-        "food",
-        "hunt"
-      ],
-      "order": [
-        "gyield"
-      ]
     },
     "development": {
       "roles": [
@@ -854,7 +781,7 @@
     }
   },
   "plan": {
-    "_note": "Cây Kế hoạch chiến đấu: ba cột Bộ binh, Kỵ, Cung, chỉ số riêng (chain tactic) chỉ cộng khi đang chiến tranh và đang giao chiến. Nhóm chỉ số đầu đủ cấp 3 mở plan_report, cấp 5 mở plan_supply; nhóm sau cấp 3 mở plan_weather, cấp 5 mở plan_rest (xem research.json). Chuỗi march (tab Hành quân) chỉ cộng khi chiến tranh và đang hành quân hoặc nghỉ.",
+    "_note": "Cây Kế hoạch chiến đấu: ba cột Bộ binh, Kỵ, Cung, chỉ số riêng (chain tactic) chỉ cộng khi đang chiến tranh và đang giao chiến. Nhóm chỉ số đầu đủ cấp 1 mở plan_report, cấp 2 mở plan_supply; nhóm sau cấp 1 mở plan_weather, cấp 2 mở plan_rest (xem research.json). Chuỗi march (tab Hành quân) chỉ cộng khi chiến tranh và đang hành quân hoặc nghỉ.",
     "roles": [
       "plan_foot",
       "plan_cavalry",

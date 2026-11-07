@@ -1,17 +1,92 @@
 {
   "types": {
-    "clear":   { "name": "Nắng",      "vision": 0, "speed": 1, "work": 1, "bow": 1,    "signal": "" },
-    "mist":    { "name": "Sương mỏng", "vision": 2, "speed": 1, "work": 0.95, "bow": 1,    "signal": "Hơi nước bốc lên từ đất, sáng mai có lẽ sẽ có sương." },
-    "drizzle": { "name": "Mưa nhẹ",   "vision": 0, "speed": 0.9, "work": 0.85, "bow": 0.85,  "signal": "Mây xám kéo tới, có lẽ ngày mai mưa." },
-    "rain":    { "name": "Mưa to",    "vision": 1, "speed": 0.75, "work": 0.7, "bow": 0.7, "signal": "Trời tối sầm, gió ẩm nổi lên: ngày mai mưa to." },
-    "thunder": { "name": "Giông sét", "vision": 3, "speed": 0.85, "work": 0.6, "bow": 0.7, "signal": "Không khí oi nồng, mây dựng thành tháp: sắp có giông." },
-    "storm":   { "name": "Bão",       "vision": 4, "speed": 0.7, "work": 0.45, "bow": 0.5,  "signal": "Gió giật mạnh, chim bay tán loạn: bão đang tới." },
-    "snow":    { "name": "Tuyết",     "vision": 1, "speed": 0.75, "work": 0.6, "bow": 0.85, "signal": "Gió lạnh buốt thổi về, có lẽ sắp có tuyết." }
+    "clear": {
+      "name": "Nắng",
+      "vision": 0,
+      "speed": 1,
+      "work": 1,
+      "bow": 1,
+      "signal": ""
+    },
+    "mist": {
+      "name": "Sương mỏng",
+      "vision": 2,
+      "speed": 1,
+      "work": 0.95,
+      "bow": 1,
+      "signal": "Hơi nước bốc lên từ đất, sáng mai có lẽ sẽ có sương."
+    },
+    "drizzle": {
+      "name": "Mưa nhẹ",
+      "vision": 0,
+      "speed": 0.9,
+      "work": 0.85,
+      "bow": 0.85,
+      "signal": "Mây xám kéo tới, có lẽ ngày mai mưa."
+    },
+    "rain": {
+      "name": "Mưa to",
+      "vision": 1,
+      "speed": 0.75,
+      "work": 0.7,
+      "bow": 0.7,
+      "signal": "Trời tối sầm, gió ẩm nổi lên: ngày mai mưa to."
+    },
+    "thunder": {
+      "name": "Giông sét",
+      "vision": 3,
+      "speed": 0.85,
+      "work": 0.6,
+      "bow": 0.7,
+      "signal": "Không khí oi nồng, mây dựng thành tháp: sắp có giông."
+    },
+    "storm": {
+      "name": "Bão",
+      "vision": 4,
+      "speed": 0.7,
+      "work": 0.45,
+      "bow": 0.5,
+      "signal": "Gió giật mạnh, chim bay tán loạn: bão đang tới."
+    },
+    "snow": {
+      "name": "Tuyết",
+      "vision": 1,
+      "speed": 0.75,
+      "work": 0.6,
+      "bow": 0.85,
+      "signal": "Gió lạnh buốt thổi về, có lẽ sắp có tuyết."
+    }
   },
   "chance": {
-    "spring": { "clear": 0.45, "mist": 0.15, "drizzle": 0.25, "rain": 0.15 },
-    "summer": { "clear": 0.6,  "rain": 0.15, "thunder": 0.15, "storm": 0.1 },
-    "autumn": { "clear": 0.45, "mist": 0.2,  "drizzle": 0.2,  "storm": 0.15 },
-    "winter": { "clear": 0.5,  "mist": 0.1,  "snow": 0.4 }
-  }
+    "spring": {
+      "clear": 0.45,
+      "mist": 0.15,
+      "drizzle": 0.25,
+      "rain": 0.15
+    },
+    "summer": {
+      "clear": 0.6,
+      "rain": 0.15,
+      "thunder": 0.15,
+      "storm": 0.1
+    },
+    "autumn": {
+      "clear": 0.45,
+      "mist": 0.2,
+      "drizzle": 0.2,
+      "storm": 0.15
+    },
+    "winter": {
+      "clear": 0.5,
+      "mist": 0.1,
+      "snow": 0.4
+    }
+  },
+  "duration": {
+    "min": 60,
+    "max": 120,
+    "startFrom": 0.1,
+    "startTo": 0.6
+  },
+  "_duration": "Một ngày có thời tiết xấu (mưa, bão, sương, tuyết...) thì thời tiết đó chỉ kéo dài từ min đến max giây game (ngẫu nhiên), bắt đầu vào lúc ngẫu nhiên của ngày (từ startFrom đến startTo của ngày); ngoài lúc đó trời quang."
 }

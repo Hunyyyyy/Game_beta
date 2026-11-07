@@ -23,6 +23,9 @@ export const RESEARCH = { enabled: (data as unknown as { enabled: boolean }).ena
 const RECIPE_LEVEL = (data as unknown as { recipeLevel: Record<string, number> }).recipeLevel;
 /** How much more the materials of a craft cost for each level of the Nhà chế tạo above the first (0.5 = half as much again), from research.json. */
 export const CRAFT_COST_PER_LEVEL = (data as unknown as { craftCostPerLevel?: number }).craftCostPerLevel ?? 0.5;
+/** What the Nhà chế tạo adds to what it makes, for each level above the first: this many times more damage (weapons) and more wear to break (weapons, armour, tools). data/research.json craftQualityPerLevel. */
+const QUALITY_PER_LEVEL = (data as unknown as { craftQualityPerLevel?: number }).craftQualityPerLevel ?? 1;
+export const craftQuality = (workshopLevel: number): number => QUALITY_PER_LEVEL ** Math.max(0, workshopLevel - 1);
 export const recipeNeedLevel = (id: string): number => RECIPE_LEVEL[id] ?? 1;
 export const TECHS = (data as unknown as { techs: Tech[] }).techs;
 // which research-house level teaches a step is the plan's call (data/progression.json), not the step's
@@ -46,16 +49,18 @@ export const statBonusAtLab = (stat: LineStat, lab: number): number => STAT_DEF[
 /** What opens each tab of the research house: Quân sự needs this level of the house, and Vũ khí opens with Quân sự. */
 export const TREE_TABS = tree.tabs as { military: { needLab: number } };
 /** Roles whose stats grow down a chain: each level of a stat needs the stat above it at the same level, and the top stat needs the bottom one a level lower. Their other stats do not exist. */
-export interface ChainDef { roles: string[]; order: LineStat[]; scale?: number; gates?: Partial<Record<LineStat, string>>; layout?: Array<{ stats?: LineStat[]; techs?: string[] }>; finalTier?: { tier: number; roles: string[]; cost: Partial<Stock>; time: number; needLab: number } }
+export interface ChainDef { roles: string[]; order: LineStat[]; /** Stats a role of the chain does not have (the output of gathering means nothing to a tamer). */ except?: Partial<Record<LineStat, string[]>>; scale?: number; gates?: Partial<Record<LineStat, string>>; layout?: Array<{ stats?: LineStat[]; techs?: string[] }>; finalTier?: { tier: number; roles: string[]; cost: Partial<Stock>; time: number; needLab: number } }
 export const CHAINS: Record<string, ChainDef> = Object.fromEntries(Object.entries(tree.chains).filter(([, c]) => typeof c !== 'string')) as unknown as Record<string, ChainDef>;
 /** The share of each step a role gets (a formation gives half of what a role does). */
 export const ROLE_SCALE: Record<string, number> = {};
 for (const c of Object.values(CHAINS)) if (c.scale !== undefined) for (const r of c.roles) ROLE_SCALE[r] = c.scale;
+/** The stats of a role in a chain, in the order they open. */
+export const statsFor = (def: ChainDef, role: string): LineStat[] => def.order.filter((s) => !def.except?.[s]?.includes(role));
 export const statTechId = (role: string, stat: string, n: number): string => `${role}_${stat}_${n}`;
 /** The steps of every stat line, one research for each level; they live beside TECHS, not in it, because there are over a thousand. */
 export const STAT_TECHS: Tech[] = [];
-for (const def of Object.values(CHAINS)) for (const role of def.roles) for (const stat of def.order) {
-  const s = STAT_DEF[stat], chain = def.order, at = chain.indexOf(stat);
+for (const def of Object.values(CHAINS)) for (const role of def.roles) for (const stat of statsFor(def, role)) {
+  const s = STAT_DEF[stat], chain = statsFor(def, role), at = chain.indexOf(stat);
   for (let n = 1; n <= statLevels(stat); n++) {
     const cost: Partial<Stock> = {};
     for (const [res, amount] of Object.entries(s.cost)) cost[res as keyof Stock] = Math.max(1, Math.round((amount as number) * tree.growth.cost ** (n - 1)));
@@ -78,7 +83,7 @@ for (const c of Object.values(CHAINS)) {
   for (const role of ft.roles) {
     const t: Tech = {
       id: tierTechId(role, ft.tier), name: `${TREE_ROLES[role].name} bậc ${ft.tier}`, desc: TREE_ROLES[role].weapon ? `Mở ${TREE_ROLES[role].name.toLowerCase()} bậc ${ft.tier}: mọi người cầm nó gây sát thương nhiều hơn. Cần nghiên cứu đủ mọi chỉ số của vũ khí này.` : `Mở bậc ${ft.tier} của ${TREE_ROLES[role].name.toLowerCase()}: mọi người làm vai trò này mạnh hơn ngay. Cần nghiên cứu đủ mọi chỉ số của họ.`,
-      requires: c.order.map((stat) => statTechId(role, stat, statLevels(stat))), needLevel: ft.needLab, cost: ft.cost, time: ft.time, unlocks: { tier: { role, tier: ft.tier } },
+      requires: statsFor(c, role).map((stat) => statTechId(role, stat, statLevels(stat))), needLevel: ft.needLab, cost: ft.cost, time: ft.time, unlocks: { tier: { role, tier: ft.tier } },
     };
     STAT_TECHS.push(t); TECH_BY_ID[t.id] = t; TIER_TECH_OF[role] = t;
   }

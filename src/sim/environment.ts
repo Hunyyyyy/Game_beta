@@ -4,6 +4,7 @@ import { FIRE_VISION, NIGHT_VISION, VISION } from './constants';
 import { BUILDINGS, buildingSight } from './buildings';
 import { armOf } from './battle';
 import startJson from '../data/start.json';
+import weatherJson from '../data/weather.json';
 import type { Sim } from './sim';
 import { Villager } from './model';
 
@@ -12,15 +13,22 @@ export function tickCalendar(sim: Sim): void {
   const day = sim.day;
   if (day !== sim.lastDay) {
     sim.lastDay = day;
-    sim.weather = sim.nextWeather;
+    sim.dayWeather = sim.nextWeather; sim.weather = 'clear'; // the weather of the day comes for a minute or two, at some moment of it
     sim.nextWeather = rollWeather(seasonOf(day + 1), sim.wrnd());
+    const dur = weatherJson.duration, dayStart = sim.time - sim.tod * sim.dayLen;
+    sim.weatherAt = dayStart + (dur.startFrom + sim.wrnd() * (dur.startTo - dur.startFrom)) * sim.dayLen;
+    sim.weatherEnd = sim.weatherAt + dur.min + sim.wrnd() * (dur.max - dur.min);
     sim.signalled = false;
     const season = seasonOf(day);
     if (season !== sim.world.season) { sim.world.setSeason(season); sim.say(SEASON_DEF[season].enter); }
-    if (sim.weather !== 'clear') sim.say(`Hôm nay: ${WEATHER[sim.weather].name.toLowerCase()}.`);
+    if (sim.dayWeather !== 'clear') sim.say(`Hôm nay sẽ có ${WEATHER[sim.dayWeather].name.toLowerCase()}.`);
     sim.restockAnimals(); // what hunting took comes back, a herd at a time
     sim.eatDay(); // the day that has just ended is paid for before anyone new walks in
     if (day >= startJson.arrivals.firstDay && !sim.dev.noArrivals) newcomers(sim);
+  }
+  if (sim.dayWeather !== 'clear') { // it comes and goes
+    if (sim.weather === 'clear' && sim.time >= sim.weatherAt && sim.time < sim.weatherEnd) { sim.weather = sim.dayWeather; sim.say(`Trời bắt đầu ${WEATHER[sim.weather].name.toLowerCase()}.`); }
+    else if (sim.weather !== 'clear' && sim.time >= sim.weatherEnd) { sim.say(`${WEATHER[sim.weather].name} đã qua.`); sim.weather = 'clear'; sim.dayWeather = 'clear'; }
   }
   if (!sim.signalled && sim.tod >= 0.5) {
     sim.signalled = true;

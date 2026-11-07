@@ -11,7 +11,19 @@ type WeatherCfg = { loops?: WeatherLayer[]; bursts?: Array<{ files: string[]; vo
 /** Most one-shot sounds at once (each is an audio element: hundreds of them at a battle would choke the page). */
 const MAX_LIVE = 14;
 type Kind = 'sfx' | 'amb' | 'mus';
-const pick = <T>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
+/** The tracks of a kind not yet played in this round: a track is taken out when it plays, and the round starts over with the whole list when none is left (a new round does not open with the track that closed the last). */
+const BAGS = new Map<string, string[]>(), LAST = new Map<string, string>();
+function bagPick(name: string, all: readonly string[]): string {
+  let left = BAGS.get(name), fresh = false;
+  if (!left || !left.length) { left = [...all]; BAGS.set(name, left); fresh = true; }
+  const last = LAST.get(name), from = fresh && left.length > 1 ? left.filter((f) => f !== last) : left; // a new round does not open with the track that closed the last one
+  const f = from[Math.floor(Math.random() * from.length)];
+  left.splice(left.indexOf(f), 1);
+  LAST.set(name, f);
+  return f;
+}
+/** One of the files, by rounds like the music: a file that has played is out until all of the list have played (see `bagPick`). */
+const pick = (a: readonly string[]): string => bagPick(a.join('|'), a);
 const HITS = cfg.hits as Record<string, HitCfg>;
 /** sounds.json `anims`: a key may name several animations joined by `|`, which then share the entry. */
 const ANIMS: Record<string, AnimCfg | AnimCfg[]> = {};
@@ -120,7 +132,7 @@ export class GameAudio {
     if (last === undefined || step === last) return;
     for (const c of Array.isArray(def) ? def : [def]) {
       if (step % clip.n !== (c.frame ?? c.hitFrame ?? clip.hit)) continue;
-      const file = c.files ? c.files[Math.floor(Math.random() * c.files.length)] : c.file;
+      const file = c.files ? pick(c.files) : c.file;
       const el = this.play(file, c.volume, c.gap, now, !!c.work, 'sfx', c.files ? c.files[0] : c.file);
       if (el && c.work) this.active.set(key, { el, anim, file: c.files ? c.files[0] : c.file, seen: now });
     }
@@ -143,7 +155,7 @@ export class GameAudio {
 
   private playHit(key: string, c: HitCfg, n: number, now: number): void {
     if (now - (this.lastPlay.get('hit:' + key) ?? -1e9) < c.gap) return;
-    const file = c.burst && n >= 2 ? c.burst[Math.min(n, c.burst.length + 1) - 2] : c.files[Math.floor(Math.random() * c.files.length)];
+    const file = c.burst && n >= 2 ? c.burst[Math.min(n, c.burst.length + 1) - 2] : pick(c.files);
     if (this.play(file, c.volume, 0, now, false)) this.lastPlay.set('hit:' + key, now);
   }
 
@@ -163,6 +175,13 @@ export class GameAudio {
     if (stings < this.stingsDone) this.stingsDone = 0; // a new war
     for (let i = 0; i < Math.min(4, stings - this.stingsDone); i++) this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, 'mus', `sting${i}`); // they may sound over each other
     this.stingsDone = stings;
+  }
+
+  /** A warning from the game: wolves come (a howl, always heard, wherever the camera is) or a village raids us (the battle sting, once). */
+  alert(kind: 'wolf' | 'raid'): void {
+    const now = performance.now() / 1000;
+    if (kind === 'raid') this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, 'mus', 'raidalert');
+    else { const w = cfg.wolves; this.play(pick(w.files), w.volume, 0, now, false, 'amb', 'wolfalert'); }
   }
 
   /** The player gave an order to a troop (a button, or a click with several chosen): one of the order sounds. */
@@ -239,7 +258,7 @@ export class GameAudio {
     if (!peaceful) return;
     this.peaceWait -= dt;
     if (this.peaceWait > 0) return;
-    const a = new Audio(cfg.dir + pick(cfg.peace.files)); a.volume = 0; this.peaceVol = 0;
+    const a = new Audio(cfg.dir + bagPick('peace', cfg.peace.files)); a.volume = 0; this.peaceVol = 0;
     this.peaceEl = a;
     a.play().catch(() => { if (this.peaceEl === a) this.peaceEl = null; this.peaceWait = 5; }); // not allowed yet: try again soon
   }
@@ -267,7 +286,7 @@ export class GameAudio {
     this.nightOn = night;
     while (this.howls.length && time >= this.howls[0]) {
       const late = time - this.howls.shift()! > 5; // the game was away (a tab, a skip): that howl is lost, not played all at once
-      if (!late) this.play(w.files[Math.floor(Math.random() * w.files.length)], w.volume, 0, time, false, 'amb');
+      if (!late) this.play(pick(w.files), w.volume, 0, time, false, 'amb');
     }
   }
 
@@ -290,7 +309,7 @@ export class GameAudio {
     if (this.sfxOn) for (const n of this.nearNow) { const l = NEAR[n]; if (l && this.vol.sfx > 0) want.set(l.file, l.volume * cfg.master * this.vol.sfx); }
     this.nearNow.clear();
     if (this.musicOn && this.warScreen) { // the war music plays all through the war; the sting (enemy seen) plays over it
-      this.warTrack ??= pick(cfg.war.music.files);
+      this.warTrack ??= bagPick('war', cfg.war.music.files);
       want.set(this.warTrack, cfg.war.music.volume * cfg.master * this.vol.mus);
     }
     for (const file of want.keys()) if (!this.beds.has(file)) {

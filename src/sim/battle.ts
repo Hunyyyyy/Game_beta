@@ -121,8 +121,9 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   if (target.kind === 'animal') {
     const a = sim.animalById.get(target.id);
     if (!a || a.state === 'dead') return;
+    if (a.raid && src.unit?.team === 'player') sim.noteDamage(true, Math.min(dmg, a.hp));
     a.hp -= dmg;
-    if (a.hp <= 0) { animalDie(sim, a); sim.onKill?.(); if (src.unit?.team === 'player' && a.species === 'wolf') sim.say('Một con sói đã bị hạ.'); }
+    if (a.hp <= 0) { if (a.raid) sim.noteBattle('foes'); animalDie(sim, a); sim.onKill?.(); if (src.unit?.team === 'player' && a.species === 'wolf') sim.say('Một con sói đã bị hạ.'); }
     else if (src.unit) provoke(sim, a, src.unit.id);
     return;
   }
@@ -130,7 +131,8 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === 'player') return;
   const missile = !!src.unit && weaponOf(src.unit).ranged === true;
-  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (1 - guardCut(sim, v, missile)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v);
+  const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v);
+  if (v.team === 'player') sim.noteDamage(false, Math.min(final, v.health)); else if (v.ai?.role === 'raider') sim.noteDamage(true, Math.min(final, v.health));
   v.health -= final; v.calm = 0; v.flinch = 0.3;
   if (src.unit && sim.mountOf(src.unit) === 'elephant') sim.addSfx('elephant', false, src.unit.x, src.unit.y); // the beast bellows when its rider strikes
   if (src.unit) { const sw = weaponOf(src.unit); sim.addSfx(sw.id, missile, v.x, v.y); } // the sound belongs to the weapon in his hand, whoever holds it
@@ -160,7 +162,7 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
 /** A villager with no health left is dead for good: nobody picks them up, nothing brings them back. */
 function fallUnit(sim: Sim, v: Villager): void {
   sim.resetTask(v); v.queue.length = 0; v.swing = null;
-  sim.noteBattle('ours');
+  sim.noteLoss(v);
   sim.killUnit(v, 'tử trận');
 }
 
@@ -207,7 +209,7 @@ function resolveSwing(sim: Sim, v: Villager, target: Target): void {
   let behind = false;
   if (e.kind === 'unit') behind = (e.v.facing === 'right' && v.x < e.v.x) || (e.v.facing === 'left' && v.x > e.v.x);
   else behind = (e.a.dir === 1 && v.x < e.a.x) || (e.a.dir === -1 && v.x > e.a.x);
-  hurt(sim, target, damageOf({ ...w, damage: weaponDamage(sim, v, w) }, v.stats.str, null, behind) * critRoll(sim, v, w) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
+  hurt(sim, target, damageOf({ ...w, damage: weaponDamage(sim, v, w) }, v.stats.str, behind) * critRoll(sim, v, w) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
   if (v.weapon) sim.wearGear(v, 'weapon');
 }
 

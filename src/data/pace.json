@@ -5,7 +5,7 @@
   "huntPerDay": 30,
   "gatherDuty": 0.6,
   "yield": { "wood": 3, "stone": 2, "food": 1 },
-  "levelYield": [1, 1, 1.6, 3],
+  "levelYield": [1, 1.25, 1.6, 3],
   "costMult": { "wood": 2, "stone": 2, "coin": 2 },
   "node": { "tree": 20, "rock": 28, "bush": 40 },
   "outdoor": ["wood", "stone", "food", "build"]

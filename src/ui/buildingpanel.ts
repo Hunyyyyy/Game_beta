@@ -19,6 +19,7 @@ import { ActiveBox, StaffBox } from './housebox';
 import { ScoutPane } from './scoutpane';
 import { SimpleWar } from './simplewar';
 import { WarLogPane } from './warlogpane';
+import { TribesPane } from './tribespane';
 import { RolePane } from './rolepane';
 import { dlg, GameDialog } from './gamedialog';
 import { personTile } from './people';
@@ -68,6 +69,7 @@ export class BuildingPanel {
   /** Where scouts are picked and sent, in the Trại trinh sát. */
   private readonly scoutPane: ScoutPane;
   private readonly warLog: WarLogPane;
+  private readonly tribes: TribesPane;
   private readonly simpleWar!: SimpleWar;
   /** The page of the Lều họp chiến: the plan of the medieval era, or the list of villages of the stone age. */
   private readonly warHost = h('div');
@@ -128,6 +130,7 @@ export class BuildingPanel {
     this.tabs.field = [{ label: 'Người làm ruộng', page: page(this.staffBoxes.farm.root) }];
     this.war = new WarPanel(c);
     this.warLog = new WarLogPane(c);
+    this.tribes = new TribesPane(c);
     this.simpleWar = new SimpleWar(c);
     this.tabs.wartent = [{ label: 'Họp chiến', page: page(this.warHost) }, { label: 'Nhật ký trận', page: page(this.warLog.root) }]; // the stone age: a list of the villages found and a button Đánh (no plan)
     this.scoutPane = new ScoutPane(c);
@@ -138,6 +141,7 @@ export class BuildingPanel {
     this.tabs.campfire = [
       { label: 'Dân', page: page(h('div', { class: 'btns' }, this.doorBtn), this.people.root) },
       { label: 'Đổi chác', page: page(barter()) },
+      { label: 'Bộ tộc', page: page(this.tribes.root) }, // the villages met: gifts, tribute, taking them in
     ];
 
     // storage: stock against capacity, and trading goods for money
@@ -177,7 +181,7 @@ export class BuildingPanel {
     const needMilitary = () => militaryLock() && 'Cần mở Quân sự trước';
     this.tabs.lab = [
       { label: 'Quân sự bậc 1', icon: 'infantry', lock: militaryLock, page: tree((t) => { t.addChains('Chỉ số quân', ['foot', 'cavalry', 'archer', 'scout'], 'military'); }) },
-      { label: 'Kinh tế bậc 1', icon: 'storage', page: tree((t) => { t.addChains('Chỉ số nghề', ['wood', 'stone', 'food', 'hunt', 'tame'], 'economy'); t.addChains('Sản lượng mỗi lần khai thác', ['wood', 'stone', 'food', 'hunt'], 'gather'); }) },
+      { label: 'Kinh tế bậc 1', icon: 'storage', page: tree((t) => { t.addChains('Chỉ số nghề', ['wood', 'stone', 'food', 'hunt', 'tame'], 'economy'); }) },
       { label: 'Phát triển bậc 1', icon: 'builder', page: tree((t) => t.addChains('Chỉ số nhà làm việc', ['build', 'craft', 'research'], 'development')) },
       { label: 'Phòng thủ bậc 1', icon: 'tower', page: tree((t) => { t.addChains('Lính phòng thủ', ['guard', 'towerman'], 'defense'); t.addChains('Hàng rào và cổng', ['fence', 'gate'], 'works1'); t.addChains('Chông và chòi canh', ['trap', 'tower'], 'works2'); }) },
       { label: 'Lập kế hoạch bậc 1', icon: 'drill' as const, show: advanced, under: 0, lock: needMilitary, page: tree((t) => { t.addSingles('Tín hiệu', only((id) => id === 'signal')); t.addFormations('Trận pháp', 'formation'); }) },
@@ -231,6 +235,14 @@ export class BuildingPanel {
     who.replaceChildren(h('div', { class: 'hint' }, h('div', { class: 'hinthead' }, this.title, helpButton()), this.info), this.state, this.foodHint);
     this.win = new GameDialog(root, { keep: true, onClose: () => ctl.closePanel(), canClose: () => !this.war.mapOpen });
     root.append(dlg.card({ wide: true, cls: 'gbuild', label: 'Công trình' }, head, this.mbody));
+  }
+
+  /** Open the campfire on its tribes: a tribe has come to ask for mercy. */
+  openTribes(): void {
+    const fire = this.c.sim.campfire();
+    if (!fire) return;
+    this.tabAt.campfire = Math.max(0, this.tabs.campfire.findIndex((t) => t.label === 'Bộ tộc'));
+    this.c.ctl.selectBuilding(fire.id, true);
   }
 
   /** Show the tab buttons of the building and the page of the chosen one. */
@@ -343,6 +355,7 @@ export class BuildingPanel {
       if (plan) this.war.update(); else this.simpleWar.update();
       this.warLog.update();
     }
+    if (b.kind === 'campfire' && ready) this.tribes.update();
     if (b.kind === 'scouttent' && ready) this.scoutPane.update();
     if (b.kind === 'workshop' && ready) this.updateWorkshop(b);
     if (b.kind === 'lab' && ready) this.updateLab(b);

@@ -306,6 +306,8 @@ export interface ArmCount { foot: number; archer: number; cavalry: number }
 export interface WarStats {
   startDay: number; fought: boolean;
   sent: ArmCount; dead: ArmCount; supplySent: number; supplyDead: number;
+  /** Enemies we killed, and the words of the war (what happened, in order). */
+  foeDead: number; notes: string[];
   /** The goods the supply soldiers set out with and brought back (food, wood and hide for the tents). */
   loaded: { food: number; wood: number; hide: number }; returned: { food: number; wood: number; hide: number };
   loot: Partial<Record<Res, number>>;
@@ -314,7 +316,7 @@ export interface WarStats {
 export interface WarRecord {
   id: number; tribe: string; name: string; mapLevel: number; startDay: number; endDay: number; days: number;
   result: 'won' | 'lost' | 'off'; squads: number;
-  sent: ArmCount; dead: ArmCount; supplySent: number; supplyDead: number;
+  sent: ArmCount; dead: ArmCount; supplySent: number; supplyDead: number; foeDead: number; notes: string[]; sample?: boolean;
   spent: { food: number; wood: number; hide: number }; loot: Partial<Record<Res, number>>;
 }
 export interface Plan {
@@ -369,7 +371,20 @@ export interface Forecast {
   facts: Array<[string, string]>;
 }
 /** What happened in the fight that is on (or was last): the base of the campaign log. */
-export interface BattleState { on: boolean; since: number; quiet: number; ourDead: number; foeDead: number; breaches: number; shots: number; notes: string[] }
+/** The fight that is on at the village (raiders, or a pack of beasts), in numbers; it becomes a `BattleRecord` when it is over. */
+export interface BattleState {
+  on: boolean; since: number; quiet: number; ourDead: number; foeDead: number; breaches: number; shots: number; notes: string[];
+  /** 'raid': a village attacks; 'beasts': a pack. `name`: who. `peak`: the most enemies on the field at once. */
+  kind: 'raid' | 'beasts'; name: string; startDay: number; night: boolean; peak: number;
+  ourDeadArm: ArmCount; civDead: number; dmgDealt: number; dmgTaken: number;
+}
+/** One fight at the village in the log of the Lều họp chiến (the defence: a raid or a pack of beasts). The attacks we make are `WarRecord`s. */
+export interface BattleRecord {
+  id: number; kind: 'defense' | 'beasts'; name: string; startDay: number; endDay: number; night: boolean; minutes: number; peak: number;
+  ourDead: number; foeDead: number; ourDeadArm: ArmCount; civDead: number; breaches: number; shots: number; dmgDealt: number; dmgTaken: number; notes: string[];
+  /** Made by the dev menu to look at the log: it can be cleared again. */
+  sample?: boolean;
+}
 
 export const NAMES_M = ['Bo', 'Rô', 'Gia', 'Mun', 'Lô', 'Tù', 'Đa'];
 export const NAMES_F = ['Tia', 'Noa', 'Ma', 'Pa', 'Kê', 'Ly', 'Sa'];

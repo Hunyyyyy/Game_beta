@@ -18,11 +18,11 @@
     "throw_attack": { "file": "battle/sling_throw.mp3", "volume": 0.5, "gap": 0.2 }
   },
   "weather": {
-    "drizzle": { "loops": [{ "file": "envairoment/rain.wav", "volume": 0.45 }] },
-    "rain":    { "loops": [{ "file": "envairoment/rain.wav", "volume": 0.85 }],
+    "drizzle": { "loops": [{ "file": "envairoment/rain.mp3", "volume": 0.45 }] },
+    "rain":    { "loops": [{ "file": "envairoment/rain.mp3", "volume": 0.85 }],
                  "bursts": [{ "files": ["envairoment/thunder_1.mp3", "envairoment/thunder_2.mp3", "envairoment/thunder_3.mp3"], "volume": 0.6, "gapMin": 15, "gapMax": 45 }] },
-    "thunder": { "loops": [{ "file": "envairoment/rain.wav", "volume": 0.85 }] },
-    "storm":   { "loops": [{ "file": "envairoment/storm.wav", "volume": 0.7 }, { "file": "envairoment/rain.wav", "volume": 0.7 }],
+    "thunder": { "loops": [{ "file": "envairoment/rain.mp3", "volume": 0.85 }] },
+    "storm":   { "loops": [{ "file": "envairoment/storm.wav", "volume": 0.7 }, { "file": "envairoment/rain.mp3", "volume": 0.7 }],
                  "bursts": [{ "files": ["envairoment/wind_storm_1.mp3", "envairoment/wind_storm_2.mp3", "envairoment/wind_1.mp3", "envairoment/wind_2.mp3"], "volume": 0.9, "gapMin": 5, "gapMax": 14 }] }
   },
   "thunder": { "files": ["envairoment/thunder_1.mp3", "envairoment/thunder_2.mp3", "envairoment/thunder_3.mp3"], "volume": 0.8, "delayMin": 0.3, "delayMax": 1.6 },
