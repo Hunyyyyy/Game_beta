@@ -1,0 +1,6 @@
+{
+  "respawnShare": 0.2,
+  "respawnMinDist": 18,
+  "searchRadius": 100,
+  "warnEvery": 90
+}

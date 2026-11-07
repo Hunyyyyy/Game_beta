@@ -63,7 +63,7 @@ export class PeoplePane {
       if (v.inside !== null) { ctl.selectBuilding(v.inside, true); return; }
       ctl.selected.clear(); ctl.selected.add(v.id); ctl.focusSelection(); ctl.closeBuilding();
     });
-    const applyAll = h('button', { class: 'sm primary', text: 'Áp dụng cho cả nhóm', title: 'Cho mọi người cùng nghề dùng ca làm, đuốc, công cụ, vũ khí và giáp giống người này', onclick: () => this.applyToGroup() });
+    const applyAll = h('button', { class: 'sm primary', text: 'Áp dụng cho cả nhóm', title: 'Cho mọi người cùng nghề dùng ca làm, đuốc và công cụ giống người này (vũ khí, giáp, thú cưỡi: bấm "Trang bị" ở nhà của nghề)', onclick: () => this.applyToGroup() });
     this.personView.append(
       h('div', { class: 'dhead' }, this.face, h('div', { class: 'dwho' }, this.name, this.state), this.where),
       this.detail.body,
@@ -82,11 +82,7 @@ export class PeoplePane {
     const k = TOOL_OF_JOB[v.job as WorkJob], errs: string[] = [];
     if (k) { const e = sim.assignTool(ids, k, v.tools[k]?.tier ?? 0); if (e) errs.push(e); }
     if (v.torch) { const e = sim.giveTorch(ids); if (e) errs.push(e); }
-    if (v.job === 'fight' || v.job === 'hunt' || v.job === 'scout') { // the beast, the weapon and the armour too: the same pieces, or "automatic" if that is how he has them
-      if (v.arm !== 'cavalry') { const e = sim.assignMount(ids, v.mount ?? null); if (e) errs.push(e); }
-      if (v.manualGear) { for (const [item, slot] of [[v.weapon, 'weapon'], [v.armor, 'armor']] as const) { const e = sim.assignGear(ids, item, slot); if (e) errs.push(e); } }
-      else { const e = sim.autoGear(ids); if (e) errs.push(e); }
-    }
+    // weapons, armour and beasts are not copied: the "Trang bị" button of the house hands them out
     toast(errs.length ? errs.join(' · ') : `Đã áp dụng cho ${ids.length} người cùng nghề`);
     ctl.onChange();
   }

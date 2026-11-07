@@ -107,13 +107,13 @@ export function assignMount(sim: Sim, ids: readonly number[], kind: MountKind | 
   let given = 0, short = false, riders = false;
   for (const v of sim.mine(ids)) {
     if (v.mount === kind) continue;
-    if (kind && v.job === 'fight' && v.arm === 'cavalry') { riders = true; continue; } // the riders of the camp have their beast already
+    if (kind && v.job === 'fight' && v.arm !== 'cavalry') { riders = true; continue; } // foot soldiers and throwers do not ride: only the riders of the Trại kỵ thú, hunters and scouts
     if (kind && tamedCount(sim, kind) <= 0) { short = true; continue; }
     if (v.mount) sim.toolStock[stockKey(v.mount)] = tamedCount(sim, v.mount) + 1;
     if (kind) sim.toolStock[stockKey(kind)]--;
     v.mount = kind; given++;
-    if (kind) { v.speed = 1.6 + 0.1 * v.stats.agi; sim.say(`${v.name} được giao một con ${MOUNTS[kind].name.toLowerCase()} để cưỡi.`); } else sim.say(`${v.name} trả thú về chuồng.`);
+    if (kind) { if (v.job !== 'fight') v.speed = 1.6 + 0.1 * v.stats.agi; sim.say(`${v.name} được giao một con ${MOUNTS[kind].name.toLowerCase()} để cưỡi.`); } else sim.say(`${v.name} trả thú về chuồng.`);
   }
   if (given) return null;
-  return riders ? 'Kỵ binh của Trại kỵ thú đã có thú của trại' : short ? `Chuồng hết ${kind ? MOUNTS[kind].name.toLowerCase() : 'thú'} đã thuần: hãy thuần thêm` : null;
+  return riders ? 'Bộ binh và cung thủ không cưỡi thú: chỉ kỵ binh, thợ săn và trinh sát' : short ? `Chuồng hết ${kind ? MOUNTS[kind].name.toLowerCase() : 'thú'} đã thuần: hãy thuần thêm` : null;
 }

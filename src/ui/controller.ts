@@ -201,7 +201,7 @@ export class Controller {
       }
       if (this.touches.size === 0) {
         this.endFenceLine();
-        if (this.box) { this.boxSelect(this.box, true); this.box = null; }
+        if (this.box) { this.boxSelect(this.box); this.box = null; }
         else if (!this.tapDead && Math.hypot(p.x - t.sx, p.y - t.sy) < 12 && performance.now() - t.t < 600) this.activate(p, true, false);
       }
       return;
@@ -212,7 +212,7 @@ export class Controller {
     } else if (e.button === 0) {
       const l = this.left; this.left = null; if (this.placing) this.el.style.cursor = '';
       this.endFenceLine();
-      if (this.box) { this.boxSelect(this.box, true); this.box = null; }
+      if (this.box) { this.boxSelect(this.box); this.box = null; }
       else if (l && !l.moved) this.activate(p, false, e.shiftKey || e.ctrlKey);
     }
   }
@@ -278,9 +278,9 @@ export class Controller {
     const id = this.hit(p, touch);
     const b = this.buildingUnder(p), w = this.r.screenToWorld(p.x, p.y);
     const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
-    if (this.multi) { // Chọn nhiều only lets the left button draw the box (and a tap on a person take him in or out); it stays on, and nothing else is locked: a tap on the ground still sends the chosen there, a building, an enemy or a tree is clicked as always.
+    if (this.multi) { // Chọn nhiều: the group changes only by drawing a new box. With a group chosen every tap is an order (the ground, one of ours, an enemy, a work, a tree: see command); with nobody chosen a tap on a person takes him in.
+      if (this.selected.size) { this.command(p, additive); return; }
       if (id !== null) { this.toggle(id); this.hushCard = false; this.onChange(); return; }
-      if (this.selected.size && b === null && !seen) { this.command(p, additive); return; }
     }
     if (id !== null) {
       this.hushCard = false;
@@ -339,9 +339,10 @@ export class Controller {
     this.onChange();
   }
 
-  private boxSelect(b: Box, add: boolean): void {
+  /** The people inside the box become the group; the group chosen before is let go. */
+  private boxSelect(b: Box): void {
     const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
-    if (!add) this.selected.clear();
+    this.selected.clear();
     for (const v of this.sim.villagers) {
       if (v.inside !== null || v.inTent) continue; // working inside a house or asleep in a field tent: not on the map
       const s = this.bodyScreen(v);
@@ -481,7 +482,8 @@ export class Controller {
   command(p: { x: number; y: number }, queue = false): void {
     if (!this.selected.size) return;
     this.hushCard = true;
-    const w = this.r.screenToWorld(p.x, p.y), ids = [...this.selected];
+    const w = this.r.screenToWorld(p.x, p.y);
+    let ids = [...this.selected];
     if (ids.every((id) => this.sim.scouts.some((m) => m.ids.includes(id)))) { this.onToast(ids.length > 1 ? 'Các trinh sát đang làm nhiệm vụ: đợi họ về' : 'Trinh sát đang làm nhiệm vụ: đợi họ về'); return; }
     const worn = ids.filter((id) => { const o = this.sim.get(id); return !!o && this.sim.sleepLocked(o); });
     if (worn.length === ids.length) { this.onToast(ids.length > 1 ? 'Họ đang ngủ say, chưa gọi dậy được' : `${this.sim.get(ids[0])?.name} đang ngủ say, chưa gọi dậy được`); return; }
@@ -498,6 +500,20 @@ export class Controller {
         this.onToast(n ? (seen.kind === 'foe' ? 'Tấn công' : 'Săn') : seen.kind === 'foe' ? 'Chỉ chiến binh mới đánh: tuyển lính ở trại lính' : why ?? noHunter);
       }
       this.markers.push({ x: w.x, y: w.y, age: 0 }); this.ordered(ids); this.onChange(); return;
+    }
+    // Chọn nhiều: the soldiers hit whatever is clicked, a work of an enemy village or a tree, rock or bush (which gives nothing); the order is absolute. A work of ours is only walked to.
+    if (this.multi) {
+      const fighters = this.fighters(), N = this.sim.world.size, raw = { x: Math.floor(w.x / TILE), y: Math.floor(w.y / TILE) };
+      const hit = fighters.length ? [this.pickTile(w.x, w.y), raw].find((c) => this.sim.world.inBounds(c.x, c.y) && this.sim.fog.state[c.y * N + c.x] !== 0 && this.sim.obstacleAt(c.x, c.y)?.clear) : undefined;
+      if (hit) {
+        const label = this.sim.obstacleAt(hit.x, hit.y)!.label;
+        if (this.sim.orderBreak(fighters, hit.x, hit.y)) {
+          this.onToast(`Tấn công ${label}`);
+          this.markers.push({ x: hit.x * TILE + TILE / 2, y: hit.y * TILE + TILE / 2, age: 0 }); this.ordered(fighters);
+          ids = ids.filter((id) => !fighters.includes(id)); // the others (villagers) follow the plain order below
+          if (!ids.length) { this.onChange(); return; }
+        }
+      }
     }
     const { x: tx, y: ty } = this.pickTile(w.x, w.y);
     if (!this.sim.world.inBounds(tx, ty)) return;

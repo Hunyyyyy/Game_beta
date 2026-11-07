@@ -240,6 +240,23 @@ export function orderAttack(sim: Sim, ids: readonly number[], target: Target, qu
   return n;
 }
 
+/**
+ * The player's order: these soldiers break down what stands on the tile (a work of an enemy village, or a tree, rock or bush, which yields nothing). The order is absolute:
+ * they keep at it whatever comes near. Returns how many took it (0 when the tile holds nothing that can be broken).
+ */
+export function orderBreak(sim: Sim, ids: readonly number[], x: number, y: number): number {
+  const ob = sim.obstacleAt(x, y);
+  if (!ob || !ob.clear) return 0;
+  let n = 0;
+  for (const v of mine(sim, ids)) {
+    if (v.job !== 'fight' || !sim.startBreaking(v, ob)) continue;
+    v.prefer = -1;
+    if (v.breaks) v.breaks.ordered = true;
+    n++;
+  }
+  return n;
+}
+
 /** Walk to a point and fight whatever is met on the way (soldiers only). */
 export function orderAttackMove(sim: Sim, ids: readonly number[], x: number, y: number, queue = false): void {
   for (const v of mine(sim, ids)) {

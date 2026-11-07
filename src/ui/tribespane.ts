@@ -41,7 +41,7 @@ export class TribesPane {
       for (const [id, c] of cards) if (!sim.tribes.includes(c.t)) { c.card.remove(); cards.delete(id); }
       for (const t of sim.tribes) if (!cards.has(t.id)) cards.set(t.id, make(t));
       for (const c of cards.values()) {
-        const { t } = c, seen = sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0;
+        const { t } = c, seen = sim.tribeSeen(t);
         c.card.hidden = !seen; if (!seen) continue; any = true;
         const rel = t.state === 'tribute' ? Math.max(60, t.relation) : t.relation;
         c.status.textContent = (t.rebel ? 'Thủ lĩnh phản bội · ' : '') + (t.state === 'free' ? relationLabel(rel) + (sim.tribeHostile(t.id) ? ' · đang thù địch' : '') : { surrendered: 'Đã xin hàng', tribute: 'Đang cống nạp', destroyed: 'Đã bị xóa sổ' }[t.state]);

@@ -3908,6 +3908,92 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   margin-bottom: 8px;
 }
 
+#bigmap .mapbar {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(5, 6, 12, 0.82);
+  color: #f5e7c4;
+}
+#bigmap .mapbar small {
+  flex: 1 1 200px;
+}
+#bigmap .mapbar .btns {
+  display: flex;
+  gap: 6px;
+}
+
+.barter {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.barter .brow {
+  display: grid;
+  grid-template-columns: minmax(110px, 160px) 1fr;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.barter .brow.dear .bname small {
+  color: #b4492a;
+  font-weight: 600;
+}
+.barter .bname {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.barter .bname small {
+  opacity: 0.8;
+}
+.barter .bkeys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.barter .bkeys button {
+  min-width: 44px;
+}
+
+@media (max-width: 520px) {
+  .barter .brow {
+    grid-template-columns: 1fr;
+  }
+  .barter .bkeys {
+    justify-content: flex-start;
+  }
+}
+#bigmap .wrap {
+  overflow: hidden;
+  border-radius: 6px;
+}
+#bigmap #bigmapCanvas {
+  cursor: grab;
+  will-change: transform;
+}
+#bigmap .mapzoom {
+  position: absolute;
+  right: 8px;
+  top: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 2;
+}
+
 @media (max-height: 480px) {
   body {
     font-size: 12px;
@@ -3989,6 +4075,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     <button class="sm" id="btnSkip" title="Tua qua đêm: chạy nhanh tới sáng, chỉ khi cả làng đã ngủ và không ai tấn công; dừng ngay nếu có chuyện" hidden>⏭ Qua đêm</button>
     <button class="sm" id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
     <span class="spacer"></span>
+    <button class="sm" id="btnMap" title="Bản đồ: nơi đã khám phá, các làng, và chọn nơi cho dân khai thác (phím M)">🗺</button>
     <button class="sm" id="btnDev" title="Menu: công trình đã dựng, ván chơi (lưu/tải), công cụ dev (phím Tab)">🛠</button>
   </div>
 
@@ -4045,7 +4132,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     <div class="wrap">
       <canvas id="bigmapCanvas"></canvas>
       <button class="close" id="btnCloseMap">✕ Đóng</button>
-      <div class="hint maphint"><button class="q" type="button" aria-label="Hướng dẫn" aria-expanded="false">?</button><p class="sub hintbody" hidden>Chạm vào bản đồ để nhảy tới đó.</p></div>
+      <div class="mapzoom"><button class="sm" id="btnMapZoomIn" type="button" title="Phóng to (lăn chuột lên)">＋</button><button class="sm" id="btnMapZoomOut" type="button" title="Thu nhỏ (lăn chuột xuống)">－</button><button class="sm" id="btnMapZoomReset" type="button" title="Về cỡ ban đầu">⟲</button></div>
+      <div class="mapbar" id="mapbar"><small id="mapInfo">Chạm vào bản đồ để chọn một điểm.</small><span class="btns"><button class="sm" id="btnMapGather" type="button" disabled>⛏ Khai thác quanh đây</button><button class="sm" id="btnMapClear" type="button" disabled>Bỏ ưu tiên</button></span></div>
+      <div class="hint maphint"><button class="q" type="button" aria-label="Hướng dẫn" aria-expanded="false">?</button><p class="sub hintbody" hidden>Vùng đen: chưa biết, hãy chọn dân rồi chạm đất ở rìa để đi khám phá. Vùng tối: đã đi qua. Chấm cam/đỏ: làng đã thấy; dấu ☁: có khói bếp quanh đó. Chạm một điểm đã khám phá rồi bấm “Khai thác quanh đây” để dân đốn gỗ, đào đá, hái lượm ở đó.</p></div>
     </div>
   </div>
 
@@ -4660,7 +4749,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       food: {
         name: "Th\u1EE9c \u0103n",
         carry: 40,
-        barter: 10,
+        barter: 20,
         hud: "always",
         unlock: null
       },
@@ -9305,6 +9394,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return last2;
   }
 
+  // src/data/nodes.json
+  var nodes_default = {
+    respawnShare: 0.2,
+    respawnMinDist: 18,
+    searchRadius: 100,
+    warnEvery: 90
+  };
+
   // src/sim/rng.ts
   function mulberry32(seed2) {
     let a = seed2 >>> 0;
@@ -9566,11 +9663,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.nodes.delete(idx);
       this.tiles[idx] = Tile.Grass;
       const N = this.size, fx = idx % N, fy = idx / N | 0, salt = this.respawns++;
+      if (hash2(idx, salt, this.seed + 47) >= nodes_default.respawnShare) return;
       for (let t = 0; t < 40; t++) {
         const ang = hash2(idx, salt * 40 + t, this.seed + 41) * Math.PI * 2, r = 4 + hash2(idx, salt * 40 + t, this.seed + 43) * 7;
         const x = Math.round(fx + Math.cos(ang) * r), y = Math.round(fy + Math.sin(ang) * r), j = y * N + x;
         if (!this.isReady(x, y) || this.tiles[j] !== Tile.Grass || this.occ[j] !== 0 || this.nodes.has(j)) continue;
-        if (Math.hypot(x - this.start.x, y - this.start.y) < 7 || free && !free(x, y) || this.wouldTrap(x, y)) continue;
+        if (Math.hypot(x - this.start.x, y - this.start.y) < nodes_default.respawnMinDist || free && !free(x, y) || this.wouldTrap(x, y)) continue;
         this.tiles[j] = TILE_OF[n.kind];
         this.nodes.set(j, { kind: n.kind, res: n.res, amount: n.kind === "bush" ? Math.round(n.max * (SEASON_DEF[this.season].bushLeft ?? 1)) : n.max, max: n.max, workers: 0, sides: 0, regrow: 0 });
         return;
@@ -11128,7 +11226,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const F = fit(o.palette, 9), H2 = hotFirst(F), W2 = fit(o.wood, 6), S2 = o.seed, R2 = new Rng(S2), HC = o.height;
     const N = (rate, seed2 = 0, off = 0) => NL(t, rate, seed2, off);
     const fla = (tt) => 0.74 + 0.16 * NL(tt, 7.3, S2 + 1) + 0.1 * NL(tt, 19, S2 + 2), fl = fla(t);
-    const GLOW = mix(mix(H2[3], H2[4], 0.5), WHITE, 0.25), SMOKE = mix(SMOKE12, H2[6], 0.25);
+    const GLOW = mix(mix(H2[3], H2[4], 0.5), WHITE, 0.25), SMOKE2 = mix(SMOKE12, H2[6], 0.25);
     const SPARKS = [H2[1], H2[2], H2[4], H2[5]], EMB = [H2[1], H2[2], H2[4], H2[6]];
     const T2 = TONGUES.map(([dx, y, h3, w, back], i) => ({ dx: dx + R2.range(-0.4, 0.4), y, h: 3 + HC * h3 * R2.range(0.92, 1.08), w: w * R2.range(0.9, 1.1), back, env: h3, n: (S2 * 7 + i) * 13 }));
     const lean = (tt) => NL(tt, 0.67, S2 + 90) * 0.12;
@@ -11147,7 +11245,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     };
     looped(t, D, 48, S2 + 300, (r) => ({ x: r.range(-5, 5), y: -HC * 0.8 - r.range(0, 8), vx: r.range(-2, 2), vy: -r.range(10, 17), life: r.range(2, 2.9), s: r.range(2.4, 3.8) }), (q, age) => {
       const [x, y] = drift(q.x, q.y, q.vx, q.vy, age, 4, -20, 1.6, 1);
-      smokePuff(p, x + NL(t - age, 0.8, S2 + 60) * (2 + 3 * age), y, 1 - age / q.life, q.s, SMOKE);
+      smokePuff(p, x + NL(t - age, 0.8, S2 + 60) * (2 + 3 * age), y, 1 - age / q.life, q.s, SMOKE2);
     });
     const puffs = [];
     looped(t, D, T2.length * 24, S2 + 200, (r, j) => {
@@ -116865,11 +116963,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     },
     war: {
       engageShare: 0.2,
-      music: { files: ["battle/musics/war_music_1.mp3", "battle/musics/Storming_the_Breach.mp3", "battle/musics/Steel_Against_the_Sky.mp3", "battle/musics/The_General_s_Heavy_Call.mp3"], volume: 0.6 },
+      music: { volume: 0.6 },
       start: { file: "battle/battle_start.mp3", volume: 0.7 }
     },
     wolves: { files: ["envairoment/wolf_1.mp3", "envairoment/wolf_2.mp3", "envairoment/wolf_3.mp3"], volume: 0.5, maxHowls: 3, from: 0.03, to: 0.3, spacing: 0.07 },
-    peace: { files: ["envairoment/musics/The_Valley_After_Rain.mp3", "envairoment/musics/Valley_of_Still_Water.mp3", "envairoment/musics/peace_3.mp3"], volume: 0.5, firstDelay: 3, gapMin: 120, gapMax: 300 },
+    peace: { volume: 0.5, firstDelay: 3, gapMin: 120, gapMax: 300 },
     fade: 1.5
   };
 
@@ -118012,6 +118110,25 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   };
 
+  // src/data/musics.gen.json
+  var musics_gen_default = {
+    peace: [
+      "envairoment/musics/The_Valley_After_Rain.mp3",
+      "envairoment/musics/Valley_of_Still_Water.mp3",
+      "envairoment/musics/Where_the_River_Bends_2.mp3",
+      "envairoment/musics/peace_3.mp3"
+    ],
+    war: [
+      "battle/musics/Iron_Against_Armor.mp3",
+      "battle/musics/March_of_the_Iron_Phalanx.mp3",
+      "battle/musics/Steel_Against_the_Sky.mp3",
+      "battle/musics/Storming_the_Breach.mp3",
+      "battle/musics/Tactical_Onslaught.mp3",
+      "battle/musics/The_General_s_Heavy_Call.mp3",
+      "battle/musics/war_music_1.mp3"
+    ]
+  };
+
   // src/audio/audio.ts
   var MAX_LIVE2 = 14;
   var BAGS = /* @__PURE__ */ new Map();
@@ -118207,7 +118324,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     /** A warning from the game: wolves come (a howl, always heard, wherever the camera is) or a village raids us (the battle sting, once). */
     alert(kind) {
       const now = performance.now() / 1e3;
-      if (kind === "raid") this.play(sounds_default.war.start.file, sounds_default.war.start.volume, 0, now, false, "mus", "raidalert");
+      if (kind === "raid" || kind === "beast") this.play(sounds_default.war.start.file, sounds_default.war.start.volume, 0, now, false, "mus", "raidalert");
+      else if (kind === "clear") this.play(sounds_default.end.won.files[0], sounds_default.end.won.volume, 0, now, false, "mus", "eventover");
       else {
         const w = sounds_default.wolves;
         this.play(pick(w.files), w.volume, 0, now, false, "amb", "wolfalert");
@@ -118309,7 +118427,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       if (!peaceful) return;
       this.peaceWait -= dt;
       if (this.peaceWait > 0) return;
-      const a = new Audio(sounds_default.dir + bagPick("peace", sounds_default.peace.files));
+      const a = new Audio(sounds_default.dir + bagPick("peace", musics_gen_default.peace));
       a.volume = 0;
       this.peaceVol = 0;
       this.peaceEl = a;
@@ -118372,7 +118490,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       this.nearNow.clear();
       if (this.musicOn && this.warScreen) {
-        this.warTrack ?? (this.warTrack = bagPick("war", sounds_default.war.music.files));
+        this.warTrack ?? (this.warTrack = bagPick("war", musics_gen_default.war));
         want.set(this.warTrack, sounds_default.war.music.volume * sounds_default.master * this.vol.mus);
       }
       for (const file of want.keys()) if (!this.beds.has(file)) {
@@ -120458,8 +120576,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
     ],
     recurring: {
-      fromDay: 36,
-      everyDays: 3,
+      fromDay: 20,
+      everyDays: 2,
       nightChance: 0.5,
       leadDays: [
         2,
@@ -120471,8 +120589,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           species: "wolf",
           weight: 3,
           base: 2,
-          perSoldier: 0.15,
-          max: 10,
+          perSoldier: 0.3,
+          max: 16,
           warn: "Ti\u1EBFng h\xFA vang l\xEAn t\u1EEB xa trong \u0111\xEAm..."
         },
         {
@@ -120480,28 +120598,28 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           species: "bear",
           weight: 1,
           base: 1,
-          perSoldier: 0.03,
-          max: 3,
+          perSoldier: 0.08,
+          max: 5,
           warn: "Nh\u1EEFng v\u1EBFt c\xE0o s\xE2u tr\xEAn th\xE2n c\xE2y quanh l\xE0ng: c\xF3 g\u1EA5u."
         },
         {
           kind: "raid",
           weight: 3,
-          power: 0.6,
+          power: 0.9,
           warn: "Kh\xF3i b\u1ED1c l\xEAn t\u1EEB ph\xEDa l\xE0ng th\xF9 \u0111\u1ECBch, c\xF3 l\u1EBD h\u1ECD \u0111ang chu\u1EA9n b\u1ECB \u0111\xE1nh ta."
         }
       ]
     },
     hostile: {
       fromDay: 18,
-      raidEveryDays: 12,
+      raidEveryDays: 8,
       raidBelow: 50,
       power: {
-        weak: 0.2,
-        normal: 0.25,
-        medium: 0.35,
-        boss: 0.4,
-        rebel: 0.4
+        weak: 0.35,
+        normal: 0.5,
+        medium: 0.7,
+        boss: 0.9,
+        rebel: 0.9
       }
     }
   };
@@ -120639,6 +120757,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     sim2.tribes.push(tribe);
     topUp(sim2, tribe);
     rescaleTribe(sim2, tribe);
+  }
+  function tribeSeen(sim2, t) {
+    const N = sim2.world.size, st = sim2.fog.state;
+    if (st[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0) return true;
+    return t.props.some((p) => st[Math.floor(p.y) * N + Math.floor(p.x)] > 0);
   }
   function tribeHostile(sim2, id) {
     const t = tribeOf(sim2, id);
@@ -121046,7 +121169,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     sim2.say(`Qu\xE2n ${t.def.name} (${weapons.length} ng\u01B0\u1EDDi) \u0111ang ti\u1EBFn v\xE0o l\xE0ng!`);
   }
   function launchBeasts(sim2, size, species = "wolf", night) {
-    const fire = sim2.campfire(), s = sim2.world.start, cx = fire ? fire.x + 1 : s.x, cy = fire ? fire.y + 1 : s.y;
+    const fire = sim2.campfire(), s = sim2.world.start, cx = fire ? fire.x + 1 : s.x, cy = fire ? fire.y + 1 : s.y, herd = 9e3 + sim2.nextRaid;
     let placed = 0;
     const ang0 = sim2.frnd() * Math.PI * 2;
     for (let tries = 0; tries < 80 && placed < size; tries++) {
@@ -121059,8 +121182,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       placed++;
     }
     sim2.nextRaid++;
-    if (placed && species === "wolf") sim2.addAlert("wolf");
+    if (placed) sim2.addAlert(species === "wolf" ? "wolf" : "beast");
     if (placed) sim2.say(`${species === "wolf" ? "B\u1EA7y s\xF3i \u0111\xF3i" : `${ANIMALS[species].name} (${placed} con)`} k\xE9o t\u1EDBi quanh l\xE0ng! \u0110\u1ED1t l\u1EEDa v\xE0 gi\u1EEF d\xE2n g\u1EA7n \u0111\u1ED1ng l\u1EEDa.`);
+    return placed ? herd : null;
   }
   var armyWeapons = (army3) => Object.entries(army3).flatMap(([w, n]) => Array.from({ length: n }, () => w));
   function initEvents(sim2, from = 0) {
@@ -121117,6 +121241,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   }
   function tickEvents(sim2) {
     for (const e of sim2.events) {
+      if (e.live) {
+        const over = e.kind === "beasts" ? !sim2.animals.some((a) => a.herd === e.herd && a.raid && a.hp > 0 && a.state !== "dead") : !(e.tribe && tribeOf(sim2, e.tribe)?.raid);
+        if (over) {
+          e.live = false;
+          sim2.say(e.kind === "beasts" ? "B\u1EA7y th\xFA \u0111\xE3 b\u1ECB \u0111\u1EA9y l\xF9i: l\xE0ng y\xEAn tr\u1EDF l\u1EA1i." : "Cu\u1ED9c t\u1EADp k\xEDch \u0111\xE3 k\u1EBFt th\xFAc.");
+          sim2.addAlert("clear");
+        }
+      }
       if (e.fired) continue;
       if (e.kind === "raid" && e.power !== void 0 && e.tribe && e.sizeDay !== sim2.day) {
         const t = tribeOf(sim2, e.tribe);
@@ -121133,12 +121265,19 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const ready = e.night ? sim2.restTime : sim2.tod >= 0.28 && !sim2.restTime;
       if (!ready) continue;
       e.fired = true;
-      if (e.kind === "beasts") launchBeasts(sim2, e.size, e.species ?? "wolf", e.night);
-      else if (e.tribe) {
+      if (e.kind === "beasts") {
+        const herd = launchBeasts(sim2, e.size, e.species ?? "wolf", e.night);
+        if (herd !== null) {
+          e.live = true;
+          e.herd = herd;
+        }
+      } else if (e.tribe) {
         const t = tribeOf(sim2, e.tribe);
         if (t && t.state === "free" && t.relation < DIFF.capture.gift.friendAt) {
-          if (raidAdvised(sim2, t, e.size) || e.fireDay >= e.warnDay + 4) e.army ? launchCustomRaid(sim2, t, armyWeapons(e.army), e.armor ?? true, false, e.night) : launchRaid(sim2, t, e.size, e.night);
-          else {
+          if (raidAdvised(sim2, t, e.size) || e.fireDay >= e.warnDay + 4) {
+            e.army ? launchCustomRaid(sim2, t, armyWeapons(e.army), e.armor ?? true, false, e.night) : launchRaid(sim2, t, e.size, e.night);
+            e.live = !!t.raid;
+          } else {
             e.fired = false;
             e.fireDay = sim2.day + 1;
             e.warned = true;
@@ -121982,6 +122121,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return h3 ? levelDef(h3).craftSpeed : 1;
   }
 
+  // src/data/barter.json
+  var barter_default = {
+    slip: 0.05,
+    resetDays: { default: 2, food: 1, hide: 3, bone: 3 },
+    keepShare: 0.3,
+    foodKeepDays: 3
+  };
+
   // src/sim/model.ts
   var NAMES_M = ["Bo", "R\xF4", "Gia", "Mun", "L\xF4", "T\xF9", "\u0110a"];
   var NAMES_F = ["Tia", "Noa", "Ma", "Pa", "K\xEA", "Ly", "Sa"];
@@ -122277,8 +122424,17 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       planDeliver(sim2, v);
       return;
     }
+    warnExhausted(sim2, def.node);
     freeTrapped(sim2, v, sim2.buildings.filter((b) => b.done && holdsGoods(b)).sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y)));
     wait(sim2, v, 2);
+  }
+  var NODE_WORD = { tree: "c\xE2y", rock: "\u0111\xE1", bush: "b\u1EE5i qu\u1EA3" };
+  function warnExhausted(sim2, kind) {
+    if (sim2.time - (sim2.noNodeWarn[kind] ?? -999) < nodes_default.warnEvery) return;
+    const st = sim2.fog.state;
+    for (const [idx, n] of sim2.world.nodes) if (n.kind === kind && n.amount > 0 && st[idx] > 0) return;
+    sim2.noNodeWarn[kind] = sim2.time;
+    sim2.say(`Xung quanh \u0111\xE2y \u0111\xE3 h\u1EBFt ${NODE_WORD[kind]}: h\xE3y c\u1EED ng\u01B0\u1EDDi \u0111i kh\xE1m ph\xE1. Khi v\xF9ng m\u1EDBi h\u1EBFt s\u01B0\u01A1ng \u0111en, d\xE2n s\u1EBD t\u1EF1 t\u1EDBi \u0111\xF3 khai th\xE1c.`);
   }
   function findNode2(sim2, v, kind) {
     const N = sim2.world.size, vx = Math.floor(v.x), vy = Math.floor(v.y);
@@ -122288,10 +122444,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     };
     const cands = [];
     if (v.prefer >= 0 && ok(v.prefer)) cands.push([-1, v.prefer]);
+    const fx = sim2.gatherFocus.x, fy = sim2.gatherFocus.y, focus = fx !== void 0 && fy !== void 0;
     for (const [idx, n] of sim2.world.nodes) {
       if (n.kind !== kind || n.amount <= 0 || n.workers >= 2 || n.sides === 3 || idx === v.prefer || !ok(idx)) continue;
-      const d = (idx % N - vx) ** 2 + ((idx / N | 0) - vy) ** 2;
-      if (d <= 70 * 70) cands.push([d, idx]);
+      const x = idx % N, y = idx / N | 0, d = (x - vx) ** 2 + (y - vy) ** 2;
+      if (d > nodes_default.searchRadius ** 2) continue;
+      const df = focus ? (x - fx) ** 2 + (y - fy) ** 2 : Infinity;
+      cands.push([df <= 30 * 30 ? df - 1e7 : d, idx]);
     }
     cands.sort((a, b) => a[0] - b[0]);
     for (let c = 0; c < Math.min(4, cands.length); c++) {
@@ -122483,6 +122642,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   };
   var SIGHT = 14;
   var HOME = 7;
+  var SMOKE = 45;
+  var SMOKE_BLUR = 9;
   var COMPASS = ["\u0110\xF4ng", "\u0110\xF4ng Nam", "Nam", "T\xE2y Nam", "T\xE2y", "T\xE2y B\u1EAFc", "B\u1EAFc", "\u0110\xF4ng B\u1EAFc"];
   var isFound = (sim2, tribe) => sim2.dev.freeBuild || sim2.sightings.some((s) => s.tribe === tribe && s.reported);
   function whereIs(sim2, tribe) {
@@ -122513,6 +122674,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       if (t.state === "destroyed" || sim2.sightings.some((s) => s.tribe === t.id)) continue;
       const finder = sim2.villagers.find((v) => v.health > 0 && v.inside === null && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < SIGHT);
       if (finder) sim2.sightings.push({ tribe: t.id, by: finder.id, at: sim2.time, reported: false });
+    }
+    for (const t of sim2.tribes) {
+      if (t.state === "destroyed" || sim2.smoke[t.id] || sim2.tribeSeen(t)) continue;
+      const near2 = sim2.villagers.find((v) => v.health > 0 && v.inside === null && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < SMOKE);
+      if (!near2) continue;
+      const at = { x: Math.round(t.camp.x + (sim2.frnd() - 0.5) * 2 * SMOKE_BLUR), y: Math.round(t.camp.y + (sim2.frnd() - 0.5) * 2 * SMOKE_BLUR) };
+      sim2.smoke[t.id] = at;
+      const fire2 = sim2.campfire(), fx = fire2 ? fire2.x + 1 : sim2.world.start.x, fy = fire2 ? fire2.y + 1 : sim2.world.start.y, dx = at.x - fx, dy = at.y - fy;
+      sim2.say(`${near2.name} ng\u1EEDi th\u1EA5y kh\xF3i b\u1EBFp: c\xF3 l\xE0ng c\xE1ch \u0111\xE2y kho\u1EA3ng ${Math.round(Math.hypot(dx, dy) / 5) * 5} \xF4 v\u1EC1 ph\xEDa ${COMPASS[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8]}. Xem b\u1EA3n \u0111\u1ED3 \u{1F5FA}.`);
     }
   }
   function scoutLevel(sim2) {
@@ -123132,13 +123302,34 @@ ${risk.lines.join("\n")}`);
   function pay(sim2, cost, sign = -1) {
     for (const k of Object.keys(cost)) sim2.stock[k] += sign * (cost[k] ?? 0);
   }
-  function barter(sim2, res) {
-    const n = BARTER[res];
-    if (sim2.stock[res] < n) return `C\u1EA7n ${n} ${RES_NAME[res].toLowerCase()} \u0111\u1EC3 \u0111\u1ED5i l\u1EA5y 1 ${RES_NAME.coin.toLowerCase()}`;
-    if (sim2.stock.coin >= sim2.capacity()) return `Kho \u0111\xE3 \u0111\u1EA7y ${RES_NAME.coin.toLowerCase()}`;
-    sim2.stock[res] -= n;
-    sim2.stock.coin += 1;
-    return null;
+  function barterPrice(sim2, res) {
+    const heat = sim2.barterHeat[res], sold = heat && sim2.time < heat.until ? heat.sold : 0;
+    return Math.ceil(BARTER[res] * (1 + barter_default.slip * sold));
+  }
+  function barterKeep(sim2, res) {
+    return res === "food" ? Math.ceil(foodNeed(sim2) * barter_default.foodKeepDays) : Math.ceil(sim2.capacity(res) * barter_default.keepShare);
+  }
+  function barter(sim2, res, coins = 1, keep = 0) {
+    const coin = RES_NAME.coin.toLowerCase(), name = RES_NAME[res].toLowerCase();
+    let got = 0, why = null;
+    while (got < coins) {
+      const n = barterPrice(sim2, res);
+      if (sim2.stock[res] - n < keep) {
+        why = keep > 0 ? `Kh\xF4ng c\xF2n ${name} d\u01B0 (\u0111ang gi\u1EEF l\u1EA1i ${keep})` : `C\u1EA7n ${n} ${name} \u0111\u1EC3 \u0111\u1ED5i l\u1EA5y 1 ${coin}`;
+        break;
+      }
+      if (sim2.stock.coin >= sim2.capacity()) {
+        why = `Kho \u0111\xE3 \u0111\u1EA7y ${coin}`;
+        break;
+      }
+      sim2.stock[res] -= n;
+      sim2.stock.coin += 1;
+      got++;
+      const heat = sim2.barterHeat[res];
+      if (!heat || sim2.time >= heat.until) sim2.barterHeat[res] = { sold: 1, until: sim2.time + (barter_default.resetDays[res] ?? barter_default.resetDays.default) * sim2.dayLen };
+      else heat.sold++;
+    }
+    return got > 0 ? null : why;
   }
   function foodNeed(sim2) {
     const level = sim2.campfire()?.level ?? 1;
@@ -123879,10 +124070,15 @@ ${risk.lines.join("\n")}`);
     const people = sim2.mine(ids);
     if (kind && !sim2.hasWorkshop() && !sim2.building("armory")) return "C\u1EA7n c\xF3 Nh\xE0 ch\u1EBF t\u1EA1o ho\u1EB7c Kho v\u0169 kh\xED \u0111\u1EC3 l\u1EA5y \u0111\u1ED3";
     let given = 0, short = false;
+    let wrong = null;
     for (const v of people) {
       const cur = slot === "weapon" ? v.weapon : v.armor;
       if (cur === kind) {
         v.manualGear = true;
+        continue;
+      }
+      if (kind && slot === "weapon" && !canCarry(v, kind)) {
+        wrong = `${v.name} kh\xF4ng d\xF9ng \u0111\u01B0\u1EE3c ${nameOf(kind)}: ${v.job === "fight" && v.arm === "archer" ? "cung th\u1EE7 ch\u1EC9 d\xF9ng v\u0169 kh\xED t\u1EA7m xa" : v.job === "fight" && v.guard && v.post >= 0 ? "l\xEDnh ch\xF2i canh ch\u1EC9 d\xF9ng v\u0169 kh\xED t\u1EA7m xa" : "b\u1ED9 binh v\xE0 k\u1EF5 binh ch\u1EC9 d\xF9ng v\u0169 kh\xED c\u1EADn chi\u1EBFn"}`;
         continue;
       }
       if (kind) {
@@ -123899,6 +124095,7 @@ ${risk.lines.join("\n")}`);
       given++;
       sim2.say(kind ? `${v.name} \u0111\u01B0\u1EE3c ph\xE1t ${nameOf(kind)}.` : `${v.name} tr\u1EA3 l\u1EA1i ${cur ? nameOf(cur) : "\u0111\u1ED3"}.`);
     }
+    if (given === 0 && wrong) return wrong;
     return short && given === 0 ? `Kho h\u1EBFt ${kind ? nameOf(kind) : "\u0111\u1ED3"}, h\xE3y ch\u1EBF th\xEAm` : null;
   }
   function autoGear(sim2, ids) {
@@ -123940,6 +124137,60 @@ ${risk.lines.join("\n")}`);
     return true;
   }
   var AUTO_ORDER = false;
+  var AUTO_GEAR = false;
+  function canCarry(v, id) {
+    const w = WEAPONS[id];
+    if (!w) return true;
+    if (v.job !== "fight") return id !== "mace";
+    if (v.guard) return v.post >= 0 ? !!w.ranged : true;
+    return v.arm === "archer" ? !!w.ranged : !w.ranged;
+  }
+  var canRide = (v) => v.job !== "fight" || v.arm === "cavalry";
+  function fitGear(sim2) {
+    for (const v of sim2.villagers) {
+      if (v.team !== "player") continue;
+      if (v.weapon && !canCarry(v, v.weapon)) {
+        sim2.assignGear([v.id], null, "weapon");
+        sim2.say(`${v.name} kh\xF4ng d\xF9ng \u0111\u01B0\u1EE3c v\u0169 kh\xED n\xE0y: tr\u1EA3 v\u1EC1 kho.`);
+      }
+      if (v.mount && !canRide(v)) sim2.assignMount([v.id], null);
+    }
+  }
+  function equipGroup(sim2, ids) {
+    const people = sim2.mine(ids).filter((v) => v.job === "fight" || v.job === "hunt");
+    if (!people.length) return "Kh\xF4ng c\xF3 ai \u0111\u1EC3 trang b\u1ECB";
+    if (!sim2.hasWorkshop() && !sim2.building("armory")) return "C\u1EA7n c\xF3 Nh\xE0 ch\u1EBF t\u1EA1o ho\u1EB7c Kho v\u0169 kh\xED \u0111\u1EC3 l\u1EA5y \u0111\u1ED3";
+    let given = 0;
+    const run = (pool, items, rank, held, may, stock, give2) => {
+      const order = [...items].sort((a, b) => rank(b) - rank(a));
+      for (let guard = 0; guard < 500; guard++) {
+        let moved = false;
+        for (const id of order) {
+          if (stock(id) <= 0) continue;
+          const low = pool.filter((v) => may(v, id) && held(v) < rank(id)).sort((a, b) => held(a) - held(b))[0];
+          if (low && give2(low, id)) {
+            given++;
+            moved = true;
+            break;
+          }
+        }
+        if (!moved) return;
+      }
+    };
+    const wRank = (id) => (WEAPONS[id].tier ?? 1) * 1e3 + WEAPONS[id].damage / WEAPONS[id].cycle;
+    const aRank = (id) => (ARMORS[id].tier ?? 1) * 1e3 + ARMORS[id].defm + ARMORS[id].defr;
+    run(people, [...CRAFTED_WEAPONS], wRank, (v) => v.weapon ? wRank(v.weapon) : 0, canCarry, (id) => sim2.toolCount(id, WEAPONS[id].tier ?? 1), (v, id) => sim2.assignGear([v.id], id, "weapon") === null);
+    run(people, Object.keys(ARMORS), aRank, (v) => v.armor ? aRank(v.armor) : 0, () => true, (id) => sim2.toolCount(id, ARMORS[id].tier ?? 1), (v, id) => sim2.assignGear([v.id], id, "armor") === null);
+    const beasts = people.filter((v) => v.job === "fight" && v.arm === "cavalry");
+    if (beasts.length) {
+      const mRank = (k) => MOUNTS[k].tier;
+      run(beasts, [...MOUNT_KINDS], mRank, (v) => {
+        const k = sim2.mountOf(v);
+        return k ? mRank(k) : 0;
+      }, () => true, (k) => sim2.tamedCount(k), (v, k) => sim2.assignMount([v.id], k) === null);
+    }
+    return given ? `\u0110\xE3 trang b\u1ECB: ${given} m\xF3n cho ${people.length} ng\u01B0\u1EDDi` : "Kho kh\xF4ng c\xF3 g\xEC t\u1ED1t h\u01A1n \u0111\u1EC3 trang b\u1ECB";
+  }
   function planTool(sim2, v, job) {
     const k = TOOL_OF_JOB[job];
     if (!k || !toolLacking(sim2, v, job)) return false;
@@ -123975,7 +124226,8 @@ ${risk.lines.join("\n")}`);
     }
   }
   function restock2(sim2) {
-    if (!sim2.building("armory")) return;
+    fitGear(sim2);
+    if (!AUTO_GEAR || !sim2.building("armory")) return;
     for (const v of sim2.villagers) {
       if (v.team !== "player" || v.job !== "fight" && v.job !== "hunt" || v.manualGear || v.health <= 0 || v.phase === "fight") continue;
       if (v.inside === null && v.phase !== "sleep") continue;
@@ -123998,7 +124250,7 @@ ${risk.lines.join("\n")}`);
     sim2.say(`${v.name} nh\u1EADn ${TOOL_NAME[k].toLowerCase()} ${TIER_NAME[t].toLowerCase()}.`);
   }
   function planEquipGear(sim2, v) {
-    if (v.job !== "hunt" && v.job !== "fight" || v.phase === "fight" || v.manualGear) return false;
+    if (!AUTO_GEAR || v.job !== "hunt" && v.job !== "fight" || v.phase === "fight" || v.manualGear) return false;
     const armory = sim2.building("armory");
     if (!armory) return false;
     const wantsWeapon = !v.weapon && !!bestWeapon(sim2, v), wantsArmor = !v.armor && !!bestArmor(sim2);
@@ -124025,7 +124277,7 @@ ${risk.lines.join("\n")}`);
     if (!house) return false;
     const have2 = (re) => Object.entries(sim2.toolStock).some(([id2, n]) => n > 0 && re.test(id2)) || sim2.craftQueue.some((id2) => re.test(id2)) || !!house.active && re.test(house.active.id);
     let id = "";
-    const mayCarry = (w) => !(w === "mace" && v.job !== "fight") && (v.job !== "fight" || v.guard || v.arm === "cavalry" || v.arm === "archer" === !!WEAPONS[w].ranged);
+    const mayCarry = (w) => canCarry(v, w);
     if (!v.weapon && !CRAFTED_WEAPONS.some((w) => mayCarry(w) && have2(new RegExp(`^${w}\\d`)))) {
       let bestScore = -1;
       for (const w of CRAFTED_WEAPONS) {
@@ -124052,9 +124304,7 @@ ${risk.lines.join("\n")}`);
     let best = null, bs = cur;
     for (const id of CRAFTED_WEAPONS) {
       if (sim2.toolCount(id, WEAPONS[id].tier ?? 1) <= 0) continue;
-      if (id === "mace" && v.job !== "fight") continue;
-      if (v.job === "fight" && v.guard && v.post >= 0 && !WEAPONS[id].ranged) continue;
-      if (v.job === "fight" && !v.guard && v.arm !== "cavalry" && v.arm === "archer" !== !!WEAPONS[id].ranged) continue;
+      if (!canCarry(v, id)) continue;
       if (score(id) > bs) {
         bs = score(id);
         best = id;
@@ -124175,7 +124425,7 @@ ${risk.lines.join("\n")}`);
     let given = 0, short = false, riders = false;
     for (const v of sim2.mine(ids)) {
       if (v.mount === kind) continue;
-      if (kind && v.job === "fight" && v.arm === "cavalry") {
+      if (kind && v.job === "fight" && v.arm !== "cavalry") {
         riders = true;
         continue;
       }
@@ -124188,12 +124438,12 @@ ${risk.lines.join("\n")}`);
       v.mount = kind;
       given++;
       if (kind) {
-        v.speed = 1.6 + 0.1 * v.stats.agi;
+        if (v.job !== "fight") v.speed = 1.6 + 0.1 * v.stats.agi;
         sim2.say(`${v.name} \u0111\u01B0\u1EE3c giao m\u1ED9t con ${MOUNTS[kind].name.toLowerCase()} \u0111\u1EC3 c\u01B0\u1EE1i.`);
       } else sim2.say(`${v.name} tr\u1EA3 th\xFA v\u1EC1 chu\u1ED3ng.`);
     }
     if (given) return null;
-    return riders ? "K\u1EF5 binh c\u1EE7a Tr\u1EA1i k\u1EF5 th\xFA \u0111\xE3 c\xF3 th\xFA c\u1EE7a tr\u1EA1i" : short ? `Chu\u1ED3ng h\u1EBFt ${kind ? MOUNTS[kind].name.toLowerCase() : "th\xFA"} \u0111\xE3 thu\u1EA7n: h\xE3y thu\u1EA7n th\xEAm` : null;
+    return riders ? "B\u1ED9 binh v\xE0 cung th\u1EE7 kh\xF4ng c\u01B0\u1EE1i th\xFA: ch\u1EC9 k\u1EF5 binh, th\u1EE3 s\u0103n v\xE0 trinh s\xE1t" : short ? `Chu\u1ED3ng h\u1EBFt ${kind ? MOUNTS[kind].name.toLowerCase() : "th\xFA"} \u0111\xE3 thu\u1EA7n: h\xE3y thu\u1EA7n th\xEAm` : null;
   }
 
   // src/sim/commands.ts
@@ -124456,6 +124706,18 @@ ${risk.lines.join("\n")}`);
       v.fight.target = target;
       takeOut(sim2, v);
       keepWatch(sim2, v);
+    }
+    return n;
+  }
+  function orderBreak(sim2, ids, x, y) {
+    const ob = sim2.obstacleAt(x, y);
+    if (!ob || !ob.clear) return 0;
+    let n = 0;
+    for (const v of mine(sim2, ids)) {
+      if (v.job !== "fight" || !sim2.startBreaking(v, ob)) continue;
+      v.prefer = -1;
+      if (v.breaks) v.breaks.ordered = true;
+      n++;
     }
     return n;
   }
@@ -125663,12 +125925,12 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/sim/save.ts
-  var SAVE_VERSION = 31;
+  var SAVE_VERSION = 32;
   var SAVED = {
     /** Single values. */
     scalars: ["era", "time", "dayBase", "timeBase", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "tribeClock", "foodPot", "foodPenalty", "popBonus", "campBonus", "newcomersOpen", "nextEventDay", "conquered", "foodIncome", "foodSeen", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "dayWeather", "weatherAt", "weatherEnd", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
     /** Objects whose keys are filled in place. */
-    records: ["stock", "toolStock", "battle", "yieldNow", "yieldPrev", "ruins", "drafts"],
+    records: ["stock", "toolStock", "battle", "yieldNow", "yieldPrev", "ruins", "drafts", "barterHeat", "smoke", "gatherFocus"],
     /** Lists of plain data. */
     lists: ["warLog", "battleLog", "scoutLosses", "wornTools", "craftQueue", "craftPaid", "tameQueue", "researchQueue", "log", "foodDays", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
     /** Handled by hand below. */
@@ -126019,6 +126281,13 @@ ${risk.lines.join("\n")}`);
       r.notes ?? (r.notes = []);
     }
     return { ...d, version: 31 };
+  };
+  MIGRATIONS[31] = (d) => {
+    var _a, _b, _c;
+    (_a = d.records).barterHeat ?? (_a.barterHeat = {});
+    (_b = d.records).smoke ?? (_b.smoke = {});
+    (_c = d.records).gatherFocus ?? (_c.gatherFocus = {});
+    return { ...d, version: 32 };
   };
 
   // src/sim/roles.ts
@@ -127971,7 +128240,7 @@ ${risk.lines.join("\n")}`);
     v.fight.scan -= dt;
     if (v.fight.scan <= 0) {
       v.fight.scan = 0.4;
-      if (b.kind === "prop" ? v.flinch > 0 && threatsOf(sim2, v, w.range + 1).length : threatsOf(sim2, v, 3.5).length) {
+      if (!b.ordered && (b.kind === "prop" ? v.flinch > 0 && threatsOf(sim2, v, w.range + 1).length : threatsOf(sim2, v, 3.5).length)) {
         stopBreaking(v);
         return false;
       }
@@ -128871,6 +129140,14 @@ ${risk.lines.join("\n")}`);
       this.tribeClock = 0;
       /** The day the next event of the recurring kind is set (tribes.seasonEvent). */
       this.nextEventDay = 0;
+      /** Villages nobody has seen yet whose smoke a villager smelled: roughly where it rises (tribe id → a point some tiles off the camp), drawn on the big map until the village is seen (scouting.tickSightings). */
+      this.smoke = {};
+      /** Where the player asked the gatherers to work (x, y: a point of the big map); empty for no preference (labor.findNode). */
+      this.gatherFocus = {};
+      /** Coins of each good sold lately and when the price falls back (economy.barterPrice). */
+      this.barterHeat = {};
+      /** When each kind of source last ran out in the land the village has seen (labor.warnExhausted): a timer for the warning, not game state. */
+      this.noNodeWarn = {};
       this.lastFullWarn = -999;
       this.lastMatWarn = -999;
       /** Today's and tomorrow's weather (tomorrow is rolled ahead so it can be foretold). */
@@ -129599,8 +129876,25 @@ ${risk.lines.join("\n")}`);
       return dailyYield(this, b);
     }
     /** → economy.barter */
-    barter(res) {
-      return barter(this, res);
+    barter(res, coins = 1, keep = 0) {
+      return barter(this, res, coins, keep);
+    }
+    /** Ask the gatherers to work around a point (tiles) of the map; `null` takes the wish back. */
+    setGatherFocus(at) {
+      delete this.gatherFocus.x;
+      delete this.gatherFocus.y;
+      if (at) {
+        this.gatherFocus.x = Math.round(at.x);
+        this.gatherFocus.y = Math.round(at.y);
+      }
+    }
+    /** → economy.barterPrice */
+    barterPrice(res) {
+      return barterPrice(this, res);
+    }
+    /** → economy.barterKeep */
+    barterKeep(res) {
+      return barterKeep(this, res);
     }
     /** → commands.resetTask */
     resetTask(v) {
@@ -129666,6 +129960,10 @@ ${risk.lines.join("\n")}`);
     orderAttack(ids, target, queue = false) {
       return orderAttack(this, ids, target, queue);
     }
+    /** → commands.orderBreak */
+    orderBreak(ids, x, y) {
+      return orderBreak(this, ids, x, y);
+    }
     /** → commands.orderAttackMove */
     orderAttackMove(ids, x, y, queue = false) {
       return orderAttackMove(this, ids, x, y, queue);
@@ -129705,6 +130003,14 @@ ${risk.lines.join("\n")}`);
     /** → inventory.assignGear */
     assignGear(ids, kind, slot) {
       return assignGear(this, ids, kind, slot);
+    }
+    /** → inventory.equipGroup */
+    equipGroup(ids) {
+      return equipGroup(this, ids);
+    }
+    /** → inventory.canCarry */
+    canCarry(v, weapon) {
+      return canCarry(v, weapon);
     }
     /** → inventory.autoGear */
     autoGear(ids) {
@@ -129892,6 +130198,10 @@ ${risk.lines.join("\n")}`);
     }
     tribeHostile(id) {
       return tribeHostile(this, id);
+    }
+    /** → tribes.tribeSeen */
+    tribeSeen(t) {
+      return tribeSeen(this, t);
     }
     /** → tribes.tribeWilling */
     tribeWilling(id) {
@@ -130754,7 +131064,7 @@ ${risk.lines.join("\n")}`);
         if (this.touches.size === 0) {
           this.endFenceLine();
           if (this.box) {
-            this.boxSelect(this.box, true);
+            this.boxSelect(this.box);
             this.box = null;
           } else if (!this.tapDead && Math.hypot(p.x - t.sx, p.y - t.sy) < 12 && performance.now() - t.t < 600) this.activate(p, true, false);
         }
@@ -130771,7 +131081,7 @@ ${risk.lines.join("\n")}`);
         if (this.placing) this.el.style.cursor = "";
         this.endFenceLine();
         if (this.box) {
-          this.boxSelect(this.box, true);
+          this.boxSelect(this.box);
           this.box = null;
         } else if (l && !l.moved) this.activate(p, false, e.shiftKey || e.ctrlKey);
       }
@@ -130874,14 +131184,14 @@ ${risk.lines.join("\n")}`);
       const b = this.buildingUnder(p), w = this.r.screenToWorld(p.x, p.y);
       const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
       if (this.multi) {
+        if (this.selected.size) {
+          this.command(p, additive);
+          return;
+        }
         if (id !== null) {
           this.toggle(id);
           this.hushCard = false;
           this.onChange();
-          return;
-        }
-        if (this.selected.size && b === null && !seen) {
-          this.command(p, additive);
           return;
         }
       }
@@ -130980,9 +131290,10 @@ ${risk.lines.join("\n")}`);
       }
       this.onChange();
     }
-    boxSelect(b, add) {
+    /** The people inside the box become the group; the group chosen before is let go. */
+    boxSelect(b) {
       const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
-      if (!add) this.selected.clear();
+      this.selected.clear();
       for (const v of this.sim.villagers) {
         if (v.inside !== null || v.inTent) continue;
         const s = this.bodyScreen(v);
@@ -131201,7 +131512,8 @@ ${risk.lines.join("\n")}`);
     command(p, queue = false) {
       if (!this.selected.size) return;
       this.hushCard = true;
-      const w = this.r.screenToWorld(p.x, p.y), ids = [...this.selected];
+      const w = this.r.screenToWorld(p.x, p.y);
+      let ids = [...this.selected];
       if (ids.every((id) => this.sim.scouts.some((m) => m.ids.includes(id)))) {
         this.onToast(ids.length > 1 ? "C\xE1c trinh s\xE1t \u0111ang l\xE0m nhi\u1EC7m v\u1EE5: \u0111\u1EE3i h\u1ECD v\u1EC1" : "Trinh s\xE1t \u0111ang l\xE0m nhi\u1EC7m v\u1EE5: \u0111\u1EE3i h\u1ECD v\u1EC1");
         return;
@@ -131228,6 +131540,23 @@ ${risk.lines.join("\n")}`);
         this.ordered(ids);
         this.onChange();
         return;
+      }
+      if (this.multi) {
+        const fighters = this.fighters(), N = this.sim.world.size, raw = { x: Math.floor(w.x / TILE), y: Math.floor(w.y / TILE) };
+        const hit = fighters.length ? [this.pickTile(w.x, w.y), raw].find((c) => this.sim.world.inBounds(c.x, c.y) && this.sim.fog.state[c.y * N + c.x] !== 0 && this.sim.obstacleAt(c.x, c.y)?.clear) : void 0;
+        if (hit) {
+          const label2 = this.sim.obstacleAt(hit.x, hit.y).label;
+          if (this.sim.orderBreak(fighters, hit.x, hit.y)) {
+            this.onToast(`T\u1EA5n c\xF4ng ${label2}`);
+            this.markers.push({ x: hit.x * TILE + TILE / 2, y: hit.y * TILE + TILE / 2, age: 0 });
+            this.ordered(fighters);
+            ids = ids.filter((id) => !fighters.includes(id));
+            if (!ids.length) {
+              this.onChange();
+              return;
+            }
+          }
+        }
       }
       const { x: tx, y: ty } = this.pickTile(w.x, w.y);
       if (!this.sim.world.inBounds(tx, ty)) return;
@@ -132278,20 +132607,135 @@ ${risk.lines.join("\n")}`);
       this.builds = -1;
       this.drawn = 0;
       this.frame = 0;
+      // ---- zoom and pan of the big map: the canvas is scaled and moved inside its frame ----
+      this.zoom = 1;
+      this.tx = 0;
+      this.ty = 0;
+      /** The point (tiles) chosen on the big map. */
+      this.point = null;
       this.N = sim2.world.size;
       this.base.width = this.base.height = mini.width = mini.height = big.width = big.height = this.N;
       this.bctx = this.base.getContext("2d");
       mini.addEventListener("click", () => this.open());
-      big.addEventListener("click", () => this.close());
+      this.bindView();
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) this.close();
       });
+      this.info = overlay.querySelector("#mapInfo");
+      this.gatherBtn = overlay.querySelector("#btnMapGather");
+      this.clearBtn = overlay.querySelector("#btnMapClear");
+      this.gatherBtn.addEventListener("click", () => {
+        if (!this.point) return;
+        this.sim.setGatherFocus(this.point);
+        this.ctl.onToast("D\xE2n khai th\xE1c s\u1EBD \u01B0u ti\xEAn quanh \u0111i\u1EC3m n\xE0y");
+        this.describe();
+      });
+      this.clearBtn.addEventListener("click", () => {
+        this.sim.setGatherFocus(null);
+        this.ctl.onToast("D\xE2n khai th\xE1c l\u1EA1i ch\u1ECDn n\u01A1i g\u1EA7n nh\u1EA5t");
+        this.describe();
+      });
+    }
+    applyView() {
+      const w = this.big.parentElement.clientWidth, h3 = this.big.parentElement.clientHeight;
+      this.tx = Math.min(0, Math.max(w - w * this.zoom, this.tx));
+      this.ty = Math.min(0, Math.max(h3 - h3 * this.zoom, this.ty));
+      this.big.style.transformOrigin = "0 0";
+      this.big.style.transform = `translate(${this.tx}px, ${this.ty}px) scale(${this.zoom})`;
+    }
+    /** Zoom by `f` around the point (cx, cy) of the frame, so that the spot under it stays put. */
+    zoomAt(cx, cy, f) {
+      const z = Math.min(24, Math.max(1, this.zoom * f)), k = z / this.zoom;
+      this.tx = cx - (cx - this.tx) * k;
+      this.ty = cy - (cy - this.ty) * k;
+      this.zoom = z;
+      this.applyView();
+    }
+    bindView() {
+      const frame2 = this.big.parentElement, ptrs = /* @__PURE__ */ new Map();
+      let moved = 0, pinch = 0;
+      const rel = (x, y) => {
+        const r = frame2.getBoundingClientRect();
+        return { x: x - r.left, y: y - r.top };
+      };
+      this.big.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const p = rel(e.clientX, e.clientY);
+        this.zoomAt(p.x, p.y, e.deltaY < 0 ? 1.25 : 0.8);
+      }, { passive: false });
+      this.big.addEventListener("pointerdown", (e) => {
+        this.big.setPointerCapture(e.pointerId);
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (ptrs.size === 1) moved = 0;
+        pinch = 0;
+      });
+      this.big.addEventListener("pointermove", (e) => {
+        const p = ptrs.get(e.pointerId);
+        if (!p) return;
+        if (ptrs.size === 1) {
+          moved += Math.abs(e.clientX - p.x) + Math.abs(e.clientY - p.y);
+          if (moved > 6) {
+            this.tx += e.clientX - p.x;
+            this.ty += e.clientY - p.y;
+            this.applyView();
+          }
+        }
+        p.x = e.clientX;
+        p.y = e.clientY;
+        if (ptrs.size === 2) {
+          const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), m = rel((a.x + b.x) / 2, (a.y + b.y) / 2);
+          moved = 99;
+          if (pinch > 0) this.zoomAt(m.x, m.y, d / pinch);
+          pinch = d;
+        }
+      });
+      const up = (e) => {
+        const had = ptrs.delete(e.pointerId);
+        pinch = 0;
+        if (had && ptrs.size === 0 && moved <= 6 && e.type === "pointerup") this.pick(e);
+      };
+      this.big.addEventListener("pointerup", up);
+      this.big.addEventListener("pointercancel", up);
+      const by = (sel, f) => this.overlay.querySelector(sel)?.addEventListener("click", () => {
+        if (f === null) {
+          this.zoom = 1;
+          this.tx = this.ty = 0;
+          this.applyView();
+        } else this.zoomAt(frame2.clientWidth / 2, frame2.clientHeight / 2, f);
+      });
+      by("#btnMapZoomIn", 1.5);
+      by("#btnMapZoomOut", 1 / 1.5);
+      by("#btnMapZoomReset", null);
+    }
+    pick(e) {
+      const r = this.big.getBoundingClientRect();
+      this.point = { x: Math.floor((e.clientX - r.left) / r.width * this.N), y: Math.floor((e.clientY - r.top) / r.height * this.N) };
+      this.describe();
+    }
+    /** What is known of the chosen point, and the buttons that fit it. */
+    describe() {
+      const { sim: sim2, N } = this, p = this.point, focus = sim2.gatherFocus.x !== void 0;
+      this.clearBtn.disabled = !focus;
+      if (!p || p.x < 0 || p.y < 0 || p.x >= N || p.y >= N) {
+        this.gatherBtn.disabled = true;
+        this.info.textContent = focus ? "D\xE2n khai th\xE1c \u0111ang \u01B0u ti\xEAn quanh d\u1EA5u \u26CF." : "Ch\u1EA1m v\xE0o b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn m\u1ED9t \u0111i\u1EC3m.";
+        return;
+      }
+      const st = sim2.fog.state[p.y * N + p.x], fire = sim2.campfire(), fx = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
+      const dist2 = Math.round(Math.hypot(p.x - fx, p.y - fy)), left = { tree: 0, rock: 0, bush: 0 };
+      if (st > 0) {
+        for (const [idx, n] of sim2.world.nodes) if (n.amount > 0 && Math.abs(idx % N - p.x) <= 12 && Math.abs((idx / N | 0) - p.y) <= 12 && sim2.fog.state[idx] > 0) left[n.kind]++;
+      }
+      this.gatherBtn.disabled = st === 0;
+      this.info.textContent = st === 0 ? `C\xE1ch \u0111\u1ED1ng l\u1EEDa ${dist2} \xF4 \xB7 v\xF9ng ch\u01B0a bi\u1EBFt: ch\u1ECDn d\xE2n r\u1ED3i ch\u1EA1m \u0111\u1EA5t \u1EDF r\xECa v\xF9ng s\xE1ng \u0111\u1EC3 \u0111i kh\xE1m ph\xE1.` : `C\xE1ch \u0111\u1ED1ng l\u1EEDa ${dist2} \xF4 \xB7 quanh \u0111\xE2y: ${left.tree} c\xE2y, ${left.rock} \u0111\xE1, ${left.bush} b\u1EE5i qu\u1EA3.`;
     }
     get isOpen() {
       return !this.overlay.hidden;
     }
     open() {
       this.overlay.hidden = false;
+      this.applyView();
+      this.describe();
     }
     close() {
       this.overlay.hidden = true;
@@ -132318,9 +132762,44 @@ ${risk.lines.join("\n")}`);
       const { sim: sim2, N } = this, seen = (x2, y2) => sim2.fog.state[Math.floor(y2) * N + Math.floor(x2)] === 2;
       ctx2.drawImage(this.base, 0, 0);
       for (const t of sim2.tribes) {
-        if (sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] === 0) continue;
+        if (!sim2.tribeSeen(t)) continue;
         ctx2.fillStyle = t.state === "destroyed" ? "#555" : t.state === "free" ? sim2.tribeHostile(t.id) ? "#e0452a" : "#e0a22a" : "#6fc06f";
         ctx2.fillRect(t.camp.x - dot, t.camp.y - dot, dot * 2, dot * 2);
+      }
+      ctx2.font = `${Math.round(dot * 5)}px sans-serif`;
+      ctx2.textAlign = "center";
+      for (const t of sim2.tribes) {
+        const s = sim2.smoke[t.id];
+        if (!s || sim2.tribeSeen(t)) continue;
+        ctx2.strokeStyle = "rgba(220,220,230,.55)";
+        ctx2.lineWidth = 1;
+        ctx2.beginPath();
+        ctx2.arc(s.x, s.y, 9, 0, Math.PI * 2);
+        ctx2.stroke();
+        ctx2.fillStyle = "#e8e8f0";
+        ctx2.fillText("\u2601", s.x, s.y + dot * 1.5);
+      }
+      if (this.isOpen) {
+        ctx2.fillStyle = "#ffffff";
+        ctx2.font = `${Math.round(dot * 4)}px sans-serif`;
+        for (const t of sim2.tribes) if (sim2.tribeSeen(t) && t.state !== "destroyed") ctx2.fillText(t.def.name, t.camp.x, t.camp.y - dot * 2.2);
+        const f = sim2.campfire();
+        if (f) {
+          ctx2.fillStyle = "#ffd24a";
+          ctx2.fillText("\u{1F525}", f.x + 1, f.y);
+        }
+        if (sim2.gatherFocus.x !== void 0) {
+          ctx2.fillStyle = "#ffffff";
+          ctx2.font = `${Math.round(dot * 6)}px sans-serif`;
+          ctx2.fillText("\u26CF", sim2.gatherFocus.x, sim2.gatherFocus.y);
+        }
+        if (this.point) {
+          ctx2.strokeStyle = "#ffffff";
+          ctx2.lineWidth = 1;
+          ctx2.beginPath();
+          ctx2.arc(this.point.x, this.point.y, 5, 0, Math.PI * 2);
+          ctx2.stroke();
+        }
       }
       ctx2.fillStyle = "#ffffff";
       for (const v of sim2.villagers) if (v.inside === null && !v.inTent) ctx2.fillRect(v.x - dot / 2, v.y - dot / 2, dot, dot);
@@ -132339,7 +132818,7 @@ ${risk.lines.join("\n")}`);
       this.frame++;
       if (this.isOpen) {
         this.redrawBase();
-        this.paint(this.big.getContext("2d"), 2.2);
+        this.paint(this.big.getContext("2d"), 2.2 / Math.pow(this.zoom, 0.6));
         return;
       }
       if (this.frame % 3) return;
@@ -133073,19 +133552,12 @@ ${risk.lines.join("\n")}`);
       const addGear = (slot, label2, kinds) => {
         const pick3 = h("select", { class: "sm", "aria-label": label2, title: `${label2}: l\u1EA5y t\u1EEB kho X\u01B0\u1EDFng, ho\u1EB7c tr\u1EA3 v\u1EC1 kho`, onchange: () => {
           if (pick3.value === "") return;
-          if (pick3.value === "auto") {
-            const e2 = sim2.autoGear(ids());
-            if (e2) c.toast(e2);
-            else after();
-            ctl2.onChange();
-            return;
-          }
           const e = sim2.assignGear(ids(), pick3.value === "none" ? null : pick3.value, slot);
           if (e) c.toast(e);
           else after();
           ctl2.onChange();
         } });
-        pick3.append(h("option", { value: "", text: "\u2014 ch\u1ECDn \u2014", hidden: true }), h("option", { value: "auto" }), h("option", { value: "none" }), ...kinds.map((k) => h("option", { value: k })));
+        pick3.append(h("option", { value: "", text: "\u2014 ch\u1ECDn \u2014", hidden: true }), h("option", { value: "none" }), ...kinds.map((k) => h("option", { value: k })));
         this.gearSel.push({ pick: pick3, slot, label: label2, kinds });
         gearRow.append(h("div", { class: "row" }, h("div", { class: "nm", text: label2 }), pick3));
       };
@@ -133158,18 +133630,19 @@ ${risk.lines.join("\n")}`);
       if (!chosen.length) return;
       const sim0 = this.c.sim, v = chosen[0], w = v.weapon ? WEAPONS[v.weapon].name : "tay kh\xF4ng";
       for (const g of this.gearSel) {
-        const auto = chosen.every((o) => !o.manualGear), cur = new Set(chosen.map((o) => (g.slot === "weapon" ? o.weapon : o.armor) ?? "none")), want = auto ? "auto" : cur.size === 1 ? [...cur][0] : "";
+        const cur = new Set(chosen.map((o) => (g.slot === "weapon" ? o.weapon : o.armor) ?? "none")), want = cur.size === 1 ? [...cur][0] : "";
         g.pick.querySelectorAll("option").forEach((op) => {
           if (op.value === "") return;
-          const text = op.value === "auto" ? "T\u1EF1 \u0111\u1ED9ng" : op.value === "none" ? "Kh\xF4ng c\xF3" : `${g.slot === "armor" ? ARMORS[op.value].name : WEAPONS[op.value].name} (${sim0.toolCount(op.value, g.slot === "armor" ? ARMORS[op.value].tier ?? 1 : WEAPONS[op.value].tier ?? 1)})`;
+          if (g.slot === "weapon" && op.value !== "none") op.hidden = chosen.some((o) => !sim0.canCarry(o, op.value));
+          const text = op.value === "none" ? "Kh\xF4ng c\xF3" : `${g.slot === "armor" ? ARMORS[op.value].name : WEAPONS[op.value].name} (${sim0.toolCount(op.value, g.slot === "armor" ? ARMORS[op.value].tier ?? 1 : WEAPONS[op.value].tier ?? 1)})`;
           if (op.textContent !== text) op.textContent = text;
         });
         if (g.pick.value !== want && document.activeElement !== g.pick) g.pick.value = want;
       }
       this.gear.innerHTML = `V\u0169 kh\xED <b>${w}</b> \xB7 Gi\xE1p <b>${v.armor ? ARMORS[v.armor].name : "\u2014"}</b>${v.armor ? ` (${armorText(ARMORS[v.armor], false)})` : ""}${v.leader ? " \xB7 <b>Th\u1EE7 l\u0129nh</b>" : ""}`;
-      const canRide = chosen.every((o) => o.job === "fight" && o.arm !== "cavalry" || o.job === "hunt" || o.job === "scout");
-      this.mountSec.hidden = !canRide;
-      if (canRide) {
+      const canRide2 = chosen.every((o) => o.job === "fight" && o.arm === "cavalry" || o.job === "hunt" || o.job === "scout");
+      this.mountSec.hidden = !canRide2;
+      if (canRide2) {
         const kinds2 = new Set(chosen.map((o) => o.mount ?? "none")), want = kinds2.size === 1 ? [...kinds2][0] : "";
         this.mountPick.querySelectorAll("option").forEach((op) => {
           if (op.value === "") return;
@@ -133781,7 +134254,7 @@ ${risk.lines.join("\n")}`);
         ctl2.focusSelection();
         ctl2.closeBuilding();
       });
-      const applyAll = h("button", { class: "sm primary", text: "\xC1p d\u1EE5ng cho c\u1EA3 nh\xF3m", title: "Cho m\u1ECDi ng\u01B0\u1EDDi c\xF9ng ngh\u1EC1 d\xF9ng ca l\xE0m, \u0111u\u1ED1c, c\xF4ng c\u1EE5, v\u0169 kh\xED v\xE0 gi\xE1p gi\u1ED1ng ng\u01B0\u1EDDi n\xE0y", onclick: () => this.applyToGroup() });
+      const applyAll = h("button", { class: "sm primary", text: "\xC1p d\u1EE5ng cho c\u1EA3 nh\xF3m", title: 'Cho m\u1ECDi ng\u01B0\u1EDDi c\xF9ng ngh\u1EC1 d\xF9ng ca l\xE0m, \u0111u\u1ED1c v\xE0 c\xF4ng c\u1EE5 gi\u1ED1ng ng\u01B0\u1EDDi n\xE0y (v\u0169 kh\xED, gi\xE1p, th\xFA c\u01B0\u1EE1i: b\u1EA5m "Trang b\u1ECB" \u1EDF nh\xE0 c\u1EE7a ngh\u1EC1)', onclick: () => this.applyToGroup() });
       this.personView.append(
         h("div", { class: "dhead" }, this.face, h("div", { class: "dwho" }, this.name, this.state), this.where),
         this.detail.body,
@@ -133808,21 +134281,6 @@ ${risk.lines.join("\n")}`);
       if (v.torch) {
         const e = sim2.giveTorch(ids);
         if (e) errs.push(e);
-      }
-      if (v.job === "fight" || v.job === "hunt" || v.job === "scout") {
-        if (v.arm !== "cavalry") {
-          const e = sim2.assignMount(ids, v.mount ?? null);
-          if (e) errs.push(e);
-        }
-        if (v.manualGear) {
-          for (const [item, slot] of [[v.weapon, "weapon"], [v.armor, "armor"]]) {
-            const e = sim2.assignGear(ids, item, slot);
-            if (e) errs.push(e);
-          }
-        } else {
-          const e = sim2.autoGear(ids);
-          if (e) errs.push(e);
-        }
       }
       toast2(errs.length ? errs.join(" \xB7 ") : `\u0110\xE3 \xE1p d\u1EE5ng cho ${ids.length} ng\u01B0\u1EDDi c\xF9ng ngh\u1EC1`);
       ctl2.onChange();
@@ -134167,6 +134625,18 @@ ${risk.lines.join("\n")}`);
           onclick: () => {
             if (allOut) sim2.sendBack(ids);
             else sim2.callOut(ids);
+            this.again();
+          }
+        })));
+      }
+      if ((role === "foot" || role === "cavalry" || role === "archer" || role === "guard" || role === "tower" || role === "hunt") && have2.length > 0) {
+        out.push(h("div", { class: "btns" }, h("button", {
+          class: "sm primary",
+          type: "button",
+          text: "Trang b\u1ECB",
+          title: "Ph\xE1t v\u0169 kh\xED, gi\xE1p v\xE0 th\xFA c\u01B0\u1EE1i \u0111ang c\xF3 trong kho cho m\u1ECDi ng\u01B0\u1EDDi \u1EDF \u0111\xE2y: \u0111\u1ED3 c\u1EA5p cao tr\u01B0\u1EDBc, ai \u0111ang c\u1EA7m \u0111\u1ED3 th\u1EA5p th\xEC \u0111\u1ED5i l\u1EA5y \u0111\u1ED3 cao h\u01A1n",
+          onclick: () => {
+            toast2(sim2.equipGroup(have2.map((v) => v.id)));
             this.again();
           }
         })));
@@ -134657,7 +135127,7 @@ ${risk.lines.join("\n")}`);
         }
         for (const t of sim2.tribes) if (!cards.has(t.id)) cards.set(t.id, make2(t));
         for (const c of cards.values()) {
-          const { t } = c, seen = sim2.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0;
+          const { t } = c, seen = sim2.tribeSeen(t);
           c.card.hidden = !seen;
           if (!seen) continue;
           any = true;
@@ -136934,17 +137404,41 @@ ${risk.lines.join("\n")}`);
       };
       const barter2 = () => {
         const box = h("div", {}, hint("\u0110\u1ED5i ch\xE1c", "\u0110\u1ED5i h\xE0ng l\u1EA5y ti\u1EC1n \u0111\u1EC3 tr\u1EA3 cho nghi\xEAn c\u1EE9u. Ti\u1EC1n c\u0169ng nh\u1EB7t \u0111\u01B0\u1EE3c khi h\xE1i l\u01B0\u1EE3m v\xE0 nh\u1EADn t\u1EEB b\u1ED9 t\u1ED9c c\u1ED1ng n\u1EA1p."));
-        const btns = h("div", { class: "btns" });
-        box.append(btns);
+        box.append(h("p", { class: "sub", text: "B\xE1n c\xE0ng nhi\u1EC1u trong m\u1ED9t l\xFAc, gi\xE1 c\xE0ng \u0111\u1EAFt; gi\xE1 tr\u1EDF l\u1EA1i b\xECnh th\u01B0\u1EDDng sau 1 \u0111\u1EBFn 3 ng\xE0y. Gi\u1EEF n\xFAt \u0111\u1EC3 b\xE1n li\xEAn t\u1EE5c." }));
+        const list = h("div", { class: "barter" });
+        box.append(list);
         for (const res of RES_LIST) {
           if (res === "coin") continue;
-          const btn = h("button", { class: "sm", onclick: () => {
-            const e = sim2.barter(res);
+          const name = h("b", { text: RES_NAME[res] }), price = h("small"), label2 = h("div", { class: "bname" }, name, price), set = [], keys = h("div", { class: "bkeys" }), row = h("div", { class: "brow" }, label2, keys);
+          const sell = (coins, keep) => {
+            const e = sim2.barter(res, coins, keep ? sim2.barterKeep(res) : 0);
             if (e) c.toast(e);
             ctl2.onChange();
-          } });
-          this.barterBtns.push({ res, btn });
-          btns.append(btn);
+            return !e;
+          };
+          const mk = (text, coins, keep = false, title = "") => {
+            const btn = h("button", { class: "sm", text, title });
+            let t = 0, rep = 0;
+            const stop = () => {
+              clearTimeout(t);
+              clearInterval(rep);
+            };
+            btn.addEventListener("pointerdown", (ev) => {
+              if (ev.button !== 0 || btn.disabled) return;
+              if (!sell(coins, keep)) return;
+              if (coins === 1) t = window.setTimeout(() => {
+                rep = window.setInterval(() => {
+                  if (!sell(1, false)) stop();
+                }, 90);
+              }, 350);
+            });
+            for (const ev of ["pointerup", "pointerleave", "pointercancel"]) btn.addEventListener(ev, stop);
+            return btn;
+          };
+          set.push(mk("\xD71", 1), mk("\xD710", 10), mk("\xD7100", 100), mk("T\u1ED1i \u0111a", Infinity, false, "B\xE1n h\u1EBFt, \u0111\u1EBFn khi kho h\u1EBFt h\xE0ng ho\u1EB7c \u0111\u1EA7y ti\u1EC1n"), mk("B\xE1n ph\u1EA7n d\u01B0", Infinity, true, "B\xE1n t\u1EA5t c\u1EA3 tr\u1EEB ph\u1EA7n gi\u1EEF l\u1EA1i cho \u0103n u\u1ED1ng v\xE0 c\xF4ng tr\xECnh"));
+          keys.append(...set);
+          this.barterBtns.push({ res, label: price, set, row });
+          list.append(row);
         }
         return box;
       };
@@ -137304,8 +137798,12 @@ ${risk.lines.join("\n")}`);
         r.bar.style.width = `${Math.min(100, sim2.stock[r.res] / Math.max(1, sim2.capacity(r.res)) * 100)}%`;
       }
       if ((b.kind === "storage" || b.kind === "campfire") && ready) for (const t of this.barterBtns) {
-        t.btn.textContent = `\u0110\u1ED5i ${BARTER[t.res]} ${RES_NAME[t.res].toLowerCase()} \u2192 1 ${RES_NAME.coin.toLowerCase()}`;
-        t.btn.disabled = sim2.stock[t.res] < BARTER[t.res];
+        const price = sim2.barterPrice(t.res), text = `${price} \u2192 1 ${RES_NAME.coin.toLowerCase()}${price > BARTER[t.res] ? " \xB7 \u0111ang \u0111\u1EAFt" : ""}`;
+        t.row.classList.toggle("dear", price > BARTER[t.res]);
+        if (t.label.textContent !== text) t.label.textContent = text;
+        t.set.forEach((btn, i) => {
+          btn.disabled = i === 4 ? sim2.stock[t.res] - price < sim2.barterKeep(t.res) : sim2.stock[t.res] < price;
+        });
       }
       if (this.bedList[b.kind] && ready) this.updateBeds(b);
       if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind].update();
@@ -137710,6 +138208,7 @@ ${risk.lines.join("\n")}`);
     tray.close();
     menu.open("dev");
   });
+  $("btnMap").addEventListener("click", () => map.isOpen ? map.close() : map.open());
   {
     const pic = iconCanvas(sprites2.icons.hammer1);
     pic.className = "buildpic";
@@ -137924,6 +138423,9 @@ ${risk.lines.join("\n")}`);
     else if (k === "tab") {
       e.preventDefault();
       menu.toggle();
+    } else if (k === "m") {
+      if (map.isOpen) map.close();
+      else map.open();
     }
   });
   var REGION_NAME = { plains: "\u0110\u1ED3ng b\u1EB1ng", sparse: "R\u1EEBng th\u01B0a", dense: "R\u1EEBng r\u1EADm", mountain: "N\xFAi", water: "V\xF9ng n\u01B0\u1EDBc" };
@@ -138109,6 +138611,7 @@ ${risk.lines.join("\n")}`);
       renderer.draw(t / 1e3, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);
       buildingBar.place();
     }
+    if (map.isOpen) map.draw();
     $("sheet").classList.toggle("hushed", ctl.hushCard);
     if (settingsOpen && statsDlg.isOpen) settingsPanel.update();
     else settingsOpen = false;

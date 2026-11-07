@@ -16,14 +16,14 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 31;
+export const SAVE_VERSION = 32;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
   scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'dayWeather', 'weatherAt', 'weatherEnd', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
-  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts'],
+  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'barterHeat', 'smoke', 'gatherFocus'],
   /** Lists of plain data. */
   lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
   /** Handled by hand below. */
@@ -42,6 +42,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'warSince', 'sfx', 'alerts', 'warSeenIds', 'warFresh', 'warStings', 'warCheckAt', 'hiddenAnimals', // the game cannot be saved while a war is on
   'leaderClock', // a timer: leaders are picked again within a second of loading
   'controlled', // what the player has selected: the screen's, not the game's
+  'noNodeWarn', // a timer for the "nothing left to gather" warning
   'dangerAt', // a timer: after loading the villagers come out of hiding at once
 ];
 
@@ -329,4 +330,10 @@ MIGRATIONS[30] = (d) => {
   if (b) { b.kind ??= 'raid'; b.name ??= ''; b.startDay ??= 0; b.night ??= false; b.peak ??= 0; b.ourDeadArm ??= { foot: 0, archer: 0, cavalry: 0 }; b.civDead ??= 0; b.dmgDealt ??= 0; b.dmgTaken ??= 0; }
   for (const r of d.lists.warLog as Array<Record<string, unknown>>) { r.foeDead ??= 0; r.notes ??= []; }
   return { ...d, version: 31 };
+};
+MIGRATIONS[31] = (d) => {
+  // 31 -> 32: the price of a good at the barter rises as it is sold (barterHeat)
+  // and the big map keeps the smoke smelled near unseen villages and the place the gatherers were sent to
+  d.records.barterHeat ??= {}; d.records.smoke ??= {}; d.records.gatherFocus ??= {};
+  return { ...d, version: 32 };
 };

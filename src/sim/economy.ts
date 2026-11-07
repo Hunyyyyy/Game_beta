@@ -2,6 +2,7 @@
 import { BARTER, FOOD, rationAt, Res, RES_NAME, Stock } from './resources';
 import type { Sim } from './sim';
 import paceJson from '../data/pace.json';
+import BARTER_CFG from '../data/barter.json';
 import { statBonus } from './research';
 import { villageBonus } from './statsys';
 import { Building, gatherMult, levelDef } from './buildings';
@@ -23,13 +24,33 @@ export function affordable(sim: Sim, cost: Partial<Stock>): boolean { return (Ob
 
 export function pay(sim: Sim, cost: Partial<Stock>, sign = -1): void { for (const k of Object.keys(cost) as Res[]) sim.stock[k] += sign * (cost[k] ?? 0); }
 
-/** Swap goods for shells: the village trades a fixed amount of one good for one coin. */
-export function barter(sim: Sim, res: Exclude<Res, 'coin'>): string | null {
-  const n = BARTER[res];
-  if (sim.stock[res] < n) return `Cần ${n} ${RES_NAME[res].toLowerCase()} để đổi lấy 1 ${RES_NAME.coin.toLowerCase()}`;
-  if (sim.stock.coin >= sim.capacity()) return `Kho đã đầy ${RES_NAME.coin.toLowerCase()}`;
-  sim.stock[res] -= n; sim.stock.coin += 1;
-  return null;
+/** Goods one coin costs now: the base rate, dearer by `slip` for every coin of this good sold since the price last reset (barter.json: every 1 to 3 days by good). */
+export function barterPrice(sim: Sim, res: Exclude<Res, 'coin'>): number {
+  const heat = sim.barterHeat[res], sold = heat && sim.time < heat.until ? heat.sold : 0;
+  return Math.ceil(BARTER[res] * (1 + BARTER_CFG.slip * sold));
+}
+
+/** What the village keeps back when it sells its surplus: three days of meals of food, a share of the store of the rest. */
+export function barterKeep(sim: Sim, res: Exclude<Res, 'coin'>): number {
+  return res === 'food' ? Math.ceil(foodNeed(sim) * BARTER_CFG.foodKeepDays) : Math.ceil(sim.capacity(res) * BARTER_CFG.keepShare);
+}
+
+/**
+ * Swap goods for shells: up to `coins` of them (Infinity: as many as can be had), each at the price of the moment, never going below `keep` of the good. Returns an error, or null when at least one coin was had.
+ */
+export function barter(sim: Sim, res: Exclude<Res, 'coin'>, coins = 1, keep = 0): string | null {
+  const coin = RES_NAME.coin.toLowerCase(), name = RES_NAME[res].toLowerCase();
+  let got = 0, why: string | null = null;
+  while (got < coins) {
+    const n = barterPrice(sim, res);
+    if (sim.stock[res] - n < keep) { why = keep > 0 ? `Không còn ${name} dư (đang giữ lại ${keep})` : `Cần ${n} ${name} để đổi lấy 1 ${coin}`; break; }
+    if (sim.stock.coin >= sim.capacity()) { why = `Kho đã đầy ${coin}`; break; }
+    sim.stock[res] -= n; sim.stock.coin += 1; got++;
+    const heat = sim.barterHeat[res];
+    if (!heat || sim.time >= heat.until) sim.barterHeat[res] = { sold: 1, until: sim.time + (BARTER_CFG.resetDays[res as keyof typeof BARTER_CFG.resetDays] ?? BARTER_CFG.resetDays.default) * sim.dayLen };
+    else heat.sold++;
+  }
+  return got > 0 ? null : why;
 }
 
 // ---------------------------------------------------------------- the daily meal (src/data/food.json)

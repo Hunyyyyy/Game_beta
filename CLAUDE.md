@@ -59,6 +59,7 @@ Hard rules when editing `src/sim`:
 
 ## Conventions
 
+- **Player orders are absolute and always have the highest priority**, whatever rules are added later (only physical limits, shown as a toast, may refuse one).
 - Tools and items pivot at the **handle end**. Tool JSON is handle + head, **side view only**.
 - Config and balance numbers belong in `src/data/*.json` or `src/content/`, not hardcoded in systems.
 - Adding a building means adding a directory under `src/content/buildings/<kind>/`.

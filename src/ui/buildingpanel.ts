@@ -40,7 +40,7 @@ export class BuildingPanel {
   private readonly pages: HTMLElement[] = []; private tabKey = '';
   private readonly resRows: Array<{ res: typeof RES_LIST[number]; num: HTMLElement; bar: HTMLElement }> = [];
   private readonly doorBtn = h('button', { class: 'sm', onclick: () => { this.c.sim.toggleNewcomers(); this.updateCampfire(); } }) as HTMLButtonElement;
-  private readonly barterBtns: Array<{ res: Exclude<typeof RES_LIST[number], 'coin'>; btn: HTMLButtonElement }> = [];
+  private readonly barterBtns: Array<{ res: Exclude<typeof RES_LIST[number], 'coin'>; label: HTMLElement; set: HTMLButtonElement[]; row: HTMLElement }> = [];
   /** What can be ordered from the Nhà chế tạo and the stable: cards that open a scroll (src/ui/ordergrid.ts). */
   private craftGrid!: OrderGrid; private tameGrid!: OrderGrid;
   private readonly trees: TechTree[] = [];
@@ -103,11 +103,23 @@ export class BuildingPanel {
     // campfire: the village's people, and trading
     const barter = () => {
       const box = h('div', {}, hint('Đổi chác', 'Đổi hàng lấy tiền để trả cho nghiên cứu. Tiền cũng nhặt được khi hái lượm và nhận từ bộ tộc cống nạp.'));
-      const btns = h('div', { class: 'btns' }); box.append(btns);
+      box.append(h('p', { class: 'sub', text: 'Bán càng nhiều trong một lúc, giá càng đắt; giá trở lại bình thường sau 1 đến 3 ngày. Giữ nút để bán liên tục.' }));
+      const list = h('div', { class: 'barter' }); box.append(list);
       for (const res of RES_LIST) {
         if (res === 'coin') continue;
-        const btn = h('button', { class: 'sm', onclick: () => { const e = sim.barter(res); if (e) c.toast(e); ctl.onChange(); } }) as HTMLButtonElement;
-        this.barterBtns.push({ res, btn }); btns.append(btn);
+        const name = h('b', { text: RES_NAME[res] }), price = h('small'), label = h('div', { class: 'bname' }, name, price), set: HTMLButtonElement[] = [], keys = h('div', { class: 'bkeys' }), row = h('div', { class: 'brow' }, label, keys);
+        const sell = (coins: number, keep: boolean) => { const e = sim.barter(res, coins, keep ? sim.barterKeep(res) : 0); if (e) c.toast(e); ctl.onChange(); return !e; };
+        // a press sells once; held, it goes on selling until the stock runs out
+        const mk = (text: string, coins: number, keep = false, title = ''): HTMLButtonElement => {
+          const btn = h('button', { class: 'sm', text, title }) as HTMLButtonElement; let t = 0, rep = 0;
+          const stop = () => { clearTimeout(t); clearInterval(rep); };
+          btn.addEventListener('pointerdown', (ev) => { if (ev.button !== 0 || btn.disabled) return; if (!sell(coins, keep)) return; if (coins === 1) t = window.setTimeout(() => { rep = window.setInterval(() => { if (!sell(1, false)) stop(); }, 90); }, 350); });
+          for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) btn.addEventListener(ev, stop);
+          return btn;
+        };
+        set.push(mk('×1', 1), mk('×10', 10), mk('×100', 100), mk('Tối đa', Infinity, false, 'Bán hết, đến khi kho hết hàng hoặc đầy tiền'), mk('Bán phần dư', Infinity, true, 'Bán tất cả trừ phần giữ lại cho ăn uống và công trình'));
+        keys.append(...set);
+        this.barterBtns.push({ res, label: price, set, row }); list.append(row);
       }
       return box;
     };
@@ -343,7 +355,12 @@ export class BuildingPanel {
     this.info.textContent = !b.done ? 'Giao dân làm Thợ xây để dựng công trình này.' : this.infoText(b);
     if (b.kind === 'campfire' && ready) this.updateCampfire();
     if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity(r.res)}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity(r.res))) * 100)}%`; }
-    if ((b.kind === 'storage' || b.kind === 'campfire') && ready) for (const t of this.barterBtns) { t.btn.textContent = `Đổi ${BARTER[t.res]} ${RES_NAME[t.res].toLowerCase()} → 1 ${RES_NAME.coin.toLowerCase()}`; t.btn.disabled = sim.stock[t.res] < BARTER[t.res]; }
+    if ((b.kind === 'storage' || b.kind === 'campfire') && ready) for (const t of this.barterBtns) {
+      const price = sim.barterPrice(t.res), text = `${price} → 1 ${RES_NAME.coin.toLowerCase()}${price > BARTER[t.res] ? ' · đang đắt' : ''}`;
+      t.row.classList.toggle('dear', price > BARTER[t.res]);
+      if (t.label.textContent !== text) t.label.textContent = text;
+      t.set.forEach((btn, i) => { btn.disabled = i === 4 ? sim.stock[t.res] - price < sim.barterKeep(t.res) : sim.stock[t.res] < price; });
+    }
     if (this.bedList[b.kind] && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
     if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);

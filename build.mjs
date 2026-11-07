@@ -2,6 +2,7 @@ import { build } from 'esbuild';
 import { copyFileSync, mkdirSync, rmSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { scss } from './tools/scss.mjs';
 import './tools/gen-content.mjs';
+import './tools/gen-music.mjs';
 
 const out = await build({
   entryPoints: ['src/main.ts'],

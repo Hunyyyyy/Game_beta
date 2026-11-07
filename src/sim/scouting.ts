@@ -37,6 +37,8 @@ const warriorsOf = (sim: Sim, tribe: string): number => { const t = tribeOf(sim,
 const SIGHT = 14;
 /** Tiles from the campfire at which someone counts as home. */
 const HOME = 7;
+/** How near (tiles) one of ours must come to an unseen village to smell its smoke, and how far off the marked point may be. */
+const SMOKE = 45, SMOKE_BLUR = 9;
 const COMPASS = ['Đông', 'Đông Nam', 'Nam', 'Tây Nam', 'Tây', 'Tây Bắc', 'Bắc', 'Đông Bắc'];
 
 /** Whether a village is on the scouting list: someone came across it and got home with the news. */
@@ -74,6 +76,16 @@ export function tickSightings(sim: Sim, dt: number): void {
     if (t.state === 'destroyed' || sim.sightings.some((s) => s.tribe === t.id)) continue;
     const finder = sim.villagers.find((v) => v.health > 0 && v.inside === null && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < SIGHT);
     if (finder) sim.sightings.push({ tribe: t.id, by: finder.id, at: sim.time, reported: false });
+  }
+  // a village not seen yet whose smoke reaches somebody of ours: he smells the cooking fires and the player is told roughly where (a point off by some tiles), marked on the big map
+  for (const t of sim.tribes) {
+    if (t.state === 'destroyed' || sim.smoke[t.id] || sim.tribeSeen(t)) continue;
+    const near = sim.villagers.find((v) => v.health > 0 && v.inside === null && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < SMOKE);
+    if (!near) continue;
+    const at = { x: Math.round(t.camp.x + (sim.frnd() - 0.5) * 2 * SMOKE_BLUR), y: Math.round(t.camp.y + (sim.frnd() - 0.5) * 2 * SMOKE_BLUR) };
+    sim.smoke[t.id] = at;
+    const fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y, dx = at.x - fx, dy = at.y - fy;
+    sim.say(`${near.name} ngửi thấy khói bếp: có làng cách đây khoảng ${Math.round(Math.hypot(dx, dy) / 5) * 5} ô về phía ${COMPASS[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8]}. Xem bản đồ 🗺.`);
   }
 }
 
