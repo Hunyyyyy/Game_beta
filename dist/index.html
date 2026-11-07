@@ -118179,6 +118179,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.birdWait = 20;
       this.burstAt = /* @__PURE__ */ new Map();
       this.peaceEl = null;
+      /** The music of a lost war while it plays: the peace music keeps quiet until it is over (setPeace). */
+      this.lostEl = null;
       this.peaceVol = 0;
       /** Seconds until the peace music may start (counted down while it is quiet). */
       this.peaceWait = sounds_default.peace.firstDelay;
@@ -118224,6 +118226,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       for (const k of [...this.active.keys()]) this.stop(k);
       this.pending.clear();
       this.victory = null;
+      this.lostEl = null;
       this.stopPeace();
       this.warScreen = false;
     }
@@ -118346,7 +118349,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
      */
     warEnded(result, now) {
       if (result === "lost") {
-        this.play(sounds_default.end.lost.file, sounds_default.end.lost.volume, 0, now, false, "mus", "lost");
+        this.lostEl = this.play(sounds_default.end.lost.file, sounds_default.end.lost.volume, 0, now, false, "mus", "lost");
         return;
       }
       const files = [...sounds_default.end.won.files];
@@ -118412,6 +118415,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
      * never in a loop. It fades out when peace ends (a war, a raid). `peaceful`: nothing hostile is going on. Call every frame.
      */
     setPeace(peaceful, dt) {
+      const lost = this.lostEl;
+      if (lost) {
+        if (lost.ended || lost.error || lost.paused) {
+          this.lostEl = null;
+          this.peaceWait = Math.max(this.peaceWait, 20);
+        } else peaceful = false;
+      }
       if (!this.musicOn || this.hidden || !this.unlocked) {
         this.stopPeace();
         return;

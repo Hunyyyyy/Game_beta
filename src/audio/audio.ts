@@ -60,6 +60,8 @@ export class GameAudio {
   private birdWait = 20;
   private readonly burstAt = new Map<string, number>();
   private peaceEl: HTMLAudioElement | null = null;
+  /** The music of a lost war while it plays: the peace music keeps quiet until it is over (setPeace). */
+  private lostEl: HTMLAudioElement | null = null;
   private peaceVol = 0;
   /** Seconds until the peace music may start (counted down while it is quiet). */
   private peaceWait = cfg.peace.firstDelay;
@@ -91,7 +93,7 @@ export class GameAudio {
     for (const b of this.beds.values()) { b.el.pause(); b.vol = 0; }
     for (const k of [...this.active.keys()]) this.stop(k);
     this.pending.clear();
-    this.victory = null;
+    this.victory = null; this.lostEl = null;
     this.stopPeace();
     this.warScreen = false;
   }
@@ -197,7 +199,7 @@ export class GameAudio {
    * `next` (30%) played, so they sound over each other, and the next pair when both are over.
    */
   warEnded(result: 'won' | 'lost', now: number): void {
-    if (result === 'lost') { this.play(cfg.end.lost.file, cfg.end.lost.volume, 0, now, false, 'mus', 'lost'); return; }
+    if (result === 'lost') { this.lostEl = this.play(cfg.end.lost.file, cfg.end.lost.volume, 0, now, false, 'mus', 'lost'); return; }
     const files = [...cfg.end.won.files];
     for (let i = files.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [files[i], files[j]] = [files[j], files[i]]; }
     this.victory = { left: files, cur: null, started: [] };
@@ -248,6 +250,8 @@ export class GameAudio {
    * never in a loop. It fades out when peace ends (a war, a raid). `peaceful`: nothing hostile is going on. Call every frame.
    */
   setPeace(peaceful: boolean, dt: number): void {
+    const lost = this.lostEl; // the music of a lost war is playing: the peace music fades out and does not start until it has ended, and then not at once
+    if (lost) { if (lost.ended || lost.error || lost.paused) { this.lostEl = null; this.peaceWait = Math.max(this.peaceWait, 20); } else peaceful = false; }
     if (!this.musicOn || this.hidden || !this.unlocked) { this.stopPeace(); return; }
     const el = this.peaceEl;
     if (el) {
