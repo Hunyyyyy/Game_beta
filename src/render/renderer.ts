@@ -1,4 +1,4 @@
-import { Building, BuildingKind, BUILDINGS, CLEARANCE as CLEAR, Era, buildingSight, maxHp, needsWork, WALL_KINDS } from '../sim/buildings';
+import { Building, BuildingKind, BUILDINGS, canGrow, CLEARANCE as CLEAR, Era, buildingSight, maxHp, needsWork, WALL_KINDS } from '../sim/buildings';
 import type { WeatherKind } from '../sim/calendar';
 import { gameDays, TILE } from '../sim/constants';
 import type { Sim, Villager } from '../sim/sim';
@@ -49,6 +49,8 @@ export class Renderer {
   private readonly fxl = new FxLayer();
   /** Optional sound: plays work and fight sounds for the units on screen. */
   audio: GameAudio | null = null;
+  /** Draw the rain, snow and lightning (the player can switch it off). */
+  weatherFx = true;
   /** The lightning slot whose thunder has been sounded (presentation only). */
   private thunderSlot = -1;
   /** The mountains of a world, drawn as one heightfield (see mountains.ts). */
@@ -120,6 +122,7 @@ export class Renderer {
   private drawDamage(b: Building, ax: number, ay: number, time: number): void {
     if (b.done && b.kind === 'campfire' && this.audio?.sfxOn) { const p = this.worldToScreen(ax, ay); if (this.nearCenter(p.x, p.y)) this.audio.near('homefire'); } // the fire of the village crackles
     if (b.done) this.drawWear(b.kind, b.hp / Math.max(1, maxHp(b)), b.id, ax, ay, time, b.level, this.buildingProp(b).ay);
+    if (b.done && canGrow(b.kind) && !WALL_KINDS.has(b.kind) && this.canUpgradeNow(b, time)) this.drawUpgradeMark(ax, ay - this.buildingProp(b).ay - 12, b.id, time);
   }
 
   /**
@@ -150,6 +153,25 @@ export class Renderer {
       ctx.strokeStyle = '#d8c690'; ctx.lineWidth = Math.max(1, 0.8 * z); ctx.beginPath(); ctx.moveTo(bx + 5 * z * Math.cos(-Math.PI * 0.45), by + 5 * z * Math.sin(-Math.PI * 0.45)); ctx.lineTo(shooting ? bx - 3 * z : bx + 5 * z * Math.cos(Math.PI * 0.45) - 0.5 * z, shooting ? by : by + 5 * z * Math.sin(Math.PI * 0.45)); ctx.lineTo(bx + 5 * z * Math.cos(Math.PI * 0.45), by + 5 * z * Math.sin(Math.PI * 0.45)); ctx.stroke();
       if (shooting) { ctx.strokeStyle = '#e8d6a8'; ctx.lineWidth = Math.max(1, z); ctx.beginPath(); ctx.moveTo(bx - 3 * z, by); ctx.lineTo(bx + 6 * z, by); ctx.stroke(); }
     }
+  }
+
+  private readonly upgradeOk = new Map<number, { at: number; ok: boolean }>();
+  /** Whether the building can be upgraded right now (asked twice a second: it looks at the stores and the campfire). */
+  private canUpgradeNow(b: Building, time: number): boolean {
+    const c = this.upgradeOk.get(b.id);
+    if (c && time - c.at < 0.5) return c.ok;
+    const ok = this.sim.canUpgrade(b) === null;
+    this.upgradeOk.set(b.id, { at: time, ok });
+    return ok;
+  }
+
+  /** A green arrow over a building that can be upgraded now, bobbing a little. */
+  private drawUpgradeMark(ax: number, top: number, id: number, time: number): void {
+    const { ctx, cam: { zoom: z } } = this, p = this.worldToScreen(ax, top - Math.sin(time * 3 + id) * 2), r = 9 * z;
+    ctx.fillStyle = 'rgba(20,14,8,.8)'; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#6bd35a'; ctx.beginPath();
+    ctx.moveTo(p.x, p.y - r * 0.6); ctx.lineTo(p.x + r * 0.6, p.y + r * 0.05); ctx.lineTo(p.x + r * 0.22, p.y + r * 0.05); ctx.lineTo(p.x + r * 0.22, p.y + r * 0.6);
+    ctx.lineTo(p.x - r * 0.22, p.y + r * 0.6); ctx.lineTo(p.x - r * 0.22, p.y + r * 0.05); ctx.lineTo(p.x - r * 0.6, p.y + r * 0.05); ctx.closePath(); ctx.fill();
   }
 
   /** The same for any work, ours or a village's: `ratio` is what is left of it, `id` only sets where the smoke and flames are in their dance. */
@@ -685,7 +707,7 @@ export class Renderer {
       this.audio.setWar(onScreen, war.stings, time);
       sim.sfx.length = 0;
     }
-    this.drawWeather(time);
+    if (this.weatherFx) this.drawWeather(time);
 
     // ---- sleeping villagers ----
     ctx.font = `700 ${Math.max(10, 5 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center';

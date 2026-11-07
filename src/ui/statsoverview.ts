@@ -2,7 +2,7 @@
  * What research has added so far, for everyone of a kind: each trade, each kind of soldier, the houses of work and the weapons, with the percent each stat has gained
  * and the tier opened (not for one villager: the same for all who have that role). The page of the menu "Chỉ số".
  */
-import { CHAINS, PLAN_TECH, TECH_BY_ID, lineLevel, soldierTier, statBonus, statLevels, STAT_DEF, TREE_ROLES } from '../sim/research';
+import { CHAINS, PLAN_TECH, statsFor, TECH_BY_ID, lineLevel, soldierTier, statBonus, statLevels, STAT_DEF, TREE_ROLES } from '../sim/research';
 import type { LineStat } from '../sim/research';
 import { h } from './dom';
 import { statIcon } from './resicons';
@@ -41,7 +41,7 @@ export class StatsOverview {
         for (const role of chain.roles) {
           if (!TREE_ROLES[role] || (role === 'scout' && sim.era !== 'ancient')) continue; // the scouts are of the medieval layer
           const tier = soldierTier(sim.researched, role);
-          const pills = chain.order.map((stat) => {
+          const pills = statsFor(chain, role).map((stat) => {
             const bonus = statBonus(sim.researched, role, stat as LineStat), lv = lineLevel(sim.researched, role, stat), top = statLevels(stat);
             return h('span', { class: `spill${bonus > 0 ? '' : ' zero'}`, title: `${STAT_DEF[stat as LineStat].name}: ${pct(bonus)} (cấp ${lv}/${top})` }, h('span', { class: 'ico-wrap' }, statIcon(stat)), h('b', { text: pct(bonus) }), h('small', { text: `${lv}/${top}` }));
           });

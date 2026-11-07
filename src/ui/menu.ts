@@ -13,8 +13,8 @@ import type { Tribe } from '../sim/tribes';
 import { costText, h, helpButton, hint } from './dom';
 import type { Ctx } from './panels';
 
-type Tab = 'places' | 'tribes' | 'game' | 'settings' | 'dev' | 'help';
-const TABS: Array<[Tab, string]> = [['places', 'Công trình'], ['tribes', 'Bộ tộc'], ['game', 'Ván chơi'], ['settings', 'Cài đặt'], ['dev', 'Dev'], ['help', '?']];
+type Tab = 'places' | 'game' | 'dev' | 'help';
+const TABS: Array<[Tab, string]> = [['places', 'Công trình'], ['game', 'Ván chơi'], ['dev', 'Dev'], ['help', '?']];
 const SEASON_NAME: Record<Season, string> = { spring: 'Xuân', summer: 'Hạ', autumn: 'Thu', winter: 'Đông' };
 const PERSONALITY = { peaceful: 'Hòa bình', aggressive: 'Hiếu chiến', ambusher: 'Hay phục kích' } as const;
 
@@ -33,8 +33,8 @@ export class Menu {
       this.tabBtns.set(t, b); tabs.append(b);
     }
     tabs.append(h('span', { class: 'spacer' }), h('button', { class: 'sm', text: '✕', title: 'Đóng menu', onclick: () => this.close() }));
-    this.pages.set('places', this.placesPage()); this.pages.set('tribes', this.tribesPage());
-    this.pages.set('game', this.gamePage()); this.pages.set('settings', this.settingsPage()); this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
+    this.pages.set('places', this.placesPage());
+    this.pages.set('game', this.gamePage()); this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
     for (const p of this.pages.values()) body.append(p);
     this.show(this.tab);
   }
@@ -59,7 +59,7 @@ export class Menu {
       if (key === this.placesKey) return;
       this.placesKey = key;
       const counts: Record<string, number> = {};
-      this.placesList.replaceChildren(...sim.buildings.map((b) => {
+      this.placesList.replaceChildren(...sim.buildings.filter((b) => b.kind !== 'fence' && b.kind !== 'gate').map((b) => { // the rows of fence would be hundreds
         counts[b.kind] = (counts[b.kind] ?? 0) + 1;
         const d = BUILDINGS[b.kind], name = `${d.name}${counts[b.kind] > 1 || b.kind !== 'campfire' ? ` #${counts[b.kind]}` : ''}`;
         const note = !b.done ? ' · đang xây' : b.upgrading ? ' · đang nâng cấp' : d.buildable ? ` · cấp ${b.level} (${levelDef(b).name.toLowerCase()})` : '';
@@ -68,56 +68,6 @@ export class Menu {
       }));
     });
     return h('div', { class: 'page' }, hint('Công trình đã dựng', 'Mọi công trình đã dựng nằm ở đây. Mở Xưởng để chế đồ, mở lửa trại để xem dân, mở Kho để xem tài nguyên.'), this.placesList);
-  }
-
-  // ---------------------------------------------------------------- tribes
-  private tribesPage(): HTMLElement {
-    const { sim, ctl } = this.c, page = h('div', { class: 'page' });
-    const banner = h('div', { class: 'card', hidden: true }); const none = h('p', { class: 'sub', text: 'Chưa gặp bộ tộc nào. Hãy cử người đi khám phá.' });
-    page.append(banner, none);
-    // a card for each village that stands: a village taken is gone, and a new era brings new ones, so the cards follow `sim.tribes`
-    type Card = { t: Tribe; card: HTMLElement; status: HTMLElement; people: HTMLElement; fill: HTMLElement; note: HTMLElement; gift: HTMLButtonElement; tribute: HTMLButtonElement; adopt: HTMLButtonElement; less: HTMLButtonElement; more: HTMLButtonElement };
-    const cards = new Map<string, Card>();
-    const make = (t: Tribe): Card => {
-      const status = h('span'), people = h('div', { class: 'kv' }), fill = h('b'), note = h('p', { class: 'sub' });
-      const act = (action: 'gift' | 'tribute' | 'adopt' | 'tributeUp' | 'tributeDown', done?: string) => () => { const e = sim.diplomacy(t.id, action); if (e) this.c.toast(e); else if (done) this.c.toast(done); };
-      const gift = h('button', { class: 'sm', text: 'Tặng quà', onclick: act('gift') }) as HTMLButtonElement;
-      const tribute = h('button', { class: 'sm', text: 'Cống nạp', onclick: act('tribute', `${t.def.name} chịu cống nạp`) }) as HTMLButtonElement;
-      const adopt = h('button', { class: 'sm primary', text: 'Thu nạp', onclick: act('adopt', `${t.def.name} gia nhập làng`) }) as HTMLButtonElement;
-      const less = h('button', { class: 'sm', text: '−10%', onclick: act('tributeDown') }) as HTMLButtonElement;
-      const more = h('button', { class: 'sm', text: '+10%', onclick: act('tributeUp') }) as HTMLButtonElement;
-      const bar = h('div', { class: 'tribe-bar' }, fill, h('u'));
-      const card = h('div', { class: 'card', hidden: true }, h('div', { class: 'cardhead' }, h('b', { text: t.def.name }), h('span', { text: PERSONALITY[t.def.personality] }), status), bar, people,
-        h('p', { class: 'sub', text: `Phần thưởng: ${t.def.reward}` }), note, h('div', { class: 'btns' }, gift, tribute, adopt, less, more));
-      page.append(card);
-      return { t, card, status, people, fill, note, gift, tribute, adopt, less, more };
-    };
-    this.updaters.push(() => {
-      const N = sim.world.size; let any = false;
-      for (const [id, c] of cards) if (!sim.tribes.includes(c.t)) { c.card.remove(); cards.delete(id); }
-      for (const t of sim.tribes) if (!cards.has(t.id)) cards.set(t.id, make(t));
-      for (const c of cards.values()) {
-        const { t } = c, seen = sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)] > 0;
-        c.card.hidden = !seen; if (!seen) continue; any = true;
-        const rel = t.state === 'tribute' ? Math.max(60, t.relation) : t.relation;
-        c.status.textContent = (t.rebel ? 'Thủ lĩnh phản bội · ' : '') + (t.state === 'free' ? relationLabel(rel) + (sim.tribeHostile(t.id) ? ' · đang thù địch' : '') : { surrendered: 'Đã xin hàng', tribute: 'Đang cống nạp', destroyed: 'Đã bị xóa sổ' }[t.state]);
-        c.fill.style.left = rel >= 0 ? '50%' : `${50 + rel / 2}%`; c.fill.style.width = `${Math.abs(rel) / 2}%`;
-        const alive = t.unitIds.map((u) => sim.get(u)).filter(Boolean);
-        c.people.innerHTML = t.state === 'destroyed' ? '' : `Người <b>${alive.length}</b> · lính <b>${alive.filter((u) => u!.ai?.role !== 'civ').length}</b> · quan hệ <b>${Math.round(rel)}</b>${t.raid ? ' · <b>đang tập kích!</b>' : ''}`;
-        const over = t.state === 'destroyed', tr = DIFF.capture.tribute, paying = t.state === 'tribute', share = t.tributeShare ?? tr.baseShare, steps = tributeSteps(t);
-        c.note.hidden = !paying;
-        if (paying && share <= 0) c.note.textContent = `Không lấy cống nạp: quan hệ +${tr.relationRegen} mỗi ${tr.everyDays} ngày.`;
-        else if (paying) c.note.textContent = `Cống nạp ${Math.round(share * 100)}% túi mỗi ${tr.everyDays} ngày${steps ? ` · đòi thêm ${steps} bước: quan hệ −${1 + steps} mỗi lần, ${Math.round(steps * tr.greedChancePerStep * 100)}% phản bội mỗi lần` : ' · quan hệ −1 mỗi lần'}.`;
-        c.gift.hidden = paying || t.state === 'surrendered'; c.tribute.hidden = paying; c.adopt.hidden = paying; c.less.hidden = c.more.hidden = !paying;
-        c.gift.disabled = over || t.state !== 'free' || t.boss === true; c.gift.title = t.boss ? 'Thủ lĩnh không nhận quà' : `Quà: ${Object.entries(giftOf(t, sim.era)).map(([k, n]) => `${n} ${RES_NAME[k as keyof typeof RES_NAME].toLowerCase()}`).join(', ')}`; c.tribute.disabled = over || !canTribute(t) || paying; c.adopt.disabled = over || !canAdopt(t) || sim.villagers.length >= sim.popCap();
-        c.less.disabled = share <= 0; c.less.textContent = share <= tr.baseShare + (t.tributeFree ?? 0) && share > 0 ? 'Không lấy' : '−10%'; c.more.disabled = share >= tr.maxShare;
-      }
-      none.hidden = any;
-      const p = sim.pendingTribe && sim.tribes.find((x) => x.id === sim.pendingTribe);
-      banner.hidden = !p;
-      if (p) banner.replaceChildren(hint(h('b', { text: `${p.def.name} xin hàng!` }), 'Thu nạp: làng biến mất, ta nhận dân và chỗ ở trại lính vĩnh viễn. Cống nạp: họ giữ làng và nộp một phần tài nguyên mỗi 3 ngày, không đánh ta nữa và góp lính khi ta đi đánh; đòi càng nhiều họ càng oán và có thể phản bội.'));
-    });
-    return page;
   }
 
   // ---------------------------------------------------------------- the game itself
@@ -139,26 +89,6 @@ export class Menu {
     let last = -1e9;
     this.updaters.push(() => { const war = this.c.sim.atWar(); for (const b of [saveBtn, loadBtn]) { b.disabled = war; b.title = war ? 'Đang chiến tranh: không lưu hay tải được cho tới khi trận kết thúc' : ''; } });
     this.updaters.push(() => { const now = performance.now(); if (!page.hidden && now - last > 2000) { last = now; void refresh(); } });
-    return page;
-  }
-
-  // ---------------------------------------------------------------- settings
-  /** Sound: a volume and an off switch for the effects, the weather and the music. Off means nothing is played and nothing is worked out for it (lighter on a slow machine). */
-  private settingsPage(): HTMLElement {
-    const { sound } = this.c, page = h('div', { class: 'page' });
-    page.append(hint('Âm thanh', 'Kéo thanh để chỉnh to nhỏ. Bỏ chọn ô bên cạnh để tắt hẳn loại âm thanh đó: khi tắt, game không xử lý âm thanh ấy nữa nên máy yếu sẽ nhẹ hơn. Phím tắt: O hiệu ứng, I môi trường, U nhạc.'));
-    const rows: Array<() => void> = [];
-    for (const [kind, label, tip] of [['sfx', 'Hiệu ứng', 'Làm việc, đánh nhau, đặt công trình, cổng, ra lệnh cho quân'], ['amb', 'Môi trường', 'Mưa, bão, sấm, gió, chim, sói'], ['mus', 'Nhạc', 'Nhạc bình yên, nhạc chiến tranh, thắng và thua']] as const) {
-      const on = h('input', { type: 'checkbox', title: 'Bật hoặc tắt' }) as HTMLInputElement;
-      const range = h('input', { type: 'range', min: '0', max: '100', step: '5', title: tip }) as HTMLInputElement;
-      const num = h('small', { text: '' });
-      const apply = () => { sound.set(kind, on.checked, +range.value / 100); num.textContent = `${range.value}%`; };
-      on.addEventListener('change', apply); range.addEventListener('input', apply);
-      const sync = () => { const g = sound.get(kind); if (document.activeElement !== range) range.value = String(Math.round(g.vol * 100)); on.checked = g.on; num.textContent = `${range.value}%`; };
-      rows.push(sync);
-      page.append(h('div', { class: 'row' }, h('div', { class: 'nm' }, label, h('small', { text: tip })), on, range, num));
-    }
-    this.updaters.push(() => { if (!page.hidden) for (const r of rows) r(); });
     return page;
   }
 
@@ -186,6 +116,7 @@ export class Menu {
     page.append(h('div', { class: 'devrow' },
       btn('+5 dân', () => toast(dev.addPeople(sim, 5)), 'Thêm 5 dân rảnh quanh lửa trại, kể cả khi vượt sức chứa'),
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),
+      btn('Mẫu nhật ký chiến đấu', () => toast(dev.sampleBattleLog(sim)), 'Thêm (hoặc xóa) vài trận giả vào nhật ký của Lều họp chiến để xem giao diện'),
       btn('Đầy quân + đồ cao nhất + đuốc', () => toast(dev.fullArmy(sim)), 'Mọi trại lính đầy quân, ai cũng có vũ khí và giáp tốt nhất của thời đại và một cây đuốc'),
       btn('Gọi sự kiện (theo cấp lửa)', () => toast(dev.callEvent(sim)), 'Gọi ngay sự kiện đã hẹn mạnh nhất mà trại cấp lửa hiện tại đủ sức đón')));
 

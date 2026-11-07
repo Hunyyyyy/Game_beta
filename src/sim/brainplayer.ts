@@ -51,8 +51,8 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   if (!fighter) {
     // Civilians do not fight: anything hostile within sight sends them running to the campfire
     if (threats.length && threats[0].d < FEAR && v.phase !== 'fight') { startFlee(sim, v, 8, threats[0]); return true; }
-    // far from the danger, a villager with no trade still goes to a Nhà dân with a bed free while the village is under attack (none free: he stays where he is)
-    if (scanNow && isFree(v) && v.inside === null && v.phase !== 'sleep' && v.phase !== 'goHome' && sim.attackReason() !== null && refugeOf(sim, v)) { startFlee(sim, v, 8); return true; }
+    // the village is under attack: every civilian runs home (a house with a bed free, else the fire or the soldiers), whether he sees the enemy or not
+    if (scanNow && isFree(v) && v.inside === null && v.phase !== 'sleep' && v.phase !== 'goHome' && sim.attackReason() !== null) { startFlee(sim, v, 8); return true; }
     return assistBrain(sim, v);
   }
   return fightBrain(sim, v, dt, threats);
@@ -128,7 +128,7 @@ export function startFlee(sim: Sim, v: Villager, secs: number, from?: { x: numbe
   v.phase = 'flee'; v.fleeT = secs;
   // a civilian runs into the house of his trade (the Nhà dân if he has none) and hides there until it is safe again; with no bed free he runs on.
   // Soldiers and hunters who retreat run to the fire or to a comrade
-  if (!isFighter(v)) { sim.dangerAt = sim.time; if (runToRefuge(sim, v)) return; v.path = runAway(sim, v, from); return; }
+  if (!isFighter(v)) { sim.dangerAt = sim.time; if (runToRefuge(sim, v)) return; v.path = from ? runAway(sim, v, from) : fleeSpot(sim, v); return; }
   v.path = fleeSpot(sim, v, from);
 }
 
@@ -148,11 +148,12 @@ function fleeBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
     }
   }
   v.fleeT -= dt;
+  if (civilian && sim.attackReason() !== null) v.fleeT = Math.max(v.fleeT, 3); // he stays hidden for as long as the attack goes on
   if (threats.length && threats[0].d < FEAR) v.fleeT = Math.max(v.fleeT, 3); // keep running while they are close
   v.timer -= dt;
   if (v.timer <= 0) {
     v.timer = 1.5;
-    if (civilian) { if (runToRefuge(sim, v)) return true; if (!v.path.length) v.path = runAway(sim, v, threats[0]); } // a bed may have come free; if not, on he runs
+    if (civilian) { if (runToRefuge(sim, v)) return true; if (!v.path.length) v.path = threats[0] ? runAway(sim, v, threats[0]) : fleeSpot(sim, v); } // a bed may have come free; if not, on he runs
     else { const way = fleeSpot(sim, v, threats[0]); if (way.length > 2) v.path = way; } // his refuge moves (a soldier): follow it; once there he stays
   }
   if (v.fleeT <= 0) { v.phase = 'idle'; v.fleeT = 0; v.path = []; return false; }

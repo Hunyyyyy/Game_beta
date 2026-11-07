@@ -102,6 +102,7 @@ export function attackReason(sim: Sim): string | null {
     const fire = sim.campfire(), cx = fire ? fire.x + 1 : sim.world.start.x, cy = fire ? fire.y + 1 : sim.world.start.y;
     const beast = sim.animals.find((a) => a.state === 'attack' && (a.target?.kind === 'unit' || a.siege !== undefined) && Math.hypot(a.x - cx, a.y - cy) < 30);
     if (beast) why = beast.siege !== undefined ? 'Thú dữ đang phá nhà' : 'Thú dữ đang tấn công người gần làng';
+    else if (sim.animals.some((a) => a.raid && a.state !== 'dead' && Math.hypot(a.x - cx, a.y - cy) < 45)) why = 'Bầy thú đang kéo tới làng';
     else if (sim.foes.some((f) => f.ai?.role === 'raider' && f.health > 0 && Math.hypot(f.x - cx, f.y - cy) < 40)) why = 'Địch đang ở quanh làng'; // raiders at the houses, whether they fight or break them down
   }
   attackCache.set(sim, { t: sim.time, why });

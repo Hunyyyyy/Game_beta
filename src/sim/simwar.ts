@@ -94,6 +94,14 @@ export const WAR = {
   drawnFigures(this: Sim): Set<number> | null { return army.drawnFigures(this); },
   /** → army.noteBattle */
   noteBattle(this: Sim, kind: army.BattleEvent, text = ''): void { return army.noteBattle(this, kind, text); },
+  /** A line of the story of the war that is on (the log of the Lều họp chiến). → warlog.noteLine */
+  warNote(this: Sim, text: string): void { return warlog.noteLine(this, text); },
+  /** An enemy of the village we are attacking fell to ours. → warlog.noteFoeDeath */
+  warFoeDead(this: Sim, tribe: string): void { return warlog.noteFoeDeath(this, tribe); },
+  /** → army.noteLoss */
+  noteLoss(this: Sim, v: Villager): void { return army.noteLoss(this, v); },
+  /** → army.noteDamage */
+  noteDamage(this: Sim, dealt: boolean, n: number): void { return army.noteDamage(this, dealt, n); },
   /** → battle.armOf */
   armOf(this: Sim, v: Villager): Arm { return armOf(v); },
   /** → scouting.mapLevel */

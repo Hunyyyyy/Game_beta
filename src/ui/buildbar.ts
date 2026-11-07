@@ -1,4 +1,5 @@
-import { BUILDINGS, Building, BuildingKind, canGrow, levelCapByFire, levelDef, maxHp, maxLevel, topLevel, POP_BY_FIRE } from '../sim/buildings';
+import { CAMP_KINDS, CAMP_PCT, campPicks } from '../sim/upgradebonus';
+import { BUILDINGS, Building, BuildingKind, canGrow, gatherMult, levelCapByFire, levelDef, maxHp, maxLevel, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
 import { ROLES, roleOf } from '../sim/jobs';
 import { RES_NAME, Res, Stock } from '../sim/resources';
@@ -57,15 +58,61 @@ export class BuildingBar {
 
   private cur(): Building | undefined { return this.id === null ? undefined : this.c.sim.getBuilding(this.id); }
 
+  /** What the next level of a building adds, one line each (only what changes): places, stores, speed, strength, sight, yield, and what the campfire opens. */
+  private upgradeChanges(b: Building): string[] {
+    const cur = levelDef(b, b.level), nx = levelDef(b, b.level + 1), kind = b.kind, out: string[] = [];
+    const num = (n: number) => n.toLocaleString('vi', { maximumFractionDigits: 2 });
+    const line = (label: string, from: number, to: number, pre = '', post = '') => { if (from !== to) out.push(`▲ ${label}: ${pre}${num(from)}${post} → ${pre}${num(to)}${post}`); };
+    const bed = kind === 'house' || kind === 'infantry' || kind === 'cavalry' || kind === 'archery';
+    if (kind === 'campfire') {
+      line('Dân tối đa', POP_BY_FIRE[b.level - 1], POP_BY_FIRE[b.level]);
+      line('Cấp tối đa của các nhà khác', levelCapByFire(b.level), levelCapByFire(b.level + 1));
+    }
+    line(bed ? 'Giường' : 'Chỗ làm việc', cur.slots, nx.slots);
+    line(kind === 'storage' ? 'Kho chứa mỗi loại' : kind === 'toolstore' || kind === 'armory' ? 'Chứa (món)' : 'Chứa', cur.cap, nx.cap);
+    if (!bed) line(kind === 'field' ? 'Năng suất' : 'Tốc độ làm việc', cur.craftSpeed, nx.craftSpeed, '×');
+    if (BUILDINGS[kind].produces) line('Sản lượng mỗi người', gatherMult({ level: b.level }), gatherMult({ level: b.level + 1 }), '×');
+    const era = kind === 'campfire' && b.level + 1 > (BUILDINGS.campfire.levels.stone?.length ?? 0) ? 'ancient' : b.era; // the HP of the building itself (also for the houses whose level gives none of its own)
+    line('Máu công trình (HP)', maxHp(b), maxHp({ kind, level: b.level + 1, era, hpBonus: b.hpBonus }));
+    line('Tầm nhìn', cur.sight, nx.sight, '', ' ô');
+    if (CAMP_KINDS.includes(kind)) { // the soldiers of the house: the stats this level raises (two different ones, fixed for this house and level)
+      const names = { hp: 'Máu', atk: 'Sát thương', aspd: 'Tốc đánh' } as const;
+      out.push(`▲ Lính của nhà này: ${campPicks(b.id, b.level + 1).map((st) => `${names[st]} +${CAMP_PCT}%`).join(', ')}`);
+    }
+    if (!out.length) out.push('Nâng cấp làm công trình bền và đẹp hơn.');
+    return out;
+  }
+
   private askUpgrade(b: Building): void {
     const { sim, ctl, toast } = this.c, def = BUILDINGS[b.kind], nx = levelDef(b, b.level + 1);
-    const gain = b.kind === 'campfire' ? `kho chứa ${nx.cap} mỗi loại, ${POP_BY_FIRE[b.level]} dân, các nhà khác lên được cấp ${levelCapByFire(b.level + 1)}` : b.kind === 'storage' ? `chứa ${nx.cap} mỗi loại` : b.kind === 'toolstore' || b.kind === 'armory' ? `chứa ${nx.cap} món` : b.kind === 'house' || b.kind === 'infantry' || b.kind === 'cavalry' || b.kind === 'archery' ? `${nx.slots} giường, hồi sức ×${nx.craftSpeed.toLocaleString('vi')}` : b.kind === 'field' ? `năng suất ×${nx.craftSpeed.toLocaleString('vi')}` : `chứa ${nx.slots} người, tốc độ ×${nx.craftSpeed.toLocaleString('vi')}`;
+    const changes = this.upgradeChanges(b);
     this.confirm.ask({
       title: `Nâng ${def.name} lên cấp ${b.level + 1}?`,
-      lines: [`${nx.name}: ${gain}. Vật liệu trả ngay, rồi giao Thợ xây để làm (~${workDays(nx.buildTime)}).${sim.freeCost() ? ' Đang bật xây miễn phí.' : ''}`,
+      lines: [`${nx.name}. Vật liệu trả ngay, rồi giao Thợ xây để làm (~${workDays(nx.buildTime)}).${sim.freeCost() ? ' Đang bật xây miễn phí.' : ''}`,
+        ...changes,
         ...(b.kind === 'campfire' ? sim.upgradeAdvice(b.level).map((a) => `${a.bad ? '⚠' : '✓'} ${a.text}`) : [])],
       cost: sim.freeCost() ? {} : nx.cost, costTitle: 'Vật liệu cần', why: sim.canUpgrade(b), ok: 'Nâng cấp',
       onOk: () => { const e = sim.upgradeBuilding(b.id); toast(e ?? 'Đã trả vật liệu. Giao Thợ xây để nâng cấp'); ctl.onChange(); },
+    });
+  }
+
+  /** The pieces of the chosen group that can be raised a level now (built, idle, below the top and below what the campfire lets; the materials are asked for together). */
+  private groupUpgradable(): Building[] {
+    const { sim, ctl } = this.c, fire = sim.campfire();
+    return ctl.groupIds.map((id) => sim.getBuilding(id)).filter((b): b is Building => !!b && canGrow(b.kind) && b.done && !b.upgrading && !b.repairing && b.level < topLevel(b) && (sim.dev.freeBuild || !fire || b.level + 1 <= levelCapByFire(fire.level)));
+  }
+
+  /** Upgrade the whole chosen group (a row of fence) at once: one question, one bill. */
+  private askUpgradeGroup(): void {
+    const { sim, ctl, toast } = this.c, list = this.groupUpgradable();
+    if (!list.length) return;
+    const total: Partial<Stock> = {};
+    for (const b of list) for (const [r, n] of Object.entries(levelDef(b, b.level + 1).cost) as Array<[Res, number]>) total[r] = (total[r] ?? 0) + n;
+    this.confirm.ask({
+      title: `Nâng cấp ${list.length} mảnh?`,
+      lines: [`Mỗi mảnh lên một cấp. Vật liệu trả ngay cho cả nhóm, rồi giao Thợ xây để làm.${sim.freeCost() ? ' Đang bật xây miễn phí.' : ''}`],
+      cost: sim.freeCost() ? {} : total, costTitle: 'Vật liệu cần', why: sim.freeCost() ? null : sim.missing(total), ok: 'Nâng cấp',
+      onOk: () => { let done = 0, why: string | null = null; for (const b of list) { why = sim.upgradeBuilding(b.id); if (why) break; done++; } toast(why && !done ? why : `Đã nâng cấp ${done} mảnh. Giao Thợ xây để làm${why ? ` (còn ${list.length - done} mảnh chưa nâng được: ${why})` : ''}`); ctl.onChange(); },
     });
   }
 
@@ -122,18 +169,18 @@ export class BuildingBar {
       onClose: () => ctl.closeBuilding(),
       actions: [
         // choosing several pieces of fence to carry together: the card turns into the card of the group
-        { id: 'run', label: 'Chọn cả dãy', title: 'Chọn mọi mảnh nối liền với các mảnh đang chọn', hidden: !ctl.groupMode, onClick: () => ctl.selectRun() },
-        { id: 'gmove', label: `Di dời ${ctl.groupIds.length}`, title: 'Nhấc cả nhóm lên để đặt chỗ khác (miễn phí)', hidden: !ctl.groupMode, tone: 'primary', onClick: () => ctl.startGroupMove(0) },
-        { id: 'grot', label: '↻ Xoay', title: 'Xoay cả nhóm một phần tư vòng rồi đặt', hidden: !ctl.groupMode, onClick: () => ctl.startGroupMove(1) },
-        { id: 'gdone', label: 'Xong', hidden: !ctl.groupMode, onClick: () => ctl.endGroup() },
-        { id: 'multi', label: 'Chọn nhiều', title: 'Chọn nhiều mảnh hàng rào để dời hoặc xoay cùng lúc', hidden: ctl.groupMode || !b.done || !(b.kind === 'fence' || b.kind === 'gate'), onClick: () => ctl.startGroup(b.id) },
+        { id: 'run', icon: '⇄', label: 'Chọn cả dãy', title: 'Chọn mọi mảnh nối liền với các mảnh đang chọn', hidden: !ctl.groupMode, onClick: () => ctl.selectRun() },
+        { id: 'gmove', icon: `✥ ${ctl.groupIds.length}`, label: `Di dời ${ctl.groupIds.length}`, title: 'Nhấc cả nhóm lên để đặt chỗ khác (miễn phí)', hidden: !ctl.groupMode, tone: 'primary', onClick: () => ctl.startGroupMove(0) },
+        { id: 'gup', icon: `⬆︎ ${this.groupUpgradable().length}`, label: `Nâng cấp ${this.groupUpgradable().length}`, title: 'Nâng cấp mọi mảnh đã chọn lên cấp tiếp theo (trả vật liệu cho cả nhóm)', hidden: !ctl.groupMode || !this.groupUpgradable().length, onClick: () => this.askUpgradeGroup() },
+        { id: 'grot', icon: '↻', label: 'Xoay', title: 'Xoay cả nhóm một phần tư vòng rồi đặt', hidden: !ctl.groupMode, onClick: () => ctl.startGroupMove(1) },
+        { id: 'multi', icon: '▣', label: 'Chọn nhiều', title: 'Chọn nhiều mảnh hàng rào để dời hoặc xoay cùng lúc', hidden: ctl.groupMode || !b.done || !(b.kind === 'fence' || b.kind === 'gate'), onClick: () => ctl.startGroup(b.id) },
         { id: 'open', label: OPEN_LABEL[b.kind], tone: 'primary', hidden: ctl.groupMode || !b.done || b.kind === 'fence' || b.kind === 'gate', onClick: () => ctl.selectBuilding(b.id, true) },
-        { id: 'gate', label: b.open ? 'Đóng cổng' : 'Mở cổng', tone: 'primary', hidden: ctl.groupMode || !(b.kind === 'gate' && b.done), onClick: () => { const e = sim.toggleGate(b.id); if (e) toast(e); ctl.onChange(); } },
-        { id: 'repair', label: 'Sửa chữa', title: 'Sửa lại độ bền đã mất: tốn vật liệu theo phần độ bền mất, thợ xây làm', hidden: ctl.groupMode || !b.done || b.repairing || b.upgrading || b.hp >= maxHp(b), onClick: () => this.askRepair(b) },
-        { id: 'up', label: 'Nâng cấp', hidden: ctl.groupMode || !upgradable, onClick: () => this.askUpgrade(b) },
-        { id: 'callall', label: campOut.all ? 'Cho về hết' : 'Gọi tất cả', title: campOut.all ? 'Cho mọi lính của trại này về trại nghỉ' : 'Gọi mọi lính của trại này ra ngoài, sẵn sàng; bấm lại để cho về', hidden: ctl.groupMode || !b.done || !campOut.ids.length, onClick: () => { if (campOut.all) sim.sendBack(campOut.ids); else sim.callOut(campOut.ids); ctl.onChange(); } },
-        { id: 'move', label: 'Di dời', title: 'Di dời (miễn phí)', hidden: ctl.groupMode || !def.buildable, onClick: () => ctl.startMoving(b.id) },
-        { id: 'del', label: 'Phá bỏ', tone: 'danger', hidden: ctl.groupMode || !def.buildable, onClick: () => this.askDemolish(b) },
+        { id: 'gate', icon: '🚪', label: b.open ? 'Đóng cổng' : 'Mở cổng', tone: 'primary', hidden: ctl.groupMode || !(b.kind === 'gate' && b.done), onClick: () => { const e = sim.toggleGate(b.id); if (e) toast(e); ctl.onChange(); } },
+        { id: 'repair', icon: '🔧', label: 'Sửa chữa', title: 'Sửa lại độ bền đã mất: tốn vật liệu theo phần độ bền mất, thợ xây làm', hidden: ctl.groupMode || !b.done || b.repairing || b.upgrading || b.hp >= maxHp(b), onClick: () => this.askRepair(b) },
+        { id: 'up', icon: '⬆︎', label: 'Nâng cấp', title: 'Nâng lên cấp tiếp theo', hidden: ctl.groupMode || !upgradable, onClick: () => this.askUpgrade(b) },
+        { id: 'callall', icon: campOut.all ? '🏠' : '⚔', label: campOut.all ? 'Cho về hết' : 'Gọi tất cả', title: campOut.all ? 'Cho mọi lính của trại này về trại nghỉ' : 'Gọi mọi lính của trại này ra ngoài, sẵn sàng; bấm lại để cho về', hidden: ctl.groupMode || !b.done || !campOut.ids.length, onClick: () => { if (campOut.all) sim.sendBack(campOut.ids); else sim.callOut(campOut.ids); ctl.onChange(); } },
+        { id: 'move', icon: '✥', label: 'Di dời', title: 'Di dời (miễn phí)', hidden: ctl.groupMode || !def.buildable, onClick: () => ctl.startMoving(b.id) },
+        { id: 'del', icon: '🗑', label: 'Phá bỏ', tone: 'danger', hidden: ctl.groupMode || !def.buildable, onClick: () => this.askDemolish(b) },
       ],
     });
     this.width = this.root.offsetWidth; this.height = this.root.offsetHeight;

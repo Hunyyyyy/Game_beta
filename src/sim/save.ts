@@ -16,16 +16,16 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 28;
+export const SAVE_VERSION = 31;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
-  scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
+  scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'dayWeather', 'weatherAt', 'weatherEnd', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
   records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts'],
   /** Lists of plain data. */
-  lists: ['warLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
+  lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
   /** Handled by hand below. */
   special: ['researched', 'questSeen', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
 } as const satisfies Record<string, readonly (keyof Sim)[]>;
@@ -39,7 +39,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'threatCache', 'pathLeft', // rebuilt every tick
   'view', // where the camera is: the screen's, not the game's
   'warIds', 'march', 'warMeals', 'warHunger', 'warFocus', 'warHarassAt', // the march of a war: the game cannot be saved while one is on
-  'warSince', 'sfx', 'warSeenIds', 'warFresh', 'warStings', 'warCheckAt', 'hiddenAnimals', // the game cannot be saved while a war is on
+  'warSince', 'sfx', 'alerts', 'warSeenIds', 'warFresh', 'warStings', 'warCheckAt', 'hiddenAnimals', // the game cannot be saved while a war is on
   'leaderClock', // a timer: leaders are picked again within a second of loading
   'controlled', // what the player has selected: the screen's, not the game's
   'dangerAt', // a timer: after loading the villagers come out of hiding at once
@@ -290,10 +290,43 @@ MIGRATIONS[25] = (d) => {
 
 MIGRATIONS[26] = (d) => {
   return { ...d, version: 27 };
+};
 
 MIGRATIONS[27] = (d) => {
   // 27 -> 28: the villages we took add places to the camps of soldiers; saves of before count none
   d.scalars.conquered ??= 0;
   return { ...d, version: 28 };
 };
+
+MIGRATIONS[28] = (d) => {
+  // 28 -> 29: every stat of the research tree has 2 levels (it had 5; the two hold the sum of the five): a line researched to level n of 5 is now at level ceil(2n/5)
+  const STAT = /^(.+)_(hp|atk|defm|defr|move|work|int|sta|aspd|crit|critd|tspd|tyield|tdur|gyield|hpregen|restregen|mspeed|mload|mbuild)_(\d+)$/;
+  const best = new Map<string, number>(), keep: string[] = [];
+  for (const id of d.researched as string[]) {
+    const m = STAT.exec(id);
+    if (!m) { keep.push(id); continue; }
+    const key = `${m[1]}_${m[2]}`;
+    best.set(key, Math.max(best.get(key) ?? 0, +m[3]));
+  }
+  for (const [key, n] of best) for (let k = 1; k <= Math.ceil((n * 2) / 5); k++) keep.push(`${key}_${k}`);
+  d.researched = keep;
+  d.lists.researchQueue = (d.lists.researchQueue as string[]).filter((id) => { const m = STAT.exec(id); return !m || +m[3] <= 2; }); // an order for a level that no longer exists is dropped
+  return { ...d, version: 29 };
+};
+
+MIGRATIONS[29] = (d) => {
+  // 29 -> 30: bad weather lasts one or two minutes of the day, not all of it: a weather on now lasts another minute
+  d.scalars.dayWeather ??= d.scalars.weather ?? 'clear';
+  d.scalars.weatherAt ??= 0;
+  d.scalars.weatherEnd ??= (d.scalars.time ?? 0) + 60;
+  return { ...d, version: 30 };
+};
+
+MIGRATIONS[30] = (d) => {
+  // 30 -> 31: the log of the Lều họp chiến holds the fights at the village too, and every record has more numbers
+  d.lists.battleLog ??= [];
+  const b = d.records.battle as Record<string, unknown> | undefined;
+  if (b) { b.kind ??= 'raid'; b.name ??= ''; b.startDay ??= 0; b.night ??= false; b.peak ??= 0; b.ourDeadArm ??= { foot: 0, archer: 0, cavalry: 0 }; b.civDead ??= 0; b.dmgDealt ??= 0; b.dmgTaken ??= 0; }
+  for (const r of d.lists.warLog as Array<Record<string, unknown>>) { r.foeDead ??= 0; r.notes ??= []; }
+  return { ...d, version: 31 };
 };

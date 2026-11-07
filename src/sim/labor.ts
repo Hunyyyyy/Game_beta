@@ -6,7 +6,7 @@ import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP
 import { CARRY_CAP, RES_NAME } from './resources';
 import paceJson from '../data/pace.json';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
-import { RESEARCH } from './research';
+import { craftQuality, RESEARCH } from './research';
 import type { Sim } from './sim';
 import { LEFT, REACH, RIGHT, Slide, Villager, XP_MULT } from './model';
 
@@ -37,7 +37,7 @@ export function gainXp(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
 export function wear(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
   const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
   if (!k || !t || t.dur <= 0) return;
-  t.dur -= (dt * sim.paceWork) / (1 + toolBonus(sim, v, job, 'tdur') / 100);
+  t.dur -= (dt * sim.paceWork) / ((1 + toolBonus(sim, v, job, 'tdur') / 100) * craftQuality(sim.building('workshop')?.level ?? 1));
   if (t.dur <= 0) { v.tools[k] = null; sim.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} của ${v.name} đã hỏng, vứt bỏ.`); }
 }
 

@@ -19,6 +19,7 @@
     "fleeBurst": 5,
     "tiredSeconds": 10,
     "tiredSpeed": 0.5,
+    "wallBite": 3,
     "carcassSeconds": 90,
     "skinSeconds": 3,
     "breedMonth": "spring",

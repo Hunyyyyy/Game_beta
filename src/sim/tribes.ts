@@ -225,6 +225,7 @@ export function killFoe(sim: Sim, v: Villager, killer?: Villager): void {
   if (!t) return;
   t.unitIds = t.unitIds.filter((u) => u !== v.id);
   if (v.ai?.role === 'raider') sim.noteBattle('foes');
+  if (killer?.team === 'player') sim.warFoeDead(v.team);
   if (killer?.team === 'player') {
     t.relation = Math.max(-100, t.relation + (v.ai?.role === 'civ' ? RELATION.killCivilian : RELATION.killWarrior));
     t.angryUntil = sim.time + 120;
@@ -503,6 +504,7 @@ export function launchRaid(sim: Sim, t: Tribe, size: number, night?: boolean): v
   picks.forEach((g, i) => { g.ai!.role = 'raider'; g.ai!.raid = id; g.fight.target = null; g.path = []; g.fleeT = 0; if (!g.weapon?.startsWith('bronze')) g.weapon = i < wantArch ? (i % 2 ? 'sling' : 'bow') : melee[i % Math.max(1, melee.length)] ?? g.weapon; });
   t.angryUntil = sim.time + 400;
   const arch = picks.filter((g) => armOfWeapon(g.weapon) === 'archer').length;
+  sim.addAlert('raid');
   sim.say(`Quân ${t.def.name} (${n} người${sim.mapLevel(t.id) >= 3 ? `: ${arch} cung thủ, ${n - arch} bộ binh` : ''}) đang tiến vào làng!`);
 }
 
@@ -524,6 +526,7 @@ export function launchCustomRaid(sim: Sim, t: Tribe, weapons: string[], armor: b
     applyStats(sim, f); f.health = f.maxHealth;
   });
   t.angryUntil = sim.time + 400;
+  sim.addAlert('raid');
   sim.say(`Quân ${t.def.name} (${weapons.length} người) đang tiến vào làng!`);
 }
 
@@ -540,6 +543,7 @@ export function launchBeasts(sim: Sim, size: number, species: Species = 'wolf', 
     w.state = 'graze'; w.timer = 0; placed++;
   }
   sim.nextRaid++;
+  if (placed && species === 'wolf') sim.addAlert('wolf');
   if (placed) sim.say(`${species === 'wolf' ? 'Bầy sói đói' : `${ANIMALS[species].name} (${placed} con)`} kéo tới quanh làng! Đốt lửa và giữ dân gần đống lửa.`);
 }
 
@@ -550,7 +554,7 @@ export const armyWeapons = (army: Record<string, number>): string[] => Object.en
 function initEvents(sim: Sim, from = 0): void {
   for (const e of eventsJson.events as Array<{ id: string; kind: 'beasts' | 'raid'; species?: Species; tribe?: TribeId; army?: Record<string, number>; armor?: boolean; power?: number; day: number; spread: number; size?: number; night: boolean; warnDays?: number; warn: string }>) {
     const fireDay = from + e.day + Math.floor(sim.frnd() * (e.spread + 1)), size = e.army ? armyWeapons(e.army).length : e.size ?? 1;
-    sim.events.push({ id: e.id, kind: e.kind, tribe: e.tribe, species: e.species, army: e.army, armor: e.armor, power: e.power, fireDay, warnDay: fireDay - (e.warnDays ?? 1), size, night: e.night, warn: e.warn, warned: !e.warn, fired: false });
+    sim.events.push({ id: e.id, kind: e.kind, tribe: e.tribe, species: e.species, army: e.army, armor: e.armor, power: e.power, fireDay, warnDay: fireDay - (e.warnDays ?? 1), size, night: e.night, warn: e.warn, warned: false, fired: false });
   }
 }
 

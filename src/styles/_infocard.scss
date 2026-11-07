@@ -14,12 +14,13 @@
   }
   .iwho { flex: 1; min-width: 0; display: grid; gap: 1px; b { font-size: 13.5px; } small { color: #6a5a3a; font-size: 11.5px; } }
   .iclose {
-    flex: none; width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 12px; line-height: 1; cursor: pointer;
+    flex: none; width: 24px; height: 24px; padding: 0; border-radius: 0; font-size: 12px; line-height: 1; cursor: pointer;
     color: #3a2c1c; background: #efe0b8; border: 1px solid #8a6a36;
     &:hover { background: #b8322a; color: #fff; border-color: #6a1c16; }
   }
   .iline { font-size: 11.5px; color: #5a4a2c; }
-  .iacts { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; button { @include parchment-button; padding: 4px 10px; font-size: 12.5px; } }
+  .iacts { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; button { @include parchment-button; padding: 4px 10px; font-size: 12.5px; &.ic { min-width: 38px; padding: 4px 8px; font-size: 18px; line-height: 1.1; white-space: nowrap; }
+    \&.act-up, \&.act-gup { color: #2f8a3a; font-weight: 900; } } }
 }
 .bbar.infocard { display: grid; justify-items: stretch; padding: 8px 10px; }
 

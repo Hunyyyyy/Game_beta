@@ -57,7 +57,7 @@ export function setSeason(sim: Sim, season: Season): void {
   const day = year * SEASON_DAYS * SEASONS.length + SEASONS.indexOf(season) * SEASON_DAYS + 1;
   sim.time = sim.timeBase + (day - 1 - sim.dayBase) * sim.dayLen + 0.3 * sim.dayLen;
 }
-export function setWeather(sim: Sim, kind: WeatherKind): void { sim.weather = kind; }
+export function setWeather(sim: Sim, kind: WeatherKind): void { sim.weather = sim.dayWeather = kind; sim.weatherAt = sim.time; sim.weatherEnd = sim.time + 90; }
 
 // ---- events
 /** Fire the next of the scheduled events now that a camp of this level can meet with the soldiers it has room for (the weakest when none can be). Returns what came, or the reason it did not. */
@@ -333,4 +333,29 @@ export function discoverTribe(sim: Sim, id: string): string {
     if (old >= 0) sim.maps[old] = map; else sim.maps.push(map);
   }
   return `Đã phát hiện ${t.def.name}: mở Lều họp chiến để đánh`;
+}
+
+/** Dev: fill the log of the Lều họp chiến with made-up fights (attacks, raids, beasts) to look at it; call it again to take them away. Returns a line about it. */
+export function sampleBattleLog(sim: Sim): string {
+  const had = sim.warLog.some((r) => r.sample) || sim.battleLog.some((r) => r.sample);
+  if (had) {
+    for (let i = sim.warLog.length - 1; i >= 0; i--) if (sim.warLog[i].sample) sim.warLog.splice(i, 1);
+    for (let i = sim.battleLog.length - 1; i >= 0; i--) if (sim.battleLog[i].sample) sim.battleLog.splice(i, 1);
+    return 'Đã xóa dữ liệu mẫu của nhật ký chiến đấu';
+  }
+  const d = sim.day, arms = (foot: number, archer: number, cavalry: number) => ({ foot, archer, cavalry });
+  sim.warLog.push(
+    { id: sim.warLog.length + 1, tribe: 'axe', name: 'Rìu Đá', mapLevel: 3, startDay: Math.max(1, d - 9), endDay: Math.max(1, d - 7), days: 1.8, result: 'won', squads: 3, sent: arms(18, 10, 4), dead: arms(5, 2, 1), supplySent: 4, supplyDead: 0, foeDead: 31,
+      notes: ['Lệnh đánh được ban ra.', 'Đội 1 tới chỗ tấn công.', 'Hàng rào của Rìu Đá bị phá.', 'Đội 2 áp sát chòi canh.', 'Chòi canh của Rìu Đá bị phá.', 'Rìu Đá đã bị đánh bại.', 'Toàn quân rút về làng sau trận.'],
+      spent: { food: 64, wood: 12, hide: 4 }, loot: { food: 80, wood: 120, stone: 40, hide: 18 }, sample: true },
+    { id: sim.warLog.length + 2, tribe: 'swamp', name: 'Đầm Lầy', mapLevel: 2, startDay: Math.max(1, d - 5), endDay: Math.max(1, d - 4), days: 0.9, result: 'lost', squads: 2, sent: arms(12, 6, 0), dead: arms(11, 6, 0), supplySent: 2, supplyDead: 2, foeDead: 9,
+      notes: ['Lệnh đánh được ban ra.', 'Đội 2 bị chặn bởi một hàng rào.', 'Lệnh rút toàn quân.'], spent: { food: 30, wood: 0, hide: 0 }, loot: {}, sample: true },
+    { id: sim.warLog.length + 3, tribe: 'axe', name: 'Rìu Đá', mapLevel: 1, startDay: Math.max(1, d - 2), endDay: Math.max(1, d - 2), days: 0.2, result: 'off', squads: 1, sent: arms(6, 2, 0), dead: arms(0, 0, 0), supplySent: 0, supplyDead: 0, foeDead: 0,
+      notes: ['Hủy trận trước khi đánh, toàn quân về làng.'], spent: { food: 4, wood: 0, hide: 0 }, loot: {}, sample: true });
+  sim.battleLog.push(
+    { id: sim.battleLog.length + 1, kind: 'beasts', name: 'Sói', startDay: Math.max(1, d - 8), endDay: Math.max(1, d - 8), night: true, minutes: 3, peak: 5, ourDead: 1, foeDead: 5, ourDeadArm: arms(1, 0, 0), civDead: 0, breaches: 0, shots: 14, dmgDealt: 420, dmgTaken: 96, notes: [], sample: true },
+    { id: sim.battleLog.length + 2, kind: 'defense', name: 'Rìu Đá', startDay: Math.max(1, d - 6), endDay: Math.max(1, d - 6), night: false, minutes: 4, peak: 8, ourDead: 3, foeDead: 8, ourDeadArm: arms(2, 1, 0), civDead: 0, breaches: 2, shots: 22, dmgDealt: 1180, dmgTaken: 540, notes: ['2 đoạn hàng rào hoặc cổng bị phá.', 'Một hố chông đã làm địch bị thương.'], sample: true },
+    { id: sim.battleLog.length + 3, kind: 'defense', name: 'Đầm Lầy', startDay: Math.max(1, d - 3), endDay: Math.max(1, d - 3), night: true, minutes: 6, peak: 10, ourDead: 7, foeDead: 6, ourDeadArm: arms(4, 3, 0), civDead: 2, breaches: 5, shots: 9, dmgDealt: 900, dmgTaken: 1320, notes: ['5 đoạn hàng rào hoặc cổng bị phá.', 'Cổng bị phá!'], sample: true },
+    { id: sim.battleLog.length + 4, kind: 'beasts', name: 'Gấu', startDay: Math.max(1, d - 1), endDay: Math.max(1, d - 1), night: true, minutes: 2, peak: 1, ourDead: 0, foeDead: 1, ourDeadArm: arms(0, 0, 0), civDead: 0, breaches: 0, shots: 6, dmgDealt: 300, dmgTaken: 40, notes: [], sample: true });
+  return 'Đã thêm dữ liệu mẫu: mở Lều họp chiến, tab Nhật ký trận (bấm lại nút này để xóa)';
 }

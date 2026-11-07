@@ -7,7 +7,7 @@
   1
  ],
  "buildable": true,
- "unlockFire": 3,
+ "unlockFire": 2,
  "requires": [
   "fence"
  ],

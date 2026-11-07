@@ -7,12 +7,13 @@ import { TICK, TILE } from './sim/constants';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { RESEARCH } from './sim/research';
+import { SettingsPanel } from './ui/settingspanel';
 import { Journal } from './ui/journal';
 import { dlg, GameDialog } from './ui/gamedialog';
 import { StatsOverview } from './ui/statsoverview';
 import { resIcon } from './ui/resicons';
 import { Controller } from './ui/controller';
-import { $, costText } from './ui/dom';
+import { $, costText, iconCanvas } from './ui/dom';
 import { Menu } from './ui/menu';
 import { BuildTray } from './ui/buildtray';
 import { MapView } from './ui/minimap';
@@ -44,12 +45,8 @@ const audio = new GameAudio();
 renderer.audio = audio;
 audio.sfxOn = settings.sfxOn; audio.ambientOn = settings.ambientOn; audio.musicOn = settings.musicOn;
 audio.vol = { sfx: settings.sfxVol, amb: settings.ambientVol, mus: settings.musicVol };
-const sfxBtn = $<HTMLButtonElement>('btnSfx'), ambBtn = $<HTMLButtonElement>('btnAmb'), musBtn = $<HTMLButtonElement>('btnMus');
-function syncSound() {
-  sfxBtn.setAttribute('aria-pressed', String(audio.sfxOn)); sfxBtn.textContent = audio.sfxOn ? '🔊' : '🔇';
-  ambBtn.setAttribute('aria-pressed', String(audio.ambientOn)); ambBtn.textContent = audio.ambientOn ? '🌧' : '🚫';
-  musBtn.setAttribute('aria-pressed', String(audio.musicOn)); musBtn.textContent = audio.musicOn ? '🎵' : '🔕';
-}
+let soundChanged: () => void = () => undefined; // the settings window reads the sound settings back when a key changes them
+function syncSound() { soundChanged(); }
 function toggleSound(kind: 'sfx' | 'amb' | 'mus') {
   if (kind === 'sfx') settings.sfxOn = audio.sfxOn = !audio.sfxOn; else if (kind === 'amb') settings.ambientOn = audio.ambientOn = !audio.ambientOn; else settings.musicOn = audio.musicOn = !audio.musicOn;
   saveSettings(settings); syncSound();
@@ -65,8 +62,8 @@ const sound: Ctx['sound'] = {
     saveSettings(settings); syncSound();
   },
 };
-sfxBtn.addEventListener('click', () => toggleSound('sfx')); ambBtn.addEventListener('click', () => toggleSound('amb')); musBtn.addEventListener('click', () => toggleSound('mus'));
-syncSound();
+renderer.weatherFx = settings.weatherFx;
+const weatherFx: Ctx['weatherFx'] = { get: () => settings.weatherFx, set: (on) => { settings.weatherFx = renderer.weatherFx = on; saveSettings(settings); } };
 const ctl = new Controller(view, sim, cam, renderer);
 ctl.centerOn(sim.world.start.x * TILE + TILE / 2, sim.world.start.y * TILE - 10);
 sim.controlled = ctl.selected; // the units the player holds: the sim lets their orders win over its own fighting and fleeing
@@ -81,10 +78,10 @@ const toast = (text: string) => {
 ctl.onToast = toast;
 ctl.onOrder = () => audio.order();
 // the buttons that command a troop (deploy, attack, withdraw, call out, send back) sound as an order
-const ORDER_BTN = /Triển khai|^\W*Đánh$|Rút|^Gọi (tất cả|cả trại|ra|quân)|^Cho (về hết|cả trại về|quân về)|^Về trại/;
+const ORDER_BTN = /Triển khai|^\W*Đánh$|Rút|^Gọi (tất cả|cả trại|quân)|^Cho (về hết|cả trại về|quân về)/;
 document.addEventListener('click', (e) => { const b = (e.target as Element | null)?.closest('button'); if (b && !b.disabled && (b.id === 'btnArmy' || ORDER_BTN.test((b.textContent ?? '').trim()))) audio.order(); }, true);
 session.onError = toast;
-const ctx: Ctx = { sim, ctl, sprites, session, toast, sound };
+const ctx: Ctx = { sim, ctl, sprites, session, toast, sound, weatherFx };
 
 // ---------------------------------------------------------------- panels, menu, maps
 const unitCard = new UnitCard($('ucard'), ctx, $('udetail')), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
@@ -94,7 +91,8 @@ const tray = new BuildTray($('tray'), ctx);
 const map = new MapView(sim, cam, renderer, ctl, $('mini'), $('bigmapCanvas'), $('bigmap'));
 const menu = new Menu($('drawer'), $('drawerTabs'), $('drawerBody'), ctx, () => { const w = renderer.screenToWorld(renderer.w / 2, renderer.h / 2); return { x: w.x / TILE, y: w.y / TILE }; });
 $('btnCloseMap').addEventListener('click', () => map.close());
-$('btnMenu').addEventListener('click', () => { tray.close(); menu.toggle(); });
+$('btnDev').addEventListener('click', () => { tray.close(); menu.open('dev'); });
+{ const pic = iconCanvas(sprites.icons.hammer1); pic.className = 'buildpic'; $('btnBuild').prepend(pic); } // the hammer of the game's own tools, not an emoji
 $('btnBuild').addEventListener('click', () => { menu.close(); tray.toggle(); });
 // ---------------------------------------------------------------- landscape on phones
 // A phone held upright gets a prompt (and the game pauses until it is turned); fullscreen plus an orientation lock is tried where the browser allows it.
@@ -131,13 +129,29 @@ fullBtn.hidden = !matchMedia('(pointer: coarse)').matches && !document.fullscree
 const SPEEDS = [1, 2, 4, 16];
 const speedBtn = $<HTMLButtonElement>('btnSpeed');
 speedBtn.addEventListener('click', () => setSpeed(SPEEDS[(SPEEDS.indexOf(sim.speed) + 1) % SPEEDS.length]));
+// the ring of buttons that opens where the pointer is held still on the map: Chọn nhiều, Gọi quân, Bỏ chọn
+const ring = $('radial'), ringBtns = ['btnMulti', 'btnArmy', 'btnNone'].map((id) => $<HTMLButtonElement>(id));
+const RING_R = 64;
+let ringHot: HTMLButtonElement | null = null;
+const ringSpot = (i: number, n: number) => { const a = -Math.PI / 2 + (i / n) * Math.PI * 2; return { x: Math.cos(a) * RING_R, y: Math.sin(a) * RING_R }; };
+const ringShown = () => ringBtns.filter((b) => !b.hidden);
+ctl.hold.open = (p) => {
+  const b = view.getBoundingClientRect(), shown = ringShown();
+  ring.style.left = `${Math.round(b.left + p.x)}px`; ring.style.top = `${Math.round(b.top + p.y)}px`;
+  shown.forEach((el, i) => { const s = ringSpot(i, shown.length); el.style.left = `${Math.round(s.x)}px`; el.style.top = `${Math.round(s.y)}px`; });
+  ring.hidden = false; ringHot = null; syncButtons();
+};
+ctl.hold.move = (p) => {
+  const b = view.getBoundingClientRect(), cx = b.left + p.x - parseFloat(ring.style.left), cy = b.top + p.y - parseFloat(ring.style.top), shown = ringShown();
+  let best: HTMLButtonElement | null = null, bd = 34; // within this many pixels of a button
+  shown.forEach((el, i) => { const s = ringSpot(i, shown.length), d = Math.hypot(cx - s.x, cy - s.y); if (d < bd) { bd = d; best = el; } });
+  ringHot = best; for (const el of ringBtns) el.classList.toggle('hot', el === best);
+};
+ctl.hold.end = () => { const hot = ringHot; ring.hidden = true; ringHot = null; for (const el of ringBtns) el.classList.remove('hot'); if (hot) hot.click(); };
 const multiBtn = $<HTMLButtonElement>('btnMulti');
 multiBtn.addEventListener('click', () => ctl.setMulti(!ctl.multi));
-$('btnAll').addEventListener('click', () => ctl.selectAll());
 $('btnNone').addEventListener('click', () => ctl.clearSelection());
 $('btnHome').addEventListener('click', () => { const f = sim.campfire(), s = sim.world.start; ctl.centerOn(((f ? f.x + 1 : s.x) ) * TILE, ((f ? f.y + 1 : s.y)) * TILE); });
-const foldBtn = $<HTMLButtonElement>('btnFold');
-foldBtn.addEventListener('click', () => { const on = !$('sheet').classList.contains('folded'); $('sheet').classList.toggle('folded', on); foldBtn.setAttribute('aria-pressed', String(on)); foldBtn.textContent = on ? 'Hiện bảng' : 'Ẩn bảng'; });
 $('btnArmy').addEventListener('click', () => { if (sim.alarmUntil > sim.time) sim.standDown(); else { const e = sim.callArmy(); if (e) toast(e); } syncButtons(); });
 $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
 $('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
@@ -173,7 +187,7 @@ function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'worksh
 function syncButtons() {
   speedBtn.textContent = sim.speed === 0 ? '❚❚' : `${sim.speed}×`; speedBtn.setAttribute('aria-pressed', String(sim.speed === 0));
   multiBtn.setAttribute('aria-pressed', String(ctl.multi));
-  { const on = sim.alarmUntil > sim.time, army = $('btnArmy'); army.setAttribute('aria-pressed', String(on)); army.textContent = on ? 'Cho quân về' : 'Gọi quân'; army.hidden = !sim.villagers.some((v) => v.job === 'fight' && !v.guard); }
+  { const on = sim.alarmUntil > sim.time, army = $('btnArmy'); army.setAttribute('aria-pressed', String(on)); army.textContent = on ? '🏠' : '⚔'; army.title = on ? 'Cho quân về trại nghỉ' : 'Gọi quân đội ra khỏi trại'; army.hidden = !sim.villagers.some((v) => v.job === 'fight' && !v.guard); }
   $('btnNone').hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
 }
 window.addEventListener('keydown', (e) => {
@@ -185,20 +199,24 @@ window.addEventListener('keydown', (e) => {
 
   else if (k === 'q') setSpeed(1); else if (k === 'e') setSpeed(2); else if (k === 'r') setSpeed(4); else if (k === 't') setSpeed(16);
   else if (k === 'b') togglePlace('storage'); else if (k === 'x') togglePlace('workshop'); else if (k === 'c') openWorkshop();
-  else if (k === 'm') { if (map.isOpen) map.close(); else map.open(); }
   else if (k === 'tab') { e.preventDefault(); menu.toggle(); }
 });
 
 // ---------------------------------------------------------------- the top bar and the log
-const clock = $('clock');
 const REGION_NAME = { plains: 'Đồng bằng', sparse: 'Rừng thưa', dense: 'Rừng rậm', mountain: 'Núi', water: 'Vùng nước' } as const;
 // the coloured squares of the top bar give way to drawn pictures
 for (const [id, key] of [['rFood', 'food'], ['rWood', 'wood'], ['rStone', 'stone'], ['rHide', 'hide'], ['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk'], ['rTorch', 'torch'], ['rCoin', 'coin'], ['rPop', 'pop']]) $(id).querySelector('i')?.replaceWith(resIcon(key));
 // the quest and notice buttons stand at the left edge; each opens its window over the map, and a red mark says something new is waiting
 const statsOverview = new StatsOverview(ctx), statsDlg = new GameDialog($('spanel'), {});
 const statsCard = dlg.card({ wide: true, label: 'Chỉ số đã nghiên cứu' }, dlg.head({ pic: '📊', title: 'Chỉ số đã nghiên cứu', sub: 'Chung cho mỗi loại dân, nghề và lính', onClose: () => statsDlg.hide() }), statsOverview.root);
-$('btnStats').addEventListener('click', () => { if (statsDlg.isOpen) { statsDlg.hide(); return; } statsOverview.update(); statsDlg.show(statsCard); });
+const openStats = () => { settingsOpen = false; statsOverview.update(); statsDlg.show(statsCard); };
+const settingsPanel = new SettingsPanel(ctx, { close: () => statsDlg.hide(), openStats });
+soundChanged = () => settingsPanel.update();
+let settingsOpen = false;
+$('btnSettings').addEventListener('click', () => { if (statsDlg.isOpen) { statsDlg.hide(); settingsOpen = false; return; } settingsPanel.update(); statsDlg.show(settingsPanel.card); settingsOpen = true; });
+let weatherView: { head: string; rows: Array<[string, string]> } = { head: '', rows: [] };
 const journal = new Journal(ctx, { quests: $('qpanel'), notices: $('npanel') }, { quests: $('btnQuest'), notices: $('btnNotice') });
+journal.weather = () => weatherView;
 let fps = 60, lastHud = 0, logKey = '', pending: string | null = null, lastTopH = -1;
 const topBar = document.querySelector('.top') as HTMLElement;
 
@@ -230,10 +248,13 @@ function updateHud(now: number) {
   const mid = renderer.screenToWorld(renderer.w / 2, renderer.h / 2), mx = Math.floor(mid.x / TILE), my = Math.floor(mid.y / TILE);
   const region = sim.world.inBounds(mx, my) ? (sim.fog.state[my * sim.world.size + mx] > 0 ? REGION_NAME[sim.world.regionAt(mx, my)] : 'Vùng chưa khám phá') : 'Ngoài bản đồ';
   { const f = sim.campfire(), s = sim.world.start; $('btnHome').hidden = Math.hypot(mid.x / TILE - (f ? f.x + 1 : s.x), mid.y / TILE - (f ? f.y + 1 : s.y)) < 30; } // the camera is far from the village: a way back
-  clock.textContent = `${year > 1 ? `Năm ${year} · ` : ''}Ngày ${sim.day} · ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} · ${DAY_PART_NAME[sim.part]} · ${we.name} · ${region}`;
   const outdoor = we.work * se.work;
   const eff = [we.vision ? `tầm nhìn −${we.vision} ô` : '', we.speed < 1 ? `đi chậm ${Math.round((1 - we.speed) * 100)}%` : '', outdoor < 1 ? `làm việc ngoài trời chậm ${Math.round((1 - outdoor) * 100)}%` : ''].filter(Boolean).join(', ');
-  $('clockLine').title = `${we.name}${eff ? `: ${eff}` : ''}. Hái lượm mùa ${se.name.toLowerCase()} ×${se.gather.toLocaleString('vi')}. ${Math.round(fps)} fps`;
+  weatherView = { // the time and the weather live in the window of the notices (the bell)
+    head: `${year > 1 ? `Năm ${year} · ` : ''}Ngày ${sim.day} · ${se.name} ${dayInSeason(sim.day)}/${SEASON_DAYS} · ${DAY_PART_NAME[sim.part]}`,
+    rows: [['Thời tiết', we.name], ...(eff ? [['Ảnh hưởng', eff] as [string, string]] : []), ['Vùng', region], ['Hái lượm', `×${se.gather.toLocaleString('vi')} (mùa ${se.name.toLowerCase()})`],
+      ...(sim.signalled && sim.nextWeather !== sim.weather ? [['Ngày mai', WEATHER[sim.nextWeather].name] as [string, string]] : []), ['Khung hình', `${Math.round(fps)} fps`]],
+  };
 
   // quests and notices: the windows are drawn by the journal; here only the toast when a quest is done
   const selB = ctl.selectedBuilding === null ? undefined : sim.getBuilding(ctl.selectedBuilding);
@@ -250,7 +271,7 @@ function updateHud(now: number) {
   if (topH !== lastTopH) { lastTopH = topH; document.documentElement.style.setProperty('--top-h', `${topH}px`); }
 
   // a tribe that has just given in: take the player to the choice
-  if (sim.pendingTribe !== pending) { pending = sim.pendingTribe; if (pending) { menu.open('tribes'); toast('Một bộ tộc xin hàng!'); } }
+  if (sim.pendingTribe !== pending) { pending = sim.pendingTribe; if (pending) { buildingPanel.openTribes(); toast('Một bộ tộc xin hàng!'); } }
 
   // which panels show
   const chosen = sim.villagers.filter((v) => ctl.selected.has(v.id));
@@ -285,6 +306,8 @@ function frame(t: number) {
   ctl.update(dt);
   audio.update(started ? sim.weather : 'clear', dt);
   audio.setPeace(started && !sim.atWar() && !sim.battle.on && !sim.tribes.some((t) => t.raid), dt);
+  for (const a of sim.alerts) audio.alert(a);
+  sim.alerts.length = 0;
   { // a war that has just been decided: the sound of the win or the loss, once
     const p = started ? sim.plans.find((q) => q.kind === 'attack' && q.result && q.endedAt > lastWarEnd) : undefined;
     if (p) { lastWarEnd = p.endedAt; celebrating = p.result === 'won' ? p : null; if (sim.time - p.endedAt < 5) audio.warEnded(p.result as 'won' | 'lost', performance.now() / 1000); }
@@ -300,8 +323,10 @@ function frame(t: number) {
   if (busy || skipping || ++drawn >= drawEvery()) {
     drawn = 0;
     renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);
-    buildingBar.place(); map.draw();
+    buildingBar.place();
   }
+  $('sheet').classList.toggle('hushed', ctl.hushCard);
+  if (settingsOpen && statsDlg.isOpen) settingsPanel.update(); else settingsOpen = false;
   updateHud(t);
   requestAnimationFrame(frame);
 }

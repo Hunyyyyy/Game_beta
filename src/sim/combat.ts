@@ -33,8 +33,11 @@ export interface WeaponDef {
   /** Blows (or shots) before it is worn out; foes' gear does not wear. */
   durability?: number;
 }
-export interface ArmorDef extends Record<DmgType, number> {
+/** Armour adds to the person's own defence stats (Phòng thủ cận chiến `defm`, Phòng thủ tầm xa `defr`): it no longer takes a share off each kind of blow. */
+export interface ArmorDef {
   name: string;
+  defm: number;
+  defr: number;
   cost?: Partial<Stock>;
   time?: number;
   tier?: number;
@@ -143,8 +146,8 @@ export const maxHpOf = (vit: number) => 40 + 8 * vit;
 /** Seconds between two blows: weapon cycle times the agility factor. */
 export const cycleOf = (weaponCycle: number, agi: number) => weaponCycle * (RULES.agilityBase - RULES.agilityStep * agi);
 
-/** Damage of one blow after armour; `strength` adds to melee only. */
-export function damageOf(w: { damage: number; type: DmgType; ranged?: boolean }, strength: number, armor: ArmorDef | null, backstab: boolean): number {
+/** Damage of one blow before the defender's defence; `strength` adds to melee only. */
+export function damageOf(w: { damage: number; type: DmgType; ranged?: boolean }, strength: number, backstab: boolean): number {
   const base = w.damage + RULES.strengthDamage * strength;
-  return base * (1 - (armor ? armor[w.type] : 0)) * (backstab ? RULES.backstab : 1);
+  return base * (backstab ? RULES.backstab : 1);
 }

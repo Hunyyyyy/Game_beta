@@ -157,3 +157,11 @@
   .link.done { background: #4f8a38; }
   .link.todo { background: #c8322c; }
 }
+
+// the detail of a person: a few rows, not a wall of text
+.gdlg .dgear { display: grid; gap: 4px; margin-top: 6px; }
+.gdlg .dgear .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0; background: none; border: 0; }
+.gdlg .dgear .nm { font-weight: 600; }
+.gdlg .dgear select { max-width: 62%; }
+.gdlg .dwork { margin-top: 8px; display: grid; gap: 4px; }
+.gdlg .dsec > .sm { margin-top: 6px; }

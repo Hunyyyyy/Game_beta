@@ -1,18 +1,16 @@
 import type { Shift } from '../sim/model';
 import { BUILDINGS, needsWork } from '../sim/buildings';
-import { ArmorDef, ARMORS } from '../sim/combat';
+import { ArmorDef, ARMORS, WEAPONS } from '../sim/combat';
+import { TIER_NAME, TOOL_NAME, TOOL_OF_JOB } from '../sim/tools';
+import type { WorkJob } from '../sim/jobs';
 import { dayLength, gameDays } from '../sim/constants';
 import { Job, JOB_NAME, JOBS } from '../sim/jobs';
 import { RES_NAME } from '../sim/resources';
 import type { Sim, Villager } from '../sim/sim';
 
 
-/** How well armour protects: the average of what it takes off a pierce, slash and crush blow (0..1). */
-export const armorLevel = (a: ArmorDef) => (a.pierce + a.slash + a.crush) / 3;
-/** A full bar is armour that stops half of every blow. */
-export const ARMOR_FULL = 0.5;
 export const pct = (x: number) => `${Math.round(x * 100)}%`;
-export const armorText = (a: ArmorDef, named = true) => `${named ? `${a.name}: ` : ''}giảm sát thương đâm ${pct(a.pierce)} · chém ${pct(a.slash)} · đập ${pct(a.crush)}`;
+export const armorText = (a: ArmorDef, named = true) => `${named ? `${a.name}: ` : ''}thủ cận +${a.defm} · thủ xa +${a.defr}`;
 
 /** The jobs of the job buttons. Soldiers are not one of them: they are recruited and discharged at the campfire. */
 export const PLAIN_JOBS: Job[] = ['idle', 'wood', 'stone', 'food', 'hunt'];
@@ -32,7 +30,7 @@ export function waitReason(v: Villager, sim: Sim): string | null {
 
 /** What a villager is doing, in words. */
 export function describe(v: Villager, sim?: Sim): string {
-  const carry = v.carry && v.carry.amount > 0 ? ` · mang ${v.carry.amount} ${RES_NAME[v.carry.res].toLowerCase()}` : '';
+  const carry = v.carry && v.carry.amount > 0 ? ` · mang ${Math.round(v.carry.amount * 10) / 10} ${RES_NAME[v.carry.res].toLowerCase()}` : '';
   let t: string;
   switch (v.phase) {
     case 'move': t = 'đang đi'; break;
@@ -86,5 +84,17 @@ export function energyText(sim: Sim, v: Villager): string {
   if (v.strain >= 5) parts.push(`mệt mỏi tích lũy <b>${Math.round(v.strain)}</b>`);
   if (v.torch) parts.push(`đuốc còn ${Math.max(1, Math.round(v.torch.dur / 60))} phút`);
   if (sim.sleepLocked(v)) parts.push(`<b>ngủ say</b>, dậy khi đạt ${v.lockUntil}%`);
+  return parts.join(' · ');
+}
+
+/** What a person holds, in one line for a list: the weapon and the armour of one who fights, hunts or scouts (with what the armour adds), the tool of one who works. Empty when he holds nothing to tell. */
+export function gearLine(v: Villager): string {
+  const parts: string[] = [];
+  if (v.job === 'fight' || v.job === 'hunt' || v.job === 'scout') {
+    parts.push(`Vũ khí: ${v.weapon ? WEAPONS[v.weapon].name : 'tay không'}`);
+    parts.push(`Giáp: ${v.armor ? armorText(ARMORS[v.armor]) : 'không'}`);
+  }
+  const k = TOOL_OF_JOB[v.job as WorkJob], t = k ? v.tools[k] : null;
+  if (k) parts.push(`${TOOL_NAME[k]}: ${t ? `${TIER_NAME[t.tier].toLowerCase()}${t.dur <= 0 ? ' (hỏng)' : ''}` : 'tay không'}`);
   return parts.join(' · ');
 }

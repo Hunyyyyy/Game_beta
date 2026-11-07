@@ -169,3 +169,27 @@ body.war .tray { display: none !important; }
 }
 
 #btnSkip.dim { opacity: .6; }
+
+// ---- the cog, the build button, the icon buttons of the chosen people ----
+.cog { width: 36px; height: 36px; padding: 0; font-size: 20px; line-height: 1; }
+.buildfab {
+  position: absolute; right: calc(10px + var(--sar)); bottom: calc(10px + var(--sab)); z-index: 15;
+  width: 68px; height: 68px; padding: 0; display: grid; place-items: center; border-radius: 8px;
+  color: #3a2c1c; background: linear-gradient(#f6e9c4, #dcc690); border: 2px solid #8a6a36; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 3px 10px rgba(0, 0, 0, .45); cursor: pointer;
+  &:hover { filter: brightness(1.07); }
+  &[aria-pressed='true'] { background: linear-gradient(#58957f, #2f6a5c); border-color: #1c4a40; }
+  .buildpic { width: 44px; height: 44px; image-rendering: pixelated; }
+  .nbadge { position: absolute; top: -6px; right: -6px; }
+}
+@media (max-height: 480px) { .buildfab { width: 54px; height: 54px; .buildpic { width: 36px; height: 36px; } } }
+.selbar .ico { width: 40px; height: 40px; padding: 0; font-size: 20px; line-height: 1; }
+.sheet.hushed > #ucard { display: none; } // the card of the chosen people steps aside while they are ordered about
+
+// ---- the ring that opens where the pointer is held on the map ----
+#radial {
+  position: fixed; z-index: 40; width: 0; height: 0; pointer-events: none;
+  .rdot { position: absolute; left: -7px; top: -7px; width: 14px; height: 14px; border-radius: 50%; background: rgba(255, 255, 255, .85); border: 2px solid rgba(0, 0, 0, .5); }
+  button { position: absolute; width: 52px; height: 52px; margin: -26px 0 0 -26px; padding: 0; border-radius: 50%; font-size: 24px; line-height: 1; box-shadow: 0 2px 8px rgba(0, 0, 0, .5);
+    &.hot { background: var(--accent); color: var(--accent-fg); transform: scale(1.18); }
+    &[hidden] { display: none; } }
+}

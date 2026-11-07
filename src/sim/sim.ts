@@ -48,7 +48,7 @@ import * as warlog from './warlog';
 import * as warquick from './warquick';
 import * as brainplayer from './brainplayer';
 import { WAR, WarApi } from './simwar';
-import { BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutLoss, WarRecord, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
+import { BattleRecord, BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutLoss, WarRecord, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
 import type { Ent } from './battle';
 export * from './model';
 
@@ -135,7 +135,9 @@ export class Sim {
   nextPlan = 1;
   /** Game seconds until which the alarm drum is sounding (0 = quiet). */
   alarmUntil = 0;
-  readonly battle: BattleState = { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] };
+  readonly battle: BattleState = { on: false, since: 0, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [], kind: 'raid', name: '', startDay: 0, night: false, peak: 0, ourDeadArm: { foot: 0, archer: 0, cavalry: 0 }, civDead: 0, dmgDealt: 0, dmgTaken: 0 };
+  /** The fights at the village, newest last (army.tickBattle): the defence half of the log of the Lều họp chiến. */
+  readonly battleLog: BattleRecord[] = [];
   /** The summaries of past fights, newest last. */
   readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
@@ -162,6 +164,10 @@ export class Sim {
   /** Today's and tomorrow's weather (tomorrow is rolled ahead so it can be foretold). */
   weather: WeatherKind = 'clear';
   nextWeather: WeatherKind = 'clear';
+  /** The weather of the day, and the game times between which it lasts (it does not last the day: see environment.tickCalendar); `weather` is what is on now. */
+  dayWeather: WeatherKind = 'clear';
+  weatherAt = 0;
+  weatherEnd = 0;
   readonly wrnd: Rng;
   lastDay = 1;
   signalled = false;
@@ -175,6 +181,9 @@ export class Sim {
   warSince = -1;
   /** War sound: whether enough of our soldiers have seen the enemy and are attacking (the sting plays each time it turns on), when that was last true, and when it was last worked out. Reset when the war ends. */
   /** Sounds waiting for the UI (a blow landed, an arrow hit): the renderer plays and empties them. Never saved. */
+  /** Warnings for the sound (a pack of wolves comes, a village raids us): the UI plays and empties them. Never saved. */
+  alerts: Array<'wolf' | 'raid'> = [];
+  addAlert(kind: 'wolf' | 'raid'): void { if (this.alerts.length < 8) this.alerts.push(kind); }
   sfx: Array<{ weapon: string; ranged: boolean; x: number; y: number }> = [];
   /** War sound: the soldiers that have seen the enemy so far, how many of them are not yet counted into a sting, and how many stings have been due. */
   warSeenIds = new Set<number>();

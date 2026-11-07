@@ -95,3 +95,7 @@ $mini: clamp(64px, 15vw, 96px);
 }
 .nbtn { top: calc(34% + 48px); }
 .nbtn .dot.calm { background: #d8b13a; color: #26180c; animation: none; }
+
+// the notice window: its tabs and the time and weather page
+.jtabs { margin: 4px 0 8px; }
+.jweather .jclock { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
