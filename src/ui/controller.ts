@@ -20,6 +20,8 @@ export class Controller {
   private ordered(ids: number[]): void { if (ids.length > 1 && ids.some((id) => this.sim.get(id)?.job === 'fight')) this.onOrder(); }
   /** Selecting several villagers: taps toggle, drags draw a box. */
   multi = false;
+  /** The army of the march is chosen: a tap or a right click on the ground sends the whole block there (sim.legionMove). */
+  legionControl = false;
   /** The card of the chosen people is out of the way while the player orders them about; choosing someone brings it back. */
   hushCard = false;
   /** Holding the pointer still on the map opens a ring of buttons round it (the screen draws it): `open` when it opens, `move` while the pointer goes over it, `end` when it is let go. */
@@ -272,6 +274,7 @@ export class Controller {
 
   /** Left click or tap. */
   private activate(p: { x: number; y: number }, touch: boolean, additive: boolean): void {
+    if (this.legionControl && this.sim.legion.on && !this.placing) { this.command(p, additive); return; }
     if (this.attackMoveArmed) { this.attackMove(p, additive); return; }
     // choosing pieces of fence: a tap takes one in or puts it back
     if (this.groupMode && !this.placing) { const b = this.buildingUnder(p); if (b !== null && this.isWall(b)) this.toggleGroup(b); else { this.endGroup(); this.selectedBuilding = null; this.onChange(); } return; } // a tap away from the fence lets the group go
@@ -481,6 +484,11 @@ export class Controller {
   }
 
   command(p: { x: number; y: number }, queue = false): void {
+    if (this.legionControl && this.sim.legion.on) { // the army of the march: the whole block goes where the player points
+      const w = this.r.screenToWorld(p.x, p.y), e = this.sim.legionMove(w.x / TILE, w.y / TILE);
+      if (e) this.onToast(e); else { this.markers.push({ x: w.x, y: w.y, age: 0 }); this.onToast('Đội quân hành quân'); }
+      this.onChange(); return;
+    }
     if (!this.selected.size) return;
     this.hushCard = true;
     const w = this.r.screenToWorld(p.x, p.y);

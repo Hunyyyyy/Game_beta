@@ -171,7 +171,7 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
   }
   if (n.amount <= 0) {
     const idx = v.target, N = sim.world.size; leaveNode(sim, v);
-    sim.world.depleted(idx, (x, y) => sim.fog.state[y * N + x] > 0 && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y)); v.phase = 'idle';
+    sim.world.depleted(idx, (x, y) => sim.fog.state[y * N + x] > 0 && !sim.inZone(x, y) && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y)); v.phase = 'idle';
     if (n.kind === 'tree') sim.say('Một cây đã được đốn xong.');
   } else if (v.carry.amount >= CARRY_CAP[res] || sim.needTool(v, job)) { leaveNode(sim, v); v.phase = 'idle'; }
 }

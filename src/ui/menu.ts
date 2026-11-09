@@ -116,6 +116,8 @@ export class Menu {
     page.append(h('div', { class: 'devrow' },
       btn('+5 dân', () => toast(dev.addPeople(sim, 5)), 'Thêm 5 dân rảnh quanh lửa trại, kể cả khi vượt sức chứa'),
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),
+      btn('Tập hợp quân đầy ô', () => { toast(dev.fillPlan(sim)); ctl.onChange(); }, 'Tạo thêm lính (đồ tốt nhất + đuốc, bỏ qua sức chứa trại) cho đủ mọi ô lính trong kế hoạch của Bãi tập rồi Tập trận ngay'),
+      btn('Dọn sạch quanh khu quân sự', () => { toast(dev.clearAroundZones(sim)); ctl.onChange(); }, 'Xóa cây, đá, bụi và thú trong khu quân sự và 40 ô xung quanh để thử hành quân (công trình giữ nguyên)'),
       btn('Mẫu nhật ký chiến đấu', () => toast(dev.sampleBattleLog(sim)), 'Thêm (hoặc xóa) vài trận giả vào nhật ký của Lều họp chiến để xem giao diện'),
       btn('Đầy quân + đồ cao nhất + đuốc', () => toast(dev.fullArmy(sim)), 'Mọi trại lính đầy quân, ai cũng có vũ khí và giáp tốt nhất của thời đại và một cây đuốc'),
       btn('Gọi sự kiện (theo cấp lửa)', () => toast(dev.callEvent(sim)), 'Gọi ngay sự kiện đã hẹn mạnh nhất mà trại cấp lửa hiện tại đủ sức đón')));

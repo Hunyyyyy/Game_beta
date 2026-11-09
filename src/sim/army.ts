@@ -139,15 +139,12 @@ export function trainSquad(sim: Sim, squadId: number, on: boolean): string | nul
   const s = squadById(sim, squadId);
   if (!s) return 'Không có đội này';
   if (!on) { s.training = false; return null; }
-  const field = sim.building('drill');
-  if (!field) return 'Cần dựng Bãi tập';
-  s.training = true;
-  squadMove(sim, s, field.x + 1.5, field.y + 1.5, 'hold');
-  return null;
+  return 'Bãi tập không còn luyện đội hình: dùng tab "Hành quân" của Bãi tập để lập quân'; // the drill ground is the place where the army is formed and set marching now (legion.ts)
 }
 
 /** Drill raises the mastery of the formation in use; what is not used is slowly forgotten. */
 export function tickTraining(sim: Sim, dt: number): void {
+  if (dt >= 0) return; // switched off: mastery no longer rises or fades (the Bãi tập is for the march now)
   const field = sim.building('drill');
   for (const s of sim.squads) {
     const us = squadUnits(sim, s);

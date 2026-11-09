@@ -60,6 +60,7 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   if (v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 0.0015 * v.maxHealth * (1 - sim.foodPenalty) * healFactor(sim, v));
   if (v.health <= 0) { sim.kill(v); return; }
   v.orderCd = Math.max(0, v.orderCd - dt);
+  if (sim.legionHolds(v)) { sim.animate(v, dt); return; } // a soldier of the marching army is moved by the army (legion.tickLegion): no work, no sleep, no brain of his own
   sim.tickEnergy(v, dt);
   const held = sim.heldTool(v);
   if (held && TOOL_OF_JOB[v.job as WorkJob] !== held.k) sim.returnTool(v); // the job changed: the tool goes back with its wear

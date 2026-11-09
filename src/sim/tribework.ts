@@ -161,7 +161,7 @@ function tickLife(sim: Sim, f: Villager, t: Tribe, L: Life, dt: number): boolean
       if (n.amount <= 0) {
         const idx = L.idx!;
         n.workers = Math.max(0, n.workers - 1); L.idx = -1;
-        sim.world.depleted(idx, (x, y) => ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y));
+        sim.world.depleted(idx, (x, y) => !sim.inZone(x, y) && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y));
         endLife(sim, f); return false;
       }
       if ((L.units ?? 0) >= npc.unitsPerTrip) { endLife(sim, f); return false; }

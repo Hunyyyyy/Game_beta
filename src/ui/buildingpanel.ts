@@ -17,6 +17,7 @@ import type { Ctx } from './ctx';
 import { PeoplePane } from './peoplepane';
 import { ActiveBox, StaffBox } from './housebox';
 import { ScoutPane } from './scoutpane';
+import { MarchPane } from './marchpane';
 import { SimpleWar } from './simplewar';
 import { WarLogPane } from './warlogpane';
 import { TribesPane } from './tribespane';
@@ -32,6 +33,7 @@ export class BuildingPanel {
   private title!: HTMLElement; private state!: HTMLElement; private picBox!: HTMLElement; private picKey = '';
   private readonly win: GameDialog;
   /** Every building shows its parts as pages behind a row of tab buttons at the top. */
+  private readonly marchPane!: MarchPane;
   private readonly tabs = {} as Record<BuildingKind, Array<{ label: string; page: HTMLElement; /** A house whose picture stands for the tab: the tabs then show as a grid of pictures. */ icon?: BuildingKind; /** Why the tab is shut, or null when it is open. */ lock?: () => string | null; /** Drawn under the tab of this index, in its column, and joined to it (and to the one above it) by a line. */ under?: number; /** Not drawn in the tree (a page that a button opens). Keep these last. */ hidden?: boolean; /** Drawn only while this is true. */ show?: () => boolean }>>;
   private readonly tabBar = h('div', { class: 'btns tabs', role: 'tablist' });
   /** The line about the building and its tabs, side by side when the tabs are plain buttons. */
@@ -146,6 +148,8 @@ export class BuildingPanel {
     this.simpleWar = new SimpleWar(c);
     this.tabs.wartent = [{ label: 'Họp chiến', page: page(this.warHost) }, { label: 'Nhật ký trận', page: page(this.warLog.root) }]; // the stone age: a list of the villages found and a button Đánh (no plan)
     this.scoutPane = new ScoutPane(c);
+    this.marchPane = new MarchPane(c);
+    this.tabs.drill = [{ label: 'Hành quân', page: page(this.marchPane.root) }];
     this.tabs.scouttent = [{ label: 'Trinh sát', page: page(this.scoutPane.roster) }, { label: 'Làng đã phát hiện', page: page(this.scoutPane.villages) }];
     this.tabs.tower = [{ label: 'Lính chòi canh', page: page(hint(this.towerHead, 'Lính chòi canh lấy thẳng từ dân rảnh, không cần trại cung thủ: họ lên chòi, ở đó ngày và đêm (đổi ca ở chi tiết của họ) và bắn bằng cung hoặc dây quăng lấy ở Kho vũ khí. Họ bắn xa hơn và mạnh hơn khi đứng trên chòi, và kẻ địch phải phá chòi mới hạ được họ. Máu và sát thương của họ, và của chòi, tăng theo nghiên cứu Phòng thủ.'), this.towerList) }];
     this.tabs.fence = []; this.tabs.gate = [];
@@ -245,7 +249,7 @@ export class BuildingPanel {
     // the ? beside the title opens what the building is; the campfire's meal sits under it
     const who = head.querySelector('.dwho') as HTMLElement;
     who.replaceChildren(h('div', { class: 'hint' }, h('div', { class: 'hinthead' }, this.title, helpButton()), this.info), this.state, this.foodHint);
-    this.win = new GameDialog(root, { keep: true, onClose: () => ctl.closePanel(), canClose: () => !this.war.mapOpen });
+    this.win = new GameDialog(root, { keep: true, onClose: () => ctl.closePanel(), canClose: () => !this.war.mapOpen && !this.marchPane.mapOpen });
     root.append(dlg.card({ wide: true, cls: 'gbuild', label: 'Công trình' }, head, this.mbody));
   }
 
@@ -341,6 +345,7 @@ export class BuildingPanel {
     else if (!inTent && this.inTent) { if (this.resume > 0 && sim.speed === 0) sim.speed = this.resume; this.resume = 0; }
     this.inTent = inTent;
     if (!inTent && this.war.mapOpen) this.war.closeMap(); // the map of a plan hangs on the tent: without the tent it goes too
+    if (this.marchPane.mapOpen && b?.kind !== 'drill') this.marchPane.close(); // the map of the march hangs on the Bãi tập: without it the map goes too
     if (!b) { if (ctl.selectedBuilding !== null) ctl.selectedBuilding = null; return; }
     if (!ctl.buildingOpen) return;
     if (b.kind !== 'lab') this.labSub = null;
@@ -374,6 +379,7 @@ export class BuildingPanel {
     }
     if (b.kind === 'campfire' && ready) this.tribes.update();
     if (b.kind === 'scouttent' && ready) this.scoutPane.update();
+    if (b.kind === 'drill' && ready) this.marchPane.update();
     if (b.kind === 'workshop' && ready) this.updateWorkshop(b);
     if (b.kind === 'lab' && ready) this.updateLab(b);
     if (b.kind === 'stable' && ready) this.updateStable(b);

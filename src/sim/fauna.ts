@@ -56,7 +56,7 @@ const isGround = (sim: Sim, x: number, y: number) => {
 };
 const isWater = (sim: Sim, x: number, y: number) => sim.world.inBounds(x, y) && sim.world.at(x, y) === Tile.Water;
 /** Can this species stand on the tile: land animals on ground, fish in water. */
-const habitable = (sim: Sim, def: AnimalDef, x: number, y: number) => (def.habitat === 'water' ? isWater(sim, x, y) : isGround(sim, x, y));
+const habitable = (sim: Sim, def: AnimalDef, x: number, y: number) => !sim.inZone(x, y) && (def.habitat === 'water' ? isWater(sim, x, y) : isGround(sim, x, y)); // nothing is born in a military zone
 
 /**
  * animals.json counts are for the first map, 192 tiles a side. Herds are laid down a chunk at a time as the land is made, in the same share of

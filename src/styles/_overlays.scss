@@ -134,3 +134,10 @@ $mini: clamp(64px, 15vw, 96px);
   canvas { width: 88px; height: 12px; border-radius: 6px; border: 1px solid var(--ring); }
   small { font-size: .62rem; opacity: .85; white-space: nowrap; }
 }
+
+// ---- the march: the ring of a held square or zone on the full-screen map ----
+.pview .ringmenu { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.pview .ringmenu .rbtn {
+  position: absolute; transform: translate(-50%, -50%); width: 44px; height: 44px; border-radius: 50%; pointer-events: auto;
+  display: grid; place-items: center; font-size: 1.3rem; padding: 0; border: 2px solid var(--line); background: var(--panel-2); color: var(--fg); box-shadow: 0 2px 8px rgba(0, 0, 0, .5);
+}

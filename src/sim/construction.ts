@@ -51,6 +51,7 @@ export function footprintError(sim: Sim, kind: BuildingKind, x: number, y: numbe
     if (!w.inBounds(tx, ty)) return 'Ngoài bản đồ';
     const k = ty * N + tx;
     if (sim.fog.state[k] === 0) return 'Chưa khám phá';
+    if (sim.inZone(tx, ty)) return 'Khu quân sự: không xây được gì';
     const t = w.tiles[k];
     if ((t !== 0 && t !== 4) || (w.occ[k] && !own(tx, ty))) return 'Vướng cây, đá, nước hoặc công trình';
   }
