@@ -138,6 +138,8 @@ export class UnitDetail {
       r.drop.disabled = chosen.every((o) => !o.tools[r.k]);
     }
     this.shiftBtns.forEach((b) => b.setAttribute('aria-pressed', String(chosen.every((o) => o.shift === b.dataset.shift))));
+    const onlyGuards = chosen.length > 0 && chosen.every((o) => o.job === 'fight' && o.guard); // a guard keeps the day or the night watch, never both
+    this.shiftBtns.forEach((b) => { if (b.dataset.shift === 'both') b.hidden = onlyGuards; });
     this.rest.innerHTML = energyText(sim0, v);
     this.torchBtn.disabled = sim0.torchCount() <= 0 || chosen.every((o) => !!o.torch);
     this.stanceBtns.forEach((b) => b.setAttribute('aria-pressed', String(chosen.every((o) => o.stance === b.dataset.stance))));

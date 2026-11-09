@@ -55,6 +55,8 @@ export class Controller {
   inspect: { kind: 'unit' | 'animal' | 'node' | 'tent'; id: number } | null = null;
   /** The campfire's people menu asked for the full page of the chosen villager. */
   openDetail = false;
+  /** The next time the panel of a house shows, open the list of the people of the house (the button "Nhân sự" of the card under the house). */
+  openPeople = false;
   /** The house whose dialog the villager's detail was opened from: closing the detail brings it back. */
   detailFrom: number | null = null;
   /** F pressed: the next click sends the selection to attack-move there. */

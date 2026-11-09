@@ -386,8 +386,6 @@ export interface BattleRecord {
   sample?: boolean;
 }
 
-export const NAMES_M = ['Bo', 'Rô', 'Gia', 'Mun', 'Lô', 'Tù', 'Đa'];
-export const NAMES_F = ['Tia', 'Noa', 'Ma', 'Pa', 'Kê', 'Ly', 'Sa'];
 export const HAIR = ['#4a2e1a', '#2b1b10', '#6b3f1d', '#c98a3a', '#7a5a3a'];
 export const SKIN = ['#d9a371', '#e8c4a0', '#c58a5c', '#b87850'];
 export const NODE_JOB: Record<NodeKind, WorkJob> = { tree: 'wood', rock: 'stone', bush: 'food' };

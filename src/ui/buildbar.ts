@@ -11,6 +11,9 @@ import { resIcon } from './resicons';
 import type { Ctx } from './panels';
 
 /** What the button that opens a building's panel is called. */
+/** The houses that keep a list of people of their own (the button "Nhân sự"). */
+const STAFF_HOUSES: string[] = ['workshop', 'lab', 'stable'];
+
 const OPEN_LABEL: Record<BuildingKind, string> = {
   campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', workshop: 'Chế tạo', lab: 'Nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', guardpost: 'Quản lý lính gác', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông', stable: 'Thuần thú', supplycamp: 'Quản lý hậu cần', fieldtent: 'Lều hành quân',
 };
@@ -177,6 +180,7 @@ export class BuildingBar {
         { id: 'multi', icon: '▣', label: 'Chọn nhiều', title: 'Chọn nhiều mảnh hàng rào để dời hoặc xoay cùng lúc', hidden: ctl.groupMode || !b.done || !(b.kind === 'fence' || b.kind === 'gate'), onClick: () => ctl.startGroup(b.id) },
         { id: 'open', label: OPEN_LABEL[b.kind], tone: 'primary', hidden: ctl.groupMode || !b.done || b.kind === 'fence' || b.kind === 'gate', onClick: () => ctl.selectBuilding(b.id, true) },
         { id: 'gate', icon: '🚪', label: b.open ? 'Đóng cổng' : 'Mở cổng', tone: 'primary', hidden: ctl.groupMode || !(b.kind === 'gate' && b.done), onClick: () => { const e = sim.toggleGate(b.id); if (e) toast(e); ctl.onChange(); } },
+        { id: 'staff', icon: '👥', label: `Nhân sự ${STAFF_HOUSES.includes(b.kind) ? `${sim.staffCount(b)}/${lv.slots}` : ''}`, title: 'Thêm hoặc cho nghỉ người làm việc trong nhà này', hidden: ctl.groupMode || !b.done || !STAFF_HOUSES.includes(b.kind), onClick: () => { ctl.openPeople = true; ctl.selectBuilding(b.id, true); } },
         { id: 'repair', icon: '🔧', label: 'Sửa chữa', title: 'Sửa lại độ bền đã mất: tốn vật liệu theo phần độ bền mất, thợ xây làm', hidden: ctl.groupMode || !b.done || b.repairing || b.upgrading || b.hp >= maxHp(b), onClick: () => this.askRepair(b) },
         { id: 'up', icon: '⬆︎', label: 'Nâng cấp', title: 'Nâng lên cấp tiếp theo', hidden: ctl.groupMode || !upgradable, onClick: () => this.askUpgrade(b) },
         { id: 'callall', icon: campOut.all ? '🏠' : '⚔', label: campOut.all ? 'Cho về hết' : 'Gọi tất cả', title: campOut.all ? 'Cho mọi lính của trại này về trại nghỉ' : 'Gọi mọi lính của trại này ra ngoài, sẵn sàng; bấm lại để cho về', hidden: ctl.groupMode || !b.done || !campOut.ids.length, onClick: () => { if (campOut.all) sim.sendBack(campOut.ids); else sim.callOut(campOut.ids); ctl.onChange(); } },

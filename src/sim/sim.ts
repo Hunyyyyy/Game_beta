@@ -642,6 +642,8 @@ export class Sim {
   }
   /** → economy.barterPrice */
   barterPrice(res: Exclude<Res, 'coin'>): number { return economy.barterPrice(this, res); }
+  /** → economy.barterQuote: what a trade would be, nothing changes */
+  barterQuote(res: Exclude<Res, 'coin'>, coins: number, keep = 0): economy.BarterQuote { return economy.barterQuote(this, res, coins, keep); }
   /** → economy.barterKeep */
   barterKeep(res: Exclude<Res, 'coin'>): number { return economy.barterKeep(this, res); }
 

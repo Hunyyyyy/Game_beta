@@ -22,7 +22,7 @@ export class StaffBox {
     const { sim } = this.c, slots = levelDef(b).slots, jobKey = this.job === 'farm' ? 'food' : this.job, stat = JOBS[jobKey].stat;
     const crew = this.job === 'build', staff = crew ? sim.crew() : b.staff.map((id) => sim.get(id)).filter((v): v is Villager => !!v);
     const count = crew ? staff.length : sim.staffCount(b), full = count >= slots;
-    this.head.replaceChildren(h('div', { class: 'dhouse' }, h('b', { text: crew ? 'Thợ xây' : this.job === 'farm' ? 'Nông dân' : 'Người làm việc' }), dlg.slots(count, slots), h('small', { class: 'dsub', text: `${count}/${slots}` })));
+    this.head.replaceChildren(h('b', { text: crew ? 'Thợ xây' : this.job === 'farm' ? 'Nông dân' : 'Người làm việc' })); // the count is in the head of the right list
     // anyone may go in, whatever they do now; those on the way to this house are counted in the places but are not listed as inside yet
     const pool = sim.villagers.filter((v) => v.health > 0 && v.down <= 0 && !staff.includes(v) && !(v.phase === 'goStaff' && v.target === b.id));
     const key = `${b.id}|${full}|${staff.map((v) => `${v.id}.${v.stats[stat]}`).join()}|${pool.map((v) => `${v.id}.${v.job}.${v.guard ? 'g' : ''}${v.arm}.${v.stats[stat]}`).join()}`;

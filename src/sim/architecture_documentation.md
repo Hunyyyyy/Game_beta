@@ -41,6 +41,7 @@ The goal of this architectural split: **modifying one system does not break anot
 | `labor` | Daily chores: harvesting, farming, carrying, building; villager state machine | `think` `doWork` `doFarm` `planBuild` |
 | `movement` | Locomotion: pathfinding, footfalls, standing positions, render poses | `pathTo` `moveUnit` `animate` |
 | `villagers` | Villager generation and daily life loop: health, sleeping | `makeVillager` `tickVillager` |
+| `names` | Names of people put together from the syllables of a "voice" (`data/names.json`): ours and one per tribe, unique among our own people (pure data layer) | `makeName` `voiceOf` |
 | `defense` | Fences, gates, watchtowers: gate open/close, defense destruction, archers on towers | `toggleGate` `damageWork` `towerBonus` `assignTower` |
 | `mounts` | Mounts: Wolf-taming, boar, and elephant stables on demand (requires research and stable level), issued like tools (`Villager.mount`), mounted units move faster and take reduced damage; mounted soldiers act as cavalry; Cavalry Outpost mounts scale with outpost tier | `queueTame` `tickTame` `assignMount` `mountOf` |
 | `training` | Role-building training: villager trains for one or more days, gaining 1–5% in a target stat while an opposing stat decreases (penalty reduced by paying extra currency), bounded by baseline birth stats and building tier caps; costs food and currency | `startTraining` `cancelTraining` `trainStep` |

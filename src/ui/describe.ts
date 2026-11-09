@@ -76,6 +76,25 @@ export function vitalsLine(sim: Sim, v: Villager): string {
   return parts.join(' · ');
 }
 
+/** What a person carries, short: "Cung ngắn - Áo da thú" for a fighter, hunter or scout, the tool of the trade ("Búa: đá") for a worker, "Tay không" when there is nothing. */
+export function equipLine(v: Villager): string {
+  if (v.job === 'fight' || v.job === 'hunt' || v.job === 'scout') return `${v.weapon ? WEAPONS[v.weapon].name : 'Tay không'} - ${v.armor ? ARMORS[v.armor].name : 'không giáp'}`;
+  const k = TOOL_OF_JOB[v.job as WorkJob], t = k ? v.tools[k] : null;
+  return k && t ? `${TOOL_NAME[k]}: ${TIER_NAME[t.tier].toLowerCase()}${t.dur <= 0 ? ' (hỏng)' : ''}` : 'Tay không';
+}
+
+/** The two things a person carries, apart: the weapon (or the tool of the trade) and the armour (null when there is none or it does not matter). */
+export function equipParts(v: Villager): { kind: 'weapon' | 'tool'; main: string; armor: string | null } {
+  if (v.job === 'fight' || v.job === 'hunt' || v.job === 'scout') return { kind: 'weapon', main: v.weapon ? WEAPONS[v.weapon].name : 'Tay không', armor: v.armor ? ARMORS[v.armor].name : null };
+  const k = TOOL_OF_JOB[v.job as WorkJob], t = k ? v.tools[k] : null;
+  return { kind: 'tool', main: k && t ? `${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()}${t.dur <= 0 ? ' (hỏng)' : ''}` : 'Tay không', armor: null };
+}
+
+/** Health and energy as now / most, nothing else: "Máu 123/123 · Sức 100/100". */
+export function vitalsShort(sim: Sim, v: Villager): string {
+  return `Máu ${Math.max(0, Math.ceil(v.health))}/${Math.round(v.maxHealth)} · Sức ${Math.round(v.energy)}/${Math.round(sim.maxEnergy(v))}`;
+}
+
 export function energyText(sim: Sim, v: Villager): string {
   const top = Math.round(sim.maxEnergy(v));
   // health, energy and the wear of the armour as now / most: they climb while the person sleeps and heals, and the armour goes down with every blow taken
