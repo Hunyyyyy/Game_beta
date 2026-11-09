@@ -53,6 +53,24 @@ export function barter(sim: Sim, res: Exclude<Res, 'coin'>, coins = 1, keep = 0)
   return got > 0 ? null : why;
 }
 
+/** What a trade would be, worked out without doing it: how many coins can be had (up to `coins`), what they cost, the price of the first and of the last one, and why it stops short. */
+export interface BarterQuote { coins: number; cost: number; first: number; last: number; why: string | null }
+
+/** The same walk as `barter` (each coin dearer than the one before, never below `keep` of the good, never over the room for coins), but only counting. */
+export function barterQuote(sim: Sim, res: Exclude<Res, 'coin'>, coins: number, keep = 0): BarterQuote {
+  const heat = sim.barterHeat[res], coin = RES_NAME.coin.toLowerCase(), name = RES_NAME[res].toLowerCase();
+  let sold = heat && sim.time < heat.until ? heat.sold : 0, left = sim.stock[res], room = sim.capacity() - sim.stock.coin;
+  const q: BarterQuote = { coins: 0, cost: 0, first: 0, last: 0, why: null };
+  while (q.coins < coins) {
+    const n = Math.ceil(BARTER[res] * (1 + BARTER_CFG.slip * sold));
+    if (left - n < keep) { q.why = keep > 0 ? `Không còn ${name} dư (đang giữ lại ${keep})` : `Cần ${n} ${name} để đổi lấy 1 ${coin}`; break; }
+    if (room <= 0) { q.why = `Kho đã đầy ${coin}`; break; }
+    if (!q.coins) q.first = n;
+    q.last = n; q.cost += n; left -= n; room--; sold++; q.coins++;
+  }
+  return q;
+}
+
 // ---------------------------------------------------------------- the daily meal (src/data/food.json)
 /** What the village eats at the end of this day: a ration for every villager and a bigger one for every soldier, by the level of the campfire. */
 export function foodNeed(sim: Sim): number {

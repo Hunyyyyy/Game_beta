@@ -154,6 +154,7 @@ const multiBtn = $<HTMLButtonElement>('btnMulti');
 multiBtn.addEventListener('click', () => ctl.setMulti(!ctl.multi));
 $('btnNone').addEventListener('click', () => ctl.clearSelection());
 $('btnHome').addEventListener('click', () => { const f = sim.campfire(), s = sim.world.start; ctl.centerOn(((f ? f.x + 1 : s.x) ) * TILE, ((f ? f.y + 1 : s.y)) * TILE); });
+$('btnLegion').addEventListener('click', () => { ctl.legionControl = !ctl.legionControl; if (ctl.legionControl) toast('Chạm đất để cả đội quân hành quân tới đó'); syncButtons(); });
 $('btnArmy').addEventListener('click', () => { if (sim.alarmUntil > sim.time) sim.standDown(); else { const e = sim.callArmy(); if (e) toast(e); } syncButtons(); });
 $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
 $('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
@@ -190,6 +191,7 @@ function syncButtons() {
   speedBtn.textContent = sim.speed === 0 ? '❚❚' : `${sim.speed}×`; speedBtn.setAttribute('aria-pressed', String(sim.speed === 0));
   multiBtn.setAttribute('aria-pressed', String(ctl.multi));
   { const on = sim.alarmUntil > sim.time, army = $('btnArmy'); army.setAttribute('aria-pressed', String(on)); army.textContent = on ? '🏠' : '⚔'; army.title = on ? 'Cho quân về trại nghỉ' : 'Gọi quân đội ra khỏi trại'; army.hidden = !sim.villagers.some((v) => v.job === 'fight' && !v.guard); }
+  { const lb = $('btnLegion'); if (!sim.legion.on) ctl.legionControl = false; lb.hidden = !sim.legion.on; lb.setAttribute('aria-pressed', String(ctl.legionControl)); }
   $('btnNone').hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
 }
 window.addEventListener('keydown', (e) => {

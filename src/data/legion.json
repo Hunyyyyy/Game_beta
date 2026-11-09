@@ -1,0 +1,7 @@
+{
+  "_note": "Hành quân thời Trung cổ: khu quân sự (zoneSize × zoneSize ô, vẽ ở Bãi tập), ô lính (cellSize × cellSize ô, mỗi ô chứa tối đa cellSize² lính cách nhau 1 ô), đội hình không xoay, cả quân tịnh tiến song song theo tâm, lính tụt lại đuổi theo nhanh tối đa catchup lần tốc độ chung. Tốc độ chung = trung vị tốc độ của mọi lính.",
+  "zoneSize": 30,
+  "cellSize": 5,
+  "catchup": 1.5,
+  "assembleSeconds": 180
+}

@@ -386,8 +386,6 @@ export interface BattleRecord {
   sample?: boolean;
 }
 
-export const NAMES_M = ['Bo', 'Rô', 'Gia', 'Mun', 'Lô', 'Tù', 'Đa'];
-export const NAMES_F = ['Tia', 'Noa', 'Ma', 'Pa', 'Kê', 'Ly', 'Sa'];
 export const HAIR = ['#4a2e1a', '#2b1b10', '#6b3f1d', '#c98a3a', '#7a5a3a'];
 export const SKIN = ['#d9a371', '#e8c4a0', '#c58a5c', '#b87850'];
 export const NODE_JOB: Record<NodeKind, WorkJob> = { tree: 'wood', rock: 'stone', bush: 'food' };
@@ -420,4 +418,20 @@ export interface Notice {
   command?: { kind: 'withdraw'; label: string };
   /** The people the notice is about: the screen can open their details so the player can change what they do. */
   people?: number[];
+}
+
+// ---------------------------------------------------------------- the march of the medieval age (legion.ts)
+/** A military zone drawn at the Bãi tập: a square of ground cleared of resources and animals, where nothing grows back and nothing may be built. */
+export interface MilZone { id: number; x: number; y: number; w: number; h: number }
+/** A square of the zone where one arm of the army stands (x, y: its top-left tile). */
+export interface MilCell { id: number; zone: number; x: number; y: number; arm: 'foot' | 'archer' | 'cavalry' }
+/**
+ * The army gathered from the cells, marching as one block. Each soldier keeps his place (`slots`: offset from the centre) and the block never turns; `theta` is only the way the soldiers face
+ * (`theta0` is unused, kept for old saves). The centre walks the `path` at `speed`, the median of the speeds of the soldiers.
+ */
+export interface Legion {
+  on: boolean; assembling: boolean; since: number; clock: number;
+  cx: number; cy: number; theta: number; theta0: number; speed: number;
+  path: Array<[number, number]>;
+  slots: Record<string, { dx: number; dy: number }>;
 }

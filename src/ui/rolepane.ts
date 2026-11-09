@@ -5,7 +5,8 @@ import type { Villager } from '../sim/model';
 import { h, hint } from './dom';
 import { dlg } from './gamedialog';
 import { roleStats } from './people';
-import { Roster } from './roster';
+import { Roster, iconButton } from './roster';
+import { icon } from './icons';
 import type { Ctx } from './ctx';
 import { describe, SHIFT_LABEL } from './describe';
 import type { Shift } from '../sim/model';
@@ -36,8 +37,8 @@ export class RolePane {
   readonly root = h('div', { class: 'page' });
   private key = '';
   private readonly roster: Roster;
-  /** The guards shown: all, or only those on one watch (the Trại lính gác). */
-  private filter: '' | Shift = '';
+  /** The Trại lính gác: the watch whose guards stand in the right list, and whether the list of all the villagers (to hire guards) is open instead. */
+  private watch: 'day' | 'night' = 'day'; private recruit = false;
 
   /** `changed` asks whoever shows this pane to draw it again. */
   constructor(private readonly c: Ctx, readonly role: RoleId, private readonly changed: () => void = () => this.update()) { this.roster = new Roster(c); }
@@ -51,7 +52,7 @@ export class RolePane {
 
   stateKey(): string {
     const { sim } = this.c;
-    return [this.role, this.filter, sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${v.shift}${v.out ? 'o' : ''}${v.housed ? 'H' : ''}${v.phase === 'sleep' ? 'z' : ''}${Math.round(v.energy / 20)}${Math.round(v.health / 20)}${v.armor ? Math.round(v.gear.ad / 25) : ''}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
+    return [this.role, this.watch, this.recruit, sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${v.shift}${v.out ? 'o' : ''}${v.housed ? 'H' : ''}${v.phase === 'sleep' ? 'z' : ''}${Math.round(v.energy / 20)}${Math.round(v.health / 20)}${v.armor ? Math.round(v.gear.ad / 25) : ''}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
       sim.scouts.map((m) => m.ids.join('.')).join('|'), sim.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join()].join('|');
   }
 
@@ -64,37 +65,49 @@ export class RolePane {
     // anyone may be given the role, whatever they do now (they leave the old work); scouts are taken from the cavalry soldiers only
     const pool = role === 'scout' ? sim.villagers.filter((v) => v.job === 'fight' && !v.guard && v.arm === 'cavalry' && v.down <= 0) : sim.villagers.filter((v) => v.health > 0 && v.down <= 0 && roleOf(v) !== role);
     const key = (v: Villager) => (STAT_OF[role] === 'scout' ? sim.scoutSkill(v) : v.stats[STAT_OF[role] as 'str']);
-    const out: Node[] = [hint(h('div', { class: 'dhouse' }, h('b', { text: roleName(role, era) }), dlg.slots(have.length, cap >= 99 ? 99 : cap)), HELP[role])];
+    const out: Node[] = [];
     // the soldiers of a camp live inside it: one button calls the whole camp out (or sends it back), and each soldier has his own
+    const guards = role === 'guard', tools: HTMLElement[] = [];
+    const stray = guards ? have.filter((v) => v.shift === 'both') : [];
+    if (stray.length) sim.setShift(stray.map((v) => v.id), 'day'); // the watch of a guard is the day or the night, never both
+    const watching = guards && !this.recruit, other = this.watch === 'day' ? 'night' : 'day', onWatch = (v: Villager) => (v.shift === 'night' ? 'night' : 'day'); // the buttons for the whole house, side by side in one row
     const camp = (role === 'foot' || role === 'cavalry' || role === 'archer' || role === 'guard' || role === 'scout' || role === 'supply') && have.length > 0;
     if (camp) {
       const allOut = have.every((v) => sim.isOut(v)), ids = have.map((v) => v.id);
-      out.push(h('div', { class: 'btns' }, h('button', { class: 'sm', type: 'button', disabled: !!lock, text: allOut ? 'Cho cả trại về' : `Gọi cả trại ra (${have.filter((v) => !sim.isOut(v)).length})`,
+      const n = have.filter((v) => !sim.isOut(v)).length;
+      tools.push(h('button', { class: 'sm tbtn', type: 'button', disabled: !!lock,
         title: allOut ? 'Cho mọi lính của trại này về trại nghỉ' : 'Gọi mọi lính của trại này ra ngoài, sẵn sàng; bấm lại để cho về',
-        onclick: () => { if (allOut) sim.sendBack(ids); else sim.callOut(ids); this.again(); } })));
+        onclick: () => { if (allOut) sim.sendBack(ids); else sim.callOut(ids); this.again(); } }, icon(allOut ? 'callBack' : 'callAll', 15), allOut ? 'Cho về' : `Gọi ra (${n})`));
     }
     // one press hands out what the stores hold (weapons, armour, beasts), the best first; a lesser piece is swapped for a better one
     if ((role === 'foot' || role === 'cavalry' || role === 'archer' || role === 'guard' || role === 'tower' || role === 'hunt') && have.length > 0) {
-      out.push(h('div', { class: 'btns' }, h('button', { class: 'sm primary', type: 'button', text: 'Trang bị', title: 'Phát vũ khí, giáp và thú cưỡi đang có trong kho cho mọi người ở đây: đồ cấp cao trước, ai đang cầm đồ thấp thì đổi lấy đồ cao hơn',
-        onclick: () => { toast(sim.equipGroup(have.map((v) => v.id))); this.again(); } })));
+      tools.push(h('button', { class: 'sm tbtn primary', type: 'button', title: 'Phát vũ khí, giáp và thú cưỡi đang có trong kho cho mọi người ở đây: đồ cấp cao trước, ai đang cầm đồ thấp thì đổi lấy đồ cao hơn',
+        onclick: () => { toast(sim.equipGroup(have.map((v) => v.id))); this.again(); } }, icon('equip', 15), 'Trang bị'));
     }
-    // the guards keep a watch by day, by night, or both: a filter over them, and buttons that set the watch of everyone shown at once
-    const guards = role === 'guard', shown = guards && this.filter ? have.filter((v) => v.shift === this.filter) : have;
-    if (guards && have.length) {
-      const WATCH: Array<['' | Shift, string]> = [['', 'Tất cả'], ['day', 'Gác ngày'], ['night', 'Gác đêm'], ['both', 'Cả ngày lẫn đêm']];
-      out.push(h('div', { class: 'btns filters' }, ...WATCH.map(([k, label]) => h('button', { class: 'sm chip', type: 'button', pressed: this.filter === k, text: `${label} (${k ? have.filter((v) => v.shift === k).length : have.length})`, onclick: () => { this.filter = k; this.again(); } }))));
-      const setAll = (shift: Shift) => h('button', { class: 'sm', type: 'button', text: SHIFT_LABEL[shift], disabled: !!lock || !shown.length, title: `Cho ${shown.length} người đang hiện gác: ${SHIFT_LABEL[shift].toLowerCase()}`, onclick: () => { sim.setShift(shown.map((v) => v.id), shift); this.again(); } });
-      out.push(h('div', { class: 'btns' }, h('small', { text: `Đổi ca cả nhóm đang hiện (${shown.length}):` }), setAll('day'), setAll('night'), setAll('both')));
+    if (guards && have.length) { // the two watches, and the list of villagers to hire guards from
+      const watchBtn = (w: 'day' | 'night') => h('button', { type: 'button', class: `segb${watching && this.watch === w ? ' on' : ''}`, title: `Xem và chia lính gác ${w === 'day' ? 'ngày' : 'đêm'}`, onclick: () => { this.watch = w; this.recruit = false; this.again(); } }, icon(w === 'day' ? 'day' : 'sleep', 15), w === 'day' ? 'Gác ngày' : 'Gác đêm');
+      tools.push(h('div', { class: 'seg' }, watchBtn('day'), watchBtn('night')));
+      tools.push(h('button', { type: 'button', class: `ibtn wide${this.recruit ? ' on' : ''}`, title: 'Tuyển thêm lính gác từ dân', 'aria-label': 'Tuyển thêm lính gác từ dân', 'aria-pressed': String(this.recruit), onclick: () => { this.recruit = !this.recruit; this.again(); } }, icon('recruit', 16)));
     }
+    out.push(hint(tools.length ? h('div', { class: 'btns toolbar' }, ...tools) : h('b', { text: roleName(role, era) }), HELP[role]));
     if (!cap) out.push(dlg.empty(`Chưa có ${house.toLowerCase()} xong: hãy dựng, rồi giao việc ở đây.`));
-    out.push(...this.roster.render({
-      assigned: shown, cap, statIds: roleStats(role), stat: key, pool,
-      addBlock: lock ?? (!cap ? `Cần dựng ${house}` : !room ? `${house} đã đủ chỗ: nâng cấp để chứa thêm` : null),
+    const block = lock ?? (!cap ? `Cần dựng ${house}` : !room ? `${house} đã đủ chỗ: nâng cấp để chứa thêm` : null);
+    const callOut = (v: Villager) => (camp ? iconButton(sim.isOut(v) ? 'callBack' : 'callOut', () => { if (sim.isOut(v)) sim.sendBack([v.id]); else sim.callOut([v.id]); this.again(); }, sim.isOut(v) ? 'Cho lính này về trại nghỉ' : 'Gọi lính này ra ngoài, sẵn sàng', { disabled: !!lock }) : null);
+    const name = (w: 'day' | 'night') => (w === 'day' ? 'ngày' : 'đêm');
+    out.push(...this.roster.render(watching ? {
+      // the guards of the house in two lists: the watch chosen (right) and the other one (left); an arrow sends a guard to the other watch
+      assigned: have.filter((v) => onWatch(v) === this.watch), cap, statIds: roleStats(role), stat: key, pool: have.filter((v) => onWatch(v) !== this.watch),
+      addBlock: lock, add: (v) => { sim.setShift([v.id], this.watch); return null; }, remove: (v) => { sim.setShift([v.id], other); return null; }, removeBlock: (v) => lock,
+      extra: (v) => [callOut(v)], titles: { pool: `Gác ${name(other)}`, in: `Gác ${name(this.watch)}` }, plain: true,
+      emptyIn: `Chưa có ai gác ${name(this.watch)}.`, emptyPool: `Không có ai gác ${name(other)}.`,
+      again: () => this.again(),
+    } : {
+      assigned: have, cap, statIds: roleStats(role), stat: key, pool,
+      addBlock: block,
       add: (v) => sim.assignRole([v.id], role),
       remove: (v) => sim.releaseRole([v.id]),
       removeBlock: (v) => lock ?? (sim.scouts.some((m) => m.ids.includes(v.id)) ? 'Đang đi trinh sát' : null),
-      noteIn: (v) => `${guards ? `${SHIFT_LABEL[v.shift]}${v.phase === 'sleep' ? ' · ' : ''}` : ''}${v.phase === 'sleep' ? describe(v, sim) : ''}`,
-      extra: (v) => [camp ? h('button', { class: 'sm', type: 'button', disabled: !!lock, text: sim.isOut(v) ? 'Về trại' : 'Gọi ra', title: sim.isOut(v) ? 'Cho lính này về trại nghỉ' : 'Gọi lính này ra ngoài, sẵn sàng; bấm lại để cho về', onclick: () => { if (sim.isOut(v)) sim.sendBack([v.id]); else sim.callOut([v.id]); this.again(); } }) : null, guards ? h('button', { class: 'sm', type: 'button', text: v.shift === 'day' ? '☀' : v.shift === 'night' ? '☾' : '☀☾', title: `${SHIFT_LABEL[v.shift]}: bấm để đổi ca gác`, disabled: !!lock, onclick: () => { sim.setShift([v.id], v.shift === 'day' ? 'night' : v.shift === 'night' ? 'both' : 'day'); this.again(); } }) : null, def.job === 'fight' ? dlg.button('◎', () => { if (v.inside !== null) { toast(`${v.name} đang ngủ trong trại`); return; } ctl.selected.clear(); ctl.selected.add(v.id); ctl.focusSelection(); ctl.closeBuilding(); }, { icon: true, title: 'Chọn trên bản đồ để ra lệnh' }) : null],
+      extra: (v) => [callOut(v)],
       emptyIn: 'Chưa có ai giữ việc này.',
       emptyPool: role === 'scout' ? 'Không còn lính kỵ nào để tuyển.' : 'Không có ai để thêm.',
       again: () => this.again(),

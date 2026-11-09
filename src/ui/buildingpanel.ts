@@ -17,6 +17,8 @@ import type { Ctx } from './ctx';
 import { PeoplePane } from './peoplepane';
 import { ActiveBox, StaffBox } from './housebox';
 import { ScoutPane } from './scoutpane';
+import { MarchPane } from './marchpane';
+import { icon } from './icons';
 import { SimpleWar } from './simplewar';
 import { WarLogPane } from './warlogpane';
 import { TribesPane } from './tribespane';
@@ -28,10 +30,14 @@ import { sleeperRows } from './soldierpane';
 import { WarPanel } from './warpanel';
 import { OrderGrid, OrderItem } from './ordergrid';
 
+/** The houses whose people are kept in a list of their own, opened by the button "Nhân sự" (the house of the research, the craft and the beasts). */
+export const STAFF_OF = { workshop: 'craft', lab: 'research', stable: 'tame' } as const;
+
 export class BuildingPanel {
   private title!: HTMLElement; private state!: HTMLElement; private picBox!: HTMLElement; private picKey = '';
   private readonly win: GameDialog;
   /** Every building shows its parts as pages behind a row of tab buttons at the top. */
+  private readonly marchPane!: MarchPane;
   private readonly tabs = {} as Record<BuildingKind, Array<{ label: string; page: HTMLElement; /** A house whose picture stands for the tab: the tabs then show as a grid of pictures. */ icon?: BuildingKind; /** Why the tab is shut, or null when it is open. */ lock?: () => string | null; /** Drawn under the tab of this index, in its column, and joined to it (and to the one above it) by a line. */ under?: number; /** Not drawn in the tree (a page that a button opens). Keep these last. */ hidden?: boolean; /** Drawn only while this is true. */ show?: () => boolean }>>;
   private readonly tabBar = h('div', { class: 'btns tabs', role: 'tablist' });
   /** The line about the building and its tabs, side by side when the tabs are plain buttons. */
@@ -40,7 +46,9 @@ export class BuildingPanel {
   private readonly pages: HTMLElement[] = []; private tabKey = '';
   private readonly resRows: Array<{ res: typeof RES_LIST[number]; num: HTMLElement; bar: HTMLElement }> = [];
   private readonly doorBtn = h('button', { class: 'sm', onclick: () => { this.c.sim.toggleNewcomers(); this.updateCampfire(); } }) as HTMLButtonElement;
-  private readonly barterBtns: Array<{ res: Exclude<typeof RES_LIST[number], 'coin'>; label: HTMLElement; set: HTMLButtonElement[]; row: HTMLElement }> = [];
+  /** The rows of the trade: the shells wanted (`n`), and the parts of the row that follow it. */
+  private readonly barterRows: Array<{ res: Exclude<typeof RES_LIST[number], 'coin'>; n: number; price: HTMLElement; input: HTMLInputElement; slider: HTMLInputElement; quote: HTMLElement; go: HTMLButtonElement }> = [];
+  private barterKeepOn = true;
   /** What can be ordered from the Nhà chế tạo and the stable: cards that open a scroll (src/ui/ordergrid.ts). */
   private craftGrid!: OrderGrid; private tameGrid!: OrderGrid;
   private readonly trees: TechTree[] = [];
@@ -59,11 +67,13 @@ export class BuildingPanel {
   private readonly progSec = {} as Record<string, HTMLElement>;
   /** The research house: the tab that is open, as a panel laid over the whole one (null while the grid of tabs shows). */
   private labSub: number | null = null;
+  /** The list of people of the house is open over its page (see STAFF_OF), and which house it was opened for. */
+  private peopleOpen = false; private peopleFor: number | null = null;
+  private readonly peopleBtn = h('button', { class: 'sm tbtn peoplebtn', type: 'button', hidden: true }) as HTMLButtonElement;
   /** The line on the front page of the research house that says who works there and opens the list to add more. */
-  private readonly labPeople = h('button', { class: 'dgo alt labpeople', type: 'button' }) as HTMLButtonElement;
   private readonly mbody = h('div', { class: 'mbody' });
   private readonly subTitle = h('b'); private readonly subBody = h('div', { class: 'subbody' });
-  private readonly sub = h('div', { class: 'subpanel', hidden: true }, h('div', { class: 'subhead' }, h('button', { class: 'sm', text: '‹ Quay lại', onclick: () => { this.labSub = null; this.tabKey = ''; this.update(); } }), this.subTitle), this.subBody);
+  private readonly sub = h('div', { class: 'subpanel', hidden: true }, h('div', { class: 'subhead' }, h('button', { class: 'sm', text: '‹ Quay lại', onclick: () => { this.labSub = null; this.peopleOpen = false; this.tabKey = ''; this.update(); } }), this.subTitle), this.subBody);
   /** The war council held in the Lều họp chiến. */
   private readonly war: WarPanel;
   /** Where scouts are picked and sent, in the Trại trinh sát. */
@@ -102,24 +112,29 @@ export class BuildingPanel {
 
     // campfire: the village's people, and trading
     const barter = () => {
-      const box = h('div', {}, hint('Đổi chác', 'Đổi hàng lấy tiền để trả cho nghiên cứu. Tiền cũng nhặt được khi hái lượm và nhận từ bộ tộc cống nạp.'));
-      box.append(h('p', { class: 'sub', text: 'Bán càng nhiều trong một lúc, giá càng đắt; giá trở lại bình thường sau 1 đến 3 ngày. Giữ nút để bán liên tục.' }));
+      const box = h('div', {}, hint('Đổi chác', 'Đổi hàng lấy tiền (vỏ) để trả cho nghiên cứu. Tiền cũng nhặt được khi hái lượm và nhận từ bộ tộc cống nạp.'));
+      box.append(h('p', { class: 'sub', text: 'Chọn số vỏ muốn có: ngay bên dưới hiện phải bán bao nhiêu hàng. Bán càng nhiều trong một lúc, giá càng đắt; giá trở lại bình thường sau 1 đến 3 ngày.' }));
+      const keepBox = h('input', { type: 'checkbox' }) as HTMLInputElement; keepBox.checked = this.barterKeepOn;
+      keepBox.addEventListener('change', () => { this.barterKeepOn = keepBox.checked; this.updateBarter(); });
+      box.append(h('label', { class: 'bkeep' }, keepBox, ' Giữ lại phần cần cho ăn uống và công trình'));
       const list = h('div', { class: 'barter' }); box.append(list);
       for (const res of RES_LIST) {
         if (res === 'coin') continue;
-        const name = h('b', { text: RES_NAME[res] }), price = h('small'), label = h('div', { class: 'bname' }, name, price), set: HTMLButtonElement[] = [], keys = h('div', { class: 'bkeys' }), row = h('div', { class: 'brow' }, label, keys);
-        const sell = (coins: number, keep: boolean) => { const e = sim.barter(res, coins, keep ? sim.barterKeep(res) : 0); if (e) c.toast(e); ctl.onChange(); return !e; };
-        // a press sells once; held, it goes on selling until the stock runs out
-        const mk = (text: string, coins: number, keep = false, title = ''): HTMLButtonElement => {
-          const btn = h('button', { class: 'sm', text, title }) as HTMLButtonElement; let t = 0, rep = 0;
-          const stop = () => { clearTimeout(t); clearInterval(rep); };
-          btn.addEventListener('pointerdown', (ev) => { if (ev.button !== 0 || btn.disabled) return; if (!sell(coins, keep)) return; if (coins === 1) t = window.setTimeout(() => { rep = window.setInterval(() => { if (!sell(1, false)) stop(); }, 90); }, 350); });
-          for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) btn.addEventListener(ev, stop);
-          return btn;
-        };
-        set.push(mk('×1', 1), mk('×10', 10), mk('×100', 100), mk('Tối đa', Infinity, false, 'Bán hết, đến khi kho hết hàng hoặc đầy tiền'), mk('Bán phần dư', Infinity, true, 'Bán tất cả trừ phần giữ lại cho ăn uống và công trình'));
-        keys.append(...set);
-        this.barterBtns.push({ res, label: price, set, row }); list.append(row);
+        const price = h('span', { class: 'bpill' }), name = h('div', { class: 'bname' }, h('b', { text: RES_NAME[res] }), price);
+        const input = h('input', { class: 'bnum', type: 'number', min: '0', step: '1', inputmode: 'numeric', 'aria-label': `Số vỏ muốn có từ ${RES_NAME[res].toLowerCase()}` }) as HTMLInputElement;
+        const slider = h('input', { class: 'bslide', type: 'range', min: '0', max: '0', step: '1', 'aria-label': 'Số vỏ' }) as HTMLInputElement;
+        const quote = h('div', { class: 'bquote' });
+        const go = h('button', { class: 'sm primary', type: 'button', text: 'Đổi' }) as HTMLButtonElement;
+        const r = { res, n: 0, price, input, slider, quote, go };
+        const keep = () => (this.barterKeepOn ? sim.barterKeep(res) : 0), most = () => sim.barterQuote(res, Infinity, keep()).coins;
+        const set = (n: number) => { r.n = Math.max(0, Math.min(most(), Math.floor(Number.isFinite(n) ? n : 0))); this.updateBarter(); };
+        input.addEventListener('input', () => set(parseInt(input.value, 10)));
+        slider.addEventListener('input', () => set(Number(slider.value)));
+        const chip = (text: string, share: number, title: string) => h('button', { class: 'sm', type: 'button', text, title, onclick: () => set(Math.max(1, Math.floor(most() * share))) });
+        go.addEventListener('click', () => { if (r.n < 1) return; const e = sim.barter(res, r.n, keep()); if (e) c.toast(e); ctl.onChange(); set(r.n); });
+        list.append(h('div', { class: 'brow' }, name,
+          h('div', { class: 'bctl' }, h('div', { class: 'bline' }, input, slider), h('div', { class: 'bline' }, chip('¼', 0.25, 'Một phần tư số tối đa'), chip('½', 0.5, 'Một nửa số tối đa'), chip('Tối đa', 1, 'Số vỏ nhiều nhất đổi được'), go), quote)));
+        this.barterRows.push(r);
       }
       return box;
     };
@@ -134,7 +149,6 @@ export class BuildingPanel {
       const kind = ROLES[role].building, pane = new RolePane(c, role);
       this.rolePanes[kind] = pane;
       this.tabs[kind] = [{ label, page: page(pane.root) }];
-      if (soldiers) this.tabs[kind].push({ label: 'Người trong trại', page: bedPage(kind, 'Lính') }); // the others show "đang ngủ" on their own tile
     };
     roleHouse('foot', 'Lính', true); roleHouse('cavalry', 'Lính', true); roleHouse('archer', 'Lính', true); roleHouse('guard', 'Lính gác', true); roleHouse('supply', 'Lính hậu cần', true);
     roleHouse('wood', 'Nhân công'); roleHouse('stone', 'Nhân công'); roleHouse('food', 'Nhân công'); roleHouse('hunt', 'Nhân công');
@@ -146,6 +160,8 @@ export class BuildingPanel {
     this.simpleWar = new SimpleWar(c);
     this.tabs.wartent = [{ label: 'Họp chiến', page: page(this.warHost) }, { label: 'Nhật ký trận', page: page(this.warLog.root) }]; // the stone age: a list of the villages found and a button Đánh (no plan)
     this.scoutPane = new ScoutPane(c);
+    this.marchPane = new MarchPane(c);
+    this.tabs.drill = [{ label: 'Hành quân', page: page(this.marchPane.root) }];
     this.tabs.scouttent = [{ label: 'Trinh sát', page: page(this.scoutPane.roster) }, { label: 'Làng đã phát hiện', page: page(this.scoutPane.villages) }];
     this.tabs.tower = [{ label: 'Lính chòi canh', page: page(hint(this.towerHead, 'Lính chòi canh lấy thẳng từ dân rảnh, không cần trại cung thủ: họ lên chòi, ở đó ngày và đêm (đổi ca ở chi tiết của họ) và bắn bằng cung hoặc dây quăng lấy ở Kho vũ khí. Họ bắn xa hơn và mạnh hơn khi đứng trên chòi, và kẻ địch phải phá chòi mới hạ được họ. Máu và sát thương của họ, và của chòi, tăng theo nghiên cứu Phòng thủ.'), this.towerList) }];
     this.tabs.fence = []; this.tabs.gate = [];
@@ -178,7 +194,6 @@ export class BuildingPanel {
     ]);
     this.progSec.workshop = h('div', {}, h('h3', { text: 'Đang chế tạo' }), this.activeBoxes.craft.root, this.queueNote.craft);
     this.tabs.workshop = [
-      { label: 'Người làm việc', page: page(this.staffBoxes.craft.root) },
       { label: 'Chế tạo', page: page(hint('Chế tạo theo bản vẽ', 'Chạm vào một món để xem giá và thêm vào hàng đợi. Chỉ chế được món đã có bản vẽ ở Nhà nghiên cứu và đủ cấp Nhà chế tạo. Vật liệu trừ ngay khi thêm vào hàng đợi, hủy đơn thì được trả lại. Sản phẩm vào Kho công cụ hoặc Kho vũ khí.'), this.craftGrid.root) },
     ];
 
@@ -187,7 +202,7 @@ export class BuildingPanel {
     const only = (test: (id: string) => boolean) => TECHS.filter((x) => test(x.id));
     const labLevel = () => sim.building('lab')?.level ?? 0;
     const militaryLock = () => (sim.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `Cần Nhà nghiên cứu cấp ${TREE_TABS.military.needLab} để mở Quân sự`);
-    this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research, this.labPeople);
+    this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research);
     // laid out as a tree in four columns: Quân sự (with Chiến đấu, Kế hoạch chiến đấu, Hành quân and Vũ khí under it), Kinh tế (with Công cụ), Phát triển, Phòng thủ
     const advanced = () => this.c.sim.era === 'ancient'; // the tabs of the medieval layer show only while it is open (the dev menu can open it)
     const needMilitary = () => militaryLock() && 'Cần mở Quân sự trước';
@@ -201,8 +216,6 @@ export class BuildingPanel {
       { label: 'Hành quân bậc 1', icon: 'supplycamp' as const, show: advanced, under: 0, lock: needMilitary, page: tree((t) => { t.addChains('Chỉ số khi hành quân (chỉ cộng khi hành quân hoặc nghỉ trong chiến tranh)', ['march_foot', 'march_cavalry', 'march_archer'], 'march'); t.addChains('Hậu cần và tốc độ', ['march_army'], 'marchlog'); }) },
       { label: 'Vũ khí bậc 1', icon: 'armory', under: 0, lock: needMilitary, page: tree((t) => { t.addChains('Chỉ số từng vũ khí', ['club', 'spear', 'mace', 'sling', 'bow'], 'weapon'); }) },
       { label: 'Công cụ bậc 1', icon: 'workshop', under: 1, page: tree((t) => { t.addChains('Chỉ số công cụ', ['axe', 'pick', 'hoe'], 'tool'); t.addChains('Búa', ['hammer'], 'hammer'); }) },
-      // not in the tree: the button "Người nghiên cứu · Thêm người" at the top opens it
-      { label: 'Người làm việc', icon: 'lab', hidden: true, page: page(this.staffBoxes.research.root) },
     ];
 
     // tool store and armoury: what is kept
@@ -234,7 +247,7 @@ export class BuildingPanel {
       };
     }));
     beasts.append(this.tameGrid.root);
-    this.tabs.stable = [{ label: 'Thuần thú', page: beasts }, { label: 'Người làm việc', page: page(this.staffBoxes.tame.root) }];
+    this.tabs.stable = [{ label: 'Thuần thú', page: beasts }];
 
     this.progress.append(...Object.values(this.progSec));
     this.topbar.append(this.labHead, this.tabBar);
@@ -244,8 +257,8 @@ export class BuildingPanel {
     this.title = head.querySelector('.dtitle') as HTMLElement; this.state = head.querySelector('.dsub') as HTMLElement; this.picBox = head.querySelector('.dpic') as HTMLElement;
     // the ? beside the title opens what the building is; the campfire's meal sits under it
     const who = head.querySelector('.dwho') as HTMLElement;
-    who.replaceChildren(h('div', { class: 'hint' }, h('div', { class: 'hinthead' }, this.title, helpButton()), this.info), this.state, this.foodHint);
-    this.win = new GameDialog(root, { keep: true, onClose: () => ctl.closePanel(), canClose: () => !this.war.mapOpen });
+    who.replaceChildren(h('div', { class: 'hint' }, h('div', { class: 'hinthead' }, this.title, helpButton()), this.info), this.state, this.foodHint, this.peopleBtn);
+    this.win = new GameDialog(root, { keep: true, onClose: () => ctl.closePanel(), canClose: () => !this.war.mapOpen && !this.marchPane.mapOpen });
     root.append(dlg.card({ wide: true, cls: 'gbuild', label: 'Công trình' }, head, this.mbody));
   }
 
@@ -282,6 +295,15 @@ export class BuildingPanel {
         const rank = t.under !== undefined ? tabs.slice(0, i).filter((o, j) => o.under === t.under && shown[j]).length : 0;
         return h('button', { class: `tabcard${locks[i] ? ' locked' : ''}${t.under !== undefined ? ' under' : ''}${i === lastTop ? ' tail' : ''}`, style: t.under !== undefined ? `grid-column:${t.under + 1};grid-row:${2 + rank}` : undefined, role: 'tab', title: locks[i] ?? t.label, onclick: go }, pic, h('span', { text: t.label }), locks[i] ? h('span', { class: 'tlock', text: '🔒' }) : null);
       }).filter((el): el is HTMLButtonElement => !!el));
+    }
+    const staff = STAFF_OF[kind as keyof typeof STAFF_OF];
+    if (staff && ready && this.peopleOpen) { // the people of the house over its page, with a way back
+      const root = this.staffBoxes[staff].root;
+      this.sub.hidden = false; this.tabBar.hidden = true; this.mbody.classList.add('subopen');
+      for (const p of this.pages) p.hidden = true;
+      this.subTitle.textContent = 'Nhân sự';
+      if (this.subBody.firstChild !== root) { this.subBody.replaceChildren(root); this.mbody.scrollTop = 0; }
+      return;
     }
     if (kind === 'lab' && ready) {
       // a tab of the research house opens a panel over this one, with a way back
@@ -341,8 +363,11 @@ export class BuildingPanel {
     else if (!inTent && this.inTent) { if (this.resume > 0 && sim.speed === 0) sim.speed = this.resume; this.resume = 0; }
     this.inTent = inTent;
     if (!inTent && this.war.mapOpen) this.war.closeMap(); // the map of a plan hangs on the tent: without the tent it goes too
+    if (this.marchPane.mapOpen && b?.kind !== 'drill') this.marchPane.close(); // the map of the march hangs on the Bãi tập: without it the map goes too
     if (!b) { if (ctl.selectedBuilding !== null) ctl.selectedBuilding = null; return; }
-    if (!ctl.buildingOpen) return;
+    if (!ctl.buildingOpen) { this.peopleOpen = false; this.peopleFor = null; return; }
+    if (this.peopleFor !== b.id) { this.peopleFor = b.id; this.peopleOpen = false; } // another house: its page first
+    if (ctl.openPeople) { ctl.openPeople = false; this.peopleOpen = !!STAFF_OF[b.kind as keyof typeof STAFF_OF] && b.done; }
     if (b.kind !== 'lab') this.labSub = null;
     const def = BUILDINGS[b.kind], lv = levelDef(b), top = topLevel(b), ready = b.done;
     this.title.textContent = `${buildingName(b.kind, b.era)}${def.buildable ? ` · cấp ${b.level}/${top} (${lv.name.toLowerCase()})` : ''}`;
@@ -352,15 +377,11 @@ export class BuildingPanel {
     this.state.textContent = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%${sim.buildWhy(b) ? ` · ${sim.buildWhy(b)}` : ''}` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%${sim.buildWhy(b) ? ` · ${sim.buildWhy(b)}` : ''}` : 'đang dùng';
     this.state.hidden = meal; this.foodHint.hidden = !meal;
     this.showTabs(b.kind, ready);
+    this.updatePeopleButton(b, ready);
     this.info.textContent = !b.done ? 'Giao dân làm Thợ xây để dựng công trình này.' : this.infoText(b);
     if (b.kind === 'campfire' && ready) this.updateCampfire();
     if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity(r.res)}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity(r.res))) * 100)}%`; }
-    if ((b.kind === 'storage' || b.kind === 'campfire') && ready) for (const t of this.barterBtns) {
-      const price = sim.barterPrice(t.res), text = `${price} → 1 ${RES_NAME.coin.toLowerCase()}${price > BARTER[t.res] ? ' · đang đắt' : ''}`;
-      t.row.classList.toggle('dear', price > BARTER[t.res]);
-      if (t.label.textContent !== text) t.label.textContent = text;
-      t.set.forEach((btn, i) => { btn.disabled = i === 4 ? sim.stock[t.res] - price < sim.barterKeep(t.res) : sim.stock[t.res] < price; });
-    }
+    if ((b.kind === 'storage' || b.kind === 'campfire') && ready) this.updateBarter();
     if (this.bedList[b.kind] && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
     if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
@@ -374,10 +395,45 @@ export class BuildingPanel {
     }
     if (b.kind === 'campfire' && ready) this.tribes.update();
     if (b.kind === 'scouttent' && ready) this.scoutPane.update();
+    if (b.kind === 'drill' && ready) this.marchPane.update();
     if (b.kind === 'workshop' && ready) this.updateWorkshop(b);
     if (b.kind === 'lab' && ready) this.updateLab(b);
     if (b.kind === 'stable' && ready) this.updateStable(b);
     if (b.kind === 'toolstore' || b.kind === 'armory') if (ready) this.updateGoods(b);
+  }
+
+  /** Draw the trade again: the price of each good, how many shells can be had at most, and what the shells wanted would cost. */
+  private updateBarter(): void {
+    const { sim } = this.c, coin = RES_NAME.coin.toLowerCase();
+    for (const r of this.barterRows) {
+      const keep = this.barterKeepOn ? sim.barterKeep(r.res) : 0, name = RES_NAME[r.res].toLowerCase();
+      const now = sim.barterPrice(r.res), base = BARTER[r.res], rise = Math.round((now / base - 1) * 100);
+      r.price.textContent = rise > 0 ? `${now} ${name} = 1 ${coin} · đắt hơn ${rise}%` : `${now} ${name} = 1 ${coin}`;
+      r.price.className = `bpill${rise >= 60 ? ' bad' : rise >= 20 ? ' warn' : rise > 0 ? ' mild' : ''}`;
+      r.price.title = rise > 0 ? `Giá gốc ${base} ${name} = 1 ${coin}; đã bán nhiều nên đang đắt hơn, sau 1 đến 3 ngày sẽ về giá gốc` : `Giá gốc`;
+      const max = sim.barterQuote(r.res, Infinity, keep);
+      r.n = Math.max(0, Math.min(r.n, max.coins));
+      if (document.activeElement !== r.input) r.input.value = r.n ? String(r.n) : '';
+      r.input.max = String(max.coins); r.input.placeholder = max.coins ? `0–${max.coins}` : '0'; r.input.disabled = max.coins < 1;
+      r.slider.max = String(max.coins); r.slider.value = String(r.n); r.slider.disabled = max.coins < 1;
+      const q = sim.barterQuote(r.res, r.n, keep), dearer = q.coins > 0 && q.last > q.first;
+      r.quote.className = `bquote${dearer && q.last >= q.first * 1.6 ? ' bad' : dearer ? ' warn' : ''}`;
+      r.quote.textContent = max.coins < 1 ? (max.why ?? 'Không đổi được') : q.coins < 1 ? `Đổi tối đa ${max.coins} ${coin} (cần ${max.first} ${name} cho vỏ đầu tiên)` : `Bán ${q.cost} ${name} → ${q.coins} ${coin}${dearer ? ` · giá tăng từ ${q.first} lên ${q.last} ${name}/${coin}` : ` · giá ${q.first} ${name}/${coin}`}`;
+      r.go.disabled = q.coins < 1;
+      r.go.textContent = q.coins > 0 ? `Đổi ${q.coins}` : 'Đổi';
+    }
+  }
+
+  /** The button "Nhân sự 2/4" in the head of the dialog: it opens the people of the house over its page. */
+  private updatePeopleButton(b: Building, ready: boolean): void {
+    const staff = STAFF_OF[b.kind as keyof typeof STAFF_OF];
+    this.peopleBtn.hidden = !staff || !ready;
+    if (!staff || !ready) return;
+    const n = this.c.sim.staffCount(b), slots = levelDef(b).slots;
+    this.peopleBtn.replaceChildren(icon('people', 15), `Nhân sự ${n}/${slots}`);
+    this.peopleBtn.classList.toggle('on', this.peopleOpen);
+    this.peopleBtn.title = n < slots ? 'Còn chỗ trống: bấm để thêm người' : 'Thêm hoặc cho nghỉ người làm việc';
+    this.peopleBtn.onclick = () => { this.peopleOpen = true; this.update(); };
   }
 
   private updateWorkshop(b: Building): void {
@@ -390,9 +446,6 @@ export class BuildingPanel {
   private updateLab(b: Building): void {
     const { sim } = this.c;
     this.staffBoxes.research.update(b); this.activeBoxes.research.update(b);
-    const at = this.tabs.lab.findIndex((t) => t.label === 'Người làm việc');
-    this.labPeople.textContent = `Người nghiên cứu ${sim.staffCount(b)}/${levelDef(b).slots} · Thêm người ›`;
-    this.labPeople.onclick = () => { this.tabAt.lab = at; this.labSub = at; this.showTabs('lab', true); };
     const waiting = sim.researchQueue[0];
     this.queueNote.research.textContent = `${waiting ? `Chờ bắt đầu: ${TECH_BY_ID[waiting]?.name ?? waiting}` : 'Mỗi lần chỉ nghiên cứu một thứ'}`;
     for (const t of this.trees) t.update();

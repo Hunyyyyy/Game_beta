@@ -16,16 +16,16 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 32;
+export const SAVE_VERSION = 33;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
   scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'dayWeather', 'weatherAt', 'weatherEnd', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
-  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'barterHeat', 'smoke', 'gatherFocus'],
+  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'barterHeat', 'smoke', 'gatherFocus', 'legion'],
   /** Lists of plain data. */
-  lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports'],
+  lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports', 'zones', 'cells'],
   /** Handled by hand below. */
   special: ['researched', 'questSeen', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
 } as const satisfies Record<string, readonly (keyof Sim)[]>;
@@ -336,4 +336,10 @@ MIGRATIONS[31] = (d) => {
   // and the big map keeps the smoke smelled near unseen villages and the place the gatherers were sent to
   d.records.barterHeat ??= {}; d.records.smoke ??= {}; d.records.gatherFocus ??= {};
   return { ...d, version: 32 };
+};
+MIGRATIONS[32] = (d) => {
+  // 32 -> 33: military zones, squares of soldiers and the marching army (legion.ts)
+  d.lists.zones ??= []; d.lists.cells ??= [];
+  d.records.legion ??= { on: false, assembling: false, since: 0, clock: 0, cx: 0, cy: 0, theta: 0, theta0: 0, speed: 0, path: [], slots: {} };
+  return { ...d, version: 33 };
 };

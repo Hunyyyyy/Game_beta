@@ -12,6 +12,7 @@ import { seenNow } from './scouting';
 import { fireEventNow, tribeOf, tributeTribe } from './tribes';
 import { torchLife } from './rest';
 import { Tile } from './world';
+import LEG from '../data/legion.json';
 
 /**
  * Helpers for the dev menu: put the game into a state worth testing without playing up to it.
@@ -271,6 +272,48 @@ export function fullArmy(sim: Sim): string {
   }
   sim.fogDirty = true;
   return `Quân đầy các trại: thêm ${added} lính, ${n} lính có đồ cao nhất + đuốc`;
+}
+
+/** Test the march: every tree, rock and bush, and every animal, within `margin` tiles of the military zones (and in them) is cleared, so nothing is in the way. Returns a line about it. */
+export function clearAroundZones(sim: Sim, margin = 40): string {
+  if (!sim.zones.length) return 'Chưa có khu quân sự nào';
+  const w = sim.world, N = w.size, near = (x: number, y: number) => sim.zones.some((z) => x >= z.x - margin && x < z.x + z.w + margin && y >= z.y - margin && y < z.y + z.h + margin);
+  let n = 0;
+  for (const idx of [...w.nodes.keys()]) {
+    if (!near(idx % N, Math.floor(idx / N))) continue;
+    for (const o of sim.villagers) if (o.target === idx && (o.phase === 'goNode' || o.phase === 'work')) sim.resetTask(o);
+    w.nodes.delete(idx); w.tiles[idx] = Tile.Grass; n++;
+  }
+  let a = 0;
+  for (let i = sim.animals.length - 1; i >= 0; i--) { const an = sim.animals[i]; if (near(an.x, an.y)) { sim.animals.splice(i, 1); sim.animalById.delete(an.id); a++; } }
+  sim.fogDirty = true;
+  return `Đã dọn ${n} cây, đá, bụi và ${a} con vật quanh khu quân sự (${margin} ô)`;
+}
+
+/**
+ * Test the Bãi tập: soldiers are made, with the best gear and a torch whatever the camps' room, until every square of the plan has a full crew of its arm
+ * (the free soldiers already there count), then "Tập trận" gathers them all. Returns a line about it.
+ */
+export function fillPlan(sim: Sim): string {
+  if (!sim.cells.length) return 'Chưa có ô lính nào: vẽ khu quân sự và đặt các ô lính ở Bãi tập trước';
+  const top = sim.era === 'ancient' ? { foot: 'bronze_sword', cav: 'bronze_spear', armor: 'bronze' } : { foot: 'mace', cav: 'spear', armor: 'bone' };
+  let made = 0;
+  for (const arm of ['foot', 'archer', 'cavalry'] as const) {
+    const have = sim.villagers.filter((v) => v.team === 'player' && v.job === 'fight' && !v.guard && v.post < 0 && v.arm === arm).length;
+    const need = sim.cells.filter((c) => c.arm === arm).length * LEG.cellSize * LEG.cellSize - have;
+    for (let i = 0; i < need; i++) {
+      const before = new Set(sim.villagers.map((v) => v.id));
+      addVillager(sim);
+      const v = sim.villagers.find((o) => !before.has(o.id));
+      if (!v) continue;
+      sim.setJob([v.id], 'fight'); v.arm = arm;
+      sim.giveGear([v.id], arm === 'archer' ? 'bow' : arm === 'cavalry' ? top.cav : top.foot, 'weapon'); sim.giveGear([v.id], top.armor, 'armor');
+      v.manualGear = true; v.torch = { dur: torchLife(sim) }; made++;
+    }
+  }
+  sim.fogDirty = true;
+  const err = sim.assemble();
+  return err ?? `Thêm ${made} lính, cả quân đã tập hợp đủ các ô`;
 }
 
 /** The nearest free village of a tier (weak, normal, medium) becomes a tributary at once, so it sends its soldiers when we go to war. Returns a line about it. */

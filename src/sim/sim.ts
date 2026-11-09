@@ -37,6 +37,7 @@ import * as idle from './idle';
 import * as defense from './defense';
 import * as army from './army';
 import * as scouting from './scouting';
+import * as legion from './legion';
 import * as power from './power';
 import * as warplan from './warplan';
 import * as warmode from './warmode';
@@ -48,7 +49,7 @@ import * as warlog from './warlog';
 import * as warquick from './warquick';
 import * as brainplayer from './brainplayer';
 import { WAR, WarApi } from './simwar';
-import { BattleRecord, BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutLoss, WarRecord, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager } from './model';
+import { BattleRecord, BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutLoss, WarRecord, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager, MilZone, MilCell, Legion } from './model';
 import type { Ent } from './battle';
 export * from './model';
 
@@ -159,6 +160,10 @@ export class Sim {
   tribeClock = 0;
   /** The day the next event of the recurring kind is set (tribes.seasonEvent). */
   nextEventDay = 0;
+  /** The military zones and the squares of soldiers in them, and the army that marches (legion.ts). */
+  readonly zones: MilZone[] = [];
+  readonly cells: MilCell[] = [];
+  legion: Legion = { on: false, assembling: false, since: 0, clock: 0, cx: 0, cy: 0, theta: 0, theta0: 0, speed: 0, path: [], slots: {} };
   /** Villages nobody has seen yet whose smoke a villager smelled: roughly where it rises (tribe id → a point some tiles off the camp), drawn on the big map until the village is seen (scouting.tickSightings). */
   smoke: Record<string, { x: number; y: number }> = {};
   /** Where the player asked the gatherers to work (x, y: a point of the big map); empty for no preference (labor.findNode). */
@@ -610,6 +615,26 @@ export class Sim {
   dailyYield(b: Building): { amount: number; people: number } | null { return economy.dailyYield(this, b); }
   /** → economy.barter */
   barter(res: Exclude<Res, 'coin'>, coins = 1, keep = 0): string | null { return economy.barter(this, res, coins, keep); }
+  /** → legion.inZone */
+  inZone(x: number, y: number): boolean { return legion.inZone(this, x, y); }
+  /** → legion.zoneError */
+  zoneError(cx: number, cy: number): string | null { return legion.zoneError(this, cx, cy); }
+  /** → legion.createZone */
+  createZone(cx: number, cy: number): string | null { return legion.createZone(this, cx, cy); }
+  /** → legion.removeZone */
+  removeZone(id: number): void { return legion.removeZone(this, id); }
+  /** → legion.addCell */
+  addCell(cx: number, cy: number, arm: MilCell['arm']): string | null { return legion.addCell(this, cx, cy, arm); }
+  /** → legion.setCellArm: `null` takes the square away */
+  setCellArm(id: number, arm: MilCell['arm'] | null): void { return legion.setCellArm(this, id, arm); }
+  /** → legion.assemble */
+  assemble(): string | null { return legion.assemble(this); }
+  /** → legion.legionMove */
+  legionMove(x: number, y: number): string | null { return legion.legionMove(this, x, y); }
+  /** → legion.disband */
+  disband(): void { return legion.disband(this); }
+  /** → legion.holds: a soldier of the marching army is moved by the army (legion.tickLegion), not by his own brain */
+  legionHolds(v: Villager): boolean { return !!this.legion.slots[v.id]; }
   /** Ask the gatherers to work around a point (tiles) of the map; `null` takes the wish back. */
   setGatherFocus(at: { x: number; y: number } | null): void {
     delete this.gatherFocus.x; delete this.gatherFocus.y;
@@ -617,6 +642,8 @@ export class Sim {
   }
   /** → economy.barterPrice */
   barterPrice(res: Exclude<Res, 'coin'>): number { return economy.barterPrice(this, res); }
+  /** → economy.barterQuote: what a trade would be, nothing changes */
+  barterQuote(res: Exclude<Res, 'coin'>, coins: number, keep = 0): economy.BarterQuote { return economy.barterQuote(this, res, coins, keep); }
   /** → economy.barterKeep */
   barterKeep(res: Exclude<Res, 'coin'>): number { return economy.barterKeep(this, res); }
 
@@ -737,7 +764,7 @@ export class Sim {
     if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; this.warSeenIds.clear(); this.warFresh = 0; this.warStings = 0; this.warCheckAt = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
-    this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
+    this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); legion.tickLegion(this, dt); warplan.tickPlans(this, dt);
     this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);

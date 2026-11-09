@@ -3,7 +3,8 @@ import { roleName, roleOf } from '../sim/jobs';
 import { CHAINS } from '../sim/research';
 import type { Villager } from '../sim/model';
 import type { Ctx } from './ctx';
-import { describe, gearLine, vitalsLine } from './describe';
+import { describe, equipParts, gearLine, vitalsLine } from './describe';
+import { icon } from './icons';
 import { dlg } from './gamedialog';
 import { h, iconCanvas } from './dom';
 import { statIcon } from './resicons';
@@ -58,10 +59,36 @@ export function personTile(c: Ctx, v: Villager, o: PersonOptions = {}): HTMLElem
   return dlg.tile({ pic: avatar(c, v), name: v.name, chip: trade, state: o.state }, [o.note === '' ? null : dlg.more(o.note ?? describe(v, sim)), gearLine(v) ? dlg.more(gearLine(v)) : null, o.stats ? dlg.more(vitalsLine(sim, v)) : null, pills], o.actions?.some(Boolean) ? h('div', { class: 'dacts' }, ...o.actions) : null);
 }
 
+/** The strip along the edge of a row: `add` (an arrow to the right, at the right edge) or `remove` (an arrow to the left, at the left edge); it is as tall as the row. */
+export interface RowStrip { kind: 'add' | 'remove'; onclick: () => void; title: string; disabled?: boolean }
+
+/**
+ * A short row for a villager in the two lists of a house: the name (and a chip), what they carry (weapon or tool, armour), health and energy on the line of the name, icon buttons at the right and an arrow strip along the edge that moves them to the other list. A tap on the row opens the detail.
+ */
+export function personRow(c: Ctx, v: Villager, o: { chip?: string; strip?: RowStrip; actions?: Array<HTMLElement | null> } = {}): HTMLElement {
+  const { sim } = c, acts = o.actions?.filter(Boolean) ?? [], maxE = sim.maxEnergy(v), eq = equipParts(v);
+  const part = (name: 'weapon' | 'tool' | 'equip' | 'hp' | 'energy', text: string, o2: { low?: boolean; title: string }) => h('span', { class: `pstat${o2.low ? ' low' : ''}`, title: o2.title }, icon(name, 13), text);
+  const strip = o.strip ? h('button', { class: `pstrip ${o.strip.kind}`, type: 'button', title: o.strip.title, 'aria-label': o.strip.title, disabled: !!o.strip.disabled, onclick: o.strip.onclick }, icon(o.strip.kind === 'add' ? 'next' : 'prev', 18)) : null;
+  const body = h('div', { class: 'pbody', title: 'Bấm để xem chi tiết và giao việc' },
+    h('div', { class: 'phead' },
+      h('div', { class: 'dname' }, h('b', { text: v.name }), o.chip ? dlg.chip(o.chip) : null),
+      h('div', { class: 'pvit' },
+        part('hp', `${Math.max(0, Math.ceil(v.health))}/${Math.round(v.maxHealth)}`, { low: v.health / v.maxHealth < 0.35, title: 'Máu' }),
+        part('energy', `${Math.round(v.energy)}/${Math.round(maxE)}`, { low: v.energy < 20, title: 'Sức' }))),
+    h('div', { class: 'pmeta' }, part(eq.kind, eq.main, { title: eq.kind === 'weapon' ? 'Vũ khí' : 'Dụng cụ' }), eq.armor ? part('equip', eq.armor, { title: 'Giáp' }) : null));
+  body.addEventListener('click', () => openDetail(c, v));
+  return h('div', { class: `dtile prow${o.strip ? ` has-${o.strip.kind}` : ''}` }, o.strip?.kind === 'remove' ? strip : null, body, acts.length ? h('div', { class: 'dacts' }, ...acts) : null, o.strip?.kind === 'add' ? strip : null);
+}
+
 /** The button that opens the detail dialog of a villager. */
 export function detailButton(c: Ctx, v: Villager, title = 'Giao việc và chi tiết'): HTMLButtonElement {
+  return dlg.button('⚙', () => openDetail(c, v), { icon: true, title });
+}
+
+/** Open the detail dialog of a villager (it comes back to this house when closed). */
+export function openDetail(c: Ctx, v: Villager): void {
   const { ctl } = c;
-  return dlg.button('⚙', () => { ctl.detailFrom = ctl.selectedBuilding; ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding(); }, { icon: true, title });
+  ctl.detailFrom = ctl.selectedBuilding; ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding();
 }
 
 /** The stats that matter for a role: the line of the research tree it belongs to (the soldiers also have the stats of the weapon in their hand). */

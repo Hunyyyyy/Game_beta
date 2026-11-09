@@ -2369,6 +2369,249 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   justify-self: start;
 }
 
+.rcols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.rcol {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rcol .rhead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 2px;
+  border-bottom: 1px solid #b89a5e;
+}
+.rcol .rhead b {
+  font-size: 14px;
+  color: #5a3a14;
+  white-space: nowrap;
+}
+.rcol .rhead select {
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 150px;
+}
+.rcol .rhead .dsub {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.rcol .dlist {
+  gap: 5px;
+}
+.rcol .prow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.rcol .prow:hover {
+  border-color: #e0a23c;
+}
+.rcol .prow .pbody {
+  flex: 1 1 0;
+  min-width: 0;
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding: 6px 9px;
+  cursor: pointer;
+  align-content: center;
+}
+.rcol .prow .phead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.rcol .prow .pvit {
+  flex: none;
+  display: inline-flex;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #5a4a2c;
+}
+.rcol .prow .dname {
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+.rcol .prow .dname b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rcol .prow .dacts {
+  flex: none;
+  align-self: center;
+  gap: 3px;
+  padding-right: 5px;
+}
+.rcol .prow .pmeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1px 10px;
+  font-size: 12.5px;
+  color: #5a4a2c;
+}
+.rcol .prow .pstat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.rcol .prow .pstat.low {
+  color: #b8322a;
+  font-weight: 700;
+}
+.rcol .prow .pstrip {
+  flex: none;
+  width: 30px;
+  padding: 0;
+  border: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: #fff;
+}
+.rcol .prow .pstrip.add {
+  background: linear-gradient(#5fa04a, #3f7a2c);
+  border-left: 1px solid #2a561c;
+}
+.rcol .prow .pstrip.remove {
+  background: linear-gradient(#c8584a, #9a2f26);
+  border-right: 1px solid #6a1c16;
+}
+.rcol .prow .pstrip:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.rcol .prow .pstrip:disabled {
+  background: #cdbd96;
+  color: #8a7a56;
+  cursor: not-allowed;
+}
+
+.ico-l {
+  display: block;
+  flex: none;
+}
+
+.ibtn {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  color: #3a2c1c;
+  background: linear-gradient(#efe0b8, #d8c28c);
+  border: 1px solid #8a6a36;
+}
+.ibtn:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+.ibtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ibtn.bad {
+  color: #fff;
+  background: linear-gradient(#c8584a, #9a2f26);
+  border-color: #6a1c16;
+}
+.ibtn.ok {
+  color: #fff;
+  background: linear-gradient(#5fa04a, #3f7a2c);
+  border-color: #2a561c;
+}
+
+.tbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.seg {
+  display: inline-flex;
+  align-items: center;
+}
+.seg .segb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 11px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a2c1c;
+  background: linear-gradient(#efe0b8, #d8c28c);
+  border: 1px solid #8a6a36;
+  margin-left: -1px;
+}
+.seg .segb:first-of-type {
+  margin-left: 0;
+  border-radius: 8px 0 0 8px;
+}
+.seg .segb:last-of-type {
+  border-radius: 0 8px 8px 0;
+}
+.seg .segb.on {
+  color: #fff;
+  background: linear-gradient(#e0a23c, #b97a1c);
+  border-color: #8a5a10;
+}
+.seg .segb:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+.seg .segb:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ibtn.wide {
+  width: 34px;
+  height: 30px;
+  border-radius: 8px;
+}
+.ibtn.wide.on {
+  color: #fff;
+  background: linear-gradient(#5fa04a, #3f7a2c);
+  border-color: #2a561c;
+}
+
+.rwhy {
+  display: block;
+  margin: 0 2px 6px;
+  color: #8a5a10;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.toolbar button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .rcols {
+    grid-template-columns: 1fr;
+  }
+}
 .rrow {
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -2659,6 +2902,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   text-align: center;
   font-size: 11px;
   line-height: 14px;
+}
+
+.peoplebtn {
+  margin-top: 4px;
+}
+.peoplebtn.on {
+  background: linear-gradient(#e0a23c, #b97a1c);
+  color: #fff;
+  border-color: #8a5a10;
 }
 
 .gdlg-back {
@@ -3931,6 +4183,19 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   gap: 6px;
 }
 
+.bkeep {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 2px;
+  font-size: 13px;
+  color: #5a3a14;
+}
+.bkeep input {
+  width: 16px;
+  height: 16px;
+}
+
 .barter {
   display: grid;
   gap: 6px;
@@ -3938,42 +4203,88 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
 }
 .barter .brow {
   display: grid;
-  grid-template-columns: minmax(110px, 160px) 1fr;
-  gap: 6px 10px;
-  align-items: center;
-  padding: 6px 8px;
+  grid-template-columns: minmax(120px, 170px) 1fr;
+  gap: 6px 12px;
+  align-items: start;
+  padding: 8px 10px;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
-.barter .brow.dear .bname small {
-  color: #b4492a;
-  font-weight: 600;
-}
 .barter .bname {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   line-height: 1.2;
 }
-.barter .bname small {
-  opacity: 0.8;
+.barter .bname b {
+  font-size: 14px;
 }
-.barter .bkeys {
+.barter .bpill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: rgba(120, 90, 40, 0.16);
+  color: #5a3a14;
+}
+.barter .bpill.mild {
+  background: rgba(224, 162, 60, 0.25);
+  color: #7a4a0c;
+}
+.barter .bpill.warn {
+  background: rgba(224, 140, 40, 0.38);
+  color: #8a3a08;
+}
+.barter .bpill.bad {
+  background: #c8322c;
+  color: #fff;
+}
+.barter .bctl {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.barter .bline {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
-  justify-content: flex-end;
+  gap: 6px;
 }
-.barter .bkeys button {
-  min-width: 44px;
+.barter .bnum {
+  width: 84px;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  border: 1px solid #8a6a36;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.6);
+}
+.barter .bslide {
+  flex: 1 1 120px;
+  min-width: 100px;
+  accent-color: #b97a1c;
+}
+.barter .bquote {
+  font-size: 13px;
+  color: #3a2c1c;
+}
+.barter .bquote.warn {
+  color: #8a3a08;
+  font-weight: 600;
+}
+.barter .bquote.bad {
+  color: #b8322a;
+  font-weight: 700;
 }
 
 @media (max-width: 520px) {
   .barter .brow {
     grid-template-columns: 1fr;
-  }
-  .barter .bkeys {
-    justify-content: flex-start;
   }
 }
 #bigmap .wrap {
@@ -4011,6 +4322,30 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   font-size: 0.62rem;
   opacity: 0.85;
   white-space: nowrap;
+}
+
+.pview .ringmenu {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.pview .ringmenu .rbtn {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  padding: 0;
+  border: 2px solid var(--line);
+  background: var(--panel-2);
+  color: var(--fg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 @media (max-height: 480px) {
@@ -4092,6 +4427,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     </div>
     <button class="sm speedbtn" id="btnSpeed" title="Tốc độ game: bấm để đổi 1× → 2× → 4× → 16× rồi về 1× (Q E R T chọn nhanh, P tạm dừng)">1×</button>
     <div class="daybar" id="daybar" title="Thời gian trong ngày: thanh sáng là ban ngày, thanh tối là đêm; vạch trắng là bây giờ"><canvas id="daybarCanvas" width="132" height="18"></canvas><small id="daybarText"></small></div>
+    <button class="sm" id="btnLegion" aria-pressed="false" hidden title="Điều khiển đội quân hành quân: bật lên rồi chạm đất để cả đội đi tới đó, giữ nguyên đội hình">⚑ Đội quân</button>
     <button class="sm" id="btnSkip" title="Tua qua đêm: chạy nhanh tới sáng, chỉ khi cả làng đã ngủ và không ai tấn công; dừng ngay nếu có chuyện" hidden>⏭ Qua đêm</button>
     <button class="sm" id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
     <span class="spacer"></span>
@@ -8915,11 +9251,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         return { cells, heading: Math.atan2(toward.y - o.y, toward.x - o.x) };
       }
       case "wedge": {
-        const half = 0.6, step2 = S2 * Math.cos(half), n = clampN(1 + 2 * Math.floor(d / step2));
+        const half = 0.6, step3 = S2 * Math.cos(half), n = clampN(1 + 2 * Math.floor(d / step3));
         cells.push({ x: o.x, y: o.y });
         for (let k = 1; cells.length < n; k++) {
-          cells.push(at(k * step2, -k * S2 * Math.sin(half)));
-          if (cells.length < n) cells.push(at(k * step2, k * S2 * Math.sin(half)));
+          cells.push(at(k * step3, -k * S2 * Math.sin(half)));
+          if (cells.length < n) cells.push(at(k * step3, k * S2 * Math.sin(half)));
         }
         return { cells, heading: ang + Math.PI };
       }
@@ -116722,8 +117058,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const name = pose ?? (v.anim in anims ? v.anim : "idle");
       const def = anims[name];
       const rate = def.gait ? Math.min(1.6, v.speed / 1.5) : 1;
-      const step2 = Math.floor(v.animClock * def.fps * rate);
-      const frame2 = def.loop === false ? Math.min(step2, def.frames.length - 1) : step2 % def.frames.length;
+      const step3 = Math.floor(v.animClock * def.fps * rate);
+      const frame2 = def.loop === false ? Math.min(step3, def.frames.length - 1) : step3 % def.frames.length;
       const kind = v.carry?.res ?? "wood";
       const flick = v.lit ? Math.floor(v.animClock * 6) % 3 : void 0;
       const facing = face2 ?? v.facing;
@@ -116925,9 +117261,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     watchWorker(v, x, y, time) {
       const cfg = workfx_default[v.anim], clip = anims_default[v.anim];
       if (!cfg || !clip || v.anim === "idle") return;
-      const step2 = Math.floor(v.animClock * clip.fps), frame2 = step2 % clip.frames.length, last2 = this.strokes.get(v);
-      this.strokes.set(v, step2);
-      if (last2 === void 0 || step2 === last2 || frame2 !== cfg.hitFrame) return;
+      const step3 = Math.floor(v.animClock * clip.fps), frame2 = step3 % clip.frames.length, last2 = this.strokes.get(v);
+      this.strokes.set(v, step3);
+      if (last2 === void 0 || step3 === last2 || frame2 !== cfg.hitFrame) return;
       const dir = v.facing === "left" ? [-1, 0] : v.facing === "right" ? [1, 0] : v.facing === "back" ? [0, -0.6] : [0, 0.6], tier = v.hold?.tier ?? 1, n = cfg.count + cfg.perTier * tier;
       const ox = x + dir[0] * workfx_default.reach, oy = y - workfx_default.height + dir[1] * workfx_default.reach;
       for (let i = 0; i < n && this.chips.length < workfx_default.maxChips; i++) {
@@ -117439,7 +117775,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const N = this.sim.world.size, at = (dx, dy) => wallAt.get((b.y + dy) * N + b.x + dx);
       if (!(at(0, -1) || at(0, 1))) return false;
       const { ctx: ctx2 } = this, z = this.cam.zoom, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay), two = b.level >= 2;
-      const rails = two ? [19, 9] : [16, 8], step2 = 11 * z, th = (two ? 2.4 : 1.8) * z;
+      const rails = two ? [19, 9] : [16, 8], step3 = 11 * z, th = (two ? 2.4 : 1.8) * z;
       ctx2.fillStyle = "rgba(0,0,0,.25)";
       ctx2.beginPath();
       ctx2.ellipse(p.x, p.y, 9 * z, 14 * z, 0, 0, Math.PI * 2);
@@ -117466,10 +117802,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         ctx2.stroke();
       };
       for (const h3 of rails) {
-        rail(p.x, p.y - step2, p.x, p.y + step2, h3);
+        rail(p.x, p.y - step3, p.x, p.y + step3, h3);
         if (at(0, 1)) {
           const q = this.worldToScreen(ax, ay + TILE);
-          rail(p.x, p.y + step2, q.x, q.y - step2, h3);
+          rail(p.x, p.y + step3, q.x, q.y - step3, h3);
         }
         for (const dx of [-1, 1]) if (at(dx, 0)) {
           const q = this.worldToScreen(ax + dx * TILE, ay);
@@ -117478,7 +117814,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       const w = (two ? 8 : 7) * z;
       for (const k of [-1, 0, 1]) {
-        const y = p.y + k * step2, hgt = ((two ? 27 : 23) + (k === 0 ? 3 : 0)) * z, x = Math.round(p.x - w / 2), top = Math.round(y - hgt);
+        const y = p.y + k * step3, hgt = ((two ? 27 : 23) + (k === 0 ? 3 : 0)) * z, x = Math.round(p.x - w / 2), top = Math.round(y - hgt);
         for (const h3 of rails) this.block(x + w - 1, y - h3 * z, 6 * z, th, two ? "#8a6238" : "#d8c690", two ? "#aa7c48" : "#f0e2b0");
         this.block(x, top, w, hgt, "#8a6238", "#aa7c48", "#5e4026");
         this.shape([[x - 0.5, top], [p.x, top - 4 * z], [x + w + 0.5, top]], "#aa7c48");
@@ -118327,11 +118663,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       const def = ANIMS[anim], clip = def && framesOf(anim);
       if (!def || !clip) return;
-      const step2 = Math.floor(clock * clip.fps), last2 = this.steps.get(key);
-      this.steps.set(key, step2);
-      if (last2 === void 0 || step2 === last2) return;
+      const step3 = Math.floor(clock * clip.fps), last2 = this.steps.get(key);
+      this.steps.set(key, step3);
+      if (last2 === void 0 || step3 === last2) return;
       for (const c of Array.isArray(def) ? def : [def]) {
-        if (step2 % clip.n !== (c.frame ?? c.hitFrame ?? clip.hit)) continue;
+        if (step3 % clip.n !== (c.frame ?? c.hitFrame ?? clip.hit)) continue;
         const file = c.files ? pick(c.files) : c.file;
         const el = this.play(file, c.volume, c.gap, now, !!c.work, "sfx", c.files ? c.files[0] : c.file);
         if (el && c.work) this.active.set(key, { el, anim, file: c.files ? c.files[0] : c.file, seen: now });
@@ -118564,8 +118900,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         this.beds.set(file, { el, vol: 0 });
       }
       for (const [file, b] of this.beds) {
-        const target = want.get(file) ?? 0, step2 = dt / sounds_default.fade * 0.6;
-        b.vol += Math.sign(target - b.vol) * Math.min(Math.abs(target - b.vol), step2);
+        const target = want.get(file) ?? 0, step3 = dt / sounds_default.fade * 0.6;
+        b.vol += Math.sign(target - b.vol) * Math.min(Math.abs(target - b.vol), step3);
         b.el.volume = !this.unlocked ? 0 : Math.max(0, Math.min(1, b.vol));
         if (b.vol > 5e-3) {
           if (this.unlocked && b.el.paused) b.el.play().catch(() => {
@@ -118779,7 +119115,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return (t === Tile.Grass || t === Tile.Mud) && !sim2.world.occ[y * sim2.world.size + x];
   };
   var isWater = (sim2, x, y) => sim2.world.inBounds(x, y) && sim2.world.at(x, y) === Tile.Water;
-  var habitable = (sim2, def, x, y) => def.habitat === "water" ? isWater(sim2, x, y) : isGround(sim2, x, y);
+  var habitable = (sim2, def, x, y) => !sim2.inZone(x, y) && (def.habitat === "water" ? isWater(sim2, x, y) : isGround(sim2, x, y));
   var SPARSE = 0.4;
   var FIRST_AREA = 192 * 192;
   var share = () => CHUNK * CHUNK * SPARSE / FIRST_AREA;
@@ -119475,7 +119811,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           const idx = L2.idx;
           n.workers = Math.max(0, n.workers - 1);
           L2.idx = -1;
-          sim2.world.depleted(idx, (x, y) => ![...sim2.villagers, ...sim2.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y));
+          sim2.world.depleted(idx, (x, y) => !sim2.inZone(x, y) && ![...sim2.villagers, ...sim2.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y));
           endLife(sim2, f);
           return false;
         }
@@ -119722,10 +120058,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   }
   function tickProjectiles(sim2, dt) {
     for (let i = sim2.projectiles.length - 1; i >= 0; i--) {
-      const p = sim2.projectiles[i], dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy), step2 = p.speed * dt;
-      if (d > step2) {
-        p.x += dx / d * step2;
-        p.y += dy / d * step2;
+      const p = sim2.projectiles[i], dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy), step3 = p.speed * dt;
+      if (d > step3) {
+        p.x += dx / d * step3;
+        p.y += dy / d * step3;
         continue;
       }
       sim2.projectiles.splice(i, 1);
@@ -120008,7 +120344,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const own = t.def.weapons, lowest = Math.min(...own.map((w) => WEAPONS[w]?.tier ?? 1));
     const cap = Math.max(lowest, Math.min(2, playerTier(sim2) + (t.campLevel >= 3 ? 1 : 0)));
     const pool = own.filter((w) => (WEAPONS[w]?.tier ?? 1) <= cap), weapons = pool.length ? pool : own;
-    const step2 = Math.min(ARMOR_LADDER.length - 1, (t.campLevel >= 4 ? 2 : t.campLevel >= 3 ? 1 : 0) + (t.def.armor ? 1 : 0)), common = ARMOR_LADDER[step2];
+    const step3 = Math.min(ARMOR_LADDER.length - 1, (t.campLevel >= 4 ? 2 : t.campLevel >= 3 ? 1 : 0) + (t.def.armor ? 1 : 0)), common = ARMOR_LADDER[step3];
     if (t.boss && index * 0.618034 % 1 < DIFF.boss.bronzeShare) return { weapon: DIFF.boss.weapons[index % DIFF.boss.weapons.length], armor: "bronze" };
     return { weapon: weapons[index % weapons.length], armor: t.boss ? "bone" : common };
   }
@@ -121839,6 +122175,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       if (!w.inBounds(tx, ty)) return "Ngo\xE0i b\u1EA3n \u0111\u1ED3";
       const k = ty * N + tx;
       if (sim2.fog.state[k] === 0) return "Ch\u01B0a kh\xE1m ph\xE1";
+      if (sim2.inZone(tx, ty)) return "Khu qu\xE2n s\u1EF1: kh\xF4ng x\xE2y \u0111\u01B0\u1EE3c g\xEC";
       const t = w.tiles[k];
       if (t !== 0 && t !== 4 || w.occ[k] && !own(tx, ty)) return "V\u01B0\u1EDBng c\xE2y, \u0111\xE1, n\u01B0\u1EDBc ho\u1EB7c c\xF4ng tr\xECnh";
     }
@@ -122219,8 +122556,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   };
 
   // src/sim/model.ts
-  var NAMES_M = ["Bo", "R\xF4", "Gia", "Mun", "L\xF4", "T\xF9", "\u0110a"];
-  var NAMES_F = ["Tia", "Noa", "Ma", "Pa", "K\xEA", "Ly", "Sa"];
   var HAIR = ["#4a2e1a", "#2b1b10", "#6b3f1d", "#c98a3a", "#7a5a3a"];
   var SKIN = ["#d9a371", "#e8c4a0", "#c58a5c", "#b87850"];
   var NODE_JOB = { tree: "wood", rock: "stone", bush: "food" };
@@ -122451,7 +122786,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (n.amount <= 0) {
       const idx = v.target, N = sim2.world.size;
       leaveNode(sim2, v);
-      sim2.world.depleted(idx, (x, y) => sim2.fog.state[y * N + x] > 0 && ![...sim2.villagers, ...sim2.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim2.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y));
+      sim2.world.depleted(idx, (x, y) => sim2.fog.state[y * N + x] > 0 && !sim2.inZone(x, y) && ![...sim2.villagers, ...sim2.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim2.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y));
       v.phase = "idle";
       if (n.kind === "tree") sim2.say("M\u1ED9t c\xE2y \u0111\xE3 \u0111\u01B0\u1EE3c \u0111\u1ED1n xong.");
     } else if (v.carry.amount >= CARRY_CAP[res] || sim2.needTool(v, job)) {
@@ -123425,6 +123760,30 @@ ${risk.lines.join("\n")}`);
       else heat.sold++;
     }
     return got > 0 ? null : why;
+  }
+  function barterQuote(sim2, res, coins, keep = 0) {
+    const heat = sim2.barterHeat[res], coin = RES_NAME.coin.toLowerCase(), name = RES_NAME[res].toLowerCase();
+    let sold = heat && sim2.time < heat.until ? heat.sold : 0, left = sim2.stock[res], room = sim2.capacity() - sim2.stock.coin;
+    const q = { coins: 0, cost: 0, first: 0, last: 0, why: null };
+    while (q.coins < coins) {
+      const n = Math.ceil(BARTER[res] * (1 + barter_default.slip * sold));
+      if (left - n < keep) {
+        q.why = keep > 0 ? `Kh\xF4ng c\xF2n ${name} d\u01B0 (\u0111ang gi\u1EEF l\u1EA1i ${keep})` : `C\u1EA7n ${n} ${name} \u0111\u1EC3 \u0111\u1ED5i l\u1EA5y 1 ${coin}`;
+        break;
+      }
+      if (room <= 0) {
+        q.why = `Kho \u0111\xE3 \u0111\u1EA7y ${coin}`;
+        break;
+      }
+      if (!q.coins) q.first = n;
+      q.last = n;
+      q.cost += n;
+      left -= n;
+      room--;
+      sold++;
+      q.coins++;
+    }
+    return q;
   }
   function foodNeed(sim2) {
     const level = sim2.campfire()?.level ?? 1;
@@ -125018,15 +125377,15 @@ ${risk.lines.join("\n")}`);
       if (d > 1e-6) v.facing = Math.abs(dx) > Math.abs(dy) * 1.1 ? dx > 0 ? "right" : "left" : dy > 0 ? "front" : "back";
     }
     if (!v.path.length && v.slide) {
-      const s = v.slide, dx = s.x - v.x, dy = s.y - v.y, d = Math.hypot(dx, dy), step2 = walk * 0.7 * dt;
-      if (d <= step2) {
+      const s = v.slide, dx = s.x - v.x, dy = s.y - v.y, d = Math.hypot(dx, dy), step3 = walk * 0.7 * dt;
+      if (d <= step3) {
         v.x = s.x;
         v.y = s.y;
         v.slide = null;
         v.facing = s.face;
       } else {
-        v.x += dx / d * step2;
-        v.y += dy / d * step2;
+        v.x += dx / d * step3;
+        v.y += dy / d * step3;
         if (Math.abs(dx) > 0.02) v.facing = dx > 0 ? "right" : "left";
       }
     }
@@ -125282,9 +125641,9 @@ ${risk.lines.join("\n")}`);
       v.path = [];
     }
     if (lodge) {
-      const step2 = Math.floor(sim2.time / 8), spots = [];
+      const step3 = Math.floor(sim2.time / 8), spots = [];
       for (let t = 0; t < 10; t++) {
-        const ang = hash2(v.id, step2 * 16 + t, 71) * Math.PI * 2, rad3 = 6 + hash2(v.id, step2 * 16 + t, 72) * (range - 6);
+        const ang = hash2(v.id, step3 * 16 + t, 71) * Math.PI * 2, rad3 = 6 + hash2(v.id, step3 * 16 + t, 72) * (range - 6);
         const gx = Math.floor(lodge.x + Math.cos(ang) * rad3), gy = Math.floor(lodge.y + Math.sin(ang) * rad3);
         if (sim2.world.inBounds(gx, gy) && !sim2.world.isBlocked(gx, gy)) spots.push([gx, gy, sim2.fog.state[gy * N + gx] === 0]);
       }
@@ -125647,11 +126006,54 @@ ${risk.lines.join("\n")}`);
     return false;
   }
 
+  // src/data/names.json
+  var names_default = {
+    _note: "T\xEAn ng\u01B0\u1EDDi: gh\xE9p \xE2m ti\u1EBFt ki\u1EC3u b\u1ED9 l\u1EA1c. M\u1ED7i 'gi\u1ECDng' (voice) c\xF3 b\u1ED9 ph\u1EE5 \xE2m \u0111\u1EA7u, nguy\xEAn \xE2m v\xE0 \xE2m cu\u1ED1i ri\xEAng; gi\u1ECDng 0 l\xE0 c\u1EE7a d\xE2n ta, c\xE1c gi\u1ECDng c\xF2n l\u1EA1i chia cho c\xE1c b\u1ED9 t\u1ED9c (theo m\xE3 b\u1ED9 t\u1ED9c). Nam: \xE2m cu\u1ED1i l\xE0 nguy\xEAn \xE2m ho\u1EB7c m\u1ED9t ph\u1EE5 \xE2m (coda, x\xE1c su\u1EA5t codaChance); n\u1EEF: k\u1EBFt th\xFAc b\u1EB1ng nguy\xEAn \xE2m trong endF. threeChance: x\xE1c su\u1EA5t t\xEAn 3 \xE2m (c\xF2n l\u1EA1i 2 \xE2m); maxLen: t\xEAn d\xE0i h\u01A1n b\u1EA5y nhi\xEAu ch\u1EEF th\xEC b\u1ECF, b\u1ED1c l\u1EA1i.",
+    threeChance: 0.06,
+    codaChance: 0.45,
+    maxLen: 6,
+    endF: ["a", "i", "e"],
+    voices: [
+      { onset: ["k", "t", "m", "n", "b", "r", "l", "s", "d", "g", "z", "p", "h"], vowel: ["a", "o", "u", "i", "e"], coda: ["k", "r", "n", "m", "g"] },
+      { onset: ["k", "r", "g", "t", "kh"], vowel: ["a", "o", "u"], coda: ["r", "k", "n"] },
+      { onset: ["m", "l", "n", "v", "s"], vowel: ["a", "e", "i", "o"], coda: ["n", "m", "l"] },
+      { onset: ["b", "d", "z", "j", "v"], vowel: ["u", "o", "a", "e"], coda: ["g", "d", "k"] },
+      { onset: ["s", "t", "sh", "ch", "th"], vowel: ["i", "a", "e", "u"], coda: ["s", "t", "n"] }
+    ]
+  };
+
+  // src/sim/names.ts
+  function voiceOf(team) {
+    if (team === "player") return 0;
+    let h3 = 0;
+    for (const ch of team) h3 = h3 * 31 + ch.charCodeAt(0) >>> 0;
+    return 1 + h3 % (names_default.voices.length - 1);
+  }
+  function makeName(sex, voice, rnd, taken) {
+    const v = names_default.voices[voice % names_default.voices.length];
+    const pick3 = (a) => a[Math.floor(rnd() * a.length)];
+    const build2 = (syllables) => {
+      let s = "";
+      for (let i = 0; i < syllables; i++) {
+        const last2 = i === syllables - 1;
+        s += pick3(v.onset) + (last2 && sex === "f" ? pick3(names_default.endF) : pick3(v.vowel));
+        if (last2 && sex === "m" && rnd() < names_default.codaChance) s += pick3(v.coda);
+      }
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    };
+    for (let tries = 0; tries < 12; tries++) {
+      const name = build2(rnd() < names_default.threeChance ? 3 : 2);
+      if (name.length <= names_default.maxLen && !taken.has(name)) return name;
+    }
+    for (let n = 2; ; n++) {
+      const name = build2(n);
+      if (!taken.has(name)) return name;
+    }
+  }
+
   // src/sim/villagers.ts
-  function freshName(sim2, sex, rnd) {
-    const pool = (sex === "m" ? NAMES_M : NAMES_F).filter((n) => !sim2.villagers.some((v) => v.name === n));
-    const list = pool.length ? pool : sex === "m" ? NAMES_M : NAMES_F;
-    return list[Math.floor(rnd() * list.length)];
+  function freshName(sim2, sex, rnd, team = "player") {
+    return makeName(sex, voiceOf(team), rnd, new Set(sim2.villagers.map((v) => v.name)));
   }
   function spawn(sim2, x, y, sex) {
     const v = makeVillager(sim2, x, y, sex, "player");
@@ -125676,7 +126078,7 @@ ${risk.lines.join("\n")}`);
     }
     return {
       id: sim2.nextVid++,
-      name: freshName(sim2, sex, rnd),
+      name: freshName(sim2, sex, rnd, team),
       look: { sex, skin: pick3(SKIN), hair: pick3(HAIR), hide: "#8b6a45", pants: "#3f63a8" },
       x: x + 0.5,
       y: y + 0.5,
@@ -125769,6 +126171,10 @@ ${risk.lines.join("\n")}`);
       return;
     }
     v.orderCd = Math.max(0, v.orderCd - dt);
+    if (sim2.legionHolds(v)) {
+      sim2.animate(v, dt);
+      return;
+    }
     sim2.tickEnergy(v, dt);
     const held = sim2.heldTool(v);
     if (held && TOOL_OF_JOB[v.job] !== held.k) sim2.returnTool(v);
@@ -126028,14 +126434,14 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/sim/save.ts
-  var SAVE_VERSION = 32;
+  var SAVE_VERSION = 33;
   var SAVED = {
     /** Single values. */
     scalars: ["era", "time", "dayBase", "timeBase", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "tribeClock", "foodPot", "foodPenalty", "popBonus", "campBonus", "newcomersOpen", "nextEventDay", "conquered", "foodIncome", "foodSeen", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "dayWeather", "weatherAt", "weatherEnd", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
     /** Objects whose keys are filled in place. */
-    records: ["stock", "toolStock", "battle", "yieldNow", "yieldPrev", "ruins", "drafts", "barterHeat", "smoke", "gatherFocus"],
+    records: ["stock", "toolStock", "battle", "yieldNow", "yieldPrev", "ruins", "drafts", "barterHeat", "smoke", "gatherFocus", "legion"],
     /** Lists of plain data. */
-    lists: ["warLog", "battleLog", "scoutLosses", "wornTools", "craftQueue", "craftPaid", "tameQueue", "researchQueue", "log", "foodDays", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports"],
+    lists: ["warLog", "battleLog", "scoutLosses", "wornTools", "craftQueue", "craftPaid", "tameQueue", "researchQueue", "log", "foodDays", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports", "zones", "cells"],
     /** Handled by hand below. */
     special: ["researched", "questSeen", "tribes", "world", "fog", "rnd", "frnd", "wrnd"]
   };
@@ -126252,9 +126658,9 @@ ${risk.lines.join("\n")}`);
     if (!d || typeof d !== "object" || typeof d.version !== "number") throw new Error("this is not a saved game");
     if (d.version > SAVE_VERSION) throw new Error(`this game was saved by a newer version (${d.version}); this one reads up to ${SAVE_VERSION}`);
     while (d.version < SAVE_VERSION) {
-      const step2 = MIGRATIONS[d.version];
-      if (!step2) throw new Error(`no way to read saved games of version ${d.version}`);
-      d = step2(d);
+      const step3 = MIGRATIONS[d.version];
+      if (!step3) throw new Error(`no way to read saved games of version ${d.version}`);
+      d = step3(d);
     }
     return d;
   }
@@ -126391,6 +126797,13 @@ ${risk.lines.join("\n")}`);
     (_b = d.records).smoke ?? (_b.smoke = {});
     (_c = d.records).gatherFocus ?? (_c.gatherFocus = {});
     return { ...d, version: 32 };
+  };
+  MIGRATIONS[32] = (d) => {
+    var _a, _b, _c;
+    (_a = d.lists).zones ?? (_a.zones = []);
+    (_b = d.lists).cells ?? (_b.cells = []);
+    (_c = d.records).legion ?? (_c.legion = { on: false, assembling: false, since: 0, clock: 0, cx: 0, cy: 0, theta: 0, theta0: 0, speed: 0, path: [], slots: {} });
+    return { ...d, version: 33 };
   };
 
   // src/sim/roles.ts
@@ -126741,13 +127154,10 @@ ${risk.lines.join("\n")}`);
       s.training = false;
       return null;
     }
-    const field = sim2.building("drill");
-    if (!field) return "C\u1EA7n d\u1EF1ng B\xE3i t\u1EADp";
-    s.training = true;
-    squadMove(sim2, s, field.x + 1.5, field.y + 1.5, "hold");
-    return null;
+    return 'B\xE3i t\u1EADp kh\xF4ng c\xF2n luy\u1EC7n \u0111\u1ED9i h\xECnh: d\xF9ng tab "H\xE0nh qu\xE2n" c\u1EE7a B\xE3i t\u1EADp \u0111\u1EC3 l\u1EADp qu\xE2n';
   }
   function tickTraining(sim2, dt) {
+    if (dt >= 0) return;
     const field = sim2.building("drill");
     for (const s of sim2.squads) {
       const us = squadUnits(sim2, s);
@@ -126857,6 +127267,271 @@ ${risk.lines.join("\n")}`);
     sim2.battleLog.push({ id: sim2.battleLog.length + 1, kind: b.kind === "raid" ? "defense" : "beasts", name: b.name, startDay: b.startDay, endDay: sim2.day, night: b.night, minutes: minutes2, peak: b.peak, ourDead: b.ourDead, foeDead: b.foeDead, ourDeadArm: { ...b.ourDeadArm }, civDead: b.civDead, breaches: b.breaches, shots: b.shots, dmgDealt: Math.round(b.dmgDealt), dmgTaken: Math.round(b.dmgTaken), notes: [...b.notes] });
     if (sim2.battleLog.length > 60) sim2.battleLog.shift();
     for (const l of lines) sim2.say(l);
+  }
+
+  // src/data/legion.json
+  var legion_default = {
+    _note: "H\xE0nh qu\xE2n th\u1EDDi Trung c\u1ED5: khu qu\xE2n s\u1EF1 (zoneSize \xD7 zoneSize \xF4, v\u1EBD \u1EDF B\xE3i t\u1EADp), \xF4 l\xEDnh (cellSize \xD7 cellSize \xF4, m\u1ED7i \xF4 ch\u1EE9a t\u1ED1i \u0111a cellSize\xB2 l\xEDnh c\xE1ch nhau 1 \xF4), \u0111\u1ED9i h\xECnh kh\xF4ng xoay, c\u1EA3 qu\xE2n t\u1ECBnh ti\u1EBFn song song theo t\xE2m, l\xEDnh t\u1EE5t l\u1EA1i \u0111u\u1ED5i theo nhanh t\u1ED1i \u0111a catchup l\u1EA7n t\u1ED1c \u0111\u1ED9 chung. T\u1ED1c \u0111\u1ED9 chung = trung v\u1ECB t\u1ED1c \u0111\u1ED9 c\u1EE7a m\u1ECDi l\xEDnh.",
+    zoneSize: 30,
+    cellSize: 5,
+    catchup: 1.5,
+    assembleSeconds: 180
+  };
+
+  // src/sim/legion.ts
+  var ARMS = ["foot", "archer", "cavalry"];
+  var ARM_NAME2 = { foot: "B\u1ED9 binh", archer: "Cung th\u1EE7", cavalry: "K\u1EF5 binh" };
+  function inZone(sim2, x, y) {
+    const tx = Math.floor(x), ty = Math.floor(y);
+    for (const z of sim2.zones) if (tx >= z.x && tx < z.x + z.w && ty >= z.y && ty < z.y + z.h) return true;
+    return false;
+  }
+  var rectOf2 = (cx, cy) => ({ x: Math.round(cx - legion_default.zoneSize / 2), y: Math.round(cy - legion_default.zoneSize / 2), w: legion_default.zoneSize, h: legion_default.zoneSize });
+  function zoneError(sim2, cx, cy) {
+    if (sim2.era !== "ancient" && !sim2.dev.freeBuild) return "Ch\u1EC9 l\u1EADp \u0111\u01B0\u1EE3c khu qu\xE2n s\u1EF1 \u1EDF th\u1EDDi Trung c\u1ED5";
+    if (!sim2.building("drill") && !sim2.dev.freeBuild) return "C\u1EA7n d\u1EF1ng B\xE3i t\u1EADp";
+    const r = rectOf2(cx, cy), w = sim2.world, N = w.size;
+    if (!w.inBounds(r.x, r.y) || !w.inBounds(r.x + r.w - 1, r.y + r.h - 1)) return "Khu qu\xE2n s\u1EF1 v\u01B0\u1EE3t ra ngo\xE0i b\u1EA3n \u0111\u1ED3";
+    if (sim2.zones.some((z) => r.x < z.x + z.w && r.x + r.w > z.x && r.y < z.y + z.h && r.y + r.h > z.y)) return "Ch\u1ED3ng l\xEAn m\u1ED9t khu qu\xE2n s\u1EF1 kh\xE1c";
+    for (let j = r.y; j < r.y + r.h; j++) for (let i = r.x; i < r.x + r.w; i++) {
+      const k = j * N + i;
+      if (sim2.fog.state[k] === 0) return "C\xF3 ch\u1ED7 ch\u01B0a kh\xE1m ph\xE1: ch\u1EC9 l\u1EADp khu tr\xEAn v\xF9ng \u0111\xE3 kh\xE1m ph\xE1";
+      if (w.occ[k]) return "C\xF3 c\xF4ng tr\xECnh trong khu (c\u1EE7a l\xE0ng ta ho\u1EB7c c\u1EE7a l\xE0ng kh\xE1c): ch\u1ECDn ch\u1ED7 tr\u1ED1ng";
+    }
+    return null;
+  }
+  function createZone(sim2, cx, cy) {
+    const why = zoneError(sim2, cx, cy);
+    if (why) return why;
+    const r = rectOf2(cx, cy), w = sim2.world, N = w.size;
+    const id = sim2.zones.reduce((m, z) => Math.max(m, z.id), 0) + 1;
+    sim2.zones.push({ id, ...r });
+    let cleared = 0;
+    for (let j = r.y; j < r.y + r.h; j++) for (let i = r.x; i < r.x + r.w; i++) {
+      const idx = j * N + i;
+      if (!w.nodes.has(idx)) continue;
+      for (const o of sim2.villagers) if (o.target === idx && (o.phase === "goNode" || o.phase === "work")) sim2.resetTask(o);
+      w.nodes.delete(idx);
+      w.tiles[idx] = Tile.Grass;
+      cleared++;
+    }
+    for (let i = sim2.animals.length - 1; i >= 0; i--) {
+      const a = sim2.animals[i];
+      if (a.x >= r.x && a.x < r.x + r.w && a.y >= r.y && a.y < r.y + r.h) {
+        sim2.animals.splice(i, 1);
+        sim2.animalById.delete(a.id);
+      }
+    }
+    sim2.fogDirty = true;
+    sim2.say(`\u0110\xE3 l\u1EADp khu qu\xE2n s\u1EF1 ${r.w}\xD7${r.h} \xF4 (d\u1ECDn ${cleared} c\xE2y, \u0111\xE1, b\u1EE5i): trong khu kh\xF4ng c\xF2n g\xEC m\u1ECDc, kh\xF4ng x\xE2y \u0111\u01B0\u1EE3c g\xEC.`);
+    return null;
+  }
+  function removeZone(sim2, id) {
+    const i = sim2.zones.findIndex((z) => z.id === id);
+    if (i < 0) return;
+    sim2.zones.splice(i, 1);
+    for (let k = sim2.cells.length - 1; k >= 0; k--) if (sim2.cells[k].zone === id) sim2.cells.splice(k, 1);
+  }
+  var CS = legion_default.cellSize;
+  var cellRect = (cx, cy) => ({ x: Math.floor(cx) - Math.floor(CS / 2), y: Math.floor(cy) - Math.floor(CS / 2) });
+  function addCell(sim2, cx, cy, arm) {
+    const c = cellRect(cx, cy), w = sim2.world;
+    const zone = sim2.zones.find((z) => c.x >= z.x && c.y >= z.y && c.x + CS <= z.x + z.w && c.y + CS <= z.y + z.h);
+    if (!zone) return "\xD4 l\xEDnh ph\u1EA3i n\u1EB1m tr\u1ECDn trong m\u1ED9t khu qu\xE2n s\u1EF1";
+    if (sim2.cells.some((o) => c.x < o.x + CS && c.x + CS > o.x && c.y < o.y + CS && c.y + CS > o.y)) return "Ch\u1ED3ng l\xEAn m\u1ED9t \xF4 l\xEDnh kh\xE1c";
+    for (let j = c.y; j < c.y + CS; j++) for (let i = c.x; i < c.x + CS; i++) if (w.isBlocked(i, j)) return "\xD4 c\xF3 n\u01B0\u1EDBc, n\xFAi ho\u1EB7c v\u1EADt c\u1EA3n";
+    sim2.cells.push({ id: sim2.cells.reduce((m, o) => Math.max(m, o.id), 0) + 1, zone: zone.id, x: c.x, y: c.y, arm });
+    return null;
+  }
+  function setCellArm(sim2, id, arm) {
+    const i = sim2.cells.findIndex((c) => c.id === id);
+    if (i < 0) return;
+    if (arm) sim2.cells[i].arm = arm;
+    else sim2.cells.splice(i, 1);
+  }
+  var living = (sim2) => {
+    const out = [];
+    for (const id of Object.keys(sim2.legion.slots)) {
+      const v = sim2.byId.get(Number(id));
+      if (v && v.team === "player" && v.health > 0) out.push(v);
+      else delete sim2.legion.slots[id];
+    }
+    return out;
+  };
+  function assemble(sim2) {
+    const lock = sim2.warLock();
+    if (lock) return lock;
+    if (!sim2.cells.length) return "Ch\u01B0a c\xF3 \xF4 l\xEDnh n\xE0o: v\u1EBD khu qu\xE2n s\u1EF1 v\xE0 \u0111\u1EB7t c\xE1c \xF4 l\xEDnh tr\u01B0\u1EDBc";
+    disband(sim2);
+    const L2 = sim2.legion, pool = sim2.villagers.filter((v) => v.team === "player" && v.job === "fight" && !v.guard && v.post < 0 && v.health > 0 && v.down <= 0 && !sim2.scouts.some((m) => m.ids.includes(v.id)));
+    const chosen = [];
+    for (const arm of ARMS) {
+      const cells = sim2.cells.filter((c) => c.arm === arm).sort((a, b) => a.id - b.id), men = pool.filter((v) => v.arm === arm).sort((a, b) => a.id - b.id);
+      men.forEach((v, k) => {
+        const c = cells[Math.floor(k / (CS * CS))], n = k % (CS * CS);
+        if (c) chosen.push({ v, x: c.x + n % CS + 0.5, y: c.y + Math.floor(n / CS) + 0.5 });
+      });
+    }
+    if (!chosen.length) return "Kh\xF4ng c\xF3 l\xEDnh n\xE0o h\u1EE3p v\u1EDBi c\xE1c \xF4 \u0111\xE3 \u0111\u1EB7t";
+    const cx = chosen.reduce((s, c) => s + c.x, 0) / chosen.length, cy = chosen.reduce((s, c) => s + c.y, 0) / chosen.length;
+    for (const { v, x, y } of chosen) {
+      sim2.exitBuilding(v);
+      sim2.resetTask(v);
+      sim2.clearCombat(v);
+      v.lockUntil = 0;
+      v.out = true;
+      v.housed = false;
+      v.recall = false;
+      v.nightOwl = false;
+      v.inTent = false;
+      v.queue.length = 0;
+      L2.slots[String(v.id)] = { dx: x - cx, dy: y - cy };
+    }
+    Object.assign(L2, { on: true, assembling: true, since: sim2.time, clock: 0, cx, cy, theta: -Math.PI / 2, theta0: -Math.PI / 2, speed: 0, path: [] });
+    sim2.say(`${chosen.length} l\xEDnh \u0111ang t\u1EADp trung v\u1EC1 c\xE1c \xF4 l\xEDnh.`);
+    return null;
+  }
+  function medianSpeed(sim2, men) {
+    const s = men.map((v) => v.speed * sim2.mountSpeed(v)).sort((a, b) => a - b);
+    return s.length ? s[Math.floor(s.length / 2)] : 0;
+  }
+  function step2(sim2, v, tx, ty, len) {
+    const dx = tx - v.x, dy = ty - v.y, d = Math.hypot(dx, dy);
+    if (d < 1e-6) return 0;
+    const k = Math.min(1, len / d), nx = v.x + dx * k, ny = v.y + dy * k, w = sim2.world;
+    const open = (x, y) => !w.isBlocked(Math.floor(x), Math.floor(y));
+    let ox = v.x, oy = v.y;
+    if (open(nx, ny)) {
+      v.x = nx;
+      v.y = ny;
+    } else if (open(nx, v.y)) v.x = nx;
+    else if (open(v.x, ny)) v.y = ny;
+    return Math.hypot(v.x - ox, v.y - oy);
+  }
+  var faceOf = (a) => {
+    const c = Math.cos(a), s = Math.sin(a);
+    return Math.abs(c) > Math.abs(s) * 1.1 ? c > 0 ? "right" : "left" : s > 0 ? "front" : "back";
+  };
+  function legionMove(sim2, x, y) {
+    const L2 = sim2.legion;
+    if (!L2.on) return 'Ch\u01B0a c\xF3 \u0111\u1ED9i qu\xE2n: b\u1EA5m "T\u1EADp tr\u1EADn" \u1EDF B\xE3i t\u1EADp';
+    if (L2.assembling) return "Qu\xE2n c\xF2n \u0111ang t\u1EADp trung";
+    const men = living(sim2);
+    if (!men.length) return "\u0110\u1ED9i qu\xE2n kh\xF4ng c\xF2n ai";
+    const sx = x - L2.cx, sy = y - L2.cy, alongX = Math.abs(sx) > Math.abs(sy), sign = (alongX ? sx : sy) >= 0 ? 1 : -1;
+    let reach = 0;
+    for (const v of men) {
+      const s = L2.slots[String(v.id)];
+      if (s) reach = Math.max(reach, sign * (alongX ? s.dx : s.dy));
+    }
+    const goal = sim2.nearestFree(Math.floor(alongX ? x - sign * reach : x), Math.floor(alongX ? y : y - sign * reach), /* @__PURE__ */ new Set());
+    if (!goal) return "Kh\xF4ng c\xF3 ch\u1ED7 \u0111\u1EC3 t\u1EDBi";
+    const agent = men.reduce((b, v) => Math.hypot(v.x - L2.cx, v.y - L2.cy) < Math.hypot(b.x - L2.cx, b.y - L2.cy) ? v : b);
+    const ox = agent.x, oy = agent.y;
+    agent.x = L2.cx;
+    agent.y = L2.cy;
+    const path = sim2.pathTo(agent, goal[0], goal[1], 6e4);
+    agent.x = ox;
+    agent.y = oy;
+    if (!path.length) return "Kh\xF4ng c\xF3 \u0111\u01B0\u1EDDng t\u1EDBi \u0111\xF3";
+    L2.path = path.map(([px, py]) => [px, py]);
+    L2.speed = medianSpeed(sim2, men);
+    return null;
+  }
+  function disband(sim2) {
+    const L2 = sim2.legion;
+    for (const id of Object.keys(L2.slots)) {
+      const v = sim2.byId.get(Number(id));
+      if (v) {
+        v.slide = null;
+        v.path = [];
+        v.phase = "idle";
+      }
+    }
+    Object.assign(L2, { on: false, assembling: false, path: [], slots: {} });
+  }
+  function tickLegion(sim2, dt) {
+    const L2 = sim2.legion;
+    if (!L2.on) return;
+    const men = living(sim2);
+    if (!men.length) {
+      disband(sim2);
+      return;
+    }
+    if (L2.assembling) {
+      let ready = 0;
+      for (const v of men) {
+        const s = L2.slots[String(v.id)], tx = L2.cx + s.dx, ty = L2.cy + s.dy, d = Math.hypot(tx - v.x, ty - v.y);
+        v.phase = "idle";
+        v.facing = v.facing ?? "front";
+        if (d < 0.3) {
+          v.x = tx;
+          v.y = ty;
+          v.path = [];
+          v.slide = null;
+          v.facing = faceOf(L2.theta);
+          ready++;
+          continue;
+        }
+        if (d > 3) {
+          if (!v.path.length && sim2.pathLeft > 0) {
+            sim2.pathLeft--;
+            v.path = sim2.pathTo(v, Math.floor(tx), Math.floor(ty), 3e4);
+          }
+          sim2.moveUnit(v, dt);
+        } else {
+          v.path = [];
+          const moved = step2(sim2, v, tx, ty, v.speed * sim2.mountSpeed(v) * dt);
+          v.slide = moved > 0 ? { x: tx, y: ty, face: tx >= v.x ? "right" : "left" } : null;
+          if (moved > 0) v.facing = faceOf(Math.atan2(ty - v.y, tx - v.x));
+        }
+      }
+      if (ready === men.length || sim2.time - L2.since > legion_default.assembleSeconds && ready >= men.length * 0.9) {
+        L2.assembling = false;
+        sim2.say("\u0110\u1ED9i qu\xE2n \u0111\xE3 t\u1EADp h\u1EE3p, s\u1EB5n s\xE0ng h\xE0nh qu\xE2n.");
+      }
+      return;
+    }
+    L2.clock += dt;
+    if (L2.clock >= 1) {
+      L2.clock = 0;
+      L2.speed = medianSpeed(sim2, men);
+    }
+    if (L2.path.length) {
+      const [px, py] = L2.path[0], tx = px + 0.5, ty = py + 0.5, dx = tx - L2.cx, dy = ty - L2.cy, d = Math.hypot(dx, dy);
+      if (d > 1e-6) {
+        L2.theta = Math.atan2(dy, dx);
+        const go = L2.speed * dt;
+        if (d <= go) {
+          L2.cx = tx;
+          L2.cy = ty;
+          L2.path.shift();
+        } else {
+          L2.cx += dx / d * go;
+          L2.cy += dy / d * go;
+        }
+      } else L2.path.shift();
+    }
+    for (const v of men) {
+      const s = L2.slots[String(v.id)], tx = L2.cx + s.dx, ty = L2.cy + s.dy, d = Math.hypot(tx - v.x, ty - v.y);
+      v.path = [];
+      v.phase = "idle";
+      const heading = faceOf(L2.theta), headSide = Math.cos(L2.theta) >= 0 ? "right" : "left", marching = L2.path.length > 0;
+      if (d < 0.04 && !marching) {
+        v.slide = null;
+        v.facing = heading;
+        continue;
+      }
+      const k = 1 + Math.min(legion_default.catchup - 1, d / 4), moved = step2(sim2, v, tx, ty, L2.speed * k * dt);
+      if (marching || moved > 0) {
+        const far = d > 1.5;
+        v.facing = far ? faceOf(Math.atan2(ty - v.y, tx - v.x)) : heading;
+        v.slide = { x: tx, y: ty, face: far ? tx >= v.x ? "right" : "left" : headSide };
+      } else {
+        v.slide = null;
+        v.facing = heading;
+      }
+    }
   }
 
   // src/sim/wartent.ts
@@ -127500,7 +128175,7 @@ ${risk.lines.join("\n")}`);
     const raiders = t.unitIds.map((u) => sim2.get(u)).filter((u) => u && u.ai?.role !== "civ");
     return raiders.length > 0 && raiders.some((u) => Math.hypot(u.x - t.camp.x, u.y - t.camp.y) > 9);
   }
-  function assemble(sim2, s, d) {
+  function assemble2(sim2, s, d) {
     const us = sim2.squadUnits(s).sort((a, b) => (sim2.armOf(a) === "archer" ? 1 : 0) - (sim2.armOf(b) === "archer" ? 1 : 0) || a.id - b.id);
     const front = (c) => c.x * Math.cos(d.heading) + c.y * Math.sin(d.heading);
     const cells = d.cells.slice().sort((a, b) => front(b) - front(a)), taken = /* @__PURE__ */ new Set();
@@ -127623,7 +128298,7 @@ ${risk.lines.join("\n")}`);
     m.resting = false;
     for (const v of sim2.squadUnits(s)) v.nightOwl = true;
     if (plan2.stage === "assemble" || plan2.stage === "ready") {
-      if (m.deploy) assemble(sim2, s, m.deploy);
+      if (m.deploy) assemble2(sim2, s, m.deploy);
       else for (const v of sim2.squadUnits(s)) {
         v.fight.mode = "guard";
         v.fight.anchor = { x: v.x, y: v.y };
@@ -127653,7 +128328,7 @@ ${risk.lines.join("\n")}`);
       m.initial = sim2.squadUnits(s).length;
       m.leg = 0;
       m.block = null;
-      if (m.deploy) assemble(sim2, s, m.deploy);
+      if (m.deploy) assemble2(sim2, s, m.deploy);
       else if (isHolding(plan2, m)) for (const v of sim2.squadUnits(s)) {
         v.fight.mode = "guard";
         v.fight.anchor = { x: v.x, y: v.y };
@@ -127984,7 +128659,7 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/sim/warquick.ts
-  var ARM_NAME2 = { foot: "B\u1ED9 binh", archer: "Cung th\u1EE7", cavalry: "K\u1EF5 binh" };
+  var ARM_NAME3 = { foot: "B\u1ED9 binh", archer: "Cung th\u1EE7", cavalry: "K\u1EF5 binh" };
   function army2(sim2) {
     return sim2.mine(sim2.villagers.filter((v) => v.job === "fight" && !v.guard && v.post < 0 && v.health > 0).map((v) => v.id)).filter((v) => v.job === "fight");
   }
@@ -128008,7 +128683,7 @@ ${risk.lines.join("\n")}`);
     for (const arm of ["foot", "archer", "cavalry"]) {
       const group = men.filter((v) => sim2.armOf(v) === arm);
       if (!group.length) continue;
-      const s = createSquad(sim2, ARM_NAME2[arm], true).squad;
+      const s = createSquad(sim2, ARM_NAME3[arm], true).squad;
       for (const v of group) {
         v.squad = s.id;
         s.ids.push(v.id);
@@ -129262,6 +129937,10 @@ ${risk.lines.join("\n")}`);
       this.tribeClock = 0;
       /** The day the next event of the recurring kind is set (tribes.seasonEvent). */
       this.nextEventDay = 0;
+      /** The military zones and the squares of soldiers in them, and the army that marches (legion.ts). */
+      this.zones = [];
+      this.cells = [];
+      this.legion = { on: false, assembling: false, since: 0, clock: 0, cx: 0, cy: 0, theta: 0, theta0: 0, speed: 0, path: [], slots: {} };
       /** Villages nobody has seen yet whose smoke a villager smelled: roughly where it rises (tribe id → a point some tiles off the camp), drawn on the big map until the village is seen (scouting.tickSightings). */
       this.smoke = {};
       /** Where the player asked the gatherers to work (x, y: a point of the big map); empty for no preference (labor.findNode). */
@@ -130002,6 +130681,46 @@ ${risk.lines.join("\n")}`);
     barter(res, coins = 1, keep = 0) {
       return barter(this, res, coins, keep);
     }
+    /** → legion.inZone */
+    inZone(x, y) {
+      return inZone(this, x, y);
+    }
+    /** → legion.zoneError */
+    zoneError(cx, cy) {
+      return zoneError(this, cx, cy);
+    }
+    /** → legion.createZone */
+    createZone(cx, cy) {
+      return createZone(this, cx, cy);
+    }
+    /** → legion.removeZone */
+    removeZone(id) {
+      return removeZone(this, id);
+    }
+    /** → legion.addCell */
+    addCell(cx, cy, arm) {
+      return addCell(this, cx, cy, arm);
+    }
+    /** → legion.setCellArm: `null` takes the square away */
+    setCellArm(id, arm) {
+      return setCellArm(this, id, arm);
+    }
+    /** → legion.assemble */
+    assemble() {
+      return assemble(this);
+    }
+    /** → legion.legionMove */
+    legionMove(x, y) {
+      return legionMove(this, x, y);
+    }
+    /** → legion.disband */
+    disband() {
+      return disband(this);
+    }
+    /** → legion.holds: a soldier of the marching army is moved by the army (legion.tickLegion), not by his own brain */
+    legionHolds(v) {
+      return !!this.legion.slots[v.id];
+    }
     /** Ask the gatherers to work around a point (tiles) of the map; `null` takes the wish back. */
     setGatherFocus(at) {
       delete this.gatherFocus.x;
@@ -130014,6 +130733,10 @@ ${risk.lines.join("\n")}`);
     /** → economy.barterPrice */
     barterPrice(res) {
       return barterPrice(this, res);
+    }
+    /** → economy.barterQuote: what a trade would be, nothing changes */
+    barterQuote(res, coins, keep = 0) {
+      return barterQuote(this, res, coins, keep);
     }
     /** → economy.barterKeep */
     barterKeep(res) {
@@ -130220,6 +130943,7 @@ ${risk.lines.join("\n")}`);
       tickTraining(this, dt);
       tickBattle(this, dt);
       tickScouts(this, dt);
+      tickLegion(this, dt);
       tickPlans(this, dt);
       this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
       for (const f of [...this.foes]) tickFoe(this, f, dt);
@@ -130668,7 +131392,7 @@ ${risk.lines.join("\n")}`);
       col: colors2[Math.floor(Math.random() * colors2.length)]
     }));
     const t0 = performance.now();
-    const step2 = (now) => {
+    const step3 = (now) => {
       const t = now - t0;
       if (t > ms) {
         cv.remove();
@@ -130689,9 +131413,9 @@ ${risk.lines.join("\n")}`);
         c.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2);
         c.restore();
       }
-      requestAnimationFrame(step2);
+      requestAnimationFrame(step3);
     };
-    requestAnimationFrame(step2);
+    requestAnimationFrame(step3);
   }
   var EraDialog = class {
     constructor(root) {
@@ -130995,6 +131719,8 @@ ${risk.lines.join("\n")}`);
       };
       /** Selecting several villagers: taps toggle, drags draw a box. */
       this.multi = false;
+      /** The army of the march is chosen: a tap or a right click on the ground sends the whole block there (sim.legionMove). */
+      this.legionControl = false;
       /** The card of the chosen people is out of the way while the player orders them about; choosing someone brings it back. */
       this.hushCard = false;
       /** Holding the pointer still on the map opens a ring of buttons round it (the screen draws it): `open` when it opens, `move` while the pointer goes over it, `end` when it is let go. */
@@ -131021,6 +131747,8 @@ ${risk.lines.join("\n")}`);
       this.inspect = null;
       /** The campfire's people menu asked for the full page of the chosen villager. */
       this.openDetail = false;
+      /** The next time the panel of a house shows, open the list of the people of the house (the button "Nhân sự" of the card under the house). */
+      this.openPeople = false;
       /** The house whose dialog the villager's detail was opened from: closing the detail brings it back. */
       this.detailFrom = null;
       /** F pressed: the next click sends the selection to attack-move there. */
@@ -131351,6 +132079,10 @@ ${risk.lines.join("\n")}`);
     }
     /** Left click or tap. */
     activate(p, touch, additive) {
+      if (this.legionControl && this.sim.legion.on && !this.placing) {
+        this.command(p, additive);
+        return;
+      }
       if (this.attackMoveArmed) {
         this.attackMove(p, additive);
         return;
@@ -131702,6 +132434,16 @@ ${risk.lines.join("\n")}`);
       return { x: Math.floor(wx / TILE), y: j0 };
     }
     command(p, queue = false) {
+      if (this.legionControl && this.sim.legion.on) {
+        const w2 = this.r.screenToWorld(p.x, p.y), e = this.sim.legionMove(w2.x / TILE, w2.y / TILE);
+        if (e) this.onToast(e);
+        else {
+          this.markers.push({ x: w2.x, y: w2.y, age: 0 });
+          this.onToast("\u0110\u1ED9i qu\xE2n h\xE0nh qu\xE2n");
+        }
+        this.onChange();
+        return;
+      }
       if (!this.selected.size) return;
       this.hushCard = true;
       const w = this.r.screenToWorld(p.x, p.y);
@@ -132202,6 +132944,54 @@ ${risk.lines.join("\n")}`);
     sim2.fogDirty = true;
     return `Qu\xE2n \u0111\u1EA7y c\xE1c tr\u1EA1i: th\xEAm ${added} l\xEDnh, ${n} l\xEDnh c\xF3 \u0111\u1ED3 cao nh\u1EA5t + \u0111u\u1ED1c`;
   }
+  function clearAroundZones(sim2, margin = 40) {
+    if (!sim2.zones.length) return "Ch\u01B0a c\xF3 khu qu\xE2n s\u1EF1 n\xE0o";
+    const w = sim2.world, N = w.size, near2 = (x, y) => sim2.zones.some((z) => x >= z.x - margin && x < z.x + z.w + margin && y >= z.y - margin && y < z.y + z.h + margin);
+    let n = 0;
+    for (const idx of [...w.nodes.keys()]) {
+      if (!near2(idx % N, Math.floor(idx / N))) continue;
+      for (const o of sim2.villagers) if (o.target === idx && (o.phase === "goNode" || o.phase === "work")) sim2.resetTask(o);
+      w.nodes.delete(idx);
+      w.tiles[idx] = Tile.Grass;
+      n++;
+    }
+    let a = 0;
+    for (let i = sim2.animals.length - 1; i >= 0; i--) {
+      const an = sim2.animals[i];
+      if (near2(an.x, an.y)) {
+        sim2.animals.splice(i, 1);
+        sim2.animalById.delete(an.id);
+        a++;
+      }
+    }
+    sim2.fogDirty = true;
+    return `\u0110\xE3 d\u1ECDn ${n} c\xE2y, \u0111\xE1, b\u1EE5i v\xE0 ${a} con v\u1EADt quanh khu qu\xE2n s\u1EF1 (${margin} \xF4)`;
+  }
+  function fillPlan(sim2) {
+    if (!sim2.cells.length) return "Ch\u01B0a c\xF3 \xF4 l\xEDnh n\xE0o: v\u1EBD khu qu\xE2n s\u1EF1 v\xE0 \u0111\u1EB7t c\xE1c \xF4 l\xEDnh \u1EDF B\xE3i t\u1EADp tr\u01B0\u1EDBc";
+    const top = sim2.era === "ancient" ? { foot: "bronze_sword", cav: "bronze_spear", armor: "bronze" } : { foot: "mace", cav: "spear", armor: "bone" };
+    let made = 0;
+    for (const arm of ["foot", "archer", "cavalry"]) {
+      const have2 = sim2.villagers.filter((v) => v.team === "player" && v.job === "fight" && !v.guard && v.post < 0 && v.arm === arm).length;
+      const need = sim2.cells.filter((c) => c.arm === arm).length * legion_default.cellSize * legion_default.cellSize - have2;
+      for (let i = 0; i < need; i++) {
+        const before = new Set(sim2.villagers.map((v2) => v2.id));
+        addVillager(sim2);
+        const v = sim2.villagers.find((o) => !before.has(o.id));
+        if (!v) continue;
+        sim2.setJob([v.id], "fight");
+        v.arm = arm;
+        sim2.giveGear([v.id], arm === "archer" ? "bow" : arm === "cavalry" ? top.cav : top.foot, "weapon");
+        sim2.giveGear([v.id], top.armor, "armor");
+        v.manualGear = true;
+        v.torch = { dur: torchLife(sim2) };
+        made++;
+      }
+    }
+    sim2.fogDirty = true;
+    const err = sim2.assemble();
+    return err ?? `Th\xEAm ${made} l\xEDnh, c\u1EA3 qu\xE2n \u0111\xE3 t\u1EADp h\u1EE3p \u0111\u1EE7 c\xE1c \xF4`;
+  }
   function allyTier(sim2, tier) {
     const f = sim2.campfire(), from = f ? { x: f.x, y: f.y } : sim2.world.start;
     const t = sim2.tribes.filter((x) => x.tier === tier && !x.boss && x.state === "free").sort((a, b) => Math.hypot(a.camp.x - from.x, a.camp.y - from.y) - Math.hypot(b.camp.x - from.x, b.camp.y - from.y))[0];
@@ -132525,6 +133315,14 @@ ${risk.lines.join("\n")}`);
         { class: "devrow" },
         btn("+5 d\xE2n", () => toast2(addPeople(sim2, 5)), "Th\xEAm 5 d\xE2n r\u1EA3nh quanh l\u1EEDa tr\u1EA1i, k\u1EC3 c\u1EA3 khi v\u01B0\u1EE3t s\u1EE9c ch\u1EE9a"),
         btn("+100 m\u1ED7i t\xE0i nguy\xEAn", () => addAllStock(sim2, 100), "C\u1ED9ng 100 m\u1ED7i lo\u1EA1i (kh\xF4ng qu\xE1 s\u1EE9c ch\u1EE9a)"),
+        btn("T\u1EADp h\u1EE3p qu\xE2n \u0111\u1EA7y \xF4", () => {
+          toast2(fillPlan(sim2));
+          ctl2.onChange();
+        }, "T\u1EA1o th\xEAm l\xEDnh (\u0111\u1ED3 t\u1ED1t nh\u1EA5t + \u0111u\u1ED1c, b\u1ECF qua s\u1EE9c ch\u1EE9a tr\u1EA1i) cho \u0111\u1EE7 m\u1ECDi \xF4 l\xEDnh trong k\u1EBF ho\u1EA1ch c\u1EE7a B\xE3i t\u1EADp r\u1ED3i T\u1EADp tr\u1EADn ngay"),
+        btn("D\u1ECDn s\u1EA1ch quanh khu qu\xE2n s\u1EF1", () => {
+          toast2(clearAroundZones(sim2));
+          ctl2.onChange();
+        }, "X\xF3a c\xE2y, \u0111\xE1, b\u1EE5i v\xE0 th\xFA trong khu qu\xE2n s\u1EF1 v\xE0 40 \xF4 xung quanh \u0111\u1EC3 th\u1EED h\xE0nh qu\xE2n (c\xF4ng tr\xECnh gi\u1EEF nguy\xEAn)"),
         btn("M\u1EABu nh\u1EADt k\xFD chi\u1EBFn \u0111\u1EA5u", () => toast2(sampleBattleLog(sim2)), "Th\xEAm (ho\u1EB7c x\xF3a) v\xE0i tr\u1EADn gi\u1EA3 v\xE0o nh\u1EADt k\xFD c\u1EE7a L\u1EC1u h\u1ECDp chi\u1EBFn \u0111\u1EC3 xem giao di\u1EC7n"),
         btn("\u0110\u1EA7y qu\xE2n + \u0111\u1ED3 cao nh\u1EA5t + \u0111u\u1ED1c", () => toast2(fullArmy(sim2)), "M\u1ECDi tr\u1EA1i l\xEDnh \u0111\u1EA7y qu\xE2n, ai c\u0169ng c\xF3 v\u0169 kh\xED v\xE0 gi\xE1p t\u1ED1t nh\u1EA5t c\u1EE7a th\u1EDDi \u0111\u1EA1i v\xE0 m\u1ED9t c\xE2y \u0111u\u1ED1c"),
         btn("G\u1ECDi s\u1EF1 ki\u1EC7n (theo c\u1EA5p l\u1EEDa)", () => toast2(callEvent(sim2)), "G\u1ECDi ngay s\u1EF1 ki\u1EC7n \u0111\xE3 h\u1EB9n m\u1EA1nh nh\u1EA5t m\xE0 tr\u1EA1i c\u1EA5p l\u1EEDa hi\u1EC7n t\u1EA1i \u0111\u1EE7 s\u1EE9c \u0111\xF3n")
@@ -133067,6 +133865,7 @@ ${risk.lines.join("\n")}`);
   };
 
   // src/ui/buildbar.ts
+  var STAFF_HOUSES = ["workshop", "lab", "stable"];
   var OPEN_LABEL = {
     campfire: "Xem d\xE2n",
     builder: "Th\u1EE3 x\xE2y",
@@ -133303,6 +134102,10 @@ ${risk.lines.join("\n")}`);
             const e = sim2.toggleGate(b.id);
             if (e) toast2(e);
             ctl2.onChange();
+          } },
+          { id: "staff", icon: "\u{1F465}", label: `Nh\xE2n s\u1EF1 ${STAFF_HOUSES.includes(b.kind) ? `${sim2.staffCount(b)}/${lv.slots}` : ""}`, title: "Th\xEAm ho\u1EB7c cho ngh\u1EC9 ng\u01B0\u1EDDi l\xE0m vi\u1EC7c trong nh\xE0 n\xE0y", hidden: ctl2.groupMode || !b.done || !STAFF_HOUSES.includes(b.kind), onClick: () => {
+            ctl2.openPeople = true;
+            ctl2.selectBuilding(b.id, true);
           } },
           { id: "repair", icon: "\u{1F527}", label: "S\u1EEDa ch\u1EEFa", title: "S\u1EEDa l\u1EA1i \u0111\u1ED9 b\u1EC1n \u0111\xE3 m\u1EA5t: t\u1ED1n v\u1EADt li\u1EC7u theo ph\u1EA7n \u0111\u1ED9 b\u1EC1n m\u1EA5t, th\u1EE3 x\xE2y l\xE0m", hidden: ctl2.groupMode || !b.done || b.repairing || b.upgrading || b.hp >= maxHp(b), onClick: () => this.askRepair(b) },
           { id: "up", icon: "\u2B06\uFE0E", label: "N\xE2ng c\u1EA5p", title: "N\xE2ng l\xEAn c\u1EA5p ti\u1EBFp theo", hidden: ctl2.groupMode || !upgradable, onClick: () => this.askUpgrade(b) },
@@ -133601,6 +134404,11 @@ ${risk.lines.join("\n")}`);
     }
     return parts.join(" \xB7 ");
   }
+  function equipParts(v) {
+    if (v.job === "fight" || v.job === "hunt" || v.job === "scout") return { kind: "weapon", main: v.weapon ? WEAPONS[v.weapon].name : "Tay kh\xF4ng", armor: v.armor ? ARMORS[v.armor].name : null };
+    const k = TOOL_OF_JOB[v.job], t = k ? v.tools[k] : null;
+    return { kind: "tool", main: k && t ? `${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()}${t.dur <= 0 ? " (h\u1ECFng)" : ""}` : "Tay kh\xF4ng", armor: null };
+  }
   function energyText(sim2, v) {
     const top = Math.round(sim2.maxEnergy(v));
     const parts = [`M\xE1u <b>${Math.max(0, Math.ceil(v.health))}/${Math.round(v.maxHealth)}</b>`, `S\u1EE9c <b>${Math.round(v.energy)}/${top}</b>`];
@@ -133622,6 +134430,210 @@ ${risk.lines.join("\n")}`);
     const k = TOOL_OF_JOB[v.job], t = k ? v.tools[k] : null;
     if (k) parts.push(`${TOOL_NAME[k]}: ${t ? `${TIER_NAME[t.tier].toLowerCase()}${t.dur <= 0 ? " (h\u1ECFng)" : ""}` : "tay kh\xF4ng"}`);
     return parts.join(" \xB7 ");
+  }
+
+  // node_modules/lucide/dist/esm/defaultAttributes.mjs
+  var defaultAttributes = {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: 24,
+    height: 24,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    "stroke-width": 2,
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round"
+  };
+
+  // node_modules/lucide/dist/esm/createElement.mjs
+  var createSVGElement = ([tag, attrs, children]) => {
+    const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    Object.keys(attrs).forEach((name) => {
+      element.setAttribute(name, String(attrs[name]));
+    });
+    if (children?.length) {
+      children.forEach((child) => {
+        const childElement = createSVGElement(child);
+        element.appendChild(childElement);
+      });
+    }
+    return element;
+  };
+  var createElement = (iconNode, customAttrs = {}) => {
+    const tag = "svg";
+    const attrs = {
+      ...defaultAttributes,
+      ...customAttrs
+    };
+    return createSVGElement([tag, attrs, iconNode]);
+  };
+
+  // node_modules/lucide/dist/esm/icons/chevron-left.mjs
+  var ChevronLeft = [["path", { d: "m15 18-6-6 6-6" }]];
+
+  // node_modules/lucide/dist/esm/icons/chevron-right.mjs
+  var ChevronRight = [["path", { d: "m9 18 6-6-6-6" }]];
+
+  // node_modules/lucide/dist/esm/icons/crosshair.mjs
+  var Crosshair = [
+    ["circle", { cx: "12", cy: "12", r: "10" }],
+    ["line", { x1: "22", x2: "18", y1: "12", y2: "12" }],
+    ["line", { x1: "6", x2: "2", y1: "12", y2: "12" }],
+    ["line", { x1: "12", x2: "12", y1: "6", y2: "2" }],
+    ["line", { x1: "12", x2: "12", y1: "22", y2: "18" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/hammer.mjs
+  var Hammer = [
+    ["path", { d: "m15 12-9.373 9.373a1 1 0 0 1-3.001-3L12 9" }],
+    ["path", { d: "m18 15 4-4" }],
+    [
+      "path",
+      {
+        d: "m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172v-.344a2 2 0 0 0-.586-1.414l-1.657-1.657A6 6 0 0 0 12.516 3H9l1.243 1.243A6 6 0 0 1 12 8.485V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"
+      }
+    ]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/heart.mjs
+  var Heart = [
+    [
+      "path",
+      {
+        d: "M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"
+      }
+    ]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/log-in.mjs
+  var LogIn = [
+    ["path", { d: "m10 17 5-5-5-5" }],
+    ["path", { d: "M15 12H3" }],
+    ["path", { d: "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/log-out.mjs
+  var LogOut = [
+    ["path", { d: "m16 17 5-5-5-5" }],
+    ["path", { d: "M21 12H9" }],
+    ["path", { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/megaphone.mjs
+  var Megaphone = [
+    [
+      "path",
+      {
+        d: "M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"
+      }
+    ],
+    ["path", { d: "M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14" }],
+    ["path", { d: "M8 6v8" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/minus.mjs
+  var Minus = [["path", { d: "M5 12h14" }]];
+
+  // node_modules/lucide/dist/esm/icons/moon.mjs
+  var Moon = [
+    [
+      "path",
+      {
+        d: "M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
+      }
+    ]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/plus.mjs
+  var Plus = [
+    ["path", { d: "M5 12h14" }],
+    ["path", { d: "M12 5v14" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/shield-check.mjs
+  var ShieldCheck = [
+    [
+      "path",
+      {
+        d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+      }
+    ],
+    ["path", { d: "m9 12 2 2 4-4" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/sun-moon.mjs
+  var SunMoon = [
+    ["path", { d: "M12 2v2" }],
+    [
+      "path",
+      {
+        d: "M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715"
+      }
+    ],
+    ["path", { d: "M16 12a4 4 0 0 0-4-4" }],
+    ["path", { d: "m19 5-1.256 1.256" }],
+    ["path", { d: "M20 12h2" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/sun.mjs
+  var Sun = [
+    ["circle", { cx: "12", cy: "12", r: "4" }],
+    ["path", { d: "M12 2v2" }],
+    ["path", { d: "M12 20v2" }],
+    ["path", { d: "m4.93 4.93 1.41 1.41" }],
+    ["path", { d: "m17.66 17.66 1.41 1.41" }],
+    ["path", { d: "M2 12h2" }],
+    ["path", { d: "M20 12h2" }],
+    ["path", { d: "m6.34 17.66-1.41 1.41" }],
+    ["path", { d: "m19.07 4.93-1.41 1.41" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/swords.mjs
+  var Swords = [
+    ["path", { d: "m13 19 6-6" }],
+    ["path", { d: "M14.5 17.5 3.586 6.586A2 2 0 013 5.172V3h2.172a2 2 0 011.414.586L17.5 14.5" }],
+    [
+      "path",
+      { d: "m14.828 6.172 2.586-2.586A2 2 0 0118.828 3H21v2.172a2 2 0 01-.586 1.414l-2.586 2.586" }
+    ],
+    ["path", { d: "m16 16 4 4" }],
+    ["path", { d: "m19 21 2-2" }],
+    ["path", { d: "m5 14 4 4" }],
+    ["path", { d: "m5 21-2-2" }],
+    ["path", { d: "M7.5 16.5 4 20" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/user-plus.mjs
+  var UserPlus = [
+    ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }],
+    ["circle", { cx: "9", cy: "7", r: "4" }],
+    ["line", { x1: "19", x2: "19", y1: "8", y2: "14" }],
+    ["line", { x1: "22", x2: "16", y1: "11", y2: "11" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/users.mjs
+  var Users = [
+    ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }],
+    ["path", { d: "M16 3.128a4 4 0 0 1 0 7.744" }],
+    ["path", { d: "M22 21v-2a4 4 0 0 0-3-3.87" }],
+    ["circle", { cx: "9", cy: "7", r: "4" }]
+  ];
+
+  // node_modules/lucide/dist/esm/icons/zap.mjs
+  var Zap = [
+    [
+      "path",
+      {
+        d: "M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"
+      }
+    ]
+  ];
+
+  // src/ui/icons.ts
+  var SET = { plus: Plus, minus: Minus, locate: Crosshair, callOut: LogOut, callBack: LogIn, sleep: Moon, day: Sun, both: SunMoon, hp: Heart, energy: Zap, callAll: Megaphone, equip: ShieldCheck, next: ChevronRight, prev: ChevronLeft, weapon: Swords, tool: Hammer, recruit: UserPlus, people: Users };
+  function icon(name, size = 16) {
+    const el = createElement(SET[name], { width: size, height: size, "stroke-width": 2, class: "ico-l" });
+    return el;
   }
 
   // src/ui/statview.ts
@@ -133692,15 +134704,39 @@ ${risk.lines.join("\n")}`);
     const trade = o.trade && role ? dlg.chip(roleName(role, sim2.era)) : null;
     return dlg.tile({ pic: avatar(c, v), name: v.name, chip: trade, state: o.state }, [o.note === "" ? null : dlg.more(o.note ?? describe(v, sim2)), gearLine(v) ? dlg.more(gearLine(v)) : null, o.stats ? dlg.more(vitalsLine(sim2, v)) : null, pills], o.actions?.some(Boolean) ? h("div", { class: "dacts" }, ...o.actions) : null);
   }
+  function personRow(c, v, o = {}) {
+    const { sim: sim2 } = c, acts = o.actions?.filter(Boolean) ?? [], maxE = sim2.maxEnergy(v), eq = equipParts(v);
+    const part = (name, text, o2) => h("span", { class: `pstat${o2.low ? " low" : ""}`, title: o2.title }, icon(name, 13), text);
+    const strip = o.strip ? h("button", { class: `pstrip ${o.strip.kind}`, type: "button", title: o.strip.title, "aria-label": o.strip.title, disabled: !!o.strip.disabled, onclick: o.strip.onclick }, icon(o.strip.kind === "add" ? "next" : "prev", 18)) : null;
+    const body = h(
+      "div",
+      { class: "pbody", title: "B\u1EA5m \u0111\u1EC3 xem chi ti\u1EBFt v\xE0 giao vi\u1EC7c" },
+      h(
+        "div",
+        { class: "phead" },
+        h("div", { class: "dname" }, h("b", { text: v.name }), o.chip ? dlg.chip(o.chip) : null),
+        h(
+          "div",
+          { class: "pvit" },
+          part("hp", `${Math.max(0, Math.ceil(v.health))}/${Math.round(v.maxHealth)}`, { low: v.health / v.maxHealth < 0.35, title: "M\xE1u" }),
+          part("energy", `${Math.round(v.energy)}/${Math.round(maxE)}`, { low: v.energy < 20, title: "S\u1EE9c" })
+        )
+      ),
+      h("div", { class: "pmeta" }, part(eq.kind, eq.main, { title: eq.kind === "weapon" ? "V\u0169 kh\xED" : "D\u1EE5ng c\u1EE5" }), eq.armor ? part("equip", eq.armor, { title: "Gi\xE1p" }) : null)
+    );
+    body.addEventListener("click", () => openDetail(c, v));
+    return h("div", { class: `dtile prow${o.strip ? ` has-${o.strip.kind}` : ""}` }, o.strip?.kind === "remove" ? strip : null, body, acts.length ? h("div", { class: "dacts" }, ...acts) : null, o.strip?.kind === "add" ? strip : null);
+  }
   function detailButton(c, v, title = "Giao vi\u1EC7c v\xE0 chi ti\u1EBFt") {
+    return dlg.button("\u2699", () => openDetail(c, v), { icon: true, title });
+  }
+  function openDetail(c, v) {
     const { ctl: ctl2 } = c;
-    return dlg.button("\u2699", () => {
-      ctl2.detailFrom = ctl2.selectedBuilding;
-      ctl2.selected.clear();
-      ctl2.selected.add(v.id);
-      ctl2.openDetail = true;
-      ctl2.closeBuilding();
-    }, { icon: true, title });
+    ctl2.detailFrom = ctl2.selectedBuilding;
+    ctl2.selected.clear();
+    ctl2.selected.add(v.id);
+    ctl2.openDetail = true;
+    ctl2.closeBuilding();
   }
   function roleStats(role) {
     if (role === "guard") role = "foot";
@@ -133857,6 +134893,10 @@ ${risk.lines.join("\n")}`);
         r.drop.disabled = chosen.every((o) => !o.tools[r.k]);
       }
       this.shiftBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.shift === b.dataset.shift))));
+      const onlyGuards = chosen.length > 0 && chosen.every((o) => o.job === "fight" && o.guard);
+      this.shiftBtns.forEach((b) => {
+        if (b.dataset.shift === "both") b.hidden = onlyGuards;
+      });
       this.rest.innerHTML = energyText(sim0, v);
       this.torchBtn.disabled = sim0.torchCount() <= 0 || chosen.every((o) => !!o.torch);
       this.stanceBtns.forEach((b) => b.setAttribute("aria-pressed", String(chosen.every((o) => o.stance === b.dataset.stance))));
@@ -134149,12 +135189,12 @@ ${risk.lines.join("\n")}`);
     /** The picture on top of a column: the house of a role, or the weapon itself. */
     headPic(def) {
       if (def.tool) {
-        const icon = this.c.sprites.icons[`${def.tool}1`];
-        if (icon) return h("span", { class: "tpic" }, iconCanvas(icon));
+        const icon2 = this.c.sprites.icons[`${def.tool}1`];
+        if (icon2) return h("span", { class: "tpic" }, iconCanvas(icon2));
       }
       if (def.weapon) {
-        const icon = this.c.sprites.icons[`${def.weapon}${WEAPONS[def.weapon]?.tier ?? 1}`];
-        if (icon) return h("span", { class: "tpic" }, iconCanvas(icon));
+        const icon2 = this.c.sprites.icons[`${def.weapon}${WEAPONS[def.weapon]?.tier ?? 1}`];
+        if (icon2) return h("span", { class: "tpic" }, iconCanvas(icon2));
       }
       return this.pic(def.building ?? "lab", 1);
     }
@@ -134295,9 +135335,9 @@ ${risk.lines.join("\n")}`);
       }
       const t = n.techOf(), lvl = n.level(), line3 = !!n.role;
       const title = line3 ? `${STAT_DEF[n.stat].name} \xB7 ${TREE_ROLES[n.role].name}` : t?.name ?? n.el.querySelector(".tname")?.textContent ?? "";
-      const src = n.el.querySelector("canvas"), icon = src ? iconCanvas(src) : n.el.querySelector(".tpic")?.cloneNode(true);
+      const src = n.el.querySelector("canvas"), icon2 = src ? iconCanvas(src) : n.el.querySelector(".tpic")?.cloneNode(true);
       const now = line3 ? statBonus(sim2.researched, n.role, n.stat) : 0, next = line3 && t ? t.unlocks.bonus.pct : 0;
-      const head = dlg.head({ pic: icon ?? void 0, title, bar: { value: lvl, max: n.max, label: n.max > 1 ? `${lvl}/${n.max}` : lvl ? "\u2713" : "" }, onClose: () => {
+      const head = dlg.head({ pic: icon2 ?? void 0, title, bar: { value: lvl, max: n.max, label: n.max > 1 ? `${lvl}/${n.max}` : lvl ? "\u2713" : "" }, onClose: () => {
         this.picked = null;
         this.showDetail();
         this.update(true);
@@ -134571,47 +135611,33 @@ ${risk.lines.join("\n")}`);
     const role = roleOf(v);
     return role ? roleName(role, c.sim.era) : isFree(v) ? "D\xE2n r\u1EA3nh" : JOB_NAME[v.job];
   };
+  function iconButton(name, onclick, title, o = {}) {
+    const b = h("button", { class: `ibtn${o.tone ? ` ${o.tone}` : ""}`, type: "button", title, "aria-label": title, disabled: !!o.disabled, onclick }, icon(name, 15));
+    return b;
+  }
   var PAGE2 = 24;
   var Roster = class {
     constructor(c) {
       this.c = c;
-      this.showIn = true;
-      this.showPool = true;
       this.filter = "all";
       /** How many of the people who could go in are drawn: a village of hundreds drawn whole made every click on + or − freeze the page. */
       this.shown = PAGE2;
     }
+    /** Two lists side by side (one under the other on a narrow screen): on the left the people who could go in, on the right the ones who are in. */
     render(s) {
       const { sim: sim2, toast: toast2, ctl: ctl2 } = this.c;
-      const head = (open, title, count, flip) => h(
-        "button",
-        { class: "dfold", type: "button", "aria-expanded": String(open), onclick: () => {
-          flip();
+      const title = (text, count, extra) => h("div", { class: "rhead" }, h("b", { text }), extra ?? null, h("small", { class: "dsub", text: count }));
+      const right = [title(s.titles?.in ?? "\u0110ang l\xE0m \u1EDF \u0111\xE2y", s.plain ? `${s.assigned.length}` : `${s.assigned.length}/${s.cap >= 99 ? "\u221E" : s.cap}`)];
+      if (!s.assigned.length) right.push(dlg.empty(s.emptyIn));
+      else right.push(dlg.list(...s.assigned.map((v) => {
+        const why = s.removeBlock?.(v) ?? null;
+        return personRow(this.c, v, { strip: { kind: "remove", onclick: () => {
+          const e = s.remove(v);
+          if (e) toast2(e);
+          ctl2.onChange();
           s.again();
-        } },
-        h("span", { class: "arrow", text: open ? "\u25BE" : "\u25B8" }),
-        h("b", { text: title }),
-        h("small", { class: "dsub", text: count })
-      );
-      const out = [head(this.showIn, "\u0110ang l\xE0m \u1EDF \u0111\xE2y", `${s.assigned.length}/${s.cap >= 99 ? "\u221E" : s.cap}`, () => {
-        this.showIn = !this.showIn;
-      })];
-      if (this.showIn) {
-        if (!s.assigned.length) out.push(dlg.empty(s.emptyIn));
-        else out.push(dlg.list(...s.assigned.map((v) => {
-          const why = s.removeBlock?.(v) ?? null;
-          return personTile(this.c, v, { note: s.noteIn?.(v) ?? "", stats: s.statIds, actions: [
-            detailButton(this.c, v),
-            ...s.extra?.(v) ?? [],
-            dlg.button("\u2212", () => {
-              const e = s.remove(v);
-              if (e) toast2(e);
-              ctl2.onChange();
-              s.again();
-            }, { icon: true, tone: "bad", disabled: !!why, title: why ?? "Cho ngh\u1EC9, v\u1EC1 l\xE0m d\xE2n th\u01B0\u1EDDng" })
-          ] });
-        })));
-      }
+        }, title: why ?? "Cho ngh\u1EC9, v\u1EC1 l\xE0m d\xE2n th\u01B0\u1EDDng", disabled: !!why }, actions: s.extra?.(v) ?? [] });
+      })));
       const trades = /* @__PURE__ */ new Map(), trade = /* @__PURE__ */ new Map();
       for (const v of s.pool) {
         const t = tradeOf(this.c, v);
@@ -134624,43 +135650,35 @@ ${risk.lines.join("\n")}`);
       for (const v of matching) rank.set(v.id, s.stat(v));
       const picked = matching.sort((a, b) => Number(isFree(b)) - Number(isFree(a)) || rank.get(b.id) - rank.get(a.id));
       const free = s.pool.filter((v) => isFree(v)).length;
-      out.push(head(this.showPool, "Th\xEAm ng\u01B0\u1EDDi", `${free} d\xE2n r\u1EA3nh \xB7 ${s.pool.length} ng\u01B0\u1EDDi`, () => {
-        this.showPool = !this.showPool;
-      }));
-      if (this.showPool) {
-        const sel = h(
-          "select",
-          { class: "sm", "aria-label": "L\u1ECDc theo ngh\u1EC1", title: "L\u1ECDc ng\u01B0\u1EDDi c\xF3 th\u1EC3 th\xEAm theo ngh\u1EC1 \u0111ang l\xE0m" },
-          h("option", { value: "all", text: `M\u1ECDi ngh\u1EC1 (${s.pool.length})` }),
-          ...[...trades].sort((a, b) => a[0].localeCompare(b[0], "vi")).map(([name, n]) => h("option", { value: name, text: `${name} (${n})` }))
-        );
-        sel.value = this.filter;
-        sel.addEventListener("change", () => {
-          this.filter = sel.value;
-          this.shown = PAGE2;
+      const sel = h(
+        "select",
+        { class: "sm", "aria-label": "L\u1ECDc theo ngh\u1EC1", title: "L\u1ECDc ng\u01B0\u1EDDi c\xF3 th\u1EC3 th\xEAm theo ngh\u1EC1 \u0111ang l\xE0m" },
+        h("option", { value: "all", text: `M\u1ECDi ngh\u1EC1 (${s.pool.length})` }),
+        ...[...trades].sort((a, b) => a[0].localeCompare(b[0], "vi")).map(([name, n]) => h("option", { value: name, text: `${name} (${n})` }))
+      );
+      sel.value = this.filter;
+      sel.addEventListener("change", () => {
+        this.filter = sel.value;
+        this.shown = PAGE2;
+        s.again();
+      });
+      const left = [title(s.titles?.pool ?? "C\xF3 th\u1EC3 th\xEAm", s.plain ? `${s.pool.length}` : `${free} r\u1EA3nh`, s.plain ? void 0 : sel)];
+      if (!picked.length) left.push(dlg.empty(s.emptyPool));
+      else left.push(dlg.list(...picked.slice(0, this.shown).map((v) => {
+        const locked = sim2.sleepLocked(v);
+        const why = s.addBlock ?? (locked ? `${v.name} \u0111ang ng\u1EE7 say v\xEC ki\u1EC7t s\u1EE9c, ch\u01B0a g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c` : null);
+        return personRow(this.c, v, { chip: s.plain ? void 0 : tradeOf(this.c, v), strip: { kind: "add", onclick: () => {
+          const e = s.add(v);
+          if (e) toast2(e);
+          ctl2.onChange();
           s.again();
-        });
-        out.push(h("div", { class: "btns filters" }, sel, h("small", { class: "dsub", text: s.addBlock ?? "D\xE2n r\u1EA3nh l\xEAn \u0111\u1EA7u; ng\u01B0\u1EDDi \u0111ang c\xF3 vi\u1EC7c s\u1EBD ngh\u1EC9 vi\u1EC7c c\u0169 khi \u0111\u01B0\u1EE3c giao" })));
-        if (!picked.length) out.push(dlg.empty(s.emptyPool));
-        else out.push(dlg.list(...picked.slice(0, this.shown).map((v) => {
-          const locked = sim2.sleepLocked(v);
-          const why = s.addBlock ?? (locked ? `${v.name} \u0111ang ng\u1EE7 say v\xEC ki\u1EC7t s\u1EE9c, ch\u01B0a g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c` : null);
-          return personTile(this.c, v, { note: `\u0111ang ${tradeOf(this.c, v).toLowerCase()}`, stats: s.statIds, actions: [
-            detailButton(this.c, v),
-            dlg.button("\uFF0B", () => {
-              const e = s.add(v);
-              if (e) toast2(e);
-              ctl2.onChange();
-              s.again();
-            }, { icon: true, disabled: !!why, title: why ?? "Giao vi\u1EC7c n\xE0y" })
-          ] });
-        })));
-        if (picked.length > this.shown) out.push(h("div", { class: "btns" }, h("button", { class: "sm", type: "button", text: `Hi\u1EC7n th\xEAm (${picked.length - this.shown})`, onclick: () => {
-          this.shown += PAGE2;
-          s.again();
-        } })));
-      }
-      return out;
+        }, title: why ?? "Giao vi\u1EC7c n\xE0y", disabled: !!why } });
+      })));
+      if (picked.length > this.shown) left.push(h("div", { class: "btns" }, h("button", { class: "sm", type: "button", text: `Hi\u1EC7n th\xEAm (${picked.length - this.shown})`, onclick: () => {
+        this.shown += PAGE2;
+        s.again();
+      } })));
+      return [...s.addBlock ? [h("small", { class: "dsub rwhy", text: s.addBlock })] : [], h("div", { class: "rcols" }, h("div", { class: "rcol" }, ...left), h("div", { class: "rcol" }, ...right))];
     }
   };
 
@@ -134680,7 +135698,7 @@ ${risk.lines.join("\n")}`);
       const { sim: sim2 } = this.c, slots = levelDef(b).slots, jobKey = this.job === "farm" ? "food" : this.job, stat = JOBS[jobKey].stat;
       const crew2 = this.job === "build", staff = crew2 ? sim2.crew() : b.staff.map((id) => sim2.get(id)).filter((v) => !!v);
       const count = crew2 ? staff.length : sim2.staffCount(b), full = count >= slots;
-      this.head.replaceChildren(h("div", { class: "dhouse" }, h("b", { text: crew2 ? "Th\u1EE3 x\xE2y" : this.job === "farm" ? "N\xF4ng d\xE2n" : "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c" }), dlg.slots(count, slots), h("small", { class: "dsub", text: `${count}/${slots}` })));
+      this.head.replaceChildren(h("b", { text: crew2 ? "Th\u1EE3 x\xE2y" : this.job === "farm" ? "N\xF4ng d\xE2n" : "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c" }));
       const pool = sim2.villagers.filter((v) => v.health > 0 && v.down <= 0 && !staff.includes(v) && !(v.phase === "goStaff" && v.target === b.id));
       const key = `${b.id}|${full}|${staff.map((v) => `${v.id}.${v.stats[stat]}`).join()}|${pool.map((v) => `${v.id}.${v.job}.${v.guard ? "g" : ""}${v.arm}.${v.stats[stat]}`).join()}`;
       if (key === this.key) return;
@@ -134767,8 +135785,9 @@ ${risk.lines.join("\n")}`);
       this.changed = changed;
       this.root = h("div", { class: "page" });
       this.key = "";
-      /** The guards shown: all, or only those on one watch (the Trại lính gác). */
-      this.filter = "";
+      /** The Trại lính gác: the watch whose guards stand in the right list, and whether the list of all the villagers (to hire guards) is open instead. */
+      this.watch = "day";
+      this.recruit = false;
       this.roster = new Roster(c);
     }
     update() {
@@ -134781,7 +135800,8 @@ ${risk.lines.join("\n")}`);
       const { sim: sim2 } = this.c;
       return [
         this.role,
-        this.filter,
+        this.watch,
+        this.recruit,
         sim2.roleCapacity(this.role),
         sim2.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? "" : "i"}${v.shift}${v.out ? "o" : ""}${v.housed ? "H" : ""}${v.phase === "sleep" ? "z" : ""}${Math.round(v.energy / 20)}${Math.round(v.health / 20)}${v.armor ? Math.round(v.gear.ad / 25) : ""}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
         sim2.scouts.map((m) => m.ids.join(".")).join("|"),
@@ -134798,77 +135818,93 @@ ${risk.lines.join("\n")}`);
       const room = Math.max(0, cap - have2.length);
       const pool = role === "scout" ? sim2.villagers.filter((v) => v.job === "fight" && !v.guard && v.arm === "cavalry" && v.down <= 0) : sim2.villagers.filter((v) => v.health > 0 && v.down <= 0 && roleOf(v) !== role);
       const key = (v) => STAT_OF[role] === "scout" ? sim2.scoutSkill(v) : v.stats[STAT_OF[role]];
-      const out = [hint(h("div", { class: "dhouse" }, h("b", { text: roleName(role, era) }), dlg.slots(have2.length, cap >= 99 ? 99 : cap)), HELP[role])];
+      const out = [];
+      const guards = role === "guard", tools = [];
+      const stray = guards ? have2.filter((v) => v.shift === "both") : [];
+      if (stray.length) sim2.setShift(stray.map((v) => v.id), "day");
+      const watching = guards && !this.recruit, other = this.watch === "day" ? "night" : "day", onWatch = (v) => v.shift === "night" ? "night" : "day";
       const camp = (role === "foot" || role === "cavalry" || role === "archer" || role === "guard" || role === "scout" || role === "supply") && have2.length > 0;
       if (camp) {
         const allOut = have2.every((v) => sim2.isOut(v)), ids = have2.map((v) => v.id);
-        out.push(h("div", { class: "btns" }, h("button", {
-          class: "sm",
+        const n = have2.filter((v) => !sim2.isOut(v)).length;
+        tools.push(h("button", {
+          class: "sm tbtn",
           type: "button",
           disabled: !!lock,
-          text: allOut ? "Cho c\u1EA3 tr\u1EA1i v\u1EC1" : `G\u1ECDi c\u1EA3 tr\u1EA1i ra (${have2.filter((v) => !sim2.isOut(v)).length})`,
           title: allOut ? "Cho m\u1ECDi l\xEDnh c\u1EE7a tr\u1EA1i n\xE0y v\u1EC1 tr\u1EA1i ngh\u1EC9" : "G\u1ECDi m\u1ECDi l\xEDnh c\u1EE7a tr\u1EA1i n\xE0y ra ngo\xE0i, s\u1EB5n s\xE0ng; b\u1EA5m l\u1EA1i \u0111\u1EC3 cho v\u1EC1",
           onclick: () => {
             if (allOut) sim2.sendBack(ids);
             else sim2.callOut(ids);
             this.again();
           }
-        })));
+        }, icon(allOut ? "callBack" : "callAll", 15), allOut ? "Cho v\u1EC1" : `G\u1ECDi ra (${n})`));
       }
       if ((role === "foot" || role === "cavalry" || role === "archer" || role === "guard" || role === "tower" || role === "hunt") && have2.length > 0) {
-        out.push(h("div", { class: "btns" }, h("button", {
-          class: "sm primary",
+        tools.push(h("button", {
+          class: "sm tbtn primary",
           type: "button",
-          text: "Trang b\u1ECB",
           title: "Ph\xE1t v\u0169 kh\xED, gi\xE1p v\xE0 th\xFA c\u01B0\u1EE1i \u0111ang c\xF3 trong kho cho m\u1ECDi ng\u01B0\u1EDDi \u1EDF \u0111\xE2y: \u0111\u1ED3 c\u1EA5p cao tr\u01B0\u1EDBc, ai \u0111ang c\u1EA7m \u0111\u1ED3 th\u1EA5p th\xEC \u0111\u1ED5i l\u1EA5y \u0111\u1ED3 cao h\u01A1n",
           onclick: () => {
             toast2(sim2.equipGroup(have2.map((v) => v.id)));
             this.again();
           }
-        })));
+        }, icon("equip", 15), "Trang b\u1ECB"));
       }
-      const guards = role === "guard", shown = guards && this.filter ? have2.filter((v) => v.shift === this.filter) : have2;
       if (guards && have2.length) {
-        const WATCH = [["", "T\u1EA5t c\u1EA3"], ["day", "G\xE1c ng\xE0y"], ["night", "G\xE1c \u0111\xEAm"], ["both", "C\u1EA3 ng\xE0y l\u1EABn \u0111\xEAm"]];
-        out.push(h("div", { class: "btns filters" }, ...WATCH.map(([k, label2]) => h("button", { class: "sm chip", type: "button", pressed: this.filter === k, text: `${label2} (${k ? have2.filter((v) => v.shift === k).length : have2.length})`, onclick: () => {
-          this.filter = k;
+        const watchBtn = (w) => h("button", { type: "button", class: `segb${watching && this.watch === w ? " on" : ""}`, title: `Xem v\xE0 chia l\xEDnh g\xE1c ${w === "day" ? "ng\xE0y" : "\u0111\xEAm"}`, onclick: () => {
+          this.watch = w;
+          this.recruit = false;
           this.again();
-        } }))));
-        const setAll = (shift) => h("button", { class: "sm", type: "button", text: SHIFT_LABEL[shift], disabled: !!lock || !shown.length, title: `Cho ${shown.length} ng\u01B0\u1EDDi \u0111ang hi\u1EC7n g\xE1c: ${SHIFT_LABEL[shift].toLowerCase()}`, onclick: () => {
-          sim2.setShift(shown.map((v) => v.id), shift);
+        } }, icon(w === "day" ? "day" : "sleep", 15), w === "day" ? "G\xE1c ng\xE0y" : "G\xE1c \u0111\xEAm");
+        tools.push(h("div", { class: "seg" }, watchBtn("day"), watchBtn("night")));
+        tools.push(h("button", { type: "button", class: `ibtn wide${this.recruit ? " on" : ""}`, title: "Tuy\u1EC3n th\xEAm l\xEDnh g\xE1c t\u1EEB d\xE2n", "aria-label": "Tuy\u1EC3n th\xEAm l\xEDnh g\xE1c t\u1EEB d\xE2n", "aria-pressed": String(this.recruit), onclick: () => {
+          this.recruit = !this.recruit;
           this.again();
-        } });
-        out.push(h("div", { class: "btns" }, h("small", { text: `\u0110\u1ED5i ca c\u1EA3 nh\xF3m \u0111ang hi\u1EC7n (${shown.length}):` }), setAll("day"), setAll("night"), setAll("both")));
+        } }, icon("recruit", 16)));
       }
+      out.push(hint(tools.length ? h("div", { class: "btns toolbar" }, ...tools) : h("b", { text: roleName(role, era) }), HELP[role]));
       if (!cap) out.push(dlg.empty(`Ch\u01B0a c\xF3 ${house.toLowerCase()} xong: h\xE3y d\u1EF1ng, r\u1ED3i giao vi\u1EC7c \u1EDF \u0111\xE2y.`));
-      out.push(...this.roster.render({
-        assigned: shown,
+      const block = lock ?? (!cap ? `C\u1EA7n d\u1EF1ng ${house}` : !room ? `${house} \u0111\xE3 \u0111\u1EE7 ch\u1ED7: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` : null);
+      const callOut2 = (v) => camp ? iconButton(sim2.isOut(v) ? "callBack" : "callOut", () => {
+        if (sim2.isOut(v)) sim2.sendBack([v.id]);
+        else sim2.callOut([v.id]);
+        this.again();
+      }, sim2.isOut(v) ? "Cho l\xEDnh n\xE0y v\u1EC1 tr\u1EA1i ngh\u1EC9" : "G\u1ECDi l\xEDnh n\xE0y ra ngo\xE0i, s\u1EB5n s\xE0ng", { disabled: !!lock }) : null;
+      const name = (w) => w === "day" ? "ng\xE0y" : "\u0111\xEAm";
+      out.push(...this.roster.render(watching ? {
+        // the guards of the house in two lists: the watch chosen (right) and the other one (left); an arrow sends a guard to the other watch
+        assigned: have2.filter((v) => onWatch(v) === this.watch),
+        cap,
+        statIds: roleStats(role),
+        stat: key,
+        pool: have2.filter((v) => onWatch(v) !== this.watch),
+        addBlock: lock,
+        add: (v) => {
+          sim2.setShift([v.id], this.watch);
+          return null;
+        },
+        remove: (v) => {
+          sim2.setShift([v.id], other);
+          return null;
+        },
+        removeBlock: (v) => lock,
+        extra: (v) => [callOut2(v)],
+        titles: { pool: `G\xE1c ${name(other)}`, in: `G\xE1c ${name(this.watch)}` },
+        plain: true,
+        emptyIn: `Ch\u01B0a c\xF3 ai g\xE1c ${name(this.watch)}.`,
+        emptyPool: `Kh\xF4ng c\xF3 ai g\xE1c ${name(other)}.`,
+        again: () => this.again()
+      } : {
+        assigned: have2,
         cap,
         statIds: roleStats(role),
         stat: key,
         pool,
-        addBlock: lock ?? (!cap ? `C\u1EA7n d\u1EF1ng ${house}` : !room ? `${house} \u0111\xE3 \u0111\u1EE7 ch\u1ED7: n\xE2ng c\u1EA5p \u0111\u1EC3 ch\u1EE9a th\xEAm` : null),
+        addBlock: block,
         add: (v) => sim2.assignRole([v.id], role),
         remove: (v) => sim2.releaseRole([v.id]),
         removeBlock: (v) => lock ?? (sim2.scouts.some((m) => m.ids.includes(v.id)) ? "\u0110ang \u0111i trinh s\xE1t" : null),
-        noteIn: (v) => `${guards ? `${SHIFT_LABEL[v.shift]}${v.phase === "sleep" ? " \xB7 " : ""}` : ""}${v.phase === "sleep" ? describe(v, sim2) : ""}`,
-        extra: (v) => [camp ? h("button", { class: "sm", type: "button", disabled: !!lock, text: sim2.isOut(v) ? "V\u1EC1 tr\u1EA1i" : "G\u1ECDi ra", title: sim2.isOut(v) ? "Cho l\xEDnh n\xE0y v\u1EC1 tr\u1EA1i ngh\u1EC9" : "G\u1ECDi l\xEDnh n\xE0y ra ngo\xE0i, s\u1EB5n s\xE0ng; b\u1EA5m l\u1EA1i \u0111\u1EC3 cho v\u1EC1", onclick: () => {
-          if (sim2.isOut(v)) sim2.sendBack([v.id]);
-          else sim2.callOut([v.id]);
-          this.again();
-        } }) : null, guards ? h("button", { class: "sm", type: "button", text: v.shift === "day" ? "\u2600" : v.shift === "night" ? "\u263E" : "\u2600\u263E", title: `${SHIFT_LABEL[v.shift]}: b\u1EA5m \u0111\u1EC3 \u0111\u1ED5i ca g\xE1c`, disabled: !!lock, onclick: () => {
-          sim2.setShift([v.id], v.shift === "day" ? "night" : v.shift === "night" ? "both" : "day");
-          this.again();
-        } }) : null, def.job === "fight" ? dlg.button("\u25CE", () => {
-          if (v.inside !== null) {
-            toast2(`${v.name} \u0111ang ng\u1EE7 trong tr\u1EA1i`);
-            return;
-          }
-          ctl2.selected.clear();
-          ctl2.selected.add(v.id);
-          ctl2.focusSelection();
-          ctl2.closeBuilding();
-        }, { icon: true, title: "Ch\u1ECDn tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ra l\u1EC7nh" }) : null],
+        extra: (v) => [callOut2(v)],
         emptyIn: "Ch\u01B0a c\xF3 ai gi\u1EEF vi\u1EC7c n\xE0y.",
         emptyPool: role === "scout" ? "Kh\xF4ng c\xF2n l\xEDnh k\u1EF5 n\xE0o \u0111\u1EC3 tuy\u1EC3n." : "Kh\xF4ng c\xF3 ai \u0111\u1EC3 th\xEAm.",
         again: () => this.again()
@@ -135096,6 +136132,392 @@ ${risk.lines.join("\n")}`);
         detailButton(this.c, v),
         dlg.button(sign, act, { icon: true, tone: sign === "\u2212" ? "bad" : void 0, disabled, title: sign === "\u2212" ? "Kh\xF4ng c\u1EED ng\u01B0\u1EDDi n\xE0y" : "C\u1EED ng\u01B0\u1EDDi n\xE0y \u0111i" })
       ] });
+    }
+  };
+
+  // src/ui/marchpane.ts
+  var WIN = 320;
+  var MIN_K = 2;
+  var MAX_K = 40;
+  var HOLD_MS = 450;
+  var ARMS2 = ["foot", "archer", "cavalry"];
+  var ARM_ICON = { foot: "\u{1F6E1}", archer: "\u{1F3F9}", cavalry: "\u{1F40E}" };
+  var ARM_COLOR = { foot: "#4aa3ff", archer: "#5ed37a", cavalry: "#ffb347" };
+  var MarchPane = class {
+    constructor(c) {
+      this.c = c;
+      /** The page of the tab: a summary and the button that opens the map. */
+      this.root = h("div", { class: "march" });
+      this.summary = h("p", { class: "sub" });
+      this.full = h("div", { class: "modal planfull", hidden: true });
+      this.view = h("div", { class: "pview" });
+      this.canvas = h("canvas", { class: "planmap" });
+      this.note = h("div", { class: "pnote", hidden: true });
+      this.ring = h("div", { class: "ringmenu", hidden: true });
+      this.state = h("span");
+      this.zoneChip = h("button", { class: "chip", type: "button" });
+      this.okChip = h("button", { class: "chip", type: "button", text: "\u2713 X\xE1c nh\u1EADn khu" });
+      this.drillChip = h("button", { class: "chip", type: "button", text: "\u2691 T\u1EADp tr\u1EADn" });
+      this.stopChip = h("button", { class: "chip", type: "button", text: "Gi\u1EA3i t\xE1n \u0111\u1ED9i qu\xE2n" });
+      this.ground = document.createElement("canvas");
+      this.origin = { x: 0, y: 0 };
+      this.open_ = false;
+      this.zoning = false;
+      this.pending = null;
+      /** Pixels per tile and the tile at the middle of the screen; the size of the canvas. */
+      this.k = 8;
+      this.cx = 0;
+      this.cy = 0;
+      this.W = 0;
+      this.H = 0;
+      this.pts = /* @__PURE__ */ new Map();
+      this.gesture = "none";
+      this.downAt = { x: 0, y: 0 };
+      this.moved = false;
+      this.pinch = 0;
+      this.hold = null;
+      this.queued = false;
+      /** Called while the building panel is open (the tab), so that the page and the open map follow the game. */
+      this.key = "";
+      const { sim: sim2, ctl: ctl2, toast: toast2 } = c;
+      this.ground.width = this.ground.height = WIN;
+      this.zoneChip.addEventListener("click", () => {
+        this.zoning = !this.zoning;
+        this.pending = null;
+        this.ring.hidden = true;
+        this.sync();
+      });
+      this.okChip.addEventListener("click", () => {
+        if (!this.pending) return;
+        const e = sim2.createZone(this.pending.x, this.pending.y);
+        if (e) {
+          toast2(e);
+          return;
+        }
+        this.zoning = false;
+        this.pending = null;
+        this.snapshot();
+        this.sync();
+      });
+      this.drillChip.addEventListener("click", () => {
+        const e = sim2.assemble();
+        if (e) {
+          toast2(e);
+          return;
+        }
+        toast2("T\u1EADp tr\u1EADn: qu\xE2n \u0111ang t\u1EADp trung. Khi xong, ch\u1EA1m \u0111\u1EA5t \u0111\u1EC3 c\u1EA3 \u0111\u1ED9i h\xE0nh qu\xE2n (n\xFAt \u2691 \u0110\u1ED9i qu\xE2n tr\xEAn thanh tr\xEAn)");
+        ctl2.legionControl = true;
+        this.close();
+        ctl2.closeBuilding();
+      });
+      this.stopChip.addEventListener("click", () => {
+        sim2.disband();
+        ctl2.legionControl = false;
+        ctl2.onChange();
+        this.sync();
+      });
+      const openBtn = h("button", { class: "dgo", type: "button", text: "\u{1F5FA} M\u1EDF b\u1EA3n \u0111\u1ED3 h\xE0nh qu\xE2n", onclick: () => this.open() });
+      this.root.append(h("p", { class: "sub", text: 'B\xE3i t\u1EADp l\xE0 n\u01A1i l\u1EADp qu\xE2n: v\u1EBD khu qu\xE2n s\u1EF1 tr\xEAn b\u1EA3n \u0111\u1ED3, \u0111\u1EB7t c\xE1c \xF4 l\xEDnh trong khu, b\u1EA5m "T\u1EADp tr\u1EADn" \u0111\u1EC3 c\u1EA3 qu\xE2n t\u1EADp trung \u0111\xFAng \xF4, r\u1ED3i \u0111i\u1EC1u khi\u1EC3n c\u1EA3 \u0111\u1ED9i qu\xE2n h\xE0nh qu\xE2n \u0111\u1EC1u v\xE0 \u0111\u1EB9p.' }), this.summary, h("div", { class: "btns" }, openBtn));
+      const top = h(
+        "div",
+        { class: "ptop" },
+        h("button", { class: "chip danger", type: "button", text: "\u2715 \u0110\xF3ng", title: "\u0110\xF3ng b\u1EA3n \u0111\u1ED3, v\u1EC1 m\xE0n h\xECnh game", onclick: () => this.close() }),
+        h("div", { class: "ptitle2" }, h("b", { text: "L\u1EADp qu\xE2n h\xE0nh qu\xE2n" }), this.state),
+        h("div", { class: "pdock" }, this.zoneChip, this.okChip, this.drillChip, this.stopChip)
+      );
+      const zoom = h(
+        "div",
+        { class: "ptools" },
+        h("button", { class: "chip zoom", type: "button", text: "\uFF0B", title: "Ph\xF3ng to", onclick: () => {
+          this.zoomBy(1.4, this.W / 2, this.H / 2);
+          this.redraw();
+        } }),
+        h("button", { class: "chip zoom", type: "button", text: "\uFF0D", title: "Thu nh\u1ECF", onclick: () => {
+          this.zoomBy(1 / 1.4, this.W / 2, this.H / 2);
+          this.redraw();
+        } }),
+        h("button", { class: "chip zoom", type: "button", text: "\u25CE", title: "V\u1EC1 gi\u1EEFa l\xE0ng", onclick: () => {
+          this.center();
+          this.redraw();
+        } })
+      );
+      this.view.append(this.canvas, this.ring, this.note);
+      this.full.append(h("div", { class: "pstage" }, this.view, top, zoom));
+      (document.body ?? document.documentElement).append(this.full);
+      const at = (e) => {
+        const b = this.canvas.getBoundingClientRect();
+        return { x: e.clientX - b.left, y: e.clientY - b.top };
+      };
+      this.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+      this.canvas.addEventListener("pointerdown", (e) => {
+        this.canvas.setPointerCapture?.(e.pointerId);
+        const p = at(e);
+        this.pts.set(e.pointerId, p);
+        this.downAt = p;
+        this.moved = false;
+        this.pinch = 0;
+        this.stopHold();
+        this.ring.hidden = true;
+        if (this.pts.size > 1) {
+          this.gesture = "pan";
+          return;
+        }
+        if (this.zoning && e.button === 0) {
+          this.gesture = "aim";
+          this.pending = this.tileOf(p);
+          this.sync();
+          return;
+        }
+        this.gesture = "pan";
+        if (e.button === 0) this.hold = setTimeout(() => this.openRing(p), HOLD_MS);
+      });
+      this.canvas.addEventListener("pointermove", (e) => {
+        const prev = this.pts.get(e.pointerId);
+        if (!prev) return;
+        const cur = at(e);
+        this.pts.set(e.pointerId, cur);
+        if (Math.hypot(cur.x - this.downAt.x, cur.y - this.downAt.y) > 6) {
+          this.moved = true;
+          this.stopHold();
+        }
+        if (this.pts.size === 2) {
+          const [a, b] = [...this.pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (this.pinch > 0 && d > 0) this.zoomBy(d / this.pinch, (a.x + b.x) / 2, (a.y + b.y) / 2);
+          this.pinch = d;
+        } else if (this.gesture === "aim") {
+          this.pending = this.tileOf(cur);
+          this.sync();
+        } else if (this.gesture === "pan") {
+          this.cx -= (cur.x - prev.x) / this.k;
+          this.cy -= (cur.y - prev.y) / this.k;
+          this.limit();
+        }
+        this.redraw();
+      });
+      const up = (e) => {
+        if (!this.pts.has(e.pointerId)) return;
+        const alone = this.pts.size === 1;
+        this.stopHold();
+        if (alone && e.type === "pointerup" && this.gesture === "pan" && !this.moved && this.ring.hidden) this.tap(this.tileOf(at(e)));
+        this.pts.delete(e.pointerId);
+        this.pinch = 0;
+        if (!this.pts.size) this.gesture = "none";
+        this.redraw();
+      };
+      this.canvas.addEventListener("pointerup", up);
+      this.canvas.addEventListener("pointercancel", up);
+      this.canvas.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const p = at(e);
+        this.zoomBy(Math.exp(-e.deltaY * 15e-4), p.x, p.y);
+        this.redraw();
+      }, { passive: false });
+      if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => {
+        this.resize();
+        this.draw();
+      }).observe(this.view);
+    }
+    get mapOpen() {
+      return this.open_;
+    }
+    open() {
+      this.open_ = true;
+      this.zoning = false;
+      this.pending = null;
+      this.ring.hidden = true;
+      this.full.hidden = false;
+      this.snapshot();
+      this.center();
+      this.resize();
+      this.sync();
+      this.draw();
+    }
+    close() {
+      this.open_ = false;
+      this.full.hidden = true;
+      this.ring.hidden = true;
+    }
+    // ---------------------------------------------------------------- the picture and the view
+    /** Take the still picture of the ground round the village: what is known now, and what the zones have cleared. */
+    snapshot() {
+      const { sim: sim2 } = this.c, N = sim2.world.size, f = sim2.campfire();
+      const mx = f ? f.x + 1 : sim2.world.start.x, my = f ? f.y + 1 : sim2.world.start.y;
+      this.origin = { x: Math.max(0, Math.min(N - WIN, Math.round(mx - WIN / 2))), y: Math.max(0, Math.min(N - WIN, Math.round(my - WIN / 2))) };
+      const bctx = this.ground.getContext("2d"), img = bctx.createImageData(WIN, WIN), d = img.data;
+      for (let j = 0; j < WIN; j++) for (let i = 0; i < WIN; i++) {
+        const k = (this.origin.y + j) * N + this.origin.x + i, c = sim2.world.occ[k] ? [200, 150, 80] : TERRAIN[sim2.world.tiles[k]] ?? [90, 90, 90], s = sim2.fog.state[k], m = s === 2 ? 1 : s === 1 ? 0.6 : 0.12, o = (j * WIN + i) * 4;
+        d[o] = c[0] * m + 8 * (1 - m);
+        d[o + 1] = c[1] * m + 10 * (1 - m);
+        d[o + 2] = c[2] * m + 20 * (1 - m);
+        d[o + 3] = 255;
+      }
+      bctx.putImageData(img, 0, 0);
+    }
+    center() {
+      const { sim: sim2 } = this.c, f = sim2.campfire();
+      this.cx = f ? f.x + 1 : sim2.world.start.x;
+      this.cy = f ? f.y + 1 : sim2.world.start.y;
+      this.k = Math.max(MIN_K, Math.min(MAX_K, Math.min(this.W || 800, this.H || 500) / 90));
+      this.limit();
+    }
+    resize() {
+      const w = this.view.clientWidth || 800, hh = this.view.clientHeight || 500, dpr = window.devicePixelRatio || 1;
+      this.W = w;
+      this.H = hh;
+      if (this.canvas.width !== Math.round(w * dpr) || this.canvas.height !== Math.round(hh * dpr)) {
+        this.canvas.width = Math.round(w * dpr);
+        this.canvas.height = Math.round(hh * dpr);
+      }
+      this.limit();
+    }
+    limit() {
+      this.cx = Math.max(this.origin.x, Math.min(this.origin.x + WIN, this.cx));
+      this.cy = Math.max(this.origin.y, Math.min(this.origin.y + WIN, this.cy));
+    }
+    zoomBy(f, sx, sy) {
+      const before = { x: (sx - this.W / 2) / this.k + this.cx, y: (sy - this.H / 2) / this.k + this.cy };
+      this.k = Math.max(MIN_K, Math.min(MAX_K, this.k * f));
+      this.cx = before.x - (sx - this.W / 2) / this.k;
+      this.cy = before.y - (sy - this.H / 2) / this.k;
+      this.limit();
+    }
+    tileOf(p) {
+      return { x: Math.floor((p.x - this.W / 2) / this.k + this.cx), y: Math.floor((p.y - this.H / 2) / this.k + this.cy) };
+    }
+    sx(x) {
+      return (x - this.cx) * this.k + this.W / 2;
+    }
+    sy(y) {
+      return (y - this.cy) * this.k + this.H / 2;
+    }
+    stopHold() {
+      if (this.hold) clearTimeout(this.hold);
+      this.hold = null;
+    }
+    redraw() {
+      if (this.queued) return;
+      this.queued = true;
+      requestAnimationFrame(() => {
+        this.queued = false;
+        this.draw();
+      });
+    }
+    // ---------------------------------------------------------------- what a press does
+    cellAt(t) {
+      return this.c.sim.cells.find((q) => t.x >= q.x && t.x < q.x + 5 && t.y >= q.y && t.y < q.y + 5);
+    }
+    /** A tap on a zone adds a square of soldiers (bộ binh); a tap on a square does nothing: hold it for its ring. */
+    tap(t) {
+      const { sim: sim2, toast: toast2 } = this.c;
+      if (this.cellAt(t) || !sim2.inZone(t.x, t.y)) return;
+      const e = sim2.addCell(t.x, t.y, "foot");
+      if (e) toast2(e);
+      this.sync();
+    }
+    /** The ring in a circle round a held square (its arm, or take it away), or round a held zone (take it away). */
+    openRing(p) {
+      this.hold = null;
+      const { sim: sim2 } = this.c, t = this.tileOf(p), cell = this.cellAt(t), zone = sim2.zones.find((z) => t.x >= z.x && t.x < z.x + z.w && t.y >= z.y && t.y < z.y + z.h);
+      if (!cell && !zone) return;
+      const items = cell ? [...ARMS2.map((a) => ({ icon: ARM_ICON[a], title: ARM_NAME2[a], run: () => sim2.setCellArm(cell.id, a) })), { icon: "\u2715", title: "X\xF3a \xF4", run: () => sim2.setCellArm(cell.id, null) }] : [{ icon: "\u2715", title: "X\xF3a khu qu\xE2n s\u1EF1 (v\xE0 c\xE1c \xF4 trong khu)", run: () => sim2.removeZone(zone.id) }];
+      const r = 62;
+      this.ring.replaceChildren(...items.map((it, i) => {
+        const a = i / items.length * Math.PI * 2 - Math.PI / 2;
+        return h("button", { class: "rbtn", type: "button", text: it.icon, title: it.title, style: `left:${p.x + Math.cos(a) * r}px;top:${p.y + Math.sin(a) * r}px`, onclick: () => {
+          it.run();
+          this.ring.hidden = true;
+          this.sync();
+          this.redraw();
+        } });
+      }));
+      this.ring.hidden = false;
+    }
+    // ---------------------------------------------------------------- drawing
+    /** Bring the bar, the note and the page of the tab in line with the state. */
+    sync() {
+      const { sim: sim2 } = this.c, ready = sim2.era === "ancient" || sim2.dev.freeBuild;
+      const have2 = (a) => sim2.villagers.filter((v) => v.job === "fight" && !v.guard && v.post < 0 && v.arm === a).length;
+      const line3 = `Khu: ${sim2.zones.length} \xB7 ${ARMS2.map((a) => `${ARM_NAME2[a]}: ${sim2.cells.filter((q) => q.arm === a).length} \xF4 / ${have2(a)} l\xEDnh`).join(" \xB7 ")}${sim2.legion.on ? ` \xB7 \u0110\u1ED9i qu\xE2n ${Object.keys(sim2.legion.slots).length} l\xEDnh${sim2.legion.assembling ? " (\u0111ang t\u1EADp trung)" : ""}` : ""}`;
+      this.summary.textContent = ready ? line3 : "Khu qu\xE2n s\u1EF1 v\xE0 h\xE0nh qu\xE2n ch\u1EC9 c\xF3 \u1EDF th\u1EDDi Trung c\u1ED5.";
+      this.state.textContent = line3;
+      this.zoneChip.textContent = this.zoning ? "\u2715 H\u1EE7y v\u1EBD khu" : "\uFF0B T\u1EA1o khu qu\xE2n s\u1EF1";
+      this.zoneChip.disabled = !ready;
+      this.okChip.hidden = !this.zoning;
+      this.drillChip.disabled = !ready || !sim2.cells.length;
+      this.stopChip.hidden = !sim2.legion.on;
+      const err = this.zoning && this.pending ? sim2.zoneError(this.pending.x, this.pending.y) : null;
+      this.okChip.disabled = !this.pending || !!err;
+      const msg = !ready ? "Ch\u1EC9 l\u1EADp \u0111\u01B0\u1EE3c khu qu\xE2n s\u1EF1 \u1EDF th\u1EDDi Trung c\u1ED5." : this.zoning ? err ?? (this.pending ? 'Khu h\u1EE3p l\u1EC7: b\u1EA5m "X\xE1c nh\u1EADn khu".' : "Ch\u1EA1m ho\u1EB7c k\xE9o tr\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 \u0111\u1EB7t khung 30\xD730 \xF4.") : sim2.zones.length ? "Ch\u1EA1m v\xE0o khu \u0111\u1EC3 \u0111\u1EB7t \xF4 l\xEDnh (5\xD75). Nh\u1EA5n gi\u1EEF \xF4 \u0111\u1EC3 ch\u1ECDn lo\u1EA1i l\xEDnh ho\u1EB7c x\xF3a; nh\u1EA5n gi\u1EEF khu \u0111\u1EC3 x\xF3a khu." : 'B\u1EA5m "T\u1EA1o khu qu\xE2n s\u1EF1" \u0111\u1EC3 v\u1EBD khu \u0111\u1EA7u ti\xEAn quanh l\xE0ng.';
+      this.note.textContent = msg;
+      this.note.hidden = !msg;
+      this.note.classList.toggle("why", !!err || !ready);
+    }
+    update() {
+      const { sim: sim2 } = this.c, key = `${sim2.era}|${sim2.zones.length}|${sim2.cells.map((q) => q.arm).join("")}|${sim2.legion.on}|${sim2.legion.assembling}|${Object.keys(sim2.legion.slots).length}|${sim2.villagers.length}`;
+      if (key !== this.key) {
+        this.key = key;
+        this.sync();
+      }
+      if (this.open_) this.redraw();
+    }
+    draw() {
+      const ctx2 = this.canvas.getContext("2d");
+      if (!ctx2 || !this.open_) return;
+      const { sim: sim2 } = this.c, k = this.k, dpr = this.W ? this.canvas.width / this.W : 1;
+      ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx2.fillStyle = "#1a1510";
+      ctx2.fillRect(0, 0, this.W, this.H);
+      ctx2.imageSmoothingEnabled = false;
+      ctx2.drawImage(this.ground, 0, 0, WIN, WIN, this.sx(this.origin.x), this.sy(this.origin.y), WIN * k, WIN * k);
+      for (const z of sim2.zones) {
+        ctx2.fillStyle = "rgba(255,255,255,.12)";
+        ctx2.fillRect(this.sx(z.x), this.sy(z.y), z.w * k, z.h * k);
+        if (k >= 6) {
+          ctx2.strokeStyle = "rgba(255,255,255,.14)";
+          ctx2.lineWidth = 1;
+          ctx2.beginPath();
+          for (let i = 5; i < z.w; i += 5) {
+            ctx2.moveTo(this.sx(z.x + i), this.sy(z.y));
+            ctx2.lineTo(this.sx(z.x + i), this.sy(z.y + z.h));
+            ctx2.moveTo(this.sx(z.x), this.sy(z.y + i));
+            ctx2.lineTo(this.sx(z.x + z.w), this.sy(z.y + i));
+          }
+          ctx2.stroke();
+        }
+        ctx2.strokeStyle = "#fff";
+        ctx2.lineWidth = 2;
+        ctx2.strokeRect(this.sx(z.x), this.sy(z.y), z.w * k, z.h * k);
+      }
+      ctx2.textAlign = "center";
+      ctx2.textBaseline = "middle";
+      ctx2.font = `${Math.max(10, Math.min(36, k * 2.4))}px sans-serif`;
+      for (const q of sim2.cells) {
+        ctx2.fillStyle = `${ARM_COLOR[q.arm]}88`;
+        ctx2.fillRect(this.sx(q.x), this.sy(q.y), 5 * k, 5 * k);
+        ctx2.strokeStyle = ARM_COLOR[q.arm];
+        ctx2.lineWidth = 2;
+        ctx2.strokeRect(this.sx(q.x), this.sy(q.y), 5 * k, 5 * k);
+        ctx2.fillStyle = "#fff";
+        ctx2.fillText(ARM_ICON[q.arm], this.sx(q.x + 2.5), this.sy(q.y + 2.5));
+      }
+      if (this.zoning && this.pending) {
+        const x = Math.round(this.pending.x - 15), y = Math.round(this.pending.y - 15), bad = !!sim2.zoneError(this.pending.x, this.pending.y);
+        ctx2.fillStyle = bad ? "rgba(255,90,74,.22)" : "rgba(111,224,138,.22)";
+        ctx2.fillRect(this.sx(x), this.sy(y), 30 * k, 30 * k);
+        ctx2.strokeStyle = bad ? "#ff5a4a" : "#6fe08a";
+        ctx2.lineWidth = 3;
+        ctx2.strokeRect(this.sx(x), this.sy(y), 30 * k, 30 * k);
+      }
+      ctx2.fillStyle = "#fff";
+      if (sim2.legion.on) for (const id of Object.keys(sim2.legion.slots)) {
+        const v = sim2.get(Number(id));
+        if (v) ctx2.fillRect(this.sx(v.x) - 1.5, this.sy(v.y) - 1.5, 3, 3);
+      }
+      const f = sim2.campfire();
+      if (f) {
+        ctx2.fillStyle = "#ffd24a";
+        ctx2.fillText("\u{1F525}", this.sx(f.x + 1), this.sy(f.y + 1));
+      }
     }
   };
 
@@ -135355,9 +136777,9 @@ ${risk.lines.join("\n")}`);
 
   // src/ui/planmap.ts
   var T = 16;
-  var MIN_K = 4;
-  var MAX_K = 64;
-  var HOLD_MS = 450;
+  var MIN_K2 = 4;
+  var MAX_K2 = 64;
+  var HOLD_MS2 = 450;
   var RING = 100;
   var ITEM = 38;
   var MARK_NAME = { civ: "D\xE2n th\u01B0\u1EDDng", unknown: "C\xF3 ng\u01B0\u1EDDi (ch\u01B0a r\xF5 lo\u1EA1i)", foot: ARM_NAME.foot, archer: ARM_NAME.archer, cavalry: ARM_NAME.cavalry };
@@ -135631,7 +137053,7 @@ ${risk.lines.join("\n")}`);
           } else this.gesture = "pan";
         } else {
           this.gesture = "pan";
-          if (this.intel && ui.mode === "pan" && this.inBox(w)) this.hold = setTimeout(() => this.openRing(), HOLD_MS);
+          if (this.intel && ui.mode === "pan" && this.inBox(w)) this.hold = setTimeout(() => this.openRing(), HOLD_MS2);
         }
       });
       this.canvas.addEventListener("pointermove", (e) => {
@@ -135731,7 +137153,7 @@ ${risk.lines.join("\n")}`);
       const i = this.intel;
       if (!i) return;
       const bw = i.box.x1 - i.box.x0, bh = i.box.y1 - i.box.y0;
-      this.k = clamp3(Math.max(this.W / bw, this.H / bh), MIN_K, MAX_K);
+      this.k = clamp3(Math.max(this.W / bw, this.H / bh), MIN_K2, MAX_K2);
       this.cx = (i.box.x0 + i.box.x1) / 2;
       this.cy = (i.box.y0 + i.box.y1) / 2;
       this.limit();
@@ -135754,7 +137176,7 @@ ${risk.lines.join("\n")}`);
     /** Zoom by a factor, keeping the tile under the screen point where it is. */
     zoom(f, sx, sy) {
       const wx = this.cx + (sx - this.W / 2) / this.k, wy = this.cy + (sy - this.H / 2) / this.k;
-      this.k = clamp3(this.k * f, this.minK(), MAX_K);
+      this.k = clamp3(this.k * f, this.minK(), MAX_K2);
       this.cx = wx - (sx - this.W / 2) / this.k;
       this.cy = wy - (sy - this.H / 2) / this.k;
       this.limit();
@@ -135763,7 +137185,7 @@ ${risk.lines.join("\n")}`);
     /** The least zoom: the map still covers the screen. */
     minK() {
       const i = this.intel;
-      return i ? Math.max(MIN_K, this.W / (i.box.x1 - i.box.x0), this.H / (i.box.y1 - i.box.y0)) : MIN_K;
+      return i ? Math.max(MIN_K2, this.W / (i.box.x1 - i.box.x0), this.H / (i.box.y1 - i.box.y0)) : MIN_K2;
     }
     /** Keep the screen on the map: no brown round it. */
     limit() {
@@ -137185,7 +138607,7 @@ ${risk.lines.join("\n")}`);
       this.roster.replaceChildren(...out);
     }
     /** One choice of a step: a big tile with a picture, a name and a line saying what it means. */
-    tile(icon, title, note, on, f, opts = {}) {
+    tile(icon2, title, note, on, f, opts = {}) {
       const press = () => {
         const plan2 = this.attackPlan(), m = plan2?.status === "draft" ? plan2.missions.find((x) => x.squad === this.sel) : void 0;
         if (m) m.ordered = true;
@@ -137194,7 +138616,7 @@ ${risk.lines.join("\n")}`);
       return h(
         "button",
         { class: `opt${on ? " on" : ""}`, disabled: opts.disabled, style: opts.color ? `border-left:6px solid ${opts.color}` : void 0, onclick: press },
-        h("span", { class: "oi", text: icon }),
+        h("span", { class: "oi", text: icon2 }),
         h("b", { text: title }),
         h("small", { text: note })
       );
@@ -137277,7 +138699,7 @@ ${risk.lines.join("\n")}`);
           const when = fight ? [["time", "\u23F1", "Theo gi\u1EDD", "Xu\u1EA5t ph\xE1t sau l\u1EC7nh \u0111\xE1nh v\xE0o l\xFAc \u0111\xE3 h\u1EB9n"], ["after", "\u{1F517}", "Sau \u0111\u1ED9i kh\xE1c", "\u0110\u1EE3i m\u1ED9t \u0111\u1ED9i giao chi\u1EBFn r\u1ED3i m\u1EDBi \u0111\xE1nh"]] : [["time", "\u25B6", "Ngay", "Xu\u1EA5t ph\xE1t khi nh\u1EADn l\u1EC7nh \u0111\xE1nh"]];
           if (kind === "leaves") when.push(["leaves", "\u{1F6AA}", "Khi \u0111\u1ECBch r\u1EDDi l\xE0ng", "\u0110\u1EE3i \u0111\u1ECBch ra kh\u1ECFi l\xE0ng"]);
           const cur = when.some((w) => w[0] === kind) ? kind : "time";
-          body.push(opts("", ...when.map(([k, icon, name, note]) => this.tile(icon, name, k === "after" && !others.length ? "Ch\u01B0a c\xF3 \u0111\u1ED9i n\xE0o kh\xE1c" : note, k === cur, () => {
+          body.push(opts("", ...when.map(([k, icon2, name, note]) => this.tile(icon2, name, k === "after" && !others.length ? "Ch\u01B0a c\xF3 \u0111\u1ED9i n\xE0o kh\xE1c" : note, k === cur, () => {
             m.trigger = k === "time" ? { kind: "time", at: 0 } : k === "after" ? { kind: "after", squad: others[0]?.squad ?? -1 } : { kind: k };
             this.step = k === "signal" ? "cards" : k === "time" && fight ? "when" : k === "after" ? "after" : "retreat";
             this.refresh();
@@ -137326,7 +138748,7 @@ ${risk.lines.join("\n")}`);
           break;
         }
         default: {
-          const row = (icon, label2, value, to) => h("button", { class: "ovrow", onclick: () => go(to) }, h("span", { class: "oi", text: icon }), h("small", { text: label2 }), h("b", { text: value }), h("em", { text: "S\u1EEDa" }));
+          const row = (icon2, label2, value, to) => h("button", { class: "ovrow", onclick: () => go(to) }, h("span", { class: "oi", text: icon2 }), h("small", { text: label2 }), h("b", { text: value }), h("em", { text: "S\u1EEDa" }));
           const rows = [row(STANCE_ICON[m.stance], "H\xE0nh \u0111\u1ED9ng", STANCE_NAME[m.stance], "action"), row("\u23F1", "B\u1EAFt \u0111\u1EA7u", this.startWords(m), "start")];
           if (kind === "signal") rows.push(row("\u{1F4EF}", "Th\u1EBB l\u1EC7nh", `${plan2.cards.filter((cd) => cd.kind === "signal" || cd.squad === sq.id).length} th\u1EBB`, "cards"));
           else rows.push(row("\u21A9", "R\xFAt lui", m.withdrawAt > 0 ? `Khi m\u1EA5t ${Math.round(m.withdrawAt * 100)}% \xB7 ${m.retreat.length ? `${m.retreat.length} \u0111i\u1EC3m` : "v\u1EC1 ch\u1ED7 h\u1EB9n"}` : "Kh\xF4ng r\xFAt", "retreat"));
@@ -137355,13 +138777,13 @@ ${risk.lines.join("\n")}`);
         else this.toast(sim2.addCard(plan2, kind, kind === "signal" ? -1 : squad, arg));
         this.refresh();
       };
-      const icon = { go: "\u25B6", advance: "\u23E9", hold: "\u{1F6E1}", shoot: "\u{1F3F9}", retreat: "\u21A9", formation: "\u26F6" };
+      const icon2 = { go: "\u25B6", advance: "\u23E9", hold: "\u{1F6E1}", shoot: "\u{1F3F9}", retreat: "\u21A9", formation: "\u26F6" };
       const out = [
         h("p", { class: "sub", text: `\u0110\u1ED9i \u0111\u1EE9ng ch\u1EDD t\xEDn hi\u1EC7u; khi \u0111\xE1nh ch\u1EC9 nh\u1EEFng th\u1EBB n\xE0y hi\u1EC7n th\xE0nh n\xFAt. \u0110\xE3 d\xF9ng ${plan2.cards.length}/${sim2.cardLimit()} th\u1EBB.` }),
         opts(
           "",
           this.tile("\u{1F4EF}", "T\xEDn hi\u1EC7u", "m\u1ED9t th\u1EBB cho c\u1EA3 k\u1EBF ho\u1EA1ch", !!has("signal"), toggle("signal"), { disabled: !draft }),
-          ...CARD_KINDS.filter((k) => k !== "formation").map((k) => this.tile(icon[k] ?? "\u2022", CARD_NAME[k], "b\u1EA5m \u0111\u1EC3 th\xEAm ho\u1EB7c b\u1ECF th\u1EBB", !!has(k), toggle(k), { disabled: !draft })),
+          ...CARD_KINDS.filter((k) => k !== "formation").map((k) => this.tile(icon2[k] ?? "\u2022", CARD_NAME[k], "b\u1EA5m \u0111\u1EC3 th\xEAm ho\u1EB7c b\u1ECF th\u1EBB", !!has(k), toggle(k), { disabled: !draft })),
           this.tile("\u26F6", "\u0110\u1ED5i tr\u1EADn", "ch\u1ECDn tr\u1EADn ph\xE1p m\u1EDBi", this.formRow || plan2.cards.some((cd) => cd.kind === "formation" && cd.squad === squad), () => {
             this.formRow = !this.formRow;
             this.refresh();
@@ -137509,12 +138931,12 @@ ${risk.lines.join("\n")}`);
   var costLine = (c) => Object.keys(c).filter((k) => (c[k] ?? 0) > 0).map((k) => `${c[k]} ${RES_NAME[k].toLowerCase()}`).join(" + ") || "mi\u1EC5n ph\xED";
 
   // src/ui/buildingpanel.ts
+  var STAFF_OF = { workshop: "craft", lab: "research", stable: "tame" };
   var BuildingPanel = class {
     constructor(root, c) {
       this.root = root;
       this.c = c;
       this.picKey = "";
-      /** Every building shows its parts as pages behind a row of tab buttons at the top. */
       this.tabs = {};
       this.tabBar = h("div", { class: "btns tabs", role: "tablist" });
       /** The line about the building and its tabs, side by side when the tabs are plain buttons. */
@@ -137527,7 +138949,9 @@ ${risk.lines.join("\n")}`);
         this.c.sim.toggleNewcomers();
         this.updateCampfire();
       } });
-      this.barterBtns = [];
+      /** The rows of the trade: the shells wanted (`n`), and the parts of the row that follow it. */
+      this.barterRows = [];
+      this.barterKeepOn = true;
       this.trees = [];
       this.goodRows = [];
       /** What the filters of the tool and weapon lists say, by list: the kind to show ('' for all) and whether to show only what can be had now. */
@@ -137545,13 +138969,17 @@ ${risk.lines.join("\n")}`);
       this.progSec = {};
       /** The research house: the tab that is open, as a panel laid over the whole one (null while the grid of tabs shows). */
       this.labSub = null;
+      /** The list of people of the house is open over its page (see STAFF_OF), and which house it was opened for. */
+      this.peopleOpen = false;
+      this.peopleFor = null;
+      this.peopleBtn = h("button", { class: "sm tbtn peoplebtn", type: "button", hidden: true });
       /** The line on the front page of the research house that says who works there and opens the list to add more. */
-      this.labPeople = h("button", { class: "dgo alt labpeople", type: "button" });
       this.mbody = h("div", { class: "mbody" });
       this.subTitle = h("b");
       this.subBody = h("div", { class: "subbody" });
       this.sub = h("div", { class: "subpanel", hidden: true }, h("div", { class: "subhead" }, h("button", { class: "sm", text: "\u2039 Quay l\u1EA1i", onclick: () => {
         this.labSub = null;
+        this.peopleOpen = false;
         this.tabKey = "";
         this.update();
       } }), this.subTitle), this.subBody);
@@ -137589,42 +139017,47 @@ ${risk.lines.join("\n")}`);
         return el;
       };
       const barter2 = () => {
-        const box = h("div", {}, hint("\u0110\u1ED5i ch\xE1c", "\u0110\u1ED5i h\xE0ng l\u1EA5y ti\u1EC1n \u0111\u1EC3 tr\u1EA3 cho nghi\xEAn c\u1EE9u. Ti\u1EC1n c\u0169ng nh\u1EB7t \u0111\u01B0\u1EE3c khi h\xE1i l\u01B0\u1EE3m v\xE0 nh\u1EADn t\u1EEB b\u1ED9 t\u1ED9c c\u1ED1ng n\u1EA1p."));
-        box.append(h("p", { class: "sub", text: "B\xE1n c\xE0ng nhi\u1EC1u trong m\u1ED9t l\xFAc, gi\xE1 c\xE0ng \u0111\u1EAFt; gi\xE1 tr\u1EDF l\u1EA1i b\xECnh th\u01B0\u1EDDng sau 1 \u0111\u1EBFn 3 ng\xE0y. Gi\u1EEF n\xFAt \u0111\u1EC3 b\xE1n li\xEAn t\u1EE5c." }));
+        const box = h("div", {}, hint("\u0110\u1ED5i ch\xE1c", "\u0110\u1ED5i h\xE0ng l\u1EA5y ti\u1EC1n (v\u1ECF) \u0111\u1EC3 tr\u1EA3 cho nghi\xEAn c\u1EE9u. Ti\u1EC1n c\u0169ng nh\u1EB7t \u0111\u01B0\u1EE3c khi h\xE1i l\u01B0\u1EE3m v\xE0 nh\u1EADn t\u1EEB b\u1ED9 t\u1ED9c c\u1ED1ng n\u1EA1p."));
+        box.append(h("p", { class: "sub", text: "Ch\u1ECDn s\u1ED1 v\u1ECF mu\u1ED1n c\xF3: ngay b\xEAn d\u01B0\u1EDBi hi\u1EC7n ph\u1EA3i b\xE1n bao nhi\xEAu h\xE0ng. B\xE1n c\xE0ng nhi\u1EC1u trong m\u1ED9t l\xFAc, gi\xE1 c\xE0ng \u0111\u1EAFt; gi\xE1 tr\u1EDF l\u1EA1i b\xECnh th\u01B0\u1EDDng sau 1 \u0111\u1EBFn 3 ng\xE0y." }));
+        const keepBox = h("input", { type: "checkbox" });
+        keepBox.checked = this.barterKeepOn;
+        keepBox.addEventListener("change", () => {
+          this.barterKeepOn = keepBox.checked;
+          this.updateBarter();
+        });
+        box.append(h("label", { class: "bkeep" }, keepBox, " Gi\u1EEF l\u1EA1i ph\u1EA7n c\u1EA7n cho \u0103n u\u1ED1ng v\xE0 c\xF4ng tr\xECnh"));
         const list = h("div", { class: "barter" });
         box.append(list);
         for (const res of RES_LIST) {
           if (res === "coin") continue;
-          const name = h("b", { text: RES_NAME[res] }), price = h("small"), label2 = h("div", { class: "bname" }, name, price), set = [], keys = h("div", { class: "bkeys" }), row = h("div", { class: "brow" }, label2, keys);
-          const sell = (coins, keep) => {
-            const e = sim2.barter(res, coins, keep ? sim2.barterKeep(res) : 0);
+          const price = h("span", { class: "bpill" }), name = h("div", { class: "bname" }, h("b", { text: RES_NAME[res] }), price);
+          const input = h("input", { class: "bnum", type: "number", min: "0", step: "1", inputmode: "numeric", "aria-label": `S\u1ED1 v\u1ECF mu\u1ED1n c\xF3 t\u1EEB ${RES_NAME[res].toLowerCase()}` });
+          const slider = h("input", { class: "bslide", type: "range", min: "0", max: "0", step: "1", "aria-label": "S\u1ED1 v\u1ECF" });
+          const quote = h("div", { class: "bquote" });
+          const go = h("button", { class: "sm primary", type: "button", text: "\u0110\u1ED5i" });
+          const r = { res, n: 0, price, input, slider, quote, go };
+          const keep = () => this.barterKeepOn ? sim2.barterKeep(res) : 0, most = () => sim2.barterQuote(res, Infinity, keep()).coins;
+          const set = (n) => {
+            r.n = Math.max(0, Math.min(most(), Math.floor(Number.isFinite(n) ? n : 0)));
+            this.updateBarter();
+          };
+          input.addEventListener("input", () => set(parseInt(input.value, 10)));
+          slider.addEventListener("input", () => set(Number(slider.value)));
+          const chip = (text, share2, title) => h("button", { class: "sm", type: "button", text, title, onclick: () => set(Math.max(1, Math.floor(most() * share2))) });
+          go.addEventListener("click", () => {
+            if (r.n < 1) return;
+            const e = sim2.barter(res, r.n, keep());
             if (e) c.toast(e);
             ctl2.onChange();
-            return !e;
-          };
-          const mk = (text, coins, keep = false, title = "") => {
-            const btn = h("button", { class: "sm", text, title });
-            let t = 0, rep = 0;
-            const stop = () => {
-              clearTimeout(t);
-              clearInterval(rep);
-            };
-            btn.addEventListener("pointerdown", (ev) => {
-              if (ev.button !== 0 || btn.disabled) return;
-              if (!sell(coins, keep)) return;
-              if (coins === 1) t = window.setTimeout(() => {
-                rep = window.setInterval(() => {
-                  if (!sell(1, false)) stop();
-                }, 90);
-              }, 350);
-            });
-            for (const ev of ["pointerup", "pointerleave", "pointercancel"]) btn.addEventListener(ev, stop);
-            return btn;
-          };
-          set.push(mk("\xD71", 1), mk("\xD710", 10), mk("\xD7100", 100), mk("T\u1ED1i \u0111a", Infinity, false, "B\xE1n h\u1EBFt, \u0111\u1EBFn khi kho h\u1EBFt h\xE0ng ho\u1EB7c \u0111\u1EA7y ti\u1EC1n"), mk("B\xE1n ph\u1EA7n d\u01B0", Infinity, true, "B\xE1n t\u1EA5t c\u1EA3 tr\u1EEB ph\u1EA7n gi\u1EEF l\u1EA1i cho \u0103n u\u1ED1ng v\xE0 c\xF4ng tr\xECnh"));
-          keys.append(...set);
-          this.barterBtns.push({ res, label: price, set, row });
-          list.append(row);
+            set(r.n);
+          });
+          list.append(h(
+            "div",
+            { class: "brow" },
+            name,
+            h("div", { class: "bctl" }, h("div", { class: "bline" }, input, slider), h("div", { class: "bline" }, chip("\xBC", 0.25, "M\u1ED9t ph\u1EA7n t\u01B0 s\u1ED1 t\u1ED1i \u0111a"), chip("\xBD", 0.5, "M\u1ED9t n\u1EEDa s\u1ED1 t\u1ED1i \u0111a"), chip("T\u1ED1i \u0111a", 1, "S\u1ED1 v\u1ECF nhi\u1EC1u nh\u1EA5t \u0111\u1ED5i \u0111\u01B0\u1EE3c"), go), quote)
+          ));
+          this.barterRows.push(r);
         }
         return box;
       };
@@ -137639,7 +139072,6 @@ ${risk.lines.join("\n")}`);
         const kind = ROLES[role].building, pane = new RolePane(c, role);
         this.rolePanes[kind] = pane;
         this.tabs[kind] = [{ label: label2, page: page(pane.root) }];
-        if (soldiers) this.tabs[kind].push({ label: "Ng\u01B0\u1EDDi trong tr\u1EA1i", page: bedPage(kind, "L\xEDnh") });
       };
       roleHouse("foot", "L\xEDnh", true);
       roleHouse("cavalry", "L\xEDnh", true);
@@ -137658,6 +139090,8 @@ ${risk.lines.join("\n")}`);
       this.simpleWar = new SimpleWar(c);
       this.tabs.wartent = [{ label: "H\u1ECDp chi\u1EBFn", page: page(this.warHost) }, { label: "Nh\u1EADt k\xFD tr\u1EADn", page: page(this.warLog.root) }];
       this.scoutPane = new ScoutPane(c);
+      this.marchPane = new MarchPane(c);
+      this.tabs.drill = [{ label: "H\xE0nh qu\xE2n", page: page(this.marchPane.root) }];
       this.tabs.scouttent = [{ label: "Trinh s\xE1t", page: page(this.scoutPane.roster) }, { label: "L\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n", page: page(this.scoutPane.villages) }];
       this.tabs.tower = [{ label: "L\xEDnh ch\xF2i canh", page: page(hint(this.towerHead, "L\xEDnh ch\xF2i canh l\u1EA5y th\u1EB3ng t\u1EEB d\xE2n r\u1EA3nh, kh\xF4ng c\u1EA7n tr\u1EA1i cung th\u1EE7: h\u1ECD l\xEAn ch\xF2i, \u1EDF \u0111\xF3 ng\xE0y v\xE0 \u0111\xEAm (\u0111\u1ED5i ca \u1EDF chi ti\u1EBFt c\u1EE7a h\u1ECD) v\xE0 b\u1EAFn b\u1EB1ng cung ho\u1EB7c d\xE2y qu\u0103ng l\u1EA5y \u1EDF Kho v\u0169 kh\xED. H\u1ECD b\u1EAFn xa h\u01A1n v\xE0 m\u1EA1nh h\u01A1n khi \u0111\u1EE9ng tr\xEAn ch\xF2i, v\xE0 k\u1EBB \u0111\u1ECBch ph\u1EA3i ph\xE1 ch\xF2i m\u1EDBi h\u1EA1 \u0111\u01B0\u1EE3c h\u1ECD. M\xE1u v\xE0 s\xE1t th\u01B0\u01A1ng c\u1EE7a h\u1ECD, v\xE0 c\u1EE7a ch\xF2i, t\u0103ng theo nghi\xEAn c\u1EE9u Ph\xF2ng th\u1EE7."), this.towerList) }];
       this.tabs.fence = [];
@@ -137705,7 +139139,6 @@ ${risk.lines.join("\n")}`);
       ]);
       this.progSec.workshop = h("div", {}, h("h3", { text: "\u0110ang ch\u1EBF t\u1EA1o" }), this.activeBoxes.craft.root, this.queueNote.craft);
       this.tabs.workshop = [
-        { label: "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c", page: page(this.staffBoxes.craft.root) },
         { label: "Ch\u1EBF t\u1EA1o", page: page(hint("Ch\u1EBF t\u1EA1o theo b\u1EA3n v\u1EBD", "Ch\u1EA1m v\xE0o m\u1ED9t m\xF3n \u0111\u1EC3 xem gi\xE1 v\xE0 th\xEAm v\xE0o h\xE0ng \u0111\u1EE3i. Ch\u1EC9 ch\u1EBF \u0111\u01B0\u1EE3c m\xF3n \u0111\xE3 c\xF3 b\u1EA3n v\u1EBD \u1EDF Nh\xE0 nghi\xEAn c\u1EE9u v\xE0 \u0111\u1EE7 c\u1EA5p Nh\xE0 ch\u1EBF t\u1EA1o. V\u1EADt li\u1EC7u tr\u1EEB ngay khi th\xEAm v\xE0o h\xE0ng \u0111\u1EE3i, h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i. S\u1EA3n ph\u1EA9m v\xE0o Kho c\xF4ng c\u1EE5 ho\u1EB7c Kho v\u0169 kh\xED."), this.craftGrid.root) }
       ];
       const tree = (fill) => {
@@ -137717,7 +139150,7 @@ ${risk.lines.join("\n")}`);
       const only = (test) => TECHS.filter((x) => test(x.id));
       const labLevel = () => sim2.building("lab")?.level ?? 0;
       const militaryLock = () => sim2.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `C\u1EA7n Nh\xE0 nghi\xEAn c\u1EE9u c\u1EA5p ${TREE_TABS.military.needLab} \u0111\u1EC3 m\u1EDF Qu\xE2n s\u1EF1`;
-      this.progSec.lab = h("div", {}, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian: c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research, this.labPeople);
+      this.progSec.lab = h("div", {}, hint("\u0110ang nghi\xEAn c\u1EE9u", "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9. M\u1ED7i c\xF4ng c\u1EE5, v\u0169 kh\xED, gi\xE1p ch\u1EC9 c\xF3 M\u1ED8T b\u1EA3n v\u1EBD, n\xE2ng d\u1EA7n theo c\u1EA5p. B\u1EA5m nghi\xEAn c\u1EE9u l\xE0 tr\u1EA3 ngay v\u1EADt li\u1EC7u v\xE0 ti\u1EC1n (h\u1EE7y \u0111\u01A1n th\xEC \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i). C\u1EA7n r\u1EA5t nhi\u1EC1u th\u1EDDi gian: c\xE0ng nhi\u1EC1u ng\u01B0\u1EDDi l\xE0m trong nh\xE0 c\xE0ng nhanh."), this.activeBoxes.research.root, this.queueNote.research);
       const advanced = () => this.c.sim.era === "ancient";
       const needMilitary = () => militaryLock() && "C\u1EA7n m\u1EDF Qu\xE2n s\u1EF1 tr\u01B0\u1EDBc";
       this.tabs.lab = [
@@ -137750,9 +139183,7 @@ ${risk.lines.join("\n")}`);
         { label: "C\xF4ng c\u1EE5 b\u1EADc 1", icon: "workshop", under: 1, page: tree((t) => {
           t.addChains("Ch\u1EC9 s\u1ED1 c\xF4ng c\u1EE5", ["axe", "pick", "hoe"], "tool");
           t.addChains("B\xFAa", ["hammer"], "hammer");
-        }) },
-        // not in the tree: the button "Người nghiên cứu · Thêm người" at the top opens it
-        { label: "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c", icon: "lab", hidden: true, page: page(this.staffBoxes.research.root) }
+        }) }
       ];
       const goods2 = page(this.goodsHint, this.goodsBar);
       const goodsRows = (cat) => RECIPES.filter((r) => cat === "gear" === isGearKind(r.kind));
@@ -137808,7 +139239,7 @@ ${risk.lines.join("\n")}`);
         };
       }));
       beasts.append(this.tameGrid.root);
-      this.tabs.stable = [{ label: "Thu\u1EA7n th\xFA", page: beasts }, { label: "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c", page: page(this.staffBoxes.tame.root) }];
+      this.tabs.stable = [{ label: "Thu\u1EA7n th\xFA", page: beasts }];
       this.progress.append(...Object.values(this.progSec));
       this.topbar.append(this.labHead, this.tabBar);
       this.mbody.append(this.progress, this.topbar, ...this.pages, this.sub);
@@ -137817,8 +139248,8 @@ ${risk.lines.join("\n")}`);
       this.state = head.querySelector(".dsub");
       this.picBox = head.querySelector(".dpic");
       const who = head.querySelector(".dwho");
-      who.replaceChildren(h("div", { class: "hint" }, h("div", { class: "hinthead" }, this.title, helpButton()), this.info), this.state, this.foodHint);
-      this.win = new GameDialog(root, { keep: true, onClose: () => ctl2.closePanel(), canClose: () => !this.war.mapOpen });
+      who.replaceChildren(h("div", { class: "hint" }, h("div", { class: "hinthead" }, this.title, helpButton()), this.info), this.state, this.foodHint, this.peopleBtn);
+      this.win = new GameDialog(root, { keep: true, onClose: () => ctl2.closePanel(), canClose: () => !this.war.mapOpen && !this.marchPane.mapOpen });
       root.append(dlg.card({ wide: true, cls: "gbuild", label: "C\xF4ng tr\xECnh" }, head, this.mbody));
     }
     /** Open the campfire on its tribes: a tribe has come to ask for mercy. */
@@ -137864,6 +139295,20 @@ ${risk.lines.join("\n")}`);
           const rank = t.under !== void 0 ? tabs.slice(0, i).filter((o, j) => o.under === t.under && shown[j]).length : 0;
           return h("button", { class: `tabcard${locks[i] ? " locked" : ""}${t.under !== void 0 ? " under" : ""}${i === lastTop ? " tail" : ""}`, style: t.under !== void 0 ? `grid-column:${t.under + 1};grid-row:${2 + rank}` : void 0, role: "tab", title: locks[i] ?? t.label, onclick: go }, pic, h("span", { text: t.label }), locks[i] ? h("span", { class: "tlock", text: "\u{1F512}" }) : null);
         }).filter((el) => !!el));
+      }
+      const staff = STAFF_OF[kind];
+      if (staff && ready && this.peopleOpen) {
+        const root = this.staffBoxes[staff].root;
+        this.sub.hidden = false;
+        this.tabBar.hidden = true;
+        this.mbody.classList.add("subopen");
+        for (const p of this.pages) p.hidden = true;
+        this.subTitle.textContent = "Nh\xE2n s\u1EF1";
+        if (this.subBody.firstChild !== root) {
+          this.subBody.replaceChildren(root);
+          this.mbody.scrollTop = 0;
+        }
+        return;
       }
       if (kind === "lab" && ready) {
         const open = this.labSub !== null && !locks[this.labSub] && (shown[this.labSub] || tabs[this.labSub]?.hidden) ? this.labSub : null;
@@ -137954,11 +139399,24 @@ ${risk.lines.join("\n")}`);
       }
       this.inTent = inTent;
       if (!inTent && this.war.mapOpen) this.war.closeMap();
+      if (this.marchPane.mapOpen && b?.kind !== "drill") this.marchPane.close();
       if (!b) {
         if (ctl2.selectedBuilding !== null) ctl2.selectedBuilding = null;
         return;
       }
-      if (!ctl2.buildingOpen) return;
+      if (!ctl2.buildingOpen) {
+        this.peopleOpen = false;
+        this.peopleFor = null;
+        return;
+      }
+      if (this.peopleFor !== b.id) {
+        this.peopleFor = b.id;
+        this.peopleOpen = false;
+      }
+      if (ctl2.openPeople) {
+        ctl2.openPeople = false;
+        this.peopleOpen = !!STAFF_OF[b.kind] && b.done;
+      }
       if (b.kind !== "lab") this.labSub = null;
       const def = BUILDINGS[b.kind], lv = levelDef(b), top = topLevel(b), ready = b.done;
       this.title.textContent = `${buildingName(b.kind, b.era)}${def.buildable ? ` \xB7 c\u1EA5p ${b.level}/${top} (${lv.name.toLowerCase()})` : ""}`;
@@ -137977,20 +139435,14 @@ ${risk.lines.join("\n")}`);
       this.state.hidden = meal;
       this.foodHint.hidden = !meal;
       this.showTabs(b.kind, ready);
+      this.updatePeopleButton(b, ready);
       this.info.textContent = !b.done ? "Giao d\xE2n l\xE0m Th\u1EE3 x\xE2y \u0111\u1EC3 d\u1EF1ng c\xF4ng tr\xECnh n\xE0y." : this.infoText(b);
       if (b.kind === "campfire" && ready) this.updateCampfire();
       if (b.kind === "storage" && ready) for (const r of this.resRows) {
         r.num.textContent = `${Math.floor(sim2.stock[r.res])} / ${sim2.capacity(r.res)}`;
         r.bar.style.width = `${Math.min(100, sim2.stock[r.res] / Math.max(1, sim2.capacity(r.res)) * 100)}%`;
       }
-      if ((b.kind === "storage" || b.kind === "campfire") && ready) for (const t of this.barterBtns) {
-        const price = sim2.barterPrice(t.res), text = `${price} \u2192 1 ${RES_NAME.coin.toLowerCase()}${price > BARTER[t.res] ? " \xB7 \u0111ang \u0111\u1EAFt" : ""}`;
-        t.row.classList.toggle("dear", price > BARTER[t.res]);
-        if (t.label.textContent !== text) t.label.textContent = text;
-        t.set.forEach((btn, i) => {
-          btn.disabled = i === 4 ? sim2.stock[t.res] - price < sim2.barterKeep(t.res) : sim2.stock[t.res] < price;
-        });
-      }
+      if ((b.kind === "storage" || b.kind === "campfire") && ready) this.updateBarter();
       if (this.bedList[b.kind] && ready) this.updateBeds(b);
       if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind].update();
       if (b.kind === "field" && ready) this.staffBoxes.farm.update(b);
@@ -138005,12 +139457,52 @@ ${risk.lines.join("\n")}`);
       }
       if (b.kind === "campfire" && ready) this.tribes.update();
       if (b.kind === "scouttent" && ready) this.scoutPane.update();
+      if (b.kind === "drill" && ready) this.marchPane.update();
       if (b.kind === "workshop" && ready) this.updateWorkshop(b);
       if (b.kind === "lab" && ready) this.updateLab(b);
       if (b.kind === "stable" && ready) this.updateStable(b);
       if (b.kind === "toolstore" || b.kind === "armory") {
         if (ready) this.updateGoods(b);
       }
+    }
+    /** Draw the trade again: the price of each good, how many shells can be had at most, and what the shells wanted would cost. */
+    updateBarter() {
+      const { sim: sim2 } = this.c, coin = RES_NAME.coin.toLowerCase();
+      for (const r of this.barterRows) {
+        const keep = this.barterKeepOn ? sim2.barterKeep(r.res) : 0, name = RES_NAME[r.res].toLowerCase();
+        const now = sim2.barterPrice(r.res), base = BARTER[r.res], rise = Math.round((now / base - 1) * 100);
+        r.price.textContent = rise > 0 ? `${now} ${name} = 1 ${coin} \xB7 \u0111\u1EAFt h\u01A1n ${rise}%` : `${now} ${name} = 1 ${coin}`;
+        r.price.className = `bpill${rise >= 60 ? " bad" : rise >= 20 ? " warn" : rise > 0 ? " mild" : ""}`;
+        r.price.title = rise > 0 ? `Gi\xE1 g\u1ED1c ${base} ${name} = 1 ${coin}; \u0111\xE3 b\xE1n nhi\u1EC1u n\xEAn \u0111ang \u0111\u1EAFt h\u01A1n, sau 1 \u0111\u1EBFn 3 ng\xE0y s\u1EBD v\u1EC1 gi\xE1 g\u1ED1c` : `Gi\xE1 g\u1ED1c`;
+        const max = sim2.barterQuote(r.res, Infinity, keep);
+        r.n = Math.max(0, Math.min(r.n, max.coins));
+        if (document.activeElement !== r.input) r.input.value = r.n ? String(r.n) : "";
+        r.input.max = String(max.coins);
+        r.input.placeholder = max.coins ? `0\u2013${max.coins}` : "0";
+        r.input.disabled = max.coins < 1;
+        r.slider.max = String(max.coins);
+        r.slider.value = String(r.n);
+        r.slider.disabled = max.coins < 1;
+        const q = sim2.barterQuote(r.res, r.n, keep), dearer = q.coins > 0 && q.last > q.first;
+        r.quote.className = `bquote${dearer && q.last >= q.first * 1.6 ? " bad" : dearer ? " warn" : ""}`;
+        r.quote.textContent = max.coins < 1 ? max.why ?? "Kh\xF4ng \u0111\u1ED5i \u0111\u01B0\u1EE3c" : q.coins < 1 ? `\u0110\u1ED5i t\u1ED1i \u0111a ${max.coins} ${coin} (c\u1EA7n ${max.first} ${name} cho v\u1ECF \u0111\u1EA7u ti\xEAn)` : `B\xE1n ${q.cost} ${name} \u2192 ${q.coins} ${coin}${dearer ? ` \xB7 gi\xE1 t\u0103ng t\u1EEB ${q.first} l\xEAn ${q.last} ${name}/${coin}` : ` \xB7 gi\xE1 ${q.first} ${name}/${coin}`}`;
+        r.go.disabled = q.coins < 1;
+        r.go.textContent = q.coins > 0 ? `\u0110\u1ED5i ${q.coins}` : "\u0110\u1ED5i";
+      }
+    }
+    /** The button "Nhân sự 2/4" in the head of the dialog: it opens the people of the house over its page. */
+    updatePeopleButton(b, ready) {
+      const staff = STAFF_OF[b.kind];
+      this.peopleBtn.hidden = !staff || !ready;
+      if (!staff || !ready) return;
+      const n = this.c.sim.staffCount(b), slots = levelDef(b).slots;
+      this.peopleBtn.replaceChildren(icon("people", 15), `Nh\xE2n s\u1EF1 ${n}/${slots}`);
+      this.peopleBtn.classList.toggle("on", this.peopleOpen);
+      this.peopleBtn.title = n < slots ? "C\xF2n ch\u1ED7 tr\u1ED1ng: b\u1EA5m \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi" : "Th\xEAm ho\u1EB7c cho ngh\u1EC9 ng\u01B0\u1EDDi l\xE0m vi\u1EC7c";
+      this.peopleBtn.onclick = () => {
+        this.peopleOpen = true;
+        this.update();
+      };
     }
     updateWorkshop(b) {
       const { sim: sim2 } = this.c;
@@ -138023,13 +139515,6 @@ ${risk.lines.join("\n")}`);
       const { sim: sim2 } = this.c;
       this.staffBoxes.research.update(b);
       this.activeBoxes.research.update(b);
-      const at = this.tabs.lab.findIndex((t) => t.label === "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c");
-      this.labPeople.textContent = `Ng\u01B0\u1EDDi nghi\xEAn c\u1EE9u ${sim2.staffCount(b)}/${levelDef(b).slots} \xB7 Th\xEAm ng\u01B0\u1EDDi \u203A`;
-      this.labPeople.onclick = () => {
-        this.tabAt.lab = at;
-        this.labSub = at;
-        this.showTabs("lab", true);
-      };
       const waiting = sim2.researchQueue[0];
       this.queueNote.research.textContent = `${waiting ? `Ch\u1EDD b\u1EAFt \u0111\u1EA7u: ${TECH_BY_ID[waiting]?.name ?? waiting}` : "M\u1ED7i l\u1EA7n ch\u1EC9 nghi\xEAn c\u1EE9u m\u1ED9t th\u1EE9"}`;
       for (const t of this.trees) t.update();
@@ -138510,6 +139995,11 @@ ${risk.lines.join("\n")}`);
     const f = sim.campfire(), s = sim.world.start;
     ctl.centerOn((f ? f.x + 1 : s.x) * TILE, (f ? f.y + 1 : s.y) * TILE);
   });
+  $("btnLegion").addEventListener("click", () => {
+    ctl.legionControl = !ctl.legionControl;
+    if (ctl.legionControl) toast("Ch\u1EA1m \u0111\u1EA5t \u0111\u1EC3 c\u1EA3 \u0111\u1ED9i qu\xE2n h\xE0nh qu\xE2n t\u1EDBi \u0111\xF3");
+    syncButtons();
+  });
   $("btnArmy").addEventListener("click", () => {
     if (sim.alarmUntil > sim.time) sim.standDown();
     else {
@@ -138588,6 +140078,12 @@ ${risk.lines.join("\n")}`);
       army3.textContent = on ? "\u{1F3E0}" : "\u2694";
       army3.title = on ? "Cho qu\xE2n v\u1EC1 tr\u1EA1i ngh\u1EC9" : "G\u1ECDi qu\xE2n \u0111\u1ED9i ra kh\u1ECFi tr\u1EA1i";
       army3.hidden = !sim.villagers.some((v) => v.job === "fight" && !v.guard);
+    }
+    {
+      const lb = $("btnLegion");
+      if (!sim.legion.on) ctl.legionControl = false;
+      lb.hidden = !sim.legion.on;
+      lb.setAttribute("aria-pressed", String(ctl.legionControl));
     }
     $("btnNone").hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
   }
@@ -138883,5 +140379,35 @@ ${risk.lines.join("\n")}`);
     ));
   })();
 })();
+/*! Bundled license information:
+
+lucide/dist/esm/defaultAttributes.mjs:
+lucide/dist/esm/createElement.mjs:
+lucide/dist/esm/icons/chevron-left.mjs:
+lucide/dist/esm/icons/chevron-right.mjs:
+lucide/dist/esm/icons/crosshair.mjs:
+lucide/dist/esm/icons/hammer.mjs:
+lucide/dist/esm/icons/heart.mjs:
+lucide/dist/esm/icons/log-in.mjs:
+lucide/dist/esm/icons/log-out.mjs:
+lucide/dist/esm/icons/megaphone.mjs:
+lucide/dist/esm/icons/minus.mjs:
+lucide/dist/esm/icons/moon.mjs:
+lucide/dist/esm/icons/plus.mjs:
+lucide/dist/esm/icons/shield-check.mjs:
+lucide/dist/esm/icons/sun-moon.mjs:
+lucide/dist/esm/icons/sun.mjs:
+lucide/dist/esm/icons/swords.mjs:
+lucide/dist/esm/icons/user-plus.mjs:
+lucide/dist/esm/icons/users.mjs:
+lucide/dist/esm/icons/zap.mjs:
+lucide/dist/esm/lucide.mjs:
+  (**
+   * @license lucide v1.70.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+*/
 </script>
 </body></html>
