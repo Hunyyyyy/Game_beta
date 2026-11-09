@@ -26,3 +26,6 @@ export function campPercent(buildingId: number, level: number, stat: CampStat): 
   for (let l = 2; l <= level; l++) if (campPicks(buildingId, l).includes(stat)) n++;
   return n * CAMP_PCT;
 }
+
+/** The stats the Lều họp chiến raises for every soldier of ours, and the percent each level from 2 adds (upgrades.json warTent). */
+export const TENT_PCT = cfg.warTent.pct as Partial<Record<'hp' | 'atk' | 'defm' | 'defr', number>>;

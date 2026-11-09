@@ -190,8 +190,9 @@ export class Sim {
   /** War sound: whether enough of our soldiers have seen the enemy and are attacking (the sting plays each time it turns on), when that was last true, and when it was last worked out. Reset when the war ends. */
   /** Sounds waiting for the UI (a blow landed, an arrow hit): the renderer plays and empties them. Never saved. */
   /** Warnings for the sound (a pack of wolves comes, a village raids us): the UI plays and empties them. Never saved. */
-  alerts: Array<'wolf' | 'raid' | 'beast' | 'clear'> = [];
-  addAlert(kind: 'wolf' | 'raid' | 'beast' | 'clear'): void { if (this.alerts.length < 8) this.alerts.push(kind); }
+  alerts: Array<{ kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era'; text: string }> = [];
+  /** Something the player must notice at once (the screen shows `text` as a toast; wolves, raids, beasts and the end of an event also make a sound). */
+  addAlert(kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era', text = ''): void { if (this.alerts.length < 8) this.alerts.push({ kind, text }); }
   sfx: Array<{ weapon: string; ranged: boolean; x: number; y: number }> = [];
   /** War sound: the soldiers that have seen the enemy so far, how many of them are not yet counted into a sting, and how many stings have been due. */
   warSeenIds = new Set<number>();

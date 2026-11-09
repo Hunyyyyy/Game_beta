@@ -1,7 +1,7 @@
 /** The stats of everyone who is a person (src/data/stats.json): base × personal factor × tier × (1 + research / 100). Each stat stands alone. */
 import cfg from '../data/stats.json';
 import cfgDiff from '../content/difficulty.json';
-import { CAMP_KINDS, campPercent, CampStat } from './upgradebonus';
+import { CAMP_KINDS, campPercent, CampStat, TENT_PCT } from './upgradebonus';
 import { CRAFTED_WEAPONS, cycleOf, RULES, WeaponDef } from './combat';
 import { FORMATIONS, FormationId } from './formations';
 import { roleOf } from './jobs';
@@ -56,13 +56,21 @@ export function campBonus(sim: Sim, v: Villager, stat: CampStat): number {
   return b && b.level > 1 ? campPercent(b.id, b.level, stat) : 0;
 }
 
+/** What the Lều họp chiến adds to every soldier of ours (percent): its share for each level it has been raised to above the first. */
+export function tentBonus(sim: Sim, v: Villager, stat: StatId): number {
+  const per = (TENT_PCT as Record<string, number | undefined>)[stat];
+  if (!per || v.team !== 'player' || v.job !== 'fight') return 0;
+  const t = sim.building?.('wartent');
+  return t && t.level > 1 ? per * (t.level - 1) : 0;
+}
+
 /** One stat of a person now. A village that went short at the last meal is weaker in every stat but the most health (health only heals slower, see tickVillager). */
 export function statValue(sim: Sim, v: Villager, stat: StatId): number {
   const role = v.team === 'player' ? treeRole(v) : null;
   const tier = role && TREE_ROLES[role] ? soldierTier(sim.researched, role) : 1;
   const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
   const squad = v.team === 'player' && v.squad >= 0 ? sim.squads.find((q) => q.id === v.squad) : undefined;
-  const bonus = (stat === 'hp' || stat === 'atk' ? campBonus(sim, v, stat) : 0) + (v.team !== 'player' ? sim.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ''), stat) : 0);
+  const bonus = (stat === 'hp' || stat === 'atk' ? campBonus(sim, v, stat) : 0) + tentBonus(sim, v, stat) + (v.team !== 'player' ? sim.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ''), stat) : 0);
   // the research of the war: Hành quân adds on the march and at rest, Kế hoạch chiến đấu while fighting (the soldiers of the three arms only)
   const mode = role === 'foot' || role === 'cavalry' || role === 'archer' ? sim.warMode?.(v) ?? null : null;
   const warBonus = mode ? statBonus(sim.researched, `${mode === 'fight' ? 'plan' : 'march'}_${role}`, stat) : 0;

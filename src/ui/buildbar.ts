@@ -1,4 +1,4 @@
-import { CAMP_KINDS, CAMP_PCT, campPicks } from '../sim/upgradebonus';
+import { CAMP_KINDS, CAMP_PCT, campPicks, TENT_PCT } from '../sim/upgradebonus';
 import { BUILDINGS, Building, BuildingKind, canGrow, gatherMult, levelCapByFire, levelDef, maxHp, maxLevel, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
 import { ROLES, roleOf } from '../sim/jobs';
@@ -79,6 +79,7 @@ export class BuildingBar {
       const names = { hp: 'Máu', atk: 'Sát thương', aspd: 'Tốc đánh' } as const;
       out.push(`▲ Lính của nhà này: ${campPicks(b.id, b.level + 1).map((st) => `${names[st]} +${CAMP_PCT}%`).join(', ')}`);
     }
+    if (kind === 'wartent') out.push(`▲ Mọi lính của làng: Máu +${TENT_PCT.hp}%, Sát thương +${TENT_PCT.atk}%, Phòng thủ cận chiến +${TENT_PCT.defm}%, Phòng thủ tầm xa +${TENT_PCT.defr}%`);
     if (!out.length) out.push('Nâng cấp làm công trình bền và đẹp hơn.');
     return out;
   }

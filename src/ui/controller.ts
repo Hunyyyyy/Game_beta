@@ -66,7 +66,7 @@ export class Controller {
   private left: { x: number; y: number; moved: boolean } | null = null;
   private right: { x: number; y: number; moved: boolean } | null = null;
   // touch
-  private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; px: number; py: number }>();
+  private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; px: number; py: number; /** Chọn nhiều: decided at the first drag, true when the finger was held a moment first (then it draws the box, else it moves the map) */ boxing?: boolean }>();
   private gesture: { dist: number; mid: { x: number; y: number }; acc: number } | null = null;
   private tapDead = false;
   /** The finger that went down while placing started on the building being placed: it drags the building, not the map. */
@@ -123,7 +123,8 @@ export class Controller {
       t.x = p.x; t.y = p.y;
       if (this.touches.size >= 2) { this.moveGesture(); return; }
       if (Math.hypot(t.x - t.sx, t.y - t.sy) > 10) {
-        if (this.multi) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
+        if (this.multi && t.boxing === undefined) t.boxing = performance.now() - t.t >= 200; // Chọn nhiều: touch and hold a moment, then drag, to draw the box; a quick swipe still moves the map
+        if (this.multi && t.boxing) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
         else if (this.placing && this.dragGhost) { if (this.isFenceLine()) this.dragFence(p); else this.placeAt = this.originAt(p); } // a finger that started on the building being placed or moved drags it (fence: it lays a row)
         else { // one finger dragging the ground (also while placing, away from the building) moves the map (a tap still gives the order); two fingers still pinch to zoom
           this.cam.x -= (t.x - t.px) / this.cam.zoom; this.cam.y -= (t.y - t.py) / this.cam.zoom; this.clamp(); this.tapDead = true;
@@ -485,8 +486,6 @@ export class Controller {
     const w = this.r.screenToWorld(p.x, p.y);
     let ids = [...this.selected];
     if (ids.every((id) => this.sim.scouts.some((m) => m.ids.includes(id)))) { this.onToast(ids.length > 1 ? 'Các trinh sát đang làm nhiệm vụ: đợi họ về' : 'Trinh sát đang làm nhiệm vụ: đợi họ về'); return; }
-    const worn = ids.filter((id) => { const o = this.sim.get(id); return !!o && this.sim.sleepLocked(o); });
-    if (worn.length === ids.length) { this.onToast(ids.length > 1 ? 'Họ đang ngủ say, chưa gọi dậy được' : `${this.sim.get(ids[0])?.name} đang ngủ say, chưa gọi dậy được`); return; }
     // an enemy, an animal or a carcass under the cursor beats ground orders
     const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
     if (seen) {
@@ -549,7 +548,7 @@ export class Controller {
 
   selectAll(): void { this.sim.villagers.forEach((v) => { if (v.inside === null) this.selected.add(v.id); }); this.selectedBuilding = null; this.onChange(); }
   clearSelection(): void { this.selected.clear(); this.selectedBuilding = null; this.inspect = null; this.onChange(); }
-  setMulti(on: boolean): void { this.multi = on; this.box = null; this.onChange(); }
+  setMulti(on: boolean): void { this.multi = on; this.box = null; if (on) this.onToast('Chọn nhiều: chạm giữ một chút rồi kéo để chọn vùng; vuốt nhanh để di chuyển bản đồ'); this.onChange(); }
 
   // ---------------------------------------------------------------- camera
   centerOn(wx: number, wy: number): void {

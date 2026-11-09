@@ -48,6 +48,8 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
 
   if (v.breaks && sim.breakBrain(v, dt)) return true; // hacking down a tree or an enemy work in a war
   const fighter = isFighter(v);
+  // a hunter is no soldier: with the village under attack he runs home and hides like the villagers (unless the player sent him somewhere: that order was handled above)
+  if (v.job === 'hunt' && v.inside === null && v.phase !== 'sleep' && v.phase !== 'goHome' && scanNow && sim.attackReason() !== null && !v.fight.obey) { startFlee(sim, v, 8, threats[0]); return true; }
   if (!fighter) {
     // Civilians do not fight: anything hostile within sight sends them running to the campfire
     if (threats.length && threats[0].d < FEAR && v.phase !== 'fight') { startFlee(sim, v, 8, threats[0]); return true; }
@@ -76,6 +78,9 @@ function fleeSpot(sim: Sim, v: Villager, from?: { x: number; y: number }): Step[
   const spot = sim.nearestFree(Math.floor(gx), Math.floor(gy), new Set());
   return spot ? sim.pathTo(v, spot[0], spot[1], 4000) : [];
 }
+
+/** Who runs into a house when it is dangerous: the villagers and the hunters (soldiers retreat to the fire or a comrade). */
+const shelters = (v: Villager): boolean => !isFighter(v) || v.job === 'hunt';
 
 /** How near a danger must be for a civilian to run from it, in tiles. */
 const FEAR = PLAYER.fear;
@@ -128,13 +133,13 @@ export function startFlee(sim: Sim, v: Villager, secs: number, from?: { x: numbe
   v.phase = 'flee'; v.fleeT = secs;
   // a civilian runs into the house of his trade (the Nhà dân if he has none) and hides there until it is safe again; with no bed free he runs on.
   // Soldiers and hunters who retreat run to the fire or to a comrade
-  if (!isFighter(v)) { sim.dangerAt = sim.time; if (runToRefuge(sim, v)) return; v.path = from ? runAway(sim, v, from) : fleeSpot(sim, v); return; }
+  if (shelters(v)) { sim.dangerAt = sim.time; if (runToRefuge(sim, v)) return; v.path = from ? runAway(sim, v, from) : fleeSpot(sim, v); return; }
   v.path = fleeSpot(sim, v, from);
 }
 
 function fleeBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {
   if (v.phase !== 'flee') { startFlee(sim, v, 8, threats[0]); return true; }
-  const civilian = !isFighter(v), refuge = civilian && v.target >= 0 ? sim.getBuilding(v.target) : undefined;
+  const civilian = shelters(v), refuge = civilian && v.target >= 0 ? sim.getBuilding(v.target) : undefined;
   if (civilian) sim.dangerAt = sim.time;
   if (refuge && refuge.done) {
     const d = BUILDINGS[refuge.kind];

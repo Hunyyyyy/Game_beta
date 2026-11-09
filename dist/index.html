@@ -3994,6 +3994,25 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   z-index: 2;
 }
 
+.daybar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+.daybar canvas {
+  width: 88px;
+  height: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--ring);
+}
+.daybar small {
+  font-size: 0.62rem;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
 @media (max-height: 480px) {
   body {
     font-size: 12px;
@@ -4072,6 +4091,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       <span class="res" id="rPop" title="Số dân"><i style="background:#e8c4a0"></i><b>0</b><small>/40</small></span>
     </div>
     <button class="sm speedbtn" id="btnSpeed" title="Tốc độ game: bấm để đổi 1× → 2× → 4× → 16× rồi về 1× (Q E R T chọn nhanh, P tạm dừng)">1×</button>
+    <div class="daybar" id="daybar" title="Thời gian trong ngày: thanh sáng là ban ngày, thanh tối là đêm; vạch trắng là bây giờ"><canvas id="daybarCanvas" width="132" height="18"></canvas><small id="daybarText"></small></div>
     <button class="sm" id="btnSkip" title="Tua qua đêm: chạy nhanh tới sáng, chỉ khi cả làng đã ngủ và không ai tấn công; dừng ngay nếu có chuyện" hidden>⏭ Qua đêm</button>
     <button class="sm" id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
     <span class="spacer"></span>
@@ -4082,6 +4102,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   <button class="qbtn" id="btnQuest" title="Nhiệm vụ" aria-pressed="false">📜<i class="dot" hidden>!</i></button>
   <div id="qpanel" hidden></div>
   <div id="spanel" hidden></div>
+  <div id="epanel" hidden></div>
   <button class="qbtn nbtn" id="btnNotice" title="Thông báo: việc sắp tới hoặc đang diễn ra trong làng" aria-pressed="false">🔔<i class="dot" hidden>!</i></button>
   <div id="npanel" hidden></div>
   <canvas id="mini" hidden aria-label="Bản đồ nhỏ" title="Bản đồ nhỏ"></canvas>
@@ -7610,25 +7631,25 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
             6e3
           ],
           wood: [
-            120,
-            400,
-            1e3,
-            2400,
-            4800
+            180,
+            600,
+            1500,
+            3600,
+            7200
           ],
           stone: [
-            80,
-            300,
-            800,
-            2e3,
-            4e3
+            120,
+            450,
+            1200,
+            3e3,
+            6e3
           ],
           hide: [
-            20,
-            60,
-            160,
-            400,
-            800
+            40,
+            120,
+            320,
+            800,
+            1600
           ],
           coin: [
             10,
@@ -7636,6 +7657,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
             80,
             200,
             400
+          ],
+          bone: [
+            32,
+            96,
+            256,
+            640,
+            1280
           ]
         },
         ancient: {
@@ -7647,25 +7675,25 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
             18e3
           ],
           wood: [
-            360,
-            1200,
-            3e3,
-            7200,
-            14400
+            540,
+            1800,
+            4500,
+            10800,
+            21600
           ],
           stone: [
-            240,
-            900,
-            2400,
-            6e3,
-            12e3
+            360,
+            1350,
+            3600,
+            9e3,
+            18e3
           ],
           hide: [
-            60,
-            180,
-            480,
-            1200,
-            2400
+            120,
+            360,
+            960,
+            2400,
+            4800
           ],
           coin: [
             30,
@@ -7673,6 +7701,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
             240,
             600,
             1200
+          ],
+          bone: [
+            96,
+            288,
+            768,
+            1920,
+            3840
           ]
         }
       },
@@ -8735,6 +8770,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       stats: ["hp", "atk", "aspd"],
       pick: 2,
       pct: 3
+    },
+    warTent: {
+      _note: "L\u1EC1u h\u1ECDp chi\u1EBFn: m\u1ED7i c\u1EA5p t\u1EEB c\u1EA5p 2 c\u1ED9ng c\xE1c % n\xE0y cho M\u1ECCI l\xEDnh c\u1EE7a ta (m\xE1u, s\xE1t th\u01B0\u01A1ng, ph\xF2ng th\u1EE7 c\u1EADn chi\u1EBFn, ph\xF2ng th\u1EE7 t\u1EA7m xa).",
+      pct: { hp: 4, atk: 4, defm: 3, defr: 3 }
     }
   };
 
@@ -8758,6 +8797,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     for (let l = 2; l <= level; l++) if (campPicks(buildingId, l).includes(stat)) n++;
     return n * CAMP_PCT;
   }
+  var TENT_PCT = upgrades_default.warTent.pct;
 
   // src/data/units.json
   var units_default = {
@@ -9134,12 +9174,18 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const b = sim2.building?.(kind);
     return b && b.level > 1 ? campPercent(b.id, b.level, stat) : 0;
   }
+  function tentBonus(sim2, v, stat) {
+    const per = TENT_PCT[stat];
+    if (!per || v.team !== "player" || v.job !== "fight") return 0;
+    const t = sim2.building?.("wartent");
+    return t && t.level > 1 ? per * (t.level - 1) : 0;
+  }
   function statValue(sim2, v, stat) {
     const role = v.team === "player" ? treeRole(v) : null;
     const tier = role && TREE_ROLES[role] ? soldierTier(sim2.researched, role) : 1;
     const mult = tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
     const squad = v.team === "player" && v.squad >= 0 ? sim2.squads.find((q) => q.id === v.squad) : void 0;
-    const bonus = (stat === "hp" || stat === "atk" ? campBonus(sim2, v, stat) : 0) + (v.team !== "player" ? sim2.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim2.researched, role, stat) : 0) + (squad ? statBonus(sim2.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ""), stat) : 0);
+    const bonus = (stat === "hp" || stat === "atk" ? campBonus(sim2, v, stat) : 0) + tentBonus(sim2, v, stat) + (v.team !== "player" ? sim2.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim2.researched, role, stat) : 0) + (squad ? statBonus(sim2.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ""), stat) : 0);
     const mode = role === "foot" || role === "cavalry" || role === "archer" ? sim2.warMode?.(v) ?? null : null;
     const warBonus = mode ? statBonus(sim2.researched, `${mode === "fight" ? "plan" : "march"}_${role}`, stat) : 0;
     const hunger = v.team === "player" && stat !== "hp" ? (1 - sim2.foodPenalty) * (1 - sim2.tiredPenalty(v)) : 1;
@@ -116967,7 +117013,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       start: { file: "battle/battle_start.mp3", volume: 0.7 }
     },
     wolves: { files: ["envairoment/wolf_1.mp3", "envairoment/wolf_2.mp3", "envairoment/wolf_3.mp3"], volume: 0.5, maxHowls: 3, from: 0.03, to: 0.3, spacing: 0.07 },
-    peace: { volume: 0.5, firstDelay: 3, gapMin: 120, gapMax: 300 },
+    peace: { volume: 0.5, firstDelay: 3, gapMin: 15, gapMax: 45 },
     fade: 1.5
   };
 
@@ -118181,6 +118227,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.peaceEl = null;
       /** The music of a lost war while it plays: the peace music keeps quiet until it is over (setPeace). */
       this.lostEl = null;
+      /** An event (a raid, a pack of beasts) is on at the village: the war music plays, whether or not the fight is on screen, and the peace music keeps quiet. Set every frame by main. */
+      this.fightOn = false;
       this.peaceVol = 0;
       /** Seconds until the peace music may start (counted down while it is quiet). */
       this.peaceWait = sounds_default.peace.firstDelay;
@@ -118331,7 +118379,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     /** A warning from the game: wolves come (a howl, always heard, wherever the camera is) or a village raids us (the battle sting, once). */
     alert(kind) {
       const now = performance.now() / 1e3;
+      if (kind === "notice") return;
       if (kind === "raid" || kind === "beast") this.play(sounds_default.war.start.file, sounds_default.war.start.volume, 0, now, false, "mus", "raidalert");
+      else if (kind === "era") this.play(sounds_default.end.won.files[1] ?? sounds_default.end.won.files[0], sounds_default.end.won.volume, 0, now, false, "mus", "eraup");
       else if (kind === "clear") this.play(sounds_default.end.won.files[0], sounds_default.end.won.volume, 0, now, false, "mus", "eventover");
       else {
         const w = sounds_default.wolves;
@@ -118483,7 +118533,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       if (this.hidden) return;
       if (this.warAge > 0.5) {
         this.warScreen = false;
-        this.warTrack = null;
+        if (!this.fightOn) this.warTrack = null;
         this.stingsDone = 0;
       }
       const w = WEATHER2[kind], want = /* @__PURE__ */ new Map();
@@ -118503,7 +118553,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         if (l && this.vol.sfx > 0) want.set(l.file, l.volume * sounds_default.master * this.vol.sfx);
       }
       this.nearNow.clear();
-      if (this.musicOn && this.warScreen) {
+      if (this.musicOn && (this.warScreen || this.fightOn)) {
         this.warTrack ?? (this.warTrack = bagPick("war", musics_gen_default.war));
         want.set(this.warTrack, sounds_default.war.music.volume * sounds_default.master * this.vol.mus);
       }
@@ -120624,6 +120674,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         }
       ]
     },
+    reward: {
+      raidMult: 1,
+      beastMult: 0.6,
+      perHead: { food: 8, wood: 4, stone: 3, hide: 3, bone: 2 }
+    },
     hostile: {
       fromDay: 18,
       raidEveryDays: 8,
@@ -121155,7 +121210,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     });
     t.angryUntil = sim2.time + 400;
     const arch = picks.filter((g) => armOfWeapon(g.weapon) === "archer").length;
-    sim2.addAlert("raid");
+    sim2.addAlert("raid", `Qu\xE2n ${t.def.name} (${n} ng\u01B0\u1EDDi) \u0111ang k\xE9o t\u1EDBi l\xE0ng!`);
     sim2.say(`Qu\xE2n ${t.def.name} (${n} ng\u01B0\u1EDDi${sim2.mapLevel(t.id) >= 3 ? `: ${arch} cung th\u1EE7, ${n - arch} b\u1ED9 binh` : ""}) \u0111ang ti\u1EBFn v\xE0o l\xE0ng!`);
   }
   function launchCustomRaid(sim2, t, weapons, armor, angers = true, night) {
@@ -121179,7 +121234,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       f.health = f.maxHealth;
     });
     t.angryUntil = sim2.time + 400;
-    sim2.addAlert("raid");
+    sim2.addAlert("raid", `Qu\xE2n ${t.def.name} (${weapons.length} ng\u01B0\u1EDDi) \u0111ang k\xE9o t\u1EDBi l\xE0ng!`);
     sim2.say(`Qu\xE2n ${t.def.name} (${weapons.length} ng\u01B0\u1EDDi) \u0111ang ti\u1EBFn v\xE0o l\xE0ng!`);
   }
   function launchBeasts(sim2, size, species = "wolf", night) {
@@ -121196,7 +121251,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       placed++;
     }
     sim2.nextRaid++;
-    if (placed) sim2.addAlert(species === "wolf" ? "wolf" : "beast");
+    if (placed) sim2.addAlert(species === "wolf" ? "wolf" : "beast", `${species === "wolf" ? "B\u1EA7y s\xF3i" : ANIMALS[species].name} (${placed} con) \u0111ang k\xE9o t\u1EDBi quanh l\xE0ng!`);
     if (placed) sim2.say(`${species === "wolf" ? "B\u1EA7y s\xF3i \u0111\xF3i" : `${ANIMALS[species].name} (${placed} con)`} k\xE9o t\u1EDBi quanh l\xE0ng! \u0110\u1ED1t l\u1EEDa v\xE0 gi\u1EEF d\xE2n g\u1EA7n \u0111\u1ED1ng l\u1EEDa.`);
     return placed ? herd : null;
   }
@@ -121253,14 +121308,30 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     t.nextRaidDay = sim2.day + h3.raidEveryDays;
     launchRaid(sim2, t, size);
   }
+  function rewardEvent(sim2, e) {
+    const c = events_default.reward, mult = e.kind === "raid" ? c.raidMult : c.beastMult, got = [];
+    for (const [k, per] of Object.entries(c.perHead)) {
+      const res = k, n = Math.max(1, Math.round(per * mult * e.size)), take2 = Math.max(0, Math.min(n, sim2.capacity(res) - sim2.stock[res]));
+      if (take2 <= 0) continue;
+      sim2.stock[res] += take2;
+      got.push(`${take2} ${RES_NAME[res].toLowerCase()}`);
+    }
+    return got;
+  }
   function tickEvents(sim2) {
     for (const e of sim2.events) {
       if (e.live) {
-        const over = e.kind === "beasts" ? !sim2.animals.some((a) => a.herd === e.herd && a.raid && a.hp > 0 && a.state !== "dead") : !(e.tribe && tribeOf(sim2, e.tribe)?.raid);
-        if (over) {
+        const tribe = e.tribe ? tribeOf(sim2, e.tribe) : void 0;
+        const alive2 = e.kind === "beasts" ? sim2.animals.filter((a) => a.herd === e.herd && a.raid && a.hp > 0 && a.state !== "dead").length : sim2.foes.filter((f) => f.ai?.raid === e.raidId && f.health > 0).length;
+        const over = e.kind === "beasts" ? alive2 === 0 : !tribe?.raid;
+        if (!over) e.left = alive2;
+        else {
           e.live = false;
-          sim2.say(e.kind === "beasts" ? "B\u1EA7y th\xFA \u0111\xE3 b\u1ECB \u0111\u1EA9y l\xF9i: l\xE0ng y\xEAn tr\u1EDF l\u1EA1i." : "Cu\u1ED9c t\u1EADp k\xEDch \u0111\xE3 k\u1EBFt th\xFAc.");
-          sim2.addAlert("clear");
+          const beaten = e.kind === "beasts" ? sim2.animals.some((a) => a.herd === e.herd && a.state === "dead") : (e.left ?? 1) === 0;
+          const got = beaten ? rewardEvent(sim2, e) : [];
+          const text = beaten ? `\u0110\xE3 \u0111\u1EA9y l\xF9i ${e.kind === "beasts" ? "b\u1EA7y th\xFA" : "qu\xE2n t\u1EADp k\xEDch"}!${got.length ? ` Thu \u0111\u01B0\u1EE3c ${got.join(", ")}.` : ""}` : e.kind === "beasts" ? "B\u1EA7y th\xFA \u0111\xE3 b\u1ECF \u0111i: l\xE0ng y\xEAn tr\u1EDF l\u1EA1i." : "Qu\xE2n t\u1EADp k\xEDch \u0111\xE3 r\xFAt lui.";
+          sim2.say(text);
+          sim2.addAlert("clear", text);
         }
       }
       if (e.fired) continue;
@@ -121274,6 +121345,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       if (!e.warned && sim2.day >= e.warnDay && sim2.tod >= 0.3) {
         e.warned = true;
         sim2.say(e.warn);
+        sim2.addAlert("notice", `S\u1EAFp c\xF3 bi\u1EBFn c\u1ED1: ${e.warn}`);
       }
       if (sim2.day < e.fireDay) continue;
       const ready = e.night ? sim2.restTime : sim2.tod >= 0.28 && !sim2.restTime;
@@ -121291,6 +121363,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           if (raidAdvised(sim2, t, e.size) || e.fireDay >= e.warnDay + 4) {
             e.army ? launchCustomRaid(sim2, t, armyWeapons(e.army), e.armor ?? true, false, e.night) : launchRaid(sim2, t, e.size, e.night);
             e.live = !!t.raid;
+            e.raidId = t.raid?.id;
+            e.left = e.size;
           } else {
             e.fired = false;
             e.fireDay = sim2.day + 1;
@@ -121912,6 +121986,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (b.kind === "campfire" && b.level >= BUILDINGS.campfire.levels.stone.length + 1 && sim2.era !== "ancient") {
       setEra(sim2, "ancient");
       sim2.resetTribes();
+      sim2.addAlert("era", "Th\u1EDDi Trung c\u1ED5 b\u1EAFt \u0111\u1EA7u!");
       sim2.say("Nh\xE0 chung \u0111\xE3 th\xE0nh Nh\xE0 ch\xEDnh: th\u1EDDi Trung c\u1ED5 b\u1EAFt \u0111\u1EA7u! C\xE1c nh\xE0 c\u1EA5p 4 c\xF3 th\u1EC3 n\xE2ng l\xEAn c\u1EA5p trung c\u1ED5, c\xF3 th\xEAm nghi\xEAn c\u1EE9u m\u1EDBi, v\xE0 kh\xF4ng c\xF2n \u0111\xE1nh nhanh.");
     }
   }
@@ -122562,6 +122637,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const house = !!sim2.building("builder");
     let sites = sim2.buildings.filter((b) => needsWork(b) && (house || b.kind === "builder") && onSite(b) < 3);
     sites.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) || Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
+    if (!sites.length && house) {
+      const hurt2 = sim2.buildings.filter((b) => b.done && !b.upgrading && !b.repairing && b.hp < maxHp(b) - 0.5 && sim2.canRepair(b) === null).sort((a, b) => a.hp / maxHp(a) - b.hp / maxHp(b));
+      if (hurt2.length && sim2.repairBuilding(hurt2[0].id) === null) sites = [hurt2[0]];
+    }
     sites = sites.slice(0, 2);
     for (const b of sites) {
       const d = BUILDINGS[b.kind];
@@ -123130,13 +123209,15 @@ ${risk.lines.join("\n")}`);
     if (c && c.t === sim2.time) return c.why;
     let why = null;
     const raid = sim2.tribes.find((t) => t.raid && t.raid.phase === "march");
-    if (raid) why = `${raid.def.name} \u0111ang ti\u1EBFn v\xE0o l\xE0ng`;
-    else {
-      const fire = sim2.campfire(), cx = fire ? fire.x + 1 : sim2.world.start.x, cy = fire ? fire.y + 1 : sim2.world.start.y;
+    const fire = sim2.campfire(), cx = fire ? fire.x + 1 : sim2.world.start.x, cy = fire ? fire.y + 1 : sim2.world.start.y;
+    if (raid) {
+      const near2 = Math.min(Infinity, ...sim2.foes.filter((f) => f.ai?.raid === raid.raid.id && f.health > 0).map((f) => Math.hypot(f.x - cx, f.y - cy)));
+      why = `${raid.def.name} \u0111ang ti\u1EBFn v\xE0o l\xE0ng${Number.isFinite(near2) ? ` (c\xF2n kho\u1EA3ng ${Math.round(near2)} \xF4, c\xF3 th\u1EC3 ch\u01B0a th\u1EA5y)` : ""}`;
+    } else {
       const beast = sim2.animals.find((a) => a.state === "attack" && (a.target?.kind === "unit" || a.siege !== void 0) && Math.hypot(a.x - cx, a.y - cy) < 30);
       if (beast) why = beast.siege !== void 0 ? "Th\xFA d\u1EEF \u0111ang ph\xE1 nh\xE0" : "Th\xFA d\u1EEF \u0111ang t\u1EA5n c\xF4ng ng\u01B0\u1EDDi g\u1EA7n l\xE0ng";
       else if (sim2.animals.some((a) => a.raid && a.state !== "dead" && Math.hypot(a.x - cx, a.y - cy) < 45)) why = "B\u1EA7y th\xFA \u0111ang k\xE9o t\u1EDBi l\xE0ng";
-      else if (sim2.foes.some((f) => f.ai?.role === "raider" && f.health > 0 && Math.hypot(f.x - cx, f.y - cy) < 40)) why = "\u0110\u1ECBch \u0111ang \u1EDF quanh l\xE0ng";
+      else if (sim2.foes.some((f) => f.ai?.role === "raider" && f.health > 0 && Math.hypot(f.x - cx, f.y - cy) < 18 && sim2.tribes.find((t) => t.id === f.team)?.raid?.phase === "march")) why = "\u0110\u1ECBch \u0111ang \u1EDF quanh l\xE0ng";
     }
     attackCache.set(sim2, { t: sim2.time, why });
     if (why) sim2.dangerAt = sim2.time;
@@ -123155,7 +123236,7 @@ ${risk.lines.join("\n")}`);
   var civilian = (v) => v.job !== "fight" && v.job !== "hunt" && v.job !== "scout" && v.job !== "supply";
   var SAFE_AFTER = 30;
   function hides(sim2, v) {
-    return v.inside !== null && v.phase === "sleep" && (civilian(v) && (attackReason(sim2) !== null || sim2.time - sim2.dangerAt < SAFE_AFTER) || quartered(sim2, v));
+    return v.inside !== null && v.phase === "sleep" && ((civilian(v) || v.job === "hunt") && (attackReason(sim2) !== null || sim2.time - sim2.dangerAt < SAFE_AFTER) || quartered(sim2, v));
   }
   function sleepLocked(sim2, v) {
     if (hides(sim2, v)) return false;
@@ -124503,7 +124584,9 @@ ${risk.lines.join("\n")}`);
     v.fleeT = 0;
   }
   function mine(sim2, ids) {
-    return ids.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.team === "player" && v.down <= 0 && !sim2.sleepLocked(v) && !sim2.scouts.some((m) => m.ids.includes(v.id)));
+    const out = ids.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.team === "player" && v.down <= 0 && !sim2.scouts.some((m) => m.ids.includes(v.id)));
+    for (const v of out) if (v.lockUntil > 0) v.lockUntil = 0;
+    return out;
   }
   function busy(sim2, v) {
     return v.phase !== "idle" || v.path.length > 0 || v.fight.mode !== "none";
@@ -124542,6 +124625,7 @@ ${risk.lines.join("\n")}`);
       if (v.job === "fight") sim2.pathLeft--;
       v.path = sim2.pathTo(v, goal[0], goal[1], 3e4);
       v.phase = v.path.length ? "move" : "idle";
+      if (v.job === "fight" && v.path.length) v.fight.obey = true;
     }
   }
   function callWorker(sim2, tx, ty) {
@@ -125266,6 +125350,10 @@ ${risk.lines.join("\n")}`);
     if (v.phase === "flee" || v.fleeT > 0) return fleeBrain(sim2, v, dt, threats);
     if (v.breaks && sim2.breakBrain(v, dt)) return true;
     const fighter = isFighter(v);
+    if (v.job === "hunt" && v.inside === null && v.phase !== "sleep" && v.phase !== "goHome" && scanNow && sim2.attackReason() !== null && !v.fight.obey) {
+      startFlee(sim2, v, 8, threats[0]);
+      return true;
+    }
     if (!fighter) {
       if (threats.length && threats[0].d < FEAR && v.phase !== "fight") {
         startFlee(sim2, v, 8, threats[0]);
@@ -125300,6 +125388,7 @@ ${risk.lines.join("\n")}`);
     const spot = sim2.nearestFree(Math.floor(gx), Math.floor(gy), /* @__PURE__ */ new Set());
     return spot ? sim2.pathTo(v, spot[0], spot[1], 4e3) : [];
   }
+  var shelters = (v) => !isFighter(v) || v.job === "hunt";
   var FEAR = PLAYER.fear;
   function crowd(sim2, b, except) {
     let n = 0;
@@ -125343,7 +125432,7 @@ ${risk.lines.join("\n")}`);
     if (v.fight.mode === "attack") v.fight.mode = "none";
     v.phase = "flee";
     v.fleeT = secs;
-    if (!isFighter(v)) {
+    if (shelters(v)) {
       sim2.dangerAt = sim2.time;
       if (runToRefuge(sim2, v)) return;
       v.path = from ? runAway(sim2, v, from) : fleeSpot(sim2, v);
@@ -125356,7 +125445,7 @@ ${risk.lines.join("\n")}`);
       startFlee(sim2, v, 8, threats[0]);
       return true;
     }
-    const civilian2 = !isFighter(v), refuge = civilian2 && v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
+    const civilian2 = shelters(v), refuge = civilian2 && v.target >= 0 ? sim2.getBuilding(v.target) : void 0;
     if (civilian2) sim2.dangerAt = sim2.time;
     if (refuge && refuge.done) {
       const d = BUILDINGS[refuge.kind];
@@ -128246,7 +128335,13 @@ ${risk.lines.join("\n")}`);
     if (!b) return false;
     const box = breakBox(sim2, b);
     if (!box) {
+      const next = b.then;
       stopBreaking(v);
+      if (next && breakBox(sim2, next)) {
+        v.breaks = next;
+        v.progress = 0;
+        return true;
+      }
       return false;
     }
     v.fight.chaseT = 0;
@@ -128286,8 +128381,21 @@ ${risk.lines.join("\n")}`);
       sim2.pathLeft--;
       v.fight.repath = 1;
       if (sim2.routeTo(v, sim2.ringTiles(v, box.x, box.y, box.w, box.h), 3) < 0) {
+        const orig = b.ordered ? b.then ?? b : null;
         stopBreaking(v);
-        if (b.kind === "prop") breachFor(sim2, v, box.x + box.w / 2, box.y + box.h / 2);
+        if (b.kind === "prop" && breachFor(sim2, v, box.x + box.w / 2, box.y + box.h / 2)) {
+          if (orig && v.breaks) {
+            v.breaks.ordered = true;
+            v.breaks.then = orig;
+          }
+          return true;
+        }
+        if (orig) {
+          v.breaks = orig;
+          v.progress = 0;
+          v.fight.repath = 3;
+          return true;
+        }
         return false;
       }
     }
@@ -129237,8 +129345,9 @@ ${risk.lines.join("\n")}`);
       this.world.onChunk = (cx, cy) => populateChunk(this, cx, cy);
       spawnTribes(this);
     }
-    addAlert(kind) {
-      if (this.alerts.length < 8) this.alerts.push(kind);
+    /** Something the player must notice at once (the screen shows `text` as a toast; wolves, raids, beasts and the end of an event also make a sound). */
+    addAlert(kind, text = "") {
+      if (this.alerts.length < 8) this.alerts.push({ kind, text });
     }
     /** True for a selected villager who is on his way to a spot the player ordered: the fighting and fleeing of the brain wait until he gets there or is let go. */
     underOrders(v) {
@@ -130540,6 +130649,74 @@ ${risk.lines.join("\n")}`);
     }
   };
 
+  // src/ui/eradialog.ts
+  function confetti(ms = 3600) {
+    const cv = document.createElement("canvas");
+    cv.style.cssText = "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:200";
+    cv.width = window.innerWidth;
+    cv.height = window.innerHeight;
+    document.body.append(cv);
+    const c = cv.getContext("2d"), colors2 = ["#f6c343", "#e8553d", "#4cb5ae", "#7a6ff0", "#f28ab2", "#8bd450"];
+    const bits = Array.from({ length: 140 }, () => ({
+      x: cv.width / 2 + (Math.random() - 0.5) * cv.width * 0.3,
+      y: cv.height * 0.35,
+      vx: (Math.random() - 0.5) * 9,
+      vy: -3 - Math.random() * 8,
+      s: 4 + Math.random() * 5,
+      a: Math.random() * 6,
+      va: (Math.random() - 0.5) * 0.4,
+      col: colors2[Math.floor(Math.random() * colors2.length)]
+    }));
+    const t0 = performance.now();
+    const step2 = (now) => {
+      const t = now - t0;
+      if (t > ms) {
+        cv.remove();
+        return;
+      }
+      c.clearRect(0, 0, cv.width, cv.height);
+      c.globalAlpha = Math.min(1, (ms - t) / 800);
+      for (const b of bits) {
+        b.vy += 0.22;
+        b.vx *= 0.995;
+        b.x += b.vx;
+        b.y += b.vy;
+        b.a += b.va;
+        c.save();
+        c.translate(b.x, b.y);
+        c.rotate(b.a);
+        c.fillStyle = b.col;
+        c.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2);
+        c.restore();
+      }
+      requestAnimationFrame(step2);
+    };
+    requestAnimationFrame(step2);
+  }
+  var EraDialog = class {
+    constructor(root) {
+      this.win = new GameDialog(root, {});
+    }
+    show() {
+      const close = () => this.win.hide();
+      this.win.show(dlg.card(
+        { label: "Chuy\u1EC3n th\u1EDDi k\u1EF3" },
+        dlg.head({ pic: "\u{1F3F0}", title: "Ch\xFAc m\u1EEBng! Th\u1EDDi Trung c\u1ED5 b\u1EAFt \u0111\u1EA7u", sub: "Nh\xE0 chung \u0111\xE3 th\xE0nh Nh\xE0 ch\xEDnh", onClose: close }),
+        dlg.text("L\xE0ng c\u1EE7a b\u1EA1n \u0111\xE3 b\u01B0\u1EDBc sang m\u1ED9t th\u1EDDi \u0111\u1EA1i m\u1EDBi. Nh\u1EEFng \u0111i\u1EC1u m\u1EDBi \u0111ang ch\u1EDD:"),
+        h(
+          "ul",
+          { class: "dtext" },
+          h("li", { text: "C\xE1c nh\xE0 c\u1EA5p 4 c\xF3 th\u1EC3 n\xE2ng l\xEAn c\u1EA5p trung c\u1ED5." }),
+          h("li", { text: "C\xF3 th\xEAm nghi\xEAn c\u1EE9u v\xE0 c\xF4ng tr\xECnh m\u1EDBi." }),
+          h("li", { text: "C\xE1c l\xE0ng th\u1EDDi \u0111\u1ED3 \u0111\xE1 bi\u1EBFn m\u1EA5t, l\xE0ng m\u1EDBi xu\u1EA5t hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3." }),
+          h("li", { text: "Chi\u1EBFn tranh kh\xF4ng c\xF2n \u0111\xE1nh nhanh: h\xE3y l\u1EADp k\u1EBF ho\u1EA1ch k\u1EF9." })
+        ),
+        dlg.button("Ti\u1EBFp t\u1EE5c", close)
+      ));
+      confetti();
+    }
+  };
+
   // src/ui/resicons.ts
   var O = "#2b1d10";
   var S = `stroke="${O}" stroke-width=".9" stroke-linejoin="round"`;
@@ -130959,7 +131136,8 @@ ${risk.lines.join("\n")}`);
           return;
         }
         if (Math.hypot(t.x - t.sx, t.y - t.sy) > 10) {
-          if (this.multi) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
+          if (this.multi && t.boxing === void 0) t.boxing = performance.now() - t.t >= 200;
+          if (this.multi && t.boxing) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
           else if (this.placing && this.dragGhost) {
             if (this.isFenceLine()) this.dragFence(p);
             else this.placeAt = this.originAt(p);
@@ -131532,14 +131710,6 @@ ${risk.lines.join("\n")}`);
         this.onToast(ids.length > 1 ? "C\xE1c trinh s\xE1t \u0111ang l\xE0m nhi\u1EC7m v\u1EE5: \u0111\u1EE3i h\u1ECD v\u1EC1" : "Trinh s\xE1t \u0111ang l\xE0m nhi\u1EC7m v\u1EE5: \u0111\u1EE3i h\u1ECD v\u1EC1");
         return;
       }
-      const worn = ids.filter((id) => {
-        const o = this.sim.get(id);
-        return !!o && this.sim.sleepLocked(o);
-      });
-      if (worn.length === ids.length) {
-        this.onToast(ids.length > 1 ? "H\u1ECD \u0111ang ng\u1EE7 say, ch\u01B0a g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c" : `${this.sim.get(ids[0])?.name} \u0111ang ng\u1EE7 say, ch\u01B0a g\u1ECDi d\u1EADy \u0111\u01B0\u1EE3c`);
-        return;
-      }
       const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
       if (seen) {
         const noHunter = "Ch\u1EC9 Th\u1EE3 s\u0103n ho\u1EB7c chi\u1EBFn binh m\u1EDBi s\u0103n th\xFA: d\xE2n \u0111\xE3 c\xF3 ngh\u1EC1 kh\xE1c ch\u1EC9 \u0111\u1ED5i ngh\u1EC1 \u1EDF c\xF4ng tr\xECnh c\u1EE7a ngh\u1EC1 \u0111\xF3";
@@ -131631,6 +131801,7 @@ ${risk.lines.join("\n")}`);
     setMulti(on) {
       this.multi = on;
       this.box = null;
+      if (on) this.onToast("Ch\u1ECDn nhi\u1EC1u: ch\u1EA1m gi\u1EEF m\u1ED9t ch\xFAt r\u1ED3i k\xE9o \u0111\u1EC3 ch\u1ECDn v\xF9ng; vu\u1ED1t nhanh \u0111\u1EC3 di chuy\u1EC3n b\u1EA3n \u0111\u1ED3");
       this.onChange();
     }
     // ---------------------------------------------------------------- camera
@@ -132993,6 +133164,7 @@ ${risk.lines.join("\n")}`);
         const names = { hp: "M\xE1u", atk: "S\xE1t th\u01B0\u01A1ng", aspd: "T\u1ED1c \u0111\xE1nh" };
         out.push(`\u25B2 L\xEDnh c\u1EE7a nh\xE0 n\xE0y: ${campPicks(b.id, b.level + 1).map((st) => `${names[st]} +${CAMP_PCT}%`).join(", ")}`);
       }
+      if (kind === "wartent") out.push(`\u25B2 M\u1ECDi l\xEDnh c\u1EE7a l\xE0ng: M\xE1u +${TENT_PCT.hp}%, S\xE1t th\u01B0\u01A1ng +${TENT_PCT.atk}%, Ph\xF2ng th\u1EE7 c\u1EADn chi\u1EBFn +${TENT_PCT.defm}%, Ph\xF2ng th\u1EE7 t\u1EA7m xa +${TENT_PCT.defr}%`);
       if (!out.length) out.push("N\xE2ng c\u1EA5p l\xE0m c\xF4ng tr\xECnh b\u1EC1n v\xE0 \u0111\u1EB9p h\u01A1n.");
       return out;
     }
@@ -138442,8 +138614,32 @@ ${risk.lines.join("\n")}`);
       else map.open();
     }
   });
+  var dayCanvas = $("daybarCanvas");
+  var dayText = $("daybarText");
+  var dayKey = "";
+  function drawDayBar() {
+    const tod = sim.tod, key = `${Math.floor(tod * 150)}|${sim.season}|${sim.day}|${sim.resting}`;
+    if (key === dayKey) return;
+    dayKey = key;
+    const c = dayCanvas.getContext("2d"), w = dayCanvas.width, h3 = dayCanvas.height;
+    c.clearRect(0, 0, w, h3);
+    for (let x = 0; x < w; x++) {
+      const l = lightAt(x / w, sim.season);
+      c.fillStyle = `rgb(${Math.round(24 + 214 * l)}, ${Math.round(30 + 190 * l)}, ${Math.round(70 + 90 * l)})`;
+      c.fillRect(x, 0, 1, h3);
+    }
+    const at = Math.round(tod * w);
+    c.fillStyle = "#fff";
+    c.fillRect(Math.max(0, Math.min(w - 2, at - 1)), 0, 2, h3);
+    c.font = "11px sans-serif";
+    c.textBaseline = "middle";
+    c.textAlign = at > w - 12 ? "right" : at < 12 ? "left" : "center";
+    c.fillText(sim.part === "night" || sim.part === "dusk" ? "\u263E" : "\u2600", at, h3 / 2);
+    dayText.textContent = `Ng\xE0y ${sim.day} \xB7 ${DAY_PART_NAME[sim.part]}`;
+  }
   var REGION_NAME = { plains: "\u0110\u1ED3ng b\u1EB1ng", sparse: "R\u1EEBng th\u01B0a", dense: "R\u1EEBng r\u1EADm", mountain: "N\xFAi", water: "V\xF9ng n\u01B0\u1EDBc" };
   for (const [id, key] of [["rFood", "food"], ["rWood", "wood"], ["rStone", "stone"], ["rHide", "hide"], ["rBone", "bone"], ["rFat", "fat"], ["rFeather", "feather"], ["rTusk", "tusk"], ["rTorch", "torch"], ["rCoin", "coin"], ["rPop", "pop"]]) $(id).querySelector("i")?.replaceWith(resIcon(key));
+  var eraDialog = new EraDialog($("epanel"));
   var statsOverview = new StatsOverview(ctx);
   var statsDlg = new GameDialog($("spanel"), {});
   var statsCard = dlg.card({ wide: true, label: "Ch\u1EC9 s\u1ED1 \u0111\xE3 nghi\xEAn c\u1EE9u" }, dlg.head({ pic: "\u{1F4CA}", title: "Ch\u1EC9 s\u1ED1 \u0111\xE3 nghi\xEAn c\u1EE9u", sub: "Chung cho m\u1ED7i lo\u1EA1i d\xE2n, ngh\u1EC1 v\xE0 l\xEDnh", onClose: () => statsDlg.hide() }), statsOverview.root);
@@ -138506,6 +138702,7 @@ ${risk.lines.join("\n")}`);
     $("rPop").querySelector("b").textContent = String(sim.villagers.length);
     $("rPop").querySelector("small").textContent = `/${sim.popCap()}`;
     for (const r of RES_LIST) void RES_NAME[r];
+    drawDayBar();
     const se = SEASON_DEF[sim.season], we = WEATHER[sim.weather], year = yearOf(sim.day);
     const mid = renderer.screenToWorld(renderer.w / 2, renderer.h / 2), mx = Math.floor(mid.x / TILE), my = Math.floor(mid.y / TILE);
     const region = sim.world.inBounds(mx, my) ? sim.fog.state[my * sim.world.size + mx] > 0 ? REGION_NAME[sim.world.regionAt(mx, my)] : "V\xF9ng ch\u01B0a kh\xE1m ph\xE1" : "Ngo\xE0i b\u1EA3n \u0111\u1ED3";
@@ -138594,8 +138791,13 @@ ${risk.lines.join("\n")}`);
     if (dt > 0) fps = fps * 0.9 + 1 / dt * 0.1;
     ctl.update(dt);
     audio.update(started ? sim.weather : "clear", dt);
-    audio.setPeace(started && !sim.atWar() && !sim.battle.on && !sim.tribes.some((t2) => t2.raid), dt);
-    for (const a of sim.alerts) audio.alert(a);
+    audio.fightOn = started && !sim.atWar() && (sim.tribes.some((t2) => t2.raid) || sim.events.some((e) => e.live));
+    audio.setPeace(started && !sim.atWar() && !sim.battle.on && !audio.fightOn, dt);
+    for (const a of sim.alerts) {
+      audio.alert(a.kind);
+      if (a.kind === "era") eraDialog.show();
+      else if (a.text) toast(a.text);
+    }
     sim.alerts.length = 0;
     {
       const p = started ? sim.plans.find((q) => q.kind === "attack" && q.result && q.endedAt > lastWarEnd) : void 0;

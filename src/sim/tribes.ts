@@ -108,6 +108,9 @@ export interface EventState {
   live?: boolean;
   /** beasts: the herd number of the pack, to know when the last of them is gone. */
   herd?: number;
+  /** raid: the number of the raid of the village, to count its men; and how many of them were seen alive last. */
+  raidId?: number;
+  left?: number;
 }
 
 export const tribeOf = (sim: Sim, id: Team): Tribe | undefined => sim.tribes.find((t) => t.id === id);
@@ -515,7 +518,7 @@ export function launchRaid(sim: Sim, t: Tribe, size: number, night?: boolean): v
   picks.forEach((g, i) => { g.ai!.role = 'raider'; g.ai!.raid = id; g.fight.target = null; g.path = []; g.fleeT = 0; if (!g.weapon?.startsWith('bronze')) g.weapon = i < wantArch ? (i % 2 ? 'sling' : 'bow') : melee[i % Math.max(1, melee.length)] ?? g.weapon; });
   t.angryUntil = sim.time + 400;
   const arch = picks.filter((g) => armOfWeapon(g.weapon) === 'archer').length;
-  sim.addAlert('raid');
+  sim.addAlert('raid', `Quân ${t.def.name} (${n} người) đang kéo tới làng!`);
   sim.say(`Quân ${t.def.name} (${n} người${sim.mapLevel(t.id) >= 3 ? `: ${arch} cung thủ, ${n - arch} bộ binh` : ''}) đang tiến vào làng!`);
 }
 
@@ -537,7 +540,7 @@ export function launchCustomRaid(sim: Sim, t: Tribe, weapons: string[], armor: b
     applyStats(sim, f); f.health = f.maxHealth;
   });
   t.angryUntil = sim.time + 400;
-  sim.addAlert('raid');
+  sim.addAlert('raid', `Quân ${t.def.name} (${weapons.length} người) đang kéo tới làng!`);
   sim.say(`Quân ${t.def.name} (${weapons.length} người) đang tiến vào làng!`);
 }
 
@@ -554,7 +557,7 @@ export function launchBeasts(sim: Sim, size: number, species: Species = 'wolf', 
     w.state = 'graze'; w.timer = 0; placed++;
   }
   sim.nextRaid++;
-  if (placed) sim.addAlert(species === 'wolf' ? 'wolf' : 'beast');
+  if (placed) sim.addAlert(species === 'wolf' ? 'wolf' : 'beast', `${species === 'wolf' ? 'Bầy sói' : ANIMALS[species].name} (${placed} con) đang kéo tới quanh làng!`);
   if (placed) sim.say(`${species === 'wolf' ? 'Bầy sói đói' : `${ANIMALS[species].name} (${placed} con)`} kéo tới quanh làng! Đốt lửa và giữ dân gần đống lửa.`);
   return placed ? herd : null;
 }
@@ -617,15 +620,35 @@ function hostileRaid(sim: Sim, t: Tribe): void {
   t.nextRaidDay = sim.day + h.raidEveryDays; launchRaid(sim, t, size);
 }
 
+/** A little of the spoils for beating an event (events.json "reward": a share of the goods per head, more for a raid than for beasts). Returns what was had, in words. */
+function rewardEvent(sim: Sim, e: EventState): string[] {
+  const c = eventsJson.reward, mult = e.kind === 'raid' ? c.raidMult : c.beastMult, got: string[] = [];
+  for (const [k, per] of Object.entries(c.perHead)) {
+    const res = k as keyof Stock, n = Math.max(1, Math.round(per * mult * e.size)), take = Math.max(0, Math.min(n, sim.capacity(res) - sim.stock[res]));
+    if (take <= 0) continue;
+    sim.stock[res] += take; got.push(`${take} ${RES_NAME[res].toLowerCase()}`);
+  }
+  return got;
+}
+
 function tickEvents(sim: Sim): void {
   for (const e of sim.events) {
-    if (e.live) { // an event that has begun: tell the player when the last of it is gone
-      const over = e.kind === 'beasts' ? !sim.animals.some((a) => a.herd === e.herd && a.raid && a.hp > 0 && a.state !== 'dead') : !(e.tribe && tribeOf(sim, e.tribe)?.raid);
-      if (over) { e.live = false; sim.say(e.kind === 'beasts' ? 'Bầy thú đã bị đẩy lùi: làng yên trở lại.' : 'Cuộc tập kích đã kết thúc.'); sim.addAlert('clear'); }
+    if (e.live) { // an event that has begun: tell the player when the last of it is gone, and reward the village when it was beaten
+      const tribe = e.tribe ? tribeOf(sim, e.tribe) : undefined;
+      const alive = e.kind === 'beasts' ? sim.animals.filter((a) => a.herd === e.herd && a.raid && a.hp > 0 && a.state !== 'dead').length : sim.foes.filter((f) => f.ai?.raid === e.raidId && f.health > 0).length;
+      const over = e.kind === 'beasts' ? alive === 0 : !tribe?.raid;
+      if (!over) e.left = alive;
+      else {
+        e.live = false;
+        const beaten = e.kind === 'beasts' ? sim.animals.some((a) => a.herd === e.herd && a.state === 'dead') : (e.left ?? 1) === 0;
+        const got = beaten ? rewardEvent(sim, e) : [];
+        const text = beaten ? `Đã đẩy lùi ${e.kind === 'beasts' ? 'bầy thú' : 'quân tập kích'}!${got.length ? ` Thu được ${got.join(', ')}.` : ''}` : e.kind === 'beasts' ? 'Bầy thú đã bỏ đi: làng yên trở lại.' : 'Quân tập kích đã rút lui.';
+        sim.say(text); sim.addAlert('clear', text);
+      }
     }
     if (e.fired) continue;
     if (e.kind === 'raid' && e.power !== undefined && e.tribe && e.sizeDay !== sim.day) { const t = tribeOf(sim, e.tribe); if (t && t.state === 'free') { e.size = raidSizeFor(sim, t, e.power); e.sizeDay = sim.day; } }
-    if (!e.warned && sim.day >= e.warnDay && sim.tod >= 0.3) { e.warned = true; sim.say(e.warn); }
+    if (!e.warned && sim.day >= e.warnDay && sim.tod >= 0.3) { e.warned = true; sim.say(e.warn); sim.addAlert('notice', `Sắp có biến cố: ${e.warn}`); }
     if (sim.day < e.fireDay) continue;
     const ready = e.night ? sim.restTime : sim.tod >= 0.28 && !sim.restTime;
     if (!ready) continue;
@@ -633,7 +656,7 @@ function tickEvents(sim: Sim): void {
     if (e.kind === 'beasts') { const herd = launchBeasts(sim, e.size, e.species ?? 'wolf', e.night); if (herd !== null) { e.live = true; e.herd = herd; } }
     else if (e.tribe) {
       const t = tribeOf(sim, e.tribe);
-      if (t && t.state === 'free' && t.relation < DIFF.capture.gift.friendAt) { if (raidAdvised(sim, t, e.size) || e.fireDay >= e.warnDay + 4) { (e.army ? launchCustomRaid(sim, t, armyWeapons(e.army), e.armor ?? true, false, e.night) : launchRaid(sim, t, e.size, e.night)); e.live = !!t.raid; } else { e.fired = false; e.fireDay = sim.day + 1; e.warned = true; sim.say(`${t.def.name} thấy làng đông quân và hoãn tập kích.`); } }
+      if (t && t.state === 'free' && t.relation < DIFF.capture.gift.friendAt) { if (raidAdvised(sim, t, e.size) || e.fireDay >= e.warnDay + 4) { (e.army ? launchCustomRaid(sim, t, armyWeapons(e.army), e.armor ?? true, false, e.night) : launchRaid(sim, t, e.size, e.night)); e.live = !!t.raid; e.raidId = t.raid?.id; e.left = e.size; } else { e.fired = false; e.fireDay = sim.day + 1; e.warned = true; sim.say(`${t.def.name} thấy làng đông quân và hoãn tập kích.`); } }
     }
   }
 }

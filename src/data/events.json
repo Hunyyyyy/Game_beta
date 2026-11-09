@@ -207,6 +207,11 @@
       }
     ]
   },
+  "reward": {
+    "raidMult": 1,
+    "beastMult": 0.6,
+    "perHead": { "food": 8, "wood": 4, "stone": 3, "hide": 3, "bone": 2 }
+  },
   "hostile": {
     "fromDay": 18,
     "raidEveryDays": 8,

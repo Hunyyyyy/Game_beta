@@ -50,6 +50,6 @@
     "start": { "file": "battle/battle_start.mp3", "volume": 0.7 }
   },
   "wolves": { "files": ["envairoment/wolf_1.mp3", "envairoment/wolf_2.mp3", "envairoment/wolf_3.mp3"], "volume": 0.5, "maxHowls": 3, "from": 0.03, "to": 0.3, "spacing": 0.07 },
-  "peace": { "volume": 0.5, "firstDelay": 3, "gapMin": 120, "gapMax": 300 },
+  "peace": { "volume": 0.5, "firstDelay": 3, "gapMin": 15, "gapMax": 45 },
   "fade": 1.5
 }

@@ -20,6 +20,7 @@
       <span class="res" id="rPop" title="Số dân"><i style="background:#e8c4a0"></i><b>0</b><small>/40</small></span>
     </div>
     <button class="sm speedbtn" id="btnSpeed" title="Tốc độ game: bấm để đổi 1× → 2× → 4× → 16× rồi về 1× (Q E R T chọn nhanh, P tạm dừng)">1×</button>
+    <div class="daybar" id="daybar" title="Thời gian trong ngày: thanh sáng là ban ngày, thanh tối là đêm; vạch trắng là bây giờ"><canvas id="daybarCanvas" width="132" height="18"></canvas><small id="daybarText"></small></div>
     <button class="sm" id="btnSkip" title="Tua qua đêm: chạy nhanh tới sáng, chỉ khi cả làng đã ngủ và không ai tấn công; dừng ngay nếu có chuyện" hidden>⏭ Qua đêm</button>
     <button class="sm" id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
     <span class="spacer"></span>
@@ -30,6 +31,7 @@
   <button class="qbtn" id="btnQuest" title="Nhiệm vụ" aria-pressed="false">📜<i class="dot" hidden>!</i></button>
   <div id="qpanel" hidden></div>
   <div id="spanel" hidden></div>
+  <div id="epanel" hidden></div>
   <button class="qbtn nbtn" id="btnNotice" title="Thông báo: việc sắp tới hoặc đang diễn ra trong làng" aria-pressed="false">🔔<i class="dot" hidden>!</i></button>
   <div id="npanel" hidden></div>
   <canvas id="mini" hidden aria-label="Bản đồ nhỏ" title="Bản đồ nhỏ"></canvas>

@@ -2,12 +2,13 @@ import { Camera, Renderer } from './render/renderer';
 import { GameAudio } from './audio/audio';
 import { Sprites } from './render/sprites';
 import { BUILDINGS, BuildingKind } from './sim/buildings';
-import { DAY_PART_NAME, dayInSeason, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
+import { DAY_PART_NAME, dayInSeason, lightAt, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
 import { TICK, TILE } from './sim/constants';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { RESEARCH } from './sim/research';
 import { SettingsPanel } from './ui/settingspanel';
+import { EraDialog } from './ui/eradialog';
 import { Journal } from './ui/journal';
 import { dlg, GameDialog } from './ui/gamedialog';
 import { StatsOverview } from './ui/statsoverview';
@@ -204,11 +205,33 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'm') { if (map.isOpen) map.close(); else map.open(); }
 });
 
+// ---------------------------------------------------------------- the clock of the day: a bar from midnight to midnight, light by day and dark by night, with the moment marked
+const dayCanvas = $<HTMLCanvasElement>('daybarCanvas'), dayText = $('daybarText');
+let dayKey = '';
+function drawDayBar() {
+  const tod = sim.tod, key = `${Math.floor(tod * 150)}|${sim.season}|${sim.day}|${sim.resting}`;
+  if (key === dayKey) return;
+  dayKey = key;
+  const c = dayCanvas.getContext('2d')!, w = dayCanvas.width, h = dayCanvas.height;
+  c.clearRect(0, 0, w, h);
+  for (let x = 0; x < w; x++) { // the colour of each moment: the light of the sky at that time of the day
+    const l = lightAt(x / w, sim.season);
+    c.fillStyle = `rgb(${Math.round(24 + 214 * l)}, ${Math.round(30 + 190 * l)}, ${Math.round(70 + 90 * l)})`;
+    c.fillRect(x, 0, 1, h);
+  }
+  const at = Math.round(tod * w);
+  c.fillStyle = '#fff'; c.fillRect(Math.max(0, Math.min(w - 2, at - 1)), 0, 2, h);
+  c.font = '11px sans-serif'; c.textBaseline = 'middle'; c.textAlign = at > w - 12 ? 'right' : at < 12 ? 'left' : 'center';
+  c.fillText(sim.part === 'night' || sim.part === 'dusk' ? '☾' : '☀', at, h / 2);
+  dayText.textContent = `Ngày ${sim.day} · ${DAY_PART_NAME[sim.part]}`;
+}
+
 // ---------------------------------------------------------------- the top bar and the log
 const REGION_NAME = { plains: 'Đồng bằng', sparse: 'Rừng thưa', dense: 'Rừng rậm', mountain: 'Núi', water: 'Vùng nước' } as const;
 // the coloured squares of the top bar give way to drawn pictures
 for (const [id, key] of [['rFood', 'food'], ['rWood', 'wood'], ['rStone', 'stone'], ['rHide', 'hide'], ['rBone', 'bone'], ['rFat', 'fat'], ['rFeather', 'feather'], ['rTusk', 'tusk'], ['rTorch', 'torch'], ['rCoin', 'coin'], ['rPop', 'pop']]) $(id).querySelector('i')?.replaceWith(resIcon(key));
 // the quest and notice buttons stand at the left edge; each opens its window over the map, and a red mark says something new is waiting
+const eraDialog = new EraDialog($('epanel'));
 const statsOverview = new StatsOverview(ctx), statsDlg = new GameDialog($('spanel'), {});
 const statsCard = dlg.card({ wide: true, label: 'Chỉ số đã nghiên cứu' }, dlg.head({ pic: '📊', title: 'Chỉ số đã nghiên cứu', sub: 'Chung cho mỗi loại dân, nghề và lính', onClose: () => statsDlg.hide() }), statsOverview.root);
 const openStats = () => { settingsOpen = false; statsOverview.update(); statsDlg.show(statsCard); };
@@ -245,6 +268,7 @@ function updateHud(now: number) {
   }
   $('rPop').querySelector('b')!.textContent = String(sim.villagers.length); $('rPop').querySelector('small')!.textContent = `/${sim.popCap()}`;
   for (const r of RES_LIST) void RES_NAME[r];
+  drawDayBar();
   const se = SEASON_DEF[sim.season], we = WEATHER[sim.weather], year = yearOf(sim.day);
   // the region under the middle of the screen, once somebody has been there (what lies in the dark is not told)
   const mid = renderer.screenToWorld(renderer.w / 2, renderer.h / 2), mx = Math.floor(mid.x / TILE), my = Math.floor(mid.y / TILE);
@@ -307,8 +331,9 @@ function frame(t: number) {
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
   ctl.update(dt);
   audio.update(started ? sim.weather : 'clear', dt);
-  audio.setPeace(started && !sim.atWar() && !sim.battle.on && !sim.tribes.some((t) => t.raid), dt);
-  for (const a of sim.alerts) audio.alert(a);
+  audio.fightOn = started && !sim.atWar() && (sim.tribes.some((t) => t.raid) || sim.events.some((e) => e.live)); // a raid or a pack at the village: the war music, and no peace music, until it is over
+  audio.setPeace(started && !sim.atWar() && !sim.battle.on && !audio.fightOn, dt);
+  for (const a of sim.alerts) { audio.alert(a.kind); if (a.kind === 'era') eraDialog.show(); else if (a.text) toast(a.text); }
   sim.alerts.length = 0;
   { // a war that has just been decided: the sound of the win or the loss, once
     const p = started ? sim.plans.find((q) => q.kind === 'attack' && q.result && q.endedAt > lastWarEnd) : undefined;

@@ -62,6 +62,8 @@ export class GameAudio {
   private peaceEl: HTMLAudioElement | null = null;
   /** The music of a lost war while it plays: the peace music keeps quiet until it is over (setPeace). */
   private lostEl: HTMLAudioElement | null = null;
+  /** An event (a raid, a pack of beasts) is on at the village: the war music plays, whether or not the fight is on screen, and the peace music keeps quiet. Set every frame by main. */
+  fightOn = false;
   private peaceVol = 0;
   /** Seconds until the peace music may start (counted down while it is quiet). */
   private peaceWait = cfg.peace.firstDelay;
@@ -181,9 +183,11 @@ export class GameAudio {
   }
 
   /** A warning from the game: wolves come (a howl, always heard, wherever the camera is) or a village raids us (the battle sting, once). */
-  alert(kind: 'wolf' | 'raid' | 'beast' | 'clear'): void {
+  alert(kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era'): void {
     const now = performance.now() / 1000;
+    if (kind === 'notice') return; // only a toast
     if (kind === 'raid' || kind === 'beast') this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, 'mus', 'raidalert'); // an event begins (a raid, a pack of beasts): the battle sting
+    else if (kind === 'era') this.play(cfg.end.won.files[1] ?? cfg.end.won.files[0], cfg.end.won.volume, 0, now, false, 'mus', 'eraup'); // a new age: a victory sound
     else if (kind === 'clear') this.play(cfg.end.won.files[0], cfg.end.won.volume, 0, now, false, 'mus', 'eventover'); // it is over: one victory sound
     else { const w = cfg.wolves; this.play(pick(w.files), w.volume, 0, now, false, 'amb', 'wolfalert'); }
   }
@@ -301,7 +305,7 @@ export class GameAudio {
     this.warAge += dt;
     this.tickVictory();
     if (this.hidden) return; // another tab: silent (see `onVisibility`)
-    if (this.warAge > 0.5) { this.warScreen = false; this.warTrack = null; this.stingsDone = 0; } // the renderer stopped reporting: no soldiers in view (the sting is re-armed only by the sim saying the fight died down)
+    if (this.warAge > 0.5) { this.warScreen = false; if (!this.fightOn) this.warTrack = null; this.stingsDone = 0; } // the renderer stopped reporting: no soldiers in view (the sting is re-armed only by the sim saying the fight died down)
     const w = WEATHER[kind], want = new Map<string, number>();
     if (this.ambientOn && w) {
       for (const l of w.loops ?? []) want.set(l.file, l.volume * cfg.master * this.vol.amb);
@@ -314,7 +318,7 @@ export class GameAudio {
     }
     if (this.sfxOn) for (const n of this.nearNow) { const l = NEAR[n]; if (l && this.vol.sfx > 0) want.set(l.file, l.volume * cfg.master * this.vol.sfx); }
     this.nearNow.clear();
-    if (this.musicOn && this.warScreen) { // the war music plays all through the war; the sting (enemy seen) plays over it
+    if (this.musicOn && (this.warScreen || this.fightOn)) { // the war music plays all through the war; the sting (enemy seen) plays over it
       this.warTrack ??= bagPick('war', MUSIC.war);
       want.set(this.warTrack, cfg.war.music.volume * cfg.master * this.vol.mus);
     }

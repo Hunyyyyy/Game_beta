@@ -323,6 +323,11 @@ export function planBuild(sim: Sim, v: Villager): void {
   let sites = sim.buildings.filter((b) => needsWork(b) && (house || b.kind === 'builder') && onSite(b) < 3);
   sites.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) ||
     Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
+  // nothing to build: a builder with free hands takes the materials from the stock and mends the most damaged house by himself
+  if (!sites.length && house) {
+    const hurt = sim.buildings.filter((b) => b.done && !b.upgrading && !b.repairing && b.hp < maxHp(b) - 0.5 && sim.canRepair(b) === null).sort((a, b) => a.hp / maxHp(a) - b.hp / maxHp(b));
+    if (hurt.length && sim.repairBuilding(hurt[0].id) === null) sites = [hurt[0]];
+  }
   sites = sites.slice(0, 2);
   for (const b of sites) {
     const d = BUILDINGS[b.kind];

@@ -49,8 +49,10 @@ export function clearCombat(sim: Sim, v: Villager): void {
 }
 
 export function mine(sim: Sim, ids: readonly number[]): Villager[] {
-  // someone worn out asleep cannot be woken, and a scout out on a trip answers to no order until he is home
-  return ids.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v && v.team === 'player' && v.down <= 0 && !sim.sleepLocked(v) && !sim.scouts.some((m) => m.ids.includes(v.id)));
+  // the player's word is the highest: even one worn out asleep wakes for it (the lock is dropped); only a scout out on a trip answers to no order until he is home
+  const out = ids.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v && v.team === 'player' && v.down <= 0 && !sim.scouts.some((m) => m.ids.includes(v.id)));
+  for (const v of out) if (v.lockUntil > 0) v.lockUntil = 0;
+  return out;
 }
 
 /** A unit that is already doing something takes a Shift-queued order after it. */
@@ -81,6 +83,7 @@ export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: numb
     if (v.job === 'fight') sim.pathLeft--;
     v.path = sim.pathTo(v, goal[0], goal[1], 30000);
     v.phase = v.path.length ? 'move' : 'idle';
+    if (v.job === 'fight' && v.path.length) v.fight.obey = true; // the player's word is the highest: he walks there whatever he meets, and fights again on arrival (brainplayer clears it)
   }
 }
 

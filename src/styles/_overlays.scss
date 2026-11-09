@@ -127,3 +127,10 @@ $mini: clamp(64px, 15vw, 96px);
   #bigmapCanvas { cursor: grab; will-change: transform; }
   .mapzoom { position: absolute; right: 8px; top: 52px; display: flex; flex-direction: column; gap: 4px; z-index: 2; }
 }
+
+// ---- the clock of the day in the top bar ----
+.daybar {
+  display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1;
+  canvas { width: 88px; height: 12px; border-radius: 6px; border: 1px solid var(--ring); }
+  small { font-size: .62rem; opacity: .85; white-space: nowrap; }
+}

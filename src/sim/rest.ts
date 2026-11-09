@@ -97,13 +97,15 @@ export function attackReason(sim: Sim): string | null {
   if (c && c.t === sim.time) return c.why;
   let why: string | null = null;
   const raid = sim.tribes.find((t) => t.raid && t.raid.phase === 'march');
-  if (raid) why = `${raid.def.name} đang tiến vào làng`;
-  else {
-    const fire = sim.campfire(), cx = fire ? fire.x + 1 : sim.world.start.x, cy = fire ? fire.y + 1 : sim.world.start.y;
+  const fire = sim.campfire(), cx = fire ? fire.x + 1 : sim.world.start.x, cy = fire ? fire.y + 1 : sim.world.start.y;
+  if (raid) { // say how far the nearest of them is: they may still be out of sight, in the dark of the map
+    const near = Math.min(Infinity, ...sim.foes.filter((f) => f.ai?.raid === raid.raid!.id && f.health > 0).map((f) => Math.hypot(f.x - cx, f.y - cy)));
+    why = `${raid.def.name} đang tiến vào làng${Number.isFinite(near) ? ` (còn khoảng ${Math.round(near)} ô, có thể chưa thấy)` : ''}`;
+  } else {
     const beast = sim.animals.find((a) => a.state === 'attack' && (a.target?.kind === 'unit' || a.siege !== undefined) && Math.hypot(a.x - cx, a.y - cy) < 30);
     if (beast) why = beast.siege !== undefined ? 'Thú dữ đang phá nhà' : 'Thú dữ đang tấn công người gần làng';
     else if (sim.animals.some((a) => a.raid && a.state !== 'dead' && Math.hypot(a.x - cx, a.y - cy) < 45)) why = 'Bầy thú đang kéo tới làng';
-    else if (sim.foes.some((f) => f.ai?.role === 'raider' && f.health > 0 && Math.hypot(f.x - cx, f.y - cy) < 40)) why = 'Địch đang ở quanh làng'; // raiders at the houses, whether they fight or break them down
+    else if (sim.foes.some((f) => f.ai?.role === 'raider' && f.health > 0 && Math.hypot(f.x - cx, f.y - cy) < 18 && sim.tribes.find((t) => t.id === f.team)?.raid?.phase === 'march')) why = 'Địch đang ở quanh làng'; // raiders at the houses (of a raid still on: ones going home, or left over, no longer hold the night), whether they fight or break them down
   }
   attackCache.set(sim, { t: sim.time, why });
   if (why) sim.dangerAt = sim.time;
@@ -135,7 +137,7 @@ const civilian = (v: Pick<Villager, 'job'>): boolean => v.job !== 'fight' && v.j
 /** How long the civilians stay in their houses after the last danger, in seconds. */
 const SAFE_AFTER = 30;
 export function hides(sim: Sim, v: Villager): boolean {
-  return v.inside !== null && v.phase === 'sleep' && ((civilian(v) && (attackReason(sim) !== null || sim.time - sim.dangerAt < SAFE_AFTER)) || quartered(sim, v)); // a soldier in his camp stays there whatever comes
+  return v.inside !== null && v.phase === 'sleep' && (((civilian(v) || v.job === 'hunt') && (attackReason(sim) !== null || sim.time - sim.dangerAt < SAFE_AFTER)) || quartered(sim, v)); // a soldier in his camp stays there whatever comes
 }
 
 /** Asleep and not to be woken: they fell asleep worn out and have not rested enough yet. */

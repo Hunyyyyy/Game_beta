@@ -209,6 +209,7 @@ export function afterUpgrade(sim: Sim, b: Building): void {
   if (b.kind === 'campfire' && b.level >= BUILDINGS.campfire.levels.stone!.length + 1 && sim.era !== 'ancient') {
     setEra(sim, 'ancient');
     sim.resetTribes(); // the villages of the stone age vanish and new ones are drawn for the new era
+    sim.addAlert('era', 'Thời Trung cổ bắt đầu!'); // the screen congratulates the player (ui/eradialog)
     sim.say('Nhà chung đã thành Nhà chính: thời Trung cổ bắt đầu! Các nhà cấp 4 có thể nâng lên cấp trung cổ, có thêm nghiên cứu mới, và không còn đánh nhanh.');
   }
 }

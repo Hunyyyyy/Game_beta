@@ -5,5 +5,9 @@
     "stats": ["hp", "atk", "aspd"],
     "pick": 2,
     "pct": 3
+  },
+  "warTent": {
+    "_note": "Lều họp chiến: mỗi cấp từ cấp 2 cộng các % này cho MỌI lính của ta (máu, sát thương, phòng thủ cận chiến, phòng thủ tầm xa).",
+    "pct": { "hp": 4, "atk": 4, "defm": 3, "defr": 3 }
   }
 }

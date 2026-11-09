@@ -195,7 +195,11 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
   const b = v.breaks;
   if (!b) return false;
   const box = breakBox(sim, b);
-  if (!box) { stopBreaking(v); return false; }
+  if (!box) { // gone: an ordered one goes on to the target he was sent to when it was a wall in the way
+    const next = b.then; stopBreaking(v);
+    if (next && breakBox(sim, next)) { v.breaks = next; v.progress = 0; return true; }
+    return false;
+  }
   v.fight.chaseT = 0; // he is at his task: he has not given up the chase
   const w = weaponOf(v);
   v.fight.scan -= dt;
@@ -224,8 +228,10 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
   if (!v.path.length && v.fight.repath <= 0 && sim.pathLeft > 0) {
     sim.pathLeft--; v.fight.repath = 1;
     if (sim.routeTo(v, sim.ringTiles(v, box.x, box.y, box.w, box.h), 3) < 0) { // no way up to it: the fence or the gate in the way is the thing to break first
+      const orig = b.ordered ? (b.then ?? b) : null; // what the player sent him to: it stands, whatever is in the way
       stopBreaking(v);
-      if (b.kind === 'prop') breachFor(sim, v, box.x + box.w / 2, box.y + box.h / 2);
+      if (b.kind === 'prop' && breachFor(sim, v, box.x + box.w / 2, box.y + box.h / 2)) { if (orig && v.breaks) { v.breaks.ordered = true; v.breaks.then = orig; } return true; }
+      if (orig) { v.breaks = orig; v.progress = 0; v.fight.repath = 3; return true; } // nothing to break through yet: he waits and tries again
       return false;
     }
   }
