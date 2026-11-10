@@ -199,7 +199,8 @@ export class BuildingBar {
     const w = this.width || this.root.offsetWidth, hh = this.height || this.root.offsetHeight;
     const gone = p.x < -40 || p.x > this.r.w + 40 || p.y < -hh - 120 || p.y > this.r.h + 40;
     this.root.style.visibility = gone ? 'hidden' : 'visible';
-    const x = Math.max(4, Math.min(this.r.w - w - 4, p.x - w / 2)), y = Math.max((parseInt(document.documentElement.style.getPropertyValue('--top-h')) || 40) + 8, Math.min(this.r.h - hh - 4, p.y + 8));
+    const tray = document.getElementById('tray'), floor = tray && !tray.hidden ? tray.offsetTop : this.r.h; // the bar stays above the build tray when it is open, never over it
+    const x = Math.max(4, Math.min(this.r.w - w - 4, p.x - w / 2)), y = Math.max((parseInt(document.documentElement.style.getPropertyValue('--top-h')) || 40) + 8, Math.min(floor - hh - 4, p.y + 8));
     this.root.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
   }
 }

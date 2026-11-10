@@ -53,7 +53,8 @@
   .dchip { padding: 1px 7px; border-radius: $radius-pill; background: rgba(120, 90, 40, .2); color: #5a3a14; font-size: 11px; font-weight: 700; white-space: nowrap; }
   .dgo.sm { min-width: 0; padding: 5px 10px; font-size: 12.5px; white-space: nowrap; }
   // the buttons at the foot of a question
-  .dbtns { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; .dgo { min-width: 110px; } }
+  // side by side when the card is wide enough for each to hold its text, else one under the other: either way the buttons are the same width
+  .dbtns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 8px; .dgo { min-width: 0; width: 100%; justify-self: stretch; } }
   .dgo.alt { color: #3a2c1c; background: linear-gradient(#efe0b8, #d8c28c); border-color: #8a6a36; }
   .dgo.bad { background: linear-gradient(#c8584a, #9a2f26); border-color: #6a1c16; }
   .dwhy { margin: 0; text-align: center; color: #b8322a; font-weight: 700; }

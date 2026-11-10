@@ -361,7 +361,7 @@ export class BuildingPanel {
     if (ctl.openPeople) { ctl.openPeople = false; this.peopleOpen = !!STAFF_OF[b.kind as keyof typeof STAFF_OF] && b.done; }
     if (b.kind !== 'lab') this.labSub = null;
     const def = BUILDINGS[b.kind], lv = levelDef(b), top = topLevel(b), ready = b.done;
-    this.title.textContent = `${buildingName(b.kind, b.era)}${def.buildable ? ` · cấp ${b.level}/${top} (${lv.name.toLowerCase()})` : ''}`;
+    this.title.textContent = `${buildingName(b.kind, b.era, b.level)}${def.buildable ? ` · cấp ${b.level}/${top} (${lv.name.toLowerCase()})` : ''}`;
     const pk = `${b.kind}${b.level}${b.done}`;
     if (pk !== this.picKey) { this.picKey = pk; try { this.picBox.replaceChildren(iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0])); } catch { this.picBox.textContent = '🏠'; this.picBox.className = 'dpic glyph'; } }
     const meal = b.kind === 'campfire' && b.done && !b.upgrading;

@@ -131,7 +131,7 @@ details {
 // ---- build tray: the bottom shelf of buildings to place ----
 .tray {
   position: absolute;
-  left: calc(6px + var(--sal)); right: calc(6px + var(--sar)); bottom: calc(6px + var(--sab));
+  left: calc(6px + var(--sal)); right: calc(88px + var(--sar)); bottom: calc(6px + var(--sab)); // the right side is left to the build button (.buildfab)
   z-index: 6;
   @include hud-box($radius-xl);
   padding: 6px;
@@ -164,7 +164,7 @@ details {
 }
 body.war .tray { display: none !important; }
 @media (max-height: 480px) {
-  .tray { left: calc(4px + var(--sal)); right: calc(4px + var(--sar)); bottom: calc(4px + var(--sab)); padding: 4px; gap: 4px; }
+  .tray { left: calc(4px + var(--sal)); right: calc(72px + var(--sar)); bottom: calc(4px + var(--sab)); padding: 4px; gap: 4px; }
   .tray .card2 { width: 92px; .pic { height: 38px; } .pic canvas { max-height: 34px; } small { font-size: 10px; } }
 }
 
