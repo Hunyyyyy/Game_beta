@@ -52,7 +52,7 @@ function send(sim: Sim, t: Tribe, c: { x: number; y: number }): void {
   for (let i = 0; i < n; i++) {
     const spot = sim.nearestFree(Math.floor(gx) + (i % 3) - 1, Math.floor(gy) + Math.floor(i / 3) - 1, taken); if (!spot) continue;
     taken.add(spot[1] * sim.world.size + spot[0]);
-    const f = sim.makeVillager(spot[0], spot[1], sim.frnd() < 0.5 ? 'm' : 'f', t.id, sim.frnd);
+    const f = sim.makeVillager(spot[0], spot[1], 'm', t.id, sim.frnd); // the band is made of men
     f.look.hide = t.def.look.hide; f.look.pants = t.def.look.pants;
     f.weapon = i % 3 === 2 ? t.def.weapons[i % t.def.weapons.length] : melee[i % Math.max(1, melee.length)] ?? f.weapon; f.armor = null;
     f.ai = { role: 'raider', camp: t.camp, wander: 0, goal: null, raid: -1, harass: sim.time };

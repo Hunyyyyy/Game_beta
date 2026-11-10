@@ -43,27 +43,14 @@
    {
     "name": "Đá",
     "cost": {
-     "wood": 30,
-     "stone": 15
+     "wood": 33,
+     "stone": 18
     },
-    "buildTime": 140,
-    "cap": 100,
-    "craftSpeed": 1,
-    "slots": 4,
-    "hp": 360,
-    "sight": 0
-   },
-   {
-    "name": "Đá gia cố",
-    "cost": {
-     "wood": 36,
-     "stone": 21
-    },
-    "buildTime": 218,
-    "cap": 200,
+    "buildTime": 179,
+    "cap": 150,
     "craftSpeed": 1,
     "slots": 5,
-    "hp": 450,
+    "hp": 405,
     "sight": 0
    }
   ],

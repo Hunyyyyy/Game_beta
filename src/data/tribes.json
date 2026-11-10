@@ -142,5 +142,89 @@
     "attackedPeaceful": -30,
     "tributeAt": 60,
     "joinAt": 90
+  },
+  "harbor": {
+    "name": "Bến Cá",
+    "personality": "aggressive",
+    "tier": "medium",
+    "angle": 140,
+    "distance": 125,
+    "civilians": 14,
+    "warriors": 10,
+    "weapons": [
+      "spear",
+      "mace"
+    ],
+    "armor": true,
+    "look": {
+      "hide": "#4a6a8a",
+      "pants": "#2a3a5a"
+    },
+    "relation": -50,
+    "reward": "Cá khô, lính giáo"
+  },
+  "ridge": {
+    "name": "Đỉnh Gió",
+    "personality": "ambusher",
+    "tier": "medium",
+    "angle": 170,
+    "distance": 135,
+    "civilians": 12,
+    "warriors": 9,
+    "weapons": [
+      "bow",
+      "club"
+    ],
+    "armor": false,
+    "look": {
+      "hide": "#8a7a5a",
+      "pants": "#4a4030"
+    },
+    "relation": -50,
+    "reward": "Cung, lông vũ"
+  },
+  "bandit1": {
+    "name": "Trại cướp phía đông",
+    "personality": "aggressive",
+    "bandit": true,
+    "tier": "normal",
+    "angle": 110,
+    "distance": 65,
+    "civilians": 2,
+    "warriors": 10,
+    "weapons": [
+      "club",
+      "spear",
+      "sling"
+    ],
+    "armor": true,
+    "look": {
+      "hide": "#3a2a2a",
+      "pants": "#201818"
+    },
+    "relation": -100,
+    "reward": "Túi cướp"
+  },
+  "bandit2": {
+    "name": "Trại cướp phía tây",
+    "personality": "ambusher",
+    "bandit": true,
+    "tier": "normal",
+    "angle": 235,
+    "distance": 95,
+    "civilians": 2,
+    "warriors": 10,
+    "weapons": [
+      "hatchet",
+      "bow",
+      "mace"
+    ],
+    "armor": true,
+    "look": {
+      "hide": "#2a2a30",
+      "pants": "#181820"
+    },
+    "relation": -100,
+    "reward": "Túi cướp"
   }
 }

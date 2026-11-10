@@ -1,7 +1,7 @@
 /**
  * Mounts. Keepers working in the Chuồng thú tame beasts (a wolf, a boar, an elephant: the level of the stable decides which, and each needs its own research)
  * and the beast goes to the stock, from where it is given to a villager like a tool. A rider walks faster and takes less of a blow; a soldier with a beast counts as
- * cavalry. The soldiers of the Trại kỵ thú need no beast from the stock: they ride the one that goes with the level of their camp.
+ * cavalry. The soldiers of the Trại lính kỵ need no beast from the stock: they ride the one that goes with the level of their camp.
  */
 import { levelDef } from './buildings';
 import { MOUNT_KINDS, MOUNTS, MountKind } from './jobs';
@@ -59,13 +59,13 @@ export function tickTame(sim: Sim, dt: number): void {
   }
 }
 
-/** The beast of a camp: the level of the Trại kỵ thú decides it (a wolf, then a boar, then an elephant). */
+/** The beast of a camp: the level of the Trại lính kỵ decides it (a wolf, then a boar, then an elephant). */
 function campBeast(sim: Sim): MountKind {
   const camp = sim.building('cavalry');
   return MOUNT_KINDS[Math.max(0, Math.min(MOUNT_KINDS.length, camp?.level ?? 1) - 1)];
 }
 
-/** The beast a villager is riding now (also the riders of a village): the one he was given, or, for a rider of the Trại kỵ thú, the beast of the camp. */
+/** The beast a villager is riding now (also the riders of a village): the one he was given, or, for a rider of the Trại lính kỵ, the beast of the camp. */
 export function mountOf(sim: Sim, v: Villager): MountKind | null {
   if (v.team !== 'player') return v.mount ?? null; // the riders of a village were given their beast when they came out (tribelod.spawnOut)
   const own = v.mount ?? ((v.job === 'fight' || v.job === 'scout') && v.arm === 'cavalry' ? campBeast(sim) : null);
@@ -107,7 +107,7 @@ export function assignMount(sim: Sim, ids: readonly number[], kind: MountKind | 
   let given = 0, short = false, riders = false;
   for (const v of sim.mine(ids)) {
     if (v.mount === kind) continue;
-    if (kind && v.job === 'fight' && v.arm !== 'cavalry') { riders = true; continue; } // foot soldiers and throwers do not ride: only the riders of the Trại kỵ thú, hunters and scouts
+    if (kind && v.job === 'fight' && v.arm !== 'cavalry') { riders = true; continue; } // foot soldiers and throwers do not ride: only the riders of the Trại lính kỵ, hunters and scouts
     if (kind && tamedCount(sim, kind) <= 0) { short = true; continue; }
     if (v.mount) sim.toolStock[stockKey(v.mount)] = tamedCount(sim, v.mount) + 1;
     if (kind) sim.toolStock[stockKey(kind)]--;

@@ -33,7 +33,7 @@ export function playerCap(level: number): { economy: number; military: number; t
   return { economy, military, total: cfg.power.economy * economy + cfg.power.military * military };
 }
 
-export type TierId = 'weak' | 'normal' | 'medium' | 'boss' | 'rebel';
+export type TierId = 'weak' | 'normal' | 'medium' | 'boss' | 'rebel' | 'raider';
 export const TIERS = cfg.tiers;
 
 /** The camp level of a village of a tier when the player's campfire is at `fire`: his plus the tier's edge, from 1 up to the tier's top level (so that a weak village stays easy and the boss stays a step above). */
@@ -46,7 +46,7 @@ export const tierLevel = (fire: number, tier: TierId): number => Math.max(1, Mat
  */
 export function tierTarget(fire: number, tier: TierId): { economy: number; military: number } {
   const t = TIERS[tier];
-  if (tier === 'boss' || tier === 'rebel') { const cap = playerCap(clampLevel(fire + 1)), share = tier === 'rebel' ? cfg.capture.rebel.share : 1; return { military: cap.military * cfg.boss.power * share, economy: cap.economy * cfg.boss.economy * share }; }
+  if (tier === 'boss' || tier === 'rebel') { const cap = playerCap(tierLevel(fire, tier)), share = tier === 'rebel' ? cfg.capture.rebel.share : 1; return { military: cap.military * cfg.boss.power * share, economy: cap.economy * cfg.boss.economy * share }; }
   const cap = playerCap(tierLevel(fire, tier)), strength = (t as { strength: number }).strength;
   return { military: cap.military * strength, economy: cap.economy * strength };
 }

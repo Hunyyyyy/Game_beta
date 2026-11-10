@@ -41,7 +41,8 @@ if (typeof document !== 'undefined') document.addEventListener('click', (e) => {
 });
 
 /** Copy an icon canvas into a fresh one (a canvas node can only live in one place). */
-export function iconCanvas(src: HTMLCanvasElement): HTMLCanvasElement {
+export function iconCanvas(src: HTMLCanvasElement | undefined): HTMLCanvasElement {
+  if (!src) { const blank = document.createElement('canvas'); blank.width = blank.height = 16; return blank; } // a picture that is missing must not stop the page from coming up
   const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
   c.getContext('2d')!.drawImage(src, 0, 0);
   return c;

@@ -33,21 +33,12 @@
       {
         "level": 4,
         "buildingMaxLevel": 4,
-        "upgradeNeeds": {
-          "groupAtLeastLevel": {
-            "production": 4
-          }
-        }
-      },
-      {
-        "level": 5,
-        "buildingMaxLevel": 5,
         "upgradeNeeds": null
       }
     ]
   },
   "research": {
-    "_note": "Mỗi cấp Nhà nghiên cứu mở những nghiên cứu nào: 'tabs' = tab nào của giao diện được mở, 'techs' là id trong research.json (cấp 3 dùng '@rest' = tất cả còn lại). Nghiên cứu chỉ cộng chỉ số và mở trận pháp, không khóa công trình hay cấp nhà (cấp nhà theo cấp Nhà chung). Dân tự lấy công cụ, vũ khí, đuốc ở kho và tự đặt chế tạo mà không cần nghiên cứu. Cấp 5 là Nhà nghiên cứu trung cổ cấp 1: các nghiên cứu của lớp chiến tranh (tín hiệu, trận pháp, kế hoạch) chỉ học được ở đó, và chỉ khi đã sang thời Trung cổ (Nhà chung thành Nhà chính). Cấp được xếp TRƯỚC cấp có '@rest' vì cấp cuối là cấp dự phòng.",
+    "_note": "Mỗi cấp Nhà nghiên cứu mở những nghiên cứu nào: 'tabs' = tab nào của giao diện được mở, 'techs' là id trong research.json (cấp 3 dùng '@rest' = tất cả còn lại). Nghiên cứu chỉ cộng chỉ số và mở trận pháp, không khóa công trình hay cấp nhà (cấp nhà theo cấp Nhà chung). Dân tự lấy công cụ, vũ khí, đuốc ở kho và tự đặt chế tạo mà không cần nghiên cứu. Cấp 4 là Nhà nghiên cứu trung cổ cấp 1: các nghiên cứu của lớp chiến tranh (tín hiệu, trận pháp, kế hoạch) chỉ học được ở đó, và chỉ khi đã sang thời Trung cổ (Nhà chung thành Nhà chính). Cấp được xếp TRƯỚC cấp có '@rest' vì cấp cuối là cấp dự phòng.",
     "levels": [
       {
         "level": 1,
@@ -68,7 +59,7 @@
         "techs": []
       },
       {
-        "level": 5,
+        "level": 4,
         "tabs": [
           "blueprints",
           "military"

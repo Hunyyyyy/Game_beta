@@ -1,3 +1,4 @@
+import { isRankRole, rankName } from './ranks';
 import type { BuildingKind, Era } from './buildings';
 import type { Res } from './resources';
 import paceJson from '../data/pace.json';
@@ -15,10 +16,11 @@ export type NodeKind = 'tree' | 'rock' | 'bush';
 export interface TrainProfile { main: StatKey; partner?: StatKey; cost: StatKey }
 export const TRAINING = trainingJson as unknown as { dayBase: number; dayPerStat: number; foodBase: number; coinBase: number; coinPerStat: number; gain: [number, number]; partnerShare: number; floor: number; floorMin: number; caps: number[]; care: Array<{ name: string; coin: number; penalty: number }>; profiles: Record<string, TrainProfile> };
 /** Mounts (mounts.json): a beast is tamed in the stable, given like a tool, and carries its rider faster and safer. */
-export type MountKind = 'wolf' | 'boar' | 'elephant';
-export const MOUNT_KINDS: MountKind[] = ['wolf', 'boar', 'elephant'];
-export interface MountDef { name: string; tier: number; species: string; speed: number; guard: number; ride: number; cost: Partial<Record<Res, number>>; time: number; tech: string }
+export type MountKind = 'wolf' | 'boar' | 'elephant' | 'horse' | 'warhorse' | 'silverhorse';
+export interface MountDef { name: string; tier: number; species: string; speed: number; guard: number; ride: number; /** pixels the rider sits to the side of the beast's feet (a horse's back is behind the middle of its sprite) */ dx?: number; /** not tamed at the stable: only given with a soldier of a rank */ hidden?: boolean; cost: Partial<Record<Res, number>>; time: number; tech: string }
 export const MOUNTS = mountsJson.kinds as unknown as Record<MountKind, MountDef>;
+/** The beasts the stable tames and the camp's level picks from: the war horses of the ranks (hidden: true) come with the price of a soldier, never from the stable. */
+export const MOUNT_KINDS: MountKind[] = (Object.keys(MOUNTS) as MountKind[]).filter((k) => !MOUNTS[k].hidden);
 /** A stat as the player reads it: whole, or with one digit after the point. */
 export const fmtStat = (x: number): string => String(Math.round(x * 10) / 10);
 
@@ -61,14 +63,21 @@ export const ROLES: Record<RoleId, RoleDef> = {
   food: { job: 'food', building: 'farmhouse', names: { stone: 'Hái lượm', ancient: 'Nông dân' } },
   hunt: { job: 'hunt', building: 'huntlodge', names: { stone: 'Thợ săn', ancient: 'Thợ săn' } },
   foot: { job: 'fight', arm: 'foot', building: 'infantry', names: { stone: 'Lính bộ', ancient: 'Bộ binh' } },
-  cavalry: { job: 'fight', arm: 'cavalry', building: 'cavalry', names: { stone: 'Kỵ thú', ancient: 'Kỵ binh' } },
-  archer: { job: 'fight', arm: 'archer', building: 'archery', names: { stone: 'Thợ ném', ancient: 'Cung thủ' } },
+  cavalry: { job: 'fight', arm: 'cavalry', building: 'cavalry', names: { stone: 'Lính kỵ', ancient: 'Kỵ binh' } },
+  archer: { job: 'fight', arm: 'archer', building: 'archery', names: { stone: 'Lính cung', ancient: 'Cung thủ' } },
   guard: { job: 'fight', arm: 'foot', building: 'guardpost', names: { stone: 'Lính gác', ancient: 'Lính gác' } },
   tower: { job: 'fight', arm: 'archer', building: 'tower', names: { stone: 'Lính chòi canh', ancient: 'Lính chòi canh' } },
   scout: { job: 'scout', building: 'scouttent', names: { stone: 'Trinh sát', ancient: 'Trinh sát' } },
   supply: { job: 'supply', building: 'supplycamp', names: { stone: 'Lính hậu cần', ancient: 'Lính hậu cần' } },
 };
 export const ROLE_IDS = Object.keys(ROLES) as RoleId[];
+/** What a person of a role is called: a soldier of a camp by his rank ("Lính cầm gậy", "Kỵ binh hoàng gia"), anyone else by the name of the role. */
+export function titleOfRole(v: { job: Job; arm: SoldierArm; post: number; guard?: boolean; rank?: number }, era: Era): string | null {
+  const role = roleOf(v);
+  if (!role) return null;
+  if (v.job === 'fight' && isRankRole(role)) return rankName(role, v.rank ?? 1) ?? roleName(role, era);
+  return roleName(role, era);
+}
 export const roleName = (role: RoleId, era: Era): string => ROLES[role].names[era];
 /** The role a villager has, or null for one with no role (idle, or working inside a house). Farmers of a field belong to the field, not to the Nông trại. */
 export function roleOf(v: { job: Job; arm: SoldierArm; post: number; guard?: boolean }): RoleId | null {

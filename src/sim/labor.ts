@@ -1,9 +1,9 @@
 /** Everyday work: gathering, carrying, building, and the phase machine that decides what a villager does next. */
-import { strokeYield, toolBonus, workSpeed } from './statsys';
+import { carryCap, strokeYield, toolBonus, workSpeed } from './statsys';
 import { SEASON_DEF, WEATHER } from './calendar';
 import { Building, BUILDINGS, GATHER_HOUSE, gatherMult, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
 import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
-import { CARRY_CAP, RES_NAME } from './resources';
+import { RES_NAME } from './resources';
 import paceJson from '../data/pace.json';
 import NODES from '../data/nodes.json';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
@@ -161,7 +161,7 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
   // sản lượng mỗi lần: cấp nhà × chất lượng công cụ, cộng % công cụ và % nghề (nghiên cứu); số lẻ được mang đi, kho làm tròn lên khi nhận (economy.deposit)
   const kindOf = GATHER_HOUSE[job], res = def.res, gain = strokeYield(sim, v, job, gatherMult(kindOf ? sim.building(kindOf) : undefined) * TIER_YIELD[tierNow] * (paceJson.yield as Record<string, number>)[def.res!]); // pace.json "yield": what a stroke brings in, so that a stroke need not be quicker
   const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
-  const take = Math.max(0, Math.min(gain, n.amount, CARRY_CAP[res] - have));
+  const take = Math.max(0, Math.min(gain, n.amount, carryCap(sim, v, res) - have));
   n.amount -= take;
   v.carry = { res, amount: have + take };
   // gatherers now and then turn up a shell (the stone age's money) among the berries
@@ -173,7 +173,7 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
     const idx = v.target, N = sim.world.size; leaveNode(sim, v);
     sim.world.depleted(idx, (x, y) => sim.fog.state[y * N + x] > 0 && !sim.inZone(x, y) && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y)); v.phase = 'idle';
     if (n.kind === 'tree') sim.say('Một cây đã được đốn xong.');
-  } else if (v.carry.amount >= CARRY_CAP[res] || sim.needTool(v, job)) { leaveNode(sim, v); v.phase = 'idle'; }
+  } else if (v.carry.amount >= carryCap(sim, v, res) || sim.needTool(v, job)) { leaveNode(sim, v); v.phase = 'idle'; }
 }
 
 /** The fields work: whoever the player put inside one grows food straight into the store, faster in a field of a higher level, with a hoe, and with the season. */
@@ -197,7 +197,7 @@ export function plan(sim: Sim, v: Villager): void {
   if (v.job === 'build') { if (!sim.planTool(v, 'build')) planBuild(sim, v); return; }
   if (isStaffJob(v.job) || (v.job === 'food' && v.post >= 0)) { sim.planStaff(v); return; }
   const def = JOBS[v.job as WorkJob], res = def.res!;
-  if (v.carry && (v.carry.res !== res || v.carry.amount >= CARRY_CAP[v.carry.res])) { planDeliver(sim, v); return; }
+  if (v.carry && (v.carry.res !== res || v.carry.amount >= carryCap(sim, v, v.carry.res))) { planDeliver(sim, v); return; }
   if (!sim.hasRoom(res)) {
     if (v.carry) { planDeliver(sim, v); return; }
     if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say(`Kho đã đầy ${RES_NAME[res].toLowerCase()}, hãy nâng cấp Kho.`); }

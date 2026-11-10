@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lính Trung cổ</title>
+<style>
+  body { margin: 0; padding: 14px 16px; background: #c4b280; font: 14px system-ui, sans-serif; color: #2b1d0e; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 12px; }
+  h1 { font-size: 18px; margin: 0 10px 0 0; }
+  label { display: inline-flex; align-items: center; gap: 5px; }
+  select, input { font: inherit; }
+  .unit { margin-bottom: 18px; padding: 8px 10px; background: rgba(255, 255, 255, .22); border: 1px solid #8a6a36; border-radius: 10px; }
+  .unit h2 { margin: 0 0 6px; font-size: 16px; }
+  .acts { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  figure { margin: 0; text-align: center; }
+  figcaption { font-weight: 700; margin-top: 2px; }
+  canvas { image-rendering: pixelated; display: block; }
+</style></head>
+<body>
+<header>
+  <h1>Lính Trung cổ · cấp 1</h1>
+  <label>Cỡ <select id="scale"><option>3</option><option selected>4</option><option>5</option><option>6</option></select></label>
+  <label>Tốc độ <select id="speed"><option value="0.25">0,25×</option><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="1.5">1,5×</option></select></label>
+  <label><input type="checkbox" id="left"> Quay sang trái</label>
+  <label><input type="checkbox" id="alt"> Đòn thay thế (kỵ binh: chém kiếm)</label>
+  <label><input type="checkbox" id="pause"> Tạm dừng</label>
+  <label>Nền <select id="bg"><option value="#c4b280">Đất</option><option value="#6a8f4a">Cỏ</option><option value="#2a2a2e">Tối</option><option value="#ffffff">Trắng</option></select></label>
+</header>
+<div id="units"></div>
+<script>/*BUNDLE*/</script>
+</body></html>

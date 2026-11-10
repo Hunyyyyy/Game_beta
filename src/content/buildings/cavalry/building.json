@@ -1,6 +1,6 @@
 {
  "kind": "cavalry",
- "name": "Trại kỵ thú",
+ "name": "Trại lính kỵ",
  "names": {
   "ancient": "Trại kỵ binh"
  },
@@ -43,27 +43,14 @@
    {
     "name": "Đá",
     "cost": {
-     "wood": 35,
-     "stone": 25
+     "wood": 38,
+     "stone": 30
     },
-    "buildTime": 160,
-    "cap": 0,
-    "craftSpeed": 1,
-    "slots": 15,
-    "hp": 360,
-    "sight": 0
-   },
-   {
-    "name": "Đá gia cố",
-    "cost": {
-     "wood": 41,
-     "stone": 35
-    },
-    "buildTime": 233,
+    "buildTime": 197,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 20,
-    "hp": 450,
+    "hp": 405,
     "sight": 0
    }
   ],

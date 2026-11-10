@@ -1,0 +1,84 @@
+{
+ "_note": "A shield held in the off hand. Poses are rows of letters drawn with the grip at (0,0) after (ox, oy); the letters are in 'legend' and the colours in 'palette'. rest / guard are seen from the side, restFront / guardFront from the front.",
+ "name": "Heater shield",
+ "palette": {
+  "rim": "#4a4f55",
+  "rimH": "#aab3ba",
+  "face": "#a8743c",
+  "faceD": "#7a5028",
+  "boss": "#d0d5d9",
+  "mark": "#b8322a",
+  "markD": "#8a2420"
+ },
+ "legend": {
+  "R": "rim",
+  "H": "rimH",
+  "F": "face",
+  "f": "faceD",
+  "B": "boss",
+  "E": "mark",
+  "e": "markD"
+ },
+ "poses": {
+  "rest": {
+   "ox": -1,
+   "oy": -4,
+   "rows": [
+    "RRRR",
+    "RHFR",
+    "RFER",
+    "RFER",
+    "RfFR",
+    ".RfR",
+    ".ReR",
+    "..R."
+   ]
+  },
+  "guard": {
+   "ox": -3,
+   "oy": -5,
+   "rows": [
+    "RRRRRRR",
+    "RHFFFFR",
+    "RFFEFFR",
+    "RFEBEFR",
+    "RFFEFFR",
+    "RfFEFfR",
+    ".RfEfR.",
+    ".ReEeR.",
+    "..RfR..",
+    "...R..."
+   ]
+  },
+  "restFront": {
+   "ox": -1,
+   "oy": -3,
+   "rows": [
+    "RRRR",
+    "RHFR",
+    "RFER",
+    "RFER",
+    "RfFR",
+    ".RfR",
+    ".ReR",
+    "..R."
+   ]
+  },
+  "guardFront": {
+   "ox": -3,
+   "oy": -5,
+   "rows": [
+    "RRRRRRR",
+    "RHFFFFR",
+    "RFFEFFR",
+    "RFEBEFR",
+    "RFFEFFR",
+    "RfFEFfR",
+    ".RfEfR.",
+    ".ReEeR.",
+    "..RfR..",
+    "...R..."
+   ]
+  }
+ }
+}

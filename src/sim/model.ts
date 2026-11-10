@@ -8,13 +8,15 @@ import { Recipe, ToolSet } from './tools';
 import { Team } from './combat';
 
 export type Sex = 'm' | 'f';
+/** A village we took (adopted or wiped out) and what it gave for good: if it is taken back, this is what we lose. */
+export interface Conquest { id: string; tier: string; pop: number; slots: number; yieldPct: number; day: number }
 export type Facing = 'front' | 'back' | 'right' | 'left';
 export type Phase = 'idle' | 'move' | 'goNode' | 'work' | 'goStore' | 'wait' | 'goSite' | 'build' | 'goShop' | 'craft' | 'goEquip' | 'goHome' | 'sleep' | 'goStaff' | 'inside' | 'goOrder' | 'fight' | 'flee' | 'down' | 'goCarcass' | 'skin' | 'rescue';
 export interface Look { sex: Sex; skin: string; hair: string; hide: string; pants: string }
 export interface Skill { xp: number; level: number }
 export interface LogLine { t: number; text: string }
 /** Công cụ đang hiện trong tay (để vẽ). */
-export interface Hold { kind: string; tier: number }
+export interface Hold { kind: string; tier: number; shield?: string }
 /** What a unit is attacking: another unit (player or tribe) or an animal. */
 export interface Target { kind: 'unit' | 'animal'; id: number }
 export type Shift = 'day' | 'night' | 'both';
@@ -97,6 +99,8 @@ export interface Villager {
   job: Job;
   /** The arm of a soldier (job 'fight'): chosen by the camp that took him on. */
   arm: SoldierArm;
+  /** The rank of a soldier of a camp (ranks.json, 1 to 6): his strength, his food and the weapon he carries follow it. 1 for everyone else. */
+  rank: number;
   phase: Phase;
   slot: number;     // chỗ đứng đã giữ bên cạnh nguồn: 1 = trái, 2 = phải, 0 = chưa giữ
   target: number;   // chỉ số ô nguồn hoặc id công trình đang nhắm
@@ -161,7 +165,7 @@ export interface Villager {
   /** Wear of the weapon and the armour in hand: which piece it was counted for, hits left, and whether it is broken (useless until mended). */
   /** The squad (đội) this soldier belongs to, -1 for none. */
   squad: number;
-  /** The beast he rides, given from the stable (null for none). The riders of the Trại kỵ thú ride the beast of their camp without one: see `sim.mountOf`. */
+  /** The beast he rides, given from the stable (null for none). The riders of the Trại lính kỵ ride the beast of their camp without one: see `sim.mountOf`. */
   mount: MountKind | null;
   /** A soldier of the Trại lính gác: he keeps a post of his own (`guardAt`) and comes back to it after each fight. */
   guard: boolean;

@@ -4,7 +4,7 @@ import type { Res } from '../sim/resources';
 import { h } from './dom';
 import type { Ctx } from './ctx';
 
-const ARM: Array<[keyof ArmCount, string]> = [['foot', 'Bộ binh'], ['archer', 'Thợ ném / cung'], ['cavalry', 'Kỵ']];
+const ARM: Array<[keyof ArmCount, string]> = [['foot', 'Bộ binh'], ['archer', 'Lính cung / cung'], ['cavalry', 'Kỵ']];
 type Tone = 'good' | 'bad' | 'neutral';
 type Kind = 'attack' | 'defense' | 'beasts';
 const FILTERS: Array<[Kind | 'all', string]> = [['all', 'Tất cả'], ['attack', '⚔ Tấn công'], ['defense', '🛡 Phòng thủ'], ['beasts', '🐺 Thú dữ']];

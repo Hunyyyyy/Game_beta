@@ -1,5 +1,5 @@
 {
- "_note": "Mọi tài nguyên của game nằm ở đây; thêm tài nguyên mới = thêm một mục (thứ tự mục = thứ tự trên màn hình). name: tên hiển thị. carry: một dân mang tối đa bao nhiêu. barter: đổi bao nhiêu thì được 1 tiền (null: không đổi). hud: 'always' luôn hiện trên thanh trên, 'whenOwned' chỉ hiện khi làng đã có. unlock: null là mở từ đầu; hoặc {building, level}: chỉ lấy được khi đã có công trình đó (xong) đạt cấp đó. Ví dụ {\"building\":\"huntlodge\",\"level\":2} mở xương ở Chòi thợ săn cấp 2; sau này đồng, sắt... mở bằng công trình riêng (thêm thư mục công trình đó ở src/content/buildings). Tài nguyên chưa mở thì thú vẫn có thể rơi ra nhưng làng không nhận được.",
+ "_note": "Mọi tài nguyên của game nằm ở đây; thêm tài nguyên mới = thêm một mục (thứ tự mục = thứ tự trên màn hình). name: tên hiển thị. carry: một dân mang tối đa bao nhiêu. barter: đổi bao nhiêu thì được 1 tiền (null: không đổi). hud: 'always' luôn hiện trên thanh trên, 'whenOwned' chỉ hiện khi làng đã có. unlock: null là mở từ đầu; hoặc {building, level}: chỉ lấy được khi đã có công trình đó (xong) đạt cấp đó. Ví dụ {\"building\":\"huntlodge\",\"level\":2} mở xương ở Chòi thợ săn cấp 2; sau này đồng, sắt... mở bằng công trình riêng (thêm thư mục công trình đó ở src/content/buildings). Tài nguyên chưa mở thì thú vẫn có thể rơi ra nhưng làng không nhận được. Thời Trung cổ: quặng sắt, than, quặng sắt hiếm, sợi, gân, gỗ thủy tùng (thô); thỏi sắt, thép, thép cao cấp, da thuộc, vải, gỗ cứng (chế biến). Công trình mở chúng (mine, smelter, tannery, carpentry) thêm ở src/content/buildings; hàng nhập như gỗ thủy tùng không bán được (barter null).",
  "resources": {
   "food": {
    "name": "Thức ăn",
@@ -70,6 +70,114 @@
    "unlock": {
     "building": "huntlodge",
     "level": 4
+   }
+  },
+  "iron_ore": {
+   "name": "Quặng sắt",
+   "carry": 6,
+   "barter": 6,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "mine",
+    "level": 1
+   }
+  },
+  "coal": {
+   "name": "Than",
+   "carry": 8,
+   "barter": 5,
+   "hud": "whenOwned",
+   "unlock": null
+  },
+  "rare_ore": {
+   "name": "Quặng sắt hiếm",
+   "carry": 4,
+   "barter": 2,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "mine",
+    "level": 3
+   }
+  },
+  "fiber": {
+   "name": "Sợi",
+   "carry": 10,
+   "barter": 4,
+   "hud": "whenOwned",
+   "unlock": null
+  },
+  "sinew": {
+   "name": "Gân",
+   "carry": 6,
+   "barter": 6,
+   "hud": "whenOwned",
+   "unlock": null
+  },
+  "yew": {
+   "name": "Gỗ thủy tùng",
+   "carry": 4,
+   "barter": null,
+   "hud": "whenOwned",
+   "unlock": null
+  },
+  "iron": {
+   "name": "Thỏi sắt",
+   "carry": 6,
+   "barter": 3,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "smelter",
+    "level": 1
+   }
+  },
+  "steel": {
+   "name": "Thép",
+   "carry": 4,
+   "barter": 2,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "smelter",
+    "level": 2
+   }
+  },
+  "fine_steel": {
+   "name": "Thép cao cấp",
+   "carry": 3,
+   "barter": 1,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "smelter",
+    "level": 3
+   }
+  },
+  "leather": {
+   "name": "Da thuộc",
+   "carry": 8,
+   "barter": 3,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "tannery",
+    "level": 1
+   }
+  },
+  "cloth": {
+   "name": "Vải",
+   "carry": 8,
+   "barter": 3,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "tannery",
+    "level": 1
+   }
+  },
+  "hardwood": {
+   "name": "Gỗ cứng",
+   "carry": 8,
+   "barter": 3,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "carpentry",
+    "level": 1
    }
   },
   "coin": {

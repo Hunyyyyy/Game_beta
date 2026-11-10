@@ -66,7 +66,7 @@ export class ScoutPane {
   // ---------------------------------------------------------------- the scouts
   private renderRoster(): Node[] {
     const { sim } = this.c, level = sim.scoutLevel(), limit = sim.scoutLimit();
-    const out: Node[] = [hint('Trinh sát', 'Trinh sát là một vai trò, tuyển từ lính kỵ của Trại kỵ thú và cho nghỉ ở đây: số lượng tối đa theo cấp trại. Mỗi chuyến cần nhiều người, mà người giỏi (Nhanh nhẹn, Thể lực) đáng giá hơn: một mình thì không bao giờ vẽ đủ. Càng đông thì đi càng nhanh. Trinh sát có thể chết.')];
+    const out: Node[] = [hint('Trinh sát', 'Trinh sát là một vai trò, tuyển từ lính kỵ của Trại lính kỵ và cho nghỉ ở đây: số lượng tối đa theo cấp trại. Mỗi chuyến cần nhiều người, mà người giỏi (Nhanh nhẹn, Thể lực) đáng giá hơn: một mình thì không bao giờ vẽ đủ. Càng đông thì đi càng nhanh. Trinh sát có thể chết.')];
     out.push(dlg.line('Bản đồ vẽ được', LEVEL_NAME[level]));
     if (!sim.dev.freeBuild && !limit) out.push(dlg.why('Hãy dựng Trại trinh sát.'));
     out.push(...this.people.render());

@@ -1,0 +1,113 @@
+{
+ "name": "Arming sword",
+ "handle": {
+  "length": 4,
+  "width": 1,
+  "color": "wood"
+ },
+ "head": [
+  {
+   "x": -2,
+   "y": -1,
+   "w": 5,
+   "h": 1,
+   "color": "dark"
+  },
+  {
+   "x": 0,
+   "y": -14,
+   "w": 2,
+   "h": 13,
+   "color": "head"
+  },
+  {
+   "x": 0,
+   "y": -15,
+   "w": 1,
+   "h": 1,
+   "color": "light"
+  },
+  {
+   "x": 0,
+   "y": -14,
+   "w": 1,
+   "h": 13,
+   "color": "light"
+  },
+  {
+   "x": 1,
+   "y": -12,
+   "w": 1,
+   "h": 11,
+   "color": "dark"
+  },
+  {
+   "x": -1,
+   "y": 0,
+   "w": 3,
+   "h": 1,
+   "color": "head"
+  }
+ ],
+ "poses": {
+  "hip": [
+   {
+    "x": 1,
+    "y": -3,
+    "w": 1,
+    "h": 3,
+    "color": "#3a2410"
+   },
+   {
+    "x": 1,
+    "y": -4,
+    "w": 1,
+    "h": 1,
+    "color": "#d8b04a"
+   },
+   {
+    "x": 0,
+    "y": 0,
+    "w": 3,
+    "h": 1,
+    "color": "head"
+   },
+   {
+    "x": -1,
+    "y": 1,
+    "w": 1,
+    "h": 2,
+    "color": "#3a2410"
+   },
+   {
+    "x": -2,
+    "y": 3,
+    "w": 1,
+    "h": 2,
+    "color": "#3a2410"
+   },
+   {
+    "x": -3,
+    "y": 5,
+    "w": 1,
+    "h": 2,
+    "color": "#3a2410"
+   },
+   {
+    "x": -4,
+    "y": 7,
+    "w": 1,
+    "h": 2,
+    "color": "#3a2410"
+   },
+   {
+    "x": -4,
+    "y": 9,
+    "w": 1,
+    "h": 1,
+    "color": "head"
+   }
+  ]
+ },
+ "_note": "Pose \"hip\": the sword in its scabbard at the hip (medieval guard rank 3 standing)."
+}

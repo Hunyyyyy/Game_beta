@@ -33,6 +33,8 @@ import * as environment from './environment';
 import * as save from './save';
 import * as rest from './rest';
 import * as roles from './roles';
+import * as barracks from './barracks';
+import type { RankRole } from './ranks';
 import * as idle from './idle';
 import * as defense from './defense';
 import * as army from './army';
@@ -49,7 +51,7 @@ import * as warlog from './warlog';
 import * as warquick from './warquick';
 import * as brainplayer from './brainplayer';
 import { WAR, WarApi } from './simwar';
-import { BattleRecord, BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutLoss, WarRecord, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager, MilZone, MilCell, Legion } from './model';
+import { BattleRecord, Conquest, BattleState, CardKind, FormationName, LogLine, Objective, Notice, PlaceResult, Plan, Projectile, ScoutLoss, WarRecord, ScoutMap, ScoutMission, Sex, Sighting, Shift, Squad, Target, Villager, MilZone, MilCell, Legion } from './model';
 import type { Ent } from './battle';
 export * from './model';
 
@@ -111,8 +113,14 @@ export class Sim {
   campBonus = 0;
   /** Whether strangers may come to settle (the campfire's panel shuts and opens the door; environment.toggleNewcomers). */
   newcomersOpen = true;
-  /** How many villages we took (adopted or wiped out): each adds to the yield of every stroke of work (difficulty.json capture.yieldPerVillage). */
+  /** How many villages we took (adopted or wiped out). */
   conquered = 0;
+  /** The newcomers of the land (tribefrontier.ts): the day the next one arrives (0 when none is on its way), how many have come, and the last day it was looked at. */
+  frontier: { next: number; late: number; day: number; bandit: Record<string, number> } = { next: 0, late: 0, day: -1, bandit: {} };
+  /** Each village we took and what it gave for good (people, places in the camps, yield): taking it back takes that away again. */
+  conquests: Conquest[] = [];
+  /** The percent every stroke of work gains from the villages taken, by their strength (difficulty.json capture.yieldPerVillage). */
+  yieldBonus = 0;
   /** Fights between two villages that we saw (time, place): they become a notice for a while. Never saved. */
   readonly clashes: Array<{ a: string; b: string; at: number; x: number; y: number }> = [];
   readonly animals: Animal[] = [];
@@ -315,6 +323,10 @@ export class Sim {
   releaseRole(ids: readonly number[]): string | null { return roles.releaseRole(this, ids); }
   /** → roles.roleCapacity */
   roleCapacity(role: RoleId): number { return roles.roleCapacity(this, role); }
+  /** → barracks.trainCheck: what stands between the village and a soldier of this rank of a branch */
+  trainCheck(role: RankRole, rank: number): barracks.TrainCheck { return barracks.trainCheck(this, role, rank); }
+  /** → barracks.trainSoldier: train villagers as soldiers of a rank of a branch (the camp's "＋") */
+  trainSoldier(ids: readonly number[], role: RankRole, rank: number): string | null { return barracks.trainSoldier(this, ids, role, rank); }
   /** → roles.roleCount */
   roleCount(role: RoleId): number { return roles.roleCount(this, role); }
   /** → tribes.foeBonus: what the strength of a tribe adds to a stat of its people */
@@ -368,6 +380,12 @@ export class Sim {
 
   /** → construction.startLevel */
   startLevel(kind: BuildingKind): number { return construction.startLevel(this, kind); }
+  /** → construction.buildBill: a bill of the works of the village, cut by the research of the builders */
+  buildBill(bill: Partial<Stock>): Partial<Stock> { return construction.buildBill(this, bill); }
+  /** → works.researchCost: what a research costs now (the research of the Nhà nghiên cứu cuts it) */
+  researchCost(t: Tech): Partial<Stock> { return works.researchCost(this, t); }
+  /** → barracks.trainCost: what one soldier of a rank costs now */
+  rankCost(role: RankRole, rank: number): Partial<Stock> { return barracks.trainCost(this, role, rank); }
   /** → construction.startCost */
   startCost(kind: BuildingKind): Partial<Stock> { return construction.startCost(this, kind); }
   /** → idle.homeKind */

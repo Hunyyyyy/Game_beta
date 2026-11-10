@@ -1,6 +1,6 @@
 {
  "kind": "archery",
- "name": "Trại cung thủ",
+ "name": "Trại lính cung",
  "names": {
   "ancient": "Trại cung thủ"
  },
@@ -43,27 +43,14 @@
    {
     "name": "Đá",
     "cost": {
-     "wood": 30,
-     "stone": 25
+     "wood": 33,
+     "stone": 30
     },
-    "buildTime": 150,
-    "cap": 0,
-    "craftSpeed": 1,
-    "slots": 15,
-    "hp": 360,
-    "sight": 0
-   },
-   {
-    "name": "Đá gia cố",
-    "cost": {
-     "wood": 36,
-     "stone": 35
-    },
-    "buildTime": 225,
+    "buildTime": 188,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 20,
-    "hp": 450,
+    "hp": 405,
     "sight": 0
    }
   ],

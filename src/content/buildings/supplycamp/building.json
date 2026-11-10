@@ -41,27 +41,14 @@
    {
     "name": "Kho quân nhu",
     "cost": {
-     "wood": 52,
-     "stone": 25
+     "wood": 60,
+     "stone": 38
     },
-    "buildTime": 160,
+    "buildTime": 197,
     "cap": 0,
     "craftSpeed": 1,
-    "slots": 12,
-    "hp": 360,
-    "sight": 0
-   },
-   {
-    "name": "Kho quân nhu gia cố",
-    "cost": {
-     "wood": 68,
-     "stone": 50
-    },
-    "buildTime": 233,
-    "cap": 0,
-    "craftSpeed": 1,
-    "slots": 16,
-    "hp": 450,
+    "slots": 14,
+    "hp": 405,
     "sight": 0
    }
   ],

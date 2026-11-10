@@ -1,0 +1,240 @@
+{
+ "_note": "Kỵ binh hoàng gia (Kỵ binh bậc 5): giáp tấm với áo choàng xanh hoàng gia có huy hiệu vàng, mũ kín có chùm lông, kiếm thép đeo hông.",
+ "name": "Giáp tấm kỵ binh hoàng gia",
+ "palette": {
+  "steel": "#a9b4bd",
+  "steelH": "#e6edf2",
+  "steelD": "#66727c",
+  "steelDD": "#3d474f",
+  "slit": "#15181c",
+  "gold": "#d8b04a",
+  "royal": "#2f56a6",
+  "royalD": "#1f3a74",
+  "belt": "#2a1c10",
+  "scab": "#33200f",
+  "hilt": "#9aa2a8"
+ },
+ "legs": {
+  "near": "steelD",
+  "far": "steelDD"
+ },
+ "wraps": {
+  "arm": {
+   "full": true,
+   "color": "steel",
+   "far": "steelD",
+   "hand": "steelDD",
+   "w": 3,
+   "h": 3
+  },
+  "leg": {
+   "dy": 4,
+   "w": 3,
+   "h": 6,
+   "color": "steel",
+   "edge": "gold"
+  }
+ },
+ "side": {
+  "head": {
+   "ox": 0,
+   "oy": -3,
+   "legend": {
+    "r": "royal",
+    "R": "royalD",
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit"
+   },
+   "rows": [
+    ".....rrr.....",
+    "....rrRRr....",
+    "...ssHHsss...",
+    "..sHHHssssD..",
+    ".sHHsssssssD.",
+    ".sssssssssssD",
+    ".ssssssssssDD",
+    ".sssssdddddsD",
+    ".sssssdkkkdsD",
+    ".ssssssddddsD",
+    ".sssssssssssD",
+    ".DsssssssssDD",
+    "..DDsssssDDD.",
+    "...DDDDDDD..."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "r": "royal",
+    "R": "royalD",
+    "b": "belt",
+    "k": "scab",
+    "h": "hilt"
+   },
+   "rows": [
+    "ssHHssD",
+    "sHHHssD",
+    "sHHgssD",
+    "ssgggsD",
+    "ssHgssD",
+    "ssssssD",
+    "bbbbgbb",
+    "rrrrrrR",
+    "rrrrrRR",
+    "rrrrRR.",
+    ".rRRR.."
+   ]
+  },
+  "over": {
+   "ox": -3,
+   "oy": 6,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "r": "royal",
+    "R": "royalD",
+    "b": "belt",
+    "k": "scab",
+    "h": "hilt"
+   },
+   "rows": [
+    "hh...",
+    "gk...",
+    ".kk..",
+    ".kk..",
+    "..kk.",
+    "...k."
+   ]
+  }
+ },
+ "front": {
+  "head": {
+   "ox": 0,
+   "oy": -3,
+   "legend": {
+    "r": "royal",
+    "R": "royalD",
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit"
+   },
+   "rows": [
+    ".....rrr....",
+    "....rrRRr...",
+    "...ssHHsss..",
+    "..sHHHssssD.",
+    ".sHHsssssssD",
+    ".ssssssssssD",
+    ".ssdddddddsD",
+    ".ssdkkdkkdsD",
+    ".ssdddddddsD",
+    ".sssssdsssdD",
+    ".ssssssssssD",
+    "..sssssssssD",
+    "...DDsssDDD."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "r": "royal",
+    "R": "royalD",
+    "b": "belt",
+    "k": "scab",
+    "h": "hilt"
+   },
+   "rows": [
+    "sHHssssHHs",
+    "sHHHssHHHs",
+    "ssHHggHHss",
+    "ssssgggsss",
+    "sssssggsss",
+    "ssssssssss",
+    "bbbbggbbbb",
+    "rrrrrrrrrR",
+    "rrrrrrrrrR",
+    ".rrrrrrrR.",
+    "..rrrrRR.."
+   ]
+  }
+ },
+ "back": {
+  "head": {
+   "ox": 0,
+   "oy": -3,
+   "legend": {
+    "r": "royal",
+    "R": "royalD",
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit"
+   },
+   "rows": [
+    ".....rrr....",
+    "....rrRRr...",
+    "...ssHHsss..",
+    "..sHHHssssD.",
+    ".sHHsssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".sssssdsssdD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    "..sssssssssD",
+    "...DDsssDDD."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "r": "royal",
+    "R": "royalD",
+    "b": "belt",
+    "k": "scab",
+    "h": "hilt"
+   },
+   "rows": [
+    "sHHssssHHs",
+    "sHHHssHHHs",
+    "ssHHssHHss",
+    "ssssssssss",
+    "ssssdsdsss",
+    "dddddddddd",
+    "bbbbbbbbbb",
+    "rrrrrrrrrR",
+    "rrrrrrrrrR",
+    ".rrrrrrrR.",
+    "..rrrrRR.."
+   ]
+  }
+ }
+}

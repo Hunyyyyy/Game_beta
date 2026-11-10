@@ -1,0 +1,269 @@
+{
+ "_note": "Lính bắn tỉa (Cung thủ bậc 6): mũ sallet nhẹ có đuôi che gáy, áo da xanh sẫm cổ xích, bao tên sau lưng.",
+ "name": "Giáp da cao cấp bắn tỉa",
+ "palette": {
+  "steel": "#b8c1c8",
+  "steelH": "#f2f6f9",
+  "steelD": "#6f7a83",
+  "mail": "#8a949b",
+  "mailD": "#5d676e",
+  "lea": "#3d5a35",
+  "leaD": "#28402a",
+  "stud": "#cfd6dc",
+  "belt": "#2a1c10",
+  "gold": "#e0b84e",
+  "qL": "#58381c",
+  "qD": "#3a2410",
+  "fW": "#f4f0e0",
+  "fR": "#c8483a",
+  "pants": "#2f3b2a",
+  "pantsD": "#222c20",
+  "glove": "#2a1c10"
+ },
+ "legs": {
+  "near": "pants",
+  "far": "pantsD"
+ },
+ "wraps": {
+  "arm": {
+   "full": true,
+   "color": "mail",
+   "far": "mailD",
+   "hand": "glove",
+   "w": 3,
+   "h": 2
+  },
+  "leg": {
+   "dy": 4,
+   "w": 3,
+   "h": 5,
+   "color": "belt",
+   "edge": "gold"
+  }
+ },
+ "side": {
+  "back": {
+   "ox": -6,
+   "oy": -2,
+   "legend": {
+    "m": "mail",
+    "M": "mailD",
+    "l": "lea",
+    "L": "leaD",
+    "s": "stud",
+    "B": "belt",
+    "G": "gold",
+    "w": "fW",
+    "F": "fR",
+    "Q": "qD",
+    "q": "qL"
+   },
+   "rows": [
+    "wF....",
+    ".wF...",
+    ".QQQ..",
+    ".qQq..",
+    "..qQq.",
+    "..qQq.",
+    "..qQq.",
+    "...qQq",
+    "...QQq"
+   ]
+  },
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD"
+   },
+   "rows": [
+    ".....ssss....",
+    "...ssHHsss...",
+    "..sHHHssssD..",
+    ".sHHsssssssD.",
+    "sssssssssssDD",
+    "sssssD.......",
+    "ssssD........",
+    ".sssD........",
+    "..sD.........",
+    ".............",
+    ".............",
+    ".............",
+    "............."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "m": "mail",
+    "M": "mailD",
+    "l": "lea",
+    "L": "leaD",
+    "s": "stud",
+    "B": "belt",
+    "G": "gold",
+    "w": "fW",
+    "F": "fR",
+    "Q": "qD",
+    "q": "qL"
+   },
+   "rows": [
+    "mMmMmMM",
+    "mMmMmMM",
+    "lslslsL",
+    "llslslL",
+    "lslslsL",
+    "llslslL",
+    "BBBBGBB",
+    "LLLLLLL",
+    "LLLLLLL",
+    "LLLLLL.",
+    "LLLL..."
+   ]
+  }
+ },
+ "front": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD"
+   },
+   "rows": [
+    "....ssss....",
+    "..ssHHssss..",
+    ".sHHHsssssD.",
+    "sHHsssssssDD",
+    "DDDDDDDDDDDD",
+    "s..........s",
+    "s..........s",
+    "sD........Ds",
+    ".s........s.",
+    "............",
+    "............",
+    "............",
+    "............"
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "m": "mail",
+    "M": "mailD",
+    "l": "lea",
+    "L": "leaD",
+    "s": "stud",
+    "B": "belt",
+    "G": "gold",
+    "w": "fW",
+    "F": "fR",
+    "Q": "qD",
+    "q": "qL"
+   },
+   "rows": [
+    "mMmMmMmMmM",
+    "MmMmMmMmMm",
+    "lslslslsls",
+    "slslslslsl",
+    "lslslslsls",
+    "slslslslsl",
+    "BBBBGGBBBB",
+    "LLLLLLLLLL",
+    "LLLLLLLLLL",
+    "LLLLLLLLLL",
+    "LLLL..LLLL"
+   ]
+  }
+ },
+ "back": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD"
+   },
+   "rows": [
+    "....ssss....",
+    "..ssHHssss..",
+    ".sHHHsssssD.",
+    "sHHsssssssDD",
+    "DDDDDDDDDDDD",
+    "ssssssssssss",
+    "sssssssssssD",
+    ".ssssssssssD",
+    "..ssssssssD.",
+    "............",
+    "............",
+    "............",
+    "............"
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "m": "mail",
+    "M": "mailD",
+    "l": "lea",
+    "L": "leaD",
+    "s": "stud",
+    "B": "belt",
+    "G": "gold",
+    "w": "fW",
+    "F": "fR",
+    "Q": "qD",
+    "q": "qL"
+   },
+   "rows": [
+    "mMmMmMmMmM",
+    "MmMmMmMmMm",
+    "lslslslsls",
+    "slslslslsl",
+    "lslslslsls",
+    "slslslslsl",
+    "BBBBBBBBBB",
+    "LLLLLLLLLL",
+    "LLLLLLLLLL",
+    "LLLLLLLLLL",
+    "LLLL..LLLL"
+   ]
+  },
+  "over": {
+   "ox": 1,
+   "oy": -3,
+   "legend": {
+    "m": "mail",
+    "M": "mailD",
+    "l": "lea",
+    "L": "leaD",
+    "s": "stud",
+    "B": "belt",
+    "G": "gold",
+    "w": "fW",
+    "F": "fR",
+    "Q": "qD",
+    "q": "qL"
+   },
+   "rows": [
+    "..wF......",
+    ".wF.wF....",
+    ".QQQQQ....",
+    ".qQqqQ....",
+    ".qQqqQ....",
+    ".qQqqQ....",
+    ".qQqqQ....",
+    ".QqqQq....",
+    "..QQQ.....",
+    ".........."
+   ]
+  }
+ }
+}

@@ -1,0 +1,95 @@
+{
+ "_note": "Khiên tháp thép: cao hơn khiên thường, che gần hết thân. rest / guard nhìn bên hông, restFront / guardFront nhìn thẳng.",
+ "name": "Tower shield",
+ "palette": {
+  "rim": "#66727c",
+  "rimH": "#e6edf2",
+  "face": "#a9b4bd",
+  "faceD": "#7f8b95",
+  "boss": "#d8b04a",
+  "mark": "#2f56a6",
+  "markD": "#1f3a74"
+ },
+ "legend": {
+  "R": "rim",
+  "H": "rimH",
+  "F": "face",
+  "f": "faceD",
+  "B": "boss",
+  "E": "mark",
+  "e": "markD"
+ },
+ "poses": {
+  "rest": {
+   "ox": -1,
+   "oy": -5,
+   "rows": [
+    "HRRH",
+    "RFfR",
+    "RFER",
+    "RFER",
+    "RFER",
+    "RFER",
+    "RFER",
+    "RFfR",
+    "RFfR",
+    ".RR.",
+    "..R."
+   ]
+  },
+  "guard": {
+   "ox": -4,
+   "oy": -7,
+   "rows": [
+    "HRRRRRRH",
+    "RFFFFFFR",
+    "RFFEEFfR",
+    "RFEEEEfR",
+    "RFFEEFfR",
+    "RFFBBFfR",
+    "RFFEEFfR",
+    "RFFEEFfR",
+    "RFFEEFfR",
+    ".RFEEfR.",
+    ".RFFFfR.",
+    "..RFFR..",
+    "...RR..."
+   ]
+  },
+  "restFront": {
+   "ox": -1,
+   "oy": -4,
+   "rows": [
+    "HRRH",
+    "RFfR",
+    "RFER",
+    "RFER",
+    "RFER",
+    "RFER",
+    "RFfR",
+    "RFfR",
+    ".RR.",
+    "..R."
+   ]
+  },
+  "guardFront": {
+   "ox": -4,
+   "oy": -7,
+   "rows": [
+    "HRRRRRRH",
+    "RFFFFFFR",
+    "RFFEEFfR",
+    "RFEEEEfR",
+    "RFFEEFfR",
+    "RFFBBFfR",
+    "RFFEEFfR",
+    "RFFEEFfR",
+    "RFFEEFfR",
+    ".RFEEfR.",
+    ".RFFFfR.",
+    "..RFFR..",
+    "...RR..."
+   ]
+  }
+ }
+}

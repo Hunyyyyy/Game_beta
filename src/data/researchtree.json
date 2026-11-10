@@ -77,8 +77,8 @@
       "name": "Sát thương chí mạng",
       "short": "ST chí mạng",
       "steps": [
-        20.0,
-        20.0
+        20,
+        20
       ],
       "cost": {
         "food": 50,
@@ -109,8 +109,8 @@
       "name": "Sản lượng",
       "short": "Sản lượng",
       "steps": [
-        8.0,
-        8.0
+        8,
+        8
       ],
       "cost": {
         "food": 50,
@@ -125,8 +125,8 @@
       "name": "Độ bền",
       "short": "Độ bền",
       "steps": [
-        20.0,
-        20.0
+        20,
+        20
       ],
       "cost": {
         "food": 50,
@@ -285,8 +285,8 @@
       "name": "Tải hậu cần",
       "short": "Tải",
       "steps": [
-        5.0,
-        5.0
+        5,
+        5
       ],
       "cost": {
         "food": 50,
@@ -301,8 +301,8 @@
       "name": "Tốc độ dựng lều",
       "short": "Dựng lều",
       "steps": [
-        25.0,
-        25.0
+        25,
+        25
       ],
       "cost": {
         "food": 50,
@@ -317,8 +317,8 @@
       "name": "Sản lượng nghề",
       "short": "Sản lượng",
       "steps": [
-        15.0,
-        15.0
+        15,
+        15
       ],
       "cost": {
         "food": 50,
@@ -336,11 +336,11 @@
       "building": "infantry"
     },
     "cavalry": {
-      "name": "Kỵ thú",
+      "name": "Lính kỵ",
       "building": "cavalry"
     },
     "archer": {
-      "name": "Thợ ném",
+      "name": "Lính cung",
       "building": "archery"
     },
     "scout": {
@@ -474,11 +474,11 @@
       "building": "infantry"
     },
     "march_cavalry": {
-      "name": "Kỵ thú",
+      "name": "Lính kỵ",
       "building": "cavalry"
     },
     "march_archer": {
-      "name": "Thợ ném",
+      "name": "Lính cung",
       "building": "archery"
     },
     "march_army": {
@@ -490,12 +490,21 @@
       "building": "infantry"
     },
     "plan_cavalry": {
-      "name": "Kỵ thú",
+      "name": "Lính kỵ",
       "building": "cavalry"
     },
     "plan_archer": {
-      "name": "Thợ ném",
+      "name": "Lính cung",
       "building": "archery"
+    },
+    "gather": {
+      "name": "Khai thác",
+      "building": "lumberyard",
+      "members": [
+        "wood",
+        "stone",
+        "food"
+      ]
     }
   },
   "tabs": {
@@ -505,12 +514,13 @@
     }
   },
   "chains": {
-    "_note": "Mỗi nhóm là một chuỗi chỉ số đi từ trên xuống dưới (order). Cấp n của một chỉ số cần chỉ số ngay phía trên đạt cấp n; chỉ số đầu chuỗi cấp n cần chỉ số cuối chuỗi đạt cấp n-1. Quân sự: Máu, Thủ cận, Thủ xa, Chạy, Sát thương, Sức. Công cụ (tab Công cụ bậc 1): mỗi CÔNG CỤ (rìu, cuốc chim, cuốc, búa) một cột Tốc độ, Sản lượng (không có ở búa), Độ bền; ai cầm công cụ đó được cộng, bậc của công cụ (gỗ, đá) do cấp Nhà chế tạo. Trận pháp (tab Chiến đấu, nhánh Chỉ số trận pháp): mỗi trận (cơ bản gồm Hàng ngang và Vòng tròn) một cột, cùng chuỗi chỉ số quân, chia làm hai đoạn (layout) với ô trận pháp ở giữa và mở rộng đội ở cuối; gates: chỉ số này cấp 1 cần nghiên cứu đó; lính đứng trong đội đang dùng trận đó được cộng thêm, và mỗi bước chỉ được scale (0,5) lần phần của Quân sự; mỗi trận chỉ nghiên cứu được khi đã mở trận (needs). Vũ khí (tab Vũ khí bậc 1): mỗi VŨ KHÍ (không phải mỗi vai trò) một cột Tốc độ đánh, Tỉ lệ chí mạng, Sát thương chí mạng (hai chỉ số này tính bằng % thật: 0,5% xác suất; 400% là gấp 4 lần đòn thường); ai cầm vũ khí đó được cộng chỉ số của nó; khi cả ba chỉ số đạt cấp tối đa thì mở vũ khí bậc 2 của vũ khí đó (finalTier): sát thương gốc của vũ khí nhân rules.tierMult trong weapons.json, cho mọi người cầm vũ khí đó. Kinh tế (nghề): Chạy, Làm việc, Sức, Trí tuệ. Phát triển (thợ xây, thợ chế tạo, nhà nghiên cứu): Làm việc, Sức, Trí tuệ (Trí tuệ ở cuối vì nó cũng tăng tốc độ làm việc và giảm sức tiêu hao khi làm việc). finalTier: ô cuối cột, mở bậc 2 khi mọi chỉ số của vai trò đạt cấp tối đa; có ở Quân sự, Kinh tế, Phát triển và Vũ khí. Bậc 2 nhân mọi chỉ số của cả vai trò theo tierMult trong stats.json.",
+    "_note": "Mỗi nhóm là một chuỗi chỉ số của các vai trò (order). Với các vai trò nằm trong cây theo trụ (pillars) thứ tự mở do các hàng của trụ quyết định; chuỗi chỉ còn quyết định các vai trò ngoài trụ (trận pháp, kế hoạch chiến đấu, hành quân của thời Trung cổ). Quân sự: Máu, Thủ cận, Thủ xa, Chạy, Sát thương, Sức, Hồi máu, Hồi sức, và ba chỉ số vũ khí cầm trong tay (Tốc đánh, Chí mạng, ST chí mạng, cộng cho vũ khí mà lính của vai trò đó cầm). Nghề khai thác và săn: Chạy, Làm việc, Sức, Trí tuệ, Hồi sức, Sản lượng nghề, và ba chỉ số công cụ cầm trong tay (Tốc độ, Sản lượng, Độ bền công cụ). gather (Khai thác) cộng cho đốn gỗ, thợ đá, hái lượm; thợ săn và người thuần thú có cột riêng. finalTier: bậc nghề, mở bằng bước nhảy của trụ. rankTiers: bậc lính của bộ, cung, kỵ, gác (ranks.json).",
     "military": {
       "roles": [
         "foot",
         "cavalry",
         "archer",
+        "guard",
         "scout"
       ],
       "order": [
@@ -521,14 +531,14 @@
         "atk",
         "sta",
         "hpregen",
-        "restregen"
+        "restregen",
+        "aspd",
+        "crit",
+        "critd"
       ],
       "finalTier": {
         "tier": 2,
         "roles": [
-          "foot",
-          "cavalry",
-          "archer",
           "scout"
         ],
         "needLab": 3,
@@ -538,114 +548,102 @@
           "coin": 20
         },
         "time": 1200
-      }
-    },
-    "weapon": {
-      "roles": [
-        "club",
-        "spear",
-        "mace",
-        "sling",
-        "bow"
-      ],
-      "order": [
-        "aspd",
-        "crit",
-        "critd"
-      ],
-      "finalTier": {
-        "tier": 2,
-        "roles": [
-          "club",
-          "spear",
-          "mace",
-          "sling",
-          "bow"
-        ],
-        "needLab": 3,
-        "cost": {
-          "wood": 100,
-          "stone": 60,
-          "coin": 15
-        },
-        "time": 900
-      }
-    },
-    "formation": {
-      "roles": [
-        "basic",
-        "wedge",
-        "horns",
-        "scatter",
-        "ambush"
-      ],
-      "order": [
-        "hp",
-        "defm",
-        "defr",
-        "move",
-        "atk",
-        "sta"
-      ],
-      "scale": 0.5,
-      "gates": {
-        "move": "form_cells_10"
       },
-      "layout": [
-        {
-          "stats": [
-            "hp",
-            "defm",
-            "defr"
-          ]
+      "rankTiers": {
+        "2": {
+          "needLab": 2,
+          "cost": {
+            "food": 200,
+            "wood": 120,
+            "coin": 20
+          },
+          "time": 1200
         },
-        {
-          "techs": [
-            "form_cells_10",
-            "form_squads_5"
-          ]
+        "3": {
+          "needLab": 3,
+          "cost": {
+            "food": 400,
+            "wood": 200,
+            "stone": 120,
+            "coin": 50
+          },
+          "time": 2400
         },
-        {
-          "stats": [
-            "move",
-            "atk",
-            "sta"
-          ]
+        "4": {
+          "needLab": 4,
+          "cost": {
+            "food": 600,
+            "wood": 300,
+            "stone": 200,
+            "coin": 80
+          },
+          "time": 3500
         },
-        {
-          "techs": [
-            "form_cells_15",
-            "form_squads_6"
-          ]
-        }
-      ]
-    },
-    "tool": {
-      "roles": [
-        "axe",
-        "pick",
-        "hoe"
-      ],
-      "order": [
-        "tspd",
-        "tyield",
-        "tdur"
-      ]
-    },
-    "hammer": {
-      "roles": [
-        "hammer"
-      ],
-      "order": [
-        "tspd",
-        "tdur"
-      ]
+        "5": {
+          "needLab": 4,
+          "cost": {
+            "food": 1200,
+            "wood": 600,
+            "stone": 400,
+            "hide": 150,
+            "coin": 200
+          },
+          "time": 7000
+        },
+        "6": {
+          "needLab": 4,
+          "cost": {
+            "food": 2400,
+            "wood": 1200,
+            "stone": 800,
+            "hide": 300,
+            "coin": 450
+          },
+          "time": 12000
+        },
+        "7": {
+          "needLab": 4,
+          "cost": {
+            "food": 4000,
+            "wood": 2000,
+            "stone": 1500,
+            "hide": 500,
+            "coin": 900
+          },
+          "time": 20000
+        },
+        "roles": [
+          "foot",
+          "cavalry",
+          "archer",
+          "guard"
+        ]
+      },
+      "except": {
+        "restregen": [
+          "foot",
+          "cavalry",
+          "archer",
+          "guard"
+        ],
+        "aspd": [
+          "archer",
+          "scout"
+        ],
+        "crit": [
+          "cavalry",
+          "scout"
+        ],
+        "critd": [
+          "foot",
+          "guard",
+          "scout"
+        ]
+      }
     },
     "economy": {
       "roles": [
-        "wood",
-        "stone",
-        "food",
+        "gather",
         "hunt",
         "tame"
       ],
@@ -655,16 +653,17 @@
         "sta",
         "int",
         "restregen",
-        "gyield"
+        "gyield",
+        "tspd",
+        "tyield",
+        "tdur",
+        "atk",
+        "hp"
       ],
       "finalTier": {
         "tier": 2,
         "roles": [
-          "wood",
-          "stone",
-          "food",
-          "hunt",
-          "tame"
+          "gather"
         ],
         "needLab": 3,
         "cost": {
@@ -677,6 +676,32 @@
       },
       "except": {
         "gyield": [
+          "tame"
+        ],
+        "tspd": [
+          "hunt",
+          "tame"
+        ],
+        "tyield": [
+          "hunt",
+          "tame"
+        ],
+        "tdur": [
+          "hunt",
+          "tame"
+        ],
+        "work": [
+          "hunt"
+        ],
+        "int": [
+          "hunt"
+        ],
+        "atk": [
+          "gather",
+          "tame"
+        ],
+        "hp": [
+          "gather",
           "tame"
         ]
       }
@@ -707,111 +732,2347 @@
         },
         "time": 1000
       }
-    },
-    "defense": {
-      "roles": [
-        "guard",
-        "towerman"
-      ],
-      "order": [
-        "hp",
-        "atk"
-      ]
-    },
-    "works1": {
-      "roles": [
-        "fence",
-        "gate"
-      ],
-      "order": [
-        "hp"
-      ]
-    },
-    "works2": {
-      "roles": [
-        "trap",
-        "tower"
-      ],
-      "order": [
-        "hp",
-        "atk"
-      ]
-    },
-    "march": {
-      "roles": [
-        "march_foot",
-        "march_cavalry",
-        "march_archer"
-      ],
-      "order": [
-        "hp",
-        "defm",
-        "defr",
-        "move",
-        "atk",
-        "sta"
-      ],
-      "scale": 0.5
-    },
-    "marchlog": {
-      "roles": [
-        "march_army"
-      ],
-      "order": [
-        "mspeed",
-        "mload",
-        "mbuild"
-      ]
-    },
-    "tactic": {
-      "roles": [
-        "plan_foot",
-        "plan_cavalry",
-        "plan_archer"
-      ],
-      "order": [
-        "hp",
-        "defm",
-        "defr",
-        "move",
-        "atk",
-        "sta"
-      ],
-      "scale": 0.5
     }
   },
-  "plan": {
-    "_note": "Cây Kế hoạch chiến đấu: ba cột Bộ binh, Kỵ, Cung, chỉ số riêng (chain tactic) chỉ cộng khi đang chiến tranh và đang giao chiến. Nhóm chỉ số đầu đủ cấp 1 mở plan_report, cấp 2 mở plan_supply; nhóm sau cấp 1 mở plan_weather, cấp 2 mở plan_rest (xem research.json). Chuỗi march (tab Hành quân) chỉ cộng khi chiến tranh và đang hành quân hoặc nghỉ.",
-    "roles": [
-      "plan_foot",
-      "plan_cavalry",
-      "plan_archer"
+  "pillars": {
+    "_note": "Cây nghiên cứu theo trụ (doc/cơ chế nghiên cứu): 3 trụ, mỗi trụ có nhiều nhánh nhỏ (cột, strands), mỗi cột 3 hàng đi từ hàng 1 (dưới cùng) lên. Một hàng có 3 nút (nodes: chỉ số thật {stat}, hoặc nút đang thiết kế {planned, about, max}) và một bước nhảy (leap): id của nghiên cứu mở bậc lính, bậc vũ khí hoặc bậc nghề; bước nhảy có tên planned là mốc chưa có tác dụng, tự đạt khi đủ điều kiện (để các hàng sau và các khóa chéo vẫn chạy). Bước nhảy cần leapShare số cấp chỉ số THẬT của hàng, cùng các bước nhảy ở cross (khóa chéo sang cột khác, không có vòng lặp). Hàng sau chỉ mở khi bước nhảy hàng trước đã đạt. labByRow: cấp Nhà nghiên cứu mà bước nhảy hàng 1, 2, 3 cần. group: nghề của nhóm cột; era: cột chỉ hiện từ thời đó. Cấp của chỉ số vẫn theo steps trong stats.",
+    "leapShare": 0.66,
+    "sideLevels": 2,
+    "sideCostMult": 1.5,
+    "sideTimeMult": 2.5,
+    "labByRow": [
+      2,
+      3,
+      3
     ],
-    "layout": [
+    "med": {
+      "levels": 5,
+      "stepScale": 0.25,
+      "costMult": 3,
+      "timeMult": 3,
+      "growth": 1.15,
+      "lab": 4
+    },
+    "list": [
       {
-        "stats": [
-          "hp",
-          "defm",
-          "defr"
+        "id": "mil",
+        "name": "Binh lực",
+        "icon": "infantry",
+        "about": "Lính, vũ khí và phòng thủ.",
+        "strands": [
+          {
+            "key": "foot",
+            "role": "foot",
+            "name": "Bộ binh",
+            "who": "Gậy gỗ, giáo gỗ, chùy đá",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_tier2",
+                  "side": {
+                    "name": "Giá luyện lính giáo",
+                    "short": "Giá lính giáo",
+                    "desc": "Giảm giá luyện lính giáo 5% mỗi cấp.",
+                    "effect": {
+                      "train_foot_2": 5
+                    }
+                  }
+                }
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_tier3",
+                  "side": {
+                    "name": "Giá luyện lính chùy đá",
+                    "short": "Giá lính chùy đá",
+                    "desc": "Giảm giá luyện lính chùy đá 8% mỗi cấp.",
+                    "effect": {
+                      "train_foot_3": 8
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_tier2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "crit"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_weapons2"
+                },
+                "cross": [
+                  "gather_tier2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m1",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_tier4",
+                  "share": 0.66,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện lính đồng",
+                    "short": "Giá lính đồng",
+                    "desc": "Giảm giá luyện lính đồng 5% mỗi cấp.",
+                    "effect": {
+                      "train_foot_4": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_tier2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m2",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m3",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "crit"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_camp1",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 5 chỗ.",
+                  "effect": {
+                    "camp_foot": 5
+                  },
+                  "cost": {
+                    "food": 500,
+                    "wood": 250,
+                    "stone": 150,
+                    "coin": 60
+                  },
+                  "time": 3000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m4",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_tier5",
+                  "share": 0.8,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện bộ binh",
+                    "short": "Giá bộ binh",
+                    "desc": "Giảm giá luyện bộ binh 5% mỗi cấp.",
+                    "effect": {
+                      "train_foot_5": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "build_tier2",
+                  "gather_tier2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m5",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m6",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "crit"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_camp2",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 10 chỗ.",
+                  "effect": {
+                    "camp_foot": 10
+                  },
+                  "cost": {
+                    "food": 800,
+                    "wood": 400,
+                    "stone": 250,
+                    "coin": 110
+                  },
+                  "time": 5000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m7",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_tier6",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện hộ vệ hoàng gia",
+                    "short": "Giá hộ vệ hoàng gia",
+                    "desc": "Giảm giá luyện hộ vệ hoàng gia 5% mỗi cấp.",
+                    "effect": {
+                      "train_foot_6": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "research_tier2",
+                  "gather_range"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m8",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m9",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "crit"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_camp3",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 15 chỗ.",
+                  "effect": {
+                    "camp_foot": 15
+                  },
+                  "cost": {
+                    "food": 1200,
+                    "wood": 600,
+                    "stone": 400,
+                    "coin": 180
+                  },
+                  "time": 8000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m10",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_tier7",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện dũng sĩ thánh giáo",
+                    "short": "Giá dũng sĩ thánh giáo",
+                    "desc": "Giảm giá luyện dũng sĩ thánh giáo 5% mỗi cấp.",
+                    "effect": {
+                      "train_foot_7": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2",
+                  "research_ms2"
+                ]
+              }
+            ]
+          },
+          {
+            "key": "cav",
+            "role": "cavalry",
+            "name": "Kỵ binh",
+            "who": "Cưỡi heo rừng, cưỡi voi",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_tier2",
+                  "side": {
+                    "name": "Giá luyện lính cưỡi heo rừng",
+                    "short": "Giá lính cưỡi heo rừng",
+                    "desc": "Giảm giá luyện lính cưỡi heo rừng 5% mỗi cấp.",
+                    "effect": {
+                      "train_cavalry_2": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "tame_ms1"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_tier3",
+                  "side": {
+                    "name": "Giá luyện lính cưỡi voi",
+                    "short": "Giá lính cưỡi voi",
+                    "desc": "Giảm giá luyện lính cưỡi voi 8% mỗi cấp.",
+                    "effect": {
+                      "train_cavalry_3": 8
+                    }
+                  }
+                },
+                "cross": [
+                  "tame_ms2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "critd"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_weapons2"
+                },
+                "cross": [
+                  "craft_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m1",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_tier4",
+                  "share": 0.66,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện kỵ binh đồng",
+                    "short": "Giá kỵ binh đồng",
+                    "desc": "Giảm giá luyện kỵ binh đồng 5% mỗi cấp.",
+                    "effect": {
+                      "train_cavalry_4": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_tier2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m2",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m3",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "critd"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_camp1",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 5 chỗ.",
+                  "effect": {
+                    "camp_cavalry": 5
+                  },
+                  "cost": {
+                    "food": 500,
+                    "wood": 250,
+                    "stone": 150,
+                    "coin": 60
+                  },
+                  "time": 3000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m4",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_tier5",
+                  "share": 0.8,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện kỵ binh",
+                    "short": "Giá kỵ binh",
+                    "desc": "Giảm giá luyện kỵ binh 5% mỗi cấp.",
+                    "effect": {
+                      "train_cavalry_5": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "build_tier2",
+                  "gather_tier2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m5",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m6",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "critd"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_camp2",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 10 chỗ.",
+                  "effect": {
+                    "camp_cavalry": 10
+                  },
+                  "cost": {
+                    "food": 800,
+                    "wood": 400,
+                    "stone": 250,
+                    "coin": 110
+                  },
+                  "time": 5000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m7",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_tier6",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện kỵ binh hoàng gia",
+                    "short": "Giá kỵ binh hoàng gia",
+                    "desc": "Giảm giá luyện kỵ binh hoàng gia 5% mỗi cấp.",
+                    "effect": {
+                      "train_cavalry_6": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "research_tier2",
+                  "gather_range"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m8",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m9",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "critd"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_camp3",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 15 chỗ.",
+                  "effect": {
+                    "camp_cavalry": 15
+                  },
+                  "cost": {
+                    "food": 1200,
+                    "wood": 600,
+                    "stone": 400,
+                    "coin": 180
+                  },
+                  "time": 8000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m10",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_tier7",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện thánh kỵ sĩ",
+                    "short": "Giá thánh kỵ sĩ",
+                    "desc": "Giảm giá luyện thánh kỵ sĩ 5% mỗi cấp.",
+                    "effect": {
+                      "train_cavalry_7": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2",
+                  "research_ms2"
+                ]
+              }
+            ]
+          },
+          {
+            "key": "archer",
+            "role": "archer",
+            "name": "Cung thủ",
+            "who": "Ném đá, dây quăng, cung ngắn",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_tier2",
+                  "side": {
+                    "name": "Giá luyện lính bắn đá",
+                    "short": "Giá lính bắn đá",
+                    "desc": "Giảm giá luyện lính bắn đá 5% mỗi cấp.",
+                    "effect": {
+                      "train_archer_2": 5
+                    }
+                  }
+                }
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_tier3",
+                  "side": {
+                    "name": "Giá luyện lính bắn cung",
+                    "short": "Giá lính bắn cung",
+                    "desc": "Giảm giá luyện lính bắn cung 8% mỗi cấp.",
+                    "effect": {
+                      "train_archer_3": 8
+                    }
+                  }
+                },
+                "cross": [
+                  "gather_storage"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "crit"
+                  },
+                  {
+                    "stat": "critd"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_weapons2"
+                },
+                "cross": [
+                  "craft_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m1",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_tier4",
+                  "share": 0.66,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện cung thủ đồng",
+                    "short": "Giá cung thủ đồng",
+                    "desc": "Giảm giá luyện cung thủ đồng 5% mỗi cấp.",
+                    "effect": {
+                      "train_archer_4": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_tier2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m2",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m3",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "crit"
+                  },
+                  {
+                    "stat": "critd"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_camp1",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 5 chỗ.",
+                  "effect": {
+                    "camp_archer": 5
+                  },
+                  "cost": {
+                    "food": 500,
+                    "wood": 250,
+                    "stone": 150,
+                    "coin": 60
+                  },
+                  "time": 3000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m4",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_tier5",
+                  "share": 0.8,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện cung thủ",
+                    "short": "Giá cung thủ",
+                    "desc": "Giảm giá luyện cung thủ 5% mỗi cấp.",
+                    "effect": {
+                      "train_archer_5": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "build_tier2",
+                  "gather_tier2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m5",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m6",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "crit"
+                  },
+                  {
+                    "stat": "critd"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_camp2",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 10 chỗ.",
+                  "effect": {
+                    "camp_archer": 10
+                  },
+                  "cost": {
+                    "food": 800,
+                    "wood": 400,
+                    "stone": 250,
+                    "coin": 110
+                  },
+                  "time": 5000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m7",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_tier6",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện cung tiễn hoàng gia",
+                    "short": "Giá cung tiễn hoàng gia",
+                    "desc": "Giảm giá luyện cung tiễn hoàng gia 5% mỗi cấp.",
+                    "effect": {
+                      "train_archer_6": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "research_tier2",
+                  "gather_range"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m8",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m9",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "crit"
+                  },
+                  {
+                    "stat": "critd"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_camp3",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 15 chỗ.",
+                  "effect": {
+                    "camp_archer": 15
+                  },
+                  "cost": {
+                    "food": 1200,
+                    "wood": 600,
+                    "stone": 400,
+                    "coin": 180
+                  },
+                  "time": 8000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m10",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_tier7",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện lính bắn tỉa",
+                    "short": "Giá lính bắn tỉa",
+                    "desc": "Giảm giá luyện lính bắn tỉa 5% mỗi cấp.",
+                    "effect": {
+                      "train_archer_7": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2",
+                  "research_ms2"
+                ]
+              }
+            ]
+          },
+          {
+            "key": "guard",
+            "role": "guard",
+            "name": "Lính gác",
+            "who": "Người canh gác, lính gác, lính canh",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_tier2",
+                  "side": {
+                    "name": "Giá luyện lính gác",
+                    "short": "Giá lính gác",
+                    "desc": "Giảm giá luyện lính gác 5% mỗi cấp.",
+                    "effect": {
+                      "train_guard_2": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "build_tier2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_tier3",
+                  "side": {
+                    "name": "Giá luyện lính canh",
+                    "short": "Giá lính canh",
+                    "desc": "Giảm giá luyện lính canh 8% mỗi cấp.",
+                    "effect": {
+                      "train_guard_3": 8
+                    }
+                  }
+                },
+                "cross": [
+                  "build_ms2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "crit"
+                  }
+                ],
+                "leap": {
+                  "planned": "Giáp & khiên bậc 2",
+                  "about": "Giáp và khiên của lính gác tốt hơn.",
+                  "id": "guard_ms3"
+                },
+                "cross": [
+                  "build_ms3"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m1",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_tier4",
+                  "share": 0.66,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện lính gác đồng",
+                    "short": "Giá lính gác đồng",
+                    "desc": "Giảm giá luyện lính gác đồng 5% mỗi cấp.",
+                    "effect": {
+                      "train_guard_4": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_tier2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m2",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m3",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "crit"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_camp1",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 5 chỗ.",
+                  "effect": {
+                    "camp_guard": 5
+                  },
+                  "cost": {
+                    "food": 500,
+                    "wood": 250,
+                    "stone": 150,
+                    "coin": 60
+                  },
+                  "time": 3000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m4",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_tier5",
+                  "share": 0.8,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện tuần đinh",
+                    "short": "Giá tuần đinh",
+                    "desc": "Giảm giá luyện tuần đinh 5% mỗi cấp.",
+                    "effect": {
+                      "train_guard_5": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "build_tier2",
+                  "gather_tier2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m5",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m6",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "crit"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_camp2",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 10 chỗ.",
+                  "effect": {
+                    "camp_guard": 10
+                  },
+                  "cost": {
+                    "food": 800,
+                    "wood": 400,
+                    "stone": 250,
+                    "coin": 110
+                  },
+                  "time": 5000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m7",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_tier6",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện lính gác chuyên nghiệp",
+                    "short": "Giá lính gác chuyên nghiệp",
+                    "desc": "Giảm giá luyện lính gác chuyên nghiệp 5% mỗi cấp.",
+                    "effect": {
+                      "train_guard_6": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "research_tier2",
+                  "gather_range"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m8",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m9",
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "aspd"
+                  },
+                  {
+                    "stat": "crit"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_camp3",
+                  "name": "Mở rộng trại",
+                  "desc": "Mở khóa mở rộng trại: trại lính thêm 15 chỗ.",
+                  "effect": {
+                    "camp_guard": 15
+                  },
+                  "cost": {
+                    "food": 1200,
+                    "wood": 600,
+                    "stone": 400,
+                    "coin": 180
+                  },
+                  "time": 8000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m10",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_tier7",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện cận vệ thành trì",
+                    "short": "Giá cận vệ thành trì",
+                    "desc": "Giảm giá luyện cận vệ thành trì 5% mỗi cấp.",
+                    "effect": {
+                      "train_guard_7": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2",
+                  "research_ms2"
+                ]
+              }
+            ]
+          },
+          {
+            "key": "scout",
+            "role": "scout",
+            "name": "Trinh sát",
+            "who": "Thời Trung cổ",
+            "era": "ancient",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "planned": "Trinh sát tầm xa",
+                  "about": "Trinh sát đi xa hơn.",
+                  "id": "scout_ms1"
+                }
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "scout_tier2"
+                }
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "hpregen"
+                  },
+                  {
+                    "stat": "restregen"
+                  }
+                ],
+                "leap": {
+                  "planned": "Do thám",
+                  "about": "Trinh sát thấy nhiều hơn.",
+                  "id": "scout_ms3"
+                }
+              }
+            ]
+          },
+          {
+            "key": "form",
+            "role": "basic",
+            "members": [
+              "basic",
+              "wedge",
+              "horns",
+              "scatter",
+              "ambush"
+            ],
+            "name": "Trận pháp",
+            "who": "Hàng ngang, mũi nhọn, sừng bò, rải quân, phục kích",
+            "era": "ancient",
+            "rows": [
+              {
+                "era": "ancient",
+                "nodes": [],
+                "leap": {
+                  "id": "form_basic",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "basic_m2",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "form_wedge",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "nodes": [],
+                "leap": {
+                  "id": "form_scatter",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "basic_m4",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "signal",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "nodes": [],
+                "leap": {
+                  "id": "form_horns",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "nodes": [],
+                "leap": {
+                  "id": "form_ambush",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "basic_m7",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "form_cells_10",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "nodes": [],
+                "leap": {
+                  "id": "form_squads_5",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "basic_m9",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "form_cells_15",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "nodes": [],
+                "leap": {
+                  "id": "form_squads_6",
+                  "lab": 4
+                }
+              }
+            ]
+          },
+          {
+            "key": "plan",
+            "role": "plan_foot",
+            "members": [
+              "plan_foot",
+              "plan_cavalry",
+              "plan_archer"
+            ],
+            "name": "Kế hoạch",
+            "who": "Chỉ cộng khi đang giao chiến trong chiến tranh",
+            "era": "ancient",
+            "rows": [
+              {
+                "era": "ancient",
+                "group": "plan_foot_m1",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "plan_report",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "plan_foot_m2",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "plan_weather",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "plan_foot_m3",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "plan_supply",
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "plan_foot_m4",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "plan_rest",
+                  "lab": 4
+                }
+              }
+            ]
+          },
+          {
+            "key": "march",
+            "role": "march_foot",
+            "members": [
+              "march_foot",
+              "march_cavalry",
+              "march_archer"
+            ],
+            "name": "Hành quân",
+            "who": "Chỉ cộng khi hành quân hoặc nghỉ trong chiến tranh",
+            "era": "ancient",
+            "rows": [
+              {
+                "era": "ancient",
+                "group": "march_foot_m1",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "march_foot_m2",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "march_foot_m3",
+                "nodes": [
+                  {
+                    "stat": "mspeed"
+                  },
+                  {
+                    "stat": "mload"
+                  },
+                  {
+                    "stat": "mbuild"
+                  }
+                ],
+                "members": [
+                  "march_army"
+                ]
+              }
+            ]
+          }
         ]
       },
       {
-        "techs": [
-          "plan_report",
-          "plan_supply"
+        "id": "econ",
+        "name": "Sinh kế",
+        "icon": "storage",
+        "about": "Khai thác, săn và thuần thú, trao đổi.",
+        "strands": [
+          {
+            "key": "gather",
+            "role": "gather",
+            "name": "Khai thác",
+            "who": "Đốn gỗ, thợ đá, hái lượm",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "gather_storage",
+                  "name": "Kho vật liệu",
+                  "desc": "Mở khóa kho vật liệu: sức chứa của kho +25%.",
+                  "effect": {
+                    "storage": 25
+                  }
+                },
+                "cross": [
+                  "build_tier2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "int"
+                  },
+                  {
+                    "stat": "gyield"
+                  },
+                  {
+                    "stat": "tspd"
+                  }
+                ],
+                "leap": {
+                  "id": "gather_tier2"
+                },
+                "cross": [
+                  "craft_tier2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "restregen"
+                  },
+                  {
+                    "stat": "tyield"
+                  },
+                  {
+                    "stat": "tdur"
+                  }
+                ],
+                "leap": {
+                  "id": "gather_range",
+                  "name": "Khai thác vùng xa",
+                  "desc": "Mở khóa khai thác vùng xa: dân khai thác chạy nhanh +15%, mang được nhiều hơn +50%.",
+                  "effect": {
+                    "gatherSpeed": 15,
+                    "gatherCarry": 50
+                  }
+                },
+                "cross": [
+                  "foot_tier3"
+                ]
+              }
+            ]
+          },
+          {
+            "key": "hunt",
+            "role": "hunt",
+            "name": "Săn",
+            "who": "Thợ săn",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "hunt_meat",
+                  "name": "Thịt nhiều",
+                  "desc": "Mở khóa thịt nhiều: thịt lấy từ xác +25%.",
+                  "effect": {
+                    "huntMeat": 25
+                  }
+                },
+                "cross": [
+                  "build_tier2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "restregen"
+                  },
+                  {
+                    "stat": "gyield"
+                  }
+                ],
+                "leap": {
+                  "id": "hunt_drops",
+                  "name": "Xẻ thú khéo",
+                  "desc": "Mở khóa xẻ thú khéo: lông, xương và các thứ khác lấy từ xác +25%.",
+                  "effect": {
+                    "huntDrops": 25
+                  }
+                },
+                "cross": [
+                  "craft_tier2"
+                ]
+              }
+            ]
+          },
+          {
+            "key": "tame",
+            "role": "tame",
+            "name": "Thuần thú",
+            "who": "Người thuần thú",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "planned": "Thuần heo rừng",
+                  "about": "Thú thuần được heo rừng; kỵ binh bậc 2 dùng được.",
+                  "id": "tame_ms1"
+                },
+                "cross": [
+                  "build_tier2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "stat": "int"
+                  },
+                  {
+                    "stat": "restregen"
+                  },
+                  {
+                    "planned": "Chuồng lớn",
+                    "about": "Nuôi nhiều thú thuần hơn.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Thuần voi",
+                  "about": "Thuần được voi. Cần kỵ binh đã quen cưỡi heo rừng.",
+                  "id": "tame_ms2"
+                },
+                "cross": [
+                  "cavalry_tier2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "planned": "Xẻ thú khéo",
+                    "about": "Mỗi con xẻ ra nhiều thịt và da hơn.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Bẫy thú",
+                    "about": "Bắt thú nhỏ mà không tốn sức.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Thú chiến",
+                    "about": "Thú thuần đi cùng kỵ binh ra trận.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Bầy thú chiến",
+                  "about": "Thú thuần đi cùng kỵ binh ra trận.",
+                  "id": "tame_ms3"
+                },
+                "cross": [
+                  "cavalry_tier3"
+                ]
+              }
+            ]
+          },
+          {
+            "key": "trade",
+            "role": "trade",
+            "name": "Trao đổi",
+            "who": "Vỏ sò, chợ, thương lái",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "planned": "Vỏ sò làm tiền",
+                    "about": "Trả công và đổi hàng bằng vỏ sò.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Đổi chác",
+                    "about": "Đổi hàng trực tiếp với dân tị nạn.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Quầy hàng",
+                    "about": "Dựng sạp đổi đồ ngay giữa làng.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Chợ làng",
+                  "about": "Mở chợ: mua bán vật liệu bằng vỏ sò.",
+                  "id": "trade_ms1"
+                },
+                "cross": [
+                  "guard_tier2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "planned": "Bảng giá",
+                    "about": "Giá mua bán ổn định theo mùa.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Thương lái",
+                    "about": "Người buôn ghé làng định kỳ.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Dự trữ vỏ sò",
+                    "about": "Tích vỏ sò, không lo hết tiền công.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Trao đổi liên bộ lạc",
+                  "about": "Đổi hàng với các bộ lạc ngoài sương mù. Cần lính hộ tống.",
+                  "id": "trade_ms2"
+                },
+                "cross": [
+                  "foot_tier2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "planned": "Thuế vỏ sò",
+                    "about": "Thu vỏ sò từ hoạt động của làng.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Kho hàng chợ",
+                    "about": "Chợ chứa nhiều hàng hơn.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Tuyến buôn",
+                    "about": "Đường buôn đi xa, ít rủi ro.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Tiền tệ chuẩn",
+                  "about": "Vỏ sò thành tiền chung, chuẩn bị cho kim loại.",
+                  "id": "trade_ms3"
+                },
+                "cross": [
+                  "research_ms2"
+                ]
+              }
+            ]
+          }
         ]
       },
       {
-        "stats": [
-          "move",
-          "atk",
-          "sta"
-        ]
-      },
-      {
-        "techs": [
-          "plan_weather",
-          "plan_rest"
+        "id": "craft",
+        "name": "Kỹ nghệ",
+        "icon": "builder",
+        "about": "Tốc độ thợ xây, chế tạo, nghiên cứu.",
+        "strands": [
+          {
+            "key": "build",
+            "role": "build",
+            "name": "Xây dựng",
+            "who": "Thợ xây",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  },
+                  {
+                    "stat": "int"
+                  }
+                ],
+                "leap": {
+                  "id": "build_tier2",
+                  "side": {
+                    "name": "Xây rẻ hơn",
+                    "short": "Xây rẻ hơn",
+                    "desc": "Giảm 5% mỗi cấp vật liệu xây và nâng cấp công trình.",
+                    "effect": {
+                      "buildCost": 5
+                    }
+                  }
+                }
+              },
+              {
+                "nodes": [
+                  {
+                    "planned": "Giàn giáo",
+                    "about": "Nhiều người cùng xây một công trình hiệu quả hơn.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Xây song song",
+                    "about": "Dựng hai công trình cùng lúc.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Móng vững",
+                    "about": "Công trình mới bền hơn ngay từ đầu.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Công trường lớn",
+                  "about": "Mở công trình lớn.",
+                  "id": "build_ms2"
+                },
+                "cross": [
+                  "guard_tier2"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "planned": "Nhà lớn",
+                    "about": "Công trình chứa được nhiều hơn.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Sửa chữa nhanh",
+                    "about": "Sửa công trình hỏng nhanh hơn.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Xây trong đêm",
+                    "about": "Thợ xây làm được cả buổi tối.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Xây công trình đá",
+                  "about": "Công trình bằng đá. Cần khai thác vùng xa.",
+                  "id": "build_ms3"
+                },
+                "cross": [
+                  "gather_tier2"
+                ]
+              }
+            ]
+          },
+          {
+            "key": "make",
+            "role": "craft",
+            "name": "Chế tạo",
+            "who": "Thợ chế tạo",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  },
+                  {
+                    "stat": "int"
+                  }
+                ],
+                "leap": {
+                  "id": "craft_tier2",
+                  "side": {
+                    "name": "Chế tạo rẻ hơn",
+                    "short": "Chế tạo rẻ hơn",
+                    "desc": "Giảm 5% mỗi cấp vật liệu chế tạo.",
+                    "effect": {
+                      "craftCost": 5
+                    }
+                  }
+                }
+              },
+              {
+                "nodes": [
+                  {
+                    "planned": "Mẻ lớn",
+                    "about": "Chế tạo nhiều món mỗi lượt.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Xưởng chuyên dụng",
+                    "about": "Mỗi bàn làm một loại, ít sai sót.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Đỡ hao nguyên liệu",
+                    "about": "Tốn ít vật liệu hơn mỗi món.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Chế tạo hàng loạt",
+                  "about": "Dụng cụ và vũ khí ra nhanh. Cần kho vật liệu.",
+                  "id": "craft_ms2"
+                },
+                "cross": [
+                  "gather_storage"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "planned": "Mài đá tinh",
+                    "about": "Vũ khí đá sắc hơn.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Vật liệu hiếm",
+                    "about": "Dùng được đá và xương tốt hơn.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Chế tạo trong đêm",
+                    "about": "Thợ làm được cả buổi tối.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Vũ khí đá bậc cao",
+                  "about": "Mở loại vũ khí đá tốt nhất. Cần chùy đá đã có.",
+                  "id": "craft_ms3"
+                },
+                "cross": [
+                  "foot_tier3"
+                ]
+              }
+            ]
+          },
+          {
+            "key": "res",
+            "role": "research",
+            "name": "Nghiên cứu",
+            "who": "Nhà nghiên cứu",
+            "rows": [
+              {
+                "nodes": [
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  },
+                  {
+                    "stat": "int"
+                  }
+                ],
+                "leap": {
+                  "id": "research_tier2",
+                  "side": {
+                    "name": "Nghiên cứu rẻ hơn",
+                    "short": "Nghiên cứu rẻ hơn",
+                    "desc": "Giảm 5% mỗi cấp vật liệu nghiên cứu.",
+                    "effect": {
+                      "researchCost": 5
+                    }
+                  }
+                }
+              },
+              {
+                "nodes": [
+                  {
+                    "planned": "Ghi chép",
+                    "about": "Phát minh ghi lại, đỡ phải làm lại.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Nghiên cứu song song",
+                    "about": "Hai đề tài cùng lúc.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Thí nghiệm",
+                    "about": "Thử nhiều lần, ít lãng phí.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Nghiên cứu nhóm",
+                  "about": "Nhiều nhà nghiên cứu làm nhanh hơn. Cần chợ làng để đổi vật liệu thử.",
+                  "id": "research_ms2"
+                },
+                "cross": [
+                  "trade_ms1"
+                ]
+              },
+              {
+                "nodes": [
+                  {
+                    "planned": "Truyền khẩu",
+                    "about": "Kể lại phát minh cho người sau.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Tranh khắc",
+                    "about": "Khắc lại trên đá và da.",
+                    "max": 1
+                  },
+                  {
+                    "planned": "Thầy dạy trò",
+                    "about": "Dân mới học nhanh hơn.",
+                    "max": 1
+                  }
+                ],
+                "leap": {
+                  "planned": "Lưu truyền tri thức",
+                  "about": "Giữ lại phát minh khi làng sụp đổ.",
+                  "id": "research_ms3"
+                }
+              }
+            ]
+          }
         ]
       }
     ]

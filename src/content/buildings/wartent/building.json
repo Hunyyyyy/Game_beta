@@ -41,27 +41,14 @@
    {
     "name": "Lều thủ lĩnh",
     "cost": {
-     "wood": 50,
-     "stone": 40
+     "wood": 56,
+     "stone": 60
     },
-    "buildTime": 200,
+    "buildTime": 243,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 360,
-    "sight": 0
-   },
-   {
-    "name": "Lều thủ lĩnh gia cố",
-    "cost": {
-     "wood": 62,
-     "stone": 80
-    },
-    "buildTime": 286,
-    "cap": 0,
-    "craftSpeed": 1,
-    "slots": 0,
-    "hp": 450,
+    "hp": 405,
     "sight": 0
    }
   ],

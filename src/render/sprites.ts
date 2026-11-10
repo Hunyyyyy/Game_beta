@@ -6,6 +6,7 @@ import bipedClips from '../data/animals/anims/biped.json';
 import fishClips from '../data/animals/anims/fish.json';
 import hopperClips from '../data/animals/anims/hopper.json';
 import quadrupedClips from '../data/animals/anims/quadruped.json';
+import horseClips from '../data/animals/anims/horse.json';
 import { Blueprint, BlueprintDef, toCanvases } from '../blueprint/blueprint';
 import { ANCIENT_ART, STONE_ART } from '../content/buildings/art.gen';
 import animsJson from '../data/anims.json';
@@ -38,7 +39,7 @@ import type { Villager } from '../sim/sim';
 export const anims = animsJson as unknown as AnimTable;
 const BODIES = bodiesJson as unknown as Record<string, AnimalDef>;
 /** Each body type has its own set of clips: four legs, hopping, two legs and fish. */
-const ANIMAL_CLIPS: Record<string, AnimalClips> = { quadruped: quadrupedClips as AnimalClips, hopper: hopperClips as AnimalClips, biped: bipedClips as AnimalClips, fish: fishClips as AnimalClips };
+const ANIMAL_CLIPS: Record<string, AnimalClips> = { quadruped: quadrupedClips as AnimalClips, horse: horseClips as AnimalClips, hopper: hopperClips as AnimalClips, biped: bipedClips as AnimalClips, fish: fishClips as AnimalClips };
 export const SPRITE_FEET = { x: CX + PADX, y: 42 + PADT };
 
 /** Một vật thể đã vẽ sẵn từ bản vẽ JSON: các khung hình + điểm neo (chân vật thể). */
@@ -73,10 +74,14 @@ const TINTS: Partial<Record<BuildingKind, Record<string, string>>> = {}; // no r
 
 export class Sprites {
   private readonly vcache = new Map<string, HTMLCanvasElement>();
+  /** The age and the season, set by the renderer every frame: the villagers of the medieval age are dressed (a drawing only: it gives no defence). */
+  private era: Era = 'stone';
+  private summer = false;
   private readonly natureCache = new Map<string, NatureSet>();
   private readonly buildingCache = new Map<string, Prop[][]>();
   private readonly campfireFx = new Map<string, Prop>();
   private readonly animalCache = new Map<string, HTMLCanvasElement>();
+  private readonly viewCache = new Map<string, { rear: HTMLCanvasElement; over: HTMLCanvasElement }>();
   /** Small badges drawn over the houses that share a drawing, so each can be told at a glance. */
   readonly emblems: Partial<Record<BuildingKind, HTMLCanvasElement>> = {};
   /** Biểu tượng công cụ 16×16, khóa dạng "axe1" (gỗ) hoặc "axe2" (đá). */
@@ -94,9 +99,20 @@ export class Sprites {
     this.icons.hide1 = make(toolHideArmorJson, 1).frames[0];
     this.icons.bone2 = this.icons.hide1; // the bone armour has no picture of its own yet: it shows as the hide one
     this.icons.torch1 = this.torchIcon();
+    this.icons.thrown_stone2 = this.stoneIcon(); // the stone of the stone thrower, for the craft list
     this.nature('spring');
     this.emblems.lab = this.scrollEmblem();
     this.emblems.builder = this.icons.hammer1; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.infantry = this.icons.spear1; this.emblems.guardpost = this.icons.club1; this.emblems.cavalry = this.icons.spear1; this.emblems.archery = this.icons.sling1 ?? this.icons.spear1; this.emblems.lumberyard = this.icons.axe1; this.emblems.quarry = this.icons.pick1; this.emblems.farmhouse = this.icons.hoe1; this.emblems.huntlodge = this.icons.spear1; this.emblems.stable = this.icons.hoe1;
+  }
+
+  /** A stone to throw 16x16, for the craft list. */
+  private stoneIcon(): HTMLCanvasElement {
+    const [c, g] = canvas(16, 16);
+    g.fillStyle = '#2b1d10'; g.fillRect(4, 5, 9, 8); g.fillRect(5, 4, 7, 1); g.fillRect(3, 7, 1, 4); g.fillRect(13, 7, 1, 4);
+    g.fillStyle = '#8e9496'; g.fillRect(5, 6, 7, 6); g.fillRect(6, 5, 5, 1);
+    g.fillStyle = '#c0c6c6'; g.fillRect(6, 6, 3, 2); g.fillRect(6, 5, 3, 1);
+    g.fillStyle = '#62686c'; g.fillRect(10, 10, 2, 2); g.fillRect(7, 11, 4, 1);
+    return c;
   }
 
   /** A torch 16x16, for the craft list. */
@@ -161,7 +177,7 @@ export class Sprites {
   /** Sprite of a building at its level and construction stage (0..4). */
   building(kind: BuildingKind, era: Era, level: number, st: number, open = false): Prop {
     if (kind === 'campfire' && st >= 4) { // a finished fire: the art of its level without drawn flames, and a fire made by code over its hearth
-      const key = era === 'ancient' && level > BUILDINGS.campfire.levels.stone!.length ? 'ancient' : `stone${Math.min(level, 4)}`;
+      const key = era === 'ancient' && level > BUILDINGS.campfire.levels.stone!.length ? 'ancient' : `stone${Math.min(level, BUILDINGS.campfire.levels.stone!.length)}`;
       let p = this.campfireFx.get(key);
       if (!p) this.campfireFx.set(key, p = bakeCampfire(this.campfireBase(era, level, st), key));
       return p;
@@ -185,8 +201,8 @@ export class Sprites {
   }
 
   /** Sprite size of a species and where its feet are (the sprite is drawn with this point on the animal's position). */
-  animalBox(species: string): { w: number; h: number; ax: number; ay: number } {
-    const d = BODIES[species], [w, h] = d.size;
+  animalBox(species: string, view?: 'front' | 'back'): { w: number; h: number; ax: number; ay: number } {
+    const d = BODIES[species], [w, h] = (view && d.views?.[view]?.size) || d.size;
     return d.body === 'fish' ? { w, h, ax: w / 2, ay: h / 2 } : { w, h, ax: w / 2, ay: h - 2 };
   }
 
@@ -222,9 +238,26 @@ export class Sprites {
     return c;
   }
 
+  /** Whether a species is drawn from the front and from behind too (the horse): its rider then faces the way he goes up and down the screen. */
+  hasViews(species: string): boolean { return !!BODIES[species].views; }
+
+  /** A beast under a rider seen from the front or from behind, in two parts: the one behind the rider and the one over him (the neck and head, or the rump). */
+  mountView(species: string, moving: boolean, clock: number, gallop: boolean, view: 'front' | 'back'): { rear: HTMLCanvasElement; over: HTMLCanvasElement } {
+    const def = BODIES[species], clips = ANIMAL_CLIPS[def.body], name = moving ? (gallop && clips.run ? 'run' : 'walk') : 'idle', clip = clips[name] ?? clips.idle, n = clip.frames.length, frame = Math.floor(clock * clip.fps) % n;
+    const key = `${species}|ride|${view}|${name}|${frame}`;
+    let c = this.viewCache.get(key);
+    if (!c) {
+      const r = renderAnimal(def, clip, frame, view), [rv, rg] = canvas(r.w, r.h), [ov, og] = canvas(r.w, r.h);
+      rg.putImageData(new ImageData(new Uint8ClampedArray(r.data), r.w, r.h), 0, 0);
+      og.putImageData(new ImageData(new Uint8ClampedArray(r.over as Uint8ClampedArray), r.w, r.h), 0, 0);
+      c = { rear: rv, over: ov }; this.viewCache.set(key, c);
+    }
+    return c;
+  }
+
   /** A beast under a rider, walking when the rider moves and standing when he stands, facing the way he faces. */
-  mount(species: string, moving: boolean, clock: number, dir: 1 | -1): HTMLCanvasElement {
-    const def = BODIES[species], clips = ANIMAL_CLIPS[def.body], name = moving ? 'walk' : 'idle', clip = clips[name] ?? clips.idle, n = clip.frames.length, frame = Math.floor(clock * clip.fps) % n;
+  mount(species: string, moving: boolean, clock: number, dir: 1 | -1, gallop = false): HTMLCanvasElement {
+    const def = BODIES[species], clips = ANIMAL_CLIPS[def.body], name = moving ? (gallop && clips.run ? 'run' : 'walk') : 'idle', clip = clips[name] ?? clips.idle, n = clip.frames.length, frame = Math.floor(clock * clip.fps) % n;
     const key = `${species}|ride|${name}|${frame}|${dir}`;
     let c = this.animalCache.get(key);
     if (!c) {
@@ -235,8 +268,17 @@ export class Sprites {
     }
     return c;
   }
+  setWorld(era: Era, season: string): void { this.era = era; this.summer = season === 'summer'; }
+  /**
+   * What a villager of ours wears in the medieval age when he carries no armour: a wool tunic over a linen shirt, brown or grey by who he is, with a straw hat in the summer and a
+   * wool hood in the other seasons. Soldiers have their own gear and the villages of the land keep their own look. Only a drawing.
+   */
+  outfitOf(v: Villager): string | null {
+    if (this.era !== 'ancient' || v.team !== 'player' || v.armor || v.job === 'fight' || v.guard) return null;
+    return `peasant_${this.summer ? 'straw' : 'hood'}_${(v.id * 2654435761 >>> 0) % 2 ? 'grey' : 'brown'}`;
+  }
   /** The villager as drawn; `pose` makes him stand in one animation (a rider sits still on his beast). */
-  villager(v: Villager, pose?: string, face?: 'left' | 'right'): HTMLCanvasElement {
+  villager(v: Villager, pose?: string, face?: 'left' | 'right' | 'front' | 'back'): HTMLCanvasElement {
     const name = pose ?? (v.anim in anims ? v.anim : 'idle');
     const def = anims[name];
     const rate = def.gait ? Math.min(1.6, v.speed / 1.5) : 1; // walking animations step faster when the villager is quick
@@ -244,13 +286,14 @@ export class Sprites {
     // looping animations wrap; one-shot ones (attacks) stop on their last frame
     const frame = def.loop === false ? Math.min(step, def.frames.length - 1) : step % def.frames.length;
     const kind = v.carry?.res ?? 'wood';
+    const armor = v.armor ?? this.outfitOf(v);
     const flick = v.lit ? Math.floor(v.animClock * 6) % 3 : undefined; // a lit torch flickers through three drawings
     const facing = face ?? v.facing; // a rider is always drawn from the side, the way his beast faces
-    const key = `${name}|${frame}|${facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier : '-'}|${v.armor ?? '-'}|${flick ?? '-'}`;
+    const key = `${name}|${frame}|${facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier + (v.hold.shield ?? '') : '-'}|${armor ?? '-'}|${flick ?? '-'}`;
     let c = this.vcache.get(key);
     if (!c) {
       const [cv, g] = canvas(FW, FH);
-      g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, facing, v.look, kind, v.hold ?? { tier: 0 }, v.armor, flick === undefined ? undefined : { torch: flick })), FW, FH), 0, 0);
+      g.putImageData(new ImageData(new Uint8ClampedArray(renderFrame(anims, name, frame, facing, v.look, kind, v.hold ?? { tier: 0 }, armor, flick === undefined ? undefined : { torch: flick })), FW, FH), 0, 0);
       this.vcache.set(key, cv); c = cv;
     }
     return c;

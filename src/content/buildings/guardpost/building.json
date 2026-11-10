@@ -41,27 +41,14 @@
    {
     "name": "Đồn gác",
     "cost": {
-     "wood": 35,
-     "stone": 30
+     "wood": 38,
+     "stone": 45
     },
-    "buildTime": 170,
+    "buildTime": 217,
     "cap": 0,
     "craftSpeed": 1.5,
-    "slots": 18,
-    "hp": 360,
-    "sight": 0
-   },
-   {
-    "name": "Đồn gác gia cố",
-    "cost": {
-     "wood": 41,
-     "stone": 60
-    },
-    "buildTime": 263,
-    "cap": 0,
-    "craftSpeed": 1.5,
-    "slots": 24,
-    "hp": 450,
+    "slots": 21,
+    "hp": 405,
     "sight": 0
    }
   ],

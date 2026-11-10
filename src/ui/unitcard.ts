@@ -1,4 +1,4 @@
-import { JOB_NAME, roleName, roleOf } from '../sim/jobs';
+import { JOB_NAME, roleName, roleOf, titleOfRole } from '../sim/jobs';
 import type { Villager } from '../sim/sim';
 import { h } from './dom';
 import { InfoCard } from './infocard';
@@ -53,17 +53,17 @@ export class UnitCard {
     if (!this.open && this.win.isOpen) this.win.hide();
     const v = chosen[0];
     const title = chosen.length > 1 ? `${v.name} và ${chosen.length - 1} người nữa` : v.name;
-    const role = roleOf(v), job = role ? roleName(role, sim0.era) : JOB_NAME[v.job]; // the trade, not what they are doing this moment
+    const job = titleOfRole(v, sim0.era) ?? JOB_NAME[v.job]; // the trade, not what they are doing this moment
     const doing = describe(v, sim0);
     this.dname.textContent = title; this.dstate.textContent = job;
     this.info.set({
-      picKey: `${v.id}|${v.armor}|${v.look.sex}`, pic: () => avatar(this.c, v),
+      picKey: `${v.id}|${v.armor ?? this.c.sprites.outfitOf(v)}|${v.look.sex}`, pic: () => avatar(this.c, v),
       title, sub: `Nghề: ${job}`, line: `Đang ${doing.replace(/^đang /, '')}`,
       onClose: () => this.c.ctl.clearSelection(),
       actions: [{ id: 'job', label: 'Giao việc', tone: 'primary', onClick: () => { this.open = true; this.update(this.chosen()); } }],
     });
     if (!this.open) return;
-    const pk = `${v.id}|${v.armor}|${v.look.sex}`;
+    const pk = `${v.id}|${v.armor ?? this.c.sprites.outfitOf(v)}|${v.look.sex}`;
     if (pk !== this.picKey) { this.picKey = pk; this.picBox.replaceChildren(avatar(this.c, v)); }
     this.detail.update(chosen);
     this.where.hidden = chosen.length !== 1;

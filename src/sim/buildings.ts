@@ -53,11 +53,11 @@ export interface BuildingDef {
   upgradable?: boolean;
   /** Kinds that must stand, finished, before this one can be placed: the order the village grows in. */
   requires?: BuildingKind[];
-  /** How many may stand for each campfire level 1..4, added up over every campfire. Without it a village gets one: the houses you open from a menu. */
+  /** How many may stand for each campfire level 1..4 (4 is the first medieval one), added up over every campfire. Without it a village gets one: the houses you open from a menu. */
   perFire?: number[];
   /** Stays in placing mode after each piece, for works laid one tile at a time (the fence). */
   repeat?: boolean;
-  /** Levels per era: `stone` is levels 1..4, `ancient` the levels that follow (5...). */
+  /** Levels per era: `stone` is levels 1..3, `ancient` the levels that follow (4...). */
   levels: Partial<Record<Era, LevelDef[]>>;
 }
 
@@ -119,7 +119,7 @@ export const buildingName = (kind: BuildingKind, era: Era): string => BUILDINGS[
 /** Level list of a building kind in an era: the stone levels, and in the medieval era the medieval ones after them (a kind with none stays at its stone levels). */
 export function levelsOf(kind: BuildingKind, era: Era): LevelDef[] {
   const defs = BUILDINGS[kind].levels, stone = defs.stone!;
-  return era === 'ancient' && defs.ancient ? levelCache(kind, stone, defs.ancient) : stone; // the medieval levels go on from the last stone level: level 5 is the first of them
+  return era === 'ancient' && defs.ancient ? levelCache(kind, stone, defs.ancient) : stone; // the medieval levels go on from the last stone level: level 4 is the first of them
 }
 const levelLists = new Map<BuildingKind, LevelDef[]>();
 const levelCache = (kind: BuildingKind, stone: LevelDef[], ancient: LevelDef[]): LevelDef[] => { let l = levelLists.get(kind); if (!l) { l = [...stone, ...ancient]; levelLists.set(kind, l); } return l; };

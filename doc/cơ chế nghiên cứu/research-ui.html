@@ -1,0 +1,565 @@
+<title>Giao diện nhà nghiên cứu</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<style>
+/* Layout concept: one game window. Header, thin work strip, pillar tabs on top, then a branch list on the left
+   and a three-stage path (row 1 -> 3) on the right, with a cost and confirm bar at the bottom. */
+:root{
+  color-scheme:dark;
+  --ground:#1b221e; --on-ground:#dbe3d6; --on-ground-2:#9aa89c; --line-g:#34403a;
+  --parch:#e3d5a6; --parch-hi:#efe5c3; --parch-lo:#d5c48b; --parch-deep:#c3b070;
+  --ink:#3a2a14; --ink-2:#5c4a2a; --ink-3:#85714a;
+  --edge:#8a6b39; --edge-lt:#b79f63; --edge-dk:#4e3a20;
+  --night:#2a211a; --on-night:#f1e6c6; --gold:#e0b04a;
+  --mil:#a53c25; --econ:#47661f; --craft:#28607f; --on-acc:#fff6e0;
+  --disp:"Baloo 2","Be Vietnam Pro",system-ui,sans-serif;
+  --body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--on-ground);font-family:var(--body);font-size:14px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0;margin:0}
+:focus-visible{outline:2px solid #ffe08a;outline-offset:2px}
+.panel :focus-visible{outline-color:var(--ink)}
+
+.wrap{max-width:830px;margin:0 auto;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
+.top{padding-block:22px 14px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+.top>div{min-width:0}
+.eyebrow{margin:0 0 4px;font:600 11px/1.3 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--on-ground-2)}
+h1{margin:0;font:700 28px/1.15 var(--disp);text-wrap:balance}
+.lede{margin:6px 0 0;color:var(--on-ground-2);max-width:62ch;font-size:13.5px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line-g);border-radius:6px;overflow:hidden}
+.seg button{padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--on-ground-2);border-right:1px solid var(--line-g)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--on-ground);color:var(--ground)}
+.rst{padding:6px 12px;font-size:12.5px;font-weight:600;border:1px solid var(--line-g);border-radius:6px;color:var(--on-ground)}
+.stagewrap{padding-block:4px 6px}
+
+/* ---------- game window ---------- */
+.panel{container-type:inline-size;width:min(100%,746px);margin:0 auto;background:var(--parch);color:var(--ink);
+  border:3px solid var(--edge-dk);border-radius:10px;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:inset 0 0 0 2px var(--parch-hi),0 18px 40px rgba(0,0,0,.45)}
+.panel[data-size="desk"]{height:541px}
+.panel[data-size="phone"]{height:360px}
+.panel[data-pil="mil"]{--acc:var(--mil)}
+.panel[data-pil="econ"]{--acc:var(--econ)}
+.panel[data-pil="craft"]{--acc:var(--craft)}
+.c-mil{--c:var(--mil)} .c-econ{--c:var(--econ)} .c-craft{--c:var(--craft)}
+.x-mil{--xacc:var(--mil)} .x-econ{--xacc:var(--econ)} .x-craft{--xacc:var(--craft)}
+
+.hd{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;background:var(--parch-lo);border-bottom:2px solid var(--edge)}
+.hd-ic{width:44px;height:44px;background:var(--night);border:2px solid var(--edge-dk);border-radius:6px;padding:3px}
+.hd h2{margin:0;font:700 18px/1.2 var(--disp)}
+.hd small{display:block;font-size:12px;color:var(--ink-2)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 11px;border:2px solid var(--edge);border-radius:999px;background:var(--parch-hi);font-size:12px;font-weight:700;white-space:nowrap}
+.work{display:flex;align-items:center;gap:10px;padding:6px 14px;background:var(--parch-hi);border-bottom:1px solid var(--edge-lt);font-size:12.5px;min-height:34px}
+.work .wi{width:18px;height:18px;color:var(--ink-3);flex:none}
+.work b{font-weight:700}
+.work .wd{color:var(--ink-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.job{flex:1;min-width:60px;max-width:220px;height:8px;background:rgba(58,42,20,.2);border-radius:4px;overflow:hidden}
+.job b{display:block;height:100%;width:0;background:var(--acc);animation:fill 1.8s linear forwards}
+@keyframes fill{to{width:100%}}
+
+.tabs{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--parch-lo);border-bottom:2px solid var(--edge)}
+.tab{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border:2px solid var(--edge);border-radius:6px;background:var(--parch-hi);font:700 14px/1.2 var(--disp);color:var(--ink)}
+.tab .ti{width:17px;height:17px;color:var(--c);flex:none;display:block}
+.tab.on{background:var(--c);border-color:var(--edge-dk);color:var(--on-acc);box-shadow:0 3px 0 var(--edge-dk)}
+.tab.on .ti{color:var(--on-acc)}
+.bdg{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--c);color:var(--on-acc);font:700 11px/18px var(--body);text-align:center}
+.tab.on .bdg{background:var(--on-acc);color:var(--c)}
+.gate{margin-left:auto;display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border:2px dashed var(--ink-3);border-radius:6px;font-size:12px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.gate.ready{border-style:solid;border-color:var(--edge-dk);background:var(--night);color:var(--gold);animation:glow 2s ease-in-out infinite}
+.gate.done{border-style:solid;border-color:var(--edge-dk);background:var(--gold);color:var(--night)}
+.gate.sel{outline:2px solid var(--ink);outline-offset:1px}
+.gd{display:inline-flex;gap:4px}
+.gd i{width:9px;height:9px;border:2px solid var(--ink-3);transform:rotate(45deg)}
+.gd i.on{background:var(--c);border-color:var(--c)}
+.gate.ready .gd i,.gate.done .gd i{border-color:currentColor}
+
+.pv{display:grid;grid-template-columns:176px minmax(0,1fr);flex:1;min-height:0}
+.nav{display:flex;flex-direction:column;gap:5px;padding:7px 8px;overflow:auto;background:var(--parch-lo);border-right:2px solid var(--edge)}
+.ni{text-align:left;display:grid;gap:2px;padding:5px 9px 6px;border:2px solid var(--edge-lt);border-radius:6px;background:var(--parch-hi)}
+.ni.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,var(--parch-hi));box-shadow:inset 0 0 0 1px var(--acc)}
+.nr{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.nn{font:700 13.5px/1.2 var(--disp)}
+.rb{font:700 9.5px/1 var(--body);letter-spacing:.05em;text-transform:uppercase;background:var(--acc);color:var(--on-acc);padding:3px 5px;border-radius:3px;white-space:nowrap}
+.path{display:inline-flex;align-items:center;gap:0}
+.path .d{width:9px;height:9px;border:2px solid var(--ink-3);transform:rotate(45deg);margin:0 3px}
+.path .d.r{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 30%,transparent)}
+.path .d.k{background:var(--acc);border-color:var(--acc)}
+.path u{width:12px;height:2px;background:var(--edge-lt)}
+.cnt{font:700 11px/1 var(--body);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ni.cap{margin-top:auto;border-style:dashed;border-color:var(--ink-3);background:transparent}
+.ni.cap.ready{border-style:solid;border-color:var(--edge-dk);background:var(--acc);color:var(--on-acc);box-shadow:0 3px 0 var(--edge-dk)}
+.ni.cap.done{border-style:solid;border-color:var(--edge-dk);background:var(--night);color:var(--on-night)}
+.ni.cap.sel{outline:2px solid var(--ink);outline-offset:1px}
+.ni.cap .bar{height:5px}
+.ni.cap .cnt{color:inherit}
+
+.lane{min-width:0;min-height:0;overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.lh{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px}
+.lh h3{margin:0;font:700 19px/1.2 var(--disp);color:var(--acc)}
+.lh .w{font-size:12px;color:var(--ink-2)}
+.lh .lc{margin-left:auto;font:700 11.5px var(--body);color:var(--ink-2)}
+.stages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:start;padding-bottom:4px}
+.stage{position:relative;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--parch-hi);border:2px solid var(--edge);border-radius:8px}
+.stage.lock{background:var(--parch-lo);border-style:dashed;border-color:var(--ink-3)}
+.stage:not(:last-child)::after{content:"";position:absolute;left:calc(100% + 2px);bottom:40px;width:22px;height:2px;background:var(--edge-lt)}
+.stage:not(:last-child)::before{content:"";position:absolute;left:calc(100% + 16px);bottom:36px;border-left:8px solid var(--edge-lt);border-top:5px solid transparent;border-bottom:5px solid transparent}
+.stage.done::after{background:var(--acc)}
+.stage.done::before{border-left-color:var(--acc)}
+.sh{display:flex;justify-content:space-between;font:700 10.5px/1 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+
+.stat{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:28px;padding:0 8px;text-align:left;
+  background:var(--parch);border:1.5px solid var(--edge-lt);border-radius:5px;font-size:12.5px;font-weight:600}
+.stat .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat.has{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--parch-hi))}
+.stat.max{background:color-mix(in srgb,var(--acc) 26%,var(--parch-hi))}
+.stage.lock .stat{opacity:.55}
+.sel{outline:2px solid var(--ink);outline-offset:1px}
+.pips{display:inline-flex;gap:5px;padding-right:2px;flex:none}
+.pips i{display:block;width:9px;height:9px;border:2px solid var(--ink-2);transform:rotate(45deg)}
+.pips i.on{background:var(--acc);border-color:var(--acc)}
+
+.leap{display:grid;grid-template-columns:minmax(0,1fr);gap:3px;width:100%;min-width:0;text-align:left;padding:7px 9px;border:2px solid var(--edge);border-radius:6px;background:var(--parch-lo)}
+.leap.locked{border-style:dashed;border-color:var(--ink-3);color:var(--ink-2)}
+.leap.ready{background:var(--acc);border-color:var(--edge-dk);color:var(--on-acc);box-shadow:0 3px 0 var(--edge-dk);animation:glow 2s ease-in-out infinite}
+.leap.done{background:var(--night);border-color:var(--edge-dk);color:var(--on-night)}
+@keyframes glow{0%,100%{box-shadow:0 3px 0 var(--edge-dk),0 0 0 0 color-mix(in srgb,var(--acc,var(--gold)) 55%,transparent)}50%{box-shadow:0 3px 0 var(--edge-dk),0 0 0 6px transparent}}
+.lk{font:700 9.5px/1 var(--body);letter-spacing:.09em;text-transform:uppercase;opacity:.85}
+.leap.done .lk{color:var(--gold);opacity:1}
+.ln{display:flex;justify-content:space-between;align-items:center;gap:6px;font:700 15px/1.15 var(--disp)}
+.ln .ic{flex:none;display:inline-flex;color:inherit}
+.leap.done .ln .ic{color:var(--gold)}
+.lpg{display:flex;align-items:center;gap:6px;font:700 11px/1 var(--body);font-variant-numeric:tabular-nums}
+.bar{flex:1;height:6px;background:rgba(58,42,20,.22);border-radius:3px;overflow:hidden;display:block}
+.bar b{display:block;height:100%;background:var(--acc)}
+.leap.ready .bar{background:rgba(255,246,224,.3)}
+.leap.ready .bar b{background:var(--on-acc)}
+.ni.cap.ready .bar{background:rgba(255,246,224,.3)}
+.ni.cap.ready .bar b{background:var(--on-acc)}
+.ni.cap.done .bar b{background:var(--gold)}
+.xcs{display:flex;flex-wrap:wrap;gap:3px}
+.xc{display:inline-block;max-width:100%;border:1.5px solid var(--xacc,var(--ink-3));color:var(--xacc,var(--ink-2));border-radius:10px;padding:0 6px;font:700 10.5px/15px var(--body)}
+.xc.ok{background:var(--xacc);color:var(--on-acc)}
+.leap.ready .xc.ok{background:rgba(255,246,224,.22);border-color:rgba(255,246,224,.65);color:var(--on-acc)}
+
+.info{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;align-items:center;min-height:68px;padding:8px 14px;background:var(--parch-hi);border-top:2px solid var(--edge)}
+.il{min-width:0;display:grid;gap:2px}
+.it{font:700 10.5px/1 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.im{font-size:12.5px;line-height:1.35;min-width:0}
+.im b{font:700 15px/1.2 var(--disp);margin-right:8px}
+.im span{color:var(--ink-2)}
+.rq{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:11.5px;font-weight:600}
+.rq span{display:inline-flex;gap:4px;color:var(--ink-2)}
+.rq span::before{content:"○";color:var(--ink-3)}
+.rq span.ok{color:var(--ink-2)}
+.rq span.ok::before{content:"✓";color:var(--econ);font-weight:700}
+.ir{display:grid;gap:4px;justify-items:end}
+.cost{font-size:11.5px;color:var(--ink-2);text-align:right;max-width:230px}
+.go{padding:5px 16px;border:2px solid var(--edge-dk);border-radius:6px;background:var(--acc);color:var(--on-acc);font:700 14px/1.3 var(--disp);box-shadow:0 3px 0 var(--edge-dk);white-space:nowrap}
+.go:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--edge-dk)}
+.go:disabled{background:var(--parch-deep);color:var(--ink-2);box-shadow:none;border-color:var(--edge);cursor:not-allowed}
+
+/* narrow window: branch list on top, stages scroll sideways */
+@container (max-width:620px){
+  .pv{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .nav{flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:2px solid var(--edge);padding:6px 10px}
+  .ni{min-width:150px;flex:none}
+  .ni.cap{margin-top:0}
+  .stages{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:min(76%,230px);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}
+  .stage{scroll-snap-align:start}
+  .info{grid-template-columns:1fr}
+  .ir{justify-items:start;grid-template-columns:auto 1fr;align-items:center}
+  .cost{text-align:left}
+  .gate .gt{display:none}
+  .tabs{overflow-x:auto}
+  .tab{padding:5px 9px;white-space:nowrap;font-size:13px}
+  .hd h2{font-size:15px}
+  .hd small{display:none}
+  .work b{white-space:nowrap}
+}
+
+/* phone landscape: same rules the game should apply with @media (max-height:480px) */
+.panel[data-size="phone"] .hd{padding:5px 12px;gap:10px}
+.panel[data-size="phone"] .hd-ic{width:32px;height:32px;padding:2px}
+.panel[data-size="phone"] .hd h2{font-size:15px}
+.panel[data-size="phone"] .hd small{display:none}
+.panel[data-size="phone"] .work{padding:2px 12px;min-height:22px;font-size:11.5px}
+.panel[data-size="phone"] .tabs{padding:4px 12px}
+.panel[data-size="phone"] .tab{padding:3px 10px;font-size:13px}
+.panel[data-size="phone"] .nav{padding:6px;gap:4px}
+.panel[data-size="phone"] .ni{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:3px 8px;min-height:27px}
+.panel[data-size="phone"] .ni .path{display:none}
+.panel[data-size="phone"] .rb{font-size:0;padding:0;width:8px;height:8px;border-radius:50%}
+.panel[data-size="phone"] .ni.cap .bar{display:none}
+.panel[data-size="phone"] .lane{padding:7px 12px;gap:0}
+.panel[data-size="phone"] .lh{display:none}
+.panel[data-size="phone"] .stage{padding:6px;gap:4px}
+.panel[data-size="phone"] .stat{height:25px}
+.panel[data-size="phone"] .nm{max-width:100%}
+.panel[data-size="phone"] .lk{display:none}
+.panel[data-size="phone"] .leap{padding:5px 8px;gap:2px}
+.panel[data-size="phone"] .ln{font-size:14px}
+.panel[data-size="phone"] .ln span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel[data-size="phone"] .xcs{flex-wrap:nowrap;overflow:hidden}
+.panel[data-size="phone"] .xc{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel[data-size="phone"] .stage:not(:last-child)::after{bottom:30px}
+.panel[data-size="phone"] .stage:not(:last-child)::before{bottom:26px}
+.panel[data-size="phone"] .info{min-height:46px;padding:5px 12px}
+.panel[data-size="phone"] .it{display:none}
+.panel[data-size="phone"] .cost{display:none}
+.panel[data-size="phone"] .im span{display:none}
+.panel[data-size="phone"] .go{padding:4px 14px;font-size:13px}
+
+.notes{padding-block:22px 36px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px 28px}
+.notes h2{grid-column:1/-1;margin:0;font:700 17px/1.3 var(--disp)}
+.notes h3{margin:0 0 2px;font:700 13.5px/1.35 var(--body);color:var(--on-ground)}
+.notes p{margin:0;color:var(--on-ground-2);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.job b{width:100%}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Bản sửa · Nhà nghiên cứu</p>
+      <h1>Cây nghiên cứu trong khung game</h1>
+      <p class="lede">Chạm một chỉ số để xem chi phí, chạm bước nhảy đang sáng rồi bấm Nghiên cứu. Đổi sang cỡ điện thoại ngang để xem bản không cần cuộn.</p>
+    </div>
+    <div class="ctl">
+      <div class="seg" role="group" aria-label="Cỡ cửa sổ">
+        <button data-size="desk" aria-pressed="true">Máy tính 746×541</button>
+        <button data-size="phone" aria-pressed="false">Điện thoại ngang 740×360</button>
+      </div>
+      <button class="rst" id="reset">Đặt lại</button>
+    </div>
+  </header>
+
+  <section class="stagewrap"><div class="panel" id="panel" data-size="desk" data-pil="mil" aria-live="polite"></div></section>
+
+  <section class="notes" aria-label="Đã sửa gì">
+    <h2>Đã sửa gì so với bản hiện tại</h2>
+    <div><h3>Bỏ màn hình chọn trụ</h3><p>Ba trụ thành tab ở trên cùng, chạm một lần là sang trụ khác. Không còn nút Quay lại và không còn khoảng trống bên dưới ba ô lớn.</p></div>
+    <div><h3>Mỗi lần xem một nhánh</h3><p>Danh sách nhánh nằm bên trái, đường đi ba hàng nằm ngang bên phải. Không còn năm cột tràn ngang, và cỡ điện thoại ngang vừa khít, không cuộn.</p></div>
+    <div><h3>Một hàng là một thẻ</h3><p>Ba chỉ số gộp trong một khung, bước nhảy dính ngay dưới. Mũi tên nối từ bước nhảy sang hàng kế tiếp.</p></div>
+    <div><h3>Trạng thái nhìn là biết</h3><p>Khóa là viền đứt, sẵn sàng là nút màu đậm đang sáng, đã mở là nền tối chữ vàng. Chỉ bước nhảy sẵn sàng mới có màu đậm, nên mắt tìm được ngay chỗ cần bấm.</p></div>
+    <div><h3>Chi phí xem trước, bấm mới trừ</h3><p>Thanh dưới cùng hiện chi phí, thời gian và điều kiện còn thiếu. Bấm nhầm một ô không tốn tài nguyên.</p></div>
+    <div><h3>Dùng màu của khung giấy da</h3><p>Bỏ các khối đen. Màu nhấn theo trụ: đỏ nâu cho Binh lực, xanh rêu cho Sinh kế, xanh lam cho Kỹ nghệ.</p></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var RES={food:'thức ăn',wood:'gỗ',stone:'đá',coin:'vỏ sò'};
+  var PN={mil:'Binh lực',econ:'Sinh kế',craft:'Kỹ nghệ'};
+  var LABNEED={1:2,2:3,3:3};
+  var LEAPC={1:{cost:{food:200,wood:120,coin:20},t:1200},2:{cost:{food:400,wood:200,stone:120,coin:50},t:2400},3:{cost:{wood:100,stone:60,coin:15},t:900}};
+  /* name, effect, % per level, shell cost, seconds (from researchtree.json) */
+  var ST={
+    hp:['Máu','máu tối đa',13.25,5,243], defm:['Thủ cận','phòng thủ cận chiến',11.25,5,283], defr:['Thủ xa','phòng thủ tầm xa',11.25,5,283],
+    move:['Chạy','tốc độ chạy',6.25,5,202], atk:['Sát thương','sát thương mỗi đòn',9.75,5,243], sta:['Sức','sức bền',9.75,25,222],
+    hpregen:['Hồi máu','tốc độ hồi máu',12.5,25,222], restregen:['Hồi sức','tốc độ hồi sức khi ngủ',12.5,25,222],
+    aspd:['Tốc đánh','tốc độ đánh của vũ khí',7.5,5,243], crit:['Chí mạng','tỉ lệ chí mạng của vũ khí',2.25,5,263], critd:['ST chí mạng','sát thương chí mạng',20,5,263],
+    work:['Làm việc','tốc độ làm việc',7.5,10,222], int:['Trí tuệ','trí tuệ (làm nhanh, đỡ tốn sức)',7.5,20,263], gyield:['Sản lượng nghề','sản lượng mỗi lần khai thác',15,5,236],
+    tspd:['Tốc độ công cụ','tốc độ khi cầm công cụ',10.5,5,222], tyield:['Sản lượng công cụ','sản lượng khi cầm công cụ',8,5,222], tdur:['Độ bền công cụ','độ bền công cụ',20,5,222]
+  };
+  function f(n){return String(n).replace('.',',');}
+  function fm(t){var m=Math.floor(t/60),s=t%60;return m+' phút'+(s?' '+s+' giây':'');}
+  /* full names for the detail bar; ST holds the short names shown on the chips */
+  var FULL={atk:'Sức mạnh',defm:'Phòng thủ cận chiến',defr:'Phòng thủ tầm xa',move:'Tốc độ di chuyển',aspd:'Tốc độ đánh',crit:'Tỉ lệ chí mạng',critd:'Sát thương chí mạng',work:'Tốc độ làm việc',tspd:'Tốc độ làm việc với công cụ',tyield:'Sản lượng công cụ',tdur:'Độ bền công cụ'};
+  var SH={gyield:'Sản lượng',tspd:'Tốc độ',tyield:'Sản lượng',tdur:'Độ bền'};
+  var TS={'Trận pháp cơ bản':'Trận cơ bản','Ô trận pháp 10':'Ô trận 10','Báo cáo chi tiết':'Báo cáo','Trận rải quân':'Rải quân','Trận phục kích':'Phục kích','Dự báo thời tiết':'Thời tiết','Hành quân & tải':'Hành quân','Tính toán hậu cần':'Hậu cần','Lính chòi canh':'Lính chòi','Tuần tra đêm':'Tuần đêm','Mũi tên chòi':'Tên chòi','Rào gia cố':'Gia cố','Xẻ thú khéo':'Xẻ thú','Vỏ sò làm tiền':'Vỏ sò','Dự trữ vỏ sò':'Dự trữ','Thuế vỏ sò':'Thuế','Kho hàng chợ':'Kho chợ','Xây song song':'Xây đôi','Sửa chữa nhanh':'Sửa nhanh','Xây trong đêm':'Xây đêm','Xưởng chuyên dụng':'Xưởng riêng','Đỡ hao nguyên liệu':'Đỡ hao liệu','Mài đá tinh':'Mài đá','Vật liệu hiếm':'Vật liệu','Chế tạo trong đêm':'Làm đêm','Nghiên cứu song song':'Song song','Thầy dạy trò':'Thầy dạy'};
+  function stat(k){var a=ST[k];return {n:FULL[k]||a[0],s:SH[k]||a[0],max:2,about:'+'+f(a[2])+'% '+a[1]+' mỗi cấp',cost:{food:50,wood:50,stone:25,coin:a[3]},t:a[4]};}
+  function T(n,about,max){return {n:n,s:TS[n],max:max||1,about:about,cost:{wood:12,coin:4},t:240};}
+  function R(nodes,name,about,cross){return {raw:nodes,leap:{n:name,about:about,cross:cross||[]}};}
+
+  var P=[
+   {k:'mil',n:'Binh lực',br:[
+    {k:'foot',n:'Bộ binh',w:'Gậy gỗ, giáo gỗ, chùy đá',rows:[
+      R(['hp','defm','defr'],'Lính giáo','Mở bậc 2 của bộ binh: cầm giáo gỗ.'),
+      R(['move','atk','sta'],'Lính chùy','Mở bậc 3 của bộ binh: cầm chùy đá.',['craft.make.1']),
+      R(['hpregen','aspd','crit'],'Vũ khí bậc 2','Gậy, giáo, chùy có sát thương gốc cao hơn.',['econ.gather.2'])]},
+    {k:'cav',n:'Kỵ binh',w:'Cưỡi heo rừng, cưỡi voi',rows:[
+      R(['hp','defm','defr'],'Lính cưỡi heo rừng','Mở bậc 2 của kỵ binh. Cần thú đã được thuần.',['econ.tame.1']),
+      R(['move','atk','sta'],'Lính cưỡi voi','Mở bậc 3 của kỵ binh. Cần thuần được voi.',['econ.tame.2']),
+      R(['hpregen','aspd','critd'],'Vũ khí bậc 2','Vũ khí của kỵ binh có sát thương gốc cao hơn.',['craft.make.2'])]},
+    {k:'archer',n:'Cung thủ',w:'Ném đá, dây quăng, cung ngắn',rows:[
+      R(['hp','defm','defr'],'Lính ném đá','Mở bậc 2 của cung thủ: dây quăng đá.'),
+      R(['move','atk','sta'],'Lính bắn cung','Mở bậc 3 của cung thủ: cung ngắn.',['econ.gather.1']),
+      R(['hpregen','crit','critd'],'Vũ khí bậc 2','Dây quăng và cung có sát thương gốc cao hơn.',['craft.make.2'])]},
+    {k:'tactics',n:'Trận & Kế hoạch',w:'Trận pháp, đội, báo cáo, hậu cần',rows:[
+      R([T('Trận pháp cơ bản','Hàng ngang và vòng tròn.'),T('Tín hiệu','Trống, khói báo động; phát tín hiệu cho các đội.'),T('Ô trận pháp 10','Mỗi trận pháp có 10 ô thay vì 5.')],'Mũi nhọn & Sừng bò','Mở trận mũi nhọn và trận sừng bò.'),
+      R([T('Báo cáo chi tiết','Tab so sánh quân ta và địch trong báo cáo triển khai.'),T('Trận rải quân','Giảm thiệt hại từ cung và lửa.'),T('Trận phục kích','Đòn đầu mạnh gấp đôi vào địch chưa biết.')],'Ô trận 15 & 6 đội','Mỗi trận có 15 ô, lập được 6 đội.',['craft.res.1']),
+      R([T('Dự báo thời tiết','Báo cáo cho biết thời tiết hôm nay và ngày mai.'),T('Hành quân & tải','Quân đi nhanh hơn, mỗi lính hậu cần mang nhiều hơn.'),T('Tính toán hậu cần','Số ngày đi, lương và vật liệu cần mang.')],'Nghỉ ngơi dã chiến','Dựng lều và nghỉ bất cứ lúc nào, cả ban ngày.',['econ.gather.1'])]},
+    {k:'defense',n:'Phòng thủ',w:'Lính gác, rào, cổng, chòi, chông',rows:[
+      R([T('Lính gác','Lính gác nhiều máu và đánh mạnh hơn.',2),T('Hàng rào','Hàng rào chịu đòn lâu hơn.',2),T('Cổng','Cổng chịu đòn lâu hơn.',2)],'Chông','Mở chông gai đặt ngoài làng.',['craft.build.1']),
+      R([T('Lính chòi canh','Lính trên chòi bắn mạnh và trụ lâu hơn.',2),T('Chông','Chông gây nhiều sát thương hơn.',2),T('Chòi canh','Chòi canh bền và bắn mạnh hơn.',2)],'Chòi canh bậc 2','Chòi canh tầm bắn xa hơn, chứa nhiều lính hơn.',['craft.build.2']),
+      R([T('Tuần tra đêm','Lính gác ít mệt khi canh suốt đêm.',2),T('Mũi tên chòi','Chòi bắn xa và trúng hơn về đêm.',2),T('Rào gia cố','Hàng rào và cổng gia cố thêm.',2)],'Phòng tuyến đêm','Phòng thủ giữ vững khi quái vật tấn công ban đêm.',['craft.build.3'])]}
+   ]},
+   {k:'econ',n:'Sinh kế',br:[
+    {k:'gather',n:'Khai thác',w:'Đốn gỗ, thợ đá, hái lượm',rows:[
+      R(['move','work','sta'],'Kho vật liệu','Kho chứa lớn hơn, đủ nuôi quân ra trận.',['craft.build.1']),
+      R(['int','gyield','tspd'],'Nghề khai thác bậc 2','Mọi chỉ số của nghề khai thác nhân lên.',['craft.make.1']),
+      R(['restregen','tyield','tdur'],'Khai thác vùng xa','Dân ra rừng sâu, núi xa trong sương mù. Cần quân hộ tống.',['mil.foot.2'])]},
+    {k:'tame',n:'Săn & Thuần thú',w:'Thợ săn, người thuần thú',rows:[
+      R(['move','work','sta'],'Thuần heo rừng','Thuần được heo rừng; kỵ binh bậc 2 dùng được.',['craft.build.1']),
+      R(['int','restregen','gyield'],'Thuần voi','Thuần được voi. Cần kỵ binh đã quen cưỡi heo rừng.',['mil.cav.1']),
+      R([T('Chuồng lớn','Nuôi nhiều thú thuần hơn.'),T('Xẻ thú khéo','Mỗi con xẻ ra nhiều thịt và da hơn.'),T('Bẫy thú','Bắt thú nhỏ mà không tốn sức.')],'Bầy thú chiến','Thú thuần đi cùng kỵ binh ra trận.',['mil.cav.2'])]},
+    {k:'trade',n:'Trao đổi',w:'Vỏ sò, chợ, thương lái',rows:[
+      R([T('Vỏ sò làm tiền','Trả công và đổi hàng bằng vỏ sò.'),T('Đổi chác','Đổi hàng trực tiếp với dân tị nạn.'),T('Quầy hàng','Dựng sạp đổi đồ ngay giữa làng.')],'Chợ làng','Mở chợ: mua bán vật liệu bằng vỏ sò.',['mil.defense.1']),
+      R([T('Bảng giá','Giá mua bán ổn định theo mùa.'),T('Thương lái','Người buôn ghé làng định kỳ.'),T('Dự trữ vỏ sò','Tích vỏ sò, không lo hết tiền công.')],'Trao đổi liên bộ lạc','Đổi hàng với các bộ lạc ngoài sương mù. Cần lính hộ tống.',['mil.foot.1']),
+      R([T('Thuế vỏ sò','Thu vỏ sò từ hoạt động của làng.'),T('Kho hàng chợ','Chợ chứa nhiều hàng hơn.'),T('Tuyến buôn','Đường buôn đi xa, ít rủi ro.')],'Tiền tệ chuẩn','Vỏ sò thành tiền chung, chuẩn bị cho kim loại.',['craft.res.2'])]}
+   ]},
+   {k:'craft',n:'Kỹ nghệ',br:[
+    {k:'build',n:'Xây dựng',w:'Thợ xây',rows:[
+      R(['work','sta','int'],'Thợ xây bậc 2','Mọi chỉ số của thợ xây nhân lên.'),
+      R([T('Giàn giáo','Nhiều người cùng xây một công trình hiệu quả hơn.'),T('Xây song song','Dựng hai công trình cùng lúc.'),T('Móng vững','Công trình mới bền hơn ngay từ đầu.')],'Công trường lớn','Mở công trình lớn. Cần chông ngoài làng bảo vệ.',['mil.defense.1']),
+      R([T('Nhà lớn','Công trình chứa được nhiều hơn.'),T('Sửa chữa nhanh','Sửa công trình hỏng nhanh hơn.'),T('Xây trong đêm','Thợ xây làm được cả buổi tối.')],'Xây công trình đá','Công trình bằng đá. Cần khai thác vùng xa.',['econ.gather.2'])]},
+    {k:'make',n:'Chế tạo',w:'Thợ chế tạo',rows:[
+      R(['work','sta','int'],'Thợ chế tạo bậc 2','Mọi chỉ số của thợ chế tạo nhân lên.'),
+      R([T('Mẻ lớn','Chế tạo nhiều món mỗi lượt.'),T('Xưởng chuyên dụng','Mỗi bàn làm một loại, ít sai sót.'),T('Đỡ hao nguyên liệu','Tốn ít vật liệu hơn mỗi món.')],'Chế tạo hàng loạt','Dụng cụ và vũ khí ra nhanh. Cần kho vật liệu.',['econ.gather.1']),
+      R([T('Mài đá tinh','Vũ khí đá sắc hơn.'),T('Vật liệu hiếm','Dùng được đá và xương tốt hơn.'),T('Chế tạo trong đêm','Thợ làm được cả buổi tối.')],'Vũ khí đá bậc cao','Mở loại vũ khí đá tốt nhất. Cần chùy đá đã có.',['mil.foot.2'])]},
+    {k:'res',n:'Nghiên cứu',w:'Nhà nghiên cứu',rows:[
+      R(['work','sta','int'],'Nhà nghiên cứu bậc 2','Mọi chỉ số của nhà nghiên cứu nhân lên.'),
+      R([T('Ghi chép','Phát minh ghi lại, đỡ phải làm lại.'),T('Nghiên cứu song song','Hai đề tài cùng lúc.'),T('Thí nghiệm','Thử nhiều lần, ít lãng phí.')],'Nghiên cứu nhóm','Nhiều nhà nghiên cứu làm nhanh hơn. Cần chợ làng để đổi vật liệu thử.',['econ.trade.1']),
+      R([T('Truyền khẩu','Kể lại phát minh cho người sau.'),T('Tranh khắc','Khắc lại trên đá và da.'),T('Thầy dạy trò','Dân mới học nhanh hơn.')],'Lưu truyền tri thức','Giữ lại phát minh khi làng sụp đổ. Cần trận pháp đã vững.',['mil.tactics.2'])]}
+   ]}
+  ];
+
+  var NODES={}, GATE={id:'gate',type:'gate',n:'Cổng Trung cổ',about:'Mở khi cả ba trụ có đỉnh. Cây Trung cổ mọc tiếp từ đây thành một tầng mới.'};
+  NODES.gate=GATE;
+  P.forEach(function(p){
+    p.br.forEach(function(b){
+      b.p=p;
+      b.rows=b.rows.map(function(r,i){
+        var Rn=i+1;
+        var nodes=r.raw.map(function(x,j){
+          var o=Object.assign({},typeof x==='string'?stat(x):x);
+          o.id=p.k+'.'+b.k+'.'+Rn+'.'+j; o.type='stat'; o.b=b; o.R=Rn; NODES[o.id]=o; return o;
+        });
+        var l=r.leap; l.id=p.k+'.'+b.k+'.'+Rn; l.type='leap'; l.b=b; l.R=Rn; l.cost=LEAPC[Rn].cost; l.t=LEAPC[Rn].t; NODES[l.id]=l;
+        var total=nodes.reduce(function(a,n){return a+n.max;},0);
+        var row={nodes:nodes,leap:l,total:total,need:Math.ceil(total*2/3)}; l.row=row; return row;
+      });
+    });
+    p.cap={id:p.k+'.cap',type:'cap',n:'Đỉnh '+p.n,about:'Hoàn tất trụ '+p.n+' của tầng Đồ đá. Ba đỉnh trụ mở Cổng Trung cổ.',p:p};
+    NODES[p.cap.id]=p.cap;
+    p.capNeed=Math.ceil(p.br.length*0.6);
+  });
+  function PIL(k){return P.filter(function(p){return p.k===k;})[0];}
+  function BR(p,k){return p.br.filter(function(b){return b.k===k;})[0];}
+
+  var ICON={
+    mil:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></svg>',
+    econ:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9"/><path d="M12 12c-4 0-6-2.5-6-6 4 0 6 2.5 6 6z"/><path d="M12 15c3.5 0 5.5-2 5.5-5-3.5 0-5.5 2-5.5 5z"/></svg>',
+    craft:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l9-9"/><path d="M12 5l7 7-3.5 3.5-7-7z"/></svg>'
+  };
+  var LOCK='<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" rx="1" fill="currentColor"/><path d="M4 5V3.5a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>';
+  var ZZ='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7l-7 8h7"/><path d="M13 12h6l-6 7h6"/></svg>';
+  var LABIC='<svg viewBox="0 0 40 40" width="100%" height="100%" aria-hidden="true"><path d="M5 18L20 8l15 10z" fill="#5b86b8"/><rect x="8" y="18" width="24" height="12" fill="#a8793f"/><rect x="16" y="22" width="8" height="8" fill="#3a2a14"/><rect x="5" y="30" width="30" height="3" fill="#6d5230"/></svg>';
+
+  var lab=2, lv={}, done={}, sel=null, busy=null, timer=null, curP='mil', curB={mil:'foot',econ:'gather',craft:'build'};
+  var panel=document.getElementById('panel');
+
+  function rowOpen(b,Rn){return Rn===1||!!done[b.rows[Rn-2].leap.id];}
+  function rowSum(b,Rn){return b.rows[Rn-1].nodes.reduce(function(a,n){return a+(lv[n.id]||0);},0);}
+  function capCount(p){return p.br.filter(function(b){return done[b.rows[2].leap.id];}).length;}
+  function gateCount(){return P.filter(function(p){return done[p.cap.id];}).length;}
+  function reqs(n){
+    var q=[];
+    if(n.type==='stat'){
+      var v=lv[n.id]||0;
+      q.push({ok:rowOpen(n.b,n.R),text:n.R===1?'Hàng 1 luôn mở':'Mở hàng '+n.R+': xong «'+n.b.rows[n.R-2].leap.n+'»'});
+      q.push({ok:lab>=v+1,text:'Nhà nghiên cứu cấp '+(v+1)});
+    } else if(n.type==='leap'){
+      var row=n.row, sum=rowSum(n.b,n.R);
+      if(n.R>1) q.push({ok:rowOpen(n.b,n.R),text:'Xong «'+n.b.rows[n.R-2].leap.n+'»'});
+      q.push({ok:sum>=row.need,text:'Chỉ số hàng '+n.R+': '+Math.min(sum,row.need)+'/'+row.need});
+      q.push({ok:lab>=LABNEED[n.R],text:'Nhà nghiên cứu cấp '+LABNEED[n.R]});
+      n.cross.forEach(function(id){var t=NODES[id];q.push({ok:!!done[id],cross:id,text:PN[t.b.p.k]+' ▸ '+t.n});});
+    } else if(n.type==='cap'){
+      var c=capCount(n.p);
+      q.push({ok:c>=n.p.capNeed,text:'Bước nhảy hàng 3: '+Math.min(c,n.p.capNeed)+'/'+n.p.capNeed+' nhánh'});
+      q.push({ok:lab>=3,text:'Nhà nghiên cứu cấp 3'});
+    } else {
+      var g=gateCount();
+      q.push({ok:g>=3,text:'Đỉnh trụ: '+g+'/3'});
+      q.push({ok:lab>=3,text:'Nhà nghiên cứu cấp 3'});
+    }
+    return q;
+  }
+  function status(n){
+    if(n.type==='stat'){
+      var v=lv[n.id]||0; if(v>=n.max) return 'done';
+      return (rowOpen(n.b,n.R)&&lab>=v+1)?'ready':'locked';
+    }
+    if(done[n.id]) return 'done';
+    return reqs(n).every(function(r){return r.ok;})?'ready':'locked';
+  }
+  function readyCount(p){
+    var c=0; p.br.forEach(function(b){b.rows.forEach(function(r){if(status(r.leap)==='ready')c++;});});
+    if(status(p.cap)==='ready')c++; return c;
+  }
+
+  function seed(){
+    lv={};done={};busy=null;if(timer){clearTimeout(timer);timer=null;}
+    function S(pk,bk,Rn,arr){var b=BR(PIL(pk),bk);arr.forEach(function(v,i){lv[b.rows[Rn-1].nodes[i].id]=v;});}
+    S('craft','build',1,[2,2,2]); done['craft.build.1']=true;
+    S('mil','foot',1,[2,2,0]);
+    S('mil','archer',1,[2,2,0]); done['mil.archer.1']=true; S('mil','archer',2,[1,1,0]);
+    S('mil','cav',1,[1,1,0]);
+    S('mil','tactics',1,[1,0,0]);
+    S('econ','tame',1,[2,1,0]);
+    curP='mil';curB={mil:'foot',econ:'gather',craft:'build'};sel='mil.foot.1';
+  }
+
+  function pips(n){var v=lv[n.id]||0,h='';for(var i=0;i<n.max;i++)h+='<i class="'+(i<v?'on':'')+'"></i>';return '<span class="pips" aria-hidden="true">'+h+'</span>';}
+  function statH(n){
+    var v=lv[n.id]||0;
+    return '<button class="stat'+(v>0?' has':'')+(v>=n.max?' max':'')+(sel===n.id?' sel':'')+'" data-node="'+n.id+'" title="'+n.n+'" aria-label="'+n.n+', cấp '+v+' trên '+n.max+'"><span class="nm">'+(n.s||n.n)+'</span>'+pips(n)+'</button>';
+  }
+  function leapH(l){
+    var st=status(l), sum=rowSum(l.b,l.R), need=l.row.need, xs='';
+    if(st!=='done'){
+      reqs(l).forEach(function(r){
+        if(r.cross){var t=NODES[r.cross];xs+='<span class="xc x-'+t.b.p.k+(r.ok?' ok':'')+'">'+(r.ok?'✓ ':'cần ')+t.n+'</span>';}
+      });
+      if(lab<LABNEED[l.R]) xs+='<span class="xc">cần Nhà NC cấp '+LABNEED[l.R]+'</span>';
+    }
+    var kick=st==='done'?'Đã mở':(st==='ready'?'Sẵn sàng':'Bước nhảy');
+    var prog=st==='done'?'':'<span class="lpg"><span class="bar"><b style="width:'+Math.min(1,sum/need)*100+'%"></b></span>'+Math.min(sum,need)+'/'+need+'</span>';
+    var ic=st==='locked'?LOCK:(st==='done'?'✓':'');
+    return '<button class="leap '+st+(sel===l.id?' sel':'')+'" data-node="'+l.id+'"><span class="lk">'+kick+'</span><span class="ln"><span>'+l.n+'</span>'+(ic?'<span class="ic">'+ic+'</span>':'')+'</span>'+prog+(xs?'<span class="xcs">'+xs+'</span>':'')+'</button>';
+  }
+  function stageH(b,Rn){
+    var row=b.rows[Rn-1], open=rowOpen(b,Rn), ld=!!done[row.leap.id], sum=rowSum(b,Rn);
+    var right=ld?'xong':(open?sum+'/'+row.total+' cấp':'khóa');
+    return '<div class="stage'+(ld?' done':'')+(open?'':' lock')+'"><div class="sh"><span>Hàng '+Rn+'</span><span>'+right+'</span></div>'+row.nodes.map(statH).join('')+leapH(row.leap)+'</div>';
+  }
+  function navH(b){
+    var p=b.p, cnt=0, any=false, path='';
+    b.rows.forEach(function(r,i){
+      var st=status(r.leap); if(st==='done')cnt++; if(st==='ready')any=true;
+      path+=(i?'<u></u>':'')+'<i class="d '+(st==='done'?'k':(st==='ready'?'r':''))+'"></i>';
+    });
+    return '<button class="ni'+(curB[p.k]===b.k?' on':'')+'" data-br="'+b.k+'" aria-current="'+(curB[p.k]===b.k)+'"><span class="nr"><span class="nn">'+b.n+'</span>'+(any?'<span class="rb">sẵn sàng</span>':'')+'</span><span class="nr"><span class="path">'+path+'</span><span class="cnt">'+cnt+'/3</span></span></button>';
+  }
+  function capH(p){
+    var st=status(p.cap), c=capCount(p);
+    var bar=st==='done'?'':'<span class="nr"><span class="bar"><b style="width:'+Math.min(1,c/p.capNeed)*100+'%"></b></span><span class="cnt">'+Math.min(c,p.capNeed)+'/'+p.capNeed+'</span></span>';
+    return '<button class="ni cap '+st+(sel===p.cap.id?' sel':'')+'" data-node="'+p.cap.id+'"><span class="nr"><span class="nn">Đỉnh trụ</span>'+(st==='done'?'<span class="cnt">✓</span>':'')+'</span>'+bar+'</button>';
+  }
+  function infoH(){
+    if(!sel) return '<div class="il"><span class="im"><span>Chạm một chỉ số hoặc bước nhảy để xem điều kiện và chi phí.</span></span></div><div class="ir"></div>';
+    var n=NODES[sel], st=status(n), tag, title, about=n.about, q=reqs(n), cost=n.cost, t=n.t, label, can=(st==='ready'&&!busy);
+    if(n.type==='stat'){
+      var v=lv[n.id]||0; tag='Chỉ số · '+n.b.n+' · hàng '+n.R; title=n.n+' · cấp '+v+'/'+n.max;
+      if(v>=n.max){q=[];label='Đã tối đa';} else label=st==='ready'?'Nghiên cứu cấp '+(v+1):'Chưa đủ điều kiện';
+    } else if(n.type==='leap'){
+      tag='Bước nhảy · '+n.b.n+' · hàng '+n.R; title=n.n;
+      if(st==='done'){q=[];label='Đã mở';} else label=st==='ready'?'Nghiên cứu':'Chưa đủ điều kiện';
+    } else if(n.type==='cap'){
+      tag='Đỉnh trụ'; title=n.n; cost=null; label=st==='done'?'Đã mở':(st==='ready'?'Mở đỉnh trụ':'Chưa đủ điều kiện'); if(st==='done')q=[];
+    } else {
+      tag='Cổng thời đại'; title=n.n; cost=null; label=st==='done'?'Đã mở':(st==='ready'?'Mở cổng':'Chưa đủ điều kiện'); if(st==='done')q=[];
+    }
+    if(busy&&busy.id===sel){label='Đang nghiên cứu…';can=false;}
+    else if(busy&&st==='ready'){label='Đang bận';}
+    var cs=cost?Object.keys(cost).map(function(k){return cost[k]+' '+RES[k];}).join(' · ')+' · '+fm(t):'';
+    return '<div class="il"><span class="it">'+tag+'</span><span class="im"><b>'+title+'</b><span>'+about+'</span></span>'+
+      (q.length?'<span class="rq">'+q.map(function(r){return '<span class="'+(r.ok?'ok':'')+'">'+r.text+'</span>';}).join('')+'</span>':'')+'</div>'+
+      '<div class="ir">'+(cs?'<span class="cost">'+cs+'</span>':'')+'<button class="go" data-go="1"'+(can?'':' disabled')+'>'+label+'</button></div>';
+  }
+  function headH(){
+    var work=busy?
+      '<div class="work"><span class="wi">'+ZZ+'</span><b>Đang nghiên cứu</b><span class="wd">'+busy.n+'</span><span class="job"><b></b></span></div>':
+      '<div class="work"><span class="wi">'+ZZ+'</span><b>Đang rảnh</b><span class="wd">Chưa có đơn nào đang làm. Mỗi lần chỉ nghiên cứu một thứ.</span></div>';
+    return '<div class="hd"><div class="hd-ic">'+LABIC+'</div><div><h2>Nhà nghiên cứu · cấp '+lab+'/3 (gỗ)</h2><small>đang dùng</small></div><span class="pill">Nhân sự 2/2</span></div>'+work;
+  }
+  function tabsH(){
+    var g=statusGate(), gd='';
+    P.forEach(function(p){gd+='<i class="c-'+p.k+(done[p.cap.id]?' on':'')+'"></i>';});
+    return '<div class="tabs" role="tablist" aria-label="Ba trụ">'+P.map(function(p){
+      var rd=readyCount(p);
+      return '<button class="tab c-'+p.k+(curP===p.k?' on':'')+'" role="tab" aria-selected="'+(curP===p.k)+'" data-tab="'+p.k+'"><span class="ti">'+ICON[p.k]+'</span><span>'+p.n+'</span>'+(rd?'<span class="bdg" title="'+rd+' sẵn sàng">'+rd+'</span>':'')+'</button>';
+    }).join('')+'<button class="gate '+g+(sel==='gate'?' sel':'')+'" data-node="gate"><span class="gd">'+gd+'</span><span class="gt">Cổng Trung cổ</span><span>'+gateCount()+'/3</span></button></div>';
+  }
+  function statusGate(){return status(GATE);}
+  function bodyH(){
+    var p=PIL(curP), b=BR(p,curB[curP]), done3=b.rows.filter(function(r){return done[r.leap.id];}).length;
+    return '<div class="pv"><nav class="nav" aria-label="Nhánh của '+p.n+'">'+p.br.map(navH).join('')+capH(p)+'</nav>'+
+      '<div class="lane"><div class="lh"><h3>'+b.n+'</h3><span class="w">'+b.w+'</span><span class="lc">Bước nhảy '+done3+'/3</span></div>'+
+      '<div class="stages">'+[1,2,3].map(function(r){return stageH(b,r);}).join('')+'</div></div></div>';
+  }
+
+  function autoSel(){
+    var b=BR(PIL(curP),curB[curP]), i, l;
+    for(i=0;i<3;i++){l=b.rows[i].leap;if(status(l)==='ready')return l.id;}
+    for(i=0;i<3;i++){l=b.rows[i].leap;if(!done[l.id])return l.id;}
+    return PIL(curP).cap.id;
+  }
+
+  function render(){
+    var act=document.activeElement, fk=null;
+    if(act&&panel.contains(act)){
+      ['node','tab','br','go'].forEach(function(k){if(act.dataset[k]!==undefined)fk='[data-'+k+'="'+act.dataset[k]+'"]';});
+    }
+    var lane=panel.querySelector('.lane'), nav=panel.querySelector('.nav'), stg=panel.querySelector('.stages');
+    var sv=[lane?lane.scrollTop:0,nav?nav.scrollTop:0,nav?nav.scrollLeft:0,stg?stg.scrollLeft:0];
+    panel.dataset.pil=curP;
+    panel.innerHTML=headH()+tabsH()+bodyH()+'<div class="info" id="info">'+infoH()+'</div>';
+    lane=panel.querySelector('.lane'); nav=panel.querySelector('.nav'); stg=panel.querySelector('.stages');
+    lane.scrollTop=sv[0]; nav.scrollTop=sv[1]; nav.scrollLeft=sv[2]; stg.scrollLeft=sv[3];
+    if(fk){var el=panel.querySelector(fk);if(el&&!el.disabled)el.focus({preventScroll:true});}
+  }
+
+  function apply(id){
+    var n=NODES[id];
+    if(n.type==='stat') lv[id]=(lv[id]||0)+1; else done[id]=true;
+  }
+  function start(id){
+    var n=NODES[id]; busy={id:id,n:n.n}; render();
+    timer=setTimeout(function(){apply(id);busy=null;timer=null;render();},1800);
+  }
+
+  panel.addEventListener('click',function(e){
+    var go=e.target.closest('[data-go]');
+    if(go){ if(sel&&!busy&&status(NODES[sel])==='ready') start(sel); return; }
+    var t=e.target.closest('[data-tab]');
+    if(t){curP=t.dataset.tab;sel=autoSel();render();return;}
+    var b=e.target.closest('[data-br]');
+    if(b){curB[curP]=b.dataset.br;sel=autoSel();render();return;}
+    var n=e.target.closest('[data-node]');
+    if(n){sel=n.dataset.node;render();}
+  });
+
+  var segs=document.querySelectorAll('[data-size]');
+  Array.prototype.forEach.call(segs,function(b){
+    b.addEventListener('click',function(){
+      panel.dataset.size=b.dataset.size;
+      Array.prototype.forEach.call(segs,function(x){x.setAttribute('aria-pressed',String(x===b));});
+    });
+  });
+  document.getElementById('reset').addEventListener('click',function(){seed();render();});
+
+  /* sanity: every cross id exists and the cross graph has no cycle */
+  (function(){
+    function deps(id){return (NODES[id].cross||[]);}
+    var state={};
+    function visit(id){
+      if(!NODES[id]) throw new Error('missing '+id);
+      if(state[id]===2)return; if(state[id]===1) throw new Error('cycle at '+id);
+      state[id]=1; deps(id).forEach(visit);
+      var n=NODES[id]; if(n.type==='leap'&&n.R>1) visit(n.b.rows[n.R-2].leap.id);
+      state[id]=2;
+    }
+    Object.keys(NODES).forEach(function(id){if(NODES[id].type==='leap')visit(id);});
+    window.__treeOk=true;
+  })();
+
+  seed();
+  render();
+})();
+</script>

@@ -13,14 +13,51 @@ import bow from '../data/handtools/bow.json';
 import bronzeSpear from '../data/handtools/bronze_spear.json';
 import bronzeSword from '../data/handtools/bronze_sword.json';
 import bronzeAxe from '../data/handtools/bronze_axe.json';
+import armingSword from '../data/handtools/arming_sword.json';
+import shortsword from '../data/handtools/shortsword.json';
+import lance from '../data/handtools/lance.json';
+import thrownStone from '../data/handtools/thrown_stone.json';
+import warhammer from '../data/handtools/warhammer.json';
+import greatsword from '../data/handtools/greatsword.json';
+import knightSword from '../data/handtools/knight_sword.json';
+import yewLongbow from '../data/handtools/yew_longbow.json';
+import paladinLance from '../data/handtools/paladin_lance.json';
+import longbow from '../data/handtools/longbow.json';
+import alloyCrossbow from '../data/handtools/alloy_crossbow.json';
+import heavyLance from '../data/handtools/heavy_lance.json';
+import compositeBow from '../data/handtools/composite_bow.json';
+import shortSpear from '../data/handtools/short_spear.json';
+import pike from '../data/handtools/pike.json';
+import heaterShield from '../data/shields/heater.json';
+import towerShield from '../data/shields/tower.json';
+import aegisShield from '../data/shields/aegis.json';
+import woodShield from '../data/shields/wood.json';
 import hideArmor from '../data/armors/hide.json';
+import footmanArmor from '../data/armors/footman.json';
+import archerArmor from '../data/armors/archer.json';
+import riderArmor from '../data/armors/rider.json';
+import guardArmor from '../data/armors/guard.json';
+import marksmanArmor from '../data/armors/marksman.json';
+import royalRiderArmor from '../data/armors/royalrider.json';
+import templarArmor from '../data/armors/templar.json';
+import sniperArmor from '../data/armors/sniper.json';
+import paladinArmor from '../data/armors/paladin.json';
 import boneArmor from '../data/armors/bone.json';
 import bronzeArmor from '../data/armors/bronze.json';
+import watchmanArmor from '../data/armors/watchman.json';
+import sergeantArmor from '../data/armors/sergeant.json';
+import wardenArmor from '../data/armors/warden.json';
+import peasantHoodBrownArmor from '../data/armors/peasant_hood_brown.json';
+import peasantHoodGreyArmor from '../data/armors/peasant_hood_grey.json';
+import peasantStrawBrownArmor from '../data/armors/peasant_straw_brown.json';
+import peasantStrawGreyArmor from '../data/armors/peasant_straw_grey.json';
 
 /* Hand-held tools are drawn from JSON (src/data/handtools). handTools may be replaced at runtime (the animation viewer uses this to try out designs). */
-const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow, bronze_spear: bronzeSpear, bronze_sword: bronzeSword, bronze_axe: bronzeAxe };
+const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow, bronze_spear: bronzeSpear, bronze_sword: bronzeSword, bronze_axe: bronzeAxe, arming_sword: armingSword, shortsword, lance, composite_bow: compositeBow, thrown_stone: thrownStone, warhammer, greatsword, alloy_crossbow: alloyCrossbow, knight_sword: knightSword, yew_longbow: yewLongbow, paladin_lance: paladinLance, longbow, heavy_lance: heavyLance, short_spear: shortSpear, pike, ward_sword: armingSword, bronze_bow: bow };
 /* Worn armour, drawn over the body from JSON (src/data/armors). */
-const armors = { hide: hideArmor, bone: boneArmor, bronze: bronzeArmor };
+const armors = { hide: hideArmor, bone: boneArmor, bronze: bronzeArmor, footman: footmanArmor, archer: archerArmor, rider: riderArmor, guard: guardArmor, marksman: marksmanArmor, royalrider: royalRiderArmor, templar: templarArmor, sniper: sniperArmor, paladin: paladinArmor, watchman: watchmanArmor, sergeant: sergeantArmor, warden: wardenArmor, peasant_hood_brown: peasantHoodBrownArmor, peasant_hood_grey: peasantHoodGreyArmor, peasant_straw_brown: peasantStrawBrownArmor, peasant_straw_grey: peasantStrawGreyArmor };
+/* Shields, held in the off hand: hand-drawn poses written as rows of letters (see src/data/shields). */
+const shields = { heater: heaterShield, tower: towerShield, aegis: aegisShield, wood: woodShield };
 
 /* ---- Lõi vẽ dân pixel: không phụ thuộc DOM ---- */
 const W = 40, H = 48, CX = 20;
@@ -192,6 +229,25 @@ function drawTool(b, side, hx, hy, tool, ov, P) {
   else rotShapes(b, gripShapes(def), col, gx, gy, rad(180 - (tool.a || 0)));
 }
 
+/* The tool seen from the front or from behind: the side drawing flattened. Its width stays, its length shrinks to the part of it that stands up (or hangs down): a spear held
+   up is a full line, one pointed at us only its tip. From behind, what is held out in front of him is hidden by the body. */
+function drawToolFacing(b, back, hx, hy, tool, ov, P) {
+  const tier = ov && ov.tier !== undefined ? ov.tier : 2;
+  if (tier <= 0) return;
+  const kind = (ov && ov.kind) || tool.kind || 'axe', def = handTools[kind] || handTools.axe;
+  const T = tiers[tier] || tiers[Math.max(...Object.keys(tiers).map(Number).filter(n => n > 0))];
+  const col = { head: hexRgb(T.head), light: hexRgb(T.light), dark: hexRgb(T.dark), wood: P.wood };
+  const cs = Math.cos(rad(180 - (tool.a || 0))), gx = Math.round(hx), gy = Math.round(hy);
+  const pose = tool.pose && def.poses && def.poses[tool.pose];
+  if (pose) { for (const [x, y, w, h, c] of rects(pose)) rect(b, gx + x, gy + y, w, h, col[c] || hexRgb(c)); return; } // a hand-drawn pose (a spear stood on the ground, a sword on the hip) is the same drawing from the front and from behind
+  if (Math.abs(cs) < 0.2) { if (!back) rect(b, gx - 1, gy - 2, 3, 3, col.head); return; } // pointed at us: the tip end-on
+  if (back && Math.abs(cs) < 0.5) return;
+  for (const [x, y, w, h, k] of gripShapes(def)) {
+    const y0 = y * cs, y1 = (y + h) * cs, top = Math.min(y0, y1), hh = Math.max(1, Math.round(Math.abs(y1 - y0)));
+    rect(b, gx + x, gy + Math.round(top), w, hh, col[k] || hexRgb(k));
+  }
+}
+
 /* Colours of a worn armour: its own palette plus the villager's skin tones. */
 function armorColors(def, P) {
   const c = { skin: P.skin, skinD: P.skinD };
@@ -202,7 +258,29 @@ function armorColors(def, P) {
 function drawArmorLayer(b, def, C, view, layer, ox, oy) {
   const shapes = def[view] && def[view][layer];
   if (!shapes) return;
+  if (!Array.isArray(shapes) && shapes.rows) { drawRows(b, shapes, C, ox, oy); return; }
   for (const [x, y, w, h, k] of rects(shapes)) rect(b, ox + x, oy + y, w, h, C[k] || hexRgb(k));
+}
+/* Pixels written as rows of letters: { "ox", "oy", "legend": { letter: colour name }, "rows": [ "..AB..", ... ] }. '.' and ' ' are empty; the colour names are looked up in C. */
+function drawRows(b, art, C, ox, oy) {
+  const legend = art.legend || {}, x0 = ox + (art.ox || 0), y0 = oy + (art.oy || 0);
+  art.rows.forEach((row, j) => {
+    for (let i = 0; i < row.length; i++) {
+      const ch = row[i];
+      if (ch === '.' || ch === ' ') continue;
+      const k = legend[ch];
+      if (k === undefined) continue;
+      put(b, x0 + i, y0 + j, C[k] || hexRgb(k));
+    }
+  });
+}
+/* A shield in the off hand, in one of its hand-drawn poses, with the grip at (hx, hy). */
+function drawShield(b, def, pose, hx, hy) {
+  const behind = pose.endsWith('Back'), art = def.poses[behind ? pose.slice(0, -4) + 'Front' : pose] || def.poses.rest, C = {};
+  for (const [k, v] of Object.entries(def.palette || {})) C[k] = hexRgb(v);
+  const legend = { ...def.legend };
+  if (behind) for (const k of ['F', 'E', 'e', 'B']) legend[k] = legend.f; // the back of a shield: no emblem, no boss
+  drawRows(b, { ...art, legend }, C, Math.round(hx), Math.round(hy));
 }
 /* A band around a limb, centred on (x, y). */
 function drawWrap(b, wr, C, x, y) {
@@ -233,6 +311,7 @@ function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
   const tool = f.tool && f.tool.on ? f.tool : null;
   const carry = f.carry && f.carry.on ? f.carry : null;
   const hold = !!(tool || carry);
+  const SH = ov && ov.shield && shields[ov.shield], shieldF = SH && f.shield && f.shield.on ? f.shield : null;
   const tDx = side ? Math.trunc(lean / 2) : 0, hDx = side ? lean : 0;
   const hipY = 35 + bob, shY = 27 + bob, TY = 25 + bob, HY = 14 + bob;
   const gl = (o, k, d) => (o && typeof o[k] === 'number') ? o[k] : d;
@@ -241,7 +320,8 @@ function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
     const a = rad(gl(L, 'a', 0));
     const fx = side ? hx + 7 * Math.sin(a) : hx;
     const fy = 42 - gl(L, 'lift', 0) - 7 * (1 - Math.cos(a));
-    line(b, hx, hipY, fx, fy, 3, col);
+    const lc = AD && AD.legs ? AC[col === P.skinD ? AD.legs.far : AD.legs.near] : col; // armour that covers the whole leg (hose, breeches)
+    line(b, hx, hipY, fx, fy, 3, lc);
     rect(b, Math.round(fx) - 1, Math.round(fy) + 1, 3, 1, P.skinD);
     if (AD && col !== P.skinD) drawWrap(b, AD.wraps && AD.wraps.leg, AC, (hx + fx) / 2, fy - gl(AD.wraps && AD.wraps.leg, 'dy', 4));
   };
@@ -256,9 +336,12 @@ function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
     return { sx, ex: sx + (CX - sx) * k * 0.4, ey, hx: sx + (CX - sx) * k, hy: ey + L * Math.cos(rad(a2)) };
   };
   const arm = (p, col) => {
-    line(b, p.sx, shY, p.ex, p.ey, 3, col);
-    line(b, p.ex, p.ey, p.hx, p.hy, 3, col);
-    if (AD) drawWrap(b, AD.wraps && AD.wraps.arm, AC, (p.ex + p.hx) / 2, (p.ey + p.hy) / 2 - 1);
+    const wr = AD && AD.wraps && AD.wraps.arm, full = !!(wr && wr.full); // a sleeve over the whole arm, a glove on the hand
+    const sc = full ? AC[col === P.skinD ? (wr.far || wr.color) : wr.color] : col;
+    line(b, p.sx, shY, p.ex, p.ey, 3, sc);
+    line(b, p.ex, p.ey, p.hx, p.hy, 3, sc);
+    if (full) { if (wr.hand) rect(b, Math.round(p.hx) - 1, Math.round(p.hy) - 1, 2, 2, AC[wr.hand]); }
+    else if (AD) drawWrap(b, wr, AC, (p.ex + p.hx) / 2, (p.ey + p.hy) / 2 - 1);
   };
   const axe = (hx, hy) => drawTool(b, side, hx, hy, tool, ov, P);
   const bundle = () => {
@@ -282,11 +365,14 @@ function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
     arm(pL, P.skinD);
     leg(f.legL, hx0, P.skinD);
     leg(f.legR, hx0, P.skin);
+    if (AD) drawArmorLayer(b, AD, AC, 'side', 'back', CX - 3 + tDx, TY);
     drawTorso(b, CX - 3 + tDx, TY, 'side', P, sex);
     if (AD) drawArmorLayer(b, AD, AC, 'side', 'torso', CX - 3 + tDx, TY);
     drawHead(b, 'side', CX - 6 + hDx, HY, P, sex);
     if (AD) drawArmorLayer(b, AD, AC, 'side', 'head', CX - 6 + hDx, HY);
+    if (AD) drawArmorLayer(b, AD, AC, 'side', 'over', CX - 3 + tDx, TY);
     if (carry) bundle();
+    if (shieldF) drawShield(b, SH, shieldF.pose || 'rest', pL.hx + (shieldF.dx || 0), pL.hy + (shieldF.dy || 0));
     arm(pR, P.skin);
     if (tool) axe(pR.hx, pR.hy);
     if (extra && extra.torch !== undefined) drawTorch(b, pL.hx, pL.hy, extra.torch);
@@ -294,16 +380,23 @@ function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
   }
   const pR = armPts(f.armR, front ? CX - 5.5 : CX + 5.5);
   const pL = armPts(f.armL, front ? CX + 5.5 : CX - 5.5);
-  leg(f.legR, front ? CX - 2.5 : CX + 2.5, P.skin);
-  leg(f.legL, front ? CX + 2.5 : CX - 2.5, P.skin);
+  const spread = gl(f, 'spread', 0); // astride a horse: the legs hang out to the sides
+  leg(f.legR, front ? CX - 2.5 - spread : CX + 2.5 + spread, P.skin);
+  leg(f.legL, front ? CX + 2.5 + spread : CX - 2.5 - spread, P.skin);
   if (!hold || back) { arm(pR, P.skin); arm(pL, P.skin); }
+  if (back && tool) drawToolFacing(b, true, pR.hx, pR.hy, tool, ov, P);
+  if (back && shieldF) drawShield(b, SH, (shieldF.pose || 'rest') + 'Back', pL.hx + (shieldF.dx || 0), pL.hy + (shieldF.dy || 0));
+  if (AD) drawArmorLayer(b, AD, AC, view, 'back', CX - 5, TY);
   drawTorso(b, CX - 5, TY, view, P, sex);
   if (AD) drawArmorLayer(b, AD, AC, view, 'torso', CX - 5, TY);
   drawHead(b, view, CX - 6, HY, P, sex);
   if (AD) drawArmorLayer(b, AD, AC, view, 'head', CX - 6, HY);
+  if (AD) drawArmorLayer(b, AD, AC, view, 'over', CX - 5, TY);
+  if (shieldF && front) drawShield(b, SH, (shieldF.pose || 'rest') + 'Front', pL.hx + (shieldF.dx || 0), pL.hy + (shieldF.dy || 0));
   if (hold) {
     if (carry) bundle();
     if (!back) { arm(pR, P.skin); arm(pL, P.skin); }
+    if (!back && tool) drawToolFacing(b, false, pR.hx - 3, pR.hy, tool, ov, P); // held at his right side: to the left of the picture
   }
   if (extra && extra.torch !== undefined) drawTorch(b, pL.hx + (front ? 1 : -1), pL.hy, extra.torch);
 }

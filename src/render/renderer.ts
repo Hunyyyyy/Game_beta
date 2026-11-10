@@ -482,7 +482,7 @@ export class Renderer {
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = '#0b0d16'; ctx.fillRect(0, 0, this.w, this.h);
 
-    const cx = Math.round(cam.x), cy = Math.round(cam.y), ts = TILE * z, nat = sp.nature(sim.season);
+    const cx = Math.round(cam.x), cy = Math.round(cam.y), ts = TILE * z, nat = sp.nature(sim.season); sp.setWorld(sim.era, sim.season);
     const i0 = Math.max(0, Math.floor(cx / TILE)), j0 = Math.max(0, Math.floor(cy / TILE));
     const i1 = Math.min(N - 1, Math.floor((cx + this.w / z) / TILE)), j1 = Math.min(N - 1, Math.floor((cy + this.h / z) / TILE));
     const px = (i: number) => (i * TILE - cx) * z, py = (j: number) => (j * TILE - cy) * z;
@@ -623,19 +623,31 @@ export class Renderer {
         // a rider is seen from the side, the way his beast faces: up and down the screen he keeps the side he last had
         if (d.v.facing === 'left' || d.v.facing === 'right') this.sideOf.set(d.v, d.v.facing);
         const side = this.sideOf.get(d.v) ?? 'right', moving0 = d.v.path.length > 0 || !!d.v.slide;
-        const s = rode && !fighting ? sp.villager(d.v, moving0 ? 'ride_walk' : 'ride', side) : sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
-        let lift = 0;
+        // a rider of the medieval age has seated animations of his own for every state (rider_*: guard, charge, thrust): they are the ones the sim chose, not the standing ones
+        const seated = !!rode && d.v.anim.startsWith('rider_'), gallop = d.v.anim === 'rider_charge';
+        // up and down the screen a rider of a species drawn from the front and behind (the horse) faces the way he goes, beast and all
+        const vdir = rode && sp.hasViews(MOUNTS[rode].species) && (d.v.facing === 'front' || d.v.facing === 'back') ? d.v.facing : null;
+        const s = seated ? sp.villager(d.v, undefined, vdir ?? side) : rode && !fighting ? sp.villager(d.v, moving0 ? 'ride_walk' : 'ride', vdir ?? side) : sp.villager(d.v), fx = d.v.x * TILE, fy = d.v.y * TILE;
+        let lift = 0, afterRider: (() => void) | null = null;
         if (rode) { // a beast under him: it walks when he walks, and he sits on its back in the seated animations (ride, ride_walk in anims.json: the same two for every beast)
-          const m = MOUNTS[rode], moving = moving0, beast = sp.mount(m.species, moving, d.v.animClock, side === 'left' ? -1 : 1), box = sp.animalBox(m.species);
-          ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(Math.round((fx - cx) * z), Math.round((fy - cy) * z), box.w * 0.3 * z, box.h * 0.1 * z, 0, 0, Math.PI * 2); ctx.fill();
-          ctx.drawImage(beast, Math.round((fx - box.ax - cx) * z), Math.round((fy - box.ay - cy) * z), beast.width * z, beast.height * z);
+          const m = MOUNTS[rode], moving = moving0, box = sp.animalBox(m.species, vdir ?? undefined);
+          ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(Math.round((fx - cx) * z), Math.round((fy - cy) * z), box.w * (vdir ? 0.45 : 0.3) * z, box.h * (vdir ? 0.07 : 0.1) * z, 0, 0, Math.PI * 2); ctx.fill();
+          if (vdir) { // the part of the beast behind him now, the part in front of him after him
+            const parts = sp.mountView(m.species, moving, d.v.animClock, gallop, vdir), bx = Math.round((fx - box.ax - cx) * z), by = Math.round((fy - box.ay - cy) * z);
+            ctx.drawImage(parts.rear, bx, by, parts.rear.width * z, parts.rear.height * z);
+            afterRider = () => ctx.drawImage(parts.over, bx, by, parts.over.width * z, parts.over.height * z);
+          } else {
+            const beast = sp.mount(m.species, moving, d.v.animClock, side === 'left' ? -1 : 1, gallop);
+            ctx.drawImage(beast, Math.round((fx - box.ax - cx) * z), Math.round((fy - box.ay - cy) * z), beast.width * z, beast.height * z);
+          }
           lift = m.ride + 1; // the seated animations bob by themselves
         }
         if (d.v.phase === 'sleep' || d.v.phase === 'down') {
           // lying asleep: sprite rotated 90°, head to the left
           ctx.save(); ctx.translate(Math.round((fx + 16 - cx) * z), Math.round((fy - 2 - cy) * z)); ctx.rotate(-Math.PI / 2);
           ctx.drawImage(s, -SPRITE_FEET.x * z, -SPRITE_FEET.y * z, s.width * z, s.height * z); ctx.restore();
-        } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx) * z), Math.round((fy - lift - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
+        } else ctx.drawImage(s, Math.round((fx - SPRITE_FEET.x - cx + (rode && !vdir ? (MOUNTS[rode].dx ?? 0) * (side === 'left' ? -1 : 1) : 0)) * z), Math.round((fy - lift - SPRITE_FEET.y - cy) * z), s.width * z, s.height * z);
+        afterRider?.();
         const v = d.v;
         if (v.phase === 'work') this.fxl.watchWorker(v, fx, fy - lift, time);
         if (this.audio?.sfxOn && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time);

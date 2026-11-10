@@ -1,6 +1,6 @@
 /** How a villager looks in a list of a house: one tile, the same everywhere (the houses of a role, the beds, the staff of a house). Change it here. */
-import { roleName, roleOf } from '../sim/jobs';
-import { CHAINS } from '../sim/research';
+import { roleName, roleOf, titleOfRole } from '../sim/jobs';
+import { CHAINS, researchRoles, statsFor } from '../sim/research';
 import type { Villager } from '../sim/model';
 import type { Ctx } from './ctx';
 import { describe, equipParts, gearLine, vitalsLine } from './describe';
@@ -31,7 +31,7 @@ const faces = new Map<string, HTMLCanvasElement>();
  * Drawn once for each look and kept; every call gives a fresh copy to put in the page.
  */
 export function avatar(c: Ctx, v: Villager): HTMLElement {
-  const key = `${v.look.sex}|${v.look.skin}|${v.look.hair}|${v.armor ?? '-'}`;
+  const key = `${v.look.sex}|${v.look.skin}|${v.look.hair}|${v.armor ?? c.sprites.outfitOf(v) ?? '-'}`;
   let face = faces.get(key);
   if (!face) {
     const still = { ...v, facing: 'front', anim: 'idle', animClock: 0, hold: null, carry: null, lit: false } as Villager;
@@ -55,7 +55,7 @@ export function personTile(c: Ctx, v: Villager, o: PersonOptions = {}): HTMLElem
   const pills = o.stats ? h('div', { class: 'dpills' }, ...o.stats.map((id) => statPill(sim, v, id))) : o.vitals === false ? null : h('div', { class: 'dpills' },
     dlg.pill(statIcon('hp'), `${Math.ceil(v.health)}`, hp < 0.35 ? 'bad' : hp < 0.7 ? 'warn' : undefined, 'Máu hiện có'),
     dlg.pill(statIcon('sta'), `${Math.round(v.energy)}%`, v.energy < 20 ? 'bad' : v.energy < 50 ? 'warn' : undefined, 'Sức còn lại'));
-  const trade = o.trade && role ? dlg.chip(roleName(role, sim.era)) : null;
+  const trade = o.trade && role ? dlg.chip(titleOfRole(v, sim.era) ?? roleName(role, sim.era)) : null;
   return dlg.tile({ pic: avatar(c, v), name: v.name, chip: trade, state: o.state }, [o.note === '' ? null : dlg.more(o.note ?? describe(v, sim)), gearLine(v) ? dlg.more(gearLine(v)) : null, o.stats ? dlg.more(vitalsLine(sim, v)) : null, pills], o.actions?.some(Boolean) ? h('div', { class: 'dacts' }, ...o.actions) : null);
 }
 
@@ -93,8 +93,7 @@ export function openDetail(c: Ctx, v: Villager): void {
 
 /** The stats that matter for a role: the line of the research tree it belongs to (the soldiers also have the stats of the weapon in their hand). */
 export function roleStats(role: string): StatId[] {
-  if (role === 'guard') role = 'foot';
-  const chain = Object.values(CHAINS).find((ch) => ch.roles.includes(role));
-  const ids = (chain?.order ?? []) as StatId[];
-  return role === 'foot' || role === 'cavalry' || role === 'archer' ? [...ids, 'aspd', 'crit', 'critd'] : ids;
+  const chain = Object.values(CHAINS).find((ch) => researchRoles(role).some((r) => ch.roles.includes(r)));
+  const own = researchRoles(role).find((r) => chain?.roles.includes(r)) ?? role;
+  return chain ? (statsFor(chain, own) as StatId[]) : [];
 }
