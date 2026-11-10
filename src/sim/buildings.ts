@@ -24,6 +24,8 @@ export const WALL_KINDS: ReadonlySet<BuildingKind> = new Set<BuildingKind>(['fen
 /** One level of a building. Level 1 is the cost to place it; higher levels are upgrade costs. */
 export interface LevelDef {
   name: string;      // material tier shown to the player: Đơn sơ, Gỗ, Đá
+  /** Optional: what the house is called at this level (e.g. "Đồn đá"); without it the house keeps the name of its kind. Set it in building.json. */
+  title?: string;
   cost: Partial<Stock>;
   buildTime: number; // seconds for a builder with factor 1.0
   cap: number;       // storage per resource (Kho), items held (Kho công cụ, Kho vũ khí)
@@ -114,7 +116,8 @@ export function buildingSight(b: Pick<Building, 'kind' | 'level' | 'done'> & { e
 }
 
 /** What a kind of house is called in an era. */
-export const buildingName = (kind: BuildingKind, era: Era): string => BUILDINGS[kind].names?.[era] ?? BUILDINGS[kind].name;
+/** What a house is called: the title of its level when building.json gives one, else the name of its kind in the era. */
+export const buildingName = (kind: BuildingKind, era: Era, level?: number): string => (level ? levelsOf(kind, kind === 'campfire' ? 'ancient' : era)[level - 1]?.title : undefined) ?? BUILDINGS[kind].names?.[era] ?? BUILDINGS[kind].name;
 
 /** Level list of a building kind in an era: the stone levels, and in the medieval era the medieval ones after them (a kind with none stays at its stone levels). */
 export function levelsOf(kind: BuildingKind, era: Era): LevelDef[] {

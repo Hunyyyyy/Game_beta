@@ -85,8 +85,8 @@ export function statValue(sim: Sim, v: Villager, stat: StatId): number {
   const mode = role === 'foot' || role === 'cavalry' || role === 'archer' ? sim.warMode?.(v) ?? null : null;
   const warBonus = mode ? statBonus(sim.researched, `${mode === 'fight' ? 'plan' : 'march'}_${role}`, stat) : 0;
   const hunger = v.team === 'player' && stat !== 'hp' ? (1 - sim.foodPenalty) * (1 - sim.tiredPenalty(v)) : 1; // short of food, and (an army in the field) short of sleep
-  // the percent of the research is ADDED to the multiple of the rank (not multiplied by it), so that a high rank is not magnified again by its research: base × (rank + research / 100)
-  return BASE[stat] * (v.fac?.[stat] ?? 1) * (mult + (bonus + warBonus) / 100) * hunger;
+  // the percent of the research MULTIPLIES the multiple of the rank, so the gap between two ranks is always the gap of their multiples, however much is researched: base × rank × (1 + research / 100)
+  return BASE[stat] * (v.fac?.[stat] ?? 1) * mult * (1 + (bonus + warBonus) / 100) * hunger;
 }
 
 /** What a stat is on a person's own (no research, no tier): used when a body is made. */

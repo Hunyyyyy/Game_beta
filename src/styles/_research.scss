@@ -4,7 +4,7 @@
   > * { flex: none; }
   > .tabpage:not([hidden]) { flex: 1; min-height: 0; display: flex; flex-direction: column; } }
 .rsp {
-  container-type: inline-size;
+  // (the container is .rs-main, not .rsp: a container makes itself the containing block of the dialog laid over it, and .rsp is as tall as all its content, so on a short screen the dialog was centred in the scrolled-away middle of it)
   --parch: #e3d5a6; --parch-hi: #efe5c3; --parch-lo: #d5c48b; --parch-deep: #c3b070;
   --ink: #3a2a14; --ink-2: #5c4a2a; --ink-3: #85714a;
   --edge: #8a6b39; --edge-lt: #b79f63; --edge-dk: #4e3a20;
@@ -14,7 +14,7 @@
   color: var(--ink); font-size: 14px; line-height: 1.4;
   flex: 1; min-height: 290px; display: flex; flex-direction: column;
   button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; margin: 0; }
-  .rs-main { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--parch); border: 2px solid var(--edge); border-radius: 8px; overflow: hidden; }
+  .rs-main { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--parch); border: 2px solid var(--edge); border-radius: 8px; overflow: hidden; container-type: inline-size; }
   .rs-main[data-pil='mil'] { --acc: var(--mil); } .rs-main[data-pil='econ'] { --acc: var(--econ); } .rs-main[data-pil='craft'] { --acc: var(--craft); }
   .c-mil { --c: var(--mil); } .c-econ { --c: var(--econ); } .c-craft { --c: var(--craft); }
 

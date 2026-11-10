@@ -2,21 +2,10 @@
   "_note": "kind beasts: species = id in animals.json (wolf, bear, lion...). kind raid: tribe = who attacks; power = how strong against the army of the player on the day (1 = as strong, 1.1 = a tenth stronger, 0.8 = a fifth weaker; kept between floor and ceiling of content/difficulty.json), OR size = how many guards the tribe sends, OR army = own make-up { weapon: count } (weapons of weapons.json: club, spear, mace, hatchet = foot; sling, bow = archers), with armor (default true). Enemy cavalry is not supported yet. day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has. recurring: sự kiện không cạn: từ fromDay, cứ everyDays ngày bốc một sự kiện từ table theo weight (thú: số con = base + perSoldier × số lính của ta, tối đa max; tập kích: một làng thù địch, sức = power × quân của ta, kẹp theo trần của cấp lửa như raidPower), báo trước leadDays ngày. hostile: làng chưa chiếm không phải loại hiền (hoặc đã thù địch, hoặc là thủ lĩnh phản bội) mà quan hệ dưới raidBelow tự tập kích cứ raidEveryDays ngày với sức power theo bậc, từ fromDay; làng có quan hệ từ gift.friendAt trở lên thì không.",
   "events": [
     {
-      "id": "wolves_3",
-      "kind": "beasts",
-      "species": "wolf",
-      "day": 3,
-      "spread": 0,
-      "size": 2,
-      "night": false,
-      "warnDays": 1,
-      "warn": "Dấu chân sói quanh bãi củi: có sói đói lảng vảng."
-    },
-    {
       "id": "wolves_5",
       "kind": "beasts",
       "species": "wolf",
-      "day": 5,
+      "day": 6,
       "spread": 0,
       "size": 3,
       "night": true,
@@ -27,7 +16,7 @@
       "id": "wolves_7",
       "kind": "beasts",
       "species": "wolf",
-      "day": 7,
+      "day": 8,
       "spread": 0,
       "size": 4,
       "night": false,

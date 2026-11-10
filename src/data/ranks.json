@@ -1,13 +1,13 @@
 {
-  "_note": "Bậc lính (xem doc/thiet_ke_bac_linh.md). Mỗi nhánh (foot, archer, cavalry) có các bậc theo thang chung 1..6: thời Đá là 1..3, thời Trung cổ là 4..7 (4 là lính đồng). Lính bậc N chỉ mang vũ khí có rank N (weapons.json) và luyện ở trại lính bằng: nghiên cứu đã mở bậc đó + vũ khí trong kho + chi phí cost (kỵ: cost đã gồm giá thú cưỡi nên không cần Chuồng thú). power: hệ số sức mạnh của từng bậc (nhân vào chỉ số gốc, trước phần cộng của nghiên cứu); statExp: mỗi chỉ số nhân power mũ bao nhiêu (hp và atk lấy căn bậc hai để sức mạnh tổng ≈ power); ration: khẩu phần ăn nhân theo bậc. soon: chưa luyện được (thiếu vật liệu), chỉ có qua dev.",
+  "_note": "Bậc lính (xem doc/thiet_ke_bac_linh.md). Mỗi nhánh (foot, archer, cavalry) có các bậc theo thang chung 1..6: thời Đá là 1..3, thời Trung cổ là 4..7 (4 là lính đồng). Lính bậc N chỉ mang vũ khí có rank N (weapons.json) và luyện ở trại lính bằng: nghiên cứu đã mở bậc đó + vũ khí trong kho + chi phí cost (kỵ: cost đã gồm giá thú cưỡi nên không cần Chuồng thú). power: hệ số sức mạnh của từng bậc (nhân vào chỉ số gốc, rồi nhân tiếp với 1 + % nghiên cứu; 1 lính bậc 7 ≈ 5 lính bậc 1 khi đánh theo nhóm, vì √25 = 5); statExp: mỗi chỉ số nhân power mũ bao nhiêu (hp và atk lấy căn bậc hai để sức mạnh tổng ≈ power); ration: khẩu phần ăn nhân theo bậc. soon: chưa luyện được (thiếu vật liệu), chỉ có qua dev.",
   "power": [
     1,
-    1.75,
-    3,
-    3.6,
+    2.25,
     4.8,
-    6.5,
-    9
+    8.4,
+    13,
+    18.5,
+    25
   ],
   "statExp": {
     "hp": 0.5,
@@ -70,7 +70,7 @@
       },
       {
         "rank": 4,
-        "name": "Lính đồng",
+        "name": "Bộ binh hạng nhẹ",
         "weapon": "bronze_sword",
         "armor": "bronze",
         "cost": {
@@ -136,7 +136,7 @@
       },
       {
         "rank": 4,
-        "name": "Cung thủ đồng",
+        "name": "Cung binh",
         "weapon": "bronze_bow",
         "armor": "bronze",
         "cost": {
@@ -211,7 +211,7 @@
       },
       {
         "rank": 4,
-        "name": "Kỵ binh đồng",
+        "name": "Xung kích kỵ",
         "weapon": "bronze_spear",
         "armor": "bronze",
         "mount": "elephant",
@@ -278,6 +278,7 @@
         "weapon": "spear",
         "armor": "hide",
         "cost": {
+          "food": 10,
           "coin": 2
         }
       },
@@ -287,12 +288,13 @@
         "weapon": "mace",
         "armor": "bone",
         "cost": {
+          "food": 20,
           "coin": 3
         }
       },
       {
         "rank": 4,
-        "name": "Lính gác đồng",
+        "name": "Dân binh",
         "weapon": "bronze_spear",
         "armor": "bronze",
         "cost": {
@@ -302,7 +304,7 @@
       },
       {
         "rank": 5,
-        "name": "Tuần đinh",
+        "name": "Hộ thành",
         "weapon": "short_spear",
         "armor": "watchman",
         "cost": {
@@ -312,7 +314,7 @@
       },
       {
         "rank": 6,
-        "name": "Lính gác chuyên nghiệp",
+        "name": "Cận vệ hoàng gia",
         "weapon": "pike",
         "armor": "sergeant",
         "cost": {
@@ -322,7 +324,7 @@
       },
       {
         "rank": 7,
-        "name": "Cận vệ thành trì",
+        "name": "Vệ binh hoàng gia",
         "weapon": "ward_sword",
         "armor": "warden",
         "cost": {
