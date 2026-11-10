@@ -34,7 +34,7 @@ export function noticesOf(sim: Sim): Notice[] {
     out.push({
       id: 'era-bronze', level: 'info', icon: '🏺', title: 'Chuyển thời kỳ: Thời đại Đồ đồng', when: 'vừa bắt đầu',
       body: `${fallen.def.name} đã sụp đổ. Bí quyết đồng giờ đã nằm trong tay làng ta.`,
-      tip: 'Bạn đã hạ được một làng đầu lĩnh: đã có thể nâng Nhà chung lên Nhà chính để bước sang thời Trung cổ (khi mọi nhà đã đạt cấp 4). Các làng còn lại cũng sẽ mạnh dần theo.',
+      tip: 'Bạn đã hạ được một làng đầu lĩnh: đã có thể nâng Nhà chung lên Nhà chính để bước sang thời Trung cổ (khi mọi nhà đã đạt cấp 3). Các làng còn lại cũng sẽ mạnh dần theo.',
     });
   }
   // the village is under attack: who hides, who may go out

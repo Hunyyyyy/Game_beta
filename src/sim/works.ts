@@ -3,7 +3,7 @@ import { Building, BuildingKind, levelDef } from './buildings';
 import { WorkJob } from './jobs';
 import { Res, Stock } from './resources';
 import { isGear, RECIPE_BY_ID, recipeName, TIER_DURABILITY, ToolKind, TOOL_OF_JOB } from './tools';
-import { CRAFT_COST_PER_LEVEL, recipeNeedLevel, recipeOpen as blueprintDone, RESEARCH, Tech, TECH_BY_ID, techForRecipe } from './research';
+import { CRAFT_COST_PER_LEVEL, discountBill, perkPct, recipeNeedLevel, recipeOpen as blueprintDone, missingOf, reached, RESEARCH, Tech, TECH_BY_ID, techForRecipe } from './research';
 import type { Sim } from './sim';
 import { Villager } from './model';
 
@@ -11,18 +11,20 @@ import { Villager } from './model';
 // ---------------------------------------------------------------- research and crafting
 /** Cost and time of an order in one of the two queues. */
 export function orderDef(sim: Sim, kind: 'research' | 'craft', id: string): { cost: Partial<Stock>; time: number } | null {
-  if (kind === 'research') { const t = TECH_BY_ID[id]; return t ? { cost: t.cost, time: t.time } : null; }
+  if (kind === 'research') { const t = TECH_BY_ID[id]; return t ? { cost: researchCost(sim, t), time: t.time } : null; }
   const r = RECIPE_BY_ID[id]; if (!r) return null;
   return { cost: r.cost, time: r.time };
 }
 
+/** What a research costs now: its own cost, cut by the research of the Nhà nghiên cứu (Nghiên cứu rẻ hơn). */
+export const researchCost = (sim: Sim, t: Tech): Partial<Stock> => discountBill(t.cost, perkPct(sim.researched, 'researchCost'));
 /** Level of a finished building of a kind (0 when there is none). */
 export function levelOfKind(sim: Sim, kind: BuildingKind): number { return sim.building(kind)?.level ?? 0; }
 
 export function workshopLevel(sim: Sim): number { return levelOfKind(sim, 'workshop'); }
 
 /** What the materials of a craft cost now, as a multiple of the base cost: half as much again for each level of the Nhà chế tạo above the first. */
-export const craftMult = (sim: Sim): number => 1 + CRAFT_COST_PER_LEVEL * Math.max(0, workshopLevel(sim) - 1);
+export const craftMult = (sim: Sim): number => (1 + CRAFT_COST_PER_LEVEL * Math.max(0, workshopLevel(sim) - 1)) * (1 - Math.min(50, perkPct(sim.researched, 'craftCost')) / 100); // and cut by the research of the craftsmen (Chế tạo rẻ hơn)
 /** A cost made m times as big (every good at least 1, rounded up). */
 export const scaleCost = (cost: Partial<Stock>, m: number): Partial<Stock> => Object.fromEntries(Object.entries(cost).map(([r, n]) => [r, Math.max(1, Math.ceil((n as number) * m - 1e-9))])) as Partial<Stock>;
 /** What ordering one of this recipe costs at the Nhà chế tạo as it stands. */
@@ -39,14 +41,22 @@ export function recipeLock(sim: Sim, id: string): string | null {
 
 export function recipeOpen(sim: Sim, id: string): boolean { return recipeLock(sim, id) === null; }
 
+/** What a research still waits for: the researches before it, and (a leap of the pillars) most of the stat levels of its row. */
+function lacksOf(sim: Sim, t: Tech): string[] {
+  const lacks = missingOf(sim.researched, t).map((n) => `Cần nghiên cứu: ${n}`);
+  if (t.needCount) { const got = t.needCount.ids.filter((r) => reached(sim.researched, r)).length; if (got < t.needCount.count) lacks.push(`Cần ${t.needCount.count} cấp chỉ số của hàng này (đã có ${got})`); }
+  return lacks;
+}
+
 /** Where a research stands: done, being worked on, queued, ready to start or locked (with the reason). */
 export function techState(sim: Sim, t: Tech): { state: 'done' | 'active' | 'queued' | 'ready' | 'locked'; why?: string; lacks?: string[] } {
+  if (t.milestone) return reached(sim.researched, t.id) ? { state: 'done' } : { state: 'locked', why: 'Đang thiết kế: chưa có tác dụng', lacks: lacksOf(sim, t) };
   if (sim.researched.has(t.id)) return { state: 'done' };
   if (sim.building('lab')?.active?.id === t.id) return { state: 'active' };
   if (sim.researchQueue.includes(t.id)) return { state: 'queued' };
   // every condition that is not met yet, not only the first
   const free = sim.dev.freeWorks; // dev: no steps before it and no level of the house needed
-  const lacks = free ? [] : t.requires.filter((r) => !sim.researched.has(r)).map((r) => `Cần nghiên cứu: ${TECH_BY_ID[r].name}`);
+  const lacks = free ? [] : lacksOf(sim, t);
   const lab = sim.building('lab');
   if (!lab) lacks.push('Cần dựng Nhà nghiên cứu');
   else if (!free && lab.level < t.needLevel) lacks.push(`Cần Nhà nghiên cứu cấp ${t.needLevel}`);
@@ -77,13 +87,13 @@ export function queueResearch(sim: Sim, id: string): string | null {
   if (st.state === 'locked') return st.why ?? 'Chưa nghiên cứu được';
   const short = researchShort(sim, t);
   if (short) return short;
-  if (!sim.dev.freeWorks) sim.pay(t.cost);
+  if (!sim.dev.freeWorks) sim.pay(researchCost(sim, t));
   sim.researchQueue.push(id);
   return null;
 }
 
 /** Why the materials and coins for a research are not there, or null. They are paid when the research is queued. */
-export function researchShort(sim: Sim, t: Tech): string | null { return sim.dev.freeWorks ? null : sim.missing(t.cost); }
+export function researchShort(sim: Sim, t: Tech): string | null { return sim.dev.freeWorks ? null : sim.missing(researchCost(sim, t)); }
 
 /** Throw goods out of a store to make room: one (the most worn first), or every one of that kind. Returns an error or null. */
 export function discardGoods(sim: Sim, id: string, all: boolean): string | null {
@@ -149,7 +159,7 @@ export function unqueueCraft(sim: Sim, id: string): void {
 /** Cancel a queued research; what was paid comes back. */
 export function unqueueResearch(sim: Sim, id: string): void {
   const t = TECH_BY_ID[id];
-  if (t && sim.researchQueue.includes(id) && !sim.dev.freeWorks) sim.pay(t.cost, 1);
+  if (t && sim.researchQueue.includes(id) && !sim.dev.freeWorks) sim.pay(researchCost(sim, t), 1);
   unqueue(sim, sim.researchQueue, id);
 }
 

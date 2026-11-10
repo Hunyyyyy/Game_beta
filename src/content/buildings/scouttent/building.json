@@ -41,27 +41,14 @@
    {
     "name": "Lều thám thính",
     "cost": {
-     "wood": 40,
-     "stone": 25
+     "wood": 47,
+     "stone": 38
     },
-    "buildTime": 160,
+    "buildTime": 197,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 6,
-    "hp": 360,
-    "sight": 0
-   },
-   {
-    "name": "Lều thám thính gia cố",
-    "cost": {
-     "wood": 53,
-     "stone": 50
-    },
-    "buildTime": 233,
-    "cap": 0,
-    "craftSpeed": 1,
-    "slots": 6,
-    "hp": 450,
+    "hp": 405,
     "sight": 0
    }
   ],

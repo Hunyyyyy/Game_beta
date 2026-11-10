@@ -20,43 +20,37 @@
         "food": [
           160,
           500,
-          1400,
-          3200,
+          2300,
           6000
         ],
         "wood": [
           180,
           600,
-          1500,
-          3600,
+          2550,
           7200
         ],
         "stone": [
           120,
           450,
-          1200,
-          3000,
+          2100,
           6000
         ],
         "hide": [
           40,
           120,
-          320,
-          800,
+          560,
           1600
         ],
         "coin": [
           10,
           30,
-          80,
-          200,
+          140,
           400
         ],
         "bone": [
           32,
           96,
-          256,
-          640,
+          448,
           1280
         ]
       },
@@ -64,49 +58,48 @@
         "food": [
           480,
           1500,
-          4200,
-          9600,
+          6900,
           18000
         ],
         "wood": [
           540,
           1800,
-          4500,
-          10800,
+          7650,
           21600
         ],
         "stone": [
           360,
           1350,
-          3600,
-          9000,
+          6300,
           18000
         ],
         "hide": [
           120,
           360,
-          960,
-          2400,
+          1680,
           4800
         ],
         "coin": [
           30,
           90,
-          240,
-          600,
+          420,
           1200
         ],
         "bone": [
           96,
           288,
-          768,
-          1920,
+          1344,
           3840
         ]
       }
     },
-    "yieldPerVillage": 15,
+    "yieldPerVillage": { "weak": 4, "normal": 8, "medium": 15, "boss": 20, "rebel": 20, "raider": 0 },
+    "bandit": { "_note": "Trại cướp (tribes.json bandit): hai trại ngoài bản đồ, mỗi 2 đến 3 ngày tự đổi mức mạnh (yếu = bậc normal, vừa = medium, mạnh = raider) dù chưa bị diệt. Diệt hết thì nhận một phần (bag) túi theo cấp trại, rồi trại mọc lại sau respawn ngày.", "rerollMin": 2, "rerollMax": 3, "respawnMin": 2, "respawnMax": 3, "bag": 0.4, "strengths": ["normal", "medium", "raider"] },
     "adopt": {
+      "raider": {
+        "pop": 0,
+        "slots": 0
+      },
       "weak": {
         "pop": 3,
         "slots": 1
@@ -136,6 +129,7 @@
       "relationLoss": 1,
       "greedChancePerStep": 0.05,
       "recoverPerDay": 0.15,
+      "rebuildPerDay": 2,
       "betrayBelow": -40,
       "relationRegen": 2
     },
@@ -144,7 +138,9 @@
       "maxRebels": 3,
       "returnBonus": 0.3
     },
+    "retake": { "after": 3, "delayMin": 3, "delayMax": 6, "maxLate": 2 },
     "allies": {
+      "max": 33,
       "weak": 3,
       "normal": 6,
       "medium": 18,
@@ -186,17 +182,22 @@
       "strength": 3
     },
     "medium": {
-      "capLevel": 4,
+      "capLevel": 3,
       "edge": 1,
       "strength": 2.5
     },
     "boss": {
-      "capLevel": 4,
+      "capLevel": 3,
       "edge": 1
     },
     "rebel": {
-      "capLevel": 4,
+      "capLevel": 3,
       "edge": 1
+    },
+    "raider": {
+      "capLevel": 3,
+      "edge": 1,
+      "strength": 3.5
     }
   }
 }

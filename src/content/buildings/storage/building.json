@@ -15,7 +15,6 @@
   1,
   2,
   3,
-  3,
   4
  ],
  "levels": {
@@ -47,27 +46,14 @@
    {
     "name": "Đá",
     "cost": {
-     "wood": 40,
-     "stone": 20
+     "wood": 43,
+     "stone": 24
     },
-    "buildTime": 140,
-    "cap": 1000,
+    "buildTime": 179,
+    "cap": 1500,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 360,
-    "sight": 0
-   },
-   {
-    "name": "Đá gia cố",
-    "cost": {
-     "wood": 46,
-     "stone": 28
-    },
-    "buildTime": 218,
-    "cap": 2000,
-    "craftSpeed": 1,
-    "slots": 0,
-    "hp": 450,
+    "hp": 405,
     "sight": 0
    }
   ],

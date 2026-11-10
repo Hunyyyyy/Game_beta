@@ -14,8 +14,7 @@
  "limit": [
   168,
   168,
-  203,
-  238,
+  221,
   256
  ],
  "repeat": true,
@@ -49,27 +48,14 @@
    {
     "name": "Hàng rào đôi gia cố",
     "cost": {
-     "wood": 8,
-     "stone": 2
+     "wood": 12,
+     "stone": 3
     },
-    "buildTime": 41,
+    "buildTime": 56,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 1200,
-    "sight": 0
-   },
-   {
-    "name": "Hàng rào đôi kiên cố",
-    "cost": {
-     "wood": 16,
-     "stone": 4
-    },
-    "buildTime": 70,
-    "cap": 0,
-    "craftSpeed": 1,
-    "slots": 0,
-    "hp": 2000,
+    "hp": 1600,
     "sight": 0
    }
   ],

@@ -10,6 +10,8 @@ import { icon } from './icons';
 import type { Ctx } from './ctx';
 import { describe, SHIFT_LABEL } from './describe';
 import type { Shift } from '../sim/model';
+import { WEAPONS } from '../sim/combat';
+import { isRankRole, rankName, ranksOf, trainBill } from '../sim/ranks';
 
 /** What a role leans on: the stat that says who is good at it (scouts are rated by their own score). */
 const STAT_OF: Record<RoleId, keyof typeof STAT_NAME | 'scout'> = {
@@ -23,9 +25,9 @@ const HELP: Record<RoleId, string> = {
   foot: 'Chiến binh cận chiến do trại này tuyển và cho nghỉ, không phải ở đống lửa. Họ ở trong trại (không hiện trên bản đồ) và chỉ ra ngoài khi bạn bấm "Gọi quân", khi có trận hoặc khi được ra lệnh; việc canh gác giao cho Lính gác. Nhớ chế vũ khí và giáp cho họ. Nâng cấp trại để chứa thêm.',
   cavalry: 'Người cưỡi thú do trại này tuyển và cho nghỉ. Họ xung phong nhanh, khắc người ném nhưng sợ giáo. Nâng cấp trại để chứa thêm.',
   archer: 'Người ném đá, bắn ná do trại này tuyển và cho nghỉ. Họ đánh từ xa và có thể lên chòi canh. Chỉ dùng vũ khí bắn. Nâng cấp trại để chứa thêm.',
-  guard: 'Lính gác do Trại lính gác quản lý: chọn thẳng trong số dân rảnh, không cần qua trại lính khác. Mỗi người có một chỗ gác riêng, đứng đó canh làng, ra tay khi thấy công trình bị phá, dân bị tấn công hoặc kẻ lạ tiến vào, rồi quay về chỗ gác. Muốn đổi chỗ gác: chọn lính rồi chạm lên bản đồ. Họ nhìn xa hơn lính thường 5 ô và không vào đội tác chiến. Nâng cấp trại để chứa 6, 12, 18 người.',
+  guard: 'Lính gác do Trại lính gác quản lý, luyện theo bậc như các trại khác (Người canh gác, Lính gác, Lính canh): chọn bậc, chọn người nam rảnh, đồ lấy từ kho. Họ phòng thủ tốt hơn đánh: nhiều máu và thủ hơn bộ binh cùng bậc. Mỗi người có một chỗ gác riêng, đứng đó canh làng, ra tay khi thấy công trình bị phá, dân bị tấn công hoặc kẻ lạ tiến vào, rồi quay về chỗ gác. Muốn đổi chỗ gác: chọn lính rồi chạm lên bản đồ. Họ nhìn xa hơn lính thường 5 ô và không vào đội tác chiến. Nâng cấp trại để chứa 6, 12, 18 người.',
   tower: 'Lính chòi canh được giao ở từng Chòi canh, lấy thẳng từ dân rảnh (không cần Trại cung thủ).',
-  scout: 'Trinh sát do Trại trinh sát tuyển từ lính kỵ của Trại kỵ thú (họ giữ thú và đồ của mình) và cho nghỉ về lại trại kỵ. Trinh sát tốt cần Nhanh nhẹn và Thể lực. Nâng cấp trại để chứa thêm.',
+  scout: 'Trinh sát do Trại trinh sát tuyển từ lính kỵ của Trại lính kỵ (họ giữ thú và đồ của mình) và cho nghỉ về lại trại kỵ. Trinh sát tốt cần Nhanh nhẹn và Thể lực. Nâng cấp trại để chứa thêm.',
   supply: 'Lính hậu cần do Trại hậu cần tuyển từ dân thường. Họ ở trong trại và chỉ làm việc khi có chiến tranh: mang lương theo quân, đi theo sau đội hình và tự vệ khi bị đánh, không tham gia tấn công. Nâng cấp trại để thêm người.',
 };
 
@@ -39,6 +41,8 @@ export class RolePane {
   private readonly roster: Roster;
   /** The Trại lính gác: the watch whose guards stand in the right list, and whether the list of all the villagers (to hire guards) is open instead. */
   private watch: 'day' | 'night' = 'day'; private recruit = false;
+  /** The rank the camps of soldiers train now (ranks.json). */
+  private rank = 1;
 
   /** `changed` asks whoever shows this pane to draw it again. */
   constructor(private readonly c: Ctx, readonly role: RoleId, private readonly changed: () => void = () => this.update()) { this.roster = new Roster(c); }
@@ -52,7 +56,7 @@ export class RolePane {
 
   stateKey(): string {
     const { sim } = this.c;
-    return [this.role, this.watch, this.recruit, sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${v.shift}${v.out ? 'o' : ''}${v.housed ? 'H' : ''}${v.phase === 'sleep' ? 'z' : ''}${Math.round(v.energy / 20)}${Math.round(v.health / 20)}${v.armor ? Math.round(v.gear.ad / 25) : ''}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
+    return [this.role, this.watch, this.recruit, this.rank, isRankRole(this.role) ? sim.trainCheck(this.role, this.rank).missing.join('|') : '', sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${v.shift}${v.out ? 'o' : ''}${v.housed ? 'H' : ''}${v.phase === 'sleep' ? 'z' : ''}${Math.round(v.energy / 20)}${Math.round(v.health / 20)}${v.armor ? Math.round(v.gear.ad / 25) : ''}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
       sim.scouts.map((m) => m.ids.join('.')).join('|'), sim.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join()].join('|');
   }
 
@@ -63,14 +67,14 @@ export class RolePane {
     const lock = sim.warLock(), house = buildingName(def.building, era), cap = sim.roleCapacity(role), have = sim.villagers.filter((v) => roleOf(v) === role).sort((a, b) => b.stats.str + b.stats.agi - a.stats.str - a.stats.agi);
     const room = Math.max(0, cap - have.length);
     // anyone may be given the role, whatever they do now (they leave the old work); scouts are taken from the cavalry soldiers only
-    const pool = role === 'scout' ? sim.villagers.filter((v) => v.job === 'fight' && !v.guard && v.arm === 'cavalry' && v.down <= 0) : sim.villagers.filter((v) => v.health > 0 && v.down <= 0 && roleOf(v) !== role);
+    const pool = role === 'scout' ? sim.villagers.filter((v) => v.job === 'fight' && !v.guard && v.arm === 'cavalry' && v.down <= 0) : sim.villagers.filter((v) => v.health > 0 && v.down <= 0 && roleOf(v) !== role && (def.job !== 'fight' || v.look.sex === 'm')); // the soldiers are men
     const key = (v: Villager) => (STAT_OF[role] === 'scout' ? sim.scoutSkill(v) : v.stats[STAT_OF[role] as 'str']);
     const out: Node[] = [];
     // the soldiers of a camp live inside it: one button calls the whole camp out (or sends it back), and each soldier has his own
     const guards = role === 'guard', tools: HTMLElement[] = [];
     const stray = guards ? have.filter((v) => v.shift === 'both') : [];
     if (stray.length) sim.setShift(stray.map((v) => v.id), 'day'); // the watch of a guard is the day or the night, never both
-    const watching = guards && !this.recruit, other = this.watch === 'day' ? 'night' : 'day', onWatch = (v: Villager) => (v.shift === 'night' ? 'night' : 'day'); // the buttons for the whole house, side by side in one row
+    const watching = guards && have.length > 0 && !this.recruit, other = this.watch === 'day' ? 'night' : 'day', onWatch = (v: Villager) => (v.shift === 'night' ? 'night' : 'day'); // the buttons for the whole house, side by side in one row
     const camp = (role === 'foot' || role === 'cavalry' || role === 'archer' || role === 'guard' || role === 'scout' || role === 'supply') && have.length > 0;
     if (camp) {
       const allOut = have.every((v) => sim.isOut(v)), ids = have.map((v) => v.id);
@@ -94,6 +98,18 @@ export class RolePane {
     const block = lock ?? (!cap ? `Cần dựng ${house}` : !room ? `${house} đã đủ chỗ: nâng cấp để chứa thêm` : null);
     const callOut = (v: Villager) => (camp ? iconButton(sim.isOut(v) ? 'callBack' : 'callOut', () => { if (sim.isOut(v)) sim.sendBack([v.id]); else sim.callOut([v.id]); this.again(); }, sim.isOut(v) ? 'Cho lính này về trại nghỉ' : 'Gọi lính này ra ngoài, sẵn sàng', { disabled: !!lock }) : null);
     const name = (w: 'day' | 'night') => (w === 'day' ? 'ngày' : 'đêm');
+    // the camps of soldiers train by rank: a card for each rank (what it costs, whether it is open) and what is missing for the one chosen
+    const train = isRankRole(role) ? role : null, ranks = train ? ranksOf(train, era) : [];
+    if (train && ranks.length && !ranks.some((d) => d.rank === this.rank)) this.rank = ranks[0].rank;
+    const chk = train ? sim.trainCheck(train, this.rank) : null;
+    if (train && ranks.length) {
+      out.push(h('div', { class: 'rankbar' }, ...ranks.map((d) => {
+        const c1 = sim.trainCheck(train, d.rank);
+        return h('button', { type: 'button', class: `rankcard${d.rank === this.rank ? ' on' : ''}${c1.ok ? ' ready' : ''}${d.soon ? ' soon' : ''}`, title: c1.ok ? `Luyện ${d.name.toLowerCase()}: ${trainBill(d, sim.rankCost(train, d.rank))}` : c1.missing.join('\n'),
+          onclick: () => { this.rank = d.rank; this.again(); } }, h('b', { text: d.name }), h('small', { text: d.soon ? 'chưa có' : trainBill(d, sim.rankCost(train, d.rank)) }));
+      })));
+      out.push(h('small', { class: `dsub rwhy${chk && chk.ok ? ' okline' : ''}`, text: chk && chk.ok ? `Mỗi lính tốn ${trainBill(chk.def!, sim.rankCost(train, this.rank))} và một ${WEAPONS[chk.def!.weapon].name.toLowerCase()} lấy từ kho.` : `Thiếu: ${chk?.missing.join(' · ')}` }));
+    }
     out.push(...this.roster.render(watching ? {
       // the guards of the house in two lists: the watch chosen (right) and the other one (left); an arrow sends a guard to the other watch
       assigned: have.filter((v) => onWatch(v) === this.watch), cap, statIds: roleStats(role), stat: key, pool: have.filter((v) => onWatch(v) !== this.watch),
@@ -103,8 +119,9 @@ export class RolePane {
       again: () => this.again(),
     } : {
       assigned: have, cap, statIds: roleStats(role), stat: key, pool,
-      addBlock: block,
-      add: (v) => sim.assignRole([v.id], role),
+      addBlock: train && chk && !chk.ok ? block ?? chk.missing[0] : block,
+      add: (v) => (train ? sim.trainSoldier([v.id], train, this.rank) : sim.assignRole([v.id], role)),
+      ...(train ? { titles: { pool: 'Dân có thể luyện', in: 'Lính trong trại' }, chipIn: (v: Villager) => rankName(train, v.rank ?? 1) ?? undefined } : {}),
       remove: (v) => sim.releaseRole([v.id]),
       removeBlock: (v) => lock ?? (sim.scouts.some((m) => m.ids.includes(v.id)) ? 'Đang đi trinh sát' : null),
       extra: (v) => [callOut(v)],

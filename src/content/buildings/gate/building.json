@@ -14,7 +14,6 @@
  "limit": [
   1,
   2,
-  3,
   4,
   5
  ],
@@ -48,27 +47,14 @@
    {
     "name": "Cổng đôi gia cố",
     "cost": {
-     "wood": 9,
-     "stone": 3
-    },
-    "buildTime": 51,
-    "cap": 0,
-    "craftSpeed": 1,
-    "slots": 0,
-    "hp": 1800,
-    "sight": 0
-   },
-   {
-    "name": "Cổng đôi kiên cố",
-    "cost": {
-     "wood": 14,
+     "wood": 12,
      "stone": 4
     },
-    "buildTime": 81,
+    "buildTime": 66,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 3600,
+    "hp": 2700,
     "sight": 0
    }
   ],

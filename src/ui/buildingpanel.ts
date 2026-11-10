@@ -5,11 +5,11 @@ import { JOBS, ROLES, STAT_NAME, roleOf } from '../sim/jobs';
 import type { RoleId } from '../sim/jobs';
 import { workDays } from '../sim/constants';
 import REST from '../data/rest.json';
-import { BARTER, RES_LIST, RES_NAME, rationAt } from '../sim/resources';
+import { ANIMAL_MATERIALS, BARTER, RES_LIST, RES_NAME, rationAt } from '../sim/resources';
 import type { Villager } from '../sim/sim';
 import type { BuildingKind } from '../sim/buildings';
-import { TECH_BY_ID, TECHS, TREE_TABS } from '../sim/research';
-import { TechTree } from './techtree';
+import { TECH_BY_ID } from '../sim/research';
+import { ResearchPane } from './researchpane';
 import { resIcon } from './resicons';
 import { RECIPE_BY_ID, RECIPES, TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, ToolKind, recipeName, recipeUse } from '../sim/tools';
 import { costText, h, helpButton, hint, iconCanvas } from './dom';
@@ -44,14 +44,14 @@ export class BuildingPanel {
   private readonly topbar = h('div', { class: 'topbar' });
   private readonly tabAt: Partial<Record<BuildingKind, number>> = {};
   private readonly pages: HTMLElement[] = []; private tabKey = '';
-  private readonly resRows: Array<{ res: typeof RES_LIST[number]; num: HTMLElement; bar: HTMLElement }> = [];
+  private readonly resRows: Array<{ res: typeof RES_LIST[number]; num: HTMLElement; bar: HTMLElement; row: HTMLElement }> = [];
   private readonly doorBtn = h('button', { class: 'sm', onclick: () => { this.c.sim.toggleNewcomers(); this.updateCampfire(); } }) as HTMLButtonElement;
   /** The rows of the trade: the shells wanted (`n`), and the parts of the row that follow it. */
-  private readonly barterRows: Array<{ res: Exclude<typeof RES_LIST[number], 'coin'>; n: number; price: HTMLElement; input: HTMLInputElement; slider: HTMLInputElement; quote: HTMLElement; go: HTMLButtonElement }> = [];
+  private readonly barterRows: Array<{ row: HTMLElement; res: Exclude<typeof RES_LIST[number], 'coin'>; n: number; price: HTMLElement; input: HTMLInputElement; slider: HTMLInputElement; quote: HTMLElement; go: HTMLButtonElement }> = [];
   private barterKeepOn = true;
   /** What can be ordered from the Nhà chế tạo and the stable: cards that open a scroll (src/ui/ordergrid.ts). */
   private craftGrid!: OrderGrid; private tameGrid!: OrderGrid;
-  private readonly trees: TechTree[] = [];
+  private research!: ResearchPane;
   private readonly goodRows: Array<{ id: string; num: HTMLElement; row: HTMLElement; drop: HTMLButtonElement; dropAll: HTMLButtonElement }> = [];
   /** What the filters of the tool and weapon lists say, by list: the kind to show ('' for all) and whether to show only what can be had now. */
   private readonly filters: Record<string, { kind: string; only: boolean }> = { 'craft-tool': { kind: '', only: false }, 'craft-weapon': { kind: '', only: false }, 'store-tool': { kind: '', only: false }, 'store-gear': { kind: '', only: false } };
@@ -125,15 +125,17 @@ export class BuildingPanel {
         const slider = h('input', { class: 'bslide', type: 'range', min: '0', max: '0', step: '1', 'aria-label': 'Số vỏ' }) as HTMLInputElement;
         const quote = h('div', { class: 'bquote' });
         const go = h('button', { class: 'sm primary', type: 'button', text: 'Đổi' }) as HTMLButtonElement;
-        const r = { res, n: 0, price, input, slider, quote, go };
+        const rowEl = h('div', { class: 'brow' });
+        const r = { row: rowEl, res, n: 0, price, input, slider, quote, go };
         const keep = () => (this.barterKeepOn ? sim.barterKeep(res) : 0), most = () => sim.barterQuote(res, Infinity, keep()).coins;
         const set = (n: number) => { r.n = Math.max(0, Math.min(most(), Math.floor(Number.isFinite(n) ? n : 0))); this.updateBarter(); };
         input.addEventListener('input', () => set(parseInt(input.value, 10)));
         slider.addEventListener('input', () => set(Number(slider.value)));
         const chip = (text: string, share: number, title: string) => h('button', { class: 'sm', type: 'button', text, title, onclick: () => set(Math.max(1, Math.floor(most() * share))) });
         go.addEventListener('click', () => { if (r.n < 1) return; const e = sim.barter(res, r.n, keep()); if (e) c.toast(e); ctl.onChange(); set(r.n); });
-        list.append(h('div', { class: 'brow' }, name,
-          h('div', { class: 'bctl' }, h('div', { class: 'bline' }, input, slider), h('div', { class: 'bline' }, chip('¼', 0.25, 'Một phần tư số tối đa'), chip('½', 0.5, 'Một nửa số tối đa'), chip('Tối đa', 1, 'Số vỏ nhiều nhất đổi được'), go), quote)));
+        rowEl.append(name,
+          h('div', { class: 'bctl' }, h('div', { class: 'bline' }, input, slider), h('div', { class: 'bline' }, chip('¼', 0.25, 'Một phần tư số tối đa'), chip('½', 0.5, 'Một nửa số tối đa'), chip('Tối đa', 1, 'Số vỏ nhiều nhất đổi được'), go), quote));
+        list.append(rowEl);
         this.barterRows.push(r);
       }
       return box;
@@ -176,8 +178,8 @@ export class BuildingPanel {
     const stockRows: HTMLElement[] = [];
     for (const res of RES_LIST) {
       const num = h('b'), bar = h('b');
-      this.resRows.push({ res, num, bar });
-      stockRows.push(h('div', { class: 'row' }, h('div', { class: 'nm' }, resIcon(res), RES_NAME[res], h('small', {}, num)), h('div', { class: 'bars', style: 'width:90px;display:block' }, h('i', {}, bar))));
+      const row = h('div', { class: 'row' }, h('div', { class: 'nm' }, resIcon(res), RES_NAME[res], h('small', {}, num)), h('div', { class: 'bars', style: 'width:90px;display:block' }, h('i', {}, bar)));
+      this.resRows.push({ res, num, bar, row }); stockRows.push(row);
     }
     this.tabs.storage = [{ label: 'Tài nguyên', page: page(...stockRows) }, { label: 'Đổi chác', page: page(barter()) }];
 
@@ -198,25 +200,10 @@ export class BuildingPanel {
     ];
 
     // research house: who works and what is under way stay at the top; the tabs are pictures laid out as a tree (Quân sự, Xây dựng, Kinh tế on one level, Vũ khí under Quân sự)
-    const tree = (fill: (t: TechTree) => void): HTMLElement => { const t = new TechTree(c); fill(t); this.trees.push(t); return page(t.root); };
-    const only = (test: (id: string) => boolean) => TECHS.filter((x) => test(x.id));
-    const labLevel = () => sim.building('lab')?.level ?? 0;
-    const militaryLock = () => (sim.dev.freeBuild || labLevel() >= TREE_TABS.military.needLab ? null : `Cần Nhà nghiên cứu cấp ${TREE_TABS.military.needLab} để mở Quân sự`);
     this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research);
-    // laid out as a tree in four columns: Quân sự (with Chiến đấu, Kế hoạch chiến đấu, Hành quân and Vũ khí under it), Kinh tế (with Công cụ), Phát triển, Phòng thủ
-    const advanced = () => this.c.sim.era === 'ancient'; // the tabs of the medieval layer show only while it is open (the dev menu can open it)
-    const needMilitary = () => militaryLock() && 'Cần mở Quân sự trước';
-    this.tabs.lab = [
-      { label: 'Quân sự bậc 1', icon: 'infantry', lock: militaryLock, page: tree((t) => { t.addChains('Chỉ số quân', ['foot', 'cavalry', 'archer', 'scout'], 'military'); }) },
-      { label: 'Kinh tế bậc 1', icon: 'storage', page: tree((t) => { t.addChains('Chỉ số nghề', ['wood', 'stone', 'food', 'hunt', 'tame'], 'economy'); }) },
-      { label: 'Phát triển bậc 1', icon: 'builder', page: tree((t) => t.addChains('Chỉ số nhà làm việc', ['build', 'craft', 'research'], 'development')) },
-      { label: 'Phòng thủ bậc 1', icon: 'tower', page: tree((t) => { t.addChains('Lính phòng thủ', ['guard', 'towerman'], 'defense'); t.addChains('Hàng rào và cổng', ['fence', 'gate'], 'works1'); t.addChains('Chông và chòi canh', ['trap', 'tower'], 'works2'); }) },
-      { label: 'Lập kế hoạch bậc 1', icon: 'drill' as const, show: advanced, under: 0, lock: needMilitary, page: tree((t) => { t.addSingles('Tín hiệu', only((id) => id === 'signal')); t.addFormations('Trận pháp', 'formation'); }) },
-      { label: 'Kế hoạch chiến đấu bậc 1', icon: 'wartent' as const, show: advanced, under: 0, lock: needMilitary, page: tree((t) => { t.addFormations('Kế hoạch chiến đấu (chỉ cộng khi đang giao chiến trong chiến tranh)', 'plan'); }) },
-      { label: 'Hành quân bậc 1', icon: 'supplycamp' as const, show: advanced, under: 0, lock: needMilitary, page: tree((t) => { t.addChains('Chỉ số khi hành quân (chỉ cộng khi hành quân hoặc nghỉ trong chiến tranh)', ['march_foot', 'march_cavalry', 'march_archer'], 'march'); t.addChains('Hậu cần và tốc độ', ['march_army'], 'marchlog'); }) },
-      { label: 'Vũ khí bậc 1', icon: 'armory', under: 0, lock: needMilitary, page: tree((t) => { t.addChains('Chỉ số từng vũ khí', ['club', 'spear', 'mace', 'sling', 'bow'], 'weapon'); }) },
-      { label: 'Công cụ bậc 1', icon: 'workshop', under: 1, page: tree((t) => { t.addChains('Chỉ số công cụ', ['axe', 'pick', 'hoe'], 'tool'); t.addChains('Búa', ['hammer'], 'hammer'); }) },
-    ];
+    this.research = new ResearchPane(c);
+    // the research house is one pane (doc/cơ chế nghiên cứu/research-ui.html): the three pillars as tabs, their branches, the path of a branch and a bar to confirm
+    this.tabs.lab = [{ label: 'Nghiên cứu', page: page(this.research.root) }];
 
     // tool store and armoury: what is kept
     const goods = page(this.goodsHint, this.goodsBar);
@@ -276,6 +263,7 @@ export class BuildingPanel {
     const locks = tabs.map((t) => t.lock?.() ?? null), shown = tabs.map((t) => !t.hidden && (t.show?.() ?? true)), ids = tabs.map((_, i) => i).filter((i) => shown[i]);
     const key = `${kind}:${tabs.length}:${locks.map((l) => (l ? 1 : 0)).join('')}:${shown.map((x) => (x ? 1 : 0)).join('')}`;
     this.labHead.hidden = !(kind === 'lab' && ready);
+    this.mbody.classList.toggle('labbody', kind === 'lab' && ready); // the research pane fills what is left of the window
     for (const [k, el] of Object.entries(this.progSec)) el.hidden = !(ready && k === kind);
     this.progress.hidden = !ready || !this.progSec[kind];
     if (key !== this.tabKey) {
@@ -305,14 +293,17 @@ export class BuildingPanel {
       if (this.subBody.firstChild !== root) { this.subBody.replaceChildren(root); this.mbody.scrollTop = 0; }
       return;
     }
-    if (kind === 'lab' && ready) {
+    if (kind === 'lab' && ready && tabs.length > 1) {
       // a tab of the research house opens a panel over this one, with a way back
       const open = this.labSub !== null && !locks[this.labSub] && (shown[this.labSub] || tabs[this.labSub]?.hidden) ? this.labSub : null;
       this.sub.hidden = open === null; this.tabBar.hidden = false;
       // with a tab open the panel under it must not scroll: the tab scrolls by itself
       this.mbody.classList.toggle('subopen', open !== null); if (open !== null) this.mbody.scrollTop = 0;
       for (const p of this.pages) p.hidden = open === null || tabs[open].page !== p;
-      if (open !== null) { this.subTitle.textContent = tabs[open].label; if (this.subBody.firstChild !== tabs[open].page) this.subBody.replaceChildren(tabs[open].page); }
+      if (open !== null) {
+        this.subTitle.textContent = tabs[open].label;
+        if (this.subBody.firstChild !== tabs[open].page) this.subBody.replaceChildren(tabs[open].page);
+      }
       [...this.tabBar.children].forEach((el, i) => el.setAttribute('aria-pressed', String(ids[i] === open)));
       return;
     }
@@ -380,7 +371,7 @@ export class BuildingPanel {
     this.updatePeopleButton(b, ready);
     this.info.textContent = !b.done ? 'Giao dân làm Thợ xây để dựng công trình này.' : this.infoText(b);
     if (b.kind === 'campfire' && ready) this.updateCampfire();
-    if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity(r.res)}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity(r.res))) * 100)}%`; }
+    if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.row.hidden = ANIMAL_MATERIALS.includes(r.res) && sim.stock[r.res] < 1; r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity(r.res)}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity(r.res))) * 100)}%`; }
     if ((b.kind === 'storage' || b.kind === 'campfire') && ready) this.updateBarter();
     if (this.bedList[b.kind] && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
@@ -406,6 +397,7 @@ export class BuildingPanel {
   private updateBarter(): void {
     const { sim } = this.c, coin = RES_NAME.coin.toLowerCase();
     for (const r of this.barterRows) {
+      r.row.hidden = ANIMAL_MATERIALS.includes(r.res) && sim.stock[r.res] < 1; // a good the village has none of is not offered
       const keep = this.barterKeepOn ? sim.barterKeep(r.res) : 0, name = RES_NAME[r.res].toLowerCase();
       const now = sim.barterPrice(r.res), base = BARTER[r.res], rise = Math.round((now / base - 1) * 100);
       r.price.textContent = rise > 0 ? `${now} ${name} = 1 ${coin} · đắt hơn ${rise}%` : `${now} ${name} = 1 ${coin}`;
@@ -448,7 +440,7 @@ export class BuildingPanel {
     this.staffBoxes.research.update(b); this.activeBoxes.research.update(b);
     const waiting = sim.researchQueue[0];
     this.queueNote.research.textContent = `${waiting ? `Chờ bắt đầu: ${TECH_BY_ID[waiting]?.name ?? waiting}` : 'Mỗi lần chỉ nghiên cứu một thứ'}`;
-    for (const t of this.trees) t.update();
+    this.research.update();
   }
 
   private updateStable(b: Building): void {

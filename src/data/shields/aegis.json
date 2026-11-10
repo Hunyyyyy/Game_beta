@@ -1,0 +1,95 @@
+{
+ "_note": "Khiên thánh giáo: mặt trắng, viền vàng, chữ thập đỏ (không phép). Bốn tư thế như khiên tháp.",
+ "name": "Aegis shield",
+ "palette": {
+  "rim": "#c9a94e",
+  "rimH": "#f1e7b6",
+  "face": "#f2eee2",
+  "faceD": "#c9c3b0",
+  "boss": "#e0b84e",
+  "mark": "#b8322a",
+  "markD": "#8a2420"
+ },
+ "legend": {
+  "R": "rim",
+  "H": "rimH",
+  "F": "face",
+  "f": "faceD",
+  "B": "boss",
+  "E": "mark",
+  "e": "markD"
+ },
+ "poses": {
+  "rest": {
+   "ox": -1,
+   "oy": -5,
+   "rows": [
+    "HRRH",
+    "RFfR",
+    "RFER",
+    "RFER",
+    "RFER",
+    "RFER",
+    "RFER",
+    "RFfR",
+    "RFfR",
+    ".RR.",
+    "..R."
+   ]
+  },
+  "guard": {
+   "ox": -4,
+   "oy": -7,
+   "rows": [
+    "HRRRRRRH",
+    "RFFEEFFR",
+    "RFFEEFFR",
+    "REEEEEER",
+    "REEEEEER",
+    "RFFEEFFR",
+    "RFFBBFFR",
+    "RFFEEFfR",
+    "RFFEEFfR",
+    ".RFEEfR.",
+    ".RFFFfR.",
+    "..RFFR..",
+    "...RR..."
+   ]
+  },
+  "restFront": {
+   "ox": -1,
+   "oy": -4,
+   "rows": [
+    "HRRH",
+    "RFfR",
+    "RFER",
+    "RFER",
+    "RFER",
+    "RFER",
+    "RFfR",
+    "RFfR",
+    ".RR.",
+    "..R."
+   ]
+  },
+  "guardFront": {
+   "ox": -4,
+   "oy": -7,
+   "rows": [
+    "HRRRRRRH",
+    "RFFEEFFR",
+    "RFFEEFFR",
+    "REEEEEER",
+    "REEEEEER",
+    "RFFEEFFR",
+    "RFFBBFFR",
+    "RFFEEFfR",
+    "RFFEEFfR",
+    ".RFEEfR.",
+    ".RFFFfR.",
+    "..RFFR..",
+    "...RR..."
+   ]
+  }
+ }
+}

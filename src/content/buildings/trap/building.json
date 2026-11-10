@@ -14,8 +14,7 @@
  "limit": [
   4,
   10,
-  18,
-  28,
+  23,
   38
  ],
  "repeat": true,
@@ -49,27 +48,14 @@
    {
     "name": "Hố chông sâu gia cố",
     "cost": {
-     "wood": 5,
-     "stone": 3
-    },
-    "buildTime": 33,
-    "cap": 0,
-    "craftSpeed": 1,
-    "slots": 0,
-    "hp": 12,
-    "sight": 0
-   },
-   {
-    "name": "Hố chông sâu kiên cố",
-    "cost": {
      "wood": 6,
      "stone": 4
     },
-    "buildTime": 54,
+    "buildTime": 44,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 24,
+    "hp": 18,
     "sight": 0
    }
   ],

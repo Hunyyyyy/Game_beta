@@ -110,7 +110,7 @@ export const canScout = (sim: Sim, v: Villager): boolean => v.job === 'scout' &&
 /** The scouts of the village, as a role like the soldiers: recruited and let go at the Trại trinh sát. */
 export const scoutRoster = (sim: Sim): Villager[] => sim.villagers.filter((v) => v.job === 'scout');
 
-/** Who can become a scout: the cavalry soldiers of the Trại kỵ thú (they keep their arm, their gear and their beast). */
+/** Who can become a scout: the cavalry soldiers of the Trại lính kỵ (they keep their arm, their gear and their beast). */
 export const canBeScout = (v: Villager): boolean => v.job === 'fight' && v.arm === 'cavalry'; // guards too: sent to scout, a guard leaves his post (see enlistScouts)
 
 /** Take cavalry soldiers into the scouts, as many as the Trại trinh sát has room for. Returns an error or null. */
@@ -119,7 +119,7 @@ export function enlistScouts(sim: Sim, ids: readonly number[]): string | null {
   const limit = scoutLimit(sim);
   if (!limit) return 'Cần dựng Trại trinh sát';
   const pick = sim.mine(ids).filter(canBeScout), room = limit - scoutRoster(sim).length;
-  if (!pick.length) return 'Trinh sát được tuyển từ lính kỵ: hãy chọn lính kỵ thú của Trại kỵ thú';
+  if (!pick.length) return 'Trinh sát được tuyển từ lính kỵ: hãy chọn lính kỵ thú của Trại lính kỵ';
   if (room <= 0) return `Trại trinh sát đã đủ ${limit} trinh sát: nâng cấp lều để chứa thêm`;
   for (const v of pick.slice(0, room)) { sim.resetTask(v); sim.clearCombat(v); v.job = 'scout'; v.prefer = -1; v.post = -1; v.guard = false; v.guardAt = null; sim.fitScoutMount(v); } // the arm stays cavalry: let go, a scout goes back to the camp
   return pick.length > room ? `Lều chỉ còn chỗ cho ${room} trinh sát` : null;

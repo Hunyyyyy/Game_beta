@@ -16,16 +16,16 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 33;
+export const SAVE_VERSION = 35;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
-  scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'dayWeather', 'weatherAt', 'weatherEnd', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
+  scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'yieldBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'dayWeather', 'weatherAt', 'weatherEnd', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
-  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'barterHeat', 'smoke', 'gatherFocus', 'legion'],
+  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'barterHeat', 'smoke', 'gatherFocus', 'legion', 'frontier'],
   /** Lists of plain data. */
-  lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports', 'zones', 'cells'],
+  lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports', 'zones', 'cells', 'conquests'],
   /** Handled by hand below. */
   special: ['researched', 'questSeen', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
 } as const satisfies Record<string, readonly (keyof Sim)[]>;
@@ -145,7 +145,7 @@ export const MIGRATIONS: Record<number, (data: any) => any> = { // eslint-disabl
     d.lists.sightings ??= [...new Set(maps.map((m) => m.tribe))].map((tribe) => ({ tribe, by: -1, at: 0, reported: true }));
     return { ...d, version: 9 };
   },
-  // 9 -> 10: roles belong to their houses. The Lều chiến binh becomes the Trại chiến binh; a soldier's arm is kept on him (a thrower if he carried a sling or a bow)
+  // 9 -> 10: roles belong to their houses. The Lều chiến binh becomes the Trại lính bộ; a soldier's arm is kept on him (a thrower if he carried a sling or a bow)
   9: (d) => {
     for (const b of d.lists.buildings as Array<{ kind: string }>) if (b.kind === 'barracks') b.kind = 'infantry';
     for (const list of [d.lists.villagers, d.lists.foes] as Array<Array<Record<string, unknown>>>) for (const v of list) v.arm ??= v.job === 'fight' && (v.weapon === 'sling' || v.weapon === 'bow') ? 'archer' : 'foot';
@@ -342,4 +342,25 @@ MIGRATIONS[32] = (d) => {
   d.lists.zones ??= []; d.lists.cells ??= [];
   d.records.legion ??= { on: false, assembling: false, since: 0, clock: 0, cx: 0, cy: 0, theta: 0, theta0: 0, speed: 0, path: [], slots: {} };
   return { ...d, version: 33 };
+};
+MIGRATIONS[33] = (d) => {
+  // 33 -> 34: the rank of a soldier (ranks.json). A soldier of a camp gets the rank of what he carries (club 1, spear 2, mace 3, sling 2, bow 3); a rider the rank of his beast
+  // (wolf 1, boar 2, elephant 3, horse 4), which a rider of the camp who had none ridden by the level of his camp is given now (the camp no longer picks the beast).
+  const beasts = ['wolf', 'boar', 'elephant', 'horse'], byWeapon: Record<string, number> = { club: 1, spear: 2, mace: 3, sling: 2, bow: 3 };
+  const camp = (d.lists.buildings as Array<Record<string, unknown>>).find((b) => b.kind === 'cavalry' && b.done);
+  const campBeast = beasts[Math.max(0, Math.min(beasts.length, Number(camp?.level ?? 1)) - 1)];
+  for (const v of d.lists.villagers as Array<Record<string, unknown>>) {
+    v.rank ??= 1;
+    if (v.team !== 'player' || v.job !== 'fight' || v.guard) continue;
+    if (v.arm === 'cavalry') { v.mount ??= campBeast; v.rank = beasts.indexOf(String(v.mount)) + 1 || 1; }
+    else v.rank = byWeapon[String(v.weapon)] ?? 1;
+  }
+  return { ...d, version: 34 };
+};
+MIGRATIONS[34] = (d) => {
+  // 34 -> 35: what each village taken gave for good is kept village by village (conquests, yieldBonus); the villages taken before it count as average ones
+  d.lists.conquests ??= []; d.records.frontier ??= { next: 0, late: 0, day: -1, bandit: {} };
+  const n = Number(d.scalars.conquered ?? 0);
+  d.scalars.yieldBonus ??= n * 8;
+  return { ...d, version: 35 };
 };

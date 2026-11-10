@@ -95,7 +95,7 @@ export class BuildingBar {
       lines: [`${nx.name}. Vật liệu trả ngay, rồi giao Thợ xây để làm (~${workDays(nx.buildTime)}).${sim.freeCost() ? ' Đang bật xây miễn phí.' : ''}`,
         ...changes,
         ...(b.kind === 'campfire' ? sim.upgradeAdvice(b.level).map((a) => `${a.bad ? '⚠' : '✓'} ${a.text}`) : [])],
-      cost: sim.freeCost() ? {} : nx.cost, costTitle: 'Vật liệu cần', why: sim.canUpgrade(b), ok: 'Nâng cấp',
+      cost: sim.freeCost() ? {} : sim.buildBill(nx.cost), costTitle: 'Vật liệu cần', why: sim.canUpgrade(b), ok: 'Nâng cấp',
       onOk: () => { const e = sim.upgradeBuilding(b.id); toast(e ?? 'Đã trả vật liệu. Giao Thợ xây để nâng cấp'); ctl.onChange(); },
     });
   }
@@ -111,7 +111,7 @@ export class BuildingBar {
     const { sim, ctl, toast } = this.c, list = this.groupUpgradable();
     if (!list.length) return;
     const total: Partial<Stock> = {};
-    for (const b of list) for (const [r, n] of Object.entries(levelDef(b, b.level + 1).cost) as Array<[Res, number]>) total[r] = (total[r] ?? 0) + n;
+    for (const b of list) for (const [r, n] of Object.entries(sim.buildBill(levelDef(b, b.level + 1).cost)) as Array<[Res, number]>) total[r] = (total[r] ?? 0) + n;
     this.confirm.ask({
       title: `Nâng cấp ${list.length} mảnh?`,
       lines: [`Mỗi mảnh lên một cấp. Vật liệu trả ngay cho cả nhóm, rồi giao Thợ xây để làm.${sim.freeCost() ? ' Đang bật xây miễn phí.' : ''}`],

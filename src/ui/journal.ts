@@ -83,7 +83,7 @@ export class Journal {
     });
     this.win.quests.show(dlg.card({ wide: true, label: 'Nhiệm vụ' },
       dlg.head({ pic: '📜', title: 'Nhiệm vụ', sub: CHAPTERS.find((x) => x.id === chap)?.name, bar: cur ? { value: done, max: mine.length, label: `${done}/${mine.length}` } : undefined, onClose: () => this.close() }),
-      dlg.list(...(cur ? tiles : [dlg.empty('Đã hoàn thành kế hoạch tới Nhà chung cấp 4.')]))));
+      dlg.list(...(cur ? tiles : [dlg.empty('Đã hoàn thành kế hoạch tới Nhà chung cấp 3.')]))));
     this.win.quests.root.querySelector('.now')?.scrollIntoView({ block: 'nearest' });
   }
 

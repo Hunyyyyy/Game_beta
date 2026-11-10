@@ -14,7 +14,6 @@
  "limit": [
   1,
   3,
-  3,
   4,
   5
  ],
@@ -27,7 +26,7 @@
     },
     "buildTime": 70,
     "cap": 0,
-    "craftSpeed": 1.0,
+    "craftSpeed": 1,
     "slots": 1,
     "hp": 405,
     "sight": 0
@@ -48,27 +47,14 @@
    {
     "name": "Bờ đá",
     "cost": {
-     "wood": 20,
-     "stone": 15
+     "wood": 24,
+     "stone": 23
     },
-    "buildTime": 160,
+    "buildTime": 197,
     "cap": 0,
-    "craftSpeed": 1.2,
-    "slots": 1,
-    "hp": 810,
-    "sight": 0
-   },
-   {
-    "name": "Bờ đá gia cố",
-    "cost": {
-     "wood": 27,
-     "stone": 30
-    },
-    "buildTime": 233,
-    "cap": 0,
-    "craftSpeed": 1.3,
+    "craftSpeed": 1.25,
     "slots": 2,
-    "hp": 1012,
+    "hp": 911,
     "sight": 0
    }
   ],

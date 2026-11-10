@@ -81,6 +81,7 @@ export class BuildTray {
         const info = h('span', { class: 'info', text: 'ⓘ', title: 'Công dụng', onclick: (e: Event) => { e.stopPropagation(); this.c.toast(`${d.name}: ${role ?? ''}`); } });
         if (role) card.append(info);
         this.refresh.push(() => {
+          lv.cost = sim.startCost(kind); costLine.textContent = costText(lv.cost, RES_NAME); // the price follows the research of the builders
           const lock = sim.buildingLock(kind), poor = !sim.freeCost() && !(Object.keys(lv.cost) as Array<keyof typeof lv.cost>).every((k) => sim.stock[k as keyof typeof sim.stock] >= (lv.cost[k] ?? 0));
           const have = sim.buildings.filter((b) => b.kind === kind).length, limit = sim.buildingLimit(kind);
           card.classList.toggle('locked', !!lock); lockIcon.hidden = !lock; costLine.classList.toggle('short', poor && !lock);

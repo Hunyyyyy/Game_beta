@@ -5,7 +5,7 @@ import { engage, HUNT_BACK } from './battle';
 import type { Threat } from './battle';
 import { CARRY_CAP, Res, RES_NAME, resourceOpen, resourceUnlock } from './resources';
 import { hash2 } from './rng';
-import { statBonus } from './research';
+import { perkPct, statBonus } from './research';
 import { villageBonus } from './statsys';
 import type { Sim, Villager } from './sim';
 
@@ -40,8 +40,9 @@ export function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]):
     v.phase = 'idle'; v.loot = -1;
     if (!a) return true;
     const more = 1 + (statBonus(sim.researched, 'hunt', 'gyield') + villageBonus(sim)) / 100; // research "Sản lượng nghề": what a hunter brings home from each beast, meat and hide alike (rounded up)
-    const have = v.carry && v.carry.res === 'food' ? v.carry.amount : 0, take = Math.min(a.meat, Math.max(0, Math.floor((CARRY_CAP.food - have) / more)));
-    if (take > 0) { const got = Math.ceil(take * more - 1e-9); a.meat -= take; v.carry = { res: 'food', amount: have + got }; sim.noteYield('hunt.food', got); }
+    const meatMore = more * (1 + perkPct(sim.researched, 'huntMeat') / 100), dropsMore = more * (1 + perkPct(sim.researched, 'huntDrops') / 100); // research: Thịt nhiều (meat) and Xẻ thú khéo (hide, bone and the rest of the body)
+    const have = v.carry && v.carry.res === 'food' ? v.carry.amount : 0, take = Math.min(a.meat, Math.max(0, Math.floor((CARRY_CAP.food - have) / meatMore)));
+    if (take > 0) { const got = Math.ceil(take * meatMore - 1e-9); a.meat -= take; v.carry = { res: 'food', amount: have + got }; sim.noteYield('hunt.food', got); }
     // the skin and everything else on the body goes straight to the store
     // a good the village cannot take yet (resources.json "unlock": the level of the Chòi thợ săn) is left on the body
     const got: string[] = [], left: string[] = [], bag: Partial<Record<Res, number>> = { ...a.drops };
@@ -49,7 +50,7 @@ export function huntBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]):
     for (const [res, n] of Object.entries(bag) as Array<[Res, number]>) {
       if (!(n > 0)) continue;
       if (!resourceOpen(res, sim.buildings)) { const u = resourceUnlock(res)!; left.push(`${RES_NAME[res].toLowerCase()} (cần ${BUILDINGS[u.building as BuildingKind].name} cấp ${u.level})`); continue; }
-      const k = Math.ceil(n * more - 1e-9);
+      const k = Math.ceil(n * dropsMore - 1e-9);
       sim.stock[res] = Math.min(sim.capacity(res), sim.stock[res] + k); sim.noteYield(`hunt.${res}`, k); got.push(`${k} ${RES_NAME[res].toLowerCase()}`);
     }
     a.hide = 0; a.drops = {};

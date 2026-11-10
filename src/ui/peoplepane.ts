@@ -1,4 +1,4 @@
-import { JOB_NAME, roleName, roleOf } from '../sim/jobs';
+import { JOB_NAME, roleName, roleOf, titleOfRole } from '../sim/jobs';
 import type { Villager } from '../sim/sim';
 import { statValue } from '../sim/statsys';
 import { TIER_NAME, TOOL_NAME, TOOL_OF_JOB } from '../sim/tools';
@@ -156,7 +156,7 @@ export class PeoplePane {
     const fk = `${v.id}|${v.armor}`;
     if (fk !== this.faceKey) { this.faceKey = fk; this.face.replaceChildren(avatar(this.c, v)); }
     const role = roleOf(v);
-    this.name.textContent = v.name; this.state.textContent = role ? roleName(role, sim.era) : JOB_NAME[v.job]; // the job, not what they are doing
+    this.name.textContent = v.name; this.state.textContent = titleOfRole(v, sim.era) ?? JOB_NAME[v.job]; // the job, not what they are doing
     this.detail.update([v]);
     this.where.textContent = v.inside !== null ? (v.phase === 'sleep' ? 'Mở nhà đang ngủ' : 'Mở nhà đang làm') : 'Đi tới';
   }

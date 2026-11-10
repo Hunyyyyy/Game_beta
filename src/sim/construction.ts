@@ -2,7 +2,7 @@
 import { Building, BuildingKind, BUILDINGS, Era, eraLocked, buildingSight, needsWork, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, topLevel, levelCapByFire, POP_BY_FIRE, fireUnlockLevel } from './buildings';
 import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
-import { buildingOpen, techForBuilding } from './research';
+import { buildingOpen, discountBill, perkPct, techForBuilding } from './research';
 import { scaleCost } from './works';
 import { fireUpgradeGroups } from './progression';
 import startJson from '../data/start.json';
@@ -131,11 +131,13 @@ export function buildingNeeds(sim: Sim, kind: BuildingKind): Array<{ text: strin
 
 /** The level a new house of this kind is raised at: the level of the last one that fell in battle, else 1. */
 export function startLevel(sim: Sim, kind: BuildingKind): number { return Math.min(sim.ruins[kind] ?? 1, maxLevel(kind, sim.era)); }
+/** A bill for the works of the village, cut by the research of the builders (Xây rẻ hơn). */
+export const buildBill = (sim: Sim, bill: Partial<Stock>): Partial<Stock> => discountBill(bill, perkPct(sim.researched, 'buildCost'));
 /** What raising it costs: every level up to the one it starts at (a rebuilt house is paid for again, but not raised level by level). */
 export function startCost(sim: Sim, kind: BuildingKind): Partial<Stock> {
   const out: Partial<Stock> = {};
   for (let l = 1; l <= startLevel(sim, kind); l++) { const c = levelsOf(kind, sim.era)[l - 1].cost; for (const r of Object.keys(c) as Res[]) out[r] = (out[r] ?? 0) + (c[r] ?? 0); }
-  return out;
+  return buildBill(sim, out);
 }
 
 /** Trả về lý do không đặt được, hoặc null nếu đặt được. */
@@ -155,7 +157,7 @@ export function canUpgrade(sim: Sim, b: Building): string | null {
   }
   const fire = sim.campfire();
   if (b.kind !== 'campfire' && fire && !sim.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `Cần nâng ${BUILDINGS.campfire.name} lên cấp ${b.level + 1}`;
-  return sim.freeCost() ? null : sim.missing(levelDef({ ...b, era: upgradeEra(b) }, b.level + 1).cost);
+  return sim.freeCost() ? null : sim.missing(buildBill(sim, levelDef({ ...b, era: upgradeEra(b) }, b.level + 1).cost));
 }
 
 /** The era whose levels a building climbs: the campfire climbs into the medieval ones from its last stone level (that step opens the era); the rest only in the medieval era (their own era is set by it). */
@@ -198,20 +200,21 @@ export function upgradeBuilding(sim: Sim, id: number): string | null {
   if (why) return why;
   b.era = upgradeEra(b);
   const next = levelDef(b, b.level + 1);
-  if (!sim.freeCost()) for (const r of Object.keys(next.cost) as Res[]) sim.stock[r] -= next.cost[r] ?? 0;
+  const bill = buildBill(sim, next.cost);
+  if (!sim.freeCost()) for (const r of Object.keys(bill) as Res[]) sim.stock[r] -= bill[r] ?? 0;
   if (sim.dev.instantBuild) { b.level++; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); afterUpgrade(sim, b); return null; }
   b.upgrading = true; b.progress = 0;
   sim.say(`Bắt đầu nâng ${BUILDINGS[b.kind].name} lên cấp ${b.level + 1} (${next.name.toLowerCase()}). Giao việc "Thợ xây" để làm.`);
   return null;
 }
 
-/** A building has reached a new level. The campfire becoming the Nhà chính (level 5, the first medieval one) opens the medieval era. */
+/** A building has reached a new level. The campfire becoming the Nhà chính (level 4, the first medieval one) opens the medieval era. */
 export function afterUpgrade(sim: Sim, b: Building): void {
   if (b.kind === 'campfire' && b.level >= BUILDINGS.campfire.levels.stone!.length + 1 && sim.era !== 'ancient') {
     setEra(sim, 'ancient');
     sim.resetTribes(); // the villages of the stone age vanish and new ones are drawn for the new era
     sim.addAlert('era', 'Thời Trung cổ bắt đầu!'); // the screen congratulates the player (ui/eradialog)
-    sim.say('Nhà chung đã thành Nhà chính: thời Trung cổ bắt đầu! Các nhà cấp 4 có thể nâng lên cấp trung cổ, có thêm nghiên cứu mới, và không còn đánh nhanh.');
+    sim.say('Nhà chung đã thành Nhà chính: thời Trung cổ bắt đầu! Các nhà cấp 3 có thể nâng lên cấp trung cổ, có thêm nghiên cứu mới, và không còn đánh nhanh.');
   }
 }
 
@@ -242,8 +245,8 @@ export function placeBuilding(sim: Sim, kind: BuildingKind, x: number, y: number
 export function invested(sim: Sim, b: Building): Partial<Stock> {
   const out: Partial<Stock> = {};
   const add = (c: Partial<Stock>) => { for (const r of Object.keys(c) as Res[]) out[r] = (out[r] ?? 0) + (c[r] ?? 0); };
-  for (let l = 1; l <= b.level; l++) add(levelDef(b, l).cost);
-  if (b.upgrading) add(levelDef(b, b.level + 1).cost);
+  for (let l = 1; l <= b.level; l++) add(buildBill(sim, levelDef(b, l).cost));
+  if (b.upgrading) add(buildBill(sim, levelDef(b, b.level + 1).cost));
   return out;
 }
 
@@ -383,7 +386,7 @@ export function moveBuilding(sim: Sim, id: number, x: number, y: number): string
   const fee = moveFee(sim, b);
   for (const r of Object.keys(fee) as Res[]) sim.stock[r] -= fee[r] ?? 0;
   evict(sim, b);
-  if (b.upgrading) { for (const r of Object.keys(levelDef(b, b.level + 1).cost) as Res[]) if (!sim.freeCost()) sim.stock[r] += levelDef(b, b.level + 1).cost[r] ?? 0; b.upgrading = false; }
+  if (b.upgrading) { const back = buildBill(sim, levelDef(b, b.level + 1).cost); for (const r of Object.keys(back) as Res[]) if (!sim.freeCost()) sim.stock[r] += back[r] ?? 0; b.upgrading = false; }
   // a finished house is lifted and set down as it is: it keeps its level and needs no builders
   setOcc(sim, b, 0); b.x = x; b.y = y; setOcc(sim, b, 1);
   sim.fogDirty = true;
@@ -395,7 +398,7 @@ export function moveBuilding(sim: Sim, id: number, x: number, y: number): string
 export function capacity(sim: Sim, res?: Res): number {
   let c = 0;
   for (const b of sim.buildings) if (b.done && (holdsGoods(b) || (res && BUILDINGS[b.kind].produces?.includes(res)))) c += levelDef(b).cap;
-  return c;
+  return Math.round(c * (1 + perkPct(sim.researched, 'storage') / 100)); // research: Kho vật liệu
 }
 
 /** Villagers the village can hold: what the campfire holds at its level, plus the beds of every finished Nhà dân. */

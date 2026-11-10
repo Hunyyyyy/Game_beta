@@ -14,8 +14,7 @@
  "limit": [
   0,
   1,
-  2,
-  4,
+  3,
   6
  ],
  "levels": {
@@ -48,28 +47,15 @@
    {
     "name": "Chòi cao gia cố",
     "cost": {
-     "wood": 45,
-     "stone": 11
+     "wood": 57,
+     "stone": 13
     },
-    "buildTime": 211,
+    "buildTime": 277,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 4,
-    "hp": 700,
-    "sight": 16
-   },
-   {
-    "name": "Chòi cao kiên cố",
-    "cost": {
-     "wood": 68,
-     "stone": 15
-    },
-    "buildTime": 342,
-    "cap": 0,
-    "craftSpeed": 1,
-    "slots": 4,
-    "hp": 800,
-    "sight": 19
+    "hp": 750,
+    "sight": 18
    }
   ],
   "ancient": [

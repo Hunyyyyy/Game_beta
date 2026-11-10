@@ -1,8 +1,11 @@
 {
-  "_note": "Mounts. A beast is tamed in the Chuồng thú (the level of the stable decides which) and given to a villager like a tool; the riders of the Trại kỵ thú ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
+  "_note": "Mounts. A beast is tamed in the Chuồng thú (the level of the stable decides which) and given to a villager like a tool; the riders of the Trại lính kỵ ride the beast of the camp's level without one. speed multiplies the walk, guard multiplies the damage the rider takes, ride is how many pixels the rider sits above the ground, species is the animals/bodies.json art. cost and time are for one beast (time in seconds with one average keeper).",
   "kinds": {
     "wolf":     { "name": "Sói",  "tier": 1, "species": "wolf",    "speed": 1.7,  "guard": 0.95, "ride": 9,  "cost": { "food": 50, "hide": 20, "coin": 10 },  "time": 240 },
     "boar":     { "name": "Lợn rừng", "tier": 2, "species": "boar", "speed": 1.4,  "guard": 0.85, "ride": 8,  "cost": { "food": 100, "hide": 40, "coin": 20 },  "time": 360 },
-    "elephant": { "name": "Voi",  "tier": 3, "species": "mammoth", "speed": 1.15, "guard": 0.65, "ride": 19, "cost": { "food": 200, "hide": 60, "coin": 30 }, "time": 600 }
+    "elephant": { "name": "Voi",  "tier": 3, "species": "mammoth", "speed": 1.15, "guard": 0.65, "ride": 19, "cost": { "food": 200, "hide": 60, "coin": 30 }, "time": 600 },
+    "horse":    { "name": "Ngựa", "tier": 4, "species": "horse", "speed": 1.55, "guard": 0.8, "ride": 19, "dx": -8, "cost": { "food": 250, "hide": 80, "coin": 60 }, "time": 700 },
+    "warhorse": { "name": "Ngựa chiến bọc giáp", "hidden": true, "tier": 5, "species": "horse_armored", "speed": 1.4, "guard": 0.65, "ride": 19, "dx": -8, "cost": { "food": 400, "hide": 120, "coin": 120 }, "time": 900 },
+    "silverhorse": { "name": "Chiến mã mạ bạc", "hidden": true, "tier": 6, "species": "horse_silver", "speed": 1.3, "guard": 0.55, "ride": 19, "dx": -8, "cost": { "food": 600, "hide": 180, "coin": 240 }, "time": 1200 }
   }
 }

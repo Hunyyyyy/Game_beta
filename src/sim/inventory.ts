@@ -116,7 +116,7 @@ export function assignGear(sim: Sim, ids: readonly number[], kind: string | null
   for (const v of people) {
     const cur = slot === 'weapon' ? v.weapon : v.armor;
     if (cur === kind) { v.manualGear = true; continue; }
-    if (kind && slot === 'weapon' && !canCarry(v, kind)) { wrong = `${v.name} không dùng được ${nameOf(kind)}: ${v.job === 'fight' && v.arm === 'archer' ? 'cung thủ chỉ dùng vũ khí tầm xa' : v.job === 'fight' && v.guard && v.post >= 0 ? 'lính chòi canh chỉ dùng vũ khí tầm xa' : 'bộ binh và kỵ binh chỉ dùng vũ khí cận chiến'}`; continue; }
+    if (kind && slot === 'weapon' && !canCarry(v, kind)) { wrong = `${v.name} không dùng được ${nameOf(kind)}: ${v.job === 'fight' && !v.guard && WEAPONS[kind].rank !== undefined && WEAPONS[kind].rank !== (v.rank ?? 1) ? `lính bậc ${v.rank ?? 1} chỉ dùng vũ khí của bậc mình` : v.job === 'fight' && v.arm === 'archer' ? 'cung thủ chỉ dùng vũ khí tầm xa' : v.job === 'fight' && v.guard && v.post >= 0 ? 'lính chòi canh chỉ dùng vũ khí tầm xa' : 'bộ binh và kỵ binh chỉ dùng vũ khí cận chiến'}`; continue; }
     if (kind) { if (toolCount(sim, kind, kind in ARMORS ? ARMORS[kind].tier ?? 1 : WEAPONS[kind].tier ?? 1) <= 0) { short = true; continue; } sim.toolStock[key(kind)]--; }
     if (cur) sim.toolStock[key(cur)] = (sim.toolStock[key(cur)] ?? 0) + 1;
     if (slot === 'weapon') v.weapon = kind; else v.armor = kind;
@@ -177,14 +177,15 @@ const AUTO_GEAR = false;
  * May this person carry this weapon? Foot soldiers and riders carry blows only, throwers and the men of a tower only what is fired; a guard of the Trại lính gác and a hunter take
  * whatever there is (the mace is a soldier's weapon alone).
  */
-export function canCarry(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'>, id: string): boolean {
+export function canCarry(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'> & { rank?: number }, id: string): boolean {
   const w = WEAPONS[id]; if (!w) return true;
   if (v.job !== 'fight') return id !== 'mace';
   if (v.guard) return v.post >= 0 ? !!w.ranged : true;
+  if (w.rank !== undefined && w.rank !== (v.rank ?? 1)) return false; // a soldier of a camp carries the weapons of his rank (ranks.json)
   return v.arm === 'archer' ? !!w.ranged : !w.ranged;
 }
 
-/** Foot soldiers and throwers do not ride; the riders of the Trại kỵ thú, hunters and scouts may. */
+/** Foot soldiers and throwers do not ride; the riders of the Trại lính kỵ, hunters and scouts may. */
 export const canRide = (v: Pick<Villager, 'job' | 'arm'>): boolean => v.job !== 'fight' || v.arm === 'cavalry';
 
 /** Every second: what a person may not carry or ride (his arm was changed, or an old save) goes back to the stores. */
@@ -222,7 +223,7 @@ export function equipGroup(sim: Sim, ids: readonly number[]): string {
   const aRank = (id: string) => (ARMORS[id].tier ?? 1) * 1000 + ARMORS[id].defm + ARMORS[id].defr;
   run(people, [...CRAFTED_WEAPONS], wRank, (v) => (v.weapon ? wRank(v.weapon) : 0), canCarry, (id) => sim.toolCount(id, WEAPONS[id].tier ?? 1), (v, id) => sim.assignGear([v.id], id, 'weapon') === null);
   run(people, Object.keys(ARMORS), aRank, (v) => (v.armor ? aRank(v.armor) : 0), () => true, (id) => sim.toolCount(id, ARMORS[id].tier ?? 1), (v, id) => sim.assignGear([v.id], id, 'armor') === null);
-  const beasts = people.filter((v) => v.job === 'fight' && v.arm === 'cavalry'); // the beasts of the stable go to the riders
+  const beasts = people.filter((v) => v.job === 'fight' && v.arm === 'cavalry' && !v.mount); // the beasts of the stable go to the riders who have none (the soldiers of the camps came with theirs)
   if (beasts.length) {
     const mRank = (k: string) => MOUNTS[k as MountKind].tier;
     run(beasts, [...MOUNT_KINDS], mRank, (v) => { const k = sim.mountOf(v); return k ? mRank(k) : 0; }, () => true, (k) => sim.tamedCount(k as MountKind), (v, k) => sim.assignMount([v.id], k as MountKind) === null);

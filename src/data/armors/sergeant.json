@@ -1,0 +1,208 @@
+{
+ "_note": "Sergeant (Lính gác chuyên nghiệp, medieval guard rank 2): bascinet with a mail aventail, blue brigandine over a mail hauberk, steel-capped boots.",
+ "name": "Giáp lính gác chuyên nghiệp",
+ "palette": {
+  "iron": "#8d969e",
+  "ironH": "#dde3e8",
+  "ironD": "#566068",
+  "chain": "#7f888f",
+  "chainD": "#596168",
+  "blue": "#34507a",
+  "blueD": "#243852",
+  "rivet": "#d8b04a",
+  "belt": "#5a3a1e",
+  "beltD": "#3a2410",
+  "gold": "#d8b04a",
+  "boot": "#4a4f55",
+  "bootD": "#2c3034",
+  "glove": "#4a4f55",
+  "hose": "#4a4a52",
+  "hoseD": "#34343a"
+ },
+ "side": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "i": "iron",
+    "H": "ironH",
+    "D": "ironD",
+    "c": "chain",
+    "C": "chainD"
+   },
+   "rows": [
+    "....iiiii....",
+    "..iiiHHHii...",
+    ".iiiHHHiiiiD.",
+    ".iiHHiiiiiiiD",
+    ".iiiiiiiiiiiD",
+    ".iiiiiiiiiiiD",
+    "DDDDDDDDDDDD.",
+    "cCcCcC.....cC",
+    "CcCcCc.....Cc",
+    "cCcCcC.....cC",
+    "CcCcCc.......",
+    "cCcCcC.......",
+    ".CcCc........"
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "c": "chain",
+    "C": "chainD",
+    "k": "blue",
+    "K": "blueD",
+    "R": "rivet",
+    "B": "belt",
+    "b": "beltD",
+    "G": "gold"
+   },
+   "rows": [
+    "kKkKkKk",
+    "KkRkRkK",
+    "kKkKkKk",
+    "KkRkRkK",
+    "kKkKkKk",
+    "KkRkRkK",
+    "BBBBGbb",
+    "cCcCcCc",
+    "CcCcCcC",
+    "cCcCcCc",
+    "CcCcCcC"
+   ]
+  }
+ },
+ "wraps": {
+  "leg": {
+   "dy": 3,
+   "w": 3,
+   "h": 5,
+   "color": "boot",
+   "edge": "bootD"
+  },
+  "arm": {
+   "full": true,
+   "color": "chain",
+   "far": "chainD",
+   "hand": "glove",
+   "w": 3,
+   "h": 3
+  }
+ },
+ "legs": {
+  "near": "hose",
+  "far": "hoseD"
+ },
+ "front": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "i": "iron",
+    "H": "ironH",
+    "D": "ironD",
+    "c": "chain",
+    "C": "chainD"
+   },
+   "rows": [
+    "....iiii....",
+    "..iiHHHiii..",
+    ".iiHHHHiiiD.",
+    "iiHHHiiiiiiD",
+    "iiiiiiiiiiiD",
+    "iiiiiiiiiiiD",
+    "DDDDDDDDDDDD",
+    "cC.......Cc.",
+    "cCc.....cCc.",
+    "CcC.....CcC.",
+    "cCcC...cCcC.",
+    ".cCcCcCcCc..",
+    "..cCcCcCc..."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "c": "chain",
+    "C": "chainD",
+    "k": "blue",
+    "K": "blueD",
+    "R": "rivet",
+    "B": "belt",
+    "b": "beltD",
+    "G": "gold"
+   },
+   "rows": [
+    "kKkKkKkKkK",
+    "KkRkKkKRKk",
+    "kKkKkKkKkK",
+    "KkRkKkKRKk",
+    "kKkKkKkKkK",
+    "KkRkKkKRKk",
+    "BBBBGGBBBB",
+    "cCcCcCcCcC",
+    "CcCcCcCcCc",
+    "cCcCcCcCcC",
+    "CcCcCcCcCc"
+   ]
+  }
+ },
+ "back": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "i": "iron",
+    "H": "ironH",
+    "D": "ironD",
+    "c": "chain",
+    "C": "chainD"
+   },
+   "rows": [
+    "....iiii....",
+    "..iiHHHiii..",
+    ".iiHHHHiiiD.",
+    "iiHHHiiiiiiD",
+    "iiiiiiiiiiiD",
+    "iiiiiiiiiiiD",
+    "DDDDDDDDDDDD",
+    "cCcCcCcCcCcC",
+    "CcCcCcCcCcCc",
+    "cCcCcCcCcCcC",
+    "CcCcCcCcCcCc",
+    ".cCcCcCcCcC.",
+    "..CcCcCcCc.."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "c": "chain",
+    "C": "chainD",
+    "k": "blue",
+    "K": "blueD",
+    "R": "rivet",
+    "B": "belt",
+    "b": "beltD",
+    "G": "gold"
+   },
+   "rows": [
+    "kKkKkKkKkK",
+    "KkRkKkKRKk",
+    "kKkKkKkKkK",
+    "KkRkKkKRKk",
+    "kKkKkKkKkK",
+    "KkRkKkKRKk",
+    "BBBBGGBBBB",
+    "cCcCcCcCcC",
+    "CcCcCcCcCc",
+    "cCcCcCcCcC",
+    "CcCcCcCcCc"
+   ]
+  }
+ }
+}

@@ -3,7 +3,7 @@ import { WEATHER } from './calendar';
 import { JOBS, WorkJob } from './jobs';
 import { findPath, Step } from './path';
 import { TOOL_OF_JOB } from './tools';
-import { poseOf } from './combat';
+import { poseOf, shieldOf } from './combat';
 import { weaponOf } from './battle';
 import type { Sim } from './sim';
 import { Hold, Villager } from './model';
@@ -102,17 +102,18 @@ export function animate(sim: Sim, v: Villager, dt: number): void {
   let anim = 'idle', hold: Hold | null = null;
   const walking = v.path.length > 0 || !!v.slide;
   // Fighting has its own poses, apart from the work animations. Which ones depend on the weapon's style (weapons.json): see poseOf.
-  const armed = (): Hold | null => { if (!v.weapon) return null; const w = weaponOf(v); return { kind: v.weapon, tier: w.tier ?? 1 }; };
-  const ready = v.phase === 'fight' || v.fight.mode !== 'none';
+  const post = v.guard && v.post < 0; // a guard of the Trại lính gác: stands at his post in the neat pose and takes the fighting one only when there is a fight
+  const armed = (): Hold | null => { if (!v.weapon) return null; const w = weaponOf(v); return { kind: v.weapon, tier: w.tier ?? 1, shield: shieldOf(w, post) }; };
+  const ready = v.phase === 'fight' || (v.fight.mode !== 'none' && !post);
   // soldiers and hunters keep their weapon in hand between tasks, so they can be told apart from civilians
   const carrying = !!v.weapon && (v.job === 'fight' || v.job === 'hunt' || (!!v.ai && v.ai.role !== 'civ')); // the soldiers of the other villages always have theirs in hand
   if (v.down > 0) anim = 'down';
-  else if (v.swing) { anim = poseOf(v.weapon, 'attack'); hold = armed(); }
+  else if (v.swing) { anim = poseOf(v.weapon, 'attack', post); hold = armed(); }
   else if (v.flinch > 0) anim = 'hit';
   else if (v.phase === 'flee') anim = 'run';
-  else if (ready) { anim = poseOf(v.weapon, walking ? 'charge' : 'guard'); hold = armed(); }
-  else if (walking) { anim = v.carry && v.carry.amount > 0 ? 'carry_walk' : 'walk'; if (carrying && !(v.carry && v.carry.amount > 0)) { anim = poseOf(v.weapon, 'walk'); hold = armed(); } }
-  else if (carrying && v.phase === 'idle') { anim = poseOf(v.weapon, 'idle'); hold = armed(); }
+  else if (ready) { anim = poseOf(v.weapon, walking ? 'charge' : 'guard', post); hold = armed(); }
+  else if (walking) { anim = v.carry && v.carry.amount > 0 ? 'carry_walk' : 'walk'; if (carrying && !(v.carry && v.carry.amount > 0)) { anim = poseOf(v.weapon, 'walk', post); hold = armed(); } }
+  else if (carrying && v.phase === 'idle') { anim = poseOf(v.weapon, 'idle', post); hold = armed(); }
   else if (v.phase === 'work' && v.job !== 'idle') {
     const k = TOOL_OF_JOB[v.job as WorkJob], tier = sim.toolTier(v, v.job);
     if (k && tier > 0) { anim = JOBS[v.job as WorkJob].anim === 'gather' ? 'dig' : JOBS[v.job as WorkJob].anim; hold = { kind: k, tier }; }

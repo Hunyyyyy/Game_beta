@@ -1,0 +1,119 @@
+// The research house (src/ui/researchpane.ts, doc/cơ chế nghiên cứu/research-ui.html): pillar tabs, a list of the branches on the left, the path of the branch (rows side by side) on the right,
+// and a bar at the foot with what the node chosen gives, what it waits for and what it costs. Parchment, with one accent colour for each pillar.
+.gdlg.gbuild > .mbody.labbody { display: flex; flex-direction: column; gap: 10px; overflow: auto;
+  > * { flex: none; }
+  > .tabpage:not([hidden]) { flex: 1; min-height: 0; display: flex; flex-direction: column; } }
+.rsp {
+  container-type: inline-size;
+  --parch: #e3d5a6; --parch-hi: #efe5c3; --parch-lo: #d5c48b; --parch-deep: #c3b070;
+  --ink: #3a2a14; --ink-2: #5c4a2a; --ink-3: #85714a;
+  --edge: #8a6b39; --edge-lt: #b79f63; --edge-dk: #4e3a20;
+  --night: #2a211a; --on-night: #f1e6c6; --gold: #e0b04a;
+  --mil: #a53c25; --econ: #47661f; --craft: #28607f; --on-acc: #fff6e0;
+  --acc: var(--mil);
+  color: var(--ink); font-size: 14px; line-height: 1.4;
+  flex: 1; min-height: 290px; display: flex; flex-direction: column;
+  button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; margin: 0; }
+  .rs-main { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--parch); border: 2px solid var(--edge); border-radius: 8px; overflow: hidden; }
+  .rs-main[data-pil='mil'] { --acc: var(--mil); } .rs-main[data-pil='econ'] { --acc: var(--econ); } .rs-main[data-pil='craft'] { --acc: var(--craft); }
+  .c-mil { --c: var(--mil); } .c-econ { --c: var(--econ); } .c-craft { --c: var(--craft); }
+
+  // ---- tabs
+  .rs-tabs { display: flex; align-items: center; gap: 6px; padding: 7px 10px; background: var(--parch-lo); border-bottom: 2px solid var(--edge); overflow-x: auto; }
+  .rs-tab { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border: 2px solid var(--edge); border-radius: 6px; background: var(--parch-hi); font-weight: 700; font-size: 14px; line-height: 1.2; color: var(--ink); white-space: nowrap;
+    .rs-ti { width: 17px; height: 17px; color: var(--c); flex: none; display: block; svg { display: block; width: 100%; height: 100%; } }
+    &.rs-plain { --c: var(--edge-dk); }
+    &.on { background: var(--c); border-color: var(--edge-dk); color: var(--on-acc); box-shadow: 0 3px 0 var(--edge-dk); .rs-ti { color: var(--on-acc); } } }
+  .rs-bdg { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--c); color: var(--on-acc); font-weight: 700; font-size: 11px; line-height: 18px; text-align: center; }
+  .rs-tab.on .rs-bdg { background: var(--on-acc); color: var(--c); }
+
+  // ---- body: branches | path
+  .rs-pv { flex: 1; display: grid; grid-template-columns: 168px minmax(0, 1fr); min-height: 0; }
+  .rs-nav { display: flex; flex-direction: column; gap: 5px; padding: 7px 8px; overflow: auto; background: var(--parch-lo); border-right: 2px solid var(--edge); }
+  .rs-ni { text-align: left; display: grid; gap: 2px; padding: 5px 9px 6px; border: 2px solid var(--edge-lt); border-radius: 6px; background: var(--parch-hi);
+    &.on { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, var(--parch-hi)); box-shadow: inset 0 0 0 1px var(--acc); } }
+  .rs-nr { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .rs-nn { font-weight: 700; font-size: 13.5px; line-height: 1.2; }
+  .rs-rb { font-weight: 700; font-size: 9.5px; line-height: 1; letter-spacing: .05em; text-transform: uppercase; background: var(--acc); color: var(--on-acc); padding: 3px 5px; border-radius: 3px; white-space: nowrap; }
+  .rs-path { display: inline-flex; align-items: center;
+    .d { display: block; width: 9px; height: 9px; border: 2px solid var(--ink-3); transform: rotate(45deg); margin: 0 3px; &.r { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 30%, transparent); } &.k { background: var(--acc); border-color: var(--acc); } }
+    u { width: 12px; height: 2px; background: var(--edge-lt); } }
+  .rs-cnt { font-weight: 700; font-size: 11px; line-height: 1; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+  .rs-lane { min-width: 0; min-height: 0; padding: 12px 12px 10px; display: flex; flex-direction: column; gap: 10px; }
+  .rs-lh { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px;
+    h3 { margin: 0; font-weight: 700; font-size: 19px; line-height: 1.2; color: var(--acc); } .rs-w { font-size: 12px; color: var(--ink-2); } .rs-lc { margin-left: auto; font-weight: 700; font-size: 11.5px; color: var(--ink-2); } }
+  // the path of a branch as one chain: the stats of a row, an arrow, the leap it ends in, an arrow, the stats of the next row ... and the shut square of the medieval age.
+  // Everything keeps its own width and the chain slides sideways with no scroll bar: swipe it, drag it with the mouse, or turn the wheel over it
+  .rs-stages { flex: 1; display: flex; align-items: center; padding: 6px 4px 78px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -ms-overflow-style: none; touch-action: pan-x pan-y;
+    &::-webkit-scrollbar { display: none; } &.drag { cursor: grabbing; user-select: none; } }
+  .rs-grp { flex: none; width: 150px; display: flex; flex-direction: column; gap: 6px; &.lock .rs-stat { opacity: .6; } }
+  .rs-arr { flex: none; position: relative; width: 40px; height: 14px;
+    &::before { content: ''; position: absolute; left: 4px; right: 12px; top: 6px; height: 2px; background: var(--edge-lt); }
+    &::after { content: ''; position: absolute; right: 4px; top: 2px; border-left: 8px solid var(--edge-lt); border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+    &.on::before { background: var(--acc); } &.on::after { border-left-color: var(--acc); } }
+  .rs-stat { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; height: 30px; padding: 0 9px; text-align: left; background: var(--parch-hi); border: 1.5px solid var(--edge-lt); border-radius: 5px; font-size: 13px; font-weight: 600;
+    .rs-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    &.has { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 12%, var(--parch-hi)); }
+    &.max { background: color-mix(in srgb, var(--acc) 26%, var(--parch-hi)); }
+    &.busy { animation: rsGlow 2s ease-in-out infinite; } }
+  // a stat of the medieval age has five levels: smaller diamonds so that the name still fits
+  .rs-stat.many .rs-pips { gap: 3px; i { width: 7px; height: 7px; border-width: 1.5px; } }
+  .rs-stat.sel, .rs-leap.sel, .rs-ni.sel { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .rs-pips { display: inline-flex; gap: 5px; padding-right: 2px; flex: none; i { display: block; width: 9px; height: 9px; border: 2px solid var(--ink-2); transform: rotate(45deg); &.on { background: var(--acc); border-color: var(--acc); } } }
+
+  .rs-col { position: relative; flex: none; width: 156px; }
+  .rs-leap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; width: 156px; text-align: left; padding: 9px 10px; border: 2px solid var(--edge); border-radius: 8px; background: var(--parch-lo);
+    &.locked { border-style: dashed; border-color: var(--ink-3); color: var(--ink-2); }
+    &.ready { background: var(--acc); border-color: var(--edge-dk); color: var(--on-acc); box-shadow: 0 3px 0 var(--edge-dk); animation: rsGlow 2s ease-in-out infinite; }
+    &.done { background: var(--night); border-color: var(--edge-dk); color: var(--on-night); } }
+  @keyframes rsGlow { 0%, 100% { box-shadow: 0 3px 0 var(--edge-dk), 0 0 0 0 color-mix(in srgb, var(--acc, var(--gold)) 55%, transparent); } 50% { box-shadow: 0 3px 0 var(--edge-dk), 0 0 0 6px transparent; } }
+  .rs-ln { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; line-height: 1.15; .rs-ic { flex: none; display: inline-flex; color: inherit; } }
+  .rs-leap.done .rs-ic { color: var(--gold); }
+  .rs-lpg { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 11px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .rs-bar { flex: 1; height: 6px; background: rgba(58, 42, 20, .22); border-radius: 3px; overflow: hidden; display: block; b { display: block; height: 100%; background: var(--acc); } }
+  .rs-leap.ready .rs-bar { background: rgba(255, 246, 224, .3); b { background: var(--on-acc); } }
+  .rs-xcs { display: flex; flex-wrap: wrap; gap: 3px; }
+  .rs-xc { display: inline-block; max-width: 100%; border: 1.5px solid var(--ink-3); color: var(--ink-2); border-radius: 10px; padding: 0 6px; font-weight: 700; font-size: 10.5px; line-height: 15px;
+    &.ok { background: var(--ink-3); color: var(--on-acc); } }
+  .rs-leap.ready .rs-xc { border-color: rgba(255, 246, 224, .65); color: var(--on-acc); &.ok { background: rgba(255, 246, 224, .22); } }
+
+  // a discount hangs under a leap: a short line down and a chip like a stat (with its diamonds), outside the height of the row
+  .rs-col > .rs-down { position: absolute; top: 100%; left: 50%; width: 2px; height: 28px; margin-left: -1px; background: var(--edge-lt); &.on { background: var(--acc); }
+    &::after { content: ''; position: absolute; left: -4px; bottom: -4px; border-top: 7px solid var(--edge-lt); border-left: 5px solid transparent; border-right: 5px solid transparent; }
+    &.on::after { border-top-color: var(--acc); } }
+  .rs-col > .rs-side { position: absolute; top: calc(100% + 28px); left: 0; right: 0; width: auto; &.dim { opacity: .6; } }
+
+  // the medieval age goes on from the last row: shut in the stone age
+  .rs-next { flex: none; width: 66px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px 4px; text-align: center; border: 2px dashed var(--ink-3); border-radius: 8px; background: var(--parch-lo); color: var(--ink-2);
+    .rs-ic { display: inline-flex; color: var(--ink-3); } b { font-size: 12px; line-height: 1.15; } small { font-size: 10.5px; } }
+
+  .rs-war { padding-top: 6px; }
+
+  // ---- a narrow window: the branches on top, the rows scroll sideways
+  @container (max-width: 620px) {
+    .rs-pv { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+    .rs-nav { flex-direction: row; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 2px solid var(--edge); padding: 6px 10px; }
+    .rs-ni { min-width: 150px; flex: none; }
+    .rs-tab { padding: 5px 9px; font-size: 13px; }
+  }
+}
+
+// a phone held sideways: no room to waste, so what is not needed to choose is left out
+@media (max-height: 480px) {
+  .rsp {
+    .rs-tabs { padding: 4px 10px; }
+    .rs-tab { padding: 3px 10px; font-size: 13px; }
+    .rs-nav { padding: 6px; gap: 4px; }
+    .rs-ni { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 3px 8px; min-height: 27px; .rs-path { display: none; } }
+    .rs-rb { font-size: 0; padding: 0; width: 8px; height: 8px; border-radius: 50%; }
+    .rs-lane { padding: 7px 12px; gap: 0; }
+    .rs-lh { display: none; }
+    .rs-stat { height: 26px; }
+    .rs-leap { padding: 5px 8px; gap: 2px; }
+    .rs-ln { font-size: 14px; }
+    .rs-xcs { flex-wrap: nowrap; overflow: hidden; }
+    .rs-xc { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
+}
+@media (prefers-reduced-motion: reduce) { .rsp * { animation: none !important; transition: none !important; } }

@@ -2,7 +2,7 @@
  * The people of a house, drawn the same way for every house that takes people (the houses of a trade, the camps, the builders, the craft, research and stable houses, the fields):
  * the ones who could go in (left, with a filter and the free hands first) and the ones who are in (right), each with a way out. Change it here, it changes everywhere.
  */
-import { JOB_NAME, roleName, roleOf } from '../sim/jobs';
+import { JOB_NAME, roleName, roleOf, titleOfRole } from '../sim/jobs';
 import { isFree } from '../sim/idle';
 import type { Villager } from '../sim/model';
 import type { Ctx } from './ctx';
@@ -32,14 +32,15 @@ export interface RosterSpec {
   emptyIn: string; emptyPool: string;
   /** The titles of the two lists (the default: who could go in, who is in). `plain`: no filter by trade and no chip, for lists that hold people of one kind (the watches of the guards). */
   titles?: { pool: string; in: string }; plain?: boolean;
+  /** A chip after the name of somebody who is in (the rank of a soldier). */
+  chipIn?: (v: Villager) => string | undefined;
   /** Draw it again after a change. */
   again: () => void;
 }
 
 /** What a villager does now, in a few words: the name of their trade, or "Dân rảnh". */
 export const tradeOf = (c: Ctx, v: Villager): string => {
-  const role = roleOf(v);
-  return role ? roleName(role, c.sim.era) : isFree(v) ? 'Dân rảnh' : JOB_NAME[v.job];
+  return titleOfRole(v, c.sim.era) ?? (isFree(v) ? 'Dân rảnh' : JOB_NAME[v.job]);
 };
 
 /** A small square button with an icon only; the words are in its tooltip. */
@@ -66,7 +67,7 @@ export class Roster {
     if (!s.assigned.length) right.push(dlg.empty(s.emptyIn));
     else right.push(dlg.list(...s.assigned.map((v) => {
       const why = s.removeBlock?.(v) ?? null;
-      return personRow(this.c, v, { strip: { kind: 'remove', onclick: () => { const e = s.remove(v); if (e) toast(e); ctl.onChange(); s.again(); }, title: why ?? 'Cho nghỉ, về làm dân thường', disabled: !!why }, actions: s.extra?.(v) ?? [] });
+      return personRow(this.c, v, { chip: s.chipIn?.(v), strip: { kind: 'remove', onclick: () => { const e = s.remove(v); if (e) toast(e); ctl.onChange(); s.again(); }, title: why ?? 'Cho nghỉ, về làm dân thường', disabled: !!why }, actions: s.extra?.(v) ?? [] });
     })));
     // ---- the ones who could go in (left): a filter by trade, the free hands first, then the best at the work
     const trades = new Map<string, number>(), trade = new Map<number, string>();

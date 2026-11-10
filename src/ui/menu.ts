@@ -104,7 +104,7 @@ export class Menu {
     page.append(hint('Mô phỏng trại', 'Dựng sẵn trại của cấp lửa đã chọn: mọi nhà mở ở cấp đó (số lượng và cấp tối đa theo cấp lửa), hàng rào, cổng và chòi canh khi đã mở, dân đầy giường, lính và các nghề đã có người, lính được phát vũ khí và giáp. Không tốn gì.'));
     // a camp of each era and level: the stone age (the quick war, no supply, scouts, watchtower or plan) or the medieval layer (all of them)
     for (const [label, medieval] of [['Đồ Đá', false], ['Trung cổ', true]] as const) {
-      page.append(h('div', { class: 'devrow' }, h('small', { text: `${label}:` }), ...(medieval ? [5] : [1, 2, 3, 4]).map((n) => btn(`Trại cấp ${n}`, () => toast(dev.simulateCamp(sim, n, medieval)), `Dựng trại cấp ${n} của thời ${label} (${medieval ? 'có hậu cần, trinh sát, chòi canh, lập kế hoạch tác chiến' : 'đánh nhanh, không hậu cần, trinh sát, chòi canh'})`))));
+      page.append(h('div', { class: 'devrow' }, h('small', { text: `${label}:` }), ...(medieval ? [4] : [1, 2, 3]).map((n) => btn(`Trại cấp ${n}`, () => toast(dev.simulateCamp(sim, n, medieval)), `Dựng trại cấp ${n} của thời ${label} (${medieval ? 'có hậu cần, trinh sát, chòi canh, lập kế hoạch tác chiến' : 'đánh nhanh, không hậu cần, trinh sát, chòi canh'})`))));
     }
     page.append(h('div', { class: 'devrow' }, toggle('Thời Trung cổ (mở lớp chiến tranh nâng cao)', 'Bật hoặc tắt riêng lớp thời Trung cổ mà không dựng lại trại', () => sim.era === 'ancient', (on) => { sim.setEra(on ? 'ancient' : 'stone'); })));
     page.append(h('div', { class: 'devrow' },
@@ -117,15 +117,25 @@ export class Menu {
       btn('+5 dân', () => toast(dev.addPeople(sim, 5)), 'Thêm 5 dân rảnh quanh lửa trại, kể cả khi vượt sức chứa'),
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),
       btn('Tập hợp quân đầy ô', () => { toast(dev.fillPlan(sim)); ctl.onChange(); }, 'Tạo thêm lính (đồ tốt nhất + đuốc, bỏ qua sức chứa trại) cho đủ mọi ô lính trong kế hoạch của Bãi tập rồi Tập trận ngay'),
+      ...[4, 5, 6, 7].map((r) => btn(`+5 lính bậc ${r} (Trung cổ)`, () => { toast(dev.addRankSoldiers(sim, r)); ctl.onChange(); }, `Thêm 5 bộ binh, 5 cung thủ, 5 kỵ binh bậc ${r} thời Trung cổ (đồ và thú đúng bậc), gọi ra quanh đống lửa để xem`)),
       btn('Dọn sạch quanh khu quân sự', () => { toast(dev.clearAroundZones(sim)); ctl.onChange(); }, 'Xóa cây, đá, bụi và thú trong khu quân sự và 40 ô xung quanh để thử hành quân (công trình giữ nguyên)'),
       btn('Mẫu nhật ký chiến đấu', () => toast(dev.sampleBattleLog(sim)), 'Thêm (hoặc xóa) vài trận giả vào nhật ký của Lều họp chiến để xem giao diện'),
       btn('Đầy quân + đồ cao nhất + đuốc', () => toast(dev.fullArmy(sim)), 'Mọi trại lính đầy quân, ai cũng có vũ khí và giáp tốt nhất của thời đại và một cây đuốc'),
       btn('Gọi sự kiện (theo cấp lửa)', () => toast(dev.callEvent(sim)), 'Gọi ngay sự kiện đã hẹn mạnh nhất mà trại cấp lửa hiện tại đủ sức đón')));
 
     page.append(h('div', { class: 'devrow' },
-      ...[1, 2, 3, 4].map((n) => btn(`Trại cấp ${n} + nghiên cứu/đồ đủ cấp ${n}`, () => toast(dev.campFullKit(sim, n)), `Trại cấp ${n} thời Đá, nghiên cứu xong mọi mục mà Nhà nghiên cứu cấp ${n} mở, kho đủ đồ mà Nhà chế tạo cấp ${n} làm được, lính tự trang bị đồ tốt nhất mở được + đuốc`)),
+      ...[1, 2, 3].map((n) => btn(`Trại cấp ${n} + nghiên cứu/đồ đủ cấp ${n}`, () => toast(dev.campFullKit(sim, n)), `Trại cấp ${n} thời Đá, nghiên cứu xong mọi mục mà Nhà nghiên cứu cấp ${n} mở, kho đủ đồ mà Nhà chế tạo cấp ${n} làm được, lính tự trang bị đồ tốt nhất mở được + đuốc`)),
       ...([['weak', 'yếu'], ['normal', 'thường'], ['medium', 'trung bình']] as const).map(([tier, name]) => btn(`Làng ${name} làm đồng minh`, () => toast(dev.allyTier(sim, tier)), `Làng ${name} gần nhất còn tự do thành chư hầu ngay: gửi quân giúp khi ta đi đánh`)),
       btn('Đánh boss', () => toast(dev.attackBoss(sim)), 'Phát hiện boss gần nhất (bản đồ đầy đủ) rồi đưa toàn quân đi đánh (đánh nhanh thời Đá)')));
+
+    // the new tribe rules: conquests, newcomers that take villages back, bandit camps, a village that builds again
+    page.append(h('div', { class: 'devrow' },
+      btn('Chiếm 3 làng', () => { toast(dev.conquerVillages(sim, 3)); ctl.onChange(); }, 'Thu nạp ngay 3 làng thường (nhận túi, dân, chỗ trại lính, % sản lượng) để thử làng mới đòi lại'),
+      btn('Làng mới xuất hiện ngay', () => toast(dev.newcomerNow(sim)), 'Làng thứ 6 (rồi thứ 7) tới ngay và lấy lại 1 đến 2 làng ta đã chiếm hoặc đang cống nạp (cần có làng như vậy)'),
+      btn('Trại cướp đổi mức ngay', () => toast(dev.rerollBandits(sim)), 'Mỗi trại cướp bốc lại mức yếu, vừa hoặc mạnh ngay bây giờ (bình thường cứ 2 đến 3 ngày)'),
+      btn('Diệt trại cướp gần nhất', () => toast(dev.crushNearestBandit(sim)), 'Nhận túi của trại cướp gần nhất, trại mọc lại sau 2 đến 3 ngày'),
+      btn('Phá nửa làng gần nhất', () => toast(dev.wreckVillage(sim)), 'Phá một nửa công trình của làng gần nhất (không phải trại cướp) để xem họ dựng lại'),
+      btn('Cho làng hồi một ngày', () => toast(dev.recoverVillagesDay(sim)), 'Mọi làng qua một ngày hồi phục: dựng lại công trình, sửa, thêm người')));
 
     // the villages of the land: where they are and how they stand, to try the sleeping and waking of a village by sending people to it
     page.append(h('h3', { text: 'Các làng NPC (tọa độ là số ô)' }));
@@ -141,7 +151,7 @@ export class Menu {
       rows.replaceChildren(...sim.tribes.map((t) => {
         const live = t.unitIds.map((u) => sim.get(u)).filter((u) => !!u && u.health > 0), guards = live.filter((u) => u!.ai?.role !== 'civ').length, crowd = t.crowd ? t.crowd.guards + t.crowd.civs : 0;
         const d = fire ? Math.round(Math.hypot(t.camp.x - fire.x, t.camp.y - fire.y)) : 0;
-        const line = `${t.boss ? 'BOSS' : 'Thường'} · ${t.def.name} · (${Math.round(t.camp.x)}, ${Math.round(t.camp.y)}) · cách lửa ${d} ô · cấp ${t.campLevel}${t.state === 'free' ? '' : ` · ${t.state}`} · ${t.awake ? 'ĐANG THỨC' : 'đang ngủ'} · ngoài ${live.length} (lính ${guards}) · trong nhà ${crowd} · ${t.props.length} công trình · sương: ${FOG[sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)]]}`;
+        const line = `${t.bandit ? 'CƯỚP' : ({ weak: 'Yếu', normal: 'Thường', medium: 'Trung bình', boss: 'BOSS', rebel: 'Phản bội', raider: 'Mạnh' } as Record<string, string>)[t.tier] ?? t.tier}${t.allyOf ? ` (đồng minh ${t.allyOf})` : ''} · ${t.def.name} · (${Math.round(t.camp.x)}, ${Math.round(t.camp.y)}) · cách lửa ${d} ô · cấp ${t.campLevel}${t.state === 'free' ? '' : ` · ${t.state}`} · ${t.awake ? 'ĐANG THỨC' : 'đang ngủ'} · ngoài ${live.length} (lính ${guards}) · trong nhà ${crowd} · ${t.props.length} công trình · sương: ${FOG[sim.fog.state[Math.floor(t.camp.y) * N + Math.floor(t.camp.x)]]}`;
         return h('div', { class: 'devrow' }, h('small', { text: line }), h('button', { class: 'sm', text: 'Phát hiện', title: 'Chỉ để thử: làng này hiện trong Lều họp chiến như đã được trinh sát đủ', onclick: () => { toast(dev.discoverTribe(sim, t.id)); ctl.onChange(); } }), h('button', { class: 'sm', text: 'Camera tới', title: 'Chỉ để thử: đưa camera tới trại này (sương mù vẫn che nếu chưa khám phá)', onclick: () => { ctl.centerOn(t.camp.x * TILE, t.camp.y * TILE); this.close(); } }));
       }));
     });

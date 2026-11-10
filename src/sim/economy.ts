@@ -13,6 +13,7 @@ import { REST } from './rest';
 import { toolBonus } from './statsys';
 import { TIER_YIELD } from './tools';
 import type { Villager } from './model';
+import { rankRation } from './ranks';
 
 /** Reason the stock cannot pay `cost`, or null. */
 export function missing(sim: Sim, cost: Partial<Stock>): string | null {
@@ -72,11 +73,14 @@ export function barterQuote(sim: Sim, res: Exclude<Res, 'coin'>, coins: number, 
 }
 
 // ---------------------------------------------------------------- the daily meal (src/data/food.json)
+/** The ration of one person: a soldier of a camp eats the more the higher his rank (ranks.json). */
+const ration = (level: number, v: Villager): number => rationAt(level, v.job === 'fight') * (v.job === 'fight' && !v.guard ? rankRation(v.rank ?? 1) : 1);
+
 /** What the village eats at the end of this day: a ration for every villager and a bigger one for every soldier, by the level of the campfire. */
 export function foodNeed(sim: Sim): number {
   const level = sim.campfire()?.level ?? 1;
   let n = 0;
-  for (const v of sim.villagers) n += rationAt(level, v.job === 'fight');
+  for (const v of sim.villagers) n += ration(level, v);
   return n;
 }
 
@@ -114,7 +118,7 @@ export function eatDay(sim: Sim): void {
 export function warNeed(sim: Sim): number {
   const level = sim.campfire()?.level ?? 1;
   let n = 0;
-  for (const v of sim.villagers) if (!sim.warIds.has(v.id)) n += rationAt(level, v.job === 'fight');
+  for (const v of sim.villagers) if (!sim.warIds.has(v.id)) n += ration(level, v);
   return n;
 }
 
@@ -122,7 +126,7 @@ export function warNeed(sim: Sim): number {
 export function armyNeed(sim: Sim): number {
   const level = sim.campfire()?.level ?? 1;
   let n = 0;
-  for (const v of sim.villagers) if (sim.warIds.has(v.id)) n += rationAt(level, true) * sim.march.food;
+  for (const v of sim.villagers) if (sim.warIds.has(v.id)) n += rationAt(level, true) * rankRation(v.rank ?? 1) * sim.march.food;
   return n;
 }
 
