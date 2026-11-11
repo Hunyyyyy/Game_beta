@@ -29,6 +29,22 @@ export class Controller {
   /** Holding the pointer still on the map opens a ring of buttons round it (the screen draws it): `open` when it opens, `move` while the pointer goes over it, `end` when it is let go. */
   hold = { open: (_p: { x: number; y: number }) => undefined as void, move: (_p: { x: number; y: number }) => undefined as void, end: (_p: { x: number; y: number }) => undefined as void };
   private ringAt: { x: number; y: number } | null = null;
+  /** Where a finger held still has made the box ready (the screen draws a ring there until the finger moves or lifts). */
+  armedAt: { x: number; y: number } | null = null;
+  /** The finger has been held long enough to draw a box: the phone buzzes. */
+  onArm: () => void = () => {};
+  private armTimer = 0;
+  /** A finger on the map: after a quarter of a second without moving, a drag draws the box (a quick swipe moves the map). The ring of buttons is for the mouse only: a hold on a phone means one thing. */
+  private armBox(): void {
+    this.disarm();
+    if (!this.boxOk()) return;
+    this.armTimer = window.setTimeout(() => {
+      this.armTimer = 0;
+      const t = [...this.touches.values()][0];
+      if (this.touches.size === 1 && t && Math.hypot(t.x - t.sx, t.y - t.sy) <= 10) { t.armed = true; this.armedAt = { x: t.x, y: t.y }; this.onArm(); }
+    }, 250);
+  }
+  private disarm(): void { if (this.armTimer) window.clearTimeout(this.armTimer); this.armTimer = 0; this.armedAt = null; }
   private holdTimer = 0;
   private holdFrom: { x: number; y: number } | null = null;
   private startHold(p: { x: number; y: number }): void {
@@ -74,7 +90,7 @@ export class Controller {
   private left: { x: number; y: number; moved: boolean } | null = null;
   private right: { x: number; y: number; moved: boolean } | null = null;
   // touch
-  private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; px: number; py: number; /** Decided at the first drag: true when the finger was held a moment first (then it draws the box, else it moves the map) */ boxing?: boolean }>();
+  private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; px: number; py: number; /** The finger has been held still for a moment: a drag from now on draws a box (the screen shows a ring and the phone buzzes once) */ armed?: boolean; /** Decided at the first drag: true when the finger was armed (then it draws the box, else it moves the map) */ boxing?: boolean }>();
   private gesture: { dist: number; mid: { x: number; y: number }; acc: number } | null = null;
   private tapDead = false;
   /** The finger that went down while placing started on the building being placed: it drags the building, not the map. */
@@ -102,7 +118,7 @@ export class Controller {
   }
 
   private cancelPointers(): void {
-    this.stopHold(); if (this.ringAt) { this.ringAt = null; this.hold.end({ x: -999, y: -999 }); }
+    this.stopHold(); this.disarm(); if (this.ringAt) { this.ringAt = null; this.hold.end({ x: -999, y: -999 }); }
     this.left = null; this.right = null; this.touches.clear(); this.gesture = null; this.box = null; this.el.style.cursor = '';
   }
 
@@ -112,7 +128,7 @@ export class Controller {
     this.el.focus();
     if (e.pointerType === 'touch') {
       this.touches.set(e.pointerId, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: performance.now(), px: p.x, py: p.y });
-      if (this.touches.size === 1) { this.tapDead = false; this.dragGhost = this.onGhost(p); this.startHold(p); } else this.stopHold();
+      if (this.touches.size === 1) { this.tapDead = false; this.dragGhost = this.onGhost(p); this.armBox(); } else { this.stopHold(); this.disarm(); }
       if (this.touches.size === 2) this.startGesture();
       return;
     }
@@ -131,7 +147,7 @@ export class Controller {
       t.x = p.x; t.y = p.y;
       if (this.touches.size >= 2) { this.moveGesture(); return; }
       if (Math.hypot(t.x - t.sx, t.y - t.sy) > 10) {
-        if (t.boxing === undefined) t.boxing = this.boxOk() && performance.now() - t.t >= 250; // touch and hold a moment, then drag, to draw the box; a quick swipe still moves the map
+        if (t.boxing === undefined) { t.boxing = this.boxOk() && !!t.armed; this.armedAt = null; } // held still until the phone buzzed, then drag: the box; a quick swipe still moves the map
         if (t.boxing) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
         else if (this.placing && this.dragGhost) { if (this.isFenceLine()) this.dragFence(p); else this.placeAt = this.originAt(p); } // a finger that started on the building being placed or moved drags it (fence: it lays a row)
         else { // one finger dragging the ground (also while placing, away from the building) moves the map (a tap still gives the order); two fingers still pinch to zoom
@@ -200,7 +216,7 @@ export class Controller {
 
   private pointerUp(e: PointerEvent): void {
     const p = this.pos(e);
-    this.stopHold();
+    this.stopHold(); this.disarm();
     if (this.ringAt) { this.ringAt = null; this.hold.end(p); this.left = null; this.right = null; this.touches.clear(); this.gesture = null; this.box = null; this.el.style.cursor = ''; return; } // the ring took this press
     if (e.pointerType === 'touch') {
       const t = this.touches.get(e.pointerId); this.touches.delete(e.pointerId);
@@ -587,8 +603,6 @@ export class Controller {
 
   selectAll(): void { this.sim.villagers.forEach((v) => { if (v.inside === null) this.selected.add(v.id); }); this.selectedBuilding = null; this.onChange(); }
   clearSelection(): void { this.selected.clear(); this.selectedBuilding = null; this.inspect = null; this.onChange(); }
-  /** Every soldier of the village that is out on the map. */
-  selectSoldiers(): void { this.selected.clear(); for (const v of this.sim.villagers) if (v.job === 'fight' && v.inside === null && !v.inTent) this.selected.add(v.id); this.selectedBuilding = null; this.inspect = null; this.onChange(); }
 
   // ---------------------------------------------------------------- camera
   centerOn(wx: number, wy: number): void {

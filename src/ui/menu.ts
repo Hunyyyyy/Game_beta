@@ -149,7 +149,7 @@ export class Menu {
   // ---------------------------------------------------------------- controls
   private helpPage(): HTMLElement {
     return h('ul', { class: 'help' },
-      h('li', {}, h('b', { text: 'Chọn dân' }), ': bấm vào dân. Bấm đúp để chọn mọi dân cùng nghề đang hiện trên màn hình. Kéo khung để chọn nhiều người: chuột trái kéo trên bản đồ, hoặc trên điện thoại giữ ngón tay đứng yên một chút rồi kéo (vuốt nhanh thì kéo bản đồ). Giữ Shift khi kéo để thêm vào nhóm; trên điện thoại giữ một ngón rồi chạm người khác bằng ngón thứ hai. Nút "Bỏ chọn" nằm ở góc dưới (hoặc Esc); "Chọn lính" chọn mọi lính ngoài trại.'),
+      h('li', {}, h('b', { text: 'Chọn dân' }), ': bấm vào dân. Bấm đúp để chọn mọi dân cùng nghề đang hiện trên màn hình. Kéo khung để chọn nhiều người: chuột trái kéo trên bản đồ, hoặc trên điện thoại giữ ngón tay đứng yên khoảng một phần tư giây (máy rung nhẹ và hiện vòng tròn) rồi kéo (vuốt nhanh thì kéo bản đồ). Giữ Shift khi kéo để thêm vào nhóm; trên điện thoại giữ một ngón rồi chạm người khác bằng ngón thứ hai. Dấu ✕ ở góc dưới (hoặc Esc) bỏ chọn; nút ⚔ bên cạnh gọi quân ra khỏi trại.'),
       h('li', {}, h('b', { text: 'Ra lệnh' }), ': máy tính: chuột phải. Điện thoại: khi đã chọn dân, chạm lên đất, cây, đá, bụi quả, công trường hay kẻ địch. Giữ Shift (máy tính) để xếp lệnh nối nhau.'),
       h('li', {}, h('b', { text: 'Kéo bản đồ' }), ': máy tính: giữ chuột phải rồi kéo (hoặc W A S D). Điện thoại: một ngón đặt giữ yên, một ngón kéo (bản đồ đi theo ngón kéo); hoặc hai ngón cùng kéo; chụm hoặc mở hai ngón để thu phóng.'),
       h('li', {}, h('b', { text: 'Bản đồ nhỏ' }), ': bấm vào để mở bản đồ lớn, chạm một chỗ để nhảy tới đó.'),

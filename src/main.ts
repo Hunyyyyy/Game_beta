@@ -88,10 +88,11 @@ const toast = (text: string) => {
   clearTimeout(toastTimer); toastTimer = window.setTimeout(() => toastEl.classList.remove('on'), 2200);
 };
 ctl.onToast = toast;
+ctl.onArm = () => { try { navigator.vibrate?.(18); } catch { /* a phone that does not buzz: the ring shows it */ } }; // a finger held long enough: the box is ready
 ctl.onOrder = (ids) => { audio.order(); if (ids.some((id) => { const v = sim.get(id); return !!v && isHorse(sim.mountOf(v)); })) audio.neigh(); }; // a troop with riders: a horse neighs too
 // the buttons that command a troop (deploy, attack, withdraw, call out, send back) sound as an order
 const ORDER_BTN = /Triển khai|^\W*Đánh$|Rút|^Gọi (tất cả|cả trại|quân)|^Cho (về hết|cả trại về|quân về)/;
-document.addEventListener('click', (e) => { const b = (e.target as Element | null)?.closest('button'); if (b && !b.disabled && (b.id === 'btnArmy' || ORDER_BTN.test((b.textContent ?? '').trim()))) audio.order(); }, true);
+document.addEventListener('click', (e) => { const b = (e.target as Element | null)?.closest('button'); if (b && !b.disabled && (b.id === 'btnArmy' || b.id === 'btnArmyBar' || ORDER_BTN.test((b.textContent ?? '').trim()))) audio.order(); }, true);
 session.onError = toast;
 const ctx: Ctx = { sim, ctl, sprites, session, toast, sound, weatherFx };
 
@@ -163,11 +164,11 @@ ctl.hold.move = (p) => {
 ctl.hold.end = () => { const hot = ringHot; ring.hidden = true; ringHot = null; for (const el of ringBtns) el.classList.remove('hot'); if (hot) hot.click(); };
 $('btnNone').addEventListener('click', () => ctl.clearSelection());
 $('btnSelNone').addEventListener('click', () => ctl.clearSelection());
-$('btnSelSoldiers').addEventListener('click', () => ctl.selectSoldiers());
 $('btnSelCount').addEventListener('click', () => ctl.focusSelection());
 $('btnHome').addEventListener('click', () => { const f = sim.campfire(), s = sim.world.start; ctl.centerOn(((f ? f.x + 1 : s.x) ) * TILE, ((f ? f.y + 1 : s.y)) * TILE); });
 $('btnLegion').addEventListener('click', () => { ctl.legionControl = !ctl.legionControl; if (ctl.legionControl) toast('Chạm đất để cả đội quân hành quân tới đó'); syncButtons(); });
-$('btnArmy').addEventListener('click', () => { if (sim.alarmUntil > sim.time) sim.standDown(); else { const e = sim.callArmy(); if (e) toast(e); } syncButtons(); });
+const armyClick = () => { if (sim.alarmUntil > sim.time) sim.standDown(); else { const e = sim.callArmy(); if (e) toast(e); } syncButtons(); };
+$('btnArmy').addEventListener('click', armyClick); $('btnArmyBar').addEventListener('click', armyClick); // the ring of the mouse, and a button for the phone
 $('btnPlaceOk').addEventListener('click', () => ctl.confirmPlace());
 $('btnPlaceNo').addEventListener('click', () => ctl.cancelPlacing());
 $('btnPlaceRot').addEventListener('click', () => ctl.rotateGroup());
@@ -208,9 +209,9 @@ function showSpeed() {
 }
 function syncButtons() {
   showSpeed();
-  { const on = sim.alarmUntil > sim.time, army = $('btnArmy'); army.setAttribute('aria-pressed', String(on)); army.textContent = on ? '🏠' : '⚔'; army.title = on ? 'Cho quân về trại nghỉ' : 'Gọi quân đội ra khỏi trại'; army.hidden = !sim.villagers.some((v) => v.job === 'fight' && !v.guard); }
+  { const on = sim.alarmUntil > sim.time, army = $('btnArmy'); army.setAttribute('aria-pressed', String(on)); army.textContent = on ? '🏠' : '⚔'; army.title = on ? 'Cho quân về trại nghỉ' : 'Gọi quân đội ra khỏi trại'; army.hidden = !sim.villagers.some((v) => v.job === 'fight' && !v.guard); const bar = $('btnArmyBar'); bar.hidden = army.hidden; bar.setAttribute('aria-pressed', String(on)); bar.textContent = on ? '🏠' : '⚔'; bar.title = army.title; }
   { const lb = $('btnLegion'); if (!sim.legion.on) ctl.legionControl = false; lb.hidden = !sim.legion.on; lb.setAttribute('aria-pressed', String(ctl.legionControl)); }
-  { const n = ctl.selected.size, soldiers = sim.villagers.some((v) => v.job === 'fight' && v.inside === null && !v.inTent); $('btnSelCount').hidden = n === 0; $('btnSelCount').textContent = `▣ ${n} người`; $('btnSelNone').hidden = n === 0; $('btnSelSoldiers').hidden = !soldiers; }
+  { const n = ctl.selected.size; $('selPill').hidden = n === 0; $('btnSelCount').textContent = `▣ ${n}`; } // one small pill, only while somebody is chosen
   $('btnNone').hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
 }
 window.addEventListener('keydown', (e) => {
@@ -371,7 +372,8 @@ function frame(t: number) {
   if (dt > 0 && !skipping && sim.speed > 1) realRate = realRate * 0.95 + ((sim.time - simT0) / dt) * 0.05; // the speed the game really runs at
   if (t - rateShown > 500) { rateShown = t; showSpeed(); }
   syncSkip();
-  const busy = !!ctl.ghost() || !!ctl.box; // placing or dragging a box: draw every frame so the hand is not behind
+  renderer.cue = ctl.armedAt;
+  const busy = !!ctl.ghost() || !!ctl.box || !!ctl.armedAt; // placing or dragging a box: draw every frame so the hand is not behind
   // the frame cap of the quality setting: full rate while the player moves the map, zooms, touches the screen or something flies; the lower one while only the animations (4 to 12 a second) and the ticks (20) change the picture
   if (cam.x !== camX || cam.y !== camY || cam.zoom !== camZ || ctl.interacting || busy || sim.projectiles.length > 0) activeUntil = t + 600;
   camX = cam.x; camY = cam.y; camZ = cam.zoom;

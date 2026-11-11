@@ -19,6 +19,7 @@ import { World } from './world';
 import startJson from '../data/start.json';
 import * as construction from './construction';
 import * as economy from './economy';
+import * as market from './market';
 import * as notices from './notices';
 import * as readiness from './readiness';
 import * as works from './works';
@@ -178,10 +179,12 @@ export class Sim {
   smoke: Record<string, { x: number; y: number }> = {};
   /** Where the player asked the gatherers to work (x, y: a point of the big map); empty for no preference (labor.findNode). */
   gatherFocus: Record<string, number> = {};
-  /** Coins of each good sold lately and when the price falls back (economy.barterPrice). */
-  barterHeat: Record<string, { sold: number; until: number }> = {};
+  /** What the Chợ takes of each good today at the fair price, and how much of it has been taken (market.ts). */
+  market: { quota: Record<string, number>; used: Record<string, number> } = { quota: {}, used: {} };
   /** When each kind of source last ran out in the land the village has seen (labor.warnExhausted): a timer for the warning, not game state. */
   noNodeWarn: Record<string, number> = {};
+  /** When a gatherer last looked over the land for a kind of source, and whether any was left in what is seen (a few seconds' memory, labor.exploreFor). */
+  nodeCheck: Partial<Record<'tree' | 'rock' | 'bush', { t: number; left: boolean }>> = {};
   lastFullWarn = -999;
   lastMatWarn = -999;
   /** Today's and tomorrow's weather (tomorrow is rolled ahead so it can be foretold). */
@@ -633,8 +636,24 @@ export class Sim {
   hasRoom(res: Res): boolean { return economy.hasRoom(this, res); }
   /** → economy.dailyYield */
   dailyYield(b: Building): { amount: number; people: number } | null { return economy.dailyYield(this, b); }
-  /** → economy.barter */
-  barter(res: Exclude<Res, 'coin'>, coins = 1, keep = 0): string | null { return economy.barter(this, res, coins, keep); }
+  /** → market.marketLevel */
+  marketLevel(): number { return market.marketLevel(this); }
+  /** → market.marketTradable */
+  marketTradable(res: Res): boolean { return market.marketTradable(this, res); }
+  /** → market.marketRoutes */
+  marketRoutes(): Array<{ give: Exclude<Res, 'coin'>; get: Exclude<Res, 'coin'> }> { return market.marketRoutes(this); }
+  /** → market.marketLeft */
+  marketLeft(res: Exclude<Res, 'coin'>): number { return market.marketLeft(this, res); }
+  /** → market.marketKeep */
+  marketKeep(res: Exclude<Res, 'coin'>): number { return market.marketKeep(this, res); }
+  /** → market.marketQuote: what a trade would be, nothing changes */
+  marketQuote(give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin', steps: number, keep = 0): market.MarketQuote { return market.marketQuote(this, give, get, steps, keep); }
+  /** → market.marketTrade */
+  marketTrade(give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin', steps: number, keep = 0): string | null { return market.marketTrade(this, give, get, steps, keep); }
+  /** → market.marketTerms */
+  marketTerms(give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin'): { price: number; per: number; left: number } { return market.marketTerms(this, give, get); }
+  /** → market.marketRoll */
+  marketRoll(): void { return market.marketRoll(this); }
   /** → legion.inZone */
   inZone(x: number, y: number): boolean { return legion.inZone(this, x, y); }
   /** → legion.zoneError */
@@ -660,12 +679,6 @@ export class Sim {
     delete this.gatherFocus.x; delete this.gatherFocus.y;
     if (at) { this.gatherFocus.x = Math.round(at.x); this.gatherFocus.y = Math.round(at.y); }
   }
-  /** → economy.barterPrice */
-  barterPrice(res: Exclude<Res, 'coin'>): number { return economy.barterPrice(this, res); }
-  /** → economy.barterQuote: what a trade would be, nothing changes */
-  barterQuote(res: Exclude<Res, 'coin'>, coins: number, keep = 0): economy.BarterQuote { return economy.barterQuote(this, res, coins, keep); }
-  /** → economy.barterKeep */
-  barterKeep(res: Exclude<Res, 'coin'>): number { return economy.barterKeep(this, res); }
 
   /** → commands.resetTask */
   resetTask(v: Villager): void { return commands.resetTask(this, v); }

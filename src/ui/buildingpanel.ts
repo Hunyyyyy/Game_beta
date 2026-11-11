@@ -5,7 +5,9 @@ import { JOBS, ROLES, STAT_NAME, roleOf } from '../sim/jobs';
 import type { RoleId } from '../sim/jobs';
 import { workDays } from '../sim/constants';
 import REST from '../data/rest.json';
-import { ANIMAL_MATERIALS, BARTER, RES_LIST, RES_NAME, rationAt } from '../sim/resources';
+import { ANIMAL_MATERIALS, RES_LIST, RES_NAME, rationAt } from '../sim/resources';
+import type { Res } from '../sim/resources';
+import MARKET from '../data/market.json';
 import type { Villager } from '../sim/sim';
 import type { BuildingKind } from '../sim/buildings';
 import { TECH_BY_ID } from '../sim/research';
@@ -33,6 +35,8 @@ import { OrderGrid, OrderItem } from './ordergrid';
 /** The houses whose people are kept in a list of their own, opened by the button "Nhân sự" (the house of the research, the craft and the beasts). */
 export const STAFF_OF = { workshop: 'craft', lab: 'research', stable: 'tame' } as const;
 
+interface MarketRow { row: HTMLElement; give: Exclude<Res, 'coin'>; get: Exclude<Res, 'coin'> | 'coin'; n: number; price: HTMLElement; input: HTMLInputElement; slider: HTMLInputElement; quote: HTMLElement; go: HTMLButtonElement }
+
 export class BuildingPanel {
   private title!: HTMLElement; private state!: HTMLElement; private picBox!: HTMLElement; private picKey = '';
   private readonly win: GameDialog;
@@ -46,9 +50,14 @@ export class BuildingPanel {
   private readonly pages: HTMLElement[] = []; private tabKey = '';
   private readonly resRows: Array<{ res: typeof RES_LIST[number]; num: HTMLElement; bar: HTMLElement; row: HTMLElement }> = [];
   private readonly doorBtn = h('button', { class: 'sm', onclick: () => { this.c.sim.toggleNewcomers(); this.updateCampfire(); } }) as HTMLButtonElement;
-  /** The rows of the trade: the shells wanted (`n`), and the parts of the row that follow it. */
-  private readonly barterRows: Array<{ row: HTMLElement; res: Exclude<typeof RES_LIST[number], 'coin'>; n: number; price: HTMLElement; input: HTMLInputElement; slider: HTMLInputElement; quote: HTMLElement; go: HTMLButtonElement }> = [];
-  private barterKeepOn = true;
+  /** The Chợ: the rows of selling goods for shells and of swapping goods for each other. `n` is the number of steps (shells' worth) wanted; the rest are the parts of the row that follow it. */
+  private readonly sellRows: MarketRow[] = [];
+  private swapRows: MarketRow[] = [];
+  private swapKey = '';
+  private marketKeepOn = true;
+  private readonly marketHead = h('p', { class: 'sub' });
+  private marketMake: ((give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin') => MarketRow) | null = null;
+  private readonly swapBox = h('div', { class: 'barter' });
   /** What can be ordered from the Nhà chế tạo and the stable: cards that open a scroll (src/ui/ordergrid.ts). */
   private craftGrid!: OrderGrid; private tameGrid!: OrderGrid;
   private research!: ResearchPane;
@@ -110,34 +119,34 @@ export class BuildingPanel {
 
     const page = (...kids: Array<HTMLElement | null>) => { const el = h('div', { class: 'tabpage', hidden: true }, ...kids); this.pages.push(el); return el; };
 
-    // campfire: the village's people, and trading
-    const barter = () => {
-      const box = h('div', {}, hint('Đổi chác', 'Đổi hàng lấy tiền (vỏ) để trả cho nghiên cứu. Tiền cũng nhặt được khi hái lượm và nhận từ bộ tộc cống nạp.'));
-      box.append(h('p', { class: 'sub', text: 'Chọn số vỏ muốn có: ngay bên dưới hiện phải bán bao nhiêu hàng. Bán càng nhiều trong một lúc, giá càng đắt; giá trở lại bình thường sau 1 đến 3 ngày.' }));
-      const keepBox = h('input', { type: 'checkbox' }) as HTMLInputElement; keepBox.checked = this.barterKeepOn;
-      keepBox.addEventListener('change', () => { this.barterKeepOn = keepBox.checked; this.updateBarter(); });
+    // the Chợ: selling goods for shells, and swapping them for each other (market.ts)
+    const marketRow = (give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin'): MarketRow => {
+      const price = h('span', { class: 'bpill' }), title = get === 'coin' ? RES_NAME[give] : `${RES_NAME[give]} → ${RES_NAME[get]}`, name = h('div', { class: 'bname' }, h('b', { text: title }), price);
+      const input = h('input', { class: 'bnum', type: 'number', min: '0', step: '1', inputmode: 'numeric', 'aria-label': get === 'coin' ? `Số vỏ muốn có từ ${RES_NAME[give].toLowerCase()}` : `Số lượt đổi ${title.toLowerCase()}` }) as HTMLInputElement;
+      const slider = h('input', { class: 'bslide', type: 'range', min: '0', max: '0', step: '1', 'aria-label': 'Số lượt' }) as HTMLInputElement;
+      const quote = h('div', { class: 'bquote' });
+      const go = h('button', { class: 'sm primary', type: 'button', text: 'Đổi' }) as HTMLButtonElement;
+      const rowEl = h('div', { class: 'brow' });
+      const r: MarketRow = { row: rowEl, give, get, n: 0, price, input, slider, quote, go };
+      const keep = () => (this.marketKeepOn ? sim.marketKeep(give) : 0), most = () => sim.marketQuote(give, get, Infinity, keep()).steps;
+      const set = (n: number) => { r.n = Math.max(0, Math.min(most(), Math.floor(Number.isFinite(n) ? n : 0))); this.updateMarket(); };
+      input.addEventListener('input', () => set(parseInt(input.value, 10)));
+      slider.addEventListener('input', () => set(Number(slider.value)));
+      const chip = (text: string, share: number, title2: string) => h('button', { class: 'sm', type: 'button', text, title: title2, onclick: () => set(Math.max(1, Math.floor(most() * share))) });
+      go.addEventListener('click', () => { if (r.n < 1) return; const e = sim.marketTrade(give, get, r.n, keep()); if (e) c.toast(e); ctl.onChange(); set(r.n); });
+      rowEl.append(name, h('div', { class: 'bctl' }, h('div', { class: 'bline' }, input, slider), h('div', { class: 'bline' }, chip('¼', 0.25, 'Một phần tư số tối đa'), chip('½', 0.5, 'Một nửa số tối đa'), chip('Tối đa', 1, 'Nhiều nhất đổi được'), go), quote));
+      return r;
+    };
+    const market = () => {
+      const box = h('div', {}, hint('Chợ', 'Nơi duy nhất đổi hàng. Bán hàng lấy vỏ để trả cho nghiên cứu, hoặc đổi hàng lấy hàng khác (các tuyến đổi mở dần theo nghiên cứu Kinh tế). Mỗi ngày chợ chỉ nhận một lượng nhất định (ngẫu nhiên) mỗi loại hàng ở giá gốc; quá lượng đó thì mỗi lượt đắt hơn. Nâng cấp chợ để được tỉ lệ tốt hơn, phí đổi hàng thấp hơn và nhận được nhiều hơn mỗi ngày.'));
+      box.append(this.marketHead);
+      const keepBox = h('input', { type: 'checkbox' }) as HTMLInputElement; keepBox.checked = this.marketKeepOn;
+      keepBox.addEventListener('change', () => { this.marketKeepOn = keepBox.checked; this.updateMarket(); });
       box.append(h('label', { class: 'bkeep' }, keepBox, ' Giữ lại phần cần cho ăn uống và công trình'));
-      const list = h('div', { class: 'barter' }); box.append(list);
-      for (const res of RES_LIST) {
-        if (res === 'coin') continue;
-        const price = h('span', { class: 'bpill' }), name = h('div', { class: 'bname' }, h('b', { text: RES_NAME[res] }), price);
-        const input = h('input', { class: 'bnum', type: 'number', min: '0', step: '1', inputmode: 'numeric', 'aria-label': `Số vỏ muốn có từ ${RES_NAME[res].toLowerCase()}` }) as HTMLInputElement;
-        const slider = h('input', { class: 'bslide', type: 'range', min: '0', max: '0', step: '1', 'aria-label': 'Số vỏ' }) as HTMLInputElement;
-        const quote = h('div', { class: 'bquote' });
-        const go = h('button', { class: 'sm primary', type: 'button', text: 'Đổi' }) as HTMLButtonElement;
-        const rowEl = h('div', { class: 'brow' });
-        const r = { row: rowEl, res, n: 0, price, input, slider, quote, go };
-        const keep = () => (this.barterKeepOn ? sim.barterKeep(res) : 0), most = () => sim.barterQuote(res, Infinity, keep()).coins;
-        const set = (n: number) => { r.n = Math.max(0, Math.min(most(), Math.floor(Number.isFinite(n) ? n : 0))); this.updateBarter(); };
-        input.addEventListener('input', () => set(parseInt(input.value, 10)));
-        slider.addEventListener('input', () => set(Number(slider.value)));
-        const chip = (text: string, share: number, title: string) => h('button', { class: 'sm', type: 'button', text, title, onclick: () => set(Math.max(1, Math.floor(most() * share))) });
-        go.addEventListener('click', () => { if (r.n < 1) return; const e = sim.barter(res, r.n, keep()); if (e) c.toast(e); ctl.onChange(); set(r.n); });
-        rowEl.append(name,
-          h('div', { class: 'bctl' }, h('div', { class: 'bline' }, input, slider), h('div', { class: 'bline' }, chip('¼', 0.25, 'Một phần tư số tối đa'), chip('½', 0.5, 'Một nửa số tối đa'), chip('Tối đa', 1, 'Số vỏ nhiều nhất đổi được'), go), quote));
-        list.append(rowEl);
-        this.barterRows.push(r);
-      }
+      const sells = h('div', { class: 'barter' });
+      for (const res of RES_LIST) { if (res === 'coin') continue; const r = marketRow(res, 'coin'); this.sellRows.push(r); sells.append(r.row); }
+      box.append(h('h3', { text: 'Bán lấy vỏ sò' }), sells, h('h3', { text: 'Đổi hàng lấy hàng' }), this.swapBox);
+      this.marketMake = marketRow;
       return box;
     };
     this.people = new PeoplePane(c);
@@ -170,7 +179,6 @@ export class BuildingPanel {
     this.tabs.builder = [{ label: 'Thợ xây', page: page(this.staffBoxes.build.root) }];
     this.tabs.campfire = [
       { label: 'Dân', page: page(h('div', { class: 'btns' }, this.doorBtn), this.people.root) },
-      { label: 'Đổi chác', page: page(barter()) },
       { label: 'Bộ tộc', page: page(this.tribes.root) }, // the villages met: gifts, tribute, taking them in
     ];
 
@@ -181,7 +189,8 @@ export class BuildingPanel {
       const row = h('div', { class: 'row' }, h('div', { class: 'nm' }, resIcon(res), RES_NAME[res], h('small', {}, num)), h('div', { class: 'bars', style: 'width:90px;display:block' }, h('i', {}, bar)));
       this.resRows.push({ res, num, bar, row }); stockRows.push(row);
     }
-    this.tabs.storage = [{ label: 'Tài nguyên', page: page(...stockRows) }, { label: 'Đổi chác', page: page(barter()) }];
+    this.tabs.storage = [{ label: 'Tài nguyên', page: page(...stockRows) }];
+    this.tabs.market = [{ label: 'Giao thương', page: page(market()) }];
 
     // craft house: what is being made, then the grid of what can be ordered (tools, weapons, armour) with filters; a card opens a scroll
     const recipeItem = (r: typeof RECIPES[number]): OrderItem => ({
@@ -339,6 +348,7 @@ export class BuildingPanel {
       case 'huntlodge': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} thợ săn, săn trong ${huntRange(this.c.sim)} ô quanh chòi · có kho riêng ${lv.cap} thức ăn · nâng cấp để chứa thêm và săn xa hơn`;
       case 'farmhouse': case 'lumberyard': case 'quarry': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} người · có kho riêng ${lv.cap} ${RES_NAME[BUILDINGS[b.kind].produces![0]].toLowerCase()}, cộng vào sức chứa của làng · nâng cấp để chứa thêm`;
       case 'scouttent': return `Cấp ${b.level}: cử tối đa ${lv.slots} trinh sát một chuyến · tab Làng đã phát hiện để chọn làng và người đi`;
+      case 'market': { const t = MARKET.levels[Math.min(MARKET.levels.length, b.level) - 1]; return `Cấp ${b.level}: bán và đổi hàng · tỉ lệ ×${t.rate.toLocaleString('vi')} · phí đổi hàng ${Math.round(t.fee * 100)}% · mỗi ngày nhận ${t.quotaMin} đến ${t.quotaMax} vỏ giá trị mỗi loại hàng ở giá gốc`; }
       case 'storage': return `Sức chứa ${lv.cap} mỗi loại`;
       case 'toolstore': case 'armory': return `Chứa tối đa ${lv.cap} món`;
       default: return `Nơi dân rảnh ngủ quanh lửa · chứa ${lv.cap} mỗi loại · làng tối đa ${this.c.sim.popCap()} dân (lửa trại ${POP_BY_FIRE[Math.min(POP_BY_FIRE.length, b.level) - 1]} + Nhà dân ${this.c.sim.bedsIn('house')}) · các nhà khác lên được cấp ${levelCapByFire(b.level)}`;
@@ -372,7 +382,7 @@ export class BuildingPanel {
     this.info.textContent = !b.done ? 'Giao dân làm Thợ xây để dựng công trình này.' : this.infoText(b);
     if (b.kind === 'campfire' && ready) this.updateCampfire();
     if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.row.hidden = ANIMAL_MATERIALS.includes(r.res) && sim.stock[r.res] < 1; r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity(r.res)}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity(r.res))) * 100)}%`; }
-    if ((b.kind === 'storage' || b.kind === 'campfire') && ready) this.updateBarter();
+    if (b.kind === 'market' && ready) this.updateMarket();
     if (this.bedList[b.kind] && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
     if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
@@ -393,26 +403,36 @@ export class BuildingPanel {
     if (b.kind === 'toolstore' || b.kind === 'armory') if (ready) this.updateGoods(b);
   }
 
-  /** Draw the trade again: the price of each good, how many shells can be had at most, and what the shells wanted would cost. */
-  private updateBarter(): void {
-    const { sim } = this.c, coin = RES_NAME.coin.toLowerCase();
-    for (const r of this.barterRows) {
-      r.row.hidden = ANIMAL_MATERIALS.includes(r.res) && sim.stock[r.res] < 1; // a good the village has none of is not offered
-      const keep = this.barterKeepOn ? sim.barterKeep(r.res) : 0, name = RES_NAME[r.res].toLowerCase();
-      const now = sim.barterPrice(r.res), base = BARTER[r.res], rise = Math.round((now / base - 1) * 100);
-      r.price.textContent = rise > 0 ? `${now} ${name} = 1 ${coin} · đắt hơn ${rise}%` : `${now} ${name} = 1 ${coin}`;
-      r.price.className = `bpill${rise >= 60 ? ' bad' : rise >= 20 ? ' warn' : rise > 0 ? ' mild' : ''}`;
-      r.price.title = rise > 0 ? `Giá gốc ${base} ${name} = 1 ${coin}; đã bán nhiều nên đang đắt hơn, sau 1 đến 3 ngày sẽ về giá gốc` : `Giá gốc`;
-      const max = sim.barterQuote(r.res, Infinity, keep);
-      r.n = Math.max(0, Math.min(r.n, max.coins));
+  /** Draw the Chợ again: the swaps that are open (the rows are made again when research opens one), and for each row the price now, how many steps can be had at most, and what the steps wanted would cost and give. */
+  private updateMarket(): void {
+    const { sim } = this.c, lv = sim.marketLevel(), coin = RES_NAME.coin.toLowerCase();
+    const t = MARKET.levels[Math.max(1, lv) - 1];
+    this.marketHead.textContent = lv < 1 ? 'Chưa có Chợ.' : `Chợ cấp ${lv}: tỉ lệ ×${t.rate.toLocaleString('vi')} · phí đổi hàng ${Math.round(t.fee * 100)}% · mỗi ngày nhận ${t.quotaMin} đến ${t.quotaMax} vỏ giá trị mỗi loại ở giá gốc (hôm nay mỗi loại một con số khác nhau).`;
+    const routes = sim.marketRoutes(), key = routes.map((r) => `${r.give}>${r.get}`).join();
+    if (key !== this.swapKey) {
+      this.swapKey = key;
+      this.swapRows = routes.map((r) => this.marketMake!(r.give, r.get));
+      this.swapBox.replaceChildren(...(this.swapRows.length ? this.swapRows.map((r) => r.row) : [h('p', { class: 'sub', text: 'Chưa có tuyến đổi hàng nào: nghiên cứu nhánh Kinh tế (Sinh kế) để mở thêm.' })]));
+    }
+    for (const r of [...this.sellRows, ...this.swapRows]) {
+      const sell = r.get === 'coin', give = RES_NAME[r.give].toLowerCase(), got = sell ? coin : RES_NAME[r.get].toLowerCase();
+      r.row.hidden = !sim.marketTradable(r.give);
+      if (r.row.hidden) continue;
+      const keep = this.marketKeepOn ? sim.marketKeep(r.give) : 0, tm = sim.marketTerms(r.give, r.get);
+      const perText = sell ? `1 ${coin}` : `${Math.floor(tm.per) === tm.per ? tm.per : tm.per.toLocaleString('vi', { maximumFractionDigits: 1 })} ${got}`;
+      r.price.textContent = `${tm.price} ${give} = ${perText}${tm.left > 0 ? ` · còn ${tm.left} lượt giá gốc hôm nay` : ' · hết lượt giá gốc hôm nay'}`;
+      r.price.className = `bpill${tm.left > 0 ? '' : ' bad'}`;
+      r.price.title = tm.left > 0 ? 'Mỗi lượt là giá trị một vỏ sò. Hết lượt giá gốc thì mỗi lượt đắt hơn.' : 'Chợ hôm nay không còn nhận thêm hàng này ở giá gốc: mỗi lượt đắt hơn lượt trước';
+      const max = sim.marketQuote(r.give, r.get, Infinity, keep);
+      r.n = Math.max(0, Math.min(r.n, max.steps));
       if (document.activeElement !== r.input) r.input.value = r.n ? String(r.n) : '';
-      r.input.max = String(max.coins); r.input.placeholder = max.coins ? `0–${max.coins}` : '0'; r.input.disabled = max.coins < 1;
-      r.slider.max = String(max.coins); r.slider.value = String(r.n); r.slider.disabled = max.coins < 1;
-      const q = sim.barterQuote(r.res, r.n, keep), dearer = q.coins > 0 && q.last > q.first;
+      r.input.max = String(max.steps); r.input.placeholder = max.steps ? `0–${max.steps}` : '0'; r.input.disabled = max.steps < 1;
+      r.slider.max = String(max.steps); r.slider.value = String(r.n); r.slider.disabled = max.steps < 1;
+      const q = sim.marketQuote(r.give, r.get, r.n, keep), dearer = q.steps > 0 && q.last > q.first;
       r.quote.className = `bquote${dearer && q.last >= q.first * 1.6 ? ' bad' : dearer ? ' warn' : ''}`;
-      r.quote.textContent = max.coins < 1 ? (max.why ?? 'Không đổi được') : q.coins < 1 ? `Đổi tối đa ${max.coins} ${coin} (cần ${max.first} ${name} cho vỏ đầu tiên)` : `Bán ${q.cost} ${name} → ${q.coins} ${coin}${dearer ? ` · giá tăng từ ${q.first} lên ${q.last} ${name}/${coin}` : ` · giá ${q.first} ${name}/${coin}`}`;
-      r.go.disabled = q.coins < 1;
-      r.go.textContent = q.coins > 0 ? `Đổi ${q.coins}` : 'Đổi';
+      r.quote.textContent = max.steps < 1 ? (max.why ?? 'Không đổi được') : q.steps < 1 ? `Đổi tối đa ${max.steps} lượt (cần ${max.first} ${give} cho lượt đầu)` : `Đưa ${q.give} ${give} → nhận ${q.get} ${got}${dearer ? ` · giá tăng từ ${q.first} lên ${q.last} ${give} mỗi lượt` : ` · ${q.first} ${give} mỗi lượt`}`;
+      r.go.disabled = q.steps < 1;
+      r.go.textContent = q.steps > 0 ? `Đổi ${q.get} ${got}` : 'Đổi';
     }
   }
 

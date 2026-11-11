@@ -24,6 +24,7 @@ export function tickCalendar(sim: Sim): void {
     if (sim.dayWeather !== 'clear') sim.say(`Hôm nay sẽ có ${WEATHER[sim.dayWeather].name.toLowerCase()}.`);
     sim.restockAnimals(); // what hunting took comes back, a herd at a time
     sim.eatDay(); // the day that has just ended is paid for before anyone new walks in
+    sim.marketRoll(); // the market draws what it takes today
     if (day >= startJson.arrivals.firstDay && !sim.dev.noArrivals) newcomers(sim);
   }
   if (sim.dayWeather !== 'clear') { // it comes and goes

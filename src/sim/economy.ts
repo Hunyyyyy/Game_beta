@@ -2,7 +2,6 @@
 import { BARTER, FOOD, rationAt, Res, RES_NAME, Stock } from './resources';
 import type { Sim } from './sim';
 import paceJson from '../data/pace.json';
-import BARTER_CFG from '../data/barter.json';
 import { statBonus } from './research';
 import { villageBonus } from './statsys';
 import { Building, gatherMult, levelDef } from './buildings';
@@ -24,53 +23,6 @@ export function missing(sim: Sim, cost: Partial<Stock>): string | null {
 export function affordable(sim: Sim, cost: Partial<Stock>): boolean { return (Object.keys(cost) as Res[]).every((k) => sim.stock[k] >= (cost[k] ?? 0)); }
 
 export function pay(sim: Sim, cost: Partial<Stock>, sign = -1): void { for (const k of Object.keys(cost) as Res[]) sim.stock[k] += sign * (cost[k] ?? 0); }
-
-/** Goods one coin costs now: the base rate, dearer by `slip` for every coin of this good sold since the price last reset (barter.json: every 1 to 3 days by good). */
-export function barterPrice(sim: Sim, res: Exclude<Res, 'coin'>): number {
-  const heat = sim.barterHeat[res], sold = heat && sim.time < heat.until ? heat.sold : 0;
-  return Math.ceil(BARTER[res] * (1 + BARTER_CFG.slip * sold));
-}
-
-/** What the village keeps back when it sells its surplus: three days of meals of food, a share of the store of the rest. */
-export function barterKeep(sim: Sim, res: Exclude<Res, 'coin'>): number {
-  return res === 'food' ? Math.ceil(foodNeed(sim) * BARTER_CFG.foodKeepDays) : Math.ceil(sim.capacity(res) * BARTER_CFG.keepShare);
-}
-
-/**
- * Swap goods for shells: up to `coins` of them (Infinity: as many as can be had), each at the price of the moment, never going below `keep` of the good. Returns an error, or null when at least one coin was had.
- */
-export function barter(sim: Sim, res: Exclude<Res, 'coin'>, coins = 1, keep = 0): string | null {
-  const coin = RES_NAME.coin.toLowerCase(), name = RES_NAME[res].toLowerCase();
-  let got = 0, why: string | null = null;
-  while (got < coins) {
-    const n = barterPrice(sim, res);
-    if (sim.stock[res] - n < keep) { why = keep > 0 ? `Không còn ${name} dư (đang giữ lại ${keep})` : `Cần ${n} ${name} để đổi lấy 1 ${coin}`; break; }
-    if (sim.stock.coin >= sim.capacity()) { why = `Kho đã đầy ${coin}`; break; }
-    sim.stock[res] -= n; sim.stock.coin += 1; got++;
-    const heat = sim.barterHeat[res];
-    if (!heat || sim.time >= heat.until) sim.barterHeat[res] = { sold: 1, until: sim.time + (BARTER_CFG.resetDays[res as keyof typeof BARTER_CFG.resetDays] ?? BARTER_CFG.resetDays.default) * sim.dayLen };
-    else heat.sold++;
-  }
-  return got > 0 ? null : why;
-}
-
-/** What a trade would be, worked out without doing it: how many coins can be had (up to `coins`), what they cost, the price of the first and of the last one, and why it stops short. */
-export interface BarterQuote { coins: number; cost: number; first: number; last: number; why: string | null }
-
-/** The same walk as `barter` (each coin dearer than the one before, never below `keep` of the good, never over the room for coins), but only counting. */
-export function barterQuote(sim: Sim, res: Exclude<Res, 'coin'>, coins: number, keep = 0): BarterQuote {
-  const heat = sim.barterHeat[res], coin = RES_NAME.coin.toLowerCase(), name = RES_NAME[res].toLowerCase();
-  let sold = heat && sim.time < heat.until ? heat.sold : 0, left = sim.stock[res], room = sim.capacity() - sim.stock.coin;
-  const q: BarterQuote = { coins: 0, cost: 0, first: 0, last: 0, why: null };
-  while (q.coins < coins) {
-    const n = Math.ceil(BARTER[res] * (1 + BARTER_CFG.slip * sold));
-    if (left - n < keep) { q.why = keep > 0 ? `Không còn ${name} dư (đang giữ lại ${keep})` : `Cần ${n} ${name} để đổi lấy 1 ${coin}`; break; }
-    if (room <= 0) { q.why = `Kho đã đầy ${coin}`; break; }
-    if (!q.coins) q.first = n;
-    q.last = n; q.cost += n; left -= n; room--; sold++; q.coins++;
-  }
-  return q;
-}
 
 // ---------------------------------------------------------------- the daily meal (src/data/food.json)
 /** The ration of one person: a soldier of a camp eats the more the higher his rank (ranks.json). */

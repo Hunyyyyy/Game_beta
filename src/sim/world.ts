@@ -232,18 +232,19 @@ export class World {
    * A tree, rock or bush that is used up is gone and its tile turns back to grass; one of the same kind appears on another free grass tile
    * a few steps away (never in the starting ring, never under somebody's feet, and where `free` allows), so the land is neither emptied nor reset in place.
    */
-  depleted(idx: number, free?: (x: number, y: number) => boolean): void {
+  depleted(idx: number, free?: (x: number, y: number) => boolean, level = 3): void {
     const n = this.nodes.get(idx);
     if (!n) return;
     this.nodes.delete(idx);
     this.tiles[idx] = Tile.Grass;
     const N = this.size, fx = idx % N, fy = (idx / N) | 0, salt = this.respawns++;
-    if (hash2(idx, salt, this.seed + 47) >= NODES.respawnShare) return; // the land is not refilled: most of what is used up is gone for good, so the village must look farther
+    const lv = Math.max(1, Math.min(NODES.respawnMinDist.length, Math.round(level))) - 1;
+    if (hash2(idx, salt, this.seed + 47) >= NODES.respawnShare[n.kind][lv]) return; // not all is refilled, and the later the less (nodes.json): the village must look farther in time
     for (let t = 0; t < 40; t++) {
       const ang = hash2(idx, salt * 40 + t, this.seed + 41) * Math.PI * 2, r = 4 + hash2(idx, salt * 40 + t, this.seed + 43) * 7;
       const x = Math.round(fx + Math.cos(ang) * r), y = Math.round(fy + Math.sin(ang) * r), j = y * N + x;
       if (!this.isReady(x, y) || this.tiles[j] !== Tile.Grass || this.occ[j] !== 0 || this.nodes.has(j)) continue;
-      if (Math.hypot(x - this.start.x, y - this.start.y) < NODES.respawnMinDist || (free && !free(x, y)) || this.wouldTrap(x, y)) continue;
+      if (Math.hypot(x - this.start.x, y - this.start.y) < NODES.respawnMinDist[lv] || (free && !free(x, y)) || this.wouldTrap(x, y)) continue;
       this.tiles[j] = TILE_OF[n.kind];
       this.nodes.set(j, { kind: n.kind, res: n.res, amount: n.kind === 'bush' ? Math.round(n.max * (SEASON_DEF[this.season].bushLeft ?? 1)) : n.max, max: n.max, workers: 0, sides: 0, regrow: 0 });
       return;

@@ -1,5 +1,5 @@
 import type { BuildingKind } from './buildings';
-import { planCamp } from './campplan';
+import { planBandits, planCamp } from './campplan';
 import { SIEGE } from './combat';
 import { DIFF } from './difficulty';
 import type { Sim } from './sim';
@@ -117,4 +117,4 @@ export function setGates(sim: Sim, t: Tribe, shut: boolean): void {
   }
 }
 
-const planPieces = (sim: Sim, t: Tribe, fire: Prop, level: number, base: Prop[], blocked: (r: { x: number; y: number; w: number; h: number }) => boolean) => planCamp(fire.x, fire.y, level, sim.era, sim.era === 'ancient' || !!t.boss, base, blocked);
+const planPieces = (sim: Sim, t: Tribe, fire: Prop, level: number, base: Prop[], blocked: (r: { x: number; y: number; w: number; h: number }) => boolean) => (t.bandit ? planBandits(fire.x, fire.y, DIFF.capture.bandit.tents[t.tier as 'normal' | 'medium' | 'raider'] ?? 2, base, blocked) : planCamp(fire.x, fire.y, level, sim.era, sim.era === 'ancient' || !!t.boss, base, blocked));

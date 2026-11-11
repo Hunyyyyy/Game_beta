@@ -1,6 +1,0 @@
-{
-  "slip": 0.05,
-  "resetDays": { "default": 2, "food": 1, "hide": 3, "bone": 3 },
-  "keepShare": 0.3,
-  "foodKeepDays": 3
-}
