@@ -20,6 +20,8 @@ export type MountKind = 'wolf' | 'boar' | 'elephant' | 'horse' | 'warhorse' | 's
 export interface MountDef { name: string; tier: number; species: string; speed: number; guard: number; ride: number; /** pixels the rider sits to the side of the beast's feet (a horse's back is behind the middle of its sprite) */ dx?: number; /** not tamed at the stable: only given with a soldier of a rank */ hidden?: boolean; cost: Partial<Record<Res, number>>; time: number; tech: string }
 export const MOUNTS = mountsJson.kinds as unknown as Record<MountKind, MountDef>;
 /** The beasts the stable tames and the camp's level picks from: the war horses of the ranks (hidden: true) come with the price of a soldier, never from the stable. */
+/** A horse of any of the three kinds (the horse, the war horse, the silver horse): the beasts that have hooves and neigh. */
+export const isHorse = (k: MountKind | null): boolean => !!k && MOUNTS[k].species.startsWith('horse');
 export const MOUNT_KINDS: MountKind[] = (Object.keys(MOUNTS) as MountKind[]).filter((k) => !MOUNTS[k].hidden);
 /** A stat as the player reads it: whole, or with one digit after the point. */
 export const fmtStat = (x: number): string => String(Math.round(x * 10) / 10);

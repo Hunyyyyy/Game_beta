@@ -13,12 +13,12 @@ import type { Tribe } from '../sim/tribes';
 import { costText, h, helpButton, hint } from './dom';
 import type { Ctx } from './panels';
 
-type Tab = 'places' | 'game' | 'dev' | 'help';
-const TABS: Array<[Tab, string]> = [['places', 'Công trình'], ['game', 'Ván chơi'], ['dev', 'Dev'], ['help', '?']];
+type Tab = 'places' | 'dev' | 'help';
+const TABS: Array<[Tab, string]> = [['places', 'Công trình'], ['dev', 'Dev'], ['help', '?']];
 const SEASON_NAME: Record<Season, string> = { spring: 'Xuân', summer: 'Hạ', autumn: 'Thu', winter: 'Đông' };
 const PERSONALITY = { peaceful: 'Hòa bình', aggressive: 'Hiếu chiến', ambusher: 'Hay phục kích' } as const;
 
-/** The slide-in menu: what to build, what is built, the tribes, the dev tools and the controls. */
+/** The slide-in menu: what is built, the dev tools and the controls. (Saving and loading is in the settings window.) */
 export class Menu {
   private tab: Tab = 'places';
   private readonly tabBtns = new Map<Tab, HTMLButtonElement>();
@@ -34,7 +34,7 @@ export class Menu {
     }
     tabs.append(h('span', { class: 'spacer' }), h('button', { class: 'sm', text: '✕', title: 'Đóng menu', onclick: () => this.close() }));
     this.pages.set('places', this.placesPage());
-    this.pages.set('game', this.gamePage()); this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
+    this.pages.set('dev', this.devPage()); this.pages.set('help', this.helpPage());
     for (const p of this.pages.values()) body.append(p);
     this.show(this.tab);
   }
@@ -68,28 +68,6 @@ export class Menu {
       }));
     });
     return h('div', { class: 'page' }, hint('Công trình đã dựng', 'Mọi công trình đã dựng nằm ở đây. Mở Xưởng để chế đồ, mở lửa trại để xem dân, mở Kho để xem tài nguyên.'), this.placesList);
-  }
-
-  // ---------------------------------------------------------------- the game itself
-  private gamePage(): HTMLElement {
-    const { session, toast } = this.c, page = h('div', { class: 'page' });
-    const info = h('p', { class: 'sub', text: 'Chưa có bản lưu.' });
-    const refresh = async () => { const m = await session.latest(); info.textContent = m ? `Bản lưu gần nhất: ngày ${m.day}, ${m.population} dân, lúc ${new Date(m.savedAt).toLocaleString('vi')}.` : 'Chưa có bản lưu.'; };
-    let armed = 0;
-    const fresh = h('button', { class: 'sm danger', text: 'Ván mới' }) as HTMLButtonElement;
-    fresh.addEventListener('click', () => {
-      if (performance.now() < armed) { void session.forget().then(() => location.assign(location.pathname + location.search.replace(/[?&]continue=1/, ''))); return; }
-      armed = performance.now() + 4000; fresh.textContent = 'Bấm lại để xóa bản lưu và chơi lại'; setTimeout(() => { fresh.textContent = 'Ván mới'; }, 4000);
-    });
-    const saveBtn = h('button', { class: 'sm primary', text: 'Lưu ngay', onclick: () => { void session.save().then((ok) => { if (ok) toast('Đã lưu'); void refresh(); }); } }) as HTMLButtonElement;
-    const loadBtn = h('button', { class: 'sm', text: 'Tải bản lưu', onclick: () => { void session.resume('auto').then((ok) => { toast(ok ? 'Đã tải lại ván chơi' : 'Chưa có bản lưu'); this.close(); }); } }) as HTMLButtonElement;
-    page.append(hint('Lưu và tải', 'Game tự lưu vào đầu mỗi ngày và khi bạn rời trang. Bản lưu nằm trong trình duyệt của máy này. Tốc độ game và lời nhắc xoay ngang là cài đặt của bạn, không nằm trong bản lưu.'), info,
-      h('div', { class: 'btns' },
-        saveBtn, loadBtn, fresh));
-    let last = -1e9;
-    this.updaters.push(() => { const war = this.c.sim.atWar(); for (const b of [saveBtn, loadBtn]) { b.disabled = war; b.title = war ? 'Đang chiến tranh: không lưu hay tải được cho tới khi trận kết thúc' : ''; } });
-    this.updaters.push(() => { const now = performance.now(); if (!page.hidden && now - last > 2000) { last = now; void refresh(); } });
-    return page;
   }
 
   // ---------------------------------------------------------------- dev tools
@@ -171,7 +149,7 @@ export class Menu {
   // ---------------------------------------------------------------- controls
   private helpPage(): HTMLElement {
     return h('ul', { class: 'help' },
-      h('li', {}, h('b', { text: 'Chọn dân' }), ': bấm vào dân. Bấm đúp để chọn mọi dân cùng nghề đang hiện trên màn hình. "Chọn nhiều" để bấm từng người hoặc kéo khung; "Chọn hết" chọn cả làng.'),
+      h('li', {}, h('b', { text: 'Chọn dân' }), ': bấm vào dân. Bấm đúp để chọn mọi dân cùng nghề đang hiện trên màn hình. Kéo khung để chọn nhiều người: chuột trái kéo trên bản đồ, hoặc trên điện thoại giữ ngón tay đứng yên một chút rồi kéo (vuốt nhanh thì kéo bản đồ). Giữ Shift khi kéo để thêm vào nhóm; trên điện thoại giữ một ngón rồi chạm người khác bằng ngón thứ hai. Nút "Bỏ chọn" nằm ở góc dưới (hoặc Esc); "Chọn lính" chọn mọi lính ngoài trại.'),
       h('li', {}, h('b', { text: 'Ra lệnh' }), ': máy tính: chuột phải. Điện thoại: khi đã chọn dân, chạm lên đất, cây, đá, bụi quả, công trường hay kẻ địch. Giữ Shift (máy tính) để xếp lệnh nối nhau.'),
       h('li', {}, h('b', { text: 'Kéo bản đồ' }), ': máy tính: giữ chuột phải rồi kéo (hoặc W A S D). Điện thoại: một ngón đặt giữ yên, một ngón kéo (bản đồ đi theo ngón kéo); hoặc hai ngón cùng kéo; chụm hoặc mở hai ngón để thu phóng.'),
       h('li', {}, h('b', { text: 'Bản đồ nhỏ' }), ': bấm vào để mở bản đồ lớn, chạm một chỗ để nhảy tới đó.'),

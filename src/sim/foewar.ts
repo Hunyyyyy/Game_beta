@@ -1,7 +1,7 @@
 import { cycleOf, RULES } from './combat';
 import { armOf, engage, fireProjectile, resolve, swingTimes, weaponOf } from './battle';
 import { swingCycle } from './statsys';
-import { BUILDINGS, levelsOf } from './buildings';
+import { BUILDINGS, footOf, levelsOf } from './buildings';
 import { UNIT_RULES } from './formations';
 import type { Tribe } from './tribes';
 import type { Sim, Villager } from './sim';
@@ -26,7 +26,7 @@ export function siegeBrain(sim: Sim, f: Villager, ai: Ai, dt: number, threats: A
   if (threats.length && threats[0].d <= weaponOf(f).range + 1.5) return false; // someone in reach: fight him first
   const b = sim.getBuilding(ai.siege);
   if (!b) { ai.siege = 0; f.path = []; return false; } // it has fallen: the way is open
-  const w = weaponOf(f), d = BUILDINGS[b.kind], cx = b.x + d.w / 2, cy = b.y + d.h / 2;
+  const w = weaponOf(f), d = footOf(b), cx = b.x + d.w / 2, cy = b.y + d.h / 2;
   const dist = Math.hypot(cx - f.x, cy - f.y) - Math.max(d.w, d.h) / 2;
   if (dist <= (w.ranged ? 1.2 : w.range) + 0.6) {
     f.path = []; f.slide = null; f.phase = 'fight'; f.facing = cx >= f.x ? 'right' : 'left';

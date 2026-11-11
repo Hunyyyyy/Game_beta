@@ -113,7 +113,8 @@ export function animate(sim: Sim, v: Villager, dt: number): void {
   else if (v.phase === 'flee') anim = 'run';
   else if (ready) { anim = poseOf(v.weapon, walking ? 'charge' : 'guard', post); hold = armed(); }
   else if (walking) { anim = v.carry && v.carry.amount > 0 ? 'carry_walk' : 'walk'; if (carrying && !(v.carry && v.carry.amount > 0)) { anim = poseOf(v.weapon, 'walk', post); hold = armed(); } }
-  else if (carrying && v.phase === 'idle') { anim = poseOf(v.weapon, 'idle', post); hold = armed(); }
+  // 'move' counts too: a man who has arrived keeps phase 'move' until something resets it, and used to stand there empty-handed
+  else if (carrying && (v.phase === 'idle' || v.phase === 'move')) { anim = poseOf(v.weapon, 'idle', post); hold = armed(); }
   else if (v.phase === 'work' && v.job !== 'idle') {
     const k = TOOL_OF_JOB[v.job as WorkJob], tier = sim.toolTier(v, v.job);
     if (k && tier > 0) { anim = JOBS[v.job as WorkJob].anim === 'gather' ? 'dig' : JOBS[v.job as WorkJob].anim; hold = { kind: k, tier }; }
@@ -158,9 +159,9 @@ export function standTile(sim: Sim, v: Villager): [number, number] {
 }
 
 /** Path from where the villager stands to (gx, gy); may end at the closest tile if unreachable. */
-export function pathTo(sim: Sim, v: Villager, gx: number, gy: number, maxNodes = 14000): Step[] {
+export function pathTo(sim: Sim, v: Villager, gx: number, gy: number, maxNodes = 14000, fresh = false): Step[] {
   const [sx, sy] = standTile(sim, v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
-  const p = gx === sx && gy === sy ? [] : findPath(sim.world, sx, sy, gx, gy, maxNodes, passOf(v));
+  const p = gx === sx && gy === sy ? [] : findPath(sim.world, sx, sy, gx, gy, maxNodes, passOf(v), fresh);
   return off ? [[sx, sy] as Step, ...p] : p;
 }
 

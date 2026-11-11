@@ -2,7 +2,7 @@ import cfg from '../data/sounds.json';
 import MUSIC from '../data/musics.gen.json'; // the music lists come from the folders (tools/gen-music.mjs, run by the build)
 
 /** `work`: a long sound that belongs to the action: only one at a time, and cut as soon as that unit stops. */
-type AnimCfg = { file: string; /** Several files: one is picked at random (the gap counts for all of them together). */ files?: string[]; /** The frame it plays on; the frame the blow lands (`hit` in anims.json) when left out. */ frame?: number; hitFrame?: number; volume: number; gap: number; work?: boolean };
+type AnimCfg = { file: string; /** Several files: one is picked at random (the gap counts for all of them together). */ files?: string[]; /** The frame it plays on; the frame the blow lands (`hit` in anims.json) when left out. */ frame?: number; /** Plays once, when the animation begins, instead of on a frame. */ onStart?: boolean; hitFrame?: number; volume: number; gap: number; work?: boolean };
 interface Active { el: HTMLAudioElement; anim: string; file: string; seen: number }
 /** Sound of the blow of a weapon. `burst`: for 2 / 3 or more hits landing together (instead of `files`). */
 type HitCfg = { files: string[]; burst?: string[]; burstWindow?: number; volume: number; gap: number };
@@ -11,7 +11,7 @@ type WeatherLayer = { file: string; volume: number };
 type WeatherCfg = { loops?: WeatherLayer[]; bursts?: Array<{ files: string[]; volume: number; gapMin: number; gapMax: number }> };
 /** Most one-shot sounds at once (each is an audio element: hundreds of them at a battle would choke the page). */
 const MAX_LIVE = 14;
-type Kind = 'sfx' | 'amb' | 'mus';
+type Kind = 'sfx' | 'amb' | 'mus' | 'voice';
 /** The tracks of a kind not yet played in this round: a track is taken out when it plays, and the round starts over with the whole list when none is left (a new round does not open with the track that closed the last). */
 const BAGS = new Map<string, string[]>(), LAST = new Map<string, string>();
 function bagPick(name: string, all: readonly string[]): string {
@@ -38,15 +38,17 @@ const NEAR = cfg.near as Record<string, WeatherLayer>;
  */
 export class GameAudio {
   /** Volume of each kind, 0 to 1 (the player's slider). */
-  vol: Record<Kind, number> = { sfx: 1, amb: 1, mus: 1 };
+  vol: Record<Kind, number> = { sfx: 1, amb: 1, mus: 1, voice: 1 };
   /** The volume of a kind of sound now: 0 when it is switched off. */
-  private gain(k: Kind): number { return (k === 'sfx' ? this.sfxOn : k === 'amb' ? this.ambientOn : this.musicOn) ? this.vol[k] : 0; }
+  private gain(k: Kind): number { return (k === 'sfx' ? this.sfxOn : k === 'amb' ? this.ambientOn : k === 'voice' ? this.voiceOn : this.musicOn) ? this.vol[k] : 0; }
   /** Work and fight sounds. */
   sfxOn = true;
   /** Weather sounds. */
   ambientOn = true;
   /** War music. */
   musicOn = true;
+  /** The voices of people: the shouts that answer an order, the cheering of a victory. */
+  voiceOn = true;
   private warScreen = false;
   private stingsDone = 0;
   private warAge = 99;
@@ -78,6 +80,8 @@ export class GameAudio {
   /** Hits of a weapon with `burst` sounds, gathered for a moment: (start time, how many) — see `hit` and `sweep`. */
   private readonly pending = new Map<string, { t0: number; n: number }>();
   private readonly steps = new WeakMap<object, number>();
+  /** The sound key each unit was last watched with, to tell when one begins. */
+  private readonly started = new WeakMap<object, string>();
   private readonly active = new Map<object, Active>();
   private readonly beds = new Map<string, { el: HTMLAudioElement; vol: number }>();
 
@@ -127,19 +131,22 @@ export class GameAudio {
   }
 
   /** Call every frame for each unit near the middle of the screen: plays the sound on the animation's hit frame. */
-  watchAnim(key: object, anim: string, clock: number, framesOf: (a: string) => { fps: number; n: number; hit: number } | undefined, now: number): void {
+  watchAnim(key: object, anim: string, clock: number, framesOf: (a: string) => { fps: number; n: number; hit: number } | undefined, now: number, sound = anim): void {
     const cur = this.active.get(key);
-    if (cur) { if (cur.anim !== anim) this.stop(key); else cur.seen = now; } // he stopped or changed what he does: his sound stops with it
-    const def = ANIMS[anim], clip = def && framesOf(anim);
+    if (cur) { if (cur.anim !== sound) this.stop(key); else cur.seen = now; } // he stopped or changed what he does: his sound stops with it
+    const begun = this.started.get(key) !== sound;
+    this.started.set(key, sound);
+    const def = ANIMS[sound], clip = def && framesOf(anim);
     if (!def || !clip) return;
+    if (begun) for (const c of Array.isArray(def) ? def : [def]) if (c.onStart) this.play(c.files ? pick(c.files) : c.file, c.volume, c.gap, now, false, 'sfx', c.files ? c.files[0] : c.file); // it has just begun (a charge: the horse neighs)
     const step = Math.floor(clock * clip.fps), last = this.steps.get(key);
     this.steps.set(key, step);
     if (last === undefined || step === last) return;
     for (const c of Array.isArray(def) ? def : [def]) {
-      if (step % clip.n !== (c.frame ?? c.hitFrame ?? clip.hit)) continue;
+      if (c.onStart || step % clip.n !== (c.frame ?? c.hitFrame ?? clip.hit)) continue;
       const file = c.files ? pick(c.files) : c.file;
       const el = this.play(file, c.volume, c.gap, now, !!c.work, 'sfx', c.files ? c.files[0] : c.file);
-      if (el && c.work) this.active.set(key, { el, anim, file: c.files ? c.files[0] : c.file, seen: now });
+      if (el && c.work) this.active.set(key, { el, anim: sound, file: c.files ? c.files[0] : c.file, seen: now });
     }
   }
 
@@ -178,24 +185,31 @@ export class GameAudio {
     this.warAge = 0;
     this.warScreen = onScreen;
     if (stings < this.stingsDone) this.stingsDone = 0; // a new war
-    for (let i = 0; i < Math.min(4, stings - this.stingsDone); i++) this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, 'mus', `sting${i}`); // they may sound over each other
+    for (let i = 0; i < Math.min(4, stings - this.stingsDone); i++) this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, 'voice', `sting${i}`); // they may sound over each other
     this.stingsDone = stings;
   }
 
   /** A warning from the game: wolves come (a howl, always heard, wherever the camera is) or a village raids us (the battle sting, once). */
-  alert(kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era'): void {
+  alert(kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era' | 'mount'): void {
     const now = performance.now() / 1000;
     if (kind === 'notice') return; // only a toast
-    if (kind === 'raid' || kind === 'beast') this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, 'mus', 'raidalert'); // an event begins (a raid, a pack of beasts): the battle sting
-    else if (kind === 'era') this.play(cfg.end.won.files[1] ?? cfg.end.won.files[0], cfg.end.won.volume, 0, now, false, 'mus', 'eraup'); // a new age: a victory sound
-    else if (kind === 'clear') this.play(cfg.end.won.files[0], cfg.end.won.volume, 0, now, false, 'mus', 'eventover'); // it is over: one victory sound
+    if (kind === 'raid' || kind === 'beast') this.play(cfg.war.start.file, cfg.war.start.volume, 0, now, false, 'voice', 'raidalert'); // an event begins (a raid, a pack of beasts): the battle sting
+    else if (kind === 'mount') this.neigh(); // a horse is tamed: it neighs
+    else if (kind === 'era') this.play(cfg.end.won.files[1] ?? cfg.end.won.files[0], cfg.end.won.volume, 0, now, false, 'voice', 'eraup'); // a new age: a victory sound
+    else if (kind === 'clear') this.play(cfg.end.won.files[0], cfg.end.won.volume, 0, now, false, 'voice', 'eventover'); // it is over: one victory sound
     else { const w = cfg.wolves; this.play(pick(w.files), w.volume, 0, now, false, 'amb', 'wolfalert'); }
+  }
+
+  /** A horse neighs (`neigh` in sounds.json): when a troop with riders is ordered, when a charge begins (see `onStart`), when a horse is tamed. */
+  neigh(): void {
+    const n = cfg.neigh;
+    this.play(pick(n.files), n.volume, n.gap, performance.now() / 1000, false, 'sfx', 'neigh');
   }
 
   /** The player gave an order to a troop (a button, or a click with several chosen): one of the order sounds. */
   order(): void {
     const o = cfg.order;
-    this.play(pick(o.files), o.volume, o.gap, performance.now() / 1000, false, 'sfx', 'order');
+    this.play(pick(o.files), o.volume, o.gap, performance.now() / 1000, false, 'voice', 'order');
   }
 
   /**
@@ -225,7 +239,7 @@ export class GameAudio {
     else if (begun > 0 && v.started.some((e) => !e.ended)) return; // the next pair: when both of the one before are over
     if (!v.left.length) { this.victory = null; return; }
     const file = v.left.shift()!;
-    const el = this.play(file, cfg.end.won.volume, 0, performance.now() / 1000, false, 'mus', file);
+    const el = this.play(file, cfg.end.won.volume, 0, performance.now() / 1000, false, 'voice', file);
     if (!el) { this.victory = null; return; } // refused (muted, another tab): that is the end of it
     v.cur = el; v.started.push(el);
   }

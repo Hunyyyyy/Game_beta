@@ -45,12 +45,29 @@ export const recipeName = (r: Recipe) => {
   if (isWeaponKind(r.kind)) return WEAPONS[r.kind].name;
   return `${TOOL_NAME[r.kind as ToolKind]} ${TIER_NAME[r.tier].toLowerCase()}`;
 };
-/** One-line use shown in the crafting panel. */
+/** One-line use shown in the crafting panel (what it is for, no numbers: those are `recipeStats`). */
 export const recipeUse = (r: Recipe) => {
-  if (isArmorKind(r.kind)) { const a = ARMORS[r.kind]; return `giáp: thủ cận +${a.defm} · thủ xa +${a.defr} · bền ${a.durability ?? '?'}`; }
+  if (isArmorKind(r.kind)) return 'Giáp mặc trên người';
   if (r.kind === 'torch') return 'làm việc ban đêm (hiệu suất 70%), nhìn xa hơn trong tối';
-  if (isWeaponKind(r.kind)) { const w = WEAPONS[r.kind]; return `${{ pierce: 'đâm', slash: 'chém', crush: 'đập' }[w.type]} ${w.damage} · ${(1 / w.cycle).toFixed(2)} đòn/giây · chí mạng đòn ${Math.round((w.critDamage ?? RULES.critDamage) * 100)}% · tầm ${w.range}`; }
-  return TOOL_USE[r.kind as ToolKind];
+  if (isWeaponKind(r.kind)) return WEAPONS[r.kind].ranged ? 'Vũ khí tầm xa' : 'Vũ khí cận chiến';
+  const t = TOOL_USE[r.kind as ToolKind]; return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
+/** The numbers of a recipe as picture + value, drawn by the UI with `statIcon(icon)`. */
+export interface RecipeStat { icon: string; value: string; title: string }
+const trim = (n: number): string => String(Math.round(n * 100) / 100);
+export const recipeStats = (r: Recipe): RecipeStat[] => {
+  if (isArmorKind(r.kind)) { const a = ARMORS[r.kind]; return [{ icon: 'defm', value: `+${a.defm}`, title: 'Phòng thủ cận chiến' }, { icon: 'defr', value: `+${a.defr}`, title: 'Phòng thủ tầm xa' }, { icon: 'tdur', value: String(a.durability ?? '?'), title: 'Độ bền (số đòn chịu được)' }]; }
+  if (r.kind === 'torch') return [];
+  if (isWeaponKind(r.kind)) {
+    const w = WEAPONS[r.kind];
+    return [
+      { icon: 'atk', value: trim(w.damage), title: 'Sát thương' }, { icon: 'aspd', value: `${(1 / w.cycle).toFixed(2)}/s`, title: 'Tốc độ đánh (đòn mỗi giây)' },
+      { icon: 'crit', value: `${Math.round((w.critDamage ?? RULES.critDamage) * 100)}%`, title: 'Sát thương chí mạng' }, { icon: 'range', value: trim(w.range), title: 'Tầm đánh' },
+      { icon: 'tdur', value: String(w.durability ?? '?'), title: 'Độ bền (số đòn)' },
+    ];
+  }
+  return [{ icon: 'work', value: `×${TIER_SPEED[r.tier]}`, title: 'Tốc độ làm việc' }, { icon: 'tyield', value: `×${TIER_YIELD[r.tier]}`, title: 'Thu hoạch mỗi lần' }, { icon: 'tdur', value: `${TIER_DURABILITY[r.tier]}s`, title: 'Độ bền (giây làm việc)' }];
 };
 
 export interface Tool { tier: number; dur: number }

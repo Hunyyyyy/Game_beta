@@ -158,7 +158,7 @@
     "spear": {
       "name": "Giáo gỗ",
       "type": "pierce",
-      "range": 1.5,
+      "range": 1.6,
       "damage": 5,
       "cycle": 1.4,
       "cost": {
@@ -171,6 +171,59 @@
       "postStyle": "post_spear",
       "postShield": "wood",
       "rank": 2
+    },
+    "sling": {
+      "name": "Dây quăng đá",
+      "type": "crush",
+      "range": 5.5,
+      "damage": 6,
+      "cycle": 2,
+      "ranged": true,
+      "cost": {
+        "wood": 5,
+        "stone": 5
+      },
+      "durability": 90,
+      "time": 60,
+      "style": "sling",
+      "projectile": "stone",
+      "tier": 1,
+      "rank": 2
+    },
+    "bow": {
+      "name": "Cung ngắn",
+      "type": "pierce",
+      "range": 8,
+      "damage": 9,
+      "cycle": 2.0,
+      "ranged": true,
+      "cost": {
+        "wood": 20,
+        "feather": 3
+      },
+      "durability": 110,
+      "time": 100,
+      "style": "shoot",
+      "projectile": "arrow",
+      "tier": 1,
+      "rank": 3
+    },
+    "thrown_stone": {
+      "name": "Đá ném",
+      "type": "crush",
+      "range": 4.5,
+      "damage": 3,
+      "cycle": 2,
+      "ranged": true,
+      "cost": {
+        "stone": 2
+      },
+      "durability": 60,
+      "time": 15,
+      "style": "stone_throw",
+      "projectile": "stone",
+      "tier": 2,
+      "rank": 1
     },
     "mace": {
       "name": "Chùy đá",
@@ -202,24 +255,6 @@
       },
       "tier": 2
     },
-    "sling": {
-      "name": "Dây quăng đá",
-      "type": "crush",
-      "range": 5.5,
-      "damage": 4,
-      "cycle": 2,
-      "ranged": true,
-      "cost": {
-        "wood": 5,
-        "stone": 5
-      },
-      "durability": 90,
-      "time": 60,
-      "style": "sling",
-      "projectile": "stone",
-      "tier": 1,
-      "rank": 2
-    },
     "bronze_spear": {
       "name": "Giáo đồng",
       "type": "pierce",
@@ -232,18 +267,6 @@
       "postStyle": "post_spear",
       "postShield": "wood"
     },
-    "bronze_bow": {
-      "name": "Cung đồng",
-      "type": "pierce",
-      "range": 8.5,
-      "damage": 11,
-      "cycle": 1.8,
-      "ranged": true,
-      "style": "shoot",
-      "projectile": "arrow",
-      "tier": 3,
-      "rank": 4
-    },
     "bronze_sword": {
       "name": "Kiếm đồng",
       "type": "slash",
@@ -254,6 +277,18 @@
       "anims": {
         "attack": "slash"
       },
+      "tier": 3,
+      "rank": 4
+    },
+    "bronze_bow": {
+      "name": "Cung đồng",
+      "type": "pierce",
+      "range": 8.5,
+      "damage": 11,
+      "cycle": 1.8,
+      "ranged": true,
+      "style": "shoot",
+      "projectile": "arrow",
       "tier": 3,
       "rank": 4
     },
@@ -269,24 +304,6 @@
       },
       "tier": 3
     },
-    "bow": {
-      "name": "Cung ngắn",
-      "type": "pierce",
-      "range": 8,
-      "damage": 8,
-      "cycle": 2.0,
-      "ranged": true,
-      "cost": {
-        "wood": 20,
-        "feather": 3
-      },
-      "durability": 110,
-      "time": 100,
-      "style": "shoot",
-      "projectile": "arrow",
-      "tier": 1,
-      "rank": 3
-    },
     "short_spear": {
       "name": "Giáo ngắn tuần đinh",
       "type": "pierce",
@@ -295,6 +312,39 @@
       "cycle": 1.3,
       "style": "guard_watch",
       "shield": "wood",
+      "tier": 4,
+      "rank": 5
+    },
+    "arming_sword": {
+      "name": "Kiếm thẳng",
+      "type": "slash",
+      "range": 1.1,
+      "damage": 15,
+      "cycle": 1.1,
+      "style": "sword_shield",
+      "shield": "heater",
+      "tier": 4,
+      "rank": 5
+    },
+    "lance": {
+      "name": "Giáo kỵ binh",
+      "type": "pierce",
+      "range": 2.2,
+      "damage": 20,
+      "cycle": 1.5,
+      "style": "rider_lance",
+      "tier": 4,
+      "rank": 5
+    },
+    "composite_bow": {
+      "name": "Cung ghép",
+      "type": "pierce",
+      "range": 9.5,
+      "damage": 11,
+      "cycle": 1.7,
+      "ranged": true,
+      "projectile": "arrow",
+      "style": "shoot",
       "tier": 4,
       "rank": 5
     },
@@ -308,83 +358,11 @@
       "tier": 5,
       "rank": 6
     },
-    "ward_sword": {
-      "name": "Kiếm dài cận vệ",
-      "type": "slash",
-      "range": 1.1,
-      "damage": 17,
-      "cycle": 1.1,
-      "style": "guard_sword",
-      "tier": 5,
-      "rank": 7
-    },
-    "arming_sword": {
-      "name": "Kiếm thẳng",
-      "type": "slash",
-      "range": 1.1,
-      "damage": 15,
-      "cycle": 1.1,
-      "style": "sword_shield",
-      "shield": "heater",
-      "tier": 4,
-      "rank": 5
-    },
-    "composite_bow": {
-      "name": "Cung ghép",
-      "type": "pierce",
-      "range": 9,
-      "damage": 11,
-      "cycle": 1.8,
-      "ranged": true,
-      "projectile": "arrow",
-      "style": "shoot",
-      "tier": 4,
-      "rank": 5
-    },
-    "lance": {
-      "name": "Giáo kỵ binh",
-      "type": "pierce",
-      "range": 2,
-      "damage": 18,
-      "cycle": 1.5,
-      "style": "rider_lance",
-      "tier": 4,
-      "rank": 5
-    },
-    "thrown_stone": {
-      "name": "Đá ném",
-      "type": "crush",
-      "range": 4.5,
-      "damage": 3,
-      "cycle": 2,
-      "ranged": true,
-      "cost": {
-        "stone": 2
-      },
-      "durability": 60,
-      "time": 15,
-      "style": "stone_throw",
-      "projectile": "stone",
-      "tier": 2,
-      "rank": 1
-    },
-    "longbow": {
-      "name": "Trường cung",
-      "type": "pierce",
-      "range": 11,
-      "damage": 15,
-      "cycle": 2,
-      "ranged": true,
-      "projectile": "arrow",
-      "style": "shoot",
-      "tier": 5,
-      "rank": 6
-    },
     "heavy_lance": {
       "name": "Trường thương kỵ binh",
       "type": "pierce",
-      "range": 2.3,
-      "damage": 26,
+      "range": 2.5,
+      "damage": 29,
       "cycle": 1.6,
       "style": "rider_lance",
       "tier": 5,
@@ -394,12 +372,34 @@
       "name": "Đại kiếm",
       "type": "slash",
       "range": 1.3,
-      "damage": 21,
-      "cycle": 1.3,
+      "damage": 23,
+      "cycle": 1.4,
       "style": "sword_shield",
       "shield": "tower",
       "tier": 5,
       "rank": 6
+    },
+    "longbow": {
+      "name": "Trường cung",
+      "type": "pierce",
+      "range": 12,
+      "damage": 15,
+      "cycle": 2,
+      "ranged": true,
+      "projectile": "arrow",
+      "style": "shoot",
+      "tier": 5,
+      "rank": 6
+    },
+    "ward_sword": {
+      "name": "Kiếm dài cận vệ",
+      "type": "slash",
+      "range": 1.1,
+      "damage": 17,
+      "cycle": 1.1,
+      "style": "guard_sword",
+      "tier": 5,
+      "rank": 7
     },
     "knight_sword": {
       "name": "Kiếm thánh giáo",
@@ -415,9 +415,9 @@
     "paladin_lance": {
       "name": "Thương thánh kỵ sĩ",
       "type": "pierce",
-      "range": 2.4,
-      "damage": 38,
-      "cycle": 1.7,
+      "range": 2.7,
+      "damage": 42,
+      "cycle": 1.8,
       "style": "rider_lance",
       "tier": 5,
       "rank": 7
@@ -425,9 +425,9 @@
     "alloy_crossbow": {
       "name": "Nỏ hợp kim",
       "type": "pierce",
-      "range": 13,
-      "damage": 40,
-      "cycle": 2.8,
+      "range": 14,
+      "damage": 45,
+      "cycle": 3.0,
       "ranged": true,
       "projectile": "arrow",
       "style": "crossbow",
@@ -439,7 +439,7 @@
     "hide": {
       "name": "Áo da thú",
       "defm": 20,
-      "defr": 13,
+      "defr": 15,
       "cost": {
         "hide": 5
       },
@@ -461,8 +461,8 @@
     },
     "bronze": {
       "name": "Giáp đồng",
-      "defm": 80,
-      "defr": 74,
+      "defm": 75,
+      "defr": 65,
       "tier": 3
     },
     "watchman": {
@@ -471,70 +471,70 @@
       "defr": 75,
       "tier": 4
     },
-    "sergeant": {
-      "name": "Giáp lính gác chuyên nghiệp (xích + brigandine)",
-      "defm": 115,
-      "defr": 100,
-      "tier": 5
-    },
-    "warden": {
-      "name": "Giáp cận vệ thành trì (tấm 3/4)",
-      "defm": 160,
-      "defr": 140,
-      "tier": 5
-    },
     "footman": {
       "name": "Giáp xích bộ binh",
-      "defm": 90,
+      "defm": 95,
       "defr": 80,
       "tier": 4
     },
     "archer": {
       "name": "Giáp da cung thủ",
-      "defm": 45,
-      "defr": 50,
+      "defm": 60,
+      "defr": 65,
       "tier": 4
     },
     "rider": {
       "name": "Giáp da bọc đinh",
-      "defm": 70,
-      "defr": 65,
+      "defm": 75,
+      "defr": 75,
       "tier": 4
+    },
+    "sergeant": {
+      "name": "Giáp lính gác chuyên nghiệp (xích + brigandine)",
+      "defm": 110,
+      "defr": 95,
+      "tier": 5
+    },
+    "warden": {
+      "name": "Giáp cận vệ thành trì (tấm 3/4)",
+      "defm": 165,
+      "defr": 145,
+      "tier": 5
     },
     "guard": {
       "name": "Giáp tấm hộ vệ",
-      "defm": 140,
-      "defr": 120,
+      "defm": 150,
+      "defr": 130,
       "tier": 5
     },
     "marksman": {
       "name": "Giáp brigandine",
-      "defm": 80,
-      "defr": 85,
+      "defm": 90,
+      "defr": 100,
       "tier": 5
     },
     "royalrider": {
       "name": "Giáp tấm kỵ binh hoàng gia",
-      "defm": 130,
-      "defr": 115,
+      "defm": 140,
+      "defr": 125,
       "tier": 5
     },
     "templar": {
       "name": "Giáp tấm thánh giáo",
       "defm": 200,
-      "defr": 170,
+      "defr": 175,
       "tier": 5
     },
     "sniper": {
       "name": "Giáp da cao cấp",
-      "defm": 110,
-      "defr": 120,
+      "defm": 105,
+      "defr": 125,
       "tier": 5
     },
     "paladin": {
       "name": "Giáp tấm thánh kỵ sĩ",
-      "defm": 190,
-      "defr": 165,
+      "defm": 185,
+      "defr": 160,
       "tier": 5
     }
   },

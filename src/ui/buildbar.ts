@@ -1,5 +1,5 @@
 import { CAMP_KINDS, CAMP_PCT, campPicks, TENT_PCT } from '../sim/upgradebonus';
-import { BUILDINGS, Building, BuildingKind, canGrow, gatherMult, levelCapByFire, levelDef, maxHp, maxLevel, topLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, footOf, BuildingKind, canGrow, gatherMult, levelCapByFire, levelDef, maxHp, maxLevel, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
 import { ROLES, roleOf } from '../sim/jobs';
 import { RES_NAME, Res, Stock } from '../sim/resources';
@@ -195,7 +195,7 @@ export class BuildingBar {
   place(): void {
     const b = this.cur();
     if (this.root.hidden || !b) return;
-    const d = BUILDINGS[b.kind], p = this.r.worldToScreen((b.x + d.w / 2) * TILE, (b.y + d.h) * TILE);
+    const d = footOf(b), p = this.r.worldToScreen((b.x + d.w / 2) * TILE, (b.y + d.h) * TILE);
     const w = this.width || this.root.offsetWidth, hh = this.height || this.root.offsetHeight;
     const gone = p.x < -40 || p.x > this.r.w + 40 || p.y < -hh - 120 || p.y > this.r.h + 40;
     this.root.style.visibility = gone ? 'hidden' : 'visible';

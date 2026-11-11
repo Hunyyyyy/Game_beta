@@ -28,7 +28,7 @@ type Pick = { kind: 'stat'; role: string; stat: LineStat; strand: PillarStrand; 
 
 export class ResearchPane {
   readonly root = h('div', { class: 'rsp' });
-  private readonly dialog = new GameDialog(h('div', {}), { inside: true, onClose: () => { this.sel = null; this.showDetail(); this.update(true); } });
+  private readonly dialog = new GameDialog(h('div', {}), { onClose: () => { this.sel = null; this.showDetail(); this.update(true); } });
   private readonly main = h('div', { class: 'rs-main' });
   private tab = 'mil';
   private readonly branch: Record<string, string> = {};

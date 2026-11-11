@@ -1,0 +1,36 @@
+{
+  "_note": "How much the screen is asked to draw. dprCap: the most canvas pixels per CSS pixel (the phone's own is used when it is lower). fps: the most frames drawn each second while the player moves the map, zooms, touches the screen or something flies (0 = every frame the screen offers); idleFps: the same when nothing of that is going on, only the animations (4 to 12 a second) and the 20 ticks of the simulation change the picture, so fewer frames show the same (0 = no lower limit). The simulation keeps its speed either way. simBudgetMs: the most time the simulation may take in one frame before the game runs a little slower rather than the picture stalling. auto: which level a touch screen and a mouse machine start on. fastBudgetMs: the same as simBudgetMs while the game is fast-forwarded (4x and more): a phone cannot run 320 ticks a second, so the simulation takes only this much of each frame and the rest is left to the screen and the touches, and the game runs as fast as it can (the speed button shows the real speed when it is lower than asked).",
+  "levels": {
+    "high": {
+      "name": "Cao",
+      "note": "Nét nhất. Máy nóng và hao pin hơn.",
+      "dprCap": 3,
+      "fps": 0,
+      "simBudgetMs": 70,
+      "idleFps": 0,
+      "fastBudgetMs": 40
+    },
+    "balanced": {
+      "name": "Cân bằng",
+      "note": "Gần như không khác hình: 60 hình mỗi giây khi kéo bản đồ, 30 khi đứng yên. Đỡ nóng.",
+      "dprCap": 2,
+      "fps": 60,
+      "simBudgetMs": 50,
+      "idleFps": 30,
+      "fastBudgetMs": 24
+    },
+    "saver": {
+      "name": "Tiết kiệm",
+      "note": "Hình mềm hơn một chút. 30 hình mỗi giây khi kéo bản đồ, 20 khi đứng yên. Dành cho máy yếu hoặc chơi lâu.",
+      "dprCap": 1.5,
+      "fps": 30,
+      "simBudgetMs": 35,
+      "idleFps": 20,
+      "fastBudgetMs": 16
+    }
+  },
+  "auto": {
+    "touch": "balanced",
+    "other": "high"
+  }
+}

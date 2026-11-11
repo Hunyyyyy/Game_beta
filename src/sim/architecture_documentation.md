@@ -44,7 +44,7 @@ The goal of this architectural split: **modifying one system does not break anot
 | `names` | Names of people put together from the syllables of a "voice" (`data/names.json`): ours and one per tribe, unique among our own people (pure data layer) | `makeName` `voiceOf` |
 | `ranks` | Ranks of soldiers (`data/ranks.json`): the ladder of the three arms, power and ration of a rank, the bill of each (pure data layer) | `rankDef` `ranksOf` `rankStatMult` `rankRation` `trainBill` |
 | `barracks` | The camps train soldiers by rank: research opened, weapon in the store, the bill paid; no promotion, a soldier let go is rank 1 again | `trainCheck` `trainSoldier` |
-| `defense` | Fences, gates, watchtowers: gate open/close, defense destruction, archers on towers | `toggleGate` `damageWork` `towerBonus` `assignTower` |
+| `defense` | Fences, gates (2 tiles: lying along a row, or `rot` 1 standing along a column; the tiles a building covers come from `footOf(b)`, never from `BUILDINGS[kind]` alone; gates of saves before 36 keep `w`/`h` 1), watchtowers: gate open/close, defense destruction, archers on towers | `toggleGate` `damageWork` `towerBonus` `assignTower` |
 | `mounts` | Mounts: Wolf-taming, boar, and elephant stables on demand (requires research and stable level), issued like tools (`Villager.mount`), mounted units move faster and take reduced damage; mounted soldiers act as cavalry; Cavalry Outpost mounts scale with outpost tier | `queueTame` `tickTame` `assignMount` `mountOf` |
 | `training` | Role-building training: villager trains for one or more days, gaining 1–5% in a target stat while an opposing stat decreases (penalty reduced by paying extra currency), bounded by baseline birth stats and building tier caps; costs food and currency | `startTraining` `cancelTraining` `trainStep` |
 | `siege` | Land combat terrain: obstacles (trees, rocks, bushes, water, structures), obstacle clearing, squad linear movement along arrows, stopping when 6 tiles ahead are blocked, arrow targets and fallback attack behavior when targets are lost | `obstacleAt` `arrowMove` `watchMarch` `breakBlock` `breakBrain` `tickTarget` Soldiers with an attack order and no way to the target pick the cheapest piece of the enemy village on the line (walk + strength / what the soldiers at it do, `siege.breachFor`) and break it, keeping the order; weapon kinds do different damage to each kind of work (`siege.json` `struct`); the villages mend themselves when left alone (`tribelod`, `tribebuild.repairProps`) |
@@ -71,7 +71,7 @@ The goal of this architectural split: **modifying one system does not break anot
 
 The tests that once enforced these are abandoned. Today `npm run typecheck` and `npm run build` are the safety net: the type rules (2) are checked by `tsc`; the rest are conventions to keep by hand. Refactoring and splitting old code is welcome as long as the rules hold.
 
-0. **Player orders are absolute and have the highest priority**, over any AI, auto behaviour or later rule. The only things that may stop an order are physical limits shown to the player as a toast (e.g. forced sleep below 20% energy, a scout away on a trip). Chọn nhiều (multi-select): a new drag box *replaces* the group; with a group chosen a tap orders it: enemy unit/animal → `orderAttack`, enemy work or tree/rock/bush → `orderBreak` (soldiers hit it, nothing is yielded; `Breaking.ordered` keeps enemies near from turning them), own work/person/ground → move.
+0. **Player orders are absolute and have the highest priority**, over any AI, auto behaviour or later rule. The only things that may stop an order are physical limits shown to the player as a toast (e.g. forced sleep below 20% energy, a scout away on a trip). Selection has no mode: a drag box (left mouse, or touch held a moment then dragged) *replaces* the group (Shift/Ctrl, or a second finger tapping a person, adds). With a group chosen a tap or right click orders it, for one soldier as for many: enemy unit/animal → `orderAttack`, enemy work or tree/rock/bush → `orderBreak` (soldiers hit it, nothing is yielded; `Breaking.ordered` keeps enemies near from turning them), own work/ground → move.
 1. A village system **must not import another village system**. Cross-system actions must call through `sim.methodName(...)`. This eliminates circular dependencies and clarifies the blast radius of changes.
 2. Systems may only `import type { Sim }`, never import `Sim` as a concrete value.
 3. Data layers must remain decoupled from `Sim`. Any function requiring session state belongs outside this layer.
@@ -92,7 +92,7 @@ The tests that once enforced these are abandoned. Today `npm run typecheck` and 
 ```
  sim.toSave() / Sim.fromSave()     (src/sim/save.ts: JSON schema, versioned, migration handlers for legacy saves)
         │
-   Session (src/save/session.ts)   auto-saves at daybreak, manual save on request, load active session
+   Session (src/save/session.ts)   one slot per game (`slot`, `name`): auto-saves at daybreak when `auto` is on (the player's setting), save now, save as new slot, open / delete a slot; the UI is the Cài đặt window (ui/settingspanel.ts, ui/savelist.ts) and the start question (main.ts)
         │
    SaveStore (src/save/store.ts)   list / load / save / remove: unified interface to storage backends
         │

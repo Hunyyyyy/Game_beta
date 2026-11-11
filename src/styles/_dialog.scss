@@ -166,3 +166,9 @@
 .gdlg .dgear select { max-width: 62%; }
 .gdlg .dwork { margin-top: 8px; display: grid; gap: 4px; }
 .gdlg .dsec > .sm { margin-top: 6px; }
+
+// ---- the settings window: pages as a row of buttons, a name to type, the rows of switches ----
+.gdlg .dtabs { display: flex; flex-wrap: wrap; gap: 6px; button { flex: 1 1 0; min-width: 0; white-space: nowrap; } }
+.gdlg .dname-in { width: 100%; box-sizing: border-box; padding: 7px 9px; font: 600 13px system-ui, sans-serif; color: #3a2c1c; background: rgba(255, 255, 255, .55); border: 1px solid #8a6a36; border-radius: 6px; &::placeholder { color: #85714a; font-weight: 400; } }
+.gdlg.gsettings .row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; background: rgba(255, 255, 255, .3); border: 1px solid #b89a5e; border-radius: 8px; .nm { flex: 1; min-width: 0; font-weight: 600; font-size: 13.5px; small { display: block; font-weight: 400; color: #5a4a2c; font-size: 12px; } } input[type='range'] { flex: 0 1 120px; min-width: 70px; } }
+.gdlg.gsettings .dacts { display: flex; gap: 6px; align-items: center; }
