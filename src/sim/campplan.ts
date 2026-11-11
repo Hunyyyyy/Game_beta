@@ -83,3 +83,19 @@ export function planCamp(fx: number, fy: number, fireLevel: number, era: Era, ad
   for (const kind of OUTSIDE.filter(open)) for (let n = limitAt(kind, fireLevel); n > 0; n--) { if (!spot(kind, outside)) break; }
   return out;
 }
+
+/**
+ * The camp of bandits: not a village, a few tents (2 by 2) scattered round the fire, at spots a little way out so that the loot piles and the fire stay clear. No fence, no gate,
+ * no tower, no houses. `tents` of them are put up, those that fit (water, mountain and what stands already are left alone).
+ */
+export function planBandits(fx: number, fy: number, tents: number, taken: Rect[], blocked: (r: Rect) => boolean): Piece[] {
+  const SPOTS: Array<[number, number]> = [[-6, -5], [5, -5], [-7, 2], [6, 3], [-1, 6], [0, -7]];
+  const out: Piece[] = [], used: Rect[] = [{ x: fx, y: fy, w: 2, h: 2 }, ...taken];
+  for (const [dx, dy] of SPOTS) {
+    if (out.length >= tents) break;
+    const r = { x: fx + dx, y: fy + dy, w: 2, h: 2 };
+    if (used.some((u) => hits(u, r)) || blocked(r)) continue;
+    used.push(r); out.push({ kind: 'fieldtent', x: r.x, y: r.y, w: 2, h: 2, level: 1 });
+  }
+  return out;
+}

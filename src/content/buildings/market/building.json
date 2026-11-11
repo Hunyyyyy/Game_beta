@@ -1,0 +1,54 @@
+{
+ "kind": "market",
+ "name": "Chợ",
+ "group": "development",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 1,
+ "requires": [],
+ "levels": {
+  "stone": [
+   {
+    "name": "Sạp da",
+    "cost": {
+     "wood": 30
+    },
+    "buildTime": 70,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 200,
+    "sight": 0
+   },
+   {
+    "name": "Sạp gỗ lợp tranh",
+    "cost": {
+     "wood": 40,
+     "stone": 25
+    },
+    "buildTime": 120,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 320,
+    "sight": 0
+   },
+   {
+    "name": "Gian đá lợp ngói",
+    "cost": {
+     "wood": 50,
+     "stone": 70
+    },
+    "buildTime": 200,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 0,
+    "hp": 480,
+    "sight": 0
+   }
+  ]
+ }
+}

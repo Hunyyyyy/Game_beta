@@ -45,6 +45,8 @@ export class Renderer {
   w = 0; h = 0; dpr = 1;
   /** The most canvas pixels per CSS pixel (the quality setting): a screen sharper than this is drawn smaller and stretched, which is much less to draw. */
   dprCap = 3;
+  /** Where a finger held still has made the selection box ready (screen px): a ring is drawn there. */
+  cue: { x: number; y: number } | null = null;
   private readonly fogCanvas: HTMLCanvasElement;
   private torchLight: HTMLCanvasElement | null = null;
   /** Sparks, dust and flames made by code (pixelfx); it only watches the Sim. */
@@ -869,6 +871,10 @@ export class Renderer {
       const x = Math.min(box.x0, box.x1), y = Math.min(box.y0, box.y1), w = Math.abs(box.x1 - box.x0), h = Math.abs(box.y1 - box.y0);
       ctx.fillStyle = 'rgba(245,231,196,.14)'; ctx.fillRect(x, y, w, h);
       ctx.strokeStyle = '#f5e7c4'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, w, h);
+    }
+    if (this.cue) { // the box is ready: drag to draw it
+      ctx.strokeStyle = '#f5e7c4'; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.arc(this.cue.x, this.cue.y, 26, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(245,231,196,.22)'; ctx.fill();
     }
   }
 }

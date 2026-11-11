@@ -183,6 +183,11 @@ body.war .tray { display: none !important; }
 }
 @media (max-height: 480px) { .buildfab { width: 54px; height: 54px; .buildpic { width: 36px; height: 36px; } } }
 .selbar .ico { width: 40px; height: 40px; padding: 0; font-size: 20px; line-height: 1; }
+// the bar under the map keeps to a corner: one small round button for the army, one small pill (how many are chosen, and the cross that lets them go) only while somebody is chosen
+.selbar { align-items: center; gap: 6px; .mini { width: 34px; height: 34px; padding: 0; font-size: 16px; line-height: 1; border-radius: 50%; }
+  .selpill { display: inline-flex; align-items: stretch; height: 34px; border-radius: 17px; overflow: hidden; border: 1px solid var(--edge, #8a6b39); background: rgba(30, 24, 16, .78); color: #f5e7c4;
+    &[hidden] { display: none; }
+    button { height: 100%; padding: 0 10px; border: 0; border-radius: 0; background: transparent; color: inherit; font: 700 13px system-ui, sans-serif; cursor: pointer; &:last-child { padding: 0 11px; border-left: 1px solid rgba(245, 231, 196, .3); } &:active { background: rgba(245, 231, 196, .18); } } } }
 .sheet.hushed > #ucard { display: none; } // the card of the chosen people steps aside while they are ordered about
 
 // ---- the ring that opens where the pointer is held on the map ----

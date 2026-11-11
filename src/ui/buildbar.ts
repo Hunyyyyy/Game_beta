@@ -1,4 +1,5 @@
 import { CAMP_KINDS, CAMP_PCT, campPicks, TENT_PCT } from '../sim/upgradebonus';
+import MARKET from '../data/market.json';
 import { BUILDINGS, Building, footOf, BuildingKind, canGrow, gatherMult, levelCapByFire, levelDef, maxHp, maxLevel, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
 import { ROLES, roleOf } from '../sim/jobs';
@@ -15,7 +16,7 @@ import type { Ctx } from './panels';
 const STAFF_HOUSES: string[] = ['workshop', 'lab', 'stable'];
 
 const OPEN_LABEL: Record<BuildingKind, string> = {
-  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', workshop: 'Chế tạo', lab: 'Nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', guardpost: 'Quản lý lính gác', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông', stable: 'Thuần thú', supplycamp: 'Quản lý hậu cần', fieldtent: 'Lều hành quân',
+  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', market: 'Giao thương', workshop: 'Chế tạo', lab: 'Nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', guardpost: 'Quản lý lính gác', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông', stable: 'Thuần thú', supplycamp: 'Quản lý hậu cần', fieldtent: 'Lều hành quân',
 };
 
 /** The gatherers whose work a house shows (see Sim.yieldNow). */
@@ -71,6 +72,7 @@ export class BuildingBar {
       line('Dân tối đa', POP_BY_FIRE[b.level - 1], POP_BY_FIRE[b.level]);
       line('Cấp tối đa của các nhà khác', levelCapByFire(b.level), levelCapByFire(b.level + 1));
     }
+    if (kind === 'market') { const a = MARKET.levels[Math.min(MARKET.levels.length, b.level) - 1], z = MARKET.levels[Math.min(MARKET.levels.length, b.level + 1) - 1]; line('Tỉ lệ đổi', a.rate, z.rate, '×'); line('Phí đổi hàng', Math.round(a.fee * 100), Math.round(z.fee * 100), '', '%'); line('Hạn mức mỗi ngày (tối đa, vỏ)', a.quotaMax, z.quotaMax); }
     line(bed ? 'Giường' : 'Chỗ làm việc', cur.slots, nx.slots);
     line(kind === 'storage' ? 'Kho chứa mỗi loại' : kind === 'toolstore' || kind === 'armory' ? 'Chứa (món)' : 'Chứa', cur.cap, nx.cap);
     if (!bed) line(kind === 'field' ? 'Năng suất' : 'Tốc độ làm việc', cur.craftSpeed, nx.craftSpeed, '×');

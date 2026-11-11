@@ -16,14 +16,14 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 36;
+export const SAVE_VERSION = 37;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
   scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'yieldBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'dayWeather', 'weatherAt', 'weatherEnd', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
-  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'barterHeat', 'smoke', 'gatherFocus', 'legion', 'frontier'],
+  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'market', 'smoke', 'gatherFocus', 'legion', 'frontier'],
   /** Lists of plain data. */
   lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports', 'zones', 'cells', 'conquests'],
   /** Handled by hand below. */
@@ -44,6 +44,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'leaderClock', // a timer: leaders are picked again within a second of loading
   'controlled', // what the player has selected: the screen's, not the game's
   'noNodeWarn', // a timer for the "nothing left to gather" warning
+  'nodeCheck', // a few seconds' memory of whether any source is left in the land seen
   'dangerAt', // a timer: after loading the villagers come out of hiding at once
 ];
 
@@ -371,4 +372,9 @@ MIGRATIONS[35] = (d) => {
   // 35 -> 36: a gate is two tiles (lying along a row, or standing along a column); the gates of an old save keep the one tile they were given
   for (const b of d.lists.buildings as Array<Record<string, unknown>>) if (b.kind === 'gate') { b.w ??= 1; b.h ??= 1; }
   return { ...d, version: 36 };
+};
+MIGRATIONS[36] = (d) => {
+  // 36 -> 37: the barter of the Kho and the campfire is gone; goods are traded at the Chợ, which draws a quota of each good every day (market)
+  delete d.records.barterHeat; d.records.market ??= { quota: {}, used: {} };
+  return { ...d, version: 37 };
 };

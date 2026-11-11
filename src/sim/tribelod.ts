@@ -41,6 +41,7 @@ export function headcount(sim: Sim, t: Tribe): { guards: number; civs: number } 
  * the strength of the village), whichever is more, but never more than `lod.maxGuardShare` of the people.
  */
 const targetsOf = (sim: Sim, t: Tribe): { total: number; fighters: number } => {
+  if (t.bandit) { const n = DIFF.capture.bandit.people[t.tier as 'normal' | 'medium' | 'raider'] ?? 4; return { total: n, fighters: n }; } // a camp of bandits is a handful of them, all of them fighters, and nobody else
   const total = Math.round(POP_BY_FIRE[Math.max(0, Math.min(POP_BY_FIRE.length, t.campLevel) - 1)] * (t.boss ? DIFF.boss.popMult : 1));
   const ratio = Math.round((total * t.def.warriors) / (t.def.warriors + t.def.civilians)), posts = slotsAt(GUARD_HOUSES, t.campLevel, sim.era, sim.era === 'ancient' || !!t.boss);
   return { total, fighters: Math.max(2, Math.min(Math.max(ratio, posts), Math.floor(total * LOD.maxGuardShare))) };
@@ -66,6 +67,14 @@ export function tribePower(sim: Sim, t: Tribe): Power {
 /** A camp changes its strength (a bandit camp, every few days): its tier and level are set, those it has over what the new level holds leave, those it lacks come. */
 export function retierTribe(sim: Sim, t: Tribe, tier: TierId): void {
   t.tier = tier; t.campLevel = tierLevel(fireLevelOf(sim), tier);
+  if (t.bandit) t.built = 0; // a stronger or weaker camp of bandits has more or fewer tents: its plan is made again
+  if (t.bandit) { // a weaker camp of bandits has fewer of them: those over the number leave the camp (the ones in a fight stay)
+    for (const u of [...t.unitIds]) { const f = sim.get(u); if (f?.ai?.role === 'civ') sim.removeFoe(f); } // no civilians in a camp of bandits (an old save may have some)
+    crowdOf(t).civs = 0;
+    let extra = headcount(sim, t).guards - targetsOf(sim, t).fighters;
+    for (const u of [...t.unitIds].reverse()) { if (extra <= 0) break; const f = sim.get(u); if (f && f.ai?.role !== 'raider' && !f.fight.target && f.phase !== 'fight') { sim.removeFoe(f); extra--; } }
+    t.unitIds = t.unitIds.filter((u) => !!sim.get(u));
+  }
   const { total, fighters } = targetsOf(sim, t), crowd = crowdOf(t), hc = headcount(sim, t);
   crowd.guards = Math.max(0, Math.min(crowd.guards, fighters - (hc.guards - crowd.guards)));
   crowd.civs = Math.max(0, Math.min(crowd.civs, total - fighters - (hc.civs - crowd.civs)));
@@ -186,6 +195,16 @@ function postsOf(sim: Sim, t: Tribe, n: number): Post[] {
   return out;
 }
 
+/** Where `n` bandits stand: in a ring round the fire, a little way out, looking away from it. */
+function banditPosts(sim: Sim, t: Tribe, n: number): Post[] {
+  const out: Post[] = [], taken = new Set<number>();
+  for (let i = 0; i < n; i++) {
+    const a = (i / Math.max(1, n)) * Math.PI * 2 + 0.4, p = postAt(sim, t, t.camp.x + Math.cos(a) * 3.2, t.camp.y + Math.sin(a) * 3.2, taken);
+    if (p) out.push(p);
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- arms
 const ARMOR_LADDER = [null, 'hide', 'bone'] as const;
 /** The best tier of soldiers the player has researched: the arms of the villages keep pace with it. */
@@ -239,11 +258,21 @@ export function wake(sim: Sim, t: Tribe): void {
   if (t.hitAt !== undefined && sim.time - t.hitAt > SIEGE.struct.fullAfter) repairProps(t, 1); // left alone long enough, it has mended everything
   t.awake = true; t.idleT = 0;
   const cap = visibleCap(sim, t), crowd = crowdOf(t);
+  if (t.bandit) { // no watch and no army: every bandit is out, sitting and standing round the fire
+    spawnOut(sim, t, 'guard', crowd.guards, t.camp, 2.5, 2, banditPosts(sim, t, crowd.guards));
+    return finishWake(sim, t);
+  }
   // only the watch stands outside: the guards of the posts and the towers (a share of the soldiers, at least a few); the rest of them are the army, indoors until the alarm (deployArmy)
   let out = Math.min(crowd.guards, cap.guards, Math.max(LOD.minGuards, Math.ceil(crowd.guards * LOD.guardShare)));
   for (const tw of t.props.filter((p) => p.kind === 'tower')) out -= spawnTowerMen(sim, t, tw, Math.min(out, towerSlots(sim, tw))); // the towers are manned first
   spawnOut(sim, t, 'guard', out, t.camp, 2.5, 3.5, postsOf(sim, t, out));
   spawnOut(sim, t, 'civ', Math.min(crowd.civs, cap.civs), t.camp, 2.5, 3.5);
+  return finishWake(sim, t);
+}
+
+/** The people of a camp that has just woken are counted, and one of the soldiers is the leader. */
+function finishWake(sim: Sim, t: Tribe): void {
+  const crowd = crowdOf(t);
   t.pool0 = standing(t); t.hid0 = crowd.guards + crowd.civs;
   const live = t.unitIds.map((u) => sim.get(u)).filter((u): u is Villager => !!u && u.health > 0);
   if (!t.leaderDead && !live.some((u) => u.id === t.leaderId)) {

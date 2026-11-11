@@ -190,7 +190,7 @@
     "tier": "normal",
     "angle": 110,
     "distance": 65,
-    "civilians": 2,
+    "civilians": 0,
     "warriors": 10,
     "weapons": [
       "club",
@@ -212,7 +212,7 @@
     "tier": "normal",
     "angle": 235,
     "distance": 95,
-    "civilians": 2,
+    "civilians": 0,
     "warriors": 10,
     "weapons": [
       "hatchet",

@@ -171,15 +171,19 @@ function campFits(sim: Sim, cx: number, cy: number, r: number, spare: number): b
 }
 
 /** The camp is looked for first where its whole plan fits (the fence, the towers and the working houses reach about 14 tiles from the fire: the yard of 7 must be clean and the rest almost so), then, failing that, where the yard alone is clean. */
-const SITES = [{ r: 14, spare: 0.04, yard: true }, { r: 7, spare: 0, yard: false }];
+const SITES = [{ r: 14, spare: 0.04, yard: true, wide: false }, { r: 7, spare: 0, yard: false, wide: false }, { r: 7, spare: 0, yard: false, wide: true }];
+/** The least distance (tiles) between the fires of two camps: each camp's plan reaches about 14 tiles from its fire, so nearer than this and two villages would be laid over each other. */
+const CAMP_GAP = 34;
 
 function spawnTribe(sim: Sim, id: TribeId, tier: TierId = TRIBES[id].tier): void {
   const def = TRIBES[id], w = sim.world, s = w.start, N = w.size, boss = tier === 'boss', campLevel = tierLevel(sim.campfire()?.level ?? 1, tier);
   let cx = -1, cy = -1;
-  search: for (const site of SITES) for (let dd = 0; dd <= 24; dd += 3) for (const sign of dd ? [1, -1] : [1]) for (let da = 0; da <= 90; da += 15) for (const as of da ? [1, -1] : [1]) {
+  // the place the village likes first (its angle and distance from ours), then ever wider round it, and last, as a way out, anywhere round the whole circle: never within CAMP_GAP of another village
+  search: for (const site of SITES) for (let dd = 0; dd <= (site.wide ? 60 : 24); dd += 3) for (const sign of dd ? [1, -1] : [1]) for (let da = 0; da <= (site.wide ? 180 : 90); da += 15) for (const as of da ? [1, -1] : [1]) {
     const ang = ((def.angle + da * as) * Math.PI) / 180, d = def.distance + dd * sign;
     const x = Math.round(s.x + Math.cos(ang) * d), y = Math.round(s.y + Math.sin(ang) * d);
     if (!(x > 16 && y > 16 && x < N - 16 && y < N - 16)) continue;
+    if (sim.tribes.some((o) => Math.hypot(o.camp.x - (x + 1), o.camp.y - (y + 1)) < CAMP_GAP)) continue; // another village is there
     w.ensure(x, y, 18); // the land must exist before it can be judged
     if (campFits(sim, x, y, 7, 0) && (!site.yard || campFits(sim, x, y, site.r, site.spare))) { cx = x; cy = y; break search; }
   }

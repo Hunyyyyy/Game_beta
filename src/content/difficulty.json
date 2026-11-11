@@ -94,7 +94,7 @@
       }
     },
     "yieldPerVillage": { "weak": 4, "normal": 8, "medium": 15, "boss": 20, "rebel": 20, "raider": 0 },
-    "bandit": { "_note": "Trại cướp (tribes.json bandit): hai trại ngoài bản đồ, mỗi 2 đến 3 ngày tự đổi mức mạnh (yếu = bậc normal, vừa = medium, mạnh = raider) dù chưa bị diệt. Diệt hết thì nhận một phần (bag) túi theo cấp trại, rồi trại mọc lại sau respawn ngày.", "rerollMin": 2, "rerollMax": 3, "respawnMin": 2, "respawnMax": 3, "bag": 0.4, "strengths": ["normal", "medium", "raider"] },
+    "bandit": { "_note": "Trại cướp (tribes.json bandit): là một trại nhỏ, không phải làng: một đống lửa, vài lều (tents) và hai đống đồ cướp, không rào, không cổng, không chòi, không dân thường; bọn cướp (people, tất cả là lính) ngồi đứng quanh đống lửa. Hai trại ngoài bản đồ, hai trại ngoài bản đồ, mỗi 2 đến 3 ngày tự đổi mức mạnh (yếu = bậc normal, vừa = medium, mạnh = raider) dù chưa bị diệt. Diệt hết thì nhận một phần (bag) túi theo cấp trại, rồi trại mọc lại sau respawn ngày.", "rerollMin": 2, "rerollMax": 3, "respawnMin": 2, "respawnMax": 3, "bag": 0.4, "strengths": ["normal", "medium", "raider"], "people": { "normal": 4, "medium": 6, "raider": 9 }, "tents": { "normal": 2, "medium": 3, "raider": 4 } },
     "adopt": {
       "raider": {
         "pop": 0,

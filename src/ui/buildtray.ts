@@ -28,13 +28,13 @@ trap: 'Hố chông gài sẵn: địch bước vào bị thương, mỗi hố l�
 fence: 'Chặn đường, tạo chỗ thắt: địch phải phá rào mới vào được. Đặt từng đoạn một, cứ chạm tiếp để đặt đoạn kế. Cấp 2 (hàng rào đôi) bền gấp ba. Số đoạn tối đa tăng theo Nhà chung.',
 gate: 'Chỗ ra vào của hàng rào. Mở thì ai cũng qua được, đóng thì chặn tất cả kể cả dân mình. Chạm vào cổng để mở hoặc đóng.',
 tower: 'Chòi canh: dân rảnh lên chòi làm lính chòi canh (không cần trại cung thủ), bắn xa hơn và mạnh hơn khi đứng trên chòi. Chạm vào chòi để giao người.',
-toolstore: 'Cất công cụ cho dân tự lấy.', armory: 'Cất vũ khí và giáp cho dân tự lấy.',
+toolstore: 'Cất công cụ cho dân tự lấy.', market: 'Chợ: nơi duy nhất đổi hàng lấy vỏ sò hoặc đổi hàng này lấy hàng khác. Mỗi ngày chợ nhận một lượng khác nhau mỗi loại hàng; nâng cấp để đổi lợi hơn. Chỉ xây một cái.', armory: 'Cất vũ khí và giáp cho dân tự lấy.',
   };
 
 /** The build categories, in the order of the tabs. */
 const GROUPS: Array<[string, BuildingKind[]]> = [
   ['Thiết yếu', ['builder', 'storage', 'house', 'field']],
-  ['Sản xuất', ['workshop', 'lab', 'toolstore', 'armory']],
+  ['Sản xuất', ['workshop', 'lab', 'toolstore', 'armory', 'market']],
   ['Tài nguyên', ['farmhouse', 'huntlodge', 'lumberyard', 'quarry', 'stable']],
   ['Quân sự', ['infantry', 'cavalry', 'archery', 'guardpost', 'wartent', 'scouttent', 'supplycamp', 'drill']],
   ['Phòng thủ', ['fence', 'gate', 'tower', 'trap']],

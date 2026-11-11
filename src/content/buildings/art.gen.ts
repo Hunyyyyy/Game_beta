@@ -67,6 +67,9 @@ import lumberyard_L1 from './lumberyard/L1.json';
 import lumberyard_L2 from './lumberyard/L2.json';
 import lumberyard_L3 from './lumberyard/L3.json';
 import lumberyard_A1 from './lumberyard/A1.json';
+import market_L1 from './market/L1.json';
+import market_L2 from './market/L2.json';
+import market_L3 from './market/L3.json';
 import quarry_L1 from './quarry/L1.json';
 import quarry_L2 from './quarry/L2.json';
 import quarry_L3 from './quarry/L3.json';
@@ -124,6 +127,7 @@ export const STONE_ART: Record<string, unknown[]> = {
   infantry: [infantry_L1, infantry_L2, infantry_L3],
   lab: [lab_L1, lab_L2, lab_L3, lab_L4],
   lumberyard: [lumberyard_L1, lumberyard_L2, lumberyard_L3],
+  market: [market_L1, market_L2, market_L3],
   quarry: [quarry_L1, quarry_L2, quarry_L3],
   scouttent: [scouttent_L1, scouttent_L2, scouttent_L3],
   stable: [stable_L1, stable_L2, stable_L3],

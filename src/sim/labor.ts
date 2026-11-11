@@ -1,9 +1,10 @@
 /** Everyday work: gathering, carrying, building, and the phase machine that decides what a villager does next. */
 import { carryCap, strokeYield, toolBonus, workSpeed } from './statsys';
 import { SEASON_DEF, WEATHER } from './calendar';
-import { Building, BUILDINGS, GATHER_HOUSE, gatherMult, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
+import { Building, BUILDINGS, footOf, GATHER_HOUSE, gatherMult, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
 import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
 import { RES_NAME } from './resources';
+import { hash2 } from './rng';
 import paceJson from '../data/pace.json';
 import NODES from '../data/nodes.json';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
@@ -171,7 +172,7 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
   }
   if (n.amount <= 0) {
     const idx = v.target, N = sim.world.size; leaveNode(sim, v);
-    sim.world.depleted(idx, (x, y) => sim.fog.state[y * N + x] > 0 && !sim.inZone(x, y) && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y)); v.phase = 'idle';
+    sim.world.depleted(idx, (x, y) => sim.fog.state[y * N + x] > 0 && !sim.inZone(x, y) && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.buildings.some((b) => { const f = footOf(b); return x >= b.x - 2 && x < b.x + f.w + 2 && y >= b.y - 2 && y < b.y + f.h + 2; }), sim.campfire()?.level ?? 1); v.phase = 'idle';
     if (n.kind === 'tree') sim.say('Một cây đã được đốn xong.');
   } else if (v.carry.amount >= carryCap(sim, v, res) || sim.needTool(v, job)) { leaveNode(sim, v); v.phase = 'idle'; }
 }
@@ -206,9 +207,40 @@ export function plan(sim: Sim, v: Villager): void {
   if (sim.planTool(v, v.job as WorkJob)) return;
   if (findNode(sim, v, def.node!)) { trapped.delete(v); return; }
   if (v.carry) { planDeliver(sim, v); return; }
+  if (exploreFor(sim, v, def.node!)) return;
   warnExhausted(sim, def.node!);
   freeTrapped(sim, v, sim.buildings.filter((b) => b.done && holdsGoods(b)).sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y)));
   wait(sim, v, 2);
+}
+
+/**
+ * Nothing of what he gathers is left in the land the village has seen: he goes out to look, to a spot round the fire (as far as the level of the fire allows: nodes.json exploreReach),
+ * unexplored ground first, a new direction every few seconds, as the hunters do. Walking there opens the map; when he arrives he looks again. Returns whether he set out.
+ */
+function exploreFor(sim: Sim, v: Villager, kind: NodeKind): boolean {
+  const fire = sim.campfire();
+  if (!fire || sim.pathLeft <= 0) return false;
+  let c = sim.nodeCheck[kind];
+  if (!c || sim.time - c.t > 5) { // who asks looks over the land at most every few seconds (the map holds very many things)
+    let left = false;
+    for (const [idx, n] of sim.world.nodes) if (n.kind === kind && n.amount > 0 && sim.fog.state[idx] > 0) { left = true; break; }
+    c = sim.nodeCheck[kind] = { t: sim.time, left };
+  }
+  if (c.left) return false; // something is left: they are only busy or cut off, not a reason to wander
+  const N = sim.world.size, reach = NODES.exploreReach[Math.max(0, Math.min(NODES.exploreReach.length, fire.level) - 1)], step = Math.floor(sim.time / 10), spots: Array<[number, number, boolean]> = [];
+  for (let t = 0; t < 10; t++) {
+    const ang = hash2(v.id, step * 16 + t, 83) * Math.PI * 2, rad = reach * (0.45 + 0.55 * hash2(v.id, step * 16 + t, 84));
+    const gx = Math.floor(fire.x + 1 + Math.cos(ang) * rad), gy = Math.floor(fire.y + 1 + Math.sin(ang) * rad);
+    if (sim.world.inBounds(gx, gy) && !sim.world.isBlocked(gx, gy)) spots.push([gx, gy, sim.fog.state[gy * N + gx] === 0]);
+  }
+  spots.sort((p, q) => Number(q[2]) - Number(p[2])); // the unexplored first
+  for (const [gx, gy] of spots) {
+    if (sim.pathLeft <= 0) break;
+    sim.pathLeft--;
+    const path = sim.pathTo(v, gx, gy, 3000);
+    if (path.length) { v.path = path; v.phase = 'move'; return true; }
+  }
+  return false;
 }
 
 const NODE_WORD: Record<NodeKind, string> = { tree: 'cây', rock: 'đá', bush: 'bụi quả' };
@@ -218,7 +250,7 @@ function warnExhausted(sim: Sim, kind: NodeKind): void {
   const st = sim.fog.state;
   for (const [idx, n] of sim.world.nodes) if (n.kind === kind && n.amount > 0 && st[idx] > 0) return; // something is left: they are only busy or cut off
   sim.noNodeWarn[kind] = sim.time;
-  sim.say(`Xung quanh đây đã hết ${NODE_WORD[kind]}: hãy cử người đi khám phá. Khi vùng mới hết sương đen, dân sẽ tự tới đó khai thác.`);
+  sim.say(`Xung quanh đây đã hết ${NODE_WORD[kind]}: dân sẽ tự đi tìm quanh làng (xa hơn khi lửa trại lên cấp). Muốn nhanh hơn hãy cử người đi khám phá.`);
 }
 
 export function findNode(sim: Sim, v: Villager, kind: NodeKind): boolean {

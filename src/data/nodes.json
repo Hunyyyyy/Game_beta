@@ -1,6 +1,37 @@
 {
-  "respawnShare": 0.2,
-  "respawnMinDist": 18,
+  "_note": "What is used up is refilled: a tree, rock or bush that is used up is gone and the share given here of them (by the level of the player's campfire, 1 to 4) appear again 4 to 11 tiles from it, at least respawnMinDist tiles from the fire of the village and two tiles from any house. The first levels give back most of it, so that a new village is never left with bare ground round it; later less, so that the people go farther for what they need (searchRadius is how far they look). exploreReach: when no source of what they gather is left in the land already seen, the gatherers go out by themselves to look: to a spot this many tiles from the fire (by its level), unexplored ground first, as the hunters do; walking there opens the map.",
+  "respawnShare": {
+    "tree": [
+      0.9,
+      0.75,
+      0.55,
+      0.45
+    ],
+    "rock": [
+      0.7,
+      0.55,
+      0.4,
+      0.3
+    ],
+    "bush": [
+      0.95,
+      0.85,
+      0.65,
+      0.5
+    ]
+  },
+  "respawnMinDist": [
+    5,
+    8,
+    11,
+    14
+  ],
   "searchRadius": 100,
-  "warnEvery": 90
+  "warnEvery": 90,
+  "exploreReach": [
+    14,
+    28,
+    42,
+    52
+  ]
 }

@@ -123,7 +123,7 @@ export function noticesOf(sim: Sim): Notice[] {
       out.push({
         id: 'winter', level: 'urgent', icon: '❄', title: 'Đông thiếu ăn', when: `còn ${rest} ngày đông`,
         body: `Cần ${want}, có ${Math.floor(have)}`,
-        tip: 'Bụi quả trụi hết, ruộng chỉ còn một phần tư. Săn bắn, làm ruộng hoặc đổi chác để có thức ăn.',
+        tip: 'Bụi quả trụi hết, ruộng chỉ còn một phần tư. Săn bắn, làm ruộng hoặc đổi hàng ở Chợ để có thức ăn.',
         action: FARM,
       });
     }

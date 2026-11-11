@@ -306,7 +306,7 @@ export const unlockedMax = (done: ReadonlySet<string>, key: 'formationCells' | '
 export const techForBuilding = (kind: BuildingKind): Tech | undefined => TECHS.find((t) => t.unlocks.buildings?.includes(kind));
 export const buildingOpen = (done: ReadonlySet<string>, kind: BuildingKind): boolean => { const t = techForBuilding(kind); return !RESEARCH.enabled || !t || done.has(t.id); };
 
-const KIND_NAME: Partial<Record<BuildingKind, string>> = { storage: 'Kho', workshop: 'Nhà chế tạo', lab: 'Nhà nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Trại lính bộ', cavalry: 'Trại lính kỵ', archery: 'Trại thợ ném', farmhouse: 'Nông trại', huntlodge: 'Chòi thợ săn', lumberyard: 'Xưởng gỗ', quarry: 'Xưởng đá', house: 'Nhà dân', field: 'Ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Chòi canh', wartent: 'Lều họp chiến', scouttent: 'Trại trinh sát', drill: 'Bãi tập', trap: 'Hố chông', stable: 'Chuồng thú cưỡi' };
+const KIND_NAME: Partial<Record<BuildingKind, string>> = { storage: 'Kho', market: 'Chợ', workshop: 'Nhà chế tạo', lab: 'Nhà nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Trại lính bộ', cavalry: 'Trại lính kỵ', archery: 'Trại thợ ném', farmhouse: 'Nông trại', huntlodge: 'Chòi thợ săn', lumberyard: 'Xưởng gỗ', quarry: 'Xưởng đá', house: 'Nhà dân', field: 'Ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Chòi canh', wartent: 'Lều họp chiến', scouttent: 'Trại trinh sát', drill: 'Bãi tập', trap: 'Hố chông', stable: 'Chuồng thú cưỡi' };
 /** What a tech unlocks, as a short Vietnamese phrase for the UI. */
 export const unlockText = (t: Tech, recipeName: (id: string) => string): string => {
   const parts = [...(t.unlocks.recipes ?? []).map(recipeName)];
