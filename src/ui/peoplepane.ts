@@ -1,8 +1,8 @@
-import { JOB_NAME, roleName, roleOf, titleOfRole } from '../sim/jobs';
+import { JOB_NAME, roleOf, titleOfRole } from '../sim/jobs';
 import { isRankRole } from '../sim/ranks';
 import type { Villager } from '../sim/sim';
 import { statValue } from '../sim/statsys';
-import { TIER_NAME, TOOL_NAME, TOOL_OF_JOB } from '../sim/tools';
+import { TOOL_OF_JOB } from '../sim/tools';
 import type { WorkJob } from '../sim/jobs';
 import type { Ctx } from './ctx';
 import { SHIFT_LABEL } from './describe';

@@ -16,6 +16,9 @@ import campfire_L2 from './campfire/L2.json';
 import campfire_L3 from './campfire/L3.json';
 import campfire_L4 from './campfire/L4.json';
 import campfire_A1 from './campfire/A1.json';
+import carpentry_A1 from './carpentry/A1.json';
+import carpentry_A2 from './carpentry/A2.json';
+import carpentry_A3 from './carpentry/A3.json';
 import cavalry_L1 from './cavalry/L1.json';
 import cavalry_L2 from './cavalry/L2.json';
 import cavalry_L3 from './cavalry/L3.json';
@@ -78,6 +81,9 @@ import scouttent_L1 from './scouttent/L1.json';
 import scouttent_L2 from './scouttent/L2.json';
 import scouttent_L3 from './scouttent/L3.json';
 import scouttent_A1 from './scouttent/A1.json';
+import smelter_A1 from './smelter/A1.json';
+import smelter_A2 from './smelter/A2.json';
+import smelter_A3 from './smelter/A3.json';
 import stable_L1 from './stable/L1.json';
 import stable_L2 from './stable/L2.json';
 import stable_L3 from './stable/L3.json';
@@ -90,6 +96,9 @@ import supplycamp_L1 from './supplycamp/L1.json';
 import supplycamp_L2 from './supplycamp/L2.json';
 import supplycamp_L3 from './supplycamp/L3.json';
 import supplycamp_A1 from './supplycamp/A1.json';
+import tannery_A1 from './tannery/A1.json';
+import tannery_A2 from './tannery/A2.json';
+import tannery_A3 from './tannery/A3.json';
 import toolstore_L1 from './toolstore/L1.json';
 import toolstore_L2 from './toolstore/L2.json';
 import toolstore_L3 from './toolstore/L3.json';
@@ -114,6 +123,7 @@ export const STONE_ART: Record<string, unknown[]> = {
   armory: [armory_L1, armory_L2, armory_L3],
   builder: [builder_L1, builder_L2, builder_L3],
   campfire: [campfire_L1, campfire_L2, campfire_L3, campfire_L4],
+  carpentry: [],
   cavalry: [cavalry_L1, cavalry_L2, cavalry_L3],
   drill: [drill_L1, drill_L2, drill_L3],
   farmhouse: [farmhouse_L1, farmhouse_L2, farmhouse_L3],
@@ -130,9 +140,11 @@ export const STONE_ART: Record<string, unknown[]> = {
   market: [market_L1, market_L2, market_L3],
   quarry: [quarry_L1, quarry_L2, quarry_L3],
   scouttent: [scouttent_L1, scouttent_L2, scouttent_L3],
+  smelter: [],
   stable: [stable_L1, stable_L2, stable_L3],
   storage: [storage_L1, storage_L2, storage_L3],
   supplycamp: [supplycamp_L1, supplycamp_L2, supplycamp_L3],
+  tannery: [],
   toolstore: [toolstore_L1, toolstore_L2, toolstore_L3],
   tower: [tower_L1, tower_L2],
   trap: [trap_L1, trap_L2],
@@ -145,6 +157,7 @@ export const ANCIENT_ART: Record<string, unknown[]> = {
   armory: [armory_A1],
   builder: [builder_A1],
   campfire: [campfire_A1],
+  carpentry: [carpentry_A1, carpentry_A2, carpentry_A3],
   cavalry: [cavalry_A1],
   drill: [drill_A1],
   farmhouse: [farmhouse_A1],
@@ -159,9 +172,11 @@ export const ANCIENT_ART: Record<string, unknown[]> = {
   lumberyard: [lumberyard_A1],
   quarry: [quarry_A1],
   scouttent: [scouttent_A1],
+  smelter: [smelter_A1, smelter_A2, smelter_A3],
   stable: [stable_A1],
   storage: [storage_A1],
   supplycamp: [supplycamp_A1],
+  tannery: [tannery_A1, tannery_A2, tannery_A3],
   toolstore: [toolstore_A1],
   tower: [tower_A1],
   trap: [trap_A1],

@@ -35,9 +35,9 @@
   .rs-nr { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
   .rs-nn { font-weight: 700; font-size: 13.5px; line-height: 1.2; }
   .rs-rb { font-weight: 700; font-size: 9.5px; line-height: 1; letter-spacing: .05em; text-transform: uppercase; background: var(--acc); color: var(--on-acc); padding: 3px 5px; border-radius: 3px; white-space: nowrap; }
-  .rs-path { display: inline-flex; align-items: center;
-    .d { display: block; width: 9px; height: 9px; border: 2px solid var(--ink-3); transform: rotate(45deg); margin: 0 3px; &.r { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 30%, transparent); } &.k { background: var(--acc); border-color: var(--acc); } }
-    u { width: 12px; height: 2px; background: var(--edge-lt); } }
+  // one segment per leap, sharing the width of the button whatever their number (a long branch must not push out of it)
+  .rs-path { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px;
+    .d { flex: 1 1 0; min-width: 2px; max-width: 18px; height: 7px; border-radius: 2px; background: color-mix(in srgb, var(--ink-3) 35%, transparent); &.r { background: color-mix(in srgb, var(--acc) 45%, transparent); box-shadow: inset 0 0 0 1px var(--acc); } &.k { background: var(--acc); } } }
   .rs-cnt { font-weight: 700; font-size: 11px; line-height: 1; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
   .rs-lane { min-width: 0; min-height: 0; padding: 12px 12px 10px; display: flex; flex-direction: column; gap: 10px; }

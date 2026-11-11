@@ -4,6 +4,7 @@ import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
 import { buildingOpen, discountBill, perkPct, techForBuilding } from './research';
 import { scaleCost } from './works';
+import { START_KIT, isProcessKind, processRecipe } from './processdata';
 import { fireUpgradeGroups } from './progression';
 import startJson from '../data/start.json';
 import type { Sim } from './sim';
@@ -214,6 +215,7 @@ export function afterUpgrade(sim: Sim, b: Building): void {
   if (b.kind === 'campfire' && b.level >= BUILDINGS.campfire.levels.stone!.length + 1 && sim.era !== 'ancient') {
     setEra(sim, 'ancient');
     sim.resetTribes(); // the villages of the stone age vanish and new ones are drawn for the new era
+    for (const r of Object.keys(START_KIT) as Res[]) sim.stock[r] += START_KIT[r] ?? 0; // a little iron and coal to begin with, until the mines
     sim.addAlert('era', 'Thời Trung cổ bắt đầu!'); // the screen congratulates the player (ui/eradialog)
     sim.say('Nhà chung đã thành Nhà chính: thời Trung cổ bắt đầu! Các nhà cấp 3 có thể nâng lên cấp trung cổ, có thêm nghiên cứu mới, và không còn đánh nhanh.');
   }
@@ -267,6 +269,7 @@ export function evict(sim: Sim, b: Building): void {
   b.staff = [];
   if (b.kind === 'builder') for (const v of sim.crew()) { sim.resetTask(v); v.job = 'idle'; }
   if (b.active && (b.kind === 'lab' || b.kind === 'workshop')) { const d = sim.orderDef(b.kind === 'lab' ? 'research' : 'craft', b.active.id); if (d && !sim.dev.freeWorks) sim.pay(b.kind === 'workshop' ? scaleCost(d.cost, b.active.paid ?? 1) : d.cost, 1); }
+  if (b.active && isProcessKind(b.kind)) { const r = processRecipe(b.kind, b.active.id); if (r && !sim.dev.freeWorks) sim.pay(r.in, 1); } // the order at work is given back (those waiting stay in a moved house)
   b.active = null;
   // sleepers are put out of their beds; being tired still, they look for another bed at once
   for (const v of sim.sleepers(b)) { sim.exitBuilding(v); v.phase = 'idle'; v.target = -1; v.path = []; }
@@ -312,6 +315,7 @@ export function demolishBuilding(sim: Sim, id: number): string | null {
   const why = canDemolish(sim, b);
   if (why) return why;
   if (Object.values(ROLES).some((r) => r.building === b.kind) && sim.warLock()) return sim.warLock(); // taking a camp down would take its role from the soldiers in it
+  sim.refundProcess(b); // the goods of its orders come back
   const back = salvage(sim, b);
   evict(sim, b);
   setOcc(sim, b, 0);
@@ -394,13 +398,17 @@ export function moveBuilding(sim: Sim, id: number, x: number, y: number, rot?: n
   if (why) return why;
   const fee = moveFee(sim, b);
   for (const r of Object.keys(fee) as Res[]) sim.stock[r] -= fee[r] ?? 0;
+  // the people who work in it keep their trade: they are put out for the move and walk to the house again where it stands now
+  const crew = sim.villagers.filter((v) => b.staff.includes(v.id) || v.post === b.id || (b.kind === 'builder' && v.job === 'build')).map((v) => ({ v, job: v.job, post: v.post }));
   evict(sim, b);
+  for (const c of crew) { if (c.v.health <= 0) continue; c.v.job = c.job; c.v.post = c.post; }
   if (b.upgrading) { const back = buildBill(sim, levelDef(b, b.level + 1).cost); for (const r of Object.keys(back) as Res[]) if (!sim.freeCost()) sim.stock[r] += back[r] ?? 0; b.upgrading = false; }
   // a finished house is lifted and set down as it is: it keeps its level and needs no builders
   setOcc(sim, b, 0); b.x = x; b.y = y;
   if (b.kind === 'gate' && b.w === undefined && rot !== undefined) b.rot = rot === 1 ? 1 : 0; // a gate may be turned as it is set down
   setOcc(sim, b, 1);
   sim.fogDirty = true;
+  for (const c of crew) if (c.v.health > 0 && c.v.phase !== 'sleep') sim.planStaff(c.v);
   sim.say(`${BUILDINGS[b.kind].name} được dời sang chỗ mới.`);
   return null;
 }

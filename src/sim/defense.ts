@@ -68,8 +68,11 @@ export function assignTower(sim: Sim, ids: readonly number[], towerId: number): 
   let err: string | null = null;
   for (const v of sim.mine(ids)) {
     if (v.post === b.id && v.job === 'fight') continue;
-    if (v.job !== 'idle' || roleOf(v)) { err = 'Chỉ dân rảnh mới lên chòi: người có nghề hoặc là lính thì cho nghỉ trước'; continue; }
     if (garrison(sim, b).length >= levelDef(b).slots) { err = `${BUILDINGS.tower.name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} lính`; continue; }
+    // anyone may go up, whatever they do now: they are let go from the old work first (a soldier hands his gear back, the men of another tower come down)
+    if (roleOf(v) === 'tower') sim.leaveTower([v.id]);
+    else if (v.job === 'fight' || v.job === 'scout' || v.job === 'supply') { const e = sim.releaseRole([v.id]); if (e) { err = e; continue; } }
+    if (v.inside !== null) sim.exitBuilding(v); // out of the house they work or sleep in
     sim.resetTask(v); sim.clearCombat(v);
     v.job = 'fight'; v.guard = true; v.guardAt = null; v.arm = 'archer'; v.post = b.id; v.shift = 'day'; // the men sleep in the tower by night and wake when an enemy comes in sight; the details can set a night or round-the-clock watch
     v.fight.mode = 'none'; v.fight.anchor = null;

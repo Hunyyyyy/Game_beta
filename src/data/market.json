@@ -1,5 +1,5 @@
 {
-  "_note": "Chợ (building market): the only place goods are traded. Every good has a value in shells (resources.json barter: how many of it one shell is worth). Selling gives shells at that value times `rate`; swapping one good for another gives the value of what is given less `fee`. Each day the market takes only so much of each good at the fair price: `quotaMin` to `quotaMax` shells' worth, drawn anew every day (the level of the market sets the range); past that, each further shell costs `overSlip` more than the one before. The village keeps back `keepShare` of the store of a good (and three days of meals of food) unless the player says otherwise. `medieval`: goods that cannot be traded before the medieval age. `free`: swaps open from the first level of the market; the rest are opened by research (techs `trade:<give>><get>`).",
+  "_note": "Chợ (building market): the only place goods are traded. Every good has a value in shells (resources.json barter: how many of it one shell is worth). Selling gives shells at that value times `rate`; swapping one good for another gives the value of what is given less `fee`. Each day the market takes only so much of each good at the fair price: `quotaMin` to `quotaMax` shells' worth, drawn anew every day (the level of the market sets the range); past that, each further shell costs `overSlip` more than the one before. The village keeps back `keepShare` of the store of a good (and three days of meals of food) unless the player says otherwise. `medieval`: goods that cannot be traded before the medieval age. `bargain`: each day the market may have a bargain on one good (chance, rising with the research perk market_bargain; pctMin to pctMax percent better, for that day only; in the medieval age the bargains are bigger, and a merchant caravan may come for a day: every good sells dearer by caravanPct). `buyFee`: what buying with shells costs on top of the fee of the level (buying is dearer than selling). Research (perks market_rate, market_fee, market_quota, market_free) betters the terms. `free`: swaps open from the first level of the market; the rest are opened by research (techs `trade:<give>><get>`).",
   "levels": [
     {
       "rate": 1.0,
@@ -21,6 +21,8 @@
     }
   ],
   "overSlip": 0.2,
+  "buyFee": 0.2,
+  "bargain": { "chance": 0.1, "pctMin": 20, "pctMax": 40, "medieval": { "pctMin": 40, "pctMax": 70, "caravanChance": 0.08, "caravanPct": 15 } },
   "keepShare": 0.25,
   "foodKeepDays": 3,
   "medieval": [

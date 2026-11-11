@@ -33,6 +33,7 @@ import towerShield from '../data/shields/tower.json';
 import aegisShield from '../data/shields/aegis.json';
 import woodShield from '../data/shields/wood.json';
 import hideArmor from '../data/armors/hide.json';
+import grassArmor from '../data/armors/grass.json';
 import footmanArmor from '../data/armors/footman.json';
 import archerArmor from '../data/armors/archer.json';
 import riderArmor from '../data/armors/rider.json';
@@ -55,7 +56,7 @@ import peasantStrawGreyArmor from '../data/armors/peasant_straw_grey.json';
 /* Hand-held tools are drawn from JSON (src/data/handtools). handTools may be replaced at runtime (the animation viewer uses this to try out designs). */
 const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow, bronze_spear: bronzeSpear, bronze_sword: bronzeSword, bronze_axe: bronzeAxe, arming_sword: armingSword, shortsword, lance, composite_bow: compositeBow, thrown_stone: thrownStone, warhammer, greatsword, alloy_crossbow: alloyCrossbow, knight_sword: knightSword, yew_longbow: yewLongbow, paladin_lance: paladinLance, longbow, heavy_lance: heavyLance, short_spear: shortSpear, pike, ward_sword: armingSword, bronze_bow: bow };
 /* Worn armour, drawn over the body from JSON (src/data/armors). */
-const armors = { hide: hideArmor, bone: boneArmor, bronze: bronzeArmor, footman: footmanArmor, archer: archerArmor, rider: riderArmor, guard: guardArmor, marksman: marksmanArmor, royalrider: royalRiderArmor, templar: templarArmor, sniper: sniperArmor, paladin: paladinArmor, watchman: watchmanArmor, sergeant: sergeantArmor, warden: wardenArmor, peasant_hood_brown: peasantHoodBrownArmor, peasant_hood_grey: peasantHoodGreyArmor, peasant_straw_brown: peasantStrawBrownArmor, peasant_straw_grey: peasantStrawGreyArmor };
+const armors = { grass: grassArmor, hide: hideArmor, bone: boneArmor, bronze: bronzeArmor, footman: footmanArmor, archer: archerArmor, rider: riderArmor, guard: guardArmor, marksman: marksmanArmor, royalrider: royalRiderArmor, templar: templarArmor, sniper: sniperArmor, paladin: paladinArmor, watchman: watchmanArmor, sergeant: sergeantArmor, warden: wardenArmor, peasant_hood_brown: peasantHoodBrownArmor, peasant_hood_grey: peasantHoodGreyArmor, peasant_straw_brown: peasantStrawBrownArmor, peasant_straw_grey: peasantStrawGreyArmor };
 /* Shields, held in the off hand: hand-drawn poses written as rows of letters (see src/data/shields). */
 const shields = { heater: heaterShield, tower: towerShield, aegis: aegisShield, wood: woodShield };
 

@@ -124,7 +124,7 @@ export class ResearchPane {
     const marks: State[] = leaps.length ? leaps.map((l) => this.leapState(l)) : rows.map((r) => (this.rowDone(st, r) ? 'done' : 'locked')); // a branch with no leap shows its stretches of stats
     marks.forEach((s, i) => {
       if (s === 'done') cnt++; if (s === 'ready') any = true;
-      path += `${i ? '<u></u>' : ''}<i class="d ${s === 'done' ? 'k' : s === 'ready' ? 'r' : ''}"></i>`;
+      path += `<i class="d ${s === 'done' ? 'k' : s === 'ready' ? 'r' : ''}"></i>`;
     });
     return `<button class="rs-ni${this.branch[p.id] === st.key ? ' on' : ''}" data-br="${st.key}"><span class="rs-nr"><span class="rs-nn">${esc(st.name)}</span>${any ? '<span class="rs-rb">sẵn sàng</span>' : ''}</span><span class="rs-nr"><span class="rs-path">${path}</span><span class="rs-cnt">${cnt}/${marks.length}</span></span></button>`;
   }

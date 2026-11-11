@@ -1,8 +1,8 @@
 import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, WeatherKind } from './calendar';
 import { dayLength, FOE_PATH_SHARE, FOG_PAUSE, paceWork, PATH_BUDGET, PATH_BUDGET_FAST, PATH_BUDGET_FASTEST, START_TIME, TICK } from './constants';
-import { Building, BuildingKind, BUILDINGS, Era, footOf } from './buildings';
+import { Building, BuildingKind, BUILDINGS, Era, footOf, levelDef } from './buildings';
 import { Fog } from './fog';
-import { Job, RoleId, WorkJob } from './jobs';
+import { Job, RoleId, ROLES, ROLE_IDS, WorkJob } from './jobs';
 import { Step } from './path';
 import { CURRENCY, emptyStock, Res, RES_NAME, Stock } from './resources';
 import { mix32, mulberry32, Rng } from './rng';
@@ -20,6 +20,7 @@ import startJson from '../data/start.json';
 import * as construction from './construction';
 import * as economy from './economy';
 import * as market from './market';
+import * as processing from './processing';
 import * as notices from './notices';
 import * as readiness from './readiness';
 import * as works from './works';
@@ -180,7 +181,7 @@ export class Sim {
   /** Where the player asked the gatherers to work (x, y: a point of the big map); empty for no preference (labor.findNode). */
   gatherFocus: Record<string, number> = {};
   /** What the Chợ takes of each good today at the fair price, and how much of it has been taken (market.ts). */
-  market: { quota: Record<string, number>; used: Record<string, number> } = { quota: {}, used: {} };
+  market: market.MarketState = { quota: {}, used: {}, bargain: null };
   /** When each kind of source last ran out in the land the village has seen (labor.warnExhausted): a timer for the warning, not game state. */
   noNodeWarn: Record<string, number> = {};
   /** When a gatherer last looked over the land for a kind of source, and whether any was left in what is seen (a few seconds' memory, labor.exploreFor). */
@@ -216,6 +217,8 @@ export class Sim {
   warSeenIds = new Set<number>();
   warFresh = 0;
   warStings = 0;
+  /** How many saved games have been put into this game: the screen resets what it remembers of the game that was (the war music, a victory being cheered). */
+  loads = 0;
   warCheckAt = 0;
   /** While a war is on: the soldiers of the plan, how their march goes (speed, food and energy factors) and the meals they and the village have eaten (paid when it ends). All reset in peace. */
   warIds = new Set<number>();
@@ -368,7 +371,11 @@ export class Sim {
   /** The whole game as plain JSON data (see save.ts). Settings are not in it. */
   toSave(): save.GameSave { return save.toSave(this); }
   /** Replace this game by a saved one; it must be a save of the same world (seed). */
-  loadSave(raw: unknown): void { save.applySave(this, save.migrate(raw)); this.fog.invalidate(); } // the drawing of the fog must be redone
+  loadSave(raw: unknown): void {
+    save.applySave(this, save.migrate(raw)); this.fog.invalidate(); // the drawing of the fog must be redone
+    this.warSeenIds.clear(); this.warFresh = 0; this.warStings = 0; this.warCheckAt = 0; this.alerts.length = 0; this.sfx.length = 0; // what the war sound remembered belongs to the game that was
+    this.loads++;
+  }
   /** A new Sim continuing a saved game. */
   static fromSave(raw: unknown): Sim {
     const data = save.migrate(raw), sim = new Sim(data.seed);
@@ -530,6 +537,16 @@ export class Sim {
 
   /** → labor.tickFarms */
   tickFarms(dt: number): void { return labor.tickFarms(this, dt); }
+  /** → processing.queueProcess */
+  queueProcess(houseId: number, id: string): string | null { return processing.queueProcess(this, houseId, id); }
+  /** → processing.unqueueProcess */
+  unqueueProcess(houseId: number, id: string): void { return processing.unqueueProcess(this, houseId, id); }
+  /** → processing.processLock */
+  processLock(b: Building, id: string): string | null { return processing.processLock(this, b, id); }
+  /** → processing.refundProcess */
+  refundProcess(b: Building): void { return processing.refundProcess(this, b); }
+  /** → houses.assignProcessing */
+  assignProcessing(ids: readonly number[], houseId: number): string | null { return houses.assignProcessing(this, ids, houseId); }
   /** → works.tickWorks */
   tickWorks(dt: number): void { return works.tickWorks(this, dt); }
 
@@ -563,6 +580,15 @@ export class Sim {
   damageWork(b: Building, dmg: number): void { return defense.damageWork(this, b, dmg); }
   /** → defense.towerBonus */
   towerBonus(v: Villager): { damage: number; range: number } { return defense.towerBonus(this, v); }
+  /** How many people work in a finished house and how many it holds (its role, or the staff of a Xưởng, a Nhà nghiên cứu, a Chuồng thú, the men of a tower); null for a house with no people to count. */
+  staffing(b: Building): { have: number; slots: number } | null {
+    if (!b.done) return null;
+    const slots = levelDef(b).slots;
+    if (b.kind === 'tower') return { have: this.garrison(b).length, slots };
+    if (b.kind === 'workshop' || b.kind === 'lab' || b.kind === 'stable') return { have: this.staffCount(b), slots };
+    const role = ROLE_IDS.find((r) => ROLES[r].building === b.kind);
+    return role ? { have: this.roleCount(role), slots: this.roleCapacity(role) } : null;
+  }
   /** → defense.garrison */
   garrison(b: Building): Villager[] { return defense.garrison(this, b); }
   /** → defense.assignTower */
@@ -647,11 +673,13 @@ export class Sim {
   /** → market.marketKeep */
   marketKeep(res: Exclude<Res, 'coin'>): number { return market.marketKeep(this, res); }
   /** → market.marketQuote: what a trade would be, nothing changes */
-  marketQuote(give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin', steps: number, keep = 0): market.MarketQuote { return market.marketQuote(this, give, get, steps, keep); }
+  marketQuote(give: Res, get: Res, steps: number, keep = 0): market.MarketQuote { return market.marketQuote(this, give, get, steps, keep); }
   /** → market.marketTrade */
-  marketTrade(give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin', steps: number, keep = 0): string | null { return market.marketTrade(this, give, get, steps, keep); }
+  marketTrade(give: Res, get: Res, steps: number, keep = 0): string | null { return market.marketTrade(this, give, get, steps, keep); }
   /** → market.marketTerms */
   marketTerms(give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin'): { price: number; per: number; left: number } { return market.marketTerms(this, give, get); }
+  /** → market.marketBuyTerms */
+  marketBuyTerms(get: Exclude<Res, 'coin'>): { per: number; left: number } { return market.marketBuyTerms(this, get); }
   /** → market.marketRoll */
   marketRoll(): void { return market.marketRoll(this); }
   /** → legion.inZone */
@@ -796,7 +824,7 @@ export class Sim {
     if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; this.warSeenIds.clear(); this.warFresh = 0; this.warStings = 0; this.warCheckAt = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
-    this.tickWorks(dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); legion.tickLegion(this, dt); warplan.tickPlans(this, dt);
+    this.tickWorks(dt); processing.tickProcessing(this, dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); legion.tickLegion(this, dt); warplan.tickPlans(this, dt);
     this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);

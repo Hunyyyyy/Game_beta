@@ -50,7 +50,8 @@
         "weapon": "club",
         "cost": {
           "coin": 1
-        }
+        },
+        "armor": "grass"
       },
       {
         "rank": 2,
@@ -58,7 +59,8 @@
         "weapon": "spear",
         "cost": {
           "coin": 2
-        }
+        },
+        "armor": "hide"
       },
       {
         "rank": 3,
@@ -66,7 +68,8 @@
         "weapon": "mace",
         "cost": {
           "coin": 3
-        }
+        },
+        "armor": "bone"
       },
       {
         "rank": 4,
@@ -116,7 +119,8 @@
         "weapon": "thrown_stone",
         "cost": {
           "coin": 1
-        }
+        },
+        "armor": "grass"
       },
       {
         "rank": 2,
@@ -124,7 +128,8 @@
         "weapon": "sling",
         "cost": {
           "coin": 2
-        }
+        },
+        "armor": "hide"
       },
       {
         "rank": 3,
@@ -132,7 +137,8 @@
         "weapon": "bow",
         "cost": {
           "coin": 3
-        }
+        },
+        "armor": "bone"
       },
       {
         "rank": 4,
@@ -185,7 +191,8 @@
           "coin": 11,
           "food": 50,
           "hide": 20
-        }
+        },
+        "armor": "grass"
       },
       {
         "rank": 2,
@@ -196,7 +203,8 @@
           "coin": 22,
           "food": 100,
           "hide": 40
-        }
+        },
+        "armor": "hide"
       },
       {
         "rank": 3,
@@ -207,7 +215,8 @@
           "coin": 33,
           "food": 200,
           "hide": 60
-        }
+        },
+        "armor": "bone"
       },
       {
         "rank": 4,
@@ -267,7 +276,7 @@
         "rank": 1,
         "name": "Người canh gác",
         "weapon": "club",
-        "armor": "hide",
+        "armor": "grass",
         "cost": {
           "coin": 1
         }

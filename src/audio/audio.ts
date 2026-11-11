@@ -29,6 +29,14 @@ const HITS = cfg.hits as Record<string, HitCfg>;
 /** sounds.json `anims`: a key may name several animations joined by `|`, which then share the entry. */
 const ANIMS: Record<string, AnimCfg | AnimCfg[]> = {};
 for (const [k, v] of Object.entries(cfg.anims as unknown as Record<string, AnimCfg | AnimCfg[]>)) for (const a of k.split('|')) ANIMS[a] = v;
+const STEP_TIERS = cfg.stepTiers, ARMOR_TIER = cfg.armorTier as Record<string, number>;
+/** The sound key of a unit on foot, by the tier of his armour (`armorTier`, sounds.json; none or unlisted = 1): grass, then the tread (run_1..4), then left-right boots; running is quicker than walking. */
+export function footSound(anim: string, armor: string | null): string {
+  if (!/walk|run|charge/.test(anim)) return anim;
+  const run = /run|charge/.test(anim), tier = armor ? ARMOR_TIER[armor] ?? 1 : 1;
+  if (tier <= STEP_TIERS.grassMax) return 'grass_step';
+  return tier <= STEP_TIERS.treadMax ? (run ? 'tread_run' : 'tread_walk') : (run ? 'step_run' : 'step_walk');
+}
 const WEATHER = cfg.weather as Record<string, WeatherCfg>;
 const NEAR = cfg.near as Record<string, WeatherLayer>;
 
@@ -89,6 +97,16 @@ export class GameAudio {
     const unlock = (): void => { this.unlocked = true; removeEventListener('pointerdown', unlock); removeEventListener('keydown', unlock); };
     addEventListener('pointerdown', unlock); addEventListener('keydown', unlock);
     for (const [t, ev] of [[document, 'visibilitychange'], [window, 'blur'], [window, 'focus'], [window, 'pagehide']] as const) t.addEventListener(ev, () => this.onVisibility());
+  }
+
+  /** A saved game was loaded: what the war music and the cheering were doing belongs to the game that was, so it all stops at once (the weather and the peace music start again by themselves). */
+  reset(): void {
+    this.warScreen = false; this.warTrack = null; this.stingsDone = 0; this.warAge = 99; this.fightOn = false;
+    this.stopVictory();
+    if (this.lostEl) { this.lostEl.pause(); this.lostEl = null; }
+    for (const b of this.beds.values()) { b.vol = 0; b.el.volume = 0; b.el.pause(); }
+    for (const k of [...this.active.keys()]) this.stop(k);
+    this.pending.clear();
   }
 
   /** The game tab is hidden or its window lost focus (another tab or window: nothing would stop the sounds): everything is paused and nothing starts until the player is back. */

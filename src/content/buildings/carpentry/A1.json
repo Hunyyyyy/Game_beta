@@ -1,0 +1,1318 @@
+{
+ "name": "Xưởng mộc (cấp 1, bãi đốt than và cưa hố)",
+ "name_en": "Carpentry (Tier 1, Charcoal Clamp and Pit Saw)",
+ "type": "prop",
+ "size": [
+  72,
+  64
+ ],
+ "anchor": [
+  36,
+  58
+ ],
+ "footprint": [
+  4,
+  32,
+  64,
+  28
+ ],
+ "seed": 9,
+ "params": {
+  "st1": 1,
+  "st2": 1,
+  "st3": 1,
+  "st4": 1
+ },
+ "palette": {
+  "line": "#2b1d10",
+  "shadow": "#000000",
+  "dirt": "#6a5238",
+  "dirtL": "#7e6244",
+  "dirtD": "#4e3c2a",
+  "wood": "#8a6238",
+  "woodL": "#aa7c48",
+  "woodD": "#5e4026",
+  "logE": "#c49a60",
+  "rope": "#d8c690",
+  "stone": "#8e9498",
+  "stoneL": "#b9bfc2",
+  "stoneD": "#60676b",
+  "chip": "#d8d2c0",
+  "sack": "#c9b27a",
+  "sackD": "#9d8756",
+  "bone": "#e4dcc4",
+  "boneD": "#b8ac90",
+  "sand": "#b9a47a",
+  "sandL": "#cdbb94",
+  "sandD": "#9a8760",
+  "blue": "#5f7fa8",
+  "blueD": "#3f5c84",
+  "ochre": "#b0762f",
+  "red": "#a8342a",
+  "dark": "#1d1812",
+  "moss": "#5f7f3a",
+  "mossL": "#7f9f50",
+  "hide": "#d9c796",
+  "wicker": "#b08a4c",
+  "wickerL": "#c9a460",
+  "wickerD": "#7e5f30",
+  "mud": "#b98a62",
+  "mudL": "#cfa07a",
+  "mudD": "#8e6745",
+  "plaster": "#dccfb2",
+  "plasterD": "#b8a98a",
+  "thatch": "#d4b45a",
+  "thatchL": "#ecd27a",
+  "thatchD": "#a98a38",
+  "hay": "#e0c060",
+  "hayD": "#b8963a",
+  "shingle": "#55361f",
+  "shingleL": "#7a5232",
+  "shingleD": "#35200f",
+  "tile": "#9b4a34",
+  "tileL": "#c06a4a",
+  "tileD": "#6e3224",
+  "slate": "#66707c",
+  "slateL": "#8893a0",
+  "slateD": "#444c56",
+  "terra": "#b5593b",
+  "terraL": "#d27a52",
+  "terraD": "#7e3a26",
+  "glass": "#9bc4d8",
+  "glassD": "#5f8aa0",
+  "gold": "#d9b13a",
+  "bannerR": "#b8322a",
+  "iron": "#5d6068",
+  "ironL": "#8a8e96",
+  "clay": "#a8683e",
+  "clayD": "#7a4a2a",
+  "cut": "#a7adb1",
+  "cutL": "#c9ced1",
+  "cutD": "#6f757a",
+  "plank": "#c8a468",
+  "plankD": "#9a7a44",
+  "ink": "#2c4466",
+  "green": "#5f8f3a",
+  "greenL": "#86b04c",
+  "greenD": "#3f6a28",
+  "hideG": "#6f8a4a",
+  "hideGL": "#8fae62",
+  "hideGD": "#4c6532",
+  "hideR": "#a8342a",
+  "hideRL": "#c8523f",
+  "hideRD": "#7a2220",
+  "awnR": "#b8392e",
+  "awnRD": "#8a2620",
+  "awnW": "#eadfc4",
+  "awnWD": "#c9bb98",
+  "shellC": "#f1ead6",
+  "shellD": "#cfc5a8",
+  "tent": "#a5502e",
+  "tentL": "#c06a40",
+  "tentD": "#7a3a22",
+  "tentK": "#2a1a10",
+  "tentR": "#8f3a2c",
+  "beast": "#6a4426",
+  "beastL": "#8a6038",
+  "beastD": "#44281a",
+  "beastT": "#b08a58",
+  "straw": "#d8b85a",
+  "strawL": "#ecd27a",
+  "strawD": "#a98a38",
+  "white": "#efe6cf",
+  "glow": "#ff9a3a",
+  "glowL": "#ffd27a",
+  "smoke": "#9a9aa0",
+  "horn": "#e8dcc0",
+  "hornD": "#b8a888",
+  "glowD": "#c85a1a",
+  "ember": "#ff7a2a",
+  "coal": "#2a2623",
+  "coalL": "#4a423b",
+  "rust": "#8a4a2a",
+  "rustL": "#b0643a",
+  "brick": "#a5503a",
+  "brickL": "#c46a4c",
+  "brickD": "#733526",
+  "ingot": "#b9bec4",
+  "ingotD": "#7d838b",
+  "leath": "#8a5a2e",
+  "leathL": "#b07c46",
+  "leathD": "#5c3a1c",
+  "clothR": "#b2453a",
+  "clothB": "#4a6fa5",
+  "clothY": "#d9b94e",
+  "clothW": "#e8e0cc",
+  "dyeB": "#35538a",
+  "dyeR": "#8e2f2a",
+  "liquid": "#5a4630",
+  "water": "#5c93b8",
+  "waterL": "#9fcbe0",
+  "sawdust": "#e6cf9a",
+  "steam": "#d9d9d9",
+  "turf": "#6f8a3c",
+  "turfL": "#8aa84e",
+  "turfD": "#4e6a2a",
+  "earth": "#6e4c2e",
+  "earthD": "#4a3220",
+  "earthL": "#8c6640",
+  "bark": "#6a4a2a"
+ },
+ "layers": [
+  {
+   "shape": "poly",
+   "points": [
+    [
+     4,
+     57
+    ],
+    [
+     56,
+     57
+    ],
+    [
+     69,
+     50
+    ],
+    [
+     16,
+     50
+    ]
+   ],
+   "color": "shadow",
+   "alpha": 0.25
+  },
+  {
+   "shape": "group",
+   "if": "st1",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       6,
+       54
+      ],
+      [
+       54,
+       54
+      ],
+      [
+       64,
+       47
+      ],
+      [
+       16,
+       47
+      ]
+     ],
+     "color": "dirt"
+    },
+    {
+     "shape": "rect",
+     "x": 6,
+     "y": 54,
+     "w": 48,
+     "h": 2,
+     "color": "dirtD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       54,
+       54
+      ],
+      [
+       64,
+       47
+      ],
+      [
+       64,
+       49
+      ],
+      [
+       54,
+       56
+      ]
+     ],
+     "color": "dirtD"
+    },
+    {
+     "shape": "scatter",
+     "count": 26,
+     "area": [
+      8,
+      47,
+      54,
+      7
+     ],
+     "size": [
+      1,
+      2
+     ],
+     "colors": [
+      "sawdust",
+      "dirtL",
+      "chip"
+     ],
+     "onlyOver": [
+      "dirt"
+     ]
+    },
+    {
+     "shape": "scatter",
+     "count": 14,
+     "area": [
+      8,
+      47,
+      54,
+      7
+     ],
+     "size": 1,
+     "colors": [
+      "dirtD",
+      "earthD"
+     ],
+     "onlyOver": [
+      "dirt"
+     ]
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st2",
+   "layers": [
+    {
+     "shape": "ellipse",
+     "cx": 21,
+     "cy": 53,
+     "rx": 15,
+     "ry": 3,
+     "color": "earthD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       6.0,
+       53.0
+      ],
+      [
+       6.3760813172726465,
+       49.66218599065529
+      ],
+      [
+       7.485466981463713,
+       46.49174391323663
+      ],
+      [
+       9.272527762979552,
+       43.647652972119
+      ],
+      [
+       11.647652972118994,
+       41.27252776297956
+      ],
+      [
+       14.491743913236625,
+       39.485466981463716
+      ],
+      [
+       17.662185990655267,
+       38.37608131727265
+      ],
+      [
+       20.999999999999996,
+       38.0
+      ],
+      [
+       24.337814009344726,
+       38.37608131727265
+      ],
+      [
+       27.508256086763367,
+       39.48546698146371
+      ],
+      [
+       30.352347027881002,
+       41.27252776297955
+      ],
+      [
+       32.72747223702044,
+       43.64765297211899
+      ],
+      [
+       34.514533018536284,
+       46.491743913236625
+      ],
+      [
+       35.62391868272735,
+       49.66218599065528
+      ],
+      [
+       36.0,
+       52.99999999999999
+      ]
+     ],
+     "color": "turf"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       28.5,
+       40.00961894323342
+      ],
+      [
+       29.449800870954324,
+       40.60641838526007
+      ],
+      [
+       30.352347027881002,
+       41.27252776297955
+      ],
+      [
+       31.202591066563784,
+       42.004221922552595
+      ],
+      [
+       31.995778077447397,
+       42.797408933436216
+      ],
+      [
+       32.72747223702044,
+       43.64765297211899
+      ],
+      [
+       33.39358161473992,
+       44.55019912904567
+      ],
+      [
+       33.99038105676658,
+       45.49999999999999
+      ],
+      [
+       34.514533018536284,
+       46.491743913236625
+      ],
+      [
+       34.963106229663055,
+       47.519884634504066
+      ],
+      [
+       35.33359208679211,
+       48.57867238383643
+      ],
+      [
+       35.62391868272736,
+       49.662185990655296
+      ],
+      [
+       35.83246239337693,
+       50.76436600735738
+      ],
+      [
+       35.9580569577177,
+       51.87904859620364
+      ],
+      [
+       36.0,
+       52.99999999999999
+      ],
+      [
+       27.0,
+       53
+      ]
+     ],
+     "color": "turfD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       9.40889008453118,
+       49.89417145876975
+      ],
+      [
+       9.67340003629959,
+       49.03665125653799
+      ],
+      [
+       10.001252929560287,
+       48.20129570816311
+      ],
+      [
+       10.390615277944683,
+       47.392776460723255
+      ],
+      [
+       10.839309609260589,
+       46.61561508181596
+      ],
+      [
+       11.344826642799978,
+       45.874157773117986
+      ],
+      [
+       11.904339322254565,
+       45.17255106466254
+      ],
+      [
+       12.514718625761429,
+       44.51471862576143
+      ],
+      [
+       13.172551064662548,
+       43.904339322254565
+      ],
+      [
+       13.874157773117975,
+       43.34482664279999
+      ],
+      [
+       14.61561508181596,
+       42.83930960926059
+      ],
+      [
+       15.392776460723258,
+       42.39061527794468
+      ],
+      [
+       16.201295708163112,
+       42.00125292956028
+      ],
+      [
+       17.036651256537994,
+       41.67340003629959
+      ],
+      [
+       17.89417145876975,
+       41.40889008453118
+      ],
+      [
+       15.0,
+       48.5
+      ]
+     ],
+     "color": "turfL",
+     "alpha": 0.7
+    },
+    {
+     "shape": "scatter",
+     "count": 16,
+     "area": [
+      8,
+      40,
+      28,
+      13
+     ],
+     "size": 1,
+     "colors": [
+      "earth",
+      "earthD",
+      "earthL"
+     ],
+     "onlyOver": [
+      "turf"
+     ]
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       14,
+       44
+      ],
+      [
+       22,
+       40
+      ],
+      [
+       28,
+       45
+      ]
+     ],
+     "color": "dark"
+    },
+    {
+     "shape": "rect",
+     "x": 6,
+     "y": 52,
+     "w": 1,
+     "h": 4,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 10,
+     "y": 53,
+     "w": 1,
+     "h": 4,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 14,
+     "y": 52,
+     "w": 1,
+     "h": 4,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 18,
+     "y": 53,
+     "w": 1,
+     "h": 4,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 22,
+     "y": 52,
+     "w": 1,
+     "h": 4,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 26,
+     "y": 53,
+     "w": 1,
+     "h": 4,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 30,
+     "y": 52,
+     "w": 1,
+     "h": 4,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 34,
+     "y": 53,
+     "w": 1,
+     "h": 4,
+     "color": "woodD"
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st3",
+   "layers": [
+    {
+     "shape": "group",
+     "onFrames": [
+      0
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 15.0,
+       "cy": 42.0,
+       "rx": 1.0499999999999998,
+       "ry": 0.9099999999999999,
+       "color": "smoke",
+       "alpha": 0.9
+      },
+      {
+       "shape": "ellipse",
+       "cx": 16.26,
+       "cy": 37.8,
+       "rx": 1.5204,
+       "ry": 1.2922,
+       "color": "smoke",
+       "alpha": 0.69
+      },
+      {
+       "shape": "ellipse",
+       "cx": 17.52,
+       "cy": 33.6,
+       "rx": 1.9908000000000001,
+       "ry": 1.6744,
+       "color": "smoke",
+       "alpha": 0.48
+      },
+      {
+       "shape": "ellipse",
+       "cx": 18.78,
+       "cy": 29.4,
+       "rx": 2.4612000000000003,
+       "ry": 2.0566000000000004,
+       "color": "smoke",
+       "alpha": 0.27
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      1
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 15.315,
+       "cy": 40.95,
+       "rx": 1.1676,
+       "ry": 1.00555,
+       "color": "smoke",
+       "alpha": 0.85
+      },
+      {
+       "shape": "ellipse",
+       "cx": 16.575,
+       "cy": 36.75,
+       "rx": 1.638,
+       "ry": 1.3877499999999998,
+       "color": "smoke",
+       "alpha": 0.64
+      },
+      {
+       "shape": "ellipse",
+       "cx": 17.835,
+       "cy": 32.55,
+       "rx": 2.1084,
+       "ry": 1.76995,
+       "color": "smoke",
+       "alpha": 0.43
+      },
+      {
+       "shape": "ellipse",
+       "cx": 19.095,
+       "cy": 28.349999999999998,
+       "rx": 2.5788,
+       "ry": 2.1521500000000002,
+       "color": "smoke",
+       "alpha": 0.22
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      2
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 15.63,
+       "cy": 39.9,
+       "rx": 1.2852,
+       "ry": 1.1011,
+       "color": "smoke",
+       "alpha": 0.8
+      },
+      {
+       "shape": "ellipse",
+       "cx": 16.89,
+       "cy": 35.7,
+       "rx": 1.7555999999999998,
+       "ry": 1.4833,
+       "color": "smoke",
+       "alpha": 0.58
+      },
+      {
+       "shape": "ellipse",
+       "cx": 18.15,
+       "cy": 31.5,
+       "rx": 2.2259999999999995,
+       "ry": 1.8655,
+       "color": "smoke",
+       "alpha": 0.38
+      },
+      {
+       "shape": "ellipse",
+       "cx": 19.41,
+       "cy": 27.299999999999997,
+       "rx": 2.6964,
+       "ry": 2.2477,
+       "color": "smoke",
+       "alpha": 0.16
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      3
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 15.945,
+       "cy": 38.85,
+       "rx": 1.4027999999999998,
+       "ry": 1.19665,
+       "color": "smoke",
+       "alpha": 0.74
+      },
+      {
+       "shape": "ellipse",
+       "cx": 17.205,
+       "cy": 34.65,
+       "rx": 1.8732,
+       "ry": 1.5788499999999999,
+       "color": "smoke",
+       "alpha": 0.53
+      },
+      {
+       "shape": "ellipse",
+       "cx": 18.465,
+       "cy": 30.45,
+       "rx": 2.3436,
+       "ry": 1.9610499999999997,
+       "color": "smoke",
+       "alpha": 0.32
+      },
+      {
+       "shape": "ellipse",
+       "cx": 19.725,
+       "cy": 26.25,
+       "rx": 2.814,
+       "ry": 2.34325,
+       "color": "smoke",
+       "alpha": 0.11
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      0
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 25.0,
+       "cy": 40.0,
+       "rx": 0.8999999999999999,
+       "ry": 0.78,
+       "color": "smoke",
+       "alpha": 0.9
+      },
+      {
+       "shape": "ellipse",
+       "cx": 26.26,
+       "cy": 35.8,
+       "rx": 1.3032000000000001,
+       "ry": 1.1076,
+       "color": "smoke",
+       "alpha": 0.69
+      },
+      {
+       "shape": "ellipse",
+       "cx": 27.52,
+       "cy": 31.6,
+       "rx": 1.7064000000000001,
+       "ry": 1.4352000000000003,
+       "color": "smoke",
+       "alpha": 0.48
+      },
+      {
+       "shape": "ellipse",
+       "cx": 28.78,
+       "cy": 27.4,
+       "rx": 2.1096000000000004,
+       "ry": 1.7628000000000004,
+       "color": "smoke",
+       "alpha": 0.27
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      1
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 25.315,
+       "cy": 38.95,
+       "rx": 1.0008,
+       "ry": 0.8619,
+       "color": "smoke",
+       "alpha": 0.85
+      },
+      {
+       "shape": "ellipse",
+       "cx": 26.575,
+       "cy": 34.75,
+       "rx": 1.404,
+       "ry": 1.1895,
+       "color": "smoke",
+       "alpha": 0.64
+      },
+      {
+       "shape": "ellipse",
+       "cx": 27.835,
+       "cy": 30.549999999999997,
+       "rx": 1.8072000000000001,
+       "ry": 1.5171000000000001,
+       "color": "smoke",
+       "alpha": 0.43
+      },
+      {
+       "shape": "ellipse",
+       "cx": 29.095,
+       "cy": 26.349999999999998,
+       "rx": 2.2104000000000004,
+       "ry": 1.8447000000000002,
+       "color": "smoke",
+       "alpha": 0.22
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      2
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 25.63,
+       "cy": 37.9,
+       "rx": 1.1016,
+       "ry": 0.9438,
+       "color": "smoke",
+       "alpha": 0.8
+      },
+      {
+       "shape": "ellipse",
+       "cx": 26.89,
+       "cy": 33.7,
+       "rx": 1.5048,
+       "ry": 1.2714,
+       "color": "smoke",
+       "alpha": 0.58
+      },
+      {
+       "shape": "ellipse",
+       "cx": 28.15,
+       "cy": 29.5,
+       "rx": 1.9079999999999997,
+       "ry": 1.599,
+       "color": "smoke",
+       "alpha": 0.38
+      },
+      {
+       "shape": "ellipse",
+       "cx": 29.41,
+       "cy": 25.299999999999997,
+       "rx": 2.3112,
+       "ry": 1.9266,
+       "color": "smoke",
+       "alpha": 0.16
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      3
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 25.945,
+       "cy": 36.85,
+       "rx": 1.2024,
+       "ry": 1.0257,
+       "color": "smoke",
+       "alpha": 0.74
+      },
+      {
+       "shape": "ellipse",
+       "cx": 27.205,
+       "cy": 32.65,
+       "rx": 1.6056000000000001,
+       "ry": 1.3533,
+       "color": "smoke",
+       "alpha": 0.53
+      },
+      {
+       "shape": "ellipse",
+       "cx": 28.465,
+       "cy": 28.45,
+       "rx": 2.0088,
+       "ry": 1.6808999999999998,
+       "color": "smoke",
+       "alpha": 0.32
+      },
+      {
+       "shape": "ellipse",
+       "cx": 29.725,
+       "cy": 24.25,
+       "rx": 2.4120000000000004,
+       "ry": 2.0085,
+       "color": "smoke",
+       "alpha": 0.11
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st4",
+   "layers": [
+    {
+     "shape": "line",
+     "from": [
+      41,
+      55
+     ],
+     "to": [
+      44,
+      46
+     ],
+     "w": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      47,
+      55
+     ],
+     "to": [
+      44,
+      46
+     ],
+     "w": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      54
+     ],
+     "to": [
+      57,
+      46
+     ],
+     "w": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      60,
+      54
+     ],
+     "to": [
+      57,
+      46
+     ],
+     "w": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 38,
+     "y": 42,
+     "w": 22,
+     "h": 4,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 38,
+     "y": 42,
+     "w": 22,
+     "h": 1,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 38,
+     "y": 45,
+     "w": 22,
+     "h": 1,
+     "color": "woodD",
+     "alpha": 0.6
+    },
+    {
+     "shape": "ellipse",
+     "cx": 60,
+     "cy": 44,
+     "rx": 2,
+     "ry": 2,
+     "color": "logE"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       60,
+       44
+      ]
+     ],
+     "color": "woodD"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       41,
+       44
+      ],
+      [
+       47,
+       43
+      ]
+     ],
+     "color": "bark"
+    },
+    {
+     "shape": "rect",
+     "x": 48,
+     "y": 30,
+     "w": 2,
+     "h": 13,
+     "color": "ironL"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       47,
+       33
+      ],
+      [
+       47,
+       36
+      ],
+      [
+       47,
+       39
+      ],
+      [
+       51,
+       34
+      ],
+      [
+       51,
+       38
+      ]
+     ],
+     "color": "iron"
+    },
+    {
+     "shape": "rect",
+     "x": 46,
+     "y": 28,
+     "w": 6,
+     "h": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 46,
+     "y": 28,
+     "w": 6,
+     "h": 1,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 47,
+     "y": 43,
+     "w": 2,
+     "h": 2,
+     "color": "sawdust"
+    },
+    {
+     "shape": "rect",
+     "x": 31,
+     "y": 52,
+     "w": 9,
+     "h": 2,
+     "color": "plank"
+    },
+    {
+     "shape": "rect",
+     "x": 32,
+     "y": 50,
+     "w": 8,
+     "h": 2,
+     "color": "plankD"
+    },
+    {
+     "shape": "rect",
+     "x": 31,
+     "y": 54,
+     "w": 9,
+     "h": 1,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 60,
+     "y": 52,
+     "w": 6,
+     "h": 2,
+     "color": "plank"
+    },
+    {
+     "shape": "rect",
+     "x": 60,
+     "y": 50,
+     "w": 6,
+     "h": 2,
+     "color": "plankD"
+    },
+    {
+     "shape": "rect",
+     "x": 2,
+     "y": 54,
+     "w": 10,
+     "h": 4,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 2,
+     "y": 54,
+     "w": 10,
+     "h": 1,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 2,
+     "y": 57,
+     "w": 10,
+     "h": 1,
+     "color": "woodD",
+     "alpha": 0.6
+    },
+    {
+     "shape": "ellipse",
+     "cx": 12,
+     "cy": 56,
+     "rx": 2,
+     "ry": 2,
+     "color": "logE"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       12,
+       56
+      ]
+     ],
+     "color": "woodD"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       5,
+       56
+      ],
+      [
+       11,
+       55
+      ]
+     ],
+     "color": "bark"
+    },
+    {
+     "shape": "rect",
+     "x": 4,
+     "y": 50,
+     "w": 10,
+     "h": 4,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 4,
+     "y": 50,
+     "w": 10,
+     "h": 1,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 4,
+     "y": 53,
+     "w": 10,
+     "h": 1,
+     "color": "woodD",
+     "alpha": 0.6
+    },
+    {
+     "shape": "ellipse",
+     "cx": 14,
+     "cy": 52,
+     "rx": 2,
+     "ry": 2,
+     "color": "logE"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       14,
+       52
+      ]
+     ],
+     "color": "woodD"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       7,
+       52
+      ],
+      [
+       13,
+       51
+      ]
+     ],
+     "color": "bark"
+    },
+    {
+     "shape": "scatter",
+     "count": 14,
+     "area": [
+      30,
+      48,
+      32,
+      7
+     ],
+     "size": 1,
+     "colors": [
+      "sawdust",
+      "chip"
+     ],
+     "onlyOver": [
+      "dirt"
+     ]
+    }
+   ]
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  }
+ ],
+ "animate": {
+  "frames": 4,
+  "fps": 4
+ }
+}

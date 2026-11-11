@@ -5,6 +5,8 @@ import type { MountKind } from './jobs';
 import { RECIPE_BY_ID, recipeName, TIER_DURABILITY, TIER_NAME, Tool, ToolKind, TOOL_KINDS, TOOL_NAME, TOOL_OF_JOB } from './tools';
 import { ARMORS, CRAFTED_WEAPONS, cycleOf, RULES, WEAPONS } from './combat';
 import { craftQuality, recipeOpen } from './research';
+import { rankDef } from './ranks';
+import type { RankRole } from './ranks';
 import type { Sim } from './sim';
 import { Villager } from './model';
 
@@ -117,6 +119,7 @@ export function assignGear(sim: Sim, ids: readonly number[], kind: string | null
     const cur = slot === 'weapon' ? v.weapon : v.armor;
     if (cur === kind) { v.manualGear = true; continue; }
     if (kind && slot === 'weapon' && !canCarry(v, kind)) { wrong = `${v.name} không dùng được ${nameOf(kind)}: ${v.job === 'fight' && !v.guard && WEAPONS[kind].rank !== undefined && WEAPONS[kind].rank !== (v.rank ?? 1) ? `lính bậc ${v.rank ?? 1} chỉ dùng vũ khí của bậc mình` : v.job === 'fight' && v.arm === 'archer' ? 'cung thủ chỉ dùng vũ khí tầm xa' : v.job === 'fight' && v.guard && v.post >= 0 ? 'lính chòi canh chỉ dùng vũ khí tầm xa' : 'bộ binh và kỵ binh chỉ dùng vũ khí cận chiến'}`; continue; }
+    if (kind && slot === 'armor' && !canWear(v, kind)) { wrong = `${v.name} không mặc được ${nameOf(kind)}: lính bậc ${v.rank ?? 1} chỉ mặc giáp của bậc mình`; continue; }
     if (kind) { if (toolCount(sim, kind, kind in ARMORS ? ARMORS[kind].tier ?? 1 : WEAPONS[kind].tier ?? 1) <= 0) { short = true; continue; } sim.toolStock[key(kind)]--; }
     if (cur) sim.toolStock[key(cur)] = (sim.toolStock[key(cur)] ?? 0) + 1;
     if (slot === 'weapon') v.weapon = kind; else v.armor = kind;
@@ -180,9 +183,16 @@ const AUTO_GEAR = false;
 export function canCarry(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'> & { rank?: number }, id: string): boolean {
   const w = WEAPONS[id]; if (!w) return true;
   if (v.job !== 'fight') return id !== 'mace';
-  if (v.guard) return v.post >= 0 ? !!w.ranged : true;
+  if (v.guard) { if (v.post >= 0) return !!w.ranged; const d = rankDef('guard', v.rank ?? 1); return d ? d.weapon === id : true; } // a guard of the Trại lính gác carries the weapon of his rank only, like a soldier of a camp
   if (w.rank !== undefined && w.rank !== (v.rank ?? 1)) return false; // a soldier of a camp carries the weapons of his rank (ranks.json)
   return v.arm === 'archer' ? !!w.ranged : !w.ranged;
+}
+
+/** May this person wear this armour? A soldier of a rank wears the armour of that rank (ranks.json); the men of a tower, the hunters and the villagers wear what there is. */
+export function canWear(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'> & { rank?: number }, id: string): boolean {
+  if (v.job !== 'fight' || (v.guard && v.post >= 0)) return true;
+  const d = rankDef((v.guard ? 'guard' : v.arm) as RankRole, v.rank ?? 1);
+  return d?.armor ? d.armor === id : true;
 }
 
 /** Foot soldiers and throwers do not ride; the riders of the Trại lính kỵ, hunters and scouts may. */
@@ -222,7 +232,7 @@ export function equipGroup(sim: Sim, ids: readonly number[]): string {
   const wRank = (id: string) => (WEAPONS[id].tier ?? 1) * 1000 + WEAPONS[id].damage / WEAPONS[id].cycle;
   const aRank = (id: string) => (ARMORS[id].tier ?? 1) * 1000 + ARMORS[id].defm + ARMORS[id].defr;
   run(people, [...CRAFTED_WEAPONS], wRank, (v) => (v.weapon ? wRank(v.weapon) : 0), canCarry, (id) => sim.toolCount(id, WEAPONS[id].tier ?? 1), (v, id) => sim.assignGear([v.id], id, 'weapon') === null);
-  run(people, Object.keys(ARMORS), aRank, (v) => (v.armor ? aRank(v.armor) : 0), () => true, (id) => sim.toolCount(id, ARMORS[id].tier ?? 1), (v, id) => sim.assignGear([v.id], id, 'armor') === null);
+  run(people, Object.keys(ARMORS), aRank, (v) => (v.armor ? aRank(v.armor) : 0), canWear, (id) => sim.toolCount(id, ARMORS[id].tier ?? 1), (v, id) => sim.assignGear([v.id], id, 'armor') === null);
   const beasts = people.filter((v) => v.job === 'fight' && v.arm === 'cavalry' && !v.mount); // the beasts of the stable go to the riders who have none (the soldiers of the camps came with theirs)
   if (beasts.length) {
     const mRank = (k: string) => MOUNTS[k as MountKind].tier;

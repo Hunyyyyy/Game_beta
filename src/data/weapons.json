@@ -436,6 +436,7 @@
     }
   },
   "armor": {
+    "grass": { "name": "Áo cỏ", "defm": 10, "defr": 8, "cost": { "wood": 4 }, "durability": 120, "time": 60, "tier": 1 },
     "hide": {
       "name": "Áo da thú",
       "defm": 20,

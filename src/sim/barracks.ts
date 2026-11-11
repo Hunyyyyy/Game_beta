@@ -3,7 +3,7 @@
  * rank, the stores hold the weapon of that rank, and the village can pay (shells, and for a rider the price of his beast, which ranks.json already counts). There is no promotion:
  * a soldier who is let go goes back to rank 1 and his gear to the store; a new one is trained from the start.
  */
-import { WEAPONS } from './combat';
+import { ARMORS, WEAPONS } from './combat';
 import { discountBill, perkPct, soldierTier } from './research';
 import { rankDef, ranksOf } from './ranks';
 import type { RankDef, RankRole } from './ranks';
@@ -22,6 +22,7 @@ export function rankOpen(sim: Sim, role: RankRole, rank: number): boolean {
 }
 
 const weaponKey = (id: string): string => `${id}${WEAPONS[id]?.tier ?? 1}`;
+const armorKey = (id: string): string => `${id}${ARMORS[id]?.tier ?? 1}`;
 
 /** What one soldier of a rank costs now: the price of the rank, cut by the research that hangs under its leap. */
 export const trainCost = (sim: Sim, role: RankRole, rank: number): Partial<Stock> => { const d = rankDef(role, rank); return d ? discountBill(d.cost, perkPct(sim.researched, `train_${role}_${rank}`)) : {}; };
@@ -35,6 +36,7 @@ export function trainCheck(sim: Sim, role: RankRole, rank: number): TrainCheck {
   if (!rankOpen(sim, role, rank)) missing.push(`Chưa nghiên cứu mở ${def.name.toLowerCase()}`);
   if (!sim.hasWorkshop() && !sim.building('armory')) missing.push('Cần có Nhà chế tạo hoặc Kho vũ khí để lấy đồ');
   else if ((sim.toolStock[weaponKey(def.weapon)] ?? 0) <= 0) missing.push(`Kho hết ${WEAPONS[def.weapon].name.toLowerCase()}: hãy chế thêm`);
+  if (def.armor && ARMORS[def.armor] && (sim.toolStock[armorKey(def.armor)] ?? 0) <= 0 && (sim.hasWorkshop() || sim.building('armory'))) missing.push(`Kho hết ${ARMORS[def.armor].name.toLowerCase()}: hãy chế thêm`);
   for (const [res, amount] of Object.entries(trainCost(sim, role, rank)) as Array<[Res, number]>) {
     if ((sim.stock[res] ?? 0) < amount) missing.push(`Thiếu ${RES_NAME[res].toLowerCase()}: cần ${amount}, có ${Math.floor(sim.stock[res] ?? 0)}`);
   }
@@ -55,6 +57,7 @@ export function trainSoldier(sim: Sim, ids: readonly number[], role: RankRole, r
     v.rank = rank; // first the rank, so that the weapon of the rank is one he may carry
     const gear = sim.assignGear([v.id], def.weapon, 'weapon');
     if (gear && v.weapon !== def.weapon) { sim.releaseRole([v.id]); why ??= gear; break; }
+    if (def.armor && ARMORS[def.armor]) { const suit = sim.assignGear([v.id], def.armor, 'armor'); if (suit && v.armor !== def.armor) { sim.releaseRole([v.id]); why ??= suit; break; } } // the armour of the rank too, taken from the store
     sim.pay(trainCost(sim, role, rank));
     v.manualGear = true;
     if (def.mount) v.mount = def.mount as typeof v.mount; // the beast came with the price

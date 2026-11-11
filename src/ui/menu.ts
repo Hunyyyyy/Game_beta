@@ -2,15 +2,15 @@ import { BUILDINGS, levelDef } from '../sim/buildings';
 import { DIFF, playerCap } from '../sim/difficulty';
 import { relationLabel, WEAPONS, TribeId } from '../sim/combat';
 import { SEASONS, Season, WEATHER, WeatherKind } from '../sim/calendar';
-import { dayLength, gameDays, TILE, workDays } from '../sim/constants';
+import { dayLength, gameDays, TILE } from '../sim/constants';
 import * as dev from '../sim/dev';
 import { StatKey, STAT_NAME } from '../sim/jobs';
-import { RESEARCH } from '../sim/research';
+
 import { RES_LIST, RES_NAME } from '../sim/resources';
 import { TOOL_KINDS, TOOL_NAME, TIER_NAME } from '../sim/tools';
 import { canAdopt, canTribute, giftOf, tributeSteps } from '../sim/tribes';
-import type { Tribe } from '../sim/tribes';
-import { costText, h, helpButton, hint } from './dom';
+
+import { h, hint } from './dom';
 import type { Ctx } from './panels';
 
 type Tab = 'places' | 'dev' | 'help';

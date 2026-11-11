@@ -119,9 +119,9 @@ function runToRefuge(sim: Sim, v: Villager): boolean {
   return true;
 }
 
-/** No room anywhere: he runs on, away from the danger. */
+/** No room anywhere: he runs on, away from the danger (or round the village when it has no direction). */
 function runAway(sim: Sim, v: Villager, from?: { x: number; y: number }): Step[] {
-  const ax = from ? v.x - from.x : 0, ay = from ? v.y - from.y : 1, len = Math.hypot(ax, ay) || 1;
+  const ang = sim.rnd() * Math.PI * 2, ax = from ? v.x - from.x : Math.cos(ang), ay = from ? v.y - from.y : Math.sin(ang), len = Math.hypot(ax, ay) || 1;
   const spot = sim.nearestFree(Math.floor(v.x + (ax / len) * 12), Math.floor(v.y + (ay / len) * 12), new Set());
   return spot ? sim.pathTo(v, spot[0], spot[1], 4000) : [];
 }
@@ -133,7 +133,7 @@ export function startFlee(sim: Sim, v: Villager, secs: number, from?: { x: numbe
   v.phase = 'flee'; v.fleeT = secs;
   // a civilian runs into the house of his trade (the Nhà dân if he has none) and hides there until it is safe again; with no bed free he runs on.
   // Soldiers and hunters who retreat run to the fire or to a comrade
-  if (shelters(v)) { sim.dangerAt = sim.time; if (runToRefuge(sim, v)) return; v.path = from ? runAway(sim, v, from) : fleeSpot(sim, v); return; }
+  if (shelters(v)) { sim.dangerAt = sim.time; if (runToRefuge(sim, v)) return; v.path = runAway(sim, v, from); return; }
   v.path = fleeSpot(sim, v, from);
 }
 
@@ -158,7 +158,7 @@ function fleeBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
   v.timer -= dt;
   if (v.timer <= 0) {
     v.timer = 1.5;
-    if (civilian) { if (runToRefuge(sim, v)) return true; if (!v.path.length) v.path = threats[0] ? runAway(sim, v, threats[0]) : fleeSpot(sim, v); } // a bed may have come free; if not, on he runs
+    if (civilian) { if (runToRefuge(sim, v)) return true; if (!v.path.length) v.path = runAway(sim, v, threats[0]); } // a bed may have come free; if not, on he runs
     else { const way = fleeSpot(sim, v, threats[0]); if (way.length > 2) v.path = way; } // his refuge moves (a soldier): follow it; once there he stays
   }
   if (v.fleeT <= 0) { v.phase = 'idle'; v.fleeT = 0; v.path = []; return false; }

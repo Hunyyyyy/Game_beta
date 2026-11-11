@@ -1,23 +1,24 @@
-import { BUILDINGS, Building, buildingName, levelCapByFire, levelDef, maxLevel, topLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, buildingName, levelCapByFire, levelDef, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { huntRange } from '../sim/hunting';
 import { ARMORS, WEAPONS } from '../sim/combat';
-import { JOBS, ROLES, STAT_NAME, roleOf } from '../sim/jobs';
+import { JOBS, ROLES, STAT_NAME } from '../sim/jobs';
 import type { RoleId } from '../sim/jobs';
-import { workDays } from '../sim/constants';
+
 import REST from '../data/rest.json';
 import { ANIMAL_MATERIALS, RES_LIST, RES_NAME, rationAt } from '../sim/resources';
 import type { Res } from '../sim/resources';
 import MARKET from '../data/market.json';
-import type { Villager } from '../sim/sim';
+
 import type { BuildingKind } from '../sim/buildings';
 import { TECH_BY_ID } from '../sim/research';
 import { ResearchPane } from './researchpane';
 import { resIcon } from './resicons';
-import { RECIPE_BY_ID, RECIPES, TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, ToolKind, recipeName, recipeStats, recipeUse } from '../sim/tools';
-import { costText, h, helpButton, hint, iconCanvas } from './dom';
+import { RECIPE_BY_ID, RECIPES, TOOL_NAME, ToolKind, recipeName, recipeStats, recipeUse } from '../sim/tools';
+import { h, helpButton, hint, iconCanvas } from './dom';
 import type { Ctx } from './ctx';
 import { PeoplePane } from './peoplepane';
 import { ActiveBox, StaffBox } from './housebox';
+import { isProcessKind, PROCESS_HOUSES } from '../sim/processdata';
 import { ScoutPane } from './scoutpane';
 import { MarchPane } from './marchpane';
 import { icon } from './icons';
@@ -25,17 +26,18 @@ import { SimpleWar } from './simplewar';
 import { WarLogPane } from './warlogpane';
 import { TribesPane } from './tribespane';
 import { RolePane } from './rolepane';
+import { TowerPane } from './towerpane';
 import { dlg, GameDialog } from './gamedialog';
-import { personTile } from './people';
+
 import { MOUNT_KINDS, MOUNTS, MountKind } from '../sim/jobs';
 import { sleeperRows } from './soldierpane';
 import { WarPanel } from './warpanel';
 import { OrderGrid, OrderItem } from './ordergrid';
 
 /** The houses whose people are kept in a list of their own, opened by the button "Nhân sự" (the house of the research, the craft and the beasts). */
-export const STAFF_OF = { workshop: 'craft', lab: 'research', stable: 'tame' } as const;
+export const STAFF_OF = { workshop: 'craft', lab: 'research', stable: 'tame', smelter: 'craft', carpentry: 'craft', tannery: 'craft' } as const;
 
-interface MarketRow { row: HTMLElement; give: Exclude<Res, 'coin'>; get: Exclude<Res, 'coin'> | 'coin'; n: number; price: HTMLElement; input: HTMLInputElement; slider: HTMLInputElement; quote: HTMLElement; go: HTMLButtonElement }
+interface MarketRow { row: HTMLElement; give: Res; get: Res; n: number; price: HTMLElement; input: HTMLInputElement; slider: HTMLInputElement; quote: HTMLElement; go: HTMLButtonElement }
 
 export class BuildingPanel {
   private title!: HTMLElement; private state!: HTMLElement; private picBox!: HTMLElement; private picKey = '';
@@ -52,6 +54,7 @@ export class BuildingPanel {
   private readonly doorBtn = h('button', { class: 'sm', onclick: () => { this.c.sim.toggleNewcomers(); this.updateCampfire(); } }) as HTMLButtonElement;
   /** The Chợ: the rows of selling goods for shells and of swapping goods for each other. `n` is the number of steps (shells' worth) wanted; the rest are the parts of the row that follow it. */
   private readonly sellRows: MarketRow[] = [];
+  private readonly buyRows: MarketRow[] = [];
   private swapRows: MarketRow[] = [];
   private swapKey = '';
   private marketKeepOn = true;
@@ -97,11 +100,15 @@ export class BuildingPanel {
   /** The people lying in the Nhà dân and the camps of the soldiers. */
   private readonly bedHead = {} as Record<string, HTMLElement>; private readonly bedList = {} as Record<string, HTMLElement>; private readonly bedKey = {} as Record<string, string>;
   /** The archers posted on a tower. */
-  private readonly towerHead = h('h3'); private readonly towerList = h('div'); private towerKey = '';
+  private readonly towerPane: TowerPane;
   /** What the building is, behind the ? next to its title. */
   private readonly info = h('p', { class: 'sub hintbody', hidden: true });
   private readonly staffBoxes: Record<'build' | 'craft' | 'research' | 'tame' | 'farm', StaffBox>;
   private readonly activeBoxes: Record<'craft' | 'research' | 'tame', ActiveBox>;
+  /** The processing houses of the medieval age (Lò luyện, Xưởng mộc, Xưởng thuộc da và dệt): the order at work, its queue line and the grid of recipes of each. */
+  private readonly processActive: Record<'smelter' | 'carpentry' | 'tannery', ActiveBox>;
+  private readonly processNote = { smelter: h('div', { class: 'kv' }), carpentry: h('div', { class: 'kv' }), tannery: h('div', { class: 'kv' }) };
+  private readonly processGrid = {} as Record<'smelter' | 'carpentry' | 'tannery', OrderGrid>;
   private readonly mountNote = h('div', { class: 'kv' });
   private readonly queueNote = { craft: h('div', { class: 'kv' }), research: h('div', { class: 'kv' }) };
   private readonly goodsNote = h('p', { class: 'sub' }); private readonly goodsHint = hint(this.goodsNote, '');
@@ -111,6 +118,8 @@ export class BuildingPanel {
     root.className = 'modal';
     const recipeNm = (id: string) => (RECIPE_BY_ID[id] ? recipeName(RECIPE_BY_ID[id]) : id);
     this.staffBoxes = { build: new StaffBox(c, 'build'), craft: new StaffBox(c, 'craft'), research: new StaffBox(c, 'research'), tame: new StaffBox(c, 'tame'), farm: new StaffBox(c, 'farm') };
+    const procActive = (kind: string) => new ActiveBox(c, (id) => PROCESS_HOUSES[kind].find((r) => r.id === id)?.name ?? id, (id) => PROCESS_HOUSES[kind].find((r) => r.id === id)?.time ?? 1);
+    this.processActive = { smelter: procActive('smelter'), carpentry: procActive('carpentry'), tannery: procActive('tannery') };
     this.activeBoxes = {
       craft: new ActiveBox(c, recipeNm, (id) => sim.orderDef('craft', id)?.time ?? 1),
       research: new ActiveBox(c, (id) => TECH_BY_ID[id]?.name ?? id, (id) => sim.orderDef('research', id)?.time ?? 1),
@@ -120,15 +129,15 @@ export class BuildingPanel {
     const page = (...kids: Array<HTMLElement | null>) => { const el = h('div', { class: 'tabpage', hidden: true }, ...kids); this.pages.push(el); return el; };
 
     // the Chợ: selling goods for shells, and swapping them for each other (market.ts)
-    const marketRow = (give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin'): MarketRow => {
-      const price = h('span', { class: 'bpill' }), title = get === 'coin' ? RES_NAME[give] : `${RES_NAME[give]} → ${RES_NAME[get]}`, name = h('div', { class: 'bname' }, h('b', { text: title }), price);
-      const input = h('input', { class: 'bnum', type: 'number', min: '0', step: '1', inputmode: 'numeric', 'aria-label': get === 'coin' ? `Số vỏ muốn có từ ${RES_NAME[give].toLowerCase()}` : `Số lượt đổi ${title.toLowerCase()}` }) as HTMLInputElement;
+    const marketRow = (give: Res, get: Res): MarketRow => {
+      const buy = give === 'coin', price = h('span', { class: 'bpill' }), title = buy ? RES_NAME[get] : get === 'coin' ? RES_NAME[give] : `${RES_NAME[give]} → ${RES_NAME[get]}`, name = h('div', { class: 'bname' }, h('b', { text: title }), price);
+      const input = h('input', { class: 'bnum', type: 'number', min: '0', step: '1', inputmode: 'numeric', 'aria-label': buy ? `Số vỏ trả để mua ${title.toLowerCase()}` : get === 'coin' ? `Số vỏ muốn có từ ${RES_NAME[give].toLowerCase()}` : `Số lượt đổi ${title.toLowerCase()}` }) as HTMLInputElement;
       const slider = h('input', { class: 'bslide', type: 'range', min: '0', max: '0', step: '1', 'aria-label': 'Số lượt' }) as HTMLInputElement;
       const quote = h('div', { class: 'bquote' });
-      const go = h('button', { class: 'sm primary', type: 'button', text: 'Đổi' }) as HTMLButtonElement;
+      const go = h('button', { class: 'sm primary', type: 'button', text: buy ? 'Mua' : 'Đổi' }) as HTMLButtonElement;
       const rowEl = h('div', { class: 'brow' });
       const r: MarketRow = { row: rowEl, give, get, n: 0, price, input, slider, quote, go };
-      const keep = () => (this.marketKeepOn ? sim.marketKeep(give) : 0), most = () => sim.marketQuote(give, get, Infinity, keep()).steps;
+      const keep = () => (this.marketKeepOn && !buy ? sim.marketKeep(give as Exclude<Res, 'coin'>) : 0), most = () => sim.marketQuote(give, get, Infinity, keep()).steps;
       const set = (n: number) => { r.n = Math.max(0, Math.min(most(), Math.floor(Number.isFinite(n) ? n : 0))); this.updateMarket(); };
       input.addEventListener('input', () => set(parseInt(input.value, 10)));
       slider.addEventListener('input', () => set(Number(slider.value)));
@@ -138,14 +147,16 @@ export class BuildingPanel {
       return r;
     };
     const market = () => {
-      const box = h('div', {}, hint('Chợ', 'Nơi duy nhất đổi hàng. Bán hàng lấy vỏ để trả cho nghiên cứu, hoặc đổi hàng lấy hàng khác (các tuyến đổi mở dần theo nghiên cứu Kinh tế). Mỗi ngày chợ chỉ nhận một lượng nhất định (ngẫu nhiên) mỗi loại hàng ở giá gốc; quá lượng đó thì mỗi lượt đắt hơn. Nâng cấp chợ để được tỉ lệ tốt hơn, phí đổi hàng thấp hơn và nhận được nhiều hơn mỗi ngày.'));
+      const box = h('div', {}, hint('Chợ', 'Nơi duy nhất đổi hàng. Bán hàng lấy vỏ để trả cho nghiên cứu, mua hàng bằng vỏ (đắt hơn bán), hoặc đổi hàng lấy hàng khác (các tuyến đổi mở dần theo nhánh Trao đổi của nghiên cứu Sinh kế). Mỗi ngày chợ chỉ nhận một lượng nhất định (ngẫu nhiên) mỗi loại hàng ở giá gốc; quá lượng đó thì mỗi lượt đắt hơn. Nâng cấp chợ để được tỉ lệ tốt hơn, phí đổi hàng thấp hơn và nhận được nhiều hơn mỗi ngày.'));
       box.append(this.marketHead);
       const keepBox = h('input', { type: 'checkbox' }) as HTMLInputElement; keepBox.checked = this.marketKeepOn;
       keepBox.addEventListener('change', () => { this.marketKeepOn = keepBox.checked; this.updateMarket(); });
       box.append(h('label', { class: 'bkeep' }, keepBox, ' Giữ lại phần cần cho ăn uống và công trình'));
       const sells = h('div', { class: 'barter' });
       for (const res of RES_LIST) { if (res === 'coin') continue; const r = marketRow(res, 'coin'); this.sellRows.push(r); sells.append(r.row); }
-      box.append(h('h3', { text: 'Bán lấy vỏ sò' }), sells, h('h3', { text: 'Đổi hàng lấy hàng' }), this.swapBox);
+      const buys = h('div', { class: 'barter' });
+      for (const res of RES_LIST) { if (res === 'coin') continue; const r = marketRow('coin', res); this.buyRows.push(r); buys.append(r.row); }
+      box.append(h('h3', { text: 'Bán lấy vỏ sò' }), sells, h('h3', { text: 'Mua bằng vỏ sò (đắt hơn bán)' }), buys, h('h3', { text: 'Đổi hàng lấy hàng' }), this.swapBox);
       this.marketMake = marketRow;
       return box;
     };
@@ -174,7 +185,8 @@ export class BuildingPanel {
     this.marchPane = new MarchPane(c);
     this.tabs.drill = [{ label: 'Hành quân', page: page(this.marchPane.root) }];
     this.tabs.scouttent = [{ label: 'Trinh sát', page: page(this.scoutPane.roster) }, { label: 'Làng đã phát hiện', page: page(this.scoutPane.villages) }];
-    this.tabs.tower = [{ label: 'Lính chòi canh', page: page(hint(this.towerHead, 'Lính chòi canh lấy thẳng từ dân rảnh, không cần trại cung thủ: họ lên chòi, ở đó ngày và đêm (đổi ca ở chi tiết của họ) và bắn bằng cung hoặc dây quăng lấy ở Kho vũ khí. Họ bắn xa hơn và mạnh hơn khi đứng trên chòi, và kẻ địch phải phá chòi mới hạ được họ. Máu và sát thương của họ, và của chòi, tăng theo nghiên cứu Phòng thủ.'), this.towerList) }];
+    this.towerPane = new TowerPane(c);
+    this.tabs.tower = [{ label: 'Lính chòi canh', page: page(this.towerPane.root) }];
     this.tabs.fence = []; this.tabs.gate = [];
     this.tabs.builder = [{ label: 'Thợ xây', page: page(this.staffBoxes.build.root) }];
     this.tabs.campfire = [
@@ -191,6 +203,20 @@ export class BuildingPanel {
     }
     this.tabs.storage = [{ label: 'Tài nguyên', page: page(...stockRows) }];
     this.tabs.market = [{ label: 'Giao thương', page: page(market()) }];
+    // the processing houses: what is being made, then a card for each recipe (the same layout as the craft house)
+    const USE: Record<string, string> = { iron: 'Nấu quặng sắt với than thành thỏi sắt: vật liệu của bậc 4.', steel: 'Rèn thỏi sắt với than thành thép: vật liệu của bậc 5.', fine_steel: 'Luyện thép cao cấp từ quặng sắt hiếm: vật liệu của bậc 6.',
+      hardwood: 'Xẻ và phơi gỗ thành gỗ cứng, dùng cho cán giáo, khiên và cung.', charcoal: 'Đốt gỗ thành than củi cho lò luyện.', leather: 'Thuộc da thú thành da thuộc, dùng cho giáp và yên cương.', cloth: 'Dệt sợi thành vải, dùng cho giáp và áo.' };
+    for (const k of ['smelter', 'carpentry', 'tannery'] as const) {
+      const house = () => sim.building(k);
+      this.processGrid[k] = new OrderGrid(c, PROCESS_HOUSES[k].map((r): OrderItem => ({
+        id: r.id, tags: [], name: r.name, use: USE[r.id] ?? r.name, cost: r.in, time: r.time, icon: () => resIcon(Object.keys(r.out)[0]),
+        lock: () => { const b = house(); return b ? sim.processLock(b, r.id) : 'Chưa dựng xong nhà'; }, full: () => null,
+        stored: () => Math.floor(sim.stock[Object.keys(r.out)[0] as Res] ?? 0), queued: () => (house()?.orders ?? []).filter((id) => id === r.id).length,
+        add: () => { const b = house(); return b ? sim.queueProcess(b.id, r.id) : 'Chưa dựng xong nhà'; }, cancel: () => { const b = house(); if (b) sim.unqueueProcess(b.id, r.id); },
+      })));
+      this.progSec[k] = h('div', {}, h('h3', { text: k === 'smelter' ? 'Đang luyện' : k === 'carpentry' ? 'Đang làm' : 'Đang thuộc, dệt' }), this.processActive[k].root, this.processNote[k]);
+      this.tabs[k] = [{ label: 'Chế biến', page: page(hint('Chế biến theo công thức', 'Chạm vào một món để xem giá và thêm vào hàng đợi. Vật liệu trừ ngay khi thêm vào hàng đợi, hủy đơn thì được trả lại. Cần có người làm việc trong nhà (nút Nhân sự) thì đơn mới chạy; nâng cấp nhà để mở thêm công thức và làm nhanh hơn. Sản phẩm vào kho vật liệu.'), this.processGrid[k].root) }];
+    }
 
     // craft house: what is being made, then the grid of what can be ordered (tools, weapons, armour) with filters; a card opens a scroll
     const recipeItem = (r: typeof RECIPES[number]): OrderItem => ({
@@ -351,6 +377,7 @@ export class BuildingPanel {
       case 'market': { const t = MARKET.levels[Math.min(MARKET.levels.length, b.level) - 1]; return `Cấp ${b.level}: bán và đổi hàng · tỉ lệ ×${t.rate.toLocaleString('vi')} · phí đổi hàng ${Math.round(t.fee * 100)}% · mỗi ngày nhận ${t.quotaMin} đến ${t.quotaMax} vỏ giá trị mỗi loại hàng ở giá gốc`; }
       case 'storage': return `Sức chứa ${lv.cap} mỗi loại`;
       case 'toolstore': case 'armory': return `Chứa tối đa ${lv.cap} món`;
+      case 'smelter': case 'carpentry': case 'tannery': return `Cấp ${b.level}: chứa ${lv.slots} người làm việc · tốc độ ×${lv.craftSpeed.toLocaleString('vi')} · cấp cao mở thêm công thức`;
       default: return `Nơi dân rảnh ngủ quanh lửa · chứa ${lv.cap} mỗi loại · làng tối đa ${this.c.sim.popCap()} dân (lửa trại ${POP_BY_FIRE[Math.min(POP_BY_FIRE.length, b.level) - 1]} + Nhà dân ${this.c.sim.bedsIn('house')}) · các nhà khác lên được cấp ${levelCapByFire(b.level)}`;
     }
   }
@@ -358,7 +385,7 @@ export class BuildingPanel {
   update(): void {
     const { sim, ctl } = this.c, b = this.current();
     this.root.hidden = !b || !ctl.buildingOpen;
-    if (this.root.hidden) { this.craftGrid.close(); this.tameGrid.close(); }
+    if (this.root.hidden) { this.craftGrid.close(); this.tameGrid.close(); for (const g of Object.values(this.processGrid)) g.close(); }
     const inTent = this.c.sim.era === 'ancient' && !!b && ctl.buildingOpen && b.kind === 'wartent' && b.done; // the plan of the medieval era opens the game paused, as a war council does
     if (inTent && !this.inTent) { this.resume = sim.speed; sim.speed = 0; }
     else if (!inTent && this.inTent) { if (this.resume > 0 && sim.speed === 0) sim.speed = this.resume; this.resume = 0; }
@@ -370,7 +397,7 @@ export class BuildingPanel {
     if (this.peopleFor !== b.id) { this.peopleFor = b.id; this.peopleOpen = false; } // another house: its page first
     if (ctl.openPeople) { ctl.openPeople = false; this.peopleOpen = !!STAFF_OF[b.kind as keyof typeof STAFF_OF] && b.done; }
     if (b.kind !== 'lab') this.labSub = null;
-    const def = BUILDINGS[b.kind], lv = levelDef(b), top = topLevel(b), ready = b.done;
+    const def = BUILDINGS[b.kind], lv = levelDef(b), fire0 = sim.campfire(), top = b.kind === 'campfire' || !fire0 || sim.dev.freeBuild ? topLevel(b) : Math.min(topLevel(b), levelCapByFire(fire0.level)), ready = b.done;
     this.title.textContent = `${buildingName(b.kind, b.era, b.level)}${def.buildable ? ` · cấp ${b.level}/${top} (${lv.name.toLowerCase()})` : ''}`;
     const pk = `${b.kind}${b.level}${b.done}`;
     if (pk !== this.picKey) { this.picKey = pk; try { this.picBox.replaceChildren(iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0])); } catch { this.picBox.textContent = '🏠'; this.picBox.className = 'dpic glyph'; } }
@@ -383,11 +410,12 @@ export class BuildingPanel {
     if (b.kind === 'campfire' && ready) this.updateCampfire();
     if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.row.hidden = ANIMAL_MATERIALS.includes(r.res) && sim.stock[r.res] < 1; r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity(r.res)}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity(r.res))) * 100)}%`; }
     if (b.kind === 'market' && ready) this.updateMarket();
+    if (ready && isProcessKind(b.kind)) this.updateProcess(b, b.kind as 'smelter' | 'carpentry' | 'tannery');
     if (this.bedList[b.kind] && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
     if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
     if (b.kind === 'builder' && ready) this.staffBoxes.build.update(b);
-    if (b.kind === 'tower' && ready) this.updateTower(b);
+    if (b.kind === 'tower' && ready) this.towerPane.update(b);
     if (b.kind === 'wartent' && ready) {
       const plan = this.c.sim.era === 'ancient', want = plan ? this.war.root : this.simpleWar.root;
       if (this.warHost.firstChild !== want) this.warHost.replaceChildren(want);
@@ -407,20 +435,38 @@ export class BuildingPanel {
   private updateMarket(): void {
     const { sim } = this.c, lv = sim.marketLevel(), coin = RES_NAME.coin.toLowerCase();
     const t = MARKET.levels[Math.max(1, lv) - 1];
-    this.marketHead.textContent = lv < 1 ? 'Chưa có Chợ.' : `Chợ cấp ${lv}: tỉ lệ ×${t.rate.toLocaleString('vi')} · phí đổi hàng ${Math.round(t.fee * 100)}% · mỗi ngày nhận ${t.quotaMin} đến ${t.quotaMax} vỏ giá trị mỗi loại ở giá gốc (hôm nay mỗi loại một con số khác nhau).`;
+    this.marketHead.textContent = lv < 1 ? 'Chưa có Chợ.' : `Chợ cấp ${lv}: tỉ lệ ×${t.rate.toLocaleString('vi')} · phí đổi hàng ${Math.round(t.fee * 100)}% · mỗi ngày nhận ${t.quotaMin} đến ${t.quotaMax} vỏ giá trị mỗi loại ở giá gốc (hôm nay mỗi loại một con số khác nhau).${sim.market.bargain ? (sim.market.bargain.good === '*' ? ` Đoàn thương nhân đang ở chợ: thu mua mọi hàng giá cao hơn ${sim.market.bargain.pct}%.` : ` Món hời hôm nay: ${sim.market.bargain.kind === 'sell' ? 'thu mua' : 'bán'} ${RES_NAME[sim.market.bargain.good as Res].toLowerCase()} ${sim.market.bargain.kind === 'sell' ? 'giá cao hơn' : 'rẻ hơn'} ${sim.market.bargain.pct}%.`) : ''}`;
     const routes = sim.marketRoutes(), key = routes.map((r) => `${r.give}>${r.get}`).join();
     if (key !== this.swapKey) {
       this.swapKey = key;
       this.swapRows = routes.map((r) => this.marketMake!(r.give, r.get));
       this.swapBox.replaceChildren(...(this.swapRows.length ? this.swapRows.map((r) => r.row) : [h('p', { class: 'sub', text: 'Chưa có tuyến đổi hàng nào: nghiên cứu nhánh Kinh tế (Sinh kế) để mở thêm.' })]));
     }
+    for (const r of this.buyRows) { // buying: a shell a step, dearer than selling
+      const good = RES_NAME[r.get].toLowerCase();
+      r.row.hidden = !sim.marketTradable(r.get);
+      if (r.row.hidden) continue;
+      const tm = sim.marketBuyTerms(r.get as Exclude<Res, 'coin'>), per = Math.floor(tm.per) === tm.per ? String(tm.per) : tm.per.toLocaleString('vi', { maximumFractionDigits: 1 });
+      r.price.textContent = `1 ${coin} = ${per} ${good}${tm.left > 0 ? ` · còn ${tm.left} lượt giá gốc hôm nay` : ' · hết lượt giá gốc hôm nay'}${sim.market.bargain?.kind === 'buy' && sim.market.bargain.good === r.get ? ' · MÓN HỜI' : ''}`;
+      r.price.className = `bpill${tm.left > 0 ? '' : ' bad'}`;
+      const max = sim.marketQuote('coin', r.get, Infinity, 0);
+      r.n = Math.max(0, Math.min(r.n, max.steps));
+      if (document.activeElement !== r.input) r.input.value = r.n ? String(r.n) : '';
+      r.input.max = String(max.steps); r.input.placeholder = max.steps ? `0–${max.steps}` : '0'; r.input.disabled = max.steps < 1;
+      r.slider.max = String(max.steps); r.slider.value = String(r.n); r.slider.disabled = max.steps < 1;
+      const q = sim.marketQuote('coin', r.get, r.n, 0);
+      r.quote.className = `bquote${q.steps > 0 && q.last < q.first * 0.6 ? ' bad' : q.steps > 0 && q.last < q.first ? ' warn' : ''}`;
+      r.quote.textContent = max.steps < 1 ? (max.why ?? 'Không mua được') : q.steps < 1 ? `Mua tối đa ${max.steps} ${coin}` : `Trả ${q.give} ${coin} → nhận ${q.get} ${good}${q.last < q.first ? ' · giá tăng dần trong lượt này' : ''}`;
+      r.go.disabled = q.steps < 1;
+      r.go.textContent = q.steps > 0 ? `Mua ${q.get} ${good}` : 'Mua';
+    }
     for (const r of [...this.sellRows, ...this.swapRows]) {
       const sell = r.get === 'coin', give = RES_NAME[r.give].toLowerCase(), got = sell ? coin : RES_NAME[r.get].toLowerCase();
       r.row.hidden = !sim.marketTradable(r.give);
       if (r.row.hidden) continue;
-      const keep = this.marketKeepOn ? sim.marketKeep(r.give) : 0, tm = sim.marketTerms(r.give, r.get);
+      const g = r.give as Exclude<Res, 'coin'>, keep = this.marketKeepOn ? sim.marketKeep(g) : 0, tm = sim.marketTerms(g, r.get as Exclude<Res, 'coin'> | 'coin');
       const perText = sell ? `1 ${coin}` : `${Math.floor(tm.per) === tm.per ? tm.per : tm.per.toLocaleString('vi', { maximumFractionDigits: 1 })} ${got}`;
-      r.price.textContent = `${tm.price} ${give} = ${perText}${tm.left > 0 ? ` · còn ${tm.left} lượt giá gốc hôm nay` : ' · hết lượt giá gốc hôm nay'}`;
+      r.price.textContent = `${tm.price} ${give} = ${perText}${tm.left > 0 ? ` · còn ${tm.left} lượt giá gốc hôm nay` : ' · hết lượt giá gốc hôm nay'}${sim.market.bargain?.kind === 'sell' && (sim.market.bargain.good === r.give || sim.market.bargain.good === '*') ? ' · MÓN HỜI' : ''}`;
       r.price.className = `bpill${tm.left > 0 ? '' : ' bad'}`;
       r.price.title = tm.left > 0 ? 'Mỗi lượt là giá trị một vỏ sò. Hết lượt giá gốc thì mỗi lượt đắt hơn.' : 'Chợ hôm nay không còn nhận thêm hàng này ở giá gốc: mỗi lượt đắt hơn lượt trước';
       const max = sim.marketQuote(r.give, r.get, Infinity, keep);
@@ -446,6 +492,13 @@ export class BuildingPanel {
     this.peopleBtn.classList.toggle('on', this.peopleOpen);
     this.peopleBtn.title = n < slots ? 'Còn chỗ trống: bấm để thêm người' : 'Thêm hoặc cho nghỉ người làm việc';
     this.peopleBtn.onclick = () => { this.peopleOpen = true; this.update(); };
+  }
+
+  private updateProcess(b: Building, kind: 'smelter' | 'carpentry' | 'tannery'): void {
+    const orders = b.orders ?? [], name = (id: string) => PROCESS_HOUSES[kind].find((r) => r.id === id)?.name.toLowerCase() ?? id;
+    this.staffBoxes.craft.update(b); this.processActive[kind].update(b);
+    this.processNote[kind].textContent = `Hàng đợi ${orders.length}: ${orders.map(name).join(', ') || 'trống'}${b.staff.length ? '' : ' · chưa có ai làm việc trong nhà: đơn chưa chạy'}`;
+    this.processGrid[kind].update();
   }
 
   private updateWorkshop(b: Building): void {
@@ -495,21 +548,6 @@ export class BuildingPanel {
       const rc = RECIPE_BY_ID[r.id], mine = (cat === 'gear') === isGearKind(rc.kind), n = sim.toolCount(rc.kind, rc.tier);
       r.row.hidden = !mine || (n === 0 && !!sim.recipeLock(r.id)) || (!!f.kind && rc.kind !== f.kind) || (f.only && n === 0); r.num.textContent = `× ${n}`; r.drop.disabled = r.dropAll.disabled = n === 0;
     }
-  }
-
-  /** Who keeps watch on the tower, and the archers who could. */
-  private updateTower(b: Building): void {
-    const { sim, ctl, toast } = this.c, crew = sim.garrison(b), slots = levelDef(b).slots;
-    const free = sim.villagers.filter((v) => v.team === 'player' && v.job === 'idle' && !roleOf(v) && v.health > 0 && v.down <= 0);
-    this.towerHead.replaceChildren(h('div', { class: 'dhouse' }, h('b', { text: 'Lính chòi canh' }), dlg.slots(crew.length, slots)));
-    const key = `${b.id}|${crew.map((v) => `${v.id}.${Math.round(v.health / 5)}.${Math.round(v.energy / 5)}.${v.weapon ?? ''}`).join()}|${free.map((v) => v.id).join()}|${crew.length >= slots}`;
-    if (key === this.towerKey) return;
-    this.towerKey = key;
-    const row = (v: Villager, label: string, fn: () => void) => personTile(this.c, v, { note: v.weapon ? WEAPONS[v.weapon].name : 'chưa có vũ khí', actions: [dlg.button(label, () => { fn(); ctl.onChange(); }, { small: true, disabled: label === 'Lên chòi' && crew.length >= slots })] });
-    this.towerList.replaceChildren(
-      crew.length ? dlg.list(...crew.map((v) => row(v, 'Xuống', () => sim.leaveTower([v.id])))) : dlg.empty('Chưa có ai trên chòi.'),
-      h('div', { class: 'dhouse' }, h('small', { class: 'dsub', text: free.length ? 'Dân rảnh có thể lên:' : 'Không còn dân rảnh nào.' })),
-      dlg.list(...free.map((v) => row(v, 'Lên chòi', () => { const e = sim.assignTower([v.id], b.id); if (e) toast(e); }))));
   }
 
   private updateCampfire(): void {

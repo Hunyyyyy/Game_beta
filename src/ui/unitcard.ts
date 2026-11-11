@@ -1,4 +1,4 @@
-import { JOB_NAME, roleName, roleOf, titleOfRole } from '../sim/jobs';
+import { JOB_NAME, titleOfRole } from '../sim/jobs';
 import type { Villager } from '../sim/sim';
 import { h } from './dom';
 import { InfoCard } from './infocard';

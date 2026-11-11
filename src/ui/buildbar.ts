@@ -1,11 +1,11 @@
 import { CAMP_KINDS, CAMP_PCT, campPicks, TENT_PCT } from '../sim/upgradebonus';
 import MARKET from '../data/market.json';
-import { BUILDINGS, Building, footOf, BuildingKind, canGrow, gatherMult, levelCapByFire, levelDef, maxHp, maxLevel, topLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, footOf, BuildingKind, canGrow, gatherMult, levelCapByFire, levelDef, maxHp, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
 import { ROLES, roleOf } from '../sim/jobs';
 import { RES_NAME, Res, Stock } from '../sim/resources';
 import type { Renderer } from '../render/renderer';
-import { costText, h, iconCanvas } from './dom';
+import { costText, iconCanvas } from './dom';
 import { dlg, GameDialog } from './gamedialog';
 import { InfoCard } from './infocard';
 import { resIcon } from './resicons';
@@ -16,7 +16,7 @@ import type { Ctx } from './panels';
 const STAFF_HOUSES: string[] = ['workshop', 'lab', 'stable'];
 
 const OPEN_LABEL: Record<BuildingKind, string> = {
-  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', market: 'Giao thương', workshop: 'Chế tạo', lab: 'Nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', guardpost: 'Quản lý lính gác', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông', stable: 'Thuần thú', supplycamp: 'Quản lý hậu cần', fieldtent: 'Lều hành quân',
+  campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', market: 'Giao thương', workshop: 'Chế tạo', smelter: 'Chế biến', carpentry: 'Chế biến', tannery: 'Chế biến', lab: 'Nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', guardpost: 'Quản lý lính gác', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông', stable: 'Thuần thú', supplycamp: 'Quản lý hậu cần', fieldtent: 'Lều hành quân',
 };
 
 /** The gatherers whose work a house shows (see Sim.yieldNow). */
@@ -161,17 +161,19 @@ export class BuildingBar {
     this.root.hidden = !show;
     if (!b || !show) { this.id = null; return; }
     this.id = b.id;
-    const def = BUILDINGS[b.kind], top = topLevel(b), lv = levelDef(b);
+    const fire = sim.campfire(), def = BUILDINGS[b.kind], lv = levelDef(b);
+    const top = b.kind === 'campfire' || !fire || sim.dev.freeBuild ? topLevel(b) : Math.min(topLevel(b), levelCapByFire(fire.level)); // a house may not rise above what the campfire allows
+    const st = sim.staffing(b), crowd = st ? ` 👥 ${st.have}/${st.slots}` : ''; // the people of the house, beside its name
     const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.repairing ? `đang sửa chữa ${Math.round((b.hp / maxHp(b)) * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
     const hp = b.done ? ` · bền ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? ' · đang cháy' : b.hp <= maxHp(b) * 0.7 ? ' · bốc khói' : ''}` : '';
-    const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < top;
+    const upgradable = canGrow(b.kind) && b.done && !b.upgrading && b.level < topLevel(b);
     // a camp of soldiers: one button calls all of its soldiers out of the camp, or sends them back when they are all out
     const campRole = (['foot', 'cavalry', 'archer', 'guard', 'scout', 'supply'] as const).find((r) => ROLES[r].building === b.kind), camp = campRole ? this.c.sim.villagers.filter((v) => roleOf(v) === campRole) : [];
     const campOut = { ids: camp.map((v) => v.id), all: camp.length > 0 && camp.every((v) => this.c.sim.isOut(v)) };
     this.card.set({
       picKey: `${b.kind}${b.level}${b.done}`,
       pic: () => { try { return iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0]); } catch { return '🏠'; } },
-      title: def.name, sub: state + hp, line: this.yieldLine(b),
+      title: def.name + crowd, sub: state + hp, line: this.yieldLine(b),
       onClose: () => ctl.closeBuilding(),
       actions: [
         // choosing several pieces of fence to carry together: the card turns into the card of the group

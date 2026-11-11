@@ -1,4 +1,4 @@
-import { Arm, armOfWeapon, ARM_NAME, FORMATION_IDS, FORMATIONS, FormationId, SQUAD_MAX, SQUAD_MIN } from '../sim/formations';
+import { Arm, ARM_NAME, FORMATION_IDS, FORMATIONS, FormationId, SQUAD_MIN } from '../sim/formations';
 import type { CardKind, Mission, MissionTarget, Plan, PlanStance, Pt, Squad, Villager } from '../sim/model';
 import { WEAPONS } from '../sim/combat';
 import { WEATHER } from '../sim/calendar';
