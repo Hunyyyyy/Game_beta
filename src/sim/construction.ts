@@ -1,5 +1,5 @@
 /** Placing, upgrading, moving and demolishing buildings, and what the buildings give the village (room, population, build speed). */
-import { Building, BuildingKind, BUILDINGS, Era, eraLocked, buildingSight, needsWork, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, topLevel, levelCapByFire, POP_BY_FIRE, fireUnlockLevel } from './buildings';
+import { Building, BuildingKind, BUILDINGS, footOf, footDim, Era, eraLocked, buildingSight, needsWork, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, topLevel, levelCapByFire, POP_BY_FIRE, fireUnlockLevel } from './buildings';
 import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
 import { buildingOpen, discountBill, perkPct, techForBuilding } from './research';
@@ -10,9 +10,9 @@ import type { Sim } from './sim';
 import { PlaceResult } from './model';
 
 // ---------------------------------------------------------------- công trình
-export function addBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, done: boolean, level = 1): Building {
-  const d = BUILDINGS[kind];
+export function addBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, done: boolean, level = 1, rot = 0): Building {
   const b: Building = { id: sim.nextBid++, kind, era: sim.era, x, y, level, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: kind !== 'gate', staff: [], active: null, workers: 0 };
+  if (rot === 1 && kind === 'gate') b.rot = 1;
   b.hp = maxHp(b);
   sim.buildings.push(b);
   setOcc(sim, b, 1);
@@ -37,15 +37,16 @@ export function inTerritory(sim: Sim, x: number, y: number, ignore?: Building): 
   for (const b of sim.buildings) {
     if (b === ignore || !b.done) continue;
     const r = buildingSight(b);
-    if (r > 0 && Math.hypot(b.x + BUILDINGS[b.kind].w / 2 - x, b.y + BUILDINGS[b.kind].h / 2 - y) <= r) return true;
+    const f = footOf(b);
+    if (r > 0 && Math.hypot(b.x + f.w / 2 - x, b.y + f.h / 2 - y) <= r) return true;
   }
   return false;
 }
 
 /** Why the footprint of `kind` at (x, y) is unusable, or null. `ignore` is a building that is being moved and may overlap itself. */
-export function footprintError(sim: Sim, kind: BuildingKind, x: number, y: number, ignore?: Building): string | null {
-  const d = BUILDINGS[kind], w = sim.world, N = w.size;
-  const own = (tx: number, ty: number) => !!ignore && tx >= ignore.x && tx < ignore.x + d.w && ty >= ignore.y && ty < ignore.y + d.h;
+export function footprintError(sim: Sim, kind: BuildingKind, x: number, y: number, ignore?: Building, dim?: { w: number; h: number }): string | null {
+  const d = dim ?? BUILDINGS[kind], w = sim.world, N = w.size, was = ignore ? footOf(ignore) : d;
+  const own = (tx: number, ty: number) => !!ignore && tx >= ignore.x && tx < ignore.x + was.w && ty >= ignore.y && ty < ignore.y + was.h;
   for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) {
     const tx = x + i, ty = y + j;
     if (!w.inBounds(tx, ty)) return 'Ngoài bản đồ';
@@ -59,7 +60,7 @@ export function footprintError(sim: Sim, kind: BuildingKind, x: number, y: numbe
   // houses keep a free tile between them (CLEARANCE) so that villagers never get boxed in; fences, gates and pits are laid tight on purpose
   if (!WALL_KINDS.has(kind)) for (const o of sim.buildings) {
     if (o === ignore || WALL_KINDS.has(o.kind)) continue;
-    const od = BUILDINGS[o.kind], gx = Math.max(x - (o.x + od.w), o.x - (x + d.w)), gy = Math.max(y - (o.y + od.h), o.y - (y + d.h));
+    const od = footOf(o), gx = Math.max(x - (o.x + od.w), o.x - (x + d.w)), gy = Math.max(y - (o.y + od.h), o.y - (y + d.h));
     if (Math.max(gx, gy) < CLEARANCE) return `Cần chừa ít nhất ${CLEARANCE} ô trống giữa các công trình để dân đi lại`;
   }
   return null;
@@ -141,8 +142,8 @@ export function startCost(sim: Sim, kind: BuildingKind): Partial<Stock> {
 }
 
 /** Trả về lý do không đặt được, hoặc null nếu đặt được. */
-export function canPlace(sim: Sim, kind: BuildingKind, x: number, y: number): string | null {
-  return footprintError(sim, kind, x, y) ?? buildingLock(sim, kind) ?? (sim.freeCost() ? null : sim.missing(startCost(sim, kind)));
+export function canPlace(sim: Sim, kind: BuildingKind, x: number, y: number, rot = 0): string | null {
+  return footprintError(sim, kind, x, y, undefined, footDim(kind, rot)) ?? buildingLock(sim, kind) ?? (sim.freeCost() ? null : sim.missing(startCost(sim, kind)));
 }
 
 /** Reason the building cannot be upgraded now, or null. */
@@ -225,14 +226,14 @@ export function setEra(sim: Sim, era: Era): void {
   sim.fogDirty = true;
 }
 
-export function placeBuilding(sim: Sim, kind: BuildingKind, x: number, y: number): PlaceResult {
+export function placeBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, rot = 0): PlaceResult {
   const d = BUILDINGS[kind];
   if (!d.buildable) return { ok: false, reason: 'Không xây được công trình này' };
-  const why = canPlace(sim, kind, x, y);
+  const why = canPlace(sim, kind, x, y, rot);
   if (why) return { ok: false, reason: why };
   const cost = startCost(sim, kind), lvl = startLevel(sim, kind);
   if (!sim.freeCost()) for (const r of Object.keys(cost) as Res[]) sim.stock[r] -= cost[r] ?? 0;
-  const b = addBuilding(sim, kind, x, y, false, lvl);
+  const b = addBuilding(sim, kind, x, y, false, lvl, rot);
   delete sim.ruins[kind]; // the ruin is built over
   sim.addSfx('place', false, x, y);
   if (sim.dev.instantBuild) { b.progress = 1; b.done = true; sim.fogDirty = true; sim.say(`${d.name} đã dựng xong ngay (dev).`); return { ok: true, building: b }; }
@@ -277,7 +278,7 @@ export function evict(sim: Sim, b: Building): void {
 }
 
 export function setOcc(sim: Sim, b: Building, val: number): void {
-  const d = BUILDINGS[b.kind];
+  const d = footOf(b);
   if ((b.kind === 'gate' && b.open) || b.kind === 'trap') val = 0; // an open gate is a gap in the fence, and a pit does not block the way
   for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) {
     const k = (b.y + j) * sim.world.size + b.x + i;
@@ -322,29 +323,37 @@ export function demolishBuilding(sim: Sim, id: number): string | null {
   return null;
 }
 
-/** Why the building cannot go to (x, y), or null. */
-export function canMove(sim: Sim, b: Building, x: number, y: number): string | null {
-  if (!BUILDINGS[b.kind].buildable) return 'Không dời được công trình này';
-  if (sim.attackReason()) return 'Không dời được công trình khi làng đang bị tấn công';
-  if (x === b.x && y === b.y) return 'Vẫn ở chỗ cũ';
-  return footprintError(sim, b.kind, x, y, b) ?? sim.missing(moveFee(sim, b));
+/** The tiles a building will cover when it goes to a new place turned `rot` (a gate of two tiles may be turned as it is moved; every other house keeps its shape). */
+export function movedDim(b: Building, rot?: number): { w: number; h: number } {
+  const f = footOf(b);
+  return b.kind === 'gate' && b.w === undefined && rot !== undefined ? footDim('gate', rot) : f;
 }
 
-/** Pieces of wall that may be picked up together and put down in another shape: the fence and the gate (one tile each). */
+/** Why the building cannot go to (x, y) (turned `rot`, for a gate), or null. */
+export function canMove(sim: Sim, b: Building, x: number, y: number, rot?: number): string | null {
+  if (!BUILDINGS[b.kind].buildable) return 'Không dời được công trình này';
+  if (sim.attackReason()) return 'Không dời được công trình khi làng đang bị tấn công';
+  const dim = movedDim(b, rot), was = footOf(b);
+  if (x === b.x && y === b.y && dim.w === was.w && dim.h === was.h) return 'Vẫn ở chỗ cũ';
+  return footprintError(sim, b.kind, x, y, b, dim) ?? sim.missing(moveFee(sim, b));
+}
+
+/** Pieces of wall that may be picked up together and put down in another shape: the fence (one tile) and the gate (two, turning with the group). */
 export const GROUP_KINDS: ReadonlySet<BuildingKind> = new Set<BuildingKind>(['fence', 'gate']);
 
 /**
  * Where each piece of a group goes when the first piece is put at `to` and the whole group is turned `rot` quarter-turns clockwise about that first piece
  * (as the walls of a village are picked up and put down in Clash of Clans).
  */
-export function groupPlan(sim: Sim, ids: readonly number[], to: { x: number; y: number }, rot: number): Array<{ id: number; kind: BuildingKind; x: number; y: number; level: number }> {
+export function groupPlan(sim: Sim, ids: readonly number[], to: { x: number; y: number }, rot: number): Array<{ id: number; kind: BuildingKind; x: number; y: number; level: number; w: number; h: number; rot: 0 | 1 }> {
   const pieces = ids.map((id) => sim.getBuilding(id)).filter((b): b is Building => !!b);
   if (!pieces.length) return [];
   const a = pieces[0], turns = ((Math.round(rot) % 4) + 4) % 4;
   return pieces.map((b) => {
-    let ox = b.x - a.x, oy = b.y - a.y;
-    for (let i = 0; i < turns; i++) [ox, oy] = [-oy, ox];
-    return { id: b.id, kind: b.kind, x: to.x + ox, y: to.y + oy, level: b.level };
+    let ox = b.x - a.x, oy = b.y - a.y, { w, h } = footOf(b), r: 0 | 1 = b.rot === 1 ? 1 : 0;
+    // a quarter turn clockwise about the first piece: the tiles of a piece go from (x .. x+w-1, y .. y+h-1) to (-(y+h-1) .. -y, x .. x+w-1), so a gate of two tiles turns from lying to standing
+    for (let i = 0; i < turns; i++) { [ox, oy] = [-(oy + h - 1), ox]; [w, h] = [h, w]; r = r ? 0 : 1; }
+    return { id: b.id, kind: b.kind, x: to.x + ox, y: to.y + oy, level: b.level, w, h, rot: r };
   });
 }
 
@@ -359,7 +368,7 @@ export function canMoveGroup(sim: Sim, ids: readonly number[], to: { x: number; 
   // lift every piece off the ground, look at where each goes, put them back as they were
   for (const b of pieces) setOcc(sim, b, 0);
   try {
-    for (const q of plan) { const why = footprintError(sim, q.kind, q.x, q.y); if (why) return why; }
+    for (const q of plan) { const why = footprintError(sim, q.kind, q.x, q.y, undefined, { w: q.w, h: q.h }); if (why) return why; }
   } finally { for (const b of pieces) setOcc(sim, b, 1); }
   return null;
 }
@@ -370,7 +379,7 @@ export function moveGroup(sim: Sim, ids: readonly number[], to: { x: number; y: 
   if (why) return why;
   const plan = groupPlan(sim, ids, to, rot), pieces = plan.map((q) => sim.getBuilding(q.id)!);
   for (const b of pieces) setOcc(sim, b, 0);
-  plan.forEach((q, i) => { pieces[i].x = q.x; pieces[i].y = q.y; });
+  plan.forEach((q, i) => { pieces[i].x = q.x; pieces[i].y = q.y; if (q.kind === 'gate') { pieces[i].rot = q.rot; if (pieces[i].w !== undefined) { pieces[i].w = q.w; pieces[i].h = q.h; } } });
   for (const b of pieces) setOcc(sim, b, 1);
   sim.fogDirty = true;
   sim.say(`Đã dời ${pieces.length} mảnh hàng rào sang chỗ mới.`);
@@ -378,17 +387,19 @@ export function moveGroup(sim: Sim, ids: readonly number[], to: { x: number; y: 
 }
 
 /** Take a building apart and put it up again elsewhere: it keeps its level, pays the fee and must be rebuilt (half the time). */
-export function moveBuilding(sim: Sim, id: number, x: number, y: number): string | null {
+export function moveBuilding(sim: Sim, id: number, x: number, y: number, rot?: number): string | null {
   const b = sim.getBuilding(id);
   if (!b) return 'Không tìm thấy công trình';
-  const why = canMove(sim, b, x, y);
+  const why = canMove(sim, b, x, y, rot);
   if (why) return why;
   const fee = moveFee(sim, b);
   for (const r of Object.keys(fee) as Res[]) sim.stock[r] -= fee[r] ?? 0;
   evict(sim, b);
   if (b.upgrading) { const back = buildBill(sim, levelDef(b, b.level + 1).cost); for (const r of Object.keys(back) as Res[]) if (!sim.freeCost()) sim.stock[r] += back[r] ?? 0; b.upgrading = false; }
   // a finished house is lifted and set down as it is: it keeps its level and needs no builders
-  setOcc(sim, b, 0); b.x = x; b.y = y; setOcc(sim, b, 1);
+  setOcc(sim, b, 0); b.x = x; b.y = y;
+  if (b.kind === 'gate' && b.w === undefined && rot !== undefined) b.rot = rot === 1 ? 1 : 0; // a gate may be turned as it is set down
+  setOcc(sim, b, 1);
   sim.fogDirty = true;
   sim.say(`${BUILDINGS[b.kind].name} được dời sang chỗ mới.`);
   return null;

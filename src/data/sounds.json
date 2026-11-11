@@ -10,9 +10,24 @@
       { "file": "battle/bow_draw.mp3",    "frame": 0, "volume": 0.3, "gap": 0.2 },
       { "file": "battle/bow_release.mp3", "volume": 0.4, "gap": 0.2 }
     ],
-    "run|swing_charge|thrust_charge|shoot_charge|fist_charge|sling_charge|throw_charge|swing_walk|thrust_walk|shoot_walk|sling_walk|throw_walk": [
+    "run": [
       { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 0, "volume": 0.6, "gap": 0.25 },
       { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 3, "volume": 0.6, "gap": 0.25 }
+    ],
+    "swing_walk|thrust_walk|shoot_walk|sling_walk|throw_walk|shield_walk|stone_walk|xbow_walk|post_club_walk|post_spear_walk|post_mace_walk|gpost_sword_walk": [
+      { "files": ["units/footstep_left_1.mp3", "units/footstep_left_3.mp3", "units/footstep_left_5.mp3"], "frame": 0, "volume": 0.35, "gap": 0.3 },
+      { "files": ["units/footstep_right_2.mp3", "units/footstep_right_4.mp3", "units/footstep_right_6.mp3"], "frame": 3, "volume": 0.35, "gap": 0.3 }
+    ],
+    "fist_charge|swing_charge|thrust_charge|shoot_charge|sling_charge|throw_charge|shield_charge|stone_charge|xbow_charge|post_spear_charge|post_mace_charge|shield_run|shoot_run|xbow_run": [
+      { "files": ["units/footstep_left_1.mp3", "units/footstep_left_3.mp3", "units/footstep_left_5.mp3"], "frame": 0, "volume": 0.5, "gap": 0.2 },
+      { "files": ["units/footstep_right_2.mp3", "units/footstep_right_4.mp3", "units/footstep_right_6.mp3"], "frame": 3, "volume": 0.5, "gap": 0.2 }
+    ],
+    "horse_idle": { "files": ["units/horse_neigh_1.mp3", "units/horse_neigh_2.mp3"], "onStart": true, "volume": 0.35, "gap": 45 },
+    "horse_walk": { "files": ["units/horse_gallop_1.mp3", "units/horse_gallop_2.mp3", "units/horse_gallop_3.mp3", "units/horse_gallop_4.mp3", "units/horse_gallop_5.mp3", "units/horse_gallop_6.mp3"], "frame": 0, "volume": 0.4, "gap": 0.4 },
+    "horse_gallop": { "files": ["units/horse_gallop_1.mp3", "units/horse_gallop_2.mp3", "units/horse_gallop_3.mp3", "units/horse_gallop_4.mp3", "units/horse_gallop_5.mp3", "units/horse_gallop_6.mp3"], "frame": 0, "volume": 0.45, "gap": 0.3 },
+    "horse_charge": [
+      { "files": ["units/horse_gallop_1.mp3", "units/horse_gallop_2.mp3", "units/horse_gallop_3.mp3", "units/horse_gallop_4.mp3", "units/horse_gallop_5.mp3", "units/horse_gallop_6.mp3"], "frame": 0, "volume": 0.55, "gap": 0.3 },
+      { "files": ["units/horse_neigh_1.mp3", "units/horse_neigh_2.mp3"], "onStart": true, "volume": 0.5, "gap": 14 }
     ],
     "sling_attack": { "file": "battle/sling_throw.mp3", "volume": 0.5, "gap": 0.2 },
     "throw_attack": { "file": "battle/sling_throw.mp3", "volume": 0.5, "gap": 0.2 }
@@ -26,6 +41,7 @@
                  "bursts": [{ "files": ["envairoment/wind_storm_1.mp3", "envairoment/wind_storm_2.mp3", "envairoment/wind_1.mp3", "envairoment/wind_2.mp3"], "volume": 0.9, "gapMin": 5, "gapMax": 14 }] }
   },
   "thunder": { "files": ["envairoment/thunder_1.mp3", "envairoment/thunder_2.mp3", "envairoment/thunder_3.mp3"], "volume": 0.8, "delayMin": 0.3, "delayMax": 1.6 },
+  "neigh": { "files": ["units/horse_neigh_1.mp3", "units/horse_neigh_2.mp3"], "volume": 0.5, "gap": 8 },
   "order": { "files": ["battle/order_1.mp3", "battle/order_2.mp3", "battle/order_3.mp3"], "volume": 0.7, "gap": 0.15 },
   "end": {
     "lost": { "file": "battle/musics/The_Field_of_Lost_Kings.mp3", "volume": 0.6 },

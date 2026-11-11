@@ -2,6 +2,13 @@ import { World } from './world';
 
 export type Step = readonly [number, number];
 const SQ2 = Math.SQRT2;
+/** The estimate is made a hair too big, so that of many ways of the same length the search keeps to the ones that lead towards the goal (a path is at most this much longer than the shortest). */
+const TIE = 1.002;
+/** How long (game seconds) the answer of a search that did not reach its goal is kept. */
+const FAIL_KEEP = 2;
+
+/** What the searches cost, for finding what is dear (a count, nothing the game reads): searches, nodes opened, searches that did not reach the goal, those that stopped at the limit, and answers taken from memory. */
+export const pathStats = { calls: 0, nodes: 0, short: 0, cut: 0, hits: 0 };
 
 class MinHeap {
   private items: number[] = [];
@@ -51,15 +58,19 @@ function memory(total: number): typeof mem {
  * A* 8 hướng, không cắt góc. Nếu không tới được đích, trả về đường tới ô gần đích nhất.
  * Trả về các ô cần đi qua (không gồm ô xuất phát); mảng rỗng nếu không có đường.
  */
-export function findPath(world: World, sx: number, sy: number, gx: number, gy: number, maxNodes = 30000, ours: boolean | 'foe' = false): Step[] {
+export function findPath(world: World, sx: number, sy: number, gx: number, gy: number, maxNodes = 30000, ours: boolean | 'foe' = false, fresh = false): Step[] {
   const N = world.size;
+  // a search that did not reach its goal (it is shut in, or too far for the limit) comes out the same when asked again from the same tile a moment later, and walkers who stand at a wall ask every half second: the answer is kept for
+  // two seconds. `fresh` (an order of the player, which is absolute and must see the map as it is now) never uses it.
+  const key = fresh ? '' : `${ours === true ? 1 : ours === 'foe' ? 2 : 0}:${sy * N + sx}:${gy * N + gx}`;
+  if (key) { const hit = world.pathFails.get(key); if (hit && hit.until > world.age) { pathStats.hits++; return hit.path.slice(); } }
   const blocked = (x: number, y: number) => (ours && (ours === 'foe' ? world.foeGates : world.gates).size > 0 ? world.isBlockedFor(x, y, ours) : world.isBlocked(x, y)); // our people pass the shut gates
   if (!world.inBounds(sx, sy) || !world.inBounds(gx, gy)) return [];
   const { g, f, parent, seen, closed, gen } = memory(N * N);
   const heap = new MinHeap(f), nb = new Uint8Array(9);
   const h = (x: number, y: number) => {
     const dx = Math.abs(x - gx), dy = Math.abs(y - gy);
-    return dx + dy + (SQ2 - 2) * Math.min(dx, dy);
+    return (dx + dy + (SQ2 - 2) * Math.min(dx, dy)) * TIE;
   };
   const start = sy * N + sx, goal = gy * N + gx;
   g[start] = 0; f[start] = h(sx, sy); seen[start] = gen; parent[start] = -1; heap.push(start);
@@ -86,7 +97,10 @@ export function findPath(world: World, sx: number, sy: number, gx: number, gy: n
       if (seen[ni] !== gen || ng < g[ni]) { seen[ni] = gen; g[ni] = ng; f[ni] = ng + h(cx + dx, cy + dy); parent[ni] = cur; heap.push(ni); }
     }
   }
+  pathStats.calls++; pathStats.nodes += expanded; if (best !== goal) pathStats.short++; if (expanded >= maxNodes) pathStats.cut++;
   const out: Step[] = [];
   for (let n = best; n !== start && n !== -1; n = parent[n]) out.push([n % N, (n / N) | 0]);
-  return out.reverse();
+  out.reverse();
+  if (key && best !== goal) { if (world.pathFails.size > 3000) world.pathFails.clear(); world.pathFails.set(key, { until: world.age + FAIL_KEEP, path: out.slice() }); }
+  return out;
 }

@@ -7,6 +7,10 @@ export const FIRE_VISION = 8;  // campfire, day and night
 export const TICK = 1 / 20;    // bước mô phỏng cố định (giây game)
 /** How many searches for a way the soldiers may start in one tick (see Sim.pathLeft). */
 export const PATH_BUDGET = 6;
+/** The least game time between two workings out of the fog of war (seconds). */
+export const FOG_PAUSE = 0.25;
+/** Searches for a way each tick while fast-forwarded: the ticks come 8 times as often at 8x and 16 times as often at 16x, and so would the searches (the dearest thing a tick does). */
+export const PATH_BUDGET_FAST = 2, PATH_BUDGET_FASTEST = 1;
 /** What is kept for the people of the villages in a tick, whatever our own soldiers have used: they are worked after ours, and in a big fight they would stand still for want of a way. */
 export const FOE_PATH_SHARE = 3;
 /** The length of a day of each era in seconds of game (= real seconds at 1x): data/time.json. A day is 65% daylight and 35% night (dusk and dawn included). */

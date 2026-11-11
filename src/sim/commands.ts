@@ -81,7 +81,7 @@ export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: numb
     // finding a way is the dear part of an order given to hundreds: past the budget of this tick a soldier is left to walk to his post when his turn comes
     if (v.job === 'fight' && sim.pathLeft <= 0) { v.phase = 'idle'; continue; }
     if (v.job === 'fight') sim.pathLeft--;
-    v.path = sim.pathTo(v, goal[0], goal[1], 30000);
+    v.path = sim.pathTo(v, goal[0], goal[1], 30000, true); // the player's word: the map as it is now, never an answer kept from a moment ago
     v.phase = v.path.length ? 'move' : 'idle';
     if (v.job === 'fight' && v.path.length) v.fight.obey = true; // the player's word is the highest: he walks there whatever he meets, and fights again on arrival (brainplayer clears it)
   }
@@ -308,7 +308,7 @@ export function nextOrder(sim: Sim, v: Villager): boolean {
   if (o.k === 'move') {
     v.fight.mode = 'none'; v.fight.target = null;
     const goal = sim.nearestFree(Math.floor(o.x), Math.floor(o.y), new Set());
-    if (goal) { v.path = sim.pathTo(v, goal[0], goal[1], 30000); v.phase = v.path.length ? 'move' : 'idle'; if (v.job === 'fight') { v.fight.mode = 'guard'; v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 }; } }
+    if (goal) { v.path = sim.pathTo(v, goal[0], goal[1], 30000, true); v.phase = v.path.length ? 'move' : 'idle'; if (v.job === 'fight') { v.fight.mode = 'guard'; v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 }; } }
   } else if (o.k === 'attackMove') { v.fight.mode = 'attackMove'; v.fight.dest = { x: o.x, y: o.y }; v.phase = 'move'; }
   else { v.fight.mode = 'attack'; v.fight.target = o.t; }
   return true;

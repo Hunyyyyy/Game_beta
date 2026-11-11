@@ -11,7 +11,7 @@ import type { BuildingKind } from '../sim/buildings';
 import { TECH_BY_ID } from '../sim/research';
 import { ResearchPane } from './researchpane';
 import { resIcon } from './resicons';
-import { RECIPE_BY_ID, RECIPES, TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, ToolKind, recipeName, recipeUse } from '../sim/tools';
+import { RECIPE_BY_ID, RECIPES, TIER_DURABILITY, TIER_NAME, TOOL_KINDS, TOOL_NAME, ToolKind, recipeName, recipeStats, recipeUse } from '../sim/tools';
 import { costText, h, helpButton, hint, iconCanvas } from './dom';
 import type { Ctx } from './ctx';
 import { PeoplePane } from './peoplepane';
@@ -185,7 +185,7 @@ export class BuildingPanel {
 
     // craft house: what is being made, then the grid of what can be ordered (tools, weapons, armour) with filters; a card opens a scroll
     const recipeItem = (r: typeof RECIPES[number]): OrderItem => ({
-      id: r.id, name: recipeName(r), use: recipeUse(r), get cost() { return sim.craftCost(r.id); }, time: r.time, icon: () => iconCanvas(sprites.icons[r.id]),
+      id: r.id, name: recipeName(r), use: recipeUse(r), stats: recipeStats(r), get cost() { return sim.craftCost(r.id); }, time: r.time, icon: () => iconCanvas(sprites.icons[r.id]),
       tags: [r.kind, ...(r.kind in WEAPONS ? [WEAPONS[r.kind].ranged ? 'ranged' : 'melee'] : r.kind in ARMORS ? ['armor'] : ['tool'])],
       lock: () => sim.recipeLock(r.id), full: () => sim.craftStoreBlock(r.id), stored: () => sim.toolCount(r.kind, r.tier), queued: () => sim.craftQueue.filter((id) => id === r.id).length,
       add: () => sim.queueCraft(r.id), cancel: () => sim.unqueueCraft(r.id),

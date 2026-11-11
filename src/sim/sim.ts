@@ -1,6 +1,6 @@
 import { DayPart, dayPart, isRestTime, lightAt, rollWeather, Season, seasonOf, WeatherKind } from './calendar';
-import { dayLength, FOE_PATH_SHARE, paceWork, PATH_BUDGET, START_TIME, TICK } from './constants';
-import { Building, BuildingKind, BUILDINGS, Era } from './buildings';
+import { dayLength, FOE_PATH_SHARE, FOG_PAUSE, paceWork, PATH_BUDGET, PATH_BUDGET_FAST, PATH_BUDGET_FASTEST, START_TIME, TICK } from './constants';
+import { Building, BuildingKind, BUILDINGS, Era, footOf } from './buildings';
 import { Fog } from './fog';
 import { Job, RoleId, WorkJob } from './jobs';
 import { Step } from './path';
@@ -160,6 +160,8 @@ export class Sim {
   readonly frnd: Rng;
   acc = 0;
   fogDirty = true;
+  /** The game time the fog was last worked out: it is not redone on every tick (fogPause), only when someone has moved and a moment has passed. */
+  fogAt = -1;
   nextVid = 1;
   nextBid = 1;
   readonly rnd: Rng;
@@ -203,9 +205,9 @@ export class Sim {
   /** War sound: whether enough of our soldiers have seen the enemy and are attacking (the sting plays each time it turns on), when that was last true, and when it was last worked out. Reset when the war ends. */
   /** Sounds waiting for the UI (a blow landed, an arrow hit): the renderer plays and empties them. Never saved. */
   /** Warnings for the sound (a pack of wolves comes, a village raids us): the UI plays and empties them. Never saved. */
-  alerts: Array<{ kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era'; text: string }> = [];
+  alerts: Array<{ kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era' | 'mount'; text: string }> = [];
   /** Something the player must notice at once (the screen shows `text` as a toast; wolves, raids, beasts and the end of an event also make a sound). */
-  addAlert(kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era', text = ''): void { if (this.alerts.length < 8) this.alerts.push({ kind, text }); }
+  addAlert(kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era' | 'mount', text = ''): void { if (this.alerts.length < 8) this.alerts.push({ kind, text }); }
   sfx: Array<{ weapon: string; ranged: boolean; x: number; y: number }> = [];
   /** War sound: the soldiers that have seen the enemy so far, how many of them are not yet counted into a sting, and how many stings have been due. */
   warSeenIds = new Set<number>();
@@ -398,7 +400,7 @@ export class Sim {
   capacity(_res?: Res): number { return construction.capacity(this, _res); }
   buildingAt(x: number, y: number): Building | undefined {
     return this.buildings.find((b) => {
-      const d = BUILDINGS[b.kind];
+      const d = footOf(b);
       return x >= b.x && x < b.x + d.w && y >= b.y && y < b.y + d.h;
     });
   }
@@ -432,7 +434,7 @@ export class Sim {
   buildingNeeds(kind: BuildingKind): Array<{ text: string; ok: boolean }> { return construction.buildingNeeds(this, kind); }
 
   /** → construction.canPlace */
-  canPlace(kind: BuildingKind, x: number, y: number): string | null { return construction.canPlace(this, kind, x, y); }
+  canPlace(kind: BuildingKind, x: number, y: number, rot = 0): string | null { return construction.canPlace(this, kind, x, y, rot); }
 
   /** → economy.missing */
   missing(cost: Partial<Stock>): string | null { return economy.missing(this, cost); }
@@ -457,7 +459,7 @@ export class Sim {
   upgradeBuilding(id: number): string | null { return construction.upgradeBuilding(this, id); }
 
   /** → construction.placeBuilding */
-  placeBuilding(kind: BuildingKind, x: number, y: number): PlaceResult { return construction.placeBuilding(this, kind, x, y); }
+  placeBuilding(kind: BuildingKind, x: number, y: number, rot = 0): PlaceResult { return construction.placeBuilding(this, kind, x, y, rot); }
 
   /** → construction.salvage */
   salvage(b: Building): Partial<Stock> { return construction.salvage(this, b); }
@@ -469,7 +471,7 @@ export class Sim {
   demolishBuilding(id: number): string | null { return construction.demolishBuilding(this, id); }
 
   /** → construction.canMove */
-  canMove(b: Building, x: number, y: number): string | null { return construction.canMove(this, b, x, y); }
+  canMove(b: Building, x: number, y: number, rot?: number): string | null { return construction.canMove(this, b, x, y, rot); }
   /** → construction.groupPlan */
   groupPlan(ids: readonly number[], to: { x: number; y: number }, rot: number): ReturnType<typeof construction.groupPlan> { return construction.groupPlan(this, ids, to, rot); }
   /** → construction.canMoveGroup */
@@ -477,7 +479,7 @@ export class Sim {
   /** → construction.moveGroup */
   moveGroup(ids: readonly number[], to: { x: number; y: number }, rot: number): string | null { return construction.moveGroup(this, ids, to, rot); }
   /** → construction.moveBuilding */
-  moveBuilding(id: number, x: number, y: number): string | null { return construction.moveBuilding(this, id, x, y); }
+  moveBuilding(id: number, x: number, y: number, rot?: number): string | null { return construction.moveBuilding(this, id, x, y, rot); }
 
   /** → works.orderDef */
   orderDef(kind: 'research' | 'craft', id: string): { cost: Partial<Stock>; time: number } | null { return works.orderDef(this, kind, id); }
@@ -765,7 +767,7 @@ export class Sim {
 
   tick(dt: number): void {
     this.time += dt;
-    this.pathLeft = this.speed >= 8 ? Math.ceil(PATH_BUDGET / 2) : PATH_BUDGET; // fast-forward: fewer searches for a way each tick (a unit waits a tick longer; the ticks are many)
+    this.pathLeft = this.speed >= 16 ? PATH_BUDGET_FASTEST : this.speed >= 8 ? PATH_BUDGET_FAST : PATH_BUDGET; // fast-forward: fewer searches for a way each tick (a unit waits a tick longer; the ticks are many)
     this.tickCalendar();
     this.world.tick(dt);
     this.streamWorld(dt);
@@ -774,8 +776,7 @@ export class Sim {
     if (warmode.warPlan(this)) {
       if (this.warSince < 0) this.warSince = this.time;
       this.tickWar(dt);
-      if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
-      if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
+      this.tickFog();
       return;
     }
     // the war is over: whoever lay out of sight (in a field tent, or with no bed) gets up and goes to bed in the right place
@@ -788,8 +789,13 @@ export class Sim {
     tickTribes(this, dt);
     this.leaderClock += dt;
     if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); inventory.restock(this); mounts.fitScouts(this); }
+    this.tickFog();
+  }
+
+  /** The fog is worked out again when the sight of the village has changed or someone has walked on, but at most every FOG_PAUSE game seconds: a quarter of a second late shows nowhere, and every tick did not come cheap (6% of a war). */
+  private tickFog(): void {
     if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
-    if (this.fogDirty) { this.fogDirty = false; this.refreshFog(); }
+    if (this.fogDirty && this.time - this.fogAt >= FOG_PAUSE) { this.fogDirty = false; this.fogAt = this.time; this.refreshFog(); }
   }
 
   private streamClock = 0;
@@ -928,7 +934,7 @@ export class Sim {
 
 
   /** → movement.pathTo */
-  pathTo(v: Villager, gx: number, gy: number, maxNodes = 14000): Step[] { return movement.pathTo(this, v, gx, gy, maxNodes); }
+  pathTo(v: Villager, gx: number, gy: number, maxNodes = 14000, fresh = false): Step[] { return movement.pathTo(this, v, gx, gy, maxNodes, fresh); }
 
   /** → movement.routeTo */
   routeTo(v: Villager, tiles: Array<[number, number]>, tries = 3, maxNodes = 14000): number { return movement.routeTo(this, v, tiles, tries, maxNodes); }

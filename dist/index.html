@@ -4359,6 +4359,64 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   margin-top: 6px;
 }
 
+.gdlg .dtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gdlg .dtabs button {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.gdlg .dname-in {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  font: 600 13px system-ui, sans-serif;
+  color: #3a2c1c;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #8a6a36;
+  border-radius: 6px;
+}
+.gdlg .dname-in::placeholder {
+  color: #85714a;
+  font-weight: 400;
+}
+
+.gdlg.gsettings .row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid #b89a5e;
+  border-radius: 8px;
+}
+.gdlg.gsettings .row .nm {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.gdlg.gsettings .row .nm small {
+  display: block;
+  font-weight: 400;
+  color: #5a4a2c;
+  font-size: 12px;
+}
+.gdlg.gsettings .row input[type=range] {
+  flex: 0 1 120px;
+  min-width: 70px;
+}
+
+.gdlg.gsettings .dacts {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 .infocard {
   --bg: #e7d3a4;
   --panel: #efe0b8;
@@ -5140,7 +5198,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   <!-- hold the mouse (or a finger) on the map: this ring opens round it; let go over a button to press it -->
   <div id="radial" hidden>
     <span class="rdot"></span>
-    <button class="ico" id="btnMulti" aria-pressed="false" title="Chọn nhiều: kéo khung hoặc chạm từng dân, rồi bấm đâu là họ đi tới đó">▣</button>
     <button class="ico" id="btnArmy" aria-pressed="false" title="Gọi quân đội ra khỏi trại (bấm lại để cho về)">⚔</button>
     <button class="ico" id="btnNone" title="Bỏ chọn (Esc)">✕</button>
   </div>
@@ -5157,6 +5214,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     <div id="ucard" hidden></div>
     <div class="selbar">
       <button id="btnHome" hidden title="Đưa camera về lửa trại">⌂ Về làng</button>
+      <button id="btnSelCount" hidden title="Số người đang chọn (bấm để đưa camera tới họ)">▣ 0 người</button>
+      <button id="btnSelSoldiers" hidden title="Chọn mọi lính đang ở ngoài">⚔ Chọn lính</button>
+      <button id="btnSelNone" hidden title="Bỏ chọn (Esc)">✕ Bỏ chọn</button>
     </div>
   </div>
 
@@ -5678,7 +5738,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       spear: {
         name: "Gi\xE1o g\u1ED7",
         type: "pierce",
-        range: 1.5,
+        range: 1.6,
         damage: 5,
         cycle: 1.4,
         cost: {
@@ -5691,6 +5751,59 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         postStyle: "post_spear",
         postShield: "wood",
         rank: 2
+      },
+      sling: {
+        name: "D\xE2y qu\u0103ng \u0111\xE1",
+        type: "crush",
+        range: 5.5,
+        damage: 6,
+        cycle: 2,
+        ranged: true,
+        cost: {
+          wood: 5,
+          stone: 5
+        },
+        durability: 90,
+        time: 60,
+        style: "sling",
+        projectile: "stone",
+        tier: 1,
+        rank: 2
+      },
+      bow: {
+        name: "Cung ng\u1EAFn",
+        type: "pierce",
+        range: 8,
+        damage: 9,
+        cycle: 2,
+        ranged: true,
+        cost: {
+          wood: 20,
+          feather: 3
+        },
+        durability: 110,
+        time: 100,
+        style: "shoot",
+        projectile: "arrow",
+        tier: 1,
+        rank: 3
+      },
+      thrown_stone: {
+        name: "\u0110\xE1 n\xE9m",
+        type: "crush",
+        range: 4.5,
+        damage: 3,
+        cycle: 2,
+        ranged: true,
+        cost: {
+          stone: 2
+        },
+        durability: 60,
+        time: 15,
+        style: "stone_throw",
+        projectile: "stone",
+        tier: 2,
+        rank: 1
       },
       mace: {
         name: "Ch\xF9y \u0111\xE1",
@@ -5722,24 +5835,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         },
         tier: 2
       },
-      sling: {
-        name: "D\xE2y qu\u0103ng \u0111\xE1",
-        type: "crush",
-        range: 5.5,
-        damage: 4,
-        cycle: 2,
-        ranged: true,
-        cost: {
-          wood: 5,
-          stone: 5
-        },
-        durability: 90,
-        time: 60,
-        style: "sling",
-        projectile: "stone",
-        tier: 1,
-        rank: 2
-      },
       bronze_spear: {
         name: "Gi\xE1o \u0111\u1ED3ng",
         type: "pierce",
@@ -5752,18 +5847,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         postStyle: "post_spear",
         postShield: "wood"
       },
-      bronze_bow: {
-        name: "Cung \u0111\u1ED3ng",
-        type: "pierce",
-        range: 8.5,
-        damage: 11,
-        cycle: 1.8,
-        ranged: true,
-        style: "shoot",
-        projectile: "arrow",
-        tier: 3,
-        rank: 4
-      },
       bronze_sword: {
         name: "Ki\u1EBFm \u0111\u1ED3ng",
         type: "slash",
@@ -5774,6 +5857,18 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         anims: {
           attack: "slash"
         },
+        tier: 3,
+        rank: 4
+      },
+      bronze_bow: {
+        name: "Cung \u0111\u1ED3ng",
+        type: "pierce",
+        range: 8.5,
+        damage: 11,
+        cycle: 1.8,
+        ranged: true,
+        style: "shoot",
+        projectile: "arrow",
         tier: 3,
         rank: 4
       },
@@ -5789,24 +5884,6 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         },
         tier: 3
       },
-      bow: {
-        name: "Cung ng\u1EAFn",
-        type: "pierce",
-        range: 8,
-        damage: 8,
-        cycle: 2,
-        ranged: true,
-        cost: {
-          wood: 20,
-          feather: 3
-        },
-        durability: 110,
-        time: 100,
-        style: "shoot",
-        projectile: "arrow",
-        tier: 1,
-        rank: 3
-      },
       short_spear: {
         name: "Gi\xE1o ng\u1EAFn tu\u1EA7n \u0111inh",
         type: "pierce",
@@ -5815,6 +5892,39 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         cycle: 1.3,
         style: "guard_watch",
         shield: "wood",
+        tier: 4,
+        rank: 5
+      },
+      arming_sword: {
+        name: "Ki\u1EBFm th\u1EB3ng",
+        type: "slash",
+        range: 1.1,
+        damage: 15,
+        cycle: 1.1,
+        style: "sword_shield",
+        shield: "heater",
+        tier: 4,
+        rank: 5
+      },
+      lance: {
+        name: "Gi\xE1o k\u1EF5 binh",
+        type: "pierce",
+        range: 2.2,
+        damage: 20,
+        cycle: 1.5,
+        style: "rider_lance",
+        tier: 4,
+        rank: 5
+      },
+      composite_bow: {
+        name: "Cung gh\xE9p",
+        type: "pierce",
+        range: 9.5,
+        damage: 11,
+        cycle: 1.7,
+        ranged: true,
+        projectile: "arrow",
+        style: "shoot",
         tier: 4,
         rank: 5
       },
@@ -5828,83 +5938,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         tier: 5,
         rank: 6
       },
-      ward_sword: {
-        name: "Ki\u1EBFm d\xE0i c\u1EADn v\u1EC7",
-        type: "slash",
-        range: 1.1,
-        damage: 17,
-        cycle: 1.1,
-        style: "guard_sword",
-        tier: 5,
-        rank: 7
-      },
-      arming_sword: {
-        name: "Ki\u1EBFm th\u1EB3ng",
-        type: "slash",
-        range: 1.1,
-        damage: 15,
-        cycle: 1.1,
-        style: "sword_shield",
-        shield: "heater",
-        tier: 4,
-        rank: 5
-      },
-      composite_bow: {
-        name: "Cung gh\xE9p",
-        type: "pierce",
-        range: 9,
-        damage: 11,
-        cycle: 1.8,
-        ranged: true,
-        projectile: "arrow",
-        style: "shoot",
-        tier: 4,
-        rank: 5
-      },
-      lance: {
-        name: "Gi\xE1o k\u1EF5 binh",
-        type: "pierce",
-        range: 2,
-        damage: 18,
-        cycle: 1.5,
-        style: "rider_lance",
-        tier: 4,
-        rank: 5
-      },
-      thrown_stone: {
-        name: "\u0110\xE1 n\xE9m",
-        type: "crush",
-        range: 4.5,
-        damage: 3,
-        cycle: 2,
-        ranged: true,
-        cost: {
-          stone: 2
-        },
-        durability: 60,
-        time: 15,
-        style: "stone_throw",
-        projectile: "stone",
-        tier: 2,
-        rank: 1
-      },
-      longbow: {
-        name: "Tr\u01B0\u1EDDng cung",
-        type: "pierce",
-        range: 11,
-        damage: 15,
-        cycle: 2,
-        ranged: true,
-        projectile: "arrow",
-        style: "shoot",
-        tier: 5,
-        rank: 6
-      },
       heavy_lance: {
         name: "Tr\u01B0\u1EDDng th\u01B0\u01A1ng k\u1EF5 binh",
         type: "pierce",
-        range: 2.3,
-        damage: 26,
+        range: 2.5,
+        damage: 29,
         cycle: 1.6,
         style: "rider_lance",
         tier: 5,
@@ -5914,12 +5952,34 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         name: "\u0110\u1EA1i ki\u1EBFm",
         type: "slash",
         range: 1.3,
-        damage: 21,
-        cycle: 1.3,
+        damage: 23,
+        cycle: 1.4,
         style: "sword_shield",
         shield: "tower",
         tier: 5,
         rank: 6
+      },
+      longbow: {
+        name: "Tr\u01B0\u1EDDng cung",
+        type: "pierce",
+        range: 12,
+        damage: 15,
+        cycle: 2,
+        ranged: true,
+        projectile: "arrow",
+        style: "shoot",
+        tier: 5,
+        rank: 6
+      },
+      ward_sword: {
+        name: "Ki\u1EBFm d\xE0i c\u1EADn v\u1EC7",
+        type: "slash",
+        range: 1.1,
+        damage: 17,
+        cycle: 1.1,
+        style: "guard_sword",
+        tier: 5,
+        rank: 7
       },
       knight_sword: {
         name: "Ki\u1EBFm th\xE1nh gi\xE1o",
@@ -5935,9 +5995,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       paladin_lance: {
         name: "Th\u01B0\u01A1ng th\xE1nh k\u1EF5 s\u0129",
         type: "pierce",
-        range: 2.4,
-        damage: 38,
-        cycle: 1.7,
+        range: 2.7,
+        damage: 42,
+        cycle: 1.8,
         style: "rider_lance",
         tier: 5,
         rank: 7
@@ -5945,9 +6005,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       alloy_crossbow: {
         name: "N\u1ECF h\u1EE3p kim",
         type: "pierce",
-        range: 13,
-        damage: 40,
-        cycle: 2.8,
+        range: 14,
+        damage: 45,
+        cycle: 3,
         ranged: true,
         projectile: "arrow",
         style: "crossbow",
@@ -5959,7 +6019,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       hide: {
         name: "\xC1o da th\xFA",
         defm: 20,
-        defr: 13,
+        defr: 15,
         cost: {
           hide: 5
         },
@@ -5981,8 +6041,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       },
       bronze: {
         name: "Gi\xE1p \u0111\u1ED3ng",
-        defm: 80,
-        defr: 74,
+        defm: 75,
+        defr: 65,
         tier: 3
       },
       watchman: {
@@ -5991,70 +6051,70 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         defr: 75,
         tier: 4
       },
-      sergeant: {
-        name: "Gi\xE1p l\xEDnh g\xE1c chuy\xEAn nghi\u1EC7p (x\xEDch + brigandine)",
-        defm: 115,
-        defr: 100,
-        tier: 5
-      },
-      warden: {
-        name: "Gi\xE1p c\u1EADn v\u1EC7 th\xE0nh tr\xEC (t\u1EA5m 3/4)",
-        defm: 160,
-        defr: 140,
-        tier: 5
-      },
       footman: {
         name: "Gi\xE1p x\xEDch b\u1ED9 binh",
-        defm: 90,
+        defm: 95,
         defr: 80,
         tier: 4
       },
       archer: {
         name: "Gi\xE1p da cung th\u1EE7",
-        defm: 45,
-        defr: 50,
+        defm: 60,
+        defr: 65,
         tier: 4
       },
       rider: {
         name: "Gi\xE1p da b\u1ECDc \u0111inh",
-        defm: 70,
-        defr: 65,
+        defm: 75,
+        defr: 75,
         tier: 4
+      },
+      sergeant: {
+        name: "Gi\xE1p l\xEDnh g\xE1c chuy\xEAn nghi\u1EC7p (x\xEDch + brigandine)",
+        defm: 110,
+        defr: 95,
+        tier: 5
+      },
+      warden: {
+        name: "Gi\xE1p c\u1EADn v\u1EC7 th\xE0nh tr\xEC (t\u1EA5m 3/4)",
+        defm: 165,
+        defr: 145,
+        tier: 5
       },
       guard: {
         name: "Gi\xE1p t\u1EA5m h\u1ED9 v\u1EC7",
-        defm: 140,
-        defr: 120,
+        defm: 150,
+        defr: 130,
         tier: 5
       },
       marksman: {
         name: "Gi\xE1p brigandine",
-        defm: 80,
-        defr: 85,
+        defm: 90,
+        defr: 100,
         tier: 5
       },
       royalrider: {
         name: "Gi\xE1p t\u1EA5m k\u1EF5 binh ho\xE0ng gia",
-        defm: 130,
-        defr: 115,
+        defm: 140,
+        defr: 125,
         tier: 5
       },
       templar: {
         name: "Gi\xE1p t\u1EA5m th\xE1nh gi\xE1o",
         defm: 200,
-        defr: 170,
+        defr: 175,
         tier: 5
       },
       sniper: {
         name: "Gi\xE1p da cao c\u1EA5p",
-        defm: 110,
-        defr: 120,
+        defm: 105,
+        defr: 125,
         tier: 5
       },
       paladin: {
         name: "Gi\xE1p t\u1EA5m th\xE1nh k\u1EF5 s\u0129",
-        defm: 190,
-        defr: 165,
+        defm: 185,
+        defr: 160,
         tier: 5
       }
     },
@@ -6887,7 +6947,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           name: "C\u1EE7i l\u1EEDa",
           cost: {},
           buildTime: 0,
-          cap: 80,
+          cap: 100,
           craftSpeed: 1,
           slots: 0,
           hp: 180,
@@ -7359,7 +7419,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     name: "C\u1ED5ng",
     group: "defence",
     size: [
-      1,
+      2,
       1
     ],
     buildable: true,
@@ -8656,6 +8716,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return [k, d];
   }));
   var fireUnlockLevel = (kind) => BUILDINGS[kind].unlockFire;
+  var footOf = (b) => {
+    if (b.w !== void 0 && b.h !== void 0) return { w: b.w, h: b.h };
+    const d = BUILDINGS[b.kind];
+    return b.rot === 1 ? { w: d.h, h: d.w } : { w: d.w, h: d.h };
+  };
+  var footDim = (kind, rot = 0) => {
+    const d = BUILDINGS[kind];
+    return rot === 1 ? { w: d.h, h: d.w } : { w: d.w, h: d.h };
+  };
   function buildingSight(b) {
     if (!b.done) return 0;
     const lv = levelsOf(b.kind, b.era ?? "stone");
@@ -8702,6 +8771,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var FIRE_VISION = 8;
   var TICK = 1 / 20;
   var PATH_BUDGET = 6;
+  var FOG_PAUSE = 0.25;
+  var PATH_BUDGET_FAST = 2;
+  var PATH_BUDGET_FASTEST = 1;
   var FOE_PATH_SHARE = 3;
   var dayLength = (era) => time_default.dayLength[era];
   var START_TIME = dayLength("stone") * 0.25;
@@ -9277,7 +9349,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           weapon: "club",
           armor: "hide",
           cost: {
-            coin: 0
+            coin: 1
           }
         },
         {
@@ -9378,7 +9450,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     craftCostPerLevel: 0.1,
     craftQualityPerLevel: 1.05,
     _note: "Research is done inside the Nh\xE0 nghi\xEAn c\u1EE9u by villagers who work there: the more and the smarter, the faster. Tools, weapons, armour and torches have no blueprint (recipe id: axe1 is the wood axe, axe2 the stone one): the level of the Nh\xE0 ch\u1EBF t\u1EA1o alone (recipeLevel) decides which can be made. cost may include coin (shells in the stone age). time is seconds at speed 1 with one average researcher; the best researcher inside must reach minInt. needLevel is the Nh\xE0 nghi\xEAn c\u1EE9u level. unlocks: recipes, buildings (kinds that may be built), Set enabled to false to open everything.",
-    recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, bone2: 2, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1, sling1: 1, thrown_stone2: 1, bow1: 2 },
+    recipeLevel: { axe1: 1, hammer1: 1, pick1: 1, hoe1: 1, club1: 1, hide1: 1, bone2: 2, spear1: 2, axe2: 2, pick2: 2, hoe2: 2, hammer2: 2, mace2: 3, torch1: 1, sling1: 2, thrown_stone2: 1, bow1: 3 },
     techs: [
       { id: "signal", name: "T\xEDn hi\u1EC7u (tr\u1ED1ng, kh\xF3i)", desc: "Tr\u1ED1ng b\xE1o \u0111\u1ED9ng: d\xE2n v\u1EC1 l\u1EEDa, qu\xE2n v\u1EC1 v\u1ECB tr\xED; th\u1EBB l\u1EC7nh Ph\xE1t t\xEDn hi\u1EC7u cho c\xE1c \u0111\u1ED9i.", requires: [], needLevel: 2, minInt: 6, cost: { food: 280, wood: 210, stone: 100, coin: 45 }, time: 1650, unlocks: {} },
       { id: "form_basic", name: "Tr\u1EADn ph\xE1p c\u01A1 b\u1EA3n", desc: "H\xE0ng ngang v\xE0 v\xF2ng tr\xF2n.", requires: [], needLevel: 1, minInt: 6, cost: { food: 200, wood: 150, stone: 60, coin: 30 }, time: 1200, unlocks: {} },
@@ -12714,7 +12786,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var PLAN_TECH = { detail: "plan_report", supply: "plan_supply", weather: "plan_weather", rest: "plan_rest" };
   var planOpen = (done, f, advanced, free = false) => advanced && (free || !RESEARCH.enabled || done.has(PLAN_TECH[f]));
   var statBonus = (done, role, stat) => researchRoles(role).reduce((sum, r) => sum + stepsOfLine(r, stat).slice(0, lineLevel(done, r, stat)).reduce((a, b) => a + b, 0) * (ROLE_SCALE[r] ?? 1), 0);
-  var NO_BLUEPRINT = /^(club|spear|mace|sling|bow|hide|bone|axe|pick|hoe|hammer|torch)\d$/;
+  var NO_BLUEPRINT = /^(club|spear|mace|thrown_stone|sling|bow|hide|bone|axe|pick|hoe|hammer|torch)\d$/;
   var recipeOpen = (done, recipeId) => !RESEARCH.enabled || NO_BLUEPRINT.test(recipeId) || done.has(recipeId);
   var techForRecipe = (recipeId) => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
   var unlockedMax = (done, key, base) => TECHS.reduce((m, t) => done.has(t.id) ? Math.max(m, t.unlocks[key] ?? 0) : m, base);
@@ -12983,6 +13055,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   // src/sim/jobs.ts
   var TRAINING = training_default;
   var MOUNTS = mounts_default.kinds;
+  var isHorse = (k) => !!k && MOUNTS[k].species.startsWith("horse");
   var MOUNT_KINDS = Object.keys(MOUNTS).filter((k) => !MOUNTS[k].hidden);
   var fmtStat = (x) => String(Math.round(x * 10) / 10);
   var STAT_NAME = { vit: "S\u1EE9c kh\u1ECFe", str: "S\u1EE9c m\u1EA1nh", agi: "Nhanh nh\u1EB9n", sta: "Th\u1EC3 l\u1EF1c" };
@@ -13083,16 +13156,30 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return `${TOOL_NAME[r.kind]} ${TIER_NAME[r.tier].toLowerCase()}`;
   };
   var recipeUse = (r) => {
+    if (isArmorKind(r.kind)) return "Gi\xE1p m\u1EB7c tr\xEAn ng\u01B0\u1EDDi";
+    if (r.kind === "torch") return "l\xE0m vi\u1EC7c ban \u0111\xEAm (hi\u1EC7u su\u1EA5t 70%), nh\xECn xa h\u01A1n trong t\u1ED1i";
+    if (isWeaponKind(r.kind)) return WEAPONS[r.kind].ranged ? "V\u0169 kh\xED t\u1EA7m xa" : "V\u0169 kh\xED c\u1EADn chi\u1EBFn";
+    const t = TOOL_USE[r.kind];
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
+  var trim = (n) => String(Math.round(n * 100) / 100);
+  var recipeStats = (r) => {
     if (isArmorKind(r.kind)) {
       const a = ARMORS[r.kind];
-      return `gi\xE1p: th\u1EE7 c\u1EADn +${a.defm} \xB7 th\u1EE7 xa +${a.defr} \xB7 b\u1EC1n ${a.durability ?? "?"}`;
+      return [{ icon: "defm", value: `+${a.defm}`, title: "Ph\xF2ng th\u1EE7 c\u1EADn chi\u1EBFn" }, { icon: "defr", value: `+${a.defr}`, title: "Ph\xF2ng th\u1EE7 t\u1EA7m xa" }, { icon: "tdur", value: String(a.durability ?? "?"), title: "\u0110\u1ED9 b\u1EC1n (s\u1ED1 \u0111\xF2n ch\u1ECBu \u0111\u01B0\u1EE3c)" }];
     }
-    if (r.kind === "torch") return "l\xE0m vi\u1EC7c ban \u0111\xEAm (hi\u1EC7u su\u1EA5t 70%), nh\xECn xa h\u01A1n trong t\u1ED1i";
+    if (r.kind === "torch") return [];
     if (isWeaponKind(r.kind)) {
       const w = WEAPONS[r.kind];
-      return `${{ pierce: "\u0111\xE2m", slash: "ch\xE9m", crush: "\u0111\u1EADp" }[w.type]} ${w.damage} \xB7 ${(1 / w.cycle).toFixed(2)} \u0111\xF2n/gi\xE2y \xB7 ch\xED m\u1EA1ng \u0111\xF2n ${Math.round((w.critDamage ?? RULES.critDamage) * 100)}% \xB7 t\u1EA7m ${w.range}`;
+      return [
+        { icon: "atk", value: trim(w.damage), title: "S\xE1t th\u01B0\u01A1ng" },
+        { icon: "aspd", value: `${(1 / w.cycle).toFixed(2)}/s`, title: "T\u1ED1c \u0111\u1ED9 \u0111\xE1nh (\u0111\xF2n m\u1ED7i gi\xE2y)" },
+        { icon: "crit", value: `${Math.round((w.critDamage ?? RULES.critDamage) * 100)}%`, title: "S\xE1t th\u01B0\u01A1ng ch\xED m\u1EA1ng" },
+        { icon: "range", value: trim(w.range), title: "T\u1EA7m \u0111\xE1nh" },
+        { icon: "tdur", value: String(w.durability ?? "?"), title: "\u0110\u1ED9 b\u1EC1n (s\u1ED1 \u0111\xF2n)" }
+      ];
     }
-    return TOOL_USE[r.kind];
+    return [{ icon: "work", value: `\xD7${TIER_SPEED[r.tier]}`, title: "T\u1ED1c \u0111\u1ED9 l\xE0m vi\u1EC7c" }, { icon: "tyield", value: `\xD7${TIER_YIELD[r.tier]}`, title: "Thu ho\u1EA1ch m\u1ED7i l\u1EA7n" }, { icon: "tdur", value: `${TIER_DURABILITY[r.tier]}s`, title: "\u0110\u1ED9 b\u1EC1n (gi\xE2y l\xE0m vi\u1EC7c)" }];
   };
   var emptyToolSet = () => ({ axe: null, pick: null, hoe: null, hammer: null });
 
@@ -13520,6 +13607,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.ready = new Uint8Array(CHUNKS * CHUNKS);
       this.season = "spring";
       this.respawns = 0;
+      /** Game seconds the land has existed (advanced by `tick`): the clock of the memory of searches. Not saved. */
+      this.age = 0;
+      /** The answers of searches for a way that did not reach their goal, kept for a moment (path.ts). Not saved. */
+      this.pathFails = /* @__PURE__ */ new Map();
       /** The tiles of the gates that are shut: they stop the enemy and the beasts, but our own people pass through them. */
       this.gates = /* @__PURE__ */ new Set();
       /** Blocked for someone of ours (a villager, a soldier): the same as isBlocked, but a shut gate lets him by. */
@@ -13738,6 +13829,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     /** Bushes fruit again; the map holds well over a hundred thousand things, so this runs once a second rather than every tick. */
     tick(dt) {
+      this.age += dt;
       this.grown += dt;
       if (this.grown < 1) return;
       dt = this.grown;
@@ -23289,7 +23381,16 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       line2(b, shX - 1, cy - bodyH / 2 + 1, shX, cy + bodyH / 2 - 1, 3, chest);
       if (stud) for (let i = 0; i < 3; i++) put2(b, shX - 1 + i % 2, cy - bodyH / 2 + 3 + i * 2, stud);
     }
-    if (brid) {
+    if (brid && S2.feature === "horse") {
+      const hr = S2.headR, mx = hx + hr + S2.snout - 3, my = hy + 2.5;
+      line2(b, hx - 1, hy - hr + 1, hx - 1, hy + hr - 1, 1, brid);
+      line2(b, hx - 1, hy - 1, mx, my - 1, 1, brid);
+      line2(b, hx + hr, hy - 1, hx + hr + 1, hy + 2, 1, brid);
+      put2(b, mx, my, hex2("#c3ccd2"));
+      const px = cx + 3, py = top - 2 - rise * 0.4, sx3 = (mx + px) / 2, sy3 = (my + py) / 2 + 3;
+      line2(b, mx, my, sx3, sy3, 1, brid);
+      line2(b, sx3, sy3, px, py, 1, brid);
+    } else if (brid) {
       line2(b, hx + 1, hy - 3, hx + 1, hy + 2, 1, brid);
       line2(b, hx + S2.headR, hy, hx + S2.headR + S2.snout - 2, hy + 1, 1, brid);
     }
@@ -23392,10 +23493,29 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const leg = (x, p, col, w) => {
       const a = num2(p, "a", 0), lift = num2(p, "lift", 0);
       const fx = x + Math.sin(rad2(a)) * legL, fy = Math.min(gy, jy + Math.cos(rad2(a)) * legL - lift);
-      if (has("horse")) {
-        const mx = x + (fx - x) * 0.45 + (a > 0 ? -0.6 : 0.6), my = jy + (fy - jy) * 0.45;
-        line2(b, x, jy, mx, my, w + 1, col);
-        line2(b, mx, my, fx, fy, w, col);
+      if (has("horse") || S2.legJoints) {
+        const front = x > cx, fold = Math.min(3, lift * 0.5);
+        const lerp2 = (t) => [x + (fx - x) * t, jy + (fy - jy) * t];
+        let j1, j2, j3;
+        if (front) {
+          j1 = lerp2(0.4);
+          j2 = lerp2(0.62);
+          j3 = lerp2(0.86);
+          j2 = [j2[0] + 0.5 + fold * 0.5, j2[1]];
+          j3 = [j3[0] - 0.3 - fold, j3[1]];
+        } else {
+          j1 = lerp2(0.32);
+          j2 = lerp2(0.62);
+          j3 = lerp2(0.86);
+          j1 = [j1[0] + 0.6, j1[1]];
+          j2 = [j2[0] - 1 - fold * 0.5, j2[1]];
+          j3 = [j3[0] + 0.3 - fold, j3[1]];
+        }
+        const hv = has("horse") ? 1 : 0;
+        line2(b, x, jy, j1[0], j1[1], w + 1 + hv, col);
+        line2(b, j1[0], j1[1], j2[0], j2[1], w + hv, col);
+        line2(b, j2[0], j2[1], j3[0], j3[1], w, col);
+        line2(b, j3[0], j3[1], fx, fy, w, col);
         if (fy > gy - 4) rect2(b, Math.round(fx) - 1, Math.round(fy) - 1, w + 1, 2, C.dark);
         else put2(b, fx, fy, C.dark);
         return;
@@ -23419,6 +23539,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const t = i / 4;
       ell(b, cx - S2.bodyL / 2 + 2 + t * (S2.bodyL - 4), cy - rise * t - bodyH * 0.32, S2.bodyL / 4 + 1, bodyH * 0.2, C.dark);
     }
+    if (has("horse")) {
+      ell(b, shX - 1, cy + 1 - rise, 4.5, bodyH / 2 + 0.5, C.base);
+      ell(b, hipX + 1, cy + 1, 5.5, bodyH / 2 + 1, C.base);
+      ell(b, hipX + 1, cy - 1, 3.5, bodyH * 0.3, C.light);
+      ell(b, shX - 1, cy - 1 - rise, 2.5, bodyH * 0.25, C.light);
+    }
     if (has("antlers")) for (const [dx, dy2] of [[-4, -1], [0, -2], [4, -1], [-2, 1], [2, 1]]) put2(b, cx + dx, cy - bodyH * 0.2 + dy2, C.light);
     if (has("tusks")) for (let i = 0; i < S2.bodyL - 4; i += 2) put2(b, cx - S2.bodyL / 2 + 3 + i, cy - bodyH / 2 - 1 - rise * (i / S2.bodyL), C.dark);
     if (has("bear")) ell(b, shX - 1, cy - bodyH / 2 - rise, 4, 3, C.base);
@@ -23430,7 +23556,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     leg(shX + 1, f.fl, C.base, thick);
     const sx = shX + 1, sy = cy - bodyH / 2 + 2 - rise, ang = rad2(num2(f.head, "a", S2.neckA)), dy = num2(f.head, "dy", 0);
     const hx = sx + Math.cos(ang) * S2.neck, hy = sy - Math.sin(ang) * S2.neck + dy;
-    line2(b, sx, sy, hx, hy, Math.max(2, Math.round(bodyH * 0.45)), C.base);
+    if (has("horse")) {
+      const nmx = (sx + hx) / 2 - 1, nmy = (sy + hy) / 2 - 1.5;
+      line2(b, sx - 1, sy + 1, nmx, nmy, Math.round(bodyH * 0.62), C.base);
+      line2(b, nmx, nmy, hx, hy, Math.max(3, Math.round(bodyH * 0.4)), C.base);
+      line2(b, sx, sy + 3, nmx + 1, nmy + 2, 1, C.light);
+    } else line2(b, sx, sy, hx, hy, Math.max(2, Math.round(bodyH * 0.45)), C.base);
     if (has("mane")) ell(b, hx - 2, hy + 1, S2.headR + 3, S2.headR + 3, C.dark);
     if (has("trunk")) ell(b, hx - 1, hy - S2.headR * 0.6, S2.headR * 0.9, S2.headR * 0.8, C.base);
     ell(b, hx, hy, S2.headR * 1.1, S2.headR, C.base);
@@ -23485,19 +23616,28 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (has("horse")) {
       for (let k = 0; k <= 4; k++) {
         const t = k / 4;
-        ell(b, sx + (hx - sx) * t - 1.5, sy + (hy - sy) * t - 1.5 - S2.headR * 0.4 * t, 1.6, 1.6, C.dark);
+        ell(b, sx + (hx - sx) * t - 2, sy + (hy - sy) * t - 2.5 - S2.headR * 0.4 * t - t * (1 - t) * 3, 1.6, 1.6, C.dark);
       }
-      for (let k = 0; k < 3; k++) put2(b, hx + 1 + k, hy - 1 + k * 0.5, C.acc);
+      const hr = S2.headR, tipX = hx + hr + S2.snout - 1, tipY = hy + 2.5 + (open ? 1 : 0);
+      poly(b, [[hx - 2, hy - hr + 0.5], [hx + hr, hy - 1.5], [tipX, tipY - 2], [tipX, tipY + 1], [hx + hr - 1, hy + 2.5], [hx - 1, hy + hr + 1], [hx - 3, hy + hr - 1]], C.base);
+      line2(b, hx - 1, hy + hr, hx + hr - 1, hy + 2.5, 1, C.light);
+      ell(b, tipX - 1, tipY - 0.5, 2.2, 1.9, C.dark);
+      put2(b, tipX, tipY - 1, C.rim);
+      for (let k = 0; k < 4; k++) put2(b, hx + 1 + k, hy - 1.5 + k * 0.75, C.acc);
+      put2(b, hx + 1, hy - 1, asleep ? C.dark : C.eye);
+      poly(b, [[hx - 2, hy - hr + 1], [hx - 3 - (asleep ? 2 : 0), hy - hr - earL + (asleep ? 3 : 0)], [hx - 0.5, hy - hr - earL + 1 + (asleep ? 2 : 0)], [hx + 0.5, hy - hr + 0.5]], C.dark);
     }
     if (def.gear) drawGear(b, def, C, { cx, cy, bodyH, shX, hipX, hx, hy, rise, S: S2 });
     const tb = [cx - S2.bodyL / 2 - 1, cy - bodyH * 0.25], ta = rad2(num2(f.tail !== void 0 ? { a: f.tail } : null, "a", 15)), tl = S2.tail;
     const tx = tb[0] - Math.cos(ta) * tl, ty = tb[1] - Math.sin(ta) * tl;
-    line2(b, tb[0], tb[1], tx, ty, has("bushy") ? 3 : 2, C.base);
+    if (!has("horse")) line2(b, tb[0], tb[1], tx, ty, has("bushy") ? 3 : 2, C.base);
     if (has("bushy")) ell(b, tx, ty, 2, 2, C.dark);
     if (has("horse")) {
-      line2(b, tb[0], tb[1], tx, ty, 3, C.dark);
-      line2(b, tx, ty, tx - 1, ty + 6, 2, C.dark);
-      line2(b, tx + 1, ty + 1, tx, ty + 7, 1, C.rim);
+      const p1 = [tb[0] - Math.cos(ta) * tl * 0.3, tb[1] - Math.sin(ta) * tl * 0.3 + 0.5], p2 = [p1[0] - 2, p1[1] + tl * 0.35], p3 = [p2[0] + 0.5, p2[1] + tl * 0.4];
+      line2(b, tb[0], tb[1], p1[0], p1[1], 3, C.dark);
+      line2(b, p1[0], p1[1], p2[0], p2[1], 3, C.dark);
+      line2(b, p2[0], p2[1], p3[0], p3[1], 2, C.dark);
+      line2(b, p1[0] + 1, p1[1] + 1, p3[0] + 1, p3[1] - 1, 1, C.rim);
     }
     outline2(b, C.rim);
   }
@@ -23665,6 +23805,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         bodyL: 20,
         bodyH: 9,
         legL: 14,
+        legJoints: true,
         neck: 11,
         neckA: 55,
         headR: 3.5,
@@ -23719,6 +23860,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         bodyL: 17,
         bodyH: 8,
         legL: 9,
+        legJoints: true,
         neck: 6,
         neckA: 30,
         headR: 3.5,
@@ -23818,6 +23960,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         bodyL: 12,
         bodyH: 6,
         legL: 6,
+        legJoints: true,
         neck: 4,
         neckA: 20,
         headR: 3,
@@ -23845,6 +23988,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         bodyL: 16,
         bodyH: 8,
         legL: 11,
+        legJoints: true,
         neck: 7,
         neckA: 45,
         headR: 3,
@@ -23874,6 +24018,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         bodyL: 22,
         bodyH: 11,
         legL: 18,
+        legJoints: true,
         neck: 12,
         neckA: 50,
         headR: 4.5,
@@ -23928,6 +24073,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         bodyL: 22,
         bodyH: 9,
         legL: 10,
+        legJoints: true,
         neck: 7,
         neckA: 25,
         headR: 4.5,
@@ -124963,18 +125109,18 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 20 }, armL: { a: 64, b: 20 }, tool: { on: true, a: 98, kind: "spear" } }
     ] },
     shoot_idle: { fps: 4, loop: true, frames: [
-      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "bow" } },
-      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "bow" } },
-      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "bow" } },
-      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "bow" } }
+      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 22, b: 38 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 72, kind: "bow" } },
+      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 22, b: 38 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 70, kind: "bow" } },
+      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 22, b: 38 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 70, kind: "bow" } },
+      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 22, b: 38 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 72, kind: "bow" } }
     ] },
     shoot_walk: { fps: 8, loop: true, gait: true, frames: [
-      { bob: 0, lean: 1, legR: { a: 34, lift: 0 }, legL: { a: -34, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
-      { bob: 1, lean: 1, legR: { a: 17, lift: 0 }, legL: { a: -22, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
-      { bob: -1, lean: 1, legR: { a: -2, lift: 0 }, legL: { a: 8, lift: 3 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
-      { bob: 0, lean: 1, legR: { a: -34, lift: 1 }, legL: { a: 34, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
-      { bob: 1, lean: 1, legR: { a: -22, lift: 2 }, legL: { a: 17, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } },
-      { bob: -1, lean: 1, legR: { a: 8, lift: 3 }, legL: { a: -2, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "bow" } }
+      { bob: 0, lean: 1, legR: { a: 34, lift: 0 }, legL: { a: -34, lift: 1 }, armR: { a: 24, b: 40 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 74, kind: "bow" } },
+      { bob: 1, lean: 1, legR: { a: 17, lift: 0 }, legL: { a: -22, lift: 2 }, armR: { a: 24, b: 40 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 70, kind: "bow" } },
+      { bob: -1, lean: 1, legR: { a: -2, lift: 0 }, legL: { a: 8, lift: 3 }, armR: { a: 24, b: 40 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 76, kind: "bow" } },
+      { bob: 0, lean: 1, legR: { a: -34, lift: 1 }, legL: { a: 34, lift: 0 }, armR: { a: 24, b: 40 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 74, kind: "bow" } },
+      { bob: 1, lean: 1, legR: { a: -22, lift: 2 }, legL: { a: 17, lift: 0 }, armR: { a: 24, b: 40 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 70, kind: "bow" } },
+      { bob: -1, lean: 1, legR: { a: 8, lift: 3 }, legL: { a: -2, lift: 0 }, armR: { a: 24, b: 40 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 76, kind: "bow" } }
     ] },
     shoot_guard: { fps: 4, loop: true, frames: [
       { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
@@ -124983,12 +125129,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 79, b: 10 }, armL: { a: 69, b: 20 }, tool: { on: true, a: 180, kind: "bow" } }
     ] },
     shoot_charge: { fps: 12, loop: true, frames: [
-      { bob: 0, lean: 3, legR: { a: 46, lift: 0 }, legL: { a: -48, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
-      { bob: 1, lean: 3, legR: { a: 22, lift: 0 }, legL: { a: -36, lift: 4 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
-      { bob: -2, lean: 3, legR: { a: -30, lift: 2 }, legL: { a: 42, lift: 4 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
-      { bob: 0, lean: 3, legR: { a: -48, lift: 3 }, legL: { a: 46, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
-      { bob: 1, lean: 3, legR: { a: -36, lift: 4 }, legL: { a: 22, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } },
-      { bob: -2, lean: 3, legR: { a: 42, lift: 4 }, legL: { a: -30, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "bow" } }
+      { bob: 0, lean: 3, legR: { a: 46, lift: 0 }, legL: { a: -48, lift: 3 }, armR: { a: 66, b: 32 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 152, kind: "bow" } },
+      { bob: 1, lean: 3, legR: { a: 22, lift: 0 }, legL: { a: -36, lift: 4 }, armR: { a: 66, b: 32 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 155, kind: "bow" } },
+      { bob: -2, lean: 3, legR: { a: -30, lift: 2 }, legL: { a: 42, lift: 4 }, armR: { a: 66, b: 32 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 152, kind: "bow" } },
+      { bob: 0, lean: 3, legR: { a: -48, lift: 3 }, legL: { a: 46, lift: 0 }, armR: { a: 66, b: 32 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 155, kind: "bow" } },
+      { bob: 1, lean: 3, legR: { a: -36, lift: 4 }, legL: { a: 22, lift: 0 }, armR: { a: 66, b: 32 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 152, kind: "bow" } },
+      { bob: -2, lean: 3, legR: { a: 42, lift: 4 }, legL: { a: -30, lift: 2 }, armR: { a: 66, b: 32 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 155, kind: "bow" } }
     ] },
     shoot_attack: { fps: 10, loop: false, hit: 4, frames: [
       { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } },
@@ -124999,18 +125145,18 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       { bob: 0, lean: 0, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 80, b: 10 }, armL: { a: 70, b: 20 }, tool: { on: true, a: 180, kind: "bow" } }
     ] },
     sling_idle: { fps: 4, loop: true, frames: [
-      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 172, kind: "sling" } },
-      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "sling" } },
-      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 172, kind: "sling" } },
-      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 28, b: 30 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 172, kind: "sling" } }
+      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 14, b: 22 }, armL: { a: -5, b: 8 }, tool: { on: true, a: 6, kind: "sling" } },
+      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 14, b: 22 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 9, kind: "sling" } },
+      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 14, b: 22 }, armL: { a: -9, b: 8 }, tool: { on: true, a: 12, kind: "sling" } },
+      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 14, b: 22 }, armL: { a: -7, b: 8 }, tool: { on: true, a: 9, kind: "sling" } }
     ] },
     sling_walk: { fps: 8, loop: true, gait: true, frames: [
-      { bob: 0, lean: 1, legR: { a: 34, lift: 0 }, legL: { a: -34, lift: 1 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
-      { bob: 1, lean: 1, legR: { a: 17, lift: 0 }, legL: { a: -22, lift: 2 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
-      { bob: -1, lean: 1, legR: { a: -2, lift: 0 }, legL: { a: 8, lift: 3 }, armR: { a: 30, b: 30 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
-      { bob: 0, lean: 1, legR: { a: -34, lift: 1 }, legL: { a: 34, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
-      { bob: 1, lean: 1, legR: { a: -22, lift: 2 }, legL: { a: 17, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } },
-      { bob: -1, lean: 1, legR: { a: 8, lift: 3 }, legL: { a: -2, lift: 0 }, armR: { a: 30, b: 30 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 172, kind: "sling" } }
+      { bob: 0, lean: 1, legR: { a: 34, lift: 0 }, legL: { a: -34, lift: 1 }, armR: { a: 16, b: 24 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 8, kind: "sling" } },
+      { bob: 1, lean: 1, legR: { a: 17, lift: 0 }, legL: { a: -22, lift: 2 }, armR: { a: 16, b: 24 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 22, kind: "sling" } },
+      { bob: -1, lean: 1, legR: { a: -2, lift: 0 }, legL: { a: 8, lift: 3 }, armR: { a: 16, b: 24 }, armL: { a: 19, b: 14 }, tool: { on: true, a: 30, kind: "sling" } },
+      { bob: 0, lean: 1, legR: { a: -34, lift: 1 }, legL: { a: 34, lift: 0 }, armR: { a: 16, b: 24 }, armL: { a: 0, b: 14 }, tool: { on: true, a: 8, kind: "sling" } },
+      { bob: 1, lean: 1, legR: { a: -22, lift: 2 }, legL: { a: 17, lift: 0 }, armR: { a: 16, b: 24 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 22, kind: "sling" } },
+      { bob: -1, lean: 1, legR: { a: 8, lift: 3 }, legL: { a: -2, lift: 0 }, armR: { a: 16, b: 24 }, armL: { a: -19, b: 14 }, tool: { on: true, a: 30, kind: "sling" } }
     ] },
     sling_guard: { fps: 4, loop: true, frames: [
       { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
@@ -125019,12 +125165,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       { bob: 1, lean: -1, legR: { a: 16, lift: 0 }, legL: { a: -16, lift: 0 }, armR: { a: 59, b: 25 }, armL: { a: 54, b: 25 }, tool: { on: true, a: 107, kind: "sling" } }
     ] },
     sling_charge: { fps: 12, loop: true, frames: [
-      { bob: 0, lean: 3, legR: { a: 46, lift: 0 }, legL: { a: -48, lift: 3 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-      { bob: 1, lean: 3, legR: { a: 22, lift: 0 }, legL: { a: -36, lift: 4 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-      { bob: -2, lean: 3, legR: { a: -30, lift: 2 }, legL: { a: 42, lift: 4 }, armR: { a: 64, b: 25 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-      { bob: 0, lean: 3, legR: { a: -48, lift: 3 }, legL: { a: 46, lift: 0 }, armR: { a: 60, b: 25 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-      { bob: 1, lean: 3, legR: { a: -36, lift: 4 }, legL: { a: 22, lift: 0 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } },
-      { bob: -2, lean: 3, legR: { a: 42, lift: 4 }, legL: { a: -30, lift: 2 }, armR: { a: 56, b: 25 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 110, kind: "sling" } }
+      { bob: 0, lean: 3, legR: { a: 46, lift: 0 }, legL: { a: -48, lift: 3 }, armR: { a: 60, b: 45 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 35, kind: "sling" } },
+      { bob: 1, lean: 3, legR: { a: 22, lift: 0 }, legL: { a: -36, lift: 4 }, armR: { a: 60, b: 45 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 43, kind: "sling" } },
+      { bob: -2, lean: 3, legR: { a: -30, lift: 2 }, legL: { a: 42, lift: 4 }, armR: { a: 60, b: 45 }, armL: { a: 51, b: 25 }, tool: { on: true, a: 35, kind: "sling" } },
+      { bob: 0, lean: 3, legR: { a: -48, lift: 3 }, legL: { a: 46, lift: 0 }, armR: { a: 60, b: 45 }, armL: { a: 55, b: 25 }, tool: { on: true, a: 43, kind: "sling" } },
+      { bob: 1, lean: 3, legR: { a: -36, lift: 4 }, legL: { a: 22, lift: 0 }, armR: { a: 60, b: 45 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 35, kind: "sling" } },
+      { bob: -2, lean: 3, legR: { a: 42, lift: 4 }, legL: { a: -30, lift: 2 }, armR: { a: 60, b: 45 }, armL: { a: 59, b: 25 }, tool: { on: true, a: 43, kind: "sling" } }
     ] },
     sling_attack: { fps: 10, loop: false, hit: 4, frames: [
       { bob: 0, lean: -1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: 165, b: 10 }, armL: { a: 150, b: 15 }, tool: { on: true, a: 175, kind: "sling" } },
@@ -125235,18 +125381,18 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       { bob: 0, lean: 1, legR: { a: 16, lift: 0 }, legL: { a: -14, lift: 0 }, armR: { a: 70, b: 20 }, armL: { a: 64, b: 20 }, tool: { on: false, a: 98, kind: "thrown_stone" } }
     ] },
     xbow_idle: { fps: 4, loop: true, frames: [
-      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 46, b: 44 }, armL: { a: 58, b: 30 }, tool: { on: true, a: 100, kind: "alloy_crossbow" } },
-      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 47, b: 44 }, armL: { a: 58, b: 30 }, tool: { on: true, a: 99, kind: "alloy_crossbow" } },
-      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 48, b: 44 }, armL: { a: 58, b: 30 }, tool: { on: true, a: 98, kind: "alloy_crossbow" } },
-      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 47, b: 44 }, armL: { a: 58, b: 30 }, tool: { on: true, a: 99, kind: "alloy_crossbow" } }
+      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 34, b: 42 }, armL: { a: 52, b: 30 }, tool: { on: true, a: 68, kind: "alloy_crossbow" } },
+      { bob: 0, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 34, b: 42 }, armL: { a: 52, b: 30 }, tool: { on: true, a: 69, kind: "alloy_crossbow" } },
+      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 34, b: 42 }, armL: { a: 52, b: 30 }, tool: { on: true, a: 68, kind: "alloy_crossbow" } },
+      { bob: 1, lean: 0, legR: { a: 3, lift: 0 }, legL: { a: -3, lift: 0 }, armR: { a: 34, b: 42 }, armL: { a: 52, b: 30 }, tool: { on: true, a: 69, kind: "alloy_crossbow" } }
     ] },
     xbow_walk: { fps: 8, loop: true, gait: true, frames: [
-      { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 46, b: 44 }, armL: { a: 58, b: 30 }, tool: { on: true, a: 100, kind: "alloy_crossbow" } },
-      { bob: 0, lean: 1, legR: { a: 28, lift: 1 }, legL: { a: -28, lift: 0 }, armR: { a: 49, b: 44 }, armL: { a: 55, b: 30 }, tool: { on: true, a: 97, kind: "alloy_crossbow" } },
-      { bob: 0, lean: 1, legR: { a: 28, lift: 0 }, legL: { a: -28, lift: 1 }, armR: { a: 49, b: 44 }, armL: { a: 55, b: 30 }, tool: { on: true, a: 97, kind: "alloy_crossbow" } },
-      { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 46, b: 44 }, armL: { a: 58, b: 30 }, tool: { on: true, a: 100, kind: "alloy_crossbow" } },
-      { bob: 0, lean: 1, legR: { a: -28, lift: 0 }, legL: { a: 28, lift: 1 }, armR: { a: 43, b: 44 }, armL: { a: 61, b: 30 }, tool: { on: true, a: 103, kind: "alloy_crossbow" } },
-      { bob: 0, lean: 1, legR: { a: -28, lift: 1 }, legL: { a: 28, lift: 0 }, armR: { a: 43, b: 44 }, armL: { a: 61, b: 30 }, tool: { on: true, a: 103, kind: "alloy_crossbow" } }
+      { bob: -1, lean: 1, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: 34, b: 42 }, armL: { a: 52, b: 30 }, tool: { on: true, a: 68, kind: "alloy_crossbow" } },
+      { bob: 0, lean: 1, legR: { a: 28, lift: 1 }, legL: { a: -28, lift: 0 }, armR: { a: 34, b: 42 }, armL: { a: 52, b: 30 }, tool: { on: true, a: 66, kind: "alloy_crossbow" } },
+      { bob: 0, lean: 1, legR: { a: 28, lift: 0 }, legL: { a: -28, lift: 1 }, armR: { a: 34, b: 42 }, armL: { a: 52, b: 30 }, tool: { on: true, a: 66, kind: "alloy_crossbow" } },
+      { bob: -1, lean: 1, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: 34, b: 42 }, armL: { a: 52, b: 30 }, tool: { on: true, a: 68, kind: "alloy_crossbow" } },
+      { bob: 0, lean: 1, legR: { a: -28, lift: 0 }, legL: { a: 28, lift: 1 }, armR: { a: 34, b: 42 }, armL: { a: 52, b: 30 }, tool: { on: true, a: 66, kind: "alloy_crossbow" } },
+      { bob: 0, lean: 1, legR: { a: -28, lift: 1 }, legL: { a: 28, lift: 0 }, armR: { a: 34, b: 42 }, armL: { a: 52, b: 30 }, tool: { on: true, a: 66, kind: "alloy_crossbow" } }
     ] },
     xbow_run: { fps: 12, loop: true, frames: [
       { bob: -1, lean: 4, legR: { a: 0, lift: 4 }, legL: { a: 0, lift: 0 }, armR: { a: 40, b: 62 }, armL: { a: 56, b: 44 }, tool: { on: true, a: 132, kind: "alloy_crossbow" } },
@@ -127880,9 +128026,24 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         { file: "battle/bow_draw.mp3", frame: 0, volume: 0.3, gap: 0.2 },
         { file: "battle/bow_release.mp3", volume: 0.4, gap: 0.2 }
       ],
-      "run|swing_charge|thrust_charge|shoot_charge|fist_charge|sling_charge|throw_charge|swing_walk|thrust_walk|shoot_walk|sling_walk|throw_walk": [
+      run: [
         { files: ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], frame: 0, volume: 0.6, gap: 0.25 },
         { files: ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], frame: 3, volume: 0.6, gap: 0.25 }
+      ],
+      "swing_walk|thrust_walk|shoot_walk|sling_walk|throw_walk|shield_walk|stone_walk|xbow_walk|post_club_walk|post_spear_walk|post_mace_walk|gpost_sword_walk": [
+        { files: ["units/footstep_left_1.mp3", "units/footstep_left_3.mp3", "units/footstep_left_5.mp3"], frame: 0, volume: 0.35, gap: 0.3 },
+        { files: ["units/footstep_right_2.mp3", "units/footstep_right_4.mp3", "units/footstep_right_6.mp3"], frame: 3, volume: 0.35, gap: 0.3 }
+      ],
+      "fist_charge|swing_charge|thrust_charge|shoot_charge|sling_charge|throw_charge|shield_charge|stone_charge|xbow_charge|post_spear_charge|post_mace_charge|shield_run|shoot_run|xbow_run": [
+        { files: ["units/footstep_left_1.mp3", "units/footstep_left_3.mp3", "units/footstep_left_5.mp3"], frame: 0, volume: 0.5, gap: 0.2 },
+        { files: ["units/footstep_right_2.mp3", "units/footstep_right_4.mp3", "units/footstep_right_6.mp3"], frame: 3, volume: 0.5, gap: 0.2 }
+      ],
+      horse_idle: { files: ["units/horse_neigh_1.mp3", "units/horse_neigh_2.mp3"], onStart: true, volume: 0.35, gap: 45 },
+      horse_walk: { files: ["units/horse_gallop_1.mp3", "units/horse_gallop_2.mp3", "units/horse_gallop_3.mp3", "units/horse_gallop_4.mp3", "units/horse_gallop_5.mp3", "units/horse_gallop_6.mp3"], frame: 0, volume: 0.4, gap: 0.4 },
+      horse_gallop: { files: ["units/horse_gallop_1.mp3", "units/horse_gallop_2.mp3", "units/horse_gallop_3.mp3", "units/horse_gallop_4.mp3", "units/horse_gallop_5.mp3", "units/horse_gallop_6.mp3"], frame: 0, volume: 0.45, gap: 0.3 },
+      horse_charge: [
+        { files: ["units/horse_gallop_1.mp3", "units/horse_gallop_2.mp3", "units/horse_gallop_3.mp3", "units/horse_gallop_4.mp3", "units/horse_gallop_5.mp3", "units/horse_gallop_6.mp3"], frame: 0, volume: 0.55, gap: 0.3 },
+        { files: ["units/horse_neigh_1.mp3", "units/horse_neigh_2.mp3"], onStart: true, volume: 0.5, gap: 14 }
       ],
       sling_attack: { file: "battle/sling_throw.mp3", volume: 0.5, gap: 0.2 },
       throw_attack: { file: "battle/sling_throw.mp3", volume: 0.5, gap: 0.2 }
@@ -127900,6 +128061,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
     },
     thunder: { files: ["envairoment/thunder_1.mp3", "envairoment/thunder_2.mp3", "envairoment/thunder_3.mp3"], volume: 0.8, delayMin: 0.3, delayMax: 1.6 },
+    neigh: { files: ["units/horse_neigh_1.mp3", "units/horse_neigh_2.mp3"], volume: 0.5, gap: 8 },
     order: { files: ["battle/order_1.mp3", "battle/order_2.mp3", "battle/order_3.mp3"], volume: 0.7, gap: 0.15 },
     end: {
       lost: { file: "battle/musics/The_Field_of_Lost_Kings.mp3", volume: 0.6 },
@@ -128058,6 +128220,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.w = 0;
       this.h = 0;
       this.dpr = 1;
+      /** The most canvas pixels per CSS pixel (the quality setting): a screen sharper than this is drawn smaller and stretched, which is much less to draw. */
+      this.dprCap = 3;
       this.torchLight = null;
       /** Sparks, dust and flames made by code (pixelfx); it only watches the Sim. */
       this.fxl = new FxLayer();
@@ -128084,11 +128248,20 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.resize();
     }
     resize() {
-      this.dpr = Math.max(1, Math.round(window.devicePixelRatio || 1));
+      const own = window.devicePixelRatio || 1;
+      this.dpr = Math.max(1, Math.min(this.dprCap, own));
       this.w = this.canvas.clientWidth;
       this.h = this.canvas.clientHeight;
-      this.canvas.width = Math.max(1, this.w * this.dpr);
-      this.canvas.height = Math.max(1, this.h * this.dpr);
+      this.canvas.width = Math.max(1, Math.round(this.w * this.dpr));
+      this.canvas.height = Math.max(1, Math.round(this.h * this.dpr));
+      this.canvas.style.imageRendering = this.dpr < own - 0.01 ? "auto" : "pixelated";
+    }
+    /** Draw with at most `cap` canvas pixels per CSS pixel from now on. */
+    setDprCap(cap2) {
+      if (cap2 !== this.dprCap) {
+        this.dprCap = cap2;
+        this.resize();
+      }
     }
     screenToWorld(sx, sy) {
       return { x: sx / this.cam.zoom + this.cam.x, y: sy / this.cam.zoom + this.cam.y };
@@ -128295,7 +128468,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     wallStub(p) {
       let b = this.wallStubs.get(p);
       if (!b) {
-        b = { id: -1, kind: p.kind, era: "stone", x: p.x, y: p.y, level: p.lv ?? 1, progress: 1, done: true, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
+        b = { id: -1, kind: p.kind, era: "stone", x: p.x, y: p.y, w: p.w, h: p.h, level: p.lv ?? 1, progress: 1, done: true, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
         Object.defineProperty(b, "open", { get: () => p.open !== false });
         this.wallStubs.set(p, b);
       }
@@ -128305,12 +128478,18 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const have2 = this.wallMaps.get(t);
       if (have2 && have2.props === t.props && have2.n === t.props.length) return have2.map;
       const N = this.sim.world.size, map2 = /* @__PURE__ */ new Map();
-      for (const p of t.props) if (p.kind === "fence" || p.kind === "gate") map2.set(p.y * N + p.x, this.wallStub(p));
+      for (const p of t.props) if (p.kind === "fence" || p.kind === "gate") {
+        const b = this.wallStub(p);
+        for (let j = 0; j < Math.max(1, p.h); j++) for (let i = 0; i < Math.max(1, p.w); i++) map2.set((p.y + j) * N + p.x + i, b);
+      }
       this.wallMaps.set(t, { props: t.props, n: t.props.length, map: map2 });
       return map2;
     }
-    buildingAnchor(kind, x, y) {
-      const d = BUILDINGS[kind];
+    anchorOf(b) {
+      return this.buildingAnchor(b.kind, b.x, b.y, footOf(b));
+    }
+    buildingAnchor(kind, x, y, fp) {
+      const d = fp ?? BUILDINGS[kind];
       return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
     }
     /** A box with a dark outline and a lit left edge, the way the tile pictures are drawn. */
@@ -128345,16 +128524,46 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       ctx2.lineWidth = Math.max(1, z * 0.8);
       ctx2.stroke();
     }
-    /** A fence piece in a column (a neighbour above or below, none beside) shows as a line of pickets running down the screen, three to a tile, tied together by two rails: the tile picture shows a row seen from the front. Returns false when the piece is not part of a column. */
-    drawColumnFence(b, wallAt) {
-      const N = this.sim.world.size, at = (dx, dy) => wallAt.get((b.y + dy) * N + b.x + dx);
-      if (!(at(0, -1) || at(0, 1))) return false;
-      const { ctx: ctx2 } = this, z = this.cam.zoom, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay), two = b.level >= 2;
-      const rails = two ? [19, 9] : [16, 8], step3 = 11 * z, th = (two ? 2.4 : 1.8) * z;
-      ctx2.fillStyle = "rgba(0,0,0,.25)";
-      ctx2.beginPath();
-      ctx2.ellipse(p.x, p.y, 9 * z, 14 * z, 0, 0, Math.PI * 2);
-      ctx2.fill();
+    /** Is a gate laid along a column? A gate of two tiles says so by its shape; one of a single tile (an old save, a village's) by the fence beside it: above or below it and none beside. */
+    gateCol(b, wallAt) {
+      const f = footOf(b);
+      if (f.w !== f.h) return f.h > f.w;
+      const N = this.sim.world.size, at = (dx, dy) => wallAt.has((b.y + dy) * N + b.x + dx);
+      return (at(0, -1) || at(0, 1)) && !(at(-1, 0) || at(1, 0));
+    }
+    /** How far (px, at zoom 1) from the middle of a wall piece a rail coming along the screen direction (ux, uy) stops: at the post of a fence piece, at the outer post of a gate. */
+    wallReach(o, ux, uy, wallAt) {
+      if (o.kind !== "gate") return 4;
+      const f = footOf(o), along2 = this.gateCol(o, wallAt) ? Math.abs(uy) : Math.abs(ux);
+      return along2 > 0.7 ? Math.max(f.w, f.h) * 16 : 4;
+    }
+    /** The point on the ground at the middle of a wall piece, as the rails see it. */
+    groundOf(b) {
+      const f = footOf(b);
+      return [(b.x + f.w / 2) * TILE, (b.y + f.h / 2) * TILE + 10];
+    }
+    /** One picket: outlined, lit on the left, shaded on the right, with a pointed head. Its foot stands at (x, y). */
+    picket(x, y, w, hgt, two) {
+      const z = this.cam.zoom, px = Math.round(x - w / 2), top = Math.round(y - hgt);
+      this.block(px, top, w, hgt, two ? "#7a5430" : "#8a6238", two ? "#9a6c3c" : "#aa7c48", two ? "#4f3620" : "#5e4026");
+      this.shape([[px - 0.5, top], [x, top - 4 * z], [px + w + 0.5, top]], two ? "#9a6c3c" : "#aa7c48");
+    }
+    /** The wall pieces touching a piece: beside it, above it and below it, and (a single fence piece only) at its corners. */
+    wallNeighbours(b, wallAt) {
+      const N = this.sim.world.size, f = footOf(b), out = /* @__PURE__ */ new Set(), single = b.kind !== "gate" && f.w * f.h === 1;
+      for (let j = -1; j <= f.h; j++) for (let i = -1; i <= f.w; i++) {
+        if (i >= 0 && i < f.w && j >= 0 && j < f.h) continue;
+        const corner = (i < 0 || i >= f.w) && (j < 0 || j >= f.h);
+        if (corner && !single) continue;
+        const o = wallAt.get((b.y + j) * N + b.x + i);
+        if (o && o !== b && !(corner && o.kind === "gate")) out.add(o);
+      }
+      return [...out];
+    }
+    /** The rails (and a middle picket) from a wall piece to the pieces touching it: each link is drawn once, by the piece below or to the right of the other. A piece with no neighbour gets a short stub of rail either side. */
+    drawWallLinks(b, wallAt, two, prog = 1) {
+      const { ctx: ctx2 } = this, z = this.cam.zoom, [gx, gy] = this.groundOf(b), p = this.worldToScreen(gx, gy);
+      const rails = two ? [19, 9] : [16, 8], th = (two ? 2.4 : 1.8) * z, tie = two ? "#8a6238" : "#d8c690", tieL = two ? "#aa7c48" : "#f0e2b0";
       const rail = (x0, y0, x1, y1, h3) => {
         ctx2.lineCap = "butt";
         ctx2.strokeStyle = "#2b1d10";
@@ -128363,55 +128572,73 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         ctx2.moveTo(x0, y0 - h3 * z);
         ctx2.lineTo(x1, y1 - h3 * z);
         ctx2.stroke();
-        ctx2.strokeStyle = two ? "#8a6238" : "#d8c690";
+        ctx2.strokeStyle = tie;
         ctx2.lineWidth = th;
         ctx2.beginPath();
         ctx2.moveTo(x0, y0 - h3 * z);
         ctx2.lineTo(x1, y1 - h3 * z);
         ctx2.stroke();
-        ctx2.strokeStyle = two ? "#aa7c48" : "#f0e2b0";
+        ctx2.strokeStyle = tieL;
         ctx2.lineWidth = Math.max(1, th * 0.35);
         ctx2.beginPath();
         ctx2.moveTo(x0, y0 - h3 * z - th * 0.25);
         ctx2.lineTo(x1, y1 - h3 * z - th * 0.25);
         ctx2.stroke();
       };
-      for (const h3 of rails) {
-        rail(p.x, p.y - step3, p.x, p.y + step3, h3);
-        if (at(0, 1)) {
-          const q = this.worldToScreen(ax, ay + TILE);
-          rail(p.x, p.y + step3, q.x, q.y - step3, h3);
-        }
-        for (const dx of [-1, 1]) if (at(dx, 0)) {
-          const q = this.worldToScreen(ax + dx * TILE, ay);
-          rail(p.x, p.y, q.x, q.y, h3);
-        }
+      const near2 = this.wallNeighbours(b, wallAt);
+      for (const o of near2) {
+        if (!(o.y < b.y || o.y === b.y && o.x < b.x)) continue;
+        const [ox, oy] = this.groundOf(o), q = this.worldToScreen(ox, oy), len = Math.hypot(q.x - p.x, q.y - p.y);
+        if (len < 1) continue;
+        const ux = (q.x - p.x) / len, uy = (q.y - p.y) / len;
+        const r0 = this.wallReach(b, ux, uy, wallAt) * z, r1 = this.wallReach(o, -ux, -uy, wallAt) * z;
+        if (len - r0 - r1 <= 1) continue;
+        const x0 = p.x + ux * r0, y0 = p.y + uy * r0, x1 = q.x - ux * r1, y1 = q.y - uy * r1;
+        const lp = Math.min(prog, o.done ? 1 : o.progress);
+        for (const h3 of lp >= 0.75 ? rails : lp >= 0.5 ? [rails[1]] : []) rail(x0, y0, x1, y1, h3);
+        const lowerTwo = o.level >= 2 && b.level >= 2;
+        if (lp >= 0.75 && len - r0 - r1 > 14 * z) this.picket((x0 + x1) / 2, (y0 + y1) / 2, 5 * z, (lowerTwo ? 22 : 19) * z, lowerTwo);
       }
-      const w = (two ? 8 : 7) * z;
-      for (const k of [-1, 0, 1]) {
-        const y = p.y + k * step3, hgt = ((two ? 27 : 23) + (k === 0 ? 3 : 0)) * z, x = Math.round(p.x - w / 2), top = Math.round(y - hgt);
-        for (const h3 of rails) this.block(x + w - 1, y - h3 * z, 6 * z, th, two ? "#8a6238" : "#d8c690", two ? "#aa7c48" : "#f0e2b0");
-        this.block(x, top, w, hgt, "#8a6238", "#aa7c48", "#5e4026");
-        this.shape([[x - 0.5, top], [p.x, top - 4 * z], [x + w + 0.5, top]], "#aa7c48");
-      }
-      return true;
+      if (!near2.length && b.kind !== "gate" && prog >= 0.75) for (const s of [-1, 1]) for (const h3 of rails) rail(p.x, p.y, p.x + s * 10 * z, p.y, h3);
     }
-    /** A gate stands taller and wider than the fence on either side (posts 26 px out from its middle, a beam across them), and shows plainly whether it is shut: shut, it has a red pennant and the leaves are closed and barred, the ground between the posts barred in red; open, a green pennant, the leaves stand swung out and a path is laid between the posts. It runs along the column when fence lies above or below it and none beside it. */
-    drawGate(b, wallAt) {
+    /** A fence piece: rails to its neighbours (straight or across a corner, so a diagonal row is joined too), and its post. */
+    /** `prog` below 1 is a piece being built: a stake that grows into the post, then the low rail, then the high rail and the pickets. */
+    drawFence(b, wallAt, prog = 1) {
+      const { ctx: ctx2 } = this, z = this.cam.zoom, [ax, ay] = this.anchorOf(b), p = this.worldToScreen(ax, ay), two = b.level >= 2;
+      const full = two ? 30 : 27, hgt = full * Math.min(1, 0.2 + prog * 1.6);
+      ctx2.fillStyle = "rgba(0,0,0,.25)";
+      ctx2.beginPath();
+      ctx2.ellipse(p.x, p.y, 8 * z, 3.5 * z, 0, 0, Math.PI * 2);
+      ctx2.fill();
+      this.drawWallLinks(b, wallAt, two, prog);
+      this.picket(p.x, p.y, (two ? 8 : 7) * z, hgt * z, two);
+      ctx2.fillStyle = two ? "#9a6c3c" : "#c79a5e";
+      ctx2.fillRect(Math.round(p.x - (two ? 4 : 3.5) * z), Math.round(p.y - hgt * z), Math.max(1, Math.round(z)), Math.round(hgt * z));
+      if (prog < 1) {
+        ctx2.fillStyle = "rgba(120,90,50,.55)";
+        ctx2.beginPath();
+        ctx2.ellipse(p.x, p.y + 1 * z, 10 * z, 4 * z, 0, 0, Math.PI * 2);
+        ctx2.fill();
+      }
+    }
+    /** A gate fills its one tile (posts 13 px out from its middle, a beam across them) and stands taller than the fence on either side, and shows plainly whether it is shut: shut, it has a red pennant and the leaves are closed and barred, the ground between the posts barred in red; open, a green pennant, the leaves stand swung out and a path is laid between the posts. It runs along the column when fence lies above or below it and none beside it. */
+    drawGate(b, wallAt, prog = 1) {
       const { ctx: ctx2 } = this, z = this.cam.zoom, N = this.sim.world.size, at = (dx, dy) => wallAt.has((b.y + dy) * N + b.x + dx);
-      const col = (at(0, -1) || at(0, 1)) && !(at(-1, 0) || at(1, 0)), two = b.level >= 2, open = b.open;
-      const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 6);
+      const col = this.gateCol(b, wallAt), two = b.level >= 2, open = b.open;
+      this.drawWallLinks(b, wallAt, two, prog);
+      const f = footOf(b), L2 = Math.max(f.w, f.h), p = this.worldToScreen((b.x + f.w / 2) * TILE, (b.y + f.h / 2) * TILE + 4);
       const sign = open ? "#4fbf5a" : "#d9473f", signDark = open ? "#2a7a33" : "#8f2620";
       const X = (u, v = 0) => col ? p.x + v * z : p.x + u * z, Y = (u, h3, v = 0) => (col ? p.y + u * z : p.y + v * z) - h3 * z;
-      const U = 26, top = two ? 52 : 46, pw = two ? 10 : 8;
+      const U = L2 * 16 - 3, top = (two ? 46 : 40) * Math.min(1, 0.2 + prog * 1.6), pw = two ? 8 : 6;
+      const leaves = prog >= 0.6;
       const wood = "#8a6238", woodL = "#aa7c48", woodD = "#5e4026", stone = "#8e9498", stoneL = "#b9bfc2", stoneD = "#60676b", iron = "#454a52";
       ctx2.fillStyle = open ? "rgba(90,200,90,.30)" : "rgba(217,71,63,.26)";
-      if (col) ctx2.fillRect(Math.round(p.x - 9 * z), Math.round(p.y - U * z), Math.round(18 * z), Math.round(2 * U * z));
-      else ctx2.fillRect(Math.round(p.x - U * z), Math.round(p.y - 9 * z), Math.round(2 * U * z), Math.round(18 * z));
+      if (col) ctx2.fillRect(Math.round(p.x - 7 * z), Math.round(p.y - U * z), Math.round(14 * z), Math.round(2 * U * z));
+      else ctx2.fillRect(Math.round(p.x - U * z), Math.round(p.y - 7 * z), Math.round(2 * U * z), Math.round(14 * z));
       const shadow2 = (u) => {
         ctx2.fillStyle = "rgba(0,0,0,.28)";
         ctx2.beginPath();
-        ctx2.ellipse(X(u), Y(u, 0), 9 * z, 3.5 * z, 0, 0, Math.PI * 2);
+        ctx2.ellipse(X(u), Y(u, 0), 6 * z, 3 * z, 0, 0, Math.PI * 2);
         ctx2.fill();
       };
       const post = (u) => {
@@ -128420,13 +128647,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         if (two) {
           this.block(x, y, pw * z, top * z, stone, stoneL, stoneD);
           ctx2.fillStyle = stoneD;
-          for (const h3 of [8, 16, 24, 32, 40]) ctx2.fillRect(Math.round(x), Math.round(Y(u, h3)), Math.round(pw * z), Math.max(1, Math.round(z * 0.8)));
-          this.block(x - 2 * z, y - 4 * z, (pw + 4) * z, 4 * z, stoneL, "#d3d8da", stone);
+          for (const h3 of [8, 16, 24, 32]) ctx2.fillRect(Math.round(x), Math.round(Y(u, h3)), Math.round(pw * z), Math.max(1, Math.round(z * 0.8)));
+          this.block(x - 1.5 * z, y - 3 * z, (pw + 3) * z, 3 * z, stoneL, "#d3d8da", stone);
         } else {
           this.block(x, y, pw * z, top * z, woodD, wood, "#3e2916");
           ctx2.fillStyle = woodL;
           ctx2.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(z * 1.5)), Math.round(top * z));
-          this.shape([[x - 0.5, y], [X(u), y - 5 * z], [x + pw * z + 0.5, y]], woodL);
+          this.shape([[x - 0.5, y], [X(u), y - 4 * z], [x + pw * z + 0.5, y]], woodL);
         }
         ctx2.fillStyle = iron;
         for (const h3 of [10, top - 14]) ctx2.fillRect(Math.round(x), Math.round(Y(u, h3)), Math.round(pw * z), Math.max(2, Math.round(2 * z)));
@@ -128438,16 +128665,16 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         ctx2.lineWidth = Math.max(1, z * 0.8);
         const n = 5;
         for (let i = 1; i < n; i++) {
-          const f = i / n;
+          const f2 = i / n;
           ctx2.beginPath();
-          ctx2.moveTo(x0 + (x1 - x0) * f - t, yA + (yB - yA) * f);
-          ctx2.lineTo(x0 + (x1 - x0) * f + t, yD + (yC - yD) * f);
+          ctx2.moveTo(x0 + (x1 - x0) * f2 - t, yA + (yB - yA) * f2);
+          ctx2.lineTo(x0 + (x1 - x0) * f2 + t, yD + (yC - yD) * f2);
           ctx2.stroke();
         }
         ctx2.strokeStyle = iron;
         ctx2.lineWidth = Math.max(2, 2 * z);
-        for (const f of [0.2, 0.8]) {
-          const ya = yA + (yD - yA) * f, yb = yB + (yC - yB) * f;
+        for (const f2 of [0.2, 0.8]) {
+          const ya = yA + (yD - yA) * f2, yb = yB + (yC - yB) * f2;
           ctx2.beginPath();
           ctx2.moveTo(x0 - t, ya);
           ctx2.lineTo(x1 + t, yb);
@@ -128461,15 +128688,16 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         ctx2.stroke();
       };
       post(-U);
-      if (open) {
+      if (!leaves) {
+      } else if (open) {
         for (const s of [-1, 1]) {
-          const h0 = 4, h1 = top - 10, hinge = s * (U - 4), freeU = s * (U - 14), v = 14;
+          const h0 = 4, h1 = top - 10, leaf = U - 3, hinge = s * (U - 3), freeU = s * (U - 3 - leaf * 0.5), v = leaf * 0.86;
           const x0 = X(hinge), x1 = X(freeU, v);
           this.shape([[x0, Y(hinge, h1)], [x1, Y(freeU, h1, v)], [x1, Y(freeU, h0, v)], [x0, Y(hinge, h0)]], wood);
           ctx2.strokeStyle = iron;
           ctx2.lineWidth = Math.max(2, 2 * z);
-          for (const f of [0.2, 0.8]) {
-            const ya = Y(hinge, h1) + (Y(hinge, h0) - Y(hinge, h1)) * f, yb = Y(freeU, h1, v) + (Y(freeU, h0, v) - Y(freeU, h1, v)) * f;
+          for (const f2 of [0.2, 0.8]) {
+            const ya = Y(hinge, h1) + (Y(hinge, h0) - Y(hinge, h1)) * f2, yb = Y(freeU, h1, v) + (Y(freeU, h0, v) - Y(freeU, h1, v)) * f2;
             ctx2.beginPath();
             ctx2.moveTo(x0, ya);
             ctx2.lineTo(x1, yb);
@@ -128478,17 +128706,17 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           ctx2.strokeStyle = woodD;
           ctx2.lineWidth = Math.max(1, z * 0.8);
           for (let i = 1; i < 4; i++) {
-            const f = i / 4;
+            const f2 = i / 4;
             ctx2.beginPath();
-            ctx2.moveTo(x0 + (x1 - x0) * f, Y(hinge, h1) + (Y(freeU, h1, v) - Y(hinge, h1)) * f);
-            ctx2.lineTo(x0 + (x1 - x0) * f, Y(hinge, h0) + (Y(freeU, h0, v) - Y(hinge, h0)) * f);
+            ctx2.moveTo(x0 + (x1 - x0) * f2, Y(hinge, h1) + (Y(freeU, h1, v) - Y(hinge, h1)) * f2);
+            ctx2.lineTo(x0 + (x1 - x0) * f2, Y(hinge, h0) + (Y(freeU, h0, v) - Y(hinge, h0)) * f2);
             ctx2.stroke();
           }
         }
       } else {
         const t = col ? 3 * z : 0;
-        planks(-U + 4, -1, 4, top - 10, t);
-        planks(1, U - 4, 4, top - 10, t);
+        planks(-U + 3, -1, 4, top - 10, t);
+        planks(1, U - 3, 4, top - 10, t);
         ctx2.fillStyle = iron;
         ctx2.beginPath();
         ctx2.arc(X(-3), Y(-3, top / 2 - 3), 1.6 * z, 0, Math.PI * 2);
@@ -128496,7 +128724,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         ctx2.fill();
       }
       post(U);
-      const bx0 = X(-U - 7), bx1 = X(U + 7), by0 = Y(-U - 7, top), by1 = Y(U + 7, top);
+      if (prog < 0.85) return;
+      const bx0 = X(-U - 4), bx1 = X(U + 4), by0 = Y(-U - 4, top), by1 = Y(U + 4, top);
       this.shape([[bx0, by0 - 4 * z], [bx1, by1 - 4 * z], [bx1, by1 + 3 * z], [bx0, by0 + 3 * z]], two ? stoneD : woodD);
       ctx2.strokeStyle = two ? stoneL : woodL;
       ctx2.lineWidth = Math.max(1, 1.4 * z);
@@ -128507,52 +128736,26 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const cx = X(0), cy = Y(0, top);
       ctx2.fillStyle = "#2b1d10";
       ctx2.fillRect(Math.round(cx - 1 * z), Math.round(cy - 18 * z), Math.max(2, Math.round(2 * z)), Math.round(15 * z));
-      this.shape([[cx + 1 * z, cy - 18 * z], [cx + 10 * z, cy - 15 * z], [cx + 1 * z, cy - 11 * z]], sign);
-      this.shape([[cx - 6 * z, cy + 3 * z], [cx + 6 * z, cy + 3 * z], [cx + 6 * z, cy + 14 * z], [cx, cy + 18 * z], [cx - 6 * z, cy + 14 * z]], sign);
+      this.shape([[cx + 1 * z, cy - 18 * z], [cx + 8 * z, cy - 15.5 * z], [cx + 1 * z, cy - 12 * z]], sign);
+      this.shape([[cx - 4 * z, cy + 3 * z], [cx + 4 * z, cy + 3 * z], [cx + 4 * z, cy + 12 * z], [cx, cy + 15 * z], [cx - 4 * z, cy + 12 * z]], sign);
       ctx2.fillStyle = signDark;
-      ctx2.fillRect(Math.round(cx - 6 * z), Math.round(cy + 12 * z), Math.round(12 * z), Math.round(2 * z));
+      ctx2.fillRect(Math.round(cx - 4 * z), Math.round(cy + 10 * z), Math.round(8 * z), Math.round(2 * z));
       ctx2.strokeStyle = "#fff6e8";
       ctx2.lineWidth = Math.max(1.5, 1.8 * z);
       ctx2.lineCap = "round";
       ctx2.beginPath();
       if (open) {
-        ctx2.moveTo(cx, cy + 12 * z);
-        ctx2.lineTo(cx, cy + 6 * z);
-        ctx2.moveTo(cx - 2.5 * z, cy + 8.5 * z);
-        ctx2.lineTo(cx, cy + 5.5 * z);
-        ctx2.lineTo(cx + 2.5 * z, cy + 8.5 * z);
+        ctx2.moveTo(cx, cy + 10 * z);
+        ctx2.lineTo(cx, cy + 5 * z);
+        ctx2.moveTo(cx - 2 * z, cy + 7 * z);
+        ctx2.lineTo(cx, cy + 4.5 * z);
+        ctx2.lineTo(cx + 2 * z, cy + 7 * z);
       } else {
-        ctx2.moveTo(cx - 3.5 * z, cy + 8.5 * z);
-        ctx2.lineTo(cx + 3.5 * z, cy + 8.5 * z);
+        ctx2.moveTo(cx - 2.5 * z, cy + 7 * z);
+        ctx2.lineTo(cx + 2.5 * z, cy + 7 * z);
       }
       ctx2.stroke();
       ctx2.lineCap = "butt";
-    }
-    /** Ropes and a middle stake from a fence piece to the pieces touching it at its upper corners, drawn over the pieces already standing there. */
-    drawDiagonalRails(b, wallAt) {
-      const { ctx: ctx2 } = this, N = this.sim.world.size, z = this.cam.zoom;
-      for (const dx of [-1, 1]) {
-        const o = wallAt.get((b.y - 1) * N + b.x + dx);
-        if (!o) continue;
-        if (wallAt.has(b.y * N + b.x + dx) || wallAt.has((b.y - 1) * N + b.x)) continue;
-        const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), [bx, by] = this.buildingAnchor(o.kind, o.x, o.y);
-        const rope = (h3) => {
-          const p = this.worldToScreen(ax, ay - h3), q = this.worldToScreen(bx, by - h3);
-          ctx2.beginPath();
-          ctx2.moveTo(p.x, p.y);
-          ctx2.lineTo(q.x, q.y);
-          ctx2.stroke();
-        };
-        ctx2.strokeStyle = "#d8c690";
-        ctx2.lineWidth = Math.max(1, z);
-        rope(12);
-        rope(6);
-        const m = this.worldToScreen((ax + bx) / 2, (ay + by) / 2);
-        ctx2.fillStyle = "#5e4026";
-        ctx2.fillRect(Math.round(m.x - 2 * z), Math.round(m.y - 24 * z), Math.round(4 * z), Math.round(24 * z));
-        ctx2.fillStyle = "#aa7c48";
-        ctx2.fillRect(Math.round(m.x - 2 * z), Math.round(m.y - 24 * z), Math.round(4 * z), Math.round(3 * z));
-      }
     }
     /** Current level's sprite; while an upgrade runs the finished building stays drawn, with a progress bar. */
     buildingProp(b) {
@@ -128687,7 +128890,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const vx0 = cx - 128, vx1 = cx + this.w / z + 128, vy0 = cy - 128, vy1 = cy + this.h / z + 128;
       const onScr = (x, y) => x * TILE >= vx0 && x * TILE <= vx1 && y * TILE >= vy0 && y * TILE <= vy1;
       for (const b of sim2.buildings) {
-        const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
+        const [ax, ay] = this.anchorOf(b);
         if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
         list.push({ y: ay, kind: "building", i: 0, j: 0, b });
       }
@@ -128708,7 +128911,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       list.sort((a, b) => a.y - b.y);
       const wallAt = /* @__PURE__ */ new Map();
-      for (const b of sim2.buildings) if (b.kind === "fence" || b.kind === "gate") wallAt.set(b.y * N + b.x, b);
+      for (const b of sim2.buildings) if (b.kind === "fence" || b.kind === "gate") {
+        const f = footOf(b);
+        for (let j = 0; j < f.h; j++) for (let i = 0; i < f.w; i++) wallAt.set((b.y + j) * N + b.x + i, b);
+      }
       for (const d of list) {
         if (d.kind === "tree") {
           const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
@@ -128727,10 +128933,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           const n = world.nodeAt(d.i, d.j), k = Math.floor(hash2(d.i, d.j, 23) * nat.bush.length);
           this.prop((n && n.amount === 0 ? nat.bushEmpty : nat.bush)[k], d.i * TILE + 16, d.y, time);
         } else if (d.kind === "building" && d.b) {
-          const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
-          if (b.kind === "gate" && b.done) this.drawGate(b, wallAt);
-          else if (!(b.kind === "fence" && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id || ghost?.movingIds?.includes(b.id) ? 0.5 : 1);
-          if (b.kind === "fence" || b.kind === "gate") this.drawDiagonalRails(b, wallAt);
+          const b = d.b, [ax, ay] = this.anchorOf(b);
+          if (b.kind === "gate") this.drawGate(b, wallAt, b.done ? 1 : b.progress);
+          else if (b.kind === "fence") this.drawFence(b, wallAt, b.done ? 1 : b.progress);
+          else this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id || ghost?.movingIds?.includes(b.id) ? 0.5 : 1);
           this.drawDamage(b, ax, ay, time);
           if (b.kind === "tower" && b.done) {
             let n = 0, shooting = false;
@@ -128808,8 +129014,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           if (p.kind === "gate" || p.kind === "fence") {
             const b = this.wallStub(p), walls = this.wallsOf(t);
             if (p.kind === "gate") this.drawGate(b, walls);
-            else if (!this.drawColumnFence(b, walls)) this.prop(sp.building("fence", "stone", p.lv ?? 1, 4), ax, ay, time, alpha);
-            this.drawDiagonalRails(b, walls);
+            else this.drawFence(b, walls);
           } else this.prop(sp.building(kind, "stone", p.kind === "fire" ? 1 : p.lv ?? 1, 4), ax, ay, time, alpha);
           if (p.hp > 0) this.drawWear(kind, p.hp / Math.max(1, maxPropHp(t, p)), p.x * 31 + p.y, ax, ay, time, p.lv ?? 1, sp.building(kind, "stone", p.kind === "fire" ? 1 : p.lv ?? 1, 4).ay);
           if (kind === "tower" && p.hp > 0) {
@@ -128854,7 +129059,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           afterRider?.();
           const v = d.v;
           if (v.phase === "work") this.fxl.watchWorker(v, fx, fy - lift, time);
-          if (this.audio?.sfxOn && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time);
+          if (this.audio?.sfxOn && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time, isHorse(rode) && /walk|run|charge/.test(v.anim) ? v.anim.includes("charge") ? "horse_charge" : v.anim.includes("walk") ? "horse_walk" : "horse_gallop" : isHorse(rode) && /idle|guard/.test(v.anim) ? "horse_idle" : v.anim);
           if (v.team === "player" && (v.job === "fight" || v.job === "hunt") && v.phase !== "flee" && v.phase !== "sleep" && v.phase !== "down") {
             const p = this.worldToScreen(fx, fy - lift - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
             ctx2.fillStyle = "rgba(20,14,8,.85)";
@@ -128892,7 +129097,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         ctx2.globalCompositeOperation = "lighter";
         for (const b of sim2.buildings) {
           if (b.kind !== "campfire") continue;
-          const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 14), rad4 = 120 * z;
+          const [ax, ay] = this.anchorOf(b), p = this.worldToScreen(ax, ay - 14), rad4 = 120 * z;
           const g = ctx2.createRadialGradient(p.x, p.y, 4 * z, p.x, p.y, rad4);
           g.addColorStop(0, `rgba(255,170,70,${(0.5 * dark).toFixed(3)})`);
           g.addColorStop(1, "rgba(255,170,70,0)");
@@ -128959,17 +129164,31 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       if (ghost?.group) {
         this.drawTerritory(sim2.buildings.filter((o) => !ghost.movingIds?.includes(o.id)));
+        const Ng = sim2.world.size, planned2 = /* @__PURE__ */ new Map(), stubs = /* @__PURE__ */ new Map();
+        for (const o of sim2.buildings) if ((o.kind === "fence" || o.kind === "gate") && !ghost.movingIds?.includes(o.id)) {
+          const f = footOf(o);
+          for (let j = 0; j < f.h; j++) for (let i = 0; i < f.w; i++) planned2.set((o.y + j) * Ng + o.x + i, o);
+        }
         for (const q of ghost.group) {
-          const [qx, qy] = this.buildingAnchor(q.kind, q.x, q.y);
-          this.prop(sp.building(q.kind, sim2.era, q.level, 4), qx, qy, time, 0.6);
+          const stub = { id: -2 - q.id, kind: q.kind, era: sim2.era, x: q.x, y: q.y, w: q.w ?? 1, h: q.h ?? 1, rot: q.rot === 1 ? 1 : 0, level: q.level, progress: 1, done: true, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
+          stubs.set(q.id, stub);
+          for (let j = 0; j < stub.h; j++) for (let i = 0; i < stub.w; i++) planned2.set((q.y + j) * Ng + q.x + i, stub);
+        }
+        for (const q of ghost.group) {
+          const stub = stubs.get(q.id), was = ctx2.globalAlpha;
+          ctx2.globalAlpha = 0.65;
+          if (q.kind === "gate") this.drawGate(stub, planned2);
+          else this.drawFence(stub, planned2);
+          ctx2.globalAlpha = was;
+          const qw = q.w ?? 1, qh = q.h ?? 1;
           ctx2.fillStyle = ghost.ok ? "rgba(90,200,90,.38)" : "rgba(220,70,60,.42)";
-          ctx2.fillRect(px(q.x), py(q.y), ts, ts);
+          ctx2.fillRect(px(q.x), py(q.y), qw * ts, qh * ts);
           ctx2.strokeStyle = ghost.ok ? "#bff0b0" : "#ffb4a8";
           ctx2.lineWidth = 2;
-          ctx2.strokeRect(px(q.x) + 1, py(q.y) + 1, ts - 2, ts - 2);
+          ctx2.strokeRect(px(q.x) + 1, py(q.y) + 1, qw * ts - 2, qh * ts - 2);
         }
       } else if (ghost) {
-        const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
+        const d = { w: ghost.w ?? BUILDINGS[ghost.kind].w, h: ghost.h ?? BUILDINGS[ghost.kind].h }, [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y, d);
         if (!WALL_KINDS.has(ghost.kind)) {
           const zone = (x, y, w, h3, c) => {
             ctx2.fillStyle = c;
@@ -128982,7 +129201,20 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           ctx2.strokeRect(px(ghost.x - CLEARANCE), py(ghost.y - CLEARANCE), (d.w + 2 * CLEARANCE) * ts, (d.h + 2 * CLEARANCE) * ts);
           ctx2.setLineDash([]);
         }
-        this.prop(sp.building(ghost.kind, ghost.era ?? sim2.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
+        if (ghost.kind === "fence" || ghost.kind === "gate") {
+          const N2 = sim2.world.size, walls = /* @__PURE__ */ new Map();
+          for (const o of sim2.buildings) if ((o.kind === "fence" || o.kind === "gate") && o.id !== ghost.moving) {
+            const f = footOf(o);
+            for (let j = 0; j < f.h; j++) for (let i = 0; i < f.w; i++) walls.set((o.y + j) * N2 + o.x + i, o);
+          }
+          const stub = { id: -2, kind: ghost.kind, era: ghost.era ?? sim2.era, x: ghost.x, y: ghost.y, w: d.w, h: d.h, rot: ghost.rot === 1 ? 1 : 0, level: ghost.level ?? 1, progress: 1, done: true, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
+          for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) walls.set((stub.y + j) * N2 + stub.x + i, stub);
+          const was = ctx2.globalAlpha;
+          ctx2.globalAlpha = 0.65;
+          if (ghost.kind === "gate") this.drawGate(stub, walls);
+          else this.drawFence(stub, walls);
+          ctx2.globalAlpha = was;
+        } else this.prop(sp.building(ghost.kind, ghost.era ?? sim2.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
         this.drawTerritory(sim2.buildings.filter((o) => o.id !== ghost.moving));
         const gs = buildingSight({ kind: ghost.kind, level: ghost.level ?? 1, done: true, era: ghost.era ?? sim2.era });
         if (gs > 0) this.drawSight(ghost.x + d.w / 2, ghost.y + d.h / 2, gs);
@@ -129038,7 +129270,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       const sb = selBuilding === null ? void 0 : sim2.getBuilding(selBuilding);
       if (sb) {
-        const d = BUILDINGS[sb.kind];
+        const d = footOf(sb);
         ctx2.strokeStyle = "#f5e7c4";
         ctx2.lineWidth = 2;
         ctx2.setLineDash([6, 4]);
@@ -129127,13 +129359,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var GameAudio = class {
     constructor() {
       /** Volume of each kind, 0 to 1 (the player's slider). */
-      this.vol = { sfx: 1, amb: 1, mus: 1 };
+      this.vol = { sfx: 1, amb: 1, mus: 1, voice: 1 };
       /** Work and fight sounds. */
       this.sfxOn = true;
       /** Weather sounds. */
       this.ambientOn = true;
       /** War music. */
       this.musicOn = true;
+      /** The voices of people: the shouts that answer an order, the cheering of a victory. */
+      this.voiceOn = true;
       this.warScreen = false;
       this.stingsDone = 0;
       this.warAge = 99;
@@ -129165,6 +129399,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       /** Hits of a weapon with `burst` sounds, gathered for a moment: (start time, how many) — see `hit` and `sweep`. */
       this.pending = /* @__PURE__ */ new Map();
       this.steps = /* @__PURE__ */ new WeakMap();
+      /** The sound key each unit was last watched with, to tell when one begins. */
+      this.started = /* @__PURE__ */ new WeakMap();
       this.active = /* @__PURE__ */ new Map();
       this.beds = /* @__PURE__ */ new Map();
       /** The game tab is hidden or its window lost focus (another tab or window: nothing would stop the sounds): everything is paused and nothing starts until the player is back. */
@@ -129180,7 +129416,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     /** The volume of a kind of sound now: 0 when it is switched off. */
     gain(k) {
-      return (k === "sfx" ? this.sfxOn : k === "amb" ? this.ambientOn : this.musicOn) ? this.vol[k] : 0;
+      return (k === "sfx" ? this.sfxOn : k === "amb" ? this.ambientOn : k === "voice" ? this.voiceOn : this.musicOn) ? this.vol[k] : 0;
     }
     onVisibility() {
       this.hidden = document.hidden || !document.hasFocus();
@@ -129241,22 +129477,27 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
     }
     /** Call every frame for each unit near the middle of the screen: plays the sound on the animation's hit frame. */
-    watchAnim(key, anim, clock, framesOf, now) {
+    watchAnim(key, anim, clock, framesOf, now, sound2 = anim) {
       const cur = this.active.get(key);
       if (cur) {
-        if (cur.anim !== anim) this.stop(key);
+        if (cur.anim !== sound2) this.stop(key);
         else cur.seen = now;
       }
-      const def = ANIMS[anim], clip = def && framesOf(anim);
+      const begun = this.started.get(key) !== sound2;
+      this.started.set(key, sound2);
+      const def = ANIMS[sound2], clip = def && framesOf(anim);
       if (!def || !clip) return;
+      if (begun) {
+        for (const c of Array.isArray(def) ? def : [def]) if (c.onStart) this.play(c.files ? pick(c.files) : c.file, c.volume, c.gap, now, false, "sfx", c.files ? c.files[0] : c.file);
+      }
       const step3 = Math.floor(clock * clip.fps), last2 = this.steps.get(key);
       this.steps.set(key, step3);
       if (last2 === void 0 || step3 === last2) return;
       for (const c of Array.isArray(def) ? def : [def]) {
-        if (step3 % clip.n !== (c.frame ?? c.hitFrame ?? clip.hit)) continue;
+        if (c.onStart || step3 % clip.n !== (c.frame ?? c.hitFrame ?? clip.hit)) continue;
         const file = c.files ? pick(c.files) : c.file;
         const el = this.play(file, c.volume, c.gap, now, !!c.work, "sfx", c.files ? c.files[0] : c.file);
-        if (el && c.work) this.active.set(key, { el, anim, file: c.files ? c.files[0] : c.file, seen: now });
+        if (el && c.work) this.active.set(key, { el, anim: sound2, file: c.files ? c.files[0] : c.file, seen: now });
       }
     }
     /**
@@ -129295,25 +129536,31 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       this.warAge = 0;
       this.warScreen = onScreen;
       if (stings < this.stingsDone) this.stingsDone = 0;
-      for (let i = 0; i < Math.min(4, stings - this.stingsDone); i++) this.play(sounds_default.war.start.file, sounds_default.war.start.volume, 0, now, false, "mus", `sting${i}`);
+      for (let i = 0; i < Math.min(4, stings - this.stingsDone); i++) this.play(sounds_default.war.start.file, sounds_default.war.start.volume, 0, now, false, "voice", `sting${i}`);
       this.stingsDone = stings;
     }
     /** A warning from the game: wolves come (a howl, always heard, wherever the camera is) or a village raids us (the battle sting, once). */
     alert(kind) {
       const now = performance.now() / 1e3;
       if (kind === "notice") return;
-      if (kind === "raid" || kind === "beast") this.play(sounds_default.war.start.file, sounds_default.war.start.volume, 0, now, false, "mus", "raidalert");
-      else if (kind === "era") this.play(sounds_default.end.won.files[1] ?? sounds_default.end.won.files[0], sounds_default.end.won.volume, 0, now, false, "mus", "eraup");
-      else if (kind === "clear") this.play(sounds_default.end.won.files[0], sounds_default.end.won.volume, 0, now, false, "mus", "eventover");
+      if (kind === "raid" || kind === "beast") this.play(sounds_default.war.start.file, sounds_default.war.start.volume, 0, now, false, "voice", "raidalert");
+      else if (kind === "mount") this.neigh();
+      else if (kind === "era") this.play(sounds_default.end.won.files[1] ?? sounds_default.end.won.files[0], sounds_default.end.won.volume, 0, now, false, "voice", "eraup");
+      else if (kind === "clear") this.play(sounds_default.end.won.files[0], sounds_default.end.won.volume, 0, now, false, "voice", "eventover");
       else {
         const w = sounds_default.wolves;
         this.play(pick(w.files), w.volume, 0, now, false, "amb", "wolfalert");
       }
     }
+    /** A horse neighs (`neigh` in sounds.json): when a troop with riders is ordered, when a charge begins (see `onStart`), when a horse is tamed. */
+    neigh() {
+      const n = sounds_default.neigh;
+      this.play(pick(n.files), n.volume, n.gap, performance.now() / 1e3, false, "sfx", "neigh");
+    }
     /** The player gave an order to a troop (a button, or a click with several chosen): one of the order sounds. */
     order() {
       const o = sounds_default.order;
-      this.play(pick(o.files), o.volume, o.gap, performance.now() / 1e3, false, "sfx", "order");
+      this.play(pick(o.files), o.volume, o.gap, performance.now() / 1e3, false, "voice", "order");
     }
     /**
      * The war is decided. Lost: its own music, once. Won: the four victory sounds, in a random order, in two rounds of two: the second of a pair starts when the first is
@@ -129353,7 +129600,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         return;
       }
       const file = v.left.shift();
-      const el = this.play(file, sounds_default.end.won.volume, 0, performance.now() / 1e3, false, "mus", file);
+      const el = this.play(file, sounds_default.end.won.volume, 0, performance.now() / 1e3, false, "voice", file);
       if (!el) {
         this.victory = null;
         return;
@@ -129581,6 +129828,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
 
   // src/sim/path.ts
   var SQ2 = Math.SQRT2;
+  var TIE = 1.002;
+  var FAIL_KEEP = 2;
+  var pathStats = { calls: 0, nodes: 0, short: 0, cut: 0, hits: 0 };
   var MinHeap = class {
     constructor(key) {
       this.key = key;
@@ -129638,15 +129888,23 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     return mem;
   }
-  function findPath(world, sx, sy, gx, gy, maxNodes = 3e4, ours = false) {
+  function findPath(world, sx, sy, gx, gy, maxNodes = 3e4, ours = false, fresh = false) {
     const N = world.size;
+    const key = fresh ? "" : `${ours === true ? 1 : ours === "foe" ? 2 : 0}:${sy * N + sx}:${gy * N + gx}`;
+    if (key) {
+      const hit = world.pathFails.get(key);
+      if (hit && hit.until > world.age) {
+        pathStats.hits++;
+        return hit.path.slice();
+      }
+    }
     const blocked = (x, y) => ours && (ours === "foe" ? world.foeGates : world.gates).size > 0 ? world.isBlockedFor(x, y, ours) : world.isBlocked(x, y);
     if (!world.inBounds(sx, sy) || !world.inBounds(gx, gy)) return [];
     const { g, f, parent, seen, closed, gen } = memory(N * N);
     const heap = new MinHeap(f), nb = new Uint8Array(9);
     const h3 = (x, y) => {
       const dx = Math.abs(x - gx), dy = Math.abs(y - gy);
-      return dx + dy + (SQ2 - 2) * Math.min(dx, dy);
+      return (dx + dy + (SQ2 - 2) * Math.min(dx, dy)) * TIE;
     };
     const start = sy * N + sx, goal = gy * N + gx;
     g[start] = 0;
@@ -129688,9 +129946,18 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         }
       }
     }
+    pathStats.calls++;
+    pathStats.nodes += expanded;
+    if (best !== goal) pathStats.short++;
+    if (expanded >= maxNodes) pathStats.cut++;
     const out = [];
     for (let n = best; n !== start && n !== -1; n = parent[n]) out.push([n % N, n / N | 0]);
-    return out.reverse();
+    out.reverse();
+    if (key && best !== goal) {
+      if (world.pathFails.size > 3e3) world.pathFails.clear();
+      world.pathFails.set(key, { until: world.age + FAIL_KEEP, path: out.slice() });
+    }
+    return out;
   }
 
   // src/sim/fauna.ts
@@ -131164,7 +131431,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       f.path = [];
       return false;
     }
-    const w = weaponOf(f), d = BUILDINGS[b.kind], cx = b.x + d.w / 2, cy = b.y + d.h / 2;
+    const w = weaponOf(f), d = footOf(b), cx = b.x + d.w / 2, cy = b.y + d.h / 2;
     const dist2 = Math.hypot(cx - f.x, cy - f.y) - Math.max(d.w, d.h) / 2;
     if (dist2 <= (w.ranged ? 1.2 : w.range) + 0.6) {
       f.path = [];
@@ -131403,21 +131670,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     _note: "kind beasts: species = id in animals.json (wolf, bear, lion...). kind raid: tribe = who attacks; power = how strong against the army of the player on the day (1 = as strong, 1.1 = a tenth stronger, 0.8 = a fifth weaker; kept between floor and ceiling of content/difficulty.json), OR size = how many guards the tribe sends, OR army = own make-up { weapon: count } (weapons of weapons.json: club, spear, mace, hatchet = foot; sling, bow = archers), with armor (default true). Enemy cavalry is not supported yet. day = first day of the window in the game year (year 2 adds 20). The event fires at a random day in [day, day + spread]. warnDays: how long before the first hint. size is capped by what the source really has. recurring: s\u1EF1 ki\u1EC7n kh\xF4ng c\u1EA1n: t\u1EEB fromDay, c\u1EE9 everyDays ng\xE0y b\u1ED1c m\u1ED9t s\u1EF1 ki\u1EC7n t\u1EEB table theo weight (th\xFA: s\u1ED1 con = base + perSoldier \xD7 s\u1ED1 l\xEDnh c\u1EE7a ta, t\u1ED1i \u0111a max; t\u1EADp k\xEDch: m\u1ED9t l\xE0ng th\xF9 \u0111\u1ECBch, s\u1EE9c = power \xD7 qu\xE2n c\u1EE7a ta, k\u1EB9p theo tr\u1EA7n c\u1EE7a c\u1EA5p l\u1EEDa nh\u01B0 raidPower), b\xE1o tr\u01B0\u1EDBc leadDays ng\xE0y. hostile: l\xE0ng ch\u01B0a chi\u1EBFm kh\xF4ng ph\u1EA3i lo\u1EA1i hi\u1EC1n (ho\u1EB7c \u0111\xE3 th\xF9 \u0111\u1ECBch, ho\u1EB7c l\xE0 th\u1EE7 l\u0129nh ph\u1EA3n b\u1ED9i) m\xE0 quan h\u1EC7 d\u01B0\u1EDBi raidBelow t\u1EF1 t\u1EADp k\xEDch c\u1EE9 raidEveryDays ng\xE0y v\u1EDBi s\u1EE9c power theo b\u1EADc, t\u1EEB fromDay; l\xE0ng c\xF3 quan h\u1EC7 t\u1EEB gift.friendAt tr\u1EDF l\xEAn th\xEC kh\xF4ng.",
     events: [
       {
-        id: "wolves_3",
-        kind: "beasts",
-        species: "wolf",
-        day: 3,
-        spread: 0,
-        size: 2,
-        night: false,
-        warnDays: 1,
-        warn: "D\u1EA5u ch\xE2n s\xF3i quanh b\xE3i c\u1EE7i: c\xF3 s\xF3i \u0111\xF3i l\u1EA3ng v\u1EA3ng."
-      },
-      {
         id: "wolves_5",
         kind: "beasts",
         species: "wolf",
-        day: 5,
+        day: 6,
         spread: 0,
         size: 3,
         night: true,
@@ -131428,7 +131684,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         id: "wolves_7",
         kind: "beasts",
         species: "wolf",
-        day: 7,
+        day: 8,
         spread: 0,
         size: 4,
         night: false,
@@ -132675,7 +132931,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var start_default = {
     _note: "Kh\u1EDFi \u0111\u1EA7u m\u1ED9t v\xE1n. campfire: v\u1ECB tr\xED \u0111\u1ED1ng l\u1EEDa so v\u1EDBi \u0111i\u1EC3m xu\u1EA5t ph\xE1t. stock: t\xE0i nguy\xEAn c\xF3 s\u1EB5n (kh\xF3a nh\u01B0 trong kho). villagers: d\xE2n c\xF3 m\u1EB7t t\u1EEB \u0111\u1EA7u (dx, dy so v\u1EDBi \u0111i\u1EC3m xu\u1EA5t ph\xE1t; sex 'm'/'f'; job l\xE0 ngh\u1EC1). buildings: c\xF4ng tr\xECnh d\u1EF1ng s\u1EB5n quanh \u0111\u1ED1ng l\u1EEDa, theo th\u1EE9 t\u1EF1. arrivals: m\u1ED7i ng\xE0y m\u1EDBi (t\u1EEB ng\xE0y firstDay) c\xF3 min..max ng\u01B0\u1EDDi l\u1EA1 t\u1EDBi xin \u1EDF, femaleChance = x\xE1c su\u1EA5t l\xE0 n\u1EEF.",
     campfire: { dx: -1, dy: -2 },
-    stock: { food: 60, wood: 60, coin: 10 },
+    stock: { food: 60, wood: 100, coin: 10 },
     villagers: [
       { dx: -1, dy: 1, sex: "m", job: "idle" },
       { dx: 0, dy: 1, sex: "m", job: "idle" },
@@ -132889,9 +133145,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   }
 
   // src/sim/construction.ts
-  function addBuilding(sim2, kind, x, y, done, level = 1) {
-    const d = BUILDINGS[kind];
+  function addBuilding(sim2, kind, x, y, done, level = 1, rot = 0) {
     const b = { id: sim2.nextBid++, kind, era: sim2.era, x, y, level, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: kind !== "gate", staff: [], active: null, workers: 0 };
+    if (rot === 1 && kind === "gate") b.rot = 1;
     b.hp = maxHp(b);
     sim2.buildings.push(b);
     setOcc(sim2, b, 1);
@@ -132915,13 +133171,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     for (const b of sim2.buildings) {
       if (b === ignore || !b.done) continue;
       const r = buildingSight(b);
-      if (r > 0 && Math.hypot(b.x + BUILDINGS[b.kind].w / 2 - x, b.y + BUILDINGS[b.kind].h / 2 - y) <= r) return true;
+      const f = footOf(b);
+      if (r > 0 && Math.hypot(b.x + f.w / 2 - x, b.y + f.h / 2 - y) <= r) return true;
     }
     return false;
   }
-  function footprintError(sim2, kind, x, y, ignore) {
-    const d = BUILDINGS[kind], w = sim2.world, N = w.size;
-    const own = (tx, ty) => !!ignore && tx >= ignore.x && tx < ignore.x + d.w && ty >= ignore.y && ty < ignore.y + d.h;
+  function footprintError(sim2, kind, x, y, ignore, dim) {
+    const d = dim ?? BUILDINGS[kind], w = sim2.world, N = w.size, was = ignore ? footOf(ignore) : d;
+    const own = (tx, ty) => !!ignore && tx >= ignore.x && tx < ignore.x + was.w && ty >= ignore.y && ty < ignore.y + was.h;
     for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) {
       const tx = x + i, ty = y + j;
       if (!w.inBounds(tx, ty)) return "Ngo\xE0i b\u1EA3n \u0111\u1ED3";
@@ -132934,7 +133191,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (!inTerritory(sim2, x + d.w / 2, y + d.h / 2, ignore)) return "Ngo\xE0i \u0111\u1EA5t c\u1EE7a l\xE0ng: ch\u1EC9 x\xE2y trong t\u1EA7m nh\xECn c\u1EE7a \u0111\u1ED1ng l\u1EEDa ho\u1EB7c m\u1ED9t c\xF4ng tr\xECnh";
     if (!WALL_KINDS.has(kind)) for (const o of sim2.buildings) {
       if (o === ignore || WALL_KINDS.has(o.kind)) continue;
-      const od = BUILDINGS[o.kind], gx = Math.max(x - (o.x + od.w), o.x - (x + d.w)), gy = Math.max(y - (o.y + od.h), o.y - (y + d.h));
+      const od = footOf(o), gx = Math.max(x - (o.x + od.w), o.x - (x + d.w)), gy = Math.max(y - (o.y + od.h), o.y - (y + d.h));
       if (Math.max(gx, gy) < CLEARANCE) return `C\u1EA7n ch\u1EEBa \xEDt nh\u1EA5t ${CLEARANCE} \xF4 tr\u1ED1ng gi\u1EEFa c\xE1c c\xF4ng tr\xECnh \u0111\u1EC3 d\xE2n \u0111i l\u1EA1i`;
     }
     return null;
@@ -133002,8 +133259,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     return buildBill(sim2, out);
   }
-  function canPlace(sim2, kind, x, y) {
-    return footprintError(sim2, kind, x, y) ?? buildingLock(sim2, kind) ?? (sim2.freeCost() ? null : sim2.missing(startCost(sim2, kind)));
+  function canPlace(sim2, kind, x, y, rot = 0) {
+    return footprintError(sim2, kind, x, y, void 0, footDim(kind, rot)) ?? buildingLock(sim2, kind) ?? (sim2.freeCost() ? null : sim2.missing(startCost(sim2, kind)));
   }
   function canUpgrade(sim2, b) {
     if (!b.done) return "C\xF4ng tr\xECnh ch\u01B0a d\u1EF1ng xong";
@@ -133093,14 +133350,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     sim2.fogDirty = true;
   }
-  function placeBuilding(sim2, kind, x, y) {
+  function placeBuilding(sim2, kind, x, y, rot = 0) {
     const d = BUILDINGS[kind];
     if (!d.buildable) return { ok: false, reason: "Kh\xF4ng x\xE2y \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y" };
-    const why = canPlace(sim2, kind, x, y);
+    const why = canPlace(sim2, kind, x, y, rot);
     if (why) return { ok: false, reason: why };
     const cost = startCost(sim2, kind), lvl = startLevel(sim2, kind);
     if (!sim2.freeCost()) for (const r of Object.keys(cost)) sim2.stock[r] -= cost[r] ?? 0;
-    const b = addBuilding(sim2, kind, x, y, false, lvl);
+    const b = addBuilding(sim2, kind, x, y, false, lvl, rot);
     delete sim2.ruins[kind];
     sim2.addSfx("place", false, x, y);
     if (sim2.dev.instantBuild) {
@@ -133171,7 +133428,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   }
   function setOcc(sim2, b, val) {
-    const d = BUILDINGS[b.kind];
+    const d = footOf(b);
     if (b.kind === "gate" && b.open || b.kind === "trap") val = 0;
     for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) {
       const k = (b.y + j) * sim2.world.size + b.x + i;
@@ -133218,11 +133475,16 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     sim2.say(`\u0110\xE3 ph\xE1 ${BUILDINGS[b.kind].name.toLowerCase()}${Object.keys(back).length ? `, thu l\u1EA1i ${Object.keys(back).map((r) => `${back[r]} ${RES_NAME[r].toLowerCase()}`).join(", ")}` : ""}.`);
     return null;
   }
-  function canMove(sim2, b, x, y) {
+  function movedDim(b, rot) {
+    const f = footOf(b);
+    return b.kind === "gate" && b.w === void 0 && rot !== void 0 ? footDim("gate", rot) : f;
+  }
+  function canMove(sim2, b, x, y, rot) {
     if (!BUILDINGS[b.kind].buildable) return "Kh\xF4ng d\u1EDDi \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh n\xE0y";
     if (sim2.attackReason()) return "Kh\xF4ng d\u1EDDi \u0111\u01B0\u1EE3c c\xF4ng tr\xECnh khi l\xE0ng \u0111ang b\u1ECB t\u1EA5n c\xF4ng";
-    if (x === b.x && y === b.y) return "V\u1EABn \u1EDF ch\u1ED7 c\u0169";
-    return footprintError(sim2, b.kind, x, y, b) ?? sim2.missing(moveFee(sim2, b));
+    const dim = movedDim(b, rot), was = footOf(b);
+    if (x === b.x && y === b.y && dim.w === was.w && dim.h === was.h) return "V\u1EABn \u1EDF ch\u1ED7 c\u0169";
+    return footprintError(sim2, b.kind, x, y, b, dim) ?? sim2.missing(moveFee(sim2, b));
   }
   var GROUP_KINDS = /* @__PURE__ */ new Set(["fence", "gate"]);
   function groupPlan(sim2, ids, to, rot) {
@@ -133230,9 +133492,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (!pieces.length) return [];
     const a = pieces[0], turns = (Math.round(rot) % 4 + 4) % 4;
     return pieces.map((b) => {
-      let ox = b.x - a.x, oy = b.y - a.y;
-      for (let i = 0; i < turns; i++) [ox, oy] = [-oy, ox];
-      return { id: b.id, kind: b.kind, x: to.x + ox, y: to.y + oy, level: b.level };
+      let ox = b.x - a.x, oy = b.y - a.y, { w, h: h3 } = footOf(b), r = b.rot === 1 ? 1 : 0;
+      for (let i = 0; i < turns; i++) {
+        [ox, oy] = [-(oy + h3 - 1), ox];
+        [w, h3] = [h3, w];
+        r = r ? 0 : 1;
+      }
+      return { id: b.id, kind: b.kind, x: to.x + ox, y: to.y + oy, level: b.level, w, h: h3, rot: r };
     });
   }
   function canMoveGroup(sim2, ids, to, rot) {
@@ -133245,7 +133511,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     for (const b of pieces) setOcc(sim2, b, 0);
     try {
       for (const q of plan2) {
-        const why = footprintError(sim2, q.kind, q.x, q.y);
+        const why = footprintError(sim2, q.kind, q.x, q.y, void 0, { w: q.w, h: q.h });
         if (why) return why;
       }
     } finally {
@@ -133261,16 +133527,23 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     plan2.forEach((q, i) => {
       pieces[i].x = q.x;
       pieces[i].y = q.y;
+      if (q.kind === "gate") {
+        pieces[i].rot = q.rot;
+        if (pieces[i].w !== void 0) {
+          pieces[i].w = q.w;
+          pieces[i].h = q.h;
+        }
+      }
     });
     for (const b of pieces) setOcc(sim2, b, 1);
     sim2.fogDirty = true;
     sim2.say(`\u0110\xE3 d\u1EDDi ${pieces.length} m\u1EA3nh h\xE0ng r\xE0o sang ch\u1ED7 m\u1EDBi.`);
     return null;
   }
-  function moveBuilding(sim2, id, x, y) {
+  function moveBuilding(sim2, id, x, y, rot) {
     const b = sim2.getBuilding(id);
     if (!b) return "Kh\xF4ng t\xECm th\u1EA5y c\xF4ng tr\xECnh";
-    const why = canMove(sim2, b, x, y);
+    const why = canMove(sim2, b, x, y, rot);
     if (why) return why;
     const fee = moveFee(sim2, b);
     for (const r of Object.keys(fee)) sim2.stock[r] -= fee[r] ?? 0;
@@ -133283,6 +133556,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     setOcc(sim2, b, 0);
     b.x = x;
     b.y = y;
+    if (b.kind === "gate" && b.w === void 0 && rot !== void 0) b.rot = rot === 1 ? 1 : 0;
     setOcc(sim2, b, 1);
     sim2.fogDirty = true;
     sim2.say(`${BUILDINGS[b.kind].name} \u0111\u01B0\u1EE3c d\u1EDDi sang ch\u1ED7 m\u1EDBi.`);
@@ -135586,6 +135860,7 @@ ${risk.lines.join("\n")}`);
       sim2.toolStock[stockKey(k)] = tamedCount(sim2, k) + 1;
       b.active = null;
       sim2.say(`\u0110\xE3 thu\u1EA7n xong m\u1ED9t con ${d.name.toLowerCase()}.`);
+      if (isHorse(k)) sim2.addAlert("mount");
     }
   }
   function campBeast(sim2) {
@@ -135739,7 +136014,7 @@ ${risk.lines.join("\n")}`);
         continue;
       }
       if (v.job === "fight") sim2.pathLeft--;
-      v.path = sim2.pathTo(v, goal[0], goal[1], 3e4);
+      v.path = sim2.pathTo(v, goal[0], goal[1], 3e4, true);
       v.phase = v.path.length ? "move" : "idle";
       if (v.job === "fight" && v.path.length) v.fight.obey = true;
     }
@@ -136003,7 +136278,7 @@ ${risk.lines.join("\n")}`);
       v.fight.target = null;
       const goal = sim2.nearestFree(Math.floor(o.x), Math.floor(o.y), /* @__PURE__ */ new Set());
       if (goal) {
-        v.path = sim2.pathTo(v, goal[0], goal[1], 3e4);
+        v.path = sim2.pathTo(v, goal[0], goal[1], 3e4, true);
         v.phase = v.path.length ? "move" : "idle";
         if (v.job === "fight") {
           v.fight.mode = "guard";
@@ -136179,7 +136454,7 @@ ${risk.lines.join("\n")}`);
         anim = poseOf(v.weapon, "walk", post);
         hold = armed();
       }
-    } else if (carrying && v.phase === "idle") {
+    } else if (carrying && (v.phase === "idle" || v.phase === "move")) {
       anim = poseOf(v.weapon, "idle", post);
       hold = armed();
     } else if (v.phase === "work" && v.job !== "idle") {
@@ -136226,9 +136501,9 @@ ${risk.lines.join("\n")}`);
     }
     return best;
   }
-  function pathTo(sim2, v, gx, gy, maxNodes = 14e3) {
+  function pathTo(sim2, v, gx, gy, maxNodes = 14e3, fresh = false) {
     const [sx, sy] = standTile(sim2, v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
-    const p = gx === sx && gy === sy ? [] : findPath(sim2.world, sx, sy, gx, gy, maxNodes, passOf(v));
+    const p = gx === sx && gy === sy ? [] : findPath(sim2.world, sx, sy, gx, gy, maxNodes, passOf(v), fresh);
     return off ? [[sx, sy], ...p] : p;
   }
   function routeTo(sim2, v, tiles, tries = 3, maxNodes = 14e3) {
@@ -137194,7 +137469,7 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/sim/save.ts
-  var SAVE_VERSION = 35;
+  var SAVE_VERSION = 36;
   var SAVED = {
     /** Single values. */
     scalars: ["era", "time", "dayBase", "timeBase", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "tribeClock", "foodPot", "foodPenalty", "popBonus", "campBonus", "yieldBonus", "newcomersOpen", "nextEventDay", "conquered", "foodIncome", "foodSeen", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "dayWeather", "weatherAt", "weatherEnd", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
@@ -137463,11 +137738,13 @@ ${risk.lines.join("\n")}`);
     sim2.rnd.setState(data.rng.rnd);
     sim2.frnd.setState(data.rng.frnd);
     sim2.wrnd.setState(data.rng.wrnd);
+    sim2.world.pathFails.clear();
+    sim2.fogAt = -1;
     sim2.world.foeGates.clear();
     for (const t of sim2.tribes) for (const p of t.props) if (p.kind === "gate" && p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) sim2.world.foeGates.add((p.y + j) * sim2.world.size + p.x + i);
     sim2.world.gates.clear();
     for (const b of sim2.buildings) if (b.kind === "gate" && !b.open) {
-      const d = BUILDINGS.gate;
+      const d = footOf(b);
       for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim2.world.gates.add((b.y + j) * sim2.world.size + b.x + i);
     }
     sim2.byId.clear();
@@ -137586,6 +137863,13 @@ ${risk.lines.join("\n")}`);
     const n = Number(d.scalars.conquered ?? 0);
     (_c = d.scalars).yieldBonus ?? (_c.yieldBonus = n * 8);
     return { ...d, version: 35 };
+  };
+  MIGRATIONS[35] = (d) => {
+    for (const b of d.lists.buildings) if (b.kind === "gate") {
+      b.w ?? (b.w = 1);
+      b.h ?? (b.h = 1);
+    }
+    return { ...d, version: 36 };
   };
 
   // src/sim/roles.ts
@@ -140780,6 +141064,8 @@ ${risk.lines.join("\n")}`);
       this.pendingTribe = null;
       this.acc = 0;
       this.fogDirty = true;
+      /** The game time the fog was last worked out: it is not redone on every tick (fogPause), only when someone has moved and a moment has passed. */
+      this.fogAt = -1;
       this.nextVid = 1;
       this.nextBid = 1;
       this.leaderClock = 0;
@@ -141139,7 +141425,7 @@ ${risk.lines.join("\n")}`);
     }
     buildingAt(x, y) {
       return this.buildings.find((b) => {
-        const d = BUILDINGS[b.kind];
+        const d = footOf(b);
         return x >= b.x && x < b.x + d.w && y >= b.y && y < b.y + d.h;
       });
     }
@@ -141190,8 +141476,8 @@ ${risk.lines.join("\n")}`);
       return buildingNeeds(this, kind);
     }
     /** → construction.canPlace */
-    canPlace(kind, x, y) {
-      return canPlace(this, kind, x, y);
+    canPlace(kind, x, y, rot = 0) {
+      return canPlace(this, kind, x, y, rot);
     }
     /** → economy.missing */
     missing(cost) {
@@ -141230,8 +141516,8 @@ ${risk.lines.join("\n")}`);
       return upgradeBuilding(this, id);
     }
     /** → construction.placeBuilding */
-    placeBuilding(kind, x, y) {
-      return placeBuilding(this, kind, x, y);
+    placeBuilding(kind, x, y, rot = 0) {
+      return placeBuilding(this, kind, x, y, rot);
     }
     /** → construction.salvage */
     salvage(b) {
@@ -141246,8 +141532,8 @@ ${risk.lines.join("\n")}`);
       return demolishBuilding(this, id);
     }
     /** → construction.canMove */
-    canMove(b, x, y) {
-      return canMove(this, b, x, y);
+    canMove(b, x, y, rot) {
+      return canMove(this, b, x, y, rot);
     }
     /** → construction.groupPlan */
     groupPlan(ids, to, rot) {
@@ -141262,8 +141548,8 @@ ${risk.lines.join("\n")}`);
       return moveGroup(this, ids, to, rot);
     }
     /** → construction.moveBuilding */
-    moveBuilding(id, x, y) {
-      return moveBuilding(this, id, x, y);
+    moveBuilding(id, x, y, rot) {
+      return moveBuilding(this, id, x, y, rot);
     }
     /** → works.orderDef */
     orderDef(kind, id) {
@@ -141760,7 +142046,7 @@ ${risk.lines.join("\n")}`);
     }
     tick(dt) {
       this.time += dt;
-      this.pathLeft = this.speed >= 8 ? Math.ceil(PATH_BUDGET / 2) : PATH_BUDGET;
+      this.pathLeft = this.speed >= 16 ? PATH_BUDGET_FASTEST : this.speed >= 8 ? PATH_BUDGET_FAST : PATH_BUDGET;
       this.tickCalendar();
       this.world.tick(dt);
       this.streamWorld(dt);
@@ -141769,11 +142055,7 @@ ${risk.lines.join("\n")}`);
       if (warPlan(this)) {
         if (this.warSince < 0) this.warSince = this.time;
         this.tickWar(dt);
-        if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
-        if (this.fogDirty) {
-          this.fogDirty = false;
-          this.refreshFog();
-        }
+        this.tickFog();
         return;
       }
       if (this.warSince >= 0) {
@@ -141827,9 +142109,14 @@ ${risk.lines.join("\n")}`);
         restock2(this);
         fitScouts(this);
       }
+      this.tickFog();
+    }
+    /** The fog is worked out again when the sight of the village has changed or someone has walked on, but at most every FOG_PAUSE game seconds: a quarter of a second late shows nowhere, and every tick did not come cheap (6% of a war). */
+    tickFog() {
       if (this.visionRadius() !== this.lastVision) this.fogDirty = true;
-      if (this.fogDirty) {
+      if (this.fogDirty && this.time - this.fogAt >= FOG_PAUSE) {
         this.fogDirty = false;
+        this.fogAt = this.time;
         this.refreshFog();
       }
     }
@@ -142019,8 +142306,8 @@ ${risk.lines.join("\n")}`);
       return ringTiles(this, v, x, y, w, h3);
     }
     /** → movement.pathTo */
-    pathTo(v, gx, gy, maxNodes = 14e3) {
-      return pathTo(this, v, gx, gy, maxNodes);
+    pathTo(v, gx, gy, maxNodes = 14e3, fresh = false) {
+      return pathTo(this, v, gx, gy, maxNodes, fresh);
     }
     /** → movement.routeTo */
     routeTo(v, tiles, tries = 3, maxNodes = 14e3) {
@@ -142036,6 +142323,58 @@ ${risk.lines.join("\n")}`);
     }
   };
   Object.assign(Sim.prototype, WAR);
+
+  // src/data/quality.json
+  var quality_default = {
+    _note: "How much the screen is asked to draw. dprCap: the most canvas pixels per CSS pixel (the phone's own is used when it is lower). fps: the most frames drawn each second while the player moves the map, zooms, touches the screen or something flies (0 = every frame the screen offers); idleFps: the same when nothing of that is going on, only the animations (4 to 12 a second) and the 20 ticks of the simulation change the picture, so fewer frames show the same (0 = no lower limit). The simulation keeps its speed either way. simBudgetMs: the most time the simulation may take in one frame before the game runs a little slower rather than the picture stalling. auto: which level a touch screen and a mouse machine start on. fastBudgetMs: the same as simBudgetMs while the game is fast-forwarded (4x and more): a phone cannot run 320 ticks a second, so the simulation takes only this much of each frame and the rest is left to the screen and the touches, and the game runs as fast as it can (the speed button shows the real speed when it is lower than asked).",
+    levels: {
+      high: {
+        name: "Cao",
+        note: "N\xE9t nh\u1EA5t. M\xE1y n\xF3ng v\xE0 hao pin h\u01A1n.",
+        dprCap: 3,
+        fps: 0,
+        simBudgetMs: 70,
+        idleFps: 0,
+        fastBudgetMs: 40
+      },
+      balanced: {
+        name: "C\xE2n b\u1EB1ng",
+        note: "G\u1EA7n nh\u01B0 kh\xF4ng kh\xE1c h\xECnh: 60 h\xECnh m\u1ED7i gi\xE2y khi k\xE9o b\u1EA3n \u0111\u1ED3, 30 khi \u0111\u1EE9ng y\xEAn. \u0110\u1EE1 n\xF3ng.",
+        dprCap: 2,
+        fps: 60,
+        simBudgetMs: 50,
+        idleFps: 30,
+        fastBudgetMs: 24
+      },
+      saver: {
+        name: "Ti\u1EBFt ki\u1EC7m",
+        note: "H\xECnh m\u1EC1m h\u01A1n m\u1ED9t ch\xFAt. 30 h\xECnh m\u1ED7i gi\xE2y khi k\xE9o b\u1EA3n \u0111\u1ED3, 20 khi \u0111\u1EE9ng y\xEAn. D\xE0nh cho m\xE1y y\u1EBFu ho\u1EB7c ch\u01A1i l\xE2u.",
+        dprCap: 1.5,
+        fps: 30,
+        simBudgetMs: 35,
+        idleFps: 20,
+        fastBudgetMs: 16
+      }
+    },
+    auto: {
+      touch: "balanced",
+      other: "high"
+    }
+  };
+
+  // src/render/quality.ts
+  var QUALITY_SETTINGS = ["auto", "high", "balanced", "saver"];
+  var QUALITY_LEVELS = quality_default.levels;
+  var isTouchDevice = () => {
+    try {
+      return matchMedia("(pointer: coarse)").matches;
+    } catch {
+      return false;
+    }
+  };
+  function levelOf(setting, touch = isTouchDevice()) {
+    return setting === "auto" ? quality_default.auto[touch ? "touch" : "other"] : setting;
+  }
 
   // src/ui/dom.ts
   var $ = (id) => document.getElementById(id);
@@ -142200,14 +142539,179 @@ ${risk.lines.join("\n")}`);
     }
   };
 
+  // src/ui/savelist.ts
+  function confirmButton(text, sure, run, o = {}) {
+    let until = 0, timer = 0;
+    const b = dlg.button(text, () => {
+      if (performance.now() < until) {
+        window.clearTimeout(timer);
+        until = 0;
+        b.textContent = text;
+        run();
+        return;
+      }
+      until = performance.now() + 3500;
+      b.textContent = sure;
+      timer = window.setTimeout(() => {
+        until = 0;
+        b.textContent = text;
+      }, 3500);
+    }, o);
+    return b;
+  }
+  var saveTitle = (m) => m.name || `V\xE1n ng\xE0y ${m.day}`;
+  var saveLines = (m) => [
+    dlg.more(`Ng\xE0y ${m.day} \xB7 ${m.population} d\xE2n`),
+    dlg.more(`L\u01B0u l\xFAc ${new Date(m.savedAt).toLocaleString("vi")}`)
+  ];
+  function saveTile(m, o) {
+    const load = dlg.button("T\u1EA3i", o.onLoad, { small: true, disabled: !!o.locked, title: o.locked ?? "Ch\u01A1i ti\u1EBFp t\u1EEB b\u1EA3n l\u01B0u n\xE0y" });
+    const del = confirmButton("X\xF3a", "Ch\u1EAFc ch\u01B0a?", o.onDelete, { tone: "bad", small: true, title: "X\xF3a b\u1EA3n l\u01B0u n\xE0y (kh\xF4ng l\u1EA5y l\u1EA1i \u0111\u01B0\u1EE3c)" });
+    return dlg.tile({ state: o.current ? "now" : void 0, pic: "\u{1F4BE}", name: saveTitle(m), chip: o.current ? dlg.chip("\u0111ang ch\u01A1i") : null }, saveLines(m), h("div", { class: "dacts" }, load, del));
+  }
+
   // src/ui/settingspanel.ts
+  var PAGES = [["saves", "\u{1F4BE} B\u1EA3n l\u01B0u"], ["sound", "\u{1F50A} \xC2m thanh"], ["view", "\u{1F5BC} H\xECnh \u1EA3nh"]];
   var SettingsPanel = class {
     constructor(c, o) {
       this.c = c;
+      this.o = o;
       this.syncs = [];
-      const { sound: sound2, weatherFx: weatherFx2 } = c;
-      const rows = [];
-      for (const [kind, label2, tip] of [["sfx", "Hi\u1EC7u \u1EE9ng", "L\xE0m vi\u1EC7c, \u0111\xE1nh nhau, \u0111\u1EB7t c\xF4ng tr\xECnh, c\u1ED5ng, ra l\u1EC7nh cho qu\xE2n (ph\xEDm O)"], ["amb", "M\xF4i tr\u01B0\u1EDDng", "M\u01B0a, b\xE3o, s\u1EA5m, gi\xF3, chim, s\xF3i (ph\xEDm I)"], ["mus", "Nh\u1EA1c", "Nh\u1EA1c b\xECnh y\xEAn, nh\u1EA1c chi\u1EBFn tranh, th\u1EAFng v\xE0 thua (ph\xEDm U)"]]) {
+      this.pageEls = /* @__PURE__ */ new Map();
+      this.tabBtns = /* @__PURE__ */ new Map();
+      this.page = "saves";
+      this.saves = [];
+      this.savesKey = "";
+      this.asked = -1e9;
+      this.nowBox = h("div");
+      this.listBox = h("div");
+      this.listHead = h("h3", { text: "C\xE1c b\u1EA3n l\u01B0u" });
+      const tabs = h("div", { class: "dtabs" }, ...PAGES.map(([p, label2]) => {
+        const b = h("button", { class: "sm", type: "button", text: label2, pressed: p === this.page, onclick: () => this.show(p) });
+        this.tabBtns.set(p, b);
+        return b;
+      }));
+      this.pageEls.set("saves", this.savesPage());
+      this.pageEls.set("sound", this.soundPage());
+      this.pageEls.set("view", this.viewPage());
+      this.card = dlg.card(
+        { label: "C\xE0i \u0111\u1EB7t", wide: true, cls: "gsettings" },
+        dlg.head({ pic: "\u2699", title: "C\xE0i \u0111\u1EB7t", sub: "B\u1EA3n l\u01B0u, \xE2m thanh, h\xECnh \u1EA3nh", onClose: o.close }),
+        tabs,
+        ...this.pageEls.values()
+      );
+      this.show(this.page);
+    }
+    show(p) {
+      this.page = p;
+      for (const [k, b] of this.tabBtns) b.setAttribute("aria-pressed", String(k === p));
+      for (const [k, el] of this.pageEls) el.hidden = k !== p;
+      this.update();
+    }
+    // ---------------------------------------------------------------- saved games
+    savesPage() {
+      const { session: session2, sim: sim2, toast: toast2 } = this.c;
+      const name = h("input", { type: "text", class: "dname-in", maxlength: "32", placeholder: "T\xEAn b\u1EA3n l\u01B0u m\u1EDBi (kh\xF4ng b\u1EAFt bu\u1ED9c)", "aria-label": "T\xEAn b\u1EA3n l\u01B0u m\u1EDBi" });
+      this.saveBtn = dlg.button("\u{1F4BE} L\u01B0u ngay", () => {
+        void session2.save().then((ok) => {
+          if (ok) toast2("\u0110\xE3 l\u01B0u");
+          void this.refresh(true);
+        });
+      }, { title: "L\u01B0u \u0111\xE8 l\xEAn b\u1EA3n l\u01B0u c\u1EE7a v\xE1n \u0111ang ch\u01A1i" });
+      this.newSaveBtn = dlg.button("\u2795 L\u01B0u th\xE0nh b\u1EA3n m\u1EDBi", () => {
+        void session2.saveAsNew(name.value).then((ok) => {
+          if (ok) {
+            toast2("\u0110\xE3 l\u01B0u th\xE0nh b\u1EA3n m\u1EDBi");
+            name.value = "";
+          }
+          void this.refresh(true);
+        });
+      }, { tone: "alt", title: "Gi\u1EEF b\u1EA3n c\u0169 nguy\xEAn, l\u01B0u v\xE1n n\xE0y v\xE0o m\u1ED9t b\u1EA3n l\u01B0u m\u1EDBi v\xE0 ch\u01A1i ti\u1EBFp tr\xEAn b\u1EA3n m\u1EDBi" });
+      const auto = h("input", { type: "checkbox", title: "B\u1EADt ho\u1EB7c t\u1EAFt" });
+      auto.addEventListener("change", () => this.o.autosave.set(auto.checked));
+      this.syncs.push(() => {
+        auto.checked = this.o.autosave.get();
+      });
+      const fresh = confirmButton("\u{1F331} V\xE1n m\u1EDBi", "B\u1EA5m l\u1EA1i \u0111\u1EC3 b\u1EAFt \u0111\u1EA7u v\xE1n m\u1EDBi", () => session2.newGame(), { tone: "alt", title: "B\u1EAFt \u0111\u1EA7u m\u1ED9t v\xE1n kh\xE1c tr\xEAn b\u1EA3n \u0111\u1ED3 m\u1EDBi. C\xE1c b\u1EA3n l\u01B0u v\u1EABn c\xF2n, t\u1EA3i l\u1EA1i l\xFAc n\xE0o c\u0169ng \u0111\u01B0\u1EE3c" });
+      const titles = [this.saveBtn.title, this.newSaveBtn.title];
+      this.syncs.push(() => {
+        const war = sim2.atWar(), why = war ? "\u0110ang chi\u1EBFn tranh: kh\xF4ng l\u01B0u hay t\u1EA3i \u0111\u01B0\u1EE3c cho t\u1EDBi khi tr\u1EADn k\u1EBFt th\xFAc" : "";
+        [this.saveBtn, this.newSaveBtn].forEach((b, i) => {
+          b.disabled = war;
+          b.title = war ? why : titles[i];
+        });
+        this.refreshLocks();
+      });
+      return h(
+        "div",
+        { class: "dbody" },
+        h("section", { class: "dsec" }, h("h3", { text: "V\xE1n \u0111ang ch\u01A1i" }), this.nowBox, name, dlg.buttons(this.saveBtn, this.newSaveBtn)),
+        h(
+          "section",
+          { class: "dsec" },
+          h("h3", { text: "T\u1EF1 \u0111\u1ED9ng l\u01B0u" }),
+          h("div", { class: "row" }, h("div", { class: "nm" }, "L\u01B0u v\xE0o \u0111\u1EA7u m\u1ED7i ng\xE0y", h("small", { text: "C\u1EA3 khi b\u1EA1n r\u1EDDi trang. T\u1EAFt \u0111i th\xEC ch\u1EC9 l\u01B0u khi b\u1EA1n b\u1EA5m L\u01B0u ngay. B\u1EA3n l\u01B0u n\u1EB1m trong tr\xECnh duy\u1EC7t c\u1EE7a m\xE1y n\xE0y." })), auto)
+        ),
+        h("section", { class: "dsec" }, this.listHead, this.listBox),
+        h("section", { class: "dsec" }, fresh)
+      );
+    }
+    /** The tile of the game being played now. */
+    renderNow() {
+      const { session: session2, sim: sim2 } = this.c, mine2 = this.saves.find((m) => m.id === session2.slot);
+      this.nowBox.replaceChildren(dlg.tile(
+        { state: "now", pic: "\u{1F525}", name: session2.name || (mine2 ? saveTitle(mine2) : `V\xE1n ng\xE0y ${sim2.day}`), chip: dlg.chip(mine2 ? "\u0111\xE3 l\u01B0u" : "ch\u01B0a l\u01B0u") },
+        [dlg.more(`B\xE2y gi\u1EDD: ng\xE0y ${sim2.day} \xB7 ${sim2.villagers.length} d\xE2n`), dlg.more(mine2 ? `L\u1EA7n l\u01B0u cu\u1ED1i: ${new Date(mine2.savedAt).toLocaleString("vi")}` : "Ch\u01B0a c\xF3 b\u1EA3n l\u01B0u c\u1EE7a v\xE1n n\xE0y: b\u1EA5m L\u01B0u ngay")]
+      ));
+    }
+    /** The list of saves, drawn again only when something in it changed (a redraw would undo a button waiting for its second press). */
+    renderList() {
+      const { session: session2, toast: toast2 } = this.c;
+      this.listHead.textContent = `C\xE1c b\u1EA3n l\u01B0u (${this.saves.length})`;
+      const war = this.c.sim.atWar() ? "\u0110ang chi\u1EBFn tranh: ch\u01B0a t\u1EA3i \u0111\u01B0\u1EE3c" : null;
+      this.listBox.replaceChildren(this.saves.length ? dlg.list(...this.saves.map((m) => saveTile(m, {
+        current: m.id === session2.slot,
+        locked: war,
+        onLoad: () => {
+          void session2.open(m).then((r) => {
+            if (r === "loaded") {
+              toast2("\u0110\xE3 t\u1EA3i v\xE1n ch\u01A1i");
+              this.o.close();
+            } else if (r === "failed") toast2("Kh\xF4ng \u0111\u1ECDc \u0111\u01B0\u1EE3c b\u1EA3n l\u01B0u");
+          });
+        },
+        onDelete: () => {
+          void session2.remove(m.id).then(() => {
+            toast2("\u0110\xE3 x\xF3a b\u1EA3n l\u01B0u");
+            void this.refresh(true);
+          });
+        }
+      }))) : dlg.empty("Ch\u01B0a c\xF3 b\u1EA3n l\u01B0u n\xE0o."));
+    }
+    /** The load buttons follow the war, which can begin while the window is open. */
+    refreshLocks() {
+      const war = this.c.sim.atWar();
+      for (const b of this.listBox.querySelectorAll(".dacts button:first-child")) {
+        b.disabled = war;
+        b.title = war ? "\u0110ang chi\u1EBFn tranh: ch\u01B0a t\u1EA3i \u0111\u01B0\u1EE3c" : "Ch\u01A1i ti\u1EBFp t\u1EEB b\u1EA3n l\u01B0u n\xE0y";
+      }
+    }
+    async refresh(force = false) {
+      const now = performance.now();
+      if (!force && now - this.asked < 2500) return;
+      this.asked = now;
+      const list = await this.c.session.list(), key = `${this.c.session.slot}|${list.map((m) => `${m.id}.${m.savedAt}.${m.name ?? ""}`).join()}`;
+      this.saves = list;
+      if (key !== this.savesKey) {
+        this.savesKey = key;
+        this.renderList();
+      }
+      this.renderNow();
+    }
+    // ---------------------------------------------------------------- sound and view
+    soundPage() {
+      const { sound: sound2 } = this.c, rows = [];
+      for (const [kind, label2, tip] of [["sfx", "Hi\u1EC7u \u1EE9ng", "L\xE0m vi\u1EC7c, \u0111\xE1nh nhau, \u0111\u1EB7t c\xF4ng tr\xECnh, c\u1ED5ng, ra l\u1EC7nh cho qu\xE2n (ph\xEDm O)"], ["amb", "M\xF4i tr\u01B0\u1EDDng", "M\u01B0a, b\xE3o, s\u1EA5m, gi\xF3, chim, s\xF3i (ph\xEDm I)"], ["mus", "Nh\u1EA1c", "Nh\u1EA1c b\xECnh y\xEAn, nh\u1EA1c chi\u1EBFn tranh v\xE0 nh\u1EA1c khi thua (ph\xEDm U)"], ["voice", "Gi\u1ECDng ng\u01B0\u1EDDi", "Ti\u1EBFng h\xF4 khi b\u1EA1n ra l\u1EC7nh cho qu\xE2n, ti\u1EBFng h\xF2 reo khi tr\u1EADn \u0111\xE1nh n\u1ED5 ra v\xE0 khi th\u1EAFng tr\u1EADn"]]) {
         const on = h("input", { type: "checkbox", title: "B\u1EADt ho\u1EB7c t\u1EAFt" });
         const range = h("input", { type: "range", min: "0", max: "100", step: "5", title: tip });
         const num5 = h("small", { text: "" });
@@ -142225,26 +142729,60 @@ ${risk.lines.join("\n")}`);
         });
         rows.push(h("div", { class: "row" }, h("div", { class: "nm" }, label2, h("small", { text: tip })), on, range, num5));
       }
+      return h("div", { class: "dbody" }, h("section", { class: "dsec" }, h("h3", { text: "\xC2m thanh" }), ...rows));
+    }
+    viewPage() {
+      const { weatherFx: weatherFx2 } = this.c, o = this.o;
+      const labels = { auto: "T\u1EF1 \u0111\u1ED9ng", high: QUALITY_LEVELS.high.name, balanced: QUALITY_LEVELS.balanced.name, saver: QUALITY_LEVELS.saver.name };
+      const note = h("small", { class: "dsub", text: "" });
+      const btns = /* @__PURE__ */ new Map();
+      const showQuality = () => {
+        const now = o.quality.get(), lv = QUALITY_LEVELS[levelOf(now)];
+        for (const [k, b] of btns) b.setAttribute("aria-pressed", String(k === now));
+        note.textContent = `${now === "auto" ? `T\u1EF1 \u0111\u1ED9ng ch\u1ECDn m\u1EE9c ${lv.name} cho m\xE1y n\xE0y. ` : ""}${lv.note}`;
+      };
+      for (const q of QUALITY_SETTINGS) btns.set(q, h("button", { class: "sm", type: "button", text: labels[q], onclick: () => {
+        o.quality.set(q);
+        showQuality();
+      } }));
+      showQuality();
       const fx = h("input", { type: "checkbox", title: "B\u1EADt ho\u1EB7c t\u1EAFt" });
       fx.addEventListener("change", () => weatherFx2.set(fx.checked));
       this.syncs.push(() => {
         fx.checked = weatherFx2.get();
       });
-      rows.push(h("div", { class: "row" }, h("div", { class: "nm" }, "Hi\u1EC7u \u1EE9ng th\u1EDDi ti\u1EBFt", h("small", { text: "M\u01B0a, b\xE3o, tuy\u1EBFt, ch\u1EDBp tr\xEAn b\u1EA3n \u0111\u1ED3. T\u1EAFt \u0111i th\xEC game nh\u1EB9 h\u01A1n." })), fx));
-      this.card = dlg.card(
-        { label: "C\xE0i \u0111\u1EB7t" },
-        dlg.head({ pic: "\u2699", title: "C\xE0i \u0111\u1EB7t", sub: "\xC2m thanh, th\u1EDDi ti\u1EBFt", onClose: o.close }),
-        h("section", { class: "dsec" }, h("h3", { text: "\xC2m thanh" }), ...rows.slice(0, 3)),
-        h("section", { class: "dsec" }, h("h3", { text: "H\xECnh \u1EA3nh" }), rows[3]),
-        h("section", { class: "dsec" }, h("button", { class: "sm", type: "button", text: "\u{1F4CA} Ch\u1EC9 s\u1ED1 \u0111\xE3 nghi\xEAn c\u1EE9u", title: "Ch\u1EC9 s\u1ED1 \u0111\xE3 nghi\xEAn c\u1EE9u cho t\u1EEBng lo\u1EA1i d\xE2n, ngh\u1EC1 v\xE0 l\xEDnh", onclick: () => {
-          o.close();
-          o.openStats();
-        } }))
+      return h(
+        "div",
+        { class: "dbody" },
+        h(
+          "section",
+          { class: "dsec" },
+          h("h3", { text: "\u0110\u1ED3 h\u1ECDa" }),
+          h("div", { class: "dtabs" }, ...btns.values()),
+          note,
+          h("small", { class: "dsub", text: "Ch\u1EC9nh theo m\xE1y: \u0111i\u1EC7n tho\u1EA1i n\xF3ng ho\u1EB7c gi\u1EADt khi ch\u01A1i l\xE2u hay \u0111\xE1nh tr\u1EADn l\u1EDBn th\xEC ch\u1ECDn C\xE2n b\u1EB1ng ho\u1EB7c Ti\u1EBFt ki\u1EC7m. T\u1ED1c \u0111\u1ED9 game kh\xF4ng \u0111\u1ED5i, ch\u1EC9 s\u1ED1 h\xECnh v\u1EBD m\u1ED7i gi\xE2y v\xE0 \u0111\u1ED9 n\xE9t." })
+        ),
+        h("section", { class: "dsec" }, h("h3", { text: "H\xECnh \u1EA3nh" }), h("div", { class: "row" }, h("div", { class: "nm" }, "Hi\u1EC7u \u1EE9ng th\u1EDDi ti\u1EBFt", h("small", { text: "M\u01B0a, b\xE3o, tuy\u1EBFt, ch\u1EDBp tr\xEAn b\u1EA3n \u0111\u1ED3. T\u1EAFt \u0111i th\xEC game nh\u1EB9 h\u01A1n." })), fx)),
+        h(
+          "section",
+          { class: "dsec" },
+          h("h3", { text: "Th\u1ED1ng k\xEA" }),
+          h("button", { class: "sm", type: "button", text: "\u{1F4CA} Ch\u1EC9 s\u1ED1 \u0111\xE3 nghi\xEAn c\u1EE9u", title: "Ch\u1EC9 s\u1ED1 \u0111\xE3 nghi\xEAn c\u1EE9u cho t\u1EEBng lo\u1EA1i d\xE2n, ngh\u1EC1 v\xE0 l\xEDnh", onclick: () => {
+            o.close();
+            o.openStats();
+          } })
+        )
       );
     }
-    /** Read the settings back into the controls (the keys O, I, U change them too). */
+    /** Read the settings back into the controls (the keys O, I, U change them too) and look at the saves now and then. */
     update() {
       for (const s of this.syncs) s();
+      if (this.page === "saves") void this.refresh();
+    }
+    /** The window was just opened: look at the saves at once. */
+    opened() {
+      this.show(this.page);
+      void this.refresh(true);
     }
   };
 
@@ -142353,6 +142891,7 @@ ${risk.lines.join("\n")}`);
     stat_crit: `<path d="M8 1.4l1.6 4.2 4.4.4-3.4 2.8 1.1 4.3L8 10.9 4.3 13.1l1.1-4.3L2 6l4.4-.4z" fill="#f26a3c" ${S}/><circle cx="8" cy="8" r="1.6" fill="#fff0cc"/>`,
     stat_critd: `<path d="M8 1.2l1.4 3.6 3.8-.6-2.2 3.2 2.6 2.8-3.8-.2L8 14.8 6.2 10l-3.8.2L5 7.4 2.8 4.2l3.8.6z" fill="#c8322c" ${S}/><path d="M10.8 2.8L5.4 11.6" stroke="#fff0cc" stroke-width="1.2" stroke-linecap="round"/>`,
     stat_sta: `<path d="M9.4 1.4L3.6 9h3.8l-.9 5.6 5.9-8H8.6z" fill="#f2b232" ${S}/>`,
+    stat_range: `<circle cx="8" cy="8" r="5.6" fill="#f1ead6" ${S}/><circle cx="8" cy="8" r="3.2" fill="#d2483a" ${S}/><circle cx="8" cy="8" r="1.1" fill="#f1ead6"/>`,
     stat_tspd: `<path d="M8 1.4v2.6M8 12v2.6M1.4 8H4M12 8h2.6M3.3 3.3l1.8 1.8M10.9 10.9l1.8 1.8M12.7 3.3l-1.8 1.8M5.1 10.9l-1.8 1.8" stroke="${O}" stroke-width="3" stroke-linecap="round"/><path d="M8 1.4v2.6M8 12v2.6M1.4 8H4M12 8h2.6M3.3 3.3l1.8 1.8M10.9 10.9l1.8 1.8M12.7 3.3l-1.8 1.8M5.1 10.9l-1.8 1.8" stroke="#c9a064" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="8" r="3.6" fill="#c9a064" ${S}/><circle cx="8" cy="8" r="1.3" fill="${O}"/>`,
     stat_tyield: `<path d="M5 5.2h6l2.4 8.4H2.6z" fill="#b5835a" ${S}/><path d="M5.2 5.2Q8 2.2 10.8 5.2" fill="none" stroke="${O}" stroke-width="1.6" stroke-linecap="round"/><path d="M5.6 2.8h4.8" stroke="#8a5a2c" stroke-width="1.4" stroke-linecap="round"/><path d="M6 9.4h4" stroke="#e8cfa2" stroke-width="1" stroke-linecap="round"/>`,
     stat_tdur: `<rect x="1.6" y="5.4" width="8" height="5.2" rx="2.6" fill="none" stroke="${O}" stroke-width="3"/><rect x="6.4" y="5.4" width="8" height="5.2" rx="2.6" fill="none" stroke="${O}" stroke-width="3"/><rect x="1.6" y="5.4" width="8" height="5.2" rx="2.6" fill="none" stroke="#aeb5ba" stroke-width="1.4"/><rect x="6.4" y="5.4" width="8" height="5.2" rx="2.6" fill="none" stroke="#d4dade" stroke-width="1.4"/>`,
@@ -142604,8 +143143,6 @@ ${risk.lines.join("\n")}`);
       /** An order was given to a troop (several chosen, soldiers among them): the sound of it. */
       this.onOrder = () => {
       };
-      /** Selecting several villagers: taps toggle, drags draw a box. */
-      this.multi = false;
       /** The army of the march is chosen: a tap or a right click on the ground sends the whole block there (sim.legionMove). */
       this.legionControl = false;
       /** The card of the chosen people is out of the way while the player orders them about; choosing someone brings it back. */
@@ -142617,6 +143154,8 @@ ${risk.lines.join("\n")}`);
       this.holdFrom = null;
       /** Building being placed, and where the ghost currently sits (top-left tile). */
       this.placing = null;
+      /** A gate being placed: 1 when it is turned to stand along a column (2 tiles tall, 1 wide). */
+      this.placeRot = 0;
       this.placeAt = null;
       /** Choosing several pieces of fence (and gates) to carry together: their ids (the first is the one the group turns about), and how many quarter-turns it has been turned. */
       this.groupMode = false;
@@ -142669,8 +143208,12 @@ ${risk.lines.join("\n")}`);
       window.addEventListener("keydown", (e) => this.keyDown(e));
       window.addEventListener("keyup", (e) => this.keys.delete(e.key.toLowerCase()));
     }
+    /** A finger or a mouse button is down on the map right now (the screen is drawn at its fullest rate while it is). */
+    get interacting() {
+      return this.touches.size > 0 || !!this.left || !!this.right || this.ringAt !== null;
+    }
     ordered(ids) {
-      if (ids.length > 1 && ids.some((id) => this.sim.get(id)?.job === "fight")) this.onOrder();
+      if (ids.length > 1 && ids.some((id) => this.sim.get(id)?.job === "fight")) this.onOrder(ids);
     }
     startHold(p) {
       this.stopHold();
@@ -142751,8 +143294,8 @@ ${risk.lines.join("\n")}`);
           return;
         }
         if (Math.hypot(t.x - t.sx, t.y - t.sy) > 10) {
-          if (this.multi && t.boxing === void 0) t.boxing = performance.now() - t.t >= 200;
-          if (this.multi && t.boxing) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
+          if (t.boxing === void 0) t.boxing = this.boxOk() && performance.now() - t.t >= 250;
+          if (t.boxing) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
           else if (this.placing && this.dragGhost) {
             if (this.isFenceLine()) this.dragFence(p);
             else this.placeAt = this.originAt(p);
@@ -142783,7 +143326,7 @@ ${risk.lines.join("\n")}`);
       }
       if (this.left) {
         if (!this.left.moved && Math.hypot(p.x - this.left.x, p.y - this.left.y) > 5) this.left.moved = true;
-        if (this.left.moved && this.multi) this.box = { x0: this.left.x, y0: this.left.y, x1: p.x, y1: p.y };
+        if (this.left.moved && this.boxOk()) this.box = { x0: this.left.x, y0: this.left.y, x1: p.x, y1: p.y };
         else if (this.left.moved && this.isFenceLine()) this.dragFence(p);
         else if (this.left.moved && this.placing) {
           this.cam.x -= (p.x - this.left.x) / this.cam.zoom;
@@ -142794,6 +143337,10 @@ ${risk.lines.join("\n")}`);
           this.el.style.cursor = "grabbing";
         }
       }
+    }
+    /** A drag may draw a selection box: not while a building is placed, fence is chosen, an attack-move is armed or the marching army is led. */
+    boxOk() {
+      return !this.placing && !this.groupMode && !this.attackMoveArmed && !(this.legionControl && this.sim.legion.on);
     }
     /** A new fence is being placed (not carried): dragging lays a row of it. */
     isFenceLine() {
@@ -142839,7 +143386,7 @@ ${risk.lines.join("\n")}`);
     /** Is the screen point on (or close to) the building being placed or moved: a finger there drags the building, anywhere else it drags the map. */
     onGhost(p) {
       if (!this.placing || !this.placeAt) return false;
-      const w = this.r.screenToWorld(p.x, p.y), tx = w.x / TILE, ty = w.y / TILE, d = BUILDINGS[this.placing], slack = this.groupMoving ? 4 : 1;
+      const w = this.r.screenToWorld(p.x, p.y), tx = w.x / TILE, ty = w.y / TILE, d = this.placeDim(), slack = this.groupMoving ? 4 : 1;
       return tx >= this.placeAt.x - slack && tx <= this.placeAt.x + d.w + slack && ty >= this.placeAt.y - slack - 1 && ty <= this.placeAt.y + d.h + slack;
     }
     pointerUp(e) {
@@ -142864,14 +143411,14 @@ ${risk.lines.join("\n")}`);
         if (this.touches.size === 1) {
           const [held] = [...this.touches.values()];
           if (Math.hypot(held.x - held.sx, held.y - held.sy) < 14 && t.t - held.t > 250 && Math.hypot(p.x - t.sx, p.y - t.sy) < 12 && performance.now() - t.t < 600) {
-            this.activate(p, true, false);
+            this.activate(p, true, this.hit(p, true) !== null);
             return;
           }
         }
         if (this.touches.size === 0) {
           this.endFenceLine();
           if (this.box) {
-            this.boxSelect(this.box);
+            this.boxSelect(this.box, false);
             this.box = null;
           } else if (!this.tapDead && Math.hypot(p.x - t.sx, p.y - t.sy) < 12 && performance.now() - t.t < 600) this.activate(p, true, false);
         }
@@ -142888,7 +143435,7 @@ ${risk.lines.join("\n")}`);
         if (this.placing) this.el.style.cursor = "";
         this.endFenceLine();
         if (this.box) {
-          this.boxSelect(this.box);
+          this.boxSelect(this.box, e.shiftKey || e.ctrlKey);
           this.box = null;
         } else if (l && !l.moved) this.activate(p, false, e.shiftKey || e.ctrlKey);
       }
@@ -142959,7 +143506,7 @@ ${risk.lines.join("\n")}`);
     buildingUnder(p) {
       const w = this.r.screenToWorld(p.x, p.y);
       for (const b of this.sim.buildings) {
-        const d = BUILDINGS[b.kind];
+        const d = footOf(b);
         if (w.x >= b.x * TILE && w.x <= (b.x + d.w) * TILE && w.y >= b.y * TILE - 24 && w.y <= (b.y + d.h) * TILE) return b.id;
       }
       return null;
@@ -142994,18 +143541,6 @@ ${risk.lines.join("\n")}`);
       const id = this.hit(p, touch);
       const b = this.buildingUnder(p), w = this.r.screenToWorld(p.x, p.y);
       const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
-      if (this.multi) {
-        if (this.selected.size) {
-          this.command(p, additive);
-          return;
-        }
-        if (id !== null) {
-          this.toggle(id);
-          this.hushCard = false;
-          this.onChange();
-          return;
-        }
-      }
       if (id !== null) {
         this.hushCard = false;
         const now = performance.now();
@@ -143101,10 +143636,10 @@ ${risk.lines.join("\n")}`);
       }
       this.onChange();
     }
-    /** The people inside the box become the group; the group chosen before is let go. */
-    boxSelect(b) {
+    /** The people inside the box become the group; the group chosen before is let go (unless `add`: they join it). */
+    boxSelect(b, add) {
       const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
-      this.selected.clear();
+      if (!add) this.selected.clear();
       for (const v of this.sim.villagers) {
         if (v.inside !== null || v.inTent) continue;
         const s = this.bodyScreen(v);
@@ -143136,8 +143671,14 @@ ${risk.lines.join("\n")}`);
     /** Top-left tile of a building of the placing kind centred on the point. */
     originAt(p) {
       if (!this.placing) return null;
-      const d = BUILDINGS[this.placing], w = this.r.screenToWorld(p.x, p.y);
+      const d = this.placeDim(), w = this.r.screenToWorld(p.x, p.y);
       return { x: Math.round(w.x / TILE - d.w / 2), y: Math.round(w.y / TILE - d.h / 2) };
+    }
+    /** The tiles the thing being placed covers: a gate turned or not; a building being carried keeps the size it has. */
+    placeDim() {
+      if (!this.placing) return { w: 1, h: 1 };
+      const moved = this.moving !== null && !this.groupMoving ? this.sim.getBuilding(this.moving) : void 0;
+      return moved ? this.turnable(moved) ? footDim(moved.kind, this.placeRot) : footOf(moved) : footDim(this.placing, this.placeRot);
     }
     /** Fences and gates may be picked up together. */
     isWall(id) {
@@ -143216,6 +143757,27 @@ ${risk.lines.join("\n")}`);
         this.groupRot = (this.groupRot + 1) % 4;
         this.onChange();
       } else if (this.groupMode) this.startGroupMove(1);
+      else if (this.canTurnGate) {
+        const mid = this.placeAt ? this.centreOfGhost() : null;
+        this.placeRot = this.placeRot ? 0 : 1;
+        if (mid) this.placeAt = this.originAt(mid);
+        this.onChange();
+      }
+    }
+    /** A gate (of the two-tile kind: the one tile of an old save has no direction) may be turned. */
+    turnable(b) {
+      return b.kind === "gate" && b.w === void 0;
+    }
+    /** A gate that is being put down, or carried to a new place, may be turned. */
+    get canTurnGate() {
+      if (this.placing !== "gate" || this.groupMode) return false;
+      const moved = this.moving !== null ? this.sim.getBuilding(this.moving) : void 0;
+      return !moved || this.turnable(moved);
+    }
+    /** The screen point at the middle of the ghost, so that turning it keeps it under the finger. */
+    centreOfGhost() {
+      const d = this.placeDim(), a = this.placeAt, s = this.r.worldToScreen((a.x + d.w / 2) * TILE, (a.y + d.h / 2) * TILE);
+      return { x: s.x, y: s.y };
     }
     ghost() {
       if (!this.placing || !this.placeAt) return null;
@@ -143224,19 +143786,21 @@ ${risk.lines.join("\n")}`);
         return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, group: plan2, movingIds: [...this.groupIds] };
       }
       const b = this.moving !== null ? this.sim.getBuilding(this.moving) : void 0;
-      return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era, moving: this.moving ?? void 0 };
+      const dim = this.placeDim();
+      return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era, moving: this.moving ?? void 0, w: dim.w, h: dim.h, rot: b && !this.turnable(b) ? b.rot : this.placeRot };
     }
     /** Why the ghost cannot be put down where it is, or null. */
     placeProblem() {
       if (!this.placing || !this.placeAt) return "Ch\u1EA1m l\xEAn b\u1EA3n \u0111\u1ED3 \u0111\u1EC3 ch\u1ECDn ch\u1ED7";
       if (this.groupMoving) return this.sim.canMoveGroup(this.groupIds, this.placeAt, this.groupRot);
-      if (this.moving === null) return this.sim.canPlace(this.placing, this.placeAt.x, this.placeAt.y);
+      if (this.moving === null) return this.sim.canPlace(this.placing, this.placeAt.x, this.placeAt.y, this.placeRot);
       const b = this.sim.getBuilding(this.moving);
-      return b ? this.sim.canMove(b, this.placeAt.x, this.placeAt.y) : "C\xF4ng tr\xECnh kh\xF4ng c\xF2n";
+      return b ? this.sim.canMove(b, this.placeAt.x, this.placeAt.y, this.turnable(b) ? this.placeRot : void 0) : "C\xF4ng tr\xECnh kh\xF4ng c\xF2n";
     }
     startPlacing(kind) {
       this.placing = kind;
       this.attackMoveArmed = false;
+      this.placeRot = 0;
       this.placeAt = this.originAt({ x: this.r.w / 2, y: this.r.h / 2 });
       this.onChange();
     }
@@ -143247,6 +143811,7 @@ ${risk.lines.join("\n")}`);
       this.moving = id;
       this.selectedBuilding = null;
       this.startPlacing(b.kind);
+      this.placeRot = b.rot === 1 ? 1 : 0;
       this.placeAt = { x: b.x, y: b.y };
       this.onChange();
     }
@@ -143273,7 +143838,7 @@ ${risk.lines.join("\n")}`);
         return true;
       }
       if (this.moving !== null) {
-        const id = this.moving, err = this.sim.moveBuilding(id, this.placeAt.x, this.placeAt.y);
+        const id = this.moving, mv = this.sim.getBuilding(id), err = this.sim.moveBuilding(id, this.placeAt.x, this.placeAt.y, mv && this.turnable(mv) ? this.placeRot : void 0);
         if (err) {
           this.onToast(err);
           return false;
@@ -143287,16 +143852,17 @@ ${risk.lines.join("\n")}`);
         this.onChange();
         return true;
       }
-      const o = this.placeAt, res = this.sim.placeBuilding(this.placing, o.x, o.y);
+      const o = this.placeAt, res = this.sim.placeBuilding(this.placing, o.x, o.y, this.placeRot);
       if (!res.ok) {
         if (!quiet) this.onToast(res.reason ?? "Kh\xF4ng \u0111\u1EB7t \u0111\u01B0\u1EE3c");
         return false;
       }
-      const d = BUILDINGS[this.placing];
+      const d = this.placeDim();
+      const repeat = BUILDINGS[this.placing].repeat;
       this.markers.push({ x: (o.x + d.w / 2) * TILE, y: (o.y + d.h / 2) * TILE, age: 0 });
       const ids = [...this.selected];
       if (ids.length && res.building && needsWork(res.building)) this.sim.orderWork(ids, o.x, o.y);
-      if (!keep && !d.repeat) {
+      if (!keep && !repeat) {
         this.placing = null;
         this.placeAt = null;
       }
@@ -143315,7 +143881,7 @@ ${risk.lines.join("\n")}`);
         if (Math.abs(wx - cx) <= hw && wy >= base - up && wy <= base + down) return { x: i, y: j };
       }
       for (const b of this.sim.buildings) {
-        const d = BUILDINGS[b.kind];
+        const d = footOf(b);
         if (wx >= b.x * TILE && wx <= (b.x + d.w) * TILE && wy >= b.y * TILE - 24 && wy <= (b.y + d.h) * TILE) return { x: b.x, y: b.y };
       }
       return { x: Math.floor(wx / TILE), y: j0 };
@@ -143354,7 +143920,7 @@ ${risk.lines.join("\n")}`);
         this.onChange();
         return;
       }
-      if (this.multi) {
+      {
         const fighters = this.fighters(), N = this.sim.world.size, raw = { x: Math.floor(w.x / TILE), y: Math.floor(w.y / TILE) };
         const hit = fighters.length ? [this.pickTile(w.x, w.y), raw].find((c) => this.sim.world.inBounds(c.x, c.y) && this.sim.fog.state[c.y * N + c.x] !== 0 && this.sim.obstacleAt(c.x, c.y)?.clear) : void 0;
         if (hit) {
@@ -143427,10 +143993,12 @@ ${risk.lines.join("\n")}`);
       this.inspect = null;
       this.onChange();
     }
-    setMulti(on) {
-      this.multi = on;
-      this.box = null;
-      if (on) this.onToast("Ch\u1ECDn nhi\u1EC1u: ch\u1EA1m gi\u1EEF m\u1ED9t ch\xFAt r\u1ED3i k\xE9o \u0111\u1EC3 ch\u1ECDn v\xF9ng; vu\u1ED1t nhanh \u0111\u1EC3 di chuy\u1EC3n b\u1EA3n \u0111\u1ED3");
+    /** Every soldier of the village that is out on the map. */
+    selectSoldiers() {
+      this.selected.clear();
+      for (const v of this.sim.villagers) if (v.job === "fight" && v.inside === null && !v.inTent) this.selected.add(v.id);
+      this.selectedBuilding = null;
+      this.inspect = null;
       this.onChange();
     }
     // ---------------------------------------------------------------- camera
@@ -143475,7 +144043,7 @@ ${risk.lines.join("\n")}`);
         else this.clearSelection();
         return;
       }
-      if (k === "r" && this.groupMode) {
+      if (k === "r" && (this.groupMode || this.canTurnGate)) {
         this.rotateGroup();
         return;
       }
@@ -143633,7 +144201,7 @@ ${risk.lines.join("\n")}`);
     };
     for (let d = -half; d <= half; d++) {
       put3("fence", cx + d, cy - half);
-      put3(d === 0 ? "gate" : "fence", cx + d, cy + half);
+      if (d !== 1) put3(d === 0 ? "gate" : "fence", cx + d, cy + half);
       if (Math.abs(d) < half) {
         put3("fence", cx - half, cy + d);
         put3("fence", cx + half, cy + d);
@@ -144100,7 +144668,7 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/ui/menu.ts
-  var TABS = [["places", "C\xF4ng tr\xECnh"], ["game", "V\xE1n ch\u01A1i"], ["dev", "Dev"], ["help", "?"]];
+  var TABS = [["places", "C\xF4ng tr\xECnh"], ["dev", "Dev"], ["help", "?"]];
   var SEASON_NAME = { spring: "Xu\xE2n", summer: "H\u1EA1", autumn: "Thu", winter: "\u0110\xF4ng" };
   var Menu = class {
     constructor(drawer, tabs, body, c, center) {
@@ -144121,7 +144689,6 @@ ${risk.lines.join("\n")}`);
       }
       tabs.append(h("span", { class: "spacer" }), h("button", { class: "sm", text: "\u2715", title: "\u0110\xF3ng menu", onclick: () => this.close() }));
       this.pages.set("places", this.placesPage());
-      this.pages.set("game", this.gamePage());
       this.pages.set("dev", this.devPage());
       this.pages.set("help", this.helpPage());
       for (const p of this.pages.values()) body.append(p);
@@ -144178,67 +144745,6 @@ ${risk.lines.join("\n")}`);
         }));
       });
       return h("div", { class: "page" }, hint("C\xF4ng tr\xECnh \u0111\xE3 d\u1EF1ng", "M\u1ECDi c\xF4ng tr\xECnh \u0111\xE3 d\u1EF1ng n\u1EB1m \u1EDF \u0111\xE2y. M\u1EDF X\u01B0\u1EDFng \u0111\u1EC3 ch\u1EBF \u0111\u1ED3, m\u1EDF l\u1EEDa tr\u1EA1i \u0111\u1EC3 xem d\xE2n, m\u1EDF Kho \u0111\u1EC3 xem t\xE0i nguy\xEAn."), this.placesList);
-    }
-    // ---------------------------------------------------------------- the game itself
-    gamePage() {
-      const { session: session2, toast: toast2 } = this.c, page = h("div", { class: "page" });
-      const info = h("p", { class: "sub", text: "Ch\u01B0a c\xF3 b\u1EA3n l\u01B0u." });
-      const refresh = async () => {
-        const m = await session2.latest();
-        info.textContent = m ? `B\u1EA3n l\u01B0u g\u1EA7n nh\u1EA5t: ng\xE0y ${m.day}, ${m.population} d\xE2n, l\xFAc ${new Date(m.savedAt).toLocaleString("vi")}.` : "Ch\u01B0a c\xF3 b\u1EA3n l\u01B0u.";
-      };
-      let armed = 0;
-      const fresh = h("button", { class: "sm danger", text: "V\xE1n m\u1EDBi" });
-      fresh.addEventListener("click", () => {
-        if (performance.now() < armed) {
-          void session2.forget().then(() => location.assign(location.pathname + location.search.replace(/[?&]continue=1/, "")));
-          return;
-        }
-        armed = performance.now() + 4e3;
-        fresh.textContent = "B\u1EA5m l\u1EA1i \u0111\u1EC3 x\xF3a b\u1EA3n l\u01B0u v\xE0 ch\u01A1i l\u1EA1i";
-        setTimeout(() => {
-          fresh.textContent = "V\xE1n m\u1EDBi";
-        }, 4e3);
-      });
-      const saveBtn = h("button", { class: "sm primary", text: "L\u01B0u ngay", onclick: () => {
-        void session2.save().then((ok) => {
-          if (ok) toast2("\u0110\xE3 l\u01B0u");
-          void refresh();
-        });
-      } });
-      const loadBtn = h("button", { class: "sm", text: "T\u1EA3i b\u1EA3n l\u01B0u", onclick: () => {
-        void session2.resume("auto").then((ok) => {
-          toast2(ok ? "\u0110\xE3 t\u1EA3i l\u1EA1i v\xE1n ch\u01A1i" : "Ch\u01B0a c\xF3 b\u1EA3n l\u01B0u");
-          this.close();
-        });
-      } });
-      page.append(
-        hint("L\u01B0u v\xE0 t\u1EA3i", "Game t\u1EF1 l\u01B0u v\xE0o \u0111\u1EA7u m\u1ED7i ng\xE0y v\xE0 khi b\u1EA1n r\u1EDDi trang. B\u1EA3n l\u01B0u n\u1EB1m trong tr\xECnh duy\u1EC7t c\u1EE7a m\xE1y n\xE0y. T\u1ED1c \u0111\u1ED9 game v\xE0 l\u1EDDi nh\u1EAFc xoay ngang l\xE0 c\xE0i \u0111\u1EB7t c\u1EE7a b\u1EA1n, kh\xF4ng n\u1EB1m trong b\u1EA3n l\u01B0u."),
-        info,
-        h(
-          "div",
-          { class: "btns" },
-          saveBtn,
-          loadBtn,
-          fresh
-        )
-      );
-      let last2 = -1e9;
-      this.updaters.push(() => {
-        const war = this.c.sim.atWar();
-        for (const b of [saveBtn, loadBtn]) {
-          b.disabled = war;
-          b.title = war ? "\u0110ang chi\u1EBFn tranh: kh\xF4ng l\u01B0u hay t\u1EA3i \u0111\u01B0\u1EE3c cho t\u1EDBi khi tr\u1EADn k\u1EBFt th\xFAc" : "";
-        }
-      });
-      this.updaters.push(() => {
-        const now = performance.now();
-        if (!page.hidden && now - last2 > 2e3) {
-          last2 = now;
-          void refresh();
-        }
-      });
-      return page;
     }
     // ---------------------------------------------------------------- dev tools
     /** Only what is needed to try the game fast: a camp of each level, quick and free works, goods, an event for the level, immortality, time and weather. */
@@ -144362,7 +144868,7 @@ ${risk.lines.join("\n")}`);
       return h(
         "ul",
         { class: "help" },
-        h("li", {}, h("b", { text: "Ch\u1ECDn d\xE2n" }), ': b\u1EA5m v\xE0o d\xE2n. B\u1EA5m \u0111\xFAp \u0111\u1EC3 ch\u1ECDn m\u1ECDi d\xE2n c\xF9ng ngh\u1EC1 \u0111ang hi\u1EC7n tr\xEAn m\xE0n h\xECnh. "Ch\u1ECDn nhi\u1EC1u" \u0111\u1EC3 b\u1EA5m t\u1EEBng ng\u01B0\u1EDDi ho\u1EB7c k\xE9o khung; "Ch\u1ECDn h\u1EBFt" ch\u1ECDn c\u1EA3 l\xE0ng.'),
+        h("li", {}, h("b", { text: "Ch\u1ECDn d\xE2n" }), ': b\u1EA5m v\xE0o d\xE2n. B\u1EA5m \u0111\xFAp \u0111\u1EC3 ch\u1ECDn m\u1ECDi d\xE2n c\xF9ng ngh\u1EC1 \u0111ang hi\u1EC7n tr\xEAn m\xE0n h\xECnh. K\xE9o khung \u0111\u1EC3 ch\u1ECDn nhi\u1EC1u ng\u01B0\u1EDDi: chu\u1ED9t tr\xE1i k\xE9o tr\xEAn b\u1EA3n \u0111\u1ED3, ho\u1EB7c tr\xEAn \u0111i\u1EC7n tho\u1EA1i gi\u1EEF ng\xF3n tay \u0111\u1EE9ng y\xEAn m\u1ED9t ch\xFAt r\u1ED3i k\xE9o (vu\u1ED1t nhanh th\xEC k\xE9o b\u1EA3n \u0111\u1ED3). Gi\u1EEF Shift khi k\xE9o \u0111\u1EC3 th\xEAm v\xE0o nh\xF3m; tr\xEAn \u0111i\u1EC7n tho\u1EA1i gi\u1EEF m\u1ED9t ng\xF3n r\u1ED3i ch\u1EA1m ng\u01B0\u1EDDi kh\xE1c b\u1EB1ng ng\xF3n th\u1EE9 hai. N\xFAt "B\u1ECF ch\u1ECDn" n\u1EB1m \u1EDF g\xF3c d\u01B0\u1EDBi (ho\u1EB7c Esc); "Ch\u1ECDn l\xEDnh" ch\u1ECDn m\u1ECDi l\xEDnh ngo\xE0i tr\u1EA1i.'),
         h("li", {}, h("b", { text: "Ra l\u1EC7nh" }), ": m\xE1y t\xEDnh: chu\u1ED9t ph\u1EA3i. \u0110i\u1EC7n tho\u1EA1i: khi \u0111\xE3 ch\u1ECDn d\xE2n, ch\u1EA1m l\xEAn \u0111\u1EA5t, c\xE2y, \u0111\xE1, b\u1EE5i qu\u1EA3, c\xF4ng tr\u01B0\u1EDDng hay k\u1EBB \u0111\u1ECBch. Gi\u1EEF Shift (m\xE1y t\xEDnh) \u0111\u1EC3 x\u1EBFp l\u1EC7nh n\u1ED1i nhau."),
         h("li", {}, h("b", { text: "K\xE9o b\u1EA3n \u0111\u1ED3" }), ": m\xE1y t\xEDnh: gi\u1EEF chu\u1ED9t ph\u1EA3i r\u1ED3i k\xE9o (ho\u1EB7c W A S D). \u0110i\u1EC7n tho\u1EA1i: m\u1ED9t ng\xF3n \u0111\u1EB7t gi\u1EEF y\xEAn, m\u1ED9t ng\xF3n k\xE9o (b\u1EA3n \u0111\u1ED3 \u0111i theo ng\xF3n k\xE9o); ho\u1EB7c hai ng\xF3n c\xF9ng k\xE9o; ch\u1EE5m ho\u1EB7c m\u1EDF hai ng\xF3n \u0111\u1EC3 thu ph\xF3ng."),
         h("li", {}, h("b", { text: "B\u1EA3n \u0111\u1ED3 nh\u1ECF" }), ": b\u1EA5m v\xE0o \u0111\u1EC3 m\u1EDF b\u1EA3n \u0111\u1ED3 l\u1EDBn, ch\u1EA1m m\u1ED9t ch\u1ED7 \u0111\u1EC3 nh\u1EA3y t\u1EDBi \u0111\xF3."),
@@ -145117,7 +145623,7 @@ ${risk.lines.join("\n")}`);
     place() {
       const b = this.cur();
       if (this.root.hidden || !b) return;
-      const d = BUILDINGS[b.kind], p = this.r.worldToScreen((b.x + d.w / 2) * TILE, (b.y + d.h) * TILE);
+      const d = footOf(b), p = this.r.worldToScreen((b.x + d.w / 2) * TILE, (b.y + d.h) * TILE);
       const w = this.width || this.root.offsetWidth, hh = this.height || this.root.offsetHeight;
       const gone = p.x < -40 || p.x > this.r.w + 40 || p.y < -hh - 120 || p.y > this.r.h + 40;
       this.root.style.visibility = gone ? "hidden" : "visible";
@@ -146163,7 +146669,7 @@ ${risk.lines.join("\n")}`);
     constructor(c) {
       this.c = c;
       this.root = h("div", { class: "rsp" });
-      this.dialog = new GameDialog(h("div", {}), { inside: true, onClose: () => {
+      this.dialog = new GameDialog(h("div", {}), { onClose: () => {
         this.sel = null;
         this.showDetail();
         this.update(true);
@@ -150005,6 +150511,7 @@ ${risk.lines.join("\n")}`);
         { label: it.name },
         head,
         dlg.text(it.use),
+        it.stats?.length ? dlg.costs(...it.stats.map((x) => dlg.cost(statIcon(x.icon), x.value, null, false, x.title))) : null,
         extra ? dlg.note(extra, false) : null,
         dlg.costs(...costs, dlg.cost(resIcon("clock"), workDays(it.time), null, false, "Th\u1EDDi gian")),
         lock ? dlg.note(lock) : null,
@@ -150215,6 +150722,7 @@ ${risk.lines.join("\n")}`);
         id: r.id,
         name: recipeName(r),
         use: recipeUse(r),
+        stats: recipeStats(r),
         get cost() {
           return sim2.craftCost(r.id);
         },
@@ -150735,11 +151243,16 @@ ${risk.lines.join("\n")}`);
 
   // src/save/session.ts
   var AUTO_SAVE = "auto";
+  var newSlotId = () => `g${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`;
   var Session = class {
     constructor(sim2, store) {
       this.sim = sim2;
       this.store = store;
       this.busy = false;
+      /** The slot this game saves into. A new game gets a slot of its own; a game picked up again keeps the slot it came from. */
+      this.slot = newSlotId();
+      /** Save by itself at the start of every day and when the page is left. The player's choice (the settings). */
+      this.auto = true;
       /** Called with a message when a save fails, so the player is told once. */
       this.onError = () => {
       };
@@ -150749,15 +151262,15 @@ ${risk.lines.join("\n")}`);
     tick() {
       if (this.sim.day === this.lastDay) return;
       this.lastDay = this.sim.day;
-      void this.save();
+      if (this.auto) void this.save();
     }
-    /** Save now. Two saves never overlap: one asked for while another is running is skipped. */
-    async save(id = AUTO_SAVE) {
+    /** Save now into the slot of this game. Two saves never overlap: one asked for while another is running is skipped. */
+    async save() {
       if (this.busy || this.sim.atWar()) return false;
       this.busy = true;
       try {
         const sim2 = this.sim;
-        await this.store.save(id, sim2.toSave(), { savedAt: Date.now(), day: sim2.day, population: sim2.villagers.length });
+        await this.store.save(this.slot, sim2.toSave(), { savedAt: Date.now(), day: sim2.day, population: sim2.villagers.length, ...this.name ? { name: this.name } : {} });
         return true;
       } catch (e) {
         this.onError(`Kh\xF4ng l\u01B0u \u0111\u01B0\u1EE3c: ${e instanceof Error ? e.message : String(e)}`);
@@ -150766,30 +151279,67 @@ ${risk.lines.join("\n")}`);
         this.busy = false;
       }
     }
-    /** The newest save, if any. */
-    async latest() {
+    /** Save into a slot of its own, which is the game's slot from now on: the old slot keeps what it had. */
+    async saveAsNew(name) {
+      const was = { slot: this.slot, name: this.name };
+      this.slot = newSlotId();
+      this.name = name?.trim() || void 0;
+      const ok = await this.save();
+      if (!ok) {
+        this.slot = was.slot;
+        this.name = was.name;
+      }
+      return ok;
+    }
+    /** Every save, the newest first. */
+    async list() {
       try {
-        return (await this.store.list())[0] ?? null;
+        return await this.store.list();
       } catch {
-        return null;
+        return [];
       }
     }
-    /** Put a save into this game. Returns false when there is none; the save must be of this world. */
+    /** The newest save, if any. */
+    async latest() {
+      return (await this.list())[0] ?? null;
+    }
+    /** Put a save into this game, which then goes on saving into the same slot. Returns false when there is none; the save must be of this world. */
     async resume(id) {
       if (this.sim.atWar()) return false;
       const data = await this.store.load(id);
       if (!data) return false;
+      const meta3 = (await this.list()).find((m) => m.id === id);
       this.sim.loadSave(data);
+      this.slot = id;
+      this.name = meta3?.name;
       this.lastDay = this.sim.day;
       return true;
     }
-    async forget(id = AUTO_SAVE) {
+    /**
+     * Go on from a save of the list. A save of this world is put in at once ('loaded'); one of another world needs the page again with that world, which is
+     * what happens ('reload': the page continues from the save when it has come up).
+     */
+    async open(meta3) {
+      if (meta3.seed !== this.sim.seed) {
+        location.assign(`${location.pathname}?seed=${meta3.seed}&continue=${encodeURIComponent(meta3.id)}`);
+        return "reload";
+      }
+      return await this.resume(meta3.id) ? "loaded" : "failed";
+    }
+    /** Begin another game: the page again with a world of its own. Every save stays where it is. */
+    newGame() {
+      location.assign(`${location.pathname}?new=1`);
+    }
+    async remove(id) {
       await this.store.remove(id);
+    }
+    async forget(id = AUTO_SAVE) {
+      await this.remove(id);
     }
   };
 
   // src/save/settings.ts
-  var DEFAULT_SETTINGS = { speed: 1, skipRotatePrompt: false, sfxOn: true, ambientOn: true, musicOn: true, weatherFx: true, sfxVol: 1, ambientVol: 1, musicVol: 1 };
+  var DEFAULT_SETTINGS = { speed: 1, skipRotatePrompt: false, sfxOn: true, ambientOn: true, musicOn: true, weatherFx: true, sfxVol: 1, ambientVol: 1, musicVol: 1, voiceOn: true, voiceVol: 1, autosave: true, quality: "auto" };
   var KEY = "lang-do-da.settings";
   var vol = (n) => typeof n === "number" && n >= 0 && n <= 1 ? n : 1;
   function loadSettings(storage = browserStorage()) {
@@ -150806,7 +151356,11 @@ ${risk.lines.join("\n")}`);
         weatherFx: o.weatherFx !== false,
         sfxVol: vol(o.sfxVol),
         ambientVol: vol(o.ambientVol),
-        musicVol: vol(o.musicVol)
+        musicVol: vol(o.musicVol),
+        voiceOn: o.voiceOn !== false,
+        voiceVol: vol(o.voiceVol),
+        autosave: o.autosave !== false,
+        quality: ["auto", "high", "balanced", "saver"].includes(o.quality) ? o.quality : "auto"
       };
     } catch {
       return { ...DEFAULT_SETTINGS };
@@ -150858,19 +151412,30 @@ ${risk.lines.join("\n")}`);
   var sim = new Sim(seed);
   var settings = loadSettings();
   var session = new Session(sim, IndexedDbStore.available() ? new IndexedDbStore() : new MemoryStore());
+  session.auto = settings.autosave;
   sim.speed = settings.speed;
+  var rateSpeed = 1;
+  var realRate = 1;
+  var rateShown = 0;
   var started = false;
   var startDialog = new GameDialog($("start"), { modal: true });
   var view = $("view");
   var cam = { x: 0, y: 0, zoom: Math.min(view.clientWidth, view.clientHeight) < 700 ? 1 : 2 };
   var sprites2 = new Sprites();
   var renderer = new Renderer(view, sim, cam, sprites2);
+  var quality = QUALITY_LEVELS[levelOf(settings.quality)];
+  var applyQuality = () => {
+    quality = QUALITY_LEVELS[levelOf(settings.quality)];
+    renderer.setDprCap(quality.dprCap);
+  };
+  applyQuality();
   var audio = new GameAudio();
   renderer.audio = audio;
   audio.sfxOn = settings.sfxOn;
   audio.ambientOn = settings.ambientOn;
   audio.musicOn = settings.musicOn;
-  audio.vol = { sfx: settings.sfxVol, amb: settings.ambientVol, mus: settings.musicVol };
+  audio.voiceOn = settings.voiceOn;
+  audio.vol = { sfx: settings.sfxVol, amb: settings.ambientVol, mus: settings.musicVol, voice: settings.voiceVol };
   var soundChanged = () => void 0;
   function syncSound() {
     soundChanged();
@@ -150885,7 +151450,7 @@ ${risk.lines.join("\n")}`);
     toast(`${on ? "B\u1EADt" : "T\u1EAFt"} ${kind === "sfx" ? "\xE2m thanh hi\u1EC7u \u1EE9ng" : kind === "amb" ? "\xE2m thanh m\xF4i tr\u01B0\u1EDDng" : "nh\u1EA1c n\u1EC1n"}`);
   }
   var sound = {
-    get: (k) => k === "sfx" ? { on: audio.sfxOn, vol: audio.vol.sfx } : k === "amb" ? { on: audio.ambientOn, vol: audio.vol.amb } : { on: audio.musicOn, vol: audio.vol.mus },
+    get: (k) => k === "sfx" ? { on: audio.sfxOn, vol: audio.vol.sfx } : k === "amb" ? { on: audio.ambientOn, vol: audio.vol.amb } : k === "voice" ? { on: audio.voiceOn, vol: audio.vol.voice } : { on: audio.musicOn, vol: audio.vol.mus },
     set: (k, on, vol2) => {
       if (k === "sfx") {
         settings.sfxOn = audio.sfxOn = on;
@@ -150893,6 +151458,9 @@ ${risk.lines.join("\n")}`);
       } else if (k === "amb") {
         settings.ambientOn = audio.ambientOn = on;
         settings.ambientVol = audio.vol.amb = vol2;
+      } else if (k === "voice") {
+        settings.voiceOn = audio.voiceOn = on;
+        settings.voiceVol = audio.vol.voice = vol2;
       } else {
         settings.musicOn = audio.musicOn = on;
         settings.musicVol = audio.vol.mus = vol2;
@@ -150918,7 +151486,13 @@ ${risk.lines.join("\n")}`);
     toastTimer = window.setTimeout(() => toastEl.classList.remove("on"), 2200);
   };
   ctl.onToast = toast;
-  ctl.onOrder = () => audio.order();
+  ctl.onOrder = (ids) => {
+    audio.order();
+    if (ids.some((id) => {
+      const v = sim.get(id);
+      return !!v && isHorse(sim.mountOf(v));
+    })) audio.neigh();
+  };
   var ORDER_BTN = /Triển khai|^\W*Đánh$|Rút|^Gọi (tất cả|cả trại|quân)|^Cho (về hết|cả trại về|quân về)/;
   document.addEventListener("click", (e) => {
     const b = e.target?.closest("button");
@@ -151010,7 +151584,7 @@ ${risk.lines.join("\n")}`);
   var speedBtn = $("btnSpeed");
   speedBtn.addEventListener("click", () => setSpeed(SPEEDS[(SPEEDS.indexOf(sim.speed) + 1) % SPEEDS.length]));
   var ring2 = $("radial");
-  var ringBtns = ["btnMulti", "btnArmy", "btnNone"].map((id) => $(id));
+  var ringBtns = ["btnArmy", "btnNone"].map((id) => $(id));
   var RING_R = 64;
   var ringHot = null;
   var ringSpot = (i, n) => {
@@ -151051,9 +151625,10 @@ ${risk.lines.join("\n")}`);
     for (const el of ringBtns) el.classList.remove("hot");
     if (hot) hot.click();
   };
-  var multiBtn = $("btnMulti");
-  multiBtn.addEventListener("click", () => ctl.setMulti(!ctl.multi));
   $("btnNone").addEventListener("click", () => ctl.clearSelection());
+  $("btnSelNone").addEventListener("click", () => ctl.clearSelection());
+  $("btnSelSoldiers").addEventListener("click", () => ctl.selectSoldiers());
+  $("btnSelCount").addEventListener("click", () => ctl.focusSelection());
   $("btnHome").addEventListener("click", () => {
     const f = sim.campfire(), s = sim.world.start;
     ctl.centerOn((f ? f.x + 1 : s.x) * TILE, (f ? f.y + 1 : s.y) * TILE);
@@ -151131,10 +151706,14 @@ ${risk.lines.join("\n")}`);
       ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE);
     } else toast("Ch\u01B0a c\xF3 X\u01B0\u1EDFng");
   }
-  function syncButtons() {
-    speedBtn.textContent = sim.speed === 0 ? "\u275A\u275A" : `${sim.speed}\xD7`;
+  function showSpeed() {
+    const slow = sim.speed > 1 && realRate < sim.speed * 0.85;
+    speedBtn.textContent = sim.speed === 0 ? "\u275A\u275A" : slow ? `${sim.speed}\xD7 (\u2248${realRate < 10 ? realRate.toFixed(1) : Math.round(realRate)}\xD7)` : `${sim.speed}\xD7`;
+    speedBtn.title = slow ? "M\xE1y kh\xF4ng theo k\u1ECBp t\u1ED1c \u0111\u1ED9 n\xE0y: game \u0111ang ch\u1EA1y nhanh h\u1EBFt m\u1EE9c c\xF3 th\u1EC3 \u0111\u1EC3 m\xE0n h\xECnh v\u1EABn m\u01B0\u1EE3t" : "";
     speedBtn.setAttribute("aria-pressed", String(sim.speed === 0));
-    multiBtn.setAttribute("aria-pressed", String(ctl.multi));
+  }
+  function syncButtons() {
+    showSpeed();
     {
       const on = sim.alarmUntil > sim.time, army3 = $("btnArmy");
       army3.setAttribute("aria-pressed", String(on));
@@ -151147,6 +151726,13 @@ ${risk.lines.join("\n")}`);
       if (!sim.legion.on) ctl.legionControl = false;
       lb.hidden = !sim.legion.on;
       lb.setAttribute("aria-pressed", String(ctl.legionControl));
+    }
+    {
+      const n = ctl.selected.size, soldiers = sim.villagers.some((v) => v.job === "fight" && v.inside === null && !v.inTent);
+      $("btnSelCount").hidden = n === 0;
+      $("btnSelCount").textContent = `\u25A3 ${n} ng\u01B0\u1EDDi`;
+      $("btnSelNone").hidden = n === 0;
+      $("btnSelSoldiers").hidden = !soldiers;
     }
     $("btnNone").hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
   }
@@ -151207,7 +151793,18 @@ ${risk.lines.join("\n")}`);
     statsOverview.update();
     statsDlg.show(statsCard);
   };
-  var settingsPanel = new SettingsPanel(ctx, { close: () => statsDlg.hide(), openStats });
+  var settingsPanel = new SettingsPanel(ctx, { close: () => {
+    statsDlg.hide();
+    settingsOpen = false;
+  }, openStats, autosave: { get: () => session.auto, set: (on) => {
+    session.auto = on;
+    settings.autosave = on;
+    saveSettings(settings);
+  } }, quality: { get: () => settings.quality, set: (q) => {
+    settings.quality = q;
+    saveSettings(settings);
+    applyQuality();
+  } } });
   soundChanged = () => settingsPanel.update();
   var settingsOpen = false;
   $("btnSettings").addEventListener("click", () => {
@@ -151216,7 +151813,7 @@ ${risk.lines.join("\n")}`);
       settingsOpen = false;
       return;
     }
-    settingsPanel.update();
+    settingsPanel.opened();
     statsDlg.show(settingsPanel.card);
     settingsOpen = true;
   });
@@ -151322,7 +151919,7 @@ ${risk.lines.join("\n")}`);
     bar.hidden = !placing;
     if (placing && ctl.placing) {
       const why = ctl.placeProblem(), moving = ctl.moving !== null ? sim.getBuilding(ctl.moving) : void 0;
-      $("btnPlaceRot").hidden = !ctl.groupMoving;
+      $("btnPlaceRot").hidden = !ctl.groupMoving && !ctl.canTurnGate;
       $("placeName").textContent = ctl.groupMoving ? `D\u1EDDi ${ctl.groupIds.length} m\u1EA3nh h\xE0ng r\xE0o` : `${moving ? "D\u1EDDi" : "\u0110\u1EB7t"} ${BUILDINGS[ctl.placing].name}`;
       $("placeInfo").textContent = why ?? (ctl.groupMoving ? "Ch\u1ED7 n\xE0y \u0111\u1EB7t \u0111\u01B0\u1EE3c \xB7 b\u1EA5m Xoay \u0111\u1EC3 quay nh\xF3m" : moving ? `Ph\xED d\u1EDDi: ${costText(sim.moveFee(moving), RES_NAME)}` : "Ch\u1ED7 n\xE0y \u0111\u1EB7t \u0111\u01B0\u1EE3c");
       $("btnPlaceOk").disabled = why !== null;
@@ -151341,6 +151938,11 @@ ${risk.lines.join("\n")}`);
   var last = 0;
   var drawn = 0;
   var lastWarEnd = 0;
+  var nextDraw = 0;
+  var activeUntil = 0;
+  var camX = cam.x;
+  var camY = cam.y;
+  var camZ = cam.zoom;
   var celebrating = null;
   var drawEvery = () => sim.speed >= 16 ? 4 : sim.speed >= 8 ? 3 : sim.speed >= 4 ? 2 : 1;
   function frame(t) {
@@ -151377,12 +151979,30 @@ ${risk.lines.join("\n")}`);
       const m = 10, z = cam.zoom;
       sim.view = { x0: cam.x / TILE - m, y0: cam.y / TILE - m, x1: (cam.x + renderer.w / z) / TILE + m, y1: (cam.y + renderer.h / z) / TILE + m };
     }
+    const simT0 = sim.time, budget = sim.speed >= 4 ? quality.fastBudgetMs : quality.simBudgetMs;
     if (skipping) runSkip();
-    else sim.advance(dt, () => performance.now() - t0 > 70);
+    else sim.advance(dt, () => performance.now() - t0 > budget);
+    if (sim.speed !== rateSpeed) {
+      rateSpeed = sim.speed;
+      realRate = sim.speed;
+    }
+    if (dt > 0 && !skipping && sim.speed > 1) realRate = realRate * 0.95 + (sim.time - simT0) / dt * 0.05;
+    if (t - rateShown > 500) {
+      rateShown = t;
+      showSpeed();
+    }
     syncSkip();
     const busy2 = !!ctl.ghost() || !!ctl.box;
-    if (busy2 || skipping || ++drawn >= drawEvery()) {
+    if (cam.x !== camX || cam.y !== camY || cam.zoom !== camZ || ctl.interacting || busy2 || sim.projectiles.length > 0) activeUntil = t + 600;
+    camX = cam.x;
+    camY = cam.y;
+    camZ = cam.zoom;
+    const cap2 = t < activeUntil ? quality.fps : quality.idleFps;
+    if (cap2) nextDraw = Math.min(nextDraw, t + 1e3 / cap2);
+    const want = busy2 || skipping || ++drawn >= drawEvery();
+    if (want && (skipping || !cap2 || t >= nextDraw - 1)) {
       drawn = 0;
+      nextDraw = cap2 ? Math.max(nextDraw + 1e3 / cap2, t - 1e3 / cap2) : 0;
       renderer.draw(t / 1e3, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);
       buildingBar.place();
     }
@@ -151406,40 +152026,56 @@ ${risk.lines.join("\n")}`);
     setSpeed(settings.speed);
   }
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden && started) void session.save();
+    if (document.hidden && started && session.auto) void session.save();
   });
   void (async () => {
-    const latest = await session.latest();
-    if (!latest) {
+    const saves = await session.list(), params = new URLSearchParams(location.search);
+    if (params.get("new") === "1" || !saves.length) {
       started = true;
       return;
     }
-    const params = new URLSearchParams(location.search);
-    const resume = async () => {
-      if (latest.seed !== seed) {
-        location.search = `?seed=${latest.seed}&continue=1`;
-        return;
-      }
-      if (await session.resume(AUTO_SAVE)) toast("\u0110\xE3 t\u1EA3i l\u1EA1i v\xE1n ch\u01A1i");
+    const want = params.get("continue"), wanted = want ? saves.find((m) => m.id === (want === "1" ? AUTO_SAVE : want)) : void 0;
+    if (wanted && wanted.seed === seed) {
+      if (await session.resume(wanted.id)) toast("\u0110\xE3 t\u1EA3i l\u1EA1i v\xE1n ch\u01A1i");
       else toast("Kh\xF4ng \u0111\u1ECDc \u0111\u01B0\u1EE3c b\u1EA3n l\u01B0u");
       begin2();
-    };
-    if (params.get("continue") === "1" && latest.seed === seed) {
-      await resume();
       return;
     }
     sim.speed = 0;
     syncButtons();
-    const when = new Date(latest.savedAt).toLocaleString("vi");
-    const fresh = dlg.button("V\xE1n m\u1EDBi", begin2, { tone: "alt" });
-    fresh.title = "B\u1EA3n l\u01B0u c\u0169 v\u1EABn c\xF2n cho t\u1EDBi khi v\xE1n m\u1EDBi t\u1EF1 l\u01B0u l\u1EA7n \u0111\u1EA7u (\u0111\u1EA7u ng\xE0y h\xF4m sau)";
-    startDialog.show(dlg.card(
-      { label: "L\xE0ng \u0110\u1ED3 \u0110\xE1" },
-      dlg.head({ pic: "\u{1F525}", title: "L\xE0ng \u0110\u1ED3 \u0110\xE1", sub: `C\xF3 v\xE1n \u0111ang ch\u01A1i d\u1EDF: ng\xE0y ${latest.day}, ${latest.population} d\xE2n (l\u01B0u l\xFAc ${when}).` }),
-      dlg.buttons(dlg.button("Ti\u1EBFp t\u1EE5c", () => {
-        void resume();
-      }), fresh)
-    ));
+    const latest = saves[0], when = new Date(latest.savedAt).toLocaleString("vi");
+    const goOn = async (m) => {
+      const r = await session.open(m);
+      if (r === "loaded") {
+        toast("\u0110\xE3 t\u1EA3i l\u1EA1i v\xE1n ch\u01A1i");
+        begin2();
+      } else if (r === "failed") toast("Kh\xF4ng \u0111\u1ECDc \u0111\u01B0\u1EE3c b\u1EA3n l\u01B0u");
+    };
+    const ask = () => {
+      const fresh = dlg.button("V\xE1n m\u1EDBi", begin2, { tone: "alt" });
+      fresh.title = "C\xE1c b\u1EA3n l\u01B0u v\u1EABn c\xF2n: t\u1EA3i l\u1EA1i l\xFAc n\xE0o c\u0169ng \u0111\u01B0\u1EE3c trong C\xE0i \u0111\u1EB7t";
+      const more = dlg.button(`Ch\u1ECDn b\u1EA3n l\u01B0u kh\xE1c (${saves.length})`, () => pick3(), { tone: "alt" });
+      startDialog.show(dlg.card(
+        { label: "L\xE0ng \u0110\u1ED3 \u0110\xE1" },
+        dlg.head({ pic: "\u{1F525}", title: "L\xE0ng \u0110\u1ED3 \u0110\xE1", sub: `C\xF3 v\xE1n \u0111ang ch\u01A1i d\u1EDF: ${saveTitle(latest)}, ${latest.population} d\xE2n (l\u01B0u l\xFAc ${when}).` }),
+        dlg.buttons(dlg.button("Ti\u1EBFp t\u1EE5c", () => {
+          void goOn(latest);
+        }), ...saves.length > 1 ? [more] : [], fresh)
+      ));
+    };
+    const pick3 = () => {
+      const tiles = () => dlg.list(...saves.map((m) => saveTile(m, { current: false, locked: null, onLoad: () => {
+        void goOn(m);
+      }, onDelete: () => {
+        void session.remove(m.id).then(() => {
+          saves.splice(saves.indexOf(m), 1);
+          if (!saves.length) begin2();
+          else pick3();
+        });
+      } })));
+      startDialog.show(dlg.card({ label: "Ch\u1ECDn b\u1EA3n l\u01B0u", wide: true }, dlg.head({ pic: "\u{1F4BE}", title: "Ch\u1ECDn b\u1EA3n l\u01B0u", sub: `${saves.length} b\u1EA3n l\u01B0u tr\xEAn m\xE1y n\xE0y` }), tiles(), dlg.buttons(dlg.button("Quay l\u1EA1i", () => ask(), { tone: "alt" }))));
+    };
+    ask();
   })();
 })();
 /*! Bundled license information:

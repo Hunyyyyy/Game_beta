@@ -99,6 +99,10 @@ export interface Building {
   hp: number;
   /** A gate lets everyone through while it is open, and stops everyone while it is shut. */
   open: boolean;
+  /** A gate laid along a column: 1 turns its footprint a quarter (the gate is 2 × 1 tiles, standing, 1 × 2). Absent: lying along a row. */
+  rot?: 0 | 1;
+  /** The footprint of a building older than its kind's present size (the gates of old saves are one tile): when set it is the size, whatever the kind says. */
+  w?: number; h?: number;
   /** Percent of extra strength the research of defence gives this work (fence, gate, trap, tower); worked out again every second. */
   hpBonus?: number;
   /** Villagers working inside (research and crafting houses). */
@@ -107,6 +111,15 @@ export interface Building {
   active: { id: string; progress: number; /** What the order cost, as a multiple of its base cost (a craft: the price of the Nhà chế tạo when it was ordered). */ paid?: number } | null;
   workers: number;
 }
+
+/** The tiles a house covers: its kind's size, turned a quarter when it is laid along a column; a size of its own (old gates) beats both. */
+export const footOf = (b: Pick<Building, 'kind' | 'rot' | 'w' | 'h'>): { w: number; h: number } => {
+  if (b.w !== undefined && b.h !== undefined) return { w: b.w, h: b.h };
+  const d = BUILDINGS[b.kind];
+  return b.rot === 1 ? { w: d.h, h: d.w } : { w: d.w, h: d.h };
+};
+/** The footprint a new house of `kind` would have, turned or not. */
+export const footDim = (kind: BuildingKind, rot: number = 0): { w: number; h: number } => { const d = BUILDINGS[kind]; return rot === 1 ? { w: d.h, h: d.w } : { w: d.w, h: d.h }; };
 
 /** How far a finished house sees, in tiles (the `sight` of its level in building.json): it clears the fog round itself and the circle is the land of the village. */
 export function buildingSight(b: Pick<Building, 'kind' | 'level' | 'done'> & { era?: Era }): number {

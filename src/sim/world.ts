@@ -203,6 +203,10 @@ export class World {
   at(x: number, y: number): TileId {
     return this.tiles[y * this.size + x] as TileId;
   }
+  /** Game seconds the land has existed (advanced by `tick`): the clock of the memory of searches. Not saved. */
+  age = 0;
+  /** The answers of searches for a way that did not reach their goal, kept for a moment (path.ts). Not saved. */
+  readonly pathFails = new Map<string, { until: number; path: ReadonlyArray<readonly [number, number]> }>();
   /** The tiles of the gates that are shut: they stop the enemy and the beasts, but our own people pass through them. */
   readonly gates = new Set<number>();
   /** Blocked for someone of ours (a villager, a soldier): the same as isBlocked, but a shut gate lets him by. */
@@ -281,6 +285,7 @@ export class World {
   private grown = 0;
   /** Bushes fruit again; the map holds well over a hundred thousand things, so this runs once a second rather than every tick. */
   tick(dt: number): void {
+    this.age += dt;
     this.grown += dt;
     if (this.grown < 1) return;
     dt = this.grown; this.grown = 0;

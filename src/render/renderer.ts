@@ -1,4 +1,4 @@
-import { Building, BuildingKind, BUILDINGS, canGrow, CLEARANCE as CLEAR, Era, buildingSight, maxHp, needsWork, WALL_KINDS } from '../sim/buildings';
+import { Building, BuildingKind, BUILDINGS, canGrow, CLEARANCE as CLEAR, Era, buildingSight, maxHp, needsWork, WALL_KINDS, footOf } from '../sim/buildings';
 import type { WeatherKind } from '../sim/calendar';
 import { gameDays, TILE } from '../sim/constants';
 import type { Sim, Villager } from '../sim/sim';
@@ -7,7 +7,7 @@ import type { Tribe } from '../sim/tribes';
 import { maxPropHp } from '../sim/tribebuild';
 import { hash2 } from '../sim/rng';
 import { Tile } from '../sim/world';
-import { MOUNTS } from '../sim/jobs';
+import { isHorse, MOUNTS } from '../sim/jobs';
 import { Prop, Sprites, SPRITE_FEET } from './sprites';
 import { FxLayer } from './fxlayer';
 import type { GameAudio } from '../audio/audio';
@@ -19,7 +19,7 @@ export interface Camera { x: number; y: number; zoom: number }
 export interface Box { x0: number; y0: number; x1: number; y1: number }
 export interface Marker { x: number; y: number; age: number }
 
-export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number; /** A group of fence pieces carried together: where each goes, and the ids they leave. */ group?: Array<{ id: number; kind: BuildingKind; x: number; y: number; level: number }>; movingIds?: number[] }
+export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number; /** A group of fence pieces carried together: where each goes, and the ids they leave. */ group?: Array<{ id: number; kind: BuildingKind; x: number; y: number; level: number; w?: number; h?: number; rot?: number }>; movingIds?: number[]; /** The tiles a gate being put down covers, and whether it stands along a column. */ w?: number; h?: number; rot?: number }
 
 interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp' | 'ftent'; ft?: { x: number; y: number; built: boolean }; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe; p?: Tribe['props'][number] }
 
@@ -43,6 +43,8 @@ const WEATHER_FX: Record<WeatherKind, { rain: number; snow: number; dim: number;
 export class Renderer {
   readonly ctx: CanvasRenderingContext2D;
   w = 0; h = 0; dpr = 1;
+  /** The most canvas pixels per CSS pixel (the quality setting): a screen sharper than this is drawn smaller and stretched, which is much less to draw. */
+  dprCap = 3;
   private readonly fogCanvas: HTMLCanvasElement;
   private torchLight: HTMLCanvasElement | null = null;
   /** Sparks, dust and flames made by code (pixelfx); it only watches the Sim. */
@@ -67,11 +69,15 @@ export class Renderer {
   }
 
   resize(): void {
-    this.dpr = Math.max(1, Math.round(window.devicePixelRatio || 1));
+    const own = window.devicePixelRatio || 1;
+    this.dpr = Math.max(1, Math.min(this.dprCap, own));
     this.w = this.canvas.clientWidth; this.h = this.canvas.clientHeight;
-    this.canvas.width = Math.max(1, this.w * this.dpr);
-    this.canvas.height = Math.max(1, this.h * this.dpr);
+    this.canvas.width = Math.max(1, Math.round(this.w * this.dpr));
+    this.canvas.height = Math.max(1, Math.round(this.h * this.dpr));
+    this.canvas.style.imageRendering = this.dpr < own - 0.01 ? 'auto' : 'pixelated'; // stretched: smooth, so that the pixels do not come out uneven; at the screen's own size: crisp
   }
+  /** Draw with at most `cap` canvas pixels per CSS pixel from now on. */
+  setDprCap(cap: number): void { if (cap !== this.dprCap) { this.dprCap = cap; this.resize(); } }
 
   screenToWorld(sx: number, sy: number): { x: number; y: number } {
     return { x: sx / this.cam.zoom + this.cam.x, y: sy / this.cam.zoom + this.cam.y };
@@ -234,7 +240,7 @@ export class Renderer {
   private wallStub(p: Tribe['props'][number]): Building {
     let b = this.wallStubs.get(p);
     if (!b) {
-      b = { id: -1, kind: p.kind as BuildingKind, era: 'stone', x: p.x, y: p.y, level: p.lv ?? 1, progress: 1, done: true, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 } as Building;
+      b = { id: -1, kind: p.kind as BuildingKind, era: 'stone', x: p.x, y: p.y, w: p.w, h: p.h, level: p.lv ?? 1, progress: 1, done: true, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 } as Building;
       Object.defineProperty(b, 'open', { get: () => p.open !== false }); // the gate shuts and opens by itself
       this.wallStubs.set(p, b);
     }
@@ -244,13 +250,14 @@ export class Renderer {
     const have = this.wallMaps.get(t);
     if (have && have.props === t.props && have.n === t.props.length) return have.map;
     const N = this.sim.world.size, map = new Map<number, Building>();
-    for (const p of t.props) if (p.kind === 'fence' || p.kind === 'gate') map.set(p.y * N + p.x, this.wallStub(p));
+    for (const p of t.props) if (p.kind === 'fence' || p.kind === 'gate') { const b = this.wallStub(p); for (let j = 0; j < Math.max(1, p.h); j++) for (let i = 0; i < Math.max(1, p.w); i++) map.set((p.y + j) * N + p.x + i, b); }
     this.wallMaps.set(t, { props: t.props, n: t.props.length, map });
     return map;
   }
 
-  private buildingAnchor(kind: BuildingKind, x: number, y: number): [number, number] {
-    const d = BUILDINGS[kind];
+  private anchorOf(b: Building): [number, number] { return this.buildingAnchor(b.kind, b.x, b.y, footOf(b)); }
+  private buildingAnchor(kind: BuildingKind, x: number, y: number, fp?: { w: number; h: number }): [number, number] {
+    const d = fp ?? BUILDINGS[kind];
     return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
   }
 
@@ -271,63 +278,111 @@ export class Renderer {
     ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = Math.max(1, z * 0.8); ctx.stroke();
   }
 
-  /** A fence piece in a column (a neighbour above or below, none beside) shows as a line of pickets running down the screen, three to a tile, tied together by two rails: the tile picture shows a row seen from the front. Returns false when the piece is not part of a column. */
-  private drawColumnFence(b: Building, wallAt: Map<number, Building>): boolean {
-    const N = this.sim.world.size, at = (dx: number, dy: number) => wallAt.get((b.y + dy) * N + b.x + dx);
-    // a fence piece at a corner or a T (a neighbour on both axes) is drawn here too
-    if (!(at(0, -1) || at(0, 1))) return false;
-    const { ctx } = this, z = this.cam.zoom, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay), two = b.level >= 2;
-    const rails = two ? [19, 9] : [16, 8], step = 11 * z, th = (two ? 2.4 : 1.8) * z;
-    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 9 * z, 14 * z, 0, 0, Math.PI * 2); ctx.fill();
+  /** Is a gate laid along a column? A gate of two tiles says so by its shape; one of a single tile (an old save, a village's) by the fence beside it: above or below it and none beside. */
+  private gateCol(b: Building, wallAt: Map<number, Building>): boolean {
+    const f = footOf(b);
+    if (f.w !== f.h) return f.h > f.w;
+    const N = this.sim.world.size, at = (dx: number, dy: number) => wallAt.has((b.y + dy) * N + b.x + dx);
+    return (at(0, -1) || at(0, 1)) && !(at(-1, 0) || at(1, 0));
+  }
+
+  /** How far (px, at zoom 1) from the middle of a wall piece a rail coming along the screen direction (ux, uy) stops: at the post of a fence piece, at the outer post of a gate. */
+  private wallReach(o: Building, ux: number, uy: number, wallAt: Map<number, Building>): number {
+    if (o.kind !== 'gate') return 4;
+    const f = footOf(o), along = this.gateCol(o, wallAt) ? Math.abs(uy) : Math.abs(ux);
+    return along > 0.7 ? Math.max(f.w, f.h) * 16 : 4;
+  }
+
+  /** The point on the ground at the middle of a wall piece, as the rails see it. */
+  private groundOf(b: Building): [number, number] { const f = footOf(b); return [(b.x + f.w / 2) * TILE, (b.y + f.h / 2) * TILE + 10]; }
+
+  /** One picket: outlined, lit on the left, shaded on the right, with a pointed head. Its foot stands at (x, y). */
+  private picket(x: number, y: number, w: number, hgt: number, two: boolean): void {
+    const z = this.cam.zoom, px = Math.round(x - w / 2), top = Math.round(y - hgt);
+    this.block(px, top, w, hgt, two ? '#7a5430' : '#8a6238', two ? '#9a6c3c' : '#aa7c48', two ? '#4f3620' : '#5e4026');
+    this.shape([[px - 0.5, top], [x, top - 4 * z], [px + w + 0.5, top]], two ? '#9a6c3c' : '#aa7c48');
+  }
+
+  /** The wall pieces touching a piece: beside it, above it and below it, and (a single fence piece only) at its corners. */
+  private wallNeighbours(b: Building, wallAt: Map<number, Building>): Building[] {
+    const N = this.sim.world.size, f = footOf(b), out = new Set<Building>(), single = b.kind !== 'gate' && f.w * f.h === 1;
+    for (let j = -1; j <= f.h; j++) for (let i = -1; i <= f.w; i++) {
+      if (i >= 0 && i < f.w && j >= 0 && j < f.h) continue;
+      const corner = (i < 0 || i >= f.w) && (j < 0 || j >= f.h);
+      if (corner && !single) continue;
+      const o = wallAt.get((b.y + j) * N + b.x + i);
+      if (o && o !== b && !(corner && o.kind === 'gate')) out.add(o); // a gate is joined square on, never across a corner
+    }
+    return [...out];
+  }
+
+  /** The rails (and a middle picket) from a wall piece to the pieces touching it: each link is drawn once, by the piece below or to the right of the other. A piece with no neighbour gets a short stub of rail either side. */
+  private drawWallLinks(b: Building, wallAt: Map<number, Building>, two: boolean, prog = 1): void {
+    const { ctx } = this, z = this.cam.zoom, [gx, gy] = this.groundOf(b), p = this.worldToScreen(gx, gy);
+    const rails = two ? [19, 9] : [16, 8], th = (two ? 2.4 : 1.8) * z, tie = two ? '#8a6238' : '#d8c690', tieL = two ? '#aa7c48' : '#f0e2b0';
     const rail = (x0: number, y0: number, x1: number, y1: number, h: number) => {
       ctx.lineCap = 'butt';
       ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = th + 2; ctx.beginPath(); ctx.moveTo(x0, y0 - h * z); ctx.lineTo(x1, y1 - h * z); ctx.stroke();
-      ctx.strokeStyle = two ? '#8a6238' : '#d8c690'; ctx.lineWidth = th; ctx.beginPath(); ctx.moveTo(x0, y0 - h * z); ctx.lineTo(x1, y1 - h * z); ctx.stroke();
-      ctx.strokeStyle = two ? '#aa7c48' : '#f0e2b0'; ctx.lineWidth = Math.max(1, th * 0.35); ctx.beginPath(); ctx.moveTo(x0, y0 - h * z - th * 0.25); ctx.lineTo(x1, y1 - h * z - th * 0.25); ctx.stroke();
+      ctx.strokeStyle = tie; ctx.lineWidth = th; ctx.beginPath(); ctx.moveTo(x0, y0 - h * z); ctx.lineTo(x1, y1 - h * z); ctx.stroke();
+      ctx.strokeStyle = tieL; ctx.lineWidth = Math.max(1, th * 0.35); ctx.beginPath(); ctx.moveTo(x0, y0 - h * z - th * 0.25); ctx.lineTo(x1, y1 - h * z - th * 0.25); ctx.stroke();
     };
-    // rails: through this piece's pickets, to the piece below, and to a piece beside it (a corner)
-    for (const h of rails) {
-      rail(p.x, p.y - step, p.x, p.y + step, h);
-      if (at(0, 1)) { const q = this.worldToScreen(ax, ay + TILE); rail(p.x, p.y + step, q.x, q.y - step, h); }
-      for (const dx of [-1, 1]) if (at(dx, 0)) { const q = this.worldToScreen(ax + dx * TILE, ay); rail(p.x, p.y, q.x, q.y, h); }
+    const near = this.wallNeighbours(b, wallAt);
+    for (const o of near) {
+      if (!(o.y < b.y || (o.y === b.y && o.x < b.x))) continue; // the other piece draws this link
+      const [ox, oy] = this.groundOf(o), q = this.worldToScreen(ox, oy), len = Math.hypot(q.x - p.x, q.y - p.y);
+      if (len < 1) continue;
+      const ux = (q.x - p.x) / len, uy = (q.y - p.y) / len;
+      const r0 = this.wallReach(b, ux, uy, wallAt) * z, r1 = this.wallReach(o, -ux, -uy, wallAt) * z;
+      if (len - r0 - r1 <= 1) continue;
+      const x0 = p.x + ux * r0, y0 = p.y + uy * r0, x1 = q.x - ux * r1, y1 = q.y - uy * r1;
+      const lp = Math.min(prog, o.done ? 1 : o.progress); // a span under construction: the low rail first, then the high one and the middle picket
+      for (const h of lp >= 0.75 ? rails : lp >= 0.5 ? [rails[1]] : []) rail(x0, y0, x1, y1, h);
+      const lowerTwo = o.level >= 2 && b.level >= 2;
+      if (lp >= 0.75 && len - r0 - r1 > 14 * z) this.picket((x0 + x1) / 2, (y0 + y1) / 2, 5 * z, (lowerTwo ? 22 : 19) * z, lowerTwo); // the middle picket of the span
     }
-    // the pickets: pointed, outlined, lit on the left and shaded on the right, the middle one standing a little taller
-    const w = (two ? 8 : 7) * z;
-    for (const k of [-1, 0, 1]) {
-      const y = p.y + k * step, hgt = ((two ? 27 : 23) + (k === 0 ? 3 : 0)) * z, x = Math.round(p.x - w / 2), top = Math.round(y - hgt);
-      for (const h of rails) this.block(x + w - 1, y - h * z, 6 * z, th, two ? '#8a6238' : '#d8c690', two ? '#aa7c48' : '#f0e2b0'); // the end of each rail, seen from the side
-      this.block(x, top, w, hgt, '#8a6238', '#aa7c48', '#5e4026');
-      this.shape([[x - 0.5, top], [p.x, top - 4 * z], [x + w + 0.5, top]], '#aa7c48');
-    }
-    return true;
+    if (!near.length && b.kind !== 'gate' && prog >= 0.75) for (const s of [-1, 1]) for (const h of rails) rail(p.x, p.y, p.x + s * 10 * z, p.y, h); // a lone piece
   }
 
-  /** A gate stands taller and wider than the fence on either side (posts 26 px out from its middle, a beam across them), and shows plainly whether it is shut: shut, it has a red pennant and the leaves are closed and barred, the ground between the posts barred in red; open, a green pennant, the leaves stand swung out and a path is laid between the posts. It runs along the column when fence lies above or below it and none beside it. */
-  private drawGate(b: Building, wallAt: Map<number, Building>): void {
+  /** A fence piece: rails to its neighbours (straight or across a corner, so a diagonal row is joined too), and its post. */
+  /** `prog` below 1 is a piece being built: a stake that grows into the post, then the low rail, then the high rail and the pickets. */
+  private drawFence(b: Building, wallAt: Map<number, Building>, prog = 1): void {
+    const { ctx } = this, z = this.cam.zoom, [ax, ay] = this.anchorOf(b), p = this.worldToScreen(ax, ay), two = b.level >= 2;
+    const full = two ? 30 : 27, hgt = full * Math.min(1, 0.2 + prog * 1.6);
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 8 * z, 3.5 * z, 0, 0, Math.PI * 2); ctx.fill();
+    this.drawWallLinks(b, wallAt, two, prog);
+    this.picket(p.x, p.y, (two ? 8 : 7) * z, hgt * z, two); // the post, taller than the pickets between
+    ctx.fillStyle = two ? '#9a6c3c' : '#c79a5e'; ctx.fillRect(Math.round(p.x - (two ? 4 : 3.5) * z), Math.round(p.y - hgt * z), Math.max(1, Math.round(z)), Math.round(hgt * z)); // lit edge
+    if (prog < 1) { ctx.fillStyle = 'rgba(120,90,50,.55)'; ctx.beginPath(); ctx.ellipse(p.x, p.y + 1 * z, 10 * z, 4 * z, 0, 0, Math.PI * 2); ctx.fill(); } // trodden earth round a piece being built
+  }
+
+  /** A gate fills its one tile (posts 13 px out from its middle, a beam across them) and stands taller than the fence on either side, and shows plainly whether it is shut: shut, it has a red pennant and the leaves are closed and barred, the ground between the posts barred in red; open, a green pennant, the leaves stand swung out and a path is laid between the posts. It runs along the column when fence lies above or below it and none beside it. */
+  private drawGate(b: Building, wallAt: Map<number, Building>, prog = 1): void {
     const { ctx } = this, z = this.cam.zoom, N = this.sim.world.size, at = (dx: number, dy: number) => wallAt.has((b.y + dy) * N + b.x + dx);
-    const col = (at(0, -1) || at(0, 1)) && !(at(-1, 0) || at(1, 0)), two = b.level >= 2, open = b.open;
-    const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 6);
+    const col = this.gateCol(b, wallAt), two = b.level >= 2, open = b.open;
+    this.drawWallLinks(b, wallAt, two, prog); // the rails of the fence on either side run up to its posts
+    const f = footOf(b), L = Math.max(f.w, f.h), p = this.worldToScreen((b.x + f.w / 2) * TILE, (b.y + f.h / 2) * TILE + 4);
     const sign = open ? '#4fbf5a' : '#d9473f', signDark = open ? '#2a7a33' : '#8f2620';
     // u runs along the gate, v across it (towards the viewer), h up from the ground
     const X = (u: number, v = 0) => (col ? p.x + v * z : p.x + u * z), Y = (u: number, h: number, v = 0) => (col ? p.y + u * z : p.y + v * z) - h * z;
-    const U = 26, top = two ? 52 : 46, pw = two ? 10 : 8;
+    const U = L * 16 - 3, top = (two ? 46 : 40) * Math.min(1, 0.2 + prog * 1.6), pw = two ? 8 : 6; // being built: the posts rise first, then the leaves, then the beam and the banner
+    const leaves = prog >= 0.6;
     const wood = '#8a6238', woodL = '#aa7c48', woodD = '#5e4026', stone = '#8e9498', stoneL = '#b9bfc2', stoneD = '#60676b', iron = '#454a52';
     // the ground between the posts: a green path when open, barred in red when shut
     ctx.fillStyle = open ? 'rgba(90,200,90,.30)' : 'rgba(217,71,63,.26)';
-    if (col) ctx.fillRect(Math.round(p.x - 9 * z), Math.round(p.y - U * z), Math.round(18 * z), Math.round(2 * U * z));
-    else ctx.fillRect(Math.round(p.x - U * z), Math.round(p.y - 9 * z), Math.round(2 * U * z), Math.round(18 * z));
-    const shadow = (u: number) => { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(X(u), Y(u, 0), 9 * z, 3.5 * z, 0, 0, Math.PI * 2); ctx.fill(); };
+    if (col) ctx.fillRect(Math.round(p.x - 7 * z), Math.round(p.y - U * z), Math.round(14 * z), Math.round(2 * U * z));
+    else ctx.fillRect(Math.round(p.x - U * z), Math.round(p.y - 7 * z), Math.round(2 * U * z), Math.round(14 * z));
+    const shadow = (u: number) => { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(X(u), Y(u, 0), 6 * z, 3 * z, 0, 0, Math.PI * 2); ctx.fill(); };
     const post = (u: number) => {
       shadow(u);
       const x = X(u) - pw * z / 2, y = Y(u, top);
       if (two) { // stone posts, laid in courses, with a cap
         this.block(x, y, pw * z, top * z, stone, stoneL, stoneD);
-        ctx.fillStyle = stoneD; for (const h of [8, 16, 24, 32, 40]) ctx.fillRect(Math.round(x), Math.round(Y(u, h)), Math.round(pw * z), Math.max(1, Math.round(z * 0.8)));
-        this.block(x - 2 * z, y - 4 * z, (pw + 4) * z, 4 * z, stoneL, '#d3d8da', stone);
+        ctx.fillStyle = stoneD; for (const h of [8, 16, 24, 32]) ctx.fillRect(Math.round(x), Math.round(Y(u, h)), Math.round(pw * z), Math.max(1, Math.round(z * 0.8)));
+        this.block(x - 1.5 * z, y - 3 * z, (pw + 3) * z, 3 * z, stoneL, '#d3d8da', stone);
       } else {
         this.block(x, y, pw * z, top * z, woodD, wood, '#3e2916');
         ctx.fillStyle = woodL; ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(z * 1.5)), Math.round(top * z));
-        this.shape([[x - 0.5, y], [X(u), y - 5 * z], [x + pw * z + 0.5, y]], woodL);
+        this.shape([[x - 0.5, y], [X(u), y - 4 * z], [x + pw * z + 0.5, y]], woodL);
       }
       // iron bands where the leaves hang
       ctx.fillStyle = iron; for (const h of [10, top - 14]) ctx.fillRect(Math.round(x), Math.round(Y(u, h)), Math.round(pw * z), Math.max(2, Math.round(2 * z)));
@@ -343,10 +398,10 @@ export class Renderer {
       ctx.strokeStyle = woodD; ctx.lineWidth = Math.max(2, 2.4 * z); ctx.beginPath(); ctx.moveTo(x0, yD); ctx.lineTo(x1, yB); ctx.stroke();
     };
     post(-U);
-    if (open) {
+    if (!leaves) { /* only the posts stand yet */ } else if (open) {
       // each leaf swung out to the front from its post
       for (const s of [-1, 1]) {
-        const h0 = 4, h1 = top - 10, hinge = s * (U - 4), freeU = s * (U - 14), v = 14;
+        const h0 = 4, h1 = top - 10, leaf = U - 3, hinge = s * (U - 3), freeU = s * (U - 3 - leaf * 0.5), v = leaf * 0.86;
         const x0 = X(hinge), x1 = X(freeU, v);
         this.shape([[x0, Y(hinge, h1)], [x1, Y(freeU, h1, v)], [x1, Y(freeU, h0, v)], [x0, Y(hinge, h0)]], wood);
         ctx.strokeStyle = iron; ctx.lineWidth = Math.max(2, 2 * z);
@@ -355,41 +410,25 @@ export class Renderer {
       }
     } else {
       const t = col ? 3 * z : 0;
-      planks(-U + 4, -1, 4, top - 10, t); planks(1, U - 4, 4, top - 10, t);
+      planks(-U + 3, -1, 4, top - 10, t); planks(1, U - 3, 4, top - 10, t);
       ctx.fillStyle = iron; ctx.beginPath(); ctx.arc(X(-3), Y(-3, top / 2 - 3), 1.6 * z, 0, Math.PI * 2); ctx.arc(X(3), Y(3, top / 2 - 3), 1.6 * z, 0, Math.PI * 2); ctx.fill();
     }
     post(U);
+    if (prog < 0.85) return;
     // the beam across the posts, carved at its ends, with a banner hung from the middle and a pennant on a pole above it
-    const bx0 = X(-U - 7), bx1 = X(U + 7), by0 = Y(-U - 7, top), by1 = Y(U + 7, top);
+    const bx0 = X(-U - 4), bx1 = X(U + 4), by0 = Y(-U - 4, top), by1 = Y(U + 4, top);
     this.shape([[bx0, by0 - 4 * z], [bx1, by1 - 4 * z], [bx1, by1 + 3 * z], [bx0, by0 + 3 * z]], two ? stoneD : woodD);
     ctx.strokeStyle = two ? stoneL : woodL; ctx.lineWidth = Math.max(1, 1.4 * z); ctx.beginPath(); ctx.moveTo(bx0, by0 - 3.2 * z); ctx.lineTo(bx1, by1 - 3.2 * z); ctx.stroke();
     const cx = X(0), cy = Y(0, top);
     ctx.fillStyle = '#2b1d10'; ctx.fillRect(Math.round(cx - 1 * z), Math.round(cy - 18 * z), Math.max(2, Math.round(2 * z)), Math.round(15 * z));
-    this.shape([[cx + 1 * z, cy - 18 * z], [cx + 10 * z, cy - 15 * z], [cx + 1 * z, cy - 11 * z]], sign);
+    this.shape([[cx + 1 * z, cy - 18 * z], [cx + 8 * z, cy - 15.5 * z], [cx + 1 * z, cy - 12 * z]], sign);
     // a hanging banner below the beam: the colour of the state, with a white mark
-    this.shape([[cx - 6 * z, cy + 3 * z], [cx + 6 * z, cy + 3 * z], [cx + 6 * z, cy + 14 * z], [cx, cy + 18 * z], [cx - 6 * z, cy + 14 * z]], sign);
-    ctx.fillStyle = signDark; ctx.fillRect(Math.round(cx - 6 * z), Math.round(cy + 12 * z), Math.round(12 * z), Math.round(2 * z));
+    this.shape([[cx - 4 * z, cy + 3 * z], [cx + 4 * z, cy + 3 * z], [cx + 4 * z, cy + 12 * z], [cx, cy + 15 * z], [cx - 4 * z, cy + 12 * z]], sign);
+    ctx.fillStyle = signDark; ctx.fillRect(Math.round(cx - 4 * z), Math.round(cy + 10 * z), Math.round(8 * z), Math.round(2 * z));
     ctx.strokeStyle = '#fff6e8'; ctx.lineWidth = Math.max(1.5, 1.8 * z); ctx.lineCap = 'round'; ctx.beginPath();
-    if (open) { ctx.moveTo(cx, cy + 12 * z); ctx.lineTo(cx, cy + 6 * z); ctx.moveTo(cx - 2.5 * z, cy + 8.5 * z); ctx.lineTo(cx, cy + 5.5 * z); ctx.lineTo(cx + 2.5 * z, cy + 8.5 * z); }
-    else { ctx.moveTo(cx - 3.5 * z, cy + 8.5 * z); ctx.lineTo(cx + 3.5 * z, cy + 8.5 * z); }
+    if (open) { ctx.moveTo(cx, cy + 10 * z); ctx.lineTo(cx, cy + 5 * z); ctx.moveTo(cx - 2 * z, cy + 7 * z); ctx.lineTo(cx, cy + 4.5 * z); ctx.lineTo(cx + 2 * z, cy + 7 * z); }
+    else { ctx.moveTo(cx - 2.5 * z, cy + 7 * z); ctx.lineTo(cx + 2.5 * z, cy + 7 * z); }
     ctx.stroke(); ctx.lineCap = 'butt';
-  }
-
-  /** Ropes and a middle stake from a fence piece to the pieces touching it at its upper corners, drawn over the pieces already standing there. */
-  private drawDiagonalRails(b: Building, wallAt: Map<number, Building>): void {
-    const { ctx } = this, N = this.sim.world.size, z = this.cam.zoom;
-    for (const dx of [-1, 1]) {
-      const o = wallAt.get((b.y - 1) * N + b.x + dx);
-      if (!o) continue;
-      // a piece beside this one in the same row or column already joins them
-      if (wallAt.has(b.y * N + b.x + dx) || wallAt.has((b.y - 1) * N + b.x)) continue;
-      const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), [bx, by] = this.buildingAnchor(o.kind, o.x, o.y);
-      const rope = (h: number) => { const p = this.worldToScreen(ax, ay - h), q = this.worldToScreen(bx, by - h); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); };
-      ctx.strokeStyle = '#d8c690'; ctx.lineWidth = Math.max(1, z); rope(12); rope(6);
-      const m = this.worldToScreen((ax + bx) / 2, (ay + by) / 2);
-      ctx.fillStyle = '#5e4026'; ctx.fillRect(Math.round(m.x - 2 * z), Math.round(m.y - 24 * z), Math.round(4 * z), Math.round(24 * z));
-      ctx.fillStyle = '#aa7c48'; ctx.fillRect(Math.round(m.x - 2 * z), Math.round(m.y - 24 * z), Math.round(4 * z), Math.round(3 * z));
-    }
   }
 
   /** Current level's sprite; while an upgrade runs the finished building stays drawn, with a progress bar. */
@@ -517,7 +556,7 @@ export class Renderer {
     const vx0 = cx - 128, vx1 = cx + this.w / z + 128, vy0 = cy - 128, vy1 = cy + this.h / z + 128;
     const onScr = (x: number, y: number) => x * TILE >= vx0 && x * TILE <= vx1 && y * TILE >= vy0 && y * TILE <= vy1; // tiles; whoever is off the screen is not drawn at all
     for (const b of sim.buildings) {
-      const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
+      const [ax, ay] = this.anchorOf(b);
       if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
       list.push({ y: ay, kind: 'building', i: 0, j: 0, b });
     }
@@ -536,9 +575,9 @@ export class Renderer {
     }
     for (const pl of sim.plans) if (pl.status === 'running') for (const t of pl.tents) if (onScr(t.x, t.y)) list.push({ y: (t.y + 1) * TILE, kind: 'ftent', i: 0, j: 0, ft: t }); // the tents of a war
     list.sort((a, b) => a.y - b.y);
-    // fences laid corner to corner: their ropes do not meet in the tile sprites, so a rope and a stake are drawn across the diagonal
+    // every wall piece joins the pieces beside it (and across a corner) with rails of its own: drawn from this map, not from tile sprites
     const wallAt = new Map<number, Building>();
-    for (const b of sim.buildings) if (b.kind === 'fence' || b.kind === 'gate') wallAt.set(b.y * N + b.x, b);
+    for (const b of sim.buildings) if (b.kind === 'fence' || b.kind === 'gate') { const f = footOf(b); for (let j = 0; j < f.h; j++) for (let i = 0; i < f.w; i++) wallAt.set((b.y + j) * N + b.x + i, b); }
     for (const d of list) {
       if (d.kind === 'tree') {
         const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
@@ -553,10 +592,10 @@ export class Renderer {
         const n = world.nodeAt(d.i, d.j), k = Math.floor(hash2(d.i, d.j, 23) * nat.bush.length);
         this.prop((n && n.amount === 0 ? nat.bushEmpty : nat.bush)[k], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'building' && d.b) {
-        const b = d.b, [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y);
-        if (b.kind === 'gate' && b.done) this.drawGate(b, wallAt);
-        else if (!(b.kind === 'fence' && b.done && this.drawColumnFence(b, wallAt))) this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id || ghost?.movingIds?.includes(b.id) ? 0.5 : 1); // the house being carried stays dim where it stands
-        if (b.kind === 'fence' || b.kind === 'gate') this.drawDiagonalRails(b, wallAt);
+        const b = d.b, [ax, ay] = this.anchorOf(b);
+        if (b.kind === 'gate') this.drawGate(b, wallAt, b.done ? 1 : b.progress);
+        else if (b.kind === 'fence') this.drawFence(b, wallAt, b.done ? 1 : b.progress);
+        else this.prop(this.buildingProp(b), ax, ay, time, ghost?.moving === b.id || ghost?.movingIds?.includes(b.id) ? 0.5 : 1); // the house being carried stays dim where it stands
         this.drawDamage(b, ax, ay, time);
         if (b.kind === 'tower' && b.done) { // whoever has been sent up the tower is seen on it
           let n = 0, shooting = false; for (const v of sim.villagers) if (v.post === b.id && v.job === 'fight') { n++; if (v.swing) shooting = true; }
@@ -609,8 +648,7 @@ export class Renderer {
         if (p.kind === 'gate' || p.kind === 'fence') {
           const b = this.wallStub(p), walls = this.wallsOf(t);
           if (p.kind === 'gate') this.drawGate(b, walls);
-          else if (!this.drawColumnFence(b, walls)) this.prop(sp.building('fence', 'stone', p.lv ?? 1, 4), ax, ay, time, alpha);
-          this.drawDiagonalRails(b, walls);
+          else this.drawFence(b, walls);
         } else this.prop(sp.building(kind, 'stone', p.kind === 'fire' ? 1 : p.lv ?? 1, 4), ax, ay, time, alpha);
         // a work of a village that has been hurt shows it as ours do: a bar, smoke, flames
         if (p.hp > 0) this.drawWear(kind, p.hp / Math.max(1, maxPropHp(t, p)), p.x * 31 + p.y, ax, ay, time, p.lv ?? 1, sp.building(kind, 'stone', p.kind === 'fire' ? 1 : p.lv ?? 1, 4).ay);
@@ -650,7 +688,7 @@ export class Renderer {
         afterRider?.();
         const v = d.v;
         if (v.phase === 'work') this.fxl.watchWorker(v, fx, fy - lift, time);
-        if (this.audio?.sfxOn && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time);
+        if (this.audio?.sfxOn && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time, isHorse(rode) && /walk|run|charge/.test(v.anim) ? (v.anim.includes('charge') ? 'horse_charge' : v.anim.includes('walk') ? 'horse_walk' : 'horse_gallop') : isHorse(rode) && /idle|guard/.test(v.anim) ? 'horse_idle' : v.anim); // on a horse: hooves, not boots; standing, now and then a neigh
         // a small badge tells soldiers (red) and hunters (amber) from civilians
         if (v.team === 'player' && (v.job === 'fight' || v.job === 'hunt') && v.phase !== 'flee' && v.phase !== 'sleep' && v.phase !== 'down') {
           const p = this.worldToScreen(fx, fy - lift - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));
@@ -675,7 +713,7 @@ export class Renderer {
       ctx.globalCompositeOperation = 'lighter';
       for (const b of sim.buildings) {
         if (b.kind !== 'campfire') continue;
-        const [ax, ay] = this.buildingAnchor(b.kind, b.x, b.y), p = this.worldToScreen(ax, ay - 14), rad = 120 * z;
+        const [ax, ay] = this.anchorOf(b), p = this.worldToScreen(ax, ay - 14), rad = 120 * z;
         const g = ctx.createRadialGradient(p.x, p.y, 4 * z, p.x, p.y, rad);
         g.addColorStop(0, `rgba(255,170,70,${(0.5 * dark).toFixed(3)})`); g.addColorStop(1, 'rgba(255,170,70,0)');
         ctx.fillStyle = g; ctx.fillRect(p.x - rad, p.y - rad, rad * 2, rad * 2);
@@ -739,14 +777,22 @@ export class Renderer {
     if (ghost?.group) {
       // pieces of fence carried together: each shows where it will stand, green when all fit, red when they do not
       this.drawTerritory(sim.buildings.filter((o) => !ghost.movingIds?.includes(o.id)));
+      const Ng = sim.world.size, planned = new Map<number, Building>(), stubs = new Map<number, Building>();
+      for (const o of sim.buildings) if ((o.kind === 'fence' || o.kind === 'gate') && !ghost.movingIds?.includes(o.id)) { const f = footOf(o); for (let j = 0; j < f.h; j++) for (let i = 0; i < f.w; i++) planned.set((o.y + j) * Ng + o.x + i, o); }
+      for (const q of ghost.group) { // the walls as they will stand, joined to each other and to the walls left where they are
+        const stub = { id: -2 - q.id, kind: q.kind, era: sim.era, x: q.x, y: q.y, w: q.w ?? 1, h: q.h ?? 1, rot: q.rot === 1 ? 1 : 0, level: q.level, progress: 1, done: true, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 } as Building;
+        stubs.set(q.id, stub); for (let j = 0; j < stub.h!; j++) for (let i = 0; i < stub.w!; i++) planned.set((q.y + j) * Ng + q.x + i, stub);
+      }
       for (const q of ghost.group) {
-        const [qx, qy] = this.buildingAnchor(q.kind, q.x, q.y);
-        this.prop(sp.building(q.kind, sim.era, q.level, 4), qx, qy, time, 0.6);
-        ctx.fillStyle = ghost.ok ? 'rgba(90,200,90,.38)' : 'rgba(220,70,60,.42)'; ctx.fillRect(px(q.x), py(q.y), ts, ts);
-        ctx.strokeStyle = ghost.ok ? '#bff0b0' : '#ffb4a8'; ctx.lineWidth = 2; ctx.strokeRect(px(q.x) + 1, py(q.y) + 1, ts - 2, ts - 2);
+        const stub = stubs.get(q.id)!, was = ctx.globalAlpha; ctx.globalAlpha = 0.65;
+        if (q.kind === 'gate') this.drawGate(stub, planned); else this.drawFence(stub, planned);
+        ctx.globalAlpha = was;
+        const qw = q.w ?? 1, qh = q.h ?? 1;
+        ctx.fillStyle = ghost.ok ? 'rgba(90,200,90,.38)' : 'rgba(220,70,60,.42)'; ctx.fillRect(px(q.x), py(q.y), qw * ts, qh * ts);
+        ctx.strokeStyle = ghost.ok ? '#bff0b0' : '#ffb4a8'; ctx.lineWidth = 2; ctx.strokeRect(px(q.x) + 1, py(q.y) + 1, qw * ts - 2, qh * ts - 2);
       }
     } else if (ghost) {
-      const d = BUILDINGS[ghost.kind], [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y);
+      const d = { w: ghost.w ?? BUILDINGS[ghost.kind].w, h: ghost.h ?? BUILDINGS[ghost.kind].h }, [ax, ay] = this.buildingAnchor(ghost.kind, ghost.x, ghost.y, d);
       // the free tile that houses keep from each other: round every standing house and round the ghost (walls keep none)
       if (!WALL_KINDS.has(ghost.kind)) {
         const zone = (x: number, y: number, w: number, h: number, c: string) => { ctx.fillStyle = c; ctx.fillRect(px(x - CLEAR), py(y - CLEAR), (w + 2 * CLEAR) * ts, (h + 2 * CLEAR) * ts); };
@@ -754,7 +800,15 @@ export class Renderer {
         ctx.strokeStyle = 'rgba(255,220,120,.9)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
         ctx.strokeRect(px(ghost.x - CLEAR), py(ghost.y - CLEAR), (d.w + 2 * CLEAR) * ts, (d.h + 2 * CLEAR) * ts); ctx.setLineDash([]);
       }
-      this.prop(sp.building(ghost.kind, ghost.era ?? sim.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
+      if (ghost.kind === 'fence' || ghost.kind === 'gate') { // a wall shows as it will stand, joined to the walls round it
+        const N = sim.world.size, walls = new Map<number, Building>();
+        for (const o of sim.buildings) if ((o.kind === 'fence' || o.kind === 'gate') && o.id !== ghost.moving) { const f = footOf(o); for (let j = 0; j < f.h; j++) for (let i = 0; i < f.w; i++) walls.set((o.y + j) * N + o.x + i, o); }
+        const stub = { id: -2, kind: ghost.kind, era: ghost.era ?? sim.era, x: ghost.x, y: ghost.y, w: d.w, h: d.h, rot: ghost.rot === 1 ? 1 : 0, level: ghost.level ?? 1, progress: 1, done: true, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 } as Building;
+        for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) walls.set((stub.y + j) * N + stub.x + i, stub);
+        const was = ctx.globalAlpha; ctx.globalAlpha = 0.65;
+        if (ghost.kind === 'gate') this.drawGate(stub, walls); else this.drawFence(stub, walls);
+        ctx.globalAlpha = was;
+      } else this.prop(sp.building(ghost.kind, ghost.era ?? sim.era, ghost.level ?? 1, 4), ax, ay, time, 0.6);
       this.drawTerritory(sim.buildings.filter((o) => o.id !== ghost.moving));
       const gs = buildingSight({ kind: ghost.kind, level: ghost.level ?? 1, done: true, era: ghost.era ?? sim.era });
       if (gs > 0) this.drawSight(ghost.x + d.w / 2, ghost.y + d.h / 2, gs); // what it will see, and hold as land of the village
@@ -791,7 +845,7 @@ export class Renderer {
     // ---- selected building ----
     const sb = selBuilding === null ? undefined : sim.getBuilding(selBuilding);
     if (sb) {
-      const d = BUILDINGS[sb.kind];
+      const d = footOf(sb);
       ctx.strokeStyle = '#f5e7c4'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
       ctx.strokeRect(px(sb.x) + 1, py(sb.y) + 1, d.w * ts - 2, d.h * ts - 2); ctx.setLineDash([]);
       if (sb.done && buildingSight(sb) > 0) this.drawSight(sb.x + d.w / 2, sb.y + d.h / 2, buildingSight(sb)); // the land it holds

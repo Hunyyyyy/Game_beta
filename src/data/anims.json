@@ -188,18 +188,18 @@
     {"bob":0,"lean":1,"legR":{"a":16,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":70,"b":20},"armL":{"a":64,"b":20},"tool":{"on":true,"a":98,"kind":"spear"}}
   ] },
   "shoot_idle": { "fps": 4, "loop": true, "frames": [
-    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-5,"b":8},"tool":{"on":true,"a":172,"kind":"bow"}},
-    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-7,"b":8},"tool":{"on":true,"a":172,"kind":"bow"}},
-    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-9,"b":8},"tool":{"on":true,"a":172,"kind":"bow"}},
-    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-7,"b":8},"tool":{"on":true,"a":172,"kind":"bow"}}
+    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":22,"b":38},"armL":{"a":-5,"b":8},"tool":{"on":true,"a":72,"kind":"bow"}},
+    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":22,"b":38},"armL":{"a":-7,"b":8},"tool":{"on":true,"a":70,"kind":"bow"}},
+    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":22,"b":38},"armL":{"a":-9,"b":8},"tool":{"on":true,"a":70,"kind":"bow"}},
+    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":22,"b":38},"armL":{"a":-7,"b":8},"tool":{"on":true,"a":72,"kind":"bow"}}
   ] },
   "shoot_walk": { "fps": 8, "loop": true, "gait": true, "frames": [
-    {"bob":0,"lean":1,"legR":{"a":34,"lift":0},"legL":{"a":-34,"lift":1},"armR":{"a":30,"b":30},"armL":{"a":0,"b":14},"tool":{"on":true,"a":172,"kind":"bow"}},
-    {"bob":1,"lean":1,"legR":{"a":17,"lift":0},"legL":{"a":-22,"lift":2},"armR":{"a":30,"b":30},"armL":{"a":19,"b":14},"tool":{"on":true,"a":172,"kind":"bow"}},
-    {"bob":-1,"lean":1,"legR":{"a":-2,"lift":0},"legL":{"a":8,"lift":3},"armR":{"a":30,"b":30},"armL":{"a":19,"b":14},"tool":{"on":true,"a":172,"kind":"bow"}},
-    {"bob":0,"lean":1,"legR":{"a":-34,"lift":1},"legL":{"a":34,"lift":0},"armR":{"a":30,"b":30},"armL":{"a":0,"b":14},"tool":{"on":true,"a":172,"kind":"bow"}},
-    {"bob":1,"lean":1,"legR":{"a":-22,"lift":2},"legL":{"a":17,"lift":0},"armR":{"a":30,"b":30},"armL":{"a":-19,"b":14},"tool":{"on":true,"a":172,"kind":"bow"}},
-    {"bob":-1,"lean":1,"legR":{"a":8,"lift":3},"legL":{"a":-2,"lift":0},"armR":{"a":30,"b":30},"armL":{"a":-19,"b":14},"tool":{"on":true,"a":172,"kind":"bow"}}
+    {"bob":0,"lean":1,"legR":{"a":34,"lift":0},"legL":{"a":-34,"lift":1},"armR":{"a":24,"b":40},"armL":{"a":0,"b":14},"tool":{"on":true,"a":74,"kind":"bow"}},
+    {"bob":1,"lean":1,"legR":{"a":17,"lift":0},"legL":{"a":-22,"lift":2},"armR":{"a":24,"b":40},"armL":{"a":19,"b":14},"tool":{"on":true,"a":70,"kind":"bow"}},
+    {"bob":-1,"lean":1,"legR":{"a":-2,"lift":0},"legL":{"a":8,"lift":3},"armR":{"a":24,"b":40},"armL":{"a":19,"b":14},"tool":{"on":true,"a":76,"kind":"bow"}},
+    {"bob":0,"lean":1,"legR":{"a":-34,"lift":1},"legL":{"a":34,"lift":0},"armR":{"a":24,"b":40},"armL":{"a":0,"b":14},"tool":{"on":true,"a":74,"kind":"bow"}},
+    {"bob":1,"lean":1,"legR":{"a":-22,"lift":2},"legL":{"a":17,"lift":0},"armR":{"a":24,"b":40},"armL":{"a":-19,"b":14},"tool":{"on":true,"a":70,"kind":"bow"}},
+    {"bob":-1,"lean":1,"legR":{"a":8,"lift":3},"legL":{"a":-2,"lift":0},"armR":{"a":24,"b":40},"armL":{"a":-19,"b":14},"tool":{"on":true,"a":76,"kind":"bow"}}
   ] },
   "shoot_guard": { "fps": 4, "loop": true, "frames": [
     {"bob":1,"lean":-1,"legR":{"a":16,"lift":0},"legL":{"a":-16,"lift":0},"armR":{"a":80,"b":10},"armL":{"a":70,"b":20},"tool":{"on":true,"a":180,"kind":"bow"}},
@@ -208,12 +208,12 @@
     {"bob":1,"lean":-1,"legR":{"a":16,"lift":0},"legL":{"a":-16,"lift":0},"armR":{"a":79,"b":10},"armL":{"a":69,"b":20},"tool":{"on":true,"a":180,"kind":"bow"}}
   ] },
   "shoot_charge": { "fps": 12, "loop": true, "frames": [
-    {"bob":0,"lean":3,"legR":{"a":46,"lift":0},"legL":{"a":-48,"lift":3},"armR":{"a":60,"b":25},"armL":{"a":55,"b":25},"tool":{"on":true,"a":110,"kind":"bow"}},
-    {"bob":1,"lean":3,"legR":{"a":22,"lift":0},"legL":{"a":-36,"lift":4},"armR":{"a":64,"b":25},"armL":{"a":51,"b":25},"tool":{"on":true,"a":110,"kind":"bow"}},
-    {"bob":-2,"lean":3,"legR":{"a":-30,"lift":2},"legL":{"a":42,"lift":4},"armR":{"a":64,"b":25},"armL":{"a":51,"b":25},"tool":{"on":true,"a":110,"kind":"bow"}},
-    {"bob":0,"lean":3,"legR":{"a":-48,"lift":3},"legL":{"a":46,"lift":0},"armR":{"a":60,"b":25},"armL":{"a":55,"b":25},"tool":{"on":true,"a":110,"kind":"bow"}},
-    {"bob":1,"lean":3,"legR":{"a":-36,"lift":4},"legL":{"a":22,"lift":0},"armR":{"a":56,"b":25},"armL":{"a":59,"b":25},"tool":{"on":true,"a":110,"kind":"bow"}},
-    {"bob":-2,"lean":3,"legR":{"a":42,"lift":4},"legL":{"a":-30,"lift":2},"armR":{"a":56,"b":25},"armL":{"a":59,"b":25},"tool":{"on":true,"a":110,"kind":"bow"}}
+    {"bob":0,"lean":3,"legR":{"a":46,"lift":0},"legL":{"a":-48,"lift":3},"armR":{"a":66,"b":32},"armL":{"a":55,"b":25},"tool":{"on":true,"a":152,"kind":"bow"}},
+    {"bob":1,"lean":3,"legR":{"a":22,"lift":0},"legL":{"a":-36,"lift":4},"armR":{"a":66,"b":32},"armL":{"a":51,"b":25},"tool":{"on":true,"a":155,"kind":"bow"}},
+    {"bob":-2,"lean":3,"legR":{"a":-30,"lift":2},"legL":{"a":42,"lift":4},"armR":{"a":66,"b":32},"armL":{"a":51,"b":25},"tool":{"on":true,"a":152,"kind":"bow"}},
+    {"bob":0,"lean":3,"legR":{"a":-48,"lift":3},"legL":{"a":46,"lift":0},"armR":{"a":66,"b":32},"armL":{"a":55,"b":25},"tool":{"on":true,"a":155,"kind":"bow"}},
+    {"bob":1,"lean":3,"legR":{"a":-36,"lift":4},"legL":{"a":22,"lift":0},"armR":{"a":66,"b":32},"armL":{"a":59,"b":25},"tool":{"on":true,"a":152,"kind":"bow"}},
+    {"bob":-2,"lean":3,"legR":{"a":42,"lift":4},"legL":{"a":-30,"lift":2},"armR":{"a":66,"b":32},"armL":{"a":59,"b":25},"tool":{"on":true,"a":155,"kind":"bow"}}
   ] },
   "shoot_attack": { "fps": 10, "loop": false, "hit": 4, "frames": [
     {"bob":0,"lean":0,"legR":{"a":12,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":80,"b":10},"armL":{"a":70,"b":20},"tool":{"on":true,"a":180,"kind":"bow"}},
@@ -224,18 +224,18 @@
     {"bob":0,"lean":0,"legR":{"a":12,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":80,"b":10},"armL":{"a":70,"b":20},"tool":{"on":true,"a":180,"kind":"bow"}}
   ] },
   "sling_idle": { "fps": 4, "loop": true, "frames": [
-    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-5,"b":8},"tool":{"on":true,"a":172,"kind":"sling"}},
-    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-7,"b":8},"tool":{"on":true,"a":172,"kind":"sling"}},
-    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-9,"b":8},"tool":{"on":true,"a":172,"kind":"sling"}},
-    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":28,"b":30},"armL":{"a":-7,"b":8},"tool":{"on":true,"a":172,"kind":"sling"}}
+    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":14,"b":22},"armL":{"a":-5,"b":8},"tool":{"on":true,"a":6,"kind":"sling"}},
+    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":14,"b":22},"armL":{"a":-7,"b":8},"tool":{"on":true,"a":9,"kind":"sling"}},
+    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":14,"b":22},"armL":{"a":-9,"b":8},"tool":{"on":true,"a":12,"kind":"sling"}},
+    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":14,"b":22},"armL":{"a":-7,"b":8},"tool":{"on":true,"a":9,"kind":"sling"}}
   ] },
   "sling_walk": { "fps": 8, "loop": true, "gait": true, "frames": [
-    {"bob":0,"lean":1,"legR":{"a":34,"lift":0},"legL":{"a":-34,"lift":1},"armR":{"a":30,"b":30},"armL":{"a":0,"b":14},"tool":{"on":true,"a":172,"kind":"sling"}},
-    {"bob":1,"lean":1,"legR":{"a":17,"lift":0},"legL":{"a":-22,"lift":2},"armR":{"a":30,"b":30},"armL":{"a":19,"b":14},"tool":{"on":true,"a":172,"kind":"sling"}},
-    {"bob":-1,"lean":1,"legR":{"a":-2,"lift":0},"legL":{"a":8,"lift":3},"armR":{"a":30,"b":30},"armL":{"a":19,"b":14},"tool":{"on":true,"a":172,"kind":"sling"}},
-    {"bob":0,"lean":1,"legR":{"a":-34,"lift":1},"legL":{"a":34,"lift":0},"armR":{"a":30,"b":30},"armL":{"a":0,"b":14},"tool":{"on":true,"a":172,"kind":"sling"}},
-    {"bob":1,"lean":1,"legR":{"a":-22,"lift":2},"legL":{"a":17,"lift":0},"armR":{"a":30,"b":30},"armL":{"a":-19,"b":14},"tool":{"on":true,"a":172,"kind":"sling"}},
-    {"bob":-1,"lean":1,"legR":{"a":8,"lift":3},"legL":{"a":-2,"lift":0},"armR":{"a":30,"b":30},"armL":{"a":-19,"b":14},"tool":{"on":true,"a":172,"kind":"sling"}}
+    {"bob":0,"lean":1,"legR":{"a":34,"lift":0},"legL":{"a":-34,"lift":1},"armR":{"a":16,"b":24},"armL":{"a":0,"b":14},"tool":{"on":true,"a":8,"kind":"sling"}},
+    {"bob":1,"lean":1,"legR":{"a":17,"lift":0},"legL":{"a":-22,"lift":2},"armR":{"a":16,"b":24},"armL":{"a":19,"b":14},"tool":{"on":true,"a":22,"kind":"sling"}},
+    {"bob":-1,"lean":1,"legR":{"a":-2,"lift":0},"legL":{"a":8,"lift":3},"armR":{"a":16,"b":24},"armL":{"a":19,"b":14},"tool":{"on":true,"a":30,"kind":"sling"}},
+    {"bob":0,"lean":1,"legR":{"a":-34,"lift":1},"legL":{"a":34,"lift":0},"armR":{"a":16,"b":24},"armL":{"a":0,"b":14},"tool":{"on":true,"a":8,"kind":"sling"}},
+    {"bob":1,"lean":1,"legR":{"a":-22,"lift":2},"legL":{"a":17,"lift":0},"armR":{"a":16,"b":24},"armL":{"a":-19,"b":14},"tool":{"on":true,"a":22,"kind":"sling"}},
+    {"bob":-1,"lean":1,"legR":{"a":8,"lift":3},"legL":{"a":-2,"lift":0},"armR":{"a":16,"b":24},"armL":{"a":-19,"b":14},"tool":{"on":true,"a":30,"kind":"sling"}}
   ] },
   "sling_guard": { "fps": 4, "loop": true, "frames": [
     {"bob":1,"lean":-1,"legR":{"a":16,"lift":0},"legL":{"a":-16,"lift":0},"armR":{"a":60,"b":25},"armL":{"a":55,"b":25},"tool":{"on":true,"a":110,"kind":"sling"}},
@@ -244,12 +244,12 @@
     {"bob":1,"lean":-1,"legR":{"a":16,"lift":0},"legL":{"a":-16,"lift":0},"armR":{"a":59,"b":25},"armL":{"a":54,"b":25},"tool":{"on":true,"a":107,"kind":"sling"}}
   ] },
   "sling_charge": { "fps": 12, "loop": true, "frames": [
-    {"bob":0,"lean":3,"legR":{"a":46,"lift":0},"legL":{"a":-48,"lift":3},"armR":{"a":60,"b":25},"armL":{"a":55,"b":25},"tool":{"on":true,"a":110,"kind":"sling"}},
-    {"bob":1,"lean":3,"legR":{"a":22,"lift":0},"legL":{"a":-36,"lift":4},"armR":{"a":64,"b":25},"armL":{"a":51,"b":25},"tool":{"on":true,"a":110,"kind":"sling"}},
-    {"bob":-2,"lean":3,"legR":{"a":-30,"lift":2},"legL":{"a":42,"lift":4},"armR":{"a":64,"b":25},"armL":{"a":51,"b":25},"tool":{"on":true,"a":110,"kind":"sling"}},
-    {"bob":0,"lean":3,"legR":{"a":-48,"lift":3},"legL":{"a":46,"lift":0},"armR":{"a":60,"b":25},"armL":{"a":55,"b":25},"tool":{"on":true,"a":110,"kind":"sling"}},
-    {"bob":1,"lean":3,"legR":{"a":-36,"lift":4},"legL":{"a":22,"lift":0},"armR":{"a":56,"b":25},"armL":{"a":59,"b":25},"tool":{"on":true,"a":110,"kind":"sling"}},
-    {"bob":-2,"lean":3,"legR":{"a":42,"lift":4},"legL":{"a":-30,"lift":2},"armR":{"a":56,"b":25},"armL":{"a":59,"b":25},"tool":{"on":true,"a":110,"kind":"sling"}}
+    {"bob":0,"lean":3,"legR":{"a":46,"lift":0},"legL":{"a":-48,"lift":3},"armR":{"a":60,"b":45},"armL":{"a":55,"b":25},"tool":{"on":true,"a":35,"kind":"sling"}},
+    {"bob":1,"lean":3,"legR":{"a":22,"lift":0},"legL":{"a":-36,"lift":4},"armR":{"a":60,"b":45},"armL":{"a":51,"b":25},"tool":{"on":true,"a":43,"kind":"sling"}},
+    {"bob":-2,"lean":3,"legR":{"a":-30,"lift":2},"legL":{"a":42,"lift":4},"armR":{"a":60,"b":45},"armL":{"a":51,"b":25},"tool":{"on":true,"a":35,"kind":"sling"}},
+    {"bob":0,"lean":3,"legR":{"a":-48,"lift":3},"legL":{"a":46,"lift":0},"armR":{"a":60,"b":45},"armL":{"a":55,"b":25},"tool":{"on":true,"a":43,"kind":"sling"}},
+    {"bob":1,"lean":3,"legR":{"a":-36,"lift":4},"legL":{"a":22,"lift":0},"armR":{"a":60,"b":45},"armL":{"a":59,"b":25},"tool":{"on":true,"a":35,"kind":"sling"}},
+    {"bob":-2,"lean":3,"legR":{"a":42,"lift":4},"legL":{"a":-30,"lift":2},"armR":{"a":60,"b":45},"armL":{"a":59,"b":25},"tool":{"on":true,"a":43,"kind":"sling"}}
   ] },
   "sling_attack": { "fps": 10, "loop": false, "hit": 4, "frames": [
     {"bob":0,"lean":-1,"legR":{"a":12,"lift":0},"legL":{"a":-12,"lift":0},"armR":{"a":165,"b":10},"armL":{"a":150,"b":15},"tool":{"on":true,"a":175,"kind":"sling"}},
@@ -460,18 +460,18 @@
     {"bob":0,"lean":1,"legR":{"a":16,"lift":0},"legL":{"a":-14,"lift":0},"armR":{"a":70,"b":20},"armL":{"a":64,"b":20},"tool":{"on":false,"a":98,"kind":"thrown_stone"}}
   ] },
   "xbow_idle": { "fps": 4, "loop": true, "frames": [
-    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":46,"b":44},"armL":{"a":58,"b":30},"tool":{"on":true,"a":100,"kind":"alloy_crossbow"}},
-    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":47,"b":44},"armL":{"a":58,"b":30},"tool":{"on":true,"a":99,"kind":"alloy_crossbow"}},
-    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":48,"b":44},"armL":{"a":58,"b":30},"tool":{"on":true,"a":98,"kind":"alloy_crossbow"}},
-    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":47,"b":44},"armL":{"a":58,"b":30},"tool":{"on":true,"a":99,"kind":"alloy_crossbow"}}
+    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":34,"b":42},"armL":{"a":52,"b":30},"tool":{"on":true,"a":68,"kind":"alloy_crossbow"}},
+    {"bob":0,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":34,"b":42},"armL":{"a":52,"b":30},"tool":{"on":true,"a":69,"kind":"alloy_crossbow"}},
+    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":34,"b":42},"armL":{"a":52,"b":30},"tool":{"on":true,"a":68,"kind":"alloy_crossbow"}},
+    {"bob":1,"lean":0,"legR":{"a":3,"lift":0},"legL":{"a":-3,"lift":0},"armR":{"a":34,"b":42},"armL":{"a":52,"b":30},"tool":{"on":true,"a":69,"kind":"alloy_crossbow"}}
   ] },
   "xbow_walk": { "fps": 8, "loop": true, "gait": true, "frames": [
-    {"bob":-1,"lean":1,"legR":{"a":0,"lift":2},"legL":{"a":0,"lift":0},"armR":{"a":46,"b":44},"armL":{"a":58,"b":30},"tool":{"on":true,"a":100,"kind":"alloy_crossbow"}},
-    {"bob":0,"lean":1,"legR":{"a":28,"lift":1},"legL":{"a":-28,"lift":0},"armR":{"a":49,"b":44},"armL":{"a":55,"b":30},"tool":{"on":true,"a":97,"kind":"alloy_crossbow"}},
-    {"bob":0,"lean":1,"legR":{"a":28,"lift":0},"legL":{"a":-28,"lift":1},"armR":{"a":49,"b":44},"armL":{"a":55,"b":30},"tool":{"on":true,"a":97,"kind":"alloy_crossbow"}},
-    {"bob":-1,"lean":1,"legR":{"a":0,"lift":0},"legL":{"a":0,"lift":2},"armR":{"a":46,"b":44},"armL":{"a":58,"b":30},"tool":{"on":true,"a":100,"kind":"alloy_crossbow"}},
-    {"bob":0,"lean":1,"legR":{"a":-28,"lift":0},"legL":{"a":28,"lift":1},"armR":{"a":43,"b":44},"armL":{"a":61,"b":30},"tool":{"on":true,"a":103,"kind":"alloy_crossbow"}},
-    {"bob":0,"lean":1,"legR":{"a":-28,"lift":1},"legL":{"a":28,"lift":0},"armR":{"a":43,"b":44},"armL":{"a":61,"b":30},"tool":{"on":true,"a":103,"kind":"alloy_crossbow"}}
+    {"bob":-1,"lean":1,"legR":{"a":0,"lift":2},"legL":{"a":0,"lift":0},"armR":{"a":34,"b":42},"armL":{"a":52,"b":30},"tool":{"on":true,"a":68,"kind":"alloy_crossbow"}},
+    {"bob":0,"lean":1,"legR":{"a":28,"lift":1},"legL":{"a":-28,"lift":0},"armR":{"a":34,"b":42},"armL":{"a":52,"b":30},"tool":{"on":true,"a":66,"kind":"alloy_crossbow"}},
+    {"bob":0,"lean":1,"legR":{"a":28,"lift":0},"legL":{"a":-28,"lift":1},"armR":{"a":34,"b":42},"armL":{"a":52,"b":30},"tool":{"on":true,"a":66,"kind":"alloy_crossbow"}},
+    {"bob":-1,"lean":1,"legR":{"a":0,"lift":0},"legL":{"a":0,"lift":2},"armR":{"a":34,"b":42},"armL":{"a":52,"b":30},"tool":{"on":true,"a":68,"kind":"alloy_crossbow"}},
+    {"bob":0,"lean":1,"legR":{"a":-28,"lift":0},"legL":{"a":28,"lift":1},"armR":{"a":34,"b":42},"armL":{"a":52,"b":30},"tool":{"on":true,"a":66,"kind":"alloy_crossbow"}},
+    {"bob":0,"lean":1,"legR":{"a":-28,"lift":1},"legL":{"a":28,"lift":0},"armR":{"a":34,"b":42},"armL":{"a":52,"b":30},"tool":{"on":true,"a":66,"kind":"alloy_crossbow"}}
   ] },
   "xbow_run": { "fps": 12, "loop": true, "frames": [
     {"bob":-1,"lean":4,"legR":{"a":0,"lift":4},"legL":{"a":0,"lift":0},"armR":{"a":40,"b":62},"armL":{"a":56,"b":44},"tool":{"on":true,"a":132,"kind":"alloy_crossbow"}},

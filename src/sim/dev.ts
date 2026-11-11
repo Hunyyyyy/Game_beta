@@ -106,7 +106,7 @@ function fenceRing(sim: Sim, cx: number, cy: number, half: number): number {
   const put = (kind: BuildingKind, x: number, y: number) => { clear(sim, x, y, BUILDINGS[kind].w, BUILDINGS[kind].h, 0); if (!sim.canPlace(kind, x, y) && sim.placeBuilding(kind, x, y).ok) n++; };
   for (let d = -half; d <= half; d++) {
     put('fence', cx + d, cy - half);
-    put(d === 0 ? 'gate' : 'fence', cx + d, cy + half);
+    if (d !== 1) put(d === 0 ? 'gate' : 'fence', cx + d, cy + half); // the gate is two tiles wide: it covers the next one too
     if (Math.abs(d) < half) { put('fence', cx - half, cy + d); put('fence', cx + half, cy + d); }
   }
   if (!eraLocked('tower', sim)) for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put('tower', sx > 0 ? cx + half + 1 : cx - half - 2, sy > 0 ? cy + half + 1 : cy - half - 2);

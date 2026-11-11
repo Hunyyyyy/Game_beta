@@ -291,7 +291,7 @@ export const statBonus = (done: ReadonlySet<string>, role: string, stat: LineSta
 
 /** A recipe can be made once its blueprint step is researched. */
 /** Tools, weapons, armour and torches need no blueprint: only the level of the Nhà chế tạo (recipeLevel) limits them. */
-const NO_BLUEPRINT = /^(club|spear|mace|sling|bow|hide|bone|axe|pick|hoe|hammer|torch)\d$/;
+const NO_BLUEPRINT = /^(club|spear|mace|thrown_stone|sling|bow|hide|bone|axe|pick|hoe|hammer|torch)\d$/;
 export const recipeOpen = (done: ReadonlySet<string>, recipeId: string): boolean => !RESEARCH.enabled || NO_BLUEPRINT.test(recipeId) || done.has(recipeId);
 /** The blueprint step that opens a recipe. */
 export const techForRecipe = (recipeId: string): Tech | undefined => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));

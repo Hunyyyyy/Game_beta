@@ -4,7 +4,7 @@
  * cavalry. The soldiers of the Trại lính kỵ need no beast from the stock: they ride the one that goes with the level of their camp.
  */
 import { levelDef } from './buildings';
-import { MOUNT_KINDS, MOUNTS, MountKind } from './jobs';
+import { isHorse, MOUNT_KINDS, MOUNTS, MountKind } from './jobs';
 import type { Sim } from './sim';
 import type { Villager } from './model';
 
@@ -56,6 +56,7 @@ export function tickTame(sim: Sim, dt: number): void {
     if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim, m), 0) >= STOCK_CAP) { if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say('Chuồng đã đầy thú chưa có người cưỡi: sản phẩm chờ chỗ.'); } continue; }
     sim.toolStock[stockKey(k)] = tamedCount(sim, k) + 1; b.active = null;
     sim.say(`Đã thuần xong một con ${d.name.toLowerCase()}.`);
+    if (isHorse(k)) sim.addAlert('mount'); // it neighs
   }
 }
 

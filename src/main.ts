@@ -4,6 +4,7 @@ import { Sprites } from './render/sprites';
 import { BUILDINGS, BuildingKind } from './sim/buildings';
 import { DAY_PART_NAME, dayInSeason, lightAt, SEASON_DAYS, SEASON_DEF, WEATHER, yearOf } from './sim/calendar';
 import { TICK, TILE } from './sim/constants';
+import { isHorse } from './sim/jobs';
 import { RES_LIST, RES_NAME } from './sim/resources';
 import { Sim } from './sim/sim';
 import { RESEARCH } from './sim/research';
@@ -24,7 +25,10 @@ import { BuildingPanel, Ctx, TargetCard, UnitCard } from './ui/panels';
 import { newSeed } from './sim/rng';
 import { IndexedDbStore } from './save/indexeddb';
 import { Session, AUTO_SAVE } from './save/session';
+import type { SaveMeta } from './save/store';
+import { saveTile, saveTitle } from './ui/savelist';
 import { loadSettings, saveSettings } from './save/settings';
+import { levelOf, QUALITY_LEVELS } from './render/quality';
 import { MemoryStore } from './save/store';
 
 // a new game is a new world: a random seed (it decides the land, the herds and where the village starts), kept in the address so that reloading the page gives the same world
@@ -35,17 +39,23 @@ if (!seedParam) { try { history.replaceState(null, '', `?seed=${seed}`); } catch
 const sim = new Sim(seed);
 const settings = loadSettings();
 const session = new Session(sim, IndexedDbStore.available() ? new IndexedDbStore() : new MemoryStore());
+session.auto = settings.autosave;
 sim.speed = settings.speed;
+let rateSpeed = 1, realRate = 1, rateShown = 0; // the speed the game really runs at (see showSpeed)
 let started = false; // true once the player has answered the "continue?" question
 const startDialog = new GameDialog($('start'), { modal: true }); // only its own buttons close it
 const view = $<HTMLCanvasElement>('view');
 const cam: Camera = { x: 0, y: 0, zoom: Math.min(view.clientWidth, view.clientHeight) < 700 ? 1 : 2 };
 const sprites = new Sprites();
 const renderer = new Renderer(view, sim, cam, sprites);
+/** How much the screen draws (the quality setting, by the device when it says auto). */
+let quality = QUALITY_LEVELS[levelOf(settings.quality)];
+const applyQuality = (): void => { quality = QUALITY_LEVELS[levelOf(settings.quality)]; renderer.setDprCap(quality.dprCap); };
+applyQuality();
 const audio = new GameAudio();
 renderer.audio = audio;
-audio.sfxOn = settings.sfxOn; audio.ambientOn = settings.ambientOn; audio.musicOn = settings.musicOn;
-audio.vol = { sfx: settings.sfxVol, amb: settings.ambientVol, mus: settings.musicVol };
+audio.sfxOn = settings.sfxOn; audio.ambientOn = settings.ambientOn; audio.musicOn = settings.musicOn; audio.voiceOn = settings.voiceOn;
+audio.vol = { sfx: settings.sfxVol, amb: settings.ambientVol, mus: settings.musicVol, voice: settings.voiceVol };
 let soundChanged: () => void = () => undefined; // the settings window reads the sound settings back when a key changes them
 function syncSound() { soundChanged(); }
 function toggleSound(kind: 'sfx' | 'amb' | 'mus') {
@@ -55,10 +65,11 @@ function toggleSound(kind: 'sfx' | 'amb' | 'mus') {
   toast(`${on ? 'Bật' : 'Tắt'} ${kind === 'sfx' ? 'âm thanh hiệu ứng' : kind === 'amb' ? 'âm thanh môi trường' : 'nhạc nền'}`);
 }
 const sound: Ctx['sound'] = {
-  get: (k) => (k === 'sfx' ? { on: audio.sfxOn, vol: audio.vol.sfx } : k === 'amb' ? { on: audio.ambientOn, vol: audio.vol.amb } : { on: audio.musicOn, vol: audio.vol.mus }),
+  get: (k) => (k === 'sfx' ? { on: audio.sfxOn, vol: audio.vol.sfx } : k === 'amb' ? { on: audio.ambientOn, vol: audio.vol.amb } : k === 'voice' ? { on: audio.voiceOn, vol: audio.vol.voice } : { on: audio.musicOn, vol: audio.vol.mus }),
   set: (k, on, vol) => {
     if (k === 'sfx') { settings.sfxOn = audio.sfxOn = on; settings.sfxVol = audio.vol.sfx = vol; }
     else if (k === 'amb') { settings.ambientOn = audio.ambientOn = on; settings.ambientVol = audio.vol.amb = vol; }
+    else if (k === 'voice') { settings.voiceOn = audio.voiceOn = on; settings.voiceVol = audio.vol.voice = vol; }
     else { settings.musicOn = audio.musicOn = on; settings.musicVol = audio.vol.mus = vol; }
     saveSettings(settings); syncSound();
   },
@@ -77,7 +88,7 @@ const toast = (text: string) => {
   clearTimeout(toastTimer); toastTimer = window.setTimeout(() => toastEl.classList.remove('on'), 2200);
 };
 ctl.onToast = toast;
-ctl.onOrder = () => audio.order();
+ctl.onOrder = (ids) => { audio.order(); if (ids.some((id) => { const v = sim.get(id); return !!v && isHorse(sim.mountOf(v)); })) audio.neigh(); }; // a troop with riders: a horse neighs too
 // the buttons that command a troop (deploy, attack, withdraw, call out, send back) sound as an order
 const ORDER_BTN = /Triển khai|^\W*Đánh$|Rút|^Gọi (tất cả|cả trại|quân)|^Cho (về hết|cả trại về|quân về)/;
 document.addEventListener('click', (e) => { const b = (e.target as Element | null)?.closest('button'); if (b && !b.disabled && (b.id === 'btnArmy' || ORDER_BTN.test((b.textContent ?? '').trim()))) audio.order(); }, true);
@@ -131,8 +142,8 @@ fullBtn.hidden = !matchMedia('(pointer: coarse)').matches && !document.fullscree
 const SPEEDS = [1, 2, 4, 16];
 const speedBtn = $<HTMLButtonElement>('btnSpeed');
 speedBtn.addEventListener('click', () => setSpeed(SPEEDS[(SPEEDS.indexOf(sim.speed) + 1) % SPEEDS.length]));
-// the ring of buttons that opens where the pointer is held still on the map: Chọn nhiều, Gọi quân, Bỏ chọn
-const ring = $('radial'), ringBtns = ['btnMulti', 'btnArmy', 'btnNone'].map((id) => $<HTMLButtonElement>(id));
+// the ring of buttons that opens where the pointer is held still on the map: Gọi quân, Bỏ chọn
+const ring = $('radial'), ringBtns = ['btnArmy', 'btnNone'].map((id) => $<HTMLButtonElement>(id));
 const RING_R = 64;
 let ringHot: HTMLButtonElement | null = null;
 const ringSpot = (i: number, n: number) => { const a = -Math.PI / 2 + (i / n) * Math.PI * 2; return { x: Math.cos(a) * RING_R, y: Math.sin(a) * RING_R }; };
@@ -150,9 +161,10 @@ ctl.hold.move = (p) => {
   ringHot = best; for (const el of ringBtns) el.classList.toggle('hot', el === best);
 };
 ctl.hold.end = () => { const hot = ringHot; ring.hidden = true; ringHot = null; for (const el of ringBtns) el.classList.remove('hot'); if (hot) hot.click(); };
-const multiBtn = $<HTMLButtonElement>('btnMulti');
-multiBtn.addEventListener('click', () => ctl.setMulti(!ctl.multi));
 $('btnNone').addEventListener('click', () => ctl.clearSelection());
+$('btnSelNone').addEventListener('click', () => ctl.clearSelection());
+$('btnSelSoldiers').addEventListener('click', () => ctl.selectSoldiers());
+$('btnSelCount').addEventListener('click', () => ctl.focusSelection());
 $('btnHome').addEventListener('click', () => { const f = sim.campfire(), s = sim.world.start; ctl.centerOn(((f ? f.x + 1 : s.x) ) * TILE, ((f ? f.y + 1 : s.y)) * TILE); });
 $('btnLegion').addEventListener('click', () => { ctl.legionControl = !ctl.legionControl; if (ctl.legionControl) toast('Chạm đất để cả đội quân hành quân tới đó'); syncButtons(); });
 $('btnArmy').addEventListener('click', () => { if (sim.alarmUntil > sim.time) sim.standDown(); else { const e = sim.callArmy(); if (e) toast(e); } syncButtons(); });
@@ -187,11 +199,18 @@ function syncSkip() {
 function setSpeed(s: number) { sim.speed = s; if (s > 0) { settings.speed = s; saveSettings(settings); } syncButtons(); }
 function togglePlace(kind: BuildingKind) { if (ctl.placing === kind) ctl.cancelPlacing(); else { ctl.startPlacing(kind); menu.close(); tray.close(); } }
 function openWorkshop() { const b = sim.buildings.find((x) => x.kind === 'workshop' && x.done); if (b) { ctl.selectBuilding(b.id, true); ctl.centerOn((b.x + 1) * TILE, (b.y + 1) * TILE); } else toast('Chưa có Xưởng'); }
+/** The speed button: the speed asked for, and when the machine cannot keep it up, the speed it really runs at. */
+function showSpeed() {
+  const slow = sim.speed > 1 && realRate < sim.speed * 0.85;
+  speedBtn.textContent = sim.speed === 0 ? '❚❚' : slow ? `${sim.speed}× (≈${realRate < 10 ? realRate.toFixed(1) : Math.round(realRate)}×)` : `${sim.speed}×`;
+  speedBtn.title = slow ? 'Máy không theo kịp tốc độ này: game đang chạy nhanh hết mức có thể để màn hình vẫn mượt' : '';
+  speedBtn.setAttribute('aria-pressed', String(sim.speed === 0));
+}
 function syncButtons() {
-  speedBtn.textContent = sim.speed === 0 ? '❚❚' : `${sim.speed}×`; speedBtn.setAttribute('aria-pressed', String(sim.speed === 0));
-  multiBtn.setAttribute('aria-pressed', String(ctl.multi));
+  showSpeed();
   { const on = sim.alarmUntil > sim.time, army = $('btnArmy'); army.setAttribute('aria-pressed', String(on)); army.textContent = on ? '🏠' : '⚔'; army.title = on ? 'Cho quân về trại nghỉ' : 'Gọi quân đội ra khỏi trại'; army.hidden = !sim.villagers.some((v) => v.job === 'fight' && !v.guard); }
   { const lb = $('btnLegion'); if (!sim.legion.on) ctl.legionControl = false; lb.hidden = !sim.legion.on; lb.setAttribute('aria-pressed', String(ctl.legionControl)); }
+  { const n = ctl.selected.size, soldiers = sim.villagers.some((v) => v.job === 'fight' && v.inside === null && !v.inTent); $('btnSelCount').hidden = n === 0; $('btnSelCount').textContent = `▣ ${n} người`; $('btnSelNone').hidden = n === 0; $('btnSelSoldiers').hidden = !soldiers; }
   $('btnNone').hidden = ctl.selected.size === 0 && ctl.selectedBuilding === null && !ctl.inspect;
 }
 window.addEventListener('keydown', (e) => {
@@ -237,10 +256,10 @@ const eraDialog = new EraDialog($('epanel'));
 const statsOverview = new StatsOverview(ctx), statsDlg = new GameDialog($('spanel'), {});
 const statsCard = dlg.card({ wide: true, label: 'Chỉ số đã nghiên cứu' }, dlg.head({ pic: '📊', title: 'Chỉ số đã nghiên cứu', sub: 'Chung cho mỗi loại dân, nghề và lính', onClose: () => statsDlg.hide() }), statsOverview.root);
 const openStats = () => { settingsOpen = false; statsOverview.update(); statsDlg.show(statsCard); };
-const settingsPanel = new SettingsPanel(ctx, { close: () => statsDlg.hide(), openStats });
+const settingsPanel = new SettingsPanel(ctx, { close: () => { statsDlg.hide(); settingsOpen = false; }, openStats, autosave: { get: () => session.auto, set: (on) => { session.auto = on; settings.autosave = on; saveSettings(settings); } }, quality: { get: () => settings.quality, set: (q) => { settings.quality = q; saveSettings(settings); applyQuality(); } } });
 soundChanged = () => settingsPanel.update();
 let settingsOpen = false;
-$('btnSettings').addEventListener('click', () => { if (statsDlg.isOpen) { statsDlg.hide(); settingsOpen = false; return; } settingsPanel.update(); statsDlg.show(settingsPanel.card); settingsOpen = true; });
+$('btnSettings').addEventListener('click', () => { if (statsDlg.isOpen) { statsDlg.hide(); settingsOpen = false; return; } settingsPanel.opened(); statsDlg.show(settingsPanel.card); settingsOpen = true; });
 let weatherView: { head: string; rows: Array<[string, string]> } = { head: '', rows: [] };
 const journal = new Journal(ctx, { quests: $('qpanel'), notices: $('npanel') }, { quests: $('btnQuest'), notices: $('btnNotice') });
 journal.weather = () => weatherView;
@@ -312,7 +331,7 @@ function updateHud(now: number) {
   const bar = $('placeBar'); bar.hidden = !placing;
   if (placing && ctl.placing) {
     const why = ctl.placeProblem(), moving = ctl.moving !== null ? sim.getBuilding(ctl.moving) : undefined;
-    $('btnPlaceRot').hidden = !ctl.groupMoving;
+    $('btnPlaceRot').hidden = !ctl.groupMoving && !ctl.canTurnGate;
     $('placeName').textContent = ctl.groupMoving ? `Dời ${ctl.groupIds.length} mảnh hàng rào` : `${moving ? 'Dời' : 'Đặt'} ${BUILDINGS[ctl.placing].name}`; $('placeInfo').textContent = why ?? (ctl.groupMoving ? 'Chỗ này đặt được · bấm Xoay để quay nhóm' : moving ? `Phí dời: ${costText(sim.moveFee(moving), RES_NAME)}` : 'Chỗ này đặt được');
     $<HTMLButtonElement>('btnPlaceOk').disabled = why !== null;
     $('btnPlaceOk').textContent = moving || ctl.groupMoving ? '✓ Dời tới đây' : '✓ Đặt ở đây';
@@ -323,7 +342,7 @@ function updateHud(now: number) {
 ctl.onChange = () => { lastHud = 0; syncButtons(); };
 
 // ---------------------------------------------------------------- main loop
-let last = 0, drawn = 0, lastWarEnd = 0;
+let last = 0, drawn = 0, lastWarEnd = 0, nextDraw = 0, activeUntil = 0, camX = cam.x, camY = cam.y, camZ = cam.zoom;
 let celebrating: (typeof sim.plans)[number] | null = null;
 /** Frames the game may skip drawing while it runs fast-forward: the simulation needs the time, and nobody follows each step at that speed. */
 const drawEvery = (): number => (sim.speed >= 16 ? 4 : sim.speed >= 8 ? 3 : sim.speed >= 4 ? 2 : 1);
@@ -346,11 +365,21 @@ function frame(t: number) {
   audio.setBirds(started && !sim.atWar() && sim.part !== 'night' && sim.season !== 'winter' && (sim.weather === 'clear' || sim.weather === 'mist'), dt, sim.time);
   if (started) session.tick();
   { const m = 10, z = cam.zoom; sim.view = { x0: cam.x / TILE - m, y0: cam.y / TILE - m, x1: (cam.x + renderer.w / z) / TILE + m, y1: (cam.y + renderer.h / z) / TILE + m }; } // seen: the screen and 10 tiles round it
-  if (skipping) runSkip(); else sim.advance(dt, () => performance.now() - t0 > 70);
+  const simT0 = sim.time, budget = sim.speed >= 4 ? quality.fastBudgetMs : quality.simBudgetMs; // fast-forwarded, the simulation takes less of the frame so the screen and the touches are not starved
+  if (skipping) runSkip(); else sim.advance(dt, () => performance.now() - t0 > budget);
+  if (sim.speed !== rateSpeed) { rateSpeed = sim.speed; realRate = sim.speed; }
+  if (dt > 0 && !skipping && sim.speed > 1) realRate = realRate * 0.95 + ((sim.time - simT0) / dt) * 0.05; // the speed the game really runs at
+  if (t - rateShown > 500) { rateShown = t; showSpeed(); }
   syncSkip();
   const busy = !!ctl.ghost() || !!ctl.box; // placing or dragging a box: draw every frame so the hand is not behind
-  if (busy || skipping || ++drawn >= drawEvery()) {
-    drawn = 0;
+  // the frame cap of the quality setting: full rate while the player moves the map, zooms, touches the screen or something flies; the lower one while only the animations (4 to 12 a second) and the ticks (20) change the picture
+  if (cam.x !== camX || cam.y !== camY || cam.zoom !== camZ || ctl.interacting || busy || sim.projectiles.length > 0) activeUntil = t + 600;
+  camX = cam.x; camY = cam.y; camZ = cam.zoom;
+  const cap = t < activeUntil ? quality.fps : quality.idleFps;
+  if (cap) nextDraw = Math.min(nextDraw, t + 1000 / cap); // back to the full rate at once when the player moves
+  const want = busy || skipping || ++drawn >= drawEvery();
+  if (want && (skipping || !cap || t >= nextDraw - 1)) {
+    drawn = 0; nextDraw = cap ? Math.max(nextDraw + 1000 / cap, t - 1000 / cap) : 0;
     renderer.draw(t / 1000, ctl.selected, ctl.box, ctl.markers, ctl.ghost(), ctl.selectedBuilding, ctl.inspect, ctl.groupMode && !ctl.groupMoving ? ctl.groupIds : []);
     buildingBar.place();
   }
@@ -370,22 +399,26 @@ syncRotate();
 // ---------------------------------------------------------------- continue a saved game
 // The game starts at once with a new world. If there is a save, a question comes first and the game waits for the answer.
 function begin(): void { started = true; startDialog.hide(); setSpeed(settings.speed); }
-document.addEventListener('visibilitychange', () => { if (document.hidden && started) void session.save(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && started && session.auto) void session.save(); });
 void (async () => {
-  const latest = await session.latest();
-  if (!latest) { started = true; return; }
-  const params = new URLSearchParams(location.search);
-  // a save of another world: load the page again with that world, then continue
-  const resume = async () => {
-    if (latest.seed !== seed) { location.search = `?seed=${latest.seed}&continue=1`; return; }
-    if (await session.resume(AUTO_SAVE)) toast('Đã tải lại ván chơi'); else toast('Không đọc được bản lưu');
-    begin();
-  };
-  if (params.get('continue') === '1' && latest.seed === seed) { await resume(); return; }
+  const saves = await session.list(), params = new URLSearchParams(location.search);
+  if (params.get('new') === '1' || !saves.length) { started = true; return; } // a game the player asked for, or nothing to go on from
+  // a page loaded to continue from one save (what "Tải" does for a save of another world): put it in when it is of this world
+  const want = params.get('continue'), wanted = want ? saves.find((m) => m.id === (want === '1' ? AUTO_SAVE : want)) : undefined;
+  if (wanted && wanted.seed === seed) { if (await session.resume(wanted.id)) toast('Đã tải lại ván chơi'); else toast('Không đọc được bản lưu'); begin(); return; }
   sim.speed = 0; syncButtons();
-  const when = new Date(latest.savedAt).toLocaleString('vi');
-  const fresh = dlg.button('Ván mới', begin, { tone: 'alt' }); fresh.title = 'Bản lưu cũ vẫn còn cho tới khi ván mới tự lưu lần đầu (đầu ngày hôm sau)';
-  startDialog.show(dlg.card({ label: 'Làng Đồ Đá' },
-    dlg.head({ pic: '🔥', title: 'Làng Đồ Đá', sub: `Có ván đang chơi dở: ngày ${latest.day}, ${latest.population} dân (lưu lúc ${when}).` }),
-    dlg.buttons(dlg.button('Tiếp tục', () => { void resume(); }), fresh)));
+  const latest = saves[0], when = new Date(latest.savedAt).toLocaleString('vi');
+  const goOn = async (m: SaveMeta) => { const r = await session.open(m); if (r === 'loaded') { toast('Đã tải lại ván chơi'); begin(); } else if (r === 'failed') toast('Không đọc được bản lưu'); };
+  const ask = () => {
+    const fresh = dlg.button('Ván mới', begin, { tone: 'alt' }); fresh.title = 'Các bản lưu vẫn còn: tải lại lúc nào cũng được trong Cài đặt';
+    const more = dlg.button(`Chọn bản lưu khác (${saves.length})`, () => pick(), { tone: 'alt' });
+    startDialog.show(dlg.card({ label: 'Làng Đồ Đá' },
+      dlg.head({ pic: '🔥', title: 'Làng Đồ Đá', sub: `Có ván đang chơi dở: ${saveTitle(latest)}, ${latest.population} dân (lưu lúc ${when}).` }),
+      dlg.buttons(dlg.button('Tiếp tục', () => { void goOn(latest); }), ...(saves.length > 1 ? [more] : []), fresh)));
+  };
+  const pick = () => {
+    const tiles = () => dlg.list(...saves.map((m) => saveTile(m, { current: false, locked: null, onLoad: () => { void goOn(m); }, onDelete: () => { void session.remove(m.id).then(() => { saves.splice(saves.indexOf(m), 1); if (!saves.length) begin(); else pick(); }); } })));
+    startDialog.show(dlg.card({ label: 'Chọn bản lưu', wide: true }, dlg.head({ pic: '💾', title: 'Chọn bản lưu', sub: `${saves.length} bản lưu trên máy này` }), tiles(), dlg.buttons(dlg.button('Quay lại', () => ask(), { tone: 'alt' }))));
+  };
+  ask();
 })();

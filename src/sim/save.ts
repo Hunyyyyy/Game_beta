@@ -9,14 +9,14 @@
  */
 import { CURRENCY, emptyStock, RES_NAME } from './resources';
 import { SIEGE, TRIBES } from './combat';
-import { BUILDINGS, maxHp } from './buildings';
+import { BUILDINGS, footOf, maxHp } from './buildings';
 import { SCREEN_QUESTS } from './progression';
 import { decode, encode, packRuns, unpackRuns } from './codec';
 import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 35;
+export const SAVE_VERSION = 36;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
@@ -38,6 +38,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'byId', 'animalById', // rebuilt after loading
   'threatCache', 'pathLeft', // rebuilt every tick
   'view', // where the camera is: the screen's, not the game's
+  'fogAt', // when the fog was last worked out (a clock for the pause between two refreshes)
   'warIds', 'march', 'warMeals', 'warHunger', 'warFocus', 'warHarassAt', // the march of a war: the game cannot be saved while one is on
   'warSince', 'sfx', 'alerts', 'warSeenIds', 'warFresh', 'warStings', 'warCheckAt', 'hiddenAnimals', // the game cannot be saved while a war is on
   'leaderClock', // a timer: leaders are picked again within a second of loading
@@ -269,8 +270,10 @@ export function applySave(sim: Sim, data: GameSave): void {
   sim.rnd.setState(data.rng.rnd); sim.frnd.setState(data.rng.frnd); sim.wrnd.setState(data.rng.wrnd);
 
   // what is derived is rebuilt, not saved
+  sim.world.pathFails.clear(); // the answers of searches kept for a moment belong to the land that was
+  sim.fogAt = -1; // the time of the save may be earlier than the last working out of the fog
   sim.world.foeGates.clear(); for (const t of sim.tribes) for (const p of t.props) if (p.kind === 'gate' && p.open === false) for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) sim.world.foeGates.add((p.y + j) * sim.world.size + p.x + i);
-  sim.world.gates.clear(); for (const b of sim.buildings) if (b.kind === 'gate' && !b.open) { const d = BUILDINGS.gate; for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.gates.add((b.y + j) * sim.world.size + b.x + i); }
+  sim.world.gates.clear(); for (const b of sim.buildings) if (b.kind === 'gate' && !b.open) { const d = footOf(b); for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) sim.world.gates.add((b.y + j) * sim.world.size + b.x + i); }
   sim.byId.clear(); for (const v of sim.villagers) sim.byId.set(v.id, v); for (const f of sim.foes) sim.byId.set(f.id, f);
   sim.animalById.clear(); for (const a of sim.animals) sim.animalById.set(a.id, a);
   RES_NAME.coin = CURRENCY[sim.era];
@@ -363,4 +366,9 @@ MIGRATIONS[34] = (d) => {
   const n = Number(d.scalars.conquered ?? 0);
   d.scalars.yieldBonus ??= n * 8;
   return { ...d, version: 35 };
+};
+MIGRATIONS[35] = (d) => {
+  // 35 -> 36: a gate is two tiles (lying along a row, or standing along a column); the gates of an old save keep the one tile they were given
+  for (const b of d.lists.buildings as Array<Record<string, unknown>>) if (b.kind === 'gate') { b.w ??= 1; b.h ??= 1; }
+  return { ...d, version: 36 };
 };
