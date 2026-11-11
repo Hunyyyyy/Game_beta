@@ -21,11 +21,17 @@ export function outdoorFactor(sim: Sim, job: WorkJob): number {
   return OUTDOOR_JOBS.includes(job) ? WEATHER[sim.weather].work * SEASON_DEF[sim.season].work : 1;
 }
 
+/** The first days of a village: cutting wood and mining stone go a little faster, the bonus fading to nothing over `days` (pace.json `earlyBuff`). */
+function earlyBoost(sim: Sim, job: WorkJob): number {
+  const b = paceJson.earlyBuff;
+  return b.jobs.includes(job) ? 1 + b.bonus * Math.max(0, 1 - (sim.day - 1) / b.days) : 1;
+}
+
 export function workFactor(sim: Sim, v: Villager, job: WorkJob, field = false): number {
   const season = job === 'food' ? SEASON_DEF[sim.season][field ? 'farm' : 'gather'] : 1;
   const tier = TOOL_OF_JOB[job] ? sim.toolTier(v, job) : -1;
   const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier] * (1 + toolBonus(sim, v, job as WorkJob, 'tspd') / 100);
-  return workSpeed(sim, v) * (1 + 0.2 * v.skill[job].level) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v);
+  return workSpeed(sim, v) * (1 + 0.2 * v.skill[job].level) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v) * earlyBoost(sim, job);
 }
 
 export function gainXp(sim: Sim, v: Villager, job: WorkJob, dt: number): void {

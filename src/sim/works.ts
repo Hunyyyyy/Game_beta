@@ -1,8 +1,8 @@
 /** What the houses are working on: the research and crafting queues and the progress they make. */
-import { Building, BuildingKind, levelDef } from './buildings';
+import { BuildingKind, levelDef } from './buildings';
 import { WorkJob } from './jobs';
-import { Res, Stock } from './resources';
-import { isGear, RECIPE_BY_ID, recipeName, TIER_DURABILITY, ToolKind, TOOL_OF_JOB } from './tools';
+import { Stock } from './resources';
+import { isGear, RECIPE_BY_ID, recipeName } from './tools';
 import { CRAFT_COST_PER_LEVEL, discountBill, perkPct, recipeNeedLevel, recipeOpen as blueprintDone, missingOf, reached, RESEARCH, Tech, TECH_BY_ID, techForRecipe } from './research';
 import type { Sim } from './sim';
 import { Villager } from './model';

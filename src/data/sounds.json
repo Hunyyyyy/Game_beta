@@ -2,17 +2,36 @@
   "dir": "sounds/",
   "master": 0.7,
   "range": 0.5,
+  "stepTiers": { "grassMax": 3, "treadMax": 5 },
+  "armorTier": { "hide": 2, "bone": 3, "bronze": 4, "footman": 5, "archer": 5, "rider": 5, "watchman": 5, "guard": 6, "marksman": 6, "royalrider": 6, "sergeant": 6, "templar": 7, "sniper": 7, "paladin": 7, "warden": 7 },
   "anims": {
+    "grass_step": [
+      { "files": ["units/grass_1.mp3", "units/grass_2.mp3", "units/grass_3.mp3", "units/grass_4.mp3"], "frame": 0, "volume": 0.7, "gap": 0.25 },
+      { "files": ["units/grass_1.mp3", "units/grass_2.mp3", "units/grass_3.mp3", "units/grass_4.mp3"], "frame": 3, "volume": 0.7, "gap": 0.25 }
+    ],
     "chop":         { "file": "works/wood_chop1.wav", "files": ["works/wood_chop1.wav", "works/wood_chop2.wav"], "hitFrame": 5, "volume": 0.5, "gap": 0.25, "work": true },
+    "gather":       { "files": ["works/gather_1.mp3", "works/gather_2.mp3"], "frame": 3, "volume": 0.45, "gap": 0.8, "work": true },
     "mine":         { "file": "works/miner_stone.mp3", "hitFrame": 5, "volume": 0.5, "gap": 0.25, "work": true },
     "build":        { "file": "works/building.wav",    "hitFrame": 2, "volume": 0.35, "gap": 6, "work": true },
     "shoot_attack": [
       { "file": "battle/bow_draw.mp3",    "frame": 0, "volume": 0.3, "gap": 0.2 },
       { "file": "battle/bow_release.mp3", "volume": 0.4, "gap": 0.2 }
     ],
-    "run": [
-      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 0, "volume": 0.6, "gap": 0.25 },
-      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 3, "volume": 0.6, "gap": 0.25 }
+    "tread_walk": [
+      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 0, "volume": 0.6, "gap": 0.35 },
+      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 3, "volume": 0.6, "gap": 0.35 }
+    ],
+    "tread_run": [
+      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 0, "volume": 0.75, "gap": 0.18 },
+      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 3, "volume": 0.75, "gap": 0.18 }
+    ],
+    "step_walk": [
+      { "files": ["units/footstep_left_1.mp3", "units/footstep_left_3.mp3", "units/footstep_left_5.mp3"], "frame": 0, "volume": 0.35, "gap": 0.3 },
+      { "files": ["units/footstep_right_2.mp3", "units/footstep_right_4.mp3", "units/footstep_right_6.mp3"], "frame": 3, "volume": 0.35, "gap": 0.3 }
+    ],
+    "step_run": [
+      { "files": ["units/footstep_left_1.mp3", "units/footstep_left_3.mp3", "units/footstep_left_5.mp3"], "frame": 0, "volume": 0.5, "gap": 0.2 },
+      { "files": ["units/footstep_right_2.mp3", "units/footstep_right_4.mp3", "units/footstep_right_6.mp3"], "frame": 3, "volume": 0.5, "gap": 0.2 }
     ],
     "swing_walk|thrust_walk|shoot_walk|sling_walk|throw_walk|shield_walk|stone_walk|xbow_walk|post_club_walk|post_spear_walk|post_mace_walk|gpost_sword_walk": [
       { "files": ["units/footstep_left_1.mp3", "units/footstep_left_3.mp3", "units/footstep_left_5.mp3"], "frame": 0, "volume": 0.35, "gap": 0.3 },

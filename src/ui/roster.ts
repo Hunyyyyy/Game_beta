@@ -2,7 +2,7 @@
  * The people of a house, drawn the same way for every house that takes people (the houses of a trade, the camps, the builders, the craft, research and stable houses, the fields):
  * the ones who could go in (left, with a filter and the free hands first) and the ones who are in (right), each with a way out. Change it here, it changes everywhere.
  */
-import { JOB_NAME, roleName, roleOf, titleOfRole } from '../sim/jobs';
+import { JOB_NAME, titleOfRole } from '../sim/jobs';
 import { isFree } from '../sim/idle';
 import type { Villager } from '../sim/model';
 import type { Ctx } from './ctx';

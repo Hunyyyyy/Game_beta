@@ -9,7 +9,7 @@ import { Roster, iconButton } from './roster';
 import { icon } from './icons';
 import type { Ctx } from './ctx';
 import { describe, SHIFT_LABEL } from './describe';
-import type { Shift } from '../sim/model';
+
 import { WEAPONS } from '../sim/combat';
 import { isRankRole, rankName, ranksOf, trainBill } from '../sim/ranks';
 

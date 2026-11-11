@@ -1,6 +1,6 @@
 {
   "advanced": false,
-  "advancedBuildings": ["tower", "supplycamp", "scouttent", "drill", "field"],
+  "advancedBuildings": ["tower", "supplycamp", "scouttent", "drill", "field", "smelter", "carpentry", "tannery"],
   "_note": "advanced: the war-logistics layer of the medieval era (supply soldiers and their camp, field tents and rest, harassment raids on the march, the watchtower, the research of the march and of the war plan). Off: none of it exists in the game (nor in the screens); set true when the era opens it. The army then eats from the village store. The army on the march. The more squads and soldiers, the harder it is to move them: speed drops (slow, from slowMin for one soldier of one squad up to slowMax), and they eat and tire more. Research can cut the slow (research: tech id -> share cut off), but never below slowFloor, so an army can never march faster than (1 - slowFloor) of normal.",
   "retreat": { "graceSeconds": 0, "doneShare": 0.8 },
   "march": {

@@ -11,6 +11,7 @@ import { isHorse, MOUNTS } from '../sim/jobs';
 import { Prop, Sprites, SPRITE_FEET } from './sprites';
 import { FxLayer } from './fxlayer';
 import type { GameAudio } from '../audio/audio';
+import { footSound } from '../audio/audio';
 import animsJson from '../data/anims.json';
 import soundsJson from '../data/sounds.json';
 import { Mountains, stripOrigin } from './mountains';
@@ -690,7 +691,7 @@ export class Renderer {
         afterRider?.();
         const v = d.v;
         if (v.phase === 'work') this.fxl.watchWorker(v, fx, fy - lift, time);
-        if (this.audio?.sfxOn && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time, isHorse(rode) && /walk|run|charge/.test(v.anim) ? (v.anim.includes('charge') ? 'horse_charge' : v.anim.includes('walk') ? 'horse_walk' : 'horse_gallop') : isHorse(rode) && /idle|guard/.test(v.anim) ? 'horse_idle' : v.anim); // on a horse: hooves, not boots; standing, now and then a neigh
+        if (this.audio?.sfxOn && this.nearCenter((fx - cx) * z, (fy - cy) * z)) this.audio.watchAnim(v, v.anim, v.animClock, animClip, time, isHorse(rode) && /walk|run|charge/.test(v.anim) ? (v.anim.includes('charge') ? 'horse_charge' : v.anim.includes('walk') ? 'horse_walk' : 'horse_gallop') : isHorse(rode) && /idle|guard/.test(v.anim) ? 'horse_idle' : footSound(v.anim, v.armor)); // on a horse: hooves, not boots; standing, now and then a neigh
         // a small badge tells soldiers (red) and hunters (amber) from civilians
         if (v.team === 'player' && (v.job === 'fight' || v.job === 'hunt') && v.phase !== 'flee' && v.phase !== 'sleep' && v.phase !== 'down') {
           const p = this.worldToScreen(fx, fy - lift - (v.health < v.maxHealth ? 54 : 48)), u = Math.max(1, Math.round(z));

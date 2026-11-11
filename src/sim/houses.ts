@@ -1,10 +1,11 @@
 /** Who works in which house: the builders' crew and the staff inside the craft and research houses. */
 import { Building, BUILDINGS, levelDef } from './buildings';
 import { CREW_BUILDING, isStaffJob, JOBS, STAFF_BUILDING, WorkJob } from './jobs';
-import { Step } from './path';
+
 import type { Sim } from './sim';
 import { Villager } from './model';
 import { isFree } from './idle';
+import { isProcessKind } from './processdata';
 
 // ---------------------------------------------------------------- working inside a house
 /** The villager best suited to work in a house who is not already doing it: free hands first, soldiers never, then the best stat for the job. */
@@ -17,7 +18,7 @@ export function bestFor(sim: Sim, job: 'craft' | 'research' | 'tame'): Villager 
 
 /** How fast a house gets through its active order: everyone inside, the house level and the dev speed-up. */
 export function houseRate(sim: Sim, b: Building): number {
-  const job: WorkJob = b.kind === 'lab' ? 'research' : b.kind === 'workshop' ? 'craft' : 'tame';
+  const job: WorkJob = b.kind === 'lab' ? 'research' : b.kind === 'workshop' || isProcessKind(b.kind) ? 'craft' : 'tame';
   let r = 0;
   for (const id of b.staff) { const v = sim.byId.get(id); if (v && v.phase === 'inside') r += sim.workFactor(v, job); }
   return r * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 1e6 : 1);
@@ -102,8 +103,25 @@ export function assignField(sim: Sim, ids: readonly number[], fieldId: number): 
   return err;
 }
 
+/** Put villagers to work in a processing house the player chose (job craft, posted to it). Returns an error or null. */
+export function assignProcessing(sim: Sim, ids: readonly number[], houseId: number): string | null {
+  const lock = sim.warLock(); if (lock) return lock;
+  const b = sim.getBuilding(houseId);
+  if (!b || !b.done || !isProcessKind(b.kind)) return 'Nhà chưa dựng xong';
+  let err: string | null = null;
+  for (const v of sim.mine(ids)) {
+    if (v.post === b.id && v.job === 'craft') continue;
+    const gone = letGo(sim, v); if (gone) { err = gone; continue; }
+    if (staffCount(sim, b) >= levelDef(b).slots) { err = `${BUILDINGS[b.kind].name} cấp ${b.level} chỉ chứa ${levelDef(b).slots} người`; continue; }
+    sim.resetTask(v); sim.clearCombat(v); v.job = 'craft'; v.prefer = -1; v.post = b.id;
+    planStaff(sim, v);
+  }
+  return err;
+}
+
 /** The house this villager is posted to: the one of their staff job, or the Ruộng the player gave them. */
 function postOf(sim: Sim, v: Villager): Building | undefined {
+  if (v.job === 'craft' && v.post >= 0) { const p = sim.getBuilding(v.post); if (p && isProcessKind(p.kind)) return p; } // a craftsman of a processing house is posted to it
   if (isStaffJob(v.job)) return sim.building(STAFF_BUILDING[v.job]);
   const b = (v.job === 'food' || v.job === 'fight') && v.post >= 0 ? sim.getBuilding(v.post) : undefined;
   return b && (v.job === 'food' ? b.kind === 'field' : b.kind === 'tower') ? b : undefined;

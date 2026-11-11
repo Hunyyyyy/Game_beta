@@ -505,6 +505,10 @@
         "stone",
         "food"
       ]
+    },
+    "trade": {
+      "name": "Trao đổi",
+      "building": "market"
     }
   },
   "tabs": {
@@ -2724,88 +2728,401 @@
           {
             "key": "trade",
             "role": "trade",
-            "name": "Trao đổi",
-            "who": "Vỏ sò, chợ, thương lái",
+            "name": "Vật liệu",
+            "who": "Chợ: gỗ, đá, thức ăn (Trung cổ nối tiếp)",
             "rows": [
               {
-                "nodes": [
-                  {
-                    "planned": "Vỏ sò làm tiền",
-                    "about": "Trả công và đổi hàng bằng vỏ sò.",
-                    "max": 1
-                  },
-                  {
-                    "planned": "Đổi chác",
-                    "about": "Đổi hàng trực tiếp với dân tị nạn.",
-                    "max": 1
-                  },
-                  {
-                    "planned": "Quầy hàng",
-                    "about": "Dựng sạp đổi đồ ngay giữa làng.",
-                    "max": 1
-                  }
-                ],
+                "nodes": [],
                 "leap": {
-                  "planned": "Chợ làng",
-                  "about": "Mở chợ: mua bán vật liệu bằng vỏ sò.",
-                  "id": "trade_ms1"
+                  "id": "trade:food>wood",
+                  "name": "Tuyến thức ăn ⇄ gỗ",
+                  "desc": "Mở tuyến đổi hai chiều thức ăn và gỗ ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 4,
+                    "wood": 30
+                  },
+                  "time": 300,
+                  "lab": 2
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:food>stone",
+                  "name": "Tuyến thức ăn ⇄ đá",
+                  "desc": "Mở tuyến đổi hai chiều thức ăn và đá ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 4,
+                    "wood": 30
+                  },
+                  "time": 300,
+                  "lab": 2
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade_ms1",
+                  "name": "Giá hữu nghị",
+                  "desc": "Chợ trả giá tốt hơn một chút (+4% tỉ lệ), thu ít phí hơn (−2%) và hay có món hời hơn (+6% mỗi ngày).",
+                  "effect": {
+                    "market_rate": 4,
+                    "market_fee": 2,
+                    "market_bargain": 6
+                  },
+                  "cost": {
+                    "coin": 6,
+                    "wood": 60,
+                    "stone": 30
+                  },
+                  "time": 500,
+                  "lab": 2
                 },
                 "cross": [
-                  "guard_tier2"
+                  "trade:hide>feather",
+                  "trade:food>bone"
                 ]
               },
               {
-                "nodes": [
-                  {
-                    "planned": "Bảng giá",
-                    "about": "Giá mua bán ổn định theo mùa.",
-                    "max": 1
-                  },
-                  {
-                    "planned": "Thương lái",
-                    "about": "Người buôn ghé làng định kỳ.",
-                    "max": 1
-                  },
-                  {
-                    "planned": "Dự trữ vỏ sò",
-                    "about": "Tích vỏ sò, không lo hết tiền công.",
-                    "max": 1
-                  }
-                ],
+                "nodes": [],
                 "leap": {
-                  "planned": "Trao đổi liên bộ lạc",
-                  "about": "Đổi hàng với các bộ lạc ngoài sương mù. Cần lính hộ tống.",
-                  "id": "trade_ms2"
+                  "id": "trade:wood>hide",
+                  "name": "Tuyến gỗ ⇄ da",
+                  "desc": "Mở tuyến đổi hai chiều gỗ và da ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 5,
+                    "wood": 45
+                  },
+                  "time": 450,
+                  "lab": 3
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:stone>bone",
+                  "name": "Tuyến đá ⇄ xương",
+                  "desc": "Mở tuyến đổi hai chiều đá và xương ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 5,
+                    "wood": 45
+                  },
+                  "time": 450,
+                  "lab": 3
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade_ms2",
+                  "name": "Kho hàng lớn",
+                  "desc": "Mỗi ngày chợ nhận thêm 25% hàng ở giá gốc.",
+                  "effect": {
+                    "market_quota": 25
+                  },
+                  "cost": {
+                    "coin": 10,
+                    "wood": 80,
+                    "stone": 50
+                  },
+                  "time": 700,
+                  "lab": 3
                 },
                 "cross": [
-                  "foot_tier2"
+                  "trade:feather>fat",
+                  "trade:food>fat"
                 ]
               },
               {
-                "nodes": [
-                  {
-                    "planned": "Thuế vỏ sò",
-                    "about": "Thu vỏ sò từ hoạt động của làng.",
-                    "max": 1
-                  },
-                  {
-                    "planned": "Kho hàng chợ",
-                    "about": "Chợ chứa nhiều hàng hơn.",
-                    "max": 1
-                  },
-                  {
-                    "planned": "Tuyến buôn",
-                    "about": "Đường buôn đi xa, ít rủi ro.",
-                    "max": 1
-                  }
-                ],
+                "nodes": [],
                 "leap": {
-                  "planned": "Tiền tệ chuẩn",
-                  "about": "Vỏ sò thành tiền chung, chuẩn bị cho kim loại.",
-                  "id": "trade_ms3"
+                  "id": "trade:wood>feather",
+                  "name": "Tuyến gỗ ⇄ lông vũ",
+                  "desc": "Mở tuyến đổi hai chiều gỗ và lông vũ ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 5,
+                    "wood": 45
+                  },
+                  "time": 450,
+                  "lab": 3
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade_ms3",
+                  "name": "Buôn có tiếng",
+                  "desc": "Thêm 3 lượt mỗi loại hàng ở giá gốc trước khi giá bắt đầu tăng.",
+                  "effect": {
+                    "market_free": 3
+                  },
+                  "cost": {
+                    "coin": 15,
+                    "wood": 100,
+                    "stone": 70
+                  },
+                  "time": 900,
+                  "lab": 3
                 },
                 "cross": [
-                  "research_ms2"
+                  "trade:bone>tusk",
+                  "trade:food>tusk"
+                ]
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade_med1",
+                  "name": "Hội buôn",
+                  "desc": "Giá tốt hơn (+6% tỉ lệ, −3% phí) và mua bằng vỏ sò rẻ hơn.",
+                  "effect": {
+                    "market_rate": 6,
+                    "market_fee": 3,
+                    "market_bargain": 4
+                  },
+                  "cost": {
+                    "coin": 30,
+                    "wood": 150,
+                    "stone": 100
+                  },
+                  "time": 1500,
+                  "lab": 3
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade_med2",
+                  "name": "Đoàn thương nhân",
+                  "desc": "Chợ nhận thêm 40% hàng mỗi ngày và thêm 5 lượt ở giá gốc.",
+                  "effect": {
+                    "market_quota": 40,
+                    "market_free": 5
+                  },
+                  "cost": {
+                    "coin": 50,
+                    "wood": 200,
+                    "stone": 150
+                  },
+                  "time": 2200,
+                  "lab": 3
+                },
+                "cross": [],
+                "era": "ancient"
+              }
+            ]
+          },
+          {
+            "key": "trade_hunt",
+            "role": "trade",
+            "name": "Thú săn",
+            "who": "Chợ: da, xương, mỡ, lông vũ, ngà",
+            "rows": [
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:hide>bone",
+                  "name": "Tuyến da ⇄ xương",
+                  "desc": "Mở tuyến đổi hai chiều da và xương ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 4,
+                    "wood": 30
+                  },
+                  "time": 300,
+                  "lab": 2
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:hide>feather",
+                  "name": "Tuyến da ⇄ lông vũ",
+                  "desc": "Mở tuyến đổi hai chiều da và lông vũ ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 4,
+                    "wood": 30
+                  },
+                  "time": 300,
+                  "lab": 2
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:bone>fat",
+                  "name": "Tuyến xương ⇄ mỡ",
+                  "desc": "Mở tuyến đổi hai chiều xương và mỡ ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 5,
+                    "wood": 45
+                  },
+                  "time": 450,
+                  "lab": 3
+                },
+                "cross": [
+                  "trade_ms1"
+                ]
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:feather>fat",
+                  "name": "Tuyến lông vũ ⇄ mỡ",
+                  "desc": "Mở tuyến đổi hai chiều lông vũ và mỡ ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 5,
+                    "wood": 45
+                  },
+                  "time": 450,
+                  "lab": 3
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:bone>tusk",
+                  "name": "Tuyến xương ⇄ ngà",
+                  "desc": "Mở tuyến đổi hai chiều xương và ngà ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 5,
+                    "wood": 45
+                  },
+                  "time": 450,
+                  "lab": 3
+                },
+                "cross": [
+                  "trade_ms2"
+                ]
+              }
+            ]
+          },
+          {
+            "key": "trade_food",
+            "role": "trade",
+            "name": "Lương thực",
+            "who": "Chợ: thức ăn lấy hàng thú",
+            "rows": [
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:food>hide",
+                  "name": "Tuyến thức ăn ⇄ da",
+                  "desc": "Mở tuyến đổi hai chiều thức ăn và da ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 4,
+                    "wood": 30
+                  },
+                  "time": 300,
+                  "lab": 2
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:food>bone",
+                  "name": "Tuyến thức ăn ⇄ xương",
+                  "desc": "Mở tuyến đổi hai chiều thức ăn và xương ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 4,
+                    "wood": 30
+                  },
+                  "time": 300,
+                  "lab": 2
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:food>feather",
+                  "name": "Tuyến thức ăn ⇄ lông vũ",
+                  "desc": "Mở tuyến đổi hai chiều thức ăn và lông vũ ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 5,
+                    "wood": 45
+                  },
+                  "time": 450,
+                  "lab": 3
+                },
+                "cross": [
+                  "trade_ms1"
+                ]
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:food>fat",
+                  "name": "Tuyến thức ăn ⇄ mỡ",
+                  "desc": "Mở tuyến đổi hai chiều thức ăn và mỡ ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 5,
+                    "wood": 45
+                  },
+                  "time": 450,
+                  "lab": 3
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade:food>tusk",
+                  "name": "Tuyến thức ăn ⇄ ngà",
+                  "desc": "Mở tuyến đổi hai chiều thức ăn và ngà ở Chợ.",
+                  "effect": {
+                    "route": 1
+                  },
+                  "cost": {
+                    "coin": 5,
+                    "wood": 45
+                  },
+                  "time": 450,
+                  "lab": 3
+                },
+                "cross": [
+                  "trade_ms2"
                 ]
               }
             ]

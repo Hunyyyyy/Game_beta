@@ -1,6 +1,7 @@
 import { Building, levelDef } from '../sim/buildings';
 import { workDays } from '../sim/constants';
-import { fmtStat, isStaffJob, JOB_NAME, JOBS, STAT_NAME } from '../sim/jobs';
+import { isProcessKind } from '../sim/processdata';
+import { JOBS } from '../sim/jobs';
 import type { Villager } from '../sim/sim';
 import { h, hint } from './dom';
 import { dlg } from './gamedialog';
@@ -20,19 +21,20 @@ export class StaffBox {
   }
   update(b: Building): void {
     const { sim } = this.c, slots = levelDef(b).slots, jobKey = this.job === 'farm' ? 'food' : this.job, stat = JOBS[jobKey].stat;
-    const crew = this.job === 'build', staff = crew ? sim.crew() : b.staff.map((id) => sim.get(id)).filter((v): v is Villager => !!v);
-    const count = crew ? staff.length : sim.staffCount(b), full = count >= slots;
+    const crew = this.job === 'build', walking = crew ? [] : sim.villagers.filter((v) => v.phase === 'goStaff' && v.target === b.id && v.health > 0);
+    const staff = crew ? sim.crew() : [...b.staff.map((id) => sim.get(id)).filter((v): v is Villager => !!v), ...walking]; // those on the way are listed too, marked as such
+    const count = staff.length, full = count >= slots;
     this.head.replaceChildren(h('b', { text: crew ? 'Thợ xây' : this.job === 'farm' ? 'Nông dân' : 'Người làm việc' })); // the count is in the head of the right list
-    // anyone may go in, whatever they do now; those on the way to this house are counted in the places but are not listed as inside yet
-    const pool = sim.villagers.filter((v) => v.health > 0 && v.down <= 0 && !staff.includes(v) && !(v.phase === 'goStaff' && v.target === b.id));
-    const key = `${b.id}|${full}|${staff.map((v) => `${v.id}.${v.stats[stat]}`).join()}|${pool.map((v) => `${v.id}.${v.job}.${v.guard ? 'g' : ''}${v.arm}.${v.stats[stat]}`).join()}`;
+    // anyone may go in, whatever they do now
+    const pool = sim.villagers.filter((v) => v.health > 0 && v.down <= 0 && !staff.includes(v));
+    const key = `${b.id}|${full}|${staff.map((v) => `${v.id}.${v.stats[stat]}${walking.includes(v) ? 'w' : ''}`).join()}|${pool.map((v) => `${v.id}.${v.job}.${v.guard ? 'g' : ''}${v.arm}.${v.stats[stat]}`).join()}`;
     if (key === this.key) return;
     this.key = key;
     const again = () => { this.key = ''; this.c.ctl.onChange(); };
     this.body.replaceChildren(...this.roster.render({
-      assigned: staff, cap: slots, statIds: roleStats(this.job), stat: (v) => v.stats[stat], pool,
+      assigned: staff, cap: slots, chipIn: (v: Villager) => (walking.includes(v) ? 'đang di chuyển đến' : undefined), statIds: roleStats(this.job), stat: (v) => v.stats[stat], pool,
       addBlock: sim.warLock() ?? (full ? 'Nhà đã đủ người: cho một người ra hoặc nâng cấp nhà' : null),
-      add: (v) => (crew ? sim.assignCrew([v.id]) : this.job === 'farm' ? sim.assignField([v.id], b.id) : sim.assignStaff([v.id], this.job as 'craft' | 'research' | 'tame')),
+      add: (v) => (crew ? sim.assignCrew([v.id]) : this.job === 'farm' ? sim.assignField([v.id], b.id) : isProcessKind(b.kind) ? sim.assignProcessing([v.id], b.id) : sim.assignStaff([v.id], this.job as 'craft' | 'research' | 'tame')),
       remove: (v) => { if (crew) sim.releaseCrew([v.id]); else sim.releaseStaff([v.id]); return null; },
       emptyIn: crew ? 'Chưa có thợ xây nào: chưa dựng được gì.' : 'Chưa có ai làm việc ở đây.',
       emptyPool: 'Không có ai để thêm.',

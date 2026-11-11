@@ -1,6 +1,6 @@
 import { CRAFTED_WEAPONS, WEAPONS } from '../sim/combat';
 import type { WorkJob } from '../sim/jobs';
-import { STAT_DEF } from '../sim/research';
+
 import { MOUNT_KINDS, MOUNTS } from '../sim/jobs';
 import type { MountKind } from '../sim/jobs';
 import { critChance, critMult, guardCut, rawValue, statValue, swingCycle } from '../sim/statsys';
@@ -11,7 +11,7 @@ import { statIcon } from './resicons';
 import type { Ctx } from './ctx';
 import { STAT_LABEL, STAT_ORDER, statReading } from './statview';
 import type { StatCell } from './statview';
-import { energyText, SHIFT_LABEL, SHIFT_TIP, armorText } from './describe';
+import { energyText, SHIFT_TIP, armorText } from './describe';
 import { ARMORS } from '../sim/combat';
 
 const KEY_STATS: readonly string[] = ['hp', 'atk', 'defm', 'defr', 'move', 'sta'];

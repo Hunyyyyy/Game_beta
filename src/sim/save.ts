@@ -40,7 +40,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'view', // where the camera is: the screen's, not the game's
   'fogAt', // when the fog was last worked out (a clock for the pause between two refreshes)
   'warIds', 'march', 'warMeals', 'warHunger', 'warFocus', 'warHarassAt', // the march of a war: the game cannot be saved while one is on
-  'warSince', 'sfx', 'alerts', 'warSeenIds', 'warFresh', 'warStings', 'warCheckAt', 'hiddenAnimals', // the game cannot be saved while a war is on
+  'warSince', 'sfx', 'alerts', 'warSeenIds', 'warFresh', 'warStings', 'warCheckAt', 'hiddenAnimals', 'loads', // the game cannot be saved while a war is on
   'leaderClock', // a timer: leaders are picked again within a second of loading
   'controlled', // what the player has selected: the screen's, not the game's
   'noNodeWarn', // a timer for the "nothing left to gather" warning

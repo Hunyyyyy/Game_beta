@@ -343,7 +343,7 @@ function updateHud(now: number) {
 ctl.onChange = () => { lastHud = 0; syncButtons(); };
 
 // ---------------------------------------------------------------- main loop
-let last = 0, drawn = 0, lastWarEnd = 0, nextDraw = 0, activeUntil = 0, camX = cam.x, camY = cam.y, camZ = cam.zoom;
+let last = 0, drawn = 0, lastWarEnd = 0, seenLoads = 0, nextDraw = 0, activeUntil = 0, camX = cam.x, camY = cam.y, camZ = cam.zoom;
 let celebrating: (typeof sim.plans)[number] | null = null;
 /** Frames the game may skip drawing while it runs fast-forward: the simulation needs the time, and nobody follows each step at that speed. */
 const drawEvery = (): number => (sim.speed >= 16 ? 4 : sim.speed >= 8 ? 3 : sim.speed >= 4 ? 2 : 1);
@@ -351,6 +351,7 @@ function frame(t: number) {
   const t0 = performance.now();
   const dt = last ? (t - last) / 1000 : 0; last = t;
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
+  if (sim.loads !== seenLoads) { seenLoads = sim.loads; audio.reset(); celebrating = null; lastWarEnd = Math.max(0, ...sim.plans.map((q) => q.endedAt ?? 0)); } // a saved game was put in: the war sound of the game that was stops, and the wars already over are not announced again
   ctl.update(dt);
   audio.update(started ? sim.weather : 'clear', dt);
   audio.fightOn = started && !sim.atWar() && (sim.tribes.some((t) => t.raid) || sim.events.some((e) => e.live)); // a raid or a pack at the village: the war music, and no peace music, until it is over

@@ -1,5 +1,5 @@
 import { WEAPONS } from '../sim/combat';
-import { ARM_NAME, armOfWeapon, Drawn, drawFormation, FORMATION_IDS, FORMATIONS, FormationId, formationOffsets, SQUAD_MAX, SQUAD_MIN } from '../sim/formations';
+import { ARM_NAME, Drawn, drawFormation, FORMATION_IDS, FORMATIONS, FormationId, formationOffsets, SQUAD_MIN } from '../sim/formations';
 import type { IntelMark, Mission, MissionTarget, Plan, Pt, RouteTime, TribeIntel } from '../sim/model';
 import type { Sim } from '../sim/sim';
 import { Tile } from '../sim/world';

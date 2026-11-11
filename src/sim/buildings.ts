@@ -109,6 +109,8 @@ export interface Building {
   staff: number[];
   /** The order being worked on right now (research or crafting): its id and progress 0..1. */
   active: { id: string; progress: number; /** What the order cost, as a multiple of its base cost (a craft: the price of the Nhà chế tạo when it was ordered). */ paid?: number } | null;
+  /** A processing house (Lò luyện, Xưởng mộc, Xưởng thuộc da): the recipes ordered and waiting, paid for already. */
+  orders?: string[];
   workers: number;
 }
 
