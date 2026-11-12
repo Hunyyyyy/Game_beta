@@ -17,8 +17,8 @@
    {
     "name": "Bãi hố thuộc da",
     "cost": {
-     "wood": 80,
-     "stone": 60
+     "wood": 120,
+     "stone": 90
     },
     "buildTime": 320,
     "cap": 0,
@@ -30,8 +30,10 @@
    {
     "name": "Nhà tranh và gác phơi",
     "cost": {
-     "wood": 130,
-     "stone": 110
+     "wood": 195,
+     "stone": 165,
+     "iron": 6,
+     "hardwood": 8
     },
     "buildTime": 480,
     "cap": 0,
@@ -43,8 +45,11 @@
    {
     "name": "Xưởng nhuộm",
     "cost": {
-     "wood": 170,
-     "stone": 210
+     "wood": 255,
+     "stone": 315,
+     "iron": 14,
+     "hardwood": 14,
+     "leather": 10
     },
     "buildTime": 700,
     "cap": 0,

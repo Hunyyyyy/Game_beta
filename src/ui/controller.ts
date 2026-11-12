@@ -54,6 +54,8 @@ export class Controller {
     this.holdTimer = window.setTimeout(() => { this.holdTimer = 0; this.holdFrom = null; this.ringAt = { x: p.x, y: p.y }; this.box = null; this.hold.open(p); }, 450);
   }
   private stopHold(): void { if (this.holdTimer) window.clearTimeout(this.holdTimer); this.holdTimer = 0; this.holdFrom = null; }
+  /** A building whose upgrade needs bigger ground and is being planned: the player clears the ground before he confirms (upgradeplan.ts). */
+  upgradePlan: number | null = null;
   /** Building being placed, and where the ghost currently sits (top-left tile). */
   placing: BuildingKind | null = null;
   /** A gate being placed: 1 when it is turned to stand along a column (2 tiles tall, 1 wide). */

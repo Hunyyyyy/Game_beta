@@ -22,6 +22,7 @@
     "cavalry":    { "main": "agi", "partner": "sta", "cost": "vit" },
     "lumberyard": { "main": "str", "partner": "vit", "cost": "agi" },
     "quarry":     { "main": "str", "partner": "vit", "cost": "agi" },
+    "mine":       { "main": "str", "partner": "vit", "cost": "agi" },
     "farmhouse":  { "main": "agi", "partner": "sta", "cost": "str" },
     "huntlodge":  { "main": "agi", "partner": "sta", "cost": "str" },
     "builder":    { "main": "sta", "partner": "str", "cost": "vit" },

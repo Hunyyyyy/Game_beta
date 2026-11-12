@@ -1,0 +1,69 @@
+{
+ "kind": "mine",
+ "name": "Mỏ",
+ "group": "production",
+ "produces": [
+  "iron_ore",
+  "coal",
+  "copper_ore",
+  "rare_ore"
+ ],
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 4,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Hầm chống gỗ",
+    "cost": {
+     "wood": 135,
+     "stone": 105
+    },
+    "buildTime": 300,
+    "cap": 60,
+    "craftSpeed": 1,
+    "slots": 3,
+    "hp": 480,
+    "sight": 0
+   },
+   {
+    "name": "Hầm xây đá",
+    "cost": {
+     "wood": 210,
+     "stone": 255,
+     "iron": 12,
+     "hardwood": 8
+    },
+    "buildTime": 460,
+    "cap": 150,
+    "craftSpeed": 1,
+    "slots": 5,
+    "hp": 700,
+    "sight": 0
+   },
+   {
+    "name": "Mỏ có tháp tời",
+    "cost": {
+     "wood": 300,
+     "stone": 450,
+     "iron": 28,
+     "hardwood": 18,
+     "steel": 8
+    },
+    "buildTime": 680,
+    "cap": 300,
+    "craftSpeed": 1,
+    "slots": 8,
+    "hp": 960,
+    "sight": 0
+   }
+  ]
+ }
+}

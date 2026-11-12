@@ -137,6 +137,7 @@ export function dailyYield(sim: Sim, b: Building): { amount: number; people: num
   switch (b.kind) {
     case 'lumberyard': job = 'wood'; workers = sim.villagers.filter((v) => roleOf(v) === 'wood'); break;
     case 'quarry': job = 'stone'; workers = sim.villagers.filter((v) => roleOf(v) === 'stone'); break;
+    case 'mine': job = 'mine'; workers = sim.villagers.filter((v) => roleOf(v) === 'mine'); break;
     case 'farmhouse': job = 'food'; workers = sim.villagers.filter((v) => roleOf(v) === 'food'); break;
     case 'huntlodge': job = 'hunt'; workers = sim.villagers.filter((v) => roleOf(v) === 'hunt'); break;
     case 'field': job = 'food'; workers = sim.villagers.filter((v) => v.job === 'food' && v.post === b.id); break;
@@ -147,7 +148,7 @@ export function dailyYield(sim: Sim, b: Building): { amount: number; people: num
     const speed = workFactor(sim, v, job, b.kind === 'field') / Math.max(0.01, sim.restFactor(v)), secs = workSeconds(sim, v);
     if (job === 'hunt') { amount += paceJson.huntPerDay * speed * (secs / (sim.dayLen * 0.65)) * (1 + (statBonus(sim.researched, 'hunt', 'gyield') + villageBonus(sim)) / 100); continue; }
     const per = TIER_YIELD[sim.toolTier(v, job)] * (1 + toolBonus(sim, v, job, 'tyield') / 100);
-    amount += b.kind === 'field' ? (speed * levelDef(b).craftSpeed * per * secs) / FARM_TIME : (speed * per * secs * paceJson.gatherDuty * gatherMult(b) * paceJson.yield[JOBS[job].res as 'wood' | 'stone' | 'food']) / JOBS[job].baseTime;
+    amount += b.kind === 'field' ? (speed * levelDef(b).craftSpeed * per * secs) / FARM_TIME : (speed * per * secs * paceJson.gatherDuty * gatherMult(b) * paceJson.yield[JOBS[job].res as 'wood' | 'stone' | 'food' | 'iron_ore']) / JOBS[job].baseTime;
   }
   return { amount, people: workers.length };
 }

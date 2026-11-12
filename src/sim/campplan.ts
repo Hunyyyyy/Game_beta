@@ -7,7 +7,7 @@ import { BUILDINGS, BuildingKind, Era, eraLocked, fireUnlockLevel, levelCapByFir
 
 /** What goes inside the fence first (the heart of the defence: the camps, the stores, the workshops), then what stays outside (the working houses, out by the land they work). */
 export const CORE: BuildingKind[] = ['storage', 'builder', 'workshop', 'armory', 'infantry', 'archery', 'cavalry', 'guardpost', 'lab', 'wartent', 'stable', 'house', 'toolstore', 'scouttent', 'supplycamp'];
-export const OUTSIDE: BuildingKind[] = ['lumberyard', 'quarry', 'farmhouse', 'huntlodge', 'drill'];
+export const OUTSIDE: BuildingKind[] = ['lumberyard', 'quarry', 'mine', 'ranch', 'farmhouse', 'huntlodge', 'drill'];
 
 export interface Piece { kind: BuildingKind; x: number; y: number; w: number; h: number; level: number }
 interface Rect { x: number; y: number; w: number; h: number }

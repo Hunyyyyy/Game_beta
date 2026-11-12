@@ -96,7 +96,7 @@ function paintGround(g: CanvasRenderingContext2D, sim: Sim, i: TribeIntel): void
   for (let y = box.y0; y < box.y1; y++) for (let x = box.x0; x < box.x1; x++) {
     const px = (x - box.x0) * T, py = (y - box.y0) * T, t = w.tiles[y * N + x], shade = (hash(x, y) - 0.5) * 14;
     const col = (r: number, gg: number, b: number) => `rgb(${Math.round(r + shade)},${Math.round(gg + shade)},${Math.round(b + shade)})`;
-    const base = t === Tile.Water ? col(63, 111, 154) : t === Tile.Mud ? col(122, 100, 66) : t === Tile.Rock ? col(124, 130, 120) : t === Tile.Mountain ? col(108, 102, 96) : col(134, 163, 85);
+    const base = t === Tile.Water ? col(63, 111, 154) : t === Tile.Mud ? col(122, 100, 66) : t === Tile.Rock ? col(124, 130, 120) : t === Tile.Ore ? col(108, 96, 90) : t === Tile.Mountain ? col(108, 102, 96) : col(134, 163, 85);
     g.fillStyle = base; g.fillRect(px, py, T, T);
     if (w.occ[y * N + x]) { g.fillStyle = col(150, 130, 90); g.fillRect(px, py, T, T); g.fillStyle = 'rgba(70,50,25,0.35)'; for (let k = 0; k < 3; k++) g.fillRect(px + hash(x, y, k + 3) * (T - 2), py + hash(x, y, k + 7) * (T - 2), 2, 2); continue; }
     if (t === Tile.Grass || t === Tile.Bush || t === Tile.Tree) {

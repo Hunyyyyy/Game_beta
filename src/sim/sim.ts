@@ -13,7 +13,7 @@ import { Animal, populateChunk, restock, restoreWarAnimals, tickAnimals } from '
 import * as tribeLod from './tribelod';
 import { tickFoe } from './brainfoe';
 import { adoptTribe, EventState, foeBonus, dismissAllies, giftTribe, killFoe, resetTribes, setTribute, spawnTribes, summonAllies, tickTribes, Tribe, tribeAttacked, tribeHostile, tribeSeen, tribesFeud, tribeWilling, tributeTribe } from './tribes';
-import { recipeOpen, Tech } from './research';
+import { Tech } from './research';
 import { questViews, QuestUi, QuestView } from './quests';
 import { World } from './world';
 import startJson from '../data/start.json';
@@ -21,6 +21,7 @@ import * as construction from './construction';
 import * as economy from './economy';
 import * as market from './market';
 import * as processing from './processing';
+import * as ranch from './ranch';
 import * as notices from './notices';
 import * as readiness from './readiness';
 import * as works from './works';
@@ -153,7 +154,7 @@ export class Sim {
   readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false };
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false, palace: false /* the Nhà chính drawn as the level 7 palace for a look, with the land round it bare (renderer only) */ };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
   /** Called when something dies (UI refresh hook). */
@@ -185,7 +186,7 @@ export class Sim {
   /** When each kind of source last ran out in the land the village has seen (labor.warnExhausted): a timer for the warning, not game state. */
   noNodeWarn: Record<string, number> = {};
   /** When a gatherer last looked over the land for a kind of source, and whether any was left in what is seen (a few seconds' memory, labor.exploreFor). */
-  nodeCheck: Partial<Record<'tree' | 'rock' | 'bush', { t: number; left: boolean }>> = {};
+  nodeCheck: Partial<Record<'tree' | 'rock' | 'bush' | 'ore', { t: number; left: boolean }>> = {};
   lastFullWarn = -999;
   lastMatWarn = -999;
   /** Today's and tomorrow's weather (tomorrow is rolled ahead so it can be foretold). */
@@ -212,7 +213,7 @@ export class Sim {
   alerts: Array<{ kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era' | 'mount'; text: string }> = [];
   /** Something the player must notice at once (the screen shows `text` as a toast; wolves, raids, beasts and the end of an event also make a sound). */
   addAlert(kind: 'wolf' | 'raid' | 'beast' | 'clear' | 'notice' | 'era' | 'mount', text = ''): void { if (this.alerts.length < 8) this.alerts.push({ kind, text }); }
-  sfx: Array<{ weapon: string; ranged: boolean; x: number; y: number }> = [];
+  sfx: Array<{ weapon: string; ranged: boolean; x: number; y: number; rank: number; armor: number }> = [];
   /** War sound: the soldiers that have seen the enemy so far, how many of them are not yet counted into a sting, and how many stings have been due. */
   warSeenIds = new Set<number>();
   warFresh = 0;
@@ -318,7 +319,8 @@ export class Sim {
   /** → warscene.warScene: the state of the war for the music */
   warScene(): warscene.WarState { return warscene.warScene(this); }
   /** A blow of `weapon` landed at (x, y): the UI plays the sound of that weapon. */
-  addSfx(weapon: string, ranged: boolean, x: number, y: number): void { if (this.sfx.length < 48) this.sfx.push({ weapon, ranged, x, y }); }
+  /** A sound for the screen to play: `rank` is the rank of the weapon, `armor` the rank of the armour of whoever is struck (0 for none), so that a blow on heavy armour can ring. */
+  addSfx(weapon: string, ranged: boolean, x: number, y: number, rank = 0, armor = 0): void { if (this.sfx.length < 48) this.sfx.push({ weapon, ranged, x, y, rank, armor }); }
   /** → warmode.warPlan: a war is on */
   atWar(): boolean { return !!warmode.warPlan(this); }
   /** → villagers.goHome */
@@ -392,6 +394,12 @@ export class Sim {
 
   /** → construction.startLevel */
   startLevel(kind: BuildingKind): number { return construction.startLevel(this, kind); }
+  /** → construction.growCheck: the ground the next level covers and what stands in its way (null: it keeps its size) */
+  growCheck(b: Building): construction.GrowCheck | null { return construction.growCheck(this, b); }
+  /** → construction.finishGrow */
+  finishGrow(b: Building): void { construction.finishGrow(this, b); }
+  /** → construction.cancelWork */
+  cancelWork(id: number): string | null { return construction.cancelWork(this, id); }
   /** → construction.buildBill: a bill of the works of the village, cut by the research of the builders */
   buildBill(bill: Partial<Stock>): Partial<Stock> { return construction.buildBill(this, bill); }
   /** → works.researchCost: what a research costs now (the research of the Nhà nghiên cứu cuts it) */
@@ -551,7 +559,7 @@ export class Sim {
   tickWorks(dt: number): void { return works.tickWorks(this, dt); }
 
   /** → houses.bestFor */
-  bestFor(job: 'craft' | 'research' | 'tame'): Villager | null { return houses.bestFor(this, job); }
+  bestFor(job: 'craft' | 'research' | 'tame' | 'herd'): Villager | null { return houses.bestFor(this, job); }
   /** → defense.tickTraps */
   tickTraps(dt: number): void { return defense.tickTraps(this, dt); }
   /** → defense.tickTowers */
@@ -583,7 +591,7 @@ export class Sim {
   /** How many people work in a finished house and how many it holds (its role, or the staff of a Xưởng, a Nhà nghiên cứu, a Chuồng thú, the men of a tower); null for a house with no people to count. */
   staffing(b: Building): { have: number; slots: number } | null {
     if (!b.done) return null;
-    const slots = levelDef(b).slots;
+    const slots = this.slotsOf(b);
     if (b.kind === 'tower') return { have: this.garrison(b).length, slots };
     if (b.kind === 'workshop' || b.kind === 'lab' || b.kind === 'stable') return { have: this.staffCount(b), slots };
     const role = ROLE_IDS.find((r) => ROLES[r].building === b.kind);
@@ -619,8 +627,16 @@ export class Sim {
   /** → houses.releaseCrew */
   releaseCrew(ids: readonly number[]): void { return houses.releaseCrew(this, ids); }
 
+  /** → ranch.dailyOf: what a ranch makes of a good in a day with the people inside it now */
+  ranchDaily(b: Building, p: import('./ranchdata').RanchProduct): number { return ranch.dailyOf(this, b, p); }
+  /** → roles.setMineOre */
+  setMineOre(id: number, res: Res, on: boolean): string | null { return roles.setMineOre(this, id, res, on); }
+  /** → houses.slotsOf: the people a house holds (its level and the research of its trade) */
+  slotsOf(b: Building): number { return houses.slotsOf(this, b); }
+  /** → houses.setCrop */
+  setCrop(fieldId: number, crop: 'food' | 'flax'): string | null { return houses.setCrop(this, fieldId, crop); }
   /** → houses.assignStaff */
-  assignStaff(ids: readonly number[], job: 'craft' | 'research' | 'tame'): string | null { return houses.assignStaff(this, ids, job); }
+  assignStaff(ids: readonly number[], job: 'craft' | 'research' | 'tame' | 'herd'): string | null { return houses.assignStaff(this, ids, job); }
   /** → houses.planStaff */
   planStaff(v: Villager): void { return houses.planStaff(this, v); }
   /** → houses.enterBuilding */
@@ -821,10 +837,10 @@ export class Sim {
       return;
     }
     // the war is over: whoever lay out of sight (in a field tent, or with no bed) gets up and goes to bed in the right place
-    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; this.warSeenIds.clear(); this.warFresh = 0; this.warStings = 0; this.warCheckAt = 0; }
+    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); this.skirmishCleanup(); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; this.warSeenIds.clear(); this.warFresh = 0; this.warStings = 0; this.warCheckAt = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
-    this.tickWorks(dt); processing.tickProcessing(this, dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); legion.tickLegion(this, dt); warplan.tickPlans(this, dt);
+    this.tickWorks(dt); processing.tickProcessing(this, dt); ranch.tickRanch(this, dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); legion.tickLegion(this, dt); warplan.tickPlans(this, dt);
     this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);

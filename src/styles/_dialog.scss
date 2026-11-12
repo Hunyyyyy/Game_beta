@@ -98,8 +98,6 @@
   .dpills { display: flex; flex-wrap: wrap; gap: 4px; }
   .dslots { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: #5a3a14;
     i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #8a6a36; background: transparent; &.on { background: #e0a23c; } } }
-  .dring { --p: 0; flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#e0a23c calc(var(--p) * 1%), rgba(60, 40, 10, .22) 0);
-    > span { width: 36px; height: 36px; border-radius: 50%; background: #efe0b8; display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #3a2c1c; } }
   .dacts { flex: none; display: flex; gap: 4px; align-items: center; }
   .dgo.ic { min-width: 30px; width: 30px; height: 30px; padding: 0; border-radius: 8px; font-size: 14px; line-height: 1; }
   .dhouse { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 4px 2px; b { font-size: 14px; color: #5a3a14; } }

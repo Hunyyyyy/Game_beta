@@ -128,7 +128,7 @@ export class WarPanel {
     });
   }
 
-  private attackPlan(): Plan | undefined { return this.c.sim.plans.find((p) => p.kind === 'attack' && p.tribe === this.openTribe); }
+  private attackPlan(): Plan | undefined { return this.c.sim.plans.find((p) => p.kind === 'attack' && !p.skirmish && p.tribe === this.openTribe); }
 
   /** From now a drag on the map draws the row, the arrow or the way back of a squad. */
   private startDraw(mode: DrawMode, squad: number): void {
@@ -211,7 +211,7 @@ export class WarPanel {
   private toast(e: string | null | undefined): void { if (e) this.c.toast(e); }
 
   update(): void {
-    const { sim } = this, plan = (k: 'attack' | 'defense') => sim.plans.find((p) => p.kind === k);
+    const { sim } = this, plan = (k: 'attack' | 'defense') => sim.plans.find((p) => p.kind === k && !p.skirmish);
     for (const [t, b] of this.tabBtns) b.setAttribute('aria-pressed', String(t === this.tab));
     const soldiers = sim.villagers.filter((v) => v.job === 'fight' && !v.guard);
     const key = [this.tab, sim.squads.map((s) => `${s.id}.${s.name}.${s.formation}.${s.ids.join('/')}.${s.leader}.${Math.round(s.mastery[s.formation] / 5)}.${s.training}`).join(), soldiers.map((v) => `${v.id}.${v.squad}.${v.weapon}`).join(),
@@ -273,7 +273,7 @@ export class WarPanel {
     if (!rows.length) out.push(h('p', { class: 'sub', text: 'Chưa có bản đồ nào. Cử trinh sát từ Trại trinh sát để vẽ bản đồ một làng.' }));
     for (const t of rows) {
       const best = sim.maps.filter((m) => m.tribe === t.id).sort((a, b) => b.level - a.level)[0], level = sim.dev.freeBuild ? 3 : sim.mapLevel(t.id);
-      const plan = sim.plans.find((p) => p.kind === 'attack' && p.tribe === t.id);
+      const plan = sim.plans.find((p) => p.kind === 'attack' && !p.skirmish && p.tribe === t.id);
       const what = level ? `Bản đồ cấp ${level}${best?.gaps ? ' (còn hở)' : ''}${best ? `, ${this.ageWords(best.at)}` : ''}` : 'Bản đồ đã quá cũ, cần cử trinh sát lại';
       const state = plan ? ` · kế hoạch ${{ draft: 'đang soạn', running: 'đang chạy', done: 'đã xong' }[plan.status]}` : '';
       out.push(h('div', { class: 'row', style: `cursor:${level ? 'pointer' : 'default'};${level ? '' : 'opacity:.6'}`, onclick: () => this.openMap(t.id) },
@@ -308,7 +308,7 @@ export class WarPanel {
     const { sim } = this, open = (p: NonNullable<PlanPanel>) => () => { this.setPanel(p, this.panel !== p); this.refresh(); };
     const out: Node[] = [];
     if (!plan) {
-      const other = sim.plans.find((p) => p.kind === 'attack');
+      const other = sim.plans.find((p) => p.kind === 'attack' && !p.skirmish);
       out.push(this.chip('＋ Lập kế hoạch tấn công', false, () => { sim.newPlan('attack', this.openTribe); this.refresh(); }, { disabled: other?.status === 'running', title: other ? 'Thay kế hoạch đang soạn bằng kế hoạch cho làng này' : 'Chưa có kế hoạch cho làng này' }));
       return out;
     }

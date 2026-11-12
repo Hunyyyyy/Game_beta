@@ -44,7 +44,7 @@ export function treeRole(v: Pick<Villager, 'job' | 'arm' | 'post'>): string | nu
     case 'build': return 'build';
     case 'craft': return 'craft';
     case 'research': return 'research';
-    case 'tame': return 'tame';
+    case 'tame': case 'herd': return 'tame'; // the herdsmen of the Trại chăn nuôi have the research of the beast tamers
     case 'food': return 'farm';
     default: return null;
   }
@@ -68,7 +68,7 @@ export function tentBonus(sim: Sim, v: Villager, stat: StatId): number {
 }
 
 /** Someone who works a gathering trade (wood, stone, food): Khai thác vùng xa makes them run faster and carry more. */
-export const isGatherer = (v: Pick<Villager, 'job'>): boolean => v.job === 'wood' || v.job === 'stone' || v.job === 'food';
+export const isGatherer = (v: Pick<Villager, 'job'>): boolean => v.job === 'wood' || v.job === 'stone' || v.job === 'mine' || v.job === 'food';
 /** How much of a good one person carries: the same for everyone, more for the gatherers once the research has opened the far lands. */
 export const carryCap = (sim: Sim, v: Villager, res: Res): number => CARRY_CAP[res] * (v.team === 'player' && isGatherer(v) ? 1 + perkPct(sim.researched, 'gatherCarry') / 100 : 1);
 
@@ -147,7 +147,7 @@ export function weaponDamage(sim: Sim, v: Villager, w: Pick<WeaponDef, 'id' | 'd
 export const villageBonus = (sim: Sim): number => sim.yieldBonus;
 
 export function strokeYield(sim: Sim, v: Villager, job: WorkJob, base: number): number {
-  const trade = v.team === 'player' ? statBonus(sim.researched, job, 'gyield') + villageBonus(sim) : 0;
+  const trade = v.team === 'player' ? statBonus(sim.researched, job, 'gyield') + villageBonus(sim) + (job === 'mine' ? perkPct(sim.researched, 'mineYield') : 0) : 0; // the research of the mines adds to what a stroke of the pick brings
   return base * (1 + (toolBonus(sim, v, job, 'tyield') + trade) / 100);
 }
 

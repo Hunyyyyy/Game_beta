@@ -22,7 +22,17 @@
   ],
   "overSlip": 0.2,
   "buyFee": 0.2,
-  "bargain": { "chance": 0.1, "pctMin": 20, "pctMax": 40, "medieval": { "pctMin": 40, "pctMax": 70, "caravanChance": 0.08, "caravanPct": 15 } },
+  "bargain": {
+    "chance": 0.1,
+    "pctMin": 20,
+    "pctMax": 40,
+    "medieval": {
+      "pctMin": 40,
+      "pctMax": 70,
+      "caravanChance": 0.08,
+      "caravanPct": 15
+    }
+  },
   "keepShare": 0.25,
   "foodKeepDays": 3,
   "medieval": [
@@ -34,7 +44,9 @@
     "fine_steel",
     "leather",
     "cloth",
-    "hardwood"
+    "hardwood",
+    "copper_ore",
+    "bronze"
   ],
   "free": [
     "wood>stone",

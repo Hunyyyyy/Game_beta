@@ -18,7 +18,9 @@ import { h, helpButton, hint, iconCanvas } from './dom';
 import type { Ctx } from './ctx';
 import { PeoplePane } from './peoplepane';
 import { ActiveBox, StaffBox } from './housebox';
-import { isProcessKind, PROCESS_HOUSES } from '../sim/processdata';
+import { isProcessKind } from '../sim/processdata';
+import { ForgePane } from './forgepane';
+import { productsAt, RANCH_PRODUCTS } from '../sim/ranchdata';
 import { ScoutPane } from './scoutpane';
 import { MarchPane } from './marchpane';
 import { icon } from './icons';
@@ -35,7 +37,7 @@ import { WarPanel } from './warpanel';
 import { OrderGrid, OrderItem } from './ordergrid';
 
 /** The houses whose people are kept in a list of their own, opened by the button "Nhân sự" (the house of the research, the craft and the beasts). */
-export const STAFF_OF = { workshop: 'craft', lab: 'research', stable: 'tame', smelter: 'craft', carpentry: 'craft', tannery: 'craft' } as const;
+export const STAFF_OF = { workshop: 'craft', lab: 'research', stable: 'tame', ranch: 'herd', smelter: 'craft', carpentry: 'craft', tannery: 'craft' } as const;
 
 interface MarketRow { row: HTMLElement; give: Res; get: Res; n: number; price: HTMLElement; input: HTMLInputElement; slider: HTMLInputElement; quote: HTMLElement; go: HTMLButtonElement }
 
@@ -103,13 +105,15 @@ export class BuildingPanel {
   private readonly towerPane: TowerPane;
   /** What the building is, behind the ? next to its title. */
   private readonly info = h('p', { class: 'sub hintbody', hidden: true });
-  private readonly staffBoxes: Record<'build' | 'craft' | 'research' | 'tame' | 'farm', StaffBox>;
+  private readonly staffBoxes: Record<'build' | 'craft' | 'research' | 'tame' | 'herd' | 'farm', StaffBox>;
   private readonly activeBoxes: Record<'craft' | 'research' | 'tame', ActiveBox>;
-  /** The processing houses of the medieval age (Lò luyện, Xưởng mộc, Xưởng thuộc da và dệt): the order at work, its queue line and the grid of recipes of each. */
-  private readonly processActive: Record<'smelter' | 'carpentry' | 'tannery', ActiveBox>;
-  private readonly processNote = { smelter: h('div', { class: 'kv' }), carpentry: h('div', { class: 'kv' }), tannery: h('div', { class: 'kv' }) };
-  private readonly processGrid = {} as Record<'smelter' | 'carpentry' | 'tannery', OrderGrid>;
+  /** The processing houses of the medieval age (Lò luyện, Xưởng mộc, Xưởng thuộc da và dệt): the bench of each, laid out like a forge (src/ui/forgepane.ts). */
+  private readonly forges = {} as Record<'smelter' | 'carpentry' | 'tannery', ForgePane>;
   private readonly mountNote = h('div', { class: 'kv' });
+  /** The field: what it is sown with (food, or flax for fibre in the medieval age). */
+  private readonly cropBox = h('div', { class: 'kv' }); private cropKey = '';
+  /** The ranch: a row for each good it makes, with what it gives in a day and the level that opens it. */
+  private readonly ranchRows: Array<{ p: (typeof RANCH_PRODUCTS)[number]; note: HTMLElement }> = [];
   private readonly queueNote = { craft: h('div', { class: 'kv' }), research: h('div', { class: 'kv' }) };
   private readonly goodsNote = h('p', { class: 'sub' }); private readonly goodsHint = hint(this.goodsNote, '');
 
@@ -117,13 +121,11 @@ export class BuildingPanel {
     const { sim, ctl, sprites } = c;
     root.className = 'modal';
     const recipeNm = (id: string) => (RECIPE_BY_ID[id] ? recipeName(RECIPE_BY_ID[id]) : id);
-    this.staffBoxes = { build: new StaffBox(c, 'build'), craft: new StaffBox(c, 'craft'), research: new StaffBox(c, 'research'), tame: new StaffBox(c, 'tame'), farm: new StaffBox(c, 'farm') };
-    const procActive = (kind: string) => new ActiveBox(c, (id) => PROCESS_HOUSES[kind].find((r) => r.id === id)?.name ?? id, (id) => PROCESS_HOUSES[kind].find((r) => r.id === id)?.time ?? 1);
-    this.processActive = { smelter: procActive('smelter'), carpentry: procActive('carpentry'), tannery: procActive('tannery') };
+    this.staffBoxes = { build: new StaffBox(c, 'build'), craft: new StaffBox(c, 'craft'), research: new StaffBox(c, 'research'), tame: new StaffBox(c, 'tame'), herd: new StaffBox(c, 'herd'), farm: new StaffBox(c, 'farm') };
     this.activeBoxes = {
-      craft: new ActiveBox(c, recipeNm, (id) => sim.orderDef('craft', id)?.time ?? 1),
-      research: new ActiveBox(c, (id) => TECH_BY_ID[id]?.name ?? id, (id) => sim.orderDef('research', id)?.time ?? 1),
-      tame: new ActiveBox(c, (id) => `thuần ${MOUNTS[id as MountKind]?.name.toLowerCase() ?? id}`, (id) => MOUNTS[id as MountKind]?.time ?? 1),
+      craft: new ActiveBox(c, recipeNm, (id) => sim.orderDef('craft', id)?.time ?? 1, (id) => iconCanvas(sprites.icons[id])),
+      research: new ActiveBox(c, (id) => TECH_BY_ID[id]?.name ?? id, (id) => sim.orderDef('research', id)?.time ?? 1, () => h('span', { class: 'aglyph', text: '🔬' })),
+      tame: new ActiveBox(c, (id) => `thuần ${MOUNTS[id as MountKind]?.name.toLowerCase() ?? id}`, (id) => MOUNTS[id as MountKind]?.time ?? 1, (id) => iconCanvas(sprites.mount(MOUNTS[id as MountKind].species, false, 0, 1))),
     };
 
     const page = (...kids: Array<HTMLElement | null>) => { const el = h('div', { class: 'tabpage', hidden: true }, ...kids); this.pages.push(el); return el; };
@@ -175,7 +177,10 @@ export class BuildingPanel {
     roleHouse('foot', 'Lính', true); roleHouse('cavalry', 'Lính', true); roleHouse('archer', 'Lính', true); roleHouse('guard', 'Lính gác', true); roleHouse('supply', 'Lính hậu cần', true);
     roleHouse('wood', 'Nhân công'); roleHouse('stone', 'Nhân công'); roleHouse('food', 'Nhân công'); roleHouse('hunt', 'Nhân công');
     this.tabs.house = [{ label: 'Người trong nhà', page: bedPage('house', 'Dân rảnh') }];
-    this.tabs.field = [{ label: 'Người làm ruộng', page: page(this.staffBoxes.farm.root) }];
+    this.tabs.field = [{ label: 'Người làm ruộng', page: page(this.cropBox, this.staffBoxes.farm.root) }];
+    // the ranch: the goods it makes by itself (a good opens at a level of the house), then the people of the house are the button Nhân sự
+    const ranchList = RANCH_PRODUCTS.map((p) => { const note = h('small'); this.ranchRows.push({ p, note }); return h('div', { class: 'row' }, h('div', { class: 'nm' }, resIcon(p.res), RES_NAME[p.res], note)); });
+    this.tabs.ranch = [{ label: 'Chăn nuôi', page: page(hint('Sản phẩm của trại', 'Người làm việc trong trại nuôi thú, và mỗi sản phẩm tự đến theo thời gian, không cần đặt đơn. Càng đông người, càng giỏi (Nhanh nhẹn) và cấp trại càng cao thì càng nhanh. Cấp cao mở thêm sản phẩm. Sản phẩm vào kho, tối đa theo sức chứa. Cần có người làm việc trong trại (nút Nhân sự).'), ...ranchList) }];
     this.war = new WarPanel(c);
     this.warLog = new WarLogPane(c);
     this.tribes = new TribesPane(c);
@@ -203,19 +208,11 @@ export class BuildingPanel {
     }
     this.tabs.storage = [{ label: 'Tài nguyên', page: page(...stockRows) }];
     this.tabs.market = [{ label: 'Giao thương', page: page(market()) }];
-    // the processing houses: what is being made, then a card for each recipe (the same layout as the craft house)
-    const USE: Record<string, string> = { iron: 'Nấu quặng sắt với than thành thỏi sắt: vật liệu của bậc 4.', steel: 'Rèn thỏi sắt với than thành thép: vật liệu của bậc 5.', fine_steel: 'Luyện thép cao cấp từ quặng sắt hiếm: vật liệu của bậc 6.',
-      hardwood: 'Xẻ và phơi gỗ thành gỗ cứng, dùng cho cán giáo, khiên và cung.', charcoal: 'Đốt gỗ thành than củi cho lò luyện.', leather: 'Thuộc da thú thành da thuộc, dùng cho giáp và yên cương.', cloth: 'Dệt sợi thành vải, dùng cho giáp và áo.' };
+    // the processing houses: the order at work with its bar above the tabs, and a forge bench (recipes, slots in and out, queue) in the tab
     for (const k of ['smelter', 'carpentry', 'tannery'] as const) {
-      const house = () => sim.building(k);
-      this.processGrid[k] = new OrderGrid(c, PROCESS_HOUSES[k].map((r): OrderItem => ({
-        id: r.id, tags: [], name: r.name, use: USE[r.id] ?? r.name, cost: r.in, time: r.time, icon: () => resIcon(Object.keys(r.out)[0]),
-        lock: () => { const b = house(); return b ? sim.processLock(b, r.id) : 'Chưa dựng xong nhà'; }, full: () => null,
-        stored: () => Math.floor(sim.stock[Object.keys(r.out)[0] as Res] ?? 0), queued: () => (house()?.orders ?? []).filter((id) => id === r.id).length,
-        add: () => { const b = house(); return b ? sim.queueProcess(b.id, r.id) : 'Chưa dựng xong nhà'; }, cancel: () => { const b = house(); if (b) sim.unqueueProcess(b.id, r.id); },
-      })));
-      this.progSec[k] = h('div', {}, h('h3', { text: k === 'smelter' ? 'Đang luyện' : k === 'carpentry' ? 'Đang làm' : 'Đang thuộc, dệt' }), this.processActive[k].root, this.processNote[k]);
-      this.tabs[k] = [{ label: 'Chế biến', page: page(hint('Chế biến theo công thức', 'Chạm vào một món để xem giá và thêm vào hàng đợi. Vật liệu trừ ngay khi thêm vào hàng đợi, hủy đơn thì được trả lại. Cần có người làm việc trong nhà (nút Nhân sự) thì đơn mới chạy; nâng cấp nhà để mở thêm công thức và làm nhanh hơn. Sản phẩm vào kho vật liệu.'), this.processGrid[k].root) }];
+      this.forges[k] = new ForgePane(c, k);
+      this.progSec[k] = h('div', {}, h('h3', { text: k === 'smelter' ? 'Đang luyện' : k === 'carpentry' ? 'Đang làm' : 'Đang thuộc, dệt' }), this.forges[k].active);
+      this.tabs[k] = [{ label: 'Chế biến', page: page(hint('Chế biến theo công thức', 'Chọn một công thức ở bên trái, rồi thêm 1, 5 hoặc tối đa đơn vào hàng đợi. Nguyên liệu trừ ngay khi thêm vào hàng đợi (ô đỏ là đang thiếu), hủy đơn thì được trả lại. Cần có người làm việc trong nhà (nút Nhân sự) thì đơn mới chạy; nâng cấp nhà để mở thêm công thức và làm nhanh hơn. Sản phẩm vào kho vật liệu.'), this.forges[k].root) }];
     }
 
     // craft house: what is being made, then the grid of what can be ordered (tools, weapons, armour) with filters; a card opens a scroll
@@ -231,11 +228,11 @@ export class BuildingPanel {
     ]);
     this.progSec.workshop = h('div', {}, h('h3', { text: 'Đang chế tạo' }), this.activeBoxes.craft.root, this.queueNote.craft);
     this.tabs.workshop = [
-      { label: 'Chế tạo', page: page(hint('Chế tạo theo bản vẽ', 'Chạm vào một món để xem giá và thêm vào hàng đợi. Chỉ chế được món đã có bản vẽ ở Nhà nghiên cứu và đủ cấp Nhà chế tạo. Vật liệu trừ ngay khi thêm vào hàng đợi, hủy đơn thì được trả lại. Sản phẩm vào Kho công cụ hoặc Kho vũ khí.'), this.craftGrid.root) },
+      { label: 'Chế tạo', page: page(hint('Chế tạo', 'Chạm vào một món để xem giá và thêm vào hàng đợi. Chỉ chế được món đủ cấp Nhà chế tạo. Vật liệu trừ ngay khi thêm vào hàng đợi, hủy đơn thì được trả lại. Sản phẩm vào Kho công cụ hoặc Kho vũ khí.'), this.craftGrid.root) },
     ];
 
     // research house: who works and what is under way stay at the top; the tabs are pictures laid out as a tree (Quân sự, Xây dựng, Kinh tế on one level, Vũ khí under Quân sự)
-    this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Mỗi công cụ, vũ khí, giáp chỉ có MỘT bản vẽ, nâng dần theo cấp. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research);
+    this.progSec.lab = h('div', {}, hint('Đang nghiên cứu', 'Mỗi lần chỉ nghiên cứu một thứ. Bấm nghiên cứu là trả ngay vật liệu và tiền (hủy đơn thì được trả lại). Cần rất nhiều thời gian: càng nhiều người làm trong nhà càng nhanh.'), this.activeBoxes.research.root, this.queueNote.research);
     this.research = new ResearchPane(c);
     // the research house is one pane (doc/cơ chế nghiên cứu/research-ui.html): the three pillars as tabs, their branches, the path of a branch and a bar to confirm
     this.tabs.lab = [{ label: 'Nghiên cứu', page: page(this.research.root) }];
@@ -369,9 +366,11 @@ export class BuildingPanel {
       case 'workshop': return `Cấp ${b.level}: chứa ${lv.slots} người chế tạo · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
       case 'lab': return `Cấp ${b.level}: chứa ${lv.slots} nhà nghiên cứu · tốc độ ×${lv.craftSpeed.toLocaleString('vi')}`;
 
+      case 'ranch': return `Cấp ${b.level}: chứa ${lv.slots} người chăn nuôi · tự cho ${productsAt(b.level).map((p) => RES_NAME[p.res].toLowerCase()).join(', ')} · tốc độ ×${lv.craftSpeed.toLocaleString('vi')} · mỗi sản phẩm có kho riêng ${lv.cap} · nâng cấp để thêm người và thêm sản phẩm`;
       case 'stable': return `Cấp ${b.level}: chứa ${lv.slots} người thuần thú · tốc độ ×${lv.craftSpeed.toLocaleString('vi')} · thuần được ${MOUNT_KINDS.filter((k) => MOUNTS[k].tier <= b.level).map((k) => MOUNTS[k].name.toLowerCase()).join(', ')}`;
       case 'wartent': if (this.c.sim.era !== 'ancient') return 'Chọn làng đã phát hiện để đưa toàn quân đi đánh'; return `Cấp ${b.level}: tối đa ${this.c.sim.squadLimit()} đội, ${this.c.sim.cardLimit()} thẻ lệnh cho một kế hoạch · vào lều là game tạm dừng`;
       case 'huntlodge': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} thợ săn, săn trong ${huntRange(this.c.sim)} ô quanh chòi · có kho riêng ${lv.cap} thức ăn · nâng cấp để chứa thêm và săn xa hơn`;
+      case 'mine': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} thợ mỏ · mỗi loại quặng và than có kho riêng ${lv.cap} · nâng cấp để thêm người và chứa thêm · mạch quặng nằm ở chân núi`;
       case 'farmhouse': case 'lumberyard': case 'quarry': return `Cấp ${b.level}: giao việc cho tối đa ${lv.slots} người · có kho riêng ${lv.cap} ${RES_NAME[BUILDINGS[b.kind].produces![0]].toLowerCase()}, cộng vào sức chứa của làng · nâng cấp để chứa thêm`;
       case 'scouttent': return `Cấp ${b.level}: cử tối đa ${lv.slots} trinh sát một chuyến · tab Làng đã phát hiện để chọn làng và người đi`;
       case 'market': { const t = MARKET.levels[Math.min(MARKET.levels.length, b.level) - 1]; return `Cấp ${b.level}: bán và đổi hàng · tỉ lệ ×${t.rate.toLocaleString('vi')} · phí đổi hàng ${Math.round(t.fee * 100)}% · mỗi ngày nhận ${t.quotaMin} đến ${t.quotaMax} vỏ giá trị mỗi loại hàng ở giá gốc`; }
@@ -385,7 +384,7 @@ export class BuildingPanel {
   update(): void {
     const { sim, ctl } = this.c, b = this.current();
     this.root.hidden = !b || !ctl.buildingOpen;
-    if (this.root.hidden) { this.craftGrid.close(); this.tameGrid.close(); for (const g of Object.values(this.processGrid)) g.close(); }
+    if (this.root.hidden) { this.craftGrid.close(); this.tameGrid.close(); }
     const inTent = this.c.sim.era === 'ancient' && !!b && ctl.buildingOpen && b.kind === 'wartent' && b.done; // the plan of the medieval era opens the game paused, as a war council does
     if (inTent && !this.inTent) { this.resume = sim.speed; sim.speed = 0; }
     else if (!inTent && this.inTent) { if (this.resume > 0 && sim.speed === 0) sim.speed = this.resume; this.resume = 0; }
@@ -413,7 +412,8 @@ export class BuildingPanel {
     if (ready && isProcessKind(b.kind)) this.updateProcess(b, b.kind as 'smelter' | 'carpentry' | 'tannery');
     if (this.bedList[b.kind] && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
-    if (b.kind === 'field' && ready) this.staffBoxes.farm.update(b);
+    if (b.kind === 'field' && ready) { this.staffBoxes.farm.update(b); this.updateCrop(b); }
+    if (b.kind === 'ranch' && ready) this.updateRanch(b);
     if (b.kind === 'builder' && ready) this.staffBoxes.build.update(b);
     if (b.kind === 'tower' && ready) this.towerPane.update(b);
     if (b.kind === 'wartent' && ready) {
@@ -487,7 +487,7 @@ export class BuildingPanel {
     const staff = STAFF_OF[b.kind as keyof typeof STAFF_OF];
     this.peopleBtn.hidden = !staff || !ready;
     if (!staff || !ready) return;
-    const n = this.c.sim.staffCount(b), slots = levelDef(b).slots;
+    const n = this.c.sim.staffCount(b), slots = this.c.sim.slotsOf(b);
     this.peopleBtn.replaceChildren(icon('people', 15), `Nhân sự ${n}/${slots}`);
     this.peopleBtn.classList.toggle('on', this.peopleOpen);
     this.peopleBtn.title = n < slots ? 'Còn chỗ trống: bấm để thêm người' : 'Thêm hoặc cho nghỉ người làm việc';
@@ -495,10 +495,7 @@ export class BuildingPanel {
   }
 
   private updateProcess(b: Building, kind: 'smelter' | 'carpentry' | 'tannery'): void {
-    const orders = b.orders ?? [], name = (id: string) => PROCESS_HOUSES[kind].find((r) => r.id === id)?.name.toLowerCase() ?? id;
-    this.staffBoxes.craft.update(b); this.processActive[kind].update(b);
-    this.processNote[kind].textContent = `Hàng đợi ${orders.length}: ${orders.map(name).join(', ') || 'trống'}${b.staff.length ? '' : ' · chưa có ai làm việc trong nhà: đơn chưa chạy'}`;
-    this.processGrid[kind].update();
+    this.staffBoxes.craft.update(b); this.forges[kind].update(b);
   }
 
   private updateWorkshop(b: Building): void {
@@ -516,6 +513,25 @@ export class BuildingPanel {
     this.research.update();
   }
 
+  /** The two buttons that say what a field is sown with; flax is for the medieval age. */
+  private updateCrop(b: Building): void {
+    const { sim, ctl, toast } = this.c, crop = b.crop ?? 'food', medieval = sim.era === 'ancient';
+    const key = `${b.id}|${crop}|${medieval}`;
+    if (key === this.cropKey) return;
+    this.cropKey = key;
+    const pick = (want: 'food' | 'flax', text: string, title: string) => h('button', { class: 'sm', type: 'button', text, title, pressed: crop === want, disabled: want === 'flax' && !medieval, onclick: () => { const e = sim.setCrop(b.id, want); if (e) toast(e); ctl.onChange(); } });
+    this.cropBox.replaceChildren(h('b', { text: 'Gieo trồng' }), h('div', { class: 'btns' }, pick('food', 'Thức ăn', 'Trồng cây lương thực: thức ăn về kho'), pick('flax', 'Lanh (sợi)', medieval ? 'Trồng lanh: cho sợi, chậm hơn thức ăn, dùng để dệt vải' : 'Trồng lanh chỉ có từ thời Trung cổ')));
+  }
+
+  private updateRanch(b: Building): void {
+    const { sim } = this.c, open = productsAt(b.level);
+    this.staffBoxes.herd.update(b);
+    for (const r of this.ranchRows) {
+      const on = open.includes(r.p), per = sim.ranchDaily(b, r.p);
+      r.note.textContent = on ? `  ~${per.toLocaleString('vi', { maximumFractionDigits: 1 })} mỗi ngày · kho ${Math.floor(sim.stock[r.p.res])}/${sim.capacity(r.p.res)}` : `  🔒 mở ở cấp ${r.p.level} của trại`;
+    }
+  }
+
   private updateStable(b: Building): void {
     const { sim } = this.c;
     this.staffBoxes.tame.update(b); this.activeBoxes.tame.update(b);
@@ -529,7 +545,7 @@ export class BuildingPanel {
     pick.append(h('option', { value: '', text: 'Mọi loại' }), ...kinds.map((k) => h('option', { value: k, text: kindLabel(k) })));
     pick.value = f.kind;
     pick.addEventListener('change', () => { f.kind = pick.value; ctl.onChange(); });
-    const only = h('button', { class: 'sm', text: 'Chỉ món có thể dùng', title: 'Ẩn những món chưa có bản vẽ, chưa đủ cấp nhà hoặc chưa có trong kho', pressed: f.only, onclick: () => { f.only = !f.only; only.setAttribute('aria-pressed', String(f.only)); ctl.onChange(); } });
+    const only = h('button', { class: 'sm', text: 'Chỉ món có thể dùng', title: 'Ẩn những món chưa đủ cấp nhà hoặc chưa có trong kho', pressed: f.only, onclick: () => { f.only = !f.only; only.setAttribute('aria-pressed', String(f.only)); ctl.onChange(); } });
     into.append(pick, only);
     return into;
   }
@@ -572,7 +588,7 @@ export class BuildingPanel {
 
 /** The stat that counts most for the people of a house: the one its job leans on (src/sim/jobs.ts). */
 const PRIORITY_STAT: Partial<Record<BuildingKind, string>> = {
-  lumberyard: STAT_NAME[JOBS.wood.stat], quarry: STAT_NAME[JOBS.stone.stat], farmhouse: STAT_NAME[JOBS.food.stat], field: STAT_NAME[JOBS.food.stat], huntlodge: STAT_NAME[JOBS.hunt.stat],
+  lumberyard: STAT_NAME[JOBS.wood.stat], ranch: STAT_NAME[JOBS.herd.stat], quarry: STAT_NAME[JOBS.stone.stat], mine: STAT_NAME[JOBS.mine.stat], farmhouse: STAT_NAME[JOBS.food.stat], field: STAT_NAME[JOBS.food.stat], huntlodge: STAT_NAME[JOBS.hunt.stat],
   builder: STAT_NAME[JOBS.build.stat], workshop: STAT_NAME[JOBS.craft.stat], lab: STAT_NAME[JOBS.research.stat], stable: STAT_NAME[JOBS.tame.stat],
   infantry: STAT_NAME.str, guardpost: STAT_NAME.str, cavalry: STAT_NAME.str, archery: STAT_NAME.agi, scouttent: `${STAT_NAME.agi}, ${STAT_NAME.sta}`, house: `${STAT_NAME.vit}, ${STAT_NAME.sta} (hồi sức nhanh)`,
 };

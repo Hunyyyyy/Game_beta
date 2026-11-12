@@ -1,5 +1,6 @@
 import type { Sim } from './sim';
 import { sightOf } from './environment';
+import { WAR_DATA } from './warmarch';
 import soundsJson from '../data/sounds.json';
 
 /** The squads of the running attack plan, for the music: where their soldiers stand (tiles). */
@@ -17,13 +18,18 @@ export function warScene(sim: Sim): WarState {
   const plan = sim.plans.find((p) => p.kind === 'attack' && p.status === 'running');
   if (!plan || plan.result) return { squads: [], stings: 0 }; // decided (won, the army stands waiting to be pulled out): the war music is over
   const squads: WarState['squads'] = [], army: number[] = [];
+  if (plan.skirmish) { // no squads: the soldiers who took the orders are the army for the music
+    const us = plan.skirmish.ids.map((id) => sim.get(id)).filter((v) => !!v && v.health > 0) as Array<NonNullable<ReturnType<Sim['get']>>>;
+    if (us.length) { squads.push({ id: -1, pts: us.map((v) => ({ x: v.x, y: v.y })) }); for (const v of us) army.push(v.id); }
+  }
   for (const m of plan.missions) {
     const s = sim.squadById(m.squad), us = s ? sim.squadUnits(s) : [];
     if (!s || !us.length) continue;
     squads.push({ id: s.id, pts: us.map((v) => ({ x: v.x, y: v.y })) });
     for (const v of us) army.push(v.id);
   }
-  if (army.length && sim.time - sim.warCheckAt >= 0.5) { // twice a second is enough for a sound
+  const quiet = !!plan.skirmish && army.length < WAR_DATA.skirmish.stingMin; // a small skirmish does not sound the battle sting
+  if (army.length && !quiet && sim.time - sim.warCheckAt >= 0.5) { // twice a second is enough for a sound
     sim.warCheckAt = sim.time;
     const foes = sim.foes.filter((f) => f.health > 0), k = soundsJson.war;
     const works = sim.tribes.filter((t) => !plan.tribe || t.id === plan.tribe).flatMap((t) => t.props.filter((q) => q.hp > 0));

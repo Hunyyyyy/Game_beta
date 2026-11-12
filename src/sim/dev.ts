@@ -42,7 +42,7 @@ export const RESEARCH_GROUPS: Array<{ key: string; label: string; chains: string
   { key: 'plan', label: 'Kế hoạch chiến đấu', chains: [], roles: ['plan_foot', 'plan_cavalry', 'plan_archer'], techs: (id) => id.startsWith('plan_') },
   { key: 'march', label: 'Hành quân', chains: [], roles: ['march_foot', 'march_cavalry', 'march_archer', 'march_army'] },
 ];
-/** Research every step of one part of the tree at once ('all' for the whole tree, the blueprints included). Returns what was done. */
+/** Research every step of one part of the tree at once ('all' for the whole tree). Returns what was done. */
 export function researchGroup(sim: Sim, key: string): string {
   const groups = key === 'all' ? RESEARCH_GROUPS : RESEARCH_GROUPS.filter((g) => g.key === key);
   if (!groups.length) return 'Không có nhóm nghiên cứu này.';
@@ -484,3 +484,10 @@ export function sampleBattleLog(sim: Sim): string {
     { id: sim.battleLog.length + 4, kind: 'beasts', name: 'Gấu', startDay: Math.max(1, d - 1), endDay: Math.max(1, d - 1), night: true, minutes: 2, peak: 1, ourDead: 0, foeDead: 1, ourDeadArm: arms(0, 0, 0), civDead: 0, breaches: 0, shots: 6, dmgDealt: 300, dmgTaken: 40, notes: [], sample: true });
   return 'Đã thêm dữ liệu mẫu: mở Lều họp chiến, tab Nhật ký trận (bấm lại nút này để xóa)';
 }
+
+/** Dev: make the second level of the Nhà dân a 4 × 4 house (or give it back its size), to try the upgrade onto bigger ground by hand. The picture stays the small one; only the footprint changes. Not saved. */
+export function growTest(on: boolean): void {
+  const lv = BUILDINGS.house.levels.stone?.[1];
+  if (lv) { if (on) lv.size = [4, 4]; else delete lv.size; }
+}
+export const growTestOn = (): boolean => !!BUILDINGS.house.levels.stone?.[1]?.size;

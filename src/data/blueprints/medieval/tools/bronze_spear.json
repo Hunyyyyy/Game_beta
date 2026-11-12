@@ -1,0 +1,127 @@
+{
+ "name": "Giáo đồng",
+ "type": "prop",
+ "size": [
+  16,
+  16
+ ],
+ "anchor": [
+  8,
+  15
+ ],
+ "params": {
+  "stone": 0
+ },
+ "palette": {
+  "line": "#2b1d10",
+  "handle": "#8a5e34",
+  "handleL": "#aa7c48",
+  "bind": "#d8c690",
+  "bronze": "#c98a3a",
+  "bronzeL": "#e8b564",
+  "bronzeD": "#8a5a22",
+  "steel": "#aeb6bd",
+  "steelL": "#dfe5ea",
+  "steelD": "#6f7880",
+  "iron": "#8e9498",
+  "ironL": "#c0c6c8",
+  "ironD": "#60676b",
+  "horn": "#c9b88a",
+  "hornD": "#8a7a52",
+  "feather": "#e4dcc4",
+  "red": "#a8342a",
+  "redL": "#c9503f",
+  "chain": "#9aa2a8",
+  "chainL": "#cfd5d9",
+  "chainD": "#5c646b",
+  "leaf": "#6e7a3a",
+  "leafL": "#8b9a4c",
+  "leafD": "#4a5528",
+  "stud": "#d8d2c0",
+  "brown": "#7a4a2a",
+  "brownL": "#9a6238",
+  "brownD": "#4e301c",
+  "hard": "#5a4430",
+  "hardL": "#7a5e44",
+  "hardD": "#3a2a1c",
+  "stitch": "#e8d6a8"
+ },
+ "layers": [
+  {
+   "shape": "line",
+   "from": [
+    2,
+    15
+   ],
+   "to": [
+    11,
+    5
+   ],
+   "w": 1,
+   "color": "handle"
+  },
+  {
+   "shape": "line",
+   "from": [
+    3,
+    15
+   ],
+   "to": [
+    12,
+    5
+   ],
+   "w": 1,
+   "color": "handleL"
+  },
+  {
+   "shape": "poly",
+   "points": [
+    [
+     10,
+     6
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     15,
+     4
+    ]
+   ],
+   "color": "bronze"
+  },
+  {
+   "shape": "pixels",
+   "at": [
+    [
+     13,
+     2
+    ],
+    [
+     13,
+     3
+    ]
+   ],
+   "color": "bronzeL"
+  },
+  {
+   "shape": "pixels",
+   "at": [
+    [
+     10,
+     7
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "color": "bind"
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  }
+ ]
+}

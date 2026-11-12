@@ -1,0 +1,29 @@
+{
+  "_note": "Trại chăn nuôi (medieval): people inside raise beasts, and each product of the house comes in by itself, with no beast drawn. A product is made `per` units for every `time` seconds of work of one average herdsman at speed 1 (all the people inside add up, the level of the house speeds it by its craftSpeed); `level` is the level of the house that opens it. What is made goes straight to the store of that good (up to its capacity: the house keeps `cap` of each good in a small store of its own).",
+  "products": [
+    {
+      "res": "hide",
+      "per": 1,
+      "time": 120,
+      "level": 1
+    },
+    {
+      "res": "fiber",
+      "per": 2,
+      "time": 100,
+      "level": 1
+    },
+    {
+      "res": "sinew",
+      "per": 1,
+      "time": 160,
+      "level": 2
+    },
+    {
+      "res": "feather",
+      "per": 2,
+      "time": 120,
+      "level": 3
+    }
+  ]
+}

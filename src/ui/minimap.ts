@@ -6,7 +6,7 @@ import type { Controller } from './controller';
 
 export const TERRAIN: Record<number, [number, number, number]> = {
   [Tile.Grass]: [134, 163, 85], [Tile.Water]: [63, 111, 154], [Tile.Tree]: [47, 82, 34],
-  [Tile.Rock]: [120, 125, 128], [Tile.Mountain]: [104, 98, 92], [Tile.Mud]: [122, 100, 66], [Tile.Bush]: [150, 70, 60],
+  [Tile.Rock]: [120, 125, 128], [Tile.Ore]: [104, 92, 88], [Tile.Mountain]: [104, 98, 92], [Tile.Mud]: [122, 100, 66], [Tile.Bush]: [150, 70, 60],
 };
 
 const BUILT: [number, number, number] = [200, 150, 80];

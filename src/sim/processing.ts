@@ -2,6 +2,7 @@
 import type { Building } from './buildings';
 import { levelDef } from './buildings';
 import { MAX_QUEUE, isProcessKind, processRecipe } from './processdata';
+import { perkPct } from './research';
 import { RES_NAME } from './resources';
 import type { Res } from './resources';
 import type { Sim } from './sim';
@@ -58,6 +59,7 @@ export function tickProcessing(sim: Sim, dt: number): void {
     if (!r) { b.active = null; continue; }
     let rate = 0;
     for (const v of staff) { rate += sim.workFactor(v, 'craft'); sim.gainXp(v, 'craft', dt); }
+    rate *= 1 + (perkPct(sim.researched, 'processSpeed') + perkPct(sim.researched, `speed_${b.kind}`)) / 100; // the research of the craftsmen: the furnaces and the benches go faster
     b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * sim.paceWork * rate * levelDef(b).craftSpeed) / r.time);
     if (b.active.progress < 1) continue;
     const full = (Object.keys(r.out) as Res[]).find((k) => sim.stock[k] + (r.out[k] ?? 0) > sim.capacity(k));

@@ -73,10 +73,16 @@ import lumberyard_A1 from './lumberyard/A1.json';
 import market_L1 from './market/L1.json';
 import market_L2 from './market/L2.json';
 import market_L3 from './market/L3.json';
+import mine_A1 from './mine/A1.json';
+import mine_A2 from './mine/A2.json';
+import mine_A3 from './mine/A3.json';
 import quarry_L1 from './quarry/L1.json';
 import quarry_L2 from './quarry/L2.json';
 import quarry_L3 from './quarry/L3.json';
 import quarry_A1 from './quarry/A1.json';
+import ranch_A1 from './ranch/A1.json';
+import ranch_A2 from './ranch/A2.json';
+import ranch_A3 from './ranch/A3.json';
 import scouttent_L1 from './scouttent/L1.json';
 import scouttent_L2 from './scouttent/L2.json';
 import scouttent_L3 from './scouttent/L3.json';
@@ -138,7 +144,9 @@ export const STONE_ART: Record<string, unknown[]> = {
   lab: [lab_L1, lab_L2, lab_L3, lab_L4],
   lumberyard: [lumberyard_L1, lumberyard_L2, lumberyard_L3],
   market: [market_L1, market_L2, market_L3],
+  mine: [],
   quarry: [quarry_L1, quarry_L2, quarry_L3],
+  ranch: [],
   scouttent: [scouttent_L1, scouttent_L2, scouttent_L3],
   smelter: [],
   stable: [stable_L1, stable_L2, stable_L3],
@@ -170,7 +178,9 @@ export const ANCIENT_ART: Record<string, unknown[]> = {
   infantry: [infantry_A1],
   lab: [lab_A1],
   lumberyard: [lumberyard_A1],
+  mine: [mine_A1, mine_A2, mine_A3],
   quarry: [quarry_A1],
+  ranch: [ranch_A1, ranch_A2, ranch_A3],
   scouttent: [scouttent_A1],
   smelter: [smelter_A1, smelter_A2, smelter_A3],
   stable: [stable_A1],

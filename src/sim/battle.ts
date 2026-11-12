@@ -1,4 +1,5 @@
 import animsJson from '../data/anims.json';
+import { armorRank } from './ranks';
 import { ARMORS, ArmorDef, damageOf, DmgType, RULES, Team, WeaponDef, WEAPONS } from './combat';
 import { WEATHER } from './calendar';
 import { Arm, armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formations';
@@ -131,14 +132,17 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === 'player') return;
   const missile = !!src.unit && weaponOf(src.unit).ranged === true;
-  const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v);
+  const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v) * sim.skirmishEdge(src.unit, v); // a boss village fought without a war plan is stronger (warskirmish.ts)
   if (v.team === 'player') sim.noteDamage(false, Math.min(final, v.health)); else if (v.ai?.role === 'raider') sim.noteDamage(true, Math.min(final, v.health));
   v.health -= final; v.calm = 0; v.flinch = 0.3;
   if (src.unit && sim.mountOf(src.unit) === 'elephant') sim.addSfx('elephant', false, src.unit.x, src.unit.y); // the beast bellows when its rider strikes
-  if (src.unit) { const sw = weaponOf(src.unit); sim.addSfx(sw.id, missile, v.x, v.y); } // the sound belongs to the weapon in his hand, whoever holds it
+  if (src.unit) { const sw = weaponOf(src.unit); sim.addSfx(sw.id, missile, v.x, v.y, sw.rank ?? 0, armor ? armorRank(v.armor) : 0); } // the sound belongs to the weapon in his hand, whoever holds it
   if (src.unit && src.unit.team !== v.team && src.unit.team !== 'player' && v.team !== 'player' && src.unit.team !== 'wild' && v.team !== 'wild') noteClash(sim, src.unit.team, v.team, v.x, v.y);
   if (armor) sim.wearGear(v, 'armor');
   if (src.unit && src.unit.team === 'player' && v.team !== 'player') sim.tribeAttacked(v.team as Exclude<Team, 'player' | 'wild'>, v);
+  // our soldier and a soldier of a village strike each other, ordered or not: the skirmish begins (warskirmish.ts)
+  if (src.unit && src.unit.team === 'player' && src.unit.job === 'fight' && v.team !== 'player') { const foe = sim.foeVillage(v); if (foe && !sim.inSkirmish(src.unit)) sim.skirmishOrder([src.unit.id], foe); }
+  else if (src.unit && v.team === 'player' && v.job === 'fight') { const foe = sim.foeVillage(src.unit); if (foe && !sim.inSkirmish(v)) sim.skirmishOrder([v.id], foe); }
   if (v.health > 0 && v.team !== 'player' && v.ai && v.ai.role !== 'civ' && src.unit && src.unit.team === 'player' && src.unit.inside !== null) {
     const tw = sim.getBuilding(src.unit.inside);
     if (tw && tw.kind === 'tower') { v.ai.siege = tw.id; v.fight.target = null; } // shot from a tower: it is the tower he goes for

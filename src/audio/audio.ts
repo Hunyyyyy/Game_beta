@@ -63,7 +63,7 @@ export class GameAudio {
   /** The war track of this war (one of `war.music.files`, picked when it starts). */
   private warTrack: string | null = null;
   /** What stands near the middle of the screen this frame (`near` in sounds.json): the renderer says it, `update` plays it. */
-  private victory: { left: string[]; cur: HTMLAudioElement | null; started: HTMLAudioElement[] } | null = null;
+  private victory: { left: string[]; total: number; cur: HTMLAudioElement | null; started: HTMLAudioElement[] } | null = null;
   private nearNow = new Set<string>();
   /** Real time (ms) before which nothing plays: just after the player is back from another tab, what happened meanwhile is not heard. */
   private quietUntil = 0;
@@ -172,8 +172,10 @@ export class GameAudio {
    * A blow landed near the middle of the screen. The sound belongs to the weapon (`hits` in sounds.json, by weapon id), whoever holds it:
    * a weapon without its own entry sounds as `melee` if it is hand to hand, and makes no sound if it is thrown or shot (sling...).
    */
-  hit(weapon: string, ranged: boolean, now: number): void {
-    const key = HITS[weapon] ? weapon : ranged ? '' : 'melee', c = key ? HITS[key] : null;
+  hit(weapon: string, ranged: boolean, now: number, rank = 0, armor = 0): void {
+    let key = HITS[weapon] ? weapon : (cfg.hitAs as Record<string, string>)[weapon] ?? (ranged ? '' : 'melee'); // the bows and the crossbow land arrows like the short bow
+    if (key === 'melee' && rank >= cfg.armorHits.weaponRank && armor >= cfg.armorHits.armor) key = armor >= cfg.armorHits.high ? 'melee_armor_67' : 'melee_armor_45'; // a heavy weapon on heavy armour rings
+    const c = key ? HITS[key] : null;
     if (!c || this.hidden || performance.now() < this.quietUntil) return;
     if (c.burst) { // arrows that land together are one sound: they are counted for `burstWindow` seconds, then played by `sweep`
       const p = this.pending.get(key);
@@ -238,8 +240,11 @@ export class GameAudio {
     if (result === 'lost') { this.lostEl = this.play(cfg.end.lost.file, cfg.end.lost.volume, 0, now, false, 'mus', 'lost'); return; }
     const files = [...cfg.end.won.files];
     for (let i = files.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [files[i], files[j]] = [files[j], files[i]]; }
-    this.victory = { left: files, cur: null, started: [] };
+    this.victory = { left: files, total: files.length, cur: null, started: [] };
   }
+
+  /** How long the cheering of a skirmish won lasts (there is no pull-out to cut it: sounds.json end.won.skirmishSeconds). */
+  get skirmishCheer(): number { return cfg.end.won.skirmishSeconds; }
 
   /** The player pulled the army out: the cheering stops (what plays now is cut, what is still to come does not start). */
   stopVictory(): void {
@@ -252,7 +257,7 @@ export class GameAudio {
   private tickVictory(): void {
     const v = this.victory;
     if (!v) return;
-    const c = v.cur, begun = 4 - v.left.length;
+    const c = v.cur, begun = v.total - v.left.length;
     if (begun % 2 === 1) { if (c && !c.ended && !(c.duration > 0 && c.currentTime / c.duration >= cfg.end.won.next)) return; } // the second of a pair: when the first is 30% played
     else if (begun > 0 && v.started.some((e) => !e.ended)) return; // the next pair: when both of the one before are over
     if (!v.left.length) { this.victory = null; return; }

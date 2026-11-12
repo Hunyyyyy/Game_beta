@@ -1,7 +1,8 @@
 /** Roles: the jobs that belong to a house. A role is given and taken back in its house (the Trại lính bộ, the Xưởng gỗ…), never at the campfire. */
 import { buildingName, levelDef } from './buildings';
 import { DIFF } from './difficulty';
-import { ROLES, roleName, roleOf } from './jobs';
+import { ORE_RES, ROLES, roleName, roleOf } from './jobs';
+import type { Res } from './resources';
 import type { RoleId } from './jobs';
 import type { Sim } from './sim';
 import type { Villager } from './model';
@@ -9,6 +10,20 @@ import { perkPct } from './research';
 
 /** While an attack is deployed (until it ends or is called off) roles stay as they are, so that nobody is taken out of the army or put into it. Returns why, or null. */
 export const warLock = (sim: Sim): string | null => (sim.plans.some((p) => p.kind === 'attack' && p.status === 'running') ? 'Đang trong chế độ chiến đấu: không đổi vai trò hay bỏ lính được cho tới khi trận kết thúc' : null);
+
+/** Let a miner of the Mỏ work an ore or not (the player chooses which ores each one digs). He keeps at least one. Returns an error or null. */
+export function setMineOre(sim: Sim, id: number, res: Res, on: boolean): string | null {
+  const v = sim.get(id);
+  if (!v || v.job !== 'mine') return 'Chỉ thợ mỏ mới chọn được loại quặng';
+  if (!ORE_RES.includes(res)) return 'Không phải quặng';
+  const now = v.ores ?? [...ORE_RES], has = now.includes(res);
+  if (on === has) return null;
+  const next = on ? [...now, res] : now.filter((r) => r !== res);
+  if (!next.length) return 'Thợ mỏ phải khai ít nhất một loại quặng';
+  v.ores = next.length === ORE_RES.length ? undefined : next; // every ore is the default
+  if (!on && v.target >= 0 && sim.world.nodes.get(v.target)?.res === res && (v.phase === 'goNode' || v.phase === 'work')) sim.resetTask(v); // he looks for another seam at once
+  return null;
+}
 
 /** The finished houses of a role. There is one of each; raising its level makes room for more people. */
 export const roleHouses = (sim: Sim, role: RoleId) => sim.buildings.filter((b) => b.kind === ROLES[role].building && b.done);
@@ -26,7 +41,7 @@ export const roleCapacity = (sim: Sim, role: RoleId): number => {
   const houses = roleHouses(sim, role);
   const camp = CAMP_ROLES.includes(role) ? sim.campBonus : 0; // a village we took adds places to every camp of soldiers
   const wider = ARMS.includes(role) ? Math.round(perkPct(sim.researched, `camp_${role}`)) : 0; // the research of the medieval age that widens the camp of an arm
-  return houses.length ? houses.reduce((n, b) => n + levelDef(b).slots + camp, 0) + wider : sim.dev.freeBuild ? 99 : NO_HOUSE_TRADES.includes(role) ? NO_HOUSE_CAP : 0;
+  return houses.length ? houses.reduce((n, b) => n + sim.slotsOf(b) + camp, 0) + wider : sim.dev.freeBuild ? 99 : NO_HOUSE_TRADES.includes(role) ? NO_HOUSE_CAP : 0;
 };
 
 export const roleCount = (sim: Sim, role: RoleId): number => sim.villagers.filter((v) => roleOf(v) === role).length;

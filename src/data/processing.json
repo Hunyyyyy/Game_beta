@@ -21,6 +21,19 @@
     "level": 1
    },
    {
+    "id": "bronze",
+    "name": "Thỏi đồng",
+    "in": {
+     "copper_ore": 3,
+     "coal": 1
+    },
+    "out": {
+     "bronze": 1
+    },
+    "time": 40,
+    "level": 1
+   },
+   {
     "id": "steel",
     "name": "Thép",
     "in": {

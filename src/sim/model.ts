@@ -96,6 +96,8 @@ export interface Villager {
   potential: Record<WorkJob, number>;
   skill: Record<WorkJob, Skill>;
   tools: ToolSet;
+  /** A miner of the Mỏ: the ores he may work, chosen by the player (undefined: every one). */
+  ores?: Res[];
   job: Job;
   /** The arm of a soldier (job 'fight'): chosen by the camp that took him on. */
   arm: SoldierArm;
@@ -327,6 +329,8 @@ export interface Plan {
   id: number; kind: 'attack' | 'defense'; tribe: string | null;
   /** Made by the simple "Đánh" of the Lều họp chiến (the stone age): the whole army, one squad of each arm, straight at the village. */
   quick?: boolean;
+  /** Made by the player's own orders on soldiers (warskirmish.ts): a war with no squads or arrows. Only these soldiers take part, with no march rules (no hunger, tiredness, slow or tents). `idleSince`: the last time one of them was fighting or under an attack order. */
+  skirmish?: { ids: number[]; idleSince: number };
   missions: Mission[]; cards: Card[];
   status: 'draft' | 'running' | 'done';
   /** When the order to pull out was given (a retreat or a recall): from it the grace of data/war.json "retreat" counts. */
@@ -392,11 +396,11 @@ export interface BattleRecord {
 
 export const HAIR = ['#4a2e1a', '#2b1b10', '#6b3f1d', '#c98a3a', '#7a5a3a'];
 export const SKIN = ['#d9a371', '#e8c4a0', '#c58a5c', '#b87850'];
-export const NODE_JOB: Record<NodeKind, WorkJob> = { tree: 'wood', rock: 'stone', bush: 'food' };
+export const NODE_JOB: Record<NodeKind, WorkJob> = { tree: 'wood', rock: 'stone', bush: 'food', ore: 'mine' };
 export const STAT_KEYS = ['vit', 'str', 'agi', 'sta'] as const;
 export const XP_MULT = [0, 1, 1.5, 2];
 /** Khoảng cách ngang (ô) từ tâm vật thể tới chỗ dân đứng khi làm. */
-export const REACH: Record<NodeKind, number> = { tree: 0.55, rock: 0.62, bush: 0.5 };
+export const REACH: Record<NodeKind, number> = { tree: 0.55, rock: 0.62, bush: 0.5, ore: 0.62 };
 export const LEFT = 1, RIGHT = 2;
 
 export interface PlaceResult { ok: boolean; reason?: string; building?: Building }

@@ -2,9 +2,9 @@
 import { Building, BUILDINGS } from './buildings';
 import { Job, JOB_NAME, MOUNTS, MOUNT_KINDS, WorkJob } from './jobs';
 import type { MountKind } from './jobs';
-import { RECIPE_BY_ID, recipeName, TIER_DURABILITY, TIER_NAME, Tool, ToolKind, TOOL_KINDS, TOOL_NAME, TOOL_OF_JOB } from './tools';
+import { MAX_TOOL_TIER, RECIPE_BY_ID, recipeName, TIER_DURABILITY, TIER_NAME, Tool, ToolKind, TOOL_KINDS, TOOL_NAME, TOOL_OF_JOB } from './tools';
 import { ARMORS, CRAFTED_WEAPONS, cycleOf, RULES, WEAPONS } from './combat';
-import { craftQuality, recipeOpen } from './research';
+import { craftQuality } from './research';
 import { rankDef } from './ranks';
 import type { RankRole } from './ranks';
 import type { Sim } from './sim';
@@ -156,7 +156,7 @@ export function toolLacking(sim: Sim, v: Villager, job: WorkJob): boolean {
 }
 
 /** Best tier of this tool the stock holds (0 when none). */
-export function stockedTier(sim: Sim, k: ToolKind): number { for (let t = 2; t >= 1; t--) if (toolCount(sim, k, t) > 0) return t; return 0; }
+export function stockedTier(sim: Sim, k: ToolKind): number { for (let t = MAX_TOOL_TIER; t >= 1; t--) if (toolCount(sim, k, t) > 0) return t; return 0; }
 
 /** A villager who lacks a tool, with the Kho công cụ built and a tool in stock: he fetches it himself. */
 export function needTool(sim: Sim, v: Villager, job: WorkJob): boolean {
@@ -182,15 +182,17 @@ const AUTO_GEAR = false;
  */
 export function canCarry(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'> & { rank?: number }, id: string): boolean {
   const w = WEAPONS[id]; if (!w) return true;
-  if (v.job !== 'fight') return id !== 'mace';
-  if (v.guard) { if (v.post >= 0) return !!w.ranged; const d = rankDef('guard', v.rank ?? 1); return d ? d.weapon === id : true; } // a guard of the Trại lính gác carries the weapon of his rank only, like a soldier of a camp
+  const ranked = (w.rank ?? 0) >= 4; // the weapons of the ranks of the medieval age are for the soldiers of those ranks: nobody else takes them from the store
+  if (v.job !== 'fight') return id !== 'mace' && !ranked;
+  if (v.guard) { if (v.post >= 0) return !!w.ranged && !ranked; const d = rankDef('guard', v.rank ?? 1); return d ? d.weapon === id : true; } // a guard of the Trại lính gác carries the weapon of his rank only, like a soldier of a camp
   if (w.rank !== undefined && w.rank !== (v.rank ?? 1)) return false; // a soldier of a camp carries the weapons of his rank (ranks.json)
   return v.arm === 'archer' ? !!w.ranged : !w.ranged;
 }
 
 /** May this person wear this armour? A soldier of a rank wears the armour of that rank (ranks.json); the men of a tower, the hunters and the villagers wear what there is. */
 export function canWear(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'> & { rank?: number }, id: string): boolean {
-  if (v.job !== 'fight' || (v.guard && v.post >= 0)) return true;
+  if (v.job !== 'fight') return (ARMORS[id]?.tier ?? 1) <= 2; // the armour of the medieval ranks is for those soldiers: the hunters and the villagers wear only the hide and the bone
+  if (v.guard && v.post >= 0) return (ARMORS[id]?.tier ?? 1) <= 2;
   const d = rankDef((v.guard ? 'guard' : v.arm) as RankRole, v.rank ?? 1);
   return d?.armor ? d.armor === id : true;
 }
@@ -251,12 +253,13 @@ export function planTool(sim: Sim, v: Villager, job: WorkJob): boolean {
   v.orderCd = 45;
   const craftHouse = sim.building('workshop');
   if (!craftHouse) return false;
-  // order the best tool the blueprints allow, unless enough are already made or on their way
+  // order the best tool the house level allows, unless enough are already made or on their way
   let id = '';
-  for (let tier = 2; tier >= 1; tier--) if (sim.recipeOpen(`${k}${tier}`)) { id = `${k}${tier}`; break; }
+  for (let tier = MAX_TOOL_TIER; tier >= 1; tier--) if (sim.recipeOpen(`${k}${tier}`) && !sim.missing(sim.craftCost(`${k}${tier}`))) { id = `${k}${tier}`; break; } // the best he can order and the village can pay now
   if (!id) return false;
   const lacking = sim.villagers.filter((o) => o.inside === null && o.job !== 'idle' && TOOL_OF_JOB[o.job as WorkJob] === k && toolLacking(sim, o, o.job as WorkJob)).length;
-  const onWay = toolCount(sim, k, 1) + toolCount(sim, k, 2) + sim.craftQueue.filter((q) => q.startsWith(k)).length + (craftHouse.active?.id.startsWith(k) ? 1 : 0);
+  let made = 0; for (let t = 1; t <= MAX_TOOL_TIER; t++) made += toolCount(sim, k, t);
+  const onWay = made + sim.craftQueue.filter((q) => q.startsWith(k)).length + (craftHouse.active?.id.startsWith(k) ? 1 : 0);
   if (onWay >= lacking || sim.craftQueue.length >= 12) return false;
   v.order = `craft:${id}`;
   return goTo(sim, v, craftHouse, 'goOrder');
@@ -322,7 +325,7 @@ export function equipGear(sim: Sim, v: Villager): void {
   if (suit) { sim.toolStock[armorKey(suit)]--; v.armor = suit; sim.say(`${v.name} mặc ${ARMORS[suit].name.toLowerCase()}.`); }
 }
 
-/** With ordering researched, a soldier or hunter who has nothing to fight with asks the Nhà chế tạo for a weapon (a soldier also for armour). */
+/** With ordering researched, a soldier or hunter who has nothing to fight with asks the Nhà chế tạo for a weapon (armour is no longer ordered: a soldier is made with his suit). */
 export function planGearErrand(sim: Sim, v: Villager): boolean {
   if (!AUTO_ORDER || (v.job !== 'hunt' && v.job !== 'fight') || v.phase === 'fight' || v.manualGear || v.orderCd > 0) return false;
   const house = sim.building('workshop');
@@ -339,7 +342,7 @@ export function planGearErrand(sim: Sim, v: Villager): boolean {
       const sc = WEAPONS[w].damage / WEAPONS[w].cycle;
       if (sc > bestScore) { bestScore = sc; id = rid; }
     }
-  } else if (v.job === 'fight' && !v.armor && !have(/^(hide|bone)/) && sim.recipeOpen('hide1')) id = 'hide1';
+  }
   v.orderCd = 60;
   if (!id) return false;
   v.order = `craft:${id}`;

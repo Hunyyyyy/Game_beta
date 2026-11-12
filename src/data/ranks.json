@@ -77,9 +77,8 @@
         "weapon": "bronze_sword",
         "armor": "bronze",
         "cost": {
-          "coin": 4
-        },
-        "soon": true
+          "coin": 20
+        }
       },
       {
         "rank": 5,
@@ -87,9 +86,8 @@
         "weapon": "arming_sword",
         "armor": "footman",
         "cost": {
-          "coin": 5
-        },
-        "soon": true
+          "coin": 35
+        }
       },
       {
         "rank": 6,
@@ -97,7 +95,7 @@
         "weapon": "greatsword",
         "armor": "guard",
         "cost": {
-          "coin": 8
+          "coin": 60
         },
         "soon": true
       },
@@ -107,7 +105,7 @@
         "weapon": "knight_sword",
         "armor": "templar",
         "cost": {
-          "coin": 14
+          "coin": 100
         },
         "soon": true
       }
@@ -146,9 +144,8 @@
         "weapon": "bronze_bow",
         "armor": "bronze",
         "cost": {
-          "coin": 4
-        },
-        "soon": true
+          "coin": 20
+        }
       },
       {
         "rank": 5,
@@ -156,9 +153,8 @@
         "weapon": "composite_bow",
         "armor": "archer",
         "cost": {
-          "coin": 5
-        },
-        "soon": true
+          "coin": 35
+        }
       },
       {
         "rank": 6,
@@ -166,7 +162,7 @@
         "weapon": "longbow",
         "armor": "marksman",
         "cost": {
-          "coin": 8
+          "coin": 60
         },
         "soon": true
       },
@@ -176,7 +172,7 @@
         "weapon": "alloy_crossbow",
         "armor": "sniper",
         "cost": {
-          "coin": 14
+          "coin": 100
         },
         "soon": true
       }
@@ -225,11 +221,10 @@
         "armor": "bronze",
         "mount": "elephant",
         "cost": {
-          "coin": 40,
+          "coin": 80,
           "food": 150,
           "hide": 50
-        },
-        "soon": true
+        }
       },
       {
         "rank": 5,
@@ -238,11 +233,10 @@
         "armor": "rider",
         "mount": "horse",
         "cost": {
-          "coin": 65,
+          "coin": 130,
           "food": 250,
           "hide": 80
-        },
-        "soon": true
+        }
       },
       {
         "rank": 6,
@@ -251,7 +245,7 @@
         "armor": "royalrider",
         "mount": "warhorse",
         "cost": {
-          "coin": 130,
+          "coin": 260,
           "food": 400,
           "hide": 120
         },
@@ -264,7 +258,7 @@
         "armor": "paladin",
         "mount": "silverhorse",
         "cost": {
-          "coin": 250,
+          "coin": 500,
           "food": 600,
           "hide": 180
         },
@@ -307,9 +301,8 @@
         "weapon": "bronze_spear",
         "armor": "bronze",
         "cost": {
-          "coin": 4
-        },
-        "soon": true
+          "coin": 20
+        }
       },
       {
         "rank": 5,
@@ -317,9 +310,8 @@
         "weapon": "short_spear",
         "armor": "watchman",
         "cost": {
-          "coin": 5
-        },
-        "soon": true
+          "coin": 35
+        }
       },
       {
         "rank": 6,
@@ -327,7 +319,7 @@
         "weapon": "pike",
         "armor": "sergeant",
         "cost": {
-          "coin": 8
+          "coin": 60
         },
         "soon": true
       },
@@ -337,7 +329,7 @@
         "weapon": "ward_sword",
         "armor": "warden",
         "cost": {
-          "coin": 14
+          "coin": 100
         },
         "soon": true
       }

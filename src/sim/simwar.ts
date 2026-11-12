@@ -20,6 +20,7 @@ import type { Res } from './resources';
 import { FOE_PATH_SHARE } from './constants';
 import * as warplan from './warplan';
 import * as warquick from './warquick';
+import * as warskirmish from './warskirmish';
 import { armOf, tickProjectiles } from './battle';
 import type { Ent } from './battle';
 import type { Building } from './buildings';
@@ -38,18 +39,33 @@ export const WAR = {
     if (Math.floor(this.time) !== Math.floor(this.time - dt)) { // each second: the village that stayed home eats from the store (paid at the end), the army from the packs
       if (this.era !== 'ancient') this.warMeals += (this.warNeed() + this.armyNeed()) / this.dayLen; // no supply soldiers: the army eats from the village store like the village
       else {
-        this.warMeals += this.warNeed() / this.dayLen; warsupply.eatPacks(this, plan, this.armyNeed() / this.dayLen);
-        if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) warsupply.follow(this, plan);
-        wartent.tickTents(this, plan); warharass.tickHarass(this, plan);
+        this.warMeals += this.warNeed() / this.dayLen;
+        if (!plan.skirmish) { // a skirmish has no packs, tents or harassment (warskirmish.ts)
+          warsupply.eatPacks(this, plan, this.armyNeed() / this.dayLen);
+          if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) warsupply.follow(this, plan);
+          wartent.tickTents(this, plan); warharass.tickHarass(this, plan);
+        }
       }
     }
     for (const v of [...this.villagers]) { if (ranks.has(v.id)) this.tickVillager(v, dt); else warmode.standDown(this, v, dt); }
-    army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
+    army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt); warskirmish.tickSkirmish(this, plan);
     const enemy = warmode.warTribe(this);
     this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
     for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
     tickTribes(this, dt);
   },
+  /** → warskirmish.skirmishOrder: soldiers took an order against a village (commands.ts), which may begin a skirmish. */
+  skirmishOrder(this: Sim, ids: readonly number[], t: Parameters<typeof warskirmish.skirmishOrder>[2]): void { warskirmish.skirmishOrder(this, ids, t); },
+  /** → warskirmish.inSkirmish */
+  inSkirmish(this: Sim, v: Villager): boolean { return warskirmish.inSkirmish(this, v); },
+  /** → warskirmish.foeVillage */
+  foeVillage(this: Sim, v: Villager) { return warskirmish.foeVillage(this, v); },
+  /** → warskirmish.villageAt */
+  villageAt(this: Sim, x: number, y: number) { return warskirmish.villageAt(this, x, y); },
+  /** → warskirmish.edge: the boss factor of a blow in a skirmish (1 elsewhere). */
+  skirmishEdge(this: Sim, from: Villager | undefined, to: Villager): number { return warskirmish.edge(this, from, to); },
+  /** → warskirmish.cleanup */
+  skirmishCleanup(this: Sim): void { warskirmish.cleanup(this); },
   /** → warsupply.supplyAdvice */
   supplyAdvice(this: Sim, plan: Plan): warsupply.SupplyAdvice | null { return warsupply.supplyAdvice(this, plan); },
   /** Whether a feature of the war plan is researched (the details tab, the supply sums, the weather, the rest in the field). */

@@ -12,7 +12,7 @@ import { Tile } from './world';
 import type { Sim } from './sim';
 import type { Breaking, Mission, Obstacle, Plan, Pt, Squad, Villager } from './model';
 
-export const NODE_NAME = { tree: 'cây', rock: 'đá', bush: 'bụi quả' } as const;
+export const NODE_NAME = { tree: 'cây', rock: 'đá', bush: 'bụi quả', ore: 'mạch quặng' } as const;
 export const PROP_NAME: Record<string, string> = { fire: 'Đống lửa', pile: 'Kho lương', tower: 'Chòi canh', fence: 'Hàng rào', gate: 'Cổng', house: 'Nhà' };
 
 type Tribe = Sim['tribes'][number];
@@ -32,7 +32,7 @@ export function obstacleAt(sim: Sim, x: number, y: number): Obstacle | null {
   const w = sim.world, N = w.size;
   if (!w.inBounds(x, y)) return { kind: 'wall', x, y, label: 'rìa bản đồ', clear: false };
   const node = w.nodeAt(x, y);
-  if (node) return { kind: node.kind, x, y, label: NODE_NAME[node.kind], clear: true };
+  if (node) return { kind: node.kind === 'ore' ? 'rock' : node.kind, x, y, label: NODE_NAME[node.kind], clear: true }; // a seam of ore is broken like a rock
   const t = w.at(x, y);
   if (t === Tile.Water) return { kind: 'water', x, y, label: 'nước', clear: false };
   if (w.occ[y * N + x]) {

@@ -200,13 +200,120 @@ export function upgradeBuilding(sim: Sim, id: number): string | null {
   if (!b) return 'Không tìm thấy công trình';
   const why = canUpgrade(sim, b);
   if (why) return why;
+  const grow = growCheck(sim, b); // a level with a bigger footprint waits for the ground to be clear: nothing is paid before
+  if (grow?.hard) return grow.hard;
+  if (grow && grow.blockers.length) return `Còn ${grow.blockers.length} công trình vướng nền mới: hãy dời đi trước`;
   b.era = upgradeEra(b);
   const next = levelDef(b, b.level + 1);
   const bill = buildBill(sim, next.cost);
   if (!sim.freeCost()) for (const r of Object.keys(bill) as Res[]) sim.stock[r] -= bill[r] ?? 0;
-  if (sim.dev.instantBuild) { b.level++; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); afterUpgrade(sim, b); return null; }
+  if (grow) startGrow(sim, b, grow.rect);
+  if (sim.dev.instantBuild) { b.level++; finishGrow(sim, b); b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} lên cấp ${b.level} ngay (dev).`); afterUpgrade(sim, b); return null; }
   b.upgrading = true; b.progress = 0;
   sim.say(`Bắt đầu nâng ${BUILDINGS[b.kind].name} lên cấp ${b.level + 1} (${next.name.toLowerCase()}). Giao việc "Thợ xây" để làm.`);
+  return null;
+}
+
+// ---------------------------------------------------------------- a level with a bigger footprint
+export interface GrowRect { x: number; y: number; w: number; h: number }
+/** The ground a building covers at its next level when that is more than it covers now (the old footprint's middle stays the middle), or null when it keeps its size. */
+export function growRect(b: Building): GrowRect | null {
+  if (b.level >= topLevel(b)) return null;
+  const next = levelDef({ ...b, era: upgradeEra(b) }, b.level + 1)?.size, cur = footOf(b);
+  if (!next || (next[0] <= cur.w && next[1] <= cur.h)) return null;
+  return { x: b.x - Math.floor((next[0] - cur.w) / 2), y: b.y - Math.floor((next[1] - cur.h) / 2), w: next[0], h: next[1] };
+}
+
+/** What stands in the way of that ground: the houses that overlap it or come closer than the free tile houses keep (the player moves those away), and whether the land itself will not do (water, mountains, the unexplored). */
+export interface GrowCheck { rect: GrowRect; blockers: Building[]; hard: string | null }
+export function growCheck(sim: Sim, b: Building): GrowCheck | null {
+  const rect = growRect(b);
+  if (!rect) return null;
+  const w = sim.world, N = w.size, cur = footOf(b), blockers: Building[] = [];
+  let hard: string | null = null;
+  const mine = (tx: number, ty: number) => tx >= b.x && tx < b.x + cur.w && ty >= b.y && ty < b.y + cur.h;
+  const owned = (tx: number, ty: number) => sim.buildings.some((o) => { if (o === b) return false; const f = footOf(o); return tx >= o.x && tx < o.x + f.w && ty >= o.y && ty < o.y + f.h; });
+  for (let j = 0; j < rect.h; j++) for (let i = 0; i < rect.w; i++) {
+    const tx = rect.x + i, ty = rect.y + j;
+    if (!w.inBounds(tx, ty)) { hard ??= 'Nền mới vượt ra ngoài bản đồ'; continue; }
+    const k = ty * N + tx, t = w.tiles[k];
+    if (sim.fog.state[k] === 0) hard ??= 'Nền mới có chỗ chưa khám phá';
+    if (sim.inZone(tx, ty)) hard ??= 'Nền mới nằm trong khu quân sự';
+    if (t === 1 || t === 6) hard ??= 'Nền mới có nước hoặc núi'; // trees, rocks, bushes and ore are cleared when the work begins
+    if (w.occ[k] && !mine(tx, ty) && !owned(tx, ty)) hard ??= 'Nền mới vướng công trình của làng khác';
+  }
+  for (const o of sim.buildings) {
+    if (o === b) continue;
+    const od = footOf(o), gx = Math.max(rect.x - (o.x + od.w), o.x - (rect.x + rect.w)), gy = Math.max(rect.y - (o.y + od.h), o.y - (rect.y + rect.h));
+    if (Math.max(gx, gy) < (WALL_KINDS.has(o.kind) ? 0 : CLEARANCE)) blockers.push(o);
+  }
+  return { rect, blockers, hard };
+}
+
+/** The upgrade is paid: the new ground is kept for it (trees, rocks, bushes and ore on it are cleared, people on it are put out), so nothing else can be raised there meanwhile. */
+export function startGrow(sim: Sim, b: Building, r: GrowRect): void {
+  const w = sim.world, N = w.size;
+  for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) {
+    const k = (r.y + j) * N + r.x + i;
+    if (w.nodes.has(k)) w.nodes.delete(k);
+    if (w.tiles[k] !== 0 && w.tiles[k] !== 4) w.tiles[k] = 0;
+    w.occ[k] = 1;
+  }
+  b.grow = r;
+  for (const v of [...sim.villagers, ...sim.foes]) {
+    if (v.inside !== null) continue;
+    const tx = Math.floor(v.x), ty = Math.floor(v.y);
+    if (tx < r.x || tx >= r.x + r.w || ty < r.y || ty >= r.y + r.h) continue;
+    const spot = sim.nearestFree(tx, ty, new Set<number>());
+    if (spot) { v.x = spot[0] + 0.5; v.y = spot[1] + 0.5; v.path = []; v.slide = null; }
+  }
+  sim.fogDirty = true;
+}
+
+/** The level has been reached (called right after it went up): the house now stands on the new ground. */
+export function finishGrow(sim: Sim, b: Building): void {
+  const g = b.grow;
+  if (!g) return;
+  const old = footOf({ ...b, level: b.level - 1 }), N = sim.world.size;
+  for (let j = 0; j < old.h; j++) for (let i = 0; i < old.w; i++) sim.world.occ[(b.y + j) * N + b.x + i] = 0;
+  for (let j = 0; j < g.h; j++) for (let i = 0; i < g.w; i++) sim.world.occ[(g.y + j) * N + g.x + i] = 0;
+  b.x = g.x; b.y = g.y; delete b.grow;
+  setOcc(sim, b, 1);
+  sim.fogDirty = true;
+}
+
+/** Give the kept ground back (the upgrade was cancelled, or the house is gone): what is not under the house itself is free again. */
+export function releaseGrow(sim: Sim, b: Building): void {
+  const g = b.grow;
+  if (!g) return;
+  const cur = footOf(b), N = sim.world.size;
+  for (let j = 0; j < g.h; j++) for (let i = 0; i < g.w; i++) {
+    const tx = g.x + i, ty = g.y + j;
+    if (tx >= b.x && tx < b.x + cur.w && ty >= b.y && ty < b.y + cur.h) continue;
+    sim.world.occ[ty * N + tx] = 0;
+  }
+  delete b.grow;
+}
+
+/**
+ * Stop the work a house is waiting for: a running upgrade is given up, and what was not yet spent comes back; a house that is still going up is taken down, and what was
+ * not yet spent comes back. Nothing is lost for what has not been started, and the ground kept for a bigger house is free again.
+ */
+export function cancelWork(sim: Sim, id: number): string | null {
+  const b = sim.getBuilding(id);
+  if (!b) return 'Không tìm thấy công trình';
+  if (!b.upgrading && b.done) return 'Không có việc xây nào để hủy';
+  const level = b.upgrading ? levelDef({ ...b, era: upgradeEra(b) }, b.level + 1) : levelDef(b), bill = buildBill(sim, level.cost), back: Partial<Stock> = {};
+  if (!sim.freeCost()) for (const r of Object.keys(bill) as Res[]) { const n = Math.floor((bill[r] ?? 0) * (1 - Math.max(0, Math.min(1, b.progress)))); if (n > 0) { back[r] = n; sim.stock[r] += n; } }
+  for (const v of sim.villagers) if (v.target === b.id && (v.phase === 'goSite' || v.phase === 'build')) sim.resetTask(v); // the builders go back to what they were doing
+  const text = Object.keys(back).length ? `, thu lại ${Object.keys(back).map((r) => `${back[r as Res]} ${RES_NAME[r as Res].toLowerCase()}`).join(', ')}` : '';
+  if (b.upgrading) {
+    b.upgrading = false; b.progress = 1; releaseGrow(sim, b);
+    sim.say(`Đã hủy nâng cấp ${BUILDINGS[b.kind].name.toLowerCase()}${text}.`);
+  } else {
+    sim.say(`Đã hủy xây ${BUILDINGS[b.kind].name.toLowerCase()}${text}.`);
+    evict(sim, b); setOcc(sim, b, 0); sim.buildings.splice(sim.buildings.indexOf(b), 1); sim.fogDirty = true; sim.trimRoles();
+  }
   return null;
 }
 
@@ -301,6 +408,7 @@ export function destroyBuilding(sim: Sim, b: Building): void {
   // the archers of a tower that falls come out and fight on the ground
   const archers = b.kind === 'tower' ? sim.garrison(b) : [];
   evict(sim, b);
+  releaseGrow(sim, b);
   for (const v of archers) { v.fight.mode = 'guard'; v.fight.anchor = { x: b.x + 1, y: b.y + 2 }; v.stance = 'aggressive'; v.nightOwl = true; v.phase = 'idle'; }
   if (archers.length) sim.say(`Chòi canh đổ: ${archers.length} cung thủ ra đánh.`);
   setOcc(sim, b, 0);
@@ -318,6 +426,7 @@ export function demolishBuilding(sim: Sim, id: number): string | null {
   sim.refundProcess(b); // the goods of its orders come back
   const back = salvage(sim, b);
   evict(sim, b);
+  releaseGrow(sim, b);
   setOcc(sim, b, 0);
   sim.buildings.splice(sim.buildings.indexOf(b), 1);
   for (const r of Object.keys(back) as Res[]) sim.stock[r] += back[r] ?? 0;
@@ -337,6 +446,7 @@ export function movedDim(b: Building, rot?: number): { w: number; h: number } {
 export function canMove(sim: Sim, b: Building, x: number, y: number, rot?: number): string | null {
   if (!BUILDINGS[b.kind].buildable) return 'Không dời được công trình này';
   if (sim.attackReason()) return 'Không dời được công trình khi làng đang bị tấn công';
+  if (b.grow) return 'Đang nâng cấp sang nền rộng hơn: hủy việc đó trước khi dời';
   const dim = movedDim(b, rot), was = footOf(b);
   if (x === b.x && y === b.y && dim.w === was.w && dim.h === was.h) return 'Vẫn ở chỗ cũ';
   return footprintError(sim, b.kind, x, y, b, dim) ?? sim.missing(moveFee(sim, b));

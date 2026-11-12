@@ -69,7 +69,7 @@ export class UnitDetail {
         if (pick.value === '') return;
         const e = sim.assignTool(ids(), k, Number(pick.value)); if (e) c.toast(e); else after(); ctl.onChange();
       } }) as HTMLSelectElement;
-      pick.append(h('option', { value: '', text: '— chọn —', hidden: true }), ...[0, 1, 2].map((t) => h('option', { value: String(t) })));
+      pick.append(h('option', { value: '', text: '— chọn —', hidden: true }), ...[0, 1, 2, 3, 4, 5].map((t) => h('option', { value: String(t) })));
       const drop = h('button', { class: 'sm', text: '✕', title: 'Vứt công cụ, kể cả khi chưa hỏng', onclick: () => { sim.discardTool(ids(), k); after(); ctl.onChange(); } }) as HTMLButtonElement;
       const row = h('div', { class: 'row' }, h('div', { class: 'nm' }, TOOL_NAME[k], state), h('div', { class: 'btns' }, pick, drop));
       this.toolRows.push({ k, row, state, pick, drop });

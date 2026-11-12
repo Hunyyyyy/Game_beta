@@ -1,6 +1,7 @@
 import type { Villager } from '../sim/model';
 import { h, hint } from './dom';
 import { dlg } from './gamedialog';
+import { progressStrip } from './housebox';
 import { detailButton, personTile } from './people';
 import { RolePane } from './rolepane';
 import { resIcon, statIcon } from './resicons';
@@ -141,10 +142,7 @@ export class ScoutPane {
 
     // the report: how the trip would go, as a gauge, strengths and times
     const chance = plan.count + (trip?.ids.length ?? 0) < 2 ? 0 : plan.chance, tone = chance >= 0.7 ? 'good' : chance >= 0.35 ? 'warn' : 'bad';
-    body.append(h('div', { class: 'dtile report' }, dlg.ring(chance, `${Math.round(chance * 100)}%`),
-      h('div', { class: 'dmain' }, h('div', { class: 'dname' }, h('b', { text: 'Tỉ lệ vẽ đủ chi tiết' })),
-        dlg.bar(Math.round(chance * 100), 100, plan.count < 2 ? 'cần ít nhất 2 người' : `${Math.round(chance * 100)}%`),
-        dlg.more(`Đi ${plan.count}/${limit} người · mức cần khoảng ${plan.need} người trung bình`))));
+    body.append(progressStrip(h('span', { class: 'aglyph', text: '🎯' }), 'Tỉ lệ vẽ đủ chi tiết', `đi ${plan.count}/${limit} người · cần ~${plan.need} người trung bình`, Math.round(chance * 100), plan.count < 2 ? 'cần ít nhất 2 người' : `${Math.round(chance * 100)}%`));
     body.append(h('div', { class: 'dpills' },
       dlg.pill(resIcon('role_scout'), `${plan.count}/${plan.need} người`, plan.count >= plan.need ? 'good' : plan.count >= 2 ? 'warn' : 'bad', 'Số người đã chọn so với mức cần'),
       dlg.pill(resIcon('role_scout'), `Bản đồ cấp ${Math.max(1, plan.level)}`, undefined, 'Cấp bản đồ sẽ vẽ'),

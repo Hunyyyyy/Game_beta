@@ -60,7 +60,9 @@
     "cost": {
      "wood": 65,
      "stone": 38,
-     "hide": 24
+     "hide": 24,
+     "iron": 10,
+     "hardwood": 8
     },
     "buildTime": 327,
     "cap": 150,

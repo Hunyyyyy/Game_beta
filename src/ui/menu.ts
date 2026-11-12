@@ -88,9 +88,11 @@ export class Menu {
     page.append(h('div', { class: 'devrow' },
       toggle('Mọi việc miễn phí + xong ngay', 'Nghiên cứu, chế tạo, thuần thú, xây, nâng cấp và sửa: không tốn vật liệu, không mất thời gian (nhà vẫn cần người làm bên trong)', () => sim.dev.freeWorks, (on) => { sim.dev.freeWorks = on; sim.dev.fastWorks = on; sim.dev.instantBuild = on; }),
       toggle('Bất tử', 'Dân không nhận sát thương', () => sim.dev.god, (on) => { sim.dev.god = on; })));
+    page.append(h('div', { class: 'devrow' }, toggle('Thử nâng cấp sang nền rộng: Nhà dân cấp 2 thành 4×4', 'Cho Nhà dân cấp 2 chiếm nền 4×4 (hình vẫn nhỏ) để thử luồng nâng cấp: hình bóng nền mới, tô đỏ công trình vướng, dời đi rồi mới xác nhận; có thể hủy', () => dev.growTestOn(), (on) => dev.growTest(on))));
+    page.append(h('div', { class: 'devrow' }, toggle('Xem cung điện (Nhà chính cấp 7)', 'Vẽ Nhà chính thành cung điện 6×6 để xem thử; cây, đá và các công trình quanh đó tạm ẩn (chỉ hình vẽ, không đổi gì trong game)', () => sim.dev.palace, (on) => { sim.dev.palace = on; })));
     page.append(h('div', { class: 'devrow' }, h('small', { text: 'Nghiên cứu xong:' }),
       ...dev.RESEARCH_GROUPS.map((g) => btn(g.label, () => toast(dev.researchGroup(sim, g.key)), `Nghiên cứu xong mọi mục của nhóm ${g.label}, không tốn gì`)),
-      btn('Tất cả', () => toast(dev.researchGroup(sim, 'all')), 'Nghiên cứu xong cả cây, kể cả các bản vẽ')));
+      btn('Tất cả', () => toast(dev.researchGroup(sim, 'all')), 'Nghiên cứu xong cả cây')));
     page.append(h('div', { class: 'devrow' },
       btn('+5 dân', () => toast(dev.addPeople(sim, 5)), 'Thêm 5 dân rảnh quanh lửa trại, kể cả khi vượt sức chứa'),
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),

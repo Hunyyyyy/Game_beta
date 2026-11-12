@@ -34,6 +34,8 @@ export interface LevelDef {
   slots: number;
   /** Strength of a defence work: what the raiders must wear down to get through (0 for the rest). */
   hp: number;
+  /** Optional: the footprint of the house at this level, n × n tiles ([6, 6]); without it the house keeps the size of its kind. A level that is bigger than the one before it is raised round the middle of the old one, once the ground is clear (construction.growCheck). */
+  size?: [number, number];
   /** How far it sees, in tiles; the same circle is the land of the village: houses may be raised only inside the sight of a finished house or the campfire. 0 for walls, pits, gates and fields. */
   sight: number;
 }
@@ -111,12 +113,20 @@ export interface Building {
   active: { id: string; progress: number; /** What the order cost, as a multiple of its base cost (a craft: the price of the Nhà chế tạo when it was ordered). */ paid?: number } | null;
   /** A processing house (Lò luyện, Xưởng mộc, Xưởng thuộc da): the recipes ordered and waiting, paid for already. */
   orders?: string[];
+  /** A running upgrade to a bigger footprint: the ground it will cover, kept clear for it from the day it was paid (construction.startGrow). */
+  grow?: { x: number; y: number; w: number; h: number };
+  /** Ranch only: how far each product of the house has come toward its next unit (0..1), by good (ranch.ts). */
+  grown?: Record<string, number>;
+  /** Field only: what it is sown with: food (the default) or flax, which gives fibre (the medieval age). */
+  crop?: 'food' | 'flax';
   workers: number;
 }
 
 /** The tiles a house covers: its kind's size, turned a quarter when it is laid along a column; a size of its own (old gates) beats both. */
-export const footOf = (b: Pick<Building, 'kind' | 'rot' | 'w' | 'h'>): { w: number; h: number } => {
+export const footOf = (b: Pick<Building, 'kind' | 'rot' | 'w' | 'h'> & Partial<Pick<Building, 'level' | 'era'>>): { w: number; h: number } => {
   if (b.w !== undefined && b.h !== undefined) return { w: b.w, h: b.h };
+  const sz = b.level !== undefined && b.era !== undefined ? levelDef({ kind: b.kind, level: b.level, era: b.era })?.size : undefined; // a level of its own size (building.json `size` of the level)
+  if (sz) return { w: sz[0], h: sz[1] };
   const d = BUILDINGS[b.kind];
   return b.rot === 1 ? { w: d.h, h: d.w } : { w: d.w, h: d.h };
 };
@@ -150,7 +160,7 @@ export const topLevel = (b: Pick<Building, 'kind' | 'era'>): number => maxLevel(
 /** Buildings that keep the village's goods (the Kho and the campfire) as opposed to those that hold tools or staff. */
 export const holdsGoods = (b: Pick<Building, 'kind'>) => b.kind === 'storage' || b.kind === 'campfire';
 /** The house of each gathering trade: at most 5 people work from it; a higher level makes each of them bring in more (pace.json `levelYield`), so the village needs fewer people on the map. */
-export const GATHER_HOUSE: Partial<Record<string, BuildingKind>> = { wood: 'lumberyard', stone: 'quarry', food: 'farmhouse' };
+export const GATHER_HOUSE: Partial<Record<string, BuildingKind>> = { wood: 'lumberyard', stone: 'quarry', mine: 'mine', food: 'farmhouse' };
 export const gatherMult = (b: Pick<Building, 'level'> | undefined): number => (b ? paceJson.levelYield[Math.min(paceJson.levelYield.length, Math.max(1, b.level)) - 1] : 1);
 /** The war-logistics layer (supply, field tents and rest, harassment, the watchtower, the war research) is a medieval-era feature: off in the stone age (the medieval era, `sim.era === 'ancient'`). */
 /** A building of that layer, shut away while it is off (`sim.era`): it is not built, not offered and not asked for. */

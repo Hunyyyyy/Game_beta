@@ -1,0 +1,71 @@
+{
+ "kind": "ranch",
+ "name": "Trại chăn nuôi",
+ "group": "production",
+ "produces": [
+  "hide",
+  "fiber",
+  "sinew",
+  "feather"
+ ],
+ "size": [
+  3,
+  3
+ ],
+ "buildable": true,
+ "unlockFire": 4,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Bãi rào gỗ",
+    "cost": {
+     "wood": 165,
+     "stone": 60
+    },
+    "buildTime": 320,
+    "cap": 60,
+    "craftSpeed": 1,
+    "slots": 2,
+    "hp": 460,
+    "sight": 0
+   },
+   {
+    "name": "Trại có chuồng",
+    "cost": {
+     "wood": 255,
+     "stone": 165,
+     "iron": 8,
+     "hardwood": 10,
+     "fiber": 10
+    },
+    "buildTime": 480,
+    "cap": 150,
+    "craftSpeed": 1.25,
+    "slots": 4,
+    "hp": 680,
+    "sight": 0
+   },
+   {
+    "name": "Trang trại",
+    "cost": {
+     "wood": 360,
+     "stone": 315,
+     "iron": 20,
+     "hardwood": 20,
+     "leather": 10,
+     "cloth": 8
+    },
+    "buildTime": 700,
+    "cap": 300,
+    "craftSpeed": 1.5,
+    "slots": 6,
+    "hp": 940,
+    "sight": 0
+   }
+  ]
+ }
+}
