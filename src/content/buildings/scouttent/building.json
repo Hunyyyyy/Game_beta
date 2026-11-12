@@ -58,7 +58,10 @@
     "cost": {
      "wood": 96,
      "hide": 33,
-     "stone": 90
+     "stone": 90,
+     "iron": 10,
+     "hardwood": 8,
+     "leather": 8
     },
     "buildTime": 350,
     "cap": 0,

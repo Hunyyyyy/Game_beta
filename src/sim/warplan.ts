@@ -419,6 +419,7 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
   const bad = reviewPlan(sim, plan).find((l) => l.startsWith('✗'));
   if (bad) return bad.slice(2);
   if (plan.kind === 'defense') return 'Kế hoạch phòng thủ chạy khi bạn đánh trống báo động';
+  if (sim.plans.some((p) => p.skirmish && p.status === 'running')) return 'Đang giao tranh: chờ trận này kết thúc rồi hãy triển khai kế hoạch';
   const attacked = sim.attackReason();
   if (attacked) return `Làng đang bị tấn công (${attacked.toLowerCase()}): không thể đi đánh`;
   for (const m of plan.missions) {
@@ -433,20 +434,25 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
   return null;
 }
 
+/** The war is won when the village has no soldier, fire or tower left (the village is taken then). True when it was won just now. Shared with the skirmish (warskirmish.ts). */
+export function winCheck(sim: Sim, plan: Plan, t: Sim['tribes'][number]): boolean {
+  const armed = headcount(sim, t).guards > 0; // soldiers in the world, and any still indoors (when we attack they all come out: tribelod.deployArmy)
+  if (t.state === 'free' && (armed || t.props.some((p) => p.kind === 'fire' || p.kind === 'tower'))) return false;
+  plan.stage = 'over'; plan.result = 'won'; plan.endedAt = sim.time; // the war goes on (the army stands where it is) until the player gives the word to pull out
+  if (plan.skirmish) sim.addAlert('notice', `Chiến thắng! ${t.def.name} đã bị đánh bại.`);
+  sim.say(plan.skirmish ? `Chiến thắng! ${t.def.name} không còn lính, lửa trại và tháp canh đã sập.` : `Chiến thắng! ${t.def.name} không còn lính, lửa trại và tháp canh đã sập. Bấm Rút quân khi muốn về làng.`);
+  sim.noteBattle('note', `${t.def.name} đã bị đánh bại.`);
+  if (t.state === 'free') sim.conquer(t.id, 'Làng bị san bằng');
+  return true;
+}
+
 /**
  * How a war ends. It is won when every soldier of the village is dead, its fire is out and every tower is down, all three together (the fence, the gate, the traps and the houses may stand); then the people ask for mercy.
  * It is lost when there is no soldier of ours left, or the army was pulled back.
  */
 function endCheck(sim: Sim, plan: Plan, t: Sim['tribes'][number] | undefined): void {
   if (!t) { plan.status = 'done'; plan.result = 'lost'; plan.endedAt = sim.time; return; }
-  const armed = headcount(sim, t).guards > 0; // soldiers in the world, and any still indoors (when we attack they all come out: tribelod.deployArmy)
-  if (t.state !== 'free' || (!armed && !t.props.some((p) => p.kind === 'fire' || p.kind === 'tower'))) {
-    plan.stage = 'over'; plan.result = 'won'; plan.endedAt = sim.time; // the war goes on (the army stands where it is) until the player gives the word to pull out
-    sim.say(`Chiến thắng! ${t.def.name} không còn lính, lửa trại và tháp canh đã sập. Bấm Rút quân khi muốn về làng.`);
-    sim.noteBattle('note', `${t.def.name} đã bị đánh bại.`);
-    if (t.state === 'free') sim.conquer(t.id, 'Làng bị san bằng');
-    return;
-  }
+  if (winCheck(sim, plan, t)) return;
   if (plan.missions.filter((m) => !isHolding(plan, m)).every((m) => m.state === 'done' || m.state === 'idle')) {
     plan.result = 'lost'; plan.endedAt = sim.time;
     const standing = plan.missions.some((m) => isHolding(plan, m) && m.state === 'hold'); // squads that were to hold are still on the field: they wait there for the word to pull out
@@ -502,7 +508,7 @@ function freeStuck(sim: Sim, plan: Plan, dt: number): void {
 export function tickPlans(sim: Sim, dt: number): void {
   if (sim.alarmUntil > 0 && sim.time > sim.alarmUntil) sim.alarmUntil = 0;
   for (const plan of sim.plans) {
-    if (plan.kind !== 'attack' || plan.status !== 'running') continue;
+    if (plan.kind !== 'attack' || plan.status !== 'running' || plan.skirmish) continue; // a skirmish is ticked by warskirmish.tickSkirmish
     const t = sim.tribes.find((x) => x.id === plan.tribe);
     if (plan.stage === 'over') continue; // decided: nothing more is ordered until the player pulls the army out
     if (plan.stage === 'assemble') {

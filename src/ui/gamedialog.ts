@@ -90,11 +90,6 @@ export const dlg = {
     if (total > 24) return h('span', { class: 'dslots', text: `${used}/∞` });
     return h('span', { class: 'dslots', title: `${used}/${total}` }, ...Array.from({ length: total }, (_, i) => h('i', { class: i < used ? 'on' : '' })));
   },
-  /** A round gauge with the percentage in the middle, for something that fills up (an order, a meal). */
-  ring(value: number, label?: string): HTMLElement {
-    const p = Math.max(0, Math.min(1, value));
-    return h('span', { class: 'dring', style: `--p:${Math.round(p * 100)}` }, h('span', { text: label ?? `${Math.floor(p * 100)}%` }));
-  },
   /** The big button. `tone` 'alt' is the quiet one (cancel), 'bad' the dangerous one. */
   button(text: string, onclick: () => void, o: { disabled?: boolean; tone?: 'alt' | 'bad'; small?: boolean; icon?: boolean; title?: string } = {}): HTMLButtonElement {
     return h('button', { class: `dgo${o.tone ? ` ${o.tone}` : ''}${o.small || o.icon ? ' sm' : ''}${o.icon ? ' ic' : ''}`, text, title: o.title, disabled: !!o.disabled, type: 'button', onclick }) as HTMLButtonElement;

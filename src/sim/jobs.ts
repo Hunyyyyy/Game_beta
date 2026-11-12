@@ -5,12 +5,14 @@ import paceJson from '../data/pace.json';
 import mountsJson from '../data/mounts.json';
 import trainingJson from '../data/training.json';
 
-export type Job = 'idle' | 'wood' | 'stone' | 'food' | 'build' | 'craft' | 'research' | 'tame' | 'hunt' | 'fight' | 'scout' | 'supply';
+export type Job = 'idle' | 'wood' | 'stone' | 'mine' | 'food' | 'build' | 'craft' | 'research' | 'tame' | 'herd' | 'hunt' | 'fight' | 'scout' | 'supply';
 /** Jobs with a work skill, a potential and a tool. Soldiers have them for the sake of the tables; scouts are a role like soldiers and have none. */
 export type WorkJob = Exclude<Job, 'idle' | 'scout' | 'supply'>;
 export type StatKey = 'vit' | 'str' | 'agi' | 'sta';
 export type Stats = Record<StatKey, number>;
-export type NodeKind = 'tree' | 'rock' | 'bush';
+export type NodeKind = 'tree' | 'rock' | 'bush' | 'ore';
+/** The goods a seam of ore (node kind 'ore') can hold: what a miner carries and what the Mỏ keeps a store for. */
+export const ORE_RES: readonly Res[] = ['iron_ore', 'coal', 'copper_ore', 'rare_ore'];
 
 /** Training in a role's house (training.json): which stat a house trains, which comes with it, and which pays for it. */
 export interface TrainProfile { main: StatKey; partner?: StatKey; cost: StatKey }
@@ -40,16 +42,25 @@ export interface JobDef {
 export const JOBS: Record<WorkJob, JobDef> = {
   wood: { name: 'Đốn gỗ', stat: 'str', res: 'wood', node: 'tree', baseTime: paceJson.gather.wood, anim: 'chop' },
   stone: { name: 'Thợ đá', stat: 'str', res: 'stone', node: 'rock', baseTime: paceJson.gather.stone, anim: 'mine' },
+  /** The ore of the foot of the mountains: what a stroke brings is the ore of the node (iron ore or coal), `res` is only the first of them. */
+  mine: { name: 'Thợ mỏ', stat: 'str', res: 'iron_ore', node: 'ore', baseTime: paceJson.gather.mine, anim: 'mine' },
   food: { name: 'Hái lượm', stat: 'agi', res: 'food', node: 'bush', baseTime: paceJson.gather.food, anim: 'gather' },
   build: { name: 'Thợ xây', stat: 'sta', baseTime: 1, anim: 'build' },
   craft: { name: 'Chế tạo', stat: 'agi', baseTime: 1, anim: 'craft' },
   research: { name: 'Nghiên cứu', stat: 'sta', baseTime: 1, anim: 'gather' },
   tame: { name: 'Thuần thú', stat: 'agi', baseTime: 1, anim: 'craft' },
+  herd: { name: 'Chăn nuôi', stat: 'agi', baseTime: 1, anim: 'gather' },
   hunt: { name: 'Thợ săn', stat: 'agi', baseTime: 1, anim: 'thrust_attack' },
   fight: { name: 'Chiến binh', stat: 'str', baseTime: 1, anim: 'swing_attack' },
 };
-export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', tame: 'Thuần thú', hunt: 'Thợ săn', fight: 'Chiến binh', scout: 'Trinh sát', supply: 'Hậu cần' };
-export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'food', 'build', 'craft', 'research', 'tame', 'hunt', 'fight'];
+/** What a stroke of mining takes, by ore (pace.json "ore"), and how much slower a tool of a lower tier than the ore's grade makes it. */
+const ORE_INFO = paceJson.ore as Record<string, { time: number; grade: number }>;
+export const oreSeconds = (res: Res, tier: number): number => {
+  const o = ORE_INFO[res];
+  return o ? o.time / paceJson.underTool ** Math.max(0, o.grade - tier) : JOBS.mine.baseTime;
+};
+export const JOB_NAME: Record<Job, string> = { idle: 'Rảnh', wood: 'Đốn gỗ', stone: 'Thợ đá', mine: 'Thợ mỏ', food: 'Hái lượm', build: 'Thợ xây', craft: 'Chế tạo', research: 'Nghiên cứu', tame: 'Thuần thú', herd: 'Chăn nuôi', hunt: 'Thợ săn', fight: 'Chiến binh', scout: 'Trinh sát', supply: 'Hậu cần' };
+export const WORK_JOBS: WorkJob[] = ['wood', 'stone', 'mine', 'food', 'build', 'craft', 'research', 'tame', 'herd', 'hunt', 'fight'];
 /** The arm a soldier belongs to, decided by the camp that took him on. Riders count as cavalry whatever they carry. */
 export type SoldierArm = 'foot' | 'archer' | 'cavalry';
 
@@ -57,11 +68,12 @@ export type SoldierArm = 'foot' | 'archer' | 'cavalry';
  * A role is a job a villager is given by the house that belongs to it, never at the campfire. Each role has one house; its level decides
  * how many people the role may have. Names change with the era but not the meaning (a stone-age tribe has no archers, only throwers).
  */
-export type RoleId = 'wood' | 'stone' | 'food' | 'hunt' | 'foot' | 'cavalry' | 'archer' | 'guard' | 'tower' | 'scout' | 'supply';
+export type RoleId = 'wood' | 'stone' | 'mine' | 'food' | 'hunt' | 'foot' | 'cavalry' | 'archer' | 'guard' | 'tower' | 'scout' | 'supply';
 export interface RoleDef { job: Job; arm?: SoldierArm; building: BuildingKind; names: Record<Era, string> }
 export const ROLES: Record<RoleId, RoleDef> = {
   wood: { job: 'wood', building: 'lumberyard', names: { stone: 'Đốn gỗ', ancient: 'Tiều phu' } },
-  stone: { job: 'stone', building: 'quarry', names: { stone: 'Thợ đá', ancient: 'Thợ mỏ' } },
+  stone: { job: 'stone', building: 'quarry', names: { stone: 'Thợ đá', ancient: 'Thợ đá' } },
+  mine: { job: 'mine', building: 'mine', names: { stone: 'Thợ mỏ', ancient: 'Thợ mỏ' } },
   food: { job: 'food', building: 'farmhouse', names: { stone: 'Hái lượm', ancient: 'Nông dân' } },
   hunt: { job: 'hunt', building: 'huntlodge', names: { stone: 'Thợ săn', ancient: 'Thợ săn' } },
   foot: { job: 'fight', arm: 'foot', building: 'infantry', names: { stone: 'Lính bộ', ancient: 'Bộ binh' } },
@@ -86,17 +98,19 @@ export function roleOf(v: { job: Job; arm: SoldierArm; post: number; guard?: boo
   switch (v.job) {
     case 'fight': return v.guard ? (v.post >= 0 ? 'tower' : 'guard') : v.arm === 'archer' ? 'archer' : v.arm === 'cavalry' ? 'cavalry' : 'foot';
     case 'food': return v.post < 0 ? 'food' : null;
-    case 'wood': case 'stone': case 'hunt': case 'scout': case 'supply': return v.job;
+    case 'wood': case 'stone': case 'mine': case 'hunt': case 'scout': case 'supply': return v.job;
     default: return null;
   }
 }
 
 /** Jobs done inside a building: the villager walks in and works from the list there. */
-export const STAFF_BUILDING = { craft: 'workshop', research: 'lab', tame: 'stable' } as const;
+export const STAFF_BUILDING = { craft: 'workshop', research: 'lab', tame: 'stable', herd: 'ranch' } as const;
 export const isStaffJob = (j: Job): j is keyof typeof STAFF_BUILDING => j in STAFF_BUILDING;
 
 /** Seconds of a farmer's work for one unit of food from a field of the first level. */
 export const FARM_TIME = paceJson.gather.farm;
+/** Seconds of a farmer's work for one unit of fibre from a field sown with flax (the medieval age). */
+export const FLAX_TIME = paceJson.gather.flax;
 
 /** Kinh nghiệm cần để lên cấp 1..5 (giây làm việc, chưa nhân tốc độ học). */
 export const XP_LEVELS = [60, 150, 300, 500, 800];

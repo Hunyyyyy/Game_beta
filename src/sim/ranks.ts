@@ -22,6 +22,10 @@ export function ranksOf(role: RankRole, era: Era): RankDef[] {
   return BRANCHES[role].filter((d) => open.includes(d.rank));
 }
 export const rankDef = (role: RankRole, rank: number): RankDef | undefined => BRANCHES[role].find((d) => d.rank === rank);
+/** The rank of the soldier a suit of armour belongs to (grass 1, hide 2, bone 3, bronze 4 ...); 0 for what is no suit of a rank. */
+const ARMOR_RANK: Record<string, number> = {};
+for (const list of Object.values(BRANCHES)) for (const d of list) if (d.armor && (ARMOR_RANK[d.armor] === undefined || d.rank < ARMOR_RANK[d.armor])) ARMOR_RANK[d.armor] = d.rank;
+export const armorRank = (id: string | null | undefined): number => (id ? ARMOR_RANK[id] ?? 0 : 0);
 /** The name of a soldier of a rank, or null when the branch has no such rank. */
 export const rankName = (role: RankRole, rank: number): string | null => rankDef(role, rank)?.name ?? null;
 

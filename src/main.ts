@@ -20,6 +20,7 @@ import { Menu } from './ui/menu';
 import { BuildTray } from './ui/buildtray';
 import { MapView } from './ui/minimap';
 import { BuildingBar, Confirm } from './ui/buildbar';
+import { UpgradePlanBar } from './ui/upgradeplan';
 import { WarBar } from './ui/warbar';
 import { BuildingPanel, Ctx, TargetCard, UnitCard } from './ui/panels';
 import { newSeed } from './sim/rng';
@@ -99,6 +100,7 @@ const ctx: Ctx = { sim, ctl, sprites, session, toast, sound, weatherFx };
 // ---------------------------------------------------------------- panels, menu, maps
 const unitCard = new UnitCard($('ucard'), ctx, $('udetail')), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
 const buildingBar = new BuildingBar($('bbar'), ctx, renderer, new Confirm($('dialog'), ctx));
+const upgradePlanBar = new UpgradePlanBar(document.body, ctx, renderer);
 const warBar = new WarBar($('warbar'), ctx);
 const tray = new BuildTray($('tray'), ctx);
 const map = new MapView(sim, cam, renderer, ctl, $('mini'), $('bigmapCanvas'), $('bigmap'));
@@ -324,7 +326,7 @@ function updateHud(now: number) {
   // which panels show
   const chosen = sim.villagers.filter((v) => ctl.selected.has(v.id));
   const placing = !!ctl.placing, showB = ctl.selectedBuilding !== null && ctl.buildingOpen && !placing;
-  buildingPanel.update(); buildingBar.update(); unitCard.update(chosen); targetCard.update();
+  buildingPanel.update(); buildingBar.update(); upgradePlanBar.update(); unitCard.update(chosen); targetCard.update();
   warBar.update(); document.body.classList.toggle('war', warBar.active); // war mode: the selection and building buttons give way to the battle buttons
   if (placing || !showB) $('bpanel').hidden = true;
   if (placing || showB) { $('ucard').hidden = true; unitCard.closeDetail(); }
@@ -360,8 +362,8 @@ function frame(t: number) {
   sim.alerts.length = 0;
   { // a war that has just been decided: the sound of the win or the loss, once
     const p = started ? sim.plans.find((q) => q.kind === 'attack' && q.result && q.endedAt > lastWarEnd) : undefined;
-    if (p) { lastWarEnd = p.endedAt; celebrating = p.result === 'won' ? p : null; if (sim.time - p.endedAt < 5) audio.warEnded(p.result as 'won' | 'lost', performance.now() / 1000); }
-    if (celebrating && celebrating.stage === 'recall') { audio.stopVictory(); celebrating = null; } // he gave the word to pull out: no more cheering
+    if (p) { lastWarEnd = p.endedAt; celebrating = p.result === 'won' ? p : null; if (sim.time - p.endedAt < 5 && !(p.skirmish && p.result === 'lost')) audio.warEnded(p.result as 'won' | 'lost', performance.now() / 1000); }
+    if (celebrating && (celebrating.stage === 'recall' || (celebrating.skirmish && sim.time - celebrating.endedAt > audio.skirmishCheer))) { audio.stopVictory(); celebrating = null; } // he gave the word to pull out: no more cheering
   }
   audio.setNight(started && sim.part === 'night', sim.time, sim.dayLen);
   audio.setBirds(started && !sim.atWar() && sim.part !== 'night' && sim.season !== 'winter' && (sim.weather === 'clear' || sim.weather === 'mist'), dt, sim.time);

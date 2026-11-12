@@ -355,6 +355,10 @@
       "name": "Thợ đá",
       "building": "quarry"
     },
+    "mine": {
+      "name": "Thợ mỏ",
+      "building": "mine"
+    },
     "food": {
       "name": "Hái lượm",
       "building": "farmhouse"
@@ -503,12 +507,33 @@
       "members": [
         "wood",
         "stone",
-        "food"
+        "food",
+        "mine"
       ]
     },
     "trade": {
       "name": "Trao đổi",
       "building": "market"
+    },
+    "house_mine": {
+      "name": "Mỏ",
+      "building": "mine"
+    },
+    "house_smelter": {
+      "name": "Lò luyện",
+      "building": "smelter"
+    },
+    "house_carpentry": {
+      "name": "Xưởng mộc",
+      "building": "carpentry"
+    },
+    "house_tannery": {
+      "name": "Xưởng thuộc da và dệt",
+      "building": "tannery"
+    },
+    "house_ranch": {
+      "name": "Trại chăn nuôi",
+      "building": "ranch"
     }
   },
   "tabs": {
@@ -579,7 +604,9 @@
             "food": 600,
             "wood": 300,
             "stone": 200,
-            "coin": 80
+            "coin": 80,
+            "bronze": 20,
+            "hardwood": 10
           },
           "time": 3500
         },
@@ -590,7 +617,10 @@
             "wood": 600,
             "stone": 400,
             "hide": 150,
-            "coin": 200
+            "coin": 200,
+            "iron": 40,
+            "hardwood": 20,
+            "leather": 10
           },
           "time": 7000
         },
@@ -601,7 +631,10 @@
             "wood": 1200,
             "stone": 800,
             "hide": 300,
-            "coin": 450
+            "coin": 450,
+            "steel": 30,
+            "leather": 20,
+            "hardwood": 30
           },
           "time": 12000
         },
@@ -612,7 +645,11 @@
             "wood": 2000,
             "stone": 1500,
             "hide": 500,
-            "coin": 900
+            "coin": 900,
+            "fine_steel": 30,
+            "cloth": 20,
+            "steel": 40,
+            "leather": 30
           },
           "time": 20000
         },
@@ -2587,6 +2624,149 @@
                 "cross": [
                   "foot_tier3"
                 ]
+              },
+              {
+                "era": "ancient",
+                "group": "gather_m1",
+                "members": [
+                  "wood",
+                  "stone",
+                  "mine",
+                  "food"
+                ],
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "gather_med1",
+                  "name": "Hầm kho lớn",
+                  "desc": "Mở khóa hầm kho lớn: sức chứa của kho +30%.",
+                  "effect": {
+                    "storage": 30
+                  },
+                  "cost": {
+                    "wood": 300,
+                    "stone": 250,
+                    "iron": 20,
+                    "hardwood": 20,
+                    "coin": 60
+                  },
+                  "time": 2800,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "gather_m2",
+                "members": [
+                  "wood",
+                  "stone",
+                  "mine",
+                  "food"
+                ],
+                "nodes": [
+                  {
+                    "stat": "int"
+                  },
+                  {
+                    "stat": "gyield"
+                  },
+                  {
+                    "stat": "tspd"
+                  }
+                ],
+                "leap": {
+                  "id": "gather_med2",
+                  "name": "Khai thác chuyên nghiệp",
+                  "desc": "Thợ mỏ lấy thêm 15% quặng mỗi nhát cuốc, dân khai thác chạy nhanh +10%.",
+                  "effect": {
+                    "mineYield": 15,
+                    "gatherSpeed": 10
+                  },
+                  "cost": {
+                    "wood": 400,
+                    "stone": 300,
+                    "iron": 30,
+                    "hardwood": 25,
+                    "coin": 90
+                  },
+                  "time": 3600,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "gather_m3",
+                "members": [
+                  "wood",
+                  "stone",
+                  "mine",
+                  "food"
+                ],
+                "nodes": [
+                  {
+                    "stat": "restregen"
+                  },
+                  {
+                    "stat": "tyield"
+                  },
+                  {
+                    "stat": "tdur"
+                  }
+                ],
+                "leap": {
+                  "id": "gather_med3",
+                  "name": "Xe chở nặng",
+                  "desc": "Mở khóa xe chở nặng: dân khai thác mang được nhiều hơn +60%.",
+                  "effect": {
+                    "gatherCarry": 60
+                  },
+                  "cost": {
+                    "wood": 500,
+                    "stone": 400,
+                    "iron": 40,
+                    "leather": 15,
+                    "coin": 130
+                  },
+                  "time": 4800,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "gather_slots",
+                  "name": "Thêm chỗ làm: xưởng khai thác",
+                  "desc": "Mở khóa thêm một chỗ làm cho Xưởng gỗ, Xưởng đá và Nông trại (mỗi nhà +1 người).",
+                  "effect": {
+                    "slots_lumberyard": 1,
+                    "slots_quarry": 1,
+                    "slots_farmhouse": 1
+                  },
+                  "cost": {
+                    "wood": 900,
+                    "stone": 700,
+                    "iron": 90,
+                    "hardwood": 70,
+                    "leather": 30,
+                    "coin": 400
+                  },
+                  "time": 7000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
               }
             ]
           },
@@ -2643,6 +2823,94 @@
                 "cross": [
                   "craft_tier2"
                 ]
+              },
+              {
+                "era": "ancient",
+                "group": "hunt_m1",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "hunt_med1",
+                  "name": "Bẫy sập",
+                  "desc": "Mở khóa bẫy sập: thịt lấy từ xác +25%.",
+                  "effect": {
+                    "huntMeat": 25
+                  },
+                  "cost": {
+                    "wood": 250,
+                    "stone": 150,
+                    "iron": 15,
+                    "leather": 10,
+                    "coin": 60
+                  },
+                  "time": 2500,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "hunt_m2",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "restregen"
+                  },
+                  {
+                    "stat": "gyield"
+                  }
+                ],
+                "leap": {
+                  "id": "hunt_med2",
+                  "name": "Thuộc da thuần thục",
+                  "desc": "Mở khóa thuộc da thuần thục: da, lông và xương lấy từ xác +30%.",
+                  "effect": {
+                    "huntDrops": 30
+                  },
+                  "cost": {
+                    "wood": 300,
+                    "stone": 200,
+                    "iron": 20,
+                    "leather": 15,
+                    "coin": 80
+                  },
+                  "time": 3200,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "hunt_slots",
+                  "name": "Thêm chỗ làm: Chòi thợ săn",
+                  "desc": "Mở khóa thêm một chỗ làm cho Chòi thợ săn (+1 người).",
+                  "effect": {
+                    "slots_huntlodge": 1
+                  },
+                  "cost": {
+                    "wood": 700,
+                    "stone": 500,
+                    "iron": 60,
+                    "leather": 40,
+                    "coin": 300
+                  },
+                  "time": 5500,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
               }
             ]
           },
@@ -2722,6 +2990,475 @@
                 "cross": [
                   "cavalry_tier3"
                 ]
+              },
+              {
+                "era": "ancient",
+                "group": "tame_m1",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ],
+                "leap": {
+                  "id": "tame_med1",
+                  "name": "Chuồng trại rộng",
+                  "desc": "Trại chăn nuôi cho thêm 20% sản phẩm.",
+                  "effect": {
+                    "ranchYield": 20
+                  },
+                  "cost": {
+                    "wood": 300,
+                    "stone": 200,
+                    "iron": 20,
+                    "hardwood": 20,
+                    "coin": 70
+                  },
+                  "time": 3000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "tame_m2",
+                "nodes": [
+                  {
+                    "stat": "int"
+                  },
+                  {
+                    "stat": "restregen"
+                  }
+                ],
+                "leap": {
+                  "id": "tame_med2",
+                  "name": "Giống tốt",
+                  "desc": "Trại chăn nuôi cho thêm 25% sản phẩm.",
+                  "effect": {
+                    "ranchYield": 25
+                  },
+                  "cost": {
+                    "wood": 400,
+                    "stone": 300,
+                    "iron": 30,
+                    "hardwood": 30,
+                    "leather": 15,
+                    "cloth": 10,
+                    "coin": 110
+                  },
+                  "time": 4200,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "tame_slots",
+                  "name": "Thêm chỗ làm: Chuồng thú",
+                  "desc": "Mở khóa thêm một chỗ làm cho Chuồng thú (+1 người).",
+                  "effect": {
+                    "slots_stable": 1
+                  },
+                  "cost": {
+                    "wood": 800,
+                    "stone": 600,
+                    "iron": 70,
+                    "hardwood": 50,
+                    "leather": 30,
+                    "coin": 350
+                  },
+                  "time": 6000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              }
+            ]
+          },
+          {
+            "key": "mine",
+            "role": "house_mine",
+            "name": "Mỏ",
+            "who": "Thợ mỏ: quặng sắt, than, quặng đồng",
+            "era": "ancient",
+            "rows": [
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "mine_med1",
+                  "name": "Cuốc chắc",
+                  "desc": "Thợ mỏ lấy thêm 12% quặng mỗi nhát cuốc.",
+                  "effect": {
+                    "mineYield": 12
+                  },
+                  "cost": {
+                    "wood": 300,
+                    "stone": 300,
+                    "iron": 25,
+                    "hardwood": 20,
+                    "coin": 90
+                  },
+                  "time": 3000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "mine_med2",
+                  "name": "Hầm có chống",
+                  "desc": "Thợ mỏ đào nhanh hơn 15%.",
+                  "effect": {
+                    "mineSpeed": 15
+                  },
+                  "cost": {
+                    "wood": 450,
+                    "stone": 450,
+                    "iron": 40,
+                    "hardwood": 35,
+                    "steel": 10,
+                    "coin": 140
+                  },
+                  "time": 4200,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "mine_slots",
+                  "name": "Thêm chỗ làm: Mỏ",
+                  "desc": "Mở khóa thêm một chỗ làm cho Mỏ (+1 thợ mỏ).",
+                  "effect": {
+                    "slots_mine": 1
+                  },
+                  "cost": {
+                    "wood": 1000,
+                    "stone": 1100,
+                    "iron": 120,
+                    "hardwood": 80,
+                    "steel": 40,
+                    "coin": 600
+                  },
+                  "time": 8500,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              }
+            ]
+          },
+          {
+            "key": "smelter",
+            "role": "house_smelter",
+            "name": "Lò luyện",
+            "who": "Nấu quặng thành thỏi",
+            "era": "ancient",
+            "rows": [
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "smelt_med1",
+                  "name": "Than hiệu quả",
+                  "desc": "Lò luyện làm nhanh hơn 15%.",
+                  "effect": {
+                    "speed_smelter": 15
+                  },
+                  "cost": {
+                    "wood": 250,
+                    "stone": 400,
+                    "iron": 20,
+                    "coin": 80
+                  },
+                  "time": 3000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "smelt_med2",
+                  "name": "Ống thổi lớn",
+                  "desc": "Lò luyện làm nhanh hơn thêm 20%.",
+                  "effect": {
+                    "speed_smelter": 20
+                  },
+                  "cost": {
+                    "wood": 400,
+                    "stone": 550,
+                    "iron": 40,
+                    "steel": 10,
+                    "coin": 130
+                  },
+                  "time": 4200,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "smelt_slots",
+                  "name": "Thêm chỗ làm: Lò luyện",
+                  "desc": "Mở khóa thêm một chỗ làm cho Lò luyện (+1 người).",
+                  "effect": {
+                    "slots_smelter": 1
+                  },
+                  "cost": {
+                    "wood": 700,
+                    "stone": 900,
+                    "iron": 100,
+                    "steel": 40,
+                    "coin": 500
+                  },
+                  "time": 8000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              }
+            ]
+          },
+          {
+            "key": "carpentry",
+            "role": "house_carpentry",
+            "name": "Xưởng mộc",
+            "who": "Gỗ cứng và than củi",
+            "era": "ancient",
+            "rows": [
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "carp_med1",
+                  "name": "Cưa sắt",
+                  "desc": "Xưởng mộc làm nhanh hơn 15%.",
+                  "effect": {
+                    "speed_carpentry": 15
+                  },
+                  "cost": {
+                    "wood": 350,
+                    "stone": 200,
+                    "iron": 20,
+                    "hardwood": 15,
+                    "coin": 80
+                  },
+                  "time": 3000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "carp_med2",
+                  "name": "Cưa nước",
+                  "desc": "Xưởng mộc làm nhanh hơn thêm 20%.",
+                  "effect": {
+                    "speed_carpentry": 20
+                  },
+                  "cost": {
+                    "wood": 550,
+                    "stone": 300,
+                    "iron": 40,
+                    "hardwood": 30,
+                    "coin": 130
+                  },
+                  "time": 4200,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "carp_slots",
+                  "name": "Thêm chỗ làm: Xưởng mộc",
+                  "desc": "Mở khóa thêm một chỗ làm cho Xưởng mộc (+1 người).",
+                  "effect": {
+                    "slots_carpentry": 1
+                  },
+                  "cost": {
+                    "wood": 1000,
+                    "stone": 500,
+                    "iron": 60,
+                    "hardwood": 100,
+                    "coin": 400
+                  },
+                  "time": 7500,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              }
+            ]
+          },
+          {
+            "key": "tannery",
+            "role": "house_tannery",
+            "name": "Xưởng thuộc da và dệt",
+            "who": "Da thuộc và vải",
+            "era": "ancient",
+            "rows": [
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "tan_med1",
+                  "name": "Thùng ngâm lớn",
+                  "desc": "Xưởng thuộc da và dệt làm nhanh hơn 15%.",
+                  "effect": {
+                    "speed_tannery": 15
+                  },
+                  "cost": {
+                    "wood": 300,
+                    "stone": 250,
+                    "iron": 15,
+                    "leather": 10,
+                    "coin": 80
+                  },
+                  "time": 3000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "tan_med2",
+                  "name": "Khung dệt lớn",
+                  "desc": "Xưởng thuộc da và dệt làm nhanh hơn thêm 20%.",
+                  "effect": {
+                    "speed_tannery": 20
+                  },
+                  "cost": {
+                    "wood": 450,
+                    "stone": 350,
+                    "iron": 30,
+                    "leather": 20,
+                    "cloth": 10,
+                    "coin": 130
+                  },
+                  "time": 4200,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "tan_slots",
+                  "name": "Thêm chỗ làm: Xưởng thuộc da và dệt",
+                  "desc": "Mở khóa thêm một chỗ làm cho Xưởng thuộc da và dệt (+1 người).",
+                  "effect": {
+                    "slots_tannery": 1
+                  },
+                  "cost": {
+                    "wood": 800,
+                    "stone": 600,
+                    "iron": 50,
+                    "leather": 60,
+                    "cloth": 40,
+                    "coin": 400
+                  },
+                  "time": 7500,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              }
+            ]
+          },
+          {
+            "key": "ranch",
+            "role": "house_ranch",
+            "name": "Trại chăn nuôi",
+            "who": "Da, sợi, gân, lông vũ",
+            "era": "ancient",
+            "rows": [
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "ranch_med1",
+                  "name": "Đồng cỏ tốt",
+                  "desc": "Trại chăn nuôi cho thêm 15% sản phẩm.",
+                  "effect": {
+                    "ranchYield": 15
+                  },
+                  "cost": {
+                    "wood": 300,
+                    "stone": 200,
+                    "iron": 20,
+                    "hardwood": 20,
+                    "coin": 80
+                  },
+                  "time": 3000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "ranch_med2",
+                  "name": "Chuồng ấm",
+                  "desc": "Trại chăn nuôi cho thêm 20% sản phẩm.",
+                  "effect": {
+                    "ranchYield": 20
+                  },
+                  "cost": {
+                    "wood": 450,
+                    "stone": 300,
+                    "iron": 35,
+                    "hardwood": 35,
+                    "leather": 15,
+                    "coin": 130
+                  },
+                  "time": 4200,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "ranch_slots",
+                  "name": "Thêm chỗ làm: Trại chăn nuôi",
+                  "desc": "Mở khóa thêm một chỗ làm cho Trại chăn nuôi (+1 người).",
+                  "effect": {
+                    "slots_ranch": 1
+                  },
+                  "cost": {
+                    "wood": 1000,
+                    "stone": 800,
+                    "iron": 60,
+                    "hardwood": 70,
+                    "leather": 60,
+                    "cloth": 30,
+                    "coin": 450
+                  },
+                  "time": 8000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
               }
             ]
           },
@@ -2901,7 +3638,7 @@
                     "stone": 100
                   },
                   "time": 1500,
-                  "lab": 3
+                  "lab": 4
                 },
                 "cross": [],
                 "era": "ancient"
@@ -2922,7 +3659,76 @@
                     "stone": 150
                   },
                   "time": 2200,
-                  "lab": 3
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade_med3",
+                  "name": "Thương lộ đường dài",
+                  "desc": "Giá tốt hơn (+4% tỉ lệ) và chợ nhận thêm 30% hàng mỗi ngày.",
+                  "effect": {
+                    "market_rate": 4,
+                    "market_quota": 30
+                  },
+                  "cost": {
+                    "coin": 120,
+                    "wood": 200,
+                    "iron": 20,
+                    "leather": 10
+                  },
+                  "time": 2600,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade_med4",
+                  "name": "Hội thợ rèn",
+                  "desc": "Thêm 6 lượt mỗi loại hàng ở giá gốc, mua bằng đồng xu rẻ hơn và bớt 3% phí đổi hàng.",
+                  "effect": {
+                    "market_free": 6,
+                    "market_bargain": 6,
+                    "market_fee": 3
+                  },
+                  "cost": {
+                    "coin": 180,
+                    "wood": 250,
+                    "iron": 30,
+                    "hardwood": 20
+                  },
+                  "time": 3200,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "trade_med5",
+                  "name": "Thương hội lớn",
+                  "desc": "Giá tốt hơn (+8% tỉ lệ), chợ nhận thêm 40% hàng mỗi ngày và bớt 3% phí đổi hàng.",
+                  "effect": {
+                    "market_rate": 8,
+                    "market_quota": 40,
+                    "market_fee": 3
+                  },
+                  "cost": {
+                    "coin": 260,
+                    "wood": 300,
+                    "iron": 40,
+                    "cloth": 20,
+                    "leather": 20
+                  },
+                  "time": 4200,
+                  "lab": 4
                 },
                 "cross": [],
                 "era": "ancient"
@@ -3218,6 +4024,94 @@
                 "cross": [
                   "gather_tier2"
                 ]
+              },
+              {
+                "era": "ancient",
+                "group": "build_m1",
+                "nodes": [
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  },
+                  {
+                    "stat": "int"
+                  }
+                ],
+                "leap": {
+                  "id": "build_med1",
+                  "name": "Xây rẻ hơn (Trung cổ)",
+                  "desc": "Giảm 10% vật liệu xây và nâng cấp công trình.",
+                  "effect": {
+                    "buildCost": 10
+                  },
+                  "cost": {
+                    "wood": 300,
+                    "stone": 300,
+                    "iron": 25,
+                    "hardwood": 25,
+                    "coin": 80
+                  },
+                  "time": 3000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "build_m2",
+                "nodes": [
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  },
+                  {
+                    "stat": "int"
+                  }
+                ],
+                "leap": {
+                  "id": "build_med2",
+                  "name": "Thợ cả",
+                  "desc": "Giảm thêm 8% vật liệu xây và nâng cấp công trình.",
+                  "effect": {
+                    "buildCost": 8
+                  },
+                  "cost": {
+                    "wood": 400,
+                    "stone": 400,
+                    "iron": 35,
+                    "hardwood": 35,
+                    "coin": 120
+                  },
+                  "time": 4200,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "build_slots",
+                  "name": "Thêm chỗ làm: Nhà thợ xây",
+                  "desc": "Mở khóa thêm một chỗ làm cho Nhà thợ xây (+1 thợ xây).",
+                  "effect": {
+                    "slots_builder": 1
+                  },
+                  "cost": {
+                    "wood": 1000,
+                    "stone": 1000,
+                    "iron": 100,
+                    "hardwood": 100,
+                    "coin": 500
+                  },
+                  "time": 7500,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
               }
             ]
           },
@@ -3304,6 +4198,94 @@
                 "cross": [
                   "foot_tier3"
                 ]
+              },
+              {
+                "era": "ancient",
+                "group": "craft_m1",
+                "nodes": [
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  },
+                  {
+                    "stat": "int"
+                  }
+                ],
+                "leap": {
+                  "id": "craft_med1",
+                  "name": "Chế tạo rẻ hơn (Trung cổ)",
+                  "desc": "Giảm 10% vật liệu chế tạo.",
+                  "effect": {
+                    "craftCost": 10
+                  },
+                  "cost": {
+                    "wood": 300,
+                    "stone": 250,
+                    "iron": 25,
+                    "hardwood": 20,
+                    "coin": 80
+                  },
+                  "time": 3000,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "era": "ancient",
+                "group": "craft_m2",
+                "nodes": [
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  },
+                  {
+                    "stat": "int"
+                  }
+                ],
+                "leap": {
+                  "id": "craft_med2",
+                  "name": "Lò thổi gió",
+                  "desc": "Lò luyện, Xưởng mộc, Xưởng thuộc da và dệt làm nhanh hơn 20%.",
+                  "effect": {
+                    "processSpeed": 20
+                  },
+                  "cost": {
+                    "wood": 400,
+                    "stone": 350,
+                    "iron": 35,
+                    "leather": 15,
+                    "coin": 120
+                  },
+                  "time": 4200,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "craft_slots",
+                  "name": "Thêm chỗ làm: Nhà chế tạo",
+                  "desc": "Mở khóa thêm một chỗ làm cho Nhà chế tạo (+1 người).",
+                  "effect": {
+                    "slots_workshop": 1
+                  },
+                  "cost": {
+                    "wood": 900,
+                    "stone": 800,
+                    "iron": 100,
+                    "steel": 30,
+                    "coin": 450
+                  },
+                  "time": 7000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
               }
             ]
           },
@@ -3387,6 +4369,62 @@
                   "about": "Giữ lại phát minh khi làng sụp đổ.",
                   "id": "research_ms3"
                 }
+              },
+              {
+                "era": "ancient",
+                "group": "res_m1",
+                "nodes": [
+                  {
+                    "stat": "work"
+                  },
+                  {
+                    "stat": "sta"
+                  },
+                  {
+                    "stat": "int"
+                  }
+                ],
+                "leap": {
+                  "id": "res_med1",
+                  "name": "Nghiên cứu rẻ hơn (Trung cổ)",
+                  "desc": "Giảm 10% vật liệu nghiên cứu.",
+                  "effect": {
+                    "researchCost": 10
+                  },
+                  "cost": {
+                    "wood": 300,
+                    "stone": 250,
+                    "iron": 25,
+                    "cloth": 15,
+                    "coin": 100
+                  },
+                  "time": 3200,
+                  "share": 0.66,
+                  "lab": 4
+                }
+              },
+              {
+                "nodes": [],
+                "leap": {
+                  "id": "res_slots",
+                  "name": "Thêm chỗ làm: Nhà nghiên cứu",
+                  "desc": "Mở khóa thêm một chỗ làm cho Nhà nghiên cứu (+1 người).",
+                  "effect": {
+                    "slots_lab": 1
+                  },
+                  "cost": {
+                    "wood": 900,
+                    "stone": 800,
+                    "iron": 90,
+                    "cloth": 40,
+                    "steel": 30,
+                    "coin": 600
+                  },
+                  "time": 8000,
+                  "lab": 4
+                },
+                "cross": [],
+                "era": "ancient"
               }
             ]
           }

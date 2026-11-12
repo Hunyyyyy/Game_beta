@@ -30,8 +30,8 @@ export function makeVillager(sim: Sim, x: number, y: number, sex: Sex, team: Tea
   const { stars, fac } = rollFactors(r), stats = legacyStats((s) => rawValue(fac, s)) as Stats;
   const potential = {} as Record<WorkJob, number>, skill = {} as Record<WorkJob, Skill>;
   for (const j of WORK_JOBS) {
-    // hunting and fighting come from the body, not from a random draw, so earlier random streams stay the same
-    if (j === 'hunt' || j === 'fight' || j === 'research' || j === 'tame') { const k = j === 'hunt' || j === 'tame' ? stats.agi : j === 'research' ? stats.sta : stats.str; potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1; skill[j] = { xp: 0, level: 0 }; continue; }
+    // hunting, fighting and mining come from the body, not from a random draw, so earlier random streams stay the same
+    if (j === 'hunt' || j === 'fight' || j === 'research' || j === 'tame' || j === 'mine' || j === 'herd') { const k = j === 'hunt' || j === 'tame' || j === 'herd' ? stats.agi : j === 'research' ? stats.sta : stats.str; potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1; skill[j] = { xp: 0, level: 0 }; continue; }
     const p = r(); potential[j] = p < 0.45 ? 1 : p < 0.85 ? 2 : 3; skill[j] = { xp: 0, level: 0 };
   }
   return {

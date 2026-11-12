@@ -1,0 +1,18 @@
+{
+  "name": "Áo cỏ",
+  "type": "prop",
+  "size": [16, 16],
+  "anchor": [8, 15],
+  "params": {"stone": 0},
+  "palette": { "line": "#2b2a10", "handle": "#8a5e34", "handleL": "#aa7c48", "tw": "#b88c54", "twL": "#deb87e", "twD": "#805c34", "st": "#8e9498", "stL": "#c0c6c8", "stD": "#60676b", "bind": "#d8c690", "grass": "#7f9a3c", "grassL": "#a9c250", "grassD": "#566e26", "straw": "#c9b25a", "cord": "#8a6a3a" },
+  "layers": [
+    { "shape": "poly", "points": [[5, 2], [11, 2], [15, 5], [13, 8], [12, 7], [12, 15], [4, 15], [4, 7], [3, 8], [1, 5]], "color": "grass" },
+    { "shape": "rect", "x": 6, "y": 2, "w": 4, "h": 2, "color": "grassD" },
+    { "shape": "line", "from": [6, 5], "to": [6, 14], "w": 1, "color": "grassL" },
+    { "shape": "line", "from": [9, 5], "to": [9, 14], "w": 1, "color": "grassD" },
+    { "shape": "line", "from": [11, 6], "to": [11, 14], "w": 1, "color": "grassL" },
+    { "shape": "pixels", "at": [[5, 13], [7, 14], [10, 14], [4, 11], [12, 12]], "color": "straw" },
+    { "shape": "rect", "x": 4, "y": 9, "w": 8, "h": 1, "color": "cord" },
+    { "shape": "outline", "color": "line" }
+  ]
+}

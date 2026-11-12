@@ -17,8 +17,8 @@
    {
     "name": "Lò đắp đất",
     "cost": {
-     "wood": 70,
-     "stone": 120
+     "wood": 105,
+     "stone": 180
     },
     "buildTime": 360,
     "cap": 0,
@@ -30,8 +30,10 @@
    {
     "name": "Sân rèn lò gạch",
     "cost": {
-     "wood": 110,
-     "stone": 230
+     "wood": 165,
+     "stone": 345,
+     "iron": 15,
+     "coal": 10
     },
     "buildTime": 520,
     "cap": 0,
@@ -43,8 +45,11 @@
    {
     "name": "Lò cao",
     "cost": {
-     "wood": 150,
-     "stone": 340
+     "wood": 225,
+     "stone": 510,
+     "iron": 30,
+     "coal": 20,
+     "steel": 12
     },
     "buildTime": 760,
     "cap": 0,

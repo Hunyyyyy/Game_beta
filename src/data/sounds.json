@@ -3,6 +3,8 @@
   "master": 0.7,
   "range": 0.5,
   "stepTiers": { "grassMax": 3, "treadMax": 5 },
+  "hitAs": { "_note": "A weapon that has no sound of its own for the arrows that land sounds as another one: the bows and the crossbow as the short bow.", "bronze_bow": "bow", "composite_bow": "bow", "longbow": "bow", "alloy_crossbow": "bow" },
+  "armorHits": { "_note": "A blow of a hand weapon of rank weaponRank or more on someone who wears armour of rank armor or more sounds as melee_armor_45, or as melee_armor_67 from rank high up (the ranks of ranks.json); a weapon with a sound of its own keeps it.", "weaponRank": 4, "armor": 4, "high": 6 },
   "armorTier": { "hide": 2, "bone": 3, "bronze": 4, "footman": 5, "archer": 5, "rider": 5, "watchman": 5, "guard": 6, "marksman": 6, "royalrider": 6, "sergeant": 6, "templar": 7, "sniper": 7, "paladin": 7, "warden": 7 },
   "anims": {
     "grass_step": [
@@ -14,16 +16,20 @@
     "mine":         { "file": "works/miner_stone.mp3", "hitFrame": 5, "volume": 0.5, "gap": 0.25, "work": true },
     "build":        { "file": "works/building.wav",    "hitFrame": 2, "volume": 0.35, "gap": 6, "work": true },
     "shoot_attack": [
-      { "file": "battle/bow_draw.mp3",    "frame": 0, "volume": 0.3, "gap": 0.2 },
-      { "file": "battle/bow_release.mp3", "volume": 0.4, "gap": 0.2 }
+      { "file": "battle/weapons/bow_draw.mp3",    "frame": 0, "volume": 0.3, "gap": 0.2 },
+      { "file": "battle/weapons/bow_release.mp3", "volume": 0.4, "gap": 0.2 }
+    ],
+    "xbow_attack": [
+      { "file": "battle/weapons/bow_draw.mp3",    "frame": 0, "volume": 0.3, "gap": 0.2 },
+      { "file": "battle/weapons/bow_release.mp3", "volume": 0.4, "gap": 0.2 }
     ],
     "tread_walk": [
-      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 0, "volume": 0.6, "gap": 0.35 },
-      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 3, "volume": 0.6, "gap": 0.35 }
+      { "files": ["battle/orders/run_1.mp3", "battle/orders/run_2.mp3", "battle/orders/run_3.mp3", "battle/orders/run_4.mp3"], "frame": 0, "volume": 0.6, "gap": 0.35 },
+      { "files": ["battle/orders/run_1.mp3", "battle/orders/run_2.mp3", "battle/orders/run_3.mp3", "battle/orders/run_4.mp3"], "frame": 3, "volume": 0.6, "gap": 0.35 }
     ],
     "tread_run": [
-      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 0, "volume": 0.75, "gap": 0.18 },
-      { "files": ["battle/run_1.mp3", "battle/run_2.mp3", "battle/run_3.mp3", "battle/run_4.mp3"], "frame": 3, "volume": 0.75, "gap": 0.18 }
+      { "files": ["battle/orders/run_1.mp3", "battle/orders/run_2.mp3", "battle/orders/run_3.mp3", "battle/orders/run_4.mp3"], "frame": 0, "volume": 0.75, "gap": 0.18 },
+      { "files": ["battle/orders/run_1.mp3", "battle/orders/run_2.mp3", "battle/orders/run_3.mp3", "battle/orders/run_4.mp3"], "frame": 3, "volume": 0.75, "gap": 0.18 }
     ],
     "step_walk": [
       { "files": ["units/footstep_left_1.mp3", "units/footstep_left_3.mp3", "units/footstep_left_5.mp3"], "frame": 0, "volume": 0.35, "gap": 0.3 },
@@ -48,8 +54,8 @@
       { "files": ["units/horse_gallop_1.mp3", "units/horse_gallop_2.mp3", "units/horse_gallop_3.mp3", "units/horse_gallop_4.mp3", "units/horse_gallop_5.mp3", "units/horse_gallop_6.mp3"], "frame": 0, "volume": 0.55, "gap": 0.3 },
       { "files": ["units/horse_neigh_1.mp3", "units/horse_neigh_2.mp3"], "onStart": true, "volume": 0.5, "gap": 14 }
     ],
-    "sling_attack": { "file": "battle/sling_throw.mp3", "volume": 0.5, "gap": 0.2 },
-    "throw_attack": { "file": "battle/sling_throw.mp3", "volume": 0.5, "gap": 0.2 }
+    "sling_attack": { "file": "battle/weapons/sling_throw.mp3", "volume": 0.5, "gap": 0.2 },
+    "throw_attack": { "file": "battle/weapons/sling_throw.mp3", "volume": 0.5, "gap": 0.2 }
   },
   "weather": {
     "drizzle": { "loops": [{ "file": "envairoment/rain.mp3", "volume": 0.45 }] },
@@ -61,28 +67,30 @@
   },
   "thunder": { "files": ["envairoment/thunder_1.mp3", "envairoment/thunder_2.mp3", "envairoment/thunder_3.mp3"], "volume": 0.8, "delayMin": 0.3, "delayMax": 1.6 },
   "neigh": { "files": ["units/horse_neigh_1.mp3", "units/horse_neigh_2.mp3"], "volume": 0.5, "gap": 8 },
-  "order": { "files": ["battle/order_1.mp3", "battle/order_2.mp3", "battle/order_3.mp3"], "volume": 0.7, "gap": 0.15 },
+  "order": { "files": ["battle/orders/order_1.mp3", "battle/orders/order_2.mp3", "battle/orders/order_3.mp3"], "volume": 0.7, "gap": 0.15 },
   "end": {
     "lost": { "file": "battle/musics/The_Field_of_Lost_Kings.mp3", "volume": 0.6 },
-    "won": { "files": ["battle/victory_1.mp3", "battle/victory_2.mp3", "battle/victory_3.mp3", "battle/victory_4.mp3"], "volume": 0.7, "next": 0.3 }
+    "won": { "files": ["battle/events/victory_1.mp3", "battle/events/victory_2.mp3", "battle/events/victory_3.mp3"], "volume": 0.7, "next": 0.3, "skirmishSeconds": 8 }
   },
   "birds": { "files": ["envairoment/birds_1.mp3", "envairoment/birds_2.mp3", "envairoment/birds_3.mp3"], "volume": 0.4, "gapMin": 30, "gapMax": 90 },
   "hits": {
-    "elephant": { "files": ["battle/elephant_1.mp3", "battle/elephant_2.mp3", "battle/elephant_3.mp3"], "volume": 0.45, "gap": 12 },
-    "gate_open": { "files": ["battle/gate_open.mp3"], "volume": 0.6, "gap": 0.4 },
-    "gate_shut": { "files": ["battle/gate_shut.mp3"], "volume": 0.6, "gap": 0.4 },
+    "elephant": { "files": ["battle/beasts/elephant_1.mp3", "battle/beasts/elephant_2.mp3", "battle/beasts/elephant_3.mp3"], "volume": 0.45, "gap": 12 },
+    "gate_open": { "files": ["battle/events/gate_open.mp3"], "volume": 0.6, "gap": 0.4 },
+    "gate_shut": { "files": ["battle/events/gate_shut.mp3"], "volume": 0.6, "gap": 0.4 },
     "place": { "files": ["build_effects/place.mp3"], "volume": 0.6, "gap": 0.3 },
-    "bow": { "files": ["battle/arrow_hit_1.mp3"], "burst": ["battle/arrow_hit_2.mp3", "battle/arrow_hit_3.mp3"], "burstWindow": 0.3, "volume": 0.4, "gap": 0.7 },
-    "melee": { "files": ["battle/melee_1.mp3", "battle/melee_2.mp3", "battle/melee_3.mp3", "battle/melee_4.mp3", "battle/melee_5.mp3"], "volume": 0.55, "gap": 0.08 }
+    "bow": { "files": ["battle/hits/arrow/arrow_hit_1.mp3"], "burst": ["battle/hits/arrow/arrow_hit_2.mp3", "battle/hits/arrow/arrow_hit_3.mp3"], "burstWindow": 0.3, "volume": 0.4, "gap": 0.7 },
+    "melee_armor_45": { "files": ["battle/hits/armor/armor_4_5_1.mp3", "battle/hits/armor/armor_4_5_2.mp3", "battle/hits/armor/armor_4_5_3.mp3"], "volume": 0.6, "gap": 0.08 },
+    "melee_armor_67": { "files": ["battle/hits/armor/armor_6_7_1.mp3", "battle/hits/armor/armor_6_7_2.mp3", "battle/hits/armor/armor_6_7_3.mp3"], "volume": 0.65, "gap": 0.08 },
+    "melee": { "files": ["battle/hits/melee/melee_1.mp3", "battle/hits/melee/melee_2.mp3", "battle/hits/melee/melee_3.mp3", "battle/hits/melee/melee_4.mp3", "battle/hits/melee/melee_5.mp3"], "volume": 0.55, "gap": 0.08 }
   },
   "near": {
-    "burn":     { "file": "battle/burn.mp3", "volume": 0.6 },
+    "burn":     { "file": "battle/events/burn.mp3", "volume": 0.6 },
     "homefire": { "file": "build_effects/homefire.mp3", "volume": 0.35 }
   },
   "war": {
     "engageShare": 0.2,
     "music": { "volume": 0.6 },
-    "start": { "file": "battle/battle_start.mp3", "volume": 0.7 }
+    "start": { "file": "battle/events/battle_start.mp3", "volume": 0.7 }
   },
   "wolves": { "files": ["envairoment/wolf_1.mp3", "envairoment/wolf_2.mp3", "envairoment/wolf_3.mp3"], "volume": 0.5, "maxHowls": 3, "from": 0.03, "to": 0.3, "spacing": 0.07 },
   "peace": { "volume": 0.5, "firstDelay": 3, "gapMin": 15, "gapMax": 45 },

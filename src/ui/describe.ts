@@ -4,7 +4,7 @@ import { ArmorDef, ARMORS, WEAPONS } from '../sim/combat';
 import { TIER_NAME, TOOL_NAME, TOOL_OF_JOB } from '../sim/tools';
 import type { WorkJob } from '../sim/jobs';
 import { dayLength, gameDays } from '../sim/constants';
-import { Job, JOB_NAME, JOBS } from '../sim/jobs';
+import { Job, JOB_NAME, JOBS, ORE_RES } from '../sim/jobs';
 import { RES_NAME } from '../sim/resources';
 import type { Sim, Villager } from '../sim/sim';
 
@@ -20,9 +20,9 @@ export const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(3 - n);
 export function waitReason(v: Villager, sim: Sim): string | null {
   const j = v.job;
   if (j === 'build') return sim.buildings.some(needsWork) ? null : 'chờ: chưa có công trường nào cần xây';
-  if (j === 'wood' || j === 'stone' || j === 'food') {
-    const res = JOBS[j].res!;
-    if (!v.carry && sim.stock[res] >= sim.capacity(res)) return `chờ: kho đầy ${RES_NAME[res].toLowerCase()}, hãy nâng cấp Kho`;
+  if (j === 'wood' || j === 'stone' || j === 'mine' || j === 'food') {
+    const res = JOBS[j].res!, full = (r: typeof res) => sim.stock[r] >= sim.capacity(r);
+    if (!v.carry && (j === 'mine' ? ORE_RES.every(full) : full(res))) return `chờ: kho đầy ${RES_NAME[res].toLowerCase()}, hãy nâng cấp Kho`;
     return 'chờ: chưa thấy nguồn nào gần đó, hãy khám phá thêm';
   }
   return null;

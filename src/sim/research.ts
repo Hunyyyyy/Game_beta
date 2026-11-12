@@ -11,7 +11,7 @@ import tree from '../data/researchtree.json';
 
 const num = (x: number): string => String(Math.round(x * 100) / 100).replace('.', ',');
 const weaponName = (id: string): string => ((weaponsJson.weapons as unknown as Record<string, { name: string }>)[id]?.name ?? id).toLowerCase();
-/** One research step. For blueprints the id is the recipe id it opens (axe1 = wood axe, axe2 = stone axe). */
+/** One research step. */
 export interface Tech {
   id: string; name: string; desc: string;
   requires: string[];
@@ -24,7 +24,7 @@ export interface Tech {
   cost: Partial<Stock>;
   /** Seconds with one average researcher at speed 1. */
   time: number;
-  unlocks: { tier?: { role: string; tier: number }; weaponTier?: { role: string; tier: number }; perk?: Record<string, number>; bonus?: { role: string; stat: string; pct: number }; formationCells?: number; squads?: number; recipes?: string[]; buildings?: BuildingKind[]; mounts?: string[] };
+  unlocks: { tier?: { role: string; tier: number }; weaponTier?: { role: string; tier: number }; perk?: Record<string, number>; bonus?: { role: string; stat: string; pct: number }; formationCells?: number; squads?: number; buildings?: BuildingKind[]; mounts?: string[] };
 }
 
 /** Research is on by default; with `enabled` false every recipe, building level and automation is open. */
@@ -289,12 +289,6 @@ export const planOpen = (done: ReadonlySet<string>, f: PlanFeature, advanced: bo
 export const statBonus = (done: ReadonlySet<string>, role: string, stat: LineStat): number =>
   researchRoles(role).reduce((sum, r) => sum + stepsOfLine(r, stat).slice(0, lineLevel(done, r, stat)).reduce((a, b) => a + b, 0) * (ROLE_SCALE[r] ?? 1), 0);
 
-/** A recipe can be made once its blueprint step is researched. */
-/** Tools, weapons, armour and torches need no blueprint: only the level of the Nhà chế tạo (recipeLevel) limits them. */
-const NO_BLUEPRINT = /^(club|spear|mace|thrown_stone|sling|bow|hide|bone|axe|pick|hoe|hammer|torch)\d$/;
-export const recipeOpen = (done: ReadonlySet<string>, recipeId: string): boolean => !RESEARCH.enabled || NO_BLUEPRINT.test(recipeId) || done.has(recipeId);
-/** The blueprint step that opens a recipe. */
-export const techForRecipe = (recipeId: string): Tech | undefined => TECH_BY_ID[recipeId] ?? TECHS.find((t) => t.unlocks.recipes?.includes(recipeId));
 
 /** The biggest value of a numeric unlock (cells of a formation, squads) among the steps done, or the default when none is. */
 export const unlockedMax = (done: ReadonlySet<string>, key: 'formationCells' | 'squads', base: number): number =>
@@ -306,11 +300,3 @@ export const unlockedMax = (done: ReadonlySet<string>, key: 'formationCells' | '
 export const techForBuilding = (kind: BuildingKind): Tech | undefined => TECHS.find((t) => t.unlocks.buildings?.includes(kind));
 export const buildingOpen = (done: ReadonlySet<string>, kind: BuildingKind): boolean => { const t = techForBuilding(kind); return !RESEARCH.enabled || !t || done.has(t.id); };
 
-const KIND_NAME: Partial<Record<BuildingKind, string>> = { storage: 'Kho', market: 'Chợ', workshop: 'Nhà chế tạo', lab: 'Nhà nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Trại lính bộ', cavalry: 'Trại lính kỵ', archery: 'Trại thợ ném', farmhouse: 'Nông trại', huntlodge: 'Chòi thợ săn', lumberyard: 'Xưởng gỗ', quarry: 'Xưởng đá', house: 'Nhà dân', field: 'Ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Chòi canh', wartent: 'Lều họp chiến', scouttent: 'Trại trinh sát', drill: 'Bãi tập', trap: 'Hố chông', stable: 'Chuồng thú cưỡi' };
-/** What a tech unlocks, as a short Vietnamese phrase for the UI. */
-export const unlockText = (t: Tech, recipeName: (id: string) => string): string => {
-  const parts = [...(t.unlocks.recipes ?? []).map(recipeName)];
-  for (const k of t.unlocks.buildings ?? []) parts.push(`xây ${KIND_NAME[k] ?? k}`);
-  for (const m of t.unlocks.mounts ?? []) parts.push(`thuần hóa ${({ wolf: 'sói', boar: 'lợn rừng', elephant: 'voi' } as Record<string, string>)[m] ?? m}`);
-  return parts.join(', ');
-};

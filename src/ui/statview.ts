@@ -33,9 +33,11 @@ export function statReading(sim: Ctx['sim'], v: Villager, id: StatId): { text: s
     const camp = id === 'hpregen' && soldier ? ` · khi ở trong trại của mình ×${num(REST.soldierHealInCamp * mult, 2)}` : '';
     return { text: `×${num(mult, 2)}`, tone: mult > 1.001 ? 'up' : '', tip: `${STAT_LABEL[id]}: nhanh gấp ${num(mult, 2)} người thường${bonus ? ` (nghiên cứu +${num(bonus)}%)` : ''}${id === 'restregen' && soldier ? ' (lính hồi sức nhanh hơn dân)' : ''}${camp}` };
   }
-  const val = statValue(sim, v, id), own = v.fac ? rawValue(v.fac, id) : val, tone = val > own + 0.05 ? 'up' : val < own - 0.05 ? 'down' : '';
+  const ride = id === 'move' ? sim.mountSpeed(v) : 1; // a rider walks faster than his own stat: shown with the beast (the stat itself stays, movement multiplies it)
+  const val = statValue(sim, v, id) * ride, own = v.fac ? rawValue(v.fac, id) : val / ride, tone = val > own + 0.05 ? 'up' : val < own - 0.05 ? 'down' : '';
+  const beast = ride > 1.001 ? ` · gồm thú cưỡi ×${num(ride, 2)}` : '';
   const reduce = id === 'defm' || id === 'defr' ? ` · giảm ${num(guardCut(sim, v, id === 'defr') * 100)}% sát thương ${id === 'defr' ? 'tầm xa' : 'cận chiến'}` : '';
-  return { text: num(val), tone, tip: `${STAT_LABEL[id]}: gốc ${num(own)}${reduce}${val < own - 0.05 ? pen : ''}` };
+  return { text: num(val), tone, tip: `${STAT_LABEL[id]}: gốc ${num(own)}${beast}${reduce}${val < own - 0.05 ? pen : ''}` };
 }
 
 /** The picture, the name and the number of a stat, as a small label. */

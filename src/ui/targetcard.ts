@@ -67,7 +67,7 @@ export class TargetCard {
       const empty = n.kind === 'bush' && n.amount <= 0;
       this.card.set({
         picKey: `node|${n.kind}`, pic: () => resIcon(n.res),
-        title: { tree: 'Cây', rock: 'Tảng đá', bush: 'Bụi quả' }[n.kind], sub: `cho ${RES_NAME[n.res].toLowerCase()}${n.workers ? ` · ${n.workers} người đang làm` : ''}`,
+        title: { tree: 'Cây', rock: 'Tảng đá', bush: 'Bụi quả', ore: n.res === 'coal' ? 'Mạch than' : n.res === 'copper_ore' ? 'Mạch quặng đồng' : n.res === 'rare_ore' ? 'Mạch quặng sắt hiếm' : 'Mạch quặng sắt' }[n.kind], sub: `cho ${RES_NAME[n.res].toLowerCase()}${n.workers ? ` · ${n.workers} người đang làm` : ''}`,
         line: empty ? 'Hết quả, đang chờ mọc lại' : `Còn ${Math.ceil(n.amount)}/${n.max}`,
         onClose: close, actions: acts(true, false, false, 'Tấn công', empty),
       });

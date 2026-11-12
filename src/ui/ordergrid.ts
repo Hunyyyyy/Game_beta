@@ -18,7 +18,7 @@ export interface OrderItem {
   /** Work time (work-seconds). */
   time: number;
   icon: () => HTMLElement;
-  /** Why it cannot be ordered at all yet (a blueprint, a house level), or null. */
+  /** Why it cannot be ordered at all yet (a house level), or null. */
   lock: () => string | null;
   /** Why no more can be ordered right now (a full store), or null. */
   full: () => string | null;

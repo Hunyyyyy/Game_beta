@@ -256,6 +256,8 @@
       "tier": 2
     },
     "bronze_spear": {
+      "cost": {"bronze": 2, "hardwood": 2},
+      "time": 70,
       "name": "Giáo đồng",
       "type": "pierce",
       "range": 1.7,
@@ -268,6 +270,8 @@
       "postShield": "wood"
     },
     "bronze_sword": {
+      "cost": {"bronze": 3, "hardwood": 1},
+      "time": 80,
       "name": "Kiếm đồng",
       "type": "slash",
       "range": 1.1,
@@ -281,6 +285,8 @@
       "rank": 4
     },
     "bronze_bow": {
+      "cost": {"hardwood": 2, "sinew": 2, "feather": 2, "bronze": 1},
+      "time": 80,
       "name": "Cung đồng",
       "type": "pierce",
       "range": 8.5,
@@ -305,6 +311,8 @@
       "tier": 3
     },
     "short_spear": {
+      "cost": {"iron": 2, "hardwood": 2},
+      "time": 80,
       "name": "Giáo ngắn tuần đinh",
       "type": "pierce",
       "range": 1.6,
@@ -316,6 +324,8 @@
       "rank": 5
     },
     "arming_sword": {
+      "cost": {"iron": 4, "hardwood": 2, "leather": 1},
+      "time": 100,
       "name": "Kiếm thẳng",
       "type": "slash",
       "range": 1.1,
@@ -327,6 +337,8 @@
       "rank": 5
     },
     "lance": {
+      "cost": {"iron": 2, "hardwood": 3},
+      "time": 90,
       "name": "Giáo kỵ binh",
       "type": "pierce",
       "range": 2.2,
@@ -337,6 +349,8 @@
       "rank": 5
     },
     "composite_bow": {
+      "cost": {"hardwood": 2, "sinew": 3, "feather": 3, "iron": 1},
+      "time": 100,
       "name": "Cung ghép",
       "type": "pierce",
       "range": 9.5,
@@ -461,30 +475,40 @@
       "tier": 2
     },
     "bronze": {
+      "cost": {"bronze": 6, "leather": 2},
+      "time": 140,
       "name": "Giáp đồng",
       "defm": 75,
       "defr": 65,
       "tier": 3
     },
     "watchman": {
+      "cost": {"iron": 2, "leather": 3},
+      "time": 120,
       "name": "Giáp tuần đinh (da cứng)",
       "defm": 85,
       "defr": 75,
       "tier": 4
     },
     "footman": {
+      "cost": {"iron": 6, "leather": 2},
+      "time": 160,
       "name": "Giáp xích bộ binh",
       "defm": 95,
       "defr": 80,
       "tier": 4
     },
     "archer": {
+      "cost": {"leather": 3, "cloth": 1},
+      "time": 120,
       "name": "Giáp da cung thủ",
       "defm": 60,
       "defr": 65,
       "tier": 4
     },
     "rider": {
+      "cost": {"leather": 4, "iron": 2},
+      "time": 140,
       "name": "Giáp da bọc đinh",
       "defm": 75,
       "defr": 75,

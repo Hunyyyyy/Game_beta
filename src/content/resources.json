@@ -89,6 +89,16 @@
    "hud": "whenOwned",
    "unlock": null
   },
+  "copper_ore": {
+   "name": "Quặng đồng",
+   "carry": 6,
+   "barter": 6,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "mine",
+    "level": 1
+   }
+  },
   "rare_ore": {
    "name": "Quặng sắt hiếm",
    "carry": 4,
@@ -124,6 +134,16 @@
    "name": "Thỏi sắt",
    "carry": 6,
    "barter": 3,
+   "hud": "whenOwned",
+   "unlock": {
+    "building": "smelter",
+    "level": 1
+   }
+  },
+  "bronze": {
+   "name": "Thỏi đồng",
+   "carry": 6,
+   "barter": 4,
    "hud": "whenOwned",
    "unlock": {
     "building": "smelter",

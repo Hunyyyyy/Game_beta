@@ -3,7 +3,7 @@ import { BuildingKind, levelDef } from './buildings';
 import { WorkJob } from './jobs';
 import { Stock } from './resources';
 import { isGear, RECIPE_BY_ID, recipeName } from './tools';
-import { CRAFT_COST_PER_LEVEL, discountBill, perkPct, recipeNeedLevel, recipeOpen as blueprintDone, missingOf, reached, RESEARCH, Tech, TECH_BY_ID, techForRecipe } from './research';
+import { CRAFT_COST_PER_LEVEL, discountBill, perkPct, recipeNeedLevel, missingOf, reached, RESEARCH, Tech, TECH_BY_ID } from './research';
 import type { Sim } from './sim';
 import { Villager } from './model';
 
@@ -30,10 +30,9 @@ export const scaleCost = (cost: Partial<Stock>, m: number): Partial<Stock> => Ob
 /** What ordering one of this recipe costs at the Nhà chế tạo as it stands. */
 export const craftCost = (sim: Sim, id: string): Partial<Stock> => scaleCost(RECIPE_BY_ID[id].cost, craftMult(sim));
 
-/** Why a recipe cannot be made yet (blueprint or crafting-house level), or null. */
+/** Why a recipe cannot be made yet (the level of the crafting house), or null. */
 export function recipeLock(sim: Sim, id: string): string | null {
-  if (!RESEARCH.enabled || sim.dev.freeWorks) return null; // dev: no blueprint or house level needed
-  if (!blueprintDone(sim.researched, id)) return `Chưa có bản vẽ: ${techForRecipe(id)?.name.replace(/^Bản vẽ /, '') ?? '?'}`;
+  if (!RESEARCH.enabled || sim.dev.freeWorks) return null; // dev: no house level needed
   const need = recipeNeedLevel(id);
   if (workshopLevel(sim) < need) return `Cần Nhà chế tạo cấp ${need}`;
   return null;
@@ -185,7 +184,7 @@ export function tickWorks(sim: Sim, dt: number): void {
         return true;
       });
       if (i < 0) {
-        if (queue.length && sim.time - sim.lastMatWarn > 30) { sim.lastMatWarn = sim.time; sim.say(kind === 'research' ? 'Nghiên cứu đang chờ.' : 'Đơn đang chờ: chưa chế được (thiếu bản vẽ hoặc Nhà chế tạo chưa đủ cấp).'); }
+        if (queue.length && sim.time - sim.lastMatWarn > 30) { sim.lastMatWarn = sim.time; sim.say(kind === 'research' ? 'Nghiên cứu đang chờ.' : 'Đơn đang chờ: chưa chế được (Nhà chế tạo chưa đủ cấp).'); }
         continue;
       }
       const id = queue[i];

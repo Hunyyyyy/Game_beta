@@ -16,7 +16,7 @@ import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 37;
+export const SAVE_VERSION = 39;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
@@ -377,4 +377,24 @@ MIGRATIONS[36] = (d) => {
   // 36 -> 37: the barter of the Kho and the campfire is gone; goods are traded at the Chợ, which draws a quota of each good every day (market)
   delete d.records.barterHeat; d.records.market ??= { quota: {}, used: {} };
   return { ...d, version: 37 };
+};
+MIGRATIONS[37] = (d) => {
+  // 37 -> 38: the miner (job 'mine', the Mỏ): everyone gets a skill and a potential for it, from the strength of the body like the soldiers' (a seam of ore needs the arm)
+  for (const v of d.lists.villagers as Array<Record<string, any>>) {
+    const str = Number(v.stats?.str ?? 5);
+    v.potential ??= {}; v.skill ??= {};
+    v.potential.mine ??= str >= 9 ? 3 : str >= 6 ? 2 : 1;
+    v.skill.mine ??= { xp: 0, level: 0 };
+  }
+  return { ...d, version: 38 };
+};
+MIGRATIONS[38] = (d) => {
+  // 38 -> 39: the herdsman (job 'herd', the Trại chăn nuôi): a skill and a potential for everyone, from the nimbleness of the body like the beast tamers'
+  for (const v of d.lists.villagers as Array<Record<string, any>>) {
+    const agi = Number(v.stats?.agi ?? 5);
+    v.potential ??= {}; v.skill ??= {};
+    v.potential.herd ??= agi >= 9 ? 3 : agi >= 6 ? 2 : 1;
+    v.skill.herd ??= { xp: 0, level: 0 };
+  }
+  return { ...d, version: 39 };
 };

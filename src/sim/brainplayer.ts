@@ -186,7 +186,6 @@ export function endOrder(sim: Sim, v: Villager): void {
   const f = v.fight;
   if (v.job !== 'fight') f.mode = 'none';
   else if (v.guard) { f.mode = 'guard'; f.anchor = homeSpot(sim, v) ?? { x: v.x, y: v.y }; }
-  else if (v.team === 'player' && v.squad < 0) { f.mode = 'none'; f.anchor = null; }
   else { f.mode = 'guard'; f.anchor = { x: v.x, y: v.y }; }
 }
 
@@ -211,7 +210,7 @@ function beastsAbout(sim: Sim): boolean {
 
 function mayEngage(sim: Sim, v: Villager): boolean {
   if (v.job !== 'fight' || v.guard || v.team !== 'player') return true;
-  return sim.alarmUntil > sim.time || beastsAbout(sim) || sim.battle.on || v.fight.mode === 'attack' || v.fight.mode === 'attackMove' || (v.squad >= 0 && sim.plans.some((p) => p.status === 'running'));
+  return sim.alarmUntil > sim.time || beastsAbout(sim) || sim.battle.on || v.fight.mode === 'attack' || v.fight.mode === 'attackMove' || sim.inSkirmish(v) || (v.squad >= 0 && sim.plans.some((p) => p.status === 'running'));
 }
 
 function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {

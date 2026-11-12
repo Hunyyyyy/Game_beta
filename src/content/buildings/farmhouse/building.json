@@ -60,7 +60,9 @@
     "name": "Gạch ngói (trung cổ)",
     "cost": {
      "wood": 65,
-     "stone": 72
+     "stone": 72,
+     "iron": 10,
+     "hardwood": 10
     },
     "buildTime": 327,
     "cap": 300,

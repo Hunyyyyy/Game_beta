@@ -12,6 +12,12 @@ import { ANCIENT_ART, STONE_ART } from '../content/buildings/art.gen';
 import animsJson from '../data/anims.json';
 import bushJson from '../data/blueprints/nature/resources/bush.json';
 import rockJson from '../data/blueprints/nature/resources/rock.json';
+import oreIronJson from '../data/blueprints/nature/resources/ore_iron.json';
+import oreCoalJson from '../data/blueprints/nature/resources/ore_coal.json';
+import oreCopperJson from '../data/blueprints/nature/resources/ore_copper.json';
+import oreRareJson from '../data/blueprints/nature/resources/ore_rare.json';
+import oreSilverJson from '../data/blueprints/nature/resources/ore_silver.json';
+import oreGoldJson from '../data/blueprints/nature/resources/ore_gold.json';
 import mountainLowJson from '../data/blueprints/nature/terrain/mountain_low.json';
 import mountainMidJson from '../data/blueprints/nature/terrain/mountain_mid.json';
 import mountainHighJson from '../data/blueprints/nature/terrain/mountain_high.json';
@@ -29,7 +35,22 @@ import toolClubJson from '../data/blueprints/stone_age/tools/club.json';
 import toolSpearJson from '../data/blueprints/stone_age/tools/spear.json';
 import toolMaceJson from '../data/blueprints/stone_age/tools/mace.json';
 import toolHideArmorJson from '../data/blueprints/stone_age/tools/hide_armor.json';
+import toolGrassArmorJson from '../data/blueprints/stone_age/tools/grass_armor.json';
 import toolSlingJson from '../data/blueprints/stone_age/tools/sling.json';
+import med_bronze_sword from '../data/blueprints/medieval/tools/bronze_sword.json';
+import med_bronze_spear from '../data/blueprints/medieval/tools/bronze_spear.json';
+import med_bronze_bow from '../data/blueprints/medieval/tools/bronze_bow.json';
+import med_bronze_armor from '../data/blueprints/medieval/tools/bronze_armor.json';
+import med_arming_sword from '../data/blueprints/medieval/tools/arming_sword.json';
+import med_composite_bow from '../data/blueprints/medieval/tools/composite_bow.json';
+import med_lance from '../data/blueprints/medieval/tools/lance.json';
+import med_short_spear from '../data/blueprints/medieval/tools/short_spear.json';
+import med_footman_armor from '../data/blueprints/medieval/tools/footman_armor.json';
+import med_archer_armor from '../data/blueprints/medieval/tools/archer_armor.json';
+import med_rider_armor from '../data/blueprints/medieval/tools/rider_armor.json';
+import med_watchman_armor from '../data/blueprints/medieval/tools/watchman_armor.json';
+import handTiers from '../data/handtools/tiers.json';
+import palaceJson from '../data/blueprints/medieval/palace.json';
 import toolBowJson from '../data/blueprints/stone_age/tools/bow.json';
 import { BuildingKind, BUILDINGS, Era, ERAS } from '../sim/buildings';
 import type { Season } from '../sim/calendar';
@@ -64,6 +85,8 @@ export interface NatureSet {
   /** The rocky ground of a mountain, and the peaks standing on it from the edge to the heart (foot, slope, summit). */
   mountainFloor: HTMLCanvasElement[]; peaks: { low: Prop[]; mid: Prop[]; high: Prop[] };
   trees: Prop[]; rocks: Prop[]; bush: Prop[]; bushEmpty: Prop[];
+  /** The seams of ore at the foot of the mountains: iron ore, coal and copper ore. Silver and gold are drawn and kept for later (no seam of them is made yet). */
+  ironOre: Prop[]; coal: Prop[]; copperOre: Prop[]; rareOre: Prop[]; silverOre: Prop[]; goldOre: Prop[];
 }
 
 /** Construction stages 0..4 (4 = finished) as blueprint params. */
@@ -78,6 +101,9 @@ export class Sprites {
   private era: Era = 'stone';
   private summer = false;
   private readonly natureCache = new Map<string, NatureSet>();
+  private palaceProp: Prop | null = null;
+  /** The Nhà chính of level 7 for the dev look (a 6 × 6 palace). */
+  palace(): Prop { return (this.palaceProp ??= make(palaceJson, 1, { st1: 1, st2: 1, st3: 1, st4: 1 })); }
   private readonly buildingCache = new Map<string, Prop[][]>();
   private readonly campfireFx = new Map<string, Prop>();
   private readonly animalCache = new Map<string, HTMLCanvasElement>();
@@ -89,7 +115,12 @@ export class Sprites {
 
   constructor() {
     const defs: Record<string, unknown> = { axe: toolAxeJson, pick: toolPickJson, hoe: toolHoeJson, hammer: toolHammerJson };
-    for (const k of Object.keys(defs)) for (const tier of [1, 2]) this.icons[`${k}${tier}`] = make(defs[k], 1, { stone: tier === 2 ? 1 : 0 }).frames[0];
+    // the tool icons are keyed like their recipes (axe1, pick4): wood, stone, then the medieval metals, whose head colours are those of the hand tools (data/handtools/tiers.json)
+    const heads = handTiers as unknown as Record<string, { head: string; light: string; dark: string }>;
+    for (const k of Object.keys(defs)) for (const tier of [1, 2, 3, 4, 5]) {
+      const c = heads[String(tier)], def = tier >= 3 ? { ...(defs[k] as object), palettes: { metal: { st: c.head, stL: c.light, stD: c.dark } } } : defs[k];
+      this.icons[`${k}${tier}`] = make(def, 1, { stone: tier >= 2 ? 1 : 0, ...(tier >= 3 ? { metal: 1 } : {}) }).frames[0];
+    }
     // gear icons are keyed like their recipes: club1, spear1, mace2, hide1
     this.icons.club1 = make(toolClubJson, 1).frames[0];
     this.icons.spear1 = make(toolSpearJson, 1).frames[0];
@@ -97,12 +128,26 @@ export class Sprites {
     this.icons.sling1 = make(toolSlingJson, 1).frames[0];
     this.icons.bow1 = make(toolBowJson, 1).frames[0];
     this.icons.hide1 = make(toolHideArmorJson, 1).frames[0];
+    // the gear of the medieval ranks: the icon is keyed like the recipe (kind + tier)
+    this.icons.bronze_sword3 = make(med_bronze_sword, 1).frames[0];
+    this.icons.bronze_spear3 = make(med_bronze_spear, 1).frames[0];
+    this.icons.bronze_bow3 = make(med_bronze_bow, 1).frames[0];
+    this.icons.bronze3 = make(med_bronze_armor, 1).frames[0];
+    this.icons.arming_sword4 = make(med_arming_sword, 1).frames[0];
+    this.icons.composite_bow4 = make(med_composite_bow, 1).frames[0];
+    this.icons.lance4 = make(med_lance, 1).frames[0];
+    this.icons.short_spear4 = make(med_short_spear, 1).frames[0];
+    this.icons.footman4 = make(med_footman_armor, 1).frames[0];
+    this.icons.archer4 = make(med_archer_armor, 1).frames[0];
+    this.icons.rider4 = make(med_rider_armor, 1).frames[0];
+    this.icons.watchman4 = make(med_watchman_armor, 1).frames[0];
+    this.icons.grass1 = make(toolGrassArmorJson, 1).frames[0];
     this.icons.bone2 = this.icons.hide1; // the bone armour has no picture of its own yet: it shows as the hide one
     this.icons.torch1 = this.torchIcon();
     this.icons.thrown_stone2 = this.stoneIcon(); // the stone of the stone thrower, for the craft list
     this.nature('spring');
     this.emblems.lab = this.scrollEmblem();
-    this.emblems.builder = this.icons.hammer1; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.infantry = this.icons.spear1; this.emblems.guardpost = this.icons.club1; this.emblems.cavalry = this.icons.spear1; this.emblems.archery = this.icons.sling1 ?? this.icons.spear1; this.emblems.lumberyard = this.icons.axe1; this.emblems.quarry = this.icons.pick1; this.emblems.farmhouse = this.icons.hoe1; this.emblems.huntlodge = this.icons.spear1; this.emblems.stable = this.icons.hoe1;
+    this.emblems.builder = this.icons.hammer1; this.emblems.toolstore = this.icons.axe2; this.emblems.armory = this.icons.club1; this.emblems.infantry = this.icons.spear1; this.emblems.guardpost = this.icons.club1; this.emblems.cavalry = this.icons.spear1; this.emblems.archery = this.icons.sling1 ?? this.icons.spear1; this.emblems.lumberyard = this.icons.axe1; this.emblems.quarry = this.icons.pick1; this.emblems.mine = this.icons.pick2; this.emblems.ranch = this.icons.hoe2; this.emblems.farmhouse = this.icons.hoe1; this.emblems.huntlodge = this.icons.spear1; this.emblems.stable = this.icons.hoe1;
   }
 
   /** A stone to throw 16x16, for the craft list. */
@@ -147,6 +192,12 @@ export class Sprites {
         water: seeds(3).map((s) => make(waterJson, s, p)),
         trees: [...seeds(4).map((s) => make(treeRoundJson, s, p)), ...seeds(4).map((s) => make(treePineJson, s + 1, p))],
         rocks: seeds(3).map((s) => make(rockJson, s, p)),
+        ironOre: seeds(3).map((s) => make(oreIronJson, s, p)),
+        coal: seeds(3).map((s) => make(oreCoalJson, s, p)),
+        copperOre: seeds(3).map((s) => make(oreCopperJson, s, p)),
+        rareOre: seeds(3).map((s) => make(oreRareJson, s, p)),
+        silverOre: seeds(3).map((s) => make(oreSilverJson, s, p)),
+        goldOre: seeds(3).map((s) => make(oreGoldJson, s, p)),
         mountainFloor: seeds(4).map((s) => make(mountainFloorJson, s, p).frames[0]),
         peaks: { low: seeds(3).map((s) => make(mountainLowJson, s, p)), mid: seeds(3).map((s) => make(mountainMidJson, s, p)), high: seeds(3).map((s) => make(mountainHighJson, s, p)) },
         bush: seeds(3).map((s) => make(bushJson, s, p)),

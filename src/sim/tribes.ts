@@ -504,7 +504,8 @@ function returnRebel(sim: Sim, t: Tribe): void {
 /** A camp of bandits is wiped out or beaten: we take its bag, it is gone from the map, and (tribefrontier.ts) another camp is put up in its place after a few days. */
 export function crushBandit(sim: Sim, t: Tribe): void {
   const got = claimVillage(sim, t);
-  sim.say(`${t.def.name} bị diệt: ta nhận ${got.length ? got.join(', ') : 'chưa được gì'}.`);
+  const msg = `${t.def.name} bị diệt: ta nhận ${got.length ? got.join(', ') : 'chưa được gì'}.`;
+  sim.say(msg); sim.addAlert('notice', msg); // a toast too: the log line fades unseen
   sim.frontier.bandit[t.id] = sim.day + DIFF.capture.bandit.respawnMin + Math.floor(sim.frnd() * (DIFF.capture.bandit.respawnMax - DIFF.capture.bandit.respawnMin + 1));
   removeTribe(sim, t);
 }

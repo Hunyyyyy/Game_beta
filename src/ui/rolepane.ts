@@ -1,5 +1,7 @@
 import { buildingName } from '../sim/buildings';
-import { JOBS, ROLES, STAT_NAME, roleName, roleOf } from '../sim/jobs';
+import { JOBS, ORE_RES, ROLES, STAT_NAME, roleName, roleOf } from '../sim/jobs';
+import { RES_NAME } from '../sim/resources';
+import { resIcon } from './resicons';
 import type { RoleId } from '../sim/jobs';
 import type { Villager } from '../sim/model';
 import { h, hint } from './dom';
@@ -15,11 +17,12 @@ import { isRankRole, rankName, ranksOf, trainBill } from '../sim/ranks';
 
 /** What a role leans on: the stat that says who is good at it (scouts are rated by their own score). */
 const STAT_OF: Record<RoleId, keyof typeof STAT_NAME | 'scout'> = {
-  wood: JOBS.wood.stat, stone: JOBS.stone.stat, food: JOBS.food.stat, hunt: JOBS.hunt.stat, foot: 'str', cavalry: 'str', archer: 'agi', guard: 'str', tower: 'agi', scout: 'scout', supply: 'str',
+  wood: JOBS.wood.stat, stone: JOBS.stone.stat, mine: JOBS.mine.stat, food: JOBS.food.stat, hunt: JOBS.hunt.stat, foot: 'str', cavalry: 'str', archer: 'agi', guard: 'str', tower: 'agi', scout: 'scout', supply: 'str',
 };
 const HELP: Record<RoleId, string> = {
   wood: 'Người đốn gỗ do Xưởng gỗ quản lý: giao việc ở đây, họ ra cây gần nhất và mang gỗ về kho. Nâng cấp xưởng để thêm người.',
   stone: 'Thợ đá do Xưởng đá quản lý: họ ra đá và mang về kho. Nâng cấp xưởng để thêm người.',
+  mine: 'Thợ mỏ do Mỏ quản lý: họ ra các mạch quặng sắt và than ở chân núi, mang về kho riêng của Mỏ. Mỗi thợ có các ô nhỏ để chọn khai loại quặng nào (bấm để bật hoặc tắt). Cuốc càng tốt khai càng nhanh; cuốc kém vẫn khai được quặng cứng nhưng chậm hơn nhiều. Quặng sắt hiếm chỉ khai được khi Mỏ cấp 3. Cần cuốc chim. Nâng cấp mỏ để thêm người.',
   food: 'Người hái lượm do Nông trại quản lý: họ ra bụi quả và mang thức ăn về kho. Người làm ruộng thì giao ở từng Ruộng. Nâng cấp nông trại để thêm người.',
   hunt: 'Thợ săn do Chòi thợ săn quản lý: họ đi săn thú và mang thịt, da về. Nên chế giáo hoặc dây quăng cho họ. Nâng cấp chòi để thêm người.',
   foot: 'Chiến binh cận chiến do trại này tuyển và cho nghỉ, không phải ở đống lửa. Họ ở trong trại (không hiện trên bản đồ) và chỉ ra ngoài khi bạn bấm "Gọi quân", khi có trận hoặc khi được ra lệnh; việc canh gác giao cho Lính gác. Nhớ chế vũ khí và giáp cho họ. Nâng cấp trại để chứa thêm.',
@@ -57,7 +60,7 @@ export class RolePane {
   stateKey(): string {
     const { sim } = this.c;
     return [this.role, this.watch, this.recruit, this.rank, isRankRole(this.role) ? sim.trainCheck(this.role, this.rank).missing.join('|') : '', sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${v.shift}${v.out ? 'o' : ''}${v.housed ? 'H' : ''}${v.phase === 'sleep' ? 'z' : ''}${Math.round(v.energy / 20)}${Math.round(v.health / 20)}${v.armor ? Math.round(v.gear.ad / 25) : ''}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
-      sim.scouts.map((m) => m.ids.join('.')).join('|'), sim.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join()].join('|');
+      sim.scouts.map((m) => m.ids.join('.')).join('|'), sim.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join(), this.role === 'mine' ? sim.villagers.filter((v) => v.job === 'mine').map((v) => `${v.id}:${v.ores?.join('.') ?? '*'}`).join() : ''].join('|');
   }
 
   private again(): void { this.key = ''; this.changed(); }
@@ -97,6 +100,13 @@ export class RolePane {
     if (!cap) out.push(dlg.empty(`Chưa có ${house.toLowerCase()} xong: hãy dựng, rồi giao việc ở đây.`));
     const block = lock ?? (!cap ? `Cần dựng ${house}` : !room ? `${house} đã đủ chỗ: nâng cấp để chứa thêm` : null);
     const callOut = (v: Villager) => (camp ? iconButton(sim.isOut(v) ? 'callBack' : 'callOut', () => { if (sim.isOut(v)) sim.sendBack([v.id]); else sim.callOut([v.id]); this.again(); }, sim.isOut(v) ? 'Cho lính này về trại nghỉ' : 'Gọi lính này ra ngoài, sẵn sàng', { disabled: !!lock }) : null);
+    // the miners: which ores each one digs (one chip for each ore; the rare ore opens with a Mỏ of level 3)
+    const mineLevel = sim.building('mine')?.level ?? 0;
+    const oreChips = (v: Villager): HTMLElement[] => (role !== 'mine' ? [] : [h('div', { class: 'btns orechips' }, ...ORE_RES.map((r) => {
+      const on = !v.ores || v.ores.includes(r), locked = r === 'rare_ore' && mineLevel < 3;
+      return h('button', { type: 'button', class: 'sm orechip', pressed: on, disabled: !!lock || locked, title: locked ? `${RES_NAME[r]}: cần Mỏ cấp 3` : `${on ? 'Đang khai' : 'Không khai'} ${RES_NAME[r].toLowerCase()}: bấm để ${on ? 'thôi khai' : 'khai'}`,
+        onclick: () => { const e = sim.setMineOre(v.id, r, !on); if (e) toast(e); this.again(); } }, resIcon(r));
+    }))]);
     const name = (w: 'day' | 'night') => (w === 'day' ? 'ngày' : 'đêm');
     // the camps of soldiers train by rank: a card for each rank (what it costs, whether it is open) and what is missing for the one chosen
     const train = isRankRole(role) ? role : null, ranks = train ? ranksOf(train, era) : [];
@@ -124,7 +134,7 @@ export class RolePane {
       ...(train ? { titles: { pool: 'Dân có thể luyện', in: 'Lính trong trại' }, chipIn: (v: Villager) => rankName(train, v.rank ?? 1) ?? undefined } : {}),
       remove: (v) => sim.releaseRole([v.id]),
       removeBlock: (v) => lock ?? (sim.scouts.some((m) => m.ids.includes(v.id)) ? 'Đang đi trinh sát' : null),
-      extra: (v) => [callOut(v)],
+      extra: (v) => [callOut(v), ...oreChips(v)],
       emptyIn: 'Chưa có ai giữ việc này.',
       emptyPool: role === 'scout' ? 'Không còn lính kỵ nào để tuyển.' : 'Không có ai để thêm.',
       again: () => this.again(),

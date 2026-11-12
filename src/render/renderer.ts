@@ -22,7 +22,7 @@ export interface Marker { x: number; y: number; age: number }
 
 export interface Ghost { kind: BuildingKind; x: number; y: number; ok: boolean; level?: number; era?: Era; /** Id of the building being carried, whose old place keeps no clearance. */ moving?: number; /** A group of fence pieces carried together: where each goes, and the ids they leave. */ group?: Array<{ id: number; kind: BuildingKind; x: number; y: number; level: number; w?: number; h?: number; rot?: number }>; movingIds?: number[]; /** The tiles a gate being put down covers, and whether it stands along a column. */ w?: number; h?: number; rot?: number }
 
-interface Drawable { y: number; kind: 'tree' | 'rock' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp' | 'ftent'; ft?: { x: number; y: number; built: boolean }; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe; p?: Tribe['props'][number] }
+interface Drawable { y: number; kind: 'tree' | 'rock' | 'ore' | 'mountain' | 'bush' | 'villager' | 'building' | 'animal' | 'camp' | 'ftent'; ft?: { x: number; y: number; built: boolean }; i: number; j: number; peak?: 'low' | 'mid' | 'high'; v?: Villager; b?: Building; a?: Animal; t?: Tribe; p?: Tribe['props'][number] }
 
 /** Frame count and speed of an animation, for the sound hit frames. */
 const animClip = (a: string): { fps: number; n: number; hit: number } | undefined => { const c = (animsJson as unknown as Record<string, { fps: number; frames: unknown[]; hit?: number }>)[a]; return c ? { fps: c.fps, n: c.frames.length, hit: c.hit ?? 2 } : undefined; };
@@ -258,7 +258,13 @@ export class Renderer {
     return map;
   }
 
-  private anchorOf(b: Building): [number, number] { return this.buildingAnchor(b.kind, b.x, b.y, footOf(b)); }
+  /** An upgrade being planned on bigger ground (ui/upgradeplan.ts): the ground it will cover, what stands in the way, and whether the way is clear. */
+  plan: { kind: BuildingKind; era: Era; level: number; rect: { x: number; y: number; w: number; h: number }; ok: boolean; blockers: Array<{ x: number; y: number; w: number; h: number }> } | null = null;
+
+  private anchorOf(b: Building): [number, number] {
+    if (this.sim.dev.palace && b.kind === 'campfire') return [(b.x + 1) * TILE, (b.y + 4) * TILE - 6]; // the palace is 6 × 6 tiles round the middle of the fire: its front edge is three tiles below it
+    return this.buildingAnchor(b.kind, b.x, b.y, footOf(b));
+  }
   private buildingAnchor(kind: BuildingKind, x: number, y: number, fp?: { w: number; h: number }): [number, number] {
     const d = fp ?? BUILDINGS[kind];
     return [(x + d.w / 2) * TILE, (y + d.h) * TILE - 6];
@@ -436,6 +442,7 @@ export class Renderer {
 
   /** Current level's sprite; while an upgrade runs the finished building stays drawn, with a progress bar. */
   private buildingProp(b: Building): Prop {
+    if (this.sim.dev.palace && b.kind === 'campfire' && b.done) return this.sprites.palace();
     const st = b.done ? 4 : Math.min(3, Math.floor(b.progress * 4));
     return this.sprites.building(b.kind, b.era, b.level, st, b.kind === 'gate' && b.open);
   }
@@ -547,11 +554,14 @@ export class Renderer {
 
     // ---- vật thể + công trình + dân, sắp theo y ----
     const list: Drawable[] = [];
+    const fireB = sim.dev.palace ? sim.campfire() : undefined, bare = (x: number, y: number) => !!fireB && fireB.done && Math.hypot(x - (fireB.x + 1), y - (fireB.y + 1)) <= 15; // the dev look at the palace: what stands round it is not drawn
     for (let j = j0; j <= Math.min(N - 1, j1 + 2); j++) {
       for (let i = Math.max(0, i0 - 1); i <= Math.min(N - 1, i1 + 1); i++) {
+        if (fireB && bare(i + 0.5, j + 0.5)) continue;
         const t = world.at(i, j);
         if (t === Tile.Tree) list.push({ y: j * TILE + 28, kind: 'tree', i, j });
         else if (t === Tile.Rock) list.push({ y: j * TILE + 28, kind: 'rock', i, j });
+        else if (t === Tile.Ore) list.push({ y: j * TILE + 28, kind: 'ore', i, j });
         else if (t === Tile.Mountain && !strips.has(j * 65536 + (i >> 3))) { strips.add(j * 65536 + (i >> 3)); list.push({ y: (j + 1) * TILE - 1, kind: 'mountain', i: i >> 3, j }); } // a strip of the range, 8 tiles wide, in front of what is behind it
         else if (t === Tile.Bush) list.push({ y: j * TILE + 28, kind: 'bush', i, j });
       }
@@ -561,6 +571,7 @@ export class Renderer {
     for (const b of sim.buildings) {
       const [ax, ay] = this.anchorOf(b);
       if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
+      if (fireB && b.kind !== 'campfire' && bare(b.x + footOf(b).w / 2, b.y + footOf(b).h / 2)) continue;
       list.push({ y: ay, kind: 'building', i: 0, j: 0, b });
     }
     for (const v of sim.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
@@ -591,6 +602,9 @@ export class Renderer {
         if (pic) { const [ox, oy] = stripOrigin(d.i, d.j); ctx.drawImage(pic, Math.round((ox - cam.x) * z), Math.round((oy - cam.y) * z), pic.width * z, pic.height * z); }
       } else if (d.kind === 'rock') {
         this.prop(nat.rocks[Math.floor(hash2(d.i, d.j, 22) * nat.rocks.length)], d.i * TILE + 16, d.y, time);
+      } else if (d.kind === 'ore') {
+        const res = world.nodeAt(d.i, d.j)?.res, set = res === 'coal' ? nat.coal : res === 'copper_ore' ? nat.copperOre : res === 'rare_ore' ? nat.rareOre : nat.ironOre; // the seam is iron ore, coal or copper ore (the node says which)
+        this.prop(set[Math.floor(hash2(d.i, d.j, 24) * set.length)], d.i * TILE + 16, d.y, time);
       } else if (d.kind === 'bush') {
         const n = world.nodeAt(d.i, d.j), k = Math.floor(hash2(d.i, d.j, 23) * nat.bush.length);
         this.prop((n && n.amount === 0 ? nat.bushEmpty : nat.bush)[k], d.i * TILE + 16, d.y, time);
@@ -754,7 +768,7 @@ export class Renderer {
     if (!this.audio) sim.sfx.length = 0;
     if (this.audio) {
       this.audio.sweep(time);
-      if (this.audio.sfxOn) for (const e of sim.sfx) if (this.nearCenter((e.x * TILE - cx) * z, (e.y * TILE - cy) * z)) this.audio.hit(e.weapon, e.ranged, time);
+      if (this.audio.sfxOn) for (const e of sim.sfx) if (this.nearCenter((e.x * TILE - cx) * z, (e.y * TILE - cy) * z)) this.audio.hit(e.weapon, e.ranged, time, e.rank, e.armor);
       const war = sim.warScene(); // the war music plays all through the war, wherever the camera is
       const onScreen = war.squads.length > 0;
       this.audio.setWar(onScreen, war.stings, time);
@@ -774,6 +788,15 @@ export class Renderer {
       const p = this.worldToScreen(v.x * TILE - 10, v.y * TILE - 14), k = (time * 0.6 + v.id * 0.37) % 1;
       ctx.fillStyle = `rgba(235,240,255,${(0.9 * (1 - k)).toFixed(2)})`;
       ctx.fillText('z', p.x + k * 6 * z, p.y - k * 10 * z);
+    }
+
+    // ---- an upgrade onto bigger ground: the picture of the house to come, the ground it takes, and in red what is in the way ----
+    if (this.plan) {
+      const pl = this.plan, rw = pl.rect.w, rh = pl.rect.h;
+      try { this.prop(sp.building(pl.kind, pl.era, pl.level, 4), ...this.buildingAnchor(pl.kind, pl.rect.x, pl.rect.y, { w: rw, h: rh }), time, 0.55); } catch { /* a level that has no picture of its own yet is only framed */ }
+      ctx.fillStyle = pl.ok ? 'rgba(90,200,90,.30)' : 'rgba(220,70,60,.30)'; ctx.fillRect(px(pl.rect.x), py(pl.rect.y), rw * ts, rh * ts);
+      ctx.strokeStyle = pl.ok ? '#bff0b0' : '#ffb4a8'; ctx.lineWidth = 2; ctx.setLineDash([8, 5]); ctx.strokeRect(px(pl.rect.x) + 1, py(pl.rect.y) + 1, rw * ts - 2, rh * ts - 2); ctx.setLineDash([]);
+      for (const q of pl.blockers) { ctx.fillStyle = 'rgba(230,50,40,.5)'; ctx.fillRect(px(q.x), py(q.y), q.w * ts, q.h * ts); ctx.strokeStyle = '#ff6a5a'; ctx.lineWidth = 3; ctx.strokeRect(px(q.x) + 1, py(q.y) + 1, q.w * ts - 2, q.h * ts - 2); }
     }
 
     // ---- bóng ma khi đặt công trình ----

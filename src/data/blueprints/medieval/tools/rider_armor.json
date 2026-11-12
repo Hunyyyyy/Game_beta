@@ -1,0 +1,184 @@
+{
+ "name": "Giáp da bọc đinh",
+ "type": "prop",
+ "size": [
+  16,
+  16
+ ],
+ "anchor": [
+  8,
+  15
+ ],
+ "params": {
+  "stone": 0
+ },
+ "palette": {
+  "line": "#2b1d10",
+  "handle": "#8a5e34",
+  "handleL": "#aa7c48",
+  "bind": "#d8c690",
+  "bronze": "#c98a3a",
+  "bronzeL": "#e8b564",
+  "bronzeD": "#8a5a22",
+  "steel": "#aeb6bd",
+  "steelL": "#dfe5ea",
+  "steelD": "#6f7880",
+  "iron": "#8e9498",
+  "ironL": "#c0c6c8",
+  "ironD": "#60676b",
+  "horn": "#c9b88a",
+  "hornD": "#8a7a52",
+  "feather": "#e4dcc4",
+  "red": "#a8342a",
+  "redL": "#c9503f",
+  "chain": "#9aa2a8",
+  "chainL": "#cfd5d9",
+  "chainD": "#5c646b",
+  "leaf": "#6e7a3a",
+  "leafL": "#8b9a4c",
+  "leafD": "#4a5528",
+  "stud": "#d8d2c0",
+  "brown": "#7a4a2a",
+  "brownL": "#9a6238",
+  "brownD": "#4e301c",
+  "hard": "#5a4430",
+  "hardL": "#7a5e44",
+  "hardD": "#3a2a1c",
+  "stitch": "#e8d6a8"
+ },
+ "layers": [
+  {
+   "shape": "poly",
+   "points": [
+    [
+     5,
+     2
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     15,
+     5
+    ],
+    [
+     13,
+     8
+    ],
+    [
+     12,
+     7
+    ],
+    [
+     12,
+     15
+    ],
+    [
+     4,
+     15
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     1,
+     5
+    ]
+   ],
+   "color": "brown"
+  },
+  {
+   "shape": "rect",
+   "x": 6,
+   "y": 2,
+   "w": 4,
+   "h": 2,
+   "color": "brownD"
+  },
+  {
+   "shape": "line",
+   "from": [
+    8,
+    4
+   ],
+   "to": [
+    8,
+    14
+   ],
+   "w": 1,
+   "color": "brownD"
+  },
+  {
+   "shape": "rect",
+   "x": 4,
+   "y": 13,
+   "w": 8,
+   "h": 2,
+   "color": "brownL"
+  },
+  {
+   "shape": "pixels",
+   "at": [
+    [
+     5,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     9,
+     11
+    ],
+    [
+     11,
+     11
+    ]
+   ],
+   "color": "stud"
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  }
+ ]
+}
