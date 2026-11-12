@@ -113,9 +113,16 @@ export function applyStats(sim: Sim, v: Villager): void {
 }
 
 /** Share of damage a person turns aside: from melee (Phòng thủ cận chiến) or from missiles (Phòng thủ tầm xa). `armor`: what the armour he wears adds to that stat. */
-export function guardCut(sim: Sim, v: Villager, ranged: boolean, armor = 0): number {
-  const d = statValue(sim, v, ranged ? 'defr' : 'defm') + armor;
+export function guardCut(sim: Sim, v: Villager, ranged: boolean, armor = 0, pierce = 0): number {
+  // the research of his arm thickens the guard of a soldier of ours (`armor_<role>`); the blow of a soldier who has the research of piercing (`pierce_<role>`) ignores a share of it
+  const d = (statValue(sim, v, ranged ? 'defr' : 'defm') + armor) * (1 + armPerk(sim, v, 'armor') / 100) * (1 - Math.min(80, pierce) / 100);
   return d / (d + cfg.defense.k);
+}
+
+/** What the research adds (percent) to a perk of the arm of a soldier of ours: `<kind>_<role>` (pierce, armor, armorDur, counter, siege). Nothing for the other teams. */
+export function armPerk(sim: Sim, v: Pick<Villager, 'job' | 'arm' | 'post' | 'team'>, kind: string): number {
+  const r = v.team === 'player' ? treeRole(v) : null;
+  return r ? perkPct(sim.researched, `${kind}_${r}`) : 0;
 }
 
 /** Speed of work from the stat Tốc độ làm việc, raised by Trí tuệ. */

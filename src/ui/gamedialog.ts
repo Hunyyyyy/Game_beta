@@ -25,7 +25,10 @@ export class GameDialog {
     root.classList.add('gdlg-back', opts.inside ? 'inside' : 'fixed');
     root.hidden = true;
     if (!opts.modal) {
-      root.addEventListener('click', (e) => { if (e.target === root && (opts.canClose?.() ?? true)) this.dismiss(); });
+      // a click on the backdrop closes it, but only when the press began there too: a drag that starts on the scroll and lets go outside ends in a click on the backdrop, and must not close it
+      let pressedOnBack = false;
+      root.addEventListener('pointerdown', (e) => { pressedOnBack = e.target === root; }, true);
+      root.addEventListener('click', (e) => { if (e.target === root && pressedOnBack && (opts.canClose?.() ?? true)) this.dismiss(); });
       // Esc closes the dialog instead of also dropping the selection behind it
       window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.isOpen && (opts.canClose?.() ?? true)) { e.stopImmediatePropagation(); this.dismiss(); } }, true);
     }

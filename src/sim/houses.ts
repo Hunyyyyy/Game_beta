@@ -9,7 +9,7 @@ import { isProcessKind } from './processdata';
 import { perkPct } from './research';
 
 /** How many people a house holds: the places of its level, and the places the research of its trade added (perk `slots_<kind>`). */
-export const slotsOf = (sim: Sim, b: Building): number => slotsOf(sim, b) + perkPct(sim.researched, `slots_${b.kind}`);
+export const slotsOf = (sim: Sim, b: Building): number => levelDef(b).slots + perkPct(sim.researched, `slots_${b.kind}`);
 
 // ---------------------------------------------------------------- working inside a house
 /** The villager best suited to work in a house who is not already doing it: free hands first, soldiers never, then the best stat for the job. */
@@ -25,11 +25,15 @@ export function houseRate(sim: Sim, b: Building): number {
   const job: WorkJob = b.kind === 'lab' ? 'research' : b.kind === 'workshop' || isProcessKind(b.kind) ? 'craft' : b.kind === 'ranch' ? 'herd' : 'tame';
   let r = 0;
   for (const id of b.staff) { const v = sim.byId.get(id); if (v && v.phase === 'inside') r += sim.workFactor(v, job); }
-  return r * levelDef(b).craftSpeed * (sim.dev.fastWorks ? 1e6 : 1);
+  const perk = b.kind === 'workshop' ? perkPct(sim.researched, 'craftSpeed') : b.kind === 'lab' ? perkPct(sim.researched, 'researchSpeed') : b.kind === 'stable' ? perkPct(sim.researched, 'tameSpeed') : 0; // the research of the craftsmen and of the researchers
+  return r * levelDef(b).craftSpeed * (1 + perk / 100) * (sim.dev.fastWorks ? 1e6 : 1);
 }
 
 /** Villagers heading for a house or already in it. */
-export function staffCount(sim: Sim, b: Building): number { return b.staff.length + sim.villagers.filter((v) => v.phase === 'goStaff' && v.target === b.id).length; }
+/** The people of a house: those inside, those on their way, and those waiting for a way in (posted here but with no path yet). `self` is left out, so that a villager asking for his own place does not count himself. */
+export function staffCount(sim: Sim, b: Building, self?: Villager): number {
+  return b.staff.length + sim.villagers.filter((v) => v !== self && ((v.phase === 'goStaff' && v.target === b.id) || (v.phase === 'wait' && isStaffJob(v.job) && postOf(sim, v)?.id === b.id))).length;
+}
 
 /** Anyone may be given a place in a house: a soldier or a scout is let go from his camp first (he hands his gear back). Returns an error or null. */
 function letGo(sim: Sim, v: Villager): string | null {
@@ -84,7 +88,7 @@ export function assignStaff(sim: Sim, ids: readonly number[], job: 'craft' | 're
   for (const v of sim.mine(ids)) {
     if (v.inside === b.id) { v.job = job; continue; }
     const gone = letGo(sim, v); if (gone) { err = gone; continue; }
-    if (staffCount(sim, b) >= slotsOf(sim, b)) { err = `${BUILDINGS[b.kind].name} cấp ${b.level} chỉ chứa ${slotsOf(sim, b)} người`; continue; }
+    if (staffCount(sim, b, v) >= slotsOf(sim, b)) { err = `${BUILDINGS[b.kind].name} cấp ${b.level} chỉ chứa ${slotsOf(sim, b)} người`; continue; }
     sim.resetTask(v); sim.clearCombat(v); v.job = job; v.prefer = -1; v.post = -1;
     planStaff(sim, v);
   }
@@ -100,7 +104,7 @@ export function assignField(sim: Sim, ids: readonly number[], fieldId: number): 
   for (const v of sim.mine(ids)) {
     if (v.post === b.id && v.job === 'food') continue;
     const gone = letGo(sim, v); if (gone) { err = gone; continue; }
-    if (staffCount(sim, b) >= slotsOf(sim, b)) { err = `${BUILDINGS.field.name} cấp ${b.level} chỉ chứa ${slotsOf(sim, b)} người`; continue; }
+    if (staffCount(sim, b, v) >= slotsOf(sim, b)) { err = `${BUILDINGS.field.name} cấp ${b.level} chỉ chứa ${slotsOf(sim, b)} người`; continue; }
     sim.resetTask(v); sim.clearCombat(v); v.job = 'food'; v.prefer = -1; v.post = b.id;
     planStaff(sim, v);
   }
@@ -126,7 +130,7 @@ export function assignProcessing(sim: Sim, ids: readonly number[], houseId: numb
   for (const v of sim.mine(ids)) {
     if (v.post === b.id && v.job === 'craft') continue;
     const gone = letGo(sim, v); if (gone) { err = gone; continue; }
-    if (staffCount(sim, b) >= slotsOf(sim, b)) { err = `${BUILDINGS[b.kind].name} cấp ${b.level} chỉ chứa ${slotsOf(sim, b)} người`; continue; }
+    if (staffCount(sim, b, v) >= slotsOf(sim, b)) { err = `${BUILDINGS[b.kind].name} cấp ${b.level} chỉ chứa ${slotsOf(sim, b)} người`; continue; }
     sim.resetTask(v); sim.clearCombat(v); v.job = 'craft'; v.prefer = -1; v.post = b.id;
     planStaff(sim, v);
   }
@@ -145,15 +149,18 @@ export function planStaff(sim: Sim, v: Villager): void {
   if (!isStaffJob(v.job) && !((v.job === 'food' || v.job === 'fight') && v.post >= 0)) return;
   const b = postOf(sim, v);
   if (!b) { if (v.job === 'food' || v.job === 'fight') v.post = -1; else v.job = 'idle'; return; }
-  if (staffCount(sim, b) >= slotsOf(sim, b)) { if (v.job !== 'fight') v.job = 'idle'; v.post = -1; sim.say(`${v.name} không còn chỗ trong ${BUILDINGS[b.kind].name.toLowerCase()}.`); return; }
+  if (staffCount(sim, b, v) >= slotsOf(sim, b)) { if (v.job !== 'fight') v.job = 'idle'; v.post = -1; sim.say(`${v.name} không còn chỗ trong ${BUILDINGS[b.kind].name.toLowerCase()}.`); return; }
   const d = BUILDINGS[b.kind];
-  if (sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) { v.target = b.id; v.phase = 'goStaff'; return; }
+  if (sim.routeTo(v, sim.ringTiles(v, b.x, b.y, d.w, d.h), 8) >= 0) { v.target = b.id; v.phase = 'goStaff'; return; }
   sim.wait(v, 3);
 }
 
 export function enterBuilding(sim: Sim, v: Villager): void {
   const b = sim.getBuilding(v.target);
-  if (!b || !b.done || postOf(sim, v)?.id !== b.id || b.staff.length >= slotsOf(sim, b)) { v.phase = 'idle'; if (isStaffJob(v.job)) v.job = 'idle'; return; }
+  if (!b || !b.done || postOf(sim, v)?.id !== b.id || b.staff.length >= slotsOf(sim, b)) {
+    if (b) sim.say(`${v.name} không vào làm ở ${BUILDINGS[b.kind].name.toLowerCase()} được: ${!b.done ? 'nhà chưa xong' : postOf(sim, v)?.id !== b.id ? 'việc của họ thuộc một nhà khác cùng loại' : 'nhà đã đủ người'}.`); // said, so that nobody is turned away without a word
+    v.phase = 'idle'; if (isStaffJob(v.job)) v.job = 'idle'; return;
+  }
   b.staff.push(v.id); v.inside = b.id; v.phase = 'inside'; v.path = []; v.slide = null;
   const d = BUILDINGS[b.kind]; v.x = b.x + d.w / 2; v.y = b.y + d.h / 2; v.facing = 'front';
   sim.say(`${v.name} vào ${BUILDINGS[b.kind].name.toLowerCase()} làm việc.`);

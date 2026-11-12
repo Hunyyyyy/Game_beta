@@ -113,7 +113,7 @@ export class BuildingPanel {
   /** The field: what it is sown with (food, or flax for fibre in the medieval age). */
   private readonly cropBox = h('div', { class: 'kv' }); private cropKey = '';
   /** The ranch: a row for each good it makes, with what it gives in a day and the level that opens it. */
-  private readonly ranchRows: Array<{ p: (typeof RANCH_PRODUCTS)[number]; note: HTMLElement }> = [];
+  private readonly ranchRows: Array<{ p: (typeof RANCH_PRODUCTS)[number]; root: HTMLElement; note: HTMLElement; bar: HTMLElement; label: HTMLElement }> = [];
   private readonly queueNote = { craft: h('div', { class: 'kv' }), research: h('div', { class: 'kv' }) };
   private readonly goodsNote = h('p', { class: 'sub' }); private readonly goodsHint = hint(this.goodsNote, '');
 
@@ -175,11 +175,16 @@ export class BuildingPanel {
       this.tabs[kind] = [{ label, page: page(pane.root) }];
     };
     roleHouse('foot', 'Lính', true); roleHouse('cavalry', 'Lính', true); roleHouse('archer', 'Lính', true); roleHouse('guard', 'Lính gác', true); roleHouse('supply', 'Lính hậu cần', true);
-    roleHouse('wood', 'Nhân công'); roleHouse('stone', 'Nhân công'); roleHouse('food', 'Nhân công'); roleHouse('hunt', 'Nhân công');
+    roleHouse('wood', 'Nhân công'); roleHouse('stone', 'Nhân công'); roleHouse('food', 'Nhân công'); roleHouse('hunt', 'Nhân công'); roleHouse('mine', 'Nhân công');
     this.tabs.house = [{ label: 'Người trong nhà', page: bedPage('house', 'Dân rảnh') }];
     this.tabs.field = [{ label: 'Người làm ruộng', page: page(this.cropBox, this.staffBoxes.farm.root) }];
     // the ranch: the goods it makes by itself (a good opens at a level of the house), then the people of the house are the button Nhân sự
-    const ranchList = RANCH_PRODUCTS.map((p) => { const note = h('small'); this.ranchRows.push({ p, note }); return h('div', { class: 'row' }, h('div', { class: 'nm' }, resIcon(p.res), RES_NAME[p.res], note)); });
+    // each product is a strip like the order of a workshop: its picture, name, what it brings, and a bar that fills until the next unit comes in
+    const ranchList = RANCH_PRODUCTS.map((p) => {
+      const note = h('small'), bar = h('i'), label = h('span'), root = h('div', { class: 'abox' }, h('span', { class: 'apic' }, resIcon(p.res)),
+        h('div', { class: 'awork' }, h('div', { class: 'aline' }, h('b', { text: RES_NAME[p.res] }), note), h('div', { class: 'abar' }, bar, label)));
+      this.ranchRows.push({ p, root, note, bar, label }); return root;
+    });
     this.tabs.ranch = [{ label: 'Chăn nuôi', page: page(hint('Sản phẩm của trại', 'Người làm việc trong trại nuôi thú, và mỗi sản phẩm tự đến theo thời gian, không cần đặt đơn. Càng đông người, càng giỏi (Nhanh nhẹn) và cấp trại càng cao thì càng nhanh. Cấp cao mở thêm sản phẩm. Sản phẩm vào kho, tối đa theo sức chứa. Cần có người làm việc trong trại (nút Nhân sự).'), ...ranchList) }];
     this.war = new WarPanel(c);
     this.warLog = new WarLogPane(c);
@@ -524,11 +529,13 @@ export class BuildingPanel {
   }
 
   private updateRanch(b: Building): void {
-    const { sim } = this.c, open = productsAt(b.level);
+    const { sim } = this.c, open = productsAt(b.level), working = sim.houseRate(b) > 0; // only those at their bench work: not the ones on the way, waiting for a way in, or asleep
     this.staffBoxes.herd.update(b);
     for (const r of this.ranchRows) {
-      const on = open.includes(r.p), per = sim.ranchDaily(b, r.p);
-      r.note.textContent = on ? `  ~${per.toLocaleString('vi', { maximumFractionDigits: 1 })} mỗi ngày · kho ${Math.floor(sim.stock[r.p.res])}/${sim.capacity(r.p.res)}` : `  🔒 mở ở cấp ${r.p.level} của trại`;
+      const on = open.includes(r.p), per = sim.ranchDaily(b, r.p), pct = on ? Math.floor(Math.min(1, b.grown?.[r.p.res] ?? 0) * 100) : 0;
+      r.root.style.opacity = on ? '' : '.55';
+      r.note.textContent = on ? `${working ? `~${per.toLocaleString('vi', { maximumFractionDigits: 1 })} mỗi ngày` : 'tạm dừng (không có người)'} · kho ${Math.floor(sim.stock[r.p.res])}/${sim.capacity(r.p.res)}` : `🔒 mở ở cấp ${r.p.level} của trại`;
+      r.bar.style.width = `${pct}%`; r.label.textContent = on ? `${pct}%` : '';
     }
   }
 

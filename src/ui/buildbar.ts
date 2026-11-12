@@ -15,7 +15,7 @@ import type { Ctx } from './panels';
 
 /** What the button that opens a building's panel is called. */
 /** The houses that keep a list of people of their own (the button "Nhân sự"). */
-const STAFF_HOUSES: string[] = ['workshop', 'lab', 'stable'];
+const STAFF_HOUSES: string[] = ['workshop', 'lab', 'stable', 'ranch'];
 
 const OPEN_LABEL: Record<BuildingKind, string> = {
   campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', market: 'Giao thương', workshop: 'Chế tạo', smelter: 'Chế biến', carpentry: 'Chế biến', tannery: 'Chế biến', lab: 'Nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', guardpost: 'Quản lý lính gác', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', mine: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Cổng', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông', stable: 'Thuần thú', ranch: 'Chăn nuôi', supplycamp: 'Quản lý hậu cần', fieldtent: 'Lều hành quân',

@@ -518,11 +518,11 @@ export class Controller {
   /** Chọn đúng vật thể người chơi nhìn thấy (tán cây vẽ cao hơn ô của nó): trả về ô gốc. */
   private pickTile(wx: number, wy: number): { x: number; y: number } {
     const world = this.sim.world, i = Math.floor(wx / TILE), j0 = Math.floor(wy / TILE);
-    const reach: Record<string, [number, number, number]> = { tree: [14, 56, 4], rock: [14, 20, 4], bush: [13, 18, 4] };
+    const reach: Record<string, [number, number, number]> = { tree: [14, 56, 4], rock: [14, 20, 4], bush: [13, 18, 4], ore: [14, 22, 4] }; // a seam of ore is drawn like a rock, on the same anchor
     for (let j = j0 + 2; j >= j0 - 1; j--) {            // vật ở phía trước (j lớn) che vật phía sau
       const n = world.nodeAt(i, j);
       if (!n) continue;
-      const [hw, up, down] = reach[n.kind], base = j * TILE + 28, cx = i * TILE + 16;
+      const [hw, up, down] = reach[n.kind] ?? reach.rock, base = j * TILE + 28, cx = i * TILE + 16;
       if (Math.abs(wx - cx) <= hw && wy >= base - up && wy <= base + down) return { x: i, y: j };
     }
     for (const b of this.sim.buildings) {

@@ -169,7 +169,7 @@ const upgradeEra = (b: Pick<Building, 'kind' | 'era'>): Building['era'] => (b.ki
 export function repairCost(sim: Sim, b: Building): Partial<Stock> {
   const top = maxHp(b), lost = top > 0 ? Math.max(0, Math.min(1, 1 - b.hp / top)) : 0, out: Partial<Stock> = {}, spent = invested(sim, b);
   for (const r of Object.keys(spent) as Res[]) { const n = Math.ceil((spent[r] ?? 0) * lost - 1e-9); if (n > 0) out[r] = n; }
-  return out;
+  return discountBill(out, perkPct(sim.researched, 'repairCost')); // the research of the builders: repairs cost less
 }
 
 /** Reason the building cannot be repaired now, or null. */
@@ -534,4 +534,4 @@ export function capacity(sim: Sim, res?: Res): number {
 export function popCap(sim: Sim): number { const f = sim.campfire(); return POP_BY_FIRE[Math.min(POP_BY_FIRE.length, f?.level ?? 1) - 1] + sim.bedsIn('house') + sim.popBonus; }
 
 /** How fast builders work: the level of their house. */
-export function crewSpeed(sim: Sim): number { const h = sim.building('builder'); return h ? levelDef(h).craftSpeed : 1; }
+export function crewSpeed(sim: Sim): number { const h = sim.building('builder'); return (h ? levelDef(h).craftSpeed : 1) * (1 + perkPct(sim.researched, 'buildSpeed') / 100); } // the research of the builders (scaffolding) makes the crew quicker

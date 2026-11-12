@@ -237,9 +237,6 @@ button.primary.danger { background: var(--bad); color: #fff; border-color: var(-
   .btns { display: flex; gap: 6px; justify-content: flex-end; }
 }
 
-// the ores each miner digs (src/ui/rolepane.ts): a chip for each ore, lit when he digs it
-.orechips { display: flex; gap: 3px; flex-wrap: nowrap; }
-.orechip { padding: 2px 4px; line-height: 0; opacity: .45; &[aria-pressed="true"] { opacity: 1; border-color: var(--accent); background: var(--panel-2); } &:disabled { opacity: .25; } .ico, svg { width: 16px; height: 16px; } }
 
 // ---- the bench of a processing house (src/ui/forgepane.ts): recipes on the left, slots in -> arrow -> slot out, then the queue as cards ----
 // the strip of the order a house is working on (src/ui/housebox.ts ActiveBox): picture, name, time left and a bar

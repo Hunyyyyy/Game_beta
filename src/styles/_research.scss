@@ -30,11 +30,11 @@
   // ---- body: branches | path
   .rs-pv { flex: 1; display: grid; grid-template-columns: 168px minmax(0, 1fr); min-height: 0; }
   .rs-nav { display: flex; flex-direction: column; gap: 5px; padding: 7px 8px; overflow: auto; background: var(--parch-lo); border-right: 2px solid var(--edge); }
-  .rs-ni { text-align: left; display: grid; gap: 2px; padding: 5px 9px 6px; border: 2px solid var(--edge-lt); border-radius: 6px; background: var(--parch-hi);
+  .rs-ni { flex: none; text-align: left; display: grid; gap: 2px; padding: 5px 9px 6px; border: 2px solid var(--edge-lt); border-radius: 6px; background: var(--parch-hi);
     &.on { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, var(--parch-hi)); box-shadow: inset 0 0 0 1px var(--acc); } }
   .rs-nr { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  .rs-nn { font-weight: 700; font-size: 13.5px; line-height: 1.2; }
-  .rs-rb { font-weight: 700; font-size: 9.5px; line-height: 1; letter-spacing: .05em; text-transform: uppercase; background: var(--acc); color: var(--on-acc); padding: 3px 5px; border-radius: 3px; white-space: nowrap; }
+  .rs-nn { min-width: 0; font-weight: 700; font-size: 13.5px; line-height: 1.2; }
+  .rs-rb { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 0 2px color-mix(in srgb, var(--acc) 30%, transparent); } // a dot: something in this branch can be researched now (words took the room of the name)
   // one segment per leap, sharing the width of the button whatever their number (a long branch must not push out of it)
   .rs-path { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px;
     .d { flex: 1 1 0; min-width: 2px; max-width: 18px; height: 7px; border-radius: 2px; background: color-mix(in srgb, var(--ink-3) 35%, transparent); &.r { background: color-mix(in srgb, var(--acc) 45%, transparent); box-shadow: inset 0 0 0 1px var(--acc); } &.k { background: var(--acc); } } }
@@ -45,8 +45,22 @@
     h3 { margin: 0; font-weight: 700; font-size: 19px; line-height: 1.2; color: var(--acc); } .rs-w { font-size: 12px; color: var(--ink-2); } .rs-lc { margin-left: auto; font-weight: 700; font-size: 11.5px; color: var(--ink-2); } }
   // the path of a branch as one chain: the stats of a row, an arrow, the leap it ends in, an arrow, the stats of the next row ... and the shut square of the medieval age.
   // Everything keeps its own width and the chain slides sideways with no scroll bar: swipe it, drag it with the mouse, or turn the wheel over it
-  .rs-stages { flex: 1; display: flex; align-items: center; padding: 6px 4px 78px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -ms-overflow-style: none; touch-action: pan-x pan-y;
+  .rs-stages { flex: 1; display: flex; align-items: center; padding: 6px 4px 78px; overflow: auto; overscroll-behavior: contain; cursor: grab; scrollbar-width: none; -ms-overflow-style: none; touch-action: none; // dragging and pinching are done by the pane itself (researchpane.ts grab)
     &::-webkit-scrollbar { display: none; } &.drag { cursor: grabbing; user-select: none; } }
+  // a tree of several chains (the market): the chains one over the other in the same sideways scroll, so that the rows line up; each has a small title that stays at the left edge
+  .rs-stages.tree { align-items: flex-start; overflow-y: auto; }
+  // the tree is drawn scaled (the zoom); its frame takes the scaled size so that there is no empty room to scroll to
+  .rs-zoomer { flex: none; position: relative; }
+  .rs-zoom { position: absolute; left: 0; top: 0; transform-origin: 0 0; display: flex; align-items: center; width: max-content; }
+  .rs-tree { flex: none; position: relative; display: flex; flex-direction: column; gap: 30px; }
+  .rs-chain.side { margin-bottom: 58px; } // the discount chips hang under the leaps of a chain
+  // the elbow of a branch: from the arrow after the leap it grows out of, down, then along to its first row
+  .rs-link { position: absolute; pointer-events: none; border-left: 2px solid var(--edge-lt); border-bottom: 2px solid var(--edge-lt); border-bottom-left-radius: 10px;
+    &::after { content: ''; position: absolute; right: -2px; bottom: -6px; border-left: 8px solid var(--edge-lt); border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+    &.on { border-color: var(--acc); &::after { border-left-color: var(--acc); } } }
+  .rs-chain { flex: none; }
+  .rs-tag { position: sticky; left: 4px; width: max-content; margin: 0 0 6px 4px; font-weight: 700; font-size: 11px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; color: var(--acc); }
+  .rs-line { display: flex; align-items: center; }
   .rs-grp { flex: none; width: 150px; display: flex; flex-direction: column; gap: 6px; &.lock .rs-stat { opacity: .6; } }
   .rs-arr { flex: none; position: relative; width: 40px; height: 14px;
     &::before { content: ''; position: absolute; left: 4px; right: 12px; top: 6px; height: 2px; background: var(--edge-lt); }

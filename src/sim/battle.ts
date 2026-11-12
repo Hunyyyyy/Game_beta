@@ -8,7 +8,8 @@ import chaseJson from '../data/chase.json';
 import { chaseSight } from './fightpolicy';
 import { isActive } from './tribework';
 import type { Sim, Target, Villager } from './sim';
-import { critChance, critMult, guardCut, swingCycle, weaponDamage } from './statsys';
+import { armPerk, critChance, critMult, guardCut, swingCycle, weaponDamage } from './statsys';
+import { perkPct } from './research';
 
 const ANIM = animsJson as unknown as Record<string, { fps: number; frames: unknown[]; hit?: number }>;
 /** When, inside an attack animation, the blow lands and when it ends (seconds). */
@@ -122,6 +123,7 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   if (target.kind === 'animal') {
     const a = sim.animalById.get(target.id);
     if (!a || a.state === 'dead') return;
+    if (src.unit?.team === 'player') dmg *= 1 + perkPct(sim.researched, `beast_${a.species}`) / 100; // the hunters who have studied this beast hit it harder
     if (a.raid && src.unit?.team === 'player') sim.noteDamage(true, Math.min(dmg, a.hp));
     a.hp -= dmg;
     if (a.hp <= 0) { if (a.raid) sim.noteBattle('foes'); animalDie(sim, a); sim.onKill?.(); if (src.unit?.team === 'player' && a.species === 'wolf') sim.say('Một con sói đã bị hạ.'); }
@@ -132,7 +134,7 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === 'player') return;
   const missile = !!src.unit && weaponOf(src.unit).ranged === true;
-  const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v) * sim.skirmishEdge(src.unit, v); // a boss village fought without a war plan is stronger (warskirmish.ts)
+  const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0, src.unit ? armPerk(sim, src.unit, 'pierce') : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v) * sim.skirmishEdge(src.unit, v); // a boss village fought without a war plan is stronger (warskirmish.ts)
   if (v.team === 'player') sim.noteDamage(false, Math.min(final, v.health)); else if (v.ai?.role === 'raider') sim.noteDamage(true, Math.min(final, v.health));
   v.health -= final; v.calm = 0; v.flinch = 0.3;
   if (src.unit && sim.mountOf(src.unit) === 'elephant') sim.addSfx('elephant', false, src.unit.x, src.unit.y); // the beast bellows when its rider strikes
@@ -187,8 +189,9 @@ function critRoll(sim: Sim, v: Villager, w: WeaponDef): number {
 }
 
 /** What the arms do to each other: foot beats archers, archers beat riders, riders beat foot (units.json). Animals are no arm. */
-export function armMultiplier(attacker: Villager, e: Ent): number {
-  return e.kind === 'unit' ? matchup(armOf(attacker), armOf(e.v), effWeapon(attacker)) : 1;
+export function armMultiplier(sim: Sim, attacker: Villager, e: Ent): number {
+  const m = e.kind === 'unit' ? matchup(armOf(attacker), armOf(e.v), effWeapon(attacker)) : 1;
+  return m > 1 ? m * (1 + armPerk(sim, attacker, 'counter') / 100) : m; // the research of an arm makes it hit harder the arm it beats
 }
 
 /** Loose an arrow or a stone from a point (the archer, or the tower he stands in): it must be seen and within reach, and it flies. */
@@ -196,7 +199,7 @@ export function fireProjectile(sim: Sim, v: Villager, e: Ent, from: { x: number;
   const w = weaponOf(v), tx = entX(e), ty = entY(e), d = Math.hypot(tx - from.x, ty - from.y);
   if (d > w.range + rangeBonus + 1 || !canSee(sim, v, tx, ty)) return false;
   // an archer with the enemy in his face shoots badly, rain and storm spoil the aim
-  const shot = (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * critRoll(sim, v, w) * clampTactical(armMultiplier(v, e) * mult * sim.attackFactor(v, e)) * WEATHER[sim.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
+  const shot = (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * critRoll(sim, v, w) * clampTactical(armMultiplier(sim, v, e) * mult * sim.attackFactor(v, e)) * WEATHER[sim.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
   if (v.inside !== null) sim.noteBattle('shot');
   const target: Target = e.kind === 'unit' ? { kind: 'unit', id: e.v.id } : { kind: 'animal', id: e.a.id };
   sim.projectiles.push({ x: from.x, y: from.y - 0.4, tx, ty, speed: 14, dmg: shot, type: w.type, from, src: v.id, team: v.team, target, chance: d <= (w.range + rangeBonus) / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? 'stone' });
@@ -207,7 +210,7 @@ export function fireProjectile(sim: Sim, v: Villager, e: Ent, from: { x: number;
 function resolveSwing(sim: Sim, v: Villager, target: Target): void {
   const e = resolve(sim, target);
   if (!e) return;
-  const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(v, e);
+  const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(sim, v, e);
   if (w.ranged) { fireProjectile(sim, v, e, { x: v.x, y: v.y }, 1, 0); return; }
   if (d > w.range + 1.1) return; // the target stepped away: the blow misses
   let behind = false;

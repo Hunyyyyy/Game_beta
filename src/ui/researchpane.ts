@@ -36,12 +36,15 @@ export class ResearchPane {
   private key = '';
   /** The mouse has just dragged the path sideways: the click that ends the drag is not a tap. */
   private dragged = false;
+  /** How big the tree is drawn (1 = 100%): the wheel, or two fingers change it (no buttons). */
+  private zoom = 1;
 
   constructor(private readonly c: Ctx) {
     this.root.append(this.main, this.dialog.root);
     this.root.addEventListener('click', (e) => { if (this.dragged) { this.dragged = false; e.stopPropagation(); return; } this.click(e.target as HTMLElement); }, true);
     this.root.addEventListener('pointerdown', (e) => { this.dragged = false; this.grab(e); });
-    this.root.addEventListener('wheel', (e) => { const st = (e.target as HTMLElement).closest<HTMLElement>('.rs-stages'); if (st && Math.abs(e.deltaY) > Math.abs(e.deltaX) && st.scrollWidth > st.clientWidth) { st.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+    // the wheel zooms the tree where the pointer is (dragging moves it)
+    this.root.addEventListener('wheel', (e) => { const st = (e.target as HTMLElement).closest<HTMLElement>('.rs-stages'); if (!st) return; const r = st.getBoundingClientRect(); this.setZoom(this.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1), { x: e.clientX - r.left, y: e.clientY - r.top }); e.preventDefault(); }, { passive: false });
   }
 
   // ---------------------------------------------------------------- what the tree says
@@ -53,7 +56,15 @@ export class ResearchPane {
     return row.nodes.some((n) => n.stat) || (!!row.leap && !TECH_BY_ID[row.leap.id].milestone);
   }
   /** The branches of a pillar in play: those with a row to show (the medieval ones only in the medieval age). */
-  private branches(p: PillarDef): PillarStrand[] { const adv = this.c.sim.era === 'ancient'; return p.strands.filter((st) => (st.era !== 'ancient' || adv) && st.rows.some((_, r) => this.rowShown(st, r))); }
+  private shown(p: PillarDef): PillarStrand[] { const adv = this.c.sim.era === 'ancient'; return p.strands.filter((st) => (st.era !== 'ancient' || adv) && st.rows.some((_, r) => this.rowShown(st, r))); }
+  /** The branches of the list on the left: a strand that is drawn inside another (`into`) has none of its own. */
+  private branches(p: PillarDef): PillarStrand[] { return this.shown(p).filter((st) => !st.into); }
+  /** The chains of a branch, from the top: the ones that hang above it, the branch itself, the ones under it (a market tree is one tree drawn as three chains). */
+  private chains(p: PillarDef, st: PillarStrand): PillarStrand[] {
+    const kids = this.shown(p).filter((k) => k.into === st.key);
+    const by = (a: PillarStrand, b: PillarStrand) => (a.place ?? 1) - (b.place ?? 1);
+    return [...kids.filter((k) => (k.place ?? 1) < 0).sort(by), st, ...kids.filter((k) => (k.place ?? 1) >= 0).sort(by)];
+  }
   private rows(st: PillarStrand): number[] { return st.rows.map((_, r) => r).filter((r) => this.rowShown(st, r)); }
   /** The role whose stat lines a row holds: the arm, or for a row of the medieval age its own made-up role. */
   private roleOf(st: PillarStrand, r: number): string { return st.rows[r].group ?? st.role; }
@@ -70,7 +81,7 @@ export class ResearchPane {
   private nextTech(role: string, stat: LineStat): Tech | undefined { const lv = lineLevel(this.c.sim.researched, role, stat); return lv >= levelsOfLine(role, stat) ? undefined : TECH_BY_ID[statTechId(role, stat, lv + 1)]; }
   private statState(role: string, stat: LineStat): State { return this.techState(this.nextTech(role, stat)); }
   private leapState(t: Tech): State { return t.milestone ? (this.done(t.id) ? 'done' : 'locked') : this.techState(t); }
-  private readyCount(p: PillarDef): number { let n = 0; for (const st of this.branches(p)) for (const r of this.rows(st)) { const l = this.leapOf(st, r); if (l && this.leapState(l) === 'ready') n++; } return n; }
+  private readyCount(p: PillarDef): number { let n = 0; for (const st of this.shown(p)) for (const r of this.rows(st)) { const l = this.leapOf(st, r); if (l && this.leapState(l) === 'ready') n++; } return n; }
 
   // ---------------------------------------------------------------- drawing
   private tabsH(): string {
@@ -110,7 +121,31 @@ export class ResearchPane {
   private stageH(st: PillarStrand, r: number): string {
     const open = this.open(st, r), leap = this.leapOf(st, r), ld = leap ? this.done(leap.id) : this.rowDone(st, r);
     const stats = this.realNodes(st, r), grp = stats.length ? `<div class="rs-grp${open ? '' : ' lock'}">${stats.map((n) => this.statH(st, r, n)).join('')}</div><span class="rs-arr${open ? ' on' : ''}"></span>` : '';
-    return leap ? `${grp}<div class="rs-col">${this.leapH(st, r)}${this.sideH(st, r)}</div><span class="rs-arr${ld ? ' on' : ''}"></span>` : grp;
+    return leap ? `${grp}<div class="rs-col">${this.leapH(st, r)}${this.sideH(st, r)}</div><span class="rs-arr${ld ? ' on' : ''}" data-after="${esc(leap.id)}"></span>` : grp;
+  }
+  /** How far from the left of a chain the arrow after a leap stands (its right end), in px: a row of stats is 150 wide and an arrow 40, a leap 156 and an arrow 40 (see _research.scss). */
+  private widthTo(st: PillarStrand, leapId: string): number | null {
+    let x = 0;
+    for (const r of this.rows(st)) {
+      x += (this.realNodes(st, r).length ? 150 + 40 : 0) + (st.rows[r].leap ? 156 + 40 : 0);
+      if (st.rows[r].leap?.id === leapId) return x;
+    }
+    return null;
+  }
+  /** The elbow of every branch: down from the arrow after the leap it grows out of, then along to its first row. Measured on the page, so that rows of any height line up. */
+  private links(): void {
+    const tree = this.main.querySelector<HTMLElement>('.rs-tree'); if (!tree) return;
+    const t0 = tree.getBoundingClientRect();
+    for (const ch of tree.querySelectorAll<HTMLElement>('.rs-chain[data-from]')) {
+      const arr = [...tree.querySelectorAll<HTMLElement>('.rs-arr[data-after]')].find((a) => a.dataset.after === ch.dataset.from), first = ch.querySelector<HTMLElement>('.rs-line > *');
+      if (!arr || !first) continue;
+      const a = arr.getBoundingClientRect(), f = first.getBoundingClientRect();
+      const z = this.zoom, x0 = (a.left + a.width / 2 - t0.left) / z, y0 = (a.top + a.height / 2 - t0.top) / z, x1 = (f.left - t0.left) / z - 2, y1 = (f.top + f.height / 2 - t0.top) / z; // the page measures what is drawn, which the zoom scaled
+      const el = document.createElement('div');
+      el.className = `rs-link${arr.classList.contains('on') ? ' on' : ''}`;
+      el.style.cssText = `left:${x0}px;top:${y0}px;width:${Math.max(0, x1 - x0)}px;height:${Math.max(0, y1 - y0)}px`;
+      tree.append(el);
+    }
   }
   /** A stretch of stats with no leap counts as done when most of its levels are (what the next row waits for). */
   private rowDone(st: PillarStrand, r: number): boolean {
@@ -118,24 +153,39 @@ export class ResearchPane {
     return total > 0 && got >= Math.ceil(total * 0.66 - 1e-9);
   }
   private navH(p: PillarDef, st: PillarStrand): string {
-    const rows = this.rows(st);
-    let cnt = 0, any = false, path = '';
-    const leaps = rows.map((r) => this.leapOf(st, r)).filter((l): l is Tech => !!l && !l.id.includes('_camp'));
-    const marks: State[] = leaps.length ? leaps.map((l) => this.leapState(l)) : rows.map((r) => (this.rowDone(st, r) ? 'done' : 'locked')); // a branch with no leap shows its stretches of stats
-    marks.forEach((s, i) => {
-      if (s === 'done') cnt++; if (s === 'ready') any = true;
-      path += `<i class="d ${s === 'done' ? 'k' : s === 'ready' ? 'r' : ''}"></i>`;
-    });
-    return `<button class="rs-ni${this.branch[p.id] === st.key ? ' on' : ''}" data-br="${st.key}"><span class="rs-nr"><span class="rs-nn">${esc(st.name)}</span>${any ? '<span class="rs-rb">sẵn sàng</span>' : ''}</span><span class="rs-nr"><span class="rs-path">${path}</span><span class="rs-cnt">${cnt}/${marks.length}</span></span></button>`;
+    let cnt = 0, any = false, path = '', total = 0;
+    for (const ch of this.chains(p, st)) {
+      const rows = this.rows(ch);
+      const leaps = rows.map((r) => this.leapOf(ch, r)).filter((l): l is Tech => !!l && !l.id.includes('_camp'));
+      const marks: State[] = leaps.length ? leaps.map((l) => this.leapState(l)) : rows.map((r) => (this.rowDone(ch, r) ? 'done' : 'locked')); // a branch with no leap shows its stretches of stats
+      marks.forEach((m) => {
+        if (m === 'done') cnt++; if (m === 'ready') any = true;
+        path += `<i class="d ${m === 'done' ? 'k' : m === 'ready' ? 'r' : ''}"></i>`;
+      });
+      total += marks.length;
+    }
+    if (total > 7) path = `<span class="rs-bar"><b style="width:${Math.round((cnt / total) * 100)}%"></b></span>`; // a long branch is one bar, not a dash for each leap
+    return `<button class="rs-ni${this.branch[p.id] === st.key ? ' on' : ''}" data-br="${st.key}"><span class="rs-nr"><span class="rs-nn">${esc(st.name)}</span>${any ? '<span class="rs-rb" title="Có mốc sẵn sàng để nghiên cứu"></span>' : ''}</span><span class="rs-nr"><span class="rs-path">${path}</span><span class="rs-cnt">${cnt}/${total}</span></span></button>`;
   }
   private bodyH(p: PillarDef): string {
-    const list = this.branches(p), st = list.find((b) => b.key === this.branch[p.id]) ?? list[0], rows = this.rows(st);
-    const leaps = rows.map((r) => this.leapOf(st, r)).filter((l): l is Tech => !!l), doneN = leaps.filter((l) => this.done(l.id)).length;
+    const list = this.branches(p), st = list.find((b) => b.key === this.branch[p.id]) ?? list[0], chains = this.chains(p, st);
+    const leaps = chains.flatMap((ch) => this.rows(ch).map((r) => this.leapOf(ch, r)).filter((l): l is Tech => !!l)), doneN = leaps.filter((l) => this.done(l.id)).length;
     // in the stone age the medieval rows of an arm are a shut square after its last row; in the medieval age they are there
     const hasMed = st.rows.some((x) => x.era === 'ancient'), next = hasMed && this.c.sim.era !== 'ancient' ? `<div class="rs-next" title="Cây Trung cổ nối tiếp từ đây"><span class="rs-ic">${LOCK}</span><b>Trung cổ</b><small>khóa</small></div>` : '';
+    const line = (ch: PillarStrand) => `${this.rows(ch).map((r) => this.stageH(ch, r)).join('')}${ch === st ? next : ''}`;
+    // one chain is the old straight path; a tree draws its chains one under the other in one scroll. A branch (`from`) starts to the right of the leap it grows out of, and `links()` draws the elbow from that leap's arrow
+    const indent = new Map<string, number>();
+    for (const ch of chains) {
+      const at = ch.from ? chains.find((o) => o !== ch && o.rows.some((x) => x.leap?.id === ch.from)) : undefined, x = at ? this.widthTo(at, ch.from!) : null;
+      indent.set(ch.key, at && x !== null ? (indent.get(at.key) ?? 0) + x - 20 + 28 : 0);
+    }
+    const hasSide = (ch: PillarStrand) => this.rows(ch).some((r) => ch.rows[r].leap?.side);
+    const stages = chains.length > 1
+      ? `<div class="rs-stages tree"><div class="rs-zoomer"><div class="rs-zoom" style="transform:scale(${this.zoom})"><div class="rs-tree">${chains.map((ch) => `<div class="rs-chain${hasSide(ch) ? ' side' : ''}"${ch.from ? ` data-from="${esc(ch.from)}"` : ''} style="margin-left:${indent.get(ch.key) ?? 0}px"><div class="rs-tag">${esc(ch.tag ?? ch.name)}</div><div class="rs-line">${line(ch)}</div></div>`).join('')}</div></div></div></div>`
+      : `<div class="rs-stages"><div class="rs-zoomer"><div class="rs-zoom rs-solo" style="transform:scale(${this.zoom})">${line(st)}</div></div></div>`;
     return `<div class="rs-pv"><nav class="rs-nav" aria-label="Nhánh của ${esc(p.name)}">${list.map((b) => this.navH(p, b)).join('')}</nav>`
       + `<div class="rs-lane"><div class="rs-lh"><h3>${esc(st.name)}</h3><span class="rs-w">${esc(st.who)}</span><span class="rs-lc">Đã mở ${doneN}/${leaps.length}</span></div>`
-      + `<div class="rs-stages">${rows.map((r) => this.stageH(st, r)).join('')}${next}</div></div></div>`;
+      + `${stages}</div></div>`;
   }
   /** The node selected. */
   private pick(): Pick | null {
@@ -184,15 +234,56 @@ export class ResearchPane {
   }
 
   // ---------------------------------------------------------------- events
-  /** Drag the path of a branch sideways with the mouse (a finger already slides it). */
+  /** Drag the tree in every direction, like the map (mouse, finger or pen); two fingers zoom it. */
+  private readonly ptrs = new Map<number, { x: number; y: number }>();
+  /** Lets go of the drag that is on (a press whose release never came, outside the window). */
+  private endGrab: (() => void) | null = null;
   private grab(e: PointerEvent): void {
     const st = (e.target as HTMLElement).closest<HTMLElement>('.rs-stages');
-    if (!st || e.pointerType !== 'mouse' || e.button !== 0) return;
-    const x0 = e.clientX, left = st.scrollLeft;
-    let moved = false;
-    const move = (m: PointerEvent): void => { if (!moved && Math.abs(m.clientX - x0) > 5) { moved = true; st.classList.add('drag'); } if (moved) st.scrollLeft = left - (m.clientX - x0); };
-    const up = (): void => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); st.classList.remove('drag'); if (moved) this.dragged = true; };
-    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    if (!st || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (e.pointerType === 'mouse') this.endGrab?.();
+    const first = this.ptrs.size === 0;
+    this.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    let moved = false, pan = { x: e.clientX, y: e.clientY, left: st.scrollLeft, top: st.scrollTop }, pinch: { d: number; z: number } | null = null;
+    const dist = (): number => { const [a, b] = [...this.ptrs.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+    if (this.ptrs.size === 2) pinch = { d: dist(), z: this.zoom };
+    if (!first) return; // the first finger owns the listeners; a second one only joins it
+    const move = (m: PointerEvent): void => {
+      const at = this.ptrs.get(m.pointerId); if (!at) return;
+      at.x = m.clientX; at.y = m.clientY;
+      if (this.ptrs.size >= 2) { // two fingers: the distance between them is the size
+        if (!pinch) pinch = { d: dist(), z: this.zoom };
+        const [a, b] = [...this.ptrs.values()], r = st.getBoundingClientRect();
+        if (pinch.d > 0) this.setZoom(pinch.z * (dist() / pinch.d), { x: (a.x + b.x) / 2 - r.left, y: (a.y + b.y) / 2 - r.top });
+        moved = true; st.classList.add('drag'); return;
+      }
+      if (!moved && Math.hypot(m.clientX - pan.x, m.clientY - pan.y) > 5) { moved = true; st.classList.add('drag'); }
+      if (moved) { st.scrollLeft = pan.left - (m.clientX - pan.x); st.scrollTop = pan.top - (m.clientY - pan.y); }
+    };
+    const up = (u: PointerEvent): void => {
+      this.ptrs.delete(u.pointerId); pinch = null;
+      if (this.ptrs.size > 0) { const [p0] = [...this.ptrs.values()]; pan = { x: p0.x, y: p0.y, left: st.scrollLeft, top: st.scrollTop }; return; } // one finger is left: it goes on dragging from where it is
+      end(); if (moved) this.dragged = true;
+    };
+    const end = (): void => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); st.classList.remove('drag'); this.ptrs.clear(); this.endGrab = null; };
+    this.endGrab = end;
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+  }
+  /** Draw the tree at another size, keeping the point under `at` (a point of the frame; the middle by default) where it is. */
+  private setZoom(z: number, at?: { x: number; y: number }): void {
+    const nz = Math.max(0.4, Math.min(1.6, Math.round(z * 100) / 100)), st = this.main.querySelector<HTMLElement>('.rs-stages');
+    if (!st || nz === this.zoom) return;
+    const ax = at?.x ?? st.clientWidth / 2, ay = at?.y ?? st.clientHeight / 2, k = nz / this.zoom, cx = st.scrollLeft + ax, cy = st.scrollTop + ay;
+    this.zoom = nz;
+    this.fit(st);
+    st.scrollLeft = cx * k - ax; st.scrollTop = cy * k - ay;
+  }
+  /** Size the frame of the tree to what it shows now: a tree drawn small leaves no empty room to scroll to. */
+  private fit(st: HTMLElement | null = this.main.querySelector<HTMLElement>('.rs-stages')): void {
+    const box = st?.querySelector<HTMLElement>('.rs-zoom'), wrap = st?.querySelector<HTMLElement>('.rs-zoomer');
+    if (!box || !wrap) return;
+    box.style.transform = `scale(${this.zoom})`;
+    wrap.style.width = `${box.offsetWidth * this.zoom}px`; wrap.style.height = `${box.offsetHeight * this.zoom}px`;
   }
   private click(el: HTMLElement): void {
     const t = el.closest<HTMLElement>('[data-tab],[data-br],[data-node]');
@@ -215,12 +306,13 @@ export class ResearchPane {
     const p = PILLARS.find((q) => q.id === this.tab)!;
     if (!this.branch[p.id]) this.branch[p.id] = this.branches(p)[0]?.key ?? '';
     const keep = this.main.querySelector<HTMLElement>('.rs-lane'), nav = this.main.querySelector<HTMLElement>('.rs-nav'), stg = this.main.querySelector<HTMLElement>('.rs-stages');
-    const sv = [keep?.scrollTop ?? 0, nav?.scrollTop ?? 0, nav?.scrollLeft ?? 0, stg?.scrollLeft ?? 0];
+    const sv = [keep?.scrollTop ?? 0, nav?.scrollTop ?? 0, nav?.scrollLeft ?? 0, stg?.scrollLeft ?? 0, stg?.scrollTop ?? 0];
     this.main.dataset.pil = p.id;
     this.dialog.root.dataset.pil = p.id;
     this.main.innerHTML = `${this.tabsH()}${this.bodyH(p)}`;
     const lane = this.main.querySelector<HTMLElement>('.rs-lane'), nv = this.main.querySelector<HTMLElement>('.rs-nav'), sg = this.main.querySelector<HTMLElement>('.rs-stages');
     if (this.sel) this.showDetail();
-    if (lane) lane.scrollTop = sv[0]; if (nv) { nv.scrollTop = sv[1]; nv.scrollLeft = sv[2]; } if (sg) sg.scrollLeft = sv[3];
+    if (lane) lane.scrollTop = sv[0]; if (nv) { nv.scrollTop = sv[1]; nv.scrollLeft = sv[2]; } if (sg) { sg.scrollLeft = sv[3]; sg.scrollTop = sv[4]; }
+    this.fit(); this.links();
   }
 }

@@ -593,7 +593,7 @@ export class Sim {
     if (!b.done) return null;
     const slots = this.slotsOf(b);
     if (b.kind === 'tower') return { have: this.garrison(b).length, slots };
-    if (b.kind === 'workshop' || b.kind === 'lab' || b.kind === 'stable') return { have: this.staffCount(b), slots };
+    if (b.kind === 'workshop' || b.kind === 'lab' || b.kind === 'stable' || b.kind === 'ranch') return { have: this.staffCount(b), slots };
     const role = ROLE_IDS.find((r) => ROLES[r].building === b.kind);
     return role ? { have: this.roleCount(role), slots: this.roleCapacity(role) } : null;
   }
