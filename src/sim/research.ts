@@ -90,7 +90,7 @@ export interface PillarLeap {
  * a row without a leap hands over to the next one when most of its levels are done (a stretch of stats between two ranks).
  */
 export interface PillarRow { nodes: PillarNode[]; leap?: PillarLeap; cross?: string[]; era?: string; group?: string; /** The roles a made-up role of this row counts for (else those of the strand). */ members?: string[] }
-export interface PillarStrand { key: string; role: string; name: string; who: string; era?: string; /** The roles its medieval rows count for (else its own role): the five formations, the three arms. */ members?: string[]; rows: PillarRow[] }
+export interface PillarStrand { key: string; role: string; name: string; who: string; era?: string; /** Drawn inside the strand of this key instead of having a branch of its own (one tree, several chains one over the other: `place` < 0 above it, > 0 under it; `tag` is the small title of the chain). */ into?: string; place?: number; tag?: string; /** A branch that grows out of a leap of the chain above it (the id of that leap): its first row waits for it, and the pane draws it starting from that leap. */ from?: string; /** The roles its medieval rows count for (else its own role): the five formations, the three arms. */ members?: string[]; rows: PillarRow[] }
 export interface PillarDef { id: string; name: string; icon: BuildingKind; about: string; strands: PillarStrand[] }
 interface MedCfg { levels: number; stepScale: number; costMult: number; timeMult: number; growth: number; lab: number }
 const PILLAR_DATA = (tree as unknown as { pillars: { leapShare: number; labByRow: number[]; sideLevels: number; sideCostMult: number; sideTimeMult: number; med: MedCfg; list: PillarDef[] } }).pillars;
@@ -123,7 +123,7 @@ const enough = (ids: string[], share = PILLAR_DATA.leapShare): { ids: string[]; 
 /** What a stat level of a row waits for besides the level before it: the leap of the row below, or (a row with no leap below) most of that row. */
 function rowGate(strand: PillarStrand, row: number): { requires: string[]; needCount?: { ids: string[]; count: number } } {
   const below = row > 1 ? strand.rows[row - 2] : null;
-  if (!below) return { requires: [] };
+  if (!below) return { requires: strand.from ? [strand.from] : [] }; // the first row of a branch waits for the leap it grows out of
   return below.leap ? { requires: [below.leap.id] } : { requires: [], needCount: enough(rowTechs(strand.role, below)) };
 }
 /** A leap of the pillars waits for most of the real stat levels of its row and for its cross leaps, and for the level of the house of its row. */

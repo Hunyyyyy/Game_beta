@@ -349,7 +349,17 @@ let last = 0, drawn = 0, lastWarEnd = 0, seenLoads = 0, nextDraw = 0, activeUnti
 let celebrating: (typeof sim.plans)[number] | null = null;
 /** Frames the game may skip drawing while it runs fast-forward: the simulation needs the time, and nobody follows each step at that speed. */
 const drawEvery = (): number => (sim.speed >= 16 ? 4 : sim.speed >= 8 ? 3 : sim.speed >= 4 ? 2 : 1);
+let lastError = '';
+/** One frame. An error inside it must never stop the loop (the game would freeze for good): it is logged, shown once as a toast, and the next frame still comes. */
 function frame(t: number) {
+  try { frameBody(t); } catch (err) {
+    console.error(err);
+    const msg = err instanceof Error ? `${err.message} @ ${(err.stack ?? '').split('\n')[1]?.trim() ?? ''}` : String(err);
+    if (msg !== lastError) { lastError = msg; toast(`Lỗi: ${msg}`); }
+  }
+  requestAnimationFrame(frame);
+}
+function frameBody(t: number) {
   const t0 = performance.now();
   const dt = last ? (t - last) / 1000 : 0; last = t;
   if (dt > 0) fps = fps * 0.9 + (1 / dt) * 0.1;
@@ -392,7 +402,6 @@ function frame(t: number) {
   $('sheet').classList.toggle('hushed', ctl.hushCard);
   if (settingsOpen && statsDlg.isOpen) settingsPanel.update(); else settingsOpen = false;
   updateHud(t);
-  requestAnimationFrame(frame);
 }
 new ResizeObserver(() => { renderer.resize(); ctl.clamp(); }).observe(view);
 requestAnimationFrame(frame);

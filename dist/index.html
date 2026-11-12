@@ -1681,30 +1681,6 @@ button.primary.danger {
   justify-content: flex-end;
 }
 
-.orechips {
-  display: flex;
-  gap: 3px;
-  flex-wrap: nowrap;
-}
-
-.orechip {
-  padding: 2px 4px;
-  line-height: 0;
-  opacity: 0.45;
-}
-.orechip[aria-pressed=true] {
-  opacity: 1;
-  border-color: var(--accent);
-  background: var(--panel-2);
-}
-.orechip:disabled {
-  opacity: 0.25;
-}
-.orechip .ico, .orechip svg {
-  width: 16px;
-  height: 16px;
-}
-
 .abox {
   display: flex;
   align-items: center;
@@ -2345,6 +2321,7 @@ button.primary.danger {
   border-right: 2px solid var(--edge);
 }
 .rsp .rs-ni {
+  flex: none;
   text-align: left;
   display: grid;
   gap: 2px;
@@ -2365,21 +2342,18 @@ button.primary.danger {
   gap: 6px;
 }
 .rsp .rs-nn {
+  min-width: 0;
   font-weight: 700;
   font-size: 13.5px;
   line-height: 1.2;
 }
 .rsp .rs-rb {
-  font-weight: 700;
-  font-size: 9.5px;
-  line-height: 1;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
   background: var(--acc);
-  color: var(--on-acc);
-  padding: 3px 5px;
-  border-radius: 3px;
-  white-space: nowrap;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--acc) 30%, transparent);
 }
 .rsp .rs-path {
   flex: 1;
@@ -2446,11 +2420,12 @@ button.primary.danger {
   display: flex;
   align-items: center;
   padding: 6px 4px 78px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
+  overflow: auto;
+  overscroll-behavior: contain;
+  cursor: grab;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  touch-action: pan-x pan-y;
+  touch-action: none;
 }
 .rsp .rs-stages::-webkit-scrollbar {
   display: none;
@@ -2458,6 +2433,74 @@ button.primary.danger {
 .rsp .rs-stages.drag {
   cursor: grabbing;
   user-select: none;
+}
+.rsp .rs-stages.tree {
+  align-items: flex-start;
+  overflow-y: auto;
+}
+.rsp .rs-zoomer {
+  flex: none;
+  position: relative;
+}
+.rsp .rs-zoom {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  display: flex;
+  align-items: center;
+  width: max-content;
+}
+.rsp .rs-tree {
+  flex: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+.rsp .rs-chain.side {
+  margin-bottom: 58px;
+}
+.rsp .rs-link {
+  position: absolute;
+  pointer-events: none;
+  border-left: 2px solid var(--edge-lt);
+  border-bottom: 2px solid var(--edge-lt);
+  border-bottom-left-radius: 10px;
+}
+.rsp .rs-link::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  bottom: -6px;
+  border-left: 8px solid var(--edge-lt);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+.rsp .rs-link.on {
+  border-color: var(--acc);
+}
+.rsp .rs-link.on::after {
+  border-left-color: var(--acc);
+}
+.rsp .rs-chain {
+  flex: none;
+}
+.rsp .rs-tag {
+  position: sticky;
+  left: 4px;
+  width: max-content;
+  margin: 0 0 6px 4px;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acc);
+}
+.rsp .rs-line {
+  display: flex;
+  align-items: center;
 }
 .rsp .rs-grp {
   flex: none;
@@ -7183,7 +7226,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           buildTime: 338,
           cap: 0,
           craftSpeed: 1.25,
-          slots: 24,
+          slots: 30,
           hp: 675,
           sight: 0
         }
@@ -7553,7 +7596,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           buildTime: 350,
           cap: 0,
           craftSpeed: 1.25,
-          slots: 24,
+          slots: 30,
           hp: 675,
           sight: 0
         }
@@ -8054,7 +8097,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           buildTime: 394,
           cap: 0,
           craftSpeed: 1.88,
-          slots: 29,
+          slots: 30,
           hp: 675,
           sight: 0
         }
@@ -8135,7 +8178,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           buildTime: 338,
           cap: 0,
           craftSpeed: 1.25,
-          slots: 24,
+          slots: 32,
           hp: 675,
           sight: 0
         }
@@ -8292,7 +8335,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           buildTime: 338,
           cap: 0,
           craftSpeed: 1.25,
-          slots: 24,
+          slots: 30,
           hp: 675,
           sight: 0
         }
@@ -11499,6 +11542,322 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               ]
             },
             {
+              key: "foot_pierce",
+              role: "foot",
+              into: "foot",
+              place: 1,
+              tag: "Xuy\xEAn gi\xE1p",
+              from: "foot_tier4",
+              name: "Xuy\xEAn gi\xE1p",
+              who: "M\u0169i gi\xE1o v\xE0 \u0111\u1EA7u ch\xF9y xuy\xEAn gi\xE1p",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "foot_m11",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "aspd"
+                    },
+                    {
+                      stat: "crit"
+                    }
+                  ],
+                  leap: {
+                    id: "foot_pierce1",
+                    name: "M\u0169i gi\xE1o th\xE9p",
+                    desc: "M\u0169i gi\xE1o th\xE9p c\u1EE9ng: m\u1ED7i \u0111\xF2n c\u1EE7a b\u1ED9 binh b\u1ECF qua 6% gi\xE1p c\u1EE7a \u0111\u1ED1i th\u1EE7.",
+                    effect: {
+                      pierce_foot: 6
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "foot_m12",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "aspd"
+                    },
+                    {
+                      stat: "crit"
+                    }
+                  ],
+                  leap: {
+                    id: "foot_pierce2",
+                    name: "\u0110\u1EA7u ch\xF9y nh\u1ECDn",
+                    desc: "Ch\xF9y c\xF3 gai nh\u1ECDn \u0111\u1EADp th\u1EE7ng gi\xE1p: b\u1ECF qua th\xEAm 8% gi\xE1p.",
+                    effect: {
+                      pierce_foot: 8
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "foot_siege",
+              role: "foot",
+              into: "foot",
+              place: 2,
+              tag: "Ph\xE1 th\xE0nh",
+              from: "foot_pierce1",
+              name: "Ph\xE1 th\xE0nh",
+              who: "B\xFAa v\xE0 r\xECu ph\xE1 c\u1ED5ng, h\xE0ng r\xE0o, th\xE1p",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "foot_m13",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "hp"
+                    }
+                  ],
+                  leap: {
+                    id: "foot_siege1",
+                    name: "B\xFAa ph\xE1 c\u1ED5ng",
+                    desc: "B\xFAa n\u1EB7ng \u0111\u1EADp c\u1ED5ng v\xE0 h\xE0ng r\xE0o: b\u1ED9 binh g\xE2y th\xEAm 15% s\xE1t th\u01B0\u01A1ng l\xEAn c\xF4ng tr\xECnh c\u1EE7a l\xE0ng \u0111\u1ECBch.",
+                    effect: {
+                      siege_foot: 15
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "foot_m14",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "hpregen"
+                    }
+                  ],
+                  leap: {
+                    id: "foot_siege2",
+                    name: "R\xECu ch\u1EBB g\u1ED7",
+                    desc: "R\xECu l\u01B0\u1EE1i r\u1ED9ng ch\u1EBB g\u1ED7 nhanh: th\xEAm 20% s\xE1t th\u01B0\u01A1ng l\xEAn c\xF4ng tr\xECnh.",
+                    effect: {
+                      siege_foot: 20
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "foot_counter",
+              role: "foot",
+              into: "foot",
+              place: 3,
+              tag: "Kh\u1EAFc ch\u1EBF cung th\u1EE7",
+              from: "foot_siege1",
+              name: "Kh\u1EAFc ch\u1EBF cung th\u1EE7",
+              who: "\xC1p s\xE1t b\u1EBB g\xE3y h\xE0ng cung",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "foot_m15",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "move"
+                    },
+                    {
+                      stat: "aspd"
+                    }
+                  ],
+                  leap: {
+                    id: "foot_counter1",
+                    name: "Ti\u1EBFn s\xE1t nhanh",
+                    desc: "X\xF4ng s\xE1t h\xE0ng cung th\u1EE7 tr\u01B0\u1EDBc khi h\u1ECD k\u1ECBp gi\xE3n: th\xEAm 10% s\xE1t th\u01B0\u01A1ng l\xEAn cung th\u1EE7 v\xE0 ng\u01B0\u1EDDi n\xE9m.",
+                    effect: {
+                      counter_foot: 10
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "foot_m16",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "move"
+                    },
+                    {
+                      stat: "defr"
+                    }
+                  ],
+                  leap: {
+                    id: "foot_counter2",
+                    name: "Khi\xEAn \u0111\u1EA9y",
+                    desc: "Khi\xEAn l\u1EDBn \u0111\u1EA9y l\xF9i t\xEAn r\u1ED3i \xE9p s\xE1t: th\xEAm 12% s\xE1t th\u01B0\u01A1ng l\xEAn cung th\u1EE7.",
+                    effect: {
+                      counter_foot: 12
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "foot_armor",
+              role: "foot",
+              into: "foot",
+              place: 4,
+              tag: "Gi\xE1p ch\u1EAFc",
+              from: "foot_counter1",
+              name: "Gi\xE1p ch\u1EAFc",
+              who: "Gi\xE1p d\xE0y v\xE0 b\u1EC1n h\u01A1n",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "foot_m17",
+                  nodes: [
+                    {
+                      stat: "hp"
+                    },
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    }
+                  ],
+                  leap: {
+                    id: "foot_armor1",
+                    name: "T\u1EA5m khi\xEAn li\u1EC1n",
+                    desc: "Khi\xEAn li\u1EC1n v\xE0 gi\xE1p gh\xE9p: gi\xE1p c\u1EE7a b\u1ED9 binh hi\u1EC7u qu\u1EA3 h\u01A1n 8%.",
+                    effect: {
+                      armor_foot: 8
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "foot_m18",
+                  nodes: [
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    },
+                    {
+                      stat: "hpregen"
+                    }
+                  ],
+                  leap: {
+                    id: "foot_armor2",
+                    name: "Th\u1EE3 v\xE1 gi\xE1p",
+                    desc: "C\xF3 ng\u01B0\u1EDDi v\xE1 gi\xE1p ngay t\u1EA1i tr\u1EA1i: gi\xE1p l\xE2u h\u1ECFng h\u01A1n 25%.",
+                    effect: {
+                      armorDur_foot: 25
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
               key: "cav",
               role: "cavalry",
               name: "K\u1EF5 binh",
@@ -11848,6 +12207,322 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               ]
             },
             {
+              key: "cav_pierce",
+              role: "cavalry",
+              into: "cav",
+              place: 1,
+              tag: "M\u0169i gi\xE1o xuy\xEAn gi\xE1p",
+              from: "cavalry_tier4",
+              name: "M\u0169i gi\xE1o xuy\xEAn gi\xE1p",
+              who: "Gi\xE1o k\u1EF5 s\u1EAFt d\u1ED3n s\u1EE9c ng\u1EF1a",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "cavalry_m11",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "critd"
+                    },
+                    {
+                      stat: "move"
+                    }
+                  ],
+                  leap: {
+                    id: "cav_pierce1",
+                    name: "Gi\xE1o k\u1EF5 s\u1EAFt",
+                    desc: "S\u1EE9c ng\u1EF1a d\u1ED3n v\xE0o m\u0169i gi\xE1o: m\u1ED7i \u0111\xF2n c\u1EE7a k\u1EF5 binh b\u1ECF qua 6% gi\xE1p.",
+                    effect: {
+                      pierce_cavalry: 6
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "cavalry_m12",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "critd"
+                    },
+                    {
+                      stat: "aspd"
+                    }
+                  ],
+                  leap: {
+                    id: "cav_pierce2",
+                    name: "M\u0169i lao nh\u1ECDn",
+                    desc: "M\u0169i lao d\xE0i v\xE0 nh\u1ECDn: b\u1ECF qua th\xEAm 8% gi\xE1p.",
+                    effect: {
+                      pierce_cavalry: 8
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "cav_counter",
+              role: "cavalry",
+              into: "cav",
+              place: 2,
+              tag: "Xung phong kh\u1EAFc b\u1ED9 binh",
+              from: "cav_pierce1",
+              name: "Xung phong kh\u1EAFc b\u1ED9 binh",
+              who: "Lao v\xE0o h\xE0ng b\u1ED9 binh",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "cavalry_m13",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "move"
+                    },
+                    {
+                      stat: "critd"
+                    }
+                  ],
+                  leap: {
+                    id: "cav_counter1",
+                    name: "\u0110\u1ED9i h\xECnh m\u0169i nh\u1ECDn",
+                    desc: "C\u1EA3 \u0111\u1ED9i lao th\xE0nh m\u0169i nh\u1ECDn: th\xEAm 12% s\xE1t th\u01B0\u01A1ng l\xEAn b\u1ED9 binh.",
+                    effect: {
+                      counter_cavalry: 12
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "cavalry_m14",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "move"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "cav_counter2",
+                    name: "Lao th\u1EB3ng h\xE0ng",
+                    desc: "Gi\u1EEF h\xE0ng lao th\u1EB3ng kh\xF4ng ch\u1EC7ch: th\xEAm 15% s\xE1t th\u01B0\u01A1ng l\xEAn b\u1ED9 binh.",
+                    effect: {
+                      counter_cavalry: 15
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "cav_armor",
+              role: "cavalry",
+              into: "cav",
+              place: 3,
+              tag: "Gi\xE1p ng\u1EF1a",
+              from: "cav_counter1",
+              name: "Gi\xE1p ng\u1EF1a",
+              who: "Ph\u1EE7 gi\xE1p cho ng\u01B0\u1EDDi v\xE0 ng\u1EF1a",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "cavalry_m15",
+                  nodes: [
+                    {
+                      stat: "hp"
+                    },
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    }
+                  ],
+                  leap: {
+                    id: "cav_armor1",
+                    name: "Gi\xE1p ng\u1EF1a da",
+                    desc: "T\u1EA5m da d\xE0y che ng\u1EF1c ng\u1EF1a: gi\xE1p c\u1EE7a k\u1EF5 binh hi\u1EC7u qu\u1EA3 h\u01A1n 8%.",
+                    effect: {
+                      armor_cavalry: 8
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "cavalry_m16",
+                  nodes: [
+                    {
+                      stat: "hp"
+                    },
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    }
+                  ],
+                  leap: {
+                    id: "cav_armor2",
+                    name: "Gi\xE1p ng\u1EF1a s\u1EAFt",
+                    desc: "Gi\xE1p s\u1EAFt ph\u1EE7 c\u1EA3 ng\u1EF1a: gi\xE1p hi\u1EC7u qu\u1EA3 h\u01A1n th\xEAm 10%.",
+                    effect: {
+                      armor_cavalry: 10
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "cav_armordur",
+              role: "cavalry",
+              into: "cav",
+              place: 4,
+              tag: "Gi\xE1p b\u1EC1n",
+              from: "cav_armor1",
+              name: "Gi\xE1p b\u1EC1n",
+              who: "Gi\xE1p l\xE2u h\u1ECFng tr\xEAn \u0111\u01B0\u1EDDng d\xE0i",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "cavalry_m17",
+                  nodes: [
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    },
+                    {
+                      stat: "hpregen"
+                    }
+                  ],
+                  leap: {
+                    id: "cav_dur1",
+                    name: "D\xE2y bu\u1ED9c ch\u1EAFc",
+                    desc: "D\xE2y v\xE0 kh\xF3a ch\u1EAFc, gi\xE1p kh\xF4ng bung: gi\xE1p l\xE2u h\u1ECFng h\u01A1n 25%.",
+                    effect: {
+                      armorDur_cavalry: 25
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "cavalry_m18",
+                  nodes: [
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    },
+                    {
+                      stat: "hpregen"
+                    }
+                  ],
+                  leap: {
+                    id: "cav_dur2",
+                    name: "Th\u1EE3 r\xE8n \u0111i theo",
+                    desc: "Th\u1EE3 r\xE8n n\u1EAFn l\u1EA1i gi\xE1p d\u1ECDc \u0111\u01B0\u1EDDng: gi\xE1p l\xE2u h\u1ECFng h\u01A1n th\xEAm 35%.",
+                    effect: {
+                      armorDur_cavalry: 35
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
               key: "archer",
               role: "archer",
               name: "Cung th\u1EE7",
@@ -12190,6 +12865,322 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                     "craft_ms2",
                     "research_ms2"
                   ]
+                }
+              ]
+            },
+            {
+              key: "archer_pierce",
+              role: "archer",
+              into: "archer",
+              place: 1,
+              tag: "M\u0169i t\xEAn \u0111\u1EE5c gi\xE1p",
+              from: "archer_tier4",
+              name: "M\u0169i t\xEAn \u0111\u1EE5c gi\xE1p",
+              who: "M\u0169i t\xEAn s\u1EAFt \u0111\u1EE5c th\u1EE7ng gi\xE1p",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "archer_m11",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "crit"
+                    },
+                    {
+                      stat: "critd"
+                    }
+                  ],
+                  leap: {
+                    id: "archer_pierce1",
+                    name: "M\u0169i t\xEAn s\u1EAFt",
+                    desc: "M\u0169i t\xEAn s\u1EAFt c\u1EE9ng h\u01A1n \u0111\xE1: m\u1ED7i ph\xE1t b\u1EAFn b\u1ECF qua 6% gi\xE1p.",
+                    effect: {
+                      pierce_archer: 6
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "archer_m12",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "crit"
+                    },
+                    {
+                      stat: "critd"
+                    }
+                  ],
+                  leap: {
+                    id: "archer_pierce2",
+                    name: "M\u0169i t\xEAn khoan",
+                    desc: "M\u0169i t\xEAn ba c\u1EA1nh khoan v\xE0o k\u1EBD gi\xE1p: b\u1ECF qua th\xEAm 8% gi\xE1p.",
+                    effect: {
+                      pierce_archer: 8
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "archer_counter",
+              role: "archer",
+              into: "archer",
+              place: 2,
+              tag: "B\u1EAFn k\u1EF5 binh",
+              from: "archer_pierce1",
+              name: "B\u1EAFn k\u1EF5 binh",
+              who: "H\u1EA1 ng\u1EF1a tr\u01B0\u1EDBc khi ch\xFAng t\u1EDBi",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "archer_m13",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "crit"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "archer_counter1",
+                    name: "T\xEAn m\xF3c ng\u1EF1a",
+                    desc: "T\xEAn c\xF3 ng\u1EA1nh m\xF3c v\xE0o ch\xE2n ng\u1EF1a: th\xEAm 12% s\xE1t th\u01B0\u01A1ng l\xEAn k\u1EF5 binh.",
+                    effect: {
+                      counter_archer: 12
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "archer_m14",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "crit"
+                    },
+                    {
+                      stat: "critd"
+                    }
+                  ],
+                  leap: {
+                    id: "archer_counter2",
+                    name: "T\xEAn r\u1EA3i lo\u1EA1t",
+                    desc: "C\u1EA3 h\xE0ng b\u1EAFn \u0111\u1ED3ng lo\u1EA1t v\xE0o m\u1ED9t h\u01B0\u1EDBng: th\xEAm 15% s\xE1t th\u01B0\u01A1ng l\xEAn k\u1EF5 binh.",
+                    effect: {
+                      counter_archer: 15
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "archer_fire",
+              role: "archer",
+              into: "archer",
+              place: 3,
+              tag: "T\xEAn l\u1EEDa",
+              from: "archer_counter1",
+              name: "T\xEAn l\u1EEDa",
+              who: "T\xEAn t\u1EA9m d\u1EA7u \u0111\u1ED1t c\u1ED5ng v\xE0 h\xE0ng r\xE0o",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "archer_m15",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "crit"
+                    }
+                  ],
+                  leap: {
+                    id: "archer_fire1",
+                    name: "T\xEAn t\u1EA9m d\u1EA7u",
+                    desc: "Qu\u1EA5n gi\u1EBB t\u1EA9m d\u1EA7u quanh m\u0169i t\xEAn: cung th\u1EE7 g\xE2y th\xEAm 15% s\xE1t th\u01B0\u01A1ng l\xEAn c\xF4ng tr\xECnh c\u1EE7a l\xE0ng \u0111\u1ECBch.",
+                    effect: {
+                      siege_archer: 15
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "archer_m16",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "critd"
+                    }
+                  ],
+                  leap: {
+                    id: "archer_fire2",
+                    name: "M\u01B0a t\xEAn l\u1EEDa",
+                    desc: "C\u1EA3 h\xE0ng b\u1EAFn t\xEAn l\u1EEDa: th\xEAm 20% s\xE1t th\u01B0\u01A1ng l\xEAn c\xF4ng tr\xECnh.",
+                    effect: {
+                      siege_archer: 20
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "archer_armor",
+              role: "archer",
+              into: "archer",
+              place: 4,
+              tag: "\xC1o gi\xE1p nh\u1EB9",
+              from: "archer_fire1",
+              name: "\xC1o gi\xE1p nh\u1EB9",
+              who: "Che ch\u1EAFn m\xE0 v\u1EABn nh\u1EB9 tay",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "archer_m17",
+                  nodes: [
+                    {
+                      stat: "hp"
+                    },
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    }
+                  ],
+                  leap: {
+                    id: "archer_armor1",
+                    name: "\xC1o da b\u1EC7n",
+                    desc: "\xC1o da b\u1EC7n nhi\u1EC1u l\u1EDBp: gi\xE1p c\u1EE7a cung th\u1EE7 hi\u1EC7u qu\u1EA3 h\u01A1n 6%.",
+                    effect: {
+                      armor_archer: 6
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "archer_m18",
+                  nodes: [
+                    {
+                      stat: "hp"
+                    },
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    }
+                  ],
+                  leap: {
+                    id: "archer_armor2",
+                    name: "Khi\xEAn m\xE2y",
+                    desc: "Khi\xEAn m\xE2y ch\u1EAFn t\xEAn \u0111\u1ECBch: gi\xE1p hi\u1EC7u qu\u1EA3 h\u01A1n th\xEAm 8%.",
+                    effect: {
+                      armor_archer: 8
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
                 }
               ]
             },
@@ -12541,6 +13532,322 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                     "craft_ms2",
                     "research_ms2"
                   ]
+                }
+              ]
+            },
+            {
+              key: "guard_armor",
+              role: "guard",
+              into: "guard",
+              place: 1,
+              tag: "Gi\xE1p d\xE0y",
+              from: "guard_tier4",
+              name: "Gi\xE1p d\xE0y",
+              who: "Gi\xE1p x\u1EBFp l\u1EDBp, khi\xEAn th\xE1p",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "guard_m11",
+                  nodes: [
+                    {
+                      stat: "hp"
+                    },
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    }
+                  ],
+                  leap: {
+                    id: "guard_armor1",
+                    name: "\xC1o gi\xE1p x\u1EBFp l\u1EDBp",
+                    desc: "Gi\xE1p x\u1EBFp l\u1EDBp d\xE0y: gi\xE1p c\u1EE7a l\xEDnh g\xE1c hi\u1EC7u qu\u1EA3 h\u01A1n 10%.",
+                    effect: {
+                      armor_guard: 10
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "guard_m12",
+                  nodes: [
+                    {
+                      stat: "hp"
+                    },
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    }
+                  ],
+                  leap: {
+                    id: "guard_armor2",
+                    name: "Khi\xEAn th\xE1p",
+                    desc: "Khi\xEAn cao che k\xEDn ng\u01B0\u1EDDi: gi\xE1p hi\u1EC7u qu\u1EA3 h\u01A1n th\xEAm 12%.",
+                    effect: {
+                      armor_guard: 12
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "guard_dur",
+              role: "guard",
+              into: "guard",
+              place: 2,
+              tag: "Th\u1EE7 ch\u1EAFc",
+              from: "guard_armor1",
+              name: "Th\u1EE7 ch\u1EAFc",
+              who: "Gi\xE1p b\u1EC1n, v\xE1 ngay t\u1EA1i tr\u1EA1m",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "guard_m13",
+                  nodes: [
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    },
+                    {
+                      stat: "hpregen"
+                    }
+                  ],
+                  leap: {
+                    id: "guard_dur1",
+                    name: "V\xE1 gi\xE1p t\u1EA1i tr\u1EA1m",
+                    desc: "Tr\u1EA1m g\xE1c c\xF3 ch\u1ED7 v\xE1 gi\xE1p: gi\xE1p l\xE2u h\u1ECFng h\u01A1n 25%.",
+                    effect: {
+                      armorDur_guard: 25
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "guard_m14",
+                  nodes: [
+                    {
+                      stat: "defm"
+                    },
+                    {
+                      stat: "defr"
+                    },
+                    {
+                      stat: "hpregen"
+                    }
+                  ],
+                  leap: {
+                    id: "guard_dur2",
+                    name: "X\u01B0\u1EDFng gi\xE1p nh\u1ECF",
+                    desc: "C\xF3 th\u1EE3 gi\xE1p ri\xEAng \u1EDF tr\u1EA1m: gi\xE1p l\xE2u h\u1ECFng h\u01A1n th\xEAm 35%.",
+                    effect: {
+                      armorDur_guard: 35
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "guard_counter",
+              role: "guard",
+              into: "guard",
+              place: 3,
+              tag: "Ph\u1EA3n \u0111\xF2n",
+              from: "guard_dur1",
+              name: "Ph\u1EA3n \u0111\xF2n",
+              who: "\u0110\u1EE1 \u0111\xF2n r\u1ED3i \u0111\xE1p tr\u1EA3 ngay",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "guard_m15",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "aspd"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "guard_counter1",
+                    name: "Th\u1EBF \u0111\u1EE1 ph\u1EA3n c\xF4ng",
+                    desc: "\u0110\u1EE1 r\u1ED3i \u0111\xE1nh tr\u1EA3 trong m\u1ED9t nh\u1ECBp: th\xEAm 10% s\xE1t th\u01B0\u01A1ng l\xEAn b\u1ED9 binh v\xE0 cung th\u1EE7 kh\u1EAFc ch\u1EBF \u0111\u01B0\u1EE3c.",
+                    effect: {
+                      counter_guard: 10
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "guard_m16",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "aspd"
+                    },
+                    {
+                      stat: "defm"
+                    }
+                  ],
+                  leap: {
+                    id: "guard_counter2",
+                    name: "M\u0169i m\xE1c h\u1ED3i",
+                    desc: "M\xE1c d\xE0i \u0111\xE2m tr\u1EA3 khi \u0111\u1ECBch \xE1p s\xE1t: th\xEAm 12% s\xE1t th\u01B0\u01A1ng l\xEAn \u0111\u1ED1i th\u1EE7 b\u1ECB kh\u1EAFc ch\u1EBF.",
+                    effect: {
+                      counter_guard: 12
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "guard_pierce",
+              role: "guard",
+              into: "guard",
+              place: 4,
+              tag: "M\xE1c xuy\xEAn gi\xE1p",
+              from: "guard_counter1",
+              name: "M\xE1c xuy\xEAn gi\xE1p",
+              who: "M\u0169i m\xE1c nh\u1ECDn \u0111\xE2m th\u1EE7ng gi\xE1p",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "guard_m17",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "aspd"
+                    },
+                    {
+                      stat: "crit"
+                    }
+                  ],
+                  leap: {
+                    id: "guard_pierce1",
+                    name: "M\xE1c m\u0169i nh\u1ECDn",
+                    desc: "M\xE1c m\u0169i nh\u1ECDn khoan th\u1EE7ng gi\xE1p: m\u1ED7i \u0111\xF2n c\u1EE7a l\xEDnh g\xE1c b\u1ECF qua 5% gi\xE1p.",
+                    effect: {
+                      pierce_guard: 5
+                    },
+                    cost: {
+                      wood: 600,
+                      stone: 500,
+                      iron: 70,
+                      steel: 20,
+                      coin: 220
+                    },
+                    time: 6e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "guard_m18",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "aspd"
+                    },
+                    {
+                      stat: "crit"
+                    }
+                  ],
+                  leap: {
+                    id: "guard_pierce2",
+                    name: "M\xE1c m\u0169i tam gi\xE1c",
+                    desc: "M\u0169i tam gi\xE1c kh\xF3 tr\u01B0\u1EE3t: b\u1ECF qua th\xEAm 7% gi\xE1p.",
+                    effect: {
+                      pierce_guard: 7
+                    },
+                    cost: {
+                      wood: 800,
+                      stone: 650,
+                      iron: 100,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 7600,
+                    share: 0.66,
+                    lab: 4
+                  }
                 }
               ]
             },
@@ -13012,7 +14319,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                     },
                     time: 2800,
                     share: 0.66,
-                    lab: 4
+                    lab: 4,
+                    side: {
+                      name: "Kho l\u1EDBn h\u01A1n",
+                      short: "Kho l\u1EDBn h\u01A1n",
+                      desc: "S\u1EE9c ch\u1EE9a c\u1EE7a kho th\xEAm 3% m\u1ED7i c\u1EA5p.",
+                      effect: {
+                        storage: 3
+                      }
+                    }
                   }
                 },
                 {
@@ -13122,6 +14437,97 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               ]
             },
             {
+              key: "gather_haul",
+              role: "gather",
+              into: "gather",
+              place: 1,
+              tag: "Kho v\xE0 chuy\xEAn ch\u1EDF",
+              from: "gather_med1",
+              name: "Kho v\xE0 chuy\xEAn ch\u1EDF",
+              who: "Kho m\xE1i che, xe k\xE9o",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "gather_m4",
+                  members: [
+                    "wood",
+                    "stone",
+                    "mine",
+                    "food"
+                  ],
+                  nodes: [
+                    {
+                      stat: "move"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "gyield"
+                    }
+                  ],
+                  leap: {
+                    id: "gather_med4",
+                    name: "Kho m\xE1i che",
+                    desc: "M\xE1i che cho h\xE0ng \u0111\u1EC3 ngo\xE0i tr\u1EDDi: s\u1EE9c ch\u1EE9a c\u1EE7a kho +15%.",
+                    effect: {
+                      storage: 15
+                    },
+                    cost: {
+                      wood: 380,
+                      stone: 320,
+                      iron: 25,
+                      hardwood: 25,
+                      coin: 80
+                    },
+                    time: 3400,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "gather_m5",
+                  members: [
+                    "wood",
+                    "stone",
+                    "mine",
+                    "food"
+                  ],
+                  nodes: [
+                    {
+                      stat: "restregen"
+                    },
+                    {
+                      stat: "tyield"
+                    },
+                    {
+                      stat: "tdur"
+                    }
+                  ],
+                  leap: {
+                    id: "gather_med5",
+                    name: "Xe k\xE9o",
+                    desc: "Xe k\xE9o th\xFA ch\u1EDF nhi\u1EC1u h\u01A1n m\u1ED7i chuy\u1EBFn: mang th\xEAm 40%.",
+                    effect: {
+                      gatherCarry: 40
+                    },
+                    cost: {
+                      wood: 480,
+                      stone: 400,
+                      iron: 35,
+                      hardwood: 35,
+                      coin: 110
+                    },
+                    time: 4200,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
               key: "hunt",
               role: "hunt",
               name: "S\u0103n",
@@ -13205,7 +14611,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                     },
                     time: 2500,
                     share: 0.66,
-                    lab: 4
+                    lab: 4,
+                    side: {
+                      name: "Th\u1ECBt nhi\u1EC1u h\u01A1n",
+                      short: "Th\u1ECBt nhi\u1EC1u h\u01A1n",
+                      desc: "Th\u1ECBt thu \u0111\u01B0\u1EE3c th\xEAm 4% m\u1ED7i c\u1EA5p.",
+                      effect: {
+                        huntMeat: 4
+                      }
+                    }
                   }
                 },
                 {
@@ -13262,6 +14676,236 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                   },
                   cross: [],
                   era: "ancient"
+                }
+              ]
+            },
+            {
+              key: "hunt_trap",
+              role: "hunt",
+              into: "hunt",
+              place: 1,
+              tag: "B\u1EABy v\xE0 l\u1ED9t da",
+              from: "hunt_med1",
+              name: "B\u1EABy v\xE0 l\u1ED9t da",
+              who: "M\u1ED3i nh\u1EED, dao l\u1ED9t da",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "hunt_m3",
+                  nodes: [
+                    {
+                      stat: "move"
+                    },
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "gyield"
+                    }
+                  ],
+                  leap: {
+                    id: "hunt_med3",
+                    name: "M\u1ED3i nh\u1EED",
+                    desc: "M\u1ED3i nh\u1EED d\u1EABn th\xFA v\xE0o b\u1EABy: th\u1ECBt thu \u0111\u01B0\u1EE3c +15%.",
+                    effect: {
+                      huntMeat: 15
+                    },
+                    cost: {
+                      wood: 380,
+                      stone: 250,
+                      iron: 25,
+                      leather: 15,
+                      coin: 80
+                    },
+                    time: 3400,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "hunt_m4",
+                  nodes: [
+                    {
+                      stat: "hp"
+                    },
+                    {
+                      stat: "restregen"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "hunt_med4",
+                    name: "Dao l\u1ED9t da",
+                    desc: "Dao l\u1ED9t da s\u1EAFc v\xE0 g\u1ECDn: da v\xE0 ph\u1EE5 ph\u1EA9m thu \u0111\u01B0\u1EE3c +15%.",
+                    effect: {
+                      huntDrops: 15
+                    },
+                    cost: {
+                      wood: 460,
+                      stone: 300,
+                      iron: 35,
+                      leather: 25,
+                      coin: 110
+                    },
+                    time: 4200,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "hunt_beast",
+              role: "hunt",
+              into: "hunt",
+              place: 2,
+              tag: "Th\u1EA1o t\u1EEBng lo\xE0i",
+              from: "hunt_med3",
+              name: "Th\u1EA1o t\u1EEBng lo\xE0i",
+              who: "M\u1ED7i lo\xE0i th\xFA c\xF3 ch\u1ED7 y\u1EBFu ri\xEAng",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "hunt_m5",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "aspd"
+                    },
+                    {
+                      stat: "move"
+                    }
+                  ],
+                  leap: {
+                    id: "hunt_wolf",
+                    name: "Th\u1EA1o s\u0103n th\xFA nh\u1ECF \u0103n th\u1ECBt",
+                    desc: "S\xF3i v\xE0 c\xE1o: nh\xECn d\u1EA5u ch\xE2n, \u0111o\xE1n \u0111\u01B0\u1EDDng ch\u1EA1y, b\u1EABy \u0111\xFAng ch\u1ED7. S\xE1t th\u01B0\u01A1ng l\xEAn s\xF3i v\xE0 c\xE1o +20%.",
+                    effect: {
+                      beast_wolf: 20,
+                      beast_fox: 20
+                    },
+                    cost: {
+                      wood: 360,
+                      stone: 300,
+                      iron: 42,
+                      steel: 12,
+                      coin: 132
+                    },
+                    time: 5200,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "hunt_m6",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "hp"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "hunt_horn",
+                    name: "Th\u1EA1o s\u0103n th\xFA s\u1EEBng",
+                    desc: "L\u1EE3n r\u1EEBng, b\xF2 r\u1EEBng, nai, d\xEA n\xFAi: bi\u1EBFt ch\u1ED7 y\u1EBFu d\u01B0\u1EDBi s\u1EEBng. S\xE1t th\u01B0\u01A1ng l\xEAn ch\xFAng +20%.",
+                    effect: {
+                      beast_boar: 20,
+                      beast_aurochs: 20,
+                      beast_elk: 20,
+                      beast_ibex: 20,
+                      beast_deer: 15
+                    },
+                    cost: {
+                      wood: 480,
+                      stone: 390,
+                      iron: 60,
+                      steel: 21,
+                      coin: 192
+                    },
+                    time: 5900,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "hunt_m7",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "crit"
+                    },
+                    {
+                      stat: "hp"
+                    }
+                  ],
+                  leap: {
+                    id: "hunt_fierce",
+                    name: "Th\u1EA1o s\u0103n th\xFA d\u1EEF",
+                    desc: "G\u1EA5u v\xE0 s\u01B0 t\u1EED: ra \u0111\xF2n d\u1EE9t kho\xE1t khi ch\xFAng v\u1ED3. S\xE1t th\u01B0\u01A1ng l\xEAn g\u1EA5u v\xE0 s\u01B0 t\u1EED +20%.",
+                    effect: {
+                      beast_bear: 20,
+                      beast_lion: 20
+                    },
+                    cost: {
+                      wood: 360,
+                      stone: 300,
+                      iron: 42,
+                      steel: 12,
+                      coin: 132
+                    },
+                    time: 6600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "hunt_m8",
+                  nodes: [
+                    {
+                      stat: "atk"
+                    },
+                    {
+                      stat: "critd"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "hunt_giant",
+                    name: "Th\u1EA1o s\u0103n voi ma m\xFAt",
+                    desc: "Voi ma m\xFAt: \u0111\xE1nh v\xE0o ch\xE2n, v\xE0o v\xF2i, ch\u1EDD n\xF3 ki\u1EC7t s\u1EE9c. S\xE1t th\u01B0\u01A1ng l\xEAn voi ma m\xFAt +30%.",
+                    effect: {
+                      beast_mammoth: 30
+                    },
+                    cost: {
+                      wood: 480,
+                      stone: 390,
+                      iron: 60,
+                      steel: 21,
+                      coin: 192
+                    },
+                    time: 7300,
+                    share: 0.66,
+                    lab: 4
+                  }
                 }
               ]
             },
@@ -13433,6 +15077,85 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               ]
             },
             {
+              key: "tame_train",
+              role: "tame",
+              into: "tame",
+              place: 1,
+              tag: "Thu\u1EA7n nhanh",
+              from: "tame_med1",
+              name: "Thu\u1EA7n nhanh",
+              who: "D\xE2y b\u1EC7n, ng\u01B0\u1EDDi d\u1EABn d\u1EAFt",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "tame_m3",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "tame_med3",
+                    name: "D\xE2y th\u1EEBng b\u1EC7n",
+                    desc: "D\xE2y b\u1EC7n ch\u1EAFc gi\u1EEF th\xFA y\xEAn: Chu\u1ED3ng th\xFA thu\u1EA7n xong nhanh h\u01A1n 15%.",
+                    effect: {
+                      tameSpeed: 15
+                    },
+                    cost: {
+                      wood: 420,
+                      stone: 380,
+                      iron: 30,
+                      leather: 25,
+                      coin: 120
+                    },
+                    time: 3800,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "tame_m4",
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "work"
+                    }
+                  ],
+                  leap: {
+                    id: "tame_med4",
+                    name: "Ng\u01B0\u1EDDi d\u1EABn d\u1EAFt",
+                    desc: "Ng\u01B0\u1EDDi gi\xE0 kinh nghi\u1EC7m d\u1EA1y th\xFA nghe l\u1EDDi: Chu\u1ED3ng th\xFA thu\u1EA7n xong nhanh h\u01A1n th\xEAm 20%.",
+                    effect: {
+                      tameSpeed: 20
+                    },
+                    cost: {
+                      wood: 520,
+                      stone: 450,
+                      iron: 40,
+                      leather: 35,
+                      coin: 150
+                    },
+                    time: 4600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
               key: "mine",
               role: "house_mine",
               name: "M\u1ECF",
@@ -13440,7 +15163,22 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               era: "ancient",
               rows: [
                 {
-                  nodes: [],
+                  era: "ancient",
+                  group: "mine_m1",
+                  members: [
+                    "mine"
+                  ],
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "tspd"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
                   leap: {
                     id: "mine_med1",
                     name: "Cu\u1ED1c ch\u1EAFc",
@@ -13456,13 +15194,36 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                       coin: 90
                     },
                     time: 3e3,
-                    lab: 4
+                    lab: 4,
+                    share: 0.66,
+                    side: {
+                      name: "Qu\u1EB7ng nhi\u1EC1u h\u01A1n",
+                      short: "Qu\u1EB7ng nhi\u1EC1u h\u01A1n",
+                      desc: "M\u1ED7i nh\xE1t cu\u1ED1c th\xEAm 3% qu\u1EB7ng m\u1ED7i c\u1EA5p.",
+                      effect: {
+                        mineYield: 3
+                      }
+                    }
                   },
-                  cross: [],
-                  era: "ancient"
+                  cross: []
                 },
                 {
-                  nodes: [],
+                  era: "ancient",
+                  group: "mine_m2",
+                  members: [
+                    "mine"
+                  ],
+                  nodes: [
+                    {
+                      stat: "tyield"
+                    },
+                    {
+                      stat: "tdur"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
                   leap: {
                     id: "mine_med2",
                     name: "H\u1EA7m c\xF3 ch\u1ED1ng",
@@ -13479,10 +15240,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                       coin: 140
                     },
                     time: 4200,
-                    lab: 4
+                    lab: 4,
+                    share: 0.66
                   },
-                  cross: [],
-                  era: "ancient"
+                  cross: []
                 },
                 {
                   nodes: [],
@@ -13510,6 +15271,86 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               ]
             },
             {
+              key: "mine_deep",
+              role: "house_mine",
+              into: "mine",
+              place: 1,
+              tag: "M\u1ECF s\xE2u",
+              from: "mine_med1",
+              name: "M\u1ECF s\xE2u",
+              who: "Qu\u1EB7ng gi\xE0u, t\u1EDDi k\xE9o",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "mine_m3",
+                  nodes: [
+                    {
+                      stat: "tyield"
+                    },
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "mine_med3",
+                    name: "Qu\u1EB7ng gi\xE0u",
+                    desc: "\u0110\xE0o theo m\u1EA1ch gi\xE0u: m\u1ED7i nh\xE1t cu\u1ED1c th\xEAm 10% qu\u1EB7ng.",
+                    effect: {
+                      mineYield: 10
+                    },
+                    cost: {
+                      wood: 400,
+                      stone: 400,
+                      iron: 35,
+                      hardwood: 30,
+                      coin: 120
+                    },
+                    time: 3800,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "mine_m4",
+                  nodes: [
+                    {
+                      stat: "tspd"
+                    },
+                    {
+                      stat: "tdur"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "mine_med4",
+                    name: "T\u1EDDi k\xE9o",
+                    desc: "T\u1EDDi k\xE9o qu\u1EB7ng l\xEAn kh\u1ECFi h\u1EA7m: th\u1EE3 m\u1ECF \u0111\xE0o nhanh h\u01A1n th\xEAm 12%.",
+                    effect: {
+                      mineSpeed: 12
+                    },
+                    cost: {
+                      wood: 500,
+                      stone: 500,
+                      iron: 45,
+                      hardwood: 40,
+                      steel: 12,
+                      coin: 150
+                    },
+                    time: 4600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
               key: "smelter",
               role: "house_smelter",
               name: "L\xF2 luy\u1EC7n",
@@ -13517,7 +15358,22 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               era: "ancient",
               rows: [
                 {
-                  nodes: [],
+                  era: "ancient",
+                  group: "smelt_m1",
+                  members: [
+                    "craft"
+                  ],
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
                   leap: {
                     id: "smelt_med1",
                     name: "Than hi\u1EC7u qu\u1EA3",
@@ -13532,13 +15388,36 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                       coin: 80
                     },
                     time: 3e3,
-                    lab: 4
+                    lab: 4,
+                    share: 0.66,
+                    side: {
+                      name: "L\xF2 nhanh h\u01A1n",
+                      short: "L\xF2 nhanh h\u01A1n",
+                      desc: "L\xF2 luy\u1EC7n nhanh h\u01A1n 3% m\u1ED7i c\u1EA5p.",
+                      effect: {
+                        speed_smelter: 3
+                      }
+                    }
                   },
-                  cross: [],
-                  era: "ancient"
+                  cross: []
                 },
                 {
-                  nodes: [],
+                  era: "ancient",
+                  group: "smelt_m2",
+                  members: [
+                    "craft"
+                  ],
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
                   leap: {
                     id: "smelt_med2",
                     name: "\u1ED0ng th\u1ED5i l\u1EDBn",
@@ -13554,10 +15433,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                       coin: 130
                     },
                     time: 4200,
-                    lab: 4
+                    lab: 4,
+                    share: 0.66
                   },
-                  cross: [],
-                  era: "ancient"
+                  cross: []
                 },
                 {
                   nodes: [],
@@ -13584,6 +15463,85 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               ]
             },
             {
+              key: "smelter_fire",
+              role: "house_smelter",
+              into: "smelter",
+              place: 1,
+              tag: "L\u1EEDa l\xF2",
+              from: "smelt_med1",
+              name: "L\u1EEDa l\xF2",
+              who: "L\xF2 \u0111\xFAc, \u1ED1ng kh\xF3i",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "smelt_m3",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "smelt_med3",
+                    name: "L\xF2 \u0111\xFAc song song",
+                    desc: "Th\xEAm m\u1ED9t l\xF2 \u0111\xFAc ch\u1EA1y c\xF9ng l\xFAc: L\xF2 luy\u1EC7n nhanh h\u01A1n 12%.",
+                    effect: {
+                      speed_smelter: 12
+                    },
+                    cost: {
+                      wood: 420,
+                      stone: 420,
+                      iron: 35,
+                      hardwood: 25,
+                      coin: 120
+                    },
+                    time: 3800,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "smelt_m4",
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "work"
+                    }
+                  ],
+                  leap: {
+                    id: "smelt_med4",
+                    name: "\u1ED0ng kh\xF3i cao",
+                    desc: "\u1ED0ng kh\xF3i cao h\xFAt gi\xF3 m\u1EA1nh: L\xF2 luy\u1EC7n nhanh h\u01A1n th\xEAm 15%.",
+                    effect: {
+                      speed_smelter: 15
+                    },
+                    cost: {
+                      wood: 520,
+                      stone: 520,
+                      iron: 45,
+                      steel: 12,
+                      coin: 150
+                    },
+                    time: 4600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
               key: "carpentry",
               role: "house_carpentry",
               name: "X\u01B0\u1EDFng m\u1ED9c",
@@ -13591,7 +15549,22 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               era: "ancient",
               rows: [
                 {
-                  nodes: [],
+                  era: "ancient",
+                  group: "carp_m1",
+                  members: [
+                    "craft"
+                  ],
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
                   leap: {
                     id: "carp_med1",
                     name: "C\u01B0a s\u1EAFt",
@@ -13607,13 +15580,36 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                       coin: 80
                     },
                     time: 3e3,
-                    lab: 4
+                    lab: 4,
+                    share: 0.66,
+                    side: {
+                      name: "X\u01B0\u1EDFng nhanh h\u01A1n",
+                      short: "X\u01B0\u1EDFng nhanh h\u01A1n",
+                      desc: "X\u01B0\u1EDFng m\u1ED9c nhanh h\u01A1n 3% m\u1ED7i c\u1EA5p.",
+                      effect: {
+                        speed_carpentry: 3
+                      }
+                    }
                   },
-                  cross: [],
-                  era: "ancient"
+                  cross: []
                 },
                 {
-                  nodes: [],
+                  era: "ancient",
+                  group: "carp_m2",
+                  members: [
+                    "craft"
+                  ],
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
                   leap: {
                     id: "carp_med2",
                     name: "C\u01B0a n\u01B0\u1EDBc",
@@ -13629,10 +15625,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                       coin: 130
                     },
                     time: 4200,
-                    lab: 4
+                    lab: 4,
+                    share: 0.66
                   },
-                  cross: [],
-                  era: "ancient"
+                  cross: []
                 },
                 {
                   nodes: [],
@@ -13659,6 +15655,85 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               ]
             },
             {
+              key: "carpentry_saw",
+              role: "house_carpentry",
+              into: "carpentry",
+              place: 1,
+              tag: "C\u01B0a x\u1EBB",
+              from: "carp_med1",
+              name: "C\u01B0a x\u1EBB",
+              who: "M\xE1y ti\u1EC7n, kho g\u1ED7 kh\xF4",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "carp_m3",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "carp_med3",
+                    name: "M\xE1y ti\u1EC7n",
+                    desc: "M\xE1y ti\u1EC7n \u0111\u1EA1p ch\xE2n g\u1ECDt g\u1ED7 \u0111\u1EC1u tay: X\u01B0\u1EDFng m\u1ED9c nhanh h\u01A1n 12%.",
+                    effect: {
+                      speed_carpentry: 12
+                    },
+                    cost: {
+                      wood: 420,
+                      stone: 380,
+                      iron: 35,
+                      hardwood: 30,
+                      coin: 120
+                    },
+                    time: 3800,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "carp_m4",
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "work"
+                    }
+                  ],
+                  leap: {
+                    id: "carp_med4",
+                    name: "Kho g\u1ED7 kh\xF4",
+                    desc: "G\u1ED7 ph\u01A1i s\u1EB5n kh\xF4ng ph\u1EA3i ch\u1EDD: X\u01B0\u1EDFng m\u1ED9c nhanh h\u01A1n th\xEAm 15%.",
+                    effect: {
+                      speed_carpentry: 15
+                    },
+                    cost: {
+                      wood: 520,
+                      stone: 450,
+                      iron: 45,
+                      hardwood: 45,
+                      coin: 150
+                    },
+                    time: 4600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
               key: "tannery",
               role: "house_tannery",
               name: "X\u01B0\u1EDFng thu\u1ED9c da v\xE0 d\u1EC7t",
@@ -13666,7 +15741,22 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               era: "ancient",
               rows: [
                 {
-                  nodes: [],
+                  era: "ancient",
+                  group: "tan_m1",
+                  members: [
+                    "craft"
+                  ],
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
                   leap: {
                     id: "tan_med1",
                     name: "Th\xF9ng ng\xE2m l\u1EDBn",
@@ -13682,13 +15772,36 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                       coin: 80
                     },
                     time: 3e3,
-                    lab: 4
+                    lab: 4,
+                    share: 0.66,
+                    side: {
+                      name: "X\u01B0\u1EDFng nhanh h\u01A1n",
+                      short: "X\u01B0\u1EDFng nhanh h\u01A1n",
+                      desc: "X\u01B0\u1EDFng thu\u1ED9c da v\xE0 d\u1EC7t nhanh h\u01A1n 3% m\u1ED7i c\u1EA5p.",
+                      effect: {
+                        speed_tannery: 3
+                      }
+                    }
                   },
-                  cross: [],
-                  era: "ancient"
+                  cross: []
                 },
                 {
-                  nodes: [],
+                  era: "ancient",
+                  group: "tan_m2",
+                  members: [
+                    "craft"
+                  ],
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
                   leap: {
                     id: "tan_med2",
                     name: "Khung d\u1EC7t l\u1EDBn",
@@ -13705,10 +15818,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                       coin: 130
                     },
                     time: 4200,
-                    lab: 4
+                    lab: 4,
+                    share: 0.66
                   },
-                  cross: [],
-                  era: "ancient"
+                  cross: []
                 },
                 {
                   nodes: [],
@@ -13736,6 +15849,85 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               ]
             },
             {
+              key: "tannery_vat",
+              role: "house_tannery",
+              into: "tannery",
+              place: 1,
+              tag: "Th\xF9ng v\xE0 khung",
+              from: "tan_med1",
+              name: "Th\xF9ng v\xE0 khung",
+              who: "B\u1EC3 ng\xE2m \u0111\xF4i, khung d\u1EC7t \u0111\xF4i",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "tan_m3",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "tan_med3",
+                    name: "B\u1EC3 ng\xE2m \u0111\xF4i",
+                    desc: "Th\xEAm m\u1ED9t b\u1EC3 ng\xE2m da: X\u01B0\u1EDFng thu\u1ED9c da nhanh h\u01A1n 12%.",
+                    effect: {
+                      speed_tannery: 12
+                    },
+                    cost: {
+                      wood: 420,
+                      stone: 380,
+                      iron: 30,
+                      leather: 25,
+                      coin: 120
+                    },
+                    time: 3800,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "tan_m4",
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "work"
+                    }
+                  ],
+                  leap: {
+                    id: "tan_med4",
+                    name: "Khung d\u1EC7t \u0111\xF4i",
+                    desc: "Hai khung d\u1EC7t l\xE0m c\xF9ng l\xFAc: X\u01B0\u1EDFng thu\u1ED9c da v\xE0 d\u1EC7t nhanh h\u01A1n th\xEAm 15%.",
+                    effect: {
+                      speed_tannery: 15
+                    },
+                    cost: {
+                      wood: 520,
+                      stone: 450,
+                      iron: 40,
+                      leather: 35,
+                      coin: 150
+                    },
+                    time: 4600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
               key: "ranch",
               role: "house_ranch",
               name: "Tr\u1EA1i ch\u0103n nu\xF4i",
@@ -13743,7 +15935,22 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               era: "ancient",
               rows: [
                 {
-                  nodes: [],
+                  era: "ancient",
+                  group: "ranch_m1",
+                  members: [
+                    "tame"
+                  ],
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "int"
+                    }
+                  ],
                   leap: {
                     id: "ranch_med1",
                     name: "\u0110\u1ED3ng c\u1ECF t\u1ED1t",
@@ -13759,13 +15966,36 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                       coin: 80
                     },
                     time: 3e3,
-                    lab: 4
+                    lab: 4,
+                    share: 0.66,
+                    side: {
+                      name: "\u0110\xE0n \u0111\xF4ng h\u01A1n",
+                      short: "\u0110\xE0n \u0111\xF4ng h\u01A1n",
+                      desc: "Tr\u1EA1i cho th\xEAm 3% s\u1EA3n ph\u1EA9m m\u1ED7i c\u1EA5p.",
+                      effect: {
+                        ranchYield: 3
+                      }
+                    }
                   },
-                  cross: [],
-                  era: "ancient"
+                  cross: []
                 },
                 {
-                  nodes: [],
+                  era: "ancient",
+                  group: "ranch_m2",
+                  members: [
+                    "tame"
+                  ],
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
                   leap: {
                     id: "ranch_med2",
                     name: "Chu\u1ED3ng \u1EA5m",
@@ -13782,10 +16012,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                       coin: 130
                     },
                     time: 4200,
-                    lab: 4
+                    lab: 4,
+                    share: 0.66
                   },
-                  cross: [],
-                  era: "ancient"
+                  cross: []
                 },
                 {
                   nodes: [],
@@ -13814,10 +16044,90 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
               ]
             },
             {
+              key: "ranch_herd",
+              role: "house_ranch",
+              into: "ranch",
+              place: 1,
+              tag: "\u0110\xE0n th\xFA",
+              from: "ranch_med1",
+              name: "\u0110\xE0n th\xFA",
+              who: "B\xE3i ch\u0103n th\u1EA3, th\xFA gi\u1ED1ng",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "ranch_m3",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "ranch_med3",
+                    name: "B\xE3i ch\u0103n th\u1EA3",
+                    desc: "B\xE3i ch\u0103n r\u1ED9ng cho \u0111\xE0n l\u1EDBn nhanh: tr\u1EA1i cho th\xEAm 10% s\u1EA3n ph\u1EA9m.",
+                    effect: {
+                      ranchYield: 10
+                    },
+                    cost: {
+                      wood: 400,
+                      stone: 350,
+                      iron: 30,
+                      leather: 20,
+                      coin: 110
+                    },
+                    time: 3600,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "ranch_m4",
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "ranch_med4",
+                    name: "Th\xFA gi\u1ED1ng",
+                    desc: "Ch\u1ECDn th\xFA gi\u1ED1ng t\u1ED1t \u0111\u1EC3 g\xE2y \u0111\xE0n: tr\u1EA1i cho th\xEAm 12% s\u1EA3n ph\u1EA9m.",
+                    effect: {
+                      ranchYield: 12
+                    },
+                    cost: {
+                      wood: 500,
+                      stone: 420,
+                      iron: 40,
+                      leather: 30,
+                      coin: 140
+                    },
+                    time: 4400,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
               key: "trade",
               role: "trade",
-              name: "V\u1EADt li\u1EC7u",
-              who: "Ch\u1EE3: g\u1ED7, \u0111\xE1, th\u1EE9c \u0103n (Trung c\u1ED5 n\u1ED1i ti\u1EBFp)",
+              name: "Ch\u1EE3",
+              tag: "Tuy\u1EBFn ch\xEDnh",
+              who: "Giao th\u01B0\u01A1ng: g\u1ED7, \u0111\xE1, th\u1EE9c \u0103n, h\xE0ng th\xFA (Trung c\u1ED5 n\u1ED1i ti\u1EBFp)",
               rows: [
                 {
                   nodes: [],
@@ -14089,6 +16399,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
             {
               key: "trade_hunt",
               role: "trade",
+              into: "trade",
+              place: -1,
+              tag: "H\xE0ng th\xFA",
               name: "Th\xFA s\u0103n",
               who: "Ch\u1EE3: da, x\u01B0\u01A1ng, m\u1EE1, l\xF4ng v\u0169, ng\xE0",
               rows: [
@@ -14188,6 +16501,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
             {
               key: "trade_food",
               role: "trade",
+              into: "trade",
+              place: 1,
+              tag: "Th\u1EE9c \u0103n \u0111\u1ED5i h\xE0ng th\xFA",
               name: "L\u01B0\u01A1ng th\u1EF1c",
               who: "Ch\u1EE3: th\u1EE9c \u0103n l\u1EA5y h\xE0ng th\xFA",
               rows: [
@@ -14406,7 +16722,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                     },
                     time: 3e3,
                     share: 0.66,
-                    lab: 4
+                    lab: 4,
+                    side: {
+                      name: "X\xE2y r\u1EBB h\u01A1n (Trung c\u1ED5)",
+                      short: "X\xE2y r\u1EBB h\u01A1n",
+                      desc: "Gi\u1EA3m 2% m\u1ED7i c\u1EA5p v\u1EADt li\u1EC7u x\xE2y v\xE0 n\xE2ng c\u1EA5p c\xF4ng tr\xECnh.",
+                      effect: {
+                        buildCost: 2
+                      }
+                    }
                   }
                 },
                 {
@@ -14443,6 +16767,40 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                   }
                 },
                 {
+                  era: "ancient",
+                  group: "build_m7",
+                  nodes: [
+                    {
+                      stat: "move"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "build_med7",
+                    name: "C\xF4ng tr\xECnh ti\u1EBFt ki\u1EC7m",
+                    desc: "T\xEDnh v\u1EADt li\u1EC7u t\u1EEBng vi\xEAn g\u1EA1ch: gi\u1EA3m th\xEAm 6% v\u1EADt li\u1EC7u x\xE2y v\xE0 n\xE2ng c\u1EA5p c\xF4ng tr\xECnh.",
+                    effect: {
+                      buildCost: 6
+                    },
+                    cost: {
+                      wood: 900,
+                      stone: 900,
+                      iron: 85,
+                      hardwood: 85,
+                      steel: 30,
+                      coin: 320
+                    },
+                    time: 8e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
                   nodes: [],
                   leap: {
                     id: "build_slots",
@@ -14463,6 +16821,166 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                   },
                   cross: [],
                   era: "ancient"
+                }
+              ]
+            },
+            {
+              key: "build_speed",
+              role: "build",
+              into: "build",
+              place: 1,
+              tag: "T\u1ED1c \u0111\u1ED9 x\xE2y",
+              from: "build_med2",
+              name: "T\u1ED1c \u0111\u1ED9 x\xE2y",
+              who: "Gi\xE0n gi\xE1o, t\u1EDDi k\xE9o",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "build_m3",
+                  nodes: [
+                    {
+                      stat: "move"
+                    },
+                    {
+                      stat: "tspd"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "build_med3",
+                    name: "Gi\xE0n gi\xE1o",
+                    desc: "D\u1EF1ng gi\xE0n gi\xE1o quanh c\xF4ng tr\u01B0\u1EDDng: c\u1EA3 \u0111\u1ED9i x\xE2y nhanh h\u01A1n 12%.",
+                    effect: {
+                      buildSpeed: 12
+                    },
+                    cost: {
+                      wood: 450,
+                      stone: 450,
+                      iron: 40,
+                      hardwood: 40,
+                      coin: 140
+                    },
+                    time: 4800,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "build_m5",
+                  nodes: [
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "build_med5",
+                    name: "Gi\xE0n gi\xE1o cao",
+                    desc: "Gi\xE0n gi\xE1o cao v\xE0 t\u1EDDi k\xE9o: c\u1EA3 \u0111\u1ED9i x\xE2y nhanh h\u01A1n th\xEAm 18%.",
+                    effect: {
+                      buildSpeed: 18
+                    },
+                    cost: {
+                      wood: 650,
+                      stone: 650,
+                      iron: 60,
+                      hardwood: 60,
+                      steel: 15,
+                      coin: 220
+                    },
+                    time: 6200,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "build_repair",
+              role: "build",
+              into: "build",
+              place: 2,
+              tag: "S\u1EEDa ch\u1EEFa",
+              from: "build_med3",
+              name: "S\u1EEDa ch\u1EEFa",
+              who: "V\xE1 c\xF4ng tr\xECnh r\u1EBB h\u01A1n",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "build_m4",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "tdur"
+                    },
+                    {
+                      stat: "int"
+                    }
+                  ],
+                  leap: {
+                    id: "build_med4",
+                    name: "S\u1EEDa ch\u1EEFa kh\xE9o",
+                    desc: "Th\u1EE3 x\xE2y bi\u1EBFt v\xE1 \u0111\xFAng ch\u1ED7: s\u1EEDa ch\u1EEFa c\xF4ng tr\xECnh t\u1ED1n \xEDt h\u01A1n 20% v\u1EADt li\u1EC7u.",
+                    effect: {
+                      repairCost: 20
+                    },
+                    cost: {
+                      wood: 500,
+                      stone: 500,
+                      iron: 45,
+                      hardwood: 45,
+                      coin: 160
+                    },
+                    time: 5200,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "build_m6",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "tspd"
+                    }
+                  ],
+                  leap: {
+                    id: "build_med6",
+                    name: "Th\u1EE3 s\u1EEDa chuy\xEAn",
+                    desc: "M\u1ED9t t\u1ED5 th\u1EE3 chuy\xEAn \u0111i v\xE1 c\xF4ng tr\xECnh: s\u1EEDa ch\u1EEFa t\u1ED1n \xEDt h\u01A1n th\xEAm 25% v\u1EADt li\u1EC7u.",
+                    effect: {
+                      repairCost: 25
+                    },
+                    cost: {
+                      wood: 750,
+                      stone: 750,
+                      iron: 70,
+                      hardwood: 70,
+                      steel: 20,
+                      coin: 260
+                    },
+                    time: 7e3,
+                    share: 0.66,
+                    lab: 4
+                  }
                 }
               ]
             },
@@ -14580,7 +17098,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                     },
                     time: 3e3,
                     share: 0.66,
-                    lab: 4
+                    lab: 4,
+                    side: {
+                      name: "Ch\u1EBF t\u1EA1o r\u1EBB h\u01A1n (Trung c\u1ED5)",
+                      short: "Ch\u1EBF t\u1EA1o r\u1EBB h\u01A1n",
+                      desc: "Gi\u1EA3m 2% m\u1ED7i c\u1EA5p v\u1EADt li\u1EC7u ch\u1EBF t\u1EA1o.",
+                      effect: {
+                        craftCost: 2
+                      }
+                    }
                   }
                 },
                 {
@@ -14637,6 +17163,197 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                   },
                   cross: [],
                   era: "ancient"
+                }
+              ]
+            },
+            {
+              key: "make_speed",
+              role: "craft",
+              into: "make",
+              place: 1,
+              tag: "T\u1ED1c \u0111\u1ED9 ch\u1EBF t\u1EA1o",
+              from: "craft_med2",
+              name: "T\u1ED1c \u0111\u1ED9 ch\u1EBF t\u1EA1o",
+              who: "B\xE0n th\u1EE3 nhanh h\u01A1n",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "craft_m3",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "craft_med3",
+                    name: "B\xE0n th\u1EE3 nhanh",
+                    desc: "B\xE0n th\u1EE3 r\u1ED9ng, d\u1EE5ng c\u1EE5 treo s\u1EB5n tay: Nh\xE0 ch\u1EBF t\u1EA1o l\xE0m nhanh h\u01A1n 12%.",
+                    effect: {
+                      craftSpeed: 12
+                    },
+                    cost: {
+                      wood: 450,
+                      stone: 350,
+                      iron: 40,
+                      leather: 20,
+                      coin: 140
+                    },
+                    time: 4800,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "craft_m6",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "craft_med6",
+                    name: "B\xE0n th\u1EE3 nhanh II",
+                    desc: "Chia vi\u1EC7c theo t\u1EEBng b\xE0n: Nh\xE0 ch\u1EBF t\u1EA1o l\xE0m nhanh h\u01A1n th\xEAm 18%.",
+                    effect: {
+                      craftSpeed: 18
+                    },
+                    cost: {
+                      wood: 750,
+                      stone: 600,
+                      iron: 70,
+                      steel: 20,
+                      coin: 260
+                    },
+                    time: 7e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "make_tools",
+              role: "craft",
+              into: "make",
+              place: 2,
+              tag: "C\xF4ng c\u1EE5 v\xE0 h\xE0ng \u0111\u1EE3i",
+              from: "craft_med3",
+              name: "C\xF4ng c\u1EE5 v\xE0 h\xE0ng \u0111\u1EE3i",
+              who: "C\xF4ng c\u1EE5 b\u1EC1n, h\xE0ng \u0111\u1EE3i d\xE0i",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "craft_m4",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "craft_med4",
+                    name: "C\xF4ng c\u1EE5 b\u1EC1n",
+                    desc: "T\xF4i v\xE0 m\xE0i \u0111\xFAng c\xE1ch: c\xF4ng c\u1EE5 l\xE2u h\u1ECFng h\u01A1n 25%.",
+                    effect: {
+                      toolDur: 25
+                    },
+                    cost: {
+                      wood: 500,
+                      stone: 400,
+                      iron: 45,
+                      steel: 10,
+                      coin: 160
+                    },
+                    time: 5200,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "craft_m5",
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "craft_med5",
+                    name: "H\xE0ng \u0111\u1EE3i d\xE0i",
+                    desc: "K\u1EC7 ch\u1EE9a ph\xF4i v\xE0 v\u1EADt li\u1EC7u c\u1EA1nh b\xE0n th\u1EE3: h\xE0ng \u0111\u1EE3i ch\u1EBF t\u1EA1o d\xE0i th\xEAm 4 \u0111\u01A1n.",
+                    effect: {
+                      craftQueue: 4
+                    },
+                    cost: {
+                      wood: 650,
+                      stone: 500,
+                      iron: 60,
+                      leather: 30,
+                      coin: 220
+                    },
+                    time: 6200,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "craft_m7",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "craft_med7",
+                    name: "C\xF4ng c\u1EE5 b\u1EC1n II",
+                    desc: "Th\xE9p t\xF4i k\u1EF9: c\xF4ng c\u1EE5 l\xE2u h\u1ECFng h\u01A1n th\xEAm 35%.",
+                    effect: {
+                      toolDur: 35
+                    },
+                    cost: {
+                      wood: 900,
+                      stone: 700,
+                      iron: 85,
+                      steel: 35,
+                      coin: 320
+                    },
+                    time: 8e3,
+                    share: 0.66,
+                    lab: 4
+                  }
                 }
               ]
             },
@@ -14751,7 +17468,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                     },
                     time: 3200,
                     share: 0.66,
-                    lab: 4
+                    lab: 4,
+                    side: {
+                      name: "Nghi\xEAn c\u1EE9u r\u1EBB h\u01A1n (Trung c\u1ED5)",
+                      short: "Nghi\xEAn c\u1EE9u r\u1EBB h\u01A1n",
+                      desc: "Gi\u1EA3m 2% m\u1ED7i c\u1EA5p v\u1EADt li\u1EC7u nghi\xEAn c\u1EE9u.",
+                      effect: {
+                        researchCost: 2
+                      }
+                    }
                   }
                 },
                 {
@@ -14776,6 +17501,199 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
                   },
                   cross: [],
                   era: "ancient"
+                }
+              ]
+            },
+            {
+              key: "res_speed",
+              role: "research",
+              into: "res",
+              place: 1,
+              tag: "T\u1ED1c \u0111\u1ED9 nghi\xEAn c\u1EE9u",
+              from: "res_med1",
+              name: "T\u1ED1c \u0111\u1ED9 nghi\xEAn c\u1EE9u",
+              who: "Ph\xF2ng \u0111\u1ECDc",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "res_m2",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "res_med2",
+                    name: "Ph\xF2ng \u0111\u1ECDc",
+                    desc: "Ph\xF2ng \u0111\u1ECDc y\xEAn t\u0129nh, s\xE1ch x\u1EBFp c\xF3 th\u1EE9 t\u1EF1: Nh\xE0 nghi\xEAn c\u1EE9u l\xE0m nhanh h\u01A1n 12%.",
+                    effect: {
+                      researchSpeed: 12
+                    },
+                    cost: {
+                      wood: 450,
+                      stone: 350,
+                      iron: 35,
+                      cloth: 20,
+                      coin: 150
+                    },
+                    time: 4800,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "res_m4",
+                  nodes: [
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "res_med4",
+                    name: "Ph\xF2ng \u0111\u1ECDc II",
+                    desc: "Th\xEAm \u0111\xE8n v\xE0 b\xE0n \u0111\u1ECDc: Nh\xE0 nghi\xEAn c\u1EE9u l\xE0m nhanh h\u01A1n th\xEAm 18%.",
+                    effect: {
+                      researchSpeed: 18
+                    },
+                    cost: {
+                      wood: 650,
+                      stone: 500,
+                      iron: 55,
+                      cloth: 35,
+                      coin: 230
+                    },
+                    time: 6200,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "res_m6",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "res_med6",
+                    name: "Ph\xF2ng \u0111\u1ECDc III",
+                    desc: "H\u1ECDc vi\u1EC7n nh\u1ECF: Nh\xE0 nghi\xEAn c\u1EE9u l\xE0m nhanh h\u01A1n th\xEAm 22%.",
+                    effect: {
+                      researchSpeed: 22
+                    },
+                    cost: {
+                      wood: 900,
+                      stone: 700,
+                      iron: 80,
+                      cloth: 55,
+                      steel: 25,
+                      coin: 340
+                    },
+                    time: 8e3,
+                    share: 0.66,
+                    lab: 4
+                  }
+                }
+              ]
+            },
+            {
+              key: "res_lib",
+              role: "research",
+              into: "res",
+              place: 2,
+              tag: "Th\u01B0 vi\u1EC7n",
+              from: "res_med2",
+              name: "Th\u01B0 vi\u1EC7n",
+              who: "Ghi ch\xE9p, b\u1EDBt v\u1EADt li\u1EC7u",
+              era: "ancient",
+              rows: [
+                {
+                  era: "ancient",
+                  group: "res_m3",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "int"
+                    },
+                    {
+                      stat: "sta"
+                    }
+                  ],
+                  leap: {
+                    id: "res_med3",
+                    name: "Th\u01B0 vi\u1EC7n",
+                    desc: "Ghi ch\xE9p l\u1EA1i m\u1ECDi th\xED nghi\u1EC7m: gi\u1EA3m 8% v\u1EADt li\u1EC7u nghi\xEAn c\u1EE9u.",
+                    effect: {
+                      researchCost: 8
+                    },
+                    cost: {
+                      wood: 500,
+                      stone: 400,
+                      iron: 40,
+                      cloth: 25,
+                      coin: 170
+                    },
+                    time: 5200,
+                    share: 0.66,
+                    lab: 4
+                  }
+                },
+                {
+                  era: "ancient",
+                  group: "res_m5",
+                  nodes: [
+                    {
+                      stat: "work"
+                    },
+                    {
+                      stat: "sta"
+                    },
+                    {
+                      stat: "restregen"
+                    }
+                  ],
+                  leap: {
+                    id: "res_med5",
+                    name: "Th\u01B0 vi\u1EC7n l\u1EDBn",
+                    desc: "Sao ch\xE9p s\xE1ch cho nhau: gi\u1EA3m th\xEAm 10% v\u1EADt li\u1EC7u nghi\xEAn c\u1EE9u.",
+                    effect: {
+                      researchCost: 10
+                    },
+                    cost: {
+                      wood: 750,
+                      stone: 600,
+                      iron: 65,
+                      cloth: 45,
+                      steel: 15,
+                      coin: 280
+                    },
+                    time: 7e3,
+                    share: 0.66,
+                    lab: 4
+                  }
                 }
               ]
             }
@@ -14840,7 +17758,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var enough = (ids, share2 = PILLAR_DATA.leapShare) => ({ ids, count: Math.ceil(ids.length * share2 - 1e-9) });
   function rowGate(strand, row) {
     const below = row > 1 ? strand.rows[row - 2] : null;
-    if (!below) return { requires: [] };
+    if (!below) return { requires: strand.from ? [strand.from] : [] };
     return below.leap ? { requires: [below.leap.id] } : { requires: [], needCount: enough(rowTechs(strand.role, below)) };
   }
   function applyLeap(t) {
@@ -15547,9 +18465,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     if (v.team === "player" && v.squad < 0 && !v.mount) v.speed = val("move");
   }
-  function guardCut(sim2, v, ranged, armor = 0) {
-    const d = statValue(sim2, v, ranged ? "defr" : "defm") + armor;
+  function guardCut(sim2, v, ranged, armor = 0, pierce = 0) {
+    const d = (statValue(sim2, v, ranged ? "defr" : "defm") + armor) * (1 + armPerk(sim2, v, "armor") / 100) * (1 - Math.min(80, pierce) / 100);
     return d / (d + stats_default.defense.k);
+  }
+  function armPerk(sim2, v, kind) {
+    const r = v.team === "player" ? treeRole(v) : null;
+    return r ? perkPct(sim2.researched, `${kind}_${r}`) : 0;
   }
   function workSpeed(sim2, v) {
     return statValue(sim2, v, "work") * (1 + stats_default.intEffect.work * (statValue(sim2, v, "int") / BASE.int - 1));
@@ -170482,6 +173404,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (target.kind === "animal") {
       const a = sim2.animalById.get(target.id);
       if (!a || a.state === "dead") return;
+      if (src.unit?.team === "player") dmg *= 1 + perkPct(sim2.researched, `beast_${a.species}`) / 100;
       if (a.raid && src.unit?.team === "player") sim2.noteDamage(true, Math.min(dmg, a.hp));
       a.hp -= dmg;
       if (a.hp <= 0) {
@@ -170496,7 +173419,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (!v || v.health <= 0) return;
     if (sim2.dev.god && v.team === "player") return;
     const missile = !!src.unit && weaponOf(src.unit).ranged === true;
-    const armor = armorOf(v), final = dmg * (1 - guardCut(sim2, v, missile, armor ? missile ? armor.defr : armor.defm : 0)) * (v.team === "player" ? sim2.takenFactor(v, missile) : 1) * sim2.mountGuard(v) * sim2.skirmishEdge(src.unit, v);
+    const armor = armorOf(v), final = dmg * (1 - guardCut(sim2, v, missile, armor ? missile ? armor.defr : armor.defm : 0, src.unit ? armPerk(sim2, src.unit, "pierce") : 0)) * (v.team === "player" ? sim2.takenFactor(v, missile) : 1) * sim2.mountGuard(v) * sim2.skirmishEdge(src.unit, v);
     if (v.team === "player") sim2.noteDamage(false, Math.min(final, v.health));
     else if (v.ai?.role === "raider") sim2.noteDamage(true, Math.min(final, v.health));
     v.health -= final;
@@ -170559,13 +173482,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const c = critChance(sim2, v, w);
     return c > 0 && sim2.frnd() < c ? critMult(sim2, v, w) : 1;
   }
-  function armMultiplier(attacker, e) {
-    return e.kind === "unit" ? matchup(armOf(attacker), armOf(e.v), effWeapon(attacker)) : 1;
+  function armMultiplier(sim2, attacker, e) {
+    const m = e.kind === "unit" ? matchup(armOf(attacker), armOf(e.v), effWeapon(attacker)) : 1;
+    return m > 1 ? m * (1 + armPerk(sim2, attacker, "counter") / 100) : m;
   }
   function fireProjectile(sim2, v, e, from, mult, rangeBonus) {
     const w = weaponOf(v), tx = entX(e), ty = entY(e), d = Math.hypot(tx - from.x, ty - from.y);
     if (d > w.range + rangeBonus + 1 || !canSee(sim2, v, tx, ty)) return false;
-    const shot = (weaponDamage(sim2, v, w) + RULES.strengthDamage * v.stats.str) * critRoll(sim2, v, w) * clampTactical(armMultiplier(v, e) * mult * sim2.attackFactor(v, e)) * WEATHER[sim2.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
+    const shot = (weaponDamage(sim2, v, w) + RULES.strengthDamage * v.stats.str) * critRoll(sim2, v, w) * clampTactical(armMultiplier(sim2, v, e) * mult * sim2.attackFactor(v, e)) * WEATHER[sim2.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
     if (v.inside !== null) sim2.noteBattle("shot");
     const target = e.kind === "unit" ? { kind: "unit", id: e.v.id } : { kind: "animal", id: e.a.id };
     sim2.projectiles.push({ x: from.x, y: from.y - 0.4, tx, ty, speed: 14, dmg: shot, type: w.type, from, src: v.id, team: v.team, target, chance: d <= (w.range + rangeBonus) / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? "stone" });
@@ -170575,7 +173499,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   function resolveSwing(sim2, v, target) {
     const e = resolve(sim2, target);
     if (!e) return;
-    const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(v, e);
+    const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(sim2, v, e);
     if (w.ranged) {
       fireProjectile(sim2, v, e, { x: v.x, y: v.y }, 1, 0);
       return;
@@ -172766,6 +175690,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const cat = catOf(id);
     return storeRoom(sim2, cat) > 0 ? null : cat === "tool" ? "Kho c\xF4ng c\u1EE5 \u0111\xE3 \u0111\u1EA7y: n\xE2ng c\u1EA5p kho ho\u1EB7c d\xF9ng b\u1EDBt \u0111\u1ED3" : "Kho v\u0169 kh\xED \u0111\xE3 \u0111\u1EA7y: n\xE2ng c\u1EA5p kho ho\u1EB7c d\xF9ng b\u1EDBt \u0111\u1ED3";
   }
+  var craftQueueMax = (sim2) => 12 + perkPct(sim2.researched, "craftQueue");
   function queueCraft(sim2, id) {
     const r = RECIPE_BY_ID[id];
     if (!r) return "C\xF4ng th\u1EE9c kh\xF4ng t\u1ED3n t\u1EA1i";
@@ -172774,7 +175699,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (lock) return lock;
     const full = craftStoreBlock(sim2, id);
     if (full) return full;
-    if (sim2.craftQueue.length >= 12) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
+    if (sim2.craftQueue.length >= craftQueueMax(sim2)) return "H\xE0ng \u0111\u1EE3i \u0111\xE3 \u0111\u1EA7y";
     const mult = craftMult(sim2);
     if (!sim2.dev.freeWorks) {
       const cost = scaleCost(r.cost, mult), short = sim2.missing(cost);
@@ -172844,7 +175769,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         rate += sim2.workFactor(v, job);
         sim2.gainXp(v, job, dt);
       }
-      b.active.progress = sim2.dev.fastWorks ? 1 : Math.min(1, b.active.progress + dt * sim2.paceWork * rate * levelDef(b).craftSpeed / d.time);
+      b.active.progress = sim2.dev.fastWorks ? 1 : Math.min(1, b.active.progress + dt * sim2.paceWork * rate * levelDef(b).craftSpeed * (1 + perkPct(sim2.researched, kind === "craft" ? "craftSpeed" : "researchSpeed") / 100) / d.time);
       if (b.active.progress < 1) continue;
       const id = b.active.id;
       if (kind === "research") {
@@ -173132,7 +176057,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const n = Math.ceil((spent[r] ?? 0) * lost - 1e-9);
       if (n > 0) out[r] = n;
     }
-    return out;
+    return discountBill(out, perkPct(sim2.researched, "repairCost"));
   }
   function canRepair(sim2, b) {
     if (!b.done) return "C\xF4ng tr\xECnh ch\u01B0a d\u1EF1ng xong";
@@ -173554,7 +176479,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   }
   function crewSpeed(sim2) {
     const h2 = sim2.building("builder");
-    return h2 ? levelDef(h2).craftSpeed : 1;
+    return (h2 ? levelDef(h2).craftSpeed : 1) * (1 + perkPct(sim2.researched, "buildSpeed") / 100);
   }
 
   // src/sim/model.ts
@@ -173595,7 +176520,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   function wear(sim2, v, job, dt) {
     const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
     if (!k || !t || t.dur <= 0) return;
-    t.dur -= dt * sim2.paceWork / ((1 + toolBonus(sim2, v, job, "tdur") / 100) * craftQuality(sim2.building("workshop")?.level ?? 1));
+    t.dur -= dt * sim2.paceWork / ((1 + (toolBonus(sim2, v, job, "tdur") + perkPct(sim2.researched, "toolDur")) / 100) * craftQuality(sim2.building("workshop")?.level ?? 1));
     if (t.dur <= 0) {
       v.tools[k] = null;
       sim2.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} c\u1EE7a ${v.name} \u0111\xE3 h\u1ECFng, v\u1EE9t b\u1ECF.`);
@@ -175559,7 +178484,7 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/sim/houses.ts
-  var slotsOf = (sim2, b) => slotsOf(sim2, b) + perkPct(sim2.researched, `slots_${b.kind}`);
+  var slotsOf = (sim2, b) => levelDef(b).slots + perkPct(sim2.researched, `slots_${b.kind}`);
   function bestFor(sim2, job) {
     const stat = JOBS[job].stat;
     const pool = sim2.villagers.filter((v) => v.down <= 0 && v.inside === null && v.job !== job && v.job !== "fight" && v.job !== "hunt" && v.job !== "scout" && v.job !== "supply");
@@ -175573,10 +178498,11 @@ ${risk.lines.join("\n")}`);
       const v = sim2.byId.get(id);
       if (v && v.phase === "inside") r += sim2.workFactor(v, job);
     }
-    return r * levelDef(b).craftSpeed * (sim2.dev.fastWorks ? 1e6 : 1);
+    const perk = b.kind === "workshop" ? perkPct(sim2.researched, "craftSpeed") : b.kind === "lab" ? perkPct(sim2.researched, "researchSpeed") : b.kind === "stable" ? perkPct(sim2.researched, "tameSpeed") : 0;
+    return r * levelDef(b).craftSpeed * (1 + perk / 100) * (sim2.dev.fastWorks ? 1e6 : 1);
   }
-  function staffCount(sim2, b) {
-    return b.staff.length + sim2.villagers.filter((v) => v.phase === "goStaff" && v.target === b.id).length;
+  function staffCount(sim2, b, self) {
+    return b.staff.length + sim2.villagers.filter((v) => v !== self && (v.phase === "goStaff" && v.target === b.id || v.phase === "wait" && isStaffJob(v.job) && postOf(sim2, v)?.id === b.id)).length;
   }
   function letGo(sim2, v) {
     return v.job === "fight" || v.job === "scout" ? sim2.releaseRole([v.id]) : null;
@@ -175649,7 +178575,7 @@ ${risk.lines.join("\n")}`);
         err = gone;
         continue;
       }
-      if (staffCount(sim2, b) >= slotsOf(sim2, b)) {
+      if (staffCount(sim2, b, v) >= slotsOf(sim2, b)) {
         err = `${BUILDINGS[b.kind].name} c\u1EA5p ${b.level} ch\u1EC9 ch\u1EE9a ${slotsOf(sim2, b)} ng\u01B0\u1EDDi`;
         continue;
       }
@@ -175675,7 +178601,7 @@ ${risk.lines.join("\n")}`);
         err = gone;
         continue;
       }
-      if (staffCount(sim2, b) >= slotsOf(sim2, b)) {
+      if (staffCount(sim2, b, v) >= slotsOf(sim2, b)) {
         err = `${BUILDINGS.field.name} c\u1EA5p ${b.level} ch\u1EC9 ch\u1EE9a ${slotsOf(sim2, b)} ng\u01B0\u1EDDi`;
         continue;
       }
@@ -175712,7 +178638,7 @@ ${risk.lines.join("\n")}`);
         err = gone;
         continue;
       }
-      if (staffCount(sim2, b) >= slotsOf(sim2, b)) {
+      if (staffCount(sim2, b, v) >= slotsOf(sim2, b)) {
         err = `${BUILDINGS[b.kind].name} c\u1EA5p ${b.level} ch\u1EC9 ch\u1EE9a ${slotsOf(sim2, b)} ng\u01B0\u1EDDi`;
         continue;
       }
@@ -175742,14 +178668,14 @@ ${risk.lines.join("\n")}`);
       else v.job = "idle";
       return;
     }
-    if (staffCount(sim2, b) >= slotsOf(sim2, b)) {
+    if (staffCount(sim2, b, v) >= slotsOf(sim2, b)) {
       if (v.job !== "fight") v.job = "idle";
       v.post = -1;
       sim2.say(`${v.name} kh\xF4ng c\xF2n ch\u1ED7 trong ${BUILDINGS[b.kind].name.toLowerCase()}.`);
       return;
     }
     const d = BUILDINGS[b.kind];
-    if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h)) >= 0) {
+    if (sim2.routeTo(v, sim2.ringTiles(v, b.x, b.y, d.w, d.h), 8) >= 0) {
       v.target = b.id;
       v.phase = "goStaff";
       return;
@@ -175759,6 +178685,7 @@ ${risk.lines.join("\n")}`);
   function enterBuilding(sim2, v) {
     const b = sim2.getBuilding(v.target);
     if (!b || !b.done || postOf(sim2, v)?.id !== b.id || b.staff.length >= slotsOf(sim2, b)) {
+      if (b) sim2.say(`${v.name} kh\xF4ng v\xE0o l\xE0m \u1EDF ${BUILDINGS[b.kind].name.toLowerCase()} \u0111\u01B0\u1EE3c: ${!b.done ? "nh\xE0 ch\u01B0a xong" : postOf(sim2, v)?.id !== b.id ? "vi\u1EC7c c\u1EE7a h\u1ECD thu\u1ED9c m\u1ED9t nh\xE0 kh\xE1c c\xF9ng lo\u1EA1i" : "nh\xE0 \u0111\xE3 \u0111\u1EE7 ng\u01B0\u1EDDi"}.`);
       v.phase = "idle";
       if (isStaffJob(v.job)) v.job = "idle";
       return;
@@ -175910,7 +178837,7 @@ ${risk.lines.join("\n")}`);
     if (!id) return;
     const max = (slot === "weapon" ? WEAPONS[id]?.durability : ARMORS[id]?.durability) ?? 0;
     if (!max) return;
-    const wearBy = 1 / craftQuality(sim2.building("workshop")?.level ?? 1);
+    const wearBy = 1 / (craftQuality(sim2.building("workshop")?.level ?? 1) * (slot === "armor" ? 1 + armPerk(sim2, v, "armorDur") / 100 : 1));
     if (slot === "weapon") {
       if (g.w !== id) {
         g.w = id;
@@ -176264,7 +179191,7 @@ ${risk.lines.join("\n")}`);
         rate += sim2.workFactor(v, "tame");
         sim2.gainXp(v, "tame", dt);
       }
-      b.active.progress = sim2.dev.fastWorks ? 1 : Math.min(1, b.active.progress + dt * sim2.paceWork * rate * levelDef(b).craftSpeed / d.time);
+      b.active.progress = sim2.dev.fastWorks ? 1 : Math.min(1, b.active.progress + dt * sim2.paceWork * rate * levelDef(b).craftSpeed * (1 + perkPct(sim2.researched, "tameSpeed") / 100) / d.time);
       if (b.active.progress < 1) continue;
       if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim2, m), 0) >= STOCK_CAP) {
         if (sim2.time - sim2.lastFullWarn > 30) {
@@ -180661,7 +183588,7 @@ ${risk.lines.join("\n")}`);
         v.swing = { t: 0, hitAt, end: end2, target: { kind: "unit", id: -1 } };
         v.atkCd = swingCycle(sim2, v, w);
         if (b.kind === "prop") sim2.addSfx(w.id, !!w.ranged, b.x, b.y);
-        if (b.kind === "prop") damageProp(sim2, b.tribe, b.x, b.y, (weaponDamage(sim2, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim2.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind));
+        if (b.kind === "prop") damageProp(sim2, b.tribe, b.x, b.y, (weaponDamage(sim2, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim2.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind) * (1 + armPerk(sim2, v, "siege") / 100));
       }
       if (b.kind === "node") {
         const kind = sim2.world.nodeAt(b.x, b.y).kind;
@@ -182370,7 +185297,7 @@ ${risk.lines.join("\n")}`);
       if (!b.done) return null;
       const slots = this.slotsOf(b);
       if (b.kind === "tower") return { have: this.garrison(b).length, slots };
-      if (b.kind === "workshop" || b.kind === "lab" || b.kind === "stable") return { have: this.staffCount(b), slots };
+      if (b.kind === "workshop" || b.kind === "lab" || b.kind === "stable" || b.kind === "ranch") return { have: this.staffCount(b), slots };
       const role = ROLE_IDS.find((r) => ROLES[r].building === b.kind);
       return role ? { have: this.roleCount(role), slots: this.roleCapacity(role) } : null;
     }
@@ -183152,8 +186079,12 @@ ${risk.lines.join("\n")}`);
       root.classList.add("gdlg-back", opts.inside ? "inside" : "fixed");
       root.hidden = true;
       if (!opts.modal) {
+        let pressedOnBack = false;
+        root.addEventListener("pointerdown", (e) => {
+          pressedOnBack = e.target === root;
+        }, true);
         root.addEventListener("click", (e) => {
-          if (e.target === root && (opts.canClose?.() ?? true)) this.dismiss();
+          if (e.target === root && pressedOnBack && (opts.canClose?.() ?? true)) this.dismiss();
         });
         window.addEventListener("keydown", (e) => {
           if (e.key === "Escape" && this.isOpen && (opts.canClose?.() ?? true)) {
@@ -184629,11 +187560,11 @@ ${risk.lines.join("\n")}`);
     /** Chọn đúng vật thể người chơi nhìn thấy (tán cây vẽ cao hơn ô của nó): trả về ô gốc. */
     pickTile(wx, wy) {
       const world = this.sim.world, i = Math.floor(wx / TILE), j0 = Math.floor(wy / TILE);
-      const reach = { tree: [14, 56, 4], rock: [14, 20, 4], bush: [13, 18, 4] };
+      const reach = { tree: [14, 56, 4], rock: [14, 20, 4], bush: [13, 18, 4], ore: [14, 22, 4] };
       for (let j = j0 + 2; j >= j0 - 1; j--) {
         const n = world.nodeAt(i, j);
         if (!n) continue;
-        const [hw, up, down] = reach[n.kind], base = j * TILE + 28, cx = i * TILE + 16;
+        const [hw, up, down] = reach[n.kind] ?? reach.rock, base = j * TILE + 28, cx = i * TILE + 16;
         if (Math.abs(wx - cx) <= hw && wy >= base - up && wy <= base + down) return { x: i, y: j };
       }
       for (const b of this.sim.buildings) {
@@ -186130,7 +189061,7 @@ ${risk.lines.join("\n")}`);
   };
 
   // src/ui/buildbar.ts
-  var STAFF_HOUSES = ["workshop", "lab", "stable"];
+  var STAFF_HOUSES = ["workshop", "lab", "stable", "ranch"];
   var OPEN_LABEL = {
     campfire: "Xem d\xE2n",
     builder: "Th\u1EE3 x\xE2y",
@@ -186716,7 +189647,7 @@ ${risk.lines.join("\n")}`);
         t = "\u0111i v\xE0o nh\xE0 l\xE0m vi\u1EC7c";
         break;
       case "inside":
-        t = v.job === "food" ? "\u0111ang l\xE0m ru\u1ED9ng" : `\u0111ang ${JOBS[v.job].name.toLowerCase()} trong nh\xE0`;
+        t = v.job === "food" ? "\u0111ang l\xE0m ru\u1ED9ng" : `\u0111ang ${(JOBS[v.job]?.name ?? JOB_NAME[v.job]).toLowerCase()} trong nh\xE0`;
         break;
       case "goOrder":
         t = "\u0111i \u0111\u1EB7t ch\u1EBF t\u1EA1o";
@@ -187554,6 +190485,13 @@ ${risk.lines.join("\n")}`);
       this.key = "";
       /** The mouse has just dragged the path sideways: the click that ends the drag is not a tap. */
       this.dragged = false;
+      /** How big the tree is drawn (1 = 100%): the wheel, or two fingers change it (no buttons). */
+      this.zoom = 1;
+      // ---------------------------------------------------------------- events
+      /** Drag the tree in every direction, like the map (mouse, finger or pen); two fingers zoom it. */
+      this.ptrs = /* @__PURE__ */ new Map();
+      /** Lets go of the drag that is on (a press whose release never came, outside the window). */
+      this.endGrab = null;
       this.root.append(this.main, this.dialog.root);
       this.root.addEventListener("click", (e) => {
         if (this.dragged) {
@@ -187569,10 +190507,10 @@ ${risk.lines.join("\n")}`);
       });
       this.root.addEventListener("wheel", (e) => {
         const st = e.target.closest(".rs-stages");
-        if (st && Math.abs(e.deltaY) > Math.abs(e.deltaX) && st.scrollWidth > st.clientWidth) {
-          st.scrollLeft += e.deltaY;
-          e.preventDefault();
-        }
+        if (!st) return;
+        const r = st.getBoundingClientRect();
+        this.setZoom(this.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1), { x: e.clientX - r.left, y: e.clientY - r.top });
+        e.preventDefault();
       }, { passive: false });
     }
     // ---------------------------------------------------------------- what the tree says
@@ -187586,9 +190524,19 @@ ${risk.lines.join("\n")}`);
       return row.nodes.some((n) => n.stat) || !!row.leap && !TECH_BY_ID[row.leap.id].milestone;
     }
     /** The branches of a pillar in play: those with a row to show (the medieval ones only in the medieval age). */
-    branches(p) {
+    shown(p) {
       const adv = this.c.sim.era === "ancient";
       return p.strands.filter((st) => (st.era !== "ancient" || adv) && st.rows.some((_, r) => this.rowShown(st, r)));
+    }
+    /** The branches of the list on the left: a strand that is drawn inside another (`into`) has none of its own. */
+    branches(p) {
+      return this.shown(p).filter((st) => !st.into);
+    }
+    /** The chains of a branch, from the top: the ones that hang above it, the branch itself, the ones under it (a market tree is one tree drawn as three chains). */
+    chains(p, st) {
+      const kids = this.shown(p).filter((k) => k.into === st.key);
+      const by = (a, b) => (a.place ?? 1) - (b.place ?? 1);
+      return [...kids.filter((k) => (k.place ?? 1) < 0).sort(by), st, ...kids.filter((k) => (k.place ?? 1) >= 0).sort(by)];
     }
     rows(st) {
       return st.rows.map((_, r) => r).filter((r) => this.rowShown(st, r));
@@ -187627,7 +190575,7 @@ ${risk.lines.join("\n")}`);
     }
     readyCount(p) {
       let n = 0;
-      for (const st of this.branches(p)) for (const r of this.rows(st)) {
+      for (const st of this.shown(p)) for (const r of this.rows(st)) {
         const l = this.leapOf(st, r);
         if (l && this.leapState(l) === "ready") n++;
       }
@@ -187674,7 +190622,32 @@ ${risk.lines.join("\n")}`);
     stageH(st, r) {
       const open = this.open(st, r), leap = this.leapOf(st, r), ld = leap ? this.done(leap.id) : this.rowDone(st, r);
       const stats = this.realNodes(st, r), grp = stats.length ? `<div class="rs-grp${open ? "" : " lock"}">${stats.map((n) => this.statH(st, r, n)).join("")}</div><span class="rs-arr${open ? " on" : ""}"></span>` : "";
-      return leap ? `${grp}<div class="rs-col">${this.leapH(st, r)}${this.sideH(st, r)}</div><span class="rs-arr${ld ? " on" : ""}"></span>` : grp;
+      return leap ? `${grp}<div class="rs-col">${this.leapH(st, r)}${this.sideH(st, r)}</div><span class="rs-arr${ld ? " on" : ""}" data-after="${esc(leap.id)}"></span>` : grp;
+    }
+    /** How far from the left of a chain the arrow after a leap stands (its right end), in px: a row of stats is 150 wide and an arrow 40, a leap 156 and an arrow 40 (see _research.scss). */
+    widthTo(st, leapId) {
+      let x = 0;
+      for (const r of this.rows(st)) {
+        x += (this.realNodes(st, r).length ? 150 + 40 : 0) + (st.rows[r].leap ? 156 + 40 : 0);
+        if (st.rows[r].leap?.id === leapId) return x;
+      }
+      return null;
+    }
+    /** The elbow of every branch: down from the arrow after the leap it grows out of, then along to its first row. Measured on the page, so that rows of any height line up. */
+    links() {
+      const tree = this.main.querySelector(".rs-tree");
+      if (!tree) return;
+      const t0 = tree.getBoundingClientRect();
+      for (const ch of tree.querySelectorAll(".rs-chain[data-from]")) {
+        const arr = [...tree.querySelectorAll(".rs-arr[data-after]")].find((a2) => a2.dataset.after === ch.dataset.from), first = ch.querySelector(".rs-line > *");
+        if (!arr || !first) continue;
+        const a = arr.getBoundingClientRect(), f = first.getBoundingClientRect();
+        const z = this.zoom, x0 = (a.left + a.width / 2 - t0.left) / z, y0 = (a.top + a.height / 2 - t0.top) / z, x1 = (f.left - t0.left) / z - 2, y1 = (f.top + f.height / 2 - t0.top) / z;
+        const el = document.createElement("div");
+        el.className = `rs-link${arr.classList.contains("on") ? " on" : ""}`;
+        el.style.cssText = `left:${x0}px;top:${y0}px;width:${Math.max(0, x1 - x0)}px;height:${Math.max(0, y1 - y0)}px`;
+        tree.append(el);
+      }
     }
     /** A stretch of stats with no leap counts as done when most of its levels are (what the next row waits for). */
     rowDone(st, r) {
@@ -187682,22 +190655,34 @@ ${risk.lines.join("\n")}`);
       return total > 0 && got >= Math.ceil(total * 0.66 - 1e-9);
     }
     navH(p, st) {
-      const rows = this.rows(st);
-      let cnt = 0, any = false, path = "";
-      const leaps = rows.map((r) => this.leapOf(st, r)).filter((l) => !!l && !l.id.includes("_camp"));
-      const marks = leaps.length ? leaps.map((l) => this.leapState(l)) : rows.map((r) => this.rowDone(st, r) ? "done" : "locked");
-      marks.forEach((s, i) => {
-        if (s === "done") cnt++;
-        if (s === "ready") any = true;
-        path += `<i class="d ${s === "done" ? "k" : s === "ready" ? "r" : ""}"></i>`;
-      });
-      return `<button class="rs-ni${this.branch[p.id] === st.key ? " on" : ""}" data-br="${st.key}"><span class="rs-nr"><span class="rs-nn">${esc(st.name)}</span>${any ? '<span class="rs-rb">s\u1EB5n s\xE0ng</span>' : ""}</span><span class="rs-nr"><span class="rs-path">${path}</span><span class="rs-cnt">${cnt}/${marks.length}</span></span></button>`;
+      let cnt = 0, any = false, path = "", total = 0;
+      for (const ch of this.chains(p, st)) {
+        const rows = this.rows(ch);
+        const leaps = rows.map((r) => this.leapOf(ch, r)).filter((l) => !!l && !l.id.includes("_camp"));
+        const marks = leaps.length ? leaps.map((l) => this.leapState(l)) : rows.map((r) => this.rowDone(ch, r) ? "done" : "locked");
+        marks.forEach((m) => {
+          if (m === "done") cnt++;
+          if (m === "ready") any = true;
+          path += `<i class="d ${m === "done" ? "k" : m === "ready" ? "r" : ""}"></i>`;
+        });
+        total += marks.length;
+      }
+      if (total > 7) path = `<span class="rs-bar"><b style="width:${Math.round(cnt / total * 100)}%"></b></span>`;
+      return `<button class="rs-ni${this.branch[p.id] === st.key ? " on" : ""}" data-br="${st.key}"><span class="rs-nr"><span class="rs-nn">${esc(st.name)}</span>${any ? '<span class="rs-rb" title="C\xF3 m\u1ED1c s\u1EB5n s\xE0ng \u0111\u1EC3 nghi\xEAn c\u1EE9u"></span>' : ""}</span><span class="rs-nr"><span class="rs-path">${path}</span><span class="rs-cnt">${cnt}/${total}</span></span></button>`;
     }
     bodyH(p) {
-      const list = this.branches(p), st = list.find((b) => b.key === this.branch[p.id]) ?? list[0], rows = this.rows(st);
-      const leaps = rows.map((r) => this.leapOf(st, r)).filter((l) => !!l), doneN = leaps.filter((l) => this.done(l.id)).length;
+      const list = this.branches(p), st = list.find((b) => b.key === this.branch[p.id]) ?? list[0], chains = this.chains(p, st);
+      const leaps = chains.flatMap((ch) => this.rows(ch).map((r) => this.leapOf(ch, r)).filter((l) => !!l)), doneN = leaps.filter((l) => this.done(l.id)).length;
       const hasMed = st.rows.some((x) => x.era === "ancient"), next = hasMed && this.c.sim.era !== "ancient" ? `<div class="rs-next" title="C\xE2y Trung c\u1ED5 n\u1ED1i ti\u1EBFp t\u1EEB \u0111\xE2y"><span class="rs-ic">${LOCK}</span><b>Trung c\u1ED5</b><small>kh\xF3a</small></div>` : "";
-      return `<div class="rs-pv"><nav class="rs-nav" aria-label="Nh\xE1nh c\u1EE7a ${esc(p.name)}">${list.map((b) => this.navH(p, b)).join("")}</nav><div class="rs-lane"><div class="rs-lh"><h3>${esc(st.name)}</h3><span class="rs-w">${esc(st.who)}</span><span class="rs-lc">\u0110\xE3 m\u1EDF ${doneN}/${leaps.length}</span></div><div class="rs-stages">${rows.map((r) => this.stageH(st, r)).join("")}${next}</div></div></div>`;
+      const line3 = (ch) => `${this.rows(ch).map((r) => this.stageH(ch, r)).join("")}${ch === st ? next : ""}`;
+      const indent = /* @__PURE__ */ new Map();
+      for (const ch of chains) {
+        const at = ch.from ? chains.find((o) => o !== ch && o.rows.some((x2) => x2.leap?.id === ch.from)) : void 0, x = at ? this.widthTo(at, ch.from) : null;
+        indent.set(ch.key, at && x !== null ? (indent.get(at.key) ?? 0) + x - 20 + 28 : 0);
+      }
+      const hasSide = (ch) => this.rows(ch).some((r) => ch.rows[r].leap?.side);
+      const stages = chains.length > 1 ? `<div class="rs-stages tree"><div class="rs-zoomer"><div class="rs-zoom" style="transform:scale(${this.zoom})"><div class="rs-tree">${chains.map((ch) => `<div class="rs-chain${hasSide(ch) ? " side" : ""}"${ch.from ? ` data-from="${esc(ch.from)}"` : ""} style="margin-left:${indent.get(ch.key) ?? 0}px"><div class="rs-tag">${esc(ch.tag ?? ch.name)}</div><div class="rs-line">${line3(ch)}</div></div>`).join("")}</div></div></div></div>` : `<div class="rs-stages"><div class="rs-zoomer"><div class="rs-zoom rs-solo" style="transform:scale(${this.zoom})">${line3(st)}</div></div></div>`;
+      return `<div class="rs-pv"><nav class="rs-nav" aria-label="Nh\xE1nh c\u1EE7a ${esc(p.name)}">${list.map((b) => this.navH(p, b)).join("")}</nav><div class="rs-lane"><div class="rs-lh"><h3>${esc(st.name)}</h3><span class="rs-w">${esc(st.who)}</span><span class="rs-lc">\u0110\xE3 m\u1EDF ${doneN}/${leaps.length}</span></div>${stages}</div></div>`;
     }
     /** The node selected. */
     pick() {
@@ -187774,28 +190759,82 @@ ${risk.lines.join("\n")}`);
         btn
       ));
     }
-    // ---------------------------------------------------------------- events
-    /** Drag the path of a branch sideways with the mouse (a finger already slides it). */
     grab(e) {
       const st = e.target.closest(".rs-stages");
-      if (!st || e.pointerType !== "mouse" || e.button !== 0) return;
-      const x0 = e.clientX, left = st.scrollLeft;
-      let moved = false;
+      if (!st || e.pointerType === "mouse" && e.button !== 0) return;
+      if (e.pointerType === "mouse") this.endGrab?.();
+      const first = this.ptrs.size === 0;
+      this.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      let moved = false, pan = { x: e.clientX, y: e.clientY, left: st.scrollLeft, top: st.scrollTop }, pinch = null;
+      const dist2 = () => {
+        const [a, b] = [...this.ptrs.values()];
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      };
+      if (this.ptrs.size === 2) pinch = { d: dist2(), z: this.zoom };
+      if (!first) return;
       const move = (m) => {
-        if (!moved && Math.abs(m.clientX - x0) > 5) {
+        const at = this.ptrs.get(m.pointerId);
+        if (!at) return;
+        at.x = m.clientX;
+        at.y = m.clientY;
+        if (this.ptrs.size >= 2) {
+          if (!pinch) pinch = { d: dist2(), z: this.zoom };
+          const [a, b] = [...this.ptrs.values()], r = st.getBoundingClientRect();
+          if (pinch.d > 0) this.setZoom(pinch.z * (dist2() / pinch.d), { x: (a.x + b.x) / 2 - r.left, y: (a.y + b.y) / 2 - r.top });
+          moved = true;
+          st.classList.add("drag");
+          return;
+        }
+        if (!moved && Math.hypot(m.clientX - pan.x, m.clientY - pan.y) > 5) {
           moved = true;
           st.classList.add("drag");
         }
-        if (moved) st.scrollLeft = left - (m.clientX - x0);
+        if (moved) {
+          st.scrollLeft = pan.left - (m.clientX - pan.x);
+          st.scrollTop = pan.top - (m.clientY - pan.y);
+        }
       };
-      const up = () => {
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-        st.classList.remove("drag");
+      const up = (u) => {
+        this.ptrs.delete(u.pointerId);
+        pinch = null;
+        if (this.ptrs.size > 0) {
+          const [p0] = [...this.ptrs.values()];
+          pan = { x: p0.x, y: p0.y, left: st.scrollLeft, top: st.scrollTop };
+          return;
+        }
+        end2();
         if (moved) this.dragged = true;
       };
+      const end2 = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        window.removeEventListener("pointercancel", up);
+        st.classList.remove("drag");
+        this.ptrs.clear();
+        this.endGrab = null;
+      };
+      this.endGrab = end2;
       window.addEventListener("pointermove", move);
       window.addEventListener("pointerup", up);
+      window.addEventListener("pointercancel", up);
+    }
+    /** Draw the tree at another size, keeping the point under `at` (a point of the frame; the middle by default) where it is. */
+    setZoom(z, at) {
+      const nz = Math.max(0.4, Math.min(1.6, Math.round(z * 100) / 100)), st = this.main.querySelector(".rs-stages");
+      if (!st || nz === this.zoom) return;
+      const ax = at?.x ?? st.clientWidth / 2, ay = at?.y ?? st.clientHeight / 2, k = nz / this.zoom, cx = st.scrollLeft + ax, cy = st.scrollTop + ay;
+      this.zoom = nz;
+      this.fit(st);
+      st.scrollLeft = cx * k - ax;
+      st.scrollTop = cy * k - ay;
+    }
+    /** Size the frame of the tree to what it shows now: a tree drawn small leaves no empty room to scroll to. */
+    fit(st = this.main.querySelector(".rs-stages")) {
+      const box = st?.querySelector(".rs-zoom"), wrap2 = st?.querySelector(".rs-zoomer");
+      if (!box || !wrap2) return;
+      box.style.transform = `scale(${this.zoom})`;
+      wrap2.style.width = `${box.offsetWidth * this.zoom}px`;
+      wrap2.style.height = `${box.offsetHeight * this.zoom}px`;
     }
     click(el) {
       const t = el.closest("[data-tab],[data-br],[data-node]");
@@ -187821,7 +190860,7 @@ ${risk.lines.join("\n")}`);
       const p = PILLARS.find((q) => q.id === this.tab);
       if (!this.branch[p.id]) this.branch[p.id] = this.branches(p)[0]?.key ?? "";
       const keep = this.main.querySelector(".rs-lane"), nav = this.main.querySelector(".rs-nav"), stg = this.main.querySelector(".rs-stages");
-      const sv = [keep?.scrollTop ?? 0, nav?.scrollTop ?? 0, nav?.scrollLeft ?? 0, stg?.scrollLeft ?? 0];
+      const sv = [keep?.scrollTop ?? 0, nav?.scrollTop ?? 0, nav?.scrollLeft ?? 0, stg?.scrollLeft ?? 0, stg?.scrollTop ?? 0];
       this.main.dataset.pil = p.id;
       this.dialog.root.dataset.pil = p.id;
       this.main.innerHTML = `${this.tabsH()}${this.bodyH(p)}`;
@@ -187832,7 +190871,12 @@ ${risk.lines.join("\n")}`);
         nv.scrollTop = sv[1];
         nv.scrollLeft = sv[2];
       }
-      if (sg) sg.scrollLeft = sv[3];
+      if (sg) {
+        sg.scrollLeft = sv[3];
+        sg.scrollTop = sv[4];
+      }
+      this.fit();
+      this.links();
     }
   };
 
@@ -188067,7 +191111,7 @@ ${risk.lines.join("\n")}`);
     render(s) {
       const { sim: sim2, toast: toast2, ctl: ctl2 } = this.c;
       const title = (text, count, extra) => h("div", { class: "rhead" }, h("b", { text }), extra ?? null, h("small", { class: "dsub", text: count }));
-      const right = [title(s.titles?.in ?? "\u0110ang l\xE0m \u1EDF \u0111\xE2y", s.plain ? `${s.assigned.length}` : `${s.assigned.length}/${s.cap >= 99 ? "\u221E" : s.cap}`)];
+      const right = [title(s.titles?.in ?? "\u0110ang l\xE0m \u1EDF \u0111\xE2y", s.inCount ?? (s.plain ? `${s.assigned.length}` : `${s.assigned.length}/${s.cap >= 99 ? "\u221E" : s.cap}`))];
       if (!s.assigned.length) right.push(dlg.empty(s.emptyIn));
       else right.push(dlg.list(...s.assigned.map((v) => {
         const why = s.removeBlock?.(v) ?? null;
@@ -188136,7 +191180,8 @@ ${risk.lines.join("\n")}`);
     }
     update(b) {
       const { sim: sim2 } = this.c, slots = sim2.slotsOf(b), jobKey = this.job === "farm" ? "food" : this.job, stat = JOBS[jobKey].stat;
-      const crew2 = this.job === "build", walking = crew2 ? [] : sim2.villagers.filter((v) => v.phase === "goStaff" && v.target === b.id && v.health > 0);
+      const crew2 = this.job === "build", single = !isProcessKind(b.kind) && this.job !== "farm";
+      const walking = crew2 ? [] : sim2.villagers.filter((v) => v.health > 0 && (v.phase === "goStaff" && v.target === b.id || single && v.phase === "wait" && v.job === this.job));
       const staff = crew2 ? sim2.crew() : [...b.staff.map((id) => sim2.get(id)).filter((v) => !!v), ...walking];
       const count = staff.length, full = count >= slots;
       this.head.replaceChildren(h("b", { text: crew2 ? "Th\u1EE3 x\xE2y" : this.job === "farm" ? "N\xF4ng d\xE2n" : "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c" }));
@@ -188151,7 +191196,7 @@ ${risk.lines.join("\n")}`);
       this.body.replaceChildren(...this.roster.render({
         assigned: staff,
         cap: slots,
-        chipIn: (v) => walking.includes(v) ? "\u0111ang di chuy\u1EC3n \u0111\u1EBFn" : void 0,
+        chipIn: (v) => walking.includes(v) ? v.phase === "wait" ? "\u0111ang ch\u1EDD l\u1ED1i v\xE0o" : "\u0111ang di chuy\u1EC3n \u0111\u1EBFn" : void 0,
         statIds: roleStats(this.job),
         stat: (v) => v.stats[stat],
         pool,
@@ -188333,10 +191378,11 @@ ${risk.lines.join("\n")}`);
     scout: "scout",
     supply: "str"
   };
+  var ORE_TAB = { iron_ore: "S\u1EAFt", coal: "Than", copper_ore: "\u0110\u1ED3ng", rare_ore: "S\u1EAFt hi\u1EBFm" };
   var HELP = {
     wood: "Ng\u01B0\u1EDDi \u0111\u1ED1n g\u1ED7 do X\u01B0\u1EDFng g\u1ED7 qu\u1EA3n l\xFD: giao vi\u1EC7c \u1EDF \u0111\xE2y, h\u1ECD ra c\xE2y g\u1EA7n nh\u1EA5t v\xE0 mang g\u1ED7 v\u1EC1 kho. N\xE2ng c\u1EA5p x\u01B0\u1EDFng \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
     stone: "Th\u1EE3 \u0111\xE1 do X\u01B0\u1EDFng \u0111\xE1 qu\u1EA3n l\xFD: h\u1ECD ra \u0111\xE1 v\xE0 mang v\u1EC1 kho. N\xE2ng c\u1EA5p x\u01B0\u1EDFng \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
-    mine: "Th\u1EE3 m\u1ECF do M\u1ECF qu\u1EA3n l\xFD: h\u1ECD ra c\xE1c m\u1EA1ch qu\u1EB7ng s\u1EAFt v\xE0 than \u1EDF ch\xE2n n\xFAi, mang v\u1EC1 kho ri\xEAng c\u1EE7a M\u1ECF. M\u1ED7i th\u1EE3 c\xF3 c\xE1c \xF4 nh\u1ECF \u0111\u1EC3 ch\u1ECDn khai lo\u1EA1i qu\u1EB7ng n\xE0o (b\u1EA5m \u0111\u1EC3 b\u1EADt ho\u1EB7c t\u1EAFt). Cu\u1ED1c c\xE0ng t\u1ED1t khai c\xE0ng nhanh; cu\u1ED1c k\xE9m v\u1EABn khai \u0111\u01B0\u1EE3c qu\u1EB7ng c\u1EE9ng nh\u01B0ng ch\u1EADm h\u01A1n nhi\u1EC1u. Qu\u1EB7ng s\u1EAFt hi\u1EBFm ch\u1EC9 khai \u0111\u01B0\u1EE3c khi M\u1ECF c\u1EA5p 3. C\u1EA7n cu\u1ED1c chim. N\xE2ng c\u1EA5p m\u1ECF \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
+    mine: "Th\u1EE3 m\u1ECF do M\u1ECF qu\u1EA3n l\xFD: h\u1ECD ra c\xE1c m\u1EA1ch qu\u1EB7ng s\u1EAFt v\xE0 than \u1EDF ch\xE2n n\xFAi, mang v\u1EC1 kho ri\xEAng c\u1EE7a M\u1ECF. Ch\u1ECDn lo\u1EA1i qu\u1EB7ng \u1EDF h\xE0ng n\xFAt tr\xEAn c\xF9ng: c\u1ED9t ph\u1EA3i l\xE0 th\u1EE3 khai lo\u1EA1i \u0111\xF3, c\u1ED9t tr\xE1i l\xE0 d\xE2n c\xF3 th\u1EC3 th\xEAm (k\u1EC3 c\u1EA3 th\u1EE3 \u0111ang khai lo\u1EA1i kh\xE1c), b\u1EA5m m\u0169i t\xEAn \u0111\u1EC3 cho khai lo\u1EA1i qu\u1EB7ng \u0111ang ch\u1ECDn. B\u1ECF lo\u1EA1i qu\u1EB7ng cu\u1ED1i c\xF9ng c\u1EE7a m\u1ED9t th\u1EE3 l\xE0 cho th\u1EE3 ngh\u1EC9. Cu\u1ED1c c\xE0ng t\u1ED1t khai c\xE0ng nhanh; cu\u1ED1c k\xE9m v\u1EABn khai \u0111\u01B0\u1EE3c qu\u1EB7ng c\u1EE9ng nh\u01B0ng ch\u1EADm h\u01A1n nhi\u1EC1u. Qu\u1EB7ng s\u1EAFt hi\u1EBFm ch\u1EC9 khai \u0111\u01B0\u1EE3c khi M\u1ECF c\u1EA5p 3. C\u1EA7n cu\u1ED1c chim. N\xE2ng c\u1EA5p m\u1ECF \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
     food: "Ng\u01B0\u1EDDi h\xE1i l\u01B0\u1EE3m do N\xF4ng tr\u1EA1i qu\u1EA3n l\xFD: h\u1ECD ra b\u1EE5i qu\u1EA3 v\xE0 mang th\u1EE9c \u0103n v\u1EC1 kho. Ng\u01B0\u1EDDi l\xE0m ru\u1ED9ng th\xEC giao \u1EDF t\u1EEBng Ru\u1ED9ng. N\xE2ng c\u1EA5p n\xF4ng tr\u1EA1i \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
     hunt: "Th\u1EE3 s\u0103n do Ch\xF2i th\u1EE3 s\u0103n qu\u1EA3n l\xFD: h\u1ECD \u0111i s\u0103n th\xFA v\xE0 mang th\u1ECBt, da v\u1EC1. N\xEAn ch\u1EBF gi\xE1o ho\u1EB7c d\xE2y qu\u0103ng cho h\u1ECD. N\xE2ng c\u1EA5p ch\xF2i \u0111\u1EC3 th\xEAm ng\u01B0\u1EDDi.",
     foot: 'Chi\u1EBFn binh c\u1EADn chi\u1EBFn do tr\u1EA1i n\xE0y tuy\u1EC3n v\xE0 cho ngh\u1EC9, kh\xF4ng ph\u1EA3i \u1EDF \u0111\u1ED1ng l\u1EEDa. H\u1ECD \u1EDF trong tr\u1EA1i (kh\xF4ng hi\u1EC7n tr\xEAn b\u1EA3n \u0111\u1ED3) v\xE0 ch\u1EC9 ra ngo\xE0i khi b\u1EA1n b\u1EA5m "G\u1ECDi qu\xE2n", khi c\xF3 tr\u1EADn ho\u1EB7c khi \u0111\u01B0\u1EE3c ra l\u1EC7nh; vi\u1EC7c canh g\xE1c giao cho L\xEDnh g\xE1c. Nh\u1EDB ch\u1EBF v\u0169 kh\xED v\xE0 gi\xE1p cho h\u1ECD. N\xE2ng c\u1EA5p tr\u1EA1i \u0111\u1EC3 ch\u1EE9a th\xEAm.',
@@ -188358,6 +191404,8 @@ ${risk.lines.join("\n")}`);
       /** The Trại lính gác: the watch whose guards stand in the right list, and whether the list of all the villagers (to hire guards) is open instead. */
       this.watch = "day";
       this.recruit = false;
+      /** The Mỏ: the ore whose miners stand in the right list (a miner may dig several ores, so he can be in more than one list). */
+      this.ore = ORE_RES[0];
       /** The rank the camps of soldiers train now (ranks.json). */
       this.rank = 1;
       this.roster = new Roster(c);
@@ -188373,6 +191421,7 @@ ${risk.lines.join("\n")}`);
       return [
         this.role,
         this.watch,
+        this.ore,
         this.recruit,
         this.rank,
         isRankRole(this.role) ? sim2.trainCheck(this.role, this.rank).missing.join("|") : "",
@@ -188397,6 +191446,9 @@ ${risk.lines.join("\n")}`);
       const guards = role === "guard", tools = [];
       const stray = guards ? have2.filter((v) => v.shift === "both") : [];
       if (stray.length) sim2.setShift(stray.map((v) => v.id), "day");
+      const mining = role === "mine", mineLevel = sim2.building("mine")?.level ?? 0, oreOpen = (r) => r !== "rare_ore" || mineLevel >= 3;
+      if (mining && !oreOpen(this.ore)) this.ore = ORE_RES[0];
+      const digs = (v, r) => !v.ores || v.ores.includes(r);
       const watching = guards && have2.length > 0 && !this.recruit, other = this.watch === "day" ? "night" : "day", onWatch = (v) => v.shift === "night" ? "night" : "day";
       const camp = (role === "foot" || role === "cavalry" || role === "archer" || role === "guard" || role === "scout" || role === "supply") && have2.length > 0;
       if (camp) {
@@ -188425,6 +191477,13 @@ ${risk.lines.join("\n")}`);
           }
         }, icon("equip", 15), "Trang b\u1ECB"));
       }
+      if (mining) {
+        const oreBtn = (r) => h("button", { type: "button", class: `segb${this.ore === r ? " on" : ""}`, disabled: !oreOpen(r), title: oreOpen(r) ? `Xem v\xE0 chia th\u1EE3 khai ${RES_NAME[r].toLowerCase()}` : `${RES_NAME[r]}: c\u1EA7n M\u1ECF c\u1EA5p 3`, onclick: () => {
+          this.ore = r;
+          this.again();
+        } }, resIcon(r), ORE_TAB[r]);
+        tools.push(h("div", { class: "seg" }, ...ORE_RES.map(oreBtn)));
+      }
       if (guards && have2.length) {
         const watchBtn = (w) => h("button", { type: "button", class: `segb${watching && this.watch === w ? " on" : ""}`, title: `Xem v\xE0 chia l\xEDnh g\xE1c ${w === "day" ? "ng\xE0y" : "\u0111\xEAm"}`, onclick: () => {
           this.watch = w;
@@ -188445,22 +191504,6 @@ ${risk.lines.join("\n")}`);
         else sim2.callOut([v.id]);
         this.again();
       }, sim2.isOut(v) ? "Cho l\xEDnh n\xE0y v\u1EC1 tr\u1EA1i ngh\u1EC9" : "G\u1ECDi l\xEDnh n\xE0y ra ngo\xE0i, s\u1EB5n s\xE0ng", { disabled: !!lock }) : null;
-      const mineLevel = sim2.building("mine")?.level ?? 0;
-      const oreChips = (v) => role !== "mine" ? [] : [h("div", { class: "btns orechips" }, ...ORE_RES.map((r) => {
-        const on = !v.ores || v.ores.includes(r), locked = r === "rare_ore" && mineLevel < 3;
-        return h("button", {
-          type: "button",
-          class: "sm orechip",
-          pressed: on,
-          disabled: !!lock || locked,
-          title: locked ? `${RES_NAME[r]}: c\u1EA7n M\u1ECF c\u1EA5p 3` : `${on ? "\u0110ang khai" : "Kh\xF4ng khai"} ${RES_NAME[r].toLowerCase()}: b\u1EA5m \u0111\u1EC3 ${on ? "th\xF4i khai" : "khai"}`,
-          onclick: () => {
-            const e = sim2.setMineOre(v.id, r, !on);
-            if (e) toast2(e);
-            this.again();
-          }
-        }, resIcon(r));
-      }))];
       const name = (w) => w === "day" ? "ng\xE0y" : "\u0111\xEAm";
       const train = isRankRole(role) ? role : null, ranks2 = train ? ranksOf(train, era) : [];
       if (train && ranks2.length && !ranks2.some((d) => d.rank === this.rank)) this.rank = ranks2[0].rank;
@@ -188480,7 +191523,35 @@ ${risk.lines.join("\n")}`);
         })));
         out.push(h("small", { class: `dsub rwhy${chk && chk.ok ? " okline" : ""}`, text: chk && chk.ok ? `M\u1ED7i l\xEDnh t\u1ED1n ${trainBill(chk.def, sim2.rankCost(train, this.rank))} v\xE0 m\u1ED9t ${WEAPONS[chk.def.weapon].name.toLowerCase()} l\u1EA5y t\u1EEB kho.` : `Thi\u1EBFu: ${chk?.missing.join(" \xB7 ")}` }));
       }
-      out.push(...this.roster.render(watching ? {
+      const ore = this.ore, oreName = RES_NAME[ore].toLowerCase();
+      out.push(...this.roster.render(mining ? {
+        // the Mỏ, one page for each ore: the miners who dig the ore chosen (right), and every villager who does not yet (left, anyone may be taken on); an arrow puts him on this ore
+        assigned: have2.filter((v) => digs(v, ore)),
+        cap: cap2,
+        inCount: `${have2.length}/${cap2}`,
+        statIds: roleStats(role),
+        stat: key,
+        pool: pool.concat(have2.filter((v) => !digs(v, ore))),
+        addBlock: lock,
+        add: (v) => {
+          if (roleOf(v) !== "mine") {
+            if (!cap2 || !room) return block;
+            const e = sim2.assignRole([v.id], "mine");
+            if (e) return e;
+            sim2.setMineOre(v.id, ore, true);
+            for (const r of ORE_RES) if (r !== ore) sim2.setMineOre(v.id, r, false);
+            return null;
+          }
+          return sim2.setMineOre(v.id, ore, true);
+        },
+        remove: (v) => (v.ores ?? ORE_RES).filter((r) => r !== ore).length ? sim2.setMineOre(v.id, ore, false) : sim2.releaseRole([v.id]),
+        // off his last ore: he stops being a miner
+        removeBlock: () => lock,
+        titles: { pool: "D\xE2n c\xF3 th\u1EC3 th\xEAm", in: `Khai ${oreName}` },
+        emptyIn: `Ch\u01B0a c\xF3 ai khai ${oreName}.`,
+        emptyPool: "Kh\xF4ng c\xF3 ai \u0111\u1EC3 th\xEAm.",
+        again: () => this.again()
+      } : watching ? {
         // the guards of the house in two lists: the watch chosen (right) and the other one (left); an arrow sends a guard to the other watch
         assigned: have2.filter((v) => onWatch(v) === this.watch),
         cap: cap2,
@@ -188514,7 +191585,7 @@ ${risk.lines.join("\n")}`);
         ...train ? { titles: { pool: "D\xE2n c\xF3 th\u1EC3 luy\u1EC7n", in: "L\xEDnh trong tr\u1EA1i" }, chipIn: (v) => rankName(train, v.rank ?? 1) ?? void 0 } : {},
         remove: (v) => sim2.releaseRole([v.id]),
         removeBlock: (v) => lock ?? (sim2.scouts.some((m) => m.ids.includes(v.id)) ? "\u0110ang \u0111i trinh s\xE1t" : null),
-        extra: (v) => [callOut2(v), ...oreChips(v)],
+        extra: (v) => [callOut2(v)],
         emptyIn: "Ch\u01B0a c\xF3 ai gi\u1EEF vi\u1EC7c n\xE0y.",
         emptyPool: role === "scout" ? "Kh\xF4ng c\xF2n l\xEDnh k\u1EF5 n\xE0o \u0111\u1EC3 tuy\u1EC3n." : "Kh\xF4ng c\xF3 ai \u0111\u1EC3 th\xEAm.",
         again: () => this.again()
@@ -191776,12 +194847,18 @@ ${risk.lines.join("\n")}`);
       roleHouse("stone", "Nh\xE2n c\xF4ng");
       roleHouse("food", "Nh\xE2n c\xF4ng");
       roleHouse("hunt", "Nh\xE2n c\xF4ng");
+      roleHouse("mine", "Nh\xE2n c\xF4ng");
       this.tabs.house = [{ label: "Ng\u01B0\u1EDDi trong nh\xE0", page: bedPage("house", "D\xE2n r\u1EA3nh") }];
       this.tabs.field = [{ label: "Ng\u01B0\u1EDDi l\xE0m ru\u1ED9ng", page: page(this.cropBox, this.staffBoxes.farm.root) }];
       const ranchList = RANCH_PRODUCTS.map((p) => {
-        const note = h("small");
-        this.ranchRows.push({ p, note });
-        return h("div", { class: "row" }, h("div", { class: "nm" }, resIcon(p.res), RES_NAME[p.res], note));
+        const note = h("small"), bar = h("i"), label2 = h("span"), root2 = h(
+          "div",
+          { class: "abox" },
+          h("span", { class: "apic" }, resIcon(p.res)),
+          h("div", { class: "awork" }, h("div", { class: "aline" }, h("b", { text: RES_NAME[p.res] }), note), h("div", { class: "abar" }, bar, label2))
+        );
+        this.ranchRows.push({ p, root: root2, note, bar, label: label2 });
+        return root2;
       });
       this.tabs.ranch = [{ label: "Ch\u0103n nu\xF4i", page: page(hint("S\u1EA3n ph\u1EA9m c\u1EE7a tr\u1EA1i", "Ng\u01B0\u1EDDi l\xE0m vi\u1EC7c trong tr\u1EA1i nu\xF4i th\xFA, v\xE0 m\u1ED7i s\u1EA3n ph\u1EA9m t\u1EF1 \u0111\u1EBFn theo th\u1EDDi gian, kh\xF4ng c\u1EA7n \u0111\u1EB7t \u0111\u01A1n. C\xE0ng \u0111\xF4ng ng\u01B0\u1EDDi, c\xE0ng gi\u1ECFi (Nhanh nh\u1EB9n) v\xE0 c\u1EA5p tr\u1EA1i c\xE0ng cao th\xEC c\xE0ng nhanh. C\u1EA5p cao m\u1EDF th\xEAm s\u1EA3n ph\u1EA9m. S\u1EA3n ph\u1EA9m v\xE0o kho, t\u1ED1i \u0111a theo s\u1EE9c ch\u1EE9a. C\u1EA7n c\xF3 ng\u01B0\u1EDDi l\xE0m vi\u1EC7c trong tr\u1EA1i (n\xFAt Nh\xE2n s\u1EF1)."), ...ranchList) }];
       this.war = new WarPanel(c);
@@ -192256,11 +195333,14 @@ ${risk.lines.join("\n")}`);
       this.cropBox.replaceChildren(h("b", { text: "Gieo tr\u1ED3ng" }), h("div", { class: "btns" }, pick3("food", "Th\u1EE9c \u0103n", "Tr\u1ED3ng c\xE2y l\u01B0\u01A1ng th\u1EF1c: th\u1EE9c \u0103n v\u1EC1 kho"), pick3("flax", "Lanh (s\u1EE3i)", medieval ? "Tr\u1ED3ng lanh: cho s\u1EE3i, ch\u1EADm h\u01A1n th\u1EE9c \u0103n, d\xF9ng \u0111\u1EC3 d\u1EC7t v\u1EA3i" : "Tr\u1ED3ng lanh ch\u1EC9 c\xF3 t\u1EEB th\u1EDDi Trung c\u1ED5")));
     }
     updateRanch(b) {
-      const { sim: sim2 } = this.c, open = productsAt(b.level);
+      const { sim: sim2 } = this.c, open = productsAt(b.level), working = sim2.houseRate(b) > 0;
       this.staffBoxes.herd.update(b);
       for (const r of this.ranchRows) {
-        const on = open.includes(r.p), per = sim2.ranchDaily(b, r.p);
-        r.note.textContent = on ? `  ~${per.toLocaleString("vi", { maximumFractionDigits: 1 })} m\u1ED7i ng\xE0y \xB7 kho ${Math.floor(sim2.stock[r.p.res])}/${sim2.capacity(r.p.res)}` : `  \u{1F512} m\u1EDF \u1EDF c\u1EA5p ${r.p.level} c\u1EE7a tr\u1EA1i`;
+        const on = open.includes(r.p), per = sim2.ranchDaily(b, r.p), pct4 = on ? Math.floor(Math.min(1, b.grown?.[r.p.res] ?? 0) * 100) : 0;
+        r.root.style.opacity = on ? "" : ".55";
+        r.note.textContent = on ? `${working ? `~${per.toLocaleString("vi", { maximumFractionDigits: 1 })} m\u1ED7i ng\xE0y` : "t\u1EA1m d\u1EEBng (kh\xF4ng c\xF3 ng\u01B0\u1EDDi)"} \xB7 kho ${Math.floor(sim2.stock[r.p.res])}/${sim2.capacity(r.p.res)}` : `\u{1F512} m\u1EDF \u1EDF c\u1EA5p ${r.p.level} c\u1EE7a tr\u1EA1i`;
+        r.bar.style.width = `${pct4}%`;
+        r.label.textContent = on ? `${pct4}%` : "";
       }
     }
     updateStable(b) {
@@ -193112,7 +196192,21 @@ ${risk.lines.join("\n")}`);
   var camZ = cam.zoom;
   var celebrating = null;
   var drawEvery = () => sim.speed >= 16 ? 4 : sim.speed >= 8 ? 3 : sim.speed >= 4 ? 2 : 1;
+  var lastError = "";
   function frame(t) {
+    try {
+      frameBody(t);
+    } catch (err) {
+      console.error(err);
+      const msg = err instanceof Error ? `${err.message} @ ${(err.stack ?? "").split("\n")[1]?.trim() ?? ""}` : String(err);
+      if (msg !== lastError) {
+        lastError = msg;
+        toast(`L\u1ED7i: ${msg}`);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  function frameBody(t) {
     const t0 = performance.now();
     const dt = last ? (t - last) / 1e3 : 0;
     last = t;
@@ -193185,7 +196279,6 @@ ${risk.lines.join("\n")}`);
     if (settingsOpen && statsDlg.isOpen) settingsPanel.update();
     else settingsOpen = false;
     updateHud(t);
-    requestAnimationFrame(frame);
   }
   new ResizeObserver(() => {
     renderer.resize();

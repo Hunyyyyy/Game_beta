@@ -5,6 +5,7 @@ import type { MountKind } from './jobs';
 import { MAX_TOOL_TIER, RECIPE_BY_ID, recipeName, TIER_DURABILITY, TIER_NAME, Tool, ToolKind, TOOL_KINDS, TOOL_NAME, TOOL_OF_JOB } from './tools';
 import { ARMORS, CRAFTED_WEAPONS, cycleOf, RULES, WEAPONS } from './combat';
 import { craftQuality } from './research';
+import { armPerk } from './statsys';
 import { rankDef } from './ranks';
 import type { RankRole } from './ranks';
 import type { Sim } from './sim';
@@ -91,7 +92,7 @@ export function wearGear(sim: Sim, v: Villager, slot: 'weapon' | 'armor'): void 
   if (!id) return;
   const max = (slot === 'weapon' ? WEAPONS[id]?.durability : ARMORS[id]?.durability) ?? 0;
   if (!max) return;
-  const wearBy = 1 / craftQuality(sim.building('workshop')?.level ?? 1); // a better workshop makes it last longer
+  const wearBy = 1 / (craftQuality(sim.building('workshop')?.level ?? 1) * (slot === 'armor' ? 1 + armPerk(sim, v, 'armorDur') / 100 : 1)); // a better workshop makes it last longer, and so does the research of the arm (armour)
   if (slot === 'weapon') { if (g.w !== id) { g.w = id; g.wd = max; g.wb = false; } g.wd -= wearBy; if (g.wb || g.wd > 0) return; }
   else { if (g.a !== id) { g.a = id; g.ad = max; g.ab = false; } g.ad -= wearBy; if (g.ab || g.ad > 0) return; }
   if (slot === 'weapon') { v.weapon = null; g.w = null; g.wb = false; } else { v.armor = null; g.a = null; g.ab = false; }

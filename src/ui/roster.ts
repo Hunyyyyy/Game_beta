@@ -32,6 +32,8 @@ export interface RosterSpec {
   emptyIn: string; emptyPool: string;
   /** The titles of the two lists (the default: who could go in, who is in). `plain`: no filter by trade and no chip, for lists that hold people of one kind (the watches of the guards). */
   titles?: { pool: string; in: string }; plain?: boolean;
+  /** The count over the list of those who are in, when it is not "in/places" (the Mỏ: all its miners over its places, whichever ore the page shows). */
+  inCount?: string;
   /** A chip after the name of somebody who is in (the rank of a soldier). */
   chipIn?: (v: Villager) => string | undefined;
   /** Draw it again after a change. */
@@ -63,7 +65,7 @@ export class Roster {
     const { sim, toast, ctl } = this.c;
     const title = (text: string, count: string, extra?: Node) => h('div', { class: 'rhead' }, h('b', { text }), extra ?? null, h('small', { class: 'dsub', text: count }));
     // ---- the ones who are in (right)
-    const right: Node[] = [title(s.titles?.in ?? 'Đang làm ở đây', s.plain ? `${s.assigned.length}` : `${s.assigned.length}/${s.cap >= 99 ? '∞' : s.cap}`)];
+    const right: Node[] = [title(s.titles?.in ?? 'Đang làm ở đây', s.inCount ?? (s.plain ? `${s.assigned.length}` : `${s.assigned.length}/${s.cap >= 99 ? '∞' : s.cap}`))];
     if (!s.assigned.length) right.push(dlg.empty(s.emptyIn));
     else right.push(dlg.list(...s.assigned.map((v) => {
       const why = s.removeBlock?.(v) ?? null;

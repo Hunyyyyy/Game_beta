@@ -21,7 +21,8 @@ export class StaffBox {
   }
   update(b: Building): void {
     const { sim } = this.c, slots = sim.slotsOf(b), jobKey = this.job === 'farm' ? 'food' : this.job, stat = JOBS[jobKey].stat;
-    const crew = this.job === 'build', walking = crew ? [] : sim.villagers.filter((v) => v.phase === 'goStaff' && v.target === b.id && v.health > 0);
+    const crew = this.job === 'build', single = !isProcessKind(b.kind) && this.job !== 'farm'; // posted to this house by the job alone (not a Ruộng or one of several processing houses)
+    const walking = crew ? [] : sim.villagers.filter((v) => v.health > 0 && ((v.phase === 'goStaff' && v.target === b.id) || (single && v.phase === 'wait' && v.job === this.job))); // on the way, or waiting for a way in
     const staff = crew ? sim.crew() : [...b.staff.map((id) => sim.get(id)).filter((v): v is Villager => !!v), ...walking]; // those on the way are listed too, marked as such
     const count = staff.length, full = count >= slots;
     this.head.replaceChildren(h('b', { text: crew ? 'Thợ xây' : this.job === 'farm' ? 'Nông dân' : 'Người làm việc' })); // the count is in the head of the right list
@@ -32,7 +33,7 @@ export class StaffBox {
     this.key = key;
     const again = () => { this.key = ''; this.c.ctl.onChange(); };
     this.body.replaceChildren(...this.roster.render({
-      assigned: staff, cap: slots, chipIn: (v: Villager) => (walking.includes(v) ? 'đang di chuyển đến' : undefined), statIds: roleStats(this.job), stat: (v) => v.stats[stat], pool,
+      assigned: staff, cap: slots, chipIn: (v: Villager) => (walking.includes(v) ? (v.phase === 'wait' ? 'đang chờ lối vào' : 'đang di chuyển đến') : undefined), statIds: roleStats(this.job), stat: (v) => v.stats[stat], pool,
       addBlock: sim.warLock() ?? (full ? 'Nhà đã đủ người: cho một người ra hoặc nâng cấp nhà' : null),
       add: (v) => (crew ? sim.assignCrew([v.id]) : this.job === 'farm' ? sim.assignField([v.id], b.id) : isProcessKind(b.kind) ? sim.assignProcessing([v.id], b.id) : sim.assignStaff([v.id], this.job as 'craft' | 'research' | 'tame' | 'herd')),
       remove: (v) => { if (crew) sim.releaseCrew([v.id]); else sim.releaseStaff([v.id]); return null; },

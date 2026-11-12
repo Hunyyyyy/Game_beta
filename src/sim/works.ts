@@ -125,6 +125,9 @@ export function craftStoreBlock(sim: Sim, id: string): string | null {
   return storeRoom(sim, cat) > 0 ? null : cat === 'tool' ? 'Kho công cụ đã đầy: nâng cấp kho hoặc dùng bớt đồ' : 'Kho vũ khí đã đầy: nâng cấp kho hoặc dùng bớt đồ';
 }
 
+/** How many orders the Nhà chế tạo takes in its queue: 12, and what the research of the craftsmen adds. */
+export const craftQueueMax = (sim: Sim): number => 12 + perkPct(sim.researched, 'craftQueue');
+
 /** Queue a tool, weapon or armour for the Nhà chế tạo. The materials are paid now, as the order is put in the queue; cancelling it gives them back. */
 export function queueCraft(sim: Sim, id: string): string | null {
   const r = RECIPE_BY_ID[id];
@@ -134,7 +137,7 @@ export function queueCraft(sim: Sim, id: string): string | null {
   if (lock) return lock;
   const full = craftStoreBlock(sim, id);
   if (full) return full;
-  if (sim.craftQueue.length >= 12) return 'Hàng đợi đã đầy';
+  if (sim.craftQueue.length >= craftQueueMax(sim)) return 'Hàng đợi đã đầy';
   const mult = craftMult(sim);
   if (!sim.dev.freeWorks) {
     const cost = scaleCost(r.cost, mult), short = sim.missing(cost);
@@ -196,7 +199,7 @@ export function tickWorks(sim: Sim, dt: number): void {
     const job = kind as WorkJob;
     let rate = 0;
     for (const v of staff) { rate += sim.workFactor(v, job); sim.gainXp(v, job, dt); }
-    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * sim.paceWork * rate * levelDef(b).craftSpeed) / d.time); // dev: done at once
+    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * sim.paceWork * rate * levelDef(b).craftSpeed * (1 + perkPct(sim.researched, kind === 'craft' ? 'craftSpeed' : 'researchSpeed') / 100)) / d.time); // dev: done at once
     if (b.active.progress < 1) continue;
     const id = b.active.id;
     if (kind === 'research') {

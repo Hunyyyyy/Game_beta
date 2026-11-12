@@ -4,7 +4,7 @@
  * some soldiers to break the thing down; and at the end of the arrow, the squad going for what the arrow points at, and once that is gone, for everything about.
  */
 import { RULES, SIEGE } from './combat';
-import { swingCycle, weaponDamage } from './statsys';
+import { armPerk, swingCycle, weaponDamage } from './statsys';
 import type { WeaponDef } from './combat';
 import { armOf, swingTimes, threatsOf, weaponOf } from './battle';
 import { FORMATIONS, formationOffsets, placeOffset } from './formations';
@@ -213,7 +213,7 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
       v.swing = { t: 0, hitAt, end, target: { kind: 'unit', id: -1 } }; // the blow has no living target: the work takes it
       v.atkCd = swingCycle(sim, v, w);
       if (b.kind === 'prop') sim.addSfx(w.id, !!w.ranged, b.x, b.y); // the blow on a work sounds as the weapon of the one who strikes
-      if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind));
+      if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind) * (1 + armPerk(sim, v, 'siege') / 100)); // the research of siege
     }
     if (b.kind === 'node') {
       const kind = sim.world.nodeAt(b.x, b.y)!.kind;

@@ -5,6 +5,7 @@
  */
 import { levelDef } from './buildings';
 import { isHorse, MOUNT_KINDS, MOUNTS, MountKind } from './jobs';
+import { perkPct } from './research';
 import type { Sim } from './sim';
 import type { Villager } from './model';
 
@@ -51,7 +52,7 @@ export function tickTame(sim: Sim, dt: number): void {
     if (!d) { b.active = null; continue; }
     let rate = 0;
     for (const v of staff) { rate += sim.workFactor(v, 'tame'); sim.gainXp(v, 'tame', dt); }
-    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * sim.paceWork * rate * levelDef(b).craftSpeed) / d.time); // dev: done at once
+    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * sim.paceWork * rate * levelDef(b).craftSpeed * (1 + perkPct(sim.researched, 'tameSpeed') / 100)) / d.time); // dev: done at once; the research of the tamers makes it quicker
     if (b.active.progress < 1) continue;
     if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim, m), 0) >= STOCK_CAP) { if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say('Chuồng đã đầy thú chưa có người cưỡi: sản phẩm chờ chỗ.'); } continue; }
     sim.toolStock[stockKey(k)] = tamedCount(sim, k) + 1; b.active = null;
